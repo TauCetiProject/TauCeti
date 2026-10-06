@@ -231,7 +231,9 @@ theorem subgroupInvMap_explicitMap2_localFormationHomInv {U : Subgroup (Absolute
         (unitsCoeffMapSymm_localFormationHomInv_smul K E iota (le_refl _))).comp
         (explicitMap2 (AbsoluteGaloisGroup E) (UnitsCoeff E) U (UnitsCoeff E)
           (ContinuousMonoidHom.subgroupSubtype U) (AddMonoidHom.id _) continuous_id
-          (id_subgroupSubtype_smul _ _ U)) =
+          (fun s m => by
+            simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
+              using (Subgroup.smul_def s m).symm)) =
       (explicitMap2 iota.fieldRange.fixingSubgroup (UnitsCoeff K)
         (U.map (localFormationHom K E iota)) (UnitsCoeff K)
         (ContinuousMonoidHom.subgroupInclusion hle) (AddMonoidHom.id _) continuous_id

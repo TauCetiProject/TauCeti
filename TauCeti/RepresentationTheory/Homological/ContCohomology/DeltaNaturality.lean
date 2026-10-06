@@ -99,54 +99,6 @@ namespace TauCeti.ContCohomology
 
 universe uG uH vA vB vC vA' vB' vC'
 
-section NamedInstances
-
-variable (G : Type uG) [Group G] [TopologicalSpace G]
-  (M : Type vA) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-    [DistribMulAction G M] [ContinuousSMul G M]
-  {N : Type vA'} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
-    [DistribMulAction G N] [ContinuousSMul G N]
-
-/-- Restriction on `H¹` is the compatible-pair pullback along the subgroup inclusion. -/
-private theorem explicitRes1_eq (T : Subgroup G) :
-    explicitRes1 G M T = explicitMap1 G M T M (ContinuousMonoidHom.subgroupSubtype T)
-      (AddMonoidHom.id M) continuous_of_discreteTopology (id_subgroupSubtype_smul G M T) := by
-  refine AddMonoidHom.ext fun y => ?_
-  induction y using QuotientAddGroup.induction_on with
-  | _ c => rw [explicitRes1_mk, explicitMap1_mk]
-
-/-- Restriction on `H²` is the compatible-pair pullback along the subgroup inclusion. -/
-private theorem explicitRes2_eq (T : Subgroup G) [ContinuousMul G] [ContinuousMul T] :
-    explicitRes2 G M T = explicitMap2 G M T M (ContinuousMonoidHom.subgroupSubtype T)
-      (AddMonoidHom.id M) continuous_of_discreteTopology (id_subgroupSubtype_smul G M T) := by
-  refine AddMonoidHom.ext fun y => ?_
-  induction y using QuotientAddGroup.induction_on with
-  | _ c => rw [explicitRes2_mk, explicitMap2_mk]
-
-/-- A coefficient map on `H¹` is the compatible-pair pullback along the identity of `G`. -/
-private theorem explicitCoeff1_eq (f : M →+[G] N) :
-    explicitCoeff1 G M f continuous_of_discreteTopology =
-      explicitMap1 G M G N (ContinuousMonoidHom.id G) (f : M →+ N)
-        continuous_of_discreteTopology fun g m => f.map_smul g m := by
-  refine AddMonoidHom.ext fun y => ?_
-  induction y using QuotientAddGroup.induction_on with
-  | _ c =>
-      exact (explicitCoeff1_mk G M f continuous_of_discreteTopology c).trans
-        (explicitMap1_mk G M G N _ _ _ _ c).symm
-
-/-- A coefficient map on `H²` is the compatible-pair pullback along the identity of `G`. -/
-private theorem explicitCoeff2_eq [ContinuousMul G] (f : M →+[G] N) :
-    explicitCoeff2 G M f continuous_of_discreteTopology =
-      explicitMap2 G M G N (ContinuousMonoidHom.id G) (f : M →+ N)
-        continuous_of_discreteTopology fun g m => f.map_smul g m := by
-  refine AddMonoidHom.ext fun y => ?_
-  induction y using QuotientAddGroup.induction_on with
-  | _ c =>
-      exact (explicitCoeff2_mk G M f continuous_of_discreteTopology c).trans
-        (explicitMap2_mk G M G N _ _ _ _ c).symm
-
-end NamedInstances
-
 namespace DiscreteShortExact
 
 section Naturality
@@ -266,10 +218,15 @@ the identity on the coefficients, and the sequence over `T` is
 theorem explicitDelta0_res (c : H0 G C) :
     explicitRes1 G A T (S.explicitDelta0 c) =
       (S.restrict T).explicitDelta0 (explicitRes0 G C T c) := by
-  rw [explicitRes1_eq]
+  rw [explicitRes1_eq_explicitMap1]
   exact S.explicitDelta0_naturality (S.restrict T) (ContinuousMonoidHom.subgroupSubtype T)
     (AddMonoidHom.id A) (AddMonoidHom.id B) (AddMonoidHom.id C)
-    (id_subgroupSubtype_smul G A T) (id_subgroupSubtype_smul G B T) (fun _ => by simp)
+    (fun s m => by
+      simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
+        using (Subgroup.smul_def s m).symm)
+    (fun s m => by
+      simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
+        using (Subgroup.smul_def s m).symm) (fun _ => by simp)
     (fun _ => by simp) c _ (by simp)
 
 /-- **Restriction commutes with `δ¹`**, the degree-one counterpart of
@@ -279,11 +236,17 @@ theorem explicitDelta1_res [ContinuousMul G] [ContinuousMul T] [ContinuousSMul G
     (x : H1 G C) :
     explicitRes2 G A T (S.explicitDelta1 x) =
       (S.restrict T).explicitDelta1 (explicitRes1 G C T x) := by
-  rw [explicitRes2_eq, explicitRes1_eq]
+  rw [explicitRes2_eq_explicitMap2, explicitRes1_eq_explicitMap1]
   exact S.explicitDelta1_naturality (S.restrict T) (ContinuousMonoidHom.subgroupSubtype T)
     (AddMonoidHom.id A) (AddMonoidHom.id B) (AddMonoidHom.id C)
-    (id_subgroupSubtype_smul G A T) (id_subgroupSubtype_smul G B T)
-    (id_subgroupSubtype_smul G C T) (fun _ => by simp) (fun _ => by simp) x
+    (fun s m => by
+      simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
+        using (Subgroup.smul_def s m).symm) (fun s m => by
+      simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
+        using (Subgroup.smul_def s m).symm)
+    (fun s m => by
+      simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
+        using (Subgroup.smul_def s m).symm) (fun _ => by simp) (fun _ => by simp) x
 
 end Restriction
 
@@ -314,7 +277,7 @@ theorem explicitDelta0_coeffMap
     (c : H0 G C) :
     explicitCoeff1 G A fA continuous_of_discreteTopology (S.explicitDelta0 c) =
       S'.explicitDelta0 (explicitCoeff0 G C fC c) := by
-  rw [explicitCoeff1_eq]
+  rw [explicitCoeff1_eq_explicitMap1]
   exact S.explicitDelta0_naturality S' (ContinuousMonoidHom.id G) (fA : A →+ A')
     (fB : B →+ B') (fC : C →+ C') (fun g a => fA.map_smul g a)
     (fun g b => fB.map_smul g b) hincl hproj c _ (by simp)
@@ -327,7 +290,7 @@ theorem explicitDelta1_coeffMap [ContinuousMul G] [ContinuousSMul G C] [Continuo
     (x : H1 G C) :
     explicitCoeff2 G A fA continuous_of_discreteTopology (S.explicitDelta1 x) =
       S'.explicitDelta1 (explicitCoeff1 G C fC continuous_of_discreteTopology x) := by
-  rw [explicitCoeff2_eq, explicitCoeff1_eq]
+  rw [explicitCoeff2_eq_explicitMap2, explicitCoeff1_eq_explicitMap1]
   exact S.explicitDelta1_naturality S' (ContinuousMonoidHom.id G) (fA : A →+ A')
     (fB : B →+ B') (fC : C →+ C') (fun g a => fA.map_smul g a)
     (fun g b => fB.map_smul g b) (fun g y => fC.map_smul g y) hincl hproj x

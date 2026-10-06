@@ -108,7 +108,9 @@ theorem brRes_eq_explicitMap2 (x : Br K) :
   -- `AddMonoidHom.comp`.
   exact congrArg (unitsRepH2Equiv L) (DFunLike.congr_fun (explicitMap2_comp _ _ _ _
     (ContinuousMonoidHom.subgroupSubtype σ.fieldRange.fixingSubgroup)
-    (AddMonoidHom.id _) continuous_id (id_subgroupSubtype_smul _ _ _) _ _
+    (AddMonoidHom.id _) continuous_id (fun s m => by
+      simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
+        using (Subgroup.smul_def s m).symm) _ _
     (absoluteGaloisGroupEquivFixingSubgroup K L σ :
       AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup)
     (unitsCoeffMap K L σ) continuous_of_discreteTopology (unitsCoeffMap_smul K L σ)) _).symm

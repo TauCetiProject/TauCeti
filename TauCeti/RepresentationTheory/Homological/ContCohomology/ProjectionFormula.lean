@@ -791,7 +791,9 @@ theorem explicitCup_projection20_res_left (a : H2 G M) (n : H0 U N) :
         (mem_Z2_iff.1 α.2).1 (n : N), fun γ η => ?_⟩
     -- Restriction is evaluation of the cochain at the inclusion, by `cocyclesMap2_apply`.
     have hres : ((cocyclesMap2 G M U M (ContinuousMonoidHom.subgroupSubtype U) (AddMonoidHom.id M)
-        continuous_id (id_subgroupSubtype_smul G M U) α : Z2 U M) : U × U → M) =
+        continuous_id (fun s m => by
+          simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
+            using (Subgroup.smul_def s m).symm) α : Z2 U M) : U × U → M) =
           fun q => (α : G × G → M) ((q.1 : G), (q.2 : G)) :=
       funext fun q => cocyclesMap2_apply G M U M _ _ _ _ α q.1 q.2
     simp only [Pi.sub_apply, coe_cocyclesCor2, hres, Subgroup.smul_def, coe_explicitCor0]
