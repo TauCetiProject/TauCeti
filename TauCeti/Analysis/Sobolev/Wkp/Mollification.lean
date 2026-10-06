@@ -57,8 +57,7 @@ theorem hasFDerivAt_indicator_convolution_value (u : Wkp mu Omega p 1)
     (Lp.memLp _) hgrad Fact.out Fact.out rho hrho hrho_cpt x hx
 
 /-- Pointwise derivative form of `hasFDerivAt_indicator_convolution_value`. -/
--- Apply the derivative formula before rewriting `Wkp.value 1` to `W1p.value`.
-@[simp↓] theorem fderiv_indicator_convolution_value (u : Wkp mu Omega p 1)
+@[simp] theorem fderiv_indicator_convolution_value (u : Wkp mu Omega p 1)
     (rho : E → ℝ) (hrho : ContDiff ℝ ∞ rho)
     (hrho_cpt : HasCompactSupport rho) (x : E)
     (hx : ∀ y ∈ tsupport rho, x - y ∈ Omega) :
@@ -149,8 +148,7 @@ theorem hasFDerivAt_indicator_convolution_normed_value [HasContDiffBump E]
     (Lp.memLp _) hgrad Fact.out Fact.out phi x hx
 
 /-- Pointwise derivative form of `hasFDerivAt_indicator_convolution_normed_value`. -/
--- Apply the derivative formula before rewriting `Wkp.value 1` to `W1p.value`.
-@[simp↓] theorem fderiv_indicator_convolution_normed_value [HasContDiffBump E]
+@[simp] theorem fderiv_indicator_convolution_normed_value [HasContDiffBump E]
     (u : Wkp mu Omega p 1) (phi : ContDiffBump (0 : E)) (x : E)
     (hx : Metric.closedBall x phi.rOut ⊆ Omega) :
     fderiv ℝ
