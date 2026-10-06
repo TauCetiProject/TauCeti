@@ -78,6 +78,7 @@ are strictly larger than `Kˣ`.
 
 * `TauCeti.unitsCoeff_continuousSMul`, `TauCeti.kummerCoeff_continuousSMul`: the coefficients are
   discrete modules, that is, the action is continuous.
+* `TauCeti.natCard_kummerCoeff`: `μₙ` has `n` elements, for `n` invertible in `K`.
 * `TauCeti.smul_kummerCoeff_eq_self`: the action on `μₙ` is trivial when `K` contains a primitive
   `n`th root of unity.
 * `TauCeti.mem_H0_unitsCoeff_iff`: a unit of `Kˢ` fixed by `G_K` comes from `Kˣ`.
@@ -158,16 +159,21 @@ theorem smul_kummerCoeff_eq_self [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n
   rw [hx, map_pow, AlgEquiv.commutes]
 
 variable {K n} in
+/-- **`μₙ` has `n` elements** for `n` invertible in `K`. -/
+theorem natCard_kummerCoeff (hn : IsUnit (n : K)) : Nat.card (KummerCoeff K n) = n := by
+  have : NeZero (n : K) := ⟨hn.ne_zero⟩
+  have : NeZero n := NeZero.of_neZero_natCast K
+  exact (Nat.card_congr Additive.toMul).trans
+    (HasEnoughRootsOfUnity.natCard_rootsOfUnity (SeparableClosure K) n)
+
+variable {K n} in
 /-- **`μₙ` is cyclic of order `n`** for `n` invertible in `K`: the `n`th roots of unity of `Kˢ`
 are additively isomorphic to `ℤ/nℤ`. The isomorphism is not canonical; it amounts to a choice of
 primitive `n`th root of unity in `Kˢ`. -/
 def kummerCoeffAddEquivZMod (hn : IsUnit (n : K)) : KummerCoeff K n ≃+ ZMod n :=
   have : NeZero (n : K) := ⟨hn.ne_zero⟩
   have : NeZero n := NeZero.of_neZero_natCast K
-  addEquivOfAddCyclicCardEq <| by
-    obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (SeparableClosure K) n
-    rw [Nat.card_zmod]
-    exact (Nat.card_congr Additive.toMul).trans hζ.card_rootsOfUnity
+  addEquivOfAddCyclicCardEq <| by rw [Nat.card_zmod, natCard_kummerCoeff hn]
 
 /-! ### The two maps of the Kummer sequence -/
 

@@ -168,6 +168,15 @@ theorem H0CyclesIso_hom_comp_subtype (M : Rep R G) :
     Zero.cyclesIsoInvariants_hom_comp_subtype]
   exact Zero.cyclesIso_hom_comp_iCycles M
 
+/-- An invariant element, as a cycle of degree `0` of the Tate complex, is the same element as a
+`0`-cochain. -/
+@[reassoc]
+theorem H0CyclesIso_inv_comp_iCycles (M : Rep R G) :
+    (H0CyclesIso M).inv ≫ (tateComplex M).iCycles 0 =
+      ModuleCat.ofHom M.ρ.invariants.subtype ≫ (cochainsIso₀ M).inv :=
+  (Iso.eq_comp_inv (cochainsIso₀ M)).2 ((Category.assoc _ _ _).trans
+    ((Iso.inv_comp_eq _).2 (H0CyclesIso_hom_comp_subtype M).symm))
+
 /-- The map from invariant representatives to degree-zero Tate cohomology. -/
 def H0π (M : Rep R G) : ModuleCat.of R M.ρ.invariants ⟶ tateCohomology M 0 :=
   ModuleCat.ofHom (Submodule.mkQ ((range M.ρ.norm).submoduleOf M.ρ.invariants)) ≫
@@ -184,6 +193,14 @@ theorem H0π_eq_cyclesIso_inv_comp_homologyπ (M : Rep R G) :
   rw [← Zero.cyclesIso_inv_comp_homologyπ_comp_homologyIso_hom_assoc]
   exact ((Category.assoc _ _ _).trans (congrArg ((Zero.cyclesIsoInvariants M).inv ≫ ·)
     (Category.assoc _ _ _))).symm
+
+/-- Under the degree-zero identification of the cycles with the invariants, `H0π` is the canonical
+projection from degree-zero cycles to homology. -/
+@[reassoc]
+theorem H0CyclesIso_hom_comp_H0π (M : Rep R G) :
+    (H0CyclesIso M).hom ≫ H0π M = (tateComplex M).homologyπ 0 := by
+  rw [H0π_eq_cyclesIso_inv_comp_homologyπ]
+  exact Iso.hom_inv_id_assoc _ _
 
 /-- The quotient map from invariant representatives onto degree-zero Tate cohomology is an
 epimorphism. -/
@@ -360,6 +377,15 @@ theorem HNegOneCyclesIso_hom_comp_subtype (M : Rep R G) :
   exact (congrArg _ (NegOne.shortComplex M).moduleCatCyclesIso_hom_i).trans
     (ShortComplex.cyclesMap_i (NegOne.isoShortComplex M).hom)
 
+/-- A norm-zero element, as a cycle of degree `-1` of the Tate complex, is the same element as a
+`0`-chain. -/
+@[reassoc]
+theorem HNegOneCyclesIso_inv_comp_iCycles (M : Rep R G) :
+    (HNegOneCyclesIso M).inv ≫ (tateComplex M).iCycles (-1) =
+      ModuleCat.ofHom (ker M.ρ.norm).subtype ≫ (chainsIso₀ M).inv :=
+  (Iso.eq_comp_inv (chainsIso₀ M)).2 ((Category.assoc _ _ _).trans
+    ((Iso.inv_comp_eq _).2 (HNegOneCyclesIso_hom_comp_subtype M).symm))
+
 /-- The representative map to degree `-1` Tate cohomology is the canonical projection from
 degree `-1` cycles to homology, after identifying those cycles with the kernel of the norm. -/
 theorem HNegOneπ_eq_cyclesIso_inv_comp_homologyπ (M : Rep R G) :
@@ -507,6 +533,11 @@ theorem H0LinearEquivTrivialIntZModCard_H0π (x : (Rep.trivial ℤ H ℤ).ρ.inv
 def trivialTateHZeroOne : tateCohomology (Rep.trivial ℤ H ℤ) 0 :=
   H0π (Rep.trivial ℤ H ℤ) ⟨1, by simp [Representation.invariants]⟩
 
+/-- The class of `1` is the degree-zero projection of the invariant `1`. -/
+theorem trivialTateHZeroOne_def :
+    trivialTateHZeroOne H = H0π (Rep.trivial ℤ H ℤ) ⟨1, by simp [Representation.invariants]⟩ :=
+  (rfl)
+
 /-- The canonical degree-zero class corresponds to `1` modulo the order of the group. -/
 @[simp]
 theorem H0LinearEquivTrivialIntZModCard_trivialTateHZeroOne :
@@ -521,6 +552,13 @@ the group. -/
 theorem natCard_tateCohomology_zero_trivial_int_eq_card :
     Nat.card (tateCohomology (Rep.trivial ℤ H ℤ) 0) = Nat.card H := by
   rw [Nat.card_congr (H0LinearEquivTrivialIntZModCard H).toEquiv, Nat.card_zmod]
+
+/-- Degree-zero Tate cohomology with trivial integral coefficients is finite. -/
+instance finite_tateCohomology_zero_trivial_int :
+    Finite (tateCohomology (Rep.trivial ℤ H ℤ) 0) :=
+  Nat.finite_of_card_ne_zero <| by
+    rw [natCard_tateCohomology_zero_trivial_int_eq_card]
+    exact Nat.card_pos.ne'
 
 /-- Degree `-1` Tate cohomology with trivial integral coefficients is trivial. -/
 instance subsingleton_tateCohomology_negOne_trivial_int :

@@ -105,6 +105,13 @@ theorem coe_prodCone (σ : Φ.cones) (τ : Ψ.cones) :
     (Φ.prodCone Ψ σ τ : PointedCone ℝ (V × V')) = σ.1.prod τ.1 :=
   rfl
 
+/-- Intersections of product cones are computed componentwise. -/
+@[simp]
+theorem prodCone_inf_prodCone (σ σ' : Φ.cones) (τ τ' : Ψ.cones) :
+    Φ.prodCone Ψ σ τ ⊓ Φ.prodCone Ψ σ' τ' = Φ.prodCone Ψ (σ ⊓ σ') (τ ⊓ τ') := by
+  apply Subtype.ext
+  simp only [coe_inf, Submodule.prod_inf_prod]
+
 /-- Every cone of a product fan is the product cone of a pair of factor cones. -/
 theorem exists_prodCone_eq (ξ : (Φ.prod Ψ).cones) :
     ∃ (σ : Φ.cones) (τ : Ψ.cones), Φ.prodCone Ψ σ τ = ξ := by
