@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Corner
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Multiplication
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner
 
 /-!
 # The middle tensor factor at nonadjacent zigzag vertices
@@ -18,13 +18,11 @@ For distinct nonadjacent vertices `i, j` of a finite simple graph, the corner
 relation for zigzag braid complexes.
 
 The calculation includes isolated vertices, whose factors in the public algebra
-are dual numbers. It does not identify the full bimodule tensor product or assert
-a commuting isomorphism of complexes; associativity and the outer bimodule factors
-still have to be assembled.
+are dual numbers. These results identify the middle factor; they do not provide
+a full bimodule tensor product isomorphism or a commuting isomorphism of complexes.
 
-The proof uses the componentwise multiplication table and
-`TauCeti.spanSingletonBalancedTensorEquivCorner`. See Huerfano--Khovanov,
-*A category for the adjoint representation*, for the graph braid action.
+See Huerfano--Khovanov, *A category for the adjoint representation*, for the
+graph braid action.
 -/
 
 public section
@@ -37,33 +35,6 @@ variable (k : Type*) [CommRing k] {V : Type*} (G : SimpleGraph V) [Finite V]
 
 local notation "Z" => AlgCat.carrier (zigzagAlgebra k G)
 local notation "e" => fun i : V ↦ zigzagAlgebraBasis k G (Sum.inl i)
-
-/-- Distinct nonadjacent vertex idempotents cut out a zero corner of the public
-zigzag algebra, including its isolated-vertex dual-number factors. -/
-theorem cornerSubmodule_zigzagAlgebra_eq_bot_of_not_adj {i j : V}
-    (hij : i ≠ j) (hadj : ¬ G.Adj i j) : cornerSubmodule k (e i) (e j) = ⊥ := by
-  classical
-  have hzero : cornerMap k (e i) (e j) = 0 := by
-    apply (zigzagAlgebraBasis k G).ext
-    intro b
-    simp only [cornerMap_apply, LinearMap.zero_apply]
-    rcases b with v | d | v
-    · by_cases h : i = v
-      · subst v
-        simp [hij]
-      · simp [h]
-    · by_cases h : i = d.snd
-      · by_cases h' : d.fst = j
-        · have ha : G.Adj i j := by simpa only [h, ← h'] using d.adj.symm
-          exact (hadj ha).elim
-        · simp [h, Ne.symm h']
-      · simp [h]
-    · by_cases h : i = v
-      · subst v
-        simp [hij]
-      · simp [h]
-  exact (cornerSubmodule_eq_bot_iff k (e i) (e j)).2 fun x ↦ by
-    simpa only [cornerMap_apply, LinearMap.zero_apply] using LinearMap.congr_fun hzero x
 
 /-- The balanced tensor product `e_i Z ⊗[Z] Z e_j` vanishes at distinct
 nonadjacent vertices. The right ideal is represented in `Zᵐᵒᵖ`. -/

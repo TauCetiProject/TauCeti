@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Basic
 public import TauCeti.RingTheory.Idempotents.Hom
-public import TauCeti.RingTheory.Idempotents.Primitive.Decomposition
 
 /-!
 # Balanced tensor products of idempotent ideals
@@ -20,9 +19,8 @@ factor. In particular the tensor product vanishes exactly when the corner vanish
 This calculation is the middle-factor identification in products of the bimodules
 `Ae ⊗[k] eA` used in complexes of projective bimodules.
 
-The construction uses `TauCeti.BalancedTensorProduct.lift` and the fixed-point API
-for idempotent ideals and corners. See Assem--Simson--Skowroński, *Elements of the
-Representation Theory of Associative Algebras*, Vol. 1, Section I.4.
+See Assem--Simson--Skowroński, *Elements of the Representation Theory of
+Associative Algebras*, Vol. 1, Section I.4.
 -/
 
 public section
@@ -40,7 +38,7 @@ private def idempotentIdealPairing (he : IsIdempotentElem e) (hf : IsIdempotentE
   toFun m :=
     { toFun n := ⟨unop (m : Aᵐᵒᵖ) * (n : A), by
         rw [mem_cornerSubmodule_iff k he hf]
-        have hm := congrArg unop ((mem_span_singleton_iff_mul_eq_self he.op).1 m.2)
+        have hm := congrArg unop ((mem_span_singleton_iff_mul_eq_self (congrArg op he.eq)).1 m.2)
         simp only [unop_mul, unop_op] at hm
         rw [← mul_assoc, hm, mul_assoc,
           (mem_span_singleton_iff_mul_eq_self hf).1 n.2]⟩
@@ -82,7 +80,7 @@ def spanSingletonBalancedTensorEquivCorner
       apply BalancedTensorProduct.hom_ext
       intro m n
       have hm : op (unop (m : Aᵐᵒᵖ)) • spanSingletonGenerator (op e) = m :=
-        smul_spanSingletonGenerator he.op m
+        smul_spanSingletonGenerator (congrArg op he.eq) m
       have hn : (unop (m : Aᵐᵒᵖ)) • n =
           ι (idempotentIdealPairing k he hf m n) :=
         Subtype.ext (by simp [ι, idempotentIdealPairing])
