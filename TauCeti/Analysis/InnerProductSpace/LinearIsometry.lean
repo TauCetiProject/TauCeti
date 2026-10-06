@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.InnerProductSpace.ProdL2
+public import Mathlib.Analysis.Normed.Module.Span
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
@@ -25,12 +26,19 @@ complement of its image; this is how it transports the stereographic charts of u
 Euclidean spaces, a linear isometry matching a pair of standard basis vectors matches the
 corresponding coordinates; this is how it transports the half-space charts of closed balls.
 
+An isometry between the orthogonal complements of two unit vectors extends uniquely to
+an ambient isometry sending one vector to the other. This extension works over both real
+and complex inner product spaces, without completeness or dimension assumptions.
+
 ## Main definitions
 
 * `LinearIsometry.prodOrthogonalRangeEquiv`: the continuous linear equivalence
   `E × (range f)ᗮ ≃L[ℝ] F` given by `(u, w) ↦ f u + w`.
 * `LinearIsometry.orthogonalComplementSingletonMap`: the restriction of a linear isometry to a map
   `(ℝ ∙ v)ᗮ →ₗᵢ[ℝ] (ℝ ∙ w)ᗮ`, where `w` is the image of `v`.
+
+* `LinearIsometryEquiv.extendOrthogonalComplement`: extend an isometry of orthogonal
+  complements by its prescribed action on the radial line.
 
 ## Main results
 
@@ -111,3 +119,67 @@ theorem apply_eq_of_map_single {L : EuclideanSpace 𝕜 ι →ₗᵢ[𝕜] Eucli
 end EuclideanSpace
 
 end LinearIsometry
+
+namespace LinearIsometryEquiv
+
+open scoped InnerProductSpace
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] {x : E} {y : F}
+
+/-- Extend an isometry between the orthogonal complements of two unit vectors by sending
+one unit vector to the other. The extension uses Mathlib's
+`Submodule.orthogonalDecomposition` and `LinearIsometryEquiv.toSpanUnitSingleton`. -/
+noncomputable def extendOrthogonalComplement
+    (e : (𝕜 ∙ x)ᗮ ≃ₗᵢ[𝕜] (𝕜 ∙ y)ᗮ) (hx : ‖x‖ = 1) (hy : ‖y‖ = 1) :
+    E ≃ₗᵢ[𝕜] F :=
+  (𝕜 ∙ x).orthogonalDecomposition.trans
+    (((toSpanUnitSingleton x hx).symm.trans (toSpanUnitSingleton y hy)).withLpProdCongr 2 e |>.trans
+      (𝕜 ∙ y).orthogonalDecomposition.symm)
+
+/-- On the orthogonal direct sum, the extension acts on the radial and transverse
+components separately. -/
+theorem extendOrthogonalComplement_apply_add
+    (e : (𝕜 ∙ x)ᗮ ≃ₗᵢ[𝕜] (𝕜 ∙ y)ᗮ) (hx : ‖x‖ = 1) (hy : ‖y‖ = 1)
+    (r : 𝕜) (v : (𝕜 ∙ x)ᗮ) :
+    e.extendOrthogonalComplement hx hy (r • x + v) = r • y + e v := by
+  have hd : (𝕜 ∙ x).orthogonalDecomposition.symm
+      (WithLp.toLp 2 (toSpanUnitSingleton x hx r, v)) = r • x + v := by
+    simp
+  rw [← hd]
+  simp only [extendOrthogonalComplement, trans_apply, apply_symm_apply,
+    withLpProdCongr_apply]
+  simp only [WithLp.toLp_fst, WithLp.toLp_snd, symm_apply_apply]
+  simp
+
+/-- The extension sends the distinguished unit vector to the distinguished target vector. -/
+@[simp]
+theorem extendOrthogonalComplement_apply_self
+    (e : (𝕜 ∙ x)ᗮ ≃ₗᵢ[𝕜] (𝕜 ∙ y)ᗮ) (hx : ‖x‖ = 1) (hy : ‖y‖ = 1) :
+    e.extendOrthogonalComplement hx hy x = y := by
+  simpa using e.extendOrthogonalComplement_apply_add hx hy 1 0
+
+/-- The extension agrees with the original isometry on the orthogonal complement. -/
+@[simp]
+theorem extendOrthogonalComplement_apply_coe
+    (e : (𝕜 ∙ x)ᗮ ≃ₗᵢ[𝕜] (𝕜 ∙ y)ᗮ) (hx : ‖x‖ = 1) (hy : ‖y‖ = 1)
+    (v : (𝕜 ∙ x)ᗮ) : e.extendOrthogonalComplement hx hy v = e v := by
+  simpa using e.extendOrthogonalComplement_apply_add hx hy 0 v
+
+/-- An ambient linear isometry is uniquely determined by its value on a unit vector and
+its restriction to the orthogonal complement. -/
+theorem eq_extendOrthogonalComplement
+    (e : (𝕜 ∙ x)ᗮ ≃ₗᵢ[𝕜] (𝕜 ∙ y)ᗮ) (hx : ‖x‖ = 1) (hy : ‖y‖ = 1)
+    (f : E ≃ₗᵢ[𝕜] F) (hfx : f x = y)
+    (hf : ∀ v : (𝕜 ∙ x)ᗮ, f v = e v) : f = e.extendOrthogonalComplement hx hy := by
+  ext z
+  obtain ⟨r, hr⟩ := (toSpanUnitSingleton x hx).surjective
+    ((𝕜 ∙ x).orthogonalDecomposition z).fst
+  have hz : r • x + (((𝕜 ∙ x).orthogonalDecomposition z).snd : E) = z := by
+    have hdecomp := (𝕜 ∙ x).orthogonalDecomposition.symm_apply_apply z
+    rw [Submodule.orthogonalDecomposition_symm_apply] at hdecomp
+    rw [← hr] at hdecomp
+    simpa using hdecomp
+  rw [← hz, map_add, map_smul, hfx, hf, extendOrthogonalComplement_apply_add]
+
+end LinearIsometryEquiv
