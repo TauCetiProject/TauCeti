@@ -244,12 +244,8 @@ private theorem definingIdeal_toIdeal_le_rootSubgroupCoordinateMap_ker
 /-- The coordinate morphism of the root subgroup `x_ij`, factored through the quotient
 coordinate algebra of the full-weight type-`A_r` carrier. -/
 noncomputable def rootSubgroupCoordinateMapOfPair (hij : i ≠ j) :
-    CommHopfAlgCat.quotient
-        (TauCeti.GeneralLinear.coordinateHopfAlgebra ℤ (r + 1))
-        (TauCeti.UniversalEnvelopingAlgebra.kostantToralDefiningIdeal (rootGenerator r)
-          (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-          (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
-          (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r)) ⟶
+    CommHopfAlgCat.quotient (TauCeti.GeneralLinear.coordinateHopfAlgebra ℤ (r + 1))
+        (definingIdeal r) ⟶
       AdditiveGroup.coordinateHopfAlgebra ℤ :=
   CommHopfAlgCat.liftQuotient (definingIdeal r)
     (TauCeti.GeneralLinear.rootSubgroupCoordinateMap hij)
@@ -332,12 +328,8 @@ theorem rootSubgroupCoordinateMapOfPair_surjective (hij : i ≠ j) :
 the ambient general-linear root coordinate morphism. -/
 @[simp]
 theorem mkQuotient_comp_rootSubgroupCoordinateMapOfPair (hij : i ≠ j) :
-    CommHopfAlgCat.mkQuotient
-          (TauCeti.GeneralLinear.coordinateHopfAlgebra ℤ (r + 1))
-          (TauCeti.UniversalEnvelopingAlgebra.kostantToralDefiningIdeal (rootGenerator r)
-            (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-            (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
-            (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r)) ≫
+    CommHopfAlgCat.mkQuotient (TauCeti.GeneralLinear.coordinateHopfAlgebra ℤ (r + 1))
+          (definingIdeal r) ≫
         rootSubgroupCoordinateMapOfPair r hij =
       TauCeti.GeneralLinear.rootSubgroupCoordinateMap hij := by
   rw [rootSubgroupCoordinateMapOfPair]
