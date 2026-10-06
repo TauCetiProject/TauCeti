@@ -244,7 +244,8 @@ theorem lowerIndex_of_ne_one {σ : DyadicSqrtTwo ≃ₐ[ℚ_[2]] DyadicSqrtTwo} 
 
 /-- The lower ramification groups are the whole Galois group through index two and trivial
 from index three, including the negative-index convention. -/
-@[simp]
+-- Use the computed filtration before general ramification rules try to infer Galois data.
+@[simp 1100]
 theorem lowerRamificationGroup_eq (i : ℤ) :
     LocalFieldsRamification.lowerRamificationGroup ℚ_[2] DyadicSqrtTwo i =
       if i ≤ 2 then ⊤ else ⊥ := by

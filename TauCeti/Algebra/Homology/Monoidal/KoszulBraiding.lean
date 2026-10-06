@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Homology.Monoidal.Cup
 # Koszul braiding for nonnegative chain complexes
 
 On the summand of bidegree `(p, q)`, interchange of tensor factors carries the sign
-`(-1)^(p*q)` to commute with the differential. `TauCeti.ChainComplex.koszulBraidingHom`
+`(-1)^(p*q)` to commute with the differential. `TauCeti.NatChainComplex.koszulBraidingHom`
 constructs this chain map in any braided preadditive monoidal category, assuming only that the
 two tensor complexes exist. It is an isomorphism in a braided category; in a symmetric category,
 its inverse is the same construction with the factors swapped.
@@ -23,19 +23,23 @@ pairing. No commutativity is asserted for the Alexander–Whitney diagonal itsel
 
 ## Main definitions and results
 
-* `TauCeti.ChainComplex.koszulBraidingHom`: the signed interchange chain map.
-* `TauCeti.ChainComplex.ιTensorObj_koszulBraidingHom_f`: its value on each bidegree summand.
-* `TauCeti.ChainComplex.koszulBraidingHom_naturality`: naturality in both chain complexes.
-* `TauCeti.ChainComplex.koszulBraiding`: the signed interchange isomorphism.
-* `TauCeti.ChainComplex.ιTensorObj_koszulBraiding_inv_f`: its inverse on each summand.
-* `TauCeti.ChainComplex.koszulBraidingHom_comp`: interchanging twice is the identity in a
+* `TauCeti.NatChainComplex.koszulBraidingHom`: the signed interchange chain map.
+* `TauCeti.NatChainComplex.ιTensorObj_koszulBraidingHom_f`: its value on each bidegree summand.
+* `TauCeti.NatChainComplex.koszulBraidingHom_naturality`: naturality in both chain complexes.
+* `TauCeti.NatChainComplex.koszulBraiding`: the signed interchange isomorphism.
+* `TauCeti.NatChainComplex.ιTensorObj_koszulBraiding_inv_f`: its inverse on each summand.
+* `TauCeti.NatChainComplex.koszulBraidingHom_comp`: interchanging twice is the identity in a
   symmetric category.
-* `TauCeti.ChainComplex.koszulBraidingHom_f_comp_tensorCochain`: signed tensor-cochain
+* `TauCeti.NatChainComplex.koszulBraidingHom_f_comp_tensorCochain`: signed tensor-cochain
   interchange in every output degree.
-* `TauCeti.ChainComplex.cupCochain_koszulBraidingHom`: signed cup-cochain interchange.
-* `TauCeti.ChainComplex.cup_koszulBraidingHom`: signed interchange on cohomology.
+* `TauCeti.NatChainComplex.cupCochain_koszulBraidingHom`: signed cup-cochain interchange.
+* `TauCeti.NatChainComplex.cup_koszulBraidingHom`: signed interchange on cohomology.
 
 ## Implementation notes
+
+The `TauCeti.NatChainComplex` namespace distinguishes this construction from the
+integer-indexed cochain braiding without nesting Mathlib's `ChainComplex` namespace under
+`TauCeti`. The existing cup API is imported from `TauCeti.ChainComplex`.
 
 The construction follows the signed tensor differential in Mathlib's
 `HomologicalComplex.tensorObj`, and the summand method of `TauCeti.koszulBraidingHom` for
@@ -56,7 +60,9 @@ noncomputable section
 
 open CategoryTheory Limits MonoidalCategory HomologicalComplex
 
-namespace TauCeti.ChainComplex
+namespace TauCeti.NatChainComplex
+
+open TauCeti.ChainComplex
 
 variable {C : Type*} [Category* C] [Preadditive C] [MonoidalCategory C]
   [MonoidalPreadditive C]
@@ -273,4 +279,4 @@ lemma cup_koszulBraidingHom {E : ChainComplex C ℕ} {M N P : C} (k : Type*) [Co
   simp only [iCycles_cupCycles, map_zsmul]
   exact cupCochain_koszulBraidingHom A B k D μ h _ _
 
-end TauCeti.ChainComplex
+end TauCeti.NatChainComplex

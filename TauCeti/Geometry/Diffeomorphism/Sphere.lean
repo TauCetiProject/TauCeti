@@ -100,7 +100,8 @@ theorem contMDiff_unitSphereEquiv (e : E ≃ₗᵢ[ℝ] F) :
 /-- The differential of the restriction of a linear isometry to the unit spheres, read in the
 ambient space through the inclusion of the target sphere, is the linear isometry applied to the
 tangent vector read in the ambient space. -/
-@[simp]
+-- Apply the vector-valued formula before unfolding `mvfderiv` in its arguments.
+@[simp↓]
 theorem mvfderiv_coe_sphere_unitSphereEquiv (e : E ≃ₗᵢ[ℝ] F) (x : sphere (0 : E) 1)
     (v : TangentSpace (𝓡 n) x) :
     mvfderiv (𝓡 k) ((↑) : sphere (0 : F) 1 → F) (unitSphereEquiv e x)
