@@ -10,8 +10,17 @@ public import Mathlib.Data.Finset.Sum
 /-!
 # Images and erasures of finite sets on sum types
 
-These identities compute the two projections of a finite set after mapping or erasing a
-vertex. They allow constructions on disjoint vertex sets to be calculated factor by factor.
+These identities compute the image of a disjoint sum, the two projections of an image under
+`Sum.map`, and the projections after erasing an element of the left summand. They are used to
+calculate joins of simplicial complexes factor by factor.
+
+## Main results
+
+* `Finset.image_sumMap_disjSum`: mapping the summands commutes with disjoint union.
+* `Finset.toLeft_image_sumMap` and `Finset.toRight_image_sumMap`: projections of an image
+  under `Sum.map`.
+* `Finset.toLeft_erase_inl` and `Finset.toRight_erase_inl`: projections after erasing a
+  left-tagged element.
 -/
 
 public section
@@ -42,11 +51,13 @@ omit [DecidableEq α] [DecidableEq β] in
   conv_lhs => rw [← toLeft_disjSum_toRight (u := s), image_sumMap_disjSum]
   simp
 
+/-- Erasing a left-tagged element erases it from the left projection. -/
 @[simp] theorem toLeft_erase_inl (s : Finset (α ⊕ β)) (a : α) :
     (s.erase (Sum.inl a)).toLeft = s.toLeft.erase a := by
   ext x
   simp
 
+/-- Erasing a left-tagged element leaves the right projection unchanged. -/
 @[simp] theorem toRight_erase_inl (s : Finset (α ⊕ β)) (a : α) :
     (s.erase (Sum.inl a)).toRight = s.toRight := by
   ext x

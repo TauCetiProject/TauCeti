@@ -19,6 +19,19 @@ checking the sphere-or-ball condition for a combinatorial manifold.
 The void complex is allowed in either factor. Only the starred face must be nonempty; starring
 the empty set gives the void complex, whereas joining a void factor retains the other factor.
 
+## Main results
+
+* `PreAbstractSimplicialComplex.stellarSubdivision_join_inl` and
+  `PreAbstractSimplicialComplex.stellarSubdivision_join_inr`: starring a nonempty face
+  commutes with joining in either factor.
+* `PreAbstractSimplicialComplex.IsStellarMove.join_left` and
+  `PreAbstractSimplicialComplex.IsStellarMove.join_right`: a stellar move in either factor
+  induces one in the join.
+* `PreAbstractSimplicialComplex.StellarEquivalent.join`: stellar equivalences in both factors
+  induce an equivalence of joins.
+* `PreAbstractSimplicialComplex.StellarEquivalentUpToRelabeling.join`: the same transport for
+  intrinsic stellar equivalence.
+
 ## References
 
 * C. P. Rourke, B. J. Sanderson, *Introduction to Piecewise-Linear Topology*, Chapters 2–3.
@@ -76,7 +89,7 @@ theorem IsStellarMove.join_left (h : IsStellarMove K K') (L : PreAbstractSimplic
     simpa using hv
   · exact (stellarSubdivision_join_inl (K.isRelLowerSet_faces hσ).1 v).symm
 
-/-- Joining on the right preserves stellar equivalence. -/
+/-- A stellar equivalence in the left factor induces one of the joins. -/
 theorem StellarEquivalent.join_left (h : StellarEquivalent K K')
     (L : PreAbstractSimplicialComplex β) : StellarEquivalent (join K L) (join K' L) := by
   apply h.induction_on
@@ -99,7 +112,10 @@ theorem stellarSubdivision_join_inr {σ : Finset β} (hσ : σ.Nonempty) (v : β
   have hface : (σ.map (Function.Embedding.inl : β ↪ β ⊕ α)).image Sum.swap =
       σ.map (Function.Embedding.inr : β ↪ α ⊕ β) := by
     simp only [Finset.map_eq_image, Finset.image_image]
-    rfl
+    apply Finset.image_congr
+    intro x hx
+    simp only [Function.comp_apply, Function.Embedding.inl_apply, Sum.swap_inl,
+      Function.Embedding.inr_apply]
   simpa only [map_stellarSubdivision Sum.swap (Equiv.sumComm β α).injective,
     map_join_swap, hface, Sum.swap_inl] using h
 
@@ -109,7 +125,7 @@ theorem IsStellarMove.join_right (h : IsStellarMove L L') (K : PreAbstractSimpli
   have h' := (h.join_left K).map Sum.swap (Equiv.sumComm β α).injective
   simpa only [map_join_swap] using h'
 
-/-- Joining on the left preserves stellar equivalence. -/
+/-- A stellar equivalence in the right factor induces one of the joins. -/
 theorem StellarEquivalent.join_right (h : StellarEquivalent L L')
     (K : PreAbstractSimplicialComplex α) : StellarEquivalent (join K L) (join K L') := by
   have h' := (h.join_left K).map Sum.swap (Equiv.sumComm β α).injective
@@ -120,8 +136,8 @@ theorem StellarEquivalent.join (hK : StellarEquivalent K K') (hL : StellarEquiva
     StellarEquivalent (join K L) (join K' L') :=
   (hK.join_left L).trans (hL.join_right K')
 
-/-- Joining on the right preserves intrinsic stellar equivalence, even when the two complexes
-use different vertex names in their common enlarged vertex type. -/
+/-- An intrinsic stellar equivalence in the left factor induces one of the joins, even when
+the two complexes use different vertex names in their common enlarged vertex type. -/
 theorem StellarEquivalentUpToRelabeling.join_left
     (h : StellarEquivalentUpToRelabeling K K') (L : PreAbstractSimplicialComplex β) :
     StellarEquivalentUpToRelabeling (join K L) (join K' L) := by
@@ -137,14 +153,16 @@ theorem StellarEquivalentUpToRelabeling.join_left
     let g' : α ⊕ β ↪ (α ⊕ β) ⊕ ℕ :=
       (g.sumMap (Function.Embedding.refl β)).trans e.toEmbedding
     apply of_common_relabeling f' g'
+    have hfcoe : (f' : α ⊕ β → (α ⊕ β) ⊕ ℕ) = e ∘ Sum.map f id := by
+      simp only [f', Function.Embedding.coe_trans, Equiv.coe_toEmbedding,
+        Function.Embedding.coe_sumMap, Function.Embedding.coe_refl]
+    have hgcoe : (g' : α ⊕ β → (α ⊕ β) ⊕ ℕ) = e ∘ Sum.map g id := by
+      simp only [g', Function.Embedding.coe_trans, Equiv.coe_toEmbedding,
+        Function.Embedding.coe_sumMap, Function.Embedding.coe_refl]
     have hf : (join A L).map f' = (join (A.map f) L).map e := by
-      calc
-        _ = ((join A L).map (Sum.map f id)).map e := (map_map _ _).symm
-        _ = _ := by rw [map_join, map_id]
+      rw [hfcoe, ← map_map, map_join, map_id]
     have hg : (join B L).map g' = (join (B.map g) L).map e := by
-      calc
-        _ = ((join B L).map (Sum.map g id)).map e := (map_map _ _).symm
-        _ = _ := by rw [map_join, map_id]
+      rw [hgcoe, ← map_map, map_join, map_id]
     rw [hf, hg]
     exact (he.join_left L).map e e.injective
   · intro A
@@ -154,11 +172,11 @@ theorem StellarEquivalentUpToRelabeling.join_left
   · intro A B C h h'
     exact h.trans h'
 
-/-- Joining on the left preserves intrinsic stellar equivalence. -/
+/-- An intrinsic stellar equivalence in the right factor induces one of the joins. -/
 theorem StellarEquivalentUpToRelabeling.join_right
     (h : StellarEquivalentUpToRelabeling L L') (K : PreAbstractSimplicialComplex α) :
     StellarEquivalentUpToRelabeling (join K L) (join K L') := by
-  have h' := (h.join_left K).map_equiv (Equiv.sumComm β α)
+  have h' := (h.join_left K).map (Equiv.sumComm β α) (Equiv.sumComm β α).injective
   simpa only [Equiv.sumComm_apply, map_join_swap] using h'
 
 /-- Intrinsic stellar equivalences in both factors induce an intrinsic stellar equivalence of

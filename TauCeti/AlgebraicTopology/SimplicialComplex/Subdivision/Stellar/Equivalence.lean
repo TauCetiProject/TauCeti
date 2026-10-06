@@ -248,23 +248,47 @@ theorem induction_on (h : StellarEquivalentUpToRelabeling K L)
   | symm A B _ ih => exact symm A B ih
   | trans A B C _ _ ih₁ ih₂ => exact trans A B C ih₁ ih₂
 
-/-- A bijection of vertex types transports intrinsic stellar equivalence. -/
-theorem map_equiv {κ : Type*} [DecidableEq κ]
-    (h : StellarEquivalentUpToRelabeling K L) (e : ι ≃ κ) :
-    StellarEquivalentUpToRelabeling (K.map e) (L.map e) := by
+/-- An injective relabeling transports intrinsic stellar equivalence. -/
+theorem map {κ : Type*} [DecidableEq κ]
+    (h : StellarEquivalentUpToRelabeling K L) (f : ι → κ) (hf : Function.Injective f) :
+    StellarEquivalentUpToRelabeling (K.map f) (L.map f) := by
+  classical
+  let F : ι ⊕ ℕ → κ ⊕ ℕ := Sum.map f id
+  have hF : Function.Injective F := hf.sumMap Function.injective_id
+  -- Extend each common relabeling over the new ambient vertices outside the image of `f`.
+  let extend (a : ι ↪ ι ⊕ ℕ) : κ → κ ⊕ ℕ := Function.extend f (F ∘ a) Sum.inl
+  have hext (a : ι ↪ ι ⊕ ℕ) : Function.Injective (extend a) := by
+    intro x y hxy
+    by_cases hx : ∃ i, f i = x
+    · obtain ⟨i, rfl⟩ := hx
+      by_cases hy : ∃ j, f j = y
+      · obtain ⟨j, rfl⟩ := hy
+        simp only [extend, hf.extend_apply, Function.comp_apply] at hxy
+        exact congrArg f (a.injective (hF hxy))
+      · simp only [extend, hf.extend_apply, Function.comp_apply,
+          Function.extend_apply' _ _ _ hy] at hxy
+        cases hai : a i with
+        | inl k =>
+          simp only [F, hai, Sum.map_inl, Sum.inl.injEq] at hxy
+          exact False.elim (hy ⟨k, hxy⟩)
+        | inr n => simp [F, hai] at hxy
+    · by_cases hy : ∃ j, f j = y
+      · obtain ⟨j, rfl⟩ := hy
+        simp only [extend, hf.extend_apply, Function.comp_apply,
+          Function.extend_apply' _ _ _ hx] at hxy
+        cases haj : a j with
+        | inl k =>
+          simp only [F, haj, Sum.map_inl, Sum.inl.injEq] at hxy
+          exact False.elim (hx ⟨k, hxy.symm⟩)
+        | inr n => simp [F, haj] at hxy
+      · simpa only [extend, Function.extend_apply' _ _ _ hx,
+          Function.extend_apply' _ _ _ hy, Sum.inl.injEq] using hxy
+  have hcomp (a : ι ↪ ι ⊕ ℕ) : extend a ∘ f = F ∘ a :=
+    Function.extend_comp hf _ _
   apply h.induction_on
-  · intro A B f g he
-    let E := Equiv.sumCongr e (Equiv.refl ℕ)
-    let f' : κ ↪ κ ⊕ ℕ := e.symm.toEmbedding.trans (f.trans E.toEmbedding)
-    let g' : κ ↪ κ ⊕ ℕ := e.symm.toEmbedding.trans (g.trans E.toEmbedding)
-    apply of_common_relabeling f' g'
-    have hf : (f' : κ → κ ⊕ ℕ) ∘ e = E ∘ f := by
-      funext x
-      simp [f']
-    have hg : (g' : κ → κ ⊕ ℕ) ∘ e = E ∘ g := by
-      funext x
-      simp [g']
-    simpa only [map_map, hf, hg] using he.map E E.injective
+  · intro A B a b he
+    apply of_common_relabeling ⟨extend a, hext a⟩ ⟨extend b, hext b⟩
+    simpa only [Function.Embedding.coeFn_mk, map_map, hcomp] using he.map F hF
   · intro A
     exact .refl _
   · intro A B h
