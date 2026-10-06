@@ -9,23 +9,20 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.EvenDegr
 public import TauCeti.NumberTheory.LocalField.ProP.QInvariant
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Marked
 
-import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.OddDegree
-
 /-!
 # Marked presentations of local maximal pro-`p` Galois groups
 
 Let `K` be a nonarchimedean local field that is a finite extension of `ℚ_[p]` and contains a
 primitive `p`th root of unity. Then `G_K(p)` is a Demushkin group of rank `N + 2`, where
-`N = [K : ℚ_[p]]`, its `q`-invariant is the number `q(K)` of `p`-power roots of unity of `K`, and
-its canonical character is the cyclotomic orientation. Labute's marked classification of Demushkin
-groups therefore presents `G_K(p)` by a single relator on `N + 2` generators, and records the
-values of the cyclotomic character on the generators. Each marked theorem of this file is the
-corresponding abstract marked classification of `TauCeti.isDemushkin_marked_of_q_ne_two`,
+`N = [K : ℚ_[p]]` (`TauCeti.demushkinRank_absoluteGaloisGroupProP`), its `q`-invariant is the
+number `q(K)` of `p`-power roots of unity of `K` (`TauCeti.demushkinQ_absoluteGaloisGroupProP`),
+and its canonical character is the cyclotomic orientation
+(`TauCeti.demushkinCharacter_absoluteGaloisGroupProP`). Labute's marked classification of
+Demushkin groups (`TauCeti.isDemushkin_marked_of_q_ne_two`,
 `TauCeti.isDemushkin_marked_of_q_two_odd`, `TauCeti.isDemushkin_marked_of_q_two_even_unitsPlusMinus`
-or `TauCeti.isDemushkin_marked_of_q_two_even_twisted`, after substituting the rank
-`TauCeti.demushkinRank_absoluteGaloisGroupProP`, the `q`-invariant
-`TauCeti.demushkinQ_absoluteGaloisGroupProP` and the canonical character
-`TauCeti.demushkinCharacter_absoluteGaloisGroupProP`.
+and `TauCeti.isDemushkin_marked_of_q_two_even_twisted`) therefore presents `G_K(p)` by a single
+relator on `N + 2` generators, and records the values of the cyclotomic character on the
+generators.
 
 If `q(K) ≠ 2`, which is the case `TauCeti.IsQNeTwoCase`,
 
@@ -50,9 +47,10 @@ If `p = 2` and `N` is even, the relator is
 `x₁^{2 + α} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{N+1}, x_{N+2})`,
 
 with `χ(x₂) = -(1 + α)⁻¹`, `χ(x₄) = (1 - 2^f)⁻¹` and `χ(xᵢ) = 1` for the other generators. The
-parameters are read off the image of the cyclotomic character, which is a hypothesis of each
-marked theorem, so that they are pinned by the arithmetic of `K` and not re-chosen. If the image
-contains `-1` it is `{±1} × U^(f)` for some `f ≥ 2`
+image of the cyclotomic character is a hypothesis of each even marked theorem, and it constrains
+the parameters: it determines the level `f` in the first case below and the index `k` in the
+second, while the exponent `α`, and in the second case the level `f`, may be any values satisfying
+the stated conditions. If the image contains `-1` it is `{±1} × U^(f)` for some `f ≥ 2`
 (`TauCeti.range_localCyclotomicCharacter_of_degree_even_plusMinus`), and that level `f` is the
 level of the relator, with any exponent `α` divisible by `2^f`, for instance `α = 0`. Otherwise,
 when `K` has no primitive fourth root of unity, the image is the twisted subgroup `U^[k]`
@@ -97,18 +95,24 @@ roots of unity is not `2`. Then `G_K(p)` is isomorphic to
 the cyclotomic orientation takes the value `(1 - q(K))⁻¹` on the second marked generator and is
 trivial on every other marked generator. -/
 theorem absoluteGaloisGroupProP_marked_of_q_ne_two (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p)
-    (h : Finite (pPowerRootsOfUnity p K)) (hq : localRootOfUnityOrder p K h ≠ 2) :
+    (hq : localRootOfUnityOrder p K
+      (finite_pPowerRootsOfUnity (hmu.elim fun _ hζ ↦ hζ.neZero'.out)) ≠ 2) :
     ∃ e : absoluteGaloisGroupProP p K ≃ₜ*
         presentedProP p (Fin (Module.finrank ℚ_[p] K + 2))
-          {demushkinWordNeTwo (localRootOfUnityOrder p K h) (Module.finrank ℚ_[p] K + 2)
+          {demushkinWordNeTwo
+            (localRootOfUnityOrder p K
+              (finite_pPowerRootsOfUnity (hmu.elim fun _ hζ ↦ hζ.neZero'.out)))
+            (Module.finrank ℚ_[p] K + 2)
             (freeProPGen p (Module.finrank ℚ_[p] K + 2))},
       ((cyclotomicOrientation p K hmu
             (e.symm (presentedProPGen p (Module.finrank ℚ_[p] K + 2) _ 1)) : ℤ_[p]) *
-          (1 - (localRootOfUnityOrder p K h : ℤ_[p])) = 1) ∧
+          (1 - (localRootOfUnityOrder p K
+            (finite_pPowerRootsOfUnity (hmu.elim fun _ hζ ↦ hζ.neZero'.out)) : ℤ_[p])) = 1) ∧
         ∀ i : ℕ, i ≠ 1 → i < Module.finrank ℚ_[p] K + 2 →
           cyclotomicOrientation p K hmu
             (e.symm (presentedProPGen p (Module.finrank ℚ_[p] K + 2) _ i)) = 1 := by
-  have hQ := demushkinQ_absoluteGaloisGroupProP p K hmu h
+  have hQ := demushkinQ_absoluteGaloisGroupProP p K hmu
+    (finite_pPowerRootsOfUnity (hmu.elim fun _ hζ ↦ hζ.neZero'.out))
   have hmarked := isDemushkin_marked_of_q_ne_two _ (hQ ▸ hq)
   rwa [demushkinCharacter_absoluteGaloisGroupProP, demushkinRank_absoluteGaloisGroupProP p K hmu,
     hQ] at hmarked
