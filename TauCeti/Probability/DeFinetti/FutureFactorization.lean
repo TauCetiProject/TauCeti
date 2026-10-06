@@ -12,7 +12,7 @@ public import TauCeti.Probability.Exchangeability.Cylinder
 public import TauCeti.Probability.Exchangeability.Contractability
 -- `PrefixDeletion` (the canonical dependency) `public import`s both
 -- `Mathlib.Probability.Independence.Conditional` (`CondIndep`/`condIndep_iff`, proof-only here) and
--- `…PathSpace.ProcessShift`, so both transit through this non-public import and are not repeated.
+-- `…PathLaw.ProcessShift`, so both transit through this non-public import and are not repeated.
 import TauCeti.Probability.DeFinetti.PrefixDeletion
 import TauCeti.Probability.DeFinetti.CondExpConvergence
 

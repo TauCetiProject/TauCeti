@@ -8,7 +8,7 @@ module
 public import TauCeti.Data.Nat.Prime.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.BaseChange
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Closed
-public import TauCeti.Topology.Algebra.QuadraticForm.OrthogonalGroup.Closed
+public import TauCeti.Topology.Algebra.QuadraticForm.OrthogonalGroup.SpecialOrthogonal
 public import Mathlib.NumberTheory.Padics.ProperSpace
 
 /-!
@@ -22,9 +22,9 @@ projection land in this intersection.
 
 This file packages the independent families, their compactness and openness, the almost-everywhere
 integrality of rational points, and the compatibility condition. It derives the special orthogonal
-family, its membership criterion, its openness, the restricted Spin projection, and
-almost-everywhere integrality for rational special orthogonal points. In particular, no separately
-chosen special orthogonal family can drift away from the orthogonal family.
+family, its membership criterion, its openness and compactness, the restricted Spin projection,
+and almost-everywhere integrality for rational special orthogonal points. In particular, no
+separately chosen special orthogonal family can drift away from the orthogonal family.
 
 The topology on every group is the canonical one inherited from the ambient finite-dimensional
 algebra; the package stores no topology of its own.
@@ -127,6 +127,14 @@ theorem isOpen_specialOrthogonal (p : Nat.Primes) :
     (_root_.QuadraticMap.continuous_specialOrthogonalToOrthogonal (Q.baseChange ℚ_[p]))
 
 omit [FiniteDimensional ℚ V] in
+/-- The derived special orthogonal reference subgroup is compact, being the preimage of a compact
+subgroup under the closed embedding `SO(Q_p) → O(Q_p)`. -/
+theorem isCompact_specialOrthogonal (p : Nat.Primes) :
+    IsCompact (U.specialOrthogonal p : Set (specialOrthogonalGroup (Q.baseChange ℚ_[p]))) :=
+  (_root_.QuadraticMap.isClosedEmbedding_specialOrthogonalToOrthogonal
+    (Q.baseChange ℚ_[p])).isCompact_preimage (U.isCompact_orthogonal p)
+
+omit [FiniteDimensional ℚ V] in
 /-- The local Spin projection carries the Spin reference subgroup into the derived special
 orthogonal reference subgroup. -/
 theorem mapsTo_specialOrthogonal (p : Nat.Primes) :
@@ -159,16 +167,7 @@ theorem eventually_specialOrthogonal (g : specialOrthogonalGroup Q) :
       specialOrthogonalGroupBaseChange (A := ℚ_[p]) Q g ∈ U.specialOrthogonal p := by
   filter_upwards [U.eventually_orthogonal
     (_root_.QuadraticMap.specialOrthogonalToOrthogonal Q g)] with p hp
-  rw [mem_specialOrthogonal_iff]
-  have hmap :
-      _root_.QuadraticMap.specialOrthogonalToOrthogonal (Q.baseChange ℚ_[p])
-          (specialOrthogonalGroupBaseChange (A := ℚ_[p]) Q g) =
-        orthogonalGroupBaseChange (A := ℚ_[p]) Q
-          (_root_.QuadraticMap.specialOrthogonalToOrthogonal Q g) := by
-    apply Subtype.ext
-    rw [coe_specialOrthogonalToOrthogonal, coe_orthogonalGroupBaseChange,
-      coe_specialOrthogonalGroupBaseChange, coe_specialOrthogonalToOrthogonal]
-  rw [hmap]
+  rw [mem_specialOrthogonal_iff, specialOrthogonalToOrthogonal_specialOrthogonalGroupBaseChange]
   exact hp
 
 end OrthogonalCompactOpens

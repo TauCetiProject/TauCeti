@@ -13,7 +13,7 @@ public import Mathlib.Probability.IdentDistrib
 import TauCeti.Data.Fin.StrictMono
 import TauCeti.Probability.Exchangeability.ExchangeableAtMonotone
 import Mathlib.Order.Fin.Tuple
-import TauCeti.Probability.Exchangeability.FiniteMarginals
+import TauCeti.Probability.Process.PathLaw.FiniteMarginals
 
 /-!
 # Contractability API

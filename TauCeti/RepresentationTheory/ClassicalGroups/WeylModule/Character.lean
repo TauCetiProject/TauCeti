@@ -39,17 +39,14 @@ its character is a complete homogeneous, respectively an elementary, symmetric p
 * `TauCeti.char_weylRepOfShape_diagramOf_diagonal` and its bundled form
   `TauCeti.char_weylFDRepOfShape_diagramOf_diagonal`: **the character of the Weyl module of a
   partition `μ` is the Schur polynomial `s_μ`** on the diagonal torus.
-* `TauCeti.finrank_weylModuleOfShape_diagramOf`: **the dimension of the Weyl module of a partition
-  is the number of semistandard tableaux of its shape in the `n`-letter alphabet**, the value of
-  its Schur polynomial at one.
+* `TauCeti.finrank_weylModuleOfShape`: **the dimension of the Weyl module of a Young diagram is
+  the number of semistandard tableaux of its shape in the `n`-letter alphabet**, the value of its
+  Schur polynomial at one.
 * `TauCeti.char_weylRepOfShape_diagonal_of_colLen_le_one` and
   `TauCeti.char_weylRepOfShape_diagonal_of_rowLen_le_one`: the character of the Weyl module of a
   shape with at most one row, respectively at most one column, is the Schur polynomial of that
   shape, with `TauCeti.char_weylFDRepOfShape_diagonal_of_colLen_le_one` and
   `TauCeti.char_weylFDRepOfShape_diagonal_of_rowLen_le_one` their bundled forms.
-* `TauCeti.finrank_weylModuleOfShape_of_colLen_le_one` and
-  `TauCeti.finrank_weylModuleOfShape_of_rowLen_le_one`: the dimension of the Weyl module of an
-  extreme shape is the number of semistandard tableaux of that shape in the `n`-letter alphabet.
 
 The `k = ℂ` case of the bundled statements is the statement for `TauCeti.schurFunctor`, which is a
 definitional re-export of `TauCeti.weylFDRepOfShape` over `ℂ`, so it needs no separate
@@ -99,17 +96,6 @@ theorem char_weylFDRepOfShape_diagonal_of_colLen_le_one (h : μ.colLen 0 ≤ 1) 
       eval (fun i => (t i : k)) (diagramSchurPoly n k μ) :=
   char_weylRepOfShape_diagonal_of_colLen_le_one k n μ h t
 
-/-- **The dimension of the Weyl module of a shape with at most one row** is the number of
-semistandard tableaux of that shape in the alphabet `{0, …, n - 1}`: the character at the identity
-is the dimension, and a Schur polynomial at one counts the tableaux of its shape. -/
-theorem finrank_weylModuleOfShape_of_colLen_le_one (h : μ.colLen 0 ≤ 1) :
-    Module.finrank k (weylModuleOfShape k n μ).toSubmodule = Nat.card (BoundedSSYT n μ) := by
-  have key := char_weylRepOfShape_diagonal_of_colLen_le_one k n μ h 1
-  rw [map_one] at key
-  simp only [Pi.one_apply, Units.val_one] at key
-  rw [Representation.char_one, eval_one_diagramSchurPoly_eq_card_boundedSSYT] at key
-  exact Nat.cast_injective key
-
 end OneRow
 
 /-! ### A shape with at most one column -/
@@ -137,17 +123,6 @@ theorem char_weylFDRepOfShape_diagonal_of_rowLen_le_one (h : μ.rowLen 0 ≤ 1) 
     (weylFDRepOfShape k n μ).character (diagGL t) =
       eval (fun i => (t i : k)) (diagramSchurPoly n k μ) :=
   char_weylRepOfShape_diagonal_of_rowLen_le_one k n μ h t
-
-/-- **The dimension of the Weyl module of a shape with at most one column** is the number of
-semistandard tableaux of that shape in the alphabet `{0, …, n - 1}`: the character at the identity
-is the dimension, and a Schur polynomial at one counts the tableaux of its shape. -/
-theorem finrank_weylModuleOfShape_of_rowLen_le_one (h : μ.rowLen 0 ≤ 1) :
-    Module.finrank k (weylModuleOfShape k n μ).toSubmodule = Nat.card (BoundedSSYT n μ) := by
-  have key := char_weylRepOfShape_diagonal_of_rowLen_le_one k n μ h 1
-  rw [map_one] at key
-  simp only [Pi.one_apply, Units.val_one] at key
-  rw [Representation.char_one, eval_one_diagramSchurPoly_eq_card_boundedSSYT] at key
-  exact Nat.cast_injective key
 
 end OneColumn
 
@@ -177,16 +152,17 @@ theorem char_weylFDRepOfShape_diagramOf_diagonal {d : ℕ} (μ : d.Partition) (t
       eval (fun i => (t i : k)) (schurPoly (Fin n) k μ) :=
   char_weylRepOfShape_diagramOf_diagonal k n μ t
 
-/-- **The dimension of the Weyl module of a partition** is the number of semistandard tableaux of
-its shape in the alphabet `{0, …, n - 1}`: the character at the identity is the dimension, and a
-Schur polynomial at one counts the tableaux of its shape. -/
-theorem finrank_weylModuleOfShape_diagramOf {d : ℕ} (μ : d.Partition) :
-    Module.finrank k (weylModuleOfShape k n (diagramOf μ)).toSubmodule =
-      Nat.card (BoundedSSYT n (diagramOf μ)) := by
-  have key := char_weylRepOfShape_diagramOf_diagonal k n μ 1
+/-- **The dimension of the Weyl module of a Young diagram** `μ` is the number of semistandard
+tableaux of shape `μ` in the alphabet `{0, …, n - 1}`: the character at the identity is the
+dimension, and the Schur polynomial of the partition with diagram `μ` counts those tableaux at one.
+When `μ` has more than `n` rows both sides vanish. -/
+theorem finrank_weylModuleOfShape (μ : YoungDiagram) :
+    Module.finrank k (weylModuleOfShape k n μ).toSubmodule = Nat.card (BoundedSSYT n μ) := by
+  have key := char_weylRepOfShape_diagramOf_diagonal k n (shapePartition μ) 1
   rw [map_one] at key
   simp only [Pi.one_apply, Units.val_one] at key
-  rw [Representation.char_one, eval_one_schurPoly_eq_card_boundedSSYT, Fintype.card_fin] at key
+  rw [Representation.char_one, eval_one_schurPoly_eq_card_boundedSSYT, Fintype.card_fin,
+    diagramOf_shapePartition] at key
   exact Nat.cast_injective key
 
 end Partition

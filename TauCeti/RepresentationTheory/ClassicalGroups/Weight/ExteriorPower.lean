@@ -75,7 +75,7 @@ false: over `𝔽₂` the diagonal torus of `GL n 𝔽₂` is trivial, so every 
 representation is everything.
 
 The eigenvector computation itself is `exteriorPower.map_basis_exteriorPower_of_apply_basis`, the
-exterior-power analogue of `SymmetricPower.map_basis_symmetricPower_of_apply_basis`; it is what
+exterior-power analogue of `Module.Basis.map_symmetricPower_of_apply`; it is what
 `TauCeti.char_extPowerRep_diagonal` sums to get the elementary symmetric polynomial, and the
 weight-space statements here refine that character identity to the decomposition behind it.
 

@@ -105,7 +105,7 @@ private theorem typeBSpinRep_simpleRootGenerator_exteriorBasis_eq_zero_of_mem
     simp [hi]
   · intro hi
     have hne : (j.castSucc : Fin (n + 1)) ≠ j.succ := Fin.castSucc_lt_succ.ne
-    rw [typeBSimpleRootGenerator_castSucc, P.typeBSpinRep_longRootGenerator_apply b z hz]
+    rw [typeBSimpleRootGenerator_castSucc, P.typeBSpinRep_differenceRootGenerator_apply b z hz]
     simp [mul_smul_comm, hne, hi, Finset.mem_erase]
 
 /-- **A positive simple type-`B` generator annihilates every exterior-basis vector whose index

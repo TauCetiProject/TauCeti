@@ -226,12 +226,6 @@ private theorem resCoindAdjunction_counit_app_hom_apply
     ((resCoindAdjunction k f).counit.app N).hom x = x.1 1 :=
   rfl
 
-private theorem coind_ρ_apply_coe_apply
-    {D E V : Type u} [Group D] [Group E] [AddCommGroup V] [Module k V] (f : D →* E)
-    (N : Representation k D V) (x : Representation.coindV f N) (e e' : E) :
-    ((Representation.coind f N e) x).1 e' = x.1 (e' * e) :=
-  rfl
-
 private theorem evalOne_hom_apply (f : coindComp φ₁ φ₂ M) :
     (evalOne φ₁ φ₂ M).hom f = f.1 1 :=
   rfl
@@ -246,7 +240,7 @@ private theorem restrictCoind_hom_apply_coe (f : coindComp φ₁ φ₂ M) (b : B
   rw [Rep.hom_comp, Representation.IntertwiningMap.comp_apply, Rep.resMap_hom_apply,
     hom_comm_apply, resCoindAdjunction_counit_app_hom_apply, evalOne_hom_apply] at h
   simpa only [res_obj_ρ, MonoidHom.coe_comp, Function.comp_apply, Rep.of_ρ,
-    coind_ρ_apply_coe_apply, one_mul] using h
+    Representation.coind_apply_coe_apply, one_mul] using h
 
 open scoped Classical in
 /-- The trace of `φ₁.range` after `restrictCoind`, a `B`-equivariant map
@@ -295,7 +289,7 @@ private theorem coindTrace_hom_apply_coe [φ₁.range.FiniteIndex] (f : coindCom
     traceRestrictRange_hom_apply] at h
   have h' : ((coindTrace φ₁ φ₂ M).hom f).1 c =
       (traceRestrict φ₁ φ₂ M).hom ((coindComp φ₁ φ₂ M).ρ c f) := by
-    simpa only [Rep.of_ρ, coind_ρ_apply_coe_apply, one_mul] using h
+    simpa only [Rep.of_ρ, Representation.coind_apply_coe_apply, one_mul] using h
   rw [h', traceRestrict, Rep.hom_comp, Representation.IntertwiningMap.comp_apply,
     Subgroup.coindResAdjunction_counit_app_hom_apply]
   refine Finset.sum_congr rfl fun q _ => ?_

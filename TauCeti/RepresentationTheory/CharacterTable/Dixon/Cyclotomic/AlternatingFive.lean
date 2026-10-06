@@ -92,12 +92,12 @@ noncomputable def alternatingGroupFiveGaloisEquiv : Cyclotomic 5 ≃+* Cyclotomi
     (Int.castRingHom (Cyclotomic 5)) (Cyclotomic.zeta 5 ^ 3)
       (alternatingGroupFive_isRoot_zeta_pow (by decide))
   have hleft : σ3.comp σ2 = RingHom.id (Cyclotomic 5) := by
-    apply Cyclotomic.ringHom_ext
+    ext1
     simp only [RingHom.comp_apply, σ2, σ3, Cyclotomic.evalRingHom_zeta, map_pow,
       RingHom.id_apply]
     decide
   have hright : σ2.comp σ3 = RingHom.id (Cyclotomic 5) := by
-    apply Cyclotomic.ringHom_ext
+    ext1
     simp only [RingHom.comp_apply, σ2, σ3, Cyclotomic.evalRingHom_zeta, map_pow,
       RingHom.id_apply]
     decide

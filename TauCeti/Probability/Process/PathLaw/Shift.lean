@@ -5,16 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.Basic
+public import TauCeti.Probability.Process.PathLaw.Basic
 import Mathlib.Dynamics.FixedPoints.Basic
 
 /-!
 # Path-space reindexing and iterates of the one-sided shift
 
 This file records the elementary path-space API for iterating the one-sided shift
-`TauCeti.Probability.shift`.  The Layer 2 exchangeability roadmap uses these lemmas before
-building shift-invariant sigma algebras and before comparing finite-dimensional path laws after
-discarding an initial block.
+`TauCeti.Probability.shift`: the shift-invariant σ-algebra on path space is built on them, as are
+comparisons of finite-dimensional path laws after discarding an initial block.
 
 It also records how *shift-fixed sets* behave under time reindexing:
 `preimage_reindex_eq_of_preimage_shift_eq_of_eventually_add` shows that a reindexing which is
@@ -26,10 +25,7 @@ preserved by such a reindexing, needs strict monotonicity and lives with `Contra
 
 The shift-specialized statements reuse the general time-reindexing path-law lemmas
 (`measurable_reindex`, `map_reindex_pathLaw`, `map_reindex_prefixProj_pathLaw`) from
-`TauCeti.Probability.Exchangeability.Basic`. Apart from the reindexing identity above, which is
-proved from Mathlib's `Function.IsFixedPt.preimage_iterate`, the implementation is a Tau Ceti
-adapter around the existing path-space definitions and Mathlib's generic `Measurable.iterate`; no
-Mathlib infrastructure is vendored.
+`TauCeti.Probability.Process.PathLaw.Basic`.
 -/
 
 public section
@@ -132,6 +128,8 @@ theorem preimage_reindex_eq_of_preimage_shift_eq_of_eventually_add {m C : ℕ} {
     {A : Set (ℕ → α)} (hshift : shift α ⁻¹' A = A)
     (hφ : ∀ n, m ≤ n → φ n = n + C) :
     (fun x : ℕ → α => fun k => x (φ k)) ⁻¹' A = A := by
+  -- Exact shift invariance transfers through both iterates by Mathlib's
+  -- `Function.IsFixedPt.preimage_iterate`.
   have hkey : ∀ x : ℕ → α,
       (shift α)^[m] (fun k => x (φ k)) = (shift α)^[m + C] x := by
     intro x

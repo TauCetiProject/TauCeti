@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Exchangeability.Basic
 public import Mathlib.Dynamics.Ergodic.MeasurePreserving
 import Mathlib.Logic.Equiv.Fintype
-import TauCeti.Probability.Exchangeability.FiniteMarginals
+import TauCeti.Probability.Process.PathLaw.FiniteMarginals
 import TauCeti.Probability.Exchangeability.Contractability
 
 /-!

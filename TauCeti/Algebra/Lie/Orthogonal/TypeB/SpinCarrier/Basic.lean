@@ -209,7 +209,7 @@ theorem rep_rootGenerator_inl_castSucc (j : Fin n) (x : ExteriorAlgebra ℚ (pol
       ExteriorAlgebra.ι ℚ (polarizationBasis n j.castSucc) *
         CliffordAlgebra.contractLeft ((polarizationBasis n).coord j.succ) x := by
   rw [TauCeti.typeBSimpleRootGeneratorFamily_inl, TauCeti.typeBSimpleRootGenerator_castSucc]
-  exact SpinPolarizationData.typeBSpinRep_longRootGenerator_apply _ _ _ _ _ _ _ x
+  exact SpinPolarizationData.typeBSpinRep_differenceRootGenerator_apply _ _ _ _ _ _ _ x
 
 /-- A nonterminal lowering generator contracts its own exterior coordinate and creates the next
 one. -/
@@ -220,7 +220,7 @@ theorem rep_rootGenerator_inr_castSucc (j : Fin n) (x : ExteriorAlgebra ℚ (pol
         CliffordAlgebra.contractLeft ((polarizationBasis n).coord j.castSucc) x := by
   rw [TauCeti.typeBSimpleRootGeneratorFamily_inr,
     TauCeti.typeBSimpleNegativeRootGenerator_castSucc]
-  exact SpinPolarizationData.typeBSpinRep_longRootGenerator_apply _ _ _ _ _ _ _ x
+  exact SpinPolarizationData.typeBSpinRep_differenceRootGenerator_apply _ _ _ _ _ _ _ x
 
 /-- The terminal raising generator creates the final exterior coordinate after the grade
 involution. -/
