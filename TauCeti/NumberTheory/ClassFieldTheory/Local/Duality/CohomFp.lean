@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.FiniteModule
 import TauCeti.Algebra.Module.ZMod.Dual
 import TauCeti.NumberTheory.LocalField.Kummer
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Local cohomology with trivial `ℤ/n` coefficients, by duality
@@ -30,6 +31,10 @@ freeness of the maximal pro-`p` quotient of `G_K` and to its generator rank.
   when `μₙ(K)` is trivial.
 * `TauCeti.ClassFieldTheory.natCard_cohomFp_one_absoluteGaloisGroup`: `H¹(G_K, ℤ/n)` has as many
   elements as `Kˣ/(Kˣ)ⁿ`.
+* `TauCeti.subsingleton_cohomFp_two_absoluteGaloisGroup_of_not_mu`: `H²(G_K, 𝔽_p) = 0` for a prime
+  `p` when `K` contains no primitive `p`th root of unity.
+* `TauCeti.finrank_cohomFp_one_absoluteGaloisGroup_of_not_mu`: `dim H¹(G_K, 𝔽_p) = [K : ℚ_[p]] + 1`
+  for a finite compatible extension `K` of `ℚ_[p]` containing no primitive `p`th root of unity.
 
 ## References
 
@@ -138,3 +143,39 @@ theorem natCard_cohomFp_one_absoluteGaloisGroup (hn : IsUnit (n : K)) :
   exact (mem_powerSubgroup_iff n).2 ⟨g, rfl⟩
 
 end TauCeti.ClassFieldTheory
+
+namespace TauCeti
+
+variable (p : ℕ) [Fact p.Prime] (K : Type) [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K]
+
+/-- **`H²(G_K, 𝔽_p)` vanishes** for a nonarchimedean local field `K` containing no primitive `p`th
+root of unity, `p` being invertible in `K`: by local duality it is dual to `μ_p(K) = 1`. -/
+theorem subsingleton_cohomFp_two_absoluteGaloisGroup_of_not_mu [NeZero (p : K)]
+    (hmu : ¬ ∃ ζ : K, IsPrimitiveRoot ζ p) :
+    Subsingleton (cohomFp p (Field.absoluteGaloisGroup K) 2) :=
+  ClassFieldTheory.subsingleton_cohomFp_two_absoluteGaloisGroup (NeZero.ne (p : K)).isUnit
+    (rootsOfUnity_eq_bot_iff.2 hmu)
+
+/-- If a finite compatible extension `K` of `ℚ_[p]` contains no primitive `p`th root of unity,
+then `dim H¹(G_K, 𝔽_p) = [K : ℚ_[p]] + 1`: by local duality and Kummer theory `H¹(G_K, 𝔽_p)` has
+as many elements as `Kˣ/(Kˣ)^p`, that is `p · #μ_p(K) · p ^ [K : ℚ_[p]]` with `μ_p(K) = 1`. -/
+theorem finrank_cohomFp_one_absoluteGaloisGroup_of_not_mu
+    [Algebra ℚ_[p] K] [ValuativeExtension ℚ_[p] K] (hmu : ¬ ∃ ζ : K, IsPrimitiveRoot ζ p) :
+    Module.finrank (ZMod p) (cohomFp p (Field.absoluteGaloisGroup K) 1) =
+      Module.finrank ℚ_[p] K + 1 := by
+  have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
+  have : NeZero (p : K) := ⟨Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero⟩
+  have hcard := ClassFieldTheory.natCard_cohomFp_one_absoluteGaloisGroup
+    (NeZero.ne (p : K)).isUnit
+  rw [natCard_powerClassQuotient_eq_mul_pow_finrank, rootsOfUnity_eq_bot_iff.2 hmu,
+    Subgroup.card_bot, mul_one] at hcard
+  have hfin := Module.natCard_eq_pow_finrank (K := ZMod p)
+    (V := cohomFp p (Field.absoluteGaloisGroup K) 1)
+  rw [Nat.card_zmod, hcard] at hfin
+  refine Nat.pow_right_injective (Fact.out : p.Prime).two_le ?_
+  dsimp only
+  rw [← hfin]
+  ring
+
+end TauCeti
