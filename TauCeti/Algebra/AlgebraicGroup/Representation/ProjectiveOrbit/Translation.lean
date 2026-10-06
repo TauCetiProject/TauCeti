@@ -19,14 +19,15 @@ orbit image, including its nonclosed points. This is the invariance input for pr
 constructible projective orbits are locally closed.
 
 The projective coordinates transform by precomposition of linear functionals with the
-original representation. The proof uses `HopfAlgebra.leftTranslationAlgEquiv`, the
-scalar-extended evaluation pairing, and `Proj.symmetricAlgebraMapIso`.
+original representation.
 No smoothness, reducedness, finite-type, or field hypothesis is required. The assertions
 about underlying maps do not assert the scheme action diagrams for a family of translations.
 
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §§7.c–7.f.
+* Formal precursors: `HopfAlgebra.leftTranslationAlgEquiv`, the scalar-extended
+  evaluation pairing, and `Proj.symmetricAlgebraMapIso`.
 -/
 
 public section
@@ -93,6 +94,24 @@ noncomputable def projectivePointTranslation (g : WithConv (H →ₐ[R] R)) :
     ((LinearMap.GeneralLinearGroup.generalLinearEquiv R M)
       (Representation.asGroupHom (basePointsRepresentation (R := R) (H := H) M) g)).dualMap
 
+/-- The forward projective translation is the projective map induced by the dual
+linear equivalence of the point action. -/
+theorem projectivePointTranslation_hom (g : WithConv (H →ₐ[R] R)) :
+    (projectivePointTranslation (M := M) g).hom =
+      (Proj.symmetricAlgebraMapIso R
+        ((LinearMap.GeneralLinearGroup.generalLinearEquiv R M)
+          (Representation.asGroupHom
+            (basePointsRepresentation (R := R) (H := H) M) g)).dualMap).hom := (rfl)
+
+/-- The inverse projective translation is the inverse projective map induced by
+the dual linear equivalence of the point action. -/
+theorem projectivePointTranslation_inv (g : WithConv (H →ₐ[R] R)) :
+    (projectivePointTranslation (M := M) g).inv =
+      (Proj.symmetricAlgebraMapIso R
+        ((LinearMap.GeneralLinearGroup.generalLinearEquiv R M)
+          (Representation.asGroupHom
+            (basePointsRepresentation (R := R) (H := H) M) g)).dualMap).inv := (rfl)
+
 /-- The coordinate pullback of the projective translation is induced by the
 point action on the dual module. -/
 @[simp]
@@ -100,9 +119,21 @@ theorem projectivePointTranslation_preimage_basicOpen
     (g : WithConv (H →ₐ[R] R)) (s : SymmetricAlgebra R (Module.Dual R M)) :
     (projectivePointTranslation (M := M) g).hom ⁻¹ᵁ Proj.basicOpen _ s =
       Proj.basicOpen _ (SymmetricAlgebra.map R (basePointsRepresentation M g).dualMap s) := by
-  rw [projectivePointTranslation, Proj.symmetricAlgebraMapIso_hom,
+  rw [projectivePointTranslation_hom, Proj.symmetricAlgebraMapIso_hom,
     Proj.map_preimage_basicOpen]
   rw [SymmetricAlgebra.gradedMap_apply]
+  congr 2
+
+/-- The inverse projective translation pulls coordinates back by the dual point
+action of the inverse group point. -/
+@[simp]
+theorem projectivePointTranslation_inv_preimage_basicOpen
+    (g : WithConv (H →ₐ[R] R)) (s : SymmetricAlgebra R (Module.Dual R M)) :
+    (projectivePointTranslation (M := M) g).inv ⁻¹ᵁ Proj.basicOpen _ s =
+      Proj.basicOpen _ (SymmetricAlgebra.map R (basePointsRepresentation M g⁻¹).dualMap s) := by
+  rw [projectivePointTranslation_inv, Proj.symmetricAlgebraMapIso_inv,
+    Proj.map_preimage_basicOpen, SymmetricAlgebra.gradedMap_apply]
+  rw [LinearEquiv.dualMap_symm]
   congr 2
 
 variable [Module.Finite R M] [Module.Projective R M]

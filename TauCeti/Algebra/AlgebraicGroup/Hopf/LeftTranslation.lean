@@ -16,12 +16,11 @@ Its pullback is convolution of the constant point with the universal point, in t
 This is the source translation that intertwines a representation's orbit map with the
 linear action on its target. The formula holds on points over every commutative algebra.
 
-The construction uses right translation and `HopfAlgebra.pointConjugationBialgEquiv`:
-conjugating `x * g` by `g` gives `g * x`.
-
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §§2 and 7.c.
+* Formal precursors: `HopfAlgebra.rightTranslationAlgEquiv` and
+  `HopfAlgebra.pointConjugationBialgEquiv`.
 -/
 
 public section
@@ -50,7 +49,7 @@ theorem toConv_leftTranslationAlgEquiv (g : WithConv (H →ₐ[R] R)) :
 
 /-- Precomposition by left translation multiplies an arbitrary algebra-valued point
 on the left by the constant translating point. -/
-theorem comp_leftTranslationAlgEquiv {A : Type*} [CommRing A] [Algebra R A]
+theorem toConv_comp_leftTranslationAlgEquiv {A : Type*} [CommRing A] [Algebra R A]
     (g : WithConv (H →ₐ[R] R)) (x : WithConv (H →ₐ[R] A)) :
     toConv (x.ofConv.comp (leftTranslationAlgEquiv g).toAlgHom) =
       AlgHom.mapValue (Algebra.ofId R A) g * x := by
