@@ -134,6 +134,50 @@ theorem Wkp.iteratedGradient_ae_eq_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p (
         (fun x hx => (hs.contDiffAt (Omega.isOpen.mem_nhds hx)).differentiableAt (by simp))
       simpa only [iteratedGradientChain_succ] using hd
 
+/-- The `Lᵖ` norm of the highest weak derivative agrees with the classical derivative
+seminorm for a representative that is `C^{k+1}` on the domain. -/
+theorem Wkp.norm_iteratedGradient_eq_lpNorm_of_contDiffOn (k : ℕ)
+    (u : Wkp mu Omega p (k + 1)) {f : E → ℝ}
+    (hf : ContDiffOn ℝ (k + 1) f Omega)
+    (hu : (value (k + 1) u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
+    ‖iteratedGradient k u‖ = lpNorm (iteratedFDeriv ℝ (k + 1) f) p (mu.restrict Omega) := by
+  rw [Lp.norm_def, lpNorm]
+  congr 1
+  refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
+    ((ContinuousOn.continuousOn_iteratedFDeriv hf Omega.isOpen (by simp)).aestronglyMeasurable
+      Omega.isOpen.measurableSet) ?_
+  filter_upwards [iteratedGradient_ae_eq_of_contDiffOn k u hf hu] with x hx
+  rw [hx, norm_iteratedGradientChain]
+
+/-- The full Sobolev norm controls the `Lᵖ` seminorm of each classical derivative through
+order `k` of a representative that is `C^k` on the domain. -/
+theorem Wkp.lpNorm_iteratedFDeriv_le_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p k)
+    {f : E → ℝ} (hf : ContDiffOn ℝ k f Omega)
+    (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
+    ∀ i ≤ k, lpNorm (iteratedFDeriv ℝ i f) p (mu.restrict Omega) ≤ ‖u‖ := by
+  induction k with
+  | zero =>
+      intro i hi
+      have hi0 : i = 0 := by omega
+      subst i
+      have he : eLpNorm (iteratedFDeriv ℝ 0 f) p (mu.restrict Omega) =
+          eLpNorm (value 0 u) p (mu.restrict Omega) := by
+        refine eLpNorm_congr_norm_ae
+          ((ContinuousOn.continuousOn_iteratedFDeriv hf Omega.isOpen (by simp)).aestronglyMeasurable
+            Omega.isOpen.measurableSet) (Lp.aestronglyMeasurable _) ?_
+        filter_upwards [hu] with x hx
+        rw [norm_iteratedFDeriv_zero, hx]
+      simpa only [lpNorm, he, ← Lp.norm_def, value_zero] using le_rfl (a := ‖u‖)
+  | succ k ih =>
+      intro i hi
+      by_cases hik : i ≤ k
+      · exact (ih (lowerOrder k u) (hf.of_le (by simp))
+          (by simpa only [value_succ] using hu) i hik).trans (norm_lowerOrder_le k u)
+      · have hi' : i = k + 1 := by omega
+        subst i
+        rw [← norm_iteratedGradient_eq_lpNorm_of_contDiffOn k u hf hu]
+        exact norm_iteratedGradient_le k u
+
 /-- Every classical derivative through order `k` of a `W^{k,p}` representative that is `C^k`
 on the domain belongs to `Lᵖ` there. -/
 theorem Wkp.memLp_iteratedFDeriv_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p k)
