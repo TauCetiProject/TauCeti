@@ -162,7 +162,7 @@ theorem d_mul_ladderValley_zero_eq_zero (hud₀ : d 0 * u 0 = 0)
 /-- Commuting a descent of `s` steps past a climb of `r` steps costs the sign `(-1)^(s*r)`.
 The bottom of the resulting valley is `m`. No bottom-rung relation is needed. -/
 @[simp]
-theorem ladderValley_descent_mul (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0)
+private theorem ladderValley_descent_mul (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0)
     (m s t r : ℕ) :
     ladderValley u d (m + r) s 0 * ladderValley u d (m + s) t r =
       (-1) ^ (s * r) * ladderValley u d m (t + s) r := by
