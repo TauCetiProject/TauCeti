@@ -15,6 +15,8 @@ point group is the product of its real point group with its finite adelic point 
 factor has no integrality condition. The product topology uses the canonical local group
 topologies and the restricted-product topology at the finite places.
 
+The real factor is retained for the study of rational diagonal points in the full adeles.
+
 This file constructs all three full adelic groups and the continuous maps `Spin → SO → O`.
 Their projections to finite adeles commute with these maps. Membership in the image of `SO → O`
 is characterized by properness at every place; for a nondegenerate form on a finite-dimensional,
