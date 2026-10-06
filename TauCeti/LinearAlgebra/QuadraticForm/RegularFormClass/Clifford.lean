@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Brauer
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse
+import Mathlib.Data.Nat.Choose.Lucas
 import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
 import TauCeti.Algebra.BrauerGroup.Splitting
 import TauCeti.Algebra.Quaternion.Binary
@@ -47,6 +48,11 @@ binary plane, the Clifford algebra of `⟨a, b⟩ ⊥ q` is `ℍ[K, a, b] ⊗ C(
 Clifford algebra of `q ⊥ ⟨a⟩` is `C(-a⁻¹ · q)`, so `c(x ⊥ ⟨a⟩) = c(⟨-a⟩ ⊗ x)` when `x` has even
 rank. In rank four the first gives `c⟨a, b, c, d⟩ = [(a, b)] · [(-abc, -abd)]`.
 
+Combined with the orthogonal-sum and scaling formulas for the Hasse invariant, the two recurrences
+prove Lam's comparison in every rank `n`, by induction from ranks at most two:
+`c(q) = s(q) · [(-1, d(q))]^C(n-1,2) · [(-1,-1)]^C(n+1,4)`. The exponents only matter modulo two,
+and the plane recurrence raises `n` by two while the line recurrence passes from even to odd rank.
+
 ## Main definitions
 
 * `TauCeti.RegularFormClass.cliffordInvariant`: the Clifford invariant of an isometry class of
@@ -77,8 +83,9 @@ rank. In rank four the first gives `c⟨a, b, c, d⟩ = [(a, b)] · [(-abc, -abd
 * `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul_of_rank_eq_three`: in rank
   three the Clifford invariant is the Hasse invariant times the discriminant and constant sign
   corrections from Lam V.3.20.
-* `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul_of_rank_le_three`: the exact
-  Lam V.3.20 formula simultaneously in every rank at most three.
+* `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul`: **Lam's comparison**
+  (Lam V.3.20) of the Clifford and Hasse invariants in every rank,
+  `c(q) = s(q) · [(-1, d(q))]^C(n-1,2) · [(-1,-1)]^C(n+1,4)`.
 
 ## References
 
@@ -387,6 +394,173 @@ theorem cliffordInvariant_mk_ternary_eq_hasseInvariant_mul (a b c : Kˣ) :
     simp [Fin.prod_univ_succ, mul_assoc]
   rw [cliffordInvariant_mk_ternary, hexp, BrauerGroup.quaternionClass_neg_inv_mul_neg_inv_mul]
 
+/-! ### Lam's comparison in every rank -/
+
+section Comparison
+
+open BrauerGroup
+
+omit [Invertible (2 : K)] in
+/-- A class of rank `n + 2` splits off a binary plane `⟨a, b⟩`, leaving a class of rank `n`. -/
+private theorem exists_eq_mk_binary_add {x : RegularFormClass K} {n : ℕ} (hx : x.rank = n + 2) :
+    ∃ (a b : Kˣ) (y : RegularFormClass K), y.rank = n ∧
+      x = Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩ + y := by
+  induction x using Quotient.inductionOn with
+  | h p =>
+    obtain ⟨k, w⟩ := p
+    obtain rfl : k = n + 2 := by simpa using hx
+    refine ⟨w 0, w 1, Quotient.mk _ ⟨n, fun i => w i.succ.succ⟩, rank_mk _, ?_⟩
+    rw [mk_succ_eq_mk_rankOne_add (n := n + 1) w,
+      mk_succ_eq_mk_rankOne_add (n := n) (fun i => w i.succ), ← add_assoc,
+      mk_add_mk _ ⟨1, _⟩, RegularFormPresentation.append_def]
+    exact congrArg (· + _) (congrArg _ (Sigma.ext rfl (heq_of_eq (by
+      funext i; fin_cases i <;> rfl))))
+
+/-- **The plane step of Lam's comparison**: if the formula holds for the class `⟨-ab⟩ ⊗ y` of rank
+`2m + 2`, then it holds for `⟨a, b⟩ ⊥ y`. This is `cliffordInvariant_mk_binary_add` combined with
+the orthogonal-sum and scaling formulas for the Hasse invariant. -/
+private theorem cliffordInvariant_mk_binary_add_eq {m : ℕ} (a b : Kˣ) {y : RegularFormClass K}
+    (hy : y.rank = 2 * m + 2)
+    (ih : cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -(a * b)⟩ * y) =
+      hasseInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -(a * b)⟩ * y) *
+        quaternionClassOnSquareClasses (squareClass (-1 : Kˣ))
+          (discr (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -(a * b)⟩ * y)) ^
+            (2 * m + 1).choose 2 *
+        quaternionClass (-1) (-1) ^ (2 * m + 3).choose 4) :
+    cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩ + y) =
+      hasseInvariant (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩ + y) *
+        quaternionClassOnSquareClasses (squareClass (-1 : Kˣ))
+          (discr (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩ + y)) ^
+            (2 * m + 3).choose 2 *
+        quaternionClass (-1) (-1) ^ (2 * m + 5).choose 4 := by
+  have hev : Even y.rank := hy ▸ ⟨m + 1, by ring⟩
+  rw [cliffordInvariant_mk_binary_add a b hev, ih, hasseInvariant_mk_rankOne_mul,
+    discr_mk_rankOne_mul_of_even _ hev, hasseInvariant_add, hasseInvariant_mk_binary, discr_add,
+    discr_mk, hy]
+  simp only [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one]
+  rw [← quaternionClassOnSquareClasses_squareClass (-(a * b)) (-1),
+    ← quaternionClassOnSquareClasses_squareClass (-1) (-1), neg_eq_neg_one_mul (a * b),
+    squareClass_mul]
+  -- Every symbol is now a pairing of the square classes `E = [-1]`, `P = [ab]` and `D = d(y)`.
+  set D := discr y
+  set E := squareClass (-1 : Kˣ)
+  set P := squareClass (a * b)
+  simp only [quaternionClassOnSquareClasses_add_left, quaternionClassOnSquareClasses_add_right,
+    quaternionClassOnSquareClasses_comm P E]
+  -- Rewrite every exponent as `(2m+1).choose 2`, `(2m+3).choose 4`, a constant, and an even
+  -- remainder, which the `2`-torsion of the symbols discards.
+  have e1 : 2 * m + 2 - 1 = 2 * m + 1 := by omega
+  have e2 : (2 * m + 2).choose 2 = (2 * m + 1).choose 2 + 2 * m + 1 := by
+    simp only [Nat.choose_succ_succ', Nat.choose_zero_right, Nat.choose_one_right, Nat.reduceAdd]
+    omega
+  have e3 : (2 * m + 3).choose 2 = (2 * m + 1).choose 2 + 2 * (2 * m + 1) + 1 := by
+    simp only [Nat.choose_succ_succ', Nat.choose_zero_right, Nat.choose_one_right, Nat.reduceAdd]
+    omega
+  have e4 : (2 * m + 5).choose 4 = (2 * m + 3).choose 4 + (2 * m + 1).choose 2 +
+      2 * ((2 * m + 3).choose 3 + 2 * m + 1) + 1 := by
+    simp only [Nat.choose_succ_succ', Nat.choose_zero_right, Nat.choose_one_right, Nat.reduceAdd]
+    omega
+  rw [e1, e2, e3, e4]
+  simp only [pow_add, pow_mul, pow_one, mul_pow, quaternionClassOnSquareClasses_sq, one_pow,
+    mul_one, one_mul]
+  simp only [mul_comm, mul_assoc, mul_left_comm]
+
+/-- **The line step of Lam's comparison**: if the formula holds for the class `⟨-a⟩ ⊗ y` of rank
+`2m + 2`, then it holds for `y ⊥ ⟨a⟩`. This is `cliffordInvariant_add_mk_rankOne` combined with
+the orthogonal-sum and scaling formulas for the Hasse invariant. -/
+private theorem cliffordInvariant_add_mk_rankOne_eq {m : ℕ} (a : Kˣ) {y : RegularFormClass K}
+    (hy : y.rank = 2 * m + 2)
+    (ih : cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -a⟩ * y) =
+      hasseInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -a⟩ * y) *
+        quaternionClassOnSquareClasses (squareClass (-1 : Kˣ))
+          (discr (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -a⟩ * y)) ^
+            (2 * m + 1).choose 2 *
+        quaternionClass (-1) (-1) ^ (2 * m + 3).choose 4) :
+    cliffordInvariant (y + Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) =
+      hasseInvariant (y + Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) *
+        quaternionClassOnSquareClasses (squareClass (-1 : Kˣ))
+          (discr (y + Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩)) ^
+            (2 * m + 2).choose 2 *
+        quaternionClass (-1) (-1) ^ (2 * m + 4).choose 4 := by
+  have hev : Even y.rank := hy ▸ ⟨m + 1, by ring⟩
+  rw [cliffordInvariant_add_mk_rankOne a hev, ih, hasseInvariant_mk_rankOne_mul,
+    discr_mk_rankOne_mul_of_even _ hev, hasseInvariant_add, hasseInvariant_mk_rankOne, discr_add,
+    discr_mk, hy, Fin.prod_univ_one, ← quaternionClassOnSquareClasses_squareClass (-a) (-1),
+    ← quaternionClassOnSquareClasses_squareClass (-1) (-1), neg_eq_neg_one_mul a,
+    squareClass_mul]
+  -- Every symbol is now a pairing of the square classes `E = [-1]`, `A = [a]` and `D = d(y)`.
+  set D := discr y
+  set E := squareClass (-1 : Kˣ)
+  set A := squareClass a
+  simp only [quaternionClassOnSquareClasses_add_left, quaternionClassOnSquareClasses_add_right,
+    quaternionClassOnSquareClasses_comm A E, quaternionClassOnSquareClasses_comm D A]
+  -- As in the plane step, except that `(2m+2).choose 3` is even, by Lucas's theorem at `2`.
+  have ht : (2 * m + 2).choose 3 % 2 = 0 := by
+    have h := Choose.choose_modEq_choose_mod_mul_choose_div_nat (n := 2 * m + 2) (k := 3) (p := 2)
+    rw [show (2 * m + 2) % 2 = 0 by omega] at h
+    simpa [Nat.ModEq] using h
+  have e1 : 2 * m + 2 - 1 = 2 * m + 1 := by omega
+  have e2 : (2 * m + 2).choose 2 = (2 * m + 1).choose 2 + 2 * m + 1 := by
+    simp only [Nat.choose_succ_succ', Nat.choose_zero_right, Nat.choose_one_right, Nat.reduceAdd]
+    omega
+  have e4 : (2 * m + 4).choose 4 = (2 * m + 3).choose 4 + (2 * m + 1).choose 2 +
+      2 * (m + (2 * m + 2).choose 3 / 2) + 1 := by
+    simp only [Nat.choose_succ_succ', Nat.choose_zero_right, Nat.choose_one_right,
+      Nat.reduceAdd] at ht ⊢
+    omega
+  rw [e1, e2, e4]
+  simp only [pow_add, pow_mul, pow_one, mul_pow, quaternionClassOnSquareClasses_sq, one_pow,
+    mul_one, one_mul]
+  simp only [mul_comm, mul_assoc, mul_left_comm]
+
+/-- **Lam's comparison of the Clifford and Hasse invariants** (Lam V.3.20): a regular form `q` of
+rank `n` with discriminant `d` has
+`c(q) = s(q) · [(-1, d)]^C(n-1,2) · [(-1,-1)]^C(n+1,4)`, the binomial coefficients being
+`(n-1)(n-2)/2` and `(n+1)n(n-1)(n-2)/24`. -/
+theorem cliffordInvariant_eq_hasseInvariant_mul (x : RegularFormClass K) :
+    cliffordInvariant x = hasseInvariant x *
+      BrauerGroup.quaternionClassOnSquareClasses (squareClass (-1 : Kˣ)) (discr x) ^
+        (x.rank - 1).choose 2 *
+      BrauerGroup.quaternionClass (-1) (-1) ^ (x.rank + 1).choose 4 := by
+  -- The even ranks `2m + 2`, by induction on `m`, splitting off a binary plane.
+  have heven (m : ℕ) : ∀ x : RegularFormClass K, x.rank = 2 * m + 2 →
+      cliffordInvariant x = hasseInvariant x *
+        BrauerGroup.quaternionClassOnSquareClasses (squareClass (-1 : Kˣ)) (discr x) ^
+          (2 * m + 1).choose 2 *
+        BrauerGroup.quaternionClass (-1) (-1) ^ (2 * m + 3).choose 4 := by
+    induction m with
+    | zero =>
+      intro x hx
+      rw [cliffordInvariant_eq_hasseInvariant_of_rank_le_two hx.le]
+      simp
+    | succ m ih =>
+      intro x hx
+      obtain ⟨a, b, y, hy, rfl⟩ := exists_eq_mk_binary_add (n := 2 * m + 2) (by rw [hx]; ring)
+      exact cliffordInvariant_mk_binary_add_eq a b hy
+        (ih _ (by simp [rank_mul, hy]))
+  obtain ⟨k, hk⟩ := x.rank.even_or_odd'
+  rcases hk with hk | hk
+  · rcases k with _ | m
+    · rw [cliffordInvariant_eq_hasseInvariant_of_rank_le_two (by omega), hk]
+      simp [Nat.choose_eq_zero_of_lt]
+    · rw [heven m x (by omega), hk, show 2 * (m + 1) - 1 = 2 * m + 1 by omega,
+        show 2 * (m + 1) + 1 = 2 * m + 3 by omega]
+  · rcases k with _ | m
+    · rw [cliffordInvariant_eq_hasseInvariant_of_rank_le_two (by omega), hk]
+      simp [Nat.choose_eq_zero_of_lt]
+    · -- The odd ranks `2m + 3`, splitting off a line.
+      obtain ⟨y, a, hy, rfl⟩ : ∃ (y : RegularFormClass K) (a : Kˣ), y.rank = 2 * m + 2 ∧
+          x = y + Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ := by
+        induction x using Quotient.inductionOn with
+        | h p =>
+          obtain ⟨k, w⟩ := p
+          obtain rfl : k = 2 * m + 2 + 1 := by simp only [rank_mk] at hk; omega
+          exact ⟨_, w 0, rank_mk _, by rw [mk_succ_eq_mk_rankOne_add, add_comm]⟩
+      rw [hk, show 2 * (m + 1) + 1 - 1 = 2 * m + 2 by omega,
+        show 2 * (m + 1) + 1 + 1 = 2 * m + 4 by omega]
+      exact cliffordInvariant_add_mk_rankOne_eq a hy (heven m _ (by simp [rank_mul, hy]))
+
 /-- **Lam's Clifford--Hasse comparison for every rank-three regular-form class.** The second
 correction pairs `-1` with the discriminant, while the last is the constant symbol
 `[(-1,-1)]`. -/
@@ -395,37 +569,10 @@ theorem cliffordInvariant_eq_hasseInvariant_mul_of_rank_eq_three {x : RegularFor
     cliffordInvariant x = hasseInvariant x *
       BrauerGroup.quaternionClassOnSquareClasses (squareClass (-1 : Kˣ)) (discr x) *
         BrauerGroup.quaternionClass (-1) (-1) := by
-  induction x using Quotient.inductionOn with
-  | h p =>
-    obtain ⟨n, w⟩ := p
-    obtain rfl : n = 3 := by simpa using hx
-    have hw : w = ![w 0, w 1, w 2] := by ext i; fin_cases i <;> rfl
-    have hprod :
-        (∏ i, (⟨3, ![w 0, w 1, w 2]⟩ : RegularFormPresentation K).2 i) =
-          w 0 * w 1 * w 2 := by
-      rw [Fin.prod_univ_three]
-      rfl
-    rw [hw, cliffordInvariant_mk_ternary_eq_hasseInvariant_mul, discr_mk,
-      hprod, BrauerGroup.quaternionClassOnSquareClasses_squareClass]
+  rw [cliffordInvariant_eq_hasseInvariant_mul, hx]
+  simp
 
-/-- **Lam's exact Clifford--Hasse comparison in every rank at most three.** The correction
-exponents are `C(n-1,2)` and `C(n+1,4)`, the binomial-coefficient form of Lam V.3.20. Rank three
-is the first case in which either correction is nontrivial. -/
-theorem cliffordInvariant_eq_hasseInvariant_mul_of_rank_le_three {x : RegularFormClass K}
-    (hx : x.rank ≤ 3) :
-    cliffordInvariant x = hasseInvariant x *
-      BrauerGroup.quaternionClassOnSquareClasses (squareClass (-1 : Kˣ)) (discr x) ^
-        (x.rank - 1).choose 2 *
-      BrauerGroup.quaternionClass (-1) (-1) ^ (x.rank + 1).choose 4 := by
-  interval_cases hrank : x.rank
-  · rw [cliffordInvariant_eq_hasseInvariant_of_rank_le_two (by omega)]
-    simp [Nat.choose_eq_zero_of_lt]
-  · rw [cliffordInvariant_eq_hasseInvariant_of_rank_le_two (by omega)]
-    simp [Nat.choose_eq_zero_of_lt]
-  · rw [cliffordInvariant_eq_hasseInvariant_of_rank_le_two (by omega)]
-    simp
-  · rw [cliffordInvariant_eq_hasseInvariant_mul_of_rank_eq_three hrank]
-    norm_num [Nat.choose_eq_zero_of_lt]
+end Comparison
 
 /-- The hyperbolic plane has trivial Clifford invariant: its Clifford algebra `ℍ[K, 1, -1]` is
 split. -/
