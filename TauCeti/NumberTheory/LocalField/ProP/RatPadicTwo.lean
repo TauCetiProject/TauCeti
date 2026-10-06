@@ -76,7 +76,8 @@ theorem localRootOfUnityOrder_two_ratPadic :
 theorem isDyadicOddCase_ratPadic : IsDyadicOddCase ℚ_[2] :=
   .mk ℚ_[2] localRootOfUnityOrder_two_ratPadic (by simp)
 
-/-- **`G_{ℚ₂}(2)` is a Demushkin group of rank `3`**, the rank `N + 2` at `N = 1`. -/
+/-- **`G_{ℚ₂}(2)` has Demushkin rank `3`**: for any witness `hG` that `G_{ℚ₂}(2)` is a Demushkin
+group, the associated rank `demushkinRank hG` is `3`, the rank `N + 2` at `N = 1`. -/
 @[simp]
 theorem demushkinRank_absoluteGaloisGroupProP_two_ratPadic
     (hG : IsDemushkin 2 (absoluteGaloisGroupProP 2 ℚ_[2])) : demushkinRank hG = 3 := by
