@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Monoidal.HomologyCross
+public import TauCeti.Algebra.Homology.Monoidal.Homology.Cross
 public import TauCeti.AlgebraicTopology.Singular.EilenbergZilber
 
 /-!

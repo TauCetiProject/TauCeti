@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Monoidal.HomologyTensor
+public import TauCeti.Algebra.Homology.Monoidal.Homology.Tensor
 public import TauCeti.Algebra.Homology.Monoidal.Summand
 
 /-!
