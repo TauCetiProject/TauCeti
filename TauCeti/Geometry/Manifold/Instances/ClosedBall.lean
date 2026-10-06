@@ -47,8 +47,8 @@ isometry, hence analytic, so the ball is an analytic manifold.
 * `TauCeti.orientable_closedBall`: in dimension at least two it is orientable, the charts attached
   to the isometries `φ` of one orientation class forming an oriented atlas.
 * `TauCeti.contMDiff_subtypeVal_closedBall`: the inclusion into `E` is analytic.
-* `TauCeti.contMDiff_iff_comp_subtypeVal_closedBall`: a map into the ball is `C^k` exactly when
-  it is `C^k` as a map into `E`.
+* `TauCeti.contMDiffWithinAt_iff_comp_subtypeVal_closedBall` and its pointwise, setwise and
+  global versions: a map into the ball is `C^k` exactly when it is `C^k` as a map into `E`.
 * `LinearIsometry.isSmoothEmbedding_unitClosedBallMap`: a linear isometry `F →ₗᵢ[ℝ] E` restricts
   to a smooth embedding of closed unit balls, in the sense of manifolds with boundary. In charts
   `closedBallChart φ` and `closedBallChart ψ` with `ψ ∘ ι ∘ φ⁻¹` fixing `e₀`, the inversions
@@ -464,20 +464,49 @@ instance instIsManifoldClosedBallEuclideanSpace :
 variable {F H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H]
   {I : ModelWithCorners ℝ F H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
-/-- A map into the closed unit ball is `C^k` exactly when it is `C^k` as a map into `E`. -/
-theorem contMDiff_iff_comp_subtypeVal_closedBall {k : ℕ∞ω} {f : M → closedBall (0 : E) 1} :
-    ContMDiff I (𝓡∂ n) k f ↔ ContMDiff I 𝓘(ℝ, E) k (Subtype.val ∘ f) := by
-  refine ⟨contMDiff_subtypeVal_closedBall.comp, fun hf x ↦ ?_⟩
+/-- A map into the closed unit ball is `C^k` within a set at a point exactly when its
+composition with the inclusion into `E` is. The point need not belong to the set. -/
+@[simp]
+theorem contMDiffWithinAt_iff_comp_subtypeVal_closedBall {k : ℕ∞ω}
+    {f : M → closedBall (0 : E) 1} {s : Set M} {x : M} :
+    ContMDiffWithinAt I (𝓡∂ n) k f s x ↔
+      ContMDiffWithinAt I 𝓘(ℝ, E) k (Subtype.val ∘ f) s x := by
+  refine ⟨fun hf ↦ contMDiff_subtypeVal_closedBall.contMDiffAt.comp_contMDiffWithinAt x hf,
+    fun hf ↦ ?_⟩
   obtain ⟨φ, hx, h⟩ := exists_chartAt_closedBall_eq (n := n) (f x)
-  have hcont : Continuous f := continuous_induced_rng.2 hf.continuous
-  rw [contMDiffAt_iff_target]
-  refine ⟨hcont.continuousAt, ?_⟩
+  have hcont : ContinuousWithinAt f s x :=
+    Topology.IsInducing.subtypeVal.continuousWithinAt_iff.2 hf.continuousWithinAt
+  rw [contMDiffWithinAt_iff_target]
+  refine ⟨hcont, ?_⟩
   have hg : ContDiffAt ℝ k (fun y : E ↦ inversion (-e₀) √2 (φ y)) (f x) :=
     ((contDiffAt_inversion hx).comp _ φ.contDiff.contDiffAt).of_le le_top
-  refine (hg.comp_contMDiffAt (f := Subtype.val ∘ f) (hf x)).congr_of_eventuallyEq ?_
-  filter_upwards [hcont.continuousAt.preimage_mem_nhds
-    ((closedBallChart φ).open_source.mem_nhds hx)] with y hy
-  simp [h, closedBallChart_apply_val φ hy]
+  refine (hg.comp_contMDiffWithinAt (f := Subtype.val ∘ f) hf).congr_of_eventuallyEq ?_ ?_
+  · filter_upwards [hcont.preimage_mem_nhdsWithin
+      ((closedBallChart φ).open_source.mem_nhds hx)] with y hy
+    simp [h, closedBallChart_apply_val φ hy]
+  · simp [h, closedBallChart_apply_val φ hx]
+
+/-- A map into the closed unit ball is `C^k` at a point exactly when its composition with
+the inclusion into `E` is. -/
+@[simp]
+theorem contMDiffAt_iff_comp_subtypeVal_closedBall {k : ℕ∞ω}
+    {f : M → closedBall (0 : E) 1} {x : M} :
+    ContMDiffAt I (𝓡∂ n) k f x ↔ ContMDiffAt I 𝓘(ℝ, E) k (Subtype.val ∘ f) x := by
+  simp only [← contMDiffWithinAt_univ, contMDiffWithinAt_iff_comp_subtypeVal_closedBall]
+
+/-- A map into the closed unit ball is `C^k` on a set exactly when its composition with
+the inclusion into `E` is. -/
+@[simp]
+theorem contMDiffOn_iff_comp_subtypeVal_closedBall {k : ℕ∞ω}
+    {f : M → closedBall (0 : E) 1} {s : Set M} :
+    ContMDiffOn I (𝓡∂ n) k f s ↔ ContMDiffOn I 𝓘(ℝ, E) k (Subtype.val ∘ f) s := by
+  simp only [ContMDiffOn, contMDiffWithinAt_iff_comp_subtypeVal_closedBall]
+
+/-- A map into the closed unit ball is `C^k` exactly when it is `C^k` as a map into `E`. -/
+@[simp]
+theorem contMDiff_iff_comp_subtypeVal_closedBall {k : ℕ∞ω} {f : M → closedBall (0 : E) 1} :
+    ContMDiff I (𝓡∂ n) k f ↔ ContMDiff I 𝓘(ℝ, E) k (Subtype.val ∘ f) := by
+  simp only [ContMDiff, contMDiffAt_iff_comp_subtypeVal_closedBall]
 
 /-! ### Smooth embeddings of closed balls induced by linear isometries -/
 
