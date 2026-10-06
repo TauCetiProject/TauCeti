@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Index
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
-import TauCeti.Analysis.Calculus.Morse.Index
 import TauCeti.Analysis.Calculus.Morse.LocalNormalForm
 
 /-!
@@ -21,9 +20,9 @@ coordinates `L : E ≃ (Fin n → ℝ)`,
 `f y = f x + (1/2) Σᵢ wᵢ (L (ψ y))ᵢ²`, with every `wᵢ = ±1`,
 
 and the number of negative weights is the manifold Morse index of `f` at `x`. Such a chart is
-recorded as a `TauCeti.MorseChart`. Morse charts are the coordinates in which the local dynamics
-of a Morse function is linear: stable and unstable manifolds, and pseudo-gradient fields adapted to
-`f`, are described in them.
+recorded as a `TauCeti.MorseChart`. A Morse chart puts the function in quadratic form; it is
+used to choose an adapted pseudo-gradient field that is linear near the critical point, whose
+stable and unstable manifolds are then studied.
 
 ## Main declarations
 
@@ -71,7 +70,7 @@ structure MorseChart (f : M → ℝ) (x : M) where
   eq_quadratic : ∀ y ∈ toChart.source,
     f y = f x + (2 : ℝ)⁻¹ * ∑ i, weight i * (coord (toChart y) i) ^ 2
 
-attribute [simp] MorseChart.apply_self
+attribute [simp] MorseChart.mem_source MorseChart.apply_self
 
 /-- **The Morse lemma on a manifold.** At a nondegenerate critical point `x` of a function `f`
 that is smooth near `x`, on a manifold modelled on a finite-dimensional real normed space `E`,
