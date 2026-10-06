@@ -185,13 +185,13 @@ theorem tangentCoordChange_geodesicSpray {x x₀ : M}
     geodesicSpray_coordChange (I := I) (M := M) hx₀ u
 
 /-- **The geodesic equation as an integral-curve equation.**  The velocity lift of a `C²` curve
-solves the equation of the geodesic spray at a parameter of its set exactly when the derivative of
-its velocity along it vanishes there. -/
+solves the equation of the geodesic spray at a parameter of its set exactly when its covariant
+acceleration vanishes there. -/
 theorem hasMFDerivWithinAt_curveVelocityLiftWithin_iff
     (hs : UniqueDiffOn ℝ s) (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 2 γ s) (ht : t ∈ s) :
     HasMFDerivWithinAt 𝓘(ℝ, ℝ) I.tangent (curveVelocityLiftWithin I γ s) s t
         ((1 : ℝ →L[ℝ] ℝ).smulRight (geodesicSpray I M (curveVelocityLiftWithin I γ s t))) ↔
-      alongCurveWithin (leviCivitaConnection I M) γ (curveVelocityWithin I γ s) s t = 0 := by
+      accelerationWithin (leviCivitaConnection I M) γ s t = 0 := by
   rw [geodesicSpray_apply, curveVelocityLiftWithin_snd, curveVelocityLiftWithin_proj]
   have hxbase : γ t ∈ (trivializationAt E (TangentSpace I) (γ t)).baseSet :=
     FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)
@@ -236,7 +236,7 @@ theorem hasMFDerivWithinAt_curveVelocityLiftWithin_iff
     congrArg (fun v : E ↦ christoffelMap (finBasis ℝ E)
       ((leviCivitaConnection I M).isCovariantDerivativeOn
         (s := (trivializationAt E (TangentSpace I) (γ t)).baseSet)) (γ t) v v) hw
-  rw [alongCurveWithin_curveVelocityWithin_eq_zero_iff (leviCivitaConnection I M) γ hs hγd ht]
+  rw [accelerationWithin_eq_zero_iff (leviCivitaConnection I M) γ hs hγd ht]
   have htotal := hasMFDerivWithinAt_totalSpace_curve_iff_of_continuousWithinAt
     (F := E) (V := fun x : M ↦ TangentSpace I x) (IB := I)
     (z := curveVelocityLiftWithin I γ s)
@@ -274,7 +274,7 @@ theorem isMIntegralCurveOn_curveVelocityLiftWithin_iff
   refine ⟨fun h ↦ ⟨hs, hγ, fun r hr ↦
       (hasMFDerivWithinAt_curveVelocityLiftWithin_iff hs hγ hr).1 (h r hr)⟩, fun h r hr ↦ ?_⟩
   exact (hasMFDerivWithinAt_curveVelocityLiftWithin_iff hs hγ hr).2
-    (h.alongCurveWithin_curveVelocityWithin_eq_zero r hr)
+    (h.accelerationWithin_eq_zero r hr)
 
 /-- **An integral curve of the spray is a velocity lift.**  At a parameter at which the parameter
 set has unique derivatives, an integral curve of the geodesic spray is the velocity lift of the

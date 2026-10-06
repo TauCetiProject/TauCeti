@@ -36,8 +36,6 @@ The inverse-free computation rule is `inv_smul_mk`.
 
 * The `MulAction`, `FaithfulSMul`, `ContinuousConstSMul`, and `IsCancelSMul` instances for
   `FundamentalGroup X x₀` acting on `UniversalCover x₀`.
-* `TauCeti.UniversalCover.basepointLift`: the constant-path point over `x₀`, lying over `x₀`
-  by `TauCeti.UniversalCover.proj_basepointLift`.
 * `TauCeti.UniversalCover.monodromy_basepointLift`: monodromy at that point is the
   fundamental-group action by the inverse loop class.
 * `TauCeti.UniversalCover.proj_eq_iff_mem_orbit`: the fibres of `proj` are precisely the
@@ -101,18 +99,14 @@ instance : FaithfulSMul (FundamentalGroup X x₀) (UniversalCover x₀) where
 /-- Every fundamental-group element acts continuously on the universal cover. -/
 instance : ContinuousConstSMul (FundamentalGroup X x₀) (UniversalCover x₀) where
   continuous_const_smul g := by
-    rw [(isQuotientMap_ofBasedPath x₀).continuous_iff]
     obtain ⟨γ, hγ⟩ := Quotient.exists_rep (g⁻¹.toPath : Path.Homotopic.Quotient x₀ x₀)
     have hγ' : Path.Homotopic.Quotient.mk γ = g⁻¹.toPath := hγ
-    suffices h_cont : Continuous (fun β : BasedPath x₀ ↦
-        ofBasedPath x₀ (BasedPath.ofPath (γ.trans β.toPath))) by
-      apply h_cont.congr
-      intro β
-      rw [ofBasedPath_ofPath, Function.comp_apply, ofBasedPath_def, smul_mk,
-        Path.Homotopic.Quotient.mk_trans, hγ']
-    refine (continuous_ofBasedPath x₀).comp (BasedPath.continuous_iff.mpr ?_)
-    exact Path.trans_continuous_family (fun _ : BasedPath x₀ ↦ γ)
-      (Path.continuous_uncurry_iff.mpr continuous_const) (fun β ↦ β.toPath) continuous_eval
+    have h : (fun e : UniversalCover x₀ => g • e) =
+        (fun e => mk e.proj ((Path.Homotopic.Quotient.mk γ).trans e.path)) := by
+      funext ⟨z, q⟩
+      rw [smul_mk, ← hγ']
+    rw [h]
+    exact continuous_prepend γ
 
 /-- The action of the fundamental group on the universal cover is free. -/
 instance : IsCancelSMul (FundamentalGroup X x₀) (UniversalCover x₀) where
@@ -171,28 +165,6 @@ theorem isQuotientCoveringMap [LocallyPathConnectedSpace X] [PathConnectedSpace 
   exact
     ⟨isCoveringMap x₀, proj_surjective, inferInstance, inferInstance, proj_eq_iff_mem_orbit⟩
 
-/-- The constant-path point in the fibre of the universal covering projection over `x₀`. -/
-def basepointLift (x₀ : X) : (proj : UniversalCover x₀ → X) ⁻¹' {x₀} :=
-  ⟨ofBasedPath x₀ (BasedPath.ofPath (Path.refl x₀)),
-    Set.mem_singleton_iff.mpr (by
-      rw [proj_ofBasedPath]
-      exact BasedPath.endpoint_ofPath _)⟩
-
-/-- The endpoint projection sends the constant-path point to the basepoint.
-
-This remains an explicit rewrite lemma: `basepointLift_coe` already puts its left-hand side in
-simp-normal form, so the `simpNF` linter rejects a redundant `@[simp]` annotation here. -/
-theorem proj_basepointLift (x₀ : X) : proj (basepointLift x₀ : UniversalCover x₀) = x₀ :=
-  (basepointLift x₀).2
-
-/-- The underlying point of `basepointLift` is represented by the constant path. -/
-@[simp]
-theorem basepointLift_coe (x₀ : X) :
-    (basepointLift x₀ : UniversalCover x₀) =
-      mk x₀ (Path.Homotopic.Quotient.refl x₀) := by
-  simp only [basepointLift]
-  rw [ofBasedPath_ofPath, Path.Homotopic.Quotient.mk_refl]
-
 /-- Monodromy of the universal covering projection at its constant-path basepoint is the
 fundamental-group action by the inverse loop class. -/
 @[simp]
@@ -201,6 +173,15 @@ theorem monodromy_basepointLift [LocallyPathConnectedSpace X]
     ((isCoveringMap x₀).monodromy g.toPath (basepointLift x₀) : UniversalCover x₀) =
       g⁻¹ • (basepointLift x₀ : UniversalCover x₀) := by
   obtain ⟨γ, hγ⟩ := Quotient.exists_rep g.toPath
+  have hbase : basepointLift x₀ =
+      (⟨ofBasedPath x₀ (BasedPath.ofPath (Path.refl x₀)),
+        Set.mem_singleton_iff.mpr (by
+          rw [proj_ofBasedPath]
+          exact BasedPath.endpoint_ofPath _)⟩ :
+        (proj : UniversalCover x₀ → X) ⁻¹' {x₀}) := by
+    apply Subtype.ext
+    simp only [basepointLift_coe, ofBasedPath_ofPath, Path.Homotopic.Quotient.mk_refl]
+  rw [hbase]
   rw [← hγ]
   -- Unfolding monodromy after choosing `γ` exposes the endpoint of its lifted path.
   change (isCoveringMap x₀).liftPath γ
@@ -213,8 +194,8 @@ theorem monodromy_basepointLift [LocallyPathConnectedSpace X]
       congr 1
     _ = ofBasedPath x₀ (BasedPath.append (BasedPath.ofPath (Path.refl x₀)) δ) :=
       liftPath_apply_one_eq_ofBasedPath_append δ
-    _ = g⁻¹ • (basepointLift x₀ : UniversalCover x₀) := by
-      rw [basepointLift_coe, inv_smul_mk]
+    _ = g⁻¹ • ofBasedPath x₀ (BasedPath.ofPath (Path.refl x₀)) := by
+      rw [ofBasedPath_ofPath, inv_smul_mk]
       rw [ofBasedPath_def]
       let hend := BasedPath.endpoint_append (BasedPath.ofPath (Path.refl x₀)) δ
       apply UniversalCover.ext hend

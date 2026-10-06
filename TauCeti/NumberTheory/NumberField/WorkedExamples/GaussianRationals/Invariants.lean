@@ -9,6 +9,8 @@ public import TauCeti.NumberTheory.NumberField.Index.Basic
 public import TauCeti.NumberTheory.NumberField.IntrinsicLabel
 public import TauCeti.NumberTheory.NumberField.Monogenic
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.GaussianRationals.Basic
+public import Mathlib.NumberTheory.NumberField.ClassNumber
+import TauCeti.NumberTheory.NumberField.ClassNumber.SmallDiscriminant
 import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
 import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
 
@@ -19,7 +21,8 @@ For `K` generated over `ℚ` by an algebraic integer `θ` with `minpoly ℤ θ =
 `−1` is `3` modulo `4`, so the quadratic-field theory of the radicand presentation applies
 directly: `𝓞 K = ℤ[θ]`, the field is monogenic with index `1`, and `discr K = 4 · (−1) = −4`.
 The negative radicand rules out real places, so the signature is `(0, 1)` and the intrinsic
-label prefix is `2.0.4`.
+label prefix is `2.0.4`. The discriminant is below the quadratic Minkowski threshold, so `𝓞 K` is
+a principal ideal domain and the class number is `1`.
 
 ## Main results
 
@@ -29,6 +32,8 @@ label prefix is `2.0.4`.
 * `TauCeti.NumberField.GaussianRationals.isTotallyComplex`, `nrRealPlaces_eq_zero`,
   `nrComplexPlaces_eq_one`: the field is totally complex, of signature `(0, 1)`;
   `hasLMFDBIntrinsicLabel`: the intrinsic label prefix is `2.0.4`.
+* `TauCeti.NumberField.GaussianRationals.isPrincipalIdealRing`, `classNumber_eq_one`: `𝓞 K` is a
+  principal ideal domain, by Mathlib's Minkowski criterion.
 -/
 
 public section
@@ -90,5 +95,18 @@ theorem hasLMFDBIntrinsicLabel (hmin : minpoly ℤ θ = X ^ 2 + 1)
   refine ⟨finrank_eq_two hmin hgen, nrRealPlaces_eq_zero hmin, ?_⟩
   rw [discr_eq_neg_four hmin hgen]
   norm_num
+
+
+/-- **`ℤ[i]` is a principal ideal domain**: the discriminant `−4` is below the quadratic
+Minkowski threshold `9` of `isPrincipalIdealRing_of_finrank_eq_two_of_natAbs_discr_le_nine`. -/
+theorem isPrincipalIdealRing (hmin : minpoly ℤ θ = X ^ 2 + 1)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : IsPrincipalIdealRing (𝓞 K) :=
+  isPrincipalIdealRing_of_finrank_eq_two_of_natAbs_discr_le_nine (finrank_eq_two hmin hgen)
+    (by rw [discr_eq_neg_four hmin hgen]; norm_num)
+
+/-- The class number of `ℚ(i)` is `1`. -/
+theorem classNumber_eq_one (hmin : minpoly ℤ θ = X ^ 2 + 1)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : classNumber K = 1 :=
+  classNumber_eq_one_iff.mpr (isPrincipalIdealRing hmin hgen)
 
 end TauCeti.NumberField.GaussianRationals

@@ -37,6 +37,9 @@ product `C × ℤ_p` becomes a power-series ring over `ℤ_p[C]`.
   `A⟦X⟧[M] →ₐ[R] A[M]⟦X⟧`, with `coeff_coeff_toPowerSeries` and `toPowerSeries_injective`.
 * `MonoidAlgebra.powerSeriesAlgEquiv R A M`: the isomorphism `A⟦X⟧[M] ≃ₐ[R] A[M]⟦X⟧`
   for finite `M`.
+* `MonoidAlgebra.map_singleOneRingHom_dvd_iff`: for finite `M`, a power series with coefficients
+  in `A` divides `ψ ∈ A[M]⟦X⟧` exactly when it divides, in `A⟦X⟧`, the coefficient at every
+  `m ∈ M` of the element of `A⟦X⟧[M]` corresponding to `ψ`.
 -/
 
 public section
@@ -110,6 +113,16 @@ theorem toPowerSeries_single_one_X :
   rw [toPowerSeries_single, PowerSeries.mapAlgHom_apply, PowerSeries.map_X, ← MonoidAlgebra.one_def,
     map_one, mul_one]
 
+/-- The map to power series over `A[M]` sends the power series `φ`, placed at `1 ∈ M`, to `φ` with
+its coefficients read in `A[M]` along `singleOneRingHom`. -/
+theorem toPowerSeries_single_one (φ : PowerSeries A) :
+    toPowerSeries R A M (single 1 φ) =
+      PowerSeries.map (singleOneRingHom : A →+* MonoidAlgebra A M) φ := by
+  rw [toPowerSeries_single R A M, ← MonoidAlgebra.one_def, map_one, mul_one,
+    PowerSeries.mapAlgHom_apply]
+  -- `singleOneAlgHom` is `singleOneRingHom` with the `R`-algebra structure recorded.
+  congr 1
+
 /-- The map `A⟦X⟧[M] → A[M]⟦X⟧` is injective, for every monoid `M`: it determines all the
 coefficients of its argument (`coeff_coeff_toPowerSeries`). -/
 theorem toPowerSeries_injective : Function.Injective (toPowerSeries R A M) := fun x y h ↦ by
@@ -159,5 +172,25 @@ theorem powerSeriesAlgEquiv_symm_C_single (m : M) (a : A) :
 theorem powerSeriesAlgEquiv_symm_X :
     (powerSeriesAlgEquiv R A M).symm PowerSeries.X = single 1 PowerSeries.X :=
   (powerSeriesAlgEquiv R A M).symm_apply_eq.mpr (toPowerSeries_single_one_X R A M).symm
+
+/-- **Divisibility by a power series with coefficients in `A`.** For `φ ∈ A⟦X⟧` and
+`ψ ∈ A[M]⟦X⟧`, with `M` finite, `φ` read in `A[M]⟦X⟧` divides `ψ` exactly when it divides, in
+`A⟦X⟧`, the coefficient at every `m ∈ M` of the element of `A⟦X⟧[M]` corresponding to `ψ`: the
+multiples of `φ` are the elements all of whose `M`-coefficients are multiples of `φ`. -/
+theorem map_singleOneRingHom_dvd_iff (φ : PowerSeries A) (ψ : PowerSeries (MonoidAlgebra A M)) :
+    PowerSeries.map (singleOneRingHom : A →+* MonoidAlgebra A M) φ ∣ ψ ↔
+      ∀ m, φ ∣ ((powerSeriesAlgEquiv R A M).symm ψ).coeff m := by
+  constructor
+  · rintro ⟨q, rfl⟩ m
+    rw [map_mul, ← toPowerSeries_single_one R A M, ← coe_powerSeriesAlgEquiv R A M,
+      AlgEquiv.symm_apply_apply, coeff_single_one_mul]
+    exact dvd_mul_right _ _
+  · intro h
+    choose q hq using h
+    refine ⟨powerSeriesAlgEquiv R A M (ofCoeff (Finsupp.equivFunOnFinite.symm q)), ?_⟩
+    rw [← toPowerSeries_single_one R A M, ← coe_powerSeriesAlgEquiv R A M, ← map_mul]
+    refine (powerSeriesAlgEquiv R A M).symm_apply_eq.mp (coeff_injective
+      (Finsupp.ext fun m ↦ ?_))
+    rw [hq, coeff_single_one_mul, coeff_ofCoeff, Finsupp.coe_equivFunOnFinite_symm]
 
 end MonoidAlgebra

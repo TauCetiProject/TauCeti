@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Connected
+import Mathlib.RingTheory.FiniteStability
 import TauCeti.Algebra.AlgebraicGroup.Connected.Comultiplication
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Comap
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ConnectedComponent

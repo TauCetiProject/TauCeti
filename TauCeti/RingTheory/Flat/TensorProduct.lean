@@ -8,25 +8,23 @@ module
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.TensorProduct.Basic
 
-import Mathlib.RingTheory.Flat.Equalizer
-
 /-!
-# Kernels and injectivity of tensor products of algebra maps under flatness
+# Flatness and tensor products of algebra homomorphisms
 
 Mathlib's `TensorProduct.map_injective_of_flat_flat` shows that the tensor product of two
 injective linear maps is injective when the codomain of the first and the domain of the second
 are flat. This file records the same statement for `Algebra.TensorProduct.map` of algebra
 homomorphisms, so that it applies without first passing to the underlying linear maps.
-It also identifies the kernel after tensoring an algebra map with a flat algebra, following
-Mathlib's `Algebra.TensorProduct.lTensor_ker` with flatness in place of surjectivity.
+It also identifies the kernel after tensoring an algebra map with a flat algebra, the analogue
+of Mathlib's `Algebra.TensorProduct.lTensor_ker` with flatness in place of surjectivity.
 
 ## Main results
 
-* `Algebra.TensorProduct.lTensor_ker_of_flat`: tensoring with a flat algebra carries kernels
-  to their images under the right tensor inclusion.
 * `Algebra.TensorProduct.map_injective_of_flat_flat`: the tensor product of two injective algebra
   homomorphisms is injective under the flatness hypotheses of
   `TensorProduct.map_injective_of_flat_flat`.
+* `Algebra.TensorProduct.lTensor_ker_of_flat`: tensoring with a flat algebra carries kernels
+  to their images under the right tensor inclusion.
 -/
 
 public section
@@ -35,18 +33,24 @@ open scoped TensorProduct
 
 namespace Algebra.TensorProduct
 
-variable {R A B C D : Type*} [CommSemiring R]
+section Semiring
+
+variable {R S A B C D : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
 variable [Semiring A] [Semiring B] [Semiring C] [Semiring D]
 variable [Algebra R A] [Algebra R B] [Algebra R C] [Algebra R D]
+variable [Algebra S A] [Algebra S B] [IsScalarTower R S A] [IsScalarTower R S B]
 
 /-- The tensor product of two injective algebra homomorphisms is injective when the codomain of
 the first and the domain of the second are flat. -/
-theorem map_injective_of_flat_flat (f : A →ₐ[R] B) (g : C →ₐ[R] D)
+theorem map_injective_of_flat_flat (f : A →ₐ[S] B) (g : C →ₐ[R] D)
     [Module.Flat R B] [Module.Flat R C]
     (hf : Function.Injective f) (hg : Function.Injective g) :
-    Function.Injective (map f g) := by
-  have h := _root_.TensorProduct.map_injective_of_flat_flat f.toLinearMap g.toLinearMap hf hg
-  rwa [← TensorProduct.AlgebraTensorModule.map_eq, ← toLinearMap_map, AlgHom.coe_toLinearMap] at h
+    Function.Injective (map f g) :=
+  -- `map f g` is `TensorProduct.map` of the underlying `R`-linear maps by definition.
+  _root_.TensorProduct.map_injective_of_flat_flat (f.toLinearMap.restrictScalars R)
+    g.toLinearMap hf hg
+
+end Semiring
 
 section Ring
 
@@ -58,21 +62,10 @@ by its image under the right tensor inclusion. -/
 theorem lTensor_ker_of_flat (f : B →ₐ[R] C) :
     RingHom.ker (map (AlgHom.id R A) f) =
       (RingHom.ker f).map (includeRight : B →ₐ[R] A ⊗[R] B) := by
-  have hmap : ⇑(map (AlgHom.id R A) f) =
-      TensorProduct.AlgebraTensorModule.lTensor R A f.toLinearMap := by
-    rw [← AlgHom.coe_toLinearMap, toLinearMap_map, AlgHom.toLinearMap_id,
-      TensorProduct.AlgebraTensorModule.map_eq, TensorProduct.AlgebraTensorModule.coe_lTensor,
-      LinearMap.lTensor_def]
-  have hker : (RingHom.ker f).restrictScalars R = LinearMap.ker f.toLinearMap := by
-    ext; simp
-  have hrange : LinearMap.range
-        (TensorProduct.AlgebraTensorModule.lTensor R A f.toLinearMap.ker.subtype) =
-      LinearMap.range (LinearMap.lTensor A f.toLinearMap.ker.subtype) := by
-    ext; simp
-  rw [← Submodule.restrictScalars_inj R, Ideal.map_includeRight_eq, hker, ← hrange,
-    ← Module.Flat.ker_lTensor_eq]
-  ext
-  simp [hmap]
+  rw [← Submodule.restrictScalars_inj R, Ideal.map_includeRight_eq]
+  -- Restricted to `R`, `RingHom.ker` of `map (AlgHom.id R A) f` and of `f` are by definition the
+  -- `LinearMap.ker` of `LinearMap.lTensor A f.toLinearMap` and of `f.toLinearMap`.
+  exact (Module.Flat.lTensor_exact A f.toLinearMap.exact_subtype_ker_map).linearMap_ker_eq
 
 end Ring
 

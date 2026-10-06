@@ -309,8 +309,10 @@ theorem mapPoints_componentPointsHom
         (H := ConstantGroup.coordinateRing k (ConnectedComponents (PrimeSpectrum H))) f
         (componentPointsHom H A g) =
       componentPointsHom H B (HopfAlgebra.mapPoints (H := H) f g) := by
-  exact DFunLike.congr_fun
-    (AlgHom.mapValue_mapDomain (componentCoordinateHom H).hom f.hom) g
+  have h := DFunLike.congr_fun
+    (AlgHom.mapValue_mapDomain (componentCoordinateHom H).hom f.hom).symm g
+  rw [MonoidHom.comp_apply, MonoidHom.comp_apply] at h
+  exact h
 
 /-- The pointwise quotient functor by the identity component is naturally isomorphic to the
 functor of points of the finite constant component group. -/

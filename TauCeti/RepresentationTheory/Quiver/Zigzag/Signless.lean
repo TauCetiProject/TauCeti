@@ -16,10 +16,25 @@ finite neighbourhood the signless preprojective relator `TauCeti.signlessPreproj
 `∑_{j ∼ v} (v → j → v)`, the sum of the backtracks along the edges at `v`. This is the relation
 which Huerfano and Khovanov find in the quadratic dual of the zigzag algebra of `G`.
 
+For a graph on `Fin n`, the class of the doubled arrow from `i` to `j` in the signless algebra
+is recorded as a function `TauCeti.signlessArrow` of two natural numbers, zero unless they are
+adjacent vertices. Products of these classes are the classes of paths, and the relator at `v`
+becomes `∑ w, signlessArrow w v * signlessArrow v w = 0`; indexing by natural numbers lets the
+computations along the arms of a Dynkin diagram use ordinary arithmetic on vertex labels.
+
+## Main definitions
+
+* `TauCeti.signlessArrow`: the class of the doubled arrow between two vertices of a graph on
+  `Fin n`, or zero.
+
 ## Main results
 
 * `TauCeti.signlessPreprojectiveRelator_vertex`: at a vertex with finite neighbourhood, the
   relator is the sum of the backtracks `TauCeti.DoubledQuiver.backtrackElem` over the neighbours.
+* `TauCeti.signlessPreprojectiveMk_ofArrow_eq_signlessArrow`: the class of every doubled arrow is
+  a `TauCeti.signlessArrow`.
+* `TauCeti.sum_signlessArrow_mul_signlessArrow`: the relation at a vertex, as a sum over all
+  vertices.
 
 ## References
 
@@ -50,5 +65,130 @@ theorem signlessPreprojectiveRelator_vertex (v : V) [Fintype (G.neighborSet v)] 
     DoubledQuiver.arrowPath_eq_toPath]
   -- The reverse of the arrow along `w` is the arrow of the symmetric adjacency.
   rfl
+
+/-! ### Arrow classes of a graph on `Fin n` -/
+
+section FinArrow
+
+open DoubledQuiver
+
+variable (k : Type w) [CommRing k] {n : ℕ} (G : SimpleGraph (Fin n))
+  [∀ i, Fintype (G.neighborSet i)]
+
+open scoped Classical in
+/-- The class of the doubled arrow from `i` to `j` in the signless algebra of a graph `G` on
+`Fin n`, or zero if `i` and `j` are not adjacent vertices of `G`. The vertices are given as natural
+numbers, so that arithmetic on vertex labels needs no bounds. -/
+noncomputable def signlessArrow (i j : ℕ) : signlessPreprojectiveAlgebra k (DoubledQuiver G) :=
+  if h : i < n ∧ j < n then
+    if hij : G.Adj ⟨i, h.1⟩ ⟨j, h.2⟩ then signlessPreprojectiveMk k _ (ofArrow (arrow G hij))
+    else 0
+  else 0
+
+variable {G}
+
+/-- Between adjacent vertices, `signlessArrow` is the class of the doubled arrow. -/
+@[simp] theorem signlessArrow_of_adj {i j : Fin n} (h : G.Adj i j) :
+    signlessArrow k G i j = signlessPreprojectiveMk k _ (ofArrow (arrow G h)) := by
+  simp [signlessArrow, h]
+
+/-- Between non-adjacent vertices, `signlessArrow` vanishes. -/
+@[simp] theorem signlessArrow_eq_zero {i j : ℕ}
+    (h : ∀ (hi : i < n) (hj : j < n), ¬G.Adj ⟨i, hi⟩ ⟨j, hj⟩) :
+    signlessArrow k G i j = 0 := by
+  by_cases hn : i < n ∧ j < n
+  · simp [signlessArrow, hn, h hn.1 hn.2]
+  · simp [signlessArrow, hn]
+
+/-- The class of an arbitrary doubled arrow of `G` is the `signlessArrow` between its endpoints. -/
+theorem signlessPreprojectiveMk_ofArrow_eq_signlessArrow {i j : DoubledQuiver G} (e : i ⟶ j) :
+    signlessPreprojectiveMk k _ (ofArrow e) =
+      signlessArrow k G ((vertexEquiv G).symm i) ((vertexEquiv G).symm j) := by
+  obtain ⟨i, rfl⟩ := exists_eq_vertex G i
+  obtain ⟨j, rfl⟩ := exists_eq_vertex G j
+  rw [vertexEquiv_symm_vertex, vertexEquiv_symm_vertex,
+    signlessArrow_of_adj k ((nonempty_hom_iff G).1 ⟨e⟩)]
+  exact congrArg (fun e => signlessPreprojectiveMk k _ (ofArrow e)) (Subsingleton.elim _ _)
+
+/-- Cutting an arrow class on the right selects its source vertex. -/
+@[simp]
+theorem signlessArrow_mul_vertexIdempotent (i j : ℕ) (v : Fin n) :
+    signlessArrow k G i j * signlessPreprojectiveMk k _ (vertexIdempotent k (vertex G v)) =
+      if i = v.val then signlessArrow k G i j else 0 := by
+  classical
+  unfold signlessArrow
+  split_ifs with h hij hv
+  all_goals try simp only [zero_mul]
+  · have hvi : (⟨i, h.1⟩ : Fin n) = v := Fin.ext hv
+    subst v
+    rw [← map_mul, ofArrow_eq_ofPath, ofPath_mul_vertexIdempotent]
+  · rw [← map_mul, ofArrow_eq_ofPath, ofPath_mul_vertexIdempotent_of_ne, map_zero]
+    exact fun he => hv (congrArg Fin.val (vertex_injective G he.symm))
+
+/-- Cutting an arrow class on the left selects its target vertex. -/
+@[simp]
+theorem vertexIdempotent_mul_signlessArrow (v : Fin n) (i j : ℕ) :
+    signlessPreprojectiveMk k _ (vertexIdempotent k (vertex G v)) * signlessArrow k G i j =
+      if j = v.val then signlessArrow k G i j else 0 := by
+  classical
+  unfold signlessArrow
+  split_ifs with h hij hv
+  all_goals try simp only [mul_zero]
+  · have hvj : (⟨j, h.2⟩ : Fin n) = v := Fin.ext hv
+    subst v
+    rw [← map_mul, ofArrow_eq_ofPath, vertexIdempotent_mul_ofPath]
+  · rw [← map_mul, ofArrow_eq_ofPath, vertexIdempotent_mul_ofPath_of_ne, map_zero]
+    exact fun he => hv (congrArg Fin.val (vertex_injective G he.symm))
+
+variable (G) in
+/-- **The signless relation at a vertex `v`**: the backtracks `v → w → v` sum to zero, the sum
+running over all vertices `w`, of which only the neighbours of `v` contribute. -/
+theorem sum_signlessArrow_mul_signlessArrow (v : Fin n) :
+    ∑ w : Fin n, signlessArrow k G w v * signlessArrow k G v w = 0 := by
+  classical
+  have hrel := signlessPreprojectiveMk_signlessPreprojectiveRelator k (vertex G v)
+  rw [signlessPreprojectiveRelator_congr k (vertex G v) _ inferInstance,
+    signlessPreprojectiveRelator_vertex, map_sum] at hrel
+  -- Only the neighbours of `v` contribute, and they contribute the backtracks of the relator.
+  calc ∑ w : Fin n, signlessArrow k G w v * signlessArrow k G v w
+      = ∑ w ∈ Finset.univ.filter (G.Adj v), signlessArrow k G w v * signlessArrow k G v w := by
+        refine (Finset.sum_filter_of_ne fun w _ hw => ?_).symm
+        by_contra h
+        exact hw (by rw [signlessArrow_eq_zero k fun _ _ h' => h (G.adj_symm (by simpa using h')),
+          zero_mul])
+    _ = ∑ w : G.neighborSet v, signlessArrow k G w v * signlessArrow k G v w :=
+        Finset.sum_subtype _ (fun w => by simp) _
+    _ = 0 := by
+        rw [← hrel]
+        refine Finset.sum_congr rfl fun w _ => ?_
+        rw [← ofArrow_symm_mul_ofArrow _ k w.2, map_mul, ← signlessArrow_of_adj k w.2,
+          ← signlessArrow_of_adj k (G.adj_symm w.2)]
+
+/-- **The signless relation at a vertex `v` of a graph whose edges join consecutive vertices**:
+the backtrack through `v + 1` cancels the backtrack through `v - 1`.
+At an end vertex the missing backtrack is zero. -/
+theorem signlessArrow_relation_of_consecutive
+    (hconsecutive : ∀ i j : Fin n, G.Adj i j → (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i) (v : ℕ) :
+    signlessArrow k G (v + 1) v * signlessArrow k G v (v + 1) +
+      signlessArrow k G (v - 1) v * signlessArrow k G v (v - 1) = 0 := by
+  by_cases hv : v < n
+  swap
+  · rw [signlessArrow_eq_zero k (i := v + 1) (fun _ => by omega),
+      signlessArrow_eq_zero k (i := v - 1) (fun _ _ => by omega), zero_mul, zero_mul, add_zero]
+  let F : ℕ → signlessPreprojectiveAlgebra k (DoubledQuiver G) :=
+    fun w => signlessArrow k G w v * signlessArrow k G v w
+  have hF (w : ℕ) (hw : ¬(w + 1 = v ∨ v + 1 = w)) : F w = 0 := by
+    simp only [F, signlessArrow_eq_zero k (fun _ _ hij => hw (hconsecutive _ _ hij)), zero_mul]
+  -- Only the neighbours `v - 1` and `v + 1` contribute to the relation at `v`.
+  have hrel := sum_signlessArrow_mul_signlessArrow k G (⟨v, hv⟩ : Fin n)
+  rw [Fin.sum_univ_eq_sum_range F n] at hrel
+  rw [← hrel]
+  refine (Finset.sum_eq_add (v + 1) (v - 1) (by omega) (fun w _ hw => hF w (by omega))
+    (fun h => ?_) (fun h => absurd (Finset.mem_range.2 (by omega)) h)).symm
+  simp only [F]
+  rw [signlessArrow_eq_zero k (i := v + 1) (j := v) fun hi _ => absurd (Finset.mem_range.2 hi) h,
+    zero_mul]
+
+end FinArrow
 
 end TauCeti

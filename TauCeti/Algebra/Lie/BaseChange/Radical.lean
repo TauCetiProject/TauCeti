@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Lie.Killing.BaseChange
 public import TauCeti.Algebra.Lie.BaseChange.Quotient
 public import TauCeti.Algebra.Lie.BaseChange.Range
 public import TauCeti.Algebra.Lie.Nilradical
-public import TauCeti.Algebra.Lie.Solvable
+public import TauCeti.Algebra.Lie.Solvable.Basic
 
 /-!
 # Solvability, nilpotency and semisimplicity under extension of scalars

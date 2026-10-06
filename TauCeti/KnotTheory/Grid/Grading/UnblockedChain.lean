@@ -8,6 +8,7 @@ module
 import Mathlib.Tactic.Linarith
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.Data.Finsupp.Weight
+public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.KnotTheory.Grid.Grading.Parity
 public import TauCeti.KnotTheory.Grid.Unblocked
@@ -70,6 +71,10 @@ the unblocked grid homology `GH⁻` and in which the concordance invariant `τ` 
 * `TauCeti.GridDiagram.maslovOℤ_sub_two_mul_card_OColumns` and
   `TauCeti.GridDiagram.alexanderTwoℤ_sub_two_mul_card_OColumns`: the integer forms of the two
   grading changes across a rectangle counted by `∂⁻`.
+* `TauCeti.GridDiagram.isWeightedHomogeneous_OMonomial` and
+  `TauCeti.GridDiagram.isWeightedHomogeneous_unblockedCoefficient`: with every variable of weight
+  `-2`, the weight of an empty rectangle from `x` to `y`, and so each matrix coefficient of `∂⁻`,
+  is weighted homogeneous of degree `M_O(x) - 1 - M_O(y)`, for any diagram.
 * `TauCeti.OddComponentGridDiagram.monomialBidegree_add_of_mem_unblockedRectangles`: multiplying by
   the weight of a counted rectangle and moving to its target lowers the bidegree by `(1, 0)`.
 * `TauCeti.OddComponentGridDiagram.unblockedDifferential_mem_bigradedChainMinusPiece`: the
@@ -77,6 +82,10 @@ the unblocked grid homology `GH⁻` and in which the concordance invariant `τ` 
 * `TauCeti.OddComponentGridDiagram.monomial_smul_mem_bigradedChainMinusPiece` and
   `TauCeti.OddComponentGridDiagram.X_smul_mem_bigradedChainMinusPiece`: the variable `V_c` has
   bidegree `(-2, -1)`, and a monomial `V^d` has bidegree `-|d|` times `(2, 1)`.
+* `TauCeti.OddComponentGridDiagram.matrixMap_mem_bigradedChainMinusPiece` and
+  `TauCeti.OddComponentGridDiagram.matrixMap_mem_alexanderChainMinusPiece`: a renamed matrix map
+  whose weighted transitions preserve bidegree or Alexander degree preserves the corresponding
+  homogeneous pieces.
 * `TauCeti.OddComponentGridDiagram.isInternal_bigradedChainMinusPiece`: `GC⁻` is the internal
   direct sum of its homogeneous pieces.
 * `TauCeti.OddComponentGridDiagram.isHomogeneous_unblockedDifferential_alexanderChainMinusGrading`
@@ -128,6 +137,42 @@ theorem alexanderTwoℤ_sub_two_mul_card_OColumns {r : GridRectangleBetween x y}
     linarith
   exact_mod_cast hq
 
+/-! ### Maslov homogeneity of the rectangle weights -/
+
+variable (R : Type*) [CommSemiring R]
+
+/-- **The weight of an empty rectangle is Maslov homogeneous.** Giving every variable the weight
+`-2`, the weight `V^{O(r)}` of an empty rectangle from `x` to `y` is weighted homogeneous of degree
+`M_O(x) - 1 - M_O(y)`: the term `V^{O(r)} · y` lies one below `x` in the `O`-Maslov grading. No
+condition on the `X`-markings is needed. -/
+theorem isWeightedHomogeneous_OMonomial {r : GridRectangleBetween x y} (hr : r.IsEmpty) :
+    IsWeightedHomogeneous (fun _ : Fin n ↦ (-2 : ℤ)) (G.OMonomial R r.toGridRectangle)
+      (G.maslovOℤ x - 1 - G.maslovOℤ y) := by
+  have h := G.maslovOℤ_sub_two_mul_card_OColumns hr
+  rw [OMonomial_eq_monomial]
+  refine isWeightedHomogeneous_monomial _ _ _ ?_
+  simp only [map_sum, Finsupp.weight_single, one_smul, Finset.sum_const, nsmul_eq_mul]
+  omega
+
+/-- A sum of weights of empty rectangles from `x` to `y`, such as a matrix coefficient of the
+unblocked differential or of an `X`-marking homotopy, is weighted homogeneous of degree
+`M_O(x) - 1 - M_O(y)` when every variable has weight `-2`. -/
+theorem isWeightedHomogeneous_sum_OMonomial (s : Finset (GridRectangleBetween x y))
+    (hs : ∀ r ∈ s, r.IsEmpty) :
+    IsWeightedHomogeneous (fun _ : Fin n ↦ (-2 : ℤ)) (∑ r ∈ s, G.OMonomial R r.toGridRectangle)
+      (G.maslovOℤ x - 1 - G.maslovOℤ y) :=
+  IsWeightedHomogeneous.sum _ _ _ fun r hr ↦ G.isWeightedHomogeneous_OMonomial R (hs r hr)
+
+/-- **The unblocked differential drops the `O`-Maslov grading by one**, in the form of its matrix
+coefficients: with every variable of weight `-2`, the coefficient from `x` to `y` is weighted
+homogeneous of degree `M_O(x) - 1 - M_O(y)`. Unlike the bigraded statements below, this needs no
+hypothesis on the number of link components. -/
+theorem isWeightedHomogeneous_unblockedCoefficient (x y : GridState n) :
+    IsWeightedHomogeneous (fun _ : Fin n ↦ (-2 : ℤ)) (G.unblockedCoefficient R x y)
+      (G.maslovOℤ x - 1 - G.maslovOℤ y) := by
+  rw [unblockedCoefficient_def]
+  exact G.isWeightedHomogeneous_sum_OMonomial R _ fun _ hr ↦ G.isEmpty_of_mem_unblockedRectangles hr
+
 end GridDiagram
 
 namespace OddComponentGridDiagram
@@ -164,6 +209,26 @@ theorem monomialBidegree_fst (x : GridState n) (e : Fin n →₀ ℕ) :
 theorem monomialBidegree_snd (x : GridState n) (e : Fin n →₀ ℕ) :
     (G.monomialBidegree x e).2 = G.alexanderℤ x - (e.degree : ℤ) := by
   rw [monomialBidegree, Prod.snd_sub, bidegree_snd]
+
+/-- Renaming the input variables and multiplying by a squarefree weight preserves bidegree
+when the target state's Maslov and Alexander gradings rise by twice and once the weight's size. -/
+theorem monomialBidegree_mapDomain_add_sum (G' : OddComponentGridDiagram n)
+    (σ : Equiv.Perm (Fin n)) (d : Fin n →₀ ℕ) (S : Finset (Fin n))
+    (hM : G'.1.maslovOℤ y = G.1.maslovOℤ x + 2 * (S.card : ℤ))
+    (hA : G'.alexanderℤ y = G.alexanderℤ x + S.card) :
+    G'.monomialBidegree y
+      (Finsupp.mapDomain σ d + ∑ c ∈ S, Finsupp.single (σ c) 1) =
+      G.monomialBidegree x d := by
+  have hdeg : ((Finsupp.mapDomain σ d +
+      ∑ c ∈ S, Finsupp.single (M := ℕ) (σ c) 1).degree : ℤ) =
+      (d.degree : ℤ) + (S.card : ℤ) := by
+    rw [map_add, map_sum, Finsupp.degree_mapDomain]
+    simp
+  refine Prod.ext ?_ ?_
+  · simp only [monomialBidegree_fst, hdeg, hM]
+    ring
+  · simp only [monomialBidegree_snd, hdeg, hA]
+    ring
 
 /-- A grid-state generator carries the bidegree of its state. -/
 @[simp]
@@ -464,6 +529,59 @@ theorem isHomogeneous_unblockedDifferential_alexanderChainMinusGrading (R : Type
       (G.alexanderChainMinusGrading R).piece 0 :=
   LinearMap.isHomogeneous_def.mpr fun a _ hc ↦ by
     simpa using G.unblockedDifferential_mem_alexanderChainMinusPiece hc
+
+/-! ### Grading preservation by renamed matrix maps -/
+
+section RenameMatrixMap
+
+variable (R : Type*) [CommSemiring R] (G' : OddComponentGridDiagram n) (σ : Equiv.Perm (Fin n))
+  (M : GridState n → GridState n → MvPolynomial (Fin n) R)
+  (f : GridChainMinus R n → GridChainMinus R n)
+  (hf : ∀ c y, f c y = c.sum fun x p => rename σ p * M x y)
+  (hgrade : ∀ x y, ∀ w ∈ (M x y).support, ∀ d : Fin n →₀ ℕ,
+    G'.monomialBidegree y (Finsupp.mapDomain σ d + w) = G.monomialBidegree x d)
+
+include hf hgrade
+
+/-- A matrix whose weighted transitions preserve bidegree preserves the bidegree of each
+monomial occurring in an arbitrary input chain. -/
+private theorem exists_monomialBidegree_eq_of_mem_support_matrixMap
+    {c : GridChainMinus R n} {y : GridState n} {e : Fin n →₀ ℕ}
+    (he : e ∈ (f c y).support) :
+    ∃ x : GridState n, ∃ d ∈ (c x).support,
+      G'.monomialBidegree y e = G.monomialBidegree x d := by
+  rw [hf] at he
+  obtain ⟨x, d, hd, w, hw, rfl⟩ :=
+    GridChain.exists_eq_mapDomain_add_of_mem_support_sum_rename_mul R c σ M he
+  exact ⟨x, d, hd, hgrade x y w hw d⟩
+
+/-- A renamed matrix map whose weighted transitions preserve bidegree sends a chain homogeneous
+for the source diagram `G` to a chain of the same bidegree for the target diagram `G'`. -/
+theorem matrixMap_mem_bigradedChainMinusPiece
+    {g : ℤ × ℤ} {c : GridChainMinus R n} (hc : c ∈ G.bigradedChainMinusPiece R g) :
+    f c ∈ G'.bigradedChainMinusPiece R g := by
+  rw [mem_bigradedChainMinusPiece] at hc ⊢
+  intro y e he
+  obtain ⟨x, d, hd, h⟩ :=
+    G.exists_monomialBidegree_eq_of_mem_support_matrixMap R G' σ M f hf hgrade he
+  rw [h, hc x d hd]
+
+omit hgrade in
+/-- A renamed matrix map whose weighted transitions preserve Alexander degree sends an
+Alexander-homogeneous chain for `G` to a chain of the same Alexander degree for `G'`. -/
+theorem matrixMap_mem_alexanderChainMinusPiece
+    (hAlexander : ∀ x y, ∀ w ∈ (M x y).support, ∀ d : Fin n →₀ ℕ,
+      (G'.monomialBidegree y (Finsupp.mapDomain σ d + w)).2 = (G.monomialBidegree x d).2)
+    {a : ℤ} {c : GridChainMinus R n} (hc : c ∈ G.alexanderChainMinusPiece R a) :
+    f c ∈ G'.alexanderChainMinusPiece R a := by
+  rw [mem_alexanderChainMinusPiece] at hc ⊢
+  intro y e he
+  rw [hf] at he
+  obtain ⟨x, d, hd, w, hw, rfl⟩ :=
+    GridChain.exists_eq_mapDomain_add_of_mem_support_sum_rename_mul R c σ M he
+  rw [← monomialBidegree_snd, hAlexander x y w hw d, monomialBidegree_snd, hc x d hd]
+
+end RenameMatrixMap
 
 end OddComponentGridDiagram
 

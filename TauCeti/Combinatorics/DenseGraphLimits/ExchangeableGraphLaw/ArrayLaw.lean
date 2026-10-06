@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Exchangeability.Arrays.Extreme.Basic
 public import TauCeti.Probability.Exchangeability.Arrays.Windows
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.AdjArray
-public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Infinite
+public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Infinite.Basic
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Dissociated
 import TauCeti.MeasureTheory.MeasurableSpace.Embedding
 

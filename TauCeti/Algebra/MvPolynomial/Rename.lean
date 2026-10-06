@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.Rename
 public import Mathlib.Algebra.MvPolynomial.Division
+public import Mathlib.Algebra.Polynomial.Eval.Coeff
 public import Mathlib.Algebra.Ring.CompTypeclasses
 
 /-!
@@ -33,6 +34,8 @@ it kills are exactly the multiples of `X a`.
   renaming is killed by `killCompl`.
 * `MvPolynomial.killCompl_eq_zero_iff_X_dvd`: when the range of the renaming is the complement of
   a single variable `X a`, discarding that variable kills exactly the multiples of `X a`.
+* `Polynomial.map_eval_map_rename`: for a polynomial family with coefficients in `MvPolynomial`,
+  specializing after renaming the parameters along `f` is specializing at the composite point.
 -/
 
 public section
@@ -77,6 +80,20 @@ theorem killCompl_eq_zero_iff_X_dvd (ha : Set.range f = {a}ᶜ) (p : MvPolynomia
     rw [map_mul, killCompl_X_of_notMem_range hf hna, zero_mul]
 
 end MvPolynomial
+
+namespace Polynomial
+
+/-- Renaming the parameters of a polynomial family `P : (MvPolynomial σ R)[X]` along `f` and then
+specializing them at `y` is specializing `P` at `y ∘ f`. -/
+theorem map_eval_map_rename {σ τ R : Type*} [CommSemiring R] (f : σ → τ)
+    (P : (MvPolynomial σ R)[X]) (y : τ → R) :
+    (P.map (MvPolynomial.rename (R := R) f).toRingHom).map (MvPolynomial.eval y) =
+      P.map (MvPolynomial.eval (y ∘ f)) := by
+  rw [Polynomial.map_map]
+  congr 1
+  ext <;> simp
+
+end Polynomial
 
 namespace TauCeti
 

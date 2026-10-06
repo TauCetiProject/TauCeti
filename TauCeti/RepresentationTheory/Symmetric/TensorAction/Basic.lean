@@ -139,6 +139,13 @@ theorem permTensorActionAlgHom_of (σ : Equiv.Perm (Fin d)) :
       permTensorAction R n d σ := by
   rw [permTensorActionAlgHom_def, Representation.asAlgebraHom_of]
 
+/-- The group-algebra action of `a ∈ R[S_d]` is the coefficient-weighted sum of the permutation
+actions. -/
+theorem permTensorActionAlgHom_eq_sum (a : MonoidAlgebra R (Equiv.Perm (Fin d))) :
+    permTensorActionAlgHom R n d a = ∑ σ, a.coeff σ • permTensorAction R n d σ := by
+  simp [permTensorActionAlgHom_def, Representation.asAlgebraHom_def, MonoidAlgebra.lift_apply,
+    Finsupp.sum_fintype]
+
 /-- The group-algebra action on a pure tensor of `(Fin n → R)^{⊗d}` is the corresponding finite
 linear combination of reindexed pure tensors. -/
 @[simp]
@@ -154,6 +161,13 @@ whose `i`-th factor is the `f i`-th standard basis vector of `Rⁿ`. -/
 noncomputable def tensorPowerBasis :
     Module.Basis (Fin d → Fin n) R (⨂[R] _ : Fin d, Fin n → R) :=
   Basis.piTensorProduct fun _ => Pi.basisFun R (Fin n)
+
+/-- The monomial basis is the tensor product of the standard bases.  The definition is not
+exposed, so this is its defining equation, used to compare it with the `Basis.piTensorProduct`
+spelling of the weight theory. -/
+theorem tensorPowerBasis_def :
+    tensorPowerBasis R n d = Basis.piTensorProduct fun _ : Fin d => Pi.basisFun R (Fin n) :=
+  (rfl)
 
 @[simp]
 theorem tensorPowerBasis_apply (f : Fin d → Fin n) :

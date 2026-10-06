@@ -59,6 +59,18 @@ instance isSimpleModule_vertexSimpleModuleFG (i : Q) :
     IsSimpleModule (pathAlgebra k Q) (vertexSimpleModuleFG k Q i) :=
   inferInstanceAs (IsSimpleModule (pathAlgebra k Q) (vertexSimpleModule k Q i))
 
+/-- Vertex simples at distinct vertices are nonisomorphic as path-algebra modules. -/
+theorem pairwise_isEmpty_linearEquiv_vertexSimpleModuleFG :
+    Pairwise fun i j ↦ IsEmpty
+      ((vertexSimpleModuleFG k Q i : Type (max v w)) ≃ₗ[pathAlgebra k Q]
+        vertexSimpleModuleFG k Q j) := by
+  intro i j hij
+  constructor
+  intro e
+  apply not_nonempty_simpleRep_iso (k := k) hij
+  exact ⟨(vertexSimpleModuleIso k Q i).symm ≪≫
+    (quiverRepFunctor k Q).mapIso e.toModuleIso ≪≫ vertexSimpleModuleIso k Q j⟩
+
 variable [FiniteDimensional k (pathAlgebra k Q)]
 
 /-- **The vertex simples exhaust the simple modules of a finite-dimensional path algebra.** -/

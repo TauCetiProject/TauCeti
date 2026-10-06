@@ -13,7 +13,8 @@ public import TauCeti.Algebra.Homology.HomologicalComplex
 /-!
 # Constructions on chain homotopies
 
-Two constructions producing new chain homotopies from old ones.
+Three constructions of chain homotopies: two produce new homotopies from old ones, and the
+third assembles a null-homotopy from components given all at once.
 
 `Homotopy.descCokernel` descends a homotopy along a degreewise cokernel.  Let `p : L ⟶ M` exhibit
 `M` in each degree as the cokernel of `u : K ⟶ L`, and let `p' : L' ⟶ M'` be any morphism of
@@ -30,6 +31,12 @@ exhibits every power `sᵐ` as homotopic to the identity, through the explicit o
 `∑_{k < m} sᵏ ≫ h`.  Its components are needed, and not just the existence of some homotopy, when
 `m` is allowed to vary from one summand of `K` to another, as in the proof that small singular
 chains for an open cover include as a chain homotopy equivalence.
+
+`Homotopy.mkChainComplex` builds a null-homotopy of a chain map between `ℕ`-indexed chain
+complexes from its components `h n : P.X n ⟶ Q.X (n + 1)`, given all at once together with the
+homotopy identities in degree zero and in positive degrees.  It is the non-inductive counterpart of
+Mathlib's `Homotopy.mkInductive`, for the situation where the components are constructed by a
+recursion of their own rather than one degree at a time from the previous two.
 -/
 
 @[expose] public section
@@ -143,3 +150,39 @@ lemma idPow_hom (h : Homotopy (𝟙 K) s) (m : ℕ) (i j : ι) :
 end Homotopy
 
 end Pow
+
+section MkChainComplex
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {P Q : ChainComplex C ℕ}
+
+namespace Homotopy
+
+/-- A null-homotopy of a chain map `e : P ⟶ Q` between `ℕ`-indexed chain complexes, from its
+components `h n : P.X n ⟶ Q.X (n + 1)` and the homotopy identities `e.f 0 = h 0 ≫ d` and
+`e.f (n + 1) = d ≫ h n + h (n + 1) ≫ d`. The components are given all at once; compare
+`Homotopy.mkInductive`, which constructs them one degree at a time. -/
+@[no_expose]
+def mkChainComplex (e : P ⟶ Q) (h : ∀ n, P.X n ⟶ Q.X (n + 1)) (comm_zero : e.f 0 = h 0 ≫ Q.d 1 0)
+    (comm_succ : ∀ n, e.f (n + 1) = P.d (n + 1) n ≫ h n + h (n + 1) ≫ Q.d (n + 2) (n + 1)) :
+    Homotopy e 0 where
+  hom i j := if hij : i + 1 = j then h i ≫ eqToHom (congrArg Q.X hij) else 0
+  zero i j hij := dite_eq_right (by simpa [ComplexShape.down_Rel] using hij)
+  comm i := by
+    cases i with
+    | zero =>
+        rw [dNext_zero_chainComplex, prevD_chainComplex]
+        simpa using comm_zero
+    | succ i =>
+        rw [dNext_succ_chainComplex, prevD_chainComplex]
+        simpa using comm_succ i
+
+@[simp]
+lemma mkChainComplex_hom_succ (e : P ⟶ Q) (h : ∀ n, P.X n ⟶ Q.X (n + 1))
+    (comm_zero : e.f 0 = h 0 ≫ Q.d 1 0)
+    (comm_succ : ∀ n, e.f (n + 1) = P.d (n + 1) n ≫ h n + h (n + 1) ≫ Q.d (n + 2) (n + 1))
+    (n : ℕ) : (mkChainComplex e h comm_zero comm_succ).hom n (n + 1) = h n := by
+  simp [mkChainComplex]
+
+end Homotopy
+
+end MkChainComplex

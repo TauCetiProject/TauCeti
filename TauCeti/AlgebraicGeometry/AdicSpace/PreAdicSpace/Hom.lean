@@ -25,8 +25,14 @@ residue-field valuations is `PreAdicSpace.Hom.valuation_eq_comap`.
 * `TauCeti.PreAdicSpace.Hom`: morphisms of pre-adic spaces, making `PreAdicSpace` a category.
 * `TauCeti.PreAdicSpace.Hom.stalkMap`: the ring homomorphism induced on stalks.
 * `TauCeti.PreAdicSpace.Hom.residueFieldMap`: the homomorphism induced on residue fields.
+* `TauCeti.PreAdicSpace.Hom.ofFac`: a morphism of presheafed spaces factoring a morphism of
+  pre-adic spaces through one whose stalk maps over its image are isomorphisms is a morphism of
+  pre-adic spaces.
 * `TauCeti.PreAdicSpace.forgetToPresheafedSpace`, `TauCeti.PreAdicSpace.forgetToTop`: the
-  forgetful functors to presheafed spaces and to topological spaces.
+  forgetful functors to presheafed spaces and to topological spaces. The first is faithful and
+  reflects isomorphisms: the inverse of an isomorphism of presheafed spaces is automatically
+  compatible with the stalk valuations, as the case of `Hom.ofFac` in which it factors the
+  identity through the isomorphism.
 
 The design follows `AlgebraicGeometry.LocallyRingedSpace`, with the valuation compatibility in
 place of the locality condition.
@@ -246,7 +252,91 @@ theorem Hom.valuation_eq_comap (x : X) :
     Hom.residueFieldMap_comp_residue, ValuationSpectrum.comap_comp, Function.comp_apply,
     ← X.stalkValuation_def x, f.stalkValuation_eq_comap x]
 
+/-- The stalk maps of a morphism of pre-adic spaces whose underlying morphism of presheafed
+spaces is an isomorphism are isomorphisms. -/
+instance isIso_stalkMap [IsIso (X := X.toPresheafedSpace) (Y := Y.toPresheafedSpace) f.toHom]
+    (x : X) : IsIso (f.stalkMap x) :=
+  -- instance search does not unfold the abbreviation `toRingPresheafedSpaceHom` to a functor
+  -- application, so the underlying instance is supplied by hand
+  have : IsIso (toRingPresheafedSpaceHom f.toHom) := Functor.map_isIso _ _
+  Hom.stalkMap_def f x ▸ PresheafedSpace.stalkMap.isIso (toRingPresheafedSpaceHom f.toHom) x
+
 end Stalks
+
+section OfFac
+
+variable {X Y Z : PreAdicSpace.{u}}
+
+/-- A morphism of presheafed spaces `g` with `g ≫ j = i`, for morphisms `i : X ⟶ Z` and
+`j : Y ⟶ Z` of pre-adic spaces such that the stalk maps of `j` at the points of the image of `g`
+are isomorphisms, is a morphism of pre-adic spaces: pulling back along those invertible stalk maps
+recovers the compatibility of `g` with the stalk valuations from that of `i` and `j`. -/
+def Hom.ofFac (i : X ⟶ Z) (j : Y ⟶ Z) (g : X.toPresheafedSpace ⟶ Y.toPresheafedSpace)
+    [hj : ∀ x : X, IsIso (j.stalkMap (g.base x))] (h : g ≫ j.toHom = i.toHom) : X ⟶ Y where
+  toHom := g
+  stalkValuation_eq x := by
+    obtain ⟨i, hi⟩ := i
+    have h' : g ≫ j.toHom = i := h
+    subst h'
+    have hi' := hi x
+    rw [toRingPresheafedSpaceHom, CategoryTheory.Functor.map_comp,
+      PresheafedSpace.stalkMap.comp] at hi'
+    have hj' := j.stalkValuation_eq ((toRingPresheafedSpaceHom g).base x)
+    -- the stalk map of `j` at `g x` is an isomorphism, so pulling back along it is injective; the
+    -- point `g x` is a point of the presheafed space of rings, so the instance is instantiated by
+    -- hand
+    have hiso : IsIso ((toRingPresheafedSpaceHom j.toHom).stalkMap
+        ((toRingPresheafedSpaceHom g).base x)) :=
+      Hom.stalkMap_def j (g.base x) ▸ hj x
+    refine ValuationSpectrum.comap_injective (ConcreteCategory.bijective_of_isIso
+      ((toRingPresheafedSpaceHom j.toHom).stalkMap ((toRingPresheafedSpaceHom g).base x))).2 ?_
+    -- `hi'` is stated at the point `(g' ≫ j').base x`, which is `j'.base (g'.base x)` by the
+    -- `rfl`-lemma `PresheafedSpace.comp_base`. It cannot be rewritten with that lemma: the point
+    -- occurs in the types of both sides of `hi'` (the stalk valuations and the stalk map live on
+    -- the stalk at that point), so the motive is not type correct. The two forms are identified
+    -- definitionally here instead.
+    exact hj'.symm.trans (hi'.trans (ValuationSpectrum.comap_hom_comap_hom _ _ _).symm)
+
+@[simp]
+theorem Hom.ofFac_toHom (i : X ⟶ Z) (j : Y ⟶ Z) (g : X.toPresheafedSpace ⟶ Y.toPresheafedSpace)
+    [∀ x : X, IsIso (j.stalkMap (g.base x))] (h : g ≫ j.toHom = i.toHom) :
+    (Hom.ofFac i j g h).toHom = g := by
+  rfl
+
+end OfFac
+
+section ReflectsIsomorphisms
+
+/-- The underlying morphism of presheafed spaces of an isomorphism of pre-adic spaces is an
+isomorphism. Instance search does not see `forgetToPresheafedSpace.map f` as `f.toHom`, so
+Mathlib's `Functor.map_isIso` does not supply this. -/
+instance isIso_toHom (f : X ⟶ Y) [IsIso f] :
+    IsIso (X := X.toPresheafedSpace) (Y := Y.toPresheafedSpace) f.toHom :=
+  (forgetToPresheafedSpace.mapIso (asIso f)).isIso_hom
+
+/-- The forgetful functor to presheafed spaces reflects isomorphisms: the inverse of the
+underlying isomorphism of presheafed spaces factors the identity through `f`, whose stalk maps
+are isomorphisms, so it is a morphism of pre-adic spaces by `Hom.ofFac`. -/
+instance : forgetToPresheafedSpace.{u}.ReflectsIsomorphisms where
+  reflects {X Y} f hf := by
+    obtain ⟨g, hg₁, hg₂⟩ := hf.out
+    -- Instance search does not see the objects `forgetToPresheafedSpace.obj X` in the type of
+    -- `hf` as the objects `X.toPresheafedSpace` of the morphisms below, so the instance is
+    -- restated.
+    have : IsIso (X := X.toPresheafedSpace) (Y := Y.toPresheafedSpace) f.toHom := hf
+    exact ⟨⟨Hom.ofFac (𝟙 Y) f g hg₂, Hom.ext' hg₁, Hom.ext' hg₂⟩⟩
+
+/-- A morphism of pre-adic spaces whose underlying morphism of presheafed spaces is an
+isomorphism is an isomorphism: the converse of `isIso_toHom`, by reflection of isomorphisms
+along the forgetful functor. -/
+theorem isIso_of_isIso_toHom (f : X ⟶ Y)
+    [hf : IsIso (X := X.toPresheafedSpace) (Y := Y.toPresheafedSpace) f.toHom] : IsIso f :=
+  -- Instance search does not see `forgetToPresheafedSpace.map f` as `f.toHom`, so the instance
+  -- is restated.
+  have : IsIso (forgetToPresheafedSpace.map f) := hf
+  isIso_of_reflects_iso f forgetToPresheafedSpace
+
+end ReflectsIsomorphisms
 
 end PreAdicSpace
 

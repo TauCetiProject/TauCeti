@@ -196,8 +196,7 @@ theorem stabilizerBallQuotientChart_map_of_le_symm (h : Δ ≤ Γ) (z : ℍ)
   intro ε hε hΔ hΓ u hu
   have : Finite (stabilizer Δ z) := finite_stabilizer_of_le h z
   have hr : 0 ≤ Real.tanh (ε / 2) := by
-    rw [← Real.tanh_zero]
-    exact Real.tanh_strictMono.monotone (by linarith)
+    rw [← Real.tanh_zero]; exact (Real.tanh_strictMono (by linarith)).le
   rw [stabilizerBallQuotientChart_target, ← image_pow_ball hr] at hu
   obtain ⟨w, hw, rfl⟩ := hu
   have hw' : ‖w‖ < Real.tanh (ε / 2) := mem_ball_zero_iff.mp hw

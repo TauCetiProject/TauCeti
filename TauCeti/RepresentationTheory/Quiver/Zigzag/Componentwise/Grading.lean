@@ -19,7 +19,8 @@ vertex–arrow–volume basis is homogeneous in degrees zero, one and two, respe
 
 The graded pieces are submodules of the public algebra itself. Their internal direct-sum
 property and multiplicativity supply a `GradedAlgebra`, including for disconnected graphs
-and graphs with isolated vertices.
+and graphs with isolated vertices. As for the relation quotient, the grading is also extended by
+zero to integer degrees, in which internal grading shifts are stated.
 
 See Huerfano–Khovanov, *A category for the adjoint representation*, Section 3, for the
 path grading and singleton convention.
@@ -224,5 +225,36 @@ algebra equivalence. -/
 @[instance_reducible]
 noncomputable def zigzagAlgebraGradedAlgebra : GradedAlgebra (zigzagAlgebraGrade k G) :=
   DirectSum.IsInternal.gradedAlgebra (isInternal_zigzagAlgebraGrade k G)
+
+/-! ### Integer-indexed grading -/
+
+/-- The componentwise grading of the public zigzag algebra, extended by zero from `ℕ` to `ℤ`, as
+`TauCeti.zigzagIntegerGrade` extends that of the relation quotient. This signed indexing is
+needed to state internal grading shifts. -/
+noncomputable def zigzagAlgebraIntegerGrade (d : ℤ) : Submodule k (zigzagAlgebra k G) :=
+  Graded.extendByZero (zigzagAlgebraGrade k G) d
+
+@[simp]
+theorem zigzagAlgebraIntegerGrade_ofNat (d : ℕ) :
+    zigzagAlgebraIntegerGrade k G d = zigzagAlgebraGrade k G d :=
+  Graded.extendByZero_natCast _ d
+
+/-- The integer extension of the componentwise grading vanishes in negative degrees. -/
+theorem zigzagAlgebraIntegerGrade_eq_bot_of_neg {d : ℤ} (hd : d < 0) :
+    zigzagAlgebraIntegerGrade k G d = ⊥ :=
+  Graded.extendByZero_of_neg _ hd
+
+/-- **The integer extension of the componentwise grading is an internal direct sum**: the pieces
+in nonnegative degrees are those of `TauCeti.zigzagAlgebraGrade`, and those in negative degrees
+vanish. -/
+theorem isInternal_zigzagAlgebraIntegerGrade :
+    DirectSum.IsInternal (zigzagAlgebraIntegerGrade k G) :=
+  Graded.isInternal_extendByZero (isInternal_zigzagAlgebraGrade k G)
+
+/-- Multiplication adds signed degrees in the integer extension of the componentwise grading. -/
+theorem mul_mem_zigzagAlgebraIntegerGrade {m n : ℤ} {x y : zigzagAlgebra k G}
+    (hx : x ∈ zigzagAlgebraIntegerGrade k G m) (hy : y ∈ zigzagAlgebraIntegerGrade k G n) :
+    x * y ∈ zigzagAlgebraIntegerGrade k G (m + n) :=
+  Graded.mul_mem_extendByZero (fun hx hy ↦ SetLike.mul_mem_graded hx hy) hx hy
 
 end TauCeti

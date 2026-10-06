@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.GaloisAction
+public import TauCeti.NumberTheory.LocalField.Logarithm
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 
 /-!
@@ -27,6 +28,8 @@ passing to successive quotients in ramification theory.
 * `AlgEquiv.coe_smul_unitFiltration`: the restricted action agrees with the action on `Lˣ`.
 * `AlgEquiv.val_coe_smul_unitFiltration`: the restricted action agrees with applying the
   automorphism on `L`.
+* `AlgEquiv.map_log_of_mem_unitFiltration_one`: on a finite extension of `ℚ_[p]`, the logarithm of
+  principal units commutes with every extension automorphism.
 
 ## References
 
@@ -111,5 +114,19 @@ automorphism. -/
 theorem val_coe_smul_unitFiltration (σ : L ≃ₐ[K] L) {i : ℕ} (x : unitFiltration L i) :
     (((σ • x : unitFiltration L i) : Lˣ) : L) = σ ((x : Lˣ) : L) :=
   (rfl)
+
+/-- **The logarithm is Galois-equivariant.** On a finite extension `L` of `ℚ_[p]`, every
+automorphism of `L/K` commutes with the logarithm of a principal unit: `σ (log u) = log (σ u)`.
+The logarithm series of `u` converges on `U(L,1)`, and `σ` is continuous and maps it termwise to
+the logarithm series of `σ u`. -/
+theorem map_log_of_mem_unitFiltration_one (σ : L ≃ₐ[K] L) (p : ℕ) [Fact p.Prime]
+    [FinitePadicExtension L p] {u : Lˣ} (hu : u ∈ unitFiltration L 1) :
+    σ (NormedSpace.log (u : L)) = NormedSpace.log (σ (u : L)) := by
+  have h := (hasSum_log_of_mem_unitFiltration_one p hu).map σ.toAddMonoidHom
+    σ.continuous_of_valuativeExtension
+  have h' := hasSum_log_of_mem_unitFiltration_one p (σ.unitsMap_mem_unitFiltration_iff.mpr hu)
+  rw [Units.coe_map, MonoidHom.coe_ofClass] at h'
+  refine h.unique (h'.congr_fun fun n ↦ ?_)
+  simp
 
 end AlgEquiv

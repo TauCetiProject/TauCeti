@@ -43,6 +43,8 @@ every use. The definition below carries it once.
 
 * `TauCeti.Huber.PairOfDefinition.completionLocObj_obj` : the underlying `TopCommRingCat` of that
   object is `UniformSpace.Completion S` with the topology `locUniformSpace` induces.
+* `TauCeti.Huber.PairOfDefinition.completionLocObj_congr_pairOfDefinition` : the object does not
+  depend on the pair of definition.
 * `TauCeti.Huber.PairOfDefinition.completionLocObjHom_eq_id` and
   `TauCeti.Huber.PairOfDefinition.completionLocObjHom_eq_comp` : identity and composition for
   comparison morphisms compatible with the structure maps from `A`.
@@ -108,6 +110,26 @@ theorem completionLocObj_obj [IsTopologicalRing A] (P : PairOfDefinition A) (T :
   let _ := isUniformAddGroup_locUniformSpace P T s S hden
   let _ := isTopologicalRing_locUniformSpace P T s S hden
   exact CompleteSeparatedTopCommRingCat.of_obj _
+
+/-- **`A⟨T/s⟩` does not depend on the pair of definition.** Two pairs of definition for which
+`(T, s)` satisfies the standing hypothesis `HasDenominatorPower` give the same object of
+`CompleteSeparatedTopCommRingCat`. When `T` spans an open ideal,
+`hasDenominatorPower_of_isOpen_span` supplies that hypothesis for every pair of definition.
+
+The corresponding equalities on `Aₛ` are `locTopology_congr_pairOfDefinition` (topologies) and
+`locUniformSpace_congr_pairOfDefinition` (uniformities). Compare `completionLocObjIso`, which
+instead changes the presentation `(T, s)` and gives an isomorphism from compatible comparison
+maps. -/
+theorem completionLocObj_congr_pairOfDefinition [IsTopologicalRing A] (P P' : PairOfDefinition A)
+    (T : Finset A) (s : A) (S : Type u) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) (hden' : HasDenominatorPower P' T s S) :
+    completionLocObj P T s S hden = completionLocObj P' T s S hden' := by
+  have hu := locUniformSpace_congr_pairOfDefinition P P' T s S hden hden'
+  -- both underlying objects are `TopCommRingCat.of (UniformSpace.Completion S)`, which involves
+  -- the pair only through the uniformity and proofs about it, so `congr!` reduces the goal to `hu`
+  ext1
+  rw [completionLocObj_obj, completionLocObj_obj]
+  congr!
 
 /-! ### Comparison morphisms between presentationwise objects -/
 

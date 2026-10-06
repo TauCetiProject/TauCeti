@@ -8,7 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Homological.ContCohomology.Basic
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 public import TauCeti.Topology.CompactOpen
 
 /-!

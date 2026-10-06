@@ -51,8 +51,9 @@ continuous `2`-cocycle, so the two descriptions of the data are interchangeable.
   quotient map, so `1 → M → E_α → G → 1` is an extension of topological groups.
 * `TauCeti.FactorSet.continuous_canonicalSection`: the canonical section is continuous, so the
   extension built from a continuous factor set carries a continuous normalized section.
-* `TauCeti.FactorSet.continuous_map`: the pushforward of a continuous factor set along a continuous
-  equivariant homomorphism of coefficient modules is continuous.
+* `TauCeti.FactorSet.continuous_map` and `TauCeti.FactorSet.continuous_mapExtension`: the
+  pushforward of a continuous factor set along a continuous equivariant homomorphism of coefficient
+  modules is continuous, and so is the induced homomorphism of twisted products.
 * `TauCeti.FactorSet.ofMul_mem_Z2_iff`: continuity of a factor set is membership of the explicit
   complex of continuous cochains.
 
@@ -237,6 +238,15 @@ coefficient modules is continuous. -/
 theorem continuous_map (f : M →*[G] N) (hf : Continuous f) {α : FactorSet G M}
     (hα : Continuous ⇑α) : Continuous ⇑(α.map f) :=
   (hf.comp hα).congr fun p => (map_apply f α p).symm
+
+/-- The homomorphism of twisted products induced by a continuous equivariant coefficient
+homomorphism is continuous: it is `f` on the `M`-coordinate and the identity on the
+`G`-coordinate. -/
+theorem continuous_mapExtension (f : M →*[G] N) (hf : Continuous f) (α : FactorSet G M) :
+    Continuous (α.mapExtension f) :=
+  Extension.isInducing_leftRight.continuous_iff.2 <|
+    ((hf.comp Extension.continuous_left).prodMk Extension.continuous_right).congr fun x => by
+      simp
 
 end Map
 

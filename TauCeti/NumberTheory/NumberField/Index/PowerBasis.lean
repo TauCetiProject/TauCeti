@@ -64,6 +64,6 @@ theorem discr_powerBasis_eq_minpoly_discr (θ : IntegralPrimitiveElement K) :
     Algebra.discr ℚ θ.powerBasis.basis = algebraMap ℤ ℚ (minpoly ℤ θ.1).discr := by
   rw [Algebra.discr_powerBasis_eq_minpoly_discr, powerBasis_gen,
     _root_.NumberField.RingOfIntegers.minpoly_rat_coe,
-    Polynomial.Monic.discr_map (minpoly.monic θ.1.isIntegral)]
+    (minpoly.monic θ.1.isIntegral).discr_map]
 
 end TauCeti.NumberField.IntegralPrimitiveElement

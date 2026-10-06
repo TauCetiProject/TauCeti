@@ -9,6 +9,7 @@ import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp.Charact
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Basic
 import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.RankParity
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.ElementaryAbelian
+public import TauCeti.Topology.Algebra.GroupExtension.ZModFour
 
 /-!
 # The cyclic group of order two is a Demushkin group
@@ -34,11 +35,18 @@ identification `TauCeti.cohomFpLinearEquivContinuousZModDual` of `H¹(ℤ/2, �
 `b s 1 = b 1 s`, and its coboundary takes the value `b 1 1` at both `(1, s, 1)` and `(1, 1, 1)`;
 hence the cup square is not a coboundary.
 
+Since `H²(ℤ/2, 𝔽₂)` is a line, the cup square is the unique nonzero class, and so it is the class
+of the extension `1 → ℤ/2 → ℤ/4 → ℤ/2 → 1` (`TauCeti.zmodFourExtensionClass`), which is nonzero
+because that extension does not split. This is the classical description of the cup square on
+`H¹(ℤ/2, 𝔽₂)` as the Bockstein of the generator, the class of the extension `ℤ/4`.
+
 ## Main results
 
 * `TauCeti.cyclicTwoClass`: the class in `H¹(ℤ/2, 𝔽₂)` of the identity character `ℤ/2 → 𝔽₂`;
   `TauCeti.cyclicTwoClass_ne_zero` and
   `TauCeti.cupFp_cyclicTwoClass_self_ne_zero`: it is nonzero and its cup square is nonzero.
+* `TauCeti.cupFp_cyclicTwoClass_self_eq_zmodFourExtensionClass`: **the cup square of the generator
+  of `H¹(ℤ/2, 𝔽₂)` is the class of the extension `ℤ/4`.**
 * `TauCeti.isDemushkin_multiplicative_zmod_two`: **`ℤ/2` is a Demushkin group at `p = 2`**, and
   `TauCeti.demushkinRank_multiplicative_zmod_two`: its rank is `1`.
 * `TauCeti.not_isDemushkin_multiplicative_zmod_of_ne_two`: at an odd prime, `ℤ/p` is not Demushkin.
@@ -139,6 +147,21 @@ theorem cupFp_cyclicTwoClass_self_ne_zero :
 @[simp]
 theorem cyclicTwoClass_ne_zero : cyclicTwoClass ≠ 0 := fun h ↦
   cupFp_cyclicTwoClass_self_ne_zero (by rw [h]; simp)
+
+/-- **The cup square of the generator of `H¹(ℤ/2, 𝔽₂)` is the class of the extension `ℤ/4`**: both
+are nonzero, and `H²(ℤ/2, 𝔽₂)` is a line over `𝔽₂`, whose only nonzero scalar is `1`. -/
+theorem cupFp_cyclicTwoClass_self_eq_zmodFourExtensionClass :
+    cupFp 2 (Multiplicative (ZMod 2)) cyclicTwoClass cyclicTwoClass = zmodFourExtensionClass := by
+  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_nonzero' _ cupFp_cyclicTwoClass_self_ne_zero).1
+    (finrank_cohomFp_two_multiplicative_zmod 2) zmodFourExtensionClass
+  have hc0 : c ≠ 0 := by
+    rintro rfl
+    exact zmodFourExtensionClass_ne_zero (by rw [← hc, zero_smul])
+  have hc1 : c = 1 := by
+    clear hc
+    revert c
+    decide
+  rw [← hc, hc1, one_smul]
 
 /-! ### `ℤ/2` is Demushkin -/
 

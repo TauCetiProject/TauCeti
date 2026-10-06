@@ -40,6 +40,9 @@ the row and column noises are supplied by the block and vertex strip codings.
 * `TauCeti.Probability.SeparatelyExchangeable.exists_common_visibleCells_coding` — one common
   coding function generates every finite family of visible cells from their contexts and
   independent uniform variables.
+* `TauCeti.Probability.SeparatelyExchangeable.exists_common_visibleArray_coding` — the same
+  coding function generates all the visible cells at once, from i.i.d. uniform variables indexed
+  by the visible positions.
 
 ## References
 
@@ -340,6 +343,94 @@ theorem SeparatelyExchangeable.exists_common_visibleCells_coding
   refine Prod.ext rfl (funext fun p => ?_)
   exact congrArg (g · (q.2 p))
     (congrFun (cellContextOfStrips_comp (α := α) e f p.1.1.1 p.1.1.2) q.1).symm
+
+/-- **One common cell coding generates the whole visible array.** Let `e` and `f` enumerate
+infinitely many hidden rows and hidden columns. There is a single measurable `g` such that feeding
+every visible cell's `cellContext` and its own fresh uniform variable to `g`, the uniform variables
+being i.i.d. over *all* visible cells, reproduces the joint law of the crossing strips and of the
+entire visible part of the array.
+
+This is `SeparatelyExchangeable.exists_common_visibleCells_coding` for the infinite family of all
+visible cells at once: the crossing strips and the coded visible cells together recover the whole
+array law. -/
+theorem SeparatelyExchangeable.exists_common_visibleArray_coding
+    (hρ : SeparatelyExchangeable ρ fun p x => x p) {e f : ℕ → ℕ}
+    (he : (Set.range e).Infinite) (hf : (Set.range f).Infinite) :
+    let H : Set (ℕ × ℕ) := (Set.univ ×ˢ Set.range f) ∪ (Set.range e ×ˢ Set.univ)
+    let V : Set (ℕ × ℕ) := (Set.range e)ᶜ ×ˢ (Set.range f)ᶜ
+    ∃ g : ((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α) → I → α, Measurable (Function.uncurry g) ∧
+      (ρ.prod (Measure.infinitePi fun _ : V => (volume : Measure I))).map
+          (fun q => (H.domRestrict q.1,
+            fun p : V => g (cellContext e f p.1.1 p.1.2 q.1) (q.2 p))) =
+        ρ.map fun x => (H.domRestrict x, V.domRestrict x) := by
+  intro H V
+  obtain ⟨g, hg, hF⟩ := hρ.exists_common_visibleCells_coding he hf
+  refine ⟨g, hg, ?_⟩
+  have hZ : Measurable (H.domRestrict (π := fun _ : ℕ × ℕ => α)) := Set.measurable_restrict H
+  have hcode : Measurable fun q : (ℕ × ℕ → α) × (V → I) =>
+      (H.domRestrict q.1, fun p : V => g (cellContext e f p.1.1 p.1.2 q.1) (q.2 p)) :=
+    (hZ.comp measurable_fst).prodMk (Measurable.of_eval fun p => hg.comp
+      (((measurable_cellContext e f p.1.1 p.1.2).comp measurable_fst).prodMk
+        ((measurable_pi_apply p).comp measurable_snd)))
+  have hread : Measurable fun x : ℕ × ℕ → α => (H.domRestrict x, V.domRestrict x) :=
+    hZ.prodMk (Set.measurable_restrict V)
+  -- Jointly with all the crossing strips, the finite-dimensional marginals in the visible cells
+  -- are those of `exists_common_visibleCells_coding`.
+  have hfin (F : Finset V) :
+      ((ρ.prod (Measure.infinitePi fun _ : V => (volume : Measure I))).map
+          (fun q => (H.domRestrict q.1,
+            fun p : V => g (cellContext e f p.1.1 p.1.2 q.1) (q.2 p)))).map
+        (Prod.map id F.restrict) =
+      (ρ.map fun x => (H.domRestrict x, V.domRestrict x)).map (Prod.map id F.restrict) := by
+    have hFr : Measurable (Prod.map (id : (H → α) → H → α) (F.restrict (π := fun _ => α))) :=
+      measurable_id.prodMap (Finset.measurable_restrict F)
+    have hIr : Measurable (Prod.map (id : (ℕ × ℕ → α) → ℕ × ℕ → α)
+        (F.restrict (π := fun _ => I))) :=
+      measurable_id.prodMap (Finset.measurable_restrict F)
+    have hcodeF : Measurable fun q : (ℕ × ℕ → α) × (F → I) =>
+        (H.domRestrict q.1, fun p : F => g (cellContext e f p.1.1.1 p.1.1.2 q.1) (q.2 p)) :=
+      (hZ.comp measurable_fst).prodMk (Measurable.of_eval fun p => hg.comp
+        (((measurable_cellContext e f p.1.1.1 p.1.1.2).comp measurable_fst).prodMk
+          ((measurable_pi_apply p).comp measurable_snd)))
+    rw [Measure.map_map hFr hcode, Measure.map_map hFr hread]
+    -- Restricting the coded cells to `F` only reads the uniform variables indexed by `F`.
+    have hcomm : Prod.map id F.restrict ∘ (fun q : (ℕ × ℕ → α) × (V → I) =>
+          (H.domRestrict q.1, fun p : V => g (cellContext e f p.1.1 p.1.2 q.1) (q.2 p))) =
+        (fun q : (ℕ × ℕ → α) × (F → I) =>
+          (H.domRestrict q.1, fun p : F => g (cellContext e f p.1.1.1 p.1.1.2 q.1) (q.2 p))) ∘
+          Prod.map id F.restrict :=
+      rfl
+    rw [hcomm, ← Measure.map_map hcodeF hIr, ← Measure.map_prod_map _ _ measurable_id
+      (Finset.measurable_restrict F), Measure.map_id, Measure.infinitePi_map_restrict, hF F]
+    rfl
+  -- Two finite laws on the product agree once they agree on rectangles `s ×ˢ t`; for a fixed
+  -- measurable `s`, the section `t ↦ μ (s ×ˢ t)` is a finite measure on the visible cells, which is
+  -- determined by its finite-dimensional marginals.
+  refine Measure.ext_prod fun {s t} hs ht => ?_
+  have hsec (μ : Measure ((H → α) × (V → α))) :
+      μ (s ×ˢ t) = ((μ.restrict (s ×ˢ Set.univ)).map Prod.snd) t := by
+    rw [Measure.map_apply measurable_snd ht, Measure.restrict_apply (measurable_snd ht)]
+    congr 1
+    ext ⟨y, z⟩
+    simp [and_comm]
+  have hmarg (μ : Measure ((H → α) × (V → α))) (F : Finset V) :
+      ((μ.restrict (s ×ˢ Set.univ)).map Prod.snd).map F.restrict =
+        ((μ.map (Prod.map id F.restrict)).restrict (s ×ˢ Set.univ)).map Prod.snd := by
+    have hFr : Measurable (Prod.map (id : (H → α) → H → α) (F.restrict (π := fun _ => α))) :=
+      measurable_id.prodMap (Finset.measurable_restrict F)
+    have hpre : Prod.map id F.restrict ⁻¹' (s ×ˢ Set.univ) =
+        (s ×ˢ Set.univ : Set ((H → α) × (V → α))) := by
+      ext
+      simp
+    rw [Measure.restrict_map hFr (hs.prod .univ), Measure.map_map measurable_snd hFr,
+      Measure.map_map (Finset.measurable_restrict F) measurable_snd, hpre]
+    rfl
+  rw [hsec, hsec]
+  refine congrFun (congrArg _ (IsProjectiveLimit.unique (P := fun F : Finset V =>
+    (((ρ.map fun x => (H.domRestrict x, V.domRestrict x)).restrict
+      (s ×ˢ Set.univ)).map Prod.snd).map F.restrict) (fun F => ?_) fun F => rfl)) t
+  dsimp only
+  rw [hmarg, hmarg, hfin F]
 
 end TauCeti.Probability
 

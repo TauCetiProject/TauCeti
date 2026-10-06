@@ -19,16 +19,17 @@ pro-`p` group lifts continuously, then `G` is free pro-`p` on a pointed profinit
 subset `s ⊆ G` converging to `1` has a presentation `F_p(insert 1 s, 1) → G`
 (`TauCeti.IsProP.presentation`) that is a topological isomorphism. In particular this holds when
 `cd_p G ≤ 1`, which is **Serre's theorem** with no finite generation hypothesis. Conversely the
-free pro-`p` group on a pointed space is projective, so for pro-`p` groups projectivity and
-freeness coincide.
+free pro-`p` group on a pointed space is projective and has `cd_p ≤ 1`, so for pro-`p` groups
+projectivity, `cd_p ≤ 1` and freeness on a pointed profinite space are the same condition.
 
 The proof runs the finite-rank argument of `TauCeti.Topology.Algebra.Group.Profinite.Free.Serre`
 on a minimal presentation on a pointed space: `G` has a presentation on a subset `s` converging to
 `1` whose kernel lies in the Frattini subgroup of `F_p(insert 1 s, 1)`. Projectivity lifts the
 identity of `G` through it to a continuous homomorphic section, and a Frattini cover of a pro-`p`
 group with such a section is an isomorphism (`TauCeti.IsProP.continuousMulEquivOfLeftInverse`).
-Only this direction of Serre's cohomological characterisation of free pro-`p` groups is proved
-here.
+The converse, that a pro-`p` group free on a pointed profinite space has `cd_p ≤ 1`, is its
+projectivity read through the vanishing of `H²` of a projective pro-`p` group
+(`TauCeti.IsProP.isProjective_iff_cohomologicalDimensionAt_le_one`).
 
 ## Main results
 
@@ -40,6 +41,9 @@ here.
 * `IsProP.exists_convergesToOne_continuousMulEquiv_presentation_of_cohomologicalDimensionAt_le_one`
   (in the `TauCeti` namespace): **Serre's theorem at arbitrary rank**, a pro-`p` group with
   `cd_p ≤ 1` is free pro-`p` on a pointed profinite space.
+* `IsProP.cohomologicalDimensionAt_le_one_iff_exists_convergesToOne_continuousMulEquiv_presentation`
+  (in the `TauCeti` namespace): a pro-`p` group has `cd_p ≤ 1` if and only if it is free pro-`p`
+  on a pointed profinite space.
 
 ## References
 
@@ -97,6 +101,16 @@ theorem exists_convergesToOne_continuousMulEquiv_presentation_of_cohomologicalDi
       ∃ e : freeProPInsertOne p s ≃ₜ* G, ⇑e = ⇑(hG.presentation s) :=
   hG.exists_convergesToOne_continuousMulEquiv_presentation_of_isProjective
     ((cohomologicalDimensionAt_le_iff p G 1).mp (by exact_mod_cast hcd)).isProjective
+
+/-- **Serre's theorem at arbitrary rank, as an equivalence.** A pro-`p` group `G` has `cd_p G ≤ 1`
+if and only if it is free pro-`p` on a pointed profinite space: some subset `s` of `G` converging to
+`1` has a presentation `F_p(insert 1 s, 1) → G` that is a topological isomorphism. -/
+theorem cohomologicalDimensionAt_le_one_iff_exists_convergesToOne_continuousMulEquiv_presentation
+    (hG : IsProP p G) :
+    cohomologicalDimensionAt.{u} p G ≤ 1 ↔ ∃ s : Set G, ConvergesToOne s ∧
+      ∃ e : freeProPInsertOne p s ≃ₜ* G, ⇑e = ⇑(hG.presentation s) :=
+  hG.isProjective_iff_cohomologicalDimensionAt_le_one.symm.trans
+    hG.isProjective_iff_exists_convergesToOne_continuousMulEquiv_presentation
 
 end IsProP
 

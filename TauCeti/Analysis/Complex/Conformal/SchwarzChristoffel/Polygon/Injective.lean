@@ -55,7 +55,10 @@ theorem schwarzChristoffelBoundary_injOn_prevertex_interval
       simpa [ha.injective.eq_iff, Finset.filter_eq'] using he i.succ
     exact schwarzChristoffelPolygon_bounded_edgeSet_inter_subset_vertex_of_adjacent
       a e z₀ ha.monotone i j hadj (ha i.castSucc_lt_succ)
-      (ha j.castSucc_lt_succ) (hfinite _) hcorner (hfinite _) ⟨hzi, hzj⟩
+      (ha j.castSucc_lt_succ) (hfinite _)
+      ⟨hcorner.1, hcorner.2.trans (by norm_num)⟩
+      (by simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he i.succ).2.ne)
+      (hfinite _) ⟨hzi, hzj⟩
   · have hd := disjoint_schwarzChristoffelPolygon_bounded_edgeSet a e z₀ ha he hsum i j
       (by simp only [Fin.lt_def] at hij; omega)
     exact False.elim (Set.disjoint_left.mp hd hzi hzj)

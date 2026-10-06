@@ -33,13 +33,11 @@ so that no downstream statement has to carry the correction.
 
 ## One counting convention, not two
 
-`card_injective_hom_eq_labelledCopyCount` identifies the count in the numerator of `injHomDensity`
-with Mathlib's `SimpleGraph.labelledCopyCount`, and `injHomDensity_eq_labelledCopyCount_div` carries
-that to the density itself. This is proved, not assumed, and it is in this file deliberately:
-without it, `injHomDensity` would silently establish a second counting convention alongside
-Mathlib's. `SimpleGraph.Copy F G` is definitionally an injective homomorphism, so the bridge is an
-equivalence of subtypes; note that Mathlib puts the **host** graph first, so the copy count of `F`
-inside `G` is `G.labelledCopyCount F`.
+`injHomDensity_eq_labelledCopyCount_div` rewrites the numerator of `injHomDensity` as Mathlib's
+`SimpleGraph.labelledCopyCount`, through the counting bridge
+`SimpleGraph.card_injective_hom_eq_labelledCopyCount`. Without it, `injHomDensity` would silently
+establish a second counting convention alongside Mathlib's. Note that Mathlib puts the **host**
+graph first, so the copy count of `F` inside `G` is `G.labelledCopyCount F`.
 
 This settles the *numerator*. Mathlib has no hom-density primitive, so nothing here pins the
 `descFactorial` denominator; that convention is chosen here and is pinned later by the unbiasedness
@@ -61,25 +59,14 @@ lemmas downstream modules should use.
 
 ## Main results
 
-* `card_injective_hom_eq_labelledCopyCount`, `injHomDensity_eq_labelledCopyCount_div` — the bridge
-  to Mathlib's counting primitive, at the level of the count and of the density;
-* `card_hom_eq_card_adjPreservingMaps` — homomorphisms are counted by the
-  adjacency-preserving vertex maps;
+* `injHomDensity_eq_labelledCopyCount_div` — the injective density in terms of Mathlib's counting
+  primitive;
 * `homDensityFin_nonneg`, `homDensityFin_le_one`, `injHomDensity_nonneg`, `injHomDensity_le_one` —
   both densities lie in `[0, 1]`, unconditionally. The degenerate cases are included: when the host
   is empty and the pattern is not, numerator and denominator both vanish and `x / 0 = 0` gives `0`.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 9a — the finite hom-density
-  estimators. The signatures and the counting-bridge proof are taken from
-  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean` (Layer 9a), generalized here from a
-  `SimpleGraph (Fin m)` host to an arbitrary finite host. The hom-versus-injective closeness bound,
-  the sampling laws, the unbiasedness anchor, and finite-graph graphons are separate targets and are
-  not built here.
-* The roadmap lists this bridge under its migration-backed routes, with an independent proof in
-  `cameronfreer/graphon` (pin `6eccca5`). No material is adapted from that source; the proof here
-  follows `Suggested.lean`.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §5.2.
 -/
 
@@ -124,53 +111,11 @@ theorem injHomDensity_def :
 
 /-! ### The bridge to Mathlib's counting primitive -/
 
-/-- The count in the numerator of `injHomDensity` is Mathlib's labelled copy count.
-
-`SimpleGraph.Copy F G` is definitionally an injective homomorphism, so this is an equivalence of
-subtypes. Mathlib takes the host graph first: `G.labelledCopyCount F` counts copies of `F` inside
-`G`.
-
-This settles the numerator against the existing Mathlib primitive, so `injHomDensity` does not
-introduce a parallel counting convention.
-
-Deliberately not `@[simp]`: the left-hand side is not in simp normal form, since `Nat.card` of a
-`Fintype` rewrites to `Fintype.card`, and the repo's `simpNF` linter rejects the annotation. Stating
-it with a `Fintype.card` left-hand side instead would abandon the `Nat.card` counting convention the
-roadmap pins for these densities. -/
-theorem card_injective_hom_eq_labelledCopyCount :
-    Nat.card {φ : F →g G // Function.Injective φ} = G.labelledCopyCount F := by
-  -- `labelledCopyCount` is defined by `classical exact Fintype.card (Copy H G)`, so unfolding it
-  -- exposes a `Fintype (Copy F G)` that only `classical` provides.
-  classical
-  rw [SimpleGraph.labelledCopyCount, ← Nat.card_eq_fintype_card]
-  exact Nat.card_congr
-    { toFun := fun φ => ⟨φ.1, φ.2⟩
-      invFun := fun c => ⟨c.toHom, c.injective'⟩
-      left_inv := fun _ => rfl
-      right_inv := fun _ => rfl }
-
 /-- The injective homomorphism density in terms of Mathlib's labelled copy count. -/
 theorem injHomDensity_eq_labelledCopyCount_div :
     injHomDensity F G =
       (G.labelledCopyCount F : ℝ) / ((Fintype.card W).descFactorial (Fintype.card V) : ℝ) := by
-  rw [injHomDensity_def, card_injective_hom_eq_labelledCopyCount]
-
-/-! ### Homomorphisms as adjacency-preserving vertex maps -/
-
-private def relHomEquivPreservingMaps {α β : Type*} (r : α → α → Prop) (s : β → β → Prop) :
-    (r →r s) ≃ {f : α → β // ∀ a b, r a b → s (f a) (f b)} where
-  toFun φ := ⟨⇑φ, fun _ _ h => φ.map_rel h⟩
-  invFun ψ := ⟨ψ.1, fun {_ _} h => ψ.2 _ _ h⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-omit [Fintype V] [Fintype W] in
-/-- Homomorphisms and adjacency-preserving vertex maps are counted alike. -/
-theorem card_hom_eq_card_adjPreservingMaps :
-    Nat.card (F →g G) = Nat.card {ψ : V → W // ∀ a b, F.Adj a b → G.Adj (ψ a) (ψ b)} :=
-  Nat.card_congr (relHomEquivPreservingMaps F.Adj G.Adj)
-
-variable (F : SimpleGraph V) (G : SimpleGraph W)
+  rw [injHomDensity_def, F.card_injective_hom_eq_labelledCopyCount G]
 
 /-! ### Both densities lie in `[0, 1]` -/
 

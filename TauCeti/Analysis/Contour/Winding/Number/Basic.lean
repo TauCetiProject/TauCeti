@@ -37,19 +37,23 @@ value does not exist.
   the open interval `Set.uIoo a b`. This is what lets a piecewise contour be evaluated one piece
   at a time.
 * `TauCeti.Contour.windingNumber_same` — the generalized winding number on `[a, a]` is `0`.
+* `TauCeti.Contour.windingNumber_eq_zero_of_eq` — if the two endpoints are equal, the generalized
+  winding number is `0`.
 * `TauCeti.Contour.isNullHomologous_iff` — restates `IsNullHomologous` as its vanishing condition,
   so consumers use the predicate without unfolding its hidden body.
+* `TauCeti.Contour.intervalIntegrable_inv_sub_mul_deriv` — integrability of the index integrand
+  for a point off the curve.
 * `TauCeti.Contour.windingNumber_eq_integral_of_avoidance` — reduces `windingNumber` to the ordinary
   index integral `(2πi)⁻¹ · ∮_γ dz/(z − z₀)` under the continuity, avoidance, and integrability
   hypotheses stated there.
 
-This is Layer 0 of the Hungerbühler–Wasem generalized residue theorem (HW Thm 3.3).
+This provides the foundation for the generalized residue theorem (Hungerbühler–Wasem, Thm 3.3).
 
 ## Provenance
 
 Adapted from the AINTLIB `LeanModularForms` project, file
 `ForMathlib/GeneralizedWindingNumber.lean`, specialised to the raw-function
-(`γ : ℝ → ℂ` on `[a, b]`) design of the contour-integration roadmap.
+(`γ : ℝ → ℂ` on `[a, b]`) setting.
 
 ## References
 
@@ -61,7 +65,7 @@ public section
 
 noncomputable section
 
-open Filter Topology
+open Filter Topology MeasureTheory
 
 namespace TauCeti.Contour
 
@@ -92,9 +96,7 @@ theorem windingNumber_eq_of_hasCauchyPVAt {γ : ℝ → ℂ} {a b : ℝ} {z₀ L
 @[simp]
 theorem windingNumber_same (γ : ℝ → ℂ) (a : ℝ) (z₀ : ℂ) :
     windingNumber γ a a z₀ = 0 := by
-  rw [windingNumber_eq_of_hasCauchyPVAt
-    (HasCauchyPVAt.refl γ a (fun z : ℂ => (z - z₀)⁻¹) z₀)]
-  ring
+  rw [windingNumber_eq_cauchyPVAt, cauchyPVAt_same, mul_zero]
 
 /-- The generalized winding number of a constant curve is zero on every parameter interval. -/
 @[simp]
@@ -109,20 +111,19 @@ theorem windingNumber_const (x : ℂ) (a b : ℝ) (z : ℂ) :
     · simpa only [deriv_const, mul_zero, ite_self, intervalIntegral.integral_zero] using
         (tendsto_const_nhds :
           Filter.Tendsto (fun _ : ℝ => (0 : ℂ)) (nhdsWithin 0 (Set.Ioi 0)) (nhds 0))
-  rw [windingNumber_eq_of_hasCauchyPVAt hpv]
-  simp
+  rw [windingNumber_eq_of_hasCauchyPVAt hpv, mul_zero]
 
 /-- **The generalized winding number is unchanged when the curves agree almost everywhere and
 their derivatives agree almost everywhere off `z₀`.** Derivative agreement is only needed where
 the curve misses `z₀`: the `ε`-truncation deletes the integrand at `z₀` for every positive `ε`.
 Curve equality alone does not suffice — the index integrand contains `deriv γ`. -/
 theorem windingNumber_congr_curve_ae {γ₁ γ₂ : ℝ → ℂ} {a b : ℝ} {z₀ : ℂ}
-    (h_eq : γ₁ =ᵐ[MeasureTheory.volume.restrict (Set.uIoc a b)] γ₂)
-    (h_deriv : ∀ᵐ t ∂MeasureTheory.volume.restrict (Set.uIoc a b),
+    (h_eq : γ₁ =ᵐ[volume.restrict (Set.uIoc a b)] γ₂)
+    (h_deriv : ∀ᵐ t ∂volume.restrict (Set.uIoc a b),
       γ₁ t ≠ z₀ → deriv γ₁ t = deriv γ₂ t) :
     windingNumber γ₁ a b z₀ = windingNumber γ₂ a b z₀ := by
-  unfold windingNumber
-  rw [cauchyPVAt_congr_curve_ae h_eq h_deriv]
+  rw [windingNumber_eq_cauchyPVAt, windingNumber_eq_cauchyPVAt,
+    cauchyPVAt_congr_curve_ae h_eq h_deriv]
 
 /-- **The generalized winding number depends on the curve only through its values on the open
 interval between `a` and `b`.** Agreement on the open interval suffices even though the index
@@ -132,13 +133,12 @@ agrees with the simple curve computing that piece's contribution. -/
 theorem windingNumber_congr_curve {γ₁ γ₂ : ℝ → ℂ} {a b : ℝ} {z₀ : ℂ}
     (h_eq : Set.EqOn γ₁ γ₂ (Set.uIoo a b)) :
     windingNumber γ₁ a b z₀ = windingNumber γ₂ a b z₀ := by
-  unfold windingNumber
-  rw [cauchyPVAt_congr_curve h_eq]
+  rw [windingNumber_eq_cauchyPVAt, windingNumber_eq_cauchyPVAt, cauchyPVAt_congr_curve h_eq]
 
 /-- If the two endpoints are equal, the generalized winding number is `0`. -/
 theorem windingNumber_eq_zero_of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (z₀ : ℂ) :
     windingNumber γ a b z₀ = 0 := by
-  subst b
+  subst hab
   exact windingNumber_same γ a z₀
 
 /-- A curve `γ` on `[a, b]` is **null-homologous** in `Ω` when its generalized winding number
@@ -159,8 +159,8 @@ interval-integrable, then `(γ t - w)⁻¹ * deriv γ t` is interval-integrable,
 factor times an integrable one. -/
 theorem intervalIntegrable_inv_sub_mul_deriv {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ}
     (hγ_cont : ContinuousOn γ (Set.uIcc a b)) (hoff : ∀ t ∈ Set.uIcc a b, γ t ≠ w)
-    (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) MeasureTheory.volume a b) :
-    IntervalIntegrable (fun t ↦ (γ t - w)⁻¹ * deriv γ t) MeasureTheory.volume a b :=
+    (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b) :
+    IntervalIntegrable (fun t ↦ (γ t - w)⁻¹ * deriv γ t) volume a b :=
   hderiv_int.continuousOn_mul ((hγ_cont.sub continuousOn_const).inv₀
     fun t ht ↦ sub_ne_zero.mpr (hoff t ht))
 
@@ -169,7 +169,7 @@ interval-integrable, the generalized winding number is the ordinary index integr
 value collapses to `(2πi)⁻¹ · ∮_γ dz/(z − z₀)`. -/
 theorem windingNumber_eq_integral_of_avoidance {γ : ℝ → ℂ} {a b : ℝ} {z₀ : ℂ}
     (h_cont : ContinuousOn γ (Set.uIcc a b)) (h_avoid : ∀ t ∈ Set.uIcc a b, γ t ≠ z₀)
-    (hf_int : IntervalIntegrable (fun t => (γ t - z₀)⁻¹ * deriv γ t) MeasureTheory.volume a b) :
+    (hf_int : IntervalIntegrable (fun t => (γ t - z₀)⁻¹ * deriv γ t) volume a b) :
     windingNumber γ a b z₀
       = (2 * (Real.pi : ℂ) * Complex.I)⁻¹ * ∫ t in a..b, (γ t - z₀)⁻¹ * deriv γ t :=
   windingNumber_eq_of_hasCauchyPVAt (HasCauchyPVAt.of_avoidance h_cont h_avoid hf_int)

@@ -7,6 +7,9 @@ module
 
 public import Mathlib.RepresentationTheory.Intertwining
 public import Mathlib.RepresentationTheory.Maschke
+public import Mathlib.RepresentationTheory.FDRep
+public import Mathlib.Algebra.Category.FGModuleCat.Abelian
+public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 import TauCeti.RepresentationTheory.AsModule
 
 /-!
@@ -17,7 +20,9 @@ order of the finite group `G` is invertible, a `k[G]`-linear injection has a `k[
 inverse (`MonoidAlgebra.exists_leftInverse_of_injective`).  This file reads that statement through
 Mathlib's dictionary `Representation.IntertwiningMap.equivLinearMapAsModule` between intertwining
 maps and `k[G]`-linear maps of the attached modules, so that it applies to representations as they
-are usually given, without passing to `Representation.asModule`.
+are usually given, without passing to `Representation.asModule`. It also gives a splitting of every
+short exact sequence in `Rep k G` and `FDRep k G`, the categorical form used to compare split and
+exact Grothendieck rings.
 
 The form recorded here is the one used to compare the two meanings of "a constituent of `ρ`": an
 irreducible `σ` that embeds in `ρ` is also a quotient of `ρ`, because the embedding splits.
@@ -26,6 +31,12 @@ irreducible `σ` that embeds in `ρ` is also a quotient of `ρ`, because the emb
 
 * `Representation.IntertwiningMap.exists_leftInverse_of_injective`: an injective intertwining map
   has an intertwining left inverse.
+* `TauCeti.Rep.nonempty_splitting_of_shortExact`: a short exact sequence in `Rep` splits.
+* `TauCeti.FDRep.nonempty_splitting_of_shortExact`: a short exact sequence in `FDRep` splits.
+
+## References
+
+* J.-P. Serre, *Linear Representations of Finite Groups*, Springer GTM 42 (1977), Chapter 1.
 -/
 
 public section
@@ -66,3 +77,46 @@ theorem exists_leftInverse_of_injective (f : IntertwiningMap ρ σ) (hf : Functi
     _ = v := hqv
 
 end Representation.IntertwiningMap
+
+namespace TauCeti
+
+open CategoryTheory CategoryTheory.Limits
+
+universe u v w
+
+variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G]
+  [NeZero (Nat.card G : k)]
+
+namespace Rep
+
+/-- Every short exact sequence of representations splits when the group
+order is invertible in the coefficient field. -/
+theorem nonempty_splitting_of_shortExact {S : ShortComplex (Rep.{w} k G)}
+    (hS : S.ShortExact) : Nonempty S.Splitting := by
+  have := hS.mono_f
+  obtain ⟨r, hr⟩ := S.f.hom.exists_leftInverse_of_injective
+    ((Rep.mono_iff_injective S.f).mp inferInstance)
+  refine ⟨ShortComplex.Splitting.ofExactOfRetraction S hS.exact
+    (ConcreteCategory.ofHom r) ?_ hS.epi_g⟩
+  apply Rep.hom_ext
+  simpa only [Rep.hom_comp, ConcreteCategory.hom_ofHom, Rep.hom_id] using hr
+
+end Rep
+
+namespace FDRep
+
+/-- Every short exact sequence of finite-dimensional representations splits when the group
+order is invertible in the coefficient field. -/
+theorem nonempty_splitting_of_shortExact {S : ShortComplex (FDRep k G)}
+    (hS : S.ShortExact) : Nonempty S.Splitting := by
+  let F := forget₂ (FDRep k G) (Rep k G)
+  obtain ⟨s⟩ := Rep.nonempty_splitting_of_shortExact (hS.map_of_exact F)
+  refine ⟨ShortComplex.Splitting.ofExactOfRetraction S hS.exact
+    (F.preimage s.r) ?_ hS.epi_g⟩
+  apply F.map_injective
+  rw [F.map_comp, F.map_preimage, F.map_id]
+  exact s.f_r
+
+end FDRep
+
+end TauCeti

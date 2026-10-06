@@ -9,7 +9,7 @@ import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 import TauCeti.Data.Fin.Basic
 
 public import TauCeti.LinearAlgebra.TensorSquare
-public import TauCeti.LinearAlgebra.ExteriorPower
+public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.RepresentationTheory.ExteriorPower
 public import TauCeti.RepresentationTheory.SymmetricPower
 public import TauCeti.LinearAlgebra.Trace.Exact

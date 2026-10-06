@@ -7,13 +7,16 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
+-- Private: `noncomm_ring` is used only in the proof of `ι_mul_ι_mul_ι_add_reverse`.
+import Mathlib.Tactic.NoncommRing
 
 /-!
 # Reversal on Clifford subalgebras
 
 This file restricts Clifford reversal to the even subalgebra, records its action on bivectors,
-develops its naturality under the standard even-algebra equivalences, and records general
-reverse-norm identities and comparisons with Clifford conjugation.
+develops its naturality under the standard even-algebra equivalences, computes a product of three
+vectors plus its reversal, and records general reverse-norm identities and comparisons with
+Clifford conjugation.
 -/
 
 public section
@@ -132,6 +135,35 @@ theorem equivEven_symm_reverseEven (Q : QuadraticForm R M) (x : even (EquivEven.
   exact congrArg (fun y : even (EquivEven.Q' Q) =>
     reverse (y : CliffordAlgebra (EquivEven.Q' Q)))
       ((equivEven Q).apply_symm_apply x).symm
+
+/-! ### Reversal of products of vectors -/
+
+section Polar
+
+open QuadraticMap
+
+variable (Q)
+
+/-- **A product of three vectors plus its reversal is a vector**, namely
+`polar b c • a - polar a c • b + polar a b • c`: reversing the product costs three transpositions
+of adjacent generators, each of which contributes a polarization term. This is the analogue one
+degree up of Mathlib's `CliffordAlgebra.ι_mul_ι_add_swap`. -/
+theorem ι_mul_ι_mul_ι_add_reverse (a b c : M) :
+    ι Q a * ι Q b * ι Q c + reverse (ι Q a * ι Q b * ι Q c) =
+      ι Q (polar Q b c • a - polar Q a c • b + polar Q a b • c) := by
+  calc ι Q a * ι Q b * ι Q c + reverse (ι Q a * ι Q b * ι Q c)
+      = (ι Q c * ι Q b + ι Q b * ι Q c) * ι Q a - ι Q b * (ι Q c * ι Q a + ι Q a * ι Q c) +
+          (ι Q b * ι Q a + ι Q a * ι Q b) * ι Q c := by
+        simp only [reverse.map_mul, reverse_ι]
+        noncomm_ring
+    _ = algebraMap R _ (polar Q c b) * ι Q a - ι Q b * algebraMap R _ (polar Q c a) +
+          algebraMap R _ (polar Q b a) * ι Q c := by
+        simp only [ι_mul_ι_add_swap]
+    _ = ι Q (polar Q b c • a - polar Q a c • b + polar Q a b • c) := by
+        simp only [map_add, map_sub, map_smul, Algebra.smul_def, Algebra.commutes, polar_comm Q c b,
+          polar_comm Q c a, polar_comm Q b a]
+
+end Polar
 
 /-! ### Reverse norms and comparison with Clifford conjugation -/
 

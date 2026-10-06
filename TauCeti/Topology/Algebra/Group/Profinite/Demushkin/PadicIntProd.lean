@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Basic
-public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.QInvariant
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Abelianization
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.FinitePresentation
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.CohomFp
 import TauCeti.Data.ZMod.TrivialAction
+import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Equiv
 
 /-!
 # `ℤ_p × ℤ_p` is a Demushkin group
@@ -53,7 +54,8 @@ classification, so that this example is the rank-two, `q = 0` normal form itself
 * `TauCeti.finrank_cohomFp_two_multiplicative_pi_padicInt_fin_two`: `H²(ℤ_p × ℤ_p, 𝔽_p)` is
   one-dimensional.
 * `TauCeti.isDemushkin_multiplicative_pi_padicInt_fin_two`: **`ℤ_p × ℤ_p` is a Demushkin group**,
-  of rank two (`TauCeti.demushkinRank_multiplicative_pi_padicInt_fin_two`).
+  of rank two (`TauCeti.demushkinRank_multiplicative_pi_padicInt_fin_two`) and with `q`-invariant
+  `0` (`TauCeti.demushkinQ_multiplicative_pi_padicInt_fin_two`).
 
 ## References
 
@@ -228,5 +230,14 @@ theorem demushkinRank_multiplicative_pi_padicInt_fin_two :
     demushkinRank (isDemushkin_multiplicative_pi_padicInt_fin_two p) = 2 := by
   rw [demushkinRank_def, topologicalGeneratorRankNat_multiplicative_pi_padicInt,
     Nat.card_eq_fintype_card, Fintype.card_fin]
+
+/-- **`ℤ_p × ℤ_p` is a Demushkin group with `q`-invariant `0`**: it is the `q = 0` normal form
+`⟨x₁, x₂ ∣ (x₁, x₂)⟩`, whose abelianization `ℤ_p × ℤ_p` is torsion-free. -/
+@[simp]
+theorem demushkinQ_multiplicative_pi_padicInt_fin_two
+    (hG : IsDemushkin p (Multiplicative (Fin 2 → ℤ_[p]))) : demushkinQ hG = 0 := by
+  rw [demushkinQ_congr hG (IsDemushkin.of_equiv p hG (presentedProPEquivPiPadicInt p).symm)
+    (presentedProPEquivPiPadicInt p).symm]
+  exact (demushkinQ_presentedProP_demushkinWordNeTwo_eq_zero_iff (dvd_zero p) _).2 rfl
 
 end TauCeti

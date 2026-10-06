@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 import TauCeti.CategoryTheory.Comma.Over
 
@@ -36,7 +36,7 @@ antipode calculations.
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
 * The closed-subgroup packaging specializes the generic construction abstracted from
-  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic`, which in turn adapts
+  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic`, which in turn adapts
   `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Borel` and
   `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic`.
 
@@ -65,6 +65,21 @@ theorem weightLeviDefiningHopfIdeal_def (w : Fin N → ℤ) :
     weightLeviDefiningHopfIdeal R w =
       weightParabolicDefiningHopfIdeal R w ⊔ weightParabolicDefiningHopfIdeal R (-w) := by
   rw [weightLeviDefiningHopfIdeal]
+
+/-- A morphism out of the coordinate algebra of `GL_N` kills the weight-Levi defining Hopf ideal
+as soon as it kills every matrix coordinate between distinct weight blocks. -/
+theorem weightLeviDefiningHopfIdeal_toIdeal_le_ker {A : Type*} [CommRing A] [Algebra R A]
+    (w : Fin N → ℤ) (f : coordinateHopfAlgebra R N →ₐ[R] A)
+    (hf : ∀ i j, w i ≠ w j → f (coordinateHopfAlgebraAlgEquiv R N
+      (coordinateRingMap R N (MvPolynomial.X (i, j)))) = 0) :
+    (weightLeviDefiningHopfIdeal R w).toIdeal ≤ RingHom.ker f.toRingHom := by
+  rw [weightLeviDefiningHopfIdeal_def, HopfIdeal.sup_toIdeal,
+    weightParabolicDefiningHopfIdeal_toIdeal, weightParabolicDefiningHopfIdeal_toIdeal]
+  refine sup_le (Ideal.span_le.2 fun x hx ↦ ?_) (Ideal.span_le.2 fun x hx ↦ ?_) <;>
+    obtain ⟨i, j, hij, rfl⟩ := (mem_weightParabolicRelationSet_iff R _ x).mp hx <;>
+    rw [SetLike.mem_coe, RingHom.mem_ker]
+  · exact hf i j hij.ne
+  · exact hf i j fun h ↦ hij.ne (by simp [h])
 
 /-- The coordinate Hopf algebra of the weight Levi attached to `w`. -/
 noncomputable abbrev weightLeviCoordinateHopfAlgebra (w : Fin N → ℤ) :

@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.BaseChange
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.BaseChange
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 
@@ -56,6 +57,8 @@ torus maps lies in the base change of the integral toral carrier; equality is no
   transported weight-torus coordinate map through the transported carrier.
 * `kostantToralBaseChangePresentationIdeal_le_commonKernelHopfIdeal`: the generated-over-`A`
   carrier is a closed subgroup of the transported integral carrier.
+* `kostantToralBaseChangePresentationIdeal_eq_generated_of_definingIdeal_eq`: equal integral
+  toral and root-generated defining ideals give equal transported presentations.
 * `kostantToralBaseChangePresentationIsoOfEq`,
   `kostantRootSubgroupToralCoordinateMapOfEq` and `kostantWeightTorusToralCoordinateMapOfEq`:
   the same identification and integral generator maps, read through a named spelling `J` of the
@@ -309,6 +312,20 @@ theorem kostantToralBaseChangePresentationIdeal_le_commonKernelHopfIdeal :
       e h ρ M hM hnil b wt A i
   · exact kostantToralBaseChangePresentationIdeal_toIdeal_le_torus_ker
       e h ρ M hM hnil b wt A
+
+/-- Equality of the integral toral and root-generated defining ideals makes the transported
+toral and root-generated presentations in `O(GLₙ/A)` equal, for every commutative ring `A`. This
+does not identify them with the common kernel of the root-subgroup maps formed anew over `A`. -/
+theorem kostantToralBaseChangePresentationIdeal_eq_generated_of_definingIdeal_eq
+    (hideal : kostantToralDefiningIdeal e h ρ M hM hnil b wt =
+      kostantGeneratedDefiningIdeal e h ρ M hM hnil b) :
+    kostantToralBaseChangePresentationIdeal e h ρ M hM hnil b wt A =
+      kostantGeneratedGeneralLinearBaseChangeIdeal e h ρ M hM hnil b A := by
+  apply HopfIdeal.ext
+  intro x
+  rw [mem_kostantToralBaseChangePresentationIdeal_iff,
+    mem_kostantGeneratedGeneralLinearBaseChangeIdeal_iff,
+    kostantToralBaseChangeIdeal_def, kostantGeneratedBaseChangeIdeal_def, hideal]
 
 /-! ## Transport along a named spelling of the integral defining ideal
 

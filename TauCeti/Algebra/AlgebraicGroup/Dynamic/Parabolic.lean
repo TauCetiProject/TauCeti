@@ -232,8 +232,8 @@ variable (φ : A →ₐ[R] B) (l : H →ₐc[R] LaurentPolynomial R)
 
 /-- Change of value algebra commutes with change of source Hopf algebra on points. -/
 theorem mapValue_mapDomain (x : WithConv (LaurentPolynomial R →ₐ[R] A)) :
-    AlgHom.mapValue φ (AlgHom.mapDomain l x) = AlgHom.mapDomain l (AlgHom.mapValue φ x) :=
-  rfl
+    AlgHom.mapValue φ (AlgHom.mapDomain l x) = AlgHom.mapDomain l (AlgHom.mapValue φ x) := by
+  simp only [AlgHom.mapValue_apply, AlgHom.mapDomain_apply, AlgHom.comp_assoc]
 
 /-- A cocharacter, read on points, is natural in the value algebra. -/
 theorem mapValue_pointsHom (u : Aˣ) :

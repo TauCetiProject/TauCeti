@@ -30,6 +30,8 @@ image of `a` then witnesses the same criterion for `M/F`.
   is generated over `F` by the image of `L`, then `M/F` is unramified.
 * `TauCeti.IsUnramified.of_fieldRange_sup_fieldRange_eq_top`: **composita**; if `M` is the
   compositum of the images of two unramified extensions of `K`, then `M/K` is unramified.
+* `TauCeti.IsUnramified.of_algEquiv`: a local field `K`-isomorphic to an unramified extension of
+  `K` is unramified over `K`.
 
 ## References
 
@@ -110,15 +112,19 @@ theorem IsUnramified.of_fieldRange_sup_fieldRange_eq_top [IsUnramified K L₁] [
   let _ := ι₂.toAlgebra
   have : IsScalarTower K L₂ M := .of_algebraMap_eq fun x ↦ (ι₂.commutes x).symm
   have : ValuativeExtension L₂ M := ι₂.valuativeExtension
-  -- `L₂(ι₁ L₁)` contains both images, hence their compositum `M`.
-  have hle : ι₁.fieldRange ⊔ ι₂.fieldRange ≤
-      (IntermediateField.adjoin L₂ (Set.range ι₁)).restrictScalars K :=
-    sup_le (fun y hy ↦ IntermediateField.subset_adjoin L₂ _ hy)
-      (by rintro _ ⟨z, rfl⟩; exact IntermediateField.algebraMap_mem _ z)
-  -- So `M/L₂` is unramified by base change, and `M/K` by transitivity.
+  -- `M` is generated over `L₂` by the image of `L₁`, so `M/L₂` is unramified by base change, and
+  -- `M/K` by transitivity.
   have := IsUnramified.of_adjoin_range_eq_top (F := L₂) ι₁
-    (eq_top_iff.2 fun x _ ↦ hle (h ▸ IntermediateField.mem_top))
+    (IntermediateField.adjoin_range_eq_top_of_fieldRange_sup_fieldRange_eq_top ι₁
+      ((sup_comm _ _).trans h))
   exact IsUnramified.trans K L₂ M
+
+/-- **Unramifiedness is invariant under isomorphism.** A nonarchimedean local field which is
+`K`-isomorphic to an unramified extension of `K` is unramified over `K`. -/
+theorem IsUnramified.of_algEquiv [IsUnramified K L₁] (e : L₁ ≃ₐ[K] M) : IsUnramified K M :=
+  IsUnramified.of_fieldRange_sup_fieldRange_eq_top (e : L₁ →ₐ[K] M) (e : L₁ →ₐ[K] M) <| by
+    rw [sup_idem, AlgHom.fieldRange_eq_top]
+    exact e.surjective
 
 end Compositum
 

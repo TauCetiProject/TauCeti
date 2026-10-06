@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
+import TauCeti.Algebra.CharP.LocalRing
+import TauCeti.RingTheory.DiscreteValuationRing.Basic
 
 /-!
 # The normalized valuation of a natural number in a local field
@@ -32,6 +34,8 @@ characteristic is the absolute ramification index of `K`.
 
 ## Main results
 
+* `TauCeti.natCast_ne_zero_of_coprime_ringChar`: a natural number prime to the residue
+  characteristic is nonzero in `K`.
 * `TauCeti.normalizedValuation_natCast`: the characteristic equation, which also records that
   the value is nonnegative.
 * `TauCeti.toAdd_normalizedValuation_natCast` and `TauCeti.valuation_natCast_eq_pow`: the
@@ -46,6 +50,8 @@ characteristic is the absolute ramification index of `K`.
   is identically zero.
 * `TauCeti.normalizedAbsoluteValue_natCast`: the normalized absolute value of `n` is
   `q ^ (-natCastValuation K n hn)`.
+* `TauCeti.IsDiscreteValuationRing.addVal_natCast`: the same valuation in the
+  discrete-valuation-ring convention.
 
 ## References
 
@@ -62,18 +68,23 @@ open scoped NNRat WithZero
 
 namespace TauCeti
 
-variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K]
+variable {K : Type*} [Field K] [ValuativeRel K]
 
-omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
 /-- A natural number that is a unit in the integer ring is nonzero in the field. -/
 theorem natCast_ne_zero_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) : (n : K) ≠ 0 := by
   simpa only [map_natCast] using (hn.map (Subring.subtype 𝒪[K])).ne_zero
 
-omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
+/-- A natural number prime to the residue characteristic is nonzero in the field. -/
+theorem natCast_ne_zero_of_coprime_ringChar {n : ℕ} (hn : n.Coprime (ringChar 𝓀[K])) :
+    (n : K) ≠ 0 :=
+  natCast_ne_zero_of_isUnit <| IsLocalRing.isUnit_natCast_iff_not_dvd.2 fun h ↦
+    CharP.ringChar_ne_one (hn.symm.eq_one_of_dvd h)
+
 /-- If `2` is a unit in the integer ring, it is nonzero in the field. -/
 theorem two_ne_zero_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) : (2 : K) ≠ 0 := by
   exact_mod_cast natCast_ne_zero_of_isUnit (K := K) (n := 2) (by exact_mod_cast h2)
+
+variable [TopologicalSpace K] [IsNonarchimedeanLocalField K]
 
 -- The declaration sequence follows the human-authored specification in
 -- `TauCetiRoadmap/LocalFieldsRamification/Suggested.lean`.
@@ -138,8 +149,7 @@ variable (K) in
 exactly when the residue characteristic of `K` does not divide `n`. -/
 theorem natCastValuation_eq_zero_iff_not_dvd (n : ℕ) (hn : (n : K) ≠ 0) :
     natCastValuation K n hn = 0 ↔ ¬ ringChar 𝓀[K] ∣ n := by
-  rw [natCastValuation_eq_zero_iff, ← IsLocalRing.residue_ne_zero_iff_isUnit, map_natCast,
-    ne_eq, ← ringChar.spec]
+  rw [natCastValuation_eq_zero_iff, IsLocalRing.isUnit_natCast_iff_not_dvd]
 
 variable (K) in
 /-- For a prime `p`, the normalized valuation of `p` is nonzero exactly when `p` is the residue
@@ -246,6 +256,24 @@ theorem span_natCast_eq_maximalIdeal_pow (n : ℕ) (hn : (n : K) ≠ 0) :
       Subring.coe_mul, Subring.coe_pow, Subring.coe_natCast] using hu
   rw [← hu', Ideal.span_singleton_mul_left_unit u.isUnit, hπ.maximalIdeal_eq,
     Ideal.span_singleton_pow]
+
+namespace IsDiscreteValuationRing
+
+variable (K) in
+/-- The additive valuation of a nonzero natural-number cast in the integer ring agrees with
+`natCastValuation` of its image in the field. -/
+@[simp] theorem addVal_natCast (n : ℕ) (hn : (n : K) ≠ 0) :
+    _root_.IsDiscreteValuationRing.addVal 𝒪[K] (n : 𝒪[K]) =
+      (natCastValuation K n hn : ℕ∞) := by
+  have hn' : (n : 𝒪[K]) ≠ 0 := fun h => hn (by
+    simpa only [Subring.coe_natCast, Subring.coe_zero] using
+      congrArg (fun x : 𝒪[K] => (x : K)) h)
+  rw [TauCeti.IsDiscreteValuationRing.addVal_eq_multiplicity_span_singleton hn',
+    span_natCast_eq_maximalIdeal_pow K n hn,
+    multiplicity_pow_self_of_prime
+      (Ideal.prime_of_isPrime (IsDiscreteValuationRing.not_a_field 𝒪[K]) inferInstance)]
+
+end IsDiscreteValuationRing
 
 /-- The multiplicative valuation of a nonzero natural-number cast is the corresponding power of
 the valuation of any uniformizer. -/

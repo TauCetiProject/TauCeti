@@ -35,9 +35,7 @@ open _root_.TauCeti.Units
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
-/-- The finite residue field, used to state the quadratic character formula. -/
-noncomputable local instance instFintypeOddResidueFormula : Fintype 𝓀[K] :=
-  Fintype.ofFinite _
+attribute [local instance] instFintypeResidueField
 
 /-- The diagonal uniformizer value is the residue sign of `-1`. -/
 theorem hilbertSymbol_uniformizer_self (h2 : IsUnit (2 : 𝒪[K]))
@@ -59,10 +57,11 @@ theorem hilbertSymbol_oddResidue_formula (h2 : IsUnit (2 : 𝒪[K]))
   let i : 𝒪[K]ˣ → Kˣ := Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K)
   have huv : hilbertSymbol (i u) (i v) = 1 :=
     hilbertSymbol_units_map_eq_one h2 u v
-  rw [hilbertSymbol_mul_left h2, hilbertSymbol_mul_right h2,
-    hilbertSymbol_mul_right h2, hilbertSymbol_zpow_left h2,
-    hilbertSymbol_zpow_right h2, hilbertSymbol_zpow_right h2,
-    hilbertSymbol_zpow_left h2, huv]
+  have h2' : (2 : K) ≠ 0 := two_ne_zero_of_isUnit_two h2
+  rw [hilbertSymbol_mul_left h2', hilbertSymbol_mul_right h2',
+    hilbertSymbol_mul_right h2', hilbertSymbol_zpow_left h2',
+    hilbertSymbol_zpow_right h2', hilbertSymbol_zpow_right h2',
+    hilbertSymbol_zpow_left h2', huv]
   rw [← zpow_mul, hilbertSymbol_uniformizer_self h2 hπ,
     oddResidueSign_neg_one h2]
   have hpu : hilbertSymbol (i u) π = oddResidueSign u :=

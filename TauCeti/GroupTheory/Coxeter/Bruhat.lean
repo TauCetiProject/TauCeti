@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Coxeter.StrongExchange
+import Mathlib.Data.List.GetD
+import Mathlib.Tactic.Group
 
 /-!
 # The Bruhat order on a Coxeter group

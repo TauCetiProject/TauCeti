@@ -24,13 +24,11 @@ with all three conditions in hand, `f` itself bundles into a `CuspForm` of the l
 
 Everything rests on the fact that `diag(d, 1)⁻¹ · A` carries `∞` to a cusp, for any
 `A ∈ SL(2, ℤ)`. That is *not* a computation: the matrix is rational, and rational matrices carry
-cusps to cusps — `IsCusp.smul_map_ratCast`, already in `Cusps/Rat/Basic.lean`. So the only work
-is to name `diag(d, 1)` over `ℚ` and record that it pushes forward to `scaleGL d`.
+cusps to cusps — `IsCusp.smul_map_ratCast`, already in `Cusps/Rat/Basic.lean`. `Degeneracy.lean`
+supplies `scaleGLRat d`, the matrix `diag(d, 1)` over `ℚ`, and its pushforward to `scaleGL d`.
 
 ## Main results
 
-* `TauCeti.scaleGLRat`, `TauCeti.map_ratCast_scaleGLRat`: `diag(d, 1)` over `ℚ`, and its
-  pushforward to `ℝ`.
 * `TauCeti.isCusp_inv_scaleGL_mul_mapGL_smul_infty`: `diag(d, 1)⁻¹ · A` sends `∞` to a cusp of
   any arithmetic subgroup.
 * `TauCeti.isZeroAtImInfty_slash_inv_scaleGL_mul_mapGL`: a cusp form therefore vanishes at
@@ -95,24 +93,6 @@ open scoped MatrixGroups ModularForm
 namespace TauCeti
 
 variable {d : ℕ} [NeZero d]
-
-/-- **`diag(d, 1)` over `ℚ`.** `scaleGL` is stated over `ℝ`, where the slash action lives, but the
-cusp argument needs the same matrix over `ℚ`, because what makes `diag(d, 1)⁻¹ · A` carry cusps to
-cusps is precisely that it is *rational*. -/
-noncomputable def scaleGLRat (d : ℕ) [NeZero d] : GL (Fin 2) ℚ :=
-  diagGL ![Units.mk0 (d : ℚ) (Nat.cast_ne_zero.mpr (NeZero.ne d)), 1]
-
-/-- `scaleGLRat` pushes forward to `scaleGL`. -/
-@[simp] lemma map_ratCast_scaleGLRat (d : ℕ) [NeZero d] :
-    Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (scaleGLRat d) = scaleGL d := by
-  -- `scaleGL` sits in a `public section` without `@[expose]`, so its body is sealed to this
-  -- module; `coe_scaleGL` is the interface, exactly as `Degeneracy.lean` uses it itself.
-  refine Units.ext ?_
-  rw [coe_scaleGL]
-  ext i j
-  simp only [Matrix.GeneralLinearGroup.map, Units.coe_map, scaleGLRat, diagGL_coe,
-    Matrix.diagonal_fin_two]
-  fin_cases i <;> fin_cases j <;> simp
 
 /-- **`diag(d, 1)⁻¹ · A` carries `∞` to a cusp.** For any `A ∈ SL(2, ℤ)` and any arithmetic
 subgroup, the point `(diag(d, 1)⁻¹ · A) • ∞` is a cusp.

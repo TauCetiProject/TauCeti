@@ -102,50 +102,11 @@ local instance factPrimeFive : Fact (Nat.Prime 5) := ⟨by decide⟩
 /-- `X ^ 5 - X - 1` is irreducible over `ZMod 5`. -/
 theorem _root_.Polynomial.irreducible_X_pow_five_sub_X_sub_one_zmod_five :
     Irreducible (X ^ 5 - X - 1 : (ZMod 5)[X]) := by
-  have hmonic : Monic (X ^ 5 - X - 1 : (ZMod 5)[X]) := by
-    rw [sub_sub]
-    apply Polynomial.monic_X_pow_sub
-    compute_degree!
-  have hpdeg : (X ^ 5 - X - 1 : (ZMod 5)[X]).natDegree = 5 := by
-    rw [sub_sub]
-    compute_degree!
-  have hpone : (X ^ 5 - X - 1 : (ZMod 5)[X]) ≠ 1 := by
-    intro h
-    rw [h, Polynomial.natDegree_one] at hpdeg
-    omega
-  rw [hmonic.irreducible_iff_lt_natDegree_lt hpone]
-  intro q hq hdeg hdvd
-  have hdeg' : q.natDegree = 1 ∨ q.natDegree = 2 := by
-    rw [hpdeg] at hdeg
-    simp only [Finset.mem_Ioc] at hdeg
-    norm_num at hdeg
-    omega
-  rcases hdeg' with hdeg' | hdeg'
-  · rw [hq.eq_X_add_C hdeg'] at hdvd
-    rw [← sub_neg_eq_add, ← Polynomial.C_neg, Polynomial.dvd_iff_isRoot,
-      Polynomial.IsRoot.def] at hdvd
-    simp only [Polynomial.eval_sub, Polynomial.eval_pow, Polynomial.eval_X,
-      Polynomial.eval_one] at hdvd
-    rw [ZMod.pow_card] at hdvd
-    norm_num at hdvd
-  · let a := q.coeff 1
-    let b := q.coeff 0
-    -- Put a hypothetical monic quadratic factor in coefficient form.
-    have hqeq : q = X ^ 2 + C a * X + C b := by
-      rw [Polynomial.eq_quadratic_of_degree_le_two
-        (Polynomial.degree_le_of_natDegree_le hdeg'.le)]
-      have hc : q.coeff 2 = 1 := by simpa [hdeg'] using hq.coeff_natDegree
-      rw [hc]
-      simp [a, b]
-    have hdvd' : X ^ 2 + C a * X + C b ∣
-        X ^ 5 + C (-1 : ZMod 5) * X + C (-1 : ZMod 5) := by
-      simpa only [hqeq, C_neg, C_1, neg_one_mul, sub_eq_add_neg] using hdvd
-    rw [X_sq_add_C_mul_X_add_C_dvd_X_pow_five_add_iff] at hdvd'
-    -- None of the 25 coefficient pairs in `ZMod 5` satisfies both equations.
-    have hno : ∀ a b : ZMod 5,
-        ¬ (a ^ 4 - 3 * a ^ 2 * b + b ^ 2 + -1 = 0 ∧
-          a ^ 3 * b - 2 * a * b ^ 2 + -1 = 0) := by decide
-    exact hno a b hdvd'
+  have hf : (X ^ 5 - X - 1 : (ZMod 5)[X]) = X ^ 5 + C (-1) * X + C (-1) := by
+    simp only [map_neg, C_1]
+    ring
+  rw [hf]
+  exact irreducible_X_pow_five_add_C_mul_X_add_C (by decide) (by decide)
 
 /-- The polynomial `X ^ 5 - X - 1` is irreducible modulo `5`, so its sole factor degree is `5`. -/
 theorem _root_.Polynomial.factorDegrees_X_pow_five_sub_X_sub_one_five :

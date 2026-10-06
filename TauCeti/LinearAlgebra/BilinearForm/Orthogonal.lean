@@ -14,9 +14,11 @@ import Mathlib.LinearAlgebra.Projection
 
 This file records facts about the orthogonal complement `LinearMap.BilinForm.orthogonal`
 that Mathlib lacks. A vector lies in the orthogonal complement of the span of one or two vectors
-exactly when it is orthogonal to each of them. Over a field, adjoining a non-isotropic vector `x`
-to an orthogonal basis of the orthogonal complement of `x` gives an orthogonal basis of the whole
-space, for a reflexive form; this is the inductive step of every diagonalization argument.
+exactly when it is orthogonal to each of them. Adjoining a vector `x` whose self-pairing is a
+non-zero-divisor dividing all its pairings (over a field: a non-isotropic vector) to an orthogonal
+basis of the orthogonal complement of `x` gives an orthogonal basis of the whole module, for a
+reflexive form; this is the inductive step of every diagonalization argument, over a field as over
+a valuation ring.
 Adjoining an orthogonal vector whose self-pairing is a right non-zero-divisor to a left-separating
 subspace of a reflexive bilinear space produces a nondegenerate restriction; this is the
 structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace.
@@ -36,6 +38,8 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   restriction splits a bilinear module over a commutative ring.
 * `LinearMap.BilinForm.restrict_span_singleton_bijective_of_isUnit`: unit self-pairing makes
   the cyclic restriction perfect.
+* `LinearMap.BilinForm.isCompl_span_singleton_orthogonal_of_dvd`: a vector whose self-pairing is
+  a non-zero-divisor dividing all its pairings splits off.
 * `LinearMap.BilinForm.isCompl_span_singleton_orthogonal_of_isUnit`: a vector with unit
   self-pairing splits off.
 -/
@@ -60,42 +64,6 @@ theorem mem_orthogonal_span_pair_iff (B : LinearMap.BilinForm K V) {x y z : V} :
   · rintro ⟨hx, hy⟩ n hn
     obtain ⟨a, b, rfl⟩ := Submodule.mem_span_pair.1 hn
     simp [hx, hy]
-
-section Field
-
-open Module
-
-variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {B : LinearMap.BilinForm K V}
-
-/-- Adjoining a non-isotropic vector `x` to an orthogonal basis of the orthogonal complement of
-`x` gives an orthogonal basis of the whole space, for a reflexive form. -/
-theorem IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton (hB : B.IsRefl) {x : V}
-    (hx : B x x ≠ 0) {d : ℕ} {v : Basis (Fin d) K (B.orthogonal (K ∙ x))}
-    (hv : (B.restrict (B.orthogonal (K ∙ x))).iIsOrtho v) :
-    ∃ b : Basis (Fin (d + 1)) K V, B.iIsOrtho b := by
-  have hc := B.isCompl_span_singleton_orthogonal hx
-  have hli : ∀ c : K, ∀ y ∈ B.orthogonal (K ∙ x), c • x + y = 0 → c = 0 := by
-    intro c y hy hcy
-    have h0 : c • x = 0 := Submodule.disjoint_def.1 hc.disjoint _
-      (Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self x))
-      (eq_neg_of_add_eq_zero_left hcy ▸ Submodule.neg_mem _ hy)
-    exact (smul_eq_zero.1 h0).resolve_right (ne_zero_of_not_isOrtho_self x hx)
-  have hsp : ∀ z : V, ∃ c : K, z + c • x ∈ B.orthogonal (K ∙ x) := fun z => by
-    obtain ⟨y, hy, w, hw, rfl⟩ :=
-      Submodule.mem_sup.1 (hc.sup_eq_top ▸ Submodule.mem_top : z ∈ (K ∙ x) ⊔ B.orthogonal (K ∙ x))
-    obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.1 hy
-    exact ⟨-a, by simpa using hw⟩
-  refine ⟨Basis.mkFinCons x v hli hsp, ?_⟩
-  rw [iIsOrtho_def, Basis.coe_mkFinCons]
-  intro i j
-  refine Fin.cases ?_ (fun i => ?_) i <;> refine Fin.cases ?_ (fun j => ?_) j <;> intro hij <;>
-    simp only [Fin.cons_zero, Fin.cons_succ, Function.comp_apply]
-  · exact (hij rfl).elim
-  · exact (mem_orthogonal_span_singleton_iff B).1 (v j).2
-  · exact hB.eq_zero ((mem_orthogonal_span_singleton_iff B).1 (v i).2)
-  · simpa using iIsOrtho_def.1 hv i j fun h => hij (congrArg Fin.succ h)
-
-end Field
 
 end LinearMap.BilinForm
 
@@ -146,6 +114,8 @@ end BilinForm
 end TauCeti
 
 namespace LinearMap.BilinForm
+
+open Module
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 
@@ -232,20 +202,64 @@ theorem restrict_span_singleton_bijective_of_isUnit (B : LinearMap.BilinForm R M
       b * (a * f ⟨x, hxS⟩ * B x x) = b * (a * B x x) * f ⟨x, hxS⟩ := by ring
       _ = b * f ⟨x, hxS⟩ := by rw [ha']; ring
 
+/-- A vector `x` whose self-pairing `B x x` is a non-zero-divisor dividing every pairing `B x y`
+spans an orthogonal direct summand. Over a field this is the condition `B x x ≠ 0`; over a
+valuation ring it says that `B x x` has minimal valuation among the pairings of `x`. -/
+theorem isCompl_span_singleton_orthogonal_of_dvd (B : LinearMap.BilinForm R M) {x : M}
+    (hx : B x x ∈ nonZeroDivisors R) (hdvd : ∀ y, B x x ∣ B x y) :
+    IsCompl (R ∙ x) (B.orthogonal (R ∙ x)) := by
+  refine ⟨Submodule.disjoint_def.mpr fun y hy hy' ↦ ?_, codisjoint_iff.mpr ?_⟩
+  · obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hy
+    have hc := (mem_orthogonal_iff.mp hy') x (Submodule.mem_span_singleton_self x)
+    rw [map_smul, smul_eq_mul] at hc
+    rw [(mem_nonZeroDivisors_iff_right.mp hx) c hc, zero_smul]
+  · refine eq_top_iff.mpr fun z _ ↦ ?_
+    obtain ⟨k, hk⟩ := hdvd z
+    refine Submodule.mem_sup.mpr ⟨k • x, Submodule.smul_mem _ k
+      (Submodule.mem_span_singleton_self x), z - k • x, mem_orthogonal_iff.mpr fun n hn ↦ ?_,
+      add_sub_cancel _ _⟩
+    obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.mp hn
+    simp only [map_smul, map_sub, LinearMap.smul_apply, smul_eq_mul, hk]
+    ring
+
+/-- Adjoining a vector `x` to an orthogonal basis of the orthogonal complement of `x` gives an
+orthogonal basis of the whole module, for a reflexive form, provided the self-pairing `B x x` is a
+non-zero-divisor dividing every pairing `B x y`. Over a field this says `B x x ≠ 0`. -/
+theorem IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton {B : LinearMap.BilinForm R M}
+    (hB : B.IsRefl) {x : M} (hx : B x x ∈ nonZeroDivisors R) (hdvd : ∀ y, B x x ∣ B x y)
+    {d : ℕ} {v : Basis (Fin d) R (B.orthogonal (R ∙ x))}
+    (hv : (B.restrict (B.orthogonal (R ∙ x))).iIsOrtho v) :
+    ∃ b : Basis (Fin (d + 1)) R M, B.iIsOrtho b := by
+  have hc := B.isCompl_span_singleton_orthogonal_of_dvd hx hdvd
+  have hli : ∀ c : R, ∀ y ∈ B.orthogonal (R ∙ x), c • x + y = 0 → c = 0 := fun c y hy hcy ↦ by
+    have hcx : c • x ∈ B.orthogonal (R ∙ x) := by
+      rw [eq_neg_of_add_eq_zero_left hcy]
+      exact neg_mem hy
+    have hzero : c • x = 0 :=
+      Submodule.disjoint_def.mp hc.disjoint (c • x) (Submodule.smul_mem _ c
+        (Submodule.mem_span_singleton_self x)) hcx
+    have h := congrArg (B x) hzero
+    rw [map_smul, smul_eq_mul, map_zero] at h
+    exact mem_nonZeroDivisors_iff_right.mp hx c h
+  have hsp : ∀ z : M, ∃ c : R, z + c • x ∈ B.orthogonal (R ∙ x) := fun z ↦ by
+    obtain ⟨w, hw, y, hy, hwy⟩ := Submodule.mem_sup.mp
+      (hc.sup_eq_top ▸ (Submodule.mem_top : z ∈ (⊤ : Submodule R M)))
+    obtain ⟨k, rfl⟩ := Submodule.mem_span_singleton.mp hw
+    exact ⟨-k, by simpa [← hwy, add_comm, add_left_comm, add_assoc] using hy⟩
+  refine ⟨Basis.mkFinCons x v hli hsp, ?_⟩
+  rw [iIsOrtho_def, Basis.coe_mkFinCons]
+  intro i j
+  refine Fin.cases ?_ (fun i => ?_) i <;> refine Fin.cases ?_ (fun j => ?_) j <;> intro hij <;>
+    simp only [Fin.cons_zero, Fin.cons_succ, Function.comp_apply]
+  · exact (hij rfl).elim
+  · exact (mem_orthogonal_span_singleton_iff B).1 (v j).2
+  · exact hB.eq_zero ((mem_orthogonal_span_singleton_iff B).1 (v i).2)
+  · simpa using iIsOrtho_def.1 hv i j fun h => hij (congrArg Fin.succ h)
+
 /-- A vector with unit self-pairing spans an orthogonal direct summand. -/
 theorem isCompl_span_singleton_orthogonal_of_isUnit
     (B : LinearMap.BilinForm R M) (x : M) (hx : IsUnit (B x x)) :
-    IsCompl (R ∙ x) (B.orthogonal (R ∙ x)) := by
-  have hsymm : (B.restrict (R ∙ x)).IsSymm := by
-    constructor
-    intro y z
-    obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp y.property
-    obtain ⟨b, hb⟩ := Submodule.mem_span_singleton.mp z.property
-    simp only [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply]
-    rw [← ha, ← hb]
-    simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
-    ring
-  exact B.isCompl_orthogonal_of_restrict_bijective (R ∙ x) hsymm
-    (B.restrict_span_singleton_bijective_of_isUnit x hx)
+    IsCompl (R ∙ x) (B.orthogonal (R ∙ x)) :=
+  B.isCompl_span_singleton_orthogonal_of_dvd hx.mem_nonZeroDivisors fun _ ↦ hx.dvd
 
 end LinearMap.BilinForm

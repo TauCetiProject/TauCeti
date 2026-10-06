@@ -160,17 +160,17 @@ private theorem sum_corners_eq_sum_range {μ : YoungDiagram} {r : ℕ} (hr : μ.
     exact mem_range.mpr (((mem_corners.mp hc).fst_lt_colLen_zero).trans_le hr)
   · exact hF i hi fun c hc h => hni (Finset.mem_image.mpr ⟨c, hc, h⟩)
 
-/-- The beta-numbers overshoot the number of cells by exactly `0 + 1 + ⋯ + (r - 1)`: the row
-lengths sum to `μ.card`, and the shifts `r - 1 - i` are a reflection of `0, 1, …, r - 1`. -/
+/-- The beta-numbers overshoot the number of cells by exactly `0 + 1 + ⋯ + (r - 1)`: the shifts
+`r - 1 - i` of `YoungDiagram.sum_betaNumber` are a reflection of `0, 1, …, r - 1`. -/
 private theorem sum_betaNumber_sub_sum_range (μ : YoungDiagram) {r : ℕ} (hr : μ.colLen 0 ≤ r) :
     (∑ i ∈ range r, (μ.betaNumber r i : ℤ)) - ∑ i ∈ range r, (i : ℤ) = (μ.card : ℤ) := by
-  have hsplit : ∑ i ∈ range r, (μ.betaNumber r i : ℤ)
-      = (∑ i ∈ range r, (μ.rowLen i : ℤ)) + ∑ i ∈ range r, ((r - 1 - i : ℕ) : ℤ) := by
-    rw [← Finset.sum_add_distrib]
-    exact Finset.sum_congr rfl fun i _ => by rw [betaNumber_def]; push_cast; ring
-  have hrows : ∑ i ∈ range r, (μ.rowLen i : ℤ) = (μ.card : ℤ) := by
-    rw [← Nat.cast_sum, ← YoungDiagram.card_eq_sum_range_rowLen μ hr]
-  rw [hsplit, hrows, Finset.sum_range_reflect (fun j : ℕ => (j : ℤ)) r]
+  have hsum : ∑ i ∈ range r, μ.betaNumber r i = μ.card + ∑ i ∈ range r, i := by
+    rw [← Finset.sum_range_reflect (fun j : ℕ => j) r,
+      ← Fin.sum_univ_eq_sum_range (fun i => μ.betaNumber r i) r,
+      ← Fin.sum_univ_eq_sum_range (fun i => r - 1 - i) r]
+    exact μ.sum_betaNumber hr
+  rw [← Nat.cast_sum, ← Nat.cast_sum, hsum]
+  push_cast
   ring
 
 /-- The inductive form of the Frobenius determinant formula, with the number of cells fixed so

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Distance
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
@@ -28,6 +29,8 @@ bundle structures.
   `TauCeti.Manifold.instIsContMDiffRiemannianBundleOpen`: the corresponding scoped instances.
 * `TauCeti.Manifold.pathELength_subtypeVal_comp`: the length of a curve in an open submanifold
   equals the length of its composition with the inclusion into the ambient manifold.
+* `TopologicalSpace.Opens.riemannianEDist_le_riemannianEDist_subtype`: restriction to an open
+  submanifold cannot decrease Riemannian distance.
 
 The three instances are in the `TauCeti` scope; use `open scoped TauCeti` to install them. In
 particular, under the usual separation hypotheses this makes `EMetricSpace.ofRiemannianMetric`
@@ -35,8 +38,6 @@ available on the open submanifold.
 
 ## References
 
-* [Geodesics, the exponential map, and the Hopf--Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 0, "Restriction to open submanifolds".
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 1, §2.
 -/
 
@@ -347,7 +348,9 @@ theorem enorm_tangentSpace_open
     ‖v‖ₑ = ‖tangentSpaceOpenEquiv (I := I) x v‖ₑ := by
   simp only [enorm, nnnorm, norm_tangentSpace_open]
 
-end TauCeti.Manifold
+end Manifold
+
+end TauCeti
 
 namespace TauCeti.Manifold
 
@@ -379,3 +382,26 @@ theorem pathELength_subtypeVal_comp {γ : ℝ → U} {a b : ℝ}
   simp
 
 end TauCeti.Manifold
+
+namespace TopologicalSpace.Opens
+
+open scoped TauCeti
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+
+/-- Restricting the Riemannian metric to an open submanifold cannot decrease distance: every
+curve in the submanifold is an ambient curve of the same length. -/
+theorem riemannianEDist_le_riemannianEDist_subtype (U : Opens M) (x y : U) :
+    riemannianEDist I (x : M) (y : M) ≤ riemannianEDist I x y := by
+  refine TauCeti.Manifold.le_riemannianEDist_of_forall_le_pathELength (M := U)
+    (I := I) fun γ h0 h1 hγ ↦ ?_
+  rw [TauCeti.Manifold.pathELength_subtypeVal_comp hγ]
+  exact Manifold.riemannianEDist_le_pathELength
+    (contMDiff_subtype_val.comp_contMDiffOn hγ)
+    (congrArg Subtype.val h0) (congrArg Subtype.val h1) zero_le_one
+
+end TopologicalSpace.Opens
