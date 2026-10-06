@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Basic
+public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Actions
 public import Mathlib.Algebra.Algebra.Opposite
 public import Mathlib.Algebra.Algebra.Tower
 
@@ -14,8 +14,9 @@ public import Mathlib.Algebra.Algebra.Tower
 
 Tensoring a module with the regular bimodule over a noncommutative algebra returns
 the original module. The identifications send `a ⊗ n` to `a • n` and `m ⊗ a` to
-`m a`. Their inverses insert `1`. These are the unit identifications for composition
-of bimodules, before introducing gradings or differentials. A semiring algebra over
+`m a`. Their inverses insert `1`. These identifications preserve the outer actions
+and hence are the unit identifications for composition of bimodules, before introducing
+gradings or differentials. A semiring algebra over
 `k` can use these identifications by installing `Algebra.semiringToRing k` locally.
 
 The construction follows the ordinary tensor product underlying Keller,
@@ -63,6 +64,26 @@ theorem lid_tmul (a : A) (n : N) : lid k A N (tmul k A a n) = a • n := by
 theorem lid_symm_apply (n : N) : (lid k A N).symm n = tmul k A 1 n := by
   simp [lid]
 
+/-- The left unit identification preserves the left regular outer action. -/
+@[simp]
+theorem lid_leftAction (a : A) (x : BalancedTensorProduct k A A N) :
+    lid k A N (leftAction k A A N A a x) = a • lid k A N x := by
+  induction x using induction_on with
+  | ht b n => simp [mul_smul]
+  | ha x y hx hy => simp [smul_add, hx, hy]
+
+/-- The left unit identification preserves any commuting right outer action. -/
+@[simp]
+theorem lid_rightAction (C : Type*) [Semiring C] [Module Cᵐᵒᵖ N]
+    [SMulCommClass Cᵐᵒᵖ k N] [SMulCommClass Cᵐᵒᵖ A N]
+    (c : Cᵐᵒᵖ) (x : BalancedTensorProduct k A A N) :
+    lid k A N (rightAction k A A N C c x) = c • lid k A N x := by
+  induction x using induction_on with
+  | ht a n =>
+    simp only [rightAction_tmul, lid_tmul]
+    exact (smul_comm c a n).symm
+  | ha x y hx hy => simp [smul_add, hx, hy]
+
 end Left
 
 section Right
@@ -101,6 +122,28 @@ theorem rid_tmul (m : M) (a : A) : rid k A M (tmul k A m a) = op a • m := by
 @[simp]
 theorem rid_symm_apply (m : M) : (rid k A M).symm m = tmul k A m 1 := by
   simp [rid]
+
+/-- The right unit identification preserves any commuting left outer action. -/
+@[simp]
+theorem rid_leftAction (B : Type*) [Semiring B] [Module B M]
+    [SMulCommClass B k M] [SMulCommClass B Aᵐᵒᵖ M]
+    (b : B) (x : BalancedTensorProduct k A M A) :
+    rid k A M (leftAction k A M A B b x) = b • rid k A M x := by
+  induction x using induction_on with
+  | ht m a =>
+    simp only [leftAction_tmul, rid_tmul]
+    exact (smul_comm b (op a) m).symm
+  | ha x y hx hy => simp [smul_add, hx, hy]
+
+/-- The right unit identification preserves the right regular outer action. -/
+@[simp]
+theorem rid_rightAction (a : Aᵐᵒᵖ) (x : BalancedTensorProduct k A M A) :
+    rid k A M (rightAction k A M A A a x) = a • rid k A M x := by
+  induction x using induction_on with
+  | ht m b =>
+    simp only [rightAction_tmul, rid_tmul, MulOpposite.smul_eq_mul_unop,
+      op_mul, op_unop, mul_smul]
+  | ha x y hx hy => simp [smul_add, hx, hy]
 
 end Right
 
