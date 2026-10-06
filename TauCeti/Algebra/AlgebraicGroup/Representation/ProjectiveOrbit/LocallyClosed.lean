@@ -44,43 +44,43 @@ variable {k H M : Type u} [Field k] [IsAlgClosed k] [CommRing H] [HopfAlgebra k 
   [Algebra.FiniteType k H] [AddCommGroup M] [Module k M] [Comodule k H M]
   [Module.Finite k M]
 
+/-- Select projective translation for the closed-point transitivity and local-closedness
+criteria. -/
+noncomputable local instance : MulAction (WithConv (H →ₐ[k] k))
+    (Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k M))) :=
+  projectivePointMulAction
+
+local instance : ContinuousConstSMul (WithConv (H →ₐ[k] k))
+    (Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k M))) :=
+  projectivePointMulAction_continuousConstSMul
+
+/-- Rational translations are transitive on the closed points of the full projective
+orbit image. -/
+theorem exists_smul_eq_of_mem_range_projectiveOrbitMap_inter_closedPoints
+    (m : M) (hm : Module.IsUnimodular k m)
+    {x y : Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k M))}
+    (hx : x ∈ Set.range (projectiveOrbitMap (H := H) m hm) ∩ closedPoints _)
+    (hy : y ∈ Set.range (projectiveOrbitMap (H := H) m hm) ∩ closedPoints _) :
+    ∃ g : WithConv (H →ₐ[k] k), g • x = y := by
+  rw [← range_projectiveOrbitMap_kernelPoint_eq_range_inter_closedPoints m hm] at hx hy
+  obtain ⟨g, rfl⟩ := hx
+  obtain ⟨h, rfl⟩ := hy
+  refine ⟨h * g⁻¹, ?_⟩
+  rw [projectivePoint_smul_def]
+  exact (projectivePointTranslation_projectiveOrbitMap_kernelPoint
+    (h * g⁻¹) g m hm).trans (by simp)
+
 /-- The entire topological image of a finite-type affine group's projective orbit morphism
 is locally closed over an algebraically closed field, including for nonreduced groups. -/
 theorem isLocallyClosed_range_projectiveOrbitMap (m : M) (hm : Module.IsUnimodular k m) :
     IsLocallyClosed (Set.range (projectiveOrbitMap (H := H) m hm)) := by
-  let X := Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k M))
-  -- Select the existing individual translations as the action used by the topological
-  -- criterion. This local instance makes no assertion about a scheme-valued action family.
-  let : MulAction (WithConv (H →ₐ[k] k)) X := {
-    smul g x := (projectivePointTranslation (M := M) g).hom x
-    one_smul x := by
-      -- Expose the smul field currently being constructed before using its scheme identity.
-      change (projectivePointTranslation (M := M) 1).hom x = x
-      rw [projectivePointTranslation_one]
-      rfl
-    mul_smul g h x := by
-      -- Expose the smul field currently being constructed before using composition.
-      change (projectivePointTranslation (M := M) (g * h)).hom x =
-        (projectivePointTranslation (M := M) g).hom
-          ((projectivePointTranslation (M := M) h).hom x)
-      rw [projectivePointTranslation_mul]
-      rfl }
-  let : ContinuousConstSMul (WithConv (H →ₐ[k] k)) X :=
-    ⟨fun g ↦ (projectivePointTranslation (M := M) g).hom.continuous⟩
-  let : JacobsonSpace X := LocallyOfFiniteType.jacobsonSpace
-    (TauCeti.SymmetricAlgebra.projToSpec k (Module.Dual k M))
   apply isLocallyClosed_of_isConstructible_of_closedPoints_transitive
     (G := WithConv (H →ₐ[k] k)) (isConstructible_range_projectiveOrbitMap m hm)
   · intro g
-    have h := image_projectivePointTranslation_range_projectiveOrbitMap g⁻¹ m hm
     rw [Set.preimage_smul, ← Set.image_smul]
-    exact h
+    simpa only [projectivePoint_smul_def] using
+      image_projectivePointTranslation_range_projectiveOrbitMap g⁻¹ m hm
   · intro x hx y hy
-    rw [← range_projectiveOrbitMap_kernelPoint_eq_range_inter_closedPoints m hm] at hx hy
-    obtain ⟨g, rfl⟩ := hx
-    obtain ⟨h, rfl⟩ := hy
-    refine ⟨h * g⁻¹, ?_⟩
-    exact (projectivePointTranslation_projectiveOrbitMap_kernelPoint
-      (h * g⁻¹) g m hm).trans (by simp)
+    exact exists_smul_eq_of_mem_range_projectiveOrbitMap_inter_closedPoints m hm hx hy
 
 end TauCeti.Comodule

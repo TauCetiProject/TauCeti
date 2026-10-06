@@ -20,14 +20,16 @@ constructible projective orbits are locally closed.
 
 The projective coordinates transform by precomposition of linear functionals with the
 original representation.
-No smoothness, reducedness, finite-type, or field hypothesis is required. The assertions
+No smoothness, reducedness, or finite-type hypothesis is required. Over a field, the final
+theorem identifies translation of a rational orbit image with the image of the
+left-multiplied group point. The assertions
 about underlying maps do not assert the scheme action diagrams for a family of translations.
 
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §§7.c–7.f.
 * Formal precursors: `HopfAlgebra.leftTranslationAlgEquiv`, the scalar-extended
-  evaluation pairing, and `Proj.symmetricAlgebraMapIso`.
+  evaluation pairing, `Proj.symmetricAlgebraMapIso`, and `Proj.symmetricAlgebraMulAction`.
 -/
 
 public section
@@ -93,6 +95,47 @@ noncomputable def projectivePointTranslation (g : WithConv (H →ₐ[R] R)) :
   Proj.symmetricAlgebraMapIso R
     ((LinearMap.GeneralLinearGroup.generalLinearEquiv R M)
       (Representation.asGroupHom (basePointsRepresentation (R := R) (H := H) M) g)).dualMap
+
+/-- The action of base-valued group points on projective space, obtained from the
+contragredient representation. Install it locally to select this action. -/
+@[instance_reducible]
+noncomputable def projectivePointMulAction :
+    MulAction (WithConv (H →ₐ[R] R))
+      (Proj (SymmetricAlgebra.homogeneousSubmodule R (Module.Dual R M))) :=
+  Proj.symmetricAlgebraMulAction R
+    ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (Module.Dual R M)).toMonoidHom.comp
+      (Representation.dual (basePointsRepresentation (R := R) (H := H) M)).asGroupHom)
+
+/-- The selected projective action is the underlying map of projective translation. -/
+theorem projectivePoint_smul_def (g : WithConv (H →ₐ[R] R))
+    (x : Proj (SymmetricAlgebra.homogeneousSubmodule R (Module.Dual R M))) :
+    letI := projectivePointMulAction (R := R) (H := H) (M := M)
+    g • x = (projectivePointTranslation (M := M) g).hom x := by
+  let := projectivePointMulAction (R := R) (H := H) (M := M)
+  rw [Proj.symmetricAlgebra_smul_def, projectivePointTranslation]
+  have hdual :
+      ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (Module.Dual R M))
+        ((Representation.dual (basePointsRepresentation M)).asGroupHom g)).symm =
+      ((LinearMap.GeneralLinearGroup.generalLinearEquiv R M)
+        (Representation.asGroupHom (basePointsRepresentation M) g)).dualMap := by
+    -- Express symmetry as group inversion so the monoid homomorphisms can carry
+    -- the inverse back to the group point; Mathlib has no bundled comparison lemma.
+    rw [show ∀ e : Module.Dual R M ≃ₗ[R] Module.Dual R M, e.symm = e⁻¹ from
+      fun e ↦ by ext φ; simp]
+    rw [← map_inv, ← map_inv]
+    ext φ m
+    simp only [LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
+      Representation.asGroupHom_apply, Representation.dual_apply, inv_inv,
+      Module.Dual.transpose_apply, LinearEquiv.dualMap_apply, LinearMap.comp_apply]
+  exact congrArg (fun e : Module.Dual R M ≃ₗ[R] Module.Dual R M ↦
+    (Proj.symmetricAlgebraMapIso R e).hom x) hdual
+
+/-- Every translation of the selected projective point action is continuous. -/
+theorem projectivePointMulAction_continuousConstSMul :
+    letI := projectivePointMulAction (R := R) (H := H) (M := M)
+    ContinuousConstSMul (WithConv (H →ₐ[R] R))
+      (Proj (SymmetricAlgebra.homogeneousSubmodule R (Module.Dual R M))) :=
+  Proj.symmetricAlgebraMulAction_continuousConstSMul R _
 
 /-- Translation by the identity point is the identity projective isomorphism. -/
 @[simp]
@@ -252,8 +295,6 @@ variable {k H M : Type u} [Field k] [CommRing H] [HopfAlgebra k H]
 
 /-- Projective translation of a rational orbit image corresponds to left multiplication
 of its group point. -/
--- Apply before `projectivePointTranslation_hom` unfolds the translation to a coordinate map.
-@[simp↓]
 theorem projectivePointTranslation_projectiveOrbitMap_kernelPoint
     (g h : WithConv (H →ₐ[k] k)) (m : M) (hm : Module.IsUnimodular k m) :
     (projectivePointTranslation (M := M) g).hom
