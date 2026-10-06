@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Ramification
-public import Mathlib.RepresentationTheory.Basic
+public import TauCeti.RepresentationTheory.RestrictScalars
 
 /-!
 # The unit logarithmic lattice in the sum-zero hyperplane
@@ -111,10 +111,16 @@ private def unitLogCoordinates : unitLogHyperplane K ≃ₗ[ℝ] logSpace K wher
   map_add' x y := by rfl
   map_smul' a x := by rfl
 
+private theorem unitLogCoordinates_apply (x : unitLogHyperplane K)
+    (w : {w : InfinitePlace K // w ≠ w₀}) :
+    unitLogCoordinates K x w = x.val w.val :=
+  (rfl)
+
 private theorem unitLogCoordinates_embedding (u : Additive (𝓞 K)ˣ) :
     unitLogCoordinates K (unitLogEmbedding K u) = NumberField.Units.logEmbedding K u := by
   funext w
-  exact (rfl)
+  rw [unitLogCoordinates_apply, unitLogEmbedding_apply]
+  exact (logEmbedding_component u.toMul w).symm
 
 open Classical in
 private theorem fullUnitLattice_eq_comap :
@@ -133,17 +139,14 @@ private theorem fullUnitLattice_eq_comap :
 instance discreteTopology_fullUnitLattice : DiscreteTopology (fullUnitLattice K) := by
   classical
   rw [fullUnitLattice_eq_comap]
-  exact ZLattice.comap_discreteTopology ℝ (NumberField.Units.unitLattice K)
-    (unitLogCoordinates K).toContinuousLinearEquiv.continuous (unitLogCoordinates K).injective
+  infer_instance
 
 /-- **Dirichlet's unit lattice theorem, with all places retained.** The logarithmic image of
 the units is a full integral lattice in the sum-zero hyperplane. -/
-instance isZLattice_fullUnitLattice : IsZLattice ℝ (fullUnitLattice K) where
-  span_top := by
-    classical
-    rw [fullUnitLattice_eq_comap]
-    exact IsZLattice.span_top (K := ℝ) (L := ZLattice.comap ℝ
-      (NumberField.Units.unitLattice K) (unitLogCoordinates K).toContinuousLinearEquiv.toLinearMap)
+instance isZLattice_fullUnitLattice : IsZLattice ℝ (fullUnitLattice K) := by
+  classical
+  simp only [fullUnitLattice_eq_comap]
+  infer_instance
 
 /-- **Equivariance of the logarithmic embedding.** Transporting a unit along a field
 isomorphism transports its coordinate at `w` to the coordinate at the pulled-back place. -/
@@ -201,6 +204,20 @@ theorem unitLogRepresentation_mem_fullUnitLattice (σ : Gal(K/k))
   exact (mem_fullUnitLattice K _).mpr
     ⟨.ofMul (Units.map (RingOfIntegers.mapRingEquiv σ.toRingEquiv) u.toMul),
       (unitLogRepresentation_embedding K k σ u.toMul).symm⟩
+
+/-- The integral Galois representation on the full unit logarithmic lattice, obtained by
+restricting the permutation representation on the logarithmic hyperplane. -/
+def fullUnitLatticeRepresentation : Representation ℤ Gal(K/k) (fullUnitLattice K) :=
+  (unitLogRepresentation K k).restrictScalarsInt.subrepresentation (fullUnitLattice K)
+    fun σ _ hx => by
+      simpa only [Submodule.mem_comap, Representation.restrictScalarsInt_apply] using
+        unitLogRepresentation_mem_fullUnitLattice K k σ hx
+
+/-- The integral action on the full unit lattice agrees with the ambient permutation action. -/
+@[simp] theorem fullUnitLatticeRepresentation_apply (σ : Gal(K/k)) (x : fullUnitLattice K) :
+    (fullUnitLatticeRepresentation K k σ x).val = unitLogRepresentation K k σ x.val := by
+  simp only [fullUnitLatticeRepresentation, Representation.subrepresentation_apply,
+    LinearMap.restrict_apply, Representation.restrictScalarsInt_apply]
 
 end GaloisAction
 
