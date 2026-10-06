@@ -42,8 +42,7 @@ be exact when suitable continuous lifts exist. Nothing below is asserted in that
 setting.
 
 The sequence is carried by a structure rather than by loose hypotheses because every statement
-here — and, later, the compatibility of corestriction with the connecting maps — is about the same
-sequence and has to name the same two coefficient maps.
+here is about the same sequence and has to name the same two coefficient maps.
 
 ## Main definitions
 
@@ -100,8 +99,8 @@ map out of them is continuous. Exactness in the middle is Mathlib's `Function.Ex
 The cochain maps are Mathlib's `AddMonoidHom.compLeft`, postcomposition on a function space; the
 statements of exactness are therefore about the image and kernel of that homomorphism restricted
 to the cochain subgroup `C¹ X -`, which is `C¹(G, -)` at `X = G` and `C²(G, -)` at `X = G × G`.
-The compatible-pair pullback of Layer 2 is a different map — it moves the group as well as the
-coefficients — and is not used here.
+The compatible-pair pullback, which moves the group as well as the coefficients, is a different
+map and is not used here.
 
 Both connecting maps are built from a *variable* preimage first, and the independence of the
 choice is a theorem rather than a definitional accident; only then is the map defined by choosing
@@ -112,19 +111,13 @@ choices the mathematical statements must not mention; the public interface to th
 has in hand.
 
 The cochain sequences are stated for a topological monoid `G`. The two connecting maps ask in
-addition that the coefficients be discrete `G`-modules with a *continuous* action,
-`[ContinuousSMul G A]` and `[ContinuousSMul G B]`: without it `B¹ ≤ Z¹` and `B² ≤ Z²` fail and the
-quotients `H1` and `H2` cannot be formed. `δ¹` asks moreover for a continuous multiplication on
-`G`, which is what carries continuity through `d¹`. `DiscreteShortExact.restrict` is the one
-exception in the other direction: restricting the sequence to a subgroup asks `G` to be a group.
-Profiniteness plays no part in this layer.
-
-This implements the "exactness of cochains" and "the short exact sequence as data" milestones of
-Layer 5 of the human-authored roadmap at `TauCetiRoadmap/ProfiniteCohomology/README.md`, together
-with the two connecting maps and their descriptions on representatives from that layer's long
-exact sequence milestone, whose `Suggested.lean` fixes the names `DiscreteShortExact`,
-`DiscreteShortExact.restrict`, `explicitDelta0`, `explicitDelta0_apply`, `explicitDelta1` and
-`explicitDelta1_apply`.
+addition that the coefficients be discrete `G`-modules with a *continuous* action:
+`[ContinuousSMul G A]` and `[ContinuousSMul G B]` for `δ⁰`, and also `[ContinuousSMul G C]` for
+`δ¹`. Without it `B¹ ≤ Z¹` and `B² ≤ Z²` fail and the quotients `H1` and `H2` cannot be formed.
+`δ¹` asks moreover for a continuous multiplication on `G`, which is what carries continuity
+through `d¹`. Restricting the sequence to a subgroup (`DiscreteShortExact.restrict`), the dual
+sequence (`DiscreteShortExact.dual`, whose conjugation action needs inverses) and
+`DiscreteShortExact.toShortComplex` ask `G` to be a group. Profiniteness plays no part here.
 
 ## References
 

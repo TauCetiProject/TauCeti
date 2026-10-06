@@ -268,6 +268,20 @@ theorem interiorAngle_nonneg (i : Fin n) : 0 ≤ P.interiorAngle i := by
   rw [interiorAngle_def]
   exact vertexAngle_nonneg _ _ _
 
+/-- The interior angle at a finite vertex is positive. -/
+theorem interiorAngle_pos_of_isLeft_vertex {i : Fin n} (hi : (P.vertex i).isLeft) :
+    0 < P.interiorAngle i := by
+  obtain ⟨A, hA⟩ := Sum.isLeft_iff.mp hi
+  have hleft := P.vertex_mem_extLeftHalfPlane i (i - 1)
+    (sub_one_ne_self (Nat.le_of_succ_le P.three_le) i)
+    (fun h ↦ add_one_add_one_ne_self P.three_le i (by rw [← h, sub_add_cancel]))
+  rw [hA] at hleft
+  have hg := isGeodesicFromTo_geodesicFromTo (hA ▸ P.vertex_ne_vertex_add_one i)
+  have hray := isGeodesicFromTo_rayToward (hA ▸ P.vertex_ne_vertex_add_one i)
+  rw [hray.extLeftHalfPlane_eq hg] at hleft
+  rw [interiorAngle_def, hA, vertexAngle_comm]
+  exact vertexAngle_pos_of_mem_extLeftHalfPlane hleft
+
 /-- The interior angles are at most `π`. -/
 theorem interiorAngle_le_pi (i : Fin n) : P.interiorAngle i ≤ π := by
   rw [interiorAngle_def]
