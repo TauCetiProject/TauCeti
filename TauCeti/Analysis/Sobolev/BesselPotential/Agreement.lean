@@ -21,6 +21,9 @@ is almost everywhere, as appropriate for these spaces.
 Weak directional derivatives agree with the distributional derivatives of the associated
 tempered distribution, connecting the weak-gradient and Bessel-potential descriptions.
 
+Use `TauCeti.memSobolev_one_of_hasWeakFDerivOn u g h` for the weak-to-Bessel inclusion and
+`TauCeti.memSobolev_one_iff_exists_w1p_value_eq u` for the whole-space equivalence.
+
 ## References
 
 * L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.8.

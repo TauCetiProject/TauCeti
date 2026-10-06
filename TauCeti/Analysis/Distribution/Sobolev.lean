@@ -18,6 +18,9 @@ defined by integer-order weak derivatives.
 The identity for the order-two Bessel potential retains Mathlib's Fourier normalization:
 it is `1 - (2π)⁻² Δ`.
 
+Use `TauCeti.besselPotential_two_eq f` for the operator identity and
+`TauCeti.memSobolev_add_one_iff f b s` for the regularity criterion.
+
 ## References
 
 * M. Taylor, *Partial Differential Equations I*, Chapter 4.
