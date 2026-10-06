@@ -148,19 +148,19 @@ section Ext
 variable {k : Type*} [CommRing k] [Linear k C] [HasExt.{w} C] {X : ChainComplex C α} {Y : C}
 
 /-- The corestriction `Xᵢ ⟶ Bⱼ` of the differential to the boundaries `ker(Zⱼ ⟶ Hⱼ(X))`. -/
-private abbrev toBoundaries (X : ChainComplex C α) (i j : α) : X.X i ⟶ kernel (X.homologyπ j) :=
+private abbrev toBoundaries (i j : α) : X.X i ⟶ kernel (X.homologyπ j) :=
   kernel.lift _ (X.toCycles i j) (X.toCycles_comp_homologyπ i j)
 
 omit [HasExt C] in
 /-- The corestriction of the differential to the boundaries vanishes on boundaries. -/
 private lemma d_toBoundaries (i j : α) :
-    X.d ((ComplexShape.up α).next i) i ≫ toBoundaries X i j = 0 := by
+    X.d ((ComplexShape.up α).next i) i ≫ toBoundaries (X := X) i j = 0 := by
   rw [← cancel_mono (kernel.ι _), Category.assoc, kernel.lift_ι, X.d_toCycles, zero_comp]
 
 omit [HasExt C] in
 /-- In degree `i = j + 1`, the corestriction of the differential to the boundaries is an
 epimorphism, because the homology `Hⱼ(X)` is the cokernel of `Xᵢ ⟶ Zⱼ`. -/
-private lemma epi_toBoundaries {i j : α} (hij : j + 1 = i) : Epi (toBoundaries X i j) :=
+private lemma epi_toBoundaries {i j : α} (hij : j + 1 = i) : Epi (toBoundaries (X := X) i j) :=
   (ShortComplex.exact_of_g_is_cokernel
     (ShortComplex.mk (X.toCycles i j) (X.homologyπ j) (X.toCycles_comp_homologyπ i j))
     (X.homologyIsCokernel i j ((ComplexShape.down α).prev_eq' hij))).epi_kernelLift
@@ -168,38 +168,38 @@ private lemma epi_toBoundaries {i j : α} (hij : j + 1 = i) : Epi (toBoundaries 
 variable (k Y) in
 /-- The map `Hom(Bⱼ, Y) →ₗ[k] Hⁱ(Hom(X, Y))` sending `β` to the class of the cocycle
 `Xᵢ ⟶ Bⱼ ⟶ Y`. -/
-private abbrev boundariesHom (X : ChainComplex C α) (i j : α) :
+private abbrev boundariesHom (i j : α) :
     (kernel (X.homologyπ j) ⟶ Y) →ₗ[k] (X.linearYonedaObj k Y).homology i :=
-  homologyClassOfComp k Y (toBoundaries X i j) (d_toBoundaries i j)
+  homologyClassOfComp k Y (toBoundaries (X := X) i j) (d_toBoundaries i j)
 
 /-- The short exact sequence `0 ⟶ Bⱼ ⟶ Zⱼ ⟶ Hⱼ(X) ⟶ 0` of boundaries, cycles and homology. -/
-private abbrev boundariesSequence (X : ChainComplex C α) (j : α) : ShortComplex C :=
+private abbrev boundariesSequence (j : α) : ShortComplex C :=
   ShortComplex.mk (kernel.ι (X.homologyπ j)) (X.homologyπ j) (kernel.condition _)
 
 omit [HasExt C] in
 /-- The sequence `0 ⟶ Bⱼ ⟶ Zⱼ ⟶ Hⱼ(X) ⟶ 0` is short exact. -/
-private lemma boundariesSequence_shortExact (j : α) : (boundariesSequence X j).ShortExact :=
+private lemma boundariesSequence_shortExact (j : α) : (boundariesSequence (X := X) j).ShortExact :=
   { exact := ShortComplex.exact_of_f_is_kernel _ (kernelIsKernel _) }
 
 variable (k Y) in
 /-- The connecting map `Hom(Bⱼ, Y) →ₗ[k] Ext¹(Hⱼ(X), Y)` of the short exact sequence
 `0 ⟶ Bⱼ ⟶ Zⱼ ⟶ Hⱼ(X) ⟶ 0`: precomposition with its extension class. -/
-private def boundariesExt (X : ChainComplex C α) (j : α) :
+private def boundariesExt (j : α) :
     (kernel (X.homologyπ j) ⟶ Y) →ₗ[k] Ext.{w} (X.homology j) Y 1 where
   toFun β := (boundariesSequence_shortExact j).extClass.comp (Ext.mk₀ β) (add_zero 1)
   map_add' β β' := by rw [Ext.mk₀_add, Ext.comp_add]
   map_smul' r β := by rw [Ext.mk₀_smul, Ext.comp_smul, RingHom.id_apply]
 
-/-- `boundariesExt k Y X j β` is the extension class composed with `β`. -/
+/-- `boundariesExt k Y j β` is the extension class composed with `β`. -/
 private lemma boundariesExt_apply (j : α) (β : kernel (X.homologyπ j) ⟶ Y) :
-    boundariesExt.{w} k Y X j β =
+    boundariesExt.{w} k Y (X := X) j β =
       (boundariesSequence_shortExact j).extClass.comp (Ext.mk₀ β) (add_zero 1) :=
   rfl
 
 /-- If the cycles `Zⱼ` are projective, every element of `Ext¹(Hⱼ(X), Y)` comes from a morphism
 `Bⱼ ⟶ Y`, since `Ext¹(Zⱼ, Y)` vanishes. -/
 private lemma boundariesExt_surjective (j : α) [Projective (X.cycles j)] :
-    Function.Surjective (boundariesExt.{w} k Y X j) := by
+    Function.Surjective (boundariesExt.{w} k Y (X := X) j) := by
   intro e
   obtain ⟨x, hx⟩ := Ext.contravariant_sequence_exact₃ (boundariesSequence_shortExact j)
     Y e (Ext.eq_zero_of_projective _) (add_zero 1)
@@ -209,7 +209,8 @@ private lemma boundariesExt_surjective (j : α) [Projective (X.cycles j)] :
 /-- A morphism `Bⱼ ⟶ Y` with zero image in `Ext¹(Hⱼ(X), Y)` gives a coboundary, when the
 inclusion of the cycles `Zⱼ ⟶ Xⱼ` is split: it extends to `Zⱼ`, hence to `Xⱼ`. -/
 private lemma ker_boundariesExt_le (i j : α) [IsSplitMono (X.iCycles j)] :
-    LinearMap.ker (boundariesExt.{w} k Y X j) ≤ LinearMap.ker (boundariesHom k Y X i j) := by
+    LinearMap.ker (boundariesExt.{w} k Y (X := X) j) ≤
+      LinearMap.ker (boundariesHom k Y (X := X) i j) := by
   intro β hβ
   obtain ⟨x, hx⟩ := Ext.contravariant_sequence_exact₁ (boundariesSequence_shortExact j)
     Y (Ext.mk₀ β) (add_zero 1) ((boundariesExt_apply j β).symm.trans hβ)
@@ -231,16 +232,16 @@ extension class of `0 ⟶ Bⱼ ⟶ Zⱼ ⟶ Hⱼ(X) ⟶ 0` goes to the class of 
 projective and their inclusion `Zⱼ ⟶ Xⱼ` is split, and is injective when `i = j + 1`. -/
 def extToHomology (i j : α) [Projective (X.cycles j)] [IsSplitMono (X.iCycles j)] :
     Ext.{w} (X.homology j) Y 1 →ₗ[k] (X.linearYonedaObj k Y).homology i :=
-  ((LinearMap.ker (boundariesExt.{w} k Y X j)).liftQ (boundariesHom k Y X i j)
+  ((LinearMap.ker (boundariesExt.{w} k Y (X := X) j)).liftQ (boundariesHom k Y (X := X) i j)
       (ker_boundariesExt_le i j)).comp
-    ((boundariesExt.{w} k Y X j).quotKerEquivOfSurjective
+    ((boundariesExt.{w} k Y (X := X) j).quotKerEquivOfSurjective
       (boundariesExt_surjective j)).symm.toLinearMap
 
 /-- `TauCeti.ChainComplex.extToHomology` sends the image of `β : Bⱼ ⟶ Y` in `Ext¹(Hⱼ(X), Y)` to
 the class of the cocycle `Xᵢ ⟶ Bⱼ ⟶ Y`. -/
 private lemma extToHomology_boundariesExt (i j : α) [Projective (X.cycles j)]
     [IsSplitMono (X.iCycles j)] (β : kernel (X.homologyπ j) ⟶ Y) :
-    extToHomology k X Y i j (boundariesExt.{w} k Y X j β) = boundariesHom k Y X i j β := by
+    extToHomology k X Y i j (boundariesExt.{w} k Y j β) = boundariesHom k Y i j β := by
   rw [extToHomology, LinearMap.comp_apply, LinearEquiv.coe_coe,
     LinearMap.quotKerEquivOfSurjective_symm_apply, Submodule.liftQ_apply]
 
@@ -266,7 +267,7 @@ theorem extToHomology_injective {i j : α} (hij : j + 1 = i) [Projective (X.cycl
   rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
   intro e he
   obtain ⟨β, rfl⟩ := boundariesExt_surjective (k := k) (Y := Y) j e
-  have hβ : boundariesHom k Y X i j β = 0 := (extToHomology_boundariesExt i j β).symm.trans he
+  have hβ : boundariesHom k Y i j β = 0 := (extToHomology_boundariesExt i j β).symm.trans he
   -- the cocycle `Xᵢ ⟶ Bⱼ ⟶ Y` is a coboundary `Xᵢ ⟶ Xⱼ ⟶ Y`
   have hφ := iCycles_cocycleOfComp (k := k) _ (d_toBoundaries i j) β
   rw [homologyClassOfComp_eq _ _ β _ hφ] at hβ
@@ -280,7 +281,7 @@ theorem extToHomology_injective {i j : α} (hij : j + 1 = i) [Projective (X.cycl
   have := epi_toBoundaries (X := X) hij
   -- hence `β` is the restriction of `ψ` along `Bⱼ ⟶ Zⱼ ⟶ Xⱼ`, whose class in `Ext¹` vanishes
   have hβψ : kernel.ι (X.homologyπ j) ≫ X.iCycles j ≫ ψ' = β := by
-    rw [← cancel_epi (toBoundaries X i j), ← hφ, kernel.lift_ι_assoc, X.toCycles_i_assoc]
+    rw [← cancel_epi (toBoundaries (X := X) i j), ← hφ, kernel.lift_ι_assoc, X.toCycles_i_assoc]
   rw [boundariesExt_apply, ← hβψ, ← Ext.mk₀_comp_mk₀,
     ← Ext.comp_assoc_of_second_deg_zero, ShortComplex.ShortExact.extClass_comp, Ext.zero_comp]
 
@@ -292,13 +293,13 @@ theorem exact_extToHomology_kronecker {i j : α} (hij : j + 1 = i) [Projective (
     [IsSplitMono (X.iCycles j)] :
     Function.Exact (extToHomology.{w} k X Y i j) (kronecker k X Y i) := by
   have hrange : LinearMap.range (extToHomology.{w} k X Y i j) =
-      LinearMap.range (boundariesHom k Y X i j) := by
+      LinearMap.range (boundariesHom k Y (X := X) i j) := by
     refine le_antisymm ?_ ?_
     · rintro _ ⟨e, rfl⟩
       obtain ⟨β, rfl⟩ := boundariesExt_surjective (k := k) (Y := Y) j e
       exact ⟨β, (extToHomology_boundariesExt i j β).symm⟩
     · rintro _ ⟨β, rfl⟩
-      exact ⟨boundariesExt.{w} k Y X j β, extToHomology_boundariesExt i j β⟩
+      exact ⟨boundariesExt.{w} k Y (X := X) j β, extToHomology_boundariesExt i j β⟩
   rw [LinearMap.exact_iff, hrange]
   refine le_antisymm (fun x hx ↦ ?_) ?_
   · obtain ⟨φ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ i x
@@ -307,18 +308,18 @@ theorem exact_extToHomology_kronecker {i j : α} (hij : j + 1 = i) [Projective (
       rw [← ha, ← kronecker_homologyπ, LinearMap.mem_ker.1 hx, comp_zero]
     have := epi_toBoundaries (X := X) hij
     -- the kernel of `Xᵢ ⟶ Bⱼ` lies in the cycles `Zᵢ`, on which the cocycle vanishes
-    have hker : kernel.ι (toBoundaries X i j) ≫ a = 0 := by
-      have hd : kernel.ι (toBoundaries X i j) ≫ X.d i j = 0 := by
+    have hker : kernel.ι (toBoundaries (X := X) i j) ≫ a = 0 := by
+      have hd : kernel.ι (toBoundaries (X := X) i j) ≫ X.d i j = 0 := by
         rw [← X.toCycles_i, ← kernel.lift_ι _ _ (X.toCycles_comp_homologyπ i j), Category.assoc,
           kernel.condition_assoc, zero_comp]
       rw [← X.liftCycles_i _ j ((ComplexShape.down α).next_eq' hij) hd, Category.assoc, hcyc,
         comp_zero]
     obtain ⟨β, hβ⟩ := CokernelCofork.IsColimit.desc' (Abelian.epiIsCokernelOfKernel _
-      (kernelIsKernel (toBoundaries X i j))) a hker
+      (kernelIsKernel (toBoundaries (X := X) i j))) a hker
     exact ⟨β, homologyClassOfComp_eq _ _ β φ (ha.trans hβ.symm)⟩
   · rintro _ ⟨β, rfl⟩
     -- the cycles `Zᵢ` map to zero in `Bⱼ ⊆ Zⱼ ⊆ Xⱼ`, as `Zᵢ ⟶ Xᵢ ⟶ Xⱼ` vanishes
-    have h0 : X.iCycles i ≫ toBoundaries X i j = 0 := by
+    have h0 : X.iCycles i ≫ toBoundaries (X := X) i j = 0 := by
       rw [← cancel_mono (kernel.ι (X.homologyπ j)), ← cancel_mono (X.iCycles j)]
       simp only [Category.assoc, kernel.lift_ι, X.toCycles_i, X.iCycles_d, zero_comp]
     rw [LinearMap.mem_ker, ← cancel_epi (X.homologyπ i), homologyπ_kronecker_homologyClassOfComp,
