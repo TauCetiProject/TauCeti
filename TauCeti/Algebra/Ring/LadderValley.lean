@@ -193,7 +193,7 @@ theorem ladderValley_mul_ladderValley (hud : ∀ w, d (w + 1) * u (w + 1) + u w 
     ladderValley_climb_mul]
 
 /-- A composable descent which pushes a valley below rung zero vanishes. -/
-theorem ladderValley_descent_mul_eq_zero (hud₀ : d 0 * u 0 = 0)
+private theorem ladderValley_descent_mul_eq_zero (hud₀ : d 0 * u 0 = 0)
     (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0)
     {m l s t r : ℕ} (hcomp : m + s = l + r) (hbottom : l < s) :
     ladderValley u d m s 0 * ladderValley u d l t r = 0 := by
