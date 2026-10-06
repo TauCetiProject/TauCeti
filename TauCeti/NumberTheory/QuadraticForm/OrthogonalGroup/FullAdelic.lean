@@ -17,8 +17,9 @@ topologies and the restricted-product topology at the finite places.
 
 This file constructs all three full adelic groups and the continuous maps `Spin → SO → O`.
 Their projections to finite adeles commute with these maps. Membership in the image of `SO → O`
-is characterized by properness at every place; in positive dimension the kernel of `Spin → SO`
-is characterized by scalar `±1` at every place, with independent signs.
+is characterized by properness at every place; for a nondegenerate form on a finite-dimensional,
+nonzero space, the kernel of `Spin → SO` is characterized by scalar `±1` at every place, with
+independent signs.
 
 The real coordinate of a full adelic point `x` is `x.1`, and its finite coordinates are `x.2 p`.
 The product and restricted-product extensionality lemmas therefore apply directly. All carriers
