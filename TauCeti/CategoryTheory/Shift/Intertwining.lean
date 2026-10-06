@@ -21,7 +21,9 @@ The construction uses the strict models of integral shifts from
 `CategoryTheory.Equivalence.IntSequence`. The sequence of shifts `n ↦ X⟦n⟧` of an object is a
 fully faithful functor to sequences for the shift by one, and it commutes coherently with the
 shifts. Applying `F` degreewise to sequences commutes strictly with reindexing. The compatibility
-of `F` is obtained by comparing the two routes to sequences.
+of `F` is obtained by comparing the two routes to sequences. The identities between the
+additivity isomorphisms `shiftFunctorAdd'` that this comparison needs are recorded in the
+`TauCeti` namespace.
 
 ## Main definitions
 
@@ -202,11 +204,62 @@ noncomputable instance mapFunctorCommShift
 
 end CategoryTheory.Equivalence.IntSequence
 
+/-! ### Identities between the additivity isomorphisms of a shift -/
+
+namespace TauCeti
+
+open CategoryTheory
+
+variable {C : Type u₁} [Category.{v₁} C]
+
+/-- Transporting the identification `X⟦a⟧⟦b⟧ ≅ X⟦c⟧` along an equality `c = c'` gives the
+identification `X⟦a⟧⟦b⟧ ≅ X⟦c'⟧`. -/
+theorem shiftFunctorAdd'_inv_app_comp_eqToHom {A : Type*} [AddMonoid A] [HasShift C A]
+    {a b c c' : A} (h : a + b = c) (h' : a + b = c') (X : C) :
+    (shiftFunctorAdd' C a b c h).inv.app X ≫ eqToHom (by rw [← h, h']) =
+      (shiftFunctorAdd' C a b c' h').inv.app X := by
+  subst h h'
+  simp
+
+variable [HasShift C ℤ]
+
+/-- The identifications `X⟦n + k⟧ ≅ X⟦k⟧⟦n⟧`, for `n` and `m = n + 1`, are compatible with the
+identifications `Y⟦n⟧⟦1⟧ ≅ Y⟦m⟧`. -/
+theorem shiftFunctorAdd'_hom_app_shift_comp {k n m : ℤ} (h : n + 1 = m) (X : C) :
+    ((shiftFunctorAdd' C k n (n + k) (add_comm k n)).hom.app X)⟦(1 : ℤ)⟧' ≫
+        (shiftFunctorAdd' C n 1 m h).inv.app (X⟦k⟧) =
+      (shiftFunctorAdd' C (n + k) 1 (m + k) (by omega)).inv.app X ≫
+        (shiftFunctorAdd' C k m (m + k) (add_comm k m)).hom.app X := by
+  rw [← cancel_epi ((shiftFunctorAdd' C (n + k) 1 (m + k) (by omega)).hom.app X),
+    reassoc_of% (shiftFunctorAdd'_assoc_hom_app k n 1 (n + k) m (m + k) (add_comm k n) h
+      (by omega) X)]
+  simp
+
+/-- The identification `X⟦k⟧⟦n⟧ ≅ X⟦n + k⟧` at `k = 0`. -/
+theorem shiftFunctorAdd'_zero_inv_app (n : ℤ) (X : C) :
+    (shiftFunctorAdd' C 0 n (n + 0) (add_comm 0 n)).inv.app X =
+      ((shiftFunctorZero C ℤ).hom.app X)⟦n⟧' ≫ eqToHom (by simp) := by
+  rw [← shiftFunctorAdd'_zero_add_inv_app, shiftFunctorAdd'_inv_app_comp_eqToHom]
+
+/-- The identification `X⟦k⟧⟦n⟧ ≅ X⟦n + k⟧` at `k = a + b`, through the shifts by `a` and `b`. -/
+theorem shiftFunctorAdd'_add_inv_app (a b n : ℤ) (X : C) :
+    (shiftFunctorAdd' C (a + b) n (n + (a + b)) (add_comm (a + b) n)).inv.app X =
+      ((shiftFunctorAdd C a b).hom.app X)⟦n⟧' ≫
+        (shiftFunctorAdd' C b n (n + b) (add_comm b n)).inv.app (X⟦a⟧) ≫
+          (shiftFunctorAdd' C a (n + b) (n + b + a) (add_comm a (n + b))).inv.app X ≫
+            eqToHom (by rw [show n + b + a = n + (a + b) by omega]) := by
+  rw [← shiftFunctorAdd'_assoc_inv_app_assoc a b n (a + b) (n + b) (n + b + a) rfl
+    (add_comm b n) (by omega), shiftFunctorAdd'_eq_shiftFunctorAdd, ← Functor.map_comp_assoc,
+    Iso.hom_inv_id_app, CategoryTheory.Functor.map_id, Category.id_comp,
+    shiftFunctorAdd'_inv_app_comp_eqToHom]
+
+end TauCeti
+
 /-! ### The sequence of shifts of an object -/
 
 namespace CategoryTheory.Equivalence.IntSequence
 
-open CategoryTheory
+open CategoryTheory TauCeti
 
 variable (D : Type u₂) [Category.{v₂} D] [HasShift D ℤ]
 
@@ -248,42 +301,6 @@ instance : (shiftSequence D).Full :=
   Functor.Full.of_comp_faithful_iso (shiftSequenceCompEvalIso D)
 
 variable {D}
-
-private lemma shiftFunctorAdd'_inv_app_comp_eqToHom {a b c c' : ℤ} (h : a + b = c)
-    (h' : a + b = c') (X : D) :
-    (shiftFunctorAdd' D a b c h).inv.app X ≫ eqToHom (by rw [← h, h']) =
-      (shiftFunctorAdd' D a b c' h').inv.app X := by
-  subst h h'
-  simp
-
-/-- The inverse identifications `X⟦n + k⟧ ≅ X⟦k⟧⟦n⟧` are compatible with the structure maps of
-the sequences of shifts. -/
-private lemma shiftFunctorAdd'_hom_app_shift_comp {k n m : ℤ} (h : n + 1 = m) (X : D) :
-    ((shiftFunctorAdd' D k n (n + k) (add_comm k n)).hom.app X)⟦(1 : ℤ)⟧' ≫
-        (shiftFunctorAdd' D n 1 m h).inv.app (X⟦k⟧) =
-      (shiftFunctorAdd' D (n + k) 1 (m + k) (by omega)).inv.app X ≫
-        (shiftFunctorAdd' D k m (m + k) (add_comm k m)).hom.app X := by
-  rw [← cancel_epi ((shiftFunctorAdd' D (n + k) 1 (m + k) (by omega)).hom.app X),
-    reassoc_of% (shiftFunctorAdd'_assoc_hom_app k n 1 (n + k) m (m + k) (add_comm k n) h
-      (by omega) X)]
-  simp
-
-/-- The identification `X⟦k⟧⟦n⟧ ≅ X⟦n + k⟧` at `k = 0`. -/
-private lemma shiftFunctorAdd'_zero_inv_app (n : ℤ) (X : D) :
-    (shiftFunctorAdd' D 0 n (n + 0) (add_comm 0 n)).inv.app X =
-      ((shiftFunctorZero D ℤ).hom.app X)⟦n⟧' ≫ eqToHom (by simp) := by
-  rw [← shiftFunctorAdd'_zero_add_inv_app, shiftFunctorAdd'_inv_app_comp_eqToHom]
-
-/-- The identification `X⟦k⟧⟦n⟧ ≅ X⟦n + k⟧` at `k = a + b`, through the shifts by `a` and `b`. -/
-private lemma shiftFunctorAdd'_add_inv_app (a b n : ℤ) (X : D) :
-    (shiftFunctorAdd' D (a + b) n (n + (a + b)) (add_comm (a + b) n)).inv.app X =
-      ((shiftFunctorAdd D a b).hom.app X)⟦n⟧' ≫
-        (shiftFunctorAdd' D b n (n + b) (add_comm b n)).inv.app (X⟦a⟧) ≫
-          (shiftFunctorAdd' D a (n + b) (n + b + a) (add_comm a (n + b))).inv.app X ≫
-            eqToHom (by rw [show n + b + a = n + (a + b) by omega]) := by
-  rw [← shiftFunctorAdd'_assoc_inv_app_assoc a b n (a + b) (n + b) (n + b + a) rfl
-    (add_comm b n) (by omega), shiftFunctorAdd'_eq_shiftFunctorAdd, ← Functor.map_comp_assoc,
-    Iso.hom_inv_id_app, Functor.map_id, Category.id_comp, shiftFunctorAdd'_inv_app_comp_eqToHom]
 
 /-- Shifting an object by `k` and forming its sequence of shifts is reindexing its sequence of
 shifts by `k`, through the identifications `X⟦k⟧⟦n⟧ ≅ X⟦n + k⟧`. -/
