@@ -16,29 +16,30 @@ the last variable `Xₙ`, which is the least significant one for the lexicograph
 into the coefficients (`MvPolynomial.optionEquivRight` after renaming along `finSuccEquivLast`)
 turns `f` into a polynomial `g` in the base variables `X₀, …, Xₙ₋₁` with coefficients in `R[Xₙ]`.
 For a base point `α ∈ Rⁿ`, Lazard evaluation of `g` at the constant polynomials `C αᵢ` divides out
-the base variables and leaves a nonzero univariate polynomial `q = g.lazardEval (C ∘ α)`, the
-Lazard evaluation of `f` over `α`; it records the removed base exponents
+the base variables and leaves a univariate polynomial `q = g.lazardEval (C ∘ α)`, the Lazard
+evaluation of `f` over `α`, which is nonzero when `f ≠ 0`; it records the removed base exponents
 `u = g.lazardExponent (C ∘ α)`.
 
 This file describes the Lazard invariants of `f` at a point `(α, β)` above `α`. The vector of
 exponents removed by Lazard evaluation of `f`, and for `f ≠ 0` its Lazard valuation, is `u` with
 the root multiplicity of `β` in `q` appended as last entry (`MvPolynomial.lazardExponent_snoc`,
 `MvPolynomial.lazardValuation_snoc`). The Lazard evaluation of `f` at `(α, β)` is obtained from
-`q` by one more step of division: it is the lowest nonzero coefficient of the Taylor expansion of
-`q` at `β` (`MvPolynomial.lazardEval_snoc`).
+`q` by one more step of division: it is the trailing coefficient of the Taylor expansion of `q` at
+`β` (`MvPolynomial.lazardEval_snoc`); for `f ≠ 0` this is its lowest nonzero coefficient, and for
+`f = 0` both sides are `0`.
 
-So, at the points of a root section `β = θ(α)` of the Lazard evaluations `q`, the Lazard valuation
-of `f` is the removed base exponent vector followed by the multiplicity of the root, and in a
-sector between root sections it is the removed base exponent vector followed by `0`. Constancy of
-the removed base exponents and of the root multiplicities over a base set thus makes the Lazard
-valuation of `f` constant on each section and sector above it. This is how Lazard's lifting
-theorem passes valuation-invariance from the base to the cylinder.
+So, for `f ≠ 0`, at the points of a root section `β = θ(α)` of the Lazard evaluations `q`, the
+Lazard valuation of `f` is the removed base exponent vector followed by the multiplicity of the
+root, and in a sector between root sections it is the removed base exponent vector followed by
+`0`. Constancy of the removed base exponents and of the root multiplicities over a base set thus
+makes the Lazard valuation of a nonzero `f` constant on each section and sector above it. This is
+how Lazard's lifting theorem passes valuation-invariance from the base to the cylinder.
 
 ## Main results
 
 * `MvPolynomial.lazardExponent_snoc`, `MvPolynomial.lazardValuation_snoc`: at `(α, β)` the
-  removed exponents and the Lazard valuation of `f` are those of `g` at `α`, followed by the root
-  multiplicity of `β` in the Lazard evaluation of `g` at `α`.
+  removed exponents of `f`, and for `f ≠ 0` its Lazard valuation, are the removed exponents of `g`
+  at `α`, followed by the root multiplicity of `β` in the Lazard evaluation of `g` at `α`.
 * `MvPolynomial.lazardEval_snoc`: the Lazard evaluation of `f` at `(α, β)` is the trailing
   coefficient of the Taylor expansion at `β` of the Lazard evaluation of `g` at `α`.
 
