@@ -400,22 +400,6 @@ section Comparison
 
 open BrauerGroup
 
-omit [Invertible (2 : K)] in
-/-- A class of rank `n + 2` splits off a binary plane `⟨a, b⟩`, leaving a class of rank `n`. -/
-private theorem exists_eq_mk_binary_add {x : RegularFormClass K} {n : ℕ} (hx : x.rank = n + 2) :
-    ∃ (a b : Kˣ) (y : RegularFormClass K), y.rank = n ∧
-      x = Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩ + y := by
-  induction x using Quotient.inductionOn with
-  | h p =>
-    obtain ⟨k, w⟩ := p
-    obtain rfl : k = n + 2 := by simpa using hx
-    refine ⟨w 0, w 1, Quotient.mk _ ⟨n, fun i => w i.succ.succ⟩, rank_mk _, ?_⟩
-    rw [mk_succ_eq_mk_rankOne_add (n := n + 1) w,
-      mk_succ_eq_mk_rankOne_add (n := n) (fun i => w i.succ), ← add_assoc,
-      mk_add_mk _ ⟨1, _⟩, RegularFormPresentation.append_def]
-    exact congrArg (· + _) (congrArg _ (Sigma.ext rfl (heq_of_eq (by
-      funext i; fin_cases i <;> rfl))))
-
 /-- **The plane step of Lam's comparison**: if the formula holds for the class `⟨-ab⟩ ⊗ y` of rank
 `2m + 2`, then it holds for `⟨a, b⟩ ⊥ y`. This is `cliffordInvariant_mk_binary_add` combined with
 the orthogonal-sum and scaling formulas for the Hasse invariant. -/
@@ -434,14 +418,15 @@ private theorem cliffordInvariant_mk_binary_add_eq {m : ℕ} (a b : Kˣ) {y : Re
             (2 * m + 3).choose 2 *
         quaternionClass (-1) (-1) ^ (2 * m + 5).choose 4 := by
   have hev : Even y.rank := hy ▸ ⟨m + 1, by ring⟩
-  rw [cliffordInvariant_mk_binary_add a b hev, ih, hasseInvariant_mk_rankOne_mul,
-    discr_mk_rankOne_mul_of_even _ hev, hasseInvariant_add, hasseInvariant_mk_binary, discr_add,
-    discr_mk, hy]
-  simp only [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one]
-  rw [← quaternionClassOnSquareClasses_squareClass (-(a * b)) (-1),
-    ← quaternionClassOnSquareClasses_squareClass (-1) (-1), neg_eq_neg_one_mul (a * b),
-    squareClass_mul]
+  -- Apply the plane recurrence and the induction hypothesis.
+  rw [cliffordInvariant_mk_binary_add a b hev, ih]
+  -- Expand the Hasse invariants and discriminants of the scaled class and of the sum.
+  simp only [hasseInvariant_mk_rankOne_mul, discr_mk_rankOne_mul_of_even _ hev,
+    hasseInvariant_add, hasseInvariant_mk_binary, discr_add, discr_mk, hy, Fin.prod_univ_two,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+  -- Write every symbol as a pairing of square classes.
+  simp only [← quaternionClassOnSquareClasses_squareClass]
+  rw [neg_eq_neg_one_mul (a * b), squareClass_mul]
   -- Every symbol is now a pairing of the square classes `E = [-1]`, `P = [ab]` and `D = d(y)`.
   set D := discr y
   set E := squareClass (-1 : Kˣ)
@@ -484,11 +469,14 @@ private theorem cliffordInvariant_add_mk_rankOne_eq {m : ℕ} (a : Kˣ) {y : Reg
             (2 * m + 2).choose 2 *
         quaternionClass (-1) (-1) ^ (2 * m + 4).choose 4 := by
   have hev : Even y.rank := hy ▸ ⟨m + 1, by ring⟩
-  rw [cliffordInvariant_add_mk_rankOne a hev, ih, hasseInvariant_mk_rankOne_mul,
-    discr_mk_rankOne_mul_of_even _ hev, hasseInvariant_add, hasseInvariant_mk_rankOne, discr_add,
-    discr_mk, hy, Fin.prod_univ_one, ← quaternionClassOnSquareClasses_squareClass (-a) (-1),
-    ← quaternionClassOnSquareClasses_squareClass (-1) (-1), neg_eq_neg_one_mul a,
-    squareClass_mul]
+  -- Apply the line recurrence and the induction hypothesis.
+  rw [cliffordInvariant_add_mk_rankOne a hev, ih]
+  -- Expand the Hasse invariants and discriminants of the scaled class and of the sum.
+  simp only [hasseInvariant_mk_rankOne_mul, discr_mk_rankOne_mul_of_even _ hev,
+    hasseInvariant_add, hasseInvariant_mk_rankOne, discr_add, discr_mk, hy, Fin.prod_univ_one]
+  -- Write every symbol as a pairing of square classes.
+  simp only [← quaternionClassOnSquareClasses_squareClass]
+  rw [neg_eq_neg_one_mul a, squareClass_mul]
   -- Every symbol is now a pairing of the square classes `E = [-1]`, `A = [a]` and `D = d(y)`.
   set D := discr y
   set E := squareClass (-1 : Kˣ)
