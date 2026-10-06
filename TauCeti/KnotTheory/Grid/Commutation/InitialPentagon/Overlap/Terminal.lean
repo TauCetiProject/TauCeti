@@ -68,27 +68,6 @@ public section
 
 namespace TauCeti
 
-namespace GridInitialPentagonBetween
-
-variable {n : ℕ} {a s : Fin n} {x y : GridState n}
-
-/-- In the column before the replaced line an initial-side pentagon covers the rows strictly
-between the turn row and its top row. -/
-private theorem mk_mem_coveredSquares_left_column (P : GridInitialPentagonBetween a s x y)
-    (t : Fin n) : (a, t) ∈ P.coveredSquares ↔ t ∈ Grid.cIoo s P.top := by
-  have ha : a ∉ Grid.cIco (finRotate n a) P.right := by simp
-  simp only [P.mem_coveredSquares, ha, P.ne_finRotate, ne_eq, not_false_eq_true, true_and,
-    false_and, false_or, or_false]
-
-/-- In the column after the replaced line an initial-side pentagon covers the rows from its
-bottom row up to the turn row. -/
-private theorem mk_mem_coveredSquares_right_column (P : GridInitialPentagonBetween a s x y)
-    (t : Fin n) : (finRotate n a, t) ∈ P.coveredSquares ↔ t ∈ Grid.cIco P.bottom s := by
-  simp only [P.mem_coveredSquares, P.ne_finRotate.symm, ne_eq, not_true_eq_false, false_and,
-    true_and, false_or]
-
-end GridInitialPentagonBetween
-
 namespace GridRectangleInitialPentagonDecomposition
 
 variable {n : ℕ} {a s : Fin n} {x z : GridState n}
