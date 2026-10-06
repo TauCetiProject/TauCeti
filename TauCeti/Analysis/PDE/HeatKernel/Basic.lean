@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convolution
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
+public import TauCeti.Analysis.InnerProductSpace.CompleteSquare
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
@@ -83,17 +84,6 @@ theorem heatKernel_neg (t : ℝ) (x : E) : heatKernel t (-x) = heatKernel t x :=
 /-- The heat kernel `K_t` is smooth in the space variable (for every `t`). -/
 theorem contDiff_heatKernel (t : ℝ) {k : WithTop ℕ∞} : ContDiff ℝ k (heatKernel t : E → ℝ) :=
   contDiff_const.mul (((contDiff_norm_sq ℝ).neg.div_const _).exp)
-
-/-- Completing the square in the exponent of `K_t(y) K_s(x - y)`: with `b = (t + s) / (4ts)`,
-`‖y‖² / (4t) + ‖x - y‖² / (4s) = b ‖y - (t / (t + s)) x‖² + ‖x‖² / (4(t + s))`. -/
-private theorem norm_sq_div_add_norm_sub_sq_div {t s : ℝ} (ht : 0 < t) (hs : 0 < s) (x y : E) :
-    ‖y‖ ^ 2 / (4 * t) + ‖x - y‖ ^ 2 / (4 * s) =
-      (t + s) / (4 * t * s) * ‖y - (t / (t + s)) • x‖ ^ 2 + ‖x‖ ^ 2 / (4 * (t + s)) := by
-  have hts : 0 < t + s := by positivity
-  rw [norm_sub_sq_real, norm_sub_sq_real, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs,
-    real_inner_smul_right, real_inner_comm]
-  field_simp
-  ring
 
 section Laplacian
 
@@ -181,9 +171,11 @@ theorem heatKernel_convolution_heatKernel {t s : ℝ} (ht : 0 < t) (hs : 0 < s) 
         exp (-b * ‖y - (t / (t + s)) • x‖ ^ 2) := fun y => by
     have hexp : -‖y‖ ^ 2 / (4 * t) + -‖x - y‖ ^ 2 / (4 * s) =
         -‖x‖ ^ 2 / (4 * (t + s)) + -b * ‖y - (t / (t + s)) • x‖ ^ 2 := by
-      have := norm_sq_div_add_norm_sub_sq_div ht hs x y
-      simp only [b, neg_div, neg_mul]
-      linarith
+      have := mul_norm_sq_add_mul_norm_sub_sq (a := (4 * t)⁻¹) (b := (4 * s)⁻¹) (by positivity) x y
+      rw [show (4 * s)⁻¹ / ((4 * t)⁻¹ + (4 * s)⁻¹) = t / (t + s) by field_simp; ring,
+        show (4 * t)⁻¹ + (4 * s)⁻¹ = b by simp only [b]; field_simp; ring,
+        show (4 * t)⁻¹ * (4 * s)⁻¹ / b = (4 * (t + s))⁻¹ by simp only [b]; field_simp] at this
+      linear_combination -this
     rw [heatKernel_apply, heatKernel_apply, mul_mul_mul_comm, ← exp_add, hexp, exp_add]
     simp only [p, neg_div]
     ring
