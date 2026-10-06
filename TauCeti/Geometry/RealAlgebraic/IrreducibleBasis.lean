@@ -5,28 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Polynomial.IrreducibleBasis
+public import TauCeti.RingTheory.MvPolynomial.IrreducibleBasis
 public import TauCeti.Geometry.RealAlgebraic.SignInvariant
-public import TauCeti.RingTheory.MvPolynomial.OrderAt
 import TauCeti.Algebra.MvPolynomial.Equiv
 import Mathlib.Algebra.MvPolynomial.Nilpotent
 import Mathlib.Basic.Sign.Basic
 
 /-!
-# Reconstructing signs and orders from an irreducible basis
+# Reconstructing signs from an irreducible basis
 
 An irreducible basis reconstructs each input polynomial as its content, a unit, and a
-product of powers of basis members. Over a polynomial coefficient ring over a domain,
-that unit is a nonzero scalar. Thus the signs of the content and the basis determine
-the sign of the input, and its ambient Taylor order is the order of its content plus
-the weighted sum of the orders of its basis factors.
+product of powers of basis members. Over a polynomial coefficient ring over an ordered
+domain, that unit is a nonzero scalar. Thus the signs of the content and the basis,
+together with the scalar sign, determine the sign of the input.
 
 The distinguished variable is coordinate zero, through `MvPolynomial.finSuccEquiv`.
-The content is evaluated at the remaining coordinates. In particular, constant signs
-or constant ambient orders for the basis and contents transfer to the original family.
-The statements include zero inputs, vanishing contents, and empty bases. Orders are
-ambient Taylor orders, including infinity for the zero polynomial; no restriction to
-a cell is taken before computing them.
+The content is evaluated at the remaining coordinates. Constant signs for the basis and
+contents transfer to the original family. The statements include zero inputs, vanishing
+contents, and empty bases. The corresponding ambient-order reconstruction and transfer
+are in `TauCeti.RingTheory.MvPolynomial.IrreducibleBasis`.
 
 ## References
 
@@ -40,51 +37,10 @@ open MvPolynomial Polynomial
 
 namespace Finset.IsIrreducibleBasis
 
-variable {R : Type*} [CommRing R] [UniqueFactorizationMonoid R] {n : ℕ}
+variable {R : Type*} [CommRing R] {n : ℕ}
+  [UniqueFactorizationMonoid (MvPolynomial (Fin n) R)]
   [NormalizedGCDMonoid (MvPolynomial (Fin n) R)]
   {F B : Finset (Polynomial (MvPolynomial (Fin n) R))}
-
-section Orders
-
-variable [IsDomain R]
-
-/-- The ambient order of an input is the order of its content plus the sum of the
-orders of the basis factors, weighted by their exponents in its factorization.
-The same exponents work at every point, including where the content vanishes. -/
-theorem exists_orderAt_eq_content_add_sum (hB : F.IsIrreducibleBasis B)
-    {f : Polynomial (MvPolynomial (Fin n) R)} (hf : f ∈ F) :
-    ∃ e : Polynomial (MvPolynomial (Fin n) R) → ℕ, ∀ a : Fin (n + 1) → R,
-      ((finSuccEquiv R n).symm f).orderAt a =
-        f.content.orderAt (Fin.tail a) +
-          ∑ b ∈ B, e b • ((finSuccEquiv R n).symm b).orderAt a := by
-  obtain ⟨u, e, hfe⟩ := hB.exists_eq_C_content_mul_unit_mul_prod hf
-  refine ⟨e, fun a ↦ ?_⟩
-  have hC (g : MvPolynomial (Fin n) R) :
-      (finSuccEquiv R n).symm (Polynomial.C g) = rename Fin.succ g := by
-    simpa only [MvPolynomial.finSuccEquiv'_zero, Fin.succAbove_zero] using
-      finSuccEquiv'_symm_C (0 : Fin (n + 1)) g
-  have hu : (rename Fin.succ (u : MvPolynomial (Fin n) R)).orderAt a = 0 :=
-    orderAt_eq_zero_iff.mpr ((u.isUnit.map (rename Fin.succ)).map (MvPolynomial.eval a)).ne_zero
-  conv_lhs => rw [hfe]
-  simp only [map_mul, hC, map_prod, map_pow, orderAt_mul, orderAt_prod,
-    orderAt_pow, hu, add_zero, orderAt_rename (Fin.succ_injective n),
-    Fin.tail_def, Function.comp_def]
-
-/-- Constant ambient orders for the content and basis factors imply constant ambient
-order for each input polynomial. No connectedness assumption is needed. -/
-theorem orderAt_eq (hB : F.IsIrreducibleBasis B)
-    {f : Polynomial (MvPolynomial (Fin n) R)} (hf : f ∈ F)
-    {a a' : Fin (n + 1) → R}
-    (hc : f.content.orderAt (Fin.tail a) = f.content.orderAt (Fin.tail a'))
-    (hb : ∀ b ∈ B, ((finSuccEquiv R n).symm b).orderAt a =
-      ((finSuccEquiv R n).symm b).orderAt a') :
-    ((finSuccEquiv R n).symm f).orderAt a =
-      ((finSuccEquiv R n).symm f).orderAt a' := by
-  obtain ⟨e, he⟩ := hB.exists_orderAt_eq_content_add_sum hf
-  rw [he a, he a', hc]
-  exact congrArg (_ + ·) (Finset.sum_congr rfl fun b hmem ↦ congrArg (e b • ·) (hb b hmem))
-
-end Orders
 
 section Signs
 
@@ -93,7 +49,7 @@ variable [LinearOrder R] [IsStrictOrderedRing R]
 /-- The signs of the content and the basis factors reconstruct the sign of each
 input, with one fixed nonzero scalar sign and fixed exponents. The identity holds
 also on zero fibers, so nullified inputs need no separate sign convention. -/
-theorem exists_sign_eval_eq_content_mul_prod (hB : F.IsIrreducibleBasis B)
+theorem exists_sign_eval_eq_content_mul_unit_mul_prod (hB : F.IsIrreducibleBasis B)
     {f : Polynomial (MvPolynomial (Fin n) R)} (hf : f ∈ F) :
     ∃ ε : SignType, ε ≠ 0 ∧ ∃ e : Polynomial (MvPolynomial (Fin n) R) → ℕ,
       ∀ a : Fin (n + 1) → R,
@@ -122,7 +78,7 @@ theorem signInvariant_eval (hB : F.IsIrreducibleBasis B)
     (hb : ∀ b ∈ B,
       TauCeti.SignInvariant (fun a ↦ MvPolynomial.eval a ((finSuccEquiv R n).symm b)) S) :
     TauCeti.SignInvariant (fun a ↦ MvPolynomial.eval a ((finSuccEquiv R n).symm f)) S := by
-  obtain ⟨ε, _, e, he⟩ := hB.exists_sign_eval_eq_content_mul_prod hf
+  obtain ⟨ε, _, e, he⟩ := hB.exists_sign_eval_eq_content_mul_unit_mul_prod hf
   simp only [TauCeti.signInvariant_def] at hc hb ⊢
   intro a ha a' ha'
   rw [he a, he a', hc a ha a' ha']
