@@ -28,8 +28,8 @@ This uniform identity is used to deform Lazard evaluations into ordinary fibers.
 ## References
 
 S. McCallum, A. Parusiński, L. Paunescu, *Validity proof of Lazard's method for CAD
-construction*, Journal of Symbolic Computation 92 (2019), 52–69, Section 5.1,
-Proposition 5.6.
+construction*, Journal of Symbolic Computation 92 (2019), 52–69.
+See arXiv:1607.00264v2, Section 5.1, Proposition 5.6, equation (8).
 -/
 
 public section
@@ -108,10 +108,10 @@ variable {R : Type*} [CommRing R] {n : ℕ}
 /-- On any nonempty set of base points, choose an evaluator for all removed Lazard exponents
 and a prescribed finite set `V` of other exponents, and the lexicographic minimum of the removed
 exponents. The polynomial admits a single remainder expansion on the whole set with that
-minimum as leading exponent. For `R = A[Z]`, the remainder retains `Z` as well as the center and
-the monomial-curve parameter. The coefficient at the minimum may vanish at points with a larger
-removed exponent. The extra set `V` allows the same curve to detect the valuations of leading
-coefficients, trailing coefficients, and discriminants. -/
+minimum as the common factored exponent. For `R = A[Z]`, the remainder retains `Z` as well as the
+center and the monomial-curve parameter. The coefficient at the minimum may vanish at points with
+a larger removed exponent. The extra set `V` allows the same curve to detect the valuations of
+leading coefficients, trailing coefficients, and discriminants. -/
 theorem exists_isLazardEvaluator_aeval_monomialCurve_eq_pow_mul
     (p : MvPolynomial (Fin n) R) {S : Set (Fin n → R)} (hS : S.Nonempty)
     {V : Set (Fin n →₀ ℕ)} (hV : V.Finite) :
