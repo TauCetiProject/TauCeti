@@ -37,6 +37,10 @@ and the ring of scalars a central subalgebra provides.
   `Subalgebra.isScalarTower_centralSubalgebraAlgebra` records that the base ring, the subalgebra
   and the ambient algebra form a scalar tower.
 * `Subalgebra.centerAlgebra` gives the whole center its canonical scalar action by inclusion.
+  `Subalgebra.isScalarTower_centerAlgebra` records compatibility with the original base action,
+  and `Subalgebra.centerAlgebraIsCentral` records that the resulting algebra is central.
+  `Subalgebra.finite_centerAlgebra_of_finite` transfers module finiteness from the original base
+  ring to the center.
   `Subalgebra.finite_over_center_of_finite` transfers module finiteness from a central
   subalgebra to the center. `Subalgebra.finite_center_of_isNoetherian` makes the center finite
   over that subalgebra when the ambient algebra is Noetherian as a module; together with
@@ -65,6 +69,26 @@ theorem centerAlgebra_algebraMap :
     algebraMap (center R A) A = (center R A).val.toRingHom := by
   ext z
   rfl
+
+/-- The original base ring, the center, and the ambient algebra form a scalar tower for the
+canonical action of the center by inclusion. -/
+theorem isScalarTower_centerAlgebra : IsScalarTower R (center R A) A := by
+  refine ⟨fun r z a ↦ ?_⟩
+  simp only [Algebra.smul_def]
+  change (((algebraMap R (center R A) r * z : center R A) : A) * a) =
+    algebraMap R A r * ((z : A) * a)
+  rw [Subalgebra.coe_mul, Subalgebra.coe_algebraMap, mul_assoc]
+
+/-- Every algebra is central when regarded as an algebra over its full center. -/
+instance centerAlgebraIsCentral : Algebra.IsCentral (center R A) A := by
+  refine ⟨fun x hx ↦ Algebra.mem_bot.mpr ?_⟩
+  exact ⟨⟨x, hx⟩, rfl⟩
+
+/-- An algebra finite as a module over its original base ring remains finite as a module over its
+center. -/
+theorem finite_centerAlgebra_of_finite [Module.Finite R A] : Module.Finite (center R A) A := by
+  let _ : IsScalarTower R (center R A) A := isScalarTower_centerAlgebra
+  exact Module.Finite.of_restrictScalars_finite R (center R A) A
 
 variable (S : Subalgebra R (Subalgebra.center R A))
 
