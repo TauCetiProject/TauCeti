@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.D.SpinWeight
+import TauCeti.Data.List.Involutive
 
 /-!
 # The tripled minuscule weight table of type D4
@@ -18,7 +19,8 @@ its fundamental weight, and records the structure a Chevalley carrier built on t
 needs.
 
 The table is closed under the four Bourbaki-numbered simple reflections through explicit
-permutations of `Fin 24`, with the reflection equation `s_i μ = μ - ⟨μ, αᵢ∨⟩ αᵢ`. Its weights
+permutations of `Fin 24`, with the reflection equation `s_i μ = μ - ⟨μ, αᵢ∨⟩ αᵢ`, and the orbits
+of those reflections are exactly the three summands. Its weights
 generate the full character lattice of `D₄`: the three blocks represent the three nonzero cosets
 of the root lattice in the weight lattice, and their weights together generate the whole of it.
 What makes all three blocks necessary is not that generation but stability under triality, which
@@ -40,6 +42,9 @@ tripled type-`D₄` Chevalley carrier, the carrier on which triality acts.
 * `TauCeti.DynkinType.d4TripledWeight`: the twenty-four weights in fundamental coordinates.
 * `TauCeti.DynkinType.d4TripledReflection`: the permutation induced by a simple reflection, with
   `TauCeti.DynkinType.d4TripledWeight_reflection` the simple-reflection equation.
+* `TauCeti.DynkinType.d4TripledSummand`: the summand containing a weight, with
+  `TauCeti.DynkinType.exists_foldl_d4TripledReflection_eq_iff` identifying the three summands
+  with the orbits of the simple reflections.
 * `TauCeti.DynkinType.span_range_d4TripledWeight_eq_top`: the weights span the character lattice.
 * `TauCeti.DynkinType.d4TripledTrialityPerm`: the permutation of the table realizing triality,
   with `TauCeti.DynkinType.d4TripledWeight_d4TripledTrialityPerm_apply` its equivariance and
@@ -151,6 +156,48 @@ theorem d4TripledWeight_reflection_apply (i : Fin 4) (a : Fin 24) (j : Fin 4) :
       d4TripledWeight a j - d4TripledWeight a i * CartanMatrix.D 4 i j := by
   rw [d4TripledWeight_reflection]
   simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
+
+/-! ## The three summands -/
+
+/-- **The summand containing a tripled weight**, numbered `0`, `1` and `2` for `V(ϖ₁)`, `V(ϖ₃)`
+and `V(ϖ₄)`: the table lists the eight weights of each summand consecutively. The label is an
+integer so that it can serve directly as a block labelling of the coordinates of `GL₂₄`. -/
+def d4TripledSummand (a : Fin 24) : ℤ :=
+  ((a : ℕ) / 8 : ℕ)
+
+/-- Simple reflections preserve each of the three summands. -/
+@[simp]
+theorem d4TripledSummand_d4TripledReflection (i : Fin 4) (a : Fin 24) :
+    d4TripledSummand (d4TripledReflection i a) = d4TripledSummand a := by
+  decide +kernel +revert
+
+/-- For each index, a word in the simple reflections carrying the first weight of its summand to
+the weight at that index. -/
+private def d4TripledSummandWord : Fin 24 → List (Fin 4) := ![
+  [], [0], [0, 1], [0, 1, 2], [0, 1, 3], [0, 1, 2, 3], [0, 1, 2, 3, 1], [0, 1, 2, 3, 1, 0],
+  [], [2], [2, 1], [2, 1, 0], [2, 1, 3], [2, 1, 0, 3], [2, 1, 0, 3, 1], [2, 1, 0, 3, 1, 2],
+  [], [3], [3, 1], [3, 1, 0], [3, 1, 2], [3, 1, 0, 2], [3, 1, 0, 2, 1], [3, 1, 0, 2, 1, 3]]
+
+private theorem foldl_d4TripledSummandWord (a b : Fin 24)
+    (h : d4TripledSummand a = d4TripledSummand b) :
+    ((d4TripledSummandWord a).reverse ++ d4TripledSummandWord b).foldl
+      (fun c i ↦ d4TripledReflection i c) a = b := by
+  revert a b
+  decide +kernel
+
+/-- **The summands are the orbits of the simple reflections on the tripled table.** One index is
+carried to another by a word in the simple reflections exactly when the two lie in the same
+summand. -/
+theorem exists_foldl_d4TripledReflection_eq_iff (a b : Fin 24) :
+    (∃ l : List (Fin 4), l.foldl (fun c i ↦ d4TripledReflection i c) a = b) ↔
+      d4TripledSummand a = d4TripledSummand b := by
+  constructor
+  · rintro ⟨l, rfl⟩
+    exact ((predicate_foldl_iff_of_involutive
+      (fun c ↦ d4TripledSummand c = d4TripledSummand a) (fun i ↦ d4TripledReflection i)
+      (fun i ↦ d4TripledReflection_apply_apply i)
+      (fun c i hc ↦ (d4TripledSummand_d4TripledReflection i c).trans hc) l a).mpr rfl).symm
+  · exact fun h ↦ ⟨_, foldl_d4TripledSummandWord a b h⟩
 
 /-! ## Generation of the character lattice -/
 

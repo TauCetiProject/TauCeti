@@ -73,14 +73,21 @@ marginal integrals of a dual pair meaningful.
   real-valued infimal transform is uniformly continuous when the target-variable sections of the
   cost share a uniform modulus and its infima are finite;
 * `TauCeti.cTransform_add_const` — the transform turns an additive real constant into its
-  negative, which is the normalisation freedom of the dual problem;
+  negative, which is the normalisation freedom of the dual problem, and
+  `TauCeti.cTransform_add_add`, `TauCeti.cSuperdifferential_add_add`,
+  `TauCeti.isCConcave_add_add_iff`, `TauCeti.isCConcaveSymm_add_add_iff` — adding a split cost
+  `a x + b y` shifts the transform and the potentials by the split terms without changing the
+  `c`-superdifferential;
 * `TauCeti.cTransform_coe` and `TauCeti.cTransformSymm_coe` — the extended-real transforms of
   coerced real potentials agree with the corresponding real infima whenever those infima are
   bounded below;
 * `TauCeti.contactSet_subset_contactSet_cTransformSymm_cTransform` — sequentially transforming a
   feasible pair gives a dominating feasible pair with a larger contact set, and
   `TauCeti.cTransformSymm_cTransform_eq_of_mem_cSuperdifferential` — a potential agrees with its
-  double transform at every point of its `c`-superdifferential.
+  double transform at every point of its `c`-superdifferential;
+* `TauCeti.IsCConcave.exists_real_conjugate` — for a bounded cost, a `c`-concave potential with a
+  finite value and its transform are bounded real potentials, each the real
+  infimal transform of the other.
 
 This is the finite-real algebraic slice of Layer 2, item 2 of the optimal-transport roadmap.
 
@@ -408,6 +415,35 @@ theorem cTransformSymm_add_const (c : X × Y → ℝ) (ψ : Y → EReal) (a : �
   simpa only [cTransformSymm_eq_cTransform] using
     cTransform_add_const (fun p : Y × X => c (p.2, p.1)) ψ a x
 
+/-! ### Split shifts of the cost -/
+
+/-- Adding a split cost `a x + b y` to the cost shifts the `c`-transform: the source term is
+absorbed into the potential and the target term is added to the result. -/
+@[simp]
+theorem cTransform_add_add (c : X × Y → ℝ) (a : X → ℝ) (b : Y → ℝ) (φ : X → EReal) (y : Y) :
+    cTransform (fun p => c p + a p.1 + b p.2) φ y =
+      (b y : EReal) + cTransform c (fun x => φ x - (a x : EReal)) y := by
+  have hb : ∀ z : EReal, z - ((-b y : ℝ) : EReal) = (b y : EReal) + z := fun z => by
+    rw [EReal.coe_neg, sub_eq_add_neg, neg_neg, add_comm]
+  have h := EReal.iInf_sub_coe (fun x => (c (x, y) : EReal) - (φ x - (a x : EReal))) (-b y)
+  simp only [hb] at h
+  rw [cTransform_apply, cTransform_apply, ← h]
+  refine iInf_congr fun x => ?_
+  rw [EReal.sub_sub_coe_eq_add_coe_sub, ← add_sub_assoc, ← EReal.coe_add, ← EReal.coe_add,
+    add_comm (b y)]
+
+/-- Adding a split cost `a x + b y` to the cost shifts the symmetric `c`-transform: the target
+term is absorbed into the potential and the source term is added to the result. -/
+@[simp]
+theorem cTransformSymm_add_add (c : X × Y → ℝ) (a : X → ℝ) (b : Y → ℝ) (ψ : Y → EReal)
+    (x : X) :
+    cTransformSymm (fun p => c p + a p.1 + b p.2) ψ x =
+      (a x : EReal) + cTransformSymm c (fun y => ψ y - (b y : EReal)) x := by
+  have hcost : (fun p : Y × X => c (p.2, p.1) + a p.2 + b p.1) =
+      fun p : Y × X => c (p.2, p.1) + b p.1 + a p.2 := funext fun p => add_right_comm _ _ _
+  simp only [cTransformSymm_eq_cTransform]
+  rw [hcost, cTransform_add_add (fun p : Y × X => c (p.2, p.1)) b a ψ x]
+
 /-! ### `c`-concave potentials -/
 
 /-- A potential on the source is `c`-concave when it is the symmetric `c`-transform of some
@@ -429,6 +465,12 @@ theorem isCConcave_cTransformSymm (c : X × Y → ℝ) (ψ : Y → EReal) :
 /-- Every `c`-transform is `c`-concave. -/
 theorem isCConcaveSymm_cTransform (c : X × Y → ℝ) (φ : X → EReal) :
     IsCConcaveSymm c (cTransform c φ) := ⟨φ, rfl⟩
+
+/-- A potential on the target is `c`-concave exactly when it is `c`-concave, as a potential on
+the source, for the transposed cost. -/
+theorem isCConcaveSymm_iff_isCConcave :
+    IsCConcaveSymm c ψ ↔ IsCConcave (fun p : Y × X => c (p.2, p.1)) ψ :=
+  Iff.rfl
 
 /-- A potential on the source is `c`-concave exactly when it is fixed by the double
 `c`-transform. -/
@@ -604,6 +646,134 @@ theorem cTransformSymm_cTransform_eq_of_mem_cSuperdifferential
     (hz : (x, y) ∈ cSuperdifferential c φ) : cTransformSymm c (cTransform c φ) x = φ x := by
   rw [cSuperdifferential_def] at hz
   exact cTransformSymm_eq_of_mem_contactSet (fun y' => add_cTransform_le c φ x y') hz
+
+/-! ### Split shifts, continued -/
+
+/-- A potential is `c`-concave for the cost shifted by a split cost `a x + b y` exactly when the
+potential with the source term absorbed is `c`-concave for the original cost. -/
+@[simp]
+theorem isCConcave_add_add_iff (c : X × Y → ℝ) (a : X → ℝ) (b : Y → ℝ) (φ : X → EReal) :
+    IsCConcave (fun p => c p + a p.1 + b p.2) φ ↔
+      IsCConcave c (fun x => φ x - (a x : EReal)) := by
+  constructor
+  · rintro ⟨ψ, rfl⟩
+    exact ⟨fun y => ψ y - (b y : EReal), funext fun x => by
+      rw [cTransformSymm_add_add, EReal.add_sub_cancel_left]⟩
+  · rintro ⟨ψ, hψ⟩
+    refine ⟨fun y => ψ y + (b y : EReal), funext fun x => ?_⟩
+    have hx : φ x - (a x : EReal) = cTransformSymm c ψ x := congr_fun hψ x
+    rw [cTransformSymm_add_add]
+    simp only [EReal.add_sub_cancel_right]
+    rw [← hx, add_comm, EReal.sub_add_cancel]
+
+/-- A potential on the target is `c`-concave for the cost shifted by a split cost `a x + b y`
+exactly when the potential with the target term absorbed is `c`-concave for the original cost. -/
+@[simp]
+theorem isCConcaveSymm_add_add_iff (c : X × Y → ℝ) (a : X → ℝ) (b : Y → ℝ) (ψ : Y → EReal) :
+    IsCConcaveSymm (fun p => c p + a p.1 + b p.2) ψ ↔
+      IsCConcaveSymm c (fun y => ψ y - (b y : EReal)) := by
+  have hcost : (fun p : Y × X => c (p.2, p.1) + b p.1 + a p.2) =
+      fun p : Y × X => c (p.2, p.1) + a p.2 + b p.1 := funext fun p => add_right_comm _ _ _
+  have h := isCConcave_add_add_iff (fun p : Y × X => c (p.2, p.1)) b a ψ
+  rw [hcost] at h
+  simpa only [IsCConcaveSymm, IsCConcave, cTransformSymm_eq_cTransform] using h
+
+/-- Adding a split cost `a x + b y` to the cost does not change the `c`-superdifferential, once
+the source term is absorbed into the potential. -/
+@[simp]
+theorem cSuperdifferential_add_add (c : X × Y → ℝ) (a : X → ℝ) (b : Y → ℝ) (φ : X → EReal) :
+    cSuperdifferential (fun p => c p + a p.1 + b p.2) φ =
+      cSuperdifferential c (fun x => φ x - (a x : EReal)) := by
+  ext ⟨x, y⟩
+  rw [mk_mem_cSuperdifferential_iff, mk_mem_cSuperdifferential_iff, cTransform_add_add,
+    add_left_comm, EReal.coe_add, EReal.coe_add, add_comm _ ((b y : ℝ) : EReal),
+    (EReal.addLECancellable_coe _).inj_right, EReal.sub_coe_add_eq_add_sub,
+    EReal.sub_coe_eq_iff_eq_add_coe]
+
+/-! ### Bounded costs -/
+
+section Bounded
+
+variable {c : X × Y → ℝ} {φ : X → EReal}
+
+/-- **`c`-concave potentials of a bounded cost are bounded and real.** If the cost is bounded
+and the `c`-concave potential `φ` takes a finite value somewhere, then `φ` and its
+`c`-transform take only finite values, given by two bounded real potentials `f` and `g`, and
+each of these is the real infimal transform of the other. The pair `(f, g)` is therefore a
+bounded real dual pair with the same contact set as `(φ, φᶜ)`. -/
+theorem IsCConcave.exists_real_conjugate (hφ : IsCConcave c φ)
+    (hcb : BddBelow (Set.range c)) (hca : BddAbove (Set.range c))
+    (hfin : ∃ (x : X) (a : ℝ), φ x = a) :
+    ∃ (f : X → ℝ) (g : Y → ℝ), (∀ x, φ x = f x) ∧ (∀ y, cTransform c φ y = g y) ∧
+      Bornology.IsBounded (Set.range f) ∧ Bornology.IsBounded (Set.range g) ∧
+      (∀ x, f x = ⨅ y, (c (x, y) - g y)) ∧ ∀ y, g y = ⨅ x, (c (x, y) - f x) := by
+  obtain ⟨m, hm⟩ := hcb
+  obtain ⟨M, hM⟩ := hca
+  have hm' : ∀ z, m ≤ c z := fun z ↦ hm (Set.mem_range_self z)
+  have hM' : ∀ z, c z ≤ M := fun z ↦ hM (Set.mem_range_self z)
+  obtain ⟨x₀, a, ha⟩ := hfin
+  set ψ := cTransform c φ with hψ
+  have hφψ : cTransformSymm c ψ = φ := hφ.cTransformSymm_cTransform
+  -- The finite value of `φ` bounds its transform from above.
+  have hψ_le (y : Y) : ψ y ≤ ((M - a : ℝ) : EReal) := by
+    refine (cTransform_le c φ x₀ y).trans ?_
+    rw [ha, ← EReal.coe_sub, EReal.coe_le_coe_iff]
+    linarith [hM' (x₀, y)]
+  -- Since `φ x₀` is finite, the transform is not identically `⊥`, so it is finite somewhere.
+  obtain ⟨y₀, hy₀⟩ : ∃ y, ψ y ≠ ⊥ := by
+    by_contra! h
+    have htop : φ x₀ = ⊤ := by
+      rw [← hφψ, cTransformSymm]
+      simp [h]
+    rw [ha] at htop
+    exact EReal.coe_ne_top a htop
+  obtain ⟨b, hb⟩ : ∃ b : ℝ, ψ y₀ = b :=
+    ⟨(ψ y₀).toReal, (EReal.coe_toReal (ne_top_of_le_ne_top (EReal.coe_ne_top _) (hψ_le y₀))
+      hy₀).symm⟩
+  have : Nonempty X := ⟨x₀⟩
+  have : Nonempty Y := ⟨y₀⟩
+  -- That finite value of the transform bounds `φ` from above.
+  have hφ_le (x : X) : φ x ≤ ((M - b : ℝ) : EReal) := by
+    rw [← hφψ]
+    refine (cTransformSymm_le c ψ x y₀).trans ?_
+    rw [hb, ← EReal.coe_sub, EReal.coe_le_coe_iff]
+    linarith [hM' (x, y₀)]
+  -- Each transform is an infimum of the cost minus a potential bounded above, hence bounded
+  -- below.
+  have hφ_ge (x : X) : ((m - (M - a) : ℝ) : EReal) ≤ φ x := by
+    rw [← hφψ]
+    refine le_cTransformSymm fun y ↦ ?_
+    refine le_trans ?_ (EReal.sub_le_sub le_rfl (hψ_le y))
+    rw [← EReal.coe_sub, EReal.coe_le_coe_iff]
+    linarith [hm' (x, y)]
+  have hψ_ge (y : Y) : ((m - (M - b) : ℝ) : EReal) ≤ ψ y := by
+    refine le_cTransform fun x ↦ ?_
+    refine le_trans ?_ (EReal.sub_le_sub le_rfl (hφ_le x))
+    rw [← EReal.coe_sub, EReal.coe_le_coe_iff]
+    linarith [hm' (x, y)]
+  have hf (x : X) : φ x = ((φ x).toReal : EReal) :=
+    (EReal.coe_toReal (ne_top_of_le_ne_top (EReal.coe_ne_top _) (hφ_le x))
+      (ne_bot_of_le_ne_bot (EReal.coe_ne_bot _) (hφ_ge x))).symm
+  have hg (y : Y) : ψ y = ((ψ y).toReal : EReal) :=
+    (EReal.coe_toReal (ne_top_of_le_ne_top (EReal.coe_ne_top _) (hψ_le y))
+      (ne_bot_of_le_ne_bot (EReal.coe_ne_bot _) (hψ_ge y))).symm
+  have hf_mem (x : X) : (φ x).toReal ∈ Set.Icc (m - (M - a)) (M - b) := by
+    rw [Set.mem_Icc, ← EReal.coe_le_coe_iff, ← EReal.coe_le_coe_iff, ← hf]
+    exact ⟨hφ_ge x, hφ_le x⟩
+  have hg_mem (y : Y) : (ψ y).toReal ∈ Set.Icc (m - (M - b)) (M - a) := by
+    rw [Set.mem_Icc, ← EReal.coe_le_coe_iff, ← EReal.coe_le_coe_iff, ← hg]
+    exact ⟨hψ_ge y, hψ_le y⟩
+  refine ⟨fun x ↦ (φ x).toReal, fun y ↦ (ψ y).toReal, hf, hg,
+    (Metric.isBounded_Icc _ _).subset (Set.range_subset_iff.2 hf_mem),
+    (Metric.isBounded_Icc _ _).subset (Set.range_subset_iff.2 hg_mem), fun x ↦ ?_, fun y ↦ ?_⟩
+  · have hbdd : BddBelow (Set.range fun y ↦ c (x, y) - (ψ y).toReal) :=
+      ⟨m - (M - a), Set.forall_mem_range.2 fun y ↦ by linarith [hm' (x, y), (hg_mem y).2]⟩
+    rw [← EReal.coe_eq_coe_iff, ← hf, ← cTransformSymm_coe c _ x hbdd, ← funext hg, hφψ]
+  · have hbdd : BddBelow (Set.range fun x ↦ c (x, y) - (φ x).toReal) :=
+      ⟨m - (M - b), Set.forall_mem_range.2 fun x ↦ by linarith [hm' (x, y), (hf_mem x).2]⟩
+    rw [← EReal.coe_eq_coe_iff, ← hg, ← cTransform_coe c _ y hbdd, ← funext hf]
+
+end Bounded
 
 end TauCeti
 

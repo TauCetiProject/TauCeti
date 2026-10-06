@@ -7,19 +7,26 @@ module
 
 public import Mathlib.Algebra.Ring.Action.Submonoid
 public import Mathlib.GroupTheory.GroupAction.OfQuotient
-public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
 public import Mathlib.Topology.Algebra.MulAction
+public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
 # Continuous actions on discrete spaces
 
 This file develops openness properties of continuous group actions on discrete spaces.
-For a finite space, the kernel of the action is open and the action factors through a finite
-quotient. For an arbitrary discrete space acted on by a compact topological group, every finite
-set is fixed pointwise by an open normal subgroup. In particular, each orbit map factors through
-a finite quotient. Total disconnectedness of the acting group is not needed: point stabilizers
-are clopen, so Mathlib's compact-group clopen-neighborhood theorem applies directly.
+For a finite space, the kernel of the action is open, and so defines an open normal subgroup
+(`TauCeti.openActionKernel`). For an arbitrary discrete space acted on by a compact topological
+group, every finite set is fixed pointwise by an open normal subgroup. In particular, each orbit
+map factors through a finite quotient. Total disconnectedness of the acting group is not needed:
+point stabilizers are clopen, so Mathlib's compact-group clopen-neighborhood theorem applies
+directly.
+
+A function `k : G → M` that is equivariant for an open subgroup `U`, in the sense
+`k (u * g) = u • k g`, is locally constant when `U` acts continuously on the discrete space `M`:
+it is constant on the open neighbourhood `Stab(k g) * g` of each `g`
+(`TauCeti.isLocallyConstant_of_apply_mul`). This is the local-constancy condition defining
+coinduced modules.
 
 For actions on discrete additive groups, the fixed-point subgroups over all open normal
 subgroups exhaust the group; the additive group need not be commutative. These results supply
@@ -51,13 +58,11 @@ theorem _root_.Set.Finite.exists_openNormalSubgroup_smul_eq_self {s : Set M} (hs
     hs.isClopen_biInter fun m _ ↦
       ⟨(MulAction.stabilizer G m).isClosed_of_isOpen (stabilizer_isOpen G m),
         stabilizer_isOpen G m⟩
-  have hOne : (1 : G) ∈ V := by
-    simp only [V, Set.mem_iInter, SetLike.mem_coe, MulAction.mem_stabilizer_iff, one_smul,
-      implies_true]
+  have hOne : (1 : G) ∈ V := by simp [V]
   obtain ⟨U, hU⟩ :=
     IsTopologicalGroup.exist_openNormalSubgroup_sub_clopen_nhds_of_one hClopen hOne
-  refine ⟨U, fun u hu m hm ↦ ?_⟩
-  exact MulAction.mem_stabilizer_iff.mp (Set.mem_iInter₂.mp (hU hu) m hm)
+  exact ⟨U, fun u hu m hm ↦
+    MulAction.mem_stabilizer_iff.mp (Set.mem_iInter₂.mp (hU hu) m hm)⟩
 
 /-- Every element of a discrete continuous action of a compact group is fixed by an open
 normal subgroup. -/
@@ -71,9 +76,7 @@ theorem exists_openNormalSubgroup_smul_eq_self (m : M) :
 normal stabilizer. This is the form used for the finite image of a locally constant cochain. -/
 theorem exists_openNormalSubgroup_smul_eq_self_range {ι : Type*} [Finite ι] (f : ι → M) :
     ∃ U : OpenNormalSubgroup G, ∀ u ∈ U, ∀ i, u • f i = f i := by
-  have hrange : (Set.range f).Finite := Set.finite_range f
-  obtain ⟨U, hU⟩ :=
-    Set.Finite.exists_openNormalSubgroup_smul_eq_self (G := G) hrange
+  obtain ⟨U, hU⟩ := (Set.finite_range f).exists_openNormalSubgroup_smul_eq_self (G := G)
   exact ⟨U, fun u hu i ↦ hU u hu (f i) ⟨i, rfl⟩⟩
 
 /-- The orbit map of a discrete continuous action of a compact group factors through a finite
@@ -88,66 +91,72 @@ theorem exists_orbitMap_quotient (m : M) :
 
 end Elementwise
 
+section SubgroupEquivariant
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+  {U : Subgroup G} {M : Type v} [TopologicalSpace M] [DiscreteTopology M] [MulAction U M]
+  [ContinuousSMul U M]
+
+/-- A function on `G` that is equivariant for an open subgroup `U` acting continuously on a
+discrete space is locally constant: it is constant on the open neighbourhood `Stab(k g) * g`
+of `g`. -/
+theorem isLocallyConstant_of_apply_mul (hU : IsOpen (U : Set G)) {k : G → M}
+    (hk : ∀ (u : U) (g : G), k (u * g) = u • k g) : IsLocallyConstant k := by
+  rw [IsLocallyConstant.iff_eventually_eq]
+  intro g
+  let S : Set U := MulAction.stabilizer U (k g)
+  have hS : IsOpen S := stabilizer_isOpen U (k g)
+  have hopen : IsOpen ((fun u : U ↦ (u : G) * g) '' S) :=
+    ((isOpenMap_mul_right g).comp hU.isOpenMap_subtype_val) S hS
+  have hg : g ∈ (fun u : U ↦ (u : G) * g) '' S := ⟨1, by simp [S], by simp⟩
+  filter_upwards [hopen.mem_nhds hg] with x hx
+  obtain ⟨u, hu, rfl⟩ := hx
+  rw [hk]
+  exact hu
+
+end SubgroupEquivariant
+
 section Kernel
 
 variable (G : Type u) [Group G] (M : Type v) [MulAction G M]
 
 /-- The action kernel is the intersection of all point stabilizers. -/
-theorem toPermHom_ker_eq_iInf_stabilizer :
+theorem ker_toPermHom_eq_iInf_stabilizer :
     (MulAction.toPermHom G M).ker = ⨅ m : M, MulAction.stabilizer G m := by
-  ext g
-  simp only [MonoidHom.mem_ker, Equiv.ext_iff, MulAction.toPermHom_apply,
-    MulAction.toPerm_apply, Equiv.Perm.one_apply, Subgroup.mem_iInf,
-    MulAction.mem_stabilizer_iff]
+  ext
+  simp [Equiv.ext_iff]
 
 /-- The action kernel is the whole group exactly when the action is trivial. -/
 @[simp]
-theorem toPermHom_ker_eq_top_iff :
+theorem ker_toPermHom_eq_top_iff :
     (MulAction.toPermHom G M).ker = ⊤ ↔ ∀ (g : G) (m : M), g • m = m := by
-  constructor
-  · intro h g m
-    have hg : g ∈ (MulAction.toPermHom G M).ker := by rw [h]; exact Subgroup.mem_top g
-    exact Equiv.congr_fun (MonoidHom.mem_ker.mp hg) m
-  · intro h
-    rw [eq_top_iff]
-    intro g _
-    rw [MonoidHom.mem_ker, Equiv.ext_iff]
-    exact h g
-
-/-- An action on a finite space factors through a finite quotient. -/
-theorem finite_quotient_toPermHom_ker [Finite M] :
-    Finite (G ⧸ (MulAction.toPermHom G M).ker) := by
-  exact Finite.of_equiv (MulAction.toPermHom G M).range
-    (QuotientGroup.quotientKerEquivRange (MulAction.toPermHom G M)).symm.toEquiv
+  simp [Subgroup.eq_top_iff', Equiv.ext_iff]
 
 variable [TopologicalSpace G] [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul G M]
 
 /-- The kernel of a continuous action on a finite discrete space is open. -/
-theorem isOpen_toPermHom_ker [Finite M] :
+theorem isOpen_ker_toPermHom [Finite M] :
     IsOpen ((MulAction.toPermHom G M).ker : Set G) := by
-  rw [toPermHom_ker_eq_iInf_stabilizer, Subgroup.coe_iInf]
+  rw [ker_toPermHom_eq_iInf_stabilizer, Subgroup.coe_iInf]
   exact isOpen_iInter_of_finite fun m ↦ stabilizer_isOpen G m
 
 /-- The open normal subgroup given by the kernel of a finite discrete action. -/
 def openActionKernel [Finite M] : OpenNormalSubgroup G where
   toOpenSubgroup :=
     { toSubgroup := (MulAction.toPermHom G M).ker
-      isOpen' := isOpen_toPermHom_ker G M }
+      isOpen' := isOpen_ker_toPermHom G M }
   isNormal' := (MulAction.toPermHom G M).normal_ker
 
 @[simp]
 theorem openActionKernel_toSubgroup [Finite M] :
-    (openActionKernel G M).toSubgroup = (MulAction.toPermHom G M).ker := by
-  ext
-  simp only [openActionKernel]
+    (openActionKernel G M).toSubgroup = (MulAction.toPermHom G M).ker :=
+  (rfl)
 
-/-- A finite discrete space with a continuous group action is fixed pointwise by an open normal
-subgroup. The subgroup can be taken to be the kernel of the action. -/
+/-- Elements of the open action kernel act trivially on the finite discrete space. -/
 @[simp]
 theorem openActionKernel_smul_eq_self [Finite M] (g : openActionKernel G M) (m : M) :
-    (g : G) • m = m := by
-  have hg := MonoidHom.mem_ker.mp g.2
-  exact Equiv.congr_fun hg m
+    (g : G) • m = m :=
+  Equiv.congr_fun (MonoidHom.mem_ker.mp g.2) m
 
 end Kernel
 
@@ -161,10 +170,8 @@ variable (G : Type u) [Group G] [TopologicalSpace G]
 The additive group need not be commutative. -/
 @[simp]
 theorem fixedPoints_openActionKernel_eq_top :
-    FixedPoints.addSubgroup (openActionKernel G M).toSubgroup M = ⊤ := by
-  rw [eq_top_iff]
-  intro m _ g
-  exact openActionKernel_smul_eq_self G M g m
+    FixedPoints.addSubgroup (openActionKernel G M).toSubgroup M = ⊤ :=
+  eq_top_iff.2 fun m _ g ↦ openActionKernel_smul_eq_self G M g m
 
 end FiniteCoefficients
 

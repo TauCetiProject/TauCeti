@@ -16,11 +16,12 @@ public import TauCeti.InformationTheory.Coding.Discriminant
 The discriminant group of the zero-code Construction A lattice is canonically the coordinate
 alphabet `(ℤ/m)^ι`. This file transports an additive code through that canonical isometry, so the
 code becomes an actual subgroup of the discriminant group. The transport identifies bilinear
-orthogonal complements and bilinear isotropy, and its inverse-image carrier is exactly the
-Construction A carrier of the original code. Gluing along a self-orthogonal code gives the
-Construction A integral lattice. The orthogonality statements use the finite
-bilinear-module presentation, while the carrier statement uses the quotient discriminant-group
-presentation required by the corresponding APIs. Quadratic isotropy is not treated here.
+orthogonal complements, bilinear isotropy, and the Lagrangian condition, and its inverse-image
+carrier is exactly the Construction A carrier of the original code. Gluing along a
+self-orthogonal code gives the Construction A integral lattice. The orthogonal-complement and
+isotropy statements use the finite bilinear-module presentation, while the carrier statement and
+the Lagrangian criterion use the quotient discriminant-group presentation required by the
+corresponding APIs. Quadratic isotropy is not treated here.
 
 References:
 
@@ -139,6 +140,17 @@ theorem isIsotropic_codeInZeroLatticeDiscriminantGroup (C : AdditiveCode (ZMod m
   rw [codeInZeroLatticeDiscriminantGroup_eq_codeInZeroLatticeDiscriminantBilinearModule,
     isIsotropic_codeInZeroLatticeDiscriminantBilinearModule_iff_le_euclideanDual]
   exact hC
+
+/-- The subgroup of the zero-lattice discriminant group transported from a code is Lagrangian
+exactly when the code is Lagrangian in the coordinate alphabet. -/
+@[simp]
+theorem isLagrangian_codeInZeroLatticeDiscriminantGroup_iff (C : AdditiveCode (ZMod m) ι) :
+    (zeroLattice m ι).discriminantBilinearModule.IsLagrangian
+        (codeInZeroLatticeDiscriminantGroup m ι C) ↔
+      ((FiniteBilinearModule.zmodStandard (m : ℕ)).coordinatePower ι).IsLagrangian C := by
+  rw [codeInZeroLatticeDiscriminantGroup_eq_codeInZeroLatticeDiscriminantBilinearModule,
+    ← (discriminantIsometry m ι).isLagrangian_map_iff,
+    map_codeInZeroLatticeDiscriminantBilinearModule]
 
 /-- Reduction maps the transported discriminant subgroup back to the original code. -/
 @[simp]

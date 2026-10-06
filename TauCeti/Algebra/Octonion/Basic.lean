@@ -71,9 +71,12 @@ nothing more.
   `x * x = trace x • x - norm x • 1`.
 * `TauCeti.Octonion.finrank_imaginary`: the imaginary octonions, the trace-zero subspace, are
   `7`-dimensional. The derivation algebra `Der 𝕆` is `TauCeti.derivationLieAlgebra R (Octonion R)`
-  (`TauCeti/Algebra/Lie/Derivation/Basic.lean`); identifying the imaginary octonions with the
-  fundamental representation of `G₂ = Der 𝕆` still waits on the count `finrank (Der 𝕆) = 14` and the
-  isomorphism with `LieAlgebra.g₂`, neither of which is proved here.
+  (`TauCeti/Algebra/Lie/Derivation/Basic.lean`), of rank `14` by
+  `TauCeti.Octonion.finrank_derivationLieAlgebra`. Over a field in which `2` is nonzero the
+  imaginary octonions are an irreducible representation of `Der 𝕆`
+  (`TauCeti.Octonion.isIrreducible_imaginaryLieSubmodule`, in
+  `TauCeti/Algebra/Octonion/Fundamental.lean`), so there they are its `7`-dimensional fundamental
+  representation; only the isomorphism of `Der 𝕆` with `LieAlgebra.g₂` still waits.
 
 ## Implementation notes
 
@@ -355,6 +358,12 @@ theorem trace_one : trace (1 : Octonion R) = 2 := by
 theorem add_conj (x : Octonion R) : x + conj x = trace x • 1 := by
   refine Octonion.ext ?_ ?_ ?_ ?_ <;> simp [add_comm]
 
+/-- Conjugation is reflection in the trace: `conj x = trace x • 1 - x`. -/
+theorem conj_eq_trace_smul_one_sub (x : Octonion R) :
+    conj x = trace x • (1 : Octonion R) - x := by
+  rw [← add_conj]
+  abel
+
 /-- Conjugation preserves the trace: it only exchanges the two diagonal entries. Not a `simp`
 lemma, for the same reason as `TauCeti.Octonion.trace_one`. -/
 theorem trace_conj (x : Octonion R) : trace (conj x) = trace x := by
@@ -577,10 +586,12 @@ example :
 /-! ### The imaginary octonions -/
 
 /-- **The imaginary octonions**, the trace-zero subspace of `𝕆`. It is `7`-dimensional
-(`TauCeti.Octonion.finrank_imaginary`); identifying it with the fundamental representation of
-`G₂ = Der 𝕆` -- where `Der 𝕆` is `TauCeti.derivationLieAlgebra R (Octonion R)` -- waits on the
-count `finrank (Der 𝕆) = 14` and the isomorphism with `LieAlgebra.g₂`, neither of which is proved
-here. -/
+(`TauCeti.Octonion.finrank_imaginary`) and, over a field in which `2` is nonzero, an irreducible
+representation of `G₂ = Der 𝕆` by `TauCeti.Octonion.isIrreducible_imaginaryLieSubmodule` -- where
+`Der 𝕆` is `TauCeti.derivationLieAlgebra R (Octonion R)`, of rank `14` by
+`TauCeti.Octonion.finrank_derivationLieAlgebra`. The isomorphism of `Der 𝕆` with `LieAlgebra.g₂` is
+not proved in the repository.
+-/
 def imaginary (R : Type*) [CommRing R] : Submodule R (Octonion R) := LinearMap.ker trace
 
 @[simp] theorem mem_imaginary {x : Octonion R} : x ∈ imaginary R ↔ trace x = 0 :=

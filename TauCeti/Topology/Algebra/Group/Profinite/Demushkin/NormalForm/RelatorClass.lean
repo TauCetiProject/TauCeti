@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.GroupAction.TypeTags
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CompletedGroupAlgebraModule
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup

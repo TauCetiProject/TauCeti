@@ -23,7 +23,8 @@ labels as the column is long.  Summing over the columns of `t`, the cells of `ν
 rows -- of which there are exactly `min k (colLen j)` in column `j` -- already accommodate `X`,
 so `μ₁ + ⋯ + μ_k ≤ ν₁ + ⋯ + ν_k`.
 
-The counting core `YoungDiagram.card_filter_le_sum_take_rowLens` is stated for an
+The counting itself is `YoungDiagram.card_filter_le_sum_take_rowLens` from
+`TauCeti/Combinatorics/Young/Diagram.lean`, stated for an
 arbitrary finite index type carrying a row function and an injection into the cells: this is what
 the tableau statement, where the index type is the set of labels, unfolds to, and it keeps the
 counting free of any tableau bookkeeping.  The lemma is the combinatorial engine behind the
@@ -34,7 +35,6 @@ below holds.
 
 ## Main results
 
-* `YoungDiagram.card_filter_le_sum_take_rowLens`: the counting core.
 * `TauCeti.YoungTableau.sum_take_rowLens_le_of_injective`: the dominance lemma for two tableaux.
 * `TauCeti.dominates_of_rowIndex_colIndex_injective`: the dominance lemma for partitions.
 * `TauCeti.exists_ne_rowIndex_eq_colIndex_eq_of_not_dominates`: its contrapositive, producing two
@@ -49,51 +49,6 @@ below holds.
 -/
 
 public section
-
-namespace YoungDiagram
-
-/-- **The counting core of the dominance lemma.** Let the elements of a finite type `α` be
-labelled by a *row* `r a : ℕ` and placed in the cells of a Young diagram `lam` by an injection
-`f`, in such a way that the row of an element together with the column of its cell determines
-the element.  Then the elements of row less than `k` are no more numerous than the cells of `lam`
-in its first `k` rows.
-
-The hypothesis `hcol` is the condition that elements sharing a row occupy pairwise distinct
-columns; it is what bounds by `k` the number of elements landing in any one column. -/
-theorem card_filter_le_sum_take_rowLens {α : Type*} [Fintype α] (lam : YoungDiagram)
-    (r : α → ℕ) (f : α → ℕ × ℕ) (hmem : ∀ a, f a ∈ lam.cells) (hinj : Function.Injective f)
-    (hcol : ∀ a b, r a = r b → (f a).2 = (f b).2 → a = b) (k : ℕ) :
-    (Finset.univ.filter fun a => r a < k).card ≤ (lam.rowLens.take k).sum := by
-  classical
-  rw [sum_take_rowLens_eq_card_filter_fst]
-  -- Every column index in sight is smaller than the length of the top row.
-  have hlt : ∀ c ∈ lam.cells, c.2 ∈ Finset.range (lam.rowLen 0) := by
-    intro c hc
-    refine Finset.mem_range.mpr (lt_of_lt_of_le ?_ (lam.rowLen_anti 0 c.1 c.1.zero_le))
-    exact _root_.YoungDiagram.mem_iff_lt_rowLen.mp ((_root_.YoungDiagram.mem_cells c).mp hc)
-  -- Split both sides into their columns.
-  rw [Finset.card_eq_sum_card_fiberwise (f := fun a => (f a).2)
-      (t := Finset.range (lam.rowLen 0)) fun a _ => hlt _ (hmem a),
-    Finset.card_eq_sum_card_fiberwise (f := fun c : ℕ × ℕ => c.2)
-      (t := Finset.range (lam.rowLen 0)) fun c hc =>
-      hlt c (Finset.mem_filter.mp hc).1]
-  refine Finset.sum_le_sum fun j _ => ?_
-  rw [card_filter_fst_lt_filter_snd_eq lam k j]
-  have hfib : ∀ a ∈ ((Finset.univ.filter fun a => r a < k).filter fun a => (f a).2 = j : Finset α),
-      r a < k ∧ (f a).2 = j := by
-    intro a ha
-    simpa only [Finset.mem_filter, Finset.mem_univ, true_and] using ha
-  -- In a fixed column, the elements are separated by their rows, and they fit in the column.
-  refine le_min (le_of_le_of_eq ?_ (Finset.card_range k))
-    (le_of_le_of_eq ?_ lam.colLen_eq_card.symm)
-  · refine Finset.card_le_card_of_injOn r (fun a ha => ?_) fun a ha b hb hab => ?_
-    · exact Finset.mem_range.mpr (hfib a ha).1
-    · exact hcol a b hab (((hfib a ha).2).trans (hfib b hb).2.symm)
-  · refine Finset.card_le_card_of_injOn f (fun a ha => ?_) hinj.injOn
-    exact _root_.YoungDiagram.mem_col_iff.mpr
-      ⟨(_root_.YoungDiagram.mem_cells _).mp (hmem a), (hfib a ha).2⟩
-
-end YoungDiagram
 
 namespace TauCeti
 
@@ -113,11 +68,16 @@ theorem sum_take_rowLens_le_of_injective (t : YoungTableau lam) (s : YoungTablea
     (h : ∀ x y, rowIndex s x = rowIndex s y → colIndex t (σ x) = colIndex t (σ y) → x = y)
     (k : ℕ) : (m.rowLens.take k).sum ≤ (lam.rowLens.take k).sum := by
   classical
-  rw [← card_filter_rowIndex_lt s k]
-  refine YoungDiagram.card_filter_le_sum_take_rowLens lam (rowIndex s)
-    (fun x => ((t.symm (σ x) : ↥lam.cells) : ℕ × ℕ)) (fun x => (t.symm (σ x)).2)
-    (fun x y hxy => σ.injective (t.symm.injective (Subtype.ext hxy))) (fun x y hr hc => ?_) k
-  exact h x y hr (by simpa only [colIndex_def] using hc)
+  have hp : Function.Injective fun y => (rowIndex s (σ.symm y), colIndex t y) := by
+    intro x y hxy
+    have h := h (σ.symm x) (σ.symm y) (congrArg Prod.fst hxy)
+      (by simpa only [Equiv.apply_symm_apply] using congrArg Prod.snd hxy)
+    exact σ.symm.injective h
+  have hcount : (Finset.univ.filter fun y => rowIndex s (σ.symm y) < k).card =
+      (Finset.univ.filter fun x => rowIndex s x < k).card :=
+    Finset.card_equiv σ.symm fun y => by simp
+  simpa only [hcount, card_filter_rowIndex_lt] using
+    card_filter_lt_le_card_filter_rowIndex_lt t hp k
 
 end YoungTableau
 

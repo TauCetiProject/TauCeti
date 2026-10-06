@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 import TauCeti.Analysis.Convex.Exhaustion
-import TauCeti.Analysis.Sobolev.W1p.LocalApproximation
+import TauCeti.Analysis.Sobolev.Wkp.LocalApproximation
 import TauCeti.MeasureTheory.Function.Lp.Const
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
@@ -33,8 +33,8 @@ holds for the deviation from an arbitrary constant, since the nonzero constants 
 ## The approximation
 
 Test functions on `Ω` are dense in `W^{1,p}(Ω)` only after `Ω` is shrunk:
-`TauCeti.W1p.restrictL_mem_closure_range_ofTestFunctionₗ` approximates `u` on a subdomain `U`
-whose closure is a compact subset of `Ω`.  Two limits are therefore taken.
+`TauCeti.W1p.restrictL_mem_closure_range_ofTestFunctionₗ` approximates `u`
+on a subdomain `U` whose closure is a compact subset of `Ω`.  Two limits are therefore taken.
 
 * On a fixed such `U`, convex so that the `C¹` inequality applies to it, the Sobolev functions
   satisfying the inequality form a closed set — the mean over `S` is a continuous functional, by
@@ -218,9 +218,9 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
     have havg : (⨍ y in S ∩ V n, W1p.value v y ∂mu) = ⨍ y in S ∩ V n, W1p.value u y ∂mu :=
       average_congr (hval.filter_mono
         (ae_mono (Measure.restrict_mono inter_subset_right le_rfl)))
-    have hbase := eLpNorm_value_sub_setAverage_le_of_mem_closure (S := S ∩ V n) hp (hWle n)
-      (hVconv n) (hb.subset (hVsub n)) inter_subset_right hn
-      (W1p.restrictL_mem_closure_range_ofTestFunctionₗ hp (hVcompact n) (hVclosure n) u)
+    have hbase := eLpNorm_value_sub_setAverage_le_of_mem_closure (S := S ∩ V n) (v := v) hp
+      (hWle n) (hVconv n) (hb.subset (hVsub n)) inter_subset_right hn
+      (W1p.restrictL_mem_closure_range_ofTestFunctionₗ (U := W) hp (hVcompact n) (hVclosure n) u)
     rw [havg] at hbase
     have hpos : 0 < mu.real (S ∩ V n) :=
       ENNReal.toReal_pos hn (ne_top_of_le_ne_top hSfin (measure_mono inter_subset_left))

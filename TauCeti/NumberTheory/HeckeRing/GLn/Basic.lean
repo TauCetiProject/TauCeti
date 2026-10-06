@@ -47,6 +47,10 @@ modular forms); the AINTLIB `HeckePair` bundle is replaced by Mathlib's `IsHecke
   `δ`. `mem_doubleCoset_SLnZ_of_intMatrix_eq` is its `SL_n(ℤ)` case, and
   `det_eq_of_mem_doubleCoset_of_le_SLnZ` extracts the determinant invariant in the other
   direction.
+* `mem_intEntries_of_mem_doubleCoset`: the double coset of an integral matrix between images of
+  subgroups of `SL_n(ℤ)` consists of integral matrices; `mem_intEntries_of_rightCoset_eq`,
+  `mem_intEntries_of_cover` and `mem_intEntries_of_mem_doubleCoset_mul_doubleCoset` read this off
+  a right coset, a family covering the double coset, and a product of two double cosets.
 * the `IsHeckeTriple (posDetInt n) (SLnZ n) (SLnZ n)` instance, and the
   Hecke ring `IntegralHeckeRing n` it founds.
 
@@ -280,6 +284,50 @@ lemma map_mapGL_le_intEntries (Γ : Subgroup (SpecialLinearGroup (Fin n) ℤ)) :
     (Γ.map (mapGL ℚ)).toSubmonoid ≤ intEntries n := by
   rintro _ ⟨σ, -, rfl⟩
   exact mapGL_mem_intEntries n σ
+
+/-- The double coset `Γ₁' δ Γ₂'` of an integral matrix `δ` between the images
+`Γᵢ' = Γᵢ.map (mapGL ℚ)` of two subgroups of `SL_n(ℤ)` consists of integral matrices. -/
+lemma mem_intEntries_of_mem_doubleCoset {Γ₁ Γ₂ : Subgroup (SpecialLinearGroup (Fin n) ℤ)}
+    {δ x : GL (Fin n) ℚ} (hδ : δ ∈ intEntries n)
+    (hx : x ∈ DoubleCoset.doubleCoset δ (Γ₁.map (mapGL ℚ)) (Γ₂.map (mapGL ℚ))) :
+    x ∈ intEntries n := by
+  obtain ⟨g₁, hg₁, g₂, hg₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hx
+  exact mul_mem (mul_mem (map_mapGL_le_intEntries n Γ₁ hg₁) hδ) (map_mapGL_le_intEntries n Γ₂ hg₂)
+
+/-- A matrix generating the same right coset of `Γ' = Γ.map (mapGL ℚ)` as an integral matrix is
+integral: `Γ' δ₁ = Γ' δ₂` puts `δ₂ = (δ₂ δ₁⁻¹) δ₁` with `δ₂ δ₁⁻¹ ∈ Γ'`. -/
+lemma mem_intEntries_of_rightCoset_eq {Γ : Subgroup (SpecialLinearGroup (Fin n) ℤ)}
+    {δ₁ δ₂ : GL (Fin n) ℚ} (h₁ : δ₁ ∈ intEntries n)
+    (h : MulOpposite.op δ₁ • (Γ.map (mapGL ℚ) : Set (GL (Fin n) ℚ)) =
+      MulOpposite.op δ₂ • (Γ.map (mapGL ℚ) : Set (GL (Fin n) ℚ))) :
+    δ₂ ∈ intEntries n := by
+  have hγ : δ₂ * δ₁⁻¹ ∈ Γ.map (mapGL ℚ) := (rightCoset_eq_iff _).mp h
+  have := mul_mem (map_mapGL_le_intEntries n Γ hγ) h₁
+  rwa [inv_mul_cancel_right] at this
+
+/-- Every member of a family whose right cosets cover the double coset `Γ₁' δ Γ₂'` of an integral
+matrix `δ` is integral: it lies in its own right coset, hence in the double coset. Membership of
+the family in `intEntries n` is therefore not an extra hypothesis on statements that assume such
+a covering. -/
+lemma mem_intEntries_of_cover {Γ₁ Γ₂ : Subgroup (SpecialLinearGroup (Fin n) ℤ)}
+    {δ : GL (Fin n) ℚ} {ι : Type*} {a : ι → GL (Fin n) ℚ} (hδ : δ ∈ intEntries n)
+    (hcover : DoubleCoset.doubleCoset δ (Γ₁.map (mapGL ℚ)) (Γ₂.map (mapGL ℚ)) =
+      ⋃ i, MulOpposite.op (a i) • (Γ₁.map (mapGL ℚ) : Set (GL (Fin n) ℚ))) (i : ι) :
+    a i ∈ intEntries n :=
+  mem_intEntries_of_mem_doubleCoset n hδ
+    (hcover ▸ Set.mem_iUnion_of_mem i (mem_own_rightCoset _ _))
+
+/-- The product `Γ₁' δ₁ Γ₂' · Γ₂' δ₂ Γ₃'` of the double cosets of two integral matrices consists
+of integral matrices. -/
+lemma mem_intEntries_of_mem_doubleCoset_mul_doubleCoset
+    {Γ₁ Γ₂ Γ₃ : Subgroup (SpecialLinearGroup (Fin n) ℤ)} {δ₁ δ₂ x : GL (Fin n) ℚ}
+    (hδ₁ : δ₁ ∈ intEntries n) (hδ₂ : δ₂ ∈ intEntries n)
+    (hx : x ∈ DoubleCoset.doubleCoset δ₁ (Γ₁.map (mapGL ℚ)) (Γ₂.map (mapGL ℚ)) *
+      DoubleCoset.doubleCoset δ₂ (Γ₂.map (mapGL ℚ)) (Γ₃.map (mapGL ℚ))) :
+    x ∈ intEntries n := by
+  obtain ⟨y, hy, z, hz, rfl⟩ := Set.mem_mul.mp hx
+  exact mul_mem (mem_intEntries_of_mem_doubleCoset n hδ₁ hy)
+    (mem_intEntries_of_mem_doubleCoset n hδ₂ hz)
 
 /-! ### The integral matrix underlying an element of `intEntries n`
 

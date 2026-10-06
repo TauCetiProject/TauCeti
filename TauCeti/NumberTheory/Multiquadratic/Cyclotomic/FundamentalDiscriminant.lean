@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Basic
 public import TauCeti.NumberTheory.Multiquadratic.Cyclotomic.GaussSum
 public import Mathlib.RingTheory.RootsOfUnity.Complex
+public import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
+import TauCeti.FieldTheory.IntermediateField.Rescale
 
 /-!
 # A quadratic field lies in the cyclotomic field of its discriminant
@@ -193,5 +195,87 @@ example {ζ x : L} (hζ : IsPrimitiveRoot ζ 3) (hx : x ^ 2 = -3) : x ∈ ℚ⟮
   rw [hx, h3]
   push_cast
   ring
+
+/-! ### Inside a cyclotomic subfield of `ℂ` of level `|D|` -/
+
+section Cyclotomic
+
+open IsCyclotomicExtension
+
+variable {d : ℤ} (hd : Squarefree d) (K : IntermediateField ℚ ℂ)
+  [IsCyclotomicExtension {(∏ P ∈ genusPrimeDiscriminants hd, P).natAbs} ℚ K]
+
+include K in
+/-- **Every chosen root of the candidate genus field lies in a cyclotomic subfield of `ℂ` of
+level `|D|`.** -/
+theorem genusFieldRoot_mem_of_isCyclotomicExtension
+    (P : {P // P ∈ genusPrimeDiscriminants hd}) : genusFieldRoot hd P ∈ K := by
+  have hne := neZero_natAbs_prod_of_forall_isPrimeDiscriminant (genusPrimeDiscriminants_spec hd).1
+  have hN : 0 < (∏ P ∈ genusPrimeDiscriminants hd, P).natAbs := Nat.pos_of_ne_zero hne.out
+  have hζ : IsPrimitiveRoot ((zeta (∏ P ∈ genusPrimeDiscriminants hd, P).natAbs ℚ K : K) : ℂ)
+      (∏ P ∈ genusPrimeDiscriminants hd, P).natAbs :=
+    (zeta_spec _ ℚ K).map_of_injective (f := K.val) Subtype.val_injective
+  refine candidateGenusField_le_of_isPrimitiveRoot hd hN hζ (zeta _ ℚ K).2 ?_
+    (genusFieldRoot_mem_candidateGenusField hd P)
+  rw [(genusPrimeDiscriminants_spec hd).2.2]
+
+/-- The rational scalar turning the chosen root of the radicand of `P` into a root of `P`
+itself: `2` when `P` is an even prime discriminant, `1` otherwise. -/
+private noncomputable def genusFieldRootScale (P : {P // P ∈ genusPrimeDiscriminants hd}) : ℚ :=
+  if (P : ℤ) = 4 * primeDiscriminantRadicand P then 2 else 1
+
+/-- The scale is nonzero. -/
+private theorem genusFieldRootScale_ne_zero (P : {P // P ∈ genusPrimeDiscriminants hd}) :
+    genusFieldRootScale hd P ≠ 0 := by
+  unfold genusFieldRootScale
+  split_ifs <;> norm_num
+
+include K in
+/-- A square root of the prime discriminant `P` itself, inside the cyclotomic field `K`. -/
+noncomputable def genusFieldRootOfPrimeDiscriminant
+    (P : {P // P ∈ genusPrimeDiscriminants hd}) : K :=
+  ⟨algebraMap ℚ ℂ (genusFieldRootScale hd P) * genusFieldRoot hd P,
+    K.mul_mem (K.algebraMap_mem _) (genusFieldRoot_mem_of_isCyclotomicExtension hd K P)⟩
+
+private theorem coe_genusFieldRootOfPrimeDiscriminant
+    (P : {P // P ∈ genusPrimeDiscriminants hd}) :
+    (genusFieldRootOfPrimeDiscriminant hd K P : ℂ) =
+      algebraMap ℚ ℂ (genusFieldRootScale hd P) * genusFieldRoot hd P := by
+  rfl
+
+/-- The rescaled root squares to the prime discriminant. -/
+@[simp] theorem genusFieldRootOfPrimeDiscriminant_sq
+    (P : {P // P ∈ genusPrimeDiscriminants hd}) :
+    genusFieldRootOfPrimeDiscriminant hd K P ^ 2 = ((P : ℤ) : K) := by
+  have hP := (genusPrimeDiscriminants_spec hd).1 P P.2
+  apply Subtype.ext
+  rw [SubmonoidClass.coe_pow, coe_genusFieldRootOfPrimeDiscriminant, mul_pow, genusFieldRoot_sq,
+    SubringClass.coe_intCast]
+  unfold genusFieldRootScale
+  rcases primeDiscriminant_eq_radicand_or_eq_four_mul_radicand hP with h | h
+  · have h4 : ¬ ((P : ℤ) = 4 * primeDiscriminantRadicand P) := by
+      intro h4
+      have : primeDiscriminantRadicand P = 0 := by linarith
+      exact hP.ne_zero (by rw [h, this])
+    rw [ite_eq_right_of_eq_false _ _ (eq_false h4), map_one, one_pow, one_mul, ← h]
+  · rw [ite_eq_left_of_eq_true _ _ (eq_true h), map_ofNat]
+    conv_rhs => rw [h]
+    push_cast
+    ring
+
+include K in
+/-- **The rescaled roots generate the candidate genus field.** Viewed in `ℂ`, the compositum of the
+square roots of the prime discriminants dividing `D` is the candidate genus field of `ℚ(√d)`: each
+rescaled root is a rational multiple of a chosen root and conversely. -/
+theorem map_adjoin_range_genusFieldRootOfPrimeDiscriminant :
+    (adjoin ℚ (Set.range (genusFieldRootOfPrimeDiscriminant hd K))).map K.val =
+      candidateGenusField hd := by
+  have hcomp : K.val ∘ genusFieldRootOfPrimeDiscriminant hd K =
+      fun P => algebraMap ℚ ℂ (genusFieldRootScale hd P) * genusFieldRoot hd P :=
+    funext fun P => coe_genusFieldRootOfPrimeDiscriminant hd K P
+  rw [adjoin_map, ← Set.range_comp, candidateGenusField_def, hcomp]
+  exact TauCeti.IntermediateField.adjoin_range_algebraMap_mul (genusFieldRootScale_ne_zero hd) _
+
+end Cyclotomic
 
 end TauCeti.Multiquadratic

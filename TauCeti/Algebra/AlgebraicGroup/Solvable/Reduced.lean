@@ -254,8 +254,9 @@ private theorem universalDerivedWord_natural (f : H →ₐc[k] K) (n : ℕ) :
   induction n with
   | zero =>
       apply WithConv.ofConv_injective
-      ext z
-      rfl
+      simp only [derivedWordCoordinateAlgebra.map_zero, universalDerivedWord_zero,
+        AlgHom.mapValue_apply, AlgHom.mapDomain_apply, ofConv_toConv,
+        AlgHom.comp_id, AlgHom.id_comp]
   | succ n ih =>
       apply WithConv.ofConv_injective
       have ih' : (derivedWordCoordinateAlgebra.map f n).toAlgHom.comp

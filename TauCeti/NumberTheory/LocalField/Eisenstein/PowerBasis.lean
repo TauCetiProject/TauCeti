@@ -8,35 +8,40 @@ module
 public import TauCeti.NumberTheory.LocalField.Norm.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.Orthogonality
 public import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
+public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 
 /-!
 # Valuations in an Eisenstein power basis of a local field
 
-An integral generator satisfying an Eisenstein polynomial is a uniformizer, and its power basis
-has length `e(L/K)`.  By `TauCeti.addVal_sum_algebraMap_mul_pow_of_irreducible`, the valuation of
-a linear combination in the resulting power basis is therefore the minimum of its term
-valuations.
+Let `ξ ∈ 𝒪[L]` be a root of an Eisenstein polynomial `f` over `𝒪[K]` with `L = K(ξ)`. Comparing
+the normalized valuations of `ξ` and of its norm, which is the constant coefficient of `f` up to
+a unit, shows that `ξ` is a uniformizer of `L` and that `L/K` has inertia degree one, so that
+`e(L/K) = [L : K] = deg f`. By `TauCeti.addVal_sum_algebraMap_mul_pow_of_irreducible`, the
+valuation of a linear combination in the power basis `1, ξ, …, ξ^{deg f - 1}` is therefore the
+minimum of its term valuations.
 
 ## Main result
 
-* `TauCeti.irreducible_of_eisenstein_adjoin_eq_top` shows that an integral generator satisfying
+* `TauCeti.irreducible_of_eisenstein_adjoin_eq_top` shows that a generator of `L/K` satisfying
   an Eisenstein polynomial is a uniformizer.
 * `TauCeti.inertiaDegree_eq_one_of_eisenstein_adjoin_eq_top` and
   `TauCeti.ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top` record its characteristic
   total-ramification consequences.
 * `TauCeti.addVal_sum_eisenstein_powerBasis` computes the additive valuation of a linear
-  combination of powers of an Eisenstein integral generator.
+  combination of powers of an Eisenstein generator.
 
 ## References
 
+* J.-P. Serre, *Local Fields*, Chapter I, §6, Proposition 17.
 * J.-P. Serre, *Local Fields*, Chapter III, §6, Proposition 12.
 -/
 
 public section
 
 open ValuativeRel IsLocalRing IsNonarchimedeanLocalField
+open scoped IntermediateField
 
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
@@ -45,31 +50,40 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 namespace TauCeti
 
 private theorem eisenstein_adjoin_eq_top_data [Algebra K L] [ValuativeExtension K L]
-    [Module.Finite K L] (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
+    (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
     (ξ : 𝒪[L]) (hroot : (f.map (algebraMap 𝒪[K] 𝒪[L])).IsRoot ξ)
-    (hgen : Algebra.adjoin 𝒪[K] {ξ} = ⊤) :
+    (hgen : K⟮(ξ : L)⟯ = ⊤) :
     Irreducible ξ ∧ inertiaDegree K L = 1 ∧ ramificationIndex K L = f.natDegree := by
+  have : Module.Finite K L := finite_of_valuativeExtension K L
   have hint : IsIntegral 𝒪[K] ξ := IsIntegral.of_finite 𝒪[K] ξ
   have hassoc : Associated (minpoly 𝒪[K] ξ) f :=
     associated_minpoly_of_eisenstein_isRoot ξ f hf hroot
   have hnatDegree : (minpoly 𝒪[K] ξ).natDegree = f.natDegree :=
     Polynomial.natDegree_eq_of_degree_eq (Polynomial.degree_eq_degree_of_associated hassoc)
   have hdeg : 0 < f.natDegree := hnatDegree ▸ minpoly.natDegree_pos hint
-  let pb : PowerBasis 𝒪[K] 𝒪[L] := PowerBasis.ofAdjoinEqTop' hint hgen
+  have hminpoly : minpoly K (ξ : L) = (minpoly 𝒪[K] ξ).map (algebraMap 𝒪[K] K) :=
+    minpoly.isIntegrallyClosed_eq_field_fractions K L hint
+  -- `ξ` generates a power basis of `L/K` of length `deg f`.
+  let pb : PowerBasis K L := .ofAdjoinSimpleEqTop (.of_finite K (ξ : L)) hgen
+  have hpbgen : pb.gen = ξ := PowerBasis.ofAdjoinSimpleEqTop_gen _ hgen
   have hpbdim : pb.dim = f.natDegree := by
-    rw [PowerBasis.ofAdjoinEqTop'_dim hint hgen, hnatDegree]
+    rw [PowerBasis.ofAdjoinSimpleEqTop_dim, hminpoly, (minpoly.monic hint).natDegree_map,
+      hnatDegree]
+  -- Its norm is, up to sign, the constant coefficient of the minimal polynomial over `𝒪[K]`.
   have hfc0 : Irreducible (f.coeff 0) := hf.irreducible_coeff_zero hdeg
   have hminc0 : Irreducible ((minpoly 𝒪[K] ξ).coeff 0) :=
     Associated.irreducible (hassoc.map Polynomial.constantCoeff).symm hfc0
-  have hnormirr : Irreducible (Algebra.norm 𝒪[K] ξ) := by
-    rw [← PowerBasis.ofAdjoinEqTop'_gen hint hgen,
-      Algebra.PowerBasis.norm_gen_eq_coeff_zero_minpoly]
-    simpa using
-      (irreducible_units_mul ((-1 : 𝒪[K]ˣ) ^ (minpoly 𝒪[K] ξ).natDegree)).mpr hminc0
+  set c : 𝒪[K] := (-1) ^ f.natDegree * (minpoly 𝒪[K] ξ).coeff 0 with hc
+  have hnormirr : Irreducible c := by
+    simpa [c] using (irreducible_units_mul ((-1 : 𝒪[K]ˣ) ^ f.natDegree)).mpr hminc0
+  have hnorm : Algebra.norm K (ξ : L) = (c : K) := by
+    rw [← hpbgen, Algebra.PowerBasis.norm_gen_eq_coeff_zero_minpoly, hpbgen, hminpoly,
+      hpbdim, Polynomial.coeff_map, hc]
+    simp [Algebra.algebraMap_ofSubsemiring_apply]
   have hξ0 : ξ ≠ 0 := by
-    intro hξ
+    rintro rfl
     apply hnormirr.ne_zero
-    simp [hξ]
+    simpa using hnorm.symm
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
   obtain ⟨m, u, hξ⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hξ0 hϖ
   have hξL : (ξ : L) ≠ 0 := fun h ↦ hξ0 (Subtype.ext h)
@@ -84,12 +98,10 @@ private theorem eisenstein_adjoin_eq_top_data [Algebra K L] [ValuativeExtension 
       normalizedValuation_irreducible hϖ, one_mul, toAdd_pow, toAdd_ofAdd,
       nsmul_eq_mul, mul_one]
   have hnormval : (normalizedValuation K (Algebra.normUnits K x)).toAdd = 1 := by
-    have hnorm0 : ((Algebra.norm 𝒪[K] ξ : 𝒪[K]) : K) ≠ 0 :=
-      fun h ↦ hnormirr.ne_zero (Subtype.ext h)
-    have heq : Algebra.normUnits K x =
-        Units.mk0 ((Algebra.norm 𝒪[K] ξ : 𝒪[K]) : K) hnorm0 := by
+    have hc0 : (c : K) ≠ 0 := fun h ↦ hnormirr.ne_zero (Subtype.ext h)
+    have heq : Algebra.normUnits K x = Units.mk0 (c : K) hc0 := by
       apply Units.ext
-      simp [x]
+      simp [x, hnorm]
     rw [heq, normalizedValuation_irreducible hnormirr, toAdd_ofAdd]
   have hfm : inertiaDegree K L * m = 1 := by
     have h := toAdd_normalizedValuation_norm (K := K) x
@@ -102,42 +114,41 @@ private theorem eisenstein_adjoin_eq_top_data [Algebra K L] [ValuativeExtension 
     exact Associated.irreducible ⟨u, by simpa [mul_comm] using hξ.symm⟩ hϖ
   have he_degree : ramificationIndex K L = f.natDegree := by
     have hef := ramificationIndex_mul_inertiaDegree (K := K) (L := L)
-    rw [hf_one, mul_one, ← finrank_integerRing K L, PowerBasis.finrank pb, hpbdim] at hef
+    rw [hf_one, mul_one, PowerBasis.finrank pb, hpbdim] at hef
     exact hef
   exact ⟨hξirr, hf_one, he_degree⟩
 
-/-- An integral generator satisfying an Eisenstein polynomial is a uniformizer of the extension
-integer ring. -/
+/-- A generator of `L/K` that is a root of an Eisenstein polynomial over `𝒪[K]` is a uniformizer
+of `𝒪[L]`. -/
 theorem irreducible_of_eisenstein_adjoin_eq_top [Algebra K L] [ValuativeExtension K L]
-    [Module.Finite K L] (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
+    (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
     (ξ : 𝒪[L]) (hroot : (f.map (algebraMap 𝒪[K] 𝒪[L])).IsRoot ξ)
-    (hgen : Algebra.adjoin 𝒪[K] {ξ} = ⊤) : Irreducible ξ :=
+    (hgen : K⟮(ξ : L)⟯ = ⊤) : Irreducible ξ :=
   (eisenstein_adjoin_eq_top_data f hf ξ hroot hgen).1
 
-/-- An extension generated integrally by a root of an Eisenstein polynomial has inertia degree
-one. -/
+/-- An extension `L/K` generated by a root of an Eisenstein polynomial over `𝒪[K]` has inertia
+degree one. -/
 theorem inertiaDegree_eq_one_of_eisenstein_adjoin_eq_top [Algebra K L] [ValuativeExtension K L]
-    [Module.Finite K L] (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
+    (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
     (ξ : 𝒪[L]) (hroot : (f.map (algebraMap 𝒪[K] 𝒪[L])).IsRoot ξ)
-    (hgen : Algebra.adjoin 𝒪[K] {ξ} = ⊤) : inertiaDegree K L = 1 :=
+    (hgen : K⟮(ξ : L)⟯ = ⊤) : inertiaDegree K L = 1 :=
   (eisenstein_adjoin_eq_top_data f hf ξ hroot hgen).2.1
 
-/-- For an integral generator satisfying an Eisenstein polynomial, the ramification index is the
-degree of that polynomial. -/
+/-- For a generator of `L/K` that is a root of an Eisenstein polynomial over `𝒪[K]`, the
+ramification index is the degree of that polynomial. -/
 theorem ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top [Algebra K L]
-    [ValuativeExtension K L] [Module.Finite K L]
-    (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
+    [ValuativeExtension K L] (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
     (ξ : 𝒪[L]) (hroot : (f.map (algebraMap 𝒪[K] 𝒪[L])).IsRoot ξ)
-    (hgen : Algebra.adjoin 𝒪[K] {ξ} = ⊤) : ramificationIndex K L = f.natDegree :=
+    (hgen : K⟮(ξ : L)⟯ = ⊤) : ramificationIndex K L = f.natDegree :=
   (eisenstein_adjoin_eq_top_data f hf ξ hroot hgen).2.2
 
-/-- The additive valuation of a linear combination in an Eisenstein power basis is the least
-of its term valuations. -/
+/-- For a generator `ξ` of `L/K` that is a root of an Eisenstein polynomial `f` over `𝒪[K]`, the
+additive valuation of a linear combination of `1, ξ, …, ξ^{deg f - 1}` with coefficients in
+`𝒪[K]` is the least of its term valuations. -/
 theorem addVal_sum_eisenstein_powerBasis [Algebra K L] [ValuativeExtension K L]
-    [Module.Finite K L]
     (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
     (ξ : 𝒪[L]) (hroot : (f.map (algebraMap 𝒪[K] 𝒪[L])).IsRoot ξ)
-    (hgen : Algebra.adjoin 𝒪[K] {ξ} = ⊤) (c : Fin f.natDegree → 𝒪[K]) :
+    (hgen : K⟮(ξ : L)⟯ = ⊤) (c : Fin f.natDegree → 𝒪[K]) :
     IsDiscreteValuationRing.addVal 𝒪[L]
         (∑ i, algebraMap 𝒪[K] 𝒪[L] (c i) * ξ ^ (i : ℕ)) =
       ⨅ i, ramificationIndex K L • IsDiscreteValuationRing.addVal 𝒪[K] (c i) + (i : ℕ) :=

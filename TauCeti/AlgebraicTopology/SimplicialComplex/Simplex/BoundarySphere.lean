@@ -7,6 +7,7 @@ module
 
 import Mathlib.Analysis.Convex.GaugeRescale
 import Mathlib.Analysis.Normed.Affine.AddTorsorBases
+import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization

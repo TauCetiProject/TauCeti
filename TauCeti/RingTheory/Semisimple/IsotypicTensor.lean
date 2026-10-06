@@ -7,6 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 public import TauCeti.RingTheory.Semisimple.Multiplicity
+-- Non-public: the rank criterion for a self-map to be injective is used only inside the proof of
+-- injectivity on a finite-dimensional target; no exported statement mentions a dimension.
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
 # An isotypic component is its type tensored with its multiplicity space

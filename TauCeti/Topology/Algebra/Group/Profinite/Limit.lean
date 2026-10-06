@@ -24,9 +24,11 @@ The unbundled workhorse of profinite group theory, phrased for the type-class st
   and `ProfiniteGrp.toLimit_injective`, which describe the same identification for the
   `ProfiniteGrp` category. The compactness input is
   `IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed`.
-* Two companion forms of the same identification: a point of `G` is determined by its images in
-  the finite quotients (`eq_of_forall_mk_eq`), and a map into `G` is continuous as soon as all
-  of its finite-quotient shadows are (`continuous_iff_forall_continuous_mk`).
+* Three companion forms of the same identification: a point of `G` is determined by its images
+  in the finite quotients (`eq_of_forall_mk_eq`), a map into `G` is continuous as soon as all of
+  its finite-quotient shadows are (`continuous_iff_forall_continuous_mk`), and a map into `G` has
+  dense range exactly when it surjects onto every finite quotient
+  (`denseRange_iff_forall_surjective_mk`).
 * The same identification for homomorphisms: a family of homomorphisms `H →* G ⧸ U` compatible
   along the quotient maps is induced by a unique homomorphism `H →* G`
   (`existsUnique_monoidHom_mk'_comp_eq`).
@@ -125,6 +127,22 @@ theorem continuous_iff_forall_continuous_mk {X : Type*} [TopologicalSpace X] {f 
     simpa using U.toSubgroup.inv_mem (QuotientGroup.eq.mp hx)
   exact hWV (by simpa using hU hmem)
 
+/-- A map into a profinite group has dense range exactly when its composite with the quotient map
+onto every finite quotient is surjective: the cosets of the open normal subgroups form a basis of
+the topology. -/
+theorem denseRange_iff_forall_surjective_mk {X : Type*} {f : X → G} :
+    DenseRange f ↔ ∀ U : OpenNormalSubgroup G,
+      Function.Surjective fun x ↦ (f x : G ⧸ U.toSubgroup) := by
+  refine ⟨fun hf U ↦ denseRange_discrete.mp <|
+    (QuotientGroup.mk'_surjective U.toSubgroup).denseRange.comp hf QuotientGroup.continuous_mk,
+    fun h ↦ dense_iff_inter_open.mpr fun W hW ⟨g, hg⟩ ↦ ?_⟩
+  -- An open normal subgroup `U` small enough that the coset `g * U` stays inside `W`; a point of
+  -- the range in the class of `g` modulo `U` then lies in `W`.
+  obtain ⟨U, hU⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one
+    (hW.preimage (f := fun y ↦ g * y) (continuous_const.mul continuous_id)) (by simpa using hg)
+  obtain ⟨x, hx⟩ := h U (g : G ⧸ U.toSubgroup)
+  exact ⟨f x, by simpa using hU (QuotientGroup.eq.mp hx.symm), x, rfl⟩
+
 /-- **Limit description of a profinite group, for homomorphisms.** A family of homomorphisms
 `x N : H →* G ⧸ N` into the quotients of `G` by its open normal subgroups, compatible along the
 quotient maps `G ⧸ N → G ⧸ N'` for `N ≤ N'`, is induced by a unique homomorphism `H →* G`. This is
@@ -153,6 +171,34 @@ theorem existsUnique_monoidHom_mk'_comp_eq {H : Type*} [MulOneClass H]
         rw [QuotientGroup.mk_mul, ← hφ a N, ← hφ b N, QuotientGroup.mk'_apply,
           QuotientGroup.mk'_apply]
   · exact (DFunLike.congr_fun (hψ N) a).trans (hφ a N).symm
+
+/-- **Limit description of a profinite group, for homomorphisms along a cofinal family.** A family
+of homomorphisms `x i : H →* G ⧸ N i` into the quotients of `G` by open normal subgroups `N i`
+below every open normal subgroup of `G`, compatible along the quotient maps `G ⧸ N i → G ⧸ N j`
+for `N i ≤ N j`, is induced by a unique homomorphism `H →* G`: the cofinal family already
+computes the inverse limit of all the finite quotients. -/
+theorem existsUnique_monoidHom_mk'_comp_eq_of_forall_exists_le {ι : Type*}
+    {N : ι → OpenNormalSubgroup G} (hcof : ∀ U : OpenNormalSubgroup G, ∃ i, N i ≤ U)
+    {H : Type*} [MulOneClass H] (x : ∀ i, H →* G ⧸ (N i).toSubgroup)
+    (hx : ∀ ⦃i j : ι⦄ (hle : N i ≤ N j), (QuotientGroup.mapOfLE hle).comp (x i) = x j) :
+    ∃! φ : H →* G, ∀ i, (QuotientGroup.mk' (N i).toSubgroup).comp φ = x i := by
+  choose k hk using hcof
+  -- Any member of the family below `U` computes the same homomorphism into `G ⧸ U`: two members
+  -- below `U` lie above a common third one, through which both factor.
+  have hext : ∀ (i : ι) (U : OpenNormalSubgroup G) (hle : N i ≤ U),
+      (QuotientGroup.mapOfLE hle).comp (x i) =
+        (QuotientGroup.mapOfLE (hk U)).comp (x (k U)) := by
+    intro i U hle
+    have hl := hk (N i ⊓ N (k U))
+    rw [← hx (hl.trans inf_le_left), ← hx (hl.trans inf_le_right), ← MonoidHom.comp_assoc,
+      ← MonoidHom.comp_assoc, QuotientGroup.mapOfLE_comp, QuotientGroup.mapOfLE_comp]
+  -- Extend `x` to every open normal subgroup and apply the limit description for all of them.
+  obtain ⟨φ, hφ, huniq⟩ := existsUnique_monoidHom_mk'_comp_eq
+    (fun U ↦ (QuotientGroup.mapOfLE (hk U)).comp (x (k U))) fun U V hle ↦ by
+      rw [← hext (k U) V ((hk U).trans hle), ← MonoidHom.comp_assoc, QuotientGroup.mapOfLE_comp]
+  refine ⟨φ, fun i ↦ ?_, fun ψ hψ ↦ huniq ψ fun U ↦ ?_⟩
+  · rw [hφ (N i), ← hext i (N i) le_rfl, QuotientGroup.mapOfLE_refl, MonoidHom.id_comp]
+  · rw [← hψ (k U), ← MonoidHom.comp_assoc, QuotientGroup.mapOfLE_comp_mk']
 
 end LimitDescription
 

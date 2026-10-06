@@ -180,6 +180,36 @@ theorem mulVec_mem (N : Subcomodule R (coordinateHopfAlgebra R n) (Fin n → R))
   simpa only [basePointsRepresentation_eq_mulVec, pointToGeneralLinear_generalLinearToPoint]
     using h
 
+/-! ## Standard comodules induced by coordinate morphisms -/
+
+/-- The standard comodule corestricted along a coordinate Hopf-algebra morphism. -/
+@[expose, instance_reducible]
+noncomputable def corestrictStandardComodule {H : Type*} [CommRing H] [HopfAlgebra R H]
+    (f : coordinateHopfAlgebra R n →ₐc[R] H) : Comodule R H (Fin n → R) :=
+  let _ := standardComodule R n
+  Comodule.Corestrict f.toCoalgHom
+
+/-- A surjective coordinate morphism gives a faithful corestricted standard representation. -/
+theorem isFaithful_corestrictStandardComodule {H : Type u} [CommRing H] [HopfAlgebra R H]
+    (f : coordinateHopfAlgebra R n →ₐc[R] H) (hf : Function.Surjective f) :
+    let _ := corestrictStandardComodule R n f
+    Comodule.IsFaithful (k := R) (H := H) (V := Fin n → R) :=
+  Comodule.isFaithful_corestrict_of_surjective f hf (isFaithful_standardComodule R n)
+
+/-- A subcomodule of the corestricted standard representation is stable under base-valued points,
+acting through their ambient invertible matrices. -/
+theorem corestrictStandardComodule_mulVec_mem {H : Type*} [CommRing H] [HopfAlgebra R H]
+    (f : coordinateHopfAlgebra R n →ₐc[R] H) :
+    let _ := corestrictStandardComodule R n f
+    ∀ (N : Subcomodule R H (Fin n → R)) (g : WithConv (H →ₐ[R] R))
+      {w : Fin n → R}, w ∈ N →
+      (pointToGeneralLinear n (AlgHom.mapDomain f g) : Matrix (Fin n) (Fin n) R) *ᵥ w ∈ N := by
+  let _ := corestrictStandardComodule R n f
+  dsimp only
+  intro N g w hw
+  have h := Comodule.basePointsRepresentation_mem N g hw
+  rwa [Comodule.basePointsRepresentation_corestrict f g, basePointsRepresentation_eq_mulVec] at h
+
 section PointAction
 
 variable {A : Type*} [CommRing A] [Algebra R A]

@@ -49,6 +49,8 @@ with it. This is the bonding operation of a levelwise comparison along the lower
   of a surjection is surjective.
 * `TauCeti.pLowerCentralSeries_one_eq_proPFrattini`: for a prime `p`, `λ_1` is the pro-`p`
   Frattini subgroup of a profinite group.
+* `TauCeti.IsProP.surjective_of_forall_inv_mul_mem_pLowerCentralSeries_one`: a continuous
+  endomorphism of a pro-`p` group congruent to the identity modulo `λ_1` is surjective.
 * `TauCeti.IsTopologicallyFinitelyGenerated.isOpen_pLowerCentralSeries`: for a prime `p`, in a
   topologically finitely generated profinite group every `λ_k` is open, so
   `TauCeti.IsTopologicallyFinitelyGenerated.finite_quotient_pLowerCentralSeries`,
@@ -70,6 +72,8 @@ with it. This is the bonding operation of a levelwise comparison along the lower
   group is continuous exactly when its composites with the quotient maps `G → G ⧸ λ_k` are.
 * `TauCeti.IsProP.hasAntitoneBasis_nhds_one_pLowerCentralSeries`: in a topologically finitely
   generated pro-`p` group the lower `p`-series is a neighbourhood basis of `1`.
+* `TauCeti.IsProP.mem_of_forall_mk_mem_map_pLowerCentralSeries`: in a pro-`p` group, membership
+  in a closed subgroup is detected on the quotients `G ⧸ λ_k`.
 
 ## References
 
@@ -159,6 +163,14 @@ Frattini subgroup. -/
 theorem pLowerCentralSeries_one_eq_proPFrattini (hp : p.Prime) :
     pLowerCentralSeries p G 1 = proPFrattini p G := by
   rw [pLowerCentralSeries_one, proPFrattini_eq_topologicalClosure hp]
+
+/-- **Burnside's criterion modulo `λ_1`.** A continuous endomorphism of a pro-`p` group congruent
+to the identity modulo `λ_1 = Φ` is surjective. -/
+theorem IsProP.surjective_of_forall_inv_mul_mem_pLowerCentralSeries_one [Fact p.Prime]
+    (hG : IsProP p G) {φ : G →* G} (hφ : Continuous φ)
+    (h : ∀ g, g⁻¹ * φ g ∈ pLowerCentralSeries p G 1) : Function.Surjective φ := by
+  rw [pLowerCentralSeries_one_eq_proPFrattini Fact.out] at h
+  exact hG.surjective_of_forall_inv_mul_mem_proPFrattini hφ h
 
 /-- **Openness of the lower `p`-series.** For a prime `p`, in a topologically finitely generated
 profinite group every term of the lower `p`-series is open. -/
@@ -302,6 +314,22 @@ theorem IsProP.hasAntitoneBasis_nhds_one_pLowerCentralSeries (hG : IsProP p G)
     (𝓝 (1 : G)).HasAntitoneBasis fun k ↦ (pLowerCentralSeries p G k : Set G) :=
   hasAntitoneBasis_nhds_one_of_iInf_eq_bot pLowerCentralSeries_antitone
     (hfg.isOpen_pLowerCentralSeries hp) (hG.iInf_pLowerCentralSeries_eq_bot hp)
+
+/-- **Membership in a closed subgroup is detected on the lower `p`-series.** In a compact pro-`p`
+group, an element whose class modulo every `λ_k` is the class of an element of the closed subgroup
+`H` lies in `H`: it lies in `H ⊔ U` for every open normal subgroup `U`, since `U` contains a term
+of the series, and `H` is the infimum of those. No finite generation is needed. -/
+theorem IsProP.mem_of_forall_mk_mem_map_pLowerCentralSeries (hG : IsProP p G) (hp : p.Prime)
+    {H : Subgroup G} (hH : IsClosed (H : Set G)) {g : G}
+    (h : ∀ k, (g : G ⧸ pLowerCentralSeries p G k) ∈
+      H.map (QuotientGroup.mk' (pLowerCentralSeries p G k))) :
+    g ∈ H := by
+  rw [H.eq_iInf_sup_openNormalSubgroup hH, Subgroup.mem_iInf]
+  intro U
+  obtain ⟨k, hk⟩ := hG.exists_pLowerCentralSeries_le hp U
+  obtain ⟨x, hxH, hx⟩ := Subgroup.mem_map.mp (h k)
+  have := Subgroup.mul_mem_sup hxH (hk (QuotientGroup.eq.mp hx))
+  rwa [mul_inv_cancel_left] at this
 
 /-- A map into a pro-`p` group is continuous exactly when all of its composites with the quotient
 maps `G → G ⧸ λ_k` are. No finite generation is needed. -/

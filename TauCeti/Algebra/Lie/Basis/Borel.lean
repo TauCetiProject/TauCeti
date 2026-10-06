@@ -47,16 +47,14 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebr
 
 section
 
-variable {ι : Type*} [Finite ι]
+variable {ι : Type*} [Fintype ι]
 
 /-- The positive nilradical associated to a Lie algebra basis is the Lie span of its raising
 operators. -/
 theorem positiveNilradical_eq_lieSpan_e (b : LieAlgebra.Basis ι H) :
-    letI : Fintype ι := Fintype.ofFinite ι
     letI := b.isCartanSubalgebra
     letI := b.isTriangularizable
     TauCeti.positiveNilradical H b.base = LieSubalgebra.lieSpan K L (Set.range b.e) := by
-  let _ : Fintype ι := Fintype.ofFinite ι
   let _ := b.isCartanSubalgebra
   let _ := b.isTriangularizable
   apply le_antisymm
@@ -86,11 +84,9 @@ theorem positiveNilradical_eq_lieSpan_e (b : LieAlgebra.Basis ι H) :
 /-- The Borel associated to a Lie algebra basis is its Cartan subalgebra together with the Lie
 span of its raising operators. -/
 theorem borelSubalgebra_eq_sup_lieSpan_e (b : LieAlgebra.Basis ι H) :
-    letI : Fintype ι := Fintype.ofFinite ι
     letI := b.isCartanSubalgebra
     letI := b.isTriangularizable
     TauCeti.borelSubalgebra H b.base = H ⊔ LieSubalgebra.lieSpan K L (Set.range b.e) := by
-  let _ : Fintype ι := Fintype.ofFinite ι
   let _ := b.isCartanSubalgebra
   let _ := b.isTriangularizable
   rw [TauCeti.borelSubalgebra_eq_sup, b.positiveNilradical_eq_lieSpan_e]

@@ -67,6 +67,11 @@ computational input to the norm and trace of an unramified extension.
 * `TauCeti.isUnramified_tower_iff`, `TauCeti.IsUnramified.trans`,
   `TauCeti.IsUnramified.tower_bot` and `TauCeti.IsUnramified.tower_top`: `M/K` is unramified
   exactly when both steps of a tower `M/L/K` are.
+* `TauCeti.IsUnramified.ramificationIndex_tower_eq`,
+  `TauCeti.IsUnramified.inertiaDegree_tower_eq` and
+  `TauCeti.IsUnramified.isTotallyRamified_iff_finrank_eq`: over an unramified `L/K`, the top
+  step `M/L` has the ramification index of `M/K`, has residue degree `f(M/K) / [L : K]`, and is
+  totally ramified exactly when `[L : K] = f(M/K)`.
 * `TauCeti.isUnramified_iff_formallyUnramified`, `TauCeti.isUnramified_iff_isUnramifiedAt` and
   `TauCeti.isUnramified_iff_etale`: the comparison with Mathlib's `Algebra.FormallyUnramified`,
   `Algebra.IsUnramifiedAt` and `Algebra.Etale` for `𝒪[L]` over `𝒪[K]`.
@@ -222,6 +227,30 @@ theorem IsUnramified.tower_bot [IsUnramified K M] : IsUnramified K L :=
 /-- The top step of an unramified tower is unramified. -/
 theorem IsUnramified.tower_top [IsUnramified K M] : IsUnramified L M :=
   ((isUnramified_tower_iff K L M).1 ‹_›).2
+
+omit [ValuativeExtension K M] in
+/-- Over an unramified `L/K`, the top step of a tower `M/L/K` has the ramification index of the
+whole extension: `e(M/L) = e(M/K)`. -/
+theorem IsUnramified.ramificationIndex_tower_eq [IsUnramified K L] :
+    ramificationIndex L M = ramificationIndex K M := by
+  rw [ramificationIndex_tower (K := K) (L := L) M,
+    IsUnramified.ramificationIndex_eq_one (K := K) (L := L), one_mul]
+
+/-- Over an unramified `L/K`, the residue degree of a tower `M/L/K` factors as
+`f(M/K) = [L : K] · f(M/L)`. -/
+theorem IsUnramified.inertiaDegree_tower_eq [IsUnramified K L] :
+    inertiaDegree K M = Module.finrank K L * inertiaDegree L M := by
+  rw [inertiaDegree_tower (K := K) (L := L) M, IsUnramified.inertiaDegree_eq_finrank]
+
+/-- Over an unramified `L/K`, the top step of a tower `M/L/K` is totally ramified exactly when
+`L/K` already has the full residue degree `f(M/K)`. -/
+theorem IsUnramified.isTotallyRamified_iff_finrank_eq [IsUnramified K L] :
+    IsTotallyRamified L M ↔ Module.finrank K L = inertiaDegree K M := by
+  have hpos : 0 < Module.finrank K L :=
+    IsUnramified.inertiaDegree_eq_finrank (K := K) (L := L) ▸ inertiaDegree_pos
+  rw [isTotallyRamified_iff_inertiaDegree_eq_one, IsUnramified.inertiaDegree_tower_eq K L M]
+  exact ⟨fun h ↦ by rw [h, mul_one],
+    fun h ↦ Nat.eq_of_mul_eq_mul_left hpos (by rw [mul_one]; exact h.symm)⟩
 
 end Tower
 

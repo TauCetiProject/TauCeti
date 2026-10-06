@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.VariableChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Singular
 public import TauCeti.Algebra.Polynomial.QuadraticDiscriminant
 
 /-!
@@ -18,6 +18,7 @@ distinguishes split from nonsplit multiplicative reduction.
 This file defines `WeierstrassCurve.nodePolynomial` over a commutative ring and proves:
 
 * its discriminant is `-c₄ c₆`;
+* for a model singular at the origin, it is `c₄` times the tangent quadratic `T² + a₁ T - a₂`;
 * it commutes with base change;
 * a change of variables `(u, r, s, t)` acts by the substitution `T ↦ u T + s` and the
   scalar `u⁻⁶`, preserving splitting over a field;
@@ -28,7 +29,7 @@ This file defines `WeierstrassCurve.nodePolynomial` over a commutative ring and 
 These criteria apply to any ring homomorphism to a field. Their relation to
 `WeierstrassCurve.HasSplitMultiplicativeReduction` is developed in `MinimalModel/Basic.lean` and
 `LocalPolynomial.lean`. The constant-coefficient formula also describes the effect of quadratic
-twisting in `QuadraticTwist.lean`.
+twisting in `QuadraticTwist/Basic.lean`.
 
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`, commit `bc2fe8ff7396`, FLT PR #1088,
 Apache 2.0): the node-polynomial block of
@@ -70,6 +71,30 @@ non-normal-form. -/
 lemma nodePolynomial_coeff_zero (W : WeierstrassCurve A) :
     W.nodePolynomial.coeff 0 = -(54 * W.b₆ - 3 * W.b₂ * W.b₄ + W.a₂ * W.c₄) := by
   simp [nodePolynomial_def]
+
+/-- **The node polynomial as `c₄` times a monic quadratic.** If `c₄ n` is the constant coefficient
+of the node polynomial, the node polynomial is `c₄ · (T² + a₁ T + n)`. When `c₄` is a unit such an
+`n` exists and is unique. This is a purely algebraic factorization; when the reduction of a
+minimal model is multiplicative, the roots of the reduced quadratic `T² + a₁ T + n` are the slopes
+of the two tangent directions at the node of the reduced curve. -/
+theorem nodePolynomial_eq_C_mul (W : WeierstrassCurve A) {n : A}
+    (hn : W.c₄ * n = W.nodePolynomial.coeff 0) :
+    W.nodePolynomial = .C W.c₄ * (.X ^ 2 + .C W.a₁ * .X + .C n) := by
+  rw [nodePolynomial_coeff_zero] at hn
+  have hC := congrArg Polynomial.C hn
+  rw [nodePolynomial_def]
+  simp only [map_mul, map_sub, map_add, map_neg, map_ofNat] at hC ⊢
+  linear_combination -hC
+
+/-- For a model singular at the origin, the node polynomial is `c₄` times the tangent quadratic
+`T² + a₁ T - a₂`, written in the coefficient form used by the quadratic polynomial API. -/
+theorem nodePolynomial_eq_of_isSingular_zero (W : WeierstrassCurve A)
+    (h : W.toAffine.IsSingular 0 0) :
+    W.nodePolynomial = .C W.c₄ * (.C 1 * .X ^ 2 + .C W.a₁ * .X + .C (-W.a₂)) := by
+  obtain ⟨h₆, h₄, h₃⟩ := (Affine.isSingular_zero _).1 h
+  have hn : W.c₄ * (-W.a₂) = W.nodePolynomial.coeff 0 := by
+    simp [nodePolynomial_coeff_zero, b₄, b₆, h₆, h₄, h₃, mul_comm]
+  simpa using W.nodePolynomial_eq_C_mul hn
 
 /-- The discriminant of the node polynomial is `-c₄ c₆`. Hence — away from residue characteristic
 two, and provided `c₄` survives the reduction — the tangent directions at the node are rational

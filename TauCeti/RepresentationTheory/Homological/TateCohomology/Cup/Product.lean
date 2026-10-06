@@ -55,6 +55,8 @@ first factor (`cup_zero_left`), because both satisfy the same rule for the dimen
   `TauCeti.TateCohomology.cup_dimensionShiftDownIso_hom`: the defining rule
   `x ∪ δ y = (-1)^p δ (x ∪ y)` for the upward shift when the second degree is nonnegative, and for
   the downward shift when it is negative.
+* `TauCeti.TateCohomology.cup_dimensionShiftUpTwoIso_hom`: for the double upward shift
+  `TauCeti.TateCohomology.dimensionShiftUpTwoIso` of a degree-zero class, the two signs cancel.
 * `TauCeti.TateCohomology.cup_map_left`, `cup_map_right`: naturality in either coefficient
   representation.
 
@@ -222,6 +224,30 @@ theorem cup_dimensionShiftDownIso_hom {p q r' r : ℤ} (hq : q < 0) (h' : p + q 
     rw [cupNeg_succ_apply, map_zsmul_unit, negOnePow_smul_negOnePow_smul,
       Iso.inv_hom_id_apply]
     exact LinearMap.congr_fun₂ (cup_negSucc M (dimensionShiftDown N) p n _) x _
+
+/-- Cup product with a degree-two class obtained by shifting a degree-zero class `z` twice is the
+degree-zero cup product with `z`, followed by the two tensored dimension shifts. The two signs
+`(-1)^p` of the shifting rule cancel. -/
+theorem cup_dimensionShiftUpTwoIso_hom (p : ℤ) (x : tateCohomology M p)
+    (z : tateCohomology (dimensionShiftUp (dimensionShiftUp N)) 0) :
+    cup M N p 2 (p + 2) rfl x ((dimensionShiftUpTwoIso N).hom z) =
+      (tensorDimensionShiftUpIso N M (p + 1) (p + 2) (by omega)).hom
+        ((tensorDimensionShiftUpIso (dimensionShiftUp N) M p (p + 1) rfl).hom
+          (cupH0 M (dimensionShiftUp (dimensionShiftUp N)) p x z)) := by
+  -- The first shift, in bidegree `(p, 0 + 1)`; `0 + 1` is `1` by definition.
+  have h₁ : cup M (dimensionShiftUp N) p 1 (p + 1) rfl x
+        ((dimensionShiftUpIso (dimensionShiftUp N) 0).hom z) =
+      p.negOnePow • (tensorDimensionShiftUpIso (dimensionShiftUp N) M p (p + 1) rfl).hom
+        (cupH0 M (dimensionShiftUp (dimensionShiftUp N)) p x z) := by
+    refine (cup_dimensionShiftUpIso_hom M (dimensionShiftUp N) le_rfl (add_zero p) rfl x
+      z).trans ?_
+    rw [cup_zero_right]
+  -- The second shift, in bidegree `(p, 1 + 1)`; `1 + 1` is `2` by definition.
+  have h₂ := cup_dimensionShiftUpIso_hom M N (q := 1) (r := p + 2) zero_le_one rfl (by omega) x
+    ((dimensionShiftUpIso (dimensionShiftUp N) 0).hom z)
+  rw [dimensionShiftUpTwoIso_hom, ModuleCat.comp_apply]
+  refine h₂.trans ?_
+  rw [h₁, map_zsmul_unit, negOnePow_smul_negOnePow_smul]
 
 /-- The upward step in the proof of `cup_zero_left`: if `cup` agrees with `cup0H` in bidegree
 `(0, q)` for the upward shift of `N`, where `0 ≤ q`, then it does in bidegree `(0, q + 1)` for

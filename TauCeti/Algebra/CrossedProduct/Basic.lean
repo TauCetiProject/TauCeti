@@ -39,11 +39,16 @@ Central simplicity of the crossed product of a finite Galois extension of fields
 
 ## Main definitions
 
-* `TauCeti.TwoCocycle K L`: the `2`-cocycles of `L ≃ₐ[K] L` with values in `Lˣ`.
+* `TauCeti.TwoCocycle K L`: the `2`-cocycles of `L ≃ₐ[K] L` with values in `Lˣ`, a commutative
+  group under pointwise multiplication (`TauCeti.TwoCocycle.instCommGroup`).
+* `TauCeti.TwoCocycle.comap f ι hf c`: the inflation of `c` along a homomorphism
+  `f : Aut_K(M) → Aut_K(L)` and an embedding `ι : L →ₐ[K] M` intertwining it.
 * `TauCeti.CrossedProduct c`: the crossed-product ring of a cocycle `c`, with its `K`-algebra and
   left `L`-module structures.
 * `TauCeti.CrossedProduct.basis c`: the `L`-basis `u_σ` of the crossed product.
 * `TauCeti.CrossedProduct.inc c`: the embedding of `L` as a `K`-subalgebra.
+* `TauCeti.CrossedProduct.lift`: the universal property, extending `f : L →ₐ[K] R` and elements
+  `u σ ∈ R` satisfying the relations of the crossed product to a `K`-algebra homomorphism.
 
 ## Main results
 
@@ -51,6 +56,8 @@ Central simplicity of the crossed product of a finite Galois extension of fields
   `(x · u_σ) · (y · u_τ) = (x · σ(y) · c(σ, τ)) · u_{στ}`.
 * `TauCeti.CrossedProduct.basis_mul_inc`: `u_σ · x = σ(x) · u_σ`.
 * `TauCeti.CrossedProduct.basis_mul_basis`: `u_σ · u_τ = c(σ, τ) · u_{στ}`.
+* `TauCeti.CrossedProduct.algHom_ext`, `TauCeti.CrossedProduct.lift_unique`: a `K`-algebra
+  homomorphism out of the crossed product is determined by its values on `L` and on the `u_σ`.
 * `TauCeti.CrossedProduct.finrank_eq_finrank_mul_card`: over fields, the `Module.finrank` of the
   crossed product is `Module.finrank K L * Nat.card (Aut_K(L))`; and
   `TauCeti.CrossedProduct.finrank_eq_finrank_sq`: for a finite Galois extension its dimension is
@@ -66,7 +73,7 @@ public section
 
 open groupCohomology
 
-universe u v
+universe u v w
 
 namespace TauCeti
 
@@ -107,6 +114,137 @@ through the Galois action. Not a `simp` lemma: at `σ = 1` its left-hand side `c
 inside its right-hand side, so `simp` would loop. -/
 theorem toFun_one_right (σ : L ≃ₐ[K] L) : (c.toFun σ 1 : L) = σ (c.toFun 1 1 : L) := by
   simp [map_one_snd_of_isMulCocycle₂ c.isMulCocycle₂ σ]
+
+/-! ### The pointwise group of `2`-cocycles -/
+
+/-- The trivial `2`-cocycle, constantly `1`. -/
+instance : One (TwoCocycle K L) where
+  one := ⟨fun _ _ ↦ 1, fun σ _ _ ↦ by simp⟩
+
+/-- The pointwise product `(c · d)(σ, τ) = c(σ, τ) · d(σ, τ)` of two `2`-cocycles. -/
+instance : Mul (TwoCocycle K L) where
+  mul c d := ⟨fun σ τ ↦ c.toFun σ τ * d.toFun σ τ, fun σ τ ρ ↦ by
+    rw [mul_mul_mul_comm, c.isMulCocycle₂ σ τ ρ, d.isMulCocycle₂ σ τ ρ, smul_mul',
+      mul_mul_mul_comm]⟩
+
+/-- The pointwise inverse `c⁻¹(σ, τ) = c(σ, τ)⁻¹` of a `2`-cocycle. -/
+instance : Inv (TwoCocycle K L) where
+  inv c := ⟨fun σ τ ↦ (c.toFun σ τ)⁻¹, fun σ τ ρ ↦ by
+    rw [← mul_inv, c.isMulCocycle₂ σ τ ρ, mul_inv, smul_inv']⟩
+
+/-- The pointwise quotient `(c / d)(σ, τ) = c(σ, τ) / d(σ, τ)` of two `2`-cocycles. -/
+instance : Div (TwoCocycle K L) where
+  div c d := ⟨fun σ τ ↦ c.toFun σ τ / d.toFun σ τ, fun σ τ ρ ↦ by
+    rw [div_mul_div_comm, c.isMulCocycle₂ σ τ ρ, d.isMulCocycle₂ σ τ ρ, smul_div',
+      div_mul_div_comm]⟩
+
+/-- The pointwise power `cⁿ(σ, τ) = c(σ, τ)ⁿ` of a `2`-cocycle. -/
+instance : Pow (TwoCocycle K L) ℕ where
+  pow c n := ⟨fun σ τ ↦ c.toFun σ τ ^ n, fun σ τ ρ ↦ by
+    rw [← mul_pow, c.isMulCocycle₂ σ τ ρ, mul_pow, smul_pow']⟩
+
+/-- The pointwise integer power `cⁿ(σ, τ) = c(σ, τ)ⁿ` of a `2`-cocycle. -/
+instance : Pow (TwoCocycle K L) ℤ where
+  pow c n := ⟨fun σ τ ↦ c.toFun σ τ ^ n, fun σ τ ρ ↦ by
+    rw [← mul_zpow, c.isMulCocycle₂ σ τ ρ, mul_zpow, smul_zpow']⟩
+
+/-- The trivial `2`-cocycle is constantly `1`. -/
+@[simp]
+theorem toFun_one (σ τ : L ≃ₐ[K] L) : (1 : TwoCocycle K L).toFun σ τ = 1 :=
+  rfl
+
+/-- Multiplication of `2`-cocycles is pointwise multiplication. -/
+@[simp]
+theorem toFun_mul (d : TwoCocycle K L) (σ τ : L ≃ₐ[K] L) :
+    (c * d).toFun σ τ = c.toFun σ τ * d.toFun σ τ :=
+  rfl
+
+/-- Inversion of `2`-cocycles is pointwise inversion. -/
+@[simp]
+theorem toFun_inv (σ τ : L ≃ₐ[K] L) : c⁻¹.toFun σ τ = (c.toFun σ τ)⁻¹ :=
+  rfl
+
+/-- Division of `2`-cocycles is pointwise division. -/
+@[simp]
+theorem toFun_div (d : TwoCocycle K L) (σ τ : L ≃ₐ[K] L) :
+    (c / d).toFun σ τ = c.toFun σ τ / d.toFun σ τ :=
+  rfl
+
+/-- Powers of `2`-cocycles are pointwise powers. -/
+@[simp]
+theorem toFun_pow (n : ℕ) (σ τ : L ≃ₐ[K] L) : (c ^ n).toFun σ τ = c.toFun σ τ ^ n :=
+  rfl
+
+/-- Integer powers of `2`-cocycles are pointwise integer powers. -/
+@[simp]
+theorem toFun_zpow (n : ℤ) (σ τ : L ≃ₐ[K] L) : (c ^ n).toFun σ τ = c.toFun σ τ ^ n :=
+  rfl
+
+/-- The `2`-cocycles form a commutative group under pointwise multiplication, the group of
+`2`-cocycles whose quotient by coboundaries is `H²(Aut_K(L), Lˣ)`. -/
+instance : CommGroup (TwoCocycle K L) :=
+  Function.Injective.commGroup TwoCocycle.toFun (fun _ _ h ↦ TwoCocycle.ext h) rfl
+    (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+
+section Comap
+
+variable {M : Type w} [CommRing M] [Algebra K M]
+
+/-- The **inflation** of a `2`-cocycle `c` of `Aut_K(L)` along a compatible pair: a homomorphism
+`f : Aut_K(M) → Aut_K(L)` and an embedding `ι : L → M` intertwining it, `ι (f g x) = g (ι x)`.
+Its values are `(g, g') ↦ ι (c (f g, f g'))`; the intertwining hypothesis is what makes this a
+cocycle. -/
+def comap (f : (M ≃ₐ[K] M) →* (L ≃ₐ[K] L)) (ι : L →ₐ[K] M) (hf : ∀ g x, ι (f g x) = g (ι x))
+    (c : TwoCocycle K L) : TwoCocycle K M where
+  toFun g g' := Units.map (ι : L →* M) (c.toFun (f g) (f g'))
+  isMulCocycle₂ g g' g'' := by
+    have hsmul (x : Lˣ) : g • Units.map (ι : L →* M) x = Units.map (ι : L →* M) (f g • x) :=
+      Units.ext (by simp [AlgEquiv.smul_units_def, hf])
+    have h := c.isMulCocycle₂ (f g) (f g') (f g'')
+    dsimp only at h ⊢
+    rw [← map_mul f, ← map_mul f] at h
+    rw [hsmul, ← map_mul, ← map_mul, h]
+
+variable (f : (M ≃ₐ[K] M) →* (L ≃ₐ[K] L)) (ι : L →ₐ[K] M) (hf : ∀ g x, ι (f g x) = g (ι x))
+
+/-- The defining equation of the inflated cocycle, `(c.comap f ι hf)(g, g') = ι (c (f g, f g'))`,
+as units. -/
+@[simp]
+theorem comap_toFun (g g' : M ≃ₐ[K] M) :
+    (c.comap f ι hf).toFun g g' = Units.map (ι : L →* M) (c.toFun (f g) (f g')) :=
+  (rfl)
+
+/-- Inflation of the trivial `2`-cocycle is trivial. -/
+@[simp]
+theorem comap_one : (1 : TwoCocycle K L).comap f ι hf = 1 :=
+  TwoCocycle.ext (funext₂ fun _ _ ↦ by simp)
+
+/-- Inflation is multiplicative. -/
+@[simp]
+theorem comap_mul (d : TwoCocycle K L) : (c * d).comap f ι hf = c.comap f ι hf * d.comap f ι hf :=
+  TwoCocycle.ext (funext₂ fun _ _ ↦ by simp)
+
+/-- Inflation commutes with inversion. -/
+@[simp]
+theorem comap_inv : c⁻¹.comap f ι hf = (c.comap f ι hf)⁻¹ :=
+  TwoCocycle.ext (funext₂ fun _ _ ↦ by simp)
+
+/-- Inflation commutes with division. -/
+@[simp]
+theorem comap_div (d : TwoCocycle K L) : (c / d).comap f ι hf = c.comap f ι hf / d.comap f ι hf :=
+  TwoCocycle.ext (funext₂ fun _ _ ↦ by simp)
+
+/-- Inflation commutes with natural powers. -/
+@[simp]
+theorem comap_pow (n : ℕ) : (c ^ n).comap f ι hf = c.comap f ι hf ^ n :=
+  TwoCocycle.ext (funext₂ fun _ _ ↦ by simp)
+
+/-- Inflation commutes with integer powers. -/
+@[simp]
+theorem comap_zpow (n : ℤ) : (c ^ n).comap f ι hf = c.comap f ι hf ^ n :=
+  TwoCocycle.ext (funext₂ fun _ _ ↦ by simp)
+
+end Comap
 
 end TwoCocycle
 
@@ -362,6 +500,80 @@ theorem repr_mul_inc (a : CrossedProduct c) (x : L) (σ : L ≃ₐ[K] L) :
     · subst h
       ring
     · simp [h]
+
+section Lift
+
+variable {R : Type*} [Semiring R] [Algebra K R]
+
+/-- The **universal property of the crossed product**: a `K`-algebra homomorphism `f : L → R`
+together with elements `u σ ∈ R` satisfying `u σ · f(x) = f(σ x) · u σ`,
+`u σ · u τ = f(c(σ, τ)) · u (στ)` and `u 1 = f(c(1, 1))` extends to the `K`-algebra homomorphism
+`x · u_σ ↦ f(x) · u σ` out of `CrossedProduct c`. The last condition is `basis_one`; without it
+`u = 0` would satisfy the first two. -/
+noncomputable def lift (f : L →ₐ[K] R) (u : (L ≃ₐ[K] L) → R)
+    (hf : ∀ σ x, u σ * f x = f (σ x) * u σ)
+    (hu : ∀ σ τ, u σ * u τ = f (c.toFun σ τ) * u (σ * τ)) (hu₁ : u 1 = f (c.toFun 1 1)) :
+    CrossedProduct c →ₐ[K] R :=
+  have hsb (σ : L ≃ₐ[K] L) (x : L) : (Finsupp.lsum K fun σ ↦
+      LinearMap.mulRight K (u σ) ∘ₗ f.toLinearMap) ((basis c).repr (x • basis c σ)) =
+      f x * u σ := by
+    simp
+  AlgHom.ofLinearMap ((Finsupp.lsum K fun σ ↦ LinearMap.mulRight K (u σ) ∘ₗ f.toLinearMap) ∘ₗ
+      (basis c).repr.toLinearMap.restrictScalars K)
+    (by
+      rw [LinearMap.comp_apply, one_def, LinearMap.restrictScalars_apply, LinearEquiv.coe_coe, hsb,
+        hu₁, ← map_mul, Units.inv_mul, map_one])
+    fun a b ↦ by
+      simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, LinearEquiv.coe_coe]
+      induction a using induction_on with
+      | zero => simp
+      | add a a' ha ha' => simp only [add_mul, map_add, ha, ha']
+      | smul_basis σ x =>
+        induction b using induction_on with
+        | zero => simp
+        | add b b' hb hb' => simp only [mul_add, map_add, hb, hb']
+        | smul_basis τ y =>
+          rw [smul_basis_mul_smul_basis, hsb, hsb, hsb, map_mul, map_mul, mul_assoc, mul_assoc,
+            ← hu, ← mul_assoc (f (σ y)), ← hf]
+          simp only [mul_assoc]
+
+variable (f : L →ₐ[K] R) (u : (L ≃ₐ[K] L) → R) (hf : ∀ σ x, u σ * f x = f (σ x) * u σ)
+  (hu : ∀ σ τ, u σ * u τ = f (c.toFun σ τ) * u (σ * τ)) (hu₁ : u 1 = f (c.toFun 1 1))
+
+/-- `CrossedProduct.lift` sends `x · u_σ` to `f(x) · u σ`. -/
+@[simp]
+theorem lift_smul_basis (σ : L ≃ₐ[K] L) (x : L) :
+    lift f u hf hu hu₁ (x • basis c σ) = f x * u σ := by
+  simp [lift]
+
+/-- `CrossedProduct.lift` sends the basis element `u_σ` to `u σ`. -/
+@[simp]
+theorem lift_basis (σ : L ≃ₐ[K] L) : lift f u hf hu hu₁ (basis c σ) = u σ := by
+  rw [← one_smul L (basis c σ), lift_smul_basis, map_one, one_mul]
+
+/-- `CrossedProduct.lift` restricts to `f` on the copy `inc c` of `L`. -/
+@[simp]
+theorem lift_inc (x : L) : lift f u hf hu hu₁ (inc c x) = f x := by
+  rw [inc_apply, lift_smul_basis, hu₁, ← map_mul, mul_assoc, Units.inv_mul, mul_one]
+
+/-- **Uniqueness in the universal property**: a `K`-algebra homomorphism out of `CrossedProduct c`
+is determined by its values on the copy `inc c` of `L` and on the basis elements `u_σ`. -/
+@[ext]
+theorem algHom_ext {F G : CrossedProduct c →ₐ[K] R} (hinc : ∀ x, F (inc c x) = G (inc c x))
+    (hbasis : ∀ σ, F (basis c σ) = G (basis c σ)) : F = G :=
+  AlgHom.ext fun a ↦ by
+    induction a using induction_on with
+    | zero => simp
+    | add a b ha hb => simp only [map_add, ha, hb]
+    | smul_basis σ x => rw [smul_def, map_mul, map_mul, hinc, hbasis]
+
+/-- `CrossedProduct.lift` is the unique `K`-algebra homomorphism restricting to `f` on `inc c` and
+sending each `u_σ` to `u σ`. -/
+theorem lift_unique (F : CrossedProduct c →ₐ[K] R) (hinc : ∀ x, F (inc c x) = f x)
+    (hbasis : ∀ σ, F (basis c σ) = u σ) : F = lift f u hf hu hu₁ :=
+  algHom_ext (fun x ↦ by rw [hinc, lift_inc]) fun σ ↦ by rw [hbasis, lift_basis]
+
+end Lift
 
 /-- A crossed product over a nontrivial ring `L` is nontrivial. -/
 instance [Nontrivial L] : Nontrivial (CrossedProduct c) :=

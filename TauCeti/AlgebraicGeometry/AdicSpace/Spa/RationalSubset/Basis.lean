@@ -352,6 +352,17 @@ omit [IsTopologicalRing A] in
 theorem mem_spaRationalOpens {Aplus : Subring A} {U : Opens (spa Aplus)} :
     U ∈ spaRationalOpens Aplus ↔ (U : Set (spa Aplus)) ∈ spaRationalFamily Aplus := Iff.rfl
 
+omit [IsTopologicalRing A] in
+/-- An open is a rational open exactly when it is a basic open `R(T/s)` whose numerator ideal
+`T · A` is open. This is `mem_spaRationalFamily_iff` for `Opens`, with the basic open
+`spaBasicOpen Aplus T s` in place of the preimage of `rationalSubset Aplus T s`. -/
+theorem mem_spaRationalOpens_iff_exists_spaBasicOpen {Aplus : Subring A} {U : Opens (spa Aplus)} :
+    U ∈ spaRationalOpens Aplus ↔ ∃ (T : Finset A) (s : A), IsOpen (Ideal.span (T : Set A) : Set A) ∧
+      U = spaBasicOpen Aplus T s := by
+  have (T : Finset A) (s : A) : (spaBasicOpen Aplus T s : Set (spa Aplus)) =
+      Subtype.val ⁻¹' rationalSubset Aplus T s := Set.ext fun _ ↦ mem_spaBasicOpen
+  simp only [mem_spaRationalOpens, mem_spaRationalFamily_iff, SetLike.ext'_iff, this]
+
 /-- **The rational opens are a basis** in the `Opens.IsBasis` sense, which is the form the sheaf
 criterion on a basis consumes. -/
 theorem isBasis_spaRationalOpens [IsHuberRing A] (Aplus : Subring A) :
@@ -370,7 +381,7 @@ omit [IsTopologicalRing A] in
 theorem spaBasicOpen_mem_spaRationalOpens {Aplus : Subring A} {T : Finset A} {s : A}
     (hT : IsOpen (Ideal.span (T : Set A) : Set A)) :
     spaBasicOpen Aplus T s ∈ spaRationalOpens Aplus :=
-  ⟨T, s, hT, Set.ext fun _ ↦ mem_spaBasicOpen⟩
+  mem_spaRationalOpens_iff_exists_spaBasicOpen.mpr ⟨T, s, hT, rfl⟩
 
 /-- **Wedhorn Remark 7.30(5)** in the bundled form: the rational opens are closed under binary
 meet. Meet of `Opens` is intersection of the underlying sets, so this is

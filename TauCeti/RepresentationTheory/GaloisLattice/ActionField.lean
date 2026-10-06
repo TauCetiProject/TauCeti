@@ -42,9 +42,7 @@ universe u
 
 variable {k : Type u} [Field k]
 
-/-- The module structure stored in the bundled representation. -/
-noncomputable local instance actionFieldStoredModule (M : GaloisLatticeCat k) : Module ℤ M.obj :=
-  M.obj.hV2
+attribute [local instance] TauCeti.GaloisLatticeCat.storedModule
 
 /-- A finite normal subextension of the algebraic closure through whose automorphism group the
 action on a Galois lattice factors. -/

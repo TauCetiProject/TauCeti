@@ -21,7 +21,7 @@ two schemes are not identified here; neither reductivity nor an identification w
 simply connected type-`E₆` group scheme follows from smoothness alone.
 
 The construction follows the generated subgroup API of
-`TauCeti.Algebra.Lie.E7.Minuscule.GeneratedSmooth`.
+`TauCeti.Algebra.Lie.E7.Minuscule.Generated.Smooth`.
 
 ## References
 
@@ -47,8 +47,7 @@ variable (k : Type u) [Field k]
 private theorem isReduced_generatorCoordinateAlgebra :
     ∀ j, IsReduced (generatorCoordinateAlgebra k j) := by
   let : IsReduced (AdditiveGroup.coordinateHopfAlgebra k) :=
-    isReduced_of_injective (AdditiveGroup.coordinateAlgEquiv k).toRingHom
-      (AdditiveGroup.coordinateAlgEquiv k).injective
+    AdditiveGroup.isReduced_coordinateHopfAlgebra k
   let : IsReduced (DiagonalizableGroup.coordinateRing k
       (SplitTorus.characterGroup (Fin 6))).obj := inferInstance
   intro j

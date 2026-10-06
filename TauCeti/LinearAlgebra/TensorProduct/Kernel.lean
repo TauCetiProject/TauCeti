@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+public import Mathlib.RingTheory.Flat.Basic
 
 /-!
 # Kernels after extension of scalars
@@ -14,15 +15,17 @@ public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 Mathlib's `Submodule.baseChange` extends a submodule of `M` to an `A`-submodule of `A ⊗[R] M`,
 and `LinearMap.baseChange` extends a linear map.  For a general map the two constructions satisfy
 only the containment `(ker f).baseChange A ≤ ker (f.baseChange A)`; it is an equality when `A` is
-flat over `R`, which is Mathlib's `Module.Flat.ker_lTensor_eq`.  This file records the other case
-in which it is an equality: the kernel of a *surjective* map is computed correctly after extending
-scalars along an arbitrary coefficient algebra, flat or not.
+flat over `R`. This file records that case and the other case in which it is an equality: the
+kernel of a *surjective* map is computed correctly after extending scalars along an arbitrary
+coefficient algebra, flat or not.
 
 That is the form wanted when the map is a quotient map, where the kernel of the extension is to be
 identified with the extension of the submodule quotiented by.
 
 ## Main results
 
+* `LinearMap.ker_baseChange_of_flat`: over a flat coefficient algebra, the kernel of an extended
+  linear map is the extension of its kernel.
 * `LinearMap.ker_baseChange_of_surjective`: **for a surjective map the kernel of an extended
   linear map is the extension of its kernel**, with no hypothesis on the coefficient algebra.
 
@@ -44,9 +47,17 @@ variable {R : Type u} (A : Type v) {M : Type w} {N : Type x}
 variable [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 variable [Ring A] [Algebra R A]
 
+/-- Over a flat coefficient algebra, extension of scalars commutes with kernels. -/
+theorem ker_baseChange_of_flat [Module.Flat R A] (f : M →ₗ[R] N) :
+    ker (f.baseChange A) = (ker f).baseChange A := by
+  have h : Function.Exact ((ker f).subtype.baseChange A) (f.baseChange A) := by
+    simpa only [baseChange_eq_ltensor] using
+      Module.Flat.lTensor_exact A f.exact_subtype_ker_map
+  exact h.linearMap_ker_eq
+
 /-- **Extension of scalars commutes with the kernel of a surjective map**, with no hypothesis on
 the coefficient algebra.  Dropping surjectivity, the same equality holds when `A` is flat over
-`R`, which is Mathlib's `Module.Flat.ker_lTensor_eq`. -/
+`R`, which is `LinearMap.ker_baseChange_of_flat`. -/
 theorem ker_baseChange_of_surjective (f : M →ₗ[R] N) (hf : Function.Surjective f) :
     ker (f.baseChange A) = (ker f).baseChange A :=
   have h : Function.Exact ((ker f).subtype.baseChange A) (f.baseChange A) :=

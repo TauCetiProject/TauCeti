@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.Cohomology.Skyscraper
 public import TauCeti.AlgebraicGeometry.Scheme.Regular
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Germ
+import Mathlib.Topology.Sheaves.LocallySurjective
 
 /-!
 # The residue sequence `0 ⟶ 𝒪_X(D) ⟶ 𝒪_X(D + y) ⟶ κ(y)_y ⟶ 0`

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.SetTheory.Cardinal.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Generation
+import Mathlib.Topology.Separation.Connected
 import TauCeti.GroupTheory.Schreier
 
 /-!

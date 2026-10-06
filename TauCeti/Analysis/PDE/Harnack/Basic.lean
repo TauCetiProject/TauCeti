@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
-import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue
+import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!

@@ -64,6 +64,6 @@ theorem map_stdRep_span_basisFun {g : GL (Fin n) k} (hg : g ∈ diagonalTorus k 
       Submodule.span k {Pi.basisFun k (Fin n) i} := by
   rw [Submodule.map_span, Set.image_singleton, stdRep_apply_basisFun_of_mem_diagonalTorus hg i]
   exact Submodule.span_singleton_smul_eq (isUnit_apply_of_isDiag
-    (isDiag_of_mem_diagonalTorus hg) i) _
+    (mem_diagonalTorus_iff.mp hg) i) _
 
 end TauCeti

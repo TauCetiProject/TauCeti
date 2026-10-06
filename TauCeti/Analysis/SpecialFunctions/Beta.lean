@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Distributions.Beta
+import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.Analysis.Real.Sqrt
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable

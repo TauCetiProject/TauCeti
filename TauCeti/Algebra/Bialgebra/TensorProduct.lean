@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Bialgebra.TensorProduct
-import TauCeti.Algebra.TensorProduct.BaseChange
+public import TauCeti.Algebra.TensorProduct.BaseChange
 
 /-!
 # Bialgebra maps and base change for tensor products
@@ -21,8 +21,7 @@ action on pure tensors in both directions.
 
 The underlying algebra equivalence upgrades Mathlib's
 `TensorProduct.AlgebraTensorModule.distribBaseChange`. The bialgebra comparison supplies the
-product/base-change identification needed for direct-product closure in Layer 6 of the
-ReductiveGroups roadmap.
+product/base-change identification for coordinate rings of direct products of affine group schemes.
 
 The tensor-product bialgebra structure and its unit isomorphisms are from Mathlib's
 `Mathlib.RingTheory.Bialgebra.TensorProduct`.
@@ -106,18 +105,14 @@ theorem projectRight_tmul (x : H₁) (y : H₂) :
 theorem projectLeft_comp_includeLeft :
     (projectLeft (R := R) (H₁ := H₁) (H₂ := H₂)).comp includeLeft = BialgHom.id R H₁ := by
   ext x
-  rw [BialgHom.comp_apply, includeLeft_apply, projectLeft_tmul,
-    Bialgebra.counit_one, one_smul]
-  rfl
+  simp
 
 /-- The right projection is a retraction of the right inclusion. -/
 @[simp]
 theorem projectRight_comp_includeRight :
     (projectRight (R := R) (H₁ := H₁) (H₂ := H₂)).comp includeRight = BialgHom.id R H₂ := by
   ext y
-  rw [BialgHom.comp_apply, includeRight_apply, projectRight_tmul,
-    Bialgebra.counit_one, one_smul]
-  rfl
+  simp
 
 section BaseChange
 
@@ -208,6 +203,14 @@ noncomputable def baseChangeTensorBialgEquiv :
     (B := (K ⊗[k] H) ⊗[K] (K ⊗[k] L))
     (baseChangeTensorAlgEquiv_counit_comp k K H L)
     (baseChangeTensorAlgEquiv_map_comp_comul k K H L)
+
+/-- The algebra equivalence underlying the product/base-change bialgebra equivalence. -/
+@[simp]
+theorem baseChangeTensorBialgEquiv_toAlgEquiv :
+    (baseChangeTensorBialgEquiv k K H L).toAlgEquiv =
+      Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L := by
+  ext x
+  rfl
 
 /-- On a pure tensor, the product/base-change equivalence puts the scalar in the first
 base-changed factor. -/

@@ -16,16 +16,18 @@ Labute's classification puts a Demushkin group of rank `n` with `q`-invariant `q
 normal forms, presented on `x₁, …, xₙ` by the relator words
 
 * `x₁^q (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`, for `q ≠ 2`;
-* `x₁² x₂^{2^f} (x₂, x₃)(x₄, x₅) ⋯ (x_{n-1}, x_n)`, for `q = 2` and `n` odd;
+* `x₁² x₂^{2^f} (x₂, x₃)(x₄, x₅) ⋯ (x_{n-1}, x_n)`, for `q = 2` and `n` odd, together with its
+  level `f = ∞`, the word `x₁² (x₂, x₃)(x₄, x₅) ⋯ (x_{n-1}, x_n)`;
 * `x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)`, for `q = 2` and `n` even, `4 ∣ a`.
 
 This file checks that the parameter `q` of a normal form is the `q`-invariant of the group it
 presents: whenever such a presented group is a Demushkin group, `TauCeti.demushkinQ` of it is `q`
 for the first word (`p^{v_p(q)}` in general, so `q` itself for `q = 0` or `q` a positive power of
-`p`), and `2` for the two dyadic words. The computation goes through the one-relator
+`p`), and `2` for the dyadic words. The computation goes through the one-relator
 abelianization structure theorem `TauCeti.presentedProP.oneRelatorAbelianizationEquiv`, in the form
 `TauCeti.demushkinQ_presentedProP_eq_pow_valuation`: the exponent vector of the first word is
-`q e₁`, that of the second is `2 e₁ + 2^f e₂ = 2 (e₁ + 2^{f-1} e₂)`, and that of the third is
+`q e₁`, that of the second is `2 e₁ + 2^f e₂ = 2 (e₁ + 2^{f-1} e₂)`, or `2 e₁` at level `f = ∞`,
+and that of the third is
 `(2 + a) e₁ + 2^f e₃ = (2 + a)(e₁ + c e₃)` with `2 + a = 2u` for the unit `u = 1 + a/2` of `ℤ₂`,
 so the abelianizations are `ℤ_p^{n-1} × ℤ_p ⧸ (q)`, `ℤ₂^{n-1} × ℤ/2` and `ℤ₂^{n-1} × ℤ/2`. The
 hypothesis `4 ∣ a` in the third word is Labute's normalisation `α ∈ 4ℤ₂`, and it is what makes
@@ -37,15 +39,17 @@ the `q`-invariant would be at least `4`. (For `f = 1` the coordinate `2` at `x�
 
 * `TauCeti.freeProP.toAdd_exponentSum_demushkinWordNeTwo`,
   `TauCeti.freeProP.toAdd_exponentSum_demushkinWordTwoOdd`,
-  `TauCeti.freeProP.toAdd_exponentSum_demushkinWordTwoEven`: the exponent vectors of the three
-  words on the free generators.
+  `TauCeti.freeProP.toAdd_exponentSum_demushkinWordTwoOddTop`,
+  `TauCeti.freeProP.toAdd_exponentSum_demushkinWordTwoEven`: the exponent vectors of the words on
+  the free generators.
 * `TauCeti.demushkinQ_presentedProP_demushkinWordNeTwo_eq_zero_iff`,
   `TauCeti.demushkinQ_presentedProP_demushkinWordNeTwo`,
   `TauCeti.demushkinQ_presentedProP_demushkinWordNeTwo_of_eq_pow`: the `q`-invariant of the
   `q ≠ 2` normal form vanishes exactly when `q = 0`, is `p^{v_p(q)}` for `q ≠ 0`, and is `q` when
   `q` is a positive power of `p`.
 * `TauCeti.demushkinQ_presentedProP_demushkinWordTwoOdd`,
-  `TauCeti.demushkinQ_presentedProP_demushkinWordTwoEven`: the two dyadic normal forms have
+  `TauCeti.demushkinQ_presentedProP_demushkinWordTwoOddTop`,
+  `TauCeti.demushkinQ_presentedProP_demushkinWordTwoEven`: the dyadic normal forms have
   `q`-invariant `2`.
 
 ## References
@@ -82,6 +86,13 @@ theorem toAdd_exponentSum_demushkinWordTwoOdd (f : ℕ) :
     (exponentSum p (Fin n) (demushkinWordTwoOdd f n (freeProPGen p n))).toAdd =
       (2 : ℤ_[p]) • (exponentSum p (Fin n) (freeProPGen p n 0)).toAdd +
         (2 : ℤ_[p]) ^ f • (exponentSum p (Fin n) (freeProPGen p n 1)).toAdd := by
+  simp [← Nat.cast_smul_eq_nsmul ℤ_[p]]
+
+/-- The exponent vector of the `q = 2`, `n` odd word at level `f = ∞`,
+`x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)`, on the free generators is `2 e₁`. -/
+theorem toAdd_exponentSum_demushkinWordTwoOddTop :
+    (exponentSum p (Fin n) (demushkinWordTwoOddTop n (freeProPGen p n))).toAdd =
+      (2 : ℤ_[p]) • (exponentSum p (Fin n) (freeProPGen p n 0)).toAdd := by
   simp [← Nat.cast_smul_eq_nsmul ℤ_[p]]
 
 /-- The exponent vector of the `q = 2`, `n` even word
@@ -159,6 +170,18 @@ theorem demushkinQ_presentedProP_demushkinWordTwoOdd (hf : 0 < f)
       Nat.sub_add_cancel hf]
   have h2 : (2 : ℤ_[2]).valuation = 1 := PadicInt.valuation_p
   rw [demushkinQ_presentedProP_eq_pow_valuation hw hr hG (dvd_refl _) two_ne_zero, h2, pow_one]
+
+/-- **The `q = 2`, `n` odd normal form at level `f = ∞` has `q`-invariant `2`**: if
+`⟨x₁, …, xₙ ∣ x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)⟩` is a Demushkin group, its `q`-invariant is `2`. -/
+@[simp]
+theorem demushkinQ_presentedProP_demushkinWordTwoOddTop
+    (hG : IsDemushkin 2 (presentedProP 2 (Fin n) {demushkinWordTwoOddTop n (freeProPGen 2 n)})) :
+    demushkinQ hG = 2 := by
+  have hn : 0 < n := by simpa using hG.card_pos_presentedProP
+  have hw : (exponentSum 2 (Fin n) (freeProPGen 2 n 0)).toAdd ⟨0, hn⟩ = 1 := by simp
+  have h2 : (2 : ℤ_[2]).valuation = 1 := PadicInt.valuation_p
+  rw [demushkinQ_presentedProP_eq_pow_valuation hw (toAdd_exponentSum_demushkinWordTwoOddTop 2) hG
+    (dvd_refl _) two_ne_zero, h2, pow_one]
 
 /-- **The `q = 2`, `n` even normal form has `q`-invariant `2`**: for `4 ∣ a` and `f ≥ 1`, if
 `⟨x₁, …, xₙ ∣ x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)⟩` is a Demushkin group, its

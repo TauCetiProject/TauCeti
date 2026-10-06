@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.TopologicallyFinitelyGenerated
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # Topologically finitely generated profinite groups are Hopfian

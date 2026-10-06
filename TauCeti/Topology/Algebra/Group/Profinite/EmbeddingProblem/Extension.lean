@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.EmbeddingProblem.Projective
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Extension
+public import TauCeti.Topology.Algebra.GroupExtension.Splitting
 
 /-!
 # Extensions of a projective pro-`p` group split
@@ -62,13 +63,10 @@ theorem _root_.GroupExtension.exists_splitting_continuous_of_isProjective
     (hM : IsProP p M) (hG : IsProP p G) (hproj : IsProjective.{u, v, u} p G) :
     ∃ s : S.Splitting, Continuous ⇑s := by
   have hE : IsProP p E := S.isProP hinl hrh hM hG
-  -- The projection, bundled with its continuity; it evaluates as `S.rightHom` by construction.
-  let π : E →ₜ* G := ⟨S.rightHom, hrh⟩
-  have hπ : ∀ z, π z = S.rightHom z := fun _ ↦ rfl
-  obtain ⟨s, hs⟩ :=
-    hproj.exists_continuous_lift hE π S.rightHom_surjective (ContinuousMonoidHom.id G)
-  exact ⟨GroupExtension.Splitting.mk s.toMonoidHom fun y ↦ by
-    simpa [hπ] using DFunLike.congr_fun hs y, s.continuous⟩
+  obtain ⟨σ, hσ⟩ := hproj.exists_continuous_lift hE ⟨S.rightHom, hrh⟩ S.rightHom_surjective
+    (ContinuousMonoidHom.id G)
+  obtain ⟨s, hs, -⟩ := S.exists_splitting_continuous_of_comp_eq_id hrh σ hσ
+  exact ⟨s, hs⟩
 
 end Splitting
 

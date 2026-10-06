@@ -129,6 +129,41 @@ theorem W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise (hlam : 0 < lam)
       field_simp
       ring
 
+omit [DecidableEq ι] in
+/-- Bound the cutoff-gradient term by the squared gradient bound and an integral over a set
+containing the support of the cutoff. The comparison function may dominate the Sobolev value only
+almost everywhere. -/
+theorem W1p.setIntegral_norm_gradient_sq_mul_value_sq_le (w : W1p mu Omega 2)
+    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) {G : ℝ}
+    (hG : ∀ x, ‖∇ ψ x‖ ≤ G) {S : Set (EuclideanSpace ℝ ι)} (hS : MeasurableSet S)
+    (hts : tsupport ψ ⊆ S) {g : EuclideanSpace ℝ ι → ℝ}
+    (hg : Integrable g (mu.restrict Omega))
+    (hwg : ∀ᵐ x ∂mu.restrict Omega, W1p.value w x ^ 2 ≤ g x) :
+    ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu ≤
+      G ^ 2 * ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ S, g x ∂mu := by
+  have hleft : Integrable (fun x => ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2)
+      (mu.restrict Omega) :=
+    (W1p.integrable_value_sq w).bdd_mul
+      ((ContDiff.continuous_gradient hψ).norm.pow 2).aestronglyMeasurable (c := G ^ 2)
+      (Filter.Eventually.of_forall fun x => by
+        rw [Real.norm_eq_abs, abs_pow, abs_norm]
+        exact pow_le_pow_left₀ (norm_nonneg _) (hG x) 2)
+  have hright : Integrable (S.indicator g) (mu.restrict Omega) := hg.indicator hS
+  calc
+    ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu ≤
+        ∫ x in Omega, G ^ 2 * S.indicator g x ∂mu :=
+      integral_mono_ae hleft (hright.const_mul _) (by
+        filter_upwards [hwg] with x hx
+        by_cases hxS : x ∈ S
+        · rw [indicator_of_mem hxS]
+          exact mul_le_mul (pow_le_pow_left₀ (norm_nonneg _) (hG x) 2) hx
+            (sq_nonneg _) (sq_nonneg _)
+        · have hfd : fderiv ℝ ψ x = 0 := Function.notMem_support.1 fun hx' =>
+            hxS (hts (support_fderiv_subset ℝ hx'))
+          simp [indicator_of_notMem hxS, _root_.gradient, hfd])
+    _ = G ^ 2 * ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ S, g x ∂mu := by
+      rw [integral_const_mul, setIntegral_indicator hS]
+
 /-- **The Caccioppoli inequality.** Let `a` be measurable and uniformly elliptic on `Ω` with
 constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = f` in `Ω`, in
 the sense that `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, with no boundary condition on `u`.

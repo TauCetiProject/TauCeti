@@ -540,8 +540,9 @@ private theorem smul_conj_sub_mul {c : N → M} (hc : groupCohomology.IsCocycle�
   have hsmul : t • c (inverseConjugationHom N t n) = c n + ((n : G) • A - A) := by
     rw [← hA']
     abel
-  rw [hconj, mul_smul, ← Subgroup.smul_def, smul_apply_inv_mul_mul_of_isCocycle₁ hc, smul_add,
-    smul_sub, hk, hsmul, d0_apply, Subgroup.smul_def, smul_add]
+  rw [hconj, mul_smul, ← Subgroup.smul_def,
+    groupCohomology.smul_apply_inv_mul_mul_of_isCocycle₁ hc, smul_add, smul_sub, hk, hsmul,
+    d0_apply, Subgroup.smul_def, smul_add]
   abel
 
 variable (s : G ⧸ N → G) (hs : ∀ q, (s q : G ⧸ N) = q)

@@ -7,7 +7,9 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import TauCeti.Algebra.MvPolynomial.Monomial
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basic
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Branching
 
 /-!
 # The Schur polynomial of a one-row shape
@@ -43,6 +45,11 @@ weakly increasing and that it has the right multiset of letters, determine it
 (`List.Perm.eq_of_pairwise'`), which is how the round trip from a tableau back to itself is
 proved.
 
+Stability is another corollary: setting the last of `n + 1` variables to `0` sends `h_d` in
+`n + 1` variables to `h_d` in `n` variables (`TauCeti.aeval_snoc_zero_hsymm`), because it does so
+for every Schur polynomial (`TauCeti.aeval_snoc_zero_diagramSchurPoly`).  The same holds for the
+integer-indexed `TauCeti.hsymmInt` (`TauCeti.aeval_snoc_zero_hsymmInt`).
+
 Symmetry is a corollary rather than an input: the one-row case falls out of
 `TauCeti.schurPoly_indiscrete` and the symmetry of the complete homogeneous symmetric polynomials,
 without the Bender--Knuth involution that `TauCeti.schurPoly_isSymmetric` needs in general.
@@ -65,6 +72,8 @@ without the Bender--Knuth involution that `TauCeti.schurPoly_isSymmetric` needs 
 * `TauCeti.diagramSchurPoly_eq_hsymm_of_colLen_le_one`: the Schur polynomial of a one-row shape is
   a complete homogeneous symmetric polynomial.
 * `TauCeti.schurPoly_indiscrete`: `s_{(n)} = h_n`.
+* `TauCeti.aeval_snoc_zero_hsymm`, `TauCeti.aeval_snoc_zero_hsymmInt`: stability of the complete
+  homogeneous symmetric polynomials under setting the last variable to `0`.
 
 ## References
 
@@ -345,5 +354,30 @@ theorem schurPoly_indiscrete (n : ℕ) :
     card_diagramOf, rename_hsymm]
 
 end Partition
+
+/-! ### Stability -/
+
+/-- **Stability of the complete homogeneous symmetric polynomials**: setting the last of `n + 1`
+variables to `0` turns `h_d` in `n + 1` variables into `h_d` in `n` variables.
+
+Not a `simp` lemma, for the reason recorded at `TauCeti.aeval_snoc_zero_diagramSchurPoly`. -/
+theorem aeval_snoc_zero_hsymm (n d : ℕ) :
+    aeval (Fin.snoc (X : Fin n → MvPolynomial (Fin n) R) 0) (hsymm (Fin (n + 1)) R d) =
+      hsymm (Fin n) R d := by
+  have h : ∀ N, hsymm (Fin N) R d =
+      diagramSchurPoly N R (diagramOf (Nat.Partition.indiscrete d)) := fun N => by
+    rw [diagramSchurPoly_eq_hsymm_of_colLen_le_one (colLen_diagramOf_indiscrete_le_one d),
+      card_diagramOf]
+  rw [h, h, aeval_snoc_zero_diagramSchurPoly]
+
+/-- **Stability of the integer-indexed complete homogeneous symmetric polynomials**: setting the
+last of `n + 1` variables to `0` turns `h_m` in `n + 1` variables into `h_m` in `n` variables, for
+every integer `m`. -/
+theorem aeval_snoc_zero_hsymmInt (n : ℕ) (m : ℤ) :
+    aeval (Fin.snoc (X : Fin n → MvPolynomial (Fin n) R) 0) (hsymmInt (Fin (n + 1)) R m) =
+      hsymmInt (Fin n) R m := by
+  rcases le_or_gt 0 m with hm | hm
+  · rw [hsymmInt_of_nonneg hm, hsymmInt_of_nonneg hm, aeval_snoc_zero_hsymm]
+  · rw [hsymmInt_of_neg hm, hsymmInt_of_neg hm, map_zero]
 
 end TauCeti

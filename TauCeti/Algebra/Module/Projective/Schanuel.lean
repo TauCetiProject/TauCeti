@@ -33,6 +33,8 @@ instance — independent of the presentation up to summands built from projectiv
 
 * `TauCeti.exists_comp_eq_of_range_le`: a map from a projective module factors through any map
   whose range contains its range.
+* `TauCeti.exists_lift_projective_presentation`: module maps lift to commutative squares between
+  projective presentations.
 * `TauCeti.exists_linearEquiv_comp_fst_eq_comp_snd_comp`: two maps from projective modules with
   equal ranges differ, after stabilisation, by an automorphism.
 * `TauCeti.exists_linearEquiv_comp_prodMap_comp_fst_eq`: two projective presentations of the same
@@ -94,6 +96,34 @@ theorem exists_linearEquiv_comp_fst_eq_comp_snd_comp [AddCommGroup A] [Module R 
   simpa using this
 
 end EqualRange
+
+section LiftPresentation
+
+variable {M N P₀ P₁ Q₀ Q₁ : Type*}
+  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+  [AddCommMonoid P₀] [Module R P₀] [AddCommMonoid P₁] [Module R P₁]
+  [AddCommMonoid Q₀] [Module R Q₀] [AddCommMonoid Q₁] [Module R Q₁]
+  {p : P₁ →ₗ[R] P₀} {q : Q₁ →ₗ[R] Q₀} {π : P₀ →ₗ[R] M} {ρ : Q₀ →ₗ[R] N}
+
+/-- A map to a presented module lifts to a square from any complex with projective terms.
+In particular, module maps lift to squares between projective presentations. The source needs
+only a zero composite, and the target needs exactness and a surjective augmentation. -/
+theorem exists_lift_projective_presentation [Module.Projective R P₀] [Module.Projective R P₁]
+    (hp : π ∘ₗ p = 0) (hq : Function.Exact q ρ) (hρ : Function.Surjective ρ)
+    (f : M →ₗ[R] N) :
+    ∃ (f₀ : P₀ →ₗ[R] Q₀) (f₁ : P₁ →ₗ[R] Q₁),
+      ρ ∘ₗ f₀ = f ∘ₗ π ∧ f₀ ∘ₗ p = q ∘ₗ f₁ := by
+  obtain ⟨f₀, hf₀⟩ := Module.projective_lifting_property ρ (f ∘ₗ π) hρ
+  have hrange : range (f₀ ∘ₗ p) ≤ range q := by
+    rw [← LinearMap.exact_iff.mp hq]
+    rintro _ ⟨x, rfl⟩
+    simp only [mem_ker, comp_apply]
+    rw [← comp_apply, hf₀]
+    simp only [comp_apply, ← comp_apply π p, hp, zero_apply, map_zero]
+  obtain ⟨f₁, hf₁⟩ := exists_comp_eq_of_range_le hrange
+  exact ⟨f₀, f₁, hf₀, hf₁.symm⟩
+
+end LiftPresentation
 
 section Presentation
 

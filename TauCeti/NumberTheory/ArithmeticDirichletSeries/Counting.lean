@@ -12,6 +12,7 @@ public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 import Mathlib.NumberTheory.Padics.HeightOneSpectrum
 import Mathlib.Order.Filter.AtTopBot.Finset
 import Mathlib.RingTheory.Ideal.GoingUp
+import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Norm
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
@@ -689,15 +690,9 @@ theorem tendsto_primeCount_univ_atTop (K : Type*) [Field K] [NumberField K] :
   let _ : Infinite (HeightOneSpectrum ℤ) :=
     Infinite.of_surjective Rat.HeightOneSpectrum.primesEquiv
       Rat.HeightOneSpectrum.primesEquiv.surjective
-  have hsurj : Function.Surjective (HeightOneSpectrum.under ℤ :
-      HeightOneSpectrum (𝓞 K) → HeightOneSpectrum ℤ) := by
-    intro p
-    let Q := Classical.choice (Ideal.nonempty_primesOver (S := 𝓞 K) p.asIdeal)
-    refine ⟨⟨Q.1, Q.2.1, Ideal.ne_bot_of_mem_primesOver p.ne_bot Q.2⟩,
-      HeightOneSpectrum.ext ?_⟩
-    exact Q.2.2.over.symm
   let _ : Infinite (HeightOneSpectrum (𝓞 K)) :=
-    Infinite.of_surjective (HeightOneSpectrum.under ℤ) hsurj
+    Infinite.of_surjective (HeightOneSpectrum.under ℤ)
+      (HeightOneSpectrum.under_surjective ℤ (𝓞 K))
   have hcarrier : Tendsto (primesLE K) atTop atTop := by
     rw [Filter.tendsto_atTop]
     intro s
@@ -843,6 +838,24 @@ theorem primeCount_union (hST : Disjoint S T) (x : ℝ) :
     primeCount K (S ∪ T) x = primeCount K S x + primeCount K T x := by
   rw [primeCount, Set.indicator_union_of_disjoint hST]
   exact summatory_add _ _ _ x
+
+/-- The logarithmically weighted count of `S` exceeds that of `T` by at most the weighted count
+of their symmetric difference. -/
+theorem primeTheta_le_add_symmDiff (S T : Set (HeightOneSpectrum (𝓞 K))) (x : ℝ) :
+    primeTheta K S x ≤ primeTheta K T x + primeTheta K (symmDiff S T) x := by
+  calc primeTheta K S x ≤ primeTheta K (T ∪ S \ T) x := primeTheta_mono_set (by simp) x
+    _ = primeTheta K T x + primeTheta K (S \ T) x := primeTheta_union Set.disjoint_sdiff_right x
+    _ ≤ primeTheta K T x + primeTheta K (symmDiff S T) x :=
+      (add_le_add_iff_left _).2 <| primeTheta_mono_set (fun v hv ↦ Set.mem_symmDiff.2 (Or.inl hv)) x
+
+/-- The unweighted count of `S` exceeds that of `T` by at most the count of their symmetric
+difference. -/
+theorem primeCount_le_add_symmDiff (S T : Set (HeightOneSpectrum (𝓞 K))) (x : ℝ) :
+    primeCount K S x ≤ primeCount K T x + primeCount K (symmDiff S T) x := by
+  calc primeCount K S x ≤ primeCount K (T ∪ S \ T) x := primeCount_mono_set (by simp) x
+    _ = primeCount K T x + primeCount K (S \ T) x := primeCount_union Set.disjoint_sdiff_right x
+    _ ≤ primeCount K T x + primeCount K (symmDiff S T) x :=
+      (add_le_add_iff_left _).2 <| primeCount_mono_set (fun v hv ↦ Set.mem_symmDiff.2 (Or.inl hv)) x
 
 /-- Chebyshev's trivial comparison: each counted prime contributes at most `log x`. -/
 theorem primeTheta_le_primeCount_mul_log (S : Set (HeightOneSpectrum (𝓞 K))) (x : ℝ) :

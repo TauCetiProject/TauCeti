@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.NumberTheory.LocalField.FactorialValuation
+import Mathlib.RingTheory.PowerSeries.Exp
 
 /-!
 # The local exponential series
@@ -39,6 +40,7 @@ classes, and hence the square classes, of `K`.
   `𝓂[K] ^ i` in the convergence range.
 * `TauCeti.hasSum_exp_of_mem_maximalIdeal_pow`: on `𝓂[K] ^ i` in the convergence range the
   exponential series sums to `NormedSpace.exp`.
+* `TauCeti.exp_add_of_mem_maximalIdeal_pow`: `exp (x + y) = exp x * exp y` on `𝓂[K] ^ i`.
 
 ## References
 
@@ -48,7 +50,7 @@ classes, and hence the square classes, of `K`.
 
 public section
 
-open Filter ValuativeRel IsNonarchimedeanLocalField
+open Filter ValuativeRel IsNonarchimedeanLocalField NormedSpace
 
 open scoped Topology
 
@@ -175,5 +177,31 @@ theorem hasSum_exp_of_mem_maximalIdeal_pow {i : ℕ} (x : (𝓂[K] ^ i : Ideal �
     HasSum (fun n : ℕ => (x : K) ^ n / (n.factorial : K)) (NormedSpace.exp (x : K)) := by
   rw [NormedSpace.exp_eq_expSeries_sum ℚ_[p], NormedSpace.expSeries_sum_eq_div]
   exact (summable_expSeries_of_mem_maximalIdeal_pow x hi).hasSum
+
+/-- **The functional equation of the exponential on deep elements.** On `𝓂[K] ^ i` with
+`(p - 1) * i > e`, `exp (x + y) = exp x * exp y`. -/
+theorem exp_add_of_mem_maximalIdeal_pow {i : ℕ}
+    (hi : absoluteRamificationIndex K p < (p - 1) * i)
+    (x y : (𝓂[K] ^ i : Ideal 𝒪[K])) :
+    exp ((x : K) + y) = exp (x : K) * exp (y : K) := by
+  have := FinitePadicExtension.charZero K p
+  let _ : NonarchimedeanRing K := by
+    rw [(valuation K).toTopologicalSpace_eq]
+    exact ValuativeRel.nonarchimedeanRing K
+  let _ := IsTopologicalAddGroup.rightUniformSpace K
+  let _ := isUniformAddGroup_of_addCommGroup (G := K)
+  have hx := hasSum_exp_of_mem_maximalIdeal_pow x hi
+  have hy := hasSum_exp_of_mem_maximalIdeal_pow y hi
+  have hxy := hasSum_exp_of_mem_maximalIdeal_pow (x + y) hi
+  push_cast at hxy
+  -- The Cauchy product of the two exponential series is the exponential series of `x + y`,
+  -- coefficientwise by the formal identity `e^{xX} * e^{yX} = e^{(x + y)X}`.
+  rw [← hx.tsum_eq, ← hy.tsum_eq, hx.summable.tsum_mul_tsum_eq_tsum_sum_antidiagonal hy.summable
+    (hx.mul_of_nonarchimedean hy).summable, ← hxy.tsum_eq]
+  refine tsum_congr fun n => ?_
+  have h := congrArg (PowerSeries.coeff n) (PowerSeries.exp_mul_exp_eq_exp_add (x : K) y)
+  simp only [PowerSeries.coeff_mul, PowerSeries.coeff_rescale, PowerSeries.coeff_exp,
+    one_div, map_inv₀, map_natCast] at h
+  simpa only [div_eq_mul_inv, mul_mul_mul_comm, eq_comm] using h
 
 end TauCeti

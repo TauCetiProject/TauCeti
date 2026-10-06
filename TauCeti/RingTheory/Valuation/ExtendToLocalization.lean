@@ -20,7 +20,7 @@ elements one wants to evaluate the extension on are the fractions `t/s` of
 
 Nothing here is topological or Huber-specific. The topological content — that the extension is
 continuous for Wedhorn's localisation topology — is in
-`TauCeti.RingTheory.Huber.LocalizationTopology.Valuation`, which is the only consumer.
+`TauCeti.RingTheory.Huber.LocalizationTopology.Valuation`.
 
 ## Main results
 
@@ -36,16 +36,25 @@ open TauCeti.Localization
 
 namespace Valuation
 
-variable {A : Type*} [CommRing A] {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
-variable (S : Type*) [CommRing S] [Algebra A S]
+variable {A : Type*} [CommRing A] {Γ₀ : Type*}
 
-/-- **The powers of an element off the support avoid the support**, so
-`Valuation.extendToLocalization` applies to a localisation away from that element. This is the
-side condition every statement about such an extension has to discharge, and naming it is what
-keeps `Submonoid.powers s ≤ v.supp.primeCompl` out of their proofs. -/
+section MonoidWithZero
+
+variable [LinearOrderedCommMonoidWithZero Γ₀] [Nontrivial Γ₀]
+
+/-- The powers of an element with nonzero valuation avoid the support.
+This holds for monoid-valued valuations; for group-valued valuations it supplies the side
+condition for `Valuation.extendToLocalization` away from that element.
+
+The value-monoid generalization is due to Claude Opus 5, in commit `7d80f5396`. -/
 theorem powers_le_supp_primeCompl {v : Valuation A Γ₀} {s : A} (hs : v s ≠ 0) :
-    Submonoid.powers s ≤ v.supp.primeCompl :=
-  Submonoid.powers_le.mpr (Ideal.mem_primeCompl_iff.mpr fun h ↦ hs ((mem_supp_iff _ _).mp h))
+    Submonoid.powers s ≤ v.supp.primeCompl := by
+  simpa only [Submonoid.powers_le, Ideal.mem_primeCompl_iff, mem_supp_iff] using hs
+
+end MonoidWithZero
+
+variable [LinearOrderedCommGroupWithZero Γ₀]
+variable (S : Type*) [CommRing S] [Algebra A S]
 
 /-- **The extension on a distinguished fraction**: `t/s` goes to `v t / v s`. -/
 @[simp]
@@ -59,8 +68,8 @@ conditions cutting out a rational subset. -/
 theorem extendToLocalization_divBy_le_one {v : Valuation A Γ₀} {s : A} (hs : v s ≠ 0)
     [IsLocalization.Away s S] {t : A} (ht : v t ≤ v s) :
     v.extendToLocalization (powers_le_supp_primeCompl hs) S (divBy t s) ≤ 1 := by
-  rw [extendToLocalization_divBy S hs t, ← mul_inv_cancel₀ hs]
-  gcongr
+  rw [extendToLocalization_divBy S hs t]
+  exact mul_inv_le_one_of_le₀ ht zero_le
 
 end Valuation
 

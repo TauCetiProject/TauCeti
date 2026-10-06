@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import Mathlib.LinearAlgebra.Matrix.SchurComplement
-public import TauCeti.GroupTheory.SpecificGroups.Braid
+public import TauCeti.GroupTheory.SpecificGroups.Braid.Basic
 
 /-!
 # The Burau representation of the braid group

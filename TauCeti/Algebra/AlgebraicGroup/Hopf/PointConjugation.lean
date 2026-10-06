@@ -196,3 +196,29 @@ theorem pointConjugationFiniteTypeIso_hom (g : WithConv (H →ₐ[R] R)) :
 end FiniteType
 
 end TauCeti.HopfAlgebra
+
+namespace BialgHom
+
+open TauCeti WithConv
+
+variable {R H K : Type*} [CommSemiring R] [CommSemiring H] [CommSemiring K]
+  [HopfAlgebra R H] [HopfAlgebra R K] [Coalgebra.IsCocomm R K]
+
+/-- A point coming from a commutative affine group centralizes that group's image,
+scheme-theoretically: conjugation restricts to the identity coordinate map. -/
+theorem comp_pointConjugationAlgHom_mapDomain_of_isCocomm (π : H →ₐc[R] K)
+    (t : WithConv (K →ₐ[R] R)) :
+    π.toAlgHom.comp (HopfAlgebra.pointConjugationAlgHom (AlgHom.mapDomain π t)) =
+      π.toAlgHom := by
+  apply WithConv.toConv_injective
+  rw [HopfAlgebra.comp_pointConjugationAlgHom]
+  have ht : AlgHom.mapValue (H := H) (Algebra.ofId R K) (AlgHom.mapDomain π t) =
+      AlgHom.mapDomain π (AlgHom.mapValue (H := K) (Algebra.ofId R K) t) := by
+    exact (DFunLike.congr_fun (AlgHom.mapValue_mapDomain π (Algebra.ofId R K)) t).symm
+  have hi : toConv π.toAlgHom = AlgHom.mapDomain π (toConv (AlgHom.id R K)) := by
+    rw [AlgHom.mapDomain_apply, ofConv_toConv, AlgHom.id_comp]
+  rw [ht, hi, ← map_inv, ← map_mul, ← map_mul]
+  congr 1
+  simp [mul_comm]
+
+end BialgHom

@@ -41,6 +41,9 @@ itself are those pinned in `TauCeti.Hodge.IsPolarization`.
 
 ## Main declarations
 
+* `TauCeti.Hodge.HodgeStructureOn.apply_weilOperator_conj_self_of_mem_piece`: for any complex
+  form with the weight symmetry of a polarization, `B (C (conj x)) x = i^(p-q) B x (conj x)` on
+  `H^{p,q}`; this is the value of the Hodge form on a Hodge component.
 * `TauCeti.Hodge.Polarization.hodgeForm`: the Hodge form of a polarization.
 * `TauCeti.Hodge.Polarization.hodgeForm_eq_conj`: it is the conjugate of the alternate-convention
   whole-space form `Q (C u) (conj v)`.
@@ -54,6 +57,8 @@ itself are those pinned in `TauCeti.Hodge.IsPolarization`.
   `TauCeti.Hodge.Polarization.hodgeForm_nondegenerate`: the packaged consequences.
 * `TauCeti.Hodge.tate_hodgeForm_apply`: the Hodge form of the polarized Tate structure `ℤ(m)` is the
   standard Hermitian form of the complex line.
+* `TauCeti.Hodge.IsPolarization.comp`: positive definiteness makes a polarizing form pull back to a
+  polarizing form along an injective morphism of Hodge structures.
 
 This is the Hermitian carrier targeted in Layer L1 of
 `TauCetiRoadmap/HodgeStructures/README.md`, the form through which the polarization is used in
@@ -99,6 +104,18 @@ private theorem I_zpow_conj_piece (p k : ℤ) :
   rw [negOne_zpow_eq_I_zpow, ← zpow_add₀ Complex.I_ne_zero,
     hexp, zpow_add₀ Complex.I_ne_zero, Complex.I_zpow_eq_zpow_mod (4 * (k - p)),
     Int.mul_emod_right, zpow_zero, mul_one]
+
+/-- For a complex bilinear form `B` with the weight symmetry `B y x = (-1)^n B x y` of a
+polarization, pairing the Weil operator of the conjugate of a vector `x` of the Hodge component
+`H^{p,q}` with `x` gives the expression `i^(p-q) B x (conj x)` of the second Hodge–Riemann
+relation. -/
+theorem HodgeStructureOn.apply_weilOperator_conj_self_of_mem_piece {W : Type*} [AddCommGroup W]
+    [Module ℂ W] {ω : Conjugation W} {n : ℤ} (hs : HodgeStructureOn W ω n)
+    (B : LinearMap.BilinForm ℂ W) (hB : ∀ x y, B y x = (n.negOnePow : ℤ) * B x y) {p : ℤ}
+    {x : W} (hx : x ∈ hs.piece p) :
+    B (hs.weilOperator (ω.toEquiv x)) x = Complex.I ^ (2 * p - n) * B x (ω.toEquiv x) := by
+  rw [hs.weilOperator_apply_of_mem (hs.conj_mem_piece hx), map_smul, LinearMap.smul_apply,
+    smul_eq_mul, hB x (ω.toEquiv x), negOnePow_cast, ← mul_assoc, I_zpow_conj_piece]
 
 namespace Polarization
 
@@ -166,11 +183,8 @@ the second Hodge–Riemann relation. -/
 theorem hodgeForm_self_of_mem_piece (P : Polarization hℂ hs) {p : ℤ} {x : Vℂ}
     (hx : x ∈ hs.piece p) :
     P.hodgeForm x x = Complex.I ^ (2 * p - n) * P.Q x (latticeConj hℂ x) := by
-  have hconj_mem : latticeConj hℂ x ∈ hs.piece (n - p) := by
-    simpa using hs.conj_mem_piece hx
-  rw [hodgeForm_apply, hs.weilOperator_apply_of_mem hconj_mem]
-  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
-  rw [P.Q_symm_weight x (latticeConj hℂ x), negOnePow_cast, ← mul_assoc, I_zpow_conj_piece]
+  rw [hodgeForm_apply, ← latticeConjugation_toEquiv_apply]
+  exact hs.apply_weilOperator_conj_self_of_mem_piece P.Q P.Q_symm_weight hx
 
 /-- The Hodge form is positive on every nonzero vector of a Hodge component. -/
 theorem hodgeForm_pos_of_mem_piece (P : Polarization hℂ hs) {p : ℤ} {x : Vℂ}
@@ -267,5 +281,69 @@ theorem tate_hodgeForm_apply (m : ℤ) (x y : ℂ) :
   rw [Polarization.hodgeForm_apply, latticeConj_tateLatticeMap, tate_weilOperator,
     tatePolarization_Q]
   simp
+
+/-! ### Pulling back a polarization along an injective morphism -/
+
+section Comp
+
+variable {V' : Type*} {V'ℂ : Type*} [AddCommGroup V'] [AddCommGroup V'ℂ] [Module ℂ V'ℂ]
+variable {ι'ℂ : V' →ₗ[ℤ] V'ℂ} {h'ℂ : IsBaseChange ℂ ι'ℂ} {hs' : HodgeStructure h'ℂ n}
+
+/-- **Polarizations pull back along injective morphisms.** If `Q` polarizes `hs` and `f` is an
+injective morphism into `hs` from a Hodge structure of the same weight, then the form
+`Q (f x) (f y)` polarizes the source. Nondegeneracy of the pulled-back form is a consequence of
+the positivity of the Hodge form of `Q`. -/
+theorem IsPolarization.comp {Q : LinearMap.BilinForm ℤ V} (hQ : IsPolarization hℂ hs Q)
+    (f : HodgeStructure.Hom hs' hs) (hf : Function.Injective f.toIntLinearMap) :
+    IsPolarization h'ℂ hs' (Q.comp f.toIntLinearMap f.toIntLinearMap) := by
+  have hform : integralFormBaseChange h'ℂ (Q.comp f.toIntLinearMap f.toIntLinearMap) =
+      (integralFormBaseChange hℂ Q).comp f.toLinearMap f.toLinearMap := by
+    rw [HodgeStructure.Hom.toLinearMap_def]
+    exact integralFormBaseChange_comp h'ℂ hℂ Q _ _
+  have hsymm : ∀ x y, Q.comp f.toIntLinearMap f.toIntLinearMap y x =
+      (n.negOnePow : ℤ) * Q.comp f.toIntLinearMap f.toIntLinearMap x y := fun x y ↦ by
+    rw [LinearMap.BilinForm.comp_apply, LinearMap.BilinForm.comp_apply]
+    exact hQ.symm_weight _ _
+  refine ⟨hsymm, ?_, fun p x hx y hy ↦ ?_, fun p x hx hx0 ↦ ?_⟩
+  · refine (LinearMap.IsRefl.nondegenerate_iff_separatingLeft fun x y hxy ↦ by
+      rw [hsymm, hxy, mul_zero]).mpr fun v hv ↦ ?_
+    -- The image of `v` pairs to zero with the image of `f`, which contains its Weil transform, so
+    -- it has Hodge norm zero.
+    let P : Polarization hℂ hs := ⟨Q, hQ⟩
+    have hzero : ∀ z, P.Q (ιℂ (f.toIntLinearMap v)) (f z) = 0 := by
+      intro z
+      induction z using h'ℂ.inductionOn with
+      | tmul w =>
+        rw [f.apply_ι, P.Q_ι]
+        exact_mod_cast hv w
+      | smul c z hz => rw [map_smul, map_smul, hz, smul_zero]
+      | add z z' hz hz' => rw [map_add, map_add, hz, hz', add_zero]
+    have hnorm : P.hodgeForm (ιℂ (f.toIntLinearMap v)) (ιℂ (f.toIntLinearMap v)) =
+        (n.negOnePow : ℤ) * P.Q (ιℂ (f.toIntLinearMap v)) (f (hs'.weilOperator (ι'ℂ v))) := by
+      rw [P.hodgeForm_apply, latticeConj_ι, P.Q_symm_weight, f.commutes_weilOperator, f.apply_ι]
+    have hu : ιℂ (f.toIntLinearMap v) = 0 :=
+      P.hodgeForm_self_eq_zero_iff.mp (by rw [hnorm, hzero, mul_zero])
+    refine hf ((hQ.nondegenerate.1 _ fun w ↦ ?_).trans (map_zero _).symm)
+    have hw := integralFormBaseChange_ι hℂ Q (f.toIntLinearMap v) w
+    rw [hu, map_zero, LinearMap.zero_apply] at hw
+    exact_mod_cast hw.symm
+  · rw [hform, LinearMap.BilinForm.comp_apply]
+    exact hQ.orthogonal p _ (f.map_F_le p (Submodule.mem_map_of_mem hx)) _
+      (f.map_F_le _ (Submodule.mem_map_of_mem hy))
+  · have hfℂ : Function.Injective f.toLinearMap := by
+      rw [HodgeStructure.Hom.toLinearMap_def]
+      exact integralMapToComplex_injective h'ℂ hℂ hf
+    have hfx : f.toLinearMap x ≠ 0 := fun h ↦ hx0 (hfℂ (h.trans (map_zero _).symm))
+    rw [hform, LinearMap.BilinForm.comp_apply]
+    simpa only [f.commutes_conj] using hQ.positive p _ (f.map_mem_piece p hx) hfx
+
+/-- A Hodge structure admitting an injective morphism into a polarizable Hodge structure of the
+same weight is polarizable. -/
+theorem IsPolarizable.of_injective (h : IsPolarizable hℂ hs) (f : HodgeStructure.Hom hs' hs)
+    (hf : Function.Injective f.toIntLinearMap) : IsPolarizable h'ℂ hs' := by
+  obtain ⟨P⟩ := isPolarizable_iff_nonempty.mp h
+  exact (⟨_, P.isPolarization.comp f hf⟩ : Polarization h'ℂ hs').isPolarizable
+
+end Comp
 
 end TauCeti.Hodge

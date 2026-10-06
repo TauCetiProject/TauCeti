@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Basic
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.DiagonalCartan
 public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
@@ -38,7 +39,9 @@ E_{n-2,\bar{n-1}} - E_{n-1,\bar{n-2}}.
 ```
 
 The lowering generators are their transposes. The resulting matrices lie in the split orthogonal
-Lie algebra and are square-zero in its standard representation.
+Lie algebra and are square-zero in its standard representation. At each numbered node, the
+raising, lowering, and Cartan generators form an `sl₂` triple, providing the corresponding
+rank-one data for later type-`D` constructions.
 
 These are the carrier-specific numbered root vectors needed to feed the type-`D` spin lattice
 into Tau Ceti's existing Kostant-form and toral-closure machinery. Their images under the
@@ -58,6 +61,8 @@ even-polarization quadratic equivalence are computed by
   `TauCeti.DynkinType.D n`, respectively its negative.
 * `TauCeti.TypeDStd.lie_cartanGenerator_rootGenerator`: the Cartan action on the generators.
 * `TauCeti.TypeDStd.lie_rootGenerator_inl_inr`: the raising--lowering bracket relations.
+* `TauCeti.TypeDStd.isSl2Triple_rootGenerator`: the generators at every numbered node form an
+  `sl₂` triple.
 * `TauCeti.TypeDStd.lie_rootGenerator_inl_inl_of_cartan_eq_zero`: nonadjacent same-sign
   generators commute.
 * `TauCeti.TypeDStd.lie_rootGenerator_inl_lie_rootGenerator_inl`: the adjacent-node Serre
@@ -895,6 +900,42 @@ theorem lie_rootGenerator_inr_inl {K : Type*} [CommRing K] (i j : Fin n) :
       · subst j
         simp
       · simp [hij, Ne.symm hij]
+
+/-- **The numbered raising and lowering generators at a type-`D` node form an `sl₂` triple.** -/
+theorem isSl2Triple_rootGenerator {K : Type*} [CommRing K] [Nontrivial K]
+    (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
+    _root_.IsSl2Triple (cartanGenerator (K := K) n hn i)
+      (rootGenerator (K := K) n hn (.inl i))
+      (rootGenerator (K := K) n hn (.inr i)) where
+  h_ne_zero := by
+    intro hzero
+    have hentry :
+        (cartanGenerator (K := K) n hn i : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) K)
+            (.inl i) (.inl i) = 0 := by
+      simpa using congrArg
+        (fun A : LieAlgebra.Orthogonal.typeD (Fin n) K =>
+          (A : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) K) (.inl i) (.inl i)) hzero
+    rw [val_cartanGenerator] at hentry
+    simp only [typeDDiagonalMatrix_apply, typeDDiagonalValue_inl, ↓reduceIte] at hentry
+    by_cases hi : (i : ℕ) + 1 < n
+    · rw [DynkinType.typeDSimpleRoot_of_add_one_lt hn hi] at hentry
+      have hne : i ≠ ⟨(i : ℕ) + 1, hi⟩ := by simp [Fin.ext_iff]
+      simp [hne] at hentry
+    · have hi_last : i = ⟨n - 1, by omega⟩ := by
+        apply Fin.ext
+        simp
+        omega
+      rw [hi_last, DynkinType.typeDSimpleRoot_of_not_add_one_lt hn] at hentry
+      · have hne : n - 1 ≠ n - 2 := by omega
+        simp [Fin.ext_iff, hne] at hentry
+      · omega
+  lie_e_f := by simp
+  lie_h_e_nsmul := by
+    rw [lie_cartanGenerator_rootGenerator, rootGeneratorWeight_inl, CartanMatrix.D_diag]
+    simp only [Int.cast_smul_eq_zsmul, two_zsmul, two_nsmul]
+  lie_h_f_nsmul := by
+    rw [lie_cartanGenerator_rootGenerator, rootGeneratorWeight_inr, CartanMatrix.D_diag]
+    simp only [Int.cast_smul_eq_zsmul, neg_zsmul, two_zsmul, two_nsmul]
 
 /-! ## Nilpotence in the standard representation -/
 
