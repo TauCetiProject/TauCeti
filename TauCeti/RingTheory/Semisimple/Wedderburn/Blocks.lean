@@ -12,10 +12,10 @@ module
 public import Mathlib.Data.Matrix.Mul
 public import Mathlib.RingTheory.SimpleRing.Defs
 public import TauCeti.RingTheory.Semisimple.RegularIsotypicComponent
--- Non-public: used only inside proofs. The block count of a product of simple rings and the
--- simplicity of the endomorphism ring of an isotypic module are the two engines of the arguments
--- below, and neither is mentioned by an exported statement.
-import TauCeti.RingTheory.Semisimple.BlockCount
+-- Non-public: used only inside proofs. Factor counts and simplicity of isotypic endomorphism
+-- rings give the two counting results; simplicity of matrix rings gives the matrix specialization.
+import Mathlib.RingTheory.SimpleRing.Matrix
+import TauCeti.RingTheory.SimpleRing.Pi
 import TauCeti.RingTheory.Semisimple.IsotypicEnd
 
 /-!
@@ -48,11 +48,12 @@ abstract simple module by a left ideal, turns the block count into a count of si
 
 ## Main results
 
-* `RingEquiv.card_isotypicComponents_eq_of_pi`: a presentation of `R` as a finite product
-  of simple rings has as many factors as `R` has isotypic components.
-* `RingEquiv.card_simpleSubmoduleClasses_eq_of_pi` and
-  `TauCeti.nonempty_equiv_simpleSubmoduleClasses_of_ringEquiv_pi`: the factors are in bijection with
-  the isomorphism classes of simple `R`-modules.
+* `RingEquiv.card_isotypicComponents_eq_of_pi`: a presentation of `R` as a product of simple
+  rings indexed by any type has as many factors as `R` has isotypic components.
+* `RingEquiv.card_simpleSubmoduleClasses_eq_of_pi`: such a presentation has as many factors as
+  there are isomorphism classes of simple `R`-modules.
+* `TauCeti.nonempty_equiv_simpleSubmoduleClasses_of_ringEquiv_pi`: for a finite index type, the
+  factors are in bijection with the isomorphism classes of simple `R`-modules.
 * `TauCeti.exists_simpleSubmodule_of_ringEquiv_pi`: **the blocks enumerate the simple modules.**
   A presentation of `R` by simple rings indexed by `ι` yields a family of simple left ideals indexed
   by `ι`, pairwise non-isomorphic, with every simple left ideal isomorphic to one of them.
@@ -63,6 +64,11 @@ abstract simple module by a left ideal, turns the block count into a count of si
   realized by a left ideal.
 
 ## Implementation notes
+
+The two cardinality results accept arbitrary index types without an explicit finiteness
+hypothesis. Semisimplicity of `R` nevertheless forces the index of an actual presentation by
+nontrivial simple rings to be finite. This differs from the factor matching in
+`TauCeti/RingTheory/SimpleRing/Pi.lean`, which applies to genuinely infinite products.
 
 The results are stated for a presentation `R ≃+* ∏ᵢ Aᵢ` by arbitrary simple rings rather than by
 matrix algebras: simplicity of the factors is all the argument uses, and Artin--Wedderburn is what
@@ -96,8 +102,8 @@ section Presentation
 
 variable {ι : Type*} {A : ι → Type v} [∀ i, Ring (A i)] [∀ i, IsSimpleRing (A i)]
 
-/-- **A presentation of a semisimple ring as a finite product of simple rings has one factor for
-each isotypic component of the regular module.**
+/-- **A presentation of a semisimple ring as a product of simple rings indexed by any type has
+one factor for each isotypic component of the regular module.**
 
 Both counts are counts of factors in a decomposition of `Rᵐᵒᵖ` as a product of simple rings: the
 opposite of the given presentation on one side, and the splitting of `End_R R ≃+* Rᵐᵒᵖ` along the
@@ -116,8 +122,8 @@ theorem _root_.RingEquiv.card_isotypicComponents_eq_of_pi (e : R ≃+* ∀ i, A 
     ((RingEquiv.moduleEndSelf R).trans (IsSemisimpleModule.endRingEquiv R R))
     ((RingEquiv.op e).trans (RingEquiv.piMulOpposite A))
 
-/-- **A presentation of a semisimple ring as a finite product of simple rings has one factor for
-each isomorphism class of simple modules.** -/
+/-- **A presentation of a semisimple ring as a product of simple rings indexed by any type has
+one factor for each isomorphism class of simple modules.** -/
 theorem _root_.RingEquiv.card_simpleSubmoduleClasses_eq_of_pi (e : R ≃+* ∀ i, A i) :
     Nat.card (SimpleSubmoduleClasses R R) = Nat.card ι :=
   (Nat.card_congr (simpleSubmoduleClassesEquiv R R)).trans

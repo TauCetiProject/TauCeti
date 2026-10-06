@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Semisimple.MatrixDivisionRing
-import TauCeti.RingTheory.Semisimple.BlockCount
+import Mathlib.RingTheory.SimpleRing.Matrix
+import TauCeti.RingTheory.SimpleRing.Pi
 
 /-!
 # Uniqueness of Wedderburn blocks
