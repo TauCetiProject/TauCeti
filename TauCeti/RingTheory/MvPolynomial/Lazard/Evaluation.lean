@@ -9,7 +9,6 @@ public import Mathlib.Algebra.MvPolynomial.Polynomial
 public import Mathlib.Algebra.Polynomial.Reverse
 public import TauCeti.Algebra.MvPolynomial.Equiv
 public import TauCeti.Algebra.Polynomial.Taylor
-public import TauCeti.Data.Finsupp.Fin
 public import TauCeti.RingTheory.MvPolynomial.Lazard.Valuation
 
 /-!

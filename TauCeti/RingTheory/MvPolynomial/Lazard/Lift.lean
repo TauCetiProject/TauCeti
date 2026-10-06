@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.Lazard.Evaluation
-public import TauCeti.RingTheory.MvPolynomial.Lazard.Valuation
 
 /-!
 # Lazard valuations at points over a base point
