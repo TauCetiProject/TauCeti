@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Quaternion.ComplexMatrix
 public import TauCeti.Algebra.Star.Unitary
+public import Mathlib.Algebra.Star.UnitaryStarAlgAut
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Four
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Four
 
@@ -173,17 +174,19 @@ private theorem map_vectorEven4 (v : Fin 4 → ℝ) :
     realCliffordFourZeroEvenEquivQuaternionProd_ι]
   ext <;> simp [e4, Pi.basisFun_apply, QuaternionAlgebra.mk_mul_mk]
 
-private def quaternionKConj : ℍ[ℝ] →ₐ[ℝ] ℍ[ℝ] where
-  toFun q := ⟨q.re, -q.imI, -q.imJ, q.imK⟩
-  map_one' := by ext <;> simp
-  map_mul' q r := by ext <;> simp [QuaternionAlgebra.mk_mul_mk] <;> ring
-  map_zero' := by ext <;> simp
-  map_add' q r := by ext <;> simp <;> abel
-  commutes' r := by ext <;> simp
+private noncomputable def quaternionKUnitary : unitary ℍ[ℝ] :=
+  ⟨(_root_.QuaternionAlgebra.Basis.self ℝ).k, by
+    rw [Quaternion.mem_unitary_iff_normSq_eq_one]
+    simp [Quaternion.normSq]⟩
+
+private noncomputable def quaternionKConj : ℍ[ℝ] ≃⋆ₐ[ℝ] ℍ[ℝ] :=
+  Unitary.conjStarAlgAut ℝ ℍ[ℝ] quaternionKUnitary
 
 private theorem quaternionKConj_apply (q : ℍ[ℝ]) :
     quaternionKConj q = ⟨q.re, -q.imI, -q.imJ, q.imK⟩ :=
-  rfl
+  by
+    simp only [quaternionKConj, Unitary.conjStarAlgAut_apply]
+    ext <;> simp [quaternionKUnitary]
 
 private theorem e4_three_sq :
     CliffordAlgebra.ι Q4 (e4 3) * CliffordAlgebra.ι Q4 (e4 3) = 1 := by
@@ -233,7 +236,7 @@ private theorem coe_referenceConjEven (x : CliffordAlgebra.even Q4) :
       CliffordAlgebra.ι Q4 (e4 3) * x * CliffordAlgebra.ι Q4 (e4 3) :=
   rfl
 
-private def swapQuaternionKConj : ℍ[ℝ] × ℍ[ℝ] →ₐ[ℝ] ℍ[ℝ] × ℍ[ℝ] where
+private noncomputable def swapQuaternionKConj : ℍ[ℝ] × ℍ[ℝ] →ₐ[ℝ] ℍ[ℝ] × ℍ[ℝ] where
   toFun q := (quaternionKConj q.2, quaternionKConj q.1)
   map_one' := by ext <;> simp
   map_mul' q r := by ext <;> simp
