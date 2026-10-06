@@ -79,16 +79,18 @@ section Extension
 
 variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] (L : Type*) [Field L] [Algebra K L] [FiniteDimensional K L]
+  [Algebra.IsSeparable K L]
 
-/-- The **conductor exponent** of a finite extension `L/K` of a nonarchimedean local field: the
-least `n` such that the step `U(K,n)` of the unit filtration consists of norms from `L`. For a
-separable extension the norm group is open, so the minimum is attained
-(`unitFiltration_conductorExponent_le_normGroup`). -/
+open Classical in
+/-- The **conductor exponent** of a finite separable extension `L/K` of a nonarchimedean local
+field: the least `n` such that the step `U(K,n)` of the unit filtration consists of norms from
+`L`. Such an `n` exists because the norm group is open (`exists_unitFiltration_le_normGroup`), so
+the minimum is attained (`unitFiltration_conductorExponent_le_normGroup`). -/
 def conductorExponent : ℕ :=
-  sInf {n : ℕ | unitFiltration K n ≤ normGroup K L}
+  Nat.find (exists_unitFiltration_le_normGroup (K := K) (L := L))
 
-/-- The **conductor** of a finite extension `L/K` of a nonarchimedean local field: the ideal
-`𝔪_K ^ c(L/K)` of `𝒪[K]`, where `c(L/K)` is the conductor exponent. -/
+/-- The **conductor** of a finite separable extension `L/K` of a nonarchimedean local field: the
+ideal `𝔪_K ^ c(L/K)` of `𝒪[K]`, where `c(L/K)` is the conductor exponent. -/
 def conductorIdeal : Ideal 𝒪[K] :=
   𝓂[K] ^ conductorExponent K L
 
@@ -101,23 +103,17 @@ theorem conductorIdeal_def : conductorIdeal K L = 𝓂[K] ^ conductorExponent K 
 theorem conductorIdeal_eq_top_iff : conductorIdeal K L = ⊤ ↔ conductorExponent K L = 0 := by
   simp [conductorIdeal_def, (maximalIdeal.isMaximal 𝒪[K]).ne_top]
 
-section Separable
-
-variable [Algebra.IsSeparable K L]
-
 /-- **The conductor exponent is attained**: `U(K, c(L/K))` consists of norms from `L`. -/
 theorem unitFiltration_conductorExponent_le_normGroup :
     unitFiltration K (conductorExponent K L) ≤ normGroup K L :=
-  Nat.sInf_mem (exists_unitFiltration_le_normGroup (K := K) (L := L))
+  open Classical in Nat.find_spec (exists_unitFiltration_le_normGroup (K := K) (L := L))
 
 /-- **The characterizing property of the conductor exponent**: `c(L/K) ≤ n` exactly when every
 element of `U(K,n)` is a norm from `L`. -/
 theorem conductorExponent_le_iff {n : ℕ} :
     conductorExponent K L ≤ n ↔ unitFiltration K n ≤ normGroup K L :=
   ⟨fun h ↦ (unitFiltration_antitone h).trans (unitFiltration_conductorExponent_le_normGroup K L),
-    fun h ↦ Nat.sInf_le h⟩
-
-end Separable
+    fun h ↦ open Classical in Nat.find_min' _ h⟩
 
 /-! ### Ramification and the conductor -/
 
@@ -132,29 +128,7 @@ theorem conductorExponent_eq_zero_of_isUnramified [IsUnramified K L] :
     rw [← map_normUnits_unitFiltration K L 0]
     rintro _ ⟨y, -, rfl⟩
     exact mem_normGroup_iff.2 ⟨y, by simp⟩
-  exact Nat.eq_zero_of_le_zero (Nat.sInf_le h)
-
-/-- If the units of `K` are norms from `L`, then the norm group contains every element of `Kˣ`
-whose valuation is divisible by the residue degree `f(L/K)`: such an element is a power of the
-norm of a uniformizer of `L` times a unit. -/
-private theorem comap_zmultiples_inertiaDegree_le_normGroup
-    (hU : unitFiltration K 0 ≤ normGroup K L) :
-    (AddSubgroup.zmultiples (inertiaDegree K L : ℤ)).toSubgroup.comap (normalizedValuation K) ≤
-      normGroup K L := by
-  intro x hx
-  obtain ⟨k, hk⟩ : (inertiaDegree K L : ℤ) ∣ (normalizedValuation K x).toAdd :=
-    Int.mem_zmultiples_iff.mp ((Multiplicative.mem_toSubgroup _ _).mp hx)
-  obtain ⟨ϖ, hϖ⟩ := normalizedValuation_surjective (K := L) (Multiplicative.ofAdd 1)
-  let y := Algebra.normUnits K ϖ
-  have hy : y ∈ normGroup K L := mem_normGroup_iff.2 ⟨ϖ, by simp [y]⟩
-  -- `x * y ^ (-k)` has valuation zero, so it is a unit and hence a norm.
-  have hunit : x * y ^ (-k) ∈ normGroup K L := by
-    refine hU <| (mem_unitFiltration_zero _).2 <| (normalizedValuation_eq_one_iff _).1 ?_
-    apply Multiplicative.toAdd.injective
-    simp only [y, map_mul, map_zpow, toAdd_mul, toAdd_zpow, toAdd_normalizedValuation_norm, hϖ,
-      toAdd_ofAdd, hk, toAdd_one, smul_eq_mul]
-    ring
-  simpa using mul_mem hunit (zpow_mem hy k)
+  exact Nat.eq_zero_of_le_zero ((conductorExponent_le_iff K L).2 h)
 
 end Extension
 
@@ -172,7 +146,7 @@ theorem isUnramified_of_conductorExponent_eq_zero
     (h : conductorExponent K L = 0) : IsUnramified K L := by
   have hU : unitFiltration K 0 ≤ normGroup K L := (conductorExponent_le_iff K L).1 h.le
   have hf := inertiaDegree_pos (K := K) (L := L)
-  have hdvd := Subgroup.index_dvd_of_le (comap_zmultiples_inertiaDegree_le_normGroup K L hU)
+  have hdvd := Subgroup.index_dvd_of_le (comap_zmultiples_inertiaDegree_le_normGroup hU)
   rw [Subgroup.index_comap_of_surjective _ normalizedValuation_surjective,
     AddSubgroup.index_toSubgroup, Int.index_zmultiples, Int.natAbs_natCast,
     index_normGroup_of_isMulCommutative, ← ramificationIndex_mul_inertiaDegree K L] at hdvd
