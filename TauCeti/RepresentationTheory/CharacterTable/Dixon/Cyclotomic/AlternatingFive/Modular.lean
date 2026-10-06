@@ -27,9 +27,10 @@ here takes place in the smaller ring containing the displayed character values.
 * J. D. Dixon, *High speed computation of group characters*, Numerische Mathematik 10 (1967),
   446–450.
 * J.-P. Serre, *Linear Representations of Finite Groups*, §5.2 (the displayed A₅ table).
-* The existing A₄ formalization in `Cyclotomic.AlternatingFour`, the source for this
-  formalization of modular search and reconstruction.
 -/
+
+/- The modular-search and reconstruction formalization follows
+`TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.AlternatingFour`. -/
 
 public section
 
@@ -52,14 +53,18 @@ theorem isGoodDixonPrime_alternatingGroup_five_sixtyOne :
     have hsqrt : Nat.sqrt 60 = 7 := ((Nat.eq_sqrt).2 (by norm_num)).symm
     norm_num [hsqrt]
 
+/-- `4` is a primitive root of order `30` modulo `61`, matching the exponent of A₅. -/
+theorem isPrimitiveRoot_alternatingGroupFive_exponentRoot :
+    IsPrimitiveRoot (4 : ZMod 61) 30 :=
+  IsPrimitiveRoot.mk_of_lt _ (by decide) (by decide)
+    fun l hl0 hl30 ↦ by interval_cases l <;> decide
+
 /-- `9` is a primitive fifth root modulo `61`, used to reduce the exact A₅ entries. -/
 theorem isPrimitiveRoot_alternatingGroupFive_modularRoot :
     IsPrimitiveRoot (9 : ZMod 61) 5 := by
-  have hroot : IsPrimitiveRoot (4 : ZMod 61) 30 :=
-    IsPrimitiveRoot.mk_of_lt _ (by decide) (by decide)
-      fun l hl0 hl30 ↦ by interval_cases l <;> decide
   have hpow : (4 : ZMod 61) ^ 6 = 9 := by decide
-  simpa only [hpow] using IsPrimitiveRoot.pow (by decide) hroot (by decide : 30 = 6 * 5)
+  simpa only [hpow] using IsPrimitiveRoot.pow (by decide)
+    isPrimitiveRoot_alternatingGroupFive_exponentRoot (by decide : 30 = 6 * 5)
 
 /-- The five central-character rows of A₅ reduced at the primitive fifth root `9` modulo `61`.
 The input rows are trivial, the two degree-three rows, degree four, and degree five. -/
