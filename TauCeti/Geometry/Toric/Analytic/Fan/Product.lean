@@ -247,7 +247,10 @@ variable {N₁ N₂ V₁ V₂ : Type} [AddCommGroup N₁] [AddCommGroup N₂]
   {i₁ : N₁ →+ V₁} {i₂ : N₂ →+ V₂} {Φ₁ : Fan i₁} {Ψ₁ : Fan i₂}
 
 /-- Under the product comparison, a componentwise product of fan morphisms acts as the
-product of the corresponding analytic maps. -/
+product of the corresponding analytic maps.
+
+For `simp only`, supply the source regularity proofs explicitly:
+`simp only [analyticProdHomeomorph_naturality Φ Ψ hΦ hΨ]`. -/
 theorem analyticProdHomeomorph_naturality (f : FanHom Φ Φ₁) (g : FanHom Ψ Ψ₁)
     (hΦ₁ : Φ₁.IsRegular) (hΨ₁ : Ψ₁.IsRegular)
     (x : (Φ.prod Ψ).analyticRealization (Fan.IsRegular.prod Φ Ψ hΦ hΨ)) :
