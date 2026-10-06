@@ -69,11 +69,13 @@ theorem conj_mem_cuspFormsOld {f : _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) 
       exact levelRaise_mem_cuspFormsOld h hM k _
   simpa only [Submodule.mem_comap, CuspForm.conjₗ_apply] using key hf
 
-/-- **Conjugation preserves the new subspace**: `f ↦ f_ρ` maps the old subspace into itself and
-conjugates the Petersson product, so it maps the orthogonal complement into itself. -/
+/-- **Conjugation preserves the new subspace**: if `f` is a new cusp form of level `N`, so is
+its conjugate `f_ρ`. -/
 theorem conj_mem_cuspFormsNew {f : _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
     (hf : f ∈ cuspFormsNew N k) :
     CuspForm.conj (Gamma1_map_le_conjAct_inv_J N) f ∈ cuspFormsNew N k := by
+  -- `f ↦ f_ρ` preserves the old subspace and conjugates the Petersson product, so it preserves
+  -- the orthogonal complement of the old subspace.
   rw [cuspFormsNew_def, CuspForm.mem_peterssonOrthogonal_iff] at hf ⊢
   intro g hg
   have hJ := Gamma1_map_le_conjAct_inv_J N
@@ -139,11 +141,10 @@ theorem qExpansion_conj (f : Newform N k) :
 theorem conj_conj (f : Newform N k) : f.conj.conj = f :=
   Newform.ext (CuspForm.conj_conj _ _)
 
-/-- **A newform of trivial nebentypus is its own conjugate.** Its eigenvalue at a good prime is
-real (`HeckeRing.GL2.EigenformAwayFromLevel.eigenvalue_eq_mul_conj`), so `f` and `f_ρ` are
-newforms with the same nebentypus and the same good eigenvalues, hence equal by strong
-multiplicity one. -/
+/-- **A newform of trivial nebentypus is its own conjugate.** -/
 theorem conj_eq_self_of_χ_eq_one (f : Newform N k) (hχ : f.χ = 1) : f.conj = f := by
+  -- The good eigenvalues of `f` are real, so `f` and `f_ρ` have the same nebentypus and the same
+  -- good eigenvalues, hence are equal by strong multiplicity one.
   refine Newform.eq_of_forall_prime_eigenvalue_eq (by rw [χ_conj, hχ]; ext; simp) fun p hp hpN ↦
     (eigenvalue_conj f ⟨p, hp.pos⟩ hpN).trans ?_
   conv_rhs => rw [f.toEigenformAwayFromLevel.eigenvalue_eq_mul_conj hp hpN]

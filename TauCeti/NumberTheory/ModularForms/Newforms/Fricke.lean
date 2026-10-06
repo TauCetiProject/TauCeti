@@ -250,14 +250,14 @@ theorem Newform.frickeSign_eq_of_normalizedFrickeOperatorCusp_eq_smul
 /-! ### The Fricke pseudo-eigenvalue -/
 
 /-- **The Fricke involution sends a newform to a multiple of its conjugate newform** (Miyake,
-Theorem 4.6.15(2)): `𝒲_N f = c • f_ρ`, for a newform `f` of any nebentypus `χ`. Both forms lie
-in the new part of `S_k(N, χ⁻¹)` and are good Hecke eigenvectors with eigenvalue `conj λ_p` at
-every prime `p ∤ N`: for `f_ρ` by construction, and for `𝒲_N f` because the Fricke operator
-multiplies the eigenvalue `λ_p` by `χ(p)⁻¹`, while `χ(p)⁻¹ λ_p = conj λ_p` by the Petersson
-adjoint (`HeckeRing.GL2.EigenformAwayFromLevel.eigenvalue_eq_mul_conj`). Multiplicity one on the
-new part makes them proportional. -/
+Theorem 4.6.15(2)): `𝒲_N f = c • f_ρ` for a newform `f` of any nebentypus `χ`, where `f_ρ` is
+the conjugate newform `HeckeRing.GL2.Newform.conj`. The scalar is
+`HeckeRing.GL2.Newform.frickePseudoEigenvalue`. -/
 theorem Newform.exists_normalizedFrickeOperatorCusp_eq_smul_conj (f : Newform N k) :
     ∃ c : ℂ, normalizedFrickeOperatorCusp k f.toCuspForm = c • f.conj.toCuspForm := by
+  -- Both `𝒲_N f` and `f_ρ` lie in the new part of `S_k(N, χ⁻¹)` and are good Hecke
+  -- eigenvectors with eigenvalue `conj λ_p` at every prime `p ∤ N`, so multiplicity one on the
+  -- new part makes them proportional.
   let F : cuspFormCharSpace k f.χ⁻¹ :=
     ⟨_, normalizedFrickeOperatorCusp_mem_cuspFormCharSpace k f.χ f.mem_charSpace⟩
   let G : cuspFormCharSpace k f.χ⁻¹ := ⟨_, f.χ_conj ▸ f.conj.mem_charSpace⟩
@@ -300,11 +300,11 @@ theorem Newform.frickePseudoEigenvalue_eq_of_normalizedFrickeOperatorCusp_eq_smu
   smul_left_injective ℂ f.conj.ne_zero
     ((f.normalizedFrickeOperatorCusp_eq_frickePseudoEigenvalue_smul).symm.trans hc)
 
-/-- **The Fricke pseudo-eigenvalue has absolute value `1`.** The normalized Fricke operator is
-Petersson-unitary, and conjugation preserves the Petersson norm, so
-`⟪f, f⟫ = |λ_N(f)|² ⟪f_ρ, f_ρ⟫ = |λ_N(f)|² ⟪f, f⟫`. -/
+/-- **The Fricke pseudo-eigenvalue has absolute value `1`.** -/
 theorem Newform.norm_frickePseudoEigenvalue (f : Newform N k) :
     ‖f.frickePseudoEigenvalue‖ = 1 := by
+  -- `𝒲_N` is Petersson-unitary and conjugation preserves the Petersson norm, so
+  -- `⟪f, f⟫ = |λ_N(f)|² ⟪f_ρ, f_ρ⟫ = |λ_N(f)|² ⟪f, f⟫`.
   have h := peterssonInnerCosets_normalizedFrickeOperatorCusp k f.toCuspForm f.toCuspForm
   -- `⟪c • f_ρ, c • f_ρ⟫ = |c|² ⟪f_ρ, f_ρ⟫` and `⟪f_ρ, f_ρ⟫ = conj ⟪f, f⟫ = ⟪f, f⟫`
   rw [f.normalizedFrickeOperatorCusp_eq_frickePseudoEigenvalue_smul, toCuspForm_conj] at h
