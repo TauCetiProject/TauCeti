@@ -9,10 +9,10 @@ module
 public import Mathlib.MeasureTheory.Measure.RegularityCompacts
 public import Mathlib.MeasureTheory.Measure.Tight
 public import Mathlib.Topology.MetricSpace.Polish
-public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 public import TauCeti.MeasureTheory.OptimalTransport.Coupling
--- Proof-only: Prokhorov's theorem upgrades tightness to relative compactness.
+-- Proof-only: continuous marginal maps and Prokhorov's relative compactness theorem.
 import Mathlib.MeasureTheory.Measure.Prokhorov
+import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 
 /-!
 # The transport plans of two probability measures form a compact set
@@ -172,25 +172,28 @@ product directly avoids imposing second countability on either factor. Closednes
 asks that the two spaces of probability measures be `T1`; these hypotheses do not choose a metric
 on either factor. -/
 
-variable {X Y : Type*} [TopologicalSpace X] [T2Space X] [MeasurableSpace X]
+variable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X]
   [OpensMeasurableSpace X] [T1Space (ProbabilityMeasure X)]
-  [TopologicalSpace Y] [T2Space Y] [MeasurableSpace Y] [OpensMeasurableSpace Y]
+  [TopologicalSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y]
   [T1Space (ProbabilityMeasure Y)] [BorelSpace (X × Y)]
 
 /-- **The couplings of two tight probability measures are weakly compact.** The set is tight by
 `TauCeti.isTightMeasureSet_setOfPred_isCoupling`, hence relatively compact by Prokhorov's theorem,
 and it is closed by `TauCeti.isClosed_setOfPred_isCoupling`; so it equals its own closure and is
-compact. -/
-theorem isCompact_setOfPred_isCoupling {μ : ProbabilityMeasure X} {ν : ProbabilityMeasure Y}
+compact. Hausdorffness is required only of the product. -/
+theorem isCompact_setOfPred_isCoupling [T2Space (X × Y)]
+    {μ : ProbabilityMeasure X} {ν : ProbabilityMeasure Y}
     (hμ : IsTightMeasureSet {μ.toMeasure}) (hν : IsTightMeasureSet {ν.toMeasure}) :
     IsCompact
       {π : ProbabilityMeasure (X × Y) | IsCoupling π.toMeasure μ.toMeasure ν.toMeasure} :=
   isCompact_setOfPred_isCoupling_of_prokhorov
     (fun _ ↦ isCompact_closure_of_isTightMeasureSet) hμ hν
 
-/-- The bundled couplings of two inner-regular probability measures form a compact space for
-weak convergence. This applies in particular to probability measures on Polish spaces. -/
-instance Coupling.instCompactSpace {μ : ProbabilityMeasure X} {ν : ProbabilityMeasure Y}
+/-- The bundled couplings of two inner-regular probability measures on Hausdorff factors form a
+compact space for weak convergence. Hausdorffness makes the inner-regular marginals tight.
+This applies in particular to probability measures on Polish spaces. -/
+instance Coupling.instCompactSpace [T2Space X] [T2Space Y]
+    {μ : ProbabilityMeasure X} {ν : ProbabilityMeasure Y}
     [μ.toMeasure.InnerRegular] [ν.toMeasure.InnerRegular] : CompactSpace (Coupling μ ν) :=
   isCompact_iff_compactSpace.mp (isCompact_setOfPred_isCoupling
     isTightMeasureSet_singleton_of_innerRegular isTightMeasureSet_singleton_of_innerRegular)
@@ -237,9 +240,10 @@ theorem isCoupling_of_tendsto [l.NeBot]
 
 /-- **Relative compactness of a family of transport plans with moving marginals.** If a tail of
 each marginal family is tight, then any eventually feasible family of plans has a weakly convergent
-refinement whose limit is a coupling of the limiting marginals. The product is Hausdorff and
-Borel for Prokhorov's theorem; no second-countability hypothesis on either factor is required. -/
-theorem exists_isCoupling_tendsto_of_isTightMeasureSet [T2Space X] [T2Space Y]
+refinement whose limit is a coupling of the limiting marginals. Prokhorov's theorem needs
+Hausdorffness and the Borel sigma algebra only on the product; no second-countability hypothesis
+on either factor is required. -/
+theorem exists_isCoupling_tendsto_of_isTightMeasureSet [T2Space (X × Y)]
     [BorelSpace (X × Y)]
     (hμt : ∃ s ∈ l, IsTightMeasureSet ((fun i ↦ (μs i).toMeasure) '' s))
     (hνt : ∃ s ∈ l, IsTightMeasureSet ((fun i ↦ (νs i).toMeasure) '' s))
