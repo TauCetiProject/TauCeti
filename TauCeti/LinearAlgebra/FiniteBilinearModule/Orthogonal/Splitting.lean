@@ -179,7 +179,7 @@ private theorem exists_pairing_eq_of_addOrderOf_eq_prime_pow {p k : ℕ} [hp : F
     rw [map_zsmul, show s * r = 1 - t * ((p ^ k : ℕ) : ℤ) by rw [← hst]; ring, sub_smul,
       one_smul, mul_smul, hpk, smul_zero, sub_zero]
 
-/-- **A pair detecting the top exponent of a primary part.** In a nondegenerate finite bilinear
+/-- **A pair detecting a nonzero primary pairing.** In a nondegenerate finite bilinear
 module whose order is divisible by a prime `p`, there are `x` and `y`, both killed by `p^{k+1}`,
 with `p^k b(x, y) ≠ 0`. In particular `x` and `y` both have order exactly `p^{k+1}`. -/
 theorem exists_nsmul_pairing_ne_zero_of_dvd_card {p : ℕ} [hp : Fact p.Prime]
