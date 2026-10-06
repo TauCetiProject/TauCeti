@@ -24,8 +24,8 @@ of the Hasse norm principle for field elements.
 ## Main results
 
 * `TauCeti.GlobalNumberFields.mem_range_ideleNormMap_iff`: the purely placewise norm criterion.
-* `TauCeti.GlobalNumberFields.ideleFiniteCoord_ideleNormMap_mem_range_normUnits` and
-  `TauCeti.GlobalNumberFields.ideleInfiniteCoord_ideleNormMap_mem_range_normUnits`:
+* `TauCeti.GlobalNumberFields.mem_range_normUnits_ideleFiniteCoord_ideleNormMap` and
+  `TauCeti.GlobalNumberFields.mem_range_normUnits_ideleInfiniteCoord_ideleNormMap`:
   every coordinate of a relative idele norm is a norm from the local étale algebra.
 
 ## References
@@ -93,7 +93,7 @@ private theorem exists_restricted_finite_preimages (x : IdeleGroup (𝓞 K) K)
   exact huunit _ hw ⟨w, inferInstance⟩
 
 /-- Every finite coordinate of an idele norm is a norm from the local étale algebra. -/
-theorem ideleFiniteCoord_ideleNormMap_mem_range_normUnits (x : IdeleGroup (𝓞 L) L)
+theorem mem_range_normUnits_ideleFiniteCoord_ideleNormMap (x : IdeleGroup (𝓞 L) L)
     (v : HeightOneSpectrum (𝓞 K)) :
     v.ideleFiniteCoord (GlobalNumberFields.ideleNormMap K L x) ∈
       (Algebra.normUnits (v.adicCompletion K) (S := v.adicCompletion K ⊗[K] L)).range := by
@@ -102,7 +102,7 @@ theorem ideleFiniteCoord_ideleNormMap_mem_range_normUnits (x : IdeleGroup (𝓞 
     (GlobalNumberFields.ideleFiniteCoord_ideleNormMap v x).symm⟩
 
 /-- Every infinite coordinate of an idele norm is a norm from the local étale algebra. -/
-theorem ideleInfiniteCoord_ideleNormMap_mem_range_normUnits (x : IdeleGroup (𝓞 L) L)
+theorem mem_range_normUnits_ideleInfiniteCoord_ideleNormMap (x : IdeleGroup (𝓞 L) L)
     (v : InfinitePlace K) :
     v.ideleInfiniteCoord (GlobalNumberFields.ideleNormMap K L x) ∈
       (Algebra.normUnits v.Completion (S := v.Completion ⊗[K] L)).range := by
@@ -123,8 +123,8 @@ theorem mem_range_ideleNormMap_iff (x : IdeleGroup (𝓞 K) K) :
   classical
   constructor
   · rintro ⟨y, rfl⟩
-    exact ⟨ideleFiniteCoord_ideleNormMap_mem_range_normUnits K L y,
-      ideleInfiniteCoord_ideleNormMap_mem_range_normUnits K L y⟩
+    exact ⟨mem_range_normUnits_ideleFiniteCoord_ideleNormMap K L y,
+      mem_range_normUnits_ideleInfiniteCoord_ideleNormMap K L y⟩
   rintro ⟨hfin, hinf⟩
   obtain ⟨u, hu, hz⟩ := exists_restricted_finite_preimages K L x hfin
   let z (w : HeightOneSpectrum (𝓞 L)) : (w.adicCompletion L)ˣ :=
