@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.RootCount
+import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
 # Semialgebraic root loci of polynomial families
@@ -43,14 +44,6 @@ namespace TauCeti
 
 variable {R ι : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] [IsRealClosed R]
   {n : ℕ}
-
-/-- The distinct roots of a product of nonzero polynomials are the distinct roots of its factors
-together. -/
-private theorem roots_prod_toFinset {K : Type*} [CommRing K] [IsDomain K] [DecidableEq K]
-    (s : Finset ι) (p : ι → K[X]) (hp : ∀ k ∈ s, p k ≠ 0) :
-    (s.prod p).roots.toFinset = s.biUnion fun k ↦ (p k).roots.toFinset := by
-  classical
-  rw [roots_prod _ _ (Finset.prod_ne_zero_iff.mpr hp), Finset.bind_toFinset, s.val_toFinset]
 
 /-- **The ordered root loci of a finite family are semialgebraic.** Let `P k` be a finite family
 of polynomial families over `R ^ n`. On a semialgebraic base `S` where every member specializes

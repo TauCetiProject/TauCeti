@@ -46,6 +46,8 @@ the number of distinct roots.
   its root set enumerates its full root multiset after base change.
 * `Polynomial.rootSet_mul`: the root set of a product of polynomials whose base changes to `E` are
   nonzero is the union of the root sets of the factors.
+* `Polynomial.roots_prod_toFinset`: the distinct roots of a finite product of nonzero polynomials
+  are those of the factors together.
 * `Polynomial.aroots_prod_toFinset`: the distinct roots of a finite product of polynomials whose
   base changes to `E` are nonzero are those of the factors together.
 * `Polynomial.rootSet_divByMonic_X_sub_C`: if `f a = 0` and `f' a ≠ 0` in `E`, then the roots of
@@ -92,6 +94,15 @@ theorem _root_.Polynomial.rootSet_mul {g : F[X]} (hf : f.map (algebraMap F E) �
   ext x
   simp only [Set.mem_union, mem_rootSet', Polynomial.map_mul, map_mul, mul_eq_zero, ne_eq, hf, hg,
     or_self, not_false_eq_true, true_and]
+
+/-- The distinct roots of a finite product of nonzero polynomials are those of the factors
+together. -/
+theorem _root_.Polynomial.roots_prod_toFinset [IsDomain F] [DecidableEq F]
+    {ι : Type*} (s : Finset ι)
+    (f : ι → F[X]) (hf : ∀ k ∈ s, f k ≠ 0) :
+    (s.prod f).roots.toFinset = s.biUnion fun k ↦ (f k).roots.toFinset := by
+  classical
+  rw [roots_prod _ _ (Finset.prod_ne_zero_iff.mpr hf), Finset.bind_toFinset, s.val_toFinset]
 
 /-- The distinct roots in `E` of a finite product of polynomials are those of the factors together,
 provided no factor vanishes after base change to `E`. -/
