@@ -71,9 +71,8 @@ private theorem eventually_prod_normalized_roots_eq {d a c : ℕ} (hd : 0 < d)
     have hc := congrArg (fun f : Polynomial 𝕜 ↦ f.coeff 0) (hnp hp)
     rw [integralNormalization_coeff_ne_natDegree (by omega : 0 ≠ (P p).natDegree),
       hdegree] at hc
-    simp only [Nat.sub_zero, coeff_zero_eq_eval_zero, eval_prod, eval_sub, eval_X,
-      eval_C, zero_sub, Finset.prod_neg, Finset.card_univ, Fintype.card_fin] at hc
-    rw [← coeff_zero_eq_eval_zero] at hc
+    simp only [Nat.sub_zero, coeff_zero_prod, coeff_sub, coeff_X_zero, coeff_C_zero,
+      zero_sub, Finset.prod_neg, Finset.card_univ, Fintype.card_fin] at hc
     have hsign : ((-1 : 𝕜) ^ d) * (-1) ^ d = 1 := by
       rw [← mul_pow]
       simp
