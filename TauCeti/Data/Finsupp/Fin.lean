@@ -88,6 +88,7 @@ theorem snoc_injective2 : Function.Injective2 (snoc (n := n) (M := M)) := by
   intro s s' y y' h
   exact ⟨by simpa using congrArg init h, by simpa using DFunLike.congr_fun h (Fin.last n)⟩
 
+@[simp]
 theorem snoc_inj {s s' : Fin n →₀ M} {y y' : M} : snoc s y = snoc s' y' ↔ s = s' ∧ y = y' :=
   snoc_injective2.eq_iff
 
