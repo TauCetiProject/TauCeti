@@ -288,6 +288,7 @@ theorem affineToricChartι_eq_affineToricChartι_iff
       affineToricOverlapRight_comp_affineToricChartι]
 
 /-- The intersection of two affine cone opens is the affine open of the intersection cone. -/
+@[simp]
 theorem range_affineToricChartι_inter (σ τ : Φ.cones) :
     Set.range (Φ.affineToricChartι σ) ∩ Set.range (Φ.affineToricChartι τ) =
       Set.range (Φ.affineToricChartι (σ ⊓ τ)) := by
