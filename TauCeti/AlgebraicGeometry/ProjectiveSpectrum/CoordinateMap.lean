@@ -19,9 +19,6 @@ orbit morphisms.
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §§7.d–7.f.
-* Formal projective-coordinate API: `Proj.awayι_comp_map` and
-  `TauCeti.ProjectiveSpectrum.toBasicOpenOfGlobalSections_eq`.
-* Formal graded-localization API: `HomogeneousLocalization.Away.lift_comp_map`.
 -/
 
 public section
