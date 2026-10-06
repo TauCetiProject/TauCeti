@@ -15,21 +15,20 @@ import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.Lift
 # Inflation of the pro-p class module along `V ≤ W`
 
 Let `G` be a profinite group and `V ≤ W` open subgroups. The transfer
-`Ver_{W→V} : W → V^ab(p)` of the canonical map `V → V^ab(p)` factors through `W^ab(p)`, giving
-`TauCeti.abelianizationProPTransferLe : W^ab(p) →* V^ab(p)`. It is continuous, and when `V` and
-`W` are normal in `G` it is equivariant along the quotient map `G ⧸ V → G ⧸ W`, so it forms a
-compatible pair with that map. The induced
-map on explicit `H¹` is NSW's map
+`W → V^ab(p)` of the canonical map `V → V^ab(p)` factors through `W^ab(p)`, giving
+`Ver_{W→V} = TauCeti.abelianizationProPTransferLe : W^ab(p) →* V^ab(p)`. It is continuous, and
+when `V` and `W` are normal in `G` it is equivariant along the quotient map `G ⧸ V → G ⧸ W`, so
+it forms a compatible pair with that map. The induced map on explicit `H¹` is NSW's map
 `i : H¹(G ⧸ W, W^ab(p)) → H¹(G ⧸ V, V^ab(p))` of (3.6.1)(ii), here
 `TauCeti.abelianizationProPInfl1`.
 
-When `scd_p G ≤ 2`, `Ver_{W→V}` is injective with image the invariants of `W.map (mk' V)`, the
-image of `W` in `G ⧸ V`. This is NSW (3.6.4)(ii) for the group `W`. Its strict dimension is at
-most that of `G`, and the pair `V ◁ W` computed in `W` is identified with the restriction of the
-pair `V ◁ G` by `TauCeti.abelianizationProPSubgroupOfEquiv`. So `i` in degree one is inflation
-from `(G ⧸ V) ⧸ W.map (mk' V) ≅ G ⧸ W` with coefficients the invariants. The
-inflation-restriction sequence `TauCeti.ContCohomology.explicitInfRes_exact` then makes it
-injective with image the kernel of restriction to `W.map (mk' V)`, NSW (1.6.7) for this pair.
+When `scd_p G ≤ 2`, the induced map `Ver_{W→V} : W^ab(p) →* V^ab(p)` is injective with image the
+invariants of `W.map (mk' V)`, the image of `W` in `G ⧸ V`. This is NSW (3.6.4)(ii) for the group
+`W`. Its strict dimension is at most that of `G`, and the pair `V ◁ W` computed in `W` is identified
+with the restriction of the pair `V ◁ G` by `TauCeti.abelianizationProPSubgroupOfEquiv`. So `i` in
+degree one is inflation from `(G ⧸ V) ⧸ W.map (mk' V) ≅ G ⧸ W` with coefficients the invariants. The
+inflation-restriction sequence `TauCeti.ContCohomology.explicitInfRes_exact` then makes it injective
+with image the kernel of restriction to `W.map (mk' V)`, NSW (1.6.7) for this pair.
 
 ## Main definitions
 
