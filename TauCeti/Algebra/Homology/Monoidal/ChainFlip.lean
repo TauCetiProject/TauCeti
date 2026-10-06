@@ -12,7 +12,7 @@ public import TauCeti.Algebra.Homology.Monoidal.Cup
 
 The interchange of tensor factors in chain complexes is not the unsigned braiding of graded
 objects: on the summand of bidegree `(p, q)` it must carry the sign `(-1)^(p*q)` to commute with
-the differential. `TauCeti.ChainComplex.tensorFlip` constructs this chain map in any braided
+the differential. `TauCeti.tensorFlip` constructs this chain map in any braided
 preadditive monoidal category, assuming only that the two tensor complexes exist. In a symmetric
 category, interchanging twice is the identity, giving `tensorFlipIso`.
 
@@ -39,8 +39,9 @@ public section
 noncomputable section
 
 open CategoryTheory Limits MonoidalCategory HomologicalComplex
+open TauCeti.ChainComplex
 
-namespace TauCeti.ChainComplex
+namespace TauCeti
 
 variable {C : Type*} [Category* C] [Preadditive C] [MonoidalCategory C]
   [MonoidalPreadditive C]
@@ -207,9 +208,9 @@ lemma cupCochain_tensorFlip {E : ChainComplex C ℕ} {M N P : C} (k : Type*) [Co
 
 end Cochain
 
-end TauCeti.ChainComplex
+end TauCeti
 
-namespace TauCeti.ChainComplex
+namespace TauCeti
 
 variable {C : Type*} [Category* C] [Abelian C] [MonoidalCategory C]
   [MonoidalPreadditive C] [BraidedCategory C]
@@ -231,4 +232,4 @@ lemma cup_tensorFlip {E : ChainComplex C ℕ} {M N P : C} (k : Type*) [CommRing 
   simp only [iCycles_cupCycles, map_zsmul]
   exact cupCochain_tensorFlip A B k D μ h _ _
 
-end TauCeti.ChainComplex
+end TauCeti
