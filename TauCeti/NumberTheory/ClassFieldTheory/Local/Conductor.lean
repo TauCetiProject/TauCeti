@@ -156,6 +156,7 @@ theorem isUnramified_of_conductorExponent_eq_zero
 /-- **The unramified criterion for the conductor**: a finite abelian extension of nonarchimedean
 local fields has conductor exponent `0`, that is, every unit of `K` is a norm, exactly when it is
 unramified. -/
+@[simp]
 theorem conductorExponent_eq_zero_iff :
     conductorExponent K L = 0 ↔ IsUnramified K L :=
   ⟨isUnramified_of_conductorExponent_eq_zero K L,
@@ -198,6 +199,7 @@ theorem characterConductorExp_le_iff (χ : Kˣ →ₜ* ℂˣ) {n : ℕ} :
 
 /-- A continuous character has conductor exponent `0` exactly when it is **unramified**, that is,
 trivial on the units `U(K,0)` of `𝒪[K]`. -/
+@[simp]
 theorem characterConductorExp_eq_zero_iff (χ : Kˣ →ₜ* ℂˣ) :
     characterConductorExp K χ = 0 ↔ unitFiltration K 0 ≤ χ.ker := by
   rw [← Nat.le_zero, characterConductorExp_le_iff]
