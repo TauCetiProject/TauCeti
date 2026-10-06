@@ -68,6 +68,35 @@ theorem finiteAdeleBaseChangeHom_tmul (a : FiniteAdeleRing (𝓞 K) K) (x : L) :
   simp [finiteAdeleBaseChangeHom, Algebra.ofId_apply,
     algebraMap_finiteAdeleExtensionAlgebra]
 
+/-- The component above `v` of the finite-adele comparison is the semilocal map after
+scalar extension of evaluation at `v`. -/
+@[simp]
+theorem finiteAdeleBaseChangeHom_apply (s : FiniteAdeleRing (𝓞 K) K ⊗[K] L)
+    (v : HeightOneSpectrum (𝓞 K))
+    (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) :
+    let f : FiniteAdeleRing (𝓞 K) K →ₗ[K] v.adicCompletion K :=
+      { toFun := fun a ↦ a v
+        map_add' := fun _ _ ↦ rfl
+        map_smul' := fun c a ↦ by
+          simp only [Algebra.smul_def, RingHom.id_apply]
+          rfl }
+    finiteAdeleBaseChangeHom K L s w.1 =
+      semilocalHom L v (TensorProduct.map f (LinearMap.id : L →ₗ[K] L) s) w := by
+  intro f
+  induction s using TensorProduct.inductionOn with
+  | tmul a x =>
+    simp only [TensorProduct.map_tmul, LinearMap.id_apply, semilocalHom_tmul,
+      finiteAdeleBaseChangeHom_tmul, FiniteAdeleRing.mul_apply,
+      finiteAdeleExtension_apply, FiniteAdeleRing.algebraMap_apply]
+    rcases w with ⟨w, hw⟩
+    have hv : v = w.under (𝓞 K) := HeightOneSpectrum.asIdeal_injective hw.over
+    subst v
+    rw [HeightOneSpectrum.algebraMap_adicCompletionExtensionAlgebra]
+    rfl
+  | add t u ht hu =>
+    simp only [map_add, Pi.add_apply]
+    exact congrArg₂ (· + ·) ht hu
+
 /-- The canonical scalar-extension map of finite adeles is injective. -/
 theorem finiteAdeleBaseChangeHom_injective :
     Function.Injective (finiteAdeleBaseChangeHom K L) := by
@@ -88,28 +117,11 @@ theorem finiteAdeleBaseChangeHom_injective :
         simp only [Algebra.smul_def, RingHom.id_apply]
         rfl }
   let T := TensorProduct.map f (LinearMap.id : L →ₗ[K] L)
-  -- The adelic comparison at the places above `v` is the semilocal map applied to `T`.
-  have hlocal (s : FiniteAdeleRing (𝓞 K) K ⊗[K] L)
-      (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) :
-      semilocalHom L v (T s) w = finiteAdeleBaseChangeHom K L s w.1 := by
-    induction s using TensorProduct.inductionOn with
-    | tmul a x =>
-      simp only [T, TensorProduct.map_tmul, LinearMap.id_apply, semilocalHom_tmul,
-        finiteAdeleBaseChangeHom_tmul, FiniteAdeleRing.mul_apply,
-        finiteAdeleExtension_apply, FiniteAdeleRing.algebraMap_apply]
-      rcases w with ⟨w, hw⟩
-      have hv : v = w.under (𝓞 K) := HeightOneSpectrum.asIdeal_injective hw.over
-      subst v
-      rw [HeightOneSpectrum.algebraMap_adicCompletionExtensionAlgebra]
-      rfl
-    | add t u ht hu =>
-      simp only [map_add, Pi.add_apply, ht, hu]
-      rfl
   -- A zero adelic image gives a zero tensor at `v` by semilocal injectivity.
   have hT : T t = 0 := by
     apply semilocalHom_injective L v
     funext w
-    rw [hlocal, ht, map_zero]
+    rw [← finiteAdeleBaseChangeHom_apply K L t v w, ht, map_zero]
     rfl
   -- Evaluation commutes with the scalar-extended basis coordinates.
   have hcoord (s : FiniteAdeleRing (𝓞 K) K ⊗[K] L) :
