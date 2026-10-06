@@ -89,7 +89,20 @@ theorem cyclicBocksteinShortExact_proj_apply (x : ULift.{u} (ZMod (n * n))) :
 
 end Coefficients
 
-variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+variable (G : Type u) [Group G]
+
+/-- Restricting the cyclic coefficient sequence preserves its multiplication and reduction
+maps. -/
+@[simp]
+theorem cyclicBocksteinShortExact_restrict (n : ℕ) [NeZero n] (U : Subgroup G) :
+    (cyclicBocksteinShortExact G n).restrict U = cyclicBocksteinShortExact U n := by
+  apply DiscreteShortExact.ext
+  · rw [DiscreteShortExact.restrict_incl]
+    rfl
+  · rw [DiscreteShortExact.restrict_proj]
+    rfl
+
+variable [TopologicalSpace G] [IsTopologicalGroup G]
 
 local instance cyclicBocksteinContinuousSMul (n : ℕ) : ContinuousSMul G (ULift.{u} (ZMod n)) :=
   ⟨continuous_snd⟩
@@ -187,6 +200,25 @@ theorem cyclicBockstein_map {H : Type u} [Group H] [TopologicalSpace H]
     (AddMonoidHom.id _) (AddMonoidHom.id _) (AddMonoidHom.id _)
     (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) i
 
+/-- Restriction to a compact subgroup commutes with the cyclic Bockstein. -/
+@[reassoc]
+theorem cyclicBockstein_res (U : Subgroup G) [CompactSpace U] (i : ℕ) :
+    cyclicBockstein G n i ≫ res U (ofDiscreteModule ℤ G (ULift.{u} (ZMod n))) (i + 1) =
+      res U (ofDiscreteModule ℤ G (ULift.{u} (ZMod n))) i ≫ cyclicBockstein U n i := by
+  simpa only [cyclicBockstein_def, cyclicBocksteinShortExact_restrict] using
+    (cyclicBocksteinShortExact G n).delta_res U i
+
+/-- Corestriction from an open finite-index subgroup commutes with the cyclic Bockstein. -/
+@[reassoc]
+theorem cyclicBockstein_corestriction [TotallyDisconnectedSpace G]
+    (U : Subgroup G) [U.FiniteIndex] (hU : IsOpen (U : Set G)) (i : ℕ) :
+    haveI : CompactSpace U := isCompact_iff_compactSpace.mp (U.isClosed_of_isOpen hU).isCompact
+    corestriction U (ULift.{u} (ZMod n)) hU i ≫ cyclicBockstein G n i =
+      cyclicBockstein U n i ≫ corestriction U (ULift.{u} (ZMod n)) hU (i + 1) := by
+  have : CompactSpace U := isCompact_iff_compactSpace.mp (U.isClosed_of_isOpen hU).isCompact
+  simpa only [cyclicBockstein_def, cyclicBocksteinShortExact_restrict] using
+    ((cyclicBocksteinShortExact G n).delta_corestriction U hU i).symm
+
 /-- In degree zero the cyclic Bockstein vanishes: every invariant cyclic coefficient has
 an invariant lift, since all the actions are trivial. -/
 @[simp]
@@ -227,7 +259,7 @@ theorem cyclicBockstein_one_explicit (x : H1 G (ULift.{u} (ZMod n))) :
 
 /-- After forgetting the universe lift, the degree-one cyclic Bockstein at modulus two
 agrees with `explicitBockstein1`, and hence with the existing cup-square calculation. -/
-theorem cyclicBockstein_one_mod_two
+theorem cyclicBockstein_one_mod_two_eq_explicitBockstein1
     (x : continuousCohomology 1 (ofDiscreteModule ℤ G (ULift.{u} (ZMod 2)))) :
     explicitMap2 G (ULift.{u} (ZMod 2)) G (ZMod 2) (ContinuousMonoidHom.id G)
         AddEquiv.ulift.toAddMonoidHom continuous_of_discreteTopology (fun _ _ ↦ rfl)
