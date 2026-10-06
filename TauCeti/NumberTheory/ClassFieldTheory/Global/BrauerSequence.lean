@@ -38,7 +38,7 @@ The section uses `DFinsupp.singleAddHom` and the inverse of
 
 * `TauCeti.ClassFieldTheory.sumLocalInvSection_apply`: the section's single-supported family.
 * `TauCeti.ClassFieldTheory.sumLocalInv_sumLocalInvSection`: the section is a right inverse.
-* `TauCeti.ClassFieldTheory.surjective_sumLocalInv`: the sum of local invariants is surjective.
+* `TauCeti.ClassFieldTheory.sumLocalInv_surjective`: the sum of local invariants is surjective.
 * `TauCeti.ClassFieldTheory.sumLocalInv_add_single_eq_iff`: the unique adjustment at a finite
   place giving a prescribed total invariant.
 
@@ -78,7 +78,7 @@ theorem sumLocalInv_sumLocalInvSection (v : HeightOneSpectrum (𝓞 K))
 
 omit [DecidableEq (HeightOneSpectrum (𝓞 K))] in
 /-- The sum of local Brauer invariants is surjective for every number field. -/
-theorem surjective_sumLocalInv : Function.Surjective (sumLocalInv K) := by
+theorem sumLocalInv_surjective : Function.Surjective (sumLocalInv K) := by
   classical
   let v : HeightOneSpectrum (𝓞 K) := Classical.arbitrary _
   exact Function.RightInverse.surjective (sumLocalInv_sumLocalInvSection K v)
