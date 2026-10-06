@@ -74,14 +74,37 @@ theorem weightSpace_eq_span_singleton_of_weight_basis
   · rw [Submodule.span_singleton_le_iff_mem]
     exact (mem_weightSpace _ _).mpr (hb i)
 
-variable [Fintype ι] [LinearWeights K L M]
+/-- A basis of weight vectors gives linear generalized weights vanishing on brackets. -/
+theorem linearWeights_of_weight_basis : LinearWeights K L M := by
+  have aux (χ : L → K) (hχ : genWeightSpace M χ ≠ ⊥) :
+      ∃ m : M, m ≠ 0 ∧ ∀ x, ⁅x, m⁆ = χ x • m := by
+    obtain ⟨m, hm, hm₀⟩ := (⟨χ, hχ⟩ : Weight K L M).exists_ne_zero
+    rw [b.genWeightSpace_eq_weightSpace_of_weight_basis hb] at hm
+    exact ⟨m, hm₀, (mem_weightSpace _ _).mp hm⟩
+  refine ⟨?_, ?_, ?_⟩
+  · intro χ hχ x y
+    obtain ⟨m, hm, hw⟩ := aux χ hχ
+    apply smul_left_injective K hm
+    simpa only [hw, add_smul] using (add_lie x y m)
+  · intro χ hχ t x
+    obtain ⟨m, hm, hw⟩ := aux χ hχ
+    apply smul_left_injective K hm
+    simpa only [hw, smul_assoc] using (smul_lie t x m)
+  · intro χ hχ x y
+    obtain ⟨m, hm, hw⟩ := aux χ hχ
+    apply smul_left_injective K hm
+    simpa only [hw, lie_smul, smul_smul, mul_comm, sub_self, zero_smul] using (lie_lie x y m)
+
+variable [Fintype ι]
 
 /-- The formal character of a module with a finite basis of weight vectors is the sum of
 those weights, counting repeated weights with their multiplicities. -/
 theorem formalCharacter_eq_sum_single_of_weight_basis :
     letI := b.finiteDimensional_of_finite
+    letI := b.linearWeights_of_weight_basis hb
     TauCeti.formalCharacter K L M = ∑ i, AddMonoidAlgebra.single (μ i) (1 : ℤ) := by
   let _ := b.finiteDimensional_of_finite
+  let _ := b.linearWeights_of_weight_basis hb
   classical
   refine AddMonoidAlgebra.ext (Finsupp.ext fun χ => ?_)
   rw [TauCeti.formalCharacter_coeff,
