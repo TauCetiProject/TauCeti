@@ -21,7 +21,8 @@ Cauchy problem `∂ₜu = Δu`, `u(0, ·) = g`. This file proves that `u` attain
 * if `g` is continuous at `x₀`, then `u(t, x) → g(x₀)` as `(t, x) → (0⁺, x₀)`;
 * if `g` is bounded and uniformly continuous, then `K_t ⋆ g → g` uniformly as `t → 0⁺`.
 
-The heat kernel is the dilation `K_t(x) = c ^ n K_1(c • x)` with `c = 1 / √t`, so as `t → 0⁺`
+The heat kernel is the dilation `K_t(x) = c ^ n K_1(c • x)` with `c = 1 / √t`
+(`TauCeti.heatKernel_eq_mul_heatKernel_one_smul`), so as `t → 0⁺`
 its mass concentrates at the origin (`TauCeti.tendsto_setIntegral_compl_ball_heatKernel`). This
 follows from Mathlib's peak-function theorem
 `MeasureTheory.tendsto_integral_comp_smul_smul_of_integrable`. The three statements above then come
@@ -34,8 +35,6 @@ data, which need not be integrable, and needs the joint limit in `(t, x)`.
 
 ## Main declarations
 
-* `TauCeti.heatKernel_eq_mul_heatKernel_one_smul`: the dilation identity
-  `K_t(x) = (√t)⁻¹ ^ n K_1((√t)⁻¹ • x)`.
 * `TauCeti.tendsto_setIntegral_compl_ball_heatKernel`: the mass of `K_t` outside any ball about
   the origin tends to zero as `t → 0⁺`.
 * `TauCeti.norm_heatKernel_convolution_le`: `‖(K_t ⋆ g)(x)‖ ≤ M` when `‖g‖ ≤ M` a.e.
@@ -64,27 +63,14 @@ open scoped BoundedContinuousFunction Convolution
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F]
 
-/-- **Parabolic scaling of the heat kernel.** For `t > 0`, `K_t` is the `L¹`-normalized dilation
-of `K_1` by the factor `(√t)⁻¹`: `K_t(x) = (√t)⁻¹ ^ n K_1((√t)⁻¹ • x)` with `n = dim E`. -/
-theorem heatKernel_eq_mul_heatKernel_one_smul {t : ℝ} (ht : 0 < t) (x : E) :
-    heatKernel t x = (√t)⁻¹ ^ finrank ℝ E * heatKernel 1 ((√t)⁻¹ • x) := by
-  have hst : 0 < √t := sqrt_pos.2 ht
-  have hpow : (√t)⁻¹ ^ finrank ℝ E = t ^ (-(finrank ℝ E : ℝ) / 2) := by
-    rw [sqrt_eq_rpow, ← rpow_natCast, inv_rpow (by positivity), ← rpow_mul ht.le, ← rpow_neg ht.le]
-    ring_nf
-  have hnorm : ‖(√t)⁻¹ • x‖ ^ 2 = ‖x‖ ^ 2 / t := by
-    rw [norm_smul, norm_inv, norm_of_nonneg hst.le, mul_pow, inv_pow, sq_sqrt ht.le]
-    ring
-  rw [heatKernel_apply, heatKernel_apply, hnorm, hpow, mul_one, mul_rpow (by positivity) ht.le]
-  field_simp
-
-/-- At unit time the heat kernel decays faster than any power: `‖x‖ ^ n K_1(x) → 0` as
-`‖x‖ → ∞`. This is the decay hypothesis of Mathlib's peak-function theorem. -/
-theorem tendsto_norm_pow_mul_heatKernel_one :
-    Tendsto (fun x : E => ‖x‖ ^ finrank ℝ E * heatKernel 1 x) (Bornology.cobounded E) (𝓝 0) := by
+/-- At unit time the heat kernel decays faster than any power: `‖x‖ ^ k K_1(x) → 0` as
+`‖x‖ → ∞` for every `k`. For `k = dim E` this is the decay hypothesis of Mathlib's peak-function
+theorem. -/
+theorem tendsto_norm_pow_mul_heatKernel_one (k : ℕ) :
+    Tendsto (fun x : E => ‖x‖ ^ k * heatKernel 1 x) (Bornology.cobounded E) (𝓝 0) := by
   have hnorm := (tendsto_norm_cobounded_atTop (E := E)).mono_right atTop_le_cocompact
   have h := ((tendsto_rpow_abs_mul_exp_neg_mul_sq_cocompact (a := 4⁻¹) (by norm_num)
-    (finrank ℝ E)).comp hnorm).const_mul ((4 * π) ^ (-(finrank ℝ E : ℝ) / 2))
+    k).comp hnorm).const_mul ((4 * π) ^ (-(finrank ℝ E : ℝ) / 2))
   rw [mul_zero] at h
   refine h.congr fun x => ?_
   simp only [Function.comp_apply, abs_norm, rpow_natCast, heatKernel_apply]
@@ -104,7 +90,7 @@ theorem tendsto_setIntegral_compl_ball_heatKernel {r : ℝ} (hr : 0 < r) :
     (continuousAt_const (y := (1 : ℝ))).congr <| eventually_of_mem (ball_mem_nhds 0 hr) fun z hz =>
       by simp [hz]
   have hpeak := tendsto_integral_comp_smul_smul_of_integrable (fun x => (heatKernel_pos one_pos
-    x).le) (integral_heatKernel one_pos) tendsto_norm_pow_mul_heatKernel_one hind hcont
+    x).le) (integral_heatKernel one_pos) (tendsto_norm_pow_mul_heatKernel_one _) hind hcont
   rw [indicator_of_mem (mem_ball_self hr)] at hpeak
   have hsqrt : Tendsto (fun t : ℝ => (√t)⁻¹) (𝓝[>] 0) atTop := by
     refine tendsto_inv_nhdsGT_zero.comp ?_
