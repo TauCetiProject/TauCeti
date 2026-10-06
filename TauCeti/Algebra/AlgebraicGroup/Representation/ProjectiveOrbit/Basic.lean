@@ -67,6 +67,16 @@ theorem counitAlgHom_comp_orbitCoordinates (m : M) :
   ext φ
   simp [Bialgebra.counitAlgHom_apply]
 
+/-- Rescaling the orbit vector multiplies each homogeneous coordinate of degree `n`
+by the `n`th power of the scalar. -/
+theorem orbitCoordinates_smul_of_mem_homogeneousSubmodule (m : M) (r : R)
+    {s : SymmetricAlgebra R (Module.Dual R M)} {n : ℕ}
+    (hs : s ∈ TauCeti.SymmetricAlgebra.homogeneousSubmodule R (Module.Dual R M) n) :
+    orbitCoordinates (H := H) (r • m) s = r ^ n • orbitCoordinates (H := H) m s := by
+  simp only [orbitCoordinates, map_smul]
+  exact TauCeti.SymmetricAlgebra.lift_smul_of_mem_homogeneousSubmodule
+    R (Module.Dual R M) _ r hs
+
 end Coordinates
 
 section Grading
