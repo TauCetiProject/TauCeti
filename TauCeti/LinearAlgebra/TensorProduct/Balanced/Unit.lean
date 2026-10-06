@@ -68,9 +68,11 @@ theorem lid_symm_apply (n : N) : (lid k A N).symm n = tmul k A 1 n := by
 @[simp]
 theorem lid_leftAction (a : A) (x : BalancedTensorProduct k A A N) :
     lid k A N (leftAction k A A N A a x) = a • lid k A N x := by
-  induction x using induction_on with
-  | ht b n => simp [mul_smul]
-  | ha x y hx hy => simp [smul_add, hx, hy]
+  simp only [lid, LinearEquiv.coe_ofLinearMap]
+  apply lift_leftAction k A A N A
+    (Algebra.lsmul k k N (A := A)).toLinearMap (leftAction_balanced k A N)
+  intro a b n
+  simp
 
 /-- The left unit identification preserves any commuting right outer action. -/
 @[simp]
@@ -78,11 +80,11 @@ theorem lid_rightAction (C : Type*) [Semiring C] [Module Cᵐᵒᵖ N]
     [SMulCommClass Cᵐᵒᵖ k N] [SMulCommClass Cᵐᵒᵖ A N]
     (c : Cᵐᵒᵖ) (x : BalancedTensorProduct k A A N) :
     lid k A N (rightAction k A A N C c x) = c • lid k A N x := by
-  induction x using induction_on with
-  | ht a n =>
-    simp only [rightAction_tmul, lid_tmul]
-    exact (smul_comm c a n).symm
-  | ha x y hx hy => simp [smul_add, hx, hy]
+  simp only [lid, LinearEquiv.coe_ofLinearMap]
+  apply lift_rightAction k A A N C
+    (Algebra.lsmul k k N (A := A)).toLinearMap (leftAction_balanced k A N)
+  intro c a n
+  simpa using (smul_comm c a n).symm
 
 end Left
 
@@ -129,21 +131,23 @@ theorem rid_leftAction (B : Type*) [Semiring B] [Module B M]
     [SMulCommClass B k M] [SMulCommClass B Aᵐᵒᵖ M]
     (b : B) (x : BalancedTensorProduct k A M A) :
     rid k A M (leftAction k A M A B b x) = b • rid k A M x := by
-  induction x using induction_on with
-  | ht m a =>
-    simp only [leftAction_tmul, rid_tmul]
-    exact (smul_comm b (op a) m).symm
-  | ha x y hx hy => simp [smul_add, hx, hy]
+  simp only [rid, LinearEquiv.coe_ofLinearMap]
+  apply lift_leftAction k A M A B
+    (((Algebra.lsmul k k M (A := Aᵐᵒᵖ)).toLinearMap.comp
+      (opLinearEquiv k : A ≃ₗ[k] Aᵐᵒᵖ).toLinearMap).flip) (rightAction_balanced k A M)
+  intro b m a
+  simpa using (smul_comm b (op a) m).symm
 
 /-- The right unit identification preserves the right regular outer action. -/
 @[simp]
 theorem rid_rightAction (a : Aᵐᵒᵖ) (x : BalancedTensorProduct k A M A) :
     rid k A M (rightAction k A M A A a x) = a • rid k A M x := by
-  induction x using induction_on with
-  | ht m b =>
-    simp only [rightAction_tmul, rid_tmul, MulOpposite.smul_eq_mul_unop,
-      op_mul, op_unop, mul_smul]
-  | ha x y hx hy => simp [smul_add, hx, hy]
+  simp only [rid, LinearEquiv.coe_ofLinearMap]
+  apply lift_rightAction k A M A A
+    (((Algebra.lsmul k k M (A := Aᵐᵒᵖ)).toLinearMap.comp
+      (opLinearEquiv k : A ≃ₗ[k] Aᵐᵒᵖ).toLinearMap).flip) (rightAction_balanced k A M)
+  intro a m b
+  simp [MulOpposite.smul_eq_mul_unop, op_mul]
 
 end Right
 

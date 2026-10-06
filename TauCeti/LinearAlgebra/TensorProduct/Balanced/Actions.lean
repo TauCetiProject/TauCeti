@@ -160,6 +160,7 @@ variable {M' N' : Type*}
   [AddCommGroup N'] [Module k N'] [Module A N']
 
 /-- Tensoring a map equivariant for the left outer action preserves that action. -/
+@[simp]
 theorem map_leftAction (B : Type*) [Semiring B]
     [Module B M] [SMulCommClass B k M] [SMulCommClass B Aᵐᵒᵖ M]
     [Module B M'] [SMulCommClass B k M'] [SMulCommClass B Aᵐᵒᵖ M']
@@ -175,6 +176,7 @@ theorem map_leftAction (B : Type*) [Semiring B]
   | ha x y hx hy => simp [hx, hy]
 
 /-- Tensoring a map equivariant for the right outer action preserves that action. -/
+@[simp]
 theorem map_rightAction (C : Type*) [Semiring C]
     [Module Cᵐᵒᵖ N] [SMulCommClass Cᵐᵒᵖ k N] [SMulCommClass Cᵐᵒᵖ A N]
     [Module Cᵐᵒᵖ N'] [SMulCommClass Cᵐᵒᵖ k N'] [SMulCommClass Cᵐᵒᵖ A N']
@@ -196,6 +198,7 @@ section Lift
 variable {P : Type*} [AddCommGroup P] [Module k P]
 
 /-- A balanced bilinear map equivariant in the first factor induces a left-equivariant map. -/
+@[simp]
 theorem lift_leftAction (B : Type*) [Semiring B]
     [Module B M] [SMulCommClass B k M] [SMulCommClass B Aᵐᵒᵖ M] [Module B P]
     (f : M →ₗ[k] N →ₗ[k] P)
@@ -208,6 +211,7 @@ theorem lift_leftAction (B : Type*) [Semiring B]
   | ha x y hx hy => simp [smul_add, hx, hy]
 
 /-- A balanced bilinear map equivariant in the second factor induces a right-equivariant map. -/
+@[simp]
 theorem lift_rightAction (C : Type*) [Semiring C]
     [Module Cᵐᵒᵖ N] [SMulCommClass Cᵐᵒᵖ k N] [SMulCommClass Cᵐᵒᵖ A N]
     [Module Cᵐᵒᵖ P]
