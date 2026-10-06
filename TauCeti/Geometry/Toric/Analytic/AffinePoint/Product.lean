@@ -17,8 +17,6 @@ with pairs of complex points of the factors. Restriction to each factor gives th
 map; the inverse multiplies the two monomial values. This is a homeomorphism for arbitrary
 finite monomial generating families, and supplies the affine charts of products of toric fans.
 
-The construction uses `MonoidAlgebra.lift` and `MonoidHom.coprodEquiv`.
-
 ## References
 
 * W. Fulton, *Introduction to Toric Varieties*, §§1.2 and 1.4.

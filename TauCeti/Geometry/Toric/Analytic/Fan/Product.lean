@@ -18,9 +18,7 @@ two fan projections. On every product-cone chart it restricts characters to the 
 factors, and its inverse multiplies their monomial values. The comparison is therefore
 independent of bases and finite semigroup generating families, and also covers empty fans.
 
-Injectivity follows from the scheme-theoretic product theorem and naturality of the
-algebraic–analytic comparison. The affine product homeomorphisms give surjectivity and
-openness. This supplies the topological product comparison for holomorphic toric maps.
+This supplies the topological product comparison for holomorphic toric maps.
 
 ## Main declarations
 
