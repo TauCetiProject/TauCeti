@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.CompactOpen
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.LowRank
+public import TauCeti.NumberTheory.Padics.StrongRankCondition
 import Mathlib.NumberTheory.Padics.LocalField
 import TauCeti.Algebra.Group.PowMonoidHom
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Open
@@ -39,13 +40,6 @@ nontrivial subgroup of local square classes.
 public section
 
 namespace TauCeti
-
-/-- A direct rank-condition witness for a `p`-adic field avoids searching through
-module-derived nontriviality instances. -/
-instance (priority := 1100) instStrongRankConditionPadic (p : ℕ) [Fact p.Prime] :
-    StrongRankCondition ℚ_[p] := by
-  let hfield : Field ℚ_[p] := @NormedField.toField _ (Padic.normedField p)
-  exact @commRing_strongRankCondition _ hfield.toCommRing (@Field.toNontrivial _ hfield)
 
 namespace QuadraticMap
 

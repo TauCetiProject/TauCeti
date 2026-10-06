@@ -38,8 +38,8 @@ pairing. No commutativity is asserted for the Alexander–Whitney diagonal itsel
 ## Implementation notes
 
 The `TauCeti.NatChainComplex` namespace distinguishes this construction from the
-integer-indexed cochain braiding without nesting Mathlib's `ChainComplex` namespace under
-`TauCeti`. The existing cup API is imported from `TauCeti.ChainComplex`.
+integer-indexed cochain braiding. The tensor-cochain and cup formulas use the existing API in
+`TauCeti.ChainComplex`.
 
 The construction follows the signed tensor differential in Mathlib's
 `HomologicalComplex.tensorObj`, and the summand method of `TauCeti.koszulBraidingHom` for
@@ -185,6 +185,8 @@ def koszulBraiding : tensorObj A B ≅ tensorObj B A :=
 /-- The forward map of signed interchange is `koszulBraidingHom`. -/
 @[simp]
 lemma koszulBraiding_hom : (koszulBraiding A B).hom = koszulBraidingHom A B := (rfl)
+
+instance : IsIso (koszulBraidingHom A B) := (koszulBraiding A B).isIso_hom
 
 /-- On the bidegree-`(q, p)` summand, inverse interchange is the inverse coefficient braiding
 multiplied by `(-1)^(p*q)`, followed by the inclusion of the swapped summand. -/
