@@ -16,8 +16,9 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.RootSpace
 # Adjoint weight spaces of the symplectic group
 
 The paired diagonal torus acts on the `(i,j)` entry of a symplectic tangent matrix
-through the difference of the standard weights `εₐ` and `-εₐ`. A cotangent-dual
-vector has adjoint weight `α` exactly when its matrix entries of every other weight
+through `diagonalTorusWeight i - diagonalTorusWeight j`, where the standard weight
+is `εᵢ` on the first block and `-εᵢ` on the second. A cotangent-dual vector has
+adjoint weight `α` exactly when its matrix entries of every other weight
 vanish. This criterion uses the actual torus coaction and distinguishes characters
 even in characteristic two and over rings with nilpotents. It provides the matrix
 criterion for identifying the root lines and normalizing a symplectic pinning.
@@ -46,50 +47,72 @@ noncomputable section
 
 variable {R : Type u} [CommRing R] {m : ℕ}
 
-/-- The standard weights of the paired diagonal torus: `εᵢ` in the first block and
-`-εᵢ` in the second block. These are integral characters, irrespective of the base ring. -/
-def diagonalTorusWeight : (Fin m ⊕ Fin m) → ULift.{u} (Fin m) →₀ ℤ
-  | .inl i => Finsupp.single (ULift.up i) 1
-  | .inr i => -Finsupp.single (ULift.up i) 1
-
-@[simp]
-theorem diagonalTorusWeight_inl (i : Fin m) :
-    diagonalTorusWeight (.inl i) = Finsupp.single (ULift.up i) (1 : ℤ) := (rfl)
-
-@[simp]
-theorem diagonalTorusWeight_inr (i : Fin m) :
-    diagonalTorusWeight (.inr i) = -Finsupp.single (ULift.up i) (1 : ℤ) := (rfl)
-
-private theorem ambientCounitPoint_universalDiagonalTorus :
+private theorem ambientCounitPoint_diagonalTorus {B : Type*} [CommRing B] [Algebra R B]
+    (s : WithConv (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin m) →₀ ℤ)) →ₐ[R] B)) :
     GeneralLinear.counitPointsMulEquiv (m + m)
       (AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R
-        (GeneralLinear.coordinateHopfAlgebra R (m + m))
-        (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin m) →₀ ℤ))))
+        (GeneralLinear.coordinateHopfAlgebra R (m + m)) B)
         (Bialgebra.Quotient.mkBialgHom (definingHopfIdeal R m).toIdeal)
-        (Derivation.pointInCounitAlgebra
-          (CommAlgCat.of R (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin m) →₀ ℤ))))
-          (toConv (diagonalTorusCoordinateMap (R := R) (m := m)).hom.toAlgHom))) =
-      diagGL (fun i => DiagonalizableGroup.charOfPoint
-        (AlgHom.id R (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin m) →₀ ℤ))))
+        (Derivation.pointInCounitAlgebra B
+          (toConv (s.ofConv.comp
+            (diagonalTorusCoordinateMap (R := R) (m := m)).hom.toAlgHom)))) =
+      diagGL (fun i => DiagonalizableGroup.charOfPoint s.ofConv
         (Multiplicative.ofAdd (diagonalTorusWeight (finSumFinEquiv.symm i)))) := by
   apply Matrix.GeneralLinearGroup.ext
   intro i j
   rw [GeneralLinear.counitPointsMulEquiv_apply]
-  -- The quotient and ambient counit indices denote the same coefficient algebra.
+  -- `mapDomain` uses the ambient-indexed copy of B, whereas `pointInCounitAlgebra`
+  -- uses the quotient-indexed copy. They reduce to the same coefficient algebra.
   erw [Bialgebra.CounitAlgebra.algEquivSelf_apply, AlgHom.mapDomain_apply_apply,
     Derivation.pointInCounitAlgebra_apply]
-  rw [ofConv_toConv, ← CommHopfAlgCat.hom_mkQuotient, ← coordinateMap_def]
-  by_cases hij : i = j
-  · subst j
-    obtain ⟨i | i, rfl⟩ := finSumFinEquiv.surjective i
-    · erw [coordinateMap_comp_diagonalTorusCoordinateMap_X_castAdd (R := R) i]
-      simp [diagGL_apply, finSumFinEquiv_apply_left]
-    · rw [finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat]
-      erw [coordinateMap_comp_diagonalTorusCoordinateMap_X_addNat (R := R) i]
-      simp [diagGL_apply, ← Fin.natAdd_eq_addNat, finSumFinEquiv_symm_apply_natAdd,
-        Finsupp.single_neg]
-  · erw [coordinateMap_comp_diagonalTorusCoordinateMap_X_of_ne (R := R) i j hij]
-    simp [diagGL_apply, hij]
+  rw [ofConv_toConv, AlgHom.comp_apply,
+    ← CommHopfAlgCat.hom_mkQuotient, ← coordinateMap_def]
+  -- The preceding point rules erase the category and matrix coercions; restate them
+  -- with their full types so the coordinate-map comparison rewrites at ordinary transparency.
+  change s.ofConv ((diagonalTorusCoordinateMap (R := R) (m := m)).hom
+    ((coordinateMap R m).hom (GeneralLinear.coordinateHopfAlgebraAlgEquiv R (m + m)
+      (GeneralLinear.coordinateRingMap R (m + m) (MvPolynomial.X (i, j)))))) =
+    (diagGL (fun k => DiagonalizableGroup.charOfPoint s.ofConv
+      (Multiplicative.ofAdd (diagonalTorusWeight (finSumFinEquiv.symm k)))) :
+        Matrix (Fin (m + m)) (Fin (m + m)) B) i j
+  rw [← BialgHom.comp_apply, ← _root_.CommHopfAlgCat.hom_comp,
+    coordinateMap_comp_diagonalTorusCoordinateMap, GeneralLinear.weightTorusCoordinateMap_X,
+    Finsupp.equivFunOnFinite_symm_coe]
+  by_cases hij : i = j <;>
+    simp [diagGL_apply, hij, DiagonalizableGroup.charOfPoint_apply_coe]
+
+/-- Over any coefficient algebra, a diagonal-torus point scales each tangent-matrix entry
+by the difference of its two standard weights. -/
+theorem tangentMatrix_adDerivation_diagonalTorus_apply
+    {B : Type*} [CommRing B] [Algebra R B]
+    (s : WithConv (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin m) →₀ ℤ)) →ₐ[R] B))
+    (d : Derivation R (coordinateHopfAlgebra R m)
+      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R m) B))
+    (i j : Fin m ⊕ Fin m) :
+    (tangentMatrix m
+      (Derivation.adDerivation B
+        (Derivation.pointInCounitAlgebra B
+          (toConv (s.ofConv.comp
+            (diagonalTorusCoordinateMap (R := R) (m := m)).hom.toAlgHom))) d) :
+      Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) B) i j =
+      (DiagonalizableGroup.charOfPoint s.ofConv
+        (Multiplicative.ofAdd (diagonalTorusWeight i - diagonalTorusWeight j)) : B) *
+        (tangentMatrix m d : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) B) i j := by
+  rw [tangentMatrix_apply_coe, Matrix.submatrix_apply,
+    HopfIdeal.quotientLieHom_adDerivation,
+    GeneralLinear.tangentMatrix_adDerivation_apply_of_diagGL
+      (ambientCounitPoint_diagonalTorus s)]
+  simp only [Equiv.symm_apply_apply]
+  have hentry : GeneralLinear.tangentMatrix (m + m)
+      (HopfIdeal.quotientLieHom (B := B) (definingHopfIdeal R m) d)
+        (finSumFinEquiv i) (finSumFinEquiv j) =
+      (tangentMatrix m d : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) B) i j := by
+    rw [tangentMatrix_apply, GeneralLinear.tangentMatrix_apply,
+      HopfIdeal.quotientLieHom_apply_apply, coordinateMap_def, CommHopfAlgCat.mkQuotient_apply]
+    exact Bialgebra.CounitAlgebra.algEquivSelf_apply R _ B _
+  rw [hentry]
+  simp only [ofAdd_sub, div_eq_mul_inv, map_mul, map_inv, Units.val_mul]
+  ring
 
 /-- At the universal diagonal-torus point, each matrix entry is multiplied by its
 integral character in the group-algebra basis. -/
@@ -109,25 +132,12 @@ theorem tangentMatrix_adDerivation_universalDiagonalTorus_apply
       MonoidAlgebra.single
         (Multiplicative.ofAdd (diagonalTorusWeight i - diagonalTorusWeight j))
         ((tangentMatrix m d : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R) i j) := by
-  rw [tangentMatrix_apply_coe, Matrix.submatrix_apply,
-    HopfIdeal.quotientLieHom_adDerivation,
-    GeneralLinear.tangentMatrix_adDerivation_apply_of_diagGL
-      ambientCounitPoint_universalDiagonalTorus]
-  simp only [Equiv.symm_apply_apply,
-    DiagonalizableGroup.charOfPoint_apply_coe, DiagonalizableGroup.charOfPoint_apply_inv_coe,
-    AlgHom.id_apply]
-  have hmatrix := congrArg (fun X : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m)
-      (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin m) →₀ ℤ))) => X i j)
-    (tangentMatrix_apply_coe (R := R) m (Derivation.mapValue (Algebra.ofId R _) d))
-  rw [tangentMatrix_mapValue_coe, Matrix.map_apply, Algebra.ofId_apply] at hmatrix
-  simp only [Matrix.submatrix_apply] at hmatrix
-  -- The ambient tangent map retains the quotient-indexed coefficient structure.
-  erw [← hmatrix]
-  rw [mul_comm (MonoidAlgebra.single _ (1 : R)), mul_assoc,
-    MonoidAlgebra.single_mul_single, one_mul]
-  rw [← MonoidAlgebra.of_apply, ← MonoidAlgebra.single_eq_algebraMap_mul_of]
-  congr 1
-  simp [ofAdd_sub, div_eq_mul_inv]
+  have h := tangentMatrix_adDerivation_diagonalTorus_apply
+    (toConv (AlgHom.id R _)) (Derivation.mapValue (Algebra.ofId R _) d) i j
+  rw [ofConv_toConv, AlgHom.id_comp] at h
+  rw [h, tangentMatrix_mapValue_coe, Matrix.map_apply,
+    DiagonalizableGroup.charOfPoint_apply_coe, AlgHom.id_apply, Algebra.ofId_apply]
+  rw [mul_comm, ← MonoidAlgebra.of_apply, ← MonoidAlgebra.single_eq_algebraMap_mul_of]
 
 /-- A cotangent-dual vector has adjoint weight `α` exactly when every entry of a
 different weight in its paired symplectic tangent matrix vanishes. -/

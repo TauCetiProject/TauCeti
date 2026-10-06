@@ -138,6 +138,19 @@ theorem tangentMatrix_apply (d : Derivation R (H (R := R) n)
         (coordinateRingMap R n (MvPolynomial.X (i, j))))) = _
     rfl
 
+/-- Extending coefficients of a general-linear tangent vector maps its matrix entrywise. -/
+@[simp]
+theorem tangentMatrix_mapValue {C : Type*} [CommRing C] [Algebra R C]
+    (φ : B →ₐ[R] C)
+    (d : Derivation R (H (R := R) n)
+      (Bialgebra.CounitAlgebra R (H (R := R) n) B)) :
+    tangentMatrix n (Derivation.mapValue φ d) = (tangentMatrix n d).map φ := by
+  ext i j
+  rw [Matrix.map_apply, tangentMatrix_apply, tangentMatrix_apply, Derivation.mapValue_apply]
+  -- `mapValue_apply` identifies the counit-indexed copies with their coefficient rings.
+  exact (Bialgebra.CounitAlgebra.algEquivSelf_apply R (H (R := R) n) C _).trans
+    (congrArg φ (Bialgebra.CounitAlgebra.algEquivSelf_apply R (H (R := R) n) B _).symm)
+
 private theorem tangentPoint_matrix_snd (d : Derivation R (H (R := R) n)
     (Bialgebra.CounitAlgebra R (H (R := R) n) B)) (i j : Fin n) :
     snd ((pointsMulEquiv (R := R) n
