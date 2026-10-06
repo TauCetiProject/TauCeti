@@ -18,8 +18,9 @@ trivial at the same vertex. This makes the coordinate projection multiplicative.
 The map needs only a commutative base semiring and finitely many vertices. It is onto: a family
 of coefficients is represented by the corresponding linear combination of vertex idempotents.
 It kills every path of positive length and sends each vertex idempotent to the indicator of
-that vertex. Its kernel is identified with the arrow ideal, and the induced quotient equivalence
-is constructed, in `TauCeti.RepresentationTheory.Quiver.SemisimpleQuotient`.
+that vertex. Its kernel is the arrow ideal. Over a commutative ring it induces the equivalence
+`TauCeti.PathAlgebra.quotientArrowIdealAlgEquiv` of the quotient by the arrow ideal with `Q → k`,
+constructed in `TauCeti.RepresentationTheory.Quiver.SemisimpleQuotient`.
 
 ## Main definitions and results
 
@@ -139,9 +140,9 @@ variable (k : Type w) (Q : Type u) [CommSemiring k] [Quiver.{v} Q] [Finite Q]
 
 /-- **The trivial-coefficient homomorphism** of a path algebra: an element is sent to the family of
 its coordinates on the trivial paths, one for each vertex. Concatenation adds lengths, so this is
-multiplicative, and it is the projection onto the quotient by the arrow ideal. Over a field and for
-a finite acyclic quiver that quotient is the semisimple quotient, but no such hypothesis is needed
-here. -/
+multiplicative. It is surjective with kernel the arrow ideal. Over a commutative ring it induces
+`TauCeti.PathAlgebra.quotientArrowIdealAlgEquiv`, the equivalence of the quotient by the arrow ideal
+with `Q → k` constructed in `TauCeti.RepresentationTheory.Quiver.SemisimpleQuotient`. -/
 noncomputable def trivialCoeff : pathAlgebra k Q →ₐ[k] (Q → k) where
   toFun f v := (pathAlgebraBasis k Q).repr f ⟨v, v, Quiver.Path.nil⟩
   map_one' := funext fun v => repr_nil_one v
