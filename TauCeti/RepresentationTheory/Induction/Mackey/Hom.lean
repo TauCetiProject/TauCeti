@@ -66,6 +66,28 @@ noncomputable def indHomMackeyLinearEquiv (A : Rep.{u} k H) (B : Rep.{u} k K) :
     (fun D : DoubleCoset.Quotient (H : Set G) (K : Set G) ↦ Rep.mackeySummand K H D.out B)
   exact f.trans (g.trans (h.trans (LinearEquiv.piCongrRight fun D ↦ e D.out)))
 
+open scoped Classical in
+/-- A double-coset component is obtained by Frobenius reciprocity, the Mackey decomposition,
+projection onto that summand, and the finite-index induction–coinduction adjunction. -/
+@[simp]
+theorem indHomMackeyLinearEquiv_apply (A : Rep.{u} k H) (B : Rep.{u} k K)
+    (φ : Rep.ind H.subtype A ⟶ Rep.ind K.subtype B)
+    (D : DoubleCoset.Quotient (H : Set G) (K : Set G)) :
+    indHomMackeyLinearEquiv A B φ D =
+      letI := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (K : Set G))
+      (Rep.resCoindHomEquiv ((mackeySubgroup D.out K H).subgroupOf H).subtype A
+        (Rep.res (mackeyToH D.out K H) B)).symm
+          ((Rep.homDirectSumLinearEquiv A
+            (fun E : DoubleCoset.Quotient (H : Set G) (K : Set G) ↦
+              Rep.mackeySummand K H E.out B)
+            ((Rep.indResHomEquiv H.subtype A (Rep.ind K.subtype B) φ) ≫
+              (Rep.mackeyDecomposition (K := H) B).hom) D) ≫
+            (Rep.indCoindIso (Rep.res (mackeyToH D.out K H) B)).hom) := by
+  classical
+  let := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (K : Set G))
+  simp only [indHomMackeyLinearEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.piCongrRight_apply, Linear.homCongr_apply, Iso.refl_inv, Category.id_comp]
+
 end Rep
 
 namespace FDRep
@@ -88,5 +110,25 @@ noncomputable def indHomMackeyLinearEquiv (A : FDRep k H) (B : FDRep k K) :
     LinearEquiv.piCongrRight fun D ↦ FDRep.forget₂HomLinearEquiv
       (resFDRep ((mackeySubgroup D.out K H).subgroupOf H) A)
       ((Action.res (FGModuleCat k) (mackeyToH D.out K H)).obj B)
+
+/-- Each finite-dimensional component is the corresponding `Rep` component, transported
+through the forgetful Hom equivalence and the induced-model comparison isomorphisms. -/
+@[simp]
+theorem indHomMackeyLinearEquiv_apply (A : FDRep k H) (B : FDRep k K)
+    (φ : indFDRep A ⟶ indFDRep B)
+    (D : DoubleCoset.Quotient (H : Set G) (K : Set G)) :
+    indHomMackeyLinearEquiv A B φ D =
+      FDRep.forget₂HomLinearEquiv
+        (resFDRep ((mackeySubgroup D.out K H).subgroupOf H) A)
+        ((Action.res (FGModuleCat k) (mackeyToH D.out K H)).obj B)
+        (Rep.indHomMackeyLinearEquiv
+          ((forget₂ (FDRep k H) (Rep k H)).obj A)
+          ((forget₂ (FDRep k K) (Rep k K)).obj B)
+          ((indFDRepForgetIso A).inv ≫
+            (FDRep.forget₂HomLinearEquiv (indFDRep A) (indFDRep B)).symm φ ≫
+            (indFDRepForgetIso B).hom) D) := by
+  simp only [indHomMackeyLinearEquiv, LinearEquiv.trans_apply,
+    Linear.homCongr_apply, Category.assoc]
+  exact LinearEquiv.piCongrRight_apply _ _ D
 
 end FDRep

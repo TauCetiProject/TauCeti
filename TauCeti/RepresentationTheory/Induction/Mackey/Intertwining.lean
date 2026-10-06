@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.DoubleCoset.Identity
 public import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
-public import TauCeti.RepresentationTheory.Induction.Mackey.Basic
 public import TauCeti.RepresentationTheory.Induction.Mackey.Hom
 
 /-!
@@ -178,9 +177,12 @@ terms of the remaining double cosets.
 For the character of an irreducible representation over an algebraically closed field the first
 summand is `1` (`TauCeti.ClassFunction.characterPairing_ofFDRep_self`), so the self-pairing of
 `Ind_H^G f` is `1` exactly when the remaining terms *sum* to zero.  That the terms then vanish
-one by one is a separate matter: it needs them to be nonnegative, which is what
-`TauCeti.finrank_hom_indFDRep_mackey_erase` supplies in characteristic zero by reading them as
-natural-number dimensions.  In that shape the identity is the Mackey irreducibility criterion. -/
+one by one is a separate matter: `TauCeti.finrank_hom_indFDRep_mackey_erase` gives a formula
+of natural-number dimensions over every field, where a zero sum forces every summand to vanish.
+The character-pairing identity below separately assumes that the group order is invertible in
+`k`; in positive characteristic, vanishing of the sum of dimension casts alone does not imply
+vanishing of the dimensions. The natural-number formula underlies the Mackey irreducibility
+criterion. -/
 theorem characterPairing_ind_ind_mackey_erase [Fintype G] (hG : IsUnit (Nat.card G : k))
     (f : ClassFunction k H) :
     ClassFunction.characterPairing (Subgroup.indClassFunction H f) (Subgroup.indClassFunction H f) =

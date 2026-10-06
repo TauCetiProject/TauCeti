@@ -24,7 +24,7 @@ namespace Rep
 
 universe v
 
-variable {k G : Type*} [CommRing k] [Monoid G] {ι : Type v} [Fintype ι]
+variable {k G : Type*} [CommSemiring k] [Monoid G] {ι : Type v} [Fintype ι]
   (A : Rep.{v} k G) (B : ι → Rep.{v} k G)
 
 /-- Morphisms into a finite direct sum are families of morphisms into its summands. -/
@@ -81,7 +81,11 @@ theorem homDirectSumLinearEquiv_apply
     (φ : A ⟶ Rep.of (directSum fun i ↦ (B i).ρ)) (i : ι) (x : A) :
     (homDirectSumLinearEquiv A B φ i).hom x = φ.hom x i := by
   classical
-  rfl
+  simp only [homDirectSumLinearEquiv, LinearEquiv.coe_mk, LinearMap.coe_mk,
+    AddHom.coe_mk, Rep.hom_ofHom,
+    IntertwiningMap.coe_mk, LinearMap.comp_apply,
+    LinearMap.proj_apply, LinearEquiv.coe_coe, IntertwiningMap.coe_toLinearMap,
+    DirectSum.linearEquivFunOnFintype_apply]
 
 /-- The inverse assembles the supplied component morphisms. -/
 @[simp]
