@@ -248,6 +248,30 @@ theorem induction_on (h : StellarEquivalentUpToRelabeling K L)
   | symm A B _ ih => exact symm A B ih
   | trans A B C _ _ ih₁ ih₂ => exact trans A B C ih₁ ih₂
 
+/-- A bijection of vertex types transports intrinsic stellar equivalence. -/
+theorem map_equiv {κ : Type*} [DecidableEq κ]
+    (h : StellarEquivalentUpToRelabeling K L) (e : ι ≃ κ) :
+    StellarEquivalentUpToRelabeling (K.map e) (L.map e) := by
+  apply h.induction_on
+  · intro A B f g he
+    let E := Equiv.sumCongr e (Equiv.refl ℕ)
+    let f' : κ ↪ κ ⊕ ℕ := e.symm.toEmbedding.trans (f.trans E.toEmbedding)
+    let g' : κ ↪ κ ⊕ ℕ := e.symm.toEmbedding.trans (g.trans E.toEmbedding)
+    apply of_common_relabeling f' g'
+    have hf : (f' : κ → κ ⊕ ℕ) ∘ e = E ∘ f := by
+      funext x
+      simp [f']
+    have hg : (g' : κ → κ ⊕ ℕ) ∘ e = E ∘ g := by
+      funext x
+      simp [g']
+    simpa only [map_map, hf, hg] using he.map E E.injective
+  · intro A
+    exact .refl _
+  · intro A B h
+    exact h.symm
+  · intro A B C h h'
+    exact h.trans h'
+
 /-- Intrinsically stellar equivalent complexes have the same dimension. -/
 theorem dimension_eq (h : StellarEquivalentUpToRelabeling K L) : dimension L = dimension K := by
   apply induction_on h
