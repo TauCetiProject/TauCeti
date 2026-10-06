@@ -25,7 +25,8 @@ the intersection nor acyclicity in higher degrees is assumed. The class of a sec
 is characterized by the Mayer–Vietoris connecting homomorphism, fixing its sign.
 
 The construction uses Mathlib's Mayer–Vietoris sequence and first isomorphism theorem
-for abelian groups, and `cohomologyZeroSectionsEquiv` for the degree-zero terms.
+for abelian groups, and `cohomologyPresheafZeroIso` to identify the degree-zero terms
+and their restriction maps with sections.
 
 Use `TauCeti.CategoryTheory.mayerVietorisSectionsQuotientEquiv S F h₂ h₃` for the
 quotient comparison, where `S` is the square and `F` is the coefficient sheaf.
@@ -73,13 +74,14 @@ lemma mayerVietorisSectionsDifference_apply
 /-- The first-cohomology class of a section on the intersection, with the sign of
 Mathlib's Mayer–Vietoris connecting homomorphism. -/
 def mayerVietorisSectionClass : F.obj.obj (op S.X₁) →+ F.H' 1 S.X₄ :=
-  (S.δ F 0 1 rfl).hom.comp (cohomologyZeroSectionsEquiv F S.X₁).symm.toAddMonoidHom
+  (S.δ F 0 1 rfl).hom.comp ((cohomologyPresheafZeroIso F).inv.app (op S.X₁)).hom
 
 @[simp]
 lemma mayerVietorisSectionClass_apply (s : F.obj.obj (op S.X₁)) :
     mayerVietorisSectionClass S F s =
-      S.δ F 0 1 rfl ((cohomologyZeroSectionsEquiv F S.X₁).symm s) :=
-  (rfl)
+      S.δ F 0 1 rfl ((cohomologyZeroSectionsEquiv F S.X₁).symm s) := by
+  simp only [mayerVietorisSectionClass, AddMonoidHom.comp_apply,
+    cohomologyPresheafZeroIso_inv_app_apply]
 
 private lemma difference_eq_fromBiprod
     (x₂ : F.H' 0 S.X₂) (x₃ : F.H' 0 S.X₃) :
@@ -99,6 +101,7 @@ private lemma difference_eq_fromBiprod
 lemma mayerVietorisSectionClass_eq_zero_iff (s : F.obj.obj (op S.X₁)) :
     mayerVietorisSectionClass S F s = 0 ↔
       ∃ s₂ s₃, F.obj.map S.f₁₂.op s₂ - F.obj.map S.f₁₃.op s₃ = s := by
+  rw [mayerVietorisSectionClass_apply]
   have hex : Function.Exact (S.fromBiprod F 0) (S.δ F 0 1 rfl) :=
     (ShortComplex.ab_exact_iff_function_exact _).mp
       ((S.sequence_exact F 0 1 rfl).exact' 1 2 3)
@@ -133,7 +136,7 @@ lemma mayerVietorisSectionClass_surjective
     (h₂ : Subsingleton (F.H' 1 S.X₂)) (h₃ : Subsingleton (F.H' 1 S.X₃)) :
     Function.Surjective (mayerVietorisSectionClass S F) :=
   ((AddCommGrpCat.epi_iff_surjective _).mp (S.epi_δ F 0 1 rfl h₂ h₃)).comp
-    (cohomologyZeroSectionsEquiv F S.X₁).symm.surjective
+    ((cohomologyPresheafZeroIso F).symm.app (op S.X₁)).addCommGroupIsoToAddEquiv.surjective
 
 /-- For a two-member cover whose members have vanishing first cohomology, first
 cohomology is sections on the intersection modulo differences of local sections. -/
