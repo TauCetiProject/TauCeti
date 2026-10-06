@@ -138,7 +138,7 @@ noncomputable def upperUnipotent (B : Matrix (Fin m) (Fin m) R) (hB : B.IsSymm) 
     GLSymplecticFin m R :=
   (mulEquivGLSymplectic m R).symm
     ((GLSymplectic.mulEquivSymplecticGroup (Fin m) R).symm
-      ⟨Matrix.fromBlocks 1 B 0 1, GLSymplectic.fromBlocks_upper_mem B hB.eq⟩)
+      ⟨Matrix.fromBlocks 1 B 0 1, SymplecticGroup.fromBlocks_upper_mem hB.eq⟩)
 
 /-- The lower unitriangular symplectic element with symmetric lower-left block `C`.
 
@@ -148,7 +148,7 @@ noncomputable def lowerUnipotent (C : Matrix (Fin m) (Fin m) R) (hC : C.IsSymm) 
     GLSymplecticFin m R :=
   (mulEquivGLSymplectic m R).symm
     ((GLSymplectic.mulEquivSymplecticGroup (Fin m) R).symm
-      ⟨Matrix.fromBlocks 1 0 C 1, GLSymplectic.fromBlocks_lower_mem C hC.eq⟩)
+      ⟨Matrix.fromBlocks 1 0 C 1, SymplecticGroup.fromBlocks_lower_mem hC.eq⟩)
 
 /-- In sum coordinates, `upperUnipotent B` is the block matrix `[1 B; 0 1]`. -/
 @[simp]
@@ -157,7 +157,7 @@ theorem coe_mulEquivGLSymplectic_upperUnipotent (B : Matrix (Fin m) (Fin m) R)
     Equiv.reindexGL finSumFinEquiv.symm R
         ((upperUnipotent B hB : GLSymplecticFin m R) : GL (Fin (m + m)) R) =
       GLSymplectic.ofSymplecticGroup (Fin m) R
-        ⟨Matrix.fromBlocks 1 B 0 1, GLSymplectic.fromBlocks_upper_mem B hB.eq⟩ := by
+        ⟨Matrix.fromBlocks 1 B 0 1, SymplecticGroup.fromBlocks_upper_mem hB.eq⟩ := by
   rw [← coe_mulEquivGLSymplectic]
   apply Matrix.GeneralLinearGroup.ext
   intro i j
@@ -171,7 +171,7 @@ theorem coe_mulEquivGLSymplectic_lowerUnipotent (C : Matrix (Fin m) (Fin m) R)
     Equiv.reindexGL finSumFinEquiv.symm R
         ((lowerUnipotent C hC : GLSymplecticFin m R) : GL (Fin (m + m)) R) =
       GLSymplectic.ofSymplecticGroup (Fin m) R
-        ⟨Matrix.fromBlocks 1 0 C 1, GLSymplectic.fromBlocks_lower_mem C hC.eq⟩ := by
+        ⟨Matrix.fromBlocks 1 0 C 1, SymplecticGroup.fromBlocks_lower_mem hC.eq⟩ := by
   rw [← coe_mulEquivGLSymplectic]
   apply Matrix.GeneralLinearGroup.ext
   intro i j

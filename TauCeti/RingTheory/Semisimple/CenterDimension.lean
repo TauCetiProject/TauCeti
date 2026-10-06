@@ -15,7 +15,8 @@ public import TauCeti.RingTheory.Semisimple.RegularIsotypicComponent
 
 A semisimple ring `R` has finitely many isomorphism classes of simple modules, indexed by the
 isotypic components of the regular module (`TauCeti.simpleSubmoduleClassesEquiv`). When `R` is an
-algebra over a field `k`, this file bounds that number by the dimension of the center:
+algebra over a field `k` with finite-dimensional center, this file bounds that number by the
+dimension of the center:
 
 `Nat.card (isotypicComponents R R) ≤ Module.finrank k (Subalgebra.center k R)`.
 
@@ -36,7 +37,8 @@ family are linearly independent, so the components are at most as many as the di
 center.
 
 Nothing here needs `R` itself to be finite-dimensional: only the center is assumed finite as a
-`k`-module, which is what a group algebra supplies through its class-sum basis.
+`k`-module, which is what a group algebra supplies through its class-sum basis. The central-element
+construction works over any commutative semiring of scalars.
 
 ## Main results
 
@@ -52,8 +54,6 @@ Nothing here needs `R` itself to be finite-dimensional: only the center is assum
 * T. Y. Lam, *A First Course in Noncommutative Rings*, GTM 131, §3.
 * C. W. Curtis and I. Reiner, *Representation Theory of Finite Groups and Associative Algebras*,
   §25.
-* [Semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md),
-  Layer 2, "Artin-Wedderburn, assembled with uniqueness".
 -/
 
 public section
@@ -71,13 +71,13 @@ theorem isTwoSided_of_mem_isotypicComponents {c : Ideal R} (hc : c ∈ isotypicC
     c.IsTwoSided :=
   isFullyInvariant_iff_isTwoSided.mp (Submodule.IsFullyInvariant.of_mem_isotypicComponents hc)
 
-section Field
+section CommSemiring
 
-variable (k R : Type*) [Field k] [Ring R] [Algebra k R] [IsSemisimpleRing R]
+variable (k R : Type*) [CommSemiring k] [Ring R] [Algebra k R] [IsSemisimpleRing R]
 
 /-- The decomposition of `1` along the isotypic components of the regular module: a family of
-nonzero central elements, one in each component. This is the whole content of the section; the two
-public statements below read off the parts of it that they need. -/
+nonzero central elements, one in each component. The public statements below read off the parts
+of this family that they need. -/
 private theorem exists_center_family :
     ∃ e : isotypicComponents R R → R, (∀ c, e c ∈ c.1) ∧ (∀ c, e c ≠ 0) ∧
       ∀ c, e c ∈ Subalgebra.center k R := by
@@ -126,6 +126,12 @@ theorem exists_ne_zero_mem_center_of_mem_isotypicComponents {c : Submodule R R}
   obtain ⟨e, hmem, hne, hcen⟩ := exists_center_family k R
   exact ⟨e ⟨c, hc⟩, hmem ⟨c, hc⟩, hne ⟨c, hc⟩, hcen ⟨c, hc⟩⟩
 
+end CommSemiring
+
+section Field
+
+variable (k R : Type*) [Field k] [Ring R] [Algebra k R] [IsSemisimpleRing R]
+
 /-- **The center bounds the number of isomorphism classes of simple modules.** Over a semisimple
 `k`-algebra whose center is finite-dimensional, the isotypic components of the regular module, which
 `TauCeti.simpleSubmoduleClassesEquiv` identifies with the isomorphism classes of simple modules, are
@@ -141,16 +147,11 @@ theorem card_isotypicComponents_le_finrank_center [Module.Finite k (Subalgebra.c
   have hind : iSupIndep fun c : isotypicComponents R R ↦ c.1 :=
     (sSupIndep_iff _).mp (sSupIndep_isotypicComponents R R)
   -- The chosen elements are linearly independent over `k`, one from each independent summand.
-  have hli : LinearIndependent k e := by
-    rw [linearIndependent_iff']
-    intro s g hg i hi
-    have hmem' : ∀ c ∈ s, g c • e c ∈ c.1 := fun c _ ↦ by
-      simpa only [Algebra.smul_def, smul_eq_mul] using
-        c.1.smul_mem (algebraMap k R (g c)) (hmem c)
-    have hzero := (iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero _).mp hind s
-      (fun c ↦ g c • e c) hmem' hg i hi
-    by_contra hgi
-    exact hne i (by rw [← one_smul k (e i), ← inv_mul_cancel₀ hgi, mul_smul, hzero, smul_zero])
+  have hind' : iSupIndep fun c : isotypicComponents R R ↦ c.1.restrictScalars k := by
+    intro c
+    simpa only [← Submodule.restrictScalars_iSup, disjoint_iff,
+      ← Submodule.restrictScalars_inf, Submodule.restrictScalars_eq_bot_iff] using hind c
+  have hli : LinearIndependent k e := hind'.linearIndependent _ hmem hne
   -- Read the independence inside the center and count.
   have hli' : LinearIndependent k fun c ↦ (⟨e c, hcen c⟩ : Subalgebra.center k R) :=
     LinearIndependent.of_comp (Subalgebra.center k R).val.toLinearMap hli

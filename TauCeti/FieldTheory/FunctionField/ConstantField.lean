@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.AlgebraicClosure
 public import TauCeti.FieldTheory.FunctionField.Basic
+import Mathlib.FieldTheory.RatFunc.IntermediateField
 
 /-!
 # The constant field of an algebraic function field
@@ -263,5 +264,13 @@ theorem algebraicClosure_ratFunc (K : Type*) [Field K] :
 /-- `k` is integrally closed in the rational function field `k(x)`. -/
 instance isIntegrallyClosedIn_ratFunc : IsIntegrallyClosedIn k (RatFunc k) :=
   algebraicClosure_eq_bot_iff_isIntegrallyClosedIn.1 (algebraicClosure_ratFunc k)
+
+/-- **Exactness passes to intermediate fields**: if `k` is integrally closed in `F`, it is
+integrally closed in every intermediate field of `F / k`. -/
+theorem isIntegrallyClosedIn_intermediateField (hex : IsIntegrallyClosedIn k F)
+    (E : IntermediateField k F) : IsIntegrallyClosedIn k E :=
+  isIntegrallyClosedIn_iff.mpr ⟨(algebraMap k E).injective, fun {z} hz ↦ by
+    obtain ⟨c, hc⟩ := (isIntegrallyClosedIn_iff.mp hex).2 (hz.map E.val)
+    exact ⟨c, Subtype.ext (by simpa using hc)⟩⟩
 
 end TauCeti

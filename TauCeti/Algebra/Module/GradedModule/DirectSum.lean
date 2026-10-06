@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.GradedMulAction
+public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.Algebra.DirectSum.Internal
 
@@ -17,12 +19,21 @@ in the ambient direct sum, so membership is characterized componentwise.
 
 This is the direct-sum compatibility target in Layer 0 of the `DGAInfinity` roadmap.
 
+The file also records how the decomposition of a graded module interacts with the action of a
+graded ring: `TauCeti.DirectSum.coe_decompose_smul_add_of_right_mem` computes the components of
+`a • x` for homogeneous `x`.
+
 ## Main definitions
 
 * `TauCeti.InternalGrading.directSumPieceInclusion`: the inclusion of homogeneous summands of one
   fixed degree into the ambient direct sum.
 * `TauCeti.InternalGrading.directSumPiece`: the corresponding homogeneous submodule.
 * `TauCeti.InternalGrading.directSum`: the canonical internal grading on an external direct sum.
+
+## Main results
+
+* `TauCeti.DirectSum.coe_decompose_smul_add_of_right_mem`: the components of `a • x`, for `x`
+  homogeneous in a graded module, are the products of the components of `a` with `x`.
 
 ## References
 
@@ -252,5 +263,35 @@ theorem lof_mem_directSumPiece (G : ∀ i, InternalGrading R (M i)) (p : ℤ) (i
   exact TauCeti.DirectSum.lof_mem_piSubmodule (fun i ↦ (G i).piece p) i x
 
 end InternalGrading
+
+/-! ### Decomposition and the action of a graded ring -/
+
+namespace DirectSum
+
+open _root_.DirectSum
+
+variable {ι A M σA σM : Type*} [DecidableEq ι] [AddRightCancelMonoid ι]
+  [Semiring A] [AddCommMonoid M] [Module A M]
+  [SetLike σA A] [AddSubmonoidClass σA A] (𝒜 : ι → σA) [GradedRing 𝒜]
+  [SetLike σM M] [AddSubmonoidClass σM M] (ℳ : ι → σM) [Decomposition ℳ]
+  [SetLike.GradedSMul 𝒜 ℳ]
+
+/-- In a graded module over a graded ring, the degree-`i + j` component of `a • x`, for `x`
+homogeneous of degree `j`, is the degree-`i` component of `a` acting on `x`. This is the module
+analogue of `DirectSum.coe_decompose_mul_add_of_right_mem`. -/
+theorem coe_decompose_smul_add_of_right_mem {a : A} {x : M} {i j : ι} (hx : x ∈ ℳ j) :
+    (decompose ℳ (a • x) (i + j) : M) = (decompose 𝒜 a i : A) • x := by
+  classical
+  have hmem (l : ι) : (decompose 𝒜 a l : A) • x ∈ ℳ (l + j) :=
+    SetLike.GradedSMul.smul_mem (decompose 𝒜 a l).2 hx
+  conv_lhs => rw [← sum_support_decompose 𝒜 a, Finset.sum_smul, decompose_sum]
+  rw [DFinsupp.finsetSum_apply, AddSubmonoidClass.coe_finsetSum, Finset.sum_eq_single i]
+  · exact decompose_of_mem_same ℳ (hmem i)
+  · exact fun l _ hl ↦ decompose_of_mem_ne ℳ (hmem l) fun h ↦ hl (add_right_cancel h)
+  · intro hi
+    rw [DFinsupp.notMem_support_iff.mp hi, ZeroMemClass.coe_zero, zero_smul, decompose_zero,
+      zero_apply, ZeroMemClass.coe_zero]
+
+end DirectSum
 
 end TauCeti

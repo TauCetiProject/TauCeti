@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
+public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 -- Private: the derivative sum and scalar rules are used only inside the proofs below.
 import Mathlib.Analysis.Calculus.FDeriv.Add
 
@@ -18,7 +19,8 @@ Mathlib defines `gradient f x`, written `∇ f x`, as the Riesz representative
 function on an inner product space, and develops its differential calculus. This file records the
 three consequences of the defining formula that come from `toDual` being a *conjugate-linear
 isometric equivalence*: the gradient has the same norm as the derivative, it is additive, and it
-is conjugate-homogeneous.
+is conjugate-homogeneous. Since `toDual` is moreover continuous, the gradient of an arbitrary
+function is Borel measurable, as the Fréchet derivative is.
 
 These are exactly what is needed to see a family of gradients as a conjugate-linear,
 norm-preserving image of the corresponding family of derivatives. Over `ℝ` it is linear; for
@@ -31,6 +33,7 @@ theorem about `‖Dφ‖`.
 * `TauCeti.gradient_add`: additivity of the gradient at a point of differentiability.
 * `TauCeti.gradient_const_smul`: `∇ (c • f) x = conj c • ∇ f x`.
 * `TauCeti.gradient_of_notMem_tsupport`: the gradient vanishes off the topological support.
+* `TauCeti.measurable_gradient`: the gradient of any function is measurable.
 * `ContDiff.gradient_right`: over `ℝ`, where `toDual` is linear, the gradient of a `C^{m+1}`
   function is `Cᵐ`.
 -/
@@ -70,6 +73,17 @@ does. -/
 @[simp]
 theorem gradient_of_notMem_tsupport (h : x ∉ tsupport f) : ∇ f x = 0 := by
   rw [gradient, fderiv_of_notMem_tsupport 𝕜 h, map_zero]
+
+/-- The gradient of an arbitrary function is Borel measurable, as is its Fréchet derivative
+(`measurable_fderiv`); no differentiability is assumed, the gradient being `0` where `f` is not
+differentiable. -/
+@[fun_prop]
+theorem measurable_gradient [MeasurableSpace F] [BorelSpace F] (f : F → 𝕜) : Measurable (∇ f) := by
+  have h : ∇ f = (toDual 𝕜 F).symm ∘ fderiv 𝕜 f := by
+    ext1 x
+    rw [Function.comp_apply, ← toDual_gradient, LinearIsometryEquiv.symm_apply_apply]
+  rw [h]
+  exact (toDual 𝕜 F).symm.continuous.measurable.comp (measurable_fderiv 𝕜 f)
 
 /-- Over `ℝ` the Riesz isomorphism is a linear isometry, so the gradient of a `C^{m+1}` function
 is `Cᵐ`, just as its Fréchet derivative is. -/

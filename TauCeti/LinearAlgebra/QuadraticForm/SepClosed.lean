@@ -7,22 +7,24 @@ module
 
 public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
+public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 
 /-!
 # Quadratic forms over a separably closed field
 
 This file proves that a finite-dimensional nondegenerate quadratic form over a separably closed
-field of characteristic different from two is equivalent to a sum of squares.
+field of characteristic different from two is equivalent to a sum of squares, so that such forms
+are classified up to equivalence by their dimension.
 
-## Main result
+## Main results
 
 * `QuadraticForm.equivalent_weightedSumSquares_of_isSepClosed`: a nondegenerate quadratic form is
   equivalent to the standard sum of squares.
+* `QuadraticForm.equivalent_of_finrank_eq_of_isSepClosed`: nondegenerate quadratic forms on spaces
+  of the same dimension are equivalent.
 
 ## References
 
-* [Tau Ceti Roadmap](https://github.com/TauCetiProject/TauCetiRoadmap), Representation Theory /
-  Spin Representations, Layer 4, "The spin module".
 * Mathlib's `QuadraticForm.isometryEquivSumSquaresUnits` and
   `QuadraticForm.equivalent_weightedSumSquares_of_isAlgClosed` supply the normalization argument
   adapted here from algebraically closed to separably closed fields.
@@ -56,5 +58,19 @@ theorem equivalent_weightedSumSquares_of_isSepClosed [Invertible (2 : K)] {M : T
   classical
   let ⟨w, ⟨e⟩⟩ := Q.equivalent_weightedSumSquares_units_of_nondegenerate' hQ
   exact ⟨e.trans (isometryEquivSumSquaresUnits w)⟩
+
+/-- Nondegenerate quadratic forms over a separably closed field of characteristic different from
+two, on possibly different finite-dimensional spaces, are equivalent when their dimensions
+agree. -/
+theorem equivalent_of_finrank_eq_of_isSepClosed [Invertible (2 : K)] {M N : Type*}
+    [AddCommGroup M] [Module K M] [FiniteDimensional K M]
+    [AddCommGroup N] [Module K N] [FiniteDimensional K N]
+    (Q : QuadraticForm K M) (R : QuadraticForm K N) (hQ : Q.Nondegenerate)
+    (hR : R.Nondegenerate) (h : Module.finrank K M = Module.finrank K N) : Q.Equivalent R := by
+  have hQ' := Q.equivalent_weightedSumSquares_of_isSepClosed
+    (nondegenerate_associated_iff.mpr hQ).1
+  rw [h] at hQ'
+  exact hQ'.trans (R.equivalent_weightedSumSquares_of_isSepClosed
+    (nondegenerate_associated_iff.mpr hR).1).symm
 
 end QuadraticForm

@@ -37,6 +37,29 @@ def quinticF20OrbitRepresentatives : Finset (Perm (Fin 5)) :=
   {1, swap 2 3, swap 3 4, swap 2 4, swap 2 3 * swap 3 4,
     swap 3 4 * swap 2 3}
 
+/-- The orbit representatives are the identity and the five nontrivial permutations of the
+last three indices. -/
+@[simp]
+theorem mem_quinticF20OrbitRepresentatives {σ : Perm (Fin 5)} :
+    σ ∈ quinticF20OrbitRepresentatives ↔
+      σ = 1 ∨ σ = swap 2 3 ∨ σ = swap 3 4 ∨ σ = swap 2 4 ∨ σ = swap 2 3 * swap 3 4 ∨
+        σ = swap 3 4 * swap 2 3 := by
+  simp only [quinticF20OrbitRepresentatives, Finset.mem_insert, Finset.mem_singleton]
+
+/-- There are six orbit representatives, one for each conjugate of the invariant. -/
+theorem card_quinticF20OrbitRepresentatives : quinticF20OrbitRepresentatives.card = 6 := by
+  decide
+
+/-- A product over the orbit representatives, expanded into its six factors. -/
+theorem prod_quinticF20OrbitRepresentatives {M : Type*} [CommMonoid M] (f : Perm (Fin 5) → M) :
+    ∏ σ ∈ quinticF20OrbitRepresentatives, f σ =
+      f 1 * f (swap 2 3) * f (swap 3 4) * f (swap 2 4) * f (swap 2 3 * swap 3 4) *
+        f (swap 3 4 * swap 2 3) := by
+  rw [quinticF20OrbitRepresentatives]
+  repeat rw [Finset.prod_insert (by decide)]
+  rw [Finset.prod_singleton]
+  simp only [mul_assoc]
+
 noncomputable section
 
 private def orbitTestPoint : Fin 5 → ℤ := ![1, 2, 4, 8, 16]
@@ -87,12 +110,10 @@ theorem universalResolvent_quinticF20Invariant :
   rw [MvPolynomial.universalResolvent_def, renameOrbit_quinticF20Invariant]
   exact Finset.prod_image (by
     intro σ hσ τ hτ h
-    have hinj : quinticF20OrbitRepresentatives.card = 6 := by
-      decide
     have himg : (quinticF20OrbitRepresentatives.image
         (fun (σ : Perm (Fin 5)) => MvPolynomial.rename (⇑σ) quinticF20Invariant)).card = 6 := by
       rw [← renameOrbit_quinticF20Invariant, card_renameOrbit_quinticF20Invariant]
-    exact (Finset.card_image_iff.mp (by rw [himg, hinj])) hσ hτ h)
+    exact (Finset.card_image_iff.mp (by rw [himg, card_quinticF20OrbitRepresentatives])) hσ hτ h)
 
 end
 

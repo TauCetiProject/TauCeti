@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Finset.Sum
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
+public import TauCeti.Data.Finset.Sum
 
 /-!
 # Joins of abstract simplicial complexes
@@ -111,6 +111,55 @@ theorem join_mono (hK : K ≤ K') (hL : L ≤ L') : join K L ≤ join K' L' := b
   rintro σ ⟨hσ, hs, ht⟩
   exact ⟨hσ, hs.imp_right (fun h => hK h), ht.imp_right (fun h => hL h)⟩
 
+/-- Mapping the vertex types separately commutes with the join. Injectivity is unnecessary. -/
+@[simp]
+theorem map_join {γ δ : Type*} [DecidableEq γ] [DecidableEq δ] (f : α → γ) (g : β → δ) :
+    (join K L).map (Sum.map f g) = join (K.map f) (L.map g) := by
+  classical
+  refine SetLike.ext fun τ => ?_
+  constructor
+  · rintro ⟨σ, hσ, rfl⟩
+    obtain ⟨hne, hK, hL⟩ := mem_join_iff.mp hσ
+    refine mem_join_iff.mpr ⟨hne.image _, ?_, ?_⟩
+    · rw [Finset.toLeft_image_sumMap]
+      exact hK.elim (fun h => Or.inl (by simp [h]))
+        (fun h => Or.inr (mem_map_iff.mpr ⟨_, h, rfl⟩))
+    · rw [Finset.toRight_image_sumMap]
+      exact hL.elim (fun h => Or.inl (by simp [h]))
+        (fun h => Or.inr (mem_map_iff.mpr ⟨_, h, rfl⟩))
+  · intro hτ
+    obtain ⟨hne, hK, hL⟩ := mem_join_iff.mp hτ
+    obtain ⟨s, hs, hsf⟩ : ∃ s : Finset α, (s = ∅ ∨ s ∈ K) ∧ s.image f = τ.toLeft := by
+      rcases hK with h | ⟨s, hs, heq⟩
+      · exact ⟨∅, Or.inl rfl, by simp [h]⟩
+      · exact ⟨s, Or.inr hs, heq⟩
+    obtain ⟨t, ht, htg⟩ : ∃ t : Finset β, (t = ∅ ∨ t ∈ L) ∧ t.image g = τ.toRight := by
+      rcases hL with h | ⟨t, ht, heq⟩
+      · exact ⟨∅, Or.inl rfl, by simp [h]⟩
+      · exact ⟨t, Or.inr ht, heq⟩
+    have heq : (s.disjSum t).image (Sum.map f g) = τ := by
+      simp [hsf, htg, Finset.toLeft_disjSum_toRight]
+    refine mem_map_iff.mpr ⟨s.disjSum t, ?_, heq⟩
+    refine disjSum_mem_join_iff.mpr ⟨?_, hs, ht⟩
+    have : (s.disjSum t).Nonempty := Finset.Nonempty.of_image (heq.symm ▸ hne)
+    simpa only [Finset.nonempty_iff_ne_empty, ne_eq, Finset.disjSum_eq_empty,
+      not_and_or] using this
+
+/-- Exchanging the tagged vertex sets exchanges the factors of a join. -/
+@[simp]
+theorem map_join_swap [DecidableEq α] [DecidableEq β] :
+    (join K L).map Sum.swap = join L K := by
+  refine SetLike.ext fun τ => ?_
+  constructor
+  · rintro ⟨σ, hσ, rfl⟩
+    simpa only [mem_join_iff, Finset.image_nonempty, Finset.toLeft_image_swap,
+      Finset.toRight_image_swap, and_comm, and_left_comm] using (mem_join_iff.mp hσ)
+  · intro hτ
+    refine mem_map_iff.mpr ⟨τ.image Sum.swap, ?_, ?_⟩
+    · simpa only [mem_join_iff, Finset.image_nonempty, Finset.toLeft_image_swap,
+        Finset.toRight_image_swap, and_comm, and_left_comm] using hτ
+    · simp [Finset.image_image]
+
 end PreAbstractSimplicialComplex
 
 namespace AbstractSimplicialComplex
@@ -181,4 +230,3 @@ theorem join_mono (hK : K ≤ K') (hL : L ≤ L') :
   exact PreAbstractSimplicialComplex.join_mono hK hL
 
 end AbstractSimplicialComplex
-

@@ -351,7 +351,7 @@ attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 (1.5.2)). The connecting map on the left is that of the sequence restricted to `U`, so both sides
 name the same two coefficient maps. -/
 @[simp]
-theorem explicitCor_delta0 [ContinuousMul G] [ContinuousInv G] (x : H0 U C) :
+theorem explicitCor_delta0 [ContinuousMul G] (x : H0 U C) :
     explicitCor1 G A U hU ((S.restrict U).explicitDelta0 x) =
       S.explicitDelta0 (explicitCor0 G C U x) := by
   obtain ⟨b, hb⟩ := (S.restrict U).proj_surjective (x : C)

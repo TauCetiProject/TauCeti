@@ -164,10 +164,6 @@ it but does not prove it. -/
 theorem isIrreducible_symPower : Representation.IsIrreducible (symPower d) := by
   have hnt : Nontrivial (Sym[ℂ]^d(Fin 2 → ℂ)) :=
     Module.nontrivial_of_finrank_pos (R := ℂ) (by rw [finrank_symPower]; omega)
-  have hntsub : Nontrivial (Subrepresentation (symPower d)) := by
-    refine ⟨⊥, ⊤, fun hbot => absurd (congrArg Subrepresentation.toSubmodule hbot) ?_⟩
-    rw [Subrepresentation.toSubmodule_bot, Subrepresentation.toSubmodule_top]
-    exact bot_ne_top
   refine { eq_bot_or_eq_top := fun σ => ?_ }
   rcases eq_or_ne σ ⊥ with hσ | hσ
   · exact Or.inl hσ

@@ -41,6 +41,9 @@ over `TauCeti.ValuationSpectrum.cont A`. They apply verbatim in Wedhorn's settin
 
 ## Main results
 
+* `TauCeti.ValuationSpectrum.IsContinuous.exists_pow_vlt_of_isTopologicallyNilpotent`: the
+  pointwise step — at a continuous point some power of a topologically nilpotent element is
+  strictly dominated by any element outside the support.
 * `TauCeti.ValuationSpectrum.exists_subset_basicOpen_pow`: the collapsed cover — some power of a
   topologically nilpotent element is dominated by `f` throughout `X`.
 * `TauCeti.ValuationSpectrum.exists_mem_nhds_zero_forall_vlt`: **Lemma 7.31** — a neighbourhood of
@@ -79,6 +82,20 @@ open Topology TauCeti.Huber
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A]
 
+/-- **Topologically nilpotent elements are eventually dominated at a continuous point.** If `v`
+is continuous, `t` is topologically nilpotent and `v f ≠ 0`, then `v (tⁿ) < v f` for some `n`. -/
+theorem IsContinuous.exists_pow_vlt_of_isTopologicallyNilpotent {v : Spv A} (hv : v.IsContinuous)
+    {t : A} (ht : IsTopologicallyNilpotent t) {f : A} (hf : f ∉ v.supp) :
+    ∃ n : ℕ, v.toValuativeRel.vlt (t ^ n) f := by
+  -- the ball `{a | v a < v f}` is open by continuity and contains `0`, so it contains a power
+  -- of `t`
+  have hfne : v.valuation f ≠ 0 := by
+    rwa [Ne, ← Valuation.mem_supp_iff, ← supp_eq_valuation_supp]
+  obtain ⟨n, hn⟩ := Valuation.exists_pow_lt_of_isTopologicallyNilpotent (v := v.valuation)
+    ((Valuation.isContinuous_def.mp ((isContinuous_def v).mp hv) f).mem_nhds
+      (by rw [Set.mem_ofPred_eq, map_zero]; exact zero_lt_iff.mpr hfne)) ht
+  exact ⟨n, (valuation_lt_iff v _ _).mp (by rwa [map_pow])⟩
+
 /-- **The basic opens `Spv(A)(tⁿ/f)` increase in the exponent at a continuous point.** A
 topologically nilpotent `t` has `v t < 1` there, so `v (tᵐ) ≤ v (tⁿ)` whenever `n ≤ m`. This is
 the monotonicity that lets a finite subcover be replaced by its largest exponent. -/
@@ -97,8 +114,8 @@ private theorem mem_basicOpen_pow_of_le {v : Spv A} (hv : v ∈ cont A) {f t : A
 set of continuous points at which `f` does not vanish and `t` topologically nilpotent, some power
 `tᵐ` is dominated by `f` at every point of `X`: `X ⊆ Spv(A)(tᵐ/f)`.
 
-Pointwise this is `Valuation.exists_pow_lt_of_isTopologicallyNilpotent` at the threshold `v f`,
-whose ball is open because `v` is continuous. The resulting basic opens increase in the exponent
+Pointwise this is `IsContinuous.exists_pow_vlt_of_isTopologicallyNilpotent`: the ball of radius
+`v f` is open because `v` is continuous. The resulting basic opens increase in the exponent
 on `X`, so a finite subcover has a largest exponent that works for all. -/
 theorem exists_subset_basicOpen_pow {X : Set (Spv A)} (hXcont : X ⊆ cont A) (hX : IsCompact X)
     {f : A} (hf : ∀ v ∈ X, ¬ v.toValuativeRel.vle f 0) {t : A} (ht : IsTopologicallyNilpotent t) :
@@ -106,15 +123,10 @@ theorem exists_subset_basicOpen_pow {X : Set (Spv A)} (hXcont : X ⊆ cont A) (h
   -- the basic opens `Spv(A)(tⁿ/f)` cover `X`, since the powers of `t` enter the ball of
   -- radius `v f` — which is open because `v` is continuous, and nonempty because `v f ≠ 0`
   have hcover : X ⊆ ⋃ n : ℕ, basicOpen (t ^ n) f := fun v hv ↦ by
-    have hcont : v.valuation.IsContinuous := (isContinuous_def v).mp ((mem_cont_iff v).mp
-      (hXcont hv))
-    have hfne : v.valuation f ≠ 0 := fun h ↦ hf v hv ((valuation_le_iff v f 0).mp (by simp [h]))
-    have hlt : v.valuation 0 < v.valuation f := by rw [map_zero]; exact zero_lt_iff.mpr hfne
-    obtain ⟨n, hn⟩ := Valuation.exists_pow_lt_of_isTopologicallyNilpotent (v := v.valuation)
-      (γ := v.valuation f)
-      ((Valuation.isContinuous_def.mp hcont f).mem_nhds hlt) ht
+    obtain ⟨n, hn⟩ := IsContinuous.exists_pow_vlt_of_isTopologicallyNilpotent
+      ((mem_cont_iff v).mp (hXcont hv)) ht (by simpa using hf v hv)
     exact Set.mem_iUnion.mpr ⟨n, (mem_basicOpen_iff (t ^ n) f v).mpr
-      ⟨(valuation_le_iff v (t ^ n) f).mp (by rw [map_pow]; exact hn.le), hf v hv⟩⟩
+      ⟨(valuation_le_iff v _ _).mp ((valuation_lt_iff v _ _).mpr hn).le, hf v hv⟩⟩
   obtain ⟨F, hF⟩ := hX.elim_finite_subcover (fun n : ℕ ↦ basicOpen (t ^ n) f)
     (fun n ↦ isOpen_basicOpen _ _) hcover
   refine ⟨F.sup id, fun v hv ↦ ?_⟩

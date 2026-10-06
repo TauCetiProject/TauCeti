@@ -19,8 +19,8 @@ algebra of the additive group `𝔾ₐ`, with primitive generator `x = ι(1)`. T
 `g : R[x] →ₐ[R] A` acts on the scalar extension of every finitely generated comodule by an
 automorphism whose difference from the identity is nilpotent. Over a field this says that `𝔾ₐ`
 acts unipotently in every finite-dimensional representation, which is the geometric definition of
-a unipotent group; together with the smoothness of `R[x]` it exhibits `𝔾ₐ` as the basic example
-of the Layer 5 predicates of the reductive-groups roadmap.
+a unipotent group; together with the smoothness of `R[x]` it exhibits `𝔾ₐ` as a smooth unipotent
+affine algebraic group.
 
 The proof is the classical divided-power argument. The monomials `xⁿ` form a basis of `R[x]`
 (`monomialBasis`), so the coaction of a comodule `V` can be written `ρ v = ∑ₙ Nₙ v ⊗ xⁿ` for a
@@ -68,12 +68,6 @@ composition rule and hence a filtration rather than a splitting.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2 and I.7.8.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §8.3.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
-
-This supplies the first worked example of Layer 5, "Unipotent groups", of the ReductiveGroups
-roadmap: the smooth unipotence predicates defined in
-`TauCeti.Algebra.AlgebraicGroup.Unipotent.Basic` are shown to be non-vacuous, on the group out of
-which the upper-triangular unipotent groups `Uₙ` and the root subgroups of a reductive group are
-built.
 -/
 
 public section
@@ -498,9 +492,7 @@ theorem geometricallyUnipotentPointsCommHopfAlgProperty_coordinateHopfAlgebra
   rw [geometricallyUnipotentPointsCommHopfAlgProperty_iff]
   exact fun g => isUnipotentPoint k g
 
-/-- **The additive group `𝔾ₐ` is a smooth unipotent affine group.** This is the basic worked
-example of the Layer 5 definition, and the one from which the unipotent upper-triangular groups
-are built. -/
+/-- **The additive group `𝔾ₐ` is a smooth unipotent affine group.** -/
 theorem smoothUnipotentCommHopfAlgProperty_coordinateHopfAlgebra (k : Type u) [Field k] :
     smoothUnipotentCommHopfAlgProperty k
       (FiniteTypeCommHopfAlgCat.of k (SymmetricAlgebra k k)) := by

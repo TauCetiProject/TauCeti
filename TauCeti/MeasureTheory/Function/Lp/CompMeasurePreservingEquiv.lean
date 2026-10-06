@@ -29,10 +29,6 @@ inverse has that inverse on both sides.
 * `MeasureTheory.Lp.compMeasurePreservingₗᵢ_apply` is the application lemma for Mathlib's
   linear isometry. Mathlib's `@[simps!]` generates only `compMeasurePreservingₗᵢ_apply_coe`,
   which unfolds one level too far to rewrite with.
-* `MeasureTheory.Lp.compMeasurePreserving_congr_fun` substitutes an almost-everywhere equal map
-  under `MeasureTheory.Lp.compMeasurePreserving`, whose measure-preserving argument is indexed by
-  the map and therefore has to change with it. It is the `Lp` form of Mathlib's
-  `MeasureTheory.AEEqFun.compMeasurePreserving_congr`.
 * `MeasureTheory.Lp.compMeasurePreservingₗᵢEquiv` upgrades that linear isometry to a
   `LinearIsometryEquiv` given a one-sided almost-everywhere inverse partner.
 * `MeasureTheory.Lp.coeFn_compMeasurePreservingₗᵢEquiv` and
@@ -67,22 +63,6 @@ theorem compMeasurePreservingₗᵢ_apply {α β E : Type*} [MeasurableSpace α]
     (hf : MeasurePreserving f μ μb) (x : Lp E p μb) :
     compMeasurePreservingₗᵢ 𝕜 f hf x = compMeasurePreserving f hf x :=
   rfl
-
-/-- **Precomposition depends on the map only up to almost-everywhere equality.** Two
-measure-preserving maps that agree almost everywhere precompose alike, whatever proofs of measure
-preservation they carry. This is the `Lp` form of `MeasureTheory.AEEqFun`'s
-`compMeasurePreserving_congr`, and in particular applies to maps that are equal on the nose, via
-`Filter.EventuallyEq.of_eq`.
-
-This is not usable as a rewrite rule with `rw`: the measure-preserving hypothesis of
-`MeasureTheory.Lp.compMeasurePreserving` is indexed by the map being replaced, so replacing the
-map has to replace that hypothesis at the same time. -/
-theorem compMeasurePreserving_congr_fun {α β E : Type*} [MeasurableSpace α] [MeasurableSpace β]
-    {μ : Measure α} {μb : Measure β} {p : ℝ≥0∞} [NormedAddCommGroup E] {f g : α → β}
-    (hf : MeasurePreserving f μ μb) (hg : MeasurePreserving g μ μb) (hfg : f =ᵐ[μ] g)
-    (x : Lp E p μb) :
-    compMeasurePreserving f hf x = compMeasurePreserving g hg x :=
-  Subtype.ext (AEEqFun.compMeasurePreserving_congr _ hf hg.measurable hfg)
 
 /-- If `f` and `g` are measure-preserving and `f ∘ g` is the identity almost everywhere, then
 precomposing by `g` undoes precomposing by `f`. -/

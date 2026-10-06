@@ -211,11 +211,8 @@ roots of unity near `0` is `m` times the meromorphic order of its descent. -/
 theorem meromorphicOrderAt_descendPow_mul [CompleteSpace E] {f : ℂ → E} (hfm : MeromorphicAt f 0)
     (hf : ∀ᶠ u in 𝓝[≠] 0, ∀ ζ : rootsOfUnity m ℂ, f (ζ • u) = f u) :
     meromorphicOrderAt (descendPow m f) 0 * m = meromorphicOrderAt f 0 := by
-  have horder : analyticOrderAt (fun u : ℂ ↦ u ^ m - (0 : ℂ) ^ m) 0 = m := by
-    have h : (fun u : ℂ ↦ u ^ m - (0 : ℂ) ^ m) = (· - 0) ^ m := by
-      funext u
-      simp [zero_pow (NeZero.ne m)]
-    rw [h, analyticOrderAt_centeredMonomial]
+  have horder : analyticOrderAt (fun u : ℂ ↦ u ^ m - (0 : ℂ) ^ m) 0 = m :=
+    analyticOrderAt_pow_sub_zero_pow (NeZero.ne m)
   have hnc : ¬EventuallyConst (fun u : ℂ ↦ u ^ m) (𝓝 0) := by
     rw [eventuallyConst_iff_analyticOrderAt_sub_eq_top, horder]
     exact ENat.natCast_ne_top m

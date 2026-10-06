@@ -10,7 +10,10 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
+public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
+import Mathlib.LinearAlgebra.Dual.Lemmas
+import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 
 /-!
@@ -40,12 +43,18 @@ forcing the integral and real ranks to agree.
 * `TauCeti.Toric.IsIntegralLattice.injective`, `TauCeti.Toric.IsIntegralLattice.span_range_eq_top`
   and `TauCeti.Toric.IsIntegralLattice.finrank_eq`: an integral lattice is injective with full
   real span, and the integral rank of `N` equals the real dimension of `V`.
+* `TauCeti.Toric.linearIndependent_comp_iff_of_liftBaseChange_injective`: when the real-linear
+  map `ℝ ⊗[ℤ] N →ₗ[ℝ] V` induced by `i` is injective (as it is when `i` extends scalars from `ℤ`
+  to `ℝ`, by `IsBaseChange.liftBaseChange_injective`), a family of integral vectors is linearly
+  independent over `ℤ` exactly when its image is linearly independent over `ℝ`.
 * `TauCeti.Toric.IsIntegralLattice.extend` and `TauCeti.Toric.IsIntegralLattice.eq_extend`: a map
   of integral vectors extends to a unique real-linear map, so the real-linear map accompanying a
   map of lattices is determined by it rather than being extra data.
 * `TauCeti.Toric.IsIntegralLattice.realCharacter` and
   `TauCeti.Toric.IsIntegralLattice.eq_realCharacter`: an integral character extends to a unique
   real-linear functional, additively in the character.
+* `TauCeti.Toric.IsIntegralLattice.exists_realCharacter_apply_eq`: every additive real-valued
+  function on the integral characters is evaluation at a point of `V`.
 * `TauCeti.Toric.IsIntegralLattice.prod`: products of integral lattices are integral lattices for
   the componentwise lattice map.
 * `TauCeti.Toric.IsIntegralLattice.isZLattice`: in a normed space the image of an integral
@@ -116,6 +125,19 @@ theorem IsIntegralLattice.injective (h : IsIntegralLattice i) :
   intro x y hxy
   refine Module.Flat.tensorProduct_mk_injective ℤ N ℝ (e.injective ?_)
   simpa only [TensorProduct.mk_apply, he] using hxy
+
+/-- When the real-linear map `ℝ ⊗[ℤ] N →ₗ[ℝ] V` induced by `i` is injective (for instance when
+`i` extends scalars from `ℤ` to `ℝ`, by `IsBaseChange.liftBaseChange_injective`), a family of
+integral vectors is linearly independent over `ℤ` exactly when its image under `i` is linearly
+independent over `ℝ`: a real linear relation among lattice vectors forces an integral one. The
+image of `i` need not span `V`. -/
+theorem linearIndependent_comp_iff_of_liftBaseChange_injective
+    (h : Function.Injective (i.toIntLinearMap.liftBaseChange ℝ)) {ι : Type*} {v : ι → N} :
+    LinearIndependent ℝ (i ∘ v) ↔ LinearIndependent ℤ v := by
+  refine ⟨fun hv ↦ LinearIndependent.of_comp i.toIntLinearMap (hv.restrict_scalars' ℤ),
+    fun hv ↦ ?_⟩
+  have := (Module.Flat.linearIndependent_one_tmul (S := ℝ) hv).map' _ (LinearMap.ker_eq_bot.2 h)
+  simpa [Function.comp_def] using this
 
 /-- The image of an integral lattice spans the ambient real vector space. -/
 theorem IsIntegralLattice.span_range_eq_top (h : IsIntegralLattice i) :
@@ -216,6 +238,22 @@ theorem IsIntegralLattice.realCharacter_injective (h : IsIntegralLattice i) :
     simpa using DFunLike.congr_fun hm (i n)
   exact Int.cast_injective hc
 
+/-- Every additive real-valued function on the integral characters is evaluation at a point of
+the ambient real space: the real extensions of the characters identify `V` with the real-valued
+additive functions on `N →+ ℤ`. -/
+theorem IsIntegralLattice.exists_realCharacter_apply_eq (h : IsIntegralLattice i)
+    (f : (N →+ ℤ) →+ ℝ) : ∃ v : V, ∀ m, h.realCharacter m v = f m := by
+  let _ := h.free
+  let _ := h.finite
+  have := h.finiteDimensional
+  -- Extend `f` to a functional on the real dual, which is the base change of the integral dual,
+  -- and read it as a point of `V`, which is its own double dual.
+  let f' := f.toIntLinearMap.comp (addMonoidHomLequivInt ℤ).symm.toLinearMap
+  refine ⟨(Module.evalEquiv ℝ V).symm (h.isBaseChange.dual.lift f'), fun m ↦ ?_⟩
+  have hm : m.toIntLinearMap.toAddMonoidHom = m := AddMonoidHom.ext fun _ ↦ rfl
+  simpa [IsIntegralLattice.realCharacter, f', hm] using
+    h.isBaseChange.dual.lift_eq f' (addMonoidHomLequivInt ℤ m)
+
 /-- Real extension commutes with a compatible map of lattices. -/
 theorem IsIntegralLattice.realCharacter_comp (h : IsIntegralLattice i)
     (h' : IsIntegralLattice i') (f : N →+ N') (g : V →ₗ[ℝ] V')
@@ -247,6 +285,18 @@ theorem IsIntegralLattice.prod (h : IsIntegralLattice i) (h' : IsIntegralLattice
   let _ := h'.finite
   exact ⟨inferInstance, inferInstance,
     IsBaseChange.prodMap i.toIntLinearMap i'.toIntLinearMap h.isBaseChange h'.isBaseChange⟩
+
+/-- Real extension of the sum of characters on the two factors of a product lattice is the
+sum of their real extensions. -/
+@[simp]
+theorem IsIntegralLattice.realCharacter_coprod (h : IsIntegralLattice i)
+    (h' : IsIntegralLattice i') (m : N →+ ℤ) (m' : N' →+ ℤ) :
+    (h.prod h').realCharacter (m.coprod m') =
+      (h.realCharacter m).coprod (h'.realCharacter m') := by
+  apply Eq.symm
+  apply (h.prod h').eq_realCharacter
+  intro n
+  simp
 
 end Naturality
 

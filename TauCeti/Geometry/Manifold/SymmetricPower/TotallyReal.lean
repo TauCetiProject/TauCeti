@@ -124,12 +124,14 @@ private theorem exists_injective_hasFDerivAt_symChartAt_ofFn {p : Fin n → α}
     rw [hs']
     exact analyticAt_symOpenPartialHomeomorph_transition _ _ V _ hm W r hr hVo hVsub hVdisj
       hWo hWsub hWdisj e e' hq hr' hpC hpD fun i j z hz _ =>
-        analyticAt_chartAt_comp_chartAt_symm (hVsub i hz.1) (hWsub j hz.2)
+        analyticAt_symm_trans (IsManifold.chart_mem_maximalAtlas _)
+          (IsManifold.chart_mem_maximalAtlas _) (hVsub i hz.1) (hWsub j hz.2)
   have hS : AnalyticAt ℂ (fun c => C (D.symm c)) (D (Sym.ofFn p)) := by
     rw [hs']
     exact analyticAt_symOpenPartialHomeomorph_transition _ _ W _ hr V _ hm hWo hWsub hWdisj
       hVo hVsub hVdisj e' e hr' hq hpD hpC fun i j z hz _ =>
-        analyticAt_chartAt_comp_chartAt_symm (hWsub i hz.1) (hVsub j hz.2)
+        analyticAt_symm_trans (IsManifold.chart_mem_maximalAtlas _)
+          (IsManifold.chart_mem_maximalAtlas _) (hWsub i hz.1) (hVsub j hz.2)
   rw [← hs'] at hpD
   set T₀ := fun c => D (C.symm c) with hT₀
   have hT₀' : HasFDerivAt T₀ (fderiv ℂ T₀ (C (Sym.ofFn p))) (C (Sym.ofFn p)) :=
@@ -199,7 +201,7 @@ private theorem injective_and_isTotallyReal_comp_pi_smulRight
   · rw [ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp, coe_diagonalSmulRight]
     refine (isTotallyReal_range_pi_smulRight).map hT' ?_
     refine LinearMap.ext fun c => ?_
-    simp [AlmostComplexStructure.ofComplexModule]
+    simp
 
 variable {γ : Fin n → ℝ → α} {t₀ : Fin n → ℝ} {v : Fin n → ℂ}
 

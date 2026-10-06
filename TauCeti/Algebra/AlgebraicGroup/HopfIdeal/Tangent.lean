@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Map
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Equivariance
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Naturality
 public import TauCeti.Algebra.Bialgebra.Quotient
-public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Map
 
 /-!
 # The Lie algebra of a closed affine subgroup
@@ -32,6 +34,8 @@ Layer 2 target "the Lie algebra of a closed subgroup".
   Hopf ideal, or just on a chosen set of ideal generators.
 * `TauCeti.HopfIdeal.quotientLieEquiv`: the closed subgroup's Lie algebra is Lie-equivalent to
   that image.
+* `TauCeti.HopfIdeal.lieSubalgebra_map`: tangent Lie algebras commute with inverse images of
+  closed subgroups under arbitrary group homomorphisms.
 
 ## References
 
@@ -66,6 +70,29 @@ noncomputable def quotientLieHom (I : HopfIdeal R H) :
       Derivation R H (Bialgebra.CounitAlgebra R H B) :=
   derivationCompLieHom (B := B) (Bialgebra.Quotient.mkBialgHom I.toIdeal)
 
+/-- The differential of a closed-subgroup inclusion is precomposition with the quotient map. -/
+theorem quotientLieHom_apply (I : HopfIdeal R H)
+    (d : Derivation R (H ⧸ I.toIdeal)
+      (Bialgebra.CounitAlgebra R (H ⧸ I.toIdeal) B)) :
+    quotientLieHom I d =
+      derivationComp (Bialgebra.Quotient.mkBialgHom I.toIdeal) d := by
+  exact derivationCompLieHom_apply _ _
+
+/-- The differential of a closed-subgroup inclusion intertwines the adjoint actions. -/
+@[simp]
+theorem quotientLieHom_adDerivation (I : HopfIdeal R H)
+    (g : WithConv ((H ⧸ I.toIdeal) →ₐ[R]
+      Bialgebra.CounitAlgebra R (H ⧸ I.toIdeal) B))
+    (d : Derivation R (H ⧸ I.toIdeal)
+      (Bialgebra.CounitAlgebra R (H ⧸ I.toIdeal) B)) :
+    quotientLieHom I (Derivation.adDerivation B g d) =
+      Derivation.adDerivation B
+        (AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R H B)
+          (Bialgebra.Quotient.mkBialgHom I.toIdeal) g)
+        (quotientLieHom I d) := by
+  rw [quotientLieHom_apply, quotientLieHom_apply]
+  exact derivationComp_adDerivation _ g d
+
 /-- The closed-subgroup differential acts by precomposition with the quotient map. -/
 @[simp]
 lemma quotientLieHom_apply_apply (I : HopfIdeal R H)
@@ -76,6 +103,18 @@ lemma quotientLieHom_apply_apply (I : HopfIdeal R H)
         (d (Ideal.Quotient.mkₐ R I.toIdeal x)) := by
   simp [quotientLieHom]
   rfl
+
+/-- The closed-subgroup differential commutes with extension of the coefficient algebra. -/
+@[simp]
+theorem quotientLieHom_mapValue (I : HopfIdeal R H)
+    {C : Type*} [CommRing C] [Algebra R C] (φ : B →ₐ[R] C)
+    (d : Derivation R (H ⧸ I.toIdeal)
+      (Bialgebra.CounitAlgebra R (H ⧸ I.toIdeal) B)) :
+    quotientLieHom I (Derivation.mapValue φ d) =
+      Derivation.mapValue φ (quotientLieHom I d) := by
+  ext x
+  simp only [quotientLieHom_apply_apply, Derivation.mapValue_apply]
+  exact Bialgebra.CounitAlgebra.algEquivSelf_map φ _
 
 /-- The differential of a closed-subgroup inclusion is injective. -/
 theorem quotientLieHom_injective (I : HopfIdeal R H) :
@@ -224,6 +263,22 @@ theorem mem_lieSubalgebra_iff_of_toIdeal_eq_span (I : HopfIdeal R H) {S : Set H}
     apply HopfIdeal.mem_toIdeal.mp
     rw [hI]
     exact Ideal.subset_span hy
+
+/-- Taking the inverse image of a closed subgroup commutes with taking its tangent Lie
+algebra. On coordinate rings the inverse image is presented by the image Hopf ideal.
+No surjectivity assumption on the coordinate morphism is needed. -/
+theorem lieSubalgebra_map {K : Type*} [CommRing K] [HopfAlgebra R K]
+    (I : HopfIdeal R H) (f : H →ₐc[R] K) :
+    lieSubalgebra (B := B) (I.map f) =
+      (lieSubalgebra (B := B) I).comap (derivationCompLieHom (B := B) f) := by
+  ext d
+  rw [LieSubalgebra.mem_comap, derivationCompLieHom_apply, mem_lieSubalgebra_iff I]
+  have hspan : (I.map f).toIdeal = Ideal.span (f '' (I.toIdeal : Set H)) := by
+    rw [map_toIdeal, ← Ideal.map_span, Ideal.span_eq]
+    rfl
+  rw [mem_lieSubalgebra_iff_of_toIdeal_eq_span _ hspan]
+  simp only [Set.forall_mem_image, derivationComp_apply]
+  exact ⟨fun h x hx ↦ h hx, fun h x hx ↦ h x hx⟩
 
 /-- The Lie algebra of the quotient Hopf algebra is canonically Lie-equivalent to its image in
 the ambient tangent Lie algebra. -/

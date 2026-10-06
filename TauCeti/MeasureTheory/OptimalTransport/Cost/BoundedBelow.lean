@@ -11,6 +11,7 @@ public import Mathlib.Topology.Instances.EReal.Lemmas
 public import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 public import TauCeti.MeasureTheory.OptimalTransport.Coupling
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Basic
+import TauCeti.Data.EReal.Operations
 
 /-!
 # Transport costs bounded below by integrable marginal terms
@@ -259,6 +260,30 @@ theorem le_transportCostBddBelow {d : EReal} (h : IntegrableSplitLowerBound c μ
     d ≤ transportCostBddBelow c μ ν h :=
   le_iInf₂ hd
 
+private theorem coe_iInf_ennreal {ι : Sort*} (f : ι → ℝ≥0∞) :
+    ((⨅ i, f i : ℝ≥0∞) : EReal) = ⨅ i, (f i : EReal) := by
+  apply le_antisymm
+  · exact le_iInf fun i ↦ EReal.coe_ennreal_le_coe_ennreal_iff.2 (iInf_le f i)
+  · have hnonneg : 0 ≤ (⨅ i, (f i : EReal)) :=
+      le_iInf fun i ↦ EReal.coe_ennreal_nonneg (f i)
+    rw [← EReal.coe_toENNReal hnonneg]
+    exact EReal.coe_ennreal_le_coe_ennreal_iff.2 <| le_iInf fun i ↦
+      (EReal.toENNReal_le_toENNReal (iInf_le (fun j ↦ (f j : EReal)) i)).trans_eq
+        EReal.toENNReal_coe
+
+/-- Subtracting the split lower bound reduces the signed primal problem to the nonnegative
+transport problem. The marginal correction is finite even when the optimum is infinite or the
+feasible set is empty. -/
+theorem transportCostBddBelow_eq_transportCost_residual_add_integral_add_integral
+    (h : IntegrableSplitLowerBound c μ ν) :
+    transportCostBddBelow c μ ν h = (transportCost h.residual μ ν : EReal) +
+      (((∫ x, h.fst x ∂μ) + ∫ y, h.snd y ∂ν : ℝ) : EReal) := by
+  have hadd (r : EReal) (a : ℝ) : r + (a : EReal) = r - ((-a : ℝ) : EReal) := by
+    simp only [EReal.coe_neg, sub_eq_add_neg, neg_neg]
+  rw [transportCostBddBelow_def, transportCost_def]
+  simp_rw [planCostBddBelow_def, add_assoc, ← EReal.coe_add, hadd,
+    EReal.iInf_sub_coe, ← coe_iInf_ennreal]
+
 private theorem residual_add_lowerBoundParts
     (h k : IntegrableSplitLowerBound c μ ν) (z : X × Y) :
     h.residual z + ENNReal.ofReal (h.fst z.1 - k.fst z.1) +
@@ -416,17 +441,6 @@ theorem transportCostBddBelow_congr_lowerBound
     transportCostBddBelow c μ ν h = transportCostBddBelow c μ ν k := by
   simp only [transportCostBddBelow]
   exact iInf_congr fun π ↦ iInf_congr fun hπ ↦ planCostBddBelow_congr_lowerBound h k hπ
-
-private theorem coe_iInf_ennreal {ι : Sort*} (f : ι → ℝ≥0∞) :
-    ((⨅ i, f i : ℝ≥0∞) : EReal) = ⨅ i, (f i : EReal) := by
-  apply le_antisymm
-  · exact le_iInf fun i ↦ EReal.coe_ennreal_le_coe_ennreal_iff.2 (iInf_le f i)
-  · have hnonneg : 0 ≤ (⨅ i, (f i : EReal)) :=
-      le_iInf fun i ↦ EReal.coe_ennreal_nonneg (f i)
-    rw [← EReal.coe_toENNReal hnonneg]
-    exact EReal.coe_ennreal_le_coe_ennreal_iff.2 <| le_iInf fun i ↦
-      (EReal.toENNReal_le_toENNReal (iInf_le (fun j ↦ (f j : EReal)) i)).trans_eq
-        EReal.toENNReal_coe
 
 /-- For a nonnegative `ℝ≥0∞`-valued cost, the bounded-below signed interface agrees exactly
 with the original nonnegative transport cost, for any valid split lower bound. -/

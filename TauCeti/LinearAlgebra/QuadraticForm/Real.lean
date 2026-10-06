@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Real
+import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Real.Sqrt
 public import TauCeti.Data.SignType.Cardinality
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
@@ -26,8 +27,14 @@ The file also supplies the normal form realizing a prescribed signature, the ort
 `p` copies of `⟨1⟩` and `q` copies of `⟨-1⟩`, and shows that every regular real form is isometric
 to the normal form of its own signature.
 
+Without any finite-dimensionality assumption, a real quadratic form is anisotropic exactly when
+it is positive or negative definite. This identifies the algebraic condition used in compactness
+criteria for real orthogonal groups with the usual order-theoretic notion of definiteness.
+
 ## Main results
 
+* `QuadraticForm.anisotropic_iff_posDef_or_negDef`: real anisotropic forms are exactly the
+  positive and negative definite forms, including forms on the zero space.
 * `QuadraticMap.map_inv_sqrt_smul_eq_one`: a vector of positive quadratic value can be
   normalized to value one by inverse-square-root scaling. This normalization feeds the
   reflection-pair construction for compact real Clifford forms.
@@ -44,6 +51,8 @@ to the normal form of its own signature.
   `QuadraticForm.nondegenerate_realSignatureForm`: every signature is realized by a regular form.
 * `QuadraticForm.equivalent_realSignatureForm`: a regular real quadratic form is isometric to the
   normal form of its signature.
+* `QuadraticForm.exists_nondegenerate_and_sigPos_eq_and_sigNeg_eq`: every signature `(p, n - p)` is
+  realized by a regular form on the coordinate space `ℝⁿ`.
 * `QuadraticForm.equivalent_realSignatureForm_iff_sigPos_eq_and_sigNeg_eq`: a regular real form is
   isometric to a prescribed normal form exactly when it has the prescribed signature.
 * `QuadraticForm.equivalent_realSignatureForm_iff`: distinct signatures give non-isometric normal
@@ -78,6 +87,52 @@ theorem map_inv_sqrt_smul_eq_one {Q : QuadraticForm ℝ M} {v : M} (hpos : 0 < Q
 end QuadraticMap
 
 namespace QuadraticForm
+
+section Definiteness
+
+variable {M : Type*} [AddCommGroup M] [Module ℝ M]
+
+/-- A real quadratic form is anisotropic if and only if it is positive or negative definite.
+No finite-dimensionality assumption is needed; on the zero space both alternatives hold. -/
+theorem anisotropic_iff_posDef_or_negDef (Q : _root_.QuadraticForm ℝ M) :
+    Q.Anisotropic ↔ Q.PosDef ∨ (-Q).PosDef := by
+  constructor
+  · intro hQ
+    have hsign (x y : M) (hx : 0 < Q x) (hy : Q y < 0) : False := by
+      let f : ℝ → ℝ := fun t ↦
+        (1 - t) ^ 2 * Q x + t ^ 2 * Q y + (1 - t) * t * polar Q x y
+      have hf (t : ℝ) : Q ((1 - t) • x + t • y) = f t := by
+        simp only [QuadraticMap.map_add, QuadraticMap.map_smul, polar_smul_left,
+          polar_smul_right, smul_eq_mul, f, pow_two]
+        ring
+      have hcont : Continuous f := by fun_prop
+      have hinterval : (0 : ℝ) ∈ Set.Icc (f 1) (f 0) := by
+        simpa [f] using And.intro hy.le hx.le
+      obtain ⟨t, -, ht⟩ := intermediate_value_Icc' (by norm_num : (0 : ℝ) ≤ 1)
+        hcont.continuousOn hinterval
+      have ht1 : t ≠ 1 := by
+        intro h
+        have : Q y = 0 := by simpa [f, h] using ht
+        exact hy.ne this
+      have hz := hQ _ ((hf t).trans ht)
+      have heq := congrArg Q (eq_neg_of_add_eq_zero_left hz)
+      simp only [QuadraticMap.map_smul, QuadraticMap.map_neg, smul_eq_mul] at heq
+      have hpos := mul_pos (sq_pos_of_ne_zero (sub_ne_zero.mpr (Ne.symm ht1))) hx
+      have hneg := mul_nonpos_of_nonneg_of_nonpos (sq_nonneg t) hy.le
+      nlinarith
+    by_cases hn : ∀ x, 0 ≤ Q x
+    · exact Or.inl (posDef_of_nonneg hn hQ)
+    · push Not at hn
+      obtain ⟨y, hy⟩ := hn
+      refine Or.inr (posDef_of_nonneg (fun x ↦ ?_) (fun x hx ↦ hQ x ?_))
+      · simp only [neg_apply, neg_nonneg]
+        exact le_of_not_gt fun hx ↦ hsign x y hx hy
+      · simpa using hx
+  · rintro (hQ | hQ)
+    · exact hQ.anisotropic
+    · exact fun x hx ↦ hQ.anisotropic x (by simpa using hx)
+
+end Definiteness
 
 section Fibers
 
@@ -233,5 +288,21 @@ theorem equivalent_realSignatureForm_iff (p q p' q' : ℕ) :
 theorem equivalent_realSignatureForm (Q : _root_.QuadraticForm ℝ M) (hQ : Q.Nondegenerate) :
     Q.Equivalent (realSignatureForm (sigPos Q) (sigNeg Q)) :=
   (equivalent_realSignatureForm_iff_sigPos_eq_and_sigNeg_eq hQ _ _).mpr ⟨rfl, rfl⟩
+
+/-- Every signature `(p, n - p)` with `p ≤ n` is the signature of a regular quadratic form on the
+coordinate space `ℝⁿ`: the normal form `realSignatureForm p (n - p)` transported along a bijection
+of its index type with `Fin n`. -/
+theorem exists_nondegenerate_and_sigPos_eq_and_sigNeg_eq {n p : ℕ} (h : p ≤ n) :
+    ∃ Q : _root_.QuadraticForm ℝ (Fin n → ℝ),
+      Q.Nondegenerate ∧ sigPos Q = p ∧ sigNeg Q = n - p := by
+  let e : Fin n ≃ Fin p ⊕ Fin (n - p) :=
+    (finCongr (Nat.add_sub_cancel' h)).symm.trans finSumFinEquiv.symm
+  obtain ⟨f⟩ : (weightedSumSquares ℝ ((Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1) ∘ e)).Equivalent
+      (realSignatureForm p (n - p)) := by
+    rw [realSignatureForm_def]
+    exact equivalent_weightedSumSquares_of_comp_eq e rfl
+  exact ⟨_, f.nondegenerate_iff.mpr (nondegenerate_realSignatureForm p (n - p)),
+    by rw [Equivalent.sigPos_eq ⟨f⟩, sigPos_realSignatureForm],
+    by rw [Equivalent.sigNeg_eq ⟨f⟩, sigNeg_realSignatureForm]⟩
 
 end QuadraticForm

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
-public import TauCeti.InformationTheory.Coding.DirectSum
 public import TauCeti.InformationTheory.Coding.Equivalence
 public import TauCeti.InformationTheory.Coding.MinimumDistance.Basic
 
@@ -26,9 +25,7 @@ is the *weight polynomial* `∑_w A_w(C) Y^w`, of degree at most `n`.
 
 These invariants carry the Hamming data of a finite code in the form used by the MacWilliams
 identity `#C · W_{C⊥}(X, Y) = W_C(X + (q - 1) Y, X - Y)`: they are unchanged by monomial
-equivalence and recover the cardinality and minimum distance of a finite additive code. Both
-enumerators are multiplicative under direct sums, so the weight distribution of a direct sum is
-the convolution of the weight distributions of its summands.
+equivalence and recover the cardinality and minimum distance of a finite additive code.
 
 ## Main definitions
 
@@ -47,9 +44,6 @@ the convolution of the weight distributions of its summands.
   code is its least positive weight with nonzero multiplicity.
 * `TauCeti.IsMonomialEquivalent.weightEnumerator_eq`: monomially equivalent codes have the same
   weight enumerator.
-* `Submodule.weightEnumerator_directSum`, `Submodule.weightPolynomial_directSum`: the weight
-  enumerators of a direct sum are the products of the weight enumerators of the summands.
-* `Submodule.weightDistribution_directSum`: `A_w(C ⊕ D) = ∑_{i + j = w} A_i(C) A_j(D)`.
 
 ## References
 
@@ -255,6 +249,21 @@ end Set
 
 namespace TauCeti
 
+section WeightPreservingEquivalence
+
+variable {ι κ : Type*} {β : ι → Type*} {γ : κ → Type*} [Fintype ι] [Fintype κ]
+  [∀ i, Zero (β i)] [∀ j, Zero (γ j)]
+  [∀ i, DecidableEq (β i)] [∀ j, DecidableEq (γ j)]
+
+/-- A weight-preserving equivalence preserves the weight distribution of any set of words. -/
+theorem weightDistribution_image (C : Set (∀ i, β i)) (f : (∀ i, β i) ≃ (∀ j, γ j))
+    (hf : ∀ x, hammingNorm (f x) = hammingNorm x) (w : ℕ) :
+    (f '' C).weightDistribution w = C.weightDistribution w := by
+  rw [Set.weightDistribution_def, Set.weightDistribution_def]
+  exact (Nat.card_congr (Equiv.subtypeEquiv f fun x ↦ by simp [hf])).symm
+
+end WeightPreservingEquivalence
+
 /-- A finite set containing zero whose nonzero words all have weight `d ≠ 0` has one word of
 weight zero, `Nat.card C - 1` words of weight `d`, and no words of any other weight. -/
 theorem weightDistribution_eq_of_constant_weight {ι : Type*} {β : ι → Type*} [Fintype ι]
@@ -321,6 +330,16 @@ theorem weightEnumerator_bot {ι R : Type*} [Fintype ι] [Semiring R] [Decidable
 
 variable {ι R : Type*} [Fintype ι] [Zero R] [DecidableEq R]
 
+/-- Summing the coordinate factor of a weight monomial, `X` at a zero letter and `Y` at a nonzero
+one, over an alphabet with `q` letters gives `X + (q - 1) Y`. -/
+@[simp]
+theorem sum_ite_eq_zero_X_zero_X_one [Fintype R] :
+    (∑ a : R, if a = 0 then (X 0 : MvPolynomial (Fin 2) ℤ) else X 1) =
+      X 0 + (Nat.card R - 1 : MvPolynomial (Fin 2) ℤ) * X 1 := by
+  -- Only the letter `0` contributes `X`; the other `q - 1` letters contribute `Y`.
+  rw [Fintype.sum_eq_add_sum_compl 0, sum_congr rfl fun a ha ↦ ite_eq_right (by simpa using ha)]
+  simp [card_compl, Nat.card_eq_fintype_card, Nat.cast_sub Fintype.card_pos]
+
 /-- The whole word space has weight enumerator `(X + (q - 1) Y)^n`. -/
 @[simp]
 theorem weightEnumerator_univ [Finite R] :
@@ -333,16 +352,7 @@ theorem weightEnumerator_univ [Finite R] :
   simp_rw [← prod_ite_eq_zero_eq_pow_mul_pow_hammingNorm]
   rw [← Fintype.prod_sum (fun (_ : ι) (a : R) ↦
     if a = 0 then (X 0 : MvPolynomial (Fin 2) ℤ) else X 1)]
-  have h : (∑ a : R, if a = 0 then (X 0 : MvPolynomial (Fin 2) ℤ) else X 1) =
-      X 0 + (Nat.card R - 1 : MvPolynomial (Fin 2) ℤ) * X 1 := by
-    have hs (a : R) : (if a = 0 then (X 0 : MvPolynomial (Fin 2) ℤ) else X 1) =
-        X 1 + if a = 0 then X 0 - X 1 else 0 := by
-      split_ifs <;> ring
-    simp_rw [hs]
-    simp [sum_add_distrib, Nat.card_eq_fintype_card]
-    ring
-  simp_rw [h]
-  simp
+  simp [sum_ite_eq_zero_X_zero_X_one]
 
 end Elementary
 
@@ -372,16 +382,10 @@ theorem IsPermutationEquivalent.weightDistribution_eq (h : IsPermutationEquivale
     (w : ℕ) :
     (C : Set (ι → R)).weightDistribution w = (D : Set (κ → R)).weightDistribution w := by
   obtain ⟨e, rfl⟩ := isPermutationEquivalent_iff.mp h
-  refine Nat.card_congr
-    (Equiv.subtypeEquiv (LinearEquiv.funCongrLeft R R e.symm).toEquiv fun x ↦ ?_)
-  simp only [SetLike.mem_coe, LinearEquiv.coe_toEquiv, Submodule.mem_map_equiv,
-    LinearEquiv.funCongrLeft_symm, Equiv.symm_symm, LinearEquiv.funCongrLeft_apply]
-  have hinv : LinearMap.funLeft R R e (LinearMap.funLeft R R e.symm x) = x :=
-    funext fun i ↦ congrArg x (e.symm_apply_apply i)
-  have hx : LinearMap.funLeft R R e.symm x = x ∘ e.symm := by
-    ext i
-    simp
-  rw [hinv, hx, Equiv.hammingNorm_comp]
+  rw [Submodule.map_coe]
+  exact (weightDistribution_image (C : Set (ι → R))
+    (LinearEquiv.funCongrLeft R R e.symm).toEquiv
+    (fun x ↦ Equiv.hammingNorm_funLeft e.symm x) w).symm
 
 /-- Permutation-equivalent codes have the same weight enumerator. -/
 theorem IsPermutationEquivalent.weightEnumerator_eq (h : IsPermutationEquivalent C D) :
@@ -401,7 +405,9 @@ variable [CommSemiring R] {C : Submodule R (ι → R)} {D : Submodule R (κ → 
 theorem IsMonomialEquivalent.weightDistribution_eq (h : IsMonomialEquivalent C D) (w : ℕ) :
     (C : Set (ι → R)).weightDistribution w = (D : Set (κ → R)).weightDistribution w := by
   obtain ⟨u, e, rfl⟩ := isMonomialEquivalent_iff.mp h
-  exact Nat.card_congr (Equiv.subtypeEquiv (monomialEquiv u e).toEquiv fun x ↦ by simp)
+  rw [Submodule.map_coe]
+  exact (weightDistribution_image (C : Set (ι → R)) (monomialEquiv u e).toEquiv
+    (hammingNorm_monomialEquiv u e) w).symm
 
 /-- Monomially equivalent codes have the same weight enumerator. -/
 theorem IsMonomialEquivalent.weightEnumerator_eq (h : IsMonomialEquivalent C D) :
@@ -414,52 +420,3 @@ theorem IsMonomialEquivalent.weightEnumerator_eq (h : IsMonomialEquivalent C D) 
 end MonomialEquivalence
 
 end TauCeti
-
-namespace Submodule
-
-variable {ι κ R : Type*} [Fintype ι] [Fintype κ] [Semiring R] [DecidableEq R] [Finite R]
-
-/-- The weight enumerator of a direct sum of codes is the product of their weight
-enumerators. -/
-theorem weightEnumerator_directSum (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) :
-    (directSum C D : Set (ι ⊕ κ → R)).weightEnumerator =
-      (C : Set (ι → R)).weightEnumerator * (D : Set (κ → R)).weightEnumerator := by
-  classical
-  let _ := Fintype.ofFinite C
-  let _ := Fintype.ofFinite D
-  let _ := Fintype.ofFinite (directSum C D)
-  rw [Set.weightEnumerator_eq_sum (Set.toFinite _), Set.weightEnumerator_eq_sum (Set.toFinite _),
-    Set.weightEnumerator_eq_sum (Set.toFinite _),
-    sum_subtype _ (p := (· ∈ directSum C D)) fun _ ↦ Set.Finite.mem_toFinset _,
-    sum_subtype _ (p := (· ∈ C)) fun _ ↦ Set.Finite.mem_toFinset _,
-    sum_subtype _ (p := (· ∈ D)) fun _ ↦ Set.Finite.mem_toFinset _, Fintype.sum_mul_sum,
-    ← Fintype.sum_prod_type',
-    ← (directSumEquivProd C D).symm.toEquiv.sum_comp]
-  refine Fintype.sum_congr _ _ fun ⟨x, y⟩ ↦ ?_
-  have ha : hammingNorm x.1 ≤ Fintype.card ι := hammingNorm_le_card_fintype
-  have hb : hammingNorm y.1 ≤ Fintype.card κ := hammingNorm_le_card_fintype
-  have hsub : Fintype.card ι + Fintype.card κ - (hammingNorm x.1 + hammingNorm y.1) =
-      (Fintype.card ι - hammingNorm x.1) + (Fintype.card κ - hammingNorm y.1) := by
-    omega
-  rw [LinearEquiv.coe_toEquiv, hammingNorm_directSumEquivProd_symm, Fintype.card_sum, hsub]
-  ring
-
-/-- The one-variable weight enumerator of a direct sum of codes is the product of their
-one-variable weight enumerators. -/
-theorem weightPolynomial_directSum (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) :
-    (directSum C D : Set (ι ⊕ κ → R)).weightPolynomial =
-      (C : Set (ι → R)).weightPolynomial * (D : Set (κ → R)).weightPolynomial := by
-  simp only [← Set.aeval_weightEnumerator, weightEnumerator_directSum, map_mul]
-
-/-- The weight distribution of a direct sum of codes is the convolution of their weight
-distributions: `A_w(C ⊕ D) = ∑_{i + j = w} A_i(C) A_j(D)`. -/
-theorem weightDistribution_directSum (C : Submodule R (ι → R)) (D : Submodule R (κ → R))
-    (w : ℕ) :
-    (directSum C D : Set (ι ⊕ κ → R)).weightDistribution w =
-      ∑ p ∈ Finset.antidiagonal w,
-        (C : Set (ι → R)).weightDistribution p.1 * (D : Set (κ → R)).weightDistribution p.2 := by
-  have h := congrArg (Polynomial.coeff · w) (weightPolynomial_directSum C D)
-  simp only [Set.coeff_weightPolynomial, Polynomial.coeff_mul] at h
-  exact_mod_cast h
-
-end Submodule

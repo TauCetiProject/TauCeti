@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Generation
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Coroot
 import TauCeti.LinearAlgebra.Matrix.Cartan.TypeD
 
 /-!
-# Generation of the type-D spin weight torus by root subgroups
+# Generation of the type-D spin carrier by root subgroups
 
 The full-weight type-`D_n` spin carrier is defined from its positive and negative numbered
 simple-root subgroups together with its split weight torus. This file proves that, over every
@@ -23,9 +24,12 @@ matrix has the explicit Bezout certificate `TauCeti.sum_cartanMatrixD_mul_typeDC
 every simple root is a primitive character of the weight torus. The generic Kostant
 coroot-generation theorem then makes the torus redundant in the pointwise generating family.
 
-The conclusion concerns subgroups of the automorphism group of the base-changed admissible
-lattice. Identifying these generated points with all points of the toral-closure group scheme is a
-separate scheme-theoretic comparison.
+Applying the pointwise containment to the universal point of the torus, over the coordinate ring
+of the split torus itself, shows that the torus is also redundant scheme-theoretically: the
+toral-closure defining ideal over `ℤ` equals the ideal cut out by the numbered root subgroups
+alone, so the carrier is the root-generated Kostant group scheme. This is an equality of integral
+carriers; it does not say that the subgroup generated anew over a non-flat base is the base change
+of the integral carrier.
 
 ## Main results
 
@@ -33,6 +37,13 @@ separate scheme-theoretic comparison.
   the elementary subgroup over every commutative ring.
 * `TauCeti.TypeDSpinCarrier.weightTorusSubsystemSubgroup_univ_eq_elementarySubgroup`: adjoining
   the weight torus to all numbered root subgroups gives exactly the elementary subgroup.
+* `TauCeti.TypeDSpinCarrier.definingIdeal_eq_kostantGeneratedDefiningIdeal`: the integral
+  toral-closure carrier is already cut out by the root subgroups alone.
+* `TauCeti.TypeDSpinCarrier.groupScheme_eq_kostantGeneratedGroupScheme` and
+  `TauCeti.TypeDSpinCarrier.isIso_kostantGeneratedToToral`: the carrier is the root-generated
+  Kostant group scheme, and the canonical comparison between them is an isomorphism.
+* `TauCeti.TypeDSpinCarrier.groupScheme_hom_ext_of_rootSubgroup`: a morphism out of the carrier
+  is determined by its restrictions to the numbered root subgroups alone.
 
 ## References
 
@@ -42,6 +53,8 @@ separate scheme-theoretic comparison.
 This file follows the formal template of `TauCeti.Algebra.Lie.E7.Minuscule.Generation`: the two
 specializations of the generic coroot-generation theorems are adapted from it, with the type-`D`
 Cartan matrix and spin weights in place of the type-`E₇` data.
+The scheme-theoretic section follows
+`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.SchemeGeneration`.
 -/
 
 public section
@@ -111,5 +124,76 @@ theorem weightTorusSubsystemSubgroup_univ_eq_elementarySubgroup (A : CommAlgCat.
     (TypeDStd.lie_serreH_serreRootGenerator n) Sum.inl Sum.inr
     (isSl2Triple_rep_rootGenerator n hn) (rootWeight_inr_eq_neg_inl n)
     (typeDCartanBezout n) (rootWeight_sum_mul_bezout n hn) A
+
+/-! ## Scheme-theoretic generation -/
+
+private theorem universalWeightTorus_mem_elementarySubgroup :
+    let T := (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup (Fin n))).obj
+    let A := CommAlgCat.of ℤ T
+    let q : HopfAlgebra.points
+        (R := ℤ) (H := DiagonalizableGroup.coordinateRing ℤ
+          (SplitTorus.characterGroup (Fin n))) A :=
+      WithConv.toConv (AlgHom.id ℤ T)
+    kostantTorusPoints (lattice n).toAddSubgroup (latticeBasis n) (basisWeight n) A
+        (SplitTorus.pointsMulEquiv q) ∈
+      kostantElementarySubgroup (TauCeti.serreRootGenerator (CartanMatrix.D n))
+        (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn)
+        (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n hn)
+        (isNilpotent_rep_rootGenerator n hn) A := by
+  intro T A q
+  apply weightTorusSubgroup_le_elementarySubgroup n hn A
+  exact (kostantTorusSubgroup_eq_range _ _ _ A).ge ⟨_, rfl⟩
+
+/-- **The full-weight type-`Dₙ` spin carrier is generated scheme-theoretically by its numbered
+root subgroups.** Adjoining the represented weight torus does not change the integral defining
+Hopf ideal. -/
+theorem definingIdeal_eq_kostantGeneratedDefiningIdeal :
+    definingIdeal n hn =
+      kostantGeneratedDefiningIdeal (TauCeti.serreRootGenerator (CartanMatrix.D n))
+        (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
+        (rep_kostantForm_mem_lattice n hn) (isNilpotent_rep_rootGenerator n hn)
+        (latticeBasis n) := by
+  rw [definingIdeal_def]
+  exact
+    kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_universal_torus_mem_elementary
+      _ _ _ _ _ _ _ (basisWeight n) (universalWeightTorus_mem_elementarySubgroup n hn)
+
+/-- The full-weight type-`Dₙ` spin carrier is the group scheme generated by its numbered positive
+and negative simple root subgroups. -/
+theorem groupScheme_eq_kostantGeneratedGroupScheme :
+    groupScheme n hn =
+      kostantGeneratedGroupScheme (TauCeti.serreRootGenerator (CartanMatrix.D n))
+        (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
+        (rep_kostantForm_mem_lattice n hn) (isNilpotent_rep_rootGenerator n hn)
+        (latticeBasis n) := by
+  rw [groupScheme_eq_kostantToralGroupScheme]
+  exact
+    kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_universal_torus_mem_elementary
+      _ _ _ _ _ _ _ (basisWeight n) (universalWeightTorus_mem_elementarySubgroup n hn)
+
+/-- The canonical inclusion of the root-generated type-`Dₙ` spin carrier into its toral closure is
+an isomorphism. -/
+instance isIso_kostantGeneratedToToral :
+    CategoryTheory.IsIso (kostantGeneratedToToral (TauCeti.serreRootGenerator (CartanMatrix.D n))
+      (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
+      (rep_kostantForm_mem_lattice n hn) (isNilpotent_rep_rootGenerator n hn)
+      (latticeBasis n) (basisWeight n)) :=
+  isIso_kostantGeneratedToToral_of_universal_torus_mem_elementary _ _ _ _ _ _ _ (basisWeight n)
+    (universalWeightTorus_mem_elementarySubgroup n hn)
+
+open CategoryTheory in
+/-- **Two morphisms out of the type-`Dₙ` spin carrier agree as soon as they agree on its numbered
+root subgroups.** This drops the weight-torus hypothesis of
+`TauCeti.TypeDSpinCarrier.groupScheme_hom_ext`, which root generation of the carrier makes
+redundant. -/
+theorem groupScheme_hom_ext_of_rootSubgroup {Y : _root_.CommHopfAlgCat.{0} ℤ}
+    (f g : groupScheme n hn ⟶
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op Y))
+    (hroot : ∀ k, rootSubgroup n hn k ≫ f = rootSubgroup n hn k ≫ g) :
+    f = g := by
+  refine (cancel_epi (eqToHom (groupScheme_eq_kostantToralGroupScheme n hn).symm)).1 ?_
+  refine kostantToralGroupScheme_hom_ext_of_isIso_kostantGeneratedToToral _ _ _ _ _ _ _
+    (basisWeight n) _ _ fun k => ?_
+  rw [← Category.assoc, ← Category.assoc, ← rootSubgroup_def, hroot k]
 
 end TauCeti.TypeDSpinCarrier

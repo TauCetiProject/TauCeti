@@ -7,9 +7,9 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
-import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.Basic
 import TauCeti.Algebra.Group.Subgroup.Ker
 import TauCeti.Algebra.Group.Subgroup.Map
+import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
 
 /-!
 # Spinor norms under isometries
@@ -44,24 +44,20 @@ theorem orthogonalSpinorNorm_orthogonalGroupCongr (e : Q.IsometryEquiv Q')
     (hQ : Q.Nondegenerate) (g : QuadraticMap.orthogonalGroup Q) :
     @orthogonalSpinorNorm K W _ _ _ e.toLinearEquiv.finiteDimensional _ Q'
       (e.nondegenerate_iff.mp hQ)
-      (QuadraticMap.orthogonalGroupCongr e g) = orthogonalSpinorNorm Q hQ g := by
+      (e.orthogonalGroupCongr g) = orthogonalSpinorNorm Q hQ g := by
   let _ : FiniteDimensional K W := e.toLinearEquiv.finiteDimensional
-  let H : Subgroup (QuadraticMap.orthogonalGroup Q) :=
-    @MonoidHom.eqLocus (QuadraticMap.orthogonalGroup Q) _
-      (Multiplicative (SquareClassGroup K)) _
+  have h :
       ((orthogonalSpinorNorm Q' (e.nondegenerate_iff.mp hQ)).comp
-        (QuadraticMap.orthogonalGroupCongr e).toMonoidHom)
-      (orthogonalSpinorNorm Q hQ)
-  have hH : H = ⊤ := QuadraticMap.subgroup_eq_top_of_reflection_mem Q hQ H (by
-    intro x _
-    have h : Invertible (Q' (e x)) := by rw [e.map_app]; infer_instance
-    let _ := h
-    rw [MonoidHom.mem_eqLocus, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+        (e.orthogonalGroupCongr).toMonoidHom) =
+      orthogonalSpinorNorm Q hQ := by
+    refine QuadraticMap.orthogonalGroup_hom_ext Q hQ fun x _ ↦ ?_
+    have hx : Invertible (Q' (e x)) := by rw [e.map_app]; infer_instance
+    let _ := hx
+    rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
       QuadraticMap.orthogonalGroupCongr_reflectionOrthogonal,
       orthogonalSpinorNorm_reflectionOrthogonal, orthogonalSpinorNorm_reflectionOrthogonal]
-    exact congrArg squareClassHom (by apply Units.ext; simp [e.map_app]))
-  have hg : g ∈ H := hH.symm ▸ Subgroup.mem_top g
-  exact hg
+    exact congrArg squareClassHom (by apply Units.ext; simp [e.map_app])
+  exact DFunLike.congr_fun h g
 
 -- `spinorNorm_apply` is already a simp lemma, so this theorem is not in simp-normal form.
 /-- An isometric equivalence preserves the spinor norm on the special orthogonal group. -/
@@ -74,7 +70,7 @@ theorem spinorNorm_specialOrthogonalGroupCongr (e : Q.IsometryEquiv Q')
   rw [spinorNorm_apply, spinorNorm_apply]
   have he : QuadraticMap.specialOrthogonalToOrthogonal Q'
         (e.specialOrthogonalGroupCongr g) =
-      QuadraticMap.orthogonalGroupCongr e (QuadraticMap.specialOrthogonalToOrthogonal Q g) := by
+      e.orthogonalGroupCongr (QuadraticMap.specialOrthogonalToOrthogonal Q g) := by
     apply Subtype.ext
     apply LinearEquiv.ext
     intro x

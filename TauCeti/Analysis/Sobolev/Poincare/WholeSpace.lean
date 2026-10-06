@@ -33,9 +33,9 @@ The obstruction is scaling. Dilating the variable by `r > 0` multiplies `‖u‖
 and `‖Du‖_p` by `r ^ (n / p - 1)` (`TauCeti.eLpNorm_comp_inv_smul` and
 `TauCeti.eLpNorm_fderiv_comp_inv_smul`), so applying a putative inequality to the dilates of one
 fixed bump function forces `‖u‖_p ≤ C r⁻¹ ‖Du‖_p` for every `r`, and letting `r → ∞` makes the
-bump's own seminorm vanish. Note that the two hypotheses `p ≠ 0` and `p ≠ ∞` are the only ones
-needed: the failure is not confined to the subcritical range `p < n` in which the positive
-result lives.
+bump's own seminorm vanish. Note that `p ≠ 0` is the only hypothesis needed: the failure is not
+confined to the subcritical range `p < n` in which the positive result lives, and includes
+`p = ∞`.
 
 `TauCeti.Analysis.Sobolev.Poincare.Slab` proves the matching positive statement: bounding the
 support in a single direction already suffices, and the constant is then the width of the slab.
@@ -74,7 +74,7 @@ private theorem eLpNorm_contDiffBump_ne_zero {p : ℝ≥0∞} (hp₀ : p ≠ 0)
 
 /-- Testing a putative Poincaré inequality on the dilate of a bump by `r` and cancelling the common
 factor `r ^ (n / p)` leaves a bound on the bump's own seminorm that degrades like `r⁻¹`. -/
-private theorem eLpNorm_le_ofReal_inv_mul_of_forall {p : ℝ≥0∞} (hp₀ : p ≠ 0) (hp : p ≠ ∞)
+private theorem eLpNorm_le_ofReal_inv_mul_of_forall {p : ℝ≥0∞}
     (φ : ContDiffBump (0 : E)) {C : ℝ≥0}
     (hC : ∀ u : E → ℝ, ContDiff ℝ 1 u → HasCompactSupport u →
       eLpNorm u p μ ≤ C * eLpNorm (fderiv ℝ u) p μ)
@@ -85,7 +85,7 @@ private theorem eLpNorm_le_ofReal_inv_mul_of_forall {p : ℝ≥0∞} (hp₀ : p 
   have h1 := hC (fun x => φ (r⁻¹ • x))
     (hφ1.comp (ContDiff.const_smul r⁻¹ (contDiff_id (𝕜 := ℝ) (E := E))))
     (φ.hasCompactSupport.comp_homeomorph (Homeomorph.smul (Units.mk0 r⁻¹ (inv_ne_zero hr.ne'))))
-  rw [eLpNorm_comp_inv_smul μ _ hr hp₀ hp, eLpNorm_fderiv_comp_inv_smul μ _ hr hp₀ hp] at h1
+  rw [eLpNorm_comp_inv_smul μ _ hr p, eLpNorm_fderiv_comp_inv_smul μ _ hr p] at h1
   set s := ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) / p.toReal)) with hs_def
   have hs0 : s ≠ 0 := by
     rw [hs_def, Ne, ENNReal.ofReal_eq_zero, not_le]
@@ -99,12 +99,13 @@ private theorem eLpNorm_le_ofReal_inv_mul_of_forall {p : ℝ≥0∞} (hp₀ : p 
   ring
 
 /-- **No Poincaré inequality holds on the whole space.** There is no constant `C` with
-`‖u‖_p ≤ C ‖Du‖_p` for every compactly supported `C¹` function `u`, for any `0 < p < ∞`.
+`‖u‖_p ≤ C ‖Du‖_p` for every compactly supported `C¹` function `u`, for any `p ≠ 0`, including
+`p = ∞`.
 
 Compare `MeasureTheory.eLpNorm_le_eLpNorm_fderiv`, which supplies such a constant once every
 `u` is supported in one fixed bounded set; the proof here shows that hypothesis cannot be
 dropped. -/
-theorem not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv {p : ℝ≥0∞} (hp₀ : p ≠ 0) (hp : p ≠ ∞) :
+theorem not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv {p : ℝ≥0∞} (hp₀ : p ≠ 0) :
     ¬ ∃ C : ℝ≥0, ∀ u : E → ℝ, ContDiff ℝ 1 u → HasCompactSupport u →
       eLpNorm u p μ ≤ C * eLpNorm (fderiv ℝ u) p μ := by
   rintro ⟨C, hC⟩
@@ -123,16 +124,16 @@ theorem not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv {p : ℝ≥0∞} (hp₀ :
   have hle : eLpNorm (φ : E → ℝ) p μ ≤ 0 * (C * D) := by
     refine ge_of_tendsto hlim ?_
     filter_upwards [eventually_gt_atTop (0 : ℝ)] with r hr using
-      eLpNorm_le_ofReal_inv_mul_of_forall μ hp₀ hp φ hC hr
+      eLpNorm_le_ofReal_inv_mul_of_forall μ φ hC hr
   rw [zero_mul, le_zero_iff] at hle
   exact eLpNorm_contDiffBump_ne_zero μ hp₀ φ hle
 
 /-- The Poincaré inequality fails on `ℝⁿ` with Lebesgue measure: the roadmap's form of
 `TauCeti.not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv`. -/
 theorem not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv_euclideanSpace (n : ℕ) {p : ℝ≥0∞}
-    (hp₀ : p ≠ 0) (hp : p ≠ ∞) :
+    (hp₀ : p ≠ 0) :
     ¬ ∃ C : ℝ≥0, ∀ u : EuclideanSpace ℝ (Fin n) → ℝ, ContDiff ℝ 1 u → HasCompactSupport u →
       eLpNorm u p volume ≤ C * eLpNorm (fderiv ℝ u) p volume :=
-  not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv volume hp₀ hp
+  not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv volume hp₀
 
 end TauCeti

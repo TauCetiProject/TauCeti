@@ -26,12 +26,16 @@ tensor product.  Such a tensor-product identification is a separate result and i
 module.
 
 The relation is preserved because the global preprojective relator is a sum of differences of
-paths with coefficients `1` and `-1`.  The same argument works for loops and parallel arrows,
+paths with coefficients `1` and `-1`. The same argument works for loops and parallel arrows,
 which are retained by `Quiver.Symmetrify`.
 
-This is the base-change clause of Layer 4 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`.  The conventions follow the presentation and
-later-factor-first multiplication fixed in `Preprojective.Basic`.
+The conventions follow the presentation and later-factor-first multiplication fixed in
+`Preprojective.Basic`.
+
+## References
+
+See Crawley-Boevey, *Quiver algebras, weighted projective lines, and the Deligne--Simpson
+problem*, Section 1.
 -/
 
 public section
@@ -169,7 +173,7 @@ theorem preprojectiveBaseChange_algebraMap (f : k →+* l) (r : k) :
 @[simp]
 theorem preprojectiveBaseChange_id :
     preprojectiveBaseChange (RingHom.id k) = RingHom.id (preprojectiveAlgebra k Q) := by
-  apply preprojectiveAlgebra_ringHom_ext
+  apply ringHom_ext_of_surjective (preprojectiveMk k Q) (preprojectiveMk_surjective k Q)
   · intro r
     simp
   · intro x
@@ -181,7 +185,7 @@ maps. -/
 theorem preprojectiveBaseChange_comp {m : Type*} [CommRing m] (f : k →+* l) (g : l →+* m) :
     preprojectiveBaseChange (Q := Q) (g.comp f) =
       (preprojectiveBaseChange (Q := Q) g).comp (preprojectiveBaseChange (Q := Q) f) := by
-  apply preprojectiveAlgebra_ringHom_ext
+  apply ringHom_ext_of_surjective (preprojectiveMk k Q) (preprojectiveMk_surjective k Q)
   · intro r
     simp
   · intro x

@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Positive
+import TauCeti.Algebra.Group.Submonoid.Closure
 
 /-!
 # The simply connected root datum of type `Dₙ`
@@ -128,7 +129,7 @@ private lemma typeDWeight_dotProduct_coordinates (hn : 4 ≤ n) (x : Fin n → �
     simp only [dotProduct, typeDWeight_apply, smul_eq_mul]
     exact Finset.sum_congr rfl fun j _ => mul_comm _ _
   rw [hleft]
-  conv_rhs => rw [← sum_smul_typeDSimpleRootCoordinates hn y]
+  conv_rhs => rw [← sum_smul_typeDSimpleRootCoordinates hn (even_sum_typeDRoot y)]
   rw [dotProduct_sum]
   exact Finset.sum_congr rfl fun j _ => (dotProduct_smul _ _ _).symm
 
@@ -142,17 +143,20 @@ private lemma typeDWeight_injective (hn : 4 ≤ n) :
       (typeDSimpleRootCoordinates n hn x - typeDSimpleRootCoordinates n hn y) i •
         typeDSimpleRoot n hn i := by
     simp only [Pi.sub_apply, sub_smul, Finset.sum_sub_distrib,
-      sum_smul_typeDSimpleRootCoordinates]
+      sum_smul_typeDSimpleRootCoordinates hn (even_sum_typeDRoot x),
+      sum_smul_typeDSimpleRootCoordinates hn (even_sum_typeDRoot y)]
   refine Subtype.ext (sub_eq_zero.mp ?_)
   rw [hexp]
   refine sum_smul_typeDSimpleRoot_eq_zero hn fun j => ?_
   rw [← hexp, ← typeDWeight_apply hn, map_sub, hxy', sub_self, Pi.zero_apply]
 
 private lemma typeDSimpleRootCoordinates_injective (hn : 4 ≤ n) :
-    Injective (typeDSimpleRootCoordinates n hn) := by
+    Injective fun x : TypeDRoot n => typeDSimpleRootCoordinates n hn x.1 := by
   intro x y h
+  have h' : typeDSimpleRootCoordinates n hn x.1 = typeDSimpleRootCoordinates n hn y.1 := h
   refine Subtype.ext ?_
-  rw [← sum_smul_typeDSimpleRootCoordinates hn x, ← sum_smul_typeDSimpleRootCoordinates hn y, h]
+  rw [← sum_smul_typeDSimpleRootCoordinates hn (even_sum_typeDRoot x),
+    ← sum_smul_typeDSimpleRootCoordinates hn (even_sum_typeDRoot y), h']
 
 /-! ## Reflections -/
 
@@ -289,8 +293,8 @@ what pins the character lattice as the weight lattice. -/
 coroot lattice, so that the datum is the simply connected one. -/
 @[simp] theorem coroot_typeDSimpleIndex (hn : 4 ≤ n) (i : Fin n) :
     (typeDSimplyConnectedRootDatum n hn).coroot (typeDSimpleIndex n hn i) = Pi.single i 1 := by
-  rw [coroot_typeDSimplyConnectedRootDatum,
-    typeDSimpleRootCoordinates_typeDRootEquiv_apply_typeDSimpleIndex]
+  rw [coroot_typeDSimplyConnectedRootDatum, typeDRootEquiv_apply_typeDSimpleIndex,
+    typeDSimpleRootCoordinates_typeDSimpleRoot]
 
 /-- The pairing of two simple roots of the pinned datum is the corresponding entry of the
 Bourbaki-numbered Cartan matrix. -/
@@ -317,7 +321,7 @@ private lemma sum_smul_root_typeDSimpleIndex (hn : 4 ≤ n) (k : Fin (2 * n * (n
         (typeDSimplyConnectedRootDatum n hn).root (typeDSimpleIndex n hn i) =
       (typeDSimplyConnectedRootDatum n hn).root k := by
   simp only [root_eq_typeDWeight, typeDRootEquiv_apply_typeDSimpleIndex, ← map_smul]
-  rw [← map_sum, sum_smul_typeDSimpleRootCoordinates]
+  rw [← map_sum, sum_smul_typeDSimpleRootCoordinates hn (even_sum_typeDRoot _)]
 
 private lemma sum_smul_coroot_typeDSimpleIndex (hn : 4 ≤ n) (k : Fin (2 * n * (n - 1))) :
     ∑ i : Fin n, typeDSimpleRootCoordinates n hn (typeDRootEquiv n hn k) i •

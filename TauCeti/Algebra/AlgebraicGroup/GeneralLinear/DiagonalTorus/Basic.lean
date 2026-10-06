@@ -251,9 +251,11 @@ theorem mapPointsFunctor_diagonalTorusCoordinateMap_app
         (CommHopfAlgCat.mapPointsFunctor
           (diagonalTorusCoordinateMap (R := R) (N := N))).app A
             (AlgHom.mapValue (H := K) f.ofConv p) := by
-    exact DFunLike.congr_fun
+    have h := DFunLike.congr_fun
       (AlgHom.mapValue_mapDomain
-        (diagonalTorusCoordinateMap (R := R) (N := N)).hom f.ofConv) p
+        (diagonalTorusCoordinateMap (R := R) (N := N)).hom f.ofConv).symm p
+    rw [MonoidHom.comp_apply, MonoidHom.comp_apply] at h
+    exact h
   rw [← hfp, ← hnat, hp, mapValue_diagonalTorusPoints]
 
 /-- The diagonal-torus coordinate morphism sends a generic matrix entry to the corresponding

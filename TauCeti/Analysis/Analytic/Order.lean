@@ -8,30 +8,52 @@ module
 public import Mathlib.Analysis.Analytic.Order
 
 /-!
-# The analytic order of products and power-compositions
+# The analytic order of products, power maps and derivatives
 
-Two extensions of Mathlib's `analyticOrderAt` calculus: the order is additive over finite
-products, and composing with `q ↦ q ^ N` at `0` multiplies the order by `N`. The finiteness a
-zero count also needs is `TauCeti.finite_setOf_mem_and_eq_zero_of_isCompact`, provided by
+Extensions of Mathlib's analytic-order calculus: `analyticOrderNatAt` respects eventual equality,
+the order is additive over finite products, composing with `q ↦ q ^ N` at `0` multiplies the order
+by `N`, the power map `w ↦ w ^ m` recentred at `0` has order `m` there for `m ≠ 0`, the
+recentred function `f · - f x` has order `1` at `x` exactly when `deriv f x ≠ 0`, and the order is
+monotone under domination (`=O`), hence invariant under equivalence up to constant factors (`=Θ`).
+The finiteness a zero count also needs is
+`TauCeti.finite_setOf_mem_and_eq_zero_of_isCompact`, provided by
 `TauCeti.Analysis.Analytic.IsolatedZeros`, which mentions no order.
 
 ## Main declarations
 
+* `TauCeti.analyticOrderNatAt_congr`: eventual equality preserves the natural analytic order.
 * `TauCeti.analyticOrderAt_prod`: the order of `∏ i ∈ s, F i` is `∑ i ∈ s`, of the orders.
 * `TauCeti.analyticOrderAt_comp_pow_zero`: the order of `q ↦ f (q ^ N)` at `0` is `N` times
   the order of `f` at `0`.
+* `TauCeti.analyticOrderAt_pow_sub_zero_pow`: the order of `w ↦ w ^ m - 0 ^ m` at `0` is `m`
+  for `m ≠ 0`.
+* `AnalyticAt.analyticOrderAt_sub_eq_one_iff_deriv_ne_zero`: `f · - f x` has order `1` at `x`
+  exactly when `deriv f x ≠ 0`, the `iff` form of Mathlib's
+  `AnalyticAt.analyticOrderAt_sub_eq_one_of_deriv_ne_zero`.
+* `AnalyticAt.analyticOrderAt_le_of_isBigO` and `AnalyticAt.analyticOrderAt_eq_of_isTheta`: an
+  analytic function dominated by `f` vanishes to at least the order of `f`, so analytic functions
+  equivalent up to constant factors have the same order.
 
 ## References
 
 * [Mathlib PR #39083](https://github.com/leanprover-community/mathlib4/pull/39083)
-  (Chris Birkbeck) — the upstream draft this file ports onto the current Mathlib pin.
+  (Chris Birkbeck) — the upstream draft from which this file ports the eventual-equality,
+  product, power-map and derivative lemmas onto the current Mathlib pin.
 -/
 
 public section
 
+open Filter Topology
+
 namespace TauCeti
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {z₀ : 𝕜}
+
+/-- Functions that agree near a point have the same natural analytic order there. -/
+theorem analyticOrderNatAt_congr {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {f g : 𝕜 → E} (hfg : f =ᶠ[𝓝 z₀] g) :
+    analyticOrderNatAt f z₀ = analyticOrderNatAt g z₀ := by
+  rw [analyticOrderNatAt, analyticOrderNatAt, analyticOrderAt_congr hfg]
 
 /-- The order is additive when taking a finite product of analytic functions. -/
 theorem analyticOrderAt_prod {ι : Type*} {s : Finset ι} {F : ι → 𝕜 → 𝕜}
@@ -59,6 +81,60 @@ lemma analyticOrderAt_comp_pow_zero {E : Type*} [NormedAddCommGroup E] [NormedSp
     AnalyticAt.analyticOrderAt_comp (hzero.symm ▸ hf) (analyticAt_id.pow N), hzero, h_sub_eq,
     analyticOrderAt_pow analyticAt_id, analyticOrderAt_id]
   simp
+
+/-- The power map `w ↦ w ^ m`, recentred at `0`, has analytic order `m` at `0` when `m ≠ 0`. -/
+theorem analyticOrderAt_pow_sub_zero_pow {m : ℕ} (hm : m ≠ 0) :
+    analyticOrderAt (fun w : 𝕜 ↦ w ^ m - 0 ^ m) 0 = m := by
+  have hpow : (fun w : 𝕜 ↦ w ^ m - 0 ^ m) = (· - 0) ^ m := funext fun w ↦ by simp [zero_pow hm]
+  rw [hpow, analyticOrderAt_centeredMonomial]
+
+/-- A function analytic at `x` has a simple zero of `f · - f x` at `x` exactly when its
+derivative at `x` does not vanish: the `iff` form of Mathlib's
+`AnalyticAt.analyticOrderAt_sub_eq_one_of_deriv_ne_zero`. -/
+theorem _root_.AnalyticAt.analyticOrderAt_sub_eq_one_iff_deriv_ne_zero {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E] [CharZero 𝕜] {f : 𝕜 → E} {x : 𝕜}
+    (hf : AnalyticAt 𝕜 f x) :
+    analyticOrderAt (f · - f x) x = 1 ↔ deriv f x ≠ 0 := by
+  rw [← hf.analyticOrderAt_deriv_add_one, ← hf.deriv.analyticOrderAt_eq_zero]
+  simp
+
+/-- A function analytic at `z₀` and dominated there by `f` vanishes to at least the order of `f`
+at `z₀`. No analyticity of `f` is needed: a non-analytic `f` has order `0`. -/
+theorem _root_.AnalyticAt.analyticOrderAt_le_of_isBigO {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : 𝕜 → E} {g : 𝕜 → F}
+    (hg : AnalyticAt 𝕜 g z₀) (hgf : g =O[𝓝 z₀] f) :
+    analyticOrderAt f z₀ ≤ analyticOrderAt g z₀ := by
+  by_cases hf : AnalyticAt 𝕜 f z₀
+  swap
+  · simp [analyticOrderAt_of_not_analyticAt hf]
+  by_cases hftop : analyticOrderAt f z₀ = ⊤
+  · -- a function dominated by one vanishing near `z₀` vanishes near `z₀`
+    rw [hftop, top_le_iff, analyticOrderAt_eq_top]
+    exact Asymptotics.isBigO_zero_right_iff.1
+      (hgf.trans_eventuallyEq (analyticOrderAt_eq_top.1 hftop))
+  by_cases hgtop : analyticOrderAt g z₀ = ⊤
+  · simp [hgtop]
+  rw [← Nat.cast_analyticOrderNatAt hftop, ← Nat.cast_analyticOrderNatAt hgtop, Nat.cast_le]
+  by_contra! hlt
+  -- otherwise `(z - z₀) ^ b`, for `b` the order of `g`, would be negligible compared to itself
+  have hpow : (fun z => (z - z₀) ^ analyticOrderNatAt f z₀) =o[𝓝 z₀]
+      fun z => (z - z₀) ^ analyticOrderNatAt g z₀ :=
+    Asymptotics.isLittleO_norm_norm.1 <| by
+      simpa only [norm_pow] using Asymptotics.isLittleO_pow_sub_pow_sub z₀ hlt
+  refine Asymptotics.isLittleO_irrefl' ?_ <|
+    ((hg.isTheta_pow_sub hgtop).symm.isBigO.trans hgf).trans_isLittleO
+      ((hf.isTheta_pow_sub hftop).isBigO.trans_isLittleO hpow)
+  exact ((eventually_nhdsWithin_of_forall (s := {z₀}ᶜ) fun z hz =>
+    norm_ne_zero_iff.2 (pow_ne_zero _ (sub_ne_zero.2 hz))).frequently).filter_mono
+      nhdsWithin_le_nhds
+
+/-- Two functions analytic at `z₀` that are equivalent up to constant factors near `z₀` vanish to
+the same order there. -/
+theorem _root_.AnalyticAt.analyticOrderAt_eq_of_isTheta {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : 𝕜 → E} {g : 𝕜 → F}
+    (hf : AnalyticAt 𝕜 f z₀) (hg : AnalyticAt 𝕜 g z₀) (hfg : f =Θ[𝓝 z₀] g) :
+    analyticOrderAt f z₀ = analyticOrderAt g z₀ :=
+  le_antisymm (hg.analyticOrderAt_le_of_isBigO hfg.2) (hf.analyticOrderAt_le_of_isBigO hfg.isBigO)
 
 end TauCeti
 

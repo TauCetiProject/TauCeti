@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.RingTheory.TensorProduct.Maps
+import Mathlib.LinearAlgebra.Basis.VectorSpace
 import TauCeti.LinearAlgebra.TensorProduct.Separation
 
 /-!

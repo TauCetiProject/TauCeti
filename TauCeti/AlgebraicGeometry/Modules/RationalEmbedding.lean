@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.Germ
 public import TauCeti.AlgebraicGeometry.Modules.RationalFunctions
+import Mathlib.Algebra.Category.ModuleCat.Presheaf.EpiMono
 
 /-!
 # Rational functions represented by generically free rank-one module sections

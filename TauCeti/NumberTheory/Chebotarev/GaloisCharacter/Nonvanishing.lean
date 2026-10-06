@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.ThreeFourOne
-import TauCeti.Analysis.Asymptotics.InvSubOne
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.ThreeFourOne
+public import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Weight
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Restrict
-import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Weight
-import TauCeti.NumberTheory.LSeries.Nonvanishing
 import TauCeti.NumberTheory.NumberField.DedekindZeta
 
 /-!
@@ -25,6 +23,12 @@ at the primes ramified in `F` deleted, does not vanish at any `s ≠ 1` with `Re
 Together with the continuation across `Re s = 1`, this is what makes the logarithmic derivatives
 of these series, with the pole of the trivial one subtracted, continuous on `Re s ≥ 1`: the
 boundary behaviour required to apply a Tauberian theorem to the Frobenius von Mangoldt series.
+
+The criterion is the `3-4-1` criterion `TauCeti.UnitaryIdealWeight.ne_zero_of_eqOn_LSeries` for
+the unitary weight `galoisCharacterUnitaryWeight χ`, whose pointwise square is the unitary weight
+of `χ²`. The remaining results handle the square: for `χ² = 1` its series is the trivial one, which
+continues across `Re s = 1` away from `s = 1` by
+`TauCeti.exists_differentiableOn_eq_LSeries_ofBadPrimes_sub`.
 
 ## Main results
 
@@ -103,26 +107,18 @@ theorem ne_zero_of_eqOn_LSeries_galoisCharacterWeight (χ : (F ≃ₐ[K] F) →*
       (LSeries (normCoeff K (χ ^ 2).galoisCharacterWeight.toIdealArithmeticFunction))
       {z | 1 < z.re}) :
     f s ≠ 0 := by
-  -- Write `s = 1 + it`, so that `2s - 1 = 1 + 2it`. The Euler-product bound
-  -- `norm_galoisCharacterLSeries_threeFourOne_ge_one` and the simple pole of the trivial series
-  -- at `s = 1` are the inputs of the analytic criterion `LSeries.ne_zero_of_threeFourOne`.
-  have hs' : s = 1 + I * s.im := by
-    conv_lhs => rw [← re_add_im s, hs, ofReal_one, mul_comm]
-  have hs₂ : 2 * s - 1 = 1 + 2 * I * s.im := by
-    conv_lhs => rw [hs']
-    ring
-  rw [hs'] at hf ⊢
-  rw [hs₂] at hf₂
-  refine LSeries.ne_zero_of_threeFourOne ?_ ?_ hf hf₂
-    (f₀ := LSeries (normCoeff K
-      (1 : (F ≃ₐ[K] F) →* ℂˣ).galoisCharacterWeight.toIdealArithmeticFunction))
-  · filter_upwards [self_mem_nhdsWithin] with σ (hσ : 1 < σ)
-    rw [hfL (by simpa using hσ), hf₂L (by simpa using hσ)]
-    exact norm_galoisCharacterLSeries_threeFourOne_ge_one χ hσ s.im
-  · -- The trivial series has a simple pole at `s = 1`.
-    rw [MonoidHom.galoisCharacterWeight_one]
-    exact isBigO_inv_sub_one_of_tendsto_sub_one_mul <| by
-      simpa using tendsto_sub_one_mul_LSeries_ofBadPrimes (K := K) (ramifiedPrimes K F)
+  -- The series of `χ` and of `χ²` are those of the unitary weight of `χ` and of its pointwise
+  -- square, so this is the `3-4-1` criterion for unitary weights.
+  have h₁ : χ.galoisCharacterUnitaryWeight.toIdealArithmeticFunction =
+      χ.galoisCharacterWeight.toIdealArithmeticFunction := by
+    simp only [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val,
+      MonoidHom.val_galoisCharacterUnitaryWeight]
+  have h₂ : (χ.galoisCharacterUnitaryWeight ^ 2).toIdealArithmeticFunction =
+      (χ ^ 2).galoisCharacterWeight.toIdealArithmeticFunction := by
+    simp only [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val, sq, UnitaryIdealWeight.val_mul,
+      MonoidHom.val_galoisCharacterUnitaryWeight, MonoidHom.galoisCharacterWeight_mul]
+  exact χ.galoisCharacterUnitaryWeight.ne_zero_of_eqOn_LSeries hs hf (by rwa [h₁]) hf₂
+    (by rwa [h₂])
 
 /-- **Nonvanishing on `Re s = 1` for a character of order at most two.** Let `F / K` be a finite
 Galois extension and `χ` a character of `Gal(F/K)` with `χ² = 1`. If `f` agrees on `Re s > 1` with
@@ -165,64 +161,16 @@ theorem exists_continuousOn_eq_neg_logDeriv_galoisCharacterWeight_one_sub : ∃ 
       G s = -logDeriv (LSeries (normCoeff K
         (1 : (F ≃ₐ[K] F) →* ℂˣ).galoisCharacterWeight.toIdealArithmeticFunction)) s -
           1 / (s - 1) := by
-  obtain ⟨G, hG, hGL⟩ := exists_differentiableOn_eq_LSeries_ofBadPrimes_sub K
-    (ramifiedPrimes K F)
-  set U := {s : ℂ | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re}
-  have hU : IsOpen U := isOpen_lt continuous_const continuous_re
-  set ρ := (dedekindZeta_residue K : ℂ) *
-    ∏ 𝔭 ∈ ramifiedPrimes K F, (1 - (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (-1 : ℂ))
-  set L₁ := LSeries (normCoeff K
-    (1 : (F ≃ₐ[K] F) →* ℂˣ).galoisCharacterWeight.toIdealArithmeticFunction)
-  have hGL' {s : ℂ} (hs : 1 < s.re) : G s = L₁ s - ρ / (s - 1) := by
-    dsimp only [L₁, ρ]
-    rw [MonoidHom.galoisCharacterWeight_one]
-    exact hGL s hs
-  -- The residue `ρ` of `L₁` at `s = 1` is nonzero: every deleted Euler factor is nonzero at `1`.
-  have hρ : ρ ≠ 0 :=
-    dedekindZeta_residue_mul_prod_one_sub_absNorm_cpow_neg_one_ne_zero
-      (ramifiedPrimes K F)
-  -- `H(s) = (s - 1) L₁(s)` continues holomorphically to `U`, with value `ρ` at `s = 1`.
-  set H : ℂ → ℂ := fun s ↦ (s - 1) * G s + ρ
-  have hH : DifferentiableOn ℂ H U := ((differentiableOn_id.sub_const 1).mul hG).add_const ρ
-  have hsub {s : ℂ} (hs : 1 < s.re) : s - 1 ≠ 0 :=
-    sub_ne_zero.mpr fun h ↦ by simp [h] at hs
-  have hHL {s : ℂ} (hs : 1 < s.re) : H s = (s - 1) * L₁ s := by
-    simp only [H, hGL' hs]
-    field_simp [hsub hs]
-    ring
-  -- `H` does not vanish on `Re s ≥ 1`.
-  have hH0 {s : ℂ} (hs : 1 ≤ s.re) : H s ≠ 0 := by
-    rcases hs.lt_or_eq with hs | hs
-    · rw [hHL hs]
-      exact mul_ne_zero (hsub hs) (MonoidHom.LSeries_galoisCharacterWeight_ne_zero 1 hs)
-    rcases eq_or_ne s 1 with rfl | hs1
-    · simpa [H] using hρ
-    -- Elsewhere on the line, `H(s) / (s - 1)` is a continuation of `L₁` differentiable at `s`.
-    have hne := ne_zero_of_eqOn_LSeries_galoisCharacterWeight_one (K := K) (F := F)
-      (f := fun z ↦ H z / (z - 1)) hs.symm hs1
-      ((hH.differentiableAt (hU.mem_nhds
-        (setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K hs.le))).div
-        (differentiableAt_id.sub_const 1) (sub_ne_zero.mpr hs1))
-      fun z (hz : 1 < z.re) ↦ by
-        simp only [hHL hz, mul_div_cancel_left₀ _ (hsub hz), L₁]
-    exact fun h ↦ hne (by simp [h])
-  refine ⟨fun s ↦ -logDeriv H s, ?_, fun s hs ↦ ?_⟩
-  · simp only [logDeriv_apply]
-    exact (((hH.deriv hU).continuousOn.mono
-      (setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K)).div
-      (hH.continuousOn.mono (setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K))
-      fun _ hs ↦ hH0 hs).neg
-  -- On `Re s > 1`, `L₁ = H / (s - 1)` near `s`, so `L₁'/L₁ = H'/H - 1 / (s - 1)`.
-  have hHs : DifferentiableAt ℂ H s :=
-    hH.differentiableAt (hU.mem_nhds
-      (setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K hs.le))
-  have hL : logDeriv L₁ s = logDeriv (H / fun z ↦ z - 1) s :=
-    (logDeriv_congr_nhds <| eventually_of_mem
-      ((isOpen_lt continuous_const continuous_re).mem_nhds hs) fun z (hz : 1 < z.re) ↦ by
-        simp only [Pi.div_apply, hHL hz, mul_div_cancel_left₀ _ (hsub hz)]).eq_of_nhds
+  -- `L_1` is `ζ_K` with the Euler factors at the ramified primes deleted, and the deletion adds
+  -- to the logarithmic derivative a finite sum holomorphic on `Re s > 0`.
+  obtain ⟨G, hG, hGζ⟩ := exists_continuousOn_eq_neg_deriv_dedekindZeta_div_sub K
+  refine ⟨fun s ↦ G s - ∑ P ∈ ramifiedPrimes K F,
+      Complex.log (Ideal.absNorm P.asIdeal) / ((Ideal.absNorm P.asIdeal : ℂ) ^ s - 1),
+    hG.sub ((differentiableOn_sum_log_absNorm_div_cpow_sub_one _).continuousOn.mono
+      fun s (hs : 1 ≤ s.re) ↦ zero_lt_one.trans_le hs), fun s hs ↦ ?_⟩
+  rw [MonoidHom.galoisCharacterWeight_one, logDeriv_LSeries_ofBadPrimes _ hs, logDeriv_apply]
   dsimp only
-  rw [hL, logDeriv_div (g := fun z ↦ z - 1) s (hH0 hs.le) (hsub hs) hHs
-    (differentiableAt_id.sub_const 1), logDeriv_apply (· - 1), deriv_sub_const, deriv_id'']
+  rw [hGζ s hs]
   ring
 
 end NumberField.Chebotarev

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import TauCeti.Analysis.Fredholm.Estimate
+public import TauCeti.Analysis.Normed.Operator.ClosedRange
 
 /-!
 # A map with upper semi-Fredholm derivative is proper near the point
@@ -198,7 +198,7 @@ theorem _root_.HasStrictFDerivAt.exists_mem_nhds_forall_isCompact_inter_preimage
   have hanti : AntilipschitzWith ⟨2 * C + 2, by positivity⟩ Θ :=
     antilipschitzWith_prodMk hC.le key
   have hΘlip : LipschitzWith (‖f'‖₊ + ε + ‖P‖₊) Θ := by
-    have h1 : LipschitzWith (‖f'‖₊ + ε) fun x : N => f (x : E) := happN.lipschitz
+    have h1 : LipschitzWith (‖f'‖₊ + ε) fun x : N => f (x : E) := happN.lipschitzWith
     have h2 : LipschitzWith ‖P‖₊ fun x : N => P (x : E) := P.lipschitzWith.restrict N
     exact (h1.prodMk h2).weaken (by simp)
   have hind : IsUniformInducing Θ := hanti.isUniformInducing hΘlip.uniformContinuous

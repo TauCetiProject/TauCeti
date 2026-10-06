@@ -99,19 +99,8 @@ theorem _root_.QuadraticForm.not_anisotropic_of_isLocallyIsotropic_of_five_le_fi
   -- Split the diagonalization as a binary summand `U` and a complement `W` of rank `m ≥ 3`.
   let U := presentedForm ⟨2, fun i => w (Fin.castAdd m i)⟩
   let W := presentedForm ⟨m, fun j => w (Fin.natAdd 2 j)⟩
-  have hsplit : Q.Equivalent (U.prod W) := by
-    refine hQw.trans ?_
-    have happ : RegularFormPresentation.append ⟨2, fun i => w (Fin.castAdd m i)⟩
-        ⟨m, fun j => w (Fin.natAdd 2 j)⟩ = ⟨2 + m, w⟩ := by
-      refine RegularFormPresentation.ext (RegularFormPresentation.fst_append _ _) fun i => ?_
-      obtain ⟨j, rfl⟩ : ∃ j, i = Fin.cast (RegularFormPresentation.fst_append _ _).symm j :=
-        ⟨Fin.cast (RegularFormPresentation.fst_append _ _) i, by simp⟩
-      induction j using Fin.addCases with
-      | left k => exact RegularFormPresentation.append_apply_castAdd _ _ k
-      | right k => exact RegularFormPresentation.append_apply_natAdd _ _ k
-    have := equivalent_presentedForm_append_prod ⟨2, fun i => w (Fin.castAdd m i)⟩
-      ⟨m, fun j => w (Fin.natAdd 2 j)⟩
-    rwa [happ] at this
+  have hsplit : Q.Equivalent (U.prod W) :=
+    hQw.trans (equivalent_presentedForm_prod_castAdd_natAdd (m := 2) (n := m) w)
   rw [hsplit.anisotropic_iff]
   refine QuadraticForm.not_anisotropic_prod_of_isLocallyIsotropic (nondegenerate_presentedForm _)
     (nondegenerate_presentedForm _) (by rw [Module.finrank_fin_fun]; dsimp only; omega)

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.Data.Fin.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E6.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
@@ -45,6 +46,8 @@ the doubled family being what its graph-twisted family `²E₆(q)` needs where `
 * `TauCeti.DynkinType.e6MinusculeWeight`: the twenty-seven weights in fundamental coordinates.
 * `TauCeti.DynkinType.e6MinusculeReflection`: the permutation induced by a simple reflection.
 * `TauCeti.DynkinType.e6MinusculeWeight_reflection`: the simple-reflection equation.
+* `TauCeti.DynkinType.exists_e6MinusculeReflections_eq`: every table index is reached from the
+  highest-weight index by simple reflections.
 * `TauCeti.DynkinType.range_e6MinusculeWeight`: the table is exactly the Weyl orbit of `ϖ₁`.
 * `TauCeti.DynkinType.span_range_e6MinusculeWeight_eq_top`: the weights span the character lattice.
 * `TauCeti.DynkinType.e6MinusculeGraphDualPerm`: the involution of the index set induced by the
@@ -65,7 +68,9 @@ Algebras, Chapters 4--6*, Plate V. The minuscule-orbit description of the 27-dim
 representation follows J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*,
 §13.4, and J. C. Jantzen, *Representations of Algebraic Groups*, II.2. That the diagram
 automorphism exchanges the two twenty-seven dimensional representations, and the conventions for
-`²E₆(q)` that makes this relevant to, are R. W. Carter, *Simple Groups of Lie Type*, §12.2.
+`²E₆(q)` that makes this relevant to, are R. W. Carter, *Simple Groups of Lie Type*, §12.2. The
+reflection-reachability argument follows the parallel type-`E₇` construction in
+`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E7.MinusculeWeight`.
 -/
 
 public section
@@ -216,42 +221,35 @@ private theorem e6MinusculeWeight_succ_eq_reflection_parent (a : Fin 26) :
   rw [e6SimplyConnectedRootDatum_reflection_e6MinusculeWeight]
   fin_cases a <;> decide
 
+/-- Every index in the minuscule weight table is reached from the highest-weight index by a
+finite sequence of simple reflections. -/
+theorem exists_e6MinusculeReflections_eq (a : Fin 27) :
+    ∃ l : List (Fin 6), l.foldl (fun b i ↦ e6MinusculeReflection i b) 0 = a := by
+  apply exists_foldl_eq_of_parent
+    (fun b i ↦ e6MinusculeReflection i b) e6MinusculeParent
+    e6MinusculeParentNode e6MinusculeParent_lt_succ
+  intro c
+  apply e6MinusculeWeight_injective
+  rw [e6MinusculeWeight_succ_eq_reflection_parent,
+    e6SimplyConnectedRootDatum_reflection_e6MinusculeWeight]
+
 private theorem e6MinusculeWeight_mem_orbit (a : Fin 27) :
     e6MinusculeWeight a ∈
       MulAction.orbit e6SimplyConnectedRootDatum.weylGroup
         (Pi.single 0 1 : Fin 6 → ℤ) := by
-  have aux : ∀ n, ∀ hn : n < 27, e6MinusculeWeight ⟨n, hn⟩ ∈
-      MulAction.orbit e6SimplyConnectedRootDatum.weylGroup
-        (Pi.single 0 1 : Fin 6 → ℤ) := by
-    intro n hn
-    induction n using Nat.strong_induction_on with
-    | h n ih =>
-        by_cases hzero : n = 0
-        · subst n
-          -- The proof that the dependent index lies in `Fin 27` is definitionally irrelevant;
-          -- expose the zero index so the public highest-weight lemma applies.
-          change e6MinusculeWeight 0 ∈
-            MulAction.orbit e6SimplyConnectedRootDatum.weylGroup
-              (Pi.single 0 1 : Fin 6 → ℤ)
-          rw [e6MinusculeWeight_zero]
-          exact MulAction.mem_orbit_self _
-        · let a : Fin 26 := ⟨n - 1, by omega⟩
-          have hasucc : a.succ = (⟨n, hn⟩ : Fin 27) := by
-            apply Fin.ext
-            simp [a]
-            omega
-          have hparent : (e6MinusculeParent a : ℕ) < n := by
-            have h := e6MinusculeParent_lt_succ a
-            -- `hasucc` is an equality of `Fin` values; applying `Fin.val` exposes exactly the
-            -- natural-number endpoint in `h` without changing either index.
-            rw [show (a.succ : ℕ) = n from congrArg Fin.val hasucc] at h
-            exact h
-          rw [← hasucc, e6MinusculeWeight_succ_eq_reflection_parent]
-          exact MulAction.mem_orbit_of_mem_orbit
-            (RootPairing.weylGroup.ofIdx e6SimplyConnectedRootDatum
-              (e6SimpleIndex (e6MinusculeParentNode a)))
-            (ih (e6MinusculeParent a) hparent (e6MinusculeParent a).isLt)
-  exact aux a a.isLt
+  obtain ⟨l, hl⟩ := exists_e6MinusculeReflections_eq a
+  rw [← hl]
+  clear a hl
+  induction l using List.reverseRecOn with
+  | nil =>
+      rw [List.foldl_nil, e6MinusculeWeight_zero]
+      exact MulAction.mem_orbit_self _
+  | append_singleton l i ih =>
+      rw [List.foldl_append]
+      simp only [List.foldl_cons, List.foldl_nil]
+      rw [← e6SimplyConnectedRootDatum_reflection_e6MinusculeWeight]
+      exact MulAction.mem_orbit_of_mem_orbit
+        (RootPairing.weylGroup.ofIdx e6SimplyConnectedRootDatum (e6SimpleIndex i)) ih
 
 /-- **The explicit table is exactly the Weyl orbit of the first fundamental weight `ϖ₁`.** -/
 theorem range_e6MinusculeWeight :

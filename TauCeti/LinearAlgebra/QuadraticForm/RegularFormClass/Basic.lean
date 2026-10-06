@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.LinearAlgebra.QuadraticForm.Prod
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
+import TauCeti.LinearAlgebra.QuadraticForm.Binary
 
 /-!
 # Isometry classes of regular quadratic forms
@@ -56,6 +57,8 @@ rank is additive.
 * `TauCeti.presentedForm_tail_isRepresentedBy`: the tail of a diagonal presentation is
   represented by the full form.
 * `TauCeti.formClass_prod`: the class of an orthogonal product is the sum of the classes.
+* `TauCeti.RegularFormClass.mk_succ_eq_mk_rankOne_add`: the class of a presentation of positive
+  rank is the rank-one class of its first weight plus the class of the remaining weights.
 * `TauCeti.RegularFormClass.induction_on_rankOne`: every class is a sum of rank-one classes.
 
 ## References
@@ -119,6 +122,15 @@ theorem presentedForm_eq_weightedSumSquares_coe {n : ℕ} (w : Fin n → Kˣ) :
   rw [presentedForm_eq_weightedSumSquares]
   ext x
   simp only [weightedSumSquares_apply, Units.smul_def, smul_eq_mul]
+
+/-- A binary presented form `⟨w₀, w₁⟩` is the weighted sum of squares with the two coerced weights
+`w₀`, `w₁`, which is the shape in which the binary value and classification criteria are stated. -/
+theorem presentedForm_two (w : Fin 2 → Kˣ) :
+    presentedForm ⟨2, w⟩ = weightedSumSquares K ![(w 0 : K), (w 1 : K)] := by
+  rw [presentedForm_eq_weightedSumSquares_coe]
+  congr 1
+  funext i
+  fin_cases i <;> rfl
 
 /-- A presented form is regular: all its weights are units, so its radical vanishes. -/
 theorem nondegenerate_presentedForm [Invertible (2 : K)] (p : RegularFormPresentation K) :
@@ -241,6 +253,27 @@ theorem RegularFormPresentation.append_apply_natAdd (p q : RegularFormPresentati
       (Fin.cast (RegularFormPresentation.fst_append p q).symm (Fin.natAdd p.1 j)) = q.2 j := by
   simp [RegularFormPresentation.append]
 
+-- `append` is opaque to importing modules; this equation lets them rewrite a full presentation.
+/-- Appending presentations concatenates their weight tuples. -/
+theorem RegularFormPresentation.append_def (p q : RegularFormPresentation K) :
+    p.append q = ⟨p.1 + q.1, Fin.append p.2 q.2⟩ := by
+  let hfst := RegularFormPresentation.fst_append p q
+  have hw : (p.append q).2 ∘ Fin.cast hfst.symm = Fin.append p.2 q.2 := by
+    funext i
+    refine Fin.addCases ?_ ?_ i
+    · intro k
+      simpa only [Function.comp_apply, Fin.append_left] using
+        RegularFormPresentation.append_apply_castAdd p q k
+    · intro k
+      simpa only [Function.comp_apply, Fin.append_right] using
+        RegularFormPresentation.append_apply_natAdd p q k
+  apply RegularFormPresentation.ext hfst
+  intro i
+  let j := Fin.cast hfst i
+  have hi : i = Fin.cast hfst.symm j := Fin.ext rfl
+  rw [hi]
+  exact congrFun hw j
+
 /-- The weight product of a concatenation is the product of the two weight products. -/
 theorem RegularFormPresentation.prod_append (p q : RegularFormPresentation K) :
     (∏ i, (RegularFormPresentation.append p q).2 i) = (∏ i, p.2 i) * ∏ j, q.2 j := by
@@ -315,6 +348,22 @@ theorem equivalent_presentedForm_append_prod (p q : RegularFormPresentation K) :
       ((presentedForm p).prod (presentedForm q)) :=
   ⟨presentedFormAppendIsometryEquiv p q⟩
 
+/-- A presentation of rank `m + n` is the concatenation of its first `m` and its last `n`
+weights. -/
+theorem RegularFormPresentation.append_castAdd_natAdd {m n : ℕ} (w : Fin (m + n) → Kˣ) :
+    RegularFormPresentation.append ⟨m, fun i => w (Fin.castAdd n i)⟩
+      ⟨n, fun i => w (Fin.natAdd m i)⟩ = ⟨m + n, w⟩ := by
+  rw [RegularFormPresentation.append_def, Fin.append_castAdd_natAdd]
+
+/-- The form presented by `m + n` weights is isometric to the orthogonal sum of the forms
+presented by its first `m` and by its last `n` weights. -/
+theorem equivalent_presentedForm_prod_castAdd_natAdd {m n : ℕ} (w : Fin (m + n) → Kˣ) :
+    (presentedForm ⟨m + n, w⟩).Equivalent
+      ((presentedForm ⟨m, fun i => w (Fin.castAdd n i)⟩).prod
+        (presentedForm ⟨n, fun i => w (Fin.natAdd m i)⟩)) := by
+  rw [← RegularFormPresentation.append_castAdd_natAdd]
+  exact equivalent_presentedForm_append_prod _ _
+
 /-- Peeling the first weight off a presentation of positive rank exhibits the presented form as
 the orthogonal sum of the line `⟨w 0⟩` and the presentation of the remaining weights:
 `⟨w 0⟩ ⊥ ⟨w 1, …, w n⟩ ≅ ⟨w 0, …, w n⟩`. The first factor is carried by `K` itself rather than by
@@ -335,6 +384,39 @@ theorem presentedForm_tail_isRepresentedBy {n : ℕ} (w : Fin (n + 1) → Kˣ) :
       (presentedForm ⟨n + 1, w⟩) :=
   (QuadraticMap.isRepresentedBy_prod_right _ _).trans
     (QuadraticMap.Equivalent.isRepresentedBy ⟨presentedFormConsIsometryEquiv w⟩)
+
+/-- A diagonal form `⟨w₀, w₁, …, wₙ⟩` is isotropic exactly when `⟨w₁, …, wₙ⟩` represents
+`-w₀`. -/
+theorem not_anisotropic_presentedForm_succ_iff [Invertible (2 : K)] {n : ℕ}
+    (w : Fin (n + 1) → Kˣ) :
+    ¬(presentedForm ⟨n + 1, w⟩).Anisotropic ↔
+      -w 0 ∈ unitValueSet (presentedForm ⟨n, fun i ↦ w i.succ⟩) := by
+  rw [mem_unitValueSet_iff_not_anisotropic_prod _ (nondegenerate_presentedForm _),
+    ← QuadraticMap.Equivalent.anisotropic_iff ⟨presentedFormConsIsometryEquiv w⟩,
+    ← QuadraticMap.Equivalent.anisotropic_iff ⟨QuadraticMap.IsometryEquiv.prodComm _ _⟩]
+  simp
+
+/-- A diagonal form `⟨w₀, w₁, w₂, …⟩` of rank `2 + n` with `n ≠ 0` is isotropic exactly when some
+unit value `x` of its binary head `⟨w₀, w₁⟩` has `-x` a value of its tail `⟨w₂, …⟩`. The head is
+stated as a weighted sum of squares, the shape in which the binary value criteria are stated. -/
+theorem not_anisotropic_presentedForm_two_add_iff [Invertible (2 : K)] {n : ℕ} [NeZero n]
+    (w : Fin (2 + n) → Kˣ) :
+    ¬(presentedForm ⟨2 + n, w⟩).Anisotropic ↔
+      ∃ x : Kˣ, x ∈ unitValueSet (weightedSumSquares K ![(w 0 : K), (w 1 : K)]) ∧
+        -x ∈ unitValueSet (presentedForm ⟨n, fun i ↦ w (Fin.natAdd 2 i)⟩) := by
+  have hfirst : presentedForm ⟨2, fun i ↦ w (Fin.castAdd n i)⟩ =
+      weightedSumSquares K ![(w 0 : K), (w 1 : K)] := by
+    have h0 : Fin.castAdd n (0 : Fin 2) = 0 := Fin.ext (by simp)
+    have h1 : Fin.castAdd n (1 : Fin 2) = 1 :=
+      Fin.ext (by simp [Nat.mod_eq_of_lt (by omega : 1 < 2 + n)])
+    rw [presentedForm_two, h0, h1]
+  have hw0 : w 0 ∈ unitValueSet (presentedForm ⟨2, fun i ↦ w (Fin.castAdd n i)⟩) := by
+    rw [hfirst]
+    exact mem_unitValueSet_binary_left _ _
+  rw [(equivalent_presentedForm_prod_castAdd_natAdd w).anisotropic_iff,
+    QuadraticMap.not_anisotropic_prod_iff_exists_mem_unitValueSet_neg_mem
+      (nondegenerate_presentedForm _).radical_eq_bot (nondegenerate_presentedForm _).radical_eq_bot
+      ⟨w 0, hw0⟩, hfirst]
 
 private theorem presentedFormConsIsometryEquiv_toLinearEquiv {n : ℕ} (w : Fin (n + 1) → Kˣ) :
     (presentedFormConsIsometryEquiv w).toLinearEquiv =
@@ -452,6 +534,23 @@ theorem RegularFormClass.rank_add (x y : RegularFormClass K) :
 theorem RegularFormClass.rank_zero : RegularFormClass.rank (0 : RegularFormClass K) = 0 := by
   rw [RegularFormClass.zero_def, RegularFormClass.rank_mk]
 
+/-- A regular-form class has rank zero exactly when it is the zero class. -/
+@[simp]
+theorem RegularFormClass.rank_eq_zero_iff {x : RegularFormClass K} :
+    x.rank = 0 ↔ x = 0 := by
+  constructor
+  · intro hx
+    induction x using Quotient.inductionOn with
+    | h p =>
+      rw [RegularFormClass.rank_mk] at hx
+      rw [RegularFormClass.zero_def]
+      apply congrArg (Quotient.mk (regularFormSetoid K))
+      apply RegularFormPresentation.ext hx
+      intro i
+      exact (Fin.cast hx i).elim0
+  · rintro rfl
+    exact RegularFormClass.rank_zero
+
 /-! ### Induction on the rank -/
 
 private theorem RegularFormClass.mk_succ {n : ℕ} (w : Fin (n + 1) → Kˣ) :
@@ -462,6 +561,19 @@ private theorem RegularFormClass.mk_succ {n : ℕ} (w : Fin (n + 1) → Kˣ) :
     (Fin.append_right_eq_snoc _ _).trans (Fin.snoc_init_self w)
   rw [RegularFormClass.mk_add_mk]
   exact congrArg (Quotient.mk (regularFormSetoid K)) (congrArg (Sigma.mk (n + 1)) hw.symm)
+
+/-- Peeling the first weight off a presentation of positive rank splits its class as the
+rank-one class `⟨w 0⟩` plus the class of the remaining weights. -/
+theorem RegularFormClass.mk_succ_eq_mk_rankOne_add {n : ℕ} (w : Fin (n + 1) → Kˣ) :
+    Quotient.mk (regularFormSetoid K) ⟨n + 1, w⟩ =
+      Quotient.mk (regularFormSetoid K) ⟨1, fun _ => w 0⟩ +
+        Quotient.mk (regularFormSetoid K) ⟨n, fun i => w i.succ⟩ := by
+  rw [RegularFormClass.mk_add_mk]
+  refine congrArg (Quotient.mk (regularFormSetoid K))
+    (RegularFormPresentation.ext (Nat.add_comm n 1) fun i => ?_)
+  simp only [RegularFormPresentation.append, Fin.append_left_eq_cons, Function.comp_apply,
+    Fin.cast_cast, Fin.cast_eq_self]
+  exact (congrFun (Fin.cons_self_tail w) i).symm
 
 /-- Every isometry class of regular forms is built from the zero class by adjoining rank-one
 classes one at a time. This is the induction principle behind every statement proved by

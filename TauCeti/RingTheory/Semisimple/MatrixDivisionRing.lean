@@ -14,6 +14,8 @@ public import Mathlib.RingTheory.Length
 -- matrix ring over a division ring) are the engines of the arguments below; neither is mentioned
 -- by an exported statement.
 import Mathlib.LinearAlgebra.Matrix.Reindex
+import Mathlib.RingTheory.SimpleRing.Congr
+import Mathlib.RingTheory.SimpleRing.Matrix
 import TauCeti.RingTheory.Semisimple.SimpleArtinian
 
 /-!

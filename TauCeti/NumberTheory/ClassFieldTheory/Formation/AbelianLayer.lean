@@ -6,7 +6,10 @@ Authors: Codex
 module
 
 public import Mathlib.Topology.Algebra.Group.TopologicalAbelianization
+public import TauCeti.GroupTheory.QuotientGroup.Index
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Basic
+
+import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 
 /-!
 # Abelian layers of a formation
@@ -52,6 +55,9 @@ class-field correspondences directly in terms of their abelian Galois groups.
   abelian sublayer.
 * `OpenNormalSubgroup.maximalAbelianLayer_eq_self_iff`: the construction fixes exactly the
   abelian layers.
+* `OpenNormalSubgroup.natCard_abelianization_gal_eq_degree_maximalAbelianLayer`: the
+  abelianized Galois group of a layer has the order of the Galois group of its maximal abelian
+  sublayer.
 
 ## References
 
@@ -101,6 +107,19 @@ theorem isAbelianClassFieldLayer_iff_isMulCommutative (V : OpenNormalSubgroup G)
   constructor
   · exact fun h ↦ (Subgroup.le_topologicalClosure _).trans h
   · exact fun h ↦ (commutator G).topologicalClosure_minimal h V.toOpenSubgroup.isClosed
+
+/-- A layer subgroup containing an abelian layer subgroup is abelian: a subextension of an
+abelian extension is abelian. -/
+theorem IsAbelianClassFieldLayer.mono {U V : OpenNormalSubgroup G}
+    (hU : U.IsAbelianClassFieldLayer) (h : U ≤ V) : V.IsAbelianClassFieldLayer :=
+  fun _ hx ↦ h (hU hx)
+
+/-- The intersection of two abelian layer subgroups is abelian: the compositum of two abelian
+extensions is abelian. -/
+theorem IsAbelianClassFieldLayer.inf {V W : OpenNormalSubgroup G}
+    (hV : V.IsAbelianClassFieldLayer) (hW : W.IsAbelianClassFieldLayer) :
+    (V ⊓ W).IsAbelianClassFieldLayer :=
+  fun _ hx ↦ ⟨hV hx, hW hx⟩
 
 /-! ### The maximal abelian sublayer -/
 
@@ -156,6 +175,16 @@ theorem maximalAbelianLayer_le {V W : OpenNormalSubgroup G} (hVW : V ≤ W)
     rw [mem_maximalAbelianLayer] at hx
     exact (sup_le (fun _ hxV ↦ hVW hxV) hW :
       V.toSubgroup ⊔ (commutator G).topologicalClosure ≤ W.toSubgroup) hx
+
+/-- The maximal abelian sublayer of a join is the join of the maximal abelian sublayers: the
+maximal abelian subextension of an intersection of two finite Galois extensions is the
+intersection of their maximal abelian subextensions. -/
+@[simp]
+theorem maximalAbelianLayer_sup (V W : OpenNormalSubgroup G) :
+    maximalAbelianLayer (V ⊔ W) = maximalAbelianLayer V ⊔ maximalAbelianLayer W :=
+  toSubgroup_injective <| by
+    simp only [toSubgroup_maximalAbelianLayer, toSubgroup_sup]
+    exact sup_sup_distrib_right _ _ _
 
 /-- A layer is already abelian exactly when its maximal abelian sublayer is itself. -/
 @[simp]
@@ -222,3 +251,38 @@ theorem abelianizationGalEquiv_of {V : OpenNormalSubgroup G}
 end AbelianLayer
 
 end TauCeti.ClassFieldTheory
+
+namespace OpenNormalSubgroup
+
+open TauCeti.ClassFieldTheory
+
+variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [TotallyDisconnectedSpace G]
+
+/-- **The abelianized Galois group of a layer has the order of the Galois group of its maximal
+abelian sublayer**: `(G ⧸ V)^ab` has `[G : V · closure [G, G]]` elements. This is the counting
+input to norm limitation. -/
+theorem natCard_abelianization_gal_eq_degree_maximalAbelianLayer (V : OpenNormalSubgroup G) :
+    Nat.card (Abelianization (NormalLayer.ofOpenNormal V).Gal) =
+      (NormalLayer.ofOpenNormal V.maximalAbelianLayer).degree := by
+  -- The commutator subgroup of `G ⧸ V` is the image of that of `G`, and closing the commutator
+  -- subgroup adds nothing to the open, hence closed, subgroup `V · [G, G]`.
+  have hcomm : commutator (G ⧸ V.toSubgroup) =
+      (commutator G).map (QuotientGroup.mk' V.toSubgroup) := by
+    rw [map_commutator_eq, QuotientGroup.range_mk', commutator_def]
+  have hopen : IsOpen ((commutator G ⊔ V.toSubgroup : Subgroup G) : Set G) :=
+    Subgroup.isOpen_mono (H₁ := V.toSubgroup) le_sup_right V.toOpenSubgroup.isOpen
+  have hclosure : (commutator G).topologicalClosure ≤ commutator G ⊔ V.toSubgroup :=
+    Subgroup.topologicalClosure_minimal _ le_sup_left (Subgroup.isClosed_of_isOpen _ hopen)
+  have hsup : V.maximalAbelianLayer.toSubgroup = commutator G ⊔ V.toSubgroup := by
+    rw [OpenNormalSubgroup.toSubgroup_maximalAbelianLayer]
+    exact le_antisymm (sup_le le_sup_right hclosure)
+      (sup_le ((Subgroup.le_topologicalClosure _).trans le_sup_right) le_sup_left)
+  rw [Nat.card_congr (NormalLayer.galOfOpenNormalEquiv V).abelianizationCongr.toEquiv,
+    NormalLayer.degree_eq_natCard_gal,
+    Nat.card_congr (NormalLayer.galOfOpenNormalEquiv V.maximalAbelianLayer).toEquiv,
+    ← Subgroup.index_eq_card, hsup, ← Subgroup.index_map_mk'_eq_index_sup, ← hcomm]
+  -- `Abelianization H` is by definition the quotient `H ⧸ commutator H`.
+  exact (Subgroup.index_eq_card _).symm
+
+end OpenNormalSubgroup
