@@ -12,9 +12,9 @@ public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 # Constructibility of projective orbit images
 
 The projective orbit morphism of a unimodular vector in a finite projective Hopf comodule
-is locally of finite type when the coordinate Hopf algebra is finitely generated over the
-base. Over a Noetherian base it is also quasi-compact and locally of finite presentation,
-so its image in projective space is constructible.
+is quasi-compact over any commutative base ring. It is locally of finite type when the
+coordinate Hopf algebra is finitely generated over the base. Over a Noetherian base it is
+also locally of finite presentation, so its image in projective space is constructible.
 
 This supplies the constructibility input for realizing homogeneous spaces as locally
 closed projective orbits. The image here is the image of the underlying scheme map,
@@ -55,6 +55,15 @@ theorem projectiveOrbitMap_projToSpec (m : M) (hm : Module.IsUnimodular R m) :
   ext r
   simp
 
+/-- A projective orbit morphism is quasi-compact over any commutative base ring. -/
+instance instQuasiCompactProjectiveOrbitMap (m : M) (hm : Module.IsUnimodular R m) :
+    QuasiCompact (projectiveOrbitMap (H := H) m hm) := by
+  have : QuasiCompact (projectiveOrbitMap (H := H) m hm ≫
+      TauCeti.SymmetricAlgebra.projToSpec R (Module.Dual R M)) := by
+    rw [projectiveOrbitMap_projToSpec]
+    infer_instance
+  exact QuasiCompact.of_comp _ (TauCeti.SymmetricAlgebra.projToSpec R (Module.Dual R M))
+
 variable [Algebra.FiniteType R H]
 
 /-- A projective orbit morphism of a finite-type affine group scheme is locally of finite
@@ -70,13 +79,6 @@ instance instLocallyOfFiniteTypeProjectiveOrbitMap (m : M) (hm : Module.IsUnimod
   exact locallyOfFiniteType_of_comp _ (TauCeti.SymmetricAlgebra.projToSpec R (Module.Dual R M))
 
 variable [IsNoetherianRing R]
-
-/-- Over a Noetherian base, a finite-type affine group's projective orbit morphism is
-quasi-compact. -/
-instance instQuasiCompactProjectiveOrbitMap (m : M) (hm : Module.IsUnimodular R m) :
-    QuasiCompact (projectiveOrbitMap (H := H) m hm) := by
-  let : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing R H
-  infer_instance
 
 /-- Over a Noetherian base, the scheme-theoretic topological image of a finite-type affine
 group's projective orbit morphism is constructible, even for nonreduced groups. -/
