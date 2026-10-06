@@ -130,6 +130,21 @@ theorem piScalarRight_comp_endOfPoint
 
 end PointAction
 
+/-- A base-valued point acts on the standard special-linear comodule by its matrix. -/
+theorem basePointsRepresentation_eq_mulVec
+    (g : WithConv (coordinateHopfAlgebra R n →ₐ[R] R)) (v : Fin n → R) :
+    Comodule.basePointsRepresentation (R := R) (H := coordinateHopfAlgebra R n)
+        (Fin n → R) g v =
+      ((pointsMulEquiv (R := R) (A := R) n g : Matrix (Fin n) (Fin n) R) *ᵥ v) := by
+  rw [Comodule.basePointsRepresentation_corestrict (coordinateMap R n).hom g,
+    GeneralLinear.basePointsRepresentation_eq_mulVec]
+  have hg : AlgHom.mapDomain (coordinateMap R n).hom g =
+      CommHopfAlgCat.quotientPointsHom (GeneralLinear.coordinateHopfAlgebra R n)
+        (definingHopfIdeal R n) (CommAlgCat.of R R) g := by
+    rw [AlgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply]
+  rw [hg, ← GeneralLinear.pointsMulEquiv_apply, pointsMulEquiv_toGL]
+  rfl
+
 /-- **A subcomodule of the standard comodule of `SL_n` is stable under every determinant-one
 matrix.** -/
 theorem mulVec_mem (N : Subcomodule R (coordinateHopfAlgebra R n) (Fin n → R))

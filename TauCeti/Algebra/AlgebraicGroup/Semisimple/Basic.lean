@@ -32,6 +32,8 @@ algebraic closure of the ground field via the counit.
   algebras over a field.
 * `TauCeti.SemisimpleCommHopfAlgCat`: the full subcategory of semisimple coordinate Hopf
   algebras.
+* `TauCeti.semisimpleCommHopfAlgProperty_of_geometricFiber_iso`: establish semisimplicity
+  using an isomorphic coordinate model of the geometric fibre.
 * `TauCeti.semisimpleCommHopfAlgProperty.eq_augmentation`: every connected normal smooth
   solvable closed subgroup of a semisimple group's geometric fibre is trivial.
 * `TauCeti.semisimpleCommHopfAlgProperty.geometricFiberCounitBialgEquiv`: a semisimple group
@@ -119,6 +121,44 @@ instance (k : Type u) [Field k] :
       geometricallySolvablePointsCommHopfAlgProperty (AlgebraicClosure k)).inverseImage
         (forget₂ (FiniteTypeCommHopfAlgCat.{u, u} (AlgebraicClosure k))
           (CommHopfAlgCat.{u} (AlgebraicClosure k))))).IsClosedUnderIsomorphisms)
+
+/-- Establish semisimplicity by identifying the geometric fibre with a coordinate model
+on which connected smooth normal solvable closed subgroups can be eliminated. -/
+theorem semisimpleCommHopfAlgProperty_of_geometricFiber_iso
+    (k : Type u) [Field k] (H : FiniteTypeCommHopfAlgCat.{u, u} k)
+    (G : CommHopfAlgCat.{u} (AlgebraicClosure k))
+    (hsmooth : Algebra.Smooth k H)
+    (hconnected : geometricallyConnectedCommHopfAlgProperty k H.obj)
+    (e : (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H).obj ≅ G)
+    (htrivial : ∀ (I : HopfIdeal (AlgebraicClosure k) G), I.IsNormal →
+      geometricallyConnectedCommHopfAlgProperty (AlgebraicClosure k)
+        (CommHopfAlgCat.quotient G I) →
+      Algebra.Smooth (AlgebraicClosure k) (CommHopfAlgCat.quotient G I) →
+      geometricallySolvablePointsCommHopfAlgProperty (AlgebraicClosure k)
+        (CommHopfAlgCat.quotient G I) →
+      I = HopfIdeal.augmentation (AlgebraicClosure k) G) :
+    semisimpleCommHopfAlgProperty k H := by
+  rw [semisimpleCommHopfAlgProperty_iff]
+  refine ⟨hsmooth, hconnected, ?_⟩
+  intro I hI hconn hsm hsolv
+  let f : G →ₐc[AlgebraicClosure k]
+      FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H :=
+    CommHopfAlgCat.ofIso e.symm
+  have hf : Function.Bijective f := ConcreteCategory.bijective_of_isIso e.inv
+  let J := I.comapOfSurjective f hf.2
+  let qIso := CommHopfAlgCat.quotientIsoOfIso e.symm I
+  have hJ : J = HopfIdeal.augmentation (AlgebraicClosure k) G := by
+    apply htrivial J (hI.comapOfSurjective_of_bijective f hf.1 hf.2)
+    · exact (geometricallyConnectedCommHopfAlgProperty (AlgebraicClosure k)).prop_of_iso
+        qIso.symm hconn
+    · exact (smoothCommHopfAlgProperty_iff _).mp <|
+        (smoothCommHopfAlgProperty (AlgebraicClosure k)).prop_of_iso qIso.symm
+          ((smoothCommHopfAlgProperty_iff _).mpr hsm)
+    · exact (geometricallySolvablePointsCommHopfAlgProperty (AlgebraicClosure k)).prop_of_iso
+        qIso.symm hsolv
+  rw [← HopfIdeal.comapOfSurjective_eq_comapOfSurjective_iff f hf.2,
+    HopfIdeal.comapOfSurjective_augmentation]
+  exact hJ
 
 /-- The category of semisimple finite-type commutative Hopf algebras over a field. -/
 abbrev SemisimpleCommHopfAlgCat (k : Type u) [Field k] :=
