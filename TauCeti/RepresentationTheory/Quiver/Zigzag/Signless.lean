@@ -214,6 +214,11 @@ noncomputable def signlessWord : List (Fin n) → Π
   | [v] => π (vertexIdempotent k (vertex G v))
   | j :: i :: r => signlessArrow k G i j * signlessWord (i :: r)
 
+/-- The empty list has class `0`. -/
+@[simp]
+theorem signlessWord_nil : signlessWord k G [] = 0 := by
+  rw [signlessWord]
+
 /-- The class of a one-vertex walk is its vertex idempotent. -/
 @[simp]
 theorem signlessWord_singleton (v : Fin n) :
@@ -221,6 +226,7 @@ theorem signlessWord_singleton (v : Fin n) :
   rw [signlessWord]
 
 /-- Extending a walk by a vertex multiplies its class on the left by the arrow to that vertex. -/
+@[simp]
 theorem signlessWord_cons_cons (j i : Fin n) (r : List (Fin n)) :
     signlessWord k G (j :: i :: r) = signlessArrow k G i j * signlessWord k G (i :: r) := by
   rw [signlessWord]

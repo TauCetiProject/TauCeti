@@ -42,6 +42,8 @@ of the arrows, so these preprojective algebras are self-injective as well.
 * `TauCeti.signlessPreprojectiveD4Basis`: the basis of the signless algebra of `D₄` by their
   classes.
 * `TauCeti.signlessPreprojectiveD4FrobeniusFunctional`: the Frobenius functional.
+* `TauCeti.signlessPreprojectiveD4LeafSign` and `TauCeti.signlessPreprojectiveD4SocleSign`: the
+  signs comparing two leaves, and the values of the functional on walks of length four.
 
 ## Main results
 
@@ -86,7 +88,7 @@ attribute [local instance] d4NeighborSetFintype
 /-- The sign comparing two leaves `a, b` of `D₄` in the cyclic order `0 → 2 → 3 → 0`: it is `1`
 if `b` follows `a`, `-1` if `b` precedes `a`, and `0` if `a = b` or one of them is the trivalent
 vertex `1`. -/
-private def d4LeafSign (a b : Fin 4) : ℤ :=
+def signlessPreprojectiveD4LeafSign (a b : Fin 4) : ℤ :=
   ![![0, 0, 1, -1], ![0, 0, 0, 0], ![-1, 0, 0, 1], ![1, 0, -1, 0]] a b
 
 /-- The **socle sign** of a list of five vertices of `D₄`, read as a walk of length four from its
@@ -95,17 +97,81 @@ trivalent vertex, visits the leaves `a` and then `b`, and its sign compares them
 order `0 → 2 → 3 → 0` of the leaves. Every other list has sign `0`. -/
 def signlessPreprojectiveD4SocleSign : List (Fin 4) → ℤ
   | [x₀, x₁, x₂, x₃, x₄] =>
-    if x₁ = 1 ∧ x₃ = 1 ∧ x₀ = x₄ then d4LeafSign x₀ x₂
-    else if x₀ = 1 ∧ x₂ = 1 ∧ x₄ = 1 then d4LeafSign x₁ x₃ else 0
+    if x₁ = 1 ∧ x₃ = 1 ∧ x₀ = x₄ then signlessPreprojectiveD4LeafSign x₀ x₂
+    else if x₀ = 1 ∧ x₂ = 1 ∧ x₄ = 1 then signlessPreprojectiveD4LeafSign x₁ x₃ else 0
   | _ => 0
 
 /-- Only lists of length five have a nonzero socle sign. -/
+@[simp]
 theorem signlessPreprojectiveD4SocleSign_of_length_ne {l : List (Fin 4)} (hl : l.length ≠ 5) :
     signlessPreprojectiveD4SocleSign l = 0 := by
   match l, hl with
   | [], _ | [_], _ | [_, _], _ | [_, _, _], _ | [_, _, _, _], _ => rfl
   | [_, _, _, _, _], h => exact absurd rfl h
   | _ :: _ :: _ :: _ :: _ :: _ :: _, _ => rfl
+
+/-- The leaf sign is antisymmetric. -/
+theorem signlessPreprojectiveD4LeafSign_swap (a b : Fin 4) :
+    signlessPreprojectiveD4LeafSign b a = -signlessPreprojectiveD4LeafSign a b := by
+  revert a b
+  decide
+
+/-- A leaf compared with itself has sign `0`. -/
+@[simp]
+theorem signlessPreprojectiveD4LeafSign_self (a : Fin 4) :
+    signlessPreprojectiveD4LeafSign a a = 0 := by
+  revert a
+  decide
+
+/-- The trivalent vertex `1` has sign `0` against every vertex. -/
+@[simp]
+theorem signlessPreprojectiveD4LeafSign_one_left (b : Fin 4) :
+    signlessPreprojectiveD4LeafSign 1 b = 0 := by
+  revert b
+  decide
+
+/-- Every vertex has sign `0` against the trivalent vertex `1`. -/
+@[simp]
+theorem signlessPreprojectiveD4LeafSign_one_right (a : Fin 4) :
+    signlessPreprojectiveD4LeafSign a 1 = 0 := by
+  revert a
+  decide
+
+/-- The leaf `2` follows the leaf `0` in the cyclic order. -/
+@[simp]
+theorem signlessPreprojectiveD4LeafSign_zero_two : signlessPreprojectiveD4LeafSign 0 2 = 1 := by
+  decide
+
+/-- The leaf `3` follows the leaf `2` in the cyclic order. -/
+@[simp]
+theorem signlessPreprojectiveD4LeafSign_two_three : signlessPreprojectiveD4LeafSign 2 3 = 1 := by
+  decide
+
+/-- The leaf `0` follows the leaf `3` in the cyclic order. -/
+@[simp]
+theorem signlessPreprojectiveD4LeafSign_three_zero : signlessPreprojectiveD4LeafSign 3 0 = 1 := by
+  decide
+
+/-- The socle sign of a list of five vertices. -/
+theorem signlessPreprojectiveD4SocleSign_five (x₀ x₁ x₂ x₃ x₄ : Fin 4) :
+    signlessPreprojectiveD4SocleSign [x₀, x₁, x₂, x₃, x₄] =
+      if x₁ = 1 ∧ x₃ = 1 ∧ x₀ = x₄ then signlessPreprojectiveD4LeafSign x₀ x₂
+      else if x₀ = 1 ∧ x₂ = 1 ∧ x₄ = 1 then signlessPreprojectiveD4LeafSign x₁ x₃ else 0 := by
+  rw [signlessPreprojectiveD4SocleSign]
+
+/-- A closed walk `a → 1 → b → 1 → a` has the sign comparing `a` with `b`. -/
+@[simp]
+theorem signlessPreprojectiveD4SocleSign_leaf (a b : Fin 4) :
+    signlessPreprojectiveD4SocleSign [a, 1, b, 1, a] = signlessPreprojectiveD4LeafSign a b := by
+  revert a b
+  decide
+
+/-- A closed walk `1 → a → 1 → b → 1` has the sign comparing `a` with `b`. -/
+@[simp]
+theorem signlessPreprojectiveD4SocleSign_trivalent (a b : Fin 4) :
+    signlessPreprojectiveD4SocleSign [1, a, 1, b, 1] = signlessPreprojectiveD4LeafSign a b := by
+  revert a b
+  decide
 
 /-- The socle signs are compatible with the signless relations: inserting the backtracks
 `i → w → i` at any position and summing over the neighbours `w` of `i` gives `0`. -/
