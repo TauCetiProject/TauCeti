@@ -428,7 +428,7 @@ theorem ofExchange_wordProd
     (hexch : ∀ (ω : List B) (i : B), ℓ (φ (π ω)) = ω.length →
       ℓ (φ (π ω * s i)) ≤ ω.length → ∃ j < ω.length, φ (π (ω.eraseIdx j)) = φ (π ω * s i))
     (ω : List B) : (cs.ofExchange φ ℓ horder hℓ hexch).wordProd ω = φ (π ω) := by
-  rw [ofExchange, TauCeti.wordProd_map]
+  rw [ofExchange, wordProd_map]
   exact MulEquiv.ofBijective_apply _ _ _
 
 /-- The length function of `CoxeterSystem.ofExchange` is `ℓ`. -/
