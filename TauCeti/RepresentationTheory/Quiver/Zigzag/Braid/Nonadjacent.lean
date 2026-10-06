@@ -38,12 +38,13 @@ local notation "e" => fun i : V ↦ zigzagAlgebraBasis k G (Sum.inl i)
 
 /-- The balanced tensor product `e_i Z ⊗[Z] Z e_j` vanishes at distinct
 nonadjacent vertices. The right ideal is represented in `Zᵐᵒᵖ`. -/
-theorem subsingleton_balancedTensorProduct_zigzagAlgebra_of_not_adj {i j : V}
+theorem subsingleton_balancedTensorProduct_zigzagAlgebra_of_ne_of_not_adj {i j : V}
     (hij : i ≠ j) (hadj : ¬ G.Adj i j) :
     Subsingleton (BalancedTensorProduct k Z (Ideal.span {op (e i)} : Ideal Zᵐᵒᵖ)
       (Ideal.span {e j} : Ideal Z)) := by
-  have hid (v : V) : IsIdempotentElem (e v) := by simp [IsIdempotentElem]
-  exact (subsingleton_spanSingleton_balancedTensorProduct_iff k (hid i) (hid j)).2
-    (cornerSubmodule_zigzagAlgebra_eq_bot_of_not_adj k G hij hadj)
+  exact (subsingleton_spanSingleton_balancedTensorProduct_iff_cornerSubmodule_eq_bot k
+    (isIdempotentElem_zigzagAlgebraBasis_inl k G i)
+    (isIdempotentElem_zigzagAlgebraBasis_inl k G j)).2
+    (cornerSubmodule_zigzagAlgebra_eq_bot_of_ne_of_not_adj k G hij hadj)
 
 end TauCeti
