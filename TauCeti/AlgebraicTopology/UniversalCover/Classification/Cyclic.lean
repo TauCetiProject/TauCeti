@@ -25,7 +25,7 @@ holds in that case as well, since in an infinite cyclic group the trivial subgro
 of index `0`.
 
 The main application is to the punctured disc, whose fundamental group is infinite cyclic: its
-connected covers of degree `e` are all isomorphic to `z ↦ z ^ e`.
+connected covers of finite degree `e ≠ 0` are all isomorphic to `z ↦ z ^ e`.
 
 ## Main declarations
 

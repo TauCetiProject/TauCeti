@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Cyclic
 
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.RingTheory.RootsOfUnity.Complex
+import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.Topology.IsLocalHomeomorph
 
 /-!
@@ -30,6 +31,8 @@ unique, but only unique up to the rotations of `𝔻*` by `e`-th roots of unity.
 
 ## Main declarations
 
+* `TauCeti.pow_mem_ball_zero_one_diff_singleton_iff`: for `e ≠ 0`, `z ^ e` lies in the punctured
+  unit ball exactly when `z` does.
 * `TauCeti.puncturedDiscPow`: the map `z ↦ z ^ e` from `𝔻*` to itself, for `e ≠ 0`.
 * `TauCeti.puncturedDiscPow_mul`: the power maps compose, `z ^ (e * f) = (z ^ f) ^ e`.
 * `TauCeti.isCoveringMap_puncturedDiscPow`: it is a covering map.
@@ -58,9 +61,9 @@ namespace TauCeti
 
 variable {e : ℕ}
 
-/-- For `e ≠ 0`, `z ^ e` lies in the punctured unit disc exactly when `z` does. -/
-private theorem pow_mem_ball_zero_one_diff_singleton_iff (he : e ≠ 0) {z : ℂ} :
-    z ^ e ∈ ball (0 : ℂ) 1 \ {0} ↔ z ∈ ball (0 : ℂ) 1 \ {0} := by
+/-- For `e ≠ 0`, `z ^ e` lies in the punctured unit ball exactly when `z` does. -/
+theorem pow_mem_ball_zero_one_diff_singleton_iff {𝕜 : Type*} [NormedDivisionRing 𝕜] (he : e ≠ 0)
+    {z : 𝕜} : z ^ e ∈ ball (0 : 𝕜) 1 \ {0} ↔ z ∈ ball (0 : 𝕜) 1 \ {0} := by
   simp [norm_pow, pow_lt_one_iff_of_nonneg (norm_nonneg z) he, he]
 
 /-- The **power map** `z ↦ z ^ e` from the punctured unit disc `ball 0 1 \ {0}` to itself, for
@@ -114,10 +117,9 @@ theorem card_puncturedDiscPow_preimage_singleton (he : e ≠ 0) (w : ↥(ball (0
     · intro hz
       refine ⟨⟨z, (pow_mem_ball_zero_one_diff_singleton_iff he).1 (hz ▸ w.2)⟩, ?_, rfl⟩
       exact Set.mem_singleton_iff.2 (Subtype.ext hz)
+  obtain ⟨α, hα⟩ := IsAlgClosed.exists_pow_nat_eq (w : ℂ) (Nat.pos_of_ne_zero he)
   rw [← Nat.card_image_of_injective Subtype.val_injective, himage, Nat.card_coe_set_eq,
-    Set.ncard_coe_finset, Polynomial.nthRootsFinset_def,
-    Multiset.toFinset_card_of_nodup (hζ.nthRoots_nodup w.2.2), hζ.card_nthRoots,
-    ite_eq_left (IsAlgClosed.exists_pow_nat_eq _ (Nat.pos_of_ne_zero he))]
+    Set.ncard_coe_finset, hζ.card_nthRootsFinset_of_pow_eq hα w.2.2]
 
 variable {E : Type*} [TopologicalSpace E] [ConnectedSpace E] {p : E → ↥(ball (0 : ℂ) 1 \ {0})}
 
