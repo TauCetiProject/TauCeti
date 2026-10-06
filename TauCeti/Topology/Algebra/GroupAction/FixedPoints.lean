@@ -13,7 +13,7 @@ public import TauCeti.GroupTheory.GroupAction.FixedPoints
 
 The fixed points of a subgroup carry the subspace topology from the coefficient space. This file
 proves continuity of restricted biadditive pairings and the inclusion into the ambient additive
-group, and supplies the continuous quotient actions used by invariant coefficients.
+monoid, and supplies the continuous quotient actions used by invariant coefficients.
 
 For a normal subgroup `H`, the algebraic `G ⧸ H`-action on the fixed points of `H` is supplied by
 `TauCeti/GroupTheory/GroupAction/FixedPoints.lean`. If the coefficients are discrete and `H` is
@@ -26,9 +26,9 @@ The fixed points of open normal subgroups form a directed family, growing as the
 shrinks. Together with quotient-action continuity, this gives the coefficient system used in
 finite-quotient descriptions of continuous cohomology.
 
-Pairings and quotient-action continuity have both additive-submonoid and additive-subgroup
-forms. The subgroup forms retain the coefficient groups' additive inverses and match the
-subgroup carrier used by group cohomology.
+Pairings, inclusions and quotient-action continuity have both additive-submonoid and
+additive-subgroup forms. The subgroup forms retain the coefficient groups' additive inverses and
+match the subgroup carrier used by group cohomology.
 
 ## Main results
 
@@ -43,8 +43,9 @@ subgroup carrier used by group cohomology.
 * `TauCeti.continuousSMulQuotientFixedPointsAddSubmonoidOfContinuousSMul` and
   `TauCeti.continuousSMulQuotientFixedPointsOfContinuousSMul`: quotient actions on discrete fixed
   points of arbitrary normal subgroups are continuous when the ambient action is continuous.
-* `TauCeti.continuous_fixedPoints_addSubgroup_subtype`: the inclusion of the fixed-point additive
-  subgroup into the ambient coefficient group is continuous.
+* `TauCeti.continuous_fixedPoints_addSubmonoid_subtype` and
+  `TauCeti.continuous_fixedPoints_addSubgroup_subtype`: the inclusion of the fixed points into the
+  ambient coefficient space is continuous.
 -/
 
 public section
@@ -147,15 +148,28 @@ end FiniteLevelAddGroup
 
 section Subtype
 
+variable (G : Type*) [Group G] (M : Type*) [AddMonoid M] [DistribMulAction G M]
+variable [TopologicalSpace M]
+
+/-- The inclusion of the fixed-point additive submonoid into `M` is continuous for the subspace
+topology. -/
+theorem continuous_fixedPoints_addSubmonoid_subtype (H : Subgroup G) :
+    Continuous ⇑(FixedPoints.addSubmonoid H M).subtype :=
+  continuous_subtype_val
+
+end Subtype
+
+section SubtypeAddGroup
+
 variable (G : Type*) [Group G] (M : Type*) [AddGroup M] [DistribMulAction G M]
 variable [TopologicalSpace M]
 
 /-- The inclusion `M ^ H ↪ M` of the invariants is continuous for the subspace topology. -/
 theorem continuous_fixedPoints_addSubgroup_subtype (H : Subgroup G) :
     Continuous ⇑(FixedPoints.addSubgroup H M).subtype :=
-  continuous_subtype_val
+  continuous_fixedPoints_addSubmonoid_subtype G M H
 
-end Subtype
+end SubtypeAddGroup
 
 section ArbitraryNormalSubgroup
 
