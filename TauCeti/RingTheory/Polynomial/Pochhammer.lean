@@ -15,11 +15,10 @@ import Mathlib.RingTheory.Binomial
 # Descending Pochhammer polynomials
 
 This module provides basic lemmas for descending Pochhammer polynomials `descPochhammer R n`
-over general rings, together with their finite differences and sums over integer intervals.
+over general rings, together with their sums over integer intervals.
 
 The monicity result holds over any ring, and the degree results require only a nontrivial ring.
-The finite-difference and summation identities also hold over arbitrary rings; no division by
-`m + 1` is needed for the summation identity.
+The summation identity also holds over arbitrary rings; no division by `m + 1` is needed.
 
 ## Main declarations
 
@@ -28,8 +27,6 @@ The finite-difference and summation identities also hold over arbitrary rings; n
 * `TauCeti.descPochhammer_degree`: `(descPochhammer R n).degree = n` for nontrivial `R`.
 * `TauCeti.descPochhammer_succ_eval_add_one`: the falling factorial of degree `m + 1` at `x + 1` is
   `x + 1` times the one of degree `m` at `x`.
-* `TauCeti.descPochhammer_eval_add_one_sub`: its finite difference is `m + 1` times the
-  degree `m` falling factorial, over any ring.
 * `TauCeti.sum_Icc_descPochhammer_eval`: its sum over an integer interval is the endpoint
   difference of the next falling factorial, after clearing the denominator.
 * `TauCeti.mul_prod_sq_sub_sq_eq_descPochhammer_eval`: the odd polynomial
@@ -86,25 +83,7 @@ theorem descPochhammer_succ_eval_add_one {R : Type*} [Ring R] (m : ℕ) (x : R) 
     eval_map, eval_map, ← algebraMap_int_eq, ← aeval_def, ← aeval_def, descPochhammer_succ_left,
     map_mul, aeval_X, aeval_comp, map_sub, aeval_X, map_one, add_sub_cancel_right]
 
-/-! ### Finite differences and sums -/
-
-/-- **The discrete derivative of a falling factorial.** The falling factorial of degree `m + 1`
-increases by `m + 1` times the falling factorial of degree `m` when its argument increases by one.
-This holds over any ring, including in positive characteristic. -/
-theorem descPochhammer_eval_add_one_sub {R : Type*} [Ring R] (m : ℕ) (x : R) :
-    (descPochhammer R (m + 1)).eval (x + 1) - (descPochhammer R (m + 1)).eval x
-      = ((m : R) + 1) * (descPochhammer R m).eval x := by
-  -- Falling factorials are polynomials in `x` with central integer coefficients.
-  have hcomm : ∀ n, Commute ((descPochhammer R n).eval x) x := by
-    intro n
-    induction n with
-    | zero => simp
-    | succ n ih =>
-      rw [descPochhammer_succ_eval]
-      exact ih.mul_left ((Commute.refl x).sub_left (Nat.cast_commute n x))
-  rw [descPochhammer_succ_eval_add_one, descPochhammer_succ_eval,
-    mul_sub, add_mul, (hcomm m).eq, ← Nat.cast_comm, add_mul, one_mul]
-  abel
+/-! ### Sums over integer intervals -/
 
 /-- **The discrete antiderivative of a falling factorial.** Summing the degree `m` falling
 factorial over the integer range `p ≤ t < q` gives the difference of the degree `m + 1` falling
@@ -126,7 +105,10 @@ theorem sum_Icc_descPochhammer_eval {R : Type*} [Ring R] (m : ℕ) {p q : ℤ} (
   simp only [hq, Nat.cast_zero, add_zero] at key
   simp only [Int.cast_add, Int.cast_natCast, Nat.cast_add, Nat.cast_one] at key
   rw [Finset.sum_congr rfl (fun k _ => by
-    simpa [add_assoc] using descPochhammer_eval_add_one_sub m ((p : R) + k))] at key
+    have hdiff := Ring.descPochhammer_succ_succ_smeval ((p : R) + k) m
+    simp only [← aeval_eq_smeval, aeval_def, algebraMap_int_eq, ← eval_map,
+      descPochhammer_map, nsmul_eq_mul, Nat.cast_add_one] at hdiff
+    simpa only [add_assoc, Int.cast_one] using sub_eq_iff_eq_add.mpr hdiff)] at key
   simpa using key
 
 /-! ### An odd polynomial as a falling factorial -/
