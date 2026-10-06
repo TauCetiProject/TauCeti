@@ -23,8 +23,6 @@ every short exact sequence of finite-dimensional modules splits.
 * `FGModuleCat.projective_of_moduleProjective`: every finitely generated projective module is a
   projective object.
 * `FGModuleCat.projective_biprod`: finite projective modules are closed under biproducts.
-* `FGModuleCat.projective_tensorObj`: over a commutative ring, finite projective modules are
-  closed under tensor products.
 * `FGModuleCat.projective_of_free`: every finite free module is projective.
 * `FGModuleCat.enoughProjectives`: every finitely generated module is a quotient of a finite free
   module.
@@ -38,7 +36,7 @@ public section
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Limits CategoryTheory.MonoidalCategory
+open CategoryTheory CategoryTheory.Limits
 
 universe u v
 
@@ -57,13 +55,6 @@ theorem _root_.FGModuleCat.projective_biprod
     F.mapBiprod X Y ≪≫ ModuleCat.biprodIsoProd X.obj Y.obj
   let e' : (X ⊞ Y : FGModuleCat.{v} R) ≅ FGModuleCat.of R (X × Y) := F.preimageIso e
   exact Module.Projective.of_equiv' (FGModuleCat.isoToLinearEquiv e').symm
-
-/-- Over a commutative ring, a tensor product of finitely generated projective modules is
-projective. -/
-theorem _root_.FGModuleCat.projective_tensorObj {S : Type u} [CommRing S]
-    (X Y : FGModuleCat.{u} S) [Module.Projective S X] [Module.Projective S Y] :
-    Module.Projective S ((X ⊗ Y : FGModuleCat.{u} S) : Type u) :=
-  inferInstanceAs (Module.Projective S (TensorProduct S X Y))
 
 /-- A finitely generated projective module is a projective object of `FGModuleCat R`. -/
 theorem _root_.FGModuleCat.projective_of_moduleProjective (X : FGModuleCat.{v} R)

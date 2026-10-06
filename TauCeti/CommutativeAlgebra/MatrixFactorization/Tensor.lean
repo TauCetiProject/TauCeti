@@ -58,10 +58,14 @@ duplexes. -/
 -- of curved duplexes, whose components occur in the types of the morphism formulas.
 @[expose] noncomputable def tensorObj (X : MatrixFactorization S v)
     (Y : MatrixFactorization S w) : MatrixFactorization S (v + w) :=
-  haveI := FGModuleCat.projective_tensorObj X.obj.X₀ Y.obj.X₀
-  haveI := FGModuleCat.projective_tensorObj X.obj.X₁ Y.obj.X₁
-  haveI := FGModuleCat.projective_tensorObj X.obj.X₁ Y.obj.X₀
-  haveI := FGModuleCat.projective_tensorObj X.obj.X₀ Y.obj.X₁
+  haveI : Module.Projective S (X.obj.X₀ ⊗ Y.obj.X₀ : FGModuleCat S) :=
+    Module.Projective.tensorProduct
+  haveI : Module.Projective S (X.obj.X₁ ⊗ Y.obj.X₁ : FGModuleCat S) :=
+    Module.Projective.tensorProduct
+  haveI : Module.Projective S (X.obj.X₁ ⊗ Y.obj.X₀ : FGModuleCat S) :=
+    Module.Projective.tensorProduct
+  haveI : Module.Projective S (X.obj.X₀ ⊗ Y.obj.X₁ : FGModuleCat S) :=
+    Module.Projective.tensorProduct
   ofCurvedDuplex (CurvedDuplex.tensorObj X.obj Y.obj)
     (FGModuleCat.projective_biprod S _ _) (FGModuleCat.projective_biprod S _ _)
 
