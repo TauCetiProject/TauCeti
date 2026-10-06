@@ -16,13 +16,12 @@ holds as an equality of scheme morphisms, including the maps on structure sheave
 It allows coordinate identities for linear actions to give equivariance of projective
 orbit morphisms.
 
-The chart computation uses `HomogeneousLocalization.Away.lift_comp_map` and
-`Proj.awayι_comp_map`; global coordinates are read using
-`TauCeti.ProjectiveSpectrum.toBasicOpenOfGlobalSections_eq`.
-
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §§7.d–7.f.
+* Formal projective-coordinate API: `Proj.awayι_comp_map` and
+  `TauCeti.ProjectiveSpectrum.toBasicOpenOfGlobalSections_eq`.
+* Formal graded-localization API: `HomogeneousLocalization.Away.lift_comp_map`.
 -/
 
 public section
@@ -74,7 +73,9 @@ theorem fromOfGlobalSections_map (F : 𝒜 →+*ᵍ ℬ)
   erw [hmap]
   simp only [← Spec.map_comp_assoc, ← CommRingCat.ofHom_comp,
     RingHom.comp_apply, GradedRingHom.coe_toRingHom]
-  congr 3
+  apply congrArg (fun φ ↦ (X.basicOpen (f (F s))).toSpecΓ ≫
+    Spec.map (CommRingCat.ofHom φ) ≫ awayι 𝒜 s hs hn)
   erw [Away.lift_comp_map]
+  simp only [RingHom.comp_assoc]
 
 end AlgebraicGeometry.Proj
