@@ -39,7 +39,7 @@ therefore vanishes, and `[Lˣ ⧸ (Lˣ)^ℓ] = [k] + [μ_ℓ(L)]`
 (`TauCeti.reductionK0_quotSMulTop_units_of_isUnit`).
 
 This is the computation of the units of `L` that enters the proof of the local Euler characteristic
-formula, where Kummer theory identifies `H¹(L, 𝔽_ℓ)` with `Lˣ ⧸ (Lˣ)^ℓ` twisted by `μ_ℓ`.
+formula, where Kummer theory identifies `H¹(L, μ_ℓ)` with `Lˣ ⧸ (Lˣ)^ℓ`.
 
 The finiteness of the reductions and torsion subgroups, which the definition of the defect asks
 for, is recorded by instances: `Lˣ ⧸ (Lˣ)^ℓ` is finite since `(Lˣ)^ℓ` has finite index
