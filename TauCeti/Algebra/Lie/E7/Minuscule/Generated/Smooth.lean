@@ -16,10 +16,9 @@ Over every field, the fourteen numbered root subgroups and weight torus of the
 type-`E₇` minuscule carrier generate a smooth closed subgroup of `GL₅₆`. Smoothness is one
 geometric property needed to recognize the generated subgroup as a pinned split group.
 
-The generators are geometrically reduced: they are additive groups and a split torus. Apply
-the geometrically reduced generator criterion in
-`TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel.GeometricallyReduced`
-to their common-kernel quotient. This concerns the subgroup generated over the field; its
+The generated subgroup is smooth and has reduced coordinate algebra over every field, with
+geometrically reduced additive root subgroups and a split torus as generators.
+This concerns the subgroup generated over the field; its
 identification with the specialization of the integral minuscule carrier is separate.
 
 ## References
