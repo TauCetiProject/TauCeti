@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 import TauCeti.CategoryTheory.Comma.Over
 
@@ -36,7 +36,7 @@ antipode calculations.
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
 * The closed-subgroup packaging specializes the generic construction abstracted from
-  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic`, which in turn adapts
+  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic`, which in turn adapts
   `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Borel` and
   `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic`.
 
