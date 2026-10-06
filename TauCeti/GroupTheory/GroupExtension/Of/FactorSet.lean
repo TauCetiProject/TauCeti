@@ -9,6 +9,7 @@ public import Mathlib.Data.FunLike.Fintype
 public import Mathlib.GroupTheory.GroupExtension.Defs
 public import Mathlib.GroupTheory.SemidirectProduct
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LowDegree
+public import TauCeti.Algebra.GroupAction.TypeTags
 
 /-!
 # Group extensions built from a factor set
@@ -67,10 +68,7 @@ group cohomology: `groupCohomology.cocyclesOfIsMulCocycle₂ α.isMulCocycle₂`
 
 ## References
 
-This supplies the central-extension target of Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md` ("projective representations,
-factor sets, and the Schur multiplier"), which the roadmap records as independent of Layers 3-5
-apart from its closing Clifford-theory obstruction. See G. Karpilovsky, *Projective Representations
+G. Karpilovsky, *Projective Representations
 of Finite Groups*, Marcel Dekker (1985), Ch. 1, and I. M. Isaacs, *Character Theory of Finite
 Groups*, AMS Chelsea (1976), Ch. 11.
 -/
@@ -126,6 +124,12 @@ variable (α : FactorSet G M)
 field `toFun`, so that it rewrites in the goals the rest of the API produces. -/
 theorem isMulCocycle₂ : IsMulCocycle₂ ⇑α := α.isMulCocycle₂'
 
+/-- A factor set, read additively, satisfies the additive `2`-cocycle identity: the two identities
+are the same statement in the two notations. -/
+theorem isCocycle₂_ofMul :
+    groupCohomology.IsCocycle₂ fun p : G × G => Additive.ofMul (α p) := fun g h j =>
+  congrArg Additive.ofMul (α.isMulCocycle₂ g h j)
+
 /-- The normalization of a factor set, restated for the coercion `⇑α` rather than for the field
 `toFun`, so that it rewrites in the goals the rest of the API produces. Not `@[simp]`: the two
 lemmas below subsume it. -/
@@ -151,7 +155,7 @@ end
 
 section Map
 
-variable {N : Type*} [CommGroup N] [MulDistribMulAction G N] (f : M →*[G] N) (α : FactorSet G M)
+variable {N : Type*} [CommGroup N] [MulDistribMulAction G N] (α : FactorSet G M) (f : M →*[G] N)
 
 /-- **Pushforward of a factor set along an equivariant homomorphism of coefficient modules**: the
 factor set `(g, h) ↦ f (α (g, h))` of `G` with values in `N`. -/
