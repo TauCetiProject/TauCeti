@@ -179,6 +179,10 @@ instance (priority := 100) preservesBiproductsOfShape_of_preservesLimits_and_col
         (isLimitOfPreserves F hb.isLimit))
       (Cone.ext (Iso.refl (F.obj b.pt)) (by
         rintro ⟨j⟩
+        -- Unfold `Cone.postcompose`, `Functor.mapCone`, `Bicone.toCone` and
+        -- `Functor.mapBicone`, including their composite discrete endpoints.
+        -- `Discrete.compNatIsoDiscrete` contributes identities. Projection rewrites alone
+        -- leave these endpoint types opaque, so the identity laws need this conversion.
         change F.map (b.π j) ≫ 𝟙 (F.obj (f j)) = 𝟙 (F.obj b.pt) ≫ F.map (b.π j)
         simp))
     isColimit := IsColimit.ofIsoColimit
@@ -186,6 +190,10 @@ instance (priority := 100) preservesBiproductsOfShape_of_preservesLimits_and_col
         (isColimitOfPreserves F hb.isColimit))
       (Cocone.ext (Iso.refl (F.obj b.pt)) (by
         rintro ⟨j⟩
+        -- Unfold `Cocone.precompose`, `Functor.mapCocone`, `Bicone.toCocone` and
+        -- `Functor.mapBicone`, including their composite discrete endpoints.
+        -- `Discrete.compNatIsoDiscrete` contributes identities. Projection rewrites alone
+        -- leave these endpoint types opaque, so the identity laws need this conversion.
         change (𝟙 (F.obj (f j)) ≫ F.map (b.ι j)) ≫ 𝟙 (F.obj b.pt) = F.map (b.ι j)
         simp)) }⟩ }
 
