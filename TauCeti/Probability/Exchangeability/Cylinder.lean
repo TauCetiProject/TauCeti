@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.Basic
+public import TauCeti.Probability.Process.PathLaw.Basic
 import Mathlib.Logic.Equiv.Basic
 import Mathlib.Data.Fin.Tuple.Sort
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
