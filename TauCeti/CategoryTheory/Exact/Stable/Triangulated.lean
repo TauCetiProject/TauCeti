@@ -46,7 +46,7 @@ result is a theorem rather than an instance.
 * `TauCeti.ExactStructure.IsFrobenius.stableIsTriangulated`: **Happel's theorem**, the stable
   category of a Frobenius exact category is triangulated.
 
-* `TauCeti.ExactStructure.IsFrobenius.isTriangulatedOfCommShiftEquivalence`: the transported
+* `TauCeti.ExactStructure.IsFrobenius.isTriangulated_ofCommShiftEquivalence`: the transported
   pretriangulation is triangulated.
 * `TauCeti.ExactStructure.IsFrobenius.mem_distTriang_ofCommShiftEquivalence_iff`: characterize
   transported distinguished triangles as images of conflation triangles, up to isomorphism.
@@ -250,7 +250,7 @@ noncomputable def pretriangulatedOfCommShiftEquivalence : Pretriangulated D :=
   Triangulated.Localization.pretriangulated F (MorphismProperty.isomorphisms _)
 
 /-- The equivalence used to transport Happel's pretriangulation is a triangle functor. -/
-theorem isTriangulated_ofCommShiftEquivalence :
+theorem isTriangulated_functor_ofCommShiftEquivalence :
     letI := hE.stableHasShift
     letI := hE.stableShiftFunctor_additive
     letI := hE.stablePretriangulated
@@ -264,7 +264,7 @@ theorem isTriangulated_ofCommShiftEquivalence :
   Triangulated.Localization.isTriangulated_functor F (MorphismProperty.isomorphisms _)
 
 /-- Happel's transported pretriangulation satisfies the octahedral axiom. -/
-theorem isTriangulatedOfCommShiftEquivalence :
+theorem isTriangulated_ofCommShiftEquivalence :
     letI := hE.pretriangulatedOfCommShiftEquivalence F hF
     IsTriangulated D := by
   let := hE.stableHasShift
@@ -273,7 +273,7 @@ theorem isTriangulatedOfCommShiftEquivalence :
   let := hF
   let := hE.pretriangulatedOfCommShiftEquivalence F hF
   have := hE.stableIsTriangulated
-  have := hE.isTriangulated_ofCommShiftEquivalence F hF
+  have := hE.isTriangulated_functor_ofCommShiftEquivalence F hF
   exact Triangulated.Localization.isTriangulated F (MorphismProperty.isomorphisms _)
 
 /-- Images of standard stable conflation triangles are distinguished in the transported
@@ -288,7 +288,7 @@ theorem map_stableConflationTriangle_mem_distTriang (S : ShortComplex C) (hS : E
   let := hE.stablePretriangulated
   let := hF
   let := hE.pretriangulatedOfCommShiftEquivalence F hF
-  have := hE.isTriangulated_ofCommShiftEquivalence F hF
+  have := hE.isTriangulated_functor_ofCommShiftEquivalence F hF
   apply F.map_distinguished
   rw [stablePretriangulated_distinguishedTriangles]
   exact hE.stableConflationTriangle_mem S hS
@@ -306,7 +306,7 @@ theorem mem_distTriang_ofCommShiftEquivalence_iff (T : Triangle D) :
   let := hE.stablePretriangulated
   let := hF
   let := hE.pretriangulatedOfCommShiftEquivalence F hF
-  have := hE.isTriangulated_ofCommShiftEquivalence F hF
+  have := hE.isTriangulated_functor_ofCommShiftEquivalence F hF
   refine ⟨fun hT => ?_, fun ⟨S, hS, ⟨e⟩⟩ =>
     isomorphic_distinguished _ (hE.map_stableConflationTriangle_mem_distTriang F hF S hS) _ e⟩
   obtain ⟨T', e, hT'⟩ := (F.distTriang_iff T).1 hT

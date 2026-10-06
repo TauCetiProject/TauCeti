@@ -213,7 +213,7 @@ variable {C : Type u₁} {D : Type u₂} [Category.{v₁} C] [Category.{v₂} D]
 
 /-- The shift comparison for a degreewise intertwining functor is its reindexing comparison. -/
 @[simp]
-theorem mapFunctor_commShiftIso (α : e.functor ⋙ F ≅ F ⋙ e'.functor) (k : ℤ) :
+theorem intSequenceMapFunctor_commShiftIso (α : e.functor ⋙ F ≅ F ⋙ e'.functor) (k : ℤ) :
     (mapFunctor α).commShiftIso k = mapFunctorShiftIso α k := (rfl)
 
 end TauCeti.Shift
@@ -366,7 +366,7 @@ theorem commShiftOfIntertwiningToShift_iso_one (e : C ≌ C) (F : C ⥤ D)
   rw [Functor.CommShift.ofIso_commShiftIso_hom_app]
   simp only [Functor.commShiftIso_comp_hom_app, evalCommShiftOfHasShift_iso_one,
     IntSequence.eval_map, IntSequence.reindexOneCompEvalIso_hom_app]
-  rw [mapFunctor_commShiftIso]
+  rw [intSequenceMapFunctor_commShiftIso]
   simp only [IntSequence.mapFunctorShiftIso_hom_app_f]
   rw [intertwiningComparison_inv_app, intertwiningComparison_hom_app]
   simp only [Functor.comp_map, IntSequence.eval_map, IntSequence.mapFunctor_map_f,

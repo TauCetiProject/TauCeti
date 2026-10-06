@@ -90,7 +90,7 @@ theorem stableToHomotopy_isTriangulated :
     letI := (splitExact_isFrobenius S w).stablePretriangulated
     letI := stableToHomotopyCommShift S w
     (stableToHomotopy S w).IsTriangulated :=
-  (splitExact_isFrobenius S w).isTriangulated_ofCommShiftEquivalence
+  (splitExact_isFrobenius S w).isTriangulated_functor_ofCommShiftEquivalence
       (stableToHomotopy S w) (stableToHomotopyCommShift S w)
 
 namespace HomotopyCategory
@@ -99,7 +99,7 @@ variable (S w) in
 /-- **The homotopy category of matrix factorizations is triangulated**, with the shift by `1`
 given by the parity shift. -/
 instance instIsTriangulated : IsTriangulated (HomotopyCategory (S := S) (w := w)) :=
-  (splitExact_isFrobenius S w).isTriangulatedOfCommShiftEquivalence
+  (splitExact_isFrobenius S w).isTriangulated_ofCommShiftEquivalence
       (stableToHomotopy S w) (stableToHomotopyCommShift S w)
 
 variable {T : ShortComplex (MatrixFactorization S w)}

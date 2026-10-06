@@ -95,7 +95,7 @@ theorem curvedDuplexSplitStableToHomotopy_isTriangulated :
     letI := (curvedDuplex_split_isFrobenius C w).stablePretriangulated
     letI := curvedDuplexSplitStableToHomotopyCommShift C w
     (curvedDuplexSplitStableToHomotopy C w).IsTriangulated :=
-  (curvedDuplex_split_isFrobenius C w).isTriangulated_ofCommShiftEquivalence
+  (curvedDuplex_split_isFrobenius C w).isTriangulated_functor_ofCommShiftEquivalence
       (curvedDuplexSplitStableToHomotopy C w)
       (curvedDuplexSplitStableToHomotopyCommShift C w)
 
@@ -107,7 +107,7 @@ variable (C w) in
 /-- **The homotopy category of curved duplexes is triangulated**, with the shift by `1` given by
 the parity shift. -/
 instance instIsTriangulated : IsTriangulated (HomotopyCategory C w) :=
-  (curvedDuplex_split_isFrobenius C w).isTriangulatedOfCommShiftEquivalence
+  (curvedDuplex_split_isFrobenius C w).isTriangulated_ofCommShiftEquivalence
       (curvedDuplexSplitStableToHomotopy C w)
       (curvedDuplexSplitStableToHomotopyCommShift C w)
 

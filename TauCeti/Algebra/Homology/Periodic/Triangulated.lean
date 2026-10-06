@@ -72,12 +72,12 @@ theorem stableToHomotopy_isTriangulated :
     letI := (hE).stablePretriangulated
     letI := stableToHomotopyCommShift C n
     (F).IsTriangulated :=
-  (hE).isTriangulated_ofCommShiftEquivalence F (stableToHomotopyCommShift C n)
+  (hE).isTriangulated_functor_ofCommShiftEquivalence F (stableToHomotopyCommShift C n)
 
 /-- The periodic homotopy category with its signed cyclic shift is triangulated. -/
 instance homotopyCategoryIsTriangulated :
     IsTriangulated (HomotopyCategory C (ComplexShape.up (ZMod n))) :=
-  (hE).isTriangulatedOfCommShiftEquivalence F (stableToHomotopyCommShift C n)
+  (hE).isTriangulated_ofCommShiftEquivalence F (stableToHomotopyCommShift C n)
 
 /-- The image of the standard stable triangle of a componentwise split conflation is
 distinguished in the periodic homotopy category. -/
