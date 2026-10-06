@@ -25,12 +25,13 @@ built with `TauCeti.rationalDiagonal`. For `SO` the integrality comes from that 
 `OrthogonalCompactOpens.eventually_specialOrthogonal`, rather than from a further hypothesis.
 
 Each diagonal is injective, since already the extension of scalars to a single `ℚ_p` is. The
-diagonals commute with the componentwise projections `Spin(V)(𝔸_f) → SO(V)(𝔸_f) → O(V)(𝔸_f)`.
-In particular the two routes from `Spin(V)(ℚ)` to `SO(V)(𝔸_f)`, through `Spin(V)(𝔸_f)` or
-through `SO(V)(ℚ)`, agree, so the image of the rational Spin points in adelic `SO` is
-unambiguous. Finally the finite adelic spinor norm of a rational proper isometry is, at every
-prime, the image of its rational spinor norm in the local square classes; so rational proper
-isometries with trivial spinor norm lie in the adelic spinor kernel.
+diagonals commute with the componentwise natural maps `Spin(V)(𝔸_f) → SO(V)(𝔸_f) → O(V)(𝔸_f)`
+(the Spin-to-SO map and the SO-to-O inclusion). In particular the two routes from `Spin(V)(ℚ)`
+to `SO(V)(𝔸_f)`, through `Spin(V)(𝔸_f)` or through `SO(V)(ℚ)`, agree, so the image of the
+rational Spin points in adelic `SO` is unambiguous. Finally the finite adelic spinor norm of a
+rational proper isometry is, at every prime, the image of its rational spinor norm in the local
+square classes; so rational proper isometries with trivial spinor norm lie in the adelic spinor
+kernel.
 
 ## Main definitions
 
@@ -130,7 +131,7 @@ theorem finiteAdelicSpecialOrthogonalDiagonal_injective :
   injective_rationalDiagonal _ _ _
     ⟨⟨2, Nat.prime_two⟩, specialOrthogonalGroupBaseChange_injective Q⟩
 
-/-! ### Compatibility with the componentwise projections -/
+/-! ### Compatibility with the componentwise natural maps -/
 
 /-- The diagonal commutes with the projections `Spin → SO`: mapping `Spin(V)(ℚ)` to
 `SO(V)(𝔸_f)` through `Spin(V)(𝔸_f)` or through `SO(V)(ℚ)` gives the same homomorphism. -/
