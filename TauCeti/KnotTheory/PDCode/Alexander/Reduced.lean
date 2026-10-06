@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.PDCode.Alexander.Basic
 public import Mathlib.Algebra.Exact.Basic
+import Mathlib.RingTheory.Localization.Submodule
 
 /-!
 # Removing the free summand of a diagram's Alexander module
@@ -16,8 +17,8 @@ base arc; choosing a generator splits the Alexander module as this kernel times 
 polynomial ring. The differences from that generator span the kernel and satisfy the same
 homogeneous crossing relations, with the chosen generator set to zero.
 
-For a nonempty diagram, the first elementary ideal is therefore the zeroth Fitting ideal
-of the augmentation kernel. This removes the free summand before computing an Alexander
+The first elementary ideal is the zeroth Fitting ideal of the augmentation kernel, including
+for the empty diagram. This removes the free summand before computing an Alexander
 polynomial from a reduced presentation. No principality or normalization of that ideal is
 asserted here, and the construction applies to links as well as knots.
 
@@ -102,15 +103,10 @@ theorem span_range_reducedAlexanderGenerator :
 
 /-- The reduced Alexander module is finitely generated, even for an empty diagram. -/
 instance : Module.Finite ℤ[T;T⁻¹] D.ReducedAlexanderModule := by
-  classical
-  by_cases h : Nonempty (Fin (4 * n) ⊕ Fin D.crossinglessComponentCount)
-  · exact Module.Finite.of_surjective (D.alexanderReduction (Classical.choice h))
-      (D.alexanderReduction_surjective (Classical.choice h))
-  · have : IsEmpty (Fin (4 * n) ⊕ Fin D.crossinglessComponentCount) :=
-      not_nonempty_iff.mp h
-    have : Subsingleton D.AlexanderModule :=
-      D.alexanderModuleMk_surjective.subsingleton
-    infer_instance
+  have : IsNoetherianRing ℤ[T;T⁻¹] :=
+    IsLocalization.isNoetherianRing (Submonoid.powers (Polynomial.X : Polynomial ℤ))
+      ℤ[T;T⁻¹] inferInstance
+  infer_instance
 
 /-- The two half-edges of an arc give the same reduced generator. -/
 @[simp]
@@ -202,11 +198,22 @@ theorem alexanderSplitting_fst (x : D.AlexanderModule) :
   rw [alexanderSplitting_symm_apply, alexanderSplitting_snd] at h
   exact (eq_sub_iff_add_eq.mpr h).trans (D.coe_alexanderReduction g₀ x).symm
 
-include g₀ in
-/-- Adjoining the free Laurent-polynomial summand shifts the Fitting ideals by one. -/
+/-- The elementary ideals shifted by one are the Fitting ideals of the augmentation kernel,
+including for the empty diagram, where both ideals are `⊤`. -/
 theorem elementaryIdeal_succ_eq_fittingIdeal_reduced (k : ℕ) :
     D.elementaryIdeal (k + 1) = fittingIdeal ℤ[T;T⁻¹] D.ReducedAlexanderModule k := by
-  rw [D.elementaryIdeal_def, fittingIdeal_congr (D.alexanderSplitting g₀)]
-  simpa using fittingIdeal_prod_add_finrank ℤ[T;T⁻¹] D.ReducedAlexanderModule ℤ[T;T⁻¹] k
+  classical
+  by_cases h : Nonempty (Fin (4 * n) ⊕ Fin D.crossinglessComponentCount)
+  · rw [D.elementaryIdeal_def, fittingIdeal_congr (D.alexanderSplitting (Classical.choice h))]
+    simpa using fittingIdeal_prod_add_finrank ℤ[T;T⁻¹] D.ReducedAlexanderModule ℤ[T;T⁻¹] k
+  · have : IsEmpty (Fin (4 * n) ⊕ Fin D.crossinglessComponentCount) :=
+      not_nonempty_iff.mp h
+    have : Subsingleton D.AlexanderModule := D.alexanderModuleMk_surjective.subsingleton
+    have : Subsingleton D.ReducedAlexanderModule := inferInstance
+    rw [D.elementaryIdeal_def,
+      fittingIdeal_eq_top_of_surjective (φ := LinearMap.id) Function.surjective_id
+        (by simp [Module.finrank_eq_zero_of_subsingleton]),
+      fittingIdeal_eq_top_of_surjective (φ := LinearMap.id) Function.surjective_id
+        (by simp [Module.finrank_eq_zero_of_subsingleton])]
 
 end TauCeti.OrientedPDCode
