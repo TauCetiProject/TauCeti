@@ -26,7 +26,7 @@ Over `ℚ_p`, irreducibility gives the full image `ℤ_pˣ`.
 ## Main results
 
 * `TauCeti.localCyclotomicCharacter_surjective_of_irreducible`: the irreducibility criterion.
-* `TauCeti.localCyclotomicCharacter_ratPadic_surjective`: the character over `ℚ_p` is surjective.
+* `TauCeti.surjective_localCyclotomicCharacter_ratPadic`: the character over `ℚ_p` is surjective.
 * `TauCeti.range_localCyclotomicCharacter_ratPadic`: the image over `ℚ_p` is all of `ℤ_pˣ`.
 
 ## References
@@ -120,7 +120,7 @@ theorem localCyclotomicCharacter_surjective_of_irreducible
   exact Set.mem_iInter.mp hσ n
 
 /-- The local `p`-adic cyclotomic character of `G_{ℚ_p}` is surjective onto `ℤ_pˣ`. -/
-theorem localCyclotomicCharacter_ratPadic_surjective (p : ℕ) [Fact p.Prime] :
+theorem surjective_localCyclotomicCharacter_ratPadic (p : ℕ) [Fact p.Prime] :
     Function.Surjective (localCyclotomicCharacter p ℚ_[p]) := by
   exact localCyclotomicCharacter_surjective_of_irreducible
     (irreducible_cyclotomic_prime_pow_ratPadic p)
@@ -129,6 +129,6 @@ theorem localCyclotomicCharacter_ratPadic_surjective (p : ℕ) [Fact p.Prime] :
 @[simp]
 theorem range_localCyclotomicCharacter_ratPadic (p : ℕ) [Fact p.Prime] :
     (localCyclotomicCharacter p ℚ_[p]).range = ⊤ :=
-  MonoidHom.range_eq_top.mpr (localCyclotomicCharacter_ratPadic_surjective p)
+  MonoidHom.range_eq_top.mpr (surjective_localCyclotomicCharacter_ratPadic p)
 
 end TauCeti
