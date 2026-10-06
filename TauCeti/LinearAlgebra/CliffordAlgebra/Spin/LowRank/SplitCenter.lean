@@ -24,7 +24,7 @@ This file constructs the resulting algebra equivalence with the product of the c
 that it carries reversal to componentwise star. The low-rank equality between Spin and the even
 unitary carrier then identifies the Spin group with the product of the two corner unitary groups.
 Forward and inverse equations expose the corner projections and their reconstruction inside the
-Clifford algebra, while the component equations record both reverse norms.
+Clifford algebra, while an ambient equation records the reverse norm of every corner unitary.
 
 The construction does not assume a model for either corner. In applications, identifying the two
 corners as quaternion algebras turns their unitary groups into the corresponding norm-one groups.
@@ -35,6 +35,8 @@ corners as quaternion algebras turns their unitary groups into the corresponding
   equivalence with `K × K`.
 * `CliffordAlgebra.splitEvenCorner` is either central corner of the even Clifford algebra, equipped
   with the reversal star in dimension four.
+* `CliffordAlgebra.reverseEven_mul_self_of_mem_unitary_splitEvenCorner` expresses the unitary
+  equation inside the ambient even Clifford algebra.
 * `CliffordAlgebra.evenAlgEquivSplitCenterCorners` decomposes the even Clifford algebra as the
   product of its two central corners and preserves reversal.
 * `CliffordAlgebra.spinGroupEquivSplitCenterCorners` identifies the Spin group with the product of
@@ -65,6 +67,25 @@ noncomputable def splitCenterIdempotent (Q : QuadraticForm R M)
   (Subalgebra.val (Subalgebra.center R (even Q))).toRingHom
     (e.symm.toRingEquiv.toRingHom
       ((RingEquiv.piFinTwo (fun _ : Fin 2 ↦ R)).toRingHom (Pi.single i 1)))
+
+/-- A split-centre idempotent belongs to the centre from which it was selected. -/
+theorem splitCenterIdempotent_mem_center (Q : QuadraticForm R M)
+    (e : Subalgebra.center R (even Q) ≃ₐ[R] R × R) (i : Fin 2) :
+    splitCenterIdempotent Q e i ∈ Subalgebra.center R (even Q) :=
+  (e.symm (RingEquiv.piFinTwo (fun _ : Fin 2 ↦ R) (Pi.single i 1))).2
+
+/-- The centre equivalence sends a split-centre idempotent to its defining coordinate. -/
+@[simp]
+theorem splitCenterIdempotent_centerEquiv (Q : QuadraticForm R M)
+    (e : Subalgebra.center R (even Q) ≃ₐ[R] R × R) (i : Fin 2) :
+    e ⟨splitCenterIdempotent Q e i, splitCenterIdempotent_mem_center Q e i⟩ =
+      RingEquiv.piFinTwo (fun _ : Fin 2 ↦ R) (Pi.single i 1) := by
+  let x := RingEquiv.piFinTwo (fun _ : Fin 2 ↦ R) (Pi.single i 1)
+  have hx : (⟨splitCenterIdempotent Q e i, splitCenterIdempotent_mem_center Q e i⟩ :
+      Subalgebra.center R (even Q)) = e.symm x := by
+    apply Subtype.ext
+    rfl
+  rw [hx, e.apply_symm_apply]
 
 /-- The two idempotents selected by a split centre form a complete orthogonal family. -/
 theorem completeOrthogonalIdempotents_splitCenterIdempotent (Q : QuadraticForm R M)
@@ -106,7 +127,7 @@ theorem reverseEven_splitCenterIdempotent (Q : QuadraticForm K V) (hQ : Q.Nondeg
     reverseEven Q (splitCenterIdempotent Q e i) = splitCenterIdempotent Q e i := by
   let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   exact TauCeti.CliffordAlgebra.reverseEven_eq_self_of_mem_center_of_finrank_eq_four hQ hV
-    ((e.symm (RingEquiv.piFinTwo (fun _ : Fin 2 ↦ K) (Pi.single i 1))).2)
+    (splitCenterIdempotent_mem_center Q e i)
 
 /-- Clifford reversal restricts to a star operation on either central corner. -/
 noncomputable instance splitEvenCornerStar (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
@@ -125,6 +146,14 @@ noncomputable instance splitEvenCornerStar (Q : QuadraticForm K V) (hQ : Q.Nonde
       simpa only [reverseEven_mul,
         reverseEven_splitCenterIdempotent Q hQ hV e i] using hr⟩
 
+/-- The value of the restricted corner star is Clifford reversal. -/
+@[simp]
+theorem val_star_splitEvenCorner (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (hV : finrank K V = 4) (e : Subalgebra.center K (even Q) ≃ₐ[K] K × K) (i : Fin 2)
+    (x : splitEvenCorner Q hQ hV e i) :
+    (star x).1 = reverseEven Q x.1 :=
+  rfl
+
 /-- On either central corner, the restricted reversal is involutive and reverses products. -/
 noncomputable instance splitEvenCornerStarMul (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
     (hV : finrank K V = 4) (e : Subalgebra.center K (even Q) ≃ₐ[K] K × K) (i : Fin 2) :
@@ -135,6 +164,38 @@ noncomputable instance splitEvenCornerStarMul (Q : QuadraticForm K V) (hQ : Q.No
   star_mul x y := by
     apply Subtype.ext
     exact reverseEven_mul x.1 y.1
+
+/-- A unitary element of a split central corner has ambient reverse norm equal to the corner
+idempotent. -/
+@[simp]
+theorem reverseEven_mul_self_of_mem_unitary_splitEvenCorner (Q : QuadraticForm K V)
+    (hQ : Q.Nondegenerate) (hV : finrank K V = 4)
+    (e : Subalgebra.center K (even Q) ≃ₐ[K] K × K) (i : Fin 2)
+    (x : unitary (splitEvenCorner Q hQ hV e i)) :
+    reverseEven Q (x : splitEvenCorner Q hQ hV e i).1 *
+        (x : splitEvenCorner Q hQ hV e i).1 = splitCenterIdempotent Q e i := by
+  have hx : star (x : splitEvenCorner Q hQ hV e i) *
+      (x : splitEvenCorner Q hQ hV e i) = 1 := Unitary.star_mul_self_of_mem x.2
+  have hval := congrArg (fun y : splitEvenCorner Q hQ hV e i ↦ y.1) hx
+  simpa only [IsIdempotentElem.Corner.val_mul, val_star_splitEvenCorner,
+    IsIdempotentElem.Corner.val_one] using hval
+
+omit [Invertible (2 : K)] in
+private theorem splitCenterProjection_algebraMap (Q : QuadraticForm K V)
+    (e : Subalgebra.center K (even Q) ≃ₐ[K] K × K) (i : Fin 2) (r : K) :
+    splitCenterIdempotent Q e i * algebraMap K (even Q) r * splitCenterIdempotent Q e i =
+      r • splitCenterIdempotent Q e i := by
+  rw [(isMulCentral_splitCenterIdempotent Q e i).comm, mul_assoc,
+    (completeOrthogonalIdempotents_splitCenterIdempotent Q e).idem i |>.eq,
+    Algebra.smul_def]
+
+private theorem reverseEven_splitCenterProjection (Q : QuadraticForm K V)
+    (hQ : Q.Nondegenerate) (hV : finrank K V = 4)
+    (e : Subalgebra.center K (even Q) ≃ₐ[K] K × K) (i : Fin 2) (x : even Q) :
+    reverseEven Q (splitCenterIdempotent Q e i * x * splitCenterIdempotent Q e i) =
+      splitCenterIdempotent Q e i * reverseEven Q x * splitCenterIdempotent Q e i := by
+  rw [reverseEven_mul, reverseEven_mul,
+    reverseEven_splitCenterIdempotent Q hQ hV e i, mul_assoc]
 
 /-- A split centre decomposes the even Clifford algebra into its two central corners. -/
 noncomputable def evenAlgEquivSplitCenterCorners (Q : QuadraticForm K V)
@@ -150,29 +211,27 @@ noncomputable def evenAlgEquivSplitCenterCorners (Q : QuadraticForm K V)
           splitCenterIdempotent Q e 1 * x * splitCenterIdempotent Q e 1) := rfl
   refine { re with commutes' := ?_ }
   intro r
-  change re (algebraMap K (even Q) r) =
-    algebraMap K (splitEvenCorner Q hQ hV e 0 × splitEvenCorner Q hQ hV e 1) r
   apply Prod.ext <;> apply Subtype.ext
-  · have h : (re (algebraMap K (even Q) r)).1.1 =
-        splitCenterIdempotent Q e 0 * algebraMap K (even Q) r *
-          splitCenterIdempotent Q e 0 := by
-      simpa only [Prod.fst] using congrArg Prod.fst (hre (algebraMap K (even Q) r))
-    rw [h]
-    change splitCenterIdempotent Q e 0 * algebraMap K (even Q) r *
-      splitCenterIdempotent Q e 0 =
-        algebraMap K (even Q) r * splitCenterIdempotent Q e 0
-    rw [(isMulCentral_splitCenterIdempotent Q e 0).comm, mul_assoc,
-      (completeOrthogonalIdempotents_splitCenterIdempotent Q e).idem 0 |>.eq]
-  · have h : (re (algebraMap K (even Q) r)).2.1 =
-        splitCenterIdempotent Q e 1 * algebraMap K (even Q) r *
-          splitCenterIdempotent Q e 1 := by
-      simpa only [Prod.snd] using congrArg Prod.snd (hre (algebraMap K (even Q) r))
-    rw [h]
-    change splitCenterIdempotent Q e 1 * algebraMap K (even Q) r *
-      splitCenterIdempotent Q e 1 =
-        algebraMap K (even Q) r * splitCenterIdempotent Q e 1
-    rw [(isMulCentral_splitCenterIdempotent Q e 1).comm, mul_assoc,
-      (completeOrthogonalIdempotents_splitCenterIdempotent Q e).idem 1 |>.eq]
+  · calc
+      (re (algebraMap K (even Q) r)).1.1 =
+          splitCenterIdempotent Q e 0 * algebraMap K (even Q) r *
+            splitCenterIdempotent Q e 0 :=
+        congrArg Prod.fst (hre (algebraMap K (even Q) r))
+      _ = r • splitCenterIdempotent Q e 0 := splitCenterProjection_algebraMap Q e 0 r
+      _ = (algebraMap K (splitEvenCorner Q hQ hV e 0) r).1 :=
+        (IsIdempotentElem.Corner.val_algebraMap r).symm
+      _ = (algebraMap K
+          (splitEvenCorner Q hQ hV e 0 × splitEvenCorner Q hQ hV e 1) r).1.1 := rfl
+  · calc
+      (re (algebraMap K (even Q) r)).2.1 =
+          splitCenterIdempotent Q e 1 * algebraMap K (even Q) r *
+            splitCenterIdempotent Q e 1 :=
+        congrArg Prod.snd (hre (algebraMap K (even Q) r))
+      _ = r • splitCenterIdempotent Q e 1 := splitCenterProjection_algebraMap Q e 1 r
+      _ = (algebraMap K (splitEvenCorner Q hQ hV e 1) r).1 :=
+        (IsIdempotentElem.Corner.val_algebraMap r).symm
+      _ = (algebraMap K
+          (splitEvenCorner Q hQ hV e 0 × splitEvenCorner Q hQ hV e 1) r).2.1 := rfl
 
 omit [Invertible (2 : K)] in
 /-- The two coordinates of the central-corner decomposition are the corresponding corner
@@ -205,7 +264,8 @@ theorem evenAlgEquivSplitCenterCorners_symm_apply (Q : QuadraticForm K V)
     (evenAlgEquivSplitCenterCorners Q hQ hV e).symm x =
         ((completeOrthogonalIdempotents_splitCenterIdempotent Q e).ringEquivOfIsMulCentral
           (isMulCentral_splitCenterIdempotent Q e)).symm f := by
-      rw [h, show re = _ from rfl, RingEquiv.symm_trans_apply]
+      rw [h]
+      exact RingEquiv.symm_trans_apply _ _ x
     _ = ∑ i, (f i).1 := rfl
     _ = x.1.1 + x.2.1 := by
       simp [f, RingEquiv.piFinTwo_symm_apply, piFinTwoEquiv_symm_apply]
@@ -217,14 +277,30 @@ theorem evenAlgEquivSplitCenterCorners_reverseEven (Q : QuadraticForm K V)
     evenAlgEquivSplitCenterCorners Q hQ hV e (reverseEven Q x) =
       star (evenAlgEquivSplitCenterCorners Q hQ hV e x) := by
   apply Prod.ext <;> apply Subtype.ext
-  · change splitCenterIdempotent Q e 0 * reverseEven Q x * splitCenterIdempotent Q e 0 =
-      reverseEven Q (splitCenterIdempotent Q e 0 * x * splitCenterIdempotent Q e 0)
-    rw [reverseEven_mul, reverseEven_mul,
-      reverseEven_splitCenterIdempotent Q hQ hV e 0, mul_assoc]
-  · change splitCenterIdempotent Q e 1 * reverseEven Q x * splitCenterIdempotent Q e 1 =
-      reverseEven Q (splitCenterIdempotent Q e 1 * x * splitCenterIdempotent Q e 1)
-    rw [reverseEven_mul, reverseEven_mul,
-      reverseEven_splitCenterIdempotent Q hQ hV e 1, mul_assoc]
+  · calc
+      ((evenAlgEquivSplitCenterCorners Q hQ hV e (reverseEven Q x)).1).1 =
+          splitCenterIdempotent Q e 0 * reverseEven Q x * splitCenterIdempotent Q e 0 :=
+        congrArg Prod.fst
+          (evenAlgEquivSplitCenterCorners_apply Q hQ hV e (reverseEven Q x))
+      _ = reverseEven Q (splitCenterIdempotent Q e 0 * x * splitCenterIdempotent Q e 0) :=
+        (reverseEven_splitCenterProjection Q hQ hV e 0 x).symm
+      _ = reverseEven Q ((evenAlgEquivSplitCenterCorners Q hQ hV e x).1).1 := by
+        exact congrArg (reverseEven Q)
+          (congrArg Prod.fst (evenAlgEquivSplitCenterCorners_apply Q hQ hV e x)).symm
+      _ = (star (evenAlgEquivSplitCenterCorners Q hQ hV e x).1).1 :=
+        (val_star_splitEvenCorner Q hQ hV e 0 _).symm
+  · calc
+      ((evenAlgEquivSplitCenterCorners Q hQ hV e (reverseEven Q x)).2).1 =
+          splitCenterIdempotent Q e 1 * reverseEven Q x * splitCenterIdempotent Q e 1 :=
+        congrArg Prod.snd
+          (evenAlgEquivSplitCenterCorners_apply Q hQ hV e (reverseEven Q x))
+      _ = reverseEven Q (splitCenterIdempotent Q e 1 * x * splitCenterIdempotent Q e 1) :=
+        (reverseEven_splitCenterProjection Q hQ hV e 1 x).symm
+      _ = reverseEven Q ((evenAlgEquivSplitCenterCorners Q hQ hV e x).2).1 := by
+        exact congrArg (reverseEven Q)
+          (congrArg Prod.snd (evenAlgEquivSplitCenterCorners_apply Q hQ hV e x)).symm
+      _ = (star (evenAlgEquivSplitCenterCorners Q hQ hV e x).2).1 :=
+        (val_star_splitEvenCorner Q hQ hV e 1 _).symm
 
 /-- In dimension four, a split centre identifies Spin with the product of the reverse-unitary
 groups of the two central corners. -/
@@ -295,19 +371,6 @@ theorem coe_spinGroupEquivSplitCenterCorners_symm_apply (Q : QuadraticForm K V)
     ((evenAlgEquivSplitCenterCorners Q hQ hV e).symm_apply_eq.mpr hs.symm)
   rw [evenAlgEquivSplitCenterCorners_symm_apply] at h
   simpa [s] using h.symm
-
-/-- Both components of the split-centre Spin equivalence have reverse norm one. -/
-theorem spinGroupEquivSplitCenterCorners_norm (Q : QuadraticForm K V)
-    (hQ : Q.Nondegenerate) (hV : finrank K V = 4)
-    (e : Subalgebra.center K (even Q) ≃ₐ[K] K × K) (s : spinGroup Q) :
-    star ((spinGroupEquivSplitCenterCorners Q hQ hV e s).1 :
-        splitEvenCorner Q hQ hV e 0) *
-        (spinGroupEquivSplitCenterCorners Q hQ hV e s).1 = 1 ∧
-      star ((spinGroupEquivSplitCenterCorners Q hQ hV e s).2 :
-        splitEvenCorner Q hQ hV e 1) *
-        (spinGroupEquivSplitCenterCorners Q hQ hV e s).2 = 1 := by
-  exact ⟨Unitary.star_mul_self_of_mem (spinGroupEquivSplitCenterCorners Q hQ hV e s).1.2,
-    Unitary.star_mul_self_of_mem (spinGroupEquivSplitCenterCorners Q hQ hV e s).2.2⟩
 
 end DimensionFour
 
