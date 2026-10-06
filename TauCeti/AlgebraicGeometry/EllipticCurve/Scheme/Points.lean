@@ -43,6 +43,9 @@ zero section corresponding to the point at infinity.
 
 * `WeierstrassCurve.projModelPointsEquivUnimodular_projModelZero`: the zero section corresponds to
   the class of `(0, 1, 0)`.
+* `WeierstrassCurve.projModelPointsEquivUnimodular_symm_mk`: the class of a representative `P`
+  with unit coordinate `Pᵢ` corresponds to the section through the chart `D₊(Xᵢ)` at which
+  `Xₖ / Xᵢ = Pₖ / Pᵢ`.
 * `WeierstrassCurve.projModelPointsEquivUnimodular_symm_mk_some`: the class of `(x, y, 1)`
   corresponds to `Spec` of `chartRingEval` at `(x, y)`, followed by the inclusion of the chart
   `D₊(Z)`.
@@ -301,7 +304,9 @@ variable [IsLocalRing R]
 /-- Over a local ring `R`, the sections of the structure morphism `projModel W ⟶ Spec R` of the
 projective Weierstrass model correspond to the projective point classes `[X : Y : Z]` of solutions
 of the projective Weierstrass equation with unimodular coordinates, that is, with one coordinate a
-unit. The zero section `[0 : 1 : 0]` corresponds to the class of `(0, 1, 0)`
+unit. The class of a representative `P` with unit coordinate `Pᵢ` corresponds to the section
+through the chart `D₊(Xᵢ)` at which `Xₖ / Xᵢ = Pₖ / Pᵢ` (`projModelPointsEquivUnimodular_symm_mk`).
+The zero section `[0 : 1 : 0]` corresponds to the class of `(0, 1, 0)`
 (`projModelPointsEquivUnimodular_projModelZero`), and the section through the chart `D₊(Z)` at which
 `X / Z = x` and `Y / Z = y` to the class of `(x, y, 1)`
 (`projModelPointsEquivUnimodular_symm_mk_some`). No ellipticity is assumed. -/
@@ -325,6 +330,29 @@ theorem projModelPointsEquivUnimodular_projModelZero :
   -- both sides are `Spec` of evaluation at `[0 : 1 : 0]` on the chart `D₊(Y)`
   congr 4
   exact Ideal.Quotient.ringHom_ext <| RingHom.ext fun p ↦ W.toProjective.evalZero_mk p
+
+/-- The class of a unimodular representative `P` with unit coordinate `Pᵢ` corresponds to the
+section through the chart `D₊(Xᵢ)` at which `Xₖ / Xᵢ = Pₖ / Pᵢ`: `Spec` of any `R`-algebra map
+`α : R[X₀, X₁, X₂] ⧸ (W, Xᵢ - 1) → R` with `α(Xₖ) = Pₖ / Pᵢ`, read on `A_(Xᵢ)` through
+`awayEquivChartRing`, followed by the inclusion of `D₊(Xᵢ)`. -/
+theorem projModelPointsEquivUnimodular_symm_mk {P : Fin 3 → R}
+    (hP : W.toProjective.UnimodularLift ⟦P⟧) {i : Fin 3} (hi : IsUnit (P i))
+    (α : W.toProjective.ChartRing i →ₐ[R] R)
+    (hα : ∀ k, α (Ideal.Quotient.mk _ (X k)) = P k * ↑hi.unit⁻¹) :
+    (W.projModelPointsEquivUnimodular.symm ⟨⟦P⟧, hP⟩).1 =
+      Spec.map (CommRingCat.ofHom ((α : W.toProjective.ChartRing i →+* R).comp
+        (W.toProjective.awayEquivChartRing i : _ →+* _))) ≫
+        Proj.awayι W.toProjective.grading (W.toProjective.coord i)
+          (W.toProjective.coord_mem_grading i) one_pos := by
+  rw [projModelPointsEquivUnimodular, Equiv.symm_symm, Equiv.ofBijective_apply, sectionOfClass_mk]
+  -- `α` sends `Xₖ / Xᵢ` to the `k`-th coordinate of the rescaled representative `Pᵢ⁻¹ • P`
+  obtain ⟨hQ, hQi, hψ⟩ := exists_eq_chartHom
+    (α := (α : W.toProjective.ChartRing i →+* R).comp
+      (W.toProjective.awayEquivChartRing i).toRingHom) (Q := ((hi.unit⁻¹ : Rˣ) : R) • P)
+    (by simp [RingHom.ext_iff, ← W.toProjective.awayEquivChartRing_symm_comp_algebraMap])
+    fun k ↦ by simpa [mul_comm] using hα k
+  rw [← W.repPoint_smul P hi.unit⁻¹, W.repPoint_eq hQ hQi, chartPoint, ← hψ,
+    RingEquiv.toRingHom_eq_coe]
 
 /-- The class of `(x, y, 1)` corresponds to the section through the chart `D₊(Z)` at which
 `X / Z = x` and `Y / Z = y`: `Spec` of the evaluation `chartRingEval` at `(x, y)` on

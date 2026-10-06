@@ -61,16 +61,23 @@ def UnimodularLift (P : PointClass R) : Prop :=
 
 variable {W'}
 
+/-- The class of a representative `P` is unimodular if and only if `P` solves the projective
+Weierstrass equation and its coordinates are unimodular. -/
 theorem unimodularLift_iff (P : Fin 3 → R) :
     W'.UnimodularLift ⟦P⟧ ↔ W'.Equation P ∧ Module.IsUnimodular R P :=
   Iff.rfl
 
 variable (W')
 
+/-- The class of `(0, 1, 0)`, the point at infinity `[0 : 1 : 0]`, is unimodular. -/
+@[simp]
 theorem unimodularLift_zero : W'.UnimodularLift ⟦![0, 1, 0]⟧ :=
   (unimodularLift_iff _).mpr
     ⟨W'.equation_zero, TauCeti.Module.isUnimodular_of_isUnit_apply (i := 1) (by simp)⟩
 
+/-- The class of `(a, b, 1)` is unimodular if and only if `(a, b)` solves the affine Weierstrass
+equation: the coordinate `1` makes the coordinates unimodular. -/
+@[simp]
 theorem unimodularLift_some (a b : R) :
     W'.UnimodularLift ⟦![a, b, 1]⟧ ↔ W'.toAffine.Equation a b := by
   rw [unimodularLift_iff, equation_some, and_iff_left_iff_imp]
