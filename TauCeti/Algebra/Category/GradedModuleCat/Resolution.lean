@@ -9,7 +9,6 @@ public import Mathlib.CategoryTheory.Abelian.Projective.Resolution
 public import TauCeti.Algebra.Category.GradedModuleCat.Projective
 public import TauCeti.Algebra.Module.GradedModule.Resolution
 public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
-public import TauCeti.Algebra.Homology.ShortComplex.Linear
 
 /-!
 # Concrete graded resolutions as categorical projective resolutions
@@ -140,7 +139,7 @@ noncomputable def toProjectiveResolution : ProjectiveResolution M where
         change Function.Exact (r.complex.d 1 0).hom (r.complexπ.f 0).hom
         rw [complex_d, complexπ_f_zero]
         exact r.exact_d_π
-      · exact (GradedModuleCat.epi_iff_surjective r.augmentation).mpr r.surjective_π
+      · exact r.epi_augmentation
     | succ n =>
       rw [quasiIsoAt_iff_exactAt'
         (hL := ChainComplex.exactAt_succ_single_obj ..),

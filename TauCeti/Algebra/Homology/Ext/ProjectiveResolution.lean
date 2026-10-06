@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Linear
 public import Mathlib.CategoryTheory.Abelian.Ext
 public import Mathlib.CategoryTheory.Abelian.Projective.Ext
 public import TauCeti.Algebra.Homology.Opposite
+public import TauCeti.Algebra.Homology.ShortComplex.Linear
 
 /-!
 # Computing `Ext` from projective resolutions
@@ -28,8 +29,8 @@ adjacent to a degree `n + 1` die against `Y` -- that is, if `d (n + 2) (n + 1) �
 condition and no coboundary survives, and `Extⁿ⁺¹(X, Y)` *is* the term `Hom(Rₙ₊₁, Y)`, linearly
 over the coefficient ring.
 
-Degree `0` is deliberately excluded: there `Ext⁰(X, Y)` is `Hom(X, Y)`, which need not be
-`Hom(R₀, Y)`.
+In degree `0`, precomposition with the augmentation identifies `Hom(X, Y)` with `Hom(R₀, Y)`
+when the first differential dies against `Y`. This identification needs no `HasExt` assumption.
 
 ## Main definitions
 
@@ -37,6 +38,8 @@ Degree `0` is deliberately excluded: there `Ext⁰(X, Y)` is `Hom(X, Y)`, which 
   `Hom(Rₙ₊₁, Y) ≃ₗ Extⁿ⁺¹(X, Y)`, sending `f` to its class.
 * `TauCeti.projectiveResolutionExtLinearEquivOfIso`: the same computation using an object
   isomorphic to the resolution term.
+* `TauCeti.projectiveResolutionHomLinearEquivOfCompEqZero`: the degree-zero Hom identification
+  when the first differential vanishes against the target.
 
 ## Main results
 
@@ -142,7 +145,25 @@ namespace TauCeti
 open CategoryTheory CategoryTheory.Abelian
 
 variable {C : Type u} [Category.{v} C] [Abelian C] {k : Type t} [Ring k] [Linear k C]
-  [HasExt.{w} C] {X Y Z : C}
+  {X Y Z : C}
+
+/-- Precomposition with a projective resolution's augmentation identifies Hom from the resolved
+object with Hom from its zeroth term when the first differential vanishes against the target. -/
+noncomputable def projectiveResolutionHomLinearEquivOfCompEqZero
+    (R : CategoryTheory.ProjectiveResolution X)
+    (h : ∀ f : R.complex.X 0 ⟶ Y, R.complex.d 1 0 ≫ f = 0) :
+    (X ⟶ Y) ≃ₗ[k] (R.complex.X 0 ⟶ Y) :=
+  homLinearEquivOfExact R.exact₀ h
+
+/-- The degree-zero Hom identification is precomposition with the augmentation. -/
+@[simp]
+theorem projectiveResolutionHomLinearEquivOfCompEqZero_apply
+    (R : CategoryTheory.ProjectiveResolution X)
+    (h : ∀ f : R.complex.X 0 ⟶ Y, R.complex.d 1 0 ≫ f = 0) (f : X ⟶ Y) :
+    projectiveResolutionHomLinearEquivOfCompEqZero (k := k) R h f = R.π.f 0 ≫ f :=
+  homLinearEquivOfExact_apply R.exact₀ h f
+
+variable [HasExt.{w} C]
 
 /-- Compute positive-degree Ext from an object isomorphic to a resolution term when both
 adjacent differentials vanish against the target. -/

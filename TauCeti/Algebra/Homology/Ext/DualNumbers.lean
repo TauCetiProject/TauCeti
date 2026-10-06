@@ -346,21 +346,13 @@ theorem homDualNumberFreeEquiv_apply (f : dualNumberFree k ⟶ dualNumberResidue
     homDualNumberFreeEquiv k f = dualNumberResidueEquiv k (f.hom 1) :=
   (rfl)
 
-private theorem homDualNumberFreeEquiv_dualNumberProj :
-    homDualNumberFreeEquiv k (dualNumberProj k) = 1 := by
-  rw [homDualNumberFreeEquiv_apply, dualNumberResidueEquiv_apply, dualNumberProj_apply, fst_one]
-
 /-- `End_A(S)` is isomorphic to `k` as a `k`-module. -/
 noncomputable def homDualNumberResidueEquiv :
     (dualNumberResidue k ⟶ dualNumberResidue k) ≃ₗ[k] k :=
-  LinearEquiv.ofBijective ((homDualNumberFreeEquiv k).toLinearMap ∘ₗ
-      Linear.leftComp k (dualNumberResidue k) (dualNumberProj k))
-    ⟨fun g g' h => (cancel_epi (dualNumberProj k)).1
-        ((homDualNumberFreeEquiv k).injective h),
-      fun c => ⟨c • 𝟙 (dualNumberResidue k), by
-        simp only [LinearMap.comp_apply, Linear.leftComp_apply, Category.comp_id,
-          LinearEquiv.coe_coe, map_smul, homDualNumberFreeEquiv_dualNumberProj, smul_eq_mul,
-          mul_one]⟩⟩
+  (projectiveResolutionHomLinearEquivOfCompEqZero (dualNumberProjectiveResolution k)
+    (dualNumberProjectiveResolution_comp_eq_zero k 1 0)).trans
+    ((Linear.homCongr k (dualNumberProjectiveResolutionXIso k 0)
+      (Iso.refl (dualNumberResidue k))).trans (homDualNumberFreeEquiv k))
 
 /-- `TauCeti.homDualNumberResidueEquiv` reads an endomorphism of `S` off its value on the class
 of `1`, through `TauCeti.dualNumberResidueEquiv`: precomposing with `A ↠ S` and evaluating at `1`
@@ -368,8 +360,13 @@ is the same data as evaluating at the class of `1`. -/
 @[simp]
 theorem homDualNumberResidueEquiv_apply (f : dualNumberResidue k ⟶ dualNumberResidue k) :
     homDualNumberResidueEquiv k f =
-      dualNumberResidueEquiv k (f.hom ((dualNumberProj k).hom 1)) :=
-  (rfl)
+      dualNumberResidueEquiv k (f.hom ((dualNumberProj k).hom 1)) := by
+  simp only [homDualNumberResidueEquiv, LinearEquiv.trans_apply,
+    projectiveResolutionHomLinearEquivOfCompEqZero_apply, Linear.homCongr_apply,
+    Iso.refl_hom, Category.comp_id]
+  -- The augmentation lands in the degree-zero term of `single₀`, which `erw` identifies with S.
+  erw [← Category.assoc, dualNumberProjectiveResolution_π_f_zero,
+    homDualNumberFreeEquiv_apply, ModuleCat.hom_comp, LinearMap.comp_apply]
 
 /-! ### The `Ext` groups -/
 
