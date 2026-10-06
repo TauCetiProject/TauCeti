@@ -8,13 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Funext
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
-public import Mathlib.LinearAlgebra.Matrix.ToLin
-public import Mathlib.RingTheory.Localization.Rat
 import Mathlib.Algebra.MvPolynomial.Basic
-import Mathlib.GroupTheory.FiniteAbelian.Basic
-import Mathlib.LinearAlgebra.Basis.VectorSpace
-import Mathlib.LinearAlgebra.Matrix.Adjugate
-import Mathlib.RingTheory.Localization.Integer
 
 /-!
 # Descending a nonsingular intertwining matrix to a smaller ring
@@ -33,16 +27,9 @@ entries. So if a nonsingular matrix over `K` intertwines two families of matrice
 Noether–Deuring theorem for an infinite base field: representations over `F` which become
 isomorphic over `K` are already isomorphic over `F`.
 
-For integer matrices and a `ℚ`-algebra `K`, clearing the denominators of the rational intertwiner
-gives a nonsingular *integer* intertwiner
-(`Matrix.exists_det_ne_zero_forall_mul_eq_mul_of_intCast`). Read in bases of two free `ℤ`-modules
-of the same rank, an integer matrix with nonzero determinant is an injective map
-(`Matrix.injective_toLin_of_det_ne_zero`, over any integral domain) whose cokernel is finite
-(`Matrix.finite_quotient_range_toLin_of_det_ne_zero`): composing with the adjugate matrix on
-either side is multiplication by the determinant. So two integral representations of a group which
-become isomorphic over a `ℚ`-algebra, for instance over `ℝ`, admit an injective intertwining map
-with finite cokernel between them; this is the algebraic content of Tate's lemma on lattices in a
-real representation.
+With `F = ℚ` this applies to integral representations that become isomorphic over a `ℚ`-algebra,
+for instance over `ℝ`: their rationalizations are then isomorphic, which is the algebraic content of
+Tate's lemma on lattices in a real representation.
 
 ## Main results
 
@@ -50,10 +37,6 @@ real representation.
   under some `F`-linear functional `K → F`.
 * `Matrix.exists_det_ne_zero_forall_mul_eq_mul_of_algebraMap`: a nonsingular matrix over `K`
   intertwining two families of matrices over `F` can be replaced by one over `F`.
-* `Matrix.exists_det_ne_zero_forall_mul_eq_mul_of_intCast`: a nonsingular matrix over a
-  `ℚ`-algebra intertwining two families of integer matrices can be replaced by an integer matrix.
-* `Matrix.injective_toLin_of_det_ne_zero`, `Matrix.finite_quotient_range_toLin_of_det_ne_zero`:
-  an integer matrix with nonzero determinant is a finite-index embedding of lattices.
 
 ## References
 
@@ -126,68 +109,5 @@ theorem exists_det_ne_zero_forall_mul_eq_mul_of_algebraMap [DecidableEq n] {ι F
   obtain ⟨f, hf⟩ := exists_linearMap_det_map_ne_zero (F := F) hX
   exact ⟨X.map f, hf, fun s ↦ by
     simpa only [map_algebraMap_mul, map_mul_algebraMap] using congrArg (Matrix.map · f) (hAB s)⟩
-
-/-- **A nonsingular intertwiner over a `ℚ`-algebra descends to the integers.** Let `A s` and
-`B s` be two families of integer matrices. If a matrix `X` with nonzero determinant over a
-`ℚ`-algebra `K` satisfies `B s * X = X * A s` for every `s`, after casting `A s` and `B s` to `K`,
-then so does an integer matrix with nonzero determinant. -/
-theorem exists_det_ne_zero_forall_mul_eq_mul_of_intCast [DecidableEq n] {ι K : Type*}
-    [CommRing K] [Algebra ℚ K] (A B : ι → Matrix n n ℤ) {X : Matrix n n K} (hX : X.det ≠ 0)
-    (hAB : ∀ s, (B s).map (Int.cast : ℤ → K) * X = X * (A s).map (Int.cast : ℤ → K)) :
-    ∃ Z : Matrix n n ℤ, Z.det ≠ 0 ∧ ∀ s, B s * Z = Z * A s := by
-  -- first descend to a rational intertwiner `Y`
-  obtain ⟨Y, hY, hYAB⟩ := exists_det_ne_zero_forall_mul_eq_mul_of_algebraMap (K := K)
-    (fun s ↦ (A s).map (Int.cast : ℤ → ℚ)) (fun s ↦ (B s).map (Int.cast : ℤ → ℚ)) hX
-    fun s ↦ by simpa only [map_map, Function.comp_def, map_intCast] using hAB s
-  -- then clear the denominators of `Y`
-  obtain ⟨⟨d, hd⟩, hdY⟩ := IsLocalization.exist_integer_multiples_of_finite
-    (nonZeroDivisors ℤ) fun p : n × n ↦ Y p.1 p.2
-  choose Z hZ using hdY
-  let Z' : Matrix n n ℤ := Matrix.of fun i j ↦ Z (i, j)
-  have hZ' : Z'.map (Int.castRingHom ℚ) = (d : ℚ) • Y := by
-    ext i j
-    simpa [Z', zsmul_eq_mul] using hZ (i, j)
-  have hd0 : (d : ℚ) ≠ 0 := Int.cast_ne_zero.mpr (nonZeroDivisors.ne_zero hd)
-  refine ⟨Z', fun h ↦ ?_, fun s ↦ map_injective (Int.castRingHom ℚ).injective_int ?_⟩
-  · have := congrArg (Int.castRingHom ℚ) h
-    rw [RingHom.map_det, RingHom.mapMatrix_apply, hZ', det_smul, map_zero] at this
-    exact mul_ne_zero (pow_ne_zero _ hd0) hY this
-  · dsimp only
-    rw [Matrix.map_mul, Matrix.map_mul, hZ', Matrix.mul_smul, Matrix.smul_mul, Int.coe_castRingHom,
-      hYAB s]
-
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-- A square matrix with nonzero determinant over an integral domain, read as a linear map in a
-basis of the source and one of the target, is injective. -/
-theorem injective_toLin_of_det_ne_zero {R M N : Type*} [CommRing R] [IsDomain R]
-    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] (bM : Module.Basis ι R M)
-    (bN : Module.Basis ι R N) {Z : Matrix ι ι R} (hZ : Z.det ≠ 0) :
-    Function.Injective (toLin bM bN Z) := by
-  have := Module.Free.of_basis bM
-  intro x y h
-  -- composing with the adjugate matrix is multiplication by the determinant
-  have h' := congrArg (toLin bN bM Z.adjugate) h
-  rw [← LinearMap.comp_apply, ← LinearMap.comp_apply, ← toLin_mul, adjugate_mul,
-    LinearEquiv.map_smul, toLin_one] at h'
-  exact smul_right_injective M hZ h'
-
-/-- A square integer matrix with nonzero determinant, read as a linear map in a basis of the
-source and one of the target, has finite cokernel: the cokernel is finitely generated and killed by
-the determinant. -/
-theorem finite_quotient_range_toLin_of_det_ne_zero {M N : Type*} [AddCommGroup M] [Module ℤ M]
-    [AddCommGroup N] [Module ℤ N] (bM : Module.Basis ι ℤ M) (bN : Module.Basis ι ℤ N)
-    {Z : Matrix ι ι ℤ} (hZ : Z.det ≠ 0) : Finite (N ⧸ LinearMap.range (toLin bM bN Z)) := by
-  -- `Module.finite_of_fg_torsion` is stated for the canonical `ℤ`-module structure
-  obtain rfl := Subsingleton.elim ‹Module ℤ N› (AddCommGroup.toIntModule N)
-  have := Module.Finite.of_basis bN
-  refine Module.finite_of_fg_torsion _ fun y ↦ ?_
-  obtain ⟨y, rfl⟩ := Submodule.mkQ_surjective _ y
-  refine ⟨⟨Z.det, mem_nonZeroDivisors_of_ne_zero hZ⟩, ?_⟩
-  rw [Submonoid.mk_smul, ← map_smul, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-  -- `det Z • y` is the image of `adjugate Z • y`
-  refine ⟨toLin bN bM Z.adjugate y, ?_⟩
-  rw [← LinearMap.comp_apply, ← toLin_mul, mul_adjugate, LinearEquiv.map_smul, toLin_one]
-  rfl
 
 end Matrix

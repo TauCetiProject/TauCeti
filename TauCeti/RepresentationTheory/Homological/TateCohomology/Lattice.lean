@@ -9,7 +9,9 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.HerbrandQu
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 import Mathlib.RingTheory.TensorProduct.IsBaseChangeHom
+import Mathlib.RingTheory.TensorProduct.Free
 import TauCeti.LinearAlgebra.Matrix.DetDescent
+import TauCeti.RepresentationTheory.Lattice
 
 /-!
 # The Herbrand quotient of a lattice in a representation
@@ -28,10 +30,11 @@ permutation lattice on the places in `S`, whose Herbrand quotient is computed in
 
 The identity of `V`, written in the two bases coming from `M` and from `N`, is a nonsingular
 matrix over `K` intertwining the integer matrices of the actions on `M` and on `N`. By
-`Matrix.exists_det_ne_zero_forall_mul_eq_mul_of_intCast` it may be replaced by a nonsingular
-integer matrix with the same property, that is, by a `G`-equivariant map `M → N`. Such a map is
-injective with finite cokernel (`Matrix.injective_toLin_of_det_ne_zero`,
-`Matrix.finite_quotient_range_toLin_of_det_ne_zero`), so it preserves the Herbrand quotient by
+`Matrix.exists_det_ne_zero_forall_mul_eq_mul_of_algebraMap` it may be replaced by a nonsingular
+rational matrix with the same property, that is, by an equivalence between the rationalizations
+`ℚ ⊗[ℤ] M` and `ℚ ⊗[ℤ] N`. Clearing denominators then gives an injective `G`-equivariant map
+`M → N` with finite cokernel (`Representation.Equiv.exists_injective_finite_quotient_range`), which
+preserves the Herbrand quotient by
 `TauCeti.TateCohomology.herbrandQuotient_eq_of_mono_of_finite_cokernel`.
 
 ## Main results
@@ -46,37 +49,11 @@ injective with finite cokernel (`Matrix.injective_toLin_of_det_ne_zero`,
 
 public noncomputable section
 
-open CategoryTheory Limits
+open CategoryTheory Limits TensorProduct
 
 namespace TauCeti.TateCohomology
 
 variable {G : Type} [Group G] [Fintype G]
-
-/-- An integer matrix with nonzero determinant intertwining the actions on two integral
-representations, in two bases indexed by the same type, gives them the same Herbrand quotient: it
-is an injective intertwining map with finite cokernel. -/
-private theorem herbrandQuotient_eq_of_det_ne_zero [IsCyclic G] {M N : Rep ℤ G} {ι : Type}
-    [Fintype ι] [DecidableEq ι] (bM : Module.Basis ι ℤ M) (bN : Module.Basis ι ℤ N)
-    (Z : Matrix ι ι ℤ) (hZ : Z.det ≠ 0)
-    (hZG : ∀ g, LinearMap.toMatrix bN bN (N.ρ g) * Z = Z * LinearMap.toMatrix bM bM (M.ρ g)) :
-    herbrandQuotient M = herbrandQuotient N := by
-  let φ := Matrix.toLin bM bN Z
-  have hφG (g : G) (x : M) : φ (M.ρ g x) = N.ρ g (φ x) := by
-    have : φ ∘ₗ M.ρ g = N.ρ g ∘ₗ φ := (LinearMap.toMatrix bM bN).injective <| by
-      rw [LinearMap.toMatrix_comp bM bM bN, LinearMap.toMatrix_comp bM bN bN,
-        LinearMap.toMatrix_toLin, hZG]
-    exact LinearMap.congr_fun this x
-  let f : M ⟶ N :=
-    ConcreteCategory.ofHom (LinearMap.intertwiningMap_of_isIntertwiningMap M.ρ N.ρ φ hφG)
-  have : Mono f := (Rep.mono_iff_injective f).2 (Matrix.injective_toLin_of_det_ne_zero bM bN hZ)
-  -- the cokernel is computed in `ModuleCat ℤ`, as the quotient by the range of `φ`
-  have : Finite (((forget₂ (Rep ℤ G) (ModuleCat ℤ)).obj N) ⧸
-      LinearMap.range ((forget₂ (Rep ℤ G) (ModuleCat ℤ)).map f).hom) :=
-    Matrix.finite_quotient_range_toLin_of_det_ne_zero bM bN hZ
-  have : Finite ↑(cokernel f) :=
-    Finite.of_equiv _ (PreservesCokernel.iso (forget₂ _ (ModuleCat ℤ)) f ≪≫
-      ModuleCat.cokernelIsoRangeQuotient _).toLinearEquiv.toEquiv.symm
-  exact herbrandQuotient_eq_of_mono_of_finite_cokernel f
 
 /-- **Tate's lattice lemma.** Let `G` be a finite cyclic group, `K` a nontrivial commutative
 `ℚ`-algebra (classically `ℝ`) and `ρ` a representation of `G` on a `K`-module `V`. If `M` and `N`
@@ -110,8 +87,36 @@ theorem herbrandQuotient_eq_of_isBaseChange [IsCyclic G] {K V : Type*} [CommRing
     rw [← IsBaseChange.endHom_toMatrix (ibcM := hj) (b := bN) (f := N.ρ g),
       ← IsBaseChange.endHom_toMatrix (ibcM := hi) (b := bM) (f := M.ρ g), ← hρM, ← hρN, hX_def,
       linearMap_toMatrix_mul_basis_toMatrix, basis_toMatrix_mul_linearMap_toMatrix]
-  obtain ⟨Z, hZ, hZG⟩ := Matrix.exists_det_ne_zero_forall_mul_eq_mul_of_intCast A B hX
-    fun g ↦ by simpa only [algebraMap_int_eq, Int.coe_castRingHom] using hXG g
-  exact herbrandQuotient_eq_of_det_ne_zero bM bN Z hZ hZG
+  -- descend `X` to a nonsingular rational intertwiner `Y`
+  obtain ⟨Y, hY, hYG⟩ := Matrix.exists_det_ne_zero_forall_mul_eq_mul_of_algebraMap (F := ℚ)
+    (fun g ↦ (A g).map (algebraMap ℤ ℚ)) (fun g ↦ (B g).map (algebraMap ℤ ℚ)) hX
+    fun g ↦ by
+      simpa only [Matrix.map_map, Function.comp_def, algebraMap_int_eq, Int.coe_castRingHom,
+        map_intCast] using hXG g
+  -- read `Y` as an equivalence of the rationalizations of `M` and `N`
+  let cM := Algebra.TensorProduct.basis ℚ bM
+  let cN := Algebra.TensorProduct.basis ℚ bN
+  have hYu : IsUnit Y.det := isUnit_iff_ne_zero.2 hY
+  let e : ℚ ⊗[ℤ] M ≃ₗ[ℚ] ℚ ⊗[ℤ] N := LinearEquiv.ofLinearMap (Matrix.toLin cM cN Y)
+    (Matrix.toLin cN cM Y⁻¹) (by rw [← Matrix.toLin_mul, Y.mul_nonsing_inv hYu, Matrix.toLin_one])
+    (by rw [← Matrix.toLin_mul, Y.nonsing_inv_mul hYu, Matrix.toLin_one])
+  have he (g : G) : e.toLinearMap ∘ₗ Representation.baseChange ℚ M.ρ g =
+      Representation.baseChange ℚ N.ρ g ∘ₗ e.toLinearMap :=
+    (LinearMap.toMatrix cM cN).injective <| by
+      rw [LinearMap.toMatrix_comp cM cM cN, LinearMap.toMatrix_comp cM cN cN,
+        Representation.baseChange_apply, Representation.baseChange_apply,
+        LinearMap.toMatrix_baseChange, LinearMap.toMatrix_baseChange,
+        LinearEquiv.toLinearMap_ofLinearMap, LinearMap.toMatrix_toLin, hYG]
+  have : Module.Finite ℤ N := Module.Finite.of_basis bN
+  obtain ⟨φ, hφ, hφfin⟩ := (Representation.Equiv.mk e he).exists_injective_finite_quotient_range
+  let f : M ⟶ N := ConcreteCategory.ofHom φ
+  have : Mono f := (Rep.mono_iff_injective f).2 hφ
+  -- the cokernel is computed in `ModuleCat ℤ`, as the quotient by the range of `φ`
+  have : Finite (((forget₂ (Rep ℤ G) (ModuleCat ℤ)).obj N) ⧸
+      LinearMap.range ((forget₂ (Rep ℤ G) (ModuleCat ℤ)).map f).hom) := hφfin
+  have : Finite ↑(cokernel f) :=
+    Finite.of_equiv _ (PreservesCokernel.iso (forget₂ _ (ModuleCat ℤ)) f ≪≫
+      ModuleCat.cokernelIsoRangeQuotient _).toLinearEquiv.toEquiv.symm
+  exact herbrandQuotient_eq_of_mono_of_finite_cokernel f
 
 end TauCeti.TateCohomology
