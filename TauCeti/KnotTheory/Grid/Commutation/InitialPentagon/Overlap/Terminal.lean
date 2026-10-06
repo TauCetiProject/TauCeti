@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Commutation.Decomposition
 public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Decomposition
 public import TauCeti.KnotTheory.Grid.Differential.Square.Recut.Pairing
 
@@ -50,9 +49,6 @@ This is the initial-side counterpart of the common-initial-side recut of
   turn row, the promoted decomposition is the generic recut.
 * `TauCeti.GridRectangleInitialPentagonDecomposition.coveredSquares_val_add_val_recutRightEqRight`:
   both decompositions cover the same squares with the same multiplicities.
-* `TauCeti.GridDiagram.
-  initialPentagonRectangleWeight_eq_rectangleInitialPentagonWeight_of_val_add_val_eq`: composite
-  domains covering the same squares have the same weight.
 * `TauCeti.GridDiagram.recutRightEqRight_mem_initialPentagonRectangleDecompositions` and
   `TauCeti.GridDiagram.initialPentagonRectangleWeight_recutRightEqRight`: the recut of a counted
   domain is counted, with the same weight.
@@ -306,24 +302,6 @@ local notation "b" => finRotate n C.column
 section Weights
 
 variable (R : Type*) [CommSemiring R]
-
-/-- An initial-side pentagon followed by a rectangle of the commuted diagram has the weight of a
-rectangle followed by an initial-side pentagon when the two composite domains cover the same
-squares with the same multiplicities, the squares of the rectangle of the commuted diagram being
-read in the original diagram, that is with the two commuted columns exchanged. -/
-theorem initialPentagonRectangleWeight_eq_rectangleInitialPentagonWeight_of_val_add_val_eq
-    {x z : GridState n} (D : GridRectangleInitialPentagonDecomposition C.column C.turnRow x z)
-    (E : GridInitialPentagonRectangleDecomposition C.column C.turnRow x z)
-    (h : E.pentagon.coveredSquares.val +
-        (E.second.toGridRectangle.coveredSquares.map
-          ((Equiv.swap C.column b).prodCongr (Equiv.refl (Fin n))).toEmbedding).val =
-      D.first.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val) :
-    G.initialPentagonRectangleWeight C R E = G.rectangleInitialPentagonWeight C R D := by
-  rw [initialPentagonRectangleWeight_def, rectangleInitialPentagonWeight_def,
-    initialPentagonWeight_eq_prod_coveredSquares, initialPentagonWeight_eq_prod_coveredSquares,
-    OMonomial_swapColumns_eq_prod_swapSquareWeight, rename_OMonomial_eq_prod_swapSquareWeight]
-  simp only [← swapSquareWeight_def, Finset.prod_eq_multiset_prod, ← Multiset.prod_add,
-    ← Multiset.map_add, h]
 
 variable {x z : GridState n}
   (D : GridRectangleInitialPentagonDecomposition C.column C.turnRow x z)
