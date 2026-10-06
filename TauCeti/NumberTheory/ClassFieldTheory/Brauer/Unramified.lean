@@ -9,8 +9,11 @@ public import TauCeti.Algebra.AddCircle
 public import TauCeti.NumberTheory.LocalField.Norm.Unramified.Basic
 public import TauCeti.NumberTheory.LocalField.ResidueCorrespondence
 public import TauCeti.FieldTheory.GaloisCohomology.Cyclic
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.GaloisAction
+public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.BaseChange
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.NumberTheory.LocalField.Frobenius
+import TauCeti.NumberTheory.LocalField.UnitFiltration.ValuationSequence
 
 /-!
 # The local invariant of an unramified layer
@@ -92,6 +95,12 @@ Thus restriction preserves the representing unit and multiplies the invariant by
   multiplies the invariant by `[K' : K]`.
 * `TauCeti.ClassFieldTheory.map_baseChange_eq_zero_of_finrank_dvd`: base change along an
   extension `K'/K` of degree a multiple of `[L : K]` kills `H²(Gal(L/K), Lˣ)`.
+* `TauCeti.ClassFieldTheory.subsingleton_H2_unitFiltration_zero`: the units `U(L,0)` of valuation
+  one have trivial `H²(Gal(L/K), U(L,0))`, since the norm maps them onto `U(K,0)`.
+* `TauCeti.ClassFieldTheory.H2π_eq_zero_of_forall_mem_unitFiltration_zero`: so a `2`-cocycle with
+  values in `U(L,0)` represents the zero class of `H²(Gal(L/K), Lˣ)`.
+* `TauCeti.ClassFieldTheory.brBaseChange_relBrInfl_eq_zero`: a Brauer class inflated from a
+  cocycle whose values are units of an unramified layer `L/K` vanishes after base change to `K`.
 
 ## References
 
@@ -357,5 +366,88 @@ theorem map_baseChange_eq_zero_of_finrank_dvd (h : Module.finrank K L ∣ Module
   rw [unramifiedInv_map_baseChange, hd, mul_nsmul, hx, nsmul_zero]
 
 end BaseChange
+
+/-! ### Cocycles with unit values -/
+
+/-- **The units of an unramified layer have trivial `H²`**: `H²(Gal(L/K), U(L,0)) = 0`. By
+two-periodicity at arithmetic Frobenius, a class is represented by a Galois-fixed unit of valuation
+one, that is, by an element of `U(K,0)`, and in an unramified extension the norm maps `U(L,0)`
+onto `U(K,0)` (`TauCeti.map_normUnits_unitFiltration`). -/
+theorem subsingleton_H2_unitFiltration_zero :
+    Subsingleton (H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0))) := by
+  let _ : IsCyclic (L ≃ₐ[K] L) :=
+    ⟨frobeniusAlgEquiv (K := K) (L := L), fun σ ↦
+      Subgroup.mem_zpowers_iff.1 (mem_zpowers_frobeniusAlgEquiv K L σ)⟩
+  let _ : CommGroup (L ≃ₐ[K] L) := IsCyclic.commGroup
+  set A := Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)
+  refine subsingleton_of_forall_eq 0 fun x ↦ ?_
+  obtain ⟨y, rfl⟩ := Rep.FiniteCyclicGroup.groupCohomologyπEven_surjective A _
+    (mem_zpowers_frobeniusAlgEquiv K L) 2 even_two x
+  refine (Rep.FiniteCyclicGroup.groupCohomologyπEven_eq_zero_iff A _
+    (mem_zpowers_frobeniusAlgEquiv K L) 2 even_two y).2 ?_
+  -- The Frobenius-fixed unit `u` of valuation one is a unit `a` of `K` of valuation one.
+  set u : unitFiltration L 0 := (Rep.toAdditive y.1).toMul
+  have hfix : frobeniusAlgEquiv (K := K) (L := L) • u = u :=
+    congrArg (fun z ↦ (Rep.toAdditive z).toMul) (Rep.FiniteCyclicGroup.ρ_apply_of_mem_ker A _ y)
+  obtain ⟨a, hau⟩ := exists_unitsMap_eq_of_smul_eq (mem_zpowers_frobeniusAlgEquiv K L)
+    ((AlgEquiv.coe_smul_unitFiltration _ u).symm.trans congr(($hfix : Lˣ)))
+  have haU : a ∈ unitFiltration K 0 := by
+    rw [← ker_normalizedValuation, MonoidHom.mem_ker,
+      ← normalizedValuation_algebraMap_eq_one_iff (L := L), hau, ← MonoidHom.mem_ker,
+      ker_normalizedValuation]
+    exact u.2
+  -- `a` is the norm of some `b ∈ U(L,0)`, and the representation norm of `b` is `a`.
+  obtain ⟨b, hb, hba⟩ := (map_normUnits_unitFiltration (K := K) (L := L) 0).ge haU
+  refine ⟨Rep.toAdditive.symm (Additive.ofMul ⟨b, hb⟩), ?_⟩
+  apply (Rep.toAdditive (M := L ≃ₐ[K] L) (G := unitFiltration L 0)).injective
+  apply Additive.toMul.injective
+  apply Subtype.ext
+  apply Units.ext
+  refine (coe_norm_unitFiltrationZero K L _).trans ?_
+  rw [AddEquiv.apply_symm_apply, toMul_ofMul, Subgroup.coe_mk, ← Algebra.coe_normUnits, hba]
+  exact congrArg Units.val hau
+
+/-- **A unit-valued cocycle of an unramified layer is a coboundary.** If a `2`-cocycle of
+`Gal(L/K)` with values in `Lˣ` takes all its values in the units `U(L,0)` of valuation one, its
+class in `H²(Gal(L/K), Lˣ)` vanishes. -/
+theorem H2π_eq_zero_of_forall_mem_unitFiltration_zero
+    (c : cocycles₂ (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ))
+    (hc : ∀ g h, (Rep.toAdditive (c (g, h))).toMul ∈ unitFiltration L 0) :
+    H2π _ c = 0 := by
+  set A := Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)
+  -- The cocycle `c`, read in `U(L,0)`.
+  let c' : (L ≃ₐ[K] L) × (L ≃ₐ[K] L) → A := fun p ↦ Additive.ofMul ⟨_, hc p.1 p.2⟩
+  -- Up to the identifications `Additive.ofMul`, `Rep.toAdditive` and the coercion from `U(L,0)`,
+  -- which are all identities, the inclusion sends `c' p` to `c p`.
+  have hc' (p) : (unitFiltrationZeroIncl K L).hom (c' p) = c p :=
+    (unitFiltrationZeroIncl_apply K L (c' p)).trans (ofMul_toMul (Rep.toAdditive (c p)))
+  have hmem : c' ∈ cocycles₂ A := by
+    rw [mem_cocycles₂_iff]
+    intro g h j
+    apply unitFiltrationZeroIncl_injective K L
+    simp only [map_add, hc']
+    rw [Rep.hom_comm_apply, hc']
+    exact (mem_cocycles₂_iff (c : _ → _)).1 c.2 g h j
+  have hmap : mapCocycles₂ (MonoidHom.id _) (unitFiltrationZeroIncl K L) ⟨c', hmem⟩ = c :=
+    cocycles₂_ext fun g h ↦ hc' (g, h)
+  have := subsingleton_H2_unitFiltration_zero K L
+  rw [← hmap, ← H2π_comp_map_apply, Subsingleton.elim (H2π A ⟨c', hmem⟩) 0, map_zero]
+
+/-- **A class inflated along an unramified layer with unit values vanishes locally.** Let `E/F`
+be a finite normal extension, embedded in `Fˢ` by `σ`, and let `K` be an `F`-algebra with a finite
+unramified Galois extension `L/K` receiving `E`. If a `2`-cocycle `c` of `Gal(E/F)` with values in
+`Eˣ` takes all its values in the units `U(L,0)` of valuation one after the inclusion `Eˣ → Lˣ`, then
+the base change to `K` of the class inflated from `c` vanishes. -/
+theorem brBaseChange_relBrInfl_eq_zero (F : Type) [Field F] [Algebra F K] [Algebra F L]
+    [IsScalarTower F K L] (E : Type) [Field E] [Algebra F E] [FiniteDimensional F E] [Normal F E]
+    [Algebra E L] [IsScalarTower F E L] (σ : E →ₐ[F] SeparableClosure F)
+    (c : cocycles₂ (Rep.ofMulDistribMulAction Gal(E/F) Eˣ))
+    (hc : ∀ g h, Units.map (algebraMap E L : E →* L) (Rep.toAdditive (c (g, h))).toMul ∈
+      unitFiltration L 0) :
+    brBaseChange F K (relBrInfl F E σ (H2π _ c)) = 0 := by
+  rw [brBaseChange_relBrInfl F K E L σ IsSepClosed.lift, H2π_comp_map_apply,
+    H2π_eq_zero_of_forall_mem_unitFiltration_zero K L _ fun g h ↦ ?_, map_zero]
+  rw [toMul_mapCocycles₂_unitsBaseChangeHom]
+  exact hc _ _
 
 end TauCeti.ClassFieldTheory

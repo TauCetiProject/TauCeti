@@ -43,7 +43,7 @@ conflation class gives the expected equivalence on conflations.
 * `TauCeti.ConflationClass.ConflationCategory.mapNatIso`: natural-isomorphism invariance of the
   induced functor.
 * `TauCeti.ConflationClass.ConflationCategory.opEquivalence`: the equivalence
-  `E.ConflationCategoryᵒᵖ ≃ E.op.ConflationCategory`.
+  `E.ConflationCategoryᵒᵖ ≌ E.op.ConflationCategory`.
 
 ## References
 
@@ -406,7 +406,7 @@ theorem mapCompιIso_inv_app (F : Functor C D) [F.PreservesZeroMorphisms]
   rfl
 
 /-- The functor on conflations induced by the identity functor is naturally isomorphic to the
-identity functor. The two functors are definitionally equal. -/
+identity functor. -/
 def mapIdIso : map (E := E) (E' := E) (Functor.id C) (fun hS ↦ hS) ≅
     Functor.id E.ConflationCategory := Iso.refl _
 
@@ -429,8 +429,7 @@ theorem mapIdIso_inv_app_hom (S : E.ConflationCategory) :
       eqToHom (mapId_obj_obj S).symm := by
   rfl
 
-/-- Mapping conflations by a composite is naturally isomorphic to mapping successively.
-The two functors are definitionally equal. -/
+/-- Mapping conflations by a composite is naturally isomorphic to mapping successively. -/
 def mapCompIso {K : Type*} [Category* K] [Preadditive K]
     {E'' : ConflationClass K} (F : Functor C D) (H : Functor D K)
     [F.PreservesZeroMorphisms] [H.PreservesZeroMorphisms]
@@ -438,8 +437,7 @@ def mapCompIso {K : Type*} [Category* K] [Preadditive K]
     (hH : ∀ {S : ShortComplex D}, E'.Conflation S → E''.Conflation (S.map H)) :
     map (F ⋙ H) (fun hS ↦ hH (hF hS)) ≅ map F hF ⋙ map H hH := Iso.refl _
 
-/-- Mapping an underlying short complex by a composite is definitionally the same as mapping it
-successively. -/
+/-- Mapping an underlying short complex by a composite agrees with mapping it successively. -/
 theorem mapComp_obj_obj {K : Type*} [Category* K] [Preadditive K]
     {E'' : ConflationClass K} (F : Functor C D) (H : Functor D K)
     [F.PreservesZeroMorphisms] [H.PreservesZeroMorphisms]
@@ -485,6 +483,8 @@ def mapNatIso (F G : Functor C D) [F.PreservesZeroMorphisms] [G.PreservesZeroMor
     apply ShortComplex.hom_ext
     all_goals exact e.hom.naturality _)
 
+/-- The `τ₁` component of `(mapNatIso F G hF hG e).hom` at `S` is `e.hom` at `S.obj.X₁`,
+transported along the identifications `map_obj_obj_X₁` for `F` and `G`. -/
 @[simp]
 theorem mapNatIso_hom_app_hom_τ₁ (F G : Functor C D)
     [F.PreservesZeroMorphisms] [G.PreservesZeroMorphisms]
@@ -496,6 +496,8 @@ theorem mapNatIso_hom_app_hom_τ₁ (F G : Functor C D)
         eqToHom (map_obj_obj_X₁ G hG S).symm :=
   (conj_eqToHom_iff_heq _ _ (map_obj_obj_X₁ F hF S) (map_obj_obj_X₁ G hG S)).2 HEq.rfl
 
+/-- The `τ₂` component of `(mapNatIso F G hF hG e).hom` at `S` is `e.hom` at `S.obj.X₂`,
+transported along the identifications `map_obj_obj_X₂` for `F` and `G`. -/
 @[simp]
 theorem mapNatIso_hom_app_hom_τ₂ (F G : Functor C D)
     [F.PreservesZeroMorphisms] [G.PreservesZeroMorphisms]
@@ -507,6 +509,8 @@ theorem mapNatIso_hom_app_hom_τ₂ (F G : Functor C D)
         eqToHom (map_obj_obj_X₂ G hG S).symm :=
   (conj_eqToHom_iff_heq _ _ (map_obj_obj_X₂ F hF S) (map_obj_obj_X₂ G hG S)).2 HEq.rfl
 
+/-- The `τ₃` component of `(mapNatIso F G hF hG e).hom` at `S` is `e.hom` at `S.obj.X₃`,
+transported along the identifications `map_obj_obj_X₃` for `F` and `G`. -/
 @[simp]
 theorem mapNatIso_hom_app_hom_τ₃ (F G : Functor C D)
     [F.PreservesZeroMorphisms] [G.PreservesZeroMorphisms]
@@ -518,6 +522,8 @@ theorem mapNatIso_hom_app_hom_τ₃ (F G : Functor C D)
         eqToHom (map_obj_obj_X₃ G hG S).symm :=
   (conj_eqToHom_iff_heq _ _ (map_obj_obj_X₃ F hF S) (map_obj_obj_X₃ G hG S)).2 HEq.rfl
 
+/-- The `τ₁` component of `(mapNatIso F G hF hG e).inv` at `S` is `e.inv` at `S.obj.X₁`,
+transported along the identifications `map_obj_obj_X₁` for `G` and `F`. -/
 @[simp]
 theorem mapNatIso_inv_app_hom_τ₁ (F G : Functor C D)
     [F.PreservesZeroMorphisms] [G.PreservesZeroMorphisms]
@@ -529,6 +535,8 @@ theorem mapNatIso_inv_app_hom_τ₁ (F G : Functor C D)
         eqToHom (map_obj_obj_X₁ F hF S).symm :=
   (conj_eqToHom_iff_heq _ _ (map_obj_obj_X₁ G hG S) (map_obj_obj_X₁ F hF S)).2 HEq.rfl
 
+/-- The `τ₂` component of `(mapNatIso F G hF hG e).inv` at `S` is `e.inv` at `S.obj.X₂`,
+transported along the identifications `map_obj_obj_X₂` for `G` and `F`. -/
 @[simp]
 theorem mapNatIso_inv_app_hom_τ₂ (F G : Functor C D)
     [F.PreservesZeroMorphisms] [G.PreservesZeroMorphisms]
@@ -540,6 +548,8 @@ theorem mapNatIso_inv_app_hom_τ₂ (F G : Functor C D)
         eqToHom (map_obj_obj_X₂ F hF S).symm :=
   (conj_eqToHom_iff_heq _ _ (map_obj_obj_X₂ G hG S) (map_obj_obj_X₂ F hF S)).2 HEq.rfl
 
+/-- The `τ₃` component of `(mapNatIso F G hF hG e).inv` at `S` is `e.inv` at `S.obj.X₃`,
+transported along the identifications `map_obj_obj_X₃` for `G` and `F`. -/
 @[simp]
 theorem mapNatIso_inv_app_hom_τ₃ (F G : Functor C D)
     [F.PreservesZeroMorphisms] [G.PreservesZeroMorphisms]
@@ -590,13 +600,12 @@ abbrev mapCompιIso [F.Additive] (hF : E.IsConflationExact E' F) :
   ConflationClass.ConflationCategory.mapCompιIso F hF.map_conflation
 
 /-- The functor on conflations induced by the identity functor is naturally isomorphic to the
-identity functor. The two functors are definitionally equal. -/
+identity functor. -/
 abbrev mapIdIso : map (ExactStructure.IsConflationExact.id (E := E)) ≅
     Functor.id E.ConflationCategory :=
   ConflationClass.ConflationCategory.mapIdIso
 
-/-- Mapping conflations by a composite is naturally isomorphic to mapping successively.
-The two functors are definitionally equal. -/
+/-- Mapping conflations by a composite is naturally isomorphic to mapping successively. -/
 abbrev mapCompIso {K : Type*} [Category* K] [Preadditive K] [HasZeroObject K]
     [HasBinaryBiproducts K] {E'' : ExactStructure K} {H : D ⥤ K} [F.Additive] [H.Additive]
     (hF : E.IsConflationExact E' F) (hH : E'.IsConflationExact E'' H)

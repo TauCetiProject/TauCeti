@@ -89,7 +89,7 @@ noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
-open Polynomial ValuativeRel
+open Polynomial _root_.ValuativeRel
 
 variable (K : Type) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]

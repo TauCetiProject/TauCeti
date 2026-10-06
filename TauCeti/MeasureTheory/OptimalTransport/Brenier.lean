@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Convex.Differentiability
 public import TauCeti.MeasureTheory.OptimalTransport.CTransform.Quadratic
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.CyclicalMonotonicity
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Mixture
-public import TauCeti.MeasureTheory.OptimalTransport.Existence
+public import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Monge
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic

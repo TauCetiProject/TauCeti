@@ -124,9 +124,8 @@ theorem subresultantCoeffMatrix_mulVec [CommSemiring R] [DecidableEq R]
     (subresultantCoeffMatrix p q m n j k).mulVec v i =
       (ofFn (m - j) (fun l => v (Fin.castAdd (n - j) l)) * q +
         ofFn (n - j) (fun l => v (Fin.natAdd (m - j) l)) * p).coeff
-        (if i.val = 0 then k else i.val + j) := by
-  exact coefficientRow_dotProduct hm hn (m - j) (n - j)
-    (if i.val = 0 then k else i.val + j) v
+        (if i.val = 0 then k else i.val + j) :=
+  coefficientRow_dotProduct hm hn (m - j) (n - j) (if i.val = 0 then k else i.val + j) v
 
 /-- At `k = j`, the coefficient matrix is the principal subresultant matrix. -/
 @[simp]
@@ -134,13 +133,7 @@ theorem subresultantCoeffMatrix_index [Semiring R]
     (p q : R[X]) (m n j : ℕ) :
     subresultantCoeffMatrix p q m n j j = subresultantMatrix p q m n j := by
   ext i l
-  induction l using Fin.addCases with
-  | left l =>
-      rw [subresultantCoeffMatrix_castAdd, subresultantMatrix_castAdd]
-      by_cases hi : i.val = 0 <;> simp [hi]
-  | right l =>
-      rw [subresultantCoeffMatrix_natAdd, subresultantMatrix_natAdd]
-      by_cases hi : i.val = 0 <;> simp [hi]
+  induction l using Fin.addCases <;> by_cases hi : i.val = 0 <;> simp [hi]
 
 /-- Mapping coefficients maps every entry of a fixed-bound subresultant coefficient matrix. -/
 @[simp]
@@ -182,41 +175,21 @@ input times a power of its coefficient at the bound. The empty determinant is ex
 theorem subresultantCoeff_right_bound [CommRing R] (p q : R[X]) {m n k : ℕ}
     (hnm : n < m) (hk : k ≤ n) :
     subresultantCoeff p q m n n k = q.coeff k * q.coeff n ^ (m - n - 1) := by
-  classical
-  let M := subresultantCoeffMatrix p q m n n k
   let i₀ : Fin ((m - n) + (n - n)) := ⟨0, by omega⟩
-  have htri : M.IsUpperTriangular := by
+  have htri : (subresultantCoeffMatrix p q m n n k).IsUpperTriangular := by
     intro i l hli
-    have hli' : l.val < i.val := by simpa using Fin.lt_def.mp hli
-    have hi0 : i.val ≠ 0 := by omega
     induction l using Fin.addCases with
     | left l =>
-      have hbound : ¬ i.val + n ≤ l.val + n := by
-        simp only [Fin.val_castAdd] at hli'
-        omega
-      simp [M, subresultantCoeffMatrix_castAdd, hi0, hbound]
+      have : l.val < i.val := hli
+      simp [show i.val ≠ 0 by omega, show ¬ i.val + n ≤ l.val + n by omega]
     | right l => exact Fin.elim0 (Fin.cast (by simp) l)
-  have hdiag (i : Fin ((m - n) + (n - n))) :
-      M i i = if i = i₀ then q.coeff k else q.coeff n := by
+  have hdiag (i : Fin ((m - n) + (n - n))) : subresultantCoeffMatrix p q m n n k i i =
+      if i = i₀ then q.coeff k else q.coeff n := by
     induction i using Fin.addCases with
-    | left i =>
-      simp only [M, subresultantCoeffMatrix_castAdd, Fin.val_castAdd]
-      by_cases hi : i.val = 0
-      · have hi₀ : Fin.castAdd (n - n) i = i₀ := by ext; exact hi
-        simp [hi, hi₀, hk]
-      · have hi₀ : Fin.castAdd (n - n) i ≠ i₀ := by
-          intro h
-          exact hi (congrArg Fin.val h)
-        simp [hi, hi₀]
+    | left i => by_cases hi : i.val = 0 <;> simp [i₀, Fin.ext_iff, hi, hk]
     | right i => exact Fin.elim0 (Fin.cast (by simp) i)
   rw [subresultantCoeff_def, Matrix.det_of_isUpperTriangular htri]
-  simp_rw [hdiag]
-  rw [← Finset.mul_prod_erase _ _ (Finset.mem_univ i₀)]
-  have hprod : (∏ x ∈ Finset.univ.erase i₀, if x = i₀ then q.coeff k else q.coeff n) =
-      ∏ _x ∈ Finset.univ.erase i₀, q.coeff n :=
-    Finset.prod_congr rfl fun x hx => ite_eq_right (Finset.ne_of_mem_erase hx)
-  rw [hprod]
-  simp
+  simp [hdiag, Finset.prod_ite, Finset.filter_ne', Finset.filter_eq', Finset.card_erase_of_mem]
 
 /-- The coefficient minor at `k = j` is the principal subresultant coefficient. -/
 @[simp]
@@ -269,13 +242,8 @@ theorem subresultantCoeff_C_mul_right [CommRing R]
     (p q : R[X]) (r : R) (m n j k : ℕ) :
     subresultantCoeff p (C r * q) m n j k =
       r ^ (m - j) * subresultantCoeff p q m n j k := by
-  have hmatrix : subresultantCoeffMatrix p (C r * q) m n j k = .of fun i l =>
-      Fin.addCases (fun _ => r) (fun _ => 1) l * subresultantCoeffMatrix p q m n j k i l := by
-    ext i l
-    induction l using Fin.addCases <;> simp [subresultantCoeffMatrix, coeff_C_mul]
-  rw [subresultantCoeff_def, subresultantCoeff_def, hmatrix, Matrix.det_mul_row,
-    Fin.prod_univ_add]
-  simp
+  rw [subresultantCoeff_comm, subresultantCoeff_C_mul_left, mul_left_comm,
+    ← subresultantCoeff_comm]
 
 /-- The fixed-bound subresultant polynomial at index `j`.
 
@@ -327,17 +295,9 @@ theorem subresultant_zero [CommRing R]
 theorem degree_subresultant_le [CommRing R]
     (p q : R[X]) (m n j : ℕ) :
     (subresultant p q m n j).degree ≤ j := by
-  classical
-  by_cases hj : j < min m n
-  · simp only [subresultant, hj, ↓reduceIte]
-    by_cases hzero : ofFn (R := R) (j + 1)
-        (fun k => subresultantCoeff p q m n j k) = 0
-    · simp [hzero]
-    · have hdeg := ofFn_degree_lt (R := R)
-          (fun k : Fin (j + 1) => subresultantCoeff p q m n j k)
-      rw [degree_eq_natDegree hzero] at hdeg ⊢
-      exact WithBot.coe_le_coe.2 (Nat.lt_succ_iff.mp (WithBot.coe_lt_coe.1 hdeg))
-  · simp [subresultant, hj]
+  rw [degree_le_iff_coeff_zero]
+  intro k hk
+  simp [show ¬ k ≤ j by exact_mod_cast hk.not_ge]
 
 /-- The subresultant polynomial has degree exactly `j` precisely when its principal coefficient
 does not vanish. -/
@@ -388,18 +348,8 @@ theorem subresultant_comm [CommRing R]
     subresultant p q m n j =
       C ((-1) ^ ((m - j) * (n - j))) * subresultant q p n m j := by
   ext k
-  rw [coeff_C_mul]
-  by_cases hj : j < min m n
-  · have hj' : j < min n m := by simpa [min_comm] using hj
-    by_cases hkj : k ≤ j
-    · rw [subresultant_coeff, subresultant_coeff]
-      simp only [hj, hj', hkj, and_self, ↓reduceIte]
-      rw [subresultantCoeff_comm]
-    · rw [subresultant_coeff, subresultant_coeff]
-      simp [hkj]
-  · have hj' : ¬j < min n m := by simpa [min_comm] using hj
-    rw [subresultant_coeff, subresultant_coeff]
-    simp [hj, hj']
+  rw [subresultant_coeff, coeff_C_mul, subresultant_coeff, min_comm n m, subresultantCoeff_comm,
+    mul_ite, mul_zero]
 
 end Polynomial
 

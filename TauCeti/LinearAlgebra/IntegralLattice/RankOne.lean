@@ -393,27 +393,17 @@ theorem polar_discriminantQuadraticMap_zsmul_rankOneClass (k l : ℤ) :
 times it is an even integer exactly when `4m ∣ N`. -/
 @[simp]
 theorem rankOne_level : (rankOne m).level = 4 * m.natAbs := by
-  have hm := rankOne_cast_ne_zero m
-  have key (N : ℤ) : ((rankOne m).level : ℤ) ∣ N ↔ 4 * m ∣ N := by
-    rw [level_dvd_iff]
-    constructor
-    · intro h
-      obtain ⟨k, hk⟩ := h _ (rankOneDualGen m).2
-      rw [coe_rankOneDualGen, rankOne_norm_apply] at hk
-      refine ⟨k, Int.cast_injective (α := ℚ) ?_⟩
-      field_simp at hk
-      push_cast
-      linear_combination hk
-    · rintro ⟨c, rfl⟩ x hx
-      obtain ⟨k, rfl⟩ := (mem_rankOne_dualCarrier_iff m x).mp hx
-      refine ⟨c * k ^ 2, ?_⟩
-      rw [rankOne_norm_apply]
-      push_cast
-      field_simp
-      ring
-  rw [← Int.natAbs_natCast (rankOne m).level,
-    Int.natAbs_eq_of_dvd_dvd ((key _).mpr dvd_rfl) ((key _).mp dvd_rfl), Int.natAbs_mul]
-  simp
+  have hgen : AddSubgroup.zmultiples (rankOneClass m) = ⊤ := by
+    rw [← Submodule.span_singleton_toAddSubgroup_eq_zmultiples, span_rankOneClass_eq_top]
+    rfl
+  rw [(isEven_rankOne m).level_eq_addOrderOf _ hgen, discriminantQuadraticMap_rankOneClass]
+  suffices hden : (1 / (4 * m) : ℚ).den = 4 * m.natAbs by
+    simpa only [Rat.cast_id, mul_one] using
+      (_root_.AddCircle.addOrderOf_coe_rat (p := (1 : ℚ)) (q := 1 / (4 * m))).trans hden
+  rw [one_div,
+    Rat.den_inv_of_ne_zero (mul_ne_zero (by norm_num) (rankOne_cast_ne_zero m))]
+  norm_cast
+  simp [Int.natAbs_mul]
 
 end NeZero
 

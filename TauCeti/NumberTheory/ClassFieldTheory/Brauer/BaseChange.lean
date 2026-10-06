@@ -47,6 +47,9 @@ On central simple algebras, base change is `A ↦ A ⊗_K L`; that comparison is
   `TauCeti.ClassFieldTheory.brBaseChange_brBaseChange`: functoriality in the extension.
 * `TauCeti.ClassFieldTheory.brBaseChange_eq_brRes`: for an extension embedded in `Kˢ`, base
   change is restriction.
+* `TauCeti.ClassFieldTheory.brBaseChange_relBrInfl`: base change of a class inflated from a finite
+  normal layer `L/K` is inflated from any finite normal layer `M/F` receiving `L`, along restriction
+  `Gal(M/F) → Gal(L/K)` and the inclusion `Lˣ → Mˣ`.
 
 ## References
 
@@ -237,5 +240,62 @@ theorem brBaseChange_eq_brRes (σ : L →ₐ[K] SeparableClosure K) :
     (ContinuousMonoidHom.ext fun g ↦ (absoluteGaloisGroupMap_eq_iff ψ).2 fun y ↦ by simp [ψ])
     (AddMonoidHom.ext fun _ ↦ Additive.toMul.injective (Units.ext (by simp [ψ])))
   rw [brBaseChange_apply K L ψ, brRes_eq_explicitMap2, hpair]
+
+/-! ### Base change of inflated classes -/
+
+section Relative
+
+variable (K : Type) [Field K] (F : Type) [Field F] [Algebra K F]
+  (L : Type) [Field L] [Algebra K L] [FiniteDimensional K L] [Normal K L]
+  (M : Type) [Field M] [Algebra F M] [FiniteDimensional F M] [Normal F M]
+  [Algebra K M] [IsScalarTower K F M] [Algebra L M] [IsScalarTower K L M]
+  (σ : L →ₐ[K] SeparableClosure K) (σ' : M →ₐ[F] SeparableClosure F)
+
+/-- **Base change of an inflated Brauer class.** Let `L/K` be finite normal, embedded in `Kˢ`
+by `σ`, let `F/K` be any extension and `M/F` finite normal, embedded in `Fˢ` by `σ'`, with a
+compatible `K`-embedding `L → M`. Then base change to `F` of the class inflated from
+`y ∈ H²(Gal(L/K), Lˣ)` is the class inflated from the image of `y` in `H²(Gal(M/F), Mˣ)`, along
+restriction `Gal(M/F) → Gal(L/K)` and the inclusion `Lˣ → Mˣ`. -/
+theorem brBaseChange_relBrInfl (y : groupCohomology (Rep.ofMulDistribMulAction Gal(L/K) Lˣ) 2) :
+    brBaseChange K F (relBrInfl K L σ y) =
+      relBrInfl F M σ' (groupCohomology.map
+        ((AlgEquiv.restrictNormalHom L).comp (AlgEquiv.restrictScalarsHom K))
+        (unitsBaseChangeHom K L F M) 2 y) := by
+  -- An embedding `τ : Kˢ → Fˢ` with `τ ∘ σ = σ' ∘ (L → M)`, extending the embedding
+  -- `σ' ∘ (L → M)` of `σ(L)` to the separable extension `Kˢ/σ(L)`.
+  obtain ⟨τ, hτ⟩ : ∃ τ : SeparableClosure K →ₐ[K] SeparableClosure F,
+      ∀ x : L, τ (σ x) = σ' (algebraMap L M x) := by
+    obtain ⟨τ, hτ⟩ := IsSepClosed.surjective_domRestrict_of_isSeparable (K := K) σ.fieldRange
+      (E := SeparableClosure K) (M := SeparableClosure F)
+      (((σ'.restrictScalars K).comp (IsScalarTower.toAlgHom K L M)).comp
+        (σ.equivFieldRange.symm : σ.fieldRange →ₐ[K] L))
+    refine ⟨τ, fun x ↦ ?_⟩
+    have := congrArg (fun g : σ.fieldRange →ₐ[K] SeparableClosure F ↦ g (σ.equivFieldRange x)) hτ
+    simpa [AlgHom.domRestrict] using this
+  -- Restricting `g ∈ G_F` to `M` and then to `L` is restricting its image in `G_K` to `L`.
+  have hres (g : AbsoluteGaloisGroup F) : σ.restrictNormalHom (absoluteGaloisGroupMap τ g) =
+      (AlgEquiv.restrictNormalHom L).comp (AlgEquiv.restrictScalarsHom K)
+        (σ'.restrictNormalHom g) := by
+    refine σ.restrictNormalHom_eq_iff.2 fun x ↦ τ.injective ?_
+    rw [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, absoluteGaloisGroupMap_commutes, hτ, hτ,
+      ← AlgHom.restrictNormalHom_commutes]
+    congr 1
+    exact (AlgEquiv.restrictNormal_commutes ((σ'.restrictNormalHom g).restrictScalars K) L x).symm
+  induction y using groupCohomology.H2_induction_on with
+  | h c =>
+  rw [groupCohomology.H2π_comp_map_apply, relBrInfl_H2π, relBrInfl_H2π, brBaseChange_apply K F τ,
+    AddEquiv.symm_apply_apply, explicitMap2_mk]
+  congr 2
+  refine Subtype.ext (funext fun p ↦ ?_)
+  obtain ⟨g, h⟩ := p
+  refine (cocyclesMap2_apply _ _ _ _ _ _ _ _ _ g h).trans ?_
+  refine Additive.toMul.injective (Units.ext ?_)
+  rw [toMul_unitsCoeffBaseChange, relBrCocycle_apply, relBrCocycle_apply, hres, hres]
+  simp only [embeddedUnitsEquivInvariants_apply, toMul_coe_embeddedUnitsInvariants]
+  rw [toMul_mapCocycles₂_unitsBaseChangeHom]
+  -- Both sides are `σ' (algebraMap L M u)` for the same unit `u` of `L`, by the choice of `τ`.
+  exact hτ _
+
+end Relative
 
 end TauCeti.ClassFieldTheory

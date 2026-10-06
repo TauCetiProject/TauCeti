@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.GroupAction.QuotientAddGroup
+public import TauCeti.Algebra.Module.Torsion.Int
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.LatticeDefect.Basic
 
 /-!
@@ -13,9 +15,20 @@ public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Lattic
 The difference between the reduction and torsion classes of a finite module is zero in the
 exact Grothendieck group, even though the two representations need not be isomorphic.
 Together with additivity, this is the finite-module input to invariance of lattice defects
-under inclusions with finite cokernel.
+under inclusions with finite cokernel. The same argument shows invariance under inclusions whose
+cokernel is uniquely `ℓ`-divisible, such as `ℤ[X] ⊆ ℤ_ℓ[X]`.
 
 The coefficient ring and the acting monoid are arbitrary.
+
+## Main results
+
+* `TauCeti.latticeDefect_eq_zero_of_bijective_zsmul`: a module on which multiplication by `ℓ` is
+  bijective, such as a uniquely `ℓ`-divisible one, has zero defect.
+* `TauCeti.latticeDefect_eq_zero_of_finite`: a finite module has zero defect.
+* `TauCeti.latticeDefect_eq_of_exact_of_finite` and `TauCeti.latticeDefect_eq_of_finiteIndex`:
+  an injective equivariant map with finite cokernel preserves the defect.
+* `TauCeti.latticeDefect_eq_of_bijective_zsmul_quotient`: so does an injective equivariant map
+  whose cokernel is uniquely `ℓ`-divisible.
 
 ## References
 
@@ -64,24 +77,16 @@ theorem latticeDefect_eq_zero_of_isTorsionBy (V : Type u) [AddCommGroup V]
         exact Representation.coe_torsionBy_apply ρ (ℓ : ℤ) g x }
   rw [latticeDefect_def, reductionK0_congr k eQ, reductionK0_congr k eT, sub_self]
 
-private theorem latticeDefect_eq_zero_of_injective_zsmul (W : Type u) [AddCommGroup W]
-    [DistribMulAction G W] [Finite W] (hf : Injective (fun x : W => (ℓ : ℤ) • x)) :
-    letI := Fintype.ofFinite W
-    latticeDefect k G ℓ W = 0 := by
-  let := Fintype.ofFinite W
-  have hsurj : Surjective (fun x : W => (ℓ : ℤ) • x) :=
-    Finite.injective_iff_surjective.mp hf
-  have htop : (ℓ : ℤ) • (⊤ : Submodule ℤ W) = ⊤ := by
-    apply top_unique
-    intro x _
-    obtain ⟨y, hy⟩ := hsurj x
-    exact (Submodule.mem_smul_pointwise_iff_exists _ _ _).mpr ⟨y, trivial, hy⟩
-  have : Subsingleton (QuotSMulTop (ℓ : ℤ) W) :=
-    Submodule.Quotient.subsingleton_iff.mpr htop
-  have : Subsingleton (Submodule.torsionBy ℤ W (ℓ : ℤ)) :=
-    ⟨fun x y => Subtype.ext <| hf <| by
-      exact ((Submodule.mem_torsionBy_iff _ _).mp x.property).trans
-        ((Submodule.mem_torsionBy_iff _ _).mp y.property).symm⟩
+/-- A module on which multiplication by `ℓ` is bijective has zero lattice defect: both its
+reduction modulo `ℓ` and its `ℓ`-torsion vanish. Bijectivity alone makes both of them trivial,
+hence finite, so no finiteness hypothesis is needed. -/
+theorem latticeDefect_eq_zero_of_bijective_zsmul (V : Type u) [AddCommGroup V]
+    [DistribMulAction G V] (hV : Bijective fun x : V => (ℓ : ℤ) • x) :
+    haveI := subsingleton_quotSMulTop_of_surjective_zsmul ℓ hV.2
+    haveI := subsingleton_torsionBy_of_injective_zsmul ℓ hV.1
+    latticeDefect k G ℓ V = 0 := by
+  have := subsingleton_quotSMulTop_of_surjective_zsmul ℓ hV.2
+  have := subsingleton_torsionBy_of_injective_zsmul ℓ hV.1
   rw [latticeDefect_def]
   simp
 
@@ -107,7 +112,8 @@ theorem latticeDefect_eq_zero_of_finite [Fact ℓ.Prime] (V : Type u) [AddCommGr
     intro W _ _ _ hn
     let f : W →+[G] W := SMulCommClass.toDistribMulActionHom G W (ℓ : ℤ)
     by_cases hf : Injective f
-    · exact latticeDefect_eq_zero_of_injective_zsmul k G ℓ W hf
+    · exact latticeDefect_eq_zero_of_bijective_zsmul k G ℓ W
+        ⟨hf, Finite.injective_iff_surjective.mp hf⟩
     · -- Reduce by the exact sequence from the torsion kernel to the multiplication image.
       -- The canonical integer-linear map has the same underlying function as `f`.
       let m := f.toAddMonoidHom.toIntLinearMap
@@ -166,5 +172,50 @@ theorem latticeDefect_eq_of_exact_of_finite [Fact ℓ.Prime] {A B C : Type u}
   let := Fintype.ofFinite C
   rw [latticeDefect_add_of_exact k G ℓ f g hf hfg hg,
     latticeDefect_eq_zero_of_finite k G ℓ C, add_zero]
+
+/-- **Finite index preserves the lattice defect**: an injective equivariant map whose image has
+finite index does not change the defect. The cokernel is the quotient by the image, with the
+induced action. -/
+theorem latticeDefect_eq_of_finiteIndex [Fact ℓ.Prime] {W V : Type u} [AddCommGroup W]
+    [DistribMulAction G W] [AddCommGroup V] [DistribMulAction G V] (f : W →+[G] V)
+    (hf : Injective f) [(f : W →+ V).range.FiniteIndex]
+    [Finite (QuotSMulTop (ℓ : ℤ) W)] [Finite (Submodule.torsionBy ℤ W ℓ)]
+    [Finite (QuotSMulTop (ℓ : ℤ) V)] [Finite (Submodule.torsionBy ℤ V ℓ)] :
+    latticeDefect k G ℓ W = latticeDefect k G ℓ V := by
+  set N := (f : W →+ V).range
+  have hN : ∀ g : G, ∀ x ∈ N, g • x ∈ N := by
+    rintro g _ ⟨w, rfl⟩
+    exact ⟨g • w, map_smul f g w⟩
+  let := N.quotientDistribMulAction hN
+  let q : V →+[G] V ⧸ N :=
+    { QuotientAddGroup.mk' N with
+      map_smul' := fun g x ↦ N.quotientDistribMulAction_smul_mk hN g x }
+  have : Finite (V ⧸ N) := AddSubgroup.finite_quotient_of_finiteIndex
+  exact latticeDefect_eq_of_exact_of_finite k G ℓ f q hf (fun x ↦ QuotientAddGroup.eq_zero_iff x)
+    (QuotientAddGroup.mk'_surjective N)
+
+/-- **A uniquely `ℓ`-divisible cokernel preserves the lattice defect**: an injective equivariant
+map whose cokernel is uniquely `ℓ`-divisible does not change the defect. The cokernel, which need
+not be finite, has zero defect (`TauCeti.latticeDefect_eq_zero_of_bijective_zsmul`). -/
+theorem latticeDefect_eq_of_bijective_zsmul_quotient [Fact ℓ.Prime] {W V : Type u}
+    [AddCommGroup W] [DistribMulAction G W] [AddCommGroup V] [DistribMulAction G V]
+    (f : W →+[G] V) (hf : Injective f)
+    (h : Bijective fun x : V ⧸ (f : W →+ V).range ↦ (ℓ : ℤ) • x)
+    [Finite (QuotSMulTop (ℓ : ℤ) W)] [Finite (Submodule.torsionBy ℤ W ℓ)]
+    [Finite (QuotSMulTop (ℓ : ℤ) V)] [Finite (Submodule.torsionBy ℤ V ℓ)] :
+    latticeDefect k G ℓ W = latticeDefect k G ℓ V := by
+  set N := (f : W →+ V).range
+  have hN : ∀ g : G, ∀ x ∈ N, g • x ∈ N := by
+    rintro g _ ⟨w, rfl⟩
+    exact ⟨g • w, map_smul f g w⟩
+  let := N.quotientDistribMulAction hN
+  let q : V →+[G] V ⧸ N :=
+    { QuotientAddGroup.mk' N with
+      map_smul' := fun g x ↦ N.quotientDistribMulAction_smul_mk hN g x }
+  have := subsingleton_quotSMulTop_of_surjective_zsmul ℓ h.2
+  have := subsingleton_torsionBy_of_injective_zsmul ℓ h.1
+  rw [latticeDefect_add_of_exact k G ℓ f q hf (fun x ↦ QuotientAddGroup.eq_zero_iff x)
+    (QuotientAddGroup.mk'_surjective N), latticeDefect_eq_zero_of_bijective_zsmul k G ℓ _ h,
+    add_zero]
 
 end TauCeti

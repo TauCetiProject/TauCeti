@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.Lie.IdealOperations
+public import Mathlib.Algebra.Lie.Semisimple.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.Basis.Basic
 
@@ -29,6 +30,8 @@ This file supplies general constructions for Lie modules that are missing from M
 
 ## Main results
 
+* `LieModule.isIrreducible_compLieHom_of_eq_bot_or_eq_top`: an underlying-submodule dichotomy for
+  a representation implies irreducibility of the induced Lie module.
 * `Module.Basis.repr_lie_eq_sum`: a Lie bracket coordinate is a weighted sum of bracket columns.
 
 * `TauCeti.LieModuleHom.instFiniteDimensional`: the morphism space of two finite-dimensional Lie
@@ -50,6 +53,36 @@ This file supplies general constructions for Lie modules that are missing from M
 -/
 
 public section
+
+namespace LieModule
+
+universe u v w
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+variable {R : Type u} [CommRing R] {L : Type v} [LieRing L] [LieAlgebra R L]
+  {M : Type w} [AddCommGroup M] [Module R M] [Nontrivial M]
+
+/-- A dichotomy for the underlying submodules invariant under a representation makes the module
+obtained by pulling back the endomorphism action along that representation irreducible. -/
+theorem isIrreducible_compLieHom_of_eq_bot_or_eq_top (f : L →ₗ⁅R⁆ Module.End R M)
+    (h : ∀ N : Submodule R M, (∀ x, N.map (f x) ≤ N) → N = ⊥ ∨ N = ⊤) :
+    letI : LieRingModule L M := LieRingModule.compLieHom _ f
+    letI : LieModule R L M := LieModule.compLieHom _ f
+    IsIrreducible R L M := by
+  let _ : LieRingModule L M := LieRingModule.compLieHom _ f
+  let _ : LieModule R L M := LieModule.compLieHom _ f
+  refine IsIrreducible.mk fun N hN => ?_
+  rw [← LieSubmodule.toSubmodule_eq_top]
+  refine (h N.toSubmodule ?_).resolve_left ?_
+  · intro x
+    rintro _ ⟨m, hm, rfl⟩
+    have hm' := N.lie_mem (x := x) hm
+    rw [LieRingModule.compLieHom_apply, Module.End.lie_apply] at hm'
+    exact (LieSubmodule.mem_carrier (N := N)).mp hm'
+  · exact fun hbot => hN ((LieSubmodule.toSubmodule_eq_bot N).mp hbot)
+
+end LieModule
 
 namespace TauCeti
 

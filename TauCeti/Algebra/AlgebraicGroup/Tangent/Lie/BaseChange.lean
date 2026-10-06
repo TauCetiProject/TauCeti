@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Dimension
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Cotangent
+public import TauCeti.Algebra.Lie.Killing.BaseChange
 public import Mathlib.RingTheory.Bialgebra.TensorProduct
 
 /-!
@@ -18,7 +20,8 @@ along `h ↦ 1 ⊗ h` identifies the tangent Lie algebra of `K ⊗[R] H` over `K
 This comparison requires neither flatness nor finiteness. It connects geometric base
 change to the coefficient-valued tangent space and its convolution bracket. For an extension
 of fields, `finrank_lie_baseChange` deduces invariance of Lie dimension when the original
-augmentation cotangent space is finite-dimensional.
+augmentation cotangent space is finite-dimensional, and `isKilling_lie_baseChange_iff` shows that
+the Lie algebra has nondegenerate Killing form exactly when its base change does.
 
 ## References
 
@@ -234,5 +237,26 @@ theorem finrank_lie_baseChange {k K H : Type*} [Field k] [Field K] [Algebra k K]
       Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) :=
   (tangentBaseChangeLieEquiv (R := k) (K := K) (H := H)).toLinearEquiv.finrank_eq.symm.trans
     Derivation.finrank_tangent_baseChange
+
+/-- Extension of the ground field preserves and reflects nondegeneracy of the Killing form of the
+Lie algebra of an affine monoid whose augmentation cotangent space is finite-dimensional: the Lie
+algebra of `K ⊗[k] H` has nondegenerate Killing form exactly when `Lie(G)` does. -/
+theorem isKilling_lie_baseChange_iff {k K H : Type*} [Field k] [Field K] [Algebra k K]
+    [CommRing H] [Bialgebra k H] [Module.Finite k (Bialgebra.CotangentSpace k H)] :
+    LieAlgebra.IsKilling K
+        (Derivation K (K ⊗[k] H) (Bialgebra.CounitAlgebra K (K ⊗[k] H) K)) ↔
+      LieAlgebra.IsKilling k (Derivation k H (Bialgebra.CounitAlgebra k H k)) := by
+  let e := Derivation.tangentScalarExtensionLieEquiv.trans
+    (tangentBaseChangeLieEquiv (R := k) (K := K) (H := H))
+  constructor
+  · intro
+    have := LieAlgebra.isKilling_of_equiv e.symm
+    have := (isKilling_baseChange_iff k K _).1 this
+    exact LieAlgebra.isKilling_of_equiv Derivation.cotangentDualLieEquiv
+  · intro
+    have : LieAlgebra.IsKilling k (Module.Dual k (Bialgebra.CotangentSpace k H)) :=
+      LieAlgebra.isKilling_of_equiv Derivation.cotangentDualLieEquiv.symm
+    have := (isKilling_baseChange_iff k K _).2 this
+    exact LieAlgebra.isKilling_of_equiv e
 
 end TauCeti

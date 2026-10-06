@@ -250,14 +250,16 @@ theorem integralBockstein_zero (n : ℕ) [NeZero n] : integralBockstein G n 0 = 
   intro x
   exact Subsingleton.elim _ _
 
-/-- Increasing the modulus from `n` to `n * k` by multiplication by `k` on cyclic coefficients
+/-- Increasing the modulus from `n` to `m = n * k` by multiplication by `k` on cyclic coefficients
 preserves the integral connecting class. In particular, the character descriptions of the
 `p`-primary part are compatible as the exponent increases. -/
-theorem integralBockstein_mulCastHom (n k : ℕ) [NeZero n] [NeZero k] (i : ℕ) :
+theorem integralBockstein_mulCastHom (n k : ℕ) {m : ℕ} [NeZero n] [NeZero m] (h : n * k = m)
+    (i : ℕ) :
     coeffMap (ofDiscreteModuleMap
-      (((AddEquiv.ulift.symm.toAddMonoidHom.comp (ZMod.mulCastHom k (rfl : n * k = n * k))).comp
+      (((AddEquiv.ulift.symm.toAddMonoidHom.comp (ZMod.mulCastHom k h)).comp
         AddEquiv.ulift.toAddMonoidHom).toIntLinearMap) (fun _ _ ↦ rfl)) i ≫
-      integralBockstein G (n * k) i = integralBockstein G n i := by
+      integralBockstein G m i = integralBockstein G n i := by
+  subst h
   let fA : ULift.{u} ℤ →+[G] ULift.{u} ℤ :=
     { AddMonoidHom.id _ with map_smul' := fun _ _ ↦ rfl }
   let fB : ULift.{u} ℤ →+[G] ULift.{u} ℤ :=

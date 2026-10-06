@@ -139,6 +139,17 @@ theorem prefixLaw_def (μ : Measure Ω) (X : ℕ → Ω → α) (n : ℕ) :
     prefixLaw μ X n = blockLaw μ X (fun i : Fin n => i.val) :=
   rfl
 
+/-- A block law of a family under a finite measure is finite. -/
+instance isFiniteMeasure_blockLaw (μ : Measure Ω) [IsFiniteMeasure μ] (X : ι → Ω → α) {m : ℕ}
+    (k : Fin m → ι) : IsFiniteMeasure (blockLaw μ X k) := by
+  rw [blockLaw_def]
+  infer_instance
+
+/-- A prefix law of a process under a finite measure is finite. -/
+instance isFiniteMeasure_prefixLaw (μ : Measure Ω) [IsFiniteMeasure μ] (X : ℕ → Ω → α)
+    (n : ℕ) : IsFiniteMeasure (prefixLaw μ X n) :=
+  isFiniteMeasure_blockLaw μ X _
+
 /-- The mass of a finite path, as the measure of the event that the process spells it out:
 `prefixLaw μ X n {w} = μ {ω | ∀ i, X i.val ω = w i}`. The singleton specialization of
 `blockLaw_apply_of_measurable` along the prefix selection. -/

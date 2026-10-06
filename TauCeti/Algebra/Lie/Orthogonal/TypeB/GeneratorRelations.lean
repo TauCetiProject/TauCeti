@@ -84,7 +84,7 @@ theorem typeBSimpleCorootGenerator_eq_diagonal (i : Fin (n + 1)) :
           LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K) := by
   refine Fin.lastCases ?_ (fun i₀ => ?_) i
   · simp [typeBShortCorootGenerator_eq_diagonal]
-  · simp [typeBLongCorootGenerator_eq_diagonal]
+  · simp [typeBDifferenceCorootGenerator_eq_diagonal]
 
 /-- The simple coroot generators in the standard split type-`B` model commute. -/
 @[simp]
@@ -108,22 +108,22 @@ theorem typeBSimpleCorootGenerator_lie_root_last (i : Fin (n + 1)) :
           typeBShortRootGenerator (K := K) (Fin.last n) := by
   rw [typeBSimpleCorootGenerator_eq_diagonal]
   simpa only [coe_typeBDiagonalEquiv_apply] using
-    (typeBDiagonalEquiv_lie_shortRootGenerator
+    (typeBDiagonalMatrix_lie_shortRootGenerator
       (typeBSimpleCorootCoordinate (K := K) i) (Fin.last n))
 
 /-- The action of a simple coroot on a positive generator at a long node. -/
 @[simp]
 theorem typeBSimpleCorootGenerator_lie_root_castSucc (i : Fin (n + 1)) (j : Fin n) :
     ⁅typeBSimpleCorootGenerator (K := K) i,
-      typeBLongRootGenerator (K := K) j.castSucc j.succ
+      typeBDifferenceRootGenerator (K := K) j.castSucc j.succ
         (ne_of_lt j.castSucc_lt_succ)⁆ =
         (typeBSimpleCorootCoordinate (K := K) i j.castSucc -
           typeBSimpleCorootCoordinate (K := K) i j.succ) •
-            typeBLongRootGenerator (K := K) j.castSucc j.succ
+            typeBDifferenceRootGenerator (K := K) j.castSucc j.succ
               (ne_of_lt j.castSucc_lt_succ) := by
   rw [typeBSimpleCorootGenerator_eq_diagonal]
   simpa only [coe_typeBDiagonalEquiv_apply] using
-    (typeBDiagonalEquiv_lie_longRootGenerator
+    (typeBDiagonalMatrix_lie_differenceRootGenerator
       (typeBSimpleCorootCoordinate (K := K) i) j.castSucc j.succ
         (ne_of_lt j.castSucc_lt_succ))
 
@@ -136,22 +136,22 @@ theorem typeBSimpleCorootGenerator_lie_negativeRoot_last (i : Fin (n + 1)) :
           typeBShortNegativeRootGenerator (K := K) (Fin.last n) := by
   rw [typeBSimpleCorootGenerator_eq_diagonal]
   simpa only [coe_typeBDiagonalEquiv_apply] using
-    (typeBDiagonalEquiv_lie_shortNegativeRootGenerator
+    (typeBDiagonalMatrix_lie_shortNegativeRootGenerator
       (typeBSimpleCorootCoordinate (K := K) i) (Fin.last n))
 
 /-- The action of a simple coroot on a negative generator at a long node. -/
 @[simp]
 theorem typeBSimpleCorootGenerator_lie_negativeRoot_castSucc (i : Fin (n + 1)) (j : Fin n) :
     ⁅typeBSimpleCorootGenerator (K := K) i,
-      typeBLongRootGenerator (K := K) j.succ j.castSucc
+      typeBDifferenceRootGenerator (K := K) j.succ j.castSucc
         (ne_of_gt j.castSucc_lt_succ)⁆ =
         (typeBSimpleCorootCoordinate (K := K) i j.succ -
           typeBSimpleCorootCoordinate (K := K) i j.castSucc) •
-            typeBLongRootGenerator (K := K) j.succ j.castSucc
+            typeBDifferenceRootGenerator (K := K) j.succ j.castSucc
               (ne_of_gt j.castSucc_lt_succ) := by
   rw [typeBSimpleCorootGenerator_eq_diagonal]
   simpa only [coe_typeBDiagonalEquiv_apply] using
-    (typeBDiagonalEquiv_lie_longRootGenerator
+    (typeBDiagonalMatrix_lie_differenceRootGenerator
       (typeBSimpleCorootCoordinate (K := K) i) j.succ j.castSucc
         (ne_of_gt j.castSucc_lt_succ))
 
