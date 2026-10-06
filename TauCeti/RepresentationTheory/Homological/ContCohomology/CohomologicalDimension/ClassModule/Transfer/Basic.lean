@@ -45,6 +45,11 @@ attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 noncomputable def abelianizationProPTransfer : G →* abelianizationProP p G V :=
   MonoidHom.transfer (abelianizationProPMk p G V)
 
+/-- The transfer to `V^ab(p)` is Mathlib's transfer of the canonical map `V → V^ab(p)`. -/
+theorem abelianizationProPTransfer_def :
+    abelianizationProPTransfer p G V = MonoidHom.transfer (abelianizationProPMk p G V) :=
+  (rfl)
+
 /-- The transfer is the product of the classes of the transversal words, for every transversal.
 The representatives are arbitrary; the transfer itself does not depend on them. -/
 theorem abelianizationProPTransfer_eq_prod_lWord (t : G ⧸ V → G)
