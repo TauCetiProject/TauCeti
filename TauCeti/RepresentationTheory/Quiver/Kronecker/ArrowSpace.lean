@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Kronecker.Irreducible
 public import TauCeti.RepresentationTheory.Quiver.Representation.IrreducibleMorphism
-import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Acyclic
 import Mathlib.CategoryTheory.Preadditive.Schur
 
 /-!
@@ -18,11 +17,6 @@ has dimension one precisely for `S₂ → P₁` and `P₁ → S₁`, and vanishe
 pair. Thus the two maps of the almost-split sequence account for the entire mesh,
 including their multiplicities. The formula is invariant under isomorphisms of both
 representations and holds over every field.
-
-The calculation uses the irreducibility of the two sequence maps and the fact that
-`End(P₁)` is one-dimensional. Their almost-split properties bound the corresponding
-morphism spaces by `End(P₁)`. The remaining off-diagonal morphism spaces vanish,
-and none of the three indecomposables admits an irreducible endomorphism.
 
 See Assem, Simson and Skowroński, *Elements of the Representation Theory of
 Associative Algebras I*, IV.1, for the `A₂` mesh and its arrow spaces.
@@ -75,15 +69,17 @@ private theorem hom_S₁_P₁_eq_zero (f : S₁ (k := k) (A := A) ⟶ P₁) : f 
   simp only [S₁, ← toPath_arrow, simpleRep_map_toPath] at hn
   simpa using (LinearMap.congr_fun hn x).symm
 
+omit [Unique A] in
 private theorem hom_P₁_S₂_eq_zero (f : P₁ (k := k) (A := A) ⟶ S₂) : f = 0 := by
-  apply (hom_simpleRep_eq_zero_iff f).mpr
-  apply ModuleCat.hom_ext
-  apply LinearMap.ext
-  intro y
-  obtain ⟨x, rfl⟩ := indecProjRep_map_arrowPath_surjective (default : A) y
-  have hn := ModuleCat.hom_ext_iff.mp (f.naturality (arrowPath (default : A)))
-  simp only [S₂, ← toPath_arrow, simpleRep_map_toPath] at hn
-  simpa using LinearMap.congr_fun hn x
+  have := finiteDimensional_simpleRep_obj (k := k) (Q := Quiver.Kronecker A) tgt
+    ((Paths.of (Quiver.Kronecker A)).obj src)
+  have : Module.Finite k (P₁ (k := k) (A := A) ⟶ S₂) :=
+    (indecProjRepHomEquiv src S₂).symm.finiteDimensional
+  have hd : Module.finrank k (P₁ (k := k) (A := A) ⟶ S₂) = 0 := by
+    rw [finrank_hom_indecProjRep, dimVector_simpleRep]
+    simp
+  have : Subsingleton (P₁ (k := k) (A := A) ⟶ S₂) := (Module.finrank_zero_iff.mp hd)
+  exact Subsingleton.elim _ _
 
 private instance local_end_simple (i : Quiver.Kronecker A) :
     IsLocalRing (End (simpleRep k (Quiver.Kronecker A) i)) :=
@@ -122,7 +118,7 @@ private theorem hom_P₁_S₁_finrank : Module.finrank k (P₁ (k := k) (A := A)
 
 /-- The irreducible morphism space `S₂ → P₁` is one-dimensional over any field. -/
 @[simp]
-theorem finrank_irreducibleMorphismSpace_kroneckerARSequence_f :
+theorem finrank_irreducibleMorphismSpace_simpleRep_tgt_indecProjRep_src :
     Module.finrank k (irreducibleMorphismSpace k (simpleRep k (Quiver.Kronecker A) tgt)
       (indecProjRep k (Quiver.Kronecker A) src)) = 1 := by
   have : Module.Finite k (S₂ (k := k) (A := A) ⟶ P₁) :=
@@ -135,7 +131,7 @@ theorem finrank_irreducibleMorphismSpace_kroneckerARSequence_f :
 
 /-- The irreducible morphism space `P₁ → S₁` is one-dimensional over any field. -/
 @[simp]
-theorem finrank_irreducibleMorphismSpace_kroneckerARSequence_g :
+theorem finrank_irreducibleMorphismSpace_indecProjRep_src_simpleRep_src :
     Module.finrank k (irreducibleMorphismSpace k (indecProjRep k (Quiver.Kronecker A) src)
       (simpleRep k (Quiver.Kronecker A) src)) = 1 := by
   have : Module.Finite k (P₁ (k := k) (A := A) ⟶ S₁) :=
@@ -150,6 +146,7 @@ open scoped Classical in
 /-- The complete `A₂` arrow-space calculation: between indecomposable representations,
 `rad / rad²` has dimension one exactly for the pairs `S₂ → P₁` and `P₁ → S₁`.
 All other pairs, including the three diagonal pairs, have dimension zero. -/
+@[simp]
 theorem finrank_irreducibleMorphismSpace_kronecker
     (M N : QuiverRep k (Quiver.Kronecker A)) (hM : Indecomposable M) (hN : Indecomposable N) :
     Module.finrank k (irreducibleMorphismSpace k M N) =
@@ -163,9 +160,9 @@ theorem finrank_irreducibleMorphismSpace_kronecker
   · rw [ite_eq_left h]
     rcases h with ⟨⟨eM⟩, ⟨eN⟩⟩ | ⟨⟨eM⟩, ⟨eN⟩⟩
     · exact (irreducibleMorphismSpaceCongr k eM eN).finrank_eq.trans
-        finrank_irreducibleMorphismSpace_kroneckerARSequence_f
+        finrank_irreducibleMorphismSpace_simpleRep_tgt_indecProjRep_src
     · exact (irreducibleMorphismSpaceCongr k eM eN).finrank_eq.trans
-        finrank_irreducibleMorphismSpace_kroneckerARSequence_g
+        finrank_irreducibleMorphismSpace_indecProjRep_src_simpleRep_src
   · rw [ite_eq_right h]
     rcases nonempty_iso_simpleRep_src_or_simpleRep_tgt_or_indecProjRep_of_indecomposable_kronecker
       M hM with hM' | hM' | hM' <;>
