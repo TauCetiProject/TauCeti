@@ -12,10 +12,10 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Character
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
 
 /-!
-# The Weyl dimension formula for the irreducible rational representations of `GL n`
+# The Weyl dimension formula for the rational Weyl modules of `GL n`
 
-Over a field `k` of characteristic zero, the rational Weyl module `TauCeti.rationalWeylFDRep k n λ`,
-the irreducible representation of `GL n k` attached to a dominant weight `λ`, has dimension
+Over a field `k` of characteristic zero, the rational Weyl module `TauCeti.rationalWeylFDRep k n λ`
+of a dominant weight `λ` (irreducible by `TauCeti.isIrreducible_rationalWeylRep`) has dimension
 
 `dim V_λ = ∏_{i < j} (λᵢ - λⱼ + j - i) / (j - i) = TauCeti.weylDimension λ`.
 
@@ -26,7 +26,9 @@ matched through the Gelfand-Tsetlin patterns: the tableaux of shape `μ` are in 
 patterns whose top row is the row-length sequence of `μ` (`TauCeti.gtPatternEquivSSYT`), and those
 patterns are counted by the Weyl product (`TauCeti.GTPattern.card_topRow_eq_weylDimension`).  The
 determinant twist by `det ^ λₙ` changes neither the dimension nor the Weyl product, so the
-polynomial case gives every dominant weight.
+polynomial case gives every dominant weight.  Identifying `TauCeti.rationalWeylFDRep k n λ` as the
+irreducible representation of highest weight `λ` belongs to the highest-weight classification and
+is not claimed here.
 
 For a Young diagram, the hook-content formula `TauCeti.weylDimension_weightOfShape_eq_prod_div`
 then expresses the same dimension as a product over the cells of the diagram.  That form needs no
@@ -69,8 +71,8 @@ theorem finrank_weylModuleOfShape_eq_weylDimension {μ : YoungDiagram} (hμ : μ
     simp only [funext_iff, weightOfShape_apply]
 
 /-- **The Weyl dimension formula for `GL n`**: over a field of characteristic zero, the rational
-Weyl module of a dominant weight `λ`, an irreducible representation of `GL n k`, has dimension
-`∏_{i < j} (λᵢ - λⱼ + j - i) / (j - i)`, the Weyl dimension of `λ`. -/
+Weyl module of a dominant weight `λ` has dimension `∏_{i < j} (λᵢ - λⱼ + j - i) / (j - i)`, the
+Weyl dimension of `λ`. -/
 theorem finrank_rationalWeylFDRep (l : DominantWeight n) :
     Module.finrank k (rationalWeylFDRep k n l) = weylDimension l := by
   rw [finrank_weylModuleOfShape_eq_weylDimension k n l.colLen_zero_detShiftShape_le,
