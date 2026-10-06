@@ -63,6 +63,7 @@ def homologyWhiskerLeftIsCokernel (T : C)
 
 /-- Morphisms out of `K.homology p ⊗ L.homology q` are determined by their composites with the
 tensor product of the projections from cycles. -/
+@[ext]
 lemma homology_tensor_homology_hom_ext
     [PreservesColimitsOfShape WalkingParallelPair (tensorLeft (K.homology p))]
     [PreservesColimitsOfShape WalkingParallelPair (tensorRight (L.cycles q))]

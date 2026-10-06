@@ -23,7 +23,9 @@ the homology objects are cokernels of the boundaries
 
 `Hₚ(K) ⊗ H_q(L) ⟶ Hₙ(K ⊗ L)`,
 
-the map of the algebraic Künneth theorem.  It is natural in both complexes.
+the map of the algebraic Künneth theorem.  It is natural in both complexes.  The construction
+only needs tensoring with `K.homology p` on the left, and with `L.cycles q` and `L.X (c.prev q)` on
+the right, to preserve cokernels.
 
 ## Main definitions and results
 
@@ -124,10 +126,9 @@ end Cycles
 
 section Homology
 
-variable [∀ T : C, PreservesColimitsOfShape WalkingParallelPair (tensorLeft T)]
-  [∀ T : C, PreservesColimitsOfShape WalkingParallelPair (tensorRight T)]
-  (K L : HomologicalComplex C c) [HasTensor K L] (p q n : I) (h : p + q = n)
+variable (K L : HomologicalComplex C c) [HasTensor K L] (p q n : I) (h : p + q = n)
   [K.HasHomology p] [L.HasHomology q] [(tensorObj K L).HasHomology n]
+  [PreservesColimitsOfShape WalkingParallelPair (tensorRight (L.cycles q))]
 
 /-- The cross product on homology restricted to `K.homology p ⊗ L.cycles q`. -/
 private def homologyCrossAux : K.homology p ⊗ L.cycles q ⟶ (tensorObj K L).homology n :=
@@ -138,11 +139,13 @@ private def homologyCrossAux : K.homology p ⊗ L.cycles q ⟶ (tensorObj K L).h
         exact (tensorObj K L).liftCycles_homologyπ_eq_zero_of_boundary (i := n) _ _ _ _ rfl
       · rw [toCycles_eq_zero _ hi, MonoidalPreadditive.zero_whiskerRight, zero_comp])
 
-omit [∀ T : C, PreservesColimitsOfShape WalkingParallelPair (tensorLeft T)] in
 private lemma homologyπ_whiskerRight_homologyCrossAux :
     (K.homologyπ p ▷ L.cycles q) ≫ homologyCrossAux K L p q n h =
       cyclesCross K L p q n h ≫ (tensorObj K L).homologyπ n :=
   Cofork.IsColimit.π_desc' (homologyWhiskerRightIsCokernel K p (L.cycles q)) _ _
+
+variable [PreservesColimitsOfShape WalkingParallelPair (tensorLeft (K.homology p))]
+  [PreservesColimitsOfShape WalkingParallelPair (tensorRight (L.X (c.prev q)))]
 
 /-- **The homology cross product** `Hₚ(K) ⊗ H_q(L) ⟶ Hₙ(K ⊗ L)` for `p + q = n`: the class of
 a cycle `x` tensored with the class of a cycle `y` is the class of the cycle `x ⊗ y`
@@ -189,8 +192,12 @@ lemma cyclesCross_naturality :
 /-- **Naturality of the homology cross product** in both complexes. -/
 @[reassoc]
 lemma homologyCross_naturality
-    [∀ T : C, PreservesColimitsOfShape WalkingParallelPair (tensorLeft T)]
-    [∀ T : C, PreservesColimitsOfShape WalkingParallelPair (tensorRight T)] :
+    [PreservesColimitsOfShape WalkingParallelPair (tensorLeft (K.homology p))]
+    [PreservesColimitsOfShape WalkingParallelPair (tensorRight (L.cycles q))]
+    [PreservesColimitsOfShape WalkingParallelPair (tensorRight (L.X (c.prev q)))]
+    [PreservesColimitsOfShape WalkingParallelPair (tensorLeft (K'.homology p))]
+    [PreservesColimitsOfShape WalkingParallelPair (tensorRight (L'.cycles q))]
+    [PreservesColimitsOfShape WalkingParallelPair (tensorRight (L'.X (c.prev q)))] :
     (homologyMap φ p ⊗ₘ homologyMap ψ q) ≫ homologyCross K' L' p q n h =
       homologyCross K L p q n h ≫ homologyMap (tensorHom φ ψ) n := by
   refine homology_tensor_homology_hom_ext K L p q ?_
