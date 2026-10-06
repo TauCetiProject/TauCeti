@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Basic
-public import TauCeti.AlgebraicGeometry.Modules.Pushforward
-public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Presentation
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Restriction
 public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 
 /-!
