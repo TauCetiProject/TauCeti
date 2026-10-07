@@ -31,7 +31,10 @@ together with this one splitting.
 
 The splitting is `LinearEquiv.piFinSnoc`: a vector of `Fin (n + 1) → k` is its first `n`
 coordinates together with its last, and that linear isomorphism is what carries the restricted
-representation onto `Representation.prod`.
+representation onto `Representation.prod`.  The same splitting branches the standard representation
+of the orthogonal group in
+`TauCeti/RepresentationTheory/ClassicalGroups/Branching/Orthogonal.lean`, where it is moreover
+orthogonal for the invariant form.
 
 ## Main definitions
 

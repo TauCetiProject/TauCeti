@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convex.SimplicialComplex.AffineIndependentUnion
 public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Topology.UniformSpace.Real
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
+import Mathlib.Geometry.Convex.ConvexSpace.Defs
 
 /-!
 # Geometric realization of an abstract simplicial complex
@@ -317,6 +318,18 @@ theorem Realization.nonneg (K : AbstractSimplicialComplex ι) (x : Realization K
     0 ≤ x.1 v :=
   StandardSimplex.nonneg (σ := (carrier K x).1) ⟨x.1, mem_convexHull_carrier K x⟩ v
 
+/-- The barycentric coordinates of a realization point sum to one. -/
+@[simp]
+theorem Realization.sum_eq_one (K : AbstractSimplicialComplex ι) (x : Realization K) :
+    x.1.sum (fun _ r => r) = 1 :=
+  StandardSimplex.sum_eq_one ⟨x.1, mem_convexHull_carrier K x⟩
+
+/-- Every barycentric coordinate of a realization point is at most one. -/
+theorem Realization.le_one (K : AbstractSimplicialComplex ι) (x : Realization K) (v : ι) :
+    x.1 v ≤ 1 :=
+  Convexity.StdSimplex.weights_apply_le_one
+    ⟨x.1, Realization.nonneg K x, Realization.sum_eq_one K x⟩ v
+
 /-- The carrier is contained in every finite vertex set whose closed simplex contains the point. -/
 theorem carrier_minimal (K : AbstractSimplicialComplex ι) (x : Realization K) {σ : Finset ι}
     (hx : x.1 ∈ convexHull ℝ (σ.image (fun v => Finsupp.single v (1 : ℝ)) : Set (ι →₀ ℝ))) :
@@ -341,6 +354,33 @@ noncomputable def vertex (K : AbstractSimplicialComplex ι) (v : ι) : Realizati
 theorem vertex_val (K : AbstractSimplicialComplex ι) (v : ι) :
     (vertex K v : ι →₀ ℝ) = Finsupp.single v 1 :=
   (rfl)
+
+/-- A realization point is a vertex exactly when its coordinate at that vertex is one. -/
+@[simp]
+theorem Realization.eq_vertex_iff (K : AbstractSimplicialComplex ι) (x : Realization K) (v : ι) :
+    x = vertex K v ↔ x.1 v = 1 := by
+  constructor
+  · rintro rfl
+    simp
+  · intro hv
+    have hsum := Finsupp.add_sum_erase' x.1 v (fun _ r => r) (fun _ => rfl)
+    rw [Realization.sum_eq_one, hv] at hsum
+    have he : (x.1.erase v).sum (fun _ r => r) = 0 := by linarith
+    have hzero : ∀ w ∈ (x.1.erase v).support, (x.1.erase v) w = 0 := by
+      apply (Finset.sum_eq_zero_iff_of_nonneg ?_).mp he
+      intro w _
+      by_cases h : w = v
+      · simp [h]
+      · simpa [Finsupp.erase_ne h] using Realization.nonneg K x w
+    apply Subtype.ext
+    rw [vertex_val, Finsupp.eq_single_iff]
+    refine ⟨?_, hv⟩
+    intro w hw
+    by_contra h
+    have hw' : w ∈ (x.1.erase v).support := by
+      simp only [Finsupp.support_erase, Finset.mem_erase]
+      exact ⟨by simpa only [Finset.mem_singleton] using h, hw⟩
+    exact (Finsupp.mem_support_iff.mp hw') (hzero w hw')
 
 /-- Distinct vertices give distinct points in the geometric realization. -/
 theorem vertex_injective (K : AbstractSimplicialComplex ι) :

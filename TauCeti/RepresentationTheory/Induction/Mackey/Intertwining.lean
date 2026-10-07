@@ -226,7 +226,7 @@ theorem natCast_finrank_hom_indFDRep_mackey [Finite G] (hG : IsUnit (Nat.card G 
     (Module.finrank k (indFDRep B ⟶ indFDRep A) : k) =
       letI := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (K : Set G))
       ∑ D : DoubleCoset.Quotient (H : Set G) (K : Set G),
-        (Module.finrank k (resFDRep ((mackeySubgroup D.out K H).subgroupOf H) A ⟶
+        (Module.finrank k (Subgroup.resFDRep ((mackeySubgroup D.out K H).subgroupOf H) A ⟶
           (Action.res (FGModuleCat k) (mackeyToH D.out K H)).obj B) : k) := by
   let := Fintype.ofFinite G
   let := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (K : Set G))
@@ -237,7 +237,7 @@ theorem natCast_finrank_hom_indFDRep_mackey [Finite G] (hG : IsUnit (Nat.card G 
   refine Finset.sum_congr rfl fun D _ => ?_
   let : Invertible (Nat.card ((mackeySubgroup D.out K H).subgroupOf H) : k) :=
     (isUnit_natCard_subgroup _ (isUnit_natCard_subgroup H hG)).invertible
-  rw [← ofFDRep_res_mackeyToH, ClassFunction.comap_subtype_ofFDRep,
+  rw [← ofFDRep_res_mackeyToH, Subgroup.comap_subtype_ofFDRep,
     ClassFunction.characterPairing_ofFDRep_eq_finrank]
 
 open scoped Classical in
@@ -250,7 +250,7 @@ theorem finrank_hom_indFDRep_mackey [Finite G] (A : FDRep k H) (B : FDRep k K) :
     Module.finrank k (indFDRep A ⟶ indFDRep B) =
       letI := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (K : Set G))
       ∑ D : DoubleCoset.Quotient (H : Set G) (K : Set G),
-        Module.finrank k (resFDRep ((mackeySubgroup D.out K H).subgroupOf H) A ⟶
+        Module.finrank k (Subgroup.resFDRep ((mackeySubgroup D.out K H).subgroupOf H) A ⟶
           (Action.res (FGModuleCat k) (mackeyToH D.out K H)).obj B) := by
   let := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (K : Set G))
   rw [(FDRep.indHomMackeyLinearEquiv A B).finrank_eq, Module.finrank_pi_fintype]
@@ -259,7 +259,7 @@ theorem finrank_hom_indFDRep_mackey [Finite G] (A : FDRep k H) (B : FDRep k K) :
 ordinary intertwining space over the subgroup. -/
 theorem finrank_hom_res_mackeyToH_one (A B : FDRep k H) :
     Module.finrank k
-        (resFDRep ((mackeySubgroup 1 H H).subgroupOf H) A ⟶
+        (Subgroup.resFDRep ((mackeySubgroup 1 H H).subgroupOf H) A ⟶
           (Action.res (FGModuleCat k) (mackeyToH 1 H H)).obj B) =
       Module.finrank k (A ⟶ B) := by
   have hsubtype : ((mackeySubgroup 1 H H).subgroupOf H).subtype =
@@ -276,19 +276,19 @@ theorem finrank_hom_res_mackeyToH_one (A B : FDRep k H) :
       congrArg Subtype.val (coe_mackeySubgroupSelfEquiv_apply
         (H := H) (s := (1 : G)) (one_mem H) y).symm
   let e := mackeySubgroupSelfEquiv (H := H) (s := (1 : G)) (one_mem H)
-  have hsource : resFDRep ((mackeySubgroup 1 H H).subgroupOf H) A =
+  have hsource : Subgroup.resFDRep ((mackeySubgroup 1 H H).subgroupOf H) A =
       (Action.res (FGModuleCat k) e.toMonoidHom).obj A :=
     congrArg (fun phi => (Action.res (FGModuleCat k) phi).obj A) (by simpa [e] using hsubtype)
   have htarget : (Action.res (FGModuleCat k) (mackeyToH 1 H H)).obj B =
       (Action.res (FGModuleCat k) e.toMonoidHom).obj B :=
     congrArg (fun phi => (Action.res (FGModuleCat k) phi).obj B) (by simpa [e] using hmackey)
   rw [hsource, htarget]
-  exact finrank_hom_res_mulEquiv e A B
+  exact e.toMonoidHom.finrank_hom_actionRes_of_surjective e.surjective A B
 
 /-- For a normal subgroup, the dimension of a Mackey intertwining space equals the dimension of
 the ordinary intertwining space from `A` to its conjugate `{}^s A`. -/
 theorem finrank_hom_res_mackeyToH_of_normal [H.Normal] (A : FDRep k H) (s : G) :
-    Module.finrank k (resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
+    Module.finrank k (Subgroup.resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
         (Action.res (FGModuleCat k) (mackeyToH s H H)).obj A) =
       Module.finrank k (A ⟶ conjNormalFDRep s A) := by
   let e := mackeySubgroupNormalEquiv (H := H) s
@@ -303,15 +303,15 @@ theorem finrank_hom_res_mackeyToH_of_normal [H.Normal] (A : FDRep k H) (s : G) :
       Function.comp_apply]
     rw [he_apply]
     simp
-  have hsource : resFDRep ((mackeySubgroup s H H).subgroupOf H) A =
+  have hsource : Subgroup.resFDRep ((mackeySubgroup s H H).subgroupOf H) A =
       (Action.res (FGModuleCat k) e.toMonoidHom).obj A := by
     exact congrArg (fun φ => (Action.res (FGModuleCat k) φ).obj A) hsubtype
   have htarget : (Action.res (FGModuleCat k) (mackeyToH s H H)).obj A =
       (Action.res (FGModuleCat k) e.toMonoidHom).obj (conjNormalFDRep s A) := by
     rw [hconj, conjNormalFDRep, conjNormalFDRepFunctor]
-    exact CategoryTheory.Functor.congr_obj (actionRes_comp _ _) A
+    exact CategoryTheory.Functor.congr_obj (MonoidHom.actionRes_comp _ _) A
   rw [hsource, htarget]
-  exact finrank_hom_res_mulEquiv e A (conjNormalFDRep s A)
+  exact e.toMonoidHom.finrank_hom_actionRes_of_surjective e.surjective A (conjNormalFDRep s A)
 
 open CategoryTheory in
 /-- **Conjugation intertwines two restrictions of one representation.**  If the two homomorphisms
@@ -344,9 +344,9 @@ Nothing is assumed of `k` beyond being a field: the two intertwining spaces are 
 another by the action of `h₁` on `A` and of `h₂` on `B`. -/
 theorem finrank_hom_res_mackeyToH_mul_left_mul_right (A : FDRep k H) (B : FDRep k K) {h₁ h₂ : G}
     (hh₁ : h₁ ∈ H) (hh₂ : h₂ ∈ K) (s : G) :
-    Module.finrank k (resFDRep ((mackeySubgroup (h₁ * s * h₂) K H).subgroupOf H) A ⟶
+    Module.finrank k (Subgroup.resFDRep ((mackeySubgroup (h₁ * s * h₂) K H).subgroupOf H) A ⟶
         (Action.res (FGModuleCat k) (mackeyToH (h₁ * s * h₂) K H)).obj B) =
-      Module.finrank k (resFDRep ((mackeySubgroup s K H).subgroupOf H) A ⟶
+      Module.finrank k (Subgroup.resFDRep ((mackeySubgroup s K H).subgroupOf H) A ⟶
         (Action.res (FGModuleCat k) (mackeyToH s K H)).obj B) := by
   -- Read both intertwining spaces over the Mackey subgroup of `s`, along the change of
   -- representative `mackeySubgroupOfCongr`, which conjugates by `h₁`.
@@ -354,8 +354,8 @@ theorem finrank_hom_res_mackeyToH_mul_left_mul_right (A : FDRep k H) (B : FDRep 
   -- three homomorphisms of `res_ρ_comm_ρAut_hom` are left to unification, which reads them off the
   -- ascribed type; naming them would only repeat that type.
   let α : (Action.res (FGModuleCat k) ((mackeySubgroupOfCongr hh₁ hh₂ s) : _ →* _)).obj
-        (resFDRep ((mackeySubgroup (h₁ * s * h₂) K H).subgroupOf H) A) ≅
-      resFDRep ((mackeySubgroup s K H).subgroupOf H) A :=
+        (Subgroup.resFDRep ((mackeySubgroup (h₁ * s * h₂) K H).subgroupOf H) A) ≅
+      Subgroup.resFDRep ((mackeySubgroup s K H).subgroupOf H) A :=
     Action.mkIso (Action.ρAut A (⟨h₁, hh₁⟩ : H)⁻¹) <|
       res_ρ_comm_ρAut_hom A (⟨h₁, hh₁⟩ : H)⁻¹ _ _ _ fun y => Subtype.ext (by
         simp only [MonoidHom.coe_ofClass, Subgroup.coe_subtype, coe_mackeySubgroupOfCongr_apply,
@@ -371,7 +371,8 @@ theorem finrank_hom_res_mackeyToH_mul_left_mul_right (A : FDRep k H) (B : FDRep 
         simp only [MonoidHom.coe_ofClass, coe_mackeyToH_apply, coe_mackeySubgroupOfCongr_apply,
           Subgroup.coe_mul]
         group)
-  rw [← finrank_hom_res_mulEquiv (mackeySubgroupOfCongr hh₁ hh₂ s)]
+  rw [← MonoidHom.finrank_hom_actionRes_of_surjective
+    (mackeySubgroupOfCongr hh₁ hh₂ s).toMonoidHom (mackeySubgroupOfCongr hh₁ hh₂ s).surjective]
   exact (Linear.homCongr k α β).finrank_eq
 
 open scoped Classical in
@@ -387,7 +388,7 @@ theorem finrank_hom_indFDRep_mackey_erase [Finite G] (A : FDRep k H) :
       Module.finrank k (A ⟶ A) +
         letI := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (H : Set G))
         ∑ D ∈ Finset.univ.erase (DoubleCoset.mk H H 1),
-          Module.finrank k (resFDRep ((mackeySubgroup D.out H H).subgroupOf H) A ⟶
+          Module.finrank k (Subgroup.resFDRep ((mackeySubgroup D.out H H).subgroupOf H) A ⟶
             (Action.res (FGModuleCat k) (mackeyToH D.out H H)).obj A) := by
   let := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (H : Set G))
   rw [finrank_hom_indFDRep_mackey A A,
