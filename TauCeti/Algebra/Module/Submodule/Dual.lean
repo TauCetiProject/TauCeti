@@ -57,7 +57,7 @@ def moduleDualAnnihilator (S : Submodule Aᵐᵒᵖ M) : Submodule A N where
 
 /-- Membership in the module annihilator means vanishing on the given submodule. -/
 @[simp]
-theorem mem_moduleDualAnnihilator_iff (S : Submodule Aᵐᵒᵖ M) (n : N) :
+theorem mem_moduleDualAnnihilator (S : Submodule Aᵐᵒᵖ M) (n : N) :
     n ∈ moduleDualAnnihilator e he S ↔ ∀ m ∈ S, e n m = 0 :=
   ⟨fun hn ↦ (Submodule.mem_dualAnnihilator _).mp hn,
     fun hn ↦ (Submodule.mem_dualAnnihilator _).mpr hn⟩
@@ -98,7 +98,7 @@ def moduleDualCoannihilator (T : Submodule A N) : Submodule Aᵐᵒᵖ M where
 /-- Membership in the module coannihilator means that every functional in the given
 submodule vanishes on the vector. -/
 @[simp]
-theorem mem_moduleDualCoannihilator_iff (T : Submodule A N) (m : M) :
+theorem mem_moduleDualCoannihilator (T : Submodule A N) (m : M) :
     m ∈ moduleDualCoannihilator e he T ↔ ∀ n ∈ T, e n m = 0 := by
   constructor
   · intro hm n hn
