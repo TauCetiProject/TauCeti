@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Action.Continuous
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.RepresentationTheory.Continuous.TopRep
+public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.Instances.ZMod
 
 /-!
@@ -365,6 +366,22 @@ lemma IsSmoothDiscrete.continuousSMul {X : TopRep R G} (hX : IsSmoothDiscrete R 
     ContinuousSMul G X.V :=
   haveI := hX.discreteTopology
   (isSmoothDiscrete_iff_continuousSMul X).1 hX
+
+/-- Smoothness passes to the target of a surjective morphism with discrete target: the stabilizer
+of `f x` contains the open stabilizer of `x`. Discreteness of the target is a hypothesis because
+the topology of `Y` is part of its data. -/
+lemma IsSmoothDiscrete.of_surjective {X Y : TopRep R G} [DiscreteTopology Y.V] (f : X ⟶ Y)
+    (hf : Function.Surjective f.hom) (hX : IsSmoothDiscrete R X) : IsSmoothDiscrete R Y := by
+  let := X.distribMulAction
+  let := Y.distribMulAction
+  refine ⟨‹_›, fun y ↦ ?_⟩
+  obtain ⟨x, rfl⟩ := hf y
+  rw [← TopRep.coe_stabilizer]
+  apply Subgroup.isOpen_mono (H₁ := MulAction.stabilizer G x)
+  · intro g hg
+    simp only [MulAction.mem_stabilizer_iff, TopRep.distribMulAction_smul] at hg ⊢
+    rw [← f.hom.isIntertwining, hg]
+  · simpa only [TopRep.coe_stabilizer] using hX.stabilizer_isOpen x
 
 /-- Smoothness is Mathlib's continuity condition on the corresponding object of
 `Action (TopModuleCat R) G`, transported along `TopRep.toActionTopModFunc`: the two conditions of

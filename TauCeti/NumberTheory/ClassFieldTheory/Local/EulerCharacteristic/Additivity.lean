@@ -31,8 +31,10 @@ alternating identity of orders.
 
 * `TauCeti.ClassFieldTheory.localEulerCharacteristic`: the positive-rational-valued local Euler
   characteristic of a finite smooth discrete Galois representation.
+* `TauCeti.ClassFieldTheory.explicitCoeff2_surjective`: a surjection out of a finite smooth
+  discrete representation is surjective on explicit `H²`.
 * `TauCeti.ClassFieldTheory.localEulerCharacteristic_mul_of_exact`: multiplicativity in a short
-  exact sequence `0 → A → B → C → 0` with `B` finite and `B`, `C` smooth discrete.
+  exact sequence `0 → A → B → C → 0` with `B` finite and smooth discrete and `C` discrete.
 
 ## References
 
@@ -82,31 +84,60 @@ theorem localEulerCharacteristic_coe (hn : (n : F) ≠ 0) (A : GalRep n F)
         Nat.card (continuousCohomology 1 A) := by
   rfl
 
+/-- A surjection from a finite smooth discrete Galois representation to a discrete one induces a
+surjection on explicit `H²`, through any equivariant additive map `φ` with the same underlying
+function. This is `coeffMap_two_surjective` read through the explicit degree-two comparison. -/
+theorem explicitCoeff2_surjective (hn : IsUnit (n : F)) {B C : GalRep n F}
+    [Finite B.V] [Fact (IsSmoothDiscrete (ZMod n) B)] [DiscreteTopology C.V]
+    (g : B ⟶ C) (hg : Function.Surjective g.hom)
+    (φ : B.V →+[Field.absoluteGaloisGroup F] C.V) (hφ : ∀ b, φ b = g.hom b) :
+    haveI := (Fact.out : IsSmoothDiscrete (ZMod n) B).discreteTopology
+    haveI := (Fact.out : IsSmoothDiscrete (ZMod n) B).continuousSMul
+    haveI := (IsSmoothDiscrete.of_surjective g hg Fact.out).continuousSMul
+    Function.Surjective
+      (explicitCoeff2 (Field.absoluteGaloisGroup F) B.V φ continuous_of_discreteTopology) := by
+  have := (Fact.out : IsSmoothDiscrete (ZMod n) B).discreteTopology
+  have := (Fact.out : IsSmoothDiscrete (ZMod n) B).continuousSMul
+  have := (IsSmoothDiscrete.of_surjective g hg Fact.out).continuousSMul
+  intro y
+  obtain ⟨x, hx⟩ := coeffMap_two_surjective hn g hg
+    (C.explicitH2AddEquivContinuousCohomologyOfDiscrete y)
+  refine ⟨B.explicitH2AddEquivContinuousCohomologyOfDiscrete.symm x,
+    C.explicitH2AddEquivContinuousCohomologyOfDiscrete.injective ?_⟩
+  -- Naturality of the degree-two comparison carries the explicit map to `coeffMap g 2`.
+  have hnat := TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_map B C
+    (ContinuousMonoidHom.id _) g φ.toAddMonoidHom (fun b ↦ (hφ b).symm) φ.map_smul
+    (B.explicitH2AddEquivContinuousCohomologyOfDiscrete.symm x)
+  rw [AddEquiv.apply_symm_apply, ← ContinuousCohomology.coeffMap_def, hx] at hnat
+  rw [explicitCoeff2_eq_explicitMap2]
+  exact hnat.symm
+
 /-- **Additivity of the local Euler characteristic.** If
-`0 → A → B → C → 0` is an exact sequence of representations with `B` finite and `B`, `C` smooth
-discrete, then `χ_F(B) = χ_F(A) χ_F(C)`. Finiteness of `A` and `C` and smoothness of `A` follow
-from the sequence (`TauCeti.IsSmoothDiscrete.of_injective`). Smoothness of `C` is assumed: the
-topology of `C` is part of its data, and a continuous surjection from a discrete module need not
-have discrete target. -/
+`0 → A → B → C → 0` is an exact sequence of representations with `B` finite and smooth discrete
+and `C` discrete, then `χ_F(B) = χ_F(A) χ_F(C)`. Finiteness of `A` and `C` and smoothness of `A`
+and `C` follow from the sequence (`TauCeti.IsSmoothDiscrete.of_injective`,
+`TauCeti.IsSmoothDiscrete.of_surjective`). Discreteness of `C` is assumed: the topology of `C` is
+part of its data, and a continuous surjection from a discrete module need not have discrete
+target. -/
 theorem localEulerCharacteristic_mul_of_exact (hn : IsUnit (n : F)) {A B C : GalRep n F}
-    [Finite B.V] [Fact (IsSmoothDiscrete (ZMod n) B)] [Fact (IsSmoothDiscrete (ZMod n) C)]
+    [Finite B.V] [Fact (IsSmoothDiscrete (ZMod n) B)] [DiscreteTopology C.V]
     (f : A ⟶ B) (g : B ⟶ C) (hf : Function.Injective f.hom)
     (hfg : Function.Exact f.hom g.hom) (hg : Function.Surjective g.hom) :
     haveI : Finite A.V := .of_injective _ hf
     haveI : Finite C.V := .of_surjective _ hg
     haveI : Fact (IsSmoothDiscrete (ZMod n) A) := ⟨.of_injective f hf Fact.out⟩
+    haveI : Fact (IsSmoothDiscrete (ZMod n) C) := ⟨.of_surjective g hg Fact.out⟩
     localEulerCharacteristic hn.ne_zero B =
       localEulerCharacteristic hn.ne_zero A * localEulerCharacteristic hn.ne_zero C := by
   have : Finite A.V := .of_injective _ hf
   have : Finite C.V := .of_surjective _ hg
   have : Fact (IsSmoothDiscrete (ZMod n) A) := ⟨.of_injective f hf Fact.out⟩
+  have : Fact (IsSmoothDiscrete (ZMod n) C) := ⟨.of_surjective g hg Fact.out⟩
   let G := Field.absoluteGaloisGroup F
   let _ : DiscreteTopology A.V :=
     (Fact.out : IsSmoothDiscrete (ZMod n) A).discreteTopology
   let _ : DiscreteTopology B.V :=
     (Fact.out : IsSmoothDiscrete (ZMod n) B).discreteTopology
-  let _ : DiscreteTopology C.V :=
-    (Fact.out : IsSmoothDiscrete (ZMod n) C).discreteTopology
   let _ : ContinuousSMul G A.V :=
     (Fact.out : IsSmoothDiscrete (ZMod n) A).continuousSMul
   let _ : ContinuousSMul G B.V :=
@@ -121,34 +152,8 @@ theorem localEulerCharacteristic_mul_of_exact (hn : IsUnit (n : F)) {A B C : Gal
       incl_injective := hf
       proj_surjective := hg
       exact := hfg }
-  let g' : B.V →+[G] C.V :=
-    { g.hom.toAddMonoidHom with map_smul' := fun σ b ↦ g.hom.isIntertwining σ b }
-  have hSproj : S.projDistribMulActionHom = g' := by
-    ext b
-    rw [S.projDistribMulActionHom_apply]
-    dsimp only [S, g']
-    rfl
-  have hlast : Function.Surjective
-      (explicitCoeff2 G B.V S.projDistribMulActionHom continuous_of_discreteTopology) := by
-    rw [hSproj]
-    intro y
-    obtain ⟨x, hx⟩ := coeffMap_two_surjective hn g hg
-      (C.explicitH2AddEquivContinuousCohomologyOfDiscrete y)
-    let z := B.explicitH2AddEquivContinuousCohomologyOfDiscrete.symm x
-    refine ⟨z, ?_⟩
-    apply C.explicitH2AddEquivContinuousCohomologyOfDiscrete.injective
-    have hnat :
-        (ContinuousCohomology.coeffMap g 2).hom
-            (B.explicitH2AddEquivContinuousCohomologyOfDiscrete z) =
-          C.explicitH2AddEquivContinuousCohomologyOfDiscrete
-            (explicitCoeff2 G B.V g'
-              continuous_of_discreteTopology z) := by
-      rw [ContinuousCohomology.coeffMap_def]
-      rw [explicitCoeff2_eq_explicitMap2]
-      exact TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_map B C
-        (ContinuousMonoidHom.id G) g g'.toAddMonoidHom (fun _ ↦ rfl) g'.map_smul z
-    rw [← hnat, show B.explicitH2AddEquivContinuousCohomologyOfDiscrete z = x by
-      exact AddEquiv.apply_symm_apply _ x, hx]
+  have hlast := explicitCoeff2_surjective hn g hg S.projDistribMulActionHom
+    S.projDistribMulActionHom_apply
   have hex := AddMonoidHom.card_mul_card_mul_card_mul_card_mul_card_of_exact
     (explicitCoeff0 G A.V S.inclDistribMulActionHom)
     (explicitCoeff0 G B.V S.projDistribMulActionHom) S.explicitDelta0

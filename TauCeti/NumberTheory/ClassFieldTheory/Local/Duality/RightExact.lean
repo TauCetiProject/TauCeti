@@ -54,19 +54,7 @@ theorem coeffMap_two_surjective (hn : IsUnit (n : F)) {B C : GalRep n F}
     Function.Surjective (ContinuousCohomology.coeffMap f 2).hom := by
   have : NeZero n := NeZero.of_neZero_natCast F (h := ⟨hn.ne_zero⟩)
   have : Finite C.V := Finite.of_surjective f.hom hf
-  have : Fact (IsSmoothDiscrete (ZMod n) C) := by
-    let := B.distribMulAction
-    let := C.distribMulAction
-    refine ⟨⟨inferInstance, fun c ↦ ?_⟩⟩
-    obtain ⟨b, rfl⟩ := hf c
-    -- The target stabilizer contains the open stabilizer of any lift.
-    rw [← TopRep.coe_stabilizer]
-    apply Subgroup.isOpen_mono (H₁ := MulAction.stabilizer (Field.absoluteGaloisGroup F) b)
-    · intro g hg
-      simp only [MulAction.mem_stabilizer_iff, TopRep.distribMulAction_smul] at hg ⊢
-      rw [← f.hom.isIntertwining, hg]
-    · simpa only [TopRep.coe_stabilizer] using
-        (Fact.out : IsSmoothDiscrete (ZMod n) B).stabilizer_isOpen b
+  have : Fact (IsSmoothDiscrete (ZMod n) C) := ⟨.of_surjective f hf Fact.out⟩
   let tr := h2MuEquivZMod F hn
   let ι := (ContinuousCohomology.coeffMap (tateDualMap f) 0).hom.toAddMonoidHom
   -- On H⁰ the dual map is its restriction to invariants, hence is injective.
