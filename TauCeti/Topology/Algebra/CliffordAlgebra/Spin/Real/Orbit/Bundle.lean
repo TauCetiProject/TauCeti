@@ -112,16 +112,24 @@ private noncomputable def realCliffordSpinBaseTrivializationData (n : ℕ) [NeZe
       coe_realCliffordUnitLevelHomeomorphSubtype_apply] using
       realCliffordSpinLastLocalSection_action (hCarrier (hOrbit q)) hq
   let e := Subgroup.localSectionTrivialization H U hU localSection hsection hsection_mk
+  have hH : H = realCliffordSpinLastStabilizer n :=
+    stabilizer_realCliffordSpinLastUnit n
   let stabilizerHomeomorph : H ≃ₜ realCliffordSpinLastStabilizer n :=
     Homeomorph.ofEqSubtypes (by
       funext s
       apply propext
-      rw [show H = realCliffordSpinLastStabilizer n from
-        stabilizer_realCliffordSpinLastUnit n])
+      rw [hH])
   let fiberHomeomorph : H ≃ₜ realCliffordSpinGroupZero n :=
     stabilizerHomeomorph.trans
       (realCliffordSpinContinuousMulEquivLastStabilizer n).symm.toHomeomorph
   let e' := (e.homeomorphComp hOrbit).transFiberHomeomorph fiberHomeomorph
+  have he_baseSet : e.baseSet = U := by
+    dsimp only [e]
+    exact Subgroup.localSectionTrivialization_baseSet H U hU localSection hsection hsection_mk
+  have he'_baseSet : e'.baseSet = hOrbit.symm ⁻¹' U := by
+    dsimp only [e', Bundle.Trivialization.transFiberHomeomorph,
+      Bundle.Trivialization.homeomorphComp]
+    rw [he_baseSet]
   have hproj : hOrbit ∘ (QuotientGroup.mk : realCliffordSpinGroupZero (n + 1) → _) =
       realCliffordSpinOrbitMap (n + 1) (realCliffordSpinLastUnit n) := by
     funext s
@@ -130,11 +138,7 @@ private noncomputable def realCliffordSpinBaseTrivializationData (n : ℕ) [NeZe
         (realCliffordSpinLastUnit n) s
   rw [← hproj]
   refine ⟨e', ?_⟩
-  dsimp only [e', Bundle.Trivialization.transFiberHomeomorph,
-    Bundle.Trivialization.homeomorphComp]
-  change hOrbit.symm (realCliffordSpinLastUnit n) ∈ e.baseSet
-  dsimp only [e, Subgroup.localSectionTrivialization]
-  rw [Subgroup.localSectionTrivialization_baseSet]
+  rw [he'_baseSet]
   dsimp only [U]
   simpa only [hCarrier, Set.mem_preimage, Function.comp_apply,
     Homeomorph.apply_symm_apply] using
