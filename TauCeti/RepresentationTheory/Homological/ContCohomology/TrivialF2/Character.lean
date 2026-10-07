@@ -202,23 +202,6 @@ local instance continuousSMul_trivialF2_naturality_G : ContinuousSMul G (trivial
 local instance continuousSMul_trivialF2_naturality_H : ContinuousSMul H (trivialF2 H).V :=
   (isSmoothDiscrete_trivialF2 H).continuousSMul
 
-/-- The identification of the trivial `𝔽₂` coefficients of `G` with those of `H`. -/
-noncomputable def trivialF2Transfer : (trivialF2 G).V →+ (trivialF2 H).V :=
-  ((trivialF2Equiv G).trans (trivialF2Equiv H).symm).toAddMonoidHom
-
-omit [TopologicalSpace G] [IsTopologicalGroup G] [TopologicalSpace H] [IsTopologicalGroup H] in
-/-- The transfer identification sends an element to the one with the same underlying value. -/
-@[simp]
-theorem trivialF2Transfer_apply (m : (trivialF2 G).V) :
-    trivialF2Transfer m = (trivialF2Equiv H).symm (trivialF2Equiv G m) :=
-  (rfl)
-
-omit [IsTopologicalGroup G] [IsTopologicalGroup H] in
-/-- The identification `trivialF2Transfer` is equivariant along every continuous homomorphism. -/
-theorem trivialF2Transfer_smul (φ : H →ₜ* G) (h : H) (m : (trivialF2 G).V) :
-    trivialF2Transfer (φ h • m) = h • (trivialF2Transfer m : (trivialF2 H).V) := by
-  simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]
-
 /-- **Pullback of a degree-one character class is composition:** for a continuous homomorphism
 `φ : H → G` and a continuous character `α : G → 𝔽₂`, the pullback of the class of `α` is the
 class of `α ∘ φ`. -/
