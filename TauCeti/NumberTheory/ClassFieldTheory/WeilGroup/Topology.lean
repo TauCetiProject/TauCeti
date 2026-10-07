@@ -31,12 +31,11 @@ topologies; the description used here needs no choice.
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.instTopologicalSpaceWeilGroup`: the Weil topology on `WeilGroup K`.
-* `TauCeti.ClassFieldTheory.inertiaToWeil K : I_K →* W_K`: the inclusion of inertia.
 
 ## Main results
 
 * `TauCeti.ClassFieldTheory.isOpenEmbedding_inertiaToWeil`: `I_K`, with its profinite topology,
-  is an open topological subgroup of `W_K`.
+  is an open topological subgroup of `W_K` via the inclusion `inertiaToWeil K : I_K →* W_K`.
 * `TauCeti.ClassFieldTheory.weilTopology_unique`: the Weil topology is the only group topology on
   `W_K` with this property.
 * `TauCeti.ClassFieldTheory.continuous_weilToAbsolute`,
@@ -83,7 +82,8 @@ instance instTopologicalSpaceWeilGroup : TopologicalSpace (WeilGroup K) :=
 `W_K` into `G_K × ℤ`, with `ℤ` discrete. -/
 theorem isEmbedding_weilToAbsolute_prod_weilDegree :
     IsEmbedding ((weilToAbsolute K).prod (weilDegree K)) :=
-  ⟨⟨rfl⟩, fun _ _ h ↦ injective_weilToAbsolute K (congrArg Prod.fst h)⟩
+  Function.Injective.isEmbedding_induced fun _ _ h ↦
+    injective_weilToAbsolute K (congrArg Prod.fst h)
 
 /-- The Weil topology makes `W_K` a topological group. -/
 instance instIsTopologicalGroupWeilGroup : IsTopologicalGroup (WeilGroup K) :=
@@ -110,34 +110,6 @@ instance instT2SpaceWeilGroup : T2Space (WeilGroup K) :=
   (isEmbedding_weilToAbsolute_prod_weilDegree K).t2Space
 
 /-! ### Inertia is open, with its own topology -/
-
-/-- **The inclusion of inertia into the Weil group**, `I_K` carrying the topology it has as a closed
-subgroup of `G_K`. -/
-def inertiaToWeil : inertiaSubgroup K →* WeilGroup K :=
-  (weilGroupEquivLocalWeilGroup K).symm.toMonoidHom.comp
-    (Subgroup.inclusion (inertiaSubgroup_le_localWeilGroup K))
-
-variable {K} in
-/-- An element of inertia maps to itself under `I_K → W_K → G_K`. -/
-@[simp]
-theorem weilToAbsolute_inertiaToWeil (σ : inertiaSubgroup K) :
-    weilToAbsolute K (inertiaToWeil K σ) = σ :=
-  (weilToAbsolute_weilGroupEquivLocalWeilGroup_symm K _).trans (Subgroup.coe_inclusion _ σ)
-
-variable {K} in
-/-- An element of inertia has trivial degree in the Weil group. -/
-@[simp]
-theorem weilDegree_inertiaToWeil (σ : inertiaSubgroup K) : weilDegree K (inertiaToWeil K σ) = 1 :=
-  (ker_weilDegree K).ge (by simp)
-
-/-- The image of inertia in the Weil group is the preimage of `I_K` under `W_K → G_K`, that is,
-the kernel of the degree (`ker_weilDegree`). -/
-theorem range_inertiaToWeil :
-    (inertiaToWeil K).range = (inertiaSubgroup K).comap (weilToAbsolute K) := by
-  ext w
-  refine ⟨?_, fun hw ↦ ⟨⟨_, hw⟩, injective_weilToAbsolute K (by simp)⟩⟩
-  rintro ⟨σ, rfl⟩
-  simp
 
 /-- **Inertia is open in the Weil group**, being the kernel of the continuous degree map to the
 discrete group `ℤ`. -/
