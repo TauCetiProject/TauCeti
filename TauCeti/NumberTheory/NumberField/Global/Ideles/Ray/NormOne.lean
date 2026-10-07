@@ -117,8 +117,11 @@ norm-one idele class to its ray class. -/
 @[simp]
 theorem normOneQuotientEquivRayClassGroup_mk (𝔪 : Modulus K) (c : normOne K) :
     normOneQuotientEquivRayClassGroup 𝔪 (c : normOne K ⧸ (raySubgroup 𝔪).subgroupOf (normOne K)) =
-      rayClassQuotient 𝔪 c :=
-  (rfl)
+      rayClassQuotient 𝔪 c := by
+  rw [normOneQuotientEquivRayClassGroup, MulEquiv.trans_apply,
+    QuotientGroup.quotientMulEquivOfEq_mk, QuotientGroup.quotientKerEquivOfSurjective,
+    QuotientGroup.quotientKerEquivOfRightInverse_apply, QuotientGroup.kerLift_mk,
+    MonoidHom.domRestrict_apply]
 
 /-- The order of the ray class group is the index of the ray subgroup in the norm-one idele class
 group. -/
