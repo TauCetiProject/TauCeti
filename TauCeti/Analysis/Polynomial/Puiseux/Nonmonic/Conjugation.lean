@@ -46,7 +46,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
 /-- Construct nonmonic Puiseux branches and their pole-removed analytic extensions together
 with the unique involutive conjugation permutation. Coefficient symmetry is needed only off
 the distinguished hyperplane. The same labels act on the full-disc extensions, where roots
-may collide. No condition on the constant coefficient is imposed; degree zero is included. -/
+may collide. No nonvanishing condition on the constant coefficient is imposed;
+degree zero is included. -/
 theorem exists_analyticOnNhd_nonmonic_powerSubstitution_conj
     (hU : IsOpen U) (hR' : 0 < R') (hn : n ≠ 0) (hR : R' ^ n ≤ R)
     (hdvd : d.factorial ∣ n)
