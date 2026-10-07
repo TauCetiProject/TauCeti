@@ -194,13 +194,12 @@ theorem isProperFractionalIdeal_traceDual (O : NumberFieldOrder K) :
   exact O.multiplierRing_traceDual
 
 /-- A number-field order is **Gorenstein** when its trace-dual fractional ideal is invertible. -/
+@[mk_iff]
 structure IsGorenstein (O : NumberFieldOrder K) : Prop where
   /-- The trace dual of a Gorenstein order is invertible. -/
   isUnit_traceDual : IsUnit O.traceDual
 
-/-- An order is Gorenstein exactly when its trace-dual fractional ideal is invertible. -/
-theorem isGorenstein_iff (O : NumberFieldOrder K) : O.IsGorenstein ↔ IsUnit O.traceDual :=
-  ⟨IsGorenstein.isUnit_traceDual, IsGorenstein.mk⟩
+attribute [simp] isGorenstein_iff
 
 /-- An order that is a Dedekind domain is Gorenstein, since every nonzero fractional ideal of a
 Dedekind domain is invertible. -/
