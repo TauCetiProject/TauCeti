@@ -109,14 +109,11 @@ theorem map_frobeniusAlgHom_eq_self_iff_mem_range_baseChange [DecidableEq K]
     (P : (W.baseChange L).toAffine.Point) :
     Affine.Point.map (W' := W) (FiniteField.frobeniusAlgHom K L) P = P ↔
       P ∈ Set.range (Affine.Point.baseChange (W' := W) K L) := by
-  rw [Set.mem_range, exists_map_eq_iff,
-    show (Algebra.ofId K L : K → L) = algebraMap K L from funext (Algebra.ofId_apply L)]
+  have hmap : (Algebra.ofId K L : K → L) = algebraMap K L :=
+    funext (Algebra.ofId_apply L)
+  rw [Set.mem_range, exists_map_eq_iff, hmap]
   cases P with
-  | zero =>
-    change Affine.Point.map _ (0 : (W.baseChange L).toAffine.Point) = 0 ↔
-      xCoord (0 : (W.baseChange L).toAffine.Point) ∈ _ ∧
-        yCoord (0 : (W.baseChange L).toAffine.Point) ∈ _
-    simp
+  | zero => simp [← Affine.Point.zero_def]
   | some x y h =>
     simpa only [Affine.Point.map_some, Affine.Point.some.injEq, xCoord_some, yCoord_some,
       FiniteField.coe_frobeniusAlgHom] using and_congr
