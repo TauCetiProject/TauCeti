@@ -24,8 +24,9 @@ a quaternion and its conjugate is scalar. Transported to two-by-two matrices, th
 characterize matrix adjugation. Consequently, the quaternion unitary equation becomes
 `adjugate A * A = 1`, which is equivalent to `det A = 1`.
 
-Over a separably closed field of characteristic different from two, every quaternion algebra with
-unit symbol parameters splits, so its unitary group is noncanonically isomorphic to `SL₂`.
+Over a field of characteristic different from two, a quaternion algebra whose first unit symbol
+parameter is a square splits, so its unitary group is noncanonically isomorphic to `SL₂`. This
+applies in particular over a separably closed field.
 
 ## Main results
 
@@ -33,6 +34,8 @@ unit symbol parameters splits, so its unitary group is noncanonically isomorphic
   equivalence carries quaternion conjugation to matrix adjugation.
 * `QuaternionAlgebra.unitaryEquivSpecialLinearOfAlgEquiv` restricts a splitting equivalence to an
   equivalence from the quaternion unitary group to `SL₂`.
+* `QuaternionAlgebra.nonempty_unitaryEquivSpecialLinear_of_isSquare` supplies such an equivalence
+  when the first unit symbol parameter is a square.
 * `QuaternionAlgebra.nonempty_unitaryEquivSpecialLinear_of_isSepClosed` supplies such an
   equivalence over a separably closed field.
 
@@ -80,6 +83,12 @@ theorem map_star_eq_adjugate_of_algEquiv_matrix {c₁ c₂ c₃ : R}
   simpa only [f, e.symm_apply_apply] using
     Matrix.eq_adjugate_of_antimultiplicative_of_exists_add_eq_smul_one f hmul hscalar (e q)
 
+private theorem mul_eq_one_of_algEquiv_apply_mul_apply_eq_one {c₁ c₂ c₃ : R}
+    (e : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R) {x y : ℍ[R,c₁,c₂,c₃]}
+    (h : e x * e y = 1) : x * y = 1 := by
+  apply e.injective
+  simpa only [map_mul, map_one] using h
+
 /-- A splitting algebra equivalence restricts to an equivalence from the quaternion norm-one group
 to the two-dimensional special linear group. -/
 noncomputable def unitaryEquivSpecialLinearOfAlgEquiv {c₁ c₂ c₃ : R}
@@ -106,13 +115,21 @@ noncomputable def unitaryEquivSpecialLinearOfAlgEquiv {c₁ c₂ c₃ : R}
     let q : ℍ[R,c₁,c₂,c₃] := e.symm A
     have hstar : e (star q) = Matrix.adjugate A := by
       rw [map_star_eq_adjugate_of_algEquiv_matrix, e.apply_symm_apply]
+    have hadjugate_mul :
+        Matrix.adjugate (A : Matrix (Fin 2) (Fin 2) R) *
+          (A : Matrix (Fin 2) (Fin 2) R) = 1 := by
+      rw [Matrix.adjugate_mul, A.det_coe, one_smul]
+    have hmul_adjugate :
+        (A : Matrix (Fin 2) (Fin 2) R) *
+          Matrix.adjugate (A : Matrix (Fin 2) (Fin 2) R) = 1 := by
+      rw [Matrix.mul_adjugate, A.det_coe, one_smul]
     have hunitary : q ∈ unitary ℍ[R,c₁,c₂,c₃] := (Unitary.mem_iff).mpr ⟨by
-        apply e.injective
-        rw [map_mul, hstar, e.apply_symm_apply, map_one,
-          Matrix.adjugate_mul, A.det_coe, one_smul], by
-        apply e.injective
-        rw [map_mul, hstar, e.apply_symm_apply, map_one,
-          Matrix.mul_adjugate, A.det_coe, one_smul]⟩
+        apply mul_eq_one_of_algEquiv_apply_mul_apply_eq_one e
+        rw [hstar, e.apply_symm_apply]
+        exact hadjugate_mul, by
+        apply mul_eq_one_of_algEquiv_apply_mul_apply_eq_one e
+        rw [hstar, e.apply_symm_apply]
+        exact hmul_adjugate⟩
     refine ⟨⟨q, hunitary⟩, ?_⟩
     apply Subtype.ext
     exact e.apply_symm_apply A
@@ -140,19 +157,28 @@ theorem coe_unitaryEquivSpecialLinearOfAlgEquiv_symm_apply {c₁ c₂ c₃ : R}
 
 variable {K : Type*} [Field K]
 
+/-- Over a field of characteristic different from two, the norm-one group of a quaternion algebra
+with unit symbol parameters is noncanonically isomorphic to `SL₂` when its first parameter is a
+square. -/
+theorem nonempty_unitaryEquivSpecialLinear_of_isSquare
+    [NeZero (2 : K)] (a b : Kˣ) (ha : IsSquare (a : K)) :
+    Nonempty (unitary ℍ[K,(a : K),0,(b : K)] ≃*
+      Matrix.SpecialLinearGroup (Fin 2) K) := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
+  obtain ⟨e⟩ :=
+    (TauCeti.QuaternionAlgebra.nonempty_algEquiv_matrix_iff_exists_eq_sq_sub_mul_sq a b).mpr
+      (TauCeti.exists_eq_sq_sub_mul_sq_of_isSquare ha a.isUnit (b : K))
+  exact ⟨unitaryEquivSpecialLinearOfAlgEquiv e⟩
+
 /-- Over a separably closed field of characteristic different from two, the norm-one group of a
 quaternion algebra with unit symbol parameters is noncanonically isomorphic to `SL₂`. -/
 theorem nonempty_unitaryEquivSpecialLinear_of_isSepClosed
     [NeZero (2 : K)] [IsSepClosed K] (a b : Kˣ) :
     Nonempty (unitary ℍ[K,(a : K),0,(b : K)] ≃*
       Matrix.SpecialLinearGroup (Fin 2) K) := by
-  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   obtain ⟨s, hs⟩ := IsSepClosed.exists_eq_mul_self (a : K)
-  have ha : IsSquare (a : K) := ⟨s, by simpa [pow_two] using hs⟩
-  obtain ⟨e⟩ :=
-    (TauCeti.QuaternionAlgebra.nonempty_algEquiv_matrix_iff_exists_eq_sq_sub_mul_sq a b).mpr
-      (TauCeti.exists_eq_sq_sub_mul_sq_of_isSquare ha a.isUnit (b : K))
-  exact ⟨unitaryEquivSpecialLinearOfAlgEquiv e⟩
+  apply nonempty_unitaryEquivSpecialLinear_of_isSquare a b
+  exact ⟨s, by simpa [pow_two] using hs⟩
 
 end QuaternionAlgebra
 
