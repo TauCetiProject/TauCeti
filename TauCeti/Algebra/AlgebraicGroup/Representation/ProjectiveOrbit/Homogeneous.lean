@@ -70,7 +70,7 @@ theorem projectiveOrbitTranslation_toProjectiveOrbit_kernelPoint
 
 /-- Rational group translations act transitively on the closed points of the orbit scheme,
 as automorphisms retaining its full scheme structure. -/
-theorem exists_projectiveOrbitTranslation_eq
+theorem exists_projectiveOrbitTranslation_eq_of_mem_closedPoints
     (m : M) (hm : Module.IsUnimodular k m)
     {x y : projectiveOrbitScheme (H := H) m hm}
     (hx : x ∈ closedPoints _) (hy : y ∈ closedPoints _) :
