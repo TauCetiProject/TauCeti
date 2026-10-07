@@ -185,6 +185,8 @@ theorem exists_equiv_factors (f : (∀ i, A i) ≃+* (∀ j, B j)) :
   have hmul : Pi.single i (1 : A i) * a = Pi.single i (a i) := by
     rw [← Pi.single_mul_left, one_mul]
   have h := congrFun (congrArg f hmul) (blockEquiv f i)
+  -- Expose `factorRingEquiv`'s defining coordinate map through its `RingEquiv` coercion, so
+  -- the following `simpa only` matches the target with the equality obtained from `hmul`.
   change f a (blockEquiv f i) = f (Pi.single i (a i)) (blockEquiv f i)
   simpa only [map_mul, image_single_one_blockEquiv, Pi.mul_apply, Pi.single_eq_same, one_mul]
     using h
