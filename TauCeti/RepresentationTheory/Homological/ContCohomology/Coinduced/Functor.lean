@@ -211,7 +211,7 @@ private theorem coindFunctor_map_apply_impl {A B : SmoothDiscreteTopRep.{u, v, w
   change (show DiscreteCoind G U B.obj.V from
     ((toSmoothDiscrete R G).map
       ((coindDiscreteFunctor R G U).map ((ofSmoothDiscrete R U).map f))).hom.hom a) g = _
-  have htop := toSmoothDiscrete_map_hom_apply (R := R) (G := G)
+  have htop := toSmoothDiscrete_map_hom_hom_apply (R := R) (G := G)
     ((coindDiscreteFunctor R G U).map ((ofSmoothDiscrete R U).map f)) a
   -- The dictionary lemma returns an equality in the underlying carrier; identifying that carrier
   -- with `DiscreteCoind` makes point evaluation at `g` well typed.
@@ -535,7 +535,7 @@ private theorem topologicalCoindIsoAlgebraic_hom_hom_hom_apply_coe_impl
     ((topologicalCoindIsoAlgebraic R G U A).hom.hom.hom f).1 g =
       (discreteCoindEquivAlgebraic R G U A f).1 g := by
   rw [topologicalCoindIsoAlgebraic, Functor.mapIso_hom]
-  have h := toSmoothDiscrete_map_hom_apply
+  have h := toSmoothDiscrete_map_hom_hom_apply
     (R := R) (G := G) (discreteCoindIsoAlgebraic R G U A).hom f
   exact congrArg (fun b ↦ b.1 g) h
 
@@ -550,7 +550,7 @@ private theorem topologicalCoindIsoAlgebraic_inv_hom_hom_apply_coe_impl
       (topologicalCoindIsoAlgebraic R G U A).inv.hom.hom f) g =
         (discreteCoindEquivAlgebraic R G U A).symm f g := by
   rw [topologicalCoindIsoAlgebraic, Functor.mapIso_inv]
-  have h := toSmoothDiscrete_map_hom_apply
+  have h := toSmoothDiscrete_map_hom_hom_apply
     (R := R) (G := G) (discreteCoindIsoAlgebraic R G U A).inv f
   -- The dictionary lemma is an equality in the unfolded carrier; view it in `DiscreteCoind` to
   -- evaluate at `g`.

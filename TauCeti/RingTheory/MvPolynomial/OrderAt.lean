@@ -9,6 +9,7 @@ public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
+public import TauCeti.Algebra.MvPolynomial.Equiv
 public import TauCeti.RingTheory.MvPowerSeries.Derivative
 
 /-!
@@ -58,6 +59,10 @@ The Taylor shift itself preserves the degree in each variable (`MvPolynomial.deg
 * `MvPolynomial.finSuccEquiv_taylor`, `MvPolynomial.coeff_taylor_cons`: singling out the
   variable `X₀` turns the Taylor shift at `a` into the univariate Taylor shift at `a₀` followed by
   the Taylor shift at the remaining coordinates.
+* `MvPolynomial.optionEquivRight_rename_finSuccEquivLast_taylor`,
+  `MvPolynomial.coeff_taylor_snoc`: moving the last variable `Xₙ` into the coefficients turns the
+  Taylor shift at `Fin.snoc α β` into the Taylor shift at the first coordinates `α`, followed by
+  the univariate Taylor shift at `β` of each coefficient.
 
 ## References
 
@@ -207,6 +212,36 @@ theorem coeff_taylor_cons {n : ℕ} (a : Fin (n + 1) → R) (p : MvPolynomial (F
         ((Polynomial.taylor (C (a 0)) (finSuccEquiv R n p)).coeff i)).coeff u := by
   rw [← finSuccEquiv_coeff_coeff, finSuccEquiv_taylor, Polynomial.coeff_map]
   rfl
+
+/-- Moving the last variable `Xₙ` into the coefficients commutes with the Taylor shift: shifting
+at `Fin.snoc α β` becomes the Taylor shift at the constant polynomials `α`, followed by the
+univariate Taylor shift at `β` of every coefficient. -/
+theorem optionEquivRight_rename_finSuccEquivLast_taylor {n : ℕ} (α : Fin n → R) (β : R)
+    (f : MvPolynomial (Fin (n + 1)) R) :
+    optionEquivRight R (Fin n) (rename finSuccEquivLast (taylor (Fin.snoc α β) f)) =
+      map (Polynomial.taylorAlgHom β : Polynomial R →+* Polynomial R)
+        (taylor (Polynomial.C ∘ α) (optionEquivRight R (Fin n) (rename finSuccEquivLast f))) := by
+  induction f using MvPolynomial.induction_on with
+  | C r => simp
+  | add p q hp hq => simp only [map_add, hp, hq]
+  | mul_X p i hp =>
+    simp only [map_mul, hp, taylor_X, rename_X]
+    congr 1
+    cases i using Fin.lastCases with
+    | last => simp [Polynomial.taylor_X]
+    | cast j => simp
+
+/-- The Taylor coefficients of `f` at `Fin.snoc α β`, read off after moving the last variable
+`Xₙ` into the coefficients: the coefficient of `Xᵘ * Xₙ ^ k` is the coefficient of `Xₙ ^ k` in
+the univariate Taylor expansion at `β` of the coefficient of `Xᵘ` in the Taylor shift at `α`. -/
+theorem coeff_taylor_snoc {n : ℕ} (α : Fin n → R) (β : R) (f : MvPolynomial (Fin (n + 1)) R)
+    (u : Fin n →₀ ℕ) (k : ℕ) :
+    (taylor (Fin.snoc α β) f).coeff (u.snoc k) =
+      (Polynomial.taylor β ((taylor (Polynomial.C ∘ α)
+        (optionEquivRight R (Fin n) (rename finSuccEquivLast f))).coeff u)).coeff k := by
+  rw [← optionEquivRight_rename_finSuccEquivLast_coeff_coeff,
+    optionEquivRight_rename_finSuccEquivLast_taylor, coeff_map]
+  simp
 
 end Taylor
 
@@ -372,6 +407,13 @@ theorem orderAt_pow [NoZeroDivisors R] [Nontrivial R] (p : MvPolynomial σ R) (a
   induction n with
   | zero => simp
   | succ n ih => rw [pow_succ, orderAt_mul, ih, succ_nsmul]
+
+/-- Over a domain, the order of a finite product is the sum of the orders of its factors. -/
+theorem orderAt_prod [NoZeroDivisors R] [Nontrivial R] {ι : Type*}
+    (p : ι → MvPolynomial σ R) (s : Finset ι) (a : σ → R) :
+    (∏ i ∈ s, p i).orderAt a = ∑ i ∈ s, (p i).orderAt a := by
+  simpa only [orderAt_def, ← coeToMvPowerSeries.ringHom_apply, map_prod] using
+    MvPowerSeries.order_prod (fun i ↦ (taylor a (p i) : MvPowerSeries σ R)) s
 
 /-- Substitution does not decrease the order: if `g` maps the point `b` to `a`, that is,
 `eval b (g i) = a i` for every `i`, then the order of `aeval g p` at `b` is at least the order
