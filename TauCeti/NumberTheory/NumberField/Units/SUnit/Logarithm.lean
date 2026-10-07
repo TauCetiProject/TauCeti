@@ -17,6 +17,9 @@ of its normalized absolute values at `S` and at every infinite place. Complex pl
 weight two. Keeping every infinite coordinate makes the map independent of a distinguished
 place, as needed when studying the Galois action on unit lattices.
 
+For `u : S.unit K`, apply the map as `TauCeti.sUnitLog S (.ofMul u)`; its coordinate equations
+are `TauCeti.sUnitLog_inl S u` and `TauCeti.sUnitLog_inr S u`.
+
 The kernel is exactly the torsion subgroup, and is finite. For finite `S`, the product formula
 puts the image in the hyperplane where the sum of coordinates is zero. These are the kernel
 and ambient-space calculations for the S-unit logarithmic lattice; discreteness and spanning
