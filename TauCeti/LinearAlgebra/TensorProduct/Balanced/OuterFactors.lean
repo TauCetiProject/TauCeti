@@ -111,12 +111,16 @@ def outerFactors :
         | add y y' hy hy' => simp_all only [tmul_add, map_add]
       | add x x' hx hx' => simp_all only [add_tmul, map_add])
 
+/-- On pure tensors, `outerFactors` separates the balanced factors `m`, `n` from
+the ground-ring factors `l`, `p`. -/
 @[simp]
 theorem outerFactors_tmul (m : M) (n : N) (l : L) (p : P) :
     outerFactors k A M N L P (tmul k A (m ⊗ₜ[k] l) (n ⊗ₜ[k] p)) =
       tmul k A m n ⊗ₜ[k] (l ⊗ₜ[k] p) := by
   simp [outerFactors, extractOuterFactors_tmul]
 
+/-- On pure tensors, the inverse of `outerFactors` reinserts the ground-ring factors
+`l`, `p` into the two arguments of the balanced tensor product. -/
 @[simp]
 theorem outerFactors_symm_tmul (m : M) (n : N) (l : L) (p : P) :
     (outerFactors k A M N L P).symm (tmul k A m n ⊗ₜ[k] (l ⊗ₜ[k] p)) =
