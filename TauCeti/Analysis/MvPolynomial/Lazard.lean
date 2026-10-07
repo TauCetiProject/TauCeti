@@ -84,7 +84,10 @@ theorem exists_analyticAt_eval_add_pow_eq_pow_mul
         eval (fun i ↦ φ z.1 i + z.2 ^ c i) p := by
       rw [← Polynomial.coe_aeval_eq_eval, comp_aeval_apply]
       simp [monomialCurve_apply, aeval_eq_eval]
-    simpa [hcurve, u, T, Polynomial.eval_map] using heq
+    rw [hcurve] at heq
+    simpa only [Polynomial.eval_mul, Polynomial.eval_pow, Polynomial.eval_X,
+      Polynomial.eval_add, Polynomial.eval_C, Polynomial.eval_map, u, T,
+      eval_coeff_taylor_map_C] using heq
 
 end MvPolynomial
 
