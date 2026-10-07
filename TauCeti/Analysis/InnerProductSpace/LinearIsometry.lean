@@ -45,7 +45,7 @@ and complex inner product spaces, without completeness or dimension assumptions.
 * `LinearIsometry.apply_eq_of_map_single`: a linear isometry of Euclidean spaces sending the `i`-th
   standard basis vector to the `j`-th one reads the `i`-th coordinate off as the `j`-th coordinate
   of the image.
-* `LinearMap.ext_of_apply_eq_of_eqOn_orthogonal`: linear maps agreeing on a vector and
+* `LinearMap.eq_of_apply_eq_of_eqOn_orthogonal`: linear maps agreeing on a vector and
   its orthogonal complement are equal, without a unit-norm assumption.
 * `LinearIsometryEquiv.eq_extendOrthogonalComplement`: a linear isometry equals the
   extension if it agrees on the unit vector and its orthogonal complement.
@@ -133,7 +133,7 @@ variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSp
 
 /-- Linear maps are determined by their value on a vector and their restriction to its
 orthogonal complement. The vector need not be a unit vector or even nonzero. -/
-theorem ext_of_apply_eq_of_eqOn_orthogonal {f g : E →ₗ[𝕜] F} (hx : f x = g x)
+theorem eq_of_apply_eq_of_eqOn_orthogonal {f g : E →ₗ[𝕜] F} (hx : f x = g x)
     (h : ∀ v : (𝕜 ∙ x)ᗮ, f v = g v) : f = g := by
   apply ext_on_codisjoint (𝕜 ∙ x).isCompl_orthogonal.codisjoint
   · exact eqOn_span' (by simpa only [Set.eqOn_singleton] using hx)
@@ -178,6 +178,7 @@ noncomputable def extendOrthogonalComplement
 
 /-- On the orthogonal direct sum, the extension acts on the radial and transverse
 components separately. -/
+@[simp]
 theorem extendOrthogonalComplement_apply_smul_add
     (e : (𝕜 ∙ x)ᗮ ≃ₗᵢ[𝕜] (𝕜 ∙ y)ᗮ) (hx : ‖x‖ = 1) (hy : ‖y‖ = 1)
     (r : 𝕜) (v : (𝕜 ∙ x)ᗮ) :
@@ -209,7 +210,7 @@ theorem eq_extendOrthogonalComplement
     (hf : ∀ v : (𝕜 ∙ x)ᗮ, f v = e v) :
     f = (e.extendOrthogonalComplement hx hy).toLinearIsometry := by
   apply LinearIsometry.toLinearMap_injective
-  apply LinearMap.ext_of_apply_eq_of_eqOn_orthogonal (x := x)
+  apply LinearMap.eq_of_apply_eq_of_eqOn_orthogonal (x := x)
   · simpa only [LinearIsometry.coe_toLinearMap, coe_toLinearIsometry,
       extendOrthogonalComplement_apply_self] using hfx
   · intro v
