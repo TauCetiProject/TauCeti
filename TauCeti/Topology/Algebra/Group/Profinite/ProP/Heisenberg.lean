@@ -119,7 +119,9 @@ theorem isProP (hR : IsProP p (Multiplicative R)) : IsProP p (HeisenbergGroup R)
     GroupExtension.ofMulEquivKer_rightHom _ _
   have hRR : IsProP p (Multiplicative (R × R)) :=
     (hR.prod hR).of_equiv (ContinuousMulEquiv.prodMultiplicative R R).symm
-  exact S.isProP (hSinl ▸ hg) (hSrh ▸ hf) hR hRR
+  exact S.isProP (hSinl ▸ hg)
+    (hSrh ▸ (MonoidHom.isOpenQuotientMap_of_isQuotientMap
+      (Topology.IsQuotientMap.of_surjective_continuous hsurj hf)).isOpenMap) hR hRR
 
 /-- The Heisenberg group over the `p`-adic integers is pro-`p`. -/
 theorem isProP_padicInt (p : ℕ) [Fact p.Prime] : IsProP p (HeisenbergGroup ℤ_[p]) :=

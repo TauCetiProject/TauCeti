@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Syntomic.Localization
+public import TauCeti.RingTheory.Syntomic.Smooth
+public import Mathlib.RingTheory.RingHom.StandardSmooth
 public import Mathlib.RingTheory.RingHom.Locally
 public import Mathlib.RingTheory.RingHom.Flat
 public import Mathlib.RingTheory.RingHom.FinitePresentation
@@ -16,7 +18,8 @@ public import Mathlib.RingTheory.RingHom.FinitePresentation
 This file expresses standard syntomic algebras as a property of ring homomorphisms.
 Localization on either side and arbitrary base change preserve the relative dimension.
 Consequently the property of being locally standard syntomic is local on both source and
-base, giving the affine input for syntomic morphisms of schemes.
+base, giving the affine input for syntomic morphisms of schemes. Standard smooth ring maps
+are standard syntomic with the same relative dimension.
 
 Use `TauCeti.IsStandardSyntomicOfRelativeDimension n f` for the ring-map predicate;
 given a proof `hf`, its consequences are available as `hf.flat` and `hf.finitePresentation`.
@@ -72,6 +75,15 @@ theorem isStandardSyntomicOfRelativeDimension_algebraMap [Algebra R S] :
     IsStandardSyntomicOfRelativeDimension n (algebraMap R S) ↔
       Algebra.IsStandardSyntomicOfRelativeDimension n R S := by
   rw [isStandardSyntomicOfRelativeDimension_iff n, toAlgebra_algebraMap]
+
+/-- A standard smooth ring map is standard syntomic of the same relative dimension. -/
+theorem _root_.RingHom.IsStandardSmoothOfRelativeDimension.isStandardSyntomicOfRelativeDimension
+    {f : R →+* S} (hf : f.IsStandardSmoothOfRelativeDimension n) :
+    IsStandardSyntomicOfRelativeDimension n f := by
+  let := f.toAlgebra
+  have : _root_.Algebra.IsStandardSmoothOfRelativeDimension n R S := hf.toAlgebra
+  rw [isStandardSyntomicOfRelativeDimension_iff n f]
+  infer_instance
 
 variable (R) in
 /-- The identity ring map is standard syntomic of relative dimension zero. -/

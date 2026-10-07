@@ -30,7 +30,10 @@ which generators and relations of a finitely presented sheaf are handled locally
 * `TauCeti.SheafOfModules.exists_eq_sum_smul_freeSection`: every section of a finite free sheaf
   is a linear combination of the tautological sections;
 * `TauCeti.SheafOfModules.freeHomEquiv_symm_val_app_sum_smul`: evaluation of the morphism out
-  of a free sheaf on such a linear combination.
+  of a free sheaf on such a linear combination;
+* `TauCeti.SheafOfModules.isIso_unitHomEquiv_symm`: the morphism `unit R ⟶ M` attached to a
+  global section `s` is an isomorphism when scalar multiplication on `s` is bijective over every
+  object, that is, when `s` is a global basis of `M`.
 
 The first comparison is used both by tensor-unit computations and when restricting a rank-one
 local trivialization. No formalization is vendored; it is Mathlib's canonical isomorphism from a
@@ -134,6 +137,29 @@ theorem freeHomEquiv_symm_val_app_sum_smul {M : _root_.SheafOfModules.{u} R}
   refine (((_root_.SheafOfModules.freeHomEquiv M).symm s).val.app Y).hom.map_smul _ _ |>.trans ?_
   exact congrArg (a k • ·) (congrArg (fun t : M.sections ↦ t.eval Y)
     (_root_.SheafOfModules.sectionsMap_freeHomEquiv_symm_freeSection s k))
+
+omit [HasWeakSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}] in
+/-- The morphism `unit R ⟶ M` attached to a global section `s` sends a scalar `r` over `Y` to
+`r • s`. -/
+@[simp]
+lemma unitHomEquiv_symm_val_app {M : _root_.SheafOfModules.{u} R} (s : M.sections) (Y : Cᵒᵖ)
+    (r : R.obj.obj Y) :
+    (M.unitHomEquiv.symm s).val.app Y r = r • s.eval Y :=
+  (rfl)
+
+omit [HasWeakSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}] in
+/-- The morphism `unit R ⟶ M` attached to a global section `s` is an isomorphism as soon as, over
+every object `Y`, multiplying `s` by scalars is a bijection `R(Y) ⟶ M(Y)`: `s` is then a global
+basis of `M`. -/
+theorem isIso_unitHomEquiv_symm {M : _root_.SheafOfModules.{u} R} (s : M.sections)
+    (hs : ∀ Y : Cᵒᵖ, Function.Bijective fun r : R.obj.obj Y ↦ r • s.eval Y) :
+    IsIso (M.unitHomEquiv.symm s) := by
+  rw [← isIso_iff_of_reflects_iso _ (_root_.SheafOfModules.forget _)]
+  have (Y : Cᵒᵖ) : IsIso ((M.unitHomEquiv.symm s).val.app Y) := by
+    rw [ConcreteCategory.isIso_iff_bijective]
+    exact hs Y
+  exact (_root_.PresheafOfModules.isoMk (fun Y ↦ asIso ((M.unitHomEquiv.symm s).val.app Y))
+    fun _ _ f ↦ (M.unitHomEquiv.symm s).val.naturality f).isIso_hom
 
 end Sections
 
