@@ -40,7 +40,7 @@ local characters and the components of the idele.
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.isOpen_ker_comp_restrictNormalHom`: a character of `Gal(E/F)` read
+* `IntermediateField.isOpen_ker_comp_restrictNormalHom`: a character of `Gal(E/F)` read
   on `G_F` has open kernel.
 * `TauCeti.ClassFieldTheory.invMap_characterCarryCocycle`: the local invariant of the carry class
   of an unramified character `χ` and `a ∈ Fˣ` is `v_F(a) · χ(φ)`.
@@ -56,9 +56,7 @@ public section
 
 noncomputable section
 
-namespace TauCeti.ClassFieldTheory
-
-open ContCohomology
+namespace IntermediateField
 
 variable {F : Type} [Field F]
 
@@ -67,14 +65,19 @@ variable {F : Type} [Field F]
 theorem isOpen_ker_comp_restrictNormalHom (E : IntermediateField F (SeparableClosure F))
     [FiniteDimensional F E] [Normal F E] (χ : Additive Gal(E/F) →+ AddCircle (1 : ℚ)) :
     IsOpen ((χ.comp (AlgEquiv.restrictNormalHom (K₁ := SeparableClosure F) E).toAdditive).ker :
-      Set (Additive (AbsoluteGaloisGroup F))) := by
+      Set (Additive (TauCeti.AbsoluteGaloisGroup F))) := by
   refine AddSubgroup.isOpen_mono (H₁ := Subgroup.toAddSubgroup E.fixingSubgroup)
     (fun x hx ↦ ?_) (E.fixingSubgroup_isOpen.preimage continuous_toMul)
-  rw [Additive.mem_toAddSubgroup, ← IntermediateField.restrictNormalHom_ker,
-    MonoidHom.mem_ker] at hx
+  rw [Additive.mem_toAddSubgroup, ← restrictNormalHom_ker, MonoidHom.mem_ker] at hx
   simp [hx]
 
-variable [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocalField F]
+end IntermediateField
+
+namespace TauCeti.ClassFieldTheory
+
+open ContCohomology
+
+variable {F : Type} [Field F] [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocalField F]
   (E : IntermediateField F (SeparableClosure F)) [FiniteDimensional F E] [IsGalois F E]
   [ValuativeRel E] [TopologicalSpace E] [IsNonarchimedeanLocalField E] [ValuativeExtension F E]
   [IsUnramified F E]
@@ -113,14 +116,14 @@ unramified class of `a`. -/
 private theorem invMap_characterCarryCocycle_frobeniusCharacter (a : Fˣ) :
     invMap F (unitsRepH2Equiv F (characterCarryCocycle ((frobeniusCharacter E).comp
       (AlgEquiv.restrictNormalHom (K₁ := SeparableClosure F) E).toAdditive)
-      (isOpen_ker_comp_restrictNormalHom E _) (baseUnitsEquivInvariants F (.ofMul a)))) =
+      (E.isOpen_ker_comp_restrictNormalHom _) (baseUnitsEquivInvariants F (.ofMul a)))) =
       (((normalizedValuation F a).toAdd / Module.finrank F E : ℚ) : AddCircle (1 : ℚ)) := by
   set n := Module.finrank F E
   set φ := frobeniusAlgEquiv (K := F) (L := E)
   set b : Eˣ := Units.map (algebraMap F E : F →* E) a
   -- The carry cocycle is read off `Gal(E/F)`, with the value `b ^ carry` at `(s, t)`.
   obtain ⟨c, hcu, hc⟩ := exists_relBrCocycle_eq F E E.val
-    (characterCarryCocycle _ (isOpen_ker_comp_restrictNormalHom E (frobeniusCharacter E))
+    (characterCarryCocycle _ (E.isOpen_ker_comp_restrictNormalHom (frobeniusCharacter E))
       (baseUnitsEquivInvariants F (.ofMul a)))
     (fun p ↦ b ^ characterCarry (frobeniusCharacter E) p.1 p.2) fun g h ↦ by
       apply Additive.toMul.injective
@@ -148,7 +151,7 @@ the Galois group of a finite unramified Galois extension `E/F` inside `Fˢ`, rea
 theorem invMap_characterCarryCocycle (χ : Additive Gal(E/F) →+ AddCircle (1 : ℚ)) (a : Fˣ) :
     invMap F (unitsRepH2Equiv F (characterCarryCocycle
       (χ.comp (AlgEquiv.restrictNormalHom (K₁ := SeparableClosure F) E).toAdditive)
-      (isOpen_ker_comp_restrictNormalHom E χ) (baseUnitsEquivInvariants F (.ofMul a)))) =
+      (E.isOpen_ker_comp_restrictNormalHom χ) (baseUnitsEquivInvariants F (.ofMul a)))) =
       (normalizedValuation F a).toAdd • χ (.ofMul (frobeniusAlgEquiv (K := F) (L := E))) := by
   set n := Module.finrank F E
   set φ := frobeniusAlgEquiv (K := F) (L := E)
@@ -170,7 +173,7 @@ theorem invMap_characterCarryCocycle (χ : Additive Gal(E/F) →+ AddCircle (1 :
         (AlgEquiv.restrictNormalHom (K₁ := SeparableClosure F) E).toAdditive := by
     rw [hχ, AddMonoidHom.smul_comp]
   simp only [hcomp]
-  rw [characterCarryCocycle_zsmul_character (isOpen_ker_comp_restrictNormalHom E _) k _, map_zsmul,
+  rw [characterCarryCocycle_zsmul_character (E.isOpen_ker_comp_restrictNormalHom _) k, map_zsmul,
     map_zsmul, invMap_characterCarryCocycle_frobeniusCharacter, ← hk, ← AddCircle.coe_zsmul,
     ← AddCircle.coe_zsmul, ← AddCircle.coe_zsmul]
   congr 1

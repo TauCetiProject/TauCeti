@@ -211,20 +211,14 @@ theorem cocyclesMap2_characterCarryCocycle {H : Type u} [Group H] [TopologicalSp
     [ContinuousMul H] {N : Type v} [AddCommGroup N] [TopologicalSpace N]
     [IsTopologicalAddGroup N] [DistribMulAction H N] (φ : H →ₜ* G) (f : M →+ N)
     (hf : Continuous f) (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
-    (χ : Additive G →+ AddCircle (1 : ℚ)) (hχ : IsOpen (χ.ker : Set (Additive G)))
-    (hχφ : IsOpen ((χ.comp (φ : H →* G).toAdditive).ker : Set (Additive H))) (a : H0 G M)
-    (ha : f a ∈ H0 H N) :
+    (χ : Additive G →+ AddCircle (1 : ℚ)) (hχ : IsOpen (χ.ker : Set (Additive G))) (a : H0 G M) :
     cocyclesMap2 G M H N φ f hf hequiv (characterCarryCocycle χ hχ a) =
-      characterCarryCocycle (χ.comp (φ : H →* G).toAdditive) hχφ ⟨f a, ha⟩ := by
+      characterCarryCocycle (χ.comp (φ : H →* G).toAdditive)
+        (by rw [← AddMonoidHom.comap_ker, AddSubgroup.coe_comap]
+            exact hχ.preimage (continuous_ofMul.comp (φ.continuous.comp continuous_toMul)))
+        (explicitMap0 G M φ f hequiv a) := by
   refine Subtype.ext (funext fun ⟨h, k⟩ ↦ ?_)
   simp [cocyclesMap2_apply, characterCarryCocycle_apply, map_zsmul]
-
-/-- The kernel of `χ₁ + χ₂` is open when those of `χ₁` and `χ₂` are. -/
-private theorem isOpen_ker_add {χ₁ χ₂ : Additive G →+ AddCircle (1 : ℚ)}
-    (hχ₁ : IsOpen (χ₁.ker : Set (Additive G))) (hχ₂ : IsOpen (χ₂.ker : Set (Additive G))) :
-    IsOpen ((χ₁ + χ₂).ker : Set (Additive G)) :=
-  AddSubgroup.isOpen_mono (H₁ := χ₁.ker ⊓ χ₂.ker)
-    (fun x hx ↦ by simp_all [AddSubgroup.mem_inf]) (hχ₁.inter hχ₂)
 
 /-- **The class of the carry cocycle is additive in the character.** The carry cocycles of
 `χ₁ + χ₂`, `χ₁` and `χ₂` differ by the coboundary of `g ↦ ⌊χ₁'(g) + χ₂'(g)⌋ • a`. The classes are
@@ -232,8 +226,10 @@ read in `Z² / B²`, which is `H2 G M` whenever the latter is defined. -/
 theorem characterCarryCocycle_add_character
     {χ₁ χ₂ : Additive G →+ AddCircle (1 : ℚ)}
     (hχ₁ : IsOpen (χ₁.ker : Set (Additive G))) (hχ₂ : IsOpen (χ₂.ker : Set (Additive G)))
-    (hχ : IsOpen ((χ₁ + χ₂).ker : Set (Additive G))) (a : H0 G M) :
-    (characterCarryCocycle (χ₁ + χ₂) hχ a : Z2 G M ⧸ (B2 G M).addSubgroupOf (Z2 G M)) =
+    (a : H0 G M) :
+    (characterCarryCocycle (χ₁ + χ₂) (AddSubgroup.isOpen_mono (H₁ := χ₁.ker ⊓ χ₂.ker)
+      (fun _ hx ↦ by simp_all [AddSubgroup.mem_inf]) (hχ₁.inter hχ₂)) a :
+        Z2 G M ⧸ (B2 G M).addSubgroupOf (Z2 G M)) =
       characterCarryCocycle χ₁ hχ₁ a + characterCarryCocycle χ₂ hχ₂ a := by
   rw [← QuotientAddGroup.mk_add, H2pi_eq_iff]
   -- The primitive is `g ↦ -e(g) • a`, with `e(g) = ⌊χ₁'(g) + χ₂'(g)⌋`.
@@ -271,29 +267,27 @@ private theorem isOpen_ker_zsmul {χ : Additive G →+ AddCircle (1 : ℚ)}
 
 /-- The carry cocycle of the zero character vanishes. -/
 @[simp]
-theorem characterCarryCocycle_zero_character
-    (h : IsOpen ((0 : Additive G →+ AddCircle (1 : ℚ)).ker : Set (Additive G))) (a : H0 G M) :
-    characterCarryCocycle 0 h a = 0 :=
+theorem characterCarryCocycle_zero_character (a : H0 G M) :
+    characterCarryCocycle 0 (by simp) a = 0 :=
   Subtype.ext (funext fun ⟨_, _⟩ ↦ by simp)
 
 /-- **The class of the carry cocycle is additive in the character**: integer multiples. -/
 theorem characterCarryCocycle_zsmul_character
     {χ : Additive G →+ AddCircle (1 : ℚ)} (hχ : IsOpen (χ.ker : Set (Additive G))) (k : ℤ)
-    (hkχ : IsOpen ((k • χ).ker : Set (Additive G))) (a : H0 G M) :
-    (characterCarryCocycle (k • χ) hkχ a : Z2 G M ⧸ (B2 G M).addSubgroupOf (Z2 G M)) =
+    (a : H0 G M) :
+    (characterCarryCocycle (k • χ) (AddSubgroup.isOpen_mono (fun _ hx ↦ by simp_all) hχ) a :
+        Z2 G M ⧸ (B2 G M).addSubgroupOf (Z2 G M)) =
       k • (characterCarryCocycle χ hχ a : Z2 G M ⧸ (B2 G M).addSubgroupOf (Z2 G M)) := by
   induction k using Int.induction_on with
   | zero => simp
   | succ i ih =>
-    have h := characterCarryCocycle_add_character (isOpen_ker_zsmul hχ i) hχ
-      (isOpen_ker_add (isOpen_ker_zsmul hχ i) hχ) a
+    have h := characterCarryCocycle_add_character (isOpen_ker_zsmul hχ i) hχ a
     simp only [add_zsmul, one_zsmul]
-    rw [h, ih (isOpen_ker_zsmul hχ i)]
+    rw [h, ih]
   | pred i ih =>
-    have h := characterCarryCocycle_add_character (isOpen_ker_zsmul hχ (-i - 1)) hχ
-      (isOpen_ker_add (isOpen_ker_zsmul hχ (-i - 1)) hχ) a
+    have h := characterCarryCocycle_add_character (isOpen_ker_zsmul hχ (-i - 1)) hχ a
     simp only [sub_zsmul, one_zsmul, neg_add_cancel_right] at h ⊢
-    rw [eq_add_neg_iff_add_eq, ← h, ih (isOpen_ker_zsmul hχ (-i))]
+    rw [eq_add_neg_iff_add_eq, ← h, ih]
 
 end Cocycle
 
