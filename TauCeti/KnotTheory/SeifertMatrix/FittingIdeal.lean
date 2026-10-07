@@ -37,11 +37,13 @@ variable {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
 /-- The zeroth Fitting ideal of the cokernel of the Seifert Alexander matrix is generated
 by the normalized Alexander polynomial. No even-size or unimodularity hypothesis is needed
 for this ideal identity. -/
-theorem fittingIdeal_coker_alexanderMatrix_zero (V : Matrix ι ι R) :
+@[simp 1100]
+theorem fittingIdeal_coker_alexanderMatrix_zero_eq_span_alexander (V : Matrix ι ι R) :
     fittingIdeal R[T;T⁻¹]
-      ((ι → R[T;T⁻¹]) ⧸ LinearMap.range (alexanderMatrix V).toLin') 0 =
+      ((ι → R[T;T⁻¹]) ⧸ LinearMap.range (alexanderMatrix V).mulVecLin) 0 =
         Ideal.span {alexander V} := by
-  rw [LinearMap.fittingIdeal_coker_zero, LinearMap.det_toLin', alexander_def,
+  rw [LinearMap.fittingIdeal_coker_zero_eq_span_det, ← Matrix.toLin'_apply',
+    LinearMap.det_toLin', alexander_def,
     Ideal.span_singleton_mul_left_unit (isUnit_T _)]
 
 end Matrix
