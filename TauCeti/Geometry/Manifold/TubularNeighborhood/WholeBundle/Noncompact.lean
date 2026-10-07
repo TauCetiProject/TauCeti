@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Noncompact
-public import TauCeti.Geometry.Manifold.TubularNeighborhood.WholeBundle
+public import TauCeti.Geometry.Manifold.TubularNeighborhood.WholeBundle.Basic
 
 /-!
 # Whole normal bundles over noncompact Euclidean submanifolds
@@ -38,9 +38,18 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
+private theorem unitBall_symm_apply_explicit {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℝ W] (y : ball (0 : W) 1) :
+    (Homeomorph.unitBall.symm y : W) =
+      (Real.sqrt (1 - ‖y.1‖ ^ 2))⁻¹ • y.1 := by
+  exact (Homeomorph.unitBall_symm_apply y).trans
+    ((OpenPartialHomeomorph.toHomeomorphSourceTarget_symm_apply_coe
+      (OpenPartialHomeomorph.univUnitBall (E := W)) y).trans
+      (OpenPartialHomeomorph.univUnitBall_symm_apply y.1))
+
 /-- Radially compressing each normal fibre by its positive continuous radius identifies the whole
 normal bundle with the corresponding variable-radius open tube. -/
-@[expose] def normalBundleHomeomorphTubeOfRadius (f : M → V) (r : C(M, ℝ))
+def normalBundleHomeomorphTubeOfRadius (f : M → V) (r : C(M, ℝ))
     (hr : ∀ x, 0 < r x) :
     TotalSpace V (fun x : M => normalSubspace I f x) ≃ₜ normalTubeOfRadius I f r where
   toFun p :=
@@ -109,29 +118,48 @@ normal bundle with the corresponding variable-radius open tube. -/
           rw [mem_ball_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (hr q.1.1).le]
           exact (inv_mul_lt_iff₀ (hr q.1.1)).mpr (by simpa using (mem_normalTubeOfRadius.mp q.2).2)⟩
       have hS : Homeomorph.unitBall.symm y =
-          (Real.sqrt (1 - ‖y.1‖ ^ 2))⁻¹ • y.1 :=
-        (Homeomorph.unitBall_symm_apply y).trans
-          ((OpenPartialHomeomorph.toHomeomorphSourceTarget_symm_apply_coe
-            (OpenPartialHomeomorph.univUnitBall (E := normalSubspace I f q.1.1)) y).trans
-            (OpenPartialHomeomorph.univUnitBall_symm_apply y.1))
+          (Real.sqrt (1 - ‖y.1‖ ^ 2))⁻¹ • y.1 := unitBall_symm_apply_explicit y
       have hV : Homeomorph.unitBall.symm (k q) =
           (Real.sqrt (1 - ‖(k q).1‖ ^ 2))⁻¹ • (k q).1 :=
-        (Homeomorph.unitBall_symm_apply (k q)).trans
-          ((OpenPartialHomeomorph.toHomeomorphSourceTarget_symm_apply_coe
-            (OpenPartialHomeomorph.univUnitBall (E := V)) (k q)).trans
-            (OpenPartialHomeomorph.univUnitBall_symm_apply (k q).1))
+        unitBall_symm_apply_explicit (k q)
       simpa only [k, y, Function.comp_apply, Submodule.coe_smul, Submodule.norm_coe]
         using congrArg ((↑) : normalSubspace I f q.1.1 → V) hS |>.trans hV.symm
 
 @[simp]
 theorem normalBundleHomeomorphTubeOfRadius_apply_fst (f : M → V) (r : C(M, ℝ))
     (hr : ∀ x, 0 < r x) (p : TotalSpace V (fun x : M => normalSubspace I f x)) :
-    (normalBundleHomeomorphTubeOfRadius f r hr p).1.1 = p.proj := rfl
+    (normalBundleHomeomorphTubeOfRadius f r hr p).1.1 = p.proj := by
+  simp [normalBundleHomeomorphTubeOfRadius]
 
 @[simp]
 theorem normalBundleHomeomorphTubeOfRadius_symm_apply_proj (f : M → V) (r : C(M, ℝ))
     (hr : ∀ x, 0 < r x) (q : normalTubeOfRadius I f r) :
-    ((normalBundleHomeomorphTubeOfRadius f r hr).symm q).proj = q.1.1 := rfl
+    ((normalBundleHomeomorphTubeOfRadius f r hr).symm q).proj = q.1.1 := by
+  simp [normalBundleHomeomorphTubeOfRadius]
+
+@[simp]
+theorem normalBundleHomeomorphTubeOfRadius_apply_snd (f : M → V) (r : C(M, ℝ))
+    (hr : ∀ x, 0 < r x) (p : TotalSpace V (fun x : M => normalSubspace I f x)) :
+    (normalBundleHomeomorphTubeOfRadius f r hr p).1.2 =
+      r p.proj • (Real.sqrt (1 + ‖(p.2 : V)‖ ^ 2))⁻¹ • (p.2 : V) := by
+  simp [normalBundleHomeomorphTubeOfRadius, Homeomorph.unitBall_apply_coe,
+    OpenPartialHomeomorph.univUnitBall_apply]
+
+@[simp]
+theorem normalBundleHomeomorphTubeOfRadius_symm_apply_snd (f : M → V) (r : C(M, ℝ))
+    (hr : ∀ x, 0 < r x) (q : normalTubeOfRadius I f r) :
+    (((normalBundleHomeomorphTubeOfRadius f r hr).symm q).2 : V) =
+      (Real.sqrt (1 - ‖(r q.1.1)⁻¹ • q.1.2‖ ^ 2))⁻¹ •
+        ((r q.1.1)⁻¹ • q.1.2) := by
+  let y : ball (0 : normalSubspace I f q.1.1) 1 :=
+    ⟨(r q.1.1)⁻¹ • ⟨q.1.2, (mem_normalTubeOfRadius.mp q.2).1⟩, by
+      rw [mem_ball_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (hr q.1.1).le]
+      exact (inv_mul_lt_iff₀ (hr q.1.1)).mpr (by simpa using (mem_normalTubeOfRadius.mp q.2).2)⟩
+  have hy : Homeomorph.unitBall.symm y =
+      (Real.sqrt (1 - ‖y.1‖ ^ 2))⁻¹ • y.1 := unitBall_symm_apply_explicit y
+  change ((Homeomorph.unitBall.symm y : normalSubspace I f q.1.1) : V) = _
+  simpa only [y, ← Submodule.norm_coe, Submodule.coe_smul, Subtype.coe_mk]
+    using congrArg ((↑) : normalSubspace I f q.1.1 → V) hy
 
 @[simp]
 theorem normalBundleHomeomorphTubeOfRadius_zeroSection (f : M → V) (r : C(M, ℝ))
@@ -142,31 +170,13 @@ theorem normalBundleHomeomorphTubeOfRadius_zeroSection (f : M → V) (r : C(M, �
   apply Subtype.ext
   simp [normalBundleHomeomorphTubeOfRadius, zeroSection]
 
-/-- A noncompact Euclidean immersion has an open tubular embedding of its whole normal bundle. -/
-theorem exists_isOpenEmbedding_normalBundleOfRadius [FiniteDimensional ℝ V]
-    [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I 2 M] {f : M → V}
-    (hf : ContMDiff I 𝓘(ℝ, V) 2 f)
-    (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (hind : IsInducing f) :
-    ∃ r : C(M, ℝ), (∀ x, 0 < r x) ∧
-      ∃ Φ : TotalSpace V (fun x : M => normalSubspace I f x) → V, IsOpenEmbedding Φ := by
-  obtain ⟨r, hr, hemb⟩ := exists_isOpenEmbedding_normalTubeOfRadius hf himm hind
-  let e := normalBundleHomeomorphTubeOfRadius (I := I) f r hr
-  let Φ : TotalSpace V (fun x : M => normalSubspace I f x) → V :=
-    fun p => f (e p).1.1 + (e p).1.2
-  have he : IsOpenEmbedding (fun p : TotalSpace V (fun x : M => normalSubspace I f x) =>
-      (normalTubeOfRadius I f r).domRestrict (fun q : M × V => f q.1 + q.2) (e p)) :=
-    hemb.comp e.isOpenEmbedding
-  refine ⟨r, hr, Φ, ?_⟩
-  simpa only [Φ, Set.domRestrict, Function.comp_apply, e] using he
-
 /-- The noncompact whole-bundle tubular embedding, packaged for the tubular-neighbourhood API. -/
-theorem exists_isTubularNeighborhood_wholeNormalBundleOfRadius [FiniteDimensional ℝ V]
+theorem exists_isTubularNeighborhood_wholeNormalBundle [FiniteDimensional ℝ V]
     [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I 2 M] {f : M → V}
     (hf : ContMDiff I 𝓘(ℝ, V) 2 f)
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (hind : IsInducing f) :
-    ∃ r : C(M, ℝ), (∀ x, 0 < r x) ∧
-      ∃ Φ : TotalSpace V (fun x : M => normalSubspace I f x) → V,
-        IsTubularNeighborhood f Set.univ (Set.univ.domRestrict Φ) := by
+    ∃ Φ : TotalSpace V (fun x : M => normalSubspace I f x) → V,
+      IsTubularNeighborhood f Set.univ (Set.univ.domRestrict Φ) := by
   obtain ⟨r, hr, hemb⟩ := exists_isOpenEmbedding_normalTubeOfRadius hf himm hind
   let e := normalBundleHomeomorphTubeOfRadius (I := I) f r hr
   let Φ : TotalSpace V (fun x : M => normalSubspace I f x) → V :=
@@ -176,7 +186,6 @@ theorem exists_isTubularNeighborhood_wholeNormalBundleOfRadius [FiniteDimensiona
         (normalTubeOfRadius I f r).domRestrict (fun q : M × V => f q.1 + q.2) (e p)) :=
       hemb.comp e.isOpenEmbedding
     simpa only [Φ, Set.domRestrict, Function.comp_apply, e] using he
-  refine ⟨r, hr, Φ, ?_⟩
   let hι := isEmbedding_totalSpace_normalSubspace (I := I) (F := V) f
   have hzero : IsEmbedding (zeroSection V (fun x : M => normalSubspace I f x)) := by
     apply hι.of_comp_iff.mp
@@ -189,6 +198,7 @@ theorem exists_isTubularNeighborhood_wholeNormalBundleOfRadius [FiniteDimensiona
     dsimp [Φ]
     rw [normalBundleHomeomorphTubeOfRadius_zeroSection]
     simp
+  refine ⟨Φ, ?_⟩
   refine ⟨isOpen_univ, fun x => mem_univ _, ?_,
     hΦ.comp isOpen_univ.isOpenEmbedding_subtypeVal,
     ?_, ?_, ?_⟩
@@ -204,5 +214,18 @@ theorem exists_isTubularNeighborhood_wholeNormalBundleOfRadius [FiniteDimensiona
           (p.2.1.proj, (p.2.1.2 : V)) :=
       hι.continuous.comp (continuous_subtype_val.comp continuous_snd)
     exact hp.fst.prodMk ((continuous_subtype_val.comp continuous_fst).smul hp.snd)
+
+/-- A noncompact Euclidean immersion has an open embedding of its whole normal bundle. -/
+theorem exists_isOpenEmbedding_wholeNormalBundle [FiniteDimensional ℝ V]
+    [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I 2 M] {f : M → V}
+    (hf : ContMDiff I 𝓘(ℝ, V) 2 f)
+    (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (hind : IsInducing f) :
+    ∃ Φ : TotalSpace V (fun x : M => normalSubspace I f x) → V, IsOpenEmbedding Φ := by
+  obtain ⟨Φ, hΦ⟩ := exists_isTubularNeighborhood_wholeNormalBundle hf himm hind
+  refine ⟨Φ, ?_⟩
+  have hcomp := hΦ.isOpenEmbedding.comp (Homeomorph.Set.univ _).symm.isOpenEmbedding
+  convert hcomp using 1
+  ext p
+  rfl
 
 end TauCeti
