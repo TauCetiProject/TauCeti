@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
+public import Mathlib.RingTheory.QuotSMulTop
 
 /-!
 # Cokernels commute with tensor products, heterobasically
@@ -18,6 +19,12 @@ of the tensored pair (`rTensor_exact`) and as the isomorphism `LinearMap.rTensor
 `M'` and `M` are modules over an `R`-algebra `A` and `f` is `A`-linear, the comparison isomorphism
 is `A`-linear for the module structure of `TensorProduct.AlgebraTensorModule` on the left factor,
 and this file records that heterobasic form.
+
+For the cokernel `M ⧸ rM = QuotSMulTop r M` of multiplication by a scalar `r`, the base change
+`A ⊗[R] (M ⧸ rM)` is the cokernel of multiplication by the image of `r` on `A ⊗[R] M`. When `r`
+maps to `0` in `A` that cokernel is all of `A ⊗[R] M`, so the base change of the quotient map
+`M → M ⧸ rM` is bijective (`QuotSMulTop.bijective_baseChange_mkQ`). For `R = ℤ` and a ring `A` of
+characteristic `ℓ`, this says that `A ⊗[ℤ] M` only depends on `M ⧸ ℓM`.
 
 The heterobasic version is what identifies the base change of a module presented by generators
 and relations over a noncommutative algebra `A` with the module presented by the base-changed
@@ -34,6 +41,8 @@ relations, for instance the rationalisation of a module over an integral group r
   quotient map `mkQ ⊗ 𝟙 N` is the range of `f ⊗ 𝟙 N`.
 * `TensorProduct.AlgebraTensorModule.rTensor_mkQ_surjective`: the tensored quotient map
   is surjective.
+* `QuotSMulTop.bijective_baseChange_mkQ`: if `r` maps to `0` in `A`, the base change of
+  `M → M ⧸ rM` to `A` is bijective.
 -/
 
 public section
@@ -92,3 +101,30 @@ theorem quotientRangeTensorEquiv_symm_mk_tmul (f : M' →ₗ[A] M) (x : M) (n : 
   (LinearEquiv.symm_apply_eq _).mpr (quotientRangeTensorEquiv_mk_tmul f x n).symm
 
 end TensorProduct.AlgebraTensorModule
+
+namespace QuotSMulTop
+
+open LinearMap TensorProduct
+open scoped Pointwise
+
+variable {R A M : Type*} [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M] [Module R M]
+
+/-- **Base change kills reduction modulo a vanishing scalar.** If `r : R` maps to `0` in the
+`R`-algebra `A`, the base change `A ⊗[R] M → A ⊗[R] (M ⧸ rM)` of the quotient map is bijective:
+it is surjective by right exactness, and its kernel is spanned by the tensors `a ⊗ r • m`, which
+vanish since `a ⊗ r • m = (r • a) ⊗ m`. -/
+theorem bijective_baseChange_mkQ {r : R} (hr : algebraMap R A r = 0) :
+    Function.Bijective ((r • ⊤ : Submodule R M).mkQ.baseChange A) := by
+  rw [baseChange_eq_ltensor]
+  refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_,
+    lTensor_surjective A (Submodule.mkQ_surjective _)⟩
+  obtain ⟨y, rfl⟩ := (lTensor_exact A (exact_subtype_mkQ _) (Submodule.mkQ_surjective _) x).mp hx
+  clear hx
+  induction y using TensorProduct.inductionOn with
+  | tmul a v =>
+    obtain ⟨w, -, hw⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp v.2
+    rw [lTensor_tmul, Submodule.subtype_apply, ← hw, tmul_smul, smul_tmul', Algebra.smul_def, hr,
+      zero_mul, zero_tmul]
+  | add y z hy hz => rw [map_add, hy, hz, add_zero]
+
+end QuotSMulTop
