@@ -165,6 +165,13 @@ theorem continuous_faceInclusion (K : AbstractSimplicialComplex ι) (σ : Face K
   continuous_iff_coinduced_le.2 (le_iSup (fun τ : Face K =>
     TopologicalSpace.coinduced (faceInclusion K τ) inferInstance) σ)
 
+/-- A subset of a weak realization is closed exactly when its inverse image in every closed
+simplex is closed. -/
+theorem isClosed_iff_faceInclusion {K : AbstractSimplicialComplex ι} {s : Set (Realization K)} :
+    IsClosed s ↔ ∀ σ : Face K, IsClosed (faceInclusion K σ ⁻¹' s) := by
+  -- The realization topology is the supremum of the coinduced face topologies.
+  simp only [isClosed_iSup_iff, isClosed_coinduced]
+
 /-- A map out of a realization is continuous exactly when its restriction to every face is
 continuous. -/
 theorem continuous_iff_faceInclusion {K : AbstractSimplicialComplex ι}

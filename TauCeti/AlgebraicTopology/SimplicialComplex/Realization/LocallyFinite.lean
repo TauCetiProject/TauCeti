@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Basic
 public import Mathlib.Topology.LocalAtTarget
 

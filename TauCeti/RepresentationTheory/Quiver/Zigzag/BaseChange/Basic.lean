@@ -27,15 +27,15 @@ the induced map on units is injective, since the parameters only record unit-val
 
 ## Main definitions
 
-* `TauCeti.skewZigzagBaseChange`: the induced coefficient map between relation quotients.
+* `SimpleGraph.skewZigzagBaseChange`: the induced coefficient map between relation quotients.
 
 ## Main results
 
-* `TauCeti.skewZigzagBaseChange_skewZigzagMk_ofPath`: scalar extension fixes every doubled path.
-* `TauCeti.skewZigzagBaseChange_algebraMap`: scalar coefficients are transported by the given
+* `SimpleGraph.skewZigzagBaseChange_skewZigzagMk_ofPath`: scalar extension fixes every doubled path.
+* `SimpleGraph.skewZigzagBaseChange_algebraMap`: scalar coefficients are transported by the given
   ring homomorphism.
-* `TauCeti.skewZigzagBaseChange_id` and `TauCeti.skewZigzagBaseChange_comp`: scalar extension is
-  functorial in the coefficient homomorphism.
+* `SimpleGraph.skewZigzagBaseChange_id` and `SimpleGraph.skewZigzagBaseChange_comp`: scalar
+  extension is functorial in the coefficient homomorphism.
 
 The parameter conventions follow C. Couture, *Skew-Zigzag Algebras*, Sections 3 and 4,
 https://arxiv.org/abs/1509.08405.  The coefficient-map construction follows
@@ -44,9 +44,9 @@ https://arxiv.org/abs/1509.08405.  The coefficient-map construction follows
 
 public section
 
-namespace TauCeti
+namespace SimpleGraph
 
-open _root_.Quiver PathAlgebra DoubledQuiver
+open _root_.Quiver TauCeti TauCeti.PathAlgebra TauCeti.DoubledQuiver
 
 universe u w z
 
@@ -251,4 +251,4 @@ theorem skewZigzagBaseChange_comp {m : Type*} [CommRing m]
 
 end Quotient
 
-end TauCeti
+end SimpleGraph

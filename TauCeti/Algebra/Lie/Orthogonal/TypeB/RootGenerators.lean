@@ -333,17 +333,12 @@ theorem typeBDiagonalMatrix_lie_differenceRootGenerator (d : ι → K) (i j : ι
     ⁅(⟨typeBDiagonalMatrix d, typeBDiagonalMatrix_mem_typeB d⟩ :
         LieAlgebra.Orthogonal.typeB ι K), typeBDifferenceRootGenerator (K := K) i j hij⁆ =
       (d i - d j) • typeBDifferenceRootGenerator i j hij := by
+  have hd := typeBDiagonalMatrix_mem_diagonalCartan (K := K) d
   apply Subtype.ext
-  -- The subtype bracket reduces definitionally to the ambient matrix commutator.
-  change typeBDiagonalMatrix d * typeBDifferenceRootMatrix i j hij -
-      typeBDifferenceRootMatrix i j hij * typeBDiagonalMatrix d =
-        (d i - d j) • typeBDifferenceRootMatrix i j hij
-  ext (a | (a | a)) (b | (b | b)) <;>
-    simp [typeBDifferenceRootMatrix, typeBDiagonalMatrix_apply, Matrix.mul_apply,
-      Matrix.single_apply, sub_eq_add_neg]
-  all_goals
-    by_cases hia : i = a <;> by_cases hja : j = a <;>
-      by_cases hib : i = b <;> by_cases hjb : j = b <;> simp_all <;> aesop
+  rw [LieSubalgebra.coe_bracket, SetLike.val_smul, coe_typeBDifferenceRootGenerator,
+    typeBDifferenceRootMatrix_def, lie_sub, lie_single_of_mem_diagonalCartan hd,
+    lie_single_of_mem_diagonalCartan hd, smul_sub]
+  simp [sub_eq_add_neg, add_comm]
 
 /-- A split diagonal element acts on the positive short-root vector of weight `εᵢ`. -/
 @[simp]
@@ -351,13 +346,12 @@ theorem typeBDiagonalMatrix_lie_shortRootGenerator (d : ι → K) (i : ι) :
     ⁅(⟨typeBDiagonalMatrix d, typeBDiagonalMatrix_mem_typeB d⟩ :
         LieAlgebra.Orthogonal.typeB ι K), typeBShortRootGenerator (K := K) i⁆ =
       d i • typeBShortRootGenerator i := by
+  have hd := typeBDiagonalMatrix_mem_diagonalCartan (K := K) d
   apply Subtype.ext
-  -- The subtype bracket reduces definitionally to the ambient matrix commutator.
-  change typeBDiagonalMatrix d * typeBShortRootMatrix i -
-      typeBShortRootMatrix i * typeBDiagonalMatrix d = d i • typeBShortRootMatrix i
-  ext (a | (a | a)) (b | (b | b)) <;>
-    simp [typeBShortRootMatrix, typeBDiagonalMatrix_apply, Matrix.mul_apply,
-      Matrix.single_apply] <;> aesop
+  rw [LieSubalgebra.coe_bracket, SetLike.val_smul, coe_typeBShortRootGenerator,
+    typeBShortRootMatrix_def, lie_sub, lie_single_of_mem_diagonalCartan hd,
+    lie_single_of_mem_diagonalCartan hd, smul_sub]
+  simp
 
 /-- A split diagonal element acts on the negative short-root vector of weight `-εᵢ`. -/
 @[simp]
@@ -365,14 +359,12 @@ theorem typeBDiagonalMatrix_lie_shortNegativeRootGenerator (d : ι → K) (i : �
     ⁅(⟨typeBDiagonalMatrix d, typeBDiagonalMatrix_mem_typeB d⟩ :
         LieAlgebra.Orthogonal.typeB ι K), typeBShortNegativeRootGenerator (K := K) i⁆ =
       -(d i) • typeBShortNegativeRootGenerator i := by
+  have hd := typeBDiagonalMatrix_mem_diagonalCartan (K := K) d
   apply Subtype.ext
-  -- The subtype bracket reduces definitionally to the ambient matrix commutator.
-  change typeBDiagonalMatrix d * typeBShortNegativeRootMatrix i -
-      typeBShortNegativeRootMatrix i * typeBDiagonalMatrix d =
-        -(d i) • typeBShortNegativeRootMatrix i
-  ext (a | (a | a)) (b | (b | b)) <;>
-    simp [typeBShortNegativeRootMatrix, typeBDiagonalMatrix_apply, Matrix.mul_apply,
-      Matrix.single_apply] <;> aesop
+  rw [LieSubalgebra.coe_bracket, SetLike.val_smul, coe_typeBShortNegativeRootGenerator,
+    typeBShortNegativeRootMatrix_def, lie_sub, lie_single_of_mem_diagonalCartan hd,
+    lie_single_of_mem_diagonalCartan hd, smul_sub]
+  simp
 
 /-- The diagonal coroot `2εᵢ` of the short root `εᵢ`, in the standard type-`B` coordinates. -/
 def typeBShortCorootMatrix (i : ι) : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K :=
