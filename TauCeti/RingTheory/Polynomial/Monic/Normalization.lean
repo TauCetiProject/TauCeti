@@ -16,6 +16,9 @@ are `f.coeff i * f.leadingCoeff ^ (n - 1 - i)`. Expressing the normalization thr
 `monicOfCoeff` makes sense even when these coefficients specialize to a lower-degree polynomial:
 the monic leading term is retained. This is the coefficient construction needed to normalize
 analytic families across a vanishing leading coefficient.
+
+`Polynomial.isRoot_integralNormalization_mul_iff` recovers the original root equation from
+a normalized root scaled by the leading coefficient, including zero and constant polynomials.
 -/
 
 public section
@@ -40,3 +43,23 @@ theorem monicOfCoeff_mul_pow_eq_integralNormalization (hf : f ≠ 0)
   rw [integralNormalization_coeff_ne_natDegree (by omega), hdeg]
 
 end TauCeti.Polynomial
+
+namespace Polynomial
+
+variable {K : Type*} [CommSemiring K] [IsDomain K]
+
+/-- Integral normalization preserves the root equation after scaling by the leading coefficient.
+This includes the zero polynomial and nonzero constants. -/
+theorem isRoot_integralNormalization_mul_iff (f : K[X]) (z : K) :
+    f.integralNormalization.IsRoot (f.leadingCoeff * z) ↔ f.IsRoot z := by
+  obtain rfl | hf := eq_or_ne f 0
+  · simp
+  rcases Nat.eq_zero_or_pos f.natDegree with hd | hd
+  · rw [eq_C_of_natDegree_eq_zero hd] at hf ⊢
+    simp [integralNormalization_C (C_ne_zero.1 hf), C_ne_zero.1 hf]
+  · have heval := integralNormalization_eval₂_leadingCoeff_mul hd (RingHom.id K) z
+    simp only [RingHom.id_apply, eval₂_id] at heval
+    rw [IsRoot.def, IsRoot.def, heval,
+      mul_eq_zero, or_iff_right (pow_ne_zero _ (leadingCoeff_ne_zero.2 hf))]
+
+end Polynomial

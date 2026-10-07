@@ -29,7 +29,7 @@ discharges, namely that the two irreducibles are inequivalent.
 
 ## Main statements
 
-* `TauCeti.ContRepresentation.averageOperator_eq_finrank_inv_mul_trace_smul_id`: the average of a
+* `ContRepresentation.averageOperator_eq_finrank_inv_mul_trace_smul_id`: the average of a
   self-map is its normalized trace times the identity.
 * `ContRepresentation.schur_orthogonality_self`: the coordinate-free first Schur
   orthogonality relation.
@@ -48,7 +48,7 @@ open MeasureTheory
 open scoped InnerProductSpace
 open scoped MonoidAlgebra
 
-namespace TauCeti
+open TauCeti TauCeti.ContRepresentation
 
 namespace ContRepresentation
 
@@ -80,14 +80,6 @@ theorem averageOperator_eq_finrank_inv_mul_trace_smul_id
   rwa [toContinuousLinearMap_averageIntertwiner, trace_averageOperator] at h
 
 end Average
-
-end ContRepresentation
-
-end TauCeti
-
-open TauCeti TauCeti.ContRepresentation
-
-namespace ContRepresentation
 
 section Orthogonality
 
@@ -152,7 +144,7 @@ variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G]
 finite-dimensional irreducible representations of a compact group are `L²`-orthogonal, provided the
 second one is unitary.
 
-This is `TauCeti.ContRepresentation.schur_orthogonality_distinct` with its hypothesis discharged:
+This is `ContRepresentation.schur_orthogonality_distinct` with its hypothesis discharged:
 the vanishing half of Schur's lemma turns inequivalence into the vanishing of every continuous
 intertwiner `π → ρ`. Algebraic closedness is not needed, since only the vanishing half of Schur's
 lemma is used. -/

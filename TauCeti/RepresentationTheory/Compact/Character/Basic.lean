@@ -52,7 +52,7 @@ So a character is the conjugate, not the sum, of its diagonal matrix coefficient
 conjugation as a transposition of the two arguments of the inner product. That transposition is
 also why `character_orthonormal_distinct` asks for the vanishing of the intertwiners `ρ → π` rather
 than `π → ρ`, and asks unitarity of `π` rather than of `ρ`: those are exactly the hypotheses of
-`TauCeti.ContRepresentation.schur_orthogonality_distinct` at the transposed pair. The reverse
+`ContRepresentation.schur_orthogonality_distinct` at the transposed pair. The reverse
 orientation is the conjugate statement, since `⟪χ_π, χ_ρ⟫ = conj ⟪χ_ρ, χ_π⟫`.
 
 Packaging the character in `L²` asks nothing of `V` beyond the finite-dimensional normed structure

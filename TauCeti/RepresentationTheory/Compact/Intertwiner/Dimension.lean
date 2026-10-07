@@ -98,7 +98,7 @@ theorem integral_character_mul_eq_finrank_contIntertwiningMap :
 
 /-- **The character integral vanishes exactly when there is no nonzero intertwiner.** This is the
 hypothesis under which the second Schur orthogonality relation
-(`TauCeti.ContRepresentation.schur_orthogonality_distinct`) is stated, now detected by the
+(`ContRepresentation.schur_orthogonality_distinct`) is stated, now detected by the
 characters. -/
 theorem integral_character_mul_eq_zero_iff :
     ∫ g, character π hπ g⁻¹ * character ρ hρ g ∂haarProb G = 0
