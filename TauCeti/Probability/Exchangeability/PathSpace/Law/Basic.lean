@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.Basic
-public import TauCeti.Probability.Exchangeability.PermutationExtension
+import Mathlib.Logic.Equiv.Fintype
 public import Mathlib.Dynamics.Ergodic.MeasurePreserving
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.Probability.ProductMeasure
@@ -22,8 +22,8 @@ user-facing API for stochastic processes; `ExchangeableLaw` names the equivalent
 viewpoint needed by π-system, invariant-σ-algebra, and shift arguments.
 
 Everything here is pure path space: it depends only on the coordinate-reindexing and prefix
-machinery of `Basic` and the finite permutation extension of `PermutationExtension`. The
-process-level ↔ path-law bridges live in
+machinery of `Basic` and Mathlib's finite permutation extension
+`Equiv.Perm.exists_extending_pair`. The process-level ↔ path-law bridges live in
 `TauCeti.Probability.Exchangeability.PathSpace.Law.Bridge`, which imports both this file and
 `FullyExchangeable`. No measure-theoretic infrastructure is vendored.
 

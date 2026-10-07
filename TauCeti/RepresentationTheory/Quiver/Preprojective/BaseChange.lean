@@ -40,9 +40,9 @@ problem*, Section 1.
 
 public section
 
-namespace TauCeti
+namespace RingHom
 
-open _root_.Quiver PathAlgebra
+open _root_.Quiver TauCeti TauCeti.PathAlgebra
 
 universe u v w z
 
@@ -52,68 +52,7 @@ variable {k : Type w} {l : Type z} {Q : Type u}
   [CommRing k] [CommRing l] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
-private noncomputable def preprojectiveBaseChangePathAlgHom (f : k →+* l) :
-    letI : Algebra k (preprojectiveAlgebra l Q) :=
-      ((algebraMap l (preprojectiveAlgebra l Q)).comp f).toAlgebra'
-        (fun c x => Algebra.commutes (R := l) (A := preprojectiveAlgebra l Q) (f c) x)
-    pathAlgebra k (Symmetrify Q) →ₐ[k] preprojectiveAlgebra l Q := by
-  let _ : Algebra k (preprojectiveAlgebra l Q) :=
-    ((algebraMap l (preprojectiveAlgebra l Q)).comp f).toAlgebra'
-      (fun c x => Algebra.commutes (R := l) (A := preprojectiveAlgebra l Q) (f c) x)
-  exact PathAlgebra.baseChangeAlgHom f (preprojectiveMk l Q)
-
-private theorem preprojectiveBaseChangePathAlgHom_ofPath (f : k →+* l)
-    (x : Quiver.TotalPath (Symmetrify Q)) :
-    letI : Algebra k (preprojectiveAlgebra l Q) :=
-      ((algebraMap l (preprojectiveAlgebra l Q)).comp f).toAlgebra'
-        (fun c x => Algebra.commutes (R := l) (A := preprojectiveAlgebra l Q) (f c) x)
-    preprojectiveBaseChangePathAlgHom f (ofPath x) = preprojectiveMk l Q (ofPath x) := by
-  let _ : Algebra k (preprojectiveAlgebra l Q) :=
-    ((algebraMap l (preprojectiveAlgebra l Q)).comp f).toAlgebra'
-      (fun c x => Algebra.commutes (R := l) (A := preprojectiveAlgebra l Q) (f c) x)
-  exact PathAlgebra.baseChangeAlgHom_ofPath f (preprojectiveMk l Q) x
-
-private theorem preprojectiveBaseChangePathAlgHom_headBacktrackElem (f : k →+* l)
-    {i j : Q} (a : i ⟶ j) :
-    letI : Algebra k (preprojectiveAlgebra l Q) :=
-      ((algebraMap l (preprojectiveAlgebra l Q)).comp f).toAlgebra'
-        (fun c x => Algebra.commutes (R := l) (A := preprojectiveAlgebra l Q) (f c) x)
-    preprojectiveBaseChangePathAlgHom f (headBacktrackElem k a) =
-      preprojectiveMk l Q (headBacktrackElem l a) := by
-  let _ : Algebra k (preprojectiveAlgebra l Q) :=
-    ((algebraMap l (preprojectiveAlgebra l Q)).comp f).toAlgebra'
-      (fun c x => Algebra.commutes (R := l) (A := preprojectiveAlgebra l Q) (f c) x)
-  rw [headBacktrackElem_def, preprojectiveBaseChangePathAlgHom_ofPath,
-    headBacktrackElem_def]
-
-private theorem preprojectiveBaseChangePathAlgHom_tailBacktrackElem (f : k →+* l)
-    {i j : Q} (a : i ⟶ j) :
-    letI : Algebra k (preprojectiveAlgebra l Q) :=
-      ((algebraMap l (preprojectiveAlgebra l Q)).comp f).toAlgebra'
-        (fun c x => Algebra.commutes (R := l) (A := preprojectiveAlgebra l Q) (f c) x)
-    preprojectiveBaseChangePathAlgHom f (tailBacktrackElem k a) =
-      preprojectiveMk l Q (tailBacktrackElem l a) := by
-  let _ : Algebra k (preprojectiveAlgebra l Q) :=
-    ((algebraMap l (preprojectiveAlgebra l Q)).comp f).toAlgebra'
-      (fun c x => Algebra.commutes (R := l) (A := preprojectiveAlgebra l Q) (f c) x)
-  rw [tailBacktrackElem_def, preprojectiveBaseChangePathAlgHom_ofPath,
-    tailBacktrackElem_def]
-
 /-! ### Descent through the preprojective relation -/
-
-private theorem preprojectiveBaseChangePathAlgHom_relator (f : k →+* l) :
-    letI : Algebra k (preprojectiveAlgebra l Q) :=
-      ((algebraMap l (preprojectiveAlgebra l Q)).comp f).toAlgebra'
-        (fun c x => Algebra.commutes (R := l) (A := preprojectiveAlgebra l Q) (f c) x)
-    preprojectiveBaseChangePathAlgHom f (preprojectiveRelator k Q) = 0 := by
-  let _ : Algebra k (preprojectiveAlgebra l Q) :=
-    ((algebraMap l (preprojectiveAlgebra l Q)).comp f).toAlgebra'
-      (fun c x => Algebra.commutes (R := l) (A := preprojectiveAlgebra l Q) (f c) x)
-  rw [preprojectiveRelator_def]
-  simp only [map_sum, map_sub, preprojectiveBaseChangePathAlgHom_headBacktrackElem,
-    preprojectiveBaseChangePathAlgHom_tailBacktrackElem]
-  simpa only [preprojectiveRelator_def, map_sum, map_sub] using
-    (preprojectiveMk_preprojectiveRelator l Q)
 
 private noncomputable def preprojectiveBaseChangeAlgHom (f : k →+* l) :
     letI : Algebra k (preprojectiveAlgebra l Q) :=
@@ -123,8 +62,12 @@ private noncomputable def preprojectiveBaseChangeAlgHom (f : k →+* l) :
   let _ : Algebra k (preprojectiveAlgebra l Q) :=
     ((algebraMap l (preprojectiveAlgebra l Q)).comp f).toAlgebra'
       (fun c x => Algebra.commutes (R := l) (A := preprojectiveAlgebra l Q) (f c) x)
-  exact preprojectiveLift (preprojectiveBaseChangePathAlgHom f)
-    (preprojectiveBaseChangePathAlgHom_relator f)
+  refine preprojectiveLift (PathAlgebra.baseChangeAlgHom f (preprojectiveMk l Q)) ?_
+  rw [preprojectiveRelator_def]
+  simp only [map_sum, map_sub, headBacktrackElem_def, tailBacktrackElem_def,
+    PathAlgebra.baseChangeAlgHom_ofPath]
+  simpa only [preprojectiveRelator_def, headBacktrackElem_def, tailBacktrackElem_def,
+    map_sum, map_sub] using preprojectiveMk_preprojectiveRelator l Q
 
 /-! ### The public coefficient map -/
 
@@ -132,12 +75,12 @@ private noncomputable def preprojectiveBaseChangeAlgHom (f : k →+* l) :
 
 The map leaves every doubled path unchanged and applies `f` to its coefficients.  It is exposed
 as a `RingHom` because the scalar rings on the two quotient algebras differ; its semilinearity is
-recorded by `preprojectiveBaseChange_algebraMap`. -/
+recorded by `RingHom.preprojectiveBaseChange_algebraMap`. -/
 noncomputable def preprojectiveBaseChange (f : k →+* l) :
     preprojectiveAlgebra k Q →+* preprojectiveAlgebra l Q := by
   let _ : Algebra k (preprojectiveAlgebra l Q) :=
     ((algebraMap l (preprojectiveAlgebra l Q)).comp f).toAlgebra'
-        (fun c x => Algebra.commutes (R := l) (A := preprojectiveAlgebra l Q) (f c) x)
+      (fun c x => Algebra.commutes (R := l) (A := preprojectiveAlgebra l Q) (f c) x)
   exact (preprojectiveBaseChangeAlgHom f).toRingHom
 
 /-- The base-change map sends the quotient class of every path to the quotient class of the same
@@ -153,7 +96,7 @@ theorem preprojectiveBaseChange_preprojectiveMk_ofPath (f : k →+* l)
   -- The public map is the underlying ring map of the quotient lift; expose that lift here.
   change preprojectiveBaseChangeAlgHom f (preprojectiveMk k Q (ofPath x)) = _
   rw [preprojectiveBaseChangeAlgHom, preprojectiveLift_preprojectiveMk,
-    preprojectiveBaseChangePathAlgHom_ofPath]
+    PathAlgebra.baseChangeAlgHom_ofPath]
 
 /-- The map on preprojective algebras carries the source scalar action to the target scalar action
 through the coefficient homomorphism. -/
@@ -163,7 +106,7 @@ theorem preprojectiveBaseChange_algebraMap (f : k →+* l) (r : k) :
       algebraMap l (preprojectiveAlgebra l Q) (f r) := by
   let _ : Algebra k (preprojectiveAlgebra l Q) :=
     ((algebraMap l (preprojectiveAlgebra l Q)).comp f).toAlgebra'
-        (fun c x => Algebra.commutes (R := l) (A := preprojectiveAlgebra l Q) (f c) x)
+      (fun c x => Algebra.commutes (R := l) (A := preprojectiveAlgebra l Q) (f c) x)
   -- The target is a `k`-algebra via the composite coefficient map.
   change preprojectiveBaseChangeAlgHom f (algebraMap k (preprojectiveAlgebra k Q) r) =
     ((algebraMap l (preprojectiveAlgebra l Q)).comp f) r
@@ -193,4 +136,4 @@ theorem preprojectiveBaseChange_comp {m : Type*} [CommRing m] (f : k →+* l) (g
 
 end
 
-end TauCeti
+end RingHom

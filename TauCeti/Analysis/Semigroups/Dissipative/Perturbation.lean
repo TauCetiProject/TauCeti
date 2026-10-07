@@ -17,7 +17,7 @@ if `A` is dissipative then `B + A - ‖B‖ I` is again dissipative, because the
 absorbs `B x` into the extra `‖B‖ ‖x‖` gained by shifting the spectral parameter. Maximality is
 inherited too: the range condition for the perturbed operator comes from the Neumann
 perturbation of a resolvent point
-(`TauCeti.LinearPMap.mem_resolventSet_vadd`), applied at a spectral parameter large enough that
+(`ContinuousLinearMap.mem_resolventSet_vadd`), applied at a spectral parameter large enough that
 `‖B‖ ‖R(lambda, A)‖ < 1`.
 
 Together these say that the Lumer--Phillips hypothesis set is stable under bounded
@@ -80,7 +80,7 @@ theorem IsMDissipative.subScalar_vadd (hA : IsMDissipative A) (B : X →L[ℝ] X
     rw [mul_inv_lt_iff₀ hmupos, one_mul]
     linarith [norm_nonneg B]
   obtain ⟨z, hz⟩ := (LinearPMap.smul_sub_bijective
-    (LinearPMap.mem_resolventSet_vadd B hres hbound hsmall)).surjective y
+    (B.mem_resolventSet_vadd hres hbound hsmall)).surjective y
   have hgoal : (‖B‖ + 1) • (z : X) - (((B : X →ₗ[ℝ] X) - ‖B‖ • LinearMap.id) +ᵥ A) z
       = (2 * ‖B‖ + 1) • (z : X) - ((B : X →ₗ[ℝ] X) +ᵥ A) z := by
     rw [LinearPMap.vadd_apply, LinearPMap.vadd_apply, LinearMap.sub_apply,

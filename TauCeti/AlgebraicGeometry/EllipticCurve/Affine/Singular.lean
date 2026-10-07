@@ -35,7 +35,9 @@ equality. Every statement here holds in any characteristic, including two and th
 * `WeierstrassCurve.Affine.isSingular_iff'` and `WeierstrassCurve.Affine.isSingular_iff`: the
   coefficient-level restatements, the second as the two equalities `Nonsingular` negates.
 * `WeierstrassCurve.Affine.isSingular_zero`: singularity at the origin is `a₃ = a₄ = a₆ = 0`.
-* `WeierstrassCurve.Affine.equation_iff_of_isSingular_zero`: the equation of a model singular at
+* `WeierstrassCurve.Affine.equation_iff_of_isSingular`: the equation expanded at a singular point
+  `(x₁, y₁)` has no constant or linear terms.
+* `WeierstrassCurve.Affine.equation_iff_of_isSingular_zero`: so the equation of a model singular at
   the origin is `y² + a₁ x y = x³ + a₂ x²`.
 * `WeierstrassCurve.Affine.c₄_eq_b₂_sq_of_isSingular_zero`: at such a model, `c₄ = b₂²`.
 * `WeierstrassCurve.Affine.isSingular_iff_variableChange`: singularity at a point is singularity at
@@ -125,11 +127,23 @@ theorem isSingular_zero (W : WeierstrassCurve.Affine R) :
     W.IsSingular 0 0 ↔ W.a₆ = 0 ∧ W.a₄ = 0 ∧ W.a₃ = 0 := by
   rw [IsSingular, equation_zero, evalEval_polynomialX_zero, evalEval_polynomialY_zero, neg_eq_zero]
 
+/-- **The equation expanded at a singular point**: at a singular point `(x₁, y₁)` the constant
+and linear terms of the equation vanish, so it reads
+`(y - y₁)² + a₁ (x - x₁) (y - y₁) = (x - x₁)³ + (3 x₁ + a₂) (x - x₁)²`. -/
+theorem equation_iff_of_isSingular (h : W.IsSingular x₁ y₁) (x y : R) :
+    W.Equation x y ↔ (y - y₁) ^ 2 + W.a₁ * (x - x₁) * (y - y₁) =
+      (x - x₁) ^ 3 + (3 * x₁ + W.a₂) * (x - x₁) ^ 2 := by
+  obtain ⟨hE, hX, hY⟩ := (isSingular_iff' _ _ _).mp h
+  rw [equation_iff] at hE ⊢
+  constructor <;> intro h'
+  · linear_combination h' - hE - (y - y₁) * hY - (x - x₁) * hX
+  · linear_combination h' + hE + (y - y₁) * hY + (x - x₁) * hX
+
 /-- At a model singular at the origin the equation reads `y² + a₁ x y = x³ + a₂ x²`. -/
 theorem equation_iff_of_isSingular_zero (h : W.IsSingular 0 0) (x y : R) :
     W.Equation x y ↔ y ^ 2 + W.a₁ * x * y = x ^ 3 + W.a₂ * x ^ 2 := by
-  obtain ⟨h₆, h₄, h₃⟩ := (isSingular_zero _).1 h
-  simp [equation_iff', h₆, h₄, h₃, sub_eq_zero]
+  simpa using equation_iff_of_isSingular h x y
+
 
 /-- For a model singular at the origin, `c₄` is the square of `b₂`, the discriminant of the
 tangent quadratic `T² + a₁ T - a₂`. -/

@@ -68,9 +68,6 @@ a hypothesis about the chosen generating relations only, which is what a caller 
   where `K₀` of a small abelian category is presented by generators and relations and the
   set-theoretic care taken here is discussed, and Section 6.1.2 for the universal property of an
   additive invariant.
-* `TauCetiRoadmap/GrothendieckEulerForms/Suggested.lean`, whose `ObjectCode`/`objectCode` naming
-  and free-abelian-group-modulo-relations presentation are followed here, with the relations left
-  as a parameter so that the split, exact, abelian, and triangulated groups share one engine.
 * `Mathlib/GroupTheory/PresentedGroup.lean` and
   `Mathlib/Algebra/PresentedMonoid/Basic.lean`, whose set-of-relations parameter and
   `mk`/`of`/`closure_range_of`/lift-and-uniqueness/extensionality/map API layout are adapted here
