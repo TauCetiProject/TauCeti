@@ -16,11 +16,12 @@ A closed embedded submanifold of a finite-dimensional Euclidean space admits a p
 continuous radius for which the closed normal discs embed as a closed neighbourhood and
 the normal spheres are the frontier of the open tube. The core need not be compact.
 
-For a `C¹` closed Euclidean embedding, a continuous uniformly bounded radius gives
-closed normal disc images. A smaller positive radius inside an embedded open tube gives
-closed disc embeddings and identifies the frontier with the normal sphere image. For a
-`C²` immersion that is a closed embedding, such a radius exists. These closed normal
-neighbourhoods and their boundary spheres provide the neighbourhoods removed in surgery.
+For a `C¹` closed embedding into a proper real inner product space, a continuous uniformly
+bounded radius gives closed normal disc images. A smaller positive radius inside an embedded
+open tube gives closed disc embeddings and identifies the frontier with the normal sphere
+image. For a `C²` Euclidean immersion that is a closed embedding, such a radius exists.
+These closed normal neighbourhoods and their boundary spheres provide the neighbourhoods
+removed in surgery.
 
 ## References
 
@@ -45,7 +46,7 @@ section Regularity
 
 variable [I.Boundaryless] [IsManifold I 1 M] {f : M → V} {r : M → ℝ}
 
-variable [FiniteDimensional ℝ V]
+variable [ProperSpace V]
 
 /-- For a closed core and a uniformly bounded continuous radius, the normal disc image
 under addition is closed. Injectivity of normal addition is not required. -/
