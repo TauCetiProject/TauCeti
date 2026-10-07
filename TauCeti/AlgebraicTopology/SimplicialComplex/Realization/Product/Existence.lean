@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Data.Finsupp.OrderedCoupling.Existence
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Product
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map
 
 /-!
 # Lifting points to an ordered simplicial product
@@ -31,16 +31,21 @@ public section
 
 namespace AbstractSimplicialComplex
 
-open TauCeti.SetLike
+open TauCeti.SetLike PreAbstractSimplicialComplex.SimplicialMap
 
 variable {α β : Type*} [LinearOrder α] [LinearOrder β]
 
-/-- Every pair of realization points has a lift to the ordered product, with their
-barycentric weights as its two marginals. -/
-theorem exists_realization_orderedProd_mapDomain (K : AbstractSimplicialComplex α)
+/-- Every pair of realization points has a lift to the ordered product under the two
+canonical realization projections. -/
+theorem exists_realization_orderedProd (K : AbstractSimplicialComplex α)
     (L : AbstractSimplicialComplex β) (x : Realization K) (y : Realization L) :
     ∃ z : Realization (orderedProd K L),
-      Finsupp.mapDomain Prod.fst z.1 = x.1 ∧ Finsupp.mapDomain Prod.snd z.1 = y.1 := by
+      (orderedProdFst K.toPreAbstractSimplicialComplex
+        L.toPreAbstractSimplicialComplex |>.domainRestrict
+          (by rw [orderedProd_toPreAbstractSimplicialComplex])).realizationMap z = x ∧
+      (orderedProdSnd K.toPreAbstractSimplicialComplex
+        L.toPreAbstractSimplicialComplex |>.domainRestrict
+          (by rw [orderedProd_toPreAbstractSimplicialComplex])).realizationMap z = y := by
   obtain ⟨w, hw, hchain, hwx, hwy⟩ := Finsupp.exists_nonneg_isChain_mapDomain x.1 y.1
     (Realization.nonneg K x) (Realization.nonneg L y)
     ((Realization.sum_eq_one K x).trans (Realization.sum_eq_one L y).symm)
@@ -56,8 +61,16 @@ theorem exists_realization_orderedProd_mapDomain (K : AbstractSimplicialComplex 
       (h := fun _ (r : ℝ) => r) (fun _ => rfl) (fun _ _ _ => rfl)
     rw [hwx, Realization.sum_eq_one K x] at h
     exact h.symm
-  refine ⟨⟨w, mem_realization_iff.mpr ⟨w.support, hface, ?_⟩⟩, hwx, hwy⟩
-  simpa only [Finset.coe_image] using
-    (mem_standardSimplex_iff (σ := w.support)).mpr ⟨hw, hmass, Finset.Subset.refl _⟩
+  have hwmem : w ∈ (standardGeometricComplex (orderedProd K L)).space := by
+    refine mem_realization_iff.mpr ⟨w.support, hface, ?_⟩
+    simpa only [Finset.coe_image] using
+      (mem_standardSimplex_iff (σ := w.support)).mpr ⟨hw, hmass, Finset.Subset.refl _⟩
+  refine ⟨⟨w, hwmem⟩, ?_, ?_⟩
+  · apply Subtype.ext
+    simpa only [PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val,
+      coe_domainRestrict, coe_orderedProdFst] using hwx
+  · apply Subtype.ext
+    simpa only [PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val,
+      coe_domainRestrict, coe_orderedProdSnd] using hwy
 
 end AbstractSimplicialComplex
