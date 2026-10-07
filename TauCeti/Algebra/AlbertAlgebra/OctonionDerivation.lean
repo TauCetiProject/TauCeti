@@ -146,7 +146,7 @@ the slots span `H₃(𝕆)`, this determines the action. -/
 /-- **Acting on the off-diagonal entries is multiplicative**: the composition of two octonion
 endomorphisms acts as the composition of their actions. The scalar diagonal plays no part because
 both sides kill it. -/
-theorem offDiagMap_mul (f g : Module.End R (Octonion R)) :
+@[simp] theorem offDiagMap_mul (f g : Module.End R (Octonion R)) :
     offDiagMap (f * g) = offDiagMap f * offDiagMap g :=
   LinearMap.ext fun _ => AlbertAlgebra.ext (rfl) (rfl)
 

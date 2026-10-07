@@ -280,6 +280,7 @@ theorem polar_derivation_apply_left_eq_neg (x y : Octonion R) :
 separates `QuadraticMap.polar` from `QuadraticMap.associated`, for the benefit of constructions
 that write the symmetric bilinear form of the norm the latter way, as the product of the split
 Albert algebra does. -/
+@[simp]
 theorem associated_derivation_add_eq_zero [Invertible (2 : R)] (x y : Octonion R) :
     QuadraticMap.associated (normQuadraticForm R) ((D : Module.End R (Octonion R)) x) y
       + QuadraticMap.associated (normQuadraticForm R) x
