@@ -24,6 +24,7 @@ results apply to path algebras independently of any relations.
 * `TauCeti.PathAlgebra.pathsInto`: the span of paths of length `n` ending at `j`.
 * `TauCeti.PathAlgebra.mem_pathsInto_iff`: the span is the degree-`n` part of the corner at `j`.
 * `TauCeti.PathAlgebra.pathsBetween`: the degree-`n` part of the corner cut out by two vertices.
+* `TauCeti.PathAlgebra.mem_pathsBetween_iff`: membership in that degree-`n` corner.
 * `TauCeti.PathAlgebra.finrank_pathsBetween`: the dimension of that corner is the number of
   paths of the prescribed length between the vertices.
 * `TauCeti.PathAlgebra.mul_mem_pathsInto`: multiplication adds path lengths.
@@ -188,23 +189,25 @@ theorem mem_pathsInto_iff {n : ℕ} {j : R} {x : pathAlgebra k R} :
   ⟨fun hx => ⟨pathsInto_le_grade n j hx, vertexIdempotent_mul_of_mem_pathsInto hx⟩,
     fun ⟨hx, hjx⟩ => hjx ▸ vertexIdempotent_mul_mem_pathsInto j hx⟩
 
-/-- **The paths of fixed length between two vertices form the corresponding graded corner.** -/
-theorem pathsBetween_eq_cornerSubmodule_inf_grade [Finite R] (n : ℕ) (i j : R) :
-    pathsBetween k n i j =
-      cornerSubmodule k (vertexIdempotent k j) (vertexIdempotent k i) ⊓ grade k R n := by
-  apply le_antisymm
-  · rw [pathsBetween, Submodule.span_le]
-    rintro _ ⟨p, rfl⟩
-    rw [SetLike.mem_coe, Submodule.mem_inf]
-    refine ⟨?_, ofPath_mem_grade_of_length p.2⟩
-    rw [mem_cornerSubmodule_iff k
-      (vertexIdempotent_mul_self j) (vertexIdempotent_mul_self i)]
-    simp
-  · intro x hx
-    rw [Submodule.mem_inf] at hx
-    obtain ⟨hcorner, hgrade⟩ := hx
-    rw [mem_cornerSubmodule_iff k
-      (vertexIdempotent_mul_self j) (vertexIdempotent_mul_self i)] at hcorner
+/-- **The paths of length `n` from `i` to `j` span the degree-`n` part of the corner
+`e_j kR e_i`.** -/
+@[simp]
+theorem mem_pathsBetween_iff {n : ℕ} {i j : R} {x : pathAlgebra k R} :
+    x ∈ pathsBetween k n i j ↔
+      x ∈ grade k R n ∧ vertexIdempotent k j * x * vertexIdempotent k i = x := by
+  constructor
+  · intro hx
+    induction hx using Submodule.span_induction with
+    | mem y hy =>
+        obtain ⟨p, rfl⟩ := hy
+        exact ⟨ofPath_mem_grade_of_length p.2,
+          by rw [vertexIdempotent_mul_ofPath, ofPath_mul_vertexIdempotent]⟩
+    | zero => simp
+    | add y z _ _ hy hz =>
+        exact ⟨add_mem hy.1 hz.1, by rw [mul_add, add_mul, hy.2, hz.2]⟩
+    | smul c y _ hy =>
+        exact ⟨Submodule.smul_mem _ c hy.1, by rw [mul_smul_comm, smul_mul_assoc, hy.2]⟩
+  · rintro ⟨hgrade, hcorner⟩
     rw [← hcorner]
     clear hcorner
     rw [grade_eq_span_range] at hgrade
@@ -227,6 +230,14 @@ theorem pathsBetween_eq_cornerSubmodule_inf_grade [Finite R] (n : ℕ) (i j : R)
     | add x y _ _ hx hy => simpa only [mul_add, add_mul] using add_mem hx hy
     | smul r x _ hx =>
         simpa only [mul_smul_comm, smul_mul_assoc] using Submodule.smul_mem _ r hx
+
+/-- **The paths of fixed length between two vertices form the corresponding graded corner.** -/
+theorem pathsBetween_eq_cornerSubmodule_inf_grade [Finite R] (n : ℕ) (i j : R) :
+    pathsBetween k n i j =
+      cornerSubmodule k (vertexIdempotent k j) (vertexIdempotent k i) ⊓ grade k R n := by
+  ext x
+  rw [mem_pathsBetween_iff, Submodule.mem_inf, mem_cornerSubmodule_iff k
+    (vertexIdempotent_mul_self j) (vertexIdempotent_mul_self i), and_comm]
 
 /-- The product of an element of `pathsInto k a i` and one of `pathsInto k c j` lies in
 `pathsInto k (c + a) i`: the paths of the right factor are followed by those of the left one. -/

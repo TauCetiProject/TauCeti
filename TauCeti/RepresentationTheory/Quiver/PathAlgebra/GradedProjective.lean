@@ -100,6 +100,7 @@ theorem range_gradedVertexProjectiveSubtype (i : Q) :
 
 /-- An element of `kQ e_i` has degree `d` exactly when its image in the path algebra has integer
 path degree `d`. -/
+@[simp]
 theorem mem_gradedVertexProjective_piece_iff (i : Q) (d : ℤ)
     (x : gradedVertexProjective k Q i) :
     x ∈ (gradedVertexProjective k Q i).grading.piece d ↔
