@@ -87,7 +87,6 @@ namespace AInfinityCategory
 variable {R : Type w} [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, w} R C]
 
 /-- `A∞` categories on a graded linear quiver are determined by their operations. -/
-@[ext]
 theorem ext {𝒞 𝒞' : AInfinityCategory R C} (h : 𝒞.m = 𝒞'.m) : 𝒞 = 𝒞' := by
   obtain ⟨𝒜, hG, hm⟩ := 𝒞
   obtain ⟨𝒜', hG', hm'⟩ := 𝒞'
@@ -140,6 +139,7 @@ theorem homInclusion_pathOperation {n : ℕ} (X : Fin (n + 1) → C) (d : Fin n 
 
 /-- `A∞` categories on a graded linear quiver are determined by their operations on composable
 strings. -/
+@[ext]
 theorem ext_pathOperation {𝒞 𝒞' : AInfinityCategory R C}
     (h : ∀ (n : ℕ) (X : Fin (n + 1) → C), 𝒞.pathOperation X = 𝒞'.pathOperation X) :
     𝒞 = 𝒞' := by
@@ -154,41 +154,6 @@ theorem ext_pathOperation {𝒞 𝒞' : AInfinityCategory R C}
   exact DFunLike.congr_fun e x
 
 /-! ### The differential and the composition -/
-
-/-- The unary operation of an `A∞` category on a single morphism `X ⟶ Y` is a morphism
-`X ⟶ Y`. -/
-theorem m_one_homInclusion_mem_range (X Y : C) (f : homModule (R := R) X Y) :
-    𝒞.m 1 ![homInclusion X Y f] ∈ LinearMap.range (homInclusion (R := R) X Y) := by
-  have h := (𝒞.isPathCompatible_m 1).mem_range_homInclusion ![X, Y]
-    (Fin.cases (motive := fun i ↦ homModule (R := R) (![X, Y] i.rev.castSucc) (![X, Y] i.rev.succ))
-      f fun i ↦ i.elim0)
-  have e : (fun i : Fin 1 ↦ homInclusion (R := R) (![X, Y] i.rev.castSucc) (![X, Y] i.rev.succ)
-      (Fin.cases (motive := fun i ↦ homModule (R := R) (![X, Y] i.rev.castSucc)
-        (![X, Y] i.rev.succ)) f (fun i ↦ i.elim0) i)) = ![homInclusion X Y f] := by
-    funext i
-    fin_cases i
-    rfl
-  rw [e] at h
-  exact h
-
-/-- The binary operation of an `A∞` category on morphisms `g : Y ⟶ Z` and `f : X ⟶ Y` is a
-morphism `X ⟶ Z`. -/
-theorem m_two_homInclusion_mem_range (X Y Z : C) (g : homModule (R := R) Y Z)
-    (f : homModule (R := R) X Y) :
-    𝒞.m 2 ![homInclusion Y Z g, homInclusion X Y f] ∈
-      LinearMap.range (homInclusion (R := R) X Z) := by
-  have h := (𝒞.isPathCompatible_m 2).mem_range_homInclusion ![X, Y, Z]
-    (Fin.cases (motive := fun i ↦
-        homModule (R := R) (![X, Y, Z] i.rev.castSucc) (![X, Y, Z] i.rev.succ))
-      g (Fin.cases f fun i ↦ i.elim0))
-  have e : (fun i : Fin 2 ↦ homInclusion (R := R) (![X, Y, Z] i.rev.castSucc)
-      (![X, Y, Z] i.rev.succ) (Fin.cases (motive := fun i ↦
-        homModule (R := R) (![X, Y, Z] i.rev.castSucc) (![X, Y, Z] i.rev.succ))
-      g (Fin.cases f fun i ↦ i.elim0) i)) = ![homInclusion Y Z g, homInclusion X Y f] := by
-    funext i
-    fin_cases i <;> rfl
-  rw [e] at h
-  exact h
 
 /-- The **differential** `m₁` of the morphisms `X ⟶ Y` of an `A∞` category. -/
 noncomputable def homDifferential (X Y : C) :
@@ -208,7 +173,17 @@ the included morphism. -/
 theorem homInclusion_homDifferential (X Y : C) (f : homModule (R := R) X Y) :
     homInclusion X Y (𝒞.homDifferential X Y f) = 𝒞.m 1 ![homInclusion X Y f] := by
   rw [homDifferential_apply]
-  exact homInclusion_homProjection_of_mem_range (𝒞.m_one_homInclusion_mem_range X Y f)
+  apply homInclusion_homProjection_of_mem_range
+  have h := (𝒞.isPathCompatible_m 1).mem_range_homInclusion ![X, Y]
+    (Fin.cases (motive := fun i ↦ homModule (R := R) (![X, Y] i.rev.castSucc) (![X, Y] i.rev.succ))
+      f fun i ↦ i.elim0)
+  have e : (fun i : Fin 1 ↦ homInclusion (R := R) (![X, Y] i.rev.castSucc) (![X, Y] i.rev.succ)
+      (Fin.cases (motive := fun i ↦ homModule (R := R) (![X, Y] i.rev.castSucc)
+        (![X, Y] i.rev.succ)) f (fun i ↦ i.elim0) i)) = ![homInclusion X Y f] := by
+    funext i
+    fin_cases i
+    rfl
+  rwa [e] at h
 
 /-- The differential of an `A∞` category raises the degree by one. -/
 theorem homDifferential_mem_piece {X Y : C} {p : ℤ} {f : homModule (R := R) X Y}
@@ -245,7 +220,18 @@ theorem homInclusion_comp (X Y Z : C) (g : homModule (R := R) Y Z)
     (f : homModule (R := R) X Y) :
     homInclusion X Z (𝒞.comp X Y Z g f) = 𝒞.m 2 ![homInclusion Y Z g, homInclusion X Y f] := by
   rw [comp_apply]
-  exact homInclusion_homProjection_of_mem_range (𝒞.m_two_homInclusion_mem_range X Y Z g f)
+  apply homInclusion_homProjection_of_mem_range
+  have h := (𝒞.isPathCompatible_m 2).mem_range_homInclusion ![X, Y, Z]
+    (Fin.cases (motive := fun i ↦
+        homModule (R := R) (![X, Y, Z] i.rev.castSucc) (![X, Y, Z] i.rev.succ))
+      g (Fin.cases f fun i ↦ i.elim0))
+  have e : (fun i : Fin 2 ↦ homInclusion (R := R) (![X, Y, Z] i.rev.castSucc)
+      (![X, Y, Z] i.rev.succ) (Fin.cases (motive := fun i ↦
+        homModule (R := R) (![X, Y, Z] i.rev.castSucc) (![X, Y, Z] i.rev.succ))
+      g (Fin.cases f fun i ↦ i.elim0) i)) = ![homInclusion Y Z g, homInclusion X Y f] := by
+    funext i
+    fin_cases i <;> rfl
+  rwa [e] at h
 
 /-- The composite of morphisms of degrees `p` and `q` has degree `p + q`. -/
 theorem comp_mem_piece {X Y Z : C} {p q : ℤ} {g : homModule (R := R) Y Z}

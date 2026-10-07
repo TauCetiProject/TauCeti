@@ -98,6 +98,7 @@ theorem homProjection_homInclusion (X Y : C) (f : homModule (R := R) X Y) :
   rw [homInclusion_eq_lof, homProjection, DirectSum.component.lof_self]
 
 /-- Projecting an included morphism to the hom module of another pair of objects gives zero. -/
+@[simp]
 theorem homProjection_homInclusion_of_ne {X Y X' Y' : C} (h : (X, Y) ≠ (X', Y'))
     (f : homModule (R := R) X Y) :
     homProjection X' Y' (homInclusion X Y f) = 0 := by
