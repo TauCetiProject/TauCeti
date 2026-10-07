@@ -68,7 +68,7 @@ variable {K : Type*} [Field K] [NumberField K]
 
 /-- Every idele class differs from a norm-one idele class by an element of the ray subgroup,
 namely an element of the identity component with the same idele class norm. -/
-private theorem exists_mem_raySubgroup_inv_mul_mem_normOne (𝔪 : Modulus K)
+private theorem _root_.IdeleClassGroup.exists_mem_raySubgroup_inv_mul_mem_normOne (𝔪 : Modulus K)
     (c : IdeleClassGroup (𝓞 K) K) : ∃ d ∈ raySubgroup 𝔪, d⁻¹ * c ∈ normOne K := by
   obtain ⟨d, hd, hdc⟩ :=
     exists_mem_connectedComponentOfOne_ideleClassNorm_eq (K := K) (ideleClassNorm c)
@@ -80,7 +80,7 @@ subgroup contains the identity component of the idele class group, on which the 
 takes every positive real value. -/
 theorem raySubgroup_sup_normOne (𝔪 : Modulus K) : raySubgroup 𝔪 ⊔ normOne K = ⊤ := by
   refine eq_top_iff.mpr fun c _ ↦ ?_
-  obtain ⟨d, hd, hdc⟩ := exists_mem_raySubgroup_inv_mul_mem_normOne 𝔪 c
+  obtain ⟨d, hd, hdc⟩ := IdeleClassGroup.exists_mem_raySubgroup_inv_mul_mem_normOne 𝔪 c
   rw [← mul_inv_cancel_left d c]
   exact Subgroup.mul_mem_sup hd hdc
 
@@ -89,7 +89,7 @@ theorem rayClassQuotient_domRestrict_normOne_surjective (𝔪 : Modulus K) :
     Function.Surjective ((rayClassQuotient 𝔪).domRestrict (normOne K)) := by
   intro x
   obtain ⟨c, rfl⟩ := rayClassQuotient_surjective 𝔪 x
-  obtain ⟨d, hd, hdc⟩ := exists_mem_raySubgroup_inv_mul_mem_normOne 𝔪 c
+  obtain ⟨d, hd, hdc⟩ := IdeleClassGroup.exists_mem_raySubgroup_inv_mul_mem_normOne 𝔪 c
   rw [← ker_rayClassQuotient, MonoidHom.mem_ker] at hd
   exact ⟨⟨d⁻¹ * c, hdc⟩, by rw [MonoidHom.domRestrict_apply, map_mul, map_inv, hd, inv_one,
     one_mul]⟩
