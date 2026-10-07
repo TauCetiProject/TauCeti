@@ -29,6 +29,8 @@ map. Indecomposability is taken in the full category of finite graded projective
 
 * C. Năstăsescu and F. Van Oystaeyen, *Methods of Graded Rings*, Section 2.3.
 * C. A. Weibel, *The K-book*, Chapter II, Sections 5 and 7.
+* `TauCeti.RepresentationTheory.GrothendieckGroup.ProjectiveBasis`: this result is the graded
+  analogue of its ungraded projective-class spanning theorem and exhaustiveness API.
 * `TauCeti.Algebra.Category.GradedModuleCat.CartanMap.SimpleBasis`: the graded simple-class basis.
 -/
 
