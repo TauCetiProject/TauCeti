@@ -61,6 +61,12 @@ noncomputable def letter : ReducedTensorWords R M →ₗ[R] M :=
 noncomputable def ofLetter : M →ₗ[R] ReducedTensorWords R M :=
   of R M 1 ∘ₗ (TensorPower.oneEquiv R M).symm.toLinearMap
 
+/-- A single letter is the pure tensor word of length one on that letter. -/
+theorem ofLetter_eq_of_tprod (a : M) :
+    ofLetter R M a = of R M 1 (PiTensorProduct.tprod R fun _ ↦ a) := by
+  rw [ofLetter, LinearMap.comp_apply, LinearEquiv.coe_coe, TensorPower.oneEquiv_symm_apply]
+  rfl
+
 /-- The length-one component of a single letter is that letter under the tensor-power
 identification. -/
 theorem component_ofLetter (a : M) :
@@ -265,6 +271,11 @@ theorem letter_of_two (a b : M) :
   rw [← prepend_ofLetter, letter_prepend]
 
 end Prepend
+
+/-- A word whose length is not one has no letter component. -/
+theorem letter_of_of_ne_one {n : {n : ℕ // 0 < n}} (hn : n ≠ 1) (z : TensorPower R n.1 M) :
+    letter R M (of R M n z) = 0 := by
+  rw [letter_apply, component_of_of_ne R M hn z, map_zero]
 
 /-- The primitive elements of the reduced tensor coalgebra are exactly the single letters. -/
 theorem deconcatenation_eq_zero_iff {x : ReducedTensorWords R M} :

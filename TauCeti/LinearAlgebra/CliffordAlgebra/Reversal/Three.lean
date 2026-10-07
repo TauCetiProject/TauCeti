@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
-import TauCeti.LinearAlgebra.Matrix.AdjugateFinTwo
+import TauCeti.LinearAlgebra.Matrix.Adjugate.FinTwo
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 

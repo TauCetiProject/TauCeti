@@ -84,16 +84,47 @@ namespace PDE
 
 open Matrix
 
-variable {X n : Type*} [Fintype n] [DecidableEq n]
+/-! ### Symmetric part of a coefficient matrix -/
 
-/-- The identity matrix has quadratic form `‖ξ‖²`. -/
+section SymmetricPart
+
+variable {n : Type*}
+
+/-- The symmetric part `(A + Aᵀ) / 2` of a coefficient matrix.
+
+For energy estimates the diagonal quadratic form of `A` agrees with that of
+`coefficientSymmetricPart A`, while the resulting matrix is symmetric. This is the
+finite-dimensional bookkeeping needed before the integrated energy form is specialized to
+self-adjoint elliptic operators. -/
+noncomputable def coefficientSymmetricPart (A : Matrix n n ℝ) : Matrix n n ℝ :=
+  (1 / 2 : ℝ) • (A + Aᵀ)
+
+/-- The symmetric part of a coefficient matrix is symmetric. -/
+lemma coefficientSymmetricPart_isSymm (A : Matrix n n ℝ) : (coefficientSymmetricPart A).IsSymm :=
+  (isSymm_add_transpose_self A).smul (1 / 2 : ℝ)
+
+/-- The entries of the symmetric part are the averages of opposite entries. -/
 @[simp]
-lemma toQuadraticForm'_one (ξ : EuclideanSpace ℝ n) :
-    (1 : Matrix n n ℝ).toQuadraticForm' ξ = ‖ξ‖ ^ 2 := by
-  rw [Matrix.toQuadraticForm'_apply, one_mulVec]
-  simpa [dotProduct, sq] using (EuclideanSpace.real_norm_sq_eq ξ).symm
+lemma coefficientSymmetricPart_apply (A : Matrix n n ℝ) (i j : n) :
+    coefficientSymmetricPart A i j = (A i j + A j i) / 2 := by
+  simp [coefficientSymmetricPart, div_eq_mul_inv, mul_comm]
 
-omit [DecidableEq n] in
+/-- A symmetric coefficient matrix is unchanged by taking its symmetric part. -/
+@[simp]
+lemma coefficientSymmetricPart_eq_self_of_isSymm {A : Matrix n n ℝ} (hA : A.IsSymm) :
+    coefficientSymmetricPart A = A := by
+  ext i j
+  rw [coefficientSymmetricPart_apply, hA.apply i j]
+  ring
+
+end SymmetricPart
+
+/-! ### The matrix bilinear form -/
+
+section BilinearForm
+
+variable {n : Type*} [Fintype n]
+
 /-- The continuous bilinear form attached to a real matrix on Euclidean space.
 
 For a coefficient matrix `A`, this is the pointwise weak-form integrand
@@ -106,7 +137,6 @@ noncomputable def matrixBilinearForm (A : Matrix n n ℝ) :
     ((Matrix.toBilin'Aux A).comp (EuclideanSpace.equiv n ℝ).toLinearEquiv.toLinearMap
       (EuclideanSpace.equiv n ℝ).toLinearEquiv.toLinearMap)
 
-omit [DecidableEq n] in
 /-- The matrix bilinear form is the dot-product expression `ηᵀ A ξ`. -/
 @[simp]
 lemma matrixBilinearForm_apply (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
@@ -114,6 +144,169 @@ lemma matrixBilinearForm_apply (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ 
   rw [matrixBilinearForm, LinearMap.toContinuousBilinearMap_apply, LinearMap.BilinForm.comp_apply]
   simp [Matrix.toBilin'Aux, Matrix.toLinearMap₂'Aux, Matrix.mulVec, dotProduct, Finset.mul_sum,
     mul_left_comm, mul_comm]
+
+/-- Matrix bilinear forms are linear in scalar multiplication of the coefficient matrix. -/
+lemma matrixBilinearForm_smul_apply (c : ℝ) (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm (c • A) η ξ = c * matrixBilinearForm A η ξ := by
+  rw [matrixBilinearForm_apply, matrixBilinearForm_apply, smul_mulVec, dotProduct_smul]
+  simp [smul_eq_mul]
+
+/-- Matrix bilinear forms are additive in the coefficient matrix. -/
+lemma matrixBilinearForm_add_apply (A B : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm (A + B) η ξ = matrixBilinearForm A η ξ + matrixBilinearForm B η ξ := by
+  rw [matrixBilinearForm_apply, matrixBilinearForm_apply, matrixBilinearForm_apply,
+    add_mulVec, dotProduct_add]
+
+/-- Transposing the coefficient matrix swaps the arguments of the bundled matrix bilinear
+form. -/
+lemma matrixBilinearForm_transpose_apply (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm Aᵀ η ξ = matrixBilinearForm A ξ η := by
+  rw [matrixBilinearForm_apply, matrixBilinearForm_apply, Matrix.dotProduct_transpose_mulVec]
+
+/-- The bundled bilinear form of the symmetric part is the average of the original bilinear
+form and its transpose. -/
+lemma matrixBilinearForm_coefficientSymmetricPart_apply (A : Matrix n n ℝ)
+    (η ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm (coefficientSymmetricPart A) η ξ =
+      (matrixBilinearForm A η ξ + matrixBilinearForm A ξ η) / 2 := by
+  rw [coefficientSymmetricPart, matrixBilinearForm_smul_apply, matrixBilinearForm_add_apply,
+    matrixBilinearForm_transpose_apply]
+  ring
+
+/-- The principal coefficient matrix-to-bilinear-form map as a continuous linear map. -/
+noncomputable def matrixBilinearFormLinear :
+    Matrix n n ℝ →L[ℝ] EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n →L[ℝ] ℝ :=
+  LinearMap.toContinuousLinearMap
+    { toFun := fun A =>
+        matrixBilinearForm A
+      map_add' := by
+        intro A B
+        ext η ξ
+        exact matrixBilinearForm_add_apply A B η ξ
+      map_smul' := by
+        intro r A
+        ext η ξ
+        exact matrixBilinearForm_smul_apply r A η ξ }
+
+/-- Applying `matrixBilinearFormLinear` recovers `matrixBilinearForm`. -/
+@[simp]
+lemma matrixBilinearFormLinear_apply (A : Matrix n n ℝ) :
+    matrixBilinearFormLinear (n := n) A = matrixBilinearForm A :=
+  by
+    ext η ξ
+    simp [matrixBilinearFormLinear]
+
+/-- The principal coefficient-to-bilinear-form map is continuous. -/
+lemma continuous_matrixBilinearForm :
+    Continuous (fun A : Matrix n n ℝ => matrixBilinearForm A) :=
+  (matrixBilinearFormLinear (n := n)).continuous.congr fun A =>
+    matrixBilinearFormLinear_apply A
+
+section Continuity
+
+variable {X : Type*} [TopologicalSpace X]
+
+namespace Continuous
+
+/-- A continuous principal coefficient field gives a continuous field of principal bilinear
+forms. -/
+lemma matrixBilinearForm {a : X → Matrix n n ℝ} (ha : Continuous a) :
+    Continuous (fun x => PDE.matrixBilinearForm (a x)) :=
+  continuous_matrixBilinearForm.comp ha
+
+end Continuous
+
+namespace ContinuousOn
+
+/-- A continuous principal coefficient field on a set gives a continuous field of principal
+bilinear forms on that set. -/
+lemma matrixBilinearForm {s : Set X} {a : X → Matrix n n ℝ} (ha : ContinuousOn a s) :
+    ContinuousOn (fun x => PDE.matrixBilinearForm (a x)) s :=
+  continuous_matrixBilinearForm.comp_continuousOn ha
+
+end ContinuousOn
+
+end Continuity
+
+/-- A pointwise bilinear upper bound gives the corresponding norm estimate for the bundled
+continuous bilinear form. -/
+lemma norm_matrixBilinearForm_le_of_upper_bound (A : Matrix n n ℝ) {Lam : ℝ}
+    (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
+    (η ξ : EuclideanSpace ℝ n) :
+    ‖matrixBilinearForm A η ξ‖ ≤ Lam * ‖η‖ * ‖ξ‖ := by
+  simpa [Real.norm_eq_abs] using hA η ξ
+
+/-- A pointwise bilinear upper bound controls the operator norm of the bundled matrix
+bilinear form.
+
+This is the matrix-coefficient specialization of Mathlib's
+`ContinuousLinearMap.opNorm_le_bound₂`. -/
+lemma matrixBilinearForm_opNorm_le_of_upper_bound (A : Matrix n n ℝ) {Lam : ℝ}
+    (hLam_nonneg : 0 ≤ Lam) (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖) :
+    ‖matrixBilinearForm A‖ ≤ Lam := by
+  refine (matrixBilinearForm A).opNorm_le_bound₂ hLam_nonneg ?_
+  intro η ξ
+  exact norm_matrixBilinearForm_le_of_upper_bound A hA η ξ
+
+/-- A pointwise bilinear upper bound gives a radius-restricted estimate for the bundled
+matrix bilinear form. -/
+lemma matrixBilinearForm_apply_norm_le_of_upper_bound {A : Matrix n n ℝ} {Lam R S : ℝ}
+    (hLam_nonneg : 0 ≤ Lam) (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
+    {η ξ : EuclideanSpace ℝ n} (hη : ‖η‖ ≤ R) (hξ : ‖ξ‖ ≤ S) :
+    ‖matrixBilinearForm A η ξ‖ ≤ Lam * R * S :=
+  (matrixBilinearForm A).le_of_opNorm₂_le_of_le
+    (matrixBilinearForm_opNorm_le_of_upper_bound A hLam_nonneg hA) hη hξ
+
+/-- Adding two pointwise bilinear upper bounds adds the constants. -/
+lemma abs_dotProduct_add_mulVec_le {A B : Matrix n n ℝ} {Lam Mu : ℝ}
+    (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
+    (hB : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (B *ᵥ ξ)| ≤ Mu * ‖η‖ * ‖ξ‖) (η ξ : EuclideanSpace ℝ n) :
+    |η ⬝ᵥ ((A + B) *ᵥ ξ)| ≤ (Lam + Mu) * ‖η‖ * ‖ξ‖ := by
+  rw [add_mulVec, dotProduct_add]
+  calc
+    |η ⬝ᵥ (A *ᵥ ξ) + η ⬝ᵥ (B *ᵥ ξ)|
+        ≤ |η ⬝ᵥ (A *ᵥ ξ)| + |η ⬝ᵥ (B *ᵥ ξ)| := abs_add_le _ _
+    _ ≤ Lam * ‖η‖ * ‖ξ‖ + Mu * ‖η‖ * ‖ξ‖ := add_le_add (hA η ξ) (hB η ξ)
+    _ = (Lam + Mu) * ‖η‖ * ‖ξ‖ := by ring
+
+/-- The symmetric part of a pointwise bounded coefficient matrix satisfies the same bilinear
+upper bound. -/
+lemma abs_dotProduct_coefficientSymmetricPart_mulVec_le {A : Matrix n n ℝ} {Lam : ℝ}
+    (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
+    (η ξ : EuclideanSpace ℝ n) :
+    |η ⬝ᵥ (coefficientSymmetricPart A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖ := by
+  classical
+  rw [← matrixBilinearForm_apply, matrixBilinearForm_coefficientSymmetricPart_apply]
+  have hηξ : ‖matrixBilinearForm A η ξ‖ ≤ Lam * ‖η‖ * ‖ξ‖ :=
+    norm_matrixBilinearForm_le_of_upper_bound A hA η ξ
+  have hξη : ‖matrixBilinearForm A ξ η‖ ≤ Lam * ‖η‖ * ‖ξ‖ := by
+    rw [mul_right_comm]
+    exact norm_matrixBilinearForm_le_of_upper_bound A hA ξ η
+  have hsum :
+      ‖matrixBilinearForm A η ξ + matrixBilinearForm A ξ η‖
+        ≤ 2 * (Lam * ‖η‖ * ‖ξ‖) := by
+    calc
+      ‖matrixBilinearForm A η ξ + matrixBilinearForm A ξ η‖
+          ≤ ‖matrixBilinearForm A η ξ‖ + ‖matrixBilinearForm A ξ η‖ := norm_add_le _ _
+      _ ≤ Lam * ‖η‖ * ‖ξ‖ + Lam * ‖η‖ * ‖ξ‖ := add_le_add hηξ hξη
+      _ = 2 * (Lam * ‖η‖ * ‖ξ‖) := by ring
+  rw [abs_div]
+  rw [abs_of_pos (a := (2 : ℝ)) two_pos]
+  exact (div_le_iff₀' two_pos).2 (by
+    simpa [Real.norm_eq_abs] using hsum)
+
+end BilinearForm
+
+/-! ### Matrix quadratic forms and uniform ellipticity -/
+
+variable {X n : Type*} [Fintype n] [DecidableEq n]
+
+/-- The identity matrix has quadratic form `‖ξ‖²`. -/
+@[simp]
+lemma toQuadraticForm'_one (ξ : EuclideanSpace ℝ n) :
+    (1 : Matrix n n ℝ).toQuadraticForm' ξ = ‖ξ‖ ^ 2 := by
+  rw [Matrix.toQuadraticForm'_apply, one_mulVec]
+  simpa [dotProduct, sq] using (EuclideanSpace.real_norm_sq_eq ξ).symm
 
 /-- The matrix bilinear form associated to the identity matrix is the Euclidean dot product. -/
 lemma matrixBilinearForm_one_apply (η ξ : EuclideanSpace ℝ n) :
@@ -132,33 +325,12 @@ lemma toQuadraticForm'_add (A B : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
   rw [Matrix.toQuadraticForm'_apply, Matrix.toQuadraticForm'_apply,
     Matrix.toQuadraticForm'_apply, add_mulVec, dotProduct_add]
 
-omit [DecidableEq n] in
-/-- Matrix bilinear forms are linear in scalar multiplication of the coefficient matrix. -/
-lemma matrixBilinearForm_smul_apply (c : ℝ) (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
-    matrixBilinearForm (c • A) η ξ = c * matrixBilinearForm A η ξ := by
-  rw [matrixBilinearForm_apply, matrixBilinearForm_apply, smul_mulVec, dotProduct_smul]
-  simp [smul_eq_mul]
-
-omit [DecidableEq n] in
-/-- Matrix bilinear forms are additive in the coefficient matrix. -/
-lemma matrixBilinearForm_add_apply (A B : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
-    matrixBilinearForm (A + B) η ξ = matrixBilinearForm A η ξ + matrixBilinearForm B η ξ := by
-  rw [matrixBilinearForm_apply, matrixBilinearForm_apply, matrixBilinearForm_apply,
-    add_mulVec, dotProduct_add]
-
 /-- Transposing the coefficient matrix does not change its quadratic form. -/
 @[simp]
 lemma toQuadraticForm'_transpose (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
     Aᵀ.toQuadraticForm' ξ = A.toQuadraticForm' ξ := by
   rw [Matrix.toQuadraticForm'_apply, Matrix.toQuadraticForm'_apply,
     Matrix.dotProduct_transpose_mulVec]
-
-omit [DecidableEq n] in
-/-- Transposing the coefficient matrix swaps the arguments of the bundled matrix bilinear
-form. -/
-lemma matrixBilinearForm_transpose_apply (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
-    matrixBilinearForm Aᵀ η ξ = matrixBilinearForm A ξ η := by
-  rw [matrixBilinearForm_apply, matrixBilinearForm_apply, Matrix.dotProduct_transpose_mulVec]
 
 /-- The matrix bilinear form associated to `c • 1` is `c` times the Euclidean dot product. -/
 lemma matrixBilinearForm_smul_one_apply (c : ℝ) (η ξ : EuclideanSpace ℝ n) :
@@ -169,6 +341,14 @@ lemma matrixBilinearForm_smul_one_apply (c : ℝ) (η ξ : EuclideanSpace ℝ n)
 lemma matrixBilinearForm_self (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm A ξ ξ = A.toQuadraticForm' ξ := by
   rw [matrixBilinearForm_apply, Matrix.toQuadraticForm'_apply]
+
+/-- The symmetric part has the same quadratic form as the original coefficient matrix. -/
+@[simp]
+lemma toQuadraticForm'_coefficientSymmetricPart (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
+    (coefficientSymmetricPart A).toQuadraticForm' ξ = A.toQuadraticForm' ξ := by
+  rw [coefficientSymmetricPart, toQuadraticForm'_smul, _root_.smul_apply, smul_eq_mul,
+    toQuadraticForm'_add, toQuadraticForm'_transpose]
+  ring
 
 /-- A pointwise absorption estimate for matrix bilinear forms. If the quadratic form is
 bounded below at `g` by `λ ‖g‖²` and the bilinear form at `(q, g)` is bounded by
@@ -210,147 +390,6 @@ theorem mul_sq_mul_norm_sq_le_matrixBilinearForm_add {A : Matrix n n ℝ} {lam L
   nlinarith [neg_abs_le (2 * (z * w) * (q ⬝ᵥ (A *ᵥ g))), sq_nonneg z,
     mul_le_mul_of_nonneg_left hlower (sq_nonneg z)]
 
-omit [DecidableEq n] in
-/-- The principal coefficient matrix-to-bilinear-form map as a continuous linear map. -/
-noncomputable def matrixBilinearFormLinear :
-    Matrix n n ℝ →L[ℝ] EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n →L[ℝ] ℝ :=
-  LinearMap.toContinuousLinearMap
-    { toFun := fun A =>
-        matrixBilinearForm A
-      map_add' := by
-        intro A B
-        ext η ξ
-        exact matrixBilinearForm_add_apply A B η ξ
-      map_smul' := by
-        intro r A
-        ext η ξ
-        exact matrixBilinearForm_smul_apply r A η ξ }
-
-omit [DecidableEq n] in
-/-- Applying `matrixBilinearFormLinear` recovers `matrixBilinearForm`. -/
-@[simp]
-lemma matrixBilinearFormLinear_apply (A : Matrix n n ℝ) :
-    matrixBilinearFormLinear (n := n) A = matrixBilinearForm A :=
-  by
-    ext η ξ
-    simp [matrixBilinearFormLinear]
-
-omit [DecidableEq n] in
-/-- The principal coefficient-to-bilinear-form map is continuous. -/
-lemma continuous_matrixBilinearForm :
-    Continuous (fun A : Matrix n n ℝ => matrixBilinearForm A) :=
-  (matrixBilinearFormLinear (n := n)).continuous.congr fun A =>
-    matrixBilinearFormLinear_apply A
-
-section Continuity
-
-variable [TopologicalSpace X]
-
-namespace Continuous
-
-omit [DecidableEq n] in
-/-- A continuous principal coefficient field gives a continuous field of principal bilinear
-forms. -/
-lemma matrixBilinearForm {a : X → Matrix n n ℝ} (ha : Continuous a) :
-    Continuous (fun x => PDE.matrixBilinearForm (a x)) :=
-  continuous_matrixBilinearForm.comp ha
-
-end Continuous
-
-namespace ContinuousOn
-
-omit [DecidableEq n] in
-/-- A continuous principal coefficient field on a set gives a continuous field of principal
-bilinear forms on that set. -/
-lemma matrixBilinearForm {s : Set X} {a : X → Matrix n n ℝ} (ha : ContinuousOn a s) :
-    ContinuousOn (fun x => PDE.matrixBilinearForm (a x)) s :=
-  continuous_matrixBilinearForm.comp_continuousOn ha
-
-end ContinuousOn
-
-end Continuity
-
-/-- The symmetric part `(A + Aᵀ) / 2` of a coefficient matrix.
-
-For energy estimates the diagonal quadratic form of `A` agrees with that of
-`coefficientSymmetricPart A`, while the resulting matrix is symmetric. This is the
-finite-dimensional bookkeeping needed before the integrated energy form is specialized to
-self-adjoint elliptic operators. -/
-noncomputable def coefficientSymmetricPart (A : Matrix n n ℝ) : Matrix n n ℝ :=
-  (1 / 2 : ℝ) • (A + Aᵀ)
-
-omit [Fintype n] [DecidableEq n] in
-/-- The symmetric part of a coefficient matrix is symmetric. -/
-lemma coefficientSymmetricPart_isSymm (A : Matrix n n ℝ) : (coefficientSymmetricPart A).IsSymm :=
-  (isSymm_add_transpose_self A).smul (1 / 2 : ℝ)
-
-omit [Fintype n] [DecidableEq n] in
-/-- The entries of the symmetric part are the averages of opposite entries. -/
-@[simp]
-lemma coefficientSymmetricPart_apply (A : Matrix n n ℝ) (i j : n) :
-    coefficientSymmetricPart A i j = (A i j + A j i) / 2 := by
-  simp [coefficientSymmetricPart, div_eq_mul_inv, mul_comm]
-
-omit [Fintype n] [DecidableEq n] in
-/-- A symmetric coefficient matrix is unchanged by taking its symmetric part. -/
-@[simp]
-lemma coefficientSymmetricPart_eq_self_of_isSymm {A : Matrix n n ℝ} (hA : A.IsSymm) :
-    coefficientSymmetricPart A = A := by
-  ext i j
-  rw [coefficientSymmetricPart_apply, hA.apply i j]
-  ring
-
-/-- The symmetric part has the same quadratic form as the original coefficient matrix. -/
-@[simp]
-lemma toQuadraticForm'_coefficientSymmetricPart (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
-    (coefficientSymmetricPart A).toQuadraticForm' ξ = A.toQuadraticForm' ξ := by
-  rw [coefficientSymmetricPart, toQuadraticForm'_smul, _root_.smul_apply, smul_eq_mul,
-    toQuadraticForm'_add, toQuadraticForm'_transpose]
-  ring
-
-omit [DecidableEq n] in
-/-- The bundled bilinear form of the symmetric part is the average of the original bilinear
-form and its transpose. -/
-lemma matrixBilinearForm_coefficientSymmetricPart_apply (A : Matrix n n ℝ)
-    (η ξ : EuclideanSpace ℝ n) :
-    matrixBilinearForm (coefficientSymmetricPart A) η ξ =
-      (matrixBilinearForm A η ξ + matrixBilinearForm A ξ η) / 2 := by
-  rw [coefficientSymmetricPart, matrixBilinearForm_smul_apply, matrixBilinearForm_add_apply,
-    matrixBilinearForm_transpose_apply]
-  ring
-
-omit [DecidableEq n] in
-/-- A pointwise bilinear upper bound gives the corresponding norm estimate for the bundled
-continuous bilinear form. -/
-lemma norm_matrixBilinearForm_le_of_upper_bound (A : Matrix n n ℝ) {Lam : ℝ}
-    (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
-    (η ξ : EuclideanSpace ℝ n) :
-    ‖matrixBilinearForm A η ξ‖ ≤ Lam * ‖η‖ * ‖ξ‖ := by
-  simpa [Real.norm_eq_abs] using hA η ξ
-
-omit [DecidableEq n] in
-/-- A pointwise bilinear upper bound controls the operator norm of the bundled matrix
-bilinear form.
-
-This is the matrix-coefficient specialization of Mathlib's
-`ContinuousLinearMap.opNorm_le_bound₂`. -/
-lemma matrixBilinearForm_opNorm_le_of_upper_bound (A : Matrix n n ℝ) {Lam : ℝ}
-    (hLam_nonneg : 0 ≤ Lam) (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖) :
-    ‖matrixBilinearForm A‖ ≤ Lam := by
-  refine (matrixBilinearForm A).opNorm_le_bound₂ hLam_nonneg ?_
-  intro η ξ
-  exact norm_matrixBilinearForm_le_of_upper_bound A hA η ξ
-
-omit [DecidableEq n] in
-/-- A pointwise bilinear upper bound gives a radius-restricted estimate for the bundled
-matrix bilinear form. -/
-lemma matrixBilinearForm_apply_norm_le_of_upper_bound {A : Matrix n n ℝ} {Lam R S : ℝ}
-    (hLam_nonneg : 0 ≤ Lam) (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
-    {η ξ : EuclideanSpace ℝ n} (hη : ‖η‖ ≤ R) (hξ : ‖ξ‖ ≤ S) :
-    ‖matrixBilinearForm A η ξ‖ ≤ Lam * R * S :=
-  (matrixBilinearForm A).le_of_opNorm₂_le_of_le
-    (matrixBilinearForm_opNorm_le_of_upper_bound A hLam_nonneg hA) hη hξ
-
 /-- A scalar multiple of the identity has operator integrand bounded by any upper bound for
 the absolute value of the scalar. -/
 lemma abs_dotProduct_smul_one_mulVec_le_of_abs_le {c Lam : ℝ} (hc : |c| ≤ Lam)
@@ -374,46 +413,6 @@ lemma norm_matrixBilinearForm_smul_one_le_of_abs_le {c Lam : ℝ} (hc : |c| ≤ 
     ‖matrixBilinearForm (c • (1 : Matrix n n ℝ)) η ξ‖ ≤ Lam * ‖η‖ * ‖ξ‖ :=
   norm_matrixBilinearForm_le_of_upper_bound (c • (1 : Matrix n n ℝ))
     (abs_dotProduct_smul_one_mulVec_le_of_abs_le hc) η ξ
-
-omit [DecidableEq n] in
-/-- Adding two pointwise bilinear upper bounds adds the constants. -/
-lemma abs_dotProduct_add_mulVec_le {A B : Matrix n n ℝ} {Lam Mu : ℝ}
-    (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
-    (hB : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (B *ᵥ ξ)| ≤ Mu * ‖η‖ * ‖ξ‖) (η ξ : EuclideanSpace ℝ n) :
-    |η ⬝ᵥ ((A + B) *ᵥ ξ)| ≤ (Lam + Mu) * ‖η‖ * ‖ξ‖ := by
-  rw [add_mulVec, dotProduct_add]
-  calc
-    |η ⬝ᵥ (A *ᵥ ξ) + η ⬝ᵥ (B *ᵥ ξ)|
-        ≤ |η ⬝ᵥ (A *ᵥ ξ)| + |η ⬝ᵥ (B *ᵥ ξ)| := abs_add_le _ _
-    _ ≤ Lam * ‖η‖ * ‖ξ‖ + Mu * ‖η‖ * ‖ξ‖ := add_le_add (hA η ξ) (hB η ξ)
-    _ = (Lam + Mu) * ‖η‖ * ‖ξ‖ := by ring
-
-omit [DecidableEq n] in
-/-- The symmetric part of a pointwise bounded coefficient matrix satisfies the same bilinear
-upper bound. -/
-lemma abs_dotProduct_coefficientSymmetricPart_mulVec_le {A : Matrix n n ℝ} {Lam : ℝ}
-    (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
-    (η ξ : EuclideanSpace ℝ n) :
-    |η ⬝ᵥ (coefficientSymmetricPart A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖ := by
-  classical
-  rw [← matrixBilinearForm_apply, matrixBilinearForm_coefficientSymmetricPart_apply]
-  have hηξ : ‖matrixBilinearForm A η ξ‖ ≤ Lam * ‖η‖ * ‖ξ‖ :=
-    norm_matrixBilinearForm_le_of_upper_bound A hA η ξ
-  have hξη : ‖matrixBilinearForm A ξ η‖ ≤ Lam * ‖η‖ * ‖ξ‖ := by
-    rw [mul_right_comm]
-    exact norm_matrixBilinearForm_le_of_upper_bound A hA ξ η
-  have hsum :
-      ‖matrixBilinearForm A η ξ + matrixBilinearForm A ξ η‖
-        ≤ 2 * (Lam * ‖η‖ * ‖ξ‖) := by
-    calc
-      ‖matrixBilinearForm A η ξ + matrixBilinearForm A ξ η‖
-          ≤ ‖matrixBilinearForm A η ξ‖ + ‖matrixBilinearForm A ξ η‖ := norm_add_le _ _
-      _ ≤ Lam * ‖η‖ * ‖ξ‖ + Lam * ‖η‖ * ‖ξ‖ := add_le_add hηξ hξη
-      _ = 2 * (Lam * ‖η‖ * ‖ξ‖) := by ring
-  rw [abs_div]
-  rw [abs_of_pos (a := (2 : ℝ)) two_pos]
-  exact (div_le_iff₀' two_pos).2 (by
-    simpa [Real.norm_eq_abs] using hsum)
 
 /-- Adding a nonnegative quadratic form preserves a lower quadratic bound. -/
 lemma lower_bound_toQuadraticForm'_add {A B : Matrix n n ℝ} {lam : ℝ}
@@ -778,10 +777,15 @@ lemma uniformlyEllipticOn_const_smul_one (Ω : Set X) {c lam Lam : ℝ} (hlam : 
   uniformlyEllipticOn_smul_one Ω (fun _ => c) hlam (hlamc.trans hcLam)
     (fun {_} _ => ⟨hlamc, hcLam⟩)
 
+/-! ### Gradient calculus and orthonormal expansion -/
+
+section Calculus
+
 open Set TopologicalSpace
 open scoped ContDiff Gradient InnerProductSpace
 
-omit [DecidableEq n] in
+variable {n : Type*} [Fintype n]
+
 /-- Expanding the first argument of a matrix bilinear form in an orthonormal basis. -/
 theorem sum_inner_mul_matrixBilinearForm {A : Matrix n n ℝ} (ξ η : EuclideanSpace ℝ n) :
     ∑ i, ⟪ξ, EuclideanSpace.basisFun n ℝ i⟫_ℝ *
@@ -789,7 +793,6 @@ theorem sum_inner_mul_matrixBilinearForm {A : Matrix n n ℝ} (ξ η : Euclidean
   conv_rhs => rw [← (EuclideanSpace.basisFun n ℝ).sum_repr' ξ]
   simp [map_sum, map_smul]
 
-omit [DecidableEq n] in
 /-- The conormal component obtained by applying a matrix bilinear form to a smooth gradient is
 smooth. -/
 theorem contDiff_matrixBilinearForm_gradient {A : Matrix n n ℝ}
@@ -797,13 +800,14 @@ theorem contDiff_matrixBilinearForm_gradient {A : Matrix n n ℝ}
     ContDiff ℝ ∞ (fun y => matrixBilinearForm A η (∇ ψ y)) :=
   (matrixBilinearForm A η).contDiff.comp (hψ.gradient_right (m := ∞) (by simp))
 
-omit [DecidableEq n] in
 /-- The conormal component of a gradient is supported where the function is. -/
 theorem tsupport_matrixBilinearForm_gradient_subset {A : Matrix n n ℝ}
     (ψ : EuclideanSpace ℝ n → ℝ) (η : EuclideanSpace ℝ n) :
     tsupport (fun y => matrixBilinearForm A η (∇ ψ y)) ⊆ tsupport ψ :=
   closure_minimal (fun x hx => by_contra fun hxψ => hx (by
     simp [gradient_of_notMem_tsupport hxψ])) (isClosed_tsupport ψ)
+
+end Calculus
 
 end PDE
 

@@ -282,6 +282,60 @@ theorem reducedTensorWordsHomotopy_of_tprod (G : InternalGrading R M) (n : {n : 
   refine Finset.sum_congr rfl fun j _ ↦ congrArg _ (congrArg _ (funext fun i ↦ ?_))
   split_ifs <;> rfl
 
+/-- On a single letter the tensor-trick homotopy is the homotopy of the contraction. -/
+@[simp]
+theorem reducedTensorWordsHomotopy_ofLetter (G : InternalGrading R M) (a : M) :
+    c.reducedTensorWordsHomotopy G (ofLetter R M a) = ofLetter R M (c.homotopy a) := by
+  rw [ofLetter_eq_of_tprod, ofLetter_eq_of_tprod, c.reducedTensorWordsHomotopy_of_tprod G 1]
+  simp
+
+/-- On a two-letter word the tensor-trick homotopy is `h ⊗ i p + τ ⊗ h`, where `τ` is the Koszul
+twist of parameter one. -/
+theorem reducedTensorWordsHomotopy_of_two (G : InternalGrading R M) (a b : M) :
+    c.reducedTensorWordsHomotopy G (of R M (2 : ℕ+) (PiTensorProduct.tprod R ![a, b])) =
+      of R M (2 : ℕ+) (PiTensorProduct.tprod R ![c.homotopy a, c.incl (c.proj b)]) +
+        of R M (2 : ℕ+) (PiTensorProduct.tprod R ![G.koszulTwist 1 a, c.homotopy b]) := by
+  have h := c.reducedTensorWordsHomotopy_of_tprod G ⟨2, two_pos⟩ ![a, b]
+  rw [Finset.sum_range_succ, Finset.sum_range_one] at h
+  refine h.trans ?_
+  congr 3 <;> funext i <;> fin_cases i <;> simp
+
+/-- The tensor-trick homotopy lowers the total degree of words by one when the homotopy of the
+contraction has degree `-1` and its inclusion and projection have degree zero. -/
+theorem isHomogeneous_reducedTensorWordsHomotopy (G : InternalGrading R M)
+    {H : InternalGrading R N} (hh : LinearMap.IsHomogeneous c.homotopy G.piece G.piece (-1))
+    (hincl : LinearMap.IsHomogeneous c.incl H.piece G.piece 0)
+    (hproj : LinearMap.IsHomogeneous c.proj G.piece H.piece 0) :
+    LinearMap.IsHomogeneous (c.reducedTensorWordsHomotopy G) (gradedPiece G) (gradedPiece G)
+      (-1) := by
+  rw [LinearMap.isHomogeneous_def]
+  intro D z hz
+  refine gradedPiece_induction
+    (motive := fun w ↦ c.reducedTensorWordsHomotopy G w ∈ gradedPiece G (D + -1)) hz ?_ ?_ ?_ ?_
+  · intro n hn 𝒟 x hx hD
+    rw [c.reducedTensorWordsHomotopy_of_tprod G ⟨n, hn⟩ x]
+    refine Submodule.sum_mem _ fun j hj ↦ ?_
+    have hjn : j < n := Finset.mem_range.mp hj
+    have hsum : (∑ i : Fin n, (𝒟 i - if i.val = j then 1 else 0)) = D + -1 := by
+      rw [Finset.sum_sub_distrib, hD, Finset.sum_eq_single (⟨j, hjn⟩ : Fin n)
+        (fun i _ hi ↦ ite_eq_right fun h ↦ hi (Fin.ext h)) (by simp)]
+      simp [sub_eq_add_neg]
+    rw [← hsum]
+    refine mem_gradedPiece_of_tprod G hn _ _ fun i ↦ ?_
+    split_ifs with h₁ h₂ h₂
+    · omega
+    · simpa [sub_eq_add_neg] using hh.map_mem (hx i)
+    · simpa using G.koszulTwist_mem_piece (hx i) 1
+    · simpa using hincl.map_mem (hproj.map_mem (hx i))
+  · rw [map_zero]
+    exact zero_mem _
+  · intro u v _ _ hu hv
+    rw [map_add]
+    exact add_mem hu hv
+  · intro a u _ hu
+    rw [map_smul]
+    exact Submodule.smul_mem _ _ hu
+
 /-! ### The tensor-trick homotopy and deconcatenation -/
 
 /-- The letters of the summand of the tensor-trick homotopy acting by `h` at position `J`. -/

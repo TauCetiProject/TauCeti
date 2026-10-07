@@ -41,6 +41,9 @@ Scalar units lie in the Lipschitz group as soon as some vector is anisotropic.
   Lipschitz group.
 * `CliffordAlgebra.mem_lipschitzGroup_iff_involute_act_ι_mem_range_ι`: for a nondegenerate form
   representing a unit, the Lipschitz group is exactly the classical Clifford group.
+* `CliffordAlgebra.mem_spinGroup_iff_unitary_even_and_involute_act_ι_mem_range_ι`: under the
+  same hypotheses, Mathlib's Spin group consists of the even unitary elements whose twisted
+  conjugation preserves the vectors, with no reference to the Lipschitz closure.
 
 ## References
 
@@ -138,5 +141,33 @@ theorem mem_lipschitzGroup_iff_involute_act_ι_mem_range_ι (hQ : Q.Nondegenerat
       ∀ m, involute (Q := Q) ↑x * ι Q m * ↑x⁻¹ ∈ LinearMap.range (ι Q) :=
   ⟨fun hx m => lipschitzGroup.involute_act_ι_mem_range_ι hx m,
     mem_lipschitzGroup_of_involute_act_ι_mem_range_ι Q hQ hv⟩
+
+/-- **Mathlib's Spin group is the even unitary Clifford group.** For a nondegenerate form on a
+finite-dimensional space representing a unit, an element of the Clifford algebra lies in
+`spinGroup Q` exactly when it is unitary, even, and its twisted conjugation
+`v ↦ involute x * ι Q v * star x` preserves the vectors. Unitarity makes `star x` the inverse
+of `x`, so this is the Lipschitz condition of
+`mem_lipschitzGroup_iff_involute_act_ι_mem_range_ι` read on the Clifford algebra itself. -/
+theorem mem_spinGroup_iff_unitary_even_and_involute_act_ι_mem_range_ι (hQ : Q.Nondegenerate)
+    (hv : ∃ v, IsUnit (Q v)) {x : CliffordAlgebra Q} :
+    x ∈ spinGroup Q ↔
+      x ∈ unitary (CliffordAlgebra Q) ∧ x ∈ even Q ∧
+        ∀ m, involute (Q := Q) x * ι Q m * star x ∈ LinearMap.range (ι Q) := by
+  constructor
+  · rintro ⟨⟨⟨u, hu, rfl⟩, hunit⟩, heven⟩
+    refine ⟨hunit, heven, fun m => ?_⟩
+    have hinv : ((u⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = star (u : CliffordAlgebra Q) :=
+      Units.inv_eq_of_mul_eq_one_right (Unitary.mul_star_self_of_mem hunit)
+    simpa only [Units.coeHom_apply, hinv] using lipschitzGroup.involute_act_ι_mem_range_ι hu m
+  · rintro ⟨hunit, heven, hact⟩
+    refine ⟨⟨⟨Unitary.toUnits ⟨x, hunit⟩, ?_, by
+      rw [Units.coeHom_apply, Unitary.val_toUnits_apply]⟩, hunit⟩, heven⟩
+    refine mem_lipschitzGroup_of_involute_act_ι_mem_range_ι Q hQ hv fun m => ?_
+    have hinv : ((Unitary.toUnits ⟨x, hunit⟩)⁻¹ : (CliffordAlgebra Q)ˣ) =
+        (star x : CliffordAlgebra Q) :=
+      Units.inv_eq_of_mul_eq_one_right (by
+        rw [Unitary.val_toUnits_apply]
+        exact Unitary.mul_star_self_of_mem hunit)
+    simpa only [Unitary.val_toUnits_apply, hinv] using hact m
 
 end CliffordAlgebra

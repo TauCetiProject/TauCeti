@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
-import TauCeti.NumberTheory.LocalField.IntegerRing
+import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
 
 /-!
 # Local-field structures on finite intermediate fields

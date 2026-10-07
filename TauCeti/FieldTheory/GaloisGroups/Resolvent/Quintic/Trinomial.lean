@@ -7,9 +7,9 @@ module
 
 public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Homogeneous
 public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Quintic.Orbit
+public import Mathlib.Basic.Complex.Basic
 
 import Mathlib.Analysis.Real.Sqrt
-import Mathlib.Basic.Complex.Basic
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
@@ -40,6 +40,8 @@ powers of `a`, and the two real orbit values `190 ± 12√31` at the roots of
 
 ## Main results
 
+* `TauCeti.rootsXPowFiveSubX`: an explicit root enumeration of `X⁵ - X` over `ℂ`.
+* `TauCeti.X_pow_five_sub_X_eq_prod_X_sub_C_rootsXPowFiveSubX`: its factorization over `ℂ`.
 * `TauCeti.quinticF20Spec_specialize_X_pow_five_add_C_mul_X_add_C`: Dummit's formula for the
   specialization at `X⁵ + aX + b` over any commutative ring.
 * `TauCeti.resolventSextic_X_pow_five_add_C_mul_X_add_C`: the resolvent sextic of the integral
@@ -183,28 +185,21 @@ private theorem specialize_X_pow_five_add_C_mul_X_add_C_eq (a b : R) :
       omega
     simp [hk]
 
-/-- The value of a renaming of Dummit's invariant, written out. -/
-private theorem eval₂_rename_quinticF20Invariant (x : Fin 5 → R) (σ : Equiv.Perm (Fin 5)) :
-    MvPolynomial.eval₂ (Int.castRingHom R) x (MvPolynomial.rename ⇑σ quinticF20Invariant) =
-      x (σ 0) ^ 2 * (x (σ 1) * x (σ 4) + x (σ 2) * x (σ 3)) +
-        x (σ 1) ^ 2 * (x (σ 2) * x (σ 0) + x (σ 3) * x (σ 4)) +
-        x (σ 2) ^ 2 * (x (σ 3) * x (σ 1) + x (σ 4) * x (σ 0)) +
-        x (σ 3) ^ 2 * (x (σ 4) * x (σ 2) + x (σ 0) * x (σ 1)) +
-        x (σ 4) ^ 2 * (x (σ 0) * x (σ 3) + x (σ 1) * x (σ 2)) := by
-  rw [rename_quinticF20Invariant]
-  simp only [MvPolynomial.eval₂_mul, MvPolynomial.eval₂_add, MvPolynomial.eval₂_pow,
-    MvPolynomial.eval₂_X, Fin.sum_univ_five]
-  simp only [Fin.isValue, Fin.reduceAdd, Fin.reduceSub]
+/-- The roots `0, 1, -1, i, -i` of `X⁵ - X`, in a fixed order. -/
+noncomputable def rootsXPowFiveSubX : Fin 5 → ℂ := ![0, 1, -1, Complex.I, -Complex.I]
 
-/-- The roots `0, 1, -1, i, -i` of `X⁵ - X`. -/
-private noncomputable def x₁ : Fin 5 → ℂ := ![0, 1, -1, Complex.I, -Complex.I]
+/-- The explicit entries of `rootsXPowFiveSubX`. -/
+@[simp]
+theorem rootsXPowFiveSubX_def : rootsXPowFiveSubX = ![0, 1, -1, Complex.I, -Complex.I] := (rfl)
 
 /-- `C i` squares to `-1` in `ℂ[X]`. -/
 private theorem C_I_sq : (C Complex.I : ℂ[X]) ^ 2 = -1 := by
   rw [← C_pow, Complex.I_sq, C_neg, C_1]
 
-private theorem prod_x₁ : (X ^ 5 + C (-1) * X + C 0 : ℂ[X]) = ∏ i, (X - C (x₁ i)) := by
-  simp only [Fin.prod_univ_five, x₁]
+/-- The factorization of `X⁵ - X` over `ℂ` using `rootsXPowFiveSubX`. -/
+theorem X_pow_five_sub_X_eq_prod_X_sub_C_rootsXPowFiveSubX :
+    (X ^ 5 - X : ℂ[X]) = ∏ i, (X - C (rootsXPowFiveSubX i)) := by
+  simp only [Fin.prod_univ_five, rootsXPowFiveSubX]
   simp
   linear_combination (X ^ 3 - X) * C_I_sq
 
@@ -212,13 +207,18 @@ open Equiv in
 /-- At `X⁵ - X` the six orbit values are `2`, four times, and `± 4i`. -/
 private theorem specialize_X_pow_five_sub_X :
     quinticF20Spec.specialize ℂ (X ^ 5 + C (-1) * X + C 0) = (X - 2) ^ 4 * (X ^ 2 + 16) := by
+  have hroots : (X ^ 5 + C (-1) * X + C 0 : ℂ[X]) =
+      ∏ i, (X - C (rootsXPowFiveSubX i)) := by
+    convert X_pow_five_sub_X_eq_prod_X_sub_C_rootsXPowFiveSubX using 1
+    simp [sub_eq_add_neg]
   rw [ResolventSpec.specialize_def, map_vietaHom_eq_galResolvent quinticF20Spec.orbitProduct_esymm
-    prod_x₁, quinticF20Spec_Φ, ← MvPolynomial.map_universalResolvent_eq_galResolvent,
+    hroots,
+    quinticF20Spec_Φ, ← MvPolynomial.map_universalResolvent_eq_galResolvent,
     universalResolvent_quinticF20Invariant, Polynomial.map_prod,
     prod_quinticF20OrbitRepresentatives]
   simp only [Polynomial.map_sub, Polynomial.map_X, Polynomial.map_C, MvPolynomial.coe_eval₂Hom,
     eval₂_rename_quinticF20Invariant]
-  simp [x₁, swap_apply_def]
+  simp [rootsXPowFiveSubX, swap_apply_def]
   linear_combination (-16 * (X - 2) ^ 4) * C_I_sq
 
 /-- A root of `X⁵ + aX + b` given by an orbit value: the shape of the sextic evaluated there. -/

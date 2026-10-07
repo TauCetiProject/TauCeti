@@ -139,7 +139,8 @@ theorem orthonormal_characterLp (hunitary : ∀ i, IsUnitary (π i))
   · -- The second character orthogonality asks for the intertwiners `π j → π i`, not `π i → π j`,
     -- so it is the pair `(j, i)` that Schur's lemma is applied to.
     rw [character_orthonormal_distinct (π i) (hπ i) (π j) (hπ j) (hunitary i)
-      fun f ↦ by simp [eq_zero_of_isEmpty_equiv (hirr j) (hirr i) (hne hij.symm) f]]
+      fun f ↦ by
+        simp [ContRepresentation.eq_zero_of_isEmpty_equiv (hirr j) (hirr i) (hne hij.symm) f]]
     simp [hij]
 
 end OrthonormalSystem

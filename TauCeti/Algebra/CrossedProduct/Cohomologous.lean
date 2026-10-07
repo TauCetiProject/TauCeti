@@ -34,6 +34,8 @@ is its value on `u'_σ · u'_τ = w(σ, τ) · u'_{στ}`.
 
 * `TauCeti.TwoCocycle.cohomologous_iff`: being cohomologous, as the explicit formula in `L`.
 * `TauCeti.TwoCocycle.Cohomologous.refl`, `.symm`, `.trans`: it is an equivalence relation.
+* `TauCeti.TwoCocycle.cohomologous_iff_one_cohomologous_div`: `z` and `w` are cohomologous exactly
+  when `w / z` is cohomologous to the trivial cocycle.
 * `TauCeti.TwoCocycle.Cohomologous.comap`: inflation along a compatible pair preserves being
   cohomologous.
 * `TauCeti.CrossedProduct.nonempty_algEquiv_of_cohomologous`: the crossed products of
@@ -107,6 +109,12 @@ theorem Cohomologous.trans {z w v : TwoCocycle K L} (h₁ : z.Cohomologous w)
   rw [← div_mul_div_cancel (v.toFun σ τ) (w.toFun σ τ), ← hb σ τ, ← hb' σ τ]
   simp only [Pi.mul_apply, smul_mul', div_eq_mul_inv, mul_inv]
   ac_rfl
+
+/-- Two cocycles are cohomologous exactly when their quotient is cohomologous to the trivial
+cocycle, that is, when `w / z` is a coboundary. -/
+theorem cohomologous_iff_one_cohomologous_div {z w : TwoCocycle K L} :
+    z.Cohomologous w ↔ (1 : TwoCocycle K L).Cohomologous (w / z) := by
+  simp only [cohomologous_def, toFun_div, toFun_one, div_one]
 
 section Comap
 

@@ -201,12 +201,9 @@ theorem abelianizationHom_ofAdd_eq_one_iff (u : X → ℤ_[p]) :
   -- The abelianization isomorphism carries the `p`-adic powers of `ρ` to the multiples of `v`.
   have hpow : ∀ l : ℤ_[p], freeProP.abelianizationEquiv p X (hF.padicPow ρ l) = ofAdd (l • v) := by
     intro l
-    have h := hF.map_padicPow (isProP_multiplicative_pi_padicInt p X)
-      (freeProP.abelianizationEquiv p X : TopologicalAbelianization (freeProP p X) →*
-        Multiplicative (X → ℤ_[p]))
-      (freeProP.abelianizationEquiv p X).continuous ρ l
-    rw [MonoidHom.coe_ofClass] at h
-    rw [h, hερ, IsProP.padicPow_ofAdd_pi]
+    have h := hF.map_padicPow_pi (freeProP.abelianizationEquiv p X : TopologicalAbelianization
+      (freeProP p X) →ₜ* Multiplicative (X → ℤ_[p])) ρ l
+    rwa [ContinuousMonoidHom.coe_coe, hερ, toAdd_ofAdd] at h
   constructor
   · intro h
     -- The image of `u` in `F^{ab}` lies in the kernel of `F^{ab} → G^{ab}`, which is the image of

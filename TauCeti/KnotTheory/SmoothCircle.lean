@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Instances.Sphere
+public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 import Mathlib.Geometry.Manifold.Algebra.SMul
 
@@ -26,11 +26,16 @@ The rotations use Mathlib's smooth scalar-action diffeomorphisms for the analyti
 `TauCeti.SmoothEmbedding.compDiffeomorph`.  In particular, they preserve the image and commute
 with transport by a diffeomorphism of the ambient manifold.
 
-This is the first geometric presentation requested by layer 4 of the geometric-topology roadmap.
 A parametrization gives the image circle its orientation.  A framing is deliberately not included
-here: defining a push-off as a framing requires the tubular-neighbourhood interface from layer 1.
-The unoriented presentation is likewise a later quotient by orientation-reversing
-reparametrizations, rather than a second bundled embedding type.
+here: defining a push-off as a framing requires the tubular-neighbourhood interface.  The
+unoriented presentation is likewise a later quotient by orientation-reversing reparametrizations,
+rather than a second bundled embedding type.
+
+The first concrete presentations are the **great circles** of a unit sphere: a linear isometry
+`ι : ℂ →ₗᵢ[ℝ] E` carries the standard circle onto the great circle of the sphere of `E` cut out by
+the plane `ι ℂ`, and the resulting smooth embedding `TauCeti.SmoothCircleEmbedding.greatCircle ι`
+is a smooth circle presentation.  The **unknot** is the great circle of `S³ ⊆ ℝ⁴` cut out by the
+first coordinate plane, with the orientation of the standard circle.
 
 ## Main definitions
 
@@ -39,6 +44,9 @@ reparametrizations, rather than a second bundled embedding type.
 * `TauCeti.SmoothCircleEmbedding`: smooth embeddings of the standard circle into a manifold.
 * `TauCeti.SmoothCircleEmbedding.rotate`: orientation-preserving reparametrization by a rotation.
 * `TauCeti.SmoothCircleEmbedding.reverse`: orientation-reversing reparametrization by conjugation.
+* `TauCeti.SmoothCircleEmbedding.greatCircle`: the great circle cut out of a unit sphere by a
+  linear isometric copy of the complex plane.
+* `TauCeti.unknot`: the unknot in `S³`, the great circle of the first coordinate plane of `ℝ⁴`.
 
 ## References
 
@@ -48,6 +56,8 @@ reparametrizations, rather than a second bundled embedding type.
 public section
 
 noncomputable section
+
+open scoped EuclideanSpace
 
 namespace TauCeti
 
@@ -217,6 +227,69 @@ instance instSMulCommClassDiff :
 
 end Ambient
 
+section GreatCircle
+
+open Metric Module
+
+attribute [local instance] finrank_real_complex_fact'
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
+  [Fact (finrank ℝ E = n + 1)]
+
+/-- The **great circle** of the unit sphere of `E` cut out by a linear isometric copy
+`ι : ℂ →ₗᵢ[ℝ] E` of the complex plane, parametrized by the standard circle through `ι`. -/
+def greatCircle (ι : ℂ →ₗᵢ[ℝ] E) : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1) :=
+  SmoothEmbedding.ofIsSmoothEmbedding
+    (fun z : Circle ↦ ι.unitSphereMap ⟨z, mem_sphere_zero_iff_norm.2 (Circle.norm_coe z)⟩)
+    -- `Circle` is by definition the unit sphere of `ℂ`, carrying the charted-space structure of
+    -- that sphere, and `⟨z, _⟩` is `z` by structure eta, so the smooth-embedding property of
+    -- `ι.unitSphereMap` applies verbatim.
+    ι.isSmoothEmbedding_unitSphereMap
+
+/-- A great circle sends a point `z` of the standard circle to `ι z`. -/
+@[simp]
+theorem coe_greatCircle_apply (ι : ℂ →ₗᵢ[ℝ] E) (z : Circle) :
+    (greatCircle (n := n) ι z : E) = ι z :=
+  (congrArg Subtype.val (SmoothEmbedding.ofIsSmoothEmbedding_apply _ _ z)).trans
+    (ι.coe_unitSphereMap_apply _)
+
+end GreatCircle
+
 end SmoothCircleEmbedding
+
+/-! ### The unknot -/
+
+open Metric Module
+
+/-- The standard isometric inclusion of the complex plane into `ℝ⁴` as the first coordinate plane,
+`z ↦ (Re z, Im z, 0, 0)`. -/
+def complexToEuclideanFour : ℂ →ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4) where
+  toLinearMap := Complex.reLm.smulRight (EuclideanSpace.single 0 1) +
+    Complex.imLm.smulRight (EuclideanSpace.single 1 1)
+  norm_map' z := by
+    simp only [LinearMap.add_apply, LinearMap.smulRight_apply, Complex.reLm_coe, Complex.imLm_coe]
+    rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), norm_add_sq_real,
+      ← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
+    simp [norm_smul, inner_smul_left, inner_smul_right, EuclideanSpace.inner_single_left]
+    ring
+
+@[simp]
+theorem complexToEuclideanFour_apply (z : ℂ) :
+    complexToEuclideanFour z =
+      z.re • EuclideanSpace.single 0 1 + z.im • EuclideanSpace.single 1 1 :=
+  (rfl)
+
+/-- The **unknot** in `S³`: the great circle cut out by the first coordinate plane of `ℝ⁴`, with the
+orientation of the standard circle. -/
+def unknot : SmoothCircleEmbedding (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) :=
+  SmoothCircleEmbedding.greatCircle complexToEuclideanFour
+
+/-- The unknot sends a point `z` of the standard circle to `(Re z, Im z, 0, 0)`. -/
+@[simp]
+theorem coe_unknot_apply (z : Circle) :
+    (unknot z : EuclideanSpace ℝ (Fin 4)) =
+      (z : ℂ).re • EuclideanSpace.single 0 1 + (z : ℂ).im • EuclideanSpace.single 1 1 := by
+  rw [unknot, SmoothCircleEmbedding.coe_greatCircle_apply (n := 3),
+    complexToEuclideanFour_apply]
 
 end TauCeti

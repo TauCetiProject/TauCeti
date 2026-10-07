@@ -116,11 +116,16 @@ theorem map_invert_alexanderMatrix (V : Matrix ι ι R) :
   rw [← mul_assoc, hT, one_mul]
   ring
 
-/-- Evaluating the Alexander matrix at `T = 1` gives the intersection form `V - Vᵀ`. -/
-theorem map_eval₂_one_alexanderMatrix (V : Matrix ι ι R) :
-    (alexanderMatrix V).map (eval₂ (RingHom.id R) 1) = V - Vᵀ := by
-  refine Matrix.ext fun i j => ?_
-  simp [alexanderMatrix_apply, eval₂_C]
+/-- Evaluating the Alexander matrix at a unit parameter gives the usual matrix
+`x • V - Vᵀ`, with coefficients transported by the chosen ring homomorphism. -/
+@[simp]
+theorem map_eval₂_alexanderMatrix {S : Type*} [CommRing S] (f : R →+* S) (x : Sˣ)
+    (V : Matrix ι ι R) :
+    (alexanderMatrix V).map (eval₂ f x) = (x : S) • V.map f - (V.map f)ᵀ := by
+  ext i j
+  simp only [Matrix.map_apply, alexanderMatrix_apply, map_sub, map_mul,
+    eval₂_C, eval₂_T, zpow_one, Matrix.sub_apply,
+    Matrix.smul_apply, smul_eq_mul, Matrix.transpose_apply]
 
 /-- The two extra columns of an enlargement: a chosen vector `ξ` in the first, zero in the
 second. -/
@@ -378,6 +383,49 @@ theorem alexander_def (V : Matrix ι ι R) :
     alexander V = T (-((Fintype.card ι / 2 : ℕ) : ℤ)) * (alexanderMatrix V).det := by
   rw [alexander]
 
+/-- Transporting coefficients of the Alexander polynomial agrees with transporting
+the entries of the underlying matrix. -/
+@[simp]
+theorem map_alexander {S : Type*} [CommRing S] (g : R →+* S) (V : Matrix ι ι R) :
+    AddMonoidAlgebra.mapRingHom ℤ g (alexander V) = alexander (V.map g) := by
+  have hT (n : ℤ) : AddMonoidAlgebra.mapRingHom ℤ g (T n) = T n := by
+    simp only [T, AddMonoidAlgebra.mapRingHom_single, map_one]
+  have hC (r : R) : AddMonoidAlgebra.mapRingHom ℤ g (C r) = C (g r) := by
+    rw [← single_eq_C, AddMonoidAlgebra.mapRingHom_single, single_eq_C]
+  have hmatrix : (alexanderMatrix V).map (AddMonoidAlgebra.mapRingHom ℤ g) =
+      alexanderMatrix (V.map g) := by
+    ext i j
+    simp only [Matrix.map_apply, alexanderMatrix_apply, map_sub, map_mul, hT, hC]
+  rw [alexander_def, map_mul, RingHom.map_det, RingHom.mapMatrix_apply, hmatrix,
+    alexander_def, hT]
+
+/-- The value of the normalized Alexander polynomial at a unit parameter, expressed
+as the determinant of the evaluated Alexander matrix. -/
+theorem eval₂_alexander {S : Type*} [CommRing S] (f : R →+* S) (x : Sˣ)
+    (V : Matrix ι ι R) :
+    eval₂ f x (alexander V) =
+      (x ^ (-((Fintype.card ι / 2 : ℕ) : ℤ)) : Sˣ).val *
+        ((x : S) • V.map f - (V.map f)ᵀ).det := by
+  rw [alexander_def, map_mul, eval₂_T, RingHom.map_det,
+    RingHom.mapMatrix_apply, map_eval₂_alexanderMatrix]
+
+/-- Mapping the coefficients before evaluating the Alexander polynomial agrees with
+composing the coefficient homomorphisms. -/
+@[simp]
+theorem eval₂_alexander_map {S A : Type*} [CommRing S] [CommRing A]
+    (f : S →+* A) (g : R →+* S) (x : Aˣ) (V : Matrix ι ι R) :
+    eval₂ f x (alexander (V.map g)) = eval₂ (f.comp g) x (alexander V) := by
+  have hcomp : (eval₂ f x).comp (AddMonoidAlgebra.mapRingHom ℤ g) =
+      eval₂ (f.comp g) x := by
+    apply AddMonoidAlgebra.ringHom_ext
+    · intro r
+      rw [RingHom.comp_apply, AddMonoidAlgebra.mapRingHom_single]
+      simp only [single_eq_C, eval₂_C, RingHom.comp_apply]
+    · intro n
+      simp only [RingHom.comp_apply, AddMonoidAlgebra.mapRingHom_single, map_one]
+      simpa only [T] using (eval₂_T f x n).trans (eval₂_T (f.comp g) x n).symm
+  rw [← map_alexander, ← RingHom.comp_apply, hcomp]
+
 /-- The Alexander polynomial of a matrix of size `2 * g`, with the genus `g` named. -/
 theorem alexander_eq_of_card {g : ℕ} (V : Matrix ι ι R) (h : Fintype.card ι = 2 * g) :
     alexander V = T (-(g : ℤ)) * (alexanderMatrix V).det := by
@@ -424,7 +472,7 @@ knot that form is unimodular, so `Δ(1) = ±1`. -/
 theorem eval₂_one_alexander (V : Matrix ι ι R) :
     eval₂ (RingHom.id R) 1 (alexander V) = (V - Vᵀ).det := by
   rw [alexander, map_mul, eval₂_T, RingHom.map_det, RingHom.mapMatrix_apply,
-    map_eval₂_one_alexanderMatrix]
+    map_eval₂_alexanderMatrix]
   simp
 
 /-- The empty Seifert matrix, that of a disc, has Alexander polynomial `1`: the unknot is

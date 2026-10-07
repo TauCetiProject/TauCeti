@@ -11,17 +11,19 @@ public import TauCeti.LinearAlgebra.LinearPMap.RestrictScalars
 /-!
 # Resolvents and restriction of scalars
 
-An unbounded operator `A : X →ₗ.[𝕜'] X` over a normed algebra `𝕜'` can also be read over a
+An unbounded operator `A : X →ₗ.[𝕜'] X` over a normed field extension `𝕜'` can also be read over a
 smaller field `𝕜`, as `A.restrictScalars 𝕜`. This file shows that the two resolvent notions
 agree at the points of `𝕜`: for `mu : 𝕜`,
 
 `mu ∈ resolventSet (A.restrictScalars 𝕜) ↔ algebraMap 𝕜 𝕜' mu ∈ resolventSet A`,
 
 and the resolvents themselves correspond under `ContinuousLinearMap.restrictScalars`.
+The actions on `X` form a scalar tower; no norm compatibility between the two fields is required.
 
 Only the forward direction has content. A bounded `𝕜`-linear inverse `R` of `mu • I - A` is
 automatically `𝕜'`-homogeneous: `z • R y` and `R (z • y)` have the same image under
-`mu • I - A`, because `A` is `𝕜'`-linear, so they agree.
+`mu • I - A`, because `A` is `𝕜'`-linear, so they agree. This homogeneity statement also works
+over an arbitrary ring algebra, without a norm or topology on the larger algebra.
 
 This is what lets a real-variable theorem about an operator on a complex Banach space — such as
 the Laplace-transform resolvent of a C₀-semigroup, which is built over `ℝ` — be read as a
@@ -46,44 +48,36 @@ noncomputable section
 
 namespace TauCeti.LinearPMap
 
+section Algebra
+
+variable {𝕜 𝕜' X : Type*} [NontriviallyNormedField 𝕜] [Ring 𝕜'] [Algebra 𝕜 𝕜']
+  [NormedAddCommGroup X] [NormedSpace 𝕜 X] [Module 𝕜' X] [IsScalarTower 𝕜 𝕜' X]
+  {A : X →ₗ.[𝕜'] X} {mu : 𝕜} {R₀ : X →L[𝕜] X}
+
+/-- A bounded `𝕜`-linear inverse of `mu • I - A` respects the action of the larger algebra
+`𝕜'`. No norm or topology on `𝕜'` is needed. -/
+theorem map_smul_of_isResolventAt_restrictScalars
+    (h : IsResolventAt (A.restrictScalars 𝕜) mu R₀) (z : 𝕜') (y : X) :
+    R₀ (z • y) = z • R₀ y := by
+  obtain ⟨hgraph, hleft⟩ := isResolventAt_iff_forall_mem_graph.mp h
+  rw [LinearPMap.restrictScalars_graph] at hgraph hleft
+  simp only [Submodule.restrictScalars_mem] at hgraph hleft
+  have hz : (z • R₀ y, z • (mu • R₀ y - y)) ∈ A.graph := by
+    simpa only [Prod.smul_mk] using A.graph.smul_mem z (hgraph y)
+  simpa only [smul_sub, smul_comm mu z, sub_sub_cancel] using hleft _ hz
+
+end Algebra
+
 variable {𝕜 𝕜' X : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
-  [NormedAlgebra 𝕜 𝕜'] [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedSpace 𝕜' X]
+  [Algebra 𝕜 𝕜'] [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedSpace 𝕜' X]
   [IsScalarTower 𝕜 𝕜' X] {A : X →ₗ.[𝕜'] X} {mu : 𝕜} {R : X →L[𝕜'] X} {R₀ : X →L[𝕜] X}
 
 /-- An inverse of `algebraMap 𝕜 𝕜' mu • I - A` restricts to an inverse of `mu • I - A` for the
 restriction of scalars. -/
 theorem IsResolventAt.restrictScalars (h : IsResolventAt A (algebraMap 𝕜 𝕜' mu) R) :
-    IsResolventAt (A.restrictScalars 𝕜) mu (R.restrictScalars 𝕜) where
-  mem_domain y := by
-    simp only [ContinuousLinearMap.coe_restrictScalars']
-    exact (A.mem_restrictScalars_domain 𝕜).mpr (h.mem_domain y)
-  smul_sub_apply y := by
-    simp only [ContinuousLinearMap.coe_restrictScalars', LinearPMap.restrictScalars_apply,
-      ← algebraMap_smul 𝕜' mu]
-    exact h.smul_sub_apply y
-  apply_smul_sub x := by
-    simp only [ContinuousLinearMap.coe_restrictScalars', LinearPMap.restrictScalars_apply,
-      ← algebraMap_smul 𝕜' mu]
-    exact h.apply_smul_sub ⟨(x : X), (A.mem_restrictScalars_domain 𝕜).mp x.property⟩
-
-/-- A bounded `𝕜`-linear inverse of `mu • I - A` is homogeneous for the larger field `𝕜'`: it is
-the inverse of a `𝕜'`-linear bijection. -/
-theorem map_smul_of_isResolventAt_restrictScalars
-    (h : IsResolventAt (A.restrictScalars 𝕜) mu R₀) (z : 𝕜') (y : X) :
-    R₀ (z • y) = z • R₀ y := by
-  have hmem : ∀ w : X, R₀ w ∈ A.domain := fun w =>
-    (A.mem_restrictScalars_domain 𝕜).mp (h.mem_domain w)
-  have hsmul : z • R₀ y ∈ A.domain := A.domain.smul_mem z (hmem y)
-  have hinv : algebraMap 𝕜 𝕜' mu • R₀ y - A ⟨R₀ y, hmem y⟩ = y := by
-    have := h.smul_sub_apply y
-    simpa only [LinearPMap.restrictScalars_apply, ← algebraMap_smul 𝕜' mu] using this
-  have hkey : algebraMap 𝕜 𝕜' mu • (z • R₀ y) - A ⟨z • R₀ y, hsmul⟩ = z • y := by
-    have hA : A ⟨z • R₀ y, hsmul⟩ = z • A ⟨R₀ y, hmem y⟩ := A.map_smul z ⟨R₀ y, hmem y⟩
-    rw [hA, smul_comm, ← smul_sub, hinv]
-  have hback := h.apply_smul_sub ⟨z • R₀ y, (A.mem_restrictScalars_domain 𝕜).mpr hsmul⟩
-  simp only [LinearPMap.restrictScalars_apply, ← algebraMap_smul 𝕜' mu] at hback
-  rw [hkey] at hback
-  exact hback
+    IsResolventAt (A.restrictScalars 𝕜) mu (R.restrictScalars 𝕜) := by
+  simpa only [isResolventAt_iff_forall_mem_graph, ContinuousLinearMap.coe_restrictScalars',
+    LinearPMap.restrictScalars_graph, Submodule.restrictScalars_mem, algebraMap_smul 𝕜'] using h
 
 /-- A bounded inverse of `mu • I - A` over the smaller field is the restriction of scalars of a
 bounded inverse over the larger one. -/
@@ -95,15 +89,9 @@ theorem exists_isResolventAt_of_isResolventAt_restrictScalars
             map_add' := R₀.map_add
             map_smul' := map_smul_of_isResolventAt_restrictScalars h
             cont := R₀.continuous }, ContinuousLinearMap.ext fun _ => rfl, ?_⟩
-  have hmem : ∀ y : X, R₀ y ∈ A.domain := fun y =>
-    (A.mem_restrictScalars_domain 𝕜).mp (h.mem_domain y)
-  have hright : ∀ y : X, algebraMap 𝕜 𝕜' mu • R₀ y - A ⟨R₀ y, hmem y⟩ = y := fun y => by
-    have hy := h.smul_sub_apply y
-    simpa only [LinearPMap.restrictScalars_apply, ← algebraMap_smul 𝕜' mu] using hy
-  have hleft : ∀ x : A.domain, R₀ (algebraMap 𝕜 𝕜' mu • (x : X) - A x) = (x : X) := fun x => by
-    have hx := h.apply_smul_sub ⟨(x : X), (A.mem_restrictScalars_domain 𝕜).mpr x.property⟩
-    simpa only [LinearPMap.restrictScalars_apply, ← algebraMap_smul 𝕜' mu] using hx
-  exact { mem_domain := hmem, smul_sub_apply := hright, apply_smul_sub := hleft }
+  simpa only [isResolventAt_iff_forall_mem_graph, LinearPMap.restrictScalars_graph,
+    Submodule.restrictScalars_mem, ContinuousLinearMap.coe_mk', LinearMap.coe_mk,
+    AddHom.coe_mk, algebraMap_smul 𝕜'] using h
 
 /-- The resolvent sets of an operator and of its restriction of scalars agree at the points of the
 smaller field. -/

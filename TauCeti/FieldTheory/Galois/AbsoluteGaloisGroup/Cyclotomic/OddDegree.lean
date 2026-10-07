@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Surjectivity
-public import TauCeti.NumberTheory.LocalField.RootsOfUnity
+public import TauCeti.NumberTheory.LocalField.RootsOfUnity.Basic
 
 import TauCeti.NumberTheory.Cyclotomic.Irreducible
 
@@ -42,7 +42,7 @@ theorem range_localCyclotomicCharacter_of_odd_finrank
   apply localCyclotomicCharacter_surjective_of_irreducible
   intro n
   apply irreducible_cyclotomic_of_coprime_finrank
-    (irreducible_cyclotomic_two_pow_ratPadic n)
+    (irreducible_cyclotomic_prime_pow_ratPadic 2 n)
   cases n with
   | zero => simp
   | succ n =>

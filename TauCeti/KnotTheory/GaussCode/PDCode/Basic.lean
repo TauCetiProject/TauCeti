@@ -111,10 +111,7 @@ private theorem slotEquiv_fst (sign : ℤˣ) (slot : Fin 4) :
 
 private theorem slotEquiv_snd_opposite (sign : ℤˣ) (slot : Fin 4) :
     (slotEquiv sign (PDCode.oppositeCrossingSlot slot)).2 = !(slotEquiv sign slot).2 := by
-  have hopposite : PDCode.oppositeCrossingSlot slot = slot + 2 := by
-    apply Fin.ext
-    exact PDCode.oppositeCrossingSlot_apply slot
-  rw [hopposite]
+  rw [PDCode.oppositeCrossingSlot_apply]
   rcases Int.units_eq_one_or sign with rfl | rfl
   · fin_cases slot <;> simp [slotEquiv, positiveSlotEquiv]
   · have hne : (-1 : ℤˣ) ≠ 1 := by decide
@@ -173,10 +170,7 @@ theorem crossingVisit_oppositeCrossingSlot (D : BasedOrientedGaussCode n) (c : F
   apply D.visitDataEquiv.injective
   simp only [visitDataEquiv_apply, visit_crossingVisit, over_crossingVisit]
   congr 1
-  have hopposite : PDCode.oppositeCrossingSlot slot = slot + 2 := by
-    apply Fin.ext
-    exact PDCode.oppositeCrossingSlot_apply slot
-  rw [hopposite]
+  rw [PDCode.oppositeCrossingSlot_apply]
   fin_cases slot <;> decide
 
 /-- Opposite slots at a crossing have opposite incoming/outgoing directions. -/
@@ -280,7 +274,7 @@ noncomputable def toOrientedPDCode (D : BasedOrientedGaussCode n) : OrientedPDCo
     rw [← slotEquiv_snd D c (PDCode.oppositeCrossingSlot slot), ← slotEquiv_snd D c slot]
     exact slotEquiv_snd_opposite (D.sign c) slot
   crossinglessComponents := if n = 0 then {true} else 0
-  crossinglessComponents_card := by split <;> simp_all
+  card_crossinglessComponents := by split <;> simp_all
 
 /-- The converted code uses slots zero and two for the over-strand at every crossing. -/
 @[simp]
@@ -356,7 +350,8 @@ theorem toOrientedPDCode_relabel (D : BasedOrientedGaussCode n) (e : Equiv.Perm 
       rcases (PDCode.crossingSlotEquiv n).symm h with ⟨c, slot⟩
       rw [toOrientedPDCode_crossing, OrientedPDCode.relabel_toPDCode, PDCode.relabel_halfEdge]
       simp only [Equiv.equivCongr_apply_apply, Equiv.refl_apply,
-        PDCode.crossingBlockPerm_symm_apply_crossingSlotEquiv, toOrientedPDCode_crossing,
+        PDCode.crossingBlockEquiv_symm,
+        PDCode.crossingBlockEquiv_apply_crossingSlotEquiv, toOrientedPDCode_crossing,
         crossingVisit_relabel, crossingOutgoing_relabel, visitHalfEdgeEquiv]
     · rw [OrientedPDCode.relabel_toPDCode, PDCode.relabel_edgePair]
       simp [toOrientedPDCode, visitHalfEdgeEquiv]
@@ -445,7 +440,7 @@ noncomputable def toFramedOrientedPDCode (D : FramedBasedOrientedGaussCode n) :
   framing_edgePair _ := (rfl)
   framing_oppositeCrossingSlot _ _ := (rfl)
   crossinglessFramings := if n = 0 then {(true, D.framing)} else 0
-  crossinglessFramings_map_fst := by
+  map_fst_crossinglessFramings := by
     by_cases h : n = 0 <;>
       simp [h, BasedOrientedGaussCode.toOrientedPDCode]
 

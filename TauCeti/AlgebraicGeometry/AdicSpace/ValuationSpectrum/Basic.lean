@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Comap
+public import TauCeti.RingTheory.Valuation.ValuativeRel.Localization
 public import TauCeti.RingTheory.Valuation.Trivial
 public import Mathlib.RingTheory.Valuation.Quotient
 public import Mathlib.RingTheory.Valuation.ExtendToLocalization
@@ -39,8 +40,6 @@ We define the valuation spectrum `Spv A` following Wedhorn, *Adic Spaces*
   `𝔞 ≤ supp v` to `Spv (A ⧸ 𝔞)`.
 * `TauCeti.ValuationSpectrum.localizationComapSection S B v hS` : Lift `v` to a localization
   `Spv B`.
-* `TauCeti.ValuationSpectrum.vle_mk'_iff` : clear the denominators in a comparison between two
-  localization fractions.
 * `TauCeti.ValuationSpectrum.localization_comap_isEmbedding` : pullback from the valuation
   spectrum of a localization is a topological embedding.
 * `TauCeti.ValuationSpectrum.suppFun` : The continuous support map `Spv A → Spec A`.
@@ -448,37 +447,6 @@ lemma localization_comap_range :
   simpa using ⟨fun ⟨w, hw⟩ ↦ hw ▸ submonoid_le_supp_primeCompl_comap_algebraMap S B w,
     fun h ↦ ⟨localizationComapSection S B v h, comap_localizationComapSection S B v h⟩⟩
 
-/-- A comparison between two fractions in a localization is equivalent to the comparison obtained
-by clearing their denominators. -/
-lemma vle_mk'_iff (v : Spv B) (a₁ a₂ : A) (s₁ s₂ : S) :
-    v.toValuativeRel.vle (IsLocalization.mk' B a₁ s₁) (IsLocalization.mk' B a₂ s₂) ↔
-      v.toValuativeRel.vle (algebraMap A B (a₁ * s₂)) (algebraMap A B (a₂ * s₁)) := by
-  have hs₁ : ¬ v.toValuativeRel.vle (algebraMap A B s₁) 0 :=
-    @TauCeti.ValuativeRel.not_vle_zero_of_isUnit B _ v.toValuativeRel _
-      (IsLocalization.map_units B s₁)
-  have hs₂ : ¬ v.toValuativeRel.vle (algebraMap A B s₂) 0 :=
-    @TauCeti.ValuativeRel.not_vle_zero_of_isUnit B _ v.toValuativeRel _
-      (IsLocalization.map_units B s₂)
-  constructor
-  · intro h
-    have h' := v.toValuativeRel.mul_vle_mul_left
-      (v.toValuativeRel.mul_vle_mul_left h (algebraMap A B s₁)) (algebraMap A B s₂)
-    have h'' : v.toValuativeRel.vle
-        ((IsLocalization.mk' B a₁ s₁ * algebraMap A B s₁) * algebraMap A B s₂)
-        ((IsLocalization.mk' B a₂ s₂ * algebraMap A B s₂) * algebraMap A B s₁) := by
-      simpa only [mul_assoc, mul_comm, mul_left_comm] using h'
-    simpa only [map_mul, IsLocalization.mk'_spec] using h''
-  · intro h
-    have h' : v.toValuativeRel.vle
-        ((IsLocalization.mk' B a₁ s₁ * algebraMap A B s₁) * algebraMap A B s₂)
-        ((IsLocalization.mk' B a₂ s₂ * algebraMap A B s₂) * algebraMap A B s₁) := by
-      simpa only [map_mul, IsLocalization.mk'_spec] using h
-    have h'' : v.toValuativeRel.vle
-        ((IsLocalization.mk' B a₁ s₁ * algebraMap A B s₂) * algebraMap A B s₁)
-        ((IsLocalization.mk' B a₂ s₂ * algebraMap A B s₂) * algebraMap A B s₁) := by
-      simpa only [mul_assoc, mul_comm, mul_left_comm] using h'
-    exact v.toValuativeRel.vle_mul_cancel hs₂ (v.toValuativeRel.vle_mul_cancel hs₁ h'')
-
 include S in
 /-- Pullback of valuative relations along a localization map is injective. -/
 lemma localization_comap_injective : Function.Injective (comap (algebraMap A B)) := by
@@ -486,26 +454,11 @@ lemma localization_comap_injective : Function.Injective (comap (algebraMap A B))
   refine ext' fun x y ↦ ?_
   obtain ⟨⟨a₁, s₁⟩, rfl⟩ := IsLocalization.mk'_surjective S x
   obtain ⟨⟨a₂, s₂⟩, rfl⟩ := IsLocalization.mk'_surjective S y
-  rw [vle_mk'_iff S B, vle_mk'_iff S B]
+  rw [@ValuativeRel.vle_mk'_iff A _ S B _ _ _ v₁.toValuativeRel,
+    @ValuativeRel.vle_mk'_iff A _ S B _ _ _ v₂.toValuativeRel]
   exact iff_of_eq (by
     simpa only [comap_vle] using
       (congrArg (fun v ↦ v.toValuativeRel.vle (a₁ * s₂) (a₂ * s₁)) h))
-
-/-- Multiplying a numerator by an element of the localized submonoid or placing it over any
-denominator does not change whether its value is nonzero. -/
-lemma not_vle_algebraMap_mul_den_zero_iff (v : Spv B) (a : A) (s t : S) :
-    ¬ v.toValuativeRel.vle (algebraMap A B (a * s)) 0 ↔
-      ¬ v.toValuativeRel.vle (IsLocalization.mk' B a t) 0 := by
-  have hs : ¬ v.toValuativeRel.vle (algebraMap A B s) 0 :=
-    @TauCeti.ValuativeRel.not_vle_zero_of_isUnit B _ v.toValuativeRel _
-      (IsLocalization.map_units B s)
-  have hmap : v.toValuativeRel.vle (algebraMap A B (a * s)) 0 ↔
-      v.toValuativeRel.vle (algebraMap A B a) 0 := by
-    simpa only [map_mul, zero_mul] using
-      (v.toValuativeRel.mul_vle_mul_iff_left (x := algebraMap A B a) (y := 0) hs)
-  have hmk := vle_mk'_iff S B v a 0 t 1
-  simp only [Submonoid.coe_one, mul_one, zero_mul, map_zero, IsLocalization.mk'_zero] at hmk
-  exact not_congr (hmap.trans hmk.symm)
 
 /-- The preimage under localization pullback of the basic open obtained by clearing denominators
 is the basic open defined by the original fractions. -/
@@ -513,8 +466,9 @@ lemma comap_preimage_basicOpen_mk' (a₁ a₂ : A) (s₁ s₂ : S) :
     comap (algebraMap A B) ⁻¹' basicOpen (a₁ * s₂) (a₂ * s₁) =
       basicOpen (IsLocalization.mk' B a₁ s₁) (IsLocalization.mk' B a₂ s₂) := by
   ext v
+  let := v.toValuativeRel
   simp only [Set.mem_preimage, mem_basicOpen_iff, comap_vle, map_zero]
-  rw [← vle_mk'_iff S B, not_vle_algebraMap_mul_den_zero_iff S B]
+  rw [← ValuativeRel.vle_mk'_iff S B, ValuativeRel.not_vle_algebraMap_mul_den_zero_iff S B]
 
 include S in
 /-- Pullback of valuative relations along a localization map induces the source topology. -/

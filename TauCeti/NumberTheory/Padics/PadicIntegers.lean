@@ -32,11 +32,16 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
 ## Main results
 
 * `PadicInt.isUnit_one_add_of_dvd`: `1 + x` is a unit of `ℤ_[p]` whenever `p ∣ x`.
+* `PadicInt.isUnit_two`: `2` is a unit of `ℤ_[p]` for odd `p`.
+* `PadicInt.pow_p_dvd_natCast_iff`: `p ^ n` divides a natural number in `ℤ_[p]` exactly when it
+  does in `ℕ`.
 * `PadicInt.dvd_of_norm_le`: in `ℤ_[p]`, `y ∣ x` whenever `‖x‖ ≤ ‖y‖`.
 * `PadicInt.exists_apply_eq_one_and_eq_smul`: a finite family in `ℤ_[p]` is `q • w` with
   `w i₀ = 1` at some index `i₀`.
 * `PadicInt.units_neg_one_ne_one`: `-1 ≠ 1` in `ℤ_[p]ˣ`.
 * `PadicInt.range_units_val`: the units of `ℤ_[p]` are the elements of norm `1`.
+* `Padic.exists_eq_zpow_valuation_mul`: every nonzero `x : ℚ_[p]` is `p ^ v(x)` times a unit of
+  `ℤ_[p]`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
   profinite group.
 -/
@@ -52,6 +57,17 @@ theorem isUnit_one_add_of_dvd {x : ℤ_[p]} (hx : (p : ℤ_[p]) ∣ x) : IsUnit 
   IsLocalRing.isUnit_of_mem_nonunits_one_sub_self _ <| by
     rw [sub_add_cancel_left, mem_nonunits, norm_neg]
     exact (norm_lt_one_iff_dvd x).mpr hx
+
+/-- `2` is a unit in `ℤ_p` for every odd prime `p`. -/
+theorem isUnit_two (hp : p ≠ 2) : IsUnit (2 : ℤ_[p]) :=
+  isUnit_iff.mpr <| by
+    exact_mod_cast norm_natCast_eq_one_iff.mpr ((Nat.coprime_primes Fact.out Nat.prime_two).mpr hp)
+
+/-- `p ^ n` divides a natural number in `ℤ_p` exactly when it divides it in `ℕ`: the natural
+number version of `PadicInt.pow_p_dvd_int_iff`. -/
+@[simp]
+theorem pow_p_dvd_natCast_iff (n a : ℕ) : (p : ℤ_[p]) ^ n ∣ (a : ℤ_[p]) ↔ p ^ n ∣ a := by
+  rw [← Int.cast_natCast a, pow_p_dvd_int_iff, ← Nat.cast_pow, Int.natCast_dvd_natCast]
 
 /-- `-1 ≠ 1` in `ℤ_pˣ`: the unit group has an element of order two. -/
 theorem units_neg_one_ne_one : (-1 : ℤ_[p]ˣ) ≠ 1 := fun h ↦ by
@@ -105,3 +121,20 @@ theorem exists_apply_eq_one_and_eq_smul {ι : Type*} [Finite ι] [Nonempty ι] (
   exact ⟨i₀, v i₀, w, hw, hv⟩
 
 end PadicInt
+
+namespace Padic
+
+variable {p : ℕ} [Fact p.Prime]
+
+/-- Every nonzero `p`-adic number is `p ^ v(x)` times a unit of `ℤ_[p]`. -/
+theorem exists_eq_zpow_valuation_mul {x : ℚ_[p]} (hx : x ≠ 0) :
+    ∃ u : ℤ_[p]ˣ, x = (p : ℚ_[p]) ^ x.valuation * u := by
+  have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  have hy : ‖x * (p : ℚ_[p]) ^ (-x.valuation)‖ = 1 := by
+    have hp' : (p : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+    rw [norm_mul, norm_zpow, Padic.norm_p, Padic.norm_eq_zpow_neg_valuation hx, inv_zpow',
+      neg_neg, ← zpow_add₀ hp', neg_add_cancel, zpow_zero]
+  refine ⟨PadicInt.mkUnits hy, ?_⟩
+  rw [PadicInt.mkUnits_eq, mul_left_comm, ← zpow_add₀ hp, add_neg_cancel, zpow_zero, mul_one]
+
+end Padic

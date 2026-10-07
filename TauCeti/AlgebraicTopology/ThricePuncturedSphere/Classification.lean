@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.UniversalCover.Classification.NumberedFi
 public import TauCeti.Combinatorics.PermutationTriple.IsoClass
 
 /-!
-# Covers of the thrice-punctured sphere are determined by their permutation triples
+# Covers of the thrice-punctured sphere are classified by their permutation triples
 
 A connected cover of the thrice-punctured sphere `U = ℂ ∖ {0, 1}` of degree `n` can be rigidified
 at the basepoint `b = 1/2` in three ways (`TauCeti.ConnectedFiberNumberedCover`,
@@ -28,17 +28,19 @@ Each invariant is constant on isomorphism classes of covers, so descends to a ma
 corresponding quotient. The three maps commute with the forgetful maps between the
 rigidifications and their combinatorial counterparts.
 
-This file proves that each of the three maps is **injective**. At the numbered level this is the
-statement that a numbered cover is determined by its numbered monodromy
+This file proves that each of the three maps is **bijective**, and packages each as an
+equivalence. At the numbered level injectivity is the statement that a numbered cover is
+determined by its numbered monodromy
 (`TauCeti.connectedFiberNumberedCoverIso_iff_permCongrHom_comp_monodromyPerm_eq`), together with
 the fact that `periph0` and `periph1` generate `π₁(U, b)`, so that the triple determines the
-monodromy representation (`TauCeti.ThricePuncturedSphere.permutationTriple_injective`). The other
-two levels follow by equivariance for relabeling, since forgetting the numbering, or keeping only
-one labelled point, is passing to the relabeling orbits on both sides.
-
-Surjectivity, the realisation of every connected triple by a cover, needs in addition that every
-pair of permutations is the monodromy along `periph0` and `periph1` of some representation of
-`π₁(U, b)`, that is, that `π₁(U, b)` is free on `periph0` and `periph1`.
+monodromy representation (`TauCeti.ThricePuncturedSphere.permutationTriple_injective`).
+Surjectivity is the realisation of every connected triple by a cover: since `π₁(U, b)` is free on
+`periph0` and `periph1`, every triple is the triple of a representation of `π₁(U, b)`
+(`TauCeti.ThricePuncturedSphere.permutationTriple_surjective`), transitive when the triple is
+connected, and every such representation is the numbered monodromy of a cover
+(`TauCeti.ConnectedFiberNumberedCover.exists_permCongrHom_comp_monodromyPerm_eq`). The other two
+levels follow by equivariance for relabeling, since forgetting the numbering, or keeping only one
+labelled point, is passing to the relabeling orbits on both sides.
 
 ## Main declarations
 
@@ -47,9 +49,14 @@ pair of permutations is the monodromy along `periph0` and `periph1` of some repr
   same triple exactly when they are isomorphic.
 * `TauCeti.ConnectedFiberNumberedCoverClass.triple`, `TauCeti.ConnectedCoverClass.isoClass`,
   `TauCeti.ConnectedPointedCoverClass.markedClass`: the three classifying maps.
-* `TauCeti.ConnectedFiberNumberedCoverClass.triple_injective`,
-  `TauCeti.ConnectedCoverClass.isoClass_injective`,
-  `TauCeti.ConnectedPointedCoverClass.markedClass_injective`: their injectivity.
+* `TauCeti.ConnectedFiberNumberedCoverClass.triple_bijective`,
+  `TauCeti.ConnectedCoverClass.isoClass_bijective`,
+  `TauCeti.ConnectedPointedCoverClass.markedClass_bijective`: their bijectivity, with the
+  injective and surjective halves stated separately.
+* `TauCeti.ConnectedFiberNumberedCoverClass.tripleEquiv`,
+  `TauCeti.ConnectedCoverClass.isoClassEquiv`,
+  `TauCeti.ConnectedPointedCoverClass.markedClassEquiv`: **the three classifications**, as
+  equivalences.
 * `TauCeti.ConnectedFiberNumberedCoverClass.isoClass_forgetNumbering`,
   `TauCeti.ConnectedFiberNumberedCoverClass.markedClass_markLabel`,
   `TauCeti.ConnectedPointedCoverClass.isoClass_forgetPoint`: compatibility with the forgetful
@@ -119,29 +126,75 @@ namespace ConnectedFiberNumberedCoverClass
 noncomputable def triple :
     ConnectedFiberNumberedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n →
       ConnectedTriple n :=
-  Quotient.lift ConnectedFiberNumberedCover.connectedTriple fun _ _ h =>
+  ConnectedFiberNumberedCoverClass.lift ConnectedFiberNumberedCover.connectedTriple fun _ _ h =>
     ConnectedFiberNumberedCover.connectedTriple_eq_connectedTriple_iff.2 h
 
 @[simp]
 theorem triple_mk
     (c : ConnectedFiberNumberedCover (X := TopCat.of ThricePuncturedSphere) basePt n) :
     (mk c).triple = c.connectedTriple :=
-  (rfl)
+  lift_mk _ _ c
 
 /-- Relabeling a numbered class relabels its triple. -/
 @[simp]
 theorem triple_smul (τ : Perm (Fin n))
     (C : ConnectedFiberNumberedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) :
     (τ • C).triple = τ • C.triple :=
-  Quotient.inductionOn C fun c => c.connectedTriple_smul τ
+  ind (fun c => by rw [smul_mk, triple_mk, triple_mk]; exact c.connectedTriple_smul τ) C
 
 /-- **A numbered cover of `ℂ ∖ {0, 1}` is determined up to isomorphism by its triple.** -/
 theorem triple_injective :
     Function.Injective
       (triple : ConnectedFiberNumberedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n →
-        ConnectedTriple n) := fun C C' =>
-  Quotient.inductionOn₂ C C' fun _ _ h =>
-    Quotient.sound (ConnectedFiberNumberedCover.connectedTriple_eq_connectedTriple_iff.1 h)
+        ConnectedTriple n) := fun C C' h => by
+  obtain ⟨c, rfl⟩ := mk_surjective C
+  obtain ⟨c', rfl⟩ := mk_surjective C'
+  rw [triple_mk, triple_mk] at h
+  exact mk_eq_mk_iff.2 (ConnectedFiberNumberedCover.connectedTriple_eq_connectedTriple_iff.1 h)
+
+/-- **Every connected triple is the triple of a numbered cover of `ℂ ∖ {0, 1}`.** -/
+theorem triple_surjective :
+    Function.Surjective
+      (triple : ConnectedFiberNumberedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n →
+        ConnectedTriple n) := by
+  rintro ⟨t, ht⟩
+  -- `π₁(ℂ ∖ {0, 1}, 1/2)` is free on `periph0` and `periph1`, so `t` is the triple of some
+  -- representation, which is transitive because `t` is connected,
+  obtain ⟨ρ, rfl⟩ := permutationTriple_surjective t
+  obtain ⟨hn, hρ⟩ := (isConnected_permutationTriple_iff ρ).1 ht
+  -- and that representation is the numbered monodromy of a cover.
+  obtain ⟨c, hc⟩ := ConnectedFiberNumberedCover.exists_permCongrHom_comp_monodromyPerm_eq
+    (X := TopCat.of ThricePuncturedSphere) ρ hn hρ
+  refine ⟨mk c, Subtype.ext ?_⟩
+  rw [triple_mk, ConnectedFiberNumberedCover.coe_connectedTriple,
+    IsCoveringMap.monodromyTriple_def, hc]
+
+/-- The triple of a class of numbered covers of `ℂ ∖ {0, 1}` is a bijection onto connected
+triples. -/
+theorem triple_bijective :
+    Function.Bijective
+      (triple : ConnectedFiberNumberedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n →
+        ConnectedTriple n) :=
+  ⟨triple_injective, triple_surjective⟩
+
+/-- **Numbered covers of `ℂ ∖ {0, 1}` up to label-preserving isomorphism are classified by their
+connected triples.** -/
+noncomputable def tripleEquiv :
+    ConnectedFiberNumberedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n ≃
+      ConnectedTriple n :=
+  Equiv.ofBijective triple triple_bijective
+
+@[simp]
+theorem tripleEquiv_apply
+    (C : ConnectedFiberNumberedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) :
+    tripleEquiv C = C.triple :=
+  (rfl)
+
+/-- The numbered cover class realising a connected triple has that triple. -/
+@[simp]
+theorem triple_tripleEquiv_symm (t : ConnectedTriple n) :
+    (tripleEquiv.symm t).triple = t := by
+  rw [← tripleEquiv_apply, Equiv.apply_symm_apply]
 
 /-- Two numbered classes whose triples are relabelings of each other are relabelings of each
 other. -/
@@ -174,7 +227,7 @@ end ConnectedCoverClass
 theorem ConnectedFiberNumberedCoverClass.isoClass_forgetNumbering
     (C : ConnectedFiberNumberedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) :
     C.forgetNumbering.isoClass = ConnectedIsoClass.mk C.triple := by
-  rw [ConnectedCoverClass.isoClass, ← orbitRelQuotientEquiv_mk, symm_apply_apply]
+  rw [ConnectedCoverClass.isoClass, orbitRelQuotientEquiv_symm_forgetNumbering]
   exact Quotient.map'_mk'' _ _ C
 
 /-- **A connected cover of `ℂ ∖ {0, 1}` is determined up to isomorphism by the isomorphism class of
@@ -191,7 +244,44 @@ theorem ConnectedCoverClass.isoClass_injective :
     ConnectedIsoClass.mk_eq_mk_iff_exists_smul] at h
   obtain ⟨τ, hτ⟩ := h
   exact ConnectedFiberNumberedCoverClass.forgetNumbering_eq_forgetNumbering_iff.2
-    ⟨τ⁻¹, inv_smul_eq_iff.2 (ConnectedFiberNumberedCoverClass.smul_eq_of_smul_triple_eq hτ).symm⟩
+    ⟨τ, ConnectedFiberNumberedCoverClass.smul_eq_of_smul_triple_eq hτ⟩
+
+/-- **Every isomorphism class of connected triples is the class of the triple of a connected cover
+of `ℂ ∖ {0, 1}`.** -/
+theorem ConnectedCoverClass.isoClass_surjective :
+    Function.Surjective
+      (isoClass : ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n →
+        ConnectedIsoClass n) := by
+  intro c
+  obtain ⟨t, rfl⟩ := ConnectedIsoClass.mk_surjective c
+  obtain ⟨C, rfl⟩ := ConnectedFiberNumberedCoverClass.triple_surjective t
+  exact ⟨C.forgetNumbering, C.isoClass_forgetNumbering⟩
+
+/-- The isomorphism class of the triple of a class of connected covers of `ℂ ∖ {0, 1}` is a
+bijection onto isomorphism classes of connected triples. -/
+theorem ConnectedCoverClass.isoClass_bijective :
+    Function.Bijective
+      (isoClass : ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n →
+        ConnectedIsoClass n) :=
+  ⟨isoClass_injective, isoClass_surjective⟩
+
+/-- **Connected covers of `ℂ ∖ {0, 1}` of degree `n` up to isomorphism are classified by the
+isomorphism classes of connected triples of degree `n`.** -/
+noncomputable def ConnectedCoverClass.isoClassEquiv :
+    ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n ≃ ConnectedIsoClass n :=
+  Equiv.ofBijective isoClass isoClass_bijective
+
+@[simp]
+theorem ConnectedCoverClass.isoClassEquiv_apply
+    (C : ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) :
+    isoClassEquiv C = C.isoClass :=
+  (rfl)
+
+/-- The cover class realising an isomorphism class of connected triples has that class. -/
+@[simp]
+theorem ConnectedCoverClass.isoClass_isoClassEquiv_symm (c : ConnectedIsoClass n) :
+    (isoClassEquiv.symm c).isoClass = c := by
+  rw [← isoClassEquiv_apply, Equiv.apply_symm_apply]
 
 /-! ### Pointed covers and marked triples -/
 
@@ -226,7 +316,7 @@ theorem ConnectedFiberNumberedCoverClass.markedClass_markLabel
     (C : ConnectedFiberNumberedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n)
     (i : Fin n) :
     (C.markLabel i).markedClass = MarkedIsoClass.mk C.triple i := by
-  rw [ConnectedPointedCoverClass.markedClass, ← markedOrbitRelQuotientEquiv_mk, symm_apply_apply]
+  rw [ConnectedPointedCoverClass.markedClass, markedOrbitRelQuotientEquiv_symm_markLabel]
   rfl
 
 /-- Forgetting the chosen point of a cover is forgetting the marked label of its marked class. -/
@@ -251,7 +341,44 @@ theorem ConnectedPointedCoverClass.markedClass_injective :
     MarkedIsoClass.mk_eq_mk_iff_exists_smul] at h
   obtain ⟨τ, hτ, hτi⟩ := h
   exact ConnectedFiberNumberedCoverClass.markLabel_eq_markLabel_iff.2
-    ⟨τ⁻¹, inv_smul_eq_iff.2 (ConnectedFiberNumberedCoverClass.smul_eq_of_smul_triple_eq hτ).symm,
-      by simp [← hτi]⟩
+    ⟨τ, ConnectedFiberNumberedCoverClass.smul_eq_of_smul_triple_eq hτ, hτi⟩
+
+/-- **Every marked class of connected triples is the marked class of a pointed connected cover of
+`ℂ ∖ {0, 1}`.** -/
+theorem ConnectedPointedCoverClass.markedClass_surjective :
+    Function.Surjective
+      (markedClass : ConnectedPointedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n →
+        MarkedIsoClass n) := by
+  intro c
+  obtain ⟨t, i, rfl⟩ := MarkedIsoClass.mk_surjective c
+  obtain ⟨C, rfl⟩ := ConnectedFiberNumberedCoverClass.triple_surjective t
+  exact ⟨C.markLabel i, C.markedClass_markLabel i⟩
+
+/-- The marked class of a class of pointed connected covers of `ℂ ∖ {0, 1}` is a bijection onto
+marked classes of connected triples. -/
+theorem ConnectedPointedCoverClass.markedClass_bijective :
+    Function.Bijective
+      (markedClass : ConnectedPointedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n →
+        MarkedIsoClass n) :=
+  ⟨markedClass_injective, markedClass_surjective⟩
+
+/-- **Pointed connected covers of `ℂ ∖ {0, 1}` of degree `n` up to pointed isomorphism are
+classified by connected triples of degree `n` with a marked label, modulo relabeling both.** -/
+noncomputable def ConnectedPointedCoverClass.markedClassEquiv :
+    ConnectedPointedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n ≃
+      MarkedIsoClass n :=
+  Equiv.ofBijective markedClass markedClass_bijective
+
+@[simp]
+theorem ConnectedPointedCoverClass.markedClassEquiv_apply
+    (C : ConnectedPointedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) :
+    markedClassEquiv C = C.markedClass :=
+  (rfl)
+
+/-- The pointed cover class realising a marked class of connected triples has that marked class. -/
+@[simp]
+theorem ConnectedPointedCoverClass.markedClass_markedClassEquiv_symm (c : MarkedIsoClass n) :
+    (markedClassEquiv.symm c).markedClass = c := by
+  rw [← markedClassEquiv_apply, Equiv.apply_symm_apply]
 
 end TauCeti

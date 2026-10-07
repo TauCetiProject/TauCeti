@@ -37,6 +37,7 @@ instance: a consumer installs the associated `LieRingModule` where it wants it, 
 ## Main results
 
 * `LieHom.leftRegularRep_apply`: it acts by left multiplication.
+* `LieHom.leftRegularRep_eq_zero_iff`: an element acts by zero exactly when its image is zero.
 * `LieHom.leftRegularRep_injective_iff`: it is faithful exactly when `q` is injective, because
   left multiplication determines the multiplier.
 * `LieHom.leftRegularRep_comp_mulRight`: right multiplications are intertwiners of the
@@ -90,6 +91,13 @@ in the associative target is nilpotent. -/
 theorem isNilpotent_leftRegularRep_iff (q : L →ₗ⁅R⁆ A) (x : L) :
     IsNilpotent (leftRegularRep q x) ↔ IsNilpotent (q x) := by
   rw [leftRegularRep_eq_mulLeft, LinearMap.isNilpotent_mulLeft_iff]
+
+/-- An element acts by zero in its left-regular representation exactly when its image in the
+associative target is zero: the kernel of the representation is the kernel of `q`. -/
+@[simp]
+theorem leftRegularRep_eq_zero_iff (q : L →ₗ⁅R⁆ A) (x : L) :
+    leftRegularRep q x = 0 ↔ q x = 0 := by
+  rw [leftRegularRep_eq_mulLeft, LinearMap.mulLeft_eq_zero_iff]
 
 /-- **The left-regular representation is faithful exactly when `q` is injective.** It is the
 composite of `q` with `Algebra.lmul`, and left multiplication determines the multiplier

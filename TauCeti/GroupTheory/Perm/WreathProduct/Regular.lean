@@ -19,6 +19,8 @@ and sends the top coordinate through the regular representation.
 
 ## Main results
 
+* `TauCeti.permutationWreathProductEquivRegular`: the regular wreath product as the permutation
+  wreath product for the left regular action.
 * `TauCeti.regularWreathProductEquiv`: the canonical group isomorphism from Mathlib's
   regular wreath product to the permutation-subgroup wreath product.
 
@@ -33,6 +35,30 @@ universe u v
 
 variable (D : Type u) (Q : Type v) [Group D] [Group Q]
 
+/-- The permutation wreath product for the left regular action of `Q` on itself is Mathlib's
+regular wreath product. Both sides have base group `Q → D` and top group `Q`; this equivalence
+identifies their coordinates without changing them. -/
+def permutationWreathProductEquivRegular :
+    PermutationWreathProduct D Q Q ≃* D ≀ᵣ Q where
+  toFun a := ⟨a.left, a.right⟩
+  invFun a := ⟨a.left, a.right⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' a b := by
+    ext x <;> simp
+
+/-- The regular-wreath-product identification preserves both coordinates. -/
+@[simp]
+theorem permutationWreathProductEquivRegular_apply (a : PermutationWreathProduct D Q Q) :
+    permutationWreathProductEquivRegular D Q a = ⟨a.left, a.right⟩ := by
+  rfl
+
+/-- The inverse regular-wreath-product identification preserves both coordinates. -/
+@[simp]
+theorem permutationWreathProductEquivRegular_symm_apply (a : D ≀ᵣ Q) :
+    (permutationWreathProductEquivRegular D Q).symm a = ⟨a.left, a.right⟩ := by
+  rfl
+
 /-- Mathlib's regular wreath product is the permutation wreath product whose top group
 is the left regular image of `Q`. The isomorphism preserves each base coordinate. -/
 noncomputable def regularWreathProductEquiv :
@@ -44,9 +70,9 @@ noncomputable def regularWreathProductEquiv :
   map_mul' a b := by
     apply SemidirectProduct.ext
     · funext x
-      simp only [PermSubgroupWreathProduct.mul_left, RegularWreathProduct.mul_left,
-        Pi.mul_apply]
-      rw [subgroupOfMulAction_inv_apply, smul_eq_mul]
+      simp only [PermutationWreathProduct.mul_left, RegularWreathProduct.mul_left,
+        Pi.mul_apply, Subgroup.smul_def, Equiv.Perm.smul_def]
+      rw [Subgroup.coe_inv, subgroupOfMulAction_inv_apply, smul_eq_mul]
     · exact (Equiv.Perm.subgroupOfMulAction Q Q).map_mul a.right b.right
 
 /-- The comparison preserves the base function pointwise. -/

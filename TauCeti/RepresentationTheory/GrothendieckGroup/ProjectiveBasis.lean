@@ -82,8 +82,6 @@ split short exact sequence of modules. -/
 private noncomputable def indecomposableInvariant :
     ExactK0.AdditiveInvariant (finiteProjectiveModulesExactStructure R) ℤ where
   obj X := (indecomposableMultiplicity R X.obj N : ℤ)
-  map_iso {X Y} e := congrArg Int.ofNat (indecomposableMultiplicity_eq_of_linearEquiv
-    (M := X.obj) (M' := Y.obj) ((finiteProjectiveModules R).ι.mapIso e).toLinearEquiv)
   map_conflation {S} hS := by
     have hT := (finiteProjectiveModulesExactStructure_conflation_iff R S).mp hS
     -- Instance search is keyed on the head symbol, so the instances carried by the objects of the

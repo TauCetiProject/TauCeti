@@ -11,9 +11,10 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restrictio
 /-!
 # Restriction of the Tate cup product
 
-The restriction law for the Tate cup product starts in bidegree `(0, 0)`: the class of
-an invariant pure tensor restricts to the class of the same tensor for a subgroup. This
-is the degree-zero base case for the all-degree restriction law used in Tate's theorem.
+Restriction preserves the Tate cup product with a degree-zero right factor in every integer
+degree (`cup_res_zero_right`). An invariant vector represents the right factor, so coefficient
+naturality gives this base case of the all-degree restriction law used in Tate's theorem. In
+bidegree `(0, 0)`, restriction carries an invariant pure tensor to the tensor of its restrictions.
 
 The product and restriction are those of the existing Tate cohomology API. See
 Artin and Tate, *Class Field Theory*, Preliminaries, §2, and Brown,
@@ -68,12 +69,25 @@ theorem cupH0_H0Res (M N : Rep k G) (H : Subgroup G)
       exact congrArg (H0π (Rep.res H.subtype (M ⊗ N)))
         (Subtype.ext (restrict_invariant_pure_tensor M N H x y))
 
-/-- Restriction preserves the product of two Tate classes of degree zero. -/
-theorem cup_res_zero_zero (M N : Rep k G) (H : Subgroup G)
-    (x : tateCohomology M 0) (y : tateCohomology N 0) :
-    res (M ⊗ N) H 0 (cup M N 0 0 0 (by omega) x y) =
-      cup (Rep.res H.subtype M) (Rep.res H.subtype N) 0 0 0 (by omega)
-        (res M H 0 x) (res N H 0 y) := by
-  simpa only [res_zero, cup_zero_right] using cupH0_H0Res M N H x y
+/-- Restriction preserves the Tate cup product with a degree-zero right factor, in every
+integer degree. -/
+theorem cup_res_zero_right (M N : Rep k G) (H : Subgroup G) (r : ℤ)
+    (x : tateCohomology M r) (y : tateCohomology N 0) :
+    res (M ⊗ N) H r (cup M N r 0 r (by omega) x y) =
+      cup (Rep.res H.subtype M) (Rep.res H.subtype N) r 0 r (by omega)
+        (res M H r x) (H0Res N H y) := by
+  rw [cup_zero_right, cup_zero_right]
+  induction y using H0_induction_on with
+  | h y =>
+    rw [cupH0_H0π, H0π_comp_H0Res_apply, cupH0_H0π]
+    have hnat : (tateCohomologyFunctor r).map (Rep.tensorInvariant M y) ≫ res (M ⊗ N) H r =
+        res M H r ≫ (tateCohomologyFunctor r).map
+          (Rep.resMap H.subtype (Rep.tensorInvariant M y)) :=
+      res_natural (Rep.tensorInvariant M y) H r
+    rw [Rep.resMap_tensorInvariant M N H y] at hnat
+    -- The goal is `hnat` applied to `x`, with the target read in
+    -- `Rep.res H.subtype M ⊗ Rep.res H.subtype N`, which is `Rep.res H.subtype (M ⊗ N)` by
+    -- definition (the same identification made in the statement).
+    exact ConcreteCategory.congr_hom hnat x
 
 end TauCeti.TateCohomology

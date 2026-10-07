@@ -10,11 +10,11 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.ReverseNorm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpecialOrthogonal
 public import TauCeti.FieldTheory.SquareClassGroup.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
+public import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.Algebra.Group.Subgroup.Ker
 import TauCeti.LinearAlgebra.CliffordAlgebra.CartanDieudonne
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
-import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
 
 /-!
 # The spinor norm
@@ -24,6 +24,9 @@ It therefore descends to the orthogonal group modulo square classes. Restricting
 to the special orthogonal group gives the spinor norm, whose kernel is exactly the image of the
 Spin group.
 
+Open `TauCeti` for the reflection-pair and surjectivity helpers below, and `CliffordAlgebra`
+for the spinor-norm homomorphisms they describe.
+
 ## Main results
 
 * `CliffordAlgebra.orthogonalSpinorNorm`: the square-class-valued spinor norm on `O(Q)`.
@@ -32,10 +35,16 @@ Spin group.
   the form is a square, the orthogonal spinor norm is trivial.
 * `CliffordAlgebra.spinToSpecialOrthogonal_surjective_of_isSquare_apply`: the same square-value
   hypothesis makes the Spin action surjective.
+* `CliffordAlgebra.spinToSpecialOrthogonal_surjective_of_square_eq_top`: the Spin action is
+  surjective when every unit of the field is a square.
 * `CliffordAlgebra.range_spinToSpecialOrthogonal_eq_ker_spinorNorm`: the Spin image is
   the kernel of the spinor norm.
 * `CliffordAlgebra.spinToSpinorNormKernel`: the Spin action corestricted to that kernel.
 * `CliffordAlgebra.spinToSpinorNormKernel_surjective`: the corestricted action is surjective.
+* `TauCeti.QuadraticMap.spinorNorm_reflectionPairSpecialOrthogonal`: the spinor norm of a
+  reflection pair.
+* `TauCeti.QuadraticMap.orthogonalSpinorNorm_surjective_of_spinorNorm_surjective`: surjectivity
+  on `SO(Q)` implies surjectivity on `O(Q)`.
 
 ## References
 
@@ -255,4 +264,57 @@ theorem spinToSpecialOrthogonal_surjective_of_isSquare_apply
     orthogonalSpinorNorm_eq_one_of_isSquare_apply Q hQ hsq]
   rfl
 
+/-- If every unit of the field is a square, the Spin action on the special orthogonal group of a
+finite-dimensional nondegenerate quadratic space is surjective. -/
+theorem spinToSpecialOrthogonal_surjective_of_square_eq_top
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (hsquare : Subgroup.square Kˣ = ⊤) :
+    Function.Surjective (spinToSpecialOrthogonal Q) := by
+  apply spinToSpecialOrthogonal_surjective_of_isSquare_apply Q hQ
+  intro v _
+  have hv : IsSquare (unitOfInvertible (Q v)) := by
+    rw [← Subgroup.mem_square, hsquare]
+    exact Subgroup.mem_top _
+  simpa only [val_unitOfInvertible] using isSquare_units_val_iff.mpr hv
+
 end CliffordAlgebra
+
+namespace TauCeti
+
+namespace QuadraticMap
+
+open _root_.CliffordAlgebra _root_.QuadraticMap
+
+universe u v
+
+variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
+  [FiniteDimensional K V] [Invertible (2 : K)]
+
+/-- The spinor norm of a pair of reflections is the square class of the product of the
+quadratic values of its defining vectors.
+
+After `open TauCeti`, use `Q.spinorNorm_reflectionPairSpecialOrthogonal hQ v w` to evaluate
+the pair defined by `v` and `w`. -/
+theorem spinorNorm_reflectionPairSpecialOrthogonal (Q : QuadraticForm K V)
+    (hQ : Q.Nondegenerate) (v w : V) [Invertible (Q v)] [Invertible (Q w)] :
+    spinorNorm Q hQ (reflectionPairSpecialOrthogonal Q v w) =
+      squareClassHom (unitOfInvertible (Q v) * unitOfInvertible (Q w)) := by
+  simp only [spinorNorm_apply, reflectionPairSpecialOrthogonal_toOrthogonal, map_mul,
+    orthogonalSpinorNorm_reflectionOrthogonal]
+
+/-- Surjectivity of the spinor norm on the special orthogonal group implies its
+surjectivity on the full orthogonal group.
+
+After `open TauCeti`, apply
+`Q.orthogonalSpinorNorm_surjective_of_spinorNorm_surjective hQ hsurj`
+to a surjectivity proof `hsurj` for the spinor norm on `SO(Q)`. -/
+theorem orthogonalSpinorNorm_surjective_of_spinorNorm_surjective
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (hsurj : Function.Surjective (spinorNorm Q hQ)) :
+    Function.Surjective (orthogonalSpinorNorm Q hQ) := by
+  apply Function.Surjective.of_comp (g := specialOrthogonalToOrthogonal Q)
+  simpa only [Function.comp_def, ← spinorNorm_apply] using hsurj
+
+end QuadraticMap
+
+end TauCeti

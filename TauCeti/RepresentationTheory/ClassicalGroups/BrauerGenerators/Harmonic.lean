@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal
+public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Basic
 public import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!

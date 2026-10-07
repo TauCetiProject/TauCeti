@@ -132,14 +132,14 @@ instance instIsCrystallographicRationalRootSystem : (t.rationalRootSystem ht).Is
 /-- Extension to the rationals preserves descending root-string lengths. -/
 @[simp] theorem chainBotCoeff_rationalRootSystem (i j : Fin t.numRoots) :
     (t.rationalRootSystem ht).chainBotCoeff i j =
-      (t.simplyConnectedRootDatum ht).chainBotCoeff i j := by
-  exact chainBotCoeff_rootPairingBaseChange ..
+      (t.simplyConnectedRootDatum ht).chainBotCoeff i j :=
+  chainBotCoeff_rootPairingBaseChange ..
 
 /-- Extension to the rationals preserves ascending root-string lengths. -/
 @[simp] theorem chainTopCoeff_rationalRootSystem (i j : Fin t.numRoots) :
     (t.rationalRootSystem ht).chainTopCoeff i j =
-      (t.simplyConnectedRootDatum ht).chainTopCoeff i j := by
-  exact chainTopCoeff_rootPairingBaseChange ..
+      (t.simplyConnectedRootDatum ht).chainTopCoeff i j :=
+  chainTopCoeff_rootPairingBaseChange ..
 
 /-- The Cartan integers of the rational system are those of the integral datum. -/
 @[simp] theorem pairingIn_rationalRootSystem (i j : Fin t.numRoots) :

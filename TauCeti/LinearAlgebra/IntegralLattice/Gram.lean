@@ -30,6 +30,8 @@ discriminant group.
 * `TauCeti.IntegralLattice.gramDet`: its signed determinant.
 * `TauCeti.IntegralLattice.determinant`: the basis-independent signed determinant.
 * `TauCeti.IntegralLattice.discriminant`: the nonnegative absolute determinant.
+* `TauCeti.IntegralLattice.determinantUnit`: the signed determinant of a nondegenerate lattice as a
+  nonzero rational number.
 
 ## Main results
 
@@ -48,6 +50,8 @@ discriminant group.
   absolute determinant of `G`.
 * `TauCeti.IntegralLattice.Isometry.determinant_eq` and `Isometry.discriminant_eq`: isometry
   invariance of the basis-free invariants.
+* `TauCeti.IntegralLattice.Isometry.ofGramMatrixEq`: lattices with bases of equal Gram matrices
+  are isometric.
 
 ## References
 
@@ -231,6 +235,18 @@ theorem determinant_ne_zero_iff (L : IntegralLattice V) :
   classical
   rw [determinant, gramDet_ne_zero_iff]
 
+/-- The signed Gram determinant of a nondegenerate integral lattice, regarded as a nonzero
+rational number. -/
+noncomputable def determinantUnit (L : IntegralLattice V) [L.IsNondegenerate] : ℚˣ :=
+  Units.mk0 (L.determinant : ℚ) <| by
+    exact_mod_cast (L.determinant_ne_zero_iff.mpr L.form_nondegenerate)
+
+/-- The value underlying `determinantUnit` is the integral Gram determinant cast to `ℚ`. -/
+@[simp]
+theorem coe_determinantUnit (L : IntegralLattice V) [L.IsNondegenerate] :
+    (L.determinantUnit : ℚ) = L.determinant :=
+  (rfl)
+
 /-- The integral form on the carrier is nondegenerate exactly when the ambient rational form is. -/
 theorem nondegenerate_integralForm_iff (L : IntegralLattice V) :
     L.integralForm.Nondegenerate ↔ L.form.Nondegenerate := by
@@ -312,6 +328,33 @@ theorem determinant_eq (e : Isometry L M) : L.determinant = M.determinant := by
 /-- The nonnegative discriminant is invariant under integral-lattice isometry. -/
 theorem discriminant_eq (e : Isometry L M) : L.discriminant = M.discriminant := by
   rw [L.discriminant_def, M.discriminant_def, e.determinant_eq]
+
+/-- The equivalence matching two bases with equal Gram matrices preserves the integral forms. -/
+private theorem integralForm_basisEquiv {ι : Type v} (b : Basis ι ℤ L) (b' : Basis ι ℤ M)
+    (h : L.gramMatrix b = M.gramMatrix b') (x y : L) :
+    M.integralForm (b.equiv b' (Equiv.refl ι) x) (b.equiv b' (Equiv.refl ι) y) =
+      L.integralForm x y := by
+  have hforms : M.integralForm.compl₁₂ (b.equiv b' (Equiv.refl ι)).toLinearMap
+      (b.equiv b' (Equiv.refl ι)).toLinearMap = L.integralForm :=
+    LinearMap.BilinForm.ext_basis b fun i j ↦ by
+      simpa [gramMatrix_apply] using (congrFun (congrFun h i) j).symm
+  simpa using LinearMap.congr_fun₂ hforms x y
+
+/-- **Lattices with bases of equal Gram matrices are isometric.** The isometry carries the `i`-th
+vector of the first basis to the `i`-th vector of the second; this is the converse of
+`TauCeti.IntegralLattice.Isometry.gramMatrix_carrierBasisEquiv`. -/
+noncomputable def ofGramMatrixEq {ι : Type v} (b : Basis ι ℤ L) (b' : Basis ι ℤ M)
+    (h : L.gramMatrix b = M.gramMatrix b') : Isometry L M :=
+  ofCarrierEquiv (b.equiv b' (Equiv.refl ι)) (integralForm_basisEquiv b b' h)
+
+/-- The isometry `ofGramMatrixEq b b' h` carries each vector of `b` to the corresponding vector
+of `b'`. -/
+@[simp]
+theorem ofGramMatrixEq_apply_basis {ι : Type v} (b : Basis ι ℤ L) (b' : Basis ι ℤ M)
+    (h : L.gramMatrix b = M.gramMatrix b') (i : ι) :
+    ofGramMatrixEq b b' h (b i) = b' i := by
+  rw [ofGramMatrixEq, ofCarrierEquiv_apply, LinearEquiv.extendOfIsLattice_apply, Basis.equiv_apply,
+    Equiv.refl_apply]
 
 end Isometry
 

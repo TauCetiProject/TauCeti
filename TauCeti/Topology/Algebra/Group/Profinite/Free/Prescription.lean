@@ -116,6 +116,18 @@ theorem _root_.TauCeti.IsCrossedHom.eq_crossedHom {F : freeProP p X → ℤ_[p]}
 
 end Finite
 
+/-- The Kronecker crossed homomorphism `D_k`, with `D_k(x_j) = δ_{kj}`, on the `ℕ`-indexed
+generators. -/
+@[simp]
+theorem crossedHom_single_freeProPGen {n : ℕ} (χ : freeProP p (Fin n) →ₜ* ℤ_[p]ˣ) (k : Fin n)
+    (m : ℕ) :
+    crossedHom χ (Pi.single k 1) (freeProPGen p n m) = if m = k then 1 else 0 := by
+  by_cases hm : m < n
+  · rw [freeProPGen_of_lt p hm, crossedHom_of, Pi.single_apply]
+    simp only [Fin.ext_iff]
+  · rw [freeProPGen_eq_one_of_le p (not_lt.1 hm), (isCrossedHom_crossedHom χ _).map_one,
+      ite_eq_right fun h ↦ hm (by rw [h]; exact k.isLt)]
+
 /-- **Crossed homomorphisms with the same values on the generators, for characters congruent
 modulo `p ^ k`, are congruent modulo `p ^ k`**: their truncations modulo `p ^ k` are continuous
 crossed homomorphisms for the same character of `F` agreeing on the generators. -/
@@ -126,16 +138,15 @@ theorem _root_.TauCeti.IsCrossedHom.pow_dvd_sub_of_forall_of_eq {χ χ' : freePr
     (g : freeProP p X) : (p : ℤ_[p]) ^ k ∣ f' g - f g := by
   -- The truncated characters agree.
   have hχeq :
-      (Units.map (PadicInt.toZModPow (p := p) k : ℤ_[p] →* ZMod (p ^ k))).comp χ'.toMonoidHom =
-        (Units.map (PadicInt.toZModPow (p := p) k : ℤ_[p] →* ZMod (p ^ k))).comp χ.toMonoidHom := by
-    refine MonoidHom.ext fun g ↦ Units.ext ?_
-    rw [MonoidHom.comp_apply, MonoidHom.comp_apply, Units.coe_map, Units.coe_map,
-      MonoidHom.coe_ofClass, ← sub_eq_zero, ← map_sub, PadicInt.toZModPow_eq_zero_iff_dvd]
+      Units.map (PadicInt.toZModPow (p := p) k : ℤ_[p] →* ZMod (p ^ k)) ∘ χ' =
+        Units.map (PadicInt.toZModPow (p := p) k : ℤ_[p] →* ZMod (p ^ k)) ∘ χ := by
+    funext g
+    apply Units.ext
+    simp only [Function.comp_apply, Units.coe_map, MonoidHom.coe_ofClass]
+    rw [← sub_eq_zero, ← map_sub, PadicInt.toZModPow_eq_zero_iff_dvd]
     exact freeProP.pow_dvd_sub_of_forall_of hχ g
-  have hf₀ : IsCrossedHom χ.toMonoidHom f := isCrossedHom_iff.2 fun x y ↦ hf.map_mul x y
-  have hf'₀ : IsCrossedHom χ'.toMonoidHom f' := isCrossedHom_iff.2 fun x y ↦ hf'.map_mul x y
-  have h1 := hf₀.ringHom_comp (PadicInt.toZModPow k)
-  have h2 := hf'₀.ringHom_comp (PadicInt.toZModPow k)
+  have h1 := hf.ringHom_comp (PadicInt.toZModPow k)
+  have h2 := hf'.ringHom_comp (PadicInt.toZModPow k)
   rw [hχeq] at h2
   have h := h1.eq_of_eqOn_of_topologicalClosure_closure_eq_top h2
     ((PadicInt.continuous_toZModPow k).comp hfc) ((PadicInt.continuous_toZModPow k).comp hf'c)

@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Henselian
 public import Mathlib.RingTheory.Norm.Defs
 public import Mathlib.RingTheory.Trace.Defs
 import Mathlib.RingTheory.MatrixPolynomialAlgebra
+import TauCeti.RingTheory.Norm.CharpolyRev
 
 /-!
 # Hensel's lemma for the norm
@@ -66,12 +67,6 @@ theorem Algebra.exists_norm_eq_of_norm_sub_mem {I : Ideal R} [HenselianRing R I]
   let M := Algebra.leftMulMatrix b w
   have hM : IsUnit M := hw.map (Algebra.leftMulMatrix b)
   have htrM : Algebra.trace R S w = M.trace := Algebra.trace_eq_matrix_trace b w
-  have hPeval (t : R) : M.charpolyRev.eval t = Algebra.norm R (1 - t • w) := by
-    rw [Algebra.norm_eq_matrix_det b, map_sub, map_one, map_smul, Matrix.charpolyRev,
-      ← coe_evalRingHom, RingHom.map_det]
-    congr 1
-    ext i j
-    by_cases hij : i = j <;> simp [hij, M] <;> ring
   -- Since `M` is invertible, `Q = charpoly (M⁻¹)` is the unit `κ = (-1)ⁿ (det M)⁻¹` times `P`,
   -- so `Q` is a monic polynomial with `Q(0) = κ` and `Q'(0) = -κ tr M`.
   obtain ⟨κ, hκ⟩ : IsUnit ((-1) ^ n * Ring.inverse M.det) :=
@@ -115,7 +110,7 @@ theorem Algebra.exists_norm_eq_of_norm_sub_mem {I : Ideal R} [HenselianRing R I]
       exact (κ.isUnit.mul (htrM ▸ htr).neg).map (Ideal.Quotient.mk I))
   refine ⟨a * (1 - t • w), ?_, ?_⟩
   · have hroot : κ * Algebra.norm R (1 - t • w) = κ * (v * (ν⁻¹ : Rˣ)) := by
-      rw [← hPeval, ← eval_C_mul (a := (κ : R)), ← hQP]
+      rw [← Algebra.eval_charpolyRev_leftMulMatrix b, ← eval_C_mul (a := (κ : R)), ← hQP]
       simpa [f, sub_eq_zero] using ht
     rw [map_mul, κ.mul_right_inj.1 hroot, ← hν, mul_comm, Units.inv_mul_cancel_right]
   · have ht' : t ∈ I := by simpa using htI

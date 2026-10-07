@@ -19,6 +19,11 @@ involution over a field. In particular, the dimensions of a code and its dual ad
 of coordinates, and over a finite field their cardinalities multiply to the cardinality of the
 whole word space.
 
+A code is self-orthogonal when it lies in its Euclidean dual and self-dual when it equals it.
+These are predicates on the code itself rather than a new bundled type, so the full `Submodule`
+API stays available. Over a field, a self-orthogonal code has at most half the ambient dimension,
+with equality exactly for self-dual codes.
+
 The dot-product convention and the resulting Euclidean dual follow Huffman and Pless,
 *Fundamentals of Error-Correcting Codes*, §§1.2–1.4.
 -/
@@ -86,9 +91,33 @@ theorem le_euclideanDual_comm {C D : Submodule R (ι → R)} :
     (Submodule.le_orthogonalBilin_flip_iff_le_orthogonalBilin
       (B := dotProductBilin R R) (S := C) (T := D))
 
+/-- The Euclidean dual of a sum is the intersection of the Euclidean duals. -/
+@[simp]
+theorem euclideanDual_sup (C D : Submodule R (ι → R)) :
+    euclideanDual (C ⊔ D) = euclideanDual C ⊓ euclideanDual D := by
+  simp only [euclideanDual, LinearMap.BilinForm.orthogonal]
+  exact Submodule.orthogonalBilin_sup (B := dotProductBilin R R) C D
+
+/-! ### Self-orthogonal and self-dual codes -/
+
+/-- A linear code is *self-orthogonal* when it is contained in its Euclidean dual, that is, when
+any two of its codewords have zero dot product. -/
+def IsSelfOrthogonal (C : Submodule R (ι → R)) : Prop :=
+  C ≤ euclideanDual C
+
+/-- A linear code is *self-dual* when it equals its Euclidean dual. -/
+def IsSelfDual (C : Submodule R (ι → R)) : Prop :=
+  C = euclideanDual C
+
+variable {C D : Submodule R (ι → R)}
+
+/-- Self-orthogonality is containment in the Euclidean dual. -/
+theorem isSelfOrthogonal_iff_le : IsSelfOrthogonal C ↔ C ≤ euclideanDual C :=
+  Iff.rfl
+
 /-- A code is self-orthogonal exactly when any two of its words have zero dot product. -/
-theorem le_euclideanDual_self_iff {C : Submodule R (ι → R)} :
-    C ≤ euclideanDual C ↔ ∀ x ∈ C, ∀ y ∈ C, x ⬝ᵥ y = 0 := by
+theorem isSelfOrthogonal_iff : IsSelfOrthogonal C ↔ ∀ x ∈ C, ∀ y ∈ C, x ⬝ᵥ y = 0 := by
+  rw [isSelfOrthogonal_iff_le]
   constructor
   · intro h x hx y hy
     exact mem_euclideanDual.mp (h hy) x hx
@@ -96,12 +125,30 @@ theorem le_euclideanDual_self_iff {C : Submodule R (ι → R)} :
     rw [mem_euclideanDual]
     exact fun x hx ↦ h x hx y hy
 
-/-- The Euclidean dual of a sum is the intersection of the Euclidean duals. -/
+/-- Self-duality is equality with the Euclidean dual. -/
+theorem isSelfDual_iff : IsSelfDual C ↔ C = euclideanDual C :=
+  Iff.rfl
+
+/-- A self-orthogonal code is contained in its Euclidean dual. -/
+theorem IsSelfOrthogonal.le_euclideanDual (hC : IsSelfOrthogonal C) : C ≤ euclideanDual C :=
+  hC
+
+/-- The Euclidean dual of a self-dual code is the code itself. -/
+theorem IsSelfDual.euclideanDual_eq (hC : IsSelfDual C) : euclideanDual C = C :=
+  (isSelfDual_iff.mp hC).symm
+
+/-- Every self-dual code is self-orthogonal. -/
+theorem IsSelfDual.isSelfOrthogonal (hC : IsSelfDual C) : IsSelfOrthogonal C :=
+  (isSelfDual_iff.mp hC).le
+
+/-- Self-orthogonality passes to subcodes. -/
+theorem IsSelfOrthogonal.mono (hD : IsSelfOrthogonal D) (hCD : C ≤ D) : IsSelfOrthogonal C :=
+  hCD.trans (hD.le_euclideanDual.trans (euclideanDual_antitone hCD))
+
+/-- The zero code is self-orthogonal. -/
 @[simp]
-theorem euclideanDual_sup (C D : Submodule R (ι → R)) :
-    euclideanDual (C ⊔ D) = euclideanDual C ⊓ euclideanDual D := by
-  simp only [euclideanDual, LinearMap.BilinForm.orthogonal]
-  exact Submodule.orthogonalBilin_sup (B := dotProductBilin R R) C D
+theorem isSelfOrthogonal_bot : IsSelfOrthogonal (⊥ : Submodule R (ι → R)) :=
+  isSelfOrthogonal_iff_le.mpr bot_le
 
 section Field
 
@@ -150,35 +197,33 @@ theorem finrank_add_finrank_euclideanDual (C : Submodule K (ι → K)) :
   exact hdual
 
 /-- A self-dual code has twice its dimension equal to its length. -/
-theorem two_mul_finrank_eq_card_of_eq_euclideanDual {C : Submodule K (ι → K)}
-    (hC : C = euclideanDual C) : 2 * finrank K C = Fintype.card ι := by
+theorem IsSelfDual.two_mul_finrank_eq_card {C : Submodule K (ι → K)} (hC : IsSelfDual C) :
+    2 * finrank K C = Fintype.card ι := by
   have h := finrank_add_finrank_euclideanDual C
-  rw [← hC] at h
+  rw [hC.euclideanDual_eq] at h
   simpa only [two_mul] using h
 
 /-- A self-orthogonal code has dimension at most half the length. -/
-theorem two_mul_finrank_le_card_of_le_euclideanDual {C : Submodule K (ι → K)}
-    (hC : C ≤ euclideanDual C) : 2 * finrank K C ≤ Fintype.card ι := by
+theorem IsSelfOrthogonal.two_mul_finrank_le_card {C : Submodule K (ι → K)}
+    (hC : IsSelfOrthogonal C) : 2 * finrank K C ≤ Fintype.card ι := by
   rw [two_mul, ← finrank_add_finrank_euclideanDual C]
-  exact Nat.add_le_add_left (Submodule.finrank_mono hC) _
+  exact Nat.add_le_add_left (Submodule.finrank_mono hC.le_euclideanDual) _
 
 /-- A self-orthogonal code of half the ambient dimension is self-dual. -/
-theorem eq_euclideanDual_of_le_of_card_le_two_mul_finrank {C : Submodule K (ι → K)}
-    (hC : C ≤ euclideanDual C) (hdim : Fintype.card ι ≤ 2 * finrank K C) :
-    C = euclideanDual C := by
-  apply Submodule.eq_of_le_of_finrank_le hC
+theorem IsSelfOrthogonal.isSelfDual_of_card_le_two_mul_finrank {C : Submodule K (ι → K)}
+    (hC : IsSelfOrthogonal C) (hdim : Fintype.card ι ≤ 2 * finrank K C) : IsSelfDual C := by
+  apply Submodule.eq_of_le_of_finrank_le hC.le_euclideanDual
   rw [← Nat.add_le_add_iff_left (n := finrank K C), finrank_add_finrank_euclideanDual C]
   simpa only [two_mul] using hdim
 
 /-- A code is self-dual exactly when it is self-orthogonal and has half the ambient dimension. -/
-theorem eq_euclideanDual_iff {C : Submodule K (ι → K)} :
-    C = euclideanDual C ↔
-      C ≤ euclideanDual C ∧ 2 * finrank K C = Fintype.card ι := by
+theorem isSelfDual_iff_isSelfOrthogonal_and_two_mul_finrank_eq {C : Submodule K (ι → K)} :
+    IsSelfDual C ↔ IsSelfOrthogonal C ∧ 2 * finrank K C = Fintype.card ι := by
   constructor
   · intro hC
-    exact ⟨hC.le, two_mul_finrank_eq_card_of_eq_euclideanDual hC⟩
+    exact ⟨hC.isSelfOrthogonal, hC.two_mul_finrank_eq_card⟩
   · rintro ⟨hC, hdim⟩
-    exact eq_euclideanDual_of_le_of_card_le_two_mul_finrank hC hdim.symm.le
+    exact hC.isSelfDual_of_card_le_two_mul_finrank hdim.symm.le
 
 /-- Over a finite field, the cardinalities of a code and its Euclidean dual multiply to the
 cardinality of the whole word space. -/
@@ -194,9 +239,9 @@ theorem natCard_mul_natCard_euclideanDual (C : Submodule K (ι → K)) :
 
 /-- A self-dual code over a field with `q` elements has `q^(n/2)` words, where `n` is its
 length. -/
-theorem natCard_of_eq_euclideanDual {C : Submodule K (ι → K)} (hC : C = euclideanDual C) :
+theorem IsSelfDual.natCard_eq {C : Submodule K (ι → K)} (hC : IsSelfDual C) :
     Nat.card C = Nat.card K ^ (Fintype.card ι / 2) := by
-  rw [Module.natCard_eq_pow_finrank (K := K), ← two_mul_finrank_eq_card_of_eq_euclideanDual hC,
+  rw [Module.natCard_eq_pow_finrank (K := K), ← hC.two_mul_finrank_eq_card,
     Nat.mul_div_cancel_left _ two_pos]
 
 end Field

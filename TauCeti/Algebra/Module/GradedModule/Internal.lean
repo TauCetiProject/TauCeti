@@ -115,6 +115,17 @@ noncomputable def ofDecomposition (ℳ : ℤ → Submodule R M) [DirectSum.Decom
 theorem ofDecomposition_piece (ℳ : ℤ → Submodule R M) [DirectSum.Decomposition ℳ] :
     (ofDecomposition ℳ).piece = ℳ := (rfl)
 
+/-- A submodule is homogeneous for the internal grading `ofDecomposition ℳ` exactly when it is
+homogeneous for `ℳ`: the decomposition carried by `ofDecomposition ℳ` is the given one, as
+decompositions are unique. -/
+@[simp]
+theorem isHomogeneous_ofDecomposition_piece_iff (ℳ : ℤ → Submodule R M)
+    [DirectSum.Decomposition ℳ] (U : Submodule R M) :
+    DirectSum.SetLike.IsHomogeneous (ofDecomposition ℳ).piece U ↔
+      DirectSum.SetLike.IsHomogeneous ℳ U :=
+  Iff.of_eq (congrArg (fun d ↦ @DirectSum.SetLike.IsHomogeneous _ _ _ _ _ _ _ ℳ d _ _ U)
+    (Subsingleton.elim _ _))
+
 /-- Two linear maps on an internally graded module agree if they agree on homogeneous elements. -/
 theorem linearMap_ext {N : Type w} [AddCommMonoid N] [Module R N]
     (G : InternalGrading R M) {f g : M →ₗ[R] N}
@@ -125,6 +136,17 @@ theorem linearMap_ext {N : Type w} [AddCommMonoid N] [Module R N]
     exact h p x hp
   · rw [← Submodule.iSup_eq_span]
     exact G.isInternal.submodule_iSup_eq_top
+
+/-- The homogeneous elements of an internally graded module span it over any scalar semiring
+acting on the total module. No compatibility between that action and the grading is needed. -/
+theorem span_setOf_exists_mem_piece_eq_top (S : Type*) [Semiring S] [Module S M]
+    (G : InternalGrading R M) : Submodule.span S {x : M | ∃ p, x ∈ G.piece p} = ⊤ := by
+  classical
+  apply top_unique
+  intro y _
+  rw [← DirectSum.sum_support_decompose G.piece y]
+  exact Submodule.sum_mem _ fun p _ => Submodule.subset_span
+    ⟨p, (DirectSum.decompose G.piece y p).property⟩
 
 section Map
 
@@ -311,14 +333,20 @@ section Decompose
 variable {R S : Type*} {M : Type v} {N : Type w} [Semiring R] [Semiring S] [SMul R S]
   [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M]
   [AddCommMonoid N] [Module R N] [Module S N] [IsScalarTower R S N]
-  {G : InternalGrading R M} {H : InternalGrading R N} {f : M →ₗ[S] N} {r : ℤ}
+  {f : M →ₗ[S] N} {r : ℤ}
 
 /-- A homogeneous linear map of degree `r` carries the degree-`p` component of an element to the
-degree-`(p + r)` component of its image. -/
-theorem map_decompose (hf : LinearMap.IsHomogeneous f G.piece H.piece r) (p : ℤ) (x : M) :
-    f (DirectSum.decompose G.piece x p : M) = (DirectSum.decompose H.piece (f x) (p + r) : N) :=
-  DirectSum.map_decompose_shift G.piece H.piece (f.restrictScalars R) (· + r)
+degree-`(p + r)` component of its image.  The gradings are any families of submodules with
+`DirectSum.Decomposition` instances, so this applies to the pieces of internal gradings and to
+Mathlib's graded algebras alike. -/
+theorem map_decompose {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
+    {𝓝 : ℤ → Submodule R N} [DirectSum.Decomposition 𝓝] (hf : LinearMap.IsHomogeneous f ℳ 𝓝 r)
+    (p : ℤ) (x : M) :
+    f (DirectSum.decompose ℳ x p : M) = (DirectSum.decompose 𝓝 (f x) (p + r) : N) :=
+  DirectSum.map_decompose_shift ℳ 𝓝 (f.restrictScalars R) (· + r)
     (add_left_injective r) (fun _ _ hx ↦ hf.map_mem hx) p x
+
+variable {G : InternalGrading R M} {H : InternalGrading R N}
 
 /-- The kernel of a homogeneous linear map is a homogeneous submodule. -/
 theorem isHomogeneous_ker (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
@@ -441,11 +469,10 @@ theorem InternalGrading.koszulTwist_comp (G : InternalGrading R M) (q q' : ℤ) 
     rw [← Int.cast_mul, ← Units.val_mul, ← Int.negOnePow_add, add_mul, add_comm]
   simpa [LinearMap.comp_apply] using this
 
-/-- The Koszul twist of any parameter is an involution. -/
+/-- The Koszul twist of an even parameter is the identity. -/
 @[simp]
-theorem InternalGrading.koszulTwist_comp_self (G : InternalGrading R M) (q : ℤ) :
-    koszulTwist G q ∘ₗ koszulTwist G q = LinearMap.id := by
-  rw [koszulTwist_comp, ← two_mul]
+theorem InternalGrading.koszulTwist_two_mul (G : InternalGrading R M) (q : ℤ) :
+    koszulTwist G (2 * q) = LinearMap.id := by
   refine DirectSum.decompose_lhom_ext (ℳ := G.piece) fun e => ?_
   ext x
   have hx : (x : M) ∈ G.piece e := Submodule.coe_mem x
@@ -453,6 +480,25 @@ theorem InternalGrading.koszulTwist_comp_self (G : InternalGrading R M) (q : ℤ
     rw [koszulTwist_apply_of_mem G hx (2 * q), mul_assoc, Int.negOnePow_two_mul]
     simp
   simpa [LinearMap.comp_apply] using this
+
+/-- The Koszul twist of parameter two is the identity. -/
+@[simp]
+theorem InternalGrading.koszulTwist_two (G : InternalGrading R M) :
+    koszulTwist G 2 = LinearMap.id := by
+  simpa using koszulTwist_two_mul G 1
+
+/-- The Koszul twist of any parameter is an involution. -/
+@[simp]
+theorem InternalGrading.koszulTwist_comp_self (G : InternalGrading R M) (q : ℤ) :
+    koszulTwist G q ∘ₗ koszulTwist G q = LinearMap.id := by
+  rw [koszulTwist_comp, ← two_mul, koszulTwist_two_mul]
+
+/-- The Koszul twist of any parameter is an involution, pointwise. -/
+@[simp]
+theorem InternalGrading.koszulTwist_koszulTwist (G : InternalGrading R M) (q : ℤ) (x : M) :
+    koszulTwist G q (koszulTwist G q x) = x := by
+  have h := LinearMap.congr_fun (koszulTwist_comp_self G q) x
+  rwa [LinearMap.comp_apply, LinearMap.id_apply] at h
 
 namespace LinearMap.IsHomogeneous
 

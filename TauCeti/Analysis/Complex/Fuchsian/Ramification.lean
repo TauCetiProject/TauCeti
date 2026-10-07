@@ -114,6 +114,12 @@ theorem localMultiplicity_quotientMk_pos (z : ℍ) :
   rw [localMultiplicity_quotientMk]
   exact Nat.card_pos
 
+/-- The orbit projection is not constant on any neighbourhood of a point. -/
+theorem not_eventuallyConst_quotientMk (z : ℍ) :
+    ¬ EventuallyConst (Quotient.mk (orbitRel Γ ℍ)) (𝓝 z) :=
+  (localMultiplicity_pos_iff (.of_forall (mdifferentiable_quotientMk Γ))).1
+    (localMultiplicity_quotientMk_pos Γ z)
+
 /-- The ramification index of the orbit projection depends only on the orbit. -/
 -- Not `@[simp]`: as for `TauCeti.card_stabilizer_smul`, whether the value at `g • z` is in normal
 -- form depends on which form of the point the ambient goal presents.

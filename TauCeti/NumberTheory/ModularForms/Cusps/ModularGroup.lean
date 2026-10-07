@@ -16,10 +16,28 @@ Möbius transformations. These evaluations describe the edges in the Manin-symbo
 
 public section
 
-open Matrix.SpecialLinearGroup ModularGroup OnePoint
+open Matrix Matrix.GeneralLinearGroup Matrix.SpecialLinearGroup ModularGroup OnePoint
 open scoped MatrixGroups
 
 namespace TauCeti
+
+/-- Any two distinct rational cusps are the images of `0` and `∞` under a rational matrix of
+positive determinant. -/
+theorem exists_smul_zero_smul_infty {a b : OnePoint ℚ} (h : a ≠ b) :
+    ∃ g : GL (Fin 2) ℚ, 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det ∧
+      g • ((0 : ℚ) : OnePoint ℚ) = a ∧ g • (∞ : OnePoint ℚ) = b := by
+  obtain ⟨γ, hγ⟩ := OnePoint.exists_mem_SL2 ℤ b
+  -- `γ⁻¹ a` is a finite cusp `q`, reached from `0` by the translation by `q`
+  obtain ⟨q, hq⟩ : ∃ q : ℚ, (q : OnePoint ℚ) = (mapGL ℚ γ)⁻¹ • a :=
+    OnePoint.ne_infty_iff_exists.mp fun h₀ ↦ h (by rw [← hγ, ← h₀, smul_inv_smul])
+  refine ⟨mapGL ℚ γ * upperRightHom q, ?_, ?_, ?_⟩
+  · rw [Units.val_mul, Matrix.det_mul, ← Matrix.GeneralLinearGroup.val_det_apply (mapGL ℚ γ),
+      det_mapGL]
+    simp [upperRightHom_apply]
+  · rw [mul_smul, ← smul_inv_smul (mapGL ℚ γ) a, ← hq]
+    simp [upperRightHom_apply, smul_some_eq_ite]
+  · rw [mul_smul, ← hγ]
+    simp [upperRightHom_apply, smul_infty_eq_ite]
 
 /-- `S` sends `∞` to `0` under the Möbius action. -/
 @[simp]

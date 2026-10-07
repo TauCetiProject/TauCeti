@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Algebraic.Fan.Basic
-public import TauCeti.Geometry.Toric.Algebraic.Ray.Primitive
+public import TauCeti.Geometry.Toric.Algebraic.Ray.Equiv
 import TauCeti.Data.Fin.Sum
 
 /-!
@@ -135,6 +135,46 @@ theorem card_toricRay_le_finrank (h : IsRegularCone i σ) :
   simpa using Nat.card_le_card_of_injective r r.injective
 
 end IsRegularCone
+
+/-! ### Equivalences -/
+
+namespace IsRegularCone
+
+/-- Regularity is preserved when a cone is transported along compatible equivalences of its
+integral lattice and ambient real vector space. -/
+theorem map_equiv {f : N ≃+ N'} {e : V ≃ₗ[ℝ] V'} (hfe : ∀ n, e (i n) = i' (f n))
+    (h : IsRegularCone i σ) :
+    IsRegularCone i' (PointedCone.map (e : V →ₗ[ℝ] V') σ) := by
+  let rayEquiv := ToricRay.mapLinearEquiv (σ := σ) e
+  obtain ⟨n, b, r, hb⟩ := h.exists_basis
+  refine ⟨(isToricCone_map_equiv_iff hfe).2 h.toIsToricCone, n,
+    b.map f.toIntLinearEquiv, rayEquiv.symm.toEmbedding.trans r, ⟨fun ρ ↦ ?_⟩⟩
+  have hp := (hb.isPrimitiveGenerator_apply (rayEquiv.symm ρ)).map_equiv hfe
+  have hray : (rayEquiv.symm ρ).map e = ρ := by
+    calc
+      (rayEquiv.symm ρ).map e =
+          ToricRay.mapLinearEquiv (σ := σ) e (rayEquiv.symm ρ) :=
+        (ToricRay.mapLinearEquiv_apply e _).symm
+      _ = ρ := rayEquiv.apply_symm_apply ρ
+  convert hp using 1
+  · exact hray.symm
+  · simp
+
+end IsRegularCone
+
+/-- Regularity of a cone is invariant under compatible equivalences of its integral lattice and
+ambient real vector space. -/
+theorem isRegularCone_map_equiv_iff {f : N ≃+ N'} {e : V ≃ₗ[ℝ] V'}
+    (hfe : ∀ n, e (i n) = i' (f n)) :
+    IsRegularCone i' (PointedCone.map (e : V →ₗ[ℝ] V') σ) ↔ IsRegularCone i σ := by
+  refine ⟨fun h ↦ ?_, IsRegularCone.map_equiv hfe⟩
+  have hsymm : ∀ n', e.symm (i' n') = i (f.symm n') := fun n' ↦ by
+    simpa using (congrArg e.symm (hfe (f.symm n'))).symm
+  have hback := h.map_equiv hsymm
+  have hcomp : (e.symm : V' →ₗ[ℝ] V).comp (e : V →ₗ[ℝ] V') = LinearMap.id := by
+    ext x
+    simp
+  simpa only [PointedCone.map_map, hcomp, PointedCone.map_id] using hback
 
 /-! ### The zero cone and the cone of a ray -/
 

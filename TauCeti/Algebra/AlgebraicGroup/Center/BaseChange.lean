@@ -37,9 +37,6 @@ point of `H`, so it kills every equation of the original center.
 
 * J. S. Milne, *Algebraic Groups* (2017), §1.k and §2.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapters 2 and 16.
-
-This supplies the base-change compatibility of the center `Z(G)` required in Layer 6,
-"Reductive and semisimple groups", of the ReductiveGroups roadmap.
 -/
 
 public section

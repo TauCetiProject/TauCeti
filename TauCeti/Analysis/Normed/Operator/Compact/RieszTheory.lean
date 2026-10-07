@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.LocallyConvex.HahnBanach
-public import Mathlib.Analysis.Normed.Module.RieszLemma
 public import TauCeti.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.Normed.Operator.Compact.Eigenspace
+import Mathlib.RingTheory.Finiteness.Cofinite
+import TauCeti.Analysis.Normed.Module.RieszLemma
+import TauCeti.LinearAlgebra.End.RangePow
 
 /-!
 # Riesz theory for compact perturbations of the identity
@@ -32,8 +34,8 @@ consequence `IsCompactOperator.exists_dist_lt_of_norm_le`.
 * For the cokernel, run the classical Riesz argument on the decreasing chain of ranges
   `range A ⊇ range A² ⊇ ⋯`. Each `Aⁿ` is again `1` minus a compact operator, so each of these
   ranges is closed, and Riesz's lemma would otherwise produce a separated bounded sequence. Once
-  the chain stabilises at `p`, every `x` splits as an element of `ker A ^ (p + 1)` plus an element
-  of `range A ^ (p + 1) ≤ range A`, so `ker A ^ (p + 1)` surjects onto the cokernel.
+  the chain stabilises at `p`, the finite-dimensional `ker (A ^ p)` and `range (A ^ p) ≤ range A`
+  together span `X`, so `ker (A ^ p)` surjects onto the cokernel.
 
 ## Main declarations
 
@@ -42,14 +44,14 @@ consequence `IsCompactOperator.exists_dist_lt_of_norm_le`.
 * `IsCompactOperator.finiteDimensional_ker_one_sub`: `ker (1 - K)` is finite dimensional.
 * `IsCompactOperator.isClosed_range_one_sub`: `range (1 - K)` is closed.
 * `IsCompactOperator.isCompactOperator_one_sub_pow`: `1 - (1 - K) ^ n` is compact, so
-  every power of `1 - K` is again a compact perturbation of the identity.
+  every power of `1 - K` is again a compact perturbation of the identity. This holds for any
+  continuous endomorphism of a topological module.
 * `IsCompactOperator.finiteDimensional_quotient_range_one_sub`: `X ⧸ range (1 - K)` is
   finite dimensional.
 
 The argument is the classical Riesz theory of compact operators; see, for example, Conway,
 *A Course in Functional Analysis*, Chapter VI, Section 5, or Rudin, *Functional Analysis*,
-Chapter 4. It supplies the compact-perturbation half of the Fredholm package asked for in Lane F0
-of the analytic Heegaard Floer roadmap.
+Chapter 4.
 -/
 
 public section
@@ -59,171 +61,110 @@ namespace TauCeti
 open Filter Module
 open scoped Topology
 
-variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜]
-variable [NormedAddCommGroup X] [NormedSpace 𝕜 X]
-variable {K : X →L[𝕜] X}
+section Pow
 
-/-- The kernel of `1 - K` is the `1`-eigenspace of `K`. -/
-@[simp]
-theorem ker_one_sub (K : X →L[𝕜] X) :
-    LinearMap.ker (1 - (K : X →ₗ[𝕜] X)) = End.eigenspace (K : X →ₗ[𝕜] X) 1 := by
-  ext x
-  rw [LinearMap.mem_ker, End.mem_eigenspace_iff]
-  rw [LinearMap.sub_apply, Module.End.one_apply, one_smul, sub_eq_zero]
-  exact eq_comm
-
-namespace IsCompactOperator
-
-/-- **A bounded sequence whose `(1 - K)`-images vanish in the limit has a subsequence converging
-to a point of `ker (1 - K)`.** The bound `R` on the sequence is arbitrary. -/
-private theorem _root_.IsCompactOperator.exists_subseq_tendsto_mem_ker (hK : IsCompactOperator K)
-    {R : ℝ} {v : ℕ → X}
-    (hvle : ∀ n, ‖v n‖ ≤ R)
-    (hAtendsto : Tendsto (fun n => (1 - K : X →L[𝕜] X) (v n)) atTop (𝓝 0)) :
-    ∃ (y : X) (ψ : ℕ → ℕ), StrictMono ψ ∧ Tendsto (fun k => v (ψ k)) atTop (𝓝 y) ∧
-      y ∈ LinearMap.ker ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) := by
-  obtain ⟨y, ψ, hψ, hψy⟩ := IsCompactOperator.exists_subseq_tendsto hK hvle
-  have hvsub : Tendsto (fun k => v (ψ k)) atTop (𝓝 y) := by
-    -- `v = (1 - K) v + K v`, and both summands converge along the subsequence.
-    have hsum : ∀ k, (1 - K : X →L[𝕜] X) (v (ψ k)) + K (v (ψ k)) = v (ψ k) := by
-      intro k
-      rw [sub_apply, one_apply_eq_self]
-      abel
-    have hlim : Tendsto (fun k => (1 - K : X →L[𝕜] X) (v (ψ k)) + K (v (ψ k))) atTop
-        (𝓝 (0 + y)) := (hAtendsto.comp hψ.tendsto_atTop).add hψy
-    rw [zero_add] at hlim
-    exact Filter.Tendsto.congr hsum hlim
-  have h1 : Tendsto (fun k => (1 - K : X →L[𝕜] X) (v (ψ k))) atTop
-      (𝓝 ((1 - K : X →L[𝕜] X) y)) :=
-    (((1 : X →L[𝕜] X) - K).continuous.tendsto y).comp hvsub
-  have h0 : Tendsto (fun k => (1 - K : X →L[𝕜] X) (v (ψ k))) atTop (𝓝 0) :=
-    hAtendsto.comp hψ.tendsto_atTop
-  exact ⟨y, ψ, hψ, hvsub, LinearMap.mem_ker.mpr (tendsto_nhds_unique h1 h0)⟩
-
-/-- On a closed subspace `M` meeting `ker (1 - K)` only in `0`, the operator `1 - K` is bounded
-below.
-
-Were it not, a sequence of vectors in a fixed norm shell whose images tend to `0` would, along a
-subsequence on which `K` converges, converge to a nonzero vector of `ker (1 - K) ⊓ M`. -/
-theorem _root_.IsCompactOperator.exists_pos_mul_norm_le_of_disjoint_ker (hK : IsCompactOperator K)
-    {M : Submodule 𝕜 X}
-    (hM : IsClosed (M : Set X))
-    (hdisj : Disjoint (LinearMap.ker ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X)) M) :
-    ∃ c : ℝ, 0 < c ∧ ∀ x ∈ M, c * ‖x‖ ≤ ‖(1 - K : X →L[𝕜] X) x‖ := by
-  by_contra hcon
-  push Not at hcon
-  obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
-  have hcpos : (0 : ℝ) < ‖c‖ := one_pos.trans hc
-  choose u huM hu using fun n : ℕ => hcon (1 / (n + 1) : ℝ) (by positivity)
-  have hune : ∀ n, u n ≠ 0 := by
-    intro n hn
-    have h := hu n
-    rw [hn] at h
-    simp at h
-  choose d hd0 hdlt hdge hdaux using fun n => rescale_to_shell hc one_pos (hune n)
-  clear hdaux
-  set v : ℕ → X := fun n => d n • u n with hv
-  have hvM : ∀ n, v n ∈ M := fun n => M.smul_mem _ (huM n)
-  have hvle : ∀ n, ‖v n‖ ≤ 1 := fun n => (hdlt n).le
-  have hvge : ∀ n, ‖c‖⁻¹ ≤ ‖v n‖ := by
-    intro n
-    simpa [one_div] using hdge n
-  have hAv : ∀ n, ‖(1 - K : X →L[𝕜] X) (v n)‖ ≤ 1 / (n + 1) := by
-    intro n
-    have hdn : (0 : ℝ) ≤ ‖d n‖ := norm_nonneg _
-    have hstep : (1 : ℝ) / (n + 1) * ‖v n‖ ≤ 1 / (n + 1) := by
-      have hpos : (0 : ℝ) < 1 / (n + 1) := by positivity
-      simpa using mul_le_mul_of_nonneg_left (hvle n) hpos.le
-    calc ‖(1 - K : X →L[𝕜] X) (v n)‖
-        = ‖d n‖ * ‖(1 - K : X →L[𝕜] X) (u n)‖ := by simp [hv, norm_smul]
-      _ ≤ ‖d n‖ * (1 / (n + 1) * ‖u n‖) := mul_le_mul_of_nonneg_left (hu n).le hdn
-      _ = 1 / (n + 1) * ‖v n‖ := by rw [hv]; simp only [norm_smul]; ring
-      _ ≤ 1 / (n + 1) := hstep
-  have hAtendsto : Tendsto (fun n => (1 - K : X →L[𝕜] X) (v n)) atTop (𝓝 0) :=
-    squeeze_zero_norm hAv tendsto_one_div_add_atTop_nhds_zero_nat
-  obtain ⟨y, ψ, -, hvsub, hyker⟩ := IsCompactOperator.exists_subseq_tendsto_mem_ker hK hvle
-    hAtendsto
-  have hyM : y ∈ M := hM.mem_of_tendsto hvsub (Eventually.of_forall fun k => hvM (ψ k))
-  have hy0 : y = 0 := by simpa using hdisj.le_bot ⟨hyker, hyM⟩
-  have hyge : ‖c‖⁻¹ ≤ ‖y‖ := ge_of_tendsto' hvsub.norm fun k => hvge (ψ k)
-  rw [hy0, norm_zero] at hyge
-  exact absurd hyge (not_le.mpr (by positivity))
+variable {R M : Type*} [Ring R] [TopologicalSpace M] [AddCommGroup M] [IsTopologicalAddGroup M]
+  [Module R M] {K : M →L[R] M}
 
 /-- Every power of a compact perturbation of the identity is again a compact perturbation of the
 identity. -/
 theorem _root_.IsCompactOperator.isCompactOperator_one_sub_pow (hK : IsCompactOperator K) (n : ℕ) :
-    IsCompactOperator ⇑((1 : X →L[𝕜] X) - (1 - K) ^ n) := by
-  induction n with
-  | zero =>
-    rw [pow_zero, sub_self]
-    simpa using isCompactOperator_zero (M₁ := X) (M₂ := X)
-  | succ n ih =>
-    have key : (1 : X →L[𝕜] X) - (1 - K) ^ (n + 1)
-        = ((1 : X →L[𝕜] X) - (1 - K) ^ n) + (1 - K) ^ n * K := by
-      rw [pow_succ, mul_sub, mul_one]
-      abel
-    rw [key]
-    simpa using ih.add (by simpa using hK.clm_comp ((1 - K : X →L[𝕜] X) ^ n))
+    IsCompactOperator ⇑((1 : M →L[R] M) - (1 - K) ^ n) := by
+  rw [← geom_sum_mul_neg, sub_sub_cancel, ContinuousLinearMap.mul_def,
+    ContinuousLinearMap.coe_comp]
+  exact hK.clm_comp _
 
-section Chain
+end Pow
 
-/-- Riesz's lemma in the form used below: a proper closed subspace `P` of a subspace `Q` contains
-a vector of `Q` of controlled norm at distance at least `1` from `P`. -/
-private theorem exists_riesz {P Q : Submodule 𝕜 X} (hPQ : P ≤ Q) (hP : IsClosed (P : Set X))
-    (hne : P ≠ Q) {c : 𝕜} (hc : 1 < ‖c‖) :
-    ∃ x ∈ Q, ‖x‖ ≤ ‖c‖ + 1 ∧ ∀ y ∈ P, 1 ≤ ‖x - y‖ := by
-  have h₁ : IsClosed ((P.comap Q.subtype : Submodule 𝕜 Q) : Set Q) :=
-    hP.preimage continuous_subtype_val
-  have h₂ : ∃ x : Q, x ∉ P.comap Q.subtype := by
-    obtain ⟨x, hxQ, hxP⟩ := IsConcreteLE.exists_of_lt (lt_of_le_of_ne hPQ hne)
-    exact ⟨⟨x, hxQ⟩, by simpa using hxP⟩
-  obtain ⟨x₀, hx₀norm, hx₀⟩ := riesz_lemma_of_norm_lt hc (R := ‖c‖ + 1) (by linarith) h₁ h₂
-  refine ⟨(x₀ : X), x₀.2, hx₀norm, fun y hy => ?_⟩
-  simpa using hx₀ ⟨y, hPQ hy⟩ (by simpa using hy)
+variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜]
+variable [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+variable {K : X →L[𝕜] X}
+
+namespace IsCompactOperator
+
+/-- A bounded sequence whose `(1 - K)`-images tend to `0` has a subsequence converging to a point
+of `ker (1 - K)`. -/
+private theorem _root_.IsCompactOperator.exists_subseq_tendsto_mem_ker (hK : IsCompactOperator K)
+    {R : ℝ} {v : ℕ → X} (hvle : ∀ n, ‖v n‖ ≤ R)
+    (hAtendsto : Tendsto (fun n => (1 - K : X →L[𝕜] X) (v n)) atTop (𝓝 0)) :
+    ∃ (y : X) (ψ : ℕ → ℕ), StrictMono ψ ∧ Tendsto (fun k => v (ψ k)) atTop (𝓝 y) ∧
+      y ∈ LinearMap.ker ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) := by
+  obtain ⟨y, ψ, hψ, hψy⟩ := IsCompactOperator.exists_subseq_tendsto hK hvle
+  have hAψ := hAtendsto.comp hψ.tendsto_atTop
+  -- `v = (1 - K) v + K v`, and both summands converge along the subsequence.
+  have hvsub : Tendsto (fun k => v (ψ k)) atTop (𝓝 y) := by
+    simpa [Function.comp_def] using hAψ.add hψy
+  exact ⟨y, ψ, hψ, hvsub, LinearMap.mem_ker.mpr <|
+    tendsto_nhds_unique (((1 - K : X →L[𝕜] X).continuous.tendsto y).comp hvsub) hAψ⟩
+
+/-- On a closed subspace `M` meeting `ker (1 - K)` only in `0`, the operator `1 - K` is bounded
+below. -/
+theorem _root_.IsCompactOperator.exists_pos_mul_norm_le_of_disjoint_ker (hK : IsCompactOperator K)
+    {M : Submodule 𝕜 X} (hM : IsClosed (M : Set X))
+    (hdisj : Disjoint (LinearMap.ker ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X)) M) :
+    ∃ c : ℝ, 0 < c ∧ ∀ x ∈ M, c * ‖x‖ ≤ ‖(1 - K : X →L[𝕜] X) x‖ := by
+  by_contra! hcon
+  obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
+  -- Otherwise `M` contains vectors in the shell `‖c‖⁻¹ ≤ ‖x‖ ≤ 1` with arbitrarily small images.
+  have hshell : ∀ n : ℕ, ∃ x ∈ M, ‖x‖ ≤ 1 ∧ ‖c‖⁻¹ ≤ ‖x‖ ∧
+      ‖(1 - K : X →L[𝕜] X) x‖ ≤ 1 / (n + 1) := by
+    intro n
+    obtain ⟨u, huM, hu⟩ := hcon (1 / (n + 1)) (by positivity)
+    have hu0 : u ≠ 0 := by rintro rfl; simp at hu
+    obtain ⟨d, -, hdlt, hdge, -⟩ := rescale_to_shell hc one_pos hu0
+    refine ⟨d • u, M.smul_mem d huM, hdlt.le, by simpa using hdge, ?_⟩
+    calc ‖(1 - K : X →L[𝕜] X) (d • u)‖ = ‖d‖ * ‖(1 - K : X →L[𝕜] X) u‖ := by
+          rw [map_smul, norm_smul]
+      _ ≤ ‖d‖ * (1 / (n + 1) * ‖u‖) := by gcongr
+      _ = 1 / (n + 1) * ‖d • u‖ := by rw [norm_smul]; ring
+      _ ≤ 1 / (n + 1) := mul_le_of_le_one_right (by positivity) hdlt.le
+  choose v hvM hvle hvge hAv using hshell
+  obtain ⟨y, ψ, -, hvsub, hyker⟩ := IsCompactOperator.exists_subseq_tendsto_mem_ker hK hvle
+    (squeeze_zero_norm hAv tendsto_one_div_add_atTop_nhds_zero_nat)
+  have hyM : y ∈ M := hM.mem_of_tendsto hvsub (.of_forall fun k => hvM (ψ k))
+  have hy0 : y = 0 := by simpa using hdisj.le_bot ⟨hyker, hyM⟩
+  have hyge : ‖c‖⁻¹ ≤ ‖y‖ := ge_of_tendsto' hvsub.norm fun k => hvge (ψ k)
+  rw [hy0, norm_zero] at hyge
+  exact hyge.not_gt (by positivity)
 
 /-- A decreasing chain of closed subspaces stable under `1 - K`, in the sense that `1 - K` carries
-the `n`-th one into the `(n + 1)`-st, cannot be strictly decreasing: Riesz's lemma would otherwise
-produce a bounded sequence whose images under `K` stay `1` apart. -/
+the `n`-th one into the `(n + 1)`-st, cannot be strictly decreasing. -/
 private theorem _root_.IsCompactOperator.exists_eq_succ_of_chain (hK : IsCompactOperator K)
     {V : ℕ → Submodule 𝕜 X}
     (hmono : ∀ n, V (n + 1) ≤ V n) (hclosed : ∀ n, IsClosed ((V n : Set X)))
     (hstep : ∀ n, ∀ x ∈ V n, x - K x ∈ V (n + 1)) :
     ∃ p, V (p + 1) = V p := by
-  by_contra hcon
-  push Not at hcon
-  have hanti : ∀ {m n : ℕ}, m ≤ n → V n ≤ V m := by
-    intro m n h
-    induction h with
-    | refl => exact le_rfl
-    | step h ih => exact (hmono _).trans ih
+  by_contra! hcon
+  have hanti : Antitone V := antitone_nat_of_succ_le hmono
   obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
+  -- Riesz's lemma gives a bounded sequence whose images under `K` stay `1` apart.
   choose f hfmem hfnorm hfsep using fun n =>
-    exists_riesz (hmono n) (hclosed (n + 1)) (hcon n) hc
+    riesz_lemma_of_norm_lt_of_lt hc (lt_add_one ‖c‖) (hclosed (n + 1))
+      ((hmono n).lt_of_ne (hcon n))
   have key : ∀ m n : ℕ, m < n → 1 ≤ ‖K (f m) - K (f n)‖ := by
     intro m n hmn
-    have hy : (f m - K (f m)) + f n - (f n - K (f n)) ∈ V (m + 1) := by
-      refine Submodule.sub_mem _ (Submodule.add_mem _ (hstep m _ (hfmem m)) ?_) ?_
-      · exact hanti hmn (hfmem n)
-      · exact hanti (Nat.succ_le_succ hmn.le) (hstep n _ (hfmem n))
+    have hy : (f m - K (f m)) + f n - (f n - K (f n)) ∈ V (m + 1) :=
+      Submodule.sub_mem _ (Submodule.add_mem _ (hstep m _ (hfmem m)) (hanti hmn (hfmem n)))
+        (hanti (Nat.succ_le_succ hmn.le) (hstep n _ (hfmem n)))
     have hrw : K (f m) - K (f n) = f m - ((f m - K (f m)) + f n - (f n - K (f n))) := by abel
     rw [hrw]
     exact hfsep m _ hy
   obtain ⟨m, n, hmn, hlt⟩ := IsCompactOperator.exists_dist_lt_of_norm_le hK hfnorm one_pos
   rw [dist_eq_norm] at hlt
-  rcases lt_or_gt_of_ne hmn with h | h
-  · exact absurd hlt (not_lt.mpr (key m n h))
-  · rw [norm_sub_rev] at hlt
-    exact absurd hlt (not_lt.mpr (key n m h))
-
-end Chain
+  rcases hmn.lt_or_gt with h | h
+  · exact (key m n h).not_gt hlt
+  · exact (key n m h).not_gt (by rwa [norm_sub_rev])
 
 variable [CompleteSpace 𝕜]
 
 /-- The kernel of a compact perturbation of the identity is finite dimensional. -/
 theorem _root_.IsCompactOperator.finiteDimensional_ker_one_sub (hK : IsCompactOperator K) :
     FiniteDimensional 𝕜 (LinearMap.ker ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X)) := by
-  rw [ContinuousLinearMap.toLinearMap_sub, ContinuousLinearMap.toLinearMap_one,
-    TauCeti.ker_one_sub]
+  have hker : LinearMap.ker ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) =
+      End.eigenspace (K : X →ₗ[𝕜] X) 1 := by
+    ext x
+    simp [sub_eq_zero, eq_comm (a := x)]
+  rw [hker]
   exact IsCompactOperator.finiteDimensional_eigenspace hK one_ne_zero
 
 variable [IsRCLikeNormedField 𝕜] [CompleteSpace X]
@@ -231,113 +172,53 @@ variable [IsRCLikeNormedField 𝕜] [CompleteSpace X]
 /-- The range of a compact perturbation of the identity is closed. -/
 theorem _root_.IsCompactOperator.isClosed_range_one_sub (hK : IsCompactOperator K) :
     IsClosed (LinearMap.range ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) : Set X) := by
-  have hfin : FiniteDimensional 𝕜 (LinearMap.ker ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X)) :=
-    IsCompactOperator.finiteDimensional_ker_one_sub hK
+  have := IsCompactOperator.finiteDimensional_ker_one_sub hK
   obtain ⟨M, hMclosed, hMcompl⟩ :=
     (Submodule.ClosedComplemented.of_finiteDimensional
       (LinearMap.ker ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X))).exists_isClosed_isCompl
   obtain ⟨c, hcpos, hc⟩ := IsCompactOperator.exists_pos_mul_norm_le_of_disjoint_ker hK hMclosed
     hMcompl.disjoint
-  -- Every value of `1 - K` is already attained on `M`.
-  have hrange : (LinearMap.range ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) : Set X)
-      = Set.range ((1 - K : X →L[𝕜] X).comp M.subtypeL) := by
-    ext y
-    constructor
-    · rintro ⟨x, rfl⟩
-      have hx : x ∈ LinearMap.ker ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) ⊔ M := by
-        rw [hMcompl.sup_eq_top]; trivial
-      obtain ⟨n, hn, m, hm, hnm⟩ := Submodule.mem_sup.mp hx
-      refine ⟨⟨m, hm⟩, ?_⟩
-      have hn0 : (1 - K : X →L[𝕜] X) n = 0 := hn
-      simp only [ContinuousLinearMap.comp_apply, Submodule.coe_subtypeL,
-        Submodule.subtype_apply, ContinuousLinearMap.coe_coe]
-      rw [← hnm, map_add, hn0, zero_add]
-    · rintro ⟨m, rfl⟩
-      exact ⟨(m : X), rfl⟩
-  have hMcomplete : CompleteSpace M := hMclosed.completeSpace_coe
-  have hcinv : (0 : ℝ) ≤ c⁻¹ := by positivity
-  have hanti : AntilipschitzWith (Real.toNNReal c⁻¹)
-      ((1 - K : X →L[𝕜] X).comp M.subtypeL) := by
-    refine AddMonoidHomClass.antilipschitz_of_bound _ fun m => ?_
-    have hm := hc (m : X) m.2
-    have h2 : ‖(m : X)‖ ≤ c⁻¹ * ‖(1 - K : X →L[𝕜] X) (m : X)‖ := by
-      have h3 := mul_le_mul_of_nonneg_left hm hcinv
-      rwa [← mul_assoc, inv_mul_cancel₀ hcpos.ne', one_mul] at h3
-    simpa [Real.coe_toNNReal _ hcinv] using h2
-  rw [hrange]
-  exact hanti.isClosed_range ((1 - K : X →L[𝕜] X).comp M.subtypeL).uniformContinuous
-
-/-- A sequence obeying the recurrence `V (n + 1) = f (V n)` is constant from `p` onwards as soon
-as `V (p + 1) = V p`. -/
-private lemma eq_of_apply_eq_of_succ_eq {S : Type*} {f : S → S} {V : ℕ → S} {p : ℕ}
-    (hmap : ∀ n, V (n + 1) = f (V n)) (hp : V (p + 1) = V p) (n : ℕ) :
-    V (p + n) = V p := by
-  induction n with
-  | zero => simp
-  | succ n ih => rw [← Nat.add_assoc, hmap (p + n), ih, ← hmap p, hp]
-
-omit [CompleteSpace 𝕜] [IsRCLikeNormedField 𝕜] [CompleteSpace X] in
-/-- If the range of `T ^ (n + 1)` is unchanged on squaring, then `ker (T ^ (n + 1))` and `range T`
-span, so `ker (T ^ (n + 1))` surjects onto `X ⧸ range T`. -/
-private lemma mkQ_comp_ker_subtype_surjective {T : X →ₗ[𝕜] X} {n : ℕ}
-    (hn : LinearMap.range (T ^ (n + 1 + (n + 1))) = LinearMap.range (T ^ (n + 1))) :
-    Function.Surjective ((LinearMap.range T).mkQ.comp
-      (LinearMap.ker (T ^ (n + 1))).subtype) := by
-  have hsup : LinearMap.range T ⊔ LinearMap.ker (T ^ (n + 1)) = ⊤ := by
-    rw [eq_top_iff]
-    intro x _
-    obtain ⟨z, hz⟩ : (T ^ (n + 1)) x ∈ LinearMap.range (T ^ (n + 1 + (n + 1))) := by
-      rw [hn]; exact ⟨x, rfl⟩
-    rw [pow_add, Module.End.mul_apply] at hz
-    refine Submodule.mem_sup.mpr ⟨(T ^ (n + 1)) z, ⟨(T ^ n) z, by rw [pow_succ']; rfl⟩,
-      x - (T ^ (n + 1)) z, ?_, by abel⟩
-    rw [LinearMap.mem_ker, map_sub, hz, sub_self]
-  rw [← LinearMap.range_eq_top, LinearMap.range_comp, Submodule.range_subtype,
-    Submodule.map_mkQ_eq_top]
-  exact hsup
+  -- `1 - K` restricted to `M` is bounded below and has the same range as `1 - K`.
+  set A : M →L[𝕜] X := (1 - K : X →L[𝕜] X).comp M.subtypeL
+  obtain ⟨C, hC⟩ : ∃ C, AntilipschitzWith C A :=
+    antilipschitzWith_iff_exists_mul_le_norm.mpr ⟨c, hcpos, fun m => hc m m.2⟩
+  have hrange : Set.range A = LinearMap.range ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) := by
+    rw [← Submodule.map_eq_range_iff.mpr hMcompl.codisjoint.symm, Submodule.map_coe]
+    ext
+    simp [A]
+  have : CompleteSpace M := hMclosed.completeSpace_coe
+  rw [← hrange]
+  exact hC.isClosed_range A.uniformContinuous
 
 /-- The cokernel of a compact perturbation of the identity is finite dimensional. -/
-theorem _root_.IsCompactOperator.finiteDimensional_quotient_range_one_sub (hK : IsCompactOperator K)
-    :
+theorem _root_.IsCompactOperator.finiteDimensional_quotient_range_one_sub
+    (hK : IsCompactOperator K) :
     FiniteDimensional 𝕜 (X ⧸ LinearMap.range ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X)) := by
   set A : X →L[𝕜] X := 1 - K with hA
-  -- `V` is Mathlib's chain object, so one step of the chain and its antitonicity are library
-  -- facts rather than hand proofs; `hViter` is the bridge to the `range (A ^ n)` form used below.
-  set V : ℕ → Submodule 𝕜 X := fun n => (A : X →ₗ[𝕜] X).iterateRange n with hV
-  have hViter : ∀ n, V n = LinearMap.range ((A ^ n : X →L[𝕜] X) : X →ₗ[𝕜] X) := fun n => by
-    simp only [hV, LinearMap.iterateRange_coe, ContinuousLinearMap.toLinearMap_pow]
-  have hVmap : ∀ n, V (n + 1) = Submodule.map (A : X →ₗ[𝕜] X) (V n) :=
-    fun _ => LinearMap.iterateRange_succ
-  have hVsucc : ∀ n, ∀ x ∈ V n, A x ∈ V (n + 1) := fun n x hx => (hVmap n) ▸ ⟨x, hx, rfl⟩
-  have hVmono : ∀ n, V (n + 1) ≤ V n :=
-    fun n => (A : X →ₗ[𝕜] X).iterateRange.monotone (Nat.le_succ n)
-  have hVclosed : ∀ n, IsClosed ((V n : Set X)) := by
-    intro n
-    have h := IsCompactOperator.isClosed_range_one_sub
-      (IsCompactOperator.isCompactOperator_one_sub_pow hK n)
-    rw [sub_sub_cancel, ← hA] at h
-    rw [hViter]
-    exact h
-  obtain ⟨p, hp⟩ := IsCompactOperator.exists_eq_succ_of_chain hK hVmono hVclosed (by
-    intro n x hx
-    have : x - K x = A x := rfl
-    rw [this]
-    exact hVsucc n x hx)
-  -- The chain of ranges is constant from `p` on.
-  have hconst : ∀ n, V (p + n) = V p := eq_of_apply_eq_of_succ_eq hVmap hp
-  have hV2 : V (p + 1 + (p + 1)) = V (p + 1) := by
-    have h1 : p + 1 + (p + 1) = p + (p + 2) := by omega
-    rw [h1, hconst, hp]
-  -- The kernel of `A ^ (p + 1)` surjects onto the cokernel of `A`.
-  have hkerfin : FiniteDimensional 𝕜
-      (LinearMap.ker (((A : X →ₗ[𝕜] X)) ^ (p + 1))) := by
+  -- The ranges of the powers of `A` form a decreasing chain of closed subspaces, which must
+  -- stabilise at some `p`.
+  have hVclosed : ∀ n, IsClosed (LinearMap.range ((A : X →ₗ[𝕜] X) ^ n) : Set X) := fun n => by
+    simpa only [sub_sub_cancel, ← hA, ContinuousLinearMap.toLinearMap_pow] using
+      IsCompactOperator.isClosed_range_one_sub
+        (IsCompactOperator.isCompactOperator_one_sub_pow hK n)
+  have hVmono : ∀ n, LinearMap.range ((A : X →ₗ[𝕜] X) ^ (n + 1)) ≤
+      LinearMap.range ((A : X →ₗ[𝕜] X) ^ n) := fun n => by
+    rw [pow_succ, Module.End.mul_eq_comp]
+    exact LinearMap.range_comp_le_range _ _
+  obtain ⟨p, hp⟩ := IsCompactOperator.exists_eq_succ_of_chain
+    (V := fun n => LinearMap.range ((A : X →ₗ[𝕜] X) ^ n)) hK hVmono hVclosed
+    fun n _ ⟨z, hz⟩ => ⟨z, by rw [pow_succ', Module.End.mul_apply, hz, hA]; simp⟩
+  -- Then `ker (A ^ p)`, which is finite dimensional, together with `range A` spans `X`.
+  have hcod : Codisjoint (LinearMap.ker ((A : X →ₗ[𝕜] X) ^ p))
+      (LinearMap.range (A : X →ₗ[𝕜] X)) := by
+    refine (LinearMap.codisjoint_ker_pow_range_pow_of_range_pow_succ_eq hp).mono_right ?_
+    rw [← hp, pow_succ', Module.End.mul_eq_comp]
+    exact LinearMap.range_comp_le_range _ _
+  have hkerfin : FiniteDimensional 𝕜 (LinearMap.ker ((A : X →ₗ[𝕜] X) ^ p)) := by
     have h := IsCompactOperator.finiteDimensional_ker_one_sub
-      (IsCompactOperator.isCompactOperator_one_sub_pow hK (p + 1))
-    rw [sub_sub_cancel, ← hA, ContinuousLinearMap.toLinearMap_pow] at h
-    exact h
-  refine FiniteDimensional.of_surjective _
-    (mkQ_comp_ker_subtype_surjective (T := (A : X →ₗ[𝕜] X)) (n := p) ?_)
-  simpa only [← ContinuousLinearMap.toLinearMap_pow, ← hViter] using hV2
+      (IsCompactOperator.isCompactOperator_one_sub_pow hK p)
+    rwa [sub_sub_cancel, ← hA, ContinuousLinearMap.toLinearMap_pow] at h
+  exact Submodule.FG.cofg_of_codisjoint hcod (Module.Finite.iff_fg.mp hkerfin)
 
 end IsCompactOperator
 

@@ -31,10 +31,10 @@ and `exists_measurePreserving_from_unitInterval` (Janson, Thm A.9) does that wit
 hypothesis. That is the whole content of the harder direction: an *arbitrary* coupling, however
 atomic, is realized by a pair of measure-preserving maps out of `(I, volume)`, because the pair of
 projections of such a realization has the coupling as its joint law. The companion
-`CutMetric.Pullback.Validation` module instantiates the equivalence at a point-mass coupling, at a
-finitely atomic one, and at one mixing an atomic with a continuous direction; these regressions are
-what the absence of an atomless hypothesis buys, and each fails to typecheck for any formulation
-that assumes one.
+`CutMetric.Pullback.Validation` module evaluates the map form through the equivalence at a
+point-mass coupling, at finitely atomic ones, and at ones mixing an atomic with a continuous
+direction; these regressions are what the absence of an atomless hypothesis buys, and each fails to
+typecheck for any formulation that assumes one.
 
 **Why the easy direction is easy.** A pair of measure-preserving maps `f, g` out of a common
 carrier pushes that carrier forward to a coupling along `x ↦ (f x, g x)`, and the overlaid

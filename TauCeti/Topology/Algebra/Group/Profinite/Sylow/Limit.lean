@@ -49,7 +49,7 @@ variable {p : ℕ} {G : Type u} [Group G] [TopologicalSpace G]
 
 namespace IsProPSylow
 
-variable [Fact p.Prime] [IsTopologicalGroup G] {P : Subgroup G}
+variable [Fact p.Prime] {P : Subgroup G}
 
 /-- The Sylow images of a Sylow pro-`p` subgroup are compatible along the quotient maps
 `G ⧸ U →* G ⧸ V`. -/
@@ -60,7 +60,7 @@ theorem map_mapOfLE_toSylow (hP : IsProPSylow p P) ⦃U V : OpenNormalSubgroup G
 
 /-- A Sylow pro-`p` subgroup of a profinite group is cut out by its images in the finite
 quotients. -/
-theorem limitSubgroup_toSylow [CompactSpace G] [TotallyDisconnectedSpace G]
+theorem limitSubgroup_toSylow [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
     (hP : IsProPSylow p P) :
     limitSubgroup (fun U ↦ (hP.toSylow U : Subgroup (G ⧸ U.toSubgroup))) = P := by
   simpa only [toSylow_coe] using limitSubgroup_map_mk' P hP.isClosed

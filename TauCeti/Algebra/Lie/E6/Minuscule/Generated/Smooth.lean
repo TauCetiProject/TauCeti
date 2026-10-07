@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.E6.Minuscule.Generated.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel.Reduced
+public import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
 
 /-!
 # Smoothness of the generated type-E₆ minuscule subgroup
@@ -43,8 +44,7 @@ variable (k : Type v) [Field k]
 private theorem isReduced_generatorCoordinateAlgebra :
     ∀ j, IsReduced (generatorCoordinateAlgebra k j) := by
   let : IsReduced (AdditiveGroup.coordinateHopfAlgebra k) :=
-    isReduced_of_injective (AdditiveGroup.coordinateAlgEquiv k).toRingHom
-      (AdditiveGroup.coordinateAlgEquiv k).injective
+    AdditiveGroup.isReduced_coordinateHopfAlgebra k
   let : IsReduced (DiagonalizableGroup.coordinateRing k
       (SplitTorus.characterGroup (Fin 6))).obj := inferInstance
   intro j
@@ -65,10 +65,8 @@ theorem isReduced_generatedCoordinateHopfAlgebra [IsAlgClosed k] :
 is smooth over an algebraically closed field. -/
 theorem smoothCommHopfAlgProperty_generatedCoordinateHopfAlgebra [IsAlgClosed k] :
     smoothCommHopfAlgProperty k (generatedCoordinateHopfAlgebra k) := by
-  let : ∀ j, IsReduced (generatorCoordinateAlgebra k j) :=
-    isReduced_generatorCoordinateAlgebra k
-  rw [generatedCoordinateHopfAlgebra_def, generatedDefiningIdeal_def]
-  exact CommHopfAlgCat.smoothCommHopfAlgProperty_quotient_commonKernelHopfIdeal
-    (generatorCoordinateMap k)
+  let : IsReduced (generatedCoordinateHopfAlgebra k) :=
+    isReduced_generatedCoordinateHopfAlgebra k
+  exact smoothCommHopfAlgProperty_of_isAlgClosed_of_isReduced k _
 
 end TauCeti.E6Minuscule

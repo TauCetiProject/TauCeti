@@ -8,9 +8,10 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.Trace
+public import Mathlib.Topology.Algebra.Group.Matrix
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
+public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
@@ -35,9 +36,14 @@ triangle group in `PSL(2, ℝ)`.
   `2 cos (π / k)`, with `2 ≤ k`, has `k`-th power `-1`.
 * `Matrix.ProjectiveSpecialLinearGroup.mk_pow_eq_one_of_trace_sq_eq_two_mul_cos_pi_div_sq`: if
   `trace A ^ 2 = (2 cos (π / k)) ^ 2` with `2 ≤ k`, then the class of `A` has `k`-th power `1`.
-* `Matrix.SpecialLinearGroup.conjRotation`: the conjugated rotation matrix, with its trace
-  `trace_conjRotation`, the trace `trace_conjRotation_mul_conjRotation` of a product, and the trace
-  `trace_commutatorElement_conjRotation` of a commutator.
+* `Matrix.SpecialLinearGroup.rotation`: the rotation matrix `!![cos θ, sin θ; -sin θ, cos θ]`;
+  `rotation_zero`, `rotation_add` and `rotation_inv` make the family a one-parameter subgroup,
+  `continuous_rotation` a continuous one, and `pslMk_rotation_pi_div_two` identifies the class of
+  the quarter turn in `PSL(2, ℝ)` with `TauCeti.pslS`.
+* `Matrix.SpecialLinearGroup.conjRotation`: the conjugated rotation matrix
+  (`conjRotation_zero_right` identifies the unconjugated case with `rotation`), with its trace
+  `trace_conjRotation`, the trace `trace_conjRotation_mul_conjRotation` of a product, and the
+  trace `trace_commutatorElement_conjRotation` of a commutator.
 
 ## References
 
@@ -124,8 +130,57 @@ end ProjectiveSpecialLinearGroup
 
 namespace SpecialLinearGroup
 
+/-- The rotation `!![cos θ, sin θ; -sin θ, cos θ]`, an element of `SL(2, ℝ)`. -/
+def rotation (θ : ℝ) : SL(2, ℝ) :=
+  ⟨!![cos θ, sin θ; -sin θ, cos θ], by
+    rw [det_fin_two_of]
+    linear_combination cos_sq_add_sin_sq θ⟩
+
+/-- The entries of `rotation θ`. -/
+@[simp]
+theorem coe_rotation (θ : ℝ) :
+    (rotation θ : Matrix (Fin 2) (Fin 2) ℝ) = !![cos θ, sin θ; -sin θ, cos θ] := (rfl)
+
+/-- The rotation by `0` is the identity. -/
+@[simp]
+theorem rotation_zero : rotation 0 = 1 :=
+  SpecialLinearGroup.ext _ _ fun i j => by
+    fin_cases i <;> fin_cases j <;> simp
+
+-- Not `@[simp]`: the family form `rotation θ` is the simp normal form, so that the action
+-- lemmas stated in it keep firing.
+/-- The rotations form a one-parameter subgroup: `rotation (θ + φ) = rotation θ * rotation φ`. -/
+theorem rotation_add (θ φ : ℝ) : rotation (θ + φ) = rotation θ * rotation φ :=
+  SpecialLinearGroup.ext _ _ fun i j => by
+    fin_cases i <;> fin_cases j <;>
+      simp [cos_add, sin_add, mul_apply, Fin.sum_univ_two] <;> ring
+
+/-- The inverse of `rotation θ` is `rotation (-θ)`. -/
+@[simp]
+theorem rotation_inv (θ : ℝ) : (rotation θ)⁻¹ = rotation (-θ) :=
+  inv_eq_of_mul_eq_one_right (by rw [← rotation_add, add_neg_cancel, rotation_zero])
+
+/-- The rotations `θ ↦ rotation θ` form a continuous family in `SL(2, ℝ)`. -/
+@[fun_prop]
+theorem continuous_rotation : Continuous rotation :=
+  Continuous.subtype_mk (continuous_matrix fun i j => by
+    fin_cases i <;> fin_cases j <;>
+      simp only [Fin.zero_eta, Fin.isValue, Fin.mk_one, of_apply, cons_val', cons_val_zero,
+        cons_val_one, cons_val_fin_one] <;>
+      fun_prop) _
+
+/-- The class of `rotation (π/2) = !![0, 1; -1, 0]` in `PSL(2, ℝ)` is `pslS`, the image of
+`ModularGroup.S = !![0, -1; 1, 0]`: the two matrices differ by a sign. -/
+@[simp]
+theorem pslMk_rotation_pi_div_two : (↑(rotation (π / 2)) : PSL(2, ℝ)) = TauCeti.pslS := by
+  have h : rotation (π / 2) = -(map (Int.castRingHom ℝ) ModularGroup.S) := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [map_apply_coe, ModularGroup.coe_S]
+  rw [h, ProjectiveSpecialLinearGroup.mk_neg, TauCeti.pslS_def, psl2zToPSL2R_mk,
+    sl2zToPSL2R_apply]
+
 /-- The matrix `!![cos θ, exp t * sin θ; -(exp (-t) * sin θ), cos θ]` of `SL(2, ℝ)`: the rotation
-`!![cos θ, sin θ; -sin θ, cos θ]` conjugated by `diag (exp (t / 2), exp (-t / 2))`. -/
+`rotation θ = !![cos θ, sin θ; -sin θ, cos θ]` conjugated by `diag (exp (t / 2), exp (-t / 2))`. -/
 def conjRotation (θ t : ℝ) : SL(2, ℝ) :=
   ⟨!![cos θ, exp t * sin θ; -(exp (-t) * sin θ), cos θ], by
     rw [det_fin_two_of, exp_neg]
@@ -137,6 +192,13 @@ def conjRotation (θ t : ℝ) : SL(2, ℝ) :=
 theorem coe_conjRotation (θ t : ℝ) :
     (conjRotation θ t : Matrix (Fin 2) (Fin 2) ℝ) =
       !![cos θ, exp t * sin θ; -(exp (-t) * sin θ), cos θ] := (rfl)
+
+-- Not `@[simp]`: `conjRotation θ 0` is the form the triangle-group generators use, and the
+-- `@[simp]` trace lemmas below are stated in it.
+/-- The unconjugated case of `conjRotation` is `rotation`. -/
+theorem conjRotation_zero_right (θ : ℝ) : conjRotation θ 0 = rotation θ :=
+  SpecialLinearGroup.ext _ _ fun i j => by
+    fin_cases i <;> fin_cases j <;> simp
 
 /-- The conjugated rotation `conjRotation θ t` has the trace `2 cos θ` of the rotation. -/
 theorem trace_conjRotation (θ t : ℝ) :

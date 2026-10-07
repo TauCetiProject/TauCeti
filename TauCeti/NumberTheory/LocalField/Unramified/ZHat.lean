@@ -9,6 +9,8 @@ public import Mathlib.FieldTheory.Galois.Profinite
 public import TauCeti.NumberTheory.LocalField.Unramified.Maximal
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Basic
 
+import TauCeti.Topology.Algebra.Group.Profinite.ZHat.ZMod
+
 /-!
 # The Galois group of the maximal unramified extension
 
@@ -18,7 +20,9 @@ the Galois group of the maximal unramified extension with the profinite integers
 `Gal(Kᵘʳ/K) ≃ₜ* ℤ̂`.
 
 The isomorphism sends arithmetic Frobenius to the canonical generator `zHat.gen`, and hence each
-integral power of `zHat.gen` to the same power of Frobenius.
+integral power of `zHat.gen` to the same power of Frobenius; in particular arithmetic Frobenius has
+infinite order (`TauCeti.not_isOfFinOrder_maximalUnramifiedFrobenius`), and `Gal(Kᵘʳ/K)` is
+commutative.
 
 ## Main definition
 
@@ -202,5 +206,20 @@ theorem maximalUnramifiedGaloisGroupEquivZHat_symm_apply_ofInt (n : ℤ) :
         (zHat.ofInt (Multiplicative.ofAdd n)) =
       maximalUnramifiedFrobenius K Ω ^ n := by
   rw [zHat.ofInt_ofAdd, map_zpow, maximalUnramifiedGaloisGroupEquivZHat_symm_apply_gen]
+
+open scoped IsMulCommutative in
+/-- The Galois group of the maximal unramified extension is commutative, being isomorphic to
+`ℤ̂`. -/
+instance : IsMulCommutative Gal(maximalUnramifiedExtension K Ω/K) :=
+  ⟨⟨fun a b ↦ (maximalUnramifiedGaloisGroupEquivZHat K Ω).injective (by
+    rw [map_mul, map_mul, mul_comm])⟩⟩
+
+/-- **Arithmetic Frobenius has infinite order** in `Gal(Kᵘʳ/K)`, since `ℤ` embeds into `ℤ̂`. -/
+theorem not_isOfFinOrder_maximalUnramifiedFrobenius :
+    ¬ IsOfFinOrder (maximalUnramifiedFrobenius K Ω) := by
+  refine injective_zpow_iff_not_isOfFinOrder.1 fun m n h ↦ ?_
+  simp only [← maximalUnramifiedGaloisGroupEquivZHat_symm_apply_ofInt] at h
+  exact Multiplicative.ofAdd.injective (zHat.ofInt_injective
+    ((maximalUnramifiedGaloisGroupEquivZHat K Ω).symm.injective h))
 
 end TauCeti

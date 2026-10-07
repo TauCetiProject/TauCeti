@@ -75,18 +75,16 @@ theorem restrict_restrict (P : Place k₂ F₂) :
   rw [← IsScalarTower.algebraMap_apply F₀ F₁ F₂]
   exact (mem_integers_restrict_iff k₀ F₀ P x).mp hx
 
+omit [Algebra.IsIntegral F₀ F₁] in
 /-- **Ramification indices are multiplicative in towers** (Stichtenoth, Proposition 3.1.6):
-`e(P₂ / P₀) = e(P₂ / P₁) e(P₁ / P₀)` for the restrictions `P₁` and `P₀` of `P₂`. -/
+`e(P₂ / F₀) = e(P₂ / F₁) e(P₂|F₁ / F₀)`. Only `F₂ / F₁` needs to be algebraic;
+the restrictions to `F₀` may be trivial, in which case both corresponding indices vanish. -/
 theorem ramificationIdx_restrict_mul (P : Place k₂ F₂) :
     P.ramificationIdx F₀ =
       P.ramificationIdx F₁ * (P.restrict k₁ F₁).ramificationIdx F₀ := by
   rw [ramificationIdx_def, ramificationIdx_def, ramificationIdx_def]
   apply Valuation.ordIndex_eq_mul_of_forall_ord_eq _ _
     (e := Valuation.ordIndex (P.valuation.comap (algebraMap F₁ F₂)))
-  · rw [← ramificationIdx_def]
-    exact ramificationIdx_pos F₁ P
-  · rw [← ramificationIdx_def]
-    exact Nat.ne_of_gt (ramificationIdx_pos F₀ (P.restrict k₁ F₁))
   intro x
   have hP (y : F₂) : Valuation.ord P.valuation y = P.ord y := by
     rw [Valuation.ord_def, P.ord_def]

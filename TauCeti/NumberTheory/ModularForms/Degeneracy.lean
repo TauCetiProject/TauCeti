@@ -36,6 +36,7 @@ the lower level. The `q`-expansion results go up only.
 
 * `TauCeti.scaleGL d`: the diagonal element `!![d, 0; 0, 1]` of `GL(2, ℝ)`, a value of
   `TauCeti.diagGL`.
+* `TauCeti.scaleGLRat d`: the same diagonal element over `ℚ`.
 * `TauCeti.conjScale`: its conjugation action on an integral matrix whose lower-left entry is
   divisible by `d`, `(a, b; d c, e) ↦ (a, d b; c, e)`.
 * `TauCeti.ModularForm.levelRaise`, `TauCeti.CuspForm.levelRaise`: the operator `V_d`, taking a
@@ -44,6 +45,7 @@ the lower level. The `q`-expansion results go up only.
 
 ## Main results
 
+* `TauCeti.map_ratCast_scaleGLRat`: the rational scaling matrix pushes forward to `scaleGL d`.
 * `TauCeti.ModularForm.levelRaise_apply`: `(V_d f) τ = f (d τ)`, the defining formula from which
   the algebraic properties (`levelRaise_one_apply`, `ModularForm.levelRaise_one`,
   `levelRaise_levelRaise`, `levelRaise_injective`) all follow by `ext`.
@@ -161,6 +163,22 @@ lemma coe_scaleGL [NeZero d] :
     ((scaleGL d : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ) = !![(d : ℝ), 0; 0, 1] := by
   rw [scaleGL, diagGL_coe, Matrix.diagonal_fin_two]
   simp
+
+/-- **`diag(d, 1)` over `ℚ`.** `scaleGL` is stated over `ℝ`, where the slash action lives, but the
+cusp argument needs the same matrix over `ℚ`, because what makes `diag(d, 1)⁻¹ · A` carry cusps to
+cusps is precisely that it is *rational*. -/
+noncomputable def scaleGLRat (d : ℕ) [NeZero d] : GL (Fin 2) ℚ :=
+  diagGL ![Units.mk0 (d : ℚ) (Nat.cast_ne_zero.mpr (NeZero.ne d)), 1]
+
+/-- `scaleGLRat` pushes forward to `scaleGL`. -/
+@[simp] lemma map_ratCast_scaleGLRat (d : ℕ) [NeZero d] :
+    Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (scaleGLRat d) = scaleGL d := by
+  refine Units.ext ?_
+  rw [coe_scaleGL]
+  ext i j
+  simp only [Matrix.GeneralLinearGroup.map, Units.coe_map, scaleGLRat, diagGL_coe,
+    Matrix.diagonal_fin_two]
+  fin_cases i <;> fin_cases j <;> simp
 
 lemma coe_inv_scaleGL [NeZero d] :
     (((scaleGL d)⁻¹ : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ) = !![(d : ℝ)⁻¹, 0; 0, 1] := by

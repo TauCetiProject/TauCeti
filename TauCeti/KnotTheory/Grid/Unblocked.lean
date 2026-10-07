@@ -60,6 +60,8 @@ assignment, a later stage of the roadmap.
 * `TauCeti.GridChainMinus`: the free `R[V₀, …, V_{n-1}]`-module on grid states.
 * `TauCeti.GridChain.relabelColumnsRenameEquiv`: the semilinear equivalence on `GC⁻` that
   relabels columns and renames the coefficient variables.
+* `TauCeti.GridChain.renameMatrixMap`: the semilinear map on `GC⁻` over a renaming of the
+  variables with prescribed matrix coefficients.
 * `TauCeti.GridDiagram.unblockedDifferential`: the unblocked differential, as a linear map over
   the polynomial ring.
 
@@ -71,6 +73,13 @@ assignment, a later stage of the roadmap.
   whose degree is the number of `O`-markings the rectangle covers.
 * `TauCeti.GridDiagram.OMonomial_eq_prod_coveredSquares`: the weight of a rectangle as a product
   over the squares it covers.
+* `TauCeti.GridDiagram.unblockedRectangles_X_eq_empty` and
+  `TauCeti.GridDiagram.unblockedDifferential_single_X`: no counted rectangle leaves the
+  `X`-marking state, which is therefore a cycle of `GC⁻`.
+* `TauCeti.GridDiagram.unblockedRectangles_X_of_X_toPerm_eq_finRotate_pow` and
+  `TauCeti.GridDiagram.even_card_unblockedRectangles_X_of_X_toPerm_eq_finRotate_pow`: when the
+  `X`-marking permutation is a power of the cyclic shift, every rectangle into the `X`-marking
+  state is counted, and each grid state has an even number, zero or two, of them.
 * `TauCeti.GridDiagram.unblockedDifferentialOnGenerator_support_subset`: the differential of a
   generator is supported on the column transpositions of that generator.
 * `TauCeti.GridDiagram.unblockedDifferential_sq_single_apply`: the matrix of `∂⁻ ∘ ∂⁻` is a
@@ -156,6 +165,62 @@ theorem relabelColumnsRenameEquiv_symm_apply (κ : Equiv.Perm (Fin n))
     LinearEquiv.symm_apply_eq, RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_toRingEquiv,
     renameEquiv_apply, rename_rename, Equiv.self_comp_symm, rename_id_apply]
 
+/-- The map on `GC⁻` with matrix coefficients `M`, semilinear over the renaming of the variables
+by `σ`: it sends the generator `x` with coefficient `p` to `∑ y, rename σ p * M x y • y`. -/
+noncomputable def renameMatrixMap (σ : Equiv.Perm (Fin n))
+    (M : GridState n → GridState n → MvPolynomial (Fin n) R) :
+    GridChainMinus R n →ₛₗ[((MvPolynomial.renameEquiv R σ).toRingEquiv :
+      MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R)] GridChainMinus R n :=
+  Finsupp.lsum (MvPolynomial (Fin n) R) fun x : GridState n =>
+    ((LinearMap.id :
+        MvPolynomial (Fin n) R →ₗ[MvPolynomial (Fin n) R] MvPolynomial (Fin n) R).smulRight
+      (∑ y : GridState n, Finsupp.single y (M x y))).comp
+        (renameEquiv R σ).toRingEquiv.toSemilinearEquiv.toLinearMap
+
+/-- The map with matrix coefficients `M` sends a generator with coefficient `p` to the renamed
+coefficient times the row of `M` at that generator. -/
+@[simp]
+theorem renameMatrixMap_single (σ : Equiv.Perm (Fin n))
+    (M : GridState n → GridState n → MvPolynomial (Fin n) R) (x : GridState n)
+    (p : MvPolynomial (Fin n) R) :
+    renameMatrixMap R σ M (Finsupp.single x p) =
+      rename σ p • ∑ y : GridState n, Finsupp.single y (M x y) := by
+  rw [renameMatrixMap, Finsupp.lsum_single, LinearMap.comp_apply, LinearMap.smulRight_apply,
+    LinearMap.id_apply, LinearEquiv.coe_coe, RingEquiv.toSemilinearEquiv_apply,
+    AlgEquiv.coe_toRingEquiv, renameEquiv_apply]
+
+/-- The coefficient formula for the map with matrix coefficients `M` on an arbitrary chain. -/
+@[simp]
+theorem renameMatrixMap_apply_apply (σ : Equiv.Perm (Fin n))
+    (M : GridState n → GridState n → MvPolynomial (Fin n) R) (c : GridChainMinus R n)
+    (y : GridState n) :
+    renameMatrixMap R σ M c y = c.sum fun x p => rename σ p * M x y := by
+  induction c using Finsupp.induction_linear with
+  | zero => rw [map_zero, Finsupp.zero_apply, Finsupp.sum_zero_index]
+  | add c d hc hd =>
+    rw [map_add, Finsupp.add_apply, hc, hd, Finsupp.sum_add_index'] <;> simp [add_mul]
+  | single x p =>
+    rw [renameMatrixMap_single, Finsupp.smul_apply, smul_eq_mul, Finsupp.finsetSum_apply,
+      Finset.sum_eq_single y (fun z _ hz => by simp [hz.symm]) (by simp),
+      Finsupp.single_eq_same, Finsupp.sum_single_index (by simp)]
+
+/-- A monomial of the coefficient at `y` of `GridChain.renameMatrixMap R σ M c` comes from a
+monomial of an input coefficient `c x` and a monomial of the matrix entry `M x y`; its exponent
+is the `σ`-renaming of the former plus the latter. -/
+theorem exists_eq_mapDomain_add_of_mem_support_sum_rename_mul (c : GridChainMinus R n)
+    (σ : Equiv.Perm (Fin n)) (M : GridState n → GridState n → MvPolynomial (Fin n) R)
+    {y : GridState n} {e : Fin n →₀ ℕ}
+    (he : e ∈ (c.sum fun x p => rename σ p * M x y).support) :
+    ∃ x, ∃ d ∈ (c x).support, ∃ w ∈ (M x y).support,
+      e = Finsupp.mapDomain σ d + w := by
+  classical
+  rw [Finsupp.sum] at he
+  obtain ⟨x, -, hx⟩ := Finset.mem_biUnion.mp (MvPolynomial.support_sum he)
+  obtain ⟨d', hd', w, hw, rfl⟩ := Finset.mem_add.mp (MvPolynomial.support_mul _ _ hx)
+  rw [support_rename_of_injective σ.injective, Finset.mem_image] at hd'
+  obtain ⟨d, hd, rfl⟩ := hd'
+  exact ⟨x, d, hd, w, hw, rfl⟩
+
 end GridChain
 
 namespace GridDiagram
@@ -185,6 +250,65 @@ theorem OSet_inter_eq_image_OColumnsOfSquares (s : Finset (Fin n × Fin n)) :
     exact ⟨p.1, by rwa [hp], by rw [hp]⟩
   · rintro ⟨c, hc, rfl⟩
     exact ⟨rfl, hc⟩
+
+/-- The number of covered `O`-columns is the number of `O`-markings in a set of squares. -/
+theorem card_OColumnsOfSquares (s : Finset (Fin n × Fin n)) :
+    (G.OColumnsOfSquares s).card = (G.OSet ∩ s).card := by
+  rw [OSet_inter_eq_image_OColumnsOfSquares, Finset.card_image_of_injective _
+    fun a b hab => congrArg Prod.fst hab]
+
+/-- A product over marked squares is the product of the corresponding column factors over
+its covered `O`-columns. -/
+theorem prod_ite_OSet_eq_prod_OColumnsOfSquares {M : Type*} [CommMonoid M]
+    (f : Fin n → M) (S : Finset (Fin n × Fin n)) :
+    ∏ p ∈ S, (if p ∈ G.OSet then f p.1 else 1) =
+      ∏ c ∈ G.OColumnsOfSquares S, f c := by
+  classical
+  rw [Finset.prod_ite_mem, Finset.inter_comm, G.OSet_inter_eq_image_OColumnsOfSquares,
+    Finset.prod_image fun _ _ _ _ h => congrArg Prod.fst h]
+
+/-- A domain supported in two distinct columns contributes each column's factor exactly when
+its `O`-marking lies in the prescribed row set. -/
+theorem prod_OColumnsOfSquares_union_singleton_product {M : Type*} [CommMonoid M]
+    (f : Fin n → M) (i j : Fin n) (S T : Finset (Fin n)) (hij : i ≠ j) :
+    ∏ c ∈ G.OColumnsOfSquares (({i} ×ˢ S) ∪ ({j} ×ˢ T)), f c =
+      (if G.O i ∈ S then f i else 1) * (if G.O j ∈ T then f j else 1) := by
+  classical
+  have hcols : G.OColumnsOfSquares (({i} ×ˢ S) ∪ ({j} ×ˢ T)) =
+      ({i, j} : Finset (Fin n)).filter (fun c => if c = i then G.O c ∈ S else G.O c ∈ T) := by
+    ext c
+    simp only [mem_OColumnsOfSquares, Finset.mem_union, Finset.mem_product,
+      Finset.mem_singleton, Finset.mem_filter, Finset.mem_insert]
+    split_ifs <;> grind
+  rw [hcols, Finset.prod_filter, Finset.prod_pair hij]
+  simp only [ite_true, hij.symm, ite_false]
+
+/-- A domain supported in one row contributes its unique `O`-marking's factor exactly
+when the column containing that marking belongs to the prescribed column set. -/
+theorem prod_OColumnsOfSquares_product_singleton {M : Type*} [CommMonoid M]
+    (f : Fin n → M) (T : Finset (Fin n)) (s : Fin n) :
+    ∏ d ∈ G.OColumnsOfSquares (T ×ˢ {s}), f d =
+      if G.O.transpose s ∈ T then f (G.O.transpose s) else 1 := by
+  classical
+  have hcols : G.OColumnsOfSquares (T ×ˢ {s}) =
+      ({G.O.transpose s} : Finset (Fin n)).filter (fun d => d ∈ T) := by
+    ext d
+    simp only [mem_OColumnsOfSquares, Finset.mem_product, Finset.mem_singleton,
+      Finset.mem_filter, GridState.transpose_apply, Equiv.eq_symm_apply]
+    tauto
+  rw [hcols, Finset.prod_filter, Finset.prod_singleton]
+
+/-- A row with one column omitted contributes its unique `O`-marking's factor unless that
+marking lies in the omitted column. -/
+theorem prod_OColumnsOfSquares_univ_erase_product_singleton {M : Type*} [CommMonoid M]
+    (f : Fin n → M) (c s : Fin n) :
+    ∏ d ∈ G.OColumnsOfSquares ((Finset.univ.erase c) ×ˢ {s}), f d =
+      if G.O c = s then 1 else f (G.O.transpose s) := by
+  classical
+  rw [G.prod_OColumnsOfSquares_product_singleton]
+  have h : G.O.transpose s = c ↔ G.O c = s := by
+    rw [GridState.transpose_apply, Equiv.symm_apply_eq, eq_comm]
+  simp only [Finset.mem_erase, Finset.mem_univ, and_true, ne_eq, h, ite_not]
 
 /-- The columns whose `O`-marking lies in the squares a toroidal rectangle covers.
 
@@ -218,17 +342,11 @@ theorem OColumns_swapColumns_eq_image_of_coveredColumns (r : GridRectangle n) {a
     simpa only [Equiv.swap_apply_self] using
       (r.mem_coveredSquares_swap_iff_of_coveredColumns h (d, G.O d)).mpr hd
 
-/-- The covered `O`-markings are exactly the markings of the covered `O`-columns. -/
-theorem OSet_inter_coveredSquares (r : GridRectangle n) :
-    G.OSet ∩ r.coveredSquares = (G.OColumns r).image fun c => (c, G.O c) := by
-  exact G.OSet_inter_eq_image_OColumnsOfSquares r.coveredSquares
-
 /-- The number of covered `O`-columns is the number of `O`-markings among the covered squares:
 a grid diagram has exactly one `O`-marking in each column. -/
 theorem card_OColumns (r : GridRectangle n) :
     (G.OColumns r).card = (G.OSet ∩ r.coveredSquares).card := by
-  rw [OSet_inter_coveredSquares, Finset.card_image_of_injective]
-  exact fun a b hab => congrArg Prod.fst hab
+  exact G.card_OColumnsOfSquares r.coveredSquares
 
 /-- A rectangle covers no `O`-column exactly when its covered squares carry no `O`-marking. -/
 theorem OColumns_eq_empty_iff (r : GridRectangle n) :
@@ -274,6 +392,17 @@ theorem OMonomial_eq_monomial (r : GridRectangle n) :
   | cons a s ha ih =>
     rw [Finset.prod_cons, Finset.sum_cons, ih, monomial_single_add, pow_one]
 
+/-- Every monomial of a sum of rectangle weights is the weight of one of the summed rectangles. -/
+theorem exists_mem_of_mem_support_sum_OMonomial {x y : GridState n}
+    {s : Finset (GridRectangleBetween x y)} {d : Fin n →₀ ℕ}
+    (hd : d ∈ (∑ r ∈ s, G.OMonomial R r.toGridRectangle).support) :
+    ∃ r ∈ s, d = ∑ c ∈ G.OColumns r.toGridRectangle, Finsupp.single c 1 := by
+  classical
+  obtain ⟨r, hr, hdr⟩ := Finset.mem_biUnion.mp (MvPolynomial.support_sum hd)
+  refine ⟨r, hr, Finset.mem_singleton.mp ?_⟩
+  rw [G.OMonomial_eq_monomial R] at hdr
+  exact MvPolynomial.support_monomial_subset hdr
+
 /-- The weight of a rectangle is never zero. -/
 theorem OMonomial_ne_zero [Nontrivial R] (r : GridRectangle n) : G.OMonomial R r ≠ 0 := by
   rw [OMonomial_eq_monomial]
@@ -289,9 +418,7 @@ theorem OMonomial_eq_prod_coveredSquares (r : GridRectangle n) :
     G.OMonomial R r =
       ∏ p ∈ r.coveredSquares,
         if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R) := by
-  classical
-  rw [OMonomial, Finset.prod_ite_mem, Finset.inter_comm, G.OSet_inter_coveredSquares r,
-    Finset.prod_image fun _ _ _ _ hab => congrArg Prod.fst hab]
+  rw [OMonomial, OColumns, G.prod_ite_OSet_eq_prod_OColumnsOfSquares]
 
 /-- The weight of a rectangle has total degree the number of `O`-markings the rectangle covers.
 
@@ -352,6 +479,81 @@ diagonal term. -/
 @[simp]
 theorem unblockedRectangles_self (x : GridState n) : G.unblockedRectangles x x = ∅ := by
   simp [unblockedRectangles]
+
+/-- Every rectangle leaving the `X`-marking state `G.X`, the grid state whose points are the
+lower-left corners of the `X`-marked squares, covers the `X`-marking at its own lower-left corner,
+so the unblocked differential counts no rectangle from `G.X`. -/
+@[simp]
+theorem unblockedRectangles_X_eq_empty (y : GridState n) : G.unblockedRectangles G.X y = ∅ := by
+  rw [Finset.eq_empty_iff_forall_notMem]
+  intro r hr
+  exact Finset.disjoint_left.mp (G.disjoint_XSet_of_mem_unblockedRectangles hr)
+    r.left_bottom_mem_coveredSquares ((G.mk_mem_XSet _ _).mpr r.bottom_def.symm)
+
+/-! ### Rectangles into the `X`-marking state of a cyclic-shift grid
+
+When the `X`-marking permutation is a power of the cyclic shift `finRotate n`, as it is for the
+standard torus link grids, powers of the shift preserve the cyclic intervals of the grid
+(`Grid.mem_cIco_finRotate_pow_finRotate_pow`), which pins down every rectangle into the
+`X`-marking state `G.X`. Such a rectangle has its two `G.X`-corners at the upper-left and
+lower-right, so its rows form the cyclic interval from `G.X` of its right column to `G.X` of its
+left column, while the `X`-markings of its covered columns occupy the complementary interval.
+Hence it avoids the `X`-markings and contains no point of its source state in its interior, so the
+unblocked differential counts every rectangle into `G.X`, of which each grid state has none or
+two. -/
+
+section CyclicShift
+
+variable {k : ℕ} {y : GridState n}
+
+/-- When the `X`-marking permutation is a power of the cyclic shift, a rectangle into the
+`X`-marking state covers no `X`-marking: the `X`-markings of its covered columns lie in the cyclic
+interval of rows complementary to the one it covers. -/
+theorem disjoint_coveredSquares_XSet_of_X_toPerm_eq_finRotate_pow
+    (hX : G.X.toPerm = finRotate n ^ k) (r : GridRectangleBetween y G.X) :
+    Disjoint r.toGridRectangle.coveredSquares G.XSet := by
+  rw [Finset.disjoint_left]
+  intro p hp hpX
+  rw [GridRectangleBetween.mem_toGridRectangle_coveredSquares_target] at hp
+  rw [mem_XSet] at hpX
+  obtain ⟨hc, hs⟩ := hp
+  rw [← hpX, hX, Grid.mem_cIco_finRotate_pow_finRotate_pow] at hs
+  exact Finset.disjoint_left.mp (Grid.disjoint_cIco_swap r.left r.right) hc hs
+
+/-- When the `X`-marking permutation is a power of the cyclic shift, a rectangle into the
+`X`-marking state is empty: the points of its source state in the columns strictly between its
+sides are `X`-corners, which lie in the cyclic interval of rows complementary to the one it
+spans. -/
+theorem isEmpty_of_X_toPerm_eq_finRotate_pow (hX : G.X.toPerm = finRotate n ^ k)
+    (r : GridRectangleBetween y G.X) : r.IsEmpty := by
+  rw [GridRectangleBetween.isEmpty_iff_forall_notMem_cIoo_target]
+  intro c hc hcy
+  rw [hX, Grid.mem_cIoo_finRotate_pow_finRotate_pow] at hcy
+  exact Finset.disjoint_left.mp (Grid.disjoint_cIoo_swap r.left r.right) hc hcy
+
+variable (y)
+
+/-- When the `X`-marking permutation is a power of the cyclic shift, the unblocked differential
+counts every rectangle into the `X`-marking state. -/
+theorem unblockedRectangles_X_of_X_toPerm_eq_finRotate_pow (hX : G.X.toPerm = finRotate n ^ k) :
+    G.unblockedRectangles y G.X = Finset.univ := by
+  ext r
+  simp [G.isEmpty_of_X_toPerm_eq_finRotate_pow hX,
+    G.disjoint_coveredSquares_XSet_of_X_toPerm_eq_finRotate_pow hX]
+
+/-- When the `X`-marking permutation is a power of the cyclic shift, every grid state has an even
+number, zero or two, of rectangles into the `X`-marking state counted by the unblocked
+differential. -/
+theorem even_card_unblockedRectangles_X_of_X_toPerm_eq_finRotate_pow
+    (hX : G.X.toPerm = finRotate n ^ k) : Even (G.unblockedRectangles y G.X).card := by
+  rw [G.unblockedRectangles_X_of_X_toPerm_eq_finRotate_pow y hX, Finset.card_univ]
+  rcases isEmpty_or_nonempty (GridRectangleBetween y G.X) with h | h
+  · rw [Fintype.card_eq_zero]
+    exact Even.zero
+  · rw [GridRectangleBetween.card_eq_two_of_nonempty]
+    exact even_two
+
+end CyclicShift
 
 /-! ### The unblocked complex and its differential -/
 
@@ -443,12 +645,8 @@ theorem exists_mem_unblockedRectangles_of_mem_support_unblockedCoefficient {x y 
     {d : Fin n →₀ ℕ} (hd : d ∈ (G.unblockedCoefficient R x y).support) :
     ∃ r ∈ G.unblockedRectangles x y,
       d = ∑ c ∈ G.OColumns r.toGridRectangle, Finsupp.single c 1 := by
-  classical
   rw [unblockedCoefficient_def] at hd
-  obtain ⟨r, hr, hdr⟩ := Finset.mem_biUnion.mp (MvPolynomial.support_sum hd)
-  refine ⟨r, hr, Finset.mem_singleton.mp ?_⟩
-  rw [G.OMonomial_eq_monomial R] at hdr
-  exact MvPolynomial.support_monomial_subset hdr
+  exact G.exists_mem_of_mem_support_sum_OMonomial R hd
 
 /-- The value of the unblocked differential on a single grid-state generator. -/
 noncomputable def unblockedDifferentialOnGenerator (x : GridState n) :
@@ -507,6 +705,27 @@ weights of the contributing rectangles. -/
 theorem unblockedDifferential_single_apply (x y : GridState n) :
     G.unblockedDifferential R (Finsupp.single x 1) y = G.unblockedCoefficient R x y := by
   simp
+
+/-- A grid state that no counted rectangle leaves is a cycle of `GC⁻`. -/
+theorem unblockedDifferential_single_eq_zero {z : GridState n}
+    (hz : ∀ y : GridState n, G.unblockedRectangles z y = ∅) :
+    G.unblockedDifferential R (Finsupp.single z 1) = 0 := by
+  ext y
+  rw [unblockedDifferential_single_apply, unblockedCoefficient_def, hz y, Finset.sum_empty,
+    Finsupp.zero_apply]
+
+/-- The `X`-marking state is a cycle of `GC⁻`. -/
+theorem unblockedDifferential_single_X :
+    G.unblockedDifferential R (Finsupp.single G.X 1) = 0 :=
+  G.unblockedDifferential_single_eq_zero R G.unblockedRectangles_X_eq_empty
+
+-- `simp` rewrites `∂⁻` of a single generator to its row, so this is the form of
+-- `unblockedDifferential_single_X` that `simp` can use.
+/-- The row of `∂⁻` at the `X`-marking state vanishes: the `X`-marking state is a cycle of
+`GC⁻`. -/
+@[simp]
+theorem unblockedDifferentialOnGenerator_X : G.unblockedDifferentialOnGenerator R G.X = 0 := by
+  rw [← unblockedDifferential_single, unblockedDifferential_single_X]
 
 /-- The unblocked differential is the finite sum of its generator rows over the support of a
 chain. -/

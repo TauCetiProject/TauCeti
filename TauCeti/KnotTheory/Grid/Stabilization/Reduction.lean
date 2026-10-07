@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.ReductionModVariables
 public import TauCeti.KnotTheory.Grid.Grading.UnblockedChain
-public import TauCeti.KnotTheory.Grid.Stabilization.Map
+public import TauCeti.KnotTheory.Grid.Stabilization.XHomotopy
 
 /-!
 # Stabilization invariance reduced to a comparison modulo the variables
@@ -15,7 +15,7 @@ public import TauCeti.KnotTheory.Grid.Stabilization.Map
 Let `G` be a grid diagram of size `n`, let `s` be a column, and let
 `G' = G.stabilizeX s.castSucc (G.X s).castSucc s` be the stabilization splitting the `X`-marking
 of column `s`. Write `S = R[V₀, …, V_n]` for the coefficient ring of `GC⁻(G')`. By
-`TauCeti.KnotTheory.Grid.Stabilization.Map`, the comparison map `GC⁻(G') ⟶ GC⁻(G)` is a
+`TauCeti.KnotTheory.Grid.Stabilization.Map.Basic`, the comparison map `GC⁻(G') ⟶ GC⁻(G)` is a
 quasi-isomorphism as soon as the component `H_I^N : N ⟶ I` of the `X₂`-homotopy, from the
 off-center complex `N` to the center complex `I`, is one. This file reduces that remaining
 hypothesis to a statement in which every variable is set to zero.
@@ -41,7 +41,7 @@ counts the empty rectangles from an off-center state to a center state with no `
 whose only `X`-marking is `X₂`
 (`constantCoeffReduction_stabilizeXOffCenterToCenter_single_apply`). That this
 reduced comparison induces a bijection on homology is the combinatorial content of
-stabilization invariance, and is not proved here.
+stabilization invariance, proved in `TauCeti.KnotTheory.Grid.Stabilization.Comparison`.
 
 ## Main results
 
@@ -58,8 +58,6 @@ stabilization invariance, and is not proved here.
   (`constantCoeffReduction_stabilizeXCenterDifferential_eq_fullyBlockedDifferential`).
 * `TauCeti.GridDiagram.quasiIso_stabilizeXOffCenterToCenterHom_of_bijective`: `H_I^N` is a
   quasi-isomorphism if its reduction modulo the variables induces a bijection on homology.
-* `TauCeti.GridDiagram.quasiIso_stabilizeXMap_of_bijective`: under the same hypothesis the
-  comparison map `GC⁻(G') ⟶ GC⁻(G)` is a quasi-isomorphism.
 
 ## References
 
@@ -290,19 +288,6 @@ theorem quasiIso_stabilizeXOffCenterToCenterHom_of_bijective
     (G.stabilizeXOffCenterDifferential_comp_self_eq_zero s R)
     (G.stabilizeXCenterDifferential_comp_self_eq_zero s R)
     (G.stabilizeXOffCenterToCenter_comp_offCenterDifferential s R) h
-
-/-- **The stabilization map is a quasi-isomorphism if the reduced comparison is.** Under the
-hypothesis of `quasiIso_stabilizeXOffCenterToCenterHom_of_bijective`, the comparison map
-`GC⁻(G') ⟶ GC⁻(G)` of complexes over `R[V₀, …, V_{n-1}]` is a quasi-isomorphism. -/
-theorem quasiIso_stabilizeXMap_of_bijective
-    (h : Function.Bijective (LinearMap.homologyMap
-      (G.stabilizeXOffCenterToCenter s R).constantCoeffReduction
-      (G.constantCoeffReduction_stabilizeXOffCenterDifferential_comp_self s R)
-      (G.constantCoeffReduction_stabilizeXCenterDifferential_comp_self s R)
-      (G.constantCoeffReduction_stabilizeXOffCenterToCenter_comp s R))) :
-    QuasiIso (G.stabilizeXMap s R) :=
-  have := G.quasiIso_stabilizeXOffCenterToCenterHom_of_bijective s R h
-  G.quasiIso_stabilizeXMap s R
 
 end ReductionRing
 

@@ -12,6 +12,10 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp
 public import TauCeti.Data.ZMod.TrivialAction
 public import TauCeti.Topology.Algebra.ContinuousZModDual
 public import TauCeti.Topology.Algebra.GroupAction.TypeTags
+-- Non-public: `Module.natCard_eq_pow_finrank` and the field structure of `ZMod p` count the
+-- explicit model of `H²(G, 𝔽_p)` by its dimension.
+import Mathlib.FieldTheory.Finiteness
+import Mathlib.Algebra.Field.ZMod
 
 /-!
 # The explicit models of `H¹(G, 𝔽_p)` and `H²(G, 𝔽_p)`
@@ -37,7 +41,8 @@ with a trivial action.
 * `TauCeti.cohomFpAddEquivH1`, `TauCeti.cohomFpAddEquivH2`: `cohomFp p G 1` and `cohomFp p G 2` are
   the explicit `H1 G (ZMod p)` and `H2 G (ZMod p)` for a trivial action.
 * `TauCeti.cohomFpLinearEquivH2`: the degree-two identification is `𝔽_p`-linear; by
-  `TauCeti.cohomFpAddEquivH2_cohomFpMap` it carries `cohomFpMap` to the explicit pullback.
+  `TauCeti.cohomFpAddEquivH2_cohomFpMap` it carries `cohomFpMap` to the explicit pullback, and
+  `TauCeti.natCard_H2_eq_pow_finrank_cohomFp_two` counts the explicit model by the dimension.
 * `TauCeti.cohomFpAddEquivH2Additive`: `cohomFp p G 2` is the explicit `H²(G, Additive 𝔽_p)` of
   the additive type tag of a multiplicatively written `𝔽_p` with trivial action.
 * `TauCeti.cohomFpLinearEquivContinuousZModDual`: `H¹(G, 𝔽_p)` is the continuous `𝔽_p`-dual of
@@ -168,6 +173,14 @@ noncomputable def cohomFpLinearEquivH2 [LocallyCompactSpace G] :
 theorem cohomFpLinearEquivH2_apply [LocallyCompactSpace G] (x : cohomFp p G 2) :
     cohomFpLinearEquivH2 p G htriv x = cohomFpAddEquivH2 p G htriv x :=
   (rfl)
+
+/-- **The order of `H²(G, 𝔽_p)`**: a finite-dimensional `H²(G, 𝔽_p)` makes the explicit model
+`H2 G (ZMod p)` of order `p ^ dim H²(G, 𝔽_p)`, for any trivial action of `G` on `ZMod p`. -/
+theorem natCard_H2_eq_pow_finrank_cohomFp_two [Fact p.Prime] [LocallyCompactSpace G]
+    [Module.Finite (ZMod p) (cohomFp p G 2)] :
+    Nat.card (H2 G (ZMod p)) = p ^ Module.finrank (ZMod p) (cohomFp p G 2) := by
+  rw [← Nat.card_congr (cohomFpAddEquivH2 p G htriv).toEquiv,
+    Module.natCard_eq_pow_finrank (K := ZMod p), Nat.card_zmod]
 
 omit htriv in
 /-- **`H¹(G, 𝔽_p)` is the continuous `𝔽_p`-dual of `G`**, as an `𝔽_p`-vector space: the classes of

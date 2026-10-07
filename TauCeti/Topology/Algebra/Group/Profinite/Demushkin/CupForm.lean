@@ -34,9 +34,13 @@ relator, is not treated in this file.
 * `TauCeti.IsDemushkin.nondegenerate_cupForm`,
   `TauCeti.IsDemushkin.nondegenerate_cupForm_of_ne_zero`: the cup form of a Demushkin group is
   nondegenerate, for every injective, equivalently nonzero, functional on `H²(G, 𝔽_p)`.
+* `TauCeti.IsDemushkin.cupFp_bijective`: the cup square is a perfect pairing, `a ↦ (a ⌣ ·)` being a
+  bijection from `H¹(G, 𝔽_p)` onto the linear maps `H¹(G, 𝔽_p) →ₗ H²(G, 𝔽_p)`.
 * `TauCeti.IsDemushkin.of_nondegenerate_cupForm`, `TauCeti.isDemushkin_iff_nondegenerate_cupForm`:
   **Labute's definition**: a pro-`p` group with finite-dimensional `H¹(G, 𝔽_p)` is Demushkin exactly
   when its cup form is nondegenerate for an isomorphism `H²(G, 𝔽_p) ≅ 𝔽_p`.
+* `TauCeti.IsDemushkin.of_cupFp_injective`: a pro-`p` group with finite-dimensional
+  `H¹(G, 𝔽_p)`, one-dimensional `H²(G, 𝔽_p)` and injective `a ↦ (a ⌣ ·)` is Demushkin.
 * `TauCeti.IsDemushkin.exists_basis_toMatrix_cupForm_eq_J_of_isAlt`,
   `TauCeti.IsDemushkin.exists_basis_toMatrix_cupForm_eq_J_of_ne_two`: when the cup form is
   alternating, in particular at an odd prime, `H¹(G, 𝔽_p)` has a basis in which its matrix is `J`.
@@ -95,6 +99,24 @@ theorem nondegenerate_cupForm_of_ne_zero {φ : cohomFp p G 2 →ₗ[ZMod p] ZMod
     φ.cupForm.Nondegenerate :=
   hG.nondegenerate_cupForm (hG.injective_of_ne_zero hφ)
 
+/-- **The cup square of a Demushkin group is a perfect pairing**: `a ↦ (a ⌣ ·)` is a bijection
+from `H¹(G, 𝔽_p)` onto the linear maps `H¹(G, 𝔽_p) →ₗ H²(G, 𝔽_p)`. Injectivity is the
+left-separating clause of the definition; surjectivity is nondegeneracy of the cup form for an
+isomorphism `H²(G, 𝔽_p) ≅ 𝔽_p`, through the duality `LinearMap.BilinForm.toDual`. -/
+theorem cupFp_bijective : Function.Bijective (cupFp p G) := by
+  have := hG.finite_cohomFp_one
+  obtain ⟨e⟩ := hG.nonempty_linearEquiv_cohomFp_two
+  refine ⟨(injective_iff_map_eq_zero _).2 fun a ha => ?_, fun f => ?_⟩
+  · by_contra h0
+    obtain ⟨b, hb⟩ := hG.cup_separatingLeft a h0
+    exact hb (by rw [ha, LinearMap.zero_apply])
+  · obtain ⟨a, ha⟩ :=
+      (e.toLinearMap.cupForm.toDual (hG.nondegenerate_cupForm e.injective)).surjective
+        (e.toLinearMap.comp f)
+    refine ⟨a, LinearMap.ext fun b => e.injective ?_⟩
+    have := LinearMap.congr_fun ha b
+    rwa [LinearMap.BilinForm.toDual_def, LinearMap.cupForm_apply, LinearMap.comp_apply] at this
+
 /-- **An alternating cup form has a symplectic basis**: when the cup form of a Demushkin group is
 alternating, `H¹(G, 𝔽_p)` has a basis indexed by `Fin m ⊕ Fin m` in which its matrix is the
 standard block matrix `J`. -/
@@ -142,6 +164,25 @@ theorem IsDemushkin.of_nondegenerate_cupForm (hP : IsProP p G)
   cup_separatingRight b hb := by
     obtain ⟨a, ha⟩ := (e.toLinearMap.nondegenerate_cupForm_iff_of_injective e.injective).1 hnd b hb
     exact ⟨a, fun h => ha ((cupFp_eq_zero_comm p G a b).1 h)⟩
+
+/-- **A perfect cup-product pairing makes a Demushkin group**: a pro-`p` group `G` with
+finite-dimensional `H¹(G, 𝔽_p)` and one-dimensional `H²(G, 𝔽_p)` on which `a ↦ (a ⌣ ·)` is
+injective is Demushkin. Injectivity is the left-separating clause, and the right-separating clause
+follows by graded commutativity. With `IsDemushkin.cupFp_bijective`, this characterizes Demushkin
+groups among the pro-`p` groups with finite `H¹(G, 𝔽_p)` and one-dimensional `H²(G, 𝔽_p)`. -/
+theorem IsDemushkin.of_cupFp_injective (hP : IsProP p G)
+    (hfin : Module.Finite (ZMod p) (cohomFp p G 1))
+    (h2 : Module.finrank (ZMod p) (cohomFp p G 2) = 1) (hcup : Function.Injective (cupFp p G)) :
+    IsDemushkin p G :=
+  have hsep : ∀ a : cohomFp p G 1, a ≠ 0 → ∃ b : cohomFp p G 1, cupFp p G a b ≠ 0 :=
+    fun a ha ↦ not_forall.1 fun h ↦ ha (hcup (LinearMap.ext fun b ↦ by simpa using h b))
+  { isProP := hP
+    finite_cohomFp_one := hfin
+    finrank_cohomFp_two := h2
+    cup_separatingLeft := hsep
+    cup_separatingRight b hb :=
+      let ⟨a, ha⟩ := hsep b hb
+      ⟨a, fun h ↦ ha ((cupFp_eq_zero_comm p G a b).1 h)⟩ }
 
 /-- **The Demushkin predicate is Labute's definition**: `G` is Demushkin exactly when it is pro-`p`
 with finite-dimensional `H¹(G, 𝔽_p)` and its cup form is nondegenerate for some isomorphism

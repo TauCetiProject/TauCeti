@@ -33,6 +33,8 @@ symmetric polynomials. This is the integral orbit product used by a resolvent sp
 
 ## Main results
 
+* `MvPolynomial.rename_eq_rename_iff`: two permutations give the same renaming exactly when
+  their quotient stabilizes the polynomial.
 * `MvPolynomial.card_renameOrbit`: the rename-orbit has size the index of the stabilizer.
 * `MvPolynomial.renameOrbit_rename` and `MvPolynomial.universalResolvent_rename`: renaming an
   invariant does not change its orbit or universal resolvent.
@@ -71,12 +73,28 @@ def renameStabilizer (Φ : MvPolynomial σ R) : Subgroup (Equiv.Perm σ) where
   inv_mem' {a} ha := by
     simp only [Set.mem_ofPred_eq] at ha ⊢
     conv_lhs => rw [← ha]
-    rw [rename_rename, ← Equiv.Perm.coe_mul, inv_mul_cancel, Equiv.Perm.coe_one, rename_id_apply]
+    simpa only [renameEquiv_symm, renameEquiv_apply, Equiv.Perm.inv_def] using
+      (renameEquiv R a).symm_apply_apply _
 
 @[simp]
 theorem mem_renameStabilizer {Φ : MvPolynomial σ R} {e : Equiv.Perm σ} :
     e ∈ renameStabilizer Φ ↔ rename (⇑e) Φ = Φ :=
   Iff.rfl
+
+/-- Two permutations rename a polynomial identically exactly when their quotient stabilizes it. -/
+theorem rename_eq_rename_iff (Φ : MvPolynomial σ R) (a b : Equiv.Perm σ) :
+    rename (⇑a) Φ = rename (⇑b) Φ ↔ a⁻¹ * b ∈ renameStabilizer Φ := by
+  rw [mem_renameStabilizer]
+  constructor
+  · intro h
+    have h' := congrArg (renameEquiv R a).symm h
+    rw [← renameEquiv_apply R a, (renameEquiv R a).symm_apply_apply] at h'
+    simpa only [renameEquiv_symm, renameEquiv_apply, ← Equiv.Perm.inv_def,
+      rename_rename, ← Equiv.Perm.coe_mul] using h'.symm
+  · intro h
+    have h' := congrArg (rename (⇑a)) h
+    simpa only [rename_rename, ← Equiv.Perm.coe_mul,
+      mul_inv_cancel_left] using h'.symm
 
 /-- A polynomial is symmetric exactly when its stabilizer is the whole symmetric group. -/
 @[simp]
@@ -89,8 +107,6 @@ theorem renameStabilizer_eq_top_iff {Φ : MvPolynomial σ R} :
 theorem renameStabilizer_rename (e : Equiv.Perm σ) (Φ : MvPolynomial σ R) :
     renameStabilizer (rename (⇑e) Φ) = (renameStabilizer Φ).map (MulAut.conj e).toMonoidHom := by
   ext τ
-  have hcancel (g : Equiv.Perm σ) (p : MvPolynomial σ R) : rename (⇑g⁻¹) (rename (⇑g) p) = p := by
-    rw [rename_rename, ← Equiv.Perm.coe_mul, inv_mul_cancel, Equiv.Perm.coe_one, rename_id_apply]
   have hconj : rename (⇑((MulAut.conj e).symm τ)) Φ =
       rename (⇑e⁻¹) (rename (⇑τ) (rename (⇑e) Φ)) := by
     rw [MulAut.conj_symm_apply, rename_rename, rename_rename, Equiv.Perm.coe_mul,
@@ -98,10 +114,13 @@ theorem renameStabilizer_rename (e : Equiv.Perm σ) (Φ : MvPolynomial σ R) :
   rw [Subgroup.mem_map_equiv, mem_renameStabilizer, mem_renameStabilizer, hconj]
   constructor
   · intro h
-    rw [h, hcancel]
+    rw [h]
+    simpa only [renameEquiv_symm, renameEquiv_apply, Equiv.Perm.inv_def] using
+      (renameEquiv R e).symm_apply_apply Φ
   · intro h
-    have h' := congrArg (rename (⇑e⁻¹⁻¹)) h
-    rwa [hcancel, inv_inv] at h'
+    have h' := congrArg (renameEquiv R e) h
+    rwa [Equiv.Perm.inv_def, ← renameEquiv_apply R e.symm, ← renameEquiv_symm,
+      (renameEquiv R e).apply_symm_apply, renameEquiv_apply] at h'
 
 end Stabilizer
 

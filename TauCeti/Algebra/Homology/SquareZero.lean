@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import Mathlib.LinearAlgebra.Finsupp.SumProd
+public import TauCeti.Algebra.Module.Submodule.Ker
 
 /-!
 # The homology of a square-zero linear endomorphism
@@ -32,6 +34,8 @@ elements of `M`, on which such structure is defined. The image is represented in
   `d` is `d.homology hd`.
 * `LinearMap.homologyMap`: the map on homology induced by a chain map `f` with `f ∘ d = e ∘ f`.
 * `LinearMap.mappingCone`: the mapping cone `(m, n) ↦ (-d m, f m + e n)` of such a chain map.
+* `LinearMap.sumMappingCone`: the mapping cone of a map between free modules `ι →₀ S` and
+  `κ →₀ S`, as an endomorphism of the free module `(ι ⊕ κ) →₀ S`.
 
 ## Main results
 
@@ -43,6 +47,8 @@ elements of `M`, on which such structure is defined. The image is represented in
   descriptions of surjectivity and injectivity of the map induced on homology.
 * `LinearMap.ker_le_range_mappingCone_iff`: a chain map induces a bijection on homology exactly when
   its mapping cone is exact.
+* `LinearMap.ker_le_range_sumMappingCone_iff`: the kernel of the mapping cone on `(ι ⊕ κ) →₀ S` lies
+  in its range exactly when the same holds for the mapping cone on `(ι →₀ S) × (κ →₀ S)`.
 * `HomologicalComplex.quasiIso_iff_bijective_homologyMap`: a morphism of complexes of modules of
   shape `ComplexShape.refl Unit`, that is, of modules with a square-zero endomorphism, is a
   quasi-isomorphism exactly when it induces a bijection on `ker d ⧸ im d`.
@@ -54,7 +60,9 @@ open CategoryTheory
 
 namespace LinearMap
 
-variable {S M : Type*} [Ring S] [AddCommGroup M] [Module S M] (d : M →ₗ[S] M)
+section Semiring
+
+variable {S M : Type*} [Semiring S] [AddCommMonoid M] [Module S M] (d : M →ₗ[S] M)
 
 /-- The intersection of the image and kernel of a linear endomorphism `d`, viewed as a submodule
 of the kernel. For a square-zero endomorphism, this is its full image. -/
@@ -64,6 +72,12 @@ abbrev boundariesInKer : Submodule S (ker d) :=
 /-- An element of the kernel of `d` is a boundary exactly when it is a value of `d`. -/
 theorem mem_boundariesInKer {z : ker d} : z ∈ d.boundariesInKer ↔ (z : M) ∈ range d :=
   Iff.rfl
+
+end Semiring
+
+section Ring
+
+variable {S M : Type*} [Ring S] [AddCommGroup M] [Module S M] (d : M →ₗ[S] M)
 
 /-- The homology `ker d ⧸ im d` of a square-zero linear endomorphism `d`. -/
 abbrev homology (_hd : d ∘ₗ d = 0) : Type _ :=
@@ -113,12 +127,6 @@ section Map
 
 variable {N : Type*} [AddCommGroup N] [Module S N] {d} {e : N →ₗ[S] N}
 
-/-- A chain map `f`, one with `f ∘ d = e ∘ f`, sends the kernel of `d` into the kernel of `e`. -/
-theorem map_mem_ker_of_comp_eq (f : M →ₗ[S] N) (hf : f ∘ₗ d = e ∘ₗ f) {x : M}
-    (hx : x ∈ ker d) :
-    f x ∈ ker e := by
-  rw [mem_ker, ← comp_apply e f, ← hf, comp_apply, mem_ker.mp hx, map_zero]
-
 /-- The map on homology induced by a chain map `f` from `(M, d)` to `(N, e)`, that is, a linear
 map with `f ∘ d = e ∘ f`: the class of a cycle `z` goes to the class of `f z`. -/
 noncomputable def homologyMap (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
@@ -143,33 +151,24 @@ variable (d) in
 @[simp]
 theorem homologyMap_id (hd : d ∘ₗ d = 0) :
     homologyMap LinearMap.id hd hd (by simp) = LinearMap.id := by
-  apply LinearMap.ext
-  intro c
-  obtain ⟨z, rfl⟩ := d.homologyπ_surjective hd c
-  rw [homologyπ_apply, homologyMap_mk]
-  rfl
+  ext z
+  simp
 
 variable (d e) in
 /-- The zero chain map induces the zero map on homology. -/
 @[simp]
 theorem homologyMap_zero (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) :
     homologyMap (0 : M →ₗ[S] N) hd he (by simp) = 0 := by
-  apply LinearMap.ext
-  intro c
-  obtain ⟨z, rfl⟩ := d.homologyπ_surjective hd c
-  simp only [homologyπ_apply, homologyMap_mk, zero_apply]
-  rfl
+  ext z
+  simp
 
 /-- The map on homology induced by `-f` is the negative of the map induced by `f`. -/
 @[simp]
 theorem homologyMap_neg (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
     (hf : f ∘ₗ d = e ∘ₗ f) :
     homologyMap (-f) hd he (by rw [neg_comp, comp_neg, hf]) = -homologyMap f hd he hf := by
-  apply LinearMap.ext
-  intro c
-  obtain ⟨z, rfl⟩ := d.homologyπ_surjective hd c
-  simp only [homologyπ_apply, homologyMap_mk, neg_apply, ← Submodule.Quotient.mk_neg]
-  rfl
+  ext z
+  simp [← Submodule.Quotient.mk_neg, Submodule.Quotient.eq]
 
 /-- The map on homology induced by `f + g` is the sum of the maps induced by `f` and `g`. -/
 @[simp]
@@ -177,11 +176,8 @@ theorem homologyMap_add (f g : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e ∘�
     (hf : f ∘ₗ d = e ∘ₗ f) (hg : g ∘ₗ d = e ∘ₗ g) :
     homologyMap (f + g) hd he (by rw [add_comp, comp_add, hf, hg]) =
       homologyMap f hd he hf + homologyMap g hd he hg := by
-  apply LinearMap.ext
-  intro c
-  obtain ⟨z, rfl⟩ := d.homologyπ_surjective hd c
-  simp only [homologyπ_apply, homologyMap_mk, add_apply, ← Submodule.Quotient.mk_add]
-  rfl
+  ext z
+  simp [← Submodule.Quotient.mk_add]
 
 /-- The map on homology induced by `f - g` is the difference of the maps induced by `f` and
 `g`. -/
@@ -190,11 +186,8 @@ theorem homologyMap_sub (f g : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e ∘�
     (hf : f ∘ₗ d = e ∘ₗ f) (hg : g ∘ₗ d = e ∘ₗ g) :
     homologyMap (f - g) hd he (by rw [sub_comp, comp_sub, hf, hg]) =
       homologyMap f hd he hf - homologyMap g hd he hg := by
-  apply LinearMap.ext
-  intro c
-  obtain ⟨z, rfl⟩ := d.homologyπ_surjective hd c
-  simp only [homologyπ_apply, homologyMap_mk, sub_apply, ← Submodule.Quotient.mk_sub]
-  rfl
+  ext z
+  simp [← Submodule.Quotient.mk_sub, Submodule.Quotient.eq]
 
 variable {P : Type*} [AddCommGroup P] [Module S P] {q : P →ₗ[S] P}
 
@@ -204,10 +197,8 @@ theorem homologyMap_comp (g : N →ₗ[S] P) (f : M →ₗ[S] N) (hd : d ∘ₗ 
     (hg : g ∘ₗ e = q ∘ₗ g) :
     homologyMap (g ∘ₗ f) hd hq (by rw [comp_assoc, hf, ← comp_assoc, hg, comp_assoc]) =
       homologyMap g he hq hg ∘ₗ homologyMap f hd he hf := by
-  apply LinearMap.ext
-  intro c
-  obtain ⟨z, rfl⟩ := d.homologyπ_surjective hd c
-  simp only [homologyπ_apply, homologyMap_mk, comp_apply]
+  ext z
+  simp
 
 /-- The composite of two induced maps on homology is the map induced by the composite. This is
 `homologyMap_comp` read right to left, the orientation usable by `simp`: its left-hand side
@@ -236,21 +227,15 @@ theorem homologyMap_surjective_iff (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he
     (hf : f ∘ₗ d = e ∘ₗ f) :
     Function.Surjective (homologyMap f hd he hf) ↔
       ∀ n ∈ ker e, ∃ m ∈ ker d, n - f m ∈ range e := by
-  constructor
-  · intro h n hn
-    obtain ⟨c, hc⟩ := h (e.homologyπ he ⟨n, hn⟩)
+  refine ⟨fun h n hn ↦ ?_, fun h c ↦ ?_⟩
+  · obtain ⟨c, hc⟩ := h (e.homologyπ he ⟨n, hn⟩)
     obtain ⟨m, rfl⟩ := d.homologyπ_surjective hd c
-    rw [homologyπ_apply, homologyMap_mk, homologyπ_apply, Submodule.Quotient.eq] at hc
-    refine ⟨m, m.2, ?_⟩
-    rw [← neg_mem_iff, neg_sub]
-    exact hc
-  · intro h c
-    obtain ⟨n, rfl⟩ := e.homologyπ_surjective he c
+    simp only [homologyπ_apply, homologyMap_mk, Submodule.Quotient.eq'] at hc
+    exact ⟨m, m.2, by simpa [neg_add_eq_sub] using hc⟩
+  · obtain ⟨n, rfl⟩ := e.homologyπ_surjective he c
     obtain ⟨m, hm, hnm⟩ := h n n.2
     refine ⟨d.homologyπ hd ⟨m, hm⟩, ?_⟩
-    rw [homologyπ_apply, homologyMap_mk, homologyπ_apply, Submodule.Quotient.eq]
-    rw [← neg_mem_iff, neg_sub] at hnm
-    exact hnm
+    simpa [Submodule.Quotient.eq', neg_add_eq_sub] using hnm
 
 /-- The map induced by `f` on homology is injective exactly when every cycle of `d` whose image
 under `f` is a boundary is itself a boundary. -/
@@ -259,17 +244,21 @@ theorem homologyMap_injective_iff (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he 
     Function.Injective (homologyMap f hd he hf) ↔
       ∀ m ∈ ker d, f m ∈ range e → m ∈ range d := by
   rw [← ker_eq_bot, Submodule.eq_bot_iff]
-  constructor
-  · intro h m hm hfm
-    have := h (d.homologyπ hd ⟨m, hm⟩) <| by
-      rw [mem_ker, homologyπ_apply, homologyMap_mk, ← homologyπ_apply, homologyπ_eq_zero_iff]
-      exact hfm
-    rwa [homologyπ_eq_zero_iff] at this
-  · intro h c hc
-    obtain ⟨m, rfl⟩ := d.homologyπ_surjective hd c
-    rw [mem_ker, homologyπ_apply, homologyMap_mk, ← homologyπ_apply, homologyπ_eq_zero_iff] at hc
-    rw [homologyπ_eq_zero_iff]
+  refine ⟨fun h m hm hfm ↦ ?_, fun h c hc ↦ ?_⟩
+  · simpa [Submodule.Quotient.mk_eq_zero] using h (d.homologyπ hd ⟨m, hm⟩) <| by
+      simpa [Submodule.Quotient.mk_eq_zero] using hfm
+  · obtain ⟨m, rfl⟩ := d.homologyπ_surjective hd c
+    simp only [mem_ker, homologyπ_apply, homologyMap_mk, Submodule.Quotient.mk_eq_zero] at hc ⊢
     exact h m m.2 hc
+
+end Map
+
+end Ring
+
+section MappingCone
+
+variable {S M N : Type*} [Semiring S] [AddCommGroup M] [Module S M] [AddCommMonoid N] [Module S N]
+  {d : M →ₗ[S] M} {e : N →ₗ[S] N}
 
 variable (d e) in
 /-- The mapping cone of a linear map `f : M → N` between modules with endomorphisms `d` and `e`:
@@ -289,8 +278,25 @@ theorem mappingCone_comp_self (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e 
     (hf : f ∘ₗ d = e ∘ₗ f) : mappingCone d e f ∘ₗ mappingCone d e f = 0 := by
   refine LinearMap.ext fun x ↦ Prod.ext ?_ ?_
   · simpa using congr($hd x.1)
-  · have hfd : f (d x.1) = e (f x.1) := congr($hf x.1)
-    simpa [hfd] using congr($he x.2)
+  · have hfd : e (f x.1) = f (d x.1) := (congr($hf x.1)).symm
+    have he2 : e (e x.2) = 0 := by simpa using congr($he x.2)
+    calc
+      ((mappingCone d e f ∘ₗ mappingCone d e f) x).2
+        = f (-d x.1) + (e (f x.1) + e (e x.2)) := by
+          simp only [comp_apply, mappingCone_apply, map_add]
+      _ = (f (-d x.1) + f (d x.1)) + e (e x.2) := by
+          rw [hfd, add_assoc]
+      _ = f (-d x.1 + d x.1) + 0 := by
+          rw [← map_add, he2]
+      _ = 0 := by
+          rw [neg_add_cancel, map_zero, add_zero]
+
+end MappingCone
+
+section Ring
+
+variable {S M N : Type*} [Ring S] [AddCommGroup M] [Module S M] [AddCommGroup N] [Module S N]
+  {d : M →ₗ[S] M} {e : N →ₗ[S] N}
 
 /-- A chain map induces a bijection on homology exactly when its mapping cone is exact, that is,
 when every element killed by the mapping cone is in its image. -/
@@ -328,7 +334,81 @@ theorem ker_le_range_mappingCone_iff (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (
     rw [hc]
     abel
 
-end Map
+end Ring
+
+/-! ### Mapping cones of maps between free modules -/
+
+section SumMappingCone
+
+open Finsupp
+
+variable {S ι κ : Type*} [Ring S]
+
+/-- The mapping cone of a map `f : (ι →₀ S) → (κ →₀ S)` between free modules with endomorphisms
+`d` and `e`, as an endomorphism of the free module `(ι ⊕ κ) →₀ S` on the disjoint union of the two
+bases: `LinearMap.mappingCone d e f` transported along `Finsupp.sumFinsuppLEquivProdFinsupp`. -/
+noncomputable def sumMappingCone (d : (ι →₀ S) →ₗ[S] (ι →₀ S)) (e : (κ →₀ S) →ₗ[S] (κ →₀ S))
+    (f : (ι →₀ S) →ₗ[S] (κ →₀ S)) : ((ι ⊕ κ) →₀ S) →ₗ[S] ((ι ⊕ κ) →₀ S) :=
+  (sumFinsuppLEquivProdFinsupp S).symm.conjRingEquiv (mappingCone d e f)
+
+/-- The mapping cone on `(ι ⊕ κ) →₀ S` is the mapping cone on `(ι →₀ S) × (κ →₀ S)` between the
+two `Finsupp` sum-product equivalences. -/
+@[simp]
+theorem sumMappingCone_apply (d : (ι →₀ S) →ₗ[S] (ι →₀ S)) (e : (κ →₀ S) →ₗ[S] (κ →₀ S))
+    (f : (ι →₀ S) →ₗ[S] (κ →₀ S)) (x : (ι ⊕ κ) →₀ S) :
+    sumMappingCone d e f x =
+      (sumFinsuppLEquivProdFinsupp S).symm (mappingCone d e f (sumFinsuppLEquivProdFinsupp S x)) :=
+  (rfl)
+
+/-- The coefficient of the mapping cone between two generators of `ι` is minus that of `d`. -/
+theorem sumMappingCone_single_inl_apply_inl (d : (ι →₀ S) →ₗ[S] (ι →₀ S))
+    (e : (κ →₀ S) →ₗ[S] (κ →₀ S)) (f : (ι →₀ S) →ₗ[S] (κ →₀ S)) (i j : ι) (c : S) :
+    sumMappingCone d e f (Finsupp.single (.inl i) c) (.inl j) = -d (Finsupp.single i c) j := by
+  simp
+
+/-- The coefficient of the mapping cone from a generator of `ι` to a generator of `κ` is that
+of `f`. -/
+theorem sumMappingCone_single_inl_apply_inr (d : (ι →₀ S) →ₗ[S] (ι →₀ S))
+    (e : (κ →₀ S) →ₗ[S] (κ →₀ S)) (f : (ι →₀ S) →ₗ[S] (κ →₀ S)) (i : ι) (k : κ) (c : S) :
+    sumMappingCone d e f (Finsupp.single (.inl i) c) (.inr k) = f (Finsupp.single i c) k := by
+  simp
+
+/-- The mapping cone has no coefficient from a generator of `κ` to a generator of `ι`. -/
+theorem sumMappingCone_single_inr_apply_inl (d : (ι →₀ S) →ₗ[S] (ι →₀ S))
+    (e : (κ →₀ S) →ₗ[S] (κ →₀ S)) (f : (ι →₀ S) →ₗ[S] (κ →₀ S)) (k : κ) (i : ι) (c : S) :
+    sumMappingCone d e f (Finsupp.single (.inr k) c) (.inl i) = 0 := by
+  simp
+
+/-- The coefficient of the mapping cone between two generators of `κ` is that of `e`. -/
+theorem sumMappingCone_single_inr_apply_inr (d : (ι →₀ S) →ₗ[S] (ι →₀ S))
+    (e : (κ →₀ S) →ₗ[S] (κ →₀ S)) (f : (ι →₀ S) →ₗ[S] (κ →₀ S)) (k k' : κ) (c : S) :
+    sumMappingCone d e f (Finsupp.single (.inr k) c) (.inr k') = e (Finsupp.single k c) k' := by
+  simp
+
+/-- The mapping cone on `(ι ⊕ κ) →₀ S` of a chain map between square-zero endomorphisms squares
+to zero. -/
+theorem sumMappingCone_comp_self {d : (ι →₀ S) →ₗ[S] (ι →₀ S)} {e : (κ →₀ S) →ₗ[S] (κ →₀ S)}
+    {f : (ι →₀ S) →ₗ[S] (κ →₀ S)} (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) (hf : f ∘ₗ d = e ∘ₗ f) :
+    sumMappingCone d e f ∘ₗ sumMappingCone d e f = 0 := by
+  unfold sumMappingCone
+  rw [← Module.End.mul_eq_comp, ← map_mul, Module.End.mul_eq_comp,
+    mappingCone_comp_self f hd he hf, map_zero]
+
+/-- The kernel of the mapping cone on `(ι ⊕ κ) →₀ S` lies in its range exactly when the kernel of
+the mapping cone on `(ι →₀ S) × (κ →₀ S)` lies in its range. -/
+theorem ker_le_range_sumMappingCone_iff {d : (ι →₀ S) →ₗ[S] (ι →₀ S)}
+    {e : (κ →₀ S) →ₗ[S] (κ →₀ S)} {f : (ι →₀ S) →ₗ[S] (κ →₀ S)} :
+    ker (sumMappingCone d e f) ≤ range (sumMappingCone d e f) ↔
+      ker (mappingCone d e f) ≤ range (mappingCone d e f) := by
+  -- Rewrite the transported cone as a composition through its application rule.
+  have hcomp : sumMappingCone d e f = (sumFinsuppLEquivProdFinsupp S).symm.toLinearMap ∘ₗ
+      mappingCone d e f ∘ₗ (sumFinsuppLEquivProdFinsupp S).toLinearMap :=
+    LinearMap.ext fun x ↦ by simp
+  rw [hcomp, LinearEquiv.ker_comp, ker_comp, range_comp, LinearEquiv.range_comp,
+    Submodule.map_equiv_eq_comap_symm, LinearEquiv.symm_symm]
+  exact Submodule.comap_le_comap_iff_of_surjective (LinearEquiv.surjective _)
+
+end SumMappingCone
 
 end LinearMap
 

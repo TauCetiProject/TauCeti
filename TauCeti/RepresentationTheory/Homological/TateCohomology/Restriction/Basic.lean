@@ -12,6 +12,7 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Functorial
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.NegativeCorestriction
 public import TauCeti.RepresentationTheory.RelativeNorm
+import TauCeti.RepresentationTheory.Coinvariants
 
 /-!
 # Restriction in negative Tate degrees and maps in the two low degrees
@@ -133,6 +134,10 @@ def HNegTwoRes :
     tateCohomology M (-2) ⟶ tateCohomology (Rep.res H.subtype M) (-2) :=
   negSuccRes M H 1
 
+/-- Degree-`-2` restriction is the degree-one instance of negative restriction. -/
+theorem HNegTwoRes_eq_negSuccRes : HNegTwoRes M H = negSuccRes M H 1 :=
+  (rfl)
+
 /-- Restriction in Tate degree `-2` is the transfer in first group homology, transported through
 Mathlib's negative-degree comparison `TateCohomology.isoGroupHomology`. -/
 theorem HNegTwoRes_def :
@@ -229,7 +234,8 @@ theorem H0Cor_comp_H0Res_apply (x : tateCohomology M 0) :
     rw [H0π_comp_H0Res_apply, H0π_comp_H0Cor_apply, ← map_nsmul]
     congr 1
     ext
-    simpa using Representation.relNorm_apply_of_mem_invariants (H := H) y.2
+    simpa using M.ρ.relNorm_apply_of_forall_apply_eq (H := H)
+      ((Representation.mem_invariants _ _).1 y.2)
 
 /-- Restriction followed by corestriction is multiplication by the index, in degree zero. -/
 theorem H0Res_comp_H0Cor :
@@ -256,7 +262,7 @@ private theorem hNegOne_cor_le :
         (Submodule.inclusion
           (Representation.ker_norm_comp_subtype_le_ker_norm (ρ := M.ρ) (H := H)))
         ((Coinvariants.ker M.ρ).submoduleOf (ker M.ρ.norm)) :=
-  fun _ hx => Representation.coinvariantsKer_comp_subtype_le (H := H) hx
+  fun _ hx => M.ρ.coinvariantsKer_comp_le H.subtype hx
 
 /-- Restriction to a subgroup in degree `-1` Tate cohomology, induced by the relative transfer. -/
 def HNegOneRes :
@@ -311,6 +317,40 @@ theorem HNegOneRes_comp_HNegOneCor :
   ext x
   simpa using HNegOneCor_comp_HNegOneRes_apply M H x
 
+/-- **Tate restriction in degree `-1` is natural in the coefficient representation.** -/
+@[reassoc]
+theorem HNegOneRes_natural {N : Rep R G} (f : M ⟶ N) :
+    (tateCohomologyFunctor (-1)).map f ≫ HNegOneRes N H =
+      HNegOneRes M H ≫ (tateCohomologyFunctor (-1)).map ((Rep.resFunctor H.subtype).map f) := by
+  let g := (Rep.resFunctor H.subtype).map f
+  let hφ : M.ρ.IsIntertwiningMap
+      (N.ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G)) f.hom.toLinearMap :=
+    ⟨fun g v ↦ Rep.hom_comm_apply f g v⟩
+  let hφH : (Rep.res H.subtype M).ρ.IsIntertwiningMap
+      ((Rep.res H.subtype N).ρ.comp ((MulEquiv.refl H : H ≃* H) : H →* H))
+      g.hom.toLinearMap := ⟨fun x v ↦ Rep.hom_comm_apply g x v⟩
+  -- Along the identity of the group, the Tate map of a compatible pair is coefficient
+  -- functoriality (`map_refl`), so `HNegOneπ_comp_map` computes both coefficient maps.
+  have hmap : HNegOneπ M ≫ (tateCohomologyFunctor (-1)).map f =
+      ModuleCat.ofHom (mapKerNorm hφ) ≫ HNegOneπ N :=
+    (map_refl hφ (-1)).symm ▸ HNegOneπ_comp_map hφ
+  have hmapH : HNegOneπ (Rep.res H.subtype M) ≫ (tateCohomologyFunctor (-1)).map g =
+      ModuleCat.ofHom (mapKerNorm hφH) ≫ HNegOneπ (Rep.res H.subtype N) :=
+    (map_refl hφH (-1)).symm ▸ HNegOneπ_comp_map hφH
+  -- The relative transfer commutes with the coefficient map on norm kernels.
+  have htransfer : ModuleCat.ofHom (mapKerNorm hφ) ≫
+        ModuleCat.ofHom (Representation.relTransferKerNorm N.ρ H) =
+      ModuleCat.ofHom (Representation.relTransferKerNorm M.ρ H) ≫
+        ModuleCat.ofHom (mapKerNorm hφH) := by
+    ext x
+    simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply]
+    rw [Representation.coe_relTransferKerNorm, mapKerNorm_apply_coe,
+      mapKerNorm_apply_coe, Representation.coe_relTransferKerNorm,
+      Representation.relTransfer_apply, Representation.relTransfer_apply, map_sum]
+    exact Finset.sum_congr rfl fun q _ ↦ (Rep.hom_comm_apply f q.out⁻¹ x).symm
+  rw [← cancel_epi (HNegOneπ M), reassoc_of% hmap, HNegOneπ_comp_HNegOneRes,
+    HNegOneπ_comp_HNegOneRes_assoc, reassoc_of% htransfer, hmapH]
+
 end NegOne
 
 section TrivialInt
@@ -324,7 +364,7 @@ theorem isIntertwiningMap_trivial_res (S : Subgroup G) :
     (Rep.trivial ℤ S ℤ).ρ.IsIntertwiningMap
       ((Rep.res S.subtype (Rep.trivial ℤ G ℤ)).ρ.comp ((MulEquiv.refl S : S ≃* S) : S →* S))
       (LinearEquiv.refl ℤ ℤ) :=
-  ⟨fun _ _ ↦ rfl⟩
+  Rep.isIntertwiningMap_trivial ℤ _
 
 /-- Tate cohomology of the trivial integral representation of a subgroup `S` of `G`, identified
 with Tate cohomology of the restriction to `S` of the trivial integral representation of `G`. -/

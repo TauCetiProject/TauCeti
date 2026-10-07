@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.GeneralLinearBaseChange
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Rigidity
 
 /-!
 # When the Kostant weight torus is scheme-theoretically redundant
@@ -22,6 +23,11 @@ defining ideals persists in the transported general-linear presentations over ev
 ring; this does not identify the transported carrier with the subgroup generated anew over a
 non-flat base.
 
+The same hypothesis also removes the weight-torus hypothesis from rigidity: a homomorphism out of
+the toral carrier is then determined by its restrictions to the root subgroups alone, which is the
+uniqueness statement a consumer pinning an endomorphism by its action on the numbered simple root
+subgroups needs.
+
 ## Main results
 
 * `kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_universal_torus_mem_elementary`:
@@ -34,6 +40,8 @@ non-flat base.
 * `kostantToralBaseChangePresentationIdeal_eq_generated_of_universal_torus_mem_elementary`: under
   the same hypothesis, the transported toral and root-generated presentations agree over every
   commutative ring.
+* `kostantToralGroupScheme_hom_ext_of_universal_torus_mem_elementary`: under the same hypothesis,
+  homomorphisms out of the toral carrier are determined by the root subgroups alone.
 
 ## References
 
@@ -215,5 +223,32 @@ theorem kostantToralBaseChangePresentationIdeal_eq_generated_of_universal_torus_
   kostantToralBaseChangePresentationIdeal_eq_generated_of_definingIdeal_eq e h ρ M hM hnil b wt A
     (kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_universal_torus_mem_elementary
       e h ρ M hM hnil b wt huniv)
+
+/-- **A root-generated weight torus makes the torus hypothesis of rigidity redundant.** If the
+represented universal weight-torus point belongs to the elementary subgroup, then two homomorphisms
+out of the toral carrier are equal as soon as they agree on every represented root subgroup, with no
+hypothesis on the weight torus. Compare `kostantToralGroupScheme_hom_ext`, where the torus
+restriction is a second hypothesis because the torus is in general an independent generator. -/
+theorem kostantToralGroupScheme_hom_ext_of_universal_torus_mem_elementary
+    (huniv :
+      let T := (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj
+      let A := CommAlgCat.of ℤ T
+      let q : HopfAlgebra.points
+          (R := ℤ) (H := DiagonalizableGroup.coordinateRing ℤ
+            (SplitTorus.characterGroup κ)) A := toConv (AlgHom.id ℤ T)
+      kostantTorusPoints M b wt A (SplitTorus.pointsMulEquiv q) ∈
+        kostantElementarySubgroup e h ρ M hM hnil A)
+    {Y : _root_.CommHopfAlgCat.{0} ℤ}
+    (φ ψ : kostantToralGroupScheme e h ρ M hM hnil b wt ⟶
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op Y))
+    (hroot : ∀ i, kostantRootSubgroupToToral e h ρ M hM hnil b wt i ≫ φ =
+      kostantRootSubgroupToToral e h ρ M hM hnil b wt i ≫ ψ) :
+    φ = ψ := by
+  have := isIso_kostantGeneratedToToral_of_universal_torus_mem_elementary
+    e h ρ M hM hnil b wt huniv
+  refine (cancel_epi (kostantGeneratedToToral e h ρ M hM hnil b wt)).1
+    (kostantGeneratedGroupScheme_hom_ext e h ρ M hM hnil b _ _ fun i => ?_)
+  simpa only [← Category.assoc,
+    kostantRootSubgroupToGenerated_comp_kostantGeneratedToToral] using hroot i
 
 end TauCeti.UniversalEnvelopingAlgebra

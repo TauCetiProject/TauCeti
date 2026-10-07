@@ -38,6 +38,8 @@ have codimension at least two.
   codimension one is closed.
 * `TauCeti.coheight_le_topologicalKrullDim`: on a T₀ space, the codimension of a point is at
   most the Krull dimension of the space.
+* `TauCeti.topologicalKrullDim_eq_iSup_coheight`: on a quasi-sober T₀ space, the Krull dimension
+  is the supremum of the codimensions of the points.
 -/
 
 public section
@@ -93,6 +95,15 @@ theorem coheight_le_topologicalKrullDim {α : Type*} [TopologicalSpace α] [T0Sp
     · exact specializes_iff_closure_subset.mp hyz
     · exact (inseparable_iff_closure_eq.mpr (congrArg SetLike.coe hyz)).eq
   exact (coheight_le_krullDim x).trans (krullDim_le_of_strictMono c hc)
+
+attribute [local instance] specializationOrder in
+/-- On a quasi-sober T₀ topological space, the Krull dimension is the supremum of the
+codimensions of the points for the specialization order: every irreducible closed subset is the
+closure of a unique generic point. -/
+theorem topologicalKrullDim_eq_iSup_coheight (α : Type*) [TopologicalSpace α] [QuasiSober α]
+    [T0Space α] : topologicalKrullDim α = ⨆ x : α, (coheight x : WithBot ℕ∞) := by
+  rw [topologicalKrullDim, krullDim_eq_of_orderIso irreducibleSetEquivPoints,
+    krullDim_eq_iSup_coheight]
 
 end TauCeti
 

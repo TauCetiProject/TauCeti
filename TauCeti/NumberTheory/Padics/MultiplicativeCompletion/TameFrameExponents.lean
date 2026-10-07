@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MonoidAlgebra.TwoGeneratorQuotient
+public import TauCeti.NumberTheory.LocalField.WorkedExamples.UnramifiedQuadratic
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Torsion
 import Mathlib.NumberTheory.Cyclotomic.CyclotomicCharacter
 import TauCeti.NumberTheory.Multiplicity
@@ -31,9 +32,13 @@ works: for `a = b = 1` the quotient is `ℤ_p[G] ⧸ I_G ≅ ℤ_p`, which is in
 
 ## Main statements
 
+* `TauCeti.nonempty_quotient_tameFrameExponents_linearEquiv`: supplied sharp exponents identify
+  their quotient with the torsion of `A(L)`.
 * `TauCeti.exists_tameFrame_exponents`: the existence of sharp exponents for a tame frame.
 * `TauCeti.finite_and_natCard_le_of_pow_orderOf_sub_one`: `ℤ_p[G] ⧸ J` has at most `p ^ k`
   elements when `b ^ orderOf τ - 1` is `p ^ k` times a `p`-adic unit.
+* `TauCeti.not_exists_tameFrame_exponents_one_one`: when `q(L) = 2` and the automorphism group is
+  nontrivial, the identity pair cannot have sharp exponents.
 
 ## References
 
@@ -171,6 +176,31 @@ private theorem exists_surjective_pPowerTorsion_padicCompletionUnits {L : Type*}
   rw [LinearMap.codRestrict_apply, hφ₀, Nat.cast_smul_eq_nsmul, toMul_nsmul, toMul_ofMul, ← hξx,
     map_pow]
 
+/-- Supplied sharp tame-frame exponents identify their quotient with the `p`-power torsion of the
+`p`-adic completion `A(L)`. -/
+theorem nonempty_quotient_tameFrameExponents_linearEquiv {L : Type*} [Field L]
+    {K : Type*} [Field K] [Algebra K L]
+    (h : Finite (pPowerRootsOfUnity p L)) (σ τ : L ≃ₐ[K] L) (a b : ℕ)
+    (ha : ∀ ζ ∈ pPowerRootsOfUnity p L, Units.map (σ : L →* L) ζ = ζ ^ a)
+    (hb : ∀ ζ ∈ pPowerRootsOfUnity p L, Units.map (τ : L →* L) ζ = ζ ^ b)
+    (hcard : Nat.card (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L) ⧸ Ideal.span
+      {single σ (1 : ℤ_[p]) - a, single τ (1 : ℤ_[p]) - b}) = localRootOfUnityOrder p L h) :
+    Nonempty ((MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L) ⧸ Ideal.span
+        {single σ (1 : ℤ_[p]) - a, single τ (1 : ℤ_[p]) - b})
+      ≃ₗ[MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)]
+      pPowerTorsion p (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
+        (Additive ↑(padicCompletionUnits p L))) := by
+  let _ : Finite (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L) ⧸ Ideal.span
+      {single σ (1 : ℤ_[p]) - a, single τ (1 : ℤ_[p]) - b}) :=
+    Nat.finite_of_card_ne_zero (hcard ▸ (localRootOfUnityOrder_pos p L h).ne')
+  obtain ⟨ζ, hζμ, -, hgenζ⟩ := exists_generator_pPowerRootsOfUnity L h
+  obtain ⟨f, hf⟩ := exists_surjective_pPowerTorsion_padicCompletionUnits hζμ hgenζ
+    (ha ζ hζμ) (hb ζ hζμ)
+  have hcardT := natCard_pPowerTorsion_padicCompletionUnits p L
+    (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) h
+  exact ⟨LinearEquiv.ofBijective f
+    (hf.bijective_of_nat_card_le (hcard.le.trans hcardT.ge))⟩
+
 /-- **Sharp exponents for a tame frame** (the exact sequence `(∗)` in the proof of NSW (7.4.1)).
 Let `σ, τ` generate the finite automorphism group `G` of `L/K`, with `τ` of order prime to `p`, and
 suppose `L` has finitely many `p`-power roots of unity. Then there are natural numbers `a, b`
@@ -233,5 +263,68 @@ theorem exists_tameFrame_exponents {L : Type*} [Field L] {K : Type*} [Field K] [
     (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) h
   have hbij := hφ.bijective_of_nat_card_le (hcardle.trans (hcardT.trans hk).ge)
   exact ⟨(Nat.card_eq_of_bijective φ hbij).trans hcardT, ⟨LinearEquiv.ofBijective φ hbij⟩⟩
+
+/-! ### The generating hypothesis is necessary -/
+
+/-- **The identity pair does not have sharp tame-frame exponents.** Suppose the finite group of
+`2`-power roots of unity of `L` has order two and `Aut_K(L)` is finite and nontrivial. There are
+no exponents through which the identity pair acts on those roots for which the corresponding
+two-generator quotient of `ℤ_2[Aut_K(L)]` also has order two.
+
+Indeed, the action equations on `-1` force both exponents to be odd. Reduction modulo two then
+makes both relations vanish, so the quotient surjects onto `𝔽₂[Aut_K(L)]`, which has at least
+four elements. This shows that the generating hypothesis of `exists_tameFrame_exponents` cannot
+be omitted. -/
+theorem not_exists_tameFrame_exponents_one_one (L : Type*) [Field L]
+    (K : Type*) [Field K] [Algebra K L] [Finite (L ≃ₐ[K] L)] [Nontrivial (L ≃ₐ[K] L)]
+    (hchar : (2 : L) ≠ 0) (hfinite : Finite (pPowerRootsOfUnity 2 L))
+    (hq : localRootOfUnityOrder 2 L hfinite = 2) :
+    ¬ ∃ a b : ℕ,
+      (∀ ζ ∈ pPowerRootsOfUnity 2 L, Units.map ((1 : L ≃ₐ[K] L) : L →* L) ζ = ζ ^ a) ∧
+      (∀ ζ ∈ pPowerRootsOfUnity 2 L, Units.map ((1 : L ≃ₐ[K] L) : L →* L) ζ = ζ ^ b) ∧
+      Nat.card (MonoidAlgebra ℤ_[2] (L ≃ₐ[K] L) ⧸ Ideal.span
+        {single (1 : L ≃ₐ[K] L) (1 : ℤ_[2]) - a,
+          single (1 : L ≃ₐ[K] L) (1 : ℤ_[2]) - b}) = localRootOfUnityOrder 2 L hfinite := by
+  classical
+  rintro ⟨a, b, ha, hb, hcard⟩
+  have hneg : (-1 : Lˣ) ∈ pPowerRootsOfUnity 2 L :=
+    (mem_pPowerRootsOfUnity_iff 2 L _).2 ⟨1, by norm_num⟩
+  have hne : (-1 : Lˣ) ≠ 1 := by
+    intro h
+    have hval := congrArg Units.val h
+    simp only [Units.val_neg, Units.val_one] at hval
+    have htwo := congrArg (fun x : L ↦ x + 1) hval
+    norm_num at htwo
+    exact hchar htwo.symm
+  have exponent_odd {n : ℕ}
+      (hn : ∀ ζ ∈ pPowerRootsOfUnity 2 L,
+        Units.map ((1 : L ≃ₐ[K] L) : L →* L) ζ = ζ ^ n) : Odd n :=
+    (neg_one_pow_eq_neg_one_iff_odd (R := Lˣ) hne).1 <| by
+      simpa using (hn (-1) hneg).symm
+  have haodd : Odd a := exponent_odd ha
+  have hbodd : Odd b := exponent_odd hb
+  exact MonoidAlgebra.natCard_quotient_span_one_sub_natCast_ne_two haodd hbodd
+    (hcard.trans hq)
+
+/-- The identity pair on the unramified quadratic extension `ℚ₂(ζ₃)/ℚ₂` does not admit sharp
+tame-frame exponents. This is the concrete rejection test showing that the generating hypothesis
+of `exists_tameFrame_exponents` cannot be removed. -/
+theorem not_exists_tameFrame_exponents_one_one_unramifiedQuadratic :
+    ¬ ∃ a b : ℕ,
+      (∀ ζ ∈ pPowerRootsOfUnity 2 UnramifiedQuadratic,
+        Units.map ((1 : UnramifiedQuadratic ≃ₐ[ℚ_[2]] UnramifiedQuadratic) :
+          UnramifiedQuadratic →* UnramifiedQuadratic) ζ = ζ ^ a) ∧
+      (∀ ζ ∈ pPowerRootsOfUnity 2 UnramifiedQuadratic,
+        Units.map ((1 : UnramifiedQuadratic ≃ₐ[ℚ_[2]] UnramifiedQuadratic) :
+          UnramifiedQuadratic →* UnramifiedQuadratic) ζ = ζ ^ b) ∧
+      Nat.card (MonoidAlgebra ℤ_[2]
+        (UnramifiedQuadratic ≃ₐ[ℚ_[2]] UnramifiedQuadratic) ⧸ Ideal.span
+          {single (1 : UnramifiedQuadratic ≃ₐ[ℚ_[2]] UnramifiedQuadratic) (1 : ℤ_[2]) - a,
+            single (1 : UnramifiedQuadratic ≃ₐ[ℚ_[2]] UnramifiedQuadratic) (1 : ℤ_[2]) - b}) =
+        localRootOfUnityOrder 2 UnramifiedQuadratic
+          (finite_pPowerRootsOfUnity (by norm_num)) := by
+  let _ := nontrivial_algEquiv_unramifiedQuadratic
+  exact not_exists_tameFrame_exponents_one_one UnramifiedQuadratic ℚ_[2] (by norm_num)
+    (finite_pPowerRootsOfUnity (by norm_num)) localRootOfUnityOrder_two_unramifiedQuadratic
 
 end TauCeti

@@ -50,7 +50,9 @@ together with the rank, that classify Demushkin groups with `q ≠ 2`.
 * `TauCeti.IsDemushkin.prime_dvd_demushkinQ`: `p ∣ q(G)`, because the relator of a minimal
   presentation lies in the Frattini subgroup.
 * `TauCeti.demushkinQ_eq_zero_iff`: `q(G) = 0` exactly when `G^{ab}` is torsion-free.
-* `TauCeti.IsDemushkin.exists_demushkinQ_eq_pow`: a nonzero `q(G)` is a positive power of `p`.
+* `TauCeti.IsDemushkin.exists_demushkinQ_eq_pow`: a nonzero `q(G)` is a positive power of `p`;
+  `TauCeti.IsDemushkin.exists_two_le_demushkinQ_eq_pow_of_ne`: if moreover `q(G) ≠ p`, the
+  exponent is at least `2`.
 * `TauCeti.demushkinQ_congr`: the `q`-invariant is invariant under topological isomorphism.
 * `TauCeti.isMulTorsionFree_topologicalAbelianization_of_mulEquiv`,
   `TauCeti.demushkinQ_eq_zero_of_mulEquiv`, `TauCeti.demushkinQ_eq_pow_valuation_of_mulEquiv`:
@@ -289,6 +291,15 @@ theorem exists_demushkinQ_eq_pow (hq : demushkinQ hG ≠ 0) :
   refine ⟨_, Nat.pos_of_ne_zero fun h0 ↦ ?_, hcard⟩
   rw [h0, pow_zero] at hcard
   exact (Fact.out : p.Prime).one_lt.ne' (Nat.dvd_one.mp (hcard ▸ hG.prime_dvd_demushkinQ))
+
+/-- **A `q`-invariant other than `0` and `p` is `p ^ k` with `k ≥ 2`.** -/
+theorem exists_two_le_demushkinQ_eq_pow_of_ne (hq0 : demushkinQ hG ≠ 0)
+    (hqp : demushkinQ hG ≠ p) : ∃ k, 2 ≤ k ∧ demushkinQ hG = p ^ k := by
+  obtain ⟨k, hk, hqk⟩ := hG.exists_demushkinQ_eq_pow hq0
+  refine ⟨k, ?_, hqk⟩
+  by_contra hlt
+  have hk1 : k = 1 := by omega
+  exact hqp (by rw [hqk, hk1, pow_one])
 
 end IsDemushkin
 

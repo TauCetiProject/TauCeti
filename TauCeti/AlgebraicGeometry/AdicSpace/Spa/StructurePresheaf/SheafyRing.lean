@@ -53,6 +53,11 @@ does not require completeness.
   sheafy exactly when, for every `B` in the definition, every ring of integral elements of `B`
   satisfies `TauCeti.Huber.IsSheafyForEveryPresentation`.
 * `TauCeti.Huber.IsStablySheafyRing.isSheafyRing`: a stably sheafy Huber ring is sheafy.
+* `TauCeti.Huber.isStablySheafyRing_completion_iff`: `Â` is stably sheafy exactly when `A` is.
+* `TauCeti.Huber.isStablySheafyRing_iff_of_completion_ringEquiv`: stable sheafiness depends only
+  on the completion, up to isomorphism of topological rings.
+* `TauCeti.Huber.isStablySheafyRing_iff_of_ringEquiv`: stable sheafiness is invariant under
+  isomorphisms of topological rings.
 
 ## References
 
@@ -66,7 +71,7 @@ open CategoryTheory UniformSpace TauCeti.ValuationSpectrum _root_.TopologicalSpa
 
 namespace TauCeti.Huber
 
-universe u v
+universe u v w
 
 variable (A : Type u) [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
   [IsHuberRing A]
@@ -196,6 +201,40 @@ type. This uses the stable condition for rings `B` in the universe of `A`. -/
 theorem IsStablySheafyRing.isSheafyRing (h : IsStablySheafyRing.{u, u} A) : IsSheafyRing A :=
   isSheafyRing_completion_iff.mp <| isStablySheafyRing_iff.mp h _ (.id _)
     isStrictlyTopologicallyFiniteType_id.isTopologicallyFiniteType
+
+section StableRingEquiv
+
+variable {B : Type w} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
+  [IsHuberRing B]
+
+/-- **Stable sheafiness depends only on the completion**: if the completions `Â` and `B̂` of Huber
+rings `A` and `B` are isomorphic as topological rings, then `A` is stably sheafy exactly when `B`
+is. `A` and `B` may lie in different universes; the rings topologically of finite type on the two
+sides lie in the same universe. -/
+theorem isStablySheafyRing_iff_of_completion_ringEquiv (e : Completion A ≃+* Completion B)
+    (he : Continuous e) (he' : Continuous e.symm) :
+    IsStablySheafyRing.{u, v} A ↔ IsStablySheafyRing.{w, v} B := by
+  simp only [isStablySheafyRing_iff]
+  exact ⟨fun h C _ _ _ _ _ _ _ φ hφ ↦ h C (φ.comp e) (hφ.comp_ringEquiv e he he'),
+    fun h C _ _ _ _ _ _ _ φ hφ ↦ h C (φ.comp e.symm) (hφ.comp_ringEquiv e.symm he' he)⟩
+
+/-- **Stable sheafiness is invariant under completion**: the completion `Â` of a Huber ring `A` is
+stably sheafy exactly when `A` is. -/
+@[simp]
+theorem isStablySheafyRing_completion_iff : IsStablySheafyRing.{u, v} (Completion A) ↔
+    IsStablySheafyRing.{u, v} A :=
+  isStablySheafyRing_iff_of_completion_ringEquiv (Completion.completeRingEquivSelf _)
+    (Completion.uniformContinuous_completeRingEquivSelf _).continuous
+    (Completion.uniformContinuous_completeRingEquivSelf_symm _).continuous
+
+/-- **Stable sheafiness is invariant under isomorphism**: if `e : A ≃+* B` is an isomorphism of
+topological rings between Huber rings, then `A` is stably sheafy exactly when `B` is. -/
+theorem isStablySheafyRing_iff_of_ringEquiv (e : A ≃+* B) (he : Continuous e)
+    (he' : Continuous e.symm) : IsStablySheafyRing.{u, v} A ↔ IsStablySheafyRing.{w, v} B :=
+  isStablySheafyRing_iff_of_completion_ringEquiv (Completion.mapRingEquiv e he he')
+    (Completion.continuous_mapRingEquiv e he he') (Completion.continuous_mapRingEquiv_symm e he he')
+
+end StableRingEquiv
 
 end TauCeti.Huber
 

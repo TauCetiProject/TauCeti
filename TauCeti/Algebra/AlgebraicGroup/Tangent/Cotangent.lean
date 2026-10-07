@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Naturality
 public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.RingTheory.Ideal.Cotangent
 
@@ -375,8 +375,8 @@ private lemma tangentScalarExtensionEquiv_apply
       tangentScalarExtensionEquivBase (R := R) (A := A) (B := B) x := rfl
 
 /-- On pure tensors, scalar extension evaluates the cotangent functional and
-multiplies it by the coefficient. -/
-@[simp]
+multiplies it by the coefficient. The bundled pure-tensor simp rule is
+`tangentScalarExtensionEquiv_tmul`. -/
 lemma tangentScalarExtensionEquiv_tmul_apply
     [Module.Finite R (Bialgebra.CotangentSpace R A)]
     [Module.Projective R (Bialgebra.CotangentSpace R A)]
@@ -385,5 +385,42 @@ lemma tangentScalarExtensionEquiv_tmul_apply
       b * algebraMap R B (f (Bialgebra.cotangentMap R A a)) := by
   rw [tangentScalarExtensionEquiv_apply,
     tangentScalarExtensionEquivBase_tmul_apply]
+
+/-- On pure tensors, scalar extension is coefficient change of the cotangent-dual tangent
+vector, followed by multiplication by the tensor coefficient. -/
+@[simp]
+theorem tangentScalarExtensionEquiv_tmul
+    [Module.Finite R (Bialgebra.CotangentSpace R A)]
+    [Module.Projective R (Bialgebra.CotangentSpace R A)]
+    (b : B) (f : Module.Dual R (Bialgebra.CotangentSpace R A)) :
+    tangentScalarExtensionEquiv (R := R) (A := A) (B := B) (b ⊗ₜ[R] f) =
+      b • mapValue (A := A) (Algebra.ofId R B)
+        (cotangentLinearEquiv (R := R) (A := A) (B := R) f) := by
+  ext h
+  apply (Bialgebra.CounitAlgebra.algEquivSelf R A B).injective
+  calc
+    Bialgebra.CounitAlgebra.algEquivSelf R A B
+          (tangentScalarExtensionEquiv (R := R) (A := A) (B := B) (b ⊗ₜ[R] f) h) =
+        b * algebraMap R B (f (Bialgebra.cotangentMap R A h)) := by
+      rw [tangentScalarExtensionEquiv_tmul_apply]
+      exact Bialgebra.CounitAlgebra.algEquivSelf_apply
+        (R := R) (A := A) (B := B) _
+    _ = b * Bialgebra.CounitAlgebra.algEquivSelf R A B
+          (mapValue (A := A) (Algebra.ofId R B)
+            (cotangentLinearEquiv (R := R) (A := A) (B := R) f) h) := by
+      rw [mapValue_apply, cotangentLinearEquiv_apply_apply]
+      simp only [Algebra.ofId_apply]
+      exact congrArg (b * ·)
+        (Bialgebra.CounitAlgebra.algEquivSelf_apply
+          (R := R) (A := A) (B := B)
+          (algebraMap R B (f (Bialgebra.cotangentMap R A h)) :
+            Bialgebra.CounitAlgebra R A B)).symm
+    _ = Bialgebra.CounitAlgebra.algEquivSelf R A B
+          ((b • mapValue (A := A) (Algebra.ofId R B)
+            (cotangentLinearEquiv (R := R) (A := A) (B := R) f)) h) :=
+      by
+        rw [Derivation.smul_apply, Bialgebra.CounitAlgebra.algEquivSelf_apply,
+          Bialgebra.CounitAlgebra.algEquivSelf_apply]
+        rfl
 
 end Derivation

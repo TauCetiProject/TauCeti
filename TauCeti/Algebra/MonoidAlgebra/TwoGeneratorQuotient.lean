@@ -9,7 +9,9 @@ public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.LinearAlgebra.Quotient.Defs
 public import Mathlib.LinearAlgebra.Span.Basic
+public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.RingTheory.Ideal.Span
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # The quotient of a monoid algebra by the left ideal of two eigenvalue relations
@@ -38,6 +40,8 @@ what makes it no larger than the roots of unity themselves.
   by `c ^ orderOf g - 1`.
 * `MonoidAlgebra.toSpanSingleton_mk_one_surjective`: when `σ, τ` generate the monoid `G`,
   the quotient is generated over `R` by the class of `1`.
+* `TauCeti.MonoidAlgebra.natCard_quotient_span_one_sub_natCast_ne_two`: for a finite nontrivial
+  monoid and odd `a, b`, the corresponding `ℤ₂`-monoid-algebra quotient cannot have order two.
 
 ## References
 
@@ -126,3 +130,70 @@ theorem toSpanSingleton_mk_one_surjective (hgen : Submonoid.closure {σ, τ} = �
     exact Submodule.smul_mem _ r (hsingle g)
 
 end MonoidAlgebra
+
+namespace TauCeti.MonoidAlgebra
+
+open _root_.MonoidAlgebra
+
+/-- If `G` is finite and nontrivial and `a, b` are odd, then the quotient of `ℤ₂[G]` by
+`(1 - a, 1 - b)` cannot have order two. Indeed, reduction modulo two makes both relations
+vanish, so the quotient surjects onto `𝔽₂[G]`, which has at least four elements. -/
+theorem natCard_quotient_span_one_sub_natCast_ne_two {G : Type*} [Monoid G] [Finite G]
+    [Nontrivial G] {a b : ℕ} (ha : Odd a) (hb : Odd b) :
+    Nat.card (MonoidAlgebra ℤ_[2] G ⧸ Ideal.span
+      {single (1 : G) (1 : ℤ_[2]) - a, single (1 : G) (1 : ℤ_[2]) - b}) ≠ 2 := by
+  classical
+  let J : Ideal (MonoidAlgebra ℤ_[2] G) := Ideal.span
+    {single (1 : G) (1 : ℤ_[2]) - a, single (1 : G) (1 : ℤ_[2]) - b}
+  let f : MonoidAlgebra ℤ_[2] G →+* MonoidAlgebra (ZMod 2) G :=
+    _root_.MonoidAlgebra.mapRingHom G PadicInt.toZMod
+  have ha2 : (a : ZMod 2) = 1 := ZMod.natCast_eq_one_iff_odd.mpr ha
+  have hb2 : (b : ZMod 2) = 1 := ZMod.natCast_eq_one_iff_odd.mpr hb
+  have hJ : J ≤ RingHom.ker f := by
+    dsimp only [J]
+    rw [Ideal.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
+    constructor
+    · apply RingHom.mem_ker.mpr
+      simp only [f, map_sub, _root_.MonoidAlgebra.mapRingHom_single, map_one, natCast_def, ha2,
+        map_natCast, sub_self]
+    · apply RingHom.mem_ker.mpr
+      simp only [f, map_sub, _root_.MonoidAlgebra.mapRingHom_single, map_one, natCast_def, hb2,
+        map_natCast, sub_self]
+  have hJtwo : J.IsTwoSided := by
+    dsimp only [J]
+    apply Ideal.isTwoSided_span_of_subset_center
+    rw [Set.insert_subset_iff, Set.singleton_subset_iff]
+    constructor <;> rw [Semigroup.mem_center_iff]
+    · intro y
+      rw [natCast_def, sub_mul, mul_sub, single_one_comm, single_one_comm]
+    · intro y
+      rw [natCast_def, sub_mul, mul_sub, single_one_comm, single_one_comm]
+  let _ : J.IsTwoSided := hJtwo
+  let φ : (MonoidAlgebra ℤ_[2] G ⧸ J) →+* MonoidAlgebra (ZMod 2) G :=
+    Ideal.Quotient.lift J f fun x hx ↦ RingHom.mem_ker.mp (hJ hx)
+  have hf : Function.Surjective f :=
+    _root_.MonoidAlgebra.map_surjective _
+      (ZMod.ringHom_surjective (PadicInt.toZMod (p := 2)))
+  have hφ : Function.Surjective φ :=
+    Ideal.Quotient.lift_surjective_of_surjective J _ hf
+  intro hcard
+  have hcardJ : Nat.card (MonoidAlgebra ℤ_[2] G ⧸ J) = 2 := by
+    dsimp only [J]
+    exact hcard
+  let _ : Finite (MonoidAlgebra ℤ_[2] G ⧸ J) :=
+    Nat.finite_of_card_ne_zero (hcardJ.trans_ne (by norm_num))
+  let _ : Fintype G := Fintype.ofFinite G
+  have hle : Nat.card (MonoidAlgebra (ZMod 2) G) ≤ 2 := by
+    calc
+      Nat.card (MonoidAlgebra (ZMod 2) G) ≤ Nat.card (MonoidAlgebra ℤ_[2] G ⧸ J) :=
+        Nat.card_le_card_of_surjective φ hφ
+      _ = 2 := hcardJ
+  have hfour : 4 ≤ Nat.card (MonoidAlgebra (ZMod 2) G) := by
+    rw [Nat.card_congr (_root_.MonoidAlgebra.coeffEquiv (R := ZMod 2) (M := G))]
+    rw [Nat.card_eq_fintype_card, Fintype.card_finsupp, ZMod.card]
+    calc
+      4 = 2 ^ 2 := by norm_num
+      _ ≤ 2 ^ Fintype.card G := Nat.pow_le_pow_right (by norm_num) Fintype.one_lt_card
+  omega
+
+end TauCeti.MonoidAlgebra

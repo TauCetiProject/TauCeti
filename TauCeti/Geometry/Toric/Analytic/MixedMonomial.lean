@@ -12,6 +12,7 @@ public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import TauCeti.Algebra.BigOperators.ZPow
 public import TauCeti.Analysis.Calculus.ContDiffZPow
+import Mathlib.Analysis.Calculus.Deriv.Pow
 
 /-!
 # Mixed monomial maps between mixed charts

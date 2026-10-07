@@ -42,11 +42,18 @@ the scalar by which `φ` acts on the class of `x_0` in the abelianization `ℤ_p
 
 * `TauCeti.Peripheral.topologicalClosure_closure_range_basis`: the basis generates `F`
   topologically.
+* `TauCeti.Peripheral.topologicalClosure_closure_range_peripheralTuple_comp_succ`: so does the
+  peripheral tuple of the basis without its first entry.
 * `TauCeti.Peripheral.hom_ext_basis`: continuous homomorphisms out of `F` into a Hausdorff monoid
   that agree on the basis are equal.
 * `TauCeti.Peripheral.prod_mul_cusp`, `TauCeti.Peripheral.prod_ofFn_peripheralTuple`: the
   defining relation `x_0 ⋯ x_{r-1} · cusp x = 1`, and the ordered product of the peripheral tuple
   is `1`.
+* `TauCeti.Peripheral.exponentSum_cusp_basis`,
+  `TauCeti.Peripheral.toAdd_exponentSum_peripheralTuple`: in the abelianization `ℤ_p ^ r` the
+  peripheral tuple of the basis has the classes `e_0, …, e_{r-1}` and `-(e_0 + ⋯ + e_{r-1})`.
+* `TauCeti.Peripheral.isPeripheralAut_of_apply_eq_conj`: an automorphism carrying each `x i` and
+  the cusp to explicit conjugates of their `u`-th powers is peripheral of exponent `u`.
 * `TauCeti.Peripheral.isPeripheralAut_conj`: inner automorphisms are peripheral of exponent one.
 * `TauCeti.Peripheral.IsPeripheralAut.exponent_unique`: in positive rank, the exponent of a
   peripheral automorphism with respect to the basis is unique.
@@ -126,6 +133,11 @@ theorem inv_cusp (x : Fin r → G) : (cusp x)⁻¹ = (List.ofFn x).prod :=
 theorem prod_mul_cusp (x : Fin r → G) : (List.ofFn x).prod * cusp x = 1 :=
   mul_inv_cancel _
 
+/-- The cusp of a one-element family is the inverse of its element. -/
+@[simp]
+theorem cusp_fin_one (x : Fin 1 → G) : cusp x = (x 0)⁻¹ := by
+  simp [cusp_def]
+
 /-- Homomorphisms carry the cusp of a family to the cusp of its image. -/
 @[simp]
 theorem map_cusp {M : Type*} [FunLike M G H] [MonoidHomClass M G H] (f : M) (x : Fin r → G) :
@@ -161,6 +173,66 @@ theorem map_peripheralTuple {M : Type*} [FunLike M G H] [MonoidHomClass M G H] (
 
 end Cusp
 
+section Generation
+
+variable {p r : ℕ} {F : Type*} [Group F] [TopologicalSpace F] [IsTopologicalGroup F]
+
+/-- The peripheral tuple of the basis without its first entry still generates `F` topologically:
+the first entry is recovered from the others through the relation `prod_mul_cusp`. -/
+theorem topologicalClosure_closure_range_peripheralTuple_comp_succ
+    (e : F ≃ₜ* freeProP p (Fin r)) :
+    (Subgroup.closure (Set.range (peripheralTuple (basis e) ∘ Fin.succ))).topologicalClosure =
+      ⊤ := by
+  let H := Subgroup.closure (Set.range (peripheralTuple (basis e) ∘ Fin.succ))
+  apply top_le_iff.mp
+  rw [← topologicalClosure_closure_range_basis e]
+  refine Subgroup.topologicalClosure_mono ((Subgroup.closure_le H).mpr ?_)
+  rintro _ ⟨i, rfl⟩
+  cases r with
+  | zero => exact i.elim0
+  | succ k =>
+    have hcusp : cusp (basis e) ∈ H :=
+      Subgroup.subset_closure ⟨Fin.last k, by simp [Fin.succ_last]⟩
+    have hsucc (j : Fin k) : basis e j.succ ∈ H :=
+      Subgroup.subset_closure
+        ⟨j.castSucc, by rw [Function.comp_apply, Fin.succ_castSucc, peripheralTuple_castSucc]⟩
+    induction i using Fin.cases with
+    | succ j => exact hsucc j
+    | zero =>
+      have htail : (List.ofFn fun j : Fin k ↦ basis e j.succ).prod ∈ H := by
+        apply Subgroup.list_prod_mem
+        intro y hy
+        obtain ⟨j, rfl⟩ := List.mem_ofFn.mp hy
+        exact hsucc j
+      have hrel := prod_mul_cusp (basis e)
+      rw [List.ofFn_succ, List.prod_cons, mul_assoc] at hrel
+      rw [eq_inv_of_mul_eq_one_left hrel]
+      exact H.inv_mem (H.mul_mem htail hcusp)
+
+end Generation
+
+section ExponentSum
+
+variable {p r : ℕ} [Fact p.Prime] {F : Type*} [Group F] [TopologicalSpace F]
+
+/-- The exponent vector of the cusp of the basis is `-(e_0 + ⋯ + e_{r-1})`. -/
+theorem exponentSum_cusp_basis (e : F ≃ₜ* freeProP p (Fin r)) :
+    freeProP.exponentSum p (Fin r) (e (cusp (basis e))) = ofAdd (-1) := by
+  apply toAdd.injective
+  rw [map_cusp, map_cusp, cusp_def, toAdd_inv, List.prod_ofFn, toAdd_prod, toAdd_ofAdd]
+  simp [Finset.univ_sum_single (fun _ : Fin r ↦ (1 : ℤ_[p])), Pi.one_def]
+
+/-- The exponent vectors of the peripheral tuple of the basis are the coordinate vectors
+`e_0, …, e_{r-1}` and, at the cusp, minus their sum. -/
+theorem toAdd_exponentSum_peripheralTuple (e : F ≃ₜ* freeProP p (Fin r)) (i : Fin (r + 1)) :
+    (freeProP.exponentSum p (Fin r) (e (peripheralTuple (basis e) i))).toAdd =
+      Fin.lastCases (motive := fun _ ↦ Fin r → ℤ_[p]) (-1) (fun j ↦ Pi.single j 1) i := by
+  induction i using Fin.lastCases with
+  | last => rw [Fin.lastCases_last, peripheralTuple_last, exponentSum_cusp_basis, toAdd_ofAdd]
+  | cast j => simp
+
+end ExponentSum
+
 section IsPeripheralAut
 
 variable {p r : ℕ} [Fact p.Prime] {F : Type*} [Group F] [TopologicalSpace F]
@@ -183,6 +255,17 @@ theorem isPeripheralAut_iff (hF : IsProP p F) (x : Fin r → F) (u : ℤ_[p]ˣ)
         IsConj (hF.padicPow (cusp x) u) (φ (cusp x)) := by
   rw [IsPeripheralAut, Fin.forall_fin_succ']
   simp only [peripheralTuple_castSucc, peripheralTuple_last]
+
+/-- An automorphism carrying each `x i` to `(c i)⁻¹ * x i ^ u * c i` and the cusp `z` to
+`d⁻¹ * z ^ u * d` is peripheral of exponent `u` for `x`. -/
+theorem isPeripheralAut_of_apply_eq_conj (hF : IsProP p F) {x : Fin r → F} {u : ℤ_[p]ˣ}
+    {φ : ContinuousAut F} {c : Fin r → F} {d : F}
+    (hc : ∀ i, φ (x i) = (c i)⁻¹ * hF.padicPow (x i) u * c i)
+    (hd : φ (cusp x) = d⁻¹ * hF.padicPow (cusp x) u * d) :
+    IsPeripheralAut hF x u φ := by
+  rw [isPeripheralAut_iff]
+  exact ⟨fun i ↦ isConj_iff.mpr ⟨(c i)⁻¹, by rw [inv_inv, hc]⟩,
+    isConj_iff.mpr ⟨d⁻¹, by rw [inv_inv, hd]⟩⟩
 
 /-- **Inner automorphisms are peripheral of exponent one.** -/
 theorem isPeripheralAut_conj (hF : IsProP p F) (x : Fin r → F) (g : F) :
@@ -213,11 +296,9 @@ theorem IsPeripheralAut.exponent_unique {hF : IsProP p F} {e : F ≃ₜ* freePro
     (freeProP.exponentSum p (Fin r)).comp (e : F →ₜ* freeProP p (Fin r))
   have hf : ∀ l : ℤ_[p], f (hF.padicPow (basis e i₀) l) = ofAdd (Pi.single i₀ l) := by
     intro l
-    have h := hF.map_padicPow (isProP_freeProP p (Fin r)) (e : F →* freeProP p (Fin r))
-      e.continuous (basis e i₀) l
-    rw [MonoidHom.coe_ofClass, map_basis] at h
-    simp only [f, ContinuousMonoidHom.comp_toFun, ContinuousMonoidHom.coe_coe, h]
-    exact freeProP.exponentSum_padicPow_of p (Fin r) i₀ l
+    rw [hF.map_padicPow_pi f]
+    simp only [f, ContinuousMonoidHom.comp_toFun, ContinuousMonoidHom.coe_coe, map_basis,
+      freeProP.exponentSum_of, toAdd_ofAdd, ← Pi.single_smul, smul_eq_mul, mul_one]
   have h := congr_fun (ofAdd.injective ((hf u).symm.trans
     ((isConj_iff_eq.mp (f.toMonoidHom.map_isConj hc)).trans (hf v)))) i₀
   simpa [Units.ext_iff] using h

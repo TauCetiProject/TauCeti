@@ -71,8 +71,8 @@ theorem aeval_weightEnumerator_euclideanDual {A : Type*} [CommRing A] [Algebra �
 /-- A self-dual code's weight enumerator is fixed by the MacWilliams substitution
 normalized by any invertible square root `s` of the alphabet size, with inverse `t`.
 This holds over any commutative ring containing such a square root. -/
-theorem aeval_weightEnumerator_normalized_of_eq_euclideanDual_of_mul_self
-    {A : Type*} [CommRing A] (hC : C = Submodule.euclideanDual C)
+theorem aeval_weightEnumerator_normalized_of_isSelfDual_of_mul_self
+    {A : Type*} [CommRing A] (hC : C.IsSelfDual)
     (s t : A) (hs : s * s = (Nat.card F : A)) (hst : t * s = 1) (x y : A) :
     aeval ![t * (x + (Nat.card F - 1 : A) * y), t * (x - y)]
         (C : Set (ι → F)).weightEnumerator =
@@ -80,7 +80,7 @@ theorem aeval_weightEnumerator_normalized_of_eq_euclideanDual_of_mul_self
   have hpow : s ^ Fintype.card ι = (Nat.card C : A) := by
     calc
       s ^ Fintype.card ι = (s * s) ^ Module.finrank F C := by
-        rw [← Submodule.two_mul_finrank_eq_card_of_eq_euclideanDual hC, pow_mul, pow_two]
+        rw [← hC.two_mul_finrank_eq_card, pow_mul, pow_two]
       _ = (Nat.card F : A) ^ Module.finrank F C := by rw [hs]
       _ = (Nat.card C : A) := by
         rw [Module.natCard_eq_pow_finrank (K := F) (V := C), Nat.cast_pow]
@@ -94,7 +94,7 @@ theorem aeval_weightEnumerator_normalized_of_eq_euclideanDual_of_mul_self
       (C : Set (ι → F)).isHomogeneous_weightEnumerator.aeval_smul
         ![x + (Nat.card F - 1 : A) * y, x - y] t
   have hmac := TauCeti.aeval_macWilliams_identity
-    (natCard_mul_weightEnumerator_of_eq_euclideanDual C hC) x y
+    (natCard_mul_weightEnumerator_of_isSelfDual C hC) x y
   have hcancel : t ^ Fintype.card ι * (Nat.card C : A) = 1 := by
     calc
       t ^ Fintype.card ι * (Nat.card C : A) = (t * s) ^ Fintype.card ι := by
@@ -111,8 +111,8 @@ theorem aeval_weightEnumerator_normalized_of_eq_euclideanDual_of_mul_self
 /-- A self-dual code's weight enumerator is fixed by the normalized MacWilliams
 substitution. The variables may lie in any commutative real algebra; in particular
 this is an identity in `ℝ[X, Y]`. -/
-theorem aeval_weightEnumerator_normalized_of_eq_euclideanDual
-    {A : Type*} [CommRing A] [Algebra ℝ A] (hC : C = Submodule.euclideanDual C)
+theorem aeval_weightEnumerator_normalized_of_isSelfDual
+    {A : Type*} [CommRing A] [Algebra ℝ A] (hC : C.IsSelfDual)
     (x y : A) :
     aeval ![(Real.sqrt (Nat.card F))⁻¹ • (x + (Nat.card F - 1 : A) * y),
         (Real.sqrt (Nat.card F))⁻¹ • (x - y)] (C : Set (ι → F)).weightEnumerator =
@@ -120,7 +120,7 @@ theorem aeval_weightEnumerator_normalized_of_eq_euclideanDual
   have hsqrt : Real.sqrt (Nat.card F) ≠ 0 :=
     ne_of_gt (Real.sqrt_pos.mpr (Nat.cast_pos.mpr Nat.card_pos))
   simpa only [Algebra.smul_def] using
-    aeval_weightEnumerator_normalized_of_eq_euclideanDual_of_mul_self C hC
+    aeval_weightEnumerator_normalized_of_isSelfDual_of_mul_self C hC
       (algebraMap ℝ A (Real.sqrt (Nat.card F)))
       (algebraMap ℝ A ((Real.sqrt (Nat.card F))⁻¹))
       (by rw [← map_mul, Real.mul_self_sqrt (Nat.cast_nonneg _), map_natCast])

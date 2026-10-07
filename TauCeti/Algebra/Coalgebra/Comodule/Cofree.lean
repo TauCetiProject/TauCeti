@@ -320,6 +320,47 @@ end Hom
 
 end Comodule
 
+end TauCeti
+
+end
+
+public section
+
+open scoped TensorProduct
+
+namespace TauCeti
+
+universe u v w
+
+namespace Comodule
+
+variable {R : Type u} {C : Type v} {M : Type w}
+variable [CommSemiring R] [AddCommMonoid C] [Module R C] [Coalgebra R C]
+variable [AddCommMonoid M] [Module R M]
+
+attribute [local instance] cofree
+
+namespace Hom
+
+/-- A morphism into a cofree comodule vanishes exactly when its counit component vanishes. -/
+@[simp]
+theorem eq_zero_iff_counit {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
+    (f : Hom R C P (M ⊗[R] C)) :
+    f = 0 ↔
+      (TensorProduct.rid R M).toLinearMap ∘ₗ
+        (Coalgebra.counit (R := R) (A := C)).lTensor M ∘ₗ f.toLinearMap = 0 := by
+  constructor
+  · intro hf
+    subst f
+    simp
+  · intro hf
+    apply (cofreeEquiv (R := R) (C := C) (M := M) (P := P)).injective
+    simpa only [cofreeEquiv_apply, Hom.zero_toLinearMap, LinearMap.comp_zero] using hf
+
+end Hom
+
+end Comodule
+
 namespace ComoduleCat
 
 variable (R : Type u) (C : Type v) [CommSemiring R] [AddCommMonoid C] [Module R C] [Coalgebra R C]
@@ -357,3 +398,5 @@ theorem cofree_coact_tmul (m : M) (c : C) :
 end ComoduleCat
 
 end TauCeti
+
+end

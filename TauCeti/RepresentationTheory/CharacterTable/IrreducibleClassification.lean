@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.CharacterTable.BlockRepresentation
 public import TauCeti.RepresentationTheory.CharacterTable.Completeness
 public import TauCeti.RingTheory.Semisimple.Wedderburn.Blocks
+import Mathlib.RingTheory.SimpleRing.Matrix
 
 /-!
 # The Wedderburn blocks of `k[G]` classify its irreducible representations

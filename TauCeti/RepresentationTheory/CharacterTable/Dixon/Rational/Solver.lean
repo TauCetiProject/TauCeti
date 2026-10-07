@@ -160,46 +160,6 @@ private theorem mem_dixonRationalCharacterTableCandidates_iff (p : ℕ) [Fact p.
     · exact (htable _ _).symm
     · rfl
 
-private theorem IsIntegerCharacterTableSpec.omega_injective
-    {omega table : Matrix (Fin d.numClasses) (Fin d.numClasses) ℤ}
-    {degree : Fin d.numClasses → ℕ}
-    (h : d.IsIntegerCharacterTableSpec omega table degree) : Function.Injective omega := by
-  intro i j hij
-  by_contra hne
-  have hproportional (k : Fin d.numClasses) :
-      (degree j : ℤ) * table i k = (degree i : ℤ) * table j k := by
-    have hi := h.degree_mul_central i k
-    have hj := h.degree_mul_central j k
-    rw [hij] at hi
-    have hcard : ((d.classFinset k).card : ℤ) ≠ 0 := by
-      exact_mod_cast (Finset.card_pos.mpr ⟨d.rep k, d.rep_mem_classFinset k⟩).ne'
-    apply mul_left_cancel₀ hcard
-    calc
-      ((d.classFinset k).card : ℤ) * ((degree j : ℤ) * table i k) =
-          (degree j : ℤ) * ((degree i : ℤ) * omega j k) := by rw [hi]; ring
-      _ = (degree i : ℤ) * ((degree j : ℤ) * omega j k) := by ring
-      _ = ((d.classFinset k).card : ℤ) * ((degree i : ℤ) * table j k) := by
-        rw [hj]
-        ring
-  have hscaled :
-      (degree j : ℤ) *
-          ∑ k, (d.classFinset k).card * table i k * table i k =
-        (degree i : ℤ) *
-          ∑ k, (d.classFinset k).card * table i k * table j k := by
-    simp only [Finset.mul_sum]
-    apply Finset.sum_congr rfl
-    intro k _
-    calc
-      (degree j : ℤ) * ((d.classFinset k).card * table i k * table i k) =
-          (d.classFinset k).card * table i k * ((degree j : ℤ) * table i k) := by ring
-      _ = (d.classFinset k).card * table i k * ((degree i : ℤ) * table j k) := by
-        rw [hproportional k]
-      _ = (degree i : ℤ) * ((d.classFinset k).card * table i k * table j k) := by ring
-  rw [h.row_orthogonal i i, ite_eq_left rfl, h.row_orthogonal i j, ite_eq_right hne,
-    mul_zero] at hscaled
-  exact (mul_ne_zero (by exact_mod_cast (h.degree_pos j).ne')
-    (by exact_mod_cast Fintype.card_pos.ne')) hscaled
-
 private theorem IsIntegerCharacterTableSpec.table_eq_integerQuotient
     {omega table : Matrix (Fin d.numClasses) (Fin d.numClasses) ℤ}
     {degree : Fin d.numClasses → ℕ}
@@ -238,7 +198,10 @@ theorem isSome_dixonRationalCharacterTable_iff (p : ℕ) [Fact p.Prime] :
     exact ⟨output, (mem_dixonRationalCharacterTableCandidates_iff d p).mp hcandidates |>.1, hspec⟩
   · rintro ⟨output, hrows, hspec⟩
     refine ⟨output, (mem_dixonRationalCharacterTableCandidates_iff d p).mpr ?_, hspec⟩
-    exact ⟨hrows, hspec.omega_injective, hspec.degree_pos, hspec.degree_dvd,
+    have hinjective : Function.Injective output.omega := by
+      simpa using hspec.map_central_injective (RingHom.id ℤ)
+        (by exact_mod_cast Fintype.card_pos.ne')
+    exact ⟨hrows, hinjective, hspec.degree_pos, hspec.degree_dvd,
       hspec.sum_degree_sq, hspec.table_eq_integerQuotient⟩
 
 /-- The rows of a successful rational Dixon--Schneider output are lifted central-character rows,

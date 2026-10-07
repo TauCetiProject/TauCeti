@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomotopyCofiber
-public import Mathlib.Algebra.Homology.QuasiIso
-public import Mathlib.Algebra.Homology.ShortComplex.Exact
 public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.Algebra.Homology.OneObject
 
@@ -37,6 +34,9 @@ a direct sum `K ⊕ L`, with `L` a subcomplex, is the mapping cone of the compon
 differential. This is how the unblocked complex of a stabilized grid diagram is presented as a
 mapping cone.
 
+The mapping cone of an identity is contractible (`homotopyCofiber.homotopyToZeroOfId`), the
+analogue for `homotopyCofiber` of Mathlib's `CochainComplex.mappingCone.homotopyToZeroOfId`.
+
 Finally, a morphism of arrows `α` from `φ : F ⟶ G` to `φ' : F' ⟶ G'` induces a map of mapping
 cones `homotopyCofiber.mapArrowHom φ φ' _ α`. If both components of `α` are
 quasi-isomorphisms, so is the induced map of cones. For grid stabilization, this transfers a
@@ -49,6 +49,8 @@ complex.
   between the mapping cone of `S.f` and `S.X₃` for a split short complex of complexes `S`.
 * `HomologicalComplex.homotopyCofiber.isoOfSplitting`: a one-object complex with a block
   lower-triangular differential is isomorphic to the mapping cone of its off-diagonal block.
+* `HomologicalComplex.homotopyCofiber.homotopyToZeroOfId`: a contraction of the mapping cone of
+  an identity.
 
 ## Main results
 
@@ -59,6 +61,8 @@ complex.
   `HomologicalComplex.homotopyCofiber.inlX_mapArrowHom_f`: the components of a map of cones.
 * `HomologicalComplex.homotopyCofiber.quasiIso_mapArrowHom`: a map of mapping cones induced by
   quasi-isomorphisms is a quasi-isomorphism.
+* `HomologicalComplex.homotopyCofiber.quasiIso_mapArrowHom_id`: any morphism induces a
+  quasi-isomorphism between the mapping cones of identities.
 
 ## References
 
@@ -137,8 +141,8 @@ namespace HomologicalComplex.homotopyCofiber
 
 open Limits
 
-variable {C : Type*} [Category* C] [Preadditive C] [HasBinaryBiproducts C]
-  {K L M : HomologicalComplex C (ComplexShape.refl Unit)} (φ : K ⟶ L)
+variable {C : Type*} [Category* C] [Preadditive C]
+  {K L M : HomologicalComplex C (ComplexShape.refl Unit)} (φ : K ⟶ L) [HasHomotopyCofiber φ]
   {inr : L.X () ⟶ M.X ()} {fst : M.X () ⟶ K.X ()} {w : inr ≫ fst = 0}
   (σ : (ShortComplex.mk inr fst w).Splitting)
   (hs : σ.s ≫ M.d () () = φ.f () ≫ inr - K.d () () ≫ σ.s)
@@ -195,6 +199,35 @@ theorem isoOfSplitting_inv_f :
 
 end HomologicalComplex.homotopyCofiber
 
+/-! ### The mapping cone of an identity is contractible -/
+
+namespace HomologicalComplex.homotopyCofiber
+
+variable {C ι : Type*} [Category* C] [Preadditive C] {c : ComplexShape ι} [DecidableRel c.Rel]
+  (K : HomologicalComplex C c) [HasHomotopyCofiber (𝟙 K)]
+
+/-- **The mapping cone of an identity is contractible.** In the cone of `𝟙 K`, whose term in
+degree `i` is `K.X j ⊞ K.X i` for `c.Rel i j`, the contracting homotopy sends the second summand
+identically onto the first summand of the term in the previous degree. This needs every index
+of the complex shape to be the target of some relation. -/
+noncomputable def homotopyToZeroOfId (hc : ∀ j, ∃ i, c.Rel i j) :
+    Homotopy (𝟙 (homotopyCofiber (𝟙 K))) 0 where
+  hom i j := if hij : c.Rel j i then sndX (𝟙 K) i ≫ inlX (𝟙 K) i j hij else 0
+  zero _ _ hij := dite_eq_right hij
+  comm j := by
+    obtain ⟨i, hij⟩ := hc j
+    rw [prevD_eq _ hij, dite_eq_left hij]
+    by_cases hj : c.Rel j (c.next j)
+    · rw [dNext_eq _ hj, dite_eq_left hj]
+      apply ext_from_X (𝟙 K) (c.next j) j hj
+      · simp [d_sndX_assoc _ _ _ hj]
+      · simp [inlX_d (𝟙 K) i j _ hij hj, d_sndX_assoc _ _ _ hj]
+    · rw [dNext_eq_zero _ _ hj, zero_add]
+      apply ext_from_X' (𝟙 K) j hj
+      simp [inlX_d' (𝟙 K) i j hij hj]
+
+end HomologicalComplex.homotopyCofiber
+
 /-! ### Maps of mapping cones -/
 
 namespace HomologicalComplex.homotopyCofiber
@@ -228,6 +261,30 @@ lemma inlX_mapArrowHom_f (i j : ι) (hij : c.Rel j i) :
   simp [mapArrowHom, inrCompHomotopy_hom _ _ _ _ hij]
 
 end MapArrowHom
+
+section Identity
+
+variable {C ι : Type*} [Category* C] [Preadditive C] {c : ComplexShape ι} [DecidableRel c.Rel]
+  {F F' : HomologicalComplex C c} [HasHomotopyCofiber (𝟙 F)] [HasHomotopyCofiber (𝟙 F')]
+  [∀ i, (homotopyCofiber (𝟙 F)).HasHomology i]
+  [∀ i, (homotopyCofiber (𝟙 F')).HasHomology i] (hc : ∀ j, ∃ i, c.Rel i j)
+
+/-- The map of cones of identities induced by any morphism is a quasi-isomorphism, since both
+cones are contractible. The morphism itself need not be a quasi-isomorphism. -/
+lemma quasiIso_mapArrowHom_id (a : F ⟶ F') :
+    QuasiIso (mapArrowHom (𝟙 F) (𝟙 F') hc (Arrow.homMk a a)) := by
+  rw [quasiIso_iff]
+  intro i
+  rw [quasiIsoAt_iff_isIso_homologyMap]
+  have h (K : HomologicalComplex C c) [HasHomotopyCofiber (𝟙 K)]
+      [(homotopyCofiber (𝟙 K)).HasHomology i] :
+      IsZero ((homotopyCofiber (𝟙 K)).homology i) := by
+    rw [IsZero.iff_id_eq_zero]
+    simpa only [homologyMap_id, homologyMap_zero] using
+      (homotopyToZeroOfId K hc).homologyMap_eq i
+  exact (h F).isIso (h F') _
+
+end Identity
 
 section QuasiIso
 
@@ -263,21 +320,6 @@ private lemma coneShortComplex_shortExact : (coneShortComplex φ hc).ShortExact 
         f_r := by simp
         s_g := hz.eq_of_src _ _
         id := by simpa using sndX_inrX φ i hi }
-
-/-- The mapping cone of an identity map is acyclic, so the map of cones of identities induced by
-any map is a quasi-isomorphism. -/
-private lemma quasiIso_mapArrowHom_id (a : F ⟶ F') :
-    QuasiIso (mapArrowHom (𝟙 F) (𝟙 F') hc (Arrow.homMk a a)) := by
-  -- The cone of `𝟙 F` is homotopy equivalent to `0`, the cokernel of the split mono `𝟙 F`.
-  let e (K : HomologicalComplex C c) : _root_.HomotopyEquiv (homotopyCofiber (𝟙 K)) 0 :=
-    ShortComplex.Splitting.homotopyCofiberHomotopyEquiv (S := ShortComplex.mk (𝟙 K) 0 (by simp))
-      { r := 𝟙 K
-        s := 0
-        s_g := (Limits.isZero_zero _).eq_of_src _ _ } hc
-  have : QuasiIso (mapArrowHom (𝟙 F) (𝟙 F') hc (Arrow.homMk a a) ≫ (e F').hom) := by
-    rw [(Limits.isZero_zero _).eq_of_tgt (_ ≫ (e F').hom) (e F).hom]
-    infer_instance
-  exact quasiIso_of_comp_right _ (e F').hom
 
 /-- **Maps of mapping cones preserve quasi-isomorphisms.** If a morphism of arrows `α` from
 `φ : F ⟶ G` to `φ' : F' ⟶ G'` consists of quasi-isomorphisms, the induced map of mapping cones

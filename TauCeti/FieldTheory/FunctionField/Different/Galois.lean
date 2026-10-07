@@ -7,6 +7,8 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Different.Complementary
 public import TauCeti.FieldTheory.FunctionField.Different.Divisor
+-- `TauCeti.Divisor.tameDifferent` occurs in the statements below.
+public import TauCeti.FieldTheory.FunctionField.Different.Tame
 public import TauCeti.FieldTheory.FunctionField.Divisor.Automorphism
 
 /-!
@@ -119,6 +121,68 @@ theorem smul_different (hF : IsFunctionField k F) (σ : F' ≃ₐ[F] F') :
   ext P'
   rw [AlgebraicGeometry.WeilDivisor.coeff_smul, coeff_different, coeff_different,
     Place.differentExponent_smul]
+
+/-- **The degree of the tame different of a Galois extension, through its branch data**: the places
+over a place `P` of `F` share one ramification index `e_P`, so the tame different
+`∑_{P'} (e(P' ∣ P) - 1) · P'` has degree
+
+`[F' : F] · ∑_P (1 - 1/e_P) · deg P`,
+
+the sum being over any finite set of places of `F` containing every ramified one.  With the Hurwitz
+genus formula in its tame form this is Riemann--Hurwitz for the quotient `F' / F`: the branch data
+`(genus F; e_P)` has deficit `(2g' - 2)/[F' : F]`. -/
+theorem degree_tameDifferent_eq_finrank_mul_sum [IsGalois F F'] (hF : IsFunctionField k F)
+    (hF' : IsFunctionField k F') (s : Finset (Place k F))
+    (hs : ∀ P' : Place k F', 1 < Place.ramificationIdx F P' → P'.restrict k F ∈ s) :
+    (degree (tameDifferent k F' hF) : ℚ) =
+      Module.finrank F F' * ∑ P ∈ s, (1 - 1 / (P.ramificationIdxIn F' : ℚ)) * P.degree := by
+  classical
+  have hsurj := Place.restrict_surjective_of_finiteDimensional (k' := k) (F := F) (F' := F') hF hF'
+  set fibre : Place k F → Finset (Place k F') :=
+    fun P ↦ (Place.finite_setOf_restrict_eq (k' := k) (F' := F') k F P).toFinset
+  have hmem : ∀ (P : Place k F) (P' : Place k F'), P' ∈ fibre P ↔ P'.restrict k F = P :=
+    fun P P' ↦ Set.Finite.mem_toFinset _
+  -- The degree of the tame different is the sum of `e - 1` over all the places above `s`.
+  have hdeg : (degree (tameDifferent k F' hF) : ℤ) =
+      ∑ P' ∈ s.biUnion fibre, ((Place.ramificationIdx F P' : ℤ) - 1) * P'.degree := by
+    have hco : ∀ P' : Place k F',
+        (tameDifferent k F' hF) P' = (Place.ramificationIdx F P' : ℤ) - 1 :=
+      fun P' ↦ coeff_tameDifferent k F' hF P'
+    rw [degree_eq_sum_support,
+      Finset.sum_congr rfl fun P' _ ↦ congrArg (· * (P'.degree : ℤ)) (hco P')]
+    refine Finset.sum_subset (fun P' hP' ↦ ?_) (fun P' _ hP' ↦ ?_)
+    · refine Finset.mem_biUnion.mpr ⟨P'.restrict k F, hs P' ?_, (hmem _ _).mpr rfl⟩
+      have hne : (tameDifferent k F' hF) P' ≠ 0 := Finsupp.mem_support_iff.mp hP'
+      rw [hco P'] at hne
+      have := Place.ramificationIdx_pos F P'
+      omega
+    · have hzero : (tameDifferent k F' hF) P' = 0 := Finsupp.notMem_support_iff.mp hP'
+      rw [hco P'] at hzero
+      rw [hzero, zero_mul]
+  -- Fibres over distinct places are disjoint, so the sum splits over the fibres.
+  have hdisj : (s : Set (Place k F)).PairwiseDisjoint fibre := by
+    intro P hP Q hQ hPQ
+    simp only [Function.onFun, Finset.disjoint_left]
+    intro P' hP' hQ'
+    exact hPQ (((hmem P P').mp hP').symm.trans ((hmem Q P').mp hQ'))
+  rw [hdeg, Finset.sum_biUnion hdisj, Finset.mul_sum]
+  push_cast
+  refine Finset.sum_congr rfl fun P hP ↦ ?_
+  -- One fibre: clear the division by the common ramification index.
+  obtain ⟨P', hP'⟩ := hsurj P
+  have hpos : 0 < P.ramificationIdxIn F' := by
+    rw [Place.ramificationIdxIn_eq_ramificationIdx hP']
+    exact Place.ramificationIdx_pos F P'
+  have hne : (P.ramificationIdxIn F' : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hpos.ne'
+  have hfib := Place.ramificationIdxIn_mul_sum_fibre_eq (k := k) (F' := F') hP'
+  have hcast : (P.ramificationIdxIn F' : ℚ) *
+      ∑ P' ∈ fibre P, ((Place.ramificationIdx F P' : ℚ) - 1) * P'.degree =
+        Module.finrank F F' * (((P.ramificationIdxIn F' : ℚ) - 1) * P.degree) := by
+    have := congrArg (fun n : ℤ ↦ (n : ℚ)) hfib
+    push_cast at this
+    exact this
+  refine mul_left_cancel₀ hne (hcast.trans ?_)
+  field_simp
 
 end Divisor
 

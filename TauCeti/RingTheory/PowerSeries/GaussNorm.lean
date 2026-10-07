@@ -7,9 +7,12 @@ module
 
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.RingTheory.PowerSeries.GaussNorm
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import Mathlib.RingTheory.Valuation.Basic
 public import TauCeti.RingTheory.PowerSeries.Restricted
+import Mathlib.Algebra.Order.GroupWithZero.Finset
+import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 import Mathlib.Topology.Order.LiminfLimsup
 import Mathlib.RingTheory.Polynomial.GaussNorm
@@ -52,6 +55,8 @@ closed unit disc.
 * `TauCeti.PowerSeries.exists_isDistinguished`: at a positive radius, every nonzero restricted
   series is distinguished of some degree.
 * `TauCeti.PowerSeries.IsDistinguished.unique`: of no more than one degree.
+* `TauCeti.PowerSeries.isDistinguished_of_norm_coeff_sub_lt`: over an ultrametric ring, a series
+  is distinguished once its coefficient in degree `s` is close to an element of maximal norm.
 * `TauCeti.PowerSeries.IsDistinguished.trunc`,
   `TauCeti.PowerSeries.IsDistinguished.gaussNorm_trunc` and
   `TauCeti.PowerSeries.IsDistinguished.gaussNorm_sub_trunc_lt`: the polynomial part of a
@@ -272,6 +277,20 @@ end Truncation
 
 variable [IsUltrametricDist R]
 
+/-- **Recognising a distinguished series.** At a positive radius, `f` is distinguished of degree
+`s` once its weighted coefficient in degree `s` is closer than the Gauss norm to an element `a`
+of weighted norm equal to the Gauss norm, and every later weighted coefficient norm is smaller
+than the Gauss norm. -/
+theorem isDistinguished_of_norm_coeff_sub_lt (hc : 0 < c) {a : R}
+    (ha : ‖a‖ * c ^ s = f.gaussNorm norm c)
+    (hs : ‖f.coeff s - a‖ * c ^ s < f.gaussNorm norm c)
+    (hm : ∀ m, s < m → ‖f.coeff m‖ * c ^ m < f.gaussNorm norm c) :
+    IsDistinguished c s f := by
+  have hlt : ‖f.coeff s - a‖ < ‖a‖ := lt_of_mul_lt_mul_right (ha ▸ hs) (pow_pos hc s).le
+  refine ⟨?_, hm⟩
+  rw [← ha, ← sub_add_cancel (f.coeff s) a,
+    IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm hlt.ne, max_eq_right hlt.le]
+
 /-- The sum of two power series with bounded weighted coefficient norms again has bounded weighted
 coefficient norms at a nonnegative radius. -/
 theorem hasGaussNorm_add (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
@@ -430,21 +449,11 @@ theorem IsDistinguished.norm_coeff_mul_mul_pow_eq_gaussNorm_mul (hf : IsDistingu
 theorem gaussNorm_mul_of_isRestricted (hc : 0 < c) (hf : f.IsRestricted c)
     (hg : g.IsRestricted c) :
     (f * g).gaussNorm norm c = f.gaussNorm norm c * g.gaussNorm norm c := by
-  by_cases hf0 : f = 0
-  · simp [hf0, PowerSeries.gaussNorm_zero norm c (norm_zero : ‖(0 : R)‖ = 0)]
-  by_cases hg0 : g = 0
-  · simp [hg0, PowerSeries.gaussNorm_zero norm c (norm_zero : ‖(0 : R)‖ = 0)]
-  obtain ⟨i, hi⟩ := exists_isDistinguished hc hf hf0
-  obtain ⟨j, hj⟩ := exists_isDistinguished hc hg hg0
-  refine le_antisymm (MvPowerSeries.gaussNorm_mul_le norm (fun _ : Unit ↦ c) f g
-    (fun _ ↦ hc.le) norm_nonneg norm_mul_le IsUltrametricDist.isNonarchimedean_norm
-    norm_zero (hasGaussNorm_of_isRestricted hf).hasMvGaussNorm
-    (hasGaussNorm_of_isRestricted hg).hasMvGaussNorm) ?_
-  calc
-    f.gaussNorm norm c * g.gaussNorm norm c = ‖(f * g).coeff (i + j)‖ * c ^ (i + j) :=
-      (hi.norm_coeff_mul_mul_pow_eq_gaussNorm_mul hj hc).symm
-    _ ≤ (f * g).gaussNorm norm c := PowerSeries.le_gaussNorm norm c (f * g)
-      (hasGaussNorm_of_isRestricted (PowerSeries.isRestricted.mul c hf hg)) _
+  let : Fact (0 < c) := ⟨hc⟩
+  -- Mathlib's univariate predicates and norms abbreviate the Unit-indexed multivariate ones.
+  simp only [PowerSeries.IsRestricted] at hf hg
+  simpa only [PowerSeries.gaussNorm] using
+    (MvPowerSeries.IsRestricted.gaussNorm_mul (c := fun _ : Unit ↦ c) hf hg)
 
 /-- The product of series distinguished in degrees `i` and `j` is distinguished in degree
 `i + j` at a positive radius. -/

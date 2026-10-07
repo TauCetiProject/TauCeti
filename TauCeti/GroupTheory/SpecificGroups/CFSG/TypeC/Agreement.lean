@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup
+public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup.Basic
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Generation
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeC.Basic
 public import TauCeti.LinearAlgebra.RootSystem.RootLength

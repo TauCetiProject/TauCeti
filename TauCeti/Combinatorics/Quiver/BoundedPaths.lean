@@ -33,7 +33,7 @@ The unbounded consequence for an acyclic quiver, `TauCeti.finite_paths_of_isAcyc
 target of Layer 0 of
 `TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`. The bounded count here is
 what the finite dimensionality of a bound quiver algebra rests on
-(`TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal`), where no such bound is automatic.
+(`TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Basic`), where no such bound is automatic.
 -/
 
 public section

@@ -7,21 +7,22 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Prevertex
 
--- Non-public: the boundary-arc continuation of the pre-Schwarzian derivative and its decay in the
--- coordinate at infinity are used only in the proof.
-import TauCeti.Analysis.Complex.Conformal.Reflection.Infinity
+-- Non-public: the boundary-arc continuation of the pre-Schwarzian derivative and the passage from
+-- decay along the upper half-plane to decay at infinity are used only in the proof.
 import TauCeti.Analysis.Complex.Conformal.Reflection.LogDeriv
+import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.Contour.PolarPart.PartialFraction
 
 /-!
 # The Schwarz--Christoffel formula from local polygonal boundary data
 
-A locally conformal map `f` of the upper half-plane satisfying the prescribed straight-side,
-corner-sector, and infinity boundary conditions is completely determined, up to an affine map of
-the target, by the real **prevertices** `a i` and the **turning exponents** `e i`: it is
-`A * F + B`, where `F` is the normalized Schwarz--Christoffel primitive for `a` and `e`.
+A locally conformal map `f` of the upper half-plane satisfying the prescribed straight-side and
+corner-sector boundary conditions, and an asymptotic condition at infinity, is completely
+determined, up to an affine map of the target, by the real **prevertices** `a i` and the
+**turning exponents** `e i`: it is `A * F + B`, where `F` is the normalized Schwarz--Christoffel
+primitive for `a` and `e`.
 
-The three pieces of boundary data are the three ways a real point can sit against the polygon.
+The side and corner data are the two ways a real point can sit against the polygon.
 
 * Away from the prevertices, `f` extends continuously and injectively to the real axis with
   boundary values on an affine line, the nearby upper half-plane lying strictly to one side of it;
@@ -31,24 +32,29 @@ The three pieces of boundary data are the three ways a real point can sit agains
   sides meeting at the vertex `f (a i)` make the interior angle `(e i + 1) * π`.  The exponent
   condition `e i ∈ Ioo (-1) 1` says that angle lies strictly between `0` and `2 * π`, so both
   convex and reentrant vertices are allowed.
-* The point at infinity lies inside a side: in the coordinate `w ↦ -1 / w` at infinity, and after
-  normalizing the target so that the side is the real axis with the polygon above it, `f` extends
-  continuously and injectively across `0`.
 
-These are local polygonal boundary conditions; they do not assert global injectivity or
-surjectivity onto a polygon.  Under these conditions, the proof runs the classical argument: the
-pre-Schwarzian derivative `f'' / f'` continues by Schwarz reflection across every boundary side to
-a conjugation-symmetric function holomorphic off the prevertices, a straightened corner gives it
-the residue `e i` at `a i`, the side through infinity makes it decay there, so partial fractions
+At infinity the condition is that `z * f''(z) / f'(z)` has a finite limit `L` as `z` tends to
+infinity in the upper half-plane.  The geometric conditions at infinity supply it, by
+`TauCeti.Analysis.Complex.Conformal.Reflection.Infinity`: if the point at infinity is carried into
+a side of the polygon then `L = -2`, and if it is carried to a vertex at infinity, between two
+unbounded sides spanning a sector of opening `β * π`, then `L = β - 1`.  In either case `L` is the
+sum of the turning exponents.
+
+These are local conditions; they do not assert global injectivity or surjectivity onto a
+polygon.  Under these conditions, the proof runs the classical argument: the pre-Schwarzian
+derivative `f'' / f'` continues by Schwarz reflection across every boundary side to a
+conjugation-symmetric function holomorphic off the prevertices, a straightened corner gives it the
+residue `e i` at `a i`, the condition at infinity makes it decay there, so partial fractions
 identify it with `∑ i, e i / (z - a i)`, and integrating that differential equation recovers `f`.
 
 ## Main results
 
 * `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary` -- a locally
-  conformal map of the upper half-plane satisfying the prescribed local side, corner, and infinity
-  conditions is an affine image of the Schwarz--Christoffel primitive for `a` and `e`.
-* `TauCeti.exponent_sum_eq_neg_two_of_logDeriv_deriv_eqOn` -- if the pre-Schwarzian derivative of
-  such a map is `∑ i, e i / (z - a i)` and infinity lies inside a side, then `∑ i, e i = -2`.
+  conformal map of the upper half-plane satisfying the prescribed local side and corner
+  conditions, with `z * f''(z) / f'(z)` convergent at infinity, is an affine image of the
+  Schwarz--Christoffel primitive for `a` and `e`.
+* `TauCeti.exponent_sum_eq_of_logDeriv_deriv_eqOn` -- if the pre-Schwarzian derivative of such a
+  map is `∑ i, e i / (z - a i)`, then `∑ i, e i` is the limit of `z * f''(z) / f'(z)` at infinity.
 
 ## References
 
@@ -62,42 +68,33 @@ open Bornology Complex Filter Set Topology UpperHalfPlane
 
 namespace TauCeti
 
-/-- **The closing condition on the Schwarz--Christoffel exponents.** Let `f` be holomorphic on
-the upper half-plane with pre-Schwarzian derivative `f'' / f' = ∑ i, e i / (z - a i)` there, where
-the poles `a i` and coefficients `e i` may be complex, and
-suppose that in the coordinate at infinity it extends across a straight side, as in
-`TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary`.  Then
-`∑ i, e i = -2`.
+/-- **The exponent sum is the limit at infinity.**  Let `f` have pre-Schwarzian derivative
+`f'' / f' = ∑ i, e i / (z - a i)` on the upper half-plane, where the poles `a i` and coefficients
+`e i` may be complex, and suppose that `z * f''(z) / f'(z) → L` as `z` tends to infinity in the
+upper half-plane.  Then `∑ i, e i = L`.
 
-For the turning exponents `e i = α i / π - 1` of a polygon with interior angles `α i`, this is
-the angle sum `∑ i, α i = (n - 2) * π`. -/
-theorem exponent_sum_eq_neg_two_of_logDeriv_deriv_eqOn
-    {ι : Type*} [Fintype ι] (a e : ι → ℂ)
-    {f : ℂ → ℂ} (hf : DifferentiableOn ℂ f upperHalfPlaneSet)
+When the point at infinity is carried into a side of a polygon, `L = -2`
+(`TauCeti.tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv`); for the turning
+exponents `e i = α i / π - 1` of a polygon with interior angles `α i`, this is the angle sum
+`∑ i, α i = (n - 2) * π`. -/
+theorem exponent_sum_eq_of_logDeriv_deriv_eqOn
+    {ι : Type*} [Fintype ι] (a e : ι → ℂ) {f : ℂ → ℂ} {L : ℂ}
     (hpre : EqOn (logDeriv (deriv f))
       (fun z => ∑ i, e i / (z - a i)) upperHalfPlaneSet)
-    (hinfty : ∃ r > 0, ∃ g : ℂ → ℂ, ∃ q b : ℂ, b ≠ 0 ∧
-      EqOn g (fun w => (f (-w⁻¹) - q) / b) (Metric.ball 0 r ∩ upperHalfPlaneSet) ∧
-      ContinuousOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) ∧
-      (∀ z ∈ Metric.ball (0 : ℂ) r, z.im = 0 → (g z).im = 0) ∧
-      MapsTo g (Metric.ball 0 r ∩ upperHalfPlaneSet) upperHalfPlaneSet ∧
-      InjOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im})) :
-    ∑ i, e i = -2 := by
-  obtain ⟨r, hr, g, q, b, hb, hgf, hgcont, hgreal, hgupper, hginj⟩ := hinfty
-  have hreg := tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv hr hb hgf hgcont
-    (differentiableOn_of_eqOn_neg_inv hf hgf) hgreal hgupper hginj
+    (hinfty : Tendsto (fun z => z * logDeriv (deriv f) z)
+      (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 L)) :
+    ∑ i, e i = L := by
   have hsum := tendsto_mul_sum_div_sub_cobounded (S := Finset.univ) a e
-  have hlim := tendsto_nhds_unique (hsum.mono_left inf_le_left) (hreg.congr' <| by
+  exact tendsto_nhds_unique (hsum.mono_left inf_le_left) (hinfty.congr' <| by
     rw [eventuallyEq_inf_principal_iff]
     exact Eventually.of_forall fun z hz => by rw [hpre hz])
-  exact hlim
 
 /-- **The Schwarz--Christoffel formula.**  Let `f` be holomorphic with nonvanishing derivative on
 the upper half-plane.  Assume that away from the distinct real prevertices `a i` its boundary
 values run along affine lines with the upper half-plane on one side, that at `a i` it opens the
-sector of angle `(e i + 1) * π` with boundary values on the two bounding rays, and that in the
-coordinate at infinity it likewise extends across a straight side.  Then throughout the upper
-half-plane
+sector of angle `(e i + 1) * π` with boundary values on the two bounding rays, and that
+`z * f''(z) / f'(z)` has a finite limit as `z` tends to infinity in the upper half-plane.  Then
+throughout the upper half-plane
 
 `f z = (f'(z₀) / integrand(z₀)) * F z + f z₀`,
 
@@ -121,12 +118,8 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary
         |((f z - f (a i : ℂ)) / b).arg| < (e i + 1) * Real.pi / 2) ∧
       ∀ z ∈ Metric.ball ((a i : ℝ) : ℂ) r, z.im = 0 → f z ≠ f (a i : ℂ) →
         |((f z - f (a i : ℂ)) / b).arg| = (e i + 1) * Real.pi / 2)
-    (hinfty : ∃ r > 0, ∃ g : ℂ → ℂ, ∃ q b : ℂ, b ≠ 0 ∧
-      EqOn g (fun w => (f (-w⁻¹) - q) / b) (Metric.ball 0 r ∩ upperHalfPlaneSet) ∧
-      ContinuousOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) ∧
-      (∀ z ∈ Metric.ball (0 : ℂ) r, z.im = 0 → (g z).im = 0) ∧
-      MapsTo g (Metric.ball 0 r ∩ upperHalfPlaneSet) upperHalfPlaneSet ∧
-      InjOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im})) :
+    {L : ℂ} (hinfty : Tendsto (fun z => z * logDeriv (deriv f) z)
+      (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 L)) :
     EqOn f (fun z => deriv f z₀ / schwarzChristoffelIntegrand a e z₀ *
       schwarzChristoffelPrimitive a e z₀ z + f z₀) upperHalfPlaneSet := by
   have hfin : (range fun i => ((a i : ℝ) : ℂ)).Finite := finite_range _
@@ -160,11 +153,9 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary
       (hφf.mono inter_subset_left) ⟨by linarith [(he i).1], by linarith [(he i).2]⟩ hb
       Metric.isOpen_ball hball (Metric.mem_ball_self hr) hcont (hf.mono inter_subset_right) hinj
       hsector hrays
-  -- The side through infinity makes it decay there.
+  -- The finite limit of `z * f'' / f'` at infinity makes it decay there.
   have hdecay : Tendsto φ (cobounded ℂ) (𝓝 0) := by
-    obtain ⟨r, hr, g, q, b, hb, hgf, hgcont, hgreal, hgupper, hginj⟩ := hinfty
-    refine tendsto_zero_cobounded_of_eqOn_logDeriv_deriv hr hb hgf hgcont
-      (differentiableOn_of_eqOn_neg_inv hf hgf) hgreal hgupper hginj ?_
+    refine tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet hinfty ?_
       (Eventually.of_forall hφconj) hφf
     filter_upwards [isBounded_def.mp hfin.isBounded] with z hz _
     exact ((hφd z hz).differentiableAt (hfin.isClosed.isOpen_compl.mem_nhds hz)).continuousAt

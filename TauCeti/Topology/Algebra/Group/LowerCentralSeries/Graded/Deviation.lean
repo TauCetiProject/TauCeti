@@ -32,6 +32,14 @@ deviation carries it into the degree `m + 1` for every `m`, and it is the reason
 basis-modification maps of the theory of Demushkin groups acquire an extra bracket term at
 `p = 2`.
 
+At `m = 0` the congruence hypothesis is empty, so every continuous endomorphism `θ` has a graded
+deviation, which is then the difference `θ_* - id` between the induced graded map and the identity.
+It is still additive, but it is no longer a derivation: in degree zero the Leibniz rule picks up
+the quadratic correction `D [x, y] = [D x, y] - [D y, x] + [D x, D y]`, because
+`[x + D x, y + D y]` expands bilinearly. This is the level at which the basis modifications of a
+free pro-`p` group are arbitrary endomorphisms, and the correction is what makes the
+basis-modification map in degree one quadratic rather than linear.
+
 The motivating case is a free pro-`p` group `F` on generators `x_i` and the endomorphism
 `x_i ↦ x_i * w_i` with `w_i ∈ λ_m(F)`, which moves a relator `r ∈ λ_1(F)` inside its coset by an
 element of `λ_{m+1}(F)` whose class is `D_1 ρ`, for `ρ ∈ gr_1(F)` the class of `r`. That case is
@@ -52,6 +60,10 @@ developed in
 * `TauCeti.gradedDeviation_gradedPow_of_one_le`, `TauCeti.gradedDeviation_gradedPow_zero`,
   `TauCeti.gradedDeviation_gradedPow_zero_of_odd`, `TauCeti.gradedDeviation_gradedPow_zero_of_two`:
   compatibility with `π`, exact in every degree.
+* `TauCeti.gradedCast_gradedDeviation_eq_gradedMap_sub`,
+  `TauCeti.gradedDeviation_gradedBracket_zero_zero`: at `m = 0`, where `θ` is an arbitrary
+  continuous endomorphism, `D_k = θ_* - id`, and the Leibniz rule in degree zero acquires the
+  quadratic correction `[D x, D y]`.
 
 ## References
 
@@ -357,5 +369,63 @@ theorem gradedDeviation_gradedPow_zero_of_two (hp : p = 2) (x : gradedPiece p G 
   rw [gradedDeviation_gradedPow_zero, Nat.choose_self, one_nsmul]
 
 end Deviation
+
+/-! ### The deviation of an arbitrary continuous endomorphism -/
+
+section DeviationZero
+
+variable (θ : G →* G) (hθc : Continuous θ) (hθ : ∀ g, g⁻¹ * θ g ∈ pLowerCentralSeries p G 0)
+
+/-- **The graded deviation of an arbitrary endomorphism is the graded map minus the identity.**
+Every continuous endomorphism `θ` is congruent to the identity modulo `λ_0 = G`, and its deviation
+in degree `k` is `D_k x = θ_* x - x`, with the degrees `0 + k` and `k` identified. -/
+theorem gradedCast_gradedDeviation_eq_gradedMap_sub (k : ℕ) (x : gradedPiece p G k) :
+    gradedCast p G (zero_add k) (gradedDeviation θ hθc hθ k x) = gradedMap p θ hθc k x - x := by
+  obtain ⟨x, rfl⟩ := gradedMk_surjective k x
+  rw [gradedDeviation_gradedMk, gradedCast_gradedMk, gradedMap_gradedMk, sub_eq_neg_add,
+    ← gradedMk_inv, ← gradedMk_mul]
+  rfl
+
+/-- **The graded deviation of an arbitrary endomorphism in degree zero**: `D_0 x = θ_* x - x`. -/
+theorem gradedDeviation_zero_eq_gradedMap_sub (x : gradedPiece p G 0) :
+    gradedDeviation θ hθc hθ 0 x = gradedMap p θ hθc 0 x - x := by
+  have h := gradedCast_gradedDeviation_eq_gradedMap_sub θ hθc hθ 0 x
+  rwa [gradedCast_rfl] at h
+
+/-- **The graded deviation of an arbitrary endomorphism in degree one**: `D_1 x = θ_* x - x`. -/
+theorem gradedDeviation_one_eq_gradedMap_sub (x : gradedPiece p G 1) :
+    gradedDeviation θ hθc hθ 1 x = gradedMap p θ hθc 1 x - x := by
+  have h := gradedCast_gradedDeviation_eq_gradedMap_sub θ hθc hθ 1 x
+  rwa [gradedCast_rfl] at h
+
+/-- **The Leibniz rule in degree zero for an arbitrary endomorphism**, with its quadratic
+correction: `D [x, y] = [D x, y] - [D y, x] + [D x, D y]` for `x, y ∈ gr_0(G)`. The correction
+`[D x, D y]` is the bilinear expansion of `[x + D x, y + D y] - [x, y]`; for an endomorphism
+congruent to the identity modulo `λ_1` it vanishes, and the rule is
+`TauCeti.gradedDeviation_gradedBracket_zero`. -/
+theorem gradedDeviation_gradedBracket_zero_zero (x y : gradedPiece p G 0) :
+    gradedDeviation θ hθc hθ 1 (gradedBracket p G 0 0 x y) =
+      gradedBracket p G 0 0 (gradedDeviation θ hθc hθ 0 x) y -
+        gradedBracket p G 0 0 (gradedDeviation θ hθc hθ 0 y) x +
+        gradedBracket p G 0 0 (gradedDeviation θ hθc hθ 0 x) (gradedDeviation θ hθc hθ 0 y) := by
+  -- Naturality of the bracket, with the degree `0 + 0 + 1` read as `1`.
+  have hnat : gradedMap p θ hθc 1 (gradedBracket p G 0 0 x y) =
+      gradedBracket p G 0 0 (gradedMap p θ hθc 0 x) (gradedMap p θ hθc 0 y) :=
+    gradedMap_gradedBracket θ hθc x y
+  -- Skew-symmetry in degree zero, with both sides in `gr_1(G)`.
+  have hswap : gradedBracket p G 0 0 x (gradedDeviation θ hθc hθ 0 y) =
+      -gradedBracket p G 0 0 (gradedDeviation θ hθc hθ 0 y) x := by
+    have h := gradedCast_gradedBracket_swap (gradedDeviation θ hθc hθ 0 y) x
+    rwa [gradedCast_rfl] at h
+  have hx : gradedMap p θ hθc 0 x = x + gradedDeviation θ hθc hθ 0 x := by
+    rw [gradedDeviation_zero_eq_gradedMap_sub, add_sub_cancel]
+  have hy : gradedMap p θ hθc 0 y = y + gradedDeviation θ hθc hθ 0 y := by
+    rw [gradedDeviation_zero_eq_gradedMap_sub, add_sub_cancel]
+  rw [gradedDeviation_one_eq_gradedMap_sub, hnat, hx, hy]
+  simp only [map_add, AddMonoidHom.add_apply]
+  rw [hswap]
+  abel
+
+end DeviationZero
 
 end TauCeti

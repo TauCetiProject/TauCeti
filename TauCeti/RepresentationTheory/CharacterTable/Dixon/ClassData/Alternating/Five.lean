@@ -33,6 +33,8 @@ fuse in the symmetric group.  Their class sizes are both twelve.
 * `TauCeti.numClasses_alternatingGroupFiveClassData`: the numbering has five classes.
 * `TauCeti.card_classFinset_alternatingGroupFiveClassData`: the class sizes are `1`, `15`,
   `20`, `12`, and `12`.
+* `TauCeti.structureConstantTable_alternatingGroupFiveClassData`: the class-algebra structure
+  constants in this numbering.
 * `TauCeti.exponent_alternatingGroup_five`: the exponent of `A₅` is thirty.
 
 ## References
@@ -461,6 +463,23 @@ theorem card_classFinset_alternatingGroupFiveClassData
     have hffour_le : f 4 ≤ 12 := hffour.trans_le hle_four
     have hffour_eq : f 4 = 12 := by omega
     exact hffour.symm.trans hffour_eq
+
+/-- **The structure constants of the class algebra of `A₅`.** The outer two indices select the
+factors and the innermost list gives the coefficients of the five class sums in their product, in
+the order identity, double transpositions, three-cycles, and the two five-cycle classes. -/
+theorem structureConstantTable_alternatingGroupFiveClassData :
+    alternatingGroupFiveClassData.structureConstantTable =
+      [[[1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 1, 0, 0], [0, 0, 0, 1, 0],
+          [0, 0, 0, 0, 1]],
+       [[0, 1, 0, 0, 0], [15, 2, 3, 5, 5], [0, 4, 6, 5, 5], [0, 4, 3, 0, 5],
+          [0, 4, 3, 5, 0]],
+       [[0, 0, 1, 0, 0], [0, 4, 6, 5, 5], [20, 8, 7, 5, 5], [0, 4, 3, 5, 5],
+          [0, 4, 3, 5, 5]],
+       [[0, 0, 0, 1, 0], [0, 4, 3, 0, 5], [0, 4, 3, 5, 5], [12, 0, 3, 5, 1],
+          [0, 4, 3, 1, 1]],
+       [[0, 0, 0, 0, 1], [0, 4, 3, 5, 0], [0, 4, 3, 5, 5], [0, 4, 3, 1, 1],
+          [12, 0, 3, 1, 5]]] := by
+  decide +kernel
 
 private theorem orderOf_alternatingGroupFiveDoubleTransposition :
     orderOf alternatingGroupFiveDoubleTransposition = 2 := by

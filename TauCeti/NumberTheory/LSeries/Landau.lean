@@ -118,7 +118,7 @@ lemma hasSum_logPowMul_re_term {x : ℝ}
       (LSeries (LSeries.logMul^[k] a) (x : ℂ)).re := by
   have hsum : LSeriesSummable (LSeries.logMul^[k] a) (x : ℂ) :=
     LSeriesSummable_of_abscissaOfAbsConv_lt_re (by
-      simpa [LSeries.absicssaOfAbsConv_logPowMul] using hx)
+      simpa [LSeries.abscissaOfAbsConv_logPowMul] using hx)
   have h : HasSum (LSeries.term (LSeries.logMul^[k] a) (x : ℂ))
       (LSeries (LSeries.logMul^[k] a) (x : ℂ)) := hsum.hasSum
   refine (Complex.hasSum_re h).congr_fun fun n ↦ ?_
