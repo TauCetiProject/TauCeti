@@ -16,12 +16,9 @@ indecomposable graded projectives. If a family meets all such indecomposables up
 shift, its classes span `K₀^gr(proj A)` over `ℤ[q,q⁻¹]`: shifting a summand by `d` multiplies its
 class by `qᵈ`.
 
-The spanning argument uses induction on the dimension of the underlying vector space, splitting
-a decomposable object into two nonzero summands of smaller dimension. It uses neither uniqueness
-of the decomposition nor a splitting-field hypothesis. In particular, it supplies the spanning
-half of a projective-class basis separately from the coordinates needed for linear independence.
-Indecomposability is taken in the full category of finite graded projectives, so all summands
-in the argument remain finite and projective.
+No uniqueness of decomposition or splitting-field hypothesis is needed. This result supplies the
+spanning half of a projective-class basis, whose coordinates can then express the graded Cartan
+map. Indecomposability is taken in the full category of finite graded projectives.
 
 ## Main results
 
@@ -32,10 +29,7 @@ in the argument remain finite and projective.
 
 * C. Năstăsescu and F. Van Oystaeyen, *Methods of Graded Rings*, Section 2.3.
 * C. A. Weibel, *The K-book*, Chapter II, Sections 5 and 7.
-
-The dimension-induction argument follows the organization of
-`TauCeti.Algebra.Category.GradedModuleCat.CartanMap.SimpleBasis`, using biproduct decompositions
-in place of simple subquotients.
+* `TauCeti.Algebra.Category.GradedModuleCat.CartanMap.SimpleBasis`: the graded simple-class basis.
 -/
 
 public section

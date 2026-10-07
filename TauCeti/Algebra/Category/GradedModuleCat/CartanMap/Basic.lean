@@ -441,8 +441,8 @@ theorem gradedFiniteModules_shiftObj {M : GradedModuleCat.{uA} 𝒜} (hM : grade
     (d : ℤ) : gradedFiniteModules 𝒜 (M.shiftObj d) :=
   gradedFiniteModules_iff.2 (gradedFiniteModules_iff.1 hM)
 
-/-- Normalize the explicit shifts in a full subcategory, using its comparison with the ambient
-shift. This is shared by the module and projective class formulas below. -/
+/-- In a full subcategory stable under internal shifts, whose exact-structure shift agrees with
+the ambient grading shift, the class of the explicit `d`-shift is `T d` times the original class. -/
 private theorem laurentK0_of_shiftObj_aux {P : ObjectProperty (GradedModuleCat.{uA} 𝒜)}
     [HasZeroObject P.FullSubcategory] [HasBinaryBiproducts P.FullSubcategory]
     [ObjectProperty.EssentiallySmall.{uA} P]
