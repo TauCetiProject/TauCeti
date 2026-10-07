@@ -133,7 +133,7 @@ theorem ringKrullDim_quotient_of_mem_minimalPrimes (hA : ringKrullDim A ≤ P.di
   refine le_antisymm ((ringKrullDim_quotient_le Q).trans hA) ?_
   -- Some `g ∉ Q` lies in every other minimal prime, so every prime of `A[1/g]` contains `Q`.
   obtain ⟨g, hgQ, hg⟩ := TauCeti.exists_notMem_forall_le_of_mem_minimalPrimes
-    (minimalPrimes.finite_of_isNoetherianRing A) hQ
+    ⊥ (minimalPrimes.finite_of_isNoetherianRing A) hQ
   let B := Localization.Away g
   have hdisj : Disjoint (Submonoid.powers g : Set A) Q :=
     (Ideal.disjoint_powers_iff_notMem g hQp.isRadical).mpr hgQ
@@ -147,7 +147,7 @@ theorem ringKrullDim_quotient_of_mem_minimalPrimes (hA : ringKrullDim A ≤ P.di
   -- Contracting primes of `A[1/g]` is a strictly monotone map into `V(Q)`.
   have hmono : Monotone (PrimeSpectrum.comap (algebraMap A B)) := fun _ _ h ↦ Ideal.comap_mono h
   refine Order.krullDim_le_of_strictMono
-    (fun q ↦ ⟨PrimeSpectrum.comap (algebraMap A B) q, hg _ inferInstance fun h ↦ ?_⟩)
+    (fun q ↦ ⟨PrimeSpectrum.comap (algebraMap A B) q, hg _ inferInstance bot_le fun h ↦ ?_⟩)
     fun _ _ h ↦ hmono.strictMono_of_injective
       (PrimeSpectrum.localization_comap_injective B (.powers g)) h
   -- The image of `g` is a unit of `A[1/g]`, so it lies in no prime.
