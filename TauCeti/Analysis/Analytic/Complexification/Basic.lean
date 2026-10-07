@@ -57,6 +57,8 @@ commutes with complex conjugation near the point, not only the one constructed h
 * `AnalyticAt.exists_complexification_pi`: the same for real analytic maps to `κ → ℝ`.
 * `AnalyticAt.eventually_eq_zero_of_eventually_real`, `AnalyticAt.eventuallyEq_of_eventually_real`:
   the identity theorem for complex analytic functions on the real points.
+* `AnalyticAt.eventually_comp_eq_id_of_eventually_real`: complex analytic extensions preserve a
+  composition law equal to the identity near a real point.
 * `AnalyticAt.eventually_apply_star`: a complex analytic function that is real at the real points
   near a real point commutes with conjugation near it.
 
@@ -300,6 +302,30 @@ theorem eventuallyEq_of_eventually_real {E : Type*} [NormedAddCommGroup E] [Norm
     F =ᶠ[𝓝 fun i ↦ (a i : ℂ)] G := by
   filter_upwards [(hF.sub hG).eventually_eq_zero_of_eventually_real
     (h.mono fun x hx ↦ sub_eq_zero.2 hx)] with z hz using sub_eq_zero.1 hz
+
+/-- If real maps have composition `g ∘ f` equal to the identity near a real point, their complex
+analytic extensions compose to the identity near the corresponding complex point. -/
+theorem eventually_comp_eq_id_of_eventually_real [Fintype κ]
+    {f : (ι → ℝ) → κ → ℝ} {g : (κ → ℝ) → ι → ℝ} {a : ι → ℝ}
+    {F : (ι → ℂ) → κ → ℂ} {G : (κ → ℂ) → ι → ℂ}
+    (hF : AnalyticAt ℂ F (fun i ↦ (a i : ℂ)))
+    (hG : AnalyticAt ℂ G (fun i ↦ (f a i : ℂ)))
+    (hFr : ∀ᶠ x in 𝓝 a, F (fun i ↦ (x i : ℂ)) = fun i ↦ (f x i : ℂ))
+    (hGr : ∀ᶠ y in 𝓝 (f a), G (fun i ↦ (y i : ℂ)) = fun i ↦ (g y i : ℂ))
+    (hgf : ∀ᶠ x in 𝓝 a, g (f x) = x) :
+    ∀ᶠ z in 𝓝 (fun i ↦ (a i : ℂ)), G (F z) = z := by
+  have hFc : ContinuousAt (fun x : ι → ℝ ↦ F (fun i ↦ (x i : ℂ))) a :=
+    hF.continuousAt.comp
+      (continuous_pi fun i ↦ Complex.continuous_ofReal.comp (continuous_apply i)).continuousAt
+  have hreal : ContinuousAt (fun x : ι → ℝ ↦ fun k ↦ (F (fun i ↦ (x i : ℂ)) k).re) a :=
+    continuousAt_pi.2 fun k ↦ Complex.continuous_re.continuousAt.comp
+      ((continuous_apply k).continuousAt.comp hFc)
+  have hf : ContinuousAt f a :=
+    hreal.congr (hFr.mono fun x hx ↦ by simp only [hx, Complex.ofReal_re])
+  have hFa := hFr.self_of_nhds
+  apply (hG.comp_of_eq hF hFa).eventuallyEq_of_eventually_real analyticAt_id
+  filter_upwards [hFr, hf.eventually hGr, hgf] with x hFx hGx hgfx
+  simp only [Function.comp_apply, id_eq, hFx, hGx, hgfx]
 
 /-- **Complexification of a real analytic function.** A function of finitely many real variables
 that is analytic at `a` extends to a function `F` of as many complex variables that is complex

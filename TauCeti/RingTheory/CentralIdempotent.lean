@@ -24,8 +24,8 @@ coordinatewise on a product (`TauCeti.centralIdempotentsPiEquiv`); and a simple 
 two of them, `0` and `1` (`TauCeti.centralIdempotents_eq_pair`).  Together these say that a finite
 product of simple rings has exactly `2 ^ (number of factors)` central idempotents
 (`TauCeti.card_centralIdempotents_pi_of_isSimpleRing`), so the number of factors can be read off
-the isomorphism class of the ring alone; `TauCeti/RingTheory/Semisimple/BlockCount.lean` draws that
-conclusion.
+the isomorphism class of the ring alone. `TauCeti/RingTheory/SimpleRing/Pi.lean` obtains the
+stronger factor matching for arbitrary products directly from their coordinate central idempotents.
 
 Mathlib has `IsIdempotentElem` and the orthogonal decompositions of `1` it generates
 (`Mathlib/RingTheory/Idempotents.lean`), and `Subring.center`, but nothing about the idempotents

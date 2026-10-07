@@ -82,10 +82,7 @@ namespace YoungTableau
 
 variable {μ : YoungDiagram}
 
-/-- Classical decidability of membership in the column group, used to form its finite sum, as in
-`TauCeti/RepresentationTheory/Symmetric/Symmetrizer.lean`. -/
-noncomputable local instance (t : YoungTableau μ) : DecidablePred (· ∈ colSubgroup t) :=
-  Classical.decPred _
+attribute [local instance] YoungTableau.decidablePredMemColSubgroup
 
 /-! ### James's lemma: the column antisymmetrizer of a tabloid -/
 

@@ -372,48 +372,16 @@ noncomputable def f4ModularSignedSimpleRootVector (k : Fin 4 ⊕ Fin 4) :
 /-- If the pinned root string from `β` in direction `α` has no positive step, then the
 corresponding modular Chevalley bracket vanishes. -/
 theorem f4Modular_lie_rootVector_eq_zero_of_chainTopCoeff_eq_zero (α β : Fin 48)
-    (hne : α ≠ β) (hopp : α ≠ f4OppositeRootIndex β)
+    (hopp : α ≠ f4OppositeRootIndex β)
     (htop : f4SimplyConnectedRootDatum.chainTopCoeff α β = 0) :
     ⁅f4ModularRootVector α, f4ModularRootVector β⁆ = 0 := by
-  let H := F4.cartanSubalgebra valid_F4
-  let P := rootSystem H
-  let E := F4.rationalRootSystemEquiv valid_F4
-  let ia := E.indexEquiv (f4RootIndex α)
-  let ib := E.indexEquiv (f4RootIndex β)
-  let a : Weight ℚ H (F4.lieAlgebra valid_F4) := f4KillingRoot α
-  let b : Weight ℚ H (F4.lieAlgebra valid_F4) := f4KillingRoot β
-  have ha : a.IsNonZero := by
-    simpa only [a, f4KillingRoot] using LieSubalgebra.isNonZero_coe_root ia
-  have hiab : ia ≠ ib := by
-    intro h
-    apply hne
-    apply f4KillingRoot_injective
-    exact congrArg Subtype.val h
-  have hneg : P.root ia ≠ -P.root ib := by
-    intro h
-    apply f4KillingRoot_add_ne_zero_of_ne_opposite α β hopp
-    apply funext
-    intro x
-    have hx := DFunLike.congr_fun h x
-    -- A root-system root evaluates as its underlying Killing weight; negation is pointwise.
-    change (f4KillingRoot α : H → ℚ) x = -(f4KillingRoot β : H → ℚ) x at hx
-    change (f4KillingRoot α : H → ℚ) x + (f4KillingRoot β : H → ℚ) x = 0
-    rw [hx, neg_add_cancel]
-  have hlinP : LinearIndependent ℚ ![P.root ia, P.root ib] :=
-    RootPairing.IsReduced.linearIndependent P hiab hneg
-  have hlin : LinearIndependent ℚ
-      ![(a : Module.Dual ℚ H), (b : Module.Dual ℚ H)] := by
-    simpa only [P, ia, ib, a, b, rootSystem_root_apply, Weight.toLinear_apply] using hlinP
-  have hLieTop : chainTopCoeff (a : H → ℚ) b = 0 :=
-    (f4_chainCoeffs_eq α β hlin).1.trans htop
-  have hroot : rootSpace H ((a : H → ℚ) + b) = ⊥ := by
-    by_contra hn
-    have hc := (rootSpace_zsmul_add_ne_bot_iff a b ha 1).mp (by
-      simpa only [one_zsmul] using hn)
-    rw [hLieTop] at hc
-    omega
-  exact f4Modular_lie_rootVector_eq_zero_of_rootSpace_add_eq_bot α β (by
-    simpa only [H, a, b] using hroot)
+  apply f4Modular_lie_rootVector_eq_zero_of_rootSpace_add_eq_bot α β
+  by_contra hbot
+  obtain ⟨ε, hε⟩ := exists_f4_root_eq_add_of_rootSpace_ne_bot α β
+    (f4KillingRoot_add_ne_zero_of_ne_opposite α β hopp) hbot
+  have := f4SimplyConnectedRootDatum.one_le_chainTopCoeff_of_root_add_mem
+    (i := α) (j := β) ⟨ε, by rw [hε, add_comm]⟩
+  omega
 
 /-- Opposite integral root vectors bracket to the corresponding integral coroot. -/
 theorem f4Integral_lie_rootVector_opposite (α : Fin 48) :

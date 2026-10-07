@@ -190,12 +190,14 @@ noncomputable def projModelVariableChangeIso : (C • W).projModel ≅ W.projMod
   Proj.mapIso (variableChangeGradedHom W C) (variableChangeGradedHomSymm W C)
     (rightInverse_variableChangeGradedHomSymm W C) (leftInverse_variableChangeGradedHomSymm W C)
 
-/-- `Proj.map` of graded ring homomorphisms into the homogeneous coordinate rings of equal
-Weierstrass curves `W₁ = W₂` which agree on representatives differ by `eqToHom`. -/
-private theorem map_eq_eqToHom_comp_map {W₁ W₂ : WeierstrassCurve R} (h : W₁ = W₂)
-    (g₁ : W.toProjective.grading →+*ᵍ W₁.toProjective.grading)
+/-- Let `g₁` and `g₂` be graded ring homomorphisms from the homogeneous coordinate ring of `W` to
+those of equal Weierstrass curves `W₁ = W₂` over `S`. If both send the class of each polynomial `p`
+to the class of the same polynomial `q p`, then `Proj.map g₁` is `Proj.map g₂` preceded by the
+`eqToHom` identifying the projective models of `W₁` and `W₂`. -/
+theorem ProjMap_eq_eqToHom_comp_ProjMap {S : Type u} [CommRing S] {W₁ W₂ : WeierstrassCurve S}
+    (h : W₁ = W₂) (g₁ : W.toProjective.grading →+*ᵍ W₁.toProjective.grading)
     (g₂ : W.toProjective.grading →+*ᵍ W₂.toProjective.grading)
-    (q : MvPolynomial (Fin 3) R → MvPolynomial (Fin 3) R)
+    (q : MvPolynomial (Fin 3) R → MvPolynomial (Fin 3) S)
     (hg₁ : ∀ p, g₁ (Ideal.Quotient.mk _ p) = Ideal.Quotient.mk _ (q p))
     (hg₂ : ∀ p, g₂ (Ideal.Quotient.mk _ p) = Ideal.Quotient.mk _ (q p)) (hf₁ hf₂) :
     Proj.map g₁ hf₁ = eqToHom (congrArg projModel h) ≫ Proj.map g₂ hf₂ := by
@@ -212,7 +214,7 @@ theorem projModelVariableChangeIso_one :
     W.projModelVariableChangeIso 1 = eqToIso (congrArg projModel (one_smul _ W)) := by
   refine Iso.ext ?_
   rw [projModelVariableChangeIso, Proj.mapIso_hom, eqToIso.hom,
-    map_eq_eqToHom_comp_map W (one_smul _ W) _ (.id _) id
+    ProjMap_eq_eqToHom_comp_ProjMap W (one_smul _ W) _ (.id _) id
       (fun p ↦ by simp [variableChangeGradedHom_apply]) (fun _ ↦ rfl) _ (by simp),
     Proj.map_id, Category.comp_id]
 
@@ -226,7 +228,7 @@ theorem projModelVariableChangeIso_mul (C' : VariableChange R) :
   rw [Iso.trans_hom, Iso.trans_hom, eqToIso.hom, projModelVariableChangeIso,
     projModelVariableChangeIso, projModelVariableChangeIso, Proj.mapIso_hom, Proj.mapIso_hom,
     Proj.mapIso_hom, ← Proj.map_comp]
-  exact map_eq_eqToHom_comp_map W (mul_smul C C' W) _ _ (linearSubst (C * C').toMatrix)
+  exact ProjMap_eq_eqToHom_comp_ProjMap W (mul_smul C C' W) _ _ (linearSubst (C * C').toMatrix)
     (fun p ↦ by simp [variableChangeGradedHom_apply, linearSubst_mul_apply])
     (fun p ↦ by simp [variableChangeGradedHom_apply, linearSubst_mul_apply]) _ _
 

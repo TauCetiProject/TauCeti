@@ -140,7 +140,7 @@ theorem gradedBracketSpan_le_iff {k : ℕ} {W : Submodule (ZMod p) (gradedPiece 
 
 /-- **Elements of the bracket span are classes of commutators**: every element of `C_{k+1}(G)` is
 the class of an element of `λ_{k+1}(G)` lying in the commutator subgroup of `G`. -/
-theorem exists_mem_commutator_gradedMk_eq_of_mem_gradedBracketSpan [NeZero p] {k : ℕ}
+theorem exists_mem_commutator_gradedMk_eq_of_mem_gradedBracketSpan {k : ℕ}
     {y : gradedPiece p G (k + 1)} (hy : y ∈ gradedBracketSpan p G k) :
     ∃ z : pLowerCentralSeries p G (k + 1), (z : G) ∈ commutator G ∧ gradedMk p G (k + 1) z = y := by
   induction hy using gradedBracketSpan_induction with
@@ -158,8 +158,8 @@ theorem exists_mem_commutator_gradedMk_eq_of_mem_gradedBracketSpan [NeZero p] {k
     exact ⟨z * z', mul_mem hz hz', gradedMk_mul z z'⟩
   | smul c x _ hx =>
     obtain ⟨z, hz, rfl⟩ := hx
-    refine ⟨z ^ c.val, pow_mem hz _, ?_⟩
-    rw [gradedMk_pow, ← Nat.cast_smul_eq_nsmul (ZMod p), ZMod.natCast_zmod_val]
+    refine ⟨z ^ (c.cast : ℤ), zpow_mem hz _, ?_⟩
+    rw [gradedMk_zpow, ← Int.cast_smul_eq_zsmul (ZMod p), ZMod.intCast_zmod_cast]
 
 /-- **`π` carries the bracket span into the next bracket span**: `π C_{k+1}(G) ≤ C_{k+2}(G)`. Away
 from degree zero `π [x, y] = [π x, y]`, and in degree zero

@@ -32,8 +32,8 @@ The compact form `realCliffordForm n 0` is positive definite
 (`TauCeti.realCliffordForm_zero_eq_weightedSumSquares_one`).
 Negating the form swaps the two signature indices through
 `TauCeti.realCliffordFormNegIsometry`; its coordinate action is given by
-`TauCeti.realCliffordFormNegIsometry_pos_of_neg` and
-`TauCeti.realCliffordFormNegIsometry_neg_of_pos`.
+`TauCeti.realCliffordFormNegIsometry_apply_castAdd` and
+`TauCeti.realCliffordFormNegIsometry_apply_natAdd`.
 
 The sign convention — generators of the *first* `p` coordinates square to `+1` — is not universal:
 sources that make the first generators square to `-1` index the periodicity table by
@@ -226,14 +226,14 @@ theorem realCliffordFormNegIsometry_apply (p q : ℕ) (x : Fin (p + q) → ℝ) 
 
 /-- Negated negative coordinates become positive coordinates under
 `realCliffordFormNegIsometry`. -/
-theorem realCliffordFormNegIsometry_pos_of_neg (p q : ℕ)
+theorem realCliffordFormNegIsometry_apply_castAdd (p q : ℕ)
     (x : Fin (p + q) → ℝ) (i : Fin q) :
     realCliffordFormNegIsometry p q x (Fin.castAdd p i) = x (Fin.natAdd p i) := by
   rw [realCliffordFormNegIsometry_apply, finAddFlip_apply_castAdd]
 
 /-- Negated positive coordinates become negative coordinates under
 `realCliffordFormNegIsometry`. -/
-theorem realCliffordFormNegIsometry_neg_of_pos (p q : ℕ)
+theorem realCliffordFormNegIsometry_apply_natAdd (p q : ℕ)
     (x : Fin (p + q) → ℝ) (i : Fin p) :
     realCliffordFormNegIsometry p q x (Fin.natAdd q i) = x (Fin.castAdd q i) := by
   rw [realCliffordFormNegIsometry_apply, finAddFlip_apply_natAdd]
@@ -462,7 +462,7 @@ theorem realCliffordSignSwitchStandardIsometry_pos_of_neg (p q : ℕ)
   have h := congrFun (congrArg Prod.fst (realCliffordSignSwitchStandardIsometry_split p q x r))
     (Fin.castAdd p i)
   simpa only [realCliffordPositiveSplitIsometry_fst_pos,
-    realCliffordFormNegIsometry_pos_of_neg] using h
+    realCliffordFormNegIsometry_apply_castAdd] using h
 
 /-- The new positive line is the last positive coordinate under
 `realCliffordSignSwitchStandardIsometry`. -/
@@ -484,7 +484,7 @@ theorem realCliffordSignSwitchStandardIsometry_neg_of_pos (p q : ℕ)
   have h := congrFun (congrArg Prod.fst (realCliffordSignSwitchStandardIsometry_split p q x r))
     (Fin.natAdd q i)
   simpa only [realCliffordPositiveSplitIsometry_fst_neg,
-    realCliffordFormNegIsometry_neg_of_pos] using h
+    realCliffordFormNegIsometry_apply_natAdd] using h
 
 /-! ### The four base entries, in coordinates -/
 

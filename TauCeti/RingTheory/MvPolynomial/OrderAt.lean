@@ -408,6 +408,13 @@ theorem orderAt_pow [NoZeroDivisors R] [Nontrivial R] (p : MvPolynomial σ R) (a
   | zero => simp
   | succ n ih => rw [pow_succ, orderAt_mul, ih, succ_nsmul]
 
+/-- Over a domain, the order of a finite product is the sum of the orders of its factors. -/
+theorem orderAt_prod [NoZeroDivisors R] [Nontrivial R] {ι : Type*}
+    (p : ι → MvPolynomial σ R) (s : Finset ι) (a : σ → R) :
+    (∏ i ∈ s, p i).orderAt a = ∑ i ∈ s, (p i).orderAt a := by
+  simpa only [orderAt_def, ← coeToMvPowerSeries.ringHom_apply, map_prod] using
+    MvPowerSeries.order_prod (fun i ↦ (taylor a (p i) : MvPowerSeries σ R)) s
+
 /-- Substitution does not decrease the order: if `g` maps the point `b` to `a`, that is,
 `eval b (g i) = a i` for every `i`, then the order of `aeval g p` at `b` is at least the order
 of `p` at `a`. -/
