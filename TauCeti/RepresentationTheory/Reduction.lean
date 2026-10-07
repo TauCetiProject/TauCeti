@@ -12,7 +12,7 @@ public import TauCeti.RepresentationTheory.BaseChange
 public import TauCeti.RepresentationTheory.Intertwining
 
 /-!
-# The reduction of a `G`-module as a finite-dimensional representation
+# The reduction of a `G`-module as a finitely generated representation
 
 Let `G` be a monoid, `V` a `G`-module (an abelian group with a distributive `G`-action) and `k` a
 commutative ring. The **reduction** of `V` is the representation `k ⊗_ℤ V` of `G`, with `G` acting
@@ -58,7 +58,7 @@ universe u v
 variable (k : Type u) [CommRing k] (G : Type v) [Monoid G]
 
 /-- **The reduction** `k ⊗_ℤ V` of a `G`-module `V`, with `G` acting on the second factor, as a
-finite-dimensional representation of `G` over `k`; it is defined when `k ⊗_ℤ V` is finitely
+finitely generated representation of `G` over `k`; it is defined when `k ⊗_ℤ V` is finitely
 generated over `k`, for instance when `V` is a finitely generated abelian group or, in
 characteristic `ℓ`, when `V ⧸ ℓV` is finite (`TauCeti.finite_baseChange_of_finite_quotSMulTop`). -/
 @[expose]

@@ -119,11 +119,12 @@ open scoped Pointwise
 variable {R A M : Type*} [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M] [Module R M]
 
 /-- **Base change kills reduction modulo a vanishing scalar.** If `r : R` maps to `0` in the
-`R`-algebra `A`, the base change `A ⊗[R] M → A ⊗[R] (M ⧸ rM)` of the quotient map is bijective:
-it is surjective by right exactness, and its kernel is spanned by the tensors `a ⊗ r • m`, which
-vanish since `a ⊗ r • m = (r • a) ⊗ m`. -/
+`R`-algebra `A`, the base change `A ⊗[R] M → A ⊗[R] (M ⧸ rM)` of the quotient map is
+bijective. -/
 theorem baseChange_mkQ_bijective {r : R} (hr : algebraMap R A r = 0) :
     Function.Bijective ((r • ⊤ : Submodule R M).mkQ.baseChange A) := by
+  -- Surjective by right exactness; the kernel is spanned by the tensors `a ⊗ r • m`, which
+  -- vanish since `a ⊗ r • m = (r • a) ⊗ m`.
   rw [baseChange_eq_ltensor]
   refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_,
     lTensor_surjective A (Submodule.mkQ_surjective _)⟩
@@ -132,8 +133,7 @@ theorem baseChange_mkQ_bijective {r : R} (hr : algebraMap R A r = 0) :
   induction y using TensorProduct.inductionOn with
   | tmul a v =>
     obtain ⟨w, -, hw⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp v.2
-    rw [lTensor_tmul, Submodule.subtype_apply, ← hw, tmul_smul, smul_tmul', Algebra.smul_def, hr,
-      zero_mul, zero_tmul]
+    simp [← hw, smul_tmul', Algebra.smul_def, hr]
   | add y z hy hz => rw [map_add, hy, hz, add_zero]
 
 /-- **Finiteness of a base change killing a scalar.** If `r : R` maps to `0` in the `R`-algebra

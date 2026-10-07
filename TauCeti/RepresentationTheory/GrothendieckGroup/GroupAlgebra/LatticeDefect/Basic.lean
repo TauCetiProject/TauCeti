@@ -59,6 +59,8 @@ defects. Neither the characteristic of `k` nor finiteness of `G` is used.
 * `TauCeti.reductionK0_congr`: equivalent representations have equal reduction classes.
 * `TauCeti.reductionK0_quotSMulTop`: in characteristic `ℓ`, the reduction class of `W ⧸ ℓW` is
   that of `W`.
+* `TauCeti.latticeDefect_eq_reductionK0_sub`: in characteristic `ℓ`, the lattice defect is
+  `[k ⊗_ℤ V] - [k ⊗_ℤ V[ℓ]]`.
 * `TauCeti.latticeDefect_add_of_exact`: additivity of the lattice defect.
 
 ## References
@@ -246,6 +248,20 @@ theorem latticeDefect_def (V : Type u) [AddCommGroup V] [DistribMulAction G V]
       reductionK0 k ((Representation.ofDistribMulAction ℤ G V).quotSMulTop ℓ) -
         reductionK0 k ((Representation.ofDistribMulAction ℤ G V).torsionBy ℓ) :=
   (rfl)
+
+/-- **The lattice defect is `[k ⊗_ℤ V] - [k ⊗_ℤ V[ℓ]]`** in characteristic `ℓ`: the reduction of
+`V ⧸ ℓV` in the definition of `TauCeti.latticeDefect` may be replaced by the reduction of `V`
+itself, which is then finitely generated over `k`
+(`TauCeti.finite_baseChange_of_finite_quotSMulTop`). -/
+theorem latticeDefect_eq_reductionK0_sub [CharP k ℓ] (V : Type u) [AddCommGroup V]
+    [DistribMulAction G V] [Finite (QuotSMulTop (ℓ : ℤ) V)]
+    [Finite (Submodule.torsionBy ℤ V ℓ)] :
+    haveI := finite_baseChange_of_finite_quotSMulTop k ℓ V
+    haveI := AddMonoid.FG.to_moduleFinite_int (G := Submodule.torsionBy ℤ V ℓ)
+    latticeDefect k G ℓ V = reductionK0 k (Representation.ofDistribMulAction ℤ G V) -
+      reductionK0 k ((Representation.ofDistribMulAction ℤ G V).torsionBy ℓ) := by
+  have := AddMonoid.FG.to_moduleFinite_int (G := QuotSMulTop (ℓ : ℤ) V)
+  rw [latticeDefect_def, reductionK0_quotSMulTop k ℓ]
 
 /-- **Additivity of the lattice defect** (Neukirch–Schmidt–Wingberg (7.3.3)): for a short exact
 sequence `0 → A → B → C → 0` of `G`-modules whose reductions modulo `ℓ` and `ℓ`-torsion are finite,

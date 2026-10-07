@@ -22,7 +22,8 @@ In characteristic `ℓ`, the reduction `k ⊗_ℤ V` is the reduction of `V ⧸ 
 (`TauCeti.reductionK0_quotSMulTop`), and it is finite-dimensional as soon as `V ⧸ ℓV` is finite
 (`TauCeti.finite_baseChange_of_finite_quotSMulTop`). The lattice defect
 `TauCeti.latticeDefect k G ℓ V`, defined as `[k ⊗_ℤ (V ⧸ ℓV)] - [k ⊗_ℤ V[ℓ]]`, is therefore
-`[k ⊗_ℤ V] - [k ⊗_ℤ V[ℓ]]` (`TauCeti.latticeDefect_eq_fdRepK0RingEquiv_reduction_sub`).
+`[k ⊗_ℤ V] - [k ⊗_ℤ V[ℓ]]` (`TauCeti.latticeDefect_eq_reductionK0_sub`), and the first class is
+that of `TauCeti.reduction k G V` (`TauCeti.latticeDefect_eq_fdRepK0RingEquiv_reduction_sub`).
 
 ## Main results
 
@@ -70,9 +71,10 @@ theorem fdRepK0RingEquiv_of_reduction (V : Type u) [AddCommGroup V] [DistribMulA
   -- definition (`TauCeti.reduction_ρ`)
   rfl
 
-/-- **The lattice defect is `[k ⊗_ℤ V] - [k ⊗_ℤ V[ℓ]]`** in characteristic `ℓ`: the reduction of
-`V ⧸ ℓV` in the definition of `TauCeti.latticeDefect` may be replaced by the reduction of `V`
-itself, which is then finite-dimensional (`TauCeti.finite_baseChange_of_finite_quotSMulTop`). -/
+/-- **The lattice defect is `[k ⊗_ℤ V] - [k ⊗_ℤ V[ℓ]]`** in characteristic `ℓ`, with `[k ⊗_ℤ V]`
+the class of the reduction `TauCeti.reduction k G V`, which is finite-dimensional
+(`TauCeti.finite_baseChange_of_finite_quotSMulTop`). This is
+`TauCeti.latticeDefect_eq_reductionK0_sub` in the Grothendieck ring of `FDRep k G`. -/
 theorem latticeDefect_eq_fdRepK0RingEquiv_reduction_sub [CharP k ℓ] (V : Type u) [AddCommGroup V]
     [DistribMulAction G V] [Finite (QuotSMulTop (ℓ : ℤ) V)]
     [Finite (Submodule.torsionBy ℤ V ℓ)] :
@@ -80,8 +82,7 @@ theorem latticeDefect_eq_fdRepK0RingEquiv_reduction_sub [CharP k ℓ] (V : Type 
     haveI := AddMonoid.FG.to_moduleFinite_int (G := Submodule.torsionBy ℤ V ℓ)
     latticeDefect k G ℓ V = fdRepK0RingEquiv k G (ExactK0.of (reduction k G V)) -
       reductionK0 k ((Representation.ofDistribMulAction ℤ G V).torsionBy ℓ) := by
-  have := AddMonoid.FG.to_moduleFinite_int (G := QuotSMulTop (ℓ : ℤ) V)
-  rw [latticeDefect_def, reductionK0_quotSMulTop k ℓ, fdRepK0RingEquiv_of_reduction]
+  rw [latticeDefect_eq_reductionK0_sub, fdRepK0RingEquiv_of_reduction]
 
 end Class
 
