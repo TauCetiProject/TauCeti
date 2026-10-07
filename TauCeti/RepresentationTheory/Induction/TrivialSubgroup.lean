@@ -226,14 +226,20 @@ theorem coindBotUnit_naturality {A B : Rep k G} (f : A ⟶ B) :
 @[simp] theorem coindBotUnitNatTrans_app (A : Rep k G) :
     (coindBotUnitNatTrans (k := k) (G := G)).app A = coindBotUnit A := rfl
 
+variable (k) in
+/-- Every function `G → X` lies in the module coinduced from the trivial subgroup: the
+compatibility condition only involves the identity of `G`. -/
+private theorem mem_coindV_bot {X : Type u} [AddCommGroup X] [Module k X] (f : G → X) :
+    f ∈ coindV (⊥ : Subgroup G).subtype (trivial k (⊥ : Subgroup G) X).ρ := fun g _ ↦ by
+  obtain rfl : g = 1 := Subsingleton.elim g 1
+  simp
+
 variable (k G) in
 /-- The underlying module of the representation coinduced from the trivial subgroup is the module
 of all functions `G → X`. -/
 def coindBotEquivPi (X : Type u) [AddCommGroup X] [Module k X] :
     (coindBot k G X : Type u) ≃ₗ[k] (G → X) :=
-  LinearEquiv.ofTop _ <| eq_top_iff.2 fun f _ g h ↦ by
-    obtain rfl : g = 1 := Subsingleton.elim g 1
-    simp
+  LinearEquiv.ofTop _ <| eq_top_iff.2 fun f _ ↦ mem_coindV_bot k f
 
 /-- The identification of the coinduced module with functions is the underlying function. -/
 @[simp]
@@ -663,10 +669,10 @@ subgroup of `G` are coinduced from the trivial subgroup of `G ⧸ S`: an `S`-inv
 def quotientToInvariantsCoindBotIso :
     (coindBot k G X).quotientToInvariants S ≅ coindBot k (G ⧸ S) X :=
   mkIso <| .mk
-    { toFun f := (coindBotEquivPi k (G ⧸ S) X).symm fun y => f.1.1 y.out
+    { toFun f := ⟨fun y => f.1.1 y.out, mem_coindV_bot k _⟩
       map_add' _ _ := rfl
       map_smul' _ _ := rfl
-      invFun F := ⟨(coindBotEquivPi k G X).symm fun g => F.1 g, fun s => by
+      invFun F := ⟨⟨fun g => F.1 g, mem_coindV_bot k _⟩, fun s => by
         ext g
         exact congrArg F.1 (QuotientGroup.mk_mul_of_mem g s.2)⟩
       left_inv f := by
