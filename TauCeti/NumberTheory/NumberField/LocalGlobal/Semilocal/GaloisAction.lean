@@ -51,7 +51,7 @@ cohomology of `L_wˣ`.
 
 * `TauCeti.semilocalEquiv_semilocalGaloisHom`: under the semi-local decomposition, `id ⊗ σ`
   carries the factor at `w` to the factor at `σ • w` by the isomorphism of completions.
-* `TauCeti.semilocalUnitsToCoind_injective` and `TauCeti.semilocalUnitsToCoind_surjective`.
+* `TauCeti.semilocalUnitsCoindIso`: the semi-local units are coinduced from one completion.
 
 ## References
 
@@ -184,7 +184,7 @@ private theorem exists_place_asIdeal_eq_smul (g : L ≃ₐ[K] L) :
 
 /-- For `L/K` Galois, a semi-local unit is determined by the components at `w` of its images
 under all automorphisms of `L/K`. -/
-theorem semilocalUnitsToCoind_injective [IsGalois K L] :
+private theorem semilocalUnitsToCoind_injective [IsGalois K L] :
     Function.Injective (semilocalUnitsToCoind v w).hom := by
   -- every place above `v` is carried to `w` by an automorphism, which transports the components
   intro y y' h
@@ -200,7 +200,7 @@ theorem semilocalUnitsToCoind_injective [IsGalois K L] :
 
 /-- For `L/K` Galois, every function in the representation coinduced from the units of `L_w`
 comes from a semi-local unit. -/
-theorem semilocalUnitsToCoind_surjective [IsGalois K L] :
+private theorem semilocalUnitsToCoind_surjective [IsGalois K L] :
     Function.Surjective (semilocalUnitsToCoind v w).hom := by
   intro F
   choose g hg using exists_asIdeal_eq_smul v w

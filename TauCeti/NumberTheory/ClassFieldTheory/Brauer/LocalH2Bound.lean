@@ -9,8 +9,7 @@ public import TauCeti.FieldTheory.GaloisCohomology.Cyclic
 public import TauCeti.FieldTheory.GaloisCohomology.Solvable
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 public import TauCeti.NumberTheory.LocalField.Solvable
-public import TauCeti.NumberTheory.LocalField.UnitFiltration.TateCohomology
-public import TauCeti.NumberTheory.LocalField.UnitFiltration.ValuationSequence
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.HerbrandQuotient
 
 /-!
 # The local second-cohomology bound
@@ -34,7 +33,6 @@ split by an unramified extension.
 
 ## Main results
 
-* `TauCeti.herbrandQuotient_units_eq_finrank`: `h(Lˣ) = [L : K]` for cyclic `L/K`.
 * `TauCeti.natCard_H2_units_eq_finrank`: `#H²(Gal(L/K), Lˣ) = [L : K]` for cyclic `L/K`.
 * `TauCeti.index_normGroup_of_isCyclic`: `[Kˣ : N_{L/K}(Lˣ)] = [L : K]` for cyclic `L/K`.
 * `TauCeti.natCard_H2_units_dvd_finrank`: `#H²(Gal(L/K), Lˣ) ∣ [L : K]` for every finite Galois
@@ -58,13 +56,6 @@ variable (K L : Type) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
   [IsGalois K L]
-
-/-- **The Herbrand quotient of a cyclic local extension.** For a cyclic extension `L/K` of
-nonarchimedean local fields, the Herbrand quotient of `Lˣ` is `[L : K]`. -/
-theorem herbrandQuotient_units_eq_finrank [IsCyclic (L ≃ₐ[K] L)] :
-    TateCohomology.herbrandQuotient (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) = finrank K L := by
-  rw [herbrandQuotient_units_eq_finrank_mul, TateCohomology.herbrandQuotient_unitFiltration_zero,
-    mul_one]
 
 /-- **The local `H²` of a cyclic extension.** For a cyclic extension `L/K` of nonarchimedean
 local fields, `H²(Gal(L/K), Lˣ)` has order `[L : K]`. -/

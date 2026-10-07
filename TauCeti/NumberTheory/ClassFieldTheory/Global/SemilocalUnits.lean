@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.LocalH2Bound
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.HerbrandQuotient
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.GaloisAction
 
 /-!
