@@ -202,6 +202,13 @@ theorem sameCycle_permCongr {β : Type*} (e : α ≃ β) {x y : α} :
   refine ⟨fun h ↦ ?_, fun h ↦ h.map fun z ↦ by simp⟩
   simpa using h.map (g := e.symm) fun z ↦ by simp
 
+/-- The cycles of a permutation transported along an equivalence are the transported cycles:
+two points lie in the same cycle of `e.permCongr σ` exactly when their preimages under `e` lie in
+the same cycle of `σ`. -/
+theorem sameCycle_permCongr_iff {β : Type*} (e : α ≃ β) {x y : β} :
+    (e.permCongr σ).SameCycle x y ↔ σ.SameCycle (e.symm x) (e.symm y) := by
+  rw [← sameCycle_permCongr σ e, e.apply_symm_apply, e.apply_symm_apply]
+
 /-- Transporting a permutation along an equivalence transports its cycles on a set: the analogue of
 `Equiv.Perm.IsCycleOn.conj` for an equivalence between two types. -/
 theorem IsCycleOn.permCongr {σ : Perm α} {β : Type*} (e : α ≃ β) {s : Set α}

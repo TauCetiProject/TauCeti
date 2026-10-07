@@ -39,7 +39,6 @@ exchangeability-specific corollaries of that theorem live in
 
 * P. Diaconis and D. Freedman, "de Finetti's theorem for Markov chains", *Annals of Probability*
   8 (1980), 115–130.
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, Layer 8, "Markov exchangeability".
 
 Mathlib's `MeasureTheory.Conservative` is recurrence of a map — the Poincaré recurrence theorem
 — and is consumed here rather than reproved; recurrence of a process in the above sense is not in
