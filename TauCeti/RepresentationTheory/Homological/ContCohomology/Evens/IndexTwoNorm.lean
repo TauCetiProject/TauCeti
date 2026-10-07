@@ -10,35 +10,23 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Clas
 /-!
 # The index-two Evens norm on degree-one classes
 
-With trivial `𝔽₂` coefficients, continuous first cohomology is the group of continuous
-homomorphisms to `𝔽₂`: a continuous `1`-cocycle for the trivial action is a homomorphism, and
-there are no nonzero coboundaries. This file names the class `homClass H α` of a continuous
-homomorphism `α : H → 𝔽₂` in Mathlib's `continuousCohomology 1 (trivialF2 H)`, identifies it with
-the `TopRep.cochainClass` of the homogeneous cochain of `α`, and shows that `homClass` is a
-bijection from continuous homomorphisms onto degree-one classes.
-
 For an open subgroup `U` of index two in `G`, the graph class
 `TauCeti.ContCohomology.graphClass U hU α` of `Evens/Class.lean` is a function of a continuous
-homomorphism `α : U → 𝔽₂`. Through `homClass` it descends to the index-two degree-one Evens norm
+homomorphism `α : U → 𝔽₂`. Through the bijection `TauCeti.ContCohomology.homClass` of
+`TrivialF2/Character.lean` between continuous homomorphisms and degree-one classes, it descends to
+the index-two degree-one Evens norm
 ```
 Nᴱᵛ : H¹(U, 𝔽₂) → H²(G, 𝔽₂),
 ```
 `evensNormIndexTwo`, whose defining equation is `evensNormIndexTwo_homClass`. The norm is a
 function and not an additive map.
 
-## Main definitions
+## Main definition
 
-* `TauCeti.ContCohomology.homClass`: the class of a continuous homomorphism to `𝔽₂`.
 * `TauCeti.ContCohomology.evensNormIndexTwo`: the index-two degree-one Evens norm.
 
 ## Main results
 
-* `TauCeti.ContCohomology.homClass_eq_cochainClass`: `homClass` is the class of the homogeneous
-  cochain `inhomogeneousCochain1` of the homomorphism.
-* `TauCeti.ContCohomology.homClass_surjective`: every degree-one class is the class of a continuous
-  homomorphism.
-* `TauCeti.ContCohomology.homClass_inj`: two continuous homomorphisms have the same class exactly
-  when they are equal.
 * `TauCeti.ContCohomology.graphClass_representative_independent`: the graph class depends only on
   the class of the homomorphism.
 * `TauCeti.ContCohomology.evensNormIndexTwo_homClass`: the norm of the class of a homomorphism is
@@ -50,6 +38,15 @@ function and not an additive map.
   Math. Soc. **108** (1963), 54–65.
 * A. Kozlowski, *The Evens–Kahn formula for the total Stiefel–Whitney class*, Proc. Amer. Math.
   Soc. **91** (1984), 309–313, Lemma 2.4.
+
+## Source note
+
+The descent route, an explicit-model class of a homomorphism, its injectivity, and the graph class
+of a chosen representative, follows the earlier Tau Ceti formalization in
+[TauCeti PR #11157](https://github.com/TauCetiProject/TauCeti/pull/11157) by @mccorvie-agent
+("feat: descend the index-two Evens norm"). The class of a homomorphism and its injectivity now
+live in `TrivialF2/Character.lean`; `graphClass_representative_independent` and the definition of
+`evensNormIndexTwo` through a chosen representative are adapted from it here.
 -/
 
 public section
@@ -59,89 +56,6 @@ open CategoryTheory
 namespace TauCeti.ContCohomology
 
 universe u
-
-section HomClass
-
-variable (H : Type u) [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
-
-attribute [local instance] TopRep.distribMulAction
-
-/-- `H` acts continuously on the trivial coefficients `𝔽₂`, which are smooth discrete. -/
-local instance continuousSMul_trivialF2_indexTwoNorm : ContinuousSMul H (trivialF2 H).V :=
-  (isSmoothDiscrete_trivialF2 H).continuousSMul
-
-/-- The class of a continuous homomorphism `α : H → 𝔽₂` in `continuousCohomology 1 (trivialF2 H)`:
-the explicit class of `α`, read as a continuous `1`-cocycle for the trivial action, carried to the
-canonical object by the degree-one comparison. `homClass_eq_cochainClass` identifies it with the
-class of the homogeneous cochain of `α`. -/
-noncomputable def homClass (α : H →* Multiplicative (ZMod 2)) (hα : Continuous α) :
-    continuousCohomology 1 (trivialF2 H) :=
-  (eqToHom (congrArg (continuousCohomology 1) (ofDiscreteModule_trivialF2 H))).hom
-    (explicitH1AddEquivContinuousCohomology H (trivialF2 H).V (evensHomCocycle α hα))
-
-/-- `homClass` is the degree-one comparison applied to the explicit class of the homomorphism. -/
-theorem homClass_def (α : H →* Multiplicative (ZMod 2)) (hα : Continuous α) :
-    homClass H α hα =
-      (eqToHom (congrArg (continuousCohomology 1) (ofDiscreteModule_trivialF2 H))).hom
-        (explicitH1AddEquivContinuousCohomology H (trivialF2 H).V (evensHomCocycle α hα)) :=
-  (rfl)
-
-/-- **The class of a continuous homomorphism is the class of its cochain:** `homClass H α` is the
-`TopRep.cochainClass` of the homogeneous cochain `(h₀, h₁) ↦ α (h₀⁻¹ * h₁)`, read additively. -/
-theorem homClass_eq_cochainClass (α : H →* Multiplicative (ZMod 2)) (hα : Continuous α) :
-    homClass H α hα =
-      (trivialF2 H).cochainClass 1
-        (inhomogeneousCochain1 (fun h => Multiplicative.toAdd (α h)) (continuous_toAdd.comp hα))
-        (inhomogeneousCochain1_d_eq_zero _ _ fun g h => by simp [map_mul, toAdd_mul]) :=
-  eqToHom_explicitH1AddEquivContinuousCohomology_eq_cochainClass _ _ _
-    (fun h => by rw [coe_evensHomCocycle]) _
-
-/-- **Every degree-one class is the class of a continuous homomorphism.** With trivial `𝔽₂`
-coefficients the continuous `1`-cocycles are the continuous homomorphisms and there are no nonzero
-coboundaries, so `H¹(H, 𝔽₂)` is the group of continuous homomorphisms `H → 𝔽₂`. -/
-theorem homClass_surjective (x : continuousCohomology 1 (trivialF2 H)) :
-    ∃ (α : H →* Multiplicative (ZMod 2)) (hα : Continuous α), homClass H α hα = x := by
-  have htriv (g : H) (m : (trivialF2 H).V) : g • m = m := by
-    rw [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]
-  let φ := Additive.toMul (H1EquivOfSmulEqSelf htriv
-    ((explicitH1AddEquivContinuousCohomology H (trivialF2 H).V).symm
-      ((eqToHom (congrArg (continuousCohomology 1) (ofDiscreteModule_trivialF2 H).symm)).hom x)))
-  let α : H →* Multiplicative (ZMod 2) :=
-    (trivialF2Equiv H).toMultiplicative.toMonoidHom.comp φ.toMonoidHom
-  have hα : Continuous α :=
-    (continuous_of_discreteTopology : Continuous (trivialF2Equiv H).toMultiplicative).comp
-      φ.continuous
-  refine ⟨α, hα, ?_⟩
-  have hφ : (evensHomCocycle α hα : H1 H (trivialF2 H).V) =
-      (explicitH1AddEquivContinuousCohomology H (trivialF2 H).V).symm
-        ((eqToHom (congrArg (continuousCohomology 1) (ofDiscreteModule_trivialF2 H).symm)).hom
-          x) := by
-    apply (H1EquivOfSmulEqSelf htriv).injective
-    rw [H1EquivOfSmulEqSelf_mk]
-    apply Additive.toMul.injective
-    ext h
-    simp [α, φ, Z1EquivOfSmulEqSelf_apply]
-  rw [homClass_def, hφ, AddEquiv.apply_symm_apply, ← ConcreteCategory.comp_apply, eqToHom_trans,
-    eqToHom_refl, ConcreteCategory.id_apply]
-
-/-- **Two continuous homomorphisms have the same class exactly when they are equal.** With
-trivial `𝔽₂` coefficients there are no nonzero degree-one coboundaries. -/
-@[simp]
-theorem homClass_inj {α β : H →* Multiplicative (ZMod 2)} (hα : Continuous α)
-    (hβ : Continuous β) : homClass H α hα = homClass H β hβ ↔ α = β := by
-  refine ⟨fun hcl => ?_, fun h => by subst h; rfl⟩
-  have htriv (g : H) (m : (trivialF2 H).V) : g • m = m := by
-    rw [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]
-  rw [homClass_def, homClass_def] at hcl
-  have hexpl := (explicitH1AddEquivContinuousCohomology H (trivialF2 H).V).injective
-    ((ConcreteCategory.bijective_of_isIso
-      (eqToHom (congrArg (continuousCohomology 1) (ofDiscreteModule_trivialF2 H)))).injective hcl)
-  have hchar := congrArg (fun z => Additive.toMul (H1EquivOfSmulEqSelf htriv z)) hexpl
-  ext h
-  simpa only [H1EquivOfSmulEqSelf_mk, Z1EquivOfSmulEqSelf_apply, coe_evensHomCocycle,
-    EmbeddingLike.apply_eq_iff_eq] using DFunLike.congr_fun hchar h
-
-end HomClass
 
 section EvensNorm
 
