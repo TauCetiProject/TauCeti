@@ -10,6 +10,7 @@ public import Mathlib.Order.Fin.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.IsCone
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Maps
+import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Basic
 import Mathlib.Data.Finset.Prod
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Set.Finite.Lattice
@@ -375,8 +376,7 @@ theorem orderedProd_mono (hK : K ≤ K') (hL : L ≤ L') :
   rw [orderedProd_toPreAbstractSimplicialComplex, orderedProd_toPreAbstractSimplicialComplex]
   exact PreAbstractSimplicialComplex.orderedProd_mono hK hL
 
-/-- An ordered product of finite-face abstract complexes has finitely many faces, even when the
-vertex types are infinite. -/
+/-- An ordered product of finite-face abstract complexes has finitely many faces. -/
 theorem finite_faces_orderedProd (hK : K.faces.Finite) (hL : L.faces.Finite) :
     (orderedProd K L).faces.Finite := by
   rw [orderedProd_toPreAbstractSimplicialComplex]
@@ -429,10 +429,8 @@ theorem finite_faces_orderedCylinder (hfin : K.faces.Finite) :
     K.orderedCylinder.faces.Finite := by
   rw [orderedCylinder_toPreAbstractSimplicialComplex]
   have htop : (⊤ : PreAbstractSimplicialComplex (Fin 2)).faces.Finite := by
-    refine (Finset.finite_toSet (Finset.univ.powerset)).subset ?_
-    intro σ _
-    rw [Finset.mem_coe, Finset.mem_powerset]
-    exact Finset.subset_univ _
+    simpa only [PreAbstractSimplicialComplex.simplex_univ] using
+      (PreAbstractSimplicialComplex.finite_faces_simplex (Finset.univ : Finset (Fin 2)))
   exact PreAbstractSimplicialComplex.finite_faces_orderedProd hfin htop
 
 /-- The ordered cylinder of a cone whose apex bounds every vertex of the complex is a cone with
