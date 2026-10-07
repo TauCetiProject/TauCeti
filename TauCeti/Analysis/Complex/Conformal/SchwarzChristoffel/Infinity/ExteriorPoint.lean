@@ -255,8 +255,9 @@ private theorem im_quadratic_notMem_band {M C η : ℝ} (hC : C < 0) (hη : 0 < 
   rw [abs_of_pos hz] at hnorm
   -- Since `‖z‖` is large, an angle bounded by Jordan's inequality costs less than `η`.
   have hratio : -C * (Real.pi / 2 * (z.im / ‖z‖)) < η := by
-    rw [show -C * (Real.pi / 2 * (z.im / ‖z‖)) = -C * Real.pi * z.im / 2 / ‖z‖ by ring,
-      div_lt_iff₀ hn]
+    -- Collect the factor `1 / ‖z‖` so that the denominator can be cleared.
+    have hquot : -C * (Real.pi / 2 * (z.im / ‖z‖)) = -C * Real.pi * z.im / 2 / ‖z‖ := by ring
+    rw [hquot, div_lt_iff₀ hn]
     have hηn : Real.pi ^ 2 * C ^ 2 + η ≤ η * ‖z‖ := by
       have := mul_le_mul_of_nonneg_left h3 hη.le
       rwa [mul_add, mul_div_cancel₀ _ hη.ne', mul_one] at this
