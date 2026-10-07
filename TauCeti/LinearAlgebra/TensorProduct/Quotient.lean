@@ -123,18 +123,19 @@ variable {R A M : Type*} [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M] [M
 bijective. -/
 theorem baseChange_mkQ_bijective {r : R} (hr : algebraMap R A r = 0) :
     Function.Bijective ((r • ⊤ : Submodule R M).mkQ.baseChange A) := by
-  -- Surjective by right exactness; the kernel is spanned by the tensors `a ⊗ r • m`, which
-  -- vanish since `a ⊗ r • m = (r • a) ⊗ m`.
-  rw [baseChange_eq_ltensor]
-  refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_,
-    lTensor_surjective A (Submodule.mkQ_surjective _)⟩
-  obtain ⟨y, rfl⟩ := (lTensor_exact A (exact_subtype_mkQ _) (Submodule.mkQ_surjective _) x).mp hx
-  clear hx
-  induction y using TensorProduct.inductionOn with
-  | tmul a v =>
+  let p := r • (⊤ : Submodule R M)
+  have hzero : lTensor A p.subtype = 0 := by
+    ext a v
     obtain ⟨w, -, hw⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp v.2
     simp [← hw, smul_tmul', Algebra.smul_def, hr]
-  | add y z hy hz => rw [map_add, hy, hz, add_zero]
+  have hbot : range (lTensor A p.subtype) = ⊥ := range_eq_bot.mpr hzero
+  let e : (A ⊗[R] M) ≃ₗ[R] A ⊗[R] QuotSMulTop r M :=
+    (range (lTensor A p.subtype)).quotEquivOfEqBot hbot |>.symm.trans
+      (lTensor.equiv A (exact_subtype_mkQ p) (Submodule.mkQ_surjective p))
+  rw [baseChange_eq_ltensor, ← show e.toLinearMap = lTensor A p.mkQ by
+    ext
+    simp [e, lTensor.equiv, lTensor.linearEquiv_of_rightInverse, lTensor.toFun]]
+  exact e.bijective
 
 /-- **Finiteness of a base change killing a scalar.** If `r : R` maps to `0` in the `R`-algebra
 `A` and `M ⧸ rM` is finitely generated over `R`, then `A ⊗[R] M` is finitely generated over `A`:
