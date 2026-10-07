@@ -13,9 +13,8 @@ import Mathlib.Topology.Compactness.Compact
 # Finite PL decompositions on compact sets
 
 A PL map on a compact subset of a finite real coordinate space admits a finite
-piecewise-affine decomposition. The local cells are restricted to polyhedral
-closed balls before taking a finite subcover. This restriction ensures that
-the selected affine formulas remain valid wherever their cells meet the set.
+piecewise-affine decomposition. Compactness thus lets one use finitely many
+affine pieces to describe a map given by local PL data.
 
 In particular, coning a PL map with compact base can use a finite decomposition
 at the apex, even though `IsPLOn` is defined using local decompositions.
@@ -46,6 +45,8 @@ theorem IsPLOn.isPiecewiseAffineOn_of_isCompact (hf : IsPLOn f s) (hs : IsCompac
     obtain ⟨r, hr, hball⟩ := nhds_basis_closedBall.mem_iff.mp hU
     exact ⟨r, hr, hpiece.mono (fun y hy => hUV ⟨hball hy.2, hy.1⟩)⟩
   choose r hr hpiece using hlocal
+  -- Restrict the cells to polyhedral closed balls before taking a finite subcover,
+  -- ensuring that each selected formula remains valid wherever its cell meets the base.
   obtain ⟨t, ht⟩ := hs.elim_nhdsWithin_subcover'
     (fun x _ => closedBall x (r ⟨x, ‹x ∈ s›⟩))
     (fun x hx => nhdsWithin_le_nhds (closedBall_mem_nhds x (hr ⟨x, hx⟩)))

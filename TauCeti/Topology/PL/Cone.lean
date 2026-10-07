@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Cone
 public import TauCeti.Topology.PL.Compact
 import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.Basic.Finite.Sum
@@ -20,19 +21,14 @@ one on the entire cone, including the apex. In particular, a PL map on a compact
 base extends to a PL map on its cone.
 
 This supplies the PL regularity needed when extending maps of links to maps of
-vertex stars. Boundedness is essential to the argument at the apex: the base
-cells are intersected with a bounding box before their inequalities are
-homogenized. Consequently their height-zero slices contain only the apex,
-rather than the recession directions of the original cells.
+vertex stars. The finite-decomposition extension assumes a bounded base; the
+PL extension assumes a compact base.
 
 ## References
 
 * C. P. Rourke, B. J. Sanderson, *Introduction to Piecewise-Linear Topology*,
   Springer (1972), Chapter 1, “Joins and Cones”, pp. 1–2,
   Example 1.5(4), p. 5, and Chapter 2, “Pseudo-Radial Projection”, pp. 20–21.
-
-The affine pieces use Mathlib's `ContinuousAffineMap.decomp` and continuous
-linear-map product combinators.
 -/
 
 public section
@@ -43,86 +39,6 @@ open Set
 
 namespace TauCeti
 
-section Cone
-
-variable {E F G : Type*} [AddCommGroup E] [Module ℝ E]
-  [AddCommGroup F] [Module ℝ F] [AddCommGroup G] [Module ℝ G]
-
-/-- The geometric cone on a set, with its apex at height zero and its base at height one.
-The cone on the empty set consists of the apex alone. -/
-def coneSet (s : Set E) : Set (E × ℝ) :=
-  {p | p = 0 ∨ 0 < p.2 ∧ p.2⁻¹ • p.1 ∈ s}
-
-/-- Cone membership separates the apex from points with a normalized base point. -/
-theorem mem_coneSet {s : Set E} {p : E × ℝ} :
-    p ∈ coneSet s ↔ p = 0 ∨ 0 < p.2 ∧ p.2⁻¹ • p.1 ∈ s := Iff.rfl
-
-@[simp]
-theorem zero_mem_coneSet (s : Set E) : (0 : E × ℝ) ∈ coneSet s := Or.inl rfl
-
-/-- The empty base contributes only the cone apex. -/
-@[simp]
-theorem coneSet_empty : coneSet (∅ : Set E) = {0} := by
-  ext p
-  simp [mem_coneSet]
-
-/-- At positive height, cone membership is membership of the normalized point in the base. -/
-@[simp]
-theorem smul_mem_coneSet_iff {s : Set E} (x : E) {t : ℝ} (ht : 0 < t) :
-    (t • x, t) ∈ coneSet s ↔ x ∈ s := by
-  simp [mem_coneSet, ht, ht.ne', smul_smul]
-
-/-- A map of bases extends radially to a height-preserving map of geometric cones. -/
-def coneMap (f : E → F) (p : E × ℝ) : F × ℝ :=
-  (p.2 • f (p.2⁻¹ • p.1), p.2)
-
-/-- The first component of the radial extension is its scaled base value. -/
-@[simp]
-theorem coneMap_fst (f : E → F) (p : E × ℝ) :
-    (coneMap f p).1 = p.2 • f (p.2⁻¹ • p.1) := (rfl)
-
-/-- The radial extension preserves height. -/
-@[simp]
-theorem coneMap_snd (f : E → F) (p : E × ℝ) : (coneMap f p).2 = p.2 := (rfl)
-
-@[simp]
-theorem coneMap_zero (f : E → F) : coneMap f 0 = 0 := by simp [coneMap]
-
-/-- The radial extension agrees with the base map on each nonzero-height ray. -/
-@[simp]
-theorem coneMap_smul (f : E → F) (x : E) {t : ℝ} (ht : t ≠ 0) :
-    coneMap f (t • x, t) = (t • f x, t) := by
-  simp [coneMap, smul_smul, ht]
-
-/-- At height one, radial extension is the original base map. -/
-@[simp]
-theorem coneMap_one (f : E → F) (x : E) : coneMap f (x, 1) = (f x, 1) := by
-  simp [coneMap]
-
-/-- Radial extension carries a cone to the cone on any set containing the base image. -/
-theorem _root_.Set.MapsTo.coneMap {s : Set E} {u : Set F} {f : E → F} (hf : MapsTo f s u) :
-    MapsTo (coneMap f) (coneSet s) (coneSet u) := by
-  rintro p (rfl | ⟨ht, hx⟩)
-  · simp
-  · exact Or.inr ⟨ht, by simpa [TauCeti.coneMap, smul_smul, ht.ne'] using hf hx⟩
-
-/-- Radial extension respects composition, including at height zero. -/
-theorem coneMap_comp (g : F → G) (f : E → F) :
-    coneMap (g ∘ f) = coneMap g ∘ coneMap f := by
-  funext p
-  by_cases ht : p.2 = 0
-  · simp [coneMap, ht]
-  · simp [coneMap, smul_smul, ht]
-
-/-- A left inverse on bases extends to a left inverse on their cones. -/
-theorem _root_.Set.LeftInvOn.coneMap {s : Set E} {f : E → F} {g : F → E} (h : LeftInvOn g f s) :
-    LeftInvOn (coneMap g) (coneMap f) (coneSet s) := by
-  rintro p (rfl | ⟨ht, hx⟩)
-  · simp
-  · simp [TauCeti.coneMap, smul_smul, ht.ne', h hx]
-
-end Cone
-
 section PiecewiseAffine
 
 variable {ι : Type*}
@@ -130,6 +46,7 @@ variable {ι : Type*}
   [IsTopologicalAddGroup F] [ContinuousSMul ℝ F]
   {s : Set (ι → ℝ)} {f : (ι → ℝ) → F}
 
+-- Use Mathlib's continuous-affine decomposition and continuous-linear product combinators.
 /-- The homogeneous affine piece associated to a base piece. It includes the height coordinate
 so that it has the same codomain as `coneMap`. -/
 private def coneAffinePiece (A : (ι → ℝ) →ᴬ[ℝ] F) :
@@ -218,6 +135,8 @@ theorem IsPiecewiseAffineOn.coneMap (hf : IsPiecewiseAffineOn f s)
   have hR (x : ι → ℝ) (hx : x ∈ s) (i : ι) : |x i| ≤ R := by
     exact (hbound i _ ⟨x, hx, rfl⟩).trans
       (Finset.single_le_sum (fun j _ => (hpos j).le) (Finset.mem_univ i))
+  -- Bound the base cells in a coordinate box before homogenizing their inequalities,
+  -- so the height-zero slices contain only the apex rather than recession directions.
   choose m a ha using fun i => isConvexPolyhedron_iff.mp (hC i)
   -- Keep an apex cell even when the base decomposition has no pieces.
   let cells : Option (Fin n) → Set ((ι → ℝ) × ℝ) :=
@@ -230,7 +149,8 @@ theorem IsPiecewiseAffineOn.coneMap (hf : IsPiecewiseAffineOn f s)
       | some i => coneAffinePiece (A i)
   refine isPiecewiseAffineOn_of_finite (C := cells) (A := pieces) ?_ ?_ ?_
   · rintro (_ | i) <;> exact isConvexPolyhedron_coneCell _ _
-  · rintro p (rfl | ⟨ht, hx⟩)
+  · intro p hp
+    rcases mem_coneSet.mp hp with rfl | ⟨ht, hx⟩
     · exact mem_iUnion.mpr ⟨none, coneCell_zero _ _⟩
     · obtain ⟨i, hi⟩ := mem_iUnion.mp (hcover hx)
       have hnorm : ∀ j, |(p.2⁻¹ • p.1) j| ≤ R := hR _ hx
@@ -242,7 +162,7 @@ theorem IsPiecewiseAffineOn.coneMap (hf : IsPiecewiseAffineOn f s)
         (by simpa [cells] using hc.2.2 0) hc.1
       rw [coneCell_eq_zero_of_height_zero hc ht, coneMap_zero]
       rfl
-    · rcases hp with rfl | ⟨ht, hx⟩
+    · rcases mem_coneSet.mp hp with rfl | ⟨ht, hx⟩
       · simp [pieces, coneAffinePiece_apply]
         rfl
       · have hbase : p.2⁻¹ • p.1 ∈ C i := by
@@ -250,7 +170,7 @@ theorem IsPiecewiseAffineOn.coneMap (hf : IsPiecewiseAffineOn f s)
           exact coneCell_normalize hc ht
         have hvalue := heq i ⟨hx, hbase⟩
         have hpiece := coneAffinePiece_ray (A i) (p.2⁻¹ • p.1) p.2
-        simpa [smul_inv_smul₀ ht.ne', TauCeti.coneMap, pieces, hvalue] using hpiece.symm
+        simpa [smul_inv_smul₀ ht.ne', Prod.ext_iff, pieces, hvalue] using hpiece.symm
 
 /-- A PL map on a compact base extends to a PL map of geometric cones, including at the apex.
 The target may be any real topological vector space. -/
