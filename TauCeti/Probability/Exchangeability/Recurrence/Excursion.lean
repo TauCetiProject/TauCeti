@@ -117,7 +117,7 @@ theorem MarkovExchangeable.exchangeable_excursionProcess (h : MarkovExchangeable
   let _ : Countable α := h.countable
   have : MeasurableSingletonClass α := h.measurableSingletonClass
   have hmeas : ∀ k, AEMeasurable (excursionProcess X a₀ k) μ :=
-    aemeasurable_excursionProcess h.aemeasurable a₀
+    aemeasurable_excursionProcess h.aemeasurable a₀ (measurableSet_singleton a₀)
   intro m σ
   refine Measure.ext_of_singleton fun v => ?_
   rw [prefixLaw_def,

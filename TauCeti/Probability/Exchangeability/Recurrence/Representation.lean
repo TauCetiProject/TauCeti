@@ -81,7 +81,7 @@ theorem MarkovExchangeable.conditionallyIID_excursionProcess [IsFiniteMeasure μ
   let _ : Countable α := h.countable
   have : MeasurableSingletonClass α := h.measurableSingletonClass
   conditionallyIID_of_exchangeable (h.exchangeable_excursionProcess hrec h0)
-    (aemeasurable_excursionProcess h.aemeasurable a₀)
+    (aemeasurable_excursionProcess h.aemeasurable a₀ (measurableSet_singleton a₀))
 
 /-- **A directing measure of an excursion process charges no word through the base state.** An
 excursion never visits the state it is an excursion from, so almost every mixing representative of
@@ -147,7 +147,7 @@ theorem MarkovExchangeable.exists_pathLaw_eq_map_deFinettiBarycenter [IsProbabil
       hν.ae_measure_setOf_mem_eq_zero_of_excursionProcess
     exact ((Measure.measurable_coe hSmeas).comp measurable_subtype_coe)
       (measurableSet_singleton (0 : ENNReal))
-  · rw [hrec.pathLaw_eq_map_pathOfExcursions h.aemeasurable h0,
+  · rw [hrec.pathLaw_eq_map_pathOfExcursions h.aemeasurable (measurableSet_singleton a₀) h0,
       pathLaw_eq_bind_infinitePi_of_mixedIIDWith hmix, deFinettiBarycenter_def]
 
 end Probability

@@ -121,13 +121,14 @@ theorem measurable_pathOfExcursions (a₀ : α) :
 
 /-- **The path law of a process returning infinitely often to `a₀` is the image of its excursion
 law.** Almost every sample path starts at and returns infinitely often to `a₀`, so concatenating
-its excursions recovers it. -/
-theorem pathLaw_eq_map_pathOfExcursions [MeasurableSingletonClass α]
-    (hX : ∀ i, AEMeasurable (X i) μ) (hreturns : ∀ᵐ ω ∂μ, {n | X n ω = a₀}.Infinite)
+its excursions recovers it. Only the base state's singleton needs to be measurable. -/
+theorem pathLaw_eq_map_pathOfExcursions
+    (hX : ∀ i, AEMeasurable (X i) μ) (ha₀ : MeasurableSet ({a₀} : Set α))
+    (hreturns : ∀ᵐ ω ∂μ, {n | X n ω = a₀}.Infinite)
     (h0 : ∀ᵐ ω ∂μ, X 0 ω = a₀) :
     pathLaw μ X = (pathLaw μ (excursionProcess X a₀)).map (pathOfExcursions a₀) := by
   have hΦ : AEMeasurable (fun ω k => excursionProcess X a₀ k ω) μ :=
-    AEMeasurable.of_eval fun k => aemeasurable_excursionProcess hX a₀ k
+    AEMeasurable.of_eval fun k => aemeasurable_excursionProcess hX a₀ ha₀ k
   have hae : (pathOfExcursions a₀ ∘ fun ω k => excursionProcess X a₀ k ω) =ᵐ[μ]
       fun ω i => X i ω := by
     filter_upwards [h0, hreturns] with ω hω0 hωinf

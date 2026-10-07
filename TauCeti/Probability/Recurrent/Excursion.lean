@@ -34,11 +34,13 @@ namespace Probability
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
   {μ : Measure Ω} {X : ℕ → Ω → α} {a₀ : α}
 
-/-- **The path law of a recurrent process started at `a₀` is the image of its excursion law.** -/
-theorem Recurrent.pathLaw_eq_map_pathOfExcursions [MeasurableSingletonClass α]
-    (hrec : Recurrent μ X) (hX : ∀ i, AEMeasurable (X i) μ) (h0 : ∀ᵐ ω ∂μ, X 0 ω = a₀) :
+/-- **The path law of a recurrent process started at `a₀` is the image of its excursion law.**
+Only the base state's singleton needs to be measurable. -/
+theorem Recurrent.pathLaw_eq_map_pathOfExcursions
+    (hrec : Recurrent μ X) (hX : ∀ i, AEMeasurable (X i) μ)
+    (ha₀ : MeasurableSet ({a₀} : Set α)) (h0 : ∀ᵐ ω ∂μ, X 0 ω = a₀) :
     pathLaw μ X = (pathLaw μ (excursionProcess X a₀)).map (pathOfExcursions a₀) := by
-  apply TauCeti.Probability.pathLaw_eq_map_pathOfExcursions hX _ h0
+  apply TauCeti.Probability.pathLaw_eq_map_pathOfExcursions hX ha₀ _ h0
   filter_upwards [h0, hrec.ae_infinite_setOf_eq] with ω hω0 hωinf
   have h := hωinf 0
   rwa [hω0] at h

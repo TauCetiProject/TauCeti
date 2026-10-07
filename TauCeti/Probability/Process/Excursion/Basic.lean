@@ -14,7 +14,7 @@ import TauCeti.Probability.Process.SuccessorArray
 # Excursion processes
 
 The excursions of a process away from a state form a process of finite words. Reading an
-excursion is measurable when the state space has measurable singletons; no recurrence or
+excursion is measurable when the base state's singleton is measurable; no recurrence or
 symmetry assumption is needed. When a path starts at the base state and makes the visit closing
 its prescribed excursions, the excursion-prefix event agrees with a finite-path event.
 
@@ -53,17 +53,15 @@ theorem excursionProcess_apply (X : ℕ → Ω → α) (a₀ : α) (k : ℕ) (ω
 
 section Measurability
 
-variable [MeasurableSingletonClass α]
-
 /-- **An excursion is a measurable function of the path.** The two endpoint visit times are
 measurable and range over a countable set, and on each of their fibres the excursion reads a fixed
 finite list of coordinates. -/
-theorem measurable_excursion (a₀ : α) (k : ℕ) :
+theorem measurable_excursion (a₀ : α) (k : ℕ) (ha₀ : MeasurableSet ({a₀} : Set α)) :
     Measurable fun x : ℕ → α => excursion x a₀ k := by
   have hidx : Measurable fun x : ℕ → α => (visitTime x a₀ k + 1, visitTime x a₀ (k + 1)) :=
     (Measurable.of_discrete.comp
-        (measurable_visitTime a₀ k (measurableSet_singleton a₀))).prodMk
-      (measurable_visitTime a₀ (k + 1) (measurableSet_singleton a₀))
+        (measurable_visitTime a₀ k ha₀)).prodMk
+      (measurable_visitTime a₀ (k + 1) ha₀)
   have hread : Measurable fun p : (ℕ → α) × ℕ × ℕ => (List.Ico p.2.1 p.2.2).map p.1 := by
     apply measurable_from_prod_countable_left
     intro q
@@ -77,11 +75,12 @@ theorem measurable_excursion (a₀ : α) (k : ℕ) :
   rw [hunfold]
   exact hread.comp (measurable_id.prodMk hidx)
 
-/-- Every excursion of a process with a.e. measurable coordinates is a.e. measurable. -/
+/-- Every excursion of a process with a.e. measurable coordinates is a.e. measurable when the
+base state's singleton is measurable. -/
 theorem aemeasurable_excursionProcess {μ : Measure Ω} {X : ℕ → Ω → α}
-    (hX : ∀ i, AEMeasurable (X i) μ) (a₀ : α) (k : ℕ) :
+    (hX : ∀ i, AEMeasurable (X i) μ) (a₀ : α) (ha₀ : MeasurableSet ({a₀} : Set α)) (k : ℕ) :
     AEMeasurable (excursionProcess X a₀ k) μ :=
-  (measurable_excursion a₀ k).comp_aemeasurable (AEMeasurable.of_eval hX)
+  (measurable_excursion a₀ k ha₀).comp_aemeasurable (AEMeasurable.of_eval hX)
 
 end Measurability
 
