@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.Algebra.Module.Primitive
 public import TauCeti.LinearAlgebra.Matrix.BilinearForm
+import TauCeti.LinearAlgebra.BilinearMap.GramCongruence
 import TauCeti.LinearAlgebra.Matrix.Condensation
 
 /-!
@@ -161,7 +162,9 @@ private theorem hermiteBound_succ (n : ℕ) (ih : HermiteBound.{u} n) :
   let c := Basis.mkFinCons v bK hli hsp
   have hmn : n = m := by simpa using Fintype.card_congr (b.indexEquiv c)
   subst hmn
-  rw [det_toMatrix_eq_det_toMatrix B b c]
+  rw [← toMatrixAux_eq b B]
+  simp only [toMatrixAux]
+  rw [← LinearMap.det_toMatrix₂Aux_eq_det_toMatrix₂Aux B b c]
   -- The condensed form `S(y, z) = μ B(y, z) - B(v, y) B(v, z)` on `K`.
   let ℓ : K →ₗ[ℤ] ℤ := (B v).comp K.subtype
   let S : LinearMap.BilinForm ℤ K :=
@@ -210,6 +213,8 @@ private theorem hermiteBound_succ (n : ℕ) (ih : HermiteBound.{u} n) :
     congr 2
     ext i j
     simp [c, toMatrix_apply, hS, hsymm (bK i : M) v, hμ_def]
+  rw [← toMatrixAux_eq c B] at hdet
+  simp only [toMatrixAux] at hdet
   refine ⟨v, hv0, ?_⟩
   rcases n.eq_zero_or_pos with rfl | hn
   · simp only [pow_zero, Matrix.det_isEmpty, mul_one, one_mul] at hdet
@@ -241,6 +246,11 @@ theorem exists_ne_zero_three_pow_mul_pow_le_four_pow_mul_det {M : Type*} [AddCom
       4 ^ (Fintype.card ι).choose 2 * (toMatrix b B).det := by
   have h := hermiteBound (Fintype.card ι) B hB (fun x hx ↦ by simpa using hpos x hx)
     (b.reindex (Fintype.equivFin ι))
-  rwa [← det_toMatrix_eq_det_toMatrix B b] at h
+  rw [← toMatrixAux_eq b B]
+  simp only [toMatrixAux]
+  rw [← toMatrixAux_eq (b.reindex (Fintype.equivFin ι)) B] at h
+  simp only [toMatrixAux] at h
+  rw [LinearMap.det_toMatrix₂Aux_eq_det_toMatrix₂Aux B b (b.reindex (Fintype.equivFin ι))] at h
+  exact h
 
 end LinearMap.BilinForm

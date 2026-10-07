@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Determinant
-public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 
 /-!
@@ -26,18 +24,12 @@ Gram matrix. For a nondegenerate form, the Gram matrix in the `B`-dual basis is 
 transpose of the Gram matrix in the original basis; for a symmetric form it is the inverse Gram
 matrix, which is how the dual of a lattice is described in coordinates.
 
-Over `ℤ` a change of basis multiplies the Gram determinant by the square of a unit, which is `1`,
-so the Gram determinant of an integral bilinear form on a free `ℤ`-module of finite rank does not
-depend on the basis.
-
 ## Main results
 
 * `Matrix.isAlt_toBilin'_one_iff`: for `R` nontrivial, the standard form on `n → R` is alternating
   exactly when `n` is empty.
 * `LinearMap.BilinForm.toMatrix_dualBasis`: the Gram matrix of a nondegenerate form in a `B`-dual
   basis is the inverse transpose of its Gram matrix in the original basis.
-* `LinearMap.BilinForm.det_toMatrix_eq_det_toMatrix`: over `ℤ`, the Gram determinant does not
-  depend on the basis.
 -/
 
 public section
@@ -73,29 +65,5 @@ theorem toMatrix_dualBasis (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate) 
     _ = (1 : Matrix ι ι K) i j := by
         rw [(B.dualBasis hB b).sum_repr, apply_dualBasis_left, Matrix.one_apply]
         simp only [eq_comm]
-
-section Int
-
-variable {M ι κ : Type*} [AddCommGroup M] [Module ℤ M] [Fintype ι] [DecidableEq ι] [Fintype κ]
-  [DecidableEq κ]
-
-/-- **Over `ℤ` the Gram determinant does not depend on the basis.** A change of basis multiplies
-the Gram determinant by the square of the determinant of the change-of-basis matrix, a unit of
-`ℤ`. The two bases may have different index types. -/
-theorem det_toMatrix_eq_det_toMatrix (B : LinearMap.BilinForm ℤ M) (b : Basis ι ℤ M)
-    (c : Basis κ ℤ M) : (toMatrix b B).det = (toMatrix c B).det := by
-  let c' := c.reindex (c.indexEquiv b)
-  have hc : (toMatrix c' B).det = (toMatrix c B).det := by
-    rw [← Matrix.det_submatrix_equiv_self (c.indexEquiv b).symm (toMatrix c B)]
-    congr 1
-    ext i j
-    simp [c', toMatrix_apply]
-  have hunit : (b.toMatrix c').det ^ 2 = 1 := by
-    rw [sq_eq_one_iff, ← Int.isUnit_iff, ← Basis.det_apply]
-    exact b.isUnit_det c'
-  rw [← hc, ← toMatrix_mul_basis_toMatrix (b := b) c' B, Matrix.det_mul, Matrix.det_mul,
-    Matrix.det_transpose, mul_right_comm, ← sq, hunit, one_mul]
-
-end Int
 
 end LinearMap.BilinForm

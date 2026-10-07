@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
-import TauCeti.LinearAlgebra.Matrix.BilinearForm
+import TauCeti.LinearAlgebra.BilinearMap.GramCongruence
 
 /-!
 # Gram determinants of integral lattices
@@ -153,8 +153,9 @@ index type and the basis to change. -/
 theorem gramDet_eq_gramDet {ι : Type v} {κ : Type w} [Fintype ι] [Fintype κ]
     [DecidableEq ι] [DecidableEq κ] (e : Basis ι ℤ L) (f : Basis κ ℤ L) :
     L.gramDet e = L.gramDet f := by
-  rw [gramDet_def, gramDet_def, gramMatrix_eq_toMatrix, gramMatrix_eq_toMatrix]
-  exact LinearMap.BilinForm.det_toMatrix_eq_det_toMatrix _ e f
+  change (LinearMap.toMatrix₂Aux ℤ (e : ι → L) (e : ι → L) L.integralForm).det =
+    (LinearMap.toMatrix₂Aux ℤ (f : κ → L) (f : κ → L) L.integralForm).det
+  exact (LinearMap.det_toMatrix₂Aux_eq_det_toMatrix₂Aux L.integralForm e f).symm
 
 /-- A Gram determinant is nonzero exactly when the ambient rational form is nondegenerate. -/
 @[simp]
