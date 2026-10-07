@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.SumGenerators
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.DiagonalCartan
 import TauCeti.Algebra.Lie.GeneralLinear.RootSpace
 
 /-!
@@ -13,14 +13,15 @@ import TauCeti.Algebra.Lie.GeneralLinear.RootSpace
 
 The standard coordinates of the split type-B module have weights `0`, `εᵢ`, and `-εᵢ`.
 An ambient matrix entry therefore has weight equal to its row weight minus its column weight.
-This file characterizes generalized root-space membership by those entry weights and locates
-all five standard root-generator families in their root spaces. These computations are the
-coordinate input for classifying the roots and matching them to the abstract type-B root datum.
+This file characterizes generalized root-space membership by those entry weights. These computations
+are the coordinate input for classifying the roots and matching them to the abstract type-B root
+datum.
+`TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.AllGenerators` locates all five standard root-generator
+families in their root spaces.
 
 Generalized root spaces are honest simultaneous eigenspaces over a reduced ring. Over a domain,
 a root vector is supported exactly on entries of the requested weight. Neither statement
-requires characteristic zero or invertibility of two. Root-generator membership holds over any
-commutative ring; the assertions do not claim that the displayed generators exhaust each space.
+requires characteristic zero or invertibility of two.
 
 The diagonal-operator argument follows the existing type-D construction in
 `TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.Space`, reusing the ambient diagonal action from
@@ -277,68 +278,5 @@ theorem mem_rootSpace_typeBDiagonalCartan_iff
     exact hab ((typeBDiagonalCartanBasis (K := K) (ι := ι)).ext hcon)
   exact rootSpace_typeBDiagonalCartan_apply_eq_zero_of_isRegular hX a b _
     (isRegular_iff_ne_zero.mpr (sub_ne_zero.mpr hk))
-
-/-- The standard positive short-root generator belongs to its coordinate root space. -/
-theorem typeBShortRootGenerator_mem_rootSpace (i : ι) :
-    typeBShortRootGenerator (K := K) i ∈
-      LieAlgebra.rootSpace (typeBDiagonalCartan K ι) (typeBEpsilon i) := by
-  refine LieModule.weightSpace_le_genWeightSpace _ _ ?_
-  rw [LieModule.mem_weightSpace]
-  intro A
-  obtain ⟨d, rfl⟩ := (typeBDiagonalEquiv (K := K)).surjective A
-  simp only [LieSubalgebra.coe_bracket_of_module, coe_typeBDiagonalEquiv_apply]
-  rw [typeBDiagonalMatrix_lie_shortRootGenerator]
-  simp [coe_typeBDiagonalEquiv_apply]
-
-/-- The standard negative short-root generator belongs to its coordinate root space. -/
-theorem typeBShortNegativeRootGenerator_mem_rootSpace (i : ι) :
-    typeBShortNegativeRootGenerator (K := K) i ∈
-      LieAlgebra.rootSpace (typeBDiagonalCartan K ι) (-typeBEpsilon i) := by
-  refine LieModule.weightSpace_le_genWeightSpace _ _ ?_
-  rw [LieModule.mem_weightSpace]
-  intro A
-  obtain ⟨d, rfl⟩ := (typeBDiagonalEquiv (K := K)).surjective A
-  simp only [LieSubalgebra.coe_bracket_of_module, coe_typeBDiagonalEquiv_apply]
-  rw [typeBDiagonalMatrix_lie_shortNegativeRootGenerator]
-  simp [coe_typeBDiagonalEquiv_apply]
-
-/-- The standard difference-root generator belongs to its coordinate root space. -/
-theorem typeBDifferenceRootGenerator_mem_rootSpace (i : ι) (j : ι) (hij : i ≠ j) :
-    typeBDifferenceRootGenerator (K := K) i j hij ∈
-      LieAlgebra.rootSpace (typeBDiagonalCartan K ι)
-        (typeBEpsilon (K := K) i - typeBEpsilon (K := K) j) := by
-  refine LieModule.weightSpace_le_genWeightSpace _ _ ?_
-  rw [LieModule.mem_weightSpace]
-  intro A
-  obtain ⟨d, rfl⟩ := (typeBDiagonalEquiv (K := K)).surjective A
-  simp only [LieSubalgebra.coe_bracket_of_module, coe_typeBDiagonalEquiv_apply]
-  rw [typeBDiagonalMatrix_lie_differenceRootGenerator]
-  simp [coe_typeBDiagonalEquiv_apply]
-
-/-- The standard positive sum-root generator belongs to its coordinate root space. -/
-theorem typeBSumRootGenerator_mem_rootSpace (i : ι) (j : ι) :
-    typeBSumRootGenerator (K := K) i j ∈
-      LieAlgebra.rootSpace (typeBDiagonalCartan K ι)
-        (typeBEpsilon (K := K) i + typeBEpsilon (K := K) j) := by
-  refine LieModule.weightSpace_le_genWeightSpace _ _ ?_
-  rw [LieModule.mem_weightSpace]
-  intro A
-  obtain ⟨d, rfl⟩ := (typeBDiagonalEquiv (K := K)).surjective A
-  simp only [LieSubalgebra.coe_bracket_of_module, coe_typeBDiagonalEquiv_apply]
-  rw [typeBDiagonalMatrix_lie_sumRootGenerator]
-  simp [coe_typeBDiagonalEquiv_apply]
-
-/-- The standard negative sum-root generator belongs to its coordinate root space. -/
-theorem typeBSumNegativeRootGenerator_mem_rootSpace (i : ι) (j : ι) :
-    typeBSumNegativeRootGenerator (K := K) i j ∈
-      LieAlgebra.rootSpace (typeBDiagonalCartan K ι)
-        (-(typeBEpsilon (K := K) i + typeBEpsilon (K := K) j)) := by
-  refine LieModule.weightSpace_le_genWeightSpace _ _ ?_
-  rw [LieModule.mem_weightSpace]
-  intro A
-  obtain ⟨d, rfl⟩ := (typeBDiagonalEquiv (K := K)).surjective A
-  simp only [LieSubalgebra.coe_bracket_of_module, coe_typeBDiagonalEquiv_apply]
-  rw [typeBDiagonalMatrix_lie_sumNegativeRootGenerator]
-  simp [coe_typeBDiagonalEquiv_apply]
 
 end TauCeti
