@@ -10,7 +10,6 @@ public import Mathlib.Order.Filter.AtTopBot.Basic
 public import Mathlib.Topology.Separation.Hausdorff
 public import Mathlib.Topology.Compactness.Compact
 public import Mathlib.Topology.Instances.Real.Lemmas
-import Mathlib.Dynamics.OmegaLimit
 import Mathlib.Topology.Order.MonotoneConvergence
 import TauCeti.Topology.Connected.TotallyDisconnected
 import TauCeti.Topology.OmegaLimit
@@ -70,16 +69,10 @@ theorem exists_tendsto_atTop_of_antitone (φ : Flow ℝ α) {g : α → ℝ} (hg
     have hne : NeBot (𝓝 (g z) ⊓ 𝓝 c) :=
       NeBot.mono hcl (inf_le_inf_left _ hlim)
     exact eq_of_nhds_neBot hne
-  -- The cluster points of the orbit form its ω-limit set, which is invariant under the flow.
-  have hinv : ∀ z, MapClusterPt z atTop γ → ∀ s, MapClusterPt (φ s z) atTop γ := by
-    intro z hz s
-    have hω := (mem_omegaLimit_singleton_iff_mapClusterPt (f := atTop) (ϕ := φ) y z).2 hz
-    exact (mem_omegaLimit_singleton_iff_mapClusterPt (f := atTop) (ϕ := φ) y _).1
-      (Flow.isInvariant_omegaLimit atTop φ {y}
-        (fun t ↦ tendsto_atTop_add_const_left _ t tendsto_id) s hω)
-  -- Hence every cluster point lies in `C`.
+  -- The cluster points of the orbit form its ω-limit set, which is invariant under the flow;
+  -- hence every cluster point lies in `C`.
   have hsub : {z | MapClusterPt z atTop γ} ⊆ C := fun z hz ↦
-    hrest z fun t ↦ (hval _ (hinv z hz t)).trans (hval z hz).symm
+    hrest z fun t ↦ (hval _ (mapClusterPt_atTop_apply hz t)).trans (hval z hz).symm
   obtain ⟨p, -, hp⟩ := isCompact_univ.exists_mapClusterPt (f := atTop) (u := γ)
     (by simp)
   have hconn : IsPreconnected {z | MapClusterPt z atTop γ} :=
