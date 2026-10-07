@@ -20,21 +20,21 @@ it to the matrix coefficients of `TauCeti/RepresentationTheory/Continuous/Matrix
 
 ## Main definitions
 
-* `TauCeti.ContRepresentation.character`: the character `g ↦ trace (π g)` as an element of
+* `ContRepresentation.character`: the character `g ↦ trace (π g)` as an element of
   `C(G, 𝕜)`.
 
 ## Main statements
 
-* `TauCeti.ContRepresentation.character_one`: the character at the identity is the dimension.
-* `TauCeti.ContRepresentation.character_conj`: the character is a class function.
-* `TauCeti.ContRepresentation.star_character`: the conjugate of the character is the sum of the
+* `ContRepresentation.character_one`: the character at the identity is the dimension.
+* `ContRepresentation.character_conj`: the character is a class function.
+* `ContRepresentation.star_character`: the conjugate of the character is the sum of the
   diagonal matrix coefficients `∑ i, ⟪π g eᵢ, eᵢ⟫` in an orthonormal basis. The conjugation is not
   decoration: Mathlib's inner product is conjugate linear in its *first* argument, so the diagonal
   matrix coefficient `matrixCoeff π hπ eᵢ eᵢ` is `⟪π g eᵢ, eᵢ⟫`, whereas the diagonal entry of the
   matrix of `π g` in that basis, which the trace sums, is `⟪eᵢ, π g eᵢ⟫`.
-* `TauCeti.ContRepresentation.character_apply_inv`: the character of a unitary representation at an
+* `ContRepresentation.character_apply_inv`: the character of a unitary representation at an
   inverse is the conjugate of its value.
-* `TauCeti.ContRepresentation.norm_character_apply_le`: a unitary character is bounded by the
+* `ContRepresentation.norm_character_apply_le`: a unitary character is bounded by the
   dimension.
 * `ContRepresentation.continuous_character_mul_self`: the character read along the squaring map
   `g ↦ g * g` is continuous.
@@ -57,9 +57,7 @@ Only the trace is at stake in the sections without an inner product, so they ask
 scalars than that functional does: `𝕜` is a complete nontrivially normed field there, and becomes
 `RCLike` only where an orthonormal basis or unitarity enters.
 
-This is the character definition of Layer 6 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md);
-the `L²` theory and the orthogonality relations are in
+The `L²` theory and the orthogonality relations are in
 `TauCeti/RepresentationTheory/Compact/Character/Basic.lean`. Nothing here needs a group, a measure,
 or compactness, so it is stated over a topological monoid. The mathematical development follows
 Daniel Bump, *Lie Groups*, second edition, Chapter 2.
@@ -69,7 +67,7 @@ public section
 
 open scoped InnerProductSpace
 
-namespace TauCeti
+open TauCeti TauCeti.ContRepresentation
 
 namespace ContRepresentation
 
@@ -213,20 +211,7 @@ theorem character_apply_inv (hunitary : IsUnitary π) (g : G) :
 
 end GroupInner
 
-end ContRepresentation
-
-end TauCeti
-
-open TauCeti.ContRepresentation
-
-namespace ContRepresentation
-
-/-! ### The character along the squaring map
-
-The lemma below is declared in the **root** `ContRepresentation` namespace, unlike the rest of this
-file, so that `π.continuous_character_mul_self hπ` elaborates: `ContRepresentation` is Mathlib's
-type, and `scripts/lint-dot-notation.py` asks that new declarations about it not recreate its
-namespace inside `TauCeti`. -/
+/-! ### The character along the squaring map -/
 
 variable {𝕜 G V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [Monoid G]
   [TopologicalSpace G] [ContinuousMul G] [NormedAddCommGroup V] [NormedSpace 𝕜 V]

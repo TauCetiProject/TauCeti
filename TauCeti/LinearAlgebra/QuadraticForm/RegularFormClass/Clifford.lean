@@ -11,6 +11,8 @@ public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse
 import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
 import TauCeti.Algebra.BrauerGroup.Splitting
 import TauCeti.Algebra.Quaternion.Binary
+import TauCeti.Data.Nat.Choose.Lucas
+import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Even
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Quaternion
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Scaling
@@ -47,6 +49,14 @@ binary plane, the Clifford algebra of `⟨a, b⟩ ⊥ q` is `ℍ[K, a, b] ⊗ C(
 Clifford algebra of `q ⊥ ⟨a⟩` is `C(-a⁻¹ · q)`, so `c(x ⊥ ⟨a⟩) = c(⟨-a⟩ ⊗ x)` when `x` has even
 rank. In rank four the first gives `c⟨a, b, c, d⟩ = [(a, b)] · [(-abc, -abd)]`.
 
+Together with the orthogonal-sum and scaling formulas for the Hasse invariant, these recurrences
+give **Lam's comparison** (Lam V.3.20) in every rank: for a class of rank `n` and discriminant `d`,
+`c(q) = s(q) · [(-1, d)]^C(n-1,2) · [(-1,-1)]^C(n+1,4)`. Since every quaternion symbol is
+`2`-torsion, only the parities of the binomial exponents matter. On a class of rank `2m` with
+trivial signed discriminant, which is a class whose Witt class lies in the square of the
+fundamental ideal, the formula becomes `c(q) = s(q) · [(-1,-1)]^C(m,2)`. Lam (p. 120) cautions
+that the version of this formula published by C. T. C. Wall is incorrect.
+
 ## Main definitions
 
 * `TauCeti.RegularFormClass.cliffordInvariant`: the Clifford invariant of an isometry class of
@@ -77,14 +87,16 @@ rank. In rank four the first gives `c⟨a, b, c, d⟩ = [(a, b)] · [(-abc, -abd
 * `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul_of_rank_eq_three`: in rank
   three the Clifford invariant is the Hasse invariant times the discriminant and constant sign
   corrections from Lam V.3.20.
-* `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul_of_rank_le_three`: the exact
-  Lam V.3.20 formula simultaneously in every rank at most three.
+* `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul`: Lam's comparison of the
+  Clifford and Hasse invariants in every rank.
+* `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero`: its
+  form `c = s · [(-1,-1)]^C(m,2)` in rank `2m` with trivial signed discriminant.
 
 ## References
 
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields*, Graduate Studies in Mathematics 67,
   American Mathematical Society (2005), Chapter V, §2 (Theorems 2.4 and 2.5), Definition 3.12,
-  and Theorem 3.20.
+  Theorem 3.20, and the Caution on p. 120.
 -/
 
 public section
@@ -408,24 +420,187 @@ theorem cliffordInvariant_eq_hasseInvariant_mul_of_rank_eq_three {x : RegularFor
     rw [hw, cliffordInvariant_mk_ternary_eq_hasseInvariant_mul, discr_mk,
       hprod, BrauerGroup.quaternionClassOnSquareClasses_squareClass]
 
-/-- **Lam's exact Clifford--Hasse comparison in every rank at most three.** The correction
-exponents are `C(n-1,2)` and `C(n+1,4)`, the binomial-coefficient form of Lam V.3.20. Rank three
-is the first case in which either correction is nontrivial. -/
-theorem cliffordInvariant_eq_hasseInvariant_mul_of_rank_le_three {x : RegularFormClass K}
-    (hx : x.rank ≤ 3) :
+/-! ### Lam's comparison in every rank -/
+
+section Lam
+
+open BrauerGroup
+
+/-- The statement of Lam's comparison for a class `x`. -/
+private def LamFormula (x : RegularFormClass K) : Prop :=
+  cliffordInvariant x = hasseInvariant x *
+    quaternionClassOnSquareClasses (squareClass (-1 : Kˣ)) (discr x) ^ (rank x - 1).choose 2 *
+    quaternionClass (-1) (-1) ^ (rank x + 1).choose 4
+
+/-- The induction step of Lam's comparison in even rank: splitting off a binary plane. -/
+private theorem lamFormula_mk_binary_add (a b : Kˣ) {y : RegularFormClass K} (hy : Even y.rank)
+    (hy2 : 2 ≤ y.rank)
+    (ih : LamFormula (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -(a * b)⟩ * y)) :
+    LamFormula (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩ + y) := by
+  have hr : rank (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -(a * b)⟩ * y) = y.rank := by
+    rw [rank_mul, rank_mk, one_mul]
+  unfold LamFormula at ih ⊢
+  -- Expand both sides into `[(a, b)]`, `s(y)` and quaternion symbols in `-1`, `c = ab` and a
+  -- representative `δ` of `d(y)`.
+  rw [hasseInvariant_mk_rankOne_mul, discr_mk_rankOne_mul_of_even _ hy, hr] at ih
+  rw [cliffordInvariant_mk_binary_add a b hy, ih, hasseInvariant_add, discr_add, rank_add,
+    hasseInvariant_mk_binary, discr_mk, rank_mk]
+  obtain ⟨δ, hδ⟩ : ∃ δ : Kˣ, discr y = squareClass δ := ⟨_, (squareClass_toMul_out _).symm⟩
+  rw [hδ, Fin.prod_univ_two, ← squareClass_mul]
+  simp only [quaternionClassOnSquareClasses_squareClass]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
+  generalize a * b = c
+  rw [← neg_one_mul c]
+  simp only [quaternionClass_mul, quaternionClass_mul_left, quaternionClass_comm c (-1)]
+  -- Write the rank of `y` as `2(j + 1)` and abstract the four `2`-torsion symbols.
+  obtain ⟨j, hj⟩ : ∃ j, y.rank = 2 * (j + 1) := by
+    obtain ⟨k, hk⟩ := hy
+    exact ⟨k - 1, by omega⟩
+  rw [hj]
+  generalize hasseInvariant y = S
+  have e1 : 2 * (j + 1) - 1 = 2 * j + 1 := by omega
+  have e2 : 2 + 2 * (j + 1) - 1 = 2 * (j + 1) + 1 := by omega
+  have e3 : 2 + 2 * (j + 1) + 1 = 2 * (j + 2) + 1 := by omega
+  rw [e1, e2, e3]
+  have hu := quaternionClass_sq (-1 : Kˣ) (-1)
+  have hv := quaternionClass_sq (-1 : Kˣ) c
+  have hw := quaternionClass_sq (-1 : Kˣ) δ
+  have hz := quaternionClass_sq c δ
+  generalize quaternionClass (-1 : Kˣ) (-1) = u at hu ⊢
+  generalize quaternionClass (-1 : Kˣ) c = v at hv ⊢
+  generalize quaternionClass (-1 : Kˣ) δ = w at hw ⊢
+  generalize quaternionClass c δ = z at hz ⊢
+  generalize quaternionClass a b = P
+  -- The parities of the binomial exponents, by Lucas' theorem at the prime `2`.
+  have hA := Choose.choose_mul_mul_modEq_choose_nat (p := 2) (a := j + 1) (b := 1)
+  have hC := Choose.choose_mul_add_mul_modEq_choose_nat (p := 2) (a := j) (b := 1) one_lt_two
+  have hD := Choose.choose_mul_add_mul_modEq_choose_nat (p := 2) (a := j + 1) (b := 2) one_lt_two
+  have hE := Choose.choose_mul_add_mul_modEq_choose_nat (p := 2) (a := j + 1) (b := 1) one_lt_two
+  have hF := Choose.choose_mul_add_mul_modEq_choose_nat (p := 2) (a := j + 2) (b := 2) one_lt_two
+  have hP : (j + 2).choose 2 = (j + 1).choose 1 + (j + 1).choose 2 := Nat.choose_succ_succ' _ _
+  simp only [Nat.ModEq, mul_one, Nat.reduceMul, Nat.choose_one_right] at hA hC hD hE hF hP
+  rw [mul_assoc P S, mul_assoc P, mul_assoc P]
+  exact congrArg (P * ·) (mul_pow_eq_of_sq_eq_one hu hv hw hz (by unfold Nat.ModEq; omega)
+    (by unfold Nat.ModEq; omega) (by unfold Nat.ModEq; omega) (by unfold Nat.ModEq; omega))
+
+/-- The induction step of Lam's comparison in odd rank: splitting off a line. -/
+private theorem lamFormula_add_mk_rankOne (a : Kˣ) {y : RegularFormClass K} (hy : Even y.rank)
+    (hy2 : 2 ≤ y.rank)
+    (ih : LamFormula (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -a⟩ * y)) :
+    LamFormula (y + Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) := by
+  have hr : rank (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -a⟩ * y) = y.rank := by
+    rw [rank_mul, rank_mk, one_mul]
+  unfold LamFormula at ih ⊢
+  -- Expand both sides into `s(y)` and quaternion symbols in `-1`, `a` and a representative `δ`
+  -- of `d(y)`.
+  rw [hasseInvariant_mk_rankOne_mul, discr_mk_rankOne_mul_of_even _ hy, hr] at ih
+  rw [cliffordInvariant_add_mk_rankOne a hy, ih, hasseInvariant_add, discr_add, rank_add,
+    hasseInvariant_mk_rankOne, discr_mk, rank_mk, Fin.prod_univ_one, mul_one]
+  obtain ⟨δ, hδ⟩ : ∃ δ : Kˣ, discr y = squareClass δ := ⟨_, (squareClass_toMul_out _).symm⟩
+  rw [hδ, ← squareClass_mul]
+  simp only [quaternionClassOnSquareClasses_squareClass]
+  rw [← neg_one_mul a]
+  simp only [quaternionClass_mul, quaternionClass_mul_left, quaternionClass_comm a (-1),
+    quaternionClass_comm δ a]
+  -- Write the rank of `y` as `2(j + 1)` and abstract the four `2`-torsion symbols.
+  obtain ⟨j, hj⟩ : ∃ j, y.rank = 2 * (j + 1) := by
+    obtain ⟨k, hk⟩ := hy
+    exact ⟨k - 1, by omega⟩
+  rw [hj]
+  generalize hasseInvariant y = S
+  have hu := quaternionClass_sq (-1 : Kˣ) (-1)
+  have hv := quaternionClass_sq (-1 : Kˣ) a
+  have hw := quaternionClass_sq (-1 : Kˣ) δ
+  have hz := quaternionClass_sq a δ
+  generalize quaternionClass (-1 : Kˣ) (-1) = u at hu ⊢
+  generalize quaternionClass (-1 : Kˣ) a = v at hv ⊢
+  generalize quaternionClass (-1 : Kˣ) δ = w at hw ⊢
+  generalize quaternionClass a δ = z at hz ⊢
+  have e1 : 2 * (j + 1) - 1 = 2 * j + 1 := by omega
+  have e2 : 2 * (j + 1) + 1 - 1 = 2 * (j + 1) := by omega
+  have e3 : 2 * (j + 1) + 1 + 1 = 2 * (j + 2) := by omega
+  rw [e1, e2, e3, mul_comm w v]
+  -- The parities of the binomial exponents, by Lucas' theorem at the prime `2`.
+  have hA := Choose.choose_mul_mul_modEq_choose_nat (p := 2) (a := j + 1) (b := 1)
+  have hC := Choose.choose_mul_add_mul_modEq_choose_nat (p := 2) (a := j) (b := 1) one_lt_two
+  have hD := Choose.choose_mul_add_mul_modEq_choose_nat (p := 2) (a := j + 1) (b := 2) one_lt_two
+  have hF := Choose.choose_mul_mul_modEq_choose_nat (p := 2) (a := j + 2) (b := 2)
+  have hP : (j + 2).choose 2 = (j + 1).choose 1 + (j + 1).choose 2 := Nat.choose_succ_succ' _ _
+  simp only [Nat.ModEq, mul_one, Nat.reduceMul, Nat.choose_one_right] at hA hC hD hF hP
+  exact mul_pow_eq_of_sq_eq_one hu hv hw hz (by unfold Nat.ModEq; omega) rfl
+    (by unfold Nat.ModEq; omega) (by unfold Nat.ModEq; omega)
+
+/-- Lam's comparison holds in ranks at most two, where both correction exponents vanish. -/
+private theorem lamFormula_of_rank_le_two {x : RegularFormClass K} (hx : x.rank ≤ 2) :
+    LamFormula x := by
+  rw [LamFormula, cliffordInvariant_eq_hasseInvariant_of_rank_le_two hx,
+    Nat.choose_eq_zero_of_lt (by omega : x.rank - 1 < 2),
+    Nat.choose_eq_zero_of_lt (by omega : x.rank + 1 < 4), pow_zero, pow_zero, mul_one, mul_one]
+
+/-- Lam's comparison in even rank, by splitting off binary planes. -/
+private theorem lamFormula_of_rank_eq_two_mul (m : ℕ) :
+    ∀ x : RegularFormClass K, x.rank = 2 * m → LamFormula x := by
+  induction m with
+  | zero => exact fun x hx => lamFormula_of_rank_le_two (by omega)
+  | succ m ih =>
+    intro x hx
+    rcases Nat.eq_zero_or_pos m with rfl | hm
+    · exact lamFormula_of_rank_le_two (by omega)
+    obtain ⟨a, b, y, hy, rfl⟩ := exists_eq_mk_binary_add (x := x) (by omega)
+    exact lamFormula_mk_binary_add a b ⟨m, by omega⟩ (by omega)
+      (ih _ (by rw [rank_mul, rank_mk, one_mul]; omega))
+
+/-- **Lam's comparison of the Clifford and Hasse invariants** (Lam V.3.20). For a class of
+rank `n` with discriminant `d`, `c(q) = s(q) · [(-1, d)]^C(n-1,2) · [(-1,-1)]^C(n+1,4)`, where
+`C(n-1,2) = (n-1)(n-2)/2` and `C(n+1,4) = (n+1)n(n-1)(n-2)/24`. -/
+theorem cliffordInvariant_eq_hasseInvariant_mul (x : RegularFormClass K) :
     cliffordInvariant x = hasseInvariant x *
-      BrauerGroup.quaternionClassOnSquareClasses (squareClass (-1 : Kˣ)) (discr x) ^
+      quaternionClassOnSquareClasses (squareClass (-1 : Kˣ)) (discr x) ^
         (x.rank - 1).choose 2 *
-      BrauerGroup.quaternionClass (-1) (-1) ^ (x.rank + 1).choose 4 := by
-  interval_cases hrank : x.rank
-  · rw [cliffordInvariant_eq_hasseInvariant_of_rank_le_two (by omega)]
-    simp [Nat.choose_eq_zero_of_lt]
-  · rw [cliffordInvariant_eq_hasseInvariant_of_rank_le_two (by omega)]
-    simp [Nat.choose_eq_zero_of_lt]
-  · rw [cliffordInvariant_eq_hasseInvariant_of_rank_le_two (by omega)]
-    simp
-  · rw [cliffordInvariant_eq_hasseInvariant_mul_of_rank_eq_three hrank]
-    norm_num [Nat.choose_eq_zero_of_lt]
+      quaternionClass (-1) (-1) ^ (x.rank + 1).choose 4 := by
+  rcases Nat.even_or_odd' x.rank with ⟨m, hm | hm⟩
+  · exact lamFormula_of_rank_eq_two_mul m x hm
+  rcases Nat.eq_zero_or_pos m with rfl | hm0
+  · exact lamFormula_of_rank_le_two (by omega)
+  obtain ⟨a, y, hy, rfl⟩ := exists_eq_add_mk_rankOne (x := x) (by omega)
+  exact lamFormula_add_mk_rankOne a ⟨m, by omega⟩ (by omega)
+    (lamFormula_of_rank_eq_two_mul m _ (by rw [rank_mul, rank_mk, one_mul]; omega))
+
+/-- **Lam's comparison on the square of the fundamental ideal.** For a class of rank `2m` with
+trivial signed discriminant, `c(q) = s(q) · [(-1,-1)]^C(m,2)`: the discriminant correction in
+`TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul` cancels. These are the classes
+whose Witt class lies in the square of the fundamental ideal
+(`TauCeti.wittClass_mem_fundamentalIdeal_sq_iff`). -/
+theorem cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero {x : RegularFormClass K}
+    {m : ℕ} (hx : x.rank = 2 * m) (hd : signedDiscr x = 0) :
+    cliffordInvariant x = hasseInvariant x * quaternionClass (-1) (-1) ^ m.choose 2 := by
+  have hdx : discr x = (2 * m).choose 2 • squareClass (-1 : Kˣ) := by
+    rw [signedDiscr_eq_sign_add_discr, hx] at hd
+    rw [← ZModModule.neg_eq_self ((2 * m).choose 2 • squareClass (-1 : Kˣ))]
+    exact eq_neg_of_add_eq_zero_right hd
+  have hpow (N : ℕ) : quaternionClass (-1 : Kˣ) ((-1) ^ N) = quaternionClass (-1) (-1) ^ N := by
+    induction N with
+    | zero => rw [pow_zero, pow_zero, quaternionClass_one_right]
+    | succ N ih => rw [pow_succ, quaternionClass_mul, ih, pow_succ]
+  rw [cliffordInvariant_eq_hasseInvariant_mul, hx, hdx, ← squareClass_pow,
+    quaternionClassOnSquareClasses_squareClass, hpow, ← pow_mul, mul_assoc, ← pow_add]
+  congr 1
+  refine pow_eq_pow_of_modEq ?_ (quaternionClass_sq _ _)
+  rcases m with _ | k
+  · rfl
+  have hN := Choose.choose_mul_mul_modEq_choose_nat (p := 2) (a := k + 1) (b := 1)
+  have hC := Choose.choose_mul_add_mul_modEq_choose_nat (p := 2) (a := k) (b := 1) one_lt_two
+  have hD := Choose.choose_mul_add_mul_modEq_choose_nat (p := 2) (a := k + 1) (b := 2) one_lt_two
+  simp only [mul_one, Nat.reduceMul, Nat.choose_one_right] at hN hC hD
+  have hk : 2 * (k + 1) - 1 = 2 * k + 1 := by omega
+  rw [hk]
+  refine (Nat.ModEq.add (Nat.ModEq.mul hN hC) hD).trans ?_
+  obtain ⟨t, ht⟩ := Nat.even_mul_succ_self k
+  rw [mul_comm, ht]
+  unfold Nat.ModEq
+  omega
+
+end Lam
 
 /-- The hyperbolic plane has trivial Clifford invariant: its Clifford algebra `ℍ[K, 1, -1]` is
 split. -/

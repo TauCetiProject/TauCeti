@@ -962,6 +962,15 @@ theorem mem_cIco_of_mem_cIco_of_mem_cIoo {A B C s : Fin n}
   rw [← hunion]
   exact Finset.mem_union.mpr (Or.inl hmem)
 
+/-- If `s` lies in the half-open cyclic interval from `A` to `C` and `s'` lies strictly between
+`s` and `C`, then the closed cyclic interval from `s` to `s'` lies in the one from `A` to `C`. -/
+theorem insert_cIco_subset_cIco {A C s s' : Fin n} (hs : s ∈ cIco A C) (hs' : s' ∈ cIoo s C) :
+    insert s' (cIco s s') ⊆ cIco A C := by
+  intro r hr
+  have hr' : r = s' ∨ r ∈ cIco s s' := Finset.mem_insert.mp hr
+  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hs hs' hr' ⊢
+  split_ifs at hs hs' hr' ⊢ <;> omega
+
 /-- A point is never in the half-open cyclic interval starting at its own successor.
 Going clockwise from `c + 1`, the point `c` is the last point reached — only after a full
 cycle. The half-open arc `cIco (c + 1) r` stops before `r`, hence before completing the
