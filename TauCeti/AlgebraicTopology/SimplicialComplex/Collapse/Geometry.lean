@@ -25,7 +25,7 @@ with a complex obtained by adding singletons. Thus deleting a free vertex is inc
 Only a nonempty facet and its upper face are needed for the local result; freeness is
 needed when extending it to the whole complex.
 
-The deformation transports `Convexity.StdSimplex.hornDeformation` through
+The deformation transports `Convexity.StdSimplex.hornDeformationRetraction` through
 `Finset.standardSimplexHomeomorph`, reusing the existing barycentric horn retraction.
 
 ## References
@@ -100,28 +100,30 @@ theorem exists_strong_deformation_retraction_simplex_deletion (K : PreAbstractSi
       refine ⟨v.1, ?_, hxv⟩
       rw [← hσ, Finset.mem_erase]
       exact ⟨fun h => hv (Subtype.ext h), v.2⟩
-  -- Transport the existing horn deformation, retaining its pointwise fixed-subset law.
-  let d : unitInterval × StandardSimplex τ → StandardSimplex τ := fun p =>
-    e.symm (Convexity.StdSimplex.hornDeformation a' p.1 (e p.2))
-  have hd : Continuous d := e.symm.continuous.comp
-    ((Convexity.StdSimplex.continuous_hornDeformation a').comp
-      (continuous_fst.prodMk (e.continuous.comp continuous_snd)))
-  have hd0 (x : StandardSimplex τ) : d (0, x) = x := by
-    simp [d]
-  have hdS (t : unitInterval) (x : StandardSimplex τ) (hx : x ∈ S) : d (t, x) = x := by
-    simp [d, Convexity.StdSimplex.hornDeformation_of_mem ((hS x).mp hx)]
-  have hd1 (x : StandardSimplex τ) : d (1, x) ∈ S := by
-    apply (hS _).mpr
-    simpa [d] using Convexity.StdSimplex.hornDeformation_one_mem a' (e x)
-  let r : C(StandardSimplex τ, S) :=
-    ⟨fun x => ⟨d (1, x), hd1 x⟩,
-      (hd.comp (continuous_const.prodMk continuous_id)).subtype_mk _⟩
-  refine ⟨r, fun x => Subtype.ext (hdS 1 x x.2), ⟨?_⟩⟩
-  exact
-    { toFun := d
-      continuous_toFun := hd
-      map_zero_left := hd0
-      map_one_left := fun _ => rfl
-      prop' := hdS }
+  -- Conjugate the bundled horn retraction and transport its relative homotopy.
+  let eS := e.subtype hS
+  let r := (eS.symm : C(Convexity.StdSimplex.horn a', S)).comp
+    ((Convexity.StdSimplex.hornRetraction a').comp
+      (e : C(StandardSimplex τ, Convexity.StdSimplex ℝ τ)))
+  have hr (x : S) : r x = x := by
+    have h := Convexity.StdSimplex.hornRetraction_apply_coe a' (eS x)
+    simpa only [r, ContinuousMap.comp_apply, ContinuousMap.coe_coe,
+      eS, Homeomorph.subtype_apply_coe, Homeomorph.symm_apply_apply] using congrArg eS.symm h
+  let H := (Convexity.StdSimplex.hornDeformationRetraction a').compContinuousMap
+    (e.symm : C(Convexity.StdSimplex ℝ τ, StandardSimplex τ))
+  refine ⟨r, hr, ⟨?_⟩⟩
+  refine
+    { toHomotopy := (H.toHomotopy.compContinuousMap
+        (e : C(StandardSimplex τ, Convexity.StdSimplex ℝ τ))).cast ?_ ?_
+      prop' := ?_ }
+  · simpa only [ContinuousMap.comp_id] using e.symm_comp_toContinuousMap
+  · ext x
+    rfl
+  · intro t x hx
+    -- The relative-homotopy field uses `toFun`, so the application simp lemmas do not match.
+    -- Express the cast and precomposition as an application of the transported homotopy.
+    change H (t, e x) = x
+    simpa only [ContinuousMap.comp_apply, ContinuousMap.coe_coe,
+      ContinuousMap.id_apply, Homeomorph.symm_apply_apply] using H.eq_fst t ((hS x).mp hx)
 
 end PreAbstractSimplicialComplex
