@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.MaximalProP
 public import TauCeti.Topology.Algebra.Group.TopologicalAbelianization
+public import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.Lift
 public import TauCeti.Topology.Algebra.GroupAction.TypeTags
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 
@@ -38,6 +39,8 @@ representatives, after passing to the abelianization.
 
 * `TauCeti.abelianizationProPMk_apply`: the canonical map is the composite of the two quotient
   maps.
+* `TauCeti.eq_one_of_maximalProPQuotient_mk_eq_one`: every continuous homomorphism to a
+  commutative pro-`p` group kills the elements that die in the maximal pro-`p` abelian quotient.
 * `TauCeti.continuous_abelianizationProPMk`: the canonical map is continuous.
 * `TauCeti.abelianizationProPMk_conj`: the canonical map is equivariant for conjugation.
 * `TauCeti.abelianizationProPFactorSet_mem_Z2`: the factor set is a continuous `2`-cocycle when
@@ -58,6 +61,18 @@ open ContCohomology
 universe u
 
 variable (p : ℕ) (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+variable {p G} {A : Type*} [CommGroup A] [TopologicalSpace A] [IsTopologicalGroup A]
+  [T1Space A] [CompactSpace A] [TotallyDisconnectedSpace A] in
+/-- Every continuous homomorphism from `G` to a commutative pro-`p` group kills the elements
+that die in the maximal pro-`p` quotient of the topological abelianization of `G`. -/
+theorem eq_one_of_maximalProPQuotient_mk_eq_one (hA : IsProP p A) (f : G →ₜ* A) {g : G}
+    (hg : maximalProPQuotient.mk p (TopologicalAbelianization G)
+      (g : TopologicalAbelianization G) = 1) : f g = 1 := by
+  let fab := TopologicalAbelianization.lift f
+  have h := congrArg (maximalProPQuotient.lift hA fab.toMonoidHom fab.continuous) hg
+  rw [maximalProPQuotient.mk_apply, maximalProPQuotient.lift_mk, map_one] at h
+  exact (TopologicalAbelianization.lift_mk f g).symm.trans h
 
 /-- The maximal pro-`p` quotient `V^ab(p)` of the topological abelianization of `V`. -/
 abbrev abelianizationProP (V : Subgroup G) : Type u :=

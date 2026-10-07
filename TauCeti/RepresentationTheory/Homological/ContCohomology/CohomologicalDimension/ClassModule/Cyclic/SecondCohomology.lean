@@ -8,10 +8,10 @@ module
 public import Mathlib.GroupTheory.PGroup
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Basic
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Transfer.StrictDimension
 import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteCyclic
 import TauCeti.Algebra.GroupAction.TypeTags
-import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.Lift
 
 /-!
 # The class of the pro-p class module generates `H²` for a cyclic quotient
@@ -64,22 +64,6 @@ universe u
 variable {p : ℕ} {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] {V : Subgroup G} [V.Normal]
 
-/-- An element of `G` that dies in `G^ab(p)` lies in the open normal subgroup `V` when `G ⧸ V`
-is a commutative `p`-group: the quotient map to the finite discrete group `G ⧸ V` factors through
-`G^ab(p)`. -/
-private theorem mem_of_maximalProPQuotient_mk_eq_one (hV : IsOpen (V : Set G))
-    (hpV : IsPGroup p (G ⧸ V)) [IsMulCommutative (G ⧸ V)] {g : G}
-    (hg : maximalProPQuotient.mk p (TopologicalAbelianization G)
-      (g : TopologicalAbelianization G) = 1) : g ∈ V := by
-  have : Finite (G ⧸ V) := V.quotient_finite_of_isOpen hV
-  have : DiscreteTopology (G ⧸ V) := QuotientGroup.discreteTopology hV
-  let : CommGroup (G ⧸ V) := { mul_comm := IsMulCommutative.is_comm.comm }
-  let π : G →ₜ* G ⧸ V := ⟨QuotientGroup.mk' V, QuotientGroup.continuous_mk⟩
-  let πab := TopologicalAbelianization.lift π
-  have h := congrArg (maximalProPQuotient.lift hpV.isProP πab.toMonoidHom πab.continuous) hg
-  rw [maximalProPQuotient.mk_apply, maximalProPQuotient.lift_mk, map_one] at h
-  exact (QuotientGroup.eq_one_iff g).mp ((TopologicalAbelianization.lift_mk π g).symm.trans h)
-
 section FiniteIndex
 
 variable [TotallyDisconnectedSpace G] [V.FiniteIndex]
@@ -129,6 +113,7 @@ private theorem transferModNorm_surjective (hp : p.Prime)
     (h : strictCohomologicalDimensionAt.{u} p G ≤ 2) (hV : IsOpen (V : Set G)) :
     Function.Surjective (transferModNorm (p := p) (V := V)) := by
   intro y
+  obtain ⟨y, rfl⟩ := Multiplicative.ofAdd.surjective y
   induction y using QuotientAddGroup.induction_on with
   | H x =>
     have hx : x.val.toMul ∈ (abelianizationProPTransfer p G V).range := by
@@ -136,7 +121,8 @@ private theorem transferModNorm_surjective (hp : p.Prime)
       intro q
       rw [← Additive.toMul_smul, (FixedPoints.mem_addSubgroup _ _ _).1 x.property q]
     obtain ⟨g, hg⟩ := hx
-    exact ⟨g, congrArg (Multiplicative.ofAdd ∘ QuotientAddGroup.mk) (Subtype.ext hg)⟩
+    exact ⟨g, congrArg Multiplicative.ofAdd
+      (congrArg QuotientAddGroup.mk (Subtype.ext hg))⟩
 
 /-- Under `scd_p G ≤ 2`, for a commutative `p`-group quotient `G ⧸ V`, the kernel of
 `transferModNorm` is `V`: on `V` the transfer is a norm, and if `Ver g = N [v] = Ver v` then
@@ -153,8 +139,12 @@ private theorem transferModNorm_eq_one_iff (hp : p.Prime)
     rw [← ofMul_toMul a, ← hv, groupNorm_ofMul_abelianizationProPMk] at ha
     have hVer : abelianizationProPTransfer p G V (g * (v : G)⁻¹) = 1 := by
       rw [map_mul, map_inv, ← Additive.ofMul.injective ha, mul_inv_cancel]
-    have hgv := mem_of_maximalProPQuotient_mk_eq_one hV hpV
+    let : DiscreteTopology (G ⧸ V) := QuotientGroup.discreteTopology hV
+    let : CommGroup (G ⧸ V) := { mul_comm := IsMulCommutative.is_comm.comm }
+    let π : G →ₜ* G ⧸ V := ⟨QuotientGroup.mk' V, QuotientGroup.continuous_mk⟩
+    have hπ := eq_one_of_maximalProPQuotient_mk_eq_one hpV.isProP π
       ((abelianizationProPTransfer_eq_one_iff hp h hV _).mp hVer)
+    have hgv := (QuotientGroup.eq_one_iff _).mp hπ
     exact (V.mul_mem_cancel_right (V.inv_mem v.property)).mp hgv
   · intro hg
     exact ⟨_, groupNorm_ofMul_abelianizationProPMk ⟨g, hg⟩⟩
@@ -168,15 +158,17 @@ private noncomputable def quotientEquivTransferModNorm (hp : p.Prime)
       (groupNorm (G ⧸ V) (Additive (abelianizationProP p G V))).range.addSubgroupOf
         (H0 (G ⧸ V) (Additive (abelianizationProP p G V)))) :=
   (QuotientGroup.quotientMulEquivOfEq
-      (SetLike.ext (transferModNorm_eq_one_iff hp h hV hpV))).symm.trans
+      (SetLike.ext fun g ↦ (transferModNorm_eq_one_iff hp h hV hpV g).symm)).trans
     (QuotientGroup.quotientKerEquivOfSurjective _ (transferModNorm_surjective hp h hV))
 
 /-- `quotientEquivTransferModNorm` sends the class of `g` to `transferModNorm g`. -/
 private theorem quotientEquivTransferModNorm_mk (hp : p.Prime)
     (h : strictCohomologicalDimensionAt.{u} p G ≤ 2) (hV : IsOpen (V : Set G))
     (hpV : IsPGroup p (G ⧸ V)) [IsMulCommutative (G ⧸ V)] (g : G) :
-    quotientEquivTransferModNorm hp h hV hpV g = transferModNorm g :=
-  (rfl)
+    quotientEquivTransferModNorm hp h hV hpV g = transferModNorm g := by
+  simp only [quotientEquivTransferModNorm, MulEquiv.trans_apply,
+    QuotientGroup.quotientMulEquivOfEq_mk,
+    TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
 
 omit [CompactSpace G] [TotallyDisconnectedSpace G] in
 /-- Under the cyclic `H²` computation at a generator `σ`, the class `u_{G/V}(p)` goes to the
