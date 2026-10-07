@@ -38,6 +38,8 @@ Gorenstein.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.one_le_traceDual`: the order lies in its trace dual.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.multiplierRing_traceDual`: the trace dual is a
   proper fractional ideal.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.isGorenstein_iff`: an order is Gorenstein exactly
+  when its trace dual is invertible.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.isGorenstein_of_isDedekindDomain`: an order that is
   a Dedekind domain is Gorenstein.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.isGorenstein_maximalNumberFieldOrder`: the maximal
@@ -186,6 +188,7 @@ theorem multiplierRing_traceDual (O : NumberFieldOrder K) :
   exact z.property
 
 /-- The trace dual is a proper fractional ideal. -/
+@[simp]
 theorem isProperFractionalIdeal_traceDual (O : NumberFieldOrder K) :
     O.IsProperFractionalIdeal O.traceDual := by
   rw [O.isProperFractionalIdeal_def]
@@ -195,6 +198,10 @@ theorem isProperFractionalIdeal_traceDual (O : NumberFieldOrder K) :
 structure IsGorenstein (O : NumberFieldOrder K) : Prop where
   /-- The trace dual of a Gorenstein order is invertible. -/
   isUnit_traceDual : IsUnit O.traceDual
+
+/-- An order is Gorenstein exactly when its trace-dual fractional ideal is invertible. -/
+theorem isGorenstein_iff (O : NumberFieldOrder K) : O.IsGorenstein ↔ IsUnit O.traceDual :=
+  ⟨IsGorenstein.isUnit_traceDual, IsGorenstein.mk⟩
 
 /-- An order that is a Dedekind domain is Gorenstein, since every nonzero fractional ideal of a
 Dedekind domain is invertible. -/
