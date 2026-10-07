@@ -45,14 +45,6 @@ namespace PreAbstractSimplicialComplex
 variable {ι : Type*} [DecidableEq ι] {K : PreAbstractSimplicialComplex ι}
   {σ τ : Finset ι} {v w : ι} {n : ℕ}
 
-/-- A fresh vertex of a complex is absent from every vertex link. -/
-theorem notMem_link_of_notMem (hv : ({v} : Finset ι) ∉ K) {w : ι} :
-    ({v} : Finset ι) ∉ link K {w} := by
-  intro h
-  obtain ⟨-, -, hface⟩ := mem_link_nonempty.mp h
-  apply hv
-  exact (K.isRelLowerSet_faces hface).2 (by simp) (by simp)
-
 /-- The link of a face avoiding the starring vertex is the stellar subdivision of its old link
 at the part of the starred set outside that face. No face or freshness hypotheses are required;
 in particular, a removed face has void link on both sides. -/
