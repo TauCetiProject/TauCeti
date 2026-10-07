@@ -839,7 +839,7 @@ theorem quotientMapOfLe_surjective (H : FiniteTypeCommHopfAlgCat.{u, v} R)
 
 /-- Composing the finite-type quotient map `H ⟶ H ⧸ I` with the quotient-to-quotient
 morphism for `I ≤ J` gives the quotient map `H ⟶ H ⧸ J`. -/
-@[simp]
+@[reassoc (attr := simp)]
 lemma mkQuotient_comp_quotientMapOfLe (H : FiniteTypeCommHopfAlgCat.{u, v} R)
     {I J : HopfIdeal R H} (hIJ : I ≤ J) :
     mkQuotient H I ≫ quotientMapOfLe H hIJ = mkQuotient H J := by
