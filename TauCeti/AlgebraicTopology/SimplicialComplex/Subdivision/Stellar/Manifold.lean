@@ -16,9 +16,8 @@ step, leaving the link of the new vertex as an explicit hypothesis. The hypothes
 remaining local calculation: once it is supplied, every vertex link in the subdivision has the
 required type.
 
-This is the local combinatorial prerequisite for the Layer 11 reconciliation of combinatorial
-manifolds with PL manifolds. The new-vertex link calculation is kept separate because its proof is
-the geometric boundary-of-a-closed-star argument.
+The new-vertex link calculation is kept separate because its proof is the geometric
+boundary-of-a-closed-star argument.
 -/
 
 public section
@@ -29,13 +28,6 @@ namespace PreAbstractSimplicialComplex
 
 variable {ι : Type*} [DecidableEq ι] {K : PreAbstractSimplicialComplex ι}
   {σ : Finset ι} {v : ι} {n : ℕ}
-
-private theorem notMem_link_of_notMem (hv : ({v} : Finset ι) ∉ K) {w : ι} :
-    ({v} : Finset ι) ∉ link K {w} := by
-  intro h
-  obtain ⟨-, -, hface⟩ := mem_link_nonempty.mp h
-  apply hv
-  exact (K.isRelLowerSet_faces hface).2 (by simp) (by simp)
 
 /-- A stellar subdivision preserves a zero-dimensional combinatorial manifold once the new
 vertex has void link. -/
