@@ -219,22 +219,23 @@ theorem exists_evenQuaternionEquiv_of_finrank_eq_four_of_isField_center
   congr 1
   exact (fEquiv.apply_symm_apply x).symm
 
-/-- A chosen quaternion model over the center identifies a regular quaternary Spin group with the
-unitary, equivalently norm-one, group of that quaternion algebra. -/
+/-- In positive dimension at most four, a chosen quaternion model over the center identifies the
+Spin group with the unitary, equivalently norm-one, group of that quaternion algebra. -/
 noncomputable def spinGroupEquivQuaternionUnitaryOverCenter
-    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV : finrank K V = 4)
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV0 : 0 < finrank K V)
+    (hV : finrank K V ≤ 4)
     {a b : Subalgebra.center K (even Q)}
     (e : even Q ≃ₐ[Subalgebra.center K (even Q)]
       ℍ[Subalgebra.center K (even Q),a,0,b])
     (he : ∀ x, e (reverseEven Q x) = star (e x)) :
     spinGroup Q ≃* unitary ℍ[Subalgebra.center K (even Q),a,0,b] := by
-  let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  let _ : FiniteDimensional K V := Module.finite_of_finrank_pos hV0
   let eK : even Q ≃ₐ[K] ℍ[Subalgebra.center K (even Q),a,0,b] :=
     @AlgEquiv.restrictScalars K (Subalgebra.center K (even Q)) (even Q)
       ℍ[Subalgebra.center K (even Q),a,0,b]
       _ _ _ _ _ _ _ _ _ Subalgebra.isScalarTower_centerAlgebra (by infer_instance) e
   exact spinGroupEquivUnitaryOfAlgEquivOfFinrankLeFour
-    Q hQ (by omega) (by omega) eK (fun x ↦ by
+    Q hQ hV0 hV eK (fun x ↦ by
       -- Restricting scalars changes only the bundled algebra map, so its value is definitionally
       -- the value of the center-linear equivalence `e` used by the supplied involution equation.
       change e (reverseEven Q x) = star (e x)
@@ -244,15 +245,16 @@ noncomputable def spinGroupEquivQuaternionUnitaryOverCenter
 even Clifford element. -/
 @[simp]
 theorem coe_spinGroupEquivQuaternionUnitaryOverCenter_apply
-    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV : finrank K V = 4)
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV0 : 0 < finrank K V)
+    (hV : finrank K V ≤ 4)
     {a b : Subalgebra.center K (even Q)}
     (e : even Q ≃ₐ[Subalgebra.center K (even Q)]
       ℍ[Subalgebra.center K (even Q),a,0,b])
     (he : ∀ x, e (reverseEven Q x) = star (e x)) (s : spinGroup Q) :
-    (spinGroupEquivQuaternionUnitaryOverCenter Q hQ hV e he s :
+    (spinGroupEquivQuaternionUnitaryOverCenter Q hQ hV0 hV e he s :
         ℍ[Subalgebra.center K (even Q),a,0,b]) =
       e (evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q s)) := by
-  let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  let _ : FiniteDimensional K V := Module.finite_of_finrank_pos hV0
   rw [spinGroupEquivQuaternionUnitaryOverCenter,
     coe_spinGroupEquivUnitaryOfAlgEquivOfFinrankLeFour_apply]
   rfl
@@ -261,34 +263,36 @@ theorem coe_spinGroupEquivQuaternionUnitaryOverCenter_apply
 center-linear quaternion model. -/
 @[simp]
 theorem coe_spinGroupEquivQuaternionUnitaryOverCenter_symm_apply
-    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV : finrank K V = 4)
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV0 : 0 < finrank K V)
+    (hV : finrank K V ≤ 4)
     {a b : Subalgebra.center K (even Q)}
     (e : even Q ≃ₐ[Subalgebra.center K (even Q)]
       ℍ[Subalgebra.center K (even Q),a,0,b])
     (he : ∀ x, e (reverseEven Q x) = star (e x))
     (q : unitary ℍ[Subalgebra.center K (even Q),a,0,b]) :
-    ((spinGroupEquivQuaternionUnitaryOverCenter Q hQ hV e he).symm q : CliffordAlgebra Q) =
+    ((spinGroupEquivQuaternionUnitaryOverCenter Q hQ hV0 hV e he).symm q :
+        CliffordAlgebra Q) =
       (e.symm (q : ℍ[Subalgebra.center K (even Q),a,0,b]) : CliffordAlgebra Q) := by
-  let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  let _ : FiniteDimensional K V := Module.finite_of_finrank_pos hV0
   rw [spinGroupEquivQuaternionUnitaryOverCenter,
     coe_spinGroupEquivUnitaryOfAlgEquivOfFinrankLeFour_symm_apply]
   rfl
 
-/-- The quaternion attached to a quaternary Spin element by a chosen center-linear model has norm
-one. This is a pre-simp lemma so it fires before the forward coercion equation rewrites its
-quaternion argument and erases the model hypotheses from the expression. -/
+/-- The quaternion attached to a Spin element by a chosen center-linear model has norm one. -/
+-- Use pre-simp so this fires before the forward coercion equation erases the model hypotheses.
 @[simp↓]
 theorem normForm_spinGroupEquivQuaternionUnitaryOverCenter
-    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV : finrank K V = 4)
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV0 : 0 < finrank K V)
+    (hV : finrank K V ≤ 4)
     {a b : Subalgebra.center K (even Q)}
     (e : even Q ≃ₐ[Subalgebra.center K (even Q)]
       ℍ[Subalgebra.center K (even Q),a,0,b])
     (he : ∀ x, e (reverseEven Q x) = star (e x)) (s : spinGroup Q) :
     QuaternionAlgebra.normForm a 0 b
-      (spinGroupEquivQuaternionUnitaryOverCenter Q hQ hV e he s :
+      (spinGroupEquivQuaternionUnitaryOverCenter Q hQ hV0 hV e he s :
         ℍ[Subalgebra.center K (even Q),a,0,b]) = 1 :=
   (QuaternionAlgebra.mem_unitary_iff_normForm_eq_one _ _ _ _).mp
-    (spinGroupEquivQuaternionUnitaryOverCenter Q hQ hV e he s).2
+    (spinGroupEquivQuaternionUnitaryOverCenter Q hQ hV0 hV e he s).2
 
 /-- Every regular quaternary Spin group whose even-Clifford center is a field is isomorphic to the
 norm-one group of a quaternion algebra over that center. -/
@@ -300,7 +304,7 @@ theorem exists_spinGroupEquivQuaternionUnitaryOverCenter_of_finrank_eq_four
         unitary ℍ[Subalgebra.center K (even Q),(a : _),0,(b : _)]) := by
   obtain ⟨a, b, e, he⟩ :=
     exists_evenQuaternionEquiv_of_finrank_eq_four_of_isField_center Q hQ hV hfield
-  exact ⟨a, b, ⟨spinGroupEquivQuaternionUnitaryOverCenter Q hQ hV e he⟩⟩
+  exact ⟨a, b, ⟨spinGroupEquivQuaternionUnitaryOverCenter Q hQ (by omega) (by omega) e he⟩⟩
 
 end CliffordAlgebra
 
