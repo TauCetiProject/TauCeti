@@ -5,7 +5,7 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.GroupTheory.Perm.Certificates.RuntimeVerifier
+public import TauCeti.GroupTheory.Perm.Certificates.Runtime.Verifier
 public import TauCeti.GroupTheory.Perm.Certificates.Search
 
 /-!

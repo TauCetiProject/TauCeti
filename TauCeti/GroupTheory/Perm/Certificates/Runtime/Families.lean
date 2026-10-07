@@ -6,8 +6,8 @@ Authors: Vincent Quenneville-Belair
 module
 
 public import TauCeti.GroupTheory.Perm.Certificates.FamilyTables
-public import TauCeti.GroupTheory.Perm.Certificates.RuntimeWriter
-public import TauCeti.GroupTheory.Perm.Certificates.RuntimeEndToEnd
+public import TauCeti.GroupTheory.Perm.Certificates.Runtime.Writer
+public import TauCeti.GroupTheory.Perm.Certificates.Runtime.EndToEnd
 
 /-!
 # Uniform polynomial-time generators for the explicit successful families

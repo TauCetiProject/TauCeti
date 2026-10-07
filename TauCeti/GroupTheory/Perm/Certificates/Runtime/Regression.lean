@@ -5,7 +5,7 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.GroupTheory.Perm.Certificates.RuntimeFamilies
+public import TauCeti.GroupTheory.Perm.Certificates.Runtime.Families
 public import TauCeti.GroupTheory.Perm.Certificates.Regression
 public meta import TauCeti.GroupTheory.Perm.Certificates.RuntimeFamilies
 public meta import TauCeti.GroupTheory.Perm.Certificates.Regression

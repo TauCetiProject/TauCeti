@@ -5,8 +5,8 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.Computability.TuringMachine.PolyTimeWriter
-public import TauCeti.GroupTheory.Perm.Certificates.RuntimeWireErasure
+public import TauCeti.Computability.TuringMachine.PolyTime.Writer
+public import TauCeti.GroupTheory.Perm.Certificates.Runtime.Wire.Erasure
 
 /-!
 # Uniform polynomial-time certificate serialization

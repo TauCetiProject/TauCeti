@@ -5,9 +5,9 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.Computability.TuringMachine.PolyTimeWriter
+public import TauCeti.Computability.TuringMachine.PolyTime.Writer
 public import TauCeti.GroupTheory.Perm.Certificates.Families
-public import TauCeti.GroupTheory.Perm.Certificates.Tables
+public import TauCeti.GroupTheory.Perm.Certificates.Tables.Basic
 
 /-!
 # Uniform polynomial-time tables for the successful families
