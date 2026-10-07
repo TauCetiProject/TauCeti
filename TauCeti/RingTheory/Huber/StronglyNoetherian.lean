@@ -51,6 +51,9 @@ discrete case below is proved through it.
   `TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate` read as a statement about the
   predicate; `[IsHuberRing A]` is what that isomorphism asks of the base, and the predicate itself
   does not.
+* `TauCeti.Huber.IsStronglyNoetherian.weightedRestrictedSubring_one_weight`: the same for the
+  uncompleted restricted-series ring whenever it is complete and Hausdorff — over a complete
+  Hausdorff base, for instance — since it is then its own completion.
 * `TauCeti.Huber.isNoetherianRing_completion_of_isStronglyNoetherian`: the zero-variable
   *consequence* of the predicate — strong noetherianness quantifies over every `k`, and its
   `k = 0` component says the separated completion `Â` is noetherian. The identification behind it,
@@ -267,6 +270,22 @@ theorem isStronglyNoetherian_congr (e : A ≃+* B) (he : Continuous e) (he' : Co
   · exact isNoetherianRing_of_ringEquiv _ (restrictedMvPowerSeriesCompletionCongr e he he' k).symm
 
 end Transport
+
+/-- **Strong noetherianity passes to the restricted power-series ring itself** whenever that ring is
+complete and Hausdorff, as it is over a complete Hausdorff base: it is then its own completion
+`A⟨X₁,…,Xₖ⟩` (`restrictedMvPowerSeriesCompletionEquiv`, bicontinuous), which is strongly noetherian
+over a strongly noetherian Huber base. -/
+instance IsStronglyNoetherian.weightedRestrictedSubring_one_weight [IsHuberRing A]
+    [IsStronglyNoetherian A]
+    [CompleteSpace (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight)]
+    [T0Space (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight)] :
+    IsStronglyNoetherian
+      (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :=
+  (isStronglyNoetherian_congr (restrictedMvPowerSeriesCompletionEquiv k A)
+    uniformContinuous_restrictedMvPowerSeriesCompletionEquiv.continuous
+    uniformContinuous_restrictedMvPowerSeriesCompletionEquiv_symm.continuous).mp inferInstance
 
 /-! ### Descent along an open quotient map -/
 
