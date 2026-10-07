@@ -482,6 +482,12 @@ theorem vertexIdempotent_mul_self (v : Q) :
     (vertexIdempotent k v * vertexIdempotent k v : pathAlgebra k Q) = vertexIdempotent k v := by
   rw [vertexIdempotent_eq_single, single_mul_single_of_comp, one_mul, _root_.Quiver.Path.comp_nil]
 
+variable (k) in
+/-- A path-algebra vertex idempotent is an idempotent element. -/
+theorem isIdempotentElem_vertexIdempotent (v : Q) :
+    IsIdempotentElem (vertexIdempotent k v : pathAlgebra k Q) :=
+  vertexIdempotent_mul_self v
+
 /-- Over a nonzero base ring, a vertex idempotent is nonzero. -/
 @[simp]
 theorem vertexIdempotent_ne_zero [Nontrivial k] (v : Q) :

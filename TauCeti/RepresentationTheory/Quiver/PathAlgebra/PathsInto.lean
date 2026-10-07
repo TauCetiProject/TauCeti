@@ -189,22 +189,20 @@ theorem mem_pathsInto_iff {n : ℕ} {j : R} {x : pathAlgebra k R} :
     fun ⟨hx, hjx⟩ => hjx ▸ vertexIdempotent_mul_mem_pathsInto j hx⟩
 
 /-- **The paths of fixed length between two vertices form the corresponding graded corner.** -/
-theorem pathsBetween_eq_cornerSubmodule_inf_grade [Finite R]
-    (n : ℕ) (i j : R) :
+theorem pathsBetween_eq_cornerSubmodule_inf_grade [Finite R] (n : ℕ) (i j : R) :
     pathsBetween k n i j =
       cornerSubmodule k (vertexIdempotent k j) (vertexIdempotent k i) ⊓ grade k R n := by
   apply le_antisymm
   · rw [pathsBetween, Submodule.span_le]
     rintro _ ⟨p, rfl⟩
+    rw [SetLike.mem_coe, Submodule.mem_inf]
     refine ⟨?_, ofPath_mem_grade_of_length p.2⟩
-    change (ofPath ⟨i, j, p.1⟩ : pathAlgebra k R) ∈
-      cornerSubmodule k (vertexIdempotent k j) (vertexIdempotent k i)
     rw [mem_cornerSubmodule_iff k
       (vertexIdempotent_mul_self j) (vertexIdempotent_mul_self i)]
     simp
   · intro x hx
+    rw [Submodule.mem_inf] at hx
     obtain ⟨hcorner, hgrade⟩ := hx
-    change x ∈ cornerSubmodule k (vertexIdempotent k j) (vertexIdempotent k i) at hcorner
     rw [mem_cornerSubmodule_iff k
       (vertexIdempotent_mul_self j) (vertexIdempotent_mul_self i)] at hcorner
     rw [← hcorner]
@@ -213,8 +211,7 @@ theorem pathsBetween_eq_cornerSubmodule_inf_grade [Finite R]
     induction hgrade using Submodule.span_induction with
     | mem x hx =>
         obtain ⟨⟨⟨a, b, p⟩, hp⟩, rfl⟩ := hx
-        change vertexIdempotent k j * ofPath ⟨a, b, p⟩ * vertexIdempotent k i ∈
-          pathsBetween k n i j
+        dsimp only
         by_cases ha : a = i
         · subst a
           by_cases hb : b = j
@@ -357,14 +354,13 @@ theorem finrank_pathsInto [Finite R] [∀ a b : R, Finite (a ⟶ b)] (n : ℕ) (
     simpa only [coe_pathAlgebraBasis, Function.comp_def] using h
   rw [pathsInto, finrank_span_eq_card hli, Nat.card_eq_fintype_card]
 
-instance finiteDimensional_pathsBetween [Finite R] [∀ a b : R, Finite (a ⟶ b)]
-    (n : ℕ) (i j : R) : FiniteDimensional k (pathsBetween k n i j) :=
+instance finiteDimensional_pathsBetween (n : ℕ) (i j : R) [Finite (PathBetween R n i j)] :
+    FiniteDimensional k (pathsBetween k n i j) :=
   FiniteDimensional.span_of_finite k (Set.finite_range _)
 
 /-- The dimension of the length-`n` corner from `i` to `j` is the number of length-`n` paths
 from `i` to `j`. -/
-theorem finrank_pathsBetween [Finite R] [∀ a b : R, Finite (a ⟶ b)]
-    (n : ℕ) (i j : R) :
+theorem finrank_pathsBetween (n : ℕ) (i j : R) [Finite (PathBetween R n i j)] :
     Module.finrank k (pathsBetween k n i j) = Nat.card (PathBetween R n i j) := by
   have := Fintype.ofFinite (PathBetween R n i j)
   have hli : LinearIndependent k

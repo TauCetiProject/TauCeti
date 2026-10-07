@@ -667,13 +667,14 @@ theorem integerGrade_ofNat (n : ℕ) : integerGrade k Q n = grade k Q n :=
   Graded.extendByZero_natCast _ n
 
 /-- The integer path-length grading vanishes in negative degrees. -/
+@[simp]
 theorem integerGrade_eq_bot_of_neg {d : ℤ} (hd : d < 0) : integerGrade k Q d = ⊥ :=
   Graded.extendByZero_of_neg _ hd
 
 /-- A vertex idempotent has integer degree zero. -/
 theorem vertexIdempotent_mem_integerGrade_zero (i : Q) :
     (vertexIdempotent k i : pathAlgebra k Q) ∈ integerGrade k Q 0 := by
-  rw [show (0 : ℤ) = (0 : ℕ) from rfl, integerGrade_ofNat]
+  rw [← Nat.cast_zero, integerGrade_ofNat]
   exact vertexIdempotent_mem_grade_zero i
 
 /-- The integer-indexed path-length pieces form an internal direct sum. -/
