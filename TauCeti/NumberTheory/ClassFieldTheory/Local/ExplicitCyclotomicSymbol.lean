@@ -158,11 +158,8 @@ theorem unitsMap_cyclotomicSymbol_primePow (m : ℕ) [NeZero m] (p : ℕ) [Fact 
   rw [padicUnitReduction_padicIntegerUnitToFiltration, map_inv]
   congr 1
   apply Units.ext
-  change (ZMod.castHom hjprimary (ZMod (p ^ j))
-      (PadicInt.toZModPow (padicValNat p m) (w : ℤ_[p]))) =
-    PadicInt.toZModPow j (w : ℤ_[p])
-  rw [ZMod.castHom_apply]
-  rw [PadicInt.cast_toZModPow j (padicValNat p m) hjle]
+  simp only [ZMod.unitsMap_val, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
+    PadicInt.cast_toZModPow j (padicValNat p m) hjle]
 
 /-- On a divisor `d` of the modulus coprime to `p`, the explicit local cyclotomic symbol is
 `p ^ k`, where `k` is the normalized valuation. -/
@@ -195,9 +192,8 @@ theorem unitsMap_cyclotomicSymbol_of_coprime (m : ℕ) [NeZero m] (p : ℕ) [Fac
   rw [map_zpow]
   congr 1
   apply Units.ext
-  change ZMod.castHom hdcomp (ZMod d) (p : ZMod (m / p ^ padicValNat p m)) =
-    (p : ZMod d)
-  rw [ZMod.castHom_apply, ZMod.cast_natCast hdcomp]
+  rw [ZMod.unitsMap_val, ZMod.coe_unitOfCoprime, ZMod.coe_unitOfCoprime,
+    ZMod.cast_natCast hdcomp]
 
 /-- **The explicit symbol of `ℚ(μ_m)/ℚ` at the real place.** It is the sign of a real unit,
 viewed as the unit `1` or `-1` modulo `m`. -/
@@ -206,6 +202,7 @@ def realCyclotomicSymbol (m : ℕ) : ℝˣ →* (ZMod m)ˣ :=
     (Units.signEquiv ℝ).toMonoidHom.comp (QuotientGroup.mk' (Units.posSubgroup ℝ))
 
 /-- The real cyclotomic symbol of a positive number is `1`. -/
+@[simp]
 theorem realCyclotomicSymbol_of_pos (m : ℕ) (x : ℝˣ) (hx : 0 < (x : ℝ)) :
     realCyclotomicSymbol m x = 1 := by
   have hs : Units.signEquiv ℝ (QuotientGroup.mk x) = 1 :=
@@ -213,6 +210,7 @@ theorem realCyclotomicSymbol_of_pos (m : ℕ) (x : ℝˣ) (hx : 0 < (x : ℝ)) :
   simp [realCyclotomicSymbol, hs]
 
 /-- The real cyclotomic symbol of a negative number is `-1`. -/
+@[simp]
 theorem realCyclotomicSymbol_of_neg (m : ℕ) (x : ℝˣ) (hx : (x : ℝ) < 0) :
     realCyclotomicSymbol m x = -1 := by
   have hs : Units.signEquiv ℝ (QuotientGroup.mk x) = -1 :=

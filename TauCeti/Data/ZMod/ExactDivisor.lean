@@ -14,10 +14,11 @@ import Mathlib.Algebra.Group.Prod
 # The Chinese remainder splitting of `ZMod N` at an exact divisor
 
 For an exact divisor `Q` of `N` (`Q ∣ N` with `Q` coprime to `N / Q`) the Chinese remainder
-theorem splits `ZMod N` as `ZMod Q × ZMod (N / Q)`. This file records the splitting through its
-idempotent, the residue `e_Q` that is `1` modulo `Q` and `0` modulo `N / Q`, rather than through a
-ring isomorphism with a product, so that no cast between `ZMod N` and `ZMod (Q * (N / Q))` is ever
-needed.
+theorem splits `ZMod N` as `ZMod Q × ZMod (N / Q)`. On unit groups this file records the splitting
+as the product equivalence `(ZMod N)ˣ ≃* (ZMod Q)ˣ × (ZMod (N / Q))ˣ`, whose components are the
+two reductions. Inside `ZMod N` it records the splitting through its idempotent, the residue `e_Q`
+that is `1` modulo `Q` and `0` modulo `N / Q`, so that operations on one component are expressed
+without a cast between `ZMod N` and `ZMod (Q * (N / Q))`.
 
 Inverting the `Q`-component of a unit and fixing its `N / Q`-component is then the automorphism
 `u ↦ e_Q u⁻¹ + (1 - e_Q) u` of `(ZMod N)ˣ`, the instance of `IsIdempotentElem.unitsInvPart` at
@@ -37,6 +38,9 @@ moves the nebentypus of a modular form of level `N`. At `Q = N` it is inversion,
 
 ## Main results
 
+* `TauCeti.Nat.IsExactDivisor.unitsEquivProd_apply_fst`,
+  `TauCeti.Nat.IsExactDivisor.unitsEquivProd_apply_snd`: the components of `unitsEquivProd` are
+  the reductions modulo `Q` and modulo `N / Q`.
 * `TauCeti.Nat.IsExactDivisor.eq_of_castHom_eq`: an element of `ZMod N` is determined by its
   residues modulo `Q` and modulo `N / Q`.
 * `TauCeti.Nat.IsExactDivisor.eq_exactDivisorIdempotent_iff`: `e_Q` is the residue that is `1`
@@ -94,9 +98,13 @@ theorem unitsEquivProd_apply_fst (h : Q ∥ N) (u : (ZMod N)ˣ) :
       (ZMod.castHom h.dvd (ZMod Q)).prod
         (ZMod.castHom (Nat.div_dvd_of_dvd h.dvd) _) :=
     RingHom.ext_zmod _ _
-  change (e (u : ZMod N)).1 = _
-  rw [← RingEquiv.coe_toRingHom, he, RingHom.prod_apply]
-  rfl
+  have hu := congr($he (u : ZMod N))
+  rw [RingEquiv.coe_toRingHom, RingHom.prod_apply] at hu
+  simp only [unitsEquivProd, MulEquiv.trans_apply, MulEquiv.prodUnits, MulEquiv.coe_mk,
+    Equiv.coe_fn_mk, MonoidHom.prod_apply, Units.coe_map, Units.coe_mapEquiv, MonoidHom.coe_fst,
+    RingEquiv.toMulEquiv_eq_coe, RingEquiv.coe_toMulEquiv, ZMod.unitsMap_val]
+  rw [hu]
+  simp only [ZMod.castHom_apply]
 
 /-- The second component of the unit-group Chinese remainder equivalence is reduction modulo the
 complementary divisor. -/
@@ -111,9 +119,13 @@ theorem unitsEquivProd_apply_snd (h : Q ∥ N) (u : (ZMod N)ˣ) :
       (ZMod.castHom h.dvd (ZMod Q)).prod
         (ZMod.castHom (Nat.div_dvd_of_dvd h.dvd) _) :=
     RingHom.ext_zmod _ _
-  change (e (u : ZMod N)).2 = _
-  rw [← RingEquiv.coe_toRingHom, he, RingHom.prod_apply]
-  rfl
+  have hu := congr($he (u : ZMod N))
+  rw [RingEquiv.coe_toRingHom, RingHom.prod_apply] at hu
+  simp only [unitsEquivProd, MulEquiv.trans_apply, MulEquiv.prodUnits, MulEquiv.coe_mk,
+    Equiv.coe_fn_mk, MonoidHom.prod_apply, Units.coe_map, Units.coe_mapEquiv, MonoidHom.coe_snd,
+    RingEquiv.toMulEquiv_eq_coe, RingEquiv.coe_toMulEquiv, ZMod.unitsMap_val]
+  rw [hu]
+  simp only [ZMod.castHom_apply]
 
 /-- **An element of `ZMod N` is determined by its residues modulo `Q` and modulo `N / Q`**, for an
 exact divisor `Q` of `N`: the injectivity half of the Chinese remainder theorem. -/
