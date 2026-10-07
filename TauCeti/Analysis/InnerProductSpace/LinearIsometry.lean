@@ -142,23 +142,6 @@ theorem eq_of_apply_eq_of_eqOn_orthogonal {f g : E →ₗ[𝕜] F} (hx : f x = g
 
 end LinearMap
 
-namespace TauCeti
-
-open scoped InnerProductSpace
-
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-
-/-- In unit-vector coordinates, the inverse orthogonal decomposition adds the radial
-and transverse components. -/
-theorem orthogonalDecomposition_symm_apply_toSpanUnitSingleton (x : E) (hx : ‖x‖ = 1)
-    (r : 𝕜) (v : (𝕜 ∙ x)ᗮ) :
-    (𝕜 ∙ x).orthogonalDecomposition.symm
-      (WithLp.toLp 2 (LinearIsometryEquiv.toSpanUnitSingleton x hx r, v)) = r • x + v := by
-  simp only [Submodule.orthogonalDecomposition_symm_apply, WithLp.toLp_fst,
-    WithLp.toLp_snd, LinearIsometryEquiv.toSpanUnitSingleton_apply]
-
-end TauCeti
-
 namespace LinearIsometryEquiv
 
 open scoped InnerProductSpace
@@ -183,10 +166,15 @@ theorem extendOrthogonalComplement_apply_smul_add
     (e : (𝕜 ∙ x)ᗮ ≃ₗᵢ[𝕜] (𝕜 ∙ y)ᗮ) (hx : ‖x‖ = 1) (hy : ‖y‖ = 1)
     (r : 𝕜) (v : (𝕜 ∙ x)ᗮ) :
     e.extendOrthogonalComplement hx hy (r • x + v) = r • y + e v := by
-  rw [← TauCeti.orthogonalDecomposition_symm_apply_toSpanUnitSingleton x hx]
-  simp only [extendOrthogonalComplement, trans_apply, apply_symm_apply,
-    withLpProdCongr_apply, WithLp.toLp_fst, WithLp.toLp_snd, symm_apply_apply]
-  exact TauCeti.orthogonalDecomposition_symm_apply_toSpanUnitSingleton y hy r (e v)
+  have h := (𝕜 ∙ x).orthogonalDecomposition.apply_symm_apply
+    (WithLp.toLp 2 (toSpanUnitSingleton x hx r, v))
+  conv_lhs at h =>
+    simp only [Submodule.orthogonalDecomposition_symm_apply, WithLp.toLp_fst,
+      WithLp.toLp_snd, toSpanUnitSingleton_apply]
+  simp only [extendOrthogonalComplement, trans_apply, h, withLpProdCongr_apply,
+    WithLp.toLp_fst, WithLp.toLp_snd, symm_apply_apply]
+  simp only [Submodule.orthogonalDecomposition_symm_apply, WithLp.toLp_fst,
+    WithLp.toLp_snd, toSpanUnitSingleton_apply]
 
 /-- The extension sends the distinguished unit vector to the distinguished target vector. -/
 @[simp]
