@@ -11,6 +11,7 @@ public import Mathlib.Topology.Instances.Real.Lemmas
 public import TauCeti.Topology.Connected.Prod
 import Mathlib.Data.Fintype.Fin
 import Mathlib.Order.Interval.Finset.Fin
+import TauCeti.Data.Finset.Basic
 
 /-!
 # Sections and sectors of a stack
@@ -247,23 +248,13 @@ theorem card_filter_lt_of_mem_sectorSet {x : X} {j : Fin (k + 1)} {t : α}
     · exact iff_of_false (h.2 i hi).not_gt (Fin.le_def.1 hi).not_gt
   rw [hfilter, Fin.card_filter_val_lt, min_eq_right (Nat.lt_succ_iff.1 j.2)]
 
-/-- Over a base point where the stack is strictly ordered, counting the values of the stack
-below `t` is counting the elements of any finset `s` of these values below `t`. -/
-private theorem card_filter_lt_eq {x : X} (hθ : StrictMono fun i ↦ θ i x) {s : Finset α}
-    (hs : (s : Set α) = range fun i ↦ θ i x) (t : α) :
-    (s.filter (· < t)).card = (Finset.univ.filter fun i ↦ θ i x < t).card := by
-  classical
-  obtain rfl : s = Finset.univ.image fun i ↦ θ i x :=
-    Finset.coe_injective (by rw [hs, Finset.coe_image, Finset.coe_univ, image_univ])
-  rw [Finset.filter_image, Finset.card_image_of_injective _ hθ.injective]
-
 /-- **Sections by counting.** Let `s` be the finite set of values of a stack over a base point
 where it is strictly ordered. A point of the fiber lies on the `i`-th section exactly when it is
 one of these values and exactly `i` of them lie strictly below it. -/
 theorem mem_sectionSet_iff_card_filter_lt {x : X} (hθ : StrictMono fun i ↦ θ i x)
     {s : Finset α} (hs : (s : Set α) = range fun i ↦ θ i x) {i : Fin k} {t : α} :
     (x, t) ∈ sectionSet θ i ↔ t ∈ s ∧ (s.filter (· < t)).card = i := by
-  rw [card_filter_lt_eq hθ hs, ← Finset.mem_coe, hs]
+  rw [Finset.card_filter_of_coe_eq_range hθ.injective hs, ← Finset.mem_coe, hs]
   refine ⟨fun h ↦ ⟨⟨i, h⟩, card_filter_lt_of_mem_sectionSet hθ h⟩, ?_⟩
   rintro ⟨⟨i', rfl⟩, hcard⟩
   obtain rfl : i' = i :=
@@ -276,7 +267,7 @@ not one of these values and exactly `j` of them lie strictly below it. -/
 theorem mem_sectorSet_iff_card_filter_lt {x : X} (hθ : StrictMono fun i ↦ θ i x)
     {s : Finset α} (hs : (s : Set α) = range fun i ↦ θ i x) {j : Fin (k + 1)} {t : α} :
     (x, t) ∈ sectorSet θ j ↔ t ∉ s ∧ (s.filter (· < t)).card = j := by
-  rw [card_filter_lt_eq hθ hs, ← Finset.mem_coe, hs]
+  rw [Finset.card_filter_of_coe_eq_range hθ.injective hs, ← Finset.mem_coe, hs]
   refine ⟨fun h ↦ ⟨?_, card_filter_lt_of_mem_sectorSet h⟩, ?_⟩
   · rintro ⟨i, hi⟩
     exact disjoint_left.1 (disjoint_sectionSet_sectorSet θ i j) (mem_sectionSet.2 hi) h

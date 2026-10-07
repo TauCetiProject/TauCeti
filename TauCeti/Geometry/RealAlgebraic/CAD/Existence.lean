@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Geometry.RealAlgebraic.CAD.Basic
 public import TauCeti.Geometry.RealAlgebraic.Projection.Delineability
-import TauCeti.FieldTheory.IsRealClosed.Real
-import TauCeti.Geometry.RealAlgebraic.Semialgebraic.SharedRoots
 
 /-!
 # Existence of adapted cylindrical algebraic decompositions
@@ -22,21 +20,11 @@ and take an adapted CAD of `ℝ ^ n` for the Collins projection of the resulting
 delineability, this family has a delineation over each cell. Its stacks give the CAD of
 `ℝ ^ (n + 1)`.
 
-These stacks are semialgebraic (`TauCeti.Delineation.isSemialgebraicStack`). At each point of the
-base, the root functions of a delineation enumerate, in increasing order, the shared real roots of
-the nonzero fibers. So a point of the cylinder lies on the `i`-th section exactly when its
-distinguished coordinate is a shared root with exactly `i` shared roots below it, and in the `j`-th
-sector exactly when it is not a shared root and has exactly `j` of them below it
-(`TauCeti.mem_sectionSet_iff_card_filter_lt`, `TauCeti.mem_sectorSet_iff_card_filter_lt`). Both
-conditions have uniform descriptions by polynomial sign conditions, which hold whether or not
-members are nullified or drop degree (`Finset.isSemialgebraic_setOf_mem_biUnion_roots_card_lt`,
-`Finset.isSemialgebraic_setOf_notMem_biUnion_roots_card_lt`). Over a semialgebraic base cell,
-every cell of the stack is therefore semialgebraic, with no assumption on the family.
+Over a semialgebraic base cell these stacks are semialgebraic
+(`TauCeti.Delineation.isSemialgebraicStack`).
 
 ## Main results
 
-* `TauCeti.Delineation.isSemialgebraicStack`: over a semialgebraic base, the stack of a
-  delineation of any finite family is a semialgebraic stack.
 * `TauCeti.exists_isCAD_signInvariant`: every finite set of polynomials has an adapted CAD.
 * `TauCeti.IsSemialgebraic.image_tail`: **projection closure**. Forgetting the coordinate `0`
   maps semialgebraic subsets of `ℝ ^ (n + 1)` to semialgebraic subsets of `ℝ ^ n`. A
@@ -49,8 +37,7 @@ every cell of the stack is therefore semialgebraic, with no assumption on the fa
 
 S. Basu, R. Pollack, and M.-F. Roy,
 [Algorithms in Real Algebraic Geometry](https://doi.org/10.1007/3-540-33099-2),
-second edition, Section 5.1 (cylindrical decomposition) and Chapters 10 and 11 (uniform sign
-descriptions of the roots of a polynomial family).
+second edition, Section 5.1 (cylindrical decomposition).
 -/
 
 public section
@@ -61,58 +48,6 @@ open scoped Polynomial
 namespace TauCeti
 
 variable {n : ℕ}
-
-section Stack
-
-variable {A : Type*} [CommRing A] {φ : A →+* ℝ} {F : Finset (MvPolynomial (Fin n) A)[X]}
-  {C : Set (Fin n → ℝ)}
-
-/-- At each point `x` of the base, the values of the root functions of a delineation of the
-fibers of `F` are the shared real roots of the nonzero fibers, computed from the family with
-coefficients mapped to `ℝ` along `φ`. -/
-private theorem Delineation.coe_biUnion_roots_toFinset [DecidableEq (MvPolynomial (Fin n) ℝ)[X]]
-    (D : Delineation fun (p : F) (x : C) ↦ p.1.map (eval₂Hom φ x.1)) (x : C) :
-    ((F.image (Polynomial.map (map φ))).biUnion fun P ↦ (P.map (eval x.1)).roots.toFinset :
-      Set ℝ) = range fun i ↦ D.root i x := by
-  have hmap (p : (MvPolynomial (Fin n) A)[X]) :
-      (p.map (map φ)).map (eval x.1) = p.map (eval₂Hom φ x.1) := by
-    rw [Polynomial.map_map]
-    exact congrArg p.map (RingHom.ext fun q ↦ eval_map φ x.1 q)
-  rw [D.range_root]
-  ext t
-  simp [hmap]
-
-/-- **Stacks of delineations are semialgebraic.** A delineation, over a semialgebraic set `C`, of
-the fibers of a finite family of polynomials in one distinguished variable is a semialgebraic
-stack. Its `i`-th section is the set of points over `C` at which the distinguished coordinate is a
-shared root of the nonzero fibers with exactly `i` shared roots below it, and its `j`-th sector is
-the set of points over `C` at which it is not a shared root and has exactly `j` of them below
-it. -/
-theorem Delineation.isSemialgebraicStack (hC : IsSemialgebraic C)
-    (D : Delineation fun (p : F) (x : C) ↦ p.1.map (eval₂Hom φ x.1)) :
-    IsSemialgebraicStack C D.root := by
-  classical
-  have hs (y : Fin (n + 1) → ℝ) (hy : Fin.tail y ∈ C) :=
-    D.coe_biUnion_roots_toFinset ⟨Fin.tail y, hy⟩
-  refine ⟨D.continuous_root, D.strictMono_root, fun i ↦ ?_, fun j ↦ ?_⟩
-  · convert hC.preimage_tail.inter
-      ((F.image (Polynomial.map (map φ))).isSemialgebraic_setOf_mem_biUnion_roots_card_lt i)
-      using 1
-    ext y
-    simp only [mem_image_cylinder, mem_inter_iff, mem_preimage, mem_ofPred_eq]
-    exact ⟨fun ⟨hy, h⟩ ↦ ⟨hy, (mem_sectionSet_iff_card_filter_lt (D.strictMono_root _)
-      (hs y hy)).1 h⟩, fun ⟨hy, h⟩ ↦ ⟨hy, (mem_sectionSet_iff_card_filter_lt
-        (D.strictMono_root _) (hs y hy)).2 h⟩⟩
-  · convert hC.preimage_tail.inter
-      ((F.image (Polynomial.map (map φ))).isSemialgebraic_setOf_notMem_biUnion_roots_card_lt j)
-      using 1
-    ext y
-    simp only [mem_image_cylinder, mem_inter_iff, mem_preimage, mem_ofPred_eq]
-    exact ⟨fun ⟨hy, h⟩ ↦ ⟨hy, (mem_sectorSet_iff_card_filter_lt (D.strictMono_root _)
-      (hs y hy)).1 h⟩, fun ⟨hy, h⟩ ↦ ⟨hy, (mem_sectorSet_iff_card_filter_lt
-        (D.strictMono_root _) (hs y hy)).2 h⟩⟩
-
-end Stack
 
 /-- **Existence of adapted cylindrical algebraic decompositions.** For every finite set `F` of
 real polynomials in `n` variables there is a cylindrical algebraic decomposition of `ℝ ^ n` on

@@ -46,6 +46,8 @@ import Mathlib.Tactic.NoncommRing
   `Finset.mem_map_swap_symmDiff_pair_iff`, `Finset.involutive_map_swap_symmDiff_pair` and
   `Finset.map_swap_symmDiff_pair_eq_self_iff` do the same for a transposition composed with the
   toggle of the two transposed points.
+* `Finset.card_filter_of_coe_eq_range` counts the elements of a finset satisfying a predicate
+  through an injective enumeration of the finset.
 * `Finset.sum_filter_le_sum_filter_le` reindexes a double sum over chains in a finite type with a
   `≤` relation.
 * `Finset.sum_eq_two` and `Finset.sum_eq_four` reduce a sum over a finite type, and a double sum
@@ -421,6 +423,16 @@ theorem sum_eq_four {ι κ M : Type*} [Fintype ι] [Fintype κ] [AddCommMonoid M
             sum_eq_two (g i') j j' hj'ne (fun y hyj hyj' => h0 i' y (fun h => hi'ne h.1.symm)
               (fun h => hi'ne h.1.symm) (fun h => hyj h.2) (fun h => hyj' h.2))]
     _ = g i j + g i j' + g i' j + g i' j' := by simp only [add_assoc]
+
+/-- If a finset `s` is the range of an injective function `f` on a finite type, then the elements
+of `s` satisfying `p` are counted by the points at which `p ∘ f` holds. -/
+theorem card_filter_of_coe_eq_range {ι α : Type*} [Fintype ι] {f : ι → α}
+    (hf : Function.Injective f) {s : Finset α} (hs : (s : Set α) = Set.range f) (p : α → Prop)
+    [DecidablePred p] : (s.filter p).card = (univ.filter fun i ↦ p (f i)).card := by
+  classical
+  obtain rfl : s = univ.image f :=
+    coe_injective (by rw [hs, coe_image, coe_univ, Set.image_univ])
+  rw [filter_image, card_image_of_injective _ hf]
 
 end Finset
 

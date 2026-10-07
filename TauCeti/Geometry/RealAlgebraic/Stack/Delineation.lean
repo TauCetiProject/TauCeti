@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.Equiv
 public import TauCeti.Analysis.Polynomial.RealRoots.Common
+public import TauCeti.Geometry.RealAlgebraic.CAD.Basic
 public import TauCeti.Geometry.RealAlgebraic.Stack.Sign
 import TauCeti.Algebra.MvPolynomial.Equiv
 import TauCeti.Algebra.Polynomial.Thom
 import TauCeti.FieldTheory.IsRealClosed.Real
 import TauCeti.FieldTheory.RealClosure.AbstractRolle
+import TauCeti.Geometry.RealAlgebraic.Semialgebraic.SharedRoots
 import TauCeti.RingTheory.Polynomial.Roots
 import TauCeti.Topology.Algebra.Polynomial
 
@@ -51,6 +53,16 @@ For a family obtained from polynomials `f` in `n + 1` variables by singling out 
 `MvPolynomial.finSuccEquiv`, every `f` is sign-invariant on each cell of the stack in
 `ℝ^(n + 1)`, the cells being the images of the sections and sectors under `TauCeti.cylinder`.
 
+Over a semialgebraic base such a stack is semialgebraic, with no assumption on the family. At each
+point of the base, the root functions of a delineation enumerate, in increasing order, the union
+of the real roots of the nonzero fibers. So a point of the cylinder lies on the `i`-th section
+exactly when its distinguished coordinate is one of these roots with exactly `i` of them below it,
+and in the `j`-th sector exactly when it is not one of these roots and has exactly `j` of them below
+it (`TauCeti.mem_sectionSet_iff_card_filter_lt`, `TauCeti.mem_sectorSet_iff_card_filter_lt`). Both
+conditions have uniform descriptions by polynomial sign conditions, which hold whether or not
+members are nullified or drop degree (`Finset.isSemialgebraic_setOf_mem_biUnion_roots_card_lt`,
+`Finset.isSemialgebraic_setOf_notMem_biUnion_roots_card_lt`).
+
 ## Main declarations
 
 * `TauCeti.Delineation`: a common stack of the roots of a family of real polynomials.
@@ -70,12 +82,15 @@ For a family obtained from polynomials `f` in `n + 1` variables by singling out 
   stack.
 * `TauCeti.Delineation.signInvariant_eval₂_of_mem_stackCells`: the polynomials in `n + 1`
   variables behind a family are sign-invariant on every ambient cell of a delineation.
+* `TauCeti.Delineation.isSemialgebraicStack`: over a semialgebraic base, the stack of a
+  delineation of any finite family is a semialgebraic stack.
 
 ## References
 
 S. Basu, R. Pollack, and M.-F. Roy,
 [Algorithms in Real Algebraic Geometry](https://doi.org/10.1007/3-540-33099-2),
-second edition, Section 5.1 (Theorem 5.16).
+second edition, Section 5.1 (Theorem 5.16), and Chapters 10 and 11 (uniform sign descriptions
+of the roots of a polynomial family).
 -/
 
 public section
@@ -373,6 +388,52 @@ theorem Delineation.signInvariant_eval₂_of_mem_stackCells
       rw [Function.comp_apply, cylinder_def, MvPolynomial.polynomial_eval_map_finSuccEquiv]
   rcases mem_stackCells.1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩ <;> rw [signInvariant_image, key]
   exacts [D.signInvariant_sectionSet ⟨_, hf⟩ i, D.signInvariant_sectorSet ⟨_, hf⟩ j]
+
+/-- At each point `x` of the base, the values of the root functions of a delineation of the
+fibers of `F` are the real roots of the nonzero fibers, computed from the family with coefficients
+mapped to `ℝ` along `φ`. -/
+private theorem Delineation.coe_biUnion_roots_toFinset
+    [DecidableEq (MvPolynomial (Fin n) ℝ)[X]]
+    (D : Delineation fun (p : F) (x : S) ↦ p.1.map (MvPolynomial.eval₂Hom φ x.1)) (x : S) :
+    ((F.image (Polynomial.map (MvPolynomial.map φ))).biUnion
+      fun P ↦ (P.map (MvPolynomial.eval x.1)).roots.toFinset : Set ℝ) =
+        range fun i ↦ D.root i x := by
+  have hmap (p : (MvPolynomial (Fin n) A)[X]) :
+      (p.map (MvPolynomial.map φ)).map (MvPolynomial.eval x.1) =
+        p.map (MvPolynomial.eval₂Hom φ x.1) := by
+    rw [Polynomial.map_map]
+    exact congrArg p.map (RingHom.ext fun q ↦ MvPolynomial.eval_map φ x.1 q)
+  rw [D.range_root]
+  ext t
+  simp [hmap]
+
+/-- **Stacks of delineations are semialgebraic.** A delineation, over a semialgebraic set `S`, of
+the fibers of a finite family of polynomials in one distinguished variable is a semialgebraic
+stack. Its `i`-th section is the set of points over `S` at which the distinguished coordinate is a
+real root of some nonzero fiber with exactly `i` such roots below it, and its `j`-th sector is the
+set of points over `S` at which it is not such a root and has exactly `j` of them below it. -/
+theorem Delineation.isSemialgebraicStack (hS : IsSemialgebraic S)
+    (D : Delineation fun (p : F) (x : S) ↦ p.1.map (MvPolynomial.eval₂Hom φ x.1)) :
+    IsSemialgebraicStack S D.root := by
+  classical
+  have hs (y : Fin (n + 1) → ℝ) (hy : Fin.tail y ∈ S) :=
+    D.coe_biUnion_roots_toFinset ⟨Fin.tail y, hy⟩
+  set G := F.image (Polynomial.map (MvPolynomial.map φ))
+  refine ⟨D.continuous_root, D.strictMono_root, fun i ↦ ?_, fun j ↦ ?_⟩
+  · convert hS.preimage_tail.inter
+      (G.isSemialgebraic_setOf_mem_biUnion_roots_card_lt i) using 1
+    ext y
+    simp only [mem_image_cylinder, mem_inter_iff, mem_preimage, mem_ofPred_eq]
+    exact ⟨fun ⟨hy, h⟩ ↦ ⟨hy, (mem_sectionSet_iff_card_filter_lt (D.strictMono_root _)
+      (hs y hy)).1 h⟩, fun ⟨hy, h⟩ ↦ ⟨hy, (mem_sectionSet_iff_card_filter_lt
+        (D.strictMono_root _) (hs y hy)).2 h⟩⟩
+  · convert hS.preimage_tail.inter
+      (G.isSemialgebraic_setOf_notMem_biUnion_roots_card_lt j) using 1
+    ext y
+    simp only [mem_image_cylinder, mem_inter_iff, mem_preimage, mem_ofPred_eq]
+    exact ⟨fun ⟨hy, h⟩ ↦ ⟨hy, (mem_sectorSet_iff_card_filter_lt (D.strictMono_root _)
+      (hs y hy)).1 h⟩, fun ⟨hy, h⟩ ↦ ⟨hy, (mem_sectorSet_iff_card_filter_lt
+        (D.strictMono_root _) (hs y hy)).2 h⟩⟩
 
 end MvPolynomial
 
