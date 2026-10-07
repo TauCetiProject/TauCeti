@@ -121,7 +121,7 @@ theorem specialIsogeny_comp_specialIsogeny :
 
 private theorem zero_ne_last : (0 : Fin (1 + 1)) ≠ Fin.last 1 := by decide
 
-private theorem next_zero : next 1 0 zero_ne_last = 1 := Fin.ext (by rw [val_next]; rfl)
+private theorem succ_zero : Order.succ (0 : Fin (1 + 1)) = 1 := rfl
 
 private theorem last_one : Fin.last 1 = (1 : Fin (1 + 1)) := rfl
 
@@ -133,7 +133,7 @@ private theorem shortRootUnit_eq (t : K) :
         (rootSubgroupPoints 1 (.inl 0) K (Multiplicative.ofAdd t)) =
       GLSymplecticFin.differenceShortRootUnit (show (0 : Fin (1 + 1)) ≠ 1 by decide) t := by
   rw [pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inl_of_ne_last 1 0 zero_ne_last,
-    toAdd_ofAdd, GLSymplecticFin.differenceShortRootUnit_congr _ _ rfl next_zero]
+    toAdd_ofAdd, GLSymplecticFin.differenceShortRootUnit_congr _ _ rfl succ_zero]
 
 omit [CharP K 2] in
 private theorem longRootUnit_eq (t : K) :
@@ -172,7 +172,7 @@ private theorem negShortRootUnit_eq (t : K) :
         (rootSubgroupPoints 1 (.inr 0) K (Multiplicative.ofAdd t)) =
       GLSymplecticFin.differenceShortRootUnit (show (1 : Fin (1 + 1)) ≠ 0 by decide) t := by
   rw [pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inr_of_ne_last 1 0 zero_ne_last,
-    toAdd_ofAdd, GLSymplecticFin.differenceShortRootUnit_congr _ _ next_zero rfl]
+    toAdd_ofAdd, GLSymplecticFin.differenceShortRootUnit_congr _ _ succ_zero rfl]
 
 omit [CharP K 2] in
 private theorem negLongRootUnit_eq (t : K) :

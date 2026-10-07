@@ -225,8 +225,7 @@ private theorem one_eq_last : (1 : Fin 2) = Fin.last 1 := rfl
 
 private theorem zero_ne_last : (0 : Fin 2) ≠ Fin.last 1 := by decide
 
-private theorem next_zero : SpStd.next 1 0 zero_ne_last = 1 :=
-  Fin.ext (by rw [SpStd.val_next]; rfl)
+private theorem succ_zero : Order.succ (0 : Fin 2) = 1 := rfl
 
 /-- **The carrier equivalence identifies each numbered simple-root subgroup with its standard
 symplectic root one-parameter subgroup.** -/
@@ -241,7 +240,7 @@ theorem carrierEquivSymplectic_simpleRootSubgroup (i : Fin d.1.rank)
       SpStd.pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inl_of_ne_last 1 0 zero_ne_last,
       GLSymplecticFin.RootSubgroupIndex.hom_difference,
       GLSymplecticFin.differenceShortRootHom_apply]
-    exact GLSymplecticFin.differenceShortRootUnit_congr _ _ rfl next_zero _
+    exact GLSymplecticFin.differenceShortRootUnit_congr _ _ rfl succ_zero _
   · rw [h, d.symplecticRootIndex_of_carrierNode_eq_one h, one_eq_last,
       SpStd.pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inl_last,
       GLSymplecticFin.RootSubgroupIndex.hom_positiveLong,
