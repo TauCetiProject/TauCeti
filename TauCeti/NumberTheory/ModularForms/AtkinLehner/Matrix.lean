@@ -73,8 +73,8 @@ normalizes `Γ₁(N)` too, and acts on the diamond labels through `Nat.IsExactDi
   the new element of `Γ₀(N)` produced on the left and on the right respectively.
 * `TauCeti.IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_self`: `W ^ 2 = Q • γ` with `γ ∈ Γ₀(N)`.
 * `TauCeti.IsAtkinLehnerMatrix.mul`: the multiplicativity of the family in the divisor.
-* `TauCeti.IsAtkinLehnerMatrix.isExactDivisor`: only an exact divisor carries an Atkin–Lehner
-  matrix.
+* `TauCeti.IsAtkinLehnerMatrix.isExactDivisor`: a divisor of the level that carries an
+  Atkin–Lehner matrix is an exact divisor.
 * `TauCeti.IsAtkinLehnerMatrix.toHomUnits_gamma0Map_of_mul_eq_mul`: moving `γ ∈ Γ₀(N)` across `W`
   inverts the residue modulo `Q` of its lower-right entry and keeps its residue modulo `N / Q`.
 
@@ -350,8 +350,10 @@ theorem IsAtkinLehnerMatrix.mul (hQRN : Q * R ∣ N)
     exact mul_dvd_mul h.dvd_apply_one_one h'.dvd_apply_one_one
   · rw [Matrix.det_mul, h.det_eq, h'.det_eq, hmul]
 
-/-- **Only an exact divisor carries an Atkin–Lehner matrix**: the reduced determinant equation
-`Q * (a * d) - (N / Q) * (b * c) = 1` is a Bézout relation between `Q` and `N / Q`. -/
+/-- **A divisor carrying an Atkin–Lehner matrix is an exact divisor**: for `Q ∣ N`, the reduced
+determinant equation `Q * (a * d) - (N / Q) * (b * c) = 1` is a Bézout relation between `Q` and
+`N / Q`. The hypothesis `Q ∣ N` is needed, since `IsAtkinLehnerMatrix` does not force it:
+`!![3, 3; 2, 3]` satisfies `IsAtkinLehnerMatrix 2 3`. -/
 theorem IsAtkinLehnerMatrix.isExactDivisor (hQ : Q ≠ 0) (hQN : Q ∣ N)
     (h : IsAtkinLehnerMatrix N Q M) : Q ∥ N := by
   obtain ⟨m, hm⟩ := hQN
