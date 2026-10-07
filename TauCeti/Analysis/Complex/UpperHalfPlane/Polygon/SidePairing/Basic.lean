@@ -201,12 +201,6 @@ theorem partialCycleMap_smul_vertex (j : Fin n) (m : ℕ) :
   | succ m ih =>
     rw [partialCycleMap_succ, mul_smul, ih, map_smul_vertex_eq_next, Function.iterate_succ_apply']
 
-/-- Pulling the vertex at the `m`th successor back by the inverse partial product gives the
-original vertex. -/
-theorem vertex_inv_partialCycleMap_smul (j : Fin n) (m : ℕ) :
-    ((σ.partialCycleMap j m)⁻¹ • P).vertex (σ.next^[m] j) = P.vertex j := by
-  rw [vertex_smul, ← σ.partialCycleMap_smul_vertex, inv_smul_smul]
-
 /-- The length of the vertex cycle through `j`: the minimal period of `j` under the successor. -/
 def cycleLength (j : Fin n) : ℕ :=
   Function.minimalPeriod σ.next j

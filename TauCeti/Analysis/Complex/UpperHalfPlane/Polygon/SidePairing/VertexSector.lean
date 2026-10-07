@@ -76,7 +76,8 @@ theorem eventuallyEq_inv_partialCycleMap_smul_carrier_vertexSector {j : Fin n} {
     (hz : P.vertex j = .inl z) (m : ℕ) :
     (σ.partialCycleMap j m)⁻¹ • P.carrier =ᶠ[𝓝 z]
       (σ.partialCycleMap j m)⁻¹ • P.vertexSector (σ.next^[m] j) := by
-  have hvertex := (σ.vertex_inv_partialCycleMap_smul j m).trans hz
+  have hvertex : ((σ.partialCycleMap j m)⁻¹ • P).vertex (σ.next^[m] j) = .inl z := by
+    rw [vertex_smul, ← σ.partialCycleMap_smul_vertex j m, inv_smul_smul, hz]
   simpa only [carrier_smul, vertexSector_smul] using
     ((σ.partialCycleMap j m)⁻¹ • P).eventuallyEq_carrier_vertexSector hvertex
 
@@ -86,7 +87,7 @@ theorem eventuallyEq_iUnion_inv_partialCycleMap_smul_carrier_vertexSector {j : F
     (⋃ m ∈ Finset.range r, (σ.partialCycleMap j m)⁻¹ • P.carrier) =ᶠ[𝓝 z]
       ⋃ m ∈ Finset.range r,
         (σ.partialCycleMap j m)⁻¹ • P.vertexSector (σ.next^[m] j) :=
-  (Finset.range r).finite_toSet.eventuallyEqSet_iUnion fun m _ ↦
+  (Finset.range r).eventuallyEqSet_iUnion fun m _ ↦
     σ.eventuallyEq_inv_partialCycleMap_smul_carrier_vertexSector hz m
 
 /-- The cycle tiles cover a neighbourhood of a finite vertex if and only if their sectors
