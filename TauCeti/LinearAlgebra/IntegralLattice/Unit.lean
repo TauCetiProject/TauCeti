@@ -47,37 +47,20 @@ universe u
 
 variable (ι : Type u)
 
-/-- The identity Gram matrix of the standard unit lattice, defined without requiring a
-`DecidableEq` argument from callers. -/
-noncomputable def unitGramMatrix (R : Type*) [Zero R] [One R] : Matrix ι ι R := by
-  classical
-  exact 1
-
-@[simp]
-theorem unitGramMatrix_apply (R : Type*) [Zero R] [One R] [DecidableEq ι] (i j : ι) :
-    unitGramMatrix ι R i j = if i = j then 1 else 0 := by
-  simp [unitGramMatrix, Matrix.one_apply]
-
-/-- The identity Gram matrix is symmetric. -/
-theorem isSymm_unitGramMatrix : (unitGramMatrix ι ℤ).IsSymm := by
-  classical
-  apply Matrix.IsSymm.ext
-  intro i j
-  simp only [unitGramMatrix_apply, eq_comm]
-
 variable [Fintype ι]
 
+open Classical in
 /-- The standard unit lattice `I_ι`: the integer coordinate lattice `ℤ^ι` inside `ℚ^ι`,
 with the dot-product form and identity Gram matrix. -/
 noncomputable def unitLattice : IntegralLattice (ι → ℚ) :=
-  ofGramMatrix (Pi.basisFun ℚ ι) (unitGramMatrix ι ℤ) (isSymm_unitGramMatrix ι)
+  ofGramMatrix (Pi.basisFun ℚ ι) 1 Matrix.isSymm_one
 
 /-- A vector belongs to the standard unit lattice exactly when all its coordinates are integers. -/
 @[simp]
 theorem mem_unitLattice_carrier_iff (x : ι → ℚ) :
     x ∈ (unitLattice ι).carrier ↔ ∀ i, ∃ z : ℤ, (z : ℚ) = x i := by
-  simpa only [unitLattice] using
-    mem_ofGramMatrix_basisFun_carrier_iff (unitGramMatrix ι ℤ) (isSymm_unitGramMatrix ι) x
+  classical
+  simpa only [unitLattice] using mem_ofGramMatrix_basisFun_carrier_iff 1 Matrix.isSymm_one x
 
 /-- The form of the standard unit lattice is the ordinary dot product. -/
 @[simp]
@@ -85,7 +68,7 @@ theorem unitLattice_form_apply (x y : ι → ℚ) :
     (unitLattice ι).form x y = ∑ i, x i * y i := by
   classical
   rw [unitLattice, form_ofGramMatrix_basisFun_apply]
-  simp
+  simp [Matrix.one_apply]
 
 /-- The norm of a vector in the standard unit lattice is the sum of its coordinate squares. -/
 @[simp]
@@ -96,9 +79,10 @@ theorem unitLattice_norm_apply (x : ι → ℚ) :
   funext i
   ring
 
+open Classical in
 /-- The coordinate vectors form the standard integral basis of `I_ι`. -/
 noncomputable def unitLatticeBasis : Basis ι ℤ (unitLattice ι) :=
-  ofGramMatrix.basis (Pi.basisFun ℚ ι) (unitGramMatrix ι ℤ) (isSymm_unitGramMatrix ι)
+  ofGramMatrix.basis (Pi.basisFun ℚ ι) 1 Matrix.isSymm_one
 
 /-- The standard integral basis vector has the corresponding unit coordinate vector in `ℚ^ι`. -/
 @[simp]
@@ -108,9 +92,13 @@ theorem coe_unitLatticeBasis_apply (i : ι) :
 
 /-- The Gram matrix of the standard integral basis is the identity matrix. -/
 @[simp]
-theorem gramMatrix_unitLatticeBasis :
-    (unitLattice ι).gramMatrix (unitLatticeBasis ι) = unitGramMatrix ι ℤ :=
-  gramMatrix_ofGramMatrix _ _ _
+theorem gramMatrix_unitLatticeBasis [DecidableEq ι] :
+    (unitLattice ι).gramMatrix (unitLatticeBasis ι) = 1 := by
+  ext i j
+  apply Int.cast_injective (α := ℚ)
+  rw [gramMatrix_apply, integralForm_cast, coe_unitLatticeBasis_apply,
+    coe_unitLatticeBasis_apply, unitLattice_form_apply]
+  simp [Matrix.one_apply, Pi.single_apply, eq_comm]
 
 /-- The rank of `I_ι` is the cardinality of its index type. -/
 @[simp]
@@ -123,7 +111,7 @@ theorem finrank_unitLattice : Module.finrank ℤ (unitLattice ι) = Fintype.card
 theorem unitLattice_determinant : (unitLattice ι).determinant = 1 := by
   classical
   rw [unitLattice, determinant_ofGramMatrix]
-  simp [unitGramMatrix]
+  simp
 
 /-- The discriminant of the standard unit lattice is one. -/
 @[simp]
@@ -139,7 +127,6 @@ instance instIsNondegenerateUnitLattice : (unitLattice ι).IsNondegenerate :=
 theorem isPosDef_unitLattice : (unitLattice ι).IsPosDef := by
   classical
   rw [unitLattice, isPosDef_ofGramMatrix_iff]
-  change (Matrix.map (1 : Matrix ι ι ℤ) (Int.cast : ℤ → ℚ)).PosDef
   rw [Matrix.map_one Int.cast Int.cast_zero Int.cast_one]
   exact Matrix.PosDef.one
 
@@ -170,7 +157,7 @@ theorem isEven_unitLattice_iff :
     exact ⟨fun i ↦ by
       obtain ⟨k, hk⟩ := h i
       have : (1 : ℤ) = k + k := by
-        simpa only [unitGramMatrix_apply, ↓reduceIte] using hk
+        simpa only [Matrix.one_apply_eq] using hk
       omega⟩
   · intro h i
     exact (Fintype.card_eq_zero_iff.mp h).false i |>.elim
