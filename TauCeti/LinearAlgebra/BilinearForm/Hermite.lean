@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.Algebra.Module.Primitive
 public import TauCeti.LinearAlgebra.Matrix.BilinearForm
+import Mathlib.Data.Rat.Floor
 import TauCeti.LinearAlgebra.BilinearMap.GramCongruence
 import TauCeti.LinearAlgebra.Matrix.Condensation
 
@@ -71,18 +72,23 @@ universe u
 /-- Every integer lies within `μ / 2` of a multiple of a positive integer `μ`. -/
 private theorem exists_four_mul_sq_le (t : ℤ) {μ : ℤ} (hμ : 0 < μ) :
     ∃ c : ℤ, 4 * (c * μ + t) ^ 2 ≤ μ ^ 2 := by
-  have h₁ := Int.emod_add_mul_ediv t μ
-  have h₂ := Int.emod_nonneg t hμ.ne'
-  have h₃ := Int.emod_lt_of_pos t hμ
-  by_cases h : 2 * (t % μ) ≤ μ
-  · refine ⟨-(t / μ), ?_⟩
-    have : -(t / μ) * μ + t = t % μ := by linarith
-    rw [this]
-    nlinarith
-  · refine ⟨-(t / μ) - 1, ?_⟩
-    have : (-(t / μ) - 1) * μ + t = t % μ - μ := by linarith
-    rw [this]
-    nlinarith
+  let c := round (-(t : ℚ) / μ)
+  refine ⟨c, ?_⟩
+  have hμ' : (0 : ℚ) < μ := by exact_mod_cast hμ
+  have hr : |-(t : ℚ) / μ - c| ≤ (1 : ℚ) / 2 := by
+    simpa [c] using abs_sub_round (-(t : ℚ) / μ)
+  have hrel : ((c * μ + t : ℤ) : ℚ) = -μ * (-(t : ℚ) / μ - c) := by
+    push_cast
+    field_simp [hμ'.ne']; ring
+  have hlo : -(μ : ℚ) / 2 ≤ (c * μ + t : ℤ) := by
+    rw [hrel]
+    nlinarith [le_of_abs_le hr]
+  have hhi : ((c * μ + t : ℤ) : ℚ) ≤ μ / 2 := by
+    rw [hrel]
+    nlinarith [neg_le_of_abs_le hr]
+  have hprod : 0 ≤ (μ / 2 - (c * μ + t : ℤ)) * (μ / 2 + (c * μ + t : ℤ) : ℚ) :=
+    mul_nonneg (sub_nonneg.mpr hhi) (by linarith)
+  exact_mod_cast (show 4 * ((c * μ + t : ℤ) : ℚ) ^ 2 ≤ (μ : ℚ) ^ 2 by nlinarith)
 
 /-- **A positive definite integral form attains its minimum at a primitive vector.** On a
 nontrivial free `ℤ`-module, a bilinear form whose values `B(x, x)` on nonzero vectors are positive
