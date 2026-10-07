@@ -140,6 +140,14 @@ theorem map_injective (f : L →ₗ⁅K⁆ M) (hf : Function.Injective f) :
       rw [pbwFiltrationPrevious_succ] at hdrop
       exact ih hdrop
 
+/-- An injective Lie map induces an injective map on every PBW filtration step. -/
+theorem mapFiltration_injective (f : L →ₗ⁅K⁆ M) (hf : Function.Injective f) (n : ℕ) :
+    Function.Injective (mapFiltration K f n) := by
+  intro x y hxy
+  apply Subtype.ext
+  apply map_injective K f hf
+  simpa only [mapFiltration_apply] using congrArg Subtype.val hxy
+
 end TauCeti.UniversalEnvelopingAlgebra
 
 namespace LieSubalgebra
@@ -161,7 +169,8 @@ noncomputable def universalEnvelopingEquiv (A : LieSubalgebra K L) :
 theorem coe_universalEnvelopingEquiv_apply (A : LieSubalgebra K L)
     (x : _root_.UniversalEnvelopingAlgebra K A) :
     (A.universalEnvelopingEquiv x : _root_.UniversalEnvelopingAlgebra K L) =
-      TauCeti.UniversalEnvelopingAlgebra.map K A.incl x :=
-  (rfl)
+      TauCeti.UniversalEnvelopingAlgebra.map K A.incl x := by
+  simp only [universalEnvelopingEquiv, AlgEquiv.trans_apply,
+    Subalgebra.equivOfEq_apply, AlgEquiv.ofInjective_apply]
 
 end LieSubalgebra
