@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
-public import Mathlib.Topology.Algebra.OpenSubgroup
-public import Mathlib.Topology.Instances.AddCircle.Defs
-public import Mathlib.Topology.LocallyConstant.Basic
+public import TauCeti.Algebra.AddCircle
+public import TauCeti.Topology.Algebra.Group.LocallyConstant
 
 /-!
 # The carry cocycle of a character
@@ -78,30 +77,13 @@ variable {G : Type u} [Group G]
 def characterCarry (χ : Additive G →+ AddCircle (1 : ℚ)) (g h : G) : ℤ :=
   ⌊(AddCircle.equivIco 1 0 (χ (.ofMul g)) : ℚ) + AddCircle.equivIco 1 0 (χ (.ofMul h))⌋
 
-/-- The floor of the sum of the representatives in `[0, 1)` of two points of `ℚ/ℤ` is the defect
-of additivity of the representatives. -/
-private theorem intCast_floor_equivIco_add (x y : AddCircle (1 : ℚ)) :
-    (⌊(AddCircle.equivIco 1 0 x : ℚ) + AddCircle.equivIco 1 0 y⌋ : ℚ) =
-      AddCircle.equivIco 1 0 x + AddCircle.equivIco 1 0 y - AddCircle.equivIco 1 0 (x + y) := by
-  obtain ⟨hz₀, hz₁⟩ := (AddCircle.equivIco 1 0 (x + y)).2
-  -- The right-hand side maps to `0` in `ℚ/ℤ`, so it is an integer `k`, and the representative
-  -- of `x + y` lying in `[0, 1)` forces `k` to be the floor.
-  have hcoe :
-      ((AddCircle.equivIco 1 0 x + AddCircle.equivIco 1 0 y - AddCircle.equivIco 1 0 (x + y) : ℚ) :
-        AddCircle (1 : ℚ)) = 0 := by
-    rw [AddCircle.coe_sub, AddCircle.coe_add, AddCircle.coe_equivIco, AddCircle.coe_equivIco,
-      AddCircle.coe_equivIco, sub_self]
-  obtain ⟨k, hk⟩ := (AddCircle.coe_eq_zero_iff (p := (1 : ℚ))).1 hcoe
-  rw [zsmul_one] at hk
-  rw [← hk, Int.floor_eq_iff.2 ⟨by linarith, by linarith⟩]
-
 /-- The carry of `χ` at `(g, h)` is the defect `χ'(g) + χ'(h) - χ'(gh)` of additivity of the
 representatives in `[0, 1)`. -/
 theorem intCast_characterCarry (χ : Additive G →+ AddCircle (1 : ℚ)) (g h : G) :
     (characterCarry χ g h : ℚ) =
       AddCircle.equivIco 1 0 (χ (.ofMul g)) + AddCircle.equivIco 1 0 (χ (.ofMul h)) -
         AddCircle.equivIco 1 0 (χ (.ofMul (g * h))) := by
-  rw [characterCarry, intCast_floor_equivIco_add, ofMul_mul, map_add χ]
+  rw [characterCarry, AddCircle.intCast_floor_equivIco_add, ofMul_mul, map_add χ]
 
 /-- **The carry on classes of fractions**: if `χ(g)` and `χ(h)` are the classes of `i / n` and
 `j / n` with `i, j < n`, the carry of `χ` at `(g, h)` is `1` if `n ≤ i + j` and `0` otherwise. -/
@@ -148,19 +130,6 @@ section Cocycle
 variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G]
   {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [DistribMulAction G M]
-
-/-- A character with open kernel is locally constant. -/
-private theorem isLocallyConstant_character {χ : Additive G →+ AddCircle (1 : ℚ)}
-    (hχ : IsOpen (χ.ker : Set (Additive G))) :
-    IsLocallyConstant fun g : G ↦ χ (.ofMul g) := by
-  refine (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦ ?_
-  -- Near `x`, the element `x⁻¹ * y` lies in the open kernel.
-  have hopen : IsOpen ((fun y : G ↦ Additive.ofMul (x⁻¹ * y)) ⁻¹' (χ.ker : Set (Additive G))) :=
-    hχ.preimage (continuous_ofMul.comp (continuous_const.mul continuous_id))
-  filter_upwards [hopen.mem_nhds (by simp)] with y hy
-  rw [Set.mem_preimage, SetLike.mem_coe, AddMonoidHom.mem_ker, ofMul_mul, map_add, ofMul_inv,
-    map_neg, neg_add_eq_zero] at hy
-  exact hy.symm
 
 /-- The carry of a character with open kernel is locally constant on `G × G`. -/
 private theorem isLocallyConstant_characterCarry {χ : Additive G →+ AddCircle (1 : ℚ)}
@@ -239,7 +208,7 @@ theorem characterCarryCocycle_add_character
   have he (g : G) : (e g : ℚ) = AddCircle.equivIco 1 0 (χ₁ (.ofMul g)) +
       AddCircle.equivIco 1 0 (χ₂ (.ofMul g)) -
         AddCircle.equivIco 1 0 ((χ₁ + χ₂) (.ofMul g)) :=
-    intCast_floor_equivIco_add _ _
+    AddCircle.intCast_floor_equivIco_add _ _
   have hfix (g : G) : g • (a : M) = a := (FixedPoints.mem_addSubgroup G M a).1 a.2 g
   refine mem_B2_iff.2 ⟨fun g ↦ (-e g) • (a : M),
     (((isLocallyConstant_character hχ₁).comp₂ (isLocallyConstant_character hχ₂) fun x y ↦
@@ -259,12 +228,6 @@ theorem characterCarryCocycle_add_character
       (characterCarry χ₁ g h + characterCarry χ₂ g h))
   simp only [d1_apply, hfix, smul_comm g _ (a : M), AddSubgroup.coe_add, Pi.sub_apply,
     Pi.add_apply, characterCarryCocycle_apply, ← sub_smul, ← add_smul, ← add_smul, key]
-
-/-- The kernel of an integer multiple of a character with open kernel is open. -/
-private theorem isOpen_ker_zsmul {χ : Additive G →+ AddCircle (1 : ℚ)}
-    (hχ : IsOpen (χ.ker : Set (Additive G))) (k : ℤ) :
-    IsOpen ((k • χ).ker : Set (Additive G)) :=
-  AddSubgroup.isOpen_mono (fun x hx ↦ by simp_all) hχ
 
 /-- The carry cocycle of the zero character vanishes. -/
 @[simp]
