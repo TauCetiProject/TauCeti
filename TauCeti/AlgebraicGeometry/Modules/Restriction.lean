@@ -41,7 +41,7 @@ noncomputable instance _root_.AlgebraicGeometry.Scheme.Modules.restrictFunctorIs
   -- The sheaf-pushforward projection hides its site functor from instance search.
   -- Instantiate the existing presheaf right adjoint with that functor explicitly.
   have := PresheafOfModules.instIsRightAdjointPushforward (F := f.opensFunctor) φ.hom
-  exact (SheafOfModules.PullbackConstruction.adjunction φ).isRightAdjoint
+  exact inferInstanceAs (SheafOfModules.pushforward φ).IsRightAdjoint
 
 /-- Restriction along an open immersion is additive. In particular it preserves the zero
 morphisms used in kernel diagrams. -/
