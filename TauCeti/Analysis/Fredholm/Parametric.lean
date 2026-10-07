@@ -28,7 +28,7 @@ solution, remember the parameter".
 
 This file analyses that projection. Writing the total derivative as a coproduct
 `D₁.coprod D₂ : E × Λ →L[𝕜] F`, which by `ContinuousLinearMap.coprod_comp_inl_inr` is no loss of
-generality, `TauCeti.parameterProj D₁ D₂` is the restriction of `Prod.snd` to
+generality, `ContinuousLinearMap.parameterProj D₁ D₂` is the restriction of `Prod.snd` to
 `(D₁.coprod D₂).ker`, and the two theorems that transversality arguments run on are:
 
 * the projection is **surjective exactly when `D₁` is**, provided the total linearization is
@@ -52,10 +52,11 @@ Everything below is read off one four-term exact sequence of `𝕜`-modules,
 ```text
 0 → ker D₁ → ker (D₁.coprod D₂) → Λ → F ⧸ range D₁,
 ```
-whose maps are `x ↦ (x, 0)` (`TauCeti.kerCoprodHom`), the parameter projection, and the map
-induced by `D₂` (`TauCeti.parameterToCoker`). Its exactness at `ker (D₁.coprod D₂)` and at `Λ` is
-`TauCeti.exact_kerCoprodHom_parameterProj` and
-`TauCeti.exact_parameterProj_parameterToCoker`; both hold with no hypothesis at all.
+whose maps are `x ↦ (x, 0)` (`ContinuousLinearMap.kerCoprodHom`), the parameter projection, and
+the map induced by `D₂` (`ContinuousLinearMap.parameterToCoker`). Its exactness at
+`ker (D₁.coprod D₂)` and at `Λ` is
+`ContinuousLinearMap.exact_kerCoprodHom_parameterProj` and
+`ContinuousLinearMap.exact_parameterProj_parameterToCoker`; both hold with no hypothesis at all.
 
 Exactness at `ker (D₁.coprod D₂)` says that the kernel of the projection is `ker D₁`: a point of
 the universal zero set over a *fixed* parameter is a solution of the equation that parameter
@@ -64,10 +65,11 @@ directions whose infinitesimal effect `D₂ l` on the equation is already achiev
 solution.
 
 Surjectivity of the total linearization says exactly that `range D₁ ⊔ range D₂ = ⊤`, that is, that
-the last map above is onto (`TauCeti.parameterToCoker_surjective_iff_coprod_surjective`). Extending
+the last map above is onto
+(`ContinuousLinearMap.parameterToCoker_surjective_iff_coprod_surjective`). Extending
 the sequence by `→ 0` on the right then identifies the cokernel of the projection with the
-cokernel of `D₁` (`TauCeti.quotientRangeParameterProjEquiv`), and the surjectivity criterion is
-the degenerate case of that identification.
+cokernel of `D₁` (`ContinuousLinearMap.quotientRangeParameterProjEquiv`), and the surjectivity
+criterion is the degenerate case of that identification.
 
 The exact sequence, its algebraic identifications, and the `finrank` identities hold over any ring,
 with continuous addition in `F`; the finite-dimensionality statements hold over division rings
@@ -83,22 +85,23 @@ Banach open mapping theorem gives strictness. No completeness of the scalar fiel
 
 ## Main declarations
 
-* `TauCeti.parameterProj`: the projection to the parameter space of the kernel of a total
-  linearization `D₁.coprod D₂`.
-* `TauCeti.exact_kerCoprodHom_parameterProj` and `TauCeti.exact_parameterProj_parameterToCoker`:
+* `ContinuousLinearMap.parameterProj`: the projection to the parameter space of the kernel of a
+  total linearization `D₁.coprod D₂`.
+* `ContinuousLinearMap.exact_kerCoprodHom_parameterProj` and
+  `ContinuousLinearMap.exact_parameterProj_parameterToCoker`:
   the exact sequence above.
-* `TauCeti.kerEquivKerParameterProj`: the kernel of the projection is `ker D₁`.
-* `TauCeti.range_parameterProj`: its range is the preimage of `range D₁` under `D₂`.
-* `TauCeti.parameterToCoker_surjective_iff_coprod_surjective`: the total linearization is onto
-  exactly when the parameter directions span the cokernel of `D₁`.
-* `TauCeti.quotientRangeParameterProjEquiv`: for a surjective total linearization, the cokernel of
-  the projection is the cokernel of `D₁`.
-* `TauCeti.parameterProj_surjective_iff`: for a surjective total linearization, the projection is
-  surjective exactly when `D₁` is.
+* `ContinuousLinearMap.kerEquivKerParameterProj`: the kernel of the projection is `ker D₁`.
+* `ContinuousLinearMap.range_parameterProj`: its range is the preimage of `range D₁` under `D₂`.
+* `ContinuousLinearMap.parameterToCoker_surjective_iff_coprod_surjective`: the total linearization
+  is onto exactly when the parameter directions span the cokernel of `D₁`.
+* `ContinuousLinearMap.quotientRangeParameterProjEquiv`: for a surjective total linearization, the
+  cokernel of the projection is the cokernel of `D₁`.
+* `ContinuousLinearMap.parameterProj_surjective_iff`: for a surjective total linearization, the
+  projection is surjective exactly when `D₁` is.
 * `ContinuousLinearMap.index_parameterProj`: for a surjective total linearization, the
   projection has the same index as `D₁`.
-* `TauCeti.isFredholm_parameterProj`: when `E` and `Λ` are Banach spaces, if `D₁` is Fredholm
-  then the projection is Fredholm.
+* `ContinuousLinearMap.isFredholm_parameterProj`: when `E` and `Λ` are Banach spaces, if `D₁` is
+  Fredholm then the projection is Fredholm.
 
 ## References
 
@@ -108,7 +111,7 @@ Banach open mapping theorem gives strictness. No completeness of the scalar fiel
 
 public section
 
-namespace TauCeti
+namespace ContinuousLinearMap
 
 open Module
 
@@ -251,7 +254,7 @@ theorem parameterToCoker_apply (l : Λ) : parameterToCoker D₁ D₂ l = D₁.ra
   (rfl)
 
 /-- The kernel of the map induced by `D₂` is the range of the parameter projection: this is
-`TauCeti.range_parameterProj` read in the quotient. -/
+`ContinuousLinearMap.range_parameterProj` read in the quotient. -/
 @[simp]
 theorem ker_parameterToCoker :
     LinearMap.ker (parameterToCoker D₁ D₂) = (parameterProj D₁ D₂).range := by
@@ -298,8 +301,8 @@ theorem quotientRangeParameterProjEquivRange_mk (l : Λ) :
 /-- **For a surjective total linearization, the cokernel of the parameter projection is the
 cokernel of `D₁`**, identified by the map induced by `D₂`.
 
-`TauCeti.ker_parameterToCoker` identifies the kernel of the map from parameters to the cokernel
-with `range (parameterProj D₁ D₂)`, making the descended map on the quotient injective.
+`ContinuousLinearMap.ker_parameterToCoker` identifies the kernel of the map from parameters to the
+cokernel with `range (parameterProj D₁ D₂)`, making the descended map on the quotient injective.
 Surjectivity of the total linearization is what makes that descended map onto. -/
 noncomputable def quotientRangeParameterProjEquiv (hD : Function.Surjective (D₁.coprod D₂)) :
     (Λ ⧸ (parameterProj D₁ D₂).range) ≃ₗ[𝕜] F ⧸ D₁.range :=
@@ -321,7 +324,7 @@ theorem range_parameterProj_eq_top_of_range_eq_top (hD₁ : D₁.range = ⊤) :
   rw [range_parameterProj, hD₁, Submodule.comap_top]
 
 /-- The `Function.Surjective` form of
-`TauCeti.range_parameterProj_eq_top_of_range_eq_top`. -/
+`ContinuousLinearMap.range_parameterProj_eq_top_of_range_eq_top`. -/
 theorem parameterProj_surjective_of_surjective (hD₁ : Function.Surjective D₁) :
     Function.Surjective (parameterProj D₁ D₂) :=
   LinearMap.range_eq_top.mp
@@ -341,7 +344,7 @@ theorem range_parameterProj_eq_top_iff (hD : (D₁.coprod D₂).range = ⊤) :
   have hl : l ∈ (parameterProj D₁ D₂).range := h.ge Submodule.mem_top
   rwa [range_parameterProj] at hl
 
-/-- The `Function.Surjective` form of `TauCeti.range_parameterProj_eq_top_iff`. -/
+/-- The `Function.Surjective` form of `ContinuousLinearMap.range_parameterProj_eq_top_iff`. -/
 theorem parameterProj_surjective_iff (hD : Function.Surjective (D₁.coprod D₂)) :
     Function.Surjective (parameterProj D₁ D₂) ↔ Function.Surjective D₁ := by
   have h := range_parameterProj_eq_top_iff D₁ D₂ (LinearMap.range_eq_top.mpr hD)
@@ -369,7 +372,7 @@ gives the dimension of the finite-dimensional model space for a regular fibre.
 
 Neither operator is assumed Fredholm: both sides are differences of `Module.finrank`s, and the
 exact sequence matches the four dimensions in pairs, junk values included. -/
-theorem _root_.ContinuousLinearMap.index_parameterProj (hD : Function.Surjective (D₁.coprod D₂)) :
+theorem index_parameterProj (hD : Function.Surjective (D₁.coprod D₂)) :
     ContinuousLinearMap.index (parameterProj D₁ D₂) = ContinuousLinearMap.index D₁ := by
   rw [ContinuousLinearMap.index_eq_finrank_sub, ContinuousLinearMap.index_eq_finrank_sub,
     finrank_ker_parameterProj, finrank_quotient_range_parameterProj D₁ D₂ hD]
@@ -438,4 +441,4 @@ theorem isFredholm_parameterProj (hD₁ : ContinuousLinearMap.IsFredholm D₁) :
 
 end Banach
 
-end TauCeti
+end ContinuousLinearMap
