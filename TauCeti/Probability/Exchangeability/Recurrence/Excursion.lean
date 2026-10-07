@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.MeasurableSpace.List
 public import TauCeti.Probability.Exchangeability.Excursion
-import TauCeti.Probability.Exchangeability.SuccessorArray
+import TauCeti.Probability.Process.SuccessorArray
 public import TauCeti.Probability.Recurrent.Basic
 import Mathlib.MeasureTheory.Measure.Dirac.Basic
 
