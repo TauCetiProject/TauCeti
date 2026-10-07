@@ -5,7 +5,7 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.GroupTheory.Perm.Certificates.Tables
+public import TauCeti.GroupTheory.Perm.Certificates.Tables.Basic
 
 /-!
 # Uniform machines for finite permutation actions

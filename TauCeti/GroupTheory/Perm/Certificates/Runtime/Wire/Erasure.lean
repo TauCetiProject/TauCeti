@@ -5,8 +5,8 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.GroupTheory.Perm.Certificates.RuntimeWire
-public import TauCeti.GroupTheory.Perm.Certificates.TableActions
+public import TauCeti.GroupTheory.Perm.Certificates.Runtime.Wire.Basic
+public import TauCeti.GroupTheory.Perm.Certificates.Tables.Actions
 
 /-!
 # Erasing the proofs in the binary certificate parser

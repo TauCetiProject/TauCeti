@@ -5,9 +5,9 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.Computability.TuringMachine.PolyTimeParserCombinators
-public import TauCeti.GroupTheory.Perm.Certificates.Tables
-public import TauCeti.GroupTheory.Perm.Certificates.Encoding
+public import TauCeti.Computability.TuringMachine.PolyTime.Parser.Combinators
+public import TauCeti.GroupTheory.Perm.Certificates.Tables.Basic
+public import TauCeti.GroupTheory.Perm.Certificates.Encoding.Basic
 
 /-!
 # Uniform machines for the certificate wire format

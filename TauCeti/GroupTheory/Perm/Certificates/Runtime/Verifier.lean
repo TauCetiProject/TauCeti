@@ -5,7 +5,7 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.GroupTheory.Perm.Certificates.RuntimeSemantics
+public import TauCeti.GroupTheory.Perm.Certificates.Runtime.Semantics
 
 /-!
 # A polynomial-time TM2 verifier for binary permutation certificates

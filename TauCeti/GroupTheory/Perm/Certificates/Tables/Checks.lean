@@ -5,7 +5,7 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.GroupTheory.Perm.Certificates.TableActions
+public import TauCeti.GroupTheory.Perm.Certificates.Tables.Actions
 public import TauCeti.GroupTheory.Perm.Inversion
 public import Mathlib.Data.List.Nodup
 public import Mathlib.Algebra.Ring.Parity

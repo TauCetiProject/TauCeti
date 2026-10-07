@@ -5,8 +5,8 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.GroupTheory.Perm.Certificates.RuntimeCheck
-public import TauCeti.GroupTheory.Perm.Certificates.RuntimeWireErasure
+public import TauCeti.GroupTheory.Perm.Certificates.Runtime.Check
+public import TauCeti.GroupTheory.Perm.Certificates.Runtime.Wire.Erasure
 
 /-!
 # Agreement of the uniform machine checks with the classical certificate checker

@@ -5,7 +5,7 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.Computability.TuringMachine.PolyTimeNat
+public import TauCeti.Computability.TuringMachine.PolyTime.Nat
 public import TauCeti.GroupTheory.Perm.WordsAndCycles
 public import Mathlib.Data.List.Find
 public import Mathlib.Data.List.FinRange

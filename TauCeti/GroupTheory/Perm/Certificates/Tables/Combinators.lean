@@ -5,7 +5,7 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.GroupTheory.Perm.Certificates.TableChecks
+public import TauCeti.GroupTheory.Perm.Certificates.Tables.Checks
 
 /-! # Polynomial-time parameter substitution for permutation-table machines -/
 

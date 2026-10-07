@@ -5,8 +5,8 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.GroupTheory.Perm.Certificates.RuntimeWire
-public import TauCeti.GroupTheory.Perm.Certificates.TableCombinators
+public import TauCeti.GroupTheory.Perm.Certificates.Runtime.Wire.Basic
+public import TauCeti.GroupTheory.Perm.Certificates.Tables.Combinators
 
 /-!
 # Uniform finite-control machines for all certificate checks
