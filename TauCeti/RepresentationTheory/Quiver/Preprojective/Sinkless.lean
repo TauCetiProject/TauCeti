@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.KoszulComplex
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Basic
+import TauCeti.RepresentationTheory.Quiver.Preprojective.KoszulComplex
 
 /-!
 # Preprojective algebras of quivers without sinks
