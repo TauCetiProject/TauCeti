@@ -357,6 +357,14 @@ theorem sideForm_mk_ofReal (A : SL(2, ℝ)) (x : ℝ) :
   rw [sideForm_mk, Complex.normSq_ofReal, Complex.ofReal_re]
   ring
 
+/-- The side form of the class of `A` along the imaginary axis is `-c d e^{2t} - a b`. -/
+theorem _root_.Matrix.SpecialLinearGroup.sideForm_pslMk_geodesicLine_one (A : SL(2, ℝ)) (t : ℝ) :
+    sideForm (A : PSL(2, ℝ)) (geodesicLine 1 t) =
+      -(A 1 0 * A 1 1) * Real.exp t ^ 2 - A 0 0 * A 0 1 := by
+  rw [sideForm_mk, geodesicLine_one_apply, UpperHalfPlane.coe_mk]
+  simp only [Complex.normSq_mk]
+  ring
+
 /-- The real part of `g⁻¹ • z` is a positive multiple of the side form at `z`. -/
 theorem exists_pos_re_inv_smul_eq (g : PSL(2, ℝ)) (z : ℍ) :
     ∃ κ : ℝ, 0 < κ ∧ (g⁻¹ • z : ℍ).re = κ * sideForm g z := by
