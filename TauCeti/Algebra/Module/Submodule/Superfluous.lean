@@ -88,6 +88,12 @@ theorem IsSuperfluous.eq_top_of_sup_eq_top {N K : Submodule R M} (hN : IsSuperfl
     (h : N ⊔ K = ⊤) : K = ⊤ :=
   hN K h
 
+/-- A superfluous direct summand is zero. -/
+theorem IsSuperfluous.eq_bot_of_isCompl {N K : Submodule R M} (hN : IsSuperfluous N)
+    (hNK : IsCompl N K) : N = ⊥ := by
+  have hK := hN.eq_top_of_sup_eq_top hNK.sup_eq_top
+  simpa only [hK, inf_top_eq] using hNK.inf_eq_bot
+
 /-- The zero submodule is superfluous. -/
 @[simp]
 theorem isSuperfluous_bot : IsSuperfluous (⊥ : Submodule R M) := by

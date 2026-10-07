@@ -51,8 +51,7 @@ whose `d¹` is the difference of the two sides
 ## Main statements
 
 * `TauCeti.ContCohomology.explicitCup_projection`: the `(0,1)` shape
-  `cor¹ (res⁰ a ⌣ b) = a ⌣ cor¹ b`. The roadmap's `Suggested.lean` fixes the unsuffixed name for
-  this shape, which is why the five companions below carry their bidegree and this one does not.
+  `cor¹ (res⁰ a ⌣ b) = a ⌣ cor¹ b`. The five companions below carry their bidegree.
 * `TauCeti.ContCohomology.explicitCup_projection00`,
   `TauCeti.ContCohomology.explicitCup_projection10`,
   `TauCeti.ContCohomology.explicitCup_projection02` and
@@ -68,9 +67,6 @@ whose `d¹` is the difference of the two sides
   `TauCeti.ContCohomology.cup20ProjectionHomotopy_spec`. With the six shapes above, the projection
   formula with the restriction on the first factor holds in every bidegree of total degree at most
   two.
-
-This implements the projection-formula item of the "compatibilities" milestone of Layer 8 of the
-human-authored roadmap at `TauCetiRoadmap/ProfiniteCohomology/README.md`.
 
 ## References
 
@@ -138,8 +134,7 @@ variable (G : Type u) [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
 include hU hμ hequiv
 
 /-- **The `(0,1)` projection formula**, `cor¹ (res⁰ a ⌣ b) = a ⌣ cor¹ b` for an open subgroup `U`
-of finite index. The roadmap's `Suggested.lean` fixes the name `explicitCup_projection` for this
-shape, and it fixes the normalization of the four companion shapes. -/
+of finite index. -/
 theorem explicitCup_projection (a : H0 G M) (b : H1 U N) :
     explicitCor1 G P U hU
         (explicitCup01 U M N P μ hμ (fun g m y => hequiv (g : G) m y)
@@ -791,7 +786,7 @@ theorem explicitCup_projection20_res_left (a : H2 G M) (n : H0 U N) :
         (mem_Z2_iff.1 α.2).1 (n : N), fun γ η => ?_⟩
     -- Restriction is evaluation of the cochain at the inclusion, by `cocyclesMap2_apply`.
     have hres : ((cocyclesMap2 G M U M (ContinuousMonoidHom.subgroupSubtype U) (AddMonoidHom.id M)
-        continuous_id (id_subgroupSubtype_smul G M U) α : Z2 U M) : U × U → M) =
+        continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M U) α : Z2 U M) : U × U → M) =
           fun q => (α : G × G → M) ((q.1 : G), (q.2 : G)) :=
       funext fun q => cocyclesMap2_apply G M U M _ _ _ _ α q.1 q.2
     simp only [Pi.sub_apply, coe_cocyclesCor2, hres, Subgroup.smul_def, coe_explicitCor0]

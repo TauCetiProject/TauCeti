@@ -13,9 +13,7 @@ public import Mathlib.RingTheory.RingHom.Flat
 public import Mathlib.RingTheory.TensorProduct.Quotient
 public import TauCeti.RingTheory.Ideal.GoingDown
 public import TauCeti.RingTheory.KrullDimension.FiniteType
-public import TauCeti.RingTheory.KrullDimension.Quotient
 public import TauCeti.RingTheory.TensorProduct.IsDomain
-public import TauCeti.Topology.PureDimension
 
 /-!
 # Irreducible components under extension of the base field
@@ -44,8 +42,6 @@ is a rational function field over `K`, with `L / E` algebraic.
 
 ## Main results
 
-* `TauCeti.isPureDimensional_primeSpectrum_iff`: `Spec R` is pure-dimensional of dimension `d`
-  exactly when `R ⧸ P` has dimension `d` for every minimal prime `P`.
 * `TauCeti.comap_includeRight_mem_minimalPrimes`: for `L` flat over `K`, a minimal prime of
   `L ⊗[K] A` contracts to a minimal prime of `A`.
 * `TauCeti.ringKrullDim_quotient_tensorProduct_of_mem_minimalPrimes`: for finitely generated `A`,
@@ -65,19 +61,6 @@ open scoped TensorProduct
 open Algebra.TensorProduct (includeRight)
 
 namespace TauCeti
-
-section PrimeSpectrum
-
-variable {R : Type*} [CommRing R]
-
-/-- The spectrum of a ring `R` is pure-dimensional of dimension `d` if and only if `R ⧸ P` has
-Krull dimension `d` for every minimal prime `P` of `R`. -/
-theorem isPureDimensional_primeSpectrum_iff {d : ℕ} :
-    IsPureDimensional d (PrimeSpectrum R) ↔ ∀ P ∈ minimalPrimes R, ringKrullDim (R ⧸ P) = d := by
-  simp_rw [isPureDimensional_iff, ← PrimeSpectrum.zeroLocus_minimalPrimes, Set.forall_mem_image,
-    Function.comp_apply, Ideal.topologicalKrullDim_zeroLocus]
-
-end PrimeSpectrum
 
 section CommRing
 

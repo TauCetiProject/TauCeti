@@ -85,6 +85,31 @@ theorem mem_integralOrthogonalSubgroup_iff_norm (g : orthogonalGroup Q) :
       (∀ i j, ‖LinearMap.toMatrix b b (g⁻¹ : V ≃ₗ[ℚ_[p]] V).toLinearMap i j‖ ≤ 1) := by
   simp [PadicInt.mem_subring_iff]
 
+/-- Membership means that the isometry and its inverse preserve the `ℤ_[p]`-span of the basis. -/
+theorem mem_integralOrthogonalSubgroup_iff_mem_span (g : orthogonalGroup Q) :
+    g ∈ integralOrthogonalSubgroup Q b ↔
+      (∀ x ∈ Submodule.span (PadicInt.subring p) (Set.range b),
+        (g : V ≃ₗ[ℚ_[p]] V) x ∈ Submodule.span (PadicInt.subring p) (Set.range b)) ∧
+      ∀ x ∈ Submodule.span (PadicInt.subring p) (Set.range b),
+        ((g⁻¹ : orthogonalGroup Q) : V ≃ₗ[ℚ_[p]] V) x ∈
+          Submodule.span (PadicInt.subring p) (Set.range b) := by
+  have hspan (x : V) : x ∈ Submodule.span (PadicInt.subring p) (Set.range b) ↔
+      ∀ i, b.repr x i ∈ PadicInt.subring p := by
+    rw [Basis.mem_span_iff_repr_mem (PadicInt.subring p) b x]
+    exact forall_congr' fun i ↦ ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.2, fun h ↦ ⟨⟨_, h⟩, rfl⟩⟩
+  -- An endomorphism preserves the span exactly when its matrix is integral.
+  have hmaps (f : V →ₗ[ℚ_[p]] V) :
+      (∀ x ∈ Submodule.span (PadicInt.subring p) (Set.range b),
+        f x ∈ Submodule.span (PadicInt.subring p) (Set.range b)) ↔
+      ∀ i j, LinearMap.toMatrix b b f i j ∈ PadicInt.subring p := by
+    refine ⟨fun h i j ↦ ?_, fun h x hx ↦ (hspan _).mpr fun i ↦ ?_⟩
+    · rw [LinearMap.toMatrix_apply]
+      exact (hspan _).mp (h _ (Submodule.subset_span ⟨j, rfl⟩)) i
+    · rw [← LinearMap.toMatrix_mulVec_repr b b f x, Matrix.mulVec, dotProduct]
+      exact sum_mem fun j _ ↦ mul_mem (h i j) ((hspan x).mp hx j)
+  rw [mem_integralOrthogonalSubgroup_iff]
+  exact and_congr (hmaps _).symm (hmaps _).symm
+
 /-- Transporting the basis along an isometry transports the integral orthogonal subgroup. -/
 theorem mem_integralOrthogonalSubgroup_orthogonalGroupCongr
     {W : Type*} [AddCommGroup W] [Module ℚ_[p] W] {Q' : QuadraticForm ℚ_[p] W}
