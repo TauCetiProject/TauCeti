@@ -22,9 +22,12 @@ The nonzero-product hypothesis is essential: a zero product has infinite order e
 and gives no information about the orders of its factors. Zero polynomials are nevertheless
 included in the local upper bound.
 
-These results transfer ambient order on root sections from a product of active polynomials
-to its individual factors. They concern order in all polynomial variables, rather than
-multiplicity in a specialized univariate fiber.
+These results complement additivity of ambient order: on a preconnected set, a nonzero
+product is order-invariant exactly when its factors are. In particular, constant product
+order gives constant factor orders, which imply sign-invariance of the factors over a
+linearly ordered topological ring. A continuous root section is another possible parametrization.
+The order is computed in all polynomial variables, rather than in a specialized univariate
+fiber.
 
 ## References
 
