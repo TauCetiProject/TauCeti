@@ -54,7 +54,7 @@ and its image consists of the classes of the line bundles whose pullback along `
   rigidification is injective when `s` is a section of a morphism `Y ⟶ T`, and
   `RigidifiedLineBundleClass.range_toLineBundleClass` describes its image as the line-bundle classes
   whose pullback along `s` is trivial;
-* `RigidifiedLineBundleClass.bijective_mk_toLineBundleClass`: for a section `s` of `p : Y ⟶ T`,
+* `RigidifiedLineBundleClass.mk_toLineBundleClass_bijective`: for a section `s` of `p : Y ⟶ T`,
   forgetting the rigidification identifies the classes of line bundles rigidified along `s` with
   `Pic(Y) / p^* Pic(T)`.
 
@@ -362,7 +362,7 @@ lemma range_toLineBundleClass :
 /-- If `s` is a section of `p : Y ⟶ T`, then forgetting the rigidification and passing to the
 quotient by the line-bundle classes pulled back along `p` is a bijection from the classes of
 line bundles rigidified along `s` onto `Pic(Y) / p^* Pic(T)`. -/
-theorem bijective_mk_toLineBundleClass {p : Y ⟶ T} (h : s ≫ p = 𝟙 T) :
+theorem mk_toLineBundleClass_bijective {p : Y ⟶ T} (h : s ≫ p = 𝟙 T) :
     Function.Bijective fun a : RigidifiedLineBundleClass s ↦
       (QuotientGroup.mk (toLineBundleClass a) :
         LineBundleClass Y ⧸ (LineBundleClass.pullbackHom p).range) := by

@@ -24,7 +24,7 @@ functor: forgetting the rigidification is a natural bijection from the classes o
 a statement about any section `s` of a morphism `p : Y ⟶ T`: forgetting the rigidification is
 injective on classes rigidified along `s`, with image the kernel of `s^* : Pic(Y) → Pic(T)`, and
 `p^*` splits `s^*`, so that this kernel maps isomorphically onto `Pic(Y) / p^* Pic(T)`
-(`TauCeti.AlgebraicGeometry.RigidifiedLineBundleClass.bijective_mk_toLineBundleClass`). No
+(`TauCeti.AlgebraicGeometry.RigidifiedLineBundleClass.mk_toLineBundleClass_bijective`). No
 hypothesis on `f` beyond the existence of the section is needed.
 
 ## Main declarations
@@ -116,7 +116,7 @@ def rigidifiedPicardFunctorIso :
     (fun a : (rigidifiedPicardFunctor f x₀ hx₀).obj T ↦
       (QuotientGroup.mk (RigidifiedLineBundleClass.toLineBundleClass a) :
         (relativePicardPresheaf f).obj T))
-    (RigidifiedLineBundleClass.bijective_mk_toLineBundleClass
+    (RigidifiedLineBundleClass.mk_toLineBundleClass_bijective
       (baseChangeSection_fst f x₀ hx₀ T.unop))).toIso) (by
       intro T T' φ
       ext a
