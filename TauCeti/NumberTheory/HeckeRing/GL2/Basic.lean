@@ -204,7 +204,7 @@ lemma heckeTDiag_mul_of_coprime (a b da db : ℕ)
   · rw [heckeTDiag_eq_zero h2, mul_zero,
       heckeTDiag_eq_zero (by simpa [Nat.mul_comm] using hzero b a db da hcop.symm h2)]
   obtain ⟨ha, hda, hdva⟩ := h1
-  obtain ⟨hb, hdb, hdvb⟩ := h2
+  obtain ⟨_, hdb, hdvb⟩ := h2
   have hb : 0 < b := Nat.pos_of_dvd_of_pos hdvb hdb
   rw [heckeTDiag_eq_diagElem ha hda hdva, heckeTDiag_eq_diagElem hb hdb hdvb,
     heckeTDiag_eq_diagElem (Nat.mul_pos ha hb) (Nat.mul_pos hda hdb) (Nat.mul_dvd_mul hdva hdvb)]

@@ -183,7 +183,7 @@ theorem twoByTwo_simplyBlockedDifferential_apply
         (c GridState.twoByTwoId * MvPolynomial.X twoByTwoSurvivingColumn) := by
   induction c using Finsupp.induction with
   | zero => simp
-  | single_add x a c hx ha ih =>
+  | single_add x a c hx _ ih =>
       rw [map_add, ih]
       rcases GridState.eq_twoByTwoId_or_eq_twoByTwoSwap x with rfl | rfl
       · ext y : 1

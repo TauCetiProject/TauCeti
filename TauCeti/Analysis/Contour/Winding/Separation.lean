@@ -58,11 +58,10 @@ theorem notMem_connectedComponentIn_compl_of_isPreconnected_sdiff_singleton (hK 
     (hright : v * s + z₀ ∈ closure (K ∩ {q | ((q - (v * s + z₀)) / v).im < 0})) :
     v * b + z₀ ∉ connectedComponentIn Kᶜ (v * a + z₀) := by
   intro hmem
-  set p : ℂ := v * s + z₀ with hp_def
+  set p : ℂ := v * s + z₀
   have hp : p ∈ K := hK.closure_subset (closure_mono inter_subset_left hleft)
   have hab : a < b := hs.1.trans hs.2
   have hx : v * a + z₀ ∈ Kᶜ := fun h => hs.1.ne (hseg a ⟨le_rfl, hab.le⟩ h)
-  have hy : v * b + z₀ ∈ Kᶜ := fun h => hs.2.ne' (hseg b ⟨hab.le, le_rfl⟩ h)
   -- Stage 1: smooth the return path through `Kᶜ`
   have hCopen : IsOpen (connectedComponentIn Kᶜ (v * a + z₀)) :=
     hK.isOpen_compl.connectedComponentIn
@@ -83,7 +82,7 @@ theorem notMem_connectedComponentIn_compl_of_isPreconnected_sdiff_singleton (hK 
     rw [mem_thickening_iff]
     exact ⟨π₀ ⟨t, ht⟩, ⟨_, rfl⟩, by simpa using hgδ ⟨t, ht⟩⟩
   -- Stage 2: construct the closed curve Γ = segment ∪ smooth return
-  set Γ : ℝ → ℂ := fun t => if t ≤ b then v * t + z₀ else g (t - b) with hΓ_def
+  let Γ : ℝ → ℂ := fun t => if t ≤ b then v * t + z₀ else g (t - b)
   have hΓseg : EqOn Γ (fun t : ℝ => v * (t : ℂ) + z₀) (Icc a b) := fun t ht => ite_eq_left ht.2
   have hΓg : ∀ t ∈ Icc b (b + 1), Γ t = g (t - b) := by
     intro t ht

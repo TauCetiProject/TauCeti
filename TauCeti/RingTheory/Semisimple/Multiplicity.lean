@@ -526,7 +526,7 @@ theorem IsSemisimpleModule.nonempty_linearEquiv_of_natCard_linearMap_mul_eq
     omega
   -- Hence `M` and `N` have the same Jordan-Hölder multiplicities.
   refine IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq M N
-    fun S _ _ hS ↦ ?_
+    fun S _ _ _ ↦ ?_
   by_cases hx : ∃ x, Nonempty (S ≃ₗ[R] R ⧸ c x)
   · obtain ⟨x, ⟨e⟩⟩ := hx
     rw [jordanHolderMultiplicity_congr e, jordanHolderMultiplicity_congr e, hA, hB, hAB]

@@ -202,7 +202,6 @@ private theorem deconcatenation_splice_left {n : ℕ} (x : Fin n → M) {a b p d
     rw [subword_eq_of_tprod R _ (by omega) (by omega),
       splice_eq_of_tprod R x e hd (by omega) (by omega)]
     refine of_tprod_congr R M _ (by omega) fun j ↦ ?_
-    have hj := j.isLt
     simp only [Fin.val_cast]
     split_ifs <;> first | rfl | exact congrArg x (by simp only [Fin.mk.injEq]; omega) | omega
   rw [hfst, hsnd]
@@ -231,7 +230,6 @@ private theorem deconcatenation_splice_right {n : ℕ} (x : Fin n → M) {a b p 
     rw [subword_eq_of_tprod R _ (by omega) (by omega),
       splice_eq_of_tprod R x e hd (by omega) (by omega)]
     refine of_tprod_congr R M _ (by omega) fun j ↦ ?_
-    have hj := j.isLt
     simp only [Fin.val_cast]
     split_ifs <;> first | rfl | exact congrArg x (by simp only [Fin.mk.injEq]; omega) | omega
   have hsnd : subword R
@@ -243,7 +241,6 @@ private theorem deconcatenation_splice_right {n : ℕ} (x : Fin n → M) {a b p 
     rw [subword_eq_of_tprod R _ (by omega) (by omega),
       subword_eq_of_tprod R x (by omega) (by omega)]
     refine of_tprod_congr R M _ (by omega) fun j ↦ ?_
-    have hj := j.isLt
     simp only [Fin.val_cast]
     have hjp : ¬(c + j.1) < p := by omega
     have hjp_ne : ¬(c + j.1) = p := by omega

@@ -257,7 +257,6 @@ consecutive or wrap around the whole cycle. This is the arithmetic behind
 `TauCeti.AffineDynkinType.graph_A_adj`. -/
 private lemma sub_val_eq_one_iff {n : ℕ} (hn : 1 ≤ n) (u v : Fin (n + 1)) :
     ((u - v : Fin (n + 1)) : ℕ) = 1 ↔ (v : ℕ) + 1 = (u : ℕ) ∨ ((u : ℕ) = 0 ∧ (v : ℕ) = n) := by
-  have hu : (u : ℕ) < n + 1 := u.isLt
   have hv : (v : ℕ) < n + 1 := v.isLt
   rcases le_or_gt v u with h | h
   · rw [Fin.coe_sub_iff_le.2 h]

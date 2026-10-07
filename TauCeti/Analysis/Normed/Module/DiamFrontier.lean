@@ -75,7 +75,7 @@ theorem exists_mem_frontier_dist_le (hV : IsBounded V) (hx : x ∈ V) (hne : y �
     rw [hγ, dist_eq_norm]
     simp [norm_smul, abs_of_nonneg ht]
   have hγ1 : γ 1 = x := by simp [hγ, hd]
-  set T : ℝ := max 1 ((R + 1) / ‖d‖) with hT
+  set T : ℝ := max 1 ((R + 1) / ‖d‖)
   have hT1 : (1 : ℝ) ≤ T := le_max_left _ _
   have hTd : R + 1 ≤ T * ‖d‖ := by
     have := le_max_right 1 ((R + 1) / ‖d‖)

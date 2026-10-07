@@ -77,7 +77,7 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_odd (hp : Odd p
   obtain ⟨-, e₁, he₁⟩ := exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordNeTwo ρ hnd
     (isAlt_degreeOneForm_of_ne_two hp2 ρ)
   set f : freeProP p (Fin n) →ₜ* freeProP p (Fin n) :=
-    (e₁ : freeProP p (Fin n) →ₜ* freeProP p (Fin n)) with hf
+    (e₁ : freeProP p (Fin n) →ₜ* freeProP p (Fin n))
   set w : pLowerCentralSeries p (freeProP p (Fin n)) 1 :=
     ⟨demushkinWordNeTwo p n (freeProPGen p n),
       demushkinWordNeTwo_mem_pLowerCentralSeries_one dvd_rfl n _⟩ with hw
@@ -96,7 +96,7 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_odd (hp : Odd p
     · exfalso
       apply hi
       set f' : freeProP p (Fin n) →ₜ* freeProP p (Fin n) :=
-        (e₁.symm : freeProP p (Fin n) →ₜ* freeProP p (Fin n)) with hf'
+        (e₁.symm : freeProP p (Fin n) →ₜ* freeProP p (Fin n))
       have hback : gradedMap p f'.toMonoidHom f'.continuous 1
           (gradedMap p f.toMonoidHom f.continuous 1 ρ) = ρ := by
         obtain ⟨x, hx⟩ := gradedMk_surjective 1 ρ

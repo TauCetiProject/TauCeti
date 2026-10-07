@@ -117,7 +117,6 @@ private theorem antilipschitzWith_prodMk {G : Type*} [SeminormedAddCommGroup G] 
     rw [Prod.dist_eq, ← dist_eq_norm]
     exact le_max_right _ _
   have hCd := mul_le_mul_of_nonneg_left hd1 hC
-  have hpos : (0 : ℝ) ≤ dist (g (x : E), P (x : E)) (g (y : E), P (y : E)) := dist_nonneg
   rw [Subtype.dist_eq, dist_eq_norm]
   calc ‖(x : E) - (y : E)‖
       ≤ 2 * (C * ‖g (x : E) - g (y : E)‖) + 2 * ‖P (x : E) - P (y : E)‖ :=

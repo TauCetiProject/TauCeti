@@ -134,7 +134,6 @@ theorem exists_isSliceChart_of_isImmersionAtOfComplement_of_straightening (hf : 
       IsSliceChart Φ (univ ×ˢ ({0} : Set F)) (range f) := by
   -- The ambient chart of the immersion, straightened into `H × F`.
   set Ψ : OpenPartialHomeomorph N (H × F) := h.codChart.trans (straighteningChart A hO hA)
-    with hΨ
   -- Both hold by unfolding `OpenPartialHomeomorph.trans` and `straighteningChart`.
   have hΨ_apply : ∀ p : N, Ψ p =
       (I.symm (A (h.codChart.extend J p)).1, (A (h.codChart.extend J p)).2) := fun _ => rfl

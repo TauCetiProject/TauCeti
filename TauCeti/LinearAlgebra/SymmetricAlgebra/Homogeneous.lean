@@ -67,8 +67,8 @@ theorem lift_smul_of_mem_homogeneousSubmodule {A : Type*} [CommSemiring A] [Alge
     SymmetricAlgebra.lift (r • f) p = r ^ n • SymmetricAlgebra.lift f p := by
   induction hp using Submodule.pow_induction_on_left' with
   | algebraMap a => simp
-  | add x y i hx hy ihx ihy => simp [ihx, ihy, smul_add]
-  | mem_mul m hm i x hx ih =>
+  | add x y i _ _ ihx ihy => simp [ihx, ihy, smul_add]
+  | mem_mul m hm i x _ ih =>
       obtain ⟨y, rfl⟩ := hm
       simp only [map_mul, SymmetricAlgebra.lift_ι_apply, LinearMap.smul_apply, ih]
       simp [pow_succ, Algebra.smul_def, mul_left_comm, mul_assoc]

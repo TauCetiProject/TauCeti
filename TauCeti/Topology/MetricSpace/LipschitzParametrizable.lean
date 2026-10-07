@@ -152,7 +152,7 @@ theorem biUnion_finset {I : Type*} (s : Finset I) {A : I → Set E}
   classical
   induction s using Finset.induction_on with
   | empty => simp
-  | @insert i s hi ih =>
+  | @insert i s _ ih =>
       rw [Finset.set_biUnion_insert]
       exact (hA i (Finset.mem_insert_self i s)).union
         (ih fun j hj ↦ hA j (Finset.mem_insert_of_mem hj))
@@ -199,7 +199,7 @@ theorem prod {G : Type*} [PseudoEMetricSpace G] {e : ℕ} {T : Set G}
 theorem finite (hS : S.Finite) : IsLipschitzParametrizable d S := by
   induction S, hS using Set.Finite.induction_on with
   | empty => exact empty
-  | @insert x S hx hS ih =>
+  | @insert x S _ hS ih =>
       rw [insert_eq, singleton_union]
       exact (singleton (d := d) x).union ih
 

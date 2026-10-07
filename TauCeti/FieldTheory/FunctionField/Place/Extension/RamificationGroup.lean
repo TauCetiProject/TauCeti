@@ -247,8 +247,8 @@ noncomputable def ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
       refine congrArg Multiplicative.ofAdd (funext fun x ↦ ?_)
       have ht0 : t ≠ 0 := fun h0 ↦ by simp [h0, ord_zero] at ht
       set s : F' := (t ^ (i + 2))⁻¹ with hs
-      set σ : F' ≃ₐ[F] F' := ((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') with hσ
-      set τ : F' ≃ₐ[F] F' := ((h : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') with hτ
+      set σ : F' ≃ₐ[F] F' := ((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F')
+      set τ : F' ≃ₐ[F] F' := ((h : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F')
       -- Normalize the error of `τ` by the chosen power of the uniformizer.
       have hw : τ (x : F') - (x : F') ∈ P.filtration ((i : ℤ) + 2) :=
         sub_mem_filtration_add_two F P h x.2

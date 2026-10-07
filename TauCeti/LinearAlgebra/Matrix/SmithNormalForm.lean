@@ -550,13 +550,13 @@ private lemma make_first_divide_all (k : ℕ) (d : Fin (k + 2) → ℤ) (hd : �
   revert d hd ha_pos
   induction N using Nat.strongRecOn with
   | _ N ih =>
-    intro d hd ha_pos hN
+    intro d hd _ hN
     by_cases hall : ∀ j, d (0 : Fin (k + 2)) ∣ d j
     · exact ⟨d, hd, hall, 1, 1, by simp⟩
     · push Not at hall
       obtain ⟨j, hj_ndvd⟩ := hall
       have hj_ne : j.val ≠ 0 := fun h ↦ hj_ndvd ((Fin.ext h : j = 0) ▸ dvd_refl _)
-      obtain ⟨L₁, R₁, d₁, hd₁_pos, hd₁_zero, hd₁_rest, _, hlt, hmul₁⟩ :=
+      obtain ⟨L₁, R₁, d₁, hd₁_pos, hd₁_zero, _, _, hlt, hmul₁⟩ :=
         gcd_step_general k d hd j hj_ne
       have hN₁ : (d₁ (0 : Fin (k + 2))).natAbs < N := by
         -- definitional: the literal `0` and the constructor `⟨0, _⟩` coincide in `Fin (k + 2)`
@@ -718,7 +718,7 @@ private lemma dvd_of_le_of_chain {d : Fin n → ℤ}
     simpa [Nat.add_sub_cancel' (Fin.val_le_of_le hij)] using h (j.val - i.val) (by omega)
   intro t
   induction t with
-  | zero => intro ht; exact dvd_rfl
+  | zero => intro _; exact dvd_rfl
   | succ m ih => exact fun ht ↦ dvd_trans (ih (by omega)) (hchain (i.val + m) ht)
 
 /-- **Smith normal form over `ℤ` with special linear transformations.** Every square integer
@@ -807,7 +807,7 @@ private lemma prod_take_dvd_of_mul_diagonal_mul_eq {c d : Fin n → ℤ}
     (hc : ∀ ⦃i j : Fin n⦄, i ≤ j → c i ∣ c j) (P Q : Matrix (Fin n) (Fin n) ℤ)
     (hcd : P * Matrix.diagonal c * Q = Matrix.diagonal d) (k : ℕ) (hk : k ≤ n) :
     (∏ j : Fin k, c ⟨j.val, by omega⟩) ∣ (∏ j : Fin k, d ⟨j.val, by omega⟩) := by
-  set e : Fin k → Fin n := fun j ↦ ⟨j.val, by omega⟩ with he_def
+  set e : Fin k → Fin n := fun j ↦ ⟨j.val, by omega⟩ with _he_def
   have he_inj : Function.Injective e := fun _ _ h ↦ Fin.ext (Fin.mk.inj h)
   have hprod_d : ∏ j : Fin k, d (e j) =
       det ((P * Matrix.diagonal c * Q).submatrix e e) := by

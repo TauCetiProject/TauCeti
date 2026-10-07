@@ -169,9 +169,6 @@ noncomputable def coindTraceHom [U.FiniteIndex]
       (⟨TopRep.res (U.subtype : U →* G) A.obj,
         A.property.res continuous_subtype_val⟩ : SmoothDiscreteTopRep R U)).obj ⟶ A.obj := by
   letI : ContinuousSMul G A.obj.V := A.property.continuousSMul
-  let X := coindTopRep R G U
-    (⟨TopRep.res (U.subtype : U →* G) A.obj,
-      A.property.res continuous_subtype_val⟩ : SmoothDiscreteTopRep R U)
   exact CategoryTheory.ConcreteCategory.ofHom
     { toContinuousLinearMap :=
         ⟨DiscreteCoind.traceLinear (R := R) G U A.obj.V, continuous_of_discreteTopology⟩

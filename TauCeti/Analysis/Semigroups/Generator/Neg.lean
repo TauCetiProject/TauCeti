@@ -60,7 +60,7 @@ private theorem hasDerivWithinAt_productOrbit {S T : StronglyContinuousSemigroup
     HasDerivWithinAt (fun u : ℝ => S.realOperator u (T.realOperator u x)) 0 (Set.Ici s) s := by
   have hdom : T.domain = S.domain := by
     rw [← T.generator_domain, hgen, LinearPMap.neg_domain, S.generator_domain]
-  set y : X := T.realOperator s x with hy
+  set y : X := T.realOperator s x
   have hyT : y ∈ T.domain := T.realOperator_mem_domain hs hx
   have hyS : y ∈ S.domain := hdom ▸ hyT
   have hyT' : y ∈ T.generator.domain := by rw [T.generator_domain]; exact hyT

@@ -119,14 +119,14 @@ private lemma coconeLeg_singleton_compat (c : Cocone (cechDiagram U)) (i j : ι)
     · exact hx.1
     · exact Finset.mem_singleton.1 hk ▸ hx.2
   -- Both composites factor through the inclusion into the intersection indexed by `{i, j}`.
-  have key : ∀ k (f : s ⟶ CechIndex.singleton k)
+  have key : ∀ k (_f : s ⟶ CechIndex.singleton k)
       (h : (cechIntersection U (CechIndex.singleton i) : Set X) ∩
         cechIntersection U (CechIndex.singleton j) ⊆ cechIntersection U (CechIndex.singleton k)),
       fundamentalGroupoidFunctor.map (TopCat.ofHom (ContinuousMap.inclusion h)) ≫
         coconeLeg U c (CechIndex.singleton k) =
       fundamentalGroupoidFunctor.map (TopCat.ofHom (ContinuousMap.inclusion hs)) ≫
-        coconeLeg U c s := fun k f h ↦ by
-    rw [← map_inclusion_comp_coconeLeg U c f, ← Functor.map_comp_assoc, ← TopCat.ofHom_comp]
+        coconeLeg U c s := fun k _f h ↦ by
+    rw [← map_inclusion_comp_coconeLeg U c _f, ← Functor.map_comp_assoc, ← TopCat.ofHom_comp]
     -- A composite of inclusions of subsets is the inclusion
     -- (`ContinuousMap.inclusion_comp_inclusion` holds by `rfl`).
     rfl

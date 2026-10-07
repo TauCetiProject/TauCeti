@@ -87,7 +87,7 @@ theorem exists_weight_intersection_branch_seven_eq
   obtain ⟨w, hw, hwb, hedge, hab⟩ := hf.exists_weight_intersection_eq hcard
   -- The `E₆` subconfiguration on `c 1, …, c 5` and the same leaf supplies the final weight,
   -- edge, and non-edge.
-  obtain ⟨w', hw₁, hw₂, hw₃, hw₄, hw₅, -, -, -, -, ha₄₅, -, -, -, -, -, -, -, -, -,
+  obtain ⟨w', _, _, hw₃, _, hw₅, -, -, -, -, ha₄₅, -, -, -, -, -, -, -, -, -,
       -, hbranch5⟩ :=
     T.exists_weight_intersection_branch_six_eq (c₁ := c 1) (c₂ := c 2) (c₃ := c 3)
       (c₄ := c 4) (c₅ := c 5) (c₆ := branch) hcard

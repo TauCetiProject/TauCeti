@@ -37,7 +37,7 @@ theorem map_mem_homogeneousSubmodule (f : M →ₗ[R] N) {n : ℕ}
   induction ha using Submodule.pow_induction_on_left' with
   | algebraMap r => simp
   | add a b n ha hb iha ihb => simpa using Submodule.add_mem _ iha ihb
-  | mem_mul m hm n a ha ih =>
+  | mem_mul m hm n a _ ih =>
       obtain ⟨m, rfl⟩ := hm
       simpa [Nat.add_comm] using
         SetLike.mul_mem_graded (ι_mem_homogeneousSubmodule R N (f m)) ih

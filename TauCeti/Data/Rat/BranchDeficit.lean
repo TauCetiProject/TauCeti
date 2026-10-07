@@ -65,7 +65,7 @@ theorem Multiset.sum_one_sub_one_div_le_card (e : Multiset ℕ) :
   have hcard : (e.map fun n : ℕ ↦ 1 - 1 / (n : ℚ)).card = e.card := Multiset.card_map _ _
   have hhigh : ∀ x ∈ e.map fun n : ℕ ↦ 1 - 1 / (n : ℚ), x ≤ 1 := by
     intro x hx
-    obtain ⟨n, hn, rfl⟩ := Multiset.mem_map.mp hx
+    obtain ⟨n, _, rfl⟩ := Multiset.mem_map.mp hx
     exact Nat.one_sub_one_div_le_one n
   have := Multiset.sum_le_card_nsmul _ 1 hhigh
   rwa [hcard, nsmul_eq_mul, mul_one] at this
@@ -188,7 +188,6 @@ theorem one_div_forty_two_le_hyperbolic_deficit {γ : ℕ} (he : ∀ n ∈ e, 2 
       linarith
   -- Genus at least two: the deficit is already at least two.
   · have hγ2 : (2 : ℚ) ≤ γ := by exact_mod_cast hγ
-    have hsum0 : (0 : ℚ) ≤ (e.map fun n : ℕ ↦ 1 - 1 / (n : ℚ)).sum := le_trans (by positivity) hlow
     linarith
 
 /-- The genus-zero branch data `(2, 3, 7)` attains the bound `1/42`, so the constant in

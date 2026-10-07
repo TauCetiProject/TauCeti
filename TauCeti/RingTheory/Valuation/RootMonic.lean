@@ -75,7 +75,7 @@ lemma map_eval_eq_of_one_lt {p : L[X]} (hp : p.Monic)
     (hcoeff : ∀ i < p.natDegree, ν (p.coeff i) ≤ 1) (ht : 1 < ν t) :
     ν (p.eval t) = ν t ^ p.natDegree := by
   nontriviality Γ
-  set n := p.natDegree with hn
+  set n := p.natDegree with _
   have h0 : ν t ≠ 0 := (zero_lt_one.trans ht).ne'
   have heval : p.eval t = (∑ i ∈ Finset.range n, p.coeff i * t ^ i) + t ^ n := by
     rw [eval_eq_sum_range, Finset.sum_range_succ, hp.coeff_natDegree, one_mul]

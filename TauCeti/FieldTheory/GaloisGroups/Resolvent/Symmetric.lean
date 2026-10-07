@@ -254,7 +254,7 @@ theorem universalResolvent_map_rename {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ)
   · intro Ψ hΨ
     rw [← renameOrbit_image n Φ σ]
     exact Finset.mem_image.mpr ⟨Ψ, hΨ, rfl⟩
-  · intro Ψ₁ h₁ Ψ₂ h₂ h
+  · intro Ψ₁ _ Ψ₂ _ h
     exact MvPolynomial.rename_injective (⇑σ) σ.injective h
   · intro Ψ hΨ
     have hΨ' : Ψ ∈ (renameOrbit Φ).image (MvPolynomial.rename (⇑σ)) := by

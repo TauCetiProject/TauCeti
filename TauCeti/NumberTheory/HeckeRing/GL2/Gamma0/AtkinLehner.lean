@@ -574,7 +574,7 @@ theorem atkinLehnerAntiInvolution_bar_mem_doubleCoset_of_smul [NeZero N] (d : �
     (atkinLehnerAntiInvolution N).bar x hx ∈
       DoubleCoset.doubleCoset x ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ)) := by
   obtain ⟨hd, hdN⟩ := pos_and_coprime_of_coe_eq_smul N d x x₀ hx hx₀ hsmul
-  set s : GL (Fin 2) ℚ := natDiagGL 2 (fun _ ↦ d) with hs_def
+  let s : GL (Fin 2) ℚ := natDiagGL 2 (fun _ ↦ d)
   have hs : s ∈ Delta0 N := natDiagGL_mem_Delta0_of_coprime N _ fun _ ↦ hdN
   have hs_wit : (s : Matrix (Fin 2) (Fin 2) ℚ) =
       (Matrix.diagonal (fun _ ↦ (d : ℤ))).map (Int.cast : ℤ → ℚ) :=

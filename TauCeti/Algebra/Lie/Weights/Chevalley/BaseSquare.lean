@@ -184,9 +184,9 @@ theorem exists_isChevalleySystem_of_lieBasis
   have hsquare : ∀ alpha : Weight K H L, alpha.IsNonZero → IsSquare (-c alpha) := by
     intro alpha halpha
     exact hx.isSquare_neg_of_forall_mem_base omega homega b.base c
-      (fun beta hbeta => hc beta) (fun i =>
+      (fun beta _ => hc beta) (fun i =>
         hx.isSquare_neg_on_lieBasis_base omega b i (he (b.baseSupportEquiv.symm i)) c
-          (fun beta hbeta => hc beta)) alpha halpha
+          (fun beta _ => hc beta)) alpha halpha
   apply hx.exists_isChevalleySystem_of_forall_exists_sq omega homega
   intro alpha halpha
   exact exists_sq_map_eq_smul_neg_of_isSquare (x := x) omega (hc alpha)

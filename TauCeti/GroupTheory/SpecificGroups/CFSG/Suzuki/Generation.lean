@@ -293,8 +293,8 @@ theorem finiteFixedSubgroup_le_suzukiGroup :
   · obtain ⟨κ, a, b, rfl⟩ := exists_eq_torus_mul_unipotent hg h
     exact mul_mem (Suzuki.torus_mem_suzukiGroup m κ) (Suzuki.unipotent_mem_suzukiGroup a b)
   · have htwo : (2 : GaloisField 2 (2 * m + 1)) = 0 := CharTwo.two_eq_zero
-    set a := (g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 1 3 / g 0 3 with ha
-    set b := (g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 2 3 / g 0 3 with hb
+    set a := (g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 1 3 / g 0 3
+    set b := (g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 2 3 / g 0 3
     set g' := Suzuki.weyl m * Suzuki.unipotent m a b * g with hg'
     have hg'mem : g' ∈ finiteFixedSubgroup m hvalid :=
       mul_mem (mul_mem (suzukiGroup_le_finiteFixedSubgroup m hvalid Suzuki.weyl_mem_suzukiGroup)

@@ -39,7 +39,7 @@ theorem exists_basis_eq_one_self_of_notMem_range_of_isIntegral {K : Type*} [Fiel
   -- A linearly independent family of `finrank` vectors is a basis.
   have hcard : Fintype.card (Fin 2) = finrank ℚ K := by
     rw [Fintype.card_fin]; exact hfin.symm
-  set b := basisOfLinearIndependentOfCardEqFinrank' ![1, x] hli hcard with hb_def
+  set b := basisOfLinearIndependentOfCardEqFinrank' ![1, x] hli hcard
   have hbcoe : ⇑b = ![1, x] := coe_basisOfLinearIndependentOfCardEqFinrank' _ _ _
   refine ⟨b, hbcoe, ?_⟩
   intro i

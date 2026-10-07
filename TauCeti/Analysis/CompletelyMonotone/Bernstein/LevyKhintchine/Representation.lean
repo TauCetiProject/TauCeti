@@ -252,7 +252,6 @@ private lemma min_one_mul_inv_le_exp_mul_one_sub_exp_neg_mul_inv {x : ℝ} (hx :
     min 1 x * x⁻¹ ≤ Real.exp 1 * ((1 - Real.exp (-x)) * x⁻¹) := by
   by_cases hx_zero : x = 0
   · simp [hx_zero]
-  have hx_pos : 0 < x := lt_of_le_of_ne hx (Ne.symm hx_zero)
   have hmain : min 1 x ≤ Real.exp 1 * (1 - Real.exp (-x)) := by
     by_cases hx_one : x ≤ 1
     · rw [min_eq_right hx_one]

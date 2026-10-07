@@ -73,7 +73,7 @@ private theorem exists_disc_factorization {U : Set ℂ} (hUb : IsBounded U)
         f z = G ((u : ℂ) *
           (((z - I) / (z + I) - c) / (1 - (starRingEnd ℂ) (c : ℂ) * ((z - I) / (z + I))))) := by
   -- the inverse `K` of the Cayley transform `C`, from the disc onto the upper half-plane
-  set C : ℂ → ℂ := fun z => (z - I) / (z + I) with hC
+  set C : ℂ → ℂ := fun z => (z - I) / (z + I)
   have hCH : BijOn C upperHalfPlaneSet (ball 0 1) := bijOn_sub_I_div_add_I_upperHalfPlaneSet
   set K := invFunOn C upperHalfPlaneSet
   have hKmaps : MapsTo K (ball 0 1) upperHalfPlaneSet := hCH.surjOn.mapsTo_invFunOn

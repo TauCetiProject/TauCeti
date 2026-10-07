@@ -185,7 +185,7 @@ private theorem B2_le_ker_cyclicZ2Map :
     (B2 G M).addSubgroupOf (Z2 G M) ≤ (cyclicZ2Map g).ker := by
   intro f hf
   rw [AddSubgroup.mem_addSubgroupOf] at hf
-  obtain ⟨c, hc, hcf⟩ := mem_B2_iff.mp hf
+  obtain ⟨c, _, hcf⟩ := mem_B2_iff.mp hf
   rw [AddMonoidHom.mem_ker]
   rw [cyclicZ2Map_apply]
   rw [QuotientAddGroup.eq_zero_iff, AddSubgroup.mem_addSubgroupOf]

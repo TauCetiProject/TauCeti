@@ -224,7 +224,6 @@ private lemma chord_addX_addY {q₁ q₂ w₁ w₂ Λ N T₃ wT : F}
         W.toAffine.addY (q₁ / w₁) (q₂ / w₂) (-1 / w₁)
           (W.toAffine.slope (q₁ / w₁) (q₂ / w₂) (-1 / w₁) (-1 / w₂)) := by
   have hxq := chord_x_ne hw₁0 hw₂0 hx
-  have hne : q₁ / w₁ - q₂ / w₂ ≠ 0 := sub_ne_zero.mpr hxq
   have hline₁ : w₁ = Λ * q₁ + N := by linear_combination -hN
   have hline₂ : w₂ = Λ * q₂ + N := by linear_combination -hN - hslope
   have hqw : q₁ * w₂ - q₂ * w₁ = N * (q₁ - q₂) := by

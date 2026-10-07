@@ -246,7 +246,7 @@ private theorem exists_pLowerCentralSeries_top_eq_bot_aux (m : ℕ) :
     rcases (hG.to_subgroup (Subgroup.center G)).card_eq_or_dvd with h | h
     · exact absurd h Finite.one_lt_card.ne'
     · exact h
-  set Z : Subgroup G := Subgroup.zpowers (z : G) with hZ
+  set Z : Subgroup G := Subgroup.zpowers (z : G)
   have hZc : Z ≤ Subgroup.center G := Subgroup.zpowers_le.2 z.2
   have : Z.Normal := Subgroup.normal_of_le_center hZc
   have hz1 : (z : G) ≠ 1 := by

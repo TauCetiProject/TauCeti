@@ -340,7 +340,6 @@ private theorem transpose_coe_transvectionWeylElement_symm (hij : i ≠ j) :
     (((transvectionWeylElement (A := A) hij.symm : GL n A) : Matrix n n A).transpose) =
       ((transvectionWeylElement hij : GL n A) : Matrix n n A) := by
   ext a b
-  have hji : j ≠ i := hij.symm
   rw [Matrix.transpose_apply, coe_transvectionWeylElement_apply,
     coe_transvectionWeylElement_apply]
   by_cases hai : a = i <;> by_cases haj : a = j <;>

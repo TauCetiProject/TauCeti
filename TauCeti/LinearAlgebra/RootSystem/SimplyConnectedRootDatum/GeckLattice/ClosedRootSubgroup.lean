@@ -155,7 +155,7 @@ theorem geckRootSubgroupMatrix_apply (i : Fin t.rank ⊕ Fin t.rank)
   simp_rw [t.geckRootSubgroup_dividedPower_repr ht]
   rw [Finset.sum_eq_single 1]
   · simp
-  · intro n hn hne
+  · intro n _ hne
     simp [hne]
   · intro hnot
     have htwo := t.two_le_nilpotencyClass_geckRootOperator ht i

@@ -156,7 +156,7 @@ theorem commutatorElement_jacobi_mem_pLowerCentralSeries {i j k : ℕ} {a b c : 
     (hc : c ∈ pLowerCentralSeries p G k) :
     ⁅⁅a, b⁆, c⁆ * ⁅⁅b, c⁆, a⁆ * ⁅⁅c, a⁆, b⁆ ∈ pLowerCentralSeries p G (i + j + k + 2 + 1) := by
   -- Work in `Q = G ⧸ λ_{m+1}` with `m = i + j + k + 2`.
-  set N := pLowerCentralSeries p G (i + j + k + 2 + 1) with hN
+  let N := pLowerCentralSeries p G (i + j + k + 2 + 1)
   -- `⁅u, v * w⁆ ≡ ⁅u, w⁆` when `⁅u, v⁆ ∈ λ_{m+1}` and `⁅u, w⁆ ∈ λ_m`.
   have key : ∀ {u v w : G}, ⁅u, v⁆ ∈ N → ⁅u, w⁆ ∈ pLowerCentralSeries p G (i + j + k + 2) →
       ((⁅u, v * w⁆ : G) : G ⧸ N) = ((⁅u, w⁆ : G) : G ⧸ N) := by

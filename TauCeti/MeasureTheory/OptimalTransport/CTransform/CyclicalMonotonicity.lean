@@ -237,7 +237,7 @@ theorem IsCyclicallyMonotone.exists_isCConcave_subset_cSuperdifferential
     ∃ φ : X → EReal, IsCConcave c φ ∧ S ⊆ cSuperdifferential c φ := by
   rcases S.eq_empty_or_nonempty with rfl | ⟨p, hp⟩
   · exact ⟨cTransformSymm c 0, isCConcave_cTransformSymm c 0, Set.empty_subset _⟩
-  set φ := rockafellarPotential c S p with hφdef
+  set φ := rockafellarPotential c S p
   have hstep : ∀ q ∈ S, ∀ x : X, φ x ≤ φ q.1 + ((c (x, q.2) - c q : ℝ) : EReal) :=
     fun q hq x => rockafellarPotential_le_add hq x
   have hsub : S ⊆ cSuperdifferential c φ := by
@@ -250,7 +250,7 @@ theorem IsCyclicallyMonotone.exists_isCConcave_subset_cSuperdifferential
       have h := hstep (x, y) hxy p.1
       rw [hbot, hzero] at h
       simp at h
-    set b : ℝ := (φ x).toReal with hbdef
+    set b : ℝ := (φ x).toReal
     have hb : φ x = (b : EReal) := (EReal.coe_toReal htop hbot).symm
     have hle : ∀ x' : X, ((c (x, y) : EReal)) - φ x ≤ (c (x', y) : EReal) - φ x' := by
       intro x'

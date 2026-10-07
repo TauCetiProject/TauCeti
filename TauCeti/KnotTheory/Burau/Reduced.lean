@@ -224,7 +224,7 @@ private theorem burauCoordMatrix_mulVec_eq_sum_range (m : ℕ) (t : Rˣ)
         ((t⁻¹ : Rˣ) : R) ^ ((i : ℕ) + 1 - a) * x (Fin.ofNat (m + 1) a) else 0 := by
       rw [← Fin.sum_univ_eq_sum_range]
       apply Finset.sum_congr rfl
-      intro a ha
+      intro a _
       simp [Fin.ofNat_eq_cast]
     _ = _ := by
       rw [← Finset.sum_filter]
@@ -232,7 +232,7 @@ private theorem burauCoordMatrix_mulVec_eq_sum_range (m : ℕ) (t : Rˣ)
       · ext a
         simp only [Finset.mem_filter, Finset.mem_range]
         omega
-      · intro a ha
+      · intro a _
         rfl
 
 private theorem burauColMatrix_mulVec_zero (m : ℕ) (hm : 0 < m) (t : R) (c : Fin m → R) :

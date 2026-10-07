@@ -362,7 +362,7 @@ theorem isOpen_ideleCongruenceSubgroup (𝔪 : Modulus K) :
           ((continuous_apply w.1).comp continuous_fst))
   have hmemA : ∀ x ∈ ideleCongruenceSubgroup 𝔪, (x : 𝔸[K]) ∈ A := by
     intro x hx
-    refine ⟨fun v ↦ ?_, fun v hv ↦ ?_, fun w hw ↦ ?_⟩
+    refine ⟨fun v ↦ ?_, fun v _ ↦ ?_, fun w hw ↦ ?_⟩
     · exact ideleCongruenceSubgroup.snd_mem_adicCompletionIntegers hx v
     · exact ideleCongruenceSubgroup.valued_snd_sub_one_le_of_pow_dvd hx
         (𝔪.pow_exponent_dvd_finitePart v)
@@ -567,7 +567,7 @@ theorem ideleCongruenceSubgroup_gcd (𝔪 𝔫 : Modulus K) :
       · simp
       · exact hpos hw (not_not.mp fun h𝔫 ↦ hwT (hmemT.mpr ⟨hw, h𝔫⟩))
   · -- The components of `y` satisfy the conditions of `𝔫`.
-    refine mem_ideleCongruenceSubgroup_iff.mpr ⟨fun v _ ↦ ?_, fun v hv ↦ ?_, fun w hw ↦ ?_⟩
+    refine mem_ideleCongruenceSubgroup_iff.mpr ⟨fun v _ ↦ ?_, fun v _ ↦ ?_, fun w hw ↦ ?_⟩
     · rw [hyf]
       split_ifs
       · exact hunit v

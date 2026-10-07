@@ -54,7 +54,7 @@ noncomputable def groupFunctorGrp {C : Type u} [Category.{v} C]
         { app := fun X => ↾fun _ => (1 : F.obj X)
           naturality := by
             intro X Y f
-            ext x
+            ext _
             exact (F.map f).hom.map_one.symm }
       mul :=
         { app := fun X => ↾fun p => p.1 * p.2

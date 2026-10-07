@@ -122,7 +122,7 @@ private theorem baseChangeExp_tmul_lie (D : LieDerivation ℚ L L) (M : LieSubal
         ∑ n ∈ range (2 * k), ∑ ij ∈ antidiagonal n,
           (t ^ (ij.1 + ij.2) * (a * b)) ⊗ₜ[ℤ] ⁅d ij.1 x, d ij.2 y⁆ := by
       apply Finset.sum_congr rfl
-      intro n hn
+      intro n _
       rw [integralDividedPower_lie, TensorProduct.tmul_sum]
       apply Finset.sum_congr rfl
       intro ij hij

@@ -112,8 +112,6 @@ private theorem enorm_derivWithin_sqrt_real_inner_add_le_enorm_mfderiv {p : M}
         Real.sqrt (inner ℝ (w t) (w t) + δ)) t := by
     have h := (Real.hasDerivAt_sqrt hpos.ne').comp t hQδ
     refine h.congr_deriv ?_
-    have hsqrt_pos : 0 < Real.sqrt (inner ℝ (w t) (w t) + δ) :=
-      Real.sqrt_pos.mpr hpos
     field_simp
   have hreal :
       ‖derivWithin (fun u ↦ Real.sqrt (inner ℝ (w u) (w u) + δ)) (Icc a b) t‖ ≤

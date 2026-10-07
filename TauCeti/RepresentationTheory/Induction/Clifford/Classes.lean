@@ -70,8 +70,8 @@ noncomputable def indSimpleFDRepClassesOver (V : FDRep k N) [Simple V] :
       (hU := simple_indFDRep_of_inertia V U h) (liesOver_indFDRep_of_inertia V U h))
     fun U U' _ _ h h' e ↦
       (SimpleFDRepClassesOver.mk_eq_mk_iff (indFDRep U) (indFDRep U')
-          (hU := simple_indFDRep_of_inertia V U h)
-          (hU' := simple_indFDRep_of_inertia V U' h')
+          (_hU := simple_indFDRep_of_inertia V U h)
+          (_hU' := simple_indFDRep_of_inertia V U' h')
           (liesOver_indFDRep_of_inertia V U h)
           (liesOver_indFDRep_of_inertia V U' h')).mpr (e.elim nonempty_iso_indFDRep)
 
@@ -109,7 +109,7 @@ theorem indSimpleFDRepClassesOver_surjective (V : FDRep k N) [Simple V] :
   exact ⟨SimpleFDRepClassesOver.mk U (hU := hU) hUlies,
     (indSimpleFDRepClassesOver_mk V U hUlies).trans
       ((SimpleFDRepClassesOver.mk_eq_mk_iff (indFDRep U) W
-        (hU := simple_indFDRep_of_inertia V U hUlies) _ _).mpr he)⟩
+        (_hU := simple_indFDRep_of_inertia V U hUlies) _ _).mpr he)⟩
 
 /-- **The Clifford correspondence.**  Let `N` be a normal subgroup of a finite group `G` and let
 `V` be an irreducible representation of `N` over an algebraically closed field of characteristic

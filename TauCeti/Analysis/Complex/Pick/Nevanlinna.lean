@@ -66,7 +66,6 @@ number. -/
 @[simp]
 theorem circleCayleyInv_boundaryCayley (x : ℝ) :
     circleCayleyInv (boundaryCayley x) = x := by
-  have hden : x ^ 2 + 1 ≠ 0 := by positivity
   simp only [circleCayleyInv, coe_boundaryCayley, div_re, div_im, sub_re, sub_im,
     ofReal_re, ofReal_im, I_re, I_im, add_re, add_im, normSq_apply]
   field_simp
@@ -355,7 +354,6 @@ theorem norm_nevanlinnaKernel_le {z : ℂ} (hz : z ∈ UpperHalfPlane.upperHalfP
     rw [hW, norm_div, ← hD, ← hE]
     field_simp
   have hWlt : W < 1 := by nlinarith
-  have hWnonneg : (0 : ℝ) ≤ W := norm_nonneg _
   have hzeta : ‖(boundaryCayley x : ℂ)‖ = 1 := Circle.norm_coe _
   have hnum : ‖(boundaryCayley x : ℂ) + (z - I) / (z + I)‖ ≤ 1 + W := by
     calc ‖(boundaryCayley x : ℂ) + (z - I) / (z + I)‖

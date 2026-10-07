@@ -196,9 +196,9 @@ theorem exists_rotation_of_re_ne {P Q : ℍ} (hPQ : P.re ≠ Q.re) :
           (Real.cos θ ^ 2 - Real.sin θ ^ 2) * P.im / (2 * (Real.sin θ * Real.cos θ)) := by
   obtain ⟨θ, hgb, hne, hθ⟩ :=
     exists_geodesicBetween_eq_toPoint_mul_rotation (fun h ↦ hPQ (h ▸ rfl) : P ≠ Q)
-  set Q' : ℍ := (toPoint P)⁻¹ • Q with hQ'
+  set Q' : ℍ := (toPoint P)⁻¹ • Q
   set α := Real.sin θ * Real.cos θ with hα
-  set β := Real.cos θ ^ 2 - Real.sin θ ^ 2 with hβ
+  set β := Real.cos θ ^ 2 - Real.sin θ ^ 2
   have hQ're : Q'.re = (Q.re - P.re) / P.im := re_toPoint_inv_smul P Q
   have hQ'n : Complex.normSq (Q' : ℂ) = Complex.normSq ((Q : ℂ) - P.re) / P.im ^ 2 :=
     normSq_toPoint_inv_smul P Q
@@ -277,15 +277,14 @@ theorem exists_re_inv_geodesicBetween_smul_eq {P Q : ℍ} (hPQ : P.re ≠ Q.re) 
       κ * ((P.re - Q.re) * (Complex.normSq ((z : ℂ) - circleCenter P Q) -
         Complex.normSq ((P : ℂ) - circleCenter P Q))) := by
   obtain ⟨θ, hgb, hE2, hc⟩ := exists_rotation_of_re_ne hPQ
-  set α := Real.sin θ * Real.cos θ with hα
-  set β := Real.cos θ ^ 2 - Real.sin θ ^ 2 with hβ
+  set α := Real.sin θ * Real.cos θ
+  set β := Real.cos θ ^ 2 - Real.sin θ ^ 2
   have hP := P.im_pos.ne'
   have hα0 : α ≠ 0 := fun h ↦ by simp [h] at hE2
   have hQP : P.re - Q.re ≠ 0 := sub_ne_zero.2 hPQ
   rw [hgb, mul_inv_rev, mul_smul, re_rotation_inv_smul, re_toPoint_inv_smul,
     normSq_toPoint_inv_smul]
   set N := Complex.normSq ((Real.sin θ : ℂ) * (((toPoint P)⁻¹ • z : ℍ) : ℂ) + Real.cos θ)
-    with hN
   have hN0 : 0 < N := normSq_sin_mul_add_cos_pos θ _
   have key : α * (Complex.normSq ((z : ℂ) - P.re) / P.im ^ 2 - 1) + β * ((z.re - P.re) / P.im) =
       (α / P.im ^ 2) * (Complex.normSq ((z : ℂ) - circleCenter P Q) -
@@ -380,7 +379,7 @@ theorem exists_velocity_geodesicBetween_zero_eq {P Q : ℍ} (hPQ : P.re ≠ Q.re
   obtain ⟨θ, hgb, hE2, hc⟩ := exists_rotation_of_re_ne hPQ
   have hα0 : Real.sin θ * Real.cos θ ≠ 0 := fun h ↦ by simp [h] at hE2
   refine ⟨2 * (Real.sin θ * Real.cos θ), ?_, ?_⟩
-  · have h : 2 * (Real.sin θ * Real.cos θ) * (Q.re - P.re) =
+  · have _ : 2 * (Real.sin θ * Real.cos θ) * (Q.re - P.re) =
         -2 * (Real.sin θ * Real.cos θ * (P.re - Q.re)) := by ring
     linarith
   · rw [hgb, velocity_mul, geodesicLine_zero, UpperHalfPlane.pslMk_smul, rotation_smul_I,

@@ -232,7 +232,7 @@ theorem exists_isChevalleySystem_of_forall_exists_sq
     intro α hα
     have h := hx.mul_eq_one_of_map_eq_smul_neg ω hω hα (ht α hα) (hopp α hα)
     linear_combination h
-  set u : Weight K H L → K := fun α ↦ if α ∈ s then (t α)⁻¹ else t (-α) with hu
+  set u : Weight K H L → K := fun α ↦ if α ∈ s then (t α)⁻¹ else t (-α)
   have humem : ∀ α : Weight K H L, α ∈ s → u α = (t α)⁻¹ := fun _ h ↦ ite_eq_left h
   have hunot : ∀ α : Weight K H L, α ∉ s → u α = t (-α) := fun _ h ↦ ite_eq_right h
   have huneg : ∀ α : Weight K H L, α.IsNonZero → α ∈ s → u (-α) = t α := by

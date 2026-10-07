@@ -96,7 +96,7 @@ theorem SubharmonicOn.frequently_le_setAverage_of_le (hv : SubharmonicOn v U) (h
     ∃ᶠ r in 𝓝[>] 0, w x ≤ ⨍ y in ball x r, w y := by
   obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.1 (hU.mem_nhds hx)
   refine ((hv.frequently_le_setAverage x hx).and_eventually (Ioo_mem_nhdsGT hε)).mono
-    fun r ⟨hr, hrε⟩ ↦ ?_
+    fun r ⟨_, hrε⟩ ↦ ?_
   have hrU : closedBall x r ⊆ U := (closedBall_subset_closedBall hrε.2.le).trans hεU
   have hint : ∀ f : E → ℝ, ContinuousOn f U → IntegrableOn f (ball x r) := fun f hf ↦
     ((hf.mono hrU).integrableOn_compact (isCompact_closedBall x r)).mono_set ball_subset_closedBall
@@ -131,7 +131,7 @@ theorem SubharmonicOn.sub_harmonicOnNhd (hu : SubharmonicOn u U) (hh : HarmonicO
   refine ⟨hu.continuousOn.sub hh.continuousOn, fun x hx ↦ ?_⟩
   obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.1 (hU.mem_nhds hx)
   refine ((hu.frequently_le_setAverage x hx).and_eventually (Ioo_mem_nhdsGT hε)).mono
-    fun r ⟨hr, hrε⟩ ↦ ?_
+    fun r ⟨_, hrε⟩ ↦ ?_
   have hrU : closedBall x r ⊆ U := (closedBall_subset_closedBall hrε.2.le).trans hεU
   have hint : ∀ f : E → ℝ, ContinuousOn f U → IntegrableOn f (ball x r) := fun f hf ↦
     ((hf.mono hrU).integrableOn_compact (isCompact_closedBall x r)).mono_set ball_subset_closedBall

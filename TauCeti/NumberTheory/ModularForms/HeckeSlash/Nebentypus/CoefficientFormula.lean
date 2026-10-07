@@ -125,7 +125,7 @@ theorem qExpansion_coeff_heckeRingHomCuspCharSpace_heckeTCompositeGamma0 {n : â„
       (TauCeti.one_mem_strictPeriods_Gamma1_map _)]
     symm
     apply Finset.sum_eq_zero
-    intro d hd
+    intro d _
     rw [zero_mul, Nat.zero_div, CuspFormClass.qExpansion_coeff_zero _ one_pos
       (TauCeti.one_mem_strictPeriods_Gamma1_map _), mul_zero]
   Â· have h := qExpansion_coeff_heckeRingHomCharSpace_heckeTCompositeGamma0_of_ne_zero hn

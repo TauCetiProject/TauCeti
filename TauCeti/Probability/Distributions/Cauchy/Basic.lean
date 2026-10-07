@@ -341,10 +341,6 @@ theorem fourier_exp_neg_mul_abs_eq_cauchyPDFReal_zero_loc (hγ : γ ≠ 0) (ξ :
     𝓕 (fun x : ℝ ↦ (Real.exp (-(2 * Real.pi * γ * |x|)) : ℂ)) ξ = (cauchyPDFReal 0 γ ξ : ℂ) := by
   have hγ' : (0 : ℝ) < (γ : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hγ)
   have ha : (0 : ℝ) < 2 * Real.pi * γ := mul_pos (by positivity) hγ'
-  have h₁ : (0 : ℝ) < (2 * Real.pi * (γ : ℝ)) ^ 2 + (2 * Real.pi * ξ) ^ 2 :=
-    add_pos_of_pos_of_nonneg (pow_pos ha 2) (sq_nonneg _)
-  have h₂ : (0 : ℝ) < (ξ - 0) ^ 2 + (γ : ℝ) ^ 2 :=
-    add_pos_of_nonneg_of_pos (sq_nonneg _) (pow_pos hγ' 2)
   rw [fourier_exp_neg_mul_abs ha, Complex.ofReal_inj, cauchyPDFReal_def]
   field_simp
   ring
@@ -423,7 +419,6 @@ theorem hasLaw_average_of_iIndepFun_cauchyMeasure {Ω ι : Type*} [MeasurableSpa
     simp only [(hlaw _).map_eq, charFun_cauchyMeasure, Finset.prod_apply, Finset.prod_const,
       Finset.card_univ, ← Complex.exp_nat_mul]
     congr 1
-    have hnpos : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.mpr Fintype.card_pos
     have habs : |(Fintype.card ι : ℝ)⁻¹ * t| = (Fintype.card ι : ℝ)⁻¹ * |t| := by
       rw [abs_mul, abs_of_pos (by positivity)]
     have hnc : (Fintype.card ι : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero

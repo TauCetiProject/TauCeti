@@ -75,7 +75,7 @@ theorem ker_branchPermHom [IsAlgClosed k] :
   refine le_antisymm ?_ (fun σ hσ ↦ ?_)
   · refine ker_placePermHomOfInvariant_le _ hx.isFunctionField_adjoin
       (isIntegrallyClosedIn_intermediateField hex k⟮x⟯) (branchPlaces hx) _
-      (fun P hP ↦ P.degree_eq_one_of_isAlgClosed_of_isFunctionField hx.isFunctionField_adjoin) ?_
+      (fun P _ ↦ P.degree_eq_one_of_isAlgClosed_of_isFunctionField hx.isFunctionField_adjoin) ?_
     rw [genus_adjoin_simple_eq_zero hx, card_branchPlaces hF hex hx hdeg]
     omega
   · rw [MonoidHom.mem_ker] at hσ ⊢
@@ -105,7 +105,7 @@ include hF hex hg hx hdeg in
 hyperelliptic involution embeds in the symmetric group of the `2g + 2` branch places. -/
 theorem card_algEquiv_le_of_finrank_adjoin_eq_two [IsAlgClosed k] :
     Nat.card (F ≃ₐ[k] F) ≤ 2 * (2 * genus k F + 2).factorial := by
-  have hfin := finite_algEquiv_of_finrank_adjoin_eq_two hF hex hg hx hdeg
+  have _hfin := finite_algEquiv_of_finrank_adjoin_eq_two hF hex hg hx hdeg
   set φ := branchPermHom hF hex hg hx hdeg with hφ
   have hcard := Subgroup.card_eq_card_quotient_mul_card_subgroup φ.ker
   have hquot : Nat.card ((F ≃ₐ[k] F) ⧸ φ.ker) ≤ (2 * genus k F + 2).factorial := by

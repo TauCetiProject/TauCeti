@@ -300,7 +300,7 @@ theorem natDegree_mul_ord_eq_ramificationIdx {φ : F[X]}
     (φ.natDegree : ℤ) * P'.ord y = ramificationIdx F P' := by
   classical
   have hdeg : 0 < φ.natDegree := hφ.natDegree_pos
-  set P := P'.restrict k F with hPdef
+  set P := P'.restrict k F
   set n := φ.natDegree with hndef
   set e : ℤ := (ramificationIdx F P' : ℤ) with hedef
   have he0 : 0 < e := by
@@ -316,7 +316,7 @@ theorem natDegree_mul_ord_eq_ramificationIdx {φ : F[X]}
     have h : algebraMap F F' (φ.coeff 0) = 0 := by
       simpa [Polynomial.aeval_def, Polynomial.eval₂_at_zero] using hy
     exact hc0 ((map_eq_zero (algebraMap F F')).mp h)
-  set m := P'.ord y with hmdef
+  set m := P'.ord y
   set T : ℕ → F' := fun i => algebraMap F F' (φ.coeff i) * y ^ i with hTdef
   have hsum : ∑ i ∈ Finset.range (n + 1), T i = 0 := by
     rw [← hy, Polynomial.aeval_eq_sum_range]
@@ -415,7 +415,7 @@ private theorem ramificationIdx_eq_and_ord_eq_one {y : F'}
   have he0 : (0 : ℤ) < (ramificationIdx F P' : ℤ) := by exact_mod_cast ramificationIdx_pos F P'
   have hn0 : (0 : ℤ) < ((minpoly F y).natDegree : ℤ) := by exact_mod_cast hdeg
   have hm1 : 1 ≤ P'.ord y := by nlinarith
-  have hm : P'.ord y = 1 := by nlinarith
+  have hm : P'.ord y = 1 := by nlinarith [hle', hn0]
   refine ⟨?_, hm⟩
   have : (ramificationIdx F P' : ℤ) = (Module.finrank F F' : ℤ) := by
     rw [hfr, ← hkey, hm, mul_one]

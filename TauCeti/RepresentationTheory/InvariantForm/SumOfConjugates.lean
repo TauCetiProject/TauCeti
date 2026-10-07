@@ -133,7 +133,7 @@ theorem exists_isInvariantForm_isSymm_ne_zero (σ : Representation k G W)
     ∃ B : BilinForm k W, IsInvariantForm σ B ∧ B.IsSymm ∧ B ≠ 0 := by
   classical
   have : Fintype G := Fintype.ofFinite G
-  set b := Module.finBasis k W with hb
+  set b := Module.finBasis k W with _
   set B₀ : BilinForm k W := Matrix.toBilin b 1 with hB₀
   have hB₀apply : ∀ x y : W, B₀ x y = ⇑(b.repr x) ⬝ᵥ ⇑(b.repr y) := by
     intro x y

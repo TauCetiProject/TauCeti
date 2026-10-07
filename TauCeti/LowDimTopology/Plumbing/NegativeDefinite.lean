@@ -197,7 +197,7 @@ proper function `(V → ℤ) → ℤ` tending to `-∞`. -/
 theorem IsNegativeDefinite.finite_setOfPred_le_intersectionForm_self (h : P.IsNegativeDefinite)
     (c : ℤ) : {x : V → ℤ | c ≤ P.intersectionForm x x}.Finite := by
   classical
-  set N : ℤ := ∑ v, |c * P.weight v| with hN
+  set N : ℤ := ∑ v, |c * P.weight v|
   have hbox : {y : V → ℤ | ∀ v, y v ∈ Set.Icc (-N) N}.Finite :=
     Set.Finite.pi' fun _ => Set.finite_Icc _ _
   refine (Set.Finite.preimage (f := P.intersectionMatrix.mulVec)

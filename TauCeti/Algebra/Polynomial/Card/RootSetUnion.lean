@@ -65,7 +65,7 @@ theorem ncard_biUnion_roots_natDegree_le_coeff_mem_le (m : R →+* S) (d : ℕ) 
   classical
   set s : R[X] → Set S := fun f => ((f.map m).roots.toFinset : Set S) with hs
   -- The index set: the relevant polynomials, finite by the bounded-coefficient count.
-  set t : Set R[X] := {f | f.natDegree ≤ d ∧ ∀ i, f.coeff i ∈ U} with ht_def
+  set t : Set R[X] := {f | f.natDegree ≤ d ∧ ∀ i, f.coeff i ∈ U}
   have ht : t.Finite := finite_setOf_natDegree_le_coeff_mem d U.finite_toSet
   -- Each such polynomial contributes at most `d` roots in `S`.
   have hbound : ∀ f ∈ t, (s f).ncard ≤ d := by

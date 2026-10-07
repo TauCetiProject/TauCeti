@@ -158,7 +158,7 @@ theorem crossingsAt_freeCancel_insert_front (v : BraidWord n) (i : Fin (n - 1)) 
       (if p = strand i ∨ p = strandSucc i then [e 0, e 1] else []) ++
         (v.crossingsAt p).map (fun j => e j.succ.succ) := by
   let e := finCongr (by simp : v.length + 2 = ([(i, ε), (i, -ε)] ++ v).length)
-  have he (j : Fin (v.length + 2)) : e j = j := by
+  have _ (j : Fin (v.length + 2)) : e j = j := by
     apply Fin.ext
     simp [e]
   dsimp

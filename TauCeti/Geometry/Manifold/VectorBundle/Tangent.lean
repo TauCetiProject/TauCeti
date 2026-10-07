@@ -155,7 +155,7 @@ theorem contDiffOn_tangentCoordChange {n : ℕ∞ω} [IsManifold I (n + 1) M] (x
     haveI : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
     ContDiffOn 𝕜 n (fun a : E => tangentCoordChange I x y ((extChartAt I x).symm a))
       (((extChartAt I x).symm ≫ extChartAt I y).source) := by
-  have hI : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
+  have _ : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
   refine (contDiffOn_fderiv_coord_change (𝕜 := 𝕜) (n := n) (I := I) (M := M)
     (achart H x) (achart H y)).congr (fun a ha => ?_)
   have ha2 : a ∈ (extChartAt I x).target := by

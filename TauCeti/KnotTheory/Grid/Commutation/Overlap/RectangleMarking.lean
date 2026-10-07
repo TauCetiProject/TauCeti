@@ -44,7 +44,7 @@ theorem disjoint_coveredSquares_XSet_rectangle_recutLeftEqLeft
   let E := D.recutLeftEqLeft hcommon hone hrectangle hpentagon
   rcases D.recut_rectangle_branch_data_of_left_eq_left hcommon hone hrectangle hpentagon with
     ⟨hcol', hEleft, hEright⟩ |
-    ⟨hcol', hEleft, hEright, hEmiddle, hEbottom, hEtop⟩
+    ⟨hcol', hEleft, hEright, _, hEbottom, hEtop⟩
   -- The recut rectangle covers neither swapped column. Repartition reduces its X-avoidance
   -- to that of the original rectangle and pentagon.
   · have hne : D.rectangle.right ≠ finRotate n a :=

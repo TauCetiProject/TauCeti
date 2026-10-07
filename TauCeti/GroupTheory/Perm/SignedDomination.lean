@@ -72,11 +72,11 @@ theorem sum_sign_filter_forall_le_of_antitone (hβ : Antitone β) (hη : Antiton
     exact Matrix.det_eq_zero_of_row_eq_zero j fun i => by simp [hM, hj i]
   -- Every row is a nonempty initial segment, so it has a largest element.
   simp only [not_exists, not_forall, not_not] at hempty
-  set S : Fin n → Finset (Fin n) := fun j => univ.filter fun i => β j ≤ η i with hS
+  set S : Fin n → Finset (Fin n) := fun j => univ.filter fun i => β j ≤ η i
   have hSne : ∀ j, (S j).Nonempty := fun j => by
     obtain ⟨i, hi⟩ := hempty j
     exact ⟨i, mem_filter.mpr ⟨mem_univ _, hi⟩⟩
-  set c : Fin n → Fin n := fun j => (S j).max' (hSne j) with hc
+  set c : Fin n → Fin n := fun j => (S j).max' (hSne j)
   have hmem : ∀ i j : Fin n, β j ≤ η i ↔ i ≤ c j := by
     refine fun i j => ⟨fun hij => (S j).le_max' i (mem_filter.mpr ⟨mem_univ _, hij⟩), fun hij => ?_⟩
     have hcj : β j ≤ η (c j) := (mem_filter.mp ((S j).max'_mem (hSne j))).2

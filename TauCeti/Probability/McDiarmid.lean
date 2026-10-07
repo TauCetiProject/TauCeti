@@ -111,10 +111,10 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
       simp
   | succ n ih =>
       -- Identify the successor product with the first coordinate times the remaining product.
-      set π1 := Measure.pi (fun _ : Fin (n + 1) => ν) with hπ1
-      set πn := Measure.pi (fun _ : Fin n => ν) with hπn
+      set π1 := Measure.pi (fun _ : Fin (n + 1) => ν)
+      set πn := Measure.pi (fun _ : Fin n => ν)
       set I : ℝ := ∫ x', f x' ∂π1 with hI_def
-      set x₀ : Fin (n + 1) → β := fun _ => Classical.arbitrary β with hx0
+      set x₀ : Fin (n + 1) → β := fun _ => Classical.arbitrary β
       set M : ℝ := (∑ i, c i) + |f x₀| with hM
       have hMf : ∀ x, |f x| ≤ M := fun x => by
         rw [hM]
@@ -206,8 +206,8 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
           ≤ Real.exp ((c 0 / 2) ^ 2 * t ^ 2 / 2) := by
         intro w
         rw [hg_def]
-        set X : β → ℝ := fun a => f (Fin.cons a w) with hX
-        set A : ℝ := sInf (Set.range X) with hA
+        set X : β → ℝ := fun a => f (Fin.cons a w)
+        set A : ℝ := sInf (Set.range X)
         have hosc : ∀ a a', |X a - X a'| ≤ c 0 := by
           intro a a'
           apply hbd (0 : Fin (n + 1))
@@ -313,8 +313,8 @@ private theorem integral_exp_mul_centered_le_pi {ι : Type*} [Fintype ι] {β : 
     ∫ x, Real.exp (t * (f x - ∫ x', f x' ∂Measure.pi (fun _ : ι => ν)))
         ∂Measure.pi (fun _ : ι => ν)
       ≤ Real.exp ((∑ i, (c i / 2) ^ 2) * t ^ 2 / 2) := by
-  set e := Fintype.equivFin ι with he
-  set φ := MeasurableEquiv.piCongrLeft (fun _ : ι => β) e.symm with hφ
+  set e := Fintype.equivFin ι
+  set φ := MeasurableEquiv.piCongrLeft (fun _ : ι => β) e.symm
   have mp : MeasurePreserving φ (Measure.pi (fun _ : Fin (Fintype.card ι) => ν))
       (Measure.pi (fun _ : ι => ν)) :=
     measurePreserving_piCongrLeft (α := fun _ : ι => β) (μ := fun _ : ι => ν) e.symm
@@ -371,9 +371,9 @@ theorem hasSubgaussianMGF_of_bounded_differences
     have h2 : ν Set.univ = 0 := by rw [h1]; simp
     rw [measure_univ] at h2
     exact one_ne_zero h2
-  set π : Measure (ι → β) := Measure.pi (fun _ : ι => ν) with hπ
-  set I : ℝ := ∫ y, f y ∂π with hI
-  set x₀ : ι → β := fun _ => Classical.arbitrary β with hx0
+  set π : Measure (ι → β) := Measure.pi (fun _ : ι => ν)
+  set I : ℝ := ∫ y, f y ∂π
+  set x₀ : ι → β := fun _ => Classical.arbitrary β
   have hc : ∀ i, 0 ≤ c i := by
     intro i
     simpa using hbd i x₀ x₀ (fun _ _ => rfl)
@@ -385,7 +385,7 @@ theorem hasSubgaussianMGF_of_bounded_differences
       ∑ i, (c i / 2) ^ 2 := by
     push_cast [Real.coe_toNNReal (c _) (hc _)]
     apply Finset.sum_congr rfl
-    intro i hi
+    intro i _
     ring
   rw [ProbabilityTheory.mgf, hcoe]
   exact hkey

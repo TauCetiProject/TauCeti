@@ -333,7 +333,6 @@ theorem isSphericalParameterSignature_iff {a b c : ℕ} (h₁ : 1 ≤ a) (h₂ :
         · exact ⟨h₁, h₂, h₃, Or.inr (Or.inr (Or.inr (Or.inl rfl)))⟩
         · exact ⟨h₁, h₂, h₃, Or.inr (Or.inr (Or.inr (Or.inr rfl)))⟩
     · -- three parameters at least `3` have reciprocal sum at most one
-      have hbc : 1 / 3 + 1 / (b : ℚ) + 1 / (c : ℚ) > 1 := by simpa using hsum
       have hba : 1 / (b : ℚ) ≤ 1 / 3 := one_div_le_one_div_of_le (by norm_num : (0 : ℚ) < 3) h₂'
       have hca : 1 / (c : ℚ) ≤ 1 / 3 :=
         one_div_le_one_div_of_le (by norm_num : (0 : ℚ) < 3) (h₂'.trans h₃')

@@ -271,7 +271,7 @@ private theorem mul_arrows_mem_preprojectiveIdeal (k : Type*) [CommRing k]
     (ofArrow b * ofArrow a : pathAlgebra k (Symmetrify preprojectiveA2Quiver)) ∈
       preprojectiveIdeal k preprojectiveA2Quiver := by
   rcases preprojectiveA2DoubledArrow_cases a with ⟨hi, hj, ha⟩ | ⟨hi, hj, ha⟩
-  · rcases preprojectiveA2DoubledArrow_cases b with ⟨hj', hl, hb⟩ | ⟨hj', hl, hb⟩
+  · rcases preprojectiveA2DoubledArrow_cases b with ⟨hj', _, _⟩ | ⟨hj', hl, hb⟩
     · exact (preprojectiveA2DoubledVertexZero_ne_one (hj.symm.trans hj').symm).elim
     · subst i; subst j; subst l
       cases ha
@@ -285,7 +285,7 @@ private theorem mul_arrows_mem_preprojectiveIdeal (k : Type*) [CommRing k]
         preprojectiveIdeal k preprojectiveA2Quiver at h
       rw [reverse_preprojectiveA2ForwardArrow] at h
       exact h
-  · rcases preprojectiveA2DoubledArrow_cases b with ⟨hj', hl, hb⟩ | ⟨hj', hl, hb⟩
+  · rcases preprojectiveA2DoubledArrow_cases b with ⟨hj', hl, hb⟩ | ⟨hj', _, _⟩
     · subst i; subst j; subst l
       cases ha
       cases hb

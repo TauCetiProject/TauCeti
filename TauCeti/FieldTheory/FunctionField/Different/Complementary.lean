@@ -280,7 +280,6 @@ theorem exists_forall_valuation_le_and_trace_eq (hF' : IsFunctionField k' F')
     intro Q' hQ'
     rw [Q'.valuation_eq_exp_neg_ord ((map_ne_zero _).mpr hc0), ord_algebraMap_restrict k F Q', hQ',
       P.ord_div hx0 hy0, WithZero.exp_le_exp]
-    have he : (0 : ℤ) ≤ ramificationIdx F Q' := by positivity
     nlinarith
   have hb (Q' : Place k' F') (hQ' : Q'.restrict k F = P) :
       Q'.valuation (algebraMap (integralClosure P.integers F') F' b) ≤ 1 :=

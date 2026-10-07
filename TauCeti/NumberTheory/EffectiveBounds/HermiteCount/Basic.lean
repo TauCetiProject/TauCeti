@@ -179,7 +179,7 @@ theorem ncard_setOf_finiteDimensional_abs_discr_le_le :
   set C := coeffBoundOfDiscrBdd N
   set S := {K : {F : IntermediateField ℚ A // FiniteDimensional ℚ F} |
       haveI : _root_.NumberField K := @NumberField.mk _ _ inferInstance K.prop
-      |discr K| ≤ (N : ℤ)} with hS
+      |discr K| ≤ (N : ℤ)}
   have hfin : {E : IntermediateField ℚ A | ∃ x ∈ (⋃ (f : ℤ[X])
         (_ : f.natDegree ≤ D ∧ ∀ i, |f.coeff i| ≤ (C : ℤ)),
         ((f.map (algebraMap ℤ A)).roots.toFinset : Set A)), E = ℚ⟮x⟯}.Finite :=

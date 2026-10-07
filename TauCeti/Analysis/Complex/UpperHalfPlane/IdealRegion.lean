@@ -154,7 +154,7 @@ above the unit semicircle between the verticals `re = a` and `re = b` has invari
 (respectively right) vertex is the ideal point `-1` (respectively `1`), with angle `0`. -/
 theorem volume_idealRegion {a b : ℝ} (ha : -1 ≤ a) (hab : a ≤ b) (hb : b ≤ 1) :
     volume (idealRegion a b) = ENNReal.ofReal (Real.arccos a - Real.arccos b) := by
-  rcases hab.eq_or_lt with rfl | hab
+  rcases hab.eq_or_lt with rfl | _
   · rw [sub_self, ENNReal.ofReal_zero]
     exact measure_mono_null (fun z hz ↦ hz.1.antisymm' hz.2.1) (volume_setOf_re_eq a)
   -- exhaust `idealRegion a b` by the regions between `A m = max a (-1 + δ m)` and

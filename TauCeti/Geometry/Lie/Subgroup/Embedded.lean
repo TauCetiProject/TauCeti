@@ -140,7 +140,7 @@ theorem nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed {K 
     Nonempty (EmbeddedLieSubgroupData I K (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) := by
   let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
   dsimp only
-  obtain ⟨q, Φ, hpq, h1, hslice, hΦ, hΦsymm⟩ :=
+  obtain ⟨q, Φ, _, h1, hslice, hΦ, hΦsymm⟩ :=
     exists_isSliceChart_of_isClosed_subgroup (I := I) hK
   let _ : ContinuousMul G := continuousMul_of_contMDiffMul I ∞
   exact ⟨{ chartedSpace := Subgroup.chartedSpaceOfIsSliceChart K Φ hslice h1

@@ -292,7 +292,6 @@ theorem setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image {ρ : ℝ}
   have hMlip : LipschitzWith (ε * 2) (N ∘ TauCeti.radialRetraction r) :=
     hN.comp_radialRetraction hr
   have hM0 : (N ∘ TauCeti.radialRetraction r) 0 = 0 := by simp [hN0]
-  have hsmallR : 2 * (K : ℝ) * ((ε : ℝ) * 2) < α := by exact_mod_cast hsmall
   -- The uniform bound on the Lyapunov--Perron solutions of the cut-off equation.
   have hbound : ∀ (ξ : X) (t : ℝ≥0),
       ‖lyapunovPerronSolution A P (N ∘ TauCeti.radialRetraction r) hs hu hα hMlip hsmall ξ t‖ ≤

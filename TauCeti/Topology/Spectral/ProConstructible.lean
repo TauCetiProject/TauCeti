@@ -350,7 +350,7 @@ theorem IsProConstructible.quasiSober (hs : IsProConstructible s) : QuasiSober s
       exact hs.inter (IsClosed.isProConstructible hC)
     obtain ⟨η, hη⟩ := QuasiSober.sober
       (hZirr.image _ continuous_subtype_val.continuousOn).closure isClosed_closure
-    obtain ⟨ζ, hζZ, rfl⟩ := hZ'.mem_of_isGenericPoint hη
+    obtain ⟨ζ, _, rfl⟩ := hZ'.mem_of_isGenericPoint hη
     refine ⟨ζ, ?_⟩
     have h₁ := IsEmbedding.subtypeVal.isInducing.closure_eq_preimage_closure_image
       ({ζ} : Set s)

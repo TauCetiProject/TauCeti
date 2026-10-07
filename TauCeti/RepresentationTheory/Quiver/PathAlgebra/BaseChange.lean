@@ -55,7 +55,7 @@ private theorem baseChangeAlgHom_hone (g : pathAlgebra l Q →ₐ[l] B) :
     _ = g (∑ x : Q, vertexIdempotent l x) := by
       congr 1
       apply Finset.sum_congr rfl
-      intro x hx
+      intro x _
       rw [vertexIdempotent_eq_ofPath]
     _ = g 1 := by rw [one_def]
     _ = 1 := g.map_one

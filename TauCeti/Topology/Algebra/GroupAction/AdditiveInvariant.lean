@@ -88,7 +88,7 @@ theorem invariant_eq_of_equiv {A B : Type u}
   have _ : ContinuousSMul G PUnit.{u + 1} := ⟨continuous_of_const fun _ _ ↦ rfl⟩
   have hZ : ∀ z : PUnit.{u + 1}, ∃ k : ℕ, p ^ k • z = 0 := fun _ ↦ ⟨0, rfl⟩
   have h := hExact hA hB hZ e.toAddMonoidHom 0 he
-    (by intro g b; simp) e.injective
+    (by intro _ _; simp) e.injective
     (fun z ↦ ⟨0, Subsingleton.elim _ _⟩)
     (by
       ext b

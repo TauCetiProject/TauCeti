@@ -51,7 +51,7 @@ theorem eq_of_transpose_mul_self_eq {ι R : Type*} [Fintype ι] [PartialOrder ι
   have hU0 : ∀ l, ¬ i ≤ l → U l i = 0 := fun l hl => not_ne_iff.mp (mt (hU l i) hl)
   have hV0 : ∀ l, ¬ i ≤ l → V l i = 0 := fun l hl => not_ne_iff.mp (mt (hV l i) hl)
   by_cases hji : j ≤ i
-  · rcases hji.lt_or_eq with hji | rfl
+  · rcases hji.lt_or_eq with _ | rfl
     · -- read the `(j, i)` entry of the Gram identity, isolating the term `l = i`
       have hj := congrFun (congrFun h j) i
       simp only [Matrix.mul_apply, Matrix.transpose_apply] at hj

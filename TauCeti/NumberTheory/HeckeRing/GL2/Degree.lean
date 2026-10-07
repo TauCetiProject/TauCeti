@@ -147,7 +147,7 @@ theorem deg_heckeT (m : ℕ+) :
     deg (posDetInt 2) (SLnZ 2) ℤ (heckeT m) = (σ 1) (m : ℕ) := by
   obtain ⟨n, hn⟩ := m
   induction n using Nat.recOnPosPrimePosCoprime with
-  | prime_pow p k hp hk =>
+  | prime_pow p k hp _ =>
     rw [deg_heckeT_prime_pow p hp k]
     exact_mod_cast (ArithmeticFunction.sigma_one_apply_prime_pow hp).symm
   | zero => exact absurd hn (lt_irrefl 0)

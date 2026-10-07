@@ -147,7 +147,7 @@ def continuousZModDualToDual :
         { toFun := fun w ↦ Multiplicative.toAdd (Additive.toMul x (Additive.toMul w))
           map_zero' := by simp
           map_add' := fun a b ↦ by simp [toMul_add] }
-      map_zero' := by ext w; simp
+      map_zero' := by ext _; simp
       map_add' := fun x y ↦ by ext w; simp }
 
 @[simp]

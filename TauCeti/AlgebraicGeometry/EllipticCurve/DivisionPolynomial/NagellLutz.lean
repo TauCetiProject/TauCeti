@@ -149,7 +149,7 @@ private lemma isInteger_of_four_dvd_order {x y : K}
   set P := Affine.Point.some _ _ hns
   -- As in the odd branch, one order equality from Mathlib supplies everything: `(m / 4) • P` has
   -- order exactly `4`, hence is nonzero, is killed by `4`, and is *not* killed by `2`.
-  set Q := (addOrderOf P / 4) • P with hQ
+  set Q := (addOrderOf P / 4) • P
   have hord : addOrderOf Q = 4 := addOrderOf_nsmul_addOrderOf_sub htor.addOrderOf_pos.ne' h4
   have hQ_ne : Q ≠ 0 := fun h ↦ by rw [h, addOrderOf_zero] at hord; omega
   have h4Q : (4 : ℕ) • Q = 0 := addOrderOf_dvd_iff_nsmul_eq_zero.mp hord.dvd

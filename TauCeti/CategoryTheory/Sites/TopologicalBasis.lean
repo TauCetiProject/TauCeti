@@ -96,9 +96,9 @@ obtained by shrinking to a basis neighbourhood inside each intersection. -/
 def basisCoverage (hB : Opens.IsBasis B) : Coverage (Opens X) where
   coverings U := {R | IsBasisCover B R}
   pullback := by
-    rintro U V f R ⟨hmem, hcov⟩
+    rintro U V f R ⟨_, hcov⟩
     refine ⟨fun W _ ↦ W ∈ B ∧ ∃ (W' : Opens X) (e : W' ⟶ U), R e ∧ W ≤ W', ⟨?_, ?_⟩, ?_⟩
-    · rintro W g ⟨hW, -⟩
+    · rintro W _ ⟨hW, -⟩
       exact hW
     · intro x hx
       obtain ⟨W', e, he, hxW'⟩ := hcov x (f.le hx)

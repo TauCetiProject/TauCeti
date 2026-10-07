@@ -168,7 +168,7 @@ private theorem mul_hopfBarrier_le_laplacian_add_fderiv [Nontrivial E] {y x v : 
     (real_inner_le_norm _ _).trans (mul_le_mul hxR hv (norm_nonneg _) hR.le)
   -- With `q = -p ≥ 1`, the operator value is `A q (q - dim E + 2 - ⟪x - y, v⟫) ≥ A (γ R² + 2)`.
   have hq : 1 ≤ -p := by nlinarith [mul_nonneg hβ hR.le, mul_nonneg hγ (sq_nonneg R)]
-  have hbracket : γ * R ^ 2 + 2 ≤ -p - Module.finrank ℝ E + 2 - ⟪x - y, v⟫_ℝ := by linarith
+  have _ : γ * R ^ 2 + 2 ≤ -p - Module.finrank ℝ E + 2 - ⟪x - y, v⟫_ℝ := by linarith
   have hprod : γ * R ^ 2 + 2 ≤ -p * (-p - Module.finrank ℝ E + 2 - ⟪x - y, v⟫_ℝ) := by
     nlinarith [mul_nonneg (sub_nonneg.mpr hq) (by positivity : (0 : ℝ) ≤ γ * R ^ 2 + 2)]
   have hrhs : A * (γ * R ^ 2 + 2) ≤
@@ -318,7 +318,6 @@ theorem fderiv_pos_of_mul_le_laplacian_add_fderiv_of_lt_ball_of_le_sphere {u c :
       (isOpen_ball.inter isClosed_closedBall.isOpen_compl)
   -- The perturbation coefficient: small enough that the barrier dominates the margin.
   set ε : ℝ := δ / (2 * (R / 2) ^ p) with hεdef
-  have hhalfpow : 0 < (R / 2) ^ p := Real.rpow_pos_of_pos hhalfpos p
   have hεpos : 0 < ε := by
     rw [hεdef]
     exact div_pos hδpos (by positivity)

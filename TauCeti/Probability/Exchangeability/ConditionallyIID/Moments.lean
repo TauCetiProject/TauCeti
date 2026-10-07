@@ -403,7 +403,7 @@ theorem ConditionallyIIDWith.integral_empiricalFrequency_sub_sq [IsFiniteMeasure
     (TauCeti.MeasureTheory.measurable_probabilityMeasure_toMeasure_apply_toReal hB).comp
       h.measurable_directing
   have he : ∀ i ∈ Finset.range n,
-      AEMeasurable ((X i ⁻¹' B).indicator (1 : Ω → ℝ)) μ := fun i hi ↦
+      AEMeasurable ((X i ⁻¹' B).indicator (1 : Ω → ℝ)) μ := fun i _ ↦
     measurable_one.aemeasurable.indicator₀ ((h.aemeasurable i).nullMeasurableSet_preimage hB)
   -- the `[0, 1]` bounds feeding the `|·| ≤ 1` hypotheses of `integral_sq_average_sub`
   have hq0 : ∀ ω, 0 ≤ ((ν ω : Measure α) B).toReal := fun _ ↦ ENNReal.toReal_nonneg
@@ -416,7 +416,7 @@ theorem ConditionallyIIDWith.integral_empiricalFrequency_sub_sq [IsFiniteMeasure
   exact integral_sq_average_sub he hq.aemeasurable
     (fun i _ ω ↦ abs_le.mpr ⟨by linarith [he0 i ω], he1 i ω⟩)
     (fun ω ↦ abs_le.mpr ⟨by linarith [hq0 ω], hq1 ω⟩)
-    (fun i hi j hj ↦
+    (fun i _ j _ ↦
       h.integral_indicator_sub_directing_mul_indicator_sub_directing i j hB)
     hn
 

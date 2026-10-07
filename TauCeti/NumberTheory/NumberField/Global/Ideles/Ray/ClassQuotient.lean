@@ -78,14 +78,14 @@ theorem exists_unitEmbedding_mul_mem_ideleCongrOneSubgroup (𝔪 : Modulus K)
   have hr (w : 𝔪.infinitePart) : r w ≠ 0 :=
     (map_ne_zero _).mpr (w.1.1.ideleInfiniteCoord x).ne_zero
   -- The open set of targets at the places of `𝔪` for which the product is congruent to one.
-  let U : Set ((∀ v : 𝔪.support, v.1.adicCompletion K) × (∀ w : 𝔪.infinitePart, ℝ)) :=
+  let U : Set ((∀ v : 𝔪.support, v.1.adicCompletion K) × (∀ _ : 𝔪.infinitePart, ℝ)) :=
     {p | (∀ v : 𝔪.support, Valued.v (p.1 v * (v.1.ideleFiniteCoord x : v.1.adicCompletion K) - 1)
         ≤ WithZero.exp (-(𝔪.exponent v.1 : ℤ))) ∧ ∀ w : 𝔪.infinitePart, 0 < p.2 w * r w}
   have hU : IsOpen U := by
     simp only [U, Set.ofPred_and, Set.ofPred_forall]
     refine (isOpen_iInter_of_finite fun v ↦ ?_).inter (isOpen_iInter_of_finite fun w ↦ ?_)
     · exact (v.1.isOpen_setOf_valued_le (K := K) WithZero.exp_ne_zero).preimage
-        (f := fun p : (∀ v : 𝔪.support, v.1.adicCompletion K) × (∀ w : 𝔪.infinitePart, ℝ) ↦
+        (f := fun p : (∀ v : 𝔪.support, v.1.adicCompletion K) × (∀ _ : 𝔪.infinitePart, ℝ) ↦
           p.1 v * (v.1.ideleFiniteCoord x : v.1.adicCompletion K) - 1) (by fun_prop)
     · exact isOpen_lt continuous_const (by fun_prop)
   have hp₀ : ((fun v : 𝔪.support ↦

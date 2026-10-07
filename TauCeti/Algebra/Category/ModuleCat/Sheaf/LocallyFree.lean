@@ -214,7 +214,7 @@ instance _root_.SheafOfModules.LocalGeneratorsData.isFiniteType_bind {I : Type*}
     (D : ∀ i, _root_.SheafOfModules.LocalGeneratorsData (M.over (X i)))
     [∀ i, (D i).IsFiniteType] : (LocalGeneratorsData.bind X hX D).IsFiniteType where
   isFiniteType i := GeneratingSections.isFiniteType_ofIteratedSlice _
-    (hσ := LocalGeneratorsData.IsFiniteType.isFiniteType (p := D i.1) i.2)
+    (_hσ := LocalGeneratorsData.IsFiniteType.isFiniteType (p := D i.1) i.2)
 
 /-- If a sheaf of modules is locally free after restriction to every member of a covering family,
 then it is locally free. -/

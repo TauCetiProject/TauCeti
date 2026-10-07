@@ -50,8 +50,8 @@ theorem exists_f4_short_neighbor_of_long (α : Fin 48) (hα : f4Length α = 2) :
               simpa only [P, f4SimplyConnectedRootDatum_root] using hroot
             rw [← hroot', P.root_coroot_eq_pairing, h β hβ]
       | zero => simp
-      | add x y hx hy ihx ihy => simp [ihx, ihy]
-      | smul a x hx ih =>
+      | add x y _ _ ihx ihy => simp [ihx, ihy]
+      | smul a x _ ih =>
           simp only [map_smul, LinearMap.smul_apply, ih, smul_zero]
     have hmem : P.root α ∈ Submodule.span ℤ (Set.range f4ShortRootWeight) := by
       rw [span_range_f4ShortRootWeight_eq_top]

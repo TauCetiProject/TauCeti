@@ -74,7 +74,7 @@ theorem differentIdeal_ringOfIntegers_rat_eq_int {K : Type*} [Field K] [NumberFi
   ext x
   simp only [Submodule.mem_traceDual, RingHom.mem_range]
   apply forall₂_congr
-  intro a ha
+  intro a _
   exact Rat.ringOfIntegersEquiv.toEquiv.exists_congr' fun n ↦
     Iff.of_eq (congrArg (· = _) (Rat.ringOfIntegersEquiv_symm_apply_coe n))
 

@@ -308,7 +308,7 @@ theorem lt_snd_stack_iff (hF : IsCollaredTrack f g F) (hG : IsCollaredTrack g h 
     have key := hG.lt_snd_apply_iff x (t := 3 * t - 2) hm1
     constructor
     · intro hlt; linarith [key.1 (by linarith)]
-    · intro hlt; linarith [key.2 (by linarith)]
+    · intro _; linarith [key.2 (by linarith)]
 
 /-- The stack of a collared track from `f` to `g` and one from `g` to `h` is a collared track from
 `f` to `h`. -/

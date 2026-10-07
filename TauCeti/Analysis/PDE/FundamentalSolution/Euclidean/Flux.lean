@@ -75,7 +75,6 @@ theorem integral_fderiv_newtonianKernel_sub_sphere_normal
   rw [integral_const]
   simp only [Measure.toSphere_real_apply_univ, finrank_euclideanSpace, Fintype.card_fin,
     smul_eq_mul]
-  have hnpos : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn0
   have hvol := volume_real_unitBall_pos n
   calc
     r ^ ((n : ℝ) - 1) *

@@ -192,7 +192,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius
     rw [narrowElementaryTwoQuotientEquivRelativeSign_apply_coe]
     exact candidateGenusFieldRelativeSignPattern_frobenius_eq_genusChar hd hnsq
       qIdeal hnorm Q σ hσ P hP
-  obtain ⟨hs, heven, hprod⟩ := genusPrimeDiscriminants_spec hd
+  obtain ⟨hs, heven, _⟩ := genusPrimeDiscriminants_spec hd
   have hxy : x = y := by
     by_cases hex : ∃ P ∈ genusPrimeDiscriminants hd, (q : ℤ) ∣ P
     · obtain ⟨P₀, hP₀, hdiv₀⟩ := hex
@@ -397,7 +397,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinHomAway
         (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q
           inferInstance inferInstance) := by
     refine NumberFieldArithmetic.artinHomAway_eq_of_apply_prime _ S _ _ ?_
-    intro J v hv hJ Q hQp hQl σ hσ
+    intro J v _ hJ Q hQp hQl σ hσ
     have _ : Q.IsPrime := hQp
     have _ : Q.LiesOver v.asIdeal := hQl
     rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_eq]

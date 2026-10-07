@@ -218,8 +218,8 @@ theorem differentiableOn_stabilizerBallQuotientChart_symm_trans {z' : ℍ} {ε' 
       ((stabilizerBallQuotientChart hε hopen).symm ≫ₕ
         stabilizerBallQuotientChart hε' hopen').source := by
   set e := stabilizerBallQuotientChart hε hopen with he
-  set e' := stabilizerBallQuotientChart hε' hopen' with he'
-  set m := Nat.card (stabilizer Γ z) with hm
+  set e' := stabilizerBallQuotientChart hε' hopen' with _
+  set m := Nat.card (stabilizer Γ z) with _
   have : NeZero m := ⟨Nat.card_pos.ne'⟩
   have hr0 : 0 ≤ Real.tanh (ε / 2) := by
     rw [← Real.tanh_zero]
@@ -230,7 +230,7 @@ theorem differentiableOn_stabilizerBallQuotientChart_symm_trans {z' : ℍ} {ε' 
     funext u
     rw [OpenPartialHomeomorph.trans_apply]
     exact (congrFun (descendPow_comp_pow (m := m) fun v ↦ e' (e.symm v)) u).symm
-  set s : Set ℂ := ball 0 (Real.tanh (ε / 2)) ∩ {w | e.symm (w ^ m) ∈ e'.source} with hs
+  set s : Set ℂ := ball 0 (Real.tanh (ε / 2)) ∩ {w | e.symm (w ^ m) ∈ e'.source} with _
   have hs_open : IsOpen s := by
     refine ContinuousOn.isOpen_inter_preimage ?_ isOpen_ball e'.open_source
     refine e.continuousOn_symm.comp (continuous_pow m).continuousOn fun w hw ↦ ?_

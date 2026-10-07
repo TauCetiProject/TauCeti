@@ -260,7 +260,7 @@ Its normalized row is a normalized common left eigenrow of the class-multiplicat
 the central character of some irreducible; the self-pairing of the row then forces the degree of
 that irreducible to be the identity entry of the row, and the two rows agree class by class. -/
 theorem exists_eq_characterTable : ∃ j, ∀ C, M i C = characterTable ℂ G j C := by
-  obtain ⟨d, hdpos, hMd, -⟩ := hM.exists_degree i
+  obtain ⟨d, _, hMd, -⟩ := hM.exists_degree i
   obtain ⟨j, hj⟩ := (isClassEigenrow_iff_exists_centralCharacterTable_eq
     (centralCharacterRow_mk_one (hM.apply_mk_one_ne_zero i))).mp (hM.row_eigen i)
   have he : (characterDegree ℂ j : ℂ) ≠ 0 :=

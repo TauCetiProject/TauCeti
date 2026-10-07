@@ -777,7 +777,7 @@ private theorem mem_inf_of_mem_refineSet (a : ConvergingGenData G) (U : OpenNorm
     · exact absurd hy'K hy'a
     · refine absurd (hUW y' hy'U) ?_
       simpa only [mul_inv_cancel_left] using a.mul_notMem_of_mem_reps U hyR h
-    · obtain ⟨q, hq, hyq⟩ := a.exists_of_mem_reps U hyR
+    · obtain ⟨q, _, hyq⟩ := a.exists_of_mem_reps U hyR
       obtain ⟨q', hq', hy'q⟩ := a.exists_of_mem_reps U hy'R
       have hqy : (y : G ⧸ a.K) = q :=
         ((QuotientGroup.eq.mpr (Subgroup.mem_inf.mp hyq).1).symm).trans (QuotientGroup.out_eq' q)

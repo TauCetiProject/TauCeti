@@ -333,14 +333,14 @@ theorem exists_eLpNorm_edist_le (hp : 1 ≤ p) (hp_top : p ≠ ∞) [IsProbabili
   have hc_ne_zero : c ≠ 0 := by
     simp only [hc_def, ne_eq, ENNReal.div_eq_zero_iff, not_or]
     exact ⟨hmin_pos.ne', ENNReal.ofNat_ne_top⟩
-  set δ : ℝ := c.toReal with hδ_def
+  set δ : ℝ := c.toReal with _
   have hδ : 0 < δ := ENNReal.toReal_pos hc_ne_zero hc_ne_top
   have hδc : ENNReal.ofReal δ = c := ENNReal.ofReal_toReal hc_ne_top
   -- the least index of a dense sequence within `δ` of a point
-  set u : ℕ → X := TopologicalSpace.denseSeq X with hu_def
+  set u : ℕ → X := TopologicalSpace.denseSeq X with _
   have hu : DenseRange u := TopologicalSpace.denseRange_denseSeq X
   have hidx : ∀ x : X, ∃ i, dist x (u i) < δ := fun x ↦ Metric.denseRange_iff.1 hu x δ hδ
-  set idx : X → ℕ := fun x ↦ Nat.find (hidx x) with hidx_def
+  set idx : X → ℕ := fun x ↦ Nat.find (hidx x) with _
   have hidx_spec : ∀ x, dist x (u (idx x)) < δ := fun x ↦ Nat.find_spec (hidx x)
   have hidx_meas : Measurable idx := measurable_find hidx fun k ↦ measurableSet_ball
   -- the ground distance to the basepoint `u 0`, and its `p`-th moment

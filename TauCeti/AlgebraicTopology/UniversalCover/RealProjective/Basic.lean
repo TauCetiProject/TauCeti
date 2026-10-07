@@ -191,7 +191,6 @@ instance instUniqueZero : Unique (RealProjectiveSpace 0) := by
       have hsq : ‖w‖^2 = (w 0)^2 := by
         rw [EuclideanSpace.norm_sq_eq, Fin.sum_univ_one, Real.norm_eq_abs, sq_abs]
       have h2 : |w 0|^2 = (w 0)^2 := sq_abs (w 0)
-      have h3 : ‖w‖^2 = |w 0|^2 := by rw [hsq, h2]
       have hpos1 : 0 ≤ ‖w‖ := norm_nonneg w
       have hpos2 : 0 ≤ |w 0| := abs_nonneg (w 0)
       nlinarith

@@ -653,7 +653,7 @@ As there, this is the cocycle identity and not a nontriviality claim. -/
 theorem map_quadraticTwistVariableChange {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) :
     (E.quadraticTwistVariableChange L).map (σ : L →+* L)
       = E.quadraticTwistVariableChange L * (E.baseChange L).negVariableChange := by
-  set σ₀ := (Algebra.IsQuadraticExtension.exists_algEquiv_ne_one K L).choose with hσ₀def
+  set σ₀ := (Algebra.IsQuadraticExtension.exists_algEquiv_ne_one K L).choose
   have hσ₀ : σ₀ ≠ 1 := (Algebra.IsQuadraticExtension.exists_algEquiv_ne_one K L).choose_spec
   -- `Gal(L/K)` has order two, so `σ` is the automorphism chosen inside
   -- `quadraticTwistVariableChange`

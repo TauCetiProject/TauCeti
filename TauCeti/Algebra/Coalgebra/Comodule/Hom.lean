@@ -193,7 +193,7 @@ theorem zero_comp (f : Hom R C M N) : comp (0 : Hom R C N P) f = 0 := by
 /-- Composing the zero morphism on the right gives the zero morphism. -/
 @[simp]
 theorem comp_zero (g : Hom R C N P) : comp g (0 : Hom R C M N) = 0 := by
-  ext m
+  ext _
   exact map_zero g.toLinearMap
 
 end Comp
