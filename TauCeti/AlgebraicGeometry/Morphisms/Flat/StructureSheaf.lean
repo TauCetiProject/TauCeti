@@ -7,7 +7,6 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
-public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 public import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 
 /-!

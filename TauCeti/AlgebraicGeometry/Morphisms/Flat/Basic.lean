@@ -22,15 +22,12 @@ proper generization. This is the dominance of a flat morphism between irreducibl
 instance of a flat model of a curve over a discrete valuation ring, whose generic point lies in
 the generic fibre.
 
-Every morphism to the spectrum of a field is flat, since every module over a field is flat.
-
 ## Main results
 
 * `AlgebraicGeometry.Scheme.Hom.flat_restrict_iff`: the stalk criterion for flatness of a
   restriction.
 * `AlgebraicGeometry.Scheme.Hom.genericPoint_eq_of_flat`: a flat morphism between irreducible
   schemes sends the generic point to the generic point.
-* `TauCeti.AlgebraicGeometry.flat_of_field`: every morphism to the spectrum of a field is flat.
 
 ## References
 
@@ -74,17 +71,3 @@ theorem flat_restrict_iff {X Y : Scheme.{u}} (f : X ⟶ Y) (U : Y.Opens) :
       (morphismRestrictStalkMap f U x)).mpr (h x.1 x.2)
 
 end AlgebraicGeometry.Scheme.Hom
-
-namespace TauCeti.AlgebraicGeometry
-
-universe u
-
-/-- Every morphism of schemes to the spectrum of a field is flat. -/
-instance flat_of_field {K : Type u} [Field K] {X : Scheme.{u}} (f : X ⟶ Spec (.of K)) :
-    Flat f := by
-  have hK : IsField Γ(Spec (.of K), ⊤) :=
-    (Scheme.ΓSpecIso (.of K)).commRingCatIsoToRingEquiv.toMulEquiv.isField (Field.toIsField K)
-  exact HasRingHomProperty.of_iSup_eq_top (P := @Flat) (fun V : X.affineOpens ↦ V)
-    (iSup_affineOpens_eq_top X) fun _ ↦ RingHom.Flat.of_isField hK _
-
-end TauCeti.AlgebraicGeometry
