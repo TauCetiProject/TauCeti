@@ -11,7 +11,7 @@ public import Mathlib.FieldTheory.IsAlgClosed.Basic
 /-!
 # Root-of-unity representatives of torsion cohomology classes
 
-Over an algebraically closed field, a class in `H²(G, kˣ)` is killed by `n > 0` exactly
+Over an algebraically closed field, a class in `H²(G, kˣ)` is killed by `n : ℕ` exactly
 when it has a normalized factor-set representative taking values in the `n`-th roots of
 unity. No finiteness assumption on `G` or restriction on the characteristic is needed.
 
@@ -38,12 +38,15 @@ attribute [local instance] trivialMulDistribMulAction
 
 variable {k G : Type} [Field k] [Group G]
 
-/-- A factor set with torsion class over an algebraically closed field has a cohomologous
-representative with values in the roots of unity of the specified positive order. -/
+/-- A factor set whose class is killed by `n` over an algebraically closed field has a cohomologous
+representative with values in the `n`-th roots of unity, including when `n = 0`. -/
 theorem exists_cohomologyClass_eq_and_pow_eq_one [IsAlgClosed k]
-    (α : FactorSet G kˣ) {n : ℕ} (hn : 0 < n) (hα : n • α.cohomologyClass = 0) :
+    (α : FactorSet G kˣ) {n : ℕ} (hα : n • α.cohomologyClass = 0) :
     ∃ β : FactorSet G kˣ, β.cohomologyClass = α.cohomologyClass ∧
       ∀ p, β p ^ n = 1 := by
+  by_cases hn : n = 0
+  · exact ⟨α, rfl, fun p ↦ by simp [hn]⟩
+  have hn : 0 < n := Nat.pos_of_ne_zero hn
   have hroot : Function.Surjective (fun z : kˣ ↦ z ^ n) := by
     intro a
     obtain ⟨z, hz⟩ := IsAlgClosed.exists_pow_nat_eq (a : k) hn
@@ -68,15 +71,15 @@ theorem exists_cohomologyClass_eq_and_pow_eq_one [IsAlgClosed k]
   · rintro ⟨g, h⟩
     exact hd g h
 
-/-- A positive integer kills a cohomology class over an algebraically closed field exactly
-when the class has a normalized representative valued in roots of unity of that order. -/
-theorem nsmul_eq_zero_iff_exists_factorSet [IsAlgClosed k] {n : ℕ} (hn : 0 < n)
+/-- A natural number `n` kills a cohomology class over an algebraically closed field exactly
+when the class has a normalized representative valued in the `n`-th roots of unity. -/
+theorem nsmul_eq_zero_iff_exists_factorSet [IsAlgClosed k] {n : ℕ}
     (x : groupCohomology.H2 (Rep.ofMulDistribMulAction G kˣ)) :
     n • x = 0 ↔ ∃ β : FactorSet G kˣ, β.cohomologyClass = x ∧ ∀ p, β p ^ n = 1 := by
   constructor
   · intro hx
     obtain ⟨α, rfl⟩ := exists_cohomologyClass_eq x
-    exact α.exists_cohomologyClass_eq_and_pow_eq_one hn hx
+    exact α.exists_cohomologyClass_eq_and_pow_eq_one hx
   · rintro ⟨β, rfl, hβ⟩
     apply (β.nsmul_cohomologyClass_eq_zero_iff n).2
     exact ⟨fun _ ↦ 1, fun g h ↦ by simp [hβ]⟩
@@ -90,19 +93,19 @@ attribute [local instance] trivialMulDistribMulAction
 variable {k G : Type} [Field k] [IsAlgClosed k] [Group G]
   {V : Type*} [AddCommMonoid V] [Module k V]
 
-/-- A projective representation whose class is killed by a positive integer `n` linearizes
+/-- A projective representation whose class is killed by a natural number `n` linearizes
 on a central extension by the `n`-th roots of unity. The kernel acts by its own scalars,
 and the action at the canonical section agrees with the original lift after a normalized
 scalar rescaling. -/
 theorem IsProjectiveRep.exists_rootsOfUnityExtension_linearization
     {ρ : G → V ≃ₗ[k] V} {α : G → G → kˣ} (hρ : IsProjectiveRep ρ α)
-    {n : ℕ} (hn : 0 < n) (hclass : n • hρ.cohomologyClass = 0) :
+    {n : ℕ} (hclass : n • hρ.cohomologyClass = 0) :
     ∃ (β : FactorSet G (rootsOfUnity n k)) (π : β.Extension →* (V ≃ₗ[k] V))
       (c : G → kˣ), c 1 = 1 ∧ ∀ x,
         π x = (ρ (FactorSet.rightHom β x)).trans
           (LinearEquiv.smulOfUnit ((x.left : kˣ) * c (FactorSet.rightHom β x))) := by
   rw [IsProjectiveRep.cohomologyClass_def] at hclass
-  obtain ⟨γ, hγ, hpow⟩ := hρ.factorSet.exists_cohomologyClass_eq_and_pow_eq_one hn hclass
+  obtain ⟨γ, hγ, hpow⟩ := hρ.factorSet.exists_cohomologyClass_eq_and_pow_eq_one hclass
   obtain ⟨c, hc⟩ := (FactorSet.cohomologyClass_eq_iff γ hρ.factorSet).1 hγ
   simp only [trivialMulDistribMulAction_smul, IsProjectiveRep.factorSet_apply] at hc
   have hc1 : c 1 = 1 := by simpa [hρ.isFactorSet.one_left] using hc 1 1
