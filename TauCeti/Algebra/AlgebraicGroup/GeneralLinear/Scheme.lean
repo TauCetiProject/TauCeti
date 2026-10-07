@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Basic
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
-import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # The general linear group scheme
@@ -122,13 +121,9 @@ theorem hopfIdealInclusion_def (I : HopfIdeal R (coordinateHopfAlgebra R n)) :
 instance isClosedImmersion_hopfIdealInclusion
     (I : HopfIdeal R (coordinateHopfAlgebra R n)) :
     IsClosedImmersion (hopfIdealInclusion R n I).hom.hom.left := by
-  let c := (CommHopfAlgCat.quotientSpecι (coordinateHopfAlgebra R n) I).hom.hom.left
-  let e := ((eqToIso (groupScheme_def R n).symm).hom).hom.hom.left
-  have hc : IsClosedImmersion c := by infer_instance
-  have hce : IsClosedImmersion (c ≫ e) :=
-    (MorphismProperty.cancel_right_of_respectsIso _ c e).2 hc
-  rw [hopfIdealInclusion_def]
-  simpa only [Grp.comp', Mon.comp_hom', Over.comp_left] using hce
+  rw [hopfIdealInclusion_def, eqToIso.hom, CommHopfAlgCat.quotientSpecι_def,
+    CommHopfAlgCat.isClosedImmersion_hopfSpec_map_comp_eqToHom_iff (groupScheme_def R n)]
+  exact CommHopfAlgCat.mkQuotient_surjective _ I
 
 /-- A subgroup of `GL_n` cut out by a Hopf ideal is locally of finite type over the base. -/
 instance locallyOfFiniteType_hopfIdealQuotientSpec
