@@ -22,7 +22,9 @@ acyclicity there would be wrong: the one-loop quiver of
 type.)
 
 This file constructs the quiver and classifies its paths: it is acyclic, and its only nontrivial
-paths are the arrows themselves. The same classification is carried out for the quiver reflected
+paths are the arrows themselves. The equivalence `totalPathEquivArrowSumBool` identifies all
+indexed paths with `A ⊕ Bool`, supporting transport of finiteness, countability and infinitude.
+The same classification is carried out for the quiver reflected
 at its target, which is the generalized Kronecker quiver read the other way round. The dimension
 of its path algebra is computed in `TauCeti.RepresentationTheory.Quiver.Kronecker.PathAlgebra`,
 its Euler and Tits forms in
@@ -38,6 +40,8 @@ infinite as soon as there are two arrows -- is settled in
 * `TauCeti.Quiver.Kronecker.arrow`: the arrow attached to an element of the arrow type.
 * `TauCeti.Quiver.Kronecker.vertexEquiv`: the two vertices as indices in `Fin 2`, the target first.
 * `TauCeti.Quiver.Kronecker.pathEquivArrow`: the paths from `src` to `tgt` are the arrows.
+* `TauCeti.Quiver.Kronecker.totalPathEquivArrowSumBool`: indexed paths are the arrow type plus
+  two Boolean-labelled trivial paths, with `false` for the target and `true` for the source.
 * `TauCeti.Quiver.Kronecker.reflectHomEquivArrow`: the arrows from `tgt` to `src` of the quiver
   reflected at `tgt` are the arrows of the original, reversed.
 * `TauCeti.Quiver.Kronecker.reflectPathEquivArrow`: the paths from `tgt` to `src` of the quiver
@@ -308,17 +312,75 @@ theorem arrowPath_pathEquivArrow (p : Path (src : Kronecker A) tgt) :
     arrowPath (pathEquivArrow p) = p := by
   rw [← pathEquivArrow_symm_apply, Equiv.symm_apply_apply]
 
+/-- Indexed paths are the arrows together with two trivial paths. The Boolean labels follow the
+vertex order: `false` represents the target, and `true` represents the source. -/
+noncomputable def totalPathEquivArrowSumBool : Quiver.TotalPath (Kronecker A) ≃ A ⊕ Bool where
+  toFun
+    | ⟨.src, .src, _⟩ => .inr true
+    | ⟨.src, .tgt, p⟩ => .inl (pathEquivArrow p)
+    | ⟨.tgt, .src, p⟩ => isEmptyElim p
+    | ⟨.tgt, .tgt, _⟩ => .inr false
+  invFun
+    | .inl a => ⟨src, tgt, arrowPath a⟩
+    | .inr false => ⟨tgt, tgt, Path.nil⟩
+    | .inr true => ⟨src, src, Path.nil⟩
+  left_inv x := by
+    obtain ⟨a, b, p⟩ := x
+    cases a <;> cases b
+    · simp only [path_src_src_eq_nil]
+    · simp only [arrowPath_pathEquivArrow]
+    · exact isEmptyElim p
+    · simp only [path_tgt_tgt_eq_nil]
+  right_inv x := by
+    cases x with
+    | inl a => simp only [pathEquivArrow_arrowPath]
+    | inr b => cases b <;> rfl
+
+/-- An arrow path is classified by the arrow it traces. -/
+@[simp]
+theorem totalPathEquivArrowSumBool_arrowPath (a : A) :
+    totalPathEquivArrowSumBool ⟨src, tgt, arrowPath a⟩ = Sum.inl a := by
+  simp [totalPathEquivArrowSumBool]
+
+/-- The trivial path at the target has Boolean label `false`. -/
+@[simp]
+theorem totalPathEquivArrowSumBool_tgt_nil :
+    totalPathEquivArrowSumBool (A := A) ⟨tgt, tgt, Path.nil⟩ = Sum.inr false := (rfl)
+
+/-- The trivial path at the source has Boolean label `true`. -/
+@[simp]
+theorem totalPathEquivArrowSumBool_src_nil :
+    totalPathEquivArrowSumBool (A := A) ⟨src, src, Path.nil⟩ = Sum.inr true := (rfl)
+
+/-- An arrow label reconstructs the path it traces. -/
+@[simp]
+theorem totalPathEquivArrowSumBool_symm_inl (a : A) :
+    totalPathEquivArrowSumBool.symm (Sum.inl a) = ⟨src, tgt, arrowPath a⟩ := (rfl)
+
+/-- Boolean label `false` reconstructs the trivial path at the target. -/
+@[simp]
+theorem totalPathEquivArrowSumBool_symm_inr_false :
+    (totalPathEquivArrowSumBool (A := A)).symm (Sum.inr false) =
+      ⟨tgt, tgt, Path.nil⟩ := (rfl)
+
+/-- Boolean label `true` reconstructs the trivial path at the source. -/
+@[simp]
+theorem totalPathEquivArrowSumBool_symm_inr_true :
+    (totalPathEquivArrowSumBool (A := A)).symm (Sum.inr true) =
+      ⟨src, src, Path.nil⟩ := (rfl)
+
 /-- Each path of a generalized Kronecker quiver is a trivial path at one of its two vertices,
 or the length-one path traced by an arrow. -/
 theorem totalPath_eq_or (x : Quiver.TotalPath (Kronecker A)) :
     x = ⟨tgt, tgt, Path.nil⟩ ∨ (∃ a : A, x = ⟨src, tgt, arrowPath a⟩) ∨
       x = ⟨src, src, Path.nil⟩ := by
-  obtain ⟨a, b, p⟩ := x
-  cases a <;> cases b
-  · exact Or.inr (Or.inr (by rw [path_src_src_eq_nil p]))
-  · exact Or.inr (Or.inl ⟨pathEquivArrow p, by rw [arrowPath_pathEquivArrow]⟩)
-  · exact isEmptyElim p
-  · exact Or.inl (by rw [path_tgt_tgt_eq_nil p])
+  cases h : totalPathEquivArrowSumBool x with
+  | inl a =>
+      exact Or.inr (Or.inl ⟨a, totalPathEquivArrowSumBool.injective (by simpa using h)⟩)
+  | inr b =>
+      cases b
+      · exact Or.inl (totalPathEquivArrowSumBool.injective (by simpa using h))
+      · exact Or.inr (Or.inr (totalPathEquivArrowSumBool.injective (by simpa using h)))
 
 noncomputable instance instFintypePath [Fintype A] : ∀ a b : Kronecker A, Fintype (Path a b)
   | .src, .src => Unique.fintype
@@ -337,9 +399,7 @@ theorem card_path_src_tgt [Fintype A] :
 arrows themselves. -/
 theorem card_totalPath [Fintype A] :
     Fintype.card (Quiver.TotalPath (Kronecker A)) = Fintype.card A + 2 := by
-  simp only [Fintype.card_sigma, sum_univ, card_path_src_tgt, Fintype.card_unique,
-    Fintype.card_eq_zero]
-  omega
+  simpa using Fintype.card_congr (totalPathEquivArrowSumBool (A := A))
 
 /-! ### The reflected quiver
 
