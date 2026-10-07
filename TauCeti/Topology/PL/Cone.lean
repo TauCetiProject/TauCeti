@@ -126,7 +126,7 @@ private theorem coneCell_normalize {n : ℕ} {a : Fin n → (ι → ℝ) →ᴬ[
 /-- A finite piecewise-affine map on a bounded base extends piecewise affinely over the whole
 geometric cone, including the apex. No closedness or polyhedral assumption on the base is needed. -/
 theorem IsPiecewiseAffineOn.coneMap (hf : IsPiecewiseAffineOn f s)
-    (hs : Bornology.IsBounded s) : IsPiecewiseAffineOn (coneMap f) (coneSet s) := by
+    (hs : Bornology.IsBounded s) : IsPiecewiseAffineOn (coneMap f) s.cone := by
   classical
   let _ := Fintype.ofFinite ι
   obtain ⟨n, C, A, hC, hcover, heq⟩ := isPiecewiseAffineOn_iff.mp hf
@@ -150,7 +150,7 @@ theorem IsPiecewiseAffineOn.coneMap (hf : IsPiecewiseAffineOn f s)
   refine isPiecewiseAffineOn_of_finite (C := cells) (A := pieces) ?_ ?_ ?_
   · rintro (_ | i) <;> exact isConvexPolyhedron_coneCell _ _
   · intro p hp
-    rcases mem_coneSet.mp hp with rfl | ⟨ht, hx⟩
+    rcases mem_cone.mp hp with rfl | ⟨ht, hx⟩
     · exact mem_iUnion.mpr ⟨none, coneCell_zero _ _⟩
     · obtain ⟨i, hi⟩ := mem_iUnion.mp (hcover hx)
       have hnorm : ∀ j, |(p.2⁻¹ • p.1) j| ≤ R := hR _ hx
@@ -162,7 +162,7 @@ theorem IsPiecewiseAffineOn.coneMap (hf : IsPiecewiseAffineOn f s)
         (by simpa [cells] using hc.2.2 0) hc.1
       rw [coneCell_eq_zero_of_height_zero hc ht, coneMap_zero]
       rfl
-    · rcases mem_coneSet.mp hp with rfl | ⟨ht, hx⟩
+    · rcases mem_cone.mp hp with rfl | ⟨ht, hx⟩
       · simp [pieces, coneAffinePiece_apply]
         rfl
       · have hbase : p.2⁻¹ • p.1 ∈ C i := by
@@ -175,7 +175,7 @@ theorem IsPiecewiseAffineOn.coneMap (hf : IsPiecewiseAffineOn f s)
 /-- A PL map on a compact base extends to a PL map of geometric cones, including at the apex.
 The target may be any real topological vector space. -/
 theorem IsPLOn.coneMap (hf : IsPLOn f s) (hs : IsCompact s) :
-    IsPLOn (coneMap f) (coneSet s) := by
+    IsPLOn (coneMap f) s.cone := by
   have hbound : Bornology.IsBounded s :=
     Bornology.forall_isBounded_image_eval_iff.mp fun i =>
       (hs.image (continuous_apply i)).isBounded

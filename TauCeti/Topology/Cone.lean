@@ -13,7 +13,7 @@ import Mathlib.Algebra.GroupWithZero.Action.Units
 /-!
 # Geometric cones and radial extensions
 
-The geometric cone `coneSet s` on a subset of a real module consists of its apex
+The geometric cone `s.cone` on a subset of a real module consists of its apex
 and the rays `(t • x, t)` with `x ∈ s` and `t > 0`. The radial extension `coneMap f`
 preserves height and scales the base value by that height. It depends only on
 the restriction of `f` to the base, respects composition, and carries maps of
@@ -34,36 +34,42 @@ noncomputable section
 
 open Set
 
+namespace Set
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E]
+
+/-- The geometric cone on a set, with its apex at height zero and its base at height one.
+The cone on the empty set consists of the apex alone. -/
+def cone (s : Set E) : Set (E × ℝ) :=
+  {p | p = 0 ∨ 0 < p.2 ∧ p.2⁻¹ • p.1 ∈ s}
+
+/-- Cone membership separates the apex from points with a normalized base point. -/
+theorem mem_cone {s : Set E} {p : E × ℝ} :
+    p ∈ cone s ↔ p = 0 ∨ 0 < p.2 ∧ p.2⁻¹ • p.1 ∈ s := Iff.rfl
+
+@[simp]
+theorem zero_mem_cone (s : Set E) : (0 : E × ℝ) ∈ cone s := Or.inl rfl
+
+/-- The empty base contributes only the cone apex. -/
+@[simp]
+theorem cone_empty : cone (∅ : Set E) = {0} := by
+  ext p
+  simp [mem_cone]
+
+/-- At positive height, cone membership is membership of the normalized point in the base. -/
+@[simp]
+theorem smul_mem_cone_iff {s : Set E} (x : E) {t : ℝ} (ht : 0 < t) :
+    (t • x, t) ∈ cone s ↔ x ∈ s := by
+  simp [mem_cone, ht, ht.ne', smul_smul]
+
+end Set
+
 namespace TauCeti
 
 section Cone
 
 variable {E F G : Type*} [AddCommGroup E] [Module ℝ E]
   [AddCommGroup F] [Module ℝ F] [AddCommGroup G] [Module ℝ G]
-
-/-- The geometric cone on a set, with its apex at height zero and its base at height one.
-The cone on the empty set consists of the apex alone. -/
-def coneSet (s : Set E) : Set (E × ℝ) :=
-  {p | p = 0 ∨ 0 < p.2 ∧ p.2⁻¹ • p.1 ∈ s}
-
-/-- Cone membership separates the apex from points with a normalized base point. -/
-theorem mem_coneSet {s : Set E} {p : E × ℝ} :
-    p ∈ coneSet s ↔ p = 0 ∨ 0 < p.2 ∧ p.2⁻¹ • p.1 ∈ s := Iff.rfl
-
-@[simp]
-theorem zero_mem_coneSet (s : Set E) : (0 : E × ℝ) ∈ coneSet s := Or.inl rfl
-
-/-- The empty base contributes only the cone apex. -/
-@[simp]
-theorem coneSet_empty : coneSet (∅ : Set E) = {0} := by
-  ext p
-  simp [mem_coneSet]
-
-/-- At positive height, cone membership is membership of the normalized point in the base. -/
-@[simp]
-theorem smul_mem_coneSet_iff {s : Set E} (x : E) {t : ℝ} (ht : 0 < t) :
-    (t • x, t) ∈ coneSet s ↔ x ∈ s := by
-  simp [mem_coneSet, ht, ht.ne', smul_smul]
 
 /-- A map of bases extends radially to a height-preserving map of geometric cones. -/
 def coneMap (f : E → F) (p : E × ℝ) : F × ℝ :=
@@ -94,14 +100,14 @@ theorem coneMap_one (f : E → F) (x : E) : coneMap f (x, 1) = (f x, 1) := by
 
 /-- Radial extensions agree on a cone whenever their base maps agree on its base. -/
 theorem _root_.Set.EqOn.coneMap {s : Set E} {f g : E → F} (h : EqOn f g s) :
-    EqOn (coneMap f) (coneMap g) (coneSet s) := by
+    EqOn (coneMap f) (coneMap g) s.cone := by
   rintro p (rfl | ⟨_, hx⟩)
   · simp
   · simp only [TauCeti.coneMap, h hx]
 
 /-- Radial extension carries a cone to the cone on any set containing the base image. -/
 theorem _root_.Set.MapsTo.coneMap {s : Set E} {u : Set F} {f : E → F} (hf : MapsTo f s u) :
-    MapsTo (coneMap f) (coneSet s) (coneSet u) := by
+    MapsTo (coneMap f) s.cone u.cone := by
   rintro p (rfl | ⟨ht, hx⟩)
   · simp
   · exact Or.inr ⟨ht, by simpa [TauCeti.coneMap, smul_smul, ht.ne'] using hf hx⟩
@@ -116,7 +122,7 @@ theorem coneMap_comp (g : F → G) (f : E → F) :
 
 /-- A left inverse on bases extends to a left inverse on their cones. -/
 theorem _root_.Set.LeftInvOn.coneMap {s : Set E} {f : E → F} {g : F → E} (h : LeftInvOn g f s) :
-    LeftInvOn (coneMap g) (coneMap f) (coneSet s) := by
+    LeftInvOn (coneMap g) (coneMap f) s.cone := by
   rintro p (rfl | ⟨ht, hx⟩)
   · simp
   · simp [TauCeti.coneMap, smul_smul, ht.ne', h hx]
