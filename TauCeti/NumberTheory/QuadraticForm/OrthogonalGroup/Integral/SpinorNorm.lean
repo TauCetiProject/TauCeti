@@ -66,60 +66,6 @@ variable {p : ℕ} [Fact p.Prime] {V ι : Type*}
 local instance integralSpinorNormInvertibleTwoPadic : Invertible (2 : ℚ_[p]) :=
   invertibleOfNonzero two_ne_zero
 
-/-- A vector is integral for `b` if its coordinates lie in `ℤ_[p]`. -/
-private def IsIntegralVector (b : Basis ι ℚ_[p] V) (x : V) : Prop :=
-  ∀ i, b.repr x i ∈ PadicInt.subring p
-
-private theorem isIntegralVector_basis (j : ι) : IsIntegralVector b (b j) := fun i ↦ by
-  classical
-  rw [Basis.repr_self, Finsupp.single_apply]
-  split_ifs
-  exacts [one_mem _, zero_mem _]
-
-private theorem IsIntegralVector.add {x y : V} (hx : IsIntegralVector b x)
-    (hy : IsIntegralVector b y) : IsIntegralVector b (x + y) := fun i ↦ by
-  rw [map_add, Finsupp.add_apply]
-  exact add_mem (hx i) (hy i)
-
-private theorem IsIntegralVector.neg {x : V} (hx : IsIntegralVector b x) :
-    IsIntegralVector b (-x) := fun i ↦ by
-  rw [map_neg, Finsupp.neg_apply]
-  exact neg_mem (hx i)
-
-private theorem IsIntegralVector.sub {x y : V} (hx : IsIntegralVector b x)
-    (hy : IsIntegralVector b y) : IsIntegralVector b (x - y) := by
-  rw [sub_eq_add_neg]
-  exact hx.add hy.neg
-
-private theorem IsIntegralVector.smul {c : ℚ_[p]} (hc : c ∈ PadicInt.subring p) {x : V}
-    (hx : IsIntegralVector b x) : IsIntegralVector b (c • x) := fun i ↦ by
-  rw [map_smul, Finsupp.smul_apply, smul_eq_mul]
-  exact mul_mem hc (hx i)
-
-variable [Fintype ι] [DecidableEq ι]
-
-/-- An endomorphism with an integral matrix carries integral vectors to integral vectors. -/
-private theorem isIntegralVector_apply {f : V →ₗ[ℚ_[p]] V}
-    (hf : ∀ i j : ι, LinearMap.toMatrix b b f i j ∈ PadicInt.subring p) {x : V}
-    (hx : IsIntegralVector b x) : IsIntegralVector b (f x) := fun i ↦ by
-  rw [← LinearMap.toMatrix_mulVec_repr b b f x, Matrix.mulVec, dotProduct]
-  exact sum_mem fun j _ ↦ mul_mem (hf i j) (hx j)
-
-/-- Membership in the integral orthogonal subgroup means that the isometry and its inverse
-preserve integral vectors. -/
-private theorem mem_integralOrthogonalSubgroup_iff_isIntegralVector (g : orthogonalGroup Q) :
-    g ∈ integralOrthogonalSubgroup Q b ↔
-      (∀ x, IsIntegralVector b x → IsIntegralVector b ((g : V ≃ₗ[ℚ_[p]] V) x)) ∧
-      ∀ x, IsIntegralVector b x →
-        IsIntegralVector b (((g⁻¹ : orthogonalGroup Q) : V ≃ₗ[ℚ_[p]] V) x) := by
-  rw [mem_integralOrthogonalSubgroup_iff]
-  refine ⟨fun h ↦ ⟨fun x ↦ isIntegralVector_apply h.1, fun x ↦ isIntegralVector_apply h.2⟩,
-    fun h ↦ ⟨fun i j ↦ ?_, fun i j ↦ ?_⟩⟩
-  · rw [LinearMap.toMatrix_apply]
-    exact h.1 _ (isIntegralVector_basis j) i
-  · rw [LinearMap.toMatrix_apply]
-    exact h.2 _ (isIntegralVector_basis j) i
-
 /-- A `p`-adic number of norm one is integral. -/
 private theorem mem_subring_of_norm_eq_one {a : ℚ_[p]} (ha : ‖a‖ = 1) :
     a ∈ PadicInt.subring p :=
@@ -130,49 +76,56 @@ private theorem inv_mem_subring_of_norm_eq_one {a : ℚ_[p]} (ha : ‖a‖ = 1) 
     a⁻¹ ∈ PadicInt.subring p :=
   mem_subring_of_norm_eq_one (by rw [norm_inv, ha, inv_one])
 
-omit [Fintype ι] [DecidableEq ι] in
 /-- If the polar form is integral on the basis, it is integral on integral vectors. -/
 private theorem polar_mem_subring (hpolar : ∀ i j, polar Q (b i) (b j) ∈ PadicInt.subring p)
-    {x y : V} (hx : IsIntegralVector b x) (hy : IsIntegralVector b y) :
+    {x y : V} (hx : x ∈ Submodule.span (PadicInt.subring p) (Set.range b))
+    (hy : y ∈ Submodule.span (PadicInt.subring p) (Set.range b)) :
     polar Q x y ∈ PadicInt.subring p := by
-  rw [← polarBilin_apply_apply, ← LinearMap.BilinForm.sum_repr_mul_repr_mul b]
-  refine sum_mem fun i _ ↦ sum_mem fun j _ ↦ ?_
-  simp only [polarBilin_apply_apply, smul_eq_mul]
-  exact mul_mem (hx i) (mul_mem (hy j) (hpolar i j))
+  induction hx, hy using Submodule.span_induction₂ with
+  | mem_mem x y hx hy =>
+    obtain ⟨⟨i, rfl⟩, ⟨j, rfl⟩⟩ := And.intro hx hy
+    exact hpolar i j
+  | zero_left y _ => rw [polar_zero_left]; exact zero_mem _
+  | zero_right x _ => rw [polar_zero_right]; exact zero_mem _
+  | add_left x y z _ _ _ hx hy => rw [polar_add_left]; exact add_mem hx hy
+  | add_right x y z _ _ _ hy hz => rw [polar_add_right]; exact add_mem hy hz
+  | smul_left c x y _ _ h =>
+    rw [Subring.smul_def, polar_smul_left, smul_eq_mul]; exact mul_mem c.2 h
+  | smul_right c x y _ _ h =>
+    rw [Subring.smul_def, polar_smul_right, smul_eq_mul]; exact mul_mem c.2 h
 
-omit [Fintype ι] [DecidableEq ι] in
 /-- The reflection in an integral vector of unit norm preserves integral vectors. -/
-private theorem isIntegralVector_reflection
+private theorem reflection_mem_span
     (hpolar : ∀ i j, polar Q (b i) (b j) ∈ PadicInt.subring p) {v : V} [Invertible (Q v)]
-    (hv : IsIntegralVector b v) (hQv : ‖Q v‖ = 1) {x : V} (hx : IsIntegralVector b x) :
-    IsIntegralVector b (reflection Q v x) := by
+    (hv : v ∈ Submodule.span (PadicInt.subring p) (Set.range b)) (hQv : ‖Q v‖ = 1) {x : V}
+    (hx : x ∈ Submodule.span (PadicInt.subring p) (Set.range b)) :
+    reflection Q v x ∈ Submodule.span (PadicInt.subring p) (Set.range b) := by
   rw [reflection_apply, invOf_eq_inv]
-  exact hx.sub (IsIntegralVector.smul (mul_mem (inv_mem_subring_of_norm_eq_one hQv)
-    (polar_mem_subring hpolar hv hx)) hv)
+  exact sub_mem hx (Submodule.smul_mem _ (⟨_, mul_mem (inv_mem_subring_of_norm_eq_one hQv)
+    (polar_mem_subring hpolar hv hx)⟩ : PadicInt.subring p) hv)
 
 /-- Two has norm one in `ℚ_[p]` for an odd prime `p`. -/
 private theorem norm_two_eq_one (hp : p ≠ 2) : ‖(2 : ℚ_[p])‖ = 1 := by
   exact_mod_cast (Padic.norm_natCast_eq_one_iff (p := p) (n := 2)).mpr
     ((Nat.coprime_primes Fact.out Nat.prime_two).mpr hp)
 
-omit [Fintype ι] [DecidableEq ι] in
 /-- At an odd prime, if the polar form is integral on the basis, `Q` is integral on integral
 vectors. -/
 private theorem apply_mem_subring (hp : p ≠ 2)
     (hpolar : ∀ i j, polar Q (b i) (b j) ∈ PadicInt.subring p) {x : V}
-    (hx : IsIntegralVector b x) : Q x ∈ PadicInt.subring p := by
+    (hx : x ∈ Submodule.span (PadicInt.subring p) (Set.range b)) : Q x ∈ PadicInt.subring p := by
   have hQ : Q x = (2 : ℚ_[p])⁻¹ * polar Q x x := by
     rw [polar_self, two_nsmul, ← two_mul, inv_mul_cancel_left₀ two_ne_zero]
   rw [hQ]
   exact mul_mem (inv_mem_subring_of_norm_eq_one (norm_two_eq_one hp))
     (polar_mem_subring hpolar hx hx)
 
-omit [Fintype ι] [DecidableEq ι] in
 /-- If `e` and `f` are integral with the same unit norm, then `e - f` or `e + f` has unit norm,
 because the two norms are integral and add up to the unit `4 Q e`. -/
 private theorem norm_sub_eq_one_or_norm_add_eq_one (hp : p ≠ 2)
     (hpolar : ∀ i j, polar Q (b i) (b j) ∈ PadicInt.subring p) {e f : V}
-    (he : IsIntegralVector b e) (hf : IsIntegralVector b f) (hef : Q e = Q f)
+    (he : e ∈ Submodule.span (PadicInt.subring p) (Set.range b))
+    (hf : f ∈ Submodule.span (PadicInt.subring p) (Set.range b)) (hef : Q e = Q f)
     (hQe : ‖Q e‖ = 1) : ‖Q (e - f)‖ = 1 ∨ ‖Q (e + f)‖ = 1 := by
   have hsum : Q (e - f) + Q (e + f) = 2 * 2 * Q e := by
     rw [sub_eq_add_neg, QuadraticMap.map_add ⇑Q, QuadraticMap.map_neg, polar_neg_right,
@@ -182,23 +135,25 @@ private theorem norm_sub_eq_one_or_norm_add_eq_one (hp : p ≠ 2)
     Padic.nonarchimedean _ _
   rw [hsum, norm_mul, norm_mul, norm_two_eq_one hp, hQe, one_mul, one_mul] at hle
   have h₁ := (PadicInt.mem_subring_iff (p := p)).mp
-    (apply_mem_subring hp hpolar (he.sub hf))
+    (apply_mem_subring hp hpolar (sub_mem he hf))
   have h₂ := (PadicInt.mem_subring_iff (p := p)).mp
-    (apply_mem_subring hp hpolar (he.add hf))
+    (apply_mem_subring hp hpolar (add_mem he hf))
   rcases le_max_iff.mp hle with h | h
   · exact Or.inl (le_antisymm h₁ h)
   · exact Or.inr (le_antisymm h₂ h)
+
+variable [Fintype ι] [DecidableEq ι]
 
 /-- If the polar form is integral on the basis `b`, the reflection in an integral vector of unit
 norm is an integral isometry. -/
 theorem reflectionOrthogonal_mem_integralOrthogonalSubgroup
     (hpolar : ∀ i j, polar Q (b i) (b j) ∈ PadicInt.subring p) {v : V} [Invertible (Q v)]
-    (hv : ∀ i, b.repr v i ∈ PadicInt.subring p) (hQv : ‖Q v‖ = 1) :
+    (hv : v ∈ Submodule.span (PadicInt.subring p) (Set.range b)) (hQv : ‖Q v‖ = 1) :
     reflectionOrthogonal Q v ∈ integralOrthogonalSubgroup Q b := by
-  rw [mem_integralOrthogonalSubgroup_iff_isIntegralVector, reflectionOrthogonal_inv,
+  rw [mem_integralOrthogonalSubgroup_iff_mem_span, reflectionOrthogonal_inv,
     coe_reflectionOrthogonal]
-  exact ⟨fun x hx ↦ isIntegralVector_reflection hpolar hv hQv hx,
-    fun x hx ↦ isIntegralVector_reflection hpolar hv hQv hx⟩
+  exact ⟨fun x hx ↦ reflection_mem_span hpolar hv hQv hx,
+    fun x hx ↦ reflection_mem_span hpolar hv hQv hx⟩
 
 section Orthogonal
 
@@ -226,7 +181,7 @@ private theorem polar_basis_mem_subring (i j : ι) :
 /-- The integral reflections in vectors of unit norm. -/
 private def integralReflections (Q : QuadraticForm ℚ_[p] V) (b : Basis ι ℚ_[p] V) :
     Set (orthogonalGroup Q) :=
-  {g | ∃ (v : V) (_ : Invertible (Q v)), (∀ i, b.repr v i ∈ PadicInt.subring p) ∧
+  {g | ∃ (v : V) (_ : Invertible (Q v)), v ∈ Submodule.span (PadicInt.subring p) (Set.range b) ∧
     ‖Q v‖ = 1 ∧ reflectionOrthogonal Q v = g}
 
 private theorem closure_integralReflections_le :
@@ -238,7 +193,7 @@ private theorem closure_integralReflections_le :
 
 omit [Fintype ι] [DecidableEq ι] hb hunit in
 private theorem reflectionOrthogonal_mem_closure {v : V} [Invertible (Q v)]
-    (hv : IsIntegralVector b v) (hQv : ‖Q v‖ = 1) :
+    (hv : v ∈ Submodule.span (PadicInt.subring p) (Set.range b)) (hQv : ‖Q v‖ = 1) :
     reflectionOrthogonal Q v ∈ Subgroup.closure (integralReflections Q b) :=
   Subgroup.subset_closure ⟨v, inferInstance, hv, hQv, rfl⟩
 
@@ -253,9 +208,9 @@ private theorem exists_mem_closure_mul_apply_basis_eq (hp : p ≠ 2) (s : Set ι
         ∀ i ∈ s, ((r * g : orthogonalGroup Q) : V ≃ₗ[ℚ_[p]] V) (b i) = b i := by
   set e := b j
   set f := (g : V ≃ₗ[ℚ_[p]] V) e
-  have he : IsIntegralVector b e := isIntegralVector_basis j
-  have hf : IsIntegralVector b f :=
-    ((mem_integralOrthogonalSubgroup_iff_isIntegralVector g).mp hg).1 e he
+  have he : e ∈ Submodule.span (PadicInt.subring p) (Set.range b) := Submodule.subset_span ⟨j, rfl⟩
+  have hf : f ∈ Submodule.span (PadicInt.subring p) (Set.range b) :=
+    ((mem_integralOrthogonalSubgroup_iff_mem_span Q b g).mp hg).1 e he
   have hfe : Q f = Q e := map_app_of_mem_orthogonalGroup g.2 e
   have horth (i : ι) (hi : i ∈ s) : polar Q e (b i) = 0 :=
     polar_basis_eq_zero hb fun h ↦ hj (h ▸ hi)
@@ -269,7 +224,7 @@ private theorem exists_mem_closure_mul_apply_basis_eq (hp : p ≠ 2) (s : Set ι
     let _ : Invertible (Q (f - e)) :=
       invertibleOfNonzero (norm_ne_zero_iff.mp (hnorm.symm ▸ one_ne_zero))
     refine ⟨reflectionOrthogonal Q (f - e),
-      reflectionOrthogonal_mem_closure (hf.sub he) hnorm, ?_, fun i hi ↦ ?_⟩
+      reflectionOrthogonal_mem_closure (sub_mem hf he) hnorm, ?_, fun i hi ↦ ?_⟩
     · simpa using reflection_sub_apply_eq_of_map_eq Q f e hfe
     · simp only [Subgroup.coe_mul, LinearEquiv.mul_apply, coe_reflectionOrthogonal, hfix i hi]
       apply reflection_apply_of_polar_eq_zero
@@ -282,7 +237,7 @@ private theorem exists_mem_closure_mul_apply_basis_eq (hp : p ≠ 2) (s : Set ι
       invertibleOfNonzero (norm_ne_zero_iff.mp ((hunit j).symm ▸ one_ne_zero))
     refine ⟨reflectionOrthogonal Q e * reflectionOrthogonal Q (f - -e),
       mul_mem (reflectionOrthogonal_mem_closure he (hunit j))
-        (reflectionOrthogonal_mem_closure (hf.sub he.neg) hnorm), ?_, fun i hi ↦ ?_⟩
+        (reflectionOrthogonal_mem_closure (sub_mem hf (neg_mem he)) hnorm), ?_, fun i hi ↦ ?_⟩
     · have hneg : reflection Q (f - -e) ((g : V ≃ₗ[ℚ_[p]] V) e) = -e :=
         reflection_sub_apply_eq_of_map_eq Q f (-e) (by rw [QuadraticMap.map_neg, hfe])
       simp only [Subgroup.coe_mul, LinearEquiv.mul_apply, coe_reflectionOrthogonal]
@@ -298,7 +253,7 @@ orthogonal basis of unit norms, the integral orthogonal subgroup is generated by
 in integral vectors of unit norm. -/
 theorem integralOrthogonalSubgroup_eq_closure_reflectionOrthogonal (hp : p ≠ 2) :
     integralOrthogonalSubgroup Q b = Subgroup.closure
-      {g | ∃ (v : V) (_ : Invertible (Q v)), (∀ i, b.repr v i ∈ PadicInt.subring p) ∧
+      {g | ∃ (v : V) (_ : Invertible (Q v)), v ∈ Submodule.span (PadicInt.subring p) (Set.range b) ∧
         ‖Q v‖ = 1 ∧ reflectionOrthogonal Q v = g} := by
   refine le_antisymm (fun g hg ↦ ?_) (closure_integralReflections_le hb hunit)
   -- Induct on the finite set of basis vectors that are not yet known to be fixed.
@@ -382,9 +337,9 @@ private theorem exists_spinorNorm_eq_squareClassHom (hp : p ≠ 2) [Nontrivial �
     simp only [v, QuadraticMap.map_add ⇑Q, QuadraticMap.map_smul, polar_smul_left,
       polar_smul_right, polar_basis_eq_zero hb hij, smul_eq_mul]
     linear_combination hcoe
-  have hint : IsIntegralVector b v :=
-    ((isIntegralVector_basis i).smul ((PadicInt.mem_subring_iff (p := p)).mpr x.2)).add
-      ((isIntegralVector_basis j).smul ((PadicInt.mem_subring_iff (p := p)).mpr y.2))
+  have hint : v ∈ Submodule.span (PadicInt.subring p) (Set.range b) :=
+    add_mem (Submodule.smul_mem _ (x : PadicInt.subring p) (Submodule.subset_span ⟨i, rfl⟩))
+      (Submodule.smul_mem _ (y : PadicInt.subring p) (Submodule.subset_span ⟨j, rfl⟩))
   have hnorm : ‖Q v‖ = 1 := by
     rw [hQv, norm_mul, norm_inv, hunit i, inv_one, one_mul, ← PadicInt.norm_def]
     exact PadicInt.isUnit_iff.mp u.isUnit
@@ -396,7 +351,7 @@ private theorem exists_spinorNorm_eq_squareClassHom (hp : p ≠ 2) [Nontrivial �
     exact mul_mem (reflectionOrthogonal_mem_integralOrthogonalSubgroup
     (polar_basis_mem_subring hb hunit) hint hnorm)
       (reflectionOrthogonal_mem_integralOrthogonalSubgroup
-    (polar_basis_mem_subring hb hunit) (isIntegralVector_basis i)
+    (polar_basis_mem_subring hb hunit) (Submodule.subset_span ⟨i, rfl⟩)
         (hunit i))
   · rw [spinorNorm_reflectionPairSpecialOrthogonal]
     congr 1
