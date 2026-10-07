@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Products
+public import Mathlib.LinearAlgebra.StdBasis
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Biproducts
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
@@ -39,7 +40,8 @@ basis sections of `free I` they give `δᵢⱼ`.
 * `TauCeti.SheafOfModules.biproductIsoFree`: the free sheaf on a finite type is the biproduct of
   copies of the unit;
 * `TauCeti.SheafOfModules.evaluationFreeIso`: the sections of `free I` over `W` are the `I`-tuples
-  of sections of `R` over `W`;
+  of sections of `R` over `W`, and `TauCeti.SheafOfModules.freeBasis` is the corresponding basis,
+  made of the basis sections `freeSection i`;
 * `TauCeti.SheafOfModules.exactPairingFree`: the exact pairing between `free I` and itself;
 * `TauCeti.SheafOfModules.ιFree_tensorHom_ιFree_evaluation`,
   `TauCeti.SheafOfModules.ιFree_tensorHom_ιFree_evaluation_of_ne` and
@@ -122,6 +124,46 @@ theorem evaluationFreeIso_hom_comp_proj (W : Cᵒᵖ) (i : I) :
     (ModuleCat.piIsoPi fun _ : I ↦ (evaluation (ringCatSheaf R) W).obj (𝟙_ _)).hom) ≫
       ModuleCat.ofHom (LinearMap.proj i) = _
   simp
+
+/-- The basis of the sections over `W` of the free sheaf of modules on a finite type `I`, obtained
+from the standard basis of `I`-tuples through `evaluationFreeIso`. Its `i`-th member is the basis
+section `freeSection i` over `W` (`freeBasis_apply`). -/
+def freeBasis (W : Cᵒᵖ) :
+    Module.Basis I (R.obj.obj W)
+      (PresheafOfModulesOfCommRing.obj (R := R.obj) (free (R := ringCatSheaf R) I).val W) :=
+  (Pi.basisFun _ I).map (evaluationFreeIso (R := R) I W).toLinearEquiv.symm
+
+/-- The `i`-th member of `freeBasis I W` is the basis section `freeSection i` over `W`. -/
+@[simp]
+theorem freeBasis_apply (W : Cᵒᵖ) (i : I) :
+    freeBasis (R := R) I W i = (freeSection (R := ringCatSheaf R) i).eval W := by
+  classical
+  refine (Module.Basis.map_apply _ _ _).trans ((LinearEquiv.symm_apply_eq _).2 ?_)
+  funext j
+  -- The `j`-th coordinate is computed by `evaluationFreeIso_hom_comp_proj`, and
+  -- `freeSection i` over `W` is the image of `1` under `ιFree i`.
+  refine Eq.trans ?_ (ConcreteCategory.congr_hom (evaluationFreeIso_hom_comp_proj (R := R) I W j)
+    ((ιFree (R := ringCatSheaf R) i).val.app W (1 : R.obj.obj W))).symm
+  have h := ιFree_biproductIsoFree_inv_assoc (R := R) i (biproduct.π _ j)
+  rw [biproduct.ι_π] at h
+  -- `rw` cannot apply `h` to the goal: the coefficient ring is `(ringCatSheaf R).obj.obj W` on
+  -- one side and `R.obj.obj W` on the other, which agree only after unfolding `ringCatSheaf`.
+  refine Eq.trans ?_ (congrArg (fun g ↦ (g.val.app W) (1 : R.obj.obj W)) h).symm
+  split_ifs with hij
+  · subst hij
+    simp
+    -- the identity morphism of sheaves of modules is the identity on sections
+    rfl
+  · simp [Ne.symm hij]
+    -- the zero morphism of sheaves of modules is zero on sections
+    rfl
+
+/-- The restriction maps of a finite free sheaf preserve the members of `freeBasis`. -/
+theorem freeBasis_map {W W' : Cᵒᵖ} (f : W ⟶ W') (i : I) :
+    (free (R := ringCatSheaf R) I).val.map f (freeBasis (R := R) I W i) =
+      freeBasis (R := R) I W' i := by
+  rw [freeBasis_apply, freeBasis_apply]
+  exact PresheafOfModules.sections_property _ f
 
 variable {I}
 
