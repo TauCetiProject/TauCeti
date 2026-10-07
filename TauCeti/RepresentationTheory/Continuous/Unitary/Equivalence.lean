@@ -55,11 +55,11 @@ theorem exists_linearIsometryEquiv_congr_eq {π : ContRepresentation 𝕜 G V}
   let : FiniteDimensional 𝕜 W := φ.toLinearEquiv.finiteDimensional
   set T : V →L[𝕜] W := φ.toContIntertwiningMap.toContinuousLinearMap with hTdef
   have hT : ∀ g : G, T ∘L π g = ρ g ∘L T := fun g ↦ by
-    rw [hTdef]
-    exact φ.toContIntertwiningMap.isIntertwining' g
+    rw [hTdef, ← φ.toContinuousLinearEquiv_toContinuousLinearMap]
+    exact φ.isIntertwining g
   have hTapp : ∀ (g : G) (v : V), T (π g v) = ρ g (T v) := fun g v ↦ by
-    simpa only [ContinuousLinearMap.comp_apply] using
-      congrArg (fun f : V →L[𝕜] W ↦ f v) (hT g)
+    simpa only [← φ.toContIntertwiningMap.toContinuousLinearMap_apply, ← hTdef] using
+      φ.toContIntertwiningMap.isIntertwining g v
   -- The adjoint intertwines the other way, so `T† ∘ T` is a self-intertwiner of `π`
   have hadj : ∀ g : G, (ContinuousLinearMap.adjoint T) ∘L ρ g
       = π g ∘L ContinuousLinearMap.adjoint T := fun g ↦ by
