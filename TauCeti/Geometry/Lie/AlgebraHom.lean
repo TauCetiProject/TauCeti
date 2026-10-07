@@ -70,8 +70,6 @@ theorem unitsLieAlgebraLieEquiv_lieMap_unitsSmoothHom (f : A →ₐ[ℝ] B)
   have h' : NormedSpace.exp (t • unitsLieAlgebraEquiv (lieMap f.unitsSmoothHom X)) =
       NormedSpace.exp (f (t • unitsLieAlgebraEquiv X)) := by
     simpa [NormedSpace.map_exp f f.toLinearMap.continuous_of_finiteDimensional] using h.symm
-  rw [show f (t • unitsLieAlgebraEquiv X) = t • f (unitsLieAlgebraEquiv X) from
-    f.toLinearMap.map_smul t _] at h'
-  exact h'
+  simpa only [map_smul] using h'
 
 end AlgHom

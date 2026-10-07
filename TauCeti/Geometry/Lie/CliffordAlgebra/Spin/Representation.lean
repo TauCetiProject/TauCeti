@@ -29,7 +29,8 @@ the quadratic source coordinate of a prescribed skew-symmetric matrix.
 * `AlgHom.unitsLieAlgebraLieEquiv_lieMap_realCliffordSpinSmoothHom`: its differential in Clifford
   coordinates is the action of the quadratic element.
 * `AlgHom.lieMap_realCliffordSpinSmoothHom_eq`: equality with the quadratic Lie-algebra action.
-* `AlgHom.lieMap_realCliffordSpinSmoothHom_of_so`: the differential in orthogonal coordinates,
+* `AlgHom.unitsLieAlgebraLieEquiv_lieMap_realCliffordSpinSmoothHom_eq_bivectorExterior`:
+  the differential in orthogonal coordinates,
   using the normalized exterior bivector associated with a skew-symmetric matrix.
 
 ## References
@@ -105,7 +106,7 @@ theorem lieMap_realCliffordSpinSmoothHom_eq
 /-- In orthogonal coordinates, the differentiated action is the Clifford action of the
 normalized bivector of the given skew-symmetric matrix. The matrix coordinate is the actual
 differential of the Spin projection. -/
-theorem lieMap_realCliffordSpinSmoothHom_of_so
+theorem unitsLieAlgebraLieEquiv_lieMap_realCliffordSpinSmoothHom_eq_bivectorExterior
     (f : CliffordAlgebra (realCliffordForm n 0) →ₐ[ℝ] A)
     (X : LeftInvariantDerivation 𝓘(ℝ, SpinLieModel(n)) (SpinUnitsRange(n))) :
     let Q := QuadraticMap.weightedSumSquares ℝ (1 : Fin n → ℝ)
