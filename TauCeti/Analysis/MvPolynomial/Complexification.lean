@@ -179,7 +179,7 @@ theorem exists_analyticAt_complex_eval_add_smul_eq_pow_mul
 conjugation-compatible complexification and an open dense set of real directions. Every
 such direction gives a power-times-unit factorization on a sufficiently small polydisc.
 The complexification is shared; the radius and unit may depend on the direction. -/
-theorem exists_complexification_open_directions_eval_add_smul_eq_pow_mul [Fintype σ]
+theorem exists_complexification_dense_open_directions_eval_add_smul_eq_pow_mul [Fintype σ]
     (p : MvPolynomial σ ℝ) {φ : (ι → ℝ) → σ → ℝ} {a : ι → ℝ} {m : ℕ}
     (hφ : AnalyticAt ℝ φ a) (hm : ∀ᶠ x in 𝓝 a, p.orderAt (φ x) = m) :
     ∃ ρ > (0 : ℝ), ∃ Φ : (ι → ℂ) → σ → ℂ, ∃ V : Set (σ → ℝ),
