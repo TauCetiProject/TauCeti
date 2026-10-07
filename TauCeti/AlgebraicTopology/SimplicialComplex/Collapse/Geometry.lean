@@ -43,18 +43,6 @@ namespace PreAbstractSimplicialComplex
 variable {ι : Type*} [DecidableEq ι] {K : PreAbstractSimplicialComplex ι}
   {σ τ : Finset ι}
 
-/-- A simplex point belongs to the polyhedron obtained by deleting a face exactly when
-its support is a face of the original precomplex and a coordinate at a vertex of the deleted
-face vanishes.
-No assumption on the containing simplex is needed. -/
-theorem mem_deletion_space_iff (K : PreAbstractSimplicialComplex ι)
-    (x : StandardSimplex τ) :
-    x.1 ∈ (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) (deletion K σ)).space ↔
-      x.1.support ∈ K ∧ ∃ v ∈ σ, x.1 v = 0 := by
-  rw [mem_onFinsupp_space_iff, mem_deletion]
-  simp only [Finset.subset_iff, not_forall, exists_prop,
-    Finsupp.mem_support_iff, not_not]
-
 /-- A simplex strongly deformation retracts onto its intersection with the polyhedron
 obtained by deleting one of its nonempty facets. This is the local geometric realization of a
 free-pair collapse, including the case where the deleted facet is a vertex. -/
@@ -85,8 +73,9 @@ theorem exists_strong_deformation_retraction_simplex_deletion (K : PreAbstractSi
         have hsum := StandardSimplex.sum_eq_one x
         simp [hz] at hsum)
     simp only [S, mem_ofPred_eq]
-    rw [mem_deletion_space_iff K, Convexity.StdSimplex.mem_horn_iff]
-    simp only [hx, true_and, e, Finset.standardSimplexHomeomorph_weights]
+    rw [mem_onFinsupp_space_iff, mem_deletion, Convexity.StdSimplex.mem_horn_iff]
+    simp only [hx, true_and, Finset.subset_iff, not_forall, exists_prop,
+      Finsupp.mem_support_iff, not_not, e, Finset.standardSimplexHomeomorph_weights]
     constructor
     · rintro ⟨v, hv, hxv⟩
       have hvτ : v ∈ τ := hστ.le hv
