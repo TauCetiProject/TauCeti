@@ -65,16 +65,6 @@ local instance continuousSMul_trivialF2_naturality (K : Type u) [Group K] [Topol
     [IsTopologicalGroup K] : ContinuousSMul K (trivialF2 K).V :=
   (isSmoothDiscrete_trivialF2 K).continuousSMul
 
-/-- The identification of the trivial `𝔽₂` coefficients of `G` with those of `H`. -/
-private noncomputable def trivialF2Transfer : (trivialF2 G).V →+ (trivialF2 H).V :=
-  ((trivialF2Equiv G).trans (trivialF2Equiv H).symm).toAddMonoidHom
-
-omit [IsTopologicalGroup G] [LocallyCompactSpace G] [IsTopologicalGroup H]
-  [LocallyCompactSpace H] in
-private theorem trivialF2Transfer_smul (φ : H →ₜ* G) (h : H) (m : (trivialF2 G).V) :
-    trivialF2Transfer (φ h • m) = h • (trivialF2Transfer m : (trivialF2 H).V) := by
-  simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]
-
 /-- **Naturality of the graph class.** For a continuous homomorphism `φ : H → G`, an open
 subgroup `U` of index two in `G` whose preimage `φ⁻¹(U)` also has index two, and a continuous
 homomorphism `α : U → 𝔽₂`, pulling the graph class of `α` back along `φ` gives the graph class of
@@ -94,7 +84,7 @@ theorem trivialF2Map_graphClass (φ : H →ₜ* G) (U : OpenSubgroup G)
   have hmap := eqToHom_comp_trivialF2Map φ (ofDiscreteModule_trivialF2 G)
     (ofDiscreteModule_trivialF2 H) trivialF2Transfer (trivialF2Transfer_smul φ)
     (fun m ↦ by
-      simp [trivialF2Transfer, eqToHom_ofDiscreteModule_trivialF2_apply]) 2
+      simp [eqToHom_ofDiscreteModule_trivialF2_apply]) 2
   have happ := ConcreteCategory.congr_hom hmap
     (explicitH2AddEquivContinuousCohomology G (trivialF2 G).V
       (evensGraphCocycle U (φ s) α hU hφs hα))
@@ -104,8 +94,7 @@ theorem trivialF2Map_graphClass (φ : H →ₜ* G) (U : OpenSubgroup G)
   rw [happ]
   congr 3
   ext ⟨h, k⟩
-  simp only [cocyclesMap2_apply, coe_evensGraphCocycle, trivialF2Transfer,
-    AddEquiv.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass, AddEquiv.trans_apply,
+  simp only [cocyclesMap2_apply, coe_evensGraphCocycle, trivialF2Transfer_apply,
     AddEquiv.apply_symm_apply]
   exact congrArg _ (evensGraphCochain_comap (φ : H →* G) U.toSubgroup s α h k).symm
 
@@ -148,6 +137,7 @@ theorem graphClass_comp_of_conj (U V : OpenSubgroup G) (hU : U.toSubgroup.index 
 /-- **Naturality of the index-two Evens norm.** If `φ : H → G` pulls an index-two open subgroup
 `U` back to another index-two subgroup, then pulling the norm back along `φ` is the norm of the
 pulled-back degree-one class. -/
+@[simp]
 theorem trivialF2Map_evensNormIndexTwo (φ : H →ₜ* G) (U : OpenSubgroup G)
     (hU : U.toSubgroup.index = 2)
     (hφU : (U.comap (φ : H →* G) φ.continuous).toSubgroup.index = 2)

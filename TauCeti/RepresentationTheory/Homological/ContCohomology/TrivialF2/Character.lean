@@ -202,37 +202,52 @@ local instance continuousSMul_trivialF2_naturality_G : ContinuousSMul G (trivial
 local instance continuousSMul_trivialF2_naturality_H : ContinuousSMul H (trivialF2 H).V :=
   (isSmoothDiscrete_trivialF2 H).continuousSMul
 
+/-- The identification of the trivial `𝔽₂` coefficients of `G` with those of `H`. -/
+noncomputable def trivialF2Transfer : (trivialF2 G).V →+ (trivialF2 H).V :=
+  ((trivialF2Equiv G).trans (trivialF2Equiv H).symm).toAddMonoidHom
+
+omit [TopologicalSpace G] [IsTopologicalGroup G] [TopologicalSpace H] [IsTopologicalGroup H] in
+/-- The transfer identification sends an element to the one with the same underlying value. -/
+@[simp]
+theorem trivialF2Transfer_apply (m : (trivialF2 G).V) :
+    trivialF2Transfer m = (trivialF2Equiv H).symm (trivialF2Equiv G m) :=
+  (rfl)
+
+omit [IsTopologicalGroup G] [IsTopologicalGroup H] in
+/-- The identification `trivialF2Transfer` is equivariant along every continuous homomorphism. -/
+theorem trivialF2Transfer_smul (φ : H →ₜ* G) (h : H) (m : (trivialF2 G).V) :
+    trivialF2Transfer (φ h • m) = h • (trivialF2Transfer m : (trivialF2 H).V) := by
+  simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]
+
 /-- **Pullback of a degree-one character class is composition:** for a continuous homomorphism
 `φ : H → G` and a continuous character `α : G → 𝔽₂`, the pullback of the class of `α` is the
 class of `α ∘ φ`. -/
+@[simp]
 theorem trivialF2Map_homClass (φ : H →ₜ* G) (α : G →* Multiplicative (ZMod 2))
     (hα : Continuous α) :
     trivialF2Map φ 1 (homClass G α hα) =
       homClass H (α.comp φ) (hα.comp φ.continuous) := by
-  let f : (trivialF2 G).V →+ (trivialF2 H).V :=
-    ((trivialF2Equiv G).trans (trivialF2Equiv H).symm).toAddMonoidHom
-  have hf (h : H) (m : (trivialF2 G).V) : f (φ h • m) = h • f m := by
-    simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]
   have hmap := eqToHom_comp_trivialF2Map φ (ofDiscreteModule_trivialF2 G)
-    (ofDiscreteModule_trivialF2 H) f hf
-    (fun m => by simp [f, eqToHom_ofDiscreteModule_trivialF2_apply]) 1
+    (ofDiscreteModule_trivialF2 H) trivialF2Transfer (trivialF2Transfer_smul φ)
+    (fun m => by simp [eqToHom_ofDiscreteModule_trivialF2_apply]) 1
   have hcocycle :
-      cocyclesMap1 G (trivialF2 G).V H (trivialF2 H).V φ f
-          continuous_of_discreteTopology hf (evensHomCocycle (G := G) α hα) =
+      cocyclesMap1 G (trivialF2 G).V H (trivialF2 H).V φ trivialF2Transfer
+          continuous_of_discreteTopology (trivialF2Transfer_smul φ)
+            (evensHomCocycle (G := G) α hα) =
         evensHomCocycle (G := H) (α.comp (φ : H →* G)) (hα.comp φ.continuous) := by
     ext h
     rw [cocyclesMap1_apply, coe_evensHomCocycle, coe_evensHomCocycle]
-    simp [f]
+    simp
   have hexp :
-      explicitMap1 G (trivialF2 G).V H (trivialF2 H).V φ f
-          continuous_of_discreteTopology hf
+      explicitMap1 G (trivialF2 G).V H (trivialF2 H).V φ trivialF2Transfer
+          continuous_of_discreteTopology (trivialF2Transfer_smul φ)
             (evensHomCocycle (G := G) α hα : H1 G (trivialF2 G).V) =
         ((evensHomCocycle (G := H) (α.comp (φ : H →* G)) (hα.comp φ.continuous) :
             Z1 H (trivialF2 H).V) : H1 H (trivialF2 H).V) := by
     rw [explicitMap1_mk, hcocycle]
   rw [homClass_def, homClass_def, ← ConcreteCategory.comp_apply, hmap,
     ConcreteCategory.comp_apply, explicitH1AddEquivContinuousCohomology_map, hexp]
-  exact hf
+  exact trivialF2Transfer_smul φ
 
 end Naturality
 
