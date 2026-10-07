@@ -506,6 +506,31 @@ section CommRing
 
 variable [CommRing R] {n : ℕ}
 
+/-- The first `n` rows of the Burau-column basis form a lower triangular matrix with
+constant diagonal `t`. Thus they give invertible coordinates whenever `t` is a unit. -/
+@[simp]
+theorem det_burauColMatrix_submatrix_castSucc (n : ℕ) (t : R) :
+    ((burauColMatrix (n + 1) t).submatrix Fin.castSucc id).det = t ^ n := by
+  have htri : ((burauColMatrix (n + 1) t).submatrix Fin.castSucc id).IsLowerTriangular := by
+    intro i j hij
+    have hij' : (i : ℕ) < (j : ℕ) := hij
+    have h₁ : i.castSucc ≠ BraidGroup.strand (n := n + 1) j := by
+      simp only [ne_eq, Fin.ext_iff, Fin.val_castSucc, BraidGroup.val_strand]
+      omega
+    have h₂ : i.castSucc ≠ BraidGroup.strandSucc (n := n + 1) j := by
+      simp only [ne_eq, Fin.ext_iff, Fin.val_castSucc, BraidGroup.val_strandSucc]
+      omega
+    simp [Matrix.submatrix_apply, burauCol_apply, h₁, h₂]
+  rw [Matrix.det_of_isLowerTriangular _ htri]
+  have hdiag (i : Fin n) : burauColMatrix (n + 1) t i.castSucc i = t := by
+    have h₁ : i.castSucc = BraidGroup.strand (n := n + 1) i :=
+      Fin.ext (by simp [BraidGroup.val_strand])
+    have h₂ : i.castSucc ≠ BraidGroup.strandSucc (n := n + 1) i := by
+      simp [Fin.ext_iff, BraidGroup.val_strandSucc]
+    simp only [burauColMatrix_apply, burauCol_apply, ite_eq_left h₁, ite_eq_right h₂, sub_zero]
+  simp only [Matrix.submatrix_apply, id_eq, hdiag, Finset.prod_const,
+    Finset.card_univ, Fintype.card_fin]
+
 /-- Every linear combination of the Burau columns belongs to the invariant kernel carrying the
 reduced Burau representation. -/
 theorem burauColMatrix_mulVec_mem_reducedBurauSpace (n : ℕ) (t : R)

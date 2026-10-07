@@ -42,6 +42,7 @@ as groups.
   inclusion `weilToAbsolute K : WeilGroup K →* G_K` and the group isomorphism
   `weilGroupEquivLocalWeilGroup K : WeilGroup K ≃* localWeilGroup K`.
 * `TauCeti.ClassFieldTheory.weilDegree K : WeilGroup K →* Multiplicative ℤ`: the degree.
+* `TauCeti.ClassFieldTheory.inertiaToWeil K : I_K →* W_K`: the inclusion of inertia.
 
 ## Main results
 
@@ -57,6 +58,8 @@ as groups.
   `TauCeti.ClassFieldTheory.localWeilGroup_ne_top`: `W_K` is dense and proper in `G_K`.
 * `TauCeti.ClassFieldTheory.surjective_weilDegree`, `TauCeti.ClassFieldTheory.ker_weilDegree`:
   the exact sequence `1 → I_K → W_K → ℤ → 1`.
+* `TauCeti.ClassFieldTheory.range_inertiaToWeil`: the image of inertia in `W_K` is the kernel of
+  the degree.
 * `TauCeti.ClassFieldTheory.unramifiedCoordinate_weilDegree`,
   `TauCeti.ClassFieldTheory.weilDegree_eq_ofAdd_one_iff`: the degree is the unramified coordinate,
   and the elements of degree `1` are the arithmetic Frobenius lifts.
@@ -281,5 +284,30 @@ theorem ker_weilDegree :
   ext w
   rw [MonoidHom.mem_ker, weilDegree_eq_iff, toAdd_one, zpow_zero, Subgroup.mem_comap,
     ← ker_restrictMaximalUnramifiedHom, MonoidHom.mem_ker]
+
+/-! ### Inertia in the Weil group -/
+
+/-- **The inclusion of inertia into the Weil group**. -/
+def inertiaToWeil : inertiaSubgroup K →* WeilGroup K :=
+  Subgroup.inclusion (inertiaSubgroup_le_localWeilGroup K)
+
+variable {K} in
+/-- An element of inertia maps to itself under `I_K → W_K → G_K`. -/
+@[simp]
+theorem weilToAbsolute_inertiaToWeil (σ : inertiaSubgroup K) :
+    weilToAbsolute K (inertiaToWeil K σ) = σ :=
+  (rfl)
+
+variable {K} in
+/-- An element of inertia has trivial degree in the Weil group. -/
+@[simp]
+theorem weilDegree_inertiaToWeil (σ : inertiaSubgroup K) : weilDegree K (inertiaToWeil K σ) = 1 :=
+  (ker_weilDegree K).ge (by simp)
+
+/-- The image of inertia in the Weil group is the preimage of `I_K` under `W_K → G_K`, that is,
+the kernel of the degree (`ker_weilDegree`). -/
+theorem range_inertiaToWeil :
+    (inertiaToWeil K).range = (inertiaSubgroup K).comap (weilToAbsolute K) :=
+  (Subgroup.inclusion_range _).trans (Subgroup.comap_subtype _ _).symm
 
 end TauCeti.ClassFieldTheory

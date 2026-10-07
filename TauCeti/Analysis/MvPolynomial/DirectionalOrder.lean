@@ -35,6 +35,34 @@ namespace MvPolynomial
 
 variable {σ 𝕜 E : Type*}
 
+/-- The coefficients of a polynomial restricted to an analytic family of affine lines
+depend analytically on the base point and direction. -/
+theorem analyticAt_coeff_aeval_C_add_C_mul_X [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    (p : MvPolynomial σ 𝕜) {φ ψ : E → σ → 𝕜} {x₀ : E}
+    (hφ : ∀ i, AnalyticAt 𝕜 (fun x ↦ φ x i) x₀)
+    (hψ : ∀ i, AnalyticAt 𝕜 (fun x ↦ ψ x i) x₀) (m : ℕ) :
+    AnalyticAt 𝕜 (fun x ↦
+      (aeval (fun i ↦ Polynomial.C (φ x i) + Polynomial.C (ψ x i) * Polynomial.X)
+        p).coeff m) x₀ := by
+  induction p using MvPolynomial.induction_on generalizing m with
+  | C r =>
+    simp only [aeval_C, Polynomial.algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply]
+    exact analyticAt_const
+  | add p q hp hq =>
+    simp only [map_add, Polynomial.coeff_add]
+    exact (hp m).add (hq m)
+  | mul_X p i hp =>
+    simp only [map_mul, aeval_X, mul_add, ← mul_assoc, Polynomial.coeff_add,
+      Polynomial.coeff_mul_C]
+    cases m with
+    | zero =>
+      simp only [Polynomial.coeff_mul_X_zero, add_zero]
+      exact (hp 0).mul (hφ i)
+    | succ m =>
+      simp only [Polynomial.coeff_mul_X, Polynomial.coeff_mul_C]
+      exact ((hp (m + 1)).mul (hφ i)).add ((hp m).mul (hψ i))
+
 /-- Along a continuous parametrization of a set of constant finite ambient order, a single
 direction detects that order analytically on every nearby slice. -/
 theorem exists_eventually_analyticOrderAt_eval_add_smul_eq [NontriviallyNormedField 𝕜]

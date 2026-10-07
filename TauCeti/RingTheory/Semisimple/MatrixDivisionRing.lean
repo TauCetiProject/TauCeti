@@ -27,7 +27,7 @@ says nothing about how much of it is determined by the ring: `RingEquiv.card_blo
 *number* of blocks is an invariant and `RingEquiv.exists_simpleSubmodule_of_pi_matrix` matches the
 blocks with the simple modules, but both are silent about the two remaining pieces of data, the
 size `ι` of a block and its division ring `D`.  This file determines both, for a *single* block:
-it does not treat a product of blocks; `TauCeti.wedderburn_blocks_unique` applies the result here
+it does not treat a product of blocks; `RingEquiv.wedderburn_blocks_unique` applies the result here
 after matching the factors of two product presentations.
 
 The content is a description of those two data of `A = Matᵢ(D)` in terms that transport along a

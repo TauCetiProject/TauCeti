@@ -15,15 +15,15 @@ In a real normed space of dimension at least two the complement of a closed ball
 it is the union, over the radii `M` exceeding the ball's, of the spheres of radius `M`, strung
 together along a single ray from the centre.
 
-The consequences for bounded sets — uniqueness of the unbounded component and the filled-hull
-alternative — are in `TauCeti/Analysis/Normed/Module/FilledHull.lean`.
+Every unbounded complementary component of a bounded set meets the exterior of any closed ball
+containing that set. Preconnectedness of the exterior therefore forces all such components to
+coincide. This uniqueness result and the corresponding filled-hull alternative are proved in
+`TauCeti/Analysis/Normed/Module/FilledHull.lean`.
 
 ## Main results
 
 * `TauCeti.isPreconnected_compl_closedBall` — the exterior of a closed ball is preconnected in a
   real normed space of dimension at least two.
-
-This is a prerequisite of the planar-separation step of the `ConformalMapping` roadmap (L5).
 
 ## References
 
