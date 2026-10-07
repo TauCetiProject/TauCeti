@@ -373,20 +373,7 @@ theorem isSl2Triple_rep_rootGenerator (i : Fin (n + 1)) :
   have hh : φ (TauCeti.typeBSimpleCorootGenerator (K := ℚ) i) ≠ 0 := by
     rw [← hrep]
     exact rep_coroot_ne_zero n i
-  have hsource :
-      _root_.IsSl2Triple
-        (TauCeti.typeBSimpleCorootGenerator (K := ℚ) i)
-        (TauCeti.typeBSimpleRootGenerator (K := ℚ) i)
-        (TauCeti.typeBSimpleNegativeRootGenerator (K := ℚ) i) := {
-    h_ne_zero := fun hzero ↦ hh (by simp [hzero])
-    lie_e_f := TauCeti.typeBSimpleRootGenerator_lie_negative i
-    lie_h_e_nsmul := by
-      rw [TauCeti.typeBSimpleCorootGenerator_lie_root, CartanMatrix.B_diag]
-      rfl
-    lie_h_f_nsmul := by
-      rw [TauCeti.typeBSimpleCorootGenerator_lie_negativeRoot, CartanMatrix.B_diag]
-      rfl
-  }
+  have hsource := TauCeti.isSl2Triple_typeBSimpleRootGenerator (K := ℚ) i
   have htriple := hsource.map φ hh
   simpa only [hrep, TauCeti.typeBSimpleRootGeneratorFamily_inl,
     TauCeti.typeBSimpleRootGeneratorFamily_inr] using htriple
