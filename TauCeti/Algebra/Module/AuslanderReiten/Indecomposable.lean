@@ -47,47 +47,62 @@ local notation "S" =>
 local notation "T" =>
   ExactStructure.projectiveStableFunctor (ExactStructure.abelian (ModuleCat Aᵐᵒᵖ))
 
-/-- A finite projective presentation of a non-projective finite-length indecomposable module
-has an indecomposable transpose in the projective stable category. Minimality is not needed. -/
-theorem indecomposable_stableTranspose (P : FiniteProjectivePresentation M)
-    (hM : IsFiniteLength A M) (hiM : IsIndecomposableModule A M)
-    (hpM : ¬ Module.Projective A M) :
-    Indecomposable ((T).obj (ModuleCat.of Aᵐᵒᵖ (AuslanderReitenTranspose P.p))) := by
-  have hi : Indecomposable M := (indecomposable_iff_isIndecomposableModule M).mpr hiM
-  have hs := (ModuleCat.indecomposable_projectiveStableFunctor_obj_iff M hM hi).mpr
-    (fun h ↦ by let := h; exact hpM inferInstance)
-  have : IsLocalRing (End M) := (indecomposable_iff_isLocalRing_end M hM).mp hi
-  have : Nontrivial (End ((S).obj M)) :=
-    nontrivial_of_ne (𝟙 ((S).obj M)) 0
-      (fun h ↦ hs.1 ((IsZero.iff_id_eq_zero _).mpr h))
-  have : IsLocalRing (End ((S).obj M)) := IsLocalRing.of_surjective'
-    ({ (S).mapEnd M, (S).mapAddHom with } : End M →+* End ((S).obj M))
-    (S).map_surjective
-  let f := AuslanderReitenTranspose.stableMap P.exact.linearMap_comp_eq_zero
-    P.exact P.surjective
-  let e := Equiv.ofBijective f
-    ⟨AuslanderReitenTranspose.stableMap_injective P.exact P.surjective P.exact P.surjective,
-      AuslanderReitenTranspose.stableMap_surjective P.exact P.surjective P.exact P.surjective⟩
-  have he_zero : e 0 = 0 := f.map_zero
-  have he_id : e (𝟙 ((S).obj M)) = 𝟙 _ :=
-    AuslanderReitenTranspose.stableMap_id P.exact P.surjective
-  have he_comp (a b : End ((S).obj M)) : e (a ≫ b) = e b ≫ e a :=
-    AuslanderReitenTranspose.stableMap_comp P.exact.linearMap_comp_eq_zero
-      P.exact P.surjective P.exact P.surjective a b
-  refine indecomposable_of_injective_of_isLocalRing (R := End ((S).obj M)) ?_
-    (fun g ↦ (e.symm g : End ((S).obj M))) e.symm.injective
-    (e.symm_apply_eq.mpr he_zero.symm) ?_ ?_
-  · intro hzero
-    apply hs.1
+/-- The stable transpose of a finite projective presentation of a finite-length
+indecomposable module is indecomposable exactly when the module is not projective.
+Minimality is not needed. -/
+@[simp]
+theorem indecomposable_stableTransposeObj_iff (P : FiniteProjectivePresentation M)
+    (hM : IsFiniteLength A M) (hiM : IsIndecomposableModule A M) :
+    Indecomposable ((T).obj (ModuleCat.of Aᵐᵒᵖ (AuslanderReitenTranspose P.p))) ↔
+      ¬ Module.Projective A M := by
+  constructor
+  · intro h hproj
+    let := hproj
+    have hs : IsZero ((S).obj M) :=
+      (ExactStructure.isZero_projectiveStableFunctor_obj_iff _ M).mpr
+        ((ExactStructure.abelian_isProjective_iff M).mpr inferInstance)
+    apply h.1
     apply (IsZero.iff_id_eq_zero _).mpr
-    apply e.injective
-    rw [he_id, he_zero]
-    exact (IsZero.iff_id_eq_zero _).mp hzero
-  · simpa only [End.one_def] using e.symm_apply_eq.mpr he_id.symm
-  · intro g
-    apply e.injective
-    simpa only [End.mul_def, e.apply_symm_apply] using
-      (he_comp (e.symm g) (e.symm g)).symm
+    rw [← AuslanderReitenTranspose.stableMap_id P.exact P.surjective,
+      (IsZero.iff_id_eq_zero _).mp hs]
+    exact (AuslanderReitenTranspose.stableMap P.exact.linearMap_comp_eq_zero
+      P.exact P.surjective).map_zero
+  · intro hpM
+    have hi : Indecomposable M := (indecomposable_iff_isIndecomposableModule M).mpr hiM
+    have hs := (ModuleCat.indecomposable_projectiveStableFunctor_obj_iff M hM hi).mpr
+      (fun h ↦ by let := h; exact hpM inferInstance)
+    have : IsLocalRing (End M) := (indecomposable_iff_isLocalRing_end M hM).mp hi
+    have : Nontrivial (End ((S).obj M)) :=
+      nontrivial_of_ne (𝟙 ((S).obj M)) 0
+        (fun h ↦ hs.1 ((IsZero.iff_id_eq_zero _).mpr h))
+    have : IsLocalRing (End ((S).obj M)) := IsLocalRing.of_surjective'
+      ({ (S).mapEnd M, (S).mapAddHom with } : End M →+* End ((S).obj M))
+      (S).map_surjective
+    let f := AuslanderReitenTranspose.stableMap P.exact.linearMap_comp_eq_zero
+      P.exact P.surjective
+    let e := Equiv.ofBijective f
+      ⟨AuslanderReitenTranspose.stableMap_injective P.exact P.surjective P.exact P.surjective,
+        AuslanderReitenTranspose.stableMap_surjective P.exact P.surjective P.exact P.surjective⟩
+    have he_zero : e 0 = 0 := f.map_zero
+    have he_id : e (𝟙 ((S).obj M)) = 𝟙 _ :=
+      AuslanderReitenTranspose.stableMap_id P.exact P.surjective
+    have he_comp (a b : End ((S).obj M)) : e (a ≫ b) = e b ≫ e a :=
+      AuslanderReitenTranspose.stableMap_comp P.exact.linearMap_comp_eq_zero
+        P.exact P.surjective P.exact P.surjective a b
+    refine indecomposable_of_injective_of_isLocalRing (R := End ((S).obj M)) ?_
+      (fun g ↦ (e.symm g : End ((S).obj M))) e.symm.injective
+      (e.symm_apply_eq.mpr he_zero.symm) ?_ ?_
+    · intro hzero
+      apply hs.1
+      apply (IsZero.iff_id_eq_zero _).mpr
+      apply e.injective
+      rw [he_id, he_zero]
+      exact (IsZero.iff_id_eq_zero _).mp hzero
+    · simpa only [End.one_def] using e.symm_apply_eq.mpr he_id.symm
+    · intro g
+      apply e.injective
+      simpa only [End.mul_def, e.apply_symm_apply] using
+        (he_comp (e.symm g) (e.symm g)).symm
 
 /-- The transpose of a finite minimal presentation of a finite-length indecomposable module
 is indecomposable exactly when the original module is not projective. -/
@@ -107,7 +122,7 @@ theorem isIndecomposableModule_auslanderReitenTranspose_iff
     apply (indecomposable_iff_isIndecomposableModule
       (ModuleCat.of Aᵐᵒᵖ (AuslanderReitenTranspose P.p))).mp
     apply (ModuleCat.indecomposable_iff_isZero_projective_retract _
-      (P.indecomposable_stableTranspose hM hiM hpM)).mpr
+      ((P.indecomposable_stableTransposeObj_iff hM hiM).mpr hpM)).mpr
     intro Q r hQ
     let := hQ
     have hzero := hP.isSuperfluous_ker.subsingleton_of_retract_auslanderReitenTranspose
