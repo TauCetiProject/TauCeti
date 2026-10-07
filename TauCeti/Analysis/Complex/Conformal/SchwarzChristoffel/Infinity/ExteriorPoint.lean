@@ -24,13 +24,15 @@ continuity up to the real axis bounds the remaining compact part. At total expon
 the real part tends to positive infinity, so the image has a global lower bound on its real part.
 For total exponent less than `-1`, the image is bounded and its closure is compact.
 
-At total exponent `1` the leading term `z ^ 2 / 2` covers a full neighbourhood of infinity, and
-the logarithmic coefficient `C = ((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2` decides what is
-left out. When `C < 0`, the image misses every closed sub-band of the open strip between the
-heights `im c + π * C` and `im c` sufficiently far to the right, where `c` is the quadratic
-constant at infinity. These two heights carry the outer sides of an end of opening `2π`, so the
-closure of the image misses the inside of the half-strip they bound. Without the sign condition
-there need not be an exterior point, as for the slit plane `z ↦ z ^ 2`.
+At total exponent `1` the leading term `z ^ 2 / 2` maps the upper half-plane onto a slit plane,
+whose closure contains a full neighbourhood of infinity, and the logarithmic coefficient
+`C = ((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2` decides what is left out. When `C < 0`,
+for each `δ > 0` the closure of the image misses the points of the closed sub-band between the
+heights `im c + π * C + δ` and `im c - δ` that lie sufficiently far to the right, where `c` is the
+quadratic constant at infinity and how far to the right depends on `δ`. The heights
+`im c + π * C` and `im c` carry the outer sides of an end of opening `2π`, so each such sub-band
+supplies exterior points. Without the sign condition there need not be an exterior point, as for
+the slit plane `z ↦ z ^ 2`.
 
 ## References
 
@@ -209,86 +211,6 @@ theorem exists_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_lt_one
   have hTmul : T * (1 - k) = M + 1 := div_mul_cancel₀ _ (by linarith)
   nlinarith
 
-/-- Far out in the upper half-plane, the comparison function `z ^ 2 / 2 - M * z + C * log z`
-with `C < 0` omits the band `π * C + η < im < -η` wherever its real part exceeds `1 / 2`. -/
-private theorem im_quadratic_notMem_band {M C η : ℝ} (hC : C < 0) (hη : 0 < η) {z : ℂ}
-    (hz : 0 < z.im)
-    (hzR : max 1 (max (-(Real.pi * C) + |M| + 1) (Real.pi ^ 2 * C ^ 2 / η + 1)) ≤ ‖z‖)
-    (hre : 1 / 2 < (z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z).re) :
-    (z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z).im ≤ Real.pi * C + η ∨
-      -η ≤ (z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z).im := by
-  have hQre : (z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z).re =
-      ((z.re - M) ^ 2 - z.im ^ 2) / 2 - M ^ 2 / 2 + C * Real.log ‖z‖ := by
-    simp [sq, Complex.mul_re, log_re]
-    ring
-  have hQim : (z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z).im =
-      (z.re - M) * z.im + C * arg z := by
-    simp [sq, Complex.mul_im, log_im]
-    ring
-  rw [hQre] at hre
-  rw [hQim]
-  by_contra! hband
-  obtain ⟨hlo, hhi⟩ := hband
-  have h1 : 1 ≤ ‖z‖ := (le_max_left _ _).trans hzR
-  have h2 : -(Real.pi * C) + |M| + 1 ≤ ‖z‖ :=
-    ((le_max_left _ _).trans (le_max_right _ _)).trans hzR
-  have h3 : Real.pi ^ 2 * C ^ 2 / η + 1 ≤ ‖z‖ :=
-    ((le_max_right _ _).trans (le_max_right _ _)).trans hzR
-  have hpi := Real.pi_pos
-  have hn : 0 < ‖z‖ := zero_lt_one.trans_le h1
-  have hlog : 0 ≤ Real.log ‖z‖ := Real.log_nonneg h1
-  have harg0 : 0 ≤ arg z := arg_nonneg_iff.mpr hz.le
-  have harg1 : arg z ≤ Real.pi := arg_le_pi z
-  -- The imaginary part is `(re z - M) * im z + C * arg z`. The real part forces
-  -- `|re z - M| > 1`, and then the band forces `im z < -π * C`, so `arg z` is close to `0` or
-  -- `π` by Jordan's inequality.
-  have hs : 1 < |z.re - M| := by
-    rw [← one_lt_sq_iff_one_lt_abs]
-    nlinarith [mul_nonpos_of_nonpos_of_nonneg hC.le hlog, sq_nonneg M, sq_nonneg z.im]
-  have hsy : |(z.re - M) * z.im| < -(Real.pi * C) := by
-    rw [abs_lt]
-    constructor <;> nlinarith
-  have hy : z.im < -(Real.pi * C) := by
-    rw [abs_mul, abs_of_pos hz] at hsy
-    nlinarith
-  have hnorm := Complex.norm_le_abs_re_add_abs_im z
-  rw [abs_of_pos hz] at hnorm
-  -- Since `‖z‖` is large, an angle bounded by Jordan's inequality costs less than `η`.
-  have hratio : -C * (Real.pi / 2 * (z.im / ‖z‖)) < η := by
-    -- Collect the factor `1 / ‖z‖` so that the denominator can be cleared.
-    have hquot : -C * (Real.pi / 2 * (z.im / ‖z‖)) = -C * Real.pi * z.im / 2 / ‖z‖ := by ring
-    rw [hquot, div_lt_iff₀ hn]
-    have hηn : Real.pi ^ 2 * C ^ 2 + η ≤ η * ‖z‖ := by
-      have := mul_le_mul_of_nonneg_left h3 hη.le
-      rwa [mul_add, mul_div_cancel₀ _ hη.ne', mul_one] at this
-    nlinarith [mul_pos (neg_pos.mpr hC) hpi]
-  have hjordan (θ : ℝ) (h0 : 0 ≤ θ) (h1 : θ ≤ Real.pi / 2) (hsin : Real.sin θ = z.im / ‖z‖) :
-      θ ≤ Real.pi / 2 * (z.im / ‖z‖) := by
-    have h := Real.mul_le_sin h0 h1
-    rw [hsin, div_mul_eq_mul_div, div_le_iff₀ hpi] at h
-    nlinarith
-  rcases le_or_gt 0 z.re with hx | hx
-  · -- Near the positive real axis, `C * arg z` is close to `0` and the linear term is positive.
-    have hJ := hjordan (arg z) harg0 (arg_le_pi_div_two_iff.mpr (Or.inl hx)) (sin_arg z)
-    have hsx : 0 < z.re - M := by
-      rw [abs_of_nonneg hx] at hnorm
-      linarith [le_abs_self M]
-    nlinarith [mul_pos hsx hz, mul_le_mul_of_nonneg_left hJ (neg_nonneg.mpr hC.le)]
-  · -- Near the negative real axis, `C * arg z` is close to `π * C` and the linear term is
-    -- negative.
-    have hhalf : Real.pi / 2 ≤ arg z := by
-      by_contra! h
-      rcases arg_lt_pi_div_two_iff.mp h with h | h | h
-      · linarith
-      · linarith
-      · simp [h] at hz
-    have hJ := hjordan (Real.pi - arg z) (by linarith) (by linarith)
-      (by rw [Real.sin_pi_sub, sin_arg])
-    have hsx : z.re - M < 0 := by
-      rw [abs_of_neg hx] at hnorm
-      linarith [neg_abs_le M]
-    nlinarith [mul_neg_of_neg_of_pos hsx hz, mul_le_mul_of_nonneg_left hJ (neg_nonneg.mpr hC.le)]
-
 /-- **The far-right band missed by an image with an end of opening `2π`.** Suppose the finite
 prevertices are integrable, the total exponent is `1`, and the logarithmic coefficient
 `C = ((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2` is negative. Then for each `δ > 0`,
@@ -323,7 +245,7 @@ theorem exists_forall_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_eq
     exact h.mono fun z hz => mem_ball_iff_norm.mp hz
   rw [eventually_inf_principal, hasBasis_cobounded_norm.eventually_iff] at htail
   obtain ⟨A, _, htail⟩ := htail
-  set R₁ := max 1 (max (-(Real.pi * C) + |M| + 1) (Real.pi ^ 2 * C ^ 2 / (δ / 2) + 1))
+  obtain ⟨R₁, hR₁⟩ := exists_forall_im_quadratic_log_notMem_Ioo (M := M) hCneg (half_pos hδ)
   obtain ⟨B, _, hB⟩ :=
     exists_norm_bound_schwarzChristoffelPrimitive_on_bounded_part a e z₀ hfinite (max A R₁)
   set R := max B (c.re + δ / 2 + 1 / 2)
@@ -346,10 +268,9 @@ theorem exists_forall_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_eq
     have hreErr := (abs_le.mp ((abs_re_le_norm _).trans herr.le)).2
     have himErr := abs_lt.mp ((abs_im_le_norm _).trans_lt herr)
     simp only [sub_re, sub_im] at hreErr himErr
-    rcases im_quadratic_notMem_band hCneg (half_pos hδ) hz ((le_max_right _ _).trans hzR.le)
-      (by linarith [le_max_right B (c.re + δ / 2 + 1 / 2)]) with h | h
-    · linarith [himErr.2]
-    · linarith [himErr.1]
+    exact hR₁ z hz ((le_max_right _ _).trans hzR.le)
+      (by linarith [le_max_right B (c.re + δ / 2 + 1 / 2)])
+      ⟨by linarith [himErr.2], by linarith [himErr.1]⟩
   exact (closure_minimal hsub hS hw).elim (fun h => not_le.mpr hwR h)
     (fun h => h.elim (fun h => not_le.mpr hwhi h) (fun h => not_le.mpr hwlo h))
 
