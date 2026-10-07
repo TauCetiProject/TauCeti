@@ -142,6 +142,7 @@ def cocycleOfComp {i : α} {A : C} (f : X.X i ⟶ A)
     rfl)).hom
 
 /-- The cocycle `cocycleOfComp k Y f hf g` has underlying cochain `f ≫ g`. -/
+@[simp]
 lemma iCycles_cocycleOfComp {i : α} {A : C} (f : X.X i ⟶ A)
     (hf : X.d ((ComplexShape.up α).next i) i ≫ f = 0) (g : A ⟶ Y) :
     (X.linearYonedaObj k Y).iCycles i (cocycleOfComp k Y f hf g) = f ≫ g := by
@@ -168,6 +169,7 @@ lemma homologyClassOfComp_eq {i : α} {A : C} (f : X.X i ⟶ A)
 
 /-- The Kronecker map sends `homologyClassOfComp k Y f hf g` to the morphism `Hᵢ(X) ⟶ Y` which on
 cycles is `f ≫ g`. -/
+@[reassoc (attr := simp)]
 lemma homologyπ_kronecker_homologyClassOfComp {i : α} {A : C} (f : X.X i ⟶ A)
     (hf : X.d ((ComplexShape.up α).next i) i ≫ f = 0) (g : A ⟶ Y) :
     X.homologyπ i ≫ kronecker k X Y i (homologyClassOfComp k Y f hf g) = X.iCycles i ≫ f ≫ g := by
