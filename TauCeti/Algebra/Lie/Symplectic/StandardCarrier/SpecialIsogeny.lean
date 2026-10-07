@@ -132,7 +132,7 @@ private theorem shortRootUnit_eq (t : K) :
       GLSymplecticFin.differenceShortRootUnit (show (0 : Fin (1 + 1)) ≠ 1 by decide) t := by
   rw [pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inl_of_ne_last 1 0 zero_ne_last,
     toAdd_ofAdd, GLSymplecticFin.differenceShortRootUnit_congr _ _ rfl
-      (show Order.succ (0 : Fin (1 + 1)) = 1 from rfl)]
+      (by simpa using Fin.orderSucc_castSucc (0 : Fin 1) : Order.succ (0 : Fin (1 + 1)) = 1)]
 
 omit [CharP K 2] in
 private theorem longRootUnit_eq (t : K) :
@@ -172,7 +172,7 @@ private theorem negShortRootUnit_eq (t : K) :
       GLSymplecticFin.differenceShortRootUnit (show (1 : Fin (1 + 1)) ≠ 0 by decide) t := by
   rw [pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inr_of_ne_last 1 0 zero_ne_last,
     toAdd_ofAdd, GLSymplecticFin.differenceShortRootUnit_congr _ _
-      (show Order.succ (0 : Fin (1 + 1)) = 1 from rfl) rfl]
+      (by simpa using Fin.orderSucc_castSucc (0 : Fin 1) : Order.succ (0 : Fin (1 + 1)) = 1) rfl]
 
 omit [CharP K 2] in
 private theorem negLongRootUnit_eq (t : K) :

@@ -239,7 +239,7 @@ theorem carrierEquivSymplectic_simpleRootSubgroup (i : Fin d.1.rank)
       GLSymplecticFin.RootSubgroupIndex.hom_difference,
       GLSymplecticFin.differenceShortRootHom_apply]
     exact GLSymplecticFin.differenceShortRootUnit_congr _ _ rfl
-      (show Order.succ (0 : Fin 2) = 1 from rfl) _
+      (by simpa using Fin.orderSucc_castSucc (0 : Fin 1) : Order.succ (0 : Fin 2) = 1) _
   · rw [h, d.symplecticRootIndex_of_carrierNode_eq_one h, one_eq_last,
       SpStd.pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inl_last,
       GLSymplecticFin.RootSubgroupIndex.hom_positiveLong,
