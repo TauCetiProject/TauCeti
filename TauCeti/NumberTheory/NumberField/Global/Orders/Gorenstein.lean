@@ -309,11 +309,12 @@ theorem dual_injective : Function.Injective O.dual :=
   (dual_involutive O).injective
 
 /-- The trace dual of the unit fractional ideal agrees with the trace dual of the order. -/
+@[simp]
 theorem dual_one_eq_traceDual (O : NumberFieldOrder K) : O.dual 1 = O.traceDual := by
   apply FractionalIdeal.coeToSubmodule_injective
-  change (O.dual 1 : Submodule O.toSubalgebra K) =
-    (O.traceDual : Submodule O.toSubalgebra K)
-  rw [coe_dual one_ne_zero, O.coe_traceDual, FractionalIdeal.coe_one]
+  exact (coe_dual one_ne_zero).trans (by
+    rw [FractionalIdeal.coe_one]
+    exact O.coe_traceDual.symm)
 
 /-! ### Proper ideals and the trace dual -/
 
