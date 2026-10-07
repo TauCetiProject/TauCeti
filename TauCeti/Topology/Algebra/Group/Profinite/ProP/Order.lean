@@ -120,20 +120,12 @@ theorem proPKernel_eq_top_of_profiniteOrder_apply_eq_zero
   apply (Nat.card_eq_one_iff_unique.mp ?_).1
   apply hU.card_eq_or_dvd.resolve_right
   intro hp
-  let q : Nat.Primes := ⟨p, Fact.out⟩
-  change profiniteOrder G q = 0 at h
-  have hle : (padicValNat q (Nat.card (G ⧸ U.toSubgroup)) : ℕ∞) ≤
-      profiniteOrder G q := by
-    rw [profiniteOrder_apply]
-    exact le_iSup
-      (fun V : OpenNormalSubgroup G ↦
-        (padicValNat q (Nat.card (G ⧸ V.toSubgroup)) : ℕ∞)) U
-  rw [h] at hle
-  have hval : padicValNat q (Nat.card (G ⧸ U.toSubgroup)) = 0 := by
-    apply ENat.natCast_inj.mp
-    exact le_antisymm hle bot_le
-  exact (dvd_iff_padicValNat_ne_zero
-    (p := p) (Nat.card_pos.ne' : Nat.card (G ⧸ U.toSubgroup) ≠ 0)).mp hp hval
+  have hle : (padicValNat p (Nat.card (G ⧸ U.toSubgroup)) : ℕ∞) ≤
+      profiniteOrder G ⟨p, Fact.out⟩ :=
+    (Supernatural.ofNat_apply _ ⟨p, Fact.out⟩).symm.trans_le
+      (Supernatural.le_iff.mp (ofNat_card_quotient_le_profiniteOrder G U) _)
+  rw [h, nonpos_iff_eq_zero, Nat.cast_eq_zero] at hle
+  exact (dvd_iff_padicValNat_ne_zero Nat.card_pos.ne').mp hp hle
 
 /-- **The maximal pro-`p` quotient is trivial when `p` is absent from the supernatural order.** -/
 theorem maximalProPQuotient.subsingleton_of_profiniteOrder_apply_eq_zero
