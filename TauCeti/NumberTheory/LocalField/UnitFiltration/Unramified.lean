@@ -14,7 +14,7 @@ import TauCeti.NumberTheory.LocalField.ResidueCorrespondence
 import TauCeti.NumberTheory.LocalField.UnitFiltration.HerbrandQuotient
 
 /-!
-# The units of an unramified extension are cohomologically trivial
+# The units of an unramified extension have no Tate cohomology
 
 Let `L/K` be a finite unramified Galois extension of nonarchimedean local fields, with Galois
 group `G`. This file proves that the unit group `𝒪[L]ˣ = U(L, 0)`, with its Galois action and
@@ -25,6 +25,9 @@ an unramified extension maps `𝒪[L]ˣ` onto `𝒪[K]ˣ` (`TauCeti.map_normUnit
 group `G` is cyclic (`TauCeti.isCyclic_algEquiv`) and the Herbrand quotient of `𝒪[L]ˣ` is `1`
 (`TauCeti.TateCohomology.herbrandQuotient_unitFiltration_zero`), so `H-hat^(-1)(G, 𝒪[L]ˣ)`
 vanishes as well, and two-periodicity gives every other degree.
+
+The statement concerns the whole group `G`. Since `L/E` is again unramified for every intermediate
+field `E`, the same theorem over `E` applies to the subgroup `Gal(L/E)` of `G`.
 
 This is the local factor at the places outside `S` in the computation of the Herbrand quotient
 of the `S`-ideles of a cyclic extension of number fields: the unit groups at places unramified
@@ -85,7 +88,7 @@ private theorem isZero_tateCohomology_zero_unitFiltration_zero_of_isUnramified :
   refine (coe_norm_unitFiltrationZero K L _).trans (congrArg (algebraMap K L) ?_)
   rw [AddEquiv.apply_symm_apply, toMul_ofMul, ← hwa, Algebra.coe_normUnits]
 
-/-- **The units of an unramified extension are cohomologically trivial.** For a finite unramified
+/-- **The units of an unramified extension have no Tate cohomology.** For a finite unramified
 Galois extension `L/K` of nonarchimedean local fields, the unit group `𝒪[L]ˣ` has vanishing Tate
 cohomology `H-hat^n(Gal(L/K), 𝒪[L]ˣ)` in every degree `n : ℤ`. -/
 theorem isZero_tateCohomology_unitFiltration_zero_of_isUnramified (n : ℤ) :
