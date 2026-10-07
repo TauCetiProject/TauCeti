@@ -211,7 +211,8 @@ theorem exists_isTubularNeighborhood_wholeNormalBundle [FiniteDimensional ℝ V]
       hι.continuous.comp (continuous_subtype_val.comp continuous_snd)
     exact hp.fst.prodMk ((continuous_subtype_val.comp continuous_fst).smul hp.snd)
 
-/-- A noncompact Euclidean immersion has an open embedding of its whole normal bundle. -/
+/-- A noncompact Euclidean immersion inducing the source topology has an open embedding of its
+whole normal bundle. -/
 theorem exists_isOpenEmbedding_wholeNormalBundle [FiniteDimensional ℝ V]
     [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I 2 M] {f : M → V}
     (hf : ContMDiff I 𝓘(ℝ, V) 2 f)
