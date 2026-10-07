@@ -16,7 +16,7 @@ cochain complex `Hom(X, Y)` (`ChainComplex.linearYonedaObj`) of degree `i` is a 
 `φ : Xᵢ ⟶ Y` vanishing on boundaries, so its restriction to the cycles of `X` descends to a
 morphism `Hᵢ(X) ⟶ Y`; the restriction of a coboundary to the cycles is zero. This gives the
 `k`-linear **Kronecker map** `Hⁱ(Hom(X, Y)) →ₗ[k] (Hᵢ(X) ⟶ Y)`, which evaluates cohomology classes
-on homology classes. It is natural in `X`.
+on homology classes. It is natural in both `X` and `Y`.
 
 When `Y` is an injective object the Kronecker map is a `k`-linear equivalence
 `Hⁱ(Hom(X, Y)) ≃ₗ[k] (Hᵢ(X) ⟶ Y)`. This is the universal coefficient theorem in the case where
@@ -130,6 +130,20 @@ lemma kronecker_naturality {X' : ChainComplex C α} (f : X' ⟶ X) (i : α)
     kronecker_homologyπ, homologyπ_naturality_assoc, kronecker_homologyπ]
   exact (congrArg (X'.iCycles i ≫ ·) (iCycles_cyclesMap_linearYonedaFunctor_map_apply f i φ)).trans
     (cyclesMap_i_assoc f i _).symm
+
+/-- Evaluation of cohomology on homology commutes with changing the coefficient object. -/
+lemma kronecker_coefficient_naturality {Z : C} (g : Y ⟶ Z) (i : α)
+    (x : (X.linearYonedaObj k Y).homology i) :
+    kronecker k X Z i (homologyMap (X.linearYonedaObjMap k g) i x) =
+      kronecker k X Y i x ≫ g := by
+  obtain ⟨φ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ i x
+  have hπ := ConcreteCategory.congr_hom (homologyπ_naturality (X.linearYonedaObjMap k g) i) φ
+  simp only [ModuleCat.comp_apply] at hπ
+  rw [hπ, ← cancel_epi (X.homologyπ i), kronecker_homologyπ, kronecker_homologyπ_assoc]
+  have hcyc := ConcreteCategory.congr_hom (cyclesMap_i (X.linearYonedaObjMap k g) i) φ
+  simp only [ModuleCat.comp_apply] at hcyc
+  exact (congrArg (X.iCycles i ≫ ·)
+    (hcyc.trans (X.linearYonedaObjMap_f_hom_apply k g i _))).trans (Category.assoc _ _ _).symm
 
 variable (k Y) in
 /-- For a morphism `f : Xᵢ ⟶ A` vanishing on the boundaries coming from `Xᵢ₊₁`, the `k`-linear map

@@ -72,6 +72,9 @@ of `I_K`, and each of them generates `G_K` topologically together with `I_K`.
   `TauCeti.IsArithFrobeniusLift.setOf_eq_leftCoset`: the arithmetic Frobenius lifts are
   characterised by their action on the roots of the polynomials `X^{q^f} − X`, exist, and form a
   left coset of `I_K`.
+* `TauCeti.restrictMaximalUnramifiedHom_eq_frobenius_pow_iff`: more generally, `σ` acts on
+  `K^{ur}` as the `n`-th power of Frobenius exactly when it raises the roots of the polynomials
+  `X^{q^f} − X` to the `q^n`-th power.
 * `TauCeti.IsArithFrobeniusLift.apply_of_pow_eq_one`: a Frobenius lift acts on the roots of unity
   of order prime to the residue characteristic by `ζ ↦ ζ ^ q`.
 * `TauCeti.IsArithFrobeniusLift.restrictNormal_smul_residueField_eq_pow`: on a finite normal
@@ -334,6 +337,35 @@ theorem isArithFrobeniusLift_def {σ : Field.absoluteGaloisGroup K} :
       restrictMaximalUnramifiedHom K σ = maximalUnramifiedFrobenius K (AlgebraicClosure K) :=
   Iff.rfl
 
+/-- **Powers of Frobenius, through the roots of `X^{q^f} − X`.** An automorphism `σ` of `K^{alg}`
+acts on the maximal unramified extension as the `n`-th power of arithmetic Frobenius exactly when it
+raises every root of every polynomial `X^{q^f} − X` with `f ≠ 0` to the `q^n`-th power, where `q` is
+the cardinality of the residue field of `K`. -/
+theorem restrictMaximalUnramifiedHom_eq_frobenius_pow_iff {σ : Field.absoluteGaloisGroup K}
+    {n : ℕ} :
+    restrictMaximalUnramifiedHom K σ = maximalUnramifiedFrobenius K (AlgebraicClosure K) ^ n ↔
+      ∀ (x : AlgebraicClosure K) (f : ℕ), f ≠ 0 → x ^ Nat.card 𝓀[K] ^ f = x →
+        DFunLike.coe (F := Gal(AlgebraicClosure K/K)) σ x = x ^ Nat.card 𝓀[K] ^ n := by
+  set M := maximalUnramifiedExtension K (AlgebraicClosure K)
+  refine ⟨fun h x f hf hx ↦ ?_, fun h ↦ AlgEquiv.coe_toAlgHom_injective ?_⟩
+  · -- A root of `X^{q^f} − X` lies in `K^{ur}`, where `σ` acts through its restriction.
+    have hxM : x ∈ M := (maximalUnramifiedExtension_eq_adjoin K _).ge
+      (subset_adjoin _ _ ⟨f, hf, hx⟩)
+    have h' := congrArg Subtype.val (DFunLike.congr_fun h ⟨x, hxM⟩)
+    rwa [restrictMaximalUnramifiedHom_coe_apply,
+      maximalUnramifiedFrobenius_pow_apply_of_pow_natCard_pow_eq_self hf
+        (Subtype.ext (by simpa using hx)), SubmonoidClass.coe_pow] at h'
+  · -- Both automorphisms of `K^{ur}` agree on its generators, the roots of the `X^{q^f} − X`.
+    refine algHom_ext_of_eq_adjoin K (maximalUnramifiedExtension_eq_adjoin K _)
+      fun x ⟨f, hf, hx⟩ ↦ ?_
+    set y : M := ⟨x, (maximalUnramifiedExtension_eq_adjoin K _).ge (subset_adjoin _ _ ⟨f, hf, hx⟩)⟩
+    refine Subtype.ext ?_
+    simp only [AlgEquiv.coe_toAlgHom]
+    rw [restrictMaximalUnramifiedHom_coe_apply,
+      maximalUnramifiedFrobenius_pow_apply_of_pow_natCard_pow_eq_self hf
+        (x := y) (Subtype.ext (by simpa [y] using hx)), SubmonoidClass.coe_pow]
+    exact h x f hf hx
+
 /-- **Frobenius lifts, through the roots of `X^{q^f} − X`.** An automorphism of `K^{alg}` is an
 arithmetic Frobenius lift exactly when it raises every root of every polynomial `X^{q^f} − X` with
 `f ≠ 0` to the `q`-th power, where `q` is the cardinality of the residue field of `K`. -/
@@ -341,16 +373,7 @@ theorem isArithFrobeniusLift_iff {σ : Field.absoluteGaloisGroup K} :
     IsArithFrobeniusLift K σ ↔
       ∀ (x : AlgebraicClosure K) (f : ℕ), f ≠ 0 → x ^ Nat.card 𝓀[K] ^ f = x →
         DFunLike.coe (F := Gal(AlgebraicClosure K/K)) σ x = x ^ Nat.card 𝓀[K] := by
-  set M := maximalUnramifiedExtension K (AlgebraicClosure K)
-  rw [isArithFrobeniusLift_def, eq_maximalUnramifiedFrobenius_iff]
-  refine ⟨fun h x f hf hx ↦ ?_, fun h y f hf hy ↦ Subtype.ext ?_⟩
-  · -- A root of `X^{q^f} − X` lies in `K^{ur}`, where `σ` acts through its restriction.
-    have hxM : x ∈ M := (maximalUnramifiedExtension_eq_adjoin K _).ge
-      (subset_adjoin _ _ ⟨f, hf, hx⟩)
-    have h' := congrArg Subtype.val (h ⟨x, hxM⟩ f hf (Subtype.ext (by simpa using hx)))
-    rwa [restrictMaximalUnramifiedHom_coe_apply, SubmonoidClass.coe_pow] at h'
-  · rw [restrictMaximalUnramifiedHom_coe_apply, SubmonoidClass.coe_pow]
-    exact h y f hf (by rw [← SubmonoidClass.coe_pow, hy])
+  simpa using restrictMaximalUnramifiedHom_eq_frobenius_pow_iff (σ := σ) (n := 1)
 
 variable (K) in
 /-- **Arithmetic Frobenius lifts exist**, since restriction to `K^{ur}` is surjective. -/

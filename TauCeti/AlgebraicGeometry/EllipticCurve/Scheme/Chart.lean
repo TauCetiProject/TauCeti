@@ -65,6 +65,15 @@ noncomputable def chartι (i : Fin 3) : Spec (.of (W.toProjective.ChartRing i)) 
     Proj.awayι W.toProjective.grading (W.toProjective.coord i) (W.toProjective.coord_mem_grading i)
       one_pos
 
+/-- The chart `D₊(Xᵢ)` is `Spec` of the isomorphism `awayEquivChartRing` from the degree-zero part
+`A_(Xᵢ)` of the localization away from `Xᵢ` to the chart ring, followed by the inclusion
+`Proj.awayι` of `D₊(Xᵢ)` into the projective model. The body of `chartι` is not exposed; this
+lemma unfolds it. -/
+theorem chartι_def (i : Fin 3) : W.chartι i =
+    Spec.map (CommRingCat.ofHom (W.toProjective.awayEquivChartRing i : _ →+* _)) ≫
+      Proj.awayι W.toProjective.grading (W.toProjective.coord i)
+        (W.toProjective.coord_mem_grading i) one_pos := (rfl)
+
 /-- The chart `D₊(Xᵢ)` of the projective model is an open immersion. -/
 instance isOpenImmersion_chartι (i : Fin 3) : IsOpenImmersion (W.chartι i) :=
   IsOpenImmersion.comp _ _

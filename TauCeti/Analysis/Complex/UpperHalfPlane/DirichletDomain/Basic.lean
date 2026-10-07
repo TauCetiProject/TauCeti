@@ -61,4 +61,13 @@ theorem geodesicSegment_subset_dirichletDomain {p z w : ℍ}
   exact mem_dirichletDomain.mpr fun g ↦
     geodesicSegment_subset_setOf_dist_le_dist (hz g) (hw g) hu
 
+/-- Along any geodesic line the parameters lying in a Dirichlet domain form an interval. -/
+theorem ordConnected_preimage_geodesicLine_dirichletDomain {k : PSL(2, ℝ)} {p : ℍ} :
+    (geodesicLine k ⁻¹' dirichletDomain G p).OrdConnected := by
+  rw [dirichletDomain_eq_iInter_closure_leftHalfPlane, preimage_iInter]
+  exact ordConnected_iInter fun g ↦ by
+    rw [preimage_iInter]
+    exact ordConnected_iInter fun _ ↦
+      ordConnected_preimage_geodesicLine_closure_leftHalfPlane k _
+
 end TauCeti.UpperHalfPlane
