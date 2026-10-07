@@ -129,6 +129,7 @@ theorem ι_translation_ne_zero [Nontrivial K] :
 passage to `p`-th powers in `TauCeti.LieAlgebra.AffineLine.ι_pow_sub_smul_ι_mem_center` is not an
 artifact: apart from `0`, no element of the Lie algebra is already central in its enveloping
 algebra. -/
+@[simp↓]
 theorem ι_mem_center_iff_eq_zero {u : AffineLine K} :
     _root_.UniversalEnvelopingAlgebra.ι K u ∈
         Subalgebra.center K (_root_.UniversalEnvelopingAlgebra K (AffineLine K)) ↔ u = 0 := by
