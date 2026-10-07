@@ -32,7 +32,7 @@ whenever the base cell is. No description of the roots by coefficient signs is n
 ## Main results
 
 * `TauCeti.Delineation.isSemialgebraicStack`: over a semialgebraic base, a delineation of a family
-  closed under differentiation is a semialgebraic stack.
+  in which the derivative of every member is zero or a member is a semialgebraic stack.
 * `TauCeti.exists_isCAD_signInvariant`: every finite set of polynomials has an adapted CAD.
 * `TauCeti.IsSemialgebraic.image_tail`: **projection closure**. Forgetting the coordinate `0`
   maps semialgebraic subsets of `ℝ ^ (n + 1)` to semialgebraic subsets of `ℝ ^ n`. A
@@ -96,16 +96,19 @@ private theorem isSemialgebraic_image_cylinder (hC : IsSemialgebraic C) {B : Set
   exact hmem _ t _ ht fun p ↦ (signInvariant_def.1 (hsign p) _ ht _ hz₀).trans (hyσ p).symm
 
 /-- A delineation, over a semialgebraic set, of the fibers of a finite family of polynomials in
-one distinguished variable that is closed under differentiation is a semialgebraic stack. Each of
-its sections and sectors is the set of points over the base where the members of the family have
-a given sign vector. -/
+one distinguished variable, in which the derivative of every member is zero or a member, is a
+semialgebraic stack. Each of its sections and sectors is the set of points over the base where the
+members of the family have a given sign vector. -/
 theorem Delineation.isSemialgebraicStack (hC : IsSemialgebraic C)
-    (hF : ∀ p ∈ F, Polynomial.derivative p ∈ F)
+    (hF : ∀ p ∈ F, Polynomial.derivative p = 0 ∨ Polynomial.derivative p ∈ F)
     (D : Delineation fun (p : F) (x : C) ↦ p.1.map (eval₂Hom φ x.1)) :
     IsSemialgebraicStack C D.root := by
-  have hder (x : C) (p : F) : ∃ q : F, q.1.map (eval₂Hom φ x.1) =
-      Polynomial.derivative (p.1.map (eval₂Hom φ x.1)) :=
-    ⟨⟨_, hF p.1 p.2⟩, (Polynomial.derivative_map _ _).symm⟩
+  have hder (x : C) (p : F) : Polynomial.derivative (p.1.map (eval₂Hom φ x.1)) = 0 ∨
+      ∃ q : F, q.1.map (eval₂Hom φ x.1) = Polynomial.derivative (p.1.map (eval₂Hom φ x.1)) := by
+    rw [Polynomial.derivative_map]
+    obtain h0 | hmem := hF p.1 p.2
+    · exact .inl (by rw [h0, Polynomial.map_zero])
+    · exact .inr ⟨⟨_, hmem⟩, rfl⟩
   refine ⟨D.continuous_root, D.strictMono_root, fun i ↦ ?_, fun j ↦ ?_⟩
   · exact isSemialgebraic_image_cylinder hC (fst_image_sectionSet _ i)
       (fun p ↦ D.signInvariant_sectionSet p i) fun x t t' ht h ↦
@@ -152,7 +155,8 @@ theorem exists_isCAD_signInvariant (F : Finset (MvPolynomial (Fin n) ℝ)) :
       · obtain ⟨D⟩ := nonempty_delineation_of_signInvariant_collinsProjection
           (φ := RingHom.id ℝ) (h𝒟.isConnected hC).isPreconnected fun q hq ↦ by
             simpa only [eval₂_id] using hproj q hq C hC
-        refine ⟨D.count, D.root, fun _ ↦ ⟨D.isSemialgebraicStack (h𝒟.isSemialgebraic hC) hG,
+        refine ⟨D.count, D.root, fun _ ↦ ⟨D.isSemialgebraicStack (h𝒟.isSemialgebraic hC)
+          fun p hp ↦ .inr (hG p hp),
           fun E hE f hf ↦ ?_⟩⟩
         simpa only [eval₂_id] using D.signInvariant_eval₂_of_mem_stackCells (hFG hf) hE
       · exact ⟨0, Fin.elim0, fun h ↦ (hC h).elim⟩

@@ -43,9 +43,9 @@ roots and the degree of the gcd of every pair of distinct members are constant o
 the family has a delineation. Its root functions are the common ordered real roots given by the
 family matching lemma `Polynomial.exists_continuous_ordered_common_roots_of_preconnectedSpace`.
 
-When the family is closed under differentiation, Thom's lemma shows that two points of one fiber
-at which all members have the same signs lie in the same section or sector. So the cells of the
-stack are cut out by sign conditions on the members.
+When the derivative of every member is zero or a member, Thom's lemma shows that two points of
+one fiber at which all members have the same signs lie in the same section or sector. So the cells
+of the stack are cut out by sign conditions on the members.
 
 For a family obtained from polynomials `f` in `n + 1` variables by singling out the first one with
 `MvPolynomial.finSuccEquiv`, every `f` is sign-invariant on each cell of the stack in
@@ -65,8 +65,9 @@ For a family obtained from polynomials `f` in `n + 1` variables by singling out 
   constant degrees, numbers of distinct complex roots and pairwise gcd degrees.
 * `TauCeti.Delineation.root_notMem_uIcc_of_sign_eval_eq`,
   `TauCeti.Delineation.mk_mem_sectionSet_iff_of_sign_eval_eq`,
-  `TauCeti.Delineation.mk_mem_sectorSet_iff_of_sign_eval_eq`: for a family closed under
-  differentiation, points of one fiber with the same signs are not separated by the stack.
+  `TauCeti.Delineation.mk_mem_sectorSet_iff_of_sign_eval_eq`: when the derivative of every
+  member is zero or a member, points of one fiber with the same signs are not separated by the
+  stack.
 * `TauCeti.Delineation.signInvariant_eval₂_of_mem_stackCells`: the polynomials in `n + 1`
   variables behind a family are sign-invariant on every ambient cell of a delineation.
 
@@ -288,40 +289,45 @@ theorem nonempty_delineation [Finite ι] [PreconnectedSpace X]
           simp only [mem_ofPred_eq, and_comm]
   · exact signInvariant_eval_sectorSet (hP k) hrc hrm (hnull k) fun x hk ↦ hsub k x hk
 
-/-! ### Families closed under differentiation -/
+/-! ### Families closed under differentiation up to zero -/
 
 namespace Delineation
 
 variable (D : Delineation P)
 
 /-- **Thom's lemma for delineations.** Suppose that at a point `x` of the base the derivative of
-every member of the family is a member. If every member has the same sign at two distinct points
-`t ≠ t'` of the fiber over `x`, then no root function takes a value in `[t, t']` at `x`. -/
-theorem root_notMem_uIcc_of_sign_eval_eq {x : X} (hder : ∀ k, ∃ l, P l x = derivative (P k x))
+every member of the family is zero or a member. If every member has the same sign at two distinct
+points `t ≠ t'` of the fiber over `x`, then no root function takes a value in `[t, t']` at `x`. -/
+theorem root_notMem_uIcc_of_sign_eval_eq {x : X}
+    (hder : ∀ k, derivative (P k x) = 0 ∨ ∃ l, P l x = derivative (P k x))
     {t t' : ℝ} (htt' : t ≠ t')
     (h : ∀ k, SignType.sign ((P k x).eval t) = SignType.sign ((P k x).eval t'))
     (i : Fin D.count) : D.root i x ∉ uIcc t t' := by
   obtain ⟨k, hk⟩ := D.exists_multiplicity_pos i
   obtain ⟨hk0, hroot⟩ := (D.multiplicity_pos_iff x).1 hk
-  -- every iterated derivative of a member is a member, so it has the same sign at `t` and `t'`
-  have hiter (j : ℕ) : ∃ l, P l x = derivative^[j] (P k x) := by
+  -- every iterated derivative of a member is zero or a member, so it has the same sign at `t`
+  -- and `t'`
+  have hiter (j : ℕ) : derivative^[j] (P k x) = 0 ∨ ∃ l, P l x = derivative^[j] (P k x) := by
     induction j with
-    | zero => exact ⟨k, rfl⟩
+    | zero => exact .inr ⟨k, rfl⟩
     | succ j ih =>
-      obtain ⟨l, hl⟩ := ih
-      obtain ⟨l', hl'⟩ := hder l
-      exact ⟨l', by rw [hl', hl, Function.iterate_succ_apply']⟩
+      rw [Function.iterate_succ_apply']
+      obtain h0 | ⟨l, hl⟩ := ih
+      · exact .inl (by rw [h0, derivative_zero])
+      · rw [← hl]
+        exact hder l
   have hsign (j : ℕ) : derivativeSign (P k x) t j = derivativeSign (P k x) t' j := by
-    obtain ⟨l, hl⟩ := hiter j
-    simpa only [derivativeSign_def, hl] using h l
+    obtain h0 | ⟨l, hl⟩ := hiter j
+    · simp only [derivativeSign_def, h0, eval_zero]
+    · simpa only [derivativeSign_def, hl] using h l
   exact fun hi ↦ eval_ne_zero_of_derivativeSign_eq _
     (RealClosure.polynomialRolle_of_isRealClosed (R := ℝ)) hk0 htt' hsign hi hroot.eq_zero
 
-/-- Suppose that at a point `x` of the base the derivative of every member of the family is a
-member. Then two points of the fiber over `x` at which every member has the same sign lie in the
-same sections. -/
+/-- Suppose that at a point `x` of the base the derivative of every member of the family is zero
+or a member. Then two points of the fiber over `x` at which every member has the same sign lie in
+the same sections. -/
 theorem mk_mem_sectionSet_iff_of_sign_eval_eq
-    {x : X} (hder : ∀ k, ∃ l, P l x = derivative (P k x)) {t t' : ℝ}
+    {x : X} (hder : ∀ k, derivative (P k x) = 0 ∨ ∃ l, P l x = derivative (P k x)) {t t' : ℝ}
     (h : ∀ k, SignType.sign ((P k x).eval t) = SignType.sign ((P k x).eval t'))
     (i : Fin D.count) : (x, t) ∈ sectionSet D.root i ↔ (x, t') ∈ sectionSet D.root i := by
   rcases eq_or_ne t t' with rfl | htt'
@@ -330,11 +336,11 @@ theorem mk_mem_sectionSet_iff_of_sign_eval_eq
   simp only [mem_sectionSet]
   exact iff_of_false (fun he ↦ hi (he ▸ left_mem_uIcc)) fun he ↦ hi (he ▸ right_mem_uIcc)
 
-/-- Suppose that at a point `x` of the base the derivative of every member of the family is a
-member. Then two points of the fiber over `x` at which every member has the same sign lie in the
-same sectors. -/
+/-- Suppose that at a point `x` of the base the derivative of every member of the family is zero
+or a member. Then two points of the fiber over `x` at which every member has the same sign lie in
+the same sectors. -/
 theorem mk_mem_sectorSet_iff_of_sign_eval_eq
-    {x : X} (hder : ∀ k, ∃ l, P l x = derivative (P k x)) {t t' : ℝ}
+    {x : X} (hder : ∀ k, derivative (P k x) = 0 ∨ ∃ l, P l x = derivative (P k x)) {t t' : ℝ}
     (h : ∀ k, SignType.sign ((P k x).eval t) = SignType.sign ((P k x).eval t'))
     (j : Fin (D.count + 1)) : (x, t) ∈ sectorSet D.root j ↔ (x, t') ∈ sectorSet D.root j := by
   rcases eq_or_ne t t' with rfl | htt'

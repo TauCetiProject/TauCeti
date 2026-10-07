@@ -291,10 +291,12 @@ theorem eval_ne_zero_of_derivativeSign_eq (p : R[X]) (hrolle : PolynomialRolle R
   · exact this hab.symm (fun k ↦ (h k).symm) (uIcc_comm a b ▸ hx)
       (lt_of_le_of_ne (not_lt.1 hlt) hab.symm)
   rw [uIcc_of_le hlt.le] at hx
+  have hsign {y : R} (hy : y ∈ Icc a b) : sign (p.eval y) = sign (p.eval a) := by
+    simpa using derivativeSign_eq_on_Icc p hrolle hy (k := 0) fun j _ ↦ h j
   intro hx0
   apply hp
   refine p.eq_zero_of_infinite_isRoot ((Icc_infinite hlt).mono fun y hy ↦ ?_)
-  have hy := (sign_between p hrolle hy h).trans (sign_between p hrolle hx h).symm
+  have hy := (hsign hy).trans (hsign hx).symm
   rwa [hx0, sign_zero, sign_eq_zero_iff] at hy
 
 /-- Roots with equal signs of every positive-order derivative are equal.
