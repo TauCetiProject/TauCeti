@@ -168,7 +168,7 @@ theorem resolvent_mem_domain (h : lambda ∈ resolventSet A) (y : X) :
   (isResolventAt_resolvent h).mem_domain y
 
 /-- The right-inverse identity `(lambda • I - A) R(lambda) y = y`. -/
-@[simp] theorem smul_sub_apply_resolvent (h : lambda ∈ resolventSet A) (y : X) :
+theorem smul_sub_apply_resolvent (h : lambda ∈ resolventSet A) (y : X) :
     lambda • resolvent A lambda y - A ⟨resolvent A lambda y, resolvent_mem_domain h y⟩ = y :=
   (isResolventAt_resolvent h).smul_sub_apply y
 
@@ -178,7 +178,7 @@ theorem resolvent_mem_domain (h : lambda ∈ resolventSet A) (y : X) :
   (isResolventAt_resolvent h).apply_smul_sub x
 
 /-- The right-inverse identity solved for `A`: `A R(lambda) y = lambda • R(lambda) y - y`. -/
-theorem apply_resolvent (h : lambda ∈ resolventSet A) (y : X) :
+@[simp] theorem apply_resolvent (h : lambda ∈ resolventSet A) (y : X) :
     A ⟨resolvent A lambda y, resolvent_mem_domain h y⟩ = lambda • resolvent A lambda y - y := by
   exact eq_sub_of_add_eq (sub_eq_iff_eq_add'.mp (smul_sub_apply_resolvent h y)).symm
 
