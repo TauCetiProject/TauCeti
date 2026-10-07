@@ -90,6 +90,13 @@ theorem coordL_apply (z : E) : φ.coordL z = φ.coord z := by
   simp [coordL]
 
 omit [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- The inverse of `coordL` is the inverse of `coord`. -/
+@[simp]
+theorem coordL_symm_apply (z : Fin (Module.finrank ℝ E) → ℝ) :
+    φ.coordL.symm z = φ.coord.symm z := by
+  simp [coordL]
+
+omit [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- The derivative of the quadratic normal form. -/
 theorem hasFDerivAt_quadratic (z : E) :
     HasFDerivAt φ.quadratic
