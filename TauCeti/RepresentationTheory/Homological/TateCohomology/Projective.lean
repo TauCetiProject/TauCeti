@@ -24,7 +24,7 @@ subgroup with coefficients in `Ind_⊥^G A` vanishes
 ## Main statements
 
 * `TauCeti.TateCohomology.isZero_res_of_projective`: if `A.ρ.asModule` is a projective
-  `k[G]`-module, then `Ĥⁿ(S, A) = 0` for every finite subgroup `S` of `G` and every `n : ℤ`.
+  `k[G]`-module, then `H-hat^n(S, A) = 0` for every finite subgroup `S` of `G` and every `n : ℤ`.
 
 ## References
 
