@@ -49,10 +49,9 @@ Gorenstein.
 
 ## Implementation notes
 
-The construction is a thin wrapper around Mathlib's trace-dual API: the underlying submodule is
-`Submodule.traceDual ℤ ℚ 1`, its finite generation comes from `Submodule.traceDual_span_of_basis`
-applied to a `ℚ`-basis of `K` spanning the order over `ℤ`, and reflexivity is
-`Module.Basis.traceDual_traceDual`.
+The underlying submodule of `traceDual` is Mathlib's `Submodule.traceDual ℤ ℚ 1` (see
+`coe_traceDual`), so Mathlib's general trace-dual API applies to it directly; reflexivity
+(`traceDual_traceDual`) is stated at this submodule level.
 
 ## References
 
