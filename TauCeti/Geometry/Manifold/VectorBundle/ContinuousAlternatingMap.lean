@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.VectorBundle.ContinuousAlternatingMap
-public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 
 /-!
@@ -30,7 +30,8 @@ open scoped Manifold Bundle Topology ContDiff
 
 namespace TauCeti
 
-variable {𝕜 ι B F₁ F₂ : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜] [Fintype ι]
+variable {𝕜 ι B F₁ F₂ : Type*} [NontriviallyNormedField 𝕜] [Fintype ι]
+  [NeZero ((Fintype.card ι).factorial : 𝕜)]
   {n : ℕ∞ω} {E₁ : B → Type*} {E₂ : B → Type*}
   [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
   [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
@@ -91,7 +92,7 @@ variable {M EM HM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
   [TopologicalSpace HM] {IM : ModelWithCorners 𝕜 EM HM}
   [TopologicalSpace M] [ChartedSpace HM M] {s : Set M} {x₀ : M}
 
-omit [CharZero 𝕜] in
+omit [NeZero ((Fintype.card ι).factorial : 𝕜)] in
 /-- Smoothness within a set in the alternating-map bundle is smoothness of the base map
 and of the alternating map written in the preferred fiber coordinates. -/
 theorem contMDiffWithinAt_continuousAlternatingMap_bundle
@@ -103,7 +104,7 @@ theorem contMDiffWithinAt_continuousAlternatingMap_bundle
             (f x₀).1 (f x).1 (f x₀).1 (f x).1 (f x).2) s x₀ :=
   contMDiffWithinAt_totalSpace
 
-omit [CharZero 𝕜] in
+omit [NeZero ((Fintype.card ι).factorial : 𝕜)] in
 /-- Smoothness at a point in the alternating-map bundle is smoothness of the base map
 and of its coefficients in preferred fiber coordinates. -/
 theorem contMDiffAt_continuousAlternatingMap_bundle
@@ -114,6 +115,30 @@ theorem contMDiffAt_continuousAlternatingMap_bundle
           (fun x ↦ ContinuousAlternatingMap.inCoordinates F₁ F₂
             (f x₀).1 (f x).1 (f x₀).1 (f x).1 (f x).2) x₀ :=
   contMDiffAt_totalSpace
+
+omit [NeZero ((Fintype.card ι).factorial : 𝕜)] in
+/-- Differentiability within a set in the alternating-map bundle is differentiability of the
+base map and of the alternating map written in the preferred fiber coordinates. -/
+theorem mdifferentiableWithinAt_continuousAlternatingMap_bundle
+    (f : M → TotalSpace (F₁ [⋀^ι]→L[𝕜] F₂) (fun x ↦ E₁ x [⋀^ι]→L[𝕜] E₂ x)) :
+    MDifferentiableWithinAt IM (IB.prod 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₂)) f s x₀ ↔
+      MDifferentiableWithinAt IM IB (fun x ↦ (f x).1) s x₀ ∧
+        MDifferentiableWithinAt IM 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₂)
+          (fun x ↦ ContinuousAlternatingMap.inCoordinates F₁ F₂
+            (f x₀).1 (f x).1 (f x₀).1 (f x).1 (f x).2) s x₀ :=
+  mdifferentiableWithinAt_totalSpace IB ..
+
+omit [NeZero ((Fintype.card ι).factorial : 𝕜)] in
+/-- Differentiability at a point in the alternating-map bundle is differentiability of the
+base map and of its coefficients in preferred fiber coordinates. -/
+theorem mdifferentiableAt_continuousAlternatingMap_bundle
+    (f : M → TotalSpace (F₁ [⋀^ι]→L[𝕜] F₂) (fun x ↦ E₁ x [⋀^ι]→L[𝕜] E₂ x)) :
+    MDifferentiableAt IM (IB.prod 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₂)) f x₀ ↔
+      MDifferentiableAt IM IB (fun x ↦ (f x).1) x₀ ∧
+        MDifferentiableAt IM 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₂)
+          (fun x ↦ ContinuousAlternatingMap.inCoordinates F₁ F₂
+            (f x₀).1 (f x).1 (f x₀).1 (f x).1 (f x).2) x₀ :=
+  mdifferentiableAt_totalSpace ..
 
 end Coordinates
 

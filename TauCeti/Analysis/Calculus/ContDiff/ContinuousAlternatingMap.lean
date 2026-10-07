@@ -17,8 +17,8 @@ linear map, also as an operator on alternating maps. This is the flat regularity
 needed for the smooth bundle of alternating maps.
 
 We use Mathlib's polynomial description of multilinear pullback and recover the alternating
-map by normalized alternatization. Characteristic zero permits division by the degree factorial;
-no completeness or finite-dimensionality assumption is needed.
+map by normalized alternatization. We only require the degree factorial to be nonzero in the
+scalar field; no completeness or finite-dimensionality assumption is needed.
 -/
 
 public noncomputable section
@@ -28,9 +28,10 @@ namespace TauCeti
 open ContinuousAlternatingMap
 open scoped ContDiff
 
-variable {𝕜 ι E F G : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜]
+variable {𝕜 ι E F G : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [NormedAddCommGroup G] [NormedSpace 𝕜 G] [Fintype ι] {n : ℕ∞ω}
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G] [Fintype ι]
+  [NeZero ((Fintype.card ι).factorial : 𝕜)] {n : ℕ∞ω}
 
 /-- Pullback depends smoothly on the linear map, in the operator norm on alternating maps. -/
 theorem contDiff_compContinuousLinearMapCLM :
@@ -48,13 +49,19 @@ theorem contDiff_compContinuousLinearMapCLM :
     (hQ.clm_comp (contDiff_const (c := toContinuousMultilinearMapCLM 𝕜)))
   have hQ_apply (g : E →L[𝕜] F) (f : F [⋀^ι]→L[𝕜] G) :
       Q (fun _ ↦ g) (toContinuousMultilinearMapCLM 𝕜 f) =
-        (f.compContinuousLinearMap g).toContinuousMultilinearMap := (rfl)
+        (f.compContinuousLinearMap g).toContinuousMultilinearMap := by
+    ext v
+    simp only [Q,
+      ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear_apply_apply,
+      toContinuousMultilinearMapCLM_apply,
+      ContinuousMultilinearMap.compContinuousLinearMap_apply, coe_toContinuousMultilinearMap,
+      compContinuousLinearMap_apply, Function.comp_def]
   convert h using 1
   funext g
   ext1 f
   simp only [ContinuousLinearMap.comp_apply, P, _root_.smul_apply,
     hQ_apply, alternatizationCLM_apply, alternatization_toContinuousMultilinearMap,
     compContinuousLinearMapCLM_apply]
-  rw [← Nat.cast_smul_eq_nsmul 𝕜, inv_smul_smul₀ (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _))]
+  rw [← Nat.cast_smul_eq_nsmul 𝕜, inv_smul_smul₀ (NeZero.ne _)]
 
 end TauCeti
