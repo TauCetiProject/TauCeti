@@ -41,6 +41,8 @@ how Lazard's lifting theorem passes valuation-invariance from the base to the cy
   at `α`, followed by the root multiplicity of `β` in the Lazard evaluation of `g` at `α`.
 * `MvPolynomial.lazardEval_snoc`: the Lazard evaluation of `f` at `(α, β)` is the trailing
   coefficient of the Taylor expansion at `β` of the Lazard evaluation of `g` at `α`.
+* `MvPolynomial.coeff_lazardEval_optionEquivRight_rename_finSuccEquivLast`: the coefficients of
+  the Lazard evaluation of `g` at `α` are Taylor coefficients of `f` at `(α, 0)`.
 
 ## References
 
@@ -126,5 +128,19 @@ theorem lazardEval_snoc (f : MvPolynomial (Fin (n + 1)) R) (α : Fin n → R) (�
   rw [Polynomial.trailingCoeff_taylor, ← Polynomial.coeff_taylor_rootMultiplicity,
     ← coeff_taylor_lazardExponent, lazardExponent_snoc, coeff_taylor_snoc,
     coeff_taylor_lazardExponent]
+
+/-- The coefficient of `Xₙ ^ k` in the Lazard evaluation of `f` over the base point `α`, after
+moving the last variable into the coefficients, is the Taylor coefficient of `f` at
+`Fin.snoc α 0` whose exponent is the vector of base exponents removed over `α` followed by `k`.
+So over a set of base points where the removed exponents are constant, the coefficients of the
+Lazard evaluations are polynomial functions of the base point. -/
+theorem coeff_lazardEval_optionEquivRight_rename_finSuccEquivLast
+    (f : MvPolynomial (Fin (n + 1)) R) (α : Fin n → R) (k : ℕ) :
+    ((optionEquivRight R (Fin n) (rename finSuccEquivLast f)).lazardEval
+        (Polynomial.C ∘ α)).coeff k =
+      (taylor (Fin.snoc α 0) f).coeff
+        (snoc ((optionEquivRight R (Fin n) (rename finSuccEquivLast f)).lazardExponent
+          (Polynomial.C ∘ α)) k) := by
+  rw [coeff_taylor_snoc, Polynomial.taylor_zero, coeff_taylor_lazardExponent]
 
 end MvPolynomial

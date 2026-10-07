@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Subcomplex
+import Mathlib.Data.Fintype.Powerset
 
 /-!
 # The topology of finite polyhedra
 
-For a complex on finitely many vertices, the weak topology of its realization agrees with
+For a complex with finitely many faces, the weak topology of its realization agrees with
 its barycentric-coordinate topology. In particular, the realization is compact and its
 coordinate map into `ι → ℝ` is a closed embedding. This permits finite polyhedra, including
 finite local models of triangulated manifolds, to be treated as ordinary coordinate subspaces.
@@ -34,65 +35,56 @@ variable {ι : Type*}
 
 attribute [local instance] Classical.decEq
 
-section Finite
-
 variable (K : AbstractSimplicialComplex ι)
 
-/-- The part of the full realization supported on a face of `K`. -/
-private def coordinatePolyhedron : Set (Realization (⊤ : AbstractSimplicialComplex ι)) :=
-  {x | x.1.support ∈ K}
+/-- A finite subcomplex occupies a compact subset of the weak realization. -/
+theorem isCompact_setOf_support_mem {L : PreAbstractSimplicialComplex ι}
+    (hL : L ≤ K.toPreAbstractSimplicialComplex) (hfin : L.faces.Finite) :
+    IsCompact {x : Realization K | x.1.support ∈ L} := by
+  let C : L.faces → Set (Realization K) :=
+    fun σ => range (faceInclusion K ⟨σ.1, hL σ.2⟩)
+  have : Finite L.faces := hfin.to_subtype
+  have heq : {x : Realization K | x.1.support ∈ L} = ⋃ σ, C σ := by
+    ext x
+    constructor
+    · intro hx
+      exact mem_iUnion.mpr ⟨⟨x.1.support, hx⟩,
+        ⟨⟨x.1, by simpa only [carrier_val] using mem_convexHull_carrier K x⟩,
+          Subtype.ext (faceInclusion_val _ _ _)⟩⟩
+    · intro hx
+      obtain ⟨σ, y, rfl⟩ := mem_iUnion.mp hx
+      exact support_faceInclusion_mem hL σ.2 y
+  rw [heq]
+  exact isCompact_iUnion fun σ => isCompact_range (continuous_faceInclusion K ⟨σ.1, hL σ.2⟩)
 
-private theorem isClosed_coordinatePolyhedron : IsClosed (coordinatePolyhedron K) :=
-  isClosed_setOf_support_mem (P := K.toPreAbstractSimplicialComplex) le_top
-
-/-- Recover a weak realization point from its coordinates in the full simplex. -/
-private def fromCoordinates (x : coordinatePolyhedron K) : Realization K :=
-  ⟨x.1.1, mem_realization_iff.mpr
-    ⟨x.1.1.support, x.2, by simpa only [carrier_val] using mem_convexHull_carrier ⊤ x.1⟩⟩
-
-private theorem fromCoordinates_surjective : Function.Surjective (fromCoordinates K) := by
-  intro x
-  refine ⟨⟨realizationMap le_top x, ?_⟩, Subtype.ext (realizationMap_val le_top x)⟩
-  simpa only [coordinatePolyhedron, mem_ofPred_eq, realizationMap_val] using support_mem K x
-
-private theorem continuous_fromCoordinates : Continuous (fromCoordinates K) := by
-  apply (continuous_subtype_iff_faceInclusion
-    (P := K.toPreAbstractSimplicialComplex) le_top).mpr
-  intro σ hσ
-  convert continuous_faceInclusion K ⟨σ, hσ⟩ using 1
-  funext x
-  apply Subtype.ext
-  rw [faceInclusion_val]
-  exact faceInclusion_val ⊤ ⟨σ, (le_top : K ≤ ⊤) hσ⟩ x
-
-private theorem compactSpace_realization_of_nonempty [Finite ι] [Nonempty ι] :
+/-- The weak realization of a complex with finitely many faces is compact. -/
+theorem compactSpace_realization_of_finite_faces (hfin : K.faces.Finite) :
     CompactSpace (Realization K) := by
-  let := Fintype.ofFinite ι
-  let : CompactSpace (Realization (⊤ : AbstractSimplicialComplex ι)) :=
-    (realizationTopHomeomorphStdSimplex (ι := ι)).symm.compactSpace
-  let : CompactSpace (coordinatePolyhedron K) :=
-    isCompact_iff_compactSpace.mp (isClosed_coordinatePolyhedron K).isCompact
-  exact Function.Surjective.compactSpace (continuous_fromCoordinates K)
-    (fromCoordinates_surjective K)
-
-end Finite
+  have hc := K.isCompact_setOf_support_mem le_rfl hfin
+  have heq : {x : Realization K | x.1.support ∈ K.toPreAbstractSimplicialComplex} = univ :=
+    Set.eq_univ_of_forall fun x => support_mem K x
+  rw [heq] at hc
+  exact ⟨hc⟩
 
 /-- The weak realization of a complex on a finite vertex type is compact. -/
 instance instCompactSpaceRealization [Finite ι] (K : AbstractSimplicialComplex ι) :
     CompactSpace (Realization K) := by
-  cases isEmpty_or_nonempty ι with
-  | inl h =>
-    have : IsEmpty (Realization K) := ⟨fun x => by
-      obtain ⟨v, -⟩ := K.isRelLowerSet_faces.prop_of_mem (support_mem K x)
-      exact isEmptyElim v⟩
-    infer_instance
-  | inr h => exact compactSpace_realization_of_nonempty K
+  let := Fintype.ofFinite ι
+  exact K.compactSpace_realization_of_finite_faces (Set.toFinite K.faces)
 
-/-- For a finite complex the barycentric-coordinate map is a closed embedding. Thus the weak
-topology is exactly the topology inherited from the finite-dimensional coordinate space. -/
-theorem isClosedEmbedding_realization_coe [Finite ι] (K : AbstractSimplicialComplex ι) :
-    Topology.IsClosedEmbedding (fun x : Realization K => (x.1 : ι → ℝ)) :=
-  (continuous_realization_coe K).isClosedEmbedding fun _ _ h =>
-    Subtype.ext (Finsupp.ext fun v => congrFun h v)
+/-- Barycentric coordinates restrict to a closed embedding on every compact subset of
+the weak realization. This applies in particular to compact local chart domains. -/
+theorem isClosedEmbedding_realization_coe_restrict {s : Set (Realization K)} (hs : IsCompact s) :
+    Topology.IsClosedEmbedding (fun x : s => (x.1.1 : ι → ℝ)) := by
+  let : CompactSpace s := isCompact_iff_compactSpace.mp hs
+  exact ((continuous_realization_coe K).comp continuous_subtype_val).isClosedEmbedding
+    ((injective_realization_coe K).comp Subtype.val_injective)
+
+/-- For a complex with finitely many faces the barycentric-coordinate map is a closed
+embedding. Thus the weak topology is exactly the topology inherited from coordinate space. -/
+theorem isClosedEmbedding_realization_coe (hfin : K.faces.Finite) :
+    Topology.IsClosedEmbedding (fun x : Realization K => (x.1 : ι → ℝ)) := by
+  let : CompactSpace (Realization K) := K.compactSpace_realization_of_finite_faces hfin
+  exact (continuous_realization_coe K).isClosedEmbedding (injective_realization_coe K)
 
 end AbstractSimplicialComplex

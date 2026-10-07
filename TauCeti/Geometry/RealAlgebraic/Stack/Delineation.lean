@@ -111,6 +111,22 @@ structure Delineation (P : ι → X → ℝ[X]) where
 
 namespace Delineation
 
+/-- Any family of real polynomials over an empty base has a delineation. -/
+theorem nonempty_of_isEmpty [IsEmpty X] (P : ι → X → ℝ[X]) : Nonempty (Delineation P) :=
+  ⟨{
+    count := 0
+    root := Fin.elim0
+    continuous_root := fun i ↦ i.elim0
+    strictMono_root := fun x ↦ isEmptyElim x
+    multiplicity := fun _ ↦ Fin.elim0
+    rootMultiplicity_root := fun _ i ↦ i.elim0
+    exists_root_eq := fun _ x ↦ isEmptyElim x
+    exists_multiplicity_pos := fun i ↦ i.elim0
+    eq_zero_or_ne_zero := fun _ ↦ .inl isEmptyElim
+    natDegree_eq := fun _ x ↦ isEmptyElim x
+    signInvariant_sectionSet := fun _ i ↦ i.elim0
+    signInvariant_sectorSet := fun _ _ ↦ subsingleton_of_subsingleton.signInvariant }⟩
+
 variable (D : Delineation P)
 
 /-- The roots of a nonzero member of the family are exactly the values of the root functions in
@@ -217,20 +233,7 @@ theorem nonempty_delineation [Finite ι] [PreconnectedSpace X]
       (EuclideanDomain.gcd (P k y) (P l y)).natDegree) :
     Nonempty (Delineation P) := by
   rcases isEmpty_or_nonempty X with hX | hX
-  · -- over an empty base the empty stack is a delineation
-    exact ⟨{
-      count := 0
-      root := Fin.elim0
-      continuous_root := fun i ↦ i.elim0
-      strictMono_root := fun x ↦ isEmptyElim x
-      multiplicity := fun _ ↦ Fin.elim0
-      rootMultiplicity_root := fun _ i ↦ i.elim0
-      exists_root_eq := fun _ x ↦ isEmptyElim x
-      exists_multiplicity_pos := fun i ↦ i.elim0
-      eq_zero_or_ne_zero := fun _ ↦ .inl isEmptyElim
-      natDegree_eq := fun _ x ↦ isEmptyElim x
-      signInvariant_sectionSet := fun _ i ↦ i.elim0
-      signInvariant_sectorSet := fun _ _ ↦ subsingleton_of_subsingleton.signInvariant }⟩
+  · exact Delineation.nonempty_of_isEmpty P
   obtain ⟨x₀⟩ := id hX
   -- the common ordered real roots of the members that are nowhere zero
   obtain ⟨n, r, hrc, hrm, hroot, hmult⟩ :=
