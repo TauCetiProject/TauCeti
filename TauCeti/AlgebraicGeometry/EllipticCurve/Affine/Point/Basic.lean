@@ -21,9 +21,10 @@ the coordinates, the nonsingularity certificate and the identifying equation in 
 separate generalisation to arrange. The accessor form is useful when the coordinates must occur in
 a definition, such as evaluation at a translated generic point.
 
-The junk value `0` is harmless: every result that uses coordinates geometrically assumes the point
-is nonzero. Nothing here needs ellipticity. The map lemmas need field hypotheses only because
-Mathlib's `Point.map` does.
+Most coordinate reconstruction results assume the point is nonzero. The descent criterion
+`exists_map_eq_iff` handles infinity separately: both accessors are `0` there, and infinity
+descends along every field embedding. Nothing here needs ellipticity. The map lemmas need field
+hypotheses only because Mathlib's `Point.map` does.
 
 ## Main definitions
 

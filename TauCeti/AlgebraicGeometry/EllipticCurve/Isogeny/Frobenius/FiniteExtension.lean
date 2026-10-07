@@ -53,7 +53,8 @@ theorem pow_ofIsogeny_baseChangeFrobenius_pointMap_eq_self_iff_mem_range_map
     ((ofIsogeny (baseChangeFrobenius K W)) ^ Module.finrank F E).pointMap P = P ↔
       P ∈ Set.range (Point.map (W' := W) (IsScalarTower.toAlgHom F E K)) := by
   rw [pow_ofIsogeny_baseChangeFrobenius_pointMap_eq_self_iff,
-    ← Module.natCard_eq_pow_finrank (K := F) (V := E), Set.mem_range, Point.exists_map_eq_iff]
+    ← Module.natCard_eq_pow_finrank (K := F) (V := E), Set.mem_range, Point.exists_map_eq_iff,
+    IsScalarTower.coe_toAlgHom']
   exact and_congr
     (FiniteField.pow_natCard_eq_self_iff_mem_range_algebraMap (Point.xCoord P))
     (FiniteField.pow_natCard_eq_self_iff_mem_range_algebraMap (Point.yCoord P))
