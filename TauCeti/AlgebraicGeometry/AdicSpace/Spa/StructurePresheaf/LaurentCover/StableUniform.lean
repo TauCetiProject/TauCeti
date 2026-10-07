@@ -56,11 +56,7 @@ variable {A : Type v} [CommRing A] [UniformSpace A] [IsTopologicalRing A] [IsTat
 
 /-- **Topological Laurent gluing on a rational subset of a stably uniform affinoid.** Sections
 on `R(T/s)` carry the subspace topology induced by restriction to
-`R(T/s) ∩ {|f| ≤ 1}` and `R(T/s) ∩ {|f| ≥ 1}`.
-
-Indeed, the coordinate ring `A⟨T/s⟩` is again stably uniform, hence uniform because it is a
-complete Hausdorff Tate ring. Buzzard--Verberkmoes topological Laurent gluing on that coordinate
-ring transports back along Wedhorn's rational-localization comparison. -/
+`R(T/s) ∩ {|f| ≤ 1}` and `R(T/s) ∩ {|f| ≥ 1}`. -/
 theorem isClosedEmbedding_presentationLimitMap_inf_laurentCoverOpen_of_isStablyUniform
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) {W : Opens ↥(spa Aplus)}
     (hW : W ∈ spaRationalOpens Aplus) (f : A) :
@@ -69,6 +65,8 @@ theorem isClosedEmbedding_presentationLimitMap_inf_laurentCoverOpen_of_isStablyU
           (inf_le_left : W ⊓ laurentCoverOpen Aplus f true ≤ W)).hom.1 x,
         (presentationLimitMap (P := P)
           (inf_le_left : W ⊓ laurentCoverOpen Aplus f false ≤ W)).hom.1 x) := by
+  -- The coordinate ring `A⟨T/s⟩` is stably uniform, hence uniform because it is complete and
+  -- Hausdorff.  Transport its Laurent closed embedding back through rational localization.
   obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hW
   have hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT
   let _ := locUniformSpace P T s _ hden

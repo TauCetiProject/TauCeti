@@ -91,6 +91,8 @@ theorem isClosedEmbedding_presentationLimitMap_inf_laurentCoverOpen_of_locOpensC
   have hrat := spaBasicOpen_mem_spaRationalOpens (Aplus := Aplus) (s := s) hT
   have hU (b : Bool) := inf_mem_spaRationalOpens hrat
     (laurentCoverOpen_mem_spaRationalOpens Aplus f b)
+  -- Rational localization identifies the original rational open with the whole localized
+  -- spectrum and each of its Laurent pieces with the corresponding localized Laurent piece.
   let d : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s) ≃ₜ
       presentationLimit (P := Q) Bplus ⊤ := TopCat.homeoOfIso (F.mapIso
     (presentationLimitLocIso P Aplus T s S hden hAplus hT _ hrat le_rfl ≪≫
@@ -104,6 +106,8 @@ theorem isClosedEmbedding_presentationLimitMap_inf_laurentCoverOpen_of_locOpensC
       (presentationLimitLocIso P Aplus T s S hden hAplus hT _ (hU b) inf_le_left ≪≫
         eqToIso (congrArg (presentationLimit (P := Q) Bplus)
           (locOpensComap_inf_laurentCoverOpen P Aplus T s S hden f b))))
+  -- Conjugate by these homeomorphisms.  The hypothesis supplies the closed embedding on the
+  -- localized side, so only commutativity of the conjugated restriction map remains.
   have hclosed := hemb.comp d.isClosedEmbedding
   apply (e true |>.prodCongr (e false)).isClosedEmbedding.of_comp_iff.mp
   suffices heq : (e true |>.prodCongr (e false)) ∘
@@ -119,6 +123,7 @@ theorem isClosedEmbedding_presentationLimitMap_inf_laurentCoverOpen_of_locOpensC
             (le_top : laurentCoverOpen Bplus g false ≤ ⊤)).hom.1 x)) ∘ d by
     rw [heq]
     exact hclosed
+  -- Naturality of rational localization compares the restriction maps before equality transport.
   have hn (b : Bool) := presentationLimitMap_comp_presentationLimitLocIso_hom
     P Aplus T s S hden hAplus hT hrat (hU b) le_rfl
     (inf_le_left : spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b ≤ _)
@@ -135,6 +140,7 @@ theorem isClosedEmbedding_presentationLimitMap_inf_laurentCoverOpen_of_locOpensC
       (locOpensComap_inf_laurentCoverOpen P Aplus T s S hden f b) _,
       eqToHom_presentationLimit (locOpensComap_spaBasicOpen_self P Aplus T s S hden) _]
     simp only [presentationLimitMap_comp]
+  -- Combine naturality with the equality-transport calculation in each Laurent coordinate.
   funext x
   apply Prod.ext
   · exact ConcreteCategory.congr_hom (((reassoc_of% hn true) _).trans (by rw [ht true])) x

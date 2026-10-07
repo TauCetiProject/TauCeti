@@ -271,6 +271,8 @@ theorem isClosedEmbedding_presentationLimitMap_laurentCoverOpen_of_isClosedEmbed
     (p false).hasDenominatorPower
   have _ := isTopologicalRing_locUniformSpace P {1} f (Localization.Away f)
     (p false).hasDenominatorPower
+  -- Identify global sections with `A` and the sections on each Laurent piece with its completed
+  -- coordinate ring.  These homeomorphisms are the source and target changes of coordinates.
   let F := TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ _root_.TopCommRingCat TopCat
   let d : presentationLimit (P := P) Aplus ⊤ ≃ₜ A :=
     (TopCat.homeoOfIso (F.mapIso (presentationLimitTopIso (P := P) Aplus hAplus))).trans
@@ -291,6 +293,8 @@ theorem isClosedEmbedding_presentationLimitMap_laurentCoverOpen_of_isClosedEmbed
         (eqToIso (completionLocObj_obj P {1} f (Localization.Away f)
           (p false).hasDenominatorPower))))
   let e := e₁.prodCongr e₂
+  -- After these changes of coordinates, the desired restriction map is the ring-level map in
+  -- `hemb`; it remains to verify that the resulting square commutes.
   have hclosed := (hemb (p false).hasDenominatorPower).comp d.isClosedEmbedding
   apply e.isClosedEmbedding.of_comp_iff.mp
   suffices heq : e ∘ (fun x : presentationLimit (P := P) Aplus ⊤ ↦
@@ -303,12 +307,15 @@ theorem isClosedEmbedding_presentationLimitMap_laurentCoverOpen_of_isClosedEmbed
         (p false).hasDenominatorPower)) ∘ d by
     rw [heq]
     exact hclosed
+  -- Check commutativity pointwise after writing a global section as the image of some `c : A`.
   funext x
   have := isIso_toPresentationLimit_top (P := P) Aplus hAplus
   have hsurj : Function.Surjective (toPresentationLimit (P := P) Aplus ⊤).hom.1 :=
     Function.RightInverse.surjective
       (asIso (toPresentationLimit (P := P) Aplus ⊤)).inv_hom_id_apply
   obtain ⟨c, rfl⟩ := hsurj x
+  -- Naturality of the presentation-limit comparison identifies restriction with the two
+  -- completed-localization structure maps.
   have key (b : Bool) : toPresentationLimit Aplus ⊤ ≫ presentationLimitMap le_top ≫
       (presentationLimitRationalIso Aplus hAplus (p b) (hp b)).hom =
         (p b).toCompletionLocObjHom := by simp
@@ -326,6 +333,7 @@ theorem isClosedEmbedding_presentationLimitMap_laurentCoverOpen_of_isClosedEmbed
       e₂ z = (eqToHom (completionLocObj_obj P {1} f (Localization.Away f)
         (p false).hasDenominatorPower)).1
           ((presentationLimitRationalIso Aplus hAplus (p false) (hp false)).hom.hom.1 z) := (rfl)
+  -- The source comparison cancels on `c`; the two target comparisons then cancel coordinatewise.
   have hd : d ((toPresentationLimit (P := P) Aplus ⊤).hom.1 c) =
       (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).1 c := by
     rw [hd_apply]
