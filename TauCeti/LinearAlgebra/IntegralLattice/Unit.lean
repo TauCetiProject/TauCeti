@@ -18,6 +18,10 @@ is the identity matrix.  Consequently it is positive definite, unimodular, and h
 and discriminant one.  It is odd whenever `ι` is nonempty, and its signature is
 `(#ι, 0, 0)`.
 
+The lattices `I_n` are the basic odd unimodular lattices: they serve as the standard comparison
+objects in integral-lattice calculations, for instance as the odd positive definite unimodular
+lattices against which even lattices such as `E_8` are contrasted.
+
 The empty-index case is retained: `I_∅` is the rank-zero even unimodular lattice.  This is why
 the parity and level results below separate empty and nonempty index types.
 
@@ -94,11 +98,8 @@ theorem coe_unitLatticeBasis_apply (i : ι) :
 @[simp]
 theorem gramMatrix_unitLatticeBasis [DecidableEq ι] :
     (unitLattice ι).gramMatrix (unitLatticeBasis ι) = 1 := by
-  ext i j
-  apply Int.cast_injective (α := ℚ)
-  rw [gramMatrix_apply, integralForm_cast, coe_unitLatticeBasis_apply,
-    coe_unitLatticeBasis_apply, unitLattice_form_apply]
-  simp [Matrix.one_apply, Pi.single_apply, eq_comm]
+  unfold unitLattice unitLatticeBasis
+  convert gramMatrix_ofGramMatrix (Pi.basisFun ℚ ι) 1 Matrix.isSymm_one
 
 /-- The rank of `I_ι` is the cardinality of its index type. -/
 @[simp]
@@ -147,6 +148,7 @@ theorem isUnimodular_unitLattice : (unitLattice ι).IsUnimodular := by
   exact unitLattice_discriminant ι
 
 /-- The standard unit lattice is even exactly when it has rank zero. -/
+@[simp]
 theorem isEven_unitLattice_iff :
     (unitLattice ι).IsEven ↔ Fintype.card ι = 0 := by
   classical
@@ -168,12 +170,14 @@ theorem not_isEven_unitLattice [Nonempty ι] : ¬ (unitLattice ι).IsEven := by
   exact Fintype.card_ne_zero
 
 /-- The rank-zero standard unit lattice has level one. -/
+@[simp]
 theorem level_unitLattice_of_isEmpty [IsEmpty ι] : (unitLattice ι).level = 1 := by
   rw [(unitLattice ι).level_eq_one_iff]
   exact ⟨(isEven_unitLattice_iff ι).mpr (Fintype.card_eq_zero_iff.mpr inferInstance),
     isUnimodular_unitLattice ι⟩
 
 /-- A positive-rank standard unit lattice has level two. -/
+@[simp]
 theorem level_unitLattice [Nonempty ι] : (unitLattice ι).level = 2 := by
   rw [(isUnimodular_unitLattice ι).level_eq_two_iff]
   exact not_isEven_unitLattice ι
