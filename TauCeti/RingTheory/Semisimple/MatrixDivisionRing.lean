@@ -24,11 +24,11 @@ import TauCeti.RingTheory.Semisimple.SimpleArtinian
 Artin--Wedderburn presents a simple Artinian ring as a matrix ring `Matᵢ(D)` over a division ring,
 and a semisimple ring as a finite product of such blocks.  Mathlib supplies the presentation but
 says nothing about how much of it is determined by the ring: `RingEquiv.card_blocks_eq` shows the
-*number* of blocks is an invariant and `TauCeti.blocks_equiv_simpleModules` matches the blocks with
-the simple modules, but both are silent about the two remaining pieces of data, the size `ι` of a
-block and its division ring `D`.  This file determines both, for a *single* block: it does not treat
-a product of blocks; `TauCeti.wedderburn_blocks_unique` applies the result here after matching the
-factors of two product presentations.
+*number* of blocks is an invariant and `RingEquiv.exists_simpleSubmodule_of_pi_matrix` matches the
+blocks with the simple modules, but both are silent about the two remaining pieces of data, the
+size `ι` of a block and its division ring `D`.  This file determines both, for a *single* block:
+it does not treat a product of blocks; `TauCeti.wedderburn_blocks_unique` applies the result here
+after matching the factors of two product presentations.
 
 The content is a description of those two data of `A = Matᵢ(D)` in terms that transport along a
 ring isomorphism.  The **column module** `ι → D`, on which `A` acts by `Matrix.mulVec`, is a simple
