@@ -53,7 +53,7 @@ theorem mem_link_stellarSubdivision_insert_iff (hvρ : v ∉ ρ) :
       Finset.union_left_comm, Finset.union_comm] using hface
 
 /-- Every face in the link of a stellar face containing the new vertex belongs to the deletion of
-that starred face in the source complex. -/
+the original starred face `σ` in the source complex. -/
 theorem link_stellarSubdivision_insert_le_deletion (hvρ : v ∉ ρ) :
     link (stellarSubdivision K σ v) (insert v ρ) ≤ deletion K σ := by
   intro τ hτ
