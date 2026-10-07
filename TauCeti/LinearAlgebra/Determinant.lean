@@ -7,6 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import Mathlib.RingTheory.Ideal.Span
+public import TauCeti.LinearAlgebra.Multilinear.Span
 import TauCeti.LinearAlgebra.BilinearForm.Multilinear
 import Mathlib.LinearAlgebra.SpecialLinearGroup
 
@@ -22,7 +24,8 @@ insufficient). This file records that law in three vocabularies: for
 an `AlternatingMap` indexed by a basis' index type, for an alternating bilinear form on a rank-two
 module, and for the standard-basis determinant form under matrix multiplication. It also
 identifies evaluation of the row determinant form on a family of linear functionals with the
-determinant of their evaluation matrix.
+determinant of their evaluation matrix. Ideal membership of these determinants extends from
+a set of rows to its linear span.
 
 Mathlib's `Module.Basis.det_comp` is the case `ω = b.det` of the first statement. The step taken
 here is that every top-degree alternating form is a multiple of `b.det`
@@ -51,6 +54,8 @@ results over the rows multiplies the determinant by the total of the factors.
   linear functionals gives the determinant of their evaluation matrix.
 * `Matrix.detRowAlternating_compLinearMap_pi_apply`: the same evaluation in multilinear-map
   vocabulary after precomposition with the family of functionals.
+* `TauCeti.det_mem_of_mem_span`: ideal membership of evaluation determinants extends from
+  a set of rows to its linear span.
 * `Matrix.sum_det_updateRow_mul_row`: Jacobi's formula for a determinant, in row form.
 * `Matrix.det_mul_column_intCast`: scaling every row `i` of an integer matrix by `d i`
   multiplies the determinant by `∏ i, d i`, over any commutative ring.
@@ -233,6 +238,29 @@ theorem detRowAlternating_compLinearMap_pi_apply {ι R F : Type*} [Fintype ι]
       (Matrix.of fun i j => f j (v i)).det := by
   rw [AlternatingMap.coe_multilinearMap, AlternatingMap.compLinearMap_apply,
     detRowAlternating_pi_apply]
+
+end Matrix
+
+namespace TauCeti
+
+/-- If an ideal contains all evaluation determinants whose rows lie in a set, it also contains
+those whose rows lie in the linear span of that set. -/
+theorem det_mem_of_mem_span {R F : Type*} [CommRing R] [AddCommGroup F] [Module R F]
+    {p : ℕ} {s : Set F} {I : Ideal R} (f : Fin p → Dual R F) {v : Fin p → F}
+    (hv : ∀ i, v i ∈ Submodule.span R s)
+    (h : ∀ w : Fin p → F, (∀ i, w i ∈ s) → (Matrix.of fun i j ↦ f j (w i)).det ∈ I) :
+    (Matrix.of fun i j ↦ f j (v i)).det ∈ I := by
+  rw [← Matrix.detRowAlternating_compLinearMap_pi_apply]
+  refine Submodule.span_le.2 ?_ <|
+    MultilinearMap.map_mem_span_image_pi
+      (Matrix.detRowAlternating.compLinearMap (LinearMap.pi f)).toMultilinearMap (fun _ ↦ s) hv
+  rintro _ ⟨w, hw, rfl⟩
+  rw [Matrix.detRowAlternating_compLinearMap_pi_apply]
+  exact h w fun i ↦ hw i trivial
+
+end TauCeti
+
+namespace Matrix
 
 /-- Multiplication by a square matrix scales the standard-basis determinant form by its
 determinant. This is `AlternatingMap.compLinearMap_eq_det_smul` at `ω = (Pi.basisFun R ι).det`,
