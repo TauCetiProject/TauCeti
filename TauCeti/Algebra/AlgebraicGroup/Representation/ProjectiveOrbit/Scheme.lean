@@ -155,4 +155,9 @@ instance instLocallyOfFiniteTypeProjectiveOrbitToSpec
   rw [projectiveOrbitToSpec_def]
   infer_instance
 
+/-- Closed points are dense in every locally closed subset of the orbit scheme. -/
+instance instJacobsonSpaceProjectiveOrbitScheme (m : M) (hm : Module.IsUnimodular k m) :
+    JacobsonSpace (projectiveOrbitScheme (H := H) m hm) :=
+  LocallyOfFiniteType.jacobsonSpace (projectiveOrbitToSpec (H := H) m hm)
+
 end TauCeti.Comodule
