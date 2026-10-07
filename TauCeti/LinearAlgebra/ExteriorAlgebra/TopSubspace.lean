@@ -45,7 +45,7 @@ theorem exteriorPower_eq_span_ιMulti {n : ℕ} (b : Basis (Fin n) R M) :
   · apply span_le.mpr
     rintro _ ⟨v, rfl⟩
     have h := congrArg (fun x : ⋀[R]^n M ↦ (x : _root_.ExteriorAlgebra R M))
-      (exteriorPower.ιMulti_eq_basis_det_smul b v)
+      (b.exteriorPower_ιMulti_eq_det_smul v)
     simp only [Submodule.coe_smul, exteriorPower.ιMulti_apply_coe] at h
     rw [h]
     exact smul_mem _ _ (subset_span (Set.mem_singleton _))

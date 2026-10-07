@@ -41,8 +41,6 @@ degree-one identifications of `extPowerRep k n` are the generic
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 1, “Symmetric and exterior power representations”.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 15.
 -/
 
@@ -76,16 +74,16 @@ noncomputable abbrev extPowerFDRep : FDRep k (GL (Fin n) k) :=
 This is deliberately not a `simp` lemma: `Representation.exteriorPower_apply` and `stdRep_apply`
 already rewrite the left-hand side to `exteriorPower.map n (Matrix.mulVecLin ↑g)`, so it is not in
 `simp` normal form and the rewrite could never fire. The `simp`-normal statement is
-`exteriorPower.map_top_eq_det_smul`, applied here to `Pi.basisFun k (Fin n)`. -/
+`Module.Basis.map_exteriorPower_top_eq_det_smul`, applied here to `Pi.basisFun k (Fin n)`. -/
 theorem extPowerRep_self_apply (g : GL (Fin n) k) :
     extPowerRep k n n g = Matrix.det (g : Matrix (Fin n) (Fin n) k) • LinearMap.id := by
   rw [Representation.exteriorPower_apply, stdRep_apply, ← Matrix.toLin'_apply',
-    exteriorPower.map_top_eq_det_smul (Pi.basisFun k (Fin n)), LinearMap.det_toLin']
+    (Pi.basisFun k (Fin n)).map_exteriorPower_top_eq_det_smul, LinearMap.det_toLin']
 
 /-- **The top exterior power of the standard representation is the determinant representation.**
 The identification sends a wedge of `n` vectors to the determinant of the matrix they form. -/
 noncomputable def topExtPowerEquivDet : (extPowerRep k n n).Equiv (detRep k n) :=
-  .mk (exteriorPower.topEquiv (Pi.basisFun k (Fin n))) fun g ↦ by
+  .mk ((Pi.basisFun k (Fin n)).exteriorPowerTopEquiv) fun g ↦ by
     refine LinearMap.ext fun x ↦ ?_
     simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
       extPowerRep_self_apply, LinearMap.smul_apply, LinearMap.id_coe, id_eq, map_smul,
@@ -95,14 +93,16 @@ noncomputable def topExtPowerEquivDet : (extPowerRep k n n).Equiv (detRep k n) :
 identification of the exterior power with the scalars. -/
 @[simp]
 theorem topExtPowerEquivDet_toLinearEquiv :
-    (topExtPowerEquivDet k n).toLinearEquiv = exteriorPower.topEquiv (Pi.basisFun k (Fin n)) :=
+    (topExtPowerEquivDet k n).toLinearEquiv = (Pi.basisFun k (Fin n)).exteriorPowerTopEquiv :=
   (rfl)
 
 /-- The identification sends a wedge of `n` vectors to the determinant of the matrix they form. -/
 @[simp]
 theorem topExtPowerEquivDet_apply_ιMulti (v : Fin n → (Fin n → k)) :
     topExtPowerEquivDet k n (exteriorPower.ιMulti k n v) = (Matrix.of v).det := by
-  simp [topExtPowerEquivDet, ← Pi.basisFun_det_apply]
+  rw [← Representation.Equiv.coe_toIntertwiningMap,
+    ← Representation.Equiv.toLinearEquiv_apply, topExtPowerEquivDet_toLinearEquiv,
+    Module.Basis.exteriorPowerTopEquiv_apply_ιMulti, Pi.basisFun_det_apply]
 
 /-- The identification of the top exterior power with the determinant representation, bundled as
 an isomorphism in `FDRep`. -/
@@ -138,7 +138,7 @@ symmetric polynomial in its diagonal entries. -/
 theorem char_extPowerRep_diagonal (t : Fin n → kˣ) : (extPowerRep k n d).character (diagGL t) =
       MvPolynomial.eval (fun i => (t i : k)) (MvPolynomial.esymm (Fin n) k d) := by
   rw [Representation.character, Representation.exteriorPower_apply]
-  rw [exteriorPower.trace_map_of_apply_basis (Pi.basisFun k (Fin n))
+  rw [(Pi.basisFun k (Fin n)).trace_map_exteriorPower_of_apply
     (stdRep k n (diagGL t)) (fun i => (t i : k)) d
     (stdRep_diagGL_apply_basisFun t)]
   simp only [MvPolynomial.esymm, MvPolynomial.eval_sum, MvPolynomial.eval_prod,
