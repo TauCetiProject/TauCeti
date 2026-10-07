@@ -18,10 +18,6 @@ slices is therefore a power of the distinguished coordinate times a complex anal
 In particular, the real constant-order hypothesis suffices to prepare a discriminant for
 complex analytic root splitting; constant order on complex points is a conclusion.
 
-The vanishing of the lower line coefficients extends from the real parameter points by
-`AnalyticAt.eventually_eq_zero_of_eventually_real`. The first nonzero coefficient persists
-by continuity, and `AnalyticAt.eventually_analyticOrderAt_eq_natCast_iff` supplies the unit.
-
 ## References
 
 * S. McCallum, *An improved projection operation for cylindrical algebraic decomposition*,
