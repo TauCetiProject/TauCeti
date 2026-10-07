@@ -104,6 +104,27 @@ theorem doubledArrowSign_inr {i j : Q} (a : j ⟶ i) :
 
 end Sign
 
+section SignReverse
+
+variable (k : Type w) {Q : Type u} [One k] [InvolutiveNeg k] [Quiver.{v} Q]
+
+/-- Swapping the two summands of an arrow of the doubled quiver negates its sign. This is the
+`simp`-normal form of `TauCeti.doubledArrowSign_reverse`, `Quiver.reverse b` being `Sum.swap b` by
+`Quiver.symmetrify_reverse`. -/
+@[simp]
+theorem doubledArrowSign_swap {i j : Symmetrify Q} (b : i ⟶ j) :
+    doubledArrowSign k (i := j) (j := i) (Sum.swap b) = -doubledArrowSign k b := by
+  rcases b with a | a
+  · rfl
+  · exact (neg_neg (1 : k)).symm
+
+/-- **Reversing an arrow of the doubled quiver negates its sign**: `ε_{b*} = -ε_b`. -/
+theorem doubledArrowSign_reverse {i j : Symmetrify Q} (b : i ⟶ j) :
+    doubledArrowSign k (Quiver.reverse b) = -doubledArrowSign k b :=
+  doubledArrowSign_swap k b
+
+end SignReverse
+
 variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 

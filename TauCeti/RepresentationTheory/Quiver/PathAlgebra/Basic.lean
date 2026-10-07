@@ -997,13 +997,23 @@ section ArrowCoordinates
 
 variable {k : Type w} {Q : Type u} [CommSemiring k] [Quiver.{v} Q]
 
-/-- The coordinates of an arrow times a basis path: the basis path extended by the arrow. -/
-private theorem pathAlgebraBasis_repr_ofArrow_mul_single {i j s : Q} (b : i ⟶ j)
+/-- The coordinates of an arrow times a basis path: the basis path extended by the arrow. This is
+not a `simp` lemma, since `TauCeti.PathAlgebra.ofArrow_eq_ofPath` rewrites its left-hand side. -/
+theorem pathAlgebraBasis_repr_ofArrow_mul_single {i j s : Q} (b : i ⟶ j)
     (p : _root_.Quiver.Path s i) (c : k) (x : Quiver.TotalPath Q) :
     (pathAlgebraBasis k Q).repr (ofArrow b * single ⟨s, i, p⟩ c) x =
       Finsupp.single (⟨s, j, p.cons b⟩ : Quiver.TotalPath Q) c x := by
   rw [single_eq_smul_ofPath, mul_smul_comm, ofArrow_mul_ofPath, ← single_eq_smul_ofPath,
     pathAlgebraBasis_repr_single]
+
+/-- The simp-normal form of `TauCeti.PathAlgebra.pathAlgebraBasis_repr_ofArrow_mul_single`, in
+which `TauCeti.PathAlgebra.ofArrow_eq_ofPath` has written the arrow as its length-one path. -/
+@[simp]
+theorem pathAlgebraBasis_repr_ofPath_toPath_mul_single {i j s : Q} (b : i ⟶ j)
+    (p : _root_.Quiver.Path s i) (c : k) (x : Quiver.TotalPath Q) :
+    (pathAlgebraBasis k Q).repr (ofPath ⟨i, j, b.toPath⟩ * single ⟨s, i, p⟩ c) x =
+      Finsupp.single (⟨s, j, p.cons b⟩ : Quiver.TotalPath Q) c x :=
+  pathAlgebraBasis_repr_ofArrow_mul_single b p c x
 
 /-- **Reading off a coordinate through the last arrow**: the coordinate of `b f` on the path `q`
 followed by `b` is the coordinate of `f` on `q`. -/
