@@ -30,7 +30,8 @@ corresponding group is missing, even though Mathlib does have the individual iso
 linear automorphism group `M ≃ₗ[R] M`, and hence a group to act with.
 
 This file supplies that subgroup, together with its determinant-one subgroup and the reflections in
-the hyperplanes of vectors of invertible norm. The orthogonal group is the target of the
+vectors of invertible norm, which fix the kernel of `polar Q v` (the hyperplane `v ^ ⊥` when `2` is
+invertible). The orthogonal group is the target of the
 twisted-conjugation homomorphism out of the Pin group, so it is the object the Pin/Spin double
 covers are stated against, and the reflections are the generators into which the Cartan-Dieudonné
 theorem `TauCeti.QuadraticMap.exists_reflectionOrthogonal_list_prod_eq` factors an orthogonal
@@ -56,8 +57,9 @@ complement of `v`: it is a transvection when `polar Q v ≠ 0`, and the identity
   a special orthogonal group into matrix `GL`.
 * `QuadraticMap.orthogonalToGeneralLinear Q`: the corresponding faithful coordinate
   inclusion of the full orthogonal group into matrix `GL`.
-* `TauCeti.QuadraticMap.reflection Q v`: the reflection in the hyperplane orthogonal to a vector `v`
-  with `Q v` invertible, built from Mathlib's `Module.reflection`.
+* `TauCeti.QuadraticMap.reflection Q v`: the reflection in a vector `v` with `Q v` invertible, built
+  from Mathlib's `Module.reflection`; it is the reflection in the hyperplane `v ^ ⊥` when `2` is
+  invertible.
 * `TauCeti.QuadraticMap.reflectionOrthogonal Q v`: the same reflection bundled as an element of
   `orthogonalGroup Q`, so that statements about products of reflections and about the ranges of the
   Pin and Spin actions can name it. `TauCeti.QuadraticMap.reflectionOrthogonal_mul_self` and
@@ -93,7 +95,7 @@ complement of `v`: it is a transvection when `polar Q v ≠ 0`, and the identity
   orthogonal group.
 * `TauCeti.QuadraticMap.reflection_mem_orthogonalGroup`: the reflection in a vector of invertible
   norm is orthogonal; `TauCeti.QuadraticMap.reflection_mul_self` says it is an involution, and
-  `TauCeti.QuadraticMap.reflection_apply_of_isOrtho` that it fixes the orthogonal hyperplane,
+  `TauCeti.QuadraticMap.reflection_apply_of_isOrtho` that it fixes every vector orthogonal to `v`,
   `TauCeti.QuadraticMap.reflection_smul_eq` that rescaling by an invertible scalar does not change
   it, and `TauCeti.QuadraticMap.det_reflection` computes its determinant on a finite free module.
   These are the factors in the Cartan-Dieudonné theorem
