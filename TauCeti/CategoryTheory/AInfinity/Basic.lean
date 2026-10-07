@@ -78,9 +78,10 @@ structure AInfinityCategory (R : Type w) [CommRing R] (C : Type u)
     [GradedLinearQuiver.{u, v, w} R C] extends AInfinityAlgebra R (TotalHom R C) where
   /-- The grading of the total algebra is the degreewise grading of the morphisms. -/
   grading_eq : grading = totalGrading R C
-  /-- Every operation sends composable strings to morphisms between their endpoints, and other
-  strings to zero. -/
-  isPathCompatible_m (n : ℕ) : IsPathCompatible (m n)
+  /-- Every operation of positive arity sends composable strings to morphisms between their
+  endpoints, and other strings to zero.  The nullary operation vanishes, so it is path-compatible
+  automatically (`TauCeti.AInfinityCategory.isPathCompatible_m`). -/
+  isPathCompatible_m_of_pos (n : ℕ) (hn : 0 < n) : IsPathCompatible (m n)
 
 namespace AInfinityCategory
 
@@ -94,6 +95,14 @@ theorem ext {𝒞 𝒞' : AInfinityCategory R C} (h : 𝒞.m = 𝒞'.m) : 𝒞 =
   rfl
 
 variable (𝒞 : AInfinityCategory R C)
+
+/-- Every operation of an `A∞` category sends composable strings to morphisms between their
+endpoints, and other strings to zero. -/
+theorem isPathCompatible_m (n : ℕ) : IsPathCompatible (𝒞.m n) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · rw [𝒞.m_zero]
+    exact ⟨fun _ _ ↦ zero_mem _, fun _ _ _ _ _ _ _ ↦ rfl⟩
+  · exact 𝒞.isPathCompatible_m_of_pos n hn
 
 /-- The operation `mₙ` sends inputs of degrees `dᵢ` to an element of degree `∑ dᵢ + 2 - n`. -/
 theorem m_mem_totalGrading_piece {n : ℕ} (d : Fin n → ℤ) (x : Fin n → TotalHom R C)

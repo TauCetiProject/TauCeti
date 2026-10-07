@@ -111,7 +111,7 @@ noncomputable def aInfinityCategory : AInfinityCategory R (AInfinitySingleObj �
       mem_totalGrading_piece_iff, totalHomEquiv_symm_apply]
     exact ⟨fun h X Y ↦ by rwa [Subsingleton.elim X (star 𝒜), Subsingleton.elim Y (star 𝒜)],
       fun h ↦ h _ _⟩
-  isPathCompatible_m n :=
+  isPathCompatible_m_of_pos _ _ :=
     { mem_range_homInclusion X _ := by
         obtain rfl : X = fun _ ↦ star 𝒜 := funext fun _ ↦ Subsingleton.elim _ _
         exact ⟨_, (totalHomEquiv_apply 𝒜 _).symm.trans ((totalHomEquiv 𝒜).apply_symm_apply _)⟩
