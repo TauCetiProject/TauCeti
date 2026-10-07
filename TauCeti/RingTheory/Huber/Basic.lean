@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import TauCeti.RingTheory.Huber.PowerBounded
 import TauCeti.RingTheory.Ideal.PowerStabilization
+import TauCeti.RingTheory.Subring.SpanSingleton
 public import TauCeti.Topology.Algebra.Group.FirstCountable
 
 /-!
@@ -720,28 +721,6 @@ namespace PairOfDefinition
 variable (A₀ : Subring A) (hA₀ : IsOpen (A₀ : Set A)) (hb : IsBounded (A₀ : Set A)) {ϖ : A}
   (hϖ : IsPseudoUniformizer ϖ) (hϖA₀ : ϖ ∈ A₀)
 
-omit [TopologicalSpace A] [IsTopologicalRing A] in
-/-- Membership in the principal ideal `a A₀` of a subring `A₀ ∋ a`. -/
-private theorem mem_span_singleton_iff {a : A} (ha : a ∈ A₀) {x : A₀} :
-    x ∈ Ideal.span {(⟨a, ha⟩ : A₀)} ↔ ∃ y ∈ A₀, a * y = x := by
-  rw [Ideal.mem_span_singleton']
-  constructor
-  · rintro ⟨y, rfl⟩
-    exact ⟨y, y.2, by simp [mul_comm]⟩
-  · rintro ⟨y, hy, hxy⟩
-    exact ⟨⟨y, hy⟩, Subtype.ext (by simp [← hxy, mul_comm])⟩
-
-omit [TopologicalSpace A] [IsTopologicalRing A] in
-/-- The `n`-th power of the principal ideal `ϖ A₀` of a subring `A₀ ∋ ϖ` is cut out of `A₀` by the
-scaled copy `ϖⁿ A₀`. -/
-private theorem coe_span_singleton_pow (n : ℕ) :
-    ((Ideal.span {(⟨ϖ, hϖA₀⟩ : A₀)} ^ n : Ideal A₀) : Set A₀) =
-      Subtype.val ⁻¹' ((ϖ ^ n) • (A₀ : Set A)) := by
-  ext x
-  rw [Ideal.span_singleton_pow, SetLike.mem_coe, SubmonoidClass.mk_pow,
-    mem_span_singleton_iff A₀ (pow_mem hϖA₀ n), Set.mem_preimage, Set.mem_smul_set]
-  simp only [smul_eq_mul, SetLike.mem_coe]
-
 include hA₀ hb hϖ in
 /-- The topology of an open bounded subring `A₀` containing a pseudouniformiser `ϖ` is the
 `ϖ A₀`-adic one. Each `ϖⁿ A₀` is open, being the image of the open `A₀` under multiplication by the
@@ -749,13 +728,13 @@ unit `ϖⁿ`; they are cofinal because `A₀` is bounded and `ϖⁿ → 0`. -/
 private theorem isAdic_span_singleton : IsAdic (Ideal.span {(⟨ϖ, hϖA₀⟩ : A₀)}) := by
   rw [isAdic_iff]
   refine ⟨fun n ↦ ?_, fun s hs ↦ ?_⟩
-  · rw [coe_span_singleton_pow]
+  · rw [A₀.coe_span_singleton_pow hϖA₀]
     exact (hA₀.smul (hϖ.isUnit.pow n).unit).preimage continuous_subtype_val
   · rw [IsInducing.subtypeVal.nhds_eq_comap, ZeroMemClass.coe_zero, Filter.mem_comap] at hs
     obtain ⟨t, ht, hts⟩ := hs
     obtain ⟨n, hn⟩ := hb.exists_pow_mul_subset hϖ.isTopologicallyNilpotent ht
     refine ⟨n, ?_⟩
-    rw [coe_span_singleton_pow]
+    rw [A₀.coe_span_singleton_pow hϖA₀]
     refine fun x hx ↦ hts (hn ?_)
     rw [Set.singleton_mul]
     exact hx
@@ -785,7 +764,7 @@ theorem mem_ofIsPseudoUniformizer_idealOfDefinition
     x ∈ (ofIsPseudoUniformizer A₀ hA₀ hb hϖ hϖA₀).idealOfDefinition ↔
       ∃ y ∈ A₀, ϖ * y = x := by
   -- the ideal of definition is `Ideal.span {ϖ}` by construction, and `x` is an element of `A₀`
-  exact mem_span_singleton_iff A₀ hϖA₀
+  exact A₀.mem_span_singleton_iff hϖA₀
 
 end PairOfDefinition
 
