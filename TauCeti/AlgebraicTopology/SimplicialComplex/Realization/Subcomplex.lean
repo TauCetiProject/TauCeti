@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
-import Mathlib.Data.Finset.Powerset
 
 /-!
 # Subcomplexes in the weak realization topology
@@ -40,13 +39,6 @@ open Set Topology TauCeti.SetLike
 namespace AbstractSimplicialComplex
 
 variable {ι : Type*} {K L : AbstractSimplicialComplex ι}
-
-/-- A subset of a weak realization is closed exactly when its inverse image in every closed
-simplex is closed. -/
-theorem isClosed_iff_faceInclusion {s : Set (Realization K)} :
-    IsClosed s ↔ ∀ σ : Face K, IsClosed (faceInclusion K σ ⁻¹' s) := by
-  -- The realization topology is the supremum of the coinduced face topologies.
-  simp only [isClosed_iSup_iff, isClosed_coinduced]
 
 /-- A point of the larger realization lies in the subcomplex precisely when its carrier is a
 face of that subcomplex. -/
@@ -87,7 +79,7 @@ theorem isClosed_of_faceInclusion {P : PreAbstractSimplicialComplex ι}
     let : CompactSpace (StandardSimplex σ.1) :=
       (Finset.standardSimplexHomeomorph σ.1).symm.compactSpace
     have ht : IsEmbedding (fun x : StandardSimplex τ.1 => (x.1 : ι → ℝ)) :=
-      ⟨⟨rfl⟩, fun x y hxy => Subtype.ext (Finsupp.ext fun v => congrFun hxy v)⟩
+      .induced (fun x y hxy => Subtype.ext (Finsupp.ext fun v => congrFun hxy v))
     let : T2Space (StandardSimplex τ.1) := ht.t2Space
     exact (hjc σ).isClosedMap
   have heq : faceInclusion L τ ⁻¹' s =
@@ -113,6 +105,16 @@ theorem isClosed_of_faceInclusion {P : PreAbstractSimplicialComplex ι}
   let : Finite A := hAfin.to_subtype
   exact isClosed_iUnion_of_finite fun σ => hjclosed σ _ (hs σ.1 σ.2.2)
 
+/-- The support of every point of a face of a precomplex is itself a face of that
+precomplex, even when the precomplex omits ambient vertices. -/
+theorem support_faceInclusion_mem {P : PreAbstractSimplicialComplex ι}
+    (hP : P ≤ L.toPreAbstractSimplicialComplex) {σ : Finset ι} (hσ : σ ∈ P)
+    (x : StandardSimplex σ) : (faceInclusion L ⟨σ, hP hσ⟩ x).1.support ∈ P := by
+  rw [faceInclusion_val]
+  exact P.isRelLowerSet_faces.mem_of_le hσ (StandardSimplex.support_subset x)
+    (by simpa only [faceInclusion_val] using
+      L.isRelLowerSet_faces.prop_of_mem (support_mem L (faceInclusion L ⟨σ, hP hσ⟩ x)))
+
 /-- The polyhedron of any precomplex inside a weak realization is closed, including when the
 precomplex omits ambient vertices or has no faces. -/
 theorem isClosed_setOf_support_mem {P : PreAbstractSimplicialComplex ι}
@@ -123,11 +125,39 @@ theorem isClosed_setOf_support_mem {P : PreAbstractSimplicialComplex ι}
   have heq : faceInclusion L ⟨σ, hP hσ⟩ ⁻¹'
       {x : Realization L | x.1.support ∈ P} = univ := by
     ext x
-    simp only [mem_preimage, mem_ofPred_eq, mem_univ, iff_true, faceInclusion_val]
-    exact P.isRelLowerSet_faces.mem_of_le hσ (StandardSimplex.support_subset x)
-      (by simpa only [faceInclusion_val] using
-        L.isRelLowerSet_faces.prop_of_mem (support_mem L (faceInclusion L ⟨σ, hP hσ⟩ x)))
+    exact iff_true_intro (support_faceInclusion_mem hP hσ x)
   exact heq.symm ▸ isClosed_univ
+
+/-- A map defined on a precomplex polyhedron is continuous exactly when its composition
+with each canonical face map into that polyhedron is continuous. The domain carries the
+subspace topology of the ambient weak realization, without any finiteness assumption. -/
+theorem continuous_subtype_iff_faceInclusion {X : Type*} [TopologicalSpace X]
+    {P : PreAbstractSimplicialComplex ι} (hP : P ≤ L.toPreAbstractSimplicialComplex)
+    {g : {x : Realization L // x.1.support ∈ P} → X} :
+    Continuous g ↔ ∀ (σ : Finset ι) (hσ : σ ∈ P),
+      Continuous (g ∘ fun x : StandardSimplex σ =>
+        ⟨faceInclusion L ⟨σ, hP hσ⟩ x, support_faceInclusion_mem hP hσ x⟩) := by
+  constructor
+  · intro hg σ hσ
+    exact hg.comp ((continuous_faceInclusion L ⟨σ, hP hσ⟩).subtype_mk
+      (support_faceInclusion_mem hP hσ))
+  · intro hg
+    apply continuous_iff_isClosed.mpr
+    intro t ht
+    rw [(isClosed_setOf_support_mem hP).isClosedEmbedding_subtypeVal.isClosed_iff_image_isClosed]
+    apply isClosed_of_faceInclusion hP
+    · rintro x ⟨y, _, rfl⟩
+      exact y.2
+    · intro σ hσ
+      convert ht.preimage (hg σ hσ) using 1
+      ext x
+      constructor
+      · rintro ⟨y, hy, hxy⟩
+        have he : y = ⟨faceInclusion L ⟨σ, hP hσ⟩ x,
+            support_faceInclusion_mem hP hσ x⟩ := Subtype.ext hxy
+        simpa only [he, mem_preimage, Function.comp_apply] using hy
+      · intro hx
+        exact ⟨⟨faceInclusion L ⟨σ, hP hσ⟩ x, support_faceInclusion_mem hP hσ x⟩, hx, rfl⟩
 
 /-- Continuity on a subcomplex can be checked on its closed simplices, with the subspace
 topology inherited from the ambient weak realization. The subcomplex may omit vertices. -/
@@ -136,27 +166,8 @@ theorem continuousOn_iff_faceInclusion {X : Type*} [TopologicalSpace X]
     {f : Realization L → X} :
     ContinuousOn f {x | x.1.support ∈ P} ↔
       ∀ (σ : Finset ι) (hσ : σ ∈ P), Continuous (f ∘ faceInclusion L ⟨σ, hP hσ⟩) := by
-  have hmaps (σ : Finset ι) (hσ : σ ∈ P) (x : StandardSimplex σ) :
-      (faceInclusion L ⟨σ, hP hσ⟩ x).1.support ∈ P := by
-    rw [faceInclusion_val]
-    exact P.isRelLowerSet_faces.mem_of_le hσ (StandardSimplex.support_subset x)
-      (by simpa only [faceInclusion_val] using
-        L.isRelLowerSet_faces.prop_of_mem (support_mem L (faceInclusion L ⟨σ, hP hσ⟩ x)))
-  constructor
-  · intro hf σ hσ
-    exact hf.comp_continuous (continuous_faceInclusion L ⟨σ, hP hσ⟩) (hmaps σ hσ)
-  · intro hf
-    apply continuousOn_iff_isClosed.mpr
-    intro t ht
-    refine ⟨f ⁻¹' t ∩ {x | x.1.support ∈ P}, ?_, by simp only [inter_assoc, inter_self]⟩
-    apply isClosed_of_faceInclusion hP (fun _ hx => hx.2)
-    intro σ hσ
-    have heq : faceInclusion L ⟨σ, hP hσ⟩ ⁻¹'
-        {x : Realization L | x.1.support ∈ P} = univ := by
-      ext x
-      exact iff_true_intro (hmaps σ hσ x)
-    rw [preimage_inter, heq, inter_univ]
-    exact ht.preimage (hf σ hσ)
+  rw [continuousOn_iff_continuous_domRestrict]
+  exact continuous_subtype_iff_faceInclusion hP
 
 /-- Realizing a subcomplex inclusion gives a closed embedding for the weak topologies. No
 finiteness assumption on the complexes or their ambient vertex type is needed. -/
