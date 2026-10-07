@@ -47,8 +47,8 @@ the sum and difference identities coincide, so neither character is determined b
 
 The trace identities specialize `LinearMap.trace_piTensorProduct_map_two` and
 `LinearMap.trace_symmetricPower_sub_trace_exteriorPower` from the linear tensor-square API to
-the action of a representation. Both hold in characteristic two because they use the exact
-sequence, without requiring its splitting.
+the action of a representation. Both hold in characteristic two: the linear trace identities
+use exactness and freeness, with no assumption on `2`.
 
 ## References
 
