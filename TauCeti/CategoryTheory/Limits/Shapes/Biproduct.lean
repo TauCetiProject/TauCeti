@@ -184,6 +184,21 @@ theorem biproductOptionIso_hom_snd_π (j : J) :
     (biproductOptionIso f).hom ≫ biprod.snd ≫ biproduct.π _ j = biproduct.π f (some j) := by
   simp [biproductOptionIso]
 
+@[simp]
+theorem biprod_inl_biproductOptionIso_inv :
+    biprod.inl ≫ (biproductOptionIso f).inv = biproduct.ι f none := by
+  classical
+  apply biproduct.hom_ext
+  rintro (_ | j) <;> simp [biproductOptionIso]
+
+@[simp]
+theorem biproduct_ι_biprod_inr_biproductOptionIso_inv (j : J) :
+    biproduct.ι (fun j => f (some j)) j ≫ biprod.inr ≫ (biproductOptionIso f).inv =
+      biproduct.ι f (some j) := by
+  classical
+  apply biproduct.hom_ext
+  rintro (_ | k) <;> simp [biproductOptionIso, biproduct.ι_π]
+
 end TauCeti
 
 namespace CategoryTheory.Limits
