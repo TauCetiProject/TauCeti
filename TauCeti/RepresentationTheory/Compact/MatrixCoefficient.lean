@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Group.Conjugation
 public import TauCeti.RepresentationTheory.Compact.Haar
+public import TauCeti.RepresentationTheory.Compact.BiregularRepresentation
 public import TauCeti.RepresentationTheory.Continuous.MatrixCoefficient
 public import Mathlib.MeasureTheory.Function.L2Space
 
@@ -42,6 +43,10 @@ the Haar integral the orthogonality argument evaluates.
   since Haar measure is positive on nonempty open sets.
 * `TauCeti.ContRepresentation.matrixCoeffLp_map_map`: moving both defining vectors by `π h`
   reparametrizes the matrix coefficient by a conjugation.
+* `TauCeti.rightRegularLp_matrixCoeffLp`, `TauCeti.leftRegularLp_matrixCoeffLp` and
+  `TauCeti.biRegularLp_matrixCoeffLp`: right, left and bi-translation each carry a matrix
+  coefficient of `π` to a matrix coefficient of the same `π`, absorbing the translation into a
+  defining vector.
 
 This is the second half of the Layer 3 milestone of the
 [compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap), whose first half is the
@@ -261,5 +266,50 @@ theorem matrixCoeffLp_map_map (hunitary : IsUnitary π) (h : G) (v w : V) :
 end CompactGroup
 
 end ContRepresentation
+
+/-! ### Translating a matrix coefficient
+
+The regular representations of `TauCeti.RepresentationTheory.Compact.RegularRepresentation` and
+the biregular one of `TauCeti.RepresentationTheory.Compact.BiregularRepresentation` act on
+`L²(G)`, so they act on matrix coefficients; translating one absorbs the translation into a
+defining vector and produces a matrix coefficient of the *same* representation.  These are the `L²`
+forms of `TauCeti.ContRepresentation.matrixCoeff_comp_mulRight` and
+`TauCeti.ContRepresentation.matrixCoeff_comp_mulLeft`. -/
+
+section Translation
+
+variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] {π : ContRepresentation 𝕜 G V}
+
+/-- **Right translation absorbs into the first defining vector of a matrix coefficient.**  The
+`g`-translate of `π_{v, w} : x ↦ ⟪π x v, w⟫` is `π_{π g v, w}`. -/
+theorem rightRegularLp_matrixCoeffLp (hπ : Continuous π) (g : G) (v w : V) :
+    rightRegularLp 𝕜 G g (ContRepresentation.matrixCoeffLp π hπ v w)
+      = ContRepresentation.matrixCoeffLp π hπ (π g v) w := by
+  rw [ContRepresentation.matrixCoeffLp_def, rightRegularLp_toLp,
+    ContRepresentation.matrixCoeff_comp_mulRight, ← ContRepresentation.matrixCoeffLp_def]
+
+/-- **Left translation absorbs into the second defining vector of a matrix coefficient.**  For a
+continuous unitary `π`, the `g`-translate of `π_{v, w} : x ↦ ⟪π x v, w⟫` is `π_{v, π g w}`. -/
+theorem leftRegularLp_matrixCoeffLp (hπ : Continuous π)
+    (hunitary : ContRepresentation.IsUnitary π) (g : G) (v w : V) :
+    leftRegularLp 𝕜 G g (ContRepresentation.matrixCoeffLp π hπ v w)
+      = ContRepresentation.matrixCoeffLp π hπ v (π g w) := by
+  rw [ContRepresentation.matrixCoeffLp_def, leftRegularLp_toLp,
+    ContRepresentation.matrixCoeff_comp_mulLeft hπ hunitary, inv_inv,
+    ← ContRepresentation.matrixCoeffLp_def]
+
+/-- **Bi-translation absorbs into the defining vectors of a matrix coefficient.**  For a
+continuous unitary `π`, the `(g, h)`-translate of `π_{v, w} : x ↦ ⟪π x v, w⟫` is `π_{π h v, π g w}`:
+the right translation lands on the first vector and the left translation on the second. -/
+theorem biRegularLp_matrixCoeffLp (hπ : Continuous π)
+    (hunitary : ContRepresentation.IsUnitary π) (p : G × G) (v w : V) :
+    biRegularLp 𝕜 G p (ContRepresentation.matrixCoeffLp π hπ v w)
+      = ContRepresentation.matrixCoeffLp π hπ (π p.2 v) (π p.1 w) := by
+  rw [biRegularLp_apply_eq_right_left, leftRegularLp_matrixCoeffLp hπ hunitary,
+    rightRegularLp_matrixCoeffLp hπ]
+
+end Translation
 
 end TauCeti

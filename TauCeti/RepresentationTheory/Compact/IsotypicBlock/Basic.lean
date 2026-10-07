@@ -94,12 +94,13 @@ first of them is
 below disappears.) What *is* proved
 about the action, in the section `Stability under translation` and nowhere else, is that each
 block is stable under the biregular representation
-(`TauCeti.biRegularLp_mem_peterWeylBlock`), because translation carries matrix coefficients of a
-model to matrix coefficients of the same model
-(`TauCeti.ContRepresentation.matrixCoeff_comp_mulLeft` and
-`TauCeti.ContRepresentation.matrixCoeff_comp_mulRight`). Equivariance of the identification of a
-block with `End(V_π)` is not proved here either: `TauCeti.endEquivPeterWeylBlock` is built from the
-canonical basis of the model, so nothing is claimed below about its equivariance. The equivariant
+(`TauCeti.biRegularLp_mem_peterWeylBlock`), and so is the sum of the blocks of a family
+(`TauCeti.biRegularLp_mem_iSup_peterWeylBlock`), because translation carries matrix coefficients of
+a model to matrix coefficients of the same model
+(`TauCeti.leftRegularLp_matrixCoeffLp` and `TauCeti.rightRegularLp_matrixCoeffLp`). Equivariance of
+the identification of a block with `End(V_π)` is not proved here either:
+`TauCeti.endEquivPeterWeylBlock` is built from the canonical basis of the model, so nothing is
+claimed below about its equivariance. The equivariant
 comparison is the basis-free trace pairing `T ↦ (x ↦ trace (T ∘ π x⁻¹))` of
 `TauCeti/RepresentationTheory/Compact/TraceCoefficient/Basic.lean`, which intertwines
 bi-translation with
@@ -146,7 +147,8 @@ available.
 * `TauCeti.rightRegularLp_mem_peterWeylBlock` and
   `TauCeti.leftRegularLp_mem_peterWeylBlock`: **each block is stable under right and left
   translation**; `TauCeti.biRegularLp_mem_peterWeylBlock` packages both as stability under the
-  biregular `G × G`-action.
+  biregular `G × G`-action, and `TauCeti.biRegularLp_mem_iSup_peterWeylBlock` carries that over to
+  the sum of the blocks of a family.
 * `TauCeti.isOrtho_peterWeylBlock`, `TauCeti.orthogonalFamily_peterWeylBlock`: **the blocks of
   inequivalent models are orthogonal**, so the blocks of a family of pairwise inequivalent models
   form an orthogonal family of subspaces, and `TauCeti.iSupIndep_peterWeylBlock` that they are
@@ -326,66 +328,36 @@ theorem iSup_peterWeylBlock_eq_span_peterWeylFamily (models : ι → IrrepModel 
 /-- **Each block is stable under right translation**, that is, under the right regular
 representation `TauCeti.rightRegularLp` of `G` on `L²(G)`: right translating a matrix coefficient of
 a model absorbs the translation into its first vector
-(`TauCeti.ContRepresentation.matrixCoeff_comp_mulRight`), so the translate is again a matrix
-coefficient of the same model. -/
+(`TauCeti.rightRegularLp_matrixCoeffLp`), so the translate is again a matrix coefficient of the same
+model. -/
 theorem rightRegularLp_mem_peterWeylBlock (model : IrrepModel 𝕜 G) (g : G)
     {f : Lp 𝕜 2 (haarProb G)} (hf : f ∈ peterWeylBlock model) :
     rightRegularLp 𝕜 G g f ∈ peterWeylBlock model := by
   induction hf using Submodule.span_induction with
   | mem x hx =>
     obtain ⟨v, w, rfl⟩ := hx
-    rw [ContRepresentation.matrixCoeffLp_def, rightRegularLp_toLp,
-      ContRepresentation.matrixCoeff_comp_mulRight, ← ContRepresentation.matrixCoeffLp_def]
+    rw [rightRegularLp_matrixCoeffLp]
     exact matrixCoeffLp_mem_peterWeylBlock model _ _
   | zero => simp
   | add x y _ _ hx hy => simpa using Submodule.add_mem _ hx hy
   | smul c x _ hx => simpa using Submodule.smul_mem _ c hx
 
-/-- **Each block is stable under left translation**: left translating a matrix coefficient of a
-unitary model moves the inverse translation onto its second vector
-(`TauCeti.ContRepresentation.matrixCoeff_comp_mulLeft`), so the translate is again a matrix
-coefficient of the same model.
-
-Left translation is spelled as Mathlib's precomposition operator
-`MeasureTheory.Lp.compMeasurePreserving`, which is also what `TauCeti.rightRegularLp_apply` unfolds
-right translation to; the left regular representation of `G` on `L²(G)` is not in the library. -/
-theorem compMeasurePreserving_mulLeft_mem_peterWeylBlock (model : IrrepModel 𝕜 G)
-    (g : G) {f : Lp 𝕜 2 (haarProb G)} (hf : f ∈ peterWeylBlock model) :
-    Lp.compMeasurePreserving (g * ·) (measurePreserving_mul_left (haarProb G) g) f ∈
-      peterWeylBlock model := by
-  induction hf using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨v, w, rfl⟩ := hx
-    have htranslate : Lp.compMeasurePreserving (g * ·) (measurePreserving_mul_left (haarProb G) g)
-        (ContRepresentation.matrixCoeffLp model.rep model.continuous_rep v w) =
-        ContRepresentation.matrixCoeffLp model.rep model.continuous_rep v
-          (model.rep g⁻¹ w) := by
-      rw [ContRepresentation.matrixCoeffLp_def, ContRepresentation.matrixCoeffLp_def,
-        ← ContRepresentation.matrixCoeff_comp_mulLeft model.continuous_rep
-          model.isUnitary v w g]
-      exact Lp.compMeasurePreserving_toLp 𝕜 _ (ContinuousMap.mulLeft g)
-        (measurePreserving_mul_left (haarProb G) g)
-    rw [htranslate]
-    exact matrixCoeffLp_mem_peterWeylBlock model _ _
-  | zero => simp
-  | add x y _ _ hx hy => simpa using Submodule.add_mem _ hx hy
-  | smul c x _ hx =>
-    -- `Lp.compMeasurePreserving` is bundled as an `AddMonoidHom`, so its `𝕜`-linearity comes from
-    -- the linear-map form of the same precomposition.
-    have hsmul : Lp.compMeasurePreserving (g * ·) (measurePreserving_mul_left (haarProb G) g)
-        (c • x) =
-        c • Lp.compMeasurePreserving (g * ·) (measurePreserving_mul_left (haarProb G) g) x :=
-      (Lp.compMeasurePreservingₗ 𝕜 (g * ·) (measurePreserving_mul_left (haarProb G) g)).map_smul c x
-    rw [hsmul]
-    exact Submodule.smul_mem _ c hx
-
-/-- **Each block is stable under the left regular representation.** This is the bundled-action
-form of `TauCeti.compMeasurePreserving_mulLeft_mem_peterWeylBlock`. -/
+/-- **Each block is stable under left translation**, that is, under the left regular representation
+`TauCeti.leftRegularLp` of `G` on `L²(G)`: the `g`-translate of the matrix coefficient `π_{v, w}` of
+a unitary model is the matrix coefficient `π_{v, π g w}`, left translation moving `π g` onto the
+second vector (`TauCeti.leftRegularLp_matrixCoeffLp`), so the translate is again a matrix
+coefficient of the same model. -/
 theorem leftRegularLp_mem_peterWeylBlock (model : IrrepModel 𝕜 G) (g : G)
     {f : Lp 𝕜 2 (haarProb G)} (hf : f ∈ peterWeylBlock model) :
     leftRegularLp 𝕜 G g f ∈ peterWeylBlock model := by
-  rw [leftRegularLp_apply]
-  exact compMeasurePreserving_mulLeft_mem_peterWeylBlock model g⁻¹ hf
+  induction hf using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨v, w, rfl⟩ := hx
+    rw [leftRegularLp_matrixCoeffLp model.continuous_rep model.isUnitary]
+    exact matrixCoeffLp_mem_peterWeylBlock model _ _
+  | zero => simp
+  | add x y _ _ hx hy => simpa using Submodule.add_mem _ hx hy
+  | smul c x _ hx => simpa using Submodule.smul_mem _ c hx
 
 /-- **Each Peter-Weyl block is invariant under the biregular `G × G`-action.** Its two factors
 act by left and right translation, each of which preserves the span of the model's matrix
@@ -396,6 +368,19 @@ theorem biRegularLp_mem_peterWeylBlock (model : IrrepModel 𝕜 G) (p : G × G)
   rw [biRegularLp_apply_eq_left_right]
   exact leftRegularLp_mem_peterWeylBlock model p.1
     (rightRegularLp_mem_peterWeylBlock model p.2 hf)
+
+/-- **The sum of the blocks of a family of models is stable under bi-translation.** Each block is
+(`TauCeti.biRegularLp_mem_peterWeylBlock`), and a sum of stable subspaces is stable. For a skeleton
+of the unitary dual this subspace is dense in `L²(G)`
+(`TauCeti.topologicalClosure_iSup_peterWeylBlock`), which is what makes the Peter-Weyl decomposition
+of `L²(G)` a decomposition of `G × G`-representations. -/
+theorem biRegularLp_mem_iSup_peterWeylBlock (models : ι → IrrepModel 𝕜 G) (p : G × G)
+    {f : Lp 𝕜 2 (haarProb G)} (hf : f ∈ ⨆ i, peterWeylBlock (models i)) :
+    biRegularLp 𝕜 G p f ∈ ⨆ i, peterWeylBlock (models i) := by
+  refine Submodule.iSup_induction (motive := fun x => biRegularLp 𝕜 G p x ∈
+    ⨆ i, peterWeylBlock (models i)) _ hf (fun i x hx => ?_) (by simp) fun x y hx hy => ?_
+  · exact Submodule.mem_iSup_of_mem i (biRegularLp_mem_peterWeylBlock (models i) p hx)
+  · simpa using Submodule.add_mem _ hx hy
 
 /-! ### A block is a copy of the endomorphism algebra of its model
 
