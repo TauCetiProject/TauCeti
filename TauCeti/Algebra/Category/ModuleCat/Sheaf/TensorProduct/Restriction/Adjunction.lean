@@ -91,10 +91,10 @@ theorem pushforwardPushforwardAdj_unit_app_tensor
   set η := (_root_.SheafOfModules.pushforwardPushforwardAdj adj φ ψ H₁ H₂).unit
   have hnat := congrArg (fun f ↦ f.app V (m ⊗ₜ[R.obj.obj V] n))
     (μ_natural (_root_.SheafOfModules.forget (ringCatSheaf R)) (η.app M) (η.app N))
-  have hψ := pushforward_μ_app_forget_μ_app_tmul ψ ((_root_.SheafOfModules.pushforward φ).obj M)
+  have hψ := pushforward_μ_app_tmul ψ ((_root_.SheafOfModules.pushforward φ).obj M)
     ((_root_.SheafOfModules.pushforward φ).obj N) V ((η.app M).val.app V m)
       ((η.app N).val.app V n)
-  have hφ := pushforward_μ_app_forget_μ_app_tmul φ M N (G.op.obj V)
+  have hφ := pushforward_μ_app_tmul φ M N (G.op.obj V)
     ((η.app M).val.app V m) ((η.app N).val.app V n)
   -- On sections over `V`, the unit is restriction along the counit `F (G V) ⟶ V`; move it past
   -- the tensor map of `forget`, then compute the right side through the two tensor maps.
@@ -126,9 +126,9 @@ theorem pushforwardPushforwardAdj_counit_app_tensor
   set ε := (_root_.SheafOfModules.pushforwardPushforwardAdj adj φ ψ H₁ H₂).counit
   have hnat := congrArg (fun f ↦ f.app U (a ⊗ₜ[S.obj.obj U] b))
     (μ_natural (_root_.SheafOfModules.forget (ringCatSheaf S)) (ε.app A) (ε.app B))
-  have hφ := pushforward_μ_app_forget_μ_app_tmul φ ((_root_.SheafOfModules.pushforward ψ).obj A)
+  have hφ := pushforward_μ_app_tmul φ ((_root_.SheafOfModules.pushforward ψ).obj A)
     ((_root_.SheafOfModules.pushforward ψ).obj B) U a b
-  have hψ := pushforward_μ_app_forget_μ_app_tmul ψ A B (F.op.obj U) a b
+  have hψ := pushforward_μ_app_tmul ψ A B (F.op.obj U) a b
   -- Compute the left side through the two tensor maps; on sections over `U`, the counit is
   -- restriction along the unit `U ⟶ G (F U)`, which then moves past the tensor map of `forget`.
   refine Eq.trans (congrArg (((_root_.SheafOfModules.forget (ringCatSheaf S)).map

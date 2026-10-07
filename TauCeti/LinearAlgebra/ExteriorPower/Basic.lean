@@ -56,6 +56,8 @@ injective map embeds `⋀ⁿ V` with its binomial dimension.
   trace.
 * `exteriorPower.fromTensorPower_comp_toTensorPower`: antisymmetrizing and projecting back is
   multiplication by `n!`, whence `exteriorPower.toTensorPower_injective`.
+* `exteriorPower.toTensorPower_injective_of_free`: antisymmetrization is injective for free
+  modules in every characteristic, without factorial invertibility.
 * `exteriorPower.range_toTensorPower`: the image of the antisymmetrization is the image of the
   antisymmetrization operator on the tensor power.
 * `exteriorPower.toTensorPower_comp_map` and `exteriorPower.map_comp_fromTensorPower`: the
@@ -153,6 +155,35 @@ theorem eq_zero_of_finrank_lt (d : ℕ) (h : Module.finrank R M < d) (x : ⋀[R]
   exact Subsingleton.elim x 0
 
 end Vanishing
+
+/-! ### Antisymmetrization of free modules -/
+
+section Free
+
+variable [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- Pairing with a pure exterior product of linear forms factors through the
+antisymmetrization into the tensor power. -/
+theorem pairingDual_ιMulti_apply {n : ℕ} (g : Fin n → Module.Dual R M) (x : ⋀[R]^n M) :
+    pairingDual R M n (ιMulti R n g) x =
+      TensorPower.multilinearMapToDual R M n g (toTensorPower R M n x) := by
+  simp [pairingDual, alternatingMapToDual]
+
+/-- Antisymmetrization embeds every exterior power of a free module into its tensor power,
+over any commutative ring, without requiring the factorial to be invertible. -/
+theorem toTensorPower_injective_of_free [Module.Free R M] {n : ℕ} :
+    Function.Injective (toTensorPower R M n) := by
+  classical
+  let : LinearOrder (Module.Free.ChooseBasisIndex R M) := linearOrderOfSTO WellOrderingRel
+  let b := Module.Free.chooseBasis R M
+  -- Each exterior-basis coordinate factors through antisymmetrization.
+  intro x y h
+  apply (b.exteriorPower n).repr.injective
+  ext s
+  rw [basis_repr_apply, basis_repr_apply]
+  simp only [ιMultiDual, ιMulti_family, pairingDual_ιMulti_apply, h]
+
+end Free
 
 /-! ### The exterior power as a quotient of the tensor power -/
 

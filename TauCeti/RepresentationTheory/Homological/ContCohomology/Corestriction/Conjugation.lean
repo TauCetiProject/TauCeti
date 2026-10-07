@@ -60,6 +60,8 @@ of the conjugation `f ↦ (x ↦ g • f (g⁻¹ x))` of `Coind_V^G M`.
   `Hⁿ(V, M)`, `(1)_* = 𝟙` and `(g)_* ≫ (h)_* = (h * g)_*`.
 * `TauCeti.ContinuousCohomology.conjNormalMap_naturality`: `(g)_*` is natural in the
   coefficients.
+* `TauCeti.ContinuousCohomology.conjNormalMap_eq_map_of_smul_eq_self`: with trivial coefficients,
+  `(g)_*` is the pullback along conjugation alone.
 
 ## References
 
@@ -338,6 +340,21 @@ theorem conjNormalMap_naturality (N : Type u) [AddCommGroup N] [TopologicalSpace
       fun v m => _root_.map_smul f (v : G) m).hom ((conjNormalPair V M g).hom m)
   rw [conjNormalPair_hom_apply, conjNormalPair_hom_apply]
   exact (_root_.map_smul f g m).symm
+
+/-- **Conjugation with trivial coefficients** is the pullback along `v ↦ g⁻¹ v g` alone: when `G`
+acts trivially on `M`, `(g)_*` is the map of the compatible pair of this conjugation and the
+identity of `M`. -/
+theorem conjNormalMap_eq_map_of_smul_eq_self (htriv : ∀ (g : G) (m : M), g • m = m) (g : G)
+    (n : ℕ) :
+    conjNormalMap V M g n = _root_.ContinuousCohomology.map
+      (ContinuousMonoidHom.toContinuousMonoidHom (ContinuousAut.conjNormal g⁻¹ : ContinuousAut V))
+      (ofDiscreteModulePair _ (AddMonoidHom.id M).toIntLinearMap fun v m ↦ by
+        simp only [AddMonoidHom.coe_toIntLinearMap, AddMonoidHom.id_apply, Subgroup.smul_def,
+          htriv]) n := by
+  rw [conjNormalMap_def]
+  congr 1
+  exact (ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun m ↦
+    (conjNormalPair_hom_apply V M g m).trans (htriv g m)).symm
 
 end ContinuousCohomology
 

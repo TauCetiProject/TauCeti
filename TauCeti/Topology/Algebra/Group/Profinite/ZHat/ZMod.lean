@@ -54,7 +54,8 @@ is `ℤ`, which is not profinite, and no lift exists.
   limit of the `ZMod n`.
 * `TauCeti.zHat.continuous_iff_forall_continuous_toZMod`: continuity into `Additive zHat` is
   detected by the projections.
-* The `CharZero (Additive zHat)` instance: the integers embed into the profinite integers.
+* The `CharZero (Additive zHat)` instance and `TauCeti.zHat.ofInt_injective`: the integers embed
+  into the profinite integers.
 
 ## References
 
@@ -223,6 +224,13 @@ instance : CharZero (Additive zHat.{u}) :=
     have h := congrArg (toZMod ⟨k + 1, k.succ_pos⟩) hk
     rw [map_natCast, map_zero, PNat.mk_coe, ZMod.natCast_eq_zero_iff] at h
     exact Nat.eq_zero_of_dvd_of_lt h k.lt_succ_self
+
+/-- The canonical homomorphism from `ℤ` to the profinite integers is injective. -/
+theorem ofInt_injective : Function.Injective (ofInt : Multiplicative ℤ →* zHat.{u}) :=
+  fun a b h ↦ by
+    have h' := congrArg ofMul h
+    rw [ofMul_ofInt, ofMul_ofInt, Int.cast_inj] at h'
+    exact toAdd.injective h'
 
 /-- **The profinite integers are the inverse limit of the `ZMod n`.** A family of residues
 `x n : ZMod n`, compatible along the reduction maps, is realized by a unique profinite

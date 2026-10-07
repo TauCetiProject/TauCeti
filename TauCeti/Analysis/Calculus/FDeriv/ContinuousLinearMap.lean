@@ -13,12 +13,15 @@ public import Mathlib.Analysis.Calculus.FDeriv.Add
 
 This file records a zero-value rule for differentiating the pointwise application of a varying
 continuous linear map. At a zero of the vector-valued argument, the variation of the operator
-contributes nothing to the derivative, so the operator-valued map need only be continuous.
+contributes nothing to the derivative, so the operator-valued map need only be continuous. It also
+records the derivative of the application of a varying continuous linear map to a fixed vector.
 
 ## Main declarations
 
 * `HasFDerivWithinAt.clm_apply_of_eq_zero`: the derivative of `y ↦ c y (u y)` at a zero of
   `u`, assuming only continuity of `c`.
+* `TauCeti.fderiv_clm_apply_const_apply`: the derivative of `y ↦ c y v` in the direction `w` is
+  `Dc(w) v`.
 -/
 
 public section
@@ -52,6 +55,14 @@ theorem _root_.HasFDerivWithinAt.clm_apply_of_eq_zero {c : E → F →L[𝕜] F'
   · funext y
     simp
   · simp
+
+/-- Differentiating `y ↦ c y v` for a fixed vector `v` in the direction `w` gives the derivative
+of `c` in the direction `w`, applied to `v`. -/
+theorem fderiv_clm_apply_const_apply {c : E → F →L[𝕜] F'} {x : E} (hc : DifferentiableAt 𝕜 c x)
+    (v : F) (w : E) :
+    fderiv 𝕜 (fun y ↦ c y v) x w = fderiv 𝕜 c x w v := by
+  rw [fderiv_clm_apply hc (differentiableAt_const v)]
+  simp
 
 end TauCeti
 

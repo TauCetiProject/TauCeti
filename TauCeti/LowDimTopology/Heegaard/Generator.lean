@@ -35,7 +35,8 @@ needed to define the differential.
 * `TauCeti.HeegaardIntersectionSystem.generatorOfPointChoice`: the point-choice constructor from
   bijective `β`-labels.
 * `TauCeti.HeegaardIntersectionSystem.point` and `TauCeti.HeegaardIntersectionSystem.betaEquiv`:
-  accessors for the chosen point and its curve matching.
+  accessors for the chosen point and its curve matching; a generator is determined by its chosen
+  points (`TauCeti.HeegaardIntersectionSystem.point_injective`).
 * `TauCeti.HeegaardIntersectionSystem.generatorChain`: the `0`-chain of the points of a
   generator.
 
@@ -174,6 +175,14 @@ theorem point_apply (g : D.Generator) (i : Fin n) : D.point g i = g.2 i := by
 theorem betaEquiv_apply (g : D.Generator) (i : Fin n) :
     D.betaEquiv g i = D.beta (D.point g i) := by
   simpa [betaEquiv, point] using (g.2 i).property.2.symm
+
+/-- A generator is determined by its chosen points: their `β`-labels recover the matching. -/
+theorem point_injective : Function.Injective D.point := by
+  rintro ⟨σ, f⟩ ⟨τ, g⟩ h
+  obtain rfl : σ = τ := Equiv.ext fun i => by
+    simpa [point] using (f i).property.2.symm.trans (congrArg D.beta (congrFun h i)) |>.trans
+      (g i).property.2
+  exact congrArg (Sigma.mk σ) (funext fun i => Subtype.ext (congrFun h i))
 
 /-- The chosen point over `i` has `α`-label `i`. -/
 @[simp]

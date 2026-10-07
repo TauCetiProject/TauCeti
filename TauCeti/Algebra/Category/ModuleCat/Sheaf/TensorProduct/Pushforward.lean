@@ -58,8 +58,8 @@ maps of the pullback along a composite are the composites of the comparison maps
   `SheafOfModules.pullback_δ`;
 * `SheafOfModules.forget_μ_comp_map_pushforward_μ`: the tensor map of the pushforward on underlying
   presheaves;
-* `SheafOfModules.pushforward_μ_app_forget_μ_app_tmul`: on sections, the tensor map of the
-  pushforward sends the class of `m ⊗ n` to the class of `m ⊗ n`;
+* `SheafOfModules.pushforward_μ_app_tmul`: on sections, the tensor map of the pushforward sends
+  the class of `m ⊗ n` to the class of `m ⊗ n`;
 * `SheafOfModules.isMonoidal_pushforwardComp_hom`: composing pushforwards is compatible with their
   lax monoidal structures;
 * `SheafOfModules.pullback_comp_η` and `SheafOfModules.pullback_comp_δ`: composing pullbacks is
@@ -308,21 +308,31 @@ lemma forget_μ_comp_map_pushforward_μ (M N : SheafOfModules.{u} (ringCatSheaf 
   exact (congrArg _ ((sheafificationForgetAdjunction S).homEquiv_counit _ _ _).symm).trans
     (Equiv.apply_symm_apply _ _)
 
-/-- On sections over `U`, the tensor map `φ_* M ⊗ φ_* N ⟶ φ_* (M ⊗ N)` of a pushforward sends the
-class of `m ⊗ n` in the sheaf tensor product to the class of `m ⊗ n`. -/
-lemma pushforward_μ_app_forget_μ_app_tmul (M N : SheafOfModules.{u} (ringCatSheaf R))
-    (U : Cᵒᵖ) (m : M.val.obj (F.op.obj U)) (n : N.val.obj (F.op.obj U)) :
-    ((_root_.SheafOfModules.forget (ringCatSheaf S)).map
-        (Functor.LaxMonoidal.μ (_root_.SheafOfModules.pushforward φ) M N)).app U
+/-- On pure tensors of sections, the tensor map of sheaf pushforward is the inclusion of
+the corresponding pure tensor on the source site into the sheaf tensor product. -/
+lemma pushforward_μ_app_tmul (M N : SheafOfModules.{u} (ringCatSheaf R)) (U : Cᵒᵖ)
+    (m : M.val.obj (F.op.obj U)) (n : N.val.obj (F.op.obj U)) :
+    (Functor.LaxMonoidal.μ (_root_.SheafOfModules.pushforward φ) M N).val.app U
       ((Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf S))
         ((_root_.SheafOfModules.pushforward φ).obj M)
         ((_root_.SheafOfModules.pushforward φ).obj N)).app U (m ⊗ₜ[S.obj.obj U] n)) =
-      (Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N).app (F.op.obj U)
-        (m ⊗ₜ[R.obj.obj (F.op.obj U)] n) :=
-  (congrArg (fun f ↦ f.app U (m ⊗ₜ[S.obj.obj U] n))
-    (forget_μ_comp_map_pushforward_μ φ M N)).trans
-      (congrArg ((Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N).app
-        (F.op.obj U)) (presheafPushforward_μ_app_tmul φ M.val N.val U m n))
+    (Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N).app
+      (F.op.obj U) (m ⊗ₜ[R.obj.obj (F.op.obj U)] n) := by
+  have h := congrArg (fun p ↦ (p.app U).hom (m ⊗ₜ[S.obj.obj U] n))
+    (forget_μ_comp_map_pushforward_μ φ M N)
+  -- Evaluate the presheaf composites as functions; their restriction-of-scalars wrappers
+  -- prevent rewriting the bundled module compositions directly.
+  change (Functor.LaxMonoidal.μ (_root_.SheafOfModules.pushforward φ) M N).val.app U
+      ((Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf S))
+        ((_root_.SheafOfModules.pushforward φ).obj M)
+        ((_root_.SheafOfModules.pushforward φ).obj N)).app U (m ⊗ₜ[S.obj.obj U] n)) =
+    (Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N).app
+      (F.op.obj U)
+      ((Functor.LaxMonoidal.μ (presheafPushforward φ) M.val N.val).app U
+        (m ⊗ₜ[S.obj.obj U] n)) at h
+  exact h.trans (congrArg
+    ((Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N).app
+      (F.op.obj U)) (presheafPushforward_μ_app_tmul φ M.val N.val U m n))
 
 /-- Pushforward of sheaves of modules respects symmetry: its lax tensor map commutes with
 interchanging the factors. -/

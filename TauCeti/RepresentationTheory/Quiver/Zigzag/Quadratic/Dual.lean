@@ -142,7 +142,7 @@ theorem repr_signlessPreprojectiveRelator_backtrackPath_self (v : V) {j : V} (h 
     rw [backtrackElem_eq_ofPath, ofPath_eq_single, pathAlgebraBasis_repr_single]
     refine Finsupp.single_eq_of_ne fun hpath => hw (Subtype.ext ?_)
     simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at hpath
-    exact eq_of_backtrackPath_eq G hpath.symm
+    exact (backtrackPath_inj G).1 hpath.symm
   · intro hmem
     exact absurd (Finset.mem_univ _) hmem
 

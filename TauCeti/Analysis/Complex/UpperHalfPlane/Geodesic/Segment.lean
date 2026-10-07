@@ -103,6 +103,23 @@ end UpperHalfPlane
 
 namespace TauCeti.UpperHalfPlane
 
+/-- The segment between two points of a unit-speed geodesic is the image of the interval
+between their parameters. The parameters may be given in either order. -/
+@[simp]
+theorem geodesicSegment_geodesicLine {g : PSL(2, ℝ)} {s t : ℝ} :
+    geodesicSegment (geodesicLine g s) (geodesicLine g t) = geodesicLine g '' uIcc s t := by
+  wlog hst : s ≤ t generalizing s t
+  · rw [← geodesicSegment_comm, uIcc_comm]
+    exact this (s := t) (t := s) (le_of_not_ge hst)
+  rcases hst.eq_or_lt with rfl | hst
+  · simp
+  rw [geodesicSegment_def, geodesicBetween_geodesicLine_of_lt g hst,
+    dist_geodesicLine, abs_sub_comm, abs_of_pos (sub_pos.mpr hst), uIcc_of_le hst.le]
+  have h : geodesicLine (g * ↑(Matrix.SpecialLinearGroup.dilation s)) =
+      geodesicLine g ∘ (fun u ↦ s + u) :=
+    funext (geodesicLine_mul_dilation g s)
+  rw [h, image_comp, image_const_add_Icc, add_zero, add_sub_cancel]
+
 /-- Segments transform naturally under the action. -/
 @[simp]
 theorem smul_geodesicSegment (h : PSL(2, ℝ)) (z w : ℍ) :

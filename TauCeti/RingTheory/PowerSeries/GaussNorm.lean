@@ -55,6 +55,8 @@ closed unit disc.
 * `TauCeti.PowerSeries.exists_isDistinguished`: at a positive radius, every nonzero restricted
   series is distinguished of some degree.
 * `TauCeti.PowerSeries.IsDistinguished.unique`: of no more than one degree.
+* `TauCeti.PowerSeries.isDistinguished_of_norm_coeff_sub_lt`: over an ultrametric ring, a series
+  is distinguished once its coefficient in degree `s` is close to an element of maximal norm.
 * `TauCeti.PowerSeries.IsDistinguished.trunc`,
   `TauCeti.PowerSeries.IsDistinguished.gaussNorm_trunc` and
   `TauCeti.PowerSeries.IsDistinguished.gaussNorm_sub_trunc_lt`: the polynomial part of a
@@ -274,6 +276,20 @@ theorem IsDistinguished.gaussNorm_sub_trunc_lt (hf : IsDistinguished c s f) (hc 
 end Truncation
 
 variable [IsUltrametricDist R]
+
+/-- **Recognising a distinguished series.** At a positive radius, `f` is distinguished of degree
+`s` once its weighted coefficient in degree `s` is closer than the Gauss norm to an element `a`
+of weighted norm equal to the Gauss norm, and every later weighted coefficient norm is smaller
+than the Gauss norm. -/
+theorem isDistinguished_of_norm_coeff_sub_lt (hc : 0 < c) {a : R}
+    (ha : ‖a‖ * c ^ s = f.gaussNorm norm c)
+    (hs : ‖f.coeff s - a‖ * c ^ s < f.gaussNorm norm c)
+    (hm : ∀ m, s < m → ‖f.coeff m‖ * c ^ m < f.gaussNorm norm c) :
+    IsDistinguished c s f := by
+  have hlt : ‖f.coeff s - a‖ < ‖a‖ := lt_of_mul_lt_mul_right (ha ▸ hs) (pow_pos hc s).le
+  refine ⟨?_, hm⟩
+  rw [← ha, ← sub_add_cancel (f.coeff s) a,
+    IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm hlt.ne, max_eq_right hlt.le]
 
 /-- The sum of two power series with bounded weighted coefficient norms again has bounded weighted
 coefficient norms at a nonnegative radius. -/
