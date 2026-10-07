@@ -64,7 +64,7 @@ end Matrix
 namespace TauCeti.KnotTheory
 
 /-- The right-handed trefoil's Seifert invariant has Conway polynomial `1 + z²`. -/
-theorem eval₂_conway_trefoil {S : Type*} [CommRing S] {s : Sˣ} :
+theorem eval₂_conway_trefoilSeifertMatrix {S : Type*} [CommRing S] {s : Sˣ} :
     Polynomial.eval₂ (Int.castRingHom S) ((s⁻¹ : Sˣ).val - s.val)
       (1 + Polynomial.X ^ 2 : ℤ[X]) =
       LaurentPolynomial.eval₂ (Int.castRingHom S) (s ^ 2)
@@ -77,7 +77,7 @@ theorem eval₂_conway_trefoil {S : Type*} [CommRing S] {s : Sˣ} :
   ring
 
 /-- The figure-eight's Seifert invariant has Conway polynomial `1 - z²`. -/
-theorem eval₂_conway_figureEight {S : Type*} [CommRing S] {s : Sˣ} :
+theorem eval₂_conway_figureEightSeifertMatrix {S : Type*} [CommRing S] {s : Sˣ} :
     Polynomial.eval₂ (Int.castRingHom S) ((s⁻¹ : Sˣ).val - s.val)
       (1 - Polynomial.X ^ 2 : ℤ[X]) =
       LaurentPolynomial.eval₂ (Int.castRingHom S) (s ^ 2)
