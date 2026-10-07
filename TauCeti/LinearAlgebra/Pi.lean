@@ -172,12 +172,13 @@ of the component hom spaces, provided those hom spaces are finite-dimensional. -
 public theorem finrank_linearMap_pi_eq_sum {k A ι κ : Type*} [Field k] [Semiring A]
     [Algebra k A] [Fintype ι] [Fintype κ] (S : ι → Type*) (T : κ → Type*)
     [∀ i, AddCommMonoid (S i)] [∀ i, Module A (S i)]
-    [∀ j, AddCommGroup (T j)] [∀ j, Module k (T j)] [∀ j, Module A (T j)]
-    [∀ j, IsScalarTower k A (T j)] [∀ i j, FiniteDimensional k (S i →ₗ[A] T j)] :
+    [∀ j, AddCommMonoid (T j)] [∀ j, Module k (T j)] [∀ j, Module A (T j)]
+    [∀ j, IsScalarTower k A (T j)] [∀ i j, Module.Finite k (S i →ₗ[A] T j)] :
     Module.finrank k (((i : ι) → S i) →ₗ[A] ((j : κ) → T j)) =
       ∑ i, ∑ j, Module.finrank k (S i →ₗ[A] T j) := by
   classical
-  let _ (i : ι) : FiniteDimensional k (S i →ₗ[A] ((j : κ) → T j)) :=
+  let _ (j : κ) : AddCommGroup (T j) := Module.addCommMonoidToAddCommGroup k
+  let _ (i : ι) : Module.Finite k (S i →ₗ[A] ((j : κ) → T j)) :=
     Module.Finite.equiv (LinearEquiv.linearMapPi (R := A) (M₂ := S i) (φ := T) k)
   rw [← (LinearMap.lsum A S k).finrank_eq, Module.finrank_pi_fintype]
   exact Finset.sum_congr rfl fun i _ ↦ by
