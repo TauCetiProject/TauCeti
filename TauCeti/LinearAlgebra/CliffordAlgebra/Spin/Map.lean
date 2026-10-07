@@ -8,6 +8,8 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Action
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpecialOrthogonal
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Map
+public import TauCeti.LinearAlgebra.QuadraticForm.Prod
+public import Mathlib.GroupTheory.NoncommCoprod
 
 /-!
 # Functoriality of Spin groups
@@ -36,6 +38,8 @@ fixed-complement result specializes this naturality to an orthogonal summand.
   summand fixes the other summand.
 * `QuadraticMap.IsometryEquiv.spinGroupMap_spinVectorAction_prod` combines these facts into the
   full action formula on an orthogonal product.
+* `QuadraticMap.spinGroupProd` combines Spin elements from two orthogonal summands, and its action
+  is componentwise.
 -/
 
 public section
@@ -286,6 +290,78 @@ theorem spinGroupMap_spinVectorAction_prod
   · simpa [f₁, f₂] using e.spinGroupMap_fixed_of_prod x m₂
 
 end QuadraticMap.IsometryEquiv
+
+namespace QuadraticMap
+
+universe u v w
+
+variable {R : Type u} [CommRing R]
+  {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
+  {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
+  (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂)
+
+private theorem spinGroupMap_inl_comm_spinGroupMap_inr
+    (x : spinGroup Q₁) (y : spinGroup Q₂) :
+    Commute (Isometry.spinGroupMap (Isometry.inl Q₁ Q₂) x)
+      (Isometry.spinGroupMap (Isometry.inr Q₁ Q₂) y) := by
+  apply Subtype.ext
+  exact CliffordAlgebra.commute_map_mul_map_of_isOrtho_of_mem_evenOdd_zero_left
+    (Isometry.inl Q₁ Q₂) (Isometry.inr Q₁ Q₂)
+    (fun _ _ ↦ IsOrtho.inl_inr _ _)
+    (x : CliffordAlgebra Q₁) (y : CliffordAlgebra Q₂) x.2.2 y.2.2
+
+/-- Combine Spin elements from two quadratic forms into a Spin element of their orthogonal
+product. -/
+def spinGroupProd : spinGroup Q₁ × spinGroup Q₂ →* spinGroup (Q₁.prod Q₂) :=
+  (Isometry.spinGroupMap (Isometry.inl Q₁ Q₂)).noncommCoprod
+    (Isometry.spinGroupMap (Isometry.inr Q₁ Q₂))
+    (spinGroupMap_inl_comm_spinGroupMap_inr Q₁ Q₂)
+
+/-- The Spin product is Clifford multiplication of the images of its two factors. -/
+@[simp]
+theorem coe_spinGroupProd_apply (x : spinGroup Q₁ × spinGroup Q₂) :
+    (spinGroupProd Q₁ Q₂ x : CliffordAlgebra (Q₁.prod Q₂)) =
+      CliffordAlgebra.map (Isometry.inl Q₁ Q₂) (x.1 : CliffordAlgebra Q₁) *
+        CliffordAlgebra.map (Isometry.inr Q₁ Q₂) (x.2 : CliffordAlgebra Q₂) := by
+  rw [spinGroupProd, MonoidHom.noncommCoprod_apply]
+  rfl
+
+/-- The Spin product acts componentwise on the orthogonal product. -/
+@[simp]
+theorem spinGroupProd_spinVectorAction [Invertible (2 : R)]
+    (x : spinGroup Q₁ × spinGroup Q₂) (m : M₁ × M₂) :
+    CliffordAlgebra.spinVectorAction (Q₁.prod Q₂) (spinGroupProd Q₁ Q₂ x) m =
+      (CliffordAlgebra.spinVectorAction Q₁ x.1 m.1,
+        CliffordAlgebra.spinVectorAction Q₂ x.2 m.2) := by
+  have hinl (n : M₁ × M₂) : CliffordAlgebra.spinVectorAction (Q₁.prod Q₂)
+      ((Isometry.inl Q₁ Q₂).spinGroupMap x.1) n =
+        (CliffordAlgebra.spinVectorAction Q₁ x.1 n.1, n.2) := by
+    convert
+      (IsometryEquiv.refl (Q₁.prod Q₂)).spinGroupMap_spinVectorAction_prod x.1 n.1 n.2
+        using 1 <;> rfl
+  have hinr (n : M₁ × M₂) : CliffordAlgebra.spinVectorAction (Q₁.prod Q₂)
+      ((Isometry.inr Q₁ Q₂).spinGroupMap x.2) n =
+        (n.1, CliffordAlgebra.spinVectorAction Q₂ x.2 n.2) := by
+    convert
+      (IsometryEquiv.prodComm Q₁ Q₂).spinGroupMap_spinVectorAction_prod x.2 n.2 n.1
+        using 1 <;> rfl
+  rw [spinGroupProd, MonoidHom.noncommCoprod_apply,
+    CliffordAlgebra.spinVectorAction_mul, LinearEquiv.mul_apply, hinr, hinl]
+
+/-- The Spin product projects to the product of the two special orthogonal transformations. -/
+@[simp]
+theorem spinToSpecialOrthogonal_spinGroupProd [Invertible (2 : R)]
+    [Module.Free R M₁] [Module.Finite R M₁] [Module.Free R M₂] [Module.Finite R M₂]
+    (x : spinGroup Q₁ × spinGroup Q₂) :
+    CliffordAlgebra.spinToSpecialOrthogonal (Q₁.prod Q₂) (spinGroupProd Q₁ Q₂ x) =
+      specialOrthogonalGroupProd Q₁ Q₂
+        (CliffordAlgebra.spinToSpecialOrthogonal Q₁ x.1,
+          CliffordAlgebra.spinToSpecialOrthogonal Q₂ x.2) := by
+  ext m <;>
+    simp only [CliffordAlgebra.coe_spinToSpecialOrthogonal_apply,
+      specialOrthogonalGroupProd_apply, spinGroupProd_spinVectorAction]
+
+end QuadraticMap
 
 namespace TauCeti.QuadraticMap
 
