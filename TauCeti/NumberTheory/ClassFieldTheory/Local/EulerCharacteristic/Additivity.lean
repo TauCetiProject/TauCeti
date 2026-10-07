@@ -32,7 +32,7 @@ alternating identity of orders.
 * `TauCeti.ClassFieldTheory.localEulerCharacteristic`: the positive-rational-valued local Euler
   characteristic of a finite smooth discrete Galois representation.
 * `TauCeti.ClassFieldTheory.localEulerCharacteristic_mul_of_exact`: multiplicativity in a short
-  exact sequence of finite smooth discrete representations.
+  exact sequence `0 → A → B → C → 0` with `B` finite and `B`, `C` smooth discrete.
 
 ## References
 
@@ -83,17 +83,23 @@ theorem localEulerCharacteristic_coe (hn : (n : F) ≠ 0) (A : GalRep n F)
   rfl
 
 /-- **Additivity of the local Euler characteristic.** If
-`0 → A → B → C → 0` is an exact sequence of finite smooth discrete representations, then
-`χ_F(B) = χ_F(A) χ_F(C)`. In applications it is enough to establish finiteness and smoothness of
-the middle representation: both properties pass to the subrepresentation and quotient. -/
+`0 → A → B → C → 0` is an exact sequence of representations with `B` finite and `B`, `C` smooth
+discrete, then `χ_F(B) = χ_F(A) χ_F(C)`. Finiteness of `A` and `C` and smoothness of `A` follow
+from the sequence (`TauCeti.IsSmoothDiscrete.of_injective`). Smoothness of `C` is assumed: the
+topology of `C` is part of its data, and a continuous surjection from a discrete module need not
+have discrete target. -/
 theorem localEulerCharacteristic_mul_of_exact (hn : IsUnit (n : F)) {A B C : GalRep n F}
-    [Finite A.V] [Finite B.V] [Finite C.V]
-    [Fact (IsSmoothDiscrete (ZMod n) A)] [Fact (IsSmoothDiscrete (ZMod n) B)]
-    [Fact (IsSmoothDiscrete (ZMod n) C)]
+    [Finite B.V] [Fact (IsSmoothDiscrete (ZMod n) B)] [Fact (IsSmoothDiscrete (ZMod n) C)]
     (f : A ⟶ B) (g : B ⟶ C) (hf : Function.Injective f.hom)
     (hfg : Function.Exact f.hom g.hom) (hg : Function.Surjective g.hom) :
+    haveI : Finite A.V := .of_injective _ hf
+    haveI : Finite C.V := .of_surjective _ hg
+    haveI : Fact (IsSmoothDiscrete (ZMod n) A) := ⟨.of_injective f hf Fact.out⟩
     localEulerCharacteristic hn.ne_zero B =
       localEulerCharacteristic hn.ne_zero A * localEulerCharacteristic hn.ne_zero C := by
+  have : Finite A.V := .of_injective _ hf
+  have : Finite C.V := .of_surjective _ hg
+  have : Fact (IsSmoothDiscrete (ZMod n) A) := ⟨.of_injective f hf Fact.out⟩
   let G := Field.absoluteGaloisGroup F
   let _ : DiscreteTopology A.V :=
     (Fact.out : IsSmoothDiscrete (ZMod n) A).discreteTopology

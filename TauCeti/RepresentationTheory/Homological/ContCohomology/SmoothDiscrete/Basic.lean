@@ -294,6 +294,19 @@ lemma IsSmoothDiscrete.res {H : Type*} [Monoid H] [TopologicalSpace H] {φ : H �
   rw [hpre]
   exact (hX.stabilizer_isOpen x).preimage hφ
 
+/-- Smoothness passes to the source of an injective morphism: a continuous injection into a
+discrete space has discrete source, and by equivariance the stabilizer of `x` is the stabilizer
+of `f x`. -/
+lemma IsSmoothDiscrete.of_injective {X Y : TopRep R G} (f : X ⟶ Y)
+    (hf : Function.Injective f.hom) (hY : IsSmoothDiscrete R Y) : IsSmoothDiscrete R X := by
+  have := hY.discreteTopology
+  refine ⟨.of_continuous_injective f.hom.continuous hf, fun x ↦ ?_⟩
+  have hstab : {g : G | X.ρ g x = x} = {g : G | Y.ρ g (f.hom x) = f.hom x} := by
+    ext g
+    simp only [Set.mem_ofPred_eq, ← f.hom.isIntertwining g x, hf.eq_iff]
+  rw [hstab]
+  exact hY.stabilizer_isOpen _
+
 omit [TopologicalSpace G] in
 /-- A discrete object is the image of its own underlying module under the dictionary; openness of
 the stabilizers plays no part, and a smooth discrete object supplies the discreteness through
