@@ -34,10 +34,9 @@ In the language of right `A`-modules, the kernel of
 ⨁_{b : i ⟶ j} e_i A ⟶ e_j A,    (z_b) ↦ ∑_b b z_b
 ```
 
-is the image of `e_j A ⟶ ⨁_b e_i A`, `y ↦ (c_b y)_b`. These are the first two maps of the
-standard projective resolution of the simple right module at `j`; the uniqueness of the
-last-arrow decomposition in `kR` (`TauCeti.PathAlgebra.sum_ofArrow_mul_eq_zero_iff`) is what
-lifts a relation among the `b z_b` in `A` to the relator.
+is the image of `e_j A ⟶ ⨁_b e_i A`, `y ↦ (e_i c_b y)_b`. The uniqueness of the last-arrow
+decomposition in `kR` (`TauCeti.PathAlgebra.sum_ofArrow_mul_eq_zero_iff`) is what lifts a relation
+among the `b z_b` in `A` to the relator.
 
 ## Main results
 
@@ -212,7 +211,7 @@ theorem exists_eq_sum_ofArrow_mul_of_mem_span_of_vertexIdempotent_mul
 `r_j = ∑_{b : i ⟶ j} b c_b`. If `∑_b b y_b` lies in the relation ideal `I`, then one element `Y`
 gives `e_i y_b ≡ e_i c_b Y` modulo `I` for every arrow `b : i ⟶ j`.
 
-Read in `A = kR / I`, this is exactness of `e_j A ⟶ ⨁_b e_i A ⟶ e_j A`, `y ↦ (c_b y)_b` and
+Read in `A = kR / I`, this is exactness of `e_j A ⟶ ⨁_b e_i A ⟶ e_j A`, `y ↦ (e_i c_b y)_b` and
 `(z_b) ↦ ∑_b b z_b`, at its middle term. -/
 theorem exists_sub_mul_mem_span_of_sum_ofArrow_mul_mem_span
     (hl : ∀ v, vertexIdempotent k v * r v = r v) {j : R}

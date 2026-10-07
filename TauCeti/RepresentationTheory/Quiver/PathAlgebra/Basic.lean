@@ -658,6 +658,7 @@ theorem pathAlgebraBasis_repr_single (x : Quiver.TotalPath Q) (c : k) :
 open PathAlgebra in
 /-- **The coordinates of `eᵥ f`**: left multiplication by the vertex idempotent at `v` keeps the
 coordinates of `f` on the paths ending at `v` and kills the others. -/
+@[simp]
 theorem pathAlgebraBasis_repr_vertexIdempotent_mul [DecidableEq Q] (v : Q) (f : pathAlgebra k Q)
     (x : Quiver.TotalPath Q) :
     (pathAlgebraBasis k Q).repr (vertexIdempotent k v * f) x =
@@ -1026,6 +1027,15 @@ theorem pathAlgebraBasis_repr_ofArrow_mul_cons {i j s : Q} (b : i ⟶ j)
       intro he
       exact h (congrArg (fun x : Quiver.TotalPath Q => x.2.1) he).symm
 
+/-- The simp-normal form of `TauCeti.PathAlgebra.pathAlgebraBasis_repr_ofArrow_mul_cons`, in which
+`TauCeti.PathAlgebra.ofArrow_eq_ofPath` has written the arrow as its length-one path. -/
+@[simp]
+theorem pathAlgebraBasis_repr_ofPath_toPath_mul_cons {i j s : Q} (b : i ⟶ j)
+    (q : _root_.Quiver.Path s i) (f : pathAlgebra k Q) :
+    (pathAlgebraBasis k Q).repr (ofPath ⟨i, j, b.toPath⟩ * f) ⟨s, j, q.cons b⟩ =
+      (pathAlgebraBasis k Q).repr f ⟨s, i, q⟩ :=
+  pathAlgebraBasis_repr_ofArrow_mul_cons b q f
+
 /-- A path ending in the arrow `b` has coordinate zero in `b' f` for every other arrow `b'` with
 the same target. -/
 theorem pathAlgebraBasis_repr_ofArrow_mul_cons_of_ne {i i' j s : Q} (b : i ⟶ j) (b' : i' ⟶ j)
@@ -1043,6 +1053,15 @@ theorem pathAlgebraBasis_repr_ofArrow_mul_cons_of_ne {i i' j s : Q} (b : i ⟶ j
       exact hb (Quiver.TotalPath.mk_cons_eq_mk_cons_iff.1 he).2.symm
     · rw [ofArrow_eq_ofPath, ofPath_eq_single, single_mul_single_of_not_composable h,
         map_zero, Finsupp.coe_zero, Pi.zero_apply]
+
+/-- The simp-normal form of `TauCeti.PathAlgebra.pathAlgebraBasis_repr_ofArrow_mul_cons_of_ne`, in
+which `TauCeti.PathAlgebra.ofArrow_eq_ofPath` has written the arrow `b'` as its length-one path. -/
+@[simp]
+theorem pathAlgebraBasis_repr_ofPath_toPath_mul_cons_of_ne {i i' j s : Q} (b : i ⟶ j)
+    (b' : i' ⟶ j) (hb : (⟨i', b'⟩ : Σ a, a ⟶ j) ≠ ⟨i, b⟩) (q : _root_.Quiver.Path s i)
+    (f : pathAlgebra k Q) :
+    (pathAlgebraBasis k Q).repr (ofPath ⟨i', j, b'.toPath⟩ * f) ⟨s, j, q.cons b⟩ = 0 :=
+  pathAlgebraBasis_repr_ofArrow_mul_cons_of_ne b b' hb q f
 
 end ArrowCoordinates
 

@@ -182,22 +182,6 @@ theorem sum_preprojectiveMk_ofArrow_mul_eq_zero_iff (v : Q)
     simp only [hy]
     exact sum_preprojectiveMk_ofArrow_mul_doubledArrowSign_smul_eq_zero k v y
 
-/-- Left multiplication by an arrow raises degrees: `b z` has positive degree for every `z`. -/
-private theorem preprojectiveMk_ofArrow_mul_mem_iSup {i j : Symmetrify Q} (b : i ⟶ j)
-    (z : preprojectiveAlgebra k Q) :
-    preprojectiveMk k Q (ofArrow b) * z ∈ ⨆ n, preprojectiveGrade k Q (n + 1) := by
-  have hz : z ∈ ⨆ n, preprojectiveGrade k Q n := by
-    rw [(isInternal_preprojectiveGrade k Q).submodule_iSup_eq_top]
-    trivial
-  refine Submodule.iSup_induction (motive := fun z =>
-      preprojectiveMk k Q (ofArrow b) * z ∈ ⨆ n, preprojectiveGrade k Q (n + 1)) _ hz
-    (fun n z hz => ?_) (by rw [mul_zero]; exact zero_mem _)
-    fun z z' hz hz' => by rw [mul_add]; exact add_mem hz hz'
-  refine Submodule.mem_iSup_of_mem n ?_
-  rw [add_comm]
-  exact mul_mem_preprojectiveGrade k Q
-    (preprojectiveMk_mem_preprojectiveGrade k Q (ofArrow_mem_grade_one b)) hz
-
 /-- **Exactness of the Koszul complex at `e_v Π`.** An element `x ∈ e_v Π` has positive degree,
 so maps to zero in the vertex augmentation module `S_v`, exactly when `x = ∑_b b z_b` for some
 `z_b ∈ e_i Π`, the sum over the arrows `b : i ⟶ v` of the doubled quiver. -/
