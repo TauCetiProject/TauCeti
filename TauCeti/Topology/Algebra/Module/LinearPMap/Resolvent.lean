@@ -11,11 +11,15 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 /-!
 # Continuous inverses of shifts of partial linear maps
 
-For a partial linear map `A` on a module over a commutative ring, `LinearPMap.IsResolventAt`
+For a partial linear map `A` on a module over a ring, `LinearPMap.IsResolventAt`
 says that a continuous linear map inverts `lambda • I - A` on the domain of `A`. The inverse
 is unique, and its existence defines `LinearPMap.resolventSet` and the chosen map
 `LinearPMap.resolvent`. These notions require only a topology on the module, with no norm or
 continuity assumptions on addition or scalar multiplication.
+
+Over a noncommutative ring, the scalar expression `x ↦ lambda • x - A x` need not be linear.
+The predicate still requires its inverse to be linear over the full scalar ring; a parameter
+whose shift is not linear therefore does not belong to the resolvent set.
 
 This file gives the graph characterization, the two inverse identities, and the fact that an
 operator has no proper extension sharing a resolvent point. On normed spaces the continuous
@@ -36,7 +40,7 @@ noncomputable section
 
 namespace LinearPMap
 
-variable {𝕜 X : Type*} [CommRing 𝕜] [AddCommGroup X] [TopologicalSpace X] [Module 𝕜 X]
+variable {𝕜 X : Type*} [Ring 𝕜] [AddCommGroup X] [TopologicalSpace X] [Module 𝕜 X]
 variable {A : X →ₗ.[𝕜] X} {lambda : 𝕜} {R : X →L[𝕜] X}
 
 /-! ## Inverting `lambda • I - A` -/

@@ -17,10 +17,11 @@ unchanged and translates its resolvent:
 `R(lambda, A - omega I) = R(lambda + omega, A)`.
 
 This file develops the characteristic resolvent API of the generic scalar shift from
-`TauCeti.LinearAlgebra.LinearPMap.Shift`, over an arbitrary nontrivially normed field — the
-generality of `LinearPMap.resolventSet` itself, so that a complex shift of a complex
-unbounded operator is covered.  The construction is independent of semigroups; in particular, it
-can be used for an operator not yet known to generate one.
+`TauCeti.LinearAlgebra.LinearPMap.Shift`. The results here are stated over an arbitrary
+nontrivially normed field, so a complex shift of a complex unbounded operator is covered.
+The continuous-inverse foundation itself applies to modules over a ring equipped with a
+topology. The construction is independent of semigroups; in particular, it can be used for
+an operator not yet known to generate one.
 
 ## Main results
 
