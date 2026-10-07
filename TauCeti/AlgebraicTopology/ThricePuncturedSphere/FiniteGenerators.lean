@@ -207,11 +207,9 @@ theorem transport_δZero_eq_periph0 :
         (⟨Subtype.val, continuous_subtype_val⟩ : C(puncturedNeighborhoodZero, _)) zeroBasePt
         (FundamentalGroup.fromPath (.mk δZero))) = periph0 := by
   rw [FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map,
-    FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply, periph0_def]
-  have h := γ0_trans_αZero_homotopic.symm.hcomp (Path.Homotopic.refl αZero.symm)
-  exact Quotient.sound ((Path.Homotopic.trans_assoc _ _ _).symm.trans
-    (h.trans ((Path.Homotopic.trans_assoc _ _ _).trans
-      (Path.Homotopic.trans_right_of_nullhomotopic (Path.Homotopic.trans_symm αZero)))))
+    periph0_def]
+  exact fundamentalGroupMulEquivOfPath_symm_fromPath_of_homotopic αZero
+    γ0_trans_αZero_homotopic
 
 /-- The point `3/4` inside the standard neighborhood of `1`. -/
 abbrev oneBasePt : puncturedNeighborhoodOne :=
@@ -304,11 +302,9 @@ theorem transport_δOne_eq_periph1 :
         (⟨Subtype.val, continuous_subtype_val⟩ : C(puncturedNeighborhoodOne, _)) oneBasePt
         (FundamentalGroup.fromPath (.mk δOne))) = periph1 := by
   rw [FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map,
-    FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply, periph1_def]
-  have h := γ1_trans_αOne_homotopic.symm.hcomp (Path.Homotopic.refl αOne.symm)
-  exact Quotient.sound ((Path.Homotopic.trans_assoc _ _ _).symm.trans
-    (h.trans ((Path.Homotopic.trans_assoc _ _ _).trans
-      (Path.Homotopic.trans_right_of_nullhomotopic (Path.Homotopic.trans_symm αOne)))))
+    periph1_def]
+  exact fundamentalGroupMulEquivOfPath_symm_fromPath_of_homotopic αOne
+    γ1_trans_αOne_homotopic
 
 /-- Transport along any connecting path gives the peripheral conjugacy class at `0`. -/
 theorem conjClassesEquivOfPath_δZero {x : ThricePuncturedSphere}
