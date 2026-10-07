@@ -167,7 +167,6 @@ private lemma groupScheme_X_hom_bundled :
 
 /-- The structural morphism of the general linear group scheme is induced by the algebra
 structure map on the determinant localization. -/
-@[simp]
 lemma groupScheme_X_hom :
     (groupScheme R n).X.hom =
       (groupSchemeSpecIso R n).hom ≫
@@ -427,7 +426,6 @@ theorem schemePointsMulEquiv_groupSchemePointMulEquiv
 
 /-- The inverse scheme-points equivalence sends an invertible matrix to the spectrum map induced
 by its canonical coordinate-algebra point. -/
-@[simp]
 lemma schemePointsMulEquiv_symm_apply (g : Matrix.GeneralLinearGroup (Fin n) A) :
     (schemePointsMulEquiv n A).symm g =
       groupSchemePointMulEquiv n A
