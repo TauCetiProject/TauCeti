@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Noncompact
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.WholeBundle.Basic
+public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 
 /-!
 # Whole normal bundles over noncompact Euclidean submanifolds
@@ -37,15 +38,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-
-private theorem unitBall_symm_apply_explicit {W : Type*} [NormedAddCommGroup W]
-    [NormedSpace ℝ W] (y : ball (0 : W) 1) :
-    (Homeomorph.unitBall.symm y : W) =
-      (Real.sqrt (1 - ‖y.1‖ ^ 2))⁻¹ • y.1 := by
-  exact (Homeomorph.unitBall_symm_apply y).trans
-    ((OpenPartialHomeomorph.toHomeomorphSourceTarget_symm_apply_coe
-      (OpenPartialHomeomorph.univUnitBall (E := W)) y).trans
-      (OpenPartialHomeomorph.univUnitBall_symm_apply y.1))
 
 /-- Radially compressing each normal fibre by its positive continuous radius identifies the whole
 normal bundle with the corresponding variable-radius open tube. -/
@@ -118,10 +110,10 @@ def normalBundleHomeomorphTubeOfRadius (f : M → V) (r : C(M, ℝ))
           rw [mem_ball_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (hr q.1.1).le]
           exact (inv_mul_lt_iff₀ (hr q.1.1)).mpr (by simpa using (mem_normalTubeOfRadius.mp q.2).2)⟩
       have hS : Homeomorph.unitBall.symm y =
-          (Real.sqrt (1 - ‖y.1‖ ^ 2))⁻¹ • y.1 := unitBall_symm_apply_explicit y
+          (Real.sqrt (1 - ‖y.1‖ ^ 2))⁻¹ • y.1 := Homeomorph.unitBall_symm_apply_explicit y
       have hV : Homeomorph.unitBall.symm (k q) =
           (Real.sqrt (1 - ‖(k q).1‖ ^ 2))⁻¹ • (k q).1 :=
-        unitBall_symm_apply_explicit (k q)
+        Homeomorph.unitBall_symm_apply_explicit (k q)
       simpa only [k, y, Function.comp_apply, Submodule.coe_smul, Submodule.norm_coe]
         using congrArg ((↑) : normalSubspace I f q.1.1 → V) hS |>.trans hV.symm
 
@@ -156,10 +148,13 @@ theorem normalBundleHomeomorphTubeOfRadius_symm_apply_snd (f : M → V) (r : C(M
       rw [mem_ball_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (hr q.1.1).le]
       exact (inv_mul_lt_iff₀ (hr q.1.1)).mpr (by simpa using (mem_normalTubeOfRadius.mp q.2).2)⟩
   have hy : Homeomorph.unitBall.symm y =
-      (Real.sqrt (1 - ‖y.1‖ ^ 2))⁻¹ • y.1 := unitBall_symm_apply_explicit y
-  change ((Homeomorph.unitBall.symm y : normalSubspace I f q.1.1) : V) = _
+      (Real.sqrt (1 - ‖y.1‖ ^ 2))⁻¹ • y.1 := Homeomorph.unitBall_symm_apply_explicit y
+  have hinv :
+      (((normalBundleHomeomorphTubeOfRadius f r hr).symm q).2 : V) =
+        ((Homeomorph.unitBall.symm y : normalSubspace I f q.1.1) : V) := by
+    rfl
   simpa only [y, ← Submodule.norm_coe, Submodule.coe_smul, Subtype.coe_mk]
-    using congrArg ((↑) : normalSubspace I f q.1.1 → V) hy
+    using hinv.trans (congrArg ((↑) : normalSubspace I f q.1.1 → V) hy)
 
 @[simp]
 theorem normalBundleHomeomorphTubeOfRadius_zeroSection (f : M → V) (r : C(M, ℝ))
