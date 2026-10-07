@@ -32,8 +32,8 @@ Finiteness of the count needs, in addition, compactness of the slice.
 
 ## Main results
 
-* `TauCeti.span_tangentConeAt_unstableSet_inter_stableSet_sup_ker_fderiv`: every level of `f` is
-  transverse to `W^u(p) ∩ W^s(q)`.
+* `TauCeti.span_tangentConeAt_unstableSet_inter_stableSet_sup_ker_fderiv_eq_top`: every level of
+  `f` is transverse to `W^u(p) ∩ W^s(q)`.
 * `TauCeti.IsNondegenerateCriticalPoint.exists_unstableSet_inter_stableSet_level_chart`: under
   transversality, the level slice is flattened by a `C¹` chart with `C¹` inverse.
 * `TauCeti.IsNondegenerateCriticalPoint.span_tangentConeAt_unstableSet_inter_stableSet_level`: its
@@ -74,7 +74,7 @@ private theorem fderiv_apply_gradient_ne_zero (hf : LipschitzWith K (∇ f)) (hp
 /-- **Levels are transverse to connecting trajectories.** At a point `y` of `W^u(p) ∩ W^s(q)` with
 `p ≠ q`, the tangent space of `W^u(p) ∩ W^s(q)` and the kernel of `df_y`, the tangent space of the
 level of `f` through `y`, span the whole space. -/
-theorem span_tangentConeAt_unstableSet_inter_stableSet_sup_ker_fderiv
+theorem span_tangentConeAt_unstableSet_inter_stableSet_sup_ker_fderiv_eq_top
     (hf : LipschitzWith K (∇ f)) (hpq : p ≠ q)
     (hyu : y ∈ Flow.unstableSet (negativeGradientFlow f hf) p)
     (hys : y ∈ Flow.stableSet (negativeGradientFlow f hf) q) :
@@ -125,7 +125,8 @@ private theorem level_slice (hp : IsNondegenerateCriticalPoint f p)
     ((hfs.of_le one_le_two).sub contDiff_const).contDiffAt
   have hgy : f y - c = 0 := by simp [hyc]
   have hs₁ := (hes₁ _ (e₁.map_source hy₁)).differentiableAt one_ne_zero
-  have htr' := span_tangentConeAt_unstableSet_inter_stableSet_sup_ker_fderiv hf hpq hyu hys
+  have htr' := span_tangentConeAt_unstableSet_inter_stableSet_sup_ker_fderiv_eq_top
+    hf hpq hyu hys
   rw [hlevel]
   exact ⟨exists_isSliceChart_inter_preimage_zero one_ne_zero (isSliceChart_iff.2 hS₁) hy₁
       ⟨hyu, hys⟩ he₁ hs₁ hg hg' hgy isOpen_univ (mem_univ y) hgC htr',
@@ -198,7 +199,8 @@ theorem finrank_span_tangentConeAt_unstableSet_inter_stableSet_level_add_morseIn
   have hdim := Submodule.finrank_sup_add_finrank_inf_eq
     (Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p ∩
       Flow.stableSet (negativeGradientFlow f hf) q) y)) (fderiv ℝ f y).ker
-  rw [span_tangentConeAt_unstableSet_inter_stableSet_sup_ker_fderiv hf hpq hyu hys, finrank_top,
+  rw [span_tangentConeAt_unstableSet_inter_stableSet_sup_ker_fderiv_eq_top hf hpq hyu hys,
+    finrank_top,
     ← (hp.level_slice hq hfs hf hpq hyu hys htr hyc).2] at hdim
   have hker := LinearMap.finrank_range_add_finrank_ker (fderiv ℝ f y : E →ₗ[ℝ] ℝ)
   rw [LinearMap.range_eq_top.2 (Flow.fderiv_surjective_of_mem_unstableSet_inter_stableSet

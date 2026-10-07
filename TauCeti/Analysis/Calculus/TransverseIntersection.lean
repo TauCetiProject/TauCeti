@@ -55,7 +55,7 @@ open scoped ContDiff
 namespace TauCeti
 
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [FiniteDimensional 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+  [FiniteDimensional 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- **A transverse intersection of embedded submanifolds is an embedded submanifold.** Let
 `C^n` charts `e₁` and `e₂` (`n ≠ 0`), with inverses differentiable at the images of `y`, flatten
@@ -160,6 +160,9 @@ theorem span_tangentConeAt_preimage_zero {n : ℕ∞ω} (hn : n ≠ 0) {g : E �
     (hU : IsOpen U) (hyU : y ∈ U) (hC : ∀ z ∈ U, ContDiffAt 𝕜 n g z) :
     Submodule.span 𝕜 (tangentConeAt 𝕜 (g ⁻¹' {0}) y) = g'.ker := by
   have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  let _ : FiniteDimensional 𝕜 F :=
+    FiniteDimensional.of_surjective g'.toLinearMap (LinearMap.range_eq_top.mp hg')
+  let _ : CompleteSpace F := FiniteDimensional.complete 𝕜 F
   obtain ⟨e, hye, -, he, hes, hS⟩ := hg.exists_isSliceChart_preimage_zero hn hg'
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
       (Submodule.closed_of_finiteDimensional _)) hU hyU hC
@@ -193,6 +196,9 @@ theorem exists_isSliceChart_inter_preimage_zero {n : ℕ∞ω} (hn : n ≠ 0) {S
       IsSliceChart e ((Submodule.span 𝕜 (tangentConeAt 𝕜 S y) ⊓ g'.ker : Submodule 𝕜 E) : Set E)
         (S ∩ g ⁻¹' {0}) := by
   have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  let _ : FiniteDimensional 𝕜 F :=
+    FiniteDimensional.of_surjective g'.toLinearMap (LinearMap.range_eq_top.mp hg')
+  let _ : CompleteSpace F := FiniteDimensional.complete 𝕜 F
   obtain ⟨e₂, hy₂, -, hc₂, hs₂, h₂⟩ := hg.exists_isSliceChart_preimage_zero hn hg'
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
       (Submodule.closed_of_finiteDimensional _)) hU hyU hC
@@ -213,6 +219,9 @@ theorem span_tangentConeAt_inter_preimage_zero {n : ℕ∞ω} (hn : n ≠ 0) {S 
     Submodule.span 𝕜 (tangentConeAt 𝕜 (S ∩ g ⁻¹' {0}) y) =
       Submodule.span 𝕜 (tangentConeAt 𝕜 S y) ⊓ g'.ker := by
   have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  let _ : FiniteDimensional 𝕜 F :=
+    FiniteDimensional.of_surjective g'.toLinearMap (LinearMap.range_eq_top.mp hg')
+  let _ : CompleteSpace F := FiniteDimensional.complete 𝕜 F
   obtain ⟨e₂, hy₂, -, hc₂, hs₂, h₂⟩ := hg.exists_isSliceChart_preimage_zero hn hg'
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
       (Submodule.closed_of_finiteDimensional _)) hU hyU hC
