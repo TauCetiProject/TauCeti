@@ -655,13 +655,15 @@ theorem explicitInfRes2_exact (hN : IsOpen (N : Set G))
       groupCohomology.apply_mul_fst_of_isCocycle₂_of_vanishing hf hR hL]
 
 variable (G M N) in
-/-- **Injectivity of inflation in degree two** when `H¹(N, M)` vanishes, for any normal subgroup
-`N` and coefficients of any topology. If the inflation of `f` is the coboundary of `c`, then
-`c - f (1, 1)` is a continuous `1`-cocycle on `N`, hence the coboundary of some `m`; the cochain
-`k = c - d⁰ m` is then constant on the cosets of `N`, takes `N`-fixed values, and descends to a
-primitive of `f` on `G ⧸ N`. -/
+/-- **Injectivity of inflation in degree two** when `H¹(N, M)` vanishes: for a normal subgroup
+`N` of `G` (not necessarily open) and coefficients `M` of any topology on whose `N`-fixed points
+`G ⧸ N` acts continuously, inflation `H²(G ⧸ N, M ^ N) → H²(G, M)` is injective. -/
 theorem explicitInfl2_injective [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)]
     [Subsingleton (H1 N M)] : Function.Injective (explicitInfl2 G M N) := by
+  -- If the inflation of `f` is the coboundary of `c`, then `c - f (1, 1)` is a continuous
+  -- `1`-cocycle on `N`, hence the coboundary of some `m`; the cochain `k = c - d⁰ m` is then
+  -- constant on the cosets of `N`, takes `N`-fixed values, and descends to a primitive of `f` on
+  -- `G ⧸ N`.
   rw [injective_iff_map_eq_zero]
   intro x hx
   induction x using QuotientAddGroup.induction_on with
