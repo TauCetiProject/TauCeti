@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
-import Mathlib.Data.Fintype.Powerset
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Subcomplex
 
 /-!
 # The topology of finite polyhedra
@@ -39,44 +38,12 @@ section Finite
 
 variable (K : AbstractSimplicialComplex ι)
 
-/-- The coordinate face spanned by `σ`, inside the full realization. -/
-private def coordinateFace (σ : Finset ι) : Set (Realization (⊤ : AbstractSimplicialComplex ι)) :=
-  {x | x.1.support ⊆ σ}
-
-private theorem isClosed_coordinateFace (σ : Finset ι) : IsClosed (coordinateFace σ) := by
-  have heq : coordinateFace σ =
-      ⋂ v ∈ (σ : Set ι)ᶜ, {x : Realization (⊤ : AbstractSimplicialComplex ι) | x.1 v = 0} := by
-    ext x
-    simp only [coordinateFace, mem_ofPred, mem_iInter, mem_compl_iff, Finset.mem_coe]
-    constructor
-    · intro h v hv
-      exact Finsupp.notMem_support_iff.mp (fun hx => hv (h hx))
-    · intro h v hv
-      by_contra hvσ
-      exact Finsupp.mem_support_iff.mp hv (h v hvσ)
-  rw [heq]
-  exact isClosed_biInter fun v _ => isClosed_eq
-    ((continuous_apply v).comp (continuous_realization_coe ⊤)) continuous_const
-
 /-- The part of the full realization supported on a face of `K`. -/
 private def coordinatePolyhedron : Set (Realization (⊤ : AbstractSimplicialComplex ι)) :=
   {x | x.1.support ∈ K}
 
-private theorem coordinatePolyhedron_eq_iUnion :
-    coordinatePolyhedron K = ⋃ σ : Face K, coordinateFace σ.1 := by
-  ext x
-  simp only [coordinatePolyhedron, mem_ofPred_eq, mem_iUnion, coordinateFace]
-  constructor
-  · intro hx
-    exact ⟨⟨x.1.support, hx⟩, Finset.Subset.rfl⟩
-  · rintro ⟨σ, hσ⟩
-    exact K.isRelLowerSet_faces.mem_of_le σ.2 hσ
-      ((⊤ : AbstractSimplicialComplex ι).isRelLowerSet_faces.prop_of_mem (support_mem ⊤ x))
-
-private theorem isClosed_coordinatePolyhedron [Finite ι] : IsClosed (coordinatePolyhedron K) := by
-  let := Fintype.ofFinite ι
-  rw [coordinatePolyhedron_eq_iUnion]
-  exact isClosed_iUnion_of_finite fun σ => isClosed_coordinateFace σ.1
+private theorem isClosed_coordinatePolyhedron : IsClosed (coordinatePolyhedron K) :=
+  isClosed_setOf_support_mem (P := K.toPreAbstractSimplicialComplex) le_top
 
 /-- Recover a weak realization point from its coordinates in the full simplex. -/
 private def fromCoordinates (x : coordinatePolyhedron K) : Realization K :=
@@ -88,35 +55,15 @@ private theorem fromCoordinates_surjective : Function.Surjective (fromCoordinate
   refine ⟨⟨realizationMap le_top x, ?_⟩, Subtype.ext (realizationMap_val le_top x)⟩
   simpa only [coordinatePolyhedron, mem_ofPred_eq, realizationMap_val] using support_mem K x
 
-private def faceFromCoordinates (σ : Face K)
-    (x : (coordinatePolyhedron K) ↓∩ coordinateFace σ.1) : StandardSimplex σ.1 :=
-  ⟨x.1.1.1, by
-    rw [Finset.coe_image, mem_standardSimplex_iff]
-    refine ⟨Realization.nonneg ⊤ x.1.1, ?_, x.2⟩
-    exact StandardSimplex.sum_eq_one (σ := (carrier ⊤ x.1.1).1)
-      ⟨x.1.1.1, mem_convexHull_carrier ⊤ x.1.1⟩⟩
-
-private theorem continuous_fromCoordinates [Finite ι] : Continuous (fromCoordinates K) := by
-  let := Fintype.ofFinite ι
-  let C : Face K → Set (coordinatePolyhedron K) :=
-    fun σ => (coordinatePolyhedron K) ↓∩ coordinateFace σ.1
-  have hC : ∀ σ, IsClosed (C σ) := fun σ =>
-    (isClosed_coordinateFace σ.1).preimage continuous_subtype_val
-  have hcover : ⋃ σ, C σ = univ := by
-    ext x
-    simp only [C, mem_iUnion, mem_preimage, mem_univ, iff_true]
-    exact ⟨⟨x.1.1.support, x.2⟩, Finset.Subset.rfl⟩
-  apply (locallyFinite_of_finite C).continuous hcover hC
-  intro σ
-  rw [continuousOn_iff_continuous_domRestrict]
-  have hface : Continuous (faceFromCoordinates K σ) := by
-    apply continuous_induced_rng.mpr
-    exact (continuous_realization_coe ⊤).comp
-      (continuous_subtype_val.comp continuous_subtype_val)
-  exact ((continuous_faceInclusion K σ).comp hface).congr fun x => by
-    apply Subtype.ext
-    rw [Function.comp_apply, faceInclusion_val]
-    rfl
+private theorem continuous_fromCoordinates : Continuous (fromCoordinates K) := by
+  apply (continuous_subtype_iff_faceInclusion
+    (P := K.toPreAbstractSimplicialComplex) le_top).mpr
+  intro σ hσ
+  convert continuous_faceInclusion K ⟨σ, hσ⟩ using 1
+  funext x
+  apply Subtype.ext
+  rw [faceInclusion_val]
+  exact faceInclusion_val ⊤ ⟨σ, (le_top : K ≤ ⊤) hσ⟩ x
 
 private theorem compactSpace_realization_of_nonempty [Finite ι] [Nonempty ι] :
     CompactSpace (Realization K) := by
