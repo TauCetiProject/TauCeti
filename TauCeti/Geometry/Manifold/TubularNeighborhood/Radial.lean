@@ -25,6 +25,9 @@ injectivity of the core map, or normal framing is required. A `C^(n+1)` immersio
 
 The fibre maps reuse Mathlib's `OpenPartialHomeomorph.univUnitBall` and its smoothness
 theorems, by Yury Kudryashov and Oliver Nash.
+This construction adapts the radial fibre formula of Tau Ceti's prior topological
+formalization `TauCeti.normalBundleHomeomorphTube` in
+`TauCeti/Geometry/Manifold/TubularNeighborhood/WholeBundle.lean` to the smooth normal bundle.
 
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Theorem 6.24
 (tubular neighbourhoods).
@@ -43,8 +46,9 @@ variable {V E H M F : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
 
-/-- Compress each normal fibre radially to a ball of radius `ε`, keeping its base point.
-For positive `ε`, the inverse on that ball is `normalBundleRadialInverse`. -/
+/-- Scale the unit-ball radial compression in each normal fibre by `ε`, keeping its base point.
+When `0 < ε`, its image in each fibre is the open ball of radius `ε`, and the inverse on
+that ball is `normalBundleRadialInverse`. -/
 def normalBundleRadialMap (f : M → V) (ε : ℝ)
     (p : TotalSpace F (fun x => normalSubspace I f x)) :
     TotalSpace F (fun x => normalSubspace I f x) :=
