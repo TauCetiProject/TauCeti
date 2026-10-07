@@ -85,12 +85,7 @@ theorem mem_centralizer_range_weightTorusPoints_iff_apply_eq_zero_of_weightChar_
     have hgeneralLinear : Commute
         (weightTorusPoints A s : GL (Fin 26) A) (g : GL (Fin 26) A) := by
       apply Units.ext
-      change
-        (((weightTorusPoints A s : GL (Fin 26) A) : Matrix (Fin 26) (Fin 26) A) *
-            ((g : GL (Fin 26) A) : Matrix (Fin 26) (Fin 26) A)) =
-          (((g : GL (Fin 26) A) : Matrix (Fin 26) (Fin 26) A) *
-            ((weightTorusPoints A s : GL (Fin 26) A) : Matrix (Fin 26) (Fin 26) A))
-      rw [coe_weightTorusPoints, F4ShortRoot.coe_weightTorusPoints,
+      rw [Units.val_mul, Units.val_mul, coe_weightTorusPoints, F4ShortRoot.coe_weightTorusPoints,
         UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
       exact hmatrix.eq
     exact (Commute.of_map (points A).subtype_injective hgeneralLinear).eq
