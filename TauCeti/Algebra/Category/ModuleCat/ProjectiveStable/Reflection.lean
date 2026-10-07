@@ -58,7 +58,7 @@ theorem indecomposable_iff_isZero_projective_retract (M : ModuleCat.{v} A)
     · exact False.elim (hM.1 ((IsZero.iff_id_eq_zero (F.obj M)).mpr (by
         rw [← F.map_id, ← he, F.map_comp, h0.eq_of_tgt (F.map r.r) 0, zero_comp])))
   · intro hP
-    apply Functor.indecomposable_of_obj_of_isZero_retract F hM
+    apply Functor.indecomposable_of_indecomposable_obj_of_reflects_isZero_retract F hM
     intro P r h0
     exact hP r ((ExactStructure.abelian_isProjective_iff P).mp
       ((ExactStructure.isZero_projectiveStableFunctor_obj_iff _ P).mp h0))

@@ -31,7 +31,8 @@ variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasBinaryBiproducts
 
 /-- A functor preserving zero morphisms and binary biproducts reflects indecomposability at `X`
 if every retract of `X` whose image is zero is itself zero. -/
-theorem indecomposable_of_obj_of_isZero_retract (F : C ⥤ D) [PreservesZeroMorphisms F]
+theorem indecomposable_of_indecomposable_obj_of_reflects_isZero_retract (F : C ⥤ D)
+    [PreservesZeroMorphisms F]
     [PreservesBinaryBiproducts F] {X : C} (hX : Indecomposable (F.obj X))
     (hF : ∀ {Y : C}, Retract Y X → IsZero (F.obj Y) → IsZero Y) :
     Indecomposable X := by
