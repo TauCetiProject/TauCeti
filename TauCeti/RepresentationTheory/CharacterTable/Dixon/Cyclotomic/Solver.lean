@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+-- Lean requires this public import to compile the executable solver through its private helpers.
 public import TauCeti.Data.FinEnum.Perm
 import Mathlib.Data.List.NodupEquivFin
 import TauCeti.Data.Array.OfFn
