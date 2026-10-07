@@ -16,7 +16,8 @@ A family of plane polynomials admits a ramified analytic splitting near the
 distinguished hyperplane. If its discriminant is a power of the ramification
 parameter times an analytic unit, the ambient order of each plane polynomial
 at each labelled root section is locally constant in the family parameter.
-On an open preconnected parameter set these orders are constant everywhere.
+On a preconnected parameter set these orders are constant everywhere, assuming
+the splitting and discriminant hypotheses as germs at each point.
 
 These are orders in both coordinates of the plane polynomial, rather than
 multiplicities in its vertical fiber. The plane polynomials may themselves be
@@ -89,29 +90,28 @@ theorem eventually_orderAt_root_eq_of_puiseux {x₀ : E} (hN : 0 < N)
   exact (horder x hx i).trans ((Finset.sum_congr rfl fun j _ ↦ hc i j).trans
     (horder x₀ hslice.self_of_nhds i).symm)
 
-/-- On an open preconnected parameter set, a ramified analytic splitting with
+/-- On a preconnected parameter set, a ramified analytic splitting with
 power-times-unit discriminant has constant ambient plane order on every
-labelled root section. The order can differ between sections. -/
-theorem orderAt_root_eq_of_puiseux {U : Set E} {R : ℝ}
-    (hU : IsOpen U) (hUc : IsPreconnected U) (hR : 0 < R) (hN : 0 < N)
-    (hr : ∀ i, AnalyticOnNhd ℂ (r i) (U ×ˢ ball 0 R))
-    (hsplit : ∀ b ∈ U ×ˢ ball 0 R,
+labelled root section. Analyticity, splitting, and the discriminant identity
+are only required as germs at each point of the distinguished hyperplane.
+The order can differ between sections. -/
+theorem orderAt_root_eq_of_puiseux {U : Set E}
+    (hUc : IsPreconnected U) (hN : 0 < N)
+    (hr : ∀ x ∈ U, ∀ i, AnalyticAt ℂ (r i) (x, 0))
+    (hsplit : ∀ x ∈ U, ∀ᶠ b in 𝓝 (x, (0 : ℂ)),
       MvPolynomial.aeval ![C (c b.1 + b.2 ^ N), X] (p b.1) =
         ∏ i, (X - C (r i b)))
-    (hu : AnalyticOnNhd ℂ u (U ×ˢ ball 0 R))
+    (hu : ∀ x ∈ U, AnalyticAt ℂ u (x, 0))
     (hu0 : ∀ x ∈ U, u (x, 0) ≠ 0)
-    (hdiscr : ∀ b ∈ U ×ˢ ball 0 R,
+    (hdiscr : ∀ x ∈ U, ∀ᶠ b in 𝓝 (x, (0 : ℂ)),
       (MvPolynomial.aeval ![C (c b.1 + b.2 ^ N), X] (p b.1)).discr =
         b.2 ^ a * u b)
     {x y : E} (hx : x ∈ U) (hy : y ∈ U) (i : Fin n) :
     (p x).orderAt ![c x, r i (x, 0)] = (p y).orderAt ![c y, r i (y, 0)] := by
   apply hUc.apply_eq_of_eventually_eq _ hx hy
   intro z hz
-  have hmem : ∀ᶠ b in 𝓝 (z, (0 : ℂ)), b ∈ U ×ˢ ball 0 R :=
-    (hU.prod isOpen_ball).mem_nhds ⟨hz, mem_ball_self hR⟩
   exact ((eventually_orderAt_root_eq_of_puiseux hN
-    (fun j ↦ hr j (z, 0) ⟨hz, mem_ball_self hR⟩) (hmem.mono hsplit)
-    (hu (z, 0) ⟨hz, mem_ball_self hR⟩) (hu0 z hz)
-    (hmem.mono hdiscr)).mono fun _ h ↦ h i).filter_mono nhdsWithin_le_nhds
+    (hr z hz) (hsplit z hz) (hu z hz) (hu0 z hz)
+    (hdiscr z hz)).mono fun _ h ↦ h i).filter_mono nhdsWithin_le_nhds
 
 end TauCeti
