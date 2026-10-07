@@ -397,6 +397,8 @@ theorem card_path_src_tgt [Fintype A] :
 
 /-- The generalized Kronecker quiver on `n` arrows has `n + 2` paths: the two trivial paths and the
 arrows themselves. -/
+-- Prefer this normal form to unfolding `TotalPath` with `Fintype.card_sigma`.
+@[simp high]
 theorem card_totalPath [Fintype A] :
     Fintype.card (Quiver.TotalPath (Kronecker A)) = Fintype.card A + 2 := by
   simpa using Fintype.card_congr (totalPathEquivArrowSumBool (A := A))
