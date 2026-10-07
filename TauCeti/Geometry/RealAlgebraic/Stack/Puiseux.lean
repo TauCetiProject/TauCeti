@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.RealAlgebraic.Stack.Delineation
 public import TauCeti.Analysis.Polynomial.Puiseux.RealRoots
 import TauCeti.Topology.Algebra.Polynomial
-import Mathlib.Analysis.Convex.Topology
 import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
@@ -41,7 +40,6 @@ open Filter Function Metric Polynomial Set Topology
 namespace TauCeti
 
 variable {E B : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-  [NormedSpace ℝ E] [IsScalarTower ℝ ℂ E]
   [NormedAddCommGroup B] [NormedSpace ℝ B]
 
 /-- A prepared monic complex splitting restricts to an analytic real delineation on a ball in

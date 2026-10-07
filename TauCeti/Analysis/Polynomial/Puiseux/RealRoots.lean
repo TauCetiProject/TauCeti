@@ -37,7 +37,6 @@ open Filter Polynomial Set Topology
 namespace TauCeti
 
 variable {E B : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-  [NormedSpace ℝ E] [IsScalarTower ℝ ℂ E]
   [NormedAddCommGroup B] [NormedSpace ℝ B]
 
 /-- A complete analytic complex splitting with power-times-unit discriminant restricts on
