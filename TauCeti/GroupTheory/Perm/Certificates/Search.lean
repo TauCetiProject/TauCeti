@@ -5,7 +5,7 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.GroupTheory.Perm.Certificates.Encoding
+public import TauCeti.GroupTheory.Perm.Certificates.Encoding.Basic
 public import TauCeti.Probability.FiniteSeed.Amplification
 
 /-!
