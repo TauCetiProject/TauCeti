@@ -217,10 +217,11 @@ attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex in
 /-- On the class in `W^ab(p)` of an element `v` of `V`, the transfer `W^ab(p) → V^ab(p)` is the
 norm of the image `W.map (mk' V)` of `W` in `G ⧸ V`: `Ver_{W→V} [v] = ∏ s, s • [v]`. So the
 transfer after the map `V^ab(p) → W^ab(p)` induced by the inclusion is the norm of `W ⧸ V`. -/
-theorem abelianizationProPTransferLe_mk_inclusion [V.Normal]
-    [Fintype (W.map (QuotientGroup.mk' V))] (v : V) :
+theorem abelianizationProPTransferLe_mk_inclusion [V.Normal] (v : V) :
+    letI := Fintype.ofFinite (W.map (QuotientGroup.mk' V))
     abelianizationProPTransferLe p hVW hV (abelianizationProPMk p G W (Subgroup.inclusion hVW v)) =
       ∏ s : W.map (QuotientGroup.mk' V), (s : G ⧸ V) • abelianizationProPMk p G V v := by
+  let := Fintype.ofFinite (W.map (QuotientGroup.mk' V))
   have hv : Subgroup.inclusion hVW v ∈ V.subgroupOf W := v.2
   -- The inclusion and the corresponding element of `V.subgroupOf W` have definitionally equal
   -- carriers; there is no separate inclusion map between these two presentations to rewrite.
