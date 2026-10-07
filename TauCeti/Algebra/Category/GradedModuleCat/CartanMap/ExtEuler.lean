@@ -80,6 +80,7 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
 idempotent `f` of degree zero and a finite-dimensional graded module `M`,
 `χ_q(Af, M) = ∑ₚ dim_k(f • Mₚ) qᵖ`. This holds for every admissibility witness and every
 `HasExt` instance. -/
+@[simp]
 theorem gradedExtEuler_ofIdeal_span_singleton [HasExt.{w} (GradedModuleCat.{uA} 𝒜)] {f : A}
     (hf : IsIdempotentElem f) (hf₀ : f ∈ 𝒜 0) (hI : (Ideal.span {f} : Ideal A).IsHomogeneous 𝒜)
     (M : GradedModuleCat.{uA} 𝒜) [Module.Finite k M]
@@ -151,6 +152,7 @@ theorem gradedProjectiveExtEuler_of_of (P : (gradedFiniteProjectiveModules 𝒜)
 
 /-- **Pairing against `[Af]` is the idempotent coordinate of `f`**: for an idempotent `f` of degree
 zero, `χ_q([Af], -)` is the `ℤ[q,q⁻¹]`-linear map sending `[M]` to `∑ₚ dim_k(f • Mₚ) qᵖ`. -/
+@[simp]
 theorem gradedProjectiveExtEuler_ofIdeal_span_singleton {f : A} (hf : IsIdempotentElem f)
     (hf₀ : f ∈ 𝒜 0) (hI : (Ideal.span {f} : Ideal A).IsHomogeneous 𝒜) :
     gradedProjectiveExtEuler 𝒜 (LaurentK0.of.{uA} _
@@ -174,6 +176,7 @@ variable {I : Type uI} (S : I → (gradedFiniteModules 𝒜).FullSubcategory) {e
 include he₀ hne hself in
 /-- **Kronecker pairing under the q-Euler form**: if the finite graded modules `Sⱼ` and the
 degree-zero idempotents `eᵢ` satisfy `gdim(eᵢ • Sⱼ) = δᵢⱼ`, then `χ_q([A eᵢ], [Sⱼ]) = δᵢⱼ`. -/
+@[simp]
 theorem gradedProjectiveExtEuler_basis [DecidableEq I] (i j : I) :
     gradedProjectiveExtEuler 𝒜 (LaurentK0.of.{uA} _
         ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i}) (hI i),
@@ -190,6 +193,7 @@ theorem gradedProjectiveExtEuler_basis [DecidableEq I] (i j : I) :
 /-- **Pairing against `[A eᵢ]` is the `i`th simple-class coordinate**: for an exhaustive family of
 graded simples `Sᵢ` cut out by degree-zero idempotents `eᵢ`, the form `χ_q([A eᵢ], -)` is the
 `i`th coordinate functional of the graded simple-class basis of `G₀^gr(mod A)`. -/
+@[simp]
 theorem gradedProjectiveExtEuler_ofIdeal_span_singleton_eq_repr
     (hS : IsExhaustiveGradedSimpleFamily S) (i : I)
     (x : LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜)) :
