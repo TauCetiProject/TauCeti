@@ -40,7 +40,20 @@ Each coordinate adds barycentric weights over a fibre of the corresponding verte
 def orderedProdRealizationMap (K : AbstractSimplicialComplex α)
     (L : AbstractSimplicialComplex β) :
     C(Realization (K.orderedProd L), Realization K × Realization L) :=
-  (K.orderedProdFst L).realizationMap.prodMk (K.orderedProdSnd L).realizationMap
+  let fst := PreAbstractSimplicialComplex.SimplicialMap.orderedProdFst
+    K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex
+  let snd := PreAbstractSimplicialComplex.SimplicialMap.orderedProdSnd
+    K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex
+  -- Transport only the face proofs so that the vertex functions retain their computation rules.
+  let fst' : PreAbstractSimplicialComplex.SimplicialMap
+      (K.orderedProd L).toPreAbstractSimplicialComplex K.toPreAbstractSimplicialComplex :=
+    ⟨fst, fun _ h ↦ fst.map_face
+      (by simpa only [orderedProd_toPreAbstractSimplicialComplex] using h)⟩
+  let snd' : PreAbstractSimplicialComplex.SimplicialMap
+      (K.orderedProd L).toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex :=
+    ⟨snd, fun _ h ↦ snd.map_face
+      (by simpa only [orderedProd_toPreAbstractSimplicialComplex] using h)⟩
+  fst'.realizationMap.prodMk snd'.realizationMap
 
 /-- The first marginal of the barycentric coordinates. -/
 @[simp]
