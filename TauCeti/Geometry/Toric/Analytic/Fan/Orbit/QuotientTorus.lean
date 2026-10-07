@@ -33,7 +33,6 @@ of `σ`, with the subspace topology of the realization, is homeomorphic to `T_{N
   quotient torus `T_{N(σ)}`.
 * `TauCeti.Toric.Fan.stabilizer_analyticDistinguishedPoint`: the stabilizer of the distinguished
   point of `σ` is the kernel of `T_N → T_{N(σ)}`.
-* `TauCeti.Toric.Fan.smul_mem_analyticConeOrbit`: the torus preserves the orbit of each cone.
 * `TauCeti.Toric.Fan.analyticConeOrbitTorusHomeomorph`: the orbit of `σ` is homeomorphic to the
   quotient torus `T_{N(σ)}`.
 * `TauCeti.Toric.Fan.analyticConeOrbitTorusHomeomorph_smul`: the homeomorphism is equivariant
@@ -78,13 +77,6 @@ theorem stabilizer_analyticDistinguishedPoint (σ : Φ.cones) :
   exact forall_congr' fun m ↦ imp_congr_left
     ((Φ.isToricCone σ.2).rational.forall_realCharacter_eq_zero_iff_coneSublattice_le_ker
       Φ.lattice m)
-
-/-- The torus preserves the orbit of every cone. -/
-theorem smul_mem_analyticConeOrbit {σ : Φ.cones} (T : ComplexTorus N)
-    {x : Φ.analyticRealization hΦ} (hx : x ∈ Φ.analyticConeOrbit hΦ σ) :
-    T • x ∈ Φ.analyticConeOrbit hΦ σ := by
-  rw [analyticConeOrbit_eq_orbit] at hx ⊢
-  exact MulAction.mem_orbit_of_mem_orbit T hx
 
 /-- Pulling a character of `N ⧸ N_σ` back along the quotient map is composition with it. -/
 private theorem compHom'_mk'_coneSublattice (σ : PointedCone ℝ V)
@@ -225,6 +217,7 @@ theorem analyticConeOrbitTorusHomeomorph_smul_analyticDistinguishedPoint (σ : �
 
 /-- The inverse identification sends the image of a torus point `T` in the quotient torus to the
 translate of the distinguished point of `σ` by `T`. -/
+@[simp]
 theorem coe_analyticConeOrbitTorusHomeomorph_symm_complexTorusMap (σ : Φ.cones)
     (T : ComplexTorus N) :
     ((Φ.analyticConeOrbitTorusHomeomorph hΦ σ).symm
