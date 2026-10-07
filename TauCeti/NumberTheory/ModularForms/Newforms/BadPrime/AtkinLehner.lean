@@ -47,8 +47,9 @@ classification of the bad-prime eigenvalues of a newform, at trivial nebentypus.
   nebentypus has `a_p = -ε_p · (√p) ^ (k - 2)` at every prime `p ∥ N`.
 * `HeckeRing.GL2.Newform.qExpansion_coeff_prime_ne_zero_of_isExactDivisor` and
   `HeckeRing.GL2.Newform.qExpansion_coeff_prime_sq_of_isExactDivisor`: so `a_p ≠ 0` and
-  `a_p ^ 2 = p ^ (k - 2)`; `simp` proves the latter via
-  `HeckeRing.GL2.Newform.atkinLehnerSign_mul_sqrt_zpow_sq`.
+  `a_p ^ 2 = p ^ (k - 2)`, the latter from
+  `HeckeRing.GL2.Newform.atkinLehnerSign_mul_sqrt_zpow_sq`: `(ε_p · (√p) ^ (k - 2)) ^ 2 =
+  p ^ (k - 2)`.
 
 ## References
 
@@ -185,8 +186,8 @@ nebentypus has `a_p(f) = -ε_p(f) · (√p) ^ (k - 2)` at every prime `p` exactl
 level, where `ε_p(f) = ±1` is its Atkin–Lehner sign at `p`. With
 `Newform.heckeUCuspNat_eq_qExpansion_coeff_smul` this is the eigenvalue of `U_p` on `f`.
 
-The hypothesis `p ∥ N` is taken as `p ∣ N` and `¬ p ^ 2 ∣ N`
-(`TauCeti.Nat.IsExactDivisor.of_not_sq_dvd`), side conditions `simp` can discharge. -/
+The hypothesis `p ∥ N` is stated as `p ∣ N` and `¬ p ^ 2 ∣ N`, which characterize it for a prime
+`p` (`TauCeti.Nat.IsExactDivisor.of_not_sq_dvd`). -/
 @[simp]
 theorem qExpansion_coeff_prime_eq_neg_atkinLehnerSign_mul (f : Newform N k) (hχ : f.χ = 1)
     (hp : p.Prime) (hpN : p ∣ N) (hpsq : ¬ p ^ 2 ∣ N) :
@@ -228,9 +229,9 @@ theorem qExpansion_coeff_prime_ne_zero_of_isExactDivisor (f : Newform N k) (hχ 
     (Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr hp.pos))))
   rcases f.atkinLehnerSign_eq_one_or_neg_one hχ h with hε | hε <;> simp [hε]
 
-/-- The square of `ε_p(f) · (√p) ^ (k - 2)` is `p ^ (k - 2)`, since `ε_p(f) = ±1`. This is the
-`simp` normal form of `a_p(f) ^ 2` after `qExpansion_coeff_prime_eq_neg_atkinLehnerSign_mul`, so
-with it `simp` proves `qExpansion_coeff_prime_sq_of_isExactDivisor`. -/
+/-- The square of `ε_p(f) · (√p) ^ (k - 2)` is `p ^ (k - 2)`, since the Atkin–Lehner sign
+`ε_p(f)` at an exact divisor `p ∥ N` is `±1`. By `qExpansion_coeff_prime_eq_neg_atkinLehnerSign_mul`
+this is the square of the eigenvalue `a_p(f)`. -/
 @[simp]
 theorem atkinLehnerSign_mul_sqrt_zpow_sq (f : Newform N k) (hχ : f.χ = 1) (h : p ∥ N) :
     (f.atkinLehnerSign hχ h * ((Real.sqrt p : ℝ) : ℂ) ^ (k - 2)) ^ 2 = (p : ℂ) ^ (k - 2) := by
@@ -241,8 +242,9 @@ theorem atkinLehnerSign_mul_sqrt_zpow_sq (f : Newform N k) (hχ : f.χ = 1) (h :
   rw [mul_pow, hε, one_mul, ← zpow_natCast, ← zpow_mul, mul_comm, zpow_mul, zpow_natCast, hs]
 
 /-- **The square of the bad-prime eigenvalue at `p ∥ N` is `p ^ (k - 2)`**, for a newform of
-trivial nebentypus. In terms of `p ∣ N` and `¬ p ^ 2 ∣ N`, `simp` proves this from
-`qExpansion_coeff_prime_eq_neg_atkinLehnerSign_mul` and `atkinLehnerSign_mul_sqrt_zpow_sq`. -/
+trivial nebentypus: `a_p(f) = ±(√p) ^ (k - 2)` by
+`qExpansion_coeff_prime_eq_neg_atkinLehnerSign_mul`, and the sign squares to `1`
+(`atkinLehnerSign_mul_sqrt_zpow_sq`). -/
 theorem qExpansion_coeff_prime_sq_of_isExactDivisor (f : Newform N k) (hχ : f.χ = 1)
     (hp : p.Prime) (h : p ∥ N) : (qExpansion 1 f.toCuspForm).coeff p ^ 2 = (p : ℂ) ^ (k - 2) := by
   have hpsq := h.not_sq_dvd hp.one_lt.ne'
