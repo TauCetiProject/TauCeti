@@ -113,14 +113,12 @@ theorem kostant_lie_ι_mul_of_mem_rootSpace
     (hc : ∀ h : H, ⁅(h : L), c⁆ = mu h • c) (h : H) :
     ⁅(h : L), ι (TauCeti.LieAlgebra.killingQuadraticForm K L) y * c⁆ =
       (χ h + mu h) • (ι (TauCeti.LieAlgebra.killingQuadraticForm K L) y * c) := by
-  rw [kostant_lie_def, ← mul_assoc]
-  have hcomm := adjointCliffordHom_lie_ι K L (h : L) y
-  rw [LieRing.of_associative_ring_bracket] at hcomm
+  rw [kostant_lie_def, ← mul_assoc, ← kostant_lie_def, kostant_lie_ι]
   have hy' := (TauCeti.mem_genWeightSpace_iff_forall_lie_eq_smul.mp hy) h
-  rw [hy'] at hcomm
-  rw [sub_eq_iff_eq_add] at hcomm
-  rw [hcomm, add_mul, map_smul, smul_mul_assoc, mul_assoc, ← kostant_lie_def, hc h,
-    mul_smul_comm, add_smul]
+  rw [hy']
+  simp only [add_mul, map_smul, smul_mul_assoc, mul_assoc]
+  rw [← kostant_lie_def, hc h, mul_smul_comm]
+  module
 
 open scoped CliffordAlgebra in
 omit [LieModule.IsTriangularizable K H L] in
