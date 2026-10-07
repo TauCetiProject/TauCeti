@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.Morse.OrbitSlice
 public import TauCeti.Analysis.Calculus.Morse.Transversality
-import Mathlib.Topology.DiscreteSubset
-import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Analysis.Calculus.Morse.RegularLevel
 
@@ -72,14 +71,6 @@ private theorem fderiv_apply_gradient_ne_zero (hf : LipschitzWith K (∇ f)) (hp
   rw [← inner_gradient_left, real_inner_self_eq_norm_sq]
   positivity
 
-/-- At a point `y` of a nonconstant connecting trajectory, `df_y` is surjective. -/
-private theorem range_fderiv_eq_top (hf : LipschitzWith K (∇ f)) (hpq : p ≠ q)
-    (hyu : y ∈ Flow.unstableSet (negativeGradientFlow f hf) p)
-    (hys : y ∈ Flow.stableSet (negativeGradientFlow f hf) q) :
-    (fderiv ℝ f y).range = ⊤ :=
-  Module.Dual.range_eq_top_of_ne_zero fun h ↦
-    fderiv_apply_gradient_ne_zero hf hpq hyu hys (by simp [← ContinuousLinearMap.coe_coe, h])
-
 /-- **Levels are transverse to connecting trajectories.** At a point `y` of `W^u(p) ∩ W^s(q)` with
 `p ≠ q`, the tangent space of `W^u(p) ∩ W^s(q)` and the kernel of `df_y`, the tangent space of the
 level of `f` through `y`, span the whole space. -/
@@ -128,7 +119,8 @@ private theorem level_slice (hp : IsNondegenerateCriticalPoint f p)
   -- The level `{f = c}` is the regular zero set of `f - c` near `y`.
   have hlevel : {x | f x = c} = (fun z ↦ f z - c) ⁻¹' {0} := by ext; simp [sub_eq_zero]
   have hg := ((hfs.contDiffAt (x := y)).hasStrictFDerivAt (by norm_num)).sub_const c
-  have hg' := range_fderiv_eq_top hf hpq hyu hys
+  have hg' := LinearMap.range_eq_top.2 (Flow.fderiv_surjective_of_mem_unstableSet_inter_stableSet
+    (fun z ↦ (forall_negativeGradientFlow_eq_self_iff f hf z).2) hpq ⟨hyu, hys⟩)
   have hgC (z : E) (_ : z ∈ univ) : ContDiffAt ℝ 1 (fun z ↦ f z - c) z :=
     ((hfs.of_le one_le_two).sub contDiff_const).contDiffAt
   have hgy : f y - c = 0 := by simp [hyc]
@@ -209,7 +201,9 @@ theorem finrank_span_tangentConeAt_unstableSet_inter_stableSet_level_add_morseIn
   rw [span_tangentConeAt_unstableSet_inter_stableSet_sup_ker_fderiv hf hpq hyu hys, finrank_top,
     ← (hp.level_slice hq hfs hf hpq hyu hys htr hyc).2] at hdim
   have hker := LinearMap.finrank_range_add_finrank_ker (fderiv ℝ f y : E →ₗ[ℝ] ℝ)
-  rw [range_fderiv_eq_top hf hpq hyu hys, finrank_top, Module.finrank_self] at hker
+  rw [LinearMap.range_eq_top.2 (Flow.fderiv_surjective_of_mem_unstableSet_inter_stableSet
+    (fun z ↦ (forall_negativeGradientFlow_eq_self_iff f hf z).2) hpq ⟨hyu, hys⟩), finrank_top,
+    Module.finrank_self] at hker
   have hW :=
     hp.finrank_span_tangentConeAt_unstableSet_inter_stableSet_add_morseIndex hq hfs hf hyu hys htr
   omega
