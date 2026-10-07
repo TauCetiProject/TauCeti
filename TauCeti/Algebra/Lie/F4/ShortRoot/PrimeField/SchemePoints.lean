@@ -60,7 +60,7 @@ matrix point under the scheme-point equivalence. -/
   simp only [schemePointsMulEquiv, MulEquiv.trans_apply, MulEquiv.symm_apply_apply]
 
 /-- The inverse comparison presents a matrix point as a quotient-coordinate scheme point. -/
-@[simp] theorem schemePointsMulEquiv_symm_apply (A : Type) [CommRing A] [Algebra 𝔽₂ A]
+theorem schemePointsMulEquiv_symm_apply (A : Type) [CommRing A] [Algebra 𝔽₂ A]
     (g : points A) :
     (schemePointsMulEquiv A).symm g =
       groupSchemePointMulEquiv A ((coordinatePointsEquiv A).symm g) := by

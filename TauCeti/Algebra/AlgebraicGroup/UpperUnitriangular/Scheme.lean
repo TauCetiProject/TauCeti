@@ -347,7 +347,6 @@ theorem schemePointsMulEquiv_apply
 
 /-- The inverse scheme-points equivalence presents an upper-unitriangular matrix as the
 corresponding spectrum point. -/
-@[simp]
 theorem schemePointsMulEquiv_symm_apply (g : upperUnitriangularGroup m A) :
     (schemePointsMulEquiv m A).symm g =
       groupSchemePointMulEquiv m A ((pointsMulEquiv R m).symm g) := by
