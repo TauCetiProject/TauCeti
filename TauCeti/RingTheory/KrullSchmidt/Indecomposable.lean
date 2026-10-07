@@ -32,6 +32,8 @@ local-endomorphism-ring theorem. Both are supplied here.
 
 * `TauCeti.isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem`: indecomposability
   says exactly that `M` is nontrivial and `0` and `1` are the only idempotents of `Module.End A M`.
+* `TauCeti.isIndecomposableModule_iff_isIndecomposableModule_of_algebraMap_surjective`:
+  indecomposability is unchanged by restricting scalars along a surjective algebra map.
 * `TauCeti.IsIndecomposableModule.bijective_of_bijective_comp`: a split injection into an
   indecomposable module is an isomorphism, that is, if `g ∘ₗ f` is bijective and the module `f`
   lands in is indecomposable, then `f` is bijective.
@@ -130,6 +132,20 @@ end Semiring
 section Ring
 
 variable {A : Type u} {M : Type v} [Ring A] [AddCommGroup M] [Module A M]
+
+/-! ### Restriction of scalars along a surjection -/
+
+/-- **Indecomposability is insensitive to restriction of scalars along a surjection**: when
+`algebraMap R A` is surjective, the `R`-submodules and the `A`-submodules of `M` are the same, so
+`M` is indecomposable over `R` exactly when it is over `A`. -/
+theorem isIndecomposableModule_iff_isIndecomposableModule_of_algebraMap_surjective
+    {R : Type*} [CommRing R] [Algebra R A] [Module R M] [IsScalarTower R A M]
+    (h : Function.Surjective (algebraMap R A)) :
+    IsIndecomposableModule R M ↔ IsIndecomposableModule A M := by
+  let e := Submodule.orderIsoOfAlgebraMapSurjective (M := M) h
+  refine and_congr_right fun _ ↦ ⟨fun hR N P hNP ↦ ?_, fun hA N P hNP ↦ ?_⟩
+  · simpa using hR (e N) (e P) (e.isCompl hNP)
+  · simpa using hA (e.symm N) (e.symm P) (e.symm.isCompl hNP)
 
 /-! ### Indecomposability through idempotent endomorphisms -/
 

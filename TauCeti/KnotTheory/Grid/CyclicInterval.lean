@@ -495,6 +495,16 @@ theorem ite_mem_cIco_eq_add_of_mem_cIoo {u v w s : Fin n} (hv : v ∈ cIoo u w)
   simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hv hs ⊢
   split_ifs at hv hs ⊢ <;> omega
 
+/-- A point `v` strictly inside the arc from `u` to `w` cuts the open arc from a point `s` of the
+arc from `u` to `v` to `w` into the open arc from `s` to `v` and the arc from `v` to `w`,
+counted. -/
+theorem ite_mem_cIoo_eq_add_of_mem_cIoo {u v w s : Fin n} (hv : v ∈ cIoo u w)
+    (hs : s ∈ cIco u v) (t : Fin n) :
+    (if t ∈ cIoo s w then 1 else 0 : ℕ) =
+      (if t ∈ cIoo s v then 1 else 0) + if t ∈ cIco v w then 1 else 0 := by
+  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hv hs ⊢
+  split_ifs at hv hs ⊢ <;> omega
+
 /-- A point `s` of the arc from `u` to `w` cuts it into the arc before `s`, the point `s` and the
 open arc after `s`, counted. -/
 theorem ite_mem_cIco_eq_add_add {u w s : Fin n} (hs : s ∈ cIco u w) (t : Fin n) :

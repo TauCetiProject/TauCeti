@@ -8,6 +8,7 @@ module
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Basic
 public import TauCeti.KnotTheory.Grid.Differential.Square.Decomposition
+import TauCeti.KnotTheory.Grid.Commutation.Decomposition
 
 /-!
 # Rectangle--initial-side pentagon decompositions
@@ -24,6 +25,11 @@ the commuted rectangle weight in the second. The two matrix products of the init
 pentagon map with the grid differentials are the weighted sums over these families.
 Disjoint-side reordering identifies the two contributions; common-side domains require
 separate recuts, sometimes involving terminal-side pentagons.
+
+Two composite domains, one in each order, covering the same squares with the same multiplicities
+have the same weight, once the rectangle of the commuted diagram is read in the original diagram
+with the two commuted columns exchanged (`TauCeti.GridDiagram.
+initialPentagonRectangleWeight_eq_rectangleInitialPentagonWeight_of_val_add_val_eq`).
 
 The construction follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*,
 Section 5.1, and the existing terminal-side decomposition API.
@@ -229,6 +235,25 @@ theorem initialPentagonRectangleWeight_def {x z : GridState n}
       G.initialPentagonWeight R C D.pentagon *
         (G.swapColumns C.column (finRotate n C.column)).OMonomial R D.second.toGridRectangle :=
   (rfl)
+
+/-- An initial-side pentagon followed by a rectangle of the commuted diagram has the weight of a
+rectangle followed by an initial-side pentagon when the two composite domains cover the same
+squares with the same multiplicities, the squares of the rectangle of the commuted diagram being
+read in the original diagram, that is with the two commuted columns exchanged. -/
+theorem initialPentagonRectangleWeight_eq_rectangleInitialPentagonWeight_of_val_add_val_eq
+    {x z : GridState n} (D : GridRectangleInitialPentagonDecomposition C.column C.turnRow x z)
+    (E : GridInitialPentagonRectangleDecomposition C.column C.turnRow x z)
+    (h : E.pentagon.coveredSquares.val +
+        (E.second.toGridRectangle.coveredSquares.map
+          ((Equiv.swap C.column (finRotate n C.column)).prodCongr
+            (Equiv.refl (Fin n))).toEmbedding).val =
+      D.first.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val) :
+    G.initialPentagonRectangleWeight C R E = G.rectangleInitialPentagonWeight C R D := by
+  rw [initialPentagonRectangleWeight_def, rectangleInitialPentagonWeight_def,
+    initialPentagonWeight_eq_prod_coveredSquares, initialPentagonWeight_eq_prod_coveredSquares,
+    OMonomial_swapColumns_eq_prod_swapSquareWeight, rename_OMonomial_eq_prod_swapSquareWeight]
+  simp only [← swapSquareWeight_def, Finset.prod_eq_multiset_prod, ← Multiset.prod_add,
+    ← Multiset.map_add, h]
 
 /-- The matrix product for the initial-side pentagon map after the original differential is the
 sum of the weights of the counted rectangle--initial-side pentagon decompositions. -/

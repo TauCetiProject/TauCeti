@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Exact.Basic
-public import TauCeti.Analysis.Fredholm.Index
+public import TauCeti.Analysis.Fredholm.Basic
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.LinearAlgebra.Isomorphisms
 
@@ -70,7 +71,8 @@ the degenerate case of that identification.
 
 The exact sequence, its algebraic identifications, and the `finrank` identities hold over any ring,
 with continuous addition in `F`; the finite-dimensionality statements hold over division rings
-without any norm. The index statement needs neither completeness nor the Fredholm property, because
+without any norm. The index statement also holds over any ring and needs neither completeness
+nor the Fredholm property, because
 `ContinuousLinearMap.index` is a difference of two `Module.finrank`s and the sequence matches both
 of them.
 
@@ -93,7 +95,7 @@ Banach open mapping theorem gives strictness. No completeness of the scalar fiel
   the projection is the cokernel of `D₁`.
 * `TauCeti.parameterProj_surjective_iff`: for a surjective total linearization, the projection is
   surjective exactly when `D₁` is.
-* `TauCeti.index_parameterProj`: for a surjective total linearization, the
+* `ContinuousLinearMap.index_parameterProj`: for a surjective total linearization, the
   projection has the same index as `D₁`.
 * `TauCeti.isFredholm_parameterProj`: when `E` and `Λ` are Banach spaces, if `D₁` is Fredholm
   then the projection is Fredholm.
@@ -360,6 +362,18 @@ theorem finrank_quotient_range_parameterProj (hD : Function.Surjective (D₁.cop
     finrank 𝕜 (Λ ⧸ (parameterProj D₁ D₂).range) = finrank 𝕜 (F ⧸ D₁.range) :=
   (quotientRangeParameterProjEquiv D₁ D₂ hD).finrank_eq
 
+/-- **The parameter projection of a surjective total linearization has the same index as `D₁`.**
+
+Under the hypotheses needed to apply `TauCeti.Analysis.Fredholm.LevelSet.Basic`, this equality
+gives the dimension of the finite-dimensional model space for a regular fibre.
+
+Neither operator is assumed Fredholm: both sides are differences of `Module.finrank`s, and the
+exact sequence matches the four dimensions in pairs, junk values included. -/
+theorem _root_.ContinuousLinearMap.index_parameterProj (hD : Function.Surjective (D₁.coprod D₂)) :
+    ContinuousLinearMap.index (parameterProj D₁ D₂) = ContinuousLinearMap.index D₁ := by
+  rw [ContinuousLinearMap.index_eq_finrank_sub, ContinuousLinearMap.index_eq_finrank_sub,
+    finrank_ker_parameterProj, finrank_quotient_range_parameterProj D₁ D₂ hD]
+
 end Topological
 
 section Dimension
@@ -386,31 +400,6 @@ theorem finiteDimensional_quotient_range_parameterProj
 
 end Dimension
 
-section Normed
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-variable {E Λ F : Type*}
-variable [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-variable [NormedAddCommGroup Λ] [NormedSpace 𝕜 Λ]
-variable [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-variable (D₁ : E →L[𝕜] F) (D₂ : Λ →L[𝕜] F)
-
-/-! ### The index and the Fredholm property -/
-
-/-- **The parameter projection of a surjective total linearization has the same index as `D₁`.**
-
-Under the hypotheses needed to apply `TauCeti.Analysis.Fredholm.LevelSet.Basic`, this equality
-gives the dimension of the finite-dimensional model space for a regular fibre.
-
-Neither operator is assumed Fredholm: both sides are differences of `Module.finrank`s, and the
-exact sequence matches the four dimensions in pairs, junk values included. -/
-theorem index_parameterProj (hD : Function.Surjective (D₁.coprod D₂)) :
-    ContinuousLinearMap.index (parameterProj D₁ D₂) = ContinuousLinearMap.index D₁ := by
-  rw [ContinuousLinearMap.index_eq_finrank_sub, ContinuousLinearMap.index_eq_finrank_sub,
-    finrank_ker_parameterProj, finrank_quotient_range_parameterProj D₁ D₂ hD]
-
-end Normed
-
 section Banach
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -422,7 +411,7 @@ variable (D₁ : E →L[𝕜] F) (D₂ : Λ →L[𝕜] F)
 
 /-- **The parameter projection is Fredholm** as soon as `D₁` is, when `E` and `Λ` are Banach
 spaces and `F` has continuous addition and closed points. When the total linearization is
-surjective, `TauCeti.index_parameterProj` also identifies their indices if `F` is normed.
+surjective, `ContinuousLinearMap.index_parameterProj` also identifies their indices.
 
 Applying Sard--Smale in the nonlinear setting is a further step requiring a suitable smooth chart,
 real scalars, second countability, and the theorem's `C^k` threshold. -/

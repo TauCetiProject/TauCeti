@@ -217,7 +217,7 @@ theorem index_fderiv_levelSetParameterMap
     ContinuousLinearMap.index (fderiv K (levelSetParameterMap hf hD hker hxl) 0) =
       ContinuousLinearMap.index D₁ := by
   rw [fderiv_levelSetParameterMap]
-  exact index_parameterProj D₁ D₂ hD
+  exact D₁.index_parameterProj D₂ hD
 
 /-! ### The regularity criterion away from the chart origin -/
 

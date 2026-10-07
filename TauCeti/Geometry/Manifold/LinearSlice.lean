@@ -9,12 +9,15 @@ public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Topology.Algebra.Module.Complement
 
+import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+
 /-!
 # Manifold structures from linear slice charts
 
-Ambient charts flattening a subset onto a fixed linear slice induce a manifold structure
-on the subset with its original topology. If the ambient charts and their inverses are
-`C^n`, the induced atlas and the inclusion into the ambient space are `C^n`.
+Ambient charts flattening a subset of a manifold onto a fixed linear slice induce a manifold
+structure on the subset with its original topology. If the ambient charts and their inverses are
+`C^n`, the induced atlas and the inclusion into the ambient manifold are `C^n`. A subset of a
+normed space is the case of the space modelled on itself.
 
 The construction requires neither finite dimension nor completeness. It reuses
 `IsSliceChart.subtypeChart`; the smooth-atlas argument follows the preferred-chart argument
@@ -36,8 +39,10 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-  {s : Set E}
-  (e : s → OpenPartialHomeomorph E (F × G))
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {s : Set M}
+  (e : s → OpenPartialHomeomorph M (F × G))
   (he : ∀ x, IsSliceChart (e x) ((univ : Set F) ×ˢ ({0} : Set G)) s)
 
 /-- The induced chart at a point of the subset. The base point supplies the fallback value
@@ -74,7 +79,7 @@ theorem linearSliceChart_apply (x y : s) :
 @[simp]
 theorem coe_linearSliceChart_symm_apply (x : s) {v : F}
     (hv : (v, (0 : G)) ∈ (e x).target) :
-    ((linearSliceChart e he x).symm v : E) = (e x).symm (v, 0) := by
+    ((linearSliceChart e he x).symm v : M) = (e x).symm (v, 0) := by
   let : Nonempty s := ⟨x⟩
   unfold linearSliceChart
   apply IsSliceChart.coe_subtypeChart_symm_apply
@@ -83,7 +88,7 @@ theorem coe_linearSliceChart_symm_apply (x : s) {v : F}
 /-- A covering family of ambient linear-slice charts gives a charted-space structure on the
 subset, with its original topology and atlas exactly the induced charts. -/
 @[instance_reducible]
-noncomputable def linearSliceChartedSpace (hcover : ∀ x : s, (x : E) ∈ (e x).source) :
+noncomputable def linearSliceChartedSpace (hcover : ∀ x : s, (x : M) ∈ (e x).source) :
     ChartedSpace F s where
   atlas := range (linearSliceChart e he)
   chartAt := linearSliceChart e he
@@ -92,17 +97,17 @@ noncomputable def linearSliceChartedSpace (hcover : ∀ x : s, (x : E) ∈ (e x)
 
 /-- The atlas consists exactly of the induced linear-slice charts. -/
 @[simp]
-theorem linearSliceChartedSpace_atlas (hcover : ∀ x : s, (x : E) ∈ (e x).source) :
+theorem linearSliceChartedSpace_atlas (hcover : ∀ x : s, (x : M) ∈ (e x).source) :
     @atlas F _ s _ (linearSliceChartedSpace e he hcover) = range (linearSliceChart e he) := (rfl)
 
 /-- The chosen chart at a point is its induced linear-slice chart. -/
 @[simp]
-theorem linearSliceChartedSpace_chartAt (hcover : ∀ x : s, (x : E) ∈ (e x).source) (x : s) :
+theorem linearSliceChartedSpace_chartAt (hcover : ∀ x : s, (x : M) ∈ (e x).source) (x : s) :
     @chartAt F _ s _ (linearSliceChartedSpace e he hcover) x = linearSliceChart e he x := (rfl)
 
 variable {n : ℕ∞ω}
-  (hsmooth : ∀ x, ∀ z ∈ (e x).source, ContDiffAt 𝕜 n (e x) z)
-  (hinv : ∀ x, ∀ z ∈ (e x).target, ContDiffAt 𝕜 n (e x).symm z)
+  (hsmooth : ∀ x, ∀ z ∈ (e x).source, ContMDiffAt I 𝓘(𝕜, F × G) n (e x) z)
+  (hinv : ∀ x, ∀ z ∈ (e x).target, ContMDiffAt 𝓘(𝕜, F × G) I n (e x).symm z)
 
 include hsmooth hinv
 
@@ -118,18 +123,19 @@ theorem contDiffOn_linearSliceChart_transition (x y : s) :
   have hzs : (e x).symm (v, 0) ∈ (e y).source := by
     simpa only [linearSliceChart_source, mem_preimage,
       coe_linearSliceChart_symm_apply e he x hvt] using hv.2
-  have h := ((hsmooth y _ hzs).comp v
-    ((hinv x _ hvt).comp v (contDiff_id.prodMk contDiff_const).contDiffAt)).fst
+  have hmk : ContMDiffAt 𝓘(𝕜, F) 𝓘(𝕜, F × G) n (fun w : F ↦ (w, (0 : G))) v :=
+    (contDiff_id.prodMk contDiff_const).contMDiff.contMDiffAt
+  have h := contMDiffAt_iff_contDiffAt.1 (contDiff_fst.contMDiff.contMDiffAt.comp v
+    ((hsmooth y _ hzs).comp v ((hinv x _ hvt).comp v hmk)))
   exact h.contDiffWithinAt.congr_of_mem (fun w hw ↦ by
     rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source] at hw
     have hwt : (w, (0 : G)) ∈ (e x).target := by
       simpa only [linearSliceChart_target, mem_preimage] using hw.1
     simp only [OpenPartialHomeomorph.coe_trans, Function.comp_apply, linearSliceChart_apply,
-      coe_linearSliceChart_symm_apply e he x hwt, OpenPartialHomeomorph.coe_toPartialEquiv,
-      id_eq]) hv
+      coe_linearSliceChart_symm_apply e he x hwt, OpenPartialHomeomorph.coe_toPartialEquiv]) hv
 
 /-- Smooth ambient slice charts induce a `C^n` manifold structure on the subset. -/
-theorem isManifold_linearSliceChartedSpace (hcover : ∀ x : s, (x : E) ∈ (e x).source) :
+theorem isManifold_linearSliceChartedSpace (hcover : ∀ x : s, (x : M) ∈ (e x).source) :
     letI := linearSliceChartedSpace e he hcover
     IsManifold 𝓘(𝕜, F) n s := by
   let := linearSliceChartedSpace e he hcover
@@ -144,47 +150,43 @@ omit hsmooth in
 /-- The inclusion of a subset equipped with its linear-slice atlas is `C^n` when the ambient
 inverse charts are `C^n`. -/
 theorem contMDiff_subtypeVal_linearSliceChartedSpace
-    (hcover : ∀ x : s, (x : E) ∈ (e x).source) :
+    (hcover : ∀ x : s, (x : M) ∈ (e x).source) :
     letI := linearSliceChartedSpace e he hcover
-    ContMDiff 𝓘(𝕜, F) 𝓘(𝕜, E) n (Subtype.val : s → E) := by
+    ContMDiff 𝓘(𝕜, F) I n (Subtype.val : s → M) := by
   let := linearSliceChartedSpace e he hcover
   intro x
-  rw [contMDiffAt_iff]
-  refine ⟨continuous_subtype_val.continuousAt, ?_⟩
-  have hx : linearSliceChart e he x x ∈ (linearSliceChart e he x).target :=
-    (linearSliceChart e he x).map_source (by rw [linearSliceChart_source]; exact hcover x)
+  have hxs : x ∈ (linearSliceChart e he x).source := by
+    rw [linearSliceChart_source]; exact hcover x
   have hxt : (linearSliceChart e he x x, (0 : G)) ∈ (e x).target := by
-    simpa only [linearSliceChart_target, mem_preimage] using hx
-  have hd := (hinv x _ hxt).comp (linearSliceChart e he x x)
-    (contDiff_id.prodMk contDiff_const).contDiffAt
-  have hd' : ContDiffAt 𝕜 n (Subtype.val ∘ (linearSliceChart e he x).symm)
-      (linearSliceChart e he x x) := by
-    apply hd.congr_of_eventuallyEq
-    filter_upwards [(linearSliceChart e he x).open_target.mem_nhds hx] with v hv
-    have hvt : (v, (0 : G)) ∈ (e x).target := by
-      simpa only [linearSliceChart_target, mem_preimage] using hv
-    exact coe_linearSliceChart_symm_apply e he x hvt
-  -- Extended charts for the self model only insert identity maps.
-  convert hd'.contDiffWithinAt using 1 <;>
-    simp only [PartialEquiv.refl_coe, Function.id_comp, extChartAt,
-      linearSliceChartedSpace_chartAt, chartAt_self_eq, OpenPartialHomeomorph.extend,
-      OpenPartialHomeomorph.refl_partialEquiv, OpenPartialHomeomorph.coe_toPartialEquiv,
-      PartialEquiv.coe_trans, PartialEquiv.coe_trans_symm, ModelWithCorners.toPartialEquiv_coe,
-      ModelWithCorners.toPartialEquiv_coe_symm, modelWithCornersSelf_coe,
-      modelWithCornersSelf_coe_symm, Function.comp_id, Function.id_comp]
-  rfl
+    simpa only [linearSliceChart_target, mem_preimage] using
+      (linearSliceChart e he x).map_source hxs
+  have hmk : ContMDiffAt 𝓘(𝕜, F) 𝓘(𝕜, F × G) n (fun w : F ↦ (w, (0 : G)))
+      (linearSliceChart e he x x) :=
+    (contDiff_id.prodMk contDiff_const).contMDiff.contMDiffAt
+  have hsymm : ContMDiffAt 𝓘(𝕜, F) I n ((e x).symm ∘ fun w : F ↦ (w, (0 : G)))
+      (linearSliceChart e he x x) :=
+    ContMDiffAt.comp (linearSliceChart e he x x) (hinv x _ hxt) hmk
+  have hd : ContMDiffAt 𝓘(𝕜, F) I n (fun y : s ↦ (e x).symm (linearSliceChart e he x y, 0)) x :=
+    hsymm.comp x <| by
+      -- The preferred chart is smooth at its centre, with no compatibility condition.
+      simpa only [extChartAt_coe, linearSliceChartedSpace_chartAt, modelWithCornersSelf_coe,
+        Function.id_comp] using contMDiffAt_extChartAt (I := 𝓘(𝕜, F)) (n := n) (x := x)
+  refine hd.congr_of_eventuallyEq ?_
+  filter_upwards [(linearSliceChart e he x).open_source.mem_nhds hxs] with y hy
+  rw [linearSliceChart_source] at hy
+  rw [linearSliceChart_apply, (he x).mk_fst_zero_eq hy y.2, (e x).left_inv hy]
 
 omit e he hsmooth hinv in
-/-- A subset locally flattened onto a complemented linear subspace is a `C^n` manifold
-modelled on that subspace, and its inclusion into the ambient space is `C^n`. -/
+/-- A subset of a manifold locally flattened onto a complemented linear subspace of the model is a
+`C^n` manifold modelled on that subspace, and its inclusion into the ambient manifold is `C^n`. -/
 theorem exists_isManifold_of_linearSubspaceCharts {L N : Submodule 𝕜 E}
     (hcompl : Submodule.IsTopCompl L N)
-    (hcharts : ∀ y : s, ∃ q : OpenPartialHomeomorph E E, (y : E) ∈ q.source ∧
-      (∀ z ∈ q.source, ContDiffAt 𝕜 n q z) ∧
-      (∀ z ∈ q.target, ContDiffAt 𝕜 n q.symm z) ∧
+    (hcharts : ∀ y : s, ∃ q : OpenPartialHomeomorph M E, (y : M) ∈ q.source ∧
+      (∀ z ∈ q.source, ContMDiffAt I 𝓘(𝕜, E) n q z) ∧
+      (∀ z ∈ q.target, ContMDiffAt 𝓘(𝕜, E) I n q.symm z) ∧
       ∀ z ∈ q.source, z ∈ s ↔ q z ∈ L) :
     ∃ C : ChartedSpace L s, letI := C
-      IsManifold 𝓘(𝕜, L) n s ∧ ContMDiff 𝓘(𝕜, L) 𝓘(𝕜, E) n (Subtype.val : s → E) := by
+      IsManifold 𝓘(𝕜, L) n s ∧ ContMDiff 𝓘(𝕜, L) I n (Subtype.val : s → M) := by
   classical
   choose q hq hqs hqi hqmem using hcharts
   let A := (L.prodEquivOfIsTopCompl N hcompl).symm
@@ -198,21 +200,21 @@ theorem exists_isManifold_of_linearSubspaceCharts {L N : Submodule 𝕜 E}
       mem_singleton_iff, true_and, A,
       Submodule.coe_symm_prodEquivOfIsTopCompl]
     exact (Submodule.prodEquivOfIsCompl_symm_apply_snd_eq_zero L N hcompl.isCompl).symm
-  have hcover (y : s) : (y : E) ∈ (e y).source := by
+  have hcover (y : s) : (y : M) ∈ (e y).source := by
     simpa only [e, OpenPartialHomeomorph.transHomeomorph_source] using hq y
-  have hs (y : s) (z : E) (hz : z ∈ (e y).source) : ContDiffAt 𝕜 n (e y) z := by
+  have hs (y : s) (z : M) (hz : z ∈ (e y).source) : ContMDiffAt I 𝓘(𝕜, L × N) n (e y) z := by
     rw [OpenPartialHomeomorph.transHomeomorph_source] at hz
     simpa only [e, OpenPartialHomeomorph.transHomeomorph_apply,
       ContinuousLinearEquiv.coe_toHomeomorph, Function.comp_def] using
-      A.contDiff.contDiffAt.comp z (hqs y z hz)
+      A.contDiff.contMDiff.contMDiffAt.comp z (hqs y z hz)
   have hi (y : s) (z : L × N) (hz : z ∈ (e y).target) :
-      ContDiffAt 𝕜 n (e y).symm z := by
+      ContMDiffAt 𝓘(𝕜, L × N) I n (e y).symm z := by
     have hzt : A.symm z ∈ (q y).target := by
       simpa only [e, OpenPartialHomeomorph.transHomeomorph_target, mem_preimage,
         ContinuousLinearEquiv.coe_symm_toHomeomorph] using hz
     simpa only [e, OpenPartialHomeomorph.transHomeomorph_symm_apply,
       ContinuousLinearEquiv.coe_symm_toHomeomorph, Function.comp_def] using
-      (hqi y _ hzt).comp z A.symm.contDiff.contDiffAt
+      (hqi y _ hzt).comp z A.symm.contDiff.contMDiff.contMDiffAt
   exact ⟨linearSliceChartedSpace e he hcover,
     isManifold_linearSliceChartedSpace e he hs hi hcover,
     contMDiff_subtypeVal_linearSliceChartedSpace e he hi hcover⟩

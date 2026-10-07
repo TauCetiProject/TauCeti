@@ -235,27 +235,15 @@ theorem dimensionShiftUpπ_naturality {A B : Rep k G} (f : A ⟶ B) :
 /-- The upward shift map preserves identity morphisms. -/
 @[simp]
 theorem dimensionShiftUpMap_id (A : Rep k G) : dimensionShiftUpMap (𝟙 A) = 𝟙 _ := by
-  simp [dimensionShiftUpMap, dimensionShiftUp]
+  apply (cancel_epi (dimensionShiftUpπ A)).mp
+  simp
 
 /-- The upward shift map preserves composition. -/
 @[simp]
 theorem dimensionShiftUpMap_comp {A B C : Rep k G} (f : A ⟶ B) (g : B ⟶ C) :
     dimensionShiftUpMap (f ≫ g) = dimensionShiftUpMap f ≫ dimensionShiftUpMap g := by
   apply (cancel_epi (dimensionShiftUpπ A)).mp
-  calc
-    dimensionShiftUpπ A ≫ dimensionShiftUpMap (f ≫ g) =
-        coindBotMap (f ≫ g) ≫ dimensionShiftUpπ C :=
-      dimensionShiftUpπ_naturality (f ≫ g)
-    _ = (coindBotMap f ≫ coindBotMap g) ≫ dimensionShiftUpπ C := by
-      rw [coindBotMap_comp]
-    _ = coindBotMap f ≫ (coindBotMap g ≫ dimensionShiftUpπ C) :=
-      Category.assoc _ _ _
-    _ = coindBotMap f ≫ (dimensionShiftUpπ B ≫ dimensionShiftUpMap g) := by
-      rw [dimensionShiftUpπ_naturality g]
-    _ = (coindBotMap f ≫ dimensionShiftUpπ B) ≫ dimensionShiftUpMap g :=
-      (Category.assoc _ _ _).symm
-    _ = (dimensionShiftUpπ A ≫ dimensionShiftUpMap f) ≫ dimensionShiftUpMap g := by
-      rw [dimensionShiftUpπ_naturality f]
+  simp
 
 /-- A coefficient morphism induces a morphism of the public presentations of the upward
 dimension-shifting sequences (`dimensionShiftUpSES_def`). -/
@@ -301,18 +289,15 @@ theorem dimensionShiftDownι_naturality {A B : Rep k G} (f : A ⟶ B) :
 /-- The downward shift map preserves identity morphisms. -/
 @[simp]
 theorem dimensionShiftDownMap_id (A : Rep k G) : dimensionShiftDownMap (𝟙 A) = 𝟙 _ := by
-  simp only [dimensionShiftDownMap, dimensionShiftDown, indBotMap_id]
-  -- Unfold the kernel wrapper to apply the generic identity law for `kernel.map`.
-  change kernel.map (indBotCounit A) (indBotCounit A)
-    (𝟙 (indBot k G A.V)) (𝟙 A) _ = 𝟙 _
-  exact kernel.map_id (indBotCounit A) (𝟙 A) (by simp)
+  apply (cancel_mono (dimensionShiftDownι A)).mp
+  simp
 
 /-- The downward shift map preserves composition. -/
 @[simp]
 theorem dimensionShiftDownMap_comp {A B C : Rep k G} (f : A ⟶ B) (g : B ⟶ C) :
     dimensionShiftDownMap (f ≫ g) = dimensionShiftDownMap f ≫ dimensionShiftDownMap g := by
   apply (cancel_mono (dimensionShiftDownι C)).mp
-  simp [dimensionShiftDownMap, dimensionShiftDownι, dimensionShiftDown, kernel.map, indBotMap_comp]
+  simp
 
 /-- A coefficient morphism induces a morphism of the public presentations of the downward
 dimension-shifting sequences (`dimensionShiftDownSES_def`). -/
