@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Analytic.AffinePoint.Product
-public import TauCeti.Geometry.Toric.Analytic.Fan.Comparison.Naturality
-public import TauCeti.Geometry.Toric.Algebraic.Fan.Product.Isomorphism
+public import TauCeti.Geometry.Toric.Analytic.Fan.Map.Basic
+public import TauCeti.Geometry.Toric.Algebraic.Fan.Product.Basic
+public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Product
 
 /-!
 # Products of analytic toric realizations
@@ -35,11 +36,13 @@ This supplies the topological product comparison for holomorphic toric maps.
 
 public section
 
+universe u
+
 open AlgebraicGeometry CategoryTheory Topology
 
 namespace TauCeti.Toric.Fan
 
-variable {N N' V V' : Type} [AddCommGroup N] [AddCommGroup N']
+variable {N N' V V' : Type u} [AddCommGroup N] [AddCommGroup N']
   [AddCommGroup V] [AddCommGroup V'] [Module ℝ V] [Module ℝ V']
   {i : N →+ V} {i' : N' →+ V'} (Φ : Fan i) (Ψ : Fan i')
   (hΦ : Φ.IsRegular) (hΨ : Ψ.IsRegular)
@@ -148,23 +151,65 @@ theorem analyticProdComparison_analyticAffineChartι (σ : Φ.cones) (τ : Ψ.co
         (by intro p hp; simpa only [FanHom.snd_realMap, LinearMap.snd_apply] using hp.2),
       analyticAffineChartProdHomeomorph_snd]
 
+private theorem analyticAffineChartProdHomeomorph_map {σ σ' : Φ.cones} {τ τ' : Ψ.cones}
+    (h : Φ.prodCone Ψ σ τ ⟶ Φ.prodCone Ψ σ' τ') (hσ : σ ⟶ σ') (hτ : τ ⟶ τ')
+    (x : (Φ.prod Ψ).analyticAffineChartDiagram.obj (Φ.prodCone Ψ σ τ)) :
+    Φ.analyticAffineChartProdHomeomorph Ψ σ' τ'
+        ((Φ.prod Ψ).analyticAffineChartDiagram.map h x) =
+      Prod.map (Φ.analyticAffineChartDiagram.map hσ) (Ψ.analyticAffineChartDiagram.map hτ)
+        (Φ.analyticAffineChartProdHomeomorph Ψ σ τ x) := by
+  apply Prod.ext
+  -- The projection formulas unwrap the bundled chart carriers before composing chart maps.
+  · erw [Prod.map_fst, analyticAffineChartProdHomeomorph_fst,
+      analyticAffineChartProdHomeomorph_fst,
+      ← TopCat.comp_app, FanHom.map_comp_analyticChartMap,
+      ← TopCat.comp_app, FanHom.analyticChartMap_comp_map]
+  · erw [Prod.map_snd, analyticAffineChartProdHomeomorph_snd,
+      analyticAffineChartProdHomeomorph_snd,
+      ← TopCat.comp_app, FanHom.map_comp_analyticChartMap,
+      ← TopCat.comp_app, FanHom.analyticChartMap_comp_map]
+
 private theorem injective_analyticProdComparison :
     Function.Injective (Φ.analyticProdComparison Ψ hΦ hΨ) := by
   intro x y h
-  let e := algebraicAnalyticEquiv (Fan.IsRegular.prod Φ Ψ hΦ hΨ)
-  apply e.symm.injective
-  apply Subtype.ext
-  apply (Φ.isPullback_fst_snd_algebraicMap Ψ).hom_ext
-  · have hfst := congrArg Prod.fst h
-    have := congrArg (algebraicAnalyticEquiv hΦ).symm hfst
-    simpa only [analyticProdComparison_apply,
-      FanHom.algebraicAnalyticEquiv_symm_naturality,
-      FanHom.coe_algebraicComplexPointMap] using congrArg Subtype.val this
-  · have hsnd := congrArg Prod.snd h
-    have := congrArg (algebraicAnalyticEquiv hΨ).symm hsnd
-    simpa only [analyticProdComparison_apply,
-      FanHom.algebraicAnalyticEquiv_symm_naturality,
-      FanHom.coe_algebraicComplexPointMap] using congrArg Subtype.val this
+  obtain ⟨ξ, a, rfl⟩ := (Φ.prod Ψ).exists_analyticAffineChartι_apply_eq
+    (Fan.IsRegular.prod Φ Ψ hΦ hΨ) x
+  obtain ⟨ζ, b, rfl⟩ := (Φ.prod Ψ).exists_analyticAffineChartι_apply_eq
+    (Fan.IsRegular.prod Φ Ψ hΦ hΨ) y
+  obtain ⟨σ, τ, rfl⟩ := Φ.exists_prodCone_eq Ψ ξ
+  obtain ⟨σ', τ', rfl⟩ := Φ.exists_prodCone_eq Ψ ζ
+  rw [analyticProdComparison_analyticAffineChartι,
+    analyticProdComparison_analyticAffineChartι] at h
+  obtain ⟨c, hc, hc'⟩ := (Φ.analyticAffineChartι_eq_analyticAffineChartι_iff hΦ _ _).mp
+    (congrArg Prod.fst h)
+  obtain ⟨d, hd, hd'⟩ := (Ψ.analyticAffineChartι_eq_analyticAffineChartι_iff hΨ _ _).mp
+    (congrArg Prod.snd h)
+  rw [analyticOverlapLeft_def] at hc hd
+  rw [analyticOverlapRight_def] at hc' hd'
+  let z := (Φ.analyticAffineChartProdHomeomorph Ψ (σ ⊓ σ') (τ ⊓ τ')).symm (c, d)
+  -- Use the common face chart directly, avoiding transport of points across cone equalities.
+  have key {υ : Φ.cones} {ω : Ψ.cones} (hσ : σ ⊓ σ' ⟶ υ) (hτ : τ ⊓ τ' ⟶ ω)
+      (p : (Φ.prod Ψ).analyticAffineChartDiagram.obj (Φ.prodCone Ψ υ ω))
+      (hp : Prod.map (Φ.analyticAffineChartDiagram.map hσ)
+        (Ψ.analyticAffineChartDiagram.map hτ) (c, d) =
+          Φ.analyticAffineChartProdHomeomorph Ψ υ ω p) :
+      (Φ.prod Ψ).analyticAffineChartι (Fan.IsRegular.prod Φ Ψ hΦ hΨ)
+        (Φ.prodCone Ψ υ ω) p =
+      (Φ.prod Ψ).analyticAffineChartι (Fan.IsRegular.prod Φ Ψ hΦ hΨ)
+        (Φ.prodCone Ψ (σ ⊓ σ') (τ ⊓ τ')) z := by
+    let f : Φ.prodCone Ψ (σ ⊓ σ') (τ ⊓ τ') ⟶ Φ.prodCone Ψ υ ω :=
+      homOfLE (by intro q hq; exact ⟨leOfHom hσ hq.1, leOfHom hτ hq.2⟩)
+    have hz : (Φ.prod Ψ).analyticAffineChartDiagram.map f z = p := by
+      apply (Φ.analyticAffineChartProdHomeomorph Ψ υ ω).injective
+      rw [analyticAffineChartProdHomeomorph_map Φ Ψ f hσ hτ,
+        Homeomorph.apply_symm_apply]
+      exact hp
+    rw [← hz]
+    exact ConcreteCategory.congr_hom
+      ((Φ.prod Ψ).analyticAffineChartDiagram_map_comp_analyticAffineChartι
+        (Fan.IsRegular.prod Φ Ψ hΦ hΨ) f) z
+  exact (key (homOfLE inf_le_left) (homOfLE inf_le_left) a (Prod.ext hc hd)).trans
+    (key (homOfLE inf_le_right) (homOfLE inf_le_right) b (Prod.ext hc' hd')).symm
 
 private theorem surjective_analyticProdComparison :
     Function.Surjective (Φ.analyticProdComparison Ψ hΦ hΨ) := by
@@ -240,7 +285,7 @@ theorem analyticProdHomeomorph_symm_analyticAffineChartι (σ : Φ.cones) (τ : 
 
 section Naturality
 
-variable {N₁ N₂ V₁ V₂ : Type} [AddCommGroup N₁] [AddCommGroup N₂]
+variable {N₁ N₂ V₁ V₂ : Type u} [AddCommGroup N₁] [AddCommGroup N₂]
   [AddCommGroup V₁] [AddCommGroup V₂] [Module ℝ V₁] [Module ℝ V₂]
   {i₁ : N₁ →+ V₁} {i₂ : N₂ →+ V₂} {Φ₁ : Fan i₁} {Ψ₁ : Fan i₂}
 
