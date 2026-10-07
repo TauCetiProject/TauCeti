@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.DeFinetti.Barycenter
-public import TauCeti.Probability.Exchangeability.Recurrence.Reconstruction
+public import TauCeti.Probability.Recurrent.Excursion
+public import TauCeti.Probability.Exchangeability.Recurrence.Excursion
 -- Non-public: the mixture form of a path law is used only inside proofs.
 import TauCeti.Probability.Exchangeability.MixedIID.Mixture
 

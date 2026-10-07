@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.Recurrence.Excursion
-import Mathlib.Logic.Equiv.List
-import Mathlib.MeasureTheory.MeasurableSpace.Constructions
+public import TauCeti.Probability.Process.Excursion.Basic
+public import TauCeti.Probability.Process.PathLaw.Basic
 
 /-!
 # Reconstructing a recurrent path from its excursions
@@ -28,25 +27,19 @@ converse `excursion_pathOfExcursions` carries the hypothesis that the words avoi
 used here.  What the identity above needs is a pushforward along a measurable map that is a.e. left
 inverse to reading the excursions off, not a bijection.
 
-The file is deliberately independent of de Finetti: this is a change of variables, and holds
-whether or not the excursion law is a mixture.
-The representation theorem that identifies that law as a mixture is in `Recurrence.Representation`,
-which is the only file in this subtree that reaches the de Finetti summit.
+This change of variables does not require any symmetry or mixture representation of the process.
+The specialization to a recurrent process is in `TauCeti.Probability.Recurrent.Excursion`.
 
 ## Main results
 
 * `TauCeti.Probability.measurable_pathOfExcursions` — concatenation is measurable;
-* `TauCeti.Probability.pathLaw_eq_map_pathOfExcursions` and its `Recurrent` form — the path law is
-  the pushforward of the excursion path law along it.
+* `TauCeti.Probability.pathLaw_eq_map_pathOfExcursions` — the path law is the pushforward of the
+  excursion path law along concatenation.
 
 ## References
 
 * P. Diaconis and D. Freedman, "de Finetti's theorem for Markov chains", *Annals of Probability*
   8 (1980), 115–130.
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, Layer 8, "Markov exchangeability".
-
-No material is adapted from `cameronfreer/exchangeability`, which treats exchangeable rather than
-Markov exchangeable sequences.
 -/
 
 public section
@@ -87,9 +80,7 @@ theorem measurable_pathOfExcursions [Countable α] [MeasurableSingletonClass α]
   have : DiscreteMeasurableSpace (Fin (i + 1) → List α) := inferInstance
   exact Measurable.of_discrete.comp (Measurable.of_eval fun j => measurable_pi_apply _)
 
-/-! ## The path law of a recurrent process -/
-
-variable {μ : Measure Ω} {X : ℕ → Ω → α} {a₀ : α}
+/-! ## Reconstructing the path law -/
 
 /-- **The path law of a process returning infinitely often to `a₀` is the image of its excursion
 law.** Almost every sample path starts at and returns infinitely often to `a₀`, so concatenating
@@ -107,16 +98,6 @@ theorem pathLaw_eq_map_pathOfExcursions [Countable α] [MeasurableSingletonClass
   rw [pathLaw_def, pathLaw_def,
     AEMeasurable.map_map_of_aemeasurable (measurable_pathOfExcursions a₀).aemeasurable hΦ,
     Measure.map_congr hae]
-
-/-- **The path law of a recurrent process started at `a₀` is the image of its excursion law.** -/
-theorem Recurrent.pathLaw_eq_map_pathOfExcursions [Countable α] [MeasurableSingletonClass α]
-    (hrec : Recurrent μ X) (hX : ∀ i, AEMeasurable (X i) μ) (h0 : ∀ᵐ ω ∂μ, X 0 ω = a₀) :
-    pathLaw μ X = (pathLaw μ (excursionProcess X a₀)).map (pathOfExcursions a₀) := by
-  apply TauCeti.Probability.pathLaw_eq_map_pathOfExcursions hX _ h0
-  filter_upwards [h0, hrec.ae_infinite_setOf_eq] with ω hω0 hωinf
-  have h := hωinf 0
-  rwa [hω0] at h
-
 
 end Probability
 

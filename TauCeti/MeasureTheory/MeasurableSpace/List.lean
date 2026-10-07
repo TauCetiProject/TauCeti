@@ -24,6 +24,7 @@ path, has a countable discrete value space.
   length-indexed representation.
 * `TauCeti.instDiscreteMeasurableSpaceList`: discreteness when `α` is countable with measurable
   singletons.
+* `TauCeti.measurable_list_ofFn`: assembling a finite tuple into a list is measurable.
 -/
 
 public section
@@ -54,6 +55,26 @@ instance instDiscreteMeasurableSpaceList [Countable α] [MeasurableSingletonClas
       let _ : DiscreteMeasurableSpace (Fin n → α) := inferInstance
       exact MeasurableSet.of_discrete
     · exact Set.preimage_image_eq s List.equivSigmaTuple.injective⟩
+
+/-- Assembling a finite tuple into a list is measurable for the length-indexed measurable
+structure on lists. -/
+theorem measurable_list_ofFn {n : ℕ} :
+    Measurable (List.ofFn : (Fin n → α) → List α) := by
+  rw [measurable_comap_iff]
+  have hmk : Measurable fun g : Fin n → α => (⟨n, g⟩ : Σ m, Fin m → α) := by
+    refine Measurable.of_le_map ?_
+    -- The sigma measurable space is the infimum over its fixed-length strata.
+    change (⨅ m : ℕ, MeasurableSpace.map
+      (@Sigma.mk ℕ (fun m => Fin m → α) m) inferInstance) ≤
+        MeasurableSpace.map (@Sigma.mk ℕ (fun m => Fin m → α) n) inferInstance
+    exact iInf_le _ n
+  have hcomp : (List.equivSigmaTuple ∘ (List.ofFn : (Fin n → α) → List α)) =
+      fun g => (⟨n, g⟩ : Σ m, Fin m → α) := by
+    funext g
+    simpa only [Function.comp_apply, List.equivSigmaTuple_symm_apply] using
+      List.equivSigmaTuple.apply_symm_apply (⟨n, g⟩ : Σ m, Fin m → α)
+  rw [hcomp]
+  exact hmk
 
 end TauCeti
 
