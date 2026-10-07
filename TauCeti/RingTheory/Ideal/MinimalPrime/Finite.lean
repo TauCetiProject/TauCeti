@@ -21,14 +21,13 @@ about a localization `A[1/g]`.
 
 ## Main results
 
-* `TauCeti.Ideal.exists_notMem_forall_le_of_mem_minimalPrimes`: for a minimal prime `P` over an
-  ideal with finitely many minimal primes, there is `g ∉ P` such that every prime over that ideal
-  not containing `g` contains `P`.
+* `Ideal.exists_notMem_forall_le_of_mem_minimalPrimes`: for a minimal prime `P` over an ideal
+  with finitely many minimal primes, there is `g ∉ P` such that every prime over that ideal not
+  containing `g` contains `P`.
 -/
 
 public section
 
-namespace TauCeti
 namespace Ideal
 
 /-- Let `P` be a minimal prime over an ideal `I` with finitely many minimal primes. Then there is
@@ -57,4 +56,3 @@ theorem exists_notMem_forall_le_of_mem_minimalPrimes {A : Type*} [CommSemiring A
     exact absurd (hQq (Finset.inf_le (f := id) hQs hg)) hgq
 
 end Ideal
-end TauCeti

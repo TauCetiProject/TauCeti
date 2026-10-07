@@ -132,8 +132,8 @@ theorem ringKrullDim_quotient_of_mem_minimalPrimes (hA : ringKrullDim A ≤ P.di
   have hQp : Q.IsPrime := hQ.1.1
   refine le_antisymm ((ringKrullDim_quotient_le Q).trans hA) ?_
   -- Some `g ∉ Q` lies in every other minimal prime, so every prime of `A[1/g]` contains `Q`.
-  obtain ⟨g, hgQ, hg⟩ := TauCeti.Ideal.exists_notMem_forall_le_of_mem_minimalPrimes
-    ⊥ (minimalPrimes.finite_of_isNoetherianRing A) hQ
+  obtain ⟨g, hgQ, hg⟩ := (⊥ : Ideal A).exists_notMem_forall_le_of_mem_minimalPrimes
+    (minimalPrimes.finite_of_isNoetherianRing A) hQ
   let B := Localization.Away g
   have hdisj : Disjoint (Submonoid.powers g : Set A) Q :=
     (Ideal.disjoint_powers_iff_notMem g hQp.isRadical).mpr hgQ
