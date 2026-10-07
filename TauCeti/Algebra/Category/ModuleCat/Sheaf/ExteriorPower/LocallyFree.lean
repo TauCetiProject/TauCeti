@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.ExteriorPower
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.ExteriorPower.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FiniteLocallyFree
 
 /-!
@@ -150,7 +150,7 @@ end Free
 section LocallyFree
 
 variable [∀ X, (J.over X).HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
-  [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
+  [∀ X, HasWeakSheafify (J.over X) AddCommGrpCat.{u}]
   [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
   {M : SheafOfModules.{u} (ringCatSheaf R)} {X : C}
 
@@ -193,6 +193,7 @@ instance GeneratingSections.finite_exteriorPower_I : Finite (σ.exteriorPower n)
   infer_instance
 
 variable [Limits.HasPullbacks C]
+variable [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
 
 variable (M) in
 /-- The exterior powers of a finite locally free sheaf of modules are finite locally free. -/
