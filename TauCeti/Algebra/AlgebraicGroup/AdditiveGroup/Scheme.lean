@@ -67,7 +67,7 @@ affine-space APIs.
 ## References
 
 The Hopf structure and algebra-valued point calculation are
-`TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra` and
+`TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra.Basic` and
 `TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Basic`. The operation formulas specialize
 `TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec`. The affine coordinate presentation follows
 the spectrum-transport pattern in `TauCetiProject/TauCeti`, revision
