@@ -11,9 +11,7 @@ public import TauCeti.Algebra.Lie.Orthogonal.TypeB.RootGenerators
 # The center of the split odd orthogonal Lie algebra
 
 The split odd orthogonal Lie algebra has zero center over a commutative ring when two is a
-regular element. A central element lies in the self-normalizing diagonal Cartan; commuting
-with the short-root vectors then makes each diagonal coordinate zero. Together with the
-standard irreducible module, this provides the center-free part of the semisimplicity argument.
+regular element. This center-free property supports the semisimplicity and Killing-form APIs.
 
 ## References
 

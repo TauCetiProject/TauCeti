@@ -18,15 +18,10 @@ when each endomorphism in its standard action is triangularizable. In particular
 over every algebraically closed field of characteristic zero. The Killing certificate makes
 Mathlib's abstract root system available for the concrete diagonal Cartan.
 
-The standard module is faithful and irreducible
-(`TauCeti.isIrreducible_typeB_standard`), so Mathlib's
-`LieAlgebra.hasCentralRadical_and_of_isIrreducible_of_isFaithful` makes the Lie algebra
-reductive. Its center vanishes: a central element is diagonal by self-normalization of the
-Cartan, and commuting with each short-root vector makes every diagonal coordinate zero.
-Cartan's criterion then gives nondegeneracy.
-
 ## References
 
+* Mathlib's `LieAlgebra.hasCentralRadical_and_of_isIrreducible_of_isFaithful`
+  (faithful irreducible modules and reductivity).
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §§5, 6, 19.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4–6*, Plate II.
 -/

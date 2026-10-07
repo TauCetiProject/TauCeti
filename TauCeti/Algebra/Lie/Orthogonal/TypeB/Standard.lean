@@ -12,10 +12,8 @@ public import Mathlib.Algebra.Lie.Semisimple.Defs
 # The standard module of the split odd orthogonal Lie algebra
 
 The standard module of `LieAlgebra.Orthogonal.typeB ι K` is irreducible over a field of
-characteristic different from two. The short-root operators connect the middle coordinate to
-both copies of `ι`; their composites with diagonal elements extract the middle coordinate from
-any nonzero invariant subspace. This irreducibility supplies a faithful irreducible module for
-the reductivity criterion.
+characteristic different from two, including when `ι` is empty. This supplies a faithful
+irreducible module for the reductivity criterion.
 
 The matrix conventions and root operators are those of
 `TauCeti.Algebra.Lie.Orthogonal.TypeB.RootGenerators`.
