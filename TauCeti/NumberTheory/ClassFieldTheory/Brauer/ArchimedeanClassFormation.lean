@@ -71,7 +71,7 @@ theorem infiniteClassFormationOfIsComplex_inv_apply (w : InfinitePlace K) (hw : 
     (infiniteClassFormationOfIsComplex w hw).inv L x = 0 := by
   let _ : Subsingleton (AbsoluteGaloisGroup w.Completion) :=
     subsingleton_absoluteGaloisGroup_of_isComplex w hw
-  exact ClassFormation.ofSubsingleton_inv (unitsFormation w.Completion) L x
+  exact ClassFormation.ofSubsingleton_inv_apply (unitsFormation w.Completion) L x
 
 /-- The invariant of the complex-place class formation is the archimedean Brauer invariant of the
 inflated class. This is the complex-place specialization of the normalization required of

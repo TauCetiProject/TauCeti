@@ -59,9 +59,8 @@ variable (L : NormalLayer G)
 theorem top_eq_ground_of_subsingleton [Subsingleton G] : L.top = L.ground := by
   apply le_antisymm L.top_le_ground
   intro g _
-  change g ∈ L.top.toSubgroup
   rw [Subsingleton.elim g 1]
-  exact L.top.toSubgroup.one_mem
+  exact one_mem L.top
 
 /-- The Galois group of a layer whose top and ground subgroups agree is trivial. -/
 theorem subsingleton_gal_of_top_eq_ground (hL : L.top = L.ground) : Subsingleton L.Gal := by
@@ -139,7 +138,7 @@ def ofSubsingleton (F : Formation G) [Subsingleton G] : ClassFormation F where
 
 /-- The invariant maps of the canonical class formation over a subsingleton group are zero. -/
 @[simp]
-theorem ofSubsingleton_inv [Subsingleton G] (F : Formation G) (L : NormalLayer G)
+theorem ofSubsingleton_inv_apply [Subsingleton G] (F : Formation G) (L : NormalLayer G)
     (x : L.H F 2) : (ofSubsingleton F).inv L x = 0 := by
   simp [ofSubsingleton]
 
