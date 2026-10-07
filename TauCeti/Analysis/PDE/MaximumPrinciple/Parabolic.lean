@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Laplacian.LocalExtr
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple
 
 /-!

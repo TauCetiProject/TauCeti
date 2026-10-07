@@ -16,8 +16,9 @@ maximum of a continuous real-valued function, the value `deriv (deriv g) t₀` i
 local minimum it is nonnegative. On a real normed space the same holds for every diagonal entry
 `fderiv ℝ (fderiv ℝ f) x w w` of the Hessian of a `C²` function at a local extremum.
 
-It also records the one-sided first-derivative test at an endpoint: a function with a local
-maximum on `Iic a` at `a` (a maximum *from the left*) has nonnegative left derivative there. This
+It also records the one-sided first-derivative tests at an endpoint: a function with a local
+maximum on `Iic a` at `a` (a maximum *from the left*) has nonnegative left derivative there, and
+dually for minima and for maxima and minima from the right on `Ici a`. The maximum from the left
 is the time-direction step of the parabolic maximum principle, where the maximum may sit on the
 top of the space-time cylinder.
 
@@ -25,6 +26,8 @@ top of the space-time cylinder.
 
 * `IsLocalMaxOn.hasDerivWithinAt_Iic_nonneg`: the left derivative at a maximum from the left is
   nonnegative.
+* `IsLocalMinOn.hasDerivWithinAt_Iic_nonpos`, `IsLocalMaxOn.hasDerivWithinAt_Ici_nonpos`,
+  `IsLocalMinOn.hasDerivWithinAt_Ici_nonneg`: the dual endpoint tests.
 * `TauCeti.deriv_deriv_nonpos_of_isLocalMax`: the local-maximum version.
 * `TauCeti.deriv_deriv_nonneg_of_isLocalMin`: the local-minimum version.
 * `TauCeti.fderiv_fderiv_self_nonpos_of_isLocalMax` /
@@ -74,6 +77,29 @@ theorem _root_.IsLocalMaxOn.hasDerivWithinAt_Iic_nonneg {f : ℝ → ℝ} {f' a 
       rw [segment_symm, segment_eq_Icc (by linarith)]
       exact Set.Icc_subset_Iic_self
   simpa using h.hasFDerivWithinAt_nonpos hf.hasFDerivWithinAt hy
+
+/-- **One-sided first-derivative test, minimum version.** If `f : ℝ → ℝ` has a local minimum on
+`Iic a` at `a`, then its left derivative at `a` is nonpositive. -/
+theorem _root_.IsLocalMinOn.hasDerivWithinAt_Iic_nonpos {f : ℝ → ℝ} {f' a : ℝ}
+    (h : IsLocalMinOn f (Set.Iic a) a) (hf : HasDerivWithinAt f f' (Set.Iic a) a) : f' ≤ 0 := by
+  simpa using h.neg.hasDerivWithinAt_Iic_nonneg hf.neg
+
+/-- **One-sided first-derivative test on the right.** If `f : ℝ → ℝ` has a local maximum on
+`Ici a` at `a`, that is a maximum from the right, then its right derivative at `a` is
+nonpositive. -/
+theorem _root_.IsLocalMaxOn.hasDerivWithinAt_Ici_nonpos {f : ℝ → ℝ} {f' a : ℝ}
+    (h : IsLocalMaxOn f (Set.Ici a) a) (hf : HasDerivWithinAt f f' (Set.Ici a) a) : f' ≤ 0 := by
+  have hy : (1 : ℝ) ∈ posTangentConeAt (Set.Ici a) a :=
+    mem_posTangentConeAt_of_segment_subset <| by
+      rw [segment_eq_Icc (by linarith)]
+      exact Set.Icc_subset_Ici_self
+  simpa using h.hasFDerivWithinAt_nonpos hf.hasFDerivWithinAt hy
+
+/-- **One-sided first-derivative test on the right, minimum version.** If `f : ℝ → ℝ` has a
+local minimum on `Ici a` at `a`, then its right derivative at `a` is nonnegative. -/
+theorem _root_.IsLocalMinOn.hasDerivWithinAt_Ici_nonneg {f : ℝ → ℝ} {f' a : ℝ}
+    (h : IsLocalMinOn f (Set.Ici a) a) (hf : HasDerivWithinAt f f' (Set.Ici a) a) : 0 ≤ f' := by
+  simpa using h.neg.hasDerivWithinAt_Ici_nonpos hf.neg
 
 section NormedSpace
 
