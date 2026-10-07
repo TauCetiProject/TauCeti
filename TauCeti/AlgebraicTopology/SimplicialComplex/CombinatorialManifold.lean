@@ -313,15 +313,23 @@ theorem IsCombinatorialManifold.dimension_eq (h : IsCombinatorialManifold K n) (
 /-- Every vertex star in a combinatorial manifold has finitely many faces. This includes
 zero-dimensional manifolds, whose vertex links are void. -/
 theorem IsCombinatorialManifold.finite_faces_closedStar
-    (h : IsCombinatorialManifold K n) (hv : ({v} : Finset ι) ∈ K) :
+    (h : IsCombinatorialManifold K n) (v : ι) :
     (closedStar K {v}).faces.Finite := by
-  apply PreAbstractSimplicialComplex.finite_faces_closedStar_iff.mpr
-  cases n with
-  | zero =>
-    rw [isCombinatorialManifold_zero_iff.mp h hv]
+  by_cases hv : ({v} : Finset ι) ∈ K
+  · apply PreAbstractSimplicialComplex.finite_faces_closedStar_iff.mpr
+    cases n with
+    | zero =>
+      rw [isCombinatorialManifold_zero_iff.mp h hv]
+      exact Set.finite_empty
+    | succ n =>
+      exact (isCombinatorialManifold_succ_iff.mp h hv).elim
+        IsCombinatorialSphere.finite_faces IsCombinatorialBall.finite_faces
+  · have heq : (closedStar K {v}).faces = ∅ := by
+      apply Set.eq_empty_iff_forall_notMem.mpr
+      intro ρ hρ
+      exact hv (singleton_mem_of_mem (mem_closedStar.mp hρ).2
+        (Finset.mem_union_right ρ (Finset.mem_singleton_self v)))
+    rw [heq]
     exact Set.finite_empty
-  | succ n =>
-    exact (isCombinatorialManifold_succ_iff.mp h hv).elim
-      IsCombinatorialSphere.finite_faces IsCombinatorialBall.finite_faces
 
 end PreAbstractSimplicialComplex

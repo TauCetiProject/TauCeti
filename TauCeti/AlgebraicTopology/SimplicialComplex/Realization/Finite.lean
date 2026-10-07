@@ -77,6 +77,14 @@ instance instCompactSpaceRealization [Finite ι] (K : AbstractSimplicialComplex 
   let := Fintype.ofFinite ι
   exact K.compactSpace_realization_of_finite_faces (Set.toFinite K.faces)
 
+/-- Barycentric coordinates restrict to a closed embedding on every compact subset of
+the weak realization. This applies in particular to compact local chart domains. -/
+theorem isClosedEmbedding_realization_coe_restrict {s : Set (Realization K)} (hs : IsCompact s) :
+    Topology.IsClosedEmbedding (fun x : s => (x.1.1 : ι → ℝ)) := by
+  let : CompactSpace s := isCompact_iff_compactSpace.mp hs
+  exact ((continuous_realization_coe K).comp continuous_subtype_val).isClosedEmbedding
+    ((injective_realization_coe K).comp Subtype.val_injective)
+
 /-- For a complex with finitely many faces the barycentric-coordinate map is a closed
 embedding. Thus the weak topology is exactly the topology inherited from coordinate space. -/
 theorem isClosedEmbedding_realization_coe (hfin : K.faces.Finite) :
