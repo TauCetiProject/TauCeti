@@ -23,8 +23,10 @@ through the maps obtained by changing one summand at a time, and the squares obt
 an identity summand are pushouts or pullbacks. The biproduct of two cokernels is the cokernel of
 the biproduct of the two morphisms (`CategoryTheory.Limits.CokernelCofork.isColimitBiprod`); this
 is the biproduct analogue of Mathlib's `CategoryTheory.Limits.CokernelCofork.isColimitTensor`.
-The short complex of a mapped commutative square agrees with the mapped short complex through
-the canonical biproduct comparison.
+For functors preserving zero morphisms, biproduct preservation is stable under composition
+and follows from preservation of products and coproducts of the same shape. The short complex
+of a mapped commutative square agrees with the mapped short complex through the canonical
+biproduct comparison.
 
 In a preadditive category, a zero object and binary biproducts already give all finite biproducts
 (`TauCeti.hasFiniteBiproducts_of_hasBinaryBiproducts`), and a finite biproduct indexed by
@@ -150,6 +152,52 @@ theorem biproductOptionIso_hom_snd_π (j : J) :
 end Preadditive
 
 end TauCeti
+
+namespace CategoryTheory.Limits
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
+  {D : Type u'} [Category.{w'} D] [HasZeroMorphisms D]
+  {E : Type*} [Category* E] [HasZeroMorphisms E]
+
+/-- The composite of functors preserving biproducts of shape `J` preserves them. -/
+instance (priority := 100) preservesBiproductsOfShape_comp (J : Type w) (F : C ⥤ D)
+    (G : D ⥤ E) [F.PreservesZeroMorphisms] [G.PreservesZeroMorphisms]
+    [PreservesBiproductsOfShape J F] [PreservesBiproductsOfShape J G] :
+    PreservesBiproductsOfShape J (F ⋙ G) where
+  preserves := { preserves := fun hb =>
+    ⟨isBilimitOfPreserves G (isBilimitOfPreserves F hb)⟩ }
+
+/-- A functor preserving zero morphisms, products and coproducts of shape `J` preserves
+biproducts of that shape. -/
+instance (priority := 100) preservesBiproductsOfShape_of_preservesLimits_and_colimits
+    (J : Type w) (F : C ⥤ D) [F.PreservesZeroMorphisms]
+    [PreservesLimitsOfShape (Discrete J) F] [PreservesColimitsOfShape (Discrete J) F] :
+    PreservesBiproductsOfShape J F where
+  preserves := fun {f} => { preserves := fun {b} hb => ⟨{
+    isLimit := IsLimit.ofIsoLimit
+      ((IsLimit.postcomposeHomEquiv (Discrete.compNatIsoDiscrete _ _) _).symm
+        (isLimitOfPreserves F hb.isLimit))
+      (Cone.ext (Iso.refl (F.obj b.pt)) (by
+        rintro ⟨j⟩
+        -- Unfold `Cone.postcompose`, `Functor.mapCone`, `Bicone.toCone` and
+        -- `Functor.mapBicone`, including their composite discrete endpoints.
+        -- `Discrete.compNatIsoDiscrete` contributes identities. Projection rewrites alone
+        -- leave these endpoint types opaque, so the identity laws need this conversion.
+        change F.map (b.π j) ≫ 𝟙 (F.obj (f j)) = 𝟙 (F.obj b.pt) ≫ F.map (b.π j)
+        simp))
+    isColimit := IsColimit.ofIsoColimit
+      ((IsColimit.precomposeInvEquiv (Discrete.compNatIsoDiscrete _ _) _).symm
+        (isColimitOfPreserves F hb.isColimit))
+      (Cocone.ext (Iso.refl (F.obj b.pt)) (by
+        rintro ⟨j⟩
+        -- Unfold `Cocone.precompose`, `Functor.mapCocone`, `Bicone.toCocone` and
+        -- `Functor.mapBicone`, including their composite discrete endpoints.
+        -- `Discrete.compNatIsoDiscrete` contributes identities. Projection rewrites alone
+        -- leave these endpoint types opaque, so the identity laws need this conversion.
+        change (𝟙 (F.obj (f j)) ≫ F.map (b.ι j)) ≫ 𝟙 (F.obj b.pt) = F.map (b.ι j)
+        simp)) }⟩ }
+
+end CategoryTheory.Limits
 
 namespace CategoryTheory.Functor
 

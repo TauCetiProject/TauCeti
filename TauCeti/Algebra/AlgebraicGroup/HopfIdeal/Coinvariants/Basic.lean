@@ -341,6 +341,13 @@ noncomputable def IsNormal.coinvariantsSubcoalgebra [Module.Flat R H]
     exact ⟨comul_mem_range_lTensor_of_mem_coinvariants hc,
       hI.comul_mem_range_rTensor_of_mem_coinvariants hc⟩
 
+/-- The underlying submodule of the coinvariant subcoalgebra is the coinvariant subalgebra. -/
+@[simp]
+theorem IsNormal.coinvariantsSubcoalgebra_carrier [Module.Flat R H]
+    [Module.Flat R (H ⧸ Subalgebra.toSubmodule I.coinvariants)] (hI : I.IsNormal) :
+    hI.coinvariantsSubcoalgebra.carrier = Subalgebra.toSubmodule I.coinvariants :=
+  (rfl)
+
 /-- The subcoalgebra of coinvariants has the coinvariants as its elements. -/
 @[simp]
 theorem IsNormal.mem_coinvariantsSubcoalgebra [Module.Flat R H]

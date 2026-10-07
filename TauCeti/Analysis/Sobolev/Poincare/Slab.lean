@@ -70,10 +70,8 @@ open scoped ENNReal Topology
 
 section OneDimensional
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-  {g g' : ℝ → F} {a b : ℝ}
+variable {F : Type*} [NormedAddCommGroup F] {g : ℝ → F} {a b : ℝ}
 
-omit [NormedSpace ℝ F] [CompleteSpace F] in
 /-- A continuous function supported in `Set.Icc a b` vanishes at the left endpoint: approaching
 `a` from the left it is identically zero. -/
 private theorem eq_zero_of_support_subset_Icc (hg : Continuous g)
@@ -84,7 +82,6 @@ private theorem eq_zero_of_support_subset_Icc (hg : Continuous g)
   by_contra h
   exact absurd (hsupp (Function.mem_support.2 fun h' => h h'.symm)).1 (not_le.2 ht)
 
-omit [NormedSpace ℝ F] [CompleteSpace F] in
 /-- A function supported in the degenerate interval `Set.Icc a a` and vanishing at `a` vanishes
 identically. -/
 private theorem eq_zero_of_support_subset_Icc_self (hsupp : Function.support g ⊆ Icc a a)
@@ -95,7 +92,6 @@ private theorem eq_zero_of_support_subset_Icc_self (hsupp : Function.support g �
     rw [le_antisymm htm.2 htm.1]
     exact hga
 
-omit [NormedSpace ℝ F] [CompleteSpace F] in
 /-- The support of `‖g ·‖ₑ ^ r` lies in the half-open interval `Set.Ioc a b`: the left endpoint
 is excluded because `g` vanishes there. -/
 private theorem support_enorm_rpow_subset_Ioc (hsupp : Function.support g ⊆ Icc a b)
@@ -106,7 +102,8 @@ private theorem support_enorm_rpow_subset_Ioc (hsupp : Function.support g ⊆ Ic
   have htm := hsupp (Function.mem_support.2 hgt)
   exact ⟨htm.1.lt_of_ne fun h => hgt (h ▸ hga), htm.2⟩
 
-omit [CompleteSpace F] in
+variable [NormedSpace ℝ F] {g' : ℝ → F}
+
 /-- **The fundamental theorem of calculus, in `∫⁻` form**: a function vanishing at `a` is bounded
 throughout `Set.Icc a b` by its total variation `∫ ‖g'‖` over the interval.
 
@@ -127,7 +124,6 @@ private theorem enorm_le_lintegral_enorm_deriv
     _ = ∫⁻ s in Ioc a t, ‖g' s‖ₑ := by rw [hderiv, setLIntegral_congr Ioc_ae_eq_Icc]
     _ ≤ ∫⁻ s in Ioc a b, ‖g' s‖ₑ := lintegral_mono_set (Ioc_subset_Ioc_right ht.2)
 
-omit [CompleteSpace F] in
 /-- **The one-dimensional Poincaré inequality**, in the `∫⁻` form the Fubini argument below
 consumes: a `C¹` function on `ℝ` that vanishes outside `Set.Icc a b` satisfies
 `∫ ‖g‖^r ≤ (b - a)^r ∫ ‖g'‖^r` for every `1 ≤ r`.
@@ -177,7 +173,6 @@ theorem lintegral_enorm_rpow_le_of_support_subset_Icc (hab : a ≤ b)
     _ ≤ ENNReal.ofReal ((b - a) ^ r) * ∫⁻ t, ‖g' t‖ₑ ^ r :=
         mul_le_mul' le_rfl (setLIntegral_le_lintegral _ _)
 
-omit [CompleteSpace F] in
 /-- **The one-dimensional Poincaré inequality**: a `C¹` function on `ℝ` supported in an interval
 of length `b - a` obeys `‖g‖_p ≤ (b - a) ‖g'‖_p` for every `1 ≤ p < ∞`.
 
@@ -196,7 +191,7 @@ end OneDimensional
 
 section Slab
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {n : ℕ} {u : EuclideanSpace ℝ (Fin (n + 1)) → F} {i : Fin (n + 1)} {a b : ℝ}
 
 /-- The parametrization of `ℝ^{n+1}` that isolates the `i`-th coordinate: the point with `i`-th
@@ -236,7 +231,6 @@ private theorem lintegral_eq_lintegral_slabChart {w : EuclideanSpace ℝ (Fin (n
   exact lintegral_prod_symm (fun z => w (slabChart i z))
     (hw.comp (measurePreserving_slabChart (i := i)).measurable).aemeasurable
 
-omit [CompleteSpace F] in
 /-- Along the line `t ↦ slabChart i (t, y)`, the function `u` has derivative the directional
 derivative of `u` in the `i`-th coordinate direction. Only differentiability at the single point
 of the line is needed. -/
@@ -251,7 +245,6 @@ private theorem hasDerivAt_comp_slabChart (y : Fin n → ℝ) {t : ℝ}
       (_root_.HasDerivAt.smul_const hid (EuclideanSpace.single i (1 : ℝ)))
   exact hu.hasFDerivAt.comp_hasDerivAt t hl
 
-omit [CompleteSpace F] in
 /-- The one-dimensional estimate on a single line of the slab: the `r`-th power integral of `u`
 along the line is at most `(b - a) ^ r` times that of the full derivative. Everything is asked of
 the restricted line only: differentiability of `u` along it, continuity of the *directional*
@@ -270,7 +263,6 @@ private theorem lintegral_enorm_rpow_comp_slabChart_le {y : Fin n → ℝ}
   refine ENNReal.ofReal_le_ofReal ?_
   simpa using (fderiv ℝ u (slabChart i (t, y))).le_opNorm (EuclideanSpace.single i 1)
 
-omit [CompleteSpace F] in
 /-- **The Poincaré inequality on a slab.** A `C¹` function on `ℝ^{n+1}` that vanishes outside
 the slab `{x | x i ∈ Set.Icc a b}` satisfies `‖u‖_p ≤ (b - a) ‖Du‖_p` for every `1 ≤ p < ∞`.
 
@@ -310,7 +302,6 @@ theorem eLpNorm_le_eLpNorm_fderiv_of_support_subset_slab (hu : ContDiff ℝ 1 u)
     _ = ENNReal.ofReal ((b - a) ^ r) * ∫⁻ x, ‖fderiv ℝ u x‖ₑ ^ r := by
         rw [lintegral_eq_lintegral_slabChart hmf]
 
-omit [CompleteSpace F] in
 /-- Membership in a Euclidean ball bounds every coordinate by the corresponding slab. -/
 theorem apply_mem_Icc_of_mem_ball {c x : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ}
     (hx : x ∈ Metric.ball c R) (i : Fin (n + 1)) : x i ∈ Icc (c i - R) (c i + R) := by
@@ -319,7 +310,6 @@ theorem apply_mem_Icc_of_mem_ball {c x : EuclideanSpace ℝ (Fin (n + 1))} {R : 
   rw [Real.norm_eq_abs, WithLp.ofLp_sub, Pi.sub_apply, abs_le] at hi
   constructor <;> linarith
 
-omit [CompleteSpace F] in
 /-- **The Poincaré inequality on a ball.** A `C¹` function on `ℝ^{n+1}` supported in a ball of
 radius `R` satisfies `‖u‖_p ≤ 2R ‖Du‖_p` for every `1 ≤ p < ∞`.
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Connected
+import Mathlib.Analysis.Normed.Module.RCLike.Real
 
 /-!
 # The exterior of a closed ball is preconnected

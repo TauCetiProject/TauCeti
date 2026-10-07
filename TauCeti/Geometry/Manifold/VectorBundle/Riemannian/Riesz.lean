@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Dual
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
+import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 
 /-!
 # Smoothness of the fibrewise Riesz dual

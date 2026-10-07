@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.CrossedProduct.CentralSimple
 public import TauCeti.Algebra.CrossedProduct.Cohomologous
 public import TauCeti.Algebra.BrauerGroup.Group
+public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 
 /-!
 # Brauer classes of crossed-product algebras

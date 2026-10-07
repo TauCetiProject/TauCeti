@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Group.Units
+public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
+public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
 
 /-!
@@ -25,6 +27,10 @@ so its module topology is Hausdorff when the field is Hausdorff and locally comp
 is locally compact. The unit topology inherits both properties, so the linear automorphisms of a
 finite-dimensional space over a Hausdorff locally compact field form a locally compact group. This
 is the local-compactness input for the orthogonal point group over `ℝ` and `ℚ_p`.
+
+Over a commutative topological ring the determinant is continuous on endomorphisms, being a
+polynomial in the matrix entries in any finite basis, and hence `LinearEquiv.det` is a continuous
+homomorphism from linear automorphisms to the units of the ring.
 -/
 
 public section
@@ -86,6 +92,14 @@ noncomputable def generalLinearContinuousMulEquiv :
     exact (LinearMap.GeneralLinearGroup.generalLinearEquiv K V).symm_apply_apply x
   continuous_invFun := continuous_induced_dom
 
+/-- The topological equivalence has Mathlib's canonical algebraic equivalence as its underlying
+multiplicative equivalence. -/
+@[simp]
+theorem coe_generalLinearContinuousMulEquiv :
+    (generalLinearContinuousMulEquiv (K := K) (V := V) :
+      LinearMap.GeneralLinearGroup K V ≃* V ≃ₗ[K] V) =
+      LinearMap.GeneralLinearGroup.generalLinearEquiv K V := (rfl)
+
 /-- A family of linear automorphisms is continuous exactly when its forward and inverse
 endomorphisms are both continuous. -/
 theorem continuous_linearEquiv_iff {X : Type*} [TopologicalSpace X]
@@ -118,10 +132,36 @@ theorem continuous_linearEquiv_toLinearMap :
     Continuous (fun e : V ≃ₗ[K] V => (e : Module.End K V)) :=
   (continuous_linearEquiv_iff.mp (continuous_id : Continuous (fun e : V ≃ₗ[K] V => e))).1
 
+section Basis
+
+variable [TopologicalSpace V] [IsModuleTopology K V]
+
+/-- A family of endomorphisms is continuous exactly when its values on the vectors of a finite
+basis vary continuously. -/
+theorem _root_.Module.Basis.continuous_iff_apply {X ι : Type*} [TopologicalSpace X]
+    [Finite ι] (b : Module.Basis ι K V) (f : X → Module.End K V) :
+    Continuous f ↔ ∀ i, Continuous (fun x ↦ f x (b i)) := by
+  let _ : ContinuousAdd V := IsModuleTopology.toContinuousAdd K V
+  let _ : ContinuousAdd (Module.End K V) :=
+    IsModuleTopology.toContinuousAdd K (Module.End K V)
+  constructor
+  · intro hf i
+    exact (IsModuleTopology.continuous_of_linearMap
+      ((LinearMap.applyₗ : V →ₗ[K] Module.End K V →ₗ[K] V) (b i))).comp hf
+  · intro h
+    let : IsModuleTopology K (ι → V) := inferInstance
+    have hvalues : Continuous (fun x i ↦ f x (b i)) := continuous_pi h
+    have hconstr : Continuous ((b.constr K).toLinearMap : (ι → V) → Module.End K V) :=
+      IsModuleTopology.continuous_of_linearMap (b.constr K).toLinearMap
+    exact (hconstr.comp hvalues).congr fun x ↦ b.constr_self K (f x)
+
+end Basis
+
 section FiniteDimensional
 
 variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalSemiring K]
   [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  [TopologicalSpace V] [IsModuleTopology K V]
 
 /-- The endomorphism algebra of a finite-dimensional space over a Hausdorff field is Hausdorff. -/
 instance instT2SpaceModuleEnd [T2Space K] : T2Space (Module.End K V) :=
@@ -153,5 +193,37 @@ instance instLocallyCompactSpaceLinearEquiv : LocallyCompactSpace (V ≃ₗ[K] V
     inferInstance
 
 end LocallyCompact
+
+section Det
+
+variable {K V : Type*} [CommRing K] [TopologicalSpace K] [IsTopologicalRing K]
+  [AddCommGroup V] [Module K V]
+
+/-- The determinant of an endomorphism is continuous in the module topology: in a finite basis it
+is a polynomial in the matrix entries, and without a finite basis it is the constant `1`. -/
+@[fun_prop]
+theorem continuous_linearMap_det : Continuous (LinearMap.det : Module.End K V → K) := by
+  classical
+  by_cases H : ∃ s : Finset V, Nonempty (Module.Basis s K V)
+  · obtain ⟨s, ⟨b⟩⟩ := H
+    have h : Continuous (LinearMap.toMatrix b b : Module.End K V → Matrix s s K) :=
+      IsModuleTopology.continuous_of_linearMap (LinearMap.toMatrix b b).toLinearMap
+    exact h.matrix_det.congr fun f ↦ LinearMap.det_toMatrix b f
+  · simp only [LinearMap.coe_det, H, dite_false]
+    exact continuous_const
+
+/-- The determinant of a linear automorphism is continuous as a map to the units of the scalar
+ring. -/
+@[fun_prop]
+theorem continuous_linearEquiv_det :
+    Continuous (LinearEquiv.det : (V ≃ₗ[K] V) → Kˣ) := by
+  refine Units.continuous_iff.mpr ⟨?_, ?_⟩
+  · simp_rw [Function.comp_def, LinearEquiv.coe_det]
+    exact continuous_linearMap_det.comp continuous_linearEquiv_toLinearMap
+  · simp_rw [LinearEquiv.coe_inv_det]
+    exact continuous_linearMap_det.comp
+      (continuous_linearEquiv_iff.mp (continuous_id : Continuous fun e : V ≃ₗ[K] V ↦ e)).2
+
+end Det
 
 end TauCeti

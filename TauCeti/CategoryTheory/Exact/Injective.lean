@@ -350,6 +350,26 @@ def op {X : C} (P : E.ProjectivePresentation X) :
   conflation := (E.op_conflation_op_iff _).mpr P.conflation
   isInjective := (E.isProjective_iff_isInjective_op P.P).mp P.isProjective
 
+/-- The middle term of the opposite presentation is the opposite projective term. -/
+@[simp] theorem op_I {X : C} (P : E.ProjectivePresentation X) :
+    P.op.I = Opposite.op P.P := (rfl)
+
+/-- The cokernel term of the opposite presentation is the opposite kernel term. -/
+@[simp] theorem op_K {X : C} (P : E.ProjectivePresentation X) :
+    P.op.K = Opposite.op P.K := (rfl)
+
+/-- After identifying the middle term, the opposite presentation starts with the opposite
+deflation. -/
+@[simp] theorem op_i {X : C} (P : E.ProjectivePresentation X) :
+    P.op.i ≫ eqToHom P.op_I = P.p.op :=
+  Category.comp_id P.p.op
+
+/-- After identifying the middle and cokernel terms, the opposite presentation ends with the
+opposite inflation. -/
+@[simp] theorem op_p {X : C} (P : E.ProjectivePresentation X) :
+    eqToHom P.op_I.symm ≫ P.op.p ≫ eqToHom P.op_K = P.i.op :=
+  (Category.id_comp (P.i.op ≫ 𝟙 _)).trans (Category.comp_id P.i.op)
+
 /-- Unopposing a projective presentation gives an injective presentation. -/
 def unop {X : Cᵒᵖ} (P : E.op.ProjectivePresentation X) :
     E.InjectivePresentation X.unop where

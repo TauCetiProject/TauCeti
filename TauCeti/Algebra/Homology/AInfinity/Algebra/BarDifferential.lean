@@ -54,10 +54,7 @@ theorem higherTaylor_of (𝒜 : AInfinityAlgebra R A)
     intro h
     have h' : n.1 = 1 := congrArg Subtype.val h
     omega
-  have hletter : ReducedTensorWords.letter R A (ReducedTensorWords.of R A n x) = 0 := by
-    rw [ReducedTensorWords.letter_apply,
-      ReducedTensorWords.component_of_of_ne R A hne x, map_zero]
-  simp [higherTaylor, hletter]
+  simp [higherTaylor, ReducedTensorWords.letter_of_of_ne_one R A hne]
 
 /-- The part of the bar differential that collapses blocks of at least two letters. -/
 noncomputable def higherBarDifferential (𝒜 : AInfinityAlgebra R A) :
@@ -100,6 +97,55 @@ theorem higherBarDifferential_ofLetter (𝒜 : AInfinityAlgebra R A) (a : A) :
   have h := 𝒜.higherBarDifferential_filtration 0
     ⟨_, ReducedTensorWords.ofLetter_mem_filtration R A a, rfl⟩
   rwa [ReducedTensorWords.filtration_zero] at h
+
+/-- The higher bar differential collapses a two-letter word to the binary operation, with the
+suspension sign carried by the degree-one Koszul twist of the first letter. -/
+theorem higherBarDifferential_of_two (𝒜 : AInfinityAlgebra R A) (a b : A) :
+    𝒜.higherBarDifferential (ReducedTensorWords.of R A (2 : ℕ+)
+        (PiTensorProduct.tprod R ![a, b])) =
+      ReducedTensorWords.ofLetter R A (𝒜.m 2 ![𝒜.grading.koszulTwist 1 a, b]) := by
+  refine ReducedTensorWords.eq_of_deconcatenation_eq_of_letter_eq R A ?_ ?_
+  · rw [𝒜.isGradedCoderivation_higherBarDifferential.deconcatenation_apply,
+      ReducedTensorWords.deconcatenation_of_two, ReducedTensorWords.deconcatenation_ofLetter]
+    simp only [LinearMap.rTensor_tmul, LinearMap.lTensor_tmul, higherBarDifferential_ofLetter,
+      TensorProduct.zero_tmul, TensorProduct.tmul_zero, add_zero]
+  · rw [← LinearMap.comp_apply, letter_comp_higherBarDifferential,
+      𝒜.higherTaylor_of (2 : ℕ+) (by decide), taylor_of_two, ReducedTensorWords.letter_ofLetter]
+
+/-- The higher bar differential of a three-letter word: the two collapses of adjacent letters to
+the binary operation, the second one with the sign of moving the degree-one operation past the
+first letter, and the collapse of all three letters to the ternary operation.  Koszul twists carry
+the suspension signs. -/
+theorem higherBarDifferential_of_three (𝒜 : AInfinityAlgebra R A) (a b c : A) :
+    𝒜.higherBarDifferential (ReducedTensorWords.of R A (3 : ℕ+)
+        (PiTensorProduct.tprod R ![a, b, c])) =
+      ReducedTensorWords.of R A (2 : ℕ+)
+          (PiTensorProduct.tprod R ![𝒜.m 2 ![𝒜.grading.koszulTwist 1 a, b], c])
+        - ReducedTensorWords.of R A (2 : ℕ+)
+            (PiTensorProduct.tprod R
+              ![𝒜.grading.koszulTwist 1 a, 𝒜.m 2 ![𝒜.grading.koszulTwist 1 b, c]])
+        + ReducedTensorWords.ofLetter R A (𝒜.m 3 ![a, 𝒜.grading.koszulTwist 1 b, c]) := by
+  -- Read the three-letter word as the letter `a` prepended to the two-letter word `b c`.
+  have h3 : ReducedTensorWords.of R A (3 : ℕ+) (PiTensorProduct.tprod R ![a, b, c]) =
+      ReducedTensorWords.prepend R A a
+        (ReducedTensorWords.of R A (2 : ℕ+) (PiTensorProduct.tprod R ![b, c])) :=
+    (ReducedTensorWords.prepend_of_tprod a (2 : ℕ+) ![b, c]).symm
+  refine ReducedTensorWords.eq_of_deconcatenation_eq_of_letter_eq R A ?_ ?_
+  · rw [𝒜.isGradedCoderivation_higherBarDifferential.deconcatenation_apply, h3,
+      ReducedTensorWords.deconcatenation_prepend]
+    -- Distribute the two tensor factors of the co-Leibniz rule first, then evaluate the letters.
+    simp only [map_add, map_sub, ReducedTensorWords.deconcatenation_of_two,
+      ReducedTensorWords.deconcatenation_ofLetter, LinearMap.rTensor_tmul, LinearMap.lTensor_tmul,
+      ReducedTensorWords.prepend_ofLetter, higherBarDifferential_ofLetter,
+      higherBarDifferential_of_two, ReducedTensorWords.map_ofLetter,
+      TensorProduct.zero_tmul, TensorProduct.tmul_zero, zero_add, add_zero]
+    rw [InternalGrading.koszulTwist_one_shift_one, LinearMap.neg_apply, map_neg,
+      TensorProduct.neg_tmul]
+    abel
+  · rw [← LinearMap.comp_apply, letter_comp_higherBarDifferential,
+      𝒜.higherTaylor_of (3 : ℕ+) (by decide), taylor_of_three, map_add, map_sub,
+      ReducedTensorWords.letter_of_two, ReducedTensorWords.letter_of_two,
+      ReducedTensorWords.letter_ofLetter, sub_zero, zero_add]
 
 /-- The unary part of the bar differential acts on one letter at a time. -/
 noncomputable def unaryBarDifferential (𝒜 : AInfinityAlgebra R A) :

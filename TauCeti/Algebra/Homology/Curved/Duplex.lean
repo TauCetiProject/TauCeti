@@ -464,6 +464,10 @@ noncomputable def HomotopyCategory.parityShiftEquivalence :
   MorphismIdeal.mapEquivalence (CurvedDuplex.parityShiftEquivalence C w) _ _
     comap_parityShift_nullHomotopic.symm
 
+instance : (HomotopyCategory.parityShiftEquivalence C w).functor.Additive := by
+  unfold HomotopyCategory.parityShiftEquivalence
+  infer_instance
+
 /-- The parity shift of the homotopy category is induced by the parity shift of curved
 duplexes. -/
 theorem HomotopyCategory.quotientFunctor_comp_parityShiftEquivalence_functor :

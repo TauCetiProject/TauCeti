@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.GradientFlow
 public import TauCeti.Dynamics.Flow.OfLipschitz
+import TauCeti.Analysis.Calculus.Gradient
 
 /-!
 # Existence of the negative gradient flow
@@ -32,6 +33,8 @@ Lyapunov descent along any orbit on which `f` is differentiable.
 
 * `TauCeti.negativeGradientFlow`: the negative gradient flow of a function with globally Lipschitz
   gradient.
+* `TauCeti.contDiff_negativeGradientFlow` and `TauCeti.contDiff_negativeGradientFlow_apply`: for a
+  globally `C²` function, this flow is `C¹` jointly and at each fixed time.
 * `TauCeti.isNegativeGradient_negativeGradientFlow`: it is a negative gradient flow of `f`.
 * `TauCeti.eq_negativeGradientFlow`: every global negative gradient trajectory is one of its
   orbits.
@@ -71,6 +74,23 @@ object the hypothesis `LipschitzWith K (∇ f)` speaks about. -/
 noncomputable def negativeGradientFlow (f : E → ℝ) {K : ℝ≥0} (hf : LipschitzWith K (∇ f)) :
     _root_.Flow ℝ E :=
   flowOfLipschitz (fun x ↦ -∇ f x) hf.neg
+
+/-- **The negative-gradient flow of a globally `C²` function is `C¹`**, jointly in time and
+the initial condition. The global Lipschitz hypothesis supplies completeness of every orbit, while
+the two derivatives of `f` make its negative-gradient field `C¹`. -/
+theorem contDiff_negativeGradientFlow (f : E → ℝ) (hf : LipschitzWith K (∇ f))
+    (hfs : ContDiff ℝ 2 f) :
+    ContDiff ℝ 1 (Function.uncurry (negativeGradientFlow f hf)) := by
+  apply contDiff_flowOfLipschitz 0 (fun x ↦ -∇ f x) hf.neg
+  exact (hfs.gradient_right (m := 1) (by norm_num)).neg
+
+/-- At every fixed time, the negative-gradient flow of a globally `C²` function is `C¹` in its
+initial condition. -/
+theorem contDiff_negativeGradientFlow_apply (f : E → ℝ) (hf : LipschitzWith K (∇ f))
+    (hfs : ContDiff ℝ 2 f) (t : ℝ) :
+    ContDiff ℝ 1 (negativeGradientFlow f hf t) := by
+  apply contDiff_flowOfLipschitz_apply 0 (fun x ↦ -∇ f x) hf.neg
+  exact (hfs.gradient_right (m := 1) (by norm_num)).neg
 
 /-- **The negative gradient flow is a negative gradient flow**: each of its orbits solves
 `γ' = -∇f(γ)`. -/

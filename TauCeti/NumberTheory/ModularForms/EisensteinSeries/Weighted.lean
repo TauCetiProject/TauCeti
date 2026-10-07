@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.Basic
+import Mathlib.Analysis.Complex.LocallyUniformLimit
+import Mathlib.NumberTheory.ModularForms.Identities
 
 /-!
 # Eisenstein series weighted by a function of residues

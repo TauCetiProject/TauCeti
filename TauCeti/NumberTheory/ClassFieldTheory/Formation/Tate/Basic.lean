@@ -261,16 +261,16 @@ theorem tensorProduct_map_trivialRangeRepHom (T : LayerRestriction small big) :
   rw [T.trivialRangeRepHom_hom_toLinearMap, LinearMap.rTensor_def]
 
 /-- In degree `-2`, the trivial range comparison becomes the map induced on abelianizations
-under the low-degree identifications. -/
+under the generic low-degree identifications. -/
 @[simp]
-theorem tateHMinusTwoEquivAbelianization_trivialTateRangeIso_hom_neg_two
+theorem HNegTwoAddEquivAbelianization_trivialTateRangeIso_hom_neg_two
     (T : LayerRestriction small big) (x : small.TrivialTateH (-2)) :
     TensorProduct.rid ℤ (Additive (Abelianization T.galHom.range))
         (TauCeti.TateCohomology.HNegTwoAddEquivTensorOfIsTrivial
           (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ))
           ((T.trivialTateRangeIso (-2)).hom x)) =
       (Abelianization.map (MonoidHom.ofInjective T.galHom_injective)).toAdditive
-        (small.tateHMinusTwoEquivAbelianization x) := by
+        (TauCeti.TateCohomology.HNegTwoAddEquivAbelianization x) := by
   rw [TauCeti.TateCohomology.HNegTwoAddEquivTensorOfIsTrivial_apply,
     T.trivialTateRangeIso_hom_comp_isoGroupHomology_hom_neg_two_apply]
   let y : groupHomology.H1 (Rep.trivial ℤ small.Gal ℤ) :=
@@ -282,7 +282,6 @@ theorem tateHMinusTwoEquivAbelianization_trivialTateRangeIso_hom_neg_two
     (groupHomology.H1AddEquivOfIsTrivial _
       (groupHomology.map _ T.trivialRangeRepHom 1 y)) = _
   rw [TauCeti.groupHomology.H1AddEquivOfIsTrivial_map,
-    NormalLayer.tateHMinusTwoEquivAbelianization_apply,
     TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_apply,
     TauCeti.TateCohomology.HNegTwoAddEquivTensorOfIsTrivial_apply]
   -- Realign the coercions inserted by the generic homology naturality theorem with the concrete

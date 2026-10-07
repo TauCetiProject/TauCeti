@@ -9,11 +9,12 @@ public import Mathlib.RingTheory.TensorProduct.Basic
 public import Mathlib.RingTheory.TensorProduct.Free
 
 /-!
-# Multiplying by `a ⊗ₜ 1` in `A ⊗[K] B`
+# Multiplying pure tensors in `A ⊗[K] B`
 
 Two formulas for multiplication by a pure tensor `a ⊗ₜ 1` in an algebra tensor product, one on
-each side. Both are general facts about `A ⊗[K] B` over a commutative semiring: neither needs `A`
-or `B` to be central, simple, or even a ring.
+each side, and two criteria for pure tensors to anticommute. All are general facts about
+`A ⊗[K] B` over a commutative semiring: none needs `A` or `B` to be central, simple, or even a
+ring.
 
 ## Main results
 
@@ -22,7 +23,7 @@ or `B` to be central, simple, or even a ring.
 * `Algebra.TensorProduct.basis_repr_mul_tmul_one`: multiplying on the right by `a ⊗ₜ 1` multiplies
   each coordinate against `Algebra.TensorProduct.basis` by `a` on the right.
 
-Both are declared into Mathlib's root `Algebra.TensorProduct` namespace, which houses the algebra
+All are declared into Mathlib's root `Algebra.TensorProduct` namespace, which houses the algebra
 tensor product's multiplicative API, rather than into a `TauCeti.`-prefixed copy of it. (The
 underlying type is the root `TensorProduct`; `Algebra.TensorProduct` is where its algebra
 structure and the lemmas about it live.)
@@ -48,6 +49,20 @@ theorem _root_.Algebra.TensorProduct.tmul_one_mul_eq_smul (a : A) (x : A ⊗[K] 
     (a ⊗ₜ[K] (1 : B)) * x = a • x := by
   rw [← smul_one_mul a x, Algebra.TensorProduct.one_def, TensorProduct.smul_tmul', smul_eq_mul,
     mul_one]
+
+/-- Pure tensors anticommute when their left factors anticommute and right factors commute. -/
+theorem _root_.Algebra.TensorProduct.tmul_anticommute_of_left {x x' : A} {y y' : B}
+    (hx : x * x' + x' * x = 0) (hy : Commute y y') :
+    x ⊗ₜ[K] y * x' ⊗ₜ y' + x' ⊗ₜ y' * x ⊗ₜ y = 0 := by
+  rw [Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul, hy.eq,
+    ← TensorProduct.add_tmul, hx, TensorProduct.zero_tmul]
+
+/-- Pure tensors anticommute when their left factors commute and right factors anticommute. -/
+theorem _root_.Algebra.TensorProduct.tmul_anticommute_of_right {x x' : A} {y y' : B}
+    (hx : Commute x x') (hy : y * y' + y' * y = 0) :
+    x ⊗ₜ[K] y * x' ⊗ₜ y' + x' ⊗ₜ y' * x ⊗ₜ y = 0 := by
+  rw [Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul, hx.eq,
+    ← TensorProduct.tmul_add, hy, TensorProduct.tmul_zero]
 
 variable (𝓑 : Module.Basis ι K B)
 

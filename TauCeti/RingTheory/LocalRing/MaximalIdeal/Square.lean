@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Square
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 public import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 public import TauCeti.LinearAlgebra.Span.Basic
+import Mathlib.RingTheory.Nakayama
 
 /-!
 # Elements of `𝔪 \ 𝔪²` in a local ring

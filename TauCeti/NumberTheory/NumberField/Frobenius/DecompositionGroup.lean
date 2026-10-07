@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.Finite.Basic
 public import TauCeti.NumberTheory.NumberField.Frobenius
 public import TauCeti.NumberTheory.RamificationInertia.Galois
+public import TauCeti.RingTheory.Ideal.RamificationGroup
 
 /-!
 # The Frobenius, the inertia subgroup, and the decomposition group
@@ -43,6 +44,9 @@ prime `τ • Q` gives the other.
 
 * `Ideal.isUnramifiedAt_iff_inertia_eq_bot`: unramifiedness at `Q` is triviality of the
   inertia subgroup of `Q` in `Gal(L/K)`.
+* `Ideal.ramificationGroup_zero_eq_bot_iff_isUnramifiedAt` and
+  `Ideal.ramificationGroup_eq_bot_of_isUnramifiedAt`: equivalently, the ramification group `G_0`
+  of `Q` is trivial, and then so is every `G_i`.
 * `Ideal.stabilizerHom_eq_frobeniusAlgEquivOfAlgebraic`: a Frobenius element at `Q` acts on
   the residue field `𝓞 L ⧸ Q` as the residue Frobenius.
 * `Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt`: a Frobenius element at an unramified `Q`
@@ -102,6 +106,21 @@ theorem isUnramifiedAt_iff_inertia_eq_bot (Q : Ideal (𝓞 L)) [Q.IsPrime] :
   rw [← Ideal.ramificationIdx_eq_one_iff (R := 𝓞 K) (q := Q),
     ← Ideal.card_inertia_eq_ramificationIdx (𝓞 K) (L ≃ₐ[K] L) Q]
   exact ⟨Subgroup.eq_bot_of_card_eq _, fun h ↦ by rw [h]; simp⟩
+
+/-- **Unramified means trivial `G_0`.** For a finite Galois extension `L / K` of number fields,
+the ramification group `G_0` of a prime `Q` of `𝓞 L` is trivial exactly when `L / K` is unramified
+at `Q`. -/
+theorem ramificationGroup_zero_eq_bot_iff_isUnramifiedAt (Q : Ideal (𝓞 L)) [Q.IsPrime] :
+    Q.ramificationGroup (L ≃ₐ[K] L) 0 = ⊥ ↔ Algebra.IsUnramifiedAt (𝓞 K) Q := by
+  rw [ramificationGroup_zero, isUnramifiedAt_iff_inertia_eq_bot]
+
+/-- **The ramification filtration of an unramified prime is trivial.** For a finite Galois
+extension `L / K` of number fields unramified at a prime `Q` of `𝓞 L`, every ramification group
+`G_i` of `Q` is trivial. -/
+@[simp]
+theorem ramificationGroup_eq_bot_of_isUnramifiedAt (Q : Ideal (𝓞 L)) [Q.IsPrime]
+    [Algebra.IsUnramifiedAt (𝓞 K) Q] (i : ℕ) : Q.ramificationGroup (L ≃ₐ[K] L) i = ⊥ :=
+  eq_bot_mono (ramificationGroup_le_inertia Q i) ((isUnramifiedAt_iff_inertia_eq_bot Q).1 ‹_›)
 
 /-! ### The decomposition group at an unramified prime -/
 
@@ -352,12 +371,11 @@ theorem inertiaDeg_eq_one_iff_mem_inertia_of_isArithFrobAt (Q : Ideal (𝓞 L)) 
 
 /-! ### Conjugation along the fibre -/
 
-/-- **Frobenius elements are conjugated by the Galois action on primes.** At an unramified prime
-`Q` with arithmetic Frobenius `σ`, an element of `Gal(L/K)` is an arithmetic Frobenius at the
+omit [NumberField K] [IsGalois K L] in
+/-- **Frobenius elements are conjugated by the automorphism action on primes.** At an unramified
+prime `Q` with arithmetic Frobenius `σ`, an element of `Gal(L/K)` is an arithmetic Frobenius at the
 translated prime `τ • Q` exactly when it is the conjugate `τ σ τ⁻¹`.
-
-Mathlib's `IsArithFrobAt.conj` gives that `τ σ τ⁻¹` is one; uniqueness at `τ • Q`, which is
-unramified by `Ideal.isUnramifiedAt_pointwise_smul_iff`, gives that it is the only one. -/
+The extension need not be normal. -/
 theorem isArithFrobAt_pointwise_smul_iff_eq_conj (Q : Ideal (𝓞 L)) [Q.IsPrime]
     [Algebra.IsUnramifiedAt (𝓞 K) Q] {σ : L ≃ₐ[K] L} (hσ : IsArithFrobAt (𝓞 K) σ Q)
     (τ ρ : L ≃ₐ[K] L) :

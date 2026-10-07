@@ -83,7 +83,7 @@ identity germ. -/
 theorem localBCH_sliceLeft :
     (localBCH A).sliceLeft = (↑(fun x : A ↦ x) : Germ (𝓝 (0 : A)) A) := by
   rw [localBCH_def, Germ.sliceLeft_coe, Germ.coe_eq]
-  filter_upwards [eventually_logOneAdd_exp_sub_one A] with x hx
+  filter_upwards [eventually_logOneAdd_exp_sub_one ℝ A] with x hx
   simpa using hx
 
 /-- Restricting the local Baker--Campbell--Hausdorff germ to the second coordinate axis gives the
@@ -92,7 +92,7 @@ identity germ. -/
 theorem localBCH_sliceRight :
     (localBCH A).sliceRight = (↑(fun y : A ↦ y) : Germ (𝓝 (0 : A)) A) := by
   rw [localBCH_def, Germ.sliceRight_coe, Germ.coe_eq]
-  filter_upwards [eventually_logOneAdd_exp_sub_one A] with y hy
+  filter_upwards [eventually_logOneAdd_exp_sub_one ℝ A] with y hy
   simpa using hy
 
 private theorem tendsto_exp_mul_exp_sub_one :
@@ -109,7 +109,7 @@ theorem localBCH_map_exp :
       (↑(fun p : A × A ↦ exp p.1 * exp p.2) : Germ (𝓝 ((0, 0) : A × A)) A) := by
   rw [localBCH_def, Germ.map_coe, Germ.coe_eq]
   filter_upwards [(tendsto_exp_mul_exp_sub_one A).eventually
-    (eventually_exp_logOneAdd A)] with p hp
+    (eventually_exp_logOneAdd ℝ A)] with p hp
   simpa [Function.comp_def] using hp
 
 /-- The representative defining `localBCH` is analytic at the origin. -/
@@ -136,7 +136,8 @@ theorem eq_localBCH_of_tendsto_of_map_exp_eq (f : Germ (𝓝 ((0, 0) : A × A)) 
             (fun p => exp p.1 * exp p.2) := by
         rw [Germ.map_coe, localBCH_map_exp, Germ.coe_eq] at hmap
         simpa only [Function.comp_def] using hmap
-      filter_upwards [hf.eventually (eventually_logOneAdd_exp_sub_one A), hmap'] with p hp hmap_p
+      filter_upwards [hf.eventually (eventually_logOneAdd_exp_sub_one ℝ A), hmap']
+        with p hp hmap_p
       rw [← hmap_p]
       exact hp.symm
 

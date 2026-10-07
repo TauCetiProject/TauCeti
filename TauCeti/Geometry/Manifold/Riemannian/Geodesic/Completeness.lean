@@ -56,7 +56,6 @@ variable
 variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [T2Space (TangentBundle I M)]
 
 variable {p : M} {v : TangentSpace I p}
 
@@ -107,7 +106,7 @@ section Metric
 variable {M : Type*} [MetricSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [T2Space (TangentBundle I M)] [IsRiemannianManifold I M]
+  [IsRiemannianManifold I M]
 
 /-- The distance from `p` to `exp_p v` is at most `‖v‖`; see `edist_riemannianExp_le`. -/
 theorem dist_riemannianExp_le (p : M) (v : TangentSpace I p) :

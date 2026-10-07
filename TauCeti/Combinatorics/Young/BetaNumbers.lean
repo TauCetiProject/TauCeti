@@ -123,13 +123,13 @@ theorem exists_eq_betaNumber_of_strictAnti {r : ℕ} {η : Fin r → ℕ} (hη :
     set L : Fin r := ⟨r - 1, by omega⟩ with hLdef
     have hLval : (L : ℕ) = r - 1 := rfl
     have hle : j ≤ L := Fin.le_def.mpr (by rw [hLval]; omega)
-    have hgap := TauCeti.add_sub_le_of_strictAnti hη hle
+    have hgap := hη.add_sub_le_nat hle
     rw [hLval] at hgap
     omega
   have hanti : Antitone fun j : Fin r => η j - (r - 1 - (j : ℕ)) := by
     intro i j hij
     dsimp only
-    have hgap := TauCeti.add_sub_le_of_strictAnti hη hij
+    have hgap := hη.add_sub_le_nat hij
     have hi := hshift i
     have hj := hshift j
     have hij' : (i : ℕ) ≤ (j : ℕ) := Fin.le_def.mp hij

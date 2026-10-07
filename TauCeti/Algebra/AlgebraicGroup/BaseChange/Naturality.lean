@@ -17,9 +17,9 @@ identifies `K`-algebra maps out of `K ⊗[k] A` with `k`-algebra maps out of `A`
 identification is compatible with post-composition in the value algebra and with
 pre-composition by morphisms of coordinate bialgebras.
 
-These lemmas are part of the ReductiveGroups roadmap Layer 0 base-change target: after the
-convolution group structure on points, the functor-of-points dictionary needs base change to
-behave naturally in both the value algebra and the coordinate Hopf algebra.
+After establishing the convolution group structure on points, the functor-of-points
+dictionary requires base change to behave naturally in both the value algebra and the
+coordinate Hopf algebra.
 
 Worked examples of base-changed groups can combine these generic lemmas with the corresponding
 unbased points naturality calculation, avoiding duplicate example-specific wrappers around the
@@ -32,7 +32,7 @@ same base-change argument.
 * `TauCeti.AlgHom.baseChangePointsMulEquiv_mapDomain`: base change of points commutes with
   pre-composition in the coordinate bialgebra.
 
-## References
+## See also
 
 This builds on Mathlib's tensor-product bialgebra map
 `Bialgebra.TensorProduct.map`, Mathlib's algebra base-change adjunction

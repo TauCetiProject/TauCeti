@@ -241,7 +241,7 @@ invariant `⟪e ·, e ·⟫` pulled back from `W`. Only the unitary model needs 
 `V` is asked for no more than a finite-dimensional normed space, as
 `TauCeti.ContRepresentation.congr` itself is. Nothing here uses finiteness or compactness of the
 acting group; a construction of an `e` is what such a hypothesis is for, Weyl's unitarian trick
-`TauCeti.ContRepresentation.exists_isUnitary_congr` being one. -/
+`ContRepresentation.exists_isUnitary_congr` being one. -/
 theorem exists_orthogonal_irreducible_decomposition_of_congr {e : V ≃L[𝕜] W}
     (he : IsUnitary (ContRepresentation.congr e π)) :
     ∃ (n : ℕ) (U : Fin n → Subrepresentation π.toRepresentation),

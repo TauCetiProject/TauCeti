@@ -7,10 +7,14 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.ShortWeierstrass
+public import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
 
 import Mathlib.RingTheory.LocalRing.Basic
 import TauCeti.Algebra.Ring.TwoPowMulThreePow
+import TauCeti.AlgebraicGeometry.EllipticCurve.GlobalMinimalModel
+import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
+import TauCeti.NumberTheory.DedekindDomain.FiniteApproximation
 
 /-!
 # Kraus's criterion: which pairs of invariants come from an integral equation
@@ -27,7 +31,10 @@ where the coefficients `a₁`, `a₂`, `a₃` of the sought equation have to abs
 `ofCInvariants c₄ c₆`.
 
 This file states that obstruction as Kraus's local condition and proves it exact: over a local
-ring the condition holds precisely when an integral equation with those invariants exists.
+ring the condition holds precisely when an integral equation with those invariants exists. Over a
+Dedekind domain `O` with fraction field `K` the local conditions at all height-one primes are
+then shown to patch: they hold everywhere exactly when a single equation with coefficients in `O`
+has invariants `c₄` and `c₆`.
 Because every equation is the `(b₂/12, a₁/2, a₃/2)`-transform of the canonical one
 (`WeierstrassCurve.smul_ofCInvariants`), the auxiliary data of the criterion is a candidate for
 those coefficients — a single `b₂` above `3`, where completing the square is free, and a pair
@@ -43,6 +50,8 @@ those coefficients — a single `b₂` above `3`, where completing the square is
   `a₂ = 0`, so `b₂ = a₁²`.
 * `TauCeti.KrausLocalCondition`: integrality of `c₄`, `c₆` and `Δ`, nonvanishing of `Δ`, and the
   two witness conditions, each imposed only when the corresponding numeral is a nonunit.
+* `TauCeti.KrausGlobalCondition`: Kraus's local condition at the localisation of a Dedekind
+  domain at every height-one prime.
 
 ## Main results
 
@@ -53,6 +62,21 @@ those coefficients — a single `b₂` above `3`, where completing the square is
   the canonical equation is itself integral, so no auxiliary data is needed;
 * `TauCeti.krausLocalCondition_of_isUnit_six`: consequently the condition is automatic there,
   given only the integrality and nonvanishing of the invariants.
+* `TauCeti.krausGlobalCondition_iff_exists_integralModel`: over a Dedekind domain with at least
+  one height-one prime, the global condition holds exactly when some Weierstrass equation with
+  coefficients in `O` has `c`-invariants `c₄` and `c₆` and nonzero discriminant.
+
+## Patching the local witnesses
+
+Every witness is a change of variables `(B/12, A/2, G/2)` with `u = 1` and `A, B, G` in the local
+ring. Two such triples give the same integrality as soon as the second is congruent to the first
+modulo `12`, after the correction `G ↦ G + A·(b - B)/12` of the last entry. The change of
+variables between the two transforms is then `((b - B)/12, (a - A)/2, (g - G - A(b - B)/12)/2)`,
+which has coefficients in the local ring. A single modulus therefore serves the primes above `2`
+and above `3` alike, and at the remaining primes `12` is a unit. Approximating the local
+`A`, `B` and the corrected `G` modulo `12` by elements of `O`
+(`TauCeti.DedekindDomain.exists_forall_sub_mem_span_singleton_localizationAtPrime`) produces
+one global change of variables.
 
 ## Provenance
 
@@ -141,6 +165,25 @@ theorem krausLocalCondition_of_isUnit_six (h6 : IsUnit (6 : R))
   have h3 : IsUnit (3 : R) := isUnit_of_dvd_unit ⟨2, by norm_num⟩ h6
   have := isIntegral_ofCInvariants h6 h₄ h₆
   exact ⟨h₄, h₆, Δ_integral_of_isIntegral R _, hΔ, fun h ↦ absurd h2 h, fun h ↦ absurd h3 h⟩
+
+/-! ### Kraus's global condition over a Dedekind domain -/
+
+variable (O : Type*) [CommRing O] [IsDedekindDomain O] [Algebra O K] [IsFractionRing O K]
+
+open IsDedekindDomain
+
+/-- **Kraus's global condition on a pair of invariants**: Kraus's local condition holds over the
+localisation of the Dedekind domain `O` at every height-one prime. -/
+def KrausGlobalCondition (c₄ c₆ : K) : Prop :=
+  ∀ v : HeightOneSpectrum O, KrausLocalCondition (Localization.AtPrime v.asIdeal) c₄ c₆
+
+variable {O}
+
+/-- Kraus's global condition, unfolded: the local condition at every height-one prime. -/
+@[simp]
+theorem krausGlobalCondition_iff : KrausGlobalCondition O c₄ c₆ ↔
+    ∀ v : HeightOneSpectrum O, KrausLocalCondition (Localization.AtPrime v.asIdeal) c₄ c₆ :=
+  Iff.rfl
 
 variable [Invertible (2 : K)] [Invertible (3 : K)]
 
@@ -236,5 +279,93 @@ theorem krausLocalCondition_iff_exists_integralModel [IsLocalRing R] :
       exact hasKrausThreeWitness_of_baseChange (V.toCharNeTwoNF • V)
         (a₁_of_isCharNeTwoNF _) (a₃_of_isCharNeTwoNF _)
         (baseChange_smul_c₄ K rfl V) (baseChange_smul_c₆ K rfl V)
+
+/-! ### Kraus's global criterion -/
+
+/-- **Every local witness is a change of variables `(B/12, A/2, G/2)`.** Under Kraus's local
+condition over a local ring, some such triple, with `A`, `B`, `G` in `R`, carries the canonical
+equation to an integral one. These entries can be taken to be the coefficients `a₁`, `b₂`,
+`a₃` of an integral model supplied by the local criterion. -/
+private theorem KrausLocalCondition.exists_isIntegral_smul [IsLocalRing R]
+    (h : KrausLocalCondition R c₄ c₆) :
+    ∃ A B G : R, ((⟨1, algebraMap R K B / 12, algebraMap R K A / 2, algebraMap R K G / 2⟩ :
+      VariableChange K) • ofCInvariants c₄ c₆).IsIntegral R := by
+  obtain ⟨W, hW, h₄, h₆, _⟩ := krausLocalCondition_iff_exists_integralModel.mp h
+  obtain ⟨V, rfl⟩ := hW.integral
+  refine ⟨V.a₁, V.b₂, V.a₃, ?_⟩
+  rw [← h₄, ← h₆, ← map_b₂, ← map_a₁, ← map_a₃, ← baseChange, smul_ofCInvariants]
+  exact ⟨V, rfl⟩
+
+/-- `12 = 2² · 3` is nonzero where `2` and `3` are invertible. -/
+private theorem twelve_ne_zero : (12 : K) ≠ 0 := by
+  have h12 : (12 : K) = 2 * 2 * 3 := by norm_num
+  rw [h12]
+  exact mul_ne_zero (mul_ne_zero (Invertible.ne_zero 2) (Invertible.ne_zero 2))
+    (Invertible.ne_zero 3)
+
+/-- **Witnesses congruent modulo `12` are equally good.** If the `(B/12, A/2, G/2)`-transform of
+`W` is integral, so is the `(b/12, a/2, g/2)`-transform whenever `a = A + 12x`, `b = B + 12y` and
+`g = G + Ay + 12z` in `R`: the second is the `(y, 6x, 6z)`-transform of the first. -/
+private theorem isIntegral_smul_of_eq_add {W : WeierstrassCurve K} {A B G a b g x y z : R}
+    (h : ((⟨1, algebraMap R K B / 12, algebraMap R K A / 2, algebraMap R K G / 2⟩ :
+      VariableChange K) • W).IsIntegral R)
+    (ha : a = A + 12 * x) (hb : b = B + 12 * y) (hg : g = G + A * y + 12 * z) :
+    ((⟨1, algebraMap R K b / 12, algebraMap R K a / 2, algebraMap R K g / 2⟩ :
+      VariableChange K) • W).IsIntegral R := by
+  have h2 : (2 : K) ≠ 0 := Invertible.ne_zero 2
+  have h12 : (12 : K) ≠ 0 := twelve_ne_zero
+  obtain ⟨V, hV⟩ := h.integral
+  have hC : (⟨1, algebraMap R K b / 12, algebraMap R K a / 2, algebraMap R K g / 2⟩ :
+      VariableChange K) = (⟨1, y, 6 * x, 6 * z⟩ : VariableChange R).baseChange K *
+        ⟨1, algebraMap R K B / 12, algebraMap R K A / 2, algebraMap R K G / 2⟩ := by
+    subst ha hb hg
+    ext <;> simp [VariableChange.mul_def, VariableChange.baseChange, map_ofNat] <;> field_simp <;>
+      ring
+  rw [hC, mul_smul, hV, baseChange_smul_baseChange]
+  exact ⟨_, rfl⟩
+
+/-- **Kraus's global criterion.** Let `O` be a Dedekind domain with fraction field `K`, in which
+`2` and `3` are invertible, and assume `O` has a height-one prime, as the ring of integers of a
+number field does. Then the pair `(c₄, c₆)` is the pair of `c`-invariants of a nonsingular
+Weierstrass equation with coefficients in `O` exactly when Kraus's local condition holds at every
+height-one prime.
+
+The equation produced is the `(b₂/12, a₁/2, a₃/2)`-transform of `ofCInvariants c₄ c₆` for elements
+`a₁`, `b₂`, `a₃` of `O` approximating the local witnesses modulo `12`. Without a height-one prime
+the condition is vacuous and the statement fails, since nothing then forces `c₄³ ≠ c₆²`. -/
+theorem krausGlobalCondition_iff_exists_integralModel [Nonempty (HeightOneSpectrum O)] :
+    KrausGlobalCondition O c₄ c₆ ↔
+      ∃ W : WeierstrassCurve K, W.IsIntegral O ∧ W.c₄ = c₄ ∧ W.c₆ = c₆ ∧ W.Δ ≠ 0 := by
+  constructor
+  · intro h
+    have hΔ := (h (Classical.arbitrary _)).Δ_ne_zero
+    have h12 : (12 : O) ≠ 0 := fun h0 ↦
+      twelve_ne_zero (K := K) (by rw [← map_ofNat (algebraMap O K) 12, h0, map_zero])
+    -- Local witnesses `(A v, B v, G v)`, then `a₁`, `b₂` approximating `A`, `B` modulo `12`,
+    -- and `a₃` approximating `G v + A v · (b₂ - B v)/12` modulo `12`.
+    choose A B G hABG using fun v : HeightOneSpectrum O ↦ (h v).exists_isIntegral_smul
+    obtain ⟨a₁, ha₁⟩ :=
+      DedekindDomain.exists_forall_sub_mem_span_singleton_localizationAtPrime h12 A
+    obtain ⟨b₂, hb₂⟩ :=
+      DedekindDomain.exists_forall_sub_mem_span_singleton_localizationAtPrime h12 B
+    choose y hy using fun v ↦ Ideal.mem_span_singleton'.1 (hb₂ v)
+    obtain ⟨a₃, ha₃⟩ :=
+      DedekindDomain.exists_forall_sub_mem_span_singleton_localizationAtPrime h12
+        fun v ↦ G v + A v * y v
+    refine exists_integralModel_of_isIntegral_smul (r := algebraMap O K b₂ / 12)
+      (s := algebraMap O K a₁ / 2) (t := algebraMap O K a₃ / 2) ?_ hΔ
+    refine isIntegral_of_forall_isIntegral_localizationAtPrime fun v ↦ ?_
+    obtain ⟨x, hx⟩ := Ideal.mem_span_singleton'.1 (ha₁ v)
+    obtain ⟨z, hz⟩ := Ideal.mem_span_singleton'.1 (ha₃ v)
+    have hyv := hy v
+    simp only [map_ofNat] at hx hyv hz
+    simp only [IsScalarTower.algebraMap_apply O (Localization.AtPrime v.asIdeal) K]
+    refine isIntegral_smul_of_eq_add (hABG v) (x := x) (y := y v) (z := z) ?_ ?_ ?_
+    · linear_combination -hx
+    · linear_combination -hyv
+    · linear_combination -hz
+  · rintro ⟨W, hW, rfl, rfl, hΔ⟩ v
+    have : W.IsIntegral (Localization.AtPrime v.asIdeal) := IsIntegral.of_isScalarTower (R := O) W
+    exact krausLocalCondition_iff_exists_integralModel.2 ⟨W, this, rfl, rfl, hΔ⟩
 
 end TauCeti

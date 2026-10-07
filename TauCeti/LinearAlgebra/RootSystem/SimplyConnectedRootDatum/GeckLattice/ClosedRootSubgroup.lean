@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.GroupScheme
 import TauCeti.CategoryTheory.Comma.Over
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 
 /-!
 # Closed root subgroups of the Geck carrier
@@ -221,21 +222,7 @@ private theorem geckRepresentedRootCoordinateMap_surjective
           (MvPolynomial.X
             (t.geckRootRow ht (Sum.elim id id i), t.geckRootColumn ht i))),
         t.geckRepresentedRootCoordinateMap_X ht i⟩
-  intro y
-  have hy : y ∈ (t.geckRepresentedRootCoordinateMap ht i).hom.toAlgHom.range := by
-    induction y using SymmetricAlgebra.induction with
-    | algebraMap z => exact Subalgebra.algebraMap_mem _ z
-    | ι z =>
-        have hz : SymmetricAlgebra.ι ℤ ℤ z = z • SymmetricAlgebra.ι ℤ ℤ 1 := by
-          rw [← map_zsmul]
-          congr 1
-          simp
-        rw [hz]
-        exact zsmul_mem hgen z
-    | mul y z hy hz => exact mul_mem hy hz
-    | add y z hy hz => exact add_mem hy hz
-  obtain ⟨z, hz⟩ := (AlgHom.mem_range _).1 hy
-  exact ⟨z, hz⟩
+  exact (t.geckRepresentedRootCoordinateMap ht i).hom.toAlgHom.surjective_of_ι_one_mem_range hgen
 
 /-- The coordinate morphism of a numbered root subgroup after factorization through the Geck
 carrier. -/

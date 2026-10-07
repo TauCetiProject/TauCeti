@@ -81,12 +81,8 @@ what the transposition step of the proof does; the equality does *not* hold hom 
 
 ## References
 
-This is the orientation-independence clause of Layer 4 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`, which asks to turn around a chosen arrow by an
-algebra isomorphism rescaling one of the exchanged arrows by `-1`, to check that it sends every
-local relation to the corresponding relation, and to compose these maps into independence under
-every explicit reorientation `Reorient Q σ`, including in characteristic two. See Crawley-Boevey,
-*Quiver algebras, weighted projective lines, and the Deligne--Simpson problem*, Section 1.
+See Crawley-Boevey, *Quiver algebras, weighted projective lines, and the Deligne--Simpson
+problem*, Section 1.
 -/
 
 public section
@@ -394,8 +390,7 @@ theorem reorientPreprojectiveAlgebraEquivGauged_preprojectiveMk
 
 /-- **The orientation-independence isomorphism, computed on generators**: it identifies the two
 doubled path algebras and then rescales, by `-1`, exactly the arrows `σ` turns around, leaving
-every formal reverse alone. This is the explicit map the roadmap asks for, in the form which makes
-the sign visible. -/
+every formal reverse alone. This is the explicit map, in the form which makes the sign visible. -/
 @[simp]
 theorem reorientPreprojectiveAlgebraEquiv_preprojectiveMk
     (x : pathAlgebra k (Symmetrify (Reorient Q σ))) :

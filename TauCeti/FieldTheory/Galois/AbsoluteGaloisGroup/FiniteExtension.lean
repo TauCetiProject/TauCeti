@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 public import TauCeti.FieldTheory.Galois.Quotient
 public import TauCeti.FieldTheory.Galois.Restriction
@@ -62,6 +63,9 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
   `σ(L)` as an open normal subgroup of `G_K`.
 * `TauCeti.fixingOpenNormalSubgroup K L`: for a finite `L/K`, the open normal subgroup of `G_K`
   fixing the normal closure of `L` in `Kˢ`, with no embedding chosen.
+* `TauCeti.absoluteGaloisGroupExtend K L σ`: the injective continuous homomorphism
+  `Field.absoluteGaloisGroup L →* Field.absoluteGaloisGroup K` between Mathlib's absolute Galois
+  groups, `galoisSubgroupEquiv K L σ` followed by the inclusion of `galoisSubgroup K L σ`.
 
 ## Main results
 
@@ -70,8 +74,12 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
   (`TauCeti.finiteIndex_fixingSubgroup_fieldRange`, `TauCeti.finiteIndex_galoisSubgroup`).
 * `TauCeti.galoisSubgroupEquiv_apply_separableClosureRingEquiv`: the isomorphism intertwines the
   actions of `G_L` on `Lˢ` and of `G_K` on `Kˢ` through `separableClosureRingEquiv K L σ`.
+* `TauCeti.absoluteGaloisGroupExtend_apply_separableClosureRingEquiv`: the embedding of Mathlib's
+  absolute Galois groups intertwines the actions on the identified separable closures.
 * `TauCeti.quotientFixingSubgroupFieldRangeEquiv_mk`: the isomorphism sends the class of `g`
   to `σ.restrictNormalHom g`.
+* `TauCeti.exists_galoisOpenNormalSubgroup_eq`: every open normal subgroup of `G_K` is
+  `galoisOpenNormalSubgroup K E E.val` for a finite Galois intermediate field `E` of `Kˢ/K`.
 * `TauCeti.fixingOpenNormalSubgroup_eq_galoisOpenNormalSubgroup`: for a finite Galois `L/K`,
   `fixingOpenNormalSubgroup K L` is `galoisOpenNormalSubgroup K L σ` for every embedding `σ`.
 * `TauCeti.restrictNormalHom_of_compatible`: a compatible pair between normal subextensions of
@@ -183,6 +191,54 @@ theorem galoisSubgroupEquiv_symm_apply (h : ↥(galoisSubgroup K L σ).toSubgrou
         ((h : AbsoluteGaloisGroup K) (separableClosureRingEquiv K L σ x)) :=
   absoluteGaloisGroupEquivFixingSubgroup_symm_apply K L σ h x
 
+/-! ### The embedding of Mathlib's absolute Galois groups -/
+
+/-- **The absolute Galois group of a finite extension inside that of `K`**, along a `K`-embedding
+`σ : L →ₐ[K] Kˢ`: identify `G_L` with the open subgroup of `G_K` fixing `σ(L)`, and include that
+subgroup in `G_K`. The two absolute Galois groups use Mathlib's algebraic closures, while the
+subgroup identification uses Tau Ceti's separable closures; `absoluteGaloisGroupRestrictEquiv`
+transports between the two models. -/
+def absoluteGaloisGroupExtend : Field.absoluteGaloisGroup L →* Field.absoluteGaloisGroup K :=
+  (absoluteGaloisGroupRestrictEquiv K).symm.toMulEquiv.toMonoidHom.comp
+    ((galoisSubgroup K L σ).toSubgroup.subtype.comp
+      ((galoisSubgroupEquiv K L σ).toMulEquiv.toMonoidHom.comp
+        (absoluteGaloisGroupRestrictEquiv L).toMulEquiv.toMonoidHom))
+
+/-- Reading `absoluteGaloisGroupExtend` on separable closures gives the inclusion of the open
+subgroup identified with `G_L`. -/
+@[simp]
+theorem absoluteGaloisGroupRestrictEquiv_absoluteGaloisGroupExtend
+    (τ : Field.absoluteGaloisGroup L) :
+    absoluteGaloisGroupRestrictEquiv K (absoluteGaloisGroupExtend K L σ τ) =
+      (galoisSubgroupEquiv K L σ (absoluteGaloisGroupRestrictEquiv L τ) :
+        AbsoluteGaloisGroup K) :=
+  (absoluteGaloisGroupRestrictEquiv K).apply_symm_apply _
+
+/-- The embedding of absolute Galois groups intertwines the actions on the identified separable
+closures. -/
+theorem absoluteGaloisGroupExtend_apply_separableClosureRingEquiv
+    (τ : Field.absoluteGaloisGroup L) (x : SeparableClosure L) :
+    absoluteGaloisGroupRestrictEquiv K (absoluteGaloisGroupExtend K L σ τ)
+        (separableClosureRingEquiv K L σ x) =
+      separableClosureRingEquiv K L σ (absoluteGaloisGroupRestrictEquiv L τ x) := by
+  rw [absoluteGaloisGroupRestrictEquiv_absoluteGaloisGroupExtend]
+  exact galoisSubgroupEquiv_apply_separableClosureRingEquiv K L σ _ x
+
+/-- The embedding `G_L → G_K` induced by an embedding of a finite extension is continuous. -/
+theorem continuous_absoluteGaloisGroupExtend : Continuous (absoluteGaloisGroupExtend K L σ) :=
+  (absoluteGaloisGroupRestrictEquiv K).symm.continuous_toFun.comp <|
+    continuous_subtype_val.comp <|
+      (galoisSubgroupEquiv K L σ).continuous_toFun.comp
+        (absoluteGaloisGroupRestrictEquiv L).continuous_toFun
+
+/-- The map `G_L → G_K` induced by an embedding of a finite extension is injective. -/
+theorem injective_absoluteGaloisGroupExtend :
+    Function.Injective (absoluteGaloisGroupExtend K L σ) :=
+  (absoluteGaloisGroupRestrictEquiv K).symm.injective.comp <|
+    Subtype.val_injective.comp <|
+      (galoisSubgroupEquiv K L σ).injective.comp
+        (absoluteGaloisGroupRestrictEquiv L).injective
+
 /-! ### Normal extensions: the quotient by the open subgroup -/
 
 section Normal
@@ -190,10 +246,6 @@ section Normal
 omit [FiniteDimensional K L]
 
 variable [Normal K L]
-
-/-- The image of a normal extension under a `K`-embedding is normal over `K`. -/
-instance normal_fieldRange : Normal K σ.fieldRange :=
-  Normal.of_algEquiv σ.equivFieldRange
 
 /-- **The Galois group of a normal extension `L` embedded by `σ` is the quotient of `G_K` by the
 subgroup fixing `σ(L)`**: `TauCeti.quotientFixingSubgroupEquiv` for the intermediate field `σ(L)`,
@@ -264,6 +316,26 @@ theorem galoisOpenNormalSubgroup_toSubgroup :
   (rfl)
 
 end OpenNormal
+
+variable {K} in
+/-- **Every open normal subgroup of `G_K` is the level of a finite Galois subextension**: it is
+`galoisOpenNormalSubgroup K E E.val` for its fixed field `E`, an intermediate field of `Kˢ/K`
+finite and Galois over `K`. -/
+theorem exists_galoisOpenNormalSubgroup_eq (U : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
+    ∃ (E : IntermediateField K (SeparableClosure K)) (_ : FiniteDimensional K E)
+      (_ : IsGalois K E), galoisOpenNormalSubgroup K E E.val = U := by
+  obtain ⟨E, hE⟩ : ∃ E : IntermediateField K (SeparableClosure K),
+      E.fixingSubgroup = U.toSubgroup :=
+    ⟨_, InfiniteGalois.fixingSubgroup_fixedField ⟨U.toSubgroup, U.isClosed⟩⟩
+  have : FiniteDimensional K E := by
+    rw [← InfiniteGalois.isOpen_iff_finite, hE]
+    exact U.isOpen
+  have : IsGalois K E := by
+    rw [← InfiniteGalois.normal_iff_isGalois, hE]
+    infer_instance
+  refine ⟨E, inferInstance, inferInstance, OpenNormalSubgroup.toSubgroup_injective ?_⟩
+  dsimp only
+  rw [galoisOpenNormalSubgroup_toSubgroup, IntermediateField.fieldRange_val, hE]
 
 /-! ### The fixing subgroup of the normal closure -/
 

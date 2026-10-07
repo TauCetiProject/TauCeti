@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Algebra.Group.Shrink
 import Mathlib.Topology.Maps.Proper.Basic
 
 public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
@@ -21,6 +22,31 @@ A minimal relation (`Subgroup.exists_minimal_isClosed_le`) therefore supplies co
 finite-level solutions. The existing inverse-limit assembly gives
 `isProjective_of_hasPGroupSolutions`, without finite generation of `G`. Compactness is applied to
 fibers in `A`; the sets of level solutions need not be finite.
+
+Conversely, a projective pro-`p` group solves every finite embedding problem with `p`-group kernel
+(`hasPGroupSolutions_of_isProjective`): its finite quotients are `p`-groups, so such a problem is a
+lifting problem against a surjection of finite `p`-groups. For a pro-`p` group the two conditions
+are therefore equivalent (`isProjective_iff_hasPGroupSolutions`), and projectivity does not depend
+on the universes of the groups it quantifies over.
+
+## Main definitions
+
+* `TauCeti.IsProjective`: every continuous homomorphism into a quotient of a profinite pro-`p`
+  group lifts continuously.
+
+## Main results
+
+* `TauCeti.isProjective_of_hasPGroupSolutions`: solving the finite embedding problems with
+  `p`-group kernel gives projectivity.
+* `TauCeti.hasPGroupSolutions_of_isProjective`: a projective pro-`p` group solves the finite
+  embedding problems with `p`-group kernel.
+* `TauCeti.isProjective_iff_hasPGroupSolutions`: for a pro-`p` group, projectivity is equivalent
+  to solving the finite embedding problems with `p`-group kernel.
+
+## References
+
+* J.-P. Serre, *Galois Cohomology*, Chapter I, §3.4 and §5.9.
+* L. Ribes and P. Zalesskii, *Profinite Groups*, Section 7.6.
 -/
 
 public section
@@ -192,5 +218,55 @@ theorem IsProjective.of_equiv {p : ℕ} (hG : IsProjective.{u, v, w} p G) {H : T
   obtain ⟨φ, hφ⟩ := hG A B hA α hα (f.comp (e : G →ₜ* H))
   refine ⟨φ.comp (e.symm : H →ₜ* G), ContinuousMonoidHom.ext fun h ↦ ?_⟩
   simpa using DFunLike.congr_fun hφ (e.symm h)
+
+/-! ### The converse for pro-`p` groups -/
+
+/-- **A projective pro-`p` group solves every finite embedding problem with `p`-group kernel.**
+The universes `v` and `w` in which `G` is assumed projective are arbitrary.
+
+The pro-`p` hypothesis cannot be dropped. `G = PSL₂(𝔽₅)` is perfect, so every continuous
+homomorphism from it to a pro-`2` group is trivial and `G` is projective at `p = 2`; but the
+problem given by `SL₂(𝔽₅) ↠ G`, with kernel of order `2` and `π = id`, has no solution, since
+`-1` is the only involution of `SL₂(𝔽₅)` while `G` has involutions. -/
+theorem hasPGroupSolutions_of_isProjective {p : ℕ} (hGp : IsProP p G)
+    (hG : IsProjective.{u, v, w} p G) : HasPGroupSolutions p G := by
+  refine hasPGroupSolutions_iff.mpr fun P hP ↦ ?_
+  -- `E` is a finite `p`-group, so the problem is a lifting problem against `α`.
+  have hE : IsPGroup p P.E := P.isPGroup_E hGp hP
+  let _ : TopologicalSpace P.Q := ⊥
+  have : DiscreteTopology P.Q := ⟨rfl⟩
+  have hπ : Continuous P.π := P.π.continuous_iff_isOpen_ker.mpr P.isOpen_ker_π
+  -- Move `E` and `Q` into the universes `v` and `w`, with the discrete topology, and lift `π`
+  -- against `α` there.
+  let eE : Shrink.{v} P.E ≃* P.E := Shrink.mulEquiv
+  let eQ : Shrink.{w} P.Q ≃* P.Q := Shrink.mulEquiv
+  let _ : TopologicalSpace (Shrink.{v} P.E) := ⊥
+  have : DiscreteTopology (Shrink.{v} P.E) := ⟨rfl⟩
+  have : Finite (Shrink.{v} P.E) := Finite.of_equiv P.E eE.symm.toEquiv
+  let _ : TopologicalSpace (Shrink.{w} P.Q) := ⊥
+  have : DiscreteTopology (Shrink.{w} P.Q) := ⟨rfl⟩
+  let α : Shrink.{v} P.E →ₜ* Shrink.{w} P.Q :=
+    ⟨eQ.symm.toMonoidHom.comp (P.α.comp eE.toMonoidHom), continuous_of_discreteTopology⟩
+  let f : G →ₜ* Shrink.{w} P.Q :=
+    ⟨eQ.symm.toMonoidHom.comp P.π, (continuous_of_discreteTopology (f := eQ.symm)).comp hπ⟩
+  obtain ⟨φ, hφ⟩ := hG.exists_continuous_lift (hE.of_equiv eE.symm).isProP α
+    (eQ.symm.surjective.comp (P.α_surjective.comp eE.surjective)) f
+  refine ⟨eE.toMonoidHom.comp φ.toMonoidHom,
+    FiniteEmbeddingProblem.isSolution_iff.mpr ⟨?_, ?_⟩⟩
+  · rw [MonoidHom.ker_comp_of_injective _ _ eE.injective]
+    exact (MonoidHom.continuous_iff_isOpen_ker _).mp φ.continuous
+  · ext g
+    have h := DFunLike.congr_fun hφ g
+    simp only [α, f, ContinuousMonoidHom.comp_toFun, ContinuousMonoidHom.coe_mk,
+      MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom] at h
+    exact eQ.symm.injective h
+
+/-- **Projectivity of a pro-`p` group is solvability of its finite `p`-embedding problems.** A
+pro-`p` group is projective exactly when it solves every finite embedding problem with `p`-group
+kernel. Since the right-hand side does not mention the universes `v` and `w`, neither does
+projectivity of a pro-`p` group. -/
+theorem isProjective_iff_hasPGroupSolutions {p : ℕ} (hGp : IsProP p G) :
+    IsProjective.{u, v, w} p G ↔ HasPGroupSolutions p G :=
+  ⟨hasPGroupSolutions_of_isProjective hGp, isProjective_of_hasPGroupSolutions⟩
 
 end TauCeti

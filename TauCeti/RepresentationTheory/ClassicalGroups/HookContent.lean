@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Young.HookLength.BetaNumbers
-public import TauCeti.RepresentationTheory.ClassicalGroups.WeylDimension
+public import TauCeti.RepresentationTheory.ClassicalGroups.WeylDimension.Basic
 
 /-!
 # The hook-content formula

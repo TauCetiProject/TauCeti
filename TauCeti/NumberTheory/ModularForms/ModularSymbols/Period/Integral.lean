@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 import Mathlib.MeasureTheory.Integral.Asymptotics
 import Mathlib.MeasureTheory.Integral.ExpDecay
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
+import TauCeti.NumberTheory.ModularForms.Cusps.ModularGroup
 
 /-!
 # The period integral of a cusp form against a binary form
@@ -48,6 +49,7 @@ law, stated through `TauCeti.binaryFormRep`, needs `R` to be a ring.
 ## Main results
 
 * `TauCeti.ModularSymbols.periodIntegrand_add_left`,
+  `TauCeti.ModularSymbols.periodIntegrand_sum_left`,
   `TauCeti.ModularSymbols.periodIntegrand_smul_left`: the integrand is `ℂ`-linear in the
   function, so that the periods define a linear map on cusp forms.
 * `TauCeti.ModularSymbols.periodIntegrand_add_right`,
@@ -65,12 +67,23 @@ law, stated through `TauCeti.binaryFormRep`, needs `R` to be a ring.
   `i∞` uniformly on vertical strips.
 * `TauCeti.ModularSymbols.cuspIntegral_periodIntegrand_add_adjacent`: **additivity** of the
   periods, `∫_α^β f(z) P(z, 1) dz + ∫_β^γ f(z) P(z, 1) dz = ∫_α^γ f(z) P(z, 1) dz`.
+* `TauCeti.ModularSymbols.cuspIntegral_mul_sub_pow`: the period `∫_α^β f(z) (z - τ)ʷ dz` is a
+  polynomial in `τ` whose coefficients are the periods `∫_α^β f(z) zʲ dz`.
 * `TauCeti.ModularSymbols.periodIntegrand_slash_mapGL`: for `γ ∈ SL(2, ℤ)`, slashing the
   integrand of `f` against `P` by `γ` gives the integrand of `f ∣[k] γ` against `P ∣ γ`.
 * `TauCeti.ModularSymbols.geodesicIntegral_mapGL_mul_periodIntegrand`: the transformation law
   `∫_{γβ}^{γα} f(z) P(z, 1) dz = ∫_β^α (f ∣[k] γ)(z) (P ∣ γ)(z, 1) dz` for `γ ∈ SL(2, ℤ)`, and
   `TauCeti.ModularSymbols.geodesicIntegral_mapGL_mul_periodIntegrand_of_mem`: its form for `γ`
-  in the level of `f`.
+  in the level of `f`, and
+  `TauCeti.ModularSymbols.cuspIntegral_periodIntegrand_mapGL_smul_of_mem`: the same between
+  arbitrary cusps, `∫_{γβ}^{γα} f(z) P(z, 1) dz = ∫_β^α f(z) (P ∣ γ)(z, 1) dz`.
+* `TauCeti.ModularSymbols.periodIntegrand_adjugate_slash`: for an integral matrix `δ` of positive
+  determinant, slashing the integrand of `f` against `P ∣ adj δ` by `δ` gives the integrand of
+  `f ∣[k] δ` against `P`, and
+  `TauCeti.ModularSymbols.cuspIntegral_periodIntegrand_slash`: the resulting substitution
+  `∫_β^α (f ∣[k] δ)(z) P(z, 1) dz = ∫_{δβ}^{δα} f(z) (P ∣ adj δ)(z, 1) dz`, the adjunction between
+  the slash action on forms and the action of integral matrices on modular symbols that underlies
+  the Hecke equivariance of the period pairing.
 
 ## References
 
@@ -119,6 +132,14 @@ theorem periodIntegrand_add_left (f g : ℍ → ℂ) (P : homogeneousSubmodule (
     periodIntegrand (f + g) P = periodIntegrand f P + periodIntegrand g P := by
   funext z
   simp [add_mul]
+
+/-- The period integrand commutes with finite sums of functions. -/
+@[simp]
+theorem periodIntegrand_sum_left {ι : Type*} (s : Finset ι) (f : ι → ℍ → ℂ)
+    (P : homogeneousSubmodule (Fin 2) R w) :
+    periodIntegrand (∑ i ∈ s, f i) P = ∑ i ∈ s, periodIntegrand (f i) P := by
+  funext z
+  simp [Finset.sum_mul]
 
 /-- The period integrand is `ℂ`-linear in the function. -/
 @[simp]
@@ -341,6 +362,44 @@ theorem cuspIntegral_periodIntegrand_add_adjacent [Γ.IsArithmetic] [CuspFormCla
     (fun _ hg ↦ integrableOn_resToImagAxis_periodIntegrand_slash_Ici f hk P hg)
     (fun _ hg ↦ tendsto_periodIntegrand_slash f hk P hg) α β γ
 
+/-- **The period polynomial is a polynomial in `τ` with periods as coefficients.** For a cusp form
+`f` of weight `w + 2` on an arithmetic subgroup, `τ ∈ ℂ` and cusps `α`, `β`, the binomial
+expansion of `(z - τ)ʷ` gives
+
+`∫_α^β f(z) (z - τ)ʷ dz = ∑_{j ≤ w} (w choose j) (-τ)ʷ⁻ʲ ∫_α^β f(z) zʲ dz`,
+
+where `f(z) zʲ` is the period integrand of `f` against the monomial `X₀ʲ X₁ʷ⁻ʲ`. -/
+theorem cuspIntegral_mul_sub_pow [Γ.IsArithmetic] [CuspFormClass F Γ k] (f : F)
+    (hk : k = w + 2) (τ : ℂ) (α β : OnePoint ℚ) :
+    cuspIntegral (fun z ↦ f z * ((z : ℂ) - τ) ^ w) α β =
+      ∑ j ∈ Finset.range (w + 1),
+        (w.choose j : ℂ) * (-τ) ^ (w - j) * cuspIntegral (fun z ↦ f z * (z : ℂ) ^ j) α β := by
+  rcases eq_or_ne α β with rfl | hαβ
+  · simp
+  obtain ⟨g, hg, rfl, rfl⟩ := exists_smul_zero_smul_infty hαβ
+  set c : ℕ → ℂ := fun j ↦ (w.choose j : ℂ) * (-τ) ^ (w - j) with hc
+  -- each term is the period integrand of a multiple of the monomial `X₀ʲ X₁ʷ⁻ʲ`
+  have hint (j : ℕ) (hj : j ∈ Finset.range (w + 1)) :
+      IntegrableOn (resToImagAxis ((c j • fun z : ℍ ↦ f z * (z : ℂ) ^ j) ∣[(2 : ℤ)] g))
+        (Ioi 0) := by
+    let P : homogeneousSubmodule (Fin 2) ℂ w := ⟨X 0 ^ j * X 1 ^ (w - j), by
+      simpa [Nat.add_sub_cancel' (Finset.mem_range_succ_iff.mp hj)] using
+        (isHomogeneous_X_pow (R := ℂ) (0 : Fin 2) j).mul (isHomogeneous_X_pow 1 (w - j))⟩
+    have hP : periodIntegrand f (c j • P) = c j • fun z : ℍ ↦ f z * (z : ℂ) ^ j := by
+      rw [periodIntegrand_smul_right]
+      congr 1
+      funext z
+      simp [P]
+    simpa only [hP] using integrableOn_resToImagAxis_periodIntegrand_slash f hk (c j • P) hg
+  have hsum : (fun z : ℍ ↦ f z * ((z : ℂ) - τ) ^ w) =
+      ∑ j ∈ Finset.range (w + 1), c j • fun z : ℍ ↦ f z * (z : ℂ) ^ j := by
+    funext z
+    simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, hc, sub_eq_add_neg, add_pow,
+      Finset.mul_sum]
+    exact Finset.sum_congr rfl fun j _ ↦ by ring
+  rw [hsum, cuspIntegral_sum _ hg hint]
+  exact Finset.sum_congr rfl fun j _ ↦ cuspIntegral_smul _ _ _ _
+
 end CommSemiring
 
 /-! ### The transformation law under `SL(2, ℤ)` -/
@@ -393,6 +452,68 @@ theorem geodesicIntegral_mapGL_mul_periodIntegrand_of_mem {Γ : Subgroup SL(2, �
   rw [geodesicIntegral_mapGL_mul_periodIntegrand hk, ModularForm.SL_slash,
     TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
     SlashInvariantFormClass.slash_action_eq f _ (Subgroup.mem_map_of_mem _ hγ)]
+
+/-- **The periods between cusps respect the modular-symbol relation**: for `γ` in the level `Γ`
+of a slash-invariant `f` and cusps `α`, `β`,
+`∫_{γβ}^{γα} f(z) P(z, 1) dz = ∫_β^α f(z) (P ∣ γ)(z, 1) dz`, the analytic counterpart of
+`{γα, γβ} ⊗ P = {α, β} ⊗ (P ∣ γ)` in `𝕄_w(Γ; R)` (`TauCeti.ModularSymbols.symbol_mapGL_smul`). -/
+theorem cuspIntegral_periodIntegrand_mapGL_smul_of_mem {Γ : Subgroup SL(2, ℤ)}
+    [SlashInvariantFormClass F (Γ.map (mapGL ℝ)) k] (f : F) (hk : k = w + 2)
+    (P : homogeneousSubmodule (Fin 2) R w) {γ : SL(2, ℤ)} (hγ : γ ∈ Γ) (α β : OnePoint ℚ) :
+    cuspIntegral (periodIntegrand f P) (mapGL ℚ γ • β) (mapGL ℚ γ • α) =
+      cuspIntegral
+        (periodIntegrand f (binaryFormRep R w (op (γ : Matrix (Fin 2) (Fin 2) ℤ)) P)) β α := by
+  have hdet : 0 < ((mapGL ℚ γ : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det := by
+    rw [← Matrix.GeneralLinearGroup.val_det_apply, det_mapGL, Units.val_one]
+    exact one_pos
+  rw [← cuspIntegral_slash _ hdet, periodIntegrand_slash_mapGL hk, ModularForm.SL_slash,
+    TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
+    SlashInvariantFormClass.slash_action_eq f _ (Subgroup.mem_map_of_mem _ hγ)]
+
+/-! ### The transformation law under integral matrices -/
+
+/-- **The transformation law under integral matrices of positive determinant.** For a rational
+matrix `g` with integral entries `A` and `0 < det g`, slashing the integrand of `f` against
+`P ∣ adj A` in weight `2` by `g` gives the integrand of `f ∣[k] g` against `P`: the adjugate sends
+`(aτ + b, cτ + d)` to `det g • (τ, 1)`, and the resulting factor `(det g)ʷ` cancels the
+`(det g)⁻ʷ` of `periodIntegrand_slash_apply`. On `SL(2, ℤ)` the adjugate is the inverse, and this
+is `periodIntegrand_slash_mapGL` read backwards. -/
+theorem periodIntegrand_adjugate_slash {k : ℤ} (hk : k = w + 2) (f : ℍ → ℂ)
+    (P : homogeneousSubmodule (Fin 2) R w) {g : GL (Fin 2) ℚ} {A : Matrix (Fin 2) (Fin 2) ℤ}
+    (hA : (g : Matrix (Fin 2) (Fin 2) ℚ) = A.map (Int.cast : ℤ → ℚ))
+    (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det) :
+    periodIntegrand f (binaryFormRep R w (op (adjugate A)) P) ∣[(2 : ℤ)] g =
+      periodIntegrand (f ∣[k] g) P := by
+  funext τ
+  set g' := Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) g with hg'
+  have hD : ((g : Matrix (Fin 2) (Fin 2) ℚ).det : ℂ) ≠ 0 := by exact_mod_cast hg.ne'
+  -- the adjugate sends `(aτ + b, cτ + d)` to `det g • (τ, 1)`
+  have hvec : ((adjugate A).map (Int.cast : ℤ → R)).map (algebraMap R ℂ) *ᵥ
+      ![num g' τ, denom g' τ] = ((g : Matrix (Fin 2) (Fin 2) ℚ).det : ℂ) • ![(τ : ℂ), 1] := by
+    have hent (i j : Fin 2) : ((g' i j : ℝ) : ℂ) = ((A i j : ℤ) : ℂ) := by
+      simp [hg', hA]
+    rw [hA, det_fin_two]
+    ext i
+    fin_cases i <;>
+      simp [adjugate_fin_two, num, denom, mulVec, dotProduct, Fin.sum_univ_two, hent] <;> ring
+  rw [periodIntegrand_slash_apply hk f _ hg τ, periodIntegrand_apply, coe_binaryFormRep_apply,
+    aeval_linearSubst, ← hg', hvec, ((mem_homogeneousSubmodule w _).mp P.2).aeval_smul,
+    smul_eq_mul, zpow_neg, zpow_natCast]
+  field_simp
+
+/-- **The substitution `z ↦ g • z` for integral matrices of positive determinant**: for a rational
+matrix `g` with integral entries `A` and `0 < det g`,
+`∫_β^α (f ∣[k] g)(z) P(z, 1) dz = ∫_{gβ}^{gα} f(z) (P ∣ adj A)(z, 1) dz`. Since the symbol
+`{α, β} ⊗ P` pairs to `∫_β^α f(z) P(z, 1) dz`, this says that slashing a form by `g` is adjoint to
+the action `{α, β} ⊗ P ↦ {gα, gβ} ⊗ (P ∣ adj A)` of `g` on modular symbols. -/
+theorem cuspIntegral_periodIntegrand_slash {k : ℤ} (hk : k = w + 2) (f : ℍ → ℂ)
+    (P : homogeneousSubmodule (Fin 2) R w) {g : GL (Fin 2) ℚ} {A : Matrix (Fin 2) (Fin 2) ℤ}
+    (hA : (g : Matrix (Fin 2) (Fin 2) ℚ) = A.map (Int.cast : ℤ → ℚ))
+    (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det) (α β : OnePoint ℚ) :
+    cuspIntegral (periodIntegrand (f ∣[k] g) P) β α =
+      cuspIntegral (periodIntegrand f (binaryFormRep R w (op (adjugate A)) P)) (g • β)
+        (g • α) := by
+  rw [← periodIntegrand_adjugate_slash hk f P hA hg, cuspIntegral_slash _ hg]
 
 end TauCeti.ModularSymbols
 

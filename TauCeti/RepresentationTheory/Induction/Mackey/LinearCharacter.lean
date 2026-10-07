@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Index.Two
 public import TauCeti.RepresentationTheory.Induction.Mackey.Irreducible
-public import TauCeti.RepresentationTheory.LinearCharacter
+public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 import Mathlib.GroupTheory.IndexNormal
 
 /-!

@@ -8,7 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
 public import Mathlib.Topology.Algebra.Category.ProfiniteGrp.Limits
 public import TauCeti.GroupTheory.QuotientGroup.Map
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The finite-quotient system of a group cohomology tower

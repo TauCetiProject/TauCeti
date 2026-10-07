@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Positive
+import TauCeti.Algebra.Group.Submonoid.Closure
 
 /-!
 # The simply connected root datum of type `Dₙ`

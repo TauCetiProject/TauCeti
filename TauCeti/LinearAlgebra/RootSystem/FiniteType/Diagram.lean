@@ -114,6 +114,13 @@ theorem diagramGraph_cartanMatrix_A (n : ℕ) :
 
 end DynkinType
 
+/-- Two nodes of the `Aₙ` diagram are joined exactly when they are consecutive. -/
+theorem diagramGraph_A_adj (n : ℕ) (i j : Fin n) :
+    (diagramGraph (DynkinType.A n).cartanMatrix : SimpleGraph (Fin n)).Adj i j ↔
+      (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i := by
+  rw [DynkinType.cartanMatrix_A, DynkinType.diagramGraph_cartanMatrix_A,
+    SimpleGraph.pathGraph_adj]
+
 namespace IsFiniteType
 
 variable [Fintype B]

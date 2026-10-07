@@ -76,7 +76,8 @@ discs (topological sliceness) and for stating the annulus conjecture.
   `TauCeti.IsLocallyFlat.comp_isOpenEmbedding`, `TauCeti.IsLocallyFlat.comp_homeomorph`: invariance
   under open embeddings and homeomorphisms of the ambient space and of the domain.
 * `TauCeti.IsSliceEmbedding.transHomeomorph`: invariance under a homeomorphic change of model
-  space.
+  space, and `TauCeti.IsLocallyFlat.transHomeomorph`, its form for the complementary model of a
+  locally flat embedding.
 * `TauCeti.IsLocallyFlat.comp`: a composite of locally flat embeddings is locally flat, under an
   explicit hypothesis that their flattening charts can be chosen compatibly, and
   `TauCeti.IsLocallyFlat.of_compatible_isSliceChart`, the form of it that assumes only the
@@ -89,6 +90,10 @@ discs (topological sliceness) and for stating the annulus conjecture.
   the origin of the complementary model is closed.
 * `TauCeti.isLocallyFlat_prodMkLeft`: over a domain charted on `F`, the standard model
   `x ↦ (x, 0)` is locally flat.
+* `TauCeti.isLocallyFlat_graph`: the graph of a continuous map is locally flat.
+* `TauCeti.exists_isSliceChart_of_inter_eq_inter_range`: a set which, near a point, is the graph of
+  a continuous map over the first coordinate of a homeomorphism `M ≃ₜ F × F'` is flattened by a
+  chart around that point.
 * `TauCeti.IsLocallyFlat.exists_isOpenEmbedding_prod`: a locally flat embedding with seminormed
   complementary model has local product neighbourhoods.
 
@@ -611,6 +616,17 @@ theorem codRestrict (h : IsLocallyFlat F F' f) {V : Set M} (hV : IsOpen V) (hf :
 theorem homeomorph_comp (h : IsLocallyFlat F F' f) (e : M ≃ₜ P) : IsLocallyFlat F F' (e ∘ f) :=
   IsSliceEmbedding.homeomorph_comp h e
 
+/-- Local flatness only depends on the complementary model up to a homeomorphism fixing the
+origin. -/
+theorem transHomeomorph {F'' : Type*} [TopologicalSpace F''] [Zero F''] (h : IsLocallyFlat F F' f)
+    (e : F' ≃ₜ F'') (he : e 0 = 0) : IsLocallyFlat F F'' f := by
+  have hS : (Homeomorph.refl F).prodCongr e '' ((univ : Set F) ×ˢ ({0} : Set F')) =
+      (univ : Set F) ×ˢ ({0} : Set F'') := by
+    ext ⟨a, b⟩
+    simp [he, eq_comm]
+  have h' := IsSliceEmbedding.transHomeomorph h ((Homeomorph.refl F).prodCongr e)
+  rwa [hS] at h'
+
 /-- The general form of `TauCeti.IsLocallyFlat.comp`: what makes a composite locally flat is a
 compatible pair of charts around each point of the domain, and nothing else. It asks for a chart
 `ψ` of `P` at `g (f x)` and a flattening chart `φ` of `M` for `f` such that `ψ` reads the
@@ -775,6 +791,69 @@ theorem isLocallyFlat_prodMkLeft [ChartedSpace F N] :
   simp [Prod.ext_iff, eq_comm]
 
 end StandardSlice
+
+/-! ### Graphs -/
+
+section Graph
+
+/-- The graph of a continuous map is locally flat, with complementary model `F`. -/
+theorem isLocallyFlat_graph
+    {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F] (f : E → F) (hf : Continuous f) :
+    IsLocallyFlat E F (fun x : E => (x, f x)) := by
+  let shear : E × F ≃ₜ E × F :=
+    { toFun := fun p => (p.1, p.2 + f p.1)
+      invFun := fun p => (p.1, p.2 - f p.1)
+      left_inv := by
+        intro p
+        simp
+      right_inv := by
+        intro p
+        simp
+      continuous_toFun := continuous_fst.prodMk (continuous_snd.add (hf.comp continuous_fst))
+      continuous_invFun := continuous_fst.prodMk (continuous_snd.sub (hf.comp continuous_fst)) }
+  have h := (isLocallyFlat_prodMkLeft (N := E) (F := E) (F' := F)).homeomorph_comp shear
+  convert h using 1
+  ext x
+  · rfl
+  · dsimp [Function.comp_apply, shear]
+    simp only [zero_add]
+
+variable [AddGroup F'] [IsTopologicalAddGroup F']
+
+/-- **A graph is flat.** Let `Φ` identify `M` with `F × F'`, and let `g : F → M` be a continuous
+section of the first coordinate of `Φ`, so that `Φ ∘ g` is the graph of the continuous map
+`s ↦ (Φ (g s)).2`. If on an open set `U` the set `A` agrees with the range of `g`, then shearing
+`Φ` by that map, and restricting to `U`, gives a chart with source `U` flattening `A` onto the
+standard slice `F × {0}`. -/
+theorem exists_isSliceChart_of_inter_eq_inter_range (Φ : M ≃ₜ F × F') {g : F → M}
+    (hg : Continuous g) (hΦg : ∀ s, (Φ (g s)).1 = s) {U A : Set M} (hU : IsOpen U)
+    (hA : U ∩ A = U ∩ range g) :
+    ∃ φ : OpenPartialHomeomorph M (F × F'), φ.source = U ∧
+      IsSliceChart φ ((univ : Set F) ×ˢ ({0} : Set F')) A := by
+  set k : F → F' := fun s => (Φ (g s)).2
+  have hk : Continuous k := continuous_snd.comp (Φ.continuous.comp hg)
+  let shear : F × F' ≃ₜ F × F' :=
+    { toFun := fun q => (q.1, q.2 - k q.1)
+      invFun := fun q => (q.1, q.2 + k q.1)
+      left_inv := fun q => by simp
+      right_inv := fun q => by simp
+      continuous_toFun := by fun_prop
+      continuous_invFun := by fun_prop }
+  refine ⟨(Φ.trans shear).toOpenPartialHomeomorph.restrOpen U hU, by simp, ?_⟩
+  refine isSliceChart_iff.2 fun y hy => ?_
+  replace hy : y ∈ U := by simpa using hy
+  have hyA : y ∈ A ↔ y ∈ range g := by
+    simpa [hy] using congrArg (y ∈ ·) hA
+  -- `y` lies on the graph exactly when it is the point of the graph over its first coordinate.
+  have hgraph : y ∈ range g ↔ (Φ y).2 = k (Φ y).1 := by
+    constructor
+    · rintro ⟨s, rfl⟩
+      simp [k, hΦg]
+    · intro he
+      refine ⟨(Φ y).1, Φ.injective (Prod.ext (hΦg _) he.symm)⟩
+  simp [hyA, hgraph, shear, sub_eq_zero]
+
+end Graph
 
 /-!
 ### Local product neighbourhoods

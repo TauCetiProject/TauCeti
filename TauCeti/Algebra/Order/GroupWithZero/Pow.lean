@@ -11,14 +11,17 @@ import Mathlib.Tactic
 /-!
 # Power bounds in ordered monoids with zero
 
-This file contains an exponent-bookkeeping inequality for elements bounded by a power of an
-element at most `1`. It turns valuation estimates for exponential and logarithm coefficients into
-geometric decay on deep ideals.
+This file contains exponent bookkeeping for comparisons between powers. The first result is an
+inequality for elements bounded by a power of an element at most `1`. It turns valuation estimates
+for exponential and logarithm coefficients into geometric decay on deep ideals. The second shows
+that a comparison `x ^ m ≤ y ^ n` of nonnegative elements depends only on the ratio `m : n`.
 
 ## Main results
 
 * `TauCeti.pow_mul_pow_le_of_le`: bounds a product of powers using a bound `t ≤ γ ^ i` and
   inequalities between the exponents.
+* `TauCeti.pow_le_pow_iff_of_mul_eq`: `x ^ m ≤ y ^ n ↔ x ^ m' ≤ y ^ n'` when the exponent pairs
+  `(m, n)` and `(m', n')` are proportional.
 -/
 
 public section
@@ -47,5 +50,19 @@ theorem pow_mul_pow_le_of_le {Γ₀ : Type*} [LinearOrderedCommMonoidWithZero Γ
         mul_le_mul_right (pow_le_pow_right_of_le_one' hγ hexp) _
     _ = t ^ d * (γ ^ s) ^ (m + 1) * γ ^ (d * (e * q)) := by
         rw [pow_add, ← pow_mul, mul_assoc]
+
+/-- In a linearly ordered monoid with zero, raising both sides of `x ^ m ≤ y ^ n` to a nonzero
+power does not change it, so for nonnegative `x` and `y` the comparison depends only on the ratio
+of the exponents: if `(m, n)` and `(m', n')` are proportional, with
+`m * c = m' * c'` and `n * c = n' * c'` for nonzero `c` and `c'`, then
+`x ^ m ≤ y ^ n ↔ x ^ m' ≤ y ^ n'`. -/
+theorem pow_le_pow_iff_of_mul_eq {M₀ : Type*} [MonoidWithZero M₀] [LinearOrder M₀]
+    [ZeroLEOneClass M₀] [PosMulStrictMono M₀] [MulPosMono M₀] {x y : M₀} (hx : 0 ≤ x) (hy : 0 ≤ y)
+    {m n m' n' c c' : ℕ} (hc : c ≠ 0) (hc' : c' ≠ 0) (hm : m * c = m' * c')
+    (hn : n * c = n' * c') : x ^ m ≤ y ^ n ↔ x ^ m' ≤ y ^ n' := by
+  calc x ^ m ≤ y ^ n ↔ (x ^ m) ^ c ≤ (y ^ n) ^ c :=
+        (pow_le_pow_iff_left₀ (pow_nonneg hx _) (pow_nonneg hy _) hc).symm
+    _ ↔ (x ^ m') ^ c' ≤ (y ^ n') ^ c' := by simp only [← pow_mul, hm, hn]
+    _ ↔ x ^ m' ≤ y ^ n' := pow_le_pow_iff_left₀ (pow_nonneg hx _) (pow_nonneg hy _) hc'
 
 end TauCeti

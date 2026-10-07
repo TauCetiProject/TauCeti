@@ -403,7 +403,7 @@ section DegreeOne
 Openness of `U` makes every corestriction cochain continuous, so the cochain layer above descends
 to `H¹ = Z¹/B¹`. -/
 
-variable [TopologicalSpace G] [ContinuousMul G] [ContinuousInv G]
+variable [TopologicalSpace G] [SeparatelyContinuousMul G]
   [TopologicalSpace M] [IsTopologicalAddGroup M] [ContinuousSMul G M]
   (t : G ⧸ U → G) (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
   (hU : IsOpen (U : Set G))
@@ -758,9 +758,8 @@ Openness of `U` makes every degree-two corestriction cochain continuous — thro
 `TauCeti.continuous_lWord` and `TauCeti.continuous_lWord_inv_smul`, one for each of the two
 transversal words — so the cochain layer above descends to `H² = Z²/B²`.
 
-Unlike degree one, this section takes the bundled `IsTopologicalGroup G` rather than
-`ContinuousMul G` together with `ContinuousInv G`. The two carry the same content, but only the
-bundled form triggers the instance `IsTopologicalGroup ↥U` that `Z²(U, M)` needs, `B²` being the
+Degree one needs separately continuous multiplication on `G`. This section uses the stronger bundled
+`IsTopologicalGroup G` to obtain `IsTopologicalGroup ↥U`, which `Z²(U, M)` needs: `B²` is the
 image of the *continuous* `1`-cochains on `U`. -/
 
 variable [TopologicalSpace G] [IsTopologicalGroup G]

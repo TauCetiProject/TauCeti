@@ -46,12 +46,12 @@ starting point `e₀`. This is the path-level statement behind
 amounts to conjugating the classes that the monodromy action fixes. -/
 theorem _root_.IsCoveringMap.monodromy_eq_self_iff_fundamentalGroupMulEquivOfPath_symm_apply
     (hp : IsCoveringMap p) (γ : Path x₀ x₁) (e₀ : p ⁻¹' {x₀})
-    (g : _root_.FundamentalGroup X x₁) :
+    (g : FundamentalGroup X x₁) :
     hp.monodromy g (hp.monodromy ⟦γ⟧ e₀) = hp.monodromy ⟦γ⟧ e₀ ↔
       hp.monodromy
-        ((_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm g) e₀ = e₀ := by
+        ((FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm g) e₀ = e₀ := by
   let γq : Path.Homotopic.Quotient x₀ x₁ := Path.Homotopic.Quotient.mk γ
-  let f := _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ
+  let f := FundamentalGroup.fundamentalGroupMulEquivOfPath γ
   -- Expose the local names so that the path-lifting composition laws apply directly.
   change hp.monodromy g (hp.monodromy γq e₀) = hp.monodromy γq e₀ ↔
     hp.monodromy (f.symm g) e₀ = e₀
@@ -63,7 +63,7 @@ theorem _root_.IsCoveringMap.monodromy_eq_self_iff_fundamentalGroupMulEquivOfPat
       f.symm g = Path.Homotopic.Quotient.trans γq
         (Path.Homotopic.Quotient.trans g γq.symm) := by
     simpa only [f, γq] using
-      _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply γ g
+      FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply γ g
   rw [← htrans]
   rw [hf]
   have hback : hp.monodromy γq.symm (hp.monodromy γq e₀) = e₀ := by

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Reparametrization
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Smoothness
 public import TauCeti.Geometry.Manifold.IntegralCurve.Maximal
+public import TauCeti.Topology.FiberBundle.Separation
 
 /-!
 # Maximal intervals of geodesics
@@ -122,7 +123,7 @@ theorem IsGeodesicCurveOnFrom.subset_geodesicInterval
 
 /-- Geodesics with the same initial data agree on the overlap of their intervals. -/
 theorem IsGeodesicCurveOnFrom.eqOn_of_inter
-    [T2Space (TangentBundle I M)] {p : M} {v : TangentSpace I p}
+    [T2Space M] {p : M} {v : TangentSpace I p}
     {γ γ' : ℝ → M} {a b a' b' : ℝ}
     (hγ : IsGeodesicCurveOnFrom I γ (Ioo a b) p v)
     (hγ' : IsGeodesicCurveOnFrom I γ' (Ioo a' b') p v) :

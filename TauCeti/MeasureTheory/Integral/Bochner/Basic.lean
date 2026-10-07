@@ -31,6 +31,8 @@ for set and probability integrals.
   integral over a larger set, for a `[0, 1]`-valued weight equal to one on the smaller set.
 * The set-integral inequality specializes to the second-moment lower bound for a real-valued
   function on a probability space.
+* `integral_max_sub_sq_le_mul_measureReal` bounds the integral of the squared truncation
+  `((f - l)⁺)²` of a function `f ≤ M` by `(M - l)²` times the measure of `{l ≤ f}`.
 
 ## `L¹` convergence
 
@@ -180,6 +182,27 @@ theorem setIntegral_le_setIntegral_sq_mul_of_eqOn {X : Type*} [MeasurableSpace X
     _ ≤ ∫ x in s, ψ x ^ 2 * f x ∂μ :=
       setIntegral_mono_set hint
         (Eventually.of_forall fun x => mul_nonneg (sq_nonneg _) (hf0 x)) hts.eventuallyLE
+
+/-- On a finite measure space where `f ≤ M` almost everywhere, the integral of the squared
+truncation `((f - l)⁺)²` is at most `(M - l)²` times the measure of the upper level set
+`{l ≤ f}`. In De Giorgi's method this turns a measure estimate for upper level sets into an `L²`
+estimate for truncations. -/
+theorem integral_max_sub_sq_le_mul_measureReal {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    [IsFiniteMeasure μ] {f : Ω → ℝ} (hf : Measurable f) {l M : ℝ} (hM : ∀ᵐ x ∂μ, f x ≤ M) :
+    ∫ x, max (f x - l) 0 ^ 2 ∂μ ≤ (M - l) ^ 2 * μ.real {x | l ≤ f x} := by
+  have hS : MeasurableSet {x | l ≤ f x} := measurableSet_le measurable_const hf
+  calc ∫ x, max (f x - l) 0 ^ 2 ∂μ
+      ≤ ∫ x, {x | l ≤ f x}.indicator (fun _ => (M - l) ^ 2) x ∂μ := by
+        refine integral_mono_of_nonneg (Eventually.of_forall fun x => by positivity)
+          ((integrable_const _).indicator hS) ?_
+        filter_upwards [hM] with x hx
+        by_cases hlx : l ≤ f x
+        · rw [Set.indicator_of_mem (by exact hlx)]
+          exact pow_le_pow_left₀ (le_max_right _ _) (max_le (by linarith) (by linarith)) 2
+        · rw [Set.indicator_of_notMem (by exact hlx), max_eq_right (by linarith)]
+          norm_num
+    _ = (M - l) ^ 2 * μ.real {x | l ≤ f x} := by
+        rw [integral_indicator_const _ hS, smul_eq_mul, mul_comm]
 
 /-- The positive part of the integral of a real-valued function is at most the integral of its
 pointwise positive part. No integrability or pointwise sign assumption on `f` is needed. -/

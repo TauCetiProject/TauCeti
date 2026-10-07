@@ -8,7 +8,9 @@ module
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
 public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
 import TauCeti.NumberTheory.HilbertSymbol.Henselian
+import TauCeti.NumberTheory.LocalField.QuadraticForm.Bimultiplicativity
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.RingTheory.DedekindDomain.SelmerGroup
 
 /-!
@@ -28,8 +30,15 @@ invariant of a global form.
 
 ## Main results
 
+* `TauCeti.hilbertSymbol_mul_left_adicCompletion`: over the completion at a finite place, the
+  symbol is multiplicative in its first argument.
+* `TauCeti.hilbertSymbol_eq_one_of_valued_eq_one`: over the completion at a finite place not
+  above `2`, the symbol of two elements of valuation `1` is `1`.
 * `TauCeti.hilbertSymbol_unitAtFinitePlace_eq_one`: the localized symbol is `1` at a finite
   place at which `2`, `a` and `b` are units.
+* `TauCeti.hasFiniteMulSupport_hilbertSymbol_of_eventually_valued_eq_one`: the symbol of a family
+  of elements of the completions that are almost all local units, with a localized global
+  element, is `1` at all but finitely many finite places.
 * `TauCeti.hasFiniteMulSupport_hilbertSymbol_unitAtFinitePlace`: the localized symbol is `1` at
   all but finitely many finite places.
 
@@ -47,26 +56,62 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] [NumberField K]
 
+/-- **Multiplicativity of the Hilbert symbol at a finite place.** Over the completion `K_v` at a
+finite place `v`, the Hilbert symbol is multiplicative in its first argument:
+`(a a', c)_v = (a, c)_v (a', c)_v`. -/
+theorem hilbertSymbol_mul_left_adicCompletion (v : HeightOneSpectrum (𝓞 K))
+    (a a' c : (v.adicCompletion K)ˣ) :
+    hilbertSymbol (a * a') c = hilbertSymbol a c * hilbertSymbol a' c := by
+  let : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+  exact hilbertSymbol_mul_left two_ne_zero c a a'
+
+/-- **The Hilbert symbol of two local units at a nondyadic place.** If `2` is a unit at the
+finite place `v`, then the Hilbert symbol over the completion `K_v` of two elements of valuation
+`1` is `1`. -/
+theorem hilbertSymbol_eq_one_of_valued_eq_one {v : HeightOneSpectrum (𝓞 K)}
+    (h2 : v.valuation K 2 = 1) {u u' : (v.adicCompletion K)ˣ}
+    (hu : Valued.v (u : v.adicCompletion K) = 1) (hu' : Valued.v (u' : v.adicCompletion K) = 1) :
+    hilbertSymbol u u' = 1 := by
+  -- The ring of integers of `K_v` is Henselian with finite residue field, and `2` is a unit there.
+  let : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+  obtain ⟨t, ht, ht2⟩ := v.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one h2
+  have ht2' : t = 2 := Subtype.ext (by rw [ht2, map_ofNat]; norm_cast)
+  -- An element of `K_v` of valuation `1` is the image of a unit of the ring of integers.
+  have hunit {w : (v.adicCompletion K)ˣ} (hw : Valued.v (w : v.adicCompletion K) = 1) :
+      ∃ r : (v.adicCompletionIntegers K)ˣ,
+        Units.map (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K) :
+          v.adicCompletionIntegers K →* v.adicCompletion K) r = w :=
+    ⟨(adicCompletionIntegers.isUnit_iff_valued_eq_one.mpr hw :
+      IsUnit (⟨w, (mem_adicCompletionIntegers _ K v).mpr hw.le⟩ : v.adicCompletionIntegers K)).unit,
+      Units.ext rfl⟩
+  obtain ⟨r, rfl⟩ := hunit hu
+  obtain ⟨r', rfl⟩ := hunit hu'
+  exact hilbertSymbol_units_map_eq_one (ht2' ▸ ht) _ _
+
 /-- **The Hilbert symbol at a good finite place.** If `2`, `a` and `b` are units at the finite
 place `v`, then the Hilbert symbol of the images of `a` and `b` in the completion `K_v` is `1`. -/
 @[simp]
 theorem hilbertSymbol_unitAtFinitePlace_eq_one {a b : Kˣ} {v : HeightOneSpectrum (𝓞 K)}
     (h2 : v.valuation K 2 = 1) (ha : v.valuation K a = 1) (hb : v.valuation K b = 1) :
-    hilbertSymbol (v.unitAtFinitePlace a) (v.unitAtFinitePlace b) = 1 := by
-  -- The ring of integers of `K_v` is Henselian with finite residue field, and `2` is a unit there.
-  let : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
-  obtain ⟨t, ht, ht2⟩ := v.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one h2
-  have ht2' : t = 2 := Subtype.ext (by rw [ht2, map_ofNat]; norm_cast)
-  obtain ⟨u, hu, hua⟩ := v.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one ha
-  obtain ⟨u', hu', hub⟩ := v.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one hb
-  -- `a` and `b` are the images of the units `u` and `u'` of the ring of integers of `K_v`.
-  have hmap {c : Kˣ} {w : v.adicCompletionIntegers K} (hw : IsUnit w)
-      (hwc : (w : v.adicCompletion K) = algebraMap K (v.adicCompletion K) c) :
-      Units.map (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K) :
-        v.adicCompletionIntegers K →* v.adicCompletion K) hw.unit = v.unitAtFinitePlace c :=
-    Units.ext (by simpa using hwc)
-  rw [← hmap hu hua, ← hmap hu' hub]
-  exact hilbertSymbol_units_map_eq_one (ht2' ▸ ht) _ _
+    hilbertSymbol (v.unitAtFinitePlace a) (v.unitAtFinitePlace b) = 1 :=
+  hilbertSymbol_eq_one_of_valued_eq_one h2 (by rwa [valued_unitAtFinitePlace])
+    (by rwa [valued_unitAtFinitePlace])
+
+/-- **Finite support of the local symbols of almost-everywhere local units.** If `c_v ∈ K_vˣ` has
+valuation `1` at all but finitely many finite places `v`, then for `b ∈ Kˣ` the Hilbert symbol of
+`c_v` and the image of `b` in `K_v` is `1` at all but finitely many finite places `v`. -/
+theorem hasFiniteMulSupport_hilbertSymbol_of_eventually_valued_eq_one
+    {c : ∀ v : HeightOneSpectrum (𝓞 K), (v.adicCompletion K)ˣ}
+    (hc : ∀ᶠ v in Filter.cofinite, Valued.v (c v : v.adicCompletion K) = 1) (b : Kˣ) :
+    Function.HasFiniteMulSupport fun v : HeightOneSpectrum (𝓞 K) ↦
+      hilbertSymbol (c v) (v.unitAtFinitePlace b) := by
+  refine (((Filter.eventually_cofinite.mp hc).union
+    (finite_setOfPred_valuation_ne_one (two_ne_zero' K))).union
+    (finite_setOfPred_valuation_ne_one b.ne_zero)).subset fun v hv ↦ ?_
+  by_contra hbad
+  simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_not] at hbad
+  exact hv (hilbertSymbol_eq_one_of_valued_eq_one hbad.1.2 hbad.1.1
+    (by rw [valued_unitAtFinitePlace, hbad.2]))
 
 /-- **Finite support of the localized Hilbert symbol.** For `a, b ∈ Kˣ`, the Hilbert symbol of
 the images of `a` and `b` in the completion `K_v` is `1` at all but finitely many finite
@@ -74,12 +119,9 @@ places `v`. -/
 @[fun_prop]
 theorem hasFiniteMulSupport_hilbertSymbol_unitAtFinitePlace (a b : Kˣ) :
     Function.HasFiniteMulSupport fun v : HeightOneSpectrum (𝓞 K) ↦
-      hilbertSymbol (v.unitAtFinitePlace a) (v.unitAtFinitePlace b) := by
-  refine (((finite_setOfPred_valuation_ne_one (two_ne_zero' K)).union
-    (finite_setOfPred_valuation_ne_one a.ne_zero)).union
-    (finite_setOfPred_valuation_ne_one b.ne_zero)).subset fun v hv ↦ ?_
-  by_contra hbad
-  simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_not] at hbad
-  exact hv (hilbertSymbol_unitAtFinitePlace_eq_one hbad.1.1 hbad.1.2 hbad.2)
+      hilbertSymbol (v.unitAtFinitePlace a) (v.unitAtFinitePlace b) :=
+  hasFiniteMulSupport_hilbertSymbol_of_eventually_valued_eq_one
+    (Filter.eventually_cofinite.mpr ((finite_setOfPred_valuation_ne_one a.ne_zero).subset
+      fun v hv ↦ by rwa [Set.mem_ofPred_eq, valued_unitAtFinitePlace] at hv)) b
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Henselian
+import Mathlib.Algebra.Ring.GeomSum
 
 /-!
 # Henselian rings

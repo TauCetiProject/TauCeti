@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Annihilation
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ClosedSubgroup
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClosedSubgroup
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.Restriction
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 
@@ -25,9 +26,11 @@ subgroup (`TauCeti.ContinuousCohomology.exists_openSubgroup_le_res_eq_zero`).
 Consequently `cd_p G ≤ cd_p U` for an open subgroup `U` of index prime to `p` of a compact group,
 and `cd_p G ≤ cd_p H` for such a closed subgroup `H` of a profinite group: both follow from the one
 observation that vanishing transfers from a subgroup on which restriction is injective in every
-positive degree (`TauCeti.CohomologicalDimensionLE.of_forall_res_injective`). The reverse
-inequality `cd_p H ≤ cd_p G`, which holds for every closed subgroup, is Shapiro's lemma and is not
-proved here. The closed-subgroup statement is the one a Sylow pro-`p` subgroup satisfies, since
+positive degree (`TauCeti.CohomologicalDimensionLE.of_forall_res_injective`). Combined with
+closed-subgroup monotonicity from Shapiro's lemma, this gives `cd_p G = cd_p H` for such a closed
+subgroup, and in particular for an open subgroup of index prime to `p`. These equalities hold in
+`ℕ∞`, including infinite cohomological dimension. The closed-subgroup statement is the one a
+Sylow pro-`p` subgroup satisfies, since
 each of its open neighbourhoods has index prime to `p`; the comparison of `cd_p G` with the
 cohomological dimension of a Sylow pro-`p` subgroup is where these results are used.
 
@@ -43,6 +46,10 @@ cohomological dimension of a Sylow pro-`p` subgroup is where these results are u
   subgroup `U` of a compact group `G` with `[G : U]` prime to `p`.
 * `TauCeti.cohomologicalDimensionAt_le_of_isClosed_of_forall_not_dvd_index`: **`cd_p G ≤ cd_p H`**
   for such a closed subgroup `H` of a profinite group `G`.
+* `TauCeti.cohomologicalDimensionAt_eq_of_isClosed_of_forall_not_dvd_index`: **`cd_p G = cd_p H`**
+  for such a closed subgroup, with no finiteness assumption on cohomological dimension.
+* `TauCeti.cohomologicalDimensionAt_eq_of_not_dvd_index`: **`cd_p G = cd_p U`** for an open
+  subgroup of index prime to `p` in a profinite group.
 
 ## References
 
@@ -139,5 +146,24 @@ theorem cohomologicalDimensionAt_le_of_isClosed_of_forall_not_dvd_index (hp : p.
   cohomologicalDimensionAt_le_of_forall_res_injective fun M _ _ _ _ _ hM i ↦
     ContinuousCohomology.res_injective_of_forall_not_dvd_index hp
       (ofDiscreteModule_isSmoothDiscrete ℤ G M) hM hH hind i
+
+/-- **`cd_p G = cd_p H` for a closed subgroup whose open neighbourhoods have index prime to
+`p`**. The equality is in
+`ℕ∞` and does not assume that either cohomological dimension is finite. -/
+theorem cohomologicalDimensionAt_eq_of_isClosed_of_forall_not_dvd_index (hp : p.Prime)
+    {H : Subgroup G} (hH : IsClosed (H : Set G))
+    (hind : ∀ V : OpenSubgroup G, H ≤ V → ¬ p ∣ V.toSubgroup.index) :
+    cohomologicalDimensionAt.{u} p G = cohomologicalDimensionAt.{u} p H :=
+  le_antisymm (cohomologicalDimensionAt_le_of_isClosed_of_forall_not_dvd_index hp hH hind)
+    (cohomologicalDimensionAt_le_of_isClosed hH)
+
+/-- **An open subgroup of index prime to `p` has the same `p`-cohomological dimension as the
+ambient profinite group** (NSW (3.3.5)). Unlike the equality for arbitrary open subgroups, this
+holds even when the cohomological dimension is infinite. -/
+theorem cohomologicalDimensionAt_eq_of_not_dvd_index (hp : p.Prime) (U : OpenSubgroup G)
+    (hU : ¬ p ∣ U.toSubgroup.index) :
+    cohomologicalDimensionAt.{u} p G = cohomologicalDimensionAt.{u} p U.toSubgroup :=
+  cohomologicalDimensionAt_eq_of_isClosed_of_forall_not_dvd_index hp U.isClosed
+    fun _ hUV hdiv ↦ hU (hdiv.trans (Subgroup.index_dvd_of_le hUV))
 
 end TauCeti

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Formula
 
 import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import TauCeti.Analysis.Complex.Conformal.LocalFrontier
+import TauCeti.Analysis.Complex.Conformal.Reflection.Infinity
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 
 /-!
@@ -26,12 +27,24 @@ of `f`.  These are the properties that Carathéodory's boundary correspondence s
 Riemann map of a polygon, once it is transported to the upper half-plane with infinity sent to a
 boundary point that is not a vertex; that transport is not carried out here.
 
-This file derives from these global conditions the local side, corner and infinity conditions of
-`TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary`, and so proves
-that such an `f` is an affine image of the normalized Schwarz--Christoffel primitive for the
-prevertices `a i` and the turning exponents `e i`.  The only geometric input is local: a
-boundary value of `f` lies on the frontier of `U`, and near a side or a vertex that frontier lies
-on the bounding line or on the two bounding rays.
+An **unbounded polygonal domain** has, besides finitely many vertices, a vertex at infinity:
+far from some point `c` it coincides with the open sector `{|arg ((z - c) / b)| < β * π / 2}` of
+opening `β * π`, where `0 < β < 2`, so that its two unbounded sides lie on lines through `c`.  For
+such a domain the map `f` is instead required to tend to infinity at infinity, so that the point
+at infinity of the half-plane is the prevertex of the vertex at infinity.  The vertex at infinity
+may also have opening `0`: far from `c` the domain coincides with the open half-strip
+`{0 < re ((z - c) / b), 0 < im ((z - c) / b) < π}`, whose two unbounded sides are parallel rays.
+The opening `β = 2`, with two parallel sides pointing in opposite directions, is not treated.
+That a Riemann map of such a domain has these properties is not established here.
+
+This file derives from these global conditions the local side and corner conditions of
+`TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary`, together with the
+limit of `z * f''(z) / f'(z)` at infinity, which is `-2` in the bounded case, `β - 1` for a sector
+at infinity, and `-1` for a half-strip, and so proves that such an `f` is an affine image of the
+normalized Schwarz--Christoffel primitive for the prevertices `a i` and the turning exponents
+`e i`.  The only geometric input is local: a boundary value of `f` lies on the frontier of `U`,
+and near a side or a vertex, or far out along an unbounded side, that frontier lies on the
+bounding line or on the two bounding rays.
 
 ## Main results
 
@@ -41,6 +54,15 @@ on the bounding line or on the two bounding rays.
   primitive.
 * `TauCeti.exponent_sum_eq_neg_two_of_polygonal_domain` -- the turning exponents of such a polygonal
   domain sum to `-2`: its interior angles sum to `(n - 2) * π`.
+* `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_unbounded_polygonal_domain` -- a
+  conformal map of the upper half-plane onto an unbounded polygonal domain, continuous and
+  injective up to the real axis and tending to infinity at infinity, is an affine image of the
+  Schwarz--Christoffel primitive.
+* `TauCeti.exponent_sum_eq_sub_one_of_unbounded_polygonal_domain` -- the turning exponents of the
+  finite vertices of such a domain sum to `β - 1`.
+* `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_halfStrip_polygonal_domain` and
+  `TauCeti.exponent_sum_eq_neg_one_of_halfStrip_polygonal_domain` -- the same for a polygonal
+  domain with a half-strip end, whose finite turning exponents sum to `-1`.
 
 ## References
 
@@ -89,7 +111,7 @@ private theorem exists_ball_abs_arg_div_of_image_eq (hfc : ContinuousOn f {z : �
   · have hzx : f z ≠ f x := fun h => by
       simp [hfi hz0.le hx.symm.le h, hx] at hz0
     exact (hU _ (hball hz0.le hz) hzx).mp (hfU ▸ mem_image_of_mem f hz0)
-  · exact abs_arg_div_eq_of_mem_frontier hb hU (hball hz0.symm.le hz) hzx
+  · exact abs_arg_div_eq_of_mem_frontier hb isOpen_ball hU (hball hz0.symm.le hz) hzx
       (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
         (hfc _ hz0.symm.le) hz0 (not_mem_image_upperHalfPlaneSet_of_im_eq_zero hfi hz0))
 
@@ -160,20 +182,16 @@ private theorem exists_eqOn_neg_inv_of_tendsto (hfc : ContinuousOn f {z : ℂ | 
 
 /-- **Condition at infinity, from the global data.**  If `f` tends at infinity to a point `p`
 which is not a value of `f` on the closed upper half-plane, and hence not a vertex, then `p` lies on
-a side of `U`, and the conclusion of `exists_eqOn_neg_inv_of_tendsto` holds for that side. -/
-private theorem exists_eqOn_neg_inv_of_tendsto_of_side {ι : Type*} {a : ι → ℝ} {v : ι → ℂ}
-    {p : ℂ} (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im}) (hfi : InjOn f {z : ℂ | 0 ≤ z.im})
+a side of `U`, and `z * f''(z) / f'(z) → -2` as `z` tends to infinity in the upper half-plane. -/
+private theorem tendsto_mul_logDeriv_deriv_of_tendsto_of_side {ι : Type*} {a : ι → ℝ}
+    {v : ι → ℂ} {p : ℂ} (hf : DifferentiableOn ℂ f upperHalfPlaneSet)
+    (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im}) (hfi : InjOn f {z : ℂ | 0 ≤ z.im})
     (hfU : f '' upperHalfPlaneSet = U) (hfv : ∀ i, f (a i) = v i)
     (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (𝓝 p))
     (hpf : p ∉ f '' {z : ℂ | 0 ≤ z.im})
     (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
       ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im)) :
-    ∃ r > 0, ∃ g : ℂ → ℂ, ∃ q b : ℂ, b ≠ 0 ∧
-      EqOn g (fun w => (f (-w⁻¹) - q) / b) (ball 0 r ∩ upperHalfPlaneSet) ∧
-      ContinuousOn g (ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) ∧
-      (∀ z ∈ ball (0 : ℂ) r, z.im = 0 → (g z).im = 0) ∧
-      MapsTo g (ball 0 r ∩ upperHalfPlaneSet) upperHalfPlaneSet ∧
-      InjOn g (ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) := by
+    Tendsto (fun z => z * logDeriv (deriv f) z) (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 (-2)) := by
   have hH0 : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := ofPred_subset_ofPred.mpr fun _ => le_of_lt
   have hpU : p ∈ frontier U := by
     refine ⟨?_, fun h => hpf ?_⟩
@@ -184,10 +202,285 @@ private theorem exists_eqOn_neg_inv_of_tendsto_of_side {ι : Type*} {a : ι → 
       exact ⟨y, hH0 hy, hyp⟩
   obtain ⟨ρ, hρ, q, b, hb, hU⟩ :=
     hside p hpU fun i h => hpf ⟨(a i : ℂ), by simp, (hfv i).trans h.symm⟩
-  obtain ⟨r, hr, g, hg⟩ := exists_eqOn_neg_inv_of_tendsto hfc hfi hfU hp hpf hpU hρ hb hU
-  exact ⟨r, hr, g, q, b, hb, hg⟩
+  obtain ⟨r, hr, g, hgf, hgcont, hgreal, hgupper, hginj⟩ :=
+    exists_eqOn_neg_inv_of_tendsto hfc hfi hfU hp hpf hpU hρ hb hU
+  exact tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv hr hb hgf hgcont
+    (differentiableOn_of_eqOn_neg_inv hf hgf) hgreal hgupper hginj
+
+/-- **Condition at a vertex at infinity.**  If `f` tends to infinity at infinity, and far from `c`
+the domain `U` coincides with the open sector `{|arg ((z - c) / b)| < β * π / 2}` of opening
+`β * π`, where `0 < β < 2`, then `z * f''(z) / f'(z) → β - 1` as `z` tends to infinity in the
+upper half-plane. -/
+private theorem tendsto_mul_logDeriv_deriv_of_tendsto_cobounded {β ρ : ℝ} {c b : ℂ}
+    (hβ : β ∈ Ioo (0 : ℝ) 2) (hb : b ≠ 0) (hf : DifferentiableOn ℂ f upperHalfPlaneSet)
+    (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im}) (hfi : InjOn f {z : ℂ | 0 ≤ z.im})
+    (hfU : f '' upperHalfPlaneSet = U)
+    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ))
+    (hU : ∀ z : ℂ, ρ < ‖z - c‖ → (z ∈ U ↔ |((z - c) / b).arg| < β * Real.pi / 2)) :
+    Tendsto (fun z => z * logDeriv (deriv f) z) (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet)
+      (𝓝 ((β : ℂ) - 1)) := by
+  have hH0 : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := ofPred_subset_ofPred.mpr fun _ => le_of_lt
+  have hfn : ∀ z ∈ upperHalfPlaneSet, deriv f z ≠ 0 := fun z hz =>
+    deriv_ne_zero_of_injOn hf isOpen_upperHalfPlaneSet (hfi.mono hH0) hz
+  have hT := tendsto_comp_neg_inv_cobounded hp
+  -- near `0`, the inverse coordinate stays in the region where `U` is the sector
+  obtain ⟨r, hr, hfar⟩ : ∃ r > 0, ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 →
+      max ρ 0 < ‖f (-w⁻¹) - c‖ := by
+    obtain ⟨r, hr, h⟩ := Metric.mem_nhdsWithin_iff.mp
+      (hT ((Metric.hasBasis_cobounded_compl_closedBall c).mem_of_mem (i := max ρ 0) trivial))
+    exact ⟨r, hr, fun w hw hw0 hw1 => by simpa [dist_eq_norm] using h ⟨hw, hw0, hw1⟩⟩
+  have hne : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 → f (-w⁻¹) - c ≠ 0 :=
+    fun w hw hw0 hw1 h => by
+      have hlt := (le_max_right ρ 0).trans_lt (hfar w hw hw0 hw1)
+      rw [h, norm_zero] at hlt
+      exact lt_irrefl _ hlt
+  have hH : ∀ w ∈ upperHalfPlaneSet, w ≠ 0 := fun w (hw : 0 < w.im) h => by simp [h] at hw
+  -- invert the target about `c`, filling in the value `0` at the origin
+  set g : ℂ → ℂ := update (fun w => b / (f (-w⁻¹) - c)) 0 0
+  have hg0 : g 0 = 0 := update_self _ _ _
+  have hgv : ∀ w, w ≠ 0 → g w = b / (f (-w⁻¹) - c) := fun w hw => update_of_ne hw _ _
+  have harg : ∀ w, w ≠ 0 → |(g w).arg| = |((f (-w⁻¹) - c) / b).arg| := fun w hw => by
+    rw [hgv w hw, ← inv_div, abs_arg_inv]
+  refine tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_div_neg_inv (g := g) hr hb hβ hf hfn
+    (fun w hw => hgv w (hH w hw.2)) hg0 ?_ ?_ (fun w hw hwim => ?_)
+    (fun w hw hwim hgw => ?_)
+  · refine continuousOn_update_iff.mpr ⟨fun w hw => ?_, fun _ => ?_⟩
+    · have hinv : ContinuousWithinAt (fun w : ℂ => -w⁻¹) ((ball 0 r ∩ {z | 0 ≤ z.im}) \ {0}) w :=
+        (continuousAt_inv₀ hw.2).neg.continuousWithinAt
+      exact continuousWithinAt_const.div (((hfc _ (im_neg_inv_nonneg.mpr hw.1.2)).comp
+        (f := fun w : ℂ => -w⁻¹) hinv fun y (hy : y ∈ (ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) \ {0}) =>
+          im_neg_inv_nonneg.mpr hy.1.2).sub_const c) (hne w hw.1.1 hw.1.2 hw.2)
+    · have hlim := (tendsto_inv₀_cobounded.comp ((tendsto_sub_const_cobounded c).comp
+        (hT.mono_left (nhdsWithin_mono _
+          (sdiff_subset_sdiff_left (inter_subset_right (s := ball (0 : ℂ) r))))))).const_mul b
+      simpa only [mul_zero, Function.comp_def, div_eq_mul_inv] using hlim
+  · intro w₁ hw₁ w₂ hw₂ h
+    by_cases h₁ : w₁ = 0 <;> by_cases h₂ : w₂ = 0
+    · rw [h₁, h₂]
+    · rw [h₁, hg0, hgv w₂ h₂] at h
+      exact absurd h.symm (div_ne_zero hb (hne w₂ hw₂.1 hw₂.2 h₂))
+    · rw [h₂, hg0, hgv w₁ h₁] at h
+      exact absurd h (div_ne_zero hb (hne w₁ hw₁.1 hw₁.2 h₁))
+    · rw [hgv w₁ h₁, hgv w₂ h₂] at h
+      have h' := congrArg (·⁻¹) h
+      simp only [inv_div, div_left_inj' hb, sub_left_inj] at h'
+      simpa using hfi (im_neg_inv_nonneg.mpr hw₁.2) (im_neg_inv_nonneg.mpr hw₂.2) h'
+  · -- the far part of the upper half-plane goes into the sector
+    have hw0 : w ≠ 0 := hH w hwim
+    rw [harg w hw0]
+    exact (hU _ ((le_max_left ρ 0).trans_lt (hfar w hw hwim.le hw0))).mp
+      (hfU ▸ mem_image_of_mem f (im_neg_inv_pos.mpr hwim))
+  · -- and the far parts of the real axis go to the two bounding rays
+    have hw0 : w ≠ 0 := fun h => hgw (h ▸ hg0)
+    have him : (-w⁻¹).im = 0 := by simp [hwim]
+    rw [harg w hw0]
+    exact abs_arg_div_eq_of_mem_frontier (V := {y : ℂ | ρ < ‖y - c‖}) hb
+      (isOpen_lt continuous_const (continuous_id.sub continuous_const).norm)
+      (fun y hy _ => hU y hy) ((le_max_left ρ 0).trans_lt (hfar w hw hwim.ge hw0))
+      (sub_ne_zero.mp (hne w hw hwim.ge hw0))
+      (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
+        (hfc _ him.ge) him (not_mem_image_upperHalfPlaneSet_of_im_eq_zero hfi him))
+
+/-- Let `f` map the upper half-plane onto `U`, continuously and injectively up to the real axis,
+and tend to infinity at infinity, and let `U` coincide far from `c` with the open half-strip
+`{0 < re ((z - c) / b), 0 < im ((z - c) / b) < π}`.  Then near `0` in the coordinate
+`w ↦ -w⁻¹`, the normalized map `ζ w = (f (-w⁻¹) - c) / b` takes the upper half-plane into the
+half-strip, and the nonzero real points onto its two bounding rays `im ζ ∈ {0, π}`. -/
+private theorem exists_ball_mem_halfStrip_of_tendsto_cobounded {ρ : ℝ} {c b : ℂ}
+    (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im}) (hfi : InjOn f {z : ℂ | 0 ≤ z.im})
+    (hfU : f '' upperHalfPlaneSet = U)
+    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ))
+    (hU : ∀ z : ℂ, ρ < ‖z - c‖ →
+      (z ∈ U ↔ 0 < ((z - c) / b).re ∧ ((z - c) / b).im ∈ Ioo 0 Real.pi)) :
+    ∃ r > 0, (∀ w ∈ ball (0 : ℂ) r, 0 < w.im →
+      0 < ((f (-w⁻¹) - c) / b).re ∧ ((f (-w⁻¹) - c) / b).im ∈ Ioo 0 Real.pi) ∧
+      ∀ w ∈ ball (0 : ℂ) r, w.im = 0 → w ≠ 0 → 0 ≤ ((f (-w⁻¹) - c) / b).re ∧
+        (((f (-w⁻¹) - c) / b).im = 0 ∨ ((f (-w⁻¹) - c) / b).im = Real.pi) := by
+  -- near `0`, the inverse coordinate stays beyond the short side of the half-strip
+  obtain ⟨r, hr, h⟩ := Metric.mem_nhdsWithin_iff.mp (tendsto_comp_neg_inv_cobounded hp
+    ((Metric.hasBasis_cobounded_compl_closedBall c).mem_of_mem
+      (i := max ρ (Real.pi * ‖b‖)) trivial))
+  have hfar : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 →
+      max ρ (Real.pi * ‖b‖) < ‖f (-w⁻¹) - c‖ := fun w hw hw0 hw1 => by
+    simpa [dist_eq_norm] using h ⟨hw, hw0, hw1⟩
+  refine ⟨r, hr, fun w hw hwim => ?_, fun w hw hwim hw0 => ?_⟩
+  · exact (hU _ ((le_max_left _ _).trans_lt (hfar w hw hwim.le fun h => by simp [h] at hwim))).mp
+      (hfU ▸ mem_image_of_mem f (im_neg_inv_pos.mpr hwim))
+  · have him : (-w⁻¹).im = 0 := by simp [hwim]
+    exact re_div_nonneg_and_im_div_eq_zero_or_eq_pi_of_mem_frontier hU
+      ((le_max_left _ _).trans_lt (hfar w hw hwim.ge hw0))
+      ((le_max_right _ _).trans_lt (hfar w hw hwim.ge hw0))
+      (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
+        (hfc _ him.ge) him (not_mem_image_upperHalfPlaneSet_of_im_eq_zero hfi him))
+
+/-- If `f` tends to infinity at infinity and, near `0` in the coordinate `w ↦ -w⁻¹`, the
+normalized map `ζ w = (f (-w⁻¹) - c) / b` stays in the closed half-strip
+`{0 ≤ re ζ, 0 ≤ im ζ ≤ π}`, then `exp (π * I - ζ w)` tends to `0` as `w` tends to `0` there:
+`re ζ ≥ ‖ζ‖ - π` tends to infinity. -/
+private theorem tendsto_exp_pi_mul_I_sub_of_tendsto_cobounded {c b : ℂ} {r : ℝ} (hb : b ≠ 0)
+    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ))
+    (hζ : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 →
+      0 ≤ ((f (-w⁻¹) - c) / b).re ∧ ((f (-w⁻¹) - c) / b).im ∈ Icc 0 Real.pi) :
+    Tendsto (fun w => exp (Real.pi * Complex.I - (f (-w⁻¹) - c) / b))
+      (𝓝[(ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) \ {0}] 0) (𝓝 0) := by
+  have hnorm : Tendsto (fun w => ‖f (-w⁻¹) - c‖ / ‖b‖ - Real.pi)
+      (𝓝[(ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) \ {0}] 0) atTop :=
+    tendsto_atTop_add_const_right _ _ (Tendsto.atTop_div_const (norm_pos_iff.mpr hb)
+      (tendsto_norm_cobounded_atTop.comp ((tendsto_sub_const_cobounded c).comp
+        ((tendsto_comp_neg_inv_cobounded hp).mono_left (nhdsWithin_mono _
+          (sdiff_subset_sdiff_left (inter_subset_right (s := ball (0 : ℂ) r))))))))
+  have hre : Tendsto (fun w => ((f (-w⁻¹) - c) / b).re)
+      (𝓝[(ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) \ {0}] 0) atTop := by
+    refine tendsto_atTop_mono' _ (eventually_nhdsWithin_of_forall fun w hw => ?_) hnorm
+    obtain ⟨hre, him₀, himπ⟩ := hζ w hw.1.1 hw.1.2 hw.2
+    have h := norm_le_abs_re_add_abs_im ((f (-w⁻¹) - c) / b)
+    rw [abs_of_nonneg hre, abs_of_nonneg him₀, norm_div] at h
+    linarith
+  refine tendsto_exp_comap_re_atBot.comp (tendsto_comap_iff.mpr ?_)
+  simpa [Function.comp_def] using tendsto_neg_atTop_atBot.comp hre
+
+/-- **Condition at a parallel-sided end at infinity.**  If `f` tends to infinity at infinity, and
+far from `c` the domain `U` coincides with the open half-strip
+`{0 < re ((z - c) / b), 0 < im ((z - c) / b) < π}`, then `z * f''(z) / f'(z) → -1` as `z` tends to
+infinity in the upper half-plane. -/
+private theorem tendsto_mul_logDeriv_deriv_of_tendsto_cobounded_of_halfStrip {ρ : ℝ} {c b : ℂ}
+    (hb : b ≠ 0) (hf : DifferentiableOn ℂ f upperHalfPlaneSet)
+    (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im}) (hfi : InjOn f {z : ℂ | 0 ≤ z.im})
+    (hfU : f '' upperHalfPlaneSet = U)
+    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ))
+    (hU : ∀ z : ℂ, ρ < ‖z - c‖ →
+      (z ∈ U ↔ 0 < ((z - c) / b).re ∧ ((z - c) / b).im ∈ Ioo 0 Real.pi)) :
+    Tendsto (fun z => z * logDeriv (deriv f) z) (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 (-1)) := by
+  have hH0 : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := ofPred_subset_ofPred.mpr fun _ => le_of_lt
+  have hfn : ∀ z ∈ upperHalfPlaneSet, deriv f z ≠ 0 := fun z hz =>
+    deriv_ne_zero_of_injOn hf isOpen_upperHalfPlaneSet (hfi.mono hH0) hz
+  have hH : ∀ w ∈ upperHalfPlaneSet, w ≠ 0 := fun w (hw : 0 < w.im) h => by simp [h] at hw
+  obtain ⟨r, hr, hζU, hζR⟩ := exists_ball_mem_halfStrip_of_tendsto_cobounded hfc hfi hfU hp hU
+  set ζ : ℂ → ℂ := fun w => (f (-w⁻¹) - c) / b
+  have hζ : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 →
+      0 ≤ (ζ w).re ∧ (ζ w).im ∈ Icc 0 Real.pi := fun w hw hwim hw0 => by
+    rcases hwim.lt_or_eq with hwim | hwim
+    · exact ⟨(hζU w hw hwim).1.le, Ioo_subset_Icc_self (hζU w hw hwim).2⟩
+    · obtain ⟨hre, him | him⟩ := hζR w hw hwim.symm hw0
+      · exact ⟨hre, by rw [him]; exact left_mem_Icc.mpr Real.pi_pos.le⟩
+      · exact ⟨hre, by rw [him]; exact right_mem_Icc.mpr Real.pi_pos.le⟩
+  -- the exponential maps the half-strip onto a half-disc: `g = exp (π * I - ζ)`, filled in at `0`
+  set g : ℂ → ℂ := update (fun w => exp (Real.pi * Complex.I - ζ w)) 0 0
+  have hg0 : g 0 = 0 := update_self _ _ _
+  have hgv : ∀ w, w ≠ 0 → g w = exp (Real.pi * Complex.I - ζ w) := fun w hw =>
+    update_of_ne hw _ _
+  have hgim : ∀ w, w ≠ 0 → (g w).im = Real.exp (-(ζ w).re) * Real.sin (ζ w).im := fun w hw => by
+    rw [hgv w hw, exp_im]
+    simp [Real.sin_pi_sub]
+  refine tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_exp_neg_inv (g := g)
+    (c := c + Real.pi * Complex.I * b) hr (neg_ne_zero.mpr hb) hf hfn (fun w hw => ?_) hg0
+    (continuousOn_update_iff.mpr ⟨fun w hw => ?_, fun _ => ?_⟩) (fun w hw hwim => ?_)
+    (fun w hw => ?_) ?_
+  · rw [hgv w (hH w hw.2)]
+    congr 1
+    simp only [ζ]
+    field_simp
+    ring
+  · -- `g` is continuous away from `0` by continuity of `f` up to the axis
+    have hinv : ContinuousWithinAt (fun w : ℂ => -w⁻¹) ((ball 0 r ∩ {z | 0 ≤ z.im}) \ {0}) w :=
+      (continuousAt_inv₀ hw.2).neg.continuousWithinAt
+    exact (continuousWithinAt_const.sub ((((hfc _ (im_neg_inv_nonneg.mpr hw.1.2)).comp
+      (f := fun w : ℂ => -w⁻¹) hinv fun y (hy : y ∈ (ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) \ {0}) =>
+        im_neg_inv_nonneg.mpr hy.1.2).sub_const c).div_const b)).cexp
+  · exact tendsto_exp_pi_mul_I_sub_of_tendsto_cobounded hb hp hζ
+  · -- the far parts of the real axis go to the two bounding rays, where `g` is real
+    by_cases hw0 : w = 0
+    · rw [hw0, hg0, zero_im]
+    rw [hgim w hw0]
+    obtain ⟨-, him | him⟩ := hζR w hw hwim hw0 <;> simp [ζ, him]
+  · -- the far part of the upper half-plane goes into the half-strip, where `g` has `im g > 0`
+    rw [Set.mem_ofPred_eq, hgim w (hH w hw.2)]
+    obtain ⟨-, him₀, himπ⟩ := hζU w hw.1 hw.2
+    exact mul_pos (Real.exp_pos _) (Real.sin_pos_of_pos_of_lt_pi him₀ himπ)
+  · -- `exp` is injective on the closed strip `0 ≤ im ≤ π`, and `f` is injective
+    intro w₁ hw₁ w₂ hw₂ h
+    have hne : ∀ w, w ≠ 0 → g w ≠ 0 := fun w hw => by rw [hgv w hw]; exact exp_ne_zero _
+    by_cases h₁ : w₁ = 0 <;> by_cases h₂ : w₂ = 0
+    · rw [h₁, h₂]
+    · rw [h₁, hg0] at h
+      exact absurd h.symm (hne w₂ h₂)
+    · rw [h₂, hg0] at h
+      exact absurd h (hne w₁ h₁)
+    · have hlog (w : ℂ) (hw : w ∈ ball (0 : ℂ) r ∩ {z | 0 ≤ z.im}) (hw0 : w ≠ 0) :
+          log (g w) = Real.pi * Complex.I - ζ w := by
+        obtain ⟨-, him₀, himπ⟩ := hζ w hw.1 hw.2 hw0
+        rw [hgv w hw0, log_exp] <;> simp <;> linarith [Real.pi_pos]
+      have hζeq : ζ w₁ = ζ w₂ := by
+        simpa using (hlog w₁ hw₁ h₁).symm.trans ((congrArg log h).trans (hlog w₂ hw₂ h₂))
+      simp only [ζ, div_left_inj' hb, sub_left_inj] at hζeq
+      simpa using hfi (im_neg_inv_nonneg.mpr hw₁.2) (im_neg_inv_nonneg.mpr hw₂.2) hζeq
 
 /-! ### The Schwarz--Christoffel formula -/
+
+/-- The Schwarz--Christoffel formula for a conformal map onto a polygonal domain, given the
+limit `L` of `z * f''(z) / f'(z)` at infinity; the bounded and unbounded cases differ only in how
+that limit is obtained. -/
+private theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain_of_tendsto
+    {ι : Type*} [Fintype ι] (a e : ι → ℝ) (ha : Function.Injective a)
+    (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1) (z₀ : UpperHalfPlane) {v : ι → ℂ} {L : ℂ}
+    (hf : DifferentiableOn ℂ f upperHalfPlaneSet) (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
+    (hfi : InjOn f {z : ℂ | 0 ≤ z.im}) (hfU : f '' upperHalfPlaneSet = U)
+    (hfv : ∀ i, f (a i) = v i)
+    (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
+      ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im))
+    (hcorner : ∀ i, ∃ ρ > 0, ∃ b : ℂ, b ≠ 0 ∧ ∀ z ∈ ball (v i) ρ, z ≠ v i →
+      (z ∈ U ↔ |((z - v i) / b).arg| < (e i + 1) * Real.pi / 2))
+    (hinfty : Tendsto (fun z => z * logDeriv (deriv f) z)
+      (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 L)) :
+    EqOn f (fun z => deriv f z₀ / schwarzChristoffelIntegrand a e z₀ *
+      schwarzChristoffelPrimitive a e z₀ z + f z₀) upperHalfPlaneSet := by
+  have hH0 : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := ofPred_subset_ofPred.mpr fun _ => le_of_lt
+  refine eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary a e ha he z₀ hf
+    (fun z hz => deriv_ne_zero_of_injOn hf isOpen_upperHalfPlaneSet (hfi.mono hH0) hz)
+    (fun x hx => ?_) (fun i => ?_) hinfty
+  · -- a real point that is not a prevertex is carried to a side
+    have hxv : ∀ i, f x ≠ v i := fun i h =>
+      hx i (by exact_mod_cast hfi (by simp) (by simp) ((hfv i).trans h.symm))
+    obtain ⟨ρ, hρ, q, b, hb, hU⟩ :=
+      hside _ (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
+        (hfc _ (by simp)) (ofReal_im x)
+        (not_mem_image_upperHalfPlaneSet_of_im_eq_zero hfi (ofReal_im x))) hxv
+    obtain ⟨r, hr, hreal, hupper⟩ := exists_ball_im_div_of_image_eq hfc hfi hfU (ofReal_im x) hρ hU
+    exact ⟨r, hr, q, b, hb, hfc.mono inter_subset_right, hfi.mono inter_subset_right, hreal,
+      hupper⟩
+  · -- the prevertex `a i` is carried to the vertex `v i`
+    obtain ⟨ρ, hρ, b, hb, hU⟩ := hcorner i
+    rw [← hfv i] at hU
+    obtain ⟨r, hr, hupper, hreal⟩ :=
+      exists_ball_abs_arg_div_of_image_eq hfc hfi hfU (ofReal_im (a i)) hρ hb hU
+    exact ⟨r, hr, b, hb, hfc.mono inter_subset_right, hfi.mono inter_subset_right, hupper, hreal⟩
+
+/-- The turning exponents of a polygonal domain sum to the limit `L` of `z * f''(z) / f'(z)` at
+infinity, for a conformal map `f` onto it. -/
+private theorem exponent_sum_eq_of_polygonal_domain_of_tendsto
+    {ι : Type*} [Fintype ι] (a e : ι → ℝ) (ha : Function.Injective a)
+    (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1) {v : ι → ℂ} {L : ℂ}
+    (hf : DifferentiableOn ℂ f upperHalfPlaneSet) (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
+    (hfi : InjOn f {z : ℂ | 0 ≤ z.im}) (hfU : f '' upperHalfPlaneSet = U)
+    (hfv : ∀ i, f (a i) = v i)
+    (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
+      ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im))
+    (hcorner : ∀ i, ∃ ρ > 0, ∃ b : ℂ, b ≠ 0 ∧ ∀ z ∈ ball (v i) ρ, z ≠ v i →
+      (z ∈ U ↔ |((z - v i) / b).arg| < (e i + 1) * Real.pi / 2))
+    (hinfty : Tendsto (fun z => z * logDeriv (deriv f) z)
+      (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 L)) :
+    ∑ i, ((e i : ℝ) : ℂ) = L := by
+  have hH0 : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := ofPred_subset_ofPred.mpr fun _ => le_of_lt
+  have hfn : ∀ z ∈ upperHalfPlaneSet, deriv f z ≠ 0 := fun z hz =>
+    deriv_ne_zero_of_injOn hf isOpen_upperHalfPlaneSet (hfi.mono hH0) hz
+  -- `f` is an affine image of the primitive, so its pre-Schwarzian is the partial-fraction sum
+  have hform := eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain_of_tendsto a e ha
+    he UpperHalfPlane.I hf hfc hfi hfU hfv hside hcorner hinfty
+  have hpre := (exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_iff a e UpperHalfPlane.I
+    hf hfn).mp ⟨_, div_ne_zero (hfn _ UpperHalfPlane.I.im_pos)
+      (schwarzChristoffelIntegrand_ne_zero a e UpperHalfPlane.I.im_pos), _, hform⟩
+  exact exponent_sum_eq_of_logDeriv_deriv_eqOn (fun i => (a i : ℂ)) (fun i => (e i : ℂ)) hpre
+    hinfty
 
 /-- **The Schwarz--Christoffel formula for a conformal map onto a polygonal domain.**  Let `U`
 coincide near each boundary point that is not a vertex with an open half-plane, and near the
@@ -213,29 +506,10 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain
     (hcorner : ∀ i, ∃ ρ > 0, ∃ b : ℂ, b ≠ 0 ∧ ∀ z ∈ ball (v i) ρ, z ≠ v i →
       (z ∈ U ↔ |((z - v i) / b).arg| < (e i + 1) * Real.pi / 2)) :
     EqOn f (fun z => deriv f z₀ / schwarzChristoffelIntegrand a e z₀ *
-      schwarzChristoffelPrimitive a e z₀ z + f z₀) upperHalfPlaneSet := by
-  have hH0 : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := ofPred_subset_ofPred.mpr fun _ => le_of_lt
-  refine eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary a e ha he z₀ hf
-    (fun z hz => deriv_ne_zero_of_injOn hf isOpen_upperHalfPlaneSet (hfi.mono hH0) hz)
-    (fun x hx => ?_) (fun i => ?_) ?_
-  · -- a real point that is not a prevertex is carried to a side
-    have hxv : ∀ i, f x ≠ v i := fun i h =>
-      hx i (by exact_mod_cast hfi (by simp) (by simp) ((hfv i).trans h.symm))
-    obtain ⟨ρ, hρ, q, b, hb, hU⟩ :=
-      hside _ (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
-        (hfc _ (by simp)) (ofReal_im x)
-        (not_mem_image_upperHalfPlaneSet_of_im_eq_zero hfi (ofReal_im x))) hxv
-    obtain ⟨r, hr, hreal, hupper⟩ := exists_ball_im_div_of_image_eq hfc hfi hfU (ofReal_im x) hρ hU
-    exact ⟨r, hr, q, b, hb, hfc.mono inter_subset_right, hfi.mono inter_subset_right, hreal,
-      hupper⟩
-  · -- the prevertex `a i` is carried to the vertex `v i`
-    obtain ⟨ρ, hρ, b, hb, hU⟩ := hcorner i
-    rw [← hfv i] at hU
-    obtain ⟨r, hr, hupper, hreal⟩ :=
-      exists_ball_abs_arg_div_of_image_eq hfc hfi hfU (ofReal_im (a i)) hρ hb hU
-    exact ⟨r, hr, b, hb, hfc.mono inter_subset_right, hfi.mono inter_subset_right, hupper, hreal⟩
-  · -- infinity is carried to the point `p` on a side
-    exact exists_eqOn_neg_inv_of_tendsto_of_side hfc hfi hfU hfv hp hpf hside
+      schwarzChristoffelPrimitive a e z₀ z + f z₀) upperHalfPlaneSet :=
+  eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain_of_tendsto a e ha he z₀ hf
+    hfc hfi hfU hfv hside hcorner
+    (tendsto_mul_logDeriv_deriv_of_tendsto_of_side hf hfc hfi hfU hfv hp hpf hside)
 
 /-- **The angle sum of a polygonal domain.**  Under the hypotheses of
 `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain`, the turning exponents
@@ -254,18 +528,121 @@ theorem exponent_sum_eq_neg_two_of_polygonal_domain
     (hcorner : ∀ i, ∃ ρ > 0, ∃ b : ℂ, b ≠ 0 ∧ ∀ z ∈ ball (v i) ρ, z ≠ v i →
       (z ∈ U ↔ |((z - v i) / b).arg| < (e i + 1) * Real.pi / 2)) :
     ∑ i, e i = -2 := by
-  have hH0 : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := ofPred_subset_ofPred.mpr fun _ => le_of_lt
-  have hfn : ∀ z ∈ upperHalfPlaneSet, deriv f z ≠ 0 := fun z hz =>
-    deriv_ne_zero_of_injOn hf isOpen_upperHalfPlaneSet (hfi.mono hH0) hz
-  -- `f` is an affine image of the primitive, so its pre-Schwarzian is the partial-fraction sum
-  have hform := eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain a e ha he
-    UpperHalfPlane.I hf hfc hfi hfU hfv hp hpf hside hcorner
-  have hpre := (exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_iff a e UpperHalfPlane.I
-    hf hfn).mp ⟨_, div_ne_zero (hfn _ UpperHalfPlane.I.im_pos)
-      (schwarzChristoffelIntegrand_ne_zero a e UpperHalfPlane.I.im_pos), _, hform⟩
-  exact_mod_cast exponent_sum_eq_neg_two_of_logDeriv_deriv_eqOn
-    (fun i => (a i : ℂ)) (fun i => (e i : ℂ)) hf hpre
-    (exists_eqOn_neg_inv_of_tendsto_of_side hfc hfi hfU hfv hp hpf hside)
+  exact_mod_cast exponent_sum_eq_of_polygonal_domain_of_tendsto a e ha he hf hfc hfi hfU hfv hside
+    hcorner (tendsto_mul_logDeriv_deriv_of_tendsto_of_side hf hfc hfi hfU hfv hp hpf hside)
+
+/-- **The Schwarz--Christoffel formula for a conformal map onto an unbounded polygonal domain.**
+Let `U` coincide near each boundary point that is not a vertex with an open half-plane, near the
+vertex `v i` with the open sector of opening `(e i + 1) * π` at `v i`, and far from a point `c`
+with the open sector `{|arg ((z - c) / b)| < β * π / 2}` of opening `β * π`, where `0 < β < 2`:
+so `U` has, besides the finite vertices, a vertex at infinity between two unbounded sides on lines
+through `c`.  Let `f` be holomorphic on the upper half-plane, map it onto `U`, and extend to a
+continuous injection of the closed upper half-plane with `f (a i) = v i`; suppose also that `f z`
+tends to infinity at infinity.  Then throughout the upper half-plane
+
+`f z = (f'(z₀) / integrand(z₀)) * F z + f z₀`,
+
+where `F` is the normalized Schwarz--Christoffel primitive for the prevertices `a` and the turning
+exponents `e`. -/
+theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_unbounded_polygonal_domain
+    {ι : Type*} [Fintype ι] (a e : ι → ℝ) (ha : Function.Injective a)
+    (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1) (z₀ : UpperHalfPlane) {v : ι → ℂ} {β : ℝ}
+    (hβ : β ∈ Ioo (0 : ℝ) 2)
+    (hf : DifferentiableOn ℂ f upperHalfPlaneSet) (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
+    (hfi : InjOn f {z : ℂ | 0 ≤ z.im}) (hfU : f '' upperHalfPlaneSet = U)
+    (hfv : ∀ i, f (a i) = v i)
+    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ))
+    (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
+      ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im))
+    (hcorner : ∀ i, ∃ ρ > 0, ∃ b : ℂ, b ≠ 0 ∧ ∀ z ∈ ball (v i) ρ, z ≠ v i →
+      (z ∈ U ↔ |((z - v i) / b).arg| < (e i + 1) * Real.pi / 2))
+    (hinfty : ∃ ρ : ℝ, ∃ c b : ℂ, b ≠ 0 ∧ ∀ z : ℂ, ρ < ‖z - c‖ →
+      (z ∈ U ↔ |((z - c) / b).arg| < β * Real.pi / 2)) :
+    EqOn f (fun z => deriv f z₀ / schwarzChristoffelIntegrand a e z₀ *
+      schwarzChristoffelPrimitive a e z₀ z + f z₀) upperHalfPlaneSet := by
+  obtain ⟨ρ, c, b, hb, hU⟩ := hinfty
+  exact eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain_of_tendsto a e ha he z₀
+    hf hfc hfi hfU hfv hside hcorner
+    (tendsto_mul_logDeriv_deriv_of_tendsto_cobounded hβ hb hf hfc hfi hfU hp hU)
+
+/-- **The angle sum of an unbounded polygonal domain.**  Under the hypotheses of
+`TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_unbounded_polygonal_domain`, the
+turning exponents of the finite vertices sum to `β - 1`.  Equivalently, the finite vertices of the
+polygon, of interior angles `(e i + 1) * π`, together with the vertex at infinity of opening
+`β * π`, have interior angles summing to `(n - 2) * π` when the vertex at infinity is assigned the
+angle `-β * π`, where `n` is the number of vertices including the one at infinity. -/
+theorem exponent_sum_eq_sub_one_of_unbounded_polygonal_domain
+    {ι : Type*} [Fintype ι] (a e : ι → ℝ) (ha : Function.Injective a)
+    (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1) {v : ι → ℂ} {β : ℝ} (hβ : β ∈ Ioo (0 : ℝ) 2)
+    (hf : DifferentiableOn ℂ f upperHalfPlaneSet) (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
+    (hfi : InjOn f {z : ℂ | 0 ≤ z.im}) (hfU : f '' upperHalfPlaneSet = U)
+    (hfv : ∀ i, f (a i) = v i)
+    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ))
+    (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
+      ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im))
+    (hcorner : ∀ i, ∃ ρ > 0, ∃ b : ℂ, b ≠ 0 ∧ ∀ z ∈ ball (v i) ρ, z ≠ v i →
+      (z ∈ U ↔ |((z - v i) / b).arg| < (e i + 1) * Real.pi / 2))
+    (hinfty : ∃ ρ : ℝ, ∃ c b : ℂ, b ≠ 0 ∧ ∀ z : ℂ, ρ < ‖z - c‖ →
+      (z ∈ U ↔ |((z - c) / b).arg| < β * Real.pi / 2)) :
+    ∑ i, e i = β - 1 := by
+  obtain ⟨ρ, c, b, hb, hU⟩ := hinfty
+  exact_mod_cast exponent_sum_eq_of_polygonal_domain_of_tendsto a e ha he hf hfc hfi hfU hfv hside
+    hcorner (tendsto_mul_logDeriv_deriv_of_tendsto_cobounded hβ hb hf hfc hfi hfU hp hU)
+
+/-- **The Schwarz--Christoffel formula for a conformal map onto a polygonal domain with a
+half-strip end.**  Let `U` coincide near each boundary point that is not a vertex with an open
+half-plane, near the vertex `v i` with the open sector of opening `(e i + 1) * π` at `v i`, and far
+from a point `c` with the open half-strip `{0 < re ((z - c) / b), 0 < im ((z - c) / b) < π}`: so
+`U` has, besides the finite vertices, a vertex at infinity of opening `0` between two parallel
+unbounded sides.  Let `f` be holomorphic on the upper half-plane, map it onto `U`, and extend to a
+continuous injection of the closed upper half-plane with `f (a i) = v i`; suppose also that `f z`
+tends to infinity at infinity.  Then throughout the upper half-plane
+
+`f z = (f'(z₀) / integrand(z₀)) * F z + f z₀`,
+
+where `F` is the normalized Schwarz--Christoffel primitive for the prevertices `a` and the turning
+exponents `e`. -/
+theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_halfStrip_polygonal_domain
+    {ι : Type*} [Fintype ι] (a e : ι → ℝ) (ha : Function.Injective a)
+    (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1) (z₀ : UpperHalfPlane) {v : ι → ℂ}
+    (hf : DifferentiableOn ℂ f upperHalfPlaneSet) (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
+    (hfi : InjOn f {z : ℂ | 0 ≤ z.im}) (hfU : f '' upperHalfPlaneSet = U)
+    (hfv : ∀ i, f (a i) = v i)
+    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ))
+    (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
+      ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im))
+    (hcorner : ∀ i, ∃ ρ > 0, ∃ b : ℂ, b ≠ 0 ∧ ∀ z ∈ ball (v i) ρ, z ≠ v i →
+      (z ∈ U ↔ |((z - v i) / b).arg| < (e i + 1) * Real.pi / 2))
+    (hinfty : ∃ ρ : ℝ, ∃ c b : ℂ, b ≠ 0 ∧ ∀ z : ℂ, ρ < ‖z - c‖ →
+      (z ∈ U ↔ 0 < ((z - c) / b).re ∧ ((z - c) / b).im ∈ Ioo 0 Real.pi)) :
+    EqOn f (fun z => deriv f z₀ / schwarzChristoffelIntegrand a e z₀ *
+      schwarzChristoffelPrimitive a e z₀ z + f z₀) upperHalfPlaneSet := by
+  obtain ⟨ρ, c, b, hb, hU⟩ := hinfty
+  exact eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain_of_tendsto a e ha he z₀
+    hf hfc hfi hfU hfv hside hcorner
+    (tendsto_mul_logDeriv_deriv_of_tendsto_cobounded_of_halfStrip hb hf hfc hfi hfU hp hU)
+
+/-- **The angle sum of a polygonal domain with a half-strip end.**  Under the hypotheses of
+`TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_halfStrip_polygonal_domain`, the
+turning exponents of the finite vertices sum to `-1`: this is the opening `β = 0` case of
+`TauCeti.exponent_sum_eq_sub_one_of_unbounded_polygonal_domain`. -/
+theorem exponent_sum_eq_neg_one_of_halfStrip_polygonal_domain
+    {ι : Type*} [Fintype ι] (a e : ι → ℝ) (ha : Function.Injective a)
+    (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1) {v : ι → ℂ}
+    (hf : DifferentiableOn ℂ f upperHalfPlaneSet) (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
+    (hfi : InjOn f {z : ℂ | 0 ≤ z.im}) (hfU : f '' upperHalfPlaneSet = U)
+    (hfv : ∀ i, f (a i) = v i)
+    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ))
+    (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
+      ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im))
+    (hcorner : ∀ i, ∃ ρ > 0, ∃ b : ℂ, b ≠ 0 ∧ ∀ z ∈ ball (v i) ρ, z ≠ v i →
+      (z ∈ U ↔ |((z - v i) / b).arg| < (e i + 1) * Real.pi / 2))
+    (hinfty : ∃ ρ : ℝ, ∃ c b : ℂ, b ≠ 0 ∧ ∀ z : ℂ, ρ < ‖z - c‖ →
+      (z ∈ U ↔ 0 < ((z - c) / b).re ∧ ((z - c) / b).im ∈ Ioo 0 Real.pi)) :
+    ∑ i, e i = -1 := by
+  obtain ⟨ρ, c, b, hb, hU⟩ := hinfty
+  exact_mod_cast exponent_sum_eq_of_polygonal_domain_of_tendsto a e ha he hf hfc hfi hfU hfv hside
+    hcorner (tendsto_mul_logDeriv_deriv_of_tendsto_cobounded_of_halfStrip hb hf hfc hfi hfU hp hU)
 
 end TauCeti
 

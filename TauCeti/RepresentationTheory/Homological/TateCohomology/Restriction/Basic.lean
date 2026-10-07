@@ -12,6 +12,7 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Functorial
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.NegativeCorestriction
 public import TauCeti.RepresentationTheory.RelativeNorm
+import TauCeti.RepresentationTheory.Coinvariants
 
 /-!
 # Restriction in negative Tate degrees and maps in the two low degrees
@@ -233,7 +234,8 @@ theorem H0Cor_comp_H0Res_apply (x : tateCohomology M 0) :
     rw [H0π_comp_H0Res_apply, H0π_comp_H0Cor_apply, ← map_nsmul]
     congr 1
     ext
-    simpa using Representation.relNorm_apply_of_mem_invariants (H := H) y.2
+    simpa using M.ρ.relNorm_apply_of_forall_apply_eq (H := H)
+      ((Representation.mem_invariants _ _).1 y.2)
 
 /-- Restriction followed by corestriction is multiplication by the index, in degree zero. -/
 theorem H0Res_comp_H0Cor :
@@ -260,7 +262,7 @@ private theorem hNegOne_cor_le :
         (Submodule.inclusion
           (Representation.ker_norm_comp_subtype_le_ker_norm (ρ := M.ρ) (H := H)))
         ((Coinvariants.ker M.ρ).submoduleOf (ker M.ρ.norm)) :=
-  fun _ hx => Representation.coinvariantsKer_comp_subtype_le (H := H) hx
+  fun _ hx => M.ρ.coinvariantsKer_comp_le H.subtype hx
 
 /-- Restriction to a subgroup in degree `-1` Tate cohomology, induced by the relative transfer. -/
 def HNegOneRes :
@@ -362,7 +364,7 @@ theorem isIntertwiningMap_trivial_res (S : Subgroup G) :
     (Rep.trivial ℤ S ℤ).ρ.IsIntertwiningMap
       ((Rep.res S.subtype (Rep.trivial ℤ G ℤ)).ρ.comp ((MulEquiv.refl S : S ≃* S) : S →* S))
       (LinearEquiv.refl ℤ ℤ) :=
-  ⟨fun _ _ ↦ rfl⟩
+  Rep.isIntertwiningMap_trivial ℤ _
 
 /-- Tate cohomology of the trivial integral representation of a subgroup `S` of `G`, identified
 with Tate cohomology of the restriction to `S` of the trivial integral representation of `G`. -/

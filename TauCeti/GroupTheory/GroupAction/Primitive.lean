@@ -8,18 +8,25 @@ module
 public import Mathlib.GroupTheory.GroupAction.Primitive
 
 /-!
-# Point stabilizers in faithful primitive actions
+# Point stabilizers in faithful primitive actions, and enlarging the acting group
 
-This file records the fixed-point property that distinguishes a nonregular primitive action from
-a regular one.  In a faithful primitive action, a nontrivial point stabilizer fixes only its base
-point.  Equivalently, it moves every other point.
+This file records two small facts about primitive actions.
 
-This is the local ingredient in the primitivity of the product action of a permutation wreath
-product: a stabilizer element can change one coordinate of a tuple while leaving a constant tuple
-fixed.
+The first is the fixed-point property that distinguishes a nonregular primitive action from a
+regular one.  In a faithful primitive action, a nontrivial point stabilizer fixes only its base
+point.  Equivalently, it moves every other point.  This is the local ingredient in the
+primitivity of the product action of a permutation wreath product: a stabilizer element can
+change one coordinate of a tuple while leaving a constant tuple fixed.
+
+The second is monotonicity in the acting subgroup.  A block for a subgroup is a block for every
+smaller subgroup, so primitivity passes from a subgroup to every larger one.  This is how
+primitivity of a transitive permutation group is inherited by the groups containing it.  (The
+corresponding statement for transitivity is Mathlib's `MulAction.IsPretransitive.of_compHom`.)
 
 ## Main results
 
+* `MulAction.IsBlock.of_le`, `MulAction.IsPreprimitive.of_le`: blocks pass to smaller subgroups
+  and primitivity to larger ones.
 * `TauCeti.MulAction.fixedPoints_stabilizer_eq_singleton`: a nontrivial point stabilizer in a
   faithful primitive action fixes exactly its base point.
 * `TauCeti.MulAction.exists_mem_stabilizer_smul_ne`: such a stabilizer moves every other point.
@@ -32,6 +39,28 @@ open scoped Pointwise
 namespace TauCeti.MulAction
 
 open _root_.MulAction
+
+section Enlarge
+
+variable {G X : Type*} [Group G] [MulAction G X] {H K : Subgroup G}
+
+/-- The identity of `X`, equivariant along the inclusion of a subgroup `H` into a larger
+subgroup `K`. -/
+private def inclusionMulActionHom (h : H ≤ K) : X →ₑ[Subgroup.inclusion h] X where
+  toFun := id
+  map_smul' _ _ := rfl
+
+/-- A block for a subgroup is a block for every smaller subgroup. -/
+theorem _root_.MulAction.IsBlock.of_le (h : H ≤ K) {B : Set X} (hB : IsBlock K B) :
+    IsBlock H B :=
+  hB.preimage (inclusionMulActionHom h)
+
+/-- A subgroup acting primitively makes every larger subgroup act primitively. -/
+theorem _root_.MulAction.IsPreprimitive.of_le (h : H ≤ K) [IsPreprimitive H X] :
+    IsPreprimitive K X :=
+  IsPreprimitive.of_surjective (f := inclusionMulActionHom h) Function.surjective_id
+
+end Enlarge
 
 variable {G X : Type*} [Group G] [MulAction G X] [FaithfulSMul G X]
   [IsPreprimitive G X] [Nontrivial X]

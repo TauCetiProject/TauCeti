@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.Padics.PrincipalUnits
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Procyclic
 
 /-!
 # Pro-`p` groups and the unit group `ℤ_pˣ`
@@ -37,6 +38,11 @@ The sign `-1` has order two, so `(-1) ^ s` depends only on `s mod 2`, and a rela
 this is how the two marked values of a character with image `{±1} × U^(f)` are separated. In that
 situation `v ^ 2 = (-v) ^ 2 ∈ U^(f)` is a `2`-adic power of a topological generator `u` of `U^(f)`.
 
+For `f ≥ 1`, and `f ≥ 2` when `p = 2`, the principal unit group `U^(f)` is itself a copy of `ℤ_p`:
+a unit `w` of exact level `f` topologically generates it and has infinite order, so `l ↦ w ^ l` is
+a topological group isomorphism `Multiplicative ℤ_[p] ≃ₜ* U^(f)`. Its inverse reads off the
+`p`-adic exponent of a principal unit with respect to `w`, continuously and multiplicatively.
+
 ## Main results
 
 * `TauCeti.isProP_units_padicInt_two`: `ℤ_2ˣ` is a pro-`2` group.
@@ -50,6 +56,8 @@ situation `v ^ 2 = (-v) ^ 2 ∈ U^(f)` is a `2`-adic power of a topological gene
   `1 + pℤ_p` takes `λ_k(G)` into `1 + p ^ (k + 1) ℤ_p`.
 * `TauCeti.exists_padicPow_eq_of_not_dvd`: when `4 ∣ a` and `2 ^ f ∤ a`, the unit `(1 - 2^f)⁻¹`
   is a `2`-adic power of `-(1 + a)⁻¹` in `ℤ_2ˣ`.
+* `TauCeti.principalUnitsEquiv`: for a unit `w` of exact level `f`, the isomorphism
+  `Multiplicative ℤ_[p] ≃ₜ* U^(f)`, `l ↦ w ^ l`.
 -/
 
 public section
@@ -196,5 +204,48 @@ theorem exists_padicPow_eq_of_not_dvd {f : ℕ} {a : ℤ_[2]} {v u : ℤ_[2]ˣ}
     (ha₄ : 4 ∣ a) (ha : ¬ 2 ^ f ∣ a) : ∃ l : ℤ_[2], isProP_units_padicInt_two.padicPow v l = u :=
   isProP_units_padicInt_two.mem_topologicalClosure_closure_singleton_iff.1
     (Subgroup.zpowers_eq_closure v ▸ mem_topologicalClosure_zpowers_of_not_dvd hv hu ha₄ ha)
+
+/-! ### The principal units as a copy of `ℤ_p` -/
+
+/-- A unit `w` of exact level `f`, with `f ≥ 1` and `f ≥ 2` when `p = 2`, topologically generates
+`U^(f)` also as an element of the topological group `U^(f)`. -/
+theorem topologicalClosure_closure_singleton_unitsPrincipal_eq_top {f : ℕ} (hf : 0 < f)
+    (hf₂ : p = 2 → 2 ≤ f) {w : ℤ_[p]ˣ} (hw : w ∈ unitsPrincipal p f)
+    (hw' : w ∉ unitsPrincipal p (f + 1)) :
+    (Subgroup.closure ({⟨w, hw⟩} : Set (unitsPrincipal p f))).topologicalClosure = ⊤ := by
+  rw [← Subgroup.zpowers_eq_closure, ← Subgroup.dense_iff_topologicalClosure_eq_top]
+  have h := (Subgroup.dense_preimage_val_iff_le_topologicalClosure (Subgroup.zpowers_le.mpr hw)).mpr
+    (topologicalClosure_zpowers_eq_unitsPrincipal hf hf₂ hw hw').ge
+  convert h using 2
+  ext y
+  simp only [Set.mem_preimage, SetLike.mem_coe, Subgroup.mem_zpowers_iff, Subtype.ext_iff,
+    Subgroup.coe_zpow]
+
+/-- **The principal units are a copy of `ℤ_p`.** For `f ≥ 1`, with `f ≥ 2` when `p = 2`, and a
+unit `w` of exact level `f`, the `p`-adic power map `l ↦ w ^ l` is a topological group
+isomorphism from the additive group of `ℤ_[p]` onto `U^(f) = 1 + p ^ f ℤ_p`. It is onto because
+`w` topologically generates `U^(f)`, and injective because `w` has infinite order. -/
+noncomputable def principalUnitsEquiv {f : ℕ} (hf : 0 < f) (hf₂ : p = 2 → 2 ≤ f) {w : ℤ_[p]ˣ}
+    (hw : w ∈ unitsPrincipal p f) (hw' : w ∉ unitsPrincipal p (f + 1)) :
+    Multiplicative ℤ_[p] ≃ₜ* unitsPrincipal p f :=
+  (isProP_unitsPrincipal p hf).padicPowEquiv
+    (topologicalClosure_closure_singleton_unitsPrincipal_eq_top hf hf₂ hw hw')
+    fun hfin ↦ not_isOfFinOrder_of_mem_unitsPrincipal hf hf₂ hw
+      (fun h ↦ hw' (h ▸ one_mem _)) ((unitsPrincipal p f).subtype.isOfFinOrder hfin)
+
+/-- The isomorphism `TauCeti.principalUnitsEquiv` is the `p`-adic power map of `w`, computed in
+the pro-`p` group `U^(f)`. -/
+@[simp]
+theorem principalUnitsEquiv_apply {f : ℕ} (hf : 0 < f) (hf₂ : p = 2 → 2 ≤ f) {w : ℤ_[p]ˣ}
+    (hw : w ∈ unitsPrincipal p f) (hw' : w ∉ unitsPrincipal p (f + 1))
+    (l : Multiplicative ℤ_[p]) :
+    principalUnitsEquiv hf hf₂ hw hw' l = (isProP_unitsPrincipal p hf).padicPow ⟨w, hw⟩ l.toAdd :=
+  IsProP.padicPowEquiv_apply _ _ _ l
+
+/-- The isomorphism `TauCeti.principalUnitsEquiv` sends `1` to `w`. -/
+theorem principalUnitsEquiv_ofAdd_one {f : ℕ} (hf : 0 < f) (hf₂ : p = 2 → 2 ≤ f) {w : ℤ_[p]ˣ}
+    (hw : w ∈ unitsPrincipal p f) (hw' : w ∉ unitsPrincipal p (f + 1)) :
+    principalUnitsEquiv hf hf₂ hw hw' (Multiplicative.ofAdd 1) = ⟨w, hw⟩ := by
+  simp
 
 end TauCeti

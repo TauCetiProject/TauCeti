@@ -82,7 +82,7 @@ data, at every time `t`: the identity holds on the common maximal interval, and 
 take the junk value `Φ p`. -/
 @[simp]
 theorem maximalGeodesic_mfderiv [I.Boundaryless] [J.Boundaryless]
-    [T2Space (TangentBundle I M)] [T2Space (TangentBundle J N)]
+    [T2Space M] [T2Space N]
     (Φ : RiemannianIsometry I J M N) (p : M) (v : TangentSpace I p) (t : ℝ) :
     maximalGeodesic J N (Φ p) (mfderiv I J Φ p v) t = Φ (maximalGeodesic I M p v t) := by
   by_cases ht : t ∈ geodesicInterval I M p v
@@ -115,7 +115,7 @@ on every tangent vector: the identity holds on the natural domain, and off it bo
 junk value `Φ p`. -/
 @[simp]
 theorem riemannianExp_mfderiv [I.Boundaryless] [J.Boundaryless]
-    [T2Space (TangentBundle I M)] [T2Space (TangentBundle J N)]
+    [T2Space M] [T2Space N]
     (Φ : RiemannianIsometry I J M N) (p : M) (v : TangentSpace I p) :
     riemannianExp J N (Φ p) (mfderiv I J Φ p v) = Φ (riemannianExp I M p v) := by
   simp only [riemannianExp_def, Φ.maximalGeodesic_mfderiv]

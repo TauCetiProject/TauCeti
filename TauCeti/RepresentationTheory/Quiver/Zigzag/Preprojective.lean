@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Orientation
 public import Mathlib.Combinatorics.SimpleGraph.Bipartite
+import Mathlib.Combinatorics.Quiver.Cast
 import Mathlib.Combinatorics.SimpleGraph.Coloring.Constructions
 import TauCeti.RepresentationTheory.Quiver.Preprojective.Bipartite
 import TauCeti.RepresentationTheory.Quiver.Zigzag.Connected

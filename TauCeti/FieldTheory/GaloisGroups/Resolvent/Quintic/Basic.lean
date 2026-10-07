@@ -44,6 +44,8 @@ from such a root separately requires the separation evidence above.
 ## Main results
 
 * `TauCeti.isHomogeneous_quinticF20Invariant`: the invariant is homogeneous of degree four.
+* `TauCeti.eval₂_rename_quinticF20Invariant`: the value of a renaming of the invariant at a vector
+  of five roots, written out.
 * `TauCeti.rename_quinticF20Invariant_eq_self_iff`: the stabilizer of the invariant is exactly
   the reference subgroup of `5T3`.
 * `TauCeti.card_renameOrbit_quinticF20Invariant`: its orbit has six elements.
@@ -93,6 +95,21 @@ theorem rename_quinticF20Invariant (σ : Perm (Fin 5)) :
         (MvPolynomial.X (σ (a + 1)) * MvPolynomial.X (σ (a - 1)) +
           MvPolynomial.X (σ (a + 2)) * MvPolynomial.X (σ (a - 2))) := by
   simp [quinticF20Invariant]
+
+/-- The value at `x` of the renaming of the `F₂₀`-invariant along any `k : Fin 5 → Fin 5`,
+written out as its ten monomials. -/
+theorem eval₂_rename_quinticF20Invariant {R : Type*} [CommRing R] (x : Fin 5 → R)
+    (k : Fin 5 → Fin 5) :
+    MvPolynomial.eval₂ (Int.castRingHom R) x (MvPolynomial.rename k quinticF20Invariant) =
+      x (k 0) ^ 2 * (x (k 1) * x (k 4) + x (k 2) * x (k 3)) +
+        x (k 1) ^ 2 * (x (k 2) * x (k 0) + x (k 3) * x (k 4)) +
+        x (k 2) ^ 2 * (x (k 3) * x (k 1) + x (k 4) * x (k 0)) +
+        x (k 3) ^ 2 * (x (k 4) * x (k 2) + x (k 0) * x (k 1)) +
+        x (k 4) ^ 2 * (x (k 0) * x (k 3) + x (k 1) * x (k 2)) := by
+  simp only [quinticF20Invariant_def, Fin.sum_univ_five, map_add, map_mul, map_pow,
+    MvPolynomial.rename_X, MvPolynomial.eval₂_mul, MvPolynomial.eval₂_add, MvPolynomial.eval₂_pow,
+    MvPolynomial.eval₂_X]
+  simp only [Fin.isValue, Fin.reduceAdd, Fin.reduceSub]
 
 /-- The translation `a ↦ a + 1` fixes the `F₂₀`-invariant: it reindexes the sum. -/
 private theorem rename_finRotate_quinticF20Invariant :

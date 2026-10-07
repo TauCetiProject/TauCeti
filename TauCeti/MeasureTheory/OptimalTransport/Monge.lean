@@ -22,7 +22,7 @@ not, so `TauCeti.mongeCost` is only an upper bound for `TauCeti.transportCost`.
 This file introduces the objective `TauCeti.transportMapCost`, the value
 `TauCeti.mongeCost`, the two optimality predicates for maps, and the relations between them.
 The relaxation `TauCeti.transportCost_le_mongeCost` is the passage from Monge to Kantorovich,
-and it comes from the graph plan of `TauCeti/MeasureTheory/OptimalTransport/GraphPlan.lean`:
+and it comes from the graph plan of `TauCeti/MeasureTheory/OptimalTransport/GraphPlan/Basic.lean`:
 every transport map induces a coupling whose cost is at most the map cost. Its equality case,
 `TauCeti.isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan`, says that a map is
 optimal for the Kantorovich value exactly when its graph plan is an optimal plan; this is the

@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.ClopenNhdofOne
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Basic
+public import TauCeti.Topology.Algebra.Group.OpenSubgroup.TopologicallyFinitelyGenerated
+public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 
 /-!
 # Topologically characteristic subgroups
@@ -18,7 +21,15 @@ automorphisms need not be continuous.
 The predicate `TauCeti.IsTopCharacteristic G N` is expressed by the image equation
 `N.map φ = N`. Its equivalent image and preimage inclusion criteria make it convenient to prove,
 and it is stable under arbitrary suprema and infima. A topologically characteristic subgroup is
-normal as soon as inner automorphisms are continuous.
+normal as soon as inner automorphisms are continuous, and so is a topologically characteristic
+subgroup of a normal subgroup.
+
+In a topologically finitely generated compact group the topologically characteristic open normal
+subgroups are cofinal among the open subgroups: an open subgroup has finite index, there are
+finitely many open subgroups of that index, and their intersection is preserved by every
+continuous automorphism. When the group is moreover totally disconnected, these subgroups form a
+neighbourhood basis of the identity. This is what makes the congruence topology on
+`ContinuousAut G` behave well for a topologically finitely generated profinite group `G`.
 
 The characterizations and lattice API parallel Mathlib's API for
 `Subgroup.Characteristic` in `Mathlib.Algebra.Group.Subgroup.Basic`.
@@ -33,6 +44,18 @@ The characterizations and lattice API parallel Mathlib's API for
   topologically characteristic.
 * `TauCeti.IsTopCharacteristic.normal`: a topologically characteristic subgroup is normal when
   inner automorphisms are continuous.
+* `TauCeti.IsTopCharacteristic.map_subtype_normal`: a topologically characteristic subgroup of a
+  normal subgroup is normal in the ambient group.
+* `TauCeti.IsTopologicallyFinitelyGenerated.exists_isTopCharacteristic_le`: in a topologically
+  finitely generated compact group, every open subgroup contains a topologically characteristic
+  open normal subgroup.
+* `TauCeti.IsTopologicallyFinitelyGenerated.exists_isTopCharacteristic_subset`: in a topologically
+  finitely generated profinite group, every neighbourhood of the identity contains a topologically
+  characteristic open normal subgroup.
+
+## References
+
+* L. Ribes, P. Zalesskii, *Profinite Groups*, 2nd ed., §4.4.
 -/
 
 public section
@@ -158,6 +181,68 @@ theorem normal [SeparatelyContinuousMul G] (hN : IsTopCharacteristic G N) : N.No
     rw [← ContinuousAut.conj_apply]
     exact Subgroup.mem_map_of_mem (ContinuousAut.conj g).toMulEquiv.toMonoidHom hn
 
+/-- A topologically characteristic subgroup of a normal subgroup is normal in the ambient group
+when inner automorphisms are continuous. This is the topological analogue of
+`Subgroup.normal_of_characteristic_of_normal`. -/
+theorem map_subtype_normal [SeparatelyContinuousMul G] {H : Subgroup G} [H.Normal]
+    {K : Subgroup H} (hK : IsTopCharacteristic H K) : (K.map H.subtype).Normal where
+  conj_mem := by
+    rintro _ ⟨k, hk, rfl⟩ g
+    exact ⟨ContinuousAut.conjNormal g k,
+      isTopCharacteristic_iff_map_le.mp hK _ ⟨k, hk, rfl⟩, ContinuousAut.conjNormal_apply g k⟩
+
 end IsTopCharacteristic
+
+section Cofinal
+
+variable [IsTopologicalGroup G] [CompactSpace G]
+
+/-- In a topologically finitely generated compact group, every open subgroup `U` contains a
+topologically characteristic open normal subgroup: the intersection of the finitely many open
+subgroups of the same index as `U`. -/
+theorem IsTopologicallyFinitelyGenerated.exists_isTopCharacteristic_le
+    (hG : IsTopologicallyFinitelyGenerated G) (U : OpenSubgroup G) :
+    ∃ N : OpenNormalSubgroup G, IsTopCharacteristic G N ∧ (N : Subgroup G) ≤ U := by
+  have := hG.finite_openSubgroup_index_eq (U : Subgroup G).index
+  let K : Subgroup G :=
+    ⨅ V : {V : OpenSubgroup G // (V : Subgroup G).index = (U : Subgroup G).index},
+      (V.1 : Subgroup G)
+  have hKopen : IsOpen (K : Set G) := by
+    rw [Subgroup.coe_iInf]
+    exact isOpen_iInter_of_finite fun V ↦ V.1.isOpen
+  have hKchar : IsTopCharacteristic G K := by
+    rw [isTopCharacteristic_iff_le_comap]
+    intro φ
+    rw [Subgroup.comap_iInf]
+    refine le_iInf fun V ↦ ?_
+    have hV : ((V.1 : Subgroup G).comap φ.toMulEquiv.toMonoidHom).index = (U : Subgroup G).index :=
+      (Subgroup.index_comap_of_surjective (V.1 : Subgroup G) (f := φ.toMulEquiv.toMonoidHom)
+        φ.toMulEquiv.surjective).trans V.2
+    exact iInf_le_of_le ⟨OpenSubgroup.comap φ.toMulEquiv.toMonoidHom φ.continuous V.1, hV⟩ le_rfl
+  have := hKchar.normal
+  exact ⟨⟨⟨K, hKopen⟩, inferInstance⟩, hKchar, iInf_le_of_le ⟨U, rfl⟩ le_rfl⟩
+
+variable [TotallyDisconnectedSpace G]
+
+/-- In a topologically finitely generated profinite group, every open neighbourhood of the
+identity contains a topologically characteristic open normal subgroup. -/
+theorem IsTopologicallyFinitelyGenerated.exists_isTopCharacteristic_subset
+    (hG : IsTopologicallyFinitelyGenerated G) {U : Set G} (hU : IsOpen U) (h1 : (1 : G) ∈ U) :
+    ∃ N : OpenNormalSubgroup G, IsTopCharacteristic G N ∧ (N : Set G) ⊆ U := by
+  obtain ⟨V, hVU⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hU h1
+  obtain ⟨N, hN, hNV⟩ := hG.exists_isTopCharacteristic_le V.toOpenSubgroup
+  exact ⟨N, hN, fun g hg ↦ hVU (hNV hg)⟩
+
+/-- In a topologically finitely generated profinite group, the topologically characteristic open
+normal subgroups intersect in the trivial subgroup. -/
+theorem IsTopologicallyFinitelyGenerated.iInf_isTopCharacteristic_eq_bot
+    (hG : IsTopologicallyFinitelyGenerated G) :
+    ⨅ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N}, (N.1 : Subgroup G) = ⊥ := by
+  refine eq_bot_iff.mpr fun g hg ↦
+    Subgroup.mem_bot.mpr (Subgroup.eq_one_of_mem_iInf_openNormalSubgroup fun U ↦ ?_)
+  obtain ⟨N, hN, hle⟩ := hG.exists_isTopCharacteristic_le U.toOpenSubgroup
+  exact hle (Subgroup.mem_iInf.mp hg ⟨N, hN⟩)
+
+end Cofinal
 
 end TauCeti

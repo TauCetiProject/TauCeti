@@ -34,7 +34,7 @@ symmetric-function half of Young's rule for the permutation modules of the symme
 The computation happens on alternants.  `TauCeti.hsymm_mul_alternant` expands `h_r · a_α` as the sum
 of `a_{α + γ}` over the exponent vectors `γ` of total degree `r`.  Taking `α` to be the beta-numbers
 `β_j = ν_j + (N - 1 - j)` of `ν`, the shifted vectors `β + γ` are no longer decreasing, so each must
-be sorted back (`TauCeti.exists_strictAnti_comp`, uniquely by `TauCeti.eq_of_strictAnti_comp`) at
+be sorted back (`Function.Injective.exists_strictAnti_comp`, uniquely by `StrictAnti.perm_eq`) at
 the cost of the sign of the sorting permutation; a strictly decreasing result is again a vector of
 beta-numbers (`YoungDiagram.exists_eq_betaNumber_of_strictAnti`), and a repeated exponent kills the
 alternant.  Grouping the shifts by the shape they sort to leaves, for each shape `μ`, the signed
@@ -148,7 +148,7 @@ theorem hsymm_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.c
         rw [hfun y hy]
         simpa [Function.comp_def] using (diagramOf y.1).strictAnti_betaNumber N
       have hp : x.2 = y.2 := by
-        simpa using congrArg Equiv.symm (eq_of_strictAnti_comp hsx hsy)
+        simpa using congrArg Equiv.symm (hsx.perm_eq hsy)
       have hbx : ∀ i, (diagramOf x.1).betaNumber N (x.2 i) =
           (diagramOf y.1).betaNumber N (y.2 i) := fun i => by
         have h1 := hval x hx i
@@ -168,7 +168,7 @@ theorem hsymm_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.c
     · -- Every shift of total degree `r` with distinct exponents sorts to such a pair.
       intro γ hγ
       obtain ⟨hγmem, hγinj⟩ := Finset.mem_filter.mp hγ
-      obtain ⟨τ₀, hτ₀⟩ := exists_strictAnti_comp hγinj
+      obtain ⟨τ₀, hτ₀⟩ := hγinj.exists_strictAnti_comp
       obtain ⟨μ₀, hμ₀col, hμ₀beta⟩ := YoungDiagram.exists_eq_betaNumber_of_strictAnti hτ₀
       have hsumγ : ∑ i : Fin N, γ i = r := (Finset.mem_piAntidiag.mp hγmem).1
       have hcard : μ₀.card = ν.card + r := by

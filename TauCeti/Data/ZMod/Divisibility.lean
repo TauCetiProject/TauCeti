@@ -9,9 +9,10 @@ public import Mathlib.Data.ZMod.Units
 public import Mathlib.Data.ZMod.QuotientRing
 
 /-!
-# Integer divisibility read off congruences modulo `n`
+# Divisibility read off congruences modulo `n`
 
-Facts about integers read off congruences in `ZMod n`.
+Facts about integers read off congruences in `ZMod n`, and divisibility inside the ring `ZMod n`
+itself.
 
 A linear congruence with unit coefficient is solvable: if `b` is a unit modulo `n`, then some
 residue `j : ZMod n` satisfies `n ∣ a - j.val * b` over `ℤ`. The solution is `j = a b⁻¹`, and it
@@ -45,6 +46,8 @@ proof uses, and the name places the divisibility in Mathlib's operand order.
   reductions modulo the prime powers dividing `n`.
 * `ZMod.equivPi_apply`: the components of Mathlib's Chinese remainder isomorphism `ZMod.equivPi`
   are the reductions modulo the prime powers exactly dividing `n`.
+* `ZMod.dvd_of_forall_mul_eq_zero`: divisibility inside `ZMod n` from annihilators: if every `r`
+  with `r d = 0` has `r x = 0`, then `d ∣ x`.
 -/
 
 public section
@@ -124,5 +127,28 @@ theorem equivPi_apply (n : ℕ) (hn : n ≠ 0) (x : ZMod n) (p : n.primeFactors)
   RingHom.congr_fun
     (Subsingleton.elim ((Pi.evalRingHom _ p).comp (equivPi n hn).toRingHom)
       (castHom (Nat.ordProj_dvd n p) (ZMod (p ^ n.factorization p)))) x
+
+/-- **Divisibility in `ℤ/nℤ` from annihilators.** If every `r : ZMod n` with `r * d = 0` also has
+`r * x = 0`, then `d ∣ x`. With `g = gcd(d, n)`, the element `n / g` kills `d`, hence `x`, so `g`
+divides `x`; and `g = d * d⁻¹` is a multiple of `d` in `ZMod n` (`ZMod.mul_inv_eq_gcd`). -/
+theorem dvd_of_forall_mul_eq_zero {n : ℕ} [NeZero n] {d x : ZMod n}
+    (h : ∀ r : ZMod n, r * d = 0 → r * x = 0) : d ∣ x := by
+  set g := Nat.gcd d.val n with hg
+  obtain ⟨m, hm⟩ : g ∣ n := Nat.gcd_dvd_right _ _
+  have hmpos : 0 < m := Nat.pos_of_ne_zero fun h0 => NeZero.ne n (by rw [hm, h0, mul_zero])
+  -- `m = n / g` kills `d`
+  have hmd : (m : ZMod n) * d = 0 := by
+    obtain ⟨k, hk⟩ : g ∣ d.val := Nat.gcd_dvd_left _ _
+    rw [← natCast_zmod_val d, ← Nat.cast_mul, natCast_eq_zero_iff, hk]
+    exact ⟨k, by rw [← mul_assoc, mul_comm m g, ← hm]⟩
+  -- hence `m` kills `x`, so `g ∣ x.val`
+  have hgx : g ∣ x.val := by
+    have hmx := h _ hmd
+    rw [← natCast_zmod_val x, ← Nat.cast_mul, natCast_eq_zero_iff] at hmx
+    refine (Nat.mul_dvd_mul_iff_left hmpos).1 ?_
+    rwa [mul_comm m g, ← hm]
+  calc d ∣ (g : ZMod n) := ⟨d⁻¹, (mul_inv_eq_gcd d).symm⟩
+    _ ∣ (x.val : ZMod n) := Nat.cast_dvd_cast hgx
+    _ = x := natCast_zmod_val x
 
 end ZMod

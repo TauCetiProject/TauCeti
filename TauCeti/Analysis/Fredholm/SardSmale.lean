@@ -353,14 +353,12 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
       ext z
       simp only [Set.mem_ofPred_eq]
     rw [hfiber]
-    have hUopen : IsOpen {z : pkg.decDom.X₀ | (p₁, z) ∈ V} :=
-      hVopen.preimage (by fun_prop)
     have hUC : ∀ z ∈ {z : pkg.decDom.X₀ | (p₁, z) ∈ V},
         ContDiffAt ℝ (k : ℕ∞ω) (pkg.obstructionSlice hT p₁) z := by
       intro z hz
       rw [funext (pkg.obstructionSlice_apply hT p₁), ← hqdef]
       exact ((hVP _ hz).2.1).comp z (contDiffAt_const.prodMk contDiffAt_id)
-    exact interior_image_criticalPoints_eq_empty hUopen hUC hkbound
+    exact interior_image_criticalPoints_eq_empty hUC hkbound
   have himg : f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)}) ⊆ Λ '' A := by
     rintro _ ⟨x, ⟨hxN, hxc⟩, rfl⟩
     obtain ⟨c₁, -, -, -, -⟩ := hVP (Φ x) (hNV x hxN)

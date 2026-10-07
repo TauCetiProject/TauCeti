@@ -8,7 +8,10 @@ module
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.RightExact
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.SingleDegree
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.TrivialFp
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Duality.RightExact
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Devissage
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.ZModTwist
+import TauCeti.RepresentationTheory.Homological.ContCohomology.ConnectingMapComparison
 
 /-!
 # The cohomological dimension of a pro-`p` group is detected on `𝔽_p`
@@ -42,8 +45,18 @@ The file also records Tate's criterion for a profinite pro-`p` group: if `Hⁿ(G
 on the finite discrete `G`-modules killed by `p`, then `cd_p G ≤ n`. The vanishing of `Hⁿ⁺¹` on
 those modules is
 `TauCeti.subsingleton_continuousCohomology_succ_of_forall_coeffMap_proj_surjective`, and
-dévissage extends it to all finite `p`-primary modules. This is how the cohomological dimension of
-a Demushkin group is bounded (Serre, *Structure de certains pro-`p`-groupes*, §9.1).
+dévissage extends it to all finite `p`-primary modules. In degree `2` the right exactness follows
+from duality: if Tate's duality map `α₂ : H²(G, M) → Hom(H⁰(G, Hom(M, N)), H²(G, N))` is bijective
+for every finite discrete `M` killed by `p`, then `cd_p G ≤ 2`
+(`TauCeti.IsProP.cohomologicalDimensionAt_le_two_of_forall_dualityMap2_bijective`). This is how
+the cohomological dimension of a Demushkin group is bounded (Serre, *Structure de certains
+pro-`p`-groupes*, §9.1).
+
+Conversely, `cd_p G ≤ 2` makes `H²(G, -)` right exact on the twisted coefficients `I(χ)/pⁱ` of a
+continuous character `χ : G →ₜ* ℤ_pˣ` of a compact group `G`: every reduction
+`H²(G, I(χ)/pⁿ) → H²(G, I(χ)/pʲ)` is surjective, because the next term `H³` of the long exact
+sequence vanishes
+(`TauCeti.ZModTwist.surjective_explicitCoeff2_reduce_of_cohomologicalDimensionAt_le_two`).
 
 ## Main results
 
@@ -58,6 +71,12 @@ a Demushkin group is bounded (Serre, *Structure de certains pro-`p`-groupes*, §
 * `TauCeti.IsProP.cohomologicalDimensionAt_le_of_forall_coeffMap_proj_surjective`: **Tate's
   criterion**: right exactness of `Hⁿ(G, -)` on the finite discrete `G`-modules killed by `p`
   gives `cd_p G ≤ n`.
+* `TauCeti.IsProP.cohomologicalDimensionAt_le_two_of_forall_dualityMap2_bijective`: **Tate's
+  duality criterion**: bijectivity of `α₂` on the finite discrete `G`-modules killed by `p` gives
+  `cd_p G ≤ 2`.
+* `TauCeti.ZModTwist.surjective_explicitCoeff2_reduce_of_cohomologicalDimensionAt_le_two`: for a
+  compact group with `cd_p G ≤ 2`, every reduction `H²(G, I(χ)/pⁿ) → H²(G, I(χ)/pʲ)` of the twisted
+  coefficients is surjective.
 
 ## References
 
@@ -74,7 +93,7 @@ namespace TauCeti
 
 open ContCohomology
 
-universe u
+universe u v
 
 variable {p : ℕ} [hp : Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G]
   [IsTopologicalGroup G]
@@ -181,5 +200,39 @@ theorem IsProP.cohomologicalDimensionAt_le_of_forall_coeffMap_proj_surjective
   exact hG.subsingleton_continuousCohomology_of_forall_smul_eq_self
     (fun A _ _ _ _ _ _ hA _ ↦
       subsingleton_continuousCohomology_succ_of_forall_coeffMap_proj_surjective h A hA) M hM
+
+/-- **Tate's duality criterion for `cd_p G ≤ 2`.** Let `G` be a profinite pro-`p` group and `N` a
+discrete `G`-module. If Tate's duality map in degree two,
+`α₂ : H²(G, M) → Hom(H⁰(G, InternalHom G M N), H²(G, N))`, is bijective for every finite discrete
+`G`-module `M` killed by `p`, then `cd_p G ≤ 2`: duality makes `H²(G, -)` right exact on those
+modules (`TauCeti.ContCohomology.DiscreteShortExact.coeffMap_proj_surjective_of_dualityMap2`), and
+right exactness bounds the dimension. For an infinite Demushkin group and `N = 𝔽_p` the hypothesis
+is Tate's perfect duality, and the conclusion is the upper bound in `cd_p G = 2`. -/
+theorem IsProP.cohomologicalDimensionAt_le_two_of_forall_dualityMap2_bijective
+    [TotallyDisconnectedSpace G] (N : Type v) [AddCommGroup N] [TopologicalSpace N]
+    [DiscreteTopology N] [DistribMulAction G N] [ContinuousSMul G N]
+    (h : ∀ (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+      [DistribMulAction G M] [ContinuousSMul G M] [Finite M], (∀ m : M, p • m = 0) →
+      Function.Bijective (dualityMap2 G M N)) :
+    cohomologicalDimensionAt.{u} p G ≤ 2 :=
+  hG.cohomologicalDimensionAt_le_of_forall_coeffMap_proj_surjective 2
+    fun _ B C _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ S _ hB hC ↦
+      S.coeffMap_proj_surjective_of_dualityMap2 N hB (h B hB).surjective (h C hC).injective
+
+omit hG in
+/-- **`cd_p G ≤ 2` makes `H²(G, -)` right exact on the twisted coefficients**: for a compact group
+`G` with `cd_p G ≤ 2`, every reduction `H²(G, I(χ)/pⁿ) → H²(G, I(χ)/pʲ)`, `j ≤ n`, is surjective,
+because the next term `H³(G, I(χ)/pⁿ⁻ʲ)` of the long exact sequence vanishes. -/
+theorem ZModTwist.surjective_explicitCoeff2_reduce_of_cohomologicalDimensionAt_le_two
+    (χ : G →ₜ* ℤ_[p]ˣ) (h : cohomologicalDimensionAt.{u} p G ≤ 2) {j n : ℕ} (hj : j ≤ n) :
+    Function.Surjective (explicitCoeff2 G (ZModTwist χ n) (ZModTwist.reduce χ hj)
+      continuous_of_discreteTopology) := by
+  obtain ⟨i, rfl⟩ := Nat.exists_eq_add_of_le' hj
+  have : Subsingleton (continuousCohomology 3 (ofDiscreteModule ℤ G (ZModTwist χ i))) :=
+    (cohomologicalDimensionAt_le_iff_forall_finite hp.out.ne_zero 2).1 h _
+      (ZModTwist.isPPrimaryTorsion χ i) 3 (by norm_num)
+  have hS :=
+    (ZModTwist.shortExact χ (rfl : i + j = i + j)).explicitCoeff2_proj_surjective_of_subsingleton
+  rwa [ZModTwist.shortExact_projDistribMulActionHom] at hS
 
 end TauCeti

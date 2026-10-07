@@ -12,6 +12,8 @@ public import TauCeti.NumberTheory.LocalField.Unramified.Maximal
 import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.NumberTheory.LocalField.InertiaDegree
 import TauCeti.NumberTheory.LocalField.Teichmuller
+import TauCeti.NumberTheory.LocalField.Unramified.ZHat
+import TauCeti.Topology.Algebra.Group.Profinite.ZHat.ZMod
 import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
@@ -31,8 +33,9 @@ It is a closed normal subgroup, and it sits in the exact sequence
 
 given by restriction `TauCeti.restrictMaximalUnramifiedHom K`, which is surjective with kernel
 `I_K`; the unramified quotient `G_K ⧸ I_K` is identified with `Gal(K^{ur}/K)` as a topological
-group. A finite separable subextension of `K^{alg}/K` is unramified exactly when inertia fixes it,
-and on a finite normal subextension `L` inertia restricts into the inertia group `G_0` of `L/K`.
+group. Inertia is not open in `G_K`, since `Gal(K^{ur}/K) ≃ ℤ̂` is infinite. A finite separable
+subextension of `K^{alg}/K` is unramified exactly when inertia fixes it, and on a finite normal
+subextension `L` inertia restricts into the inertia group `G_0` of `L/K`.
 
 An **arithmetic Frobenius lift** is an element of `G_K` restricting to the arithmetic Frobenius
 `TauCeti.maximalUnramifiedFrobenius` of `K^{ur}/K`; equivalently, it raises every root of every
@@ -55,6 +58,7 @@ of `I_K`, and each of them generates `G_K` topologically together with `I_K`.
 * `TauCeti.apply_eq_self_of_mem_inertiaSubgroup_of_pow_eq_one`: `I_K` fixes the roots of unity of
   order prime to the residue characteristic.
 * `TauCeti.isClosed_inertiaSubgroup`, `TauCeti.inertiaSubgroup_normal`: `I_K` is closed and normal.
+* `TauCeti.not_isOpen_inertiaSubgroup`: `I_K` is not open in `G_K`.
 * `TauCeti.restrictMaximalUnramifiedHom_surjective`, `TauCeti.ker_restrictMaximalUnramifiedHom`:
   restriction `G_K → Gal(K^{ur}/K)` is surjective with kernel `I_K`.
 * `TauCeti.unramifiedDegree_surjective`, `TauCeti.continuous_unramifiedDegree`,
@@ -70,6 +74,8 @@ of `I_K`, and each of them generates `G_K` topologically together with `I_K`.
   left coset of `I_K`.
 * `TauCeti.IsArithFrobeniusLift.apply_of_pow_eq_one`: a Frobenius lift acts on the roots of unity
   of order prime to the residue characteristic by `ζ ↦ ζ ^ q`.
+* `TauCeti.IsArithFrobeniusLift.restrictNormal_smul_residueField_eq_pow`: on a finite normal
+  subextension `L`, a Frobenius lift acts on the residue field of `L` by `x ↦ x ^ q`.
 * `TauCeti.IsArithFrobeniusLift.topologicalClosure_zpowers_sup_inertiaSubgroup`: a Frobenius lift
   and `I_K` generate `G_K` topologically.
 
@@ -241,6 +247,16 @@ theorem quotientInertiaSubgroupEquiv_symm_restrictMaximalUnramifiedHom
   -- `restrictMaximalUnramifiedHom K` is by definition `AlgEquiv.restrictNormalHom`.
   absoluteGaloisGroupQuotientEquiv_symm_restrictNormalHom σ
 
+/-- **Inertia is not open in `G_K`.** Otherwise `G_K ⧸ I_K ≃ ℤ̂` would be finite, since `G_K` is
+compact; but `ℤ` embeds into `ℤ̂`. -/
+theorem not_isOpen_inertiaSubgroup :
+    ¬ IsOpen (inertiaSubgroup K : Set (Field.absoluteGaloisGroup K)) := fun h ↦ by
+  have := Subgroup.quotient_finite_of_isOpen (inertiaSubgroup K) h
+  have : Finite zHat := .of_equiv _ ((quotientInertiaSubgroupEquiv K).toMulEquiv.trans
+    (maximalUnramifiedGaloisGroupEquivZHat K (AlgebraicClosure K)).toMulEquiv).toEquiv
+  have := Finite.of_injective _ (zHat.ofInt_injective.comp Multiplicative.ofAdd.injective)
+  exact not_finite ℤ
+
 variable {K} in
 /-- **Unramified subextensions are those fixed by inertia.** A finite separable subextension `E` of
 `K^{alg}/K`, with a structure of nonarchimedean local field compatible with `K`, is unramified over
@@ -368,6 +384,27 @@ theorem apply_of_pow_eq_one (hσ : IsArithFrobeniusLift K σ) {m : ℕ}
   exact isArithFrobeniusLift_iff.1 hσ ζ m.totient
     (Nat.totient_pos.2 (Nat.pos_of_ne_zero (ne_zero_of_coprime_ringChar hm))).ne'
     (pow_pow_totient_eq_self hq hζ)
+
+/-- **A Frobenius lift acts on finite residue fields as the `q`-th power map.** The restriction of
+an arithmetic Frobenius lift to a finite normal subextension `L` of `K^{alg}/K` acts on the residue
+field of `L` by `x ↦ x ^ q`, where `q` is the cardinality of the residue field of `K`. -/
+theorem restrictNormal_smul_residueField_eq_pow {σ : Gal(AlgebraicClosure K/K)}
+    (hσ : IsArithFrobeniusLift K σ)
+    (L : IntermediateField K (AlgebraicClosure K)) [ValuativeRel L] [TopologicalSpace L]
+    [IsNonarchimedeanLocalField L] [ValuativeExtension K L] [FiniteDimensional K L] [Normal K L]
+    (x : 𝓀[L]) :
+    AlgEquiv.restrictNormal σ L • x = x ^ Nat.card 𝓀[K] := by
+  -- The Teichmüller representative `ω` of `x` is a root of `X^{q^f} − X`, so `σ ω = ω ^ q`.
+  set ω := teichmullerLift L x
+  have hω : AlgEquiv.restrictNormal σ L • ω = ω ^ Nat.card 𝓀[K] := by
+    refine Subtype.ext (Subtype.ext ?_)
+    rw [AlgEquiv.coe_smul_integerRing, AlgEquiv.restrictNormal_apply]
+    refine (isArithFrobeniusLift_iff.1 hσ _ (inertiaDegree K L) inertiaDegree_pos.ne' ?_).trans
+      (by simp)
+    rw [← natCard_residueField]
+    exact_mod_cast congrArg (fun y : 𝒪[L] ↦ ((y : L) : AlgebraicClosure K))
+      (teichmullerLift_pow_natCard L x)
+  rw [← residue_teichmullerLift L x, ← IsLocalRing.ResidueField.residue_smul, hω, map_pow]
 
 /-- **The arithmetic Frobenius lifts form a left coset of the inertia subgroup**: they are the
 elements of `σ I_K`, for any one of them `σ`. -/

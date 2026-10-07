@@ -302,7 +302,7 @@ theorem exists_mem_primesAboveRamifiedPrimes_not_mem_ramifiedPrimes_X_pow_three_
   let QQ : HeightOneSpectrum (𝓞 L) := ⟨Q, inferInstance, hQne⟩
   have hcardInertia : Nat.card (Q.inertia (L ≃ₐ[ℚ] L)) = 3 := by
     rw [Ideal.card_inertia_eq_ramificationIdx (𝓞 ℚ),
-      Ideal.ramificationIdx_ringOfIntegers_rat_eq_int Q hQne, hramQ]
+      Ideal.ramificationIdx_ringOfIntegers_rat_eq_int Q, hramQ]
   have hinertia : Q.inertia (L ≃ₐ[ℚ] L) ≠ ⊥ := by
     intro hbot
     rw [hbot] at hcardInertia
