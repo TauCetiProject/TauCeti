@@ -58,6 +58,12 @@ def normalSphereBundleOfRadius (f : M → V) (r : M → ℝ) : Set (M × V) :=
     p ∈ normalSphereBundleOfRadius I f r ↔
       p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ = r p.1 := Iff.rfl
 
+/-- Normal spheres are contained in the closed normal discs of the same radius. -/
+theorem normalSphereBundleOfRadius_subset_normalDiscBundleOfRadius {f : M → V} {r : M → ℝ} :
+    normalSphereBundleOfRadius I f r ⊆ normalDiscBundleOfRadius I f r := fun _ hp =>
+  mem_normalDiscBundleOfRadius.mpr
+    ⟨(mem_normalSphereBundleOfRadius.mp hp).1, (mem_normalSphereBundleOfRadius.mp hp).2.le⟩
+
 /-- The difference between closed normal discs and their open tube consists of the
 normal spheres. -/
 @[simp] theorem normalDiscBundleOfRadius_sdiff_normalTubeOfRadius (f : M → V) (r : M → ℝ) :
@@ -254,17 +260,13 @@ theorem exists_isClosedEmbedding_normalDiscBundle [FiniteDimensional ℝ V]
   obtain ⟨R, hR, h⟩ := exists_isOpenEmbedding_normalTube hf himm hinj
   have hf1 : ContMDiff I 𝓘(ℝ, V) 1 f := hf.of_le (by norm_num)
   have hd := isClosedEmbedding_normalDiscBundle hf1 (half_lt_self hR) h
-  have hsub : normalSphereBundleOfRadius I f (fun _ => R / 2) ⊆
-      normalDiscBundleOfRadius I f (fun _ => R / 2) := fun p hp =>
-    mem_normalDiscBundleOfRadius.mpr ⟨(mem_normalSphereBundleOfRadius.mp hp).1,
-      (mem_normalSphereBundleOfRadius.mp hp).2.le⟩
   exact ⟨R / 2, half_pos hR,
     (by
       rw [← normalTubeOfRadius_const]
       exact isOpenEmbedding_normalTubeOfRadius_of_le continuous_const
         (fun _ => (half_lt_self hR).le)
         (by rw [normalTubeOfRadius_const]; exact h)), hd,
-    hd.comp (IsClosedEmbedding.inclusion hsub
+    hd.comp (IsClosedEmbedding.inclusion normalSphereBundleOfRadius_subset_normalDiscBundleOfRadius
       ((isClosed_normalSphereBundleOfRadius hf1 continuous_const).preimage continuous_subtype_val)),
     frontier_image_normalTube hf1 (half_pos hR) (half_lt_self hR) h⟩
 

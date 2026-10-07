@@ -147,13 +147,10 @@ theorem exists_isClosedEmbedding_normalDiscBundleOfRadius [FiniteDimensional ℝ
   have hf1 : ContMDiff I 𝓘(ℝ, V) 1 f := hf.of_le (by norm_num)
   have hd :=
     isClosedEmbedding_normalDiscBundleOfRadius hf1 hclosed r.continuous hbound hrs h.isEmbedding
-  have hsub : normalSphereBundleOfRadius I f r ⊆ normalDiscBundleOfRadius I f r :=
-    fun p hp => mem_normalDiscBundleOfRadius.mpr
-      ⟨(mem_normalSphereBundleOfRadius.mp hp).1, (mem_normalSphereBundleOfRadius.mp hp).2.le⟩
   have hopen :=
     isOpenEmbedding_normalTubeOfRadius_of_le r.continuous (fun x => (hrs x).le) h
   exact ⟨r, hr, hopen, hd,
-    hd.comp (IsClosedEmbedding.inclusion hsub
+    hd.comp (IsClosedEmbedding.inclusion normalSphereBundleOfRadius_subset_normalDiscBundleOfRadius
       ((isClosed_normalSphereBundleOfRadius hf1 r.continuous).preimage continuous_subtype_val)),
     frontier_image_normalTubeOfRadius hf1 hclosed r.continuous hr hbound hrs h⟩
 
