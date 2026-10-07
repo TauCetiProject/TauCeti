@@ -16,8 +16,7 @@ face description in `Stellar.Basic` gives this directly, but repeatedly unfoldin
 error-prone.  This file records the resulting membership criterion and its deletion containment.
 
 The criterion is the containing-new-vertex companion to
-`link_stellarSubdivision_of_notMem`: it is the next local ingredient for the higher-face
-sphere-or-ball classification in layer 11 of the geometric-topology roadmap.
+`link_stellarSubdivision_of_notMem`.
 -/
 
 public section
