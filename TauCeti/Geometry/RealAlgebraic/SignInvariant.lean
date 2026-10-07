@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Connected.TotallyDisconnected
 public import Mathlib.Topology.Instances.Sign
+import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
 # Sign-invariant functions
@@ -145,5 +146,20 @@ theorem _root_.IsPreconnected.signInvariant [Zero R] [LinearOrder R] [Topologica
     (hf : ContinuousOn f s) (h0 : ∀ x ∈ s, f x ≠ 0) : SignInvariant f s :=
   fun _ hx _ hy ↦ hs.constant (f := fun x ↦ SignType.sign (f x))
     (fun z hz ↦ (continuousAt_sign_of_ne_zero (h0 z hz)).comp_continuousWithinAt (hf z hz)) hx hy
+
+/-- Local sign-invariance on relative neighborhoods implies sign-invariance on a preconnected
+set. No continuity of the function itself is required. -/
+theorem _root_.IsPreconnected.signInvariant_of_locally [Zero R] [Preorder R] [DecidableLT R]
+    [TopologicalSpace α] {f : α → R} {s : Set α} (hs : IsPreconnected s)
+    (hlocal : ∀ x ∈ s, ∃ U : Set α, IsOpen U ∧ x ∈ U ∧ SignInvariant f (s ∩ U)) :
+    SignInvariant f s := by
+  let : PreconnectedSpace s := isPreconnected_iff_preconnectedSpace.mp hs
+  have hsign : IsLocallyConstant (fun x : s ↦ SignType.sign (f x)) := by
+    refine (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦ ?_
+    obtain ⟨U, hU, hx, h⟩ := hlocal x x.property
+    filter_upwards [continuous_subtype_val.continuousAt.preimage_mem_nhds (hU.mem_nhds hx)]
+      with y hy
+    exact h y ⟨y.property, hy⟩ x ⟨x.property, hx⟩
+  exact fun x hx y hy ↦ hsign.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
 
 end TauCeti
