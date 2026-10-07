@@ -165,15 +165,8 @@ theorem generalLinearToPoint_coordinateRingMap
     (generalLinearToPoint (R := R) n g).ofConv
         (coordinateHopfAlgebraAlgEquiv R n (coordinateRingMap R n x)) =
       MvPolynomial.aeval (fun ij : Fin n × Fin n ↦ g.val ij.1 ij.2) x := by
-  rw [generalLinearToPoint_ofConv, AlgHom.comp_apply]
-  have heq :
-      (coordinateHopfAlgebraAlgEquiv R n).symm.toAlgHom
-          (coordinateHopfAlgebraAlgEquiv R n (coordinateRingMap R n x)) =
-        coordinateRingMap R n x :=
-    (coordinateHopfAlgebraAlgEquiv R n).symm_apply_apply _
-  rw [heq]
-  rw [localizedEvaluationOfGeneralLinear_coordinateRingMap]
-  rfl
+  simp [generalLinearToPoint_ofConv, localizedEvaluationOfGeneralLinear_coordinateRingMap,
+    evaluationOfGeneralLinear]
 
 /-- The point obtained from an invertible matrix sends a bundled generic coordinate to the
 corresponding matrix entry. -/
@@ -280,7 +273,7 @@ theorem pointsMulEquiv_mapValue (phi : A →ₐ[R] B)
     (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
     pointsMulEquiv n (AlgHom.mapValue (H := coordinateHopfAlgebra R n) phi f) =
       Matrix.GeneralLinearGroup.map (phi : A →+* B) (pointsMulEquiv n f) := by
-  exact pointToGeneralLinear_mapValue n phi f
+  rw [pointsMulEquiv_apply, pointsMulEquiv_apply, pointToGeneralLinear_mapValue]
 
 /-- Naturality of the inverse pointwise equivalence in the value algebra. -/
 theorem mapValue_pointsMulEquiv_symm_apply (phi : A →ₐ[R] B)
