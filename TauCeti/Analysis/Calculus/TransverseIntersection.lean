@@ -26,12 +26,6 @@ whose tangent space is the intersection of the two tangent spaces: there is a `C
 cone of `S₁ ∩ S₂` at `y` is that intersection. Its dimension is therefore
 `dim T₁ + dim T₂ - dim E`.
 
-The proof writes `S₁ ∩ S₂` near `y` as the zero set of the map `z ↦ (P₁ (e₁ z), P₂ (e₂ z))`, where
-`Pᵢ` projects onto a complement of the model subspace of the chart `eᵢ`. Transversality is
-exactly the surjectivity of its derivative at `y`, so the zero set is flattened by the chart that
-the implicit function theorem attaches to a map with surjective derivative
-(`HasStrictFDerivAt.exists_isSliceChart_preimage_zero`).
-
 ## Main results
 
 * `TauCeti.exists_isSliceChart_inter_of_span_tangentConeAt_sup_eq_top`: a transverse
