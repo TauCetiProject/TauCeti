@@ -24,6 +24,9 @@ in the commutation chain-map equation.
 
 Ozsvath--Stipsicz--Szabo, *Grid Homology for Knots and Links*, Section 5.1,
 Case (P-3), Figures 5.5--5.6.
+
+This file adapts the terminal-side formalization in
+`TauCeti.KnotTheory.Grid.Commutation.Annulus.Weight`.
 -/
 
 public section

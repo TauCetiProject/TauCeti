@@ -20,6 +20,9 @@ the `X`-marking in the turn row.
 
 Ozsvath--Stipsicz--Szabo, *Grid Homology for Knots and Links*, Section 5.1,
 Case (P-3), Figures 5.5--5.6.
+
+This file adapts the terminal-side formalization in
+`TauCeti.KnotTheory.Grid.Commutation.Annulus.Horizontal`.
 -/
 
 public section
@@ -281,7 +284,7 @@ theorem initialPentagonRectangleOppositeSideOrder_eq_empty_of_X_column_ne_turnRo
 
 /-- At least one horizontal initial-side family in the diagonal chain-map coefficient is empty,
 because the two commuted columns have `X`-markings in distinct rows. -/
-theorem initialPentagonAnnulus_oppositeSideOrder_eq_empty_or_eq_empty
+theorem rectangleInitialPentagon_or_initialPentagonRectangle_oppositeSideOrder_eq_empty
     (x : GridState n) :
     G.rectangleInitialPentagonOppositeSideOrder C x = ∅ ∨
       G.initialPentagonRectangleOppositeSideOrder C x = ∅ := by
