@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold
 public import Mathlib.Topology.LocalAtTarget
 
@@ -36,35 +37,6 @@ open Set Filter Topology TauCeti.SetLike
 namespace AbstractSimplicialComplex
 
 variable {ι : Type*} [DecidableEq ι] (K : AbstractSimplicialComplex ι)
-
-/-- The realized closed star of a finite vertex set consists of points whose carriers lie
-in its closed star. -/
-def closedStarRealization (σ : Finset ι) : Set (Realization K) :=
-  {x | x.1.support ∈ PreAbstractSimplicialComplex.closedStar K.toPreAbstractSimplicialComplex σ}
-
-/-- Membership in the realized closed star is closed-star membership of the carrier. -/
-@[simp]
-theorem mem_closedStarRealization {σ : Finset ι} {x : Realization K} :
-    x ∈ K.closedStarRealization σ ↔
-      x.1.support ∈ PreAbstractSimplicialComplex.closedStar K.toPreAbstractSimplicialComplex σ :=
-  Iff.rfl
-
-/-- Each open star lies in its closed star. -/
-theorem openStarRealization_subset_closedStarRealization (v : ι) :
-    K.openStarRealization v ⊆ K.closedStarRealization {v} := by
-  intro x hx
-  apply PreAbstractSimplicialComplex.mem_closedStar.mpr
-  refine ⟨support_mem K x, ?_⟩
-  rw [Finset.union_singleton,
-    Finset.insert_eq_of_mem ((K.mem_openStarRealization_iff_mem_support).mp hx)]
-  exact support_mem K x
-
-/-- The realization of a finite closed star is compact. -/
-theorem isCompact_closedStarRealization {σ : Finset ι}
-    (hfin :
-      (PreAbstractSimplicialComplex.closedStar K.toPreAbstractSimplicialComplex σ).faces.Finite) :
-    IsCompact (K.closedStarRealization σ) :=
-  K.isCompact_setOf_support_mem PreAbstractSimplicialComplex.closedStar_le hfin
 
 /-- Finite vertex stars provide a compact neighbourhood around every realization point. -/
 theorem locallyCompactSpace_realization_of_finite_vertex_stars

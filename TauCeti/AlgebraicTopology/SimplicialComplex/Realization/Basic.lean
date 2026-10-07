@@ -351,43 +351,6 @@ theorem Realization.nonneg (K : AbstractSimplicialComplex ι) (x : Realization K
     0 ≤ x.1 v :=
   StandardSimplex.nonneg (σ := (carrier K x).1) ⟨x.1, mem_convexHull_carrier K x⟩ v
 
-section OpenStars
-
-variable (K : AbstractSimplicialComplex ι)
-
-/-- The open star of a vertex consists of points with positive barycentric coordinate at
-that vertex. Equivalently, their carriers contain the vertex. -/
-def openStarRealization (v : ι) : Set (Realization K) := {x | 0 < x.1 v}
-
-/-- Membership in the open star is positivity of the corresponding coordinate. -/
-@[simp]
-theorem mem_openStarRealization {v : ι} {x : Realization K} :
-    x ∈ K.openStarRealization v ↔ 0 < x.1 v := Iff.rfl
-
-/-- A point lies in the open star exactly when its carrier contains the vertex. -/
-theorem mem_openStarRealization_iff_mem_support {v : ι} {x : Realization K} :
-    x ∈ K.openStarRealization v ↔ v ∈ x.1.support := by
-  rw [mem_openStarRealization, Finsupp.mem_support_iff]
-  exact (lt_iff_le_and_ne).trans (by simp [Realization.nonneg K x v, ne_comm])
-
-/-- Open stars are open for the weak topology, since coordinates are continuous. -/
-theorem isOpen_openStarRealization (v : ι) : IsOpen (K.openStarRealization v) :=
-  isOpen_lt continuous_const ((continuous_apply v).comp (continuous_realization_coe K))
-
-/-- Every realization point belongs to an open vertex star. -/
-theorem exists_mem_openStarRealization (x : Realization K) :
-    ∃ v, x ∈ K.openStarRealization v := by
-  classical
-  obtain ⟨v, hv⟩ := K.isRelLowerSet_faces.prop_of_mem (support_mem K x)
-  exact ⟨v, (K.mem_openStarRealization_iff_mem_support).mpr hv⟩
-
-/-- The open vertex stars cover the realization. -/
-@[simp]
-theorem iUnion_openStarRealization : ⋃ v, K.openStarRealization v = univ :=
-  Set.eq_univ_of_forall fun x => mem_iUnion.mpr (K.exists_mem_openStarRealization x)
-
-end OpenStars
-
 /-- The barycentric coordinates of a realization point sum to one. -/
 @[simp]
 theorem Realization.sum_eq_one (K : AbstractSimplicialComplex ι) (x : Realization K) :
