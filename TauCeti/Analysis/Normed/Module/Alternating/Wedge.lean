@@ -68,7 +68,9 @@ noncomputable def wedgeWithUnalternated {k l : ℕ} (mu : F₁ →L[ℝ] F₂ �
     (MultilinearMap.domCoprod phi.toAlternatingMap.toMultilinearMap
       psi.toAlternatingMap.toMultilinearMap).domDomCongr finSumFinEquiv
 
-private lemma wedgeWithUnalternated_apply {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+/-- The unalternated pairing evaluates `phi` on the first `k` vectors and `psi` on the last `l`. -/
+@[simp]
+theorem wedgeWithUnalternated_apply {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂)
     (v : Fin (k + l) → E) :
     wedgeWithUnalternated mu phi psi v =
@@ -181,30 +183,7 @@ private lemma wedgeAlternating_apply_one_one (mu : F₁ →L[ℝ] F₂ →L[ℝ]
     exact perm_fin_two_eq_one_or_swap e
   rw [hperm, Finset.sum_insert (by decide), Finset.sum_singleton,
     Equiv.Perm.sign_swap (by decide : (0 : Fin 2) ≠ 1)]
-  simp only [Nat.factorial_one, Nat.cast_one, mul_one, inv_one, Equiv.Perm.sign_one,
-    Equiv.Perm.one_apply, one_smul, Units.neg_smul, Fin.natAdd_eq_addNat, Fin.addNat_one,
-    Matrix.cons_val_succ, Matrix.cons_val_fin_one]
-  have h₀ : (fun i : Fin 1 => ![v, w] (Fin.castAdd 1 i)) = ![v] := by
-    funext i
-    fin_cases i
-    rfl
-  have h₁ : (fun _j : Fin 1 => w) = ![w] := by
-    funext j
-    fin_cases j
-    rfl
-  have h₂ : (fun i : Fin 1 => ![v, w] ((Equiv.swap 0 1) (Fin.castAdd 1 i))) = ![w] := by
-    funext i
-    fin_cases i
-    simp only [Nat.succ_eq_add_one, Nat.reduceAdd, Fin.isValue, Fin.zero_eta, Fin.reduceCastAdd,
-      Equiv.swap_apply_left, Matrix.cons_val_one, Matrix.cons_val_fin_one]
-  have h₃ : (fun j : Fin 1 => ![v, w] ((Equiv.swap 0 1) j.succ)) = ![v] := by
-    funext j
-    fin_cases j
-    simp only [Nat.succ_eq_add_one, Nat.reduceAdd, Fin.isValue, Fin.zero_eta,
-      Fin.succ_zero_eq_one, Equiv.swap_apply_right, Matrix.cons_val_zero,
-      Matrix.cons_val_fin_one]
-  rw [h₀, h₁, h₂, h₃]
-  rw [sub_eq_add_neg]
+  simp [Fin.fin_one_eq_zero, Matrix.cons_fin_one, sub_eq_add_neg]
 
 /-- The paired wedge product of continuous alternating maps, normalized as the signed sum over all
 permutations divided by `k! l!`. Equivalently, it is the unscaled sum over `(k, l)`-shuffles. -/
@@ -245,6 +224,7 @@ theorem wedgeWith_apply_one_one (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
   exact wedgeAlternating_apply_one_one mu phi psi v w
 
 /-- Postcomposing the pairing postcomposes the paired wedge. -/
+@[simp]
 theorem wedgeWith_postcomp {F₄ : Type*} [NormedAddCommGroup F₄] [NormedSpace ℝ F₄]
     {k l : ℕ} (nu : F₃ →L[ℝ] F₄) (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
@@ -363,11 +343,13 @@ the pairing and the two forms. -/
 theorem norm_wedgeWith_le {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
     ‖wedgeWith mu phi psi‖ ≤ (k + l).choose k * ‖mu‖ * ‖phi‖ * ‖psi‖ := by
+  unfold wedgeWith
   apply AlternatingMap.mkContinuous_norm_le
   positivity
 
 /-- Pulling both arguments of a paired wedge back by a continuous linear map is the same as pulling
 back their wedge. -/
+@[simp]
 theorem wedgeWith_compContinuousLinearMap {E' : Type*} [NormedAddCommGroup E']
     [NormedSpace ℝ E'] {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (f : E' →L[ℝ] E)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
