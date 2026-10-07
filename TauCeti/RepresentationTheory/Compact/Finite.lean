@@ -720,7 +720,7 @@ section Unitarization
 
 variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [Fintype G] [TopologicalSpace G]
   [DiscreteTopology G] [MeasurableSpace G] [BorelSpace G]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V]
+  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
   [CompleteSpace V]
 
 variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
@@ -730,34 +730,34 @@ include hπ
 /-- **The averaged invariant form of a finite group is the group average**
 `⟪v, w⟫_G = |G|⁻¹ ∑ g, ⟪π g v, π g w⟫`. This is the form Weyl's unitarian trick averages into
 existence, read off the Gram operator that represents it
-(`TauCeti.ContRepresentation.inner_gramOperator`) through
+(`ContRepresentation.inner_gramOperator`) through
 `TauCeti.integral_haarProb_eq_inv_mul_sum`; for a finite group it is the classical averaging
 `⟪·, ·⟫ ↦ |G|⁻¹ ∑ g, ⟪π g ·, π g ·⟫` of the finite-group proof, and the normalization `|G|⁻¹` is
 the one that fixes the form on the invariants. -/
 theorem inner_gramOperator_eq_inv_mul_sum (v w : V) :
-    ⟪v, gramOperator π hπ w⟫_𝕜 = (Nat.card G : 𝕜)⁻¹ * ∑ g, ⟪π g v, π g w⟫_𝕜 := by
-  rw [inner_gramOperator, integral_haarProb_eq_inv_mul_sum]
+    ⟪v, π.gramOperator hπ w⟫_𝕜 = (Nat.card G : 𝕜)⁻¹ * ∑ g, ⟪π g v, π g w⟫_𝕜 := by
+  rw [π.inner_gramOperator hπ, integral_haarProb_eq_inv_mul_sum]
 
 /-- **The averaged form of a finite group on the diagonal is the average of `‖π g v‖ ^ 2`.** This is
 the finite form of the positive definiteness that makes the unitarian trick work: the average of
 `|G|` nonnegative reals, one of which is `‖v‖ ^ 2` at `g = 1`, is positive for `v ≠ 0`. Compactness
-of `G` enters the general statement `TauCeti.ContRepresentation.inner_gramOperator_self` only to
+of `G` enters the general statement `ContRepresentation.inner_gramOperator_self` only to
 make `g ↦ ‖π g v‖ ^ 2` integrable; it is the *strict* positivity
-`TauCeti.ContRepresentation.re_inner_gramOperator_self_pos` that also needs the compactness bound
+`ContRepresentation.re_inner_gramOperator_self_pos` that also needs the compactness bound
 on the operator norms from below. A finite group needs neither. -/
 theorem inner_gramOperator_self_eq_inv_mul_sum (v : V) :
-    ⟪gramOperator π hπ v, v⟫_𝕜 = (((Nat.card G : ℝ)⁻¹ * ∑ g, ‖π g v‖ ^ 2 : ℝ) : 𝕜) := by
-  rw [inner_gramOperator_self, integral_haarProb, smul_eq_mul]
+    ⟪π.gramOperator hπ v, v⟫_𝕜 = (((Nat.card G : ℝ)⁻¹ * ∑ g, ‖π g v‖ ^ 2 : ℝ) : 𝕜) := by
+  rw [π.inner_gramOperator_self hπ, integral_haarProb, smul_eq_mul]
 
 /-- **The Gram operator of a finite group is the averaged sum of the operators `(π g)† ∘ (π g)`.**
 This is `ContRepresentation.inner_gramOperator_eq_inv_mul_sum` at the level of operators:
 each summand is the Gram operator of the pulled-back form `(v, w) ↦ ⟪π g v, π g w⟫`, and the Haar
 average of the family is their group average. -/
 theorem gramOperator_eq_smul_sum :
-    gramOperator π hπ =
+    π.gramOperator hπ =
       (Nat.card G : 𝕜)⁻¹ • ∑ g, (ContinuousLinearMap.adjoint (π g)).comp (π g) := by
   refine ContinuousLinearMap.ext fun w ↦ ext_inner_left 𝕜 fun v ↦ ?_
-  rw [inner_gramOperator_eq_inv_mul_sum, smul_apply, sum_apply, inner_smul_right, inner_sum]
+  rw [π.inner_gramOperator_eq_inv_mul_sum hπ, smul_apply, sum_apply, inner_smul_right, inner_sum]
   exact congrArg _ (Finset.sum_congr rfl fun g _ ↦
     (ContinuousLinearMap.adjoint_inner_right (π g) v (π g w)).symm)
 
@@ -766,14 +766,14 @@ end Unitarization
 section Maschke
 
 variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [Finite G]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V]
+  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
   [FiniteDimensional 𝕜 V]
 
 /-- **The unitarian trick for a finite group.** Every finite-dimensional representation of a finite
 group on an inner product space is conjugate, by a continuous linear automorphism of the carrier,
 to one preserving the inner product.
 
-This is `TauCeti.ContRepresentation.exists_isUnitary_congr` with all of its compact-group
+This is `ContRepresentation.exists_isUnitary_congr` with all of its compact-group
 hypotheses discharged: the statement mentions neither a topology on `G` nor a measure, so the proof
 installs the discrete topology and the Borel structure it averages against — a finite discrete
 group is compact and every representation of it is continuous by `continuous_of_discreteTopology` —

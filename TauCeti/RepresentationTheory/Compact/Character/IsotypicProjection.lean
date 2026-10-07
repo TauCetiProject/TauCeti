@@ -372,7 +372,7 @@ theorem isotypicProjector_apply_subtype_of_not_equiv
     finrank_euclideanSpace_fin.symm
   let sigmaStd := TauCeti.ContRepresentation.congr estd sigma
   let hsigmaStd : Continuous sigmaStd := TauCeti.ContRepresentation.continuous_congr estd hsigma
-  obtain ⟨e, hunitary⟩ := TauCeti.ContRepresentation.exists_isUnitary_congr sigmaStd hsigmaStd
+  obtain ⟨e, hunitary⟩ := sigmaStd.exists_isUnitary_congr hsigmaStd
   let sigma' := TauCeti.ContRepresentation.congr e sigmaStd
   let hsigma' : Continuous sigma' := TauCeti.ContRepresentation.continuous_congr e hsigmaStd
   have hirr' : Representation.IsIrreducible sigma'.toRepresentation :=

@@ -6,16 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Semisimple.MatrixDivisionRing
-import TauCeti.RingTheory.Semisimple.BlockCount
+import Mathlib.RingTheory.SimpleRing.Matrix
+import TauCeti.RingTheory.SimpleRing.Pi
 
 /-!
 # Uniqueness of Wedderburn blocks
 
 Artin--Wedderburn presents a semisimple ring as a finite product of matrix rings over division
-rings.  `TauCeti.card_blocks_eq` proves that two such presentations have equally many blocks, and
+rings.  `RingEquiv.card_blocks_eq` proves that two such presentations have equally many blocks, and
 `TauCeti.wedderburn_data_unique` proves that the size and coefficient division ring of a *single*
 matrix block are intrinsic.  The generic factor matching in
-`TauCeti.exists_equiv_factors_of_ringEquiv_pi` permutes the factors of the two products; this file
+`RingEquiv.exists_equiv_factors` permutes the factors of the two products; this file
 applies the single-block result to each matched pair and concludes that two Wedderburn
 presentations have the same matrix sizes and division rings after one permutation of the blocks.
 
@@ -26,8 +27,6 @@ presentations have the same matrix sizes and division rings after one permutatio
 
 ## References
 
-This proves the two-presentation block-multiset consequence of the Layer 2 uniqueness target in the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
 See T. Y. Lam, *A First Course in Noncommutative Rings*, GTM 131, section 3, or C. W. Curtis and
 I. Reiner, *Representation Theory of Finite Groups and Associative Algebras*, section 26.
 -/
@@ -56,7 +55,7 @@ theorem wedderburn_blocks_unique {R : Type u} [Ring R]
     ⟨⟨0, Nat.pos_of_ne_zero (NeZero.ne (d i))⟩⟩
   have he : ∀ j, Nonempty (Fin (e j)) := fun j ↦
     ⟨⟨0, Nat.pos_of_ne_zero (NeZero.ne (e j))⟩⟩
-  obtain ⟨σ, hσ⟩ := exists_equiv_factors_of_ringEquiv_pi (f.symm.trans g)
+  obtain ⟨σ, hσ⟩ := (f.symm.trans g).exists_equiv_factors
   refine ⟨σ, fun i ↦ ?_⟩
   obtain ⟨hblock, -⟩ := hσ i
   exact wedderburn_data_unique (.refl _) hblock

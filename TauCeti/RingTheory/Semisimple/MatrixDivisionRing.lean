@@ -23,12 +23,12 @@ import TauCeti.RingTheory.Semisimple.SimpleArtinian
 
 Artin--Wedderburn presents a simple Artinian ring as a matrix ring `Matᵢ(D)` over a division ring,
 and a semisimple ring as a finite product of such blocks.  Mathlib supplies the presentation but
-says nothing about how much of it is determined by the ring: `TauCeti.card_blocks_eq` shows the
-*number* of blocks is an invariant and `TauCeti.blocks_equiv_simpleModules` matches the blocks with
-the simple modules, but both are silent about the two remaining pieces of data, the size `ι` of a
-block and its division ring `D`.  This file determines both, for a *single* block: it does not treat
-a product of blocks; `TauCeti.wedderburn_blocks_unique` applies the result here after matching the
-factors of two product presentations.
+says nothing about how much of it is determined by the ring: `RingEquiv.card_blocks_eq` shows the
+*number* of blocks is an invariant and `RingEquiv.exists_simpleSubmodule_of_pi_matrix` matches the
+blocks with the simple modules, but both are silent about the two remaining pieces of data, the
+size `ι` of a block and its division ring `D`.  This file determines both, for a *single* block:
+it does not treat a product of blocks; `TauCeti.wedderburn_blocks_unique` applies the result here
+after matching the factors of two product presentations.
 
 The content is a description of those two data of `A = Matᵢ(D)` in terms that transport along a
 ring isomorphism.  The **column module** `ι → D`, on which `A` acts by `Matrix.mulVec`, is a simple
@@ -69,7 +69,7 @@ Artin--Wedderburn theorems produce is the corollary `TauCeti.wedderburn_data_uni
 is essential and not decoration wherever the division ring is involved: `Mat_∅(D)` is the trivial
 ring for every `D`, so an empty block determines no `D` at all.  It is the hypothesis `NeZero n`
 supplies in `IsSemisimpleRing.exists_ringEquiv_pi_matrix_divisionRing` and in
-`TauCeti.card_blocks_eq`.  The statements about the size alone hold for every `ι`, the empty case
+`RingEquiv.card_blocks_eq`.  The statements about the size alone hold for every `ι`, the empty case
 saying that the trivial ring has regular module of length `0`, and are stated without it.
 
 Everything is stated for the *left* regular module, matching the convention of `IsSemisimpleRing`,
@@ -89,11 +89,6 @@ recover the factor permutation, and the theorem in this file then identifies the
 factor.
 
 ## References
-
-This is the single-block case of the Layer 2 target "uniqueness / invariance" -- the degrees `nᵢ`
-and the division rings `Dᵢ` of a Wedderburn presentation are determined by the ring -- of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md);
-the product-level result is `TauCeti.wedderburn_blocks_unique`.
 
 See T. Y. Lam, *A First Course in Noncommutative Rings*, GTM 131, §3, or C. W. Curtis and
 I. Reiner, *Representation Theory of Finite Groups and Associative Algebras*, §26.
