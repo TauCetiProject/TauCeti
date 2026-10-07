@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Compactness
+public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Quotient
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Truncation
 
 /-!
@@ -105,8 +106,7 @@ theorem isCompact_compl_iUnion_image_horodisc
     IsCompact ((⋃ C, Quotient.mk (orbitRel Γ ℍ) '' horodisc (D C) (A C))ᶜ) := by
   obtain ⟨K, hK, hcoverK⟩ := P.exists_isCompact_cover_quotient_horodiscs hcover hcusp D hD A
   refine (hK.image continuous_quotient_mk').of_isClosed_subset
-    (isOpen_iUnion fun C ↦
-      MulAction.isOpenQuotientMap_quotientMk.isOpenMap _ (isOpen_horodisc _ _)).isClosed_compl ?_
+    (isOpen_iUnion fun C ↦ isOpen_image_quotientMk_horodisc (D C) (A C)).isClosed_compl ?_
   intro q hq
   rcases hcoverK q with hqK | ⟨C, hqC⟩
   · exact hqK
