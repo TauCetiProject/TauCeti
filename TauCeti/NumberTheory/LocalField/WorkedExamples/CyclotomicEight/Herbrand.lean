@@ -62,6 +62,7 @@ private theorem herbrand_three :
 
 /-- The Herbrand function has slopes `1`, `1/2`, and `1/4`, with lower breaks `1` and `3`.
 The formula includes the prescribed identity on `[-1, 0]`. -/
+@[simp]
 theorem coe_herbrand_eq (u : RamificationIndexDomain) :
     (herbrand ℚ_[2] DyadicCyclotomicEight u : ℝ) =
       if (u : ℝ) ≤ 1 then (u : ℝ) else if (u : ℝ) ≤ 3 then ((u : ℝ) + 1) / 2
@@ -96,6 +97,7 @@ theorem coe_herbrand_eq (u : RamificationIndexDomain) :
     linarith
 
 /-- The inverse Herbrand function has upper breaks `1` and `2`, and slopes `1`, `2`, and `4`. -/
+@[simp]
 theorem coe_inverseHerbrand_eq (v : RamificationIndexDomain) :
     (inverseHerbrand ℚ_[2] DyadicCyclotomicEight v : ℝ) =
       if (v : ℝ) ≤ 1 then (v : ℝ) else if (v : ℝ) ≤ 2 then 2 * (v : ℝ) - 1
