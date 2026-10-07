@@ -42,17 +42,17 @@ variable {V E H M : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 variable [FiniteDimensional ℝ V] [FiniteDimensional ℝ E]
   [I.Boundaryless] [IsManifold I 2 M]
 
-/-- **Noncompact Euclidean tubular neighbourhood theorem.** A `C²` immersion which is a
-topological embedding admits a positive continuous radius on which its normal addition
+/-- **Noncompact Euclidean tubular neighbourhood theorem.** A `C²` immersion inducing
+the source topology admits a positive continuous radius on which its normal addition
 map is an open embedding. -/
 theorem exists_isOpenEmbedding_normalTubeOfRadius {f : M → V}
     (hf : ContMDiff I 𝓘(ℝ, V) 2 f)
-    (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (hemb : IsEmbedding f) :
+    (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (hind : IsInducing f) :
     ∃ r : C(M, ℝ), (∀ x, 0 < r x) ∧
       IsOpenEmbedding ((normalTubeOfRadius I f r).domRestrict
         fun p : M × V => f p.1 + p.2) := by
   choose W hWo hxW δ hδ hinjOn hopen using exists_injOn_isOpen_image_normalTube hf himm
-  obtain ⟨r, hr, hloc⟩ := hemb.isInducing.exists_continuous_radius_subordinate W hWo
+  obtain ⟨r, hr, hloc⟩ := hind.exists_continuous_radius_subordinate W hWo
     (fun x => ⟨x, hxW x⟩) δ hδ
   simp only [mem_normalTube] at hinjOn hopen
   let Φ : M × V → V := fun p => f p.1 + p.2
