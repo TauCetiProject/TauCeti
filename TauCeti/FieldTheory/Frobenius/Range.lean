@@ -39,15 +39,20 @@ noncomputable def frobeniusPowers : IntermediateField k F := by
     rw [← RingHom.map_iterateFrobenius, ← coe_iterateFrobeniusEquiv,
       RingEquiv.apply_symm_apply]
 
-/-- Membership in the Frobenius power subfield means being a `p^n`-th power in `F`. -/
-@[simp]
-theorem mem_frobeniusPowers (z : F) :
-    z ∈ frobeniusPowers k F p n ↔ ∃ x : F, x ^ p ^ n = z := (Iff.rfl)
-
 /-- The underlying subfield is Mathlib's field range of iterated Frobenius. -/
 theorem frobeniusPowers_toSubfield :
     letI : ExpChar F p := expChar_of_injective_algebraMap (algebraMap k F).injective p
-    (frobeniusPowers k F p n).toSubfield = (iterateFrobenius F p n).fieldRange := (rfl)
+    (frobeniusPowers k F p n).toSubfield = (iterateFrobenius F p n).fieldRange := by
+  unfold frobeniusPowers
+  exact Subfield.toIntermediateField_toSubfield _ _
+
+/-- Membership in the Frobenius power subfield means being a `p^n`-th power in `F`. -/
+@[simp]
+theorem mem_frobeniusPowers (z : F) :
+    z ∈ frobeniusPowers k F p n ↔ ∃ x : F, x ^ p ^ n = z := by
+  have : ExpChar F p := expChar_of_injective_algebraMap (algebraMap k F).injective p
+  rw [← IntermediateField.mem_toSubfield, frobeniusPowers_toSubfield, RingHom.mem_fieldRange]
+  simp only [iterateFrobenius_def]
 
 /-- Iterated Frobenius as an isomorphism from `F` onto its power subfield. It is semilinear,
 not generally linear, over `k`. -/
@@ -60,7 +65,10 @@ noncomputable def iterateFrobeniusEquivPowers : F ≃+* frobeniusPowers k F p n 
 /-- The field isomorphism onto the power subfield sends `x` to `x^{p^n}`. -/
 @[simp]
 theorem coe_iterateFrobeniusEquivPowers (x : F) :
-    (iterateFrobeniusEquivPowers k F p n x : F) = x ^ p ^ n := (rfl)
+    (iterateFrobeniusEquivPowers k F p n x : F) = x ^ p ^ n := by
+  have : ExpChar F p := expChar_of_injective_algebraMap (algebraMap k F).injective p
+  exact (RingHom.rangeRestrictFieldEquiv_apply_coe (iterateFrobenius F p n) x).trans
+    (iterateFrobenius_def p n x)
 
 /-- On constants, the power-subfield isomorphism acts by the Frobenius automorphism of `k`. -/
 @[simp]
