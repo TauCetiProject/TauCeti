@@ -384,13 +384,14 @@ private theorem exists_comparison_of_halfStripExterior {ρ : ℝ} {c b : ℂ}
   have hfA : IsClosed (f '' A) := isClosed_image_of_tendsto_cobounded hA hfc hp
   have hφc : ContinuousOn φ (f '' A) := continuousOn_invFunOn_of_tendsto_cobounded hA hfc hfi hp
   have hφA : ∀ y ∈ f '' A, φ y ∈ A ∧ f (φ y) = y := fun y hy => ⟨invFunOn_mem hy, invFunOn_eq hy⟩
+  have hφf : ∀ z ∈ A, φ (f z) = z := fun z hz => by
+    simpa only [φ] using hfi.leftInvOn_invFunOn hz
   have hφU : ∀ y ∈ U, φ y ∈ upperHalfPlaneSet ∧
       φ y = invFunOn f upperHalfPlaneSet y := by
     intro y hy
     rw [← hfU] at hy
     obtain ⟨z, hz, rfl⟩ := hy
-    rw [show φ (f z) = z from hfi.leftInvOn_invFunOn (hH0 hz),
-      (hfi.mono hH0).leftInvOn_invFunOn hz]
+    rw [hφf z (hH0 hz), (hfi.mono hH0).leftInvOn_invFunOn hz]
     exact ⟨hz, rfl⟩
   -- The model values `q (-s⁻¹)` far out: in `U` above the axis, outside `U` on it.
   set q : ℂ → ℂ := fun ζ => c + b * model ζ
