@@ -213,28 +213,30 @@ theorem rootSpace_typeBDiagonalCartan_apply_eq_zero_of_isRegular
     (a b : Unit ⊕ ι ⊕ ι) (A : typeBDiagonalCartan K ι)
     (hreg : IsRegular (typeBMatrixWeight a b A - χ A)) :
     (X : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) a b = 0 := by
-  obtain ⟨k, hk⟩ := (LieModule.mem_genWeightSpace _ _ _).mp hX A
-  let T := LieModule.toEnd K (typeBDiagonalCartan K ι)
-    (LieAlgebra.Orthogonal.typeB ι K) A - χ A • 1
-  have hpow (n : ℕ) (Y : LieAlgebra.Orthogonal.typeB ι K) :
-      ((T ^ n) Y : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) a b =
-        (typeBMatrixWeight a b A - χ A) ^ n *
-          (Y : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) a b := by
-    induction n generalizing Y with
-    | zero => simp
-    | succ n ih =>
-      rw [pow_succ, Module.End.mul_apply, ih]
-      simp only [T, LinearMap.sub_apply, LinearMap.smul_apply, Module.End.one_apply,
-        LieModule.toEnd_apply_apply, LieSubalgebra.coe_bracket_of_module,
-        LieSubalgebra.coe_bracket, AddSubgroupClass.coe_sub, SetLike.val_smul,
-        Matrix.sub_apply, Matrix.smul_apply, smul_eq_mul, typeBDiagonalCartan_lie_apply]
-      ring
+  let ev : LieAlgebra.Orthogonal.typeB ι K →ₗ[K] K :=
+    ((LinearMap.proj (R := K) b).comp (LinearMap.proj (R := K) a)).comp
+      (LieAlgebra.Orthogonal.typeB ι K).toSubmodule.subtype
+  have ev_apply (Y : LieAlgebra.Orthogonal.typeB ι K) :
+      ev Y = (Y : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) a b := by
+    rfl
+  have hev : (typeBMatrixWeight a b A • (1 : Module.End K K)).comp ev =
+      ev.comp (LieModule.toEnd K (typeBDiagonalCartan K ι)
+        (LieAlgebra.Orthogonal.typeB ι K) A) := by
+    ext Y
+    simp only [LinearMap.comp_apply, LinearMap.smul_apply, Module.End.one_apply,
+      ev_apply, smul_eq_mul, LieModule.toEnd_apply_apply,
+      LieSubalgebra.coe_bracket_of_module, LieSubalgebra.coe_bracket,
+      typeBDiagonalCartan_lie_apply]
+  -- Entry evaluation intertwines the Cartan action with scalar multiplication.
+  have hentry := Module.End.mapsTo_genEigenspace_of_comp ev hev (χ A) ⊤
+    ((Module.End.mem_maxGenEigenspace _ _ _).mpr
+      ((LieModule.mem_genWeightSpace _ _ _).mp hX A))
+  obtain ⟨k, hk⟩ := (Module.End.mem_maxGenEigenspace _ _ _).mp hentry
+  rw [← sub_smul (typeBMatrixWeight a b A) (χ A) (1 : Module.End K K), smul_pow] at hk
   have hab : (typeBMatrixWeight a b A - χ A) ^ k *
       (X : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) a b = 0 := by
-    rw [← hpow k X]
-    have hk' : (T ^ k) X = 0 := hk
-    rw [hk']
-    rfl
+    simpa only [one_pow, LinearMap.smul_apply, Module.End.one_apply, smul_eq_mul,
+      ev_apply] using hk
   exact (isRegular_iff_eq_zero_of_mul.mp (hreg.pow k)).1 _ hab
 
 /-- A type-`B` matrix supported on entries of weight `χ` belongs to the `χ` root space. -/
