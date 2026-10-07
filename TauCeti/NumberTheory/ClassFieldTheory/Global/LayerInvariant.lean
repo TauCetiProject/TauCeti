@@ -180,17 +180,19 @@ theorem hasFiniteSupport_ideleLocalInvAt (x : L.H (ideleFormation K) 2) :
     mt (ideleLocalInvAt_eq_zero_iff K L _ x).2 hv
 
 /-- **The ramification set of an idele-layer class**: the finite set of the finite places where its
-local invariant is nonzero. -/
+local invariant is nonzero: the support of the finite-place part of the localization
+`ideleLocalization K` of its class over `G_K`. -/
 def ideleSupport (x : L.H (ideleFormation K) 2) : Finset (HeightOneSpectrum (𝓞 K)) :=
-  Set.Finite.toFinset (s := Function.support fun v ↦ ideleLocalInvAt K L v x)
-    (hasFiniteSupport_ideleLocalInvAt K L x)
+  open scoped Classical in (ideleLocalization K (ideleLayerCorInfl K L x)).1.support
 
 /-- A finite place lies in the ramification set of `x` exactly when the local invariant of `x`
 there is nonzero. -/
 @[simp]
 theorem mem_ideleSupport {x : L.H (ideleFormation K) 2} {v : HeightOneSpectrum (𝓞 K)} :
-    v ∈ ideleSupport K L x ↔ ideleLocalInvAt K L v x ≠ 0 :=
-  (Set.Finite.mem_toFinset _).trans Function.mem_support
+    v ∈ ideleSupport K L x ↔ ideleLocalInvAt K L v x ≠ 0 := by
+  classical
+  rw [ideleSupport, DFinsupp.mem_support_iff, ideleLocalization_fst_apply, ne_eq, ne_eq,
+    ideleLocalInvAt_eq_zero_iff]
 
 /-- Outside its ramification set, the local invariant of an idele-layer class vanishes. -/
 theorem ideleLocalInvAt_eq_zero_of_notMem_ideleSupport {x : L.H (ideleFormation K) 2}

@@ -453,6 +453,14 @@ theorem coeffFixedPointsEquiv_apply_coe (x : (L.rep F).V) :
     (L.coeffFixedPointsEquiv e he x : M) = e.symm (x : F.level L.top) :=
   (rfl)
 
+/-- The inverse of `coeffFixedPointsEquiv` reads a fixed point of `M` in the coefficient module
+through `e`. -/
+@[simp]
+theorem coeffFixedPointsEquiv_symm_apply_coe
+    (m : FixedPoints.addSubgroup (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) M) :
+    ((L.coeffFixedPointsEquiv e he).symm m : F.level L.top) = e m :=
+  (rfl)
+
 /-- `coeffFixedPointsEquiv` is equivariant for the Galois group of the layer. -/
 @[simp]
 theorem coeffFixedPointsEquiv_ρ
