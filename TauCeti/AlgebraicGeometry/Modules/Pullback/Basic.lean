@@ -340,6 +340,17 @@ lax monoidal functors (`TauCeti.SheafOfModules.isMonoidal_pushforwardComp_hom`).
 instance isMonoidal_pushforwardComp_hom : NatTrans.IsMonoidal (pushforwardComp f g).hom :=
   TauCeti.SheafOfModules.isMonoidal_pushforwardComp_hom g.toRingCatSheafHom f.toRingCatSheafHom
 
+/-- The identification `pushforward f ≅ pushforward f'` for equal morphisms `f = f'` is an
+isomorphism of lax monoidal functors. -/
+instance isMonoidal_pushforwardCongr_hom {f' : X ⟶ Y} (h : f = f') :
+    NatTrans.IsMonoidal (pushforwardCongr h).hom := by
+  subst h
+  have : pushforwardCongr (rfl : f = f) = Iso.refl _ := by
+    ext M U : 4
+    simp
+  rw [this]
+  exact inferInstanceAs (NatTrans.IsMonoidal (𝟙 _))
+
 /-- The tensor map `(f ≫ g)^* (M ⊗ N) ⟶ (f ≫ g)^* M ⊗ (f ≫ g)^* N` of the pullback along a
 composite is, through the composition isomorphism `pullbackComp f g`, the composite
 `f^* g^* (M ⊗ N) ⟶ f^* (g^* M ⊗ g^* N) ⟶ f^* g^* M ⊗ f^* g^* N` of the tensor maps of the two
