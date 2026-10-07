@@ -63,11 +63,12 @@ private theorem exists_linearMap_forall_abs_apply_le [Fintype ι] (a : ι → Mo
   -- it is a linear combination of the coordinates of `A`.
   set A : V →ₗ[K] ι → K := LinearMap.pi fun j ↦ x j • a j
   obtain ⟨g, hg⟩ := A.exists_comp_comp_eq_self
-  set P := g ∘ₗ A
+  set P := g ∘ₗ A with hP
   have hAP (w : V) : A (P w) = A w := LinearMap.congr_fun hg w
   have hfac (φ : Module.Dual K V) : ∃ L : ι → K, ∀ w, φ (P w) = ∑ j, L j * (x j * a j w) := by
     refine ⟨fun j ↦ φ (g fun i ↦ if j = i then 1 else 0), fun w ↦ ?_⟩
-    rw [show φ (P w) = (φ ∘ₗ g) (A w) from rfl, LinearMap.pi_apply_eq_sum_univ (φ ∘ₗ g) (A w)]
+    rw [hP, LinearMap.comp_apply, ← LinearMap.comp_apply φ g,
+      LinearMap.pi_apply_eq_sum_univ (φ ∘ₗ g) (A w)]
     simp [A, mul_comm]
   refine ⟨P, fun w j hj ↦ mul_left_cancel₀ hj.ne' (by simpa [A] using congrFun (hAP w) j),
     fun φ ↦ ?_⟩
