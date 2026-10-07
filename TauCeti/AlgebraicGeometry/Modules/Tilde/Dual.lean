@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Dualizable
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.Affine
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Monoidal
 public import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Basic
@@ -30,7 +30,7 @@ finite projective module is finite locally free
 dualizable
 (`TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasLeftDual_of_isFiniteLocallyFree`).
 An affine scheme `X` is identified with `Spec Γ(X, ⊤)` by `X.isoSpec`; pullback along this
-isomorphism preserves left and right dualizability, as does any pullback to an affine target
+isomorphism preserves left and right dualizability, as does any pullback
 (`TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasLeftDual_pullback` and
 `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasRightDual_pullback`), and finite local
 freeness can be checked after it
@@ -41,11 +41,8 @@ freeness can be checked after it
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasLeftDual_iff_finite_projective`:
   a quasicoherent sheaf on `Spec R` is dualizable if and only if its global sections form a
   finite projective `R`-module;
-* `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasLeftDual_iff_isFiniteLocallyFree`:
-  a quasicoherent sheaf on an affine scheme is dualizable if and only if it is finite locally
-  free;
-* `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasRightDual_iff_isFiniteLocallyFree`:
-  the corresponding characterization in terms of right duals.
+* `QuasicoherentSheaf.nonempty_hasLeftDual_iff_isFiniteLocallyFree_of_isAffine`:
+  the affine criterion used to descend dualizability to finite local freeness on arbitrary schemes.
 -/
 
 public section
@@ -110,7 +107,7 @@ theorem nonempty_hasLeftDual_iff_finite_projective (E : QuasicoherentSheaf (Spec
 
 /-- A quasicoherent sheaf on an affine scheme `X` is dualizable in `QuasicoherentSheaf X` if and
 only if it is finite locally free. -/
-theorem nonempty_hasLeftDual_iff_isFiniteLocallyFree {X : Scheme.{u}} [IsAffine X]
+theorem nonempty_hasLeftDual_iff_isFiniteLocallyFree_of_isAffine {X : Scheme.{u}} [IsAffine X]
     (E : QuasicoherentSheaf X) :
     Nonempty (HasLeftDual E) ↔ Scheme.Modules.isFiniteLocallyFree X E.obj := by
   refine ⟨fun h ↦ ?_, nonempty_hasLeftDual_of_isFiniteLocallyFree E⟩
@@ -133,20 +130,6 @@ theorem nonempty_hasLeftDual_iff_isFiniteLocallyFree {X : Scheme.{u}} [IsAffine 
   -- type-correct at reducible transparency.
   exact (Scheme.Modules.isFiniteLocallyFree _).prop_of_iso
     (eqToIso (C := (Spec Γ(X, ⊤)).Modules) (pullback_obj_obj X.isoSpec.inv E)) hF
-
-/-- A quasicoherent sheaf on an affine scheme `X` has a right dual in `QuasicoherentSheaf X` if
-and only if it is finite locally free. -/
-theorem nonempty_hasRightDual_iff_isFiniteLocallyFree {X : Scheme.{u}} [IsAffine X]
-    (E : QuasicoherentSheaf X) :
-    Nonempty (HasRightDual E) ↔ Scheme.Modules.isFiniteLocallyFree X E.obj := by
-  rw [← nonempty_hasLeftDual_iff_isFiniteLocallyFree]
-  constructor
-  · rintro ⟨hE⟩
-    let _ : HasRightDual E := hE
-    exact ⟨BraidedCategory.hasLeftDualOfHasRightDual⟩
-  · rintro ⟨hE⟩
-    let _ : HasLeftDual E := hE
-    exact ⟨BraidedCategory.hasRightDualOfHasLeftDual⟩
 
 end QuasicoherentSheaf
 
