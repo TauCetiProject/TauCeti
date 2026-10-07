@@ -400,6 +400,13 @@ theorem evalCoeffs_eq_eval₂ {R : Type*} [Semiring R] (f : ℤ →+* R) (r : R)
     evalCoeffs f r x = x.toPolynomial.eval₂ f r := by
   rw [evalCoeffs, toPolynomial, TauCeti.Polynomial.eval₂_ofCoeffList]
 
+/-- The bundled evaluation at a root of the cyclotomic polynomial is the Horner evaluation
+`TauCeti.Cyclotomic.evalCoeffs`. -/
+theorem evalRingHom_eq_evalCoeffs {R : Type*} [CommRing R] (f : ℤ →+* R) (r : R)
+    (hr : (cyclotomic e ℤ).eval₂ f r = 0) (x : Cyclotomic e) :
+    evalRingHom f r hr x = evalCoeffs f r x := by
+  rw [evalRingHom_apply, evalCoeffs_eq_eval₂]
+
 /-- Horner's rule in closed form: coefficient-list evaluation is the sum of the evaluated
 coordinates against the powers of `r`, one term for each element of the power basis. -/
 theorem evalCoeffs_eq_sum {R : Type*} [Semiring R] (f : ℤ →+* R) (r : R) (x : Cyclotomic e) :
@@ -437,8 +444,7 @@ noncomputable def reduceRingHom (p : ℕ) [Fact p.Prime] [NeZero e]
 theorem reduceRingHom_apply (p : ℕ) [Fact p.Prime] [NeZero e]
     (r : ZMod p) (hr : IsPrimitiveRoot r e) (x : Cyclotomic e) :
     reduceRingHom p r hr x = reduce p r x := by
-  rw [reduceRingHom, reduce, evalRingHom, RingHom.comp_apply, toAdjoinRootRingHom_apply,
-    toAdjoinRoot, AdjoinRoot.lift_mk, evalCoeffs_eq_eval₂]
+  rw [reduceRingHom, evalRingHom_eq_evalCoeffs, reduce]
 
 /-- For a prime `p`, reduction at a primitive `e`-th root in `ZMod p` sends the distinguished
 generator `ζ` to that root. -/
