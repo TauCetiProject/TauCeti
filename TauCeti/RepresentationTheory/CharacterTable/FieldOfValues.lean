@@ -45,6 +45,11 @@ noncomputable def characterField (X : FDRep k G) (F : Type w) [Field F] [Algebra
     IntermediateField F k :=
   IntermediateField.adjoin F (Set.range X.character)
 
+/-- The character field is the intermediate field adjoined by the range of the character. -/
+theorem characterField_def (X : FDRep k G) (F : Type w) [Field F] [Algebra F k] :
+    X.characterField F = IntermediateField.adjoin F (Set.range X.character) :=
+  (rfl)
+
 /-- Every character value belongs to the character field. -/
 @[simp]
 theorem character_mem_characterField (X : FDRep k G) (F : Type w) [Field F] [Algebra F k]
