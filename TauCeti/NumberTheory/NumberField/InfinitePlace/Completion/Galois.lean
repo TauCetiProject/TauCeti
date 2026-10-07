@@ -17,10 +17,11 @@ When `L/K` is Galois, the stabilizer of `w` is thereby identified with `Aut(L_w/
 This is the archimedean decomposition-group comparison needed to compute the cohomology
 of the semi-local multiplicative groups by Shapiro's lemma.
 
-The transport uses Mathlib's `WithAbs.congr` and `UniformSpace.Completion.mapRingEquiv`.
-The order computation uses Mathlib's infinite-place ramification classification.
-
 ## References
+
+The completion transport and decomposition-group API adapt the formal pattern of
+`completionCongr`, `decompositionHom`, and `decompositionEquiv` in
+`TauCeti/NumberTheory/NumberField/LocalGlobal/DecompositionGroup.lean`.
 
 * J. S. Milne, *Class Field Theory*, Chapter VII, §2 and Proposition 2.7.
 * J. Neukirch, *Algebraic Number Theory*, Chapter II, §8.
@@ -206,7 +207,7 @@ theorem infiniteDecompositionHom_injective : Function.Injective (infiniteDecompo
 variable [IsGalois K L]
 
 /-- The order of an archimedean decomposition group is the completed extension degree. -/
-theorem card_infiniteStabilizer_eq_finrank :
+theorem card_stabilizer_eq_finrank_completion :
     Nat.card (MulAction.stabilizer (L ≃ₐ[K] L) w) =
       Module.finrank v.Completion w.Completion := by
   classical
@@ -221,7 +222,7 @@ theorem infiniteDecompositionHom_surjective :
   refine ((Nat.bijective_iff_injective_and_card (infiniteDecompositionHom v w)).mpr
     ⟨infiniteDecompositionHom_injective v w, le_antisymm ?_ ?_⟩).surjective
   · exact Nat.card_le_card_of_injective _ (infiniteDecompositionHom_injective v w)
-  · rw [card_infiniteStabilizer_eq_finrank v w]
+  · rw [card_stabilizer_eq_finrank_completion v w]
     exact Nat.card_eq_fintype_card.trans_le AlgEquiv.card_le
 
 /-- The decomposition group at an infinite place of a Galois extension is the Galois group
