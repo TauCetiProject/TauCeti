@@ -50,15 +50,15 @@ integral with Mathlib's sesquilinear `L²` inner product of the two characters.
 
 ## References
 
-This is the block-projection item of Layer 5 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-"averaging against `dim V_π · conj χ_π`", and the operator half of its Layer 6 item "characters span
-the class functions". The mathematical development follows Daniel Bump, *Lie Groups*, second
+These character-weighted averages give the operators used for isotypic projection and
+class-function completeness. The mathematical development follows Daniel Bump, *Lie Groups*, second
 edition, Chapter 2, and T. Bröcker and T. tom Dieck, *Representations of Compact Lie Groups*,
 Springer GTM 98 (1985), Chapter II.
 -/
 
 public section
+
+open _root_.ContRepresentation
 
 open MeasureTheory
 open scoped InnerProductSpace
@@ -124,7 +124,7 @@ theorem integratedOperator_star_character_eq_zero (hunitary : IsUnitary π)
     integratedOperator ρ hρ (star (character π hπ)) = 0 := by
   -- The operator is not evaluated as a scalar -- which would need Schur's scalar lemma, hence an
   -- algebraically closed `𝕜` -- but paired against a vector, which turns it into the second Schur
-  -- orthogonality relation (`TauCeti.ContRepresentation.schur_orthogonality_distinct`) summed over
+  -- orthogonality relation (`ContRepresentation.schur_orthogonality_distinct`) summed over
   -- the diagonal matrix coefficients that make up `conj χ_π`
   -- (`TauCeti.ContRepresentation.star_character`).
   refine ContinuousLinearMap.ext fun v ↦ ?_

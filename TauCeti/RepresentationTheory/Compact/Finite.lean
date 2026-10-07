@@ -121,7 +121,7 @@ not even `[Fact (1 ≤ p)]`, since `MeasureTheory.MemLp.of_discrete` produces th
 at every exponent, whereas `ContinuousMap.toLp`, being a continuous linear map, needs a norm on
 `Lp` and hence that hypothesis — and `[RCLike 𝕜]` and `p = 2` appear from the inner-product
 statements on.
-Cardinalities are written `Nat.card G` throughout, matching the rest of the roadmap;
+Cardinalities are written `Nat.card G` throughout;
 `Nat.card_eq_fintype_card` converts.
 
 `IsTopologicalGroup G`, `CompactSpace G`, `T2Space G` and `MeasurableSingletonClass G` are all
@@ -145,10 +145,8 @@ The scalar in the averaged sums is real, not `𝕜`: the Bochner integral being 
 
 ## References
 
-The compact-group theory specialized here is the one developed in the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-and each statement below is the finite case of the compact one named beside it. `haarProb G` is the
-normalized counting measure `|G|⁻¹ • count`, and the counting identity
+Each statement below is the finite case of the compact-group theorem named beside it.
+`haarProb G` is the normalized counting measure `|G|⁻¹ • count`, and the counting identity
 `dim V^G = |G|⁻¹ ∑ g, χ_π g` is the finite shadow of
 `ContRepresentation.integral_character_eq_finrank_invariants`, matching Mathlib's
 `FDRep.average_char_eq_finrank_invariants` for the purely algebraic theory. `L²(G)` is `G → 𝕜` by
@@ -171,6 +169,8 @@ matrix-coefficient basis of the functions on `G`, is proved in
 -/
 
 public section
+
+open _root_.ContRepresentation
 
 open MeasureTheory Set
 open scoped ENNReal InnerProductSpace
@@ -547,7 +547,7 @@ omit [FiniteDimensional 𝕜 V] in
 /-- **Schur orthogonality for a finite group and a vanishing intertwiner space.** If the only
 continuous intertwiner `π → ρ` is zero and `ρ` is unitary, then every matrix coefficient of `π` has
 vanishing group average against every matrix coefficient of `ρ`. This is
-`TauCeti.ContRepresentation.schur_orthogonality_distinct` read through the finite Hermitian
+`ContRepresentation.schur_orthogonality_distinct` read through the finite Hermitian
 pairing; Schur's lemma is what supplies the hypothesis for a pair of inequivalent irreducibles, as
 in `ContRepresentation.schur_orthogonality_sum` below. No continuity is asked of either
 representation, for the reason given at `ContRepresentation.schur_orthogonality_self_sum`. -/

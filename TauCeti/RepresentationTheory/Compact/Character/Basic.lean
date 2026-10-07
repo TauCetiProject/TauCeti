@@ -53,7 +53,7 @@ So a character is the conjugate, not the sum, of its diagonal matrix coefficient
 conjugation as a transposition of the two arguments of the inner product. That transposition is
 also why `character_orthonormal_distinct` asks for the vanishing of the intertwiners `ρ → π` rather
 than `π → ρ`, and asks unitarity of `π` rather than of `ρ`: those are exactly the hypotheses of
-`TauCeti.ContRepresentation.schur_orthogonality_distinct` at the transposed pair. The reverse
+`ContRepresentation.schur_orthogonality_distinct` at the transposed pair. The reverse
 orientation is the conjugate statement, since `⟪χ_π, χ_ρ⟫ = conj ⟪χ_ρ, χ_π⟫`.
 
 Packaging the character in `L²` asks nothing of `V` beyond the finite-dimensional normed structure
@@ -62,14 +62,14 @@ from `inner_characterLp_eq_sum` on, where an orthonormal basis enters. The scala
 even for that packaging: `ContinuousMap.toLp` needs `SecondCountableTopologyEither G 𝕜`, which a
 general complete nontrivially normed field does not supply.
 
-This is the first half of Layer 6 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md);
-its remaining item, that the characters span the central subspace of `L²(G)`, needs the Peter-Weyl
-theorem of Layer 5 and is proved in `TauCeti/RepresentationTheory/Compact/Character/Basis.lean`.
-The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
+Class-function completeness is proved using Peter-Weyl in
+`TauCeti/RepresentationTheory/Compact/Character/Basis.lean`. The mathematical development follows
+Daniel Bump, *Lie Groups*, second edition, Chapter 2.
 -/
 
 public section
+
+open _root_.ContRepresentation
 
 open MeasureTheory
 open scoped InnerProductSpace
