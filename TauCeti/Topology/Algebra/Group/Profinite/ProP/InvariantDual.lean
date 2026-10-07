@@ -101,7 +101,8 @@ theorem pLowerCentralStep_proPKernel :
     exact pow_mem_pLowerCentralStep hgR
   have hGS : IsProP p (G ⧸ S) :=
     (isProP_maximalProPQuotient (p := p) (G := G)).of_ker_isProP
-      (Topology.IsQuotientMap.of_surjective_continuous hsurj hf) hker.isProP
+      (MonoidHom.isOpenQuotientMap_of_isQuotientMap
+        (Topology.IsQuotientMap.of_surjective_continuous hsurj hf)).isOpenMap hsurj hker.isProP
   apply le_antisymm
     (pLowerCentralStep_le (p := p) (H := proPKernel p G)
       (isClosed_proPKernel (p := p) (G := G)))
