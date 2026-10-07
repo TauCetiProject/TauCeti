@@ -23,9 +23,9 @@ restricted products of the local orthogonal, special orthogonal and Spin groups.
 
 For this family the reference subgroups of the local square-class groups are computed at almost
 every prime: in dimension at least two, the image of the integral special orthogonal group under
-the local spinor norm is the group of unit square classes. The proof chooses a rational orthogonal
-basis. At all but finitely many primes `p` it spans the same `ℤ_[p]`-lattice as `b`, its vectors
-have `p`-adic unit norms, and `p` is odd; there the spinor norms of integral isometries are known.
+the local spinor norm is the group of unit square classes. More generally, the same holds for any
+compatible family whose orthogonal reference subgroups are integral in some rational basis at
+almost every prime.
 
 In dimension one the special orthogonal group is trivial, so the reference images are trivial and
 the dimension hypothesis cannot be dropped
@@ -96,13 +96,25 @@ theorem integral_orthogonal (Q : QuadraticForm ℚ V) (hQ : Q.Nondegenerate) (b 
     (integral Q hQ b).orthogonal p =
       integralOrthogonalSubgroup (Q.baseChange ℚ_[p]) (b.baseChange ℚ_[p]) := (rfl)
 
--- Not `@[simp]`: the `simpNF` check of this left-hand side runs into an instance-search timeout
--- for `Module.FaithfullyFlat ℚ ℚ_[p]` in the full library environment.
+-- Not `@[simp]`: simp would go on to try the `@[simp]` lemma
+-- `CliffordAlgebra.integralSpinSubgroup_eq_top` on the right-hand side, whose
+-- `Subsingleton (ℚ_[p] ⊗[ℚ] V)` side goal times out in instance search in the full library
+-- environment. `mem_integral_spin` is the simp-normalizing lemma instead.
 /-- The Spin reference subgroups of the integral family are the integral Spin subgroups. -/
 theorem integral_spin (Q : QuadraticForm ℚ V) (hQ : Q.Nondegenerate) (b : Basis ι ℚ V)
     (p : Nat.Primes) :
     (integral Q hQ b).spin p =
       CliffordAlgebra.integralSpinSubgroup (Q.baseChange ℚ_[p]) (b.baseChange ℚ_[p]) := (rfl)
+
+/-- A Spin point lies in the Spin reference subgroup of the integral family exactly when its
+action is an integral isometry. -/
+@[simp]
+theorem mem_integral_spin (Q : QuadraticForm ℚ V) (hQ : Q.Nondegenerate) (b : Basis ι ℚ V)
+    (p : Nat.Primes) (s : spinGroup (Q.baseChange ℚ_[p])) :
+    s ∈ (integral Q hQ b).spin p ↔
+      CliffordAlgebra.spinToOrthogonal (Q.baseChange ℚ_[p]) s ∈
+        integralOrthogonalSubgroup (Q.baseChange ℚ_[p]) (b.baseChange ℚ_[p]) := by
+  rw [integral_spin, CliffordAlgebra.mem_integralSpinSubgroup_iff]
 
 /-- **The local spinor-norm images are eventually the unit square classes.** Let `U` be
 compatible compact-open reference data for a nondegenerate rational quadratic space of dimension
@@ -122,8 +134,8 @@ theorem eventually_localSpinorNormImage_eq_unitSquareClasses {Q : QuadraticForm 
   obtain ⟨c, hc, hc0⟩ := hQ.exists_orthogonal_basis
   have : Nontrivial (Fin (finrank ℚ V)) := Fin.nontrivial_iff_two_le.mpr hV
   have hodd : ∀ᶠ p : Nat.Primes in cofinite, (p : ℕ) ≠ 2 :=
-    (Set.finite_singleton (⟨2, Nat.prime_two⟩ : Nat.Primes)).eventually_cofinite_notMem.mono
-      fun p hp h ↦ hp (Subtype.ext h)
+    (eventually_cofinite_ne (⟨2, Nat.prime_two⟩ : Nat.Primes)).mono
+      fun _ hp h ↦ hp (Subtype.ext h)
   filter_upwards [hU, eventually_integralOrthogonalSubgroup_baseChange_eq Q b c, hodd,
     eventually_all.mpr fun i ↦ Padic.eventually_norm_rat_eq_one (hc0 i)] with p hUp hbc hp hnorm
   -- At such a prime, `c` is an orthogonal basis of `p`-adic unit norms spanning the same lattice.

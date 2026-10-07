@@ -11,6 +11,7 @@ public import Mathlib.NumberTheory.Padics.PadicIntegers
 import Mathlib.NumberTheory.Padics.ProperSpace
 import Mathlib.Topology.Instances.Matrix
 import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.Hyperbolic
+import TauCeti.LinearAlgebra.Basis.RangeSpan
 import TauCeti.LinearAlgebra.TensorProduct.Basis
 import TauCeti.NumberTheory.Padics.RatCast
 
@@ -243,24 +244,6 @@ theorem eventually_mem_integralOrthogonalSubgroup (g : orthogonalGroup Q₀) :
   let : Fact (p : ℕ).Prime := ⟨p.property⟩
   exact mem_integralOrthogonalSubgroup_baseChange_of_not_dvd_den Q₀ b₀ g hp hpinv
 
-omit [Fintype ι] [DecidableEq ι] in
-/-- If `p` divides no denominator of the change-of-basis matrix from `b₀` to `b₀'`, then the
-`ℤ_[p]`-span of the scalar extension of `b₀'` lies in that of `b₀`. -/
-private theorem span_range_baseChange_le_of_not_dvd_den {ι' : Type*} (b₀' : Basis ι' ℚ W)
-    (h : ∀ i j, ¬ p ∣ (b₀.toMatrix b₀' i j).den) :
-    Submodule.span (PadicInt.subring p) (Set.range (b₀'.baseChange ℚ_[p])) ≤
-      Submodule.span (PadicInt.subring p) (Set.range (b₀.baseChange ℚ_[p])) := by
-  rw [Submodule.span_le]
-  rintro _ ⟨j, rfl⟩
-  rw [SetLike.mem_coe, Basis.mem_span_iff_repr_mem]
-  intro i
-  have hij : (b₀.baseChange ℚ_[p]).repr (b₀'.baseChange ℚ_[p] j) i =
-      ((b₀.toMatrix b₀' i j : ℚ) : ℚ_[p]) := by
-    rw [← Basis.toMatrix_apply, Basis.baseChange_toMatrix_baseChange, Matrix.map_apply,
-      eq_ratCast]
-  rw [hij]
-  exact ⟨⟨_, (PadicInt.mem_subring_iff (p := p)).mpr (Padic.norm_rat_le_one (h i j))⟩, rfl⟩
-
 /-- For two rational bases, the integral orthogonal subgroups of their scalar extensions agree
 at almost every prime: away from finitely many primes the two bases span the same `ℤ_[p]`-lattice,
 since the entries of both change-of-basis matrices are `p`-adic integers. -/
@@ -276,9 +259,19 @@ theorem eventually_integralOrthogonalSubgroup_baseChange_eq {ι' : Type*} [Finty
     (b₀'.toMatrix b₀ i j).eventually_not_dvd_den
   filter_upwards [h, h'] with p hp hp'
   let : Fact (p : ℕ).Prime := ⟨p.property⟩
-  exact integralOrthogonalSubgroup_eq_of_span_eq _ _ (le_antisymm
-    (span_range_baseChange_le_of_not_dvd_den b₀' b₀ hp')
-    (span_range_baseChange_le_of_not_dvd_den b₀ b₀' hp))
+  have hmem (q : ℚ) (hq : ¬ (p : ℕ) ∣ q.den) :
+      algebraMap ℚ ℚ_[p] q ∈ Set.range (algebraMap (PadicInt.subring p) ℚ_[p]) := by
+    rw [eq_ratCast]
+    exact ⟨⟨_, (PadicInt.mem_subring_iff (p := p)).mpr (Padic.norm_rat_le_one hq)⟩, rfl⟩
+  refine integralOrthogonalSubgroup_eq_of_span_eq _ _ (le_antisymm ?_ ?_)
+  · refine (b₀'.baseChange ℚ_[p]).span_range_le_span_range_of_forall_toMatrix_mem
+      (A := PadicInt.subring p) (b₀.baseChange ℚ_[p]) fun i j ↦ ?_
+    rw [Basis.baseChange_toMatrix_baseChange, Matrix.map_apply]
+    exact hmem _ (hp' i j)
+  · refine (b₀.baseChange ℚ_[p]).span_range_le_span_range_of_forall_toMatrix_mem
+      (A := PadicInt.subring p) (b₀'.baseChange ℚ_[p]) fun i j ↦ ?_
+    rw [Basis.baseChange_toMatrix_baseChange, Matrix.map_apply]
+    exact hmem _ (hp i j)
 
 -- A non-integral rational isometry of `x₀² - x₁²`: the torus parameter `2` has entry `5/4`.
 -- It is nevertheless integral in the base-changed standard basis at almost every prime.
