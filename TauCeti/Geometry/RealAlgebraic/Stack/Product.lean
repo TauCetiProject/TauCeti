@@ -25,6 +25,12 @@ of each factor in each section gives sign-invariance on sections and sectors.
 This allows analytic delineability of an active basis product to supply the common stack
 for all its members. Nullified members must be removed before forming that product.
 
+The transfer also applies to a product delineation constructed by `TauCeti.nonempty_delineation`
+from continuous coefficients, constant degree and a constant number of distinct complex roots
+of the product. For this singleton family the pairwise gcd condition is vacuous. Together with
+constant factor degrees, nonzero factors and continuous factor coefficients, these data give
+a common factor stack without separate pairwise gcd hypotheses on the factors.
+
 ## References
 
 S. McCallum, *An improved projection operation for cylindrical algebraic decomposition*,
