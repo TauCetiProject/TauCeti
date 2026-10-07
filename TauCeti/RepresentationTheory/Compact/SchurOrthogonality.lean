@@ -29,7 +29,7 @@ discharges, namely that the two irreducibles are inequivalent.
 
 ## Main statements
 
-* `TauCeti.ContRepresentation.averageOperator_eq_finrank_inv_mul_trace_smul_id`: the average of a
+* `ContRepresentation.averageOperator_eq_finrank_inv_mul_trace_smul_id`: the average of a
   self-map is its normalized trace times the identity.
 * `TauCeti.ContRepresentation.schur_orthogonality_self`: the coordinate-free first Schur
   orthogonality relation.
@@ -38,22 +38,19 @@ discharges, namely that the two irreducibles are inequivalent.
 * `TauCeti.ContRepresentation.schur_orthogonality`: the second Schur orthogonality relation, for
   a pair of inequivalent irreducible unitary representations.
 
-This supplies the three formulas pinned by the orthogonality items of Layer 4 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md);
-that item's remaining request, checking the convention against `fourierBasis` on `AddCircle`, waits
-on the `AddCircle` material and is not done here. The roadmap sketches the basis identity as the
-primitive one; here the coordinate-free statement is the primitive and the basis identity is read
-off from it, which is the shorter route and fixes the same convention.
-The mathematical argument follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
+The basis identity follows from the coordinate-free statement, in the same inner-product
+convention. The mathematical argument follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
 -/
 
 public section
+
+open _root_.ContRepresentation
 
 open MeasureTheory
 open scoped InnerProductSpace
 open scoped MonoidAlgebra
 
-namespace TauCeti
+open TauCeti TauCeti.ContRepresentation
 
 namespace ContRepresentation
 
@@ -85,6 +82,12 @@ theorem averageOperator_eq_finrank_inv_mul_trace_smul_id
   rwa [toContinuousLinearMap_averageIntertwiner, trace_averageOperator] at h
 
 end Average
+
+end ContRepresentation
+
+namespace TauCeti
+
+namespace ContRepresentation
 
 section Orthogonality
 
@@ -149,7 +152,7 @@ variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G]
 finite-dimensional irreducible representations of a compact group are `L²`-orthogonal, provided the
 second one is unitary.
 
-This is `TauCeti.ContRepresentation.schur_orthogonality_distinct` with its hypothesis discharged:
+This is `ContRepresentation.schur_orthogonality_distinct` with its hypothesis discharged:
 the vanishing half of Schur's lemma turns inequivalence into the vanishing of every continuous
 intertwiner `π → ρ`. Algebraic closedness is not needed, since only the vanishing half of Schur's
 lemma is used. -/

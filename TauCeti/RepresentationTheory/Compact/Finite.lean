@@ -146,8 +146,7 @@ The scalar in the averaged sums is real, not `𝕜`: the Bochner integral being 
 ## References
 
 Each statement below is the finite case of the compact-group theorem named beside it.
-`haarProb G` is the
-normalized counting measure `|G|⁻¹ • count`, and the counting identity
+`haarProb G` is the normalized counting measure `|G|⁻¹ • count`, and the counting identity
 `dim V^G = |G|⁻¹ ∑ g, χ_π g` is the finite shadow of
 `ContRepresentation.integral_character_eq_finrank_invariants`, matching Mathlib's
 `FDRep.average_char_eq_finrank_invariants` for the purely algebraic theory. `L²(G)` is `G → 𝕜` by
@@ -170,6 +169,8 @@ matrix-coefficient basis of the functions on `G`, is proved in
 -/
 
 public section
+
+open _root_.ContRepresentation
 
 open MeasureTheory Set
 open scoped ENNReal InnerProductSpace
@@ -546,7 +547,7 @@ omit [FiniteDimensional 𝕜 V] in
 /-- **Schur orthogonality for a finite group and a vanishing intertwiner space.** If the only
 continuous intertwiner `π → ρ` is zero and `ρ` is unitary, then every matrix coefficient of `π` has
 vanishing group average against every matrix coefficient of `ρ`. This is
-`TauCeti.ContRepresentation.schur_orthogonality_distinct` read through the finite Hermitian
+`ContRepresentation.schur_orthogonality_distinct` read through the finite Hermitian
 pairing; Schur's lemma is what supplies the hypothesis for a pair of inequivalent irreducibles, as
 in `ContRepresentation.schur_orthogonality_sum` below. No continuity is asked of either
 representation, for the reason given at `ContRepresentation.schur_orthogonality_self_sum`. -/

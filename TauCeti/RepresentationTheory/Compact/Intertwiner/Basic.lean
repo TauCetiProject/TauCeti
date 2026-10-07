@@ -29,7 +29,7 @@ The target `W` is not assumed complete. `averageOperator` is `TauCeti.haarAverag
 family valued in the operator space `V →L[𝕜] W`, so it inherits that average's convention: it is the
 displayed Haar integral when that space is complete, and the Bochner integral's junk value `0`
 otherwise. `[CompleteSpace W]` is what supplies completeness of `V →L[𝕜] W`, so the statements that
-read the average's actual value, from `TauCeti.ContRepresentation.averageOperator_apply` onwards,
+read the average's actual value, from `ContRepresentation.averageOperator_apply` onwards,
 carry it.
 
 The construction is a projection onto the intertwiners: it is linear in `T`, it fixes every
@@ -38,30 +38,29 @@ That last fact is what pins the constant `d⁻¹` in the first Schur orthogonali
 
 ## Main definitions
 
-* `TauCeti.ContRepresentation.averageOperator`: the Haar average `∫ g, ρ g⁻¹ ∘ T ∘ π g`.
-* `TauCeti.ContRepresentation.averageOperatorₗ`: the same, bundled as a linear map in `T`.
-* `TauCeti.ContRepresentation.averageIntertwiner`: the average packaged as a term of Mathlib's
+* `ContRepresentation.averageOperator`: the Haar average `∫ g, ρ g⁻¹ ∘ T ∘ π g`.
+* `ContRepresentation.averageOperatorₗ`: the same, bundled as a linear map in `T`.
+* `ContRepresentation.averageIntertwiner`: the average packaged as a term of Mathlib's
   `ContIntertwiningMap π ρ`.
 
 ## Main statements
 
-* `TauCeti.ContRepresentation.averageOperator_comp`: the average intertwines `π` with `ρ`.
-* `TauCeti.ContRepresentation.averageOperator_eq_self`: the average fixes an operator that already
+* `ContRepresentation.averageOperator_comp`: the average intertwines `π` with `ρ`.
+* `ContRepresentation.averageOperator_eq_self`: the average fixes an operator that already
   intertwines, so `averageOperator` is idempotent
-  (`TauCeti.ContRepresentation.averageOperator_averageOperator`).
-* `TauCeti.ContRepresentation.trace_averageOperator`: averaging a self-map of a finite-dimensional
+  (`ContRepresentation.averageOperator_averageOperator`).
+* `ContRepresentation.trace_averageOperator`: averaging a self-map of a finite-dimensional
   representation preserves the trace.
-* `TauCeti.ContRepresentation.inner_matrixCoeffLp_eq_inner_averageOperator`: the `L²` inner product
+* `ContRepresentation.inner_matrixCoeffLp_eq_inner_averageOperator`: the `L²` inner product
   of two matrix coefficients is a matrix entry of the average of a **rank-one** operator. This is
   the identity that turns Schur orthogonality into a statement about intertwiners.
-* `TauCeti.ContRepresentation.schur_orthogonality_distinct`: **the second Schur orthogonality
+* `ContRepresentation.schur_orthogonality_distinct`: **the second Schur orthogonality
   relation.** If there is no nonzero continuous intertwiner `π → ρ`, every matrix coefficient of `π`
   is `L²`-orthogonal to every matrix coefficient of `ρ`.
 
-This is the intertwiner half of Layer 4 of the [compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/roadmap/representation-theory/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-whose orthogonality statements are pinned in its `Suggested.lean`. Schur's lemma itself is not used
-here: `schur_orthogonality_distinct` takes the vanishing of the intertwiner space as a hypothesis,
-which is precisely what Schur's lemma supplies for inequivalent irreducibles.
+Schur's lemma itself is not used here: `schur_orthogonality_distinct` takes the vanishing of the
+intertwiner space as a hypothesis, which is precisely what Schur's lemma supplies for inequivalent
+irreducibles.
 
 The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
 -/
@@ -95,6 +94,10 @@ private theorem conjAction_apply {𝕜 G V W : Type*} [RCLike 𝕜] [Group G]
     (π : ContRepresentation 𝕜 G V) (ρ : ContRepresentation 𝕜 G W) (g : G) (S : V →L[𝕜] W) :
     conjAction π ρ g S = (ρ g⁻¹).comp (S.comp (π g)) := by
   rw [conjAction, ContRepresentation.linHom_apply, inv_inv]
+
+end TauCeti
+
+open TauCeti TauCeti.ContRepresentation
 
 namespace ContRepresentation
 
@@ -142,7 +145,7 @@ variable [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
 
 On a complete `W` this is always defined — the integrand is continuous and Haar measure is
 finite — and it always intertwines `π` with `ρ`
-(`TauCeti.ContRepresentation.averageOperator_comp`). `W` is not assumed complete. The average is
+(`ContRepresentation.averageOperator_comp`). `W` is not assumed complete. The average is
 taken in the operator space `V →L[𝕜] W`, so it is `TauCeti.haarAverage`'s junk value `0` unless that
 space is complete, which `[CompleteSpace W]` supplies; that is why the results below that read the
 average's actual value carry it. -/
@@ -388,7 +391,7 @@ integrand `⟪ρ g v', T (π g v)⟫` is exactly the pointwise product
 
 This is the identity that reduces Schur orthogonality to a statement about the intertwiner space:
 the operator on the right is an intertwiner `π → ρ` by
-`TauCeti.ContRepresentation.averageOperator_comp`. -/
+`ContRepresentation.averageOperator_comp`. -/
 theorem inner_matrixCoeffLp_eq_inner_averageOperator (hunitary : IsUnitary ρ)
     (v w : V) (v' w' : W) :
     ⟪matrixCoeffLp π hπ v w, matrixCoeffLp ρ hρ v' w'⟫_𝕜
@@ -418,5 +421,3 @@ theorem schur_orthogonality_distinct (hunitary : IsUnitary ρ)
 end Orthogonality
 
 end ContRepresentation
-
-end TauCeti
