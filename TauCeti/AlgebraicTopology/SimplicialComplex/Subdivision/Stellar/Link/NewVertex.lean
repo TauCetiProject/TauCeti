@@ -54,10 +54,21 @@ theorem mem_link_stellarSubdivision_insert_iff (hvρ : v ∉ ρ) :
 
 /-- Every face in the link of a stellar face containing the new vertex belongs to the deletion of
 the original starred face `σ` in the source complex. -/
-theorem link_stellarSubdivision_insert_le_deletion (hvρ : v ∉ ρ) :
+theorem link_stellarSubdivision_insert_le_deletion :
     link (stellarSubdivision K σ v) (insert v ρ) ≤ deletion K σ := by
   intro τ hτ
-  obtain ⟨hτ, -, -, hσ, hK⟩ := mem_link_stellarSubdivision_insert_iff hvρ |>.mp hτ
+  have hρ : insert v (ρ.erase v) = insert v ρ := by
+    ext x
+    by_cases hx : x = v
+    · subst x
+      simp
+    · simp [hx]
+  have hτ' : τ ∈ link (stellarSubdivision K σ v) (insert v (ρ.erase v)) := by
+    rw [hρ]
+    exact hτ
+  obtain ⟨hτ, -, -, hσ, hK⟩ :=
+    mem_link_stellarSubdivision_insert_iff (ρ := ρ.erase v)
+      (Finset.notMem_erase v ρ) |>.mp hτ'
   apply mem_deletion.mpr
   refine ⟨(K.isRelLowerSet_faces hK).2
       (Finset.subset_union_left.trans Finset.subset_union_left) hτ, ?_⟩
