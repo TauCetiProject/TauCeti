@@ -59,7 +59,8 @@ private theorem typeASimpleIndex_two_ne : typeASimpleIndex 2 0 ≠ typeASimpleIn
   have h' := congrArg Fin.val h
   norm_num [typeASimpleIndex_val] at h'
 
-private theorem root_typeA2HighestRootIndex :
+/-- The root indexed by `typeA2HighestRootIndex` is the sum of the two simple roots. -/
+theorem root_typeA2HighestRootIndex :
     (typeASimplyConnectedRootDatum 2).root typeA2HighestRootIndex =
       (typeASimplyConnectedRootDatum 2).root (typeASimpleIndex 2 0) +
         (typeASimplyConnectedRootDatum 2).root (typeASimpleIndex 2 1) := by
@@ -112,7 +113,9 @@ theorem posRootsFinset_typeA_two :
     · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
       exact ⟨typeASimpleIndex_two_ne, (typeA2HighestRootIndex_ne_simple 0).symm⟩
 
-private theorem pairing_typeA2HighestRootIndex (x : Fin 2 → ℤ) :
+/-- Pairing a weight with the highest coroot of type `A₂` sums its two
+fundamental-weight coordinates. -/
+theorem pairing_typeA2HighestRootIndex (x : Fin 2 → ℤ) :
     (typeASimplyConnectedRootDatum 2).toLinearMap x
         ((typeASimplyConnectedRootDatum 2).coroot typeA2HighestRootIndex) = x 0 + x 1 := by
   have hc : (typeASimplyConnectedRootDatum 2).coroot typeA2HighestRootIndex = ![1, 1] := by
@@ -129,7 +132,8 @@ private theorem pairing_typeASimpleIndex_two (x : Fin 2 → ℤ) (i : Fin 2) :
   rw [coroot_typeASimpleIndex, toLinearMap_typeASimplyConnectedRootDatum]
   fin_cases i <;> simp [dotProduct, Pi.single_apply]
 
-private theorem coroot_typeA2HighestRootIndex :
+/-- The coroot indexed by `typeA2HighestRootIndex` is the sum of the two simple coroots. -/
+theorem coroot_typeA2HighestRootIndex :
     (typeASimplyConnectedRootDatum 2).coroot typeA2HighestRootIndex =
       (typeASimplyConnectedRootDatum 2).coroot (typeASimpleIndex 2 0) +
         (typeASimplyConnectedRootDatum 2).coroot (typeASimpleIndex 2 1) := by
@@ -138,18 +142,34 @@ private theorem coroot_typeA2HighestRootIndex :
   rw [coroot_typeAIndexEquiv, coroot_typeASimpleIndex, coroot_typeASimpleIndex]
   fin_cases i <;> simp
 
-private theorem height_flip_typeA2HighestRootIndex :
+private theorem height_flip_typeASimpleIndex_two (i : Fin 2) :
+    (typeASimplyConnectedBase 2).flip.height (typeASimpleIndex 2 i) = 1 := by
+  apply (typeASimplyConnectedBase 2).flip.height_one_of_mem_support
+  rw [RootPairing.Base.flip_support]
+  exact Finset.mem_coe.mpr (by
+    rw [mem_typeASimplyConnectedBase_support, typeASimpleIndex_val]
+    exact i.isLt)
+
+/-- The highest coroot of type `A₂` has height two. -/
+theorem height_flip_typeA2HighestRootIndex :
     (typeASimplyConnectedBase 2).flip.height typeA2HighestRootIndex = 2 := by
   rw [(typeASimplyConnectedBase 2).flip.height_add coroot_typeA2HighestRootIndex]
-  have h₀ : typeASimpleIndex 2 0 ∈ (typeASimplyConnectedBase 2).flip.support := by
-    rw [RootPairing.Base.flip_support]
-    exact Finset.mem_coe.mpr (by rw [mem_typeASimplyConnectedBase_support]; simp)
-  have h₁ : typeASimpleIndex 2 1 ∈ (typeASimplyConnectedBase 2).flip.support := by
-    rw [RootPairing.Base.flip_support]
-    exact Finset.mem_coe.mpr (by rw [mem_typeASimplyConnectedBase_support]; simp)
-  rw [(typeASimplyConnectedBase 2).flip.height_one_of_mem_support h₀,
-    (typeASimplyConnectedBase 2).flip.height_one_of_mem_support h₁]
+  rw [height_flip_typeASimpleIndex_two, height_flip_typeASimpleIndex_two]
   norm_num
+
+attribute [simp↓] pairing_typeA2HighestRootIndex height_flip_typeA2HighestRootIndex
+
+private theorem prod_posRootsFinset_typeA_two (f : Fin 6 → ℤ) :
+    ∏ i ∈ posRootsFinset (typeASimplyConnectedRootDatum 2) (typeASimplyConnectedBase 2),
+      f i =
+        f (typeASimpleIndex 2 0) * f (typeASimpleIndex 2 1) * f typeA2HighestRootIndex := by
+  rw [posRootsFinset_typeA_two]
+  rw [Finset.prod_insert (by
+      simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
+      exact ⟨typeASimpleIndex_two_ne, (typeA2HighestRootIndex_ne_simple 0).symm⟩),
+    Finset.prod_insert (by simpa using (typeA2HighestRootIndex_ne_simple 1).symm),
+    Finset.prod_singleton]
+  simp only [mul_assoc]
 
 /-- **The Weyl numerator product in type `A₂`.** At the fundamental-weight coordinates
 `(a, b)`, its three factors are `a + 1`, `b + 1`, and `a + b + 2`. -/
@@ -159,42 +179,19 @@ theorem prod_shiftedCorootPairing_typeA_two (a b : ℤ) :
           ((typeASimplyConnectedRootDatum 2).coroot i) +
             (typeASimplyConnectedBase 2).flip.height i) =
       (a + 1) * (b + 1) * (a + b + 2) := by
-  rw [posRootsFinset_typeA_two]
-  rw [Finset.prod_insert (by
-      simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
-      exact ⟨typeASimpleIndex_two_ne, (typeA2HighestRootIndex_ne_simple 0).symm⟩),
-    Finset.prod_insert (by simpa using (typeA2HighestRootIndex_ne_simple 1).symm),
-    Finset.prod_singleton]
+  rw [prod_posRootsFinset_typeA_two]
   rw [pairing_typeASimpleIndex_two, pairing_typeASimpleIndex_two,
-    pairing_typeA2HighestRootIndex,
-    (typeASimplyConnectedBase 2).flip.height_one_of_mem_support (by
-      rw [RootPairing.Base.flip_support]
-      exact Finset.mem_coe.mpr (by rw [mem_typeASimplyConnectedBase_support]; simp)),
-    (typeASimplyConnectedBase 2).flip.height_one_of_mem_support (by
-      rw [RootPairing.Base.flip_support]
-      exact Finset.mem_coe.mpr (by rw [mem_typeASimplyConnectedBase_support]; simp))]
-  rw [height_flip_typeA2HighestRootIndex]
+    pairing_typeA2HighestRootIndex, height_flip_typeASimpleIndex_two,
+    height_flip_typeASimpleIndex_two, height_flip_typeA2HighestRootIndex]
   simp
-  ring
 
 /-- The denominator in the `A₂` Weyl dimension formula is `2`: its factors are `1`, `1`, and
 `2`, the heights of the three positive coroots. -/
 theorem prod_positiveCorootHeight_typeA_two :
     ∏ i ∈ posRootsFinset (typeASimplyConnectedRootDatum 2) (typeASimplyConnectedBase 2),
       (typeASimplyConnectedBase 2).flip.height i = 2 := by
-  rw [posRootsFinset_typeA_two]
-  rw [Finset.prod_insert (by
-      simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
-      exact ⟨typeASimpleIndex_two_ne, (typeA2HighestRootIndex_ne_simple 0).symm⟩),
-    Finset.prod_insert (by simpa using (typeA2HighestRootIndex_ne_simple 1).symm),
-    Finset.prod_singleton]
-  rw [(typeASimplyConnectedBase 2).flip.height_one_of_mem_support (by
-      rw [RootPairing.Base.flip_support]
-      exact Finset.mem_coe.mpr (by rw [mem_typeASimplyConnectedBase_support]; simp)),
-    (typeASimplyConnectedBase 2).flip.height_one_of_mem_support (by
-      rw [RootPairing.Base.flip_support]
-      exact Finset.mem_coe.mpr (by rw [mem_typeASimplyConnectedBase_support]; simp)),
-    height_flip_typeA2HighestRootIndex]
+  rw [prod_posRootsFinset_typeA_two, height_flip_typeASimpleIndex_two,
+    height_flip_typeASimpleIndex_two, height_flip_typeA2HighestRootIndex]
   norm_num
 
 /-- **The Weyl dimension product for type `A₂`.** At the weight with fundamental-weight
