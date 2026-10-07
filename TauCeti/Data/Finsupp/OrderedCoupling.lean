@@ -17,7 +17,7 @@ public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 A nonnegative finitely supported function on a product of partial orders whose support is a
 chain is determined by its two marginals. Its mass on a rectangle of lower sets equals one
 marginal mass and is bounded by the other; when infima exist, it is their infimum.
-Taking differences of four such rectangles recovers each coefficient.
+An additive identity between four such rectangles recovers each coefficient by cancellation.
 This is the uniqueness property underlying the staircase triangulation of a product of simplices.
 No normalization of the total mass or finiteness of the ambient orders is required.
 The marginal sums use Mathlib's `Finsupp.sum_mapDomain_index`.
@@ -102,32 +102,33 @@ theorem sum_indicator_prod_eq_inf [Preorder α] [Preorder β] [AddCommMonoid G] 
   · rw [heq, inf_eq_left.mpr hle]
   · rw [heq, inf_eq_right.mpr hle]
 
-/-- A coefficient is the alternating sum of the masses of the four lower rectangles whose
-upper bounds use strict or non-strict comparison with that coefficient's coordinates. -/
-@[simp]
-theorem sum_indicator_Iic_prod_sub_sub_add [PartialOrder α] [PartialOrder β]
-    [AddCommGroup G] (u : (α × β) →₀ G) (a : α) (b : β) :
-    u.sum (fun p r => (Iic (a, b)).indicator (fun _ => r) p) -
-      u.sum (fun p r => (Iio a ×ˢ Iic b).indicator (fun _ => r) p) -
-      u.sum (fun p r => (Iic a ×ˢ Iio b).indicator (fun _ => r) p) +
-      u.sum (fun p r => (Iio a ×ˢ Iio b).indicator (fun _ => r) p) = u (a, b) := by
+/-- The masses of the closed and open lower rectangles sum to the masses of the two mixed
+rectangles plus the coefficient at their common upper bound. -/
+theorem sum_indicator_Iic_prod_add_sum_indicator_Iio_prod [PartialOrder α] [PartialOrder β]
+    [AddCommMonoid G] (u : (α × β) →₀ G) (a : α) (b : β) :
+    u.sum (fun p r => (Iic (a, b)).indicator (fun _ => r) p) +
+      u.sum (fun p r => (Iio a ×ˢ Iio b).indicator (fun _ => r) p) =
+      u.sum (fun p r => (Iio a ×ˢ Iic b).indicator (fun _ => r) p) +
+        u.sum (fun p r => (Iic a ×ˢ Iio b).indicator (fun _ => r) p) + u (a, b) := by
   classical
   rw [← Iic_prod_Iic]
-  simp only [Finsupp.sum, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
   calc
-    _ = ∑ p ∈ u.support, if p = (a, b) then u p else 0 := by
+    _ = u.sum (fun p r => (Iio a ×ˢ Iic b).indicator (fun _ => r) p +
+        (Iic a ×ˢ Iio b).indicator (fun _ => r) p + if p = (a, b) then r else 0) := by
+      simp only [Finsupp.sum, ← Finset.sum_add_distrib]
       apply Finset.sum_congr rfl
       intro p _
       simp only [Set.indicator, mem_prod, mem_Iic, mem_Iio]
       by_cases ha : p.1 ≤ a <;> by_cases hb : p.2 ≤ b <;>
         by_cases ha' : p.1 < a <;> by_cases hb' : p.2 < b <;>
         simp_all [Prod.ext_iff, lt_iff_le_and_ne] <;> grind
-    _ = u (a, b) := by
-      simp [Finsupp.mem_support_iff, eq_comm]
+    _ = _ := by
+      simp [Finsupp.sum, Finset.sum_add_distrib, Finsupp.mem_support_iff, eq_comm]
+      split_ifs <;> simp_all
 
 /-- Two nonnegative chain-supported couplings with equal marginals coincide. -/
 theorem eq_of_mapDomain_eq_of_isChain_support [PartialOrder α] [PartialOrder β]
-    [AddCommGroup G] [PartialOrder G]
+    [AddCancelCommMonoid G] [PartialOrder G]
     [IsOrderedAddMonoid G] (w v : (α × β) →₀ G)
     (hw : ∀ p, 0 ≤ w p) (hv : ∀ p, 0 ≤ v p)
     (hcw : IsChain (· ≤ ·) (w.support : Set (α × β)))
@@ -160,11 +161,13 @@ theorem eq_of_mapDomain_eq_of_isChain_support [PartialOrder α] [PartialOrder β
     · exact hwrect.trans ((le_antisymm hwle hvle).trans hvrect.symm)
     · exact hwrect.trans hvrect.symm
   ext ⟨a, b⟩
-  rw [← sum_indicator_Iic_prod_sub_sub_add w a b, ← sum_indicator_Iic_prod_sub_sub_add v a b]
-  simp only [← Iic_prod_Iic]
+  have hwrect := sum_indicator_Iic_prod_add_sum_indicator_Iio_prod w a b
+  have hvrect := sum_indicator_Iic_prod_add_sum_indicator_Iio_prod v a b
+  simp only [← Iic_prod_Iic] at hwrect hvrect
   rw [hrect (isLowerSet_Iic a) (isLowerSet_Iic b),
     hrect (isLowerSet_Iio a) (isLowerSet_Iic b),
     hrect (isLowerSet_Iic a) (isLowerSet_Iio b),
-    hrect (isLowerSet_Iio a) (isLowerSet_Iio b)]
+    hrect (isLowerSet_Iio a) (isLowerSet_Iio b)] at hwrect
+  exact add_left_cancel (hwrect.symm.trans hvrect)
 
 end Finsupp
