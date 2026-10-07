@@ -21,7 +21,6 @@ open IsDedekindDomain
 open scoped Pointwise
 
 namespace TauCeti
-namespace IsDedekindDomain.HeightOneSpectrum
 
 variable {G R : Type*} [Group G] [CommRing R] [MulSemiringAction G R]
 
@@ -44,9 +43,8 @@ noncomputable instance instMulActionHeightOneSpectrum : MulAction G (HeightOneSp
 
 /-- The action on height-one primes agrees with the pointwise action on ideals. -/
 @[simp]
-theorem asIdeal_smul (g : G) (v : HeightOneSpectrum R) :
+theorem heightOneSpectrum_asIdeal_smul (g : G) (v : HeightOneSpectrum R) :
     (g • v).asIdeal = g • v.asIdeal :=
   HeightOneSpectrum.asIdeal_equivOfRingEquiv (MulSemiringAction.toRingEquiv G R g) v
 
-end IsDedekindDomain.HeightOneSpectrum
 end TauCeti

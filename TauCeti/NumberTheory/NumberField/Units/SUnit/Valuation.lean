@@ -32,7 +32,7 @@ on exactness or equivariance.
 The arithmetic finite-index input is `TauCeti.finiteIndex_range_unitValuation`; the permutation
 module and its action are Mathlib's `Rep.ofMulAction`.
 
-`TauCeti.SubMulAction.sUnitShortComplex` packages the ordinary-unit inclusion and valuation onto
+`TauCeti.sUnitShortComplex` packages the ordinary-unit inclusion and valuation onto
 Mathlib's categorical image as a short exact sequence. The image inclusion has finite categorical
 cokernel, so it can be used with Herbrand-quotient invariance under finite cokernels.
 
@@ -48,7 +48,6 @@ open IsDedekindDomain NumberField CategoryTheory MonoidAlgebra
 open scoped Pointwise
 
 namespace TauCeti
-namespace SubMulAction
 
 attribute [local instance] Units.mulDistribMulActionRight
 
@@ -246,13 +245,11 @@ theorem finiteIndex_range_sUnitValuation :
   exact AddSubgroup.FiniteIndex.map_of_surjective _
     (TauCeti.funMultiplicativeIntLinearEquiv S).surjective
 
-end SubMulAction
 end TauCeti
 
 namespace TauCeti
-namespace SubMulAction
 
-open _root_.SubMulAction CategoryTheory.Limits
+open CategoryTheory.Limits
 
 attribute [local instance] Units.mulDistribMulActionRight
 
@@ -329,5 +326,4 @@ instance finite_cokernel_sUnitValuation_image_ι :
   exact Finite.of_equiv _ (F.mapIso
     (cokernelImageι (sUnitValuation S))).toLinearEquiv.toEquiv.symm
 
-end SubMulAction
 end TauCeti
