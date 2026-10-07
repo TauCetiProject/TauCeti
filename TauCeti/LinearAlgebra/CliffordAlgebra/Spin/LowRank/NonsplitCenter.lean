@@ -9,9 +9,7 @@ public import TauCeti.Algebra.Quaternion.NormForm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Center
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Four
 
-import TauCeti.Algebra.Quaternion.Basis
 import TauCeti.Algebra.Quaternion.CentralSimple
-import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Center
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalBasis
 
@@ -86,16 +84,16 @@ theorem exists_evenQuaternionEquiv_of_finrank_eq_four_of_isField_center
   let b : Eˣ := Units.map (algebraMap K E).toMonoidHom bK
   let i : even Q := (even.ι Q).bilin (B n0) (B n1)
   let j : even Q := (even.ι Q).bilin (B n0) (B n2)
+  -- The center action on the even algebra is multiplication by its algebra map; unfolding the
+  -- mapped units then exposes the original base-field symbol parameters.
   have ha_smul : (a : E) • (1 : even Q) =
       algebraMap K (even Q) (-(Q (B n0) * Q (B n1))) := by
-    change algebraMap E (even Q) (a : E) * 1 = _
-    rw [show (a : E) = algebraMap K E (-(Q (B n0) * Q (B n1))) by rfl]
+    change algebraMap E (even Q) (algebraMap K E (-(Q (B n0) * Q (B n1)))) * 1 = _
     rw [Subalgebra.centerAlgebra_algebraMap_apply, mul_one]
     rfl
   have hb_smul : (b : E) • (1 : even Q) =
       algebraMap K (even Q) (-(Q (B n0) * Q (B n2))) := by
-    change algebraMap E (even Q) (b : E) * 1 = _
-    rw [show (b : E) = algebraMap K E (-(Q (B n0) * Q (B n2))) by rfl]
+    change algebraMap E (even Q) (algebraMap K E (-(Q (B n0) * Q (B n2)))) * 1 = _
     rw [Subalgebra.centerAlgebra_algebraMap_apply, mul_one]
     rfl
   have hi_sq : i * i = (a : E) • (1 : even Q) := by
@@ -110,6 +108,8 @@ theorem exists_evenQuaternionEquiv_of_finrank_eq_four_of_isField_center
     simp
   have hji : j * i = -(i * j) := by
     apply Subtype.ext
+    -- After subtype extensionality, expose the four Clifford generators represented by the two
+    -- even bivectors so the orthogonality commutation lemmas apply.
     change (ι Q (B n0) * ι Q (B n2)) * (ι Q (B n0) * ι Q (B n1)) =
       -((ι Q (B n0) * ι Q (B n1)) * (ι Q (B n0) * ι Q (B n2)))
     calc
@@ -141,6 +141,7 @@ theorem exists_evenQuaternionEquiv_of_finrank_eq_four_of_isField_center
           simp
   }
   let f : ℍ[E,(a : E),0,(b : E)] →ₐ[E] even Q := qBasis.liftHom
+  -- Unfold the local bivector abbreviations before using the reversal formula for `even.ι`.
   have hrev_i : reverseEven Q i = -i := by
     change reverseEven Q ((even.ι Q).bilin (B n0) (B n1)) =
       -((even.ι Q).bilin (B n0) (B n1))
@@ -176,6 +177,8 @@ theorem exists_evenQuaternionEquiv_of_finrank_eq_four_of_isField_center
     rw [(algebraMap E (even Q)).map_neg, (algebraMap E (even Q)).map_neg,
       (algebraMap E (even Q)).map_neg]
     simp only [neg_mul]
+    -- The quaternion lift expands into four center-scalar products; state that common normal form
+    -- explicitly before substituting the reversal equations for the generators.
     change algebraMap E (even Q) x.re +
           algebraMap E (even Q) x.imI * reverseEven Q i +
           algebraMap E (even Q) x.imJ * reverseEven Q j +
@@ -209,6 +212,8 @@ theorem exists_evenQuaternionEquiv_of_finrank_eq_four_of_isField_center
   intro x
   apply fEquiv.injective
   rw [fEquiv.apply_symm_apply]
+  -- Unfold `fEquiv` only at this inverse-image boundary so `hf_star` applies to the original
+  -- presentation homomorphism `f`.
   change reverseEven Q x = f (star (fEquiv.symm x))
   rw [← hf_star]
   congr 1
@@ -230,6 +235,8 @@ noncomputable def spinGroupEquivQuaternionUnitaryOverCenter
       _ _ _ _ _ _ _ _ _ Subalgebra.isScalarTower_centerAlgebra (by infer_instance) e
   exact spinGroupEquivUnitaryOfAlgEquivOfFinrankLeFour
     Q hQ (by omega) (by omega) eK (fun x ↦ by
+      -- Restricting scalars changes only the bundled algebra map, so its value is definitionally
+      -- the value of the center-linear equivalence `e` used by the supplied involution equation.
       change e (reverseEven Q x) = star (e x)
       exact he x)
 
@@ -268,7 +275,9 @@ theorem coe_spinGroupEquivQuaternionUnitaryOverCenter_symm_apply
   rfl
 
 /-- The quaternion attached to a quaternary Spin element by a chosen center-linear model has norm
-one. -/
+one. This is a pre-simp lemma so it fires before the forward coercion equation rewrites its
+quaternion argument and erases the model hypotheses from the expression. -/
+@[simp↓]
 theorem normForm_spinGroupEquivQuaternionUnitaryOverCenter
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV : finrank K V = 4)
     {a b : Subalgebra.center K (even Q)}
