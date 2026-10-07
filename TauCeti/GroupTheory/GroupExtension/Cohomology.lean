@@ -62,6 +62,14 @@ of `G`, equivalently the central extensions of `G` by `kˣ` up to equivalence.
 * `TauCeti.FactorSet.cohomologyClass_eq_zero_iff` and
   `TauCeti.FactorSet.nonempty_splitting_iff_cohomologyClass_eq_zero`: the class vanishes exactly
   for the coboundaries, equivalently for the factor sets whose extension splits.
+* `TauCeti.FactorSet.nsmul_cohomologyClass_eq_zero_iff`: `n` kills a factor-set class exactly
+  when the pointwise `n`-th power of the factor set is a multiplicative coboundary.
+* `TauCeti.FactorSet.exists_rescale_pow_eq_one`: with trivial coefficient action and a
+  surjective `n`-th power map for nonzero `n`, a class killed by `n` admits a normalized
+  scalar rescaling whose values have `n`-th power one. For `n = 0`, no divisibility is needed.
+* `TauCeti.FactorSet.exists_cohomologyClass_eq_and_pow_eq_one`: the rescaling produces a
+  cohomologous factor-set representative with pointwise `n`-th power one under the same
+  hypotheses, allowing torsion classes to be represented by root-valued factor sets.
 * `TauCeti.GroupExtension.cohomologyClass_factorSet_eq`: the class of the factor set of a
   normalized section does not depend on the section.
 * `TauCeti.GroupExtension.nonempty_equiv_iff_cohomologyClass_factorSet_eq`: **`H²(G, M)` classifies
