@@ -59,8 +59,7 @@ where finiteness of the extension is exactly what makes a nonconstant map of cur
 
 `degree` is the coordinate-ring form of D. Angdinata's function-field definition, as the
 `Isogeny` structure itself is. The finiteness result also follows that development's
-function-field formulation; the proofs below are written against the coordinate-ring form
-rather than ported.
+function-field formulation.
 
 ## Provenance
 
