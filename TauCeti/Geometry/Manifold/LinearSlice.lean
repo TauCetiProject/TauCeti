@@ -146,14 +146,14 @@ theorem isManifold_linearSliceChartedSpace (hcover : ∀ x : s, (x : M) ∈ (e x
     inter_univ, preimage_id, Function.comp_id, Function.id_comp] using
     contDiffOn_linearSliceChart_transition e he hsmooth hinv x y
 
+omit hsmooth in
 /-- The inclusion of a subset equipped with its linear-slice atlas is `C^n` when the ambient
-charts and their inverses are `C^n`. -/
+inverse charts are `C^n`. -/
 theorem contMDiff_subtypeVal_linearSliceChartedSpace
     (hcover : ∀ x : s, (x : M) ∈ (e x).source) :
     letI := linearSliceChartedSpace e he hcover
     ContMDiff 𝓘(𝕜, F) I n (Subtype.val : s → M) := by
   let := linearSliceChartedSpace e he hcover
-  have := isManifold_linearSliceChartedSpace e he hsmooth hinv hcover
   intro x
   have hxs : x ∈ (linearSliceChart e he x).source := by
     rw [linearSliceChart_source]; exact hcover x
@@ -167,8 +167,10 @@ theorem contMDiff_subtypeVal_linearSliceChartedSpace
       (linearSliceChart e he x x) :=
     ContMDiffAt.comp (linearSliceChart e he x x) (hinv x _ hxt) hmk
   have hd : ContMDiffAt 𝓘(𝕜, F) I n (fun y : s ↦ (e x).symm (linearSliceChart e he x y, 0)) x :=
-    hsymm.comp x
-      (contMDiffAt_of_mem_maximalAtlas (IsManifold.subset_maximalAtlas (mem_range_self x)) hxs)
+    hsymm.comp x <| by
+      -- The preferred chart is smooth at its centre, with no compatibility condition.
+      simpa only [extChartAt_coe, linearSliceChartedSpace_chartAt, modelWithCornersSelf_coe,
+        Function.id_comp] using contMDiffAt_extChartAt (I := 𝓘(𝕜, F)) (n := n) (x := x)
   refine hd.congr_of_eventuallyEq ?_
   filter_upwards [(linearSliceChart e he x).open_source.mem_nhds hxs] with y hy
   rw [linearSliceChart_source] at hy
@@ -215,6 +217,6 @@ theorem exists_isManifold_of_linearSubspaceCharts {L N : Submodule 𝕜 E}
       (hqi y _ hzt).comp z A.symm.contDiff.contMDiff.contMDiffAt
   exact ⟨linearSliceChartedSpace e he hcover,
     isManifold_linearSliceChartedSpace e he hs hi hcover,
-    contMDiff_subtypeVal_linearSliceChartedSpace e he hs hi hcover⟩
+    contMDiff_subtypeVal_linearSliceChartedSpace e he hi hcover⟩
 
 end TauCeti
