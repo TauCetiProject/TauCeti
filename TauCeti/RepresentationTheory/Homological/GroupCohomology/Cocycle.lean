@@ -30,7 +30,8 @@ Facts about a `1`-cocycle `f : G → M` in the sense of Mathlib's unbundled
   determined by its value at a generator.
 * `TauCeti.groupNorm`: the sum of the scalar actions of a finite group, as an additive
   homomorphism, with no topology or representation required. For a finite normal subgroup it
-  commutes with the action of the ambient group (`TauCeti.groupNorm_smul`).
+  commutes with the action of the ambient group (`TauCeti.groupNorm_smul`), and so is a
+  `G`-equivariant additive endomorphism (`TauCeti.groupNormHom`).
 * `TauCeti.sum_smul_apply_eq_zero_of_isCocycle₁`: on a finite group, the group norm kills
   every value of a one-cocycle.
 
@@ -109,6 +110,19 @@ theorem groupNorm_smul {G M : Type*} [Group G] [AddCommMonoid M] [DistribMulActi
   simp only [groupNorm_apply, Finset.smul_sum, Subgroup.smul_def]
   exact Fintype.sum_equiv (MulAut.conjNormal g⁻¹).toEquiv _ _ fun n ↦ by
     simp [← mul_smul, mul_assoc]
+
+/-- The norm of a finite normal subgroup `N` of `G`, as a `G`-equivariant additive endomorphism
+of `M` (`TauCeti.groupNorm_smul`). -/
+def groupNormHom {G : Type*} [Group G] (N : Subgroup G) [N.Normal] [Fintype N] (M : Type*)
+    [AddCommMonoid M] [DistribMulAction G M] : M →+[G] M :=
+  { groupNorm N M with map_smul' := groupNorm_smul N }
+
+/-- The equivariant norm `groupNormHom N M` is the group norm of `N`. -/
+@[simp]
+theorem groupNormHom_apply {G : Type*} [Group G] (N : Subgroup G) [N.Normal] [Fintype N]
+    (M : Type*) [AddCommMonoid M] [DistribMulAction G M] (m : M) :
+    groupNormHom N M m = groupNorm N M m :=
+  (rfl)
 
 variable {G M : Type*} [Group G] [AddCommGroup M] [MulAction G M]
 

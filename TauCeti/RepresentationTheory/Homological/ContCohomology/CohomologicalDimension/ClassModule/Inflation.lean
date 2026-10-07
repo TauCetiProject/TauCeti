@@ -577,14 +577,9 @@ theorem abelianizationProPInfl2_class :
   let : Fintype Δ := Fintype.ofFinite Δ
   -- The norm of `Δ`, an equivariant endomorphism of `V^ab(p)` because `Δ` is normal, multiplies
   -- `u_{G/V}(p)` by `#Δ = (W : V)`.
-  let Nm : M →+[G ⧸ V] M :=
-    { groupNorm Δ M with map_smul' := groupNorm_smul Δ }
-  have hNm : Continuous Nm := (continuous_finsetSum _ fun s _ ↦
-    continuous_const_smul ((s : Δ) : G ⧸ V)).congr fun x ↦ (groupNorm_apply Δ M x).symm
   have hcard : Nat.card Δ = V.relIndex W :=
     (Nat.card_congr (quotientSubgroupOfEquivMap V W hV).toEquiv).symm
-  -- `Nm` is `groupNorm Δ M` by construction.
-  rw [← hcard, ← explicitCoeff2_eq_card_nsmul (G ⧸ V) M Δ Nm hNm fun _ ↦ rfl,
+  rw [← hcard, ← explicitCoeff2_eq_card_nsmul (G ⧸ V) M Δ,
     abelianizationProPInfl2_def, abelianizationProPClass_def, abelianizationProPClass_def,
     QuotientAddGroup.mk'_apply, QuotientAddGroup.mk'_apply, explicitCoeff2_mk]
   refine (explicitMap2_mk _ _ _ _ _ _ _ _ _).trans ?_
@@ -599,10 +594,10 @@ theorem abelianizationProPInfl2_class :
   rw [abelianizationProPTransferLe_mk_inclusion, map_mul, map_mul, map_mul, map_inv,
     abelianizationProPTransferLe_smul] at h
   -- The norm of the factor set of `t` is the transfer of its defect.
-  have hN : Nm (abelianizationProPFactorSet p G V (a, b)) = Additive.ofMul
+  have hN : groupNormHom Δ M (abelianizationProPFactorSet p G V (a, b)) = Additive.ofMul
       (∏ s : Δ, (s : G ⧸ V) • abelianizationProPMk p G V
         ⟨a.out * b.out * (a * b).out⁻¹, QuotientGroup.out_mul_out_mul_inv_mem V a b⟩) := by
-    refine (groupNorm_apply Δ M _).trans ?_
+    rw [groupNormHom_apply, groupNorm_apply]
     simp only [abelianizationProPFactorSet_apply, ofMul_prod, Additive.ofMul_smul,
       Subgroup.smul_def]
   rw [Pi.sub_apply]

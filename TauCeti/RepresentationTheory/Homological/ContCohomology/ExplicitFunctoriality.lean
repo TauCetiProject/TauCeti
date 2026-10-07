@@ -928,12 +928,11 @@ variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G]
   [DistribMulAction G M] [ContinuousSMul G M]
 
 /-- **The norm of a finite normal subgroup acts on explicit `H²` as multiplication by its order.**
-A coefficient map which is the norm `m ↦ ∑ n : N, n • m` of a finite normal subgroup `N` of `G`
+The norm `m ↦ ∑ n : N, n • m` of a finite normal subgroup `N` of `G`, as a coefficient map,
 induces multiplication by `#N` on `H²(G, M)`. The norm is `G`-equivariant because `N` is normal,
 and it is multiplication by `#N` on the invariants, but not in general on `M`. -/
-theorem explicitCoeff2_eq_card_nsmul (N : Subgroup G) [N.Normal] [Fintype N] (f : M →+[G] M)
-    (hf : Continuous f) (hN : ∀ m, f m = groupNorm N M m) (x : H2 G M) :
-    explicitCoeff2 G M f hf x = Nat.card N • x := by
+theorem explicitCoeff2_eq_card_nsmul (N : Subgroup G) [N.Normal] [Fintype N] (x : H2 G M) :
+    explicitCoeff2 G M (groupNormHom N M) (continuous_groupNormHom N M) x = Nat.card N • x := by
   induction x using QuotientAddGroup.induction_on with
   | _ c =>
     obtain ⟨hcont, hc⟩ := mem_Z2_iff.1 c.2
@@ -944,11 +943,11 @@ theorem explicitCoeff2_eq_card_nsmul (N : Subgroup G) [N.Normal] [Fintype N] (f 
         (hcont.comp (continuous_const.prodMk continuous_id)).sub
           (hcont.comp (continuous_id.prodMk continuous_const)), fun g h ↦ ?_⟩
     -- `cocyclesMap2_apply` is applied as a term: rewriting it would abstract the equivariance
-    -- proof of `f` into an ill-typed motive.
+    -- proof of the norm into an ill-typed motive.
     rw [Pi.sub_apply]
     refine Eq.trans ?_ (congrArg₂ (· - ·) (cocyclesMap2_apply _ _ _ _ _ _ _ _ c g h).symm rfl)
-    simp only [ContinuousMonoidHom.coe_id, id, AddMonoidHom.coe_ofClass, hN, groupNorm_apply,
-      Subgroup.smul_def, AddSubgroup.coe_nsmul, Pi.smul_apply,
+    simp only [ContinuousMonoidHom.coe_id, id, AddMonoidHom.coe_ofClass, groupNormHom_apply,
+      groupNorm_apply, Subgroup.smul_def, AddSubgroup.coe_nsmul, Pi.smul_apply,
       TauCeti.groupCohomology.sum_smul_apply_of_isCocycle₂ N hc g h]
     abel
 
