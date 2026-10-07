@@ -11,6 +11,8 @@ public import Mathlib.NumberTheory.Padics.PadicIntegers
 import Mathlib.NumberTheory.Padics.ProperSpace
 import Mathlib.Topology.Instances.Matrix
 import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.Hyperbolic
+import TauCeti.LinearAlgebra.TensorProduct.Basis
+import TauCeti.NumberTheory.Padics.RatCast
 
 /-!
 # Integral orthogonal subgroups in a basis
@@ -24,6 +26,8 @@ The subgroup is compact and open in the canonical forward-and-inverse topology o
 isometries. For a rational quadratic space and a rational basis, every rational isometry belongs
 to these subgroups at all but finitely many primes. No integrality of the quadratic form itself
 is required: the exceptional primes come from the denominators of the isometry and its inverse.
+The subgroup depends only on the `ℤ_[p]`-span of the basis, so two rational bases give the same
+local subgroups at all but finitely many primes.
 
 -/
 
@@ -109,6 +113,15 @@ theorem mem_integralOrthogonalSubgroup_iff_mem_span (g : orthogonalGroup Q) :
       exact sum_mem fun j _ ↦ mul_mem (h i j) ((hspan x).mp hx j)
   rw [mem_integralOrthogonalSubgroup_iff]
   exact and_congr (hmaps _).symm (hmaps _).symm
+
+/-- Bases with the same `ℤ_[p]`-span have the same integral orthogonal subgroup. -/
+theorem integralOrthogonalSubgroup_eq_of_span_eq {ι' : Type*} [Fintype ι'] [DecidableEq ι']
+    {b' : Basis ι' ℚ_[p] V}
+    (h : Submodule.span (PadicInt.subring p) (Set.range b) =
+      Submodule.span (PadicInt.subring p) (Set.range b')) :
+    integralOrthogonalSubgroup Q b = integralOrthogonalSubgroup Q b' := by
+  ext g
+  rw [mem_integralOrthogonalSubgroup_iff_mem_span, mem_integralOrthogonalSubgroup_iff_mem_span, h]
 
 /-- Transporting the basis along an isometry transports the integral orthogonal subgroup. -/
 theorem mem_integralOrthogonalSubgroup_orthogonalGroupCongr
@@ -222,18 +235,50 @@ theorem eventually_mem_integralOrthogonalSubgroup (g : orthogonalGroup Q₀) :
       let _ : Fact (p : ℕ).Prime := ⟨p.property⟩
       orthogonalGroupBaseChange (A := ℚ_[p]) Q₀ g ∈
         integralOrthogonalSubgroup (Q₀.baseChange ℚ_[p]) (b₀.baseChange ℚ_[p]) := by
-  have hden (q : ℚ) : ∀ᶠ p : Nat.Primes in cofinite, ¬ (p : ℕ) ∣ q.den := by
-    apply Filter.eventually_cofinite.mpr
-    apply (Set.finite_Iic q.den).preimage Subtype.val_injective.injOn |>.subset
-    intro p hp
-    exact Nat.le_of_dvd q.den_pos (not_not.mp hp)
   have hg := Filter.eventually_all.mpr fun i ↦ Filter.eventually_all.mpr fun j ↦
-    hden (LinearMap.toMatrix b₀ b₀ (g : W ≃ₗ[ℚ] W).toLinearMap i j)
+    (LinearMap.toMatrix b₀ b₀ (g : W ≃ₗ[ℚ] W).toLinearMap i j).eventually_not_dvd_den
   have hginv := Filter.eventually_all.mpr fun i ↦ Filter.eventually_all.mpr fun j ↦
-    hden (LinearMap.toMatrix b₀ b₀ (g⁻¹ : W ≃ₗ[ℚ] W).toLinearMap i j)
+    (LinearMap.toMatrix b₀ b₀ (g⁻¹ : W ≃ₗ[ℚ] W).toLinearMap i j).eventually_not_dvd_den
   filter_upwards [hg, hginv] with p hp hpinv
   let : Fact (p : ℕ).Prime := ⟨p.property⟩
   exact mem_integralOrthogonalSubgroup_baseChange_of_not_dvd_den Q₀ b₀ g hp hpinv
+
+omit [Fintype ι] [DecidableEq ι] in
+/-- If `p` divides no denominator of the change-of-basis matrix from `b₀` to `b₀'`, then the
+`ℤ_[p]`-span of the scalar extension of `b₀'` lies in that of `b₀`. -/
+private theorem span_range_baseChange_le_of_not_dvd_den {ι' : Type*} (b₀' : Basis ι' ℚ W)
+    (h : ∀ i j, ¬ p ∣ (b₀.toMatrix b₀' i j).den) :
+    Submodule.span (PadicInt.subring p) (Set.range (b₀'.baseChange ℚ_[p])) ≤
+      Submodule.span (PadicInt.subring p) (Set.range (b₀.baseChange ℚ_[p])) := by
+  rw [Submodule.span_le]
+  rintro _ ⟨j, rfl⟩
+  rw [SetLike.mem_coe, Basis.mem_span_iff_repr_mem]
+  intro i
+  have hij : (b₀.baseChange ℚ_[p]).repr (b₀'.baseChange ℚ_[p] j) i =
+      ((b₀.toMatrix b₀' i j : ℚ) : ℚ_[p]) := by
+    rw [← Basis.toMatrix_apply, Basis.baseChange_toMatrix_baseChange, Matrix.map_apply,
+      eq_ratCast]
+  rw [hij]
+  exact ⟨⟨_, (PadicInt.mem_subring_iff (p := p)).mpr (Padic.norm_rat_le_one (h i j))⟩, rfl⟩
+
+/-- For two rational bases, the integral orthogonal subgroups of their scalar extensions agree
+at almost every prime: away from finitely many primes the two bases span the same `ℤ_[p]`-lattice,
+since the entries of both change-of-basis matrices are `p`-adic integers. -/
+theorem eventually_integralOrthogonalSubgroup_baseChange_eq {ι' : Type*} [Fintype ι']
+    [DecidableEq ι'] (b₀' : Basis ι' ℚ W) :
+    ∀ᶠ p : Nat.Primes in cofinite,
+      let _ : Fact (p : ℕ).Prime := ⟨p.property⟩
+      integralOrthogonalSubgroup (Q₀.baseChange ℚ_[p]) (b₀.baseChange ℚ_[p]) =
+        integralOrthogonalSubgroup (Q₀.baseChange ℚ_[p]) (b₀'.baseChange ℚ_[p]) := by
+  have h := Filter.eventually_all.mpr fun i ↦ Filter.eventually_all.mpr fun j ↦
+    (b₀.toMatrix b₀' i j).eventually_not_dvd_den
+  have h' := Filter.eventually_all.mpr fun i ↦ Filter.eventually_all.mpr fun j ↦
+    (b₀'.toMatrix b₀ i j).eventually_not_dvd_den
+  filter_upwards [h, h'] with p hp hp'
+  let : Fact (p : ℕ).Prime := ⟨p.property⟩
+  exact integralOrthogonalSubgroup_eq_of_span_eq _ _ (le_antisymm
+    (span_range_baseChange_le_of_not_dvd_den b₀' b₀ hp')
+    (span_range_baseChange_le_of_not_dvd_den b₀ b₀' hp))
 
 -- A non-integral rational isometry of `x₀² - x₁²`: the torus parameter `2` has entry `5/4`.
 -- It is nevertheless integral in the base-changed standard basis at almost every prime.
