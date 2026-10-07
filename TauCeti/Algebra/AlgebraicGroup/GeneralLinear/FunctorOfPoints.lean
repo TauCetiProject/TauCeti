@@ -268,8 +268,11 @@ theorem pointToGeneralLinear_mapValue (phi : A →ₐ[R] B)
   intro i j
   simp
 
+/-- Reading a point as an invertible matrix commutes with post-composition by a map of value
+algebras. This is `pointToGeneralLinear_mapValue` in the form `simp` reaches: `simp` rewrites
+`AlgHom.mapValue phi f` to `toConv (phi.comp f.ofConv)`. -/
 @[simp]
-private theorem pointToGeneralLinear_toConv_comp (phi : A →ₐ[R] B)
+theorem pointToGeneralLinear_toConv_comp (phi : A →ₐ[R] B)
     (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
     pointToGeneralLinear n (toConv (phi.comp f.ofConv)) =
       Matrix.GeneralLinearGroup.map (phi : A →+* B) (pointToGeneralLinear n f) := by
@@ -293,8 +296,11 @@ theorem mapValue_pointsMulEquiv_symm_apply (phi : A →ₐ[R] B)
   rw [pointsMulEquiv_mapValue]
   simp
 
+/-- Post-composing the point of an invertible matrix with a map of value algebras gives the point
+of the entrywise image matrix. This is `mapValue_pointsMulEquiv_symm_apply` in the form `simp`
+reaches. -/
 @[simp]
-private theorem toConv_comp_generalLinearToPoint_ofConv (phi : A →ₐ[R] B)
+theorem toConv_comp_generalLinearToPoint_ofConv (phi : A →ₐ[R] B)
     (g : Matrix.GeneralLinearGroup (Fin n) A) :
     toConv (phi.comp (generalLinearToPoint (R := R) n g).ofConv) =
       generalLinearToPoint (R := R) n
