@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Subcomplex
 public import Mathlib.Topology.Homotopy.Basic
-import Mathlib.Topology.CompactOpen
 
 /-!
 # Gluing homotopies on weak realizations
