@@ -36,7 +36,11 @@ namespace TauCeti
 
 open CategoryTheory Matrix
 
-variable (k : Type*) [Field k]
+variable (k : Type*)
+
+section Ring
+
+variable [CommRing k]
 
 /-- The standard representation of `S₄`, restricted to `A₄`. -/
 noncomputable def alternatingGroupFourStandard : FDRep k (alternatingGroup (Fin 4)) :=
@@ -47,6 +51,12 @@ theorem alternatingGroupFourStandard_def :
     alternatingGroupFourStandard k =
       (alternatingGroup (Fin 4)).resFDRep (FDRep.of (standardRepresentation k (Fin 4))) :=
   (rfl)
+
+end Ring
+
+section Field
+
+variable [Field k]
 
 /-- The restricted standard character is the number of fixed points minus one. -/
 @[simp]
@@ -97,6 +107,10 @@ theorem simple_alternatingGroupFourStandard (k : Type) [Field k] [IsAlgClosed k]
   apply (FDRep.simple_iff_char_is_norm_one (alternatingGroupFourStandard k)).mpr
   simp only [character_alternatingGroupFourStandard, natCard_alternatingGroup_four]
   exact_mod_cast standard_norm_sum
+
+end Field
+
+variable [CommRing k]
 
 /-- The restricted standard representation of `A₄` is fixed by every conjugation from `S₄`.
 Its extension to `S₄` implements the conjugation isomorphisms. -/
