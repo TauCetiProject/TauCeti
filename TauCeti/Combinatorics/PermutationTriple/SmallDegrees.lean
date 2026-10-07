@@ -129,7 +129,10 @@ theorem image_cycleData_four :
   · rintro ⟨r, hr, rfl⟩
     exact ⟨⟨r, isConnected_of_mem_degreeFourClassReps r hr⟩, rfl⟩
 
-private theorem cycleData_mem_degreeFourCycleData (t : ConnectedTriple 4) :
+/-- The ordered full cycle data of every connected degree-four triple appear in the table
+`degreeFourCycleData`. -/
+@[simp]
+theorem cycleData_mem_degreeFourCycleData (t : ConnectedTriple 4) :
     t.1.cycleData ∈ degreeFourCycleData := by
   rw [← image_cycleData_four]
   exact Finset.mem_image_of_mem _ (Finset.mem_univ t)
