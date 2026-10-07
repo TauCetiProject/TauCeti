@@ -149,16 +149,24 @@ theorem _root_.Module.Basis.map_exteriorPower_top_eq_det_smul (b : Module.Basis 
   simp only [LinearMap.smul_apply, LinearMap.id_coe, id_eq]
 
 /-- The basis-free form of `Module.Basis.map_exteriorPower_top_eq_det_smul`: an endomorphism of a
-finite free module acts on the exterior power in degree `Module.finrank R M` by its determinant. -/
+free module acts on the exterior power in degree `Module.finrank R M` by its determinant.
+For a nonfinite module over a nontrivial ring, this is the identity in degree zero. -/
 @[simp]
 theorem _root_.LinearMap.map_exteriorPower_finrank_eq_det_smul
-    [Module.Free R M] [Module.Finite R M]
+    [Module.Free R M]
     (f : M →ₗ[R] M) :
     map (Module.finrank R M) f = LinearMap.det f • LinearMap.id := by
   rcases subsingleton_or_nontrivial R with _ | _
   · have := Module.subsingleton R (⋀[R]^(Module.finrank R M) M)
     exact Subsingleton.elim _ _
-  · exact (Module.finBasis R M).map_exteriorPower_top_eq_det_smul f
+  · classical
+    by_cases h : Module.Finite R M
+    · have := h
+      exact (Module.finBasis R M).map_exteriorPower_top_eq_det_smul f
+    · rw [Module.finrank_of_not_finite h, LinearMap.det_eq_one_of_not_module_finite h f,
+        one_smul]
+      exact (LinearMap.cancel_left (zeroEquiv R M).injective).mp
+        (by simpa only [LinearMap.comp_id] using zeroEquiv_naturality f)
 
 /-- A basis indexed by `Fin n` identifies the degree-`n` exterior power with the scalars by
 sending an exterior product of vectors to their determinant against the basis. -/
