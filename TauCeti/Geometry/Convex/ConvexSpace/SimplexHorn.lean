@@ -215,7 +215,7 @@ def hornDeformationRetraction (a : ι) :
   toFun p := hornDeformation a p.1 p.2
   continuous_toFun := continuous_hornDeformation a
   map_zero_left := hornDeformation_zero a
-  map_one_left _ := rfl
+  map_one_left x := (coe_hornRetraction a x).symm
   prop' t _x hx := hornDeformation_of_mem hx t
 
 /-- The strong deformation retraction evaluates by the barycentric horn deformation. -/
