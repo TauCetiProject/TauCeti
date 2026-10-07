@@ -78,6 +78,17 @@ theorem mem_geometricLink_iff (x : Realization K) :
   simp [geometricLink, geometricClosedStar, PreAbstractSimplicialComplex.mem_link,
     support_mem, Finset.disjoint_singleton_right]
 
+/-- The apex, regarded as a point of its geometric closed star. -/
+def starApex : geometricClosedStar K v :=
+  ⟨vertex K v, by
+    simp only [mem_geometricClosedStar, vertex_val,
+      Finsupp.support_single v one_ne_zero, Finset.union_self]
+    exact K.singleton_mem v⟩
+
+/-- The underlying realization point of the closed-star apex is its vertex. -/
+@[simp]
+theorem starApex_val : (starApex K v).1 = vertex K v := (rfl)
+
 /-- The punctured geometric closed star, expressed by the apex coordinate being less than one. -/
 def puncturedClosedStar : Set (Realization K) :=
   {x | x ∈ geometricClosedStar K v ∧ x.1 v < 1}
