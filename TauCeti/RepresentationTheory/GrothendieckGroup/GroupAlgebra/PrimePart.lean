@@ -100,11 +100,14 @@ theorem ordProj_dvd_finrankK0_linearCombination_indK0 {ι : Type*}
     (ordProj[p] (Nat.card G) : ℤ) ∣
       finrankK0 k k[G] (Finsupp.linearCombination ℤ (fun i ↦ indK0 k (S i) (y i)) a) := by
   classical
-  rw [Finsupp.linearCombination_apply, Finsupp.sum, map_sum]
-  apply Finset.dvd_sum
+  refine ordProj_dvd_finrankK0_of_mem_iSup_range_indK0 hp
+    (P := fun T ↦ ∃ i, T = S i) (by rintro T ⟨i, rfl⟩; exact hS i) ?_
+  rw [Finsupp.linearCombination_apply, Finsupp.sum]
+  apply AddSubgroup.sum_mem
   intro i _
-  rw [map_zsmul, zsmul_eq_mul]
-  exact dvd_mul_of_dvd_right ((S i).ordProj_dvd_finrankK0_indK0 hp (hS i) (y i)) _
+  apply AddSubgroup.zsmul_mem
+  exact AddSubgroup.mem_iSup_of_mem (S i)
+    (AddSubgroup.mem_iSup_of_mem ⟨i, rfl⟩ ⟨y i, rfl⟩)
 
 /-- In an explicit induction identity for an integer multiple of the trivial class, the
 multiplier must contain the `p`-part of the group order. The coefficients may be negative. -/
