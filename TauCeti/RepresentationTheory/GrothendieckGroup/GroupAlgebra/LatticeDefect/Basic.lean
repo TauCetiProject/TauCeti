@@ -17,9 +17,10 @@ import TauCeti.RepresentationTheory.Intertwining
 /-!
 # Reduction classes and the lattice defect of a `G`-module
 
-Let `G` be a monoid and `k` a commutative ring, typically a field. A representation `ρ` of `G` on a
-finitely generated abelian group `W` has a **reduction** `k ⊗_ℤ W`, with `G` acting on the second
-factor (`Representation.baseChange`). It is finitely generated over `k`, so it has a class
+Let `G` be a monoid and `k` a commutative ring, typically a field. A representation `ρ` of `G` on an
+abelian group `W` has a **reduction** `k ⊗_ℤ W`, with `G` acting on the second factor
+(`Representation.baseChange`). When it is finitely generated over `k`, for instance because `W` is
+a finitely generated abelian group, it has a class
 
 `TauCeti.reductionK0 k ρ = [k ⊗_ℤ W] ∈ G₀(k[G])`
 
@@ -56,8 +57,8 @@ defects. Neither the characteristic of `k` nor finiteness of `G` is used.
 ## Main results
 
 * `TauCeti.reductionK0_congr`: equivalent representations have equal reduction classes.
-* `TauCeti.reductionK0_quotSMulTop`: in characteristic `ℓ`, the reduction class of `W ⧸ ℓW` is the
-  class of `k ⊗_ℤ W`.
+* `TauCeti.reductionK0_quotSMulTop`: in characteristic `ℓ`, the reduction class of `W ⧸ ℓW` is
+  that of `W`.
 * `TauCeti.latticeDefect_add_of_exact`: additivity of the lattice defect.
 
 ## References
@@ -94,11 +95,11 @@ instance instModuleFiniteAsModuleBaseChange {W : Type u} [AddCommGroup W] [Modul
     Module.Finite k[G] (Representation.baseChange k ρ).asModule :=
   Module.Finite.of_restrictScalars_finite k k[G] _
 
-variable {W : Type u} [AddCommGroup W] [Module ℤ W] [Module.Finite ℤ W]
+variable {W : Type u} [AddCommGroup W] [Module ℤ W] [Module.Finite k (k ⊗[ℤ] W)]
 
-/-- **The reduction class** of a representation `ρ` of `G` on a finitely generated abelian group
-`W`: the class in `G₀(k[G])` of its scalar extension `k ⊗_ℤ W`, with `G` acting on the second
-factor. -/
+/-- **The reduction class** of a representation `ρ` of `G` on an abelian group `W` whose reduction
+`k ⊗_ℤ W` is finitely generated over `k`, for instance because `W` is finitely generated: the class
+in `G₀(k[G])` of its scalar extension `k ⊗_ℤ W`, with `G` acting on the second factor. -/
 noncomputable def reductionK0 (ρ : Representation ℤ G W) :
     ExactK0 (finiteModulesExactStructure k[G]) :=
   ExactK0.of (FGModuleCat.of k[G] (Representation.baseChange k ρ).asModule)
@@ -109,7 +110,8 @@ theorem reductionK0_def (ρ : Representation ℤ G W) :
   (rfl)
 
 /-- Equivalent representations have equal reduction classes. -/
-theorem reductionK0_congr {W' : Type u} [AddCommGroup W'] [Module ℤ W'] [Module.Finite ℤ W']
+theorem reductionK0_congr {W' : Type u} [AddCommGroup W'] [Module ℤ W']
+    [Module.Finite k (k ⊗[ℤ] W')]
     {ρ : Representation ℤ G W} {σ : Representation ℤ G W'} (e : ρ.Equiv σ) :
     reductionK0 k ρ = reductionK0 k σ :=
   ExactK0.of_congr (Representation.asModuleLinearEquivOfEquiv (e.baseChange k)).toFGModuleCatIso
@@ -127,14 +129,13 @@ theorem reductionK0_eq_zero_of_subsingleton [Subsingleton W] (ρ : Representatio
 
 end Reduction
 
-/-- **The reduction of `W ⧸ ℓW` is that of `W`** in characteristic `ℓ`: the reduction class of
-`ρ.quotSMulTop ℓ` is the class of `k ⊗_ℤ W`, which is finitely generated over `k` as soon as
-`W ⧸ ℓW` is, even when `W` is not (`TauCeti.finite_baseChange_of_finite_quotSMulTop`). -/
+/-- **The reduction of `W ⧸ ℓW` is that of `W`** in characteristic `ℓ`: the reduction classes of
+`ρ.quotSMulTop ℓ` and of `ρ` agree. Here `k ⊗_ℤ W` is finitely generated over `k` as soon as
+`W ⧸ ℓW` is, even when `W` is not (`QuotSMulTop.finite_baseChange`). -/
 theorem reductionK0_quotSMulTop (ℓ : ℕ) [CharP k ℓ] {W : Type u} [AddCommGroup W] [Module ℤ W]
     [Module.Finite ℤ (QuotSMulTop (ℓ : ℤ) W)] (ρ : Representation ℤ G W) :
     haveI : Module.Finite k (k ⊗[ℤ] W) := QuotSMulTop.finite_baseChange (r := (ℓ : ℤ)) (by simp)
-    reductionK0 k (ρ.quotSMulTop ℓ) =
-      ExactK0.of (FGModuleCat.of k[G] (Representation.baseChange k ρ).asModule) :=
+    reductionK0 k (ρ.quotSMulTop ℓ) = reductionK0 k ρ :=
   haveI : Module.Finite k (k ⊗[ℤ] W) := QuotSMulTop.finite_baseChange (r := (ℓ : ℤ)) (by simp)
   ExactK0.of_congr (Representation.asModuleLinearEquivOfEquiv
     (ρ.baseChangeQuotSMulTopEquiv (by simp)).symm).toFGModuleCatIso

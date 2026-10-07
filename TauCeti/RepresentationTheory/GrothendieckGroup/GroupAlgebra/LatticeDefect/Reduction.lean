@@ -57,11 +57,12 @@ section Class
 
 variable {k : Type u} [Field k] (G : Type u) [Monoid G] [Finite G] (ℓ : ℕ)
 
-/-- **The class of the reduction is the reduction class**: for a finitely generated `G`-module
-`V`, the class of `TauCeti.reduction k G V` in the Grothendieck ring of `FDRep k G` corresponds to
-`TauCeti.reductionK0 k` of the representation on `V` under `TauCeti.fdRepK0RingEquiv`. -/
+/-- **The class of the reduction is the reduction class**: for a `G`-module `V` with `k ⊗_ℤ V`
+finite-dimensional, the class of `TauCeti.reduction k G V` in the Grothendieck ring of `FDRep k G`
+corresponds to `TauCeti.reductionK0 k` of the representation on `V` under
+`TauCeti.fdRepK0RingEquiv`. -/
 theorem fdRepK0RingEquiv_of_reduction (V : Type u) [AddCommGroup V] [DistribMulAction G V]
-    [Module.Finite ℤ V] :
+    [Module.Finite k (k ⊗[ℤ] V)] :
     fdRepK0RingEquiv k G (ExactK0.of (reduction k G V)) =
       reductionK0 k (Representation.ofDistribMulAction ℤ G V) := by
   rw [fdRepK0RingEquiv_of, reductionK0_def]
@@ -79,12 +80,8 @@ theorem latticeDefect_eq_fdRepK0RingEquiv_reduction_sub [CharP k ℓ] (V : Type 
     haveI := AddMonoid.FG.to_moduleFinite_int (G := Submodule.torsionBy ℤ V ℓ)
     latticeDefect k G ℓ V = fdRepK0RingEquiv k G (ExactK0.of (reduction k G V)) -
       reductionK0 k ((Representation.ofDistribMulAction ℤ G V).torsionBy ℓ) := by
-  have := finite_baseChange_of_finite_quotSMulTop k ℓ V
   have := AddMonoid.FG.to_moduleFinite_int (G := QuotSMulTop (ℓ : ℤ) V)
-  rw [latticeDefect_def, fdRepK0RingEquiv_of, reductionK0_quotSMulTop k ℓ]
-  -- `(reduction k G V).ρ` is `Representation.baseChange k (ofDistribMulAction ℤ G V)` by
-  -- definition (`TauCeti.reduction_ρ`)
-  rfl
+  rw [latticeDefect_def, reductionK0_quotSMulTop k ℓ, fdRepK0RingEquiv_of_reduction]
 
 end Class
 

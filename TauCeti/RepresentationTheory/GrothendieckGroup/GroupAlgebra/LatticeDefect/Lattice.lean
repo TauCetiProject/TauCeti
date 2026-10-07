@@ -45,17 +45,18 @@ universe u
 
 variable (k G : Type u) [CommRing k] [Monoid G] (ℓ : ℕ)
 
-/-- **The lattice defect of a lattice is its reduction class**: in characteristic `ℓ`, a finitely
-generated `G`-module `V` without `ℓ`-torsion has defect `[k ⊗_ℤ V]`. Since `ℓ = 0` in `k`, the
+/-- **The lattice defect of a lattice is its reduction class**: in characteristic `ℓ`, a `G`-module
+`V` with `V ⧸ ℓV` finite and without `ℓ`-torsion has defect `[k ⊗_ℤ V]`. Since `ℓ = 0` in `k`, the
 reduction of `V ⧸ ℓV` is that of `V` (`TauCeti.reductionK0_quotSMulTop`). -/
 theorem latticeDefect_eq_reductionK0 [CharP k ℓ] (V : Type u) [AddCommGroup V]
-    [DistribMulAction G V] [Module.Finite ℤ V] [Finite (QuotSMulTop (ℓ : ℤ) V)]
+    [DistribMulAction G V] [Finite (QuotSMulTop (ℓ : ℤ) V)]
     [Subsingleton (Submodule.torsionBy ℤ V ℓ)] :
+    haveI := finite_baseChange_of_finite_quotSMulTop k ℓ V
     latticeDefect k G ℓ V = reductionK0 k (Representation.ofDistribMulAction ℤ G V) := by
   have := AddMonoid.FG.to_moduleFinite_int (G := QuotSMulTop (ℓ : ℤ) V)
   let ρ := Representation.ofDistribMulAction ℤ G V
   rw [latticeDefect_def, reductionK0_eq_zero_of_subsingleton k (ρ.torsionBy ℓ), sub_zero,
-    reductionK0_quotSMulTop k ℓ, reductionK0_def]
+    reductionK0_quotSMulTop k ℓ]
 
 section Permutation
 
