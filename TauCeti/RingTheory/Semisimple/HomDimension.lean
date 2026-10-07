@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Semisimple.Schur
+import TauCeti.LinearAlgebra.Pi
 
 /-!
 # Symmetry of hom-space dimensions for semisimple modules
@@ -59,27 +60,9 @@ theorem finrank_linearMap_comm_of_isSemisimpleModule
     Module.Finite.of_injective ((T j).subtype.restrictScalars k) Subtype.val_injective
   let epM := eM.trans DFinsupp.linearEquivFunOnFintype
   let epN := eN.trans DFinsupp.linearEquivFunOnFintype
-  have hMN : Module.finrank k (M →ₗ[A] N) =
-      ∑ i : Fin m, ∑ j : Fin n, Module.finrank k (S i →ₗ[A] T j) := by
-    rw [(LinearEquiv.congrLeft N k epM).finrank_eq,
-      (homCongrRight k epN).finrank_eq,
-      ← (LinearMap.lsum A (fun i : Fin m ↦ S i) k).finrank_eq,
-      Module.finrank_pi_fintype]
-    congr 1
-    ext i
-    rw [← (LinearEquiv.linearMapPi (R := A) (M₂ := S i)
-      (φ := fun j : Fin n ↦ T j) k).finrank_eq, Module.finrank_pi_fintype]
-  have hNM : Module.finrank k (N →ₗ[A] M) =
-      ∑ j : Fin n, ∑ i : Fin m, Module.finrank k (T j →ₗ[A] S i) := by
-    rw [(LinearEquiv.congrLeft M k epN).finrank_eq,
-      (homCongrRight k epM).finrank_eq,
-      ← (LinearMap.lsum A (fun j : Fin n ↦ T j) k).finrank_eq,
-      Module.finrank_pi_fintype]
-    congr 1
-    ext j
-    rw [← (LinearEquiv.linearMapPi (R := A) (M₂ := T j)
-      (φ := fun i : Fin m ↦ S i) k).finrank_eq, Module.finrank_pi_fintype]
-  rw [hMN, hNM, Finset.sum_comm]
+  rw [(LinearEquiv.congrLeft N k epM).finrank_eq, (homCongrRight k epN).finrank_eq,
+    (LinearEquiv.congrLeft M k epN).finrank_eq, (homCongrRight k epM).finrank_eq,
+    finrank_linearMap_pi_eq_sum, finrank_linearMap_pi_eq_sum, Finset.sum_comm]
   exact Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun i _ ↦
     finrank_linearMap_comm_of_isSimpleModule (S i) (T j)
 
