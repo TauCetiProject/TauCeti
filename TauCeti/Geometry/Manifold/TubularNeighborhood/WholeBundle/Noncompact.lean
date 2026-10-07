@@ -152,7 +152,8 @@ theorem normalBundleHomeomorphTubeOfRadius_symm_apply_snd (f : M → V) (r : C(M
   have hinv :
       (((normalBundleHomeomorphTubeOfRadius f r hr).symm q).2 : V) =
         ((Homeomorph.unitBall.symm y : normalSubspace I f q.1.1) : V) := by
-    rfl
+    -- The inverse is defined with this dependent subtype; expose that definition explicitly.
+    dsimp [normalBundleHomeomorphTubeOfRadius, y]
   simpa only [y, ← Submodule.norm_coe, Submodule.coe_smul, Subtype.coe_mk]
     using hinv.trans (congrArg ((↑) : normalSubspace I f q.1.1 → V) hy)
 
