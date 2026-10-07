@@ -16,24 +16,28 @@ A basis of a module induces a basis of each exterior power, indexed by subsets o
 indices. An endomorphism diagonal in the original basis acts diagonally in this exterior-power
 basis, with eigenvalues given by products over the indexing subsets. Their sum is the trace.
 
-In the degree of a finite basis indexed by `Fin n`, an exterior product is its determinant against
-that basis times the basis wedge. This identifies the top exterior power with the scalars and
-makes the induced endomorphism act by its determinant. These formulas hold over every commutative
-ring, including the zero ring.
+A basis indexed by `Fin n` identifies the degree-`n` exterior power with the scalars by sending an
+exterior product to its determinant against that basis. The induced endomorphism acts by its
+determinant in this degree. These formulas hold over every commutative ring, including the zero
+ring. When the ring is nontrivial, `n` is the module's rank and this is its top exterior power.
 
 ## Main definitions
 
-* `Module.Basis.exteriorPowerTopEquiv` identifies the top exterior power with the scalars.
+* `Module.Basis.exteriorPowerTopEquiv` identifies the degree-`n` exterior power with the scalars
+  for a basis indexed by `Fin n`.
 
 ## Main results
 
 * `Module.Basis.map_exteriorPower_of_apply` gives the eigenvalues in the exterior-power basis.
 * `Module.Basis.trace_map_exteriorPower_of_apply` sums those eigenvalues to compute the trace.
-* `Module.Basis.exteriorPower_ιMulti_eq_det_smul` expands a top-degree exterior product in terms
-  of the basis wedge.
-* `Module.Basis.map_exteriorPower_top_eq_det_smul` and
-  `LinearMap.map_exteriorPower_finrank_eq_det_smul` give the top-degree action as its determinant.
-* `Module.Basis.trace_map_exteriorPower_top` identifies the top-degree trace with the determinant.
+* `Module.Basis.exteriorPower_ιMulti_eq_det_smul` expands a degree-`n` exterior product in terms
+  of the wedge of a basis indexed by `Fin n`.
+* `Module.Basis.map_exteriorPower_top_eq_det_smul` gives the degree-`n` action as its determinant
+  for a basis indexed by `Fin n`.
+* `LinearMap.map_exteriorPower_finrank_eq_det_smul` gives the action in degree `Module.finrank`
+  as its determinant.
+* `Module.Basis.trace_map_exteriorPower_top` gives the degree-`n` trace as the determinant
+  for a basis indexed by `Fin n`.
 
 ## References
 
@@ -112,8 +116,8 @@ section Top
 
 variable [CommRing R] [AddCommGroup M] [Module R M] {n : ℕ}
 
-/-- In the top degree, an exterior product of `n` vectors is the determinant of that family
-against a basis, times the exterior product of the basis. -/
+/-- Given a basis indexed by `Fin n`, an exterior product of `n` vectors is the determinant of
+that family against the basis, times the exterior product of the basis. -/
 theorem _root_.Module.Basis.exteriorPower_ιMulti_eq_det_smul (b : Module.Basis (Fin n) R M)
     (v : Fin n → M) :
     ιMulti R n v = b.det v • ιMulti R n ⇑b := by
@@ -133,7 +137,8 @@ theorem _root_.Module.Basis.exteriorPower_ιMulti_eq_det_smul (b : Module.Basis 
         rw [← hφ_apply ⇑b, mul_comm]
     _ = (b.exteriorPower n).repr (b.det v • ιMulti R n ⇑b) s := by simp
 
-/-- **An endomorphism acts on the top exterior power as multiplication by its determinant.** -/
+/-- For a basis indexed by `Fin n`, an endomorphism acts on the degree-`n` exterior power as
+multiplication by its determinant. -/
 theorem _root_.Module.Basis.map_exteriorPower_top_eq_det_smul (b : Module.Basis (Fin n) R M)
     (f : M →ₗ[R] M) :
     map n f = LinearMap.det f • LinearMap.id := by
@@ -144,7 +149,7 @@ theorem _root_.Module.Basis.map_exteriorPower_top_eq_det_smul (b : Module.Basis 
   simp only [LinearMap.smul_apply, LinearMap.id_coe, id_eq]
 
 /-- The basis-free form of `Module.Basis.map_exteriorPower_top_eq_det_smul`: an endomorphism of a
-finite free module acts on the exterior power in the degree equal to its rank by its determinant. -/
+finite free module acts on the exterior power in degree `Module.finrank R M` by its determinant. -/
 @[simp]
 theorem _root_.LinearMap.map_exteriorPower_finrank_eq_det_smul
     [Module.Free R M] [Module.Finite R M]
@@ -155,9 +160,8 @@ theorem _root_.LinearMap.map_exteriorPower_finrank_eq_det_smul
     exact Subsingleton.elim _ _
   · exact (Module.finBasis R M).map_exteriorPower_top_eq_det_smul f
 
-/-- The top exterior power of a module with a basis indexed by `Fin n` is free of rank one: it is
-identified with the scalars by sending an exterior product of vectors to their determinant against
-the basis. -/
+/-- A basis indexed by `Fin n` identifies the degree-`n` exterior power with the scalars by
+sending an exterior product of vectors to their determinant against the basis. -/
 noncomputable def _root_.Module.Basis.exteriorPowerTopEquiv (b : Module.Basis (Fin n) R M) :
     ⋀[R]^n M ≃ₗ[R] R :=
   LinearEquiv.ofLinearMap (alternatingMapLinearEquiv b.det)
@@ -170,20 +174,22 @@ noncomputable def _root_.Module.Basis.exteriorPowerTopEquiv (b : Module.Basis (F
       rintro _ ⟨v, rfl⟩
       simp [b.exteriorPower_ιMulti_eq_det_smul v, Module.Basis.det_self])
 
-/-- The top-degree identification sends an exterior product to its determinant against the basis. -/
+/-- The identification for a basis indexed by `Fin n` sends an exterior product to its determinant
+against the basis. -/
 @[simp]
 lemma _root_.Module.Basis.exteriorPowerTopEquiv_apply_ιMulti (b : Module.Basis (Fin n) R M)
     (v : Fin n → M) :
     b.exteriorPowerTopEquiv (ιMulti R n v) = b.det v := by
   simp [Module.Basis.exteriorPowerTopEquiv]
 
-/-- The inverse top-degree identification sends a scalar to that multiple of the basis wedge. -/
+/-- The inverse identification sends a scalar to that multiple of the basis wedge. -/
 @[simp]
 lemma _root_.Module.Basis.exteriorPowerTopEquiv_symm_apply (b : Module.Basis (Fin n) R M) (r : R) :
     b.exteriorPowerTopEquiv.symm r = r • ιMulti R n ⇑b := by
   simp [Module.Basis.exteriorPowerTopEquiv]
 
-/-- The trace of the induced endomorphism of the top exterior power is the determinant. -/
+/-- For a basis indexed by `Fin n`, the trace of the induced endomorphism on the degree-`n`
+exterior power is the determinant. -/
 theorem _root_.Module.Basis.trace_map_exteriorPower_top
     (b : Module.Basis (Fin n) R M) (f : M →ₗ[R] M) :
     LinearMap.trace R (⋀[R]^n M) (map n f) = LinearMap.det f := by
