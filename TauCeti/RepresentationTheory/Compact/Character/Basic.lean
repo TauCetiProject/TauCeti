@@ -31,15 +31,15 @@ here by the Haar integral.
 
 ## Main definitions
 
-* `TauCeti.ContRepresentation.characterLp`: the character as an element of `Lp 𝕜 2 (haarProb G)`.
+* `ContRepresentation.characterLp`: the character as an element of `Lp 𝕜 2 (haarProb G)`.
 
 ## Main statements
 
-* `TauCeti.ContRepresentation.inner_characterLp_eq_sum`: the `L²` inner product of two characters
+* `ContRepresentation.inner_characterLp_eq_sum`: the `L²` inner product of two characters
   is the double sum of the inner products of the diagonal matrix coefficients.
-* `TauCeti.ContRepresentation.character_orthonormal_self`: **first character orthogonality.** The
+* `ContRepresentation.character_orthonormal_self`: **first character orthogonality.** The
   character of a finite-dimensional irreducible unitary representation is a unit vector of `L²(G)`.
-* `TauCeti.ContRepresentation.character_orthonormal_distinct`: **second character orthogonality.**
+* `ContRepresentation.character_orthonormal_distinct`: **second character orthogonality.**
   The characters of two representations with no nonzero intertwiner between them are
   `L²`-orthogonal.
 
@@ -49,7 +49,7 @@ The diagonal matrix coefficient `matrixCoeff π hπ eᵢ eᵢ` is `g ↦ ⟪π g
 entry of the matrix of `π g` that the trace sums is `⟪eᵢ, π g eᵢ⟫`; in Mathlib's convention, where
 the inner product is conjugate linear in its first argument, these are conjugate to one another.
 So a character is the conjugate, not the sum, of its diagonal matrix coefficients
-(`TauCeti.ContRepresentation.star_character`), and `inner_characterLp_eq_sum` carries that
+(`ContRepresentation.star_character`), and `inner_characterLp_eq_sum` carries that
 conjugation as a transposition of the two arguments of the inner product. That transposition is
 also why `character_orthonormal_distinct` asks for the vanishing of the intertwiners `ρ → π` rather
 than `π → ρ`, and asks unitarity of `π` rather than of `ρ`: those are exactly the hypotheses of
@@ -62,11 +62,9 @@ from `inner_characterLp_eq_sum` on, where an orthonormal basis enters. The scala
 even for that packaging: `ContinuousMap.toLp` needs `SecondCountableTopologyEither G 𝕜`, which a
 general complete nontrivially normed field does not supply.
 
-This is the first half of Layer 6 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md);
-its remaining item, that the characters span the central subspace of `L²(G)`, needs the Peter-Weyl
-theorem of Layer 5 and is proved in `TauCeti/RepresentationTheory/Compact/Character/Basis.lean`.
-The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
+Class-function completeness is proved using Peter-Weyl in
+`TauCeti/RepresentationTheory/Compact/Character/Basis.lean`. The mathematical development follows
+Daniel Bump, *Lie Groups*, second edition, Chapter 2.
 -/
 
 public section
@@ -74,7 +72,7 @@ public section
 open MeasureTheory
 open scoped InnerProductSpace
 
-namespace TauCeti
+open TauCeti TauCeti.ContRepresentation
 
 namespace ContRepresentation
 
@@ -134,7 +132,7 @@ private theorem inner_toLp_star (F H : C(G, 𝕜)) :
 /-- **The `L²` inner product of two characters is a double sum of inner products of diagonal matrix
 coefficients.** The two arguments are transposed on the right-hand side because a character is the
 *conjugate* of the sum of its diagonal matrix coefficients
-(`TauCeti.ContRepresentation.star_character`).
+(`ContRepresentation.star_character`).
 
 This is the identity through which both orthogonality relations below are read off the Schur
 orthogonality relations for matrix coefficients. -/
@@ -229,5 +227,3 @@ theorem norm_characterLp_eq_one [IsAlgClosed 𝕜] (hunitary : IsUnitary π)
 end Orthogonality
 
 end ContRepresentation
-
-end TauCeti

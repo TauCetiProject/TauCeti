@@ -36,7 +36,7 @@ instance, a matrix of integers.
 The facts about `ρ g` as a bare endomorphism live in `TauCeti.LinearAlgebra.End.FiniteOrder`.
 
 The conjugation identity `conj (χ g) = χ g⁻¹` also holds for a unitary representation of a
-topological group, where it is `TauCeti.ContRepresentation.character_apply_inv` and comes from the
+topological group, where it is `ContRepresentation.character_apply_inv` and comes from the
 action of `g⁻¹` being the adjoint of the action of `g`. Here it is proved for an arbitrary complex
 representation of a group, from the eigenvalues alone, with no invariant inner product in sight.
 
