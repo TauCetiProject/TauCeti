@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Algebra.Module.Torsion.Int
 public import TauCeti.RepresentationTheory.BaseChange
-public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.LatticeDefect.Basic
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.LatticeDefect.Finite
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Permutation.Basic
+public import TauCeti.RepresentationTheory.Lattice
 
 /-!
 # The lattice defect of a lattice
@@ -23,16 +24,33 @@ For the permutation lattice `ℤ[X] = X →₀ ℤ` of a finite `G`-set `X`, who
 permutation representation `k[X]` (`TauCeti.baseChangeComapEquiv`), this gives
 `latticeDefect ℤ[X] = [k[X]]` (`TauCeti.latticeDefect_finsupp_int`).
 
+Two lattices `V` and `W` with equivalent rationalizations `ℚ ⊗_ℤ V ≅ ℚ ⊗_ℤ W` have the same
+reduction class over every field `k` (`TauCeti.reductionK0_eq_of_nonempty_equiv`), although their
+reductions need not be isomorphic: for `G` of order `2`, the permutation lattice `ℤ[G]` and the
+lattice `ℤ ⊕ ℤ(-1)` have isomorphic rationalizations, but modulo `2` the first reduces to the
+indecomposable `𝔽₂[G]` and the second to two trivial lines. Clearing denominators in a rational
+equivalence gives equivariant maps `f : V → W` and `f' : W → V` whose composites are
+multiplication by a nonzero integer `s`
+(`Representation.Equiv.exists_intertwiningMap_comp_eq_smul`). In characteristic zero `s` is
+invertible in `k`, so `f` reduces to an isomorphism. In characteristic `ℓ`, `f` is injective with
+finite cokernel, so the two lattices have the same lattice defect
+(`TauCeti.latticeDefect_eq_of_finiteIndex`), which is their reduction class.
+
 ## Main results
 
 * `TauCeti.latticeDefect_eq_reductionK0`: the defect of a lattice is its reduction class.
 * `TauCeti.latticeDefect_finsupp_int`: the defect of the permutation lattice `ℤ[X]` is the
   permutation class `[k[X]]`.
+* `TauCeti.reductionK0_eq_of_nonempty_equiv_of_charP` and
+  `TauCeti.reductionK0_eq_of_nonempty_equiv`: lattices with equivalent rationalizations have the
+  same reduction class, in characteristic `ℓ` over any commutative ring, and over every field.
 
 ## References
 
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., Springer (2008),
   §VII.3, (7.3.3).
+* J. S. Milne, *Arithmetic Duality Theorems*, 2nd ed. (2006), Chapter I, Lemma 2.12, the same
+  statement for finitely generated `ℤ_p[G]`-modules with isomorphic `ℚ_p`-rationalizations.
 -/
 
 public section
@@ -45,6 +63,8 @@ open scoped Pointwise
 attribute [local instance high] Submodule.module Submodule.Quotient.module TensorProduct.instModule
 
 universe u
+
+section CommRing
 
 variable (k G : Type u) [CommRing k] [Monoid G] (ℓ : ℕ)
 
@@ -83,6 +103,23 @@ theorem latticeDefect_eq_reductionK0 [CharP k ℓ] (V : Type u) [AddCommGroup V]
     reductionK0_def, reductionK0_def]
   exact ExactK0.of_congr (Representation.asModuleLinearEquivOfEquiv e).toFGModuleCatIso
 
+/-- **Lattices with equivalent rationalizations have the same reduction class** in
+characteristic `ℓ`: for finitely generated torsion-free `G`-modules `V` and `W` with
+`ℚ ⊗_ℤ V ≅ ℚ ⊗_ℤ W`, the classes `[k ⊗_ℤ V]` and `[k ⊗_ℤ W]` agree. The reductions themselves need
+not be isomorphic. -/
+theorem reductionK0_eq_of_nonempty_equiv_of_charP [Fact ℓ.Prime] [CharP k ℓ] (V W : Type u)
+    [AddCommGroup V] [DistribMulAction G V] [Module.Finite ℤ V] [IsAddTorsionFree V]
+    [AddCommGroup W] [DistribMulAction G W] [Module.Finite ℤ W] [IsAddTorsionFree W]
+    (h : Nonempty ((Representation.baseChange ℚ (Representation.ofDistribMulAction ℤ G V)).Equiv
+      (Representation.baseChange ℚ (Representation.ofDistribMulAction ℤ G W)))) :
+    reductionK0 k (Representation.ofDistribMulAction ℤ G V) =
+      reductionK0 k (Representation.ofDistribMulAction ℤ G W) := by
+  have : NeZero ℓ := ⟨(Fact.out : ℓ.Prime).ne_zero⟩
+  obtain ⟨f, hf, _⟩ := exists_injective_finite_quotient_range_of_nonempty_equiv h
+  have : (f : V →+ W).range.FiniteIndex := AddSubgroup.finiteIndex_of_finite_quotient
+  rw [← latticeDefect_eq_reductionK0 k G ℓ V, ← latticeDefect_eq_reductionK0 k G ℓ W]
+  exact latticeDefect_eq_of_finiteIndex k G ℓ f hf
+
 section Permutation
 
 attribute [local instance] Finsupp.comapSMul Finsupp.comapMulAction Finsupp.comapDistribMulAction
@@ -97,5 +134,52 @@ theorem latticeDefect_finsupp_int [CharP k ℓ] [NeZero ℓ] (X : Type u) [MulAc
     permK0_eq_of_equiv k X _ (baseChangeComapEquiv ℤ k G X).symm]
 
 end Permutation
+
+end CommRing
+
+variable (k G : Type u) [Field k] [Monoid G]
+
+/-- **Lattices with equivalent rationalizations have the same reduction class**, over every field
+`k`: for finitely generated torsion-free `G`-modules `V` and `W` with `ℚ ⊗_ℤ V ≅ ℚ ⊗_ℤ W`, the
+classes `[k ⊗_ℤ V]` and `[k ⊗_ℤ W]` in `G₀(k[G])` agree. In characteristic zero the reductions are
+isomorphic; in characteristic `ℓ` they need not be. -/
+theorem reductionK0_eq_of_nonempty_equiv (V W : Type u)
+    [AddCommGroup V] [DistribMulAction G V] [Module.Finite ℤ V] [IsAddTorsionFree V]
+    [AddCommGroup W] [DistribMulAction G W] [Module.Finite ℤ W] [IsAddTorsionFree W]
+    (h : Nonempty ((Representation.baseChange ℚ (Representation.ofDistribMulAction ℤ G V)).Equiv
+      (Representation.baseChange ℚ (Representation.ofDistribMulAction ℤ G W)))) :
+    reductionK0 k (Representation.ofDistribMulAction ℤ G V) =
+      reductionK0 k (Representation.ofDistribMulAction ℤ G W) := by
+  obtain ⟨ℓ, hℓ⟩ := CharP.exists k
+  rcases CharP.char_is_prime_or_zero k ℓ with hp | rfl
+  · have := Fact.mk hp
+    exact reductionK0_eq_of_nonempty_equiv_of_charP k G ℓ V W h
+  have := (CharP.charP_zero_iff_charZero k).mp hℓ
+  -- Clear denominators: `f' ∘ f` and `f ∘ f'` are multiplication by a nonzero integer `s`.
+  obtain ⟨e⟩ := h
+  obtain ⟨f, f', s, hf'f, hff'⟩ := e.exists_intertwiningMap_comp_eq_smul (nonZeroDivisors ℤ)
+    (fun s ↦ .of_ne_zero (nonZeroDivisors.coe_ne_zero s))
+    fun s ↦ .of_ne_zero (nonZeroDivisors.coe_ne_zero s)
+  -- After base change to `k`, multiplication by `s` is invertible, so `f` becomes bijective.
+  have hs : IsUnit ((s : ℤ) : k) :=
+    (Int.cast_ne_zero.mpr (nonZeroDivisors.coe_ne_zero s)).isUnit
+  have hcomp {X Y : Type u} [AddCommGroup X] [AddCommGroup Y]
+      {ρ : Representation ℤ G X} {σ : Representation ℤ G Y}
+      (a : ρ.IntertwiningMap σ) (b : σ.IntertwiningMap ρ) (hab : ∀ x, b (a x) = (s : ℤ) • x)
+      (x : k ⊗[ℤ] X) : b.baseChange k (a.baseChange k x) = ((s : ℤ) : k) • x := by
+    induction x using TensorProduct.inductionOn with
+    | tmul c x =>
+      rw [Representation.IntertwiningMap.baseChange_tmul,
+        Representation.IntertwiningMap.baseChange_tmul, hab, TensorProduct.tmul_smul,
+        Int.cast_smul_eq_zsmul]
+    | add x y hx hy => simp only [map_add, hx, hy, smul_add]
+  have hbij : Function.Bijective (f.baseChange k) := by
+    refine ⟨fun x y hxy ↦ hs.smul_left_cancel.mp ?_, fun y ↦ ⟨f'.baseChange k (hs.unit⁻¹ • y), ?_⟩⟩
+    · rw [← hcomp f f' hf'f, ← hcomp f f' hf'f, hxy]
+    · rw [hcomp f' f hff']
+      exact smul_inv_smul hs.unit y
+  rw [reductionK0_def, reductionK0_def]
+  exact ExactK0.of_congr
+    (Representation.asModuleLinearEquivOfEquiv ((f.baseChange k).ofBijective hbij)).toFGModuleCatIso
 
 end TauCeti
