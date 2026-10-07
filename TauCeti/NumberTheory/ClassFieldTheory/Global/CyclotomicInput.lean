@@ -146,6 +146,8 @@ theorem exists_apply_unitOfCoprime_pow_sub_one (q N : ℕ) (hq : 1 < q) (hN : N 
 
 end CharacterModule
 
+end TauCeti
+
 namespace IsPrimitiveRoot
 
 /-- **The prescribed cyclotomic character.** Let `ζ` be a primitive `(q ^ N - 1)`-th root of
@@ -165,11 +167,11 @@ theorem exists_character_autToPow_apply {K E : Type*} [CommRing K] [CommRing E] 
   let _ : NeZero (q ^ N - 1) := ⟨by
     have : 1 < q ^ N := one_lt_pow₀ hq hN
     omega⟩
-  obtain ⟨χ, hχ⟩ := CharacterModule.exists_apply_unitOfCoprime_pow_sub_one q N hq hN
+  obtain ⟨χ, hχ⟩ := TauCeti.CharacterModule.exists_apply_unitOfCoprime_pow_sub_one q N hq hN
   refine ⟨χ.comp (hζ.autToPow K).toAdditive, fun σ hσ ↦ ?_⟩
   change χ (.ofMul (hζ.autToPow K σ)) = _
   have haut : hζ.autToPow K σ =
-      ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one q N hq hN) := by
+      ZMod.unitOfCoprime q (TauCeti.Nat.coprime_pow_sub_one q N hq hN) := by
     apply Units.ext
     rw [ZMod.coe_unitOfCoprime,
       ← ZMod.natCast_zmod_val (hζ.autToPow K σ : ZMod (q ^ N - 1)),
@@ -180,5 +182,3 @@ theorem exists_character_autToPow_apply {K E : Type*} [CommRing K] [CommRing E] 
   rw [haut, hχ]
 
 end IsPrimitiveRoot
-
-end TauCeti
