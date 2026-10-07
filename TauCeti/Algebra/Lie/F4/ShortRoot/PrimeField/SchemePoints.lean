@@ -74,19 +74,11 @@ theorem schemePointsMulEquiv_mapValue {A B : Type} [CommRing A] [CommRing B]
         ((Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver
           (Spec (CommRingCat.of 𝔽₂)) ≫ p) =
       pointsMap φ (schemePointsMulEquiv A p) := by
-  let q : HopfAlgebra.points (H := Q) (CommAlgCat.of 𝔽₂ A) :=
-    (groupSchemePointMulEquiv A).symm p
-  have hpre :
-      (groupSchemePointMulEquiv B).symm
-          ((Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver
-            (Spec (CommRingCat.of 𝔽₂)) ≫ p) =
-        HopfAlgebra.mapPoints (H := Q) (CommAlgCat.ofHom φ) q := by
-    simpa only [q, groupSchemePointMulEquiv] using
-      CommHopfAlgCat.mapMulEquivOfPresentation_mapValue Q φ
-        (GeneralLinear.generatedGroupScheme_def 26 generator) p
-  simp only [schemePointsMulEquiv, MulEquiv.trans_apply]
-  rw [hpre, HopfAlgebra.mapPoints_apply]
-  exact coordinatePointsEquiv_mapPoints φ q
+  unfold schemePointsMulEquiv groupSchemePointMulEquiv
+  exact CommHopfAlgCat.mapMulEquivOfPresentation_symm_trans_mapValue Q φ
+    (GeneralLinear.generatedGroupScheme_def 26 generator) _ _ (pointsMap φ)
+    (fun q ↦ (congrArg _ (AlgHom.mapValue_apply φ q)).trans
+      (coordinatePointsEquiv_mapPoints φ q)) p
 
 /-- A coordinate endomorphism acts on scheme-valued points by precomposition. -/
 theorem groupSchemePointMulEquiv_comp_coordinateMap
