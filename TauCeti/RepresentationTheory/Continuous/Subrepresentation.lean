@@ -107,7 +107,7 @@ theorem _root_.Subrepresentation.toRepresentation_subrepresentation_toSubmodule
     (σ : Subrepresentation π.toRepresentation) :
     (subrepresentation π σ.toSubmodule
       (fun g _ hv ↦ σ.apply_mem_toSubmodule g hv)).toRepresentation = σ.toRepresentation := by
-  rfl
+  exact toRepresentation_subrepresentation.trans (by ext g v; rfl)
 
 end Restriction
 
