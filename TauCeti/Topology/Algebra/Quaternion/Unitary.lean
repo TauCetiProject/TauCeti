@@ -28,6 +28,7 @@ open scoped Quaternion
 namespace Quaternion
 
 /-- A Hamilton quaternion is unitary exactly when it belongs to the unit sphere. -/
+@[simp 1100]
 theorem mem_unitary_iff_mem_sphere_zero_one (q : ℍ[ℝ]) :
     q ∈ unitary ℍ[ℝ] ↔ q ∈ sphere (0 : ℍ[ℝ]) 1 := by
   rw [mem_unitary_iff_normSq_eq_one, mem_sphere, dist_zero_right,

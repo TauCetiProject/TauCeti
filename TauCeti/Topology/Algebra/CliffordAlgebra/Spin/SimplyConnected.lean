@@ -45,8 +45,8 @@ theorem continuous_realSpinThreeEquivQuaternionUnitary :
     Continuous (realSpinThreeEquivQuaternionUnitary :
       spinGroup (realCliffordForm 3 0) → unitary ℍ[ℝ]) := by
   apply continuous_induced_rng.2
-  change Continuous (fun s ↦ (realSpinThreeEquivQuaternionUnitary s : ℍ[ℝ]))
-  have hfun : (fun s ↦ (realSpinThreeEquivQuaternionUnitary s : ℍ[ℝ])) =
+  have hfun : Subtype.val ∘ (realSpinThreeEquivQuaternionUnitary :
+      spinGroup (realCliffordForm 3 0) → unitary ℍ[ℝ]) =
       fun s ↦ realCliffordThreeZeroEvenEquivQuaternion
         (CliffordAlgebra.evenUnitaryGroupEvenPart (realCliffordForm 3 0)
           (CliffordAlgebra.spinGroupToEvenUnitary (realCliffordForm 3 0) s)) := by
@@ -59,16 +59,17 @@ theorem continuous_realSpinThreeEquivQuaternionUnitary :
       CliffordAlgebra.evenUnitaryGroupEvenPart (realCliffordForm 3 0)
         (CliffordAlgebra.spinGroupToEvenUnitary (realCliffordForm 3 0) s)) := by
     apply continuous_induced_rng.2
-    convert (continuous_subtype_val : Continuous (fun s : spinGroup (realCliffordForm 3 0) ↦
-      (s : CliffordAlgebra (realCliffordForm 3 0)))) using 1
-    funext s
-    change ((CliffordAlgebra.evenUnitaryGroupEvenPart (realCliffordForm 3 0)
-      (CliffordAlgebra.spinGroupToEvenUnitary (realCliffordForm 3 0) s) :
-        CliffordAlgebra.even (realCliffordForm 3 0)) :
-          CliffordAlgebra (realCliffordForm 3 0)) = s
-    rw [CliffordAlgebra.coe_evenUnitaryGroupEvenPart,
-      CliffordAlgebra.coe_spinGroupToEvenUnitary_apply]
-    rfl
+    have hinnerFun : Subtype.val ∘ (fun s ↦
+        CliffordAlgebra.evenUnitaryGroupEvenPart (realCliffordForm 3 0)
+          (CliffordAlgebra.spinGroupToEvenUnitary (realCliffordForm 3 0) s)) =
+        fun s : spinGroup (realCliffordForm 3 0) ↦
+          (s : CliffordAlgebra (realCliffordForm 3 0)) := by
+      funext s
+      simp only [Function.comp_apply, CliffordAlgebra.coe_evenUnitaryGroupEvenPart,
+        CliffordAlgebra.coe_spinGroupToEvenUnitary_apply]
+      rfl
+    rw [hinnerFun]
+    exact continuous_subtype_val
   exact realCliffordThreeZeroEvenEquivQuaternion.toLinearMap.continuous_of_finiteDimensional.comp
     hinner
 
@@ -114,11 +115,9 @@ theorem coe_realSpinThreeHomeomorphQuaternionSphere_apply
     (s : spinGroup (realCliffordForm 3 0)) :
     (realSpinThreeHomeomorphQuaternionSphere s : ℍ[ℝ]) =
       realSpinThreeEquivQuaternionUnitary s := by
-  rw [realSpinThreeHomeomorphQuaternionSphere]
-  change (Quaternion.unitaryHomeomorphSphere
-    (realSpinThreeContinuousMulEquivQuaternionUnitary s) : ℍ[ℝ]) = _
-  rw [Quaternion.coe_unitaryHomeomorphSphere_apply,
-    realSpinThreeContinuousMulEquivQuaternionUnitary_apply]
+  rw [realSpinThreeHomeomorphQuaternionSphere, Homeomorph.trans_apply,
+    Quaternion.coe_unitaryHomeomorphSphere_apply]
+  exact congrArg Subtype.val (realSpinThreeContinuousMulEquivQuaternionUnitary_apply s)
 
 /-- The inverse sphere homeomorphism is the inverse of the existing algebraic equivalence after
 viewing a sphere point as a unitary quaternion. -/
@@ -128,10 +127,11 @@ theorem realSpinThreeHomeomorphQuaternionSphere_symm_apply
     realSpinThreeHomeomorphQuaternionSphere.symm q =
       realSpinThreeEquivQuaternionUnitary.symm
         (Quaternion.unitaryHomeomorphSphere.symm q) := by
-  rw [realSpinThreeHomeomorphQuaternionSphere]
-  change realSpinThreeContinuousMulEquivQuaternionUnitary.symm
-    (Quaternion.unitaryHomeomorphSphere.symm q) = _
-  rw [realSpinThreeContinuousMulEquivQuaternionUnitary_symm_apply]
+  rw [realSpinThreeHomeomorphQuaternionSphere, Homeomorph.symm_trans_apply]
+  rw [ContinuousMulEquiv.toHomeomorph_eq_coe,
+    ContinuousMulEquiv.coe_toHomeomorph_symm]
+  exact realSpinThreeContinuousMulEquivQuaternionUnitary_symm_apply
+    (Quaternion.unitaryHomeomorphSphere.symm q)
 
 end TauCeti
 
