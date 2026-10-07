@@ -42,6 +42,9 @@ up to a scalar there. At `Q = N` the Fricke matrix gives the Fricke operator of
 
 * `TauCeti.atkinLehnerOperatorGamma1`, `TauCeti.atkinLehnerOperatorGamma1Cusp`: the slash by an
   Atkin–Lehner matrix on `M_k(Γ₁(N))` and on `S_k(Γ₁(N))`.
+* `TauCeti.atkinLehnerGamma1CharRestrict`, `TauCeti.atkinLehnerGamma1CharCuspRestrict`: those
+  operators restricted to linear maps `M_k(N, χ) → M_k(N, χ ∘ ι_Q)` and
+  `S_k(N, χ) → S_k(N, χ ∘ ι_Q)`.
 
 ## Main results
 
@@ -55,7 +58,9 @@ up to a scalar there. At `Q = N` the Fricke matrix gives the Fricke operator of
   `χ` to `χ ∘ ι_Q`.
 * `TauCeti.atkinLehnerOperatorGamma1_mul_left`,
   `TauCeti.atkinLehnerOperatorGamma1_mul_left_of_mem_modFormCharSpace`: the dependence on the
-  matrix, `W_{γ W} = W_W ∘ ⟨d_γ⟩`, a scalar `χ(d_γ)` on `M_k(N, χ)`.
+  matrix, `W_{γ W} = W_W ∘ ⟨d_γ⟩`, a scalar `χ(d_γ)` on `M_k(N, χ)`; with cusp-form counterparts
+  `TauCeti.atkinLehnerOperatorGamma1Cusp_mul_left` and
+  `TauCeti.atkinLehnerOperatorGamma1Cusp_mul_left_of_mem_cuspFormCharSpace`.
 * `TauCeti.atkinLehnerOperatorGamma1_fricke`, `TauCeti.atkinLehnerOperatorGamma1Cusp_fricke`: at
   the Fricke matrix the operator is `frickeOperator`.
 
@@ -228,14 +233,15 @@ theorem atkinLehnerOperatorGamma1_mem_modFormCharSpace (hQ : 0 < Q) (hQN : Q ∣
     (h : IsAtkinLehnerMatrix N Q M) {χ : (ZMod N)ˣ →* ℂˣ}
     {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ modFormCharSpace k χ) :
     atkinLehnerOperatorGamma1 hQ hQN h k f ∈
-      modFormCharSpace k (χ.comp (h.isExactDivisor hQ.ne' hQN).unitsInvPart.toMonoidHom) := by
+      modFormCharSpace k
+        (χ.comp ((h.isExactDivisor hQ.ne' hQN).unitsInvPart : (ZMod N)ˣ →* (ZMod N)ˣ)) := by
   rw [mem_modFormCharSpace_iff]
   intro d
   have hd := LinearMap.congr_fun (atkinLehnerOperatorGamma1_diamondOp hQ hQN h k
     ((h.isExactDivisor hQ.ne' hQN).unitsInvPart d)) f
   rw [LinearMap.comp_apply, LinearMap.comp_apply, Nat.IsExactDivisor.unitsInvPart_unitsInvPart,
     diamondOp_apply_of_mem_modFormCharSpace k χ _ hf, map_smul] at hd
-  rw [diamondOpHom_apply, ← hd, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
+  rw [diamondOpHom_apply, ← hd, MonoidHom.comp_apply, MonoidHom.coe_ofClass]
 
 /-- **`W_Q` shifts the nebentypus `χ` to `χ ∘ ι_Q` on cusp forms**: it carries `S_k(N, χ)` into
 `S_k(N, χ ∘ ι_Q)`. -/
@@ -243,14 +249,57 @@ theorem atkinLehnerOperatorGamma1Cusp_mem_cuspFormCharSpace (hQ : 0 < Q) (hQN : 
     (h : IsAtkinLehnerMatrix N Q M) {χ : (ZMod N)ˣ →* ℂˣ}
     {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ) :
     atkinLehnerOperatorGamma1Cusp hQ hQN h k f ∈
-      cuspFormCharSpace k (χ.comp (h.isExactDivisor hQ.ne' hQN).unitsInvPart.toMonoidHom) := by
+      cuspFormCharSpace k
+        (χ.comp ((h.isExactDivisor hQ.ne' hQN).unitsInvPart : (ZMod N)ˣ →* (ZMod N)ˣ)) := by
   rw [mem_cuspFormCharSpace_iff]
   intro d
   have hd := LinearMap.congr_fun (atkinLehnerOperatorGamma1Cusp_diamondOpCusp hQ hQN h k
     ((h.isExactDivisor hQ.ne' hQN).unitsInvPart d)) f
   rw [LinearMap.comp_apply, LinearMap.comp_apply, Nat.IsExactDivisor.unitsInvPart_unitsInvPart,
     diamondOpCusp_apply_of_mem_cuspFormCharSpace k χ _ hf, map_smul] at hd
-  rw [diamondOpCuspHom_apply, ← hd, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
+  rw [diamondOpCuspHom_apply, ← hd, MonoidHom.comp_apply, MonoidHom.coe_ofClass]
+
+/-- **The Atkin–Lehner operator on `Γ₁(N)` restricted to a nebentypus space**, as a `ℂ`-linear
+map `M_k(N, χ) →ₗ[ℂ] M_k(N, χ ∘ ι_Q)`. This is `atkinLehnerOperatorGamma1` cut down by
+`LinearMap.restrict`. -/
+noncomputable def atkinLehnerGamma1CharRestrict (hQ : 0 < Q) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) :
+    modFormCharSpace k χ →ₗ[ℂ]
+      modFormCharSpace k
+        (χ.comp ((h.isExactDivisor hQ.ne' hQN).unitsInvPart : (ZMod N)ˣ →* (ZMod N)ˣ)) :=
+  (atkinLehnerOperatorGamma1 hQ hQN h k).restrict fun _ hf ↦
+    atkinLehnerOperatorGamma1_mem_modFormCharSpace hQ hQN h hf
+
+/-- On underlying modular forms, `atkinLehnerGamma1CharRestrict` is `atkinLehnerOperatorGamma1`. -/
+@[simp]
+theorem coe_atkinLehnerGamma1CharRestrict_apply (hQ : 0 < Q) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) (f : modFormCharSpace k χ) :
+    (atkinLehnerGamma1CharRestrict hQ hQN h k χ f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) =
+      atkinLehnerOperatorGamma1 hQ hQN h k (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :=
+  -- Naming the restriction as a `def` destroys the `LinearMap.restrict` head symbol, so
+  -- `LinearMap.coe_restrict_apply` does not fire as a `simp` lemma; it still applies by name.
+  LinearMap.coe_restrict_apply _ _
+
+/-- **The Atkin–Lehner operator on `Γ₁(N)` restricted to a nebentypus space of cusp forms**, as a
+`ℂ`-linear map `S_k(N, χ) →ₗ[ℂ] S_k(N, χ ∘ ι_Q)`. The cusp-form counterpart of
+`atkinLehnerGamma1CharRestrict`. -/
+noncomputable def atkinLehnerGamma1CharCuspRestrict (hQ : 0 < Q) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) :
+    cuspFormCharSpace k χ →ₗ[ℂ]
+      cuspFormCharSpace k
+        (χ.comp ((h.isExactDivisor hQ.ne' hQN).unitsInvPart : (ZMod N)ˣ →* (ZMod N)ˣ)) :=
+  (atkinLehnerOperatorGamma1Cusp hQ hQN h k).restrict fun _ hf ↦
+    atkinLehnerOperatorGamma1Cusp_mem_cuspFormCharSpace hQ hQN h hf
+
+/-- On underlying cusp forms, `atkinLehnerGamma1CharCuspRestrict` is
+`atkinLehnerOperatorGamma1Cusp`. The cusp-form counterpart of
+`coe_atkinLehnerGamma1CharRestrict_apply`, stated for the same reason. -/
+@[simp]
+theorem coe_atkinLehnerGamma1CharCuspRestrict_apply (hQ : 0 < Q) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) (f : cuspFormCharSpace k χ) :
+    (atkinLehnerGamma1CharCuspRestrict hQ hQN h k χ f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
+      atkinLehnerOperatorGamma1Cusp hQ hQN h k (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :=
+  LinearMap.coe_restrict_apply _ _
 
 /-- Replacing `W` by `γ W`, for `γ ∈ Γ₀(N)`, multiplies the matrix read in `GL (Fin 2) ℝ` by `γ`
 on the left. -/
@@ -284,6 +333,28 @@ theorem atkinLehnerOperatorGamma1_mul_left_of_mem_modFormCharSpace (hQ : 0 < Q) 
       (χ ((Gamma0Map N).toHomUnits ⟨γ, hγ⟩) : ℂ) • atkinLehnerOperatorGamma1 hQ hQN h k f := by
   rw [atkinLehnerOperatorGamma1_mul_left, LinearMap.comp_apply,
     diamondOp_apply_of_mem_modFormCharSpace k χ _ hf, map_smul]
+
+/-- **The dependence on the Atkin–Lehner matrix, on cusp forms**: the `S_k(Γ₁(N))` counterpart of
+`atkinLehnerOperatorGamma1_mul_left`. -/
+theorem atkinLehnerOperatorGamma1Cusp_mul_left (hQ : 0 < Q) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) (k : ℤ) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
+    atkinLehnerOperatorGamma1Cusp hQ hQN (h.mul_left hQN hγ) k =
+      (atkinLehnerOperatorGamma1Cusp hQ hQN h k).comp
+        (diamondOpCusp k ((Gamma0Map N).toHomUnits ⟨γ, hγ⟩)) := by
+  refine LinearMap.ext fun f ↦ DFunLike.coe_injective ?_
+  rw [LinearMap.comp_apply, coe_atkinLehnerOperatorGamma1Cusp, coe_atkinLehnerOperatorGamma1Cusp,
+    coe_diamondOpCusp k _ ⟨γ, hγ⟩ rfl, atkinLehnerGL_mul_left hQ hQN h hγ, SlashAction.slash_mul]
+
+/-- **On `S_k(N, χ)` the operator is determined by `Q` up to a scalar**: the cusp-form counterpart
+of `atkinLehnerOperatorGamma1_mul_left_of_mem_modFormCharSpace`. -/
+theorem atkinLehnerOperatorGamma1Cusp_mul_left_of_mem_cuspFormCharSpace (hQ : 0 < Q)
+    (hQN : Q ∣ N) (h : IsAtkinLehnerMatrix N Q M) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N)
+    {χ : (ZMod N)ˣ →* ℂˣ} {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
+    (hf : f ∈ cuspFormCharSpace k χ) :
+    atkinLehnerOperatorGamma1Cusp hQ hQN (h.mul_left hQN hγ) k f =
+      (χ ((Gamma0Map N).toHomUnits ⟨γ, hγ⟩) : ℂ) • atkinLehnerOperatorGamma1Cusp hQ hQN h k f := by
+  rw [atkinLehnerOperatorGamma1Cusp_mul_left, LinearMap.comp_apply,
+    diamondOpCusp_apply_of_mem_cuspFormCharSpace k χ _ hf, map_smul]
 
 /-- **At the Fricke matrix the operator is the Fricke operator** `frickeOperator` on
 `M_k(Γ₁(N))`. -/

@@ -389,9 +389,10 @@ theorem IsAtkinLehnerMatrix.intCast_apply_one_one_of_mul_eq_mul (hQ : Q ≠ 0) (
     linear_combination ((Q : ℤ) * m * c) * h01 - ((Q : ℤ) * a) * h11 - (Q * δ 1 1) * hred +
       (Q * (c * d) * γ 0 1) * hN
   -- the reduced determinant equation splits `1` as `e_Q + (1 - e_Q)`
+  have hdet : -((m : ℤ) * (b * c)) = 1 - Q * (a * d) := by linear_combination hred
   have he : ((-(m * (b * c)) : ℤ) : ZMod N) = exactDivisorIdempotent N Q := by
     refine hex.eq_exactDivisorIdempotent_iff.mpr ⟨?_, ?_⟩
-    · rw [map_intCast, show -((m : ℤ) * (b * c)) = 1 - Q * (a * d) by linear_combination hred]
+    · rw [map_intCast, hdet]
       simp
     · rw [map_intCast, hmQ]
       simp
