@@ -294,7 +294,7 @@ theorem normalSubspace_eq_of_mem_source [IsManifold I 1 M] {f : M → V} {x y : 
 /-- The local tubular neighbourhood theorem on `M`: around every point there is an open set `W`
 and a radius `δ` such that the normal map is injective, and sends relatively open sets to open
 sets, on the normal vectors of length less than `δ` at points of `W`. -/
-private theorem exists_injOn_isOpen_image_normalTube [I.Boundaryless] [IsManifold I 2 M]
+theorem exists_injOn_isOpen_image_normalTube [I.Boundaryless] [IsManifold I 2 M]
     {f : M → V} (hf : ContMDiff I 𝓘(ℝ, V) 2 f) (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x))
     (x₀ : M) :
     ∃ W : Set M, IsOpen W ∧ x₀ ∈ W ∧ ∃ δ > 0,
