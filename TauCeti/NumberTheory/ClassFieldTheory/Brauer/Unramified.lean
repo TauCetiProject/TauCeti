@@ -98,10 +98,9 @@ Thus restriction preserves the representing unit and multiplies the invariant by
   multiplies the invariant by `[K' : K]`.
 * `TauCeti.ClassFieldTheory.map_baseChange_eq_zero_of_finrank_dvd`: base change along an
   extension `K'/K` of degree a multiple of `[L : K]` kills `H²(Gal(L/K), Lˣ)`.
-* `TauCeti.ClassFieldTheory.subsingleton_H2_unitFiltration_zero`: the units `U(L,0)` of valuation
-  one have trivial `H²(Gal(L/K), U(L,0))`, since they have no Tate cohomology.
-* `TauCeti.ClassFieldTheory.H2π_eq_zero_of_forall_mem_unitFiltration_zero`: so a `2`-cocycle with
-  values in `U(L,0)` represents the zero class of `H²(Gal(L/K), Lˣ)`.
+* `TauCeti.ClassFieldTheory.H2π_eq_zero_of_forall_mem_unitFiltration_zero`: a `2`-cocycle with
+  values in the units `U(L,0)` of valuation one represents the zero class of `H²(Gal(L/K), Lˣ)`,
+  since `U(L,0)` has no Tate cohomology.
 * `TauCeti.ClassFieldTheory.mk_eq_zero_of_forall_mem_unitFiltration_zero`: the same for a
   continuous `2`-cocycle on `G_K` read off `Gal(L/K)` with values in `U(L,0)`.
 * `TauCeti.ClassFieldTheory.brBaseChange_relBrInfl_eq_zero`: a Brauer class inflated from a
@@ -381,15 +380,6 @@ end BaseChange
 
 /-! ### Cocycles with unit values -/
 
-/-- **The units of an unramified layer have trivial `H²`**: `H²(Gal(L/K), U(L,0)) = 0`. This is
-degree `2` of the vanishing of all Tate cohomology of `U(L,0)`
-(`TauCeti.TateCohomology.isZero_tateCohomology_unitFiltration_zero_of_isUnramified`). -/
-theorem subsingleton_H2_unitFiltration_zero :
-    Subsingleton (H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0))) :=
-  ModuleCat.isZero_iff_subsingleton.1 <|
-    (TauCeti.TateCohomology.isZero_tateCohomology_unitFiltration_zero_of_isUnramified
-      (K := K) (L := L) 2).of_iso ((_root_.TateCohomology.isoGroupCohomology 2).app _).symm
-
 /-- **A unit-valued cocycle of an unramified layer is a coboundary.** If a `2`-cocycle of
 `Gal(L/K)` with values in `Lˣ` takes all its values in the units `U(L,0)` of valuation one, its
 class in `H²(Gal(L/K), Lˣ)` vanishes. -/
@@ -413,7 +403,10 @@ theorem H2π_eq_zero_of_forall_mem_unitFiltration_zero
     exact (mem_cocycles₂_iff (c : _ → _)).1 c.2 g h j
   have hmap : mapCocycles₂ (MonoidHom.id _) (unitFiltrationZeroIncl K L) ⟨c', hmem⟩ = c :=
     cocycles₂_ext fun g h ↦ hc' (g, h)
-  have := subsingleton_H2_unitFiltration_zero K L
+  -- `H²(Gal(L/K), U(L,0))` vanishes, since `U(L,0)` has no Tate cohomology.
+  have : Subsingleton (H2 A) := ModuleCat.isZero_iff_subsingleton.1 <|
+    (TauCeti.TateCohomology.isZero_tateCohomology_unitFiltration_zero_of_isUnramified
+      (K := K) (L := L) 2).of_iso ((_root_.TateCohomology.isoGroupCohomology 2).app _).symm
   rw [← hmap, ← H2π_comp_map_apply, Subsingleton.elim (H2π A ⟨c', hmem⟩) 0, map_zero]
 
 /-- **A continuous cocycle read off an unramified layer with unit values is a coboundary.** If a
