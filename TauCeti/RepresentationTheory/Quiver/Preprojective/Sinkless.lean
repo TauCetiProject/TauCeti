@@ -259,19 +259,13 @@ private noncomputable def toEnd : pathAlgebra k (Symmetrify Q) →ₐ[k] Module.
 
 /-! ### The local relations act by zero -/
 
-private theorem sum_eq_zero_iff_neg_eq_sum_compl {ι M : Type*} [Fintype ι] [AddCommGroup M]
-    [DecidableEq ι] (f : ι → M) (i : ι) :
-    (∑ j, f j) = 0 ↔ -f i = ∑ j ∈ ({i} : Finset ι)ᶜ, f j := by
-  rw [← Finset.sum_add_sum_compl ({i} : Finset ι), Finset.sum_singleton,
-    neg_eq_iff_add_eq_zero]
-
 open scoped Classical in
 /-- The local relation at `u` acts by zero on a path ending at `u`: its `β_u` term is the rewritten
 backtrack `β_u α_u`, and it cancels the other terms. -/
 private theorem sum_arrowMap_act_reverse {a u : Symmetrify Q} (p : Path a u) :
     ∑ s : Σ i, i ⟶ u, doubledArrowSign k s.2 • arrowMap k σ s.2 (act k σ p (reverse s.2)) =
       0 := by
-  rw [sum_eq_zero_iff_neg_eq_sum_compl _ ⟨_, reverse (chosenArrow σ u)⟩,
+  rw [Fintype.sum_eq_add_sum_compl ⟨_, reverse (chosenArrow σ u)⟩, add_eq_zero_iff_neg_eq,
     reverse_reverse, act_chosenArrow, arrowMap_single, one_smul, act_cons_backtrack,
     doubledArrowSign_reverse, doubledArrowSign_chosenArrow, neg_one_smul, neg_neg]
   refine Finset.sum_congr rfl fun s hs => ?_
@@ -341,8 +335,8 @@ private theorem preprojectiveMk_backtrack (v : Q) :
     rw [Fintype.sum_sigma]
     simpa only [localPreprojectiveRelator_eq_sum_ofArrow_mul, map_sum, mul_smul_comm, map_smul]
       using preprojectiveMk_localPreprojectiveRelator k v
-  rw [sum_eq_zero_iff_neg_eq_sum_compl _
-    ⟨_, reverse (chosenArrow σ (Symmetrify.of.obj v))⟩] at h
+  rw [Fintype.sum_eq_add_sum_compl ⟨_, reverse (chosenArrow σ (Symmetrify.of.obj v))⟩,
+    add_eq_zero_iff_neg_eq] at h
   simpa only [reverse_reverse, doubledArrowSign_reverse, doubledArrowSign_chosenArrow,
     neg_one_smul, neg_neg] using h
 
