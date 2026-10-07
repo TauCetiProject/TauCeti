@@ -142,21 +142,29 @@ theorem ext_of_apply_eq_of_eqOn_orthogonal {f g : E →ₗ[𝕜] F} (hx : f x = 
 
 end LinearMap
 
-namespace LinearIsometryEquiv
+namespace Submodule
 
 open scoped InnerProductSpace
 
-variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] {x : E} {y : F}
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
 /-- In unit-vector coordinates, the inverse orthogonal decomposition adds the radial
 and transverse components. -/
 theorem orthogonalDecomposition_symm_apply_toSpanUnitSingleton (x : E) (hx : ‖x‖ = 1)
     (r : 𝕜) (v : (𝕜 ∙ x)ᗮ) :
     (𝕜 ∙ x).orthogonalDecomposition.symm
-      (WithLp.toLp 2 (toSpanUnitSingleton x hx r, v)) = r • x + v := by
+      (WithLp.toLp 2 (LinearIsometryEquiv.toSpanUnitSingleton x hx r, v)) = r • x + v := by
   simp only [Submodule.orthogonalDecomposition_symm_apply, WithLp.toLp_fst,
-    WithLp.toLp_snd, toSpanUnitSingleton_apply]
+    WithLp.toLp_snd, LinearIsometryEquiv.toSpanUnitSingleton_apply]
+
+end Submodule
+
+namespace LinearIsometryEquiv
+
+open scoped InnerProductSpace
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] {x : E} {y : F}
 
 /-- Extend an isometry between the orthogonal complements of two unit vectors by sending
 one unit vector to the other. The extension uses Mathlib's
@@ -174,10 +182,10 @@ theorem extendOrthogonalComplement_apply_smul_add
     (e : (𝕜 ∙ x)ᗮ ≃ₗᵢ[𝕜] (𝕜 ∙ y)ᗮ) (hx : ‖x‖ = 1) (hy : ‖y‖ = 1)
     (r : 𝕜) (v : (𝕜 ∙ x)ᗮ) :
     e.extendOrthogonalComplement hx hy (r • x + v) = r • y + e v := by
-  rw [← orthogonalDecomposition_symm_apply_toSpanUnitSingleton x hx]
+  rw [← Submodule.orthogonalDecomposition_symm_apply_toSpanUnitSingleton x hx]
   simp only [extendOrthogonalComplement, trans_apply, apply_symm_apply,
     withLpProdCongr_apply, WithLp.toLp_fst, WithLp.toLp_snd, symm_apply_apply]
-  exact orthogonalDecomposition_symm_apply_toSpanUnitSingleton y hy r (e v)
+  exact Submodule.orthogonalDecomposition_symm_apply_toSpanUnitSingleton y hy r (e v)
 
 /-- The extension sends the distinguished unit vector to the distinguished target vector. -/
 @[simp]

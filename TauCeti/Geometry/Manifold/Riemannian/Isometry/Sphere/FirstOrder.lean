@@ -29,6 +29,10 @@ and `LinearIsometryEquiv.extendOrthogonalComplement`.
 ## Main definitions and results
 
 * `LinearIsometryEquiv.extendSphereTangent`: extend a tangent isometry to the ambient spaces.
+* `LinearIsometryEquiv.unitSphereEquiv_extendSphereTangent_apply_self`: the sphere
+  restriction sends the source point to the target point.
+* `LinearIsometryEquiv.mfderiv_unitSphereEquiv_extendSphereTangent`: the sphere
+  restriction has the prescribed manifold differential.
 * `LinearIsometryEquiv.eq_extendSphereTangent`: characterize the extension by its value
   and action on tangent vectors.
 * `TauCeti.RiemannianIsometry.exists_linearIsometryEquiv_apply_eq_and_mfderiv_eq`:
@@ -82,6 +86,32 @@ theorem extendSphereTangent_apply_mfderiv
     symm_apply_apply]
   exact TauCeti.coe_sphereTangentEquiv_apply y (e v)
 
+/-- The sphere restriction of the extension sends the source point to the target point. -/
+@[simp]
+theorem unitSphereEquiv_extendSphereTangent_apply_self
+    (e : TangentSpace (𝓡 n) x ≃ₗᵢ[ℝ] TangentSpace (𝓡 k) y) :
+    unitSphereEquiv e.extendSphereTangent x = y := by
+  apply Subtype.ext
+  rw [coe_unitSphereEquiv_apply]
+  exact extendSphereTangent_apply_self e
+
+/-- The sphere restriction of the extension has the prescribed tangent isometry as
+its manifold differential. -/
+@[simp]
+theorem mfderiv_unitSphereEquiv_extendSphereTangent
+    (e : TangentSpace (𝓡 n) x ≃ₗᵢ[ℝ] TangentSpace (𝓡 k) y) :
+    mfderiv (𝓡 n) (𝓡 k) (unitSphereEquiv e.extendSphereTangent) x =
+      e.toContinuousLinearEquiv.toContinuousLinearMap := by
+  have hfx := unitSphereEquiv_extendSphereTangent_apply_self e
+  ext v
+  apply injective_mvfderiv_subtypeVal_sphere y
+  have h := mvfderiv_coe_sphere_unitSphereEquiv (n := n) (k := k) e.extendSphereTangent x v
+  rw [hfx] at h
+  -- `TangentSpace` is a type alias indexed by the base point. After identifying
+  -- the points, `erw` sees the common model space beneath these different indices.
+  erw [h, mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply]
+  exact e.extendSphereTangent_apply_mfderiv v
+
 /-- The ambient extension is uniquely characterized by its radial value and its
 prescribed action on tangent vectors. -/
 theorem eq_extendSphereTangent
@@ -113,16 +143,10 @@ theorem exists_linearIsometryEquiv_apply_eq_and_mfderiv_eq
     ∃ f : E ≃ₗᵢ[ℝ] F, LinearIsometryEquiv.unitSphereEquiv f x = Φ x ∧
       mfderiv (𝓡 n) (𝓡 k) (LinearIsometryEquiv.unitSphereEquiv f) x =
         mfderiv (𝓡 n) (𝓡 k) Φ x := by
-  let f := (Φ.mfderivToLinearIsometryEquiv x).extendSphereTangent
-  have hfx : LinearIsometryEquiv.unitSphereEquiv f x = Φ x := by
-    apply Subtype.ext
-    rw [LinearIsometryEquiv.coe_unitSphereEquiv_apply]
-    exact LinearIsometryEquiv.extendSphereTangent_apply_self _
-  refine ⟨f, hfx, ?_⟩
+  refine ⟨(Φ.mfderivToLinearIsometryEquiv x).extendSphereTangent,
+    LinearIsometryEquiv.unitSphereEquiv_extendSphereTangent_apply_self _, ?_⟩
+  rw [LinearIsometryEquiv.mfderiv_unitSphereEquiv_extendSphereTangent]
   ext v
-  apply injective_mvfderiv_subtypeVal_sphere (Φ x)
-  rw [← hfx, LinearIsometryEquiv.mvfderiv_coe_sphere_unitSphereEquiv, hfx]
-  simpa only [mfderivToLinearIsometryEquiv_apply, mvfderiv_apply_eq_mfderiv_apply] using
-    (Φ.mfderivToLinearIsometryEquiv x).extendSphereTangent_apply_mfderiv v
+  exact mfderivToLinearIsometryEquiv_apply Φ x v
 
 end TauCeti.RiemannianIsometry
