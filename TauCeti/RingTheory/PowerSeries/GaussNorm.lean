@@ -50,6 +50,9 @@ closed unit disc.
 
 ## Main results
 
+* `TauCeti.PowerSeries.hasGaussNorm_add` and `TauCeti.PowerSeries.hasGaussNorm_mul`: bounded
+  weighted coefficient norms are preserved by addition and multiplication over an ultrametric
+  seminormed ring, at any nonnegative radius.
 * `TauCeti.PowerSeries.gaussNorm_eq_of_forall_le`: the Gauss norm is attained at a degree whose
   weighted coefficient dominates.
 * `TauCeti.PowerSeries.exists_isDistinguished`: at a positive radius, every nonzero restricted
@@ -86,6 +89,65 @@ namespace TauCeti.PowerSeries
 
 open Filter
 open scoped Topology
+
+section SeminormedRing
+
+variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R]
+  {c : ℝ} {f g : PowerSeries R}
+
+/-- The sum of two power series with bounded weighted coefficient norms again has bounded weighted
+coefficient norms at a nonnegative radius. -/
+theorem hasGaussNorm_add (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
+    (hg : g.HasGaussNorm norm c) : (f + g).HasGaussNorm norm c := by
+  have key (m : ℕ) :
+      ‖(f + g).coeff m‖ * c ^ m ≤ max (f.gaussNorm norm c) (g.gaussNorm norm c) := by
+    rw [map_add]
+    calc
+      ‖f.coeff m + g.coeff m‖ * c ^ m ≤ max ‖f.coeff m‖ ‖g.coeff m‖ * c ^ m :=
+        mul_le_mul_of_nonneg_right (IsUltrametricDist.isNonarchimedean_norm _ _) (pow_nonneg hc m)
+      _ = max (‖f.coeff m‖ * c ^ m) (‖g.coeff m‖ * c ^ m) :=
+        max_mul_of_nonneg _ _ (pow_nonneg hc m)
+      _ ≤ max (f.gaussNorm norm c) (g.gaussNorm norm c) :=
+        max_le_max (PowerSeries.le_gaussNorm norm c _ hf m)
+          (PowerSeries.le_gaussNorm norm c _ hg m)
+  exact ⟨_, Set.forall_mem_range.mpr key⟩
+
+/-- The product of two power series with bounded weighted coefficient norms again has bounded
+weighted coefficient norms at a nonnegative radius. -/
+theorem hasGaussNorm_mul (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
+    (hg : g.HasGaussNorm norm c) : (f * g).HasGaussNorm norm c := by
+  have key (m : ℕ) :
+      ‖(f * g).coeff m‖ * c ^ m ≤ f.gaussNorm norm c * g.gaussNorm norm c := by
+    rw [PowerSeries.coeff_mul]
+    have hne := Finset.HasAntidiagonal.nonempty_antidiagonal m
+    calc
+      ‖∑ p ∈ Finset.antidiagonal m, f.coeff p.1 * g.coeff p.2‖ * c ^ m
+          ≤ (Finset.antidiagonal m).sup' hne
+              (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖) * c ^ m :=
+        mul_le_mul_of_nonneg_right (hne.norm_sum_le_sup'_norm
+          (fun p : ℕ × ℕ ↦ f.coeff p.1 * g.coeff p.2)) (pow_nonneg hc m)
+      _ = (Finset.antidiagonal m).sup' hne
+          (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖ * c ^ m) :=
+        Finset.sup'_mul₀ (pow_nonneg hc m) _ _ _
+      _ ≤ f.gaussNorm norm c * g.gaussNorm norm c :=
+        (Finset.sup'_le_iff hne
+          (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖ * c ^ m)).2 fun p hp ↦ by
+          have hsum : p.1 + p.2 = m := Finset.mem_antidiagonal.mp hp
+          rw [← hsum, pow_add]
+          calc
+            ‖f.coeff p.1 * g.coeff p.2‖ * (c ^ p.1 * c ^ p.2)
+                ≤ ‖f.coeff p.1‖ * ‖g.coeff p.2‖ * (c ^ p.1 * c ^ p.2) :=
+              mul_le_mul_of_nonneg_right (norm_mul_le _ _)
+                (mul_nonneg (pow_nonneg hc _) (pow_nonneg hc _))
+            _ = (‖f.coeff p.1‖ * c ^ p.1) * (‖g.coeff p.2‖ * c ^ p.2) := by ring
+            _ ≤ f.gaussNorm norm c * g.gaussNorm norm c :=
+              mul_le_mul (PowerSeries.le_gaussNorm norm c f hf p.1)
+                (PowerSeries.le_gaussNorm norm c g hg p.2)
+                (mul_nonneg (norm_nonneg _) (pow_nonneg hc _))
+                (PowerSeries.gaussNorm_nonneg norm c f norm_nonneg)
+  exact ⟨_, Set.forall_mem_range.mpr key⟩
+
+end SeminormedRing
 
 variable {R : Type*} [NormedRing R] {c : ℝ} {i j s t : ℕ} {f g : PowerSeries R}
 
@@ -291,58 +353,6 @@ theorem isDistinguished_of_norm_coeff_sub_lt (hc : 0 < c) {a : R}
   rw [← ha, ← sub_add_cancel (f.coeff s) a,
     IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm hlt.ne, max_eq_right hlt.le]
 
-/-- The sum of two power series with bounded weighted coefficient norms again has bounded weighted
-coefficient norms at a nonnegative radius. -/
-theorem hasGaussNorm_add (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
-    (hg : g.HasGaussNorm norm c) : (f + g).HasGaussNorm norm c := by
-  have key (m : ℕ) :
-      ‖(f + g).coeff m‖ * c ^ m ≤ max (f.gaussNorm norm c) (g.gaussNorm norm c) := by
-    rw [map_add]
-    calc
-      ‖f.coeff m + g.coeff m‖ * c ^ m ≤ max ‖f.coeff m‖ ‖g.coeff m‖ * c ^ m :=
-        mul_le_mul_of_nonneg_right (IsUltrametricDist.isNonarchimedean_norm _ _) (pow_nonneg hc m)
-      _ = max (‖f.coeff m‖ * c ^ m) (‖g.coeff m‖ * c ^ m) :=
-        max_mul_of_nonneg _ _ (pow_nonneg hc m)
-      _ ≤ max (f.gaussNorm norm c) (g.gaussNorm norm c) :=
-        max_le_max (PowerSeries.le_gaussNorm norm c _ hf m)
-          (PowerSeries.le_gaussNorm norm c _ hg m)
-  exact ⟨_, Set.forall_mem_range.mpr key⟩
-
-/-- The product of two power series with bounded weighted coefficient norms again has bounded
-weighted coefficient norms at a nonnegative radius. -/
-theorem hasGaussNorm_mul (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
-    (hg : g.HasGaussNorm norm c) : (f * g).HasGaussNorm norm c := by
-  have key (m : ℕ) :
-      ‖(f * g).coeff m‖ * c ^ m ≤ f.gaussNorm norm c * g.gaussNorm norm c := by
-    rw [PowerSeries.coeff_mul]
-    have hne := Finset.HasAntidiagonal.nonempty_antidiagonal m
-    calc
-      ‖∑ p ∈ Finset.antidiagonal m, f.coeff p.1 * g.coeff p.2‖ * c ^ m
-          ≤ (Finset.antidiagonal m).sup' hne
-              (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖) * c ^ m :=
-        mul_le_mul_of_nonneg_right (hne.norm_sum_le_sup'_norm
-          (fun p : ℕ × ℕ ↦ f.coeff p.1 * g.coeff p.2)) (pow_nonneg hc m)
-      _ = (Finset.antidiagonal m).sup' hne
-          (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖ * c ^ m) :=
-        Finset.sup'_mul₀ (pow_nonneg hc m) _ _ _
-      _ ≤ f.gaussNorm norm c * g.gaussNorm norm c :=
-        (Finset.sup'_le_iff hne
-          (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖ * c ^ m)).2 fun p hp ↦ by
-          have hsum : p.1 + p.2 = m := Finset.mem_antidiagonal.mp hp
-          rw [← hsum, pow_add]
-          calc
-            ‖f.coeff p.1 * g.coeff p.2‖ * (c ^ p.1 * c ^ p.2)
-                ≤ ‖f.coeff p.1‖ * ‖g.coeff p.2‖ * (c ^ p.1 * c ^ p.2) :=
-              mul_le_mul_of_nonneg_right (norm_mul_le _ _)
-                (mul_nonneg (pow_nonneg hc _) (pow_nonneg hc _))
-            _ = (‖f.coeff p.1‖ * c ^ p.1) * (‖g.coeff p.2‖ * c ^ p.2) := by ring
-            _ ≤ f.gaussNorm norm c * g.gaussNorm norm c :=
-              mul_le_mul (PowerSeries.le_gaussNorm norm c f hf p.1)
-                (PowerSeries.le_gaussNorm norm c g hg p.2)
-                (mul_nonneg (norm_nonneg _) (pow_nonneg hc _))
-                (PowerSeries.gaussNorm_nonneg norm c f norm_nonneg)
-  exact ⟨_, Set.forall_mem_range.mpr key⟩
-
 section Summation
 
 variable [CompleteSpace R] {ι : Type*} {a : ι → PowerSeries R}
@@ -464,7 +474,8 @@ theorem IsDistinguished.mul (hf : IsDistinguished c i f) (hg : IsDistinguished c
   have hgp := hg.gaussNorm_pos
   have hbf := hf.hasGaussNorm
   have hbg := hg.hasGaussNorm
-  have hbmul := hasGaussNorm_mul hc.le hbf hbg
+  -- The explicit type fixes the norm's seminormed-ring instance before elaborating the arguments.
+  have hbmul : (f * g).HasGaussNorm norm c := hasGaussNorm_mul hc.le hbf hbg
   have hmul : (f * g).gaussNorm norm c = f.gaussNorm norm c * g.gaussNorm norm c :=
     le_antisymm
       (MvPowerSeries.gaussNorm_mul_le norm (fun _ : Unit ↦ c) f g (fun _ ↦ hc.le)
