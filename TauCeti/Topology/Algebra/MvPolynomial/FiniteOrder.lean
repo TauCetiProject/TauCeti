@@ -43,7 +43,6 @@ theorem exists_finset_orderAt_eq_iInf_transverse_of_isOpen (n D : ℕ)
   obtain ⟨s, hs, hsU⟩ := isOpen_pi_iff'.1 hU a ha
   have hinfinite (i : Fin n) : (s i).Infinite :=
     infinite_of_mem_nhds (a i) ((hs i).1.mem_nhds (hs i).2)
-  have : Infinite K := infinite_univ_iff.1 (infinite_of_mem_nhds (0 : K) Filter.univ_mem)
   obtain ⟨T, hT, horder⟩ := exists_finset_orderAt_eq_iInf_transverse n D s hinfinite
   exact ⟨T, hT.trans hsU, horder⟩
 

@@ -45,7 +45,7 @@ theorem exists_finset_orderAt_eq_iInf_trailingDegree (D : ℕ)
           (aeval (fun i ↦ Polynomial.C (a i) + Polynomial.C (v.1 i) * Polynomial.X)
             p).trailingDegree := by
   classical
-  obtain ⟨T, hT, htest⟩ := exists_finset_eval_eq_zero_iff_of_totalDegree_le D s hs
+  obtain ⟨T, hT, htest⟩ := exists_finset_eq_zero_iff_forall_eval_eq_zero_of_totalDegree_le D s hs
   refine ⟨T, hT, fun p hp a ↦ le_antisymm ?_ ?_⟩
   · exact le_iInf fun v ↦ p.orderAt_le_trailingDegree_aeval_C_add_C_mul_X a v.1
   · rcases eq_or_ne p 0 with rfl | hp0
@@ -72,7 +72,7 @@ theorem exists_finset_orderAt_eq_iInf_trailingDegree (D : ℕ)
 /-- Finitely many fixed base directions detect ambient order on transverse planes at
 all centers, uniformly for polynomials of bounded total degree. The plane coordinates are
 the base-line parameter and the distinguished root coordinate, respectively. -/
-theorem exists_finset_orderAt_eq_iInf_transverse [Infinite K] (n D : ℕ)
+theorem exists_finset_orderAt_eq_iInf_transverse (n D : ℕ)
     (s : Fin n → Set K) (hs : ∀ i, (s i).Infinite) :
     ∃ T : Finset (Fin n → K), (↑T : Set (Fin n → K)) ⊆ Set.pi Set.univ s ∧
       ∀ p : MvPolynomial (Fin (n + 1)) K, p.totalDegree ≤ D →
@@ -81,6 +81,41 @@ theorem exists_finset_orderAt_eq_iInf_transverse [Infinite K] (n D : ℕ)
             (aeval (Fin.cons (C (a 0) + X (1 : Fin 2))
               (fun i ↦ C (a i.succ) + C (v.1 i) * X (0 : Fin 2))) p).orderAt (0 : Fin 2 → K) := by
   classical
+  by_cases hn : n = 0
+  · subst n
+    -- With no base variables, the distinguished-coordinate substitution has a polynomial
+    -- retraction, so order monotonicity in both directions gives equality.
+    refine ⟨{0}, ?_, fun p _ a ↦ ?_⟩
+    · intro v _ i
+      exact Fin.elim0 i
+    simp only [Finset.mem_singleton, iInf_subtype, iInf_iInf_eq_left]
+    let g : Fin 1 → MvPolynomial (Fin 2) K := fun _ ↦ C (a 0) + X 1
+    let h : Fin 2 → MvPolynomial (Fin 1) K := ![0, X 0 - C (a 0)]
+    have hcomp : aeval h (aeval g p) = p := by
+      rw [← AlgHom.comp_apply]
+      have : (aeval h).comp (aeval g) = AlgHom.id K (MvPolynomial (Fin 1) K) := by
+        ext i : 1
+        simp [g, h, Subsingleton.elim i 0]
+      rw [this]
+      rfl
+    have hg : (fun i ↦ eval (0 : Fin 2 → K) (g i)) = a := by
+      ext i
+      simp [g, Subsingleton.elim i 0]
+    have hh : (fun i ↦ eval a (h i)) = (0 : Fin 2 → K) := by
+      ext i
+      fin_cases i <;> simp [h]
+    have horder := le_antisymm
+      (by simpa only [hg] using p.orderAt_le_orderAt_aeval g 0)
+      (by simpa only [hh, hcomp] using (aeval g p).orderAt_le_orderAt_aeval h a)
+    convert horder using 2
+    congr 1
+    ext i
+    fin_cases i
+    simp [g]
+  -- An infinite side of a positive-dimensional box supplies the scalar infinitude needed
+  -- to apply the line detector with a free distinguished-coordinate direction.
+  have : Infinite K :=
+    Set.infinite_univ_iff.1 ((hs ⟨0, Nat.pos_of_ne_zero hn⟩).mono (Set.subset_univ _))
   obtain ⟨t, ht, hline⟩ := exists_finset_orderAt_eq_iInf_trailingDegree D
     (Fin.cons Set.univ s) (fun i ↦ Fin.cases Set.infinite_univ hs i)
   refine ⟨t.image Fin.tail, ?_, fun p hp a ↦ ?_⟩

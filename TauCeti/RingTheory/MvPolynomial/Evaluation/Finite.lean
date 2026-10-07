@@ -31,7 +31,7 @@ variable {σ K : Type*} [Field K]
 
 /-- Finitely many evaluations in a box with infinite sides detect zero in a
 finite-dimensional polynomial subspace. -/
-theorem exists_finset_eval_eq_zero_iff (V : Submodule K (MvPolynomial σ K))
+theorem exists_finset_eq_zero_iff_forall_eval_eq_zero (V : Submodule K (MvPolynomial σ K))
     [Module.Finite K V] (s : σ → Set K) (hs : ∀ i, (s i).Infinite) :
     ∃ T : Finset (σ → K), (↑T : Set (σ → K)) ⊆ Set.pi Set.univ s ∧
       ∀ p ∈ V, p = 0 ↔ ∀ v ∈ T, eval v p = 0 := by
@@ -59,12 +59,13 @@ variable {σ K : Type*} [Field K] [Finite σ]
 
 /-- A fixed finite set in a box with infinite sides tests zero for every polynomial
 of total degree at most `D`. -/
-theorem exists_finset_eval_eq_zero_iff_of_totalDegree_le (D : ℕ)
+theorem exists_finset_eq_zero_iff_forall_eval_eq_zero_of_totalDegree_le (D : ℕ)
     (s : σ → Set K) (hs : ∀ i, (s i).Infinite) :
     ∃ T : Finset (σ → K), (↑T : Set (σ → K)) ⊆ Set.pi Set.univ s ∧
       ∀ p : MvPolynomial σ K, p.totalDegree ≤ D →
         (p = 0 ↔ ∀ v ∈ T, eval v p = 0) := by
-  obtain ⟨T, hT, h⟩ := (restrictTotalDegree σ K D).exists_finset_eval_eq_zero_iff s hs
+  obtain ⟨T, hT, h⟩ :=
+    (restrictTotalDegree σ K D).exists_finset_eq_zero_iff_forall_eval_eq_zero s hs
   exact ⟨T, hT, fun p hp ↦ h p ((mem_restrictTotalDegree σ D p).2 hp)⟩
 
 end TauCeti
