@@ -381,11 +381,9 @@ theorem gradedFiniteProjectiveModules_gradedAbelian_shift :
   rw [GradedExactStructure.abelian_shift]
   exact gradedFiniteProjectiveModules_shift
 
-/-- The induced graded exact structure on finite graded modules.
-
-The body is exposed so that importing modules see this as the full-subcategory structure of
-`GradedExactStructure.abelian` for the grading shift, the form in which the graded Ext-Euler
-pairing `TauCeti.gradedExtEulerSesquilinear` is stated. -/
+/-- The induced graded exact structure on finite graded modules: the full-subcategory exact
+structure of the graded abelian exact structure for the grading shift. Its Laurent Grothendieck
+group is the graded Grothendieck group `G₀^gr(mod A)` of finite graded modules. -/
 @[expose] noncomputable def gradedFiniteModulesExactStructure (𝒜 : ℤ → Submodule k A) :
     GradedExactStructure (gradedFiniteModules 𝒜).FullSubcategory :=
   (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).fullSubcategory _

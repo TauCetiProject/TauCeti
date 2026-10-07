@@ -172,8 +172,8 @@ variable {I : Type uI} (S : I → (gradedFiniteModules 𝒜).FullSubcategory) {e
   (hself : ∀ i, (S i).obj.smulGradedDimension (e i) = 1)
 
 include he₀ hne hself in
-/-- **Projectives are dual to simples under the q-Euler form**: if the degree-zero idempotents
-`eᵢ` satisfy `gdim(eᵢ • Sⱼ) = δᵢⱼ`, then `χ_q([A eᵢ], [Sⱼ]) = δᵢⱼ`. -/
+/-- **Kronecker pairing under the q-Euler form**: if the finite graded modules `Sⱼ` and the
+degree-zero idempotents `eᵢ` satisfy `gdim(eᵢ • Sⱼ) = δᵢⱼ`, then `χ_q([A eᵢ], [Sⱼ]) = δᵢⱼ`. -/
 theorem gradedProjectiveExtEuler_basis [DecidableEq I] (i j : I) :
     gradedProjectiveExtEuler 𝒜 (LaurentK0.of.{uA} _
         ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i}) (hI i),

@@ -121,7 +121,7 @@ private theorem hom_spanSingletonGenerator_mem {f : A} (hf : IsIdempotentElem f)
   rw [← hfix]
   exact Submodule.smul_mem_pointwise_smul _ _ _ hgen
 
-/-- Right action on an element of `f • M₀`, as a graded map `Af ⟶ M`: it sends `a` to `a • m`. -/
+/-- Scalar action on an element of `f • M₀`, as a graded map `Af ⟶ M`: it sends `a` to `a • m`. -/
 private def ofIdealSpanSingletonLift {f : A} (hf₀ : f ∈ 𝒜 0)
     (hI : (Ideal.span {f} : Ideal A).IsHomogeneous 𝒜) {M : GradedModuleCat.{uA} 𝒜}
     (m : ↥(f • M.grading.piece 0)) : ofIdeal 𝒜 (Ideal.span {f}) hI ⟶ M :=
