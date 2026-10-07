@@ -21,6 +21,7 @@ map by normalized alternatization. We only require the degree factorial to be no
 scalar field; no completeness or finite-dimensionality assumption is needed.
 Over a characteristic-zero field, this condition follows from `Nat.factorial_ne_zero`.
 In positive characteristic, it permits degrees whose factorial has nonzero cast.
+The regularity parameter ranges over `ℕ∞ω`, including analytic regularity `ω`.
 -/
 
 public noncomputable section
@@ -42,6 +43,8 @@ theorem contDiff_compContinuousLinearMapCLM :
       (compContinuousLinearMapCLM : (E →L[𝕜] F) →
         (F [⋀^ι]→L[𝕜] G) →L[𝕜] E [⋀^ι]→L[𝕜] G) := by
   classical
+  -- Alternatization restricts to factorial multiplication on alternating maps, so its
+  -- normalization is a left inverse of their inclusion into multilinear maps.
   let P : ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ E) G →L[𝕜] E [⋀^ι]→L[𝕜] G :=
     ((Fintype.card ι).factorial : 𝕜)⁻¹ • alternatizationCLM
   let Q := ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear
