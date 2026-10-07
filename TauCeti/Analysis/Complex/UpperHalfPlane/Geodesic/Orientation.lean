@@ -207,6 +207,20 @@ theorem orientedAngle_sign_eq_zero_iff {A B C : ℍ} (hAC : A ≠ C) :
     (orientedAngle A B C).sign = 0 ↔ C ∈ Set.range (geodesicLine (geodesicBetween A B)) := by
   rw [sign_orientedAngle_eq hAC, sign_eq_zero_iff, mem_range_geodesicLine_iff, neg_eq_zero]
 
+/-- For `A ≠ C`, `C` lies in the closed left half-plane of the geodesic from `A` to `B` exactly
+when the oriented angle is not negative. -/
+theorem mem_closure_leftHalfPlane_geodesicBetween_iff {A B C : ℍ} (hAC : A ≠ C) :
+    C ∈ closure (leftHalfPlane (geodesicBetween A B)) ↔ (orientedAngle A B C).sign ≠ -1 := by
+  rw [mem_closure_leftHalfPlane_iff, Ne, orientedAngle_sign_eq_neg_one_iff hAC,
+    mem_rightHalfPlane_iff, not_lt]
+
+/-- For `A ≠ C`, `C` lies in the closed right half-plane of the geodesic from `A` to `B` exactly
+when the oriented angle is not positive. -/
+theorem mem_closure_rightHalfPlane_geodesicBetween_iff {A B C : ℍ} (hAC : A ≠ C) :
+    C ∈ closure (rightHalfPlane (geodesicBetween A B)) ↔ (orientedAngle A B C).sign ≠ 1 := by
+  rw [mem_closure_rightHalfPlane_iff, Ne, orientedAngle_sign_eq_one_iff hAC,
+    mem_leftHalfPlane_iff, not_lt]
+
 /-- The oriented angle of a nondegenerate triangle is neither `0` nor `π`. -/
 private theorem orientedAngle_ne_zero_and_ne_pi {A B C : ℍ}
     (hC : C ∉ Set.range (geodesicLine (geodesicBetween A B))) :
