@@ -129,12 +129,17 @@ theorem baseChange_mkQ_bijective {r : R} (hr : algebraMap R A r = 0) :
     obtain ⟨w, -, hw⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp v.2
     simp [← hw, smul_tmul', Algebra.smul_def, hr]
   have hbot : range (lTensor A p.subtype) = ⊥ := range_eq_bot.mpr hzero
+  let e₀ := lTensor.equiv A (exact_subtype_mkQ p) (Submodule.mkQ_surjective p)
+  -- Mathlib states no computation rule for `lTensor.equiv` itself (only for its inverse, via
+  -- `lTensor.inverse_apply`); its forward map is by definition `lTensor.toFun`, the descent
+  -- of `lTensor A p.mkQ` to the quotient, so this holds by `rfl`.
+  have he₀ (y : A ⊗[R] M) : e₀ (Submodule.Quotient.mk y) = lTensor A p.mkQ y := rfl
   let e : (A ⊗[R] M) ≃ₗ[R] A ⊗[R] QuotSMulTop r M :=
-    (range (lTensor A p.subtype)).quotEquivOfEqBot hbot |>.symm.trans
-      (lTensor.equiv A (exact_subtype_mkQ p) (Submodule.mkQ_surjective p))
-  rw [baseChange_eq_ltensor, ← show e.toLinearMap = lTensor A p.mkQ by
-    ext
-    simp [e, lTensor.equiv, lTensor.linearEquiv_of_rightInverse, lTensor.toFun]]
+    (range (lTensor A p.subtype)).quotEquivOfEqBot hbot |>.symm.trans e₀
+  have he : e.toLinearMap = lTensor A p.mkQ := LinearMap.ext fun y ↦ by
+    simp only [e, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
+      Submodule.quotEquivOfEqBot_symm_apply, he₀]
+  rw [baseChange_eq_ltensor, ← he]
   exact e.bijective
 
 /-- **Finiteness of a base change killing a scalar.** If `r : R` maps to `0` in the `R`-algebra

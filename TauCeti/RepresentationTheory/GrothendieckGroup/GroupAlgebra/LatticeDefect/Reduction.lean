@@ -73,8 +73,9 @@ theorem fdRepK0RingEquiv_of_reduction (V : Type u) [AddCommGroup V] [DistribMulA
 
 /-- **The lattice defect is `[k ⊗_ℤ V] - [k ⊗_ℤ V[ℓ]]`** in characteristic `ℓ`, with `[k ⊗_ℤ V]`
 the class of the reduction `TauCeti.reduction k G V`, which is finite-dimensional
-(`TauCeti.finite_baseChange_of_finite_quotSMulTop`). This is
-`TauCeti.latticeDefect_eq_reductionK0_sub` in the Grothendieck ring of `FDRep k G`. -/
+(`TauCeti.finite_baseChange_of_finite_quotSMulTop`), transported from the Grothendieck ring of
+`FDRep k G` along `TauCeti.fdRepK0RingEquiv`. The equality holds in `G₀(k[G])`; this is
+`TauCeti.latticeDefect_eq_reductionK0_sub` with the class of `k ⊗_ℤ V` read off from `FDRep`. -/
 theorem latticeDefect_eq_fdRepK0RingEquiv_reduction_sub [CharP k ℓ] (V : Type u) [AddCommGroup V]
     [DistribMulAction G V] [Finite (QuotSMulTop (ℓ : ℤ) V)]
     [Finite (Submodule.torsionBy ℤ V ℓ)] :
