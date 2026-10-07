@@ -12,7 +12,7 @@ public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
-# The product decomposition along a linear isometry
+# Linear isometries, orthogonal complements, and product decompositions
 
 A linear isometry `f : E →ₗᵢ[ℝ] F` into a finite-dimensional inner product space identifies `F`
 with the product of `E` and the orthogonal complement of the range of `f`, by
@@ -45,6 +45,10 @@ and complex inner product spaces, without completeness or dimension assumptions.
 * `LinearIsometry.apply_eq_of_map_single`: a linear isometry of Euclidean spaces sending the `i`-th
   standard basis vector to the `j`-th one reads the `i`-th coordinate off as the `j`-th coordinate
   of the image.
+* `LinearMap.ext_of_apply_eq_of_eqOn_orthogonal`: linear maps agreeing on a vector and
+  its orthogonal complement are equal, without a unit-norm assumption.
+* `LinearIsometryEquiv.eq_extendOrthogonalComplement`: a linear isometry equals the
+  extension if it agrees on the unit vector and its orthogonal complement.
 -/
 
 public section
@@ -120,12 +124,39 @@ end EuclideanSpace
 
 end LinearIsometry
 
+namespace LinearMap
+
+open scoped InnerProductSpace
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [AddCommMonoid F] [Module 𝕜 F] {x : E}
+
+/-- Linear maps are determined by their value on a vector and their restriction to its
+orthogonal complement. The vector need not be a unit vector or even nonzero. -/
+theorem ext_of_apply_eq_of_eqOn_orthogonal {f g : E →ₗ[𝕜] F} (hx : f x = g x)
+    (h : ∀ v : (𝕜 ∙ x)ᗮ, f v = g v) : f = g := by
+  apply ext_on_codisjoint (𝕜 ∙ x).isCompl_orthogonal.codisjoint
+  · exact eqOn_span' (by simpa only [Set.eqOn_singleton] using hx)
+  · intro v hv
+    exact h ⟨v, hv⟩
+
+end LinearMap
+
 namespace LinearIsometryEquiv
 
 open scoped InnerProductSpace
 
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] {x : E} {y : F}
+
+/-- In unit-vector coordinates, the inverse orthogonal decomposition adds the radial
+and transverse components. -/
+theorem orthogonalDecomposition_symm_apply_toSpanUnitSingleton (x : E) (hx : ‖x‖ = 1)
+    (r : 𝕜) (v : (𝕜 ∙ x)ᗮ) :
+    (𝕜 ∙ x).orthogonalDecomposition.symm
+      (WithLp.toLp 2 (toSpanUnitSingleton x hx r, v)) = r • x + v := by
+  simp only [Submodule.orthogonalDecomposition_symm_apply, WithLp.toLp_fst,
+    WithLp.toLp_snd, toSpanUnitSingleton_apply]
 
 /-- Extend an isometry between the orthogonal complements of two unit vectors by sending
 one unit vector to the other. The extension uses Mathlib's
@@ -139,47 +170,42 @@ noncomputable def extendOrthogonalComplement
 
 /-- On the orthogonal direct sum, the extension acts on the radial and transverse
 components separately. -/
-theorem extendOrthogonalComplement_apply_add
+theorem extendOrthogonalComplement_apply_smul_add
     (e : (𝕜 ∙ x)ᗮ ≃ₗᵢ[𝕜] (𝕜 ∙ y)ᗮ) (hx : ‖x‖ = 1) (hy : ‖y‖ = 1)
     (r : 𝕜) (v : (𝕜 ∙ x)ᗮ) :
     e.extendOrthogonalComplement hx hy (r • x + v) = r • y + e v := by
-  have hd : (𝕜 ∙ x).orthogonalDecomposition.symm
-      (WithLp.toLp 2 (toSpanUnitSingleton x hx r, v)) = r • x + v := by
-    simp
-  rw [← hd]
+  rw [← orthogonalDecomposition_symm_apply_toSpanUnitSingleton x hx]
   simp only [extendOrthogonalComplement, trans_apply, apply_symm_apply,
-    withLpProdCongr_apply]
-  simp only [WithLp.toLp_fst, WithLp.toLp_snd, symm_apply_apply]
-  simp
+    withLpProdCongr_apply, WithLp.toLp_fst, WithLp.toLp_snd, symm_apply_apply]
+  exact orthogonalDecomposition_symm_apply_toSpanUnitSingleton y hy r (e v)
 
 /-- The extension sends the distinguished unit vector to the distinguished target vector. -/
 @[simp]
 theorem extendOrthogonalComplement_apply_self
     (e : (𝕜 ∙ x)ᗮ ≃ₗᵢ[𝕜] (𝕜 ∙ y)ᗮ) (hx : ‖x‖ = 1) (hy : ‖y‖ = 1) :
     e.extendOrthogonalComplement hx hy x = y := by
-  simpa using e.extendOrthogonalComplement_apply_add hx hy 1 0
+  simpa using e.extendOrthogonalComplement_apply_smul_add hx hy 1 0
 
 /-- The extension agrees with the original isometry on the orthogonal complement. -/
 @[simp]
 theorem extendOrthogonalComplement_apply_coe
     (e : (𝕜 ∙ x)ᗮ ≃ₗᵢ[𝕜] (𝕜 ∙ y)ᗮ) (hx : ‖x‖ = 1) (hy : ‖y‖ = 1)
     (v : (𝕜 ∙ x)ᗮ) : e.extendOrthogonalComplement hx hy v = e v := by
-  simpa using e.extendOrthogonalComplement_apply_add hx hy 0 v
+  simpa using e.extendOrthogonalComplement_apply_smul_add hx hy 0 v
 
 /-- An ambient linear isometry is uniquely determined by its value on a unit vector and
 its restriction to the orthogonal complement. -/
 theorem eq_extendOrthogonalComplement
     (e : (𝕜 ∙ x)ᗮ ≃ₗᵢ[𝕜] (𝕜 ∙ y)ᗮ) (hx : ‖x‖ = 1) (hy : ‖y‖ = 1)
-    (f : E ≃ₗᵢ[𝕜] F) (hfx : f x = y)
-    (hf : ∀ v : (𝕜 ∙ x)ᗮ, f v = e v) : f = e.extendOrthogonalComplement hx hy := by
-  ext z
-  obtain ⟨r, hr⟩ := (toSpanUnitSingleton x hx).surjective
-    ((𝕜 ∙ x).orthogonalDecomposition z).fst
-  have hz : r • x + (((𝕜 ∙ x).orthogonalDecomposition z).snd : E) = z := by
-    have hdecomp := (𝕜 ∙ x).orthogonalDecomposition.symm_apply_apply z
-    rw [Submodule.orthogonalDecomposition_symm_apply] at hdecomp
-    rw [← hr] at hdecomp
-    simpa using hdecomp
-  rw [← hz, map_add, map_smul, hfx, hf, extendOrthogonalComplement_apply_add]
+    (f : E →ₗᵢ[𝕜] F) (hfx : f x = y)
+    (hf : ∀ v : (𝕜 ∙ x)ᗮ, f v = e v) :
+    f = (e.extendOrthogonalComplement hx hy).toLinearIsometry := by
+  apply LinearIsometry.toLinearMap_injective
+  apply LinearMap.ext_of_apply_eq_of_eqOn_orthogonal (x := x)
+  · simpa only [LinearIsometry.coe_toLinearMap, coe_toLinearIsometry,
+      extendOrthogonalComplement_apply_self] using hfx
+  · intro v
+    simpa only [LinearIsometry.coe_toLinearMap, coe_toLinearIsometry,
+      extendOrthogonalComplement_apply_coe] using hf v
 
 end LinearIsometryEquiv

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Riemannian.Induced
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # The round metric on the unit sphere
@@ -120,9 +121,10 @@ inclusion. -/
 theorem coe_sphereTangentEquiv_apply (x : sphere (0 : E) 1)
     (v : TangentSpace (𝓡 n) x) :
     (sphereTangentEquiv x v : E) =
-      mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v := by
+      mfderiv (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) x v := by
   simp only [sphereTangentEquiv, LinearIsometryEquiv.trans_apply,
     LinearIsometryEquiv.coe_ofEq_apply]
-  rfl
+  rw [LinearIsometry.equivRange_apply_coe]
+  exact mvfderiv_apply_eq_mfderiv_apply _ x v
 
 end TauCeti

@@ -26,6 +26,14 @@ differential identifies the full isometry group with the ambient orthogonal grou
 The construction uses `TauCeti.sphereTangentEquiv`, the differential of the sphere inclusion,
 and `LinearIsometryEquiv.extendOrthogonalComplement`.
 
+## Main definitions and results
+
+* `LinearIsometryEquiv.extendSphereTangent`: extend a tangent isometry to the ambient spaces.
+* `LinearIsometryEquiv.eq_extendSphereTangent`: characterize the extension by its value
+  and action on tangent vectors.
+* `TauCeti.RiemannianIsometry.exists_linearIsometryEquiv_apply_eq_and_mfderiv_eq`:
+  match a Riemannian isometry at a point to first order by an ambient linear isometry.
+
 ## References
 
 * J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Springer (2018),
@@ -69,7 +77,6 @@ theorem extendSphereTangent_apply_mfderiv
     (v : TangentSpace (𝓡 n) x) :
     e.extendSphereTangent (mfderiv (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) x v) =
       mfderiv (𝓡 k) 𝓘(ℝ, F) ((↑) : sphere (0 : F) 1 → F) y (e v) := by
-  simp only [← mvfderiv_apply_eq_mfderiv_apply]
   rw [← TauCeti.coe_sphereTangentEquiv_apply x v]
   simp only [extendSphereTangent, extendOrthogonalComplement_apply_coe, trans_apply,
     symm_apply_apply]
@@ -78,12 +85,12 @@ theorem extendSphereTangent_apply_mfderiv
 /-- The ambient extension is uniquely characterized by its radial value and its
 prescribed action on tangent vectors. -/
 theorem eq_extendSphereTangent
-    (e : TangentSpace (𝓡 n) x ≃ₗᵢ[ℝ] TangentSpace (𝓡 k) y) (f : E ≃ₗᵢ[ℝ] F)
+    (e : TangentSpace (𝓡 n) x ≃ₗᵢ[ℝ] TangentSpace (𝓡 k) y) (f : E →ₗᵢ[ℝ] F)
     (hfx : f (x : E) = y)
     (hf : ∀ v : TangentSpace (𝓡 n) x,
-      f (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v) =
-        mvfderiv (𝓡 k) ((↑) : sphere (0 : F) 1 → F) y (e v)) :
-    f = e.extendSphereTangent := by
+      f (mfderiv (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) x v) =
+        mfderiv (𝓡 k) 𝓘(ℝ, F) ((↑) : sphere (0 : F) 1 → F) y (e v)) :
+    f = e.extendSphereTangent.toLinearIsometry := by
   rw [extendSphereTangent]
   apply eq_extendOrthogonalComplement _ _ _ f hfx
   intro v
@@ -100,7 +107,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- At any point, a Riemannian isometry of round spheres has the same value and
 manifold differential as the restriction of an ambient linear isometry. -/
-theorem exists_linearIsometryEquiv_value_mfderiv
+theorem exists_linearIsometryEquiv_apply_eq_and_mfderiv_eq
     (Φ : RiemannianIsometry (𝓡 n) (𝓡 k) (sphere (0 : E) 1) (sphere (0 : F) 1))
     (x : sphere (0 : E) 1) :
     ∃ f : E ≃ₗᵢ[ℝ] F, LinearIsometryEquiv.unitSphereEquiv f x = Φ x ∧
