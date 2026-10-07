@@ -166,20 +166,7 @@ theorem nonempty_delineation_of_locally [PreconnectedSpace X]
     Nonempty (Delineation P) := by
   classical
   rcases isEmpty_or_nonempty X with hX | hX
-  · -- Over an empty base the empty stack is a delineation.
-    exact ⟨{
-      count := 0
-      root := Fin.elim0
-      continuous_root := fun i ↦ i.elim0
-      strictMono_root := fun x ↦ isEmptyElim x
-      multiplicity := fun _ ↦ Fin.elim0
-      rootMultiplicity_root := fun _ i ↦ i.elim0
-      exists_root_eq := fun _ x ↦ isEmptyElim x
-      exists_multiplicity_pos := fun i ↦ i.elim0
-      eq_zero_or_ne_zero := fun _ ↦ .inl isEmptyElim
-      natDegree_eq := fun _ x ↦ isEmptyElim x
-      signInvariant_sectionSet := fun _ i ↦ i.elim0
-      signInvariant_sectorSet := fun _ _ ↦ subsingleton_of_subsingleton.signInvariant }⟩
+  · exact Delineation.nonempty_of_isEmpty P
   choose U hU hxU hD using hlocal
   let D (x : X) := (hD x).some
   obtain ⟨hdeg, hnull⟩ := invariants_of_local_delineations hU hxU D
