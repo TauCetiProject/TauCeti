@@ -22,7 +22,7 @@ for PL compatibility of barycentric stellar identifications.
 
 public section
 
-open Set Filter Topology
+open Set Filter Topology TauCeti
 
 variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
 
@@ -31,6 +31,10 @@ namespace Finset
 /-- The cell on which the affine functional indexed by `i` is a minimum on `s`. -/
 def infCell {ι : Type*} (s : Finset ι) (f : ι → (E →ᴬ[ℝ] ℝ)) (i : s) : Set E :=
   {x | ∀ j ∈ s, f i x ≤ f j x}
+
+@[simp] theorem mem_infCell_iff {ι : Type*} (s : Finset ι) (f : ι → (E →ᴬ[ℝ] ℝ)) (i : s)
+    (x : E) : x ∈ s.infCell f i ↔ ∀ j ∈ s, f i x ≤ f j x :=
+  Iff.rfl
 
 /-- A finite-minimum cell is an intersection of affine half-spaces. -/
 theorem isConvexPolyhedron_infCell {ι : Type*} (s : Finset ι)
@@ -51,26 +55,18 @@ theorem subset_iUnion_infCell {ι : Type*} (s : Finset ι) (hs : s.Nonempty)
   refine mem_iUnion.2 ⟨⟨i, hi⟩, ?_⟩
   exact hmin
 
-/-- The pointwise minimum of a finite nonempty family of affine functionals. -/
-def infAffine {ι : Type*} (s : Finset ι) (hs : s.Nonempty)
-    (f : ι → (E →ᴬ[ℝ] ℝ)) : E → ℝ :=
-  fun x => s.inf' hs (fun i => f i x)
-
-@[simp] theorem infAffine_apply {ι : Type*} (s : Finset ι) (hs : s.Nonempty)
-    (f : ι → (E →ᴬ[ℝ] ℝ)) (x : E) :
-    s.infAffine hs f x = s.inf' hs (fun i => f i x) := by
-  simp [infAffine]
-
-end Finset
-
-namespace TauCeti
-
-variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+/-- The finite affine infimum agrees with the active functional on its cell. -/
+theorem infAffine_eq_of_mem_infCell {ι : Type*} (s : Finset ι) (hs : s.Nonempty)
+    (f : ι → (E →ᴬ[ℝ] ℝ)) (i : s) {x : E} (hx : x ∈ s.infCell f i) :
+    s.inf' hs (fun j => f j x) = f i x := by
+  apply le_antisymm
+  · exact s.inf'_le _ i.2
+  · exact s.le_inf' hs _ (fun j hj => hx j hj)
 
 /-- A finite minimum of continuous affine functionals is piecewise affine on the whole source. -/
-theorem isPLOn_finsetInfAffine {ι : Type*} (s : Finset ι) (hs : s.Nonempty)
+theorem isPLOn_infAffine {ι : Type*} (s : Finset ι) (hs : s.Nonempty)
     (f : ι → (E →ᴬ[ℝ] ℝ)) :
-    IsPLOn (s.infAffine hs f) (Set.univ : Set E) := by
+    IsPLOn (fun x => s.inf' hs (fun i => f i x)) (Set.univ : Set E) := by
   let C : s → Set E := s.infCell f
   have hC : ∀ i, IsConvexPolyhedron (C i) := by
     intro i
@@ -80,9 +76,6 @@ theorem isPLOn_finsetInfAffine {ι : Type*} (s : Finset ι) (hs : s.Nonempty)
   refine (isPiecewiseAffineOn_of_finite (C := C) (A := fun i => f i)
     hC hcov ?_).isPLOn
   intro i x hx
-  dsimp [Finset.infAffine]
-  apply le_antisymm
-  · exact Finset.inf'_le _ i.2
-  · exact Finset.le_inf' hs _ (fun j hj => hx.2 j hj)
+  exact s.infAffine_eq_of_mem_infCell hs f i hx.2
 
-end TauCeti
+end Finset
