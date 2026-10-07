@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Crosscut.Basic
 public import TauCeti.Topology.Path.Separation
 import Mathlib.Analysis.Complex.Convex
-import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Topology.ConnectedComponents
 
 /-!
 # The sides of a crosscut
@@ -70,23 +70,6 @@ private lemma range_realDiameter_im_eq_zero {z : ℂ}
   obtain ⟨t, rfl⟩ := hz
   simp [Path.segment_apply, AffineMap.lineMap_apply_module]
 
-private lemma connectedComponentIn_eq_of_sign {D H : Set ℂ} {z : ℂ} {φ : ℂ → ℝ}
-    (hH : IsPreconnected H) (hHD : H ⊆ D) (hz : z ∈ H) (hφ : Continuous φ)
-    (hHpos : ∀ q ∈ H, 0 < φ q) (hDne : ∀ q ∈ D, φ q ≠ 0)
-    (hmem : ∀ q ∈ D, 0 < φ q → q ∈ H) : connectedComponentIn D z = H := by
-  apply Subset.antisymm
-  · intro q hq
-    have hqD : q ∈ D := connectedComponentIn_subset D z hq
-    apply hmem q hqD
-    rcases lt_or_gt_of_ne (hDne q hqD) with hqneg | hqpos
-    · have hzC : z ∈ connectedComponentIn D z := mem_connectedComponentIn (hHD hz)
-      have hzero : (0 : ℝ) ∈ Icc (φ q) (φ z) := ⟨hqneg.le, (hHpos z hz).le⟩
-      obtain ⟨p, hpC, hpzero⟩ :=
-        isPreconnected_connectedComponentIn.intermediate_value hq hzC hφ.continuousOn hzero
-      exact (hDne p (connectedComponentIn_subset D z hpC) hpzero).elim
-    · exact hqpos
-  · exact hH.subset_connectedComponentIn hz hHD
-
 /-- The connected component of a point in the open upper half of the unit disc, after removing
 the real diameter, is exactly that upper half-disc. -/
 theorem connectedComponentIn_unitDisc_diff_realDiameter_eq_upper {z : ℂ}
@@ -100,11 +83,9 @@ theorem connectedComponentIn_unitDisc_diff_realDiameter_eq_upper {z : ℂ}
     have hqim' : 0 < q.im := hqim
     refine ⟨hqball, fun hqrange => ?_⟩
     exact (ne_of_gt hqim') (range_realDiameter_im_eq_zero hqrange)
-  apply connectedComponentIn_eq_of_sign
-      ((convex_ball (0 : ℂ) 1).inter (convex_halfSpace_im_gt 0)).isPreconnected hHD hz
-      Complex.continuous_im
-  · intro q hq
-    exact hq.2
+  apply connectedComponentIn_eq_of_lt
+      ((convex_ball (0 : ℂ) 1).inter (convex_halfSpace_im_gt 0)).isPreconnected hHD hz hz.2
+      Complex.continuous_im.continuousOn
   · intro q hq hqim
     exact hq.2 (mem_range_realDiameter_of_mem_unitDisc_of_im_eq_zero hq.1 hqim)
   · intro q hq hqim
@@ -123,11 +104,9 @@ theorem connectedComponentIn_unitDisc_diff_realDiameter_eq_lower {z : ℂ}
     have hqim' : q.im < 0 := hqim
     refine ⟨hqball, fun hqrange => ?_⟩
     exact (ne_of_lt hqim') (range_realDiameter_im_eq_zero hqrange)
-  apply connectedComponentIn_eq_of_sign
+  apply connectedComponentIn_eq_of_lt (φ := fun w : ℂ ↦ -w.im)
       ((convex_ball (0 : ℂ) 1).inter (convex_halfSpace_im_lt 0)).isPreconnected hHD hz
-      Complex.continuous_im.neg
-  · intro q hq
-    simpa using hq.2
+      (neg_pos.mpr hz.2) Complex.continuous_im.neg.continuousOn
   · intro q hq hqim
     apply hq.2
     apply mem_range_realDiameter_of_mem_unitDisc_of_im_eq_zero hq.1
