@@ -110,8 +110,10 @@ theorem isAtkinLehnerMatrix_descendExtra (hp : p.Prime) (hpN : p ∣ N) (hpsq : 
 `[1, 0; 0, p] γ_p`.** This is the member of the descent family at the index `p`, present because
 `p ∥ N`. -/
 theorem descendMatrix_eq_atkinLehnerGL (hp : p.Prime) (hpN : p ∣ N) (hpsq : ¬ p ^ 2 ∣ N)
-    [NeZero p] {v : Fin (descendMatrixCount p N)} (hv : p ≤ v.val) :
+    {v : Fin (descendMatrixCount p N)} (hv : p ≤ v.val) :
+    haveI : NeZero p := ⟨hp.ne_zero⟩
     descendMatrix p N v = atkinLehnerGL hp.pos (isAtkinLehnerMatrix_descendExtra hp hpN hpsq) := by
+  have : NeZero p := ⟨hp.ne_zero⟩
   refine Units.ext ?_
   rw [descendMatrix_of_le hv, coe_atkinLehnerGL]
   ext i j
