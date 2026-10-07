@@ -9,7 +9,6 @@ public import Mathlib.LinearAlgebra.DirectSum.Finite
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.RingTheory.Noetherian.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.Projective
-public import TauCeti.Algebra.Homology.EulerCharacteristic.GradedDimension
 
 /-!
 # Graded free modules and projective presentations
@@ -244,40 +243,5 @@ theorem exists_finite_free_presentation [IsNoetherianRing A]
   refine ⟨I, J, hI, hJ, d, e, g ≫ kernelι f, f, ?_, hf⟩
   rw [hom_comp, hom_kernelι]
   exact hg.comp_exact_iff_exact.mpr (LinearMap.exact_subtype_ker_map f.hom)
-
-end TauCeti.GradedModuleCat
-
-namespace TauCeti.GradedModuleCat
-
-universe uk uA
-
-variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
-  {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
-
-/-- **Graded maps into the shifts of a finite-dimensional graded module have finite Laurent
-support** when the source is finitely generated. A surjection from a finite graded free module
-`⨁ᵢ A{dᵢ}` embeds `Hom(P, M{j})` into `∏ᵢ M_{dᵢ-j}`, and `M` has only finitely many nonzero
-pieces. -/
-theorem hasFiniteLaurentSupport_hom_shiftObj (P M : GradedModuleCat.{uA} 𝒜)
-    [Module.Finite A P] [Module.Finite k M] :
-    HasFiniteLaurentSupport k fun j : ℤ ↦ P ⟶ M.shiftObj j := by
-  classical
-  obtain ⟨I, hI, d, π, hπ⟩ := exists_finite_free_surjection P
-  have : Epi π := (epi_iff_surjective π).2 hπ
-  let _ : Fintype I := Fintype.ofFinite I
-  have hM := M.grading.finite_piece_ne_bot
-  -- Maps out of the free module are tuples in the pieces `M_{dᵢ-j}`.
-  have hfree : HasFiniteLaurentSupport k fun j : ℤ ↦ ∀ i, (M.shiftObj j).grading.piece (d i) := by
-    refine HasFiniteLaurentSupport.of_finset (fun j ↦ inferInstance)
-      (Finset.univ.biUnion fun i ↦ hM.toFinset.image fun p ↦ d i - p) fun j hj ↦ ?_
-    have (i : I) : Subsingleton ((M.shiftObj j).grading.piece (d i)) := by
-      rw [Submodule.subsingleton_iff_eq_bot]
-      by_contra hne
-      refine hj (Finset.mem_biUnion.2 ⟨i, Finset.mem_univ i, Finset.mem_image.2
-        ⟨d i + -j, hM.mem_toFinset.2 ?_, by omega⟩⟩)
-      simpa using hne
-    infer_instance
-  exact (hfree.of_equiv fun j ↦ (freeHomEquiv (M.shiftObj j)).symm).of_injective
-    (fun j ↦ Linear.leftComp k _ π) fun j _ _ h ↦ (cancel_epi π).1 h
 
 end TauCeti.GradedModuleCat

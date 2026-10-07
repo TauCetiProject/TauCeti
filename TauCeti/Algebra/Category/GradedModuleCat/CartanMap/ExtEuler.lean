@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.SimpleBasis
-public import TauCeti.Algebra.Category.GradedModuleCat.Free
+public import TauCeti.Algebra.Category.GradedModuleCat.HomLaurentSupport
 public import TauCeti.Algebra.Category.GradedModuleCat.Shift
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Sesquilinear
 
@@ -40,14 +40,12 @@ projective covers and simples.
 
 ## Main results
 
-* `TauCeti.GradedModuleCat.hasFiniteLaurentSupport_hom_shiftObj`: graded maps from a finitely
-  generated graded module into the shifts of a finite-dimensional one have finite Laurent support.
 * `TauCeti.isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules_gradedFiniteModules`: finite
   graded projectives and finite graded modules form graded Euler-admissible pairs.
 * `TauCeti.gradedExtEuler_ofIdeal_span_singleton`: `χ_q(Af, M) = ∑ₚ dim_k(f • Mₚ) qᵖ`.
 * `TauCeti.gradedProjectiveExtEuler_ofIdeal_span_singleton`: pairing against `[Af]` is the
   idempotent coordinate of `f`.
-* `TauCeti.gradedProjectiveExtEuler_ofIdeal_span_singleton_of`: `χ_q([A eᵢ], [Sⱼ]) = δᵢⱼ`.
+* `TauCeti.gradedProjectiveExtEuler_basis`: `χ_q([A eᵢ], [Sⱼ]) = δᵢⱼ`.
 * `TauCeti.gradedProjectiveExtEuler_ofIdeal_span_singleton_eq_repr`: pairing against `[A eᵢ]` is
   the `i`th coordinate in the graded simple-class basis.
 
@@ -176,7 +174,7 @@ variable {I : Type uI} (S : I → (gradedFiniteModules 𝒜).FullSubcategory) {e
 include he₀ hne hself in
 /-- **Projectives are dual to simples under the q-Euler form**: if the degree-zero idempotents
 `eᵢ` satisfy `gdim(eᵢ • Sⱼ) = δᵢⱼ`, then `χ_q([A eᵢ], [Sⱼ]) = δᵢⱼ`. -/
-theorem gradedProjectiveExtEuler_ofIdeal_span_singleton_of [DecidableEq I] (i j : I) :
+theorem gradedProjectiveExtEuler_basis [DecidableEq I] (i j : I) :
     gradedProjectiveExtEuler 𝒜 (LaurentK0.of.{uA} _
         ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i}) (hI i),
           gradedFiniteProjectiveModules_ofIdeal_span_singleton (he i) (hI i)⟩)
