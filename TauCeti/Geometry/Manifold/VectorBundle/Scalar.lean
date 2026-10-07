@@ -21,8 +21,7 @@ the zero section and preserves the projection, without a choice of global trivia
 For normal bundles, positive rescaling converts unit-radius fibre coordinates to a radius
 varying over the submanifold. It is the rescaling step in the variable-radius tubular
 neighbourhood construction of J. M. Lee, *Introduction to Smooth Manifolds*, second edition,
-Theorem 6.24. The smoothness argument uses Mathlib's
-`Bundle.contMDiffWithinAt_totalSpace` and the linearity of vector-bundle trivializations.
+Theorem 6.24.
 -/
 
 public section
