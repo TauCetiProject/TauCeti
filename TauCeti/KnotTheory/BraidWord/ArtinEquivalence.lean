@@ -18,8 +18,6 @@ that the represented braid is unchanged and that the oriented closure changes by
 moves. Free cancellation is deliberately a separate relation, since its closure-level clasp
 calculation is a different local argument.
 
-The relation is the move-level input for the braid-to-diagram comparison: a later completeness
-theorem can combine it with free cancellation to compare arbitrary words representing one braid.
 -/
 
 public section
@@ -86,10 +84,53 @@ theorem induction {motive : BraidWord n → BraidWord n → Prop}
   | symm _ _ hww' ih => exact symm hww' ih
   | trans _ _ _ hww' hw'w'' ih ih' => exact trans hww' hw'w'' ih ih'
 
+/-- Adding a common prefix preserves Artin equivalence. -/
+theorem append_left (pre : BraidWord n) {w w' : BraidWord n} (h : ArtinEquiv w w') :
+    ArtinEquiv (pre ++ w) (pre ++ w') := by
+  refine ArtinEquiv.induction (motive := fun w w' ↦ ArtinEquiv (pre ++ w) (pre ++ w')) ?_ ?_ ?_ ?_ h
+  · intro w w' hstep
+    cases hstep with
+    | commute u v h =>
+        exact of_step <| by
+          simpa only [List.append_assoc] using ArtinStep.commute (pre ++ u) v h
+    | braid u v ε hij =>
+        exact of_step <| by
+          simpa only [List.append_assoc] using ArtinStep.braid (pre ++ u) v ε hij
+  · intro w
+    exact refl _
+  · intro w w' h ih
+    exact ih.symm
+  · intro w w' w'' h h' ih ih'
+    exact ih.trans ih'
+
+/-- Adding a common suffix preserves Artin equivalence. -/
+theorem append_right {w w' : BraidWord n} (h : ArtinEquiv w w') (suf : BraidWord n) :
+    ArtinEquiv (w ++ suf) (w' ++ suf) := by
+  refine ArtinEquiv.induction (motive := fun w w' ↦ ArtinEquiv (w ++ suf) (w' ++ suf)) ?_ ?_ ?_ ?_ h
+  · intro w w' hstep
+    cases hstep with
+    | commute u v h =>
+        exact of_step <| by
+          simpa only [List.cons_append, List.append_assoc] using ArtinStep.commute u (v ++ suf) h
+    | braid u v ε hij =>
+        exact of_step <| by
+          simpa only [List.cons_append, List.append_assoc] using ArtinStep.braid u (v ++ suf) ε hij
+  · intro w
+    exact refl _
+  · intro w w' h ih
+    exact ih.symm
+  · intro w w' w'' h h' ih ih'
+    exact ih.trans ih'
+
+/-- Appending Artin-equivalent words preserves Artin equivalence. -/
+theorem append {w₁ w₁' w₂ w₂' : BraidWord n} (h₁ : ArtinEquiv w₁ w₁')
+    (h₂ : ArtinEquiv w₂ w₂') : ArtinEquiv (w₁ ++ w₂) (w₁' ++ w₂') :=
+  (h₁.append_right w₂).trans (h₂.append_left w₁')
+
 end ArtinEquiv
 
 /-- A single Artin relation step preserves the braid represented by a word. -/
-theorem toBraid_artinStep {w w' : BraidWord n} (h : ArtinStep w w') :
+theorem toBraid_eq_of_artinStep {w w' : BraidWord n} (h : ArtinStep w w') :
     toBraid w = toBraid w' := by
   cases h with
   | @commute u v a b h =>
@@ -110,16 +151,16 @@ theorem toBraid_artinStep {w w' : BraidWord n} (h : ArtinStep w w') :
       simpa [mul_assoc] using congrArg (fun z => toBraid u * (z * toBraid v)) hb
 
 /-- Artin equivalence preserves the braid represented by a word. -/
-theorem toBraid_artinEquiv {w w' : BraidWord n} (h : ArtinEquiv w w') :
+theorem toBraid_eq_of_artinEquiv {w w' : BraidWord n} (h : ArtinEquiv w w') :
     toBraid w = toBraid w' := by
   induction h with
-  | rel _ _ h => exact toBraid_artinStep h
+  | rel _ _ h => exact toBraid_eq_of_artinStep h
   | refl => rfl
   | symm _ _ _ ih => exact ih.symm
   | trans _ _ _ _ _ ih₁ ih₂ => exact ih₁.trans ih₂
 
 /-- A single Artin relation step gives Reidemeister-equivalent oriented closures. -/
-theorem reidemeisterEquiv_closure_artinStep {w w' : BraidWord n} (h : ArtinStep w w') :
+theorem reidemeisterEquiv_closure_of_artinStep {w w' : BraidWord n} (h : ArtinStep w w') :
     OrientedPDCode.ReidemeisterEquiv (closure w) (closure w') := by
   cases h with
   | commute u v h => exact reidemeisterEquiv_closure_append_cons_cons_comm u v h
@@ -129,10 +170,10 @@ theorem reidemeisterEquiv_closure_artinStep {w w' : BraidWord n} (h : ArtinStep 
         rfl)
 
 /-- Artin-equivalent braid words have Reidemeister-equivalent oriented closures. -/
-theorem reidemeisterEquiv_closure_artinEquiv {w w' : BraidWord n} (h : ArtinEquiv w w') :
+theorem reidemeisterEquiv_closure_of_artinEquiv {w w' : BraidWord n} (h : ArtinEquiv w w') :
     OrientedPDCode.ReidemeisterEquiv (closure w) (closure w') := by
   induction h with
-  | rel _ _ h => exact reidemeisterEquiv_closure_artinStep h
+  | rel _ _ h => exact reidemeisterEquiv_closure_of_artinStep h
   | refl => exact OrientedPDCode.ReidemeisterEquiv.refl _
   | symm _ _ _ ih => exact ih.symm
   | trans _ _ _ _ _ ih₁ ih₂ => exact ih₁.trans ih₂
