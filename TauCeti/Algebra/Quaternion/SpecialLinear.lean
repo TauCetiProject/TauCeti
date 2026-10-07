@@ -52,39 +52,40 @@ variable {R : Type*} [CommRing R]
 
 /-- Any algebra equivalence from a quaternion algebra to two-by-two matrices carries quaternion
 conjugation to matrix adjugation. -/
-theorem map_star_eq_adjugate_of_algEquiv_matrix {a b : R}
-    (e : ℍ[R,a,0,b] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R) (q : ℍ[R,a,0,b]) :
+theorem map_star_eq_adjugate_of_algEquiv_matrix {c₁ c₂ c₃ : R}
+    (e : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R) (q : ℍ[R,c₁,c₂,c₃]) :
     e (star q) = Matrix.adjugate (e q) := by
   let f : Matrix (Fin 2) (Fin 2) R → Matrix (Fin 2) (Fin 2) R :=
     fun A ↦ e (star (e.symm A))
   have hmul (A B : Matrix (Fin 2) (Fin 2) R) : f (A * B) = f B * f A := by
     simp only [f, map_mul, star_mul]
   have hscalar (A : Matrix (Fin 2) (Fin 2) R) : ∃ r : R, A + f A = r • 1 := by
-    refine ⟨2 * (e.symm A).re, ?_⟩
+    refine ⟨2 * (e.symm A).re + c₂ * (e.symm A).imI, ?_⟩
     dsimp only [f]
     calc
       A + e (star (e.symm A)) = e (e.symm A) + e (star (e.symm A)) := by
         rw [e.apply_symm_apply]
       _ = e (e.symm A + star (e.symm A)) := (map_add e _ _).symm
-      _ = (2 * (e.symm A).re) • 1 := by
-        rw [self_add_star]
+      _ = (2 * (e.symm A).re + c₂ * (e.symm A).imI) • 1 := by
+        rw [self_add_star']
         have hscalarQuat :
-            (2 * ((e.symm A).re : ℍ[R,a,0,b]) +
-                (0 : R) * ((e.symm A).imI : ℍ[R,a,0,b])) =
-              algebraMap R ℍ[R,a,0,b] (2 * (e.symm A).re) := by
+            ((2 * (e.symm A).re + c₂ * (e.symm A).imI : R) :
+                ℍ[R,c₁,c₂,c₃]) =
+              algebraMap R ℍ[R,c₁,c₂,c₃]
+                (2 * (e.symm A).re + c₂ * (e.symm A).imI) := by
           ext <;> simp
         rw [hscalarQuat]
         simpa only [Algebra.algebraMap_eq_smul_one] using
-          e.commutes (2 * (e.symm A).re)
+          e.commutes (2 * (e.symm A).re + c₂ * (e.symm A).imI)
   simpa only [f, e.symm_apply_apply] using
     Matrix.eq_adjugate_of_antimultiplicative_of_exists_add_eq_smul_one f hmul hscalar (e q)
 
 /-- A splitting algebra equivalence restricts to an equivalence from the quaternion norm-one group
 to the two-dimensional special linear group. -/
-noncomputable def unitaryEquivSpecialLinearOfAlgEquiv {a b : R}
-    (e : ℍ[R,a,0,b] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R) :
-    unitary ℍ[R,a,0,b] ≃* Matrix.SpecialLinearGroup (Fin 2) R := by
-  let f : unitary ℍ[R,a,0,b] →* Matrix.SpecialLinearGroup (Fin 2) R :=
+noncomputable def unitaryEquivSpecialLinearOfAlgEquiv {c₁ c₂ c₃ : R}
+    (e : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R) :
+    unitary ℍ[R,c₁,c₂,c₃] ≃* Matrix.SpecialLinearGroup (Fin 2) R := by
+  let f : unitary ℍ[R,c₁,c₂,c₃] →* Matrix.SpecialLinearGroup (Fin 2) R :=
     { toFun := fun q ↦
         ⟨e q, (Matrix.adjugate_mul_self_eq_one_iff_det_eq_one (e q)).mp <| by
           rw [← map_star_eq_adjugate_of_algEquiv_matrix e, ← map_mul]
@@ -94,7 +95,7 @@ noncomputable def unitaryEquivSpecialLinearOfAlgEquiv {a b : R}
         exact map_one e
       map_mul' := fun x y ↦ by
         apply Subtype.ext
-        exact map_mul e (x : ℍ[R,a,0,b]) (y : ℍ[R,a,0,b]) }
+        exact map_mul e (x : ℍ[R,c₁,c₂,c₃]) (y : ℍ[R,c₁,c₂,c₃]) }
   apply MulEquiv.ofBijective f
   constructor
   · intro x y hxy
@@ -102,10 +103,10 @@ noncomputable def unitaryEquivSpecialLinearOfAlgEquiv {a b : R}
     apply e.injective
     exact congrArg Subtype.val hxy
   · intro A
-    let q : ℍ[R,a,0,b] := e.symm A
+    let q : ℍ[R,c₁,c₂,c₃] := e.symm A
     have hstar : e (star q) = Matrix.adjugate A := by
       rw [map_star_eq_adjugate_of_algEquiv_matrix, e.apply_symm_apply]
-    have hunitary : q ∈ unitary ℍ[R,a,0,b] := (Unitary.mem_iff).mpr ⟨by
+    have hunitary : q ∈ unitary ℍ[R,c₁,c₂,c₃] := (Unitary.mem_iff).mpr ⟨by
         apply e.injective
         rw [map_mul, hstar, e.apply_symm_apply, map_one,
           Matrix.adjugate_mul, A.det_coe, one_smul], by
@@ -118,8 +119,9 @@ noncomputable def unitaryEquivSpecialLinearOfAlgEquiv {a b : R}
 
 /-- The quaternion-to-`SL₂` equivalence evaluates the chosen splitting algebra equivalence. -/
 @[simp]
-theorem coe_unitaryEquivSpecialLinearOfAlgEquiv_apply {a b : R}
-    (e : ℍ[R,a,0,b] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R) (q : unitary ℍ[R,a,0,b]) :
+theorem coe_unitaryEquivSpecialLinearOfAlgEquiv_apply {c₁ c₂ c₃ : R}
+    (e : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R)
+    (q : unitary ℍ[R,c₁,c₂,c₃]) :
     ((unitaryEquivSpecialLinearOfAlgEquiv e q : Matrix.SpecialLinearGroup (Fin 2) R) :
       Matrix (Fin 2) (Fin 2) R) = e q := by
   rfl
@@ -127,10 +129,10 @@ theorem coe_unitaryEquivSpecialLinearOfAlgEquiv_apply {a b : R}
 /-- The inverse quaternion-to-`SL₂` equivalence evaluates the inverse splitting algebra
 equivalence. -/
 @[simp]
-theorem coe_unitaryEquivSpecialLinearOfAlgEquiv_symm_apply {a b : R}
-    (e : ℍ[R,a,0,b] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R)
+theorem coe_unitaryEquivSpecialLinearOfAlgEquiv_symm_apply {c₁ c₂ c₃ : R}
+    (e : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R)
     (A : Matrix.SpecialLinearGroup (Fin 2) R) :
-    ((unitaryEquivSpecialLinearOfAlgEquiv e).symm A : ℍ[R,a,0,b]) = e.symm A := by
+    ((unitaryEquivSpecialLinearOfAlgEquiv e).symm A : ℍ[R,c₁,c₂,c₃]) = e.symm A := by
   apply e.injective
   rw [← coe_unitaryEquivSpecialLinearOfAlgEquiv_apply, e.apply_symm_apply]
   exact congrArg Subtype.val
