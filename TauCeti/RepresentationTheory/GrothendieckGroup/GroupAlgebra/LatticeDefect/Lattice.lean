@@ -47,19 +47,15 @@ variable (k G : Type u) [CommRing k] [Monoid G] (ℓ : ℕ)
 
 /-- **The lattice defect of a lattice is its reduction class**: in characteristic `ℓ`, a finitely
 generated `G`-module `V` without `ℓ`-torsion has defect `[k ⊗_ℤ V]`. Since `ℓ = 0` in `k`, the
-reduction `k ⊗_ℤ V → k ⊗_ℤ (V ⧸ ℓV)` of the quotient map is bijective
-(`Representation.baseChangeQuotSMulTopEquiv`). -/
+reduction of `V ⧸ ℓV` is that of `V` (`TauCeti.reductionK0_quotSMulTop`). -/
 theorem latticeDefect_eq_reductionK0 [CharP k ℓ] (V : Type u) [AddCommGroup V]
     [DistribMulAction G V] [Module.Finite ℤ V] [Finite (QuotSMulTop (ℓ : ℤ) V)]
     [Subsingleton (Submodule.torsionBy ℤ V ℓ)] :
     latticeDefect k G ℓ V = reductionK0 k (Representation.ofDistribMulAction ℤ G V) := by
   have := AddMonoid.FG.to_moduleFinite_int (G := QuotSMulTop (ℓ : ℤ) V)
   let ρ := Representation.ofDistribMulAction ℤ G V
-  have hℓ : algebraMap ℤ k ℓ = 0 := by rw [map_natCast, CharP.cast_eq_zero]
   rw [latticeDefect_def, reductionK0_eq_zero_of_subsingleton k (ρ.torsionBy ℓ), sub_zero,
-    reductionK0_def, reductionK0_def]
-  exact ExactK0.of_congr (Representation.asModuleLinearEquivOfEquiv
-    (ρ.baseChangeQuotSMulTopEquiv hℓ).symm).toFGModuleCatIso
+    reductionK0_quotSMulTop k ℓ, reductionK0_def]
 
 section Permutation
 

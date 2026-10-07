@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
+public import Mathlib.Algebra.CharP.Defs
+public import Mathlib.RingTheory.TensorProduct.Finite
 public import Mathlib.RingTheory.QuotSMulTop
 
 /-!
@@ -23,8 +25,11 @@ and this file records that heterobasic form.
 For the cokernel `M ⧸ rM = QuotSMulTop r M` of multiplication by a scalar `r`, the base change
 `A ⊗[R] (M ⧸ rM)` is the cokernel of multiplication by the image of `r` on `A ⊗[R] M`. When `r`
 maps to `0` in `A` that cokernel is all of `A ⊗[R] M`, so the base change of the quotient map
-`M → M ⧸ rM` is bijective (`QuotSMulTop.bijective_baseChange_mkQ`). For `R = ℤ` and a ring `A` of
-characteristic `ℓ`, this says that `A ⊗[ℤ] M` only depends on `M ⧸ ℓM`.
+`M → M ⧸ rM` is bijective (`QuotSMulTop.baseChange_mkQ_bijective`), and `A ⊗[R] M` is finitely
+generated over `A` as soon as `M ⧸ rM` is finitely generated over `R`
+(`QuotSMulTop.finite_baseChange`). For `R = ℤ` and a ring `A` of characteristic `ℓ`, this says
+that `A ⊗[ℤ] M` only depends on `M ⧸ ℓM`, and is finitely generated when `M ⧸ ℓM` is finite
+(`TauCeti.finite_baseChange_of_finite_quotSMulTop`), even when `M` is not finitely generated.
 
 The heterobasic version is what identifies the base change of a module presented by generators
 and relations over a noncommutative algebra `A` with the module presented by the base-changed
@@ -41,8 +46,12 @@ relations, for instance the rationalisation of a module over an integral group r
   quotient map `mkQ ⊗ 𝟙 N` is the range of `f ⊗ 𝟙 N`.
 * `TensorProduct.AlgebraTensorModule.rTensor_mkQ_surjective`: the tensored quotient map
   is surjective.
-* `QuotSMulTop.bijective_baseChange_mkQ`: if `r` maps to `0` in `A`, the base change of
+* `QuotSMulTop.baseChange_mkQ_bijective`: if `r` maps to `0` in `A`, the base change of
   `M → M ⧸ rM` to `A` is bijective.
+* `QuotSMulTop.finite_baseChange`: if `r` maps to `0` in `A` and `M ⧸ rM` is finitely generated,
+  then so is `A ⊗[R] M`.
+* `TauCeti.finite_baseChange_of_finite_quotSMulTop`: in characteristic `ℓ`, `k ⊗_ℤ V` is finitely
+  generated over `k` when `V ⧸ ℓV` is finite.
 -/
 
 public section
@@ -113,7 +122,7 @@ variable {R A M : Type*} [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M] [M
 `R`-algebra `A`, the base change `A ⊗[R] M → A ⊗[R] (M ⧸ rM)` of the quotient map is bijective:
 it is surjective by right exactness, and its kernel is spanned by the tensors `a ⊗ r • m`, which
 vanish since `a ⊗ r • m = (r • a) ⊗ m`. -/
-theorem bijective_baseChange_mkQ {r : R} (hr : algebraMap R A r = 0) :
+theorem baseChange_mkQ_bijective {r : R} (hr : algebraMap R A r = 0) :
     Function.Bijective ((r • ⊤ : Submodule R M).mkQ.baseChange A) := by
   rw [baseChange_eq_ltensor]
   refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_,
@@ -127,4 +136,25 @@ theorem bijective_baseChange_mkQ {r : R} (hr : algebraMap R A r = 0) :
       zero_mul, zero_tmul]
   | add y z hy hz => rw [map_add, hy, hz, add_zero]
 
+/-- **Finiteness of a base change killing a scalar.** If `r : R` maps to `0` in the `R`-algebra
+`A` and `M ⧸ rM` is finitely generated over `R`, then `A ⊗[R] M` is finitely generated over `A`:
+it is isomorphic to `A ⊗[R] (M ⧸ rM)` (`QuotSMulTop.baseChange_mkQ_bijective`). -/
+theorem finite_baseChange {r : R} (hr : algebraMap R A r = 0) [Module.Finite R (QuotSMulTop r M)] :
+    Module.Finite A (A ⊗[R] M) :=
+  Module.Finite.equiv (LinearEquiv.ofBijective _ (baseChange_mkQ_bijective (M := M) hr)).symm
+
 end QuotSMulTop
+
+namespace TauCeti
+
+open scoped TensorProduct
+
+/-- **Finiteness of the reduction in characteristic `ℓ`.** If `k` has characteristic `ℓ` and
+`V ⧸ ℓV` is finite, then `k ⊗_ℤ V` is finitely generated over `k`, even when `V` is not. -/
+theorem finite_baseChange_of_finite_quotSMulTop (k : Type*) [Ring k] (ℓ : ℕ) [CharP k ℓ]
+    (V : Type*) [AddCommGroup V] [Finite (QuotSMulTop (ℓ : ℤ) V)] :
+    Module.Finite k (k ⊗[ℤ] V) :=
+  have := AddMonoid.FG.to_moduleFinite_int (G := QuotSMulTop (ℓ : ℤ) V)
+  QuotSMulTop.finite_baseChange (r := (ℓ : ℤ)) (by simp)
+
+end TauCeti

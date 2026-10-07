@@ -31,6 +31,8 @@ caller has already done.
   onto a subrepresentation that its image fills.
 * `Representation.IntertwiningMap.lcomp`: precomposition with an intertwining map, as an
   intertwining map of the conjugation representations `Representation.linHom`.
+* `Representation.IntertwiningMap.ofDistribMulActionHom`: an equivariant additive map of
+  `G`-modules, as an intertwining map of the attached representations over `ℤ`.
 
 ## Main results
 
@@ -106,5 +108,32 @@ theorem lcomp_apply (u : IntertwiningMap ρ' ρ) (σ : Representation A G W) (φ
   (rfl)
 
 end lcomp
+
+section DistribMulAction
+
+variable {G V W : Type*} [Monoid G] [AddCommGroup V] [DistribMulAction G V] [AddCommGroup W]
+  [DistribMulAction G W]
+
+/-- An equivariant additive map `f : V →+[G] W` of `G`-modules, as an intertwining map between the
+representations `Representation.ofDistribMulAction ℤ G` on `V` and on `W`. It is exposed so that
+its underlying function is `f` by definition. -/
+@[expose]
+def ofDistribMulActionHom (f : V →+[G] W) :
+    IntertwiningMap (ofDistribMulAction ℤ G V) (ofDistribMulAction ℤ G W) :=
+  f.toAddMonoidHom.toIntLinearMap.intertwiningMap_of_isIntertwiningMap _ _ fun g v =>
+    map_smul f g v
+
+/-- The linear map underlying `ofDistribMulActionHom f` is `f`, as a `ℤ`-linear map. -/
+@[simp]
+theorem toLinearMap_ofDistribMulActionHom (f : V →+[G] W) :
+    (ofDistribMulActionHom f).toLinearMap = f.toAddMonoidHom.toIntLinearMap :=
+  (rfl)
+
+/-- `ofDistribMulActionHom f` acts as `f`. -/
+@[simp]
+theorem ofDistribMulActionHom_apply (f : V →+[G] W) (v : V) : ofDistribMulActionHom f v = f v :=
+  (rfl)
+
+end DistribMulAction
 
 end Representation.IntertwiningMap

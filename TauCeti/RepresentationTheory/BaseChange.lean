@@ -19,7 +19,7 @@ public import TauCeti.RepresentationTheory.QuotSMulTop
 -- (`TensorProduct.piRight`) are used only to construct the invariant and intertwiner comparisons.
 import Mathlib.RingTheory.Flat.Equalizer
 import Mathlib.LinearAlgebra.TensorProduct.Pi
--- Non-public: bijectivity of the base-changed quotient map (`QuotSMulTop.bijective_baseChange_mkQ`)
+-- Non-public: bijectivity of the base-changed quotient map (`QuotSMulTop.baseChange_mkQ_bijective`)
 -- is used only to construct `Representation.baseChangeQuotSMulTopEquiv`.
 import TauCeti.LinearAlgebra.TensorProduct.Quotient
 -- Non-public: the bundling lemmas `FDRep.character_of` and `FDRep.character_ρ` are used only inside
@@ -382,7 +382,7 @@ noncomputable def _root_.Representation.baseChangeQuotSMulTopEquiv
     (_root_.Representation.baseChange A ρ).Equiv
       (_root_.Representation.baseChange A (ρ.quotSMulTop r)) :=
   _root_.Representation.Equiv.mk
-    (LinearEquiv.ofBijective _ (QuotSMulTop.bijective_baseChange_mkQ hr)) fun g ↦ by
+    (LinearEquiv.ofBijective _ (QuotSMulTop.baseChange_mkQ_bijective hr)) fun g ↦ by
       ext v
       simp
 
@@ -392,6 +392,15 @@ theorem _root_.Representation.baseChangeQuotSMulTopEquiv_tmul (ρ : _root_.Repre
     {r : R} (hr : algebraMap R A r = 0) (a : A) (v : V) :
     ρ.baseChangeQuotSMulTopEquiv hr (a ⊗ₜ[R] v) = a ⊗ₜ[R] Submodule.Quotient.mk v :=
   (rfl)
+
+/-- The inverse of `Representation.baseChangeQuotSMulTopEquiv` lifts the second factor of a pure
+tensor along the quotient map. -/
+@[simp]
+theorem _root_.Representation.baseChangeQuotSMulTopEquiv_symm_tmul
+    (ρ : _root_.Representation R G V) {r : R} (hr : algebraMap R A r = 0) (a : A) (v : V) :
+    (ρ.baseChangeQuotSMulTopEquiv hr).symm (a ⊗ₜ[R] Submodule.Quotient.mk v) = a ⊗ₜ[R] v := by
+  rw [← _root_.Representation.baseChangeQuotSMulTopEquiv_tmul ρ hr,
+    _root_.Representation.Equiv.symm_apply_apply]
 
 end QuotSMulTop
 

@@ -55,11 +55,10 @@ theorem latticeDefect_int_eq_one [NeZero ℓ] [CharP k ℓ] [DistribMulAction G 
   -- the action is trivial, hence so is its reduction
   have hρ (g : G) : ρ g = LinearMap.id := LinearMap.ext fun n ↦ by
     rw [Representation.ofDistribMulAction_apply_apply, h, LinearMap.id_apply]
-  have hℓ : algebraMap ℤ k ℓ = 0 := by rw [map_natCast, CharP.cast_eq_zero]
   -- `k ⊗_ℤ (ℤ ⧸ ℓℤ) ≅ k ⊗_ℤ ℤ ≅ k`, as `ℓ` vanishes in `k`
   let e : (Representation.baseChange k (ρ.quotSMulTop ℓ)).Equiv
       (Representation.trivial k G k) :=
-    (ρ.baseChangeQuotSMulTopEquiv hℓ).symm.trans
+    (ρ.baseChangeQuotSMulTopEquiv (by simp)).symm.trans
       { toLinearEquiv := TensorProduct.AlgebraTensorModule.rid ℤ k k
         isIntertwining' g := by
           ext
