@@ -13,8 +13,9 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Coinduced
 Let `k` be a commutative ring and `G` a group. A representation `A` of `G` over `k` whose
 `k[G]`-module is projective has vanishing Tate cohomology in every degree on every finite subgroup
 of `G` (Serre, *Local Fields*, IX §5; Brown, *Cohomology of Groups*, VI §8). This is
-the easy half of the theorem of Nakayama and Rim, which characterizes the cohomologically trivial
-representations of a finite group as those of projective dimension at most one over `k[G]`.
+the easy half of the theorem of Nakayama and Rim, which for `k = ℤ` characterizes the
+cohomologically trivial `G`-modules of a finite group `G` as those of projective dimension at most
+one over `ℤ[G]`.
 
 The projection `Ind_⊥^G A → A` from the representation induced from the trivial subgroup is an
 epimorphism, so a projective `A` is a retract of `Ind_⊥^G A`. The Tate cohomology of every finite
