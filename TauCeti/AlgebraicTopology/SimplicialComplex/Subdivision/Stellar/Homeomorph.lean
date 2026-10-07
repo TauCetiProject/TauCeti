@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Realization
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Equivalence
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
+import all TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Equivalence
 import Mathlib.Topology.Algebra.Ring.Real
 
 /-!
@@ -47,7 +48,7 @@ variable {ι : Type*} [DecidableEq ι] {K L : PreAbstractSimplicialComplex ι}
 /-- The barycentric identification of a finite stellar subdivision is a homeomorphism for
 the weak subpolyhedron topologies. The new vertex goes to the barycenter of `σ` and the old
 vertices are fixed, as specified by the underlying linear map. -/
-theorem exists_stellarSubdivision_homeomorph (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K)
+theorem exists_homeomorph_stellarSubdivision (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K)
     (hfin : K.faces.Finite) (hK : K ≤ A.toPreAbstractSimplicialComplex)
     (hS : stellarSubdivision K σ v ≤ A.toPreAbstractSimplicialComplex) :
     ∃ e : {x : Realization A // x.1.support ∈ stellarSubdivision K σ v} ≃ₜ
@@ -120,27 +121,21 @@ theorem StellarEquivalent.nonempty_homeomorph (h : StellarEquivalent K L)
       P ≤ (⊤ : AbstractSimplicialComplex ι).toPreAbstractSimplicialComplex :=
     fun _ hτ => TauCeti.AbstractSimplicialComplex.mem_top_iff.mpr
       (P.isRelLowerSet_faces.prop_of_mem hτ)
-  -- Carry finiteness along the moves as well as the homeomorphisms, so that inverse
-  -- moves and intermediate complexes meet the compactness hypothesis.
-  suffices hp : (K.faces.Finite ↔ L.faces.Finite) ∧
-      (K.faces.Finite → Nonempty
-        ({x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ K} ≃ₜ
-          {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ L})) from
-    hp.2 hfin
-  apply h.induction_on
-  · intro P Q h
-    refine ⟨h.finite_faces_iff, fun hP => ?_⟩
+  -- Unfold the equivalence closure to retain the sub-equivalence witnesses during induction;
+  -- their finiteness preservation supplies compactness for inverse and intermediate moves.
+  unfold StellarEquivalent at h
+  induction h with
+  | rel P Q h =>
     obtain ⟨σ, v, hσ, hv, rfl⟩ := isStellarMove_iff.mp h
-    obtain ⟨e, -⟩ := exists_stellarSubdivision_homeomorph hσ hv hP (hle P) (hle _)
+    obtain ⟨e, -⟩ := exists_homeomorph_stellarSubdivision hσ hv hfin (hle P) (hle _)
     exact ⟨e.symm⟩
-  · intro P
-    exact ⟨Iff.rfl, fun _ => ⟨Homeomorph.refl _⟩⟩
-  · intro P Q ih
-    exact ⟨ih.1.symm, fun hQ => (ih.2 (ih.1.mpr hQ)).map Homeomorph.symm⟩
-  · intro P Q R ihPQ ihQR
-    refine ⟨ihPQ.1.trans ihQR.1, fun hP => ?_⟩
-    obtain ⟨e⟩ := ihPQ.2 hP
-    obtain ⟨e'⟩ := ihQR.2 (ihPQ.1.mp hP)
+  | refl =>
+    exact ⟨Homeomorph.refl _⟩
+  | symm P Q h ih =>
+    exact (ih ((StellarEquivalent.finite_faces_iff h).mpr hfin)).map Homeomorph.symm
+  | trans P Q R hPQ _ ihPQ ihQR =>
+    obtain ⟨e⟩ := ihPQ hfin
+    obtain ⟨e'⟩ := ihQR ((StellarEquivalent.finite_faces_iff hPQ).mp hfin)
     exact ⟨e.trans e'⟩
 
 end PreAbstractSimplicialComplex
