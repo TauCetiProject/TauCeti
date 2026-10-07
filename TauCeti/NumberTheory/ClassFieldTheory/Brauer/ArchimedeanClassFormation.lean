@@ -119,7 +119,7 @@ theorem degree_realLayer (w : InfinitePlace K) (hw : w.IsReal) :
     natCard_absoluteGaloisGroup_of_isReal w hw]
 
 /-- Inflation from the unique nontrivial layer at a real place exhausts its Brauer group. -/
-theorem surjective_brInfl_realOpenNormalSubgroup (w : InfinitePlace K) (hw : w.IsReal) :
+theorem brInfl_realOpenNormalSubgroup_surjective (w : InfinitePlace K) (hw : w.IsReal) :
     Function.Surjective (brInfl (realOpenNormalSubgroup w hw)) := by
   intro x
   obtain ⟨V, y, hy⟩ := exists_brInfl_eq w.Completion x
@@ -197,7 +197,7 @@ theorem range_realLayerInv (w : InfinitePlace K) (hw : w.IsReal)
     simp [AddSubgroup.torsionBy, eq_comm]
   · subst L
     rw [realLayerInv_realLayer, AddMonoidHom.coe_comp, Set.range_comp,
-      (surjective_brInfl_realOpenNormalSubgroup w hw).range_eq, Set.image_univ,
+      (brInfl_realOpenNormalSubgroup_surjective w hw).range_eq, Set.image_univ,
       range_infiniteInvMap_of_isReal w hw, degree_realLayer]
     norm_num
 
