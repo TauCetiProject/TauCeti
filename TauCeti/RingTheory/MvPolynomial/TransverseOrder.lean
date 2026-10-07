@@ -38,7 +38,8 @@ variable {R : Type*} {n : ℕ}
 
 /-- Evaluation of a transverse plane restriction keeps the root coordinate free and
 moves the base along an affine line. -/
--- `map_aeval` already supplies the simplifier's general coefficient-map normal form.
+-- Kept as an explicit rewrite: `map_aeval` simplifies the left-hand side to `eval₂`,
+-- so adding `@[simp]` here fails the `simpNF` linter.
 theorem eval_aeval_finCons_C_add_C_mul_X [CommSemiring R]
     (p : MvPolynomial (Fin (n + 1)) R) (a v : Fin n → R) (y z : R) :
     eval ![y, z]
