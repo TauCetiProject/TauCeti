@@ -21,13 +21,13 @@ characteristic zero. It has full inertia in `S₄`, since it extends to the stan
 representation there. This supplies the nonlinear fixed constituent in Clifford theory
 for `A₄ ◁ S₄`, complementary to the two conjugate nontrivial linear characters.
 
-The irreducibility proof consumes Mathlib's `FDRep.simple_iff_char_is_norm_one`; the
-character computation uses the standard representation's augmentation character formula.
-
 ## References
 
 * I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 6.
 * J.-P. Serre, *Linear Representations of Finite Groups*, §5.2.
+* Mathlib's character-norm criterion: `FDRep.simple_iff_char_is_norm_one`.
+* The standard representation's augmentation character formula:
+  `TauCeti.char_standardRepresentation`.
 -/
 
 public section
@@ -74,6 +74,7 @@ private theorem standardCharacter_rep (i : Fin alternatingGroupFourClassData.num
 
 /-- On the identity, double transpositions, and the two classes of three-cycles,
 the restricted standard character takes the values `3, -1, 0, 0`. -/
+@[simp high]
 theorem character_alternatingGroupFourStandard_rep
     (i : Fin alternatingGroupFourClassData.numClasses) :
     (alternatingGroupFourStandard k).character (alternatingGroupFourClassData.rep i) =
@@ -88,8 +89,8 @@ private theorem standard_norm_sum :
         ((Fintype.card {x : Fin 4 // g⁻¹.val x = x} : ℤ) - 1) = 12 := by
   decide
 
-/-- The restricted standard representation of `A₄` is irreducible.
-The universe restriction comes from Mathlib's character-norm criterion. -/
+/-- The restricted standard representation of `A₄` is irreducible over an algebraically
+closed field of characteristic zero. -/
 theorem simple_alternatingGroupFourStandard (k : Type) [Field k] [IsAlgClosed k] [CharZero k] :
     Simple (alternatingGroupFourStandard k) := by
   classical
@@ -97,7 +98,7 @@ theorem simple_alternatingGroupFourStandard (k : Type) [Field k] [IsAlgClosed k]
   simp only [character_alternatingGroupFourStandard, natCard_alternatingGroup_four]
   exact_mod_cast standard_norm_sum
 
-/-- The three-dimensional irreducible of `A₄` is fixed by every conjugation from `S₄`.
+/-- The restricted standard representation of `A₄` is fixed by every conjugation from `S₄`.
 Its extension to `S₄` implements the conjugation isomorphisms. -/
 @[simp]
 theorem inertia_alternatingGroupFourStandard :

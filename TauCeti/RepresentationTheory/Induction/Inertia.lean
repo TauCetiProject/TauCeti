@@ -192,8 +192,8 @@ theorem inertia_resFDRep (W : FDRep k G) (N : Subgroup G) [N.Normal] :
   -- leave incompatible object types in the compositions, so expose the ambient operators.
   change Action.ρ W (MulAut.conjNormal g⁻¹ n : G) ≫ Action.ρ W g =
     Action.ρ W g ≫ Action.ρ W (n : G)
-  simp only [← End.mul_def, ← map_mul]
-  exact congrArg (Action.ρ W) (by simp [mul_assoc])
+  ext v
+  exact Representation.apply_conjNormal_inv ((forget₂ (FDRep k G) (Rep k G)).obj W).ρ g n v
 
 end FDRep
 
