@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Finrank
+public import Mathlib.RepresentationTheory.Invariants
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Ring
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Universal
 import Mathlib.RepresentationTheory.Maschke
 import Mathlib.RingTheory.SimpleModule.InjectiveProjective
@@ -47,28 +48,20 @@ universe u
 variable {k G : Type u} [Field k] [Group G] [Finite G] [NeZero (Nat.card G : k)]
 
 /-- Under Maschke's hypothesis, taking invariants preserves short exact sequences of
-finite-dimensional representations. -/
-theorem FDRep.shortExact_map_invariantsFunctor {S : ShortComplex (FDRep k G)}
-    (hS : S.ShortExact) :
-    (S.map (forget₂ (FDRep k G) (Rep k G) ⋙ Rep.invariantsFunctor k G)).ShortExact := by
-  let F := forget₂ (FDRep k G) (Rep k G) ⋙ Rep.invariantsFunctor k G
-  have : F.PreservesEpimorphisms := ⟨fun {X Y} f hf ↦ by
-      have hsurj : Function.Surjective f.hom :=
-        (Rep.epi_iff_surjective ((forget₂ (FDRep k G) (Rep k G)).map f)).1 inferInstance
-      let Y' := (forget₂ (FDRep k G) (Rep k G)).obj Y
-      have : Module.Projective k[G] Y'.ρ.asModule :=
-        Module.projective_of_isSemisimpleRing k[G] Y'.ρ.asModule
+representations. -/
+theorem Rep.shortExact_map_invariantsFunctor {S : ShortComplex (Rep k G)} (hS : S.ShortExact) :
+    (S.map (Rep.invariantsFunctor k G)).ShortExact := by
+  have : (Rep.invariantsFunctor k G).PreservesEpimorphisms := ⟨fun {X Y} f hf ↦ by
+      have : Module.Projective k[G] Y.ρ.asModule :=
+        Module.projective_of_isSemisimpleRing k[G] Y.ρ.asModule
       exact (ModuleCat.epi_iff_surjective _).2
-        (Rep.invariantsFunctor_map_surjective_of_surjective_of_projective
-          ((forget₂ (FDRep k G) (Rep k G)).map f) hsurj)⟩
-  have : F.PreservesHomology :=
-    Functor.preservesHomology_of_preservesEpis_and_kernels F
-  have : F.PreservesMonomorphisms := by
-    dsimp [F]
-    infer_instance
+        (Rep.invariantsFunctor_map_surjective_of_surjective_of_projective f
+          ((Rep.epi_iff_surjective f).1 hf))⟩
+  have : (Rep.invariantsFunctor k G).PreservesHomology :=
+    Functor.preservesHomology_of_preservesEpis_and_kernels _
   have : Mono S.f := hS.mono_f
   have : Epi S.g := hS.epi_g
-  exact hS.map F
+  exact hS.map _
 
 /-- Invariant dimension is additive on short exact sequences of finite-dimensional
 representations when the group order is invertible in the coefficient field. -/
@@ -77,16 +70,23 @@ theorem FDRep.finrank_invariants_add_of_shortExact {S : ShortComplex (FDRep k G)
     Module.finrank k (Representation.invariants S.X₂.ρ) =
       Module.finrank k (Representation.invariants S.X₁.ρ) +
         Module.finrank k (Representation.invariants S.X₃.ρ) := by
-  let F := forget₂ (FDRep k G) (Rep k G) ⋙ Rep.invariantsFunctor k G
-  have hInv : (S.map F).ShortExact := FDRep.shortExact_map_invariantsFunctor hS
-  have : Module.Finite k (S.map F).X₁ :=
-    Module.Finite.of_injective (Submodule.subtype _) Subtype.coe_injective
-  have : Module.Finite k (S.map F).X₃ :=
-    Module.Finite.of_injective (Submodule.subtype _) Subtype.coe_injective
-  have h := ModuleCat.free_shortExact_finrank_add hInv
-    (n := Module.finrank k (F.obj S.X₁))
-    (p := Module.finrank k (F.obj S.X₃)) rfl rfl
-  exact h
+  have hInv := Rep.shortExact_map_invariantsFunctor 
+    (hS.map_of_exact (forget₂ (FDRep k G) (Rep k G)))
+  -- `Rep.invariantsFunctor` sends `forget₂ V` to the invariant subspace of `V.ρ`
+  -- (`Rep.invariantsFunctor_obj_carrier`, `FDRep.forget₂_ρ`).
+  have hfinrank (V : FDRep k G) :
+      Module.finrank k ((Rep.invariantsFunctor k G).obj ((forget₂ (FDRep k G) (Rep k G)).obj V)) =
+        Module.finrank k (Representation.invariants V.ρ) :=
+    rfl
+  have hfinite (V : FDRep k G) :
+      Module.Finite k ((Rep.invariantsFunctor k G).obj ((forget₂ (FDRep k G) (Rep k G)).obj V)) :=
+    Module.Finite.of_injective (Representation.invariants V.ρ).subtype Subtype.coe_injective
+  have : Module.Finite k ((S.map (forget₂ (FDRep k G) (Rep k G))).map
+      (Rep.invariantsFunctor k G)).X₁ := hfinite S.X₁
+  have : Module.Finite k ((S.map (forget₂ (FDRep k G) (Rep k G))).map
+      (Rep.invariantsFunctor k G)).X₃ := hfinite S.X₃
+  simpa only [ShortComplex.map_X₁, ShortComplex.map_X₂, ShortComplex.map_X₃, hfinrank] using
+    ModuleCat.free_shortExact_finrank_add hInv rfl rfl
 
 /-- **Invariant dimension on the group-algebra Grothendieck group.** When `#G` is nonzero in
 `k`, this homomorphism sends the class of a finite-dimensional representation `V` to
@@ -97,13 +97,15 @@ noncomputable def finrankInvariantsK0 :
     fun {_} hS ↦ by
     exact_mod_cast FDRep.finrank_invariants_add_of_shortExact hS
 
-/-- The invariant-dimension homomorphism evaluates on an actual representation as the dimension
-of its invariant subspace. -/
-theorem finrankInvariantsK0_fdRepK0RingEquiv_of (V : FDRep k G) :
-    finrankInvariantsK0 (k := k) (G := G) (fdRepK0RingEquiv k G (ExactK0.of V)) =
-      Module.finrank k (Representation.invariants V.ρ) := by
-  rw [fdRepK0RingEquiv_of]
-  simp [finrankInvariantsK0]
+/-- The invariant-dimension homomorphism evaluates on the class of the group-algebra module of a
+representation `V` as the dimension of the invariant subspace of `V`. -/
+@[simp]
+theorem finrankInvariantsK0_of (V : FDRep k G) :
+    letI : Module.Finite k[G] (Representation.asModule V.ρ) :=
+      Module.Finite.of_restrictScalars_finite k k[G] _
+    finrankInvariantsK0 (ExactK0.of (FGModuleCat.of k[G] (Representation.asModule V.ρ))) =
+      Module.finrank k (Representation.invariants V.ρ) :=
+  liftFDRepK0_of _ _ V
 
 /-- **Invariant dimension after tensoring with `A`.** This additive homomorphism sends a class
 `[M]` to `dimₖ (M ⊗ A)ᴳ`. -/
@@ -112,12 +114,23 @@ noncomputable def finrankTensorInvariantsK0 (A : FDRep k G) :
   (finrankInvariantsK0 (k := k) (G := G)).comp
     (AddMonoidHom.mulRight (fdRepK0RingEquiv k G (ExactK0.of A)))
 
-/-- Evaluating `finrankTensorInvariantsK0 A` on `[M]` gives the dimension of the invariants of
-the tensor product `M ⊗ A`. -/
-theorem finrankTensorInvariantsK0_fdRepK0RingEquiv_of (A M : FDRep k G) :
-    finrankTensorInvariantsK0 A (fdRepK0RingEquiv k G (ExactK0.of M)) =
+/-- `finrankTensorInvariantsK0 A` is invariant dimension after multiplication by the class of
+`A`. -/
+theorem finrankTensorInvariantsK0_apply (A : FDRep k G)
+    (x : ExactK0 (finiteModulesExactStructure k[G])) :
+    finrankTensorInvariantsK0 A x =
+      finrankInvariantsK0 (x * fdRepK0RingEquiv k G (ExactK0.of A)) := by
+  rw [finrankTensorInvariantsK0, AddMonoidHom.comp_apply, AddMonoidHom.mulRight_apply]
+
+/-- Evaluating `finrankTensorInvariantsK0 A` on the class of the group-algebra module of `M`
+gives the dimension of the invariants of the tensor product `M ⊗ A`. -/
+@[simp]
+theorem finrankTensorInvariantsK0_of (A M : FDRep k G) :
+    letI : Module.Finite k[G] (Representation.asModule M.ρ) :=
+      Module.Finite.of_restrictScalars_finite k k[G] _
+    finrankTensorInvariantsK0 A (ExactK0.of (FGModuleCat.of k[G] (Representation.asModule M.ρ))) =
       Module.finrank k (Representation.invariants (M ⊗ A).ρ) := by
-  rw [finrankTensorInvariantsK0, AddMonoidHom.comp_apply, AddMonoidHom.mulRight_apply,
-    ← map_mul, ExactK0.of_mul_of, finrankInvariantsK0_fdRepK0RingEquiv_of]
+  rw [← fdRepK0RingEquiv_of, finrankTensorInvariantsK0_apply, ← map_mul, ExactK0.of_mul_of,
+    fdRepK0RingEquiv_of, finrankInvariantsK0_of]
 
 end TauCeti
