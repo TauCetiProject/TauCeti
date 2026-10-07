@@ -173,6 +173,28 @@ lemma _root_.ChainComplex.linearYonedaObjMap_comp (X : ChainComplex C α)
         (congrArg (fun b ↦ (X.linearYonedaObjMap k h).f i b)
           (X.linearYonedaObjMap_f_hom_apply k g i a).symm)))
 
+/-- The coefficient map sends the class of a cocycle to the class of its image. -/
+@[simp]
+lemma _root_.ChainComplex.homologyMap_linearYonedaObjMap_homologyπ_apply
+    (X : ChainComplex C α) {Y Z : C} (g : Y ⟶ Z) (i : α)
+    (a : (X.linearYonedaObj k Y).cycles i) :
+    HomologicalComplex.homologyMap (X.linearYonedaObjMap k g) i
+        ((X.linearYonedaObj k Y).homologyπ i a) =
+      (X.linearYonedaObj k Z).homologyπ i
+        (HomologicalComplex.cyclesMap (X.linearYonedaObjMap k g) i a) :=
+  ConcreteCategory.congr_hom (HomologicalComplex.homologyπ_naturality _ i) a
+
+/-- The coefficient map on cocycles is postcomposition. -/
+@[simp↓]
+lemma _root_.ChainComplex.iCycles_cyclesMap_linearYonedaObjMap_apply
+    (X : ChainComplex C α) {Y Z : C} (g : Y ⟶ Z) (i : α)
+    (a : (X.linearYonedaObj k Y).cycles i) :
+    (X.linearYonedaObj k Z).iCycles i
+        (HomologicalComplex.cyclesMap (X.linearYonedaObjMap k g) i a) =
+      (X.linearYonedaObj k Y).iCycles i a ≫ g := by
+  exact (ConcreteCategory.congr_hom (HomologicalComplex.cyclesMap_i _ i) a).trans
+    (X.linearYonedaObjMap_f_hom_apply k g i _)
+
 section Elementwise
 
 variable {k Y} {X : ChainComplex C α}

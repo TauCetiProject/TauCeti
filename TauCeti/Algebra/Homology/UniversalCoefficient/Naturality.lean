@@ -16,10 +16,6 @@ naturality of the Kronecker map, this makes both arrows of the universal coeffic
 sequence natural in both variables.
 No compatibility of chosen cycle retractions is needed.
 
-The argument uses Mathlib's `ShortComplex.ShortExact.extClass_naturality` on the
-canonical sequence of boundaries, cycles, and homology, and the characterization
-`TauCeti.ChainComplex.extToHomology_extClass_comp_mk₀` of the inclusion.
-
 Reference: Hatcher, *Algebraic Topology*, Section 3.1, Theorem 3.2.
 -/
 
@@ -38,6 +34,25 @@ variable {C : Type*} [Category* C] [Abelian C]
   {k : Type*} [CommRing k] [Linear k C] [HasExt.{w} C]
   {X X' : ChainComplex C α} {Y : C}
 
+/-- The image of a boundary morphism under the Ext inclusion has a cocycle
+representative given by composing with the corestriction of the differential. -/
+private lemma extToHomology_homBoundary_representative (i j : α)
+    [Projective (X.cycles j)] [IsSplitMono (X.iCycles j)]
+    (hX : (ShortComplex.mk (kernel.ι (X.homologyπ j)) (X.homologyπ j)
+      (kernel.condition _)).ShortExact)
+    (β : kernel (X.homologyπ j) ⟶ Y) :
+    ∃ φ : (X.linearYonedaObj k Y).cycles i,
+      (X.linearYonedaObj k Y).iCycles i φ =
+        kernel.lift _ (X.toCycles i j) (X.toCycles_comp_homologyπ i j) ≫ β ∧
+      extToHomology k X Y i j (homBoundary k hX Y β) =
+        (X.linearYonedaObj k Y).homologyπ i φ := by
+  let a := kernel.lift (X.homologyπ j) (X.toCycles i j) (X.toCycles_comp_homologyπ i j)
+  have ha : X.d ((ComplexShape.up α).next i) i ≫ a = 0 := by
+    rw [← cancel_mono (kernel.ι _), Category.assoc, kernel.lift_ι, X.d_toCycles, zero_comp]
+  refine ⟨cocycleOfComp k Y a ha β, iCycles_cocycleOfComp a ha β, ?_⟩
+  exact (congrArg (extToHomology k X Y i j) (homBoundary_apply k hX Y β)).trans
+    (extToHomology_extClass_comp_mk₀ i j β _ (iCycles_cocycleOfComp a ha β))
+
 /-- Pulling back an extension of homology and then including it in cohomology is
 including it first and pulling back the resulting cohomology class. This holds in
 particular in the universal coefficient degree `i = j + 1`. -/
@@ -48,6 +63,8 @@ lemma extToHomology_naturality (f : X' ⟶ X) (i j : α)
     extToHomology k X' Y i j ((Ext.mk₀ (homologyMap f j)).comp e (zero_add 1)) =
       homologyMap (K := X.linearYonedaObj k Y) (L := X'.linearYonedaObj k Y)
         ((linearYonedaFunctor k Y).map f.op) i (extToHomology k X Y i j e) := by
+  -- The Ext square uses Mathlib's `ShortComplex.ShortExact.extClass_naturality`;
+  -- the inclusion is identified by `extToHomology_extClass_comp_mk₀`.
   -- State the kernel sequences with explicit terms so that their projective middle
   -- objects and extension-class endpoints are available to instance search and rewriting.
   have hX : (ShortComplex.mk (kernel.ι (X.homologyπ j)) (X.homologyπ j)
@@ -73,16 +90,7 @@ lemma extToHomology_naturality (f : X' ⟶ X) (i j : α)
     rw [homBoundary_apply, homBoundary_apply,
       ← Ext.comp_assoc _ _ _ (zero_add 1) (add_zero 1) (by omega),
       ← hn, Ext.comp_assoc _ _ _ (add_zero 1) (zero_add 0) (by omega), Ext.mk₀_comp_mk₀]
-  let a := kernel.lift (X.homologyπ j) (X.toCycles i j) (X.toCycles_comp_homologyπ i j)
-  have ha : X.d ((ComplexShape.up α).next i) i ≫ a = 0 := by
-    rw [← cancel_mono (kernel.ι _), Category.assoc, kernel.lift_ι, X.d_toCycles, zero_comp]
-  let φ := cocycleOfComp k Y a ha β
-  have hφ : (X.linearYonedaObj k Y).iCycles i φ = a ≫ β :=
-    iCycles_cocycleOfComp a ha β
-  have hEval : extToHomology k X Y i j (homBoundary k hX Y β) =
-      (X.linearYonedaObj k Y).homologyπ i φ :=
-    (congrArg (extToHomology k X Y i j) (homBoundary_apply k hX Y β)).trans
-      (extToHomology_extClass_comp_mk₀ i j β φ hφ)
+  obtain ⟨φ, hφ, hEval⟩ := extToHomology_homBoundary_representative (k := k) i j hX β
   -- It remains to identify the pulled-back representative cocycle.
   rw [he, hEval, homologyMap_linearYonedaFunctor_map_homologyπ_apply]
   rw [homBoundary_apply]
@@ -91,7 +99,7 @@ lemma extToHomology_naturality (f : X' ⟶ X) (i j : α)
   simp only [← Category.assoc]
   apply congrArg (· ≫ β)
   rw [← cancel_mono (kernel.ι (X.homologyπ j))]
-  dsimp only [a, b]
+  dsimp only [b]
   simp only [Category.assoc, kernel.lift_ι]
   rw [← cancel_mono (X.iCycles j)]
   simp only [Category.assoc, kernel.lift_ι_assoc, cyclesMap_i,
@@ -113,24 +121,9 @@ lemma extToHomology_coefficient_naturality {Z : C} (g : Y ⟶ Z) (i j : α)
       homBoundary k hX Z (β ≫ g) := by
     rw [homBoundary_apply, homBoundary_apply,
       Ext.comp_assoc _ _ _ (add_zero 1) (zero_add 0) (by omega), Ext.mk₀_comp_mk₀]
-  let a := kernel.lift (X.homologyπ j) (X.toCycles i j) (X.toCycles_comp_homologyπ i j)
-  have ha : X.d ((ComplexShape.up α).next i) i ≫ a = 0 := by
-    rw [← cancel_mono (kernel.ι _), Category.assoc, kernel.lift_ι, X.d_toCycles, zero_comp]
-  let φ := cocycleOfComp k Y a ha β
-  have hφ : (X.linearYonedaObj k Y).iCycles i φ = a ≫ β :=
-    iCycles_cocycleOfComp a ha β
-  have hEval : extToHomology k X Y i j (homBoundary k hX Y β) =
-      (X.linearYonedaObj k Y).homologyπ i φ := by
-    exact (congrArg (extToHomology k X Y i j) (homBoundary_apply k hX Y β)).trans
-      (extToHomology_extClass_comp_mk₀ i j β φ hφ)
-  rw [he, hEval]
-  have hπ := ConcreteCategory.congr_hom (homologyπ_naturality (X.linearYonedaObjMap k g) i) φ
-  simp only [ModuleCat.comp_apply] at hπ
-  rw [hπ, homBoundary_apply]
+  obtain ⟨φ, hφ, hEval⟩ := extToHomology_homBoundary_representative (k := k) i j hX β
+  rw [he, hEval, X.homologyMap_linearYonedaObjMap_homologyπ_apply k, homBoundary_apply]
   apply extToHomology_extClass_comp_mk₀
-  have hcyc := ConcreteCategory.congr_hom (cyclesMap_i (X.linearYonedaObjMap k g) i) φ
-  simp only [ModuleCat.comp_apply] at hcyc
-  exact hcyc.trans ((X.linearYonedaObjMap_f_hom_apply k g i _).trans
-    ((congrArg (· ≫ g) hφ).trans (Category.assoc _ _ _)))
+  rw [X.iCycles_cyclesMap_linearYonedaObjMap_apply k, hφ, Category.assoc]
 
 end TauCeti.ChainComplex
