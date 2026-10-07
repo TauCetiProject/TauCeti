@@ -189,6 +189,7 @@ omit [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Valua
   [FiniteDimensional K L] in
 variable {K L} in
 /-- The Weil restriction of `w` is the restriction along `ι` of the automorphism `w` of `Kˢ`. -/
+@[simp]
 theorem weilRestrict_apply (w : WeilGroup K) :
     weilRestrict K L ι w =
       ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K (weilToAbsolute K w)) :=
@@ -199,7 +200,6 @@ omit [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Valua
 variable {K L} in
 /-- **The characterization of the Weil restriction**: `weilRestrict K L ι w` is the automorphism of
 `L` through which `w` acts on `ι(L)`. -/
-@[simp]
 theorem weilRestrict_commutes (w : WeilGroup K) (x : L) :
     ι (weilRestrict K L ι w x) = absoluteGaloisGroupRestrictEquiv K (weilToAbsolute K w) (ι x) := by
   rw [weilRestrict_apply, AlgHom.restrictNormalHom_commutes]
