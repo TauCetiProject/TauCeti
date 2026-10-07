@@ -31,7 +31,7 @@ finiteness where the value is computed.
 
 ## Main results
 
-* `TauCeti.normGroup_le_normGroup_of_algHom`: a larger extension has a smaller norm group.
+* `AlgHom.normGroup_le_normGroup`: a larger extension has a smaller norm group.
 -/
 
 public section
@@ -71,7 +71,7 @@ variable {K L} in
 /-- **A larger extension has a smaller norm group.** A `K`-algebra map `f : M →ₐ[K] L` of finite
 extensions makes `L` an extension of `M`, and by transitivity of the norm every norm from `L` is
 a norm from `M`. -/
-theorem normGroup_le_normGroup_of_algHom {M : Type*} [Field M] [Algebra K M] [Module.Finite K L]
+theorem _root_.AlgHom.normGroup_le_normGroup {M : Type*} [Field M] [Algebra K M] [Module.Finite K L]
     [Module.Finite K M] (f : M →ₐ[K] L) : normGroup K L ≤ normGroup K M := by
   let _ : Algebra M L := f.toRingHom.toAlgebra
   have : IsScalarTower K M L := .of_algebraMap_eq fun x ↦ (f.commutes x).symm

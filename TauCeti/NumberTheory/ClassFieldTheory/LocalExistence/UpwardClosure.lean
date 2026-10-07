@@ -105,7 +105,7 @@ theorem exists_abelianLayer_localNormSubgroup_eq_of_normGroup_le {M : Type*} [Fi
   obtain ⟨V, hV⟩ := (exists_classField_eq_iff E).2 ⟨inferInstance, inferInstance⟩
   refine exists_abelianLayer_localNormSubgroup_eq_of_le (V := V) (le_trans ?_ h)
   rw [localNormSubgroup_def]
-  exact normGroup_le_normGroup_of_algHom ((IntermediateField.equivOfEq hV.symm).toAlgHom.comp
+  exact AlgHom.normGroup_le_normGroup ((IntermediateField.equivOfEq hV.symm).toAlgHom.comp
     ((normalClosure.algHomEquiv K M (SeparableClosure K)).symm IsSepClosed.lift))
 
 end TauCeti.ClassFieldTheory

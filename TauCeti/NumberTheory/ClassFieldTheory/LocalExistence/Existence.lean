@@ -112,7 +112,7 @@ private theorem exists_normGroup_le_powerSubgroup_of_isPrimitiveRoot {n : ℕ} [
     Subtype.ext (by simpa using hs q)
   rw [localSymbol_antisymm, neg_eq_zero, hb,
     localSymbol_eq_zero_iff_mem_normGroup hζ tr hn a q.out ht (adjoin_adjoinSimple_gen_eq_top _)]
-  exact normGroup_le_normGroup_of_algHom
+  exact AlgHom.normGroup_le_normGroup
     (inclusion (adjoin_simple_le_iff.2 (subset_adjoin K _ (Set.mem_range_self q)))) ha
 
 /-- **Local existence for subgroups containing the `n`-th powers.** For a nonarchimedean local
@@ -160,11 +160,11 @@ theorem localAbelianExistence [CharZero K] (N : Subgroup Kˣ) [N.FiniteIndex] :
     ∃ V : OpenNormalSubgroup (AbsoluteGaloisGroup K),
       V.IsAbelianClassFieldLayer ∧ localNormSubgroup K V = N :=
   exists_abelianLayer_localNormSubgroup_eq_of_powerSubgroup_le
-    (Nat.cast_ne_zero.2 Subgroup.FiniteIndex.index_ne_zero) (powerSubgroup_index_le N)
+    (Nat.cast_ne_zero.2 Subgroup.FiniteIndex.index_ne_zero) N.powerSubgroup_index_le
 
 /-- **Local existence in characteristic zero, forgetful form.** Some open normal subgroup, not
-necessarily an abelian layer, has the given norm subgroup. By norm limitation it is not unique: a
-layer and its maximal abelian sublayer have the same norm subgroup. -/
+necessarily an abelian layer, has the given norm subgroup. By norm limitation, replacing a layer by
+its maximal abelian sublayer does not change its norm subgroup. -/
 theorem localExistence [CharZero K] (N : Subgroup Kˣ) [N.FiniteIndex] :
     ∃ V : OpenNormalSubgroup (AbsoluteGaloisGroup K), localNormSubgroup K V = N :=
   (localAbelianExistence N).imp fun _ h ↦ h.2
@@ -182,7 +182,7 @@ theorem localAbelianExistence_primeToResidueCharacteristic (p : ℕ) [Fact p.Pri
     rw [← IsLocalRing.residue_ne_zero_iff_isUnit, map_natCast, Ne, CharP.cast_eq_zero_iff 𝓀[K] p]
     exact fun hp ↦ (Fact.out : p.Prime).one_lt.ne' (Nat.Coprime.eq_one_of_dvd hindex.symm hp)
   exact exists_abelianLayer_localNormSubgroup_eq_of_powerSubgroup_le
-    (natCast_ne_zero_of_isUnit hunit) (powerSubgroup_index_le N)
+    (natCast_ne_zero_of_isUnit hunit) N.powerSubgroup_index_le
 
 /-- **Local existence prime to the residue characteristic, forgetful form.** -/
 theorem localExistence_primeToResidueCharacteristic (p : ℕ) [Fact p.Prime] [CharP 𝓀[K] p]
