@@ -20,8 +20,8 @@ the last variable `Xₙ` distinguished, and let `S ⊆ ℝⁿ` be a set of base 
 into the coefficients turns `F k` into a polynomial in `X₀, …, Xₙ₋₁` with coefficients in `ℝ[Xₙ]`,
 whose Lazard evaluation over `α ∈ S` is a univariate polynomial; for `F k ≠ 0` it is nonzero,
 even where the ordinary fibre `F k (α, Xₙ)` vanishes identically. A *Lazard delineation* of the
-family over `S` is a common stack of the real roots of these Lazard evaluations: continuous
-functions `θ₀ < ⋯ < θₘ₋₁` on `S` such that
+family over a nonempty `S` is a common stack of the real roots of these Lazard evaluations:
+continuous functions `θ₀ < ⋯ < θₘ₋₁` on `S` such that
 
 * the vector of base exponents removed by Lazard evaluation of each member is the same at every
   point of `S`;
@@ -77,14 +77,17 @@ namespace TauCeti
 
 variable {ι : Type*} {n : ℕ}
 
-/-- A *Lazard delineation* of a family `F k` of real polynomials in `n + 1` variables over a set
-`S ⊆ ℝⁿ` of base points. Move the last variable into the coefficients and Lazard-evaluate the
-base variables at `α ∈ S`. A Lazard delineation is a common stack of the roots of the resulting
-univariate polynomials: continuous functions `root 0 < ⋯ < root (count - 1)` on `S` such that the
-removed base exponents of each member are a constant `exponent k`, the roots of each nonzero
-member are among the `root i α`, each `root i` is a root of some member, and the multiplicity of
-`root i α` as a root of the Lazard evaluation of `F k` is a constant `multiplicity k i`. -/
+/-- A *Lazard delineation* of a family `F k` of real polynomials in `n + 1` variables over a
+nonempty set `S ⊆ ℝⁿ` of base points. Move the last variable into the coefficients and
+Lazard-evaluate the base variables at `α ∈ S`. A Lazard delineation is a common stack of the
+roots of the resulting univariate polynomials: continuous functions
+`root 0 < ⋯ < root (count - 1)` on `S` such that the removed base exponents of each member are a
+constant `exponent k`, the roots of each nonzero member are among the `root i α`, each `root i` is
+a root of some member, and the multiplicity of `root i α` as a root of the Lazard evaluation of
+`F k` is a constant `multiplicity k i`. -/
 structure LazardDelineation (F : ι → MvPolynomial (Fin (n + 1)) ℝ) (S : Set (Fin n → ℝ)) where
+  /-- The base is nonempty, so that `exponent` and `multiplicity` are determined by the roots. -/
+  nonempty : S.Nonempty
   /-- The number of sections of the stack. -/
   count : ℕ
   /-- The root functions, listed in increasing order. -/
@@ -118,6 +121,21 @@ structure LazardDelineation (F : ι → MvPolynomial (Fin (n + 1)) ℝ) (S : Set
 namespace LazardDelineation
 
 variable {F : ι → MvPolynomial (Fin (n + 1)) ℝ} {S : Set (Fin n → ℝ)} (D : LazardDelineation F S)
+
+/-- A Lazard delineation is determined by its root functions: the removed base exponents and the
+multiplicities can be read off at any point of the nonempty base. -/
+@[ext (iff := false)]
+theorem ext {D₁ D₂ : LazardDelineation F S} (hcount : D₁.count = D₂.count)
+    (hroot : ∀ i x, D₁.root i x = D₂.root (Fin.cast hcount i) x) : D₁ = D₂ := by
+  cases D₁ with | mk hS c r _ _ e he m hm _ _ =>
+  cases D₂ with | mk _ c' r' _ _ e' he' m' hm' _ _ =>
+  obtain ⟨x, hx⟩ := hS
+  dsimp only at hcount hroot
+  subst hcount
+  obtain rfl : r = r' := funext₂ hroot
+  obtain rfl : e = e' := funext fun k ↦ (he k ⟨x, hx⟩).symm.trans (he' k ⟨x, hx⟩)
+  obtain rfl : m = m' := funext₂ fun k i ↦ (hm k i ⟨x, hx⟩).symm.trans (hm' k i ⟨x, hx⟩)
+  rfl
 
 /-- On a sector of a Lazard delineation, the fibre coordinate is not a root of the Lazard
 evaluation of any member over the base point. -/
@@ -169,20 +187,14 @@ theorem lazardValuation_snoc_eq_of_mem_sectorSet (k : ι) {j : Fin (D.count + 1)
   · rw [D.lazardValuation_snoc_of_mem_sectorSet hk hz,
       D.lazardValuation_snoc_of_mem_sectorSet hk hz']
 
-/-- A polynomial in `n + 1` variables, evaluated at the point of `ℝⁿ⁺¹` with base coordinates
-`z.1` and last coordinate `z.2`, is continuous on the cylinder `S × ℝ`. -/
-private theorem continuous_eval_snoc (f : MvPolynomial (Fin (n + 1)) ℝ) :
-    Continuous fun z : S × ℝ ↦ eval (Fin.snoc z.1.1 z.2) f :=
-  (continuous_eval f).comp
-    ((continuous_subtype_val.comp continuous_fst).finSnoc (A := fun _ ↦ ℝ) continuous_snd)
-
 /-- Over a preconnected base, every member of a family is sign-invariant on each section of a
 Lazard delineation. -/
 theorem signInvariant_sectionSet (hS : IsPreconnected S) (k : ι) (i : Fin D.count) :
     SignInvariant (fun z : S × ℝ ↦ eval (Fin.snoc z.1.1 z.2) (F k)) (sectionSet D.root i) := by
   have := isPreconnected_iff_preconnectedSpace.1 hS
   refine (isPreconnected_sectionSet (D.continuous_root i)).signInvariant_of_eq_zero_iff
-    (continuous_eval_snoc (F k)).continuousOn fun z hz z' hz' ↦ ?_
+    ((continuous_eval (F k)).comp ((continuous_subtype_val.comp continuous_fst).finSnoc
+      (A := fun _ ↦ ℝ) continuous_snd)).continuousOn fun z hz z' hz' ↦ ?_
   rw [← lazardValuation_pos_iff, ← lazardValuation_pos_iff,
     D.lazardValuation_snoc_eq_of_mem_sectionSet k hz hz']
 
@@ -192,7 +204,9 @@ theorem signInvariant_sectorSet (hS : IsPreconnected S) (k : ι) (j : Fin (D.cou
     SignInvariant (fun z : S × ℝ ↦ eval (Fin.snoc z.1.1 z.2) (F k)) (sectorSet D.root j) := by
   have := isPreconnected_iff_preconnectedSpace.1 hS
   refine (isPreconnected_sectorSet D.continuous_root D.strictMono_root j
-    ).signInvariant_of_eq_zero_iff (continuous_eval_snoc (F k)).continuousOn fun z hz z' hz' ↦ ?_
+    ).signInvariant_of_eq_zero_iff
+    ((continuous_eval (F k)).comp ((continuous_subtype_val.comp continuous_fst).finSnoc
+      (A := fun _ ↦ ℝ) continuous_snd)).continuousOn fun z hz z' hz' ↦ ?_
   rw [← lazardValuation_pos_iff, ← lazardValuation_pos_iff,
     D.lazardValuation_snoc_eq_of_mem_sectorSet k hz hz']
 
