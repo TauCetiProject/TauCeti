@@ -694,24 +694,6 @@ theorem rep_rootGenerator_rep_rootGenerator_eq_zero
         simp
       · simp [hi, (Order.lt_succ_iff_ne_top.2 hi).ne, (Order.lt_succ_iff_ne_top.2 hi).ne']
 
-/-- Every numbered root generator squares to zero as a matrix. -/
-theorem rootGenerator_mul_self_eq_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
-    (rootGenerator n k : Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) ℚ) *
-      (rootGenerator n k : Matrix _ _ ℚ) = 0 := by
-  cases k with
-  | inl i =>
-      by_cases hi : i = Fin.last n
-      · subst hi
-        simp [positiveRootMatrix_last]
-      · simp [positiveRootMatrix_of_ne_last n i hi, sub_mul, mul_sub, single_mul_single_of_ne,
-          (Order.lt_succ_iff_ne_top.2 hi).ne, (Order.lt_succ_iff_ne_top.2 hi).ne']
-  | inr i =>
-      by_cases hi : i = Fin.last n
-      · subst hi
-        simp [negativeRootMatrix_last]
-      · simp [negativeRootMatrix_of_ne_last n i hi, sub_mul, mul_sub, single_mul_single_of_ne,
-          (Order.lt_succ_iff_ne_top.2 hi).ne, (Order.lt_succ_iff_ne_top.2 hi).ne']
-
 /-- Every numbered root generator squares to zero in the standard representation. -/
 theorem pow_two_rep_rootGenerator_eq_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator n k)) ^ 2 = 0 := by
