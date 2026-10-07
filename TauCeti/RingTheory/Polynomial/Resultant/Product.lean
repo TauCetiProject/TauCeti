@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
-import Mathlib.RingTheory.Localization.FractionRing
 
 /-!
 # Discriminants of products of nonmonic polynomials
@@ -19,8 +18,9 @@ where leading coefficients need not be units.
 Positive degrees are essential with the convention `Polynomial.discr_C = 1`: multiplying
 by a constant instead obeys the scaling law `TauCeti.discr_C_mul`.
 
-The proof reduces to `Polynomial.Monic.discr_mul` by monic normalization over the fraction
-field, using `TauCeti.discr_C_mul` and the coefficient-map law for discriminants.
+This extends `Polynomial.Monic.discr_mul` and supplies the discriminant identity for
+products of primitive basis members in McCallum projection, where the coefficient ring
+is a multivariate polynomial ring.
 
 ## References
 
