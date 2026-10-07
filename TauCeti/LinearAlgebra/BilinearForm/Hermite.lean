@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.Algebra.Module.Primitive
 public import TauCeti.LinearAlgebra.Matrix.BilinearForm
-import Mathlib.Data.Rat.Floor
+import TauCeti.Data.Int.Round
 import TauCeti.LinearAlgebra.BilinearMap.GramCongruence
 import TauCeti.LinearAlgebra.Matrix.Condensation
 
@@ -44,8 +44,9 @@ choosing `t` to be a nearest integer to `-B(v, y) / μ`, the minimality of `μ` 
 `3 μ² ≤ 4 S(y, y)` for every nonzero `y ∈ K`. The inductive hypothesis applied to `S` then
 bounds `μ`.
 
-The forms and the determinant argument stay integral; only the nearest-integer step briefly
-divides in `ℚ`. The least norm exists because norms of nonzero vectors are positive integers.
+The forms and the determinant argument stay integral; the nearest-integer step is
+`Int.exists_two_mul_abs_sub_mul_le`. The least norm exists because norms of nonzero vectors are
+positive integers.
 
 ## Main results
 
@@ -68,28 +69,6 @@ open Module
 namespace LinearMap.BilinForm
 
 universe u
-
-/-- Every integer lies within `μ / 2` of a multiple of a positive integer `μ`. -/
-private theorem exists_four_mul_sq_le (t : ℤ) {μ : ℤ} (hμ : 0 < μ) :
-    ∃ c : ℤ, 4 * (c * μ + t) ^ 2 ≤ μ ^ 2 := by
-  let c := round (-(t : ℚ) / μ)
-  refine ⟨c, ?_⟩
-  have hμ' : (0 : ℚ) < μ := by exact_mod_cast hμ
-  have hr : |-(t : ℚ) / μ - c| ≤ (1 : ℚ) / 2 := by
-    simpa [c] using abs_sub_round (-(t : ℚ) / μ)
-  have hrel : ((c * μ + t : ℤ) : ℚ) = -μ * (-(t : ℚ) / μ - c) := by
-    push_cast
-    field_simp [hμ'.ne']; ring
-  have hlo : -(μ : ℚ) / 2 ≤ (c * μ + t : ℤ) := by
-    rw [hrel]
-    nlinarith [le_of_abs_le hr]
-  have hhi : ((c * μ + t : ℤ) : ℚ) ≤ μ / 2 := by
-    rw [hrel]
-    nlinarith [neg_le_of_abs_le hr]
-  have hprod : 0 ≤ (μ / 2 - (c * μ + t : ℤ)) * (μ / 2 + (c * μ + t : ℤ) : ℚ) :=
-    mul_nonneg (sub_nonneg.mpr hhi) (by linarith)
-  have hq : 4 * ((c * μ + t : ℤ) : ℚ) ^ 2 ≤ (μ : ℚ) ^ 2 := by nlinarith
-  exact_mod_cast hq
 
 /-- **A positive definite integral form attains its minimum at a primitive vector.** On a
 nontrivial free `ℤ`-module, a bilinear form whose values `B(x, x)` on nonzero vectors are positive
@@ -204,7 +183,10 @@ private theorem hermiteBound_succ (n : ℕ) (ih : HermiteBound.{u} n) :
   -- Minimality of `μ` bounds `S` from below on nonzero vectors of `K`.
   have hSlow : ∀ y : K, y ≠ 0 → 3 * μ ^ 2 ≤ 4 * S y y := by
     intro y hy
-    obtain ⟨t, ht⟩ := exists_four_mul_sq_le (B v y) hμ
+    obtain ⟨k, hk⟩ := Int.exists_two_mul_abs_sub_mul_le (B v y) hμ
+    have hk' : 0 ≤ μ + 2 * |B v y - k * μ| := by positivity
+    obtain ⟨t, ht⟩ : ∃ t : ℤ, 4 * (t * μ + B v y) ^ 2 ≤ μ ^ 2 :=
+      ⟨-k, by nlinarith [mul_nonneg (sub_nonneg.mpr hk) hk', sq_abs (B v y - k * μ)]⟩
     have hne : t • v + (y : M) ≠ 0 := by
       intro h
       rw [hli t y y.2 h, zero_smul, zero_add] at h
