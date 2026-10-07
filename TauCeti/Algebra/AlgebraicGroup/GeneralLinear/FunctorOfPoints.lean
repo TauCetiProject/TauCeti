@@ -64,33 +64,13 @@ section Pointwise
 
 variable {A : Type w} [CommRing A] [Algebra R A]
 
-/-- The matrix of values of a point on the localized generic matrix. -/
-private noncomputable def matrixOfPoint
-    (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) : Matrix (Fin n) (Fin n) A :=
-  (localizedGenericMatrix R n).map
-    (f.ofConv.comp (coordinateHopfAlgebraAlgEquiv R n).toAlgHom)
-
-/-- An entry of `matrixOfPoint f` is the value of `f` on the corresponding bundled coordinate. -/
-@[simp]
-private theorem matrixOfPoint_apply
-    (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) (i j : Fin n) :
-    matrixOfPoint n f i j =
-      f.ofConv (coordinateHopfAlgebraAlgEquiv R n
-        (coordinateRingMap R n (MvPolynomial.X (i, j)))) := by
-  simp [matrixOfPoint]
-
-private theorem isUnit_det_matrixOfPoint
-    (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
-    IsUnit (Matrix.det (matrixOfPoint n f)) := by
-  rw [matrixOfPoint, ← AlgHom.mapMatrix_apply, ← AlgHom.map_det]
-  exact (isUnit_det_localizedGenericMatrix R n).map
-    (f.ofConv.comp (coordinateHopfAlgebraAlgEquiv R n).toAlgHom)
-
-/-- The invertible matrix obtained by evaluating a point on the localized generic matrix. -/
+/-- The invertible matrix obtained by evaluating a point on the generic matrix. -/
 noncomputable def pointToGeneralLinear
     (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
     Matrix.GeneralLinearGroup (Fin n) A :=
-  Matrix.GeneralLinearGroup.mk'' (matrixOfPoint n f) (isUnit_det_matrixOfPoint n f)
+  Matrix.GeneralLinearGroup.mk'' ((genericMatrix R n).map f.ofConv) <| by
+    rw [← AlgHom.mapMatrix_apply, ← AlgHom.map_det]
+    exact (isUnit_det_genericMatrix R n).map f.ofConv
 
 /-- Reading a point as an invertible matrix evaluates it on the corresponding bundled
 coordinate. -/
@@ -100,7 +80,7 @@ theorem pointToGeneralLinear_apply
     pointToGeneralLinear n f i j =
       f.ofConv (coordinateHopfAlgebraAlgEquiv R n
         (coordinateRingMap R n (MvPolynomial.X (i, j)))) := by
-  exact matrixOfPoint_apply n f i j
+  simp [pointToGeneralLinear]
 
 /-- **The generic matrix transported along an algebra morphism out of the coordinate Hopf algebra
 is the matrix of the point that morphism is.** -/
@@ -200,19 +180,10 @@ theorem pointToGeneralLinear_generalLinearToPoint
 theorem generalLinearToPoint_pointToGeneralLinear
     (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
     generalLinearToPoint (R := R) n (pointToGeneralLinear n f) = f := by
-  have hraw :
-      localizedEvaluationOfGeneralLinear (R := R) n (pointToGeneralLinear n f) =
-        f.ofConv.comp (coordinateHopfAlgebraAlgEquiv R n).toAlgHom := by
-    apply algHom_ext_away R n
-    apply MvPolynomial.algHom_ext
-    rintro ⟨i, j⟩
-    simp only [AlgHom.comp_apply]
-    rw [localizedEvaluationOfGeneralLinear_coordinateRingMap]
-    simp [evaluationOfGeneralLinear]
   apply WithConv.ext
-  rw [generalLinearToPoint_ofConv, hraw]
-  ext x
-  simp
+  apply coordinateHopfAlgebra_algHom_ext R n
+  intro i j
+  rw [generalLinearToPoint_apply, pointToGeneralLinear_apply]
 
 /-- Reading points as invertible matrices carries convolution to ordinary matrix
 multiplication, with the tensor-factor order unchanged. -/
