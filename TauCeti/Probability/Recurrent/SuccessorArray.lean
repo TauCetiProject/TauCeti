@@ -22,10 +22,10 @@ the path from its successor array needs none of this — `pathOfSuccessors_succe
 the decomposition of an arbitrary sequence — but an argument that permutes the entries within a
 row does need them to be real transitions rather than junk.
 
-The same recurrence makes finitely supported row permutations eventually last-exit admissible
-(`Recurrent.ae_eventually_lastExitAdmissible`), the hypothesis under which
-`TauCeti.Combinatorics.Enumerative.LastExit` rebuilds a finite prefix from reindexed successor
-rows with the same endpoint and transition counts.
+The same recurrence makes row permutations that move finitely many cells on attained rows
+eventually last-exit admissible (`Recurrent.ae_eventually_lastExitAdmissible`), the hypothesis
+under which `TauCeti.Combinatorics.Enumerative.LastExit` rebuilds a finite prefix from reindexed
+successor rows with the same endpoint and transition counts.
 
 ## Main results
 
@@ -35,8 +35,9 @@ rows with the same endpoint and transition counts.
 * `TauCeti.Probability.Recurrent.ae_visitCount_visitTime` and
   `TauCeti.Probability.Recurrent.ae_tendsto_visitCount_atTop` — the visit counts along them run
   through every natural number, so every visited row is infinite;
-* `TauCeti.Probability.Recurrent.ae_eventually_lastExitAdmissible` — a finitely supported family
-  of row permutations is almost surely last-exit admissible for every long enough prefix.
+* `TauCeti.Probability.Recurrent.ae_eventually_lastExitAdmissible` — a family of row
+  permutations moving almost surely finitely many cells on attained rows is almost surely
+  last-exit admissible for every long enough prefix.
 
 ## References
 
@@ -93,16 +94,17 @@ theorem Recurrent.ae_tendsto_visitCount_atTop (h : Recurrent μ X) :
         (hω k b).symm
     _ ≤ visitCount (fun n => X n ω) (X k ω) n := visitCount_monotone _ _ hn
 
-/-- **A finite-support family of successor-row permutations is almost surely eventually
-last-exit admissible for a recurrent process.** This is the almost-sure form of
-`TauCeti.eventually_lastExitAdmissible_of_recurrent`. -/
+/-- **A family of successor-row permutations moving almost surely finitely many cells on attained
+rows is almost surely eventually last-exit admissible for a recurrent process.** This is the
+almost-sure form of `TauCeti.eventually_lastExitAdmissible_of_recurrent`; only the cells on rows
+the sampled path attains need be finitely many, so a finitely supported `π` is a special case. -/
 theorem Recurrent.ae_eventually_lastExitAdmissible (h : Recurrent μ X)
-    (π : α → Equiv.Perm ℕ) (hπ : {p : α × ℕ | π p.1 p.2 ≠ p.2}.Finite) :
+    (π : α → Equiv.Perm ℕ)
+    (hπ : ∀ᵐ ω ∂μ, {p : α × ℕ | π p.1 p.2 ≠ p.2 ∧ ∃ t, X t ω = p.1}.Finite) :
     ∀ᵐ ω ∂μ, ∀ᶠ m in atTop, LastExitAdmissible π (fun n => X n ω) m := by
-  filter_upwards [h.ae_infinite_setOf_eq] with ω hω
+  filter_upwards [h.ae_infinite_setOf_eq, hπ] with ω hω hπω
   exact eventually_lastExitAdmissible_of_recurrent
-    (fun _ _ ⟨t, ht⟩ => by simpa only [ht] using hω t) <|
-      hπ.subset fun _ hp => hp.1
+    (fun _ _ ⟨t, ht⟩ => by simpa only [ht] using hω t) hπω
 
 end Probability
 
