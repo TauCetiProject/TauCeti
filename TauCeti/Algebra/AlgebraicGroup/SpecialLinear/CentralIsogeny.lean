@@ -25,16 +25,11 @@ proves:
 Over a field, it also reduces the central-isogeny property to injectivity of the coordinate
 morphism, as explained below.
 
-Finiteness is integrality of the generic matrix `X` of `SLₙ` and of its inverse `Y`. The
-coordinates of `PGLₙ` pull back to the products `Xₚᵢ Yⱼq`, so for a fixed entry `c` of `X` the
-scaled matrix `c • Y` has all its entries in the image of `O(PGLₙ)`. Since `det Y = 1`, its
-determinant `cⁿ` lies in that image as well, so `c` is integral. The same argument with the roles
-of `X` and `Y` exchanged applies to the entries of `Y`, and these entries generate `O(SLₙ)`.
-
-Over a field, the target `PGLₙ` is geometrically reduced as soon as the coordinate morphism is
-injective, since `SLₙ` is smooth. Injectivity then gives faithful flatness. Thus `SLₙ → PGLₙ` is
-a central isogeny exactly when its coordinate morphism is injective, that is, when the
-homomorphism is schematically dominant. That injectivity is not proved in this file.
+Finiteness and centrality are two of the three conditions in
+`TauCeti.CommHopfAlgCat.IsCentralIsogeny`. Over a field, the third, faithful flatness, follows
+from injectivity of the coordinate morphism. Thus `SLₙ → PGLₙ` is a central isogeny exactly when
+its coordinate morphism is injective, that is, when the homomorphism is schematically dominant.
+That injectivity is not proved in this file.
 
 ## Main declarations
 
@@ -98,17 +93,13 @@ theorem finite_conjugationMap : (conjugationMap n R).hom.toAlgHom.Finite := by
     refine IsIntegral.of_pow hn ?_
     rw [← hc]
     exact isIntegral_algebraMap
-  -- Hence every entry of `X` and of `X⁻¹` is integral over `O(PGLₙ)`.
+  -- Hence every entry of `X` is integral over `O(PGLₙ)`.
   have hle := Algebra.adjoin_le (S := (integralClosure P S).restrictScalars R) (s :=
-    Set.range (fun ij : Fin n × Fin n ↦ X ij.1 ij.2) ∪
-      Set.range (fun ij : Fin n × Fin n ↦ X⁻¹ ij.1 ij.2)) <| by
-    rintro _ (⟨⟨i, j⟩, rfl⟩ | ⟨⟨i, j⟩, rfl⟩)
-    · refine hint hY (fun l m ↦ ?_) (Fin.pos i)
-      simpa using hentry (finProdFinEquiv (i, m)) (finProdFinEquiv (j, l))
-    · refine hint hX (fun l m ↦ ?_) (Fin.pos i)
-      obtain ⟨x, hx⟩ := hentry (finProdFinEquiv (l, j)) (finProdFinEquiv (m, i))
-      exact ⟨x, by simpa [mul_comm] using hx⟩
-  rw [adjoin_range_map_genericMatrix_union_range_inv, top_le_iff] at hle
+    Set.range (fun ij : Fin n × Fin n ↦ X ij.1 ij.2)) <| by
+    rintro _ ⟨⟨i, j⟩, rfl⟩
+    refine hint hY (fun l m ↦ ?_) (Fin.pos i)
+    simpa using hentry (finProdFinEquiv (i, m)) (finProdFinEquiv (j, l))
+  rw [adjoin_range_map_genericMatrix, top_le_iff] at hle
   have : Algebra.IsIntegral P S := ⟨fun x ↦ by
     have hx : x ∈ (integralClosure P S).restrictScalars R := hle ▸ Algebra.mem_top
     rwa [Subalgebra.mem_restrictScalars, mem_integralClosure_iff] at hx⟩
