@@ -47,7 +47,7 @@ locus, to be a single point.
   the closures of its tails.
 * `TauCeti.isPreconnected_setOf_mapClusterPt_atTop` — the ω-limit set of such a curve, continuous
   on the half-line carrying that tail, is preconnected.
-* `Flow.mapClusterPt_atTop_apply` — the ω-limit set of an orbit of a flow of `ℝ` is invariant
+* `Flow.mapClusterPt_atTop_flow` — the ω-limit set of an orbit of a flow of `ℝ` is invariant
   under the flow.
 
 ## References
@@ -107,7 +107,7 @@ open Filter Topology
 /-- **The ω-limit set of an orbit of a flow is invariant.** If `z` is a cluster point at `+∞` of
 the orbit `t ↦ φ t y` of a flow of `ℝ`, so is `φ s z` for every time `s`. This is Mathlib's
 `Flow.isInvariant_omegaLimit` for the ω-limit set of the single point `y`. -/
-theorem mapClusterPt_atTop_apply {α : Type*} [TopologicalSpace α] {φ : Flow ℝ α} {y z : α}
+theorem mapClusterPt_atTop_flow {α : Type*} [TopologicalSpace α] {φ : Flow ℝ α} {y z : α}
     (hz : MapClusterPt z atTop fun t ↦ φ t y) (s : ℝ) :
     MapClusterPt (φ s z) atTop fun t ↦ φ t y := by
   have hω := (mem_omegaLimit_singleton_iff_mapClusterPt (f := atTop) (ϕ := φ) y z).2 hz

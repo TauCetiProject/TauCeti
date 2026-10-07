@@ -72,7 +72,7 @@ theorem exists_tendsto_atTop_of_antitone (φ : Flow ℝ α) {g : α → ℝ} (hg
   -- The cluster points of the orbit form its ω-limit set, which is invariant under the flow;
   -- hence every cluster point lies in `C`.
   have hsub : {z | MapClusterPt z atTop γ} ⊆ C := fun z hz ↦
-    hrest z fun t ↦ (hval _ (mapClusterPt_atTop_apply hz t)).trans (hval z hz).symm
+    hrest z fun t ↦ (hval _ (mapClusterPt_atTop_flow hz t)).trans (hval z hz).symm
   obtain ⟨p, -, hp⟩ := isCompact_univ.exists_mapClusterPt (f := atTop) (u := γ)
     (by simp)
   have hconn : IsPreconnected {z | MapClusterPt z atTop γ} :=
