@@ -10,15 +10,17 @@ public import Mathlib.Order.Filter.AtTopBot.Basic
 public import Mathlib.Topology.Separation.Hausdorff
 public import Mathlib.Topology.Compactness.Compact
 public import Mathlib.Topology.Instances.Real.Lemmas
+import Mathlib.Dynamics.OmegaLimit
 import Mathlib.Topology.Order.MonotoneConvergence
+import TauCeti.Topology.Connected.TotallyDisconnected
 import TauCeti.Topology.OmegaLimit
 
 /-!
 # Convergence of the orbits of a flow with a Lyapunov function
 
 Let `φ` be a flow of `ℝ` on a compact Hausdorff space and `g` a continuous function that is
-antitone along every orbit. Suppose that the only points along whose orbit `g` is constant form a
-finite set `C`. Then every orbit converges, forward in time, to a point of `C`.
+antitone along every orbit. Suppose that the points along whose orbit `g` is constant are contained
+in a finite set `C`. Then every orbit converges, forward in time, to a point of `C`.
 
 This is the topological core of the convergence of gradient-like flows: for the flow of a
 pseudo-gradient field adapted to a Morse function `f`, the function is `f` and `C` is the finite
@@ -45,8 +47,8 @@ variable {α : Type*} [TopologicalSpace α] [CompactSpace α] [T2Space α]
 
 /-- **The orbits of a flow with a Lyapunov function converge.** Let `g` be a continuous function,
 antitone along every orbit of a flow `φ` of `ℝ` on a compact Hausdorff space. If the points along
-whose orbit `g` is constant form a finite set `C`, every orbit converges forward in time to a point
-of `C`. -/
+whose orbit `g` is constant are contained in a finite set `C`, every orbit converges forward in time
+to a point of `C`. -/
 theorem exists_tendsto_atTop_of_antitone (φ : Flow ℝ α) {g : α → ℝ} (hg : Continuous g)
     (hanti : ∀ y, Antitone fun t ↦ g (φ t y)) {C : Set α} (hC : C.Finite)
     (hrest : ∀ z, (∀ t, g (φ t z) = g z) → z ∈ C) (y : α) :
@@ -68,16 +70,13 @@ theorem exists_tendsto_atTop_of_antitone (φ : Flow ℝ α) {g : α → ℝ} (hg
     have hne : NeBot (𝓝 (g z) ⊓ 𝓝 c) :=
       NeBot.mono hcl (inf_le_inf_left _ hlim)
     exact eq_of_nhds_neBot hne
-  -- The cluster points of the orbit are invariant under the flow.
+  -- The cluster points of the orbit form its ω-limit set, which is invariant under the flow.
   have hinv : ∀ z, MapClusterPt z atTop γ → ∀ s, MapClusterPt (φ s z) atTop γ := by
     intro z hz s
-    have h1 : MapClusterPt (φ s z) atTop (φ s ∘ γ) :=
-      hz.continuousAt_comp (φ.continuous_toFun s).continuousAt
-    have h2 : φ s ∘ γ = γ ∘ fun t ↦ s + t := by
-      ext t
-      simp [hγdef, Flow.map_add]
-    rw [h2] at h1
-    exact h1.of_comp (tendsto_atTop_add_const_left _ s tendsto_id)
+    have hω := (mem_omegaLimit_singleton_iff_mapClusterPt (f := atTop) (ϕ := φ) y z).2 hz
+    exact (mem_omegaLimit_singleton_iff_mapClusterPt (f := atTop) (ϕ := φ) y _).1
+      (Flow.isInvariant_omegaLimit atTop φ {y}
+        (fun t ↦ tendsto_atTop_add_const_left _ t tendsto_id) s hω)
   -- Hence every cluster point lies in `C`.
   have hsub : {z | MapClusterPt z atTop γ} ⊆ C := fun z hz ↦
     hrest z fun t ↦ (hval _ (hinv z hz t)).trans (hval z hz).symm
@@ -86,15 +85,9 @@ theorem exists_tendsto_atTop_of_antitone (φ : Flow ℝ α) {g : α → ℝ} (hg
   have hconn : IsPreconnected {z | MapClusterPt z atTop γ} :=
     TauCeti.isPreconnected_setOf_mapClusterPt_atTop (a := 0) isCompact_univ hγc.continuousOn
       (mapsTo_univ _ _)
-  have hone : ∀ z ∈ univ, MapClusterPt z atTop γ → z = p := by
-    intro z _ hz
-    by_contra hne
-    obtain ⟨w, -, hw1, hw2⟩ := isPreconnected_closed_iff.mp hconn {p}
-      ({z | MapClusterPt z atTop γ} \ {p}) isClosed_singleton
-      ((hC.subset hsub).sdiff.isClosed)
-      (fun w hw ↦ (em (w = p)).imp id fun hwp ↦ ⟨hw, hwp⟩)
-      ⟨p, hp, rfl⟩ ⟨z, hz, hz, hne⟩
-    exact hw2.2 hw1
+  -- A finite preconnected set is a single point.
+  have hone : ∀ z ∈ univ, MapClusterPt z atTop γ → z = p := fun z _ hz ↦
+    (hC.subset hsub).isTotallyDisconnected _ subset_rfl hconn hz hp
   exact ⟨p, hsub hp, isCompact_univ.tendsto_nhds_of_unique_mapClusterPt
     (Eventually.of_forall fun _ ↦ mem_univ _) hone⟩
 
