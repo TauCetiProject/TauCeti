@@ -22,7 +22,9 @@ a given half-plane or its closure is an interval
 (`ordConnected_preimage_geodesicLine_rightHalfPlane` and companions); and half-planes and
 their closures are convex: they contain the segment between any two of their points
 (`geodesicSegment_subset_rightHalfPlane`, …, `geodesicSegment_subset_closure_leftHalfPlane`).
-Convexity is what makes the triangles and polygons bounded by such half-planes convex.
+The mixed strict/weak endpoint result `geodesicLine_mem_leftHalfPlane_of_le_of_lt` gives
+strictness away from the weak endpoint. Convexity is what makes the triangles and polygons
+bounded by such half-planes convex.
 
 Source: Walkden, *Hyperbolic geometry* (MATH32051 lecture notes, Manchester 2019), §7.1 (the
 segment `[z, w]`) and Solution 14.1 (half-planes are convex); Katok, *Fuchsian groups,
@@ -252,5 +254,32 @@ theorem geodesicSegment_subset_closure_leftHalfPlane {k : PSL(2, ℝ)} {z w : �
     geodesicSegment z w ⊆ closure (leftHalfPlane k) :=
   geodesicSegment_subset_of_ordConnected
     (ordConnected_preimage_geodesicLine_closure_leftHalfPlane _ k) hz hw
+
+/-- Along a geodesic, all points between a strictly left point and a weakly left point, except
+the latter endpoint, are strictly left. -/
+theorem geodesicLine_mem_leftHalfPlane_of_le_of_lt {g k : PSL(2, ℝ)} {s t u : ℝ}
+    (hst : s ≤ t) (htu : t < u) (hs : geodesicLine g s ∈ leftHalfPlane k)
+    (hu : geodesicLine g u ∈ closure (leftHalfPlane k)) : geodesicLine g t ∈ leftHalfPlane k := by
+  -- On the imaginary axis, the side form is affine in the strictly increasing `exp(t)²`.
+  have hs' : geodesicLine 1 s ∈ leftHalfPlane (g⁻¹ * k) := by
+    simpa only [mem_leftHalfPlane_iff, smul_geodesicLine, mul_inv_rev, inv_inv, mul_one] using hs
+  have hu' : geodesicLine 1 u ∈ closure (leftHalfPlane (g⁻¹ * k)) := by
+    simpa only [mem_closure_leftHalfPlane_iff, smul_geodesicLine, mul_inv_rev, inv_inv, mul_one]
+      using hu
+  suffices geodesicLine 1 t ∈ leftHalfPlane (g⁻¹ * k) by
+    simpa only [mem_leftHalfPlane_iff, smul_geodesicLine, mul_inv_rev, inv_inv, mul_one] using this
+  generalize g⁻¹ * k = m at hs' hu' ⊢
+  induction m using QuotientGroup.induction_on with | H A => ?_
+  rw [mem_leftHalfPlane_iff_sideForm_neg,
+    Matrix.SpecialLinearGroup.sideForm_pslMk_geodesicLine_one] at hs' ⊢
+  rw [mem_closure_leftHalfPlane_iff_sideForm_nonpos,
+    Matrix.SpecialLinearGroup.sideForm_pslMk_geodesicLine_one] at hu'
+  have h₀ : Real.exp s ^ 2 ≤ Real.exp t ^ 2 :=
+    pow_le_pow_left₀ (Real.exp_pos s).le (Real.exp_le_exp.2 hst) 2
+  have hd : Real.exp t ^ 2 < Real.exp u ^ 2 := by
+    nlinarith [Real.exp_lt_exp.2 htu, Real.exp_pos t, Real.exp_pos u]
+  by_cases hc : 0 ≤ A 1 0 * A 1 1
+  · nlinarith [mul_nonneg hc (sub_nonneg.2 h₀)]
+  · nlinarith [mul_pos (neg_pos.2 (lt_of_not_ge hc)) (sub_pos.2 hd)]
 
 end TauCeti.UpperHalfPlane

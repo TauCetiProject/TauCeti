@@ -22,7 +22,9 @@ equivariant under `PSL(2, ℝ)` (`smul_extGeodesicSegment`).
 
 Closed half-planes are convex in this extended sense: if `p` and `q` are weakly to the left of
 `geodesicLine k` (`extClosedLeftHalfPlane k`), then so is the piece between them
-(`extGeodesicSegment_subset_closure_leftHalfPlane`), and in particular a geodesic ray or line
+(`extGeodesicSegment_subset_closure_leftHalfPlane`). If one endpoint is strictly left, all
+points of the piece except the weak endpoint are strictly left
+(`mem_leftHalfPlane_of_mem_extGeodesicSegment`). In particular a geodesic ray or line
 whose endpoints are weakly to the left of `geodesicLine k` lies in its closed left half-plane
 (`geodesicLine_image_Ici_subset_closure_leftHalfPlane`,
 `range_geodesicLine_subset_closure_leftHalfPlane`).
@@ -189,20 +191,10 @@ private theorem inr_smul_mem_extClosedLeftHalfPlane_iff (g k : PSL(2, ℝ)) (ξ 
       Sum.inr ξ ∈ extClosedLeftHalfPlane (g⁻¹ * k) := by
   rw [← smul_extClosedLeftHalfPlane, Set.mem_smul_set_iff_inv_smul_mem, inv_inv, Sum.smul_inr]
 
-/-- The side form of the class of `A` along the imaginary axis is `-c d e^{2t} - a b`. -/
-private theorem sideForm_mk_geodesicLine_one (A : SL(2, ℝ)) (t : ℝ) :
-    sideForm (A : PSL(2, ℝ)) (geodesicLine 1 t) =
-      -(A 1 0 * A 1 1) * Real.exp t ^ 2 - A 0 0 * A 0 1 := by
-  rw [sideForm_mk, geodesicLine_one_apply, UpperHalfPlane.coe_mk]
-  simp only [Complex.normSq_mk]
-  ring
-
-/-- If `∞` is weakly to the left of the geodesic line of the class of `A`, then `0 ≤ c d`. -/
-private theorem mul_nonneg_of_inr_infty_mem {A : SL(2, ℝ)}
-    (h : Sum.inr ∞ ∈ extClosedLeftHalfPlane (A : PSL(2, ℝ))) : 0 ≤ A 1 0 * A 1 1 := by
-  rcases inr_mem_extClosedLeftHalfPlane_iff.1 h with h₀ | h₁ | h
-  · rw [(mk_smul_zero_eq_infty_iff A).1 h₀.symm, mul_zero]
-  · rw [(mk_smul_infty_eq_infty_iff A).1 h₁.symm, zero_mul]
+/-- If `∞` is strictly left of the line of `A`, then `c d > 0`. -/
+private theorem mul_pos_of_infty_mem {A : SL(2, ℝ)}
+    (h : (∞ : OnePoint ℝ) ∈ boundaryLeftHalfPlane (A : PSL(2, ℝ))) :
+    0 < A 1 0 * A 1 1 := by
   -- both endpoints are real, `e₀ < e₁`, and `(e₁ - e₀) c d = a d - b c = 1`
   have h₀ : (A : PSL(2, ℝ)) • ((0 : ℝ) : OnePoint ℝ) ≠ ∞ := fun h₀ ↦
     smul_zero_notMem_boundaryLeftHalfPlane _ (by rwa [h₀])
@@ -218,7 +210,15 @@ private theorem mul_nonneg_of_inr_infty_mem {A : SL(2, ℝ)}
     exact A.det_coe
   have hcd : (e₁ - e₀) * (A 1 0 * A 1 1) = 1 := by
     linear_combination hdet - A 1 1 * ha + A 1 0 * hb
-  exact ((pos_iff_pos_of_mul_pos (hcd.symm ▸ one_pos)).1 (sub_pos.2 he)).le
+  exact (pos_iff_pos_of_mul_pos (hcd.symm ▸ one_pos)).1 (sub_pos.2 he)
+
+/-- If `∞` is weakly to the left of the geodesic line of the class of `A`, then `0 ≤ c d`. -/
+private theorem mul_nonneg_of_inr_infty_mem {A : SL(2, ℝ)}
+    (h : Sum.inr ∞ ∈ extClosedLeftHalfPlane (A : PSL(2, ℝ))) : 0 ≤ A 1 0 * A 1 1 := by
+  rcases inr_mem_extClosedLeftHalfPlane_iff.1 h with h₀ | h₁ | h
+  · rw [(mk_smul_zero_eq_infty_iff A).1 h₀.symm, mul_zero]
+  · rw [(mk_smul_infty_eq_infty_iff A).1 h₁.symm, zero_mul]
+  · exact (mul_pos_of_infty_mem h).le
 
 /-- If `0` is weakly to the left of the geodesic line of the class of `A`, then `0 ≤ a b`. -/
 private theorem mul_nonneg_of_inr_zero_mem {A : SL(2, ℝ)}
@@ -242,7 +242,8 @@ theorem range_geodesicLine_subset_closure_leftHalfPlane {g k : PSL(2, ℝ)}
   induction m using QuotientGroup.induction_on with | H A => ?_
   have hcd := mul_nonneg_of_inr_infty_mem h₁
   have hab := mul_nonneg_of_inr_zero_mem h₀
-  rw [mem_closure_leftHalfPlane_iff_sideForm_nonpos, sideForm_mk_geodesicLine_one]
+  rw [mem_closure_leftHalfPlane_iff_sideForm_nonpos,
+    Matrix.SpecialLinearGroup.sideForm_pslMk_geodesicLine_one]
   nlinarith [mul_nonneg hcd (sq_nonneg (Real.exp t))]
 
 /-- A geodesic ray `geodesicLine g '' [0, ∞)` starting in the closed left half-plane of `k`,
@@ -258,7 +259,8 @@ theorem geodesicLine_image_Ici_subset_closure_leftHalfPlane {g k : PSL(2, ℝ)}
   generalize g⁻¹ * k = m at h₀ h₁ ⊢
   induction m using QuotientGroup.induction_on with | H A => ?_
   have hcd := mul_nonneg_of_inr_infty_mem h₁
-  rw [mem_closure_leftHalfPlane_iff_sideForm_nonpos, sideForm_mk_geodesicLine_one] at h₀ ⊢
+  rw [mem_closure_leftHalfPlane_iff_sideForm_nonpos,
+    Matrix.SpecialLinearGroup.sideForm_pslMk_geodesicLine_one] at h₀ ⊢
   rw [Real.exp_zero, one_pow] at h₀
   have hexp : 1 ≤ Real.exp t ^ 2 := one_le_pow₀ (Real.one_le_exp ht)
   nlinarith [mul_nonneg hcd (sub_nonneg.2 hexp)]
@@ -288,5 +290,113 @@ theorem extGeodesicSegment_subset_closure_leftHalfPlane {k : PSL(2, ℝ)}
   rw [extGeodesicSegment_inr_inr hξη]
   exact range_geodesicLine_subset_closure_leftHalfPlane (by rwa [hg.smul_zero_eq])
     (by rwa [hg.smul_infty_eq])
+
+/-- A ray starting strictly left of a geodesic and tending to an ideal point weakly left of it
+lies in its open left half-plane. -/
+theorem geodesicLine_image_Ici_subset_leftHalfPlane {g k : PSL(2, ℝ)}
+    (h₀ : geodesicLine g 0 ∈ leftHalfPlane k)
+    (h₁ : Sum.inr (g • (∞ : OnePoint ℝ)) ∈ extClosedLeftHalfPlane k) :
+    geodesicLine g '' Set.Ici 0 ⊆ leftHalfPlane k := by
+  rintro _ ⟨t, ht, rfl⟩
+  have h₀' : geodesicLine 1 0 ∈ leftHalfPlane (g⁻¹ * k) := by
+    simpa only [mem_leftHalfPlane_iff, smul_geodesicLine, mul_inv_rev, inv_inv, mul_one] using h₀
+  rw [inr_smul_mem_extClosedLeftHalfPlane_iff] at h₁
+  suffices geodesicLine 1 t ∈ leftHalfPlane (g⁻¹ * k) by
+    simpa only [mem_leftHalfPlane_iff, smul_geodesicLine, mul_inv_rev, inv_inv, mul_one] using this
+  generalize g⁻¹ * k = m at h₀' h₁ ⊢
+  induction m using QuotientGroup.induction_on with | H A => ?_
+  have hcd := mul_nonneg_of_inr_infty_mem h₁
+  rw [mem_leftHalfPlane_iff_sideForm_neg,
+    Matrix.SpecialLinearGroup.sideForm_pslMk_geodesicLine_one] at h₀' ⊢
+  rw [Real.exp_zero, one_pow] at h₀'
+  have hexp : 1 ≤ Real.exp t ^ 2 := one_le_pow₀ (Real.one_le_exp ht)
+  nlinarith [mul_nonneg hcd (sub_nonneg.2 hexp)]
+
+/-- A ray starting weakly left of a geodesic and tending to an ideal point strictly left of it
+lies strictly left after its starting point. -/
+theorem geodesicLine_image_Ioi_subset_leftHalfPlane {g k : PSL(2, ℝ)}
+    (h₀ : geodesicLine g 0 ∈ closure (leftHalfPlane k))
+    (h₁ : (g • (∞ : OnePoint ℝ)) ∈ boundaryLeftHalfPlane k) :
+    geodesicLine g '' Set.Ioi 0 ⊆ leftHalfPlane k := by
+  rintro _ ⟨t, ht, rfl⟩
+  rw [geodesicLine_mem_closure_leftHalfPlane_iff] at h₀
+  have h₁' : (∞ : OnePoint ℝ) ∈ boundaryLeftHalfPlane (g⁻¹ * k) := by
+    rw [← smul_boundaryLeftHalfPlane, Set.mem_smul_set_iff_inv_smul_mem, inv_inv]
+    exact h₁
+  suffices geodesicLine 1 t ∈ leftHalfPlane (g⁻¹ * k) by
+    simpa only [mem_leftHalfPlane_iff, smul_geodesicLine, mul_inv_rev, inv_inv, mul_one] using this
+  generalize g⁻¹ * k = m at h₀ h₁' ⊢
+  induction m using QuotientGroup.induction_on with | H A => ?_
+  have hcd := mul_pos_of_infty_mem h₁'
+  rw [mem_leftHalfPlane_iff_sideForm_neg,
+    Matrix.SpecialLinearGroup.sideForm_pslMk_geodesicLine_one]
+  rw [mem_closure_leftHalfPlane_iff_sideForm_nonpos,
+    Matrix.SpecialLinearGroup.sideForm_pslMk_geodesicLine_one,
+    Real.exp_zero, one_pow] at h₀
+  have hexp : 1 < Real.exp t ^ 2 := by nlinarith [Real.one_lt_exp_iff.2 ht]
+  nlinarith [mul_pos hcd (sub_pos.2 hexp)]
+
+/-- A geodesic with its backward ideal endpoint strictly left of another line and its forward
+ideal endpoint weakly left lies entirely in that line's open left half-plane. -/
+theorem range_geodesicLine_subset_leftHalfPlane {g k : PSL(2, ℝ)}
+    (h₀ : (g • ((0 : ℝ) : OnePoint ℝ)) ∈ boundaryLeftHalfPlane k)
+    (h₁ : Sum.inr (g • (∞ : OnePoint ℝ)) ∈ extClosedLeftHalfPlane k) :
+    Set.range (geodesicLine g) ⊆ leftHalfPlane k := by
+  rintro _ ⟨t, rfl⟩
+  have h₀' : Sum.inr ((0 : ℝ) : OnePoint ℝ) ∈ extLeftHalfPlane (g⁻¹ * k) := by
+    rw [← smul_extLeftHalfPlane, Set.mem_smul_set_iff_inv_smul_mem, inv_inv, Sum.smul_inr,
+      inr_mem_extLeftHalfPlane_iff]
+    exact h₀
+  rw [inr_smul_mem_extClosedLeftHalfPlane_iff] at h₁
+  suffices geodesicLine 1 t ∈ leftHalfPlane (g⁻¹ * k) by
+    simpa only [mem_leftHalfPlane_iff, smul_geodesicLine, mul_inv_rev, inv_inv, mul_one] using this
+  generalize g⁻¹ * k = m at h₀' h₁ ⊢
+  induction m using QuotientGroup.induction_on with | H A => ?_
+  have hcd := mul_nonneg_of_inr_infty_mem h₁
+  have hab := sideForm_toComplex_neg_of_mem_extLeftHalfPlane
+    (Sum.inr_injective.ne (OnePoint.coe_ne_infty 0)) h₀'
+  rw [toComplex_inr_coe, sideForm_mk_ofReal] at hab
+  rw [mem_leftHalfPlane_iff_sideForm_neg,
+    Matrix.SpecialLinearGroup.sideForm_pslMk_geodesicLine_one]
+  norm_num at hab
+  nlinarith [mul_nonneg hcd (sq_nonneg (Real.exp t))]
+
+/-- If one endpoint is strictly left of a geodesic and the other is weakly left, every point of
+the geodesic piece except the weak endpoint is strictly left. This includes rays and pieces
+between ideal points. -/
+theorem mem_leftHalfPlane_of_mem_extGeodesicSegment {k : PSL(2, ℝ)}
+    {p q : ℍ ⊕ OnePoint ℝ} {z : ℍ} (hp : p ∈ extLeftHalfPlane k)
+    (hq : q ∈ extClosedLeftHalfPlane k) (hz : z ∈ extGeodesicSegment p q)
+    (hzq : Sum.inl z ≠ q) : z ∈ leftHalfPlane k := by
+  rcases p with v | ξ <;> rcases q with w | η
+  · rw [extGeodesicSegment_inl_inl, mem_geodesicSegment_iff] at hz
+    obtain ⟨t, ht, rfl⟩ := hz
+    have htd : t < dist v w := lt_of_le_of_ne ht.2 (by
+      intro h
+      exact hzq (by rw [h, geodesicLine_geodesicBetween_dist]))
+    exact geodesicLine_mem_leftHalfPlane_of_le_of_lt ht.1 htd
+      (by simpa only [geodesicLine_geodesicBetween_zero, inl_mem_extLeftHalfPlane_iff] using hp)
+      (by simpa only [geodesicLine_geodesicBetween_dist, inl_mem_extClosedLeftHalfPlane_iff]
+        using hq)
+  · rw [extGeodesicSegment_inl_inr] at hz
+    exact geodesicLine_image_Ici_subset_leftHalfPlane
+      (by simpa only [geodesicLine_rayToward_zero, inl_mem_extLeftHalfPlane_iff] using hp)
+      (by rwa [rayToward_inr_smul_infty]) hz
+  · rw [extGeodesicSegment_inr_inl] at hz
+    obtain ⟨t, ht, rfl⟩ := hz
+    have htpos : 0 < t := lt_of_le_of_ne ht (by
+      intro h
+      exact hzq (by rw [← h, geodesicLine_rayToward_zero]))
+    exact geodesicLine_image_Ioi_subset_leftHalfPlane
+      (by simpa only [geodesicLine_rayToward_zero, inl_mem_extClosedLeftHalfPlane_iff] using hq)
+      (by rwa [rayToward_inr_smul_infty, ← inr_mem_extLeftHalfPlane_iff]) ⟨t, htpos, rfl⟩
+  · have hξη : ξ ≠ η := by
+      rintro rfl
+      simp only [extGeodesicSegment_inr_self, Set.mem_empty_iff_false] at hz
+    have hg := isGeodesicFromTo_geodesicFromTo (Sum.inr_injective.ne hξη)
+    rw [extGeodesicSegment_inr_inr hξη] at hz
+    exact range_geodesicLine_subset_leftHalfPlane
+      (by rwa [hg.smul_zero_eq, ← inr_mem_extLeftHalfPlane_iff])
+      (by rwa [hg.smul_infty_eq]) hz
 
 end TauCeti.UpperHalfPlane
