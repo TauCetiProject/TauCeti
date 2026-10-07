@@ -25,7 +25,7 @@ in the argument remain finite and projective.
 
 ## Main results
 
-* `TauCeti.span_range_laurentK0_projective_of_eq_top`: an exhaustive family of indecomposable
+* `TauCeti.span_range_laurentK0_projective_of_eq_top`: a family exhaustive among indecomposable
   graded projectives up to shift spans the Laurent Grothendieck group.
 
 ## References
@@ -139,7 +139,7 @@ private theorem laurentK0_projective_of_mem_span
     rw [hclass]
     exact G.add_mem (ih _ (by omega) Y rfl) (ih _ (by omega) Z rfl)
 
-/-- **An exhaustive family of indecomposable graded projective classes spans
+/-- **The classes of a family exhaustive among indecomposable graded projectives up to shift span
 `K₀^gr(proj A)` over `ℤ[q,q⁻¹]`.** Every finite graded projective splits into finitely many
 indecomposable summands, and the class of a shifted summand is a Laurent monomial times the class
 of a member of the family. No independence or uniqueness of decomposition is assumed. -/
