@@ -37,23 +37,6 @@ open AlgebraicGeometry AlgebraicGeometry.Scheme.IdealSheafData
 
 variable {X S : Scheme.{u}}
 
-/-- The sum of two effective Cartier divisors, represented by multiplication of their ideals,
-is effective Cartier. The divisors need not be disjoint. -/
-theorem isEffectiveCartier_mul {I J : X.IdealSheafData}
-    (hI : I.IsEffectiveCartier) (hJ : J.IsEffectiveCartier) :
-    (I * J).IsEffectiveCartier := by
-  rw [isEffectiveCartier_iff]
-  intro x
-  obtain ⟨U, hxU, a, ha, hIa⟩ := (isEffectiveCartier_iff I).mp hI x
-  obtain ⟨V, hVU, hxV, b, hb, hJb⟩ := hJ.exists_eq_span_singleton_le U.1 hxU
-  let a' := X.presheaf.map (homOfLE hVU).op a
-  have ha' : IsSMulRegular Γ(X, V) a' := U.2.isSMulRegular_map hVU ha
-  have hIa' : I.ideal V = Ideal.span {a'} := by
-    rw [← I.map_ideal hVU, hIa, Ideal.map_span, Set.image_singleton]
-    rfl
-  exact ⟨V, hxV, a' * b, ha'.mul hb, by
-    simp only [ideal_mul, Pi.mul_apply, hIa', hJb, Ideal.span_singleton_mul_span_singleton]⟩
-
 /-- On a flat ambient scheme, the sum of two relative effective Cartier divisors is relative
 effective Cartier. No disjointness, reducedness, or noetherian hypothesis is needed. -/
 theorem isRelativeEffectiveCartier_mul {I J : X.IdealSheafData} {f : X ⟶ S} [Flat f]
@@ -114,13 +97,6 @@ theorem isRelativeEffectiveCartier_mul {I J : X.IdealSheafData} {f : X ⟶ S} [F
   rw [hIJ]
   exact hflat
 
-/-- Every nonnegative multiple of an effective Cartier divisor is effective Cartier. -/
-theorem isEffectiveCartier_pow {I : X.IdealSheafData} (hI : I.IsEffectiveCartier) (n : ℕ) :
-    (I ^ n).IsEffectiveCartier := by
-  induction n with
-  | zero => simp
-  | succ n hn => simpa only [pow_succ] using isEffectiveCartier_mul hn hI
-
 /-- Every nonnegative multiple of a relative effective Cartier divisor on a flat ambient scheme
 is relative effective Cartier. This includes the empty divisor for multiplicity zero. -/
 theorem isRelativeEffectiveCartier_pow {I : X.IdealSheafData} {f : X ⟶ S} [Flat f]
@@ -129,17 +105,6 @@ theorem isRelativeEffectiveCartier_pow {I : X.IdealSheafData} {f : X ⟶ S} [Fla
   induction n with
   | zero => simp
   | succ n hn => simpa only [pow_succ] using isRelativeEffectiveCartier_mul hn hI
-
-/-- A finite sum of effective Cartier divisors is effective Cartier. -/
-theorem isEffectiveCartier_prod {ι : Type*} {s : Finset ι} {I : ι → X.IdealSheafData}
-    (hI : ∀ i ∈ s, (I i).IsEffectiveCartier) : (∏ i ∈ s, I i).IsEffectiveCartier := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | @insert i s hi hs =>
-    rw [Finset.prod_insert hi]
-    exact isEffectiveCartier_mul (hI i (Finset.mem_insert_self i s))
-      (hs fun j hj ↦ hI j (Finset.mem_insert_of_mem hj))
 
 /-- A finite sum of relative effective Cartier divisors on a flat ambient scheme is relative
 effective Cartier, with no restriction on intersections between the summands. -/

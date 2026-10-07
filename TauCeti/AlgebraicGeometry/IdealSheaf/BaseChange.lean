@@ -93,8 +93,8 @@ open AlgebraicGeometry AlgebraicGeometry.Scheme.IdealSheafData
 
 variable {S X : Scheme.{u}}
 
-/-- Flatness of the divisor over a pair of affine opens is equivalent to flatness of its
-quotient algebra of sections over the base. -/
+/-- Flatness of the closed subscheme cut out by `I` over a pair of affine opens is equivalent
+to flatness of its quotient algebra of sections over the base. -/
 theorem flat_resLE_subschemeι_iff {I : X.IdealSheafData} {f : X ⟶ S}
     {W : S.Opens} (hW : IsAffineOpen W) (U : X.affineOpens)
     (hUW : U.1 ≤ f ⁻¹ᵁ W) :
