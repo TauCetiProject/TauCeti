@@ -144,7 +144,45 @@ theorem cohomologyClass_eq_zero_iff : α.cohomologyClass = 0 ↔ IsMulCoboundary
   rw [← cohomologyClass_trivial (G := G) (M := M), cohomologyClass_eq_iff]
   simp
 
+/-- A natural number kills the class of a factor set exactly when its pointwise power is a
+multiplicative coboundary. -/
+theorem nsmul_cohomologyClass_eq_zero_iff (n : ℕ) :
+    n • α.cohomologyClass = 0 ↔ IsMulCoboundary₂ (fun p ↦ α p ^ n) := by
+  rw [cohomologyClass_def, ← map_nsmul, H2π_eq_zero_iff]
+  have hcoe : ⇑(n • α.toCocycles₂) = fun p ↦ Additive.ofMul (α p ^ n) := by
+    ext p
+    -- The custom coercion on `cocycles₂` is pointwise but has no nsmul application lemma.
+    change n • Additive.ofMul (α p) = Additive.ofMul (α p ^ n)
+    rfl
+  rw [hcoe]
+  exact ⟨fun h ↦ isMulCoboundary₂_of_mem_coboundaries₂ _ h,
+    fun h ↦ (coboundariesOfIsMulCoboundary₂ h).2⟩
+
 end Class
+
+/-- For a trivial coefficient action, if `n` kills the class of a factor set and the
+coefficient group is `n`-divisible, a normalized scalar rescaling makes every value have
+`n`-th power one. -/
+theorem exists_rescale_pow_eq_one (α : FactorSet G M) (htriv : ∀ (g : G) (a : M), g • a = a) {n : ℕ}
+    (hroot : Function.Surjective (fun z : M ↦ z ^ n))
+    (hα : n • α.cohomologyClass = 0) :
+    ∃ d : G → M, d 1 = 1 ∧ ∀ g h,
+      (d g * d h * (d (g * h))⁻¹ * α (g, h)) ^ n = 1 := by
+  classical
+  obtain ⟨c, hc⟩ := (α.nsmul_cohomologyClass_eq_zero_iff n).1 hα
+  simp only [htriv] at hc
+  have hc1 : c 1 = 1 := by simpa using hc 1 1
+  choose e he using fun g ↦ hroot (c g)⁻¹
+  let d (g : G) := if g = 1 then 1 else e g
+  have hd (g : G) : d g ^ n = (c g)⁻¹ := by
+    by_cases hg : g = 1
+    · simp [d, hg, hc1]
+    · simp [d, hg, he]
+  refine ⟨d, by simp [d], fun g h ↦ ?_⟩
+  simp only [mul_pow, inv_pow, hd, ← hc g h, div_eq_mul_inv]
+  apply Additive.ofMul.injective
+  simp only [ofMul_mul, ofMul_inv, ofMul_one]
+  abel
 
 /-! ### Normalizing a cocycle -/
 
