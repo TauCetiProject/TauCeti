@@ -133,12 +133,16 @@ end Reduction
 
 /-- **The reduction of `W ⧸ ℓW` is that of `W`** in characteristic `ℓ`: the reduction classes of
 `ρ.quotSMulTop ℓ` and of `ρ` agree. Here `k ⊗_ℤ W` is finitely generated over `k` as soon as
-`W ⧸ ℓW` is, even when `W` is not (`QuotSMulTop.finite_baseChange`). -/
+`k ⊗_ℤ (W ⧸ ℓW)` is, even when `W` is not. -/
 theorem reductionK0_quotSMulTop (ℓ : ℕ) [CharP k ℓ] {W : Type u} [AddCommGroup W] [Module ℤ W]
-    [Module.Finite ℤ (QuotSMulTop (ℓ : ℤ) W)] (ρ : Representation ℤ G W) :
-    haveI : Module.Finite k (k ⊗[ℤ] W) := QuotSMulTop.finite_baseChange (r := (ℓ : ℤ)) (by simp)
+    [Module.Finite k (k ⊗[ℤ] QuotSMulTop (ℓ : ℤ) W)] (ρ : Representation ℤ G W) :
+    haveI : Module.Finite k (k ⊗[ℤ] W) :=
+      Module.Finite.equiv
+        (ρ.baseChangeQuotSMulTopEquiv (A := k) (r := (ℓ : ℤ)) (by simp)).symm.toLinearEquiv
     reductionK0 k (ρ.quotSMulTop ℓ) = reductionK0 k ρ :=
-  haveI : Module.Finite k (k ⊗[ℤ] W) := QuotSMulTop.finite_baseChange (r := (ℓ : ℤ)) (by simp)
+  haveI : Module.Finite k (k ⊗[ℤ] W) :=
+    Module.Finite.equiv
+      (ρ.baseChangeQuotSMulTopEquiv (A := k) (r := (ℓ : ℤ)) (by simp)).symm.toLinearEquiv
   ExactK0.of_congr (Representation.asModuleLinearEquivOfEquiv
     (ρ.baseChangeQuotSMulTopEquiv (by simp)).symm).toFGModuleCatIso
 
