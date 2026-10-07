@@ -34,6 +34,8 @@ homomorphisms into addition of classes.
   homomorphism.
 * `TauCeti.ContCohomology.homClass_inj`: two continuous homomorphisms have the same class exactly
   when they are equal.
+* `TauCeti.ContCohomology.trivialF2Map_homClass`: pullback carries the class of a homomorphism to
+  the class of its composite.
 
 ## References
 
@@ -186,5 +188,52 @@ theorem homClass_inj {α β : H →* Multiplicative (ZMod 2)} (hα : Continuous 
     EmbeddingLike.apply_eq_iff_eq] using DFunLike.congr_fun hchar h
 
 end HomClass
+
+section Naturality
+
+variable {G H : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+
+attribute [local instance] TopRep.distribMulAction
+
+local instance continuousSMul_trivialF2_naturality_G : ContinuousSMul G (trivialF2 G).V :=
+  (isSmoothDiscrete_trivialF2 G).continuousSMul
+
+local instance continuousSMul_trivialF2_naturality_H : ContinuousSMul H (trivialF2 H).V :=
+  (isSmoothDiscrete_trivialF2 H).continuousSMul
+
+/-- **Pullback of a degree-one character class is composition:** for a continuous homomorphism
+`φ : H → G` and a continuous character `α : G → 𝔽₂`, the pullback of the class of `α` is the
+class of `α ∘ φ`. -/
+theorem trivialF2Map_homClass (φ : H →ₜ* G) (α : G →* Multiplicative (ZMod 2))
+    (hα : Continuous α) :
+    trivialF2Map φ 1 (homClass G α hα) =
+      homClass H (α.comp φ) (hα.comp φ.continuous) := by
+  let f : (trivialF2 G).V →+ (trivialF2 H).V :=
+    ((trivialF2Equiv G).trans (trivialF2Equiv H).symm).toAddMonoidHom
+  have hf (h : H) (m : (trivialF2 G).V) : f (φ h • m) = h • f m := by
+    simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]
+  have hmap := eqToHom_comp_trivialF2Map φ (ofDiscreteModule_trivialF2 G)
+    (ofDiscreteModule_trivialF2 H) f hf
+    (fun m => by simp [f, eqToHom_ofDiscreteModule_trivialF2_apply]) 1
+  have hcocycle :
+      cocyclesMap1 G (trivialF2 G).V H (trivialF2 H).V φ f
+          continuous_of_discreteTopology hf (evensHomCocycle (G := G) α hα) =
+        evensHomCocycle (G := H) (α.comp (φ : H →* G)) (hα.comp φ.continuous) := by
+    ext h
+    rw [cocyclesMap1_apply, coe_evensHomCocycle, coe_evensHomCocycle]
+    simp [f]
+  have hexp :
+      explicitMap1 G (trivialF2 G).V H (trivialF2 H).V φ f
+          continuous_of_discreteTopology hf
+            (evensHomCocycle (G := G) α hα : H1 G (trivialF2 G).V) =
+        ((evensHomCocycle (G := H) (α.comp (φ : H →* G)) (hα.comp φ.continuous) :
+            Z1 H (trivialF2 H).V) : H1 H (trivialF2 H).V) := by
+    rw [explicitMap1_mk, hcocycle]
+  rw [homClass_def, homClass_def, ← ConcreteCategory.comp_apply, hmap,
+    ConcreteCategory.comp_apply, explicitH1AddEquivContinuousCohomology_map, hexp]
+  exact hf
+
+end Naturality
 
 end TauCeti.ContCohomology
