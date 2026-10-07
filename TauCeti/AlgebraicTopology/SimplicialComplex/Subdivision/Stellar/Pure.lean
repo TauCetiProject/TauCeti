@@ -29,7 +29,7 @@ namespace PreAbstractSimplicialComplex
 variable {ι : Type*} [DecidableEq ι] {K L : PreAbstractSimplicialComplex ι}
   {σ τ : Finset ι} {v w : ι} {n : ℕ}
 
-/-- Replacing one vertex of the starred set in a containing face by the fresh vertex
+/-- Replacing one vertex of the starred set in a containing face `τ` by a vertex absent from `τ`
 gives a face of the stellar subdivision. -/
 theorem insert_erase_mem_stellarSubdivision (hτ : τ ∈ K) (hv : v ∉ τ)
     (hστ : σ ⊆ τ) (hw : w ∈ σ) : insert v (τ.erase w) ∈ stellarSubdivision K σ v := by
