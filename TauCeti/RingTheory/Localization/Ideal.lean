@@ -17,6 +17,8 @@ multiplier, as produced by Nakayama's lemma.
 
 ## Main results
 
+* `Ideal.map_algebraMap_eq_span_singleton_of_isUnit`: if the image of `r` is a unit, then
+  `r • I ≤ (t)` and `t ∈ I` imply that `I` generates `(t)` after applying the algebra map.
 * `Ideal.map_algebraMap_away_eq_span_singleton`: if `r • I ≤ (t)` and `t ∈ I`, then `I`
   generates `(t)` in the localization away from `r`.
 -/
@@ -27,21 +29,28 @@ open scoped Pointwise
 
 namespace Ideal
 
-/-- If `r • I ≤ (t)` for some `t ∈ I`, then `I` generates the principal ideal `(t)` in the
-localization away from `r`. -/
-theorem map_algebraMap_away_eq_span_singleton {B B' : Type*} [CommRing B] [CommRing B']
-    [Algebra B B'] {I : Ideal B} {r t : B} [IsLocalization.Away r B'] (ht : t ∈ I)
-    (h : r • I ≤ Ideal.span {t}) :
+/-- If the image of `r` is a unit, `r • I ≤ (t)`, and `t ∈ I`, then `I` generates the principal
+ideal `(t)` after applying the algebra map. -/
+theorem map_algebraMap_eq_span_singleton_of_isUnit {B B' : Type*} [CommSemiring B]
+    [CommSemiring B'] [Algebra B B'] {I : Ideal B} {r t : B} (ht : t ∈ I)
+    (h : r • I ≤ Ideal.span {t}) (hr : IsUnit (algebraMap B B' r)) :
     I.map (algebraMap B B') = Ideal.span {algebraMap B B' t} := by
   refine le_antisymm (Ideal.map_le_iff_le_comap.mpr fun i hi ↦ ?_) ?_
   · obtain ⟨b, hb⟩ :=
       Ideal.mem_span_singleton'.mp (h (Submodule.smul_mem_pointwise_smul i r I hi))
-    rw [Ideal.mem_comap, ← Ideal.unit_mul_mem_iff_mem _
-      (IsLocalization.Away.algebraMap_isUnit (S := B') r), ← map_mul, ← smul_eq_mul, ← hb,
+    rw [Ideal.mem_comap, ← Ideal.unit_mul_mem_iff_mem _ hr, ← map_mul, ← smul_eq_mul, ← hb,
       map_mul]
     exact Ideal.mul_mem_left _ _ (Ideal.mem_span_singleton_self _)
   · rw [Ideal.span_le, Set.singleton_subset_iff]
     exact Ideal.mem_map_of_mem _ ht
 
-end Ideal
+/-- If `r • I ≤ (t)` for some `t ∈ I`, then `I` generates the principal ideal `(t)` in the
+localization away from `r`. -/
+theorem map_algebraMap_away_eq_span_singleton {B B' : Type*} [CommSemiring B]
+    [CommSemiring B'] [Algebra B B'] {I : Ideal B} {r t : B} [IsLocalization.Away r B']
+    (ht : t ∈ I) (h : r • I ≤ Ideal.span {t}) :
+    I.map (algebraMap B B') = Ideal.span {algebraMap B B' t} :=
+  map_algebraMap_eq_span_singleton_of_isUnit ht h
+    (IsLocalization.Away.algebraMap_isUnit (S := B') r)
 
+end Ideal
