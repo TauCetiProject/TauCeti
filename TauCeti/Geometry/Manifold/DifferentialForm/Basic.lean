@@ -12,8 +12,9 @@ public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 # Rough differential forms
 
 A rough bundle-valued differential form assigns a continuous alternating map to each
-tangent fiber, with values in an arbitrary family of topological vector spaces. No
-regularity in the base point, global trivialization, connection, or fiber norm is required.
+tangent fiber, with values in an arbitrary family of real modules equipped with arbitrary
+topologies. No regularity in the base point, global trivialization, connection, or fiber norm
+is required.
 Fixed-coefficient forms are the specialization to the trivial value bundle.
 
 This is the unbundled section description of differential forms from Lee,
@@ -27,7 +28,8 @@ namespace TauCeti
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
 
-/-- A rough degree-`k` form with values in the family `V` of topological vector spaces. -/
+/-- A rough degree-`k` form with values in the family `V` of real modules equipped with arbitrary
+topologies. -/
 abbrev RoughBundleForm (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
     [ChartedSpace H M] (V : M → Type*) [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
     [∀ x, TopologicalSpace (V x)] (k : ℕ) : Type _ :=

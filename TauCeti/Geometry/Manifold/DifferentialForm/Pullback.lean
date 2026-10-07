@@ -76,6 +76,7 @@ theorem bundleMpullbackWithin_univ (f : M → M') (ω : RoughBundleForm I' M' V 
   simp
 
 /-- Within-set and ordinary pullback agree where the derivatives agree. -/
+@[simp]
 theorem bundleMpullbackWithin_eq_bundleMpullback {f : M → M'} {s : Set M} {x : M}
     (hs : UniqueMDiffWithinAt I s x) (hf : MDifferentiableAt I I' f x)
     (ω : RoughBundleForm I' M' V k) :
@@ -138,6 +139,7 @@ variable {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
   [∀ x, TopologicalSpace (V x)]
 
 /-- Within-set pullback by the identity fixes a form wherever the derivative is unique. -/
+@[simp]
 theorem bundleMpullbackWithin_id {s : Set M} {x : M} (hs : UniqueMDiffWithinAt I s x)
     (ω : RoughBundleForm I M V k) : bundleMpullbackWithin I I id s ω x = ω x := by
   ext v
