@@ -17,7 +17,7 @@ operator `TauCeti.peterWeylBlockAveraging` of a model `π` is the orthogonal pro
 onto the `π`-block, and says in its `## What is not proved here` section that this is a statement
 about a projection onto a *subspace*, not about a `G`-isotypic decomposition: the block is called
 isotypic only because it is spanned by the matrix coefficients of `π` alone. The obstruction named
-there is that `TauCeti.ContRepresentation.isotypicProjector` is the integrated operator of a
+there is that `ContRepresentation.isotypicProjector` is the integrated operator of a
 *norm*-continuous representation on a *finite-dimensional* carrier, while `L²(G)` is in general
 infinite-dimensional and its regular representation then only strongly continuous.
 
@@ -38,7 +38,7 @@ This also matches the convolution computation of the block file, which moves the
 the integrated operator of the kernel on the model's carrier.
 
 Reading the averaging kernel `dim V_π · conj χ_π` as
-`TauCeti.ContRepresentation.isotypicKernel` then identifies the two operators outright
+`ContRepresentation.isotypicKernel` then identifies the two operators outright
 (`TauCeti.peterWeylBlockAveraging_eq_isotypicProjector`), and the range identification of the
 isotypic projector turns the `π`-block into the `π`-isotypic component of the left regular
 representation — Mathlib's `isotypicComponent` of the `𝕜[G]`-module `L²(G)` — in
@@ -155,7 +155,7 @@ variable {𝕜 G : Type*} [RCLike 𝕜] [Group G] [Finite G] [TopologicalSpace G
 finite discrete group.
 
 The averaging kernel `dim V_π · conj χ_π` of `TauCeti.peterWeylBlockAveraging` *is*
-`TauCeti.ContRepresentation.isotypicKernel` of the model, and convolution against it is the
+`ContRepresentation.isotypicKernel` of the model, and convolution against it is the
 integrated action of that kernel in the left regular representation by
 `TauCeti.convolutionOperator_eq_integratedOperator_leftRegularLp`. -/
 theorem peterWeylBlockAveraging_eq_isotypicProjector (model : IrrepModel 𝕜 G) :
@@ -176,7 +176,7 @@ The block file proves that each block is *stable* under translation
 (`TauCeti.leftRegularLp_mem_peterWeylBlock`); this says the projection onto it is equivariant, which
 is what makes the block a subrepresentation complemented by the kernel of the projection. It holds
 because the averaging kernel is a class function
-(`TauCeti.ContRepresentation.isotypicKernel_conj`), the property that makes an integrated operator
+(`ContRepresentation.isotypicKernel_conj`), the property that makes an integrated operator
 an intertwiner. -/
 theorem peterWeylBlockAveraging_comp_leftRegularLp (model : IrrepModel 𝕜 G) (g : G) :
     (peterWeylBlockAveraging model).comp (leftRegularLp 𝕜 G g)

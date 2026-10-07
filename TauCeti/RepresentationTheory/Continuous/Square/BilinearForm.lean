@@ -126,7 +126,7 @@ private theorem mem_invariants_of_isInvariantForm_ofTensor (hπ : IsUnitary π) 
 
 /-- **The form of a tensor is invariant exactly when the tensor is invariant.** This is a statement
 about one tensor at a time; that *every* invariant form is the form of an invariant tensor is
-`TauCeti.ContRepresentation.map_ofTensor_invariants`, which needs finite dimensions. -/
+`ContRepresentation.map_ofTensor_invariants`, which needs finite dimensions. -/
 @[simp, grind =]
 theorem isInvariantForm_ofTensor_iff (hπ : IsUnitary π) {t : V ⊗[𝕜] V} :
     Representation.IsInvariantForm π.toRepresentation (BilinForm.ofTensor t) ↔
@@ -245,7 +245,7 @@ theorem coe_exteriorSquareInvariantsEquivAlternatingInvariantForms_apply [Finite
 
 /-- **A nonzero invariant symmetric form is the same thing as a nonzero invariant tensor of the
 symmetric square**: both sides say that the two sides of
-`TauCeti.ContRepresentation.symmetricSquareInvariantsEquivSymmetricInvariantForms` are
+`ContRepresentation.symmetricSquareInvariantsEquivSymmetricInvariantForms` are
 nontrivial. -/
 theorem exists_isInvariantForm_isSymm_ne_zero_iff [FiniteDimensional 𝕜 V] (hπ : IsUnitary π) :
     (∃ B : BilinForm 𝕜 V,
@@ -258,7 +258,7 @@ theorem exists_isInvariantForm_isSymm_ne_zero_iff [FiniteDimensional 𝕜 V] (h�
 
 /-- **A nonzero invariant alternating form is the same thing as a nonzero invariant tensor of the
 exterior square**: both sides say that the two sides of
-`TauCeti.ContRepresentation.exteriorSquareInvariantsEquivAlternatingInvariantForms` are
+`ContRepresentation.exteriorSquareInvariantsEquivAlternatingInvariantForms` are
 nontrivial. -/
 theorem exists_isInvariantForm_isAlt_ne_zero_iff [FiniteDimensional 𝕜 V] (hπ : IsUnitary π) :
     (∃ B : BilinForm 𝕜 V,

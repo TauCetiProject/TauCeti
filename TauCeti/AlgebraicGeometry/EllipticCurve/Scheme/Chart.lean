@@ -33,6 +33,9 @@ product `D₊(Xᵢ) ×_S D₊(Xⱼ)` of two charts as an open immersion from the
   projective model is `Spec` of the structure map `R → ChartRing i`.
 * `WeierstrassCurve.chartPairι_fst` and `WeierstrassCurve.chartPairι_snd`: the two projections of
   `E ×_S E` on the product of two charts.
+* `WeierstrassCurve.SpecMap_desc_chartPairι`: the point of the product of two charts given by two
+  homomorphisms out of the chart rings that agree on `R` is the point of `E ×_S E` with the
+  corresponding points of the two charts as components.
 * `WeierstrassCurve.range_chartPairι`: the product of two charts is the locus in `E ×_S E` whose
   projections lie on the two charts.
 
@@ -44,7 +47,12 @@ Adapted from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at commit
 `chartι_projModelπ`, and `chartPieceTensorIso` with its `_inv_fst` and `_inv_snd` lemmas, as
 `chartι`, `chartι_projModelOver`, `chartPairι`, `chartPairι_fst` and `chartPairι_snd`. Here the
 chart is read through `WeierstrassCurve.Projective.awayEquivChartRing`, and the product of two
-charts is an open immersion into `E ×_S E` rather than an isomorphism with a pullback.
+charts is an open immersion into `E ×_S E` rather than an isomorphism with a pullback. From the
+file `AdditionSpecPoints.lean` of the same directory: `specMap_pieceAwayZι_fst`,
+`specMap_pieceAwayZι_snd`, `specMap_pieceAwayι_fst` and `specMap_pieceAwayι_snd`, as
+`SpecMap_desc_chartPairι`. The source computes the two projections of a point of a piece of its
+cover through the left and right inclusions of the tensor product; here a point of the product of
+two charts is built from its two components through the pushout property of the tensor product.
 -/
 
 public section
@@ -127,6 +135,19 @@ theorem chartPairι_snd (i j : Fin 3) :
     W.chartPairι i j ≫ pullback.snd W.projModelOver W.projModelOver =
       Spec.map (CommRingCat.ofHom (includeRight : _ →ₐ[R] _).toRingHom) ≫ W.chartι j := by
   simp [chartPairι]
+
+/-- If the homomorphisms `α` and `β` from the chart rings `ChartRing i` and `ChartRing j` to `A`
+agree on `R`, then `Spec` of the homomorphism `a ⊗ₜ b ↦ α a * β b` they induce on
+`ChartRing i ⊗[R] ChartRing j`, followed by the product `chartPairι W i j` of the charts, is the
+morphism to `E ×_S E` with components `Spec α ≫ chartι W i` and `Spec β ≫ chartι W j`. -/
+theorem SpecMap_desc_chartPairι {A : CommRingCat.{u}} {i j : Fin 3}
+    (α : CommRingCat.of (W.toProjective.ChartRing i) ⟶ A)
+    (β : CommRingCat.of (W.toProjective.ChartRing j) ⟶ A)
+    (h : CommRingCat.ofHom (algebraMap R _) ≫ α = CommRingCat.ofHom (algebraMap R _) ≫ β) :
+    Spec.map ((CommRingCat.isPushout_tensorProduct R _ _).desc α β h) ≫ W.chartPairι i j =
+      pullback.lift (Spec.map α ≫ W.chartι i) (Spec.map β ≫ W.chartι j)
+        (by simp [← Spec.map_comp, h]) := by
+  ext <;> simp [← Spec.map_comp_assoc]
 
 /-- A point of `E ×_S E` lies on the product of the charts `D₊(Xᵢ)` and `D₊(Xⱼ)` exactly when its
 two projections lie on `D₊(Xᵢ)` and `D₊(Xⱼ)`. -/

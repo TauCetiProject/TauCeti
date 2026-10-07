@@ -28,7 +28,8 @@ fields the construction still indexes a basis over the ground field; it does not
 valuations over residue division rings. This file constructs the underlying quiver only, without
 its partial translation. The choices of representatives and bases are noncomputable.
 
-The vertices use Mathlib's `CategoryTheory.Skeleton`, and the arrows use its
+The equivalence `irreducibleMorphismQuiver.equivSkeleton` identifies the vertices with Mathlib's
+`CategoryTheory.Skeleton`, and the arrows use its
 `Module.Free.chooseBasis` on `TauCeti.irreducibleMorphismSpace`. The Hom differential identifies
 representation morphisms with a subspace of the finite product of vertex-map spaces.
 
@@ -58,10 +59,39 @@ namespace irreducibleMorphismQuiver
 
 variable {k Q}
 
+/-- The vertex type as Mathlib's skeleton of finite-dimensional indecomposables.
+
+This equivalence transports classifications of indecomposables to the vertex type. In files using
+`module` with a regular `public import`, the body of `irreducibleMorphismQuiver` is not exposed,
+so this identification is available through the equivalence and its lemmas. -/
+def equivSkeleton : irreducibleMorphismQuiver.{u, v, w, t} k Q ≃
+    Skeleton (ObjectProperty.FullSubcategory
+      (fun M : QuiverRep.{u, v, w, t} k Q ↦ IsFinDim k Q M ∧ Indecomposable M)) :=
+  Equiv.refl _
+
 /-- The vertex represented by a finite-dimensional indecomposable representation. -/
 def of {M : QuiverRep.{u, v, w, t} k Q} (hM : IsFinDim k Q M) (hI : Indecomposable M) :
     irreducibleMorphismQuiver.{u, v, w, t} k Q :=
   toSkeleton ⟨M, hM, hI⟩
+
+/-- A representation's vertex corresponds to its skeleton class, without unfolding `of`
+in importing modules. -/
+@[simp]
+theorem equivSkeleton_of {M : QuiverRep.{u, v, w, t} k Q}
+    (hM : IsFinDim k Q M) (hI : Indecomposable M) :
+    equivSkeleton (of hM hI) =
+      toSkeleton (⟨M, hM, hI⟩ : ObjectProperty.FullSubcategory
+        (fun N : QuiverRep.{u, v, w, t} k Q ↦ IsFinDim k Q N ∧ Indecomposable N)) :=
+  (rfl)
+
+/-- A skeleton class becomes the vertex of the same representation, without unfolding `of`
+in importing modules. -/
+@[simp]
+theorem equivSkeleton_symm_toSkeleton
+    (M : ObjectProperty.FullSubcategory
+      (fun N : QuiverRep.{u, v, w, t} k Q ↦ IsFinDim k Q N ∧ Indecomposable N)) :
+    equivSkeleton.symm (toSkeleton M) = of M.property.1 M.property.2 :=
+  (rfl)
 
 /-- Two representations determine the same vertex exactly when they are isomorphic. -/
 @[simp]

@@ -31,11 +31,11 @@ discharges, namely that the two irreducibles are inequivalent.
 
 * `ContRepresentation.averageOperator_eq_finrank_inv_mul_trace_smul_id`: the average of a
   self-map is its normalized trace times the identity.
-* `TauCeti.ContRepresentation.schur_orthogonality_self`: the coordinate-free first Schur
+* `ContRepresentation.schur_orthogonality_self`: the coordinate-free first Schur
   orthogonality relation.
-* `TauCeti.ContRepresentation.schur_orthogonality_basis`: the corresponding Kronecker-delta
+* `ContRepresentation.schur_orthogonality_basis`: the corresponding Kronecker-delta
   formula in an orthonormal basis.
-* `TauCeti.ContRepresentation.schur_orthogonality`: the second Schur orthogonality relation, for
+* `ContRepresentation.schur_orthogonality`: the second Schur orthogonality relation, for
   a pair of inequivalent irreducible unitary representations.
 
 The basis identity follows from the coordinate-free statement, in the same inner-product
@@ -43,8 +43,6 @@ convention. The mathematical argument follows Daniel Bump, *Lie Groups*, second 
 -/
 
 public section
-
-open _root_.ContRepresentation
 
 open MeasureTheory
 open scoped InnerProductSpace
@@ -82,12 +80,6 @@ theorem averageOperator_eq_finrank_inv_mul_trace_smul_id
   rwa [toContinuousLinearMap_averageIntertwiner, trace_averageOperator] at h
 
 end Average
-
-end ContRepresentation
-
-namespace TauCeti
-
-namespace ContRepresentation
 
 section Orthogonality
 
@@ -168,5 +160,3 @@ theorem schur_orthogonality (π : ContRepresentation 𝕜 G V)
 end Inequivalent
 
 end ContRepresentation
-
-end TauCeti
