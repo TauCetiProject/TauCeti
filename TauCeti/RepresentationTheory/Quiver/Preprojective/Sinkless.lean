@@ -26,8 +26,8 @@ module `S_v`, for every vertex `v` and every commutative ring `k`.
 
 The hypothesis is on the orientation, while `Π` does not depend on the orientation up to
 isomorphism (`TauCeti.reorientPreprojectiveAlgebraEquiv`). A connected graph admits an orientation
-without sinks exactly when it is not a tree, so the non-Dynkin trees, such as `D̃ₙ` and `Ẽ₆`,
-`Ẽ₇`, `Ẽ₈`, are not covered here.
+without sinks exactly when it is not a tree, so the non-Dynkin trees, such as `D~ₙ` and `E₆~`,
+`E₇~`, `E₈~`, are not covered here.
 
 ## Main results
 
