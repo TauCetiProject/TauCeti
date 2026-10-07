@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
-public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.LinearAlgebra.Alternating.DomCoprod
+public import TauCeti.Data.Fin.Basic
 
 /-!
 # Wedge products of continuous alternating maps
@@ -19,8 +19,8 @@ and an `l`-form with values in `F₂` into a `(k + l)`-form with values in `F₃
 The normalization is the determinant convention: the signed sum over all permutations is divided
 by `k! l!`. Equivalently, this is the unscaled sum over `(k, l)`-shuffles. In particular, the wedge
 of two one-forms is the usual two-term determinant rather than half of it. The construction starts
-with Mathlib's `MultilinearMap.domCoprod`, composes with the pairing, and then applies
-`MultilinearMap.alternatization`.
+with Mathlib's `AlternatingMap.domCoprod`, transports its domain along `finSumFinEquiv`, and
+postcomposes with the pairing.
 
 The paired construction follows the design of Yury Kudryashov's
 [`DeRhamCohomology`](https://github.com/urkud/DeRhamCohomology) project.
@@ -28,6 +28,7 @@ The paired construction follows the design of Yury Kudryashov's
 ## Main declarations
 
 * `TauCeti.wedgeWith`: the paired wedge product.
+* `TauCeti.wedgeWith_toAlternatingMap`: its characterization by alternatization.
 * `TauCeti.wedgeWith_apply`: the signed-permutation formula in every degree.
 * `TauCeti.norm_wedgeWith_le`: the sharp binomial norm bound.
 * `TauCeti.wedgeWith_compContinuousLinearMap`: compatibility with pullback by a continuous linear
@@ -59,25 +60,53 @@ private lemma pairingLinear_tmul (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (x : 
     pairingLinear mu (x ⊗ₜ[ℝ] y) = mu x y :=
   rfl
 
-private noncomputable def wedgeUnalternated {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+/-- The unalternated multilinear pairing underlying `wedgeWith`. -/
+noncomputable def wedgeWithUnalternated {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
     MultilinearMap ℝ (fun _ : Fin (k + l) => E) F₃ :=
   (pairingLinear mu).compMultilinearMap <|
-    (MultilinearMap.domCoprod phi.toContinuousMultilinearMap.toMultilinearMap
-      psi.toContinuousMultilinearMap.toMultilinearMap).domDomCongr finSumFinEquiv
+    (MultilinearMap.domCoprod phi.toAlternatingMap.toMultilinearMap
+      psi.toAlternatingMap.toMultilinearMap).domDomCongr finSumFinEquiv
 
-private lemma wedgeUnalternated_apply {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+private lemma wedgeWithUnalternated_apply {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂)
     (v : Fin (k + l) → E) :
-    wedgeUnalternated mu phi psi v =
+    wedgeWithUnalternated mu phi psi v =
       mu (phi (fun i => v (Fin.castAdd l i))) (psi (fun j => v (Fin.natAdd k j))) := by
-  simp [wedgeUnalternated, pairingLinear]
+  simp [wedgeWithUnalternated, pairingLinear]
+
+private lemma alternatization_domDomCongr {G : Type*} [AddCommGroup G] [Module ℝ G]
+    {ι ι' : Type*} [Fintype ι] [Fintype ι'] [DecidableEq ι] [DecidableEq ι']
+    (e : ι ≃ ι') (f : MultilinearMap ℝ (fun _ : ι => E) G) :
+    MultilinearMap.alternatization (f.domDomCongr e) =
+      (MultilinearMap.alternatization f).domDomCongr e := by
+  apply AlternatingMap.ext
+  intro v
+  simp only [MultilinearMap.alternatization_apply, MultilinearMap.domDomCongr_apply,
+    AlternatingMap.domDomCongr_apply]
+  symm
+  exact Fintype.sum_equiv e.permCongr _ _ fun sigma => by
+    simp
 
 private noncomputable def wedgeAlternating {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
     E [⋀^Fin (k + l)]→ₗ[ℝ] F₃ :=
-  (((k.factorial : ℝ) * (l.factorial : ℝ))⁻¹) •
-    (wedgeUnalternated mu phi psi).alternatization
+  (pairingLinear mu).compAlternatingMap <|
+    (phi.toAlternatingMap.domCoprod psi.toAlternatingMap).domDomCongr finSumFinEquiv
+
+private lemma wedgeAlternating_eq_alternatization {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
+    wedgeAlternating mu phi psi =
+      (((k.factorial : ℝ) * (l.factorial : ℝ))⁻¹) •
+        (wedgeWithUnalternated mu phi psi).alternatization := by
+  unfold wedgeAlternating wedgeWithUnalternated
+  rw [LinearMap.compMultilinearMap_alternatization,
+    alternatization_domDomCongr,
+    MultilinearMap.domCoprod_alternatization_eq]
+  simp only [Fintype.card_fin, LinearMap.compAlternatingMap_smul,
+    AlternatingMap.domDomCongr_smul]
+  rw [← Nat.cast_smul_eq_nsmul ℝ, Nat.cast_mul]
+  rw [inv_smul_smul₀ (by positivity)]
 
 private lemma wedgeAlternating_apply {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂)
@@ -87,13 +116,14 @@ private lemma wedgeAlternating_apply {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[
         ∑ sigma : Equiv.Perm (Fin (k + l)), Equiv.Perm.sign sigma •
           mu (phi (fun i => v (sigma (Fin.castAdd l i))))
             (psi (fun j => v (sigma (Fin.natAdd k j)))) := by
-  simp [wedgeAlternating, MultilinearMap.alternatization_apply, wedgeUnalternated_apply]
+  rw [wedgeAlternating_eq_alternatization]
+  simp [MultilinearMap.alternatization_apply, wedgeWithUnalternated_apply]
 
-private lemma norm_wedgeUnalternated_le {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+private lemma norm_wedgeWithUnalternated_le {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂)
     (v : Fin (k + l) → E) :
-    ‖wedgeUnalternated mu phi psi v‖ ≤ ‖mu‖ * ‖phi‖ * ‖psi‖ * ∏ i, ‖v i‖ := by
-  rw [wedgeUnalternated_apply]
+    ‖wedgeWithUnalternated mu phi psi v‖ ≤ ‖mu‖ * ‖phi‖ * ‖psi‖ * ∏ i, ‖v i‖ := by
+  rw [wedgeWithUnalternated_apply]
   calc
     _ ≤ ‖mu‖ * ‖phi (fun i => v (Fin.castAdd l i))‖ *
         ‖psi (fun j => v (Fin.natAdd k j))‖ := mu.le_opNorm₂ _ _
@@ -111,13 +141,14 @@ private lemma norm_wedgeAlternating_le {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →
     (v : Fin (k + l) → E) :
     ‖wedgeAlternating mu phi psi v‖ ≤
       (k + l).choose k * ‖mu‖ * ‖phi‖ * ‖psi‖ * ∏ i, ‖v i‖ := by
-  rw [wedgeAlternating, AlternatingMap.smul_apply, MultilinearMap.alternatization_apply,
+  rw [wedgeAlternating_eq_alternatization, AlternatingMap.smul_apply,
+    MultilinearMap.alternatization_apply,
     norm_smul]
   have hterm (sigma : Equiv.Perm (Fin (k + l))) :
-      ‖Equiv.Perm.sign sigma • wedgeUnalternated mu phi psi (v ∘ sigma)‖ ≤
+      ‖Equiv.Perm.sign sigma • wedgeWithUnalternated mu phi psi (v ∘ sigma)‖ ≤
         ‖mu‖ * ‖phi‖ * ‖psi‖ * ∏ i, ‖v i‖ := by
     simpa [Equiv.Perm.prod_comp sigma Finset.univ (fun i => ‖v i‖) (by simp),
-      Function.comp_def] using norm_wedgeUnalternated_le mu phi psi (v ∘ sigma)
+      Function.comp_def] using norm_wedgeWithUnalternated_le mu phi psi (v ∘ sigma)
   calc
     _ ≤ ‖(((k.factorial : ℝ) * (l.factorial : ℝ))⁻¹)‖ *
         ∑ _sigma : Equiv.Perm (Fin (k + l)),
@@ -141,18 +172,18 @@ private lemma wedgeAlternating_apply_one_one (mu : F₁ →L[ℝ] F₂ →L[ℝ]
     (phi : E [⋀^Fin 1]→L[ℝ] F₁) (psi : E [⋀^Fin 1]→L[ℝ] F₂) (v w : E) :
     wedgeAlternating mu phi psi ![v, w] =
       mu (phi ![v]) (psi ![w]) - mu (phi ![w]) (psi ![v]) := by
+  classical
   rw [wedgeAlternating_apply]
-  simp only [Finset.univ_perm_fin_succ, Finset.sum_map, Fintype.sum_prod_type]
-  rw [Fin.sum_univ_two]
-  simp only [Nat.factorial_one, Nat.cast_one, mul_one, inv_one, Nat.succ_eq_add_one, Nat.reduceAdd,
-    Finset.univ_unique, Fin.default_eq_zero, Fin.isValue, Equiv.Perm.default_eq,
-    Function.Embedding.coeFn_mk, Equiv.Perm.decomposeFin.symm_sign, ↓reduceIte, ite_mul, one_mul,
-    neg_mul, mul_ite, mul_neg, Fin.natAdd_eq_addNat, Fin.addNat_one,
-    Equiv.Perm.decomposeFin_symm_apply_succ, Equiv.swap_self, Equiv.refl_apply,
-    Matrix.cons_val_succ, Matrix.cons_val_fin_one, ite_smul, Units.neg_smul,
-    Finset.sum_ite_irrel, Finset.sum_singleton, Equiv.Perm.sign_one,
-    Equiv.Perm.decomposeFin_symm_of_one, one_smul, Finset.sum_neg_distrib,
-    Equiv.Perm.decomposeFin_symm_of_refl, one_ne_zero, neg_neg, smul_add, smul_neg]
+  have hperm : (Finset.univ : Finset (Equiv.Perm (Fin 2))) =
+      {1, Equiv.swap 0 1} := by
+    ext e
+    simp only [Finset.mem_univ, Finset.mem_insert, Finset.mem_singleton, true_iff]
+    exact perm_fin_two_eq_one_or_swap e
+  rw [hperm, Finset.sum_insert (by decide), Finset.sum_singleton,
+    Equiv.Perm.sign_swap (by decide : (0 : Fin 2) ≠ 1)]
+  simp only [Nat.factorial_one, Nat.cast_one, mul_one, inv_one, Equiv.Perm.sign_one,
+    Equiv.Perm.one_apply, one_smul, Units.neg_smul, Fin.natAdd_eq_addNat, Fin.addNat_one,
+    Matrix.cons_val_succ, Matrix.cons_val_fin_one]
   have h₀ : (fun i : Fin 1 => ![v, w] (Fin.castAdd 1 i)) = ![v] := by
     funext i
     fin_cases i
@@ -172,7 +203,8 @@ private lemma wedgeAlternating_apply_one_one (mu : F₁ →L[ℝ] F₂ →L[ℝ]
     simp only [Nat.succ_eq_add_one, Nat.reduceAdd, Fin.isValue, Fin.zero_eta,
       Fin.succ_zero_eq_one, Equiv.swap_apply_right, Matrix.cons_val_zero,
       Matrix.cons_val_fin_one]
-  rw [h₀, h₁, h₂, h₃, sub_eq_add_neg]
+  rw [h₀, h₁, h₂, h₃]
+  rw [sub_eq_add_neg]
 
 /-- The paired wedge product of continuous alternating maps, normalized as the signed sum over all
 permutations divided by `k! l!`. Equivalently, it is the unscaled sum over `(k, l)`-shuffles. -/
@@ -190,17 +222,76 @@ theorem wedgeWith_apply {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
       (((k.factorial : ℝ) * (l.factorial : ℝ))⁻¹) •
         ∑ sigma : Equiv.Perm (Fin (k + l)), Equiv.Perm.sign sigma •
           mu (phi (fun i => v (sigma (Fin.castAdd l i))))
-            (psi (fun j => v (sigma (Fin.natAdd k j)))) :=
-  wedgeAlternating_apply mu phi psi v
+            (psi (fun j => v (sigma (Fin.natAdd k j)))) := by
+  simp only [wedgeWith, AlternatingMap.coe_mkContinuous]
+  exact wedgeAlternating_apply mu phi psi v
+
+/-- The underlying alternating map of the paired wedge is the alternatization of its unalternated
+multilinear pairing, divided by `k! l!`. -/
+theorem wedgeWith_toAlternatingMap {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
+    (wedgeWith mu phi psi).toAlternatingMap =
+      (((k.factorial : ℝ) * (l.factorial : ℝ))⁻¹) •
+        (wedgeWithUnalternated mu phi psi).alternatization := by
+  simp only [wedgeWith]
+  exact wedgeAlternating_eq_alternatization mu phi psi
 
 /-- On two one-forms, the paired wedge is the usual two-term determinant, with no factor `1 / 2`. -/
 theorem wedgeWith_apply_one_one (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin 1]→L[ℝ] F₁) (psi : E [⋀^Fin 1]→L[ℝ] F₂) (v w : E) :
     wedgeWith mu phi psi ![v, w] =
-      mu (phi ![v]) (psi ![w]) - mu (phi ![w]) (psi ![v]) :=
-  wedgeAlternating_apply_one_one mu phi psi v w
+      mu (phi ![v]) (psi ![w]) - mu (phi ![w]) (psi ![v]) := by
+  simp only [wedgeWith, AlternatingMap.coe_mkContinuous]
+  exact wedgeAlternating_apply_one_one mu phi psi v w
+
+/-- Postcomposing the pairing postcomposes the paired wedge. -/
+theorem wedgeWith_postcomp {F₄ : Type*} [NormedAddCommGroup F₄] [NormedSpace ℝ F₄]
+    {k l : ℕ} (nu : F₃ →L[ℝ] F₄) (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
+    wedgeWith ((ContinuousLinearMap.compL ℝ F₂ F₃ F₄ nu).comp mu) phi psi =
+      nu.compContinuousAlternatingMap (wedgeWith mu phi psi) := by
+  ext v
+  simp only [wedgeWith_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.compL_apply,
+    ContinuousLinearMap.compContinuousAlternatingMap_coe, Function.comp_apply, map_smul, map_sum]
+  congr 2
+  funext sigma
+  exact (nu.map_smul_of_tower (Equiv.Perm.sign sigma) _).symm
+
+/-- The paired wedge is additive in the pairing. -/
+@[simp]
+theorem wedgeWith_add_pairing {k l : ℕ} (mu nu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
+    wedgeWith (mu + nu) phi psi = wedgeWith mu phi psi + wedgeWith nu phi psi := by
+  ext v
+  simp only [wedgeWith_apply, add_apply, ContinuousAlternatingMap.add_apply, Finset.smul_sum,
+    smul_add]
+  rw [Finset.sum_add_distrib]
+
+/-- The paired wedge respects scalar multiplication of the pairing. -/
+@[simp]
+theorem wedgeWith_smul_pairing {k l : ℕ} (c : ℝ) (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
+    wedgeWith (c • mu) phi psi = c • wedgeWith mu phi psi := by
+  ext v
+  simp only [wedgeWith_apply, ContinuousAlternatingMap.smul_apply,
+    Finset.smul_sum, smul_smul]
+  apply Finset.sum_congr rfl
+  intro sigma _
+  rw [smul_apply, smul_apply, smul_comm (Equiv.Perm.sign sigma) c]
+  simp only [smul_smul]
+  ring_nf
+
+/-- The paired wedge for the zero pairing is zero. -/
+@[simp]
+theorem wedgeWith_zero_pairing {k l : ℕ} (phi : E [⋀^Fin k]→L[ℝ] F₁)
+    (psi : E [⋀^Fin l]→L[ℝ] F₂) :
+    wedgeWith (0 : F₁ →L[ℝ] F₂ →L[ℝ] F₃) phi psi = 0 := by
+  ext v
+  simp only [wedgeWith_apply, zero_apply, smul_zero, Finset.sum_const_zero,
+    ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
 
 /-- The paired wedge is additive in its first form. -/
+@[simp]
 theorem wedgeWith_add_left {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi phi' : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
     wedgeWith mu (phi + phi') psi = wedgeWith mu phi psi + wedgeWith mu phi' psi := by
@@ -212,6 +303,7 @@ theorem wedgeWith_add_left {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
   simp only [add_apply, smul_add]
 
 /-- The paired wedge is additive in its second form. -/
+@[simp]
 theorem wedgeWith_add_right {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi psi' : E [⋀^Fin l]→L[ℝ] F₂) :
     wedgeWith mu phi (psi + psi') = wedgeWith mu phi psi + wedgeWith mu phi psi' := by
@@ -223,6 +315,7 @@ theorem wedgeWith_add_right {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃
   simp only [smul_add]
 
 /-- The paired wedge respects scalar multiplication in its first form. -/
+@[simp]
 theorem wedgeWith_smul_left {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (c : ℝ)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
     wedgeWith mu (c • phi) psi = c • wedgeWith mu phi psi := by
@@ -236,6 +329,7 @@ theorem wedgeWith_smul_left {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃
   ring_nf
 
 /-- The paired wedge respects scalar multiplication in its second form. -/
+@[simp]
 theorem wedgeWith_smul_right {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (c : ℝ)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
     wedgeWith mu phi (c • psi) = c • wedgeWith mu phi psi := by
