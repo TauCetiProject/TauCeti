@@ -49,6 +49,7 @@ def stellarSubdivisionLinearMap (σ : Finset ι) (v : ι) : (ι →₀ ℝ) →�
     ((∑ i ∈ σ, Finsupp.single i ((σ.card : ℝ)⁻¹)) - Finsupp.single v 1)
 
 /-- The coordinate formula for the stellar realization map. -/
+@[simp]
 theorem stellarSubdivisionLinearMap_apply (σ : Finset ι) (v : ι) (x : ι →₀ ℝ) (i : ι) :
     stellarSubdivisionLinearMap σ v x i =
       x i + x v * ((if i ∈ σ then (σ.card : ℝ)⁻¹ else 0) - if i = v then 1 else 0) := by
