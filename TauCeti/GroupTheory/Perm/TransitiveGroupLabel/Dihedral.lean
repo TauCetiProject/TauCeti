@@ -141,6 +141,9 @@ theorem TransitiveGroupLabel.nonempty_mulEquiv_dihedralGroup_four_two
   obtain ⟨e⟩ := h.nonempty_mulEquiv_referenceSubgroup
   exact ⟨e.trans referenceSubgroupFourTwoMulEquivDihedralGroup⟩
 
+/-- The reflection `i ↦ 3 - i` of the pentagon. -/
+private abbrev pentagonReflection : Perm (Fin 5) := swap 0 3 * swap 1 2
+
 private theorem pentagonReflection_mul_self : pentagonReflection * pentagonReflection = 1 := by
   decide
 
