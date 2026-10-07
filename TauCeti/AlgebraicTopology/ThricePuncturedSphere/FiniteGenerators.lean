@@ -217,7 +217,6 @@ theorem transport_δZero_eq_periph0 :
 abbrev oneBasePt : puncturedNeighborhoodOne :=
   puncturedNeighborhoodOneHomeomorphZero.symm zeroBasePt
 
-@[simp]
 theorem coe_oneBasePt : ((oneBasePt : ThricePuncturedSphere) : ℂ) = 3 / 4 := by
   rw [oneBasePt, puncturedNeighborhoodOneHomeomorphZero_symm_apply, coe_mob01,
     coe_zeroBasePt]
