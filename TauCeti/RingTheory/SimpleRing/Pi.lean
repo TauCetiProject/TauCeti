@@ -71,7 +71,7 @@ private theorem image_coordinate_eq_zero_or_one (f : (∀ i, A i) ≃+* (∀ j, 
     · subst k
       simpa using (one_mem_centralIdempotents (R := A i))
     · simpa [Pi.single_eq_of_ne h] using (zero_mem_centralIdempotents (R := A k))
-  have hmem := (mem_centralIdempotents_pi B).mp (map_mem_centralIdempotents f hsingle) j
+  have hmem := (mem_centralIdempotents_pi B).mp (f.map_mem_centralIdempotents hsingle) j
   simpa [centralIdempotents_eq_pair] using hmem
 
 variable (f : (∀ i, A i) ≃+* (∀ j, B j))

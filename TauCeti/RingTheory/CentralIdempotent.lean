@@ -19,7 +19,7 @@ everything.  Such an element splits `R` as a product of the two rings `eR` and `
 central idempotents record how far `R` is from being indecomposable as a ring.
 
 This file collects the three facts that make `TauCeti.centralIdempotents` a *counting* invariant.
-It is preserved by ring isomorphisms (`TauCeti.centralIdempotentsCongr`); it is computed
+It is preserved by ring isomorphisms (`RingEquiv.centralIdempotentsCongr`); it is computed
 coordinatewise on a product (`TauCeti.centralIdempotentsPiEquiv`); and a simple ring has exactly
 two of them, `0` and `1` (`TauCeti.centralIdempotents_eq_pair`).  Together these say that a finite
 product of simple rings has exactly `2 ^ (number of factors)` central idempotents
@@ -41,7 +41,7 @@ already maps onto `B` (`TauCeti.exists_algHom_surjective_of_prod`).
 ## Main definitions
 
 * `TauCeti.centralIdempotents R`: the set of central idempotents of `R`.
-* `TauCeti.centralIdempotentsCongr`: a ring isomorphism `R ≃+* S` restricts to an equivalence
+* `RingEquiv.centralIdempotentsCongr`: a ring isomorphism `R ≃+* S` restricts to an equivalence
   between the central idempotents of `R` and those of `S`.
 * `TauCeti.centralIdempotentsPiEquiv`: the central idempotents of a product of rings are the
   families of central idempotents of the factors.
@@ -97,7 +97,13 @@ theorem zero_mem_centralIdempotents : (0 : R) ∈ centralIdempotents R :=
 theorem one_mem_centralIdempotents : (1 : R) ∈ centralIdempotents R :=
   ⟨IsIdempotentElem.one, Subring.one_mem _⟩
 
-section Congr
+end TauCeti
+
+namespace RingEquiv
+
+open TauCeti
+
+variable {R S : Type*} [Ring R] [Ring S]
 
 /-- A ring isomorphism preserves central idempotents. -/
 theorem map_mem_centralIdempotents (f : R ≃+* S) {e : R} (he : e ∈ centralIdempotents R) :
@@ -124,7 +130,11 @@ theorem card_centralIdempotents_congr (f : R ≃+* S) :
     Nat.card (centralIdempotents R) = Nat.card (centralIdempotents S) :=
   Nat.card_congr (centralIdempotentsCongr f)
 
-end Congr
+end RingEquiv
+
+namespace TauCeti
+
+variable {R : Type*} [Ring R]
 
 section Pi
 
