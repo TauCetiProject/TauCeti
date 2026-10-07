@@ -10,12 +10,13 @@ public import TauCeti.CategoryTheory.Preadditive.Indecomposable
 import TauCeti.RingTheory.LocalRing.Basic
 
 /-!
-# Full additive functors on objects with local endomorphism rings
+# Additive functors on objects with local endomorphism rings
 
 A full additive functor sends a local endomorphism ring to a local endomorphism ring,
 provided the image object is nonzero. It also reflects isomorphisms between objects with
-local endomorphism rings whose images are nonzero. These results let additive quotients
-retain indecomposability and distinguish isomorphism classes even though they are not faithful.
+local endomorphism rings whose images are nonzero. Only surjectivity on the relevant hom-sets
+is needed. These results let additive quotients retain indecomposability and distinguish
+isomorphism classes even though they are not faithful.
 
 No splitting of idempotents in the quotient is required: locality of its endomorphism ring
 already rules out nontrivial biproduct decompositions.
@@ -56,13 +57,14 @@ theorem indecomposable_obj_of_map_surjective_of_isLocalRing_end [HasBinaryBiprod
   exact TauCeti.indecomposable_of_injective_of_isLocalRing hX (id : End (F.obj X) → _)
     Function.injective_id rfl rfl (fun _ ↦ rfl)
 
-variable [F.Full]
-
-/-- A full additive functor reflects isomorphisms between objects with local endomorphism
-rings, as long as the source image is nonzero. -/
+/-- An additive functor surjective on morphisms from `Y` to `X` reflects invertibility
+of a morphism from `X` to `Y` when their endomorphism rings are local and the source image
+is nonzero. -/
 theorem isIso_of_map_isIso_of_isLocalRing_end [IsLocalRing (End X)] [IsLocalRing (End Y)]
-    (hX : ¬ IsZero (F.obj X)) (f : X ⟶ Y) [IsIso (F.map f)] : IsIso f := by
-  obtain ⟨g, hg⟩ := F.map_surjective (CategoryTheory.inv (F.map f))
+    (hX : ¬ IsZero (F.obj X))
+    (hF : Function.Surjective (F.map : (Y ⟶ X) → (F.obj Y ⟶ F.obj X)))
+    (f : X ⟶ Y) [IsIso (F.map f)] : IsIso f := by
+  obtain ⟨g, hg⟩ := hF (CategoryTheory.inv (F.map f))
   have : IsIso (f ≫ g) := F.isIso_of_map_eq_id_of_isLocalRing_end hX _ (by
     rw [F.map_comp, hg, IsIso.hom_inv_id])
   refine TauCeti.isIso_of_isIso_comp
@@ -72,15 +74,19 @@ theorem isIso_of_map_isIso_of_isLocalRing_end [IsLocalRing (End X)] [IsLocalRing
     TauCeti.IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem (R := End Y)
       (a := e) (by simpa only [IsIdempotentElem, End.mul_def] using he)
 
-/-- A full additive functor detects isomorphism classes of objects with local endomorphism
-rings and nonzero source image. -/
+/-- An additive functor surjective on morphisms in both directions between two objects
+detects their isomorphism classes when their endomorphism rings are local and the source
+image is nonzero. -/
 theorem nonempty_iso_obj_iff_of_isLocalRing_end [IsLocalRing (End X)] [IsLocalRing (End Y)]
-    (hX : ¬ IsZero (F.obj X)) : Nonempty (F.obj X ≅ F.obj Y) ↔ Nonempty (X ≅ Y) := by
+    (hX : ¬ IsZero (F.obj X))
+    (hF : Function.Surjective (F.map : (X ⟶ Y) → (F.obj X ⟶ F.obj Y)))
+    (hF' : Function.Surjective (F.map : (Y ⟶ X) → (F.obj Y ⟶ F.obj X))) :
+    Nonempty (F.obj X ≅ F.obj Y) ↔ Nonempty (X ≅ Y) := by
   constructor
   · rintro ⟨e⟩
-    obtain ⟨f, hf⟩ := F.map_surjective e.hom
+    obtain ⟨f, hf⟩ := hF e.hom
     have : IsIso (F.map f) := hf.symm ▸ e.isIso_hom
-    have : IsIso f := F.isIso_of_map_isIso_of_isLocalRing_end hX f
+    have : IsIso f := F.isIso_of_map_isIso_of_isLocalRing_end hX hF' f
     exact ⟨asIso f⟩
   · exact fun ⟨e⟩ ↦ ⟨F.mapIso e⟩
 

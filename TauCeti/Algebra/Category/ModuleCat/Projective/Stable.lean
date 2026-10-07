@@ -63,7 +63,7 @@ theorem isIso_projectiveStableFunctor_map_iff {M N : ModuleCat.{v} A}
   have : IsLocalRing (End M) := (TauCeti.indecomposable_iff_isLocalRing_end M hM).mp hiM
   have : IsLocalRing (End N) := (TauCeti.indecomposable_iff_isLocalRing_end N hN).mp hiN
   have hnonzero := ((indecomposable_projectiveStableFunctor_obj_iff M hM hiM).mpr hpM).1
-  exact ⟨fun _ ↦ (S).isIso_of_map_isIso_of_isLocalRing_end hnonzero f,
+  exact ⟨fun _ ↦ (S).isIso_of_map_isIso_of_isLocalRing_end hnonzero (S).map_surjective f,
     fun _ ↦ inferInstance⟩
 
 /-- Two non-projective finite-length indecomposable modules are stably isomorphic exactly
@@ -78,5 +78,6 @@ theorem nonempty_iso_projectiveStableFunctor_obj_iff (M N : ModuleCat.{v} A)
   have : IsLocalRing (End N) := (TauCeti.indecomposable_iff_isLocalRing_end N hN).mp hiN
   exact (S).nonempty_iso_obj_iff_of_isLocalRing_end
     (((indecomposable_projectiveStableFunctor_obj_iff M hM hiM).mpr hpM).1)
+    (S).map_surjective (S).map_surjective
 
 end ModuleCat
