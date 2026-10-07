@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AddCircle
 public import TauCeti.Algebra.CrossedProduct.TwoTorsion
 public import TauCeti.Algebra.Module.Torsion.Basic
-public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.CentralSimple
+public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.CentralSimple.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Invariant
 
 /-!

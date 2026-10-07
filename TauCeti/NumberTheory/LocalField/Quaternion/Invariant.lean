@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.CentralSimpleInvariant
+public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.CentralSimple.Invariant
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.RootsOfUnity
 public import TauCeti.NumberTheory.LocalField.Quaternion.Subgroup
 
@@ -89,10 +89,11 @@ theorem invMap_brauerGroupEquivBr_quaternionClass_eq_half_iff (a b : Kˣ) :
 such a class exists by `TauCeti.ClassFieldTheory.h2MuToBr_range` and is unique by
 `TauCeti.ClassFieldTheory.h2MuToBr_injective`. The normalized invariant `h2MuEquivZMod` sends `y`
 to `1` exactly when the Hilbert symbol `(a, b)_K` is `-1`. -/
-theorem h2MuEquivZMod_eq_one_iff_hilbertSymbol_eq_neg_one (hn : IsUnit ((2 : ℕ) : K))
-    (a b : Kˣ) {y : continuousCohomology 2 (muNRep 2 K)}
+theorem h2MuEquivZMod_eq_one_iff_hilbertSymbol_eq_neg_one (a b : Kˣ)
+    {y : continuousCohomology 2 (muNRep 2 K)}
     (hy : h2MuToBr 2 K y = brauerGroupEquivBr K (Additive.ofMul (quaternionClass a b))) :
-    h2MuEquivZMod K hn y = 1 ↔ hilbertSymbol a b = -1 := by
+    h2MuEquivZMod K (by exact_mod_cast isUnit_of_invertible (2 : K)) y = 1 ↔
+      hilbertSymbol a b = -1 := by
   have half : ZMod.toRatAddCircle 2 1 = ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) := by
     simpa using ZMod.toRatAddCircle_natCast 2 1
   rw [h2MuEquivZMod_eq_iff, hy, half, invMap_brauerGroupEquivBr_quaternionClass_eq_half_iff]
