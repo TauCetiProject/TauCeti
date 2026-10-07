@@ -15,7 +15,7 @@ public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 # Uniqueness of ordered couplings
 
 A nonnegative finitely supported function on a product of linear orders whose support is a
-chain is determined by its two marginals. Its mass on a rectangle of lower sets is the minimum
+chain is determined by its two marginals. Its mass on a rectangle of lower sets is the infimum
 of the two marginal masses. Taking differences of four such rectangles recovers each coefficient.
 This is the uniqueness property underlying the staircase triangulation of a product of simplices.
 No normalization of the total mass or finiteness of the ambient orders is required.
@@ -32,14 +32,14 @@ open Set
 
 variable {α β G : Type*}
 
-/-- The mass of a lower rectangle in a nonnegative chain-supported coupling is the minimum
+/-- The mass of a lower rectangle in a nonnegative chain-supported coupling is the infimum
 of the masses of its two coordinate lower sets. -/
-theorem sum_indicator_prod_eq_min [Preorder α] [Preorder β] [AddCommMonoid G] [LinearOrder G]
+theorem sum_indicator_prod_eq_inf [Preorder α] [Preorder β] [AddCommMonoid G] [SemilatticeInf G]
     [IsOrderedAddMonoid G] (w : (α × β) →₀ G) (hw : ∀ p, 0 ≤ w p)
     (hc : IsChain (· ≤ ·) (w.support : Set (α × β)))
     {s : Set α} {t : Set β} (hs : IsLowerSet s) (ht : IsLowerSet t) :
     w.sum (fun p r => (s ×ˢ t).indicator (fun _ => r) p) =
-      min (w.sum fun p r => s.indicator (fun _ => r) p.1)
+      (w.sum fun p r => s.indicator (fun _ => r) p.1) ⊓
         (w.sum fun p r => t.indicator (fun _ => r) p.2) := by
   classical
   -- A chain cannot meet both off-diagonal rectangles; one coordinate lower set contains the other.
@@ -64,7 +64,7 @@ theorem sum_indicator_prod_eq_min [Preorder α] [Preorder β] [AddCommMonoid G] 
       by_cases hqt : q.2 ∈ t
       · simp [hqt, hsub q hq hqt]
       · by_cases hqs : q.1 ∈ s <;> simp [hqt, hqs, hw q]
-    rw [heq, min_eq_right hle]
+    rw [heq, inf_eq_right.mpr hle]
   · have hsub : ∀ p ∈ w.support, p.1 ∈ s → p.2 ∈ t := by
       intro p hp hps
       by_contra hpt
@@ -81,7 +81,7 @@ theorem sum_indicator_prod_eq_min [Preorder α] [Preorder β] [AddCommMonoid G] 
       by_cases hps : p.1 ∈ s
       · simp [hps, hsub p hp hps]
       · by_cases hpt : p.2 ∈ t <;> simp [hps, hpt, hw p]
-    rw [heq, min_eq_left hle]
+    rw [heq, inf_eq_left.mpr hle]
 
 /-- A coefficient is the alternating sum of the masses of the four lower rectangles whose
 upper bounds use strict or non-strict comparison with that coefficient's coordinates. -/
@@ -107,7 +107,7 @@ theorem sum_indicator_Iic_prod_sub_sub_add [LinearOrder α] [LinearOrder β]
 
 /-- Two nonnegative chain-supported couplings with equal marginals coincide. -/
 theorem eq_of_mapDomain_eq_of_isChain_support [LinearOrder α] [LinearOrder β]
-    [AddCommGroup G] [LinearOrder G]
+    [AddCommGroup G] [SemilatticeInf G]
     [IsOrderedAddMonoid G] (w v : (α × β) →₀ G)
     (hw : ∀ p, 0 ≤ w p) (hv : ∀ p, 0 ≤ v p)
     (hcw : IsChain (· ≤ ·) (w.support : Set (α × β)))
@@ -130,8 +130,8 @@ theorem eq_of_mapDomain_eq_of_isChain_support [LinearOrder α] [LinearOrder β]
       (by simp) (by simp [indicator_add]),
       sum_mapDomain_index (h := fun b r => t.indicator (fun _ => r) b)
         (by simp) (by simp [indicator_add])] at hg
-    rw [sum_indicator_prod_eq_min w hw hcw hs ht,
-      sum_indicator_prod_eq_min v hv hcv hs ht, hf, hg]
+    rw [sum_indicator_prod_eq_inf w hw hcw hs ht,
+      sum_indicator_prod_eq_inf v hv hcv hs ht, hf, hg]
   ext ⟨a, b⟩
   rw [← sum_indicator_Iic_prod_sub_sub_add w a b, ← sum_indicator_Iic_prod_sub_sub_add v a b]
   simp only [← Iic_prod_Iic]
