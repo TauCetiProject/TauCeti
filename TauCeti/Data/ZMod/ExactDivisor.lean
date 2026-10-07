@@ -65,11 +65,6 @@ Atkin–Lehner matrix `TauCeti.atkinLehnerMatrix N Q`. -/
 def exactDivisorIdempotent (N Q : ℕ) : ZMod N :=
   (((N / Q : ℕ) : ℤ) * Nat.gcdB Q (N / Q) : ℤ)
 
-/-- A unit reduced along `ZMod.unitsMap` is the reduction of the underlying residue. -/
-private theorem val_unitsMap {m n : ℕ} (hd : n ∣ m) (u : (ZMod m)ˣ) :
-    (ZMod.unitsMap hd u : ZMod n) = ZMod.castHom hd (ZMod n) u := by
-  rw [ZMod.unitsMap_val, ZMod.castHom_apply]
-
 namespace Nat.IsExactDivisor
 
 variable {N Q : ℕ}
@@ -147,7 +142,8 @@ theorem unitsInvPart_unitsInvPart (h : Q ∥ N) (u : (ZMod N)ˣ) :
 theorem unitsMap_unitsInvPart_left (h : Q ∥ N) (u : (ZMod N)ˣ) :
     ZMod.unitsMap h.dvd (h.unitsInvPart u) = (ZMod.unitsMap h.dvd u)⁻¹ := by
   refine Units.ext ?_
-  rw [← map_inv, val_unitsMap, val_unitsMap, coe_unitsInvPart, map_add, map_mul, map_mul, map_sub,
+  rw [← map_inv, ZMod.unitsMap_val, ZMod.unitsMap_val, ← ZMod.castHom_apply (h := h.dvd),
+    ← ZMod.castHom_apply (h := h.dvd), coe_unitsInvPart, map_add, map_mul, map_mul, map_sub,
     map_one, h.castHom_exactDivisorIdempotent_left, sub_self, zero_mul, add_zero, one_mul]
 
 /-- **`unitsInvPart` fixes the residue modulo `N / Q`.** -/
@@ -156,8 +152,10 @@ theorem unitsMap_unitsInvPart_right (h : Q ∥ N) (u : (ZMod N)ˣ) :
     ZMod.unitsMap (Nat.div_dvd_of_dvd h.dvd) (h.unitsInvPart u) =
       ZMod.unitsMap (Nat.div_dvd_of_dvd h.dvd) u := by
   refine Units.ext ?_
-  rw [val_unitsMap, val_unitsMap, coe_unitsInvPart, map_add, map_mul, map_mul, map_sub, map_one,
-    h.castHom_exactDivisorIdempotent_right, sub_zero, zero_mul, zero_add, one_mul]
+  rw [ZMod.unitsMap_val, ZMod.unitsMap_val, ← ZMod.castHom_apply (h := Nat.div_dvd_of_dvd h.dvd),
+    ← ZMod.castHom_apply (h := Nat.div_dvd_of_dvd h.dvd), coe_unitsInvPart, map_add, map_mul,
+    map_mul, map_sub, map_one, h.castHom_exactDivisorIdempotent_right, sub_zero, zero_mul,
+    zero_add, one_mul]
 
 /-- **`unitsInvPart u` is the unit with residue `u⁻¹` modulo `Q` and `u` modulo `N / Q`.** -/
 theorem eq_unitsInvPart_iff (h : Q ∥ N) {u v : (ZMod N)ˣ} :
@@ -166,8 +164,10 @@ theorem eq_unitsInvPart_iff (h : Q ∥ N) {u v : (ZMod N)ˣ} :
   refine ⟨?_, fun ⟨hQ, hR⟩ ↦ Units.ext <| h.eq_of_castHom_eq ?_ ?_⟩
   · rintro rfl
     exact ⟨h.unitsMap_unitsInvPart_left u, h.unitsMap_unitsInvPart_right u⟩
-  · rw [← val_unitsMap, ← val_unitsMap, h.unitsMap_unitsInvPart_left, hQ]
-  · rw [← val_unitsMap, ← val_unitsMap, h.unitsMap_unitsInvPart_right, hR]
+  · rw [ZMod.castHom_apply, ZMod.castHom_apply, ← ZMod.unitsMap_val h.dvd,
+      ← ZMod.unitsMap_val h.dvd, h.unitsMap_unitsInvPart_left, hQ]
+  · rw [ZMod.castHom_apply, ZMod.castHom_apply, ← ZMod.unitsMap_val (Nat.div_dvd_of_dvd h.dvd),
+      ← ZMod.unitsMap_val (Nat.div_dvd_of_dvd h.dvd), h.unitsMap_unitsInvPart_right, hR]
 
 /-- **The character shift `χ_Q · χ_{N/Q} ↦ χ_Q⁻¹ · χ_{N/Q}`**: on a character of `(ZMod N)ˣ` pulled
 back from a character `ψ` modulo `Q` and a character `φ` modulo `N / Q`, precomposition with
