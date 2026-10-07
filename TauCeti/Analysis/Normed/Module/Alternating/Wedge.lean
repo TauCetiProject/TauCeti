@@ -77,19 +77,6 @@ theorem wedgeWithUnalternated_apply {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[�
       mu (phi (fun i => v (Fin.castAdd l i))) (psi (fun j => v (Fin.natAdd k j))) := by
   simp [wedgeWithUnalternated, pairingLinear]
 
-private lemma alternatization_domDomCongr {G : Type*} [AddCommGroup G] [Module ℝ G]
-    {ι ι' : Type*} [Fintype ι] [Fintype ι'] [DecidableEq ι] [DecidableEq ι']
-    (e : ι ≃ ι') (f : MultilinearMap ℝ (fun _ : ι => E) G) :
-    MultilinearMap.alternatization (f.domDomCongr e) =
-      (MultilinearMap.alternatization f).domDomCongr e := by
-  apply AlternatingMap.ext
-  intro v
-  simp only [MultilinearMap.alternatization_apply, MultilinearMap.domDomCongr_apply,
-    AlternatingMap.domDomCongr_apply]
-  symm
-  exact Fintype.sum_equiv e.permCongr _ _ fun sigma => by
-    simp
-
 private noncomputable def wedgeAlternating {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
     E [⋀^Fin (k + l)]→ₗ[ℝ] F₃ :=
@@ -101,9 +88,23 @@ private lemma wedgeAlternating_eq_alternatization {k l : ℕ} (mu : F₁ →L[�
     wedgeAlternating mu phi psi =
       (((k.factorial : ℝ) * (l.factorial : ℝ))⁻¹) •
         (wedgeWithUnalternated mu phi psi).alternatization := by
+  have htransport :
+      MultilinearMap.alternatization
+          ((MultilinearMap.domCoprod phi.toAlternatingMap.toMultilinearMap
+            psi.toAlternatingMap.toMultilinearMap).domDomCongr finSumFinEquiv) =
+        (MultilinearMap.alternatization
+          (MultilinearMap.domCoprod phi.toAlternatingMap.toMultilinearMap
+            psi.toAlternatingMap.toMultilinearMap)).domDomCongr finSumFinEquiv := by
+    apply AlternatingMap.ext
+    intro v
+    simp only [MultilinearMap.alternatization_apply, MultilinearMap.domDomCongr_apply,
+      AlternatingMap.domDomCongr_apply]
+    symm
+    exact Fintype.sum_equiv finSumFinEquiv.permCongr _ _ fun sigma => by
+      simp
   unfold wedgeAlternating wedgeWithUnalternated
   rw [LinearMap.compMultilinearMap_alternatization,
-    alternatization_domDomCongr,
+    htransport,
     MultilinearMap.domCoprod_alternatization_eq]
   simp only [Fintype.card_fin, LinearMap.compAlternatingMap_smul,
     AlternatingMap.domDomCongr_smul]
