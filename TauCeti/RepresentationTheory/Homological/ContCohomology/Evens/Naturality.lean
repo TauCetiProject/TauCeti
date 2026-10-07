@@ -8,10 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Class
 
 /-!
-# Naturality of the class of a homomorphism and of the index-two graph class
-
-The class `TauCeti.ContCohomology.homClass α ∈ H¹(G, 𝔽₂)` of a continuous homomorphism
-`α : G → 𝔽₂` pulls back along a continuous homomorphism `φ : H → G` to the class of `α ∘ φ`.
+# Naturality of the index-two graph class
 
 Let `U` be an open subgroup of index two in a topological group `G`, and `α : U → 𝔽₂` a
 continuous homomorphism, with graph class `N^{Ev}[α] ∈ H²(G, 𝔽₂)`
@@ -35,8 +32,6 @@ that differ by an inner automorphism of the absolute Galois group of the base.
 
 ## Main results
 
-* `TauCeti.ContCohomology.trivialF2Map_homClass`: pullback of the class of a homomorphism along a
-  continuous homomorphism is the class of the composite.
 * `TauCeti.ContCohomology.trivialF2Map_graphClass`: pullback of the graph class along a continuous
   homomorphism is the graph class of the pulled-back subgroup and homomorphism.
 * `TauCeti.ContCohomology.graphClass_comp_of_conj`: the graph class is invariant under conjugation.
@@ -75,16 +70,6 @@ omit [IsTopologicalGroup G] [LocallyCompactSpace G] [IsTopologicalGroup H]
 private theorem trivialF2Transfer_smul (φ : H →ₜ* G) (h : H) (m : (trivialF2 G).V) :
     trivialF2Transfer (φ h • m) = h • (trivialF2Transfer m : (trivialF2 H).V) := by
   simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]
-
-omit [LocallyCompactSpace G] [LocallyCompactSpace H] in
-/-- **Naturality of the class of a homomorphism.** For a continuous homomorphism `φ : H → G`,
-pulling the class of a continuous `α : G → 𝔽₂` back along `φ` gives the class of `α ∘ φ`. -/
-theorem trivialF2Map_homClass (φ : H →ₜ* G) (α : G →* Multiplicative (ZMod 2))
-    (hα : Continuous α) :
-    trivialF2Map φ 1 (homClass G α hα) =
-      homClass H (α.comp (φ : H →* G)) (hα.comp φ.continuous) := by
-  rw [homClass_eq_cochainClass, homClass_eq_cochainClass]
-  exact trivialF2Map_cochainClass_inhomogeneousCochain1 φ _ _ _ _
 
 /-- **Naturality of the graph class.** For a continuous homomorphism `φ : H → G`, an open
 subgroup `U` of index two in `G` whose preimage `φ⁻¹(U)` also has index two, and a continuous

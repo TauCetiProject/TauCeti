@@ -8,7 +8,7 @@ module
 public import TauCeti.FieldTheory.Galois.SquareRoot
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Basic
 public import TauCeti.FieldTheory.GaloisCohomology.Restriction
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Naturality
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialF2.Character
 
 /-!
 # The Kummer class of a unit as the class of a character
@@ -66,7 +66,8 @@ variable {K : Type u} [Field K]
 
 open Classical in
 /-- **The sign of `r` under `g`**: `rootSign r g` is `0` when `g` fixes `r` and `1` otherwise.
-For `r² ∈ K` it is the Kummer cocycle `g ↦ g r / r ∈ μ₂` read in `𝔽₂`. -/
+When `r ≠ 0`, `r² ∈ K`, and `2` is invertible in `K`, it is the Kummer cocycle
+`g ↦ g r / r ∈ μ₂` read in `𝔽₂`. -/
 def rootSign (r : SeparableClosure K) (g : AbsoluteGaloisGroup K) : ZMod 2 :=
   if g r = r then 0 else 1
 
@@ -77,23 +78,26 @@ theorem rootSign_of_apply_eq {r : SeparableClosure K} {g : AbsoluteGaloisGroup K
   simp [rootSign, h]
 
 /-- The sign of a root that `g` moves is `1`. -/
+@[simp]
 theorem rootSign_of_apply_ne {r : SeparableClosure K} {g : AbsoluteGaloisGroup K}
     (h : g r ≠ r) : rootSign r g = 1 := by
   simp [rootSign, h]
 
 /-- The sign of `r` under `g` vanishes exactly when `g` fixes `r`. -/
+@[simp]
 theorem rootSign_eq_zero_iff {r : SeparableClosure K} {g : AbsoluteGaloisGroup K} :
     rootSign r g = 0 ↔ g r = r := by
   by_cases h : g r = r
   · simp [h]
-  · simp [rootSign_of_apply_ne h, h]
+  · simp [h]
 
 /-- The sign of `r` under `g` is `1` exactly when `g` moves `r`. -/
+@[simp]
 theorem rootSign_eq_one_iff {r : SeparableClosure K} {g : AbsoluteGaloisGroup K} :
     rootSign r g = 1 ↔ g r ≠ r := by
   by_cases h : g r = r
   · simp [h]
-  · simp [rootSign_of_apply_ne h, h]
+  · simp [h]
 
 /-- The sign of `r` under the identity is `0`. -/
 @[simp]
@@ -227,12 +231,13 @@ theorem continuous_galoisKummerCharacter (σ : L →ₐ[K] SeparableClosure K) (
   continuous_ofAdd.comp ((continuous_rootSign r).comp continuous_subtype_val)
 
 /-- **The Kummer class of `a ∈ Lˣ`, carried to `galoisSubgroup K L σ`, is the class of its Kummer
-character**: `kummerClass_eq_homClass` over `L` at the square root of `a` corresponding to `r`,
-transported along `galoisSubgroupEquiv K L σ`, which sends `γ` to its action on `σ L`. -/
+character**: for a square root `r` of `σ a`, the transported class is represented by the character
+`γ ↦ rootSign r γ`. -/
 theorem galoisF2Iso_inv_kummerClass [Invertible (2 : L)] (σ : L →ₐ[K] SeparableClosure K)
     (a : Lˣ) (r : SeparableClosure K) (hr : r ^ 2 = σ (a : L)) :
     (galoisF2Iso K L σ 1).inv (kummerClass a) =
       homClass _ (galoisKummerCharacter σ a r hr) (continuous_galoisKummerCharacter σ a r hr) := by
+  -- Apply the character comparison over `L`, then transport it along the subgroup equivalence.
   let e := separableClosureRingEquiv K L σ
   have hr' : e.symm r ^ 2 = algebraMap L (SeparableClosure L) a := by
     rw [← map_pow, hr, separableClosureRingEquiv_symm_apply_eq_algebraMap]
