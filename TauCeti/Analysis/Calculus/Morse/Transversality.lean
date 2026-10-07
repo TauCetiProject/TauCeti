@@ -51,8 +51,9 @@ of `p`, and the complementary dimension for the stable set of `q`.
   intersection of the tangent spaces.
 * `TauCeti.IsNondegenerateCriticalPoint.span_tangentConeAt_unstableSet_inter_stableSet`: the
   tangent space of the intersection is the intersection of the tangent spaces.
-* `TauCeti.IsNondegenerateCriticalPoint.finrank_span_tangentConeAt_inter_add_morseIndex`: the
-  intersection has dimension `morseIndex f p - morseIndex f q`.
+* `finrank_span_tangentConeAt_unstableSet_inter_stableSet_add_morseIndex` (in the namespace
+  `TauCeti.IsNondegenerateCriticalPoint`): the intersection has dimension
+  `morseIndex f p - morseIndex f q`.
 * `TauCeti.IsNondegenerateCriticalPoint.morseIndex_lt_of_mem_unstableSet_inter_stableSet`: along a
   transverse trajectory joining distinct critical points, the Morse index drops strictly.
 
@@ -157,7 +158,8 @@ theorem span_tangentConeAt_unstableSet_inter_stableSet (hp : IsNondegenerateCrit
 critical point `p` and the stable set of a Morse critical point `q` meet transversally at `y`,
 then the tangent space of `W^u(p) ∩ W^s(q)` at `y` has dimension
 `morseIndex f p - morseIndex f q`. -/
-theorem finrank_span_tangentConeAt_inter_add_morseIndex (hp : IsNondegenerateCriticalPoint f p)
+theorem finrank_span_tangentConeAt_unstableSet_inter_stableSet_add_morseIndex
+    (hp : IsNondegenerateCriticalPoint f p)
     (hq : IsNondegenerateCriticalPoint f q) (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
     (hyu : y ∈ Flow.unstableSet (negativeGradientFlow f hf) p)
     (hys : y ∈ Flow.stableSet (negativeGradientFlow f hf) q)
@@ -187,7 +189,8 @@ theorem morseIndex_lt_of_mem_unstableSet_inter_stableSet (hp : IsNondegenerateCr
     (htr : Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊔
       Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) = ⊤) :
     morseIndex f q < morseIndex f p := by
-  have hdim := hp.finrank_span_tangentConeAt_inter_add_morseIndex hq hfs hf hyu hys htr
+  have hdim :=
+    hp.finrank_span_tangentConeAt_unstableSet_inter_stableSet_add_morseIndex hq hfs hf hyu hys htr
   set φ := negativeGradientFlow f hf
   -- The velocity `-∇f y` of the trajectory through `y` is tangent to the invariant set
   -- `W^u(p) ∩ W^s(q)`.
