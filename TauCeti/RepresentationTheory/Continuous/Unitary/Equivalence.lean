@@ -17,12 +17,9 @@ over an algebraically closed `RCLike` field it can always be rescaled to one tha
 notions of equivalence coincide. Isometric transport preserves matrix coefficients when both
 defining vectors move along the same map (`LinearIsometryEquiv.matrixCoeff_congr`).
 
-The argument is Schur's lemma applied to `T† ∘ T`. If `T` intertwines `π` with `ρ` then, both
-representations being unitary, the adjoint `T†` intertwines `ρ` with `π`; hence `T† ∘ T` is a
-self-intertwiner of the irreducible `π`, so over an algebraically closed field it is a scalar `c`.
-Taking norms of the inner-product identity gives `‖T v‖² = ‖c‖ ‖v‖²`. Since `T` is
-injective and the irreducible carrier is nonzero, `‖c‖ > 0`, and rescaling `T` by `1 / √‖c‖`
-gives the required isometry.
+This identifies equivalence classes of finite-dimensional irreducible unitary representations
+with their unitary equivalence classes. It lets one choose representatives for the unitary dual
+and transport their matrix coefficients while preserving inner products.
 
 ## Main statements
 
@@ -55,7 +52,7 @@ theorem exists_linearIsometryEquiv_congr_eq {π : ContRepresentation 𝕜 G V}
     (hirr : π.toRepresentation.IsIrreducible) (φ : Equiv π ρ) :
     ∃ e : V ≃ₗᵢ[𝕜] W, ContinuousLinearEquiv.congr e.toContinuousLinearEquiv π = ρ := by
   let : FiniteDimensional 𝕜 W := φ.toLinearEquiv.finiteDimensional
-  set T : V →L[𝕜] W := φ.toContIntertwiningMap.toContinuousLinearMap
+  set T : V →L[𝕜] W := φ.toContIntertwiningMap.toContinuousLinearMap with hTdef
   have hT : ∀ g : G, T ∘L π g = ρ g ∘L T := fun g ↦ φ.isIntertwining g
   have hTapp : ∀ (g : G) (v : V), T (π g v) = ρ g (T v) := fun g v ↦
     congrArg (fun f : V →L[𝕜] W ↦ f v) (hT g)
@@ -100,10 +97,13 @@ theorem exists_linearIsometryEquiv_congr_eq {π : ContRepresentation 𝕜 G V}
   let L : V ≃ₗ[𝕜] W :=
     φ.toContinuousLinearEquiv.toLinearEquiv.trans (LinearEquiv.smulOfNeZero 𝕜 W b hbne)
   have hL : ∀ v : V, L v = b • T v := fun v ↦ calc
-    L v = b • φ.toContinuousLinearEquiv v := rfl
+    L v = b • φ.toContinuousLinearEquiv v := by
+      simp only [L, LinearEquiv.trans_apply, LinearEquiv.smulOfNeZero_apply,
+        ContinuousLinearEquiv.coe_toLinearEquiv]
     _ = b • φ.toContIntertwiningMap v :=
       congrArg (b • ·) (φ.toContinuousLinearEquiv_apply v)
-    _ = b • T v := rfl
+    _ = b • T v := by
+      rw [hTdef, ContIntertwiningMap.toContinuousLinearMap_apply]
   have hLnorm : ∀ v : V, ‖L v‖ = ‖v‖ := by
     intro v
     rw [hL, norm_smul, hbnorm, hnorm v, ← mul_assoc, inv_mul_cancel₀ hsqrt.ne', one_mul]
