@@ -62,6 +62,8 @@ and `fB` to `π₁(A ∩ B, x)`, so they glue. Uniqueness is the generation half
 * `TauCeti.vanKampenLift`, `TauCeti.vanKampenLift_bijective`, `TauCeti.vanKampenEquiv`: the
   canonical homomorphism from the free product, and the theorem that it is bijective when `A ∩ B`
   is simply connected.
+* `TauCeti.vanKampenLift_surjective`: the canonical homomorphism is surjective when `A ∩ B`
+  is path connected.
 * `TauCeti.vanKampenWideDesc`, `TauCeti.vanKampenWideDesc_map`: the universal property of
   `π₁(X, x)` for a family whose pairwise intersections are all `C`.
 * `TauCeti.vanKampenWide_hom_ext`: homomorphisms out of `π₁(X, x)` are determined by their
@@ -397,6 +399,16 @@ theorem vanKampenLift_apply_inr (A B : Set X) (x : X) (hxA : x ∈ A) (hxB : x �
     vanKampenLift A B x hxA hxB (Monoid.Coprod.inr g) =
       FundamentalGroup.map (ContinuousMap.subtypeVal B) ⟨x, hxB⟩ g :=
   (rfl)
+
+/-- **The generation half of the based van Kampen theorem.** Every loop class is an image
+of an element of the free product of the two subspace groups. -/
+theorem vanKampenLift_surjective (hxA : x ∈ A) (hxB : x ∈ B)
+    (hCover : interior A ∪ interior B = univ)
+    (hA : IsPathConnected A) (hB : IsPathConnected B) (hAB : IsPathConnected (A ∩ B)) :
+    Function.Surjective (vanKampenLift A B x hxA hxB) := by
+  rw [← MonoidHom.range_eq_top, vanKampenLift_def]
+  exact (Monoid.Coprod.range_lift _ _).trans
+    (FundamentalGroup.range_map_subtypeVal_sup_eq_top hCover hA hB hAB hxA hxB)
 
 /-- **The based Seifert--van Kampen theorem for a simply connected overlap.**
 

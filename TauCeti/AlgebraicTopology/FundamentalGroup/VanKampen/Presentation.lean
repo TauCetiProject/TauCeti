@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroup.VanKampen.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
-import TauCeti.AlgebraicTopology.FundamentalGroup.CoverGeneration
 
 /-!
 # The free-product presentation in van Kampen's theorem
@@ -126,15 +125,6 @@ theorem ker_vanKampenLift (hCover : interior A ∪ interior B = univ)
   apply (QuotientGroup.eq_one_iff g).mp
   exact (DFunLike.congr_fun hfac g).symm.trans (by
     rw [MonoidHom.comp_apply, MonoidHom.mem_ker.mp hg, map_one])
-
-/-- **The generation half of the based van Kampen theorem.** Every loop class is an image
-of an element of the free product of the two subspace groups. -/
-theorem vanKampenLift_surjective (hCover : interior A ∪ interior B = univ)
-    (hA : IsPathConnected A) (hB : IsPathConnected B) (hAB : IsPathConnected (A ∩ B)) :
-    Function.Surjective (vanKampenLift A B x hxA hxB) := by
-  rw [← MonoidHom.range_eq_top, vanKampenLift_def]
-  exact (Coprod.range_lift _ _).trans
-    (FundamentalGroup.range_map_subtypeVal_sup_eq_top hCover hA hB hAB hxA hxB)
 
 /-- **The free-product quotient presentation of the fundamental group.** For a cover by
 two path-connected sets with path-connected intersection containing the basepoint, the
