@@ -39,9 +39,10 @@ stable and unstable sets are exactly the coordinate planes, and the remaining an
 * `TauCeti.IsAdaptedPseudoGradient.mvfderiv_apply_nonpos`: `df(X) ≤ 0` everywhere.
 * `TauCeti.IsAdaptedPseudoGradient.eq_zero_iff`: the zeros of an adapted pseudo-gradient are
   exactly the critical points of `f`.
-* `TauCeti.IsAdaptedPseudoGradient.antitone_comp`: `f` is antitone along every integral curve.
+* `TauCeti.IsAdaptedPseudoGradient.antitone_comp`: `f` is antitone along every integral curve
+  along which it is differentiable.
 * `TauCeti.IsAdaptedPseudoGradient.strictAnti_comp`: `f` is strictly antitone along an integral
-  curve that never meets a critical point.
+  curve along which it is differentiable and that never meets a critical point.
 
 ## References
 
@@ -117,7 +118,8 @@ theorem eq_zero_iff (hX : IsAdaptedPseudoGradient f X) {x : M} :
   ⟨fun h ↦ by_contra fun hx ↦ hX.ne_zero_of_mfderiv_ne_zero hx h, hX.eq_zero_of_mfderiv_eq_zero⟩
 
 omit [FiniteDimensional ℝ E] in
-/-- **`f` is antitone along every integral curve of an adapted pseudo-gradient.** -/
+/-- **`f` is antitone along every integral curve of an adapted pseudo-gradient** along which `f` is
+differentiable. -/
 theorem antitone_comp (hX : IsAdaptedPseudoGradient f X)
     (hf : ∀ t, MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f (γ t)) (hγ : IsMIntegralCurve γ X) :
     Antitone (f ∘ γ) :=
@@ -125,8 +127,8 @@ theorem antitone_comp (hX : IsAdaptedPseudoGradient f X)
     fun t ↦ hX.mvfderiv_apply_nonpos (γ t)
 
 omit [FiniteDimensional ℝ E] in
-/-- **`f` is strictly antitone along an integral curve of an adapted pseudo-gradient that never
-meets a critical point.** -/
+/-- **`f` is strictly antitone along an integral curve of an adapted pseudo-gradient** along which
+`f` is differentiable and that never meets a critical point. -/
 theorem strictAnti_comp (hX : IsAdaptedPseudoGradient f X)
     (hf : ∀ t, MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f (γ t)) (hγ : IsMIntegralCurve γ X)
     (hcrit : ∀ t, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (γ t) ≠ 0) : StrictAnti (f ∘ γ) :=
