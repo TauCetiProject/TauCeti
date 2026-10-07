@@ -28,8 +28,9 @@ c_R : K₀(proj R) ⟶ G₀(mod R)
 
 induced by the inclusion of the finitely generated projectives into the finitely generated modules.
 Here `K₀(proj R)` is the exact `K₀` of the finitely generated projectives and `G₀(mod R)` is the
-exact `K₀` of the finitely generated modules. Over a noetherian ring the latter is the usual `G₀`;
-over a general ring the usual `G₀` is defined through pseudo-coherent modules instead. The first
+exact `K₀` of the finitely generated modules. Over a noetherian ring the latter is the usual `G₀`
+(Weibel, *The K-book*, Definition II.6.2); over a general ring the usual `G₀` is defined through
+pseudo-coherent modules instead (Example II.7.1.4 and Exercise II.7.3 there). The first
 structure is the split one, by
 `TauCeti.finiteProjectiveModulesExactStructure_eq_split`, because a short exact sequence of
 modules with projective quotient splits.
@@ -104,7 +105,8 @@ Artinian ring, in the indecomposable-projective and simple bases.
 ## References
 
 * Charles A. Weibel, *The K-book: An Introduction to Algebraic K-theory*, Chapter II, Sections 6
-  and 7, for `K₀(proj R)`, `G₀(mod R)` and the resolution theorem.
+  and 7, for `K₀(proj R)`, `G₀(mod R)` and the resolution theorem; Definition II.6.2 for `G₀` of a
+  noetherian ring, and Example II.7.1.4 and Exercise II.7.3 for `G₀` of a general ring.
 * Ibrahim Assem, Daniel Simson, and Andrzej Skowroński, *Elements of the Representation Theory of
   Associative Algebras I*, Chapter III, Section 3, for the Cartan map of a finite-dimensional
   algebra.
