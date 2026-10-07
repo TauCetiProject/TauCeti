@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.NormalForm
-import all TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.Basic
 
 /-!
 # Reduced spanning words at the type-`D` fork
@@ -45,22 +44,6 @@ local notation "Π" => signlessPreprojectiveAlgebra k (DoubledQuiver DG)
 local notation "π" => signlessPreprojectiveMk k (DoubledQuiver DG)
 local notation "c" => n - 3
 local notation "e" => fun a : Fin (DynkinType.D n).rank => π (vertexIdempotent k (vertex DG a))
-
-/-- The two longest alternating fork words cancel in every source/target corner of `Dₙ`.
-The exponent counts backtracks, each of arrow length two. -/
-@[simp]
-theorem signlessPreprojectiveDBranchWord_add_eq_zero (hn : 3 ≤ n)
-    (a b : Fin (DynkinType.D n).rank) :
-    signlessPreprojectiveDBranchWord k a b true (c + 1) +
-      signlessPreprojectiveDBranchWord k a b false (c + 1) = 0 := by
-  have hsum := forkTurn_add_pow_eq_zero k (G := DG) («c» := n - 3)
-    (by rw [DynkinType.rank_D]; omega) (diagramGraph_D_adj hn)
-  simp only [forkTurn] at hsum
-  simp only [signlessPreprojectiveDBranchWord_def, Nat.add_eq_zero_iff,
-    Nat.one_ne_zero, and_false, ite_false, Bool.false_eq_true, ite_true,
-    Nat.add_sub_cancel]
-  rw [← add_mul, ← add_mul, ← mul_add, ← add_mul, ← pow_succ', hsum]
-  simp only [mul_zero, zero_mul]
 
 /-- The fork vertex of the Bourbaki-labelled `Dₙ` diagram. -/
 def preprojectiveDForkVertex (n : ℕ) (hn : 3 ≤ n) : Fin (DynkinType.D n).rank :=
@@ -136,9 +119,9 @@ theorem signlessPreprojectiveDForkWords_mem_cornerSubmodule (hn : 3 ≤ n)
         (e (preprojectiveDForkVertex n hn)) := by
   rcases i with (_ | ⟨l, t⟩) | u
   · rw [signlessPreprojectiveDForkWords_inl_none]
-    have hid := IsIdempotentElem.map
-      (vertexIdempotent_mul_self (k := k) (vertex DG (preprojectiveDForkVertex n hn))) π
-    exact (mem_cornerSubmodule_iff k hid hid).mpr (by simp only [hid.eq])
+    simpa only [signlessPreprojectiveDBranchWord_fork_zero] using
+      signlessPreprojectiveDBranchWord_mem_cornerSubmodule k
+        (preprojectiveDForkVertex n hn) (preprojectiveDForkVertex n hn) false 0
   · exact signlessPreprojectiveDBranchWord_mem_cornerSubmodule k _ _ l (t.val + 1)
   · exact signlessPreprojectiveDBranchWord_mem_cornerSubmodule k _ _ true (c + 1)
 
