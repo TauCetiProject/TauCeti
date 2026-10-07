@@ -67,7 +67,7 @@ private theorem orderAt_reflect_le (p : Polynomial (MvPolynomial (Fin n) 𝕜))
   simpa only [g, Fin.cons_zero, Fin.tail_cons] using
     MvPolynomial.orderAt_le_of_analyticAt_mul_eq
       ((finSuccEquiv 𝕜 n).symm (p.reflect N)) ((finSuccEquiv 𝕜 n).symm p)
-      (Fin.cons z a) hg hu (pow_ne_zero N hz) heq
+      (Fin.cons z a) hg hu heq
 
 /-- Reflection at a fixed bound preserves the ambient order at reciprocal nonzero
 coordinates. The bound concerns the formal polynomial, not its specialized fibers. -/

@@ -13,7 +13,7 @@ public import TauCeti.Analysis.Analytic.Order
 
 An analytic curve through a point cannot lower the ambient order of a polynomial.
 Together with a line detecting that order, this compares ambient orders under analytic
-coordinate substitutions and multiplication by an analytic unit. These comparisons allow
+coordinate substitutions and multiplication by an analytic function. These comparisons allow
 polynomial order to be transported through local coordinate changes, even when the coordinate
 change itself is not polynomial.
 -/
@@ -71,13 +71,12 @@ theorem orderAt_le_analyticOrderAt_eval (p : MvPolynomial σ 𝕜)
   rw [← Pi.pow_def, analyticOrderAt_pow (hδ i)]
   simpa only [nsmul_one] using nsmul_le_nsmul_right (hδorder i) (d i)
 
-/-- An analytic substitution and multiplication by an analytic unit cannot lower ambient
+/-- An analytic substitution and multiplication by an analytic function cannot lower ambient
 polynomial order. The identity is required only near the comparison point. -/
 theorem orderAt_le_of_analyticAt_mul_eq [Fintype σ]
     (p : MvPolynomial τ 𝕜) (q : MvPolynomial σ 𝕜) (a : σ → 𝕜)
     {g : (σ → 𝕜) → τ → 𝕜} {u : (σ → 𝕜) → 𝕜}
     (hg : ∀ i, AnalyticAt 𝕜 (fun x ↦ g x i) a) (hu : AnalyticAt 𝕜 u a)
-    (hu0 : u a ≠ 0)
     (heq : ∀ᶠ x in 𝓝 a, eval (g x) p * u x = eval x q) :
     p.orderAt (g a) ≤ q.orderAt a := by
   by_cases hq : q = 0
@@ -91,15 +90,13 @@ theorem orderAt_le_of_analyticAt_mul_eq [Fintype σ]
     simpa only [Function.comp_def] using (hg i).comp_of_eq hline (by simp)
   have hua : AnalyticAt 𝕜 (fun t : 𝕜 ↦ u (a + t • v)) 0 := by
     simpa only [Function.comp_def] using hu.comp_of_eq hline (by simp)
-  have hunit : analyticOrderAt (fun t : 𝕜 ↦ u (a + t • v)) 0 = 0 :=
-    hua.analyticOrderAt_eq_zero.2 (by simpa using hu0)
   have hidentity := hline.continuousAt.tendsto.eventually (by simpa using heq)
   have horder := analyticOrderAt_congr hidentity
   rw [← Pi.mul_def, analyticOrderAt_mul
     (by simpa only [aeval_eq_eval] using AnalyticAt.aeval_mvPolynomial hga p) hua,
-    hunit, add_zero, hv.self_of_nhds] at horder
+    hv.self_of_nhds] at horder
   have hbound := p.orderAt_le_analyticOrderAt_eval hga
   simp only [zero_smul, add_zero] at hbound
-  exact hbound.trans_eq (horder.trans hm)
+  exact (hbound.trans le_self_add).trans_eq (horder.trans hm)
 
 end MvPolynomial
