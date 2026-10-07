@@ -335,6 +335,30 @@ theorem isChain_of_mem_orderedProd {σ : Finset (α × β)}
     (hσ : σ ∈ orderedProd K L) : IsChain (· ≤ ·) (σ : Set (α × β)) :=
   (mem_orderedProd_iff.mp hσ).2.2
 
+/-- The simplicial first-coordinate projection from an abstract ordered product. -/
+def orderedProdFst (K : AbstractSimplicialComplex α) (L : AbstractSimplicialComplex β) :
+    PreAbstractSimplicialComplex.SimplicialMap
+      (K.orderedProd L).toPreAbstractSimplicialComplex K.toPreAbstractSimplicialComplex where
+  toFun := Prod.fst
+  map_face' := fun _ h => image_fst_mem_of_mem_orderedProd h
+
+/-- The first-coordinate projection acts on vertices by `Prod.fst`. -/
+@[simp]
+theorem coe_orderedProdFst (K : AbstractSimplicialComplex α)
+    (L : AbstractSimplicialComplex β) : ⇑(K.orderedProdFst L) = Prod.fst := (rfl)
+
+/-- The simplicial second-coordinate projection from an abstract ordered product. -/
+def orderedProdSnd (K : AbstractSimplicialComplex α) (L : AbstractSimplicialComplex β) :
+    PreAbstractSimplicialComplex.SimplicialMap
+      (K.orderedProd L).toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex where
+  toFun := Prod.snd
+  map_face' := fun _ h => image_snd_mem_of_mem_orderedProd h
+
+/-- The second-coordinate projection acts on vertices by `Prod.snd`. -/
+@[simp]
+theorem coe_orderedProdSnd (K : AbstractSimplicialComplex α)
+    (L : AbstractSimplicialComplex β) : ⇑(K.orderedProdSnd L) = Prod.snd := (rfl)
+
 /-- Ordered product is monotone in both abstract simplicial complexes. -/
 theorem orderedProd_mono (hK : K ≤ K') (hL : L ≤ L') :
     orderedProd K L ≤ orderedProd K' L' := by
