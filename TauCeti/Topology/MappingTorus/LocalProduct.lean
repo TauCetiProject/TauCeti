@@ -125,10 +125,14 @@ the fibre coordinate unchanged. -/
     ((localProduct φ a).symm p : MappingTorus φ) =
       mk φ p.2 (AddCircle.equivIco (1 : ℝ) a p.1) := by
   rw [localProduct, Homeomorph.symm_trans_apply]
-  simp only [Homeomorph.symm_trans_apply, Homeomorph.prodCongr_symm,
+  simp only [Homeomorph.symm_trans_apply, Homeomorph.symm_symm, Homeomorph.prodCongr_symm,
     Homeomorph.prodComm_symm, Homeomorph.coe_prodComm, Homeomorph.coe_prodCongr,
     Homeomorph.refl_symm, Homeomorph.refl_apply, Homeomorph.setCongr]
-  exact cylinderHomeomorph_apply φ a _
+  rw [cylinderHomeomorph_apply]
+  simp only [Prod.map_fst, Prod.fst_swap, id_eq, Prod.map_snd, Prod.snd_swap,
+    Homeomorph.symm_trans_apply, Homeomorph.homeomorph_mk_coe_symm, equivOfEq_symm_apply,
+    OpenPartialHomeomorph.toHomeomorphSourceTarget_symm_apply_coe,
+    AddCircle.openPartialHomeomorphCoe_symm_apply]
 
 /-- The local product chart recovers the fibre coordinate of a cylinder point whose height
 lies in the chosen interval. -/
