@@ -21,9 +21,7 @@ the original leading coefficient vanishes upon specialization. Reversal is taken
 formal degree before specialization; it must not be recomputed at a smaller fiber degree.
 
 The identities include repeated roots and constant polynomials. No separability or
-characteristic-zero hypothesis is needed. The passage from split fields to arbitrary rings
-uses Mathlib's `Polynomial.induction_of_Splits_of_injective_of_surjective`. The root calculations
-use `Polynomial.discr_prod_X_sub_C` and `TauCeti.discr_C_mul`.
+characteristic-zero hypothesis is needed.
 
 ## References
 
@@ -39,6 +37,10 @@ open Finset
 namespace Polynomial
 
 variable {R : Type*} [CommRing R]
+
+/- The passage from split fields to arbitrary rings uses Mathlib's
+`Polynomial.induction_of_Splits_of_injective_of_surjective`. The root calculations use
+`Polynomial.discr_prod_X_sub_C` and `TauCeti.discr_C_mul`. -/
 
 private theorem discr_comp_X_add_C_of_splits {K : Type*} [Field K] {f : K[X]}
     (hf : f.Splits) (a : K) : (f.comp (X + C a)).discr = f.discr := by
