@@ -86,6 +86,19 @@ theorem Away.lift_algebraMap (φ : A →+* R) {f : A} (hf : IsUnit (φ f)) (a : 
     IsScalarTower.algebraMap_apply (𝒜 0) A, IsLocalization.Away.lift_eq,
     SetLike.GradeZero.algebraMap_apply]
 
+/-- Changing the value ring of homogeneous coordinates commutes with the chart lift. -/
+@[simp]
+theorem _root_.RingHom.comp_homogeneousLocalizationAwayLift {S : Type*} [CommRing S]
+    (ψ : R →+* S) (φ : A →+* R)
+    {f : A} (hf : IsUnit (φ f)) :
+    ψ.comp (Away.lift 𝒜 φ hf) = Away.lift 𝒜 (ψ.comp φ) (hf.map ψ) := by
+  unfold Away.lift
+  rw [← RingHom.comp_assoc]
+  congr 1
+  apply IsLocalization.ringHom_ext (Submonoid.powers f)
+  ext a
+  simp [IsLocalization.Away.lift_eq]
+
 /-- `Away.lift` is compatible with the restriction `awayMap : A_{(f)} →+* A_{(fg)}`. -/
 theorem Away.lift_comp_awayMap (φ : A →+* R) {e : ι} {f g x : A} (hg : g ∈ 𝒜 e)
     (hx : x = f * g) (hφx : IsUnit (φ x)) (hφf : IsUnit (φ f)) :

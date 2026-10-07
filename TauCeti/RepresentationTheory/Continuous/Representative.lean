@@ -31,7 +31,7 @@ representations rather than about functions:
   involution of `C(G, 𝕜)`.
 
 Characters are sums of diagonal matrix coefficients, so they lie in `𝓡(G)` as well
-(`TauCeti.ContRepresentation.character_mem_representativeSubmodule`).
+(`ContRepresentation.character_mem_representativeSubmodule`).
 
 ## Implementation notes
 
@@ -48,11 +48,11 @@ is `⟪·, w⟫` for some `w`, so pairing with a functional produces no function
 
 No unitarity is required, of `𝓡(G)` or of any lemma about it: none of the three closure properties
 uses it, `π ⊗ ρ` and the conjugate of `π` being available for an arbitrary continuous `π`. The
-unitary case is the one Layer 4 and Layer 5 work in, and that the three constructions preserve
-unitarity is recorded with each of them
+unitary case is used for Schur orthogonality and Peter-Weyl. Preservation of unitarity is recorded
+with each of the three constructions
 (`TauCeti.ContRepresentation.IsUnitary.tprod`, `TauCeti.ContRepresentation.IsUnitary.conjugate`,
 `TauCeti.ContRepresentation.IsUnitary.congr`); on a *compact* group the distinction is empty
-anyway, since Haar averaging (Layer 1) unitarizes.
+anyway, since Haar averaging unitarizes.
 
 Neither `TauCeti.IsRepresentative` nor `TauCeti.representativeSubmodule` exposes its
 implementation. What downstream arguments need of them is supplied by
@@ -61,7 +61,7 @@ implementation. What downstream arguments need of them is supplied by
 
 **Point separation is deliberately absent.** That `𝓡(G)` separates the points of a compact `G` is
 equivalent to the Peter-Weyl theorem, so it cannot be recorded at this stage without circularity;
-it is a Layer 5 corollary of the analytic density theorem, proved in
+it is a corollary of the analytic density theorem, proved in
 `TauCeti/RepresentationTheory/Compact/RepresentativeDensity.lean`, not an input to it.
 
 ## Main definitions
@@ -82,16 +82,16 @@ it is a Layer 5 corollary of the analytic density theorem, proved in
   themselves are closed under multiplication and conjugation and contain the constants and `0`.
 * `TauCeti.mul_mem_representativeSubmodule`, `TauCeti.star_mem_representativeSubmodule`: the same
   closure properties for their span.
-* `TauCeti.ContRepresentation.character_mem_representativeSubmodule`: characters lie in `𝓡(G)`.
+* `ContRepresentation.character_mem_representativeSubmodule`: characters lie in `𝓡(G)`.
 
-This is the representative-`*`-subalgebra item of Layer 3 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-the algebra whose uniform density in `C(G)` is the analytic core of Layer 5. The mathematical
+The uniform density of this algebra in `C(G)` is the analytic core of Peter-Weyl. The mathematical
 development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2, and
 T. Bröcker, T. tom Dieck, *Representations of Compact Lie Groups*, Chapter III.
 -/
 
 public section
+
+open _root_.ContRepresentation
 
 open scoped InnerProductSpace
 
@@ -258,7 +258,8 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [Monoid G] [TopologicalSpace G]
 /-- **The character of a finite-dimensional continuous representation lies in `𝓡(G)`.** Its
 conjugate is the sum of the diagonal matrix coefficients, and `𝓡(G)` is closed under
 conjugation. -/
-theorem character_mem_representativeSubmodule (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
+theorem _root_.ContRepresentation.character_mem_representativeSubmodule
+    (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
     character π hπ ∈ representativeSubmodule 𝕜 G := by
   have h : character π hπ =
       star (∑ i, matrixCoeff π hπ (stdOrthonormalBasis 𝕜 V i) (stdOrthonormalBasis 𝕜 V i)) := by

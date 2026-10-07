@@ -55,7 +55,11 @@ explicit.
 * `TauCeti.GridDiagram.pentagonRectangleWeight_eq_rectanglePentagonWeight_of_val_add_val_eq`
   and `TauCeti.GridDiagram.rectanglePentagonWeight_eq_of_val_add_val_eq`: two composite domains
   covering the same squares with the same multiplicities, a rectangle of the commuted diagram read
-  with its two commuted columns exchanged, have the same weight.
+  with its two commuted columns exchanged, have the same weight. They rest on
+  `TauCeti.GridDiagram.rename_OMonomial_eq_prod_swapSquareWeight` and
+  `TauCeti.GridDiagram.OMonomial_swapColumns_eq_prod_swapSquareWeight`, which write the renamed
+  rectangle weight and the rectangle weight in the commuted diagram as products of the
+  per-square weight `TauCeti.GridDiagram.swapSquareWeight`.
 
 * `TauCeti.GridDiagram.rectanglePentagonWeight_eq_prod_OColumnsOfSquares_union` and
   `TauCeti.GridDiagram.pentagonRectangleWeight_eq_prod_OColumnsOfSquares_union`: when the
@@ -457,12 +461,19 @@ theorem pentagonRectangleWeight_def {x z : GridState n}
 
 /-- The weight of a square in a column commutation of the columns `i` and `j`: the variable of
 the commuted column of its `O`-marking, and `1` on unmarked squares. -/
-private noncomputable def swapSquareWeight (i j : Fin n) (p : Fin n × Fin n) :
+noncomputable def swapSquareWeight (i j : Fin n) (p : Fin n × Fin n) :
     MvPolynomial (Fin n) R :=
   if p ∈ G.OSet then MvPolynomial.X (Equiv.swap i j p.1) else 1
 
+/-- The weight of a square is the swapped variable of its column at an `O`-marking and `1`
+elsewhere. -/
+theorem swapSquareWeight_def (i j : Fin n) (p : Fin n × Fin n) :
+    G.swapSquareWeight R i j p =
+      if p ∈ G.OSet then MvPolynomial.X (Equiv.swap i j p.1) else 1 :=
+  (rfl)
+
 /-- The renamed `O`-monomial of a rectangle of the original diagram, square by square. -/
-private theorem rename_OMonomial_eq_prod_swapSquareWeight (i j : Fin n) (r : GridRectangle n) :
+theorem rename_OMonomial_eq_prod_swapSquareWeight (i j : Fin n) (r : GridRectangle n) :
     MvPolynomial.rename (Equiv.swap i j) (G.OMonomial R r) =
       ∏ p ∈ r.coveredSquares, G.swapSquareWeight R i j p := by
   rw [G.OMonomial_eq_prod_coveredSquares R, map_prod]
@@ -473,7 +484,7 @@ private theorem rename_OMonomial_eq_prod_swapSquareWeight (i j : Fin n) (r : Gri
 /-- The `O`-monomial of a rectangle of the commuted diagram, square by square: a square of the
 commuted diagram carries the marking of the square of the original diagram in the swapped
 column. -/
-private theorem OMonomial_swapColumns_eq_prod_swapSquareWeight (i j : Fin n)
+theorem OMonomial_swapColumns_eq_prod_swapSquareWeight (i j : Fin n)
     (r : GridRectangle n) :
     (G.swapColumns i j).OMonomial R r =
       ∏ p ∈ r.coveredSquares.map

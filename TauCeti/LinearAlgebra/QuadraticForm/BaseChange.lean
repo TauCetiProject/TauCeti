@@ -20,6 +20,8 @@ import TauCeti.LinearAlgebra.TensorProduct.Basis
 # Base change of quadratic forms
 
 This file supplies the functorial API for extending quadratic spaces along a commutative algebra.
+The pure-tensor map also restricts to the polar kernel of a vector, so orthogonal parameters can
+be extended before passing to quotient spaces.
 It lifts isometries and isometric equivalences by extending their underlying linear maps, records
 the interaction with the additive operations on forms, compares direct and successive extension
 through a scalar tower, and proves that finite-dimensional nondegenerate forms remain
@@ -702,3 +704,29 @@ theorem anisotropic_baseChange_iff_of_finrank_le_one [Invertible (2 : K)]
 end QuadraticForm
 
 end Field
+
+namespace TauCeti.QuadraticMap
+
+open _root_.QuadraticMap
+
+variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A]
+  [AddCommGroup M] [Module R M] [Invertible (2 : R)]
+
+/-- Pure tensors carry the orthogonal kernel of `u` into that of `1 ⊗ u`. -/
+def polarKernelBaseChange (Q : QuadraticForm R M) (u : M) :
+    LinearMap.ker (Q.polarBilin u) →ₛₗ[algebraMap R A]
+      LinearMap.ker ((Q.baseChange A).polarBilin (1 ⊗ₜ[R] u)) where
+  toFun w := ⟨1 ⊗ₜ[R] (w : M), by
+    rw [LinearMap.mem_ker, polarBilin_apply_apply, QuadraticForm.polar_baseChange_tmul]
+    have hw : polar Q u w = 0 := LinearMap.mem_ker.mp w.2
+    simp [hw]⟩
+  map_add' w w' := by ext; simp [TensorProduct.tmul_add]
+  map_smul' r w := by ext; simp [TensorProduct.tmul_smul]
+
+/-- The scalar-extension map on an orthogonal kernel is the pure-tensor map on vectors. -/
+@[simp]
+theorem coe_polarKernelBaseChange_apply (Q : QuadraticForm R M) (u : M)
+    (w : LinearMap.ker (Q.polarBilin u)) :
+    (polarKernelBaseChange (A := A) Q u w : A ⊗[R] M) = 1 ⊗ₜ[R] (w : M) := (rfl)
+
+end TauCeti.QuadraticMap

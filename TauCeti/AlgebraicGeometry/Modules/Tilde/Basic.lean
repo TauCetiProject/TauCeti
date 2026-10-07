@@ -45,6 +45,8 @@ out of `M~` is determined by where it sends the global sections coming from `M`.
   injective maps `M~(U) ⟶ N~(U)` on sections;
 * `TauCeti.AlgebraicGeometry.preservesFiniteLimits_tildeFunctor`: the functor `M ↦ M~` preserves
   finite limits, hence (with its preservation of colimits) short exact sequences;
+* `Scheme.Modules.tildeKernelIso`: the affine computation of ambient kernels of morphisms
+  between quasicoherent sheaves, with `tildeKernelIso_hom_comp_ι` identifying the kernel inclusion;
 * `TauCeti.AlgebraicGeometry.tildeFunctorCompPullbackIso`: the isomorphism
   `(Spec φ)^* M~ ≅ (S ⊗_R M)~`, natural in `M`;
 * `TauCeti.AlgebraicGeometry.unit_tildeFunctorCompPullbackIso_hom_app`: its characterization
@@ -113,6 +115,35 @@ instance preservesFiniteLimits_tildeFunctor : PreservesFiniteLimits (tilde.funct
   have := hS.mono_f
   exact ⟨((Functor.preservesFiniteColimits_iff_forall_exact_map_and_epi _).mp inferInstance
     S hS).1, inferInstanceAs (Mono (tilde.map S.f))⟩
+
+/-- The kernel of a morphism of quasicoherent sheaves on a spectrum is the sheaf associated
+with the kernel of its map on global sections. The comparison uses the counit of
+`tilde.adjunction` and the canonical kernel comparison of the exact tilde functor. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.tildeKernelIso
+    {M N : (Spec R).Modules} (f : M ⟶ N) [M.IsQuasicoherent] [N.IsQuasicoherent] :
+    tilde (kernel ((moduleSpecΓFunctor (R := R)).map f)) ≅ kernel f :=
+  PreservesKernel.iso (tilde.functor R) _ ≪≫
+    kernel.mapIso _ _
+      (@asIso _ _ _ _ M.fromTildeΓ
+        (Scheme.Modules.isIso_fromTildeΓ_of_isQuasicoherent (R := R) M))
+      (@asIso _ _ _ _ N.fromTildeΓ
+        (Scheme.Modules.isIso_fromTildeΓ_of_isQuasicoherent (R := R) N))
+      ((tilde.adjunction (R := R)).counit.naturality f)
+
+/-- The affine kernel comparison intertwines kernel inclusions through the counit of the
+tilde/global-sections adjunction. -/
+@[reassoc (attr := simp)]
+theorem _root_.AlgebraicGeometry.Scheme.Modules.tildeKernelIso_hom_comp_ι
+    {M N : (Spec R).Modules} (f : M ⟶ N) [M.IsQuasicoherent] [N.IsQuasicoherent] :
+    (Scheme.Modules.tildeKernelIso f).hom ≫ kernel.ι f =
+      (tilde.functor R).map (kernel.ι ((moduleSpecΓFunctor (R := R)).map f)) ≫
+        M.fromTildeΓ := by
+  rw [Scheme.Modules.tildeKernelIso]
+  -- The composite comparison lives in the sheaf category underlying `(Spec R).Modules`.
+  -- `erw` identifies these category wrappers before applying the kernel comparison formulas.
+  erw [Iso.trans_hom, Category.assoc, kernel.mapIso_hom]
+  simp only [kernel.lift_ι, PreservesKernel.iso_hom]
+  exact kernelComparison_comp_ι_assoc _ _ _
 
 end Exactness
 

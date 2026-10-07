@@ -83,7 +83,7 @@ is the arithmetic that `FDRep.clifford_restrict_dvd_finrank` reads off and that
 theorem clifford_restrict_finrank [IsAlgClosed k] (W : FDRep k G) [Simple W] :
     ∃ (V : FDRep k N) (_ : Simple V) (hfinite : Finite (G ⧸ inertia V)),
       let _ := hfinite
-      ∃ e : ℕ, e ≠ 0 ∧ Nonempty (resFDRep N W ≅ V.cliffordSum e) ∧
+      ∃ e : ℕ, e ≠ 0 ∧ Nonempty (Subgroup.resFDRep N W ≅ V.cliffordSum e) ∧
         Module.finrank k W = e * (inertia V).index * Module.finrank k V := by
   obtain ⟨V, hV, hfinite, e, he, ⟨iso⟩⟩ := W.clifford_restrict_iso (N := N)
   let _ : Finite (G ⧸ inertia V) := hfinite
@@ -108,12 +108,12 @@ This is the form in which the dimension identity of `FDRep.clifford_restrict_fin
 number of distinct conjugates occurring in the restriction is `[G : inertia V]`, and it is
 constrained from two sides at once: by the degree of `W`, through the dimension identity, and by
 the index of `N`, through `TauCeti.le_inertia`.  Neither constraint mentions the multiplicity `e`,
-which the last divisibility divides out instead: `dim W / (e * dim V)` is the roadmap's form of the
-count of distinct conjugates. -/
+which the last divisibility divides out instead: `dim W / (e * dim V)` counts the distinct
+conjugates. -/
 theorem clifford_restrict_dvd_finrank [IsAlgClosed k] (W : FDRep k G) [Simple W] :
     ∃ (V : FDRep k N) (_ : Simple V) (hfinite : Finite (G ⧸ inertia V)),
       let _ := hfinite
-      ∃ e : ℕ, e ≠ 0 ∧ Nonempty (resFDRep N W ≅ V.cliffordSum e) ∧
+      ∃ e : ℕ, e ≠ 0 ∧ Nonempty (Subgroup.resFDRep N W ≅ V.cliffordSum e) ∧
         (inertia V).index ∣ Module.finrank k W ∧ Module.finrank k V ∣ Module.finrank k W ∧
           (inertia V).index ∣ N.index ∧
             (inertia V).index ∣ Module.finrank k W / (e * Module.finrank k V) := by
@@ -143,7 +143,7 @@ theorem clifford_restrict_inertia_eq_top_of_coprime [IsAlgClosed k] (W : FDRep k
     (hcop : Nat.Coprime (Module.finrank k W) N.index) :
     ∃ (V : FDRep k N) (_ : Simple V) (hfinite : Finite (G ⧸ inertia V)),
       let _ := hfinite
-      ∃ e : ℕ, e ≠ 0 ∧ inertia V = ⊤ ∧ Nonempty (resFDRep N W ≅ V.cliffordSum e) ∧
+      ∃ e : ℕ, e ≠ 0 ∧ inertia V = ⊤ ∧ Nonempty (Subgroup.resFDRep N W ≅ V.cliffordSum e) ∧
         Module.finrank k W = e * Module.finrank k V ∧
         ∀ n : N, W.character (n : G) = (e : k) * V.character n := by
   obtain ⟨V, hV, hfinite, e, he, ⟨iso⟩, hdim⟩ := W.clifford_restrict_finrank (N := N)
@@ -179,7 +179,7 @@ theorem clifford_restrict_inertia_eq_top_of_finrank_eq_one [IsAlgClosed k] (W : 
     [Simple W] (hW : Module.finrank k W = 1) :
     ∃ (V : FDRep k N) (_ : Simple V) (hfinite : Finite (G ⧸ inertia V)),
       let _ := hfinite
-      Nonempty (resFDRep N W ≅ V.cliffordSum 1) ∧ inertia V = ⊤ ∧
+      Nonempty (Subgroup.resFDRep N W ≅ V.cliffordSum 1) ∧ inertia V = ⊤ ∧
         Module.finrank k V = 1 := by
   obtain ⟨V, hV, hfinite, e, -, hiso, hdim⟩ := W.clifford_restrict_finrank (N := N)
   let _ : Finite (G ⧸ inertia V) := hfinite

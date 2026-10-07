@@ -52,7 +52,7 @@ identity is integrated against it.
 
 The two sections ask different things of the scalars. For the continuity statements they are a
 complete nontrivially normed field `𝕜` with `2 ≠ 0` — exactly what the trace functional behind
-`TauCeti.ContRepresentation.character` and the closed formulas ask for; the consumer instantiates
+`ContRepresentation.character` and the closed formulas ask for; the consumer instantiates
 them at `ℂ`. There `𝕜` is in `Type` rather than `Type*` because the symmetric- and exterior-power
 representations of `TauCeti/RepresentationTheory/SymmetricPower.lean` and
 `TauCeti/RepresentationTheory/ExteriorPower.lean`, whose characters are spoken of, are built over a
@@ -64,11 +64,9 @@ pointwise identity instead needs the two squares of
 inner product space, so its scalars are `RCLike 𝕜`, in any universe, and `2` is invertible there by
 instance.
 
-All declarations sit in the **root** `ContRepresentation` namespace, so that
-`π.continuous_character_symmetricPower_two hπ` elaborates: `ContRepresentation` is Mathlib's type,
-and `scripts/lint-dot-notation.py` asks that new declarations about it not recreate its namespace
-inside `TauCeti`. That is why the ambient `TauCeti` names this file consumes are brought in by
-`open`.
+All declarations sit in the root `ContRepresentation` namespace, so that
+`π.continuous_character_symmetricPower_two hπ` elaborates. The ambient `TauCeti` constructions
+this file consumes are brought in by `open`.
 -/
 
 public section

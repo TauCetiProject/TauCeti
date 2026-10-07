@@ -26,6 +26,8 @@ external direct sums.
   spans `M`, and whose `i`-th member is isomorphic to `N i`. This is the transport the two theorems
   below run on, and it is stated separately because it is what a client needs in order to reach any
   other statement about internal decompositions.
+* `TauCeti.IsIndecomposableModule.exists_nonempty_linearEquiv_of_directSum`: an indecomposable
+  module isomorphic to `⨁ i, N i` is isomorphic to one of the summands `N i`.
 * `TauCeti.exists_linearEquiv_directSum_isIndecomposableModule`: **existence**, externally: an
   Artinian module is isomorphic to a direct sum of indecomposable modules.
 * `TauCeti.exists_equiv_linearEquiv_of_directSum`: **the Krull-Schmidt theorem**, externally: two
@@ -119,6 +121,22 @@ theorem exists_iSupIndep_linearEquiv_of_directSum (e : M ≃ₗ[A] ⨁ i, N i) :
     exact LinearMap.range_eq_top.mpr e.symm.surjective
   · exact (LinearEquiv.ofInjective (lof A ι N i) DFinsupp.single_injective).trans
       (Submodule.equivMapOfInjective _ e.symm.injective _)
+
+/-- **An indecomposable direct sum has a single summand**: a module isomorphic to `⨁ i, N i` that is
+indecomposable is isomorphic to one of the `N i`, namely to the unique nonzero summand. -/
+theorem IsIndecomposableModule.exists_nonempty_linearEquiv_of_directSum
+    (h : IsIndecomposableModule A M) (e : M ≃ₗ[A] ⨁ i, N i) :
+    ∃ i, Nonempty (M ≃ₗ[A] N i) := by
+  have := h.nontrivial
+  obtain ⟨P, hPi, hPt, hPe⟩ := exists_iSupIndep_linearEquiv_of_directSum e
+  obtain ⟨i, hi⟩ : ∃ i, P i ≠ ⊥ := by
+    by_contra! hP
+    simp [hP] at hPt
+  have hsplit : P i ⊔ ⨆ (j) (_ : j ≠ i), P j = ⊤ := (iSup_split_single P i).symm.trans hPt
+  have hrest : ⨆ (j) (_ : j ≠ i), P j = ⊥ :=
+    (h.eq_bot_or_eq_bot ⟨hPi i, codisjoint_iff.mpr hsplit⟩).resolve_left hi
+  rw [hrest, sup_bot_eq] at hsplit
+  exact ⟨i, ⟨(LinearEquiv.ofTop _ hsplit).symm ≪≫ₗ (hPe i).some.symm⟩⟩
 
 end Transport
 

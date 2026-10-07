@@ -103,9 +103,6 @@ class function of the identity class, which is `1` at the identity and `0` elsew
 
 * I. M. Isaacs, *Character Theory of Finite Groups* (1976), Chapter 7, Theorem 7.2.
 * J.-P. Serre, *Linear Representations of Finite Groups*, Section 7.2.
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 8 (`frobeniusKernelSubgroup`, `coe_frobeniusKernelSubgroup`,
-  `frobeniusKernelSubgroup_normal`, `frobeniusKernel_isComplement'`).
 -/
 
 public section
@@ -228,8 +225,8 @@ private theorem exists_normal_coe_eq_frobeniusKernel (hH : IsTISubgroup H) :
     rcases mem_frobeniusKernel.mp hg with rfl | hgc
     · rw [indExtend_apply_one]
     -- no conjugate of `H` contains `g`, so *every* class function induced from `H` vanishes there
-    have hindzero : ∀ f : H → ℂ, indClassFun H f g = 0 := fun f => by
-      rw [indClassFun_apply]
+    have hindzero : ∀ f : H → ℂ, Subgroup.indClassFun H f g = 0 := fun f => by
+      rw [Subgroup.indClassFun_apply]
       exact Finset.sum_eq_zero fun t _ => dite_eq_right (hgc _)
     simp [indExtend_def, hindzero]
 

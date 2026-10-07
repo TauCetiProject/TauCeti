@@ -49,7 +49,7 @@ theorem inner_traceCoeffLp (π : ContRepresentation 𝕜 G V) (hπ : Continuous 
       (Module.finrank 𝕜 V : 𝕜)⁻¹ * ∑ i, ⟪T (e i), S (e i)⟫_𝕜 := by
   classical
   rw [traceCoeffLp_eq_sum π hπ hunitary e, traceCoeffLp_eq_sum π hπ hunitary e]
-  simp_rw [sum_inner, inner_sum, schur_orthogonality_self π hπ hunitary hirr,
+  simp_rw [sum_inner, inner_sum, π.schur_orthogonality_self hπ hunitary hirr,
     orthonormal_iff_ite.mp e.orthonormal]
   simp [Finset.mul_sum]
 

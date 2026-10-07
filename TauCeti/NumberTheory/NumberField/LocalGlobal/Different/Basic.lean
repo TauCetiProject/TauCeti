@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.EquationalCriterion
-public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.NormTrace
+public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Norm.Trace
 public import TauCeti.RingTheory.DedekindDomain.Different.DualFamily
 
 /-!

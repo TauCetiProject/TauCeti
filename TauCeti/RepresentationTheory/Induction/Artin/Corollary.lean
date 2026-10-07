@@ -72,11 +72,12 @@ theorem _root_.FDRep.subgroupCharacterSum_eq_card_mul_finrank_invariants
     {k : Type*} {G : Type u} [Field k] [Group G]
     (X : FDRep k G) (C : Subgroup G) [Finite C] [Invertible (Nat.card C : k)] :
     X.subgroupCharacterSum C =
-      (Nat.card C : k) * Module.finrank k (_root_.Representation.invariants (resFDRep C X).ρ) := by
+      (Nat.card C : k) *
+        Module.finrank k (_root_.Representation.invariants (Subgroup.resFDRep C X).ρ) := by
   classical
   let _ : Fintype C := Fintype.ofFinite C
   have hcard : (Nat.card C : k) ≠ 0 := (isUnit_of_invertible _).ne_zero
-  have hav := FDRep.average_char_eq_finrank_invariants (resFDRep C X)
+  have hav := FDRep.average_char_eq_finrank_invariants (Subgroup.resFDRep C X)
   have hsubtype (c : C) : C.subtype c = (c : G) := rfl
   simp_rw [FDRep.character_actionRes, hsubtype] at hav
   rw [X.subgroupCharacterSum_eq_sum]
@@ -85,7 +86,7 @@ theorem _root_.FDRep.subgroupCharacterSum_eq_card_mul_finrank_invariants
         (Nat.card C : k) * ((Nat.card C : k)⁻¹ * ∑ c : C, X.character (c : G)) := by
       rw [← mul_assoc, mul_inv_cancel₀ hcard, one_mul]
     _ = (Nat.card C : k) *
-        Module.finrank k (_root_.Representation.invariants (resFDRep C X).ρ) := by rw [hav]
+        Module.finrank k (_root_.Representation.invariants (Subgroup.resFDRep C X).ρ) := by rw [hav]
 
 /-- **Artin's fixed-point corollary.** A rational representation of a finite group is determined
 by the sums of its character over the cyclic subgroups. Equivalently, since the sum over `C` is
@@ -153,8 +154,8 @@ theorem _root_.FDRep.nonempty_iso_of_finrank_invariants_eq_cyclic
     {G : Type u} [Group G] [Finite G]
     (V W : FDRep ℚ G)
     (h : ∀ C : Subgroup G, IsCyclic C →
-      Module.finrank ℚ (_root_.Representation.invariants (resFDRep C V).ρ) =
-        Module.finrank ℚ (_root_.Representation.invariants (resFDRep C W).ρ)) :
+      Module.finrank ℚ (_root_.Representation.invariants (Subgroup.resFDRep C V).ρ) =
+        Module.finrank ℚ (_root_.Representation.invariants (Subgroup.resFDRep C W).ρ)) :
     Nonempty (V ≅ W) := by
   apply V.nonempty_iso_of_subgroupCharacterSum_eq_cyclic W
   intro C hC

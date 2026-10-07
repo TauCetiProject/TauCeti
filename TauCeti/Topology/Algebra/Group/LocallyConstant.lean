@@ -9,7 +9,10 @@ public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
-# Locally constant functions on a compact group are uniformly locally constant
+# Locally constant functions on topological groups
+
+A homomorphism from a topological group whose kernel is open is locally constant. Open kernels
+are preserved by taking integer multiples of additive homomorphisms.
 
 A locally constant function `f : G → A` on a topological group is constant near each point, but
 the neighbourhood on which it is constant depends on the point. On a *compact* group the
@@ -44,6 +47,31 @@ the parameter `p`, uniformly in the point being translated.
 public section
 
 namespace TauCeti
+
+section Character
+
+variable {G A : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G]
+
+/-- A character with open kernel is locally constant. -/
+theorem isLocallyConstant_character [AddGroup A] {χ : Additive G →+ A}
+    (hχ : IsOpen (χ.ker : Set (Additive G))) :
+    IsLocallyConstant fun g : G ↦ χ (.ofMul g) := by
+  refine (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦ ?_
+  -- Near `x`, the element `x⁻¹ * y` lies in the open kernel.
+  have hopen : IsOpen ((fun y : G ↦ Additive.ofMul (x⁻¹ * y)) ⁻¹' (χ.ker : Set (Additive G))) :=
+    hχ.preimage (continuous_ofMul.comp (continuous_const.mul continuous_id))
+  filter_upwards [hopen.mem_nhds (by simp)] with y hy
+  rw [Set.mem_preimage, SetLike.mem_coe, AddMonoidHom.mem_ker, ofMul_mul, map_add, ofMul_inv,
+    map_neg, neg_add_eq_zero] at hy
+  exact hy.symm
+
+/-- The kernel of an integer multiple of an additive homomorphism with open kernel is open. -/
+theorem isOpen_ker_zsmul [AddCommGroup A] {χ : Additive G →+ A}
+    (hχ : IsOpen (χ.ker : Set (Additive G))) (k : ℤ) :
+    IsOpen ((k • χ).ker : Set (Additive G)) :=
+  AddSubgroup.isOpen_mono (fun x hx ↦ by simp_all) hχ
+
+end Character
 
 section Mul
 

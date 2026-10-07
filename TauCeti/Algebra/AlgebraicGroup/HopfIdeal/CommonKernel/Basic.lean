@@ -236,7 +236,7 @@ theorem commonKernelHopfIdeal_eq_map_mkQuotient_of_comp (f : ∀ i, H ⟶ K i)
       ((commonKernelHopfIdeal f).map q.hom).comapOfSurjective q.hom hq =
         commonKernelHopfIdeal f := by
     simpa only [q, hom_mkQuotient] using
-      HopfIdeal.comapOfSurjective_map_mkQuotient hI
+      HopfIdeal.comapOfSurjective_map_mkBialgHom hI
   rw [hcomap_map]
   apply le_antisymm
   · rw [le_commonKernelHopfIdeal_iff]

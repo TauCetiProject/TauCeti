@@ -13,7 +13,9 @@ public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
 
 The finite adele ring of a Dedekind domain with finite residue fields is locally compact.  Each
 adic completion is a nonarchimedean local field, and its integer ring is compact and open.  The
-result then follows from the local-compactness theorem for restricted products.
+result then follows from the local-compactness theorem for restricted products.  If the Dedekind
+domain is moreover countable, the finite adele ring is σ-compact: every finite adele has a common
+denominator `b`, so it lies in one of the countably many compact sets `b⁻¹ · ∏_v 𝒪_v`.
 
 The finite-residue-field hypothesis is stated directly, rather than specialized to rings of
 integers, so this applies to every Dedekind domain for which the same local compactness argument is
@@ -23,6 +25,8 @@ valid.
 
 * `IsDedekindDomain.FiniteAdeleRing.instLocallyCompactSpace`: the finite adele ring is locally
   compact when all residue fields are finite.
+* `IsDedekindDomain.FiniteAdeleRing.instSigmaCompactSpace`: the finite adele ring is σ-compact
+  when moreover the Dedekind domain is countable.
 
 ## References
 
@@ -50,5 +54,25 @@ instance instLocallyCompactSpace [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.a
   exact inferInstanceAs <| LocallyCompactSpace <|
     RestrictedProduct (fun v : HeightOneSpectrum R ↦ v.adicCompletion K)
       (fun v ↦ v.adicCompletionIntegers K) Filter.cofinite
+
+/-- The finite adele ring of a countable Dedekind domain with finite residue fields is
+σ-compact. -/
+instance instSigmaCompactSpace [Countable R] [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.asIdeal)] :
+    SigmaCompactSpace (FiniteAdeleRing R K) := by
+  let s (b : R) : Set (FiniteAdeleRing R K) :=
+    (· * algebraMap K (FiniteAdeleRing R K) (algebraMap R K b)⁻¹) ''
+      {a | ∀ v, a v ∈ v.adicCompletionIntegers K}
+  -- Every finite adele has a common denominator `b`, so it lies in `s b`.
+  have hs : ⋃ b, s b = Set.univ := by
+    refine Set.eq_univ_of_forall fun a ↦ Set.mem_iUnion.mpr ?_
+    obtain ⟨b, hb0, hb⟩ := mul_nonZeroDivisor_mem_adicCompletionIntegers a
+    have hb' : algebraMap R K b ≠ 0 := IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hb0
+    refine ⟨b, a * algebraMap K (FiniteAdeleRing R K) (algebraMap R K b), fun v ↦ ?_, ?_⟩
+    · simpa [IsScalarTower.algebraMap_apply R K (v.adicCompletion K)] using hb v
+    · dsimp only
+      rw [mul_assoc, ← map_mul, mul_inv_cancel₀ hb', map_one, mul_one]
+  rw [← isSigmaCompact_univ_iff, ← hs]
+  exact isSigmaCompact_iUnion_of_isCompact _ fun b ↦
+    isCompact_integralFiniteAdeles.image (continuous_id.mul continuous_const)
 
 end IsDedekindDomain.FiniteAdeleRing

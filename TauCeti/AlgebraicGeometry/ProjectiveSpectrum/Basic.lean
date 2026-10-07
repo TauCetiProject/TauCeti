@@ -35,6 +35,8 @@ isomorphism of schemes.
   chart `D₊(f)` agrees with the one defined on the chart `D₊(g)`.
 * `AlgebraicGeometry.Proj.map_toSpecZero`: `Proj.map f` lies over `Spec` of the degree-zero part
   of `f`.
+* `ProjectiveSpectrum.ext_of_mem_pos`: positive-degree homogeneous elements determine a
+  projective point, allowing comparison through its positive-degree coordinate opens.
 -/
 
 public section
@@ -120,3 +122,33 @@ theorem mapIso_inv (f : 𝒜 →+*ᵍ ℬ) (g : ℬ →+*ᵍ 𝒜) (hfg : Functi
   (rfl)
 
 end AlgebraicGeometry.Proj
+
+namespace ProjectiveSpectrum
+
+variable {A σ : Type*} [CommRing A] [SetLike σ A] [AddSubmonoidClass σ A]
+  {𝒜 : ℕ → σ} [GradedRing 𝒜]
+
+/-- Relevant homogeneous prime ideals are determined by their positive-degree elements. -/
+theorem ext_of_mem_pos {x y : ProjectiveSpectrum 𝒜}
+    (h : ∀ n > 0, ∀ s ∈ 𝒜 n,
+      s ∈ x.asHomogeneousIdeal ↔ s ∈ y.asHomogeneousIdeal) : x = y := by
+  have hex : ∃ n > 0, ∃ t ∈ 𝒜 n, t ∉ x.asHomogeneousIdeal := by
+    by_contra! ht
+    exact x.not_irrelevant_le ((toIdeal_le_toIdeal_iff).mp
+      ((HomogeneousIdeal.toIdeal_irrelevant_le 𝒜).mpr ht))
+  obtain ⟨n, hn, t, ht, htx⟩ := hex
+  have hty : t ∉ y.asHomogeneousIdeal := fun hy ↦ htx ((h n hn t ht).mpr hy)
+  apply ProjectiveSpectrum.ext
+  apply HomogeneousIdeal.ext'
+  intro i s hs
+  rcases i with _ | i
+  · have hst : s * t ∈ 𝒜 n := by
+      simpa using SetLike.mul_mem_graded hs ht
+    have heq := h n hn (s * t) hst
+    have htx' : t ∉ x.asHomogeneousIdeal.toIdeal := HomogeneousIdeal.mem_iff.not.mpr htx
+    have hty' : t ∉ y.asHomogeneousIdeal.toIdeal := HomogeneousIdeal.mem_iff.not.mpr hty
+    simpa only [← HomogeneousIdeal.mem_iff, x.isPrime.mul_mem_iff_mem_or_mem,
+      y.isPrime.mul_mem_iff_mem_or_mem, htx', hty', or_false] using heq
+  · exact h (i + 1) (Nat.succ_pos i) s hs
+
+end ProjectiveSpectrum
