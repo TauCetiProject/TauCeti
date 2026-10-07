@@ -44,7 +44,7 @@ section CommRing
 variable {K : Type*} [CommRing K] {A : Type*} [CommRing A] [Algebra K A]
 
 /-- A minimal prime `Q` over the extension of an ideal of `A` to `E ⊗[K] A` is the extension
-of its contraction `P` to `A`, provided `E ⊗[K] (A ⧸ P)` is a domain. -/
+of its contraction `P` from `A` to `E ⊗[K] A`, provided `E ⊗[K] (A ⧸ P)` is a domain. -/
 theorem eq_map_comap_includeRight_of_isDomain {E : Type*} [CommRing E] [Algebra K E]
     (Q : Ideal (E ⊗[K] A)) {I : Ideal A} (hQ : Q ∈ (I.map includeRight).minimalPrimes)
     (hdom : IsDomain (E ⊗[K] (A ⧸ Q.comap includeRight))) :
