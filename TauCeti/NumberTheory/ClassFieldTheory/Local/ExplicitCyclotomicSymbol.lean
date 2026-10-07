@@ -96,20 +96,13 @@ private theorem unitsEquivIntProd_eq_of_padic_decomposition (p : ℕ) [Fact p.Pr
       (.ofAdd k, padicIntegerUnitToFiltration p w)
   simpa only [unitsEquivIntProd_symm_apply, toAdd_ofAdd] using h
 
-private theorem coprime_p_div_primePow_padicValNat (m p : ℕ) [NeZero m] [Fact p.Prime] :
-    Nat.Coprime p (m / p ^ padicValNat p m) := by
-  rw [(Fact.out : p.Prime).coprime_iff_not_dvd]
-  intro hp
-  apply pow_succ_padicValNat_not_dvd (p := p) (NeZero.ne m)
-  rw [pow_succ]
-  exact (Nat.mul_dvd_mul_left (p ^ padicValNat p m) hp).trans
-    (dvd_of_eq (Nat.mul_div_cancel' pow_padicValNat_dvd))
-
 private def cyclotomicSymbolComponents (m p : ℕ) [NeZero m] [Fact p.Prime] :
     Multiplicative ℤ × unitFiltration ℚ_[p] 0 →*
       (ZMod (p ^ padicValNat p m))ˣ × (ZMod (m / p ^ padicValNat p m))ˣ :=
   ((padicUnitReduction p (padicValNat p m))⁻¹.comp (MonoidHom.snd _ _)).prod
-    ((zpowersHom _ (ZMod.unitOfCoprime p (coprime_p_div_primePow_padicValNat m p))).comp
+    ((zpowersHom _ (ZMod.unitOfCoprime p (by
+      simpa [Nat.factorization_def m (Fact.out : p.Prime)] using
+        Nat.coprime_ordCompl (Fact.out : p.Prime) (NeZero.ne m)))).comp
       (MonoidHom.fst _ _))
 
 /-- **The explicit local symbol of `ℚ(μ_m)/ℚ` at `p`.** If `m = p ^ j * d`, with `p ∤ d`, and
