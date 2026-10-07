@@ -149,7 +149,9 @@ theorem _root_.Dense.denseRange_subgroupOf_codRestrict {D U : Subgroup G}
 
 /-- **An open subgroup has the same index in a dense subgroup.** If `f : G' →* G` has dense range
 and `U` is an open subgroup of `G`, then the preimage of `U` has the same index in `G'` as `U` has
-in `G`: the range of `f` meets every coset of `U`, since the cosets are open. -/
+in `G`: the range of `f` meets every coset of `U`, since the cosets are open.
+
+The proof is adapted from Mathlib's `Subgroup.index_comap_of_surjective`. -/
 theorem index_comap_of_denseRange [ContinuousMul G] {G' : Type*} [Group G'] {f : G' →* G}
     (hf : DenseRange f) {U : Subgroup G} (hU : IsOpen (U : Set G)) :
     (U.comap f).index = U.index := by

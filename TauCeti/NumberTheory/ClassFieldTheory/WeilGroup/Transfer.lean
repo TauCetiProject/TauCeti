@@ -51,8 +51,8 @@ transfer: `1 → W_L → W_K → Gal(L/K) → 1` is exact.
   `TauCeti.ClassFieldTheory.index_range_weilTransfer`: its image is the part of `W_K` lying in
   `G_L`, an open subgroup of index `[L : K]`.
 * `TauCeti.ClassFieldTheory.surjective_weilRestrict`,
-  `TauCeti.ClassFieldTheory.ker_weilRestrict`: for `L/K` normal, the restriction
-  `W_K → Gal(L/K)` is surjective with kernel the image of the Weil transfer.
+  `TauCeti.ClassFieldTheory.range_weilTransfer_eq_ker_weilRestrict`: for `L/K` normal, the
+  restriction `W_K → Gal(L/K)` is surjective with kernel the image of the Weil transfer.
 
 ## References
 
@@ -76,6 +76,7 @@ variable (K : Type u) [Field K] [ValuativeRel K] [TopologicalSpace K]
 variable {K L} in
 /-- **The Weil group of `L` inside that of `K`.** An element of `G_L` lies in the local Weil group
 of `L` exactly when its image in `G_K` lies in the local Weil group of `K`. -/
+@[simp]
 theorem absoluteGaloisGroupExtend_mem_localWeilGroup_iff {τ : Field.absoluteGaloisGroup L} :
     absoluteGaloisGroupExtend K L ι τ ∈ localWeilGroup K ↔ τ ∈ localWeilGroup L := by
   rw [mem_localWeilGroup_iff, mem_localWeilGroup_iff]
@@ -107,6 +108,7 @@ theorem weilToAbsolute_weilTransfer (w : WeilGroup L) :
 
 /-- **The degree along the Weil transfer** is multiplied by the residue degree:
 `deg_K (weilTransfer w) = f(L/K) · deg_L w`. -/
+@[simp]
 theorem weilDegree_weilTransfer (w : WeilGroup L) :
     weilDegree K (weilTransfer K L ι w) = weilDegree L w ^ inertiaDegree K L := by
   rw [weilDegree_eq_iff, weilToAbsolute_weilTransfer, toAdd_pow, nsmul_eq_mul]
@@ -224,11 +226,12 @@ theorem surjective_weilRestrict : Function.Surjective (weilRestrict K L ι) := f
   rw [weilRestrict_apply, ← mul_inv_cancel_left σ (absoluteGaloisGroupRestrictEquiv K _), map_mul,
     hmem, mul_one]
 
-/-- **Exactness of `1 → W_L → W_K → Gal(L/K) → 1` in the middle**: the kernel of the Weil
-restriction is the image of the Weil transfer. -/
-theorem ker_weilRestrict : (weilRestrict K L ι).ker = (weilTransfer K L ι).range := by
+/-- **Exactness of `1 → W_L → W_K → Gal(L/K) → 1` in the middle**: the image of the Weil
+transfer is the kernel of the Weil restriction. -/
+theorem range_weilTransfer_eq_ker_weilRestrict :
+    (weilTransfer K L ι).range = (weilRestrict K L ι).ker := by
   ext w
-  rw [range_weilTransfer, Subgroup.mem_comap, mem_range_absoluteGaloisGroupExtend_iff,
+  rw [iff_comm, range_weilTransfer, Subgroup.mem_comap, mem_range_absoluteGaloisGroupExtend_iff,
     ← OpenSubgroup.mem_toSubgroup, galoisSubgroup_toSubgroup, ← AlgHom.ker_restrictNormalHom,
     MonoidHom.mem_ker, MonoidHom.mem_ker, weilRestrict_apply]
 
