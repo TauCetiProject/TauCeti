@@ -11,7 +11,8 @@ public import TauCeti.AlgebraicGeometry.Modules.Differentials.Quasicoherent
 public import TauCeti.AlgebraicGeometry.Modules.FittingIdeal.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.PureRelativeDimension
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
-public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.PureRelativeDimension
+public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.PureRelativeDimension
+public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Smooth
 
 /-!
 # The relative singular locus
