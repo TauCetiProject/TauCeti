@@ -101,7 +101,8 @@ theorem upperJump_iff_exists_isCyclic_intermediateField (u : RamificationIndexDo
       isCyclic_of_surjective (IsGalois.normalAutEquivQuotient H).toMonoidHom
         (IsGalois.normalAutEquivQuotient H).surjective
     have hker : (AlgEquiv.restrictNormalHom F : (L ≃ₐ[K] L) →* (F ≃ₐ[K] F)).ker = H := by
-      have hval : IsScalarTower.toAlgHom K F L = F.val := AlgHom.ext fun _ ↦ rfl
+      have hval : IsScalarTower.toAlgHom K F L = F.val :=
+        AlgHom.ext fun x ↦ IntermediateField.algebraMap_apply F x
       rw [AlgEquiv.ker_restrictNormalHom, hval, fieldRange_val, fixingSubgroup_fixedField]
     have hnontrivial : upperRamificationGroup K F u ≠ ⊥ := by
       intro hbot
