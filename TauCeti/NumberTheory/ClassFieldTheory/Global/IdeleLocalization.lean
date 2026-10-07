@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.BaseChange
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Coefficients
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.FiniteAdele
+public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.InfiniteAdele
 import Mathlib.RingTheory.DedekindDomain.Different
 import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Unramified
 import TauCeti.NumberTheory.NumberField.LocalGlobal.DecompositionGroup
@@ -17,7 +18,7 @@ import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
 /-!
-# The localization of idele cohomology at a finite place
+# The localization of idele cohomology at a place
 
 Let `K` be a number field, `v` a finite place of `K` with completion `K_v`, and `G_K`, `G_{K_v}`
 the absolute Galois groups. A `K`-embedding `τ : Kˢ → K_vˢ` of separable closures picks out, for
@@ -50,12 +51,28 @@ finitely many of the localizations of a class of `H²(G_K, I_{Kˢ})` are nonzero
 (`finite_setOfPred_ideleBrLocalization_ne_zero`), so the local invariants of an idele class have
 a finite sum.
 
+The same construction works at an infinite place `w` of `K`, with completion `K_w = ℝ` or `ℂ`:
+the components above `w` of an idele of `E` form a unit of `K_w ⊗[K] E`
+(`TauCeti.GlobalNumberFields.infiniteAdeleSemilocalHom`), and an embedding
+`τ : Kˢ → K_wˢ` gives the coordinate `ideleCoeffInfiniteComponent τ : I_{Kˢ} → (K_wˢ)ˣ` and the
+localization
+
+```text
+ideleInfiniteBrLocalization w : H²(G_K, I_{Kˢ}) → Br K_w,
+```
+
+with the same properties. Both are instances of one construction from the semi-local components
+of adeles, which only uses that these components are natural in `E` and send `x ∈ E` to `1 ⊗ x`.
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.ideleCoeffComponent τ`: the coordinate at `v` of the ideles of `Kˢ`
   along `τ`.
 * `TauCeti.ClassFieldTheory.ideleBrLocalization v`: the localization
   `H²(G_K, I_{Kˢ}) → Br K_v`.
+* `TauCeti.ClassFieldTheory.ideleCoeffInfiniteComponent τ`,
+  `TauCeti.ClassFieldTheory.ideleInfiniteBrLocalization w`: the coordinate and the localization at
+  an infinite place `w`.
 
 ## Main results
 
@@ -69,6 +86,9 @@ a finite sum.
   pair of any `τ`.
 * `TauCeti.ClassFieldTheory.ideleBrLocalization_principalIdele`: on principal idele classes the
   localization is `brBaseChange K K_v`.
+* `TauCeti.ClassFieldTheory.ideleInfiniteBrLocalization_apply`,
+  `TauCeti.ClassFieldTheory.ideleInfiniteBrLocalization_principalIdele`: the same two statements
+  at an infinite place.
 * `TauCeti.ClassFieldTheory.toMul_ideleCoeffComponent_ideleCoeffOf_eq_map_ideleFiniteCoord`: for
   `τ` extending an embedding of a completion `E_w` above `v`, the coordinate at `v` of an idele of
   `E` is its component at `w`.
@@ -95,130 +115,131 @@ variable {K : Type} [Field K] [NumberField K] {v : HeightOneSpectrum (𝓞 K)}
 
 local notation "Ω" => FiniteGaloisIntermediateField K (SeparableClosure K)
 
-/-! ### The coordinate at a finite place -/
+/-! ### Semi-local components of adeles
 
-section Coordinate
+The construction is the same at finite and at infinite places: all it uses is the family of
+semi-local components `𝔸_E → F ⊗[K] E` of the adeles of the finite Galois subextensions `E` of
+`Kˢ/K`, for the completion `F` of `K` at the place, natural in `E`. -/
 
-variable (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+section Generic
 
-/-- The `K_v`-algebra map `K_v ⊗[K] E → K_vˢ`, `a ⊗ x ↦ a τ(x)`. -/
-private def semilocalLift (E : Ω) :
-    v.adicCompletion K ⊗[K] E →ₐ[v.adicCompletion K] SeparableClosure (v.adicCompletion K) :=
+variable (K) in
+/-- Semi-local components of the adeles of the finite Galois subextensions of `Kˢ/K` in a field
+`F` over `K`: a ring homomorphism `𝔸_E → F ⊗[K] E` for every `E`, sending `x ∈ E` to `1 ⊗ x` and
+natural along inclusions and `K`-automorphisms. -/
+private structure AdeleSemilocal (F : Type) [Field F] [Algebra K F] where
+  /-- The semi-local component of an adele of `E`. -/
+  hom (E : Ω) : AdeleRing (𝓞 E) E →+* F ⊗[K] E
+  hom_algebraMap (E : Ω) (x : E) : hom E (algebraMap E _ x) = (1 : F) ⊗ₜ[K] x
+  hom_adeleTransition {E E' : Ω} (h : E ≤ E') (a : AdeleRing (𝓞 E) E) :
+    hom E' (adeleTransition h a) =
+      Algebra.TensorProduct.map (AlgHom.id F F) (IntermediateField.inclusion h) (hom E a)
+  hom_adeleGaloisAction (E : Ω) (σ : E ≃ₐ[K] E) (a : AdeleRing (𝓞 E) E) :
+    hom E (GlobalNumberFields.adeleGaloisAction K E σ a) =
+      Algebra.TensorProduct.map (AlgHom.id F F) (σ : E →ₐ[K] E) (hom E a)
+
+variable {F : Type} [Field F] [Algebra K F]
+
+/-- The `F`-algebra map `F ⊗[K] E → Fˢ`, `a ⊗ x ↦ a τ(x)`. -/
+private def semilocalLift (τ : SeparableClosure K →ₐ[K] SeparableClosure F) (E : Ω) :
+    F ⊗[K] E →ₐ[F] SeparableClosure F :=
   Algebra.TensorProduct.lift (Algebra.ofId _ _)
     (τ.comp (IsScalarTower.toAlgHom K E (SeparableClosure K))) fun _ _ ↦ .all _ _
 
+omit [NumberField K] in
 @[simp]
-private theorem semilocalLift_tmul (E : Ω) (a : v.adicCompletion K) (x : E) :
+private theorem semilocalLift_tmul (τ : SeparableClosure K →ₐ[K] SeparableClosure F) (E : Ω)
+    (a : F) (x : E) :
     semilocalLift τ E (a ⊗ₜ x) =
-      algebraMap (v.adicCompletion K) (SeparableClosure (v.adicCompletion K)) a *
-        τ (x : SeparableClosure K) := by
+      algebraMap F (SeparableClosure F) a * τ (x : SeparableClosure K) := by
   simp [semilocalLift]
 
-/-- The coordinate at `v` along `τ` of an adele of `E`: its components above `v`, mapped to
-`K_vˢ` by `semilocalLift`. -/
-private def adeleComponent (E : Ω) : AdeleRing (𝓞 E) E →+* SeparableClosure (v.adicCompletion K) :=
-  (semilocalLift τ E).toRingHom.comp
-    ((finiteAdeleSemilocalHom E v).comp (RingHom.snd (InfiniteAdeleRing E) _))
+/-- The coordinate along `τ` of an adele of `E`: its semi-local component, mapped to `Fˢ` by
+`semilocalLift`. -/
+private def adeleComponent (P : AdeleSemilocal K F)
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure F) (E : Ω) :
+    AdeleRing (𝓞 E) E →+* SeparableClosure F :=
+  (semilocalLift τ E).toRingHom.comp (P.hom E)
 
-private theorem adeleComponent_apply (E : Ω) (a : AdeleRing (𝓞 E) E) :
-    adeleComponent τ E a = semilocalLift τ E (finiteAdeleSemilocalHom E v a.2) :=
+private theorem adeleComponent_apply (P : AdeleSemilocal K F)
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure F) (E : Ω) (a : AdeleRing (𝓞 E) E) :
+    adeleComponent P τ E a = semilocalLift τ E (P.hom E a) :=
   (rfl)
 
-/-- The coordinate at `v` is compatible with the extension maps of adeles. -/
-private theorem adeleComponent_adeleTransition {E E' : Ω} (h : E ≤ E') (a : AdeleRing (𝓞 E) E) :
-    adeleComponent τ E' (adeleTransition h a) = adeleComponent τ E a := by
-  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
-  have : IsScalarTower K E E' := .of_algebraMap_eq fun _ ↦ rfl
-  rw [adeleComponent_apply, adeleComponent_apply, adeleTransition_snd,
-    finiteAdeleSemilocalHom_finiteAdeleExtension, ← AlgHom.comp_apply]
+/-- The coordinate is compatible with the extension maps of adeles. -/
+private theorem adeleComponent_adeleTransition (P : AdeleSemilocal K F)
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure F) {E E' : Ω} (h : E ≤ E')
+    (a : AdeleRing (𝓞 E) E) :
+    adeleComponent P τ E' (adeleTransition h a) = adeleComponent P τ E a := by
+  rw [adeleComponent_apply, adeleComponent_apply, P.hom_adeleTransition, ← AlgHom.comp_apply]
   congr 1
   ext x
-  simp only [AlgHom.comp_apply, AlgHom.restrictScalars_apply,
-    Algebra.TensorProduct.includeRight_apply, Algebra.TensorProduct.map_tmul, semilocalLift_tmul]
-  -- The algebra map `E → E'` is the inclusion, which does not move `x` in `Kˢ`.
-  rw [show ((IsScalarTower.toAlgHom K E E' x : E') : SeparableClosure K) = x from
-    IntermediateField.coe_inclusion h x, AlgHom.id_apply]
+  -- The inclusion `E → E'` does not move `x` in `Kˢ`.
+  simp
 
 /-- Acting on an adele of `E` by `h ∈ G_K` and then taking the coordinate along `τ` is taking the
 coordinate along `τ ∘ h`. -/
-private theorem adeleComponent_adeleGaloisAction (h : AbsoluteGaloisGroup K) (E : Ω)
-    (a : AdeleRing (𝓞 E) E) :
-    adeleComponent τ E (GlobalNumberFields.adeleGaloisAction K E (h.restrictNormal E) a) =
-      adeleComponent (τ.comp (h : SeparableClosure K →ₐ[K] SeparableClosure K)) E a := by
-  rw [adeleComponent_apply, adeleComponent_apply, GlobalNumberFields.adeleGaloisAction_apply,
-    GlobalNumberFields.adeleEquiv_snd, finiteAdeleSemilocalHom_finiteAdeleEquiv,
-    ← AlgHom.comp_apply]
+private theorem adeleComponent_adeleGaloisAction (P : AdeleSemilocal K F)
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure F)
+    (h : AbsoluteGaloisGroup K) (E : Ω) (a : AdeleRing (𝓞 E) E) :
+    adeleComponent P τ E (GlobalNumberFields.adeleGaloisAction K E (h.restrictNormal E) a) =
+      adeleComponent P (τ.comp (h : SeparableClosure K →ₐ[K] SeparableClosure K)) E a := by
+  rw [adeleComponent_apply, adeleComponent_apply, P.hom_adeleGaloisAction, ← AlgHom.comp_apply]
   congr 1
   ext x
   simp [AlgEquiv.restrictNormal_apply]
 
-/-- Composing `τ` with `g ∈ G_{K_v}` composes the coordinate with `g`. -/
-private theorem adeleComponent_comp_left (g : AbsoluteGaloisGroup (v.adicCompletion K)) (E : Ω)
-    (a : AdeleRing (𝓞 E) E) :
-    adeleComponent (((g : SeparableClosure (v.adicCompletion K) →ₐ[v.adicCompletion K]
-      SeparableClosure (v.adicCompletion K)).restrictScalars K).comp τ) E a =
-        g (adeleComponent τ E a) := by
+/-- Composing `τ` with `g ∈ G_F` composes the coordinate with `g`. -/
+private theorem adeleComponent_comp_left (P : AdeleSemilocal K F)
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure F)
+    (g : AbsoluteGaloisGroup F) (E : Ω) (a : AdeleRing (𝓞 E) E) :
+    adeleComponent P (((g : SeparableClosure F →ₐ[F] SeparableClosure F).restrictScalars K).comp τ)
+      E a = g (adeleComponent P τ E a) := by
   rw [adeleComponent_apply, adeleComponent_apply, ← AlgEquiv.coe_toAlgHom, ← AlgHom.comp_apply]
   congr 1
   ext x
   simp
 
-/-- **The coordinate at `v` of the ideles of `Kˢ`** along a `K`-embedding
-`τ : Kˢ →ₐ[K] K_vˢ` of separable closures: an idele `a` of a finite Galois subextension `E` of
-`Kˢ/K` goes to the image of its components above `v`, read in `K_v ⊗[K] E`, under the
-`K_v`-algebra map `a ⊗ x ↦ a τ(x)` to `K_vˢ` (`toMul_ideleCoeffComponent_ideleCoeffOf`). A ring
-homomorphism from `K_v ⊗[K] E ≃ ∏_{w ∣ v} E_w` to a field factors through a single factor `E_w`,
-so this reads the component of the idele at one place `w` of `E` above `v`, embedded in
-`K_vˢ`. -/
-def ideleCoeffComponent : IdeleCoeff K →+ UnitsCoeff (v.adicCompletion K) :=
-  IdeleCoeff.lift K (fun E ↦ (Units.map (adeleComponent τ E).toMonoidHom).toAdditive)
+/-- The coordinate along `τ` of the ideles of `Kˢ`. -/
+private def ideleComponent (P : AdeleSemilocal K F)
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure F) :
+    IdeleCoeff K →+ UnitsCoeff F :=
+  IdeleCoeff.lift K (fun E ↦ (Units.map (adeleComponent P τ E).toMonoidHom).toAdditive)
     fun E E' h a ↦ Additive.toMul.injective (Units.ext (by simp [adeleComponent_adeleTransition]))
 
-private theorem toMul_ideleCoeffComponent_ideleCoeffOf' (E : Ω) (a : IdeleGroup (𝓞 E) E) :
-    ((ideleCoeffComponent τ (ideleCoeffOf K E (.ofMul a))).toMul :
-      SeparableClosure (v.adicCompletion K)) = adeleComponent τ E a := by
-  simp [ideleCoeffComponent, IdeleCoeff.lift_ideleCoeffOf]
+private theorem toMul_ideleComponent_ideleCoeffOf (P : AdeleSemilocal K F)
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure F) (E : Ω) (a : IdeleGroup (𝓞 E) E) :
+    ((ideleComponent P τ (ideleCoeffOf K E (.ofMul a))).toMul : SeparableClosure F) =
+      adeleComponent P τ E a := by
+  simp [ideleComponent, IdeleCoeff.lift_ideleCoeffOf]
 
-/-- **The coordinate at `v` of an idele of `E`**: the image of its components above `v`, read in
-`K_v ⊗[K] E`, under `a ⊗ x ↦ a τ(x)`. -/
-theorem toMul_ideleCoeffComponent_ideleCoeffOf (E : Ω) (a : IdeleGroup (𝓞 E) E) :
-    ((ideleCoeffComponent τ (ideleCoeffOf K E (.ofMul a))).toMul :
-      SeparableClosure (v.adicCompletion K)) =
-      Algebra.TensorProduct.lift (Algebra.ofId _ _)
-        (τ.comp (IsScalarTower.toAlgHom K E (SeparableClosure K))) (fun _ _ ↦ .all _ _)
-        (finiteAdeleSemilocalHom E v (a : AdeleRing (𝓞 E) E).2) :=
-  toMul_ideleCoeffComponent_ideleCoeffOf' τ E a
-
-/-- **Changing the embedding by an automorphism** `h` of `Kˢ` precomposes the coordinate at `v`
-with the action of `h` on the ideles. -/
-theorem ideleCoeffComponent_comp (h : AbsoluteGaloisGroup K) (x : IdeleCoeff K) :
-    ideleCoeffComponent (τ.comp (h : SeparableClosure K →ₐ[K] SeparableClosure K)) x =
-      ideleCoeffComponent τ (h • x) := by
+private theorem ideleComponent_comp (P : AdeleSemilocal K F)
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure F)
+    (h : AbsoluteGaloisGroup K) (x : IdeleCoeff K) :
+    ideleComponent P (τ.comp (h : SeparableClosure K →ₐ[K] SeparableClosure K)) x =
+      ideleComponent P τ (h • x) := by
   obtain ⟨E, a, rfl⟩ := exists_ideleCoeffOf_eq x
   refine Additive.toMul.injective (Units.ext ?_)
-  simp [smul_ideleCoeffOf, toMul_ideleCoeffComponent_ideleCoeffOf',
-    adeleComponent_adeleGaloisAction]
+  simp [smul_ideleCoeffOf, toMul_ideleComponent_ideleCoeffOf, adeleComponent_adeleGaloisAction]
 
-/-- **The coordinate at `v` is equivariant** along the decomposition map
-`absoluteGaloisGroupMap τ : G_{K_v} → G_K`. -/
-theorem ideleCoeffComponent_smul (g : AbsoluteGaloisGroup (v.adicCompletion K)) (x : IdeleCoeff K) :
-    ideleCoeffComponent τ (absoluteGaloisGroupMap τ g • x) = g • ideleCoeffComponent τ x := by
-  rw [← ideleCoeffComponent_comp]
+private theorem ideleComponent_smul (P : AdeleSemilocal K F)
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure F)
+    (g : AbsoluteGaloisGroup F) (x : IdeleCoeff K) :
+    ideleComponent P τ (absoluteGaloisGroupMap τ g • x) = g • ideleComponent P τ x := by
+  rw [← ideleComponent_comp]
   have hτ : τ.comp (absoluteGaloisGroupMap τ g : SeparableClosure K →ₐ[K] SeparableClosure K) =
-      ((g : SeparableClosure (v.adicCompletion K) →ₐ[v.adicCompletion K]
-        SeparableClosure (v.adicCompletion K)).restrictScalars K).comp τ :=
+      ((g : SeparableClosure F →ₐ[F] SeparableClosure F).restrictScalars K).comp τ :=
     AlgHom.ext fun y ↦ absoluteGaloisGroupMap_commutes τ g y
   obtain ⟨E, a, rfl⟩ := exists_ideleCoeffOf_eq x
   refine Additive.toMul.injective (Units.ext ?_)
   rw [hτ]
-  simp [toMul_ideleCoeffComponent_ideleCoeffOf', adeleComponent_comp_left, Additive.toMul_smul,
+  simp [toMul_ideleComponent_ideleCoeffOf, adeleComponent_comp_left, Additive.toMul_smul,
     AlgEquiv.smul_units_def]
 
-/-- **On principal ideles the coordinate at `v` is `τ`**: the coordinate of the principal idele
-of a unit `x` of `Kˢ` is `τ x`. -/
-@[simp]
-theorem ideleCoeffComponent_principalIdele (x : UnitsCoeff K) :
-    ideleCoeffComponent τ (principalIdele K x) = unitsCoeffBaseChange τ x := by
+private theorem ideleComponent_principalIdele (P : AdeleSemilocal K F)
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure F)
+    (x : UnitsCoeff K) :
+    ideleComponent P τ (principalIdele K x) = unitsCoeffBaseChange τ x := by
   -- `x` is a unit of the finite Galois subextension it generates.
   let E : Ω := FiniteGaloisIntermediateField.adjoin K {(x.toMul : SeparableClosure K)}
   have hx : (x.toMul : SeparableClosure K) ∈ (E : IntermediateField K (SeparableClosure K)) :=
@@ -228,12 +249,126 @@ theorem ideleCoeffComponent_principalIdele (x : UnitsCoeff K) :
     Additive.toMul.injective (Units.ext rfl)
   refine Additive.toMul.injective (Units.ext ?_)
   rw [hxu, principalIdele_ofMul_map_algebraMap]
-  simp [toMul_ideleCoeffComponent_ideleCoeffOf', adeleComponent_apply,
-    finiteAdeleSemilocalHom_algebraMap]
+  simp [toMul_ideleComponent_ideleCoeffOf, adeleComponent_apply, P.hom_algebraMap]
 
-end Coordinate
+/-- The localization `H²(G_K, I_{Kˢ}) → Br F` along the semi-local components `P`. -/
+private def semilocalBrLocalization (P : AdeleSemilocal K F) :
+    H2 (AbsoluteGaloisGroup K) (IdeleCoeff K) →+ Br F :=
+  (unitsRepH2Equiv F : H2 (AbsoluteGaloisGroup F) (UnitsCoeff F) →+ Br F).comp
+    (explicitMap2 (AbsoluteGaloisGroup K) (IdeleCoeff K) (AbsoluteGaloisGroup F) (UnitsCoeff F)
+      (absoluteGaloisGroupMap IsSepClosed.lift) (ideleComponent P IsSepClosed.lift)
+      continuous_of_discreteTopology (ideleComponent_smul P IsSepClosed.lift))
 
-/-! ### The localization of idele cohomology -/
+private theorem semilocalBrLocalization_apply (P : AdeleSemilocal K F)
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure F)
+    (x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K)) :
+    semilocalBrLocalization P x =
+      unitsRepH2Equiv F (explicitMap2 (AbsoluteGaloisGroup K) (IdeleCoeff K)
+        (AbsoluteGaloisGroup F) (UnitsCoeff F) (absoluteGaloisGroupMap τ) (ideleComponent P τ)
+        continuous_of_discreteTopology (ideleComponent_smul P τ) x) := by
+  rw [semilocalBrLocalization,
+    explicitMap2_absoluteGaloisGroupMap_eq K F (fun τ ↦ ideleComponent P τ)
+    (ideleComponent_smul P) (ideleComponent_comp P) IsSepClosed.lift τ,
+    AddMonoidHom.comp_apply, AddMonoidHom.coe_ofClass]
+
+private theorem semilocalBrLocalization_principalIdele (P : AdeleSemilocal K F)
+    (x : H2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) :
+    semilocalBrLocalization P (explicitCoeff2 (AbsoluteGaloisGroup K) (UnitsCoeff K)
+        (principalIdele K) continuous_of_discreteTopology x) =
+      brBaseChange K F (unitsRepH2Equiv K x) := by
+  let τ : SeparableClosure K →ₐ[K] SeparableClosure F := IsSepClosed.lift
+  -- Pulling back along the principal ideles and then along the pair of `τ` is pulling back along
+  -- the composite pair, which is `(absoluteGaloisGroupMap τ, unitsCoeffBaseChange τ)`.
+  have hcomp := DFunLike.congr_fun (explicitMap2_comp (AbsoluteGaloisGroup K) (UnitsCoeff K)
+    (AbsoluteGaloisGroup K) (IdeleCoeff K) (ContinuousMonoidHom.id _)
+    (principalIdele K : UnitsCoeff K →+ IdeleCoeff K) continuous_of_discreteTopology
+    (fun g m ↦ map_smul (principalIdele K) g m) (AbsoluteGaloisGroup F) (UnitsCoeff F)
+    (absoluteGaloisGroupMap τ) (ideleComponent P τ) continuous_of_discreteTopology
+    (ideleComponent_smul P τ)) x
+  have hpair := explicitMap2_congr_of_eq (AbsoluteGaloisGroup K) (UnitsCoeff K)
+    (AbsoluteGaloisGroup F) (UnitsCoeff F)
+    ((ContinuousMonoidHom.id _).comp (absoluteGaloisGroupMap τ)) (absoluteGaloisGroupMap τ)
+    ((ideleComponent P τ).comp (principalIdele K : UnitsCoeff K →+ IdeleCoeff K))
+    (unitsCoeffBaseChange τ) (hf := continuous_of_discreteTopology)
+    (hq := continuous_of_discreteTopology) (hψ := unitsCoeffBaseChange_smul τ)
+    (hφ := fun g m ↦ by
+      rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, ContinuousMonoidHom.comp_toFun]
+      exact (congrArg (ideleComponent P τ) (map_smul (principalIdele K) _ m)).trans
+        (ideleComponent_smul P τ g _))
+    (ContinuousMonoidHom.ext fun _ ↦ rfl)
+    (AddMonoidHom.ext fun y ↦ ideleComponent_principalIdele P τ y)
+  rw [semilocalBrLocalization_apply P τ, brBaseChange_apply K _ τ, AddEquiv.symm_apply_apply,
+    explicitCoeff2_eq_explicitMap2]
+  exact congrArg _ (hcomp.symm.trans (DFunLike.congr_fun hpair x))
+
+end Generic
+
+/-! ### The localization at a finite place -/
+
+section Finite
+
+/-- The semi-local components above a finite place `v` of the finite parts of adeles. -/
+private def finiteAdeleSemilocal (v : HeightOneSpectrum (𝓞 K)) :
+    AdeleSemilocal K (v.adicCompletion K) where
+  hom E := (finiteAdeleSemilocalHom E v).comp (RingHom.snd (InfiniteAdeleRing E) _)
+  hom_algebraMap E x := finiteAdeleSemilocalHom_algebraMap x
+  hom_adeleTransition {E E'} h a := by
+    let := (IntermediateField.inclusion h).toRingHom.toAlgebra
+    have : IsScalarTower K E E' := .of_algebraMap_eq fun _ ↦ rfl
+    -- With this `Algebra E E'` instance, `algebraMap E E'` is the inclusion `E → E'`.
+    rw [show IntermediateField.inclusion h = IsScalarTower.toAlgHom K E E' from
+      AlgHom.ext fun _ ↦ rfl]
+    -- `hom E'` is the semi-local component of the finite part `a.2`.
+    exact (congrArg (finiteAdeleSemilocalHom E' v) (adeleTransition_snd h a)).trans
+      (finiteAdeleSemilocalHom_finiteAdeleExtension v a.2)
+  hom_adeleGaloisAction E σ a := by
+    have ha : (GlobalNumberFields.adeleGaloisAction K E σ a).2 =
+        GlobalNumberFields.finiteAdeleEquiv E E σ.toRingEquiv a.2 := by
+      rw [GlobalNumberFields.adeleGaloisAction_apply, GlobalNumberFields.adeleEquiv_snd]
+    exact (congrArg (finiteAdeleSemilocalHom E v) ha).trans
+      (finiteAdeleSemilocalHom_finiteAdeleEquiv v σ a.2)
+
+variable (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+
+/-- **The coordinate at `v` of the ideles of `Kˢ`** along a `K`-embedding
+`τ : Kˢ →ₐ[K] K_vˢ` of separable closures: an idele `a` of a finite Galois subextension `E` of
+`Kˢ/K` goes to the image of its components above `v`, read in `K_v ⊗[K] E`, under the
+`K_v`-algebra map `a ⊗ x ↦ a τ(x)` to `K_vˢ` (`toMul_ideleCoeffComponent_ideleCoeffOf`). A ring
+homomorphism from `K_v ⊗[K] E ≃ ∏_{w ∣ v} E_w` to a field factors through a single factor `E_w`,
+so this reads the component of the idele at one place `w` of `E` above `v`, embedded in
+`K_vˢ`. -/
+def ideleCoeffComponent : IdeleCoeff K →+ UnitsCoeff (v.adicCompletion K) :=
+  ideleComponent (finiteAdeleSemilocal v) τ
+
+/-- **The coordinate at `v` of an idele of `E`**: the image of its components above `v`, read in
+`K_v ⊗[K] E`, under `a ⊗ x ↦ a τ(x)`. -/
+theorem toMul_ideleCoeffComponent_ideleCoeffOf (E : Ω) (a : IdeleGroup (𝓞 E) E) :
+    ((ideleCoeffComponent τ (ideleCoeffOf K E (.ofMul a))).toMul :
+      SeparableClosure (v.adicCompletion K)) =
+      Algebra.TensorProduct.lift (Algebra.ofId _ _)
+        (τ.comp (IsScalarTower.toAlgHom K E (SeparableClosure K))) (fun _ _ ↦ .all _ _)
+        (finiteAdeleSemilocalHom E v (a : AdeleRing (𝓞 E) E).2) :=
+  toMul_ideleComponent_ideleCoeffOf (finiteAdeleSemilocal v) τ E a
+
+/-- **Changing the embedding by an automorphism** `h` of `Kˢ` precomposes the coordinate at `v`
+with the action of `h` on the ideles. -/
+theorem ideleCoeffComponent_comp (h : AbsoluteGaloisGroup K) (x : IdeleCoeff K) :
+    ideleCoeffComponent (τ.comp (h : SeparableClosure K →ₐ[K] SeparableClosure K)) x =
+      ideleCoeffComponent τ (h • x) :=
+  ideleComponent_comp (finiteAdeleSemilocal v) τ h x
+
+/-- **The coordinate at `v` is equivariant** along the decomposition map
+`absoluteGaloisGroupMap τ : G_{K_v} → G_K`. -/
+theorem ideleCoeffComponent_smul (g : AbsoluteGaloisGroup (v.adicCompletion K)) (x : IdeleCoeff K) :
+    ideleCoeffComponent τ (absoluteGaloisGroupMap τ g • x) = g • ideleCoeffComponent τ x :=
+  ideleComponent_smul (finiteAdeleSemilocal v) τ g x
+
+/-- **On principal ideles the coordinate at `v` is `τ`**: the coordinate of the principal idele
+of a unit `x` of `Kˢ` is `τ x`. -/
+@[simp]
+theorem ideleCoeffComponent_principalIdele (x : UnitsCoeff K) :
+    ideleCoeffComponent τ (principalIdele K x) = unitsCoeffBaseChange τ x :=
+  ideleComponent_principalIdele (finiteAdeleSemilocal v) τ x
 
 variable (v) in
 /-- **The localization of idele cohomology at a finite place** `v`,
@@ -242,29 +377,18 @@ variable (v) in
 separable closures `Kˢ → K_vˢ`, followed by the identification of `H²(G_{K_v}, (K_vˢ)ˣ)` with
 `Br K_v`. It does not depend on the embedding (`ideleBrLocalization_apply`). -/
 def ideleBrLocalization : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K) →+ Br (v.adicCompletion K) :=
-  (unitsRepH2Equiv (v.adicCompletion K) :
-      H2 (AbsoluteGaloisGroup (v.adicCompletion K)) (UnitsCoeff (v.adicCompletion K)) →+
-        Br (v.adicCompletion K)).comp
-    (explicitMap2 (AbsoluteGaloisGroup K) (IdeleCoeff K) (AbsoluteGaloisGroup (v.adicCompletion K))
-      (UnitsCoeff (v.adicCompletion K)) (absoluteGaloisGroupMap IsSepClosed.lift)
-      (ideleCoeffComponent IsSepClosed.lift) continuous_of_discreteTopology
-      (ideleCoeffComponent_smul IsSepClosed.lift))
+  semilocalBrLocalization (finiteAdeleSemilocal v)
 
 /-- **The localization of idele cohomology is the pullback along any embedding** `τ` of separable
 closures, through the decomposition map of `τ` and the coordinate at `v` along `τ`. -/
-theorem ideleBrLocalization_apply
-    (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
-    (x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K)) :
+theorem ideleBrLocalization_apply (x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K)) :
     ideleBrLocalization v x =
       unitsRepH2Equiv (v.adicCompletion K)
         (explicitMap2 (AbsoluteGaloisGroup K) (IdeleCoeff K)
           (AbsoluteGaloisGroup (v.adicCompletion K)) (UnitsCoeff (v.adicCompletion K))
           (absoluteGaloisGroupMap τ) (ideleCoeffComponent τ) continuous_of_discreteTopology
-          (ideleCoeffComponent_smul τ) x) := by
-  rw [ideleBrLocalization, explicitMap2_absoluteGaloisGroupMap_eq K (v.adicCompletion K)
-    (fun τ ↦ ideleCoeffComponent τ) ideleCoeffComponent_smul ideleCoeffComponent_comp
-    IsSepClosed.lift τ,
-    AddMonoidHom.comp_apply, AddMonoidHom.coe_ofClass]
+          (ideleCoeffComponent_smul τ) x) :=
+  semilocalBrLocalization_apply (finiteAdeleSemilocal v) τ x
 
 /-- **On principal idele classes, the localization is the localization of Brauer classes**: the
 class in `H²(G_K, I_{Kˢ})` of a Brauer class `x ∈ Br K = H²(G_K, (Kˢ)ˣ)`, along the principal
@@ -272,31 +396,111 @@ ideles, localizes at `v` to the base change of `x` to `K_v`. -/
 theorem ideleBrLocalization_principalIdele (x : H2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) :
     ideleBrLocalization v (explicitCoeff2 (AbsoluteGaloisGroup K) (UnitsCoeff K)
         (principalIdele K) continuous_of_discreteTopology x) =
-      brBaseChange K (v.adicCompletion K) (unitsRepH2Equiv K x) := by
-  let τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K) := IsSepClosed.lift
-  -- Pulling back along the principal ideles and then along the pair of `τ` is pulling back along
-  -- the composite pair, which is `(absoluteGaloisGroupMap τ, unitsCoeffBaseChange τ)`.
-  have hcomp := DFunLike.congr_fun (explicitMap2_comp (AbsoluteGaloisGroup K) (UnitsCoeff K)
-    (AbsoluteGaloisGroup K) (IdeleCoeff K) (ContinuousMonoidHom.id _)
-    (principalIdele K : UnitsCoeff K →+ IdeleCoeff K) continuous_of_discreteTopology
-    (fun g m ↦ map_smul (principalIdele K) g m) (AbsoluteGaloisGroup (v.adicCompletion K))
-    (UnitsCoeff (v.adicCompletion K)) (absoluteGaloisGroupMap τ) (ideleCoeffComponent τ)
-    continuous_of_discreteTopology (ideleCoeffComponent_smul τ)) x
-  have hpair := explicitMap2_congr_of_eq (AbsoluteGaloisGroup K) (UnitsCoeff K)
-    (AbsoluteGaloisGroup (v.adicCompletion K)) (UnitsCoeff (v.adicCompletion K))
-    ((ContinuousMonoidHom.id _).comp (absoluteGaloisGroupMap τ)) (absoluteGaloisGroupMap τ)
-    ((ideleCoeffComponent τ).comp (principalIdele K : UnitsCoeff K →+ IdeleCoeff K))
-    (unitsCoeffBaseChange τ) (hf := continuous_of_discreteTopology)
-    (hq := continuous_of_discreteTopology) (hψ := unitsCoeffBaseChange_smul τ)
-    (hφ := fun g m ↦ by
-      rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, ContinuousMonoidHom.comp_toFun]
-      exact (congrArg (ideleCoeffComponent τ) (map_smul (principalIdele K) _ m)).trans
-        (ideleCoeffComponent_smul τ g _))
-    (ContinuousMonoidHom.ext fun _ ↦ rfl)
-    (AddMonoidHom.ext fun y ↦ ideleCoeffComponent_principalIdele τ y)
-  rw [ideleBrLocalization_apply τ, brBaseChange_apply K _ τ, AddEquiv.symm_apply_apply,
-    explicitCoeff2_eq_explicitMap2]
-  exact congrArg _ (hcomp.symm.trans (DFunLike.congr_fun hpair x))
+      brBaseChange K (v.adicCompletion K) (unitsRepH2Equiv K x) :=
+  semilocalBrLocalization_principalIdele (finiteAdeleSemilocal v) x
+
+end Finite
+
+/-! ### The localization at an infinite place -/
+
+section Infinite
+
+variable {w : InfinitePlace K}
+
+/-- The semi-local components above an infinite place `w` of the infinite parts of adeles. -/
+private def infiniteAdeleSemilocal (w : InfinitePlace K) : AdeleSemilocal K w.Completion where
+  hom E := (GlobalNumberFields.infiniteAdeleSemilocalHom E w).comp
+    (RingHom.fst _ (FiniteAdeleRing (𝓞 E) E))
+  hom_algebraMap E x := GlobalNumberFields.infiniteAdeleSemilocalHom_algebraMap x
+  hom_adeleTransition {E E'} h a := by
+    let := (IntermediateField.inclusion h).toRingHom.toAlgebra
+    have : IsScalarTower K E E' := .of_algebraMap_eq fun _ ↦ rfl
+    -- With this `Algebra E E'` instance, `algebraMap E E'` is the inclusion `E → E'`.
+    rw [show IntermediateField.inclusion h = IsScalarTower.toAlgHom K E E' from
+      AlgHom.ext fun _ ↦ rfl]
+    -- `hom E'` is the semi-local component of the infinite part `a.1`.
+    exact (congrArg (GlobalNumberFields.infiniteAdeleSemilocalHom E' w)
+      (adeleTransition_fst h a)).trans
+      (GlobalNumberFields.infiniteAdeleSemilocalHom_infiniteAdeleExtension w a.1)
+  hom_adeleGaloisAction E σ a := by
+    have ha : (GlobalNumberFields.adeleGaloisAction K E σ a).1 =
+        GlobalNumberFields.infiniteAdeleEquiv E E σ.toRingEquiv a.1 := by
+      rw [GlobalNumberFields.adeleGaloisAction_apply, GlobalNumberFields.adeleEquiv_fst]
+    exact (congrArg (GlobalNumberFields.infiniteAdeleSemilocalHom E w) ha).trans
+      (GlobalNumberFields.infiniteAdeleSemilocalHom_infiniteAdeleEquiv w σ a.1)
+
+variable (τ : SeparableClosure K →ₐ[K] SeparableClosure w.Completion)
+
+/-- **The coordinate at an infinite place `w` of the ideles of `Kˢ`** along a `K`-embedding
+`τ : Kˢ →ₐ[K] K_wˢ` of separable closures: an idele `a` of a finite Galois subextension `E` of
+`Kˢ/K` goes to the image of its components above `w`, read in `K_w ⊗[K] E`, under the
+`K_w`-algebra map `a ⊗ x ↦ a τ(x)` to `K_wˢ` (`toMul_ideleCoeffInfiniteComponent_ideleCoeffOf`).
+It reads the component of the idele at one place of `E` above `w`, embedded in `K_wˢ`. -/
+def ideleCoeffInfiniteComponent : IdeleCoeff K →+ UnitsCoeff w.Completion :=
+  ideleComponent (infiniteAdeleSemilocal w) τ
+
+/-- **The coordinate at `w` of an idele of `E`**: the image of its components above `w`, read in
+`K_w ⊗[K] E`, under `a ⊗ x ↦ a τ(x)`. -/
+theorem toMul_ideleCoeffInfiniteComponent_ideleCoeffOf (E : Ω) (a : IdeleGroup (𝓞 E) E) :
+    ((ideleCoeffInfiniteComponent τ (ideleCoeffOf K E (.ofMul a))).toMul :
+      SeparableClosure w.Completion) =
+      Algebra.TensorProduct.lift (Algebra.ofId _ _)
+        (τ.comp (IsScalarTower.toAlgHom K E (SeparableClosure K))) (fun _ _ ↦ .all _ _)
+        (GlobalNumberFields.infiniteAdeleSemilocalHom E w (a : AdeleRing (𝓞 E) E).1) :=
+  toMul_ideleComponent_ideleCoeffOf (infiniteAdeleSemilocal w) τ E a
+
+/-- **Changing the embedding by an automorphism** `h` of `Kˢ` precomposes the coordinate at `w`
+with the action of `h` on the ideles. -/
+theorem ideleCoeffInfiniteComponent_comp (h : AbsoluteGaloisGroup K) (x : IdeleCoeff K) :
+    ideleCoeffInfiniteComponent (τ.comp (h : SeparableClosure K →ₐ[K] SeparableClosure K)) x =
+      ideleCoeffInfiniteComponent τ (h • x) :=
+  ideleComponent_comp (infiniteAdeleSemilocal w) τ h x
+
+/-- **The coordinate at `w` is equivariant** along the decomposition map
+`absoluteGaloisGroupMap τ : G_{K_w} → G_K`. -/
+theorem ideleCoeffInfiniteComponent_smul (g : AbsoluteGaloisGroup w.Completion)
+    (x : IdeleCoeff K) :
+    ideleCoeffInfiniteComponent τ (absoluteGaloisGroupMap τ g • x) =
+      g • ideleCoeffInfiniteComponent τ x :=
+  ideleComponent_smul (infiniteAdeleSemilocal w) τ g x
+
+/-- **On principal ideles the coordinate at `w` is `τ`**: the coordinate of the principal idele
+of a unit `x` of `Kˢ` is `τ x`. -/
+@[simp]
+theorem ideleCoeffInfiniteComponent_principalIdele (x : UnitsCoeff K) :
+    ideleCoeffInfiniteComponent τ (principalIdele K x) = unitsCoeffBaseChange τ x :=
+  ideleComponent_principalIdele (infiniteAdeleSemilocal w) τ x
+
+variable (w) in
+/-- **The localization of idele cohomology at an infinite place** `w`,
+`H²(G_K, I_{Kˢ}) → Br K_w`: the pullback along the decomposition map `G_{K_w} → G_K` and the
+coordinate at `w` of the ideles (`ideleCoeffInfiniteComponent`) of an embedding of separable
+closures `Kˢ → K_wˢ`, followed by the identification of `H²(G_{K_w}, (K_wˢ)ˣ)` with `Br K_w`. It
+does not depend on the embedding (`ideleInfiniteBrLocalization_apply`). -/
+def ideleInfiniteBrLocalization : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K) →+ Br w.Completion :=
+  semilocalBrLocalization (infiniteAdeleSemilocal w)
+
+/-- **The localization of idele cohomology at `w` is the pullback along any embedding** `τ` of
+separable closures, through the decomposition map of `τ` and the coordinate at `w` along `τ`. -/
+theorem ideleInfiniteBrLocalization_apply (x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K)) :
+    ideleInfiniteBrLocalization w x =
+      unitsRepH2Equiv w.Completion
+        (explicitMap2 (AbsoluteGaloisGroup K) (IdeleCoeff K) (AbsoluteGaloisGroup w.Completion)
+          (UnitsCoeff w.Completion) (absoluteGaloisGroupMap τ) (ideleCoeffInfiniteComponent τ)
+          continuous_of_discreteTopology (ideleCoeffInfiniteComponent_smul τ) x) :=
+  semilocalBrLocalization_apply (infiniteAdeleSemilocal w) τ x
+
+/-- **On principal idele classes, the localization at `w` is the localization of Brauer
+classes**: the class in `H²(G_K, I_{Kˢ})` of a Brauer class `x ∈ Br K`, along the principal
+ideles, localizes at `w` to the base change of `x` to `K_w`. -/
+theorem ideleInfiniteBrLocalization_principalIdele
+    (x : H2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) :
+    ideleInfiniteBrLocalization w (explicitCoeff2 (AbsoluteGaloisGroup K) (UnitsCoeff K)
+        (principalIdele K) continuous_of_discreteTopology x) =
+      brBaseChange K w.Completion (unitsRepH2Equiv K x) :=
+  semilocalBrLocalization_principalIdele (infiniteAdeleSemilocal w) x
+
+end Infinite
 
 /-! ### Finite support
 

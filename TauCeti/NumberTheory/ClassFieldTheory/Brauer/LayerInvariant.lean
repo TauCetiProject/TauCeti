@@ -229,7 +229,7 @@ theorem explicitMap2_layerInfl_eq_zero (x : L.H (unitsFormation K) 2) :
   have h1 := explicitMap2_comp L.ground.toSubgroup (UnitsCoeff K)
     (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) (UnitsCoeff K)
     (ContinuousMonoidHom.subgroupSubtype _) (AddMonoidHom.id _) continuous_id
-    (id_subgroupSubtype_smul _ _ _) L.top.toSubgroup (UnitsCoeff K)
+    (ContinuousMonoidHom.id_subgroupSubtype_smul _ _) L.top.toSubgroup (UnitsCoeff K)
     ((Subgroup.subgroupOfContinuousMulEquivOfLe
       (OpenSubgroup.toSubgroup_le.2 L.top_le_ground)).symm : _ →ₜ* _)
     (AddMonoidHom.id _) continuous_id fun _ _ => rfl
@@ -238,7 +238,7 @@ theorem explicitMap2_layerInfl_eq_zero (x : L.H (unitsFormation K) 2) :
     ((DFunLike.congr_fun h1 _).trans ?_)
   · exact ContinuousMonoidHom.ext fun _ => rfl
   · exact AddMonoidHom.ext fun _ => rfl
-  · rw [AddMonoidHom.comp_apply, h0, map_zero]
+  · simp only [AddMonoidHom.comp_apply, h0, map_zero]
 
 /-- **Inflation commutes with restriction of layers**: for a restriction `V ◁ U' ≤ U` of a layer
 `V ◁ U` to an intermediate ground subgroup, inflating the restricted class to `U'` is restricting

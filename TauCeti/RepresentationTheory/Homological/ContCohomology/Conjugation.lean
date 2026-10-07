@@ -250,8 +250,7 @@ theorem explicitConj1_mul (N : Subgroup G) [N.Normal] (g h : G) :
       (DistribSMul.toAddMonoidHom M g).comp (DistribSMul.toAddMonoidHom M h) := by
     ext m
     simp [mul_smul]
-  have hcomp := comp_apply_smul
-    (inverseConjugationHom N h : N →* N) (inverseConjugationHom N g : N →* N)
+  have hcomp := (inverseConjugationHom N h).comp_map_smul (inverseConjugationHom N g)
     (DistribSMul.toAddMonoidHom M h) (DistribSMul.toAddMonoidHom M g)
     (inverseConjugationHom_smul N h) (inverseConjugationHom_smul N g)
   have hcontg : Continuous (DistribSMul.toAddMonoidHom M g) := by

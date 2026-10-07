@@ -53,9 +53,6 @@ theorem range_projectiveOrbitMap_kernelPoint_eq_range_inter_closedPoints
         Set.range (projectiveOrbitMap (H := H) m hm) ∩
           closedPoints (Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k
             (Module.Dual k M))) := by
-  let : JacobsonSpace (Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k
-      (Module.Dual k M))) := LocallyOfFiniteType.jacobsonSpace
-    (TauCeti.SymmetricAlgebra.projToSpec k (Module.Dual k M))
   rw [← (projectiveOrbitMap (H := H) m hm).image_closedPoints_eq_range_inter_closedPoints,
     ← range_kernelPoint_eq_closedPoints (k := k) (A := H), ← Set.range_comp]
   exact (ofConv_surjective (A := H →ₐ[k] k)).range_comp

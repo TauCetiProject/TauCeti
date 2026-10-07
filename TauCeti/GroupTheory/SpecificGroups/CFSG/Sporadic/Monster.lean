@@ -142,12 +142,8 @@ local infixl:70 " ⬝ " => Relator.mul
 private abbrev a : Relator (Fin 12) := .gen 0
 private abbrev b1 : Relator (Fin 12) := .gen 1
 private abbrev c1 : Relator (Fin 12) := .gen 2
-private abbrev d1 : Relator (Fin 12) := .gen 3
-private abbrev e1 : Relator (Fin 12) := .gen 4
 private abbrev b2 : Relator (Fin 12) := .gen 5
 private abbrev c2 : Relator (Fin 12) := .gen 6
-private abbrev d2 : Relator (Fin 12) := .gen 7
-private abbrev e2 : Relator (Fin 12) := .gen 8
 private abbrev b3 : Relator (Fin 12) := .gen 9
 private abbrev c3 : Relator (Fin 12) := .gen 10
 private abbrev d3 : Relator (Fin 12) := .gen 11
@@ -285,14 +281,14 @@ theorem presentation_relatorLetters : presentation.relatorLetters =
 /-! ### Decidable transcription checks -/
 
 /-- The `Y₄₄₃` Coxeter diagram contributes seventy-eight relators. -/
-theorem length_coxeterRelators : (coxeterRelators coxeterMatrix).length = 78 := by
+protected theorem length_coxeterRelators : (coxeterRelators coxeterMatrix).length = 78 := by
   simp
   norm_num [Nat.choose]
 
 /-- The full Monster presentation has eighty relators. -/
 theorem length_relatorList : relatorList.length = 80 := by
-  simp [relatorList_def, adjoinedRelators_def]
-  norm_num [Nat.choose]
+  rw [relatorList_def, List.length_append, Monster.length_coxeterRelators]
+  simp [adjoinedRelators_def]
 
 /-- The Monster presentation carries eighty relator expressions. -/
 @[simp]
@@ -352,8 +348,9 @@ theorem isCyclicallyReduced_toWord_of_mem_relatorList (r : Relator (Fin 12))
     exact isCyclicallyReduced_toWord_coxeterRelator coxeterMatrix _ _
   · simp only [adjoinedRelators_def, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;>
-      simp [spiderRelator, centralInvolutionRelator, FreeGroup.IsCyclicallyReduced,
-        FreeGroup.IsReduced]
+      simp only [spiderRelator_def, centralInvolutionRelator_def] <;>
+      exact Relator.isCyclicallyReduced_toWord_pow
+        (by simp [FreeGroup.IsCyclicallyReduced, FreeGroup.IsReduced]) _
 
 /-- Every compiled Monster relator is cyclically reduced, so the letter counts above agree with
 the usual presentation-length convention. -/
@@ -370,7 +367,7 @@ relations**, which is the shape in which Bray and Ivanov state the presentation.
 This is an identification of the presented group with a quotient built from Mathlib's
 `CoxeterMatrix.relationsSet`; it asserts nothing about the order or the structure of either
 side. -/
-def mulEquivPresentedGroupCoxeterAppend :
+protected def mulEquivPresentedGroupCoxeterAppend :
     presentation.Group ≃*
       PresentedGroup (coxeterMatrix.relationsSet ∪ Relator.relatorSet adjoinedRelators) := by
   -- The generic equivalence indexes its Coxeter matrix and extra relators by
@@ -384,14 +381,14 @@ def mulEquivPresentedGroupCoxeterAppend :
 /-- The Coxeter equivalence sends each canonical generator to the corresponding canonical
 generator. -/
 @[simp]
-theorem mulEquivPresentedGroupCoxeterAppend_apply_of (i : Fin 12) :
-    mulEquivPresentedGroupCoxeterAppend
+protected theorem mulEquivPresentedGroupCoxeterAppend_apply_of (i : Fin 12) :
+    Monster.mulEquivPresentedGroupCoxeterAppend
         (PresentedGroup.of
           (Fin.cast (by simp [GroupPresentation.generatorCount, presentation]) i)) =
       PresentedGroup.of i := by
   -- Same reduction as in the equivalence itself: `Fin.cast` moves the index from `Fin 12` to
   -- `Fin presentation.generatorCount`, and unfolding the sealed row identifies the two.
-  unfold mulEquivPresentedGroupCoxeterAppend presentation
+  unfold Monster.mulEquivPresentedGroupCoxeterAppend presentation
   apply GroupPresentation.mulEquivPresentedGroupCoxeterAppend_apply_of
 
 end TauCeti.Sporadic.Monster

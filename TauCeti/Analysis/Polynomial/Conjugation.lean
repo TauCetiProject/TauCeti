@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import TauCeti.Topology.Connected.FiniteFamily
+import Mathlib.Analysis.RCLike.Lemmas
 
 /-!
 # Conjugation of continuous polynomial root branches
@@ -24,6 +25,9 @@ power-substitution variable. The punctured product is connected and the roots ar
 there. The conclusions concern the given branches; their construction and their extension
 across the missing hyperplane are separate results.
 
+For real polynomial families, persistence of collisions also gives a local realness criterion
+without distinctness: a labelled root is real nearby exactly when it is real at the center.
+
 ## References
 
 * S. McCallum, A. Parusiński, L. Paunescu, *Validity proof of Lazard's method for CAD
@@ -32,9 +36,36 @@ across the missing hyperplane are separate results.
 
 public section
 
-open Polynomial Set ComplexConjugate
+open Filter Polynomial Set Topology ComplexConjugate
 
 namespace TauCeti
+
+/-- In a finite continuous complete labelling of the complex roots of a real polynomial
+family, the real labels are locally constant if collisions persist locally. Repeated labels
+are allowed, and neither connectedness nor coefficient continuity is required. -/
+theorem eventually_root_im_eq_zero_iff_of_persistent_collisions {B ι : Type*}
+    [TopologicalSpace B] [Finite ι] {F : B → ℝ[X]} {r : ι → B → ℂ} {b₀ : B}
+    (hr : ∀ i, ContinuousAt (r i) b₀)
+    (hroot : ∀ᶠ b in 𝓝 b₀, ∀ z, ((F b).map (algebraMap ℝ ℂ)).IsRoot z ↔
+      ∃ i, r i b = z)
+    (hcollision : ∀ i j, r j b₀ = r i b₀ → r j =ᶠ[𝓝 b₀] r i) :
+    ∀ᶠ b in 𝓝 b₀, ∀ i, (r i b).im = 0 ↔ (r i b₀).im = 0 := by
+  rw [eventually_all]
+  intro i
+  by_cases hi : (r i b₀).im = 0
+  · have hmem : ∀ᶠ b in 𝓝 b₀, conj (r i b) ∈ range (fun j ↦ r j b) := by
+      filter_upwards [hroot] with b hb
+      have hz := (hb (r i b)).2 ⟨i, rfl⟩
+      rw [IsRoot.def, eval_map_algebraMap] at hz
+      apply (hb _).1
+      rw [IsRoot.def, eval_map_algebraMap, aeval_conj, hz, map_zero]
+    have heq := eventuallyEq_of_continuousAt_mem_range hr
+      (Complex.continuous_conj.continuousAt.comp (hr i)) hmem
+      (Complex.conj_eq_iff_im.mpr hi).symm (hcollision i)
+    filter_upwards [heq] with b hb
+    exact iff_of_true (Complex.conj_eq_iff_im.mp hb.symm) hi
+  · have hne := (Complex.continuous_im.continuousAt.comp (hr i)).eventually_ne hi
+    exact hne.mono fun _ hb ↦ iff_of_false hb hi
 
 variable {B ι : Type*} [TopologicalSpace B] [PreconnectedSpace B] [Finite ι]
   {F : B → ℂ[X]} {r : ι → B → ℂ} {τ : B → B}
