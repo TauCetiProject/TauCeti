@@ -90,4 +90,10 @@ def shiftPowIso : ∀ d : ℤ, ((shift 𝒜) ^ d).functor ≅ shiftFunctor (𝒜
   | Int.ofNat n => shiftPowNatIso 𝒜 n
   | Int.negSucc n => shiftInversePowNatIso 𝒜 (n + 1)
 
+/-- Morphisms into the categorical `d`-th power of the grading shift are linearly equivalent to
+morphisms into the explicit internal shift by `d`. -/
+def homShiftPowEquiv (P M : GradedModuleCat.{v} 𝒜) (d : ℤ) :
+    (P ⟶ ((shift 𝒜) ^ d).functor.obj M) ≃ₗ[k] (P ⟶ M.shiftObj d) :=
+  Linear.homCongr k (Iso.refl P) ((shiftPowIso 𝒜 d).app M)
+
 end TauCeti.GradedModuleCat

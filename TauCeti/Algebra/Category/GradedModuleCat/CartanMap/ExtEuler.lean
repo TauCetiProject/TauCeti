@@ -42,8 +42,8 @@ projective covers and simples.
 
 * `TauCeti.GradedModuleCat.hasFiniteLaurentSupport_hom_shiftObj`: graded maps from a finitely
   generated graded module into the shifts of a finite-dimensional one have finite Laurent support.
-* `TauCeti.isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules`: finite graded projectives
-  and finite graded modules form graded Euler-admissible pairs.
+* `TauCeti.isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules_gradedFiniteModules`: finite
+  graded projectives and finite graded modules form graded Euler-admissible pairs.
 * `TauCeti.gradedExtEuler_ofIdeal_span_singleton`: `χ_q(Af, M) = ∑ₚ dim_k(f • Mₚ) qᵖ`.
 * `TauCeti.gradedProjectiveExtEuler_ofIdeal_span_singleton`: pairing against `[Af]` is the
   idempotent coordinate of `f`.
@@ -76,37 +76,6 @@ universe w uk uA uI
 variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
 
-/-! ### Finite support of graded Hom spaces -/
-
-namespace GradedModuleCat
-
-/-- **Graded maps into the shifts of a finite-dimensional graded module have finite Laurent
-support** when the source is finitely generated. A surjection from a finite graded free module
-`⨁ᵢ A{dᵢ}` embeds `Hom(P, M{j})` into `∏ᵢ M_{dᵢ-j}`, and `M` has only finitely many nonzero
-pieces. -/
-theorem hasFiniteLaurentSupport_hom_shiftObj (P M : GradedModuleCat.{uA} 𝒜) [Module.Finite A P]
-    [Module.Finite k M] : HasFiniteLaurentSupport k fun j : ℤ ↦ P ⟶ M.shiftObj j := by
-  classical
-  obtain ⟨I, hI, d, π, hπ⟩ := exists_finite_free_surjection P
-  have : Epi π := (epi_iff_surjective π).2 hπ
-  let _ : Fintype I := Fintype.ofFinite I
-  have hM := M.grading.finite_piece_ne_bot
-  -- Maps out of the free module are tuples in the pieces `M_{dᵢ-j}`.
-  have hfree : HasFiniteLaurentSupport k fun j : ℤ ↦ ∀ i, (M.shiftObj j).grading.piece (d i) := by
-    refine HasFiniteLaurentSupport.of_finset (fun j ↦ inferInstance)
-      (Finset.univ.biUnion fun i ↦ hM.toFinset.image fun p ↦ d i - p) fun j hj ↦ ?_
-    have (i : I) : Subsingleton ((M.shiftObj j).grading.piece (d i)) := by
-      rw [Submodule.subsingleton_iff_eq_bot]
-      by_contra hne
-      refine hj (Finset.mem_biUnion.2 ⟨i, Finset.mem_univ i, Finset.mem_image.2
-        ⟨d i + -j, hM.mem_toFinset.2 ?_, by omega⟩⟩)
-      simpa using hne
-    infer_instance
-  exact (hfree.of_equiv fun j ↦ (freeHomEquiv (M.shiftObj j)).symm).of_injective
-    (fun j ↦ Linear.leftComp k _ π) fun j _ _ h ↦ (cancel_epi π).1 h
-
-end GradedModuleCat
-
 /-! ### Evaluation against `Af` -/
 
 /-- **The q-Euler characteristic against `Af` is the idempotent graded dimension**: for an
@@ -123,9 +92,9 @@ theorem gradedExtEuler_ofIdeal_span_singleton [HasExt.{w} (GradedModuleCat.{uA} 
   rw [gradedExtEuler_projective]
   ext p
   rw [coeff_targetShiftGradedDimension, GradedModuleCat.coeff_smulGradedDimension,
-    (Linear.homCongr k (Iso.refl _) ((GradedModuleCat.shiftPowIso 𝒜 (-p)).app M)).finrank_eq,
+    (GradedModuleCat.homShiftPowEquiv 𝒜 _ M (-p)).finrank_eq,
     (GradedModuleCat.ofIdealSpanSingletonHomEquiv hf hf₀ hI _).finrank_eq]
-  rw [GradedModuleCat.shiftFunctor_obj, InternalGrading.shift_piece, neg_neg, zero_add]
+  rw [InternalGrading.shift_piece, neg_neg, zero_add]
 
 /-! ### Graded Euler-admissibility of projective pairs -/
 
@@ -134,7 +103,7 @@ variable [Module.Finite k A]
 /-- **Finite graded projectives and finite graded modules form graded Euler-admissible pairs**:
 higher Ext out of a projective vanishes, and its graded Hom spaces into the shifts of a finite
 graded module have finite Laurent support. -/
-theorem isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules
+theorem isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules_gradedFiniteModules
     [HasExt.{w} (GradedModuleCat.{uA} 𝒜)] :
     IsGradedEulerAdmissibleOn.{w} (k := k) (e := GradedModuleCat.shift 𝒜)
       (gradedFiniteProjectiveModules 𝒜) (gradedFiniteModules 𝒜) where
@@ -145,7 +114,7 @@ theorem isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules
     have : Module.Finite k M := Module.Finite.trans A M
     exact isGradedEulerAdmissible_of_projective k _ P M
       ((GradedModuleCat.hasFiniteLaurentSupport_hom_shiftObj P M).of_equiv fun j ↦
-        Linear.homCongr k (Iso.refl P) ((GradedModuleCat.shiftPowIso 𝒜 j).app M).symm)
+        (GradedModuleCat.homShiftPowEquiv 𝒜 P M j).symm)
 
 /-! ### The q-Euler form on graded Grothendieck groups -/
 
@@ -160,7 +129,16 @@ def gradedProjectiveExtEuler :
       →ₛₗ[(LaurentPolynomial.invert (R := ℤ)).toRingEquiv.toRingHom]
       LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜) →ₗ[LaurentPolynomial ℤ]
         LaurentPolynomial ℤ :=
-  gradedExtEulerSesquilinear _ _ _ _ isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules
+  gradedExtEulerSesquilinear _ _ _ _
+    isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules_gradedFiniteModules
+
+/-- The projective/module q-Euler form is the generic graded Ext-Euler sesquilinear form for the
+two induced graded abelian exact subcategories. -/
+theorem gradedProjectiveExtEuler_eq :
+    gradedProjectiveExtEuler 𝒜 =
+      gradedExtEulerSesquilinear.{uA} _ _ _ _
+        isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules_gradedFiniteModules :=
+  gradedProjectiveExtEuler.eq_def 𝒜
 
 /-- The q-Euler form evaluates on two classes as the graded Ext-Euler characteristic. -/
 @[simp]
@@ -168,7 +146,8 @@ theorem gradedProjectiveExtEuler_of_of (P : (gradedFiniteProjectiveModules 𝒜)
     (M : (gradedFiniteModules 𝒜).FullSubcategory) :
     gradedProjectiveExtEuler 𝒜 (LaurentK0.of.{uA} _ P) (LaurentK0.of.{uA} _ M) =
       gradedExtEuler k (GradedModuleCat.shift 𝒜)
-        (isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules.isGradedEulerAdmissible
+        ((isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules_gradedFiniteModules
+          (𝒜 := 𝒜)).isGradedEulerAdmissible
           P.property M.property) :=
   gradedExtEulerSesquilinear_of_of _ _ _ _ _ P M
 
