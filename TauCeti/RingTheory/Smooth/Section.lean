@@ -87,7 +87,8 @@ theorem exists_isSMulRegular_smul_ker_le_span_singleton {A B : Type*} [CommRing 
       exact ⟨e.symm q, e.injective (by simp [heu, hq])⟩
     · rintro ⟨q, rfl⟩
       simp [heu]
-  obtain ⟨r, hr, hle⟩ := FormallyUnramified.exists_smul_ker_le_span_singleton σ hker
+  obtain ⟨r, hr, hle⟩ := FormallyUnramified.exists_smul_ker_le_span_singleton σ
+    (FinitePresentation.ker_fG_of_surjective σ fun c ↦ ⟨algebraMap A B c, σ.commutes c⟩) hker
   refine ⟨_, ?_, hu.of_flat, r, hr, hle⟩
   have hmem := hker ▸ Ideal.mem_span_singleton_self u
   simpa [RingHom.mem_ker] using hmem
