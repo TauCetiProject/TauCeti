@@ -23,12 +23,11 @@ all twenty-six degree-four classes. The degree-four table also determines their 
 geometry types: six classes have genus one, four are Euclidean, three are hyperbolic, and the
 rest are spherical. Fixed points are included in every displayed partition.
 
-Through degree three, the classification compares every pair of connected triples by kernel
-reduction. In degree four such brute force over all connected triples needs more than 20 GB of
-memory, so the file fixes one representative triple per class instead. Conjugating the first
-component of a connected triple to a fixed permutation of its cycle type leaves at most
-twenty-four triples to match against the representatives. The number of classes,
-`TauCeti.ConnectedIsoClass.card_four`, then follows from the classification.
+The degree-four representatives realize exactly the cycle data in the table, and every connected
+degree-four triple is equivalent to one of them. Consequently the table classifies connected
+triples up to relabeling, determines their Euler characteristics, genera, and geometry types,
+counts the twenty-six isomorphism classes, and shows that every inhabited ordered passport through
+degree four contains a single class.
 
 ## References
 
