@@ -86,12 +86,14 @@ theorem unitsInvPart_unitsInvPart (he : IsIdempotentElem e) (u : Rˣ) :
   he.unitsInvPart.apply_symm_apply u
 
 /-- **The `e`-component of `unitsInvPart u`** is the `e`-component of `u⁻¹`. -/
+@[simp]
 theorem mul_unitsInvPart (he : IsIdempotentElem e) (u : Rˣ) :
     e * (he.unitsInvPart u : R) = e * ↑u⁻¹ := by
   rw [coe_unitsInvPart]
   linear_combination (↑u⁻¹ - ↑u : R) * he.eq
 
 /-- **The `(1 - e)`-component of `unitsInvPart u`** is the `(1 - e)`-component of `u`. -/
+@[simp]
 theorem one_sub_mul_unitsInvPart (he : IsIdempotentElem e) (u : Rˣ) :
     (1 - e) * (he.unitsInvPart u : R) = (1 - e) * u := by
   rw [coe_unitsInvPart]
