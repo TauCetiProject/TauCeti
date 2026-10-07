@@ -16,6 +16,11 @@ same genus as `F`. This concerns the normalized places of the power subfield, no
 restriction of the valuations of `F`. The isomorphism given by iterated Frobenius transports the
 places, divisor degrees and dimensions of Riemann–Roch spaces semilinearly.
 
+If `hF : IsFunctionField k F`, the power subfield is again a function field by
+`hF.of_isAlgebraic_top (E := frobeniusPowers k F p n)`: the instance
+`isPurelyInseparable_frobeniusPowers` supplies the required algebraicity. In this setting,
+`genus_frobeniusPowers` compares the genera of function fields.
+
 No separability of `F / F^{p^n}` is assumed; in positive characteristic this extension is purely
 inseparable. Nor is exactness of the constant field needed for equality of the two suprema.
 
