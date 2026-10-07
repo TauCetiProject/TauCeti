@@ -43,7 +43,7 @@ variable {ι κ ν : Type*} [DecidableEq ι] [DecidableEq κ] [DecidableEq ν]
 
 /-- Radially extend a link map, preserving the apex coordinate and sending apex to apex. -/
 def closedStarMap (f : geometricLink K v → geometricLink L w)
-    (x : geometricClosedStar K v) : geometricClosedStar L w :=
+    (x : closedStarRealization K {v}) : closedStarRealization L {w} :=
   if h : x.1.1 v < 1 then
     let y := starRay L w (f (starLinkProjection K v
       ⟨x.1, (mem_puncturedClosedStar K v _).mpr ⟨x.2, h⟩⟩))
@@ -59,7 +59,7 @@ theorem closedStarMap_starApex (f : geometricLink K v → geometricLink L w) :
 
 /-- On a punctured star, the extension applies the link map and preserves the ray parameter. -/
 theorem closedStarMap_of_lt (f : geometricLink K v → geometricLink L w)
-    (x : geometricClosedStar K v) (hx : x.1.1 v < 1) :
+    (x : closedStarRealization K {v}) (hx : x.1.1 v < 1) :
     closedStarMap f x =
       ⟨(starRay L w (f (starLinkProjection K v
         ⟨x.1, (mem_puncturedClosedStar K v _).mpr ⟨x.2, hx⟩⟩))
@@ -92,7 +92,7 @@ theorem closedStarMap_link (f : geometricLink K v → geometricLink L w)
 /-- The apex coordinate is unchanged by radial extension. -/
 @[simp]
 theorem closedStarMap_apex_coordinate (f : geometricLink K v → geometricLink L w)
-    (x : geometricClosedStar K v) : (closedStarMap f x).1.1 w = x.1.1 v := by
+    (x : closedStarRealization K {v}) : (closedStarMap f x).1.1 w = x.1.1 v := by
   by_cases hx : x.1.1 v < 1
   · rw [closedStarMap_of_lt f x hx]
     simp
@@ -101,7 +101,7 @@ theorem closedStarMap_apex_coordinate (f : geometricLink K v → geometricLink L
 
 /-- Every other coordinate of the extension is bounded by the mass outside the apex. -/
 theorem closedStarMap_coordinate_le (f : geometricLink K v → geometricLink L w)
-    (x : geometricClosedStar K v) {j : κ} (hj : j ≠ w) :
+    (x : closedStarRealization K {v}) {j : κ} (hj : j ≠ w) :
     (closedStarMap f x).1.1 j ≤ 1 - x.1.1 v := by
   by_cases hx : x.1.1 v < 1
   · rw [closedStarMap_of_lt f x hx]
@@ -112,7 +112,7 @@ theorem closedStarMap_coordinate_le (f : geometricLink K v → geometricLink L w
 
 /-- Radial extension of the identity fixes every point of the closed star. -/
 @[simp]
-theorem closedStarMap_id (x : geometricClosedStar K v) : closedStarMap id x = x := by
+theorem closedStarMap_id (x : closedStarRealization K {v}) : closedStarMap id x = x := by
   by_cases hx : x.1.1 v < 1
   · rw [closedStarMap_of_lt id x hx]
     have h := congrArg (fun z : puncturedClosedStar K v => z.1)
@@ -127,7 +127,7 @@ theorem closedStarMap_id (x : geometricClosedStar K v) : closedStarMap id x = x 
 /-- Radial extension respects composition of link maps. -/
 @[simp]
 theorem closedStarMap_comp (g : geometricLink L w → geometricLink N u)
-    (f : geometricLink K v → geometricLink L w) (x : geometricClosedStar K v) :
+    (f : geometricLink K v → geometricLink L w) (x : closedStarRealization K {v}) :
     closedStarMap g (closedStarMap f x) = closedStarMap (g ∘ f) x := by
   by_cases hx : x.1.1 v < 1
   · rw [closedStarMap_of_lt f x hx,
@@ -142,9 +142,9 @@ theorem continuous_closedStarMap
     (hL : Topology.IsInducing (fun x : Realization L => (x.1 : κ → ℝ)))
     {f : geometricLink K v → geometricLink L w} (hf : Continuous f) :
     Continuous (closedStarMap f) := by
-  have hc : Continuous (fun x : geometricClosedStar K v => x.1.1 v) :=
+  have hc : Continuous (fun x : closedStarRealization K {v} => x.1.1 v) :=
     (continuous_apply v).comp ((continuous_realization_coe K).comp continuous_subtype_val)
-  let S : Set (geometricClosedStar K v) := {x | x.1.1 v < 1}
+  let S : Set (closedStarRealization K {v}) := {x | x.1.1 v < 1}
   have hS : IsOpen S := isOpen_lt hc continuous_const
   -- Off the apex, use the existing product coordinates on the punctured star.
   have haway : ContinuousOn (closedStarMap f) S := by
@@ -175,9 +175,9 @@ theorem continuous_closedStarMap
       simpa only [Function.comp_apply, closedStarMap_apex_coordinate] using hc.continuousAt
     · have hzero : (closedStarMap f x).1.1 j = 0 := by
         simp [closedStarMap, hx, Ne.symm hj]
-      have hupper : Tendsto (fun y : geometricClosedStar K v => 1 - y.1.1 v)
+      have hupper : Tendsto (fun y : closedStarRealization K {v} => 1 - y.1.1 v)
           (𝓝 x) (𝓝 0) := by
-        have hd : Continuous (fun y : geometricClosedStar K v => 1 - y.1.1 v) :=
+        have hd : Continuous (fun y : closedStarRealization K {v} => 1 - y.1.1 v) :=
           continuous_const.sub hc
         simpa only [ContinuousAt, heq, sub_self] using hd.continuousAt (x := x)
       have hbound := tendsto_const_nhds.squeeze hupper
@@ -191,7 +191,7 @@ def closedStarHomeomorph
     (hK : Topology.IsInducing (fun x : Realization K => (x.1 : ι → ℝ)))
     (hL : Topology.IsInducing (fun x : Realization L => (x.1 : κ → ℝ)))
     (e : geometricLink K v ≃ₜ geometricLink L w) :
-    geometricClosedStar K v ≃ₜ geometricClosedStar L w where
+    closedStarRealization K {v} ≃ₜ closedStarRealization L {w} where
   toFun := closedStarMap e
   invFun := closedStarMap e.symm
   left_inv x := by
@@ -214,7 +214,7 @@ def closedStarHomeomorph
 theorem closedStarHomeomorph_apply
     (hK : Topology.IsInducing (fun x : Realization K => (x.1 : ι → ℝ)))
     (hL : Topology.IsInducing (fun x : Realization L => (x.1 : κ → ℝ)))
-    (e : geometricLink K v ≃ₜ geometricLink L w) (x : geometricClosedStar K v) :
+    (e : geometricLink K v ≃ₜ geometricLink L w) (x : closedStarRealization K {v}) :
     closedStarHomeomorph hK hL e x = closedStarMap e x := (rfl)
 
 /-- The inverse radial homeomorphism extends the inverse link homeomorphism. -/
@@ -222,7 +222,7 @@ theorem closedStarHomeomorph_apply
 theorem closedStarHomeomorph_symm_apply
     (hK : Topology.IsInducing (fun x : Realization K => (x.1 : ι → ℝ)))
     (hL : Topology.IsInducing (fun x : Realization L => (x.1 : κ → ℝ)))
-    (e : geometricLink K v ≃ₜ geometricLink L w) (x : geometricClosedStar L w) :
+    (e : geometricLink K v ≃ₜ geometricLink L w) (x : closedStarRealization L {w}) :
     (closedStarHomeomorph hK hL e).symm x = closedStarMap e.symm x := (rfl)
 
 end AbstractSimplicialComplex

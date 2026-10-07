@@ -136,9 +136,9 @@ theorem mem_geometricLink_iff (x : Realization K) :
     support_mem, Finset.disjoint_singleton_right]
 
 /-- The apex, regarded as a point of its geometric closed star. -/
-def starApex : geometricClosedStar K v :=
+def starApex : closedStarRealization K {v} :=
   ⟨vertex K v, by
-    simp only [mem_geometricClosedStar, vertex_val,
+    simp only [mem_closedStarRealization_iff, vertex_val,
       Finsupp.support_single v one_ne_zero, Finset.union_self]
     exact K.singleton_mem v⟩
 
