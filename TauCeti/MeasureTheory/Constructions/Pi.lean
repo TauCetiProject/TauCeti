@@ -267,6 +267,12 @@ def MeasurableEquiv.finThreeArrow : (Fin 3 → β) ≃ᵐ β × β × β :=
 theorem MeasurableEquiv.finThreeArrow_apply (x : Fin 3 → β) :
     MeasurableEquiv.finThreeArrow x = (x 0, x 1, x 2) := (rfl)
 
+/-- The inverse of `MeasurableEquiv.finThreeArrow` sends a triple to the corresponding vector. -/
+@[simp]
+theorem MeasurableEquiv.finThreeArrow_symm_apply (a b c : β) :
+    MeasurableEquiv.finThreeArrow.symm (a, b, c) = ![a, b, c] :=
+  MeasurableEquiv.finThreeArrow.symm_apply_eq.2 (by simp)
+
 /-- Under `MeasurableEquiv.finThreeArrow` the product measure on `Fin 3 → β` is the iterated
 product `μ ⊗ (μ ⊗ μ)`. -/
 theorem measurePreserving_finThreeArrow (μ : Measure β) [SigmaFinite μ] :
@@ -284,6 +290,13 @@ def MeasurableEquiv.finFourArrow : (Fin 4 → β) ≃ᵐ β × β × β × β :=
 @[simp]
 theorem MeasurableEquiv.finFourArrow_apply (x : Fin 4 → β) :
     MeasurableEquiv.finFourArrow x = (x 0, x 1, x 2, x 3) := (rfl)
+
+/-- The inverse of `MeasurableEquiv.finFourArrow` sends a quadruple to the corresponding
+vector. -/
+@[simp]
+theorem MeasurableEquiv.finFourArrow_symm_apply (a b c d : β) :
+    MeasurableEquiv.finFourArrow.symm (a, b, c, d) = ![a, b, c, d] :=
+  MeasurableEquiv.finFourArrow.symm_apply_eq.2 (by simp)
 
 /-- Under `MeasurableEquiv.finFourArrow` the product measure on `Fin 4 → β` is the iterated
 product `μ ⊗ (μ ⊗ (μ ⊗ μ))`. -/

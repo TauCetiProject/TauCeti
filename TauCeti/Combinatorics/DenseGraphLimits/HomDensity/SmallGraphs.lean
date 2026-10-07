@@ -156,12 +156,18 @@ private theorem middleSwap_apply (p : Ω × Ω × Ω) :
     middleSwap Ω p = (p.2.1, p.1, p.2.2) := by
   rfl
 
+/-- The local reordering behind the four-cycle transport, read off on a quadruple: it unfolds
+`reorderFour` and `middleSwap` of this file and Mathlib's `prodAssoc`, which have no application
+lemmas of their own. -/
+private theorem prodAssoc_symm_reorderFour_apply (p : Ω × Ω × Ω × Ω) :
+    (MeasurableEquiv.prodAssoc : ((Ω × Ω) × (Ω × Ω)) ≃ᵐ Ω × Ω × (Ω × Ω)).symm (reorderFour Ω p) =
+      ((p.1, p.2.2.1), (p.2.1, p.2.2.2)) := (rfl)
+
 @[simp]
 private theorem finFourArrowPairPair_apply (x : Fin 4 → Ω) :
     finFourArrowPairPair Ω x = ((x 0, x 2), (x 1, x 3)) := by
   rw [finFourArrowPairPair, MeasurableEquiv.trans_apply, MeasurableEquiv.trans_apply,
-    MeasurableEquiv.finFourArrow_apply]
-  rfl
+    MeasurableEquiv.finFourArrow_apply, prodAssoc_symm_reorderFour_apply]
 
 private theorem measurePreserving_middleSwap (μ : Measure Ω) [SigmaFinite μ] :
     MeasurePreserving (middleSwap Ω) (μ.prod (μ.prod μ)) (μ.prod (μ.prod μ)) := by
@@ -187,7 +193,9 @@ private theorem measurePreserving_finFourArrowPairPair (μ : Measure Ω) [SigmaF
       (μ.prod (μ.prod (μ.prod μ))) ((μ.prod μ).prod (μ.prod μ)) :=
     (measurePreserving_prodAssoc μ μ (μ.prod μ)).symm
   convert hassoc.comp (hswap.comp hright) using 1
-  rfl
+  funext x
+  rw [finFourArrowPairPair_apply, Function.comp_apply, Function.comp_apply,
+    MeasurableEquiv.finFourArrow_apply, prodAssoc_symm_reorderFour_apply]
 
 /-- **The four-vertex transport.**  For any graph on `Fin 4`, the homomorphism density is an
 integral over two copies of `Ω × Ω`, with the coordinates paired for the four-cycle formulas. -/
