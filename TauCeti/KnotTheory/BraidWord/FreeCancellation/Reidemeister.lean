@@ -56,7 +56,8 @@ theorem crossingSign_closure_append_freeCancel_second (v : BraidWord n) (i : Fin
   simp [List.getElem_append_right]
 
 /-- Opposite appended letters produce opposite over-pair indicators at the two new crossings. -/
-theorem overPair_closure_append_freeCancel_one (v : BraidWord n) (i : Fin (n - 1))
+theorem overPair_closure_append_freeCancel_second_eq_not_first
+    (v : BraidWord n) (i : Fin (n - 1))
     (ε : ℤˣ) :
     (closure (v ++ [(i, ε), (i, -ε)])).overPair
         ⟨v.length + 1, by simp [List.length_append]⟩ =
