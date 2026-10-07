@@ -5,34 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Ring.Subring.Units
 public import TauCeti.GroupTheory.Index.Exact
-public import TauCeti.NumberTheory.ClassFieldTheory.FiniteCohomology.DegreeTwo
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.RightExact
+public import TauCeti.NumberTheory.ClassFieldTheory.Local.EulerCharacteristic.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LongExact
 
 /-!
 # Additivity of the local Euler characteristic
 
-For a finite smooth discrete Galois representation `A` over a nonarchimedean local field, define
-the three-term local Euler characteristic
-
-```text
-χ_F(A) = |H⁰(F, A)| |H²(F, A)| / |H¹(F, A)|.
-```
-
-This file proves that `χ_F` is multiplicative in short exact sequences. The low-degree long exact
-cohomology sequence supplies the nine exact terms. Its right endpoint is surjective by local Tate
-duality (`coeffMap_two_surjective`), and
+This file proves that the three-term local Euler characteristic `χ_F` is multiplicative in short
+exact sequences. The low-degree long exact cohomology sequence supplies the nine exact terms. Its
+right endpoint is surjective by local Tate duality (`coeffMap_two_surjective`), and
 `AddMonoidHom.card_mul_card_mul_card_mul_card_mul_card_of_exact` turns exactness into the required
 alternating identity of orders.
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.localEulerCharacteristic`: the positive-rational-valued local Euler
-  characteristic of a finite smooth discrete Galois representation.
-* `TauCeti.ClassFieldTheory.explicitCoeff2_surjective`: a surjection out of a finite smooth
-  discrete representation is surjective on explicit `H²`.
 * `TauCeti.ClassFieldTheory.localEulerCharacteristic_mul_of_exact`: multiplicativity in a short
   exact sequence `0 → A → B → C → 0` with `B` finite and smooth discrete and `C` discrete.
 
@@ -52,65 +40,6 @@ attribute [local instance] TopRep.distribMulAction
 
 variable {n : ℕ} {F : Type} [Field F] [ValuativeRel F] [TopologicalSpace F]
   [IsNonarchimedeanLocalField F]
-
-/-- **The three-term local Euler characteristic** of a finite smooth discrete Galois
-representation, as a positive rational number:
-`χ_F(A) = |H⁰(F, A)| |H²(F, A)| / |H¹(F, A)|`. -/
-def localEulerCharacteristic (hn : (n : F) ≠ 0) (A : GalRep n F)
-    [Finite A.V] [Fact (IsSmoothDiscrete (ZMod n) A)] :
-    Units.posSubgroup ℚ := by
-  have h₀ : Finite (continuousCohomology 0 A) :=
-    finite_H (F := F) (n := n) hn A Fact.out (i := 0) (by omega)
-  have h₁ : Finite (continuousCohomology 1 A) :=
-    finite_H (F := F) (n := n) hn A Fact.out (i := 1) (by omega)
-  have h₂ : Finite (continuousCohomology 2 A) :=
-    finite_H (F := F) (n := n) hn A Fact.out (i := 2) (by omega)
-  let q : ℚ :=
-    (Nat.card (continuousCohomology 0 A) : ℚ) * Nat.card (continuousCohomology 2 A) /
-      Nat.card (continuousCohomology 1 A)
-  have hq : 0 < q := div_pos
-    (mul_pos
-      (by exact_mod_cast @Nat.card_pos (continuousCohomology 0 A) inferInstance h₀)
-      (by exact_mod_cast @Nat.card_pos (continuousCohomology 2 A) inferInstance h₂))
-    (by exact_mod_cast @Nat.card_pos (continuousCohomology 1 A) inferInstance h₁)
-  exact ⟨Units.mk0 q hq.ne', hq⟩
-
-/-- The value of `localEulerCharacteristic` in `ℚ`. -/
-@[simp]
-theorem localEulerCharacteristic_coe (hn : (n : F) ≠ 0) (A : GalRep n F)
-    [Finite A.V] [Fact (IsSmoothDiscrete (ZMod n) A)] :
-    ((localEulerCharacteristic hn A).1 : ℚ) =
-      (Nat.card (continuousCohomology 0 A) : ℚ) * Nat.card (continuousCohomology 2 A) /
-        Nat.card (continuousCohomology 1 A) := by
-  rfl
-
-/-- A surjection from a finite smooth discrete Galois representation to a discrete one induces a
-surjection on explicit `H²`, through any equivariant additive map `φ` with the same underlying
-function. This is `coeffMap_two_surjective` read through the explicit degree-two comparison. -/
-theorem explicitCoeff2_surjective (hn : IsUnit (n : F)) {B C : GalRep n F}
-    [Finite B.V] [Fact (IsSmoothDiscrete (ZMod n) B)] [DiscreteTopology C.V]
-    (g : B ⟶ C) (hg : Function.Surjective g.hom)
-    (φ : B.V →+[Field.absoluteGaloisGroup F] C.V) (hφ : ∀ b, φ b = g.hom b) :
-    haveI := (Fact.out : IsSmoothDiscrete (ZMod n) B).discreteTopology
-    haveI := (Fact.out : IsSmoothDiscrete (ZMod n) B).continuousSMul
-    haveI := (IsSmoothDiscrete.of_surjective g hg Fact.out).continuousSMul
-    Function.Surjective
-      (explicitCoeff2 (Field.absoluteGaloisGroup F) B.V φ continuous_of_discreteTopology) := by
-  have := (Fact.out : IsSmoothDiscrete (ZMod n) B).discreteTopology
-  have := (Fact.out : IsSmoothDiscrete (ZMod n) B).continuousSMul
-  have := (IsSmoothDiscrete.of_surjective g hg Fact.out).continuousSMul
-  intro y
-  obtain ⟨x, hx⟩ := coeffMap_two_surjective hn g hg
-    (C.explicitH2AddEquivContinuousCohomologyOfDiscrete y)
-  refine ⟨B.explicitH2AddEquivContinuousCohomologyOfDiscrete.symm x,
-    C.explicitH2AddEquivContinuousCohomologyOfDiscrete.injective ?_⟩
-  -- Naturality of the degree-two comparison carries the explicit map to `coeffMap g 2`.
-  have hnat := TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_map B C
-    (ContinuousMonoidHom.id _) g φ.toAddMonoidHom (fun b ↦ (hφ b).symm) φ.map_smul
-    (B.explicitH2AddEquivContinuousCohomologyOfDiscrete.symm x)
-  rw [AddEquiv.apply_symm_apply, ← ContinuousCohomology.coeffMap_def, hx] at hnat
-  rw [explicitCoeff2_eq_explicitMap2]
-  exact hnat.symm
 
 /-- **Additivity of the local Euler characteristic.** If
 `0 → A → B → C → 0` is an exact sequence of representations with `B` finite and smooth discrete
