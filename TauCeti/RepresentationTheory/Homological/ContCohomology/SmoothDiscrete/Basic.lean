@@ -367,10 +367,15 @@ lemma IsSmoothDiscrete.continuousSMul {X : TopRep R G} (hX : IsSmoothDiscrete R 
   haveI := hX.discreteTopology
   (isSmoothDiscrete_iff_continuousSMul X).1 hX
 
+omit [IsTopologicalGroup G] in
 /-- Smoothness passes to the target of a surjective morphism with discrete target: the stabilizer
-of `f x` contains the open stabilizer of `x`. Discreteness of the target is a hypothesis because
-the topology of `Y` is part of its data. -/
-lemma IsSmoothDiscrete.of_surjective {X Y : TopRep R G} [DiscreteTopology Y.V] (f : X ⟶ Y)
+of `f x` is a subgroup containing the open stabilizer of `x`, hence open since `G` has separately
+continuous multiplication. That continuity cannot be dropped: for `G` cyclic of order four with
+only `{1}` open among its proper nonempty subsets, `ℤ[i]` with a generator acting by `i` is smooth
+discrete, but in its quotient `ℤ[i]/2` the stabilizer of `1` is `{1, g²}`, which is not open.
+Discreteness of the target is a hypothesis because the topology of `Y` is part of its data. -/
+lemma IsSmoothDiscrete.of_surjective [SeparatelyContinuousMul G] {X Y : TopRep R G}
+    [DiscreteTopology Y.V] (f : X ⟶ Y)
     (hf : Function.Surjective f.hom) (hX : IsSmoothDiscrete R X) : IsSmoothDiscrete R Y := by
   let := X.distribMulAction
   let := Y.distribMulAction

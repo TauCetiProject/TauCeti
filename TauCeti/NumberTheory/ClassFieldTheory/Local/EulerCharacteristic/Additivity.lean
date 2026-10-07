@@ -188,14 +188,15 @@ theorem localEulerCharacteristic_mul_of_exact (hn : IsUnit (n : F)) {A B C : Gal
         Nat.card (continuousCohomology 1 B) *
           (Nat.card (continuousCohomology 0 A) * Nat.card (continuousCohomology 2 A) *
             (Nat.card (continuousCohomology 0 C) * Nat.card (continuousCohomology 2 C))) := by
-    have h := (show
-      Nat.card (continuousCohomology 0 B) * Nat.card (continuousCohomology 2 B) *
-          (Nat.card (continuousCohomology 1 A) * Nat.card (continuousCohomology 1 C)) =
-        Nat.card (continuousCohomology 1 B) *
-          (Nat.card (continuousCohomology 0 A) * Nat.card (continuousCohomology 2 A) *
-            (Nat.card (continuousCohomology 0 C) * Nat.card (continuousCohomology 2 C))) by
+    -- The same identity in `ℕ`, rearranged from `hex`; it is then cast to `ℚ`.
+    have h :
+        Nat.card (continuousCohomology 0 B) * Nat.card (continuousCohomology 2 B) *
+            (Nat.card (continuousCohomology 1 A) * Nat.card (continuousCohomology 1 C)) =
+          Nat.card (continuousCohomology 1 B) *
+            (Nat.card (continuousCohomology 0 A) * Nat.card (continuousCohomology 2 A) *
+              (Nat.card (continuousCohomology 0 C) * Nat.card (continuousCohomology 2 C))) := by
       ring_nf at hex ⊢
-      exact hex.symm)
+      exact hex.symm
     exact_mod_cast h
   have hA₁ : Finite (continuousCohomology 1 A) := finite_H hn.ne_zero A Fact.out (by omega)
   have hB₁ : Finite (continuousCohomology 1 B) := finite_H hn.ne_zero B Fact.out (by omega)
