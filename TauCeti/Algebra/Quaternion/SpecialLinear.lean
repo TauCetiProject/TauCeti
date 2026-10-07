@@ -83,12 +83,6 @@ theorem map_star_eq_adjugate_of_algEquiv_matrix {c₁ c₂ c₃ : R}
   simpa only [f, e.symm_apply_apply] using
     Matrix.eq_adjugate_of_antimultiplicative_of_exists_add_eq_smul_one f hmul hscalar (e q)
 
-private theorem mul_eq_one_of_algEquiv_apply_mul_apply_eq_one {c₁ c₂ c₃ : R}
-    (e : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R) {x y : ℍ[R,c₁,c₂,c₃]}
-    (h : e x * e y = 1) : x * y = 1 := by
-  apply e.injective
-  simpa only [map_mul, map_one] using h
-
 /-- A splitting algebra equivalence restricts to an equivalence from the quaternion norm-one group
 to the two-dimensional special linear group. -/
 noncomputable def unitaryEquivSpecialLinearOfAlgEquiv {c₁ c₂ c₃ : R}
@@ -124,11 +118,11 @@ noncomputable def unitaryEquivSpecialLinearOfAlgEquiv {c₁ c₂ c₃ : R}
           Matrix.adjugate (A : Matrix (Fin 2) (Fin 2) R) = 1 := by
       rw [Matrix.mul_adjugate, A.det_coe, one_smul]
     have hunitary : q ∈ unitary ℍ[R,c₁,c₂,c₃] := (Unitary.mem_iff).mpr ⟨by
-        apply mul_eq_one_of_algEquiv_apply_mul_apply_eq_one e
-        rw [hstar, e.apply_symm_apply]
+        apply (map_eq_one_iff e e.injective).mp
+        rw [map_mul, hstar, e.apply_symm_apply]
         exact hadjugate_mul, by
-        apply mul_eq_one_of_algEquiv_apply_mul_apply_eq_one e
-        rw [hstar, e.apply_symm_apply]
+        apply (map_eq_one_iff e e.injective).mp
+        rw [map_mul, hstar, e.apply_symm_apply]
         exact hmul_adjugate⟩
     refine ⟨⟨q, hunitary⟩, ?_⟩
     apply Subtype.ext
