@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Convex.SimplicialComplex.AffineIndependentUnion
 public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Topology.UniformSpace.Real
+import Mathlib.Analysis.Convex.Topology
+import Mathlib.Topology.Separation.Hausdorff
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
 import Mathlib.Geometry.Convex.ConvexSpace.Defs
 
@@ -107,6 +109,26 @@ topologies used to define the weak topology on the whole realization. -/
 instance (σ : Finset ι) : TopologicalSpace (StandardSimplex σ) :=
   TopologicalSpace.induced (fun x : StandardSimplex σ => (x.1 : ι → ℝ)) inferInstance
 
+/-- Every closed coordinate simplex is compact, even in an infinite vertex set. -/
+instance instCompactSpaceStandardSimplex (σ : Finset ι) : CompactSpace (StandardSimplex σ) := by
+  let c := Finsupp.lcoeFun (R := ℝ) (α := ι) (M := ℝ)
+  have hc : IsCompact
+      (c '' convexHull ℝ (σ.image (fun v => Finsupp.single v (1 : ℝ)) : Set (ι →₀ ℝ))) := by
+    rw [c.image_convexHull]
+    exact ((σ.image (fun v => Finsupp.single v (1 : ℝ))).finite_toSet.image c).isCompact_convexHull
+      ℝ
+  have hind : Topology.IsInducing (fun x : StandardSimplex σ => (x.1 : ι → ℝ)) :=
+    Topology.IsInducing.induced _
+  have hr : range (fun x : StandardSimplex σ => (x.1 : ι → ℝ)) =
+      c '' convexHull ℝ (σ.image (fun v => Finsupp.single v (1 : ℝ)) : Set (ι →₀ ℝ)) := by
+    have hcoe : (fun x : StandardSimplex σ => (x.1 : ι → ℝ)) = ⇑c ∘ Subtype.val :=
+      funext fun x => by simp [c]
+    rw [hcoe]
+    exact (range_comp c Subtype.val).trans (congrArg (fun s => c '' s) Subtype.range_coe)
+  refine ⟨hind.isCompact_iff.mpr ?_⟩
+  rw [image_univ, hr]
+  exact hc
+
 /-- A geometric face is exactly the image of an abstract face under the coordinate embedding. -/
 theorem mem_standardGeometricComplex_faces_iff (K : AbstractSimplicialComplex ι)
     (τ : Finset (ι →₀ ℝ)) :
@@ -158,6 +180,17 @@ theorem continuous_realization_coe (K : AbstractSimplicialComplex ι) :
   intro σ
   exact continuous_induced_dom.congr fun x => by
     exact congrArg (fun y : ι →₀ ℝ => (y : ι → ℝ)) (faceInclusion_val K σ x).symm
+
+/-- Distinct realization points have distinct barycentric coordinates. -/
+theorem injective_realization_coe (K : AbstractSimplicialComplex ι) :
+    Function.Injective (fun x : Realization K => (x.1 : ι → ℝ)) :=
+  fun _ _ h => Subtype.ext (Finsupp.ext fun v => congrFun h v)
+
+/-- The weak realization is Hausdorff: distinct points have distinct continuous
+barycentric coordinates. -/
+instance instT2SpaceRealization (K : AbstractSimplicialComplex ι) : T2Space (Realization K) :=
+  T2Space.of_injective_continuous
+    (injective_realization_coe K) (continuous_realization_coe K)
 
 /-- The coordinate image of every abstract face is a face of the geometric complex. -/
 theorem image_single_mem_standardGeometricComplex_faces {K : AbstractSimplicialComplex ι}

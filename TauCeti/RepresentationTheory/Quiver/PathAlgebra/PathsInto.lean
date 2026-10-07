@@ -15,13 +15,17 @@ public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Grading
 For a quiver `R`, `pathsInto k n j` is the span in its path algebra of paths of length `n`
 ending at `j`. This file describes the span through the path-length grading and the vertex
 idempotent, proves its multiplication and last-arrow decomposition, and counts its dimension.
-These results apply to path algebras independently of any relations.
+The last-arrow decomposition is unique: `∑_{b : i ⟶ j} b f_b` determines each `eᵢ f_b`. These
+results apply to path algebras independently of any relations.
 
 ## Main results
 
 * `TauCeti.PathAlgebra.pathsInto`: the span of paths of length `n` ending at `j`.
 * `TauCeti.PathAlgebra.mem_pathsInto_iff`: the span is the degree-`n` part of the corner at `j`.
 * `TauCeti.PathAlgebra.mul_mem_pathsInto`: multiplication adds path lengths.
+* `TauCeti.PathAlgebra.exists_eq_sum_ofArrow_mul` and
+  `TauCeti.PathAlgebra.sum_ofArrow_mul_eq_zero_iff`: existence and uniqueness of the last-arrow
+  decomposition.
 * `TauCeti.PathAlgebra.finrank_pathsInto`: its dimension is the number of paths into `j`.
 -/
 
@@ -229,6 +233,40 @@ theorem exists_eq_sum_ofArrow_mul [Fintype R] [∀ a b : R, Fintype (a ⟶ b)] {
     obtain ⟨z, hz, rfl⟩ := hx
     refine ⟨c • z, fun i b => Submodule.smul_mem _ c (hz i b), ?_⟩
     simp only [Pi.smul_apply, mul_smul_comm, Finset.smul_sum]
+
+/-- **Uniqueness of the last-arrow decomposition.** A sum `∑_{b : i ⟶ j} b f_b` vanishes exactly
+when each `f_b` is killed by the vertex idempotent at the source of `b`: the paths `q` followed by
+distinct arrows `b` into `j` are distinct basis paths. Only the part `eᵢ f_b` of `f_b` on paths
+ending at `i` contributes to `b f_b`. -/
+theorem sum_ofArrow_mul_eq_zero_iff [Fintype R] [∀ a b : R, Fintype (a ⟶ b)] {j : R}
+    {f : (i : R) → (i ⟶ j) → pathAlgebra k R} :
+    ∑ i, ∑ b : i ⟶ j, ofArrow b * f i b = 0 ↔ ∀ i b, vertexIdempotent k i * f i b = 0 := by
+  classical
+  constructor
+  · intro h i b
+    refine (pathAlgebraBasis k R).repr.injective (Finsupp.ext fun x => ?_)
+    obtain ⟨s, t, q⟩ := x
+    rw [pathAlgebraBasis_repr_vertexIdempotent_mul, map_zero, Finsupp.coe_zero, Pi.zero_apply]
+    split_ifs with ht
+    · subst ht
+      -- Read off the coordinate of the sum on the path `q` followed by `b`.
+      have h' := congrArg (fun F => (pathAlgebraBasis k R).repr F ⟨s, j, q.cons b⟩) h
+      simp only [map_sum, Finsupp.coe_finsetSum, Finset.sum_apply, map_zero,
+        Finsupp.coe_zero, Pi.zero_apply] at h'
+      rw [Finset.sum_eq_single t, Finset.sum_eq_single b,
+        pathAlgebraBasis_repr_ofArrow_mul_cons] at h'
+      · exact h'
+      · intro b' _ hb'
+        exact pathAlgebraBasis_repr_ofArrow_mul_cons_of_ne b b' (by simpa using hb') q _
+      · simp
+      · intro i' _ hi'
+        exact Finset.sum_eq_zero fun b' _ => pathAlgebraBasis_repr_ofArrow_mul_cons_of_ne b b'
+          (fun he => hi' (congrArg Sigma.fst he)) q _
+      · simp
+    · rfl
+  · intro h
+    refine Finset.sum_eq_zero fun i _ => Finset.sum_eq_zero fun b _ => ?_
+    rw [ofArrow_eq_ofPath, ← ofPath_mul_vertexIdempotent, mul_assoc, h, mul_zero]
 
 end Semiring
 

@@ -30,6 +30,8 @@ for noncompact submanifolds the radius has to be a positive continuous function 
 * `TauCeti.normalSubspace I f x`: the orthogonal complement in `V` of the range of the
   differential of `f` at `x`.
 * `TauCeti.normalTube I f ε`: the normal vectors of length less than `ε`, as a subset of `M × V`.
+* `TauCeti.normalTubeOfRadius I f r`: the normal vectors shorter than a radius `r` depending on
+  their base point.
 
 ## Main results
 
@@ -279,6 +281,25 @@ theorem mem_normalTube {f : M → V} {ε : ℝ} {p : M × V} :
     p ∈ normalTube I f ε ↔ p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ < ε :=
   Iff.rfl
 
+variable (I) in
+/-- The normal vectors along `f` shorter than a radius depending on their base point. -/
+def normalTubeOfRadius (f : M → V) (r : M → ℝ) : Set (M × V) :=
+  {p | p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ < r p.1}
+
+omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
+@[simp]
+theorem mem_normalTubeOfRadius {f : M → V} {r : M → ℝ} {p : M × V} :
+    p ∈ normalTubeOfRadius I f r ↔ p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ < r p.1 :=
+  Iff.rfl
+
+omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
+/-- A constant radius gives the usual normal tube. -/
+@[simp]
+theorem normalTubeOfRadius_const (f : M → V) (ε : ℝ) :
+    normalTubeOfRadius I f (fun _ => ε) = normalTube I f ε := by
+  ext p
+  simp
+
 omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
 /-- At a point `y` of the source of a chart, the normal space of `f` is the orthogonal complement
 of the range of the derivative of the coordinate expression of `f`. -/
@@ -294,7 +315,7 @@ theorem normalSubspace_eq_of_mem_source [IsManifold I 1 M] {f : M → V} {x y : 
 /-- The local tubular neighbourhood theorem on `M`: around every point there is an open set `W`
 and a radius `δ` such that the normal map is injective, and sends relatively open sets to open
 sets, on the normal vectors of length less than `δ` at points of `W`. -/
-private theorem exists_injOn_isOpen_image_normalTube [I.Boundaryless] [IsManifold I 2 M]
+theorem exists_injOn_isOpen_image_normalTube [I.Boundaryless] [IsManifold I 2 M]
     {f : M → V} (hf : ContMDiff I 𝓘(ℝ, V) 2 f) (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x))
     (x₀ : M) :
     ∃ W : Set M, IsOpen W ∧ x₀ ∈ W ∧ ∃ δ > 0,

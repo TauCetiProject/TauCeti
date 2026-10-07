@@ -201,8 +201,8 @@ theorem isSeparable_iff_pullbackDifferential_ne_zero [W₁.IsElliptic] [W₂.IsE
   have hsep : Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField ↔
       Algebra.IsSeparable W₂.FunctionField W₁.FunctionField := by
     rw [← Field.finSepDegree_eq_finrank_iff, ← Field.finSepDegree_eq_finrank_iff,
-      TauCeti.AlgHom.finSepDegree_fieldRange φ.fieldPullback halg,
-      TauCeti.AlgHom.finrank_fieldRange φ.fieldPullback halg]
+      φ.fieldPullback.finSepDegree_fieldRange halg,
+      φ.fieldPullback.finrank_fieldRange halg]
   -- A finite extension is separable exactly when its module of differentials vanishes.
   have hunr : Algebra.IsSeparable W₂.FunctionField W₁.FunctionField ↔
       Subsingleton (KaehlerDifferential W₂.FunctionField W₁.FunctionField) := by
