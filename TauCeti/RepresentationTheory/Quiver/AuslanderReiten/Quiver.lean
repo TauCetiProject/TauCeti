@@ -59,7 +59,10 @@ namespace irreducibleMorphismQuiver
 
 variable {k Q}
 
-/-- The vertex type as Mathlib's skeleton of finite-dimensional indecomposables. -/
+/-- The vertex type as Mathlib's skeleton of finite-dimensional indecomposables.
+
+This equivalence makes the identification available to importing modules: the definition of
+`irreducibleMorphismQuiver` is not exposed, so they cannot use `Equiv.refl` directly. -/
 def equivSkeleton : irreducibleMorphismQuiver.{u, v, w, t} k Q ≃
     Skeleton (ObjectProperty.FullSubcategory
       (fun M : QuiverRep.{u, v, w, t} k Q ↦ IsFinDim k Q M ∧ Indecomposable M)) :=
@@ -70,7 +73,8 @@ def of {M : QuiverRep.{u, v, w, t} k Q} (hM : IsFinDim k Q M) (hI : Indecomposab
     irreducibleMorphismQuiver.{u, v, w, t} k Q :=
   toSkeleton ⟨M, hM, hI⟩
 
-/-- A representation's vertex corresponds to its skeleton class. -/
+/-- A representation's vertex corresponds to its skeleton class, without unfolding `of`
+in importing modules. -/
 @[simp]
 theorem equivSkeleton_of {M : QuiverRep.{u, v, w, t} k Q}
     (hM : IsFinDim k Q M) (hI : Indecomposable M) :
@@ -79,7 +83,8 @@ theorem equivSkeleton_of {M : QuiverRep.{u, v, w, t} k Q}
         (fun N : QuiverRep.{u, v, w, t} k Q ↦ IsFinDim k Q N ∧ Indecomposable N)) :=
   (rfl)
 
-/-- A skeleton class becomes the vertex of the same representation. -/
+/-- A skeleton class becomes the vertex of the same representation, without unfolding `of`
+in importing modules. -/
 @[simp]
 theorem equivSkeleton_symm_toSkeleton
     (M : ObjectProperty.FullSubcategory
