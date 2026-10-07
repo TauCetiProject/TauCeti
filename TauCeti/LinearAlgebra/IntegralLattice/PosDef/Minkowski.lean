@@ -88,10 +88,11 @@ theorem IsPosDef.minimum_pow_mul_pi_pow_le (hL : L.IsPosDef) :
     rw [← mul_div_assoc, lt_div_iff₀ hΓ]
     refine lt_of_pow_lt_pow_left₀ 2 (by positivity) ?_
     have hr : (√m ^ n * √Real.pi ^ n) ^ 2 = m ^ n * Real.pi ^ n := by
-      rw [mul_pow, ← pow_mul, ← pow_mul, mul_comm n 2, pow_mul, pow_mul, Real.sq_sqrt hm,
-        Real.sq_sqrt Real.pi_pos.le]
+      calc (√m ^ n * √Real.pi ^ n) ^ 2 = (√m ^ 2) ^ n * (√Real.pi ^ 2) ^ n := by ring
+        _ = m ^ n * Real.pi ^ n := by rw [Real.sq_sqrt hm, Real.sq_sqrt Real.pi_pos.le]
     have hl : (2 ^ n * c * Γ) ^ 2 = 4 ^ n * Γ ^ 2 * c ^ 2 := by
-      rw [show (4 : ℝ) = 2 ^ 2 by norm_num, ← pow_mul, mul_comm 2 n, pow_mul]
+      have h4 : (4 : ℝ) ^ n = 2 ^ n * 2 ^ n := by rw [← mul_pow]; norm_num
+      rw [h4]
       ring
     rw [hr, hl]
     exact h
@@ -130,16 +131,22 @@ theorem IsPosDef.minimum_le_mul_determinant_rpow (hL : L.IsPosDef) :
       (L.determinant : ℝ) ^ (1 / finrank ℤ L : ℝ) := by
   set n := finrank ℤ L
   have hdet : (0 : ℝ) ≤ L.determinant := by exact_mod_cast hL.determinant_pos.le
-  have hΓ : 0 ≤ Real.Gamma (n / 2 + 1) := (Real.Gamma_pos_of_pos (by positivity)).le
+  have key := hL.minimum_pow_mul_pi_pow_le
+  set Γ := Real.Gamma (n / 2 + 1)
+  have hΓ : 0 ≤ Γ := (Real.Gamma_pos_of_pos (by positivity)).le
   rcases subsingleton_or_nontrivial L with hL0 | hL0
   · rw [minimum_eq_zero_of_subsingleton, Nat.cast_zero]
     positivity
   have hn : n ≠ 0 := finrank_pos.ne'
+  have hn' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
+  -- The analytic identities: the `n`-th powers of the two real powers.
+  have hΓn : (Γ ^ (2 / n : ℝ)) ^ n = Γ ^ 2 := by
+    rw [← Real.rpow_mul_natCast hΓ, div_mul_cancel₀ _ hn', Real.rpow_two]
+  have hdetn : ((L.determinant : ℝ) ^ (1 / n : ℝ)) ^ n = L.determinant := by
+    rw [← Real.rpow_mul_natCast hdet, div_mul_cancel₀ _ hn', Real.rpow_one]
   refine le_of_pow_le_pow_left₀ hn (by positivity) ?_
-  rw [mul_pow, mul_pow, div_pow, ← Real.rpow_mul_natCast hΓ, ← Real.rpow_mul_natCast hdet,
-    div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr hn), div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr hn),
-    Real.rpow_two, Real.rpow_one, div_mul_eq_mul_div, div_mul_eq_mul_div,
-    le_div_iff₀ (by positivity)]
-  exact hL.minimum_pow_mul_pi_pow_le
+  rw [mul_pow, mul_pow, div_pow, hΓn, hdetn]
+  field_simp
+  exact key
 
 end TauCeti.IntegralLattice
