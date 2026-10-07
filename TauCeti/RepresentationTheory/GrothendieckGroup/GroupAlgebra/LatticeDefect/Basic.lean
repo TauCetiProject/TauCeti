@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.Algebra.Module.Torsion.Tensor
+public import TauCeti.LinearAlgebra.TensorProduct.Quotient
 public import TauCeti.RepresentationTheory.AsModule
 public import TauCeti.RepresentationTheory.BaseChange
 public import TauCeti.RepresentationTheory.TorsionBy
@@ -130,10 +131,11 @@ end Reduction
 `ρ.quotSMulTop ℓ` is the class of `k ⊗_ℤ W`, which is finitely generated over `k` as soon as
 `W ⧸ ℓW` is, even when `W` is not (`TauCeti.finite_baseChange_of_finite_quotSMulTop`). -/
 theorem reductionK0_quotSMulTop (ℓ : ℕ) [CharP k ℓ] {W : Type u} [AddCommGroup W] [Module ℤ W]
-    [Module.Finite ℤ (QuotSMulTop (ℓ : ℤ) W)] [Module.Finite k (k ⊗[ℤ] W)]
-    (ρ : Representation ℤ G W) :
+    [Module.Finite ℤ (QuotSMulTop (ℓ : ℤ) W)] (ρ : Representation ℤ G W) :
+    haveI : Module.Finite k (k ⊗[ℤ] W) := QuotSMulTop.finite_baseChange (r := (ℓ : ℤ)) (by simp)
     reductionK0 k (ρ.quotSMulTop ℓ) =
       ExactK0.of (FGModuleCat.of k[G] (Representation.baseChange k ρ).asModule) :=
+  haveI : Module.Finite k (k ⊗[ℤ] W) := QuotSMulTop.finite_baseChange (r := (ℓ : ℤ)) (by simp)
   ExactK0.of_congr (Representation.asModuleLinearEquivOfEquiv
     (ρ.baseChangeQuotSMulTopEquiv (by simp)).symm).toFGModuleCatIso
 
@@ -262,7 +264,10 @@ theorem latticeDefect_add_of_exact [Fact ℓ.Prime] {A B C : Type u} [AddCommGro
   have := AddMonoid.FG.to_moduleFinite_int (G := QuotSMulTop (ℓ : ℤ) C)
   have := AddMonoid.FG.to_moduleFinite_int (G := Submodule.torsionBy ℤ C ℓ)
   have key := reductionK0_six_term k ℓ (f := IntertwiningMap.ofDistribMulActionHom f)
-    (g := IntertwiningMap.ofDistribMulActionHom g) hfg hf hg
+    (g := IntertwiningMap.ofDistribMulActionHom g)
+    (by simpa only [IntertwiningMap.coe_ofDistribMulActionHom] using hfg)
+    (by simpa only [IntertwiningMap.coe_ofDistribMulActionHom] using hf)
+    (by simpa only [IntertwiningMap.coe_ofDistribMulActionHom] using hg)
   rw [latticeDefect_def, latticeDefect_def, latticeDefect_def]
   linear_combination (norm := abel) key
 

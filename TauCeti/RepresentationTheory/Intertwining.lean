@@ -115,9 +115,7 @@ variable {G V W : Type*} [Monoid G] [AddCommGroup V] [DistribMulAction G V] [Add
   [DistribMulAction G W]
 
 /-- An equivariant additive map `f : V →+[G] W` of `G`-modules, as an intertwining map between the
-representations `Representation.ofDistribMulAction ℤ G` on `V` and on `W`. It is exposed so that
-its underlying function is `f` by definition. -/
-@[expose]
+representations `Representation.ofDistribMulAction ℤ G` on `V` and on `W`. -/
 def ofDistribMulActionHom (f : V →+[G] W) :
     IntertwiningMap (ofDistribMulAction ℤ G V) (ofDistribMulAction ℤ G W) :=
   f.toAddMonoidHom.toIntLinearMap.intertwiningMap_of_isIntertwiningMap _ _ fun g v =>
@@ -131,7 +129,7 @@ theorem toLinearMap_ofDistribMulActionHom (f : V →+[G] W) :
 
 /-- `ofDistribMulActionHom f` acts as `f`. -/
 @[simp]
-theorem ofDistribMulActionHom_apply (f : V →+[G] W) (v : V) : ofDistribMulActionHom f v = f v :=
+theorem coe_ofDistribMulActionHom (f : V →+[G] W) : ⇑(ofDistribMulActionHom f) = ⇑f :=
   (rfl)
 
 end DistribMulAction
