@@ -30,21 +30,6 @@ open Limits
 variable {C D : Type*} [Category* C] [Category* D] [Preadditive C] [Preadditive D]
 variable (F : C ⥤ D) [F.Additive] {X Y : C}
 
-/-- Surjectivity on endomorphisms preserves locality when the image object is nonzero. -/
-theorem isLocalRing_end_obj_of_map_surjective [IsLocalRing (End X)]
-    (hX : ¬ IsZero (F.obj X))
-    (hF : Function.Surjective (F.map : End X → End (F.obj X))) :
-    IsLocalRing (End (F.obj X)) := by
-  have : Nontrivial (End (F.obj X)) :=
-    nontrivial_of_ne (𝟙 (F.obj X)) 0 (fun h ↦ hX ((IsZero.iff_id_eq_zero _).mpr h))
-  refine IsLocalRing.of_isUnit_or_isUnit_one_sub_self fun e ↦ ?_
-  obtain ⟨f, rfl⟩ := hF e
-  rcases IsLocalRing.isUnit_or_isUnit_one_sub_self (R := End X) f with hf | hf
-  · exact Or.inl (hf.map (F.mapEnd X))
-  · exact Or.inr (by
-      simpa only [mapEnd_apply, F.map_sub, End.one_def, F.map_id]
-        using hf.map (F.mapEnd X))
-
 /-- An endomorphism of an object with local endomorphism ring is invertible if an additive
 functor sends it to the identity of a nonzero object. -/
 theorem isIso_of_map_eq_id_of_isLocalRing_end [IsLocalRing (End X)]
@@ -64,7 +49,10 @@ endomorphism ring is local and the functor is surjective on its endomorphisms. -
 theorem indecomposable_obj_of_map_surjective_of_isLocalRing_end [HasBinaryBiproducts D]
     [IsLocalRing (End X)] (hX : ¬ IsZero (F.obj X))
     (hF : Function.Surjective (F.map : End X → End (F.obj X))) : Indecomposable (F.obj X) := by
-  have := F.isLocalRing_end_obj_of_map_surjective hX hF
+  have : Nontrivial (End (F.obj X)) :=
+    nontrivial_of_ne (𝟙 (F.obj X)) 0 (fun h ↦ hX ((IsZero.iff_id_eq_zero _).mpr h))
+  have := IsLocalRing.of_surjective'
+    ({ F.mapEnd X, F.mapAddHom with } : End X →+* End (F.obj X)) hF
   exact TauCeti.indecomposable_of_injective_of_isLocalRing hX (id : End (F.obj X) → _)
     Function.injective_id rfl rfl (fun _ ↦ rfl)
 
