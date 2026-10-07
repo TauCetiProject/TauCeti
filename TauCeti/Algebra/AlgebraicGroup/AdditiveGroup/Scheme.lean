@@ -52,10 +52,9 @@ affine-space APIs.
 * `TauCeti.AdditiveGroup.groupScheme_one_left`,
   `TauCeti.AdditiveGroup.groupScheme_mul_left`, and
   `TauCeti.AdditiveGroup.groupScheme_inv_left`: the underlying scheme maps of its operations.
-* `TauCeti.AdditiveGroup.isAffine_groupScheme`,
-  `TauCeti.AdditiveGroup.locallyOfFinitePresentation_groupScheme`, and
-  `TauCeti.AdditiveGroup.locallyOfFiniteType_groupScheme`: affineness, local finite presentation,
-  and local finite type.
+* `TauCeti.AdditiveGroup.isAffine_groupScheme` and
+  `TauCeti.AdditiveGroup.locallyOfFinitePresentation_groupScheme`: affineness and local finite
+  presentation. Local finite type follows by instance search.
 * `TauCeti.AdditiveGroup.groupSchemePointMulEquiv`: the canonical passage between algebra points
   and scheme-valued points.
 * `TauCeti.AdditiveGroup.schemePointsMulEquiv`: scheme-valued points are the additive group of
@@ -282,18 +281,9 @@ instance isAffine_groupScheme : IsAffine (groupScheme R).X.left := by
 /-- The structural morphism of the additive group scheme is locally of finite presentation. -/
 instance locallyOfFinitePresentation_groupScheme :
     LocallyOfFinitePresentation (groupScheme R).X.hom := by
-  rw [groupScheme_X_hom]
-  let : LocallyOfFinitePresentation (eqToHom (groupScheme_X_left R)) :=
-    locallyOfFinitePresentation_of_isOpenImmersion _
-  let : LocallyOfFinitePresentation
-      (Spec.map (CommRingCat.ofHom (algebraMap R (SymmetricAlgebra R R)))) := by
-    rw [LocallyOfFinitePresentation.SpecMap_iff]
-    exact RingHom.finitePresentation_algebraMap.mpr inferInstance
-  exact locallyOfFinitePresentation_comp _ _
-
-/-- The structural morphism of the additive group scheme is locally of finite type. -/
-instance locallyOfFiniteType_groupScheme :
-    LocallyOfFiniteType (groupScheme R).X.hom := inferInstance
+  rw [groupScheme_def]
+  exact (algebraFinitePresentation_iff_locallyOfFinitePresentation_hopfSpec R
+    (coordinateHopfAlgebra R)).mp inferInstance
 
 section SchemePoints
 
