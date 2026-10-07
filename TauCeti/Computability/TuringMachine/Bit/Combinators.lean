@@ -5,7 +5,7 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.Computability.TuringMachine.BitPrimitives
+public import TauCeti.Computability.TuringMachine.Bit.Primitives
 public import TauCeti.Computability.TuringMachine.Composition
 public import Mathlib.Data.Nat.SuccPred
 public import TauCeti.Algebra.Polynomial.Eval.Monotone
