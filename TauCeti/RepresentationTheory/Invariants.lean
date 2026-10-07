@@ -397,13 +397,13 @@ namespace TauCeti
 open CategoryTheory CategoryTheory.Limits
 open scoped MonoidAlgebra
 
-universe u
+universe u v w
 
-variable {k G : Type u} [Field k] [Group G] [Finite G] [NeZero (Nat.card G : k)]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [NeZero (Nat.card G : k)]
 
 /-- Under Maschke's hypothesis, taking invariants preserves short exact sequences of
 representations. -/
-theorem Rep.shortExact_map_invariantsFunctor {S : ShortComplex (Rep k G)} (hS : S.ShortExact) :
+theorem Rep.shortExact_map_invariantsFunctor {S : ShortComplex (Rep.{w} k G)} (hS : S.ShortExact) :
     (S.map (Rep.invariantsFunctor k G)).ShortExact := by
   have : (Rep.invariantsFunctor k G).PreservesEpimorphisms := ⟨fun {X Y} f hf ↦ by
       have : Module.Projective k[G] Y.ρ.asModule :=
