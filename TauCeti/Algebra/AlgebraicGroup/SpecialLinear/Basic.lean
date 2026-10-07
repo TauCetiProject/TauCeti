@@ -42,6 +42,10 @@ reductivity, or base-change theorem is asserted here.
 * `TauCeti.SpecialLinear.definingHopfIdeal_toIdeal_le_ker_of_map_determinant_eq_one`: a coordinate
   morphism that kills `det - 1` kills the defining ideal of `SLₙ`.
 * `TauCeti.SpecialLinear.coordinateHopfAlgebra`: the determinant-one quotient Hopf algebra.
+* `TauCeti.SpecialLinear.det_map_genericMatrix_coordinateMap` and
+  `TauCeti.SpecialLinear.adjoin_range_map_genericMatrix_union_range_inv`: the generic matrix of
+  `SLₙ` has determinant one, and its entries together with those of its inverse generate
+  `O(SLₙ)`.
 * `TauCeti.SpecialLinear.pointsMulEquiv`: the natural multiplicative equivalence between quotient
   Hopf points and `Matrix.SpecialLinearGroup`.
 * `TauCeti.SpecialLinear.pointsNatIso`: the corresponding natural isomorphism of group-valued
@@ -228,6 +232,41 @@ theorem coordinateMap_ker :
         {(GeneralLinear.determinantGroupLike R n :
             GeneralLinear.coordinateHopfAlgebra R n) - 1} := by
   rw [CommHopfAlgCat.mkQuotient_ker, definingHopfIdeal_toIdeal]
+
+/-- The generic matrix of `SLₙ`, the image in `O(SLₙ)` of the generic matrix of `GLₙ`, has
+determinant one. -/
+theorem det_map_genericMatrix_coordinateMap :
+    ((GeneralLinear.genericMatrix R n).map (coordinateMap R n).hom).det = 1 := by
+  rw [← (coordinateMap R n).hom.coe_toAlgHom,
+    GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear,
+    ← GeneralLinear.point_apply_determinantGroupLike, ofConv_toConv, BialgHom.coe_toAlgHom,
+    coordinateMap_determinantGroupLike]
+
+/-- The entries of the generic matrix of `SLₙ` and of its inverse generate `O(SLₙ)`. -/
+theorem adjoin_range_map_genericMatrix_union_range_inv :
+    Algebra.adjoin R
+        (Set.range (fun ij : Fin n × Fin n ↦
+          (GeneralLinear.genericMatrix R n).map (coordinateMap R n).hom ij.1 ij.2) ∪
+        Set.range (fun ij : Fin n × Fin n ↦
+          ((GeneralLinear.genericMatrix R n).map (coordinateMap R n).hom)⁻¹ ij.1 ij.2)) =
+      ⊤ := by
+  let q := (coordinateMap R n).hom.toAlgHom
+  have hq : Function.Surjective q :=
+    CommHopfAlgCat.mkQuotient_surjective _ (definingHopfIdeal R n)
+  -- These generators are the images of the generators of `O(GLₙ)` under `O(GLₙ) ↠ O(SLₙ)`.
+  have himage := congrArg (Subalgebra.map q)
+    (GeneralLinear.adjoin_coordinateHopfAlgebra_X_union_antipode_X R n)
+  rw [Algebra.map_top, (AlgHom.range_eq_top q).mpr hq, ← Algebra.adjoin_image, Set.image_union,
+    ← Set.range_comp, ← Set.range_comp] at himage
+  convert himage using 4
+  · ext ij
+    rw [Function.comp_apply, Matrix.map_apply, GeneralLinear.genericMatrix_apply,
+      BialgHom.coe_toAlgHom]
+  · ext ij
+    rw [Function.comp_apply, ← HopfAlgebra.antipodeAlgHom_apply,
+      ← GeneralLinear.genericMatrix_apply, ← Matrix.map_apply (f := HopfAlgebra.antipodeAlgHom R _),
+      GeneralLinear.map_antipode_genericMatrix, ← Matrix.map_apply (f := q),
+      GeneralLinear.map_inv_genericMatrix, BialgHom.coe_toAlgHom]
 
 /-- The special-linear coordinate Hopf algebra bundled with its finite-type algebra property. -/
 noncomputable def finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat R :=
