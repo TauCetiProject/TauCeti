@@ -41,8 +41,7 @@ theorem fittingIdeal_zero_eq_span_alexander_of_ker_eq_range (V : Matrix ι ι R)
     {π : (ι → R[T;T⁻¹]) →ₗ[R[T;T⁻¹]] M} (hπ : Function.Surjective π)
     (h : LinearMap.ker π = LinearMap.range (alexanderMatrix V).mulVecLin) :
     fittingIdeal R[T;T⁻¹] M 0 = Ideal.span {alexander V} := by
-  rw [LinearMap.fittingIdeal_zero_eq_span_det_of_ker_eq_range _ hπ h,
-    ← Matrix.toLin'_apply', LinearMap.det_toLin',
+  rw [Matrix.fittingIdeal_zero_eq_span_det_of_ker_eq_range _ hπ h,
     ← V.span_alexander_eq_span_det_alexanderMatrix]
 
 /-- The zeroth Fitting ideal of the cokernel of the Seifert Alexander matrix is generated

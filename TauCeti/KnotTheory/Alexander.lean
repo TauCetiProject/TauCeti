@@ -51,6 +51,8 @@ of the GeometricTopology roadmap.
 
 ## Main results
 
+* `Matrix.span_alexander_eq_span_det_alexanderMatrix`: normalising the Alexander determinant
+  by a Laurent monomial does not change its principal ideal.
 * `TauCeti.KnotTheory.invert_alexander`: `Δ(t⁻¹) = Δ(t)` for a matrix of even size.
 * `TauCeti.KnotTheory.alexander_congruence_of_det_sq_eq_one`: `Δ` is unchanged by
   `V ↦ P * V * Pᵀ` whenever `det P ^ 2 = 1`. Over `ℤ` that is exactly the congruence by a change

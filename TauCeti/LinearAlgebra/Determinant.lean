@@ -11,7 +11,7 @@ import TauCeti.LinearAlgebra.BilinearForm.Multilinear
 import Mathlib.LinearAlgebra.SpecialLinearGroup
 
 /-!
-# Determinant transformation laws, and determinants of updated rows
+# Determinant transformation laws, evaluation, and determinants of updated rows
 
 Precomposing an alternating form of top degree with an endomorphism `φ` multiplies it by
 `LinearMap.det φ`, and — the direction that is actually used — a *nonzero* form merely known to be
@@ -20,7 +20,9 @@ scalars cancel against nonzero vectors of the codomain (`IsCancelMulZero R` and
 `Module.IsTorsionFree R N`; see the implementation notes, where `ω ≠ 0` alone is shown to be
 insufficient). This file records that law in three vocabularies: for
 an `AlternatingMap` indexed by a basis' index type, for an alternating bilinear form on a rank-two
-module, and for the standard-basis determinant form under matrix multiplication.
+module, and for the standard-basis determinant form under matrix multiplication. It also
+identifies evaluation of the row determinant form on a family of linear functionals with the
+determinant of their evaluation matrix.
 
 Mathlib's `Module.Basis.det_comp` is the case `ω = b.det` of the first statement. The step taken
 here is that every top-degree alternating form is a multiple of `b.det`
@@ -45,6 +47,10 @@ results over the rows multiplies the determinant by the total of the factors.
   commutative ring, for a left-separating form.
 * `Matrix.detRowAlternating_mulVec`: multiplication by a square matrix scales the
   standard-basis determinant form by the matrix determinant.
+* `Matrix.detRowAlternating_pi_apply`: evaluating the row determinant form on a family of
+  linear functionals gives the determinant of their evaluation matrix.
+* `Matrix.detRowAlternating_compLinearMap_pi_apply`: the same evaluation in multilinear-map
+  vocabulary after precomposition with the family of functionals.
 * `Matrix.sum_det_updateRow_mul_row`: Jacobi's formula for a determinant, in row form.
 * `Matrix.det_mul_column_intCast`: scaling every row `i` of an integer matrix by `d i`
   multiplies the determinant by `∏ i, d i`, over any commutative ring.
@@ -217,6 +223,16 @@ theorem detRowAlternating_pi_apply {ι R F : Type*} [Fintype ι]
     simp only [LinearMap.pi_apply, Matrix.of_apply]
   -- Mathlib defines `det` as evaluation of `detRowAlternating` on the rows.
   simpa only [Matrix.det] using congrArg Matrix.det hmatrix
+
+/-- The multilinear form obtained by precomposing the row determinant with a family of linear
+functionals evaluates to the determinant of their evaluation matrix. -/
+theorem detRowAlternating_compLinearMap_pi_apply {ι R F : Type*} [Fintype ι]
+    [DecidableEq ι] [CommRing R] [AddCommGroup F] [Module R F]
+    (f : ι → Module.Dual R F) (v : ι → F) :
+    (detRowAlternating.compLinearMap (LinearMap.pi f)).toMultilinearMap v =
+      (Matrix.of fun i j => f j (v i)).det := by
+  rw [AlternatingMap.coe_multilinearMap, AlternatingMap.compLinearMap_apply,
+    detRowAlternating_pi_apply]
 
 /-- Multiplication by a square matrix scales the standard-basis determinant form by its
 determinant. This is `AlternatingMap.compLinearMap_eq_det_smul` at `ω = (Pi.basisFun R ι).det`,

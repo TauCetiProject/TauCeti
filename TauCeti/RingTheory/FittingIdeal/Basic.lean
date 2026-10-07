@@ -44,6 +44,8 @@ is carried by a shear automorphism of `F × F'` onto `ker φ × F'`.
 
 ## Main results
 
+* `TauCeti.det_mem_of_mem_span`: ideal membership of evaluation determinants extends from
+  a set of rows to its linear span.
 * `Submodule.minorsIdeal_prod_top`: adjoining a free summand of rank `r` shifts the minors ideals
   by `r`.
 * `Submodule.minorsIdeal_ker_eq_of_surjective`: the minors ideals of the kernels of two surjections
@@ -73,6 +75,25 @@ public section
 noncomputable section
 
 open Function LinearMap Module
+
+namespace TauCeti
+
+/-- If an ideal contains all evaluation determinants whose rows lie in a set, it also contains
+those whose rows lie in the linear span of that set. -/
+theorem det_mem_of_mem_span {R F : Type*} [CommRing R] [AddCommGroup F] [Module R F]
+    {p : ℕ} {s : Set F} {I : Ideal R} (f : Fin p → Dual R F) {v : Fin p → F}
+    (hv : ∀ i, v i ∈ Submodule.span R s)
+    (h : ∀ w : Fin p → F, (∀ i, w i ∈ s) → (Matrix.of fun i j ↦ f j (w i)).det ∈ I) :
+    (Matrix.of fun i j ↦ f j (v i)).det ∈ I := by
+  rw [← Matrix.detRowAlternating_compLinearMap_pi_apply]
+  refine Submodule.span_le.2 ?_ <|
+    MultilinearMap.map_mem_span_image_pi
+      (Matrix.detRowAlternating.compLinearMap (LinearMap.pi f)).toMultilinearMap (fun _ ↦ s) hv
+  rintro _ ⟨w, hw, rfl⟩
+  rw [Matrix.detRowAlternating_compLinearMap_pi_apply]
+  exact h w fun i ↦ hw i trivial
+
+end TauCeti
 
 namespace Submodule
 
@@ -197,13 +218,7 @@ private theorem minorsIdeal_prod_top_succ (N : Submodule R F) (p : ℕ) :
       rw [hsplit]
       exact add_mem (subset_span (Set.mem_insert_of_mem _ ⟨_, hvi, rfl⟩))
         (smul_mem _ _ (subset_span (Set.mem_insert _ _)))
-    let ω := Matrix.detRowAlternating.compLinearMap (LinearMap.pi f)
-    rw [← Matrix.detRowAlternating_pi_apply]
-    refine span_le.2 ?_ (ω.toMultilinearMap.map_mem_span_image_pi (fun _ ↦ T) hT)
-    rintro _ ⟨w, hw, rfl⟩
-    rw [AlternatingMap.coe_multilinearMap, AlternatingMap.compLinearMap_apply,
-      Matrix.detRowAlternating_pi_apply]
-    exact det_mem_minorsIdeal_of_mem_insert N f fun i ↦ hw i trivial
+    exact TauCeti.det_mem_of_mem_span f hT fun _ hw ↦ det_mem_minorsIdeal_of_mem_insert N f hw
   · -- Border the matrix by the row `(0, 1)` and the functional `snd`.
     convert det_mem_minorsIdeal (N := N.prod ⊤)
       (Fin.cons (LinearMap.snd R F R) fun j ↦ f j ∘ₗ LinearMap.fst R F R)
