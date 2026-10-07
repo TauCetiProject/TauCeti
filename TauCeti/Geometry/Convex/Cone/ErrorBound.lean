@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Convex.Cone.Alternative
+public import TauCeti.LinearAlgebra.LinearMap.PseudoInverse
 
 /-!
 # An error bound for homogeneous linear inequalities
@@ -47,25 +48,7 @@ public section
 namespace TauCeti
 
 variable {ι κ K V : Type*} [Field K] [AddCommGroup V] [Module K V]
-
-/-- A linear map `A : V →ₗ ι → K` to a finite product admits a linear map `P : V →ₗ V` with
-`A ∘ P = A` such that every functional composed with `P` is a fixed linear combination of the
-coordinates of `A`. -/
-private theorem exists_comp_eq_and_forall_exists_sum [Fintype ι] (A : V →ₗ[K] ι → K) :
-    ∃ P : V →ₗ[K] V, (∀ w, A (P w) = A w) ∧
-      ∀ φ : Module.Dual K V, ∃ L : ι → K, ∀ w, φ (P w) = ∑ j, L j * A w j := by
-  classical
-  obtain ⟨g, hg⟩ := A.rangeRestrict.exists_rightInverse_of_surjective A.range_rangeRestrict
-  refine ⟨g ∘ₗ A.rangeRestrict, fun w ↦ ?_, fun φ ↦ ?_⟩
-  · exact congrArg Subtype.val (LinearMap.congr_fun hg (A.rangeRestrict w))
-  · -- Extend `φ ∘ g` from the range of `A` to all of `ι → K`, and expand it in coordinates.
-    obtain ⟨Ψ, hΨ⟩ := LinearMap.exists_extend (φ ∘ₗ g)
-    refine ⟨fun j ↦ Ψ fun i ↦ if j = i then 1 else 0, fun w ↦ ?_⟩
-    have h : Ψ (A w) = φ (g (A.rangeRestrict w)) := LinearMap.congr_fun hΨ (A.rangeRestrict w)
-    rw [LinearMap.comp_apply, ← h, LinearMap.pi_apply_eq_sum_univ Ψ (A w)]
-    exact Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _
-
-variable [LinearOrder K] [IsStrictOrderedRing K]
+  [LinearOrder K] [IsStrictOrderedRing K]
 
 /-- If `x` is a nonnegative linear relation among the functionals `a j`, there is a linear map
 `P` that fixes the functionals in the support of `x` and moves every `w` violating the
@@ -75,10 +58,18 @@ private theorem exists_linearMap_forall_abs_apply_le [Fintype ι] (a : ι → Mo
     ∃ P : V →ₗ[K] V, (∀ w j, 0 < x j → a j (P w) = a j w) ∧
       ∀ φ : Module.Dual K V, ∃ D : K, 0 ≤ D ∧
         ∀ c : K, 0 ≤ c → ∀ w : V, (∀ j, -c ≤ a j w) → |φ (P w)| ≤ D * c := by
-  obtain ⟨P, hAP, hfac⟩ := exists_comp_eq_and_forall_exists_sum
-    (LinearMap.pi fun j ↦ x j • a j)
-  simp only [LinearMap.pi_apply, LinearMap.smul_apply, smul_eq_mul] at hfac
-  refine ⟨P, fun w j hj ↦ mul_left_cancel₀ hj.ne' (by simpa using congrFun (hAP w) j),
+  classical
+  -- Compose `A = (x j • a j)_j` with a pseudo-inverse `g`; then `φ ∘ P` factors through `A`, so
+  -- it is a linear combination of the coordinates of `A`.
+  set A : V →ₗ[K] ι → K := LinearMap.pi fun j ↦ x j • a j
+  obtain ⟨g, hg⟩ := A.exists_comp_comp_eq_self
+  set P := g ∘ₗ A
+  have hAP (w : V) : A (P w) = A w := LinearMap.congr_fun hg w
+  have hfac (φ : Module.Dual K V) : ∃ L : ι → K, ∀ w, φ (P w) = ∑ j, L j * (x j * a j w) := by
+    refine ⟨fun j ↦ φ (g fun i ↦ if j = i then 1 else 0), fun w ↦ ?_⟩
+    rw [show φ (P w) = (φ ∘ₗ g) (A w) from rfl, LinearMap.pi_apply_eq_sum_univ (φ ∘ₗ g) (A w)]
+    simp [A, mul_comm]
+  refine ⟨P, fun w j hj ↦ mul_left_cancel₀ hj.ne' (by simpa [A] using congrFun (hAP w) j),
     fun φ ↦ ?_⟩
   obtain ⟨L, hL⟩ := hfac φ
   set S := ∑ j, x j
@@ -108,10 +99,10 @@ private theorem exists_linearMap_forall_abs_apply_le [Fintype ι] (a : ι → Mo
 /-- **Hoffman's error bound for a polyhedral cone.** Let `a j` be finitely many functionals on a
 finite-dimensional space. There is a constant `C` such that every `w` with `-c ≤ a j w` for all
 `j`, where `0 ≤ c`, lies within `C * c` of the cone `{w' | ∀ j, 0 ≤ a j w'}`, as measured by
-finitely many prescribed functionals `b k`. -/
+finitely many prescribed functionals `b k`. The constant `C` is nonnegative. -/
 theorem exists_forall_abs_apply_sub_le_of_forall_neg_le [Finite ι] [Finite κ]
     [FiniteDimensional K V] (a : ι → Module.Dual K V) (b : κ → Module.Dual K V) :
-    ∃ C : K, ∀ c : K, 0 ≤ c → ∀ w : V, (∀ j, -c ≤ a j w) →
+    ∃ C : K, 0 ≤ C ∧ ∀ c : K, 0 ≤ c → ∀ w : V, (∀ j, -c ≤ a j w) →
       ∃ w' : V, (∀ j, 0 ≤ a j w') ∧ ∀ k, |b k (w - w')| ≤ C * c := by
   classical
   have := Fintype.ofFinite ι
@@ -138,8 +129,9 @@ theorem exists_forall_abs_apply_sub_le_of_forall_neg_le [Finite ι] [Finite κ]
     Finset.single_le_sum (f := fun j ↦ (1 + Da j) / (x j + a j v₀))
       (fun i _ ↦ div_nonneg (by linarith [hDa0 i]) (hpos i).le) (Finset.mem_univ j)
   have hT0 : 0 ≤ T := Finset.sum_nonneg fun i _ ↦ div_nonneg (by linarith [hDa0 i]) (hpos i).le
-  refine ⟨∑ k, (Db k + T * |b k v₀|), fun c hc w hw ↦
-    ⟨w - P w + (T * c) • v₀, fun j ↦ ?_, fun k ↦ ?_⟩⟩
+  refine ⟨∑ k, (Db k + T * |b k v₀|),
+    Finset.sum_nonneg fun k _ ↦ add_nonneg (hDb0 k) (mul_nonneg hT0 (abs_nonneg _)),
+    fun c hc w hw ↦ ⟨w - P w + (T * c) • v₀, fun j ↦ ?_, fun k ↦ ?_⟩⟩
   · simp only [map_add, map_sub, map_smul, smul_eq_mul]
     rcases (hx j).eq_or_lt with hxj | hxj
     · -- Away from the support of `x`, `a j v₀` is positive and the shift by `T * c` suffices.

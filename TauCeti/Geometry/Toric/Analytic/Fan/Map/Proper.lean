@@ -131,7 +131,7 @@ private theorem exists_isCompact_preimage_analyticMap_subset (hΦ0 : Nonempty Φ
   have := Φ.lattice.finiteDimensional
   -- The error bound for the inequalities cutting out `f_ℝ⁻¹ τ`, tested on the characters of the
   -- generators of the dual semigroups of all source cones.
-  obtain ⟨C, hC⟩ := exists_forall_abs_apply_sub_le_of_forall_neg_le
+  obtain ⟨C, -, hC⟩ := exists_forall_abs_apply_sub_le_of_forall_neg_le
     (fun j ↦ (Ψ.lattice.realCharacter (g.toFun j : N' →+ ℤ)).comp f.realMap)
     (fun k : Σ σ : Φ.cones, Fin (Φ.analyticChartGenerators σ).1 ↦
       Φ.lattice.realCharacter ((G k.1).toFun k.2 : N →+ ℤ))
