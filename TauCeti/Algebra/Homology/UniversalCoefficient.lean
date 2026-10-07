@@ -183,12 +183,8 @@ theorem exact_extToHomology_kronecker {i j : α} (hij : j + 1 = i) [Projective (
     Function.Exact (extToHomology.{w} k X Y i j) (kronecker k X Y i) := by
   have hrange : LinearMap.range (extToHomology.{w} k X Y i j) =
       LinearMap.range (boundariesHom k Y (X := X) i j) := by
-    refine le_antisymm ?_ ?_
-    · rintro _ ⟨e, rfl⟩
-      obtain ⟨β, rfl⟩ := homBoundary_surjective k (boundaries_shortExact (X := X) j) Y e
-      exact ⟨β, (extToHomology_homBoundary i j β).symm⟩
-    · rintro _ ⟨β, rfl⟩
-      exact ⟨_, extToHomology_homBoundary i j β⟩
+    rw [extToHomology, LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _),
+      Submodule.range_liftQ]
   rw [LinearMap.exact_iff, hrange]
   refine le_antisymm (fun x hx ↦ ?_) ?_
   · obtain ⟨φ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ i x
