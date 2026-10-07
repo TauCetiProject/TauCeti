@@ -43,6 +43,8 @@ mapping theorem for σ-compact groups.
 * `TauCeti.GlobalNumberFields.adeleBaseChangeEquiv_tmul_one`,
   `TauCeti.GlobalNumberFields.adeleBaseChangeEquiv_apply_prod`: the continuous comparison
   extends `𝔸_K → 𝔸_L` and is the product of the infinite- and finite-adele comparisons.
+* `TauCeti.GlobalNumberFields.adeleBaseChangeEquiv_tower`: in a tower `K ⊆ L ⊆ M`, base change
+  from `K` to `M` factors through base change from `K` to `L`.
 
 ## References
 
@@ -260,5 +262,18 @@ theorem adeleBaseChangeEquiv_apply_prod (t : AdeleRing (𝓞 K) K ⊗[K] L) :
 theorem adeleBaseChangeEquiv_symm_algebraMap (x : L) :
     (adeleBaseChangeEquiv K L).symm (algebraMap L (AdeleRing (𝓞 L) L) x) = 1 ⊗ₜ[K] x :=
   adeleBaseChangeAlgEquiv_symm_algebraMap K L x
+
+/-- **Base change of adeles in a tower** `K ⊆ L ⊆ M`: the comparison for `M/K` factors through
+the comparison for `L/K`, followed by the comparison for `M/L`. -/
+theorem adeleBaseChangeEquiv_tower (M : Type*) [Field M] [NumberField M] [Algebra K M]
+    [Algebra L M] [IsScalarTower K L M] [TopologicalSpace (AdeleRing (𝓞 K) K ⊗[K] M)]
+    [IsModuleTopology (AdeleRing (𝓞 K) K) (AdeleRing (𝓞 K) K ⊗[K] M)]
+    [TopologicalSpace (AdeleRing (𝓞 L) L ⊗[L] M)]
+    [IsModuleTopology (AdeleRing (𝓞 L) L) (AdeleRing (𝓞 L) L ⊗[L] M)]
+    (a : AdeleRing (𝓞 K) K) (z : M) :
+    adeleBaseChangeEquiv K M (a ⊗ₜ z) =
+      adeleBaseChangeEquiv L M (adeleBaseChangeEquiv K L (a ⊗ₜ 1) ⊗ₜ z) := by
+  rw [adeleBaseChangeEquiv_tmul, adeleBaseChangeEquiv_tmul_one, adeleBaseChangeEquiv_tmul,
+    ← adeleExtension_comp (𝓞 K) K (𝓞 L) L (𝓞 M) M, RingHom.comp_apply]
 
 end TauCeti.GlobalNumberFields
