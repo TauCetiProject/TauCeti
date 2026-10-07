@@ -603,6 +603,15 @@ theorem coe_typeBSimpleCorootGenerator (i : Fin (n + 1)) :
   refine Fin.lastCases ?_ (fun j => ?_) i <;>
     simp [typeBSimpleCorootGenerator, typeBSimpleCorootMatrix]
 
+/-- Every numbered simple coroot belongs to the split diagonal Cartan. -/
+theorem typeBSimpleCorootGenerator_mem_typeBDiagonalCartan (i : Fin (n + 1)) :
+    typeBSimpleCorootGenerator (K := K) i ∈ typeBDiagonalCartan K (Fin (n + 1)) := by
+  refine Fin.lastCases ?_ (fun j => ?_) i
+  · rw [typeBSimpleCorootGenerator_last, typeBShortCorootGenerator_eq_diagonal]
+    exact (typeBDiagonalEquiv _).property
+  · rw [typeBSimpleCorootGenerator_castSucc, typeBDifferenceCorootGenerator_eq_diagonal]
+    exact (typeBDiagonalEquiv _).property
+
 /-- The positive and negative Bourbaki-numbered simple-root vectors of `Bₙ₊₁`, combined into the
 single family indexed by `Fin (n + 1) ⊕ Fin (n + 1)` that the Chevalley constructions consume. -/
 def typeBSimpleRootGeneratorFamily (k : Fin (n + 1) ⊕ Fin (n + 1)) :

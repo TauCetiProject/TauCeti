@@ -235,13 +235,8 @@ theorem derivedDefiningIdeal_eq_augmentation_iff_isCocomm :
       apply WithConv.ofConv_injective
       apply AlgHom.ext
       intro x
-      have hx : x - algebraMap R H (Coalgebra.counit (R := R) x) ∈
-          HopfIdeal.augmentation R H := by
-        rw [HopfIdeal.mem_augmentation]
-        simp
-      have hxzero := hker ((HopfIdeal.mem_toIdeal).mpr hx)
-      rw [RingHom.mem_ker, map_sub, sub_eq_zero] at hxzero
-      simpa [AlgHom.convOne_apply] using hxzero
+      exact (AlgHom.apply_eq_counit_of_augmentation_le_ker _ hker x).trans
+        (AlgHom.convOne_apply x).symm
     rw [HopfAlgebra.toConv_commutatorAlgHom] at hcommutator
     simp only [Bialgebra.TensorProduct.includeLeft_toAlgHom,
       Bialgebra.TensorProduct.includeRight_toAlgHom] at hcommutator

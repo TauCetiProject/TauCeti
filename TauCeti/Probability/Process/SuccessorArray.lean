@@ -10,7 +10,7 @@ public import TauCeti.MeasureTheory.MeasurableSpace.Eval
 public import TauCeti.Probability.Process.PathLaw.Basic
 
 /-!
-# The successor array of a path
+# Successor arrays of paths and processes
 
 The combinatorial successor-array encoding and its inverse are defined in
 `TauCeti.Combinatorics.Enumerative.SuccessorArray`. This file relates that encoding to transition
@@ -20,10 +20,9 @@ counts and proves that both directions of the change of variables are measurable
 
 Markov exchangeability (`TauCeti.Probability.MarkovExchangeable`) says that the law of a finite
 path depends only on its initial state and transition counts. The successor array is the change of
-variables that reads those counts as occurrence counts in initial segments of its rows. Turning
-this identity into within-row exchangeability requires the later endpoint and recurrence argument;
-that step is not proved here. The measurable encoding proved here is what will transfer a future
-representation of the joint law of `(x 0, successorArray x)` back to the law of the path.
+variables that reads those counts as occurrence counts in initial segments of its rows. Its
+measurability transfers representations of the joint law of `(x 0, successorArray x)` back to the
+law of the path.
 
 ## Main definitions
 
@@ -46,7 +45,6 @@ representation of the joint law of `(x 0, successorArray x)` back to the law of 
 
 * P. Diaconis and D. Freedman, "de Finetti's theorem for Markov chains", *Annals of Probability*
   8 (1980), 115–130.
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, Layer 8, "Markov exchangeability".
 
 No material is adapted from `cameronfreer/exchangeability`, which treats exchangeable rather than
 Markov exchangeable sequences.
