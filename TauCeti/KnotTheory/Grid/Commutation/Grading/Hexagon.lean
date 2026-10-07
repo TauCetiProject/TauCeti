@@ -22,13 +22,13 @@ file proves that it does.
 A hexagon is the rectangle with the same corners with one column cut away, and that column holds
 one `O`-marking and one `X`-marking of the rectangle
 (`GridDiagram.OColumns_toGridRectangle_eq_insert_of_hexagon`,
-`GridDiagram.XSet_inter_toGridRectangle_coveredSquares_of_mem_hexagons`). So for a counted
-hexagon `P` from `x` to `y` the rectangle formulas give
+`GridDiagram.XSet_inter_toGridRectangle_coveredSquares_of_disjoint_hexagon`). So for a hexagon
+`P` from `x` to `y` the rectangle formulas give
 
-* `M_O(y) = M_O(x) + 1 + 2 #(𝕆 ∩ P)`, since the rectangle is empty and carries `#(𝕆 ∩ P) + 1`
-  `O`-markings;
-* `A(y) = A(x) + #(𝕆 ∩ P)`, since the rectangle carries one `X`-marking and `#(𝕆 ∩ P) + 1`
-  `O`-markings.
+* `M_O(y) = M_O(x) + 1 + 2 #(𝕆 ∩ P)` if `P` is empty, since the rectangle is then empty and
+  carries `#(𝕆 ∩ P) + 1` `O`-markings;
+* `A(y) = A(x) + #(𝕆 ∩ P)` if `P` carries no `X`-marking, since the rectangle then carries one
+  `X`-marking and `#(𝕆 ∩ P) + 1` `O`-markings.
 
 Since every variable has bidegree `(-2, -1)`, each term `V^{𝕆 ∩ P} · y` of `H(x)` has bidegree
 `(M_O(x) + 1, A(x))`. The same holds for hexagons turning on their initial side.
@@ -38,9 +38,9 @@ Since every variable has bidegree `(-2, -1)`, each term `V^{𝕆 ∩ P} · y` of
 * `TauCeti.GridDiagram.maslovOℤ_eq_of_isEmpty_hexagon`,
   `TauCeti.GridDiagram.maslovOℤ_eq_of_isEmpty_initialHexagon`: the `O`-Maslov grading across an
   empty hexagon.
-* `TauCeti.OddComponentGridDiagram.alexanderℤ_eq_of_mem_hexagons`,
-  `TauCeti.OddComponentGridDiagram.alexanderℤ_eq_of_mem_initialHexagons`: the Alexander grading
-  across a counted hexagon.
+* `TauCeti.OddComponentGridDiagram.alexanderℤ_eq_of_disjoint_hexagon`,
+  `TauCeti.OddComponentGridDiagram.alexanderℤ_eq_of_disjoint_initialHexagon`: the Alexander
+  grading across a hexagon carrying no `X`-marking.
 * `TauCeti.OddComponentGridDiagram.hexagonMap_mem_bigradedChainMinusPiece`,
   `TauCeti.OddComponentGridDiagram.initialHexagonMap_mem_bigradedChainMinusPiece`,
   `TauCeti.OddComponentGridDiagram.commutationHomotopy_mem_bigradedChainMinusPiece`: the hexagon
@@ -88,30 +88,30 @@ theorem maslovOℤ_eq_of_isEmpty_initialHexagon
   push_cast at h
   linarith
 
-/-- **The Alexander grading across a counted hexagon**, in its doubled integer form: a hexagon
-counted by the hexagon map from `x` to `y` raises it by twice the number of `O`-markings it
-carries, `2 A(y) = 2 A(x) + 2 #(𝕆 ∩ P)`. -/
-theorem alexanderTwoℤ_eq_of_mem_hexagons
+/-- **The Alexander grading across a hexagon carrying no `X`-marking**, in its doubled integer
+form: such a hexagon from `x` to `y` raises it by twice the number of `O`-markings it carries,
+`2 A(y) = 2 A(x) + 2 #(𝕆 ∩ P)`. -/
+theorem alexanderTwoℤ_eq_of_disjoint_hexagon
     {P : GridHexagonBetween C.column C.oppositeTurnRow C.turnRow x y}
-    (hP : P ∈ G.hexagons C x y) :
+    (hP : Disjoint P.coveredSquares G.XSet) :
     G.alexanderTwoℤ y =
       G.alexanderTwoℤ x + 2 * ((G.OColumnsOfSquares P.coveredSquares).card : ℤ) := by
   refine G.alexanderTwoℤ_eq_of_card (r := P.toGridRectangleBetween) ?_ ?_
   · rw [G.OColumns_toGridRectangle_eq_insert_of_hexagon P,
       Finset.card_insert_of_notMem (by simp [P.mem_coveredSquares])]
-  · rw [G.XSet_inter_toGridRectangle_coveredSquares_of_mem_hexagons hP, Finset.card_singleton]
+  · rw [G.XSet_inter_toGridRectangle_coveredSquares_of_disjoint_hexagon hP, Finset.card_singleton]
 
-/-- **The Alexander grading across a counted hexagon turning on its initial side**, in its doubled
-integer form: `2 A(y) = 2 A(x) + 2 #(𝕆 ∩ P)`. -/
-theorem alexanderTwoℤ_eq_of_mem_initialHexagons
+/-- **The Alexander grading across a hexagon turning on its initial side and carrying no
+`X`-marking**, in its doubled integer form: `2 A(y) = 2 A(x) + 2 #(𝕆 ∩ P)`. -/
+theorem alexanderTwoℤ_eq_of_disjoint_initialHexagon
     {P : GridInitialHexagonBetween C.column C.turnRow C.oppositeTurnRow x y}
-    (hP : P ∈ G.initialHexagons C x y) :
+    (hP : Disjoint P.coveredSquares G.XSet) :
     G.alexanderTwoℤ y =
       G.alexanderTwoℤ x + 2 * ((G.OColumnsOfSquares P.coveredSquares).card : ℤ) := by
   refine G.alexanderTwoℤ_eq_of_card (r := P.toGridRectangleBetween) ?_ ?_
   · rw [G.OColumns_toGridRectangle_eq_insert_of_initialHexagon P,
       Finset.card_insert_of_notMem (by simp [P.mem_coveredSquares])]
-  · rw [G.XSet_inter_toGridRectangle_coveredSquares_of_mem_initialHexagons hP,
+  · rw [G.XSet_inter_toGridRectangle_coveredSquares_of_disjoint_initialHexagon hP,
       Finset.card_singleton]
 
 end GridDiagram
@@ -121,24 +121,24 @@ namespace OddComponentGridDiagram
 variable {n : ℕ} (G : OddComponentGridDiagram n) (C : GridDiagram.ColumnCommutationData G.1)
   {x y : GridState n}
 
-/-- **The Alexander grading across a counted hexagon**: a hexagon counted by the hexagon map from
-`x` to `y` raises the Alexander grading by the number of `O`-markings it carries,
+/-- **The Alexander grading across a hexagon carrying no `X`-marking**: such a hexagon from `x`
+to `y` raises the Alexander grading by the number of `O`-markings it carries,
 `A(y) = A(x) + #(𝕆 ∩ P)`. -/
-theorem alexanderℤ_eq_of_mem_hexagons
+theorem alexanderℤ_eq_of_disjoint_hexagon
     {P : GridHexagonBetween C.column C.oppositeTurnRow C.turnRow x y}
-    (hP : P ∈ G.1.hexagons C x y) :
+    (hP : Disjoint P.coveredSquares G.1.XSet) :
     G.alexanderℤ y = G.alexanderℤ x + (G.1.OColumnsOfSquares P.coveredSquares).card := by
-  have h := G.1.alexanderTwoℤ_eq_of_mem_hexagons C hP
+  have h := G.1.alexanderTwoℤ_eq_of_disjoint_hexagon C hP
   rw [← two_mul_alexanderℤ, ← two_mul_alexanderℤ] at h
   omega
 
-/-- **The Alexander grading across a counted hexagon turning on its initial side**:
-`A(y) = A(x) + #(𝕆 ∩ P)`. -/
-theorem alexanderℤ_eq_of_mem_initialHexagons
+/-- **The Alexander grading across a hexagon turning on its initial side and carrying no
+`X`-marking**: `A(y) = A(x) + #(𝕆 ∩ P)`. -/
+theorem alexanderℤ_eq_of_disjoint_initialHexagon
     {P : GridInitialHexagonBetween C.column C.turnRow C.oppositeTurnRow x y}
-    (hP : P ∈ G.1.initialHexagons C x y) :
+    (hP : Disjoint P.coveredSquares G.1.XSet) :
     G.alexanderℤ y = G.alexanderℤ x + (G.1.OColumnsOfSquares P.coveredSquares).card := by
-  have h := G.1.alexanderTwoℤ_eq_of_mem_initialHexagons C hP
+  have h := G.1.alexanderTwoℤ_eq_of_disjoint_initialHexagon C hP
   rw [← two_mul_alexanderℤ, ← two_mul_alexanderℤ] at h
   omega
 
@@ -155,7 +155,7 @@ private theorem monomialBidegree_add_of_mem_support_hexagonCoefficient (R : Type
   obtain rfl := Finset.mem_singleton.mp (MvPolynomial.support_monomial_subset hwP)
   exact G.monomialBidegree_mapDomain_add_sum_eq_add G _ e _ (1, 0)
     (G.1.maslovOℤ_eq_of_isEmpty_hexagon C ((G.1.mem_hexagons P).mp hP).1)
-    (by simpa using G.alexanderℤ_eq_of_mem_hexagons C hP)
+    (by simpa using G.alexanderℤ_eq_of_disjoint_hexagon C ((G.1.mem_hexagons P).mp hP).2)
 
 /-- Each monomial of an initial-side hexagon coefficient raises the bidegree by `(1, 0)`. -/
 private theorem monomialBidegree_add_of_mem_support_initialHexagonCoefficient (R : Type*)
@@ -170,7 +170,8 @@ private theorem monomialBidegree_add_of_mem_support_initialHexagonCoefficient (R
   obtain rfl := Finset.mem_singleton.mp (MvPolynomial.support_monomial_subset hwP)
   exact G.monomialBidegree_mapDomain_add_sum_eq_add G _ e _ (1, 0)
     (G.1.maslovOℤ_eq_of_isEmpty_initialHexagon C ((G.1.mem_initialHexagons P).mp hP).1)
-    (by simpa using G.alexanderℤ_eq_of_mem_initialHexagons C hP)
+    (by simpa using
+      G.alexanderℤ_eq_of_disjoint_initialHexagon C ((G.1.mem_initialHexagons P).mp hP).2)
 
 /-- **The hexagon map has bidegree `(1, 0)`.** The hexagon map of a validated column commutation
 `C` sends a chain of `GC⁻(G)` homogeneous of bidegree `g` to one homogeneous of bidegree

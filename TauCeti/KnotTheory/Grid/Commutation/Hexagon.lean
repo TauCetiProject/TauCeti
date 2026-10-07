@@ -78,9 +78,9 @@ above. That `∂⁻ ∘ H + H ∘ ∂⁻` is the identity plus `Ψ ∘ Φ` is no
   `Subsingleton` records that it is then unique.
 * `TauCeti.GridDiagram.OColumns_toGridRectangle_eq_insert_of_hexagon` and its initial version:
   the rectangle under a hexagon carries one more `O`-marking, that of the cut-off column.
-* `TauCeti.GridDiagram.XSet_inter_toGridRectangle_coveredSquares_of_mem_hexagons` and its
-  initial version: the rectangle under a counted hexagon carries exactly one `X`-marking, that of
-  the cut-off column.
+* `TauCeti.GridDiagram.XSet_inter_toGridRectangle_coveredSquares_of_disjoint_hexagon` and its
+  initial version: the rectangle under a hexagon carrying no `X`-marking carries exactly one
+  `X`-marking, that of the cut-off column.
 * `TauCeti.GridDiagram.commutationHomotopy_apply_apply`: the matrix coefficients of the
   commutation homotopy.
 
@@ -446,13 +446,14 @@ theorem OColumns_toGridRectangle_eq_insert_of_initialHexagon {C : ColumnCommutat
   · simpa using next_mem_toGridRectangle_coveredSquares G P C.O_next_above
   · simp only [hc, false_or, ne_eq, not_false_eq_true, true_and]
 
-/-- The rectangle underlying a counted hexagon carries exactly one `X`-marking, that of
-`C.column`. -/
-theorem XSet_inter_toGridRectangle_coveredSquares_of_mem_hexagons {C : ColumnCommutationData G}
-    {x y : GridState n} {P : GridHexagonBetween C.column C.oppositeTurnRow C.turnRow x y}
-    (hP : P ∈ G.hexagons C x y) :
+/-- The rectangle underlying a hexagon carrying no `X`-marking carries exactly one `X`-marking,
+that of `C.column`. -/
+theorem XSet_inter_toGridRectangle_coveredSquares_of_disjoint_hexagon
+    {C : ColumnCommutationData G} {x y : GridState n}
+    {P : GridHexagonBetween C.column C.oppositeTurnRow C.turnRow x y}
+    (hP : Disjoint P.coveredSquares G.XSet) :
     G.XSet ∩ P.toGridRectangle.coveredSquares = {(C.column, G.X C.column)} := by
-  have hX := Finset.disjoint_left.mp ((G.mem_hexagons P).mp hP).2.symm
+  have hX := Finset.disjoint_left.mp hP.symm
   ext p
   rw [Finset.mem_inter, Finset.mem_singleton, G.mem_XSet]
   constructor
@@ -463,15 +464,15 @@ theorem XSet_inter_toGridRectangle_coveredSquares_of_mem_hexagons {C : ColumnCom
   · rintro rfl
     exact ⟨rfl, column_mem_toGridRectangle_coveredSquares G P C.X_column_below⟩
 
-/-- The rectangle underlying a counted hexagon turning on its initial side carries exactly one
-`X`-marking, that of the column after `C.column`. -/
-theorem XSet_inter_toGridRectangle_coveredSquares_of_mem_initialHexagons
+/-- The rectangle underlying a hexagon turning on its initial side and carrying no `X`-marking
+carries exactly one `X`-marking, that of the column after `C.column`. -/
+theorem XSet_inter_toGridRectangle_coveredSquares_of_disjoint_initialHexagon
     {C : ColumnCommutationData G} {x y : GridState n}
     {P : GridInitialHexagonBetween C.column C.turnRow C.oppositeTurnRow x y}
-    (hP : P ∈ G.initialHexagons C x y) :
+    (hP : Disjoint P.coveredSquares G.XSet) :
     G.XSet ∩ P.toGridRectangle.coveredSquares =
       {(finRotate n C.column, G.X (finRotate n C.column))} := by
-  have hX := Finset.disjoint_left.mp ((G.mem_initialHexagons P).mp hP).2.symm
+  have hX := Finset.disjoint_left.mp hP.symm
   ext p
   rw [Finset.mem_inter, Finset.mem_singleton, G.mem_XSet]
   constructor
