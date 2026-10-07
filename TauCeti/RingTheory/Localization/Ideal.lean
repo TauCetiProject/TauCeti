@@ -17,8 +17,8 @@ multiplier, as produced by Nakayama's lemma.
 
 ## Main results
 
-* `Ideal.map_algebraMap_eq_span_singleton_of_isUnit`: if the image of `r` is a unit, then
-  `r • I ≤ (t)` and `t ∈ I` imply that `I` generates `(t)` after applying the algebra map.
+* `Ideal.map_eq_span_singleton_of_isUnit`: if `f r` is a unit for a ring homomorphism `f`,
+  then `r • I ≤ (t)` and `t ∈ I` imply that `I` generates `(f t)` after applying `f`.
 * `Ideal.map_algebraMap_away_eq_span_singleton`: if `r • I ≤ (t)` and `t ∈ I`, then `I`
   generates `(t)` in the localization away from `r`.
 -/
@@ -29,12 +29,12 @@ open scoped Pointwise
 
 namespace Ideal
 
-/-- If the image of `r` is a unit, `r • I ≤ (t)`, and `t ∈ I`, then `I` generates the principal
-ideal `(t)` after applying the algebra map. -/
-theorem map_algebraMap_eq_span_singleton_of_isUnit {B B' : Type*} [CommSemiring B]
-    [CommSemiring B'] [Algebra B B'] {I : Ideal B} {r t : B} (ht : t ∈ I)
-    (h : r • I ≤ Ideal.span {t}) (hr : IsUnit (algebraMap B B' r)) :
-    I.map (algebraMap B B') = Ideal.span {algebraMap B B' t} := by
+/-- If `f r` is a unit, `r • I ≤ (t)`, and `t ∈ I`, then `I` generates the principal ideal
+`(f t)` after applying the ring homomorphism `f`. -/
+theorem map_eq_span_singleton_of_isUnit {B B' : Type*} [CommSemiring B] [CommSemiring B']
+    (f : B →+* B') {I : Ideal B} {r t : B} (ht : t ∈ I) (h : r • I ≤ Ideal.span {t})
+    (hr : IsUnit (f r)) :
+    I.map f = Ideal.span {f t} := by
   refine le_antisymm (Ideal.map_le_iff_le_comap.mpr fun i hi ↦ ?_) ?_
   · obtain ⟨b, hb⟩ :=
       Ideal.mem_span_singleton'.mp (h (Submodule.smul_mem_pointwise_smul i r I hi))
@@ -50,7 +50,7 @@ theorem map_algebraMap_away_eq_span_singleton {B B' : Type*} [CommSemiring B]
     [CommSemiring B'] [Algebra B B'] {I : Ideal B} {r t : B} [IsLocalization.Away r B']
     (ht : t ∈ I) (h : r • I ≤ Ideal.span {t}) :
     I.map (algebraMap B B') = Ideal.span {algebraMap B B' t} :=
-  map_algebraMap_eq_span_singleton_of_isUnit ht h
+  map_eq_span_singleton_of_isUnit (algebraMap B B') ht h
     (IsLocalization.Away.algebraMap_isUnit (S := B') r)
 
 end Ideal
