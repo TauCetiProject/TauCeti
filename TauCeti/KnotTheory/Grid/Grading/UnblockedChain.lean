@@ -139,20 +139,30 @@ theorem alexanderTwoℤ_sub_two_mul_card_OColumns {r : GridRectangleBetween x y}
     linarith
   exact_mod_cast hq
 
+/-- The integer form of the Alexander grading change across an arbitrary rectangle: it raises the
+doubled Alexander grading by twice the number of `O`-markings minus the number of `X`-markings it
+carries. -/
+theorem alexanderTwoℤ_eq_add_two_mul_card_sub_card (r : GridRectangleBetween x y) :
+    G.alexanderTwoℤ y = G.alexanderTwoℤ x + 2 * (((G.OColumns r.toGridRectangle).card : ℤ) -
+      ((G.XSet ∩ r.toGridRectangle.coveredSquares).card : ℤ)) := by
+  have h := G.alexander_sub_alexander_eq_card_sub_card r
+  rw [← G.card_OColumns] at h
+  have hx := G.two_mul_alexander_eq_intCast x
+  have hy := G.two_mul_alexander_eq_intCast y
+  have hq : (G.alexanderTwoℤ y : ℚ) = G.alexanderTwoℤ x + 2 * (((G.OColumns
+      r.toGridRectangle).card : ℚ) - ((G.XSet ∩ r.toGridRectangle.coveredSquares).card : ℚ)) := by
+    linarith
+  exact_mod_cast hq
+
 /-- A rectangle carrying exactly one `X`-marking and one more `O`-marking than a set `S` of columns
 raises the doubled Alexander grading by twice the size of `S`. -/
 theorem alexanderTwoℤ_eq_of_card {r : GridRectangleBetween x y} {S : Finset (Fin n)}
     (hO : (G.OColumns r.toGridRectangle).card = S.card + 1)
     (hX : (G.XSet ∩ r.toGridRectangle.coveredSquares).card = 1) :
     G.alexanderTwoℤ y = G.alexanderTwoℤ x + 2 * (S.card : ℤ) := by
-  have h := G.alexander_sub_alexander_eq_card_sub_card r
-  rw [hX, ← G.card_OColumns, hO] at h
-  have hx := G.two_mul_alexander_eq_intCast x
-  have hy := G.two_mul_alexander_eq_intCast y
-  have hq : (G.alexanderTwoℤ y : ℚ) = G.alexanderTwoℤ x + 2 * (S.card : ℚ) := by
-    push_cast at h
-    linarith
-  exact_mod_cast hq
+  rw [G.alexanderTwoℤ_eq_add_two_mul_card_sub_card r, hO, hX]
+  push_cast
+  ring
 
 /-! ### Maslov homogeneity of the rectangle weights -/
 
