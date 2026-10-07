@@ -144,20 +144,6 @@ private noncomputable def realCliffordSpinBaseTrivializationData (n : ℕ) [NeZe
     Homeomorph.apply_symm_apply] using
     realCliffordSpinLastUnit_mem_neighborhood n
 
-private def realCliffordSpinUnitLevelSmulHomeomorph (n : ℕ) (hn : 2 ≤ n)
-    (x : realCliffordUnitLevel n) (g : realCliffordSpinGroupZero n) :
-    realCliffordUnitLevel n ≃ₜ realCliffordUnitLevel n :=
-  (realCliffordSpinOrbitHomeomorph n hn x).symm.trans
-    ((Homeomorph.smul g).trans (realCliffordSpinOrbitHomeomorph n hn x))
-
-@[simp]
-private theorem realCliffordSpinUnitLevelSmulHomeomorph_apply (n : ℕ) (hn : 2 ≤ n)
-    (x y : realCliffordUnitLevel n) (g : realCliffordSpinGroupZero n) :
-    realCliffordSpinUnitLevelSmulHomeomorph n hn x g y = g • y := by
-  simp only [realCliffordSpinUnitLevelSmulHomeomorph, Homeomorph.trans_apply,
-    Homeomorph.smul_apply, realCliffordSpinOrbitHomeomorph_smul,
-    Homeomorph.apply_symm_apply]
-
 /-- For positive `n`, the orbit map `Spin(n + 1) → Sⁿ` through the last coordinate unit vector is
 locally trivial with fiber `Spin(n)`. Here the sphere is represented by the unit level of the
 positive-definite real Clifford form. -/
@@ -175,8 +161,10 @@ theorem isFiberBundle_realCliffordSpinOrbitMap (n : ℕ) [NeZero n] :
   obtain ⟨g, rfl⟩ := MulAction.IsPretransitive.exists_smul_eq
     (M := realCliffordSpinGroupZero (n + 1)) (realCliffordSpinLastUnit n) y
   let e₀ := (realCliffordSpinBaseTrivializationData n).1
-  let hBase := realCliffordSpinUnitLevelSmulHomeomorph (n + 1) hn
-    (realCliffordSpinLastUnit n) g
+  let _ : ContinuousSMul (realCliffordSpinGroupZero (n + 1)) (Fin (n + 1) → ℝ) :=
+    ⟨by simpa only [spinGroup_smul_apply] using
+      continuous_spinVectorAction (realCliffordForm (n + 1) 0)⟩
+  let hBase := (Homeomorph.smul g : realCliffordUnitLevel (n + 1) ≃ₜ _)
   let e₁ := (e₀.compHomeomorph (Homeomorph.mulLeft g⁻¹)).homeomorphComp hBase
   have hproj :
       hBase ∘ (realCliffordSpinOrbitMap (n + 1) (realCliffordSpinLastUnit n) ∘
@@ -185,14 +173,13 @@ theorem isFiberBundle_realCliffordSpinOrbitMap (n : ℕ) [NeZero n] :
     funext s
     simp only [Function.comp_apply, Homeomorph.coe_mulLeft,
       realCliffordSpinOrbitMap_apply, hBase,
-      realCliffordSpinUnitLevelSmulHomeomorph_apply, smul_smul]
+      Homeomorph.smul_apply, smul_smul]
     rw [← mul_assoc, mul_inv_cancel, one_mul]
   rw [← hproj]
   refine ⟨e₁, ?_⟩
   dsimp only [e₁, Bundle.Trivialization.homeomorphComp,
     Bundle.Trivialization.compHomeomorph]
-  rw [← realCliffordSpinUnitLevelSmulHomeomorph_apply (n + 1) hn
-    (realCliffordSpinLastUnit n) (realCliffordSpinLastUnit n) g]
+  rw [← Homeomorph.smul_apply g (realCliffordSpinLastUnit n)]
   simpa only [hBase, e₀, Set.mem_preimage, Homeomorph.symm_apply_apply] using
     (realCliffordSpinBaseTrivializationData n).2
 
