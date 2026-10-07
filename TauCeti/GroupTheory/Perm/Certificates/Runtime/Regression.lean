@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Perm.Certificates.Runtime.Families
 public import TauCeti.GroupTheory.Perm.Certificates.Regression
-public meta import TauCeti.GroupTheory.Perm.Certificates.RuntimeFamilies
+public meta import TauCeti.GroupTheory.Perm.Certificates.Runtime.Families
 public meta import TauCeti.GroupTheory.Perm.Certificates.Regression
 
 /-!
