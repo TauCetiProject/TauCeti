@@ -27,6 +27,9 @@ null-homotopic maps on either side.
 
 ## Main results
 
+* `TauCeti.MatrixFactorization.tensorHom_mem_nullHomotopic_left` and
+  `TauCeti.MatrixFactorization.tensorHom_mem_nullHomotopic_right`: the tensor product of a
+  null-homotopic map with any closed map, on either side, is null-homotopic.
 * `TauCeti.MatrixFactorization.nullHomotopic_le_comap_tensor_obj` and
   `TauCeti.MatrixFactorization.nullHomotopic_le_comap_tensor_flip_obj`: tensoring with a fixed
   factorization, on either side, preserves null-homotopic maps.
@@ -58,11 +61,6 @@ duplexes. -/
 -- of curved duplexes, whose components occur in the types of the morphism formulas.
 @[expose] noncomputable def tensorObj (X : MatrixFactorization S v)
     (Y : MatrixFactorization S w) : MatrixFactorization S (v + w) :=
-  -- The carrier of a tensor product in `FGModuleCat S` is the module tensor product, so Mathlib's
-  -- `Module.Projective.tensorProduct` makes each of the four tensor summands projective.
-  letI (A B : FGModuleCat S) [Module.Projective S A] [Module.Projective S B] :
-      Module.Projective S (A ⊗ B : FGModuleCat S) :=
-    Module.Projective.tensorProduct
   ofCurvedDuplex (CurvedDuplex.tensorObj X.obj Y.obj)
     (FGModuleCat.projective_biprod S _ _) (FGModuleCat.projective_biprod S _ _)
 
@@ -159,27 +157,39 @@ instance : (tensor S v w).Linear S where
 instance (Y : MatrixFactorization S w) : ((tensor S v w).flip.obj Y).Linear S where
   map_smul {_ _} f r := smul_tensorHom r f (𝟙 Y)
 
+/-- The tensor product of a null-homotopic map with any closed map is null-homotopic. -/
+theorem tensorHom_mem_nullHomotopic_left {f : X ⟶ X'}
+    (hf : f ∈ (nullHomotopic (S := S) (w := v)).hom X X') (g : Y ⟶ Y') :
+    tensorHom f g ∈ (nullHomotopic (S := S) (w := v + w)).hom _ _ := by
+  rw [mem_nullHomotopic_iff, ← CurvedDuplex.mem_nullHomotopic_iff] at hf ⊢
+  -- The underlying map is `CurvedDuplex.tensorHom f.hom g.hom` (`tensorHom_hom`); rewriting by it
+  -- would also change the objects indexing its hom type, so the identification is left to
+  -- definitional unfolding.
+  exact CurvedDuplex.tensorHom_mem_nullHomotopic_left hf g.hom
+
+/-- The tensor product of any closed map with a null-homotopic map is null-homotopic. -/
+theorem tensorHom_mem_nullHomotopic_right (f : X ⟶ X') {g : Y ⟶ Y'}
+    (hg : g ∈ (nullHomotopic (S := S) (w := w)).hom Y Y') :
+    tensorHom f g ∈ (nullHomotopic (S := S) (w := v + w)).hom _ _ := by
+  rw [mem_nullHomotopic_iff, ← CurvedDuplex.mem_nullHomotopic_iff] at hg ⊢
+  -- As above, the underlying map is identified with `CurvedDuplex.tensorHom f.hom g.hom` by
+  -- definitional unfolding.
+  exact CurvedDuplex.tensorHom_mem_nullHomotopic_right f.hom hg
+
 /-- Tensoring on the left with a fixed matrix factorization preserves null-homotopic maps. -/
 theorem nullHomotopic_le_comap_tensor_obj (X : MatrixFactorization S v) :
     nullHomotopic (S := S) (w := w) ≤
-      (nullHomotopic (S := S) (w := v + w)).comap ((tensor S v w).obj X) := by
-  intro _ _ g hg
-  rw [mem_nullHomotopic_iff, ← CurvedDuplex.mem_nullHomotopic_iff] at hg
-  rw [MorphismIdeal.mem_comap_hom, mem_nullHomotopic_iff, ← CurvedDuplex.mem_nullHomotopic_iff]
-  -- The underlying map is `CurvedDuplex.tensorHom (𝟙 X).hom g.hom` (`tensor_obj_map`,
-  -- `tensorHom_hom`); rewriting by these would also change the objects indexing its hom type,
-  -- so the identification is left to definitional unfolding.
-  exact CurvedDuplex.tensorHom_mem_nullHomotopic_right _ hg
+      (nullHomotopic (S := S) (w := v + w)).comap ((tensor S v w).obj X) :=
+  fun _ _ g hg ↦ by
+    rw [MorphismIdeal.mem_comap_hom, tensor_obj_map]
+    exact tensorHom_mem_nullHomotopic_right _ hg
 
 /-- Tensoring on the right with a fixed matrix factorization preserves null-homotopic maps. -/
 theorem nullHomotopic_le_comap_tensor_flip_obj (Y : MatrixFactorization S w) :
     nullHomotopic (S := S) (w := v) ≤
-      (nullHomotopic (S := S) (w := v + w)).comap ((tensor S v w).flip.obj Y) := by
-  intro _ _ f hf
-  rw [mem_nullHomotopic_iff, ← CurvedDuplex.mem_nullHomotopic_iff] at hf
-  rw [MorphismIdeal.mem_comap_hom, mem_nullHomotopic_iff, ← CurvedDuplex.mem_nullHomotopic_iff]
-  -- The underlying map is `CurvedDuplex.tensorHom f.hom (𝟙 Y).hom` (`Functor.flip_obj_map`,
-  -- `tensor_map_app`, `tensorHom_hom`); as above, it is identified by definitional unfolding.
-  exact CurvedDuplex.tensorHom_mem_nullHomotopic_left hf _
+      (nullHomotopic (S := S) (w := v + w)).comap ((tensor S v w).flip.obj Y) :=
+  fun _ _ f hf ↦ by
+    rw [MorphismIdeal.mem_comap_hom, Functor.flip_obj_map, tensor_map_app]
+    exact tensorHom_mem_nullHomotopic_left hf _
 
 end TauCeti.MatrixFactorization
