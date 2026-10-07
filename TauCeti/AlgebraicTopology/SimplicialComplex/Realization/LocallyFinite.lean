@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star
-public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold
+public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Basic
 public import Mathlib.Topology.LocalAtTarget
 
 /-!
