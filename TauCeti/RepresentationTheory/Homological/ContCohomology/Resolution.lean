@@ -178,6 +178,7 @@ theorem cochainClass_iCycles (z : ContinuousCohomology.cocycles X n) :
 
 /-- **The class map is additive**: the class of a sum of homogeneous cocycles is the sum of their
 classes. -/
+@[simp]
 theorem cochainClass_add (a b : (homogeneousCochains X).X n)
     (ha : ((homogeneousCochains X).d n (n + 1)).hom a = 0)
     (hb : ((homogeneousCochains X).d n (n + 1)).hom b = 0) :

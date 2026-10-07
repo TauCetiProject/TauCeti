@@ -236,6 +236,7 @@ theorem cochainClass_inhomogeneousCochain2_eq_of_coboundary (f f' : G × G → Z
   simp only [mul_assoc, mul_inv_cancel_left, add_sub_cancel_left]
 
 /-- The passage from inhomogeneous to homogeneous `2`-cochains is additive. -/
+@[simp]
 theorem inhomogeneousCochain2_add (f₁ f₂ : G × G → ZMod 2) (hf₁ : Continuous f₁)
     (hf₂ : Continuous f₂) :
     inhomogeneousCochain2 (fun q ↦ f₁ q + f₂ q) (hf₁.add hf₂) =
@@ -267,6 +268,7 @@ theorem f2CocycleClass_def (f : G × G → ZMod 2) (hf : Continuous f)
   (rfl)
 
 /-- **The class of an explicit `2`-cocycle is additive**: `[f₁ + f₂] = [f₁] + [f₂]`. -/
+@[simp]
 theorem f2CocycleClass_add (f₁ f₂ : G × G → ZMod 2) (hf₁ : Continuous f₁) (hf₂ : Continuous f₂)
     (hc₁ : ∀ g h j : G, f₁ (g * h, j) + f₁ (g, h) = f₁ (h, j) + f₁ (g, h * j))
     (hc₂ : ∀ g h j : G, f₂ (g * h, j) + f₂ (g, h) = f₂ (h, j) + f₂ (g, h * j)) :
