@@ -24,13 +24,13 @@ their own basis and their own diagonal computation.
 
 ## Main results
 
-* `TauCeti.trace_eq_trace_comp_self_of_toMatrix_diag`: an endomorphism with diagonal entries
+* `Module.Basis.trace_eq_trace_comp_self_of_toMatrix_diag`: an endomorphism with diagonal entries
   `aᵢⱼ aⱼᵢ` in a pair-indexed basis has trace `tr (f ∘ f)`.
 -/
 
 public section
 
-namespace TauCeti
+namespace Module.Basis
 
 variable {R M N ι κ : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
   [Module R N] [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
@@ -52,4 +52,4 @@ theorem trace_eq_trace_comp_self_of_toMatrix_diag (b : Module.Basis ι R M)
     fun _ ↦ rfl) ?_
   exact Fintype.sum_prod_type _
 
-end TauCeti
+end Module.Basis
