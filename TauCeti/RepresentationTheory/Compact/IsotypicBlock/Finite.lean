@@ -31,7 +31,7 @@ of the translates of their argument, and the identity is the substitution `y = g
 convolution integral, run as a reindexing of a finite sum. The *left* regular representation is the
 one that appears, and not the right: left translation moves a matrix coefficient
 `g ↦ ⟪π g v, w⟫` through its second vector `w`
-(`TauCeti.ContRepresentation.matrixCoeff_comp_mulLeft`), on which it depends linearly, so the block
+(`ContRepresentation.matrixCoeff_comp_mulLeft`), on which it depends linearly, so the block
 is a sum of copies of `π` itself under left translation, whereas right translation moves the first
 vector, on which the coefficient depends conjugate-linearly.
 This also matches the convolution computation of the block file, which moves the second vector by

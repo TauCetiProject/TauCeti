@@ -57,10 +57,8 @@ is what turns orthogonality to every character into the vanishing of every Peter
 
 ## References
 
-This is the item "characters span the class functions" of Layer 6 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-whose first half — the closed subspace of class functions and the membership of the characters in
-it — is `TauCeti/RepresentationTheory/Compact/ClassFunctionLp.lean`. The `[Finite G]` shadow of the
+The closed subspace of class functions and the membership of characters in it are developed in
+`TauCeti/RepresentationTheory/Compact/ClassFunctionLp.lean`. The `[Finite G]` shadow of the
 statement is that the irreducible characters of a finite group are a basis of its class functions.
 
 * D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapter 2.
@@ -68,6 +66,8 @@ statement is that the irreducible characters of a finite group are a basis of it
 -/
 
 public section
+
+open _root_.ContRepresentation
 
 open MeasureTheory
 open scoped InnerProductSpace

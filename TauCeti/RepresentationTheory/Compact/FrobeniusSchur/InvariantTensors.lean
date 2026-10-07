@@ -30,7 +30,7 @@ space is one, whereas `Sym[ℂ]^2 V` and `⋀[ℂ]^2 V` — a quotient and a sub
 exterior squares, so nothing is lost.
 
 With the squares realized that way the proof is short. The tensor square of `π` is
-`TauCeti.ContRepresentation.tprod π π`, the flip commutes with it, so each eigenspace is a
+`ContRepresentation.tprod π π`, the flip commutes with it, so each eigenspace is a
 subrepresentation, and their characters differ by `χ_π(g²)`: this is
 `ContRepresentation.character_symmetricSquare_sub_character_exteriorSquare`, whose linear-algebra
 content is that composing `f ⊗ f` with the flip has trace `tr (f ∘ f)`. Integrating that pointwise
@@ -64,16 +64,9 @@ try.
 
 ## References
 
-This is the reading of `ν₂(π)` as a difference of invariant counts that Layer 6b of the
-compact-groups roadmap asks for — the section "Layer 6b: the Frobenius-Schur reality trichotomy for
-compact groups" of its
-[`Suggested.lean`](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/Suggested.lean),
-which pins `frobeniusSchurIndicator` (already built, in
-`TauCeti/RepresentationTheory/Compact/FrobeniusSchur/Basic.lean`) and the trichotomy targets on top
-of it — and that `TauCeti/RepresentationTheory/Compact/Invariants.lean` was built to supply; the
-trichotomy `ν₂ ∈ {1, 0, -1}` is the next step and is not proved here. The mathematical development
-follows Daniel Bump, *Lie Groups*, second edition, Chapter 2, and T. Bröcker and T. tom Dieck,
-*Representations of Compact Lie Groups*, Springer GTM 98 (1985), Chapter II.
+The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2, and
+T. Bröcker and T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
+Chapter II.
 -/
 
 public section

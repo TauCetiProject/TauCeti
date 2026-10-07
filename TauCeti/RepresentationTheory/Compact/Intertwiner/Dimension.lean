@@ -50,15 +50,15 @@ carries `[IsAlgClosed 𝕜]` while `character_orthonormal_distinct` does not.
 
 ## References
 
-This supplies the counting theorem that Layer 6 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md)
-reads off the character orthogonality relations, the compact analogue of Mathlib's
+The invariant-counting theorem is the compact analogue of Mathlib's
 `FDRep.scalar_product_char_eq_finrank_equivariant`. The mathematical development follows Daniel
 Bump, *Lie Groups*, second edition, Chapter 2, and T. Bröcker and T. tom Dieck, *Representations of
 Compact Lie Groups*, Springer GTM 98 (1985), Chapter II.
 -/
 
 public section
+
+open _root_.ContRepresentation
 
 open MeasureTheory TauCeti TauCeti.ContRepresentation
 open scoped InnerProductSpace

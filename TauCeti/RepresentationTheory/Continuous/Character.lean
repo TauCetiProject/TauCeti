@@ -57,15 +57,15 @@ Only the trace is at stake in the sections without an inner product, so they ask
 scalars than that functional does: `𝕜` is a complete nontrivially normed field there, and becomes
 `RCLike` only where an orthonormal basis or unitarity enters.
 
-This is the character definition of Layer 6 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md);
-the `L²` theory and the orthogonality relations are in
+The `L²` theory and the orthogonality relations are in
 `TauCeti/RepresentationTheory/Compact/Character/Basic.lean`. Nothing here needs a group, a measure,
 or compactness, so it is stated over a topological monoid. The mathematical development follows
 Daniel Bump, *Lie Groups*, second edition, Chapter 2.
 -/
 
 public section
+
+open _root_.ContRepresentation
 
 open scoped InnerProductSpace
 

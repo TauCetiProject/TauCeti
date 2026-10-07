@@ -58,15 +58,16 @@ That last fact is what pins the constant `d⁻¹` in the first Schur orthogonali
   relation.** If there is no nonzero continuous intertwiner `π → ρ`, every matrix coefficient of `π`
   is `L²`-orthogonal to every matrix coefficient of `ρ`.
 
-This is the intertwiner half of Layer 4 of the [compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/roadmap/representation-theory/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-whose orthogonality statements are pinned in its `Suggested.lean`. Schur's lemma itself is not used
-here: `schur_orthogonality_distinct` takes the vanishing of the intertwiner space as a hypothesis,
-which is precisely what Schur's lemma supplies for inequivalent irreducibles.
+Schur's lemma itself is not used here: `schur_orthogonality_distinct` takes the vanishing of the
+intertwiner space as a hypothesis, which is precisely what Schur's lemma supplies for inequivalent
+irreducibles.
 
 The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
 -/
 
 public section
+
+open _root_.ContRepresentation
 
 open MeasureTheory
 open scoped InnerProductSpace
@@ -384,7 +385,7 @@ theorem inner_averageOperator_of_isUnitary (hunitary : IsUnitary ρ) (T : V →L
 operator.** For the rank-one operator `InnerProductSpace.rankOne 𝕜 w' w = ⟪w, ·⟫ • w'` the
 integrand `⟪ρ g v', T (π g v)⟫` is exactly the pointwise product
 `⟪ρ g v', w'⟫ · conj ⟪π g v, w⟫` computed by
-`TauCeti.ContRepresentation.inner_matrixCoeffLp`.
+`ContRepresentation.inner_matrixCoeffLp`.
 
 This is the identity that reduces Schur orthogonality to a statement about the intertwiner space:
 the operator on the right is an intertwiner `π → ρ` by

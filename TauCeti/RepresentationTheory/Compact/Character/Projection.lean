@@ -50,15 +50,14 @@ integral with Mathlib's sesquilinear `L²` inner product of the two characters.
 
 ## References
 
-This is the block-projection item of Layer 5 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-"averaging against `dim V_π · conj χ_π`", and the operator half of its Layer 6 item "characters span
-the class functions". The mathematical development follows Daniel Bump, *Lie Groups*, second
+The mathematical development follows Daniel Bump, *Lie Groups*, second
 edition, Chapter 2, and T. Bröcker and T. tom Dieck, *Representations of Compact Lie Groups*,
 Springer GTM 98 (1985), Chapter II.
 -/
 
 public section
+
+open _root_.ContRepresentation
 
 open MeasureTheory
 open scoped InnerProductSpace

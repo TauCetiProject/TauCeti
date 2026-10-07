@@ -30,7 +30,7 @@ so integrating that identity gives
 
 and the companion identity `χ(g)² = χ_{Sym²}(g) + χ_{Λ²}(g)` gives the two integrals separately in
 terms of `ν₂(π)` and `∫_G χ_π²`. Those two integrals are the (complexified) dimensions of the
-invariants of the two squares once the projection onto invariants built from the Layer 0 averaging
+invariants of the two squares once the projection onto invariants built from the Haar averaging
 operator is available; here only the character-level identities are proved, which is what makes them
 independent of that development.
 
@@ -88,21 +88,19 @@ That is why the ambient `TauCeti` names this file consumes — `TauCeti.haarProb
 `TauCeti.integrable_continuousMap`, `TauCeti.ContRepresentation.character` — are brought in by
 `open` instead of by being in scope.
 
-The scalars are `ℂ`, as the compact-groups roadmap pins them. That is not only convention here: the
-symmetric- and exterior-power representations of
+The scalars are `ℂ`: the symmetric- and exterior-power representations of
 `TauCeti/RepresentationTheory/SymmetricPower.lean` and
 `TauCeti/RepresentationTheory/ExteriorPower.lean`, whose characters the square identities below
 speak of, are built over a base ring in `Type`, so a general `RCLike` field in an arbitrary universe
 would not even let the statements be formed.
 
-This is Layer 6b of the compact-groups roadmap, pinned in its
-[`Suggested.lean`](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/Suggested.lean),
-the compact-group half of the Frobenius-Schur reality invariant. The mathematical development
-follows Daniel Bump, *Lie Groups*, second edition, Chapter 2, and Bröcker-tom Dieck,
-*Representations of Compact Lie Groups*, Chapter II.
+The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2, and
+Bröcker-tom Dieck, *Representations of Compact Lie Groups*, Chapter II.
 -/
 
 public section
+
+open _root_.ContRepresentation
 
 open MeasureTheory
 

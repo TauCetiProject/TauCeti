@@ -96,8 +96,8 @@ about the action, in the section `Stability under translation` and nowhere else,
 block is stable under the biregular representation
 (`TauCeti.biRegularLp_mem_peterWeylBlock`), because translation carries matrix coefficients of a
 model to matrix coefficients of the same model
-(`TauCeti.ContRepresentation.matrixCoeff_comp_mulLeft` and
-`TauCeti.ContRepresentation.matrixCoeff_comp_mulRight`). Equivariance of the identification of a
+(`ContRepresentation.matrixCoeff_comp_mulLeft` and
+`ContRepresentation.matrixCoeff_comp_mulRight`). Equivariance of the identification of a
 block with `End(V_π)` is not proved here either: `TauCeti.endEquivPeterWeylBlock` is built from the
 canonical basis of the model, so nothing is claimed below about its equivariance. The equivariant
 comparison is the basis-free trace pairing `T ↦ (x ↦ trace (T ∘ π x⁻¹))` of
@@ -326,7 +326,7 @@ theorem iSup_peterWeylBlock_eq_span_peterWeylFamily (models : ι → IrrepModel 
 /-- **Each block is stable under right translation**, that is, under the right regular
 representation `TauCeti.rightRegularLp` of `G` on `L²(G)`: right translating a matrix coefficient of
 a model absorbs the translation into its first vector
-(`TauCeti.ContRepresentation.matrixCoeff_comp_mulRight`), so the translate is again a matrix
+(`ContRepresentation.matrixCoeff_comp_mulRight`), so the translate is again a matrix
 coefficient of the same model. -/
 theorem rightRegularLp_mem_peterWeylBlock (model : IrrepModel 𝕜 G) (g : G)
     {f : Lp 𝕜 2 (haarProb G)} (hf : f ∈ peterWeylBlock model) :
@@ -343,12 +343,12 @@ theorem rightRegularLp_mem_peterWeylBlock (model : IrrepModel 𝕜 G) (g : G)
 
 /-- **Each block is stable under left translation**: left translating a matrix coefficient of a
 unitary model moves the inverse translation onto its second vector
-(`TauCeti.ContRepresentation.matrixCoeff_comp_mulLeft`), so the translate is again a matrix
+(`ContRepresentation.matrixCoeff_comp_mulLeft`), so the translate is again a matrix
 coefficient of the same model.
 
 Left translation is spelled as Mathlib's precomposition operator
 `MeasureTheory.Lp.compMeasurePreserving`, which is also what `TauCeti.rightRegularLp_apply` unfolds
-right translation to; the left regular representation of `G` on `L²(G)` is not in the library. -/
+right translation to, while `leftRegularLp_apply` identifies this operator with left translation. -/
 theorem compMeasurePreserving_mulLeft_mem_peterWeylBlock (model : IrrepModel 𝕜 G)
     (g : G) {f : Lp 𝕜 2 (haarProb G)} (hf : f ∈ peterWeylBlock model) :
     Lp.compMeasurePreserving (g * ·) (measurePreserving_mul_left (haarProb G) g) f ∈

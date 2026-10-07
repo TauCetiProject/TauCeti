@@ -67,6 +67,8 @@ this is the equivariance of the Peter-Weyl block of a compact group, in
 
 public section
 
+open _root_.ContRepresentation
+
 open scoped InnerProductSpace
 
 open TauCeti TauCeti.ContRepresentation

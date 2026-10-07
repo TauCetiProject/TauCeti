@@ -121,7 +121,7 @@ not even `[Fact (1 ≤ p)]`, since `MeasureTheory.MemLp.of_discrete` produces th
 at every exponent, whereas `ContinuousMap.toLp`, being a continuous linear map, needs a norm on
 `Lp` and hence that hypothesis — and `[RCLike 𝕜]` and `p = 2` appear from the inner-product
 statements on.
-Cardinalities are written `Nat.card G` throughout, matching the rest of the roadmap;
+Cardinalities are written `Nat.card G` throughout;
 `Nat.card_eq_fintype_card` converts.
 
 `IsTopologicalGroup G`, `CompactSpace G`, `T2Space G` and `MeasurableSingletonClass G` are all
@@ -145,9 +145,7 @@ The scalar in the averaged sums is real, not `𝕜`: the Bochner integral being 
 
 ## References
 
-The compact-group theory specialized here is the one developed in the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-and each statement below is the finite case of the compact one named beside it. `haarProb G` is the
+Each statement below is the finite case of the compact one named beside it. `haarProb G` is the
 normalized counting measure `|G|⁻¹ • count`, and the counting identity
 `dim V^G = |G|⁻¹ ∑ g, χ_π g` is the finite shadow of
 `ContRepresentation.integral_character_eq_finrank_invariants`, matching Mathlib's
@@ -171,6 +169,8 @@ matrix-coefficient basis of the functions on `G`, is proved in
 -/
 
 public section
+
+open _root_.ContRepresentation
 
 open MeasureTheory Set
 open scoped ENNReal InnerProductSpace
@@ -780,7 +780,7 @@ group is compact and every representation of it is continuous by `continuous_of_
 and the caller is left with a bare finite group. The form being averaged is the explicit
 `|G|⁻¹ ∑ g, ⟪π g ·, π g ·⟫` of `ContRepresentation.inner_gramOperator_eq_inv_mul_sum`. -/
 theorem exists_isUnitary_congr_of_finite (π : ContRepresentation 𝕜 G V) :
-    ∃ e : V ≃L[𝕜] V, IsUnitary (congr e π) := by
+    ∃ e : V ≃L[𝕜] V, IsUnitary (ContinuousLinearEquiv.congr e π) := by
   let _ : TopologicalSpace G := ⊥
   have _ : DiscreteTopology G := ⟨rfl⟩
   let _ : MeasurableSpace G := borel G
@@ -796,7 +796,7 @@ automorphism `e` of the carrier.
 This is the finite shadow of complete reducibility, and all that is finite about it is the
 production of `e`: unitarity is not assumed but produced, by the finite unitarian trick
 `ContRepresentation.exists_isUnitary_congr_of_finite`, and the decomposition of `π` itself is then
-`TauCeti.ContRepresentation.IsUnitary.exists_orthogonal_irreducible_decomposition_of_congr`, which
+`ContRepresentation.IsUnitary.exists_orthogonal_irreducible_decomposition_of_congr`, which
 decomposes the unitary model and carries every block back along the equivalence of representations
 `ContRepresentation.congrEquiv : π.Equiv (congr e π)` for an arbitrary group. The blocks are
 therefore subrepresentations of `π` itself.
@@ -811,7 +811,7 @@ which produces complements but no inner product; the plain semisimplicity is not
 being already a Mathlib instance for every field in which `|G|` is invertible. -/
 theorem exists_orthogonal_irreducible_decomposition_of_finite (π : ContRepresentation 𝕜 G V) :
     ∃ (e : V ≃L[𝕜] V) (n : ℕ) (U : Fin n → Subrepresentation π.toRepresentation),
-      IsUnitary (congr e π) ∧
+      IsUnitary (ContinuousLinearEquiv.congr e π) ∧
       (∀ i, (U i).toRepresentation.IsIrreducible) ∧
       (Pairwise fun i j ↦ ∀ v ∈ (U i).toSubmodule, ∀ w ∈ (U j).toSubmodule, ⟪e v, e w⟫_𝕜 = 0) ∧
       DirectSum.IsInternal (fun i ↦ (U i).toSubmodule) ∧
