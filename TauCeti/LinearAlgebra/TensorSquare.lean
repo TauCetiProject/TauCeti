@@ -995,6 +995,8 @@ variable {R M}
 tensors is `SymmetricPower.map f`. With `TauCeti.symmetricTensorsEquivSymmetricPower` this is
 what makes the symmetric tensors a *symmetric square* of representations, not only of
 modules. -/
+-- Prefer these naturality rules to expanding the comparison maps.
+@[simp high]
 theorem symmetricTensorsEquivSymmetricPower_symmetricTensorsRestrict (f : M →ₗ[R] M)
     (z : symmetricTensors R M) :
     symmetricTensorsEquivSymmetricPower R M (f.symmetricTensorsRestrict z) =
@@ -1009,6 +1011,7 @@ theorem symmetricTensorsEquivSymmetricPower_symmetricTensorsRestrict (f : M →�
 
 /-- **The exterior comparison is equivariant**: the restriction of `f ⊗ f` to the antisymmetric
 tensors is `exteriorPower.map 2 f`. -/
+@[simp high]
 theorem antisymmetricTensorsEquivExteriorPower_antisymmetricTensorsRestrict (f : M →ₗ[R] M)
     (z : antisymmetricTensors R M) :
     antisymmetricTensorsEquivExteriorPower R M (f.antisymmetricTensorsRestrict z) =
