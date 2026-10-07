@@ -104,6 +104,7 @@ theorem seifertConwayDeterminant_def (V : Matrix ι ι R) :
 
 /-- Evaluation of the Seifert determinant at a unit parameter is the determinant of
 `s V - s⁻¹ Vᵀ`. -/
+@[simp]
 theorem eval₂_seifertConwayDeterminant {S : Type*} [CommRing S]
     (V : Matrix ι ι R) (f : R →+* S) (s : Sˣ) :
     eval₂ f s V.seifertConwayDeterminant =
