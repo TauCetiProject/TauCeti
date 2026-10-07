@@ -130,11 +130,8 @@ noncomputable def spinorNormKernelBaseChange (Q : QuadraticForm K V)
     (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   exact ((QuadraticMap.specialOrthogonalGroupBaseChange Q).comp
     (MonoidHom.ker (spinorNorm Q hQ)).subtype).codRestrict _ fun g ↦ by
-    rw [MonoidHom.mem_ker]
-    change spinorNorm (Q.baseChange L) (QuadraticForm.Nondegenerate.baseChange hQ)
-      (QuadraticMap.specialOrthogonalGroupBaseChange Q g) = 1
-    rw [spinorNorm_specialOrthogonalGroupBaseChange Q hQ g]
-    rw [MonoidHom.mem_ker.mp g.2]
+    rw [MonoidHom.mem_ker, MonoidHom.comp_apply, Subgroup.coe_subtype,
+      spinorNorm_specialOrthogonalGroupBaseChange Q hQ g, MonoidHom.mem_ker.mp g.2]
     simp
 
 /-- The underlying special-orthogonal element of a base-changed spinor-kernel element is obtained
