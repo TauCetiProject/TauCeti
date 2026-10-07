@@ -28,7 +28,8 @@ and Mathlib's invariance of ring-map flatness under isomorphisms.
 
 ## References
 
-* J. S. Milne, *Algebraic Groups* (2017), §§7.c–7.f, orbits and homogeneous spaces.
+* J. S. Milne, *Algebraic Groups* (2017), Proposition 1.65(a), flatness of equivariant
+  morphisms; §§7.c–7.f, orbits and homogeneous spaces.
 -/
 
 public section
