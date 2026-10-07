@@ -150,7 +150,6 @@ private noncomputable def ofCotangentLinearMap
         Bialgebra.CounitAlgebra.algEquivSelf_smul]
       simp only [AlgEquiv.apply_symm_apply, Algebra.smul_def]
 
-@[simp]
 private lemma algEquivSelf_ofCotangentLinearMap_apply
     (f : Bialgebra.CotangentSpace R A →ₗ[R] B) (a : A) :
     Bialgebra.CounitAlgebra.algEquivSelf R A B (ofCotangentLinearMap f a) =
