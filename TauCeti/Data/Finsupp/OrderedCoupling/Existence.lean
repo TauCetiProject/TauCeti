@@ -15,10 +15,9 @@ import Mathlib.Data.Finset.Max
 Two nonnegative finitely supported functions on linear orders with equal total mass admit
 nonnegative joint weights supported on a chain in the coordinatewise product order. This is
 the barycentric existence argument for the staircase triangulation of a product of simplices.
-The orders and coefficient group are arbitrary; normalization to mass one is unnecessary.
-
-The construction repeatedly matches the least remaining indices, removing the smaller of
-their two weights. At least one support shrinks at each step, so the construction terminates.
+The index orders are arbitrary, and the coefficients may lie in an ordered additive group
+or a monoid with truncated subtraction, such as `ℕ` or `ℝ≥0`. Normalization to mass one is
+unnecessary.
 
 ## References
 
@@ -33,7 +32,8 @@ namespace Finsupp
 open Finset
 
 variable {α β R : Type*} [LinearOrder α] [LinearOrder β]
-  [AddCommGroup R] [LinearOrder R] [IsOrderedAddMonoid R]
+  [AddCommMonoid R] [LinearOrder R] [IsOrderedCancelAddMonoid R]
+  [Sub R] [OrderedSub R] [ExistsAddOfLE R]
 
 /-- Nonnegative finite weights of equal total mass have a nonnegative coupling supported
 on a staircase. The two `mapDomain` equations specify its marginals. -/
@@ -42,6 +42,8 @@ theorem exists_nonneg_isChain_mapDomain (f : α →₀ R) (g : β →₀ R)
     ∃ w : (α × β) →₀ R, 0 ≤ w ∧ IsChain (· ≤ ·) (w.support : Set (α × β)) ∧
       mapDomain Prod.fst w = f ∧ mapDomain Prod.snd w = g := by
   classical
+  -- Match the least remaining indices, removing the smaller weight. At least one support
+  -- shrinks at each step, so induction on the sum of the support cardinalities terminates.
   have aux : ∀ n : ℕ, ∀ (f : α →₀ R) (g : β →₀ R),
       f.support.card + g.support.card = n → 0 ≤ f → 0 ≤ g →
       f.sum (fun _ r => r) = g.sum (fun _ r => r) →
@@ -72,39 +74,54 @@ theorem exists_nonneg_isChain_mapDomain (f : α →₀ R) (g : β →₀ R)
       have ha : a ∈ f.support := min'_mem _ _
       have hb : b ∈ g.support := min'_mem _ _
       let c := min (f a) (g b)
-      let f' := f - single a c
-      let g' := g - single b c
+      let f' := f.update a (f a - c)
+      let g' := g.update b (g b - c)
       have hf' : 0 ≤ f' := by
         intro i
-        by_cases hi : a = i
-        · subst i; simp [f', c]
-        · simpa [f', single_apply, hi] using hf i
+        by_cases hi : i = a
+        · subst i
+          simpa [f'] using (le_tsub_iff_right (min_le_left (f a) (g b))).mpr
+            (by simp)
+        · simpa [f', update_apply, hi] using hf i
       have hg' : 0 ≤ g' := by
         intro i
-        by_cases hi : b = i
-        · subst i; simp [g', c]
-        · simpa [g', single_apply, hi] using hg i
+        by_cases hi : i = b
+        · subst i
+          simpa [g'] using (le_tsub_iff_right (min_le_right (f a) (g b))).mpr
+            (by simp)
+        · simpa [g', update_apply, hi] using hg i
       have hfs : f'.support ⊆ f.support :=
-        support_sub.trans (union_subset (Subset.refl _)
-          (support_single_subset.trans (singleton_subset_iff.mpr ha)))
+        by simpa [ha] using support_update_subset f a (b := f a - c)
       have hgs : g'.support ⊆ g.support :=
-        support_sub.trans (union_subset (Subset.refl _)
-          (support_single_subset.trans (singleton_subset_iff.mpr hb)))
+        by simpa [hb] using support_update_subset g b (b := g b - c)
       -- One of the least weights is exhausted, making the induction measure smaller.
       have hcard : f'.support.card + g'.support.card < n := by
         have hfcard := card_le_card hfs
         have hgcard := card_le_card hgs
         rcases le_total (f a) (g b) with hle | hle
-        · have hna : a ∉ f'.support := by simp [f', c, min_eq_left hle]
+        · have hna : a ∉ f'.support := by
+            simp [f', c, min_eq_left hle, tsub_eq_of_eq_add (zero_add (f a)).symm]
           have hlt := card_lt_card (Finset.ssubset_iff_subset_ne.mpr
             ⟨hfs, fun h => hna (h.symm ▸ ha)⟩)
           omega
-        · have hnb : b ∉ g'.support := by simp [g', c, min_eq_right hle]
+        · have hnb : b ∉ g'.support := by
+            simp [g', c, min_eq_right hle, tsub_eq_of_eq_add (zero_add (g b)).symm]
           have hlt := card_lt_card (Finset.ssubset_iff_subset_ne.mpr
             ⟨hgs, fun h => hnb (h.symm ▸ hb)⟩)
           omega
+      have hfr : single a c + f' = f := by
+        ext i
+        by_cases hi : i = a
+        · subst i; simp [f', c]
+        · simp [f', hi]
+      have hgr : single b c + g' = g := by
+        ext i
+        by_cases hi : i = b
+        · subst i; simp [g', c]
+        · simp [g', hi]
       have hmass' : f'.sum (fun _ r => r) = g'.sum (fun _ r => r) := by
-        simpa [f', g', sum_sub_index] using congrArg (fun r => r - c) hmass
+        rw [← hfr, ← hgr] at hmass
+        simpa [sum_add_index] using hmass
       obtain ⟨w, hw, hchain, hwf, hwg⟩ := ih _ hcard f' g' rfl hf' hg' hmass'
       have hws : w.support ⊆ f.support.product g.support := by
         intro p hp
@@ -127,8 +144,8 @@ theorem exists_nonneg_isChain_mapDomain (f : α →₀ R) (g : β →₀ R)
         intro p hp _
         have hp' := mem_product.mp (hws hp)
         exact Or.inl ⟨min'_le _ _ hp'.1, min'_le _ _ hp'.2⟩
-      · simp [mapDomain_add, hwf, f', add_sub_cancel]
-      · simp [mapDomain_add, hwg, g', add_sub_cancel]
+      · simpa [mapDomain_add, hwf] using hfr
+      · simpa [mapDomain_add, hwg] using hgr
   exact aux _ f g rfl hf hg hmass
 
 end Finsupp
