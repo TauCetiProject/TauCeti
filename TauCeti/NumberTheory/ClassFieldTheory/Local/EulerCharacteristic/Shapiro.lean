@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Field.ZMod
+public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro.FiniteQuotient
 public import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic
 
 /-!
@@ -61,7 +62,7 @@ variable (F : Type u) [Field F]
   (C : Subgroup (Field.absoluteGaloisGroup F ⧸ V.toSubgroup))
 
 /-- The open subgroup of `G_F` obtained as the preimage of `C ≤ G_F / V`. -/
-@[expose] noncomputable def shapiroOpenSubgroup : OpenSubgroup (Field.absoluteGaloisGroup F) :=
+noncomputable def shapiroOpenSubgroup : OpenSubgroup (Field.absoluteGaloisGroup F) :=
   (⟨C, by exact isOpen_discrete _⟩ : OpenSubgroup _).comap
     (QuotientGroup.mk' V.toSubgroup)
     QuotientGroup.continuous_mk
@@ -73,8 +74,26 @@ theorem shapiroOpenSubgroup_toSubgroup :
   OpenSubgroup.toSubgroup_comap _ _ _
 
 /-- The fixed field in an algebraic closure of the subgroup used by finite-quotient Shapiro. -/
-@[expose] noncomputable def shapiroField : IntermediateField F (AlgebraicClosure F) :=
+noncomputable def shapiroField : IntermediateField F (AlgebraicClosure F) :=
   IntermediateField.fixedField (shapiroOpenSubgroup F V C).toSubgroup
+
+/-- `shapiroField F V C` is the fixed field of `shapiroOpenSubgroup F V C`. -/
+theorem shapiroField_def :
+    shapiroField F V C = IntermediateField.fixedField (shapiroOpenSubgroup F V C).toSubgroup := by
+  rw [shapiroField]
+
+/-- An element lies in the Shapiro fixed field iff it is fixed by every element of `G_F` whose
+image in `G_F / V` lies in `C`. -/
+@[simp]
+theorem mem_shapiroField {x : AlgebraicClosure F} :
+    x ∈ shapiroField F V C ↔
+      ∀ σ : AlgebraicClosure F ≃ₐ[F] AlgebraicClosure F,
+        (QuotientGroup.mk (σ : Field.absoluteGaloisGroup F) :
+          Field.absoluteGaloisGroup F ⧸ V.toSubgroup) ∈ C → σ x = x := by
+  rw [shapiroField_def]
+  -- `Gal(AlgebraicClosure F/F)` and `G_F` carry different (defeq) group instances, so the
+  -- membership condition cannot be rewritten by `simp`; it holds by `Subgroup.mem_comap`.
+  exact IntermediateField.mem_fixedField_iff _ x
 
 /-- The index of the preimage of `C` in `G_F` is the index of `C` in the finite quotient. -/
 theorem shapiroOpenSubgroup_index :
@@ -85,9 +104,7 @@ theorem shapiroOpenSubgroup_index :
 /-- The degree of the Shapiro fixed field over `F` is the index of `C` in `G_F / V`. -/
 theorem finrank_shapiroField [IsGalois F (AlgebraicClosure F)] :
     Module.finrank F (shapiroField F V C) = C.index := by
-  rw [IntermediateField.finrank_eq_fixingSubgroup_index]
-  change (IntermediateField.fixedField
-    (shapiroOpenSubgroup F V C).toSubgroup).fixingSubgroup.index = C.index
+  rw [IntermediateField.finrank_eq_fixingSubgroup_index, shapiroField_def]
   have hfix : (IntermediateField.fixedField
       (shapiroOpenSubgroup F V C).toSubgroup).fixingSubgroup =
         (shapiroOpenSubgroup F V C).toSubgroup := by
