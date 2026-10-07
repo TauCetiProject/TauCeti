@@ -62,18 +62,9 @@ and without it a topological ring with no continuous valuation need not have `1 
 theorem one_mem_closure_zero_of_spa_eq_empty (Aplus : Subring A)
     (hplus : IsRingOfIntegralElements Aplus) (hspa : spa Aplus = ∅) :
     (1 : A) ∈ closure ({0} : Set A) := by
-  have hall_mem : ∀ a : A, a ∈ Aplus := by
-    intro a
-    let _ := hplus.isIntegrallyClosedIn
-    apply mem_of_forall_vle_one hplus.isOpen
-    intro v hv
-    rw [hspa] at hv
-    exact (Set.notMem_empty v hv).elim
-  have hall_powerBounded : ∀ a : A, IsPowerBounded a := fun a ↦
-    mem_powerBoundedSubring.mp (hplus.le_powerBoundedSubring (hall_mem a))
+  have hall_mem (a : A) : a ∈ Aplus := hplus.mem_of_forall_vle_one <| by simp [hspa]
   let toPowerBounded : A →+* powerBoundedSubring A :=
-    (RingHom.id A).codRestrict (powerBoundedSubring A) fun a ↦
-      mem_powerBoundedSubring.mpr (hall_powerBounded a)
+    (RingHom.id A).codRestrict _ fun a ↦ hplus.le_powerBoundedSubring (hall_mem a)
   let nilIdeal : Ideal A := (topologicallyNilpotentIdeal A).comap toPowerBounded
   let P : PairOfDefinition A := Classical.choice IsHuberRing.nonempty_pairOfDefinition
   have hopen : IsOpen (P.extendedIdealOfDefinition : Set A) :=

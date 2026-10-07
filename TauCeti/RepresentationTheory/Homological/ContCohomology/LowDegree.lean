@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Ring.Action.Submonoid
 public import Mathlib.GroupTheory.QuotientGroup.Basic
-public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LowDegree
-public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.ContinuousMap.Algebra
 public import TauCeti.GroupTheory.GroupAction.FixedPoints
+public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Cocycle.Topology
 
 import Mathlib.Tactic.Abel
 
@@ -39,6 +38,8 @@ H⁰(G, M) = M^G,   H¹(G, M) = Z¹/B¹,   H²(G, M) = Z²/B².
 * `TauCeti.ContCohomology.H0`, `H1`, `H2`, their class maps `H1pi`, `H2pi`, and the discrete
   carriers `DiscreteH1`, `DiscreteH2` used by the comparison with canonical cohomology, together
   with their identifications `discreteH1Equiv`, `discreteH2Equiv` with `H1` and `H2`.
+* `TauCeti.ContCohomology.sumCocycle`: the additive map sending a finite-group `2`-cocycle to
+  the invariant obtained by summing it over its first argument.
 * `TauCeti.ContCohomology.explicitMap0`: the compatible-pair pullback on the explicit degree-zero
   carrier, with `TauCeti.ContCohomology.explicitRes0` and `explicitCoeff0` its two named
   instances.
@@ -51,10 +52,10 @@ H⁰(G, M) = M^G,   H¹(G, M) = Z¹/B¹,   H²(G, M) = Z²/B².
 * `TauCeti.ContCohomology.subsingleton_H1_of_subsingleton` and
   `subsingleton_H2_of_subsingleton`: a trivial group has vanishing `H¹` and `H²`.
 * `TauCeti.ContCohomology.subsingleton_H1_of_subsingleton_coefficients` and
-  `subsingleton_H2_of_subsingleton_coefficients`: trivial coefficients have vanishing `H¹` and
+  `subsingleton_H2_of_subsingleton_coefficients`: a zero coefficient group has vanishing `H¹` and
   `H²`.
-* `TauCeti.ContCohomology.nsmul_H2_eq_zero`: `H²(G, M)` is killed by whatever kills the
-  coefficients `M`.
+* `TauCeti.ContCohomology.nsmul_H1_eq_zero` and `nsmul_H2_eq_zero`: `H¹(G, M)` and `H²(G, M)`
+  are killed by whatever kills the coefficients `M`.
 * `TauCeti.ContCohomology.H1EquivOfSmulEqSelf`: for a trivial action, `H¹(G, M)` is the group of
   continuous homomorphisms `G →ₜ* Multiplicative M`. This is the statement that makes `H¹` of a
   profinite group computable, and it is false without continuity.
@@ -77,25 +78,27 @@ vanishing of the differentials, so that `Zⁱ = Cⁱ ⊓ ker dⁱ` — which is 
 *defined*, taking their closure under the group operations from `AddMonoidHom.ker` — is stated in
 that spelling by `mem_Z1_iff` and `mem_Z2_iff`.
 
-Mathlib's bundled `groupCohomology.cocycles₁` and `cocycles₂` are *not* reused here: they are
-stated for `Rep k G`, which forces the coefficient ring and the group into a single universe, and
-the coefficient modules of a profinite group have to be allowed to live in the group's universe
-with a small coefficient ring such as `ℤ`. The unbundled `IsCocycle₁`/`IsCocycle₂` predicates,
-which Mathlib provides for exactly this purpose, carry no such constraint and are consumed
-directly. The cochain groups themselves are Mathlib's `continuousAddSubgroup`.
+Mathlib's bundled `groupCohomology.cocycles₁` and `cocycles₂` are *not* reused here: Mathlib's
+low-degree group cohomology API states them for `Rep k G` with `k` and `G` in a single universe
+(its binders are `{k G : Type u}`), and the coefficient modules of a profinite group have to be
+allowed to live in the group's universe with a small coefficient ring such as `ℤ`. The unbundled
+`IsCocycle₁`/`IsCocycle₂` predicates, which Mathlib provides for exactly this purpose, carry no
+such constraint and are consumed directly. The cochain groups themselves are Mathlib's
+`continuousAddSubgroup`.
 
 The trivial-action results are the continuous analogues of Mathlib's
 `groupCohomology.cocycles₁IsoOfIsTrivial`, `groupCohomology.coboundaries₁_eq_bot_of_isTrivial` and
 `groupCohomology.H1IsoOfIsTrivial`, in the same order and with the same proof plan; they are
 restated for the unbundled classes because the Mathlib versions are stated for `Rep k G`.
 
-Cochains are not normalised: `f 1 = 0` in degree `1` and the degree-`2` normalisations are the
-lemmas `map_one_of_mem_Z1`, `map_one_fst_of_mem_Z2` and `map_one_snd_of_mem_Z2`, never
-definitional conditions.
+Cochains are not normalised. The identities at the unit, `f 1 = 0` in degree `1` and
+`f (1, g) = f (1, 1)`, `f (g, 1) = g • f (1, 1)` in degree `2`, are the lemmas
+`map_one_of_mem_Z1`, `map_one_fst_of_mem_Z2` and `map_one_snd_of_mem_Z2`, never definitional
+conditions.
 
 `H1` and `H2` divide `Z¹` and `Z²` by the coboundaries *viewed inside the cocycles*, in the
-`AddSubgroup.addSubgroupOf` spelling the roadmap fixes, so that no proof term enters either quotient
-subgroup. Each carrier retains the hypotheses of `TauCeti.ContCohomology.B1_le_Z1`, respectively
+`AddSubgroup.addSubgroupOf` spelling, so that no proof term enters either quotient subgroup. Each
+carrier retains the hypotheses of `TauCeti.ContCohomology.B1_le_Z1`, respectively
 `B2_le_Z2`, through that inclusion theorem, so the subgroup divided out is always the whole of
 `B¹`, respectively `B²`, and never the intersection `B ⊓ Z` that `addSubgroupOf` would cut out at a
 weaker generality; `AddSubgroup.map_addSubgroupOf_eq_of_le` turns those inclusions into that
@@ -103,11 +106,6 @@ identity whenever a consumer needs it spelled out. The two carriers therefore si
 sections:
 `H¹` needs `G` to be a monoid acting continuously, and `H²` needs a continuous multiplication on
 `G` besides, because `d¹` has to preserve continuity for `B² = d¹(C¹)` to consist of cocycles.
-
-This implements the "the complex" milestone of Layer 2 of the human-authored roadmap at
-`TauCetiRoadmap/ProfiniteCohomology/README.md`, whose §3 fixes every convention above and whose
-`Suggested.lean` fixes the names `C1`, `C2`, `d0`, `d1`, `Z1`, `Z2`, `B1`, `B2`, `H0`, `H1`, `H2`,
-`H1pi`, `H2pi`, `B1_le_Z1` and `B2_le_Z2`.
 
 ## References
 
@@ -214,10 +212,8 @@ theorem d0_eq_zero_of_smul_eq_self : d0 G M = 0 :=
   AddMonoidHom.ext fun m => funext fun g => by simp [htriv g m]
 
 /-- For a trivial action there are no nonzero `1`-coboundaries. -/
-theorem B1_eq_bot_of_smul_eq_self : B1 G M = ⊥ := by
-  refine eq_bot_iff.2 fun f hf => ?_
-  obtain ⟨m, rfl⟩ := AddMonoidHom.mem_range.1 hf
-  simp [d0_eq_zero_of_smul_eq_self htriv]
+theorem B1_eq_bot_of_smul_eq_self : B1 G M = ⊥ :=
+  AddMonoidHom.range_eq_bot_iff.2 (d0_eq_zero_of_smul_eq_self htriv)
 
 end TrivialAction
 
@@ -267,57 +263,19 @@ theorem d2_apply (f : G × G → M) (g h j : G) :
 @[simp]
 theorem d1_apply_eq_zero_iff {f : G → M} :
     d1 G M f = 0 ↔ groupCohomology.IsCocycle₁ f := by
-  simp only [funext_iff, Prod.forall, groupCohomology.IsCocycle₁]
-  refine forall_congr' fun g => forall_congr' fun h => ?_
-  rw [d1_apply, Pi.zero_apply]
-  constructor
-  · intro hgh
-    calc
-      f (g * h) = f (g * h) + (g • f h - f (g * h) + f g) := by rw [hgh, add_zero]
-      _ = g • f h + f g := by abel
-  · intro hgh
-    rw [hgh]
-    abel
+  simp only [funext_iff, Prod.forall, groupCohomology.IsCocycle₁, d1_apply, Pi.zero_apply]
+  exact forall₂_congr fun g h => by rw [sub_add_eq_add_sub, sub_eq_zero, eq_comm]
 
 /-- A `2`-cochain is killed by `d²` exactly when it is a `2`-cocycle. -/
 @[simp]
 theorem d2_apply_eq_zero_iff {f : G × G → M} :
     d2 G M f = 0 ↔ groupCohomology.IsCocycle₂ f := by
-  simp only [funext_iff, Prod.forall, groupCohomology.IsCocycle₂]
-  refine forall_congr' fun g => forall_congr' fun h => forall_congr' fun j => ?_
-  rw [d2_apply, Pi.zero_apply]
-  constructor
-  · intro hghj
-    calc
-      f (g * h, j) + f (g, h) =
-          f (g * h, j) + f (g, h) +
-            (g • f (h, j) - f (g * h, j) + f (g, h * j) - f (g, h)) := by
-              rw [hghj, add_zero]
-      _ = g • f (h, j) + f (g, h * j) := by abel
-  · intro hghj
-    calc
-      g • f (h, j) - f (g * h, j) + f (g, h * j) - f (g, h) =
-          (g • f (h, j) + f (g, h * j)) - (f (g * h, j) + f (g, h)) := by abel
-      _ = 0 := by rw [← hghj, sub_self]
+  simp only [funext_iff, Prod.forall, groupCohomology.IsCocycle₂, d2_apply, Pi.zero_apply]
+  refine forall₃_congr fun g h j => ?_
+  rw [← sub_eq_zero (a := f (g * h, j) + f (g, h)), ← neg_eq_zero]
+  exact Eq.congr_left (by abel)
 
 end CocycleConditions
-
-section CocycleIdentities
-
-variable {G : Type u} [Group G] {M : Type v} [AddCommGroup M] [DistribMulAction G M]
-
-/-- Conjugating the argument of a `1`-cocycle by `k` changes its value, after the action of `k`,
-by the coboundary of `c k`. -/
-theorem smul_apply_inv_mul_mul_of_isCocycle₁ {c : G → M}
-    (hc : groupCohomology.IsCocycle₁ c) (k m : G) :
-    k • c (k⁻¹ * m * k) = m • c k - c k + c m := by
-  have hmul : k * (k⁻¹ * m * k) = m * k := by group
-  have h := hc k (k⁻¹ * m * k)
-  rw [hmul, hc m k] at h
-  rw [eq_sub_of_add_eq h.symm]
-  abel
-
-end CocycleIdentities
 
 section Complex
 
@@ -398,6 +356,19 @@ theorem coe_explicitMap0 {H : Type*} [Monoid H] {N : Type*} [AddCommGroup N]
     (explicitMap0 G M φ f hequiv m : N) = f (m : M) :=
   (rfl)
 
+/-- **The degree-zero pullback along an isomorphism is bijective**: for a surjective
+`φ : H →* G` and an additive equivalence `f : M ≃+ N` with `f (φ h • m) = h • f m`, the
+`H`-invariants of `N` are exactly the images of the `G`-invariants of `M`. -/
+theorem explicitMap0_bijective {H : Type*} [Monoid H] {N : Type*} [AddCommGroup N]
+    [DistribMulAction H N] (φ : H →* G) (hφ : Function.Surjective φ) (f : M ≃+ N)
+    (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) :
+    Function.Bijective (explicitMap0 G M φ f.toAddMonoidHom hequiv) := by
+  refine ⟨fun x y hxy => Subtype.ext (f.injective (congrArg Subtype.val hxy)), fun m => ?_⟩
+  refine ⟨⟨f.symm m, (FixedPoints.mem_addSubgroup G M _).2 fun g => f.injective ?_⟩,
+    Subtype.ext (f.apply_symm_apply _)⟩
+  obtain ⟨h, rfl⟩ := hφ g
+  rw [hequiv, f.apply_symm_apply, (FixedPoints.mem_addSubgroup H N m).1 m.2]
+
 /-- Pullback along the identity compatible pair is the identity on degree-zero cohomology. -/
 @[simp]
 theorem explicitMap0_id :
@@ -418,6 +389,49 @@ theorem explicitMap0_comp {H : Type*} [Monoid H] {N : Type*} [AddCommGroup N]
       (explicitMap0 H N ψ q hequivq).comp (explicitMap0 G M φ f hequiv) :=
   AddMonoidHom.ext fun _ => Subtype.ext (rfl)
 
+/-- A coefficient homomorphism induces an additive map on degree-zero cohomology: the
+compatible-pair pullback along the identity of the acting monoid. -/
+def explicitCoeff0 {N : Type*} [AddCommGroup N] [DistribMulAction G N] (f : M →+[G] N) :
+    H0 G M →+ H0 G N :=
+  explicitMap0 G M (MonoidHom.id G) f.toAddMonoidHom (fun g m => f.map_smul g m)
+
+/-- The degree-zero coefficient map applies the underlying coefficient homomorphism. -/
+@[simp]
+theorem coe_explicitCoeff0 {N : Type*} [AddCommGroup N] [DistribMulAction G N]
+    (f : M →+[G] N) (m : H0 G M) : (explicitCoeff0 G M f m : N) = f (m : M) :=
+  coe_explicitMap0 G M (MonoidHom.id G) f.toAddMonoidHom (fun g m => f.map_smul g m) m
+
+/-- A coefficient map in degree zero is the compatible-pair pullback along the identity of the
+acting monoid. -/
+theorem explicitCoeff0_eq_explicitMap0 {N : Type*} [AddCommGroup N] [DistribMulAction G N]
+    (f : M →+[G] N) :
+    explicitCoeff0 G M f =
+      explicitMap0 G M (MonoidHom.id G) f.toAddMonoidHom (fun g m => f.map_smul g m) :=
+  (rfl)
+
+/-- The identity coefficient map induces the identity on degree-zero cohomology. -/
+@[simp]
+theorem explicitCoeff0_id : explicitCoeff0 G M (DistribMulActionHom.id G) = AddMonoidHom.id _ :=
+  AddMonoidHom.ext fun m => Subtype.ext (coe_explicitCoeff0 G M _ m)
+
+/-- Coefficient maps on degree-zero cohomology respect composition. -/
+theorem explicitCoeff0_comp {N : Type*} [AddCommGroup N] [DistribMulAction G N]
+    {P : Type*} [AddCommGroup P] [DistribMulAction G P] (f : M →+[G] N) (q : N →+[G] P) :
+    explicitCoeff0 G M (q.comp f) = (explicitCoeff0 G N q).comp (explicitCoeff0 G M f) :=
+  AddMonoidHom.ext fun _ => Subtype.ext (rfl)
+
+/-- A bijective equivariant homomorphism of coefficients induces a bijection on degree-zero
+cohomology. -/
+theorem explicitCoeff0_bijective {N : Type*} [AddCommGroup N] [DistribMulAction G N]
+    {f : M →+[G] N} (hf : Function.Bijective f) : Function.Bijective (explicitCoeff0 G M f) := by
+  refine ⟨fun x y h => Subtype.ext (hf.1 ?_), fun y => ?_⟩
+  · simpa only [coe_explicitCoeff0] using congrArg Subtype.val h
+  · obtain ⟨m, hm⟩ := hf.2 (y : N)
+    refine ⟨⟨m, (FixedPoints.mem_addSubgroup G M m).2 fun g => hf.1 ?_⟩, Subtype.ext ?_⟩
+    · rw [map_smul f, hm]
+      exact (FixedPoints.mem_addSubgroup G N (y : N)).1 y.2 g
+    · simpa only [coe_explicitCoeff0] using hm
+
 end CompatiblePairDegreeZero
 
 section RestrictionDegreeZero
@@ -425,72 +439,31 @@ section RestrictionDegreeZero
 variable (G : Type u) [Group G] (M : Type v) [AddCommGroup M] [DistribMulAction G M]
   (U : Subgroup G)
 
-private def H0.toFixedPointsTop : H0 G M →+ FixedPoints.addSubmonoid (⊤ : Subgroup G) M where
-  toFun m := ⟨m, (FixedPoints.mem_addSubmonoid (⊤ : Subgroup G) M m).2 fun g =>
-    (FixedPoints.mem_addSubgroup G M m).1 m.2 (g : G)⟩
-  map_zero' := rfl
-  map_add' _ _ := rfl
-
-private def H0.ofFixedPointsTop : FixedPoints.addSubmonoid (⊤ : Subgroup G) M →+ H0 G M where
-  toFun m := ⟨m, (FixedPoints.mem_addSubgroup G M m).2 fun g =>
-    (FixedPoints.mem_addSubmonoid (⊤ : Subgroup G) M m).1 m.2 ⟨g, Subgroup.mem_top g⟩⟩
-  map_zero' := rfl
-  map_add' _ _ := rfl
-
-/-- A coefficient homomorphism induces an additive map on degree-zero cohomology. -/
-def explicitCoeff0 {N : Type*} [AddCommGroup N] [DistribMulAction G N] (f : M →+[G] N) :
-    H0 G M →+ H0 G N :=
-  (H0.ofFixedPointsTop G N).comp
-    ((fixedPointsMap f (⊤ : Subgroup G)).comp (H0.toFixedPointsTop G M))
-
-/-- The degree-zero coefficient map applies the underlying coefficient homomorphism. -/
-@[simp]
-theorem coe_explicitCoeff0 {N : Type*} [AddCommGroup N] [DistribMulAction G N]
-    (f : M →+[G] N) (m : H0 G M) : (explicitCoeff0 G M f m : N) = f (m : M) := by
-  unfold explicitCoeff0 H0.ofFixedPointsTop H0.toFixedPointsTop
-  exact coe_fixedPointsMap f ⊤ _
-
-/-- **Restriction in degree zero**, the inclusion `H⁰(G, M) → H⁰(U, M)`. -/
+/-- **Restriction in degree zero**, the inclusion `H⁰(G, M) → H⁰(U, M)`: the compatible-pair
+pullback along the inclusion of the subgroup, with the identity on the coefficients. -/
 def explicitRes0 : H0 G M →+ H0 U M :=
-  (fixedPointsInclusion (M := M) (show U ≤ (⊤ : Subgroup G) from le_top)).comp
-    (H0.toFixedPointsTop G M)
+  explicitMap0 G M U.subtype (AddMonoidHom.id M) (fun _ _ => rfl)
 
 /-- Restriction in degree zero does not change the underlying coefficient. -/
 @[simp]
-theorem coe_explicitRes0 (m : H0 G M) : (explicitRes0 G M U m : M) = m := by
-  unfold explicitRes0 H0.toFixedPointsTop
-  exact coe_fixedPointsInclusion (M := M) (show U ≤ (⊤ : Subgroup G) from le_top) _
+theorem coe_explicitRes0 (m : H0 G M) : (explicitRes0 G M U m : M) = m :=
+  coe_explicitMap0 G M U.subtype (AddMonoidHom.id M) (fun _ _ => rfl) m
 
 /-- Restriction in degree zero is natural in equivariant coefficient homomorphisms. -/
 theorem map_explicitRes0 {N : Type*} [AddCommGroup N] [DistribMulAction G N]
     (f : M →+[G] N) (m : H0 G M) :
     fixedPointsMap f U (explicitRes0 G M U m) =
       explicitRes0 G N U (explicitCoeff0 G M f m) := by
-  apply Subtype.ext
-  calc
-    (fixedPointsMap f U (explicitRes0 G M U m) : N) =
-        f (explicitRes0 G M U m : M) := coe_fixedPointsMap f U _
-    _ = f (m : M) := congrArg f (coe_explicitRes0 G M U m)
-    _ = (explicitCoeff0 G M f m : N) := (coe_explicitCoeff0 G M f m).symm
-    _ = (explicitRes0 G N U (explicitCoeff0 G M f m) : N) :=
-      (coe_explicitRes0 G N U _).symm
+  ext
+  rw [coe_explicitRes0, coe_explicitCoeff0, ← coe_explicitRes0 G M U m]
+  exact coe_fixedPointsMap f U _
 
 /-- Restriction in degree zero is the compatible-pair pullback along the inclusion of the subgroup
 with the identity on the coefficients. -/
 theorem explicitRes0_eq_explicitMap0 :
     explicitRes0 G M U =
       explicitMap0 G M U.subtype (AddMonoidHom.id M) (fun _ _ => rfl) :=
-  AddMonoidHom.ext fun m => Subtype.ext ((coe_explicitRes0 G M U m).trans
-    (coe_explicitMap0 G M U.subtype (AddMonoidHom.id M) (fun _ _ => rfl) m).symm)
-
-/-- A coefficient map in degree zero is the compatible-pair pullback along the identity of the
-group. -/
-theorem explicitCoeff0_eq_explicitMap0 {N : Type*} [AddCommGroup N] [DistribMulAction G N]
-    (f : M →+[G] N) :
-    explicitCoeff0 G M f =
-      explicitMap0 G M (MonoidHom.id G) f.toAddMonoidHom (fun g m => f.map_smul g m) :=
-  AddMonoidHom.ext fun m => Subtype.ext ((coe_explicitCoeff0 G M f m).trans
-    (coe_explicitMap0 G M (MonoidHom.id G) f.toAddMonoidHom (fun g m => f.map_smul g m) m).symm)
+  (rfl)
 
 end RestrictionDegreeZero
 
@@ -565,6 +538,52 @@ theorem Z2_le_C2 : Z2 G M ≤ C2 G M := inf_le_left
 
 end Cocycles
 
+section FiniteGroup
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [Fintype G]
+  {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [DistribMulAction G M]
+
+/-- The additive map sending a finite-group `2`-cocycle `f` to the invariant
+`∑ x, f (x, g)` obtained by summing it over its first argument. -/
+def sumCocycle (g : G) : Z2 G M →+ H0 G M where
+  toFun f := ⟨∑ x : G, (f : G × G → M) (x, g), by
+    rw [FixedPoints.mem_addSubgroup]
+    intro y
+    have hf := (mem_Z2_iff.mp f.property).2
+    calc
+      y • ∑ x : G, (f : G × G → M) (x, g) =
+          ∑ x : G, y • (f : G × G → M) (x, g) := by rw [Finset.smul_sum]
+      _ = ∑ x : G, ((f : G × G → M) (y * x, g) +
+          (f : G × G → M) (y, x) - (f : G × G → M) (y, x * g)) := by
+        apply Finset.sum_congr rfl
+        intro x _
+        have h := hf y x g
+        rw [eq_sub_iff_add_eq]
+        exact h.symm
+      _ = (∑ x : G, (f : G × G → M) (y * x, g)) +
+          ∑ x : G, (f : G × G → M) (y, x) -
+            ∑ x : G, (f : G × G → M) (y, x * g) := by
+        simp only [Finset.sum_add_distrib, Finset.sum_sub_distrib]
+      _ = ∑ x : G, (f : G × G → M) (x, g) := by
+        have hleft : (∑ x : G, (f : G × G → M) (y * x, g)) =
+            ∑ x : G, (f : G × G → M) (x, g) :=
+          Fintype.sum_bijective _ (Group.mulLeft_bijective y) _ _ (fun _ ↦ rfl)
+        have hright : (∑ x : G, (f : G × G → M) (y, x * g)) =
+            ∑ x : G, (f : G × G → M) (y, x) :=
+          Fintype.sum_bijective _ (Group.mulRight_bijective g) _ _ (fun _ ↦ rfl)
+        rw [hleft, hright, add_sub_cancel_right]⟩
+  map_zero' := Subtype.ext (by simp)
+  map_add' f f' := Subtype.ext (by simp [Finset.sum_add_distrib])
+
+/-- The value of `sumCocycle` is the sum of the cocycle over its first argument. -/
+@[simp]
+theorem sumCocycle_val (g : G) (f : Z2 G M) :
+    (sumCocycle g f : M) = ∑ x : G, (f : G × G → M) (x, g) :=
+  (rfl)
+
+end FiniteGroup
+
 section Normalizations
 
 variable {G : Type u} [Monoid G] [TopologicalSpace G]
@@ -576,11 +595,11 @@ variable {G : Type u} [Monoid G] [TopologicalSpace G]
 theorem map_one_of_mem_Z1 {f : G → M} (hf : f ∈ Z1 G M) : f 1 = 0 :=
   groupCohomology.map_one_of_isCocycle₁ (mem_Z1_iff.1 hf).2
 
-/-- The first degree-`2` normalisation. -/
+/-- A continuous `2`-cocycle takes the same value at `(1, g)` as at `(1, 1)`. -/
 theorem map_one_fst_of_mem_Z2 {f : G × G → M} (hf : f ∈ Z2 G M) (g : G) : f (1, g) = f (1, 1) :=
   groupCohomology.map_one_fst_of_isCocycle₂ (mem_Z2_iff.1 hf).2 g
 
-/-- The second degree-`2` normalisation. -/
+/-- A continuous `2`-cocycle satisfies `f (g, 1) = g • f (1, 1)`. -/
 theorem map_one_snd_of_mem_Z2 {f : G × G → M} (hf : f ∈ Z2 G M) (g : G) :
     f (g, 1) = g • f (1, 1) :=
   groupCohomology.map_one_snd_of_isCocycle₂ (mem_Z2_iff.1 hf).2 g
@@ -598,57 +617,28 @@ variable {G : Type u} [Group G] [TopologicalSpace G]
 theorem map_inv_of_mem_Z1 {f : G → M} (hf : f ∈ Z1 G M) (g : G) : g • f g⁻¹ = -f g :=
   groupCohomology.map_inv_of_isCocycle₁ (mem_Z1_iff.1 hf).2 g
 
-/-- **The zero locus of a `1`-cocycle is a subgroup.** The cocycle identity
-`f (g * h) = g • f h + f g` closes it under multiplication, and the inverse formula
-`g • f g⁻¹ = -f g` closes it under inversion. -/
-def zeroLocus {f : G → M} (hf : f ∈ Z1 G M) : Subgroup G where
-  carrier := {g | f g = 0}
-  one_mem' := map_one_of_mem_Z1 hf
-  mul_mem' {g h} hg hh := by
-    simp only [Set.mem_ofPred_eq] at hg hh ⊢
-    rw [(mem_Z1_iff.1 hf).2 g h, hg, hh, smul_zero, add_zero]
-  inv_mem' {g} hg := by
-    simp only [Set.mem_ofPred_eq] at hg ⊢
-    have h := map_inv_of_mem_Z1 hf g
-    rwa [hg, neg_zero, smul_eq_zero_iff_eq] at h
-
-@[simp]
-theorem mem_zeroLocus {f : G → M} (hf : f ∈ Z1 G M) {g : G} : g ∈ zeroLocus hf ↔ f g = 0 :=
-  Iff.rfl
-
-/-- The zero locus of a continuous `1`-cocycle with values in a `T1` module is closed. -/
-theorem isClosed_zeroLocus [T1Space M] {f : G → M} (hf : f ∈ Z1 G M) :
-    IsClosed (zeroLocus hf : Set G) :=
-  isClosed_singleton.preimage (mem_Z1_iff.1 hf).1
-
 /-- **Continuous `1`-cocycles are determined by their values on a topological generating set.**
 Two continuous `1`-cocycles with values in a `T1` module that agree on a set `s` whose generated
-subgroup is dense agree everywhere: their difference is a continuous cocycle whose zero locus is
-a closed subgroup containing `s`. -/
+subgroup is dense agree everywhere. -/
 theorem eq_of_mem_Z1_of_eqOn_of_topologicalClosure_closure_eq_top [IsTopologicalGroup G]
     [T1Space M] {c₁ c₂ : G → M} (h₁ : c₁ ∈ Z1 G M) (h₂ : c₂ ∈ Z1 G M) {s : Set G}
     (hs : (Subgroup.closure s).topologicalClosure = ⊤) (h : Set.EqOn c₁ c₂ s) : c₁ = c₂ := by
-  have hsub : c₁ - c₂ ∈ Z1 G M := (Z1 G M).sub_mem h₁ h₂
-  have hle : (Subgroup.closure s).topologicalClosure ≤ zeroLocus hsub :=
-    Subgroup.topologicalClosure_minimal _
-      ((Subgroup.closure_le _).2 fun g hg ↦ (mem_zeroLocus hsub).2 (sub_eq_zero.2 (h hg)))
-      (isClosed_zeroLocus hsub)
-  funext g
-  exact sub_eq_zero.1 ((mem_zeroLocus hsub).1 (hle (hs ▸ Subgroup.mem_top g)))
+  obtain ⟨hcont, hcoc⟩ := mem_Z1_iff.1 ((Z1 G M).sub_mem h₁ h₂)
+  exact sub_eq_zero.1 (groupCohomology.eq_zero_of_eqOn_zero_of_topologicalClosure_closure_eq_top
+    hcoc hcont hs fun g hg ↦ sub_eq_zero.2 (h hg))
 
 end Inverse
 
 section Continuity
 
 variable {G : Type u} [TopologicalSpace G]
-  {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [DistribSMul G M] [ContinuousSMul G M]
+  {M : Type v} [AddCommGroup M] [TopologicalSpace M] [DistribSMul G M] [ContinuousSMul G M]
 
 /-- Every `1`-coboundary is continuous. -/
-theorem continuous_d0_apply (m : M) : Continuous (d0 G M m) :=
+theorem continuous_d0_apply [ContinuousSub M] (m : M) : Continuous (d0 G M m) :=
   (continuous_id.smul continuous_const).sub continuous_const
 
-variable (G M)
+variable [IsTopologicalAddGroup M] (G M)
 
 /-- `1`-coboundaries are continuous `1`-cochains. -/
 theorem B1_le_C1 : B1 G M ≤ C1 G M := by
@@ -664,15 +654,15 @@ section ContinuityMul
 multiplication on `G` and a distributive scalar action, with no unit and no associativity. -/
 
 variable {G : Type u} [Mul G] [TopologicalSpace G] [ContinuousMul G]
-  {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [DistribSMul G M] [ContinuousSMul G M]
+  {M : Type v} [AddCommGroup M] [TopologicalSpace M] [DistribSMul G M] [ContinuousSMul G M]
 
 /-- `d¹` preserves continuity. -/
-theorem continuous_d1_apply {f : G → M} (hf : Continuous f) : Continuous (d1 G M f) :=
+theorem continuous_d1_apply [ContinuousAdd M] [ContinuousSub M] {f : G → M} (hf : Continuous f) :
+    Continuous (d1 G M f) :=
   ((continuous_fst.smul (hf.comp continuous_snd)).sub
     (hf.comp (continuous_fst.mul continuous_snd))).add (hf.comp continuous_fst)
 
-variable (G M)
+variable [IsTopologicalAddGroup M] (G M)
 
 /-- `2`-coboundaries are continuous `2`-cochains. -/
 theorem B2_le_C2 : B2 G M ≤ C2 G M := by
@@ -722,16 +712,15 @@ variable (G : Type u) [Monoid G] [TopologicalSpace G]
 
 /-- The first continuous cohomology group `H¹(G, M) = Z¹/B¹`.
 
-The denominator is `B¹` viewed inside `Z¹`, in Mathlib's `AddSubgroup.addSubgroupOf` spelling the
-roadmap fixes, so that no proof term enters the quotient subgroup. The hypotheses in force are
-those of
+The denominator is `B¹` viewed inside `Z¹`, in Mathlib's `AddSubgroup.addSubgroupOf` spelling,
+so that no proof term enters the quotient subgroup. The hypotheses in force are those of
 `TauCeti.ContCohomology.B1_le_Z1`, so the subgroup divided out really is the whole of `B¹`:
 `AddSubgroup.map_addSubgroupOf_eq_of_le (B1_le_Z1 G M)` says its image in `G → M` is `B¹` itself.
 
 `H¹` is used as a bare additive group. It does inherit a quotient topology from the *pointwise*
-topology on `G → M`, and that topology is not the intended one: it need not be discrete, the
-roadmap's witness being trivial `ZMod 2` coefficients on a product of infinitely many copies of
-`C₂`, where no finite set of evaluations isolates the zero character. The comparison of Layer 3 is
+topology on `G → M`, and that topology is not the intended one: it need not be discrete. For
+trivial `ZMod 2` coefficients on a product of infinitely many copies of `C₂`, no finite set of
+evaluations isolates the zero character. The comparison with canonical continuous cohomology is
 therefore stated against `DiscreteH1`. -/
 abbrev H1 :=
   let _h := B1_le_Z1 G M
@@ -745,7 +734,7 @@ continuous cohomology. -/
 def DiscreteH1 : Type _ := H1 G M
 
 /-- `DiscreteH1 G M` has the additive group structure of `H¹(G, M)`. -/
-noncomputable instance : AddCommGroup (DiscreteH1 G M) :=
+instance : AddCommGroup (DiscreteH1 G M) :=
   inferInstanceAs (AddCommGroup (H1 G M))
 
 /-- `DiscreteH1 G M` carries the discrete topology. -/
@@ -756,7 +745,7 @@ instance : DiscreteTopology (DiscreteH1 G M) := ⟨rfl⟩
 
 /-- The identity as an additive equivalence, so that the quotient-class computations on
 representatives stay available after passing to the discrete object. -/
-noncomputable def discreteH1Equiv : DiscreteH1 G M ≃+ H1 G M :=
+def discreteH1Equiv : DiscreteH1 G M ≃+ H1 G M :=
   AddEquiv.refl _
 
 variable {G M}
@@ -773,6 +762,14 @@ omit hcont in
 theorem H1pi_eq_iff {f f' : Z1 G M} :
     (f : H1 G M) = (f' : H1 G M) ↔ (f : G → M) - f' ∈ B1 G M := by
   rw [QuotientAddGroup.eq_iff_sub_mem, AddSubgroup.mem_addSubgroupOf, AddSubgroup.coe_sub]
+
+/-- **`H¹` inherits the exponent of its coefficients.** If `n` kills the coefficient module `M`,
+then it kills every class in `H¹(G, M)`. -/
+theorem nsmul_H1_eq_zero {n : ℕ} (h : ∀ m : M, n • m = 0) (x : H1 G M) : n • x = 0 := by
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    have hc : n • c = 0 := Subtype.ext (funext fun _ ↦ by simp [h])
+    rw [← QuotientAddGroup.mk_nsmul, hc, QuotientAddGroup.mk_zero]
 
 end CohomologyDegree1
 
@@ -804,7 +801,7 @@ continuous cohomology. -/
 def DiscreteH2 : Type _ := H2 G M
 
 /-- `DiscreteH2 G M` has the additive group structure of `H²(G, M)`. -/
-noncomputable instance : AddCommGroup (DiscreteH2 G M) :=
+instance : AddCommGroup (DiscreteH2 G M) :=
   inferInstanceAs (AddCommGroup (H2 G M))
 
 /-- `DiscreteH2 G M` carries the discrete topology. -/
@@ -814,7 +811,7 @@ instance : TopologicalSpace (DiscreteH2 G M) := ⊥
 instance : DiscreteTopology (DiscreteH2 G M) := ⟨rfl⟩
 
 /-- The degree-`2` counterpart of `TauCeti.ContCohomology.discreteH1Equiv`. -/
-noncomputable def discreteH2Equiv : DiscreteH2 G M ≃+ H2 G M :=
+def discreteH2Equiv : DiscreteH2 G M ≃+ H2 G M :=
   AddEquiv.refl _
 
 variable {G M}
@@ -833,8 +830,7 @@ theorem H2pi_eq_iff {f f' : Z2 G M} :
   rw [QuotientAddGroup.eq_iff_sub_mem, AddSubgroup.mem_addSubgroupOf, AddSubgroup.coe_sub]
 
 /-- **`H²` inherits the exponent of its coefficients.** If `n` kills the coefficient module `M`,
-then it kills every class in `H²(G, M)`: a continuous `2`-cocycle with values in `M` is killed
-pointwise, hence so is its class. -/
+then it kills every class in `H²(G, M)`. -/
 theorem nsmul_H2_eq_zero {n : ℕ} (h : ∀ m : M, n • m = 0) (x : H2 G M) : n • x = 0 := by
   induction x using QuotientAddGroup.induction_on with
   | _ c =>
@@ -849,34 +845,17 @@ variable (G : Type u) [Monoid G] [TopologicalSpace G] [Subsingleton G]
   (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [DistribMulAction G M] [ContinuousSMul G M]
 
-/-- **A trivial group has vanishing `H¹`**: a `1`-cocycle satisfies `f 1 = 1 • f 1 + f 1`, so it
-vanishes at the only element. -/
-instance subsingleton_H1_of_subsingleton : Subsingleton (H1 G M) := by
-  have hzero : ∀ f : Z1 G M, (f : G → M) = 0 := fun f => funext fun g => by
-    have h := (mem_Z1_iff.1 f.2).2 1 1
-    rw [Subsingleton.elim g 1]
-    rw [mul_one, one_smul] at h
-    simpa using h
-  refine ⟨fun x y => ?_⟩
-  induction x using QuotientAddGroup.induction_on with
-  | _ f =>
-    induction y using QuotientAddGroup.induction_on with
-    | _ f' =>
-      refine H1pi_eq_iff.2 ?_
-      rw [hzero f, hzero f', sub_zero]
-      exact zero_mem _
+/-- **A trivial group has vanishing `H¹`.** -/
+instance subsingleton_H1_of_subsingleton : Subsingleton (H1 G M) :=
+  have : Subsingleton (Z1 G M) := ⟨fun f f' => Subtype.ext <| funext fun g => by
+    rw [Subsingleton.elim g 1, map_one_of_mem_Z1 f.2, map_one_of_mem_Z1 f'.2]⟩
+  QuotientAddGroup.mk_surjective.subsingleton
 
-/-- **A trivial group has vanishing `H²`**: a `2`-cochain `f` is the coboundary of the constant
-`1`-cochain at `f (1, 1)`. -/
-instance subsingleton_H2_of_subsingleton [ContinuousMul G] : Subsingleton (H2 G M) := by
-  have hB : ∀ f : G × G → M, f ∈ B2 G M := fun f => mem_B2_iff'.2
-    ⟨fun _ => f (1, 1), continuous_const, fun g h => by
-      rw [Subsingleton.elim g 1, Subsingleton.elim h 1, one_smul, sub_add_cancel]⟩
-  refine ⟨fun x y => ?_⟩
-  induction x using QuotientAddGroup.induction_on with
-  | _ f =>
-    induction y using QuotientAddGroup.induction_on with
-    | _ f' => exact H2pi_eq_iff.2 (hB _)
+/-- **A trivial group has vanishing `H²`.** -/
+instance subsingleton_H2_of_subsingleton [ContinuousMul G] : Subsingleton (H2 G M) :=
+  subsingleton_of_forall_eq 0 fun x => QuotientAddGroup.induction_on x fun f =>
+    H2pi_eq_zero_iff.2 <| mem_B2_iff'.2 ⟨fun _ => (f : G × G → M) (1, 1), continuous_const,
+      fun g h => by rw [Subsingleton.elim g 1, Subsingleton.elim h 1, one_smul, sub_add_cancel]⟩
 
 end TrivialGroup
 
@@ -886,39 +865,35 @@ variable (G : Type u) [Monoid G] [TopologicalSpace G]
   (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [DistribMulAction G M] [ContinuousSMul G M] [Subsingleton M]
 
-/-- **Trivial coefficients have vanishing `H¹`**: there is only one cochain. -/
+/-- **A zero coefficient group has vanishing `H¹`.** -/
 instance subsingleton_H1_of_subsingleton_coefficients : Subsingleton (H1 G M) :=
-  ⟨fun x y => by
-    induction x using QuotientAddGroup.induction_on with
-    | _ f =>
-      induction y using QuotientAddGroup.induction_on with
-      | _ f' => exact congrArg (H1pi G M) (Subsingleton.elim f f')⟩
+  QuotientAddGroup.mk_surjective.subsingleton
 
-/-- **Trivial coefficients have vanishing `H²`**: there is only one cochain. -/
+/-- **A zero coefficient group has vanishing `H²`.** -/
 instance subsingleton_H2_of_subsingleton_coefficients [ContinuousMul G] : Subsingleton (H2 G M) :=
-  ⟨fun x y => by
-    induction x using QuotientAddGroup.induction_on with
-    | _ f =>
-      induction y using QuotientAddGroup.induction_on with
-      | _ f' => exact congrArg (H2pi G M) (Subsingleton.elim f f')⟩
+  QuotientAddGroup.mk_surjective.subsingleton
 
 end TrivialCoefficients
 
 section TrivialAction
 
-variable {G : Type u} [Monoid G] [TopologicalSpace G]
+/-! Identifying the cocycles with homomorphisms uses only that `G` acts trivially by a
+distributive scalar action; associativity of the action is needed only to form `H¹`. -/
+
+variable {G : Type u} [TopologicalSpace G]
   {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [DistribMulAction G M] (htriv : ∀ (g : G) (m : M), g • m = m)
+  [DistribSMul G M] (htriv : ∀ (g : G) (m : M), g • m = m)
 
 include htriv
 
-/-- For a trivial action a continuous `1`-cocycle is additive: the cocycle identity loses its
-scalar and becomes `f (a * b) = f a + f b`. -/
-theorem map_mul_of_smul_eq_self_of_mem_Z1 {f : G → M} (hf : f ∈ Z1 G M) (a b : G) :
+/-- For a trivial action a continuous `1`-cocycle is additive. -/
+theorem map_mul_of_smul_eq_self_of_mem_Z1 [Mul G] {f : G → M} (hf : f ∈ Z1 G M) (a b : G) :
     f (a * b) = f a + f b := by
   have h := (mem_Z1_iff.1 hf).2 a b
   rw [htriv a (f b)] at h
   exact h.trans (add_comm _ _)
+
+variable [Monoid G]
 
 /-- For a trivial action the pointwise `Multiplicative.toAdd` of a continuous homomorphism
 `G → Multiplicative M` is a continuous `1`-cocycle. -/
@@ -975,7 +950,7 @@ include htriv
 
 Continuity is what makes this useful rather than decorative: without it the right-hand side is the
 group of abstract homomorphisms, which for a profinite group is enormous. -/
-noncomputable def H1EquivOfSmulEqSelf :
+def H1EquivOfSmulEqSelf :
     H1 G M ≃+ Additive (ContinuousMonoidHom G (Multiplicative M)) :=
   (QuotientAddGroup.quotientAddEquivOfEq
       (M := (B1 G M).addSubgroupOf (Z1 G M)) (N := ⊥) (by
@@ -990,8 +965,7 @@ theorem H1EquivOfSmulEqSelf_mk (f : Z1 G M) :
     H1EquivOfSmulEqSelf htriv (f : H1 G M) = Z1EquivOfSmulEqSelf htriv f := by
   simp only [H1EquivOfSmulEqSelf, AddEquiv.trans_apply,
     QuotientAddGroup.quotientAddEquivOfEq_mk]
-  -- `quotientBot` takes the class of a cocycle back to the cocycle definitionally.
-  rfl
+  rw [← QuotientAddGroup.quotientBot_symm_apply f, AddEquiv.apply_symm_apply]
 
 /-- The class of the continuous `1`-cocycle attached to a continuous homomorphism by
 `H1EquivOfSmulEqSelf`. -/
@@ -1002,6 +976,14 @@ theorem H1EquivOfSmulEqSelf_symm_apply
   (H1EquivOfSmulEqSelf htriv).symm_apply_eq.2
     (((Z1EquivOfSmulEqSelf htriv).apply_symm_apply φ).symm.trans
       (H1EquivOfSmulEqSelf_mk htriv _).symm)
+
+/-- A compact monoid has vanishing first continuous cohomology with trivial, discrete,
+torsion-free coefficients. In particular, this applies to trivial integer coefficients. -/
+theorem subsingleton_H1_of_isAddTorsionFree [CompactSpace G] [DiscreteTopology M]
+    [IsAddTorsionFree M] : Subsingleton (H1 G M) := by
+  refine subsingleton_of_forall_eq 0 fun x ↦ (H1EquivOfSmulEqSelf htriv).injective ?_
+  apply Additive.toMul.injective
+  exact (Additive.toMul ((H1EquivOfSmulEqSelf htriv) x)).eq_one_of_isMulTorsionFree
 
 end TrivialCohomology
 

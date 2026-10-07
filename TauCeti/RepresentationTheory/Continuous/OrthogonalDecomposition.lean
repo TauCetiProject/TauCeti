@@ -22,8 +22,8 @@ blocks.
 
 The proof is the classical descent. A nonzero subrepresentation of a finite-dimensional
 representation contains an atom of the lattice of subrepresentations
-(`TauCeti.Representation.exists_isAtom_le`), and an atom carries an irreducible representation
-(`TauCeti.Representation.isIrreducible_toRepresentation_of_isAtom`). Unitarity enters exactly
+(`Representation.exists_isAtom_le`), and an atom carries an irreducible representation
+(`Representation.isIrreducible_toRepresentation_of_isAtom`). Unitarity enters exactly
 once, to split off that atom orthogonally: the orthogonal complement of an invariant subspace is
 again invariant (`TauCeti.ContRepresentation.IsUnitary.orthogonal_mem_invtSubmodule`), so the
 remainder is a strictly smaller subrepresentation and the descent recurses on it.
@@ -241,7 +241,7 @@ invariant `⟪e ·, e ·⟫` pulled back from `W`. Only the unitary model needs 
 `V` is asked for no more than a finite-dimensional normed space, as
 `TauCeti.ContRepresentation.congr` itself is. Nothing here uses finiteness or compactness of the
 acting group; a construction of an `e` is what such a hypothesis is for, Weyl's unitarian trick
-`TauCeti.ContRepresentation.exists_isUnitary_congr` being one. -/
+`ContRepresentation.exists_isUnitary_congr` being one. -/
 theorem exists_orthogonal_irreducible_decomposition_of_congr {e : V ≃L[𝕜] W}
     (he : IsUnitary (ContRepresentation.congr e π)) :
     ∃ (n : ℕ) (U : Fin n → Subrepresentation π.toRepresentation),

@@ -9,10 +9,12 @@ public import Mathlib.Topology.Algebra.Monoid
 public import Mathlib.Topology.CompactOpen
 
 /-!
-# Continuous maps on a topological magma
+# Continuous maps on a topological magma, and the coordinate embeddings of a product
 
 Continuous-map constructions that use the multiplication of a topological magma, next to
-Mathlib's `ContinuousMap.mulLeft` and `ContinuousMap.mulRight`.
+Mathlib's `ContinuousMap.mulLeft` and `ContinuousMap.mulRight`, and the convergence of the
+coordinate embeddings `Pi.mulSingle` of a product of pointed topological spaces, next to Mathlib's
+`continuous_mulSingle`.
 
 ## Main definitions
 
@@ -20,6 +22,12 @@ Mathlib's `ContinuousMap.mulLeft` and `ContinuousMap.mulRight`.
   two-variable continuous map `Ψ`, that is, `Ψ` precomposed with the coordinate swap followed by
   the shear `(a, b) ↦ (a, a * b)` of `Homeomorph.shearMulRight`, with
   `ContinuousMap.compSwapShearMulRight_apply_apply` its pointwise formula.
+
+## Main results
+
+* `TauCeti.tendsto_mulSingle_cofinite`: in a product `∀ i, M i` of pointed topological spaces, the
+  elements `Pi.mulSingle i (x i)` supported at a single coordinate tend to `1` along the cofinite
+  filter on the index type.
 -/
 
 public section
@@ -43,3 +51,26 @@ theorem compSwapShearMulRight_apply_apply (Ψ : C(X, C(X, Z))) (x y : X) :
     compSwapShearMulRight Ψ x y = Ψ y (y * x) := (rfl)
 
 end ContinuousMap
+
+namespace TauCeti
+
+open Filter Topology
+
+variable {ι : Type*} [DecidableEq ι] {M : ι → Type*} [∀ i, One (M i)]
+  [∀ i, TopologicalSpace (M i)]
+
+/-- **The coordinate embeddings of a product tend to `1` along the cofinite filter.** For any
+family `x`, the element `Pi.mulSingle i (x i)` of the product, supported at the single coordinate
+`i`, tends to `1` as `i` leaves every finite set. -/
+@[to_additive /-- **The coordinate embeddings of a product tend to `0` along the cofinite
+filter.** For any family `x`, the element `Pi.single i (x i)` of the product, supported at the
+single coordinate `i`, tends to `0` as `i` leaves every finite set. -/]
+theorem tendsto_mulSingle_cofinite (x : ∀ i, M i) :
+    Tendsto (fun i ↦ Pi.mulSingle i (x i)) cofinite (𝓝 1) := by
+  -- coordinatewise: the `j`-th coordinate of `Pi.mulSingle i (x i)` is `1` as soon as `i ≠ j`
+  rw [tendsto_pi_nhds]
+  intro j
+  refine tendsto_const_nhds.congr' ((eventually_cofinite_ne j).mono fun i hij ↦ ?_)
+  exact (Pi.mulSingle_eq_of_ne hij.symm (x i)).symm
+
+end TauCeti

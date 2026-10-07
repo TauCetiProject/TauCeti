@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Chebotarev.FixedField.FiberCount
 public import TauCeti.NumberTheory.Chebotarev.PrimeCounting.VonMangoldt
 public import TauCeti.NumberTheory.Chebotarev.PrimesAboveRamifiedPrimes
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.Contraction
 import TauCeti.NumberTheory.Chebotarev.PrimeCounting.Discard
 
 /-!
@@ -90,36 +91,21 @@ private theorem primeTheta_eq_mul_frobeniusTheta_of_forall_mem_iff (sigma : L �
       ((Nat.card (L ≃ₐ[K] L) /
           (Nat.card (ConjClasses.mk sigma).carrier * orderOf sigma) : ℕ) : ℝ) *
         frobeniusTheta K L (ConjClasses.mk sigma) x := by
-  classical
   -- Every member of `S` has residue degree one over `K`, hence the norm of the prime below.
   have hnorm : ∀ P ∈ S, Ideal.absNorm P.asIdeal = Ideal.absNorm (P.under (𝓞 K)).asIdeal := by
     intro P hPS
     obtain ⟨hP, hp⟩ := (hS P).mp hPS
-    have hdeg := (inertiaDeg_eq_one_iff_under_mem_frobeniusPrimeSet sigma hP fun h ↦
-      frobeniusPrimeSet_subset_compl_ramifiedPrimes _ hp (Finset.mem_coe.mpr h)).mpr hp
-    have : P.asIdeal.LiesOver (P.under (𝓞 K)).asIdeal := ⟨HeightOneSpectrum.under_asIdeal _ P⟩
-    rw [← Ideal.absNorm_pow_inertiaDeg (P.under (𝓞 K)).asIdeal P.asIdeal, hdeg, pow_one]
-  rw [primeTheta_apply, frobeniusTheta_apply]
-  simp only [Set.indicator_apply]
-  rw [← Finset.sum_filter, ← Finset.sum_filter, Finset.mul_sum]
-  refine (Finset.sum_fiberwise_of_maps_to (g := fun P ↦ P.under (𝓞 K)) ?_ _).symm.trans
-    (Finset.sum_congr rfl fun p hp ↦ ?_)
-  · intro P hP
-    simp only [Finset.mem_filter, mem_normLE] at hP ⊢
-    exact ⟨hnorm P hP.2 ▸ hP.1, ((hS P).mp hP.2).2⟩
-  simp only [Finset.mem_filter, mem_normLE] at hp
-  rw [Finset.sum_congr rfl fun P hP ↦ by
-    simp only [Finset.mem_filter] at hP
-    rw [hnorm P hP.1.2, hP.2], Finset.sum_const, nsmul_eq_mul]
-  -- The primes of `E` counted over `p` are exactly those of `fixedField_frobenius_fiber_card`.
-  rw [← fixedField_frobenius_fiber_card _ sigma ConjClasses.mem_carrier_mk p hp.2,
-    ← Nat.card_eq_finsetCard]
-  refine congrArg (· * _) (congrArg Nat.cast (Nat.card_congr
-    (Equiv.subtypeEquivRight fun P ↦ ?_)))
-  simp only [Finset.mem_filter, mem_normLE]
-  refine ⟨fun ⟨⟨_, hPS⟩, hPp⟩ ↦ ⟨hPp, ((hS P).mp hPS).1⟩, fun ⟨hPp, hP⟩ ↦ ?_⟩
-  have hPS : P ∈ S := (hS P).mpr ⟨hP, hPp ▸ hp.2⟩
-  exact ⟨⟨by rw [hnorm P hPS, hPp]; exact hp.1, hPS⟩, hPp⟩
+    exact HeightOneSpectrum.absNorm_eq_absNorm_under_of_inertiaDeg_eq_one
+      ((inertiaDeg_eq_one_iff_under_mem_frobeniusPrimeSet sigma hP fun h ↦
+        frobeniusPrimeSet_subset_compl_ramifiedPrimes _ hp (Finset.mem_coe.mpr h)).mpr hp)
+  rw [frobeniusTheta_def]
+  refine NumberField.Set.primeTheta_eq_mul_of_card_fiber (fun P hP ↦ ((hS P).mp hP).2) hnorm
+    (fun p hp ↦ ?_) x
+  -- The primes of `S` over `p` are exactly those of `fixedField_frobenius_fiber_card`.
+  rw [← fixedField_frobenius_fiber_card _ sigma ConjClasses.mem_carrier_mk p hp]
+  refine Nat.card_congr (Equiv.subtypeEquivRight fun P ↦ ?_)
+  rw [hS P]
+  exact ⟨fun h ↦ ⟨h.1, h.2.1⟩, fun h ↦ ⟨h.1, h.2, h.1 ▸ hp⟩⟩
 
 /-- **The exact residue-degree-one contraction of Frobenius `ϑ`.** Let `sigma` represent `C` and
 let `E = L ^ <sigma>`.  Sum `log N 𝔓` over the primes `𝔓` of `E` of norm at most `x` whose relative

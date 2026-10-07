@@ -14,7 +14,10 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 Material complementing `Mathlib/AlgebraicGeometry/EllipticCurve/VariableChange.lean`: the
 negation automorphism `[-1]` of a Weierstrass curve as an admissible change of variables, with
 its involution API, together with the compatibility of the action with base change
-(`baseChange_smul_baseChange`) and the three base-change facts that Galois descent runs on:
+(`baseChange_smul_baseChange`, whence the instance `isElliptic_baseChange_smul`: the base change of
+`C • V` is elliptic along with that of `V`, and `baseChange_smul_c₄` / `baseChange_smul_c₆`: a
+change of variables with `u = 1` leaves the `c`-invariants of a base change alone) and the three
+base-change facts that Galois descent runs on:
 `smul_eq_of_baseChange_smul_eq` (a relation between base changes descends when the change of
 variables does), `negVariableChange_baseChange_map` (`[-1]` is defined over the base, so a base
 automorphism fixes it) and `map_smul_baseChange_eq` (the conjugate of an isomorphism of base
@@ -195,6 +198,30 @@ in the `baseChange` spelling, so it rewrites directly in goals phrased that way.
 lemma baseChange_smul_baseChange (C : VariableChange R) (V : WeierstrassCurve R) :
     (C.baseChange L) • V.baseChange L = (C • V).baseChange L :=
   map_variableChange (W := V) (C := C) (φ := algebraMap R L)
+
+variable {L} in
+/-- The base change of `C • V` to `L` is elliptic whenever that of `V` is, since it is
+`Cᴸ • Vᴸ`. -/
+instance isElliptic_baseChange_smul (V : WeierstrassCurve R) (C : VariableChange R)
+    [(V.baseChange L).IsElliptic] : ((C • V).baseChange L).IsElliptic := by
+  rw [← baseChange_smul_baseChange]
+  infer_instance
+
+/-- **A change of variables with `u = 1` leaves `c₄` alone**, and base change carries that along:
+the scaling factor `u⁻¹ ^ 4` of `WeierstrassCurve.variableChange_c₄` is `1`. -/
+@[simp] lemma baseChange_smul_c₄ {C : VariableChange R} (hu : C.u = 1) (V : WeierstrassCurve R) :
+    ((C • V).baseChange L).c₄ = (V.baseChange L).c₄ := by
+  rw [← baseChange_smul_baseChange, variableChange_c₄, VariableChange.baseChange,
+    VariableChange.map_u, hu]
+  simp
+
+/-- **A change of variables with `u = 1` leaves `c₆` alone**, and base change carries that along:
+the scaling factor `u⁻¹ ^ 6` of `WeierstrassCurve.variableChange_c₆` is `1`. -/
+@[simp] lemma baseChange_smul_c₆ {C : VariableChange R} (hu : C.u = 1) (V : WeierstrassCurve R) :
+    ((C • V).baseChange L).c₆ = (V.baseChange L).c₆ := by
+  rw [← baseChange_smul_baseChange, variableChange_c₆, VariableChange.baseChange,
+    VariableChange.map_u, hu]
+  simp
 
 /-- **A relation between base changes descends, provided the change of variables does.** If `C` is
 defined over `R` and `Cᴸ` carries `Vᴸ` to `Wᴸ`, then `C` already carries `V` to `W` over `R`. The

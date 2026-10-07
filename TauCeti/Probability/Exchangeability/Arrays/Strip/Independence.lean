@@ -25,6 +25,10 @@ conditionally independent of every entry outside it given the union of the row a
 This is the block form of the conditional cell-noise factorization: after the crossing strips have
 been revealed, the rest of the array carries no further information about that visible block.
 
+The same factorization holds for a jointly exchangeable array, with one infinite set `S` of hidden
+indices serving both axes: a finite visible square `I ×ˢ I`, diagonal included, is conditionally
+independent of every entry outside it given all entries in a hidden row or a hidden column.
+
 ## References
 
 * The finite-observation argument is adapted from
@@ -39,8 +43,13 @@ been revealed, the rest of the array carries no further information about that v
 
 * `TauCeti.Probability.SeparatelyExchangeable.condIndepFun_rowStrip_colStrip` — the two crossing
   strip families are conditionally independent given their intersection.
+* `TauCeti.Probability.SeparatelyExchangeable.condIndepFun_rowStrip_colStrip_of_enum` — the same
+  statement for `ℕ`-indexed strips given an enumerated hidden block.
 * `TauCeti.Probability.SeparatelyExchangeable.condIndepFun_visibleBlock_compl` — a finite visible
   rectangle is conditionally independent of its complement given the full crossing strips.
+* `TauCeti.Probability.JointlyExchangeable.condIndepFun_visibleBlock_compl` — for a jointly
+  exchangeable array, a finite visible square is conditionally independent of its complement
+  given the crossing strips of one infinite hidden index set.
 -/
 
 public section
@@ -80,6 +89,50 @@ theorem SeparatelyExchangeable.condIndepFun_rowStrip_colStrip
       fun p hp ↦ Prod.ext rfl (hbC p.2 ⟨p, hp, rfl⟩),
       fun p hp ↦ ⟨hp.1, hbT _⟩⟩
 
+/-- **Enumerated crossing strips are conditionally independent given the hidden block.** Let `e`
+and `f` enumerate hidden rows and hidden columns, at least one of them with infinite range. Then
+the row strips `(x (g i, f ·))ᵢ` and the column strips `(x (e ·, g' j))ⱼ` are conditionally
+independent given the `ℕ × ℕ`-indexed hidden block `(x (e a, f b))_{a,b}`, for arbitrary
+`g` and `g'`. This is `condIndepFun_rowStrip_colStrip` for `range e` and `range f`, restated with
+`ℕ`-indexed strips and block. -/
+theorem SeparatelyExchangeable.condIndepFun_rowStrip_colStrip_of_enum
+    (hρ : SeparatelyExchangeable ρ fun p x ↦ x p) {e f : ℕ → ℕ}
+    (hef : (Set.range e).Infinite ∨ (Set.range f).Infinite) (g g' : ℕ → ℕ) :
+    CondIndepFun (MeasurableSpace.comap (fun x : ℕ × ℕ → α ↦ fun q : ℕ × ℕ ↦ x (e q.1, f q.2))
+        inferInstance)
+      (Measurable.of_eval fun q ↦ measurable_pi_apply (e q.1, f q.2)).comap_le
+      (fun x i b ↦ x (g i, f b)) (fun x j a ↦ x (e a, g' j)) ρ := by
+  -- The hidden block generates the same σ-algebra as the restriction to `range e ×ˢ range f`.
+  set S := Set.range e
+  set T := Set.range f
+  let H : (ℕ × ℕ → α) → ℕ × ℕ → α := fun x q ↦ x (e q.1, f q.2)
+  have hHD : H = (fun y q ↦ y ⟨(e q.1, f q.2), ⟨q.1, rfl⟩, ⟨q.2, rfl⟩⟩) ∘
+      (S ×ˢ T).domRestrict (π := fun _ ↦ α) := rfl
+  have hDH : (S ×ˢ T).domRestrict (π := fun _ ↦ α) =
+      (fun h q ↦ h (Function.invFun e q.1.1, Function.invFun f q.1.2)) ∘ H := by
+    funext x q
+    rcases q with ⟨⟨a, b⟩, ⟨i, hi⟩, ⟨j, hj⟩⟩
+    simp only at hi hj
+    subst hi hj
+    simp only [Function.comp_apply, H, Set.domRestrict_apply,
+      Function.invFun_eq (⟨i, rfl⟩ : ∃ i', e i' = e i),
+      Function.invFun_eq (⟨j, rfl⟩ : ∃ j', f j' = f j)]
+  have hcomap : MeasurableSpace.comap H inferInstance =
+      MeasurableSpace.comap ((S ×ˢ T).domRestrict (π := fun _ ↦ α)) inferInstance := by
+    apply le_antisymm
+    · rw [hHD, ← MeasurableSpace.comap_comp]
+      exact MeasurableSpace.comap_mono (Measurable.of_eval fun _ ↦ measurable_pi_apply _).comap_le
+    · rw [hDH, ← MeasurableSpace.comap_comp]
+      exact MeasurableSpace.comap_mono (Measurable.of_eval fun _ ↦ measurable_pi_apply _).comap_le
+  have h := (hρ.condIndepFun_rowStrip_colStrip S (T := T) hef).comp
+    (φ := fun y i b ↦ y ⟨(g i, f b), trivial, ⟨b, rfl⟩⟩)
+    (ψ := fun y j a ↦ y ⟨(e a, g' j), ⟨a, rfl⟩, trivial⟩)
+    (Measurable.of_eval fun _ ↦ Measurable.of_eval fun _ ↦ measurable_pi_apply _)
+    (Measurable.of_eval fun _ ↦ Measurable.of_eval fun _ ↦ measurable_pi_apply _)
+  -- `convert` discharges the equality of the two conditioning σ-algebras with the hypothesis
+  -- `hcomap`; the strip maps agree with the composites by definition.
+  convert h using 1 <;> rfl
+
 /-- **A finite visible rectangle is conditionally independent of its complement given the
 crossing hidden strips.** Let `S` and `T` be infinite sets of hidden row and column indices, and
 let the finite sets `I` and `J` be disjoint from them. Once all entries in hidden rows or hidden
@@ -96,34 +149,49 @@ theorem SeparatelyExchangeable.condIndepFun_visibleBlock_compl
     let C : Set (ℕ × ℕ) := I ×ˢ J
     let H : Set (ℕ × ℕ) := (Set.univ ×ˢ T) ∪ (S ×ˢ Set.univ)
     C.domRestrict ⟂ᵢ[H.domRestrict, Set.measurable_restrict _; ρ] Cᶜ.domRestrict := by
-  dsimp
-  let R : Set (ℕ × ℕ) := (S ∪ I) ×ˢ (T ∪ J) \ (I ×ˢ J)
-  let H : Set (ℕ × ℕ) := (Set.univ ×ˢ T) ∪ (S ×ˢ Set.univ)
-  have hRsub : R ⊆ H := by
-    rintro p ⟨⟨hpS | hpI, hpT | hpJ⟩, hpC⟩
-    · exact Set.mem_union_left _ ⟨Set.mem_univ _, hpT⟩
-    · exact Set.mem_union_right _ ⟨hpS, Set.mem_univ _⟩
-    · exact Set.mem_union_left _ ⟨Set.mem_univ _, hpT⟩
+  dsimp only
+  refine condIndepFun_domRestrict_of_subset (Set.measurable_restrict _)
+    (hρ.condIndepFun_domRestrict_subblock_compl_of_finite_block_of_subset
+      (S := S ∪ I) (T := T ∪ J) (hS.mono Set.subset_union_left) (hT.mono Set.subset_union_left)
+      (hI.prod hJ) Set.Subset.rfl (Set.prod_mono Set.subset_union_right Set.subset_union_right))
+    ?_ ?_
+  · rintro p ⟨⟨hpS | hpI, hpT | hpJ⟩, hpC⟩
+    · exact Or.inl ⟨trivial, hpT⟩
+    · exact Or.inr ⟨hpS, trivial⟩
+    · exact Or.inl ⟨trivial, hpT⟩
     · exact (hpC ⟨hpI, hpJ⟩).elim
-  have hHsub : H ⊆ (I ×ˢ J)ᶜ := by
-    rintro p (hp | hp) hpC
+  · rintro p (hp | hp) hpC
     · exact Set.disjoint_left.1 hJT hpC.2 hp.2
     · exact Set.disjoint_left.1 hIS hpC.1 hp.1
-  have hRH : MeasurableSpace.comap (R.domRestrict (π := fun _ ↦ α)) inferInstance ≤
-      MeasurableSpace.comap (H.domRestrict (π := fun _ ↦ α)) inferInstance := by
-    rw [← Set.domRestrict₂_comp_domRestrict hRsub, ← MeasurableSpace.comap_comp]
-    exact MeasurableSpace.comap_mono (Set.measurable_restrict₂ hRsub).comap_le
-  have hHC : MeasurableSpace.comap (H.domRestrict (π := fun _ ↦ α)) inferInstance ≤
-      MeasurableSpace.comap (((I ×ˢ J)ᶜ).domRestrict (π := fun _ ↦ α)) inferInstance := by
-    rw [← Set.domRestrict₂_comp_domRestrict hHsub, ← MeasurableSpace.comap_comp]
-    exact MeasurableSpace.comap_mono (Set.measurable_restrict₂ hHsub).comap_le
-  have hlocal := hρ.condIndepFun_domRestrict_subblock_compl_of_finite_block_of_subset
-    (S := S ∪ I) (T := T ∪ J) (B := I ×ˢ J) (C := I ×ˢ J)
-    (hS.mono Set.subset_union_left) (hT.mono Set.subset_union_left) (hI.prod hJ)
-    Set.Subset.rfl (Set.prod_mono Set.subset_union_right Set.subset_union_right)
-  rw [condIndepFun_iff_condIndep] at hlocal ⊢
-  exact condIndep_of_condIndep_of_le_of_le
-    (Set.measurable_restrict _).comap_le (Set.measurable_restrict _).comap_le
-    (Set.measurable_restrict _).comap_le hlocal hRH hHC
+
+/-- **A finite visible square of a jointly exchangeable array is conditionally independent of its
+complement given the crossing hidden strips.** Let `S` be an infinite set of hidden indices and let
+the finite set `I` be disjoint from it. Once all entries in a hidden row or a hidden column are
+known, the block `I ×ˢ I` is conditionally independent of every entry outside that block.
+
+This is the jointly exchangeable form of `SeparatelyExchangeable.condIndepFun_visibleBlock_compl`,
+with one set of hidden indices serving both axes. The block contains the diagonal entries `(i, i)`
+and both orientations `(i, j)` and `(j, i)` of each visible off-diagonal cell, which is the cell
+layer of the jointly exchangeable Aldous--Hoover representation. -/
+theorem JointlyExchangeable.condIndepFun_visibleBlock_compl
+    (hρ : JointlyExchangeable ρ fun p x ↦ x p)
+    {S I : Set ℕ} (hS : S.Infinite) (hI : I.Finite) (hIS : Disjoint I S) :
+    let C : Set (ℕ × ℕ) := I ×ˢ I
+    let H : Set (ℕ × ℕ) := (Set.univ ×ˢ S) ∪ (S ×ˢ Set.univ)
+    C.domRestrict ⟂ᵢ[H.domRestrict, Set.measurable_restrict _; ρ] Cᶜ.domRestrict := by
+  dsimp only
+  refine condIndepFun_domRestrict_of_subset (Set.measurable_restrict _)
+    (hρ.condIndepFun_domRestrict_subblock_compl_of_finite_block_of_subset (S := S ∪ I)
+      (hS.mono Set.subset_union_left) (hI.prod hI) Set.Subset.rfl
+      (Set.prod_mono Set.subset_union_right Set.subset_union_right))
+    ?_ ?_
+  · rintro p ⟨⟨hpS | hpI, hpS' | hpI'⟩, hpC⟩
+    · exact Or.inl ⟨trivial, hpS'⟩
+    · exact Or.inr ⟨hpS, trivial⟩
+    · exact Or.inl ⟨trivial, hpS'⟩
+    · exact (hpC ⟨hpI, hpI'⟩).elim
+  · rintro p (hp | hp) hpC
+    · exact Set.disjoint_left.1 hIS hpC.2 hp.2
+    · exact Set.disjoint_left.1 hIS hpC.1 hp.1
 
 end TauCeti.Probability

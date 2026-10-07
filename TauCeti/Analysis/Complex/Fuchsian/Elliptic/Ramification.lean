@@ -115,6 +115,27 @@ theorem card_stabilizer_mul_ellipticRamificationIndex (h : Δ ≤ Γ) (z : ℍ) 
   rw [card_ambientStabilizer, card_ambientStabilizer, mul_comm] at hm
   exact hm
 
+/-- For a finite point stabilizer, the relative index is the quotient of stabilizer orders. -/
+theorem ellipticRamificationIndex_eq_card_div (h : Δ ≤ Γ) (z : ℍ)
+    [Finite (stabilizer Γ z)] :
+    ellipticRamificationIndex h z =
+      Nat.card (stabilizer Γ z) / Nat.card (stabilizer Δ z) := by
+  let : Finite (stabilizer Δ z) := finite_stabilizer_of_le h z
+  rw [← card_stabilizer_mul_ellipticRamificationIndex h z,
+    Nat.mul_div_cancel_left _ Nat.card_pos]
+
+/-- For finite stabilizers, the relative index is the group index of the inclusion map. -/
+theorem ellipticRamificationIndex_eq_index (h : Δ ≤ Γ) (z : ℍ)
+    [Finite (stabilizer Γ z)] :
+    ellipticRamificationIndex h z = (stabilizerInclusion h z).range.index := by
+  let : Finite (stabilizer Δ z) := finite_stabilizer_of_le h z
+  have hcard : Nat.card (stabilizerInclusion h z).range =
+      Nat.card (stabilizer Δ z) := by
+    simpa only [Subgroup.map_top, Subgroup.card_top] using
+      (Subgroup.card_map_of_injective
+        (K := (⊤ : Subgroup (stabilizer Δ z))) (stabilizerInclusion_injective h z))
+  rw [ellipticRamificationIndex_eq_card_div h z, Subgroup.index_eq_card_div, hcard]
+
 /-- The elliptic ramification index is positive. -/
 theorem ellipticRamificationIndex_pos (h : Δ ≤ Γ) (z : ℍ)
     [Finite (stabilizer Γ z)] :
@@ -175,8 +196,7 @@ theorem stabilizerBallQuotientChart_map_of_le_symm (h : Δ ≤ Γ) (z : ℍ)
   intro ε hε hΔ hΓ u hu
   have : Finite (stabilizer Δ z) := finite_stabilizer_of_le h z
   have hr : 0 ≤ Real.tanh (ε / 2) := by
-    rw [← Real.tanh_zero]
-    exact Real.tanh_strictMono.monotone (by linarith)
+    rw [← Real.tanh_zero]; exact (Real.tanh_strictMono (by linarith)).le
   rw [stabilizerBallQuotientChart_target, ← image_pow_ball hr] at hu
   obtain ⟨w, hw, rfl⟩ := hu
   have hw' : ‖w‖ < Real.tanh (ε / 2) := mem_ball_zero_iff.mp hw
@@ -188,5 +208,91 @@ theorem stabilizerBallQuotientChart_map_of_le_symm (h : Δ ≤ Γ) (z : ℍ)
   rw [stabilizerBallQuotientChart_symm_pow hε hΔ hw']
   simpa [stabilizerBallQuotientChart_mk hε hΔ hτ, τ] using
     stabilizerBallQuotientChart_map_of_le h z τ hε hΔ hΓ hτ
+
+variable {Δ Γ : Subgroup PSL(2, ℝ)} (h : Δ ≤ Γ) (z : ℍ)
+
+/-- Two properly discontinuous actions admit a common positive chart radius at `z`. -/
+theorem exists_common_elliptic_chart_radius
+    [ProperlyDiscontinuousSMul Δ ℍ] [ProperlyDiscontinuousSMul Γ ℍ] :
+    ∃ ε : ℝ, 0 < ε ∧
+      IsOpenEmbedding (stabilizerBallQuotientToQuotient Δ z ε) ∧
+      IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε) :=
+  (eventually_mem_nhdsWithin.and
+    ((eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient Δ z).and
+      (eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient Γ z))).exists
+
+/-- For a representative lying in both chart balls centered at the same point, the map induced
+by `Δ ≤ Γ` has chart expression `u ↦ u ^ e`. The two chart radii may differ. -/
+theorem stabilizerBallQuotientChart_map_mk_eq_pow_ellipticRamificationIndex
+    [Finite (stabilizer Γ z)]
+    {εΔ εΓ : ℝ} (hεΔ : 0 < εΔ) (hεΓ : 0 < εΓ)
+    (hopenΔ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Δ z εΔ))
+    (hopenΓ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z εΓ))
+    {τ : ℍ} (hτΔ : dist τ z < εΔ) (hτΓ : dist τ z < εΓ) :
+    let : Finite (stabilizer Δ z) :=
+      Finite.of_injective (stabilizerInclusion h z) (stabilizerInclusion_injective h z)
+    stabilizerBallQuotientChart hεΓ hopenΓ
+      (Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := ℍ) h)
+        (Quotient.mk _ τ)) =
+      (stabilizerBallQuotientChart hεΔ hopenΔ (Quotient.mk _ τ)) ^
+        ellipticRamificationIndex h z := by
+  dsimp only
+  let : Finite (stabilizer Δ z) :=
+    Finite.of_injective (stabilizerInclusion h z) (stabilizerInclusion_injective h z)
+  rw [TauCeti.Setoid.map_of_le_mk,
+    stabilizerBallQuotientChart_mk hεΓ hopenΓ hτΓ,
+    stabilizerBallQuotientChart_mk hεΔ hopenΔ hτΔ,
+    ← pow_mul, card_stabilizer_mul_ellipticRamificationIndex h z]
+
+/-- The map of orbit quotients sends the source of a chart centered at `z` into the
+corresponding chart source for the larger group, when both use the same radius. -/
+theorem map_mem_stabilizerBallQuotientChart_source
+    [Finite (stabilizer Γ z)]
+    {ε : ℝ} (hε : 0 < ε)
+    (hopenΔ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Δ z ε))
+    (hopenΓ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε))
+    {q : orbitRel.Quotient Δ ℍ} :
+    let : Finite (stabilizer Δ z) :=
+      Finite.of_injective (stabilizerInclusion h z) (stabilizerInclusion_injective h z)
+    q ∈ (stabilizerBallQuotientChart hε hopenΔ).source →
+    Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := ℍ) h) q ∈
+      (stabilizerBallQuotientChart hε hopenΓ).source := by
+  dsimp only
+  let : Finite (stabilizer Δ z) :=
+    Finite.of_injective (stabilizerInclusion h z) (stabilizerInclusion_injective h z)
+  intro hq
+  induction q using Quotient.inductionOn' with
+  | h τ =>
+      obtain ⟨g, hg⟩ := (mem_stabilizerBallQuotientChart_source_iff hε hopenΔ).1 hq
+      rw [TauCeti.Setoid.map_of_le_mk]
+      exact (mem_stabilizerBallQuotientChart_source_iff hε hopenΓ).2
+        ⟨⟨g.1, h g.2⟩, hg⟩
+
+/-- On the entire source of a common elliptic chart, the quotient map is the power map
+of degree equal to the elliptic ramification index. -/
+theorem stabilizerBallQuotientChart_map_eq_pow_ellipticRamificationIndex
+    [Finite (stabilizer Γ z)]
+    {ε : ℝ} (hε : 0 < ε)
+    (hopenΔ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Δ z ε))
+    (hopenΓ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε))
+    {q : orbitRel.Quotient Δ ℍ} :
+    let : Finite (stabilizer Δ z) :=
+      Finite.of_injective (stabilizerInclusion h z) (stabilizerInclusion_injective h z)
+    q ∈ (stabilizerBallQuotientChart hε hopenΔ).source →
+    stabilizerBallQuotientChart hε hopenΓ
+      (Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := ℍ) h) q) =
+      (stabilizerBallQuotientChart hε hopenΔ q) ^ ellipticRamificationIndex h z := by
+  dsimp only
+  let : Finite (stabilizer Δ z) :=
+    Finite.of_injective (stabilizerInclusion h z) (stabilizerInclusion_injective h z)
+  intro hq
+  induction q using Quotient.inductionOn' with
+  | h τ =>
+      obtain ⟨g, hg⟩ := (mem_stabilizerBallQuotientChart_source_iff hε hopenΔ).1 hq
+      have heq : (Quotient.mk _ (g • τ) : orbitRel.Quotient Δ ℍ) = Quotient.mk _ τ :=
+        Quotient.sound (orbitRel_apply.mpr (mem_orbit τ g))
+      simpa only [heq] using
+        (stabilizerBallQuotientChart_map_mk_eq_pow_ellipticRamificationIndex
+          h z hε hε hopenΔ hopenΓ hg hg)
 
 end Subgroup

@@ -416,6 +416,10 @@ when its Taylor map only reads the letter component through the linear part. -/
 def IsStrict (f : AInfinityHom AA BB) : Prop :=
   f.taylor = f.linearPart ∘ₗ ReducedTensorWords.letter R A
 
+/-- Strictness is equivalent to the Taylor map factoring through the letter component. -/
+theorem isStrict_iff (f : AInfinityHom AA BB) :
+    f.IsStrict ↔ f.taylor = f.linearPart ∘ₗ ReducedTensorWords.letter R A := (Iff.rfl)
+
 /-- The identity `A∞` morphism is strict. -/
 @[simp]
 theorem isStrict_id (AA : AInfinityAlgebra R A) : (AInfinityHom.id AA).IsStrict := by
@@ -449,7 +453,7 @@ noncomputable def IsStrict.toStrictHom {f : AInfinityHom AA BB} (hf : f.IsStrict
     rcases Nat.eq_zero_or_pos n with rfl | hn
     · rw [AA.m_zero, BB.m_zero, LinearMap.compMultilinearMap_zero,
         MultilinearMap.zero_compLinearMap]
-    apply AA.grading.multilinearMap_ext
+    apply InternalGrading.multilinearMap_ext (fun _ ↦ AA.grading)
     intro d x hx
     let e : ℕ → ℤ := fun i ↦ if h : i < n then d ⟨i, h⟩ else 0
     let y : ℕ → A := fun i ↦ if h : i < n then x ⟨i, h⟩ else 0

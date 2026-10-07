@@ -33,6 +33,8 @@ construction should recover `expUnit` when specialized to the Lie group `Rˣ`.
 * `TauCeti.expUnit_add_of_commute`: the exponential addition law as an equality of units.
 * `TauCeti.expUnit_zero`, `TauCeti.expUnit_neg`: the identity and inverse laws.
 * `TauCeti.expUnit_add_smul`: the one-parameter subgroup law as an equality of units.
+* `TauCeti.coe_expUnitHom_real`, `TauCeti.coe_expUnitHom_complex`: on `ℝ` and `ℂ`, the
+  one-parameter subgroup is `t ↦ exp (t * x)` for the scalar exponential.
 
 ## References
 
@@ -115,6 +117,16 @@ noncomputable def expUnitHom (x : R) : ContinuousMonoidHom (Multiplicative ℝ) 
 theorem expUnitHom_apply (x : R) (t : ℝ) :
     expUnitHom x (Multiplicative.ofAdd t) = expUnit (t • x) :=
   (rfl)
+
+/-- On the real line, `expUnitHom x` is `t ↦ Real.exp (t * x)`. -/
+theorem coe_expUnitHom_real (x t : ℝ) :
+    (expUnitHom x (Multiplicative.ofAdd t) : ℝ) = Real.exp (t * x) := by
+  rw [expUnitHom_apply, expUnit_coe, ← Real.exp_eq_exp_ℝ, smul_eq_mul]
+
+/-- On the complex numbers, `expUnitHom s` is `t ↦ Complex.exp (t * s)`. -/
+theorem coe_expUnitHom_complex (s : ℂ) (t : ℝ) :
+    (expUnitHom s (Multiplicative.ofAdd t) : ℂ) = Complex.exp (t * s) := by
+  rw [expUnitHom_apply, expUnit_coe, ← Complex.exp_eq_exp_ℂ, Complex.real_smul]
 
 end Real
 

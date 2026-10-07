@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.Torsion
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.Algebra.Group.Equiv.TypeTags
+import TauCeti.Algebra.Group.Coprime
 
 /-!
 # The torsion subgroup under a product decomposition
@@ -32,6 +33,9 @@ of the quotient identification is `TauCeti.quotientTorsionContinuousMulEquiv` in
 * `TauCeti.mem_torsion_iff_of_mulEquiv`: an element is torsion exactly when its `M`-coordinate
   vanishes.
 * `TauCeti.torsionMulEquiv`: the torsion subgroup of `A` is isomorphic to `T`.
+* `TauCeti.natCard_torsion_of_mulEquiv`, `TauCeti.finite_torsion_of_mulEquiv`,
+  `TauCeti.isCyclic_torsion_of_mulEquiv`: the torsion subgroup of `A` has the cardinality of `T`,
+  and it is finite, respectively cyclic, when `T` is.
 * `TauCeti.torsionFactorAddEquiv`: two decompositions of `A` have isomorphic torsion factors.
 * `TauCeti.quotientTorsionMulEquiv`: the quotient of `A` by its torsion subgroup is isomorphic to
   `M`.
@@ -59,6 +63,8 @@ Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
 * `TauCeti.IsPPrimaryTorsion.isAddTorsion`: a `p`-primary torsion group is torsion when `p ≠ 0`.
 * `TauCeti.IsPPrimaryTorsion.exists_pow_smul_eq_zero`: a finite `p`-primary torsion group is
   annihilated by one power of `p`.
+* `TauCeti.exists_mem_primaryComponent_apply_eq`: for prime `p`, a `p`-primary image of an element
+  of finite order is already the image of a `p`-primary element.
 -/
 
 public section
@@ -136,7 +142,31 @@ theorem torsionFactorAddEquiv_symm_apply {M' T' : Type*} [AddMonoid M'] [IsAddTo
     (torsionFactorAddEquiv hT hT' e e').symm t' = (e (e'.symm (ofAdd (0, t')))).toAdd.2 :=
   (rfl)
 
+/-- Under an isomorphism `A ≃* Multiplicative (M × T)` with `M` torsion-free and `T` torsion, the
+torsion subgroup of `A` has the cardinality of `T`. -/
+theorem natCard_torsion_of_mulEquiv (hT : IsAddTorsion T) (e : A ≃* Multiplicative (M × T)) :
+    Nat.card (torsion A) = Nat.card T := by
+  rw [Nat.card_congr (torsionMulEquiv hT e).toEquiv, Nat.card_congr toAdd]
+
 end Monoid
+
+section AddGroup
+
+variable [CommGroup A] [AddMonoid M] [AddGroup T] [IsAddTorsionFree M]
+
+/-- Under an isomorphism `A ≃* Multiplicative (M × T)` with `M` torsion-free and `T` finite, the
+torsion subgroup of `A` is finite. -/
+theorem finite_torsion_of_mulEquiv [Finite T] (e : A ≃* Multiplicative (M × T)) :
+    Finite (torsion A) :=
+  Finite.of_equiv _ (torsionMulEquiv isAddTorsion_of_finite e).symm.toEquiv
+
+/-- Under an isomorphism `A ≃* Multiplicative (M × T)` with `M` torsion-free and `T` a cyclic
+torsion group, the torsion subgroup of `A` is cyclic. -/
+theorem isCyclic_torsion_of_mulEquiv [IsAddCyclic T] (hT : IsAddTorsion T)
+    (e : A ≃* Multiplicative (M × T)) : IsCyclic (torsion A) :=
+  isCyclic_of_surjective (torsionMulEquiv hT e).symm (torsionMulEquiv hT e).symm.surjective
+
+end AddGroup
 
 section Quotient
 
@@ -236,5 +266,23 @@ theorem exists_pow_smul_eq_zero [Finite M] (h : IsPPrimaryTorsion p M) :
     simpa using hm⟩
 
 end IsPPrimaryTorsion
+
+/-- **A `p`-primary image of an element of finite order has a `p`-primary preimage.** For prime
+`p`, an additive homomorphism `f` and an element `m` of finite order with `f m` in the `p`-primary
+component, some element of the `p`-primary component has the same image. -/
+theorem exists_mem_primaryComponent_apply_eq {F : Type*} [FunLike F M N] [AddMonoidHomClass F M N]
+    (f : F) (hp : p.Prime) {m : M} (hm : IsOfFinAddOrder m)
+    (hfm : f m ∈ AddCommGroup.primaryComponent N p) :
+    ∃ m' ∈ AddCommGroup.primaryComponent M p, f m' = f m := by
+  obtain ⟨k, hk⟩ := hfm
+  obtain ⟨b, c, hc, hord⟩ :=
+    Nat.exists_eq_pow_mul_and_not_dvd hm.addOrderOf_pos.ne' p hp.ne_one
+  -- Bézout for the coprime `c` and `p ^ k`: `i • c • y + j • p ^ k • y = y` for every `y`
+  obtain ⟨i, j, hij⟩ := exists_zsmul_add_zsmul_eq_of_coprime (G := N)
+    (((hp.coprime_iff_not_dvd.2 hc).symm).pow_right k)
+  refine ⟨i • c • m, ⟨b, ?_⟩, ?_⟩
+  · rw [smul_comm, smul_smul, ← hord, addOrderOf_nsmul_eq_zero, smul_zero]
+  · rw [map_zsmul, map_nsmul]
+    simpa [hk] using hij (f m)
 
 end TauCeti

@@ -23,7 +23,7 @@ The argument runs in three steps.  The tabloid `q = gH` has rows the fibers of
 fibers (`TauCeti.stabilizer_quotientGroup_mk_youngSubgroup`); counting the labels in the first `k`
 of those rows recovers the partial sums of `μ` (`TauCeti.card_filter_youngBlock_lt`), which is
 what feeds the counting core `YoungDiagram.card_filter_le_sum_take_rowLens` of
-`TauCeti/Combinatorics/Young/Dominance.lean` and yields dominance from the row/column condition.
+`TauCeti/Combinatorics/Young/Diagram.lean` and yields dominance from the row/column condition.
 That condition is then supplied by the sign cancellation: if two labels sharing a column of `t`
 lie in a common row of `q`, their transposition is an odd element of the column group fixing `q`,
 which `b_t` absorbs at the cost of its sign while leaving `q` alone, so `b_t · q = 0`.
@@ -106,11 +106,7 @@ theorem dominates_of_forall_swap_smul_ne {lam : YoungDiagram} (t : YoungTableau 
 
 /-! ## The column antisymmetrizer acting on a tabloid -/
 
-/-- Classical decidability of membership in the column group, used to form its finite sum, as in
-`TauCeti/RepresentationTheory/Symmetric/Symmetrizer.lean`. -/
-noncomputable local instance {lam : YoungDiagram} (t : YoungTableau lam) :
-    DecidablePred (· ∈ colSubgroup t) :=
-  Classical.decPred _
+attribute [local instance] YoungTableau.decidablePredMemColSubgroup
 
 /-- **The column antisymmetrizer kills a tabloid fixed by an odd column permutation.**  The
 antisymmetrizer absorbs such a permutation up to its sign, which is `-1`, while the tabloid is

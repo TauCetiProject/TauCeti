@@ -13,9 +13,10 @@ public import TauCeti.AlgebraicGeometry.ResidueDegree
 
 A `k`-rational point of a scheme `X` over a field `k` is a morphism `Spec k ⟶ X` over `Spec k`,
 that is, a *section* of the structure morphism `f : X ⟶ Spec k`. This file records what such a
-section gives at the level of points and residue fields. Everything is stated for a section `s`
-of an arbitrary morphism of schemes `f : X ⟶ S`, the hypothesis being `s ≫ f = 𝟙 S`; the
-`k`-rational case is the special case `S = Spec k`.
+section gives at the level of points and residue fields. The residue-degree results hold for a
+section `s` of an arbitrary morphism of schemes `f : X ⟶ S`, with hypothesis `s ≫ f = 𝟙 S`.
+Stalk evaluation is surjective over any commutative local ring; the final results identify residue
+fields and global functions over a field.
 
 ## Main results
 
@@ -31,6 +32,7 @@ of an arbitrary morphism of schemes `f : X ⟶ S`, the hypothesis being `s ≫ f
   `X.descResidueField (Scheme.stalkClosedPointTo s)`. The section hypothesis makes that map
   bijective (`descResidueField_bijective_of_section`), which is what lets a `K`-rational point
   transport `K`-structures to the fibre data at the point.
+* `isClosed_singleton_of_section`: over `Spec K`, the section gives a closed point of `X`.
 * `appTop_bijective_of_section`: if moreover `X` is integral and universally closed over `Spec K`,
   a `K`-rational point forces the global functions of `X` to be the constants, that is,
   `f.appTop : Γ(Spec K, ⊤) ⟶ Γ(X, ⊤)` is bijective. Mathlib's `isField_of_universallyClosed`
@@ -38,15 +40,10 @@ of an arbitrary morphism of schemes `f : X ⟶ S`, the hypothesis being `s ≫ f
 
 The divisor-level consequences live in `TauCeti.AlgebraicGeometry.RationalPoint.Degree`, which
 keeps the results here independent of Weil divisor theory. They are the geometric source of the
-weight-one base point hypothesis that the Layer A degree theory runs on: the weight of a point of
-a curve over `k` there is its residue degree `[κ(x) : k]`, and both the class-group splitting
+weight-one base point hypothesis in divisor degree theory: the weight of a point of a curve over
+`k` is its residue degree `[κ(x) : k]`, and both the class-group splitting
 `OrderSystem.classGroupAddEquivPicZeroProdInt` and the Abel-Jacobi class
 `OrderSystem.weightedAbelJacobiClass` require a base point of weight one.
-
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, "Standing hypotheses" ("A chosen
-`k`-rational point `x₀`. ... the `k`-point *rigidifies/normalizes* the Picard functor and supplies
-the Abel-Jacobi morphism"). Base change of rational points is left to a subsequent file, since it
-is a statement about pullbacks in an arbitrary category rather than about schemes.
 
 No external mathematics is vendored; the proofs reuse Mathlib's `Scheme.Hom.residueFieldMap`,
 `Scheme.residueFieldCongr` and `Scheme.Hom.residueDegree` API, `CategoryTheory.asIso` and
@@ -143,9 +140,7 @@ lemma residueFieldMap_comp_residueFieldMap_of_section (hs : s ≫ f = 𝟙 S) (y
         f.residueFieldMap (s y) ≫ s.residueFieldMap y = 𝟙 (S.residueField y) := by
   rw [← Scheme.residueFieldMap_comp, Scheme.Hom.residueFieldMap_congr hs y]
   simp only [Scheme.residueFieldMap_id]
-  change (S.residueFieldCongr (section_apply hs y).symm).hom ≫
-      (S.residueFieldCongr (section_apply hs y)).hom = 𝟙 _
-  simp
+  exact (S.residueFieldCongr (section_apply hs y)).inv_hom_id
 
 /-- The residue field of `X` at a point in the image of a section is the residue field of the
 base at the corresponding point of the base. The inverse is the residue-field map of the
@@ -175,41 +170,51 @@ lemma residueFieldIsoOfSection_inv (hs : s ≫ f = 𝟙 S) (y : S) :
     rw [residueFieldIsoOfSection_hom, Category.assoc,
       residueFieldMap_comp_residueFieldMap_of_section hs y]
 
+/-! ### Stalk evaluation over a local ring -/
+
+section OverLocalRing
+
+variable {R : Type u} [CommRing R] [IsLocalRing R] {X : Scheme.{u}}
+  {f : X ⟶ Spec (.of R)} {s : Spec (.of R) ⟶ X}
+
+/-- A section over a commutative local ring `R` induces a surjection from the stalk at the
+image of the closed point of `Spec R` onto `R`. -/
+lemma stalkClosedPointTo_surjective_of_section (hs : s ≫ f = 𝟙 (Spec (.of R))) :
+    Function.Surjective (Scheme.stalkClosedPointTo s) := by
+  -- The hypothesis is used through a universally quantified morphism, since the *type* of
+  -- `Scheme.stalkClosedPointTo t` depends on `t`; substituting `t := 𝟙 _` avoids a transport.
+  have key : ∀ t : Spec (.of R) ⟶ Spec (.of R), t = 𝟙 (Spec (.of R)) →
+      Function.Surjective (Scheme.stalkClosedPointTo t) := by
+    rintro t rfl
+    have H : ∀ x : (Spec (.of R) : Scheme.{u}),
+        IsIso (Scheme.Hom.stalkMap (𝟙 (Spec (.of R))) x) := fun _ ↦ inferInstance
+    have : IsIso (Scheme.stalkClosedPointTo (𝟙 (Spec (.of R)))) := by
+      rw [Scheme.stalkClosedPointTo]
+      have := H (IsLocalRing.closedPoint R)
+      infer_instance
+    exact (ConcreteCategory.bijective_of_isIso _).2
+  have hcomp := key _ hs
+  rw [Scheme.stalkClosedPointTo_comp] at hcomp
+  exact Function.Surjective.of_comp hcomp
+
+end OverLocalRing
+
 /-! ### The residue field at a rational point
 
-Over a base `Spec K` with `K` a field, the residue field at a rational point is not merely
-isomorphic to the residue field of the base: it *is* the ground field `K`, through the canonical
-evaluation map that Mathlib attaches to any `K`-point of `X`, namely
-`X.descResidueField (Scheme.stalkClosedPointTo s)`. -/
+Over a field `K`, the residue field at a rational point is canonically isomorphic to `K`
+through the evaluation map `X.descResidueField (Scheme.stalkClosedPointTo s)`. -/
 
 section OverField
 
 variable {K : Type u} [Field K] {X : Scheme.{u}} {f : X ⟶ Spec (.of K)} {s : Spec (.of K) ⟶ X}
 
-/-- A section of `f : X ⟶ Spec K` maps the stalk at its image point onto `K`: the induced map
-`𝒪_{X, s 0} ⟶ K` of Mathlib's `Scheme.stalkClosedPointTo` is surjective, because composing it
-with the stalk map of `f` gives the corresponding map for the identity of `Spec K`, which is an
-isomorphism. -/
-lemma stalkClosedPointTo_surjective_of_section (hs : s ≫ f = 𝟙 (Spec (.of K))) :
-    Function.Surjective (Scheme.stalkClosedPointTo s) := by
-  -- The hypothesis is used through a universally quantified morphism, since the *type* of
-  -- `Scheme.stalkClosedPointTo t` depends on `t`; substituting `t := 𝟙 _` avoids a transport.
-  have key : ∀ t : Spec (.of K) ⟶ Spec (.of K), t = 𝟙 (Spec (.of K)) →
-      Function.Surjective (Scheme.stalkClosedPointTo t) := by
-    rintro t rfl
-    have H : ∀ x : (Spec (.of K) : Scheme.{u}),
-        IsIso (Scheme.Hom.stalkMap (𝟙 (Spec (.of K))) x) := fun _ ↦ inferInstance
-    have : IsIso (Scheme.stalkClosedPointTo (𝟙 (Spec (.of K)))) := by
-      rw [Scheme.stalkClosedPointTo]
-      have := H (IsLocalRing.closedPoint K)
-      infer_instance
-    exact (ConcreteCategory.bijective_of_isIso _).2
-  intro a
-  obtain ⟨b, hb⟩ := key _ hs a
-  -- The last step is `ConcreteCategory.comp_apply`, which is definitional; it cannot be applied
-  -- as a rewrite here, because the point `s (closedPoint K)` inhabits `↥(Spec (.of K))` only up
-  -- to unfolding `Spec`, so the rewritten term is not type-correct at reducible transparency.
-  exact ⟨Scheme.Hom.stalkMap f _ b, by rw [← hb, Scheme.stalkClosedPointTo_comp]; rfl⟩
+/-- The image of a rational-point section is a closed point. -/
+lemma isClosed_singleton_of_section
+    (hs : s ≫ f = 𝟙 (Spec (.of K))) : IsClosed {s (IsLocalRing.closedPoint K)} := by
+  have := isClosedImmersion_of_comp_eq_id f s hs
+  rw [← Set.range_eq_singleton fun y ↦ congrArg s
+    (Subsingleton.elim y (IsLocalRing.closedPoint K))]
+  exact s.isClosedEmbedding.isClosed_range
 
 /-- The canonical evaluation map `κ(s 0) ⟶ K` at a `K`-rational point is bijective: it is
 injective as a map of fields, and surjective because the stalk already surjects onto `K`. -/

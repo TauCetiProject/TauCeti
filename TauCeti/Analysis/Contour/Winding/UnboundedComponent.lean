@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.MetricSpace.Bounded
 public import TauCeti.Analysis.Contour.Winding.LocallyConstant
 public import TauCeti.Analysis.Contour.Winding.Vanishing
+public import TauCeti.Topology.FilledHull
 
 /-!
 # The winding number on the unbounded component
@@ -27,6 +28,9 @@ integration roadmap: the winding number is zero on the unbounded component.
   every unbounded component of the curve complement.
 * `TauCeti.Contour.IsPiecewiseC1On.windingNumber_eq_zero_of_unbounded_component` — the direct
   piecewise-`C¹` form.
+* `TauCeti.Contour.IsPiecewiseC1On.isNullHomologous_of_filledHull_subset` — every closed curve in a
+  set without holes, one whose complement has no bounded connected component, is null-homologous
+  there.
 
 ## References
 
@@ -117,5 +121,19 @@ theorem IsPiecewiseC1On.windingNumber_eq_zero_of_ray {γ : ℝ → ℂ} {a b : �
     simpa using norm_sub_le (w + (c : ℂ) * v) w
   rw [hnorm] at hge
   linarith
+
+/-- **A closed curve in a set without holes is null-homologous there.** If `filledHull U ⊆ U`,
+that is, if every connected component of `ℂ \ U` is unbounded, then every closed piecewise-`C¹`
+curve in `U` has winding number zero about every point outside `U`. For open `U`, the hypothesis
+is the plane form of the connectedness of the complement of `U` in the Riemann sphere. -/
+theorem IsPiecewiseC1On.isNullHomologous_of_filledHull_subset {γ : ℝ → ℂ} {a b : ℝ} {U : Set ℂ}
+    (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b) (hγU : MapsTo γ (uIcc a b) U)
+    (hU : filledHull U ⊆ U) : IsNullHomologous γ a b U := by
+  rw [isNullHomologous_iff]
+  intro w hw
+  refine hγ.windingNumber_eq_zero_of_unbounded_component hclosed fun hbdd => hw (hU ?_)
+  refine (mem_filledHull_iff (K := U)).2 (hbdd.subset (connectedComponentIn_mono w ?_))
+  rintro _ hx ⟨t, ht, rfl⟩
+  exact hx (hγU ht)
 
 end TauCeti.Contour

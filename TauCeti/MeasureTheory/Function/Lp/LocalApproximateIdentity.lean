@@ -70,7 +70,7 @@ theorem normedBumpLp_extendByZero_ae_eq_convolution (hp : p ≠ ∞)
   let f₀ : E → F := s.indicator (f : E → F)
   have hf₀ : MemLp f₀ p (mu.restrict (univ : Set E)) := by
     simpa only [f₀, Measure.restrict_univ] using
-      (memLp_indicator_iff_restrict hs).2 (Lp.memLp f)
+      (memLp_indicator_iff_restrict hs.nullMeasurableSet).2 (Lp.memLp f)
   have hext : hf₀.toLp f₀ = extendByZeroLpₗᵢ ℝ mu hs (subset_univ s) f := by
     apply Lp.ext
     exact hf₀.coeFn_toLp.trans (coeFn_extendByZeroLpₗᵢ ℝ hs (subset_univ s) f).symm

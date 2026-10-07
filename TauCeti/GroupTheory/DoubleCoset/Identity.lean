@@ -29,6 +29,8 @@ outside `H`.
 * `TauCeti.doubleCosetMk_eq_mk_one_iff`: the double coset of `s` is the identity one exactly when
   `s ∈ H * K`.
 * `TauCeti.doubleCosetMk_eq_mk_one_iff_mem`: for `K = H`, that condition is `s ∈ H`.
+* `TauCeti.subsingleton_doubleCosetQuotient_iff`: the identity double coset is the only one
+  exactly when `H * K` is the whole group.
 -/
 
 public section
@@ -73,5 +75,17 @@ theorem doubleCosetMk_eq_mk_one_iff (H K : Subgroup G) (s : G) :
 theorem doubleCosetMk_eq_mk_one_iff_mem (H : Subgroup G) (s : G) :
     DoubleCoset.mk H H s = DoubleCoset.mk H H 1 ↔ s ∈ H := by
   rw [doubleCosetMk_eq_mk_one_iff, coe_mul_coe, SetLike.mem_coe]
+
+/-- **There is a single double coset exactly when `H * K` is the whole group**: `H \ G / K` has
+at most one element if and only if every element of `G` is a product of an element of `H` and an
+element of `K`. -/
+theorem subsingleton_doubleCosetQuotient_iff (H K : Subgroup G) :
+    Subsingleton (DoubleCoset.Quotient (H : Set G) (K : Set G)) ↔
+      (H : Set G) * (K : Set G) = Set.univ := by
+  refine ⟨fun _ ↦ Set.eq_univ_of_forall fun s ↦
+    (doubleCosetMk_eq_mk_one_iff H K s).1 (Subsingleton.elim _ _), fun h ↦ ⟨fun q r ↦ ?_⟩⟩
+  have hone (s : G) : DoubleCoset.mk H K s = DoubleCoset.mk H K 1 :=
+    (doubleCosetMk_eq_mk_one_iff H K s).2 (h ▸ Set.mem_univ s)
+  rw [← DoubleCoset.out_eq' q, ← DoubleCoset.out_eq' r, hone q.out, hone r.out]
 
 end TauCeti

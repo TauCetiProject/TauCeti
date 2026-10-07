@@ -71,23 +71,6 @@ section Inertia
 
 variable {k G : Type u} [Field k] [Group G] {N : Subgroup G} [N.Normal]
 
-/-- An element `t` of the inertia group of `V` gives a linear automorphism of `V` carrying the
-action of `n` to the action of `t⁻¹ n t`: the isomorphism `{}^t V ≅ V`, read on the common
-underlying space. -/
-private theorem exists_linearEquiv_of_mem_inertia {V : FDRep k N} {t : G} (ht : t ∈ inertia V) :
-    ∃ ε : V ≃ₗ[k] V, ∀ (n : N) (v : V),
-      ε (V.ρ n v) = V.ρ (MulAut.conjNormal t⁻¹ n) (ε v) := by
-  obtain ⟨e⟩ := mem_inertia_iff.1 ht
-  -- `{}^t V` has the same underlying space as `V` (`conjNormalFDRep_V`), so `e⁻¹` is itself a
-  -- linear automorphism of `V`.
-  let ε : V ≃ₗ[k] conjNormalFDRep t V := isoToLinearEquiv e.symm
-  refine ⟨ε, fun n v => ?_⟩
-  have h := DFunLike.congr_fun (FDRep.Iso.conj_ρ e.symm n) (isoToLinearEquiv e.symm v)
-  have hv := congrArg (fun w => isoToLinearEquiv e.symm (V.ρ n w))
-    ((isoToLinearEquiv e.symm).symm_apply_apply v)
-  rw [← conjNormalFDRep_ρ]
-  exact (h.trans hv).symm
-
 /-- **The images of intertwiners from `V` span a representation of the inertia group lying over
 `V`.**  If `U` is an irreducible representation of the inertia group of `V` and some intertwiner
 `V → Res_N U` is nonzero, then the images of all such intertwiners span `U`. -/
@@ -102,7 +85,7 @@ theorem iSup_range_intertwiningMap_inertia_eq_top (V : FDRep k N) (U : FDRep k (
   -- `J` is stable under the inertia group: translating the image of `g` by `t` gives the image of
   -- `ρ t ∘ g ∘ ε`, where `ε` is the automorphism of `V` witnessing `{}^t V ≅ V`.
   have hstable (t : inertia V) {x : U} (hx : x ∈ J) : U.ρ t x ∈ J := by
-    obtain ⟨ε, hε⟩ := exists_linearEquiv_of_mem_inertia t.2
+    obtain ⟨ε, hε⟩ := mem_inertia_iff_exists_linearEquiv.mp (inv_mem t.2)
     let g' (g : IntertwiningMap V.ρ (U.ρ.comp (Subgroup.inclusion (le_inertia V)))) :
         IntertwiningMap V.ρ (U.ρ.comp (Subgroup.inclusion (le_inertia V))) :=
       LinearMap.intertwiningMap_of_isIntertwiningMap _ _
@@ -153,7 +136,7 @@ theorem linearMap_eq_zero_of_comp_intertwiningMap_eq_zero (V : FDRep k N)
 source to `N` with the conjugate by `s` of the restriction of its target: the Mackey subgroup
 contains `N`, and on `N` the map `TauCeti.mackeyToH` is conjugation by `s⁻¹`. -/
 theorem mackey_hom_apply_inclusion {V : FDRep k N} {A B : FDRep k (inertia V)} {s : G}
-    (φ : resFDRep ((mackeySubgroup s (inertia V) (inertia V)).subgroupOf (inertia V)) A ⟶
+    (φ : Subgroup.resFDRep ((mackeySubgroup s (inertia V) (inertia V)).subgroupOf (inertia V)) A ⟶
       (Action.res (FGModuleCat k) (mackeyToH s (inertia V) (inertia V))).obj B)
     (n : N) (a : A) :
     φ.hom.hom.hom (A.ρ (Subgroup.inclusion (le_inertia V) n) a) =
@@ -207,11 +190,12 @@ theorem subsingleton_hom_res_mackeyToH_of_not_mem_inertia [Finite N]
     (hB : B.LiesOver (Subgroup.inclusion (le_inertia V)) V)
     {s : G} (hs : s ∉ inertia V) :
     Subsingleton
-      (resFDRep ((mackeySubgroup s (inertia V) (inertia V)).subgroupOf (inertia V)) A ⟶
+      (Subgroup.resFDRep ((mackeySubgroup s (inertia V) (inertia V)).subgroupOf (inertia V)) A ⟶
         (Action.res (FGModuleCat k) (mackeyToH s (inertia V) (inertia V))).obj B) := by
   refine subsingleton_of_forall_eq 0 fun φ => ?_
   suffices φ.hom.hom.hom = 0 from Action.Hom.ext (FGModuleCat.hom_ext this)
-  -- `resFDRep` and `Action.res` keep the carriers of `A` and `B`, so `φ` is a linear map `A → B`.
+  -- `Subgroup.resFDRep` and `Action.res` keep the carriers of `A` and `B`, so `φ` is a linear map
+  -- `A → B`.
   let f : A →ₗ[k] B := φ.hom.hom.hom
   refine linearMap_eq_zero_of_comp_intertwiningMap_eq_zero V A hA f fun g => ?_
   by_contra hg

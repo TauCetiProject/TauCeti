@@ -9,6 +9,8 @@ module
 import Mathlib.Algebra.Polynomial.Roots
 -- `CharZero.infinite`, which specialises `weightChar_injective` to characteristic zero.
 public import Mathlib.Algebra.CharZero.Infinite
+-- Characteristic zero for a field that is a `ℚ`-algebra.
+public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.LinearAlgebra.Basis.SMul
 public import Mathlib.LinearAlgebra.Matrix.Basis
@@ -63,7 +65,8 @@ field distinct weights stay distinct (`TauCeti.weightChar_injective`).
 * `TauCeti.exists_torusCharacter_eq_of_sum_mul_eq_one`: a weight whose coordinates have a
   `ℤ`-linear combination equal to one takes every unit as a value.
 * `TauCeti.weightChar_injective`: over an infinite field, distinct weights give distinct
-  characters of the torus.
+  characters of the torus; `TauCeti.weightChar_injective_of_algebraRat` specializes this to
+  fields that are `ℚ`-algebras.
 * `TauCeti.eq_of_span_eq_top_of_torusCharacter_eq`: dually, weights generating the whole character
   lattice separate the points of the torus, over any coefficient ring.
 * `TauCeti.basisDiagonalHom_injective` and `TauCeti.basisWeightTorus_injective`: a diagonal
@@ -362,6 +365,13 @@ theorem weightChar_injective {K : Type*} [Field K] [Infinite K] :
   have hval := congrArg (fun χ : (κ → Kˣ) →* Kˣ ↦ χ (Pi.mulSingle c u)) h
   simp only [weightChar_apply, torusCharacter_mulSingle] at hval
   rw [zpow_sub, hval, mul_inv_cancel]
+
+/-- The weight characters of a field that is a `ℚ`-algebra separate weights: such a field has
+characteristic zero, hence infinitely many elements. -/
+theorem weightChar_injective_of_algebraRat (k : Type*) [Field k] [Algebra ℚ k] :
+    Function.Injective (weightChar k (κ := κ)) := by
+  have : CharZero k := charZero_of_injective_algebraMap (algebraMap ℚ k).injective
+  exact weightChar_injective
 
 /-! ## Separating torus points -/
 

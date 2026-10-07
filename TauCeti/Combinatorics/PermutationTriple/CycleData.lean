@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.PermutationTriple.Basic
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
+public import TauCeti.GroupTheory.Perm.ComputedCycleType
 
 /-!
 # Cycle data of permutation triples
@@ -16,7 +17,8 @@ The cycle data of a permutation triple records, in the ordered branch-point conv
 `Equiv.Perm.partition`, rather than `Equiv.Perm.cycleType`: fixed points therefore appear as
 parts equal to one.
 
-`TauCeti.PermutationTriple.cycleData` packages the three partitions and
+`TauCeti.PermutationTriple.cycleData` packages the three partitions, computed using
+`Equiv.Perm.computedCycleType`, and
 `TauCeti.PermutationTriple.cycleCounts` packages their numbers of parts. The latter is expressed
 using `TauCeti.orbitCount`, and `cycleCounts_eq_card_cycleData` identifies the two descriptions.
 The remaining results record that every partition sums to the degree and that both invariants are
@@ -40,22 +42,26 @@ namespace PermutationTriple
 variable {n m : ℕ}
 
 /-- The ordered full cycle partitions of the three components of a permutation triple. Fixed
-points occur as parts equal to one. -/
-noncomputable def cycleData (t : PermutationTriple n) :
+points occur as parts equal to one. The executable body is exposed for kernel computations in
+importing modules; the component equations identify it with Mathlib's partitions. -/
+@[expose] def cycleData (t : PermutationTriple n) :
     Multiset ℕ × Multiset ℕ × Multiset ℕ :=
-  (t.σ0.partition.parts, t.σ1.partition.parts, t.σinf.partition.parts)
+  (t.σ0.computedCycleType, t.σ1.computedCycleType, t.σinf.computedCycleType)
 
 @[simp]
 theorem cycleData_σ0 (t : PermutationTriple n) :
-    t.cycleData.1 = t.σ0.partition.parts := (rfl)
+    t.cycleData.1 = t.σ0.partition.parts := by
+  simp [cycleData, Equiv.Perm.fullCycleType_def]
 
 @[simp]
 theorem cycleData_σ1 (t : PermutationTriple n) :
-    t.cycleData.2.1 = t.σ1.partition.parts := (rfl)
+    t.cycleData.2.1 = t.σ1.partition.parts := by
+  simp [cycleData, Equiv.Perm.fullCycleType_def]
 
 @[simp]
 theorem cycleData_σinf (t : PermutationTriple n) :
-    t.cycleData.2.2 = t.σinf.partition.parts := (rfl)
+    t.cycleData.2.2 = t.σinf.partition.parts := by
+  simp [cycleData, Equiv.Perm.fullCycleType_def]
 
 /-- The ordered numbers of cycles of the three components, with fixed points included. -/
 noncomputable def cycleCounts (t : PermutationTriple n) : ℕ × ℕ × ℕ :=
@@ -74,20 +80,20 @@ theorem cycleCounts_σinf (t : PermutationTriple n) :
 /-- The cycle counts of a triple are the cardinalities of its three full cycle partitions. -/
 theorem cycleCounts_eq_card_cycleData (t : PermutationTriple n) :
     t.cycleCounts = (t.cycleData.1.card, t.cycleData.2.1.card, t.cycleData.2.2.card) := by
-  simp only [cycleCounts, cycleData, orbitCount_eq_card_parts_partition]
+  simp only [cycleCounts, cycleData_σ0, cycleData_σ1, cycleData_σinf,
+    orbitCount_eq_card_parts_partition]
 
 /-- Each full cycle partition of a degree-`n` triple sums to `n`. -/
 theorem sum_cycleData (t : PermutationTriple n) :
     (t.cycleData.1.sum, t.cycleData.2.1.sum, t.cycleData.2.2.sum) = (n, n, n) := by
-  simp only [cycleData]
-  rw [t.σ0.partition.parts_sum, t.σ1.partition.parts_sum, t.σinf.partition.parts_sum]
-  simp
+  simp [cycleData_σ0, cycleData_σ1, cycleData_σinf, t.σ0.partition.parts_sum,
+    t.σ1.partition.parts_sum, t.σinf.partition.parts_sum]
 
 /-- Simultaneous relabeling leaves the ordered cycle data unchanged. -/
 @[simp]
 theorem cycleData_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
     cycleData (τ • t) = cycleData t := by
-  simp [cycleData]
+  simp [Prod.ext_iff]
 
 /-- Simultaneous relabeling leaves all three cycle counts unchanged. -/
 @[simp]
@@ -99,7 +105,7 @@ theorem cycleCounts_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
 @[simp]
 theorem cycleData_transport (e : Fin n ≃ Fin m) (t : PermutationTriple n) :
     cycleData (transport e t) = cycleData t := by
-  simp [cycleData]
+  simp [Prod.ext_iff]
 
 /-- Transporting the labels of the sheets leaves all three cycle counts unchanged. -/
 @[simp]
@@ -112,7 +118,7 @@ leaves the ordered cycle data unchanged. -/
 theorem cycleData_inv_components (t : PermutationTriple n) :
     (t.σ0⁻¹.partition.parts, t.σ1⁻¹.partition.parts, t.σinf⁻¹.partition.parts) =
       cycleData t := by
-  simp [cycleData]
+  simp [Prod.ext_iff]
 
 /-- Inverting all three components leaves their ordered numbers of cycles unchanged. -/
 theorem cycleCounts_inv_components (t : PermutationTriple n) :

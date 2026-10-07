@@ -25,7 +25,7 @@ The presentation displayed by the ATLAS is
 
 The ATLAS commutator convention is `[r,s] = r⁻¹s⁻¹rs`, opposite to Mathlib's
 `commutatorElement`. Accordingly each displayed commutator is stored using
-`Relator.comm (.inv r) (.inv s)`, as prescribed by `Relator`'s API. The structured expressions
+`Relator.commInvInv r s`, as prescribed by `Relator`'s API. The structured expressions
 otherwise preserve the displayed products and powers. The proved `Relator.toWord_toFreeGroup`
 theorem is the audit boundary between these expressions and the signed words used by
 `PresentedGroup`.
@@ -171,9 +171,9 @@ def hePresentation : GroupPresentation where
     [ .pow a 2,
       .pow b 7,
       .pow (a ⬝ b) 17,
-      .pow (.comm (.inv a) (.inv b)) 6,
-      .pow (.comm (.inv a) (.inv (.pow b 3))) 5,
-      .comm (.inv a) (.inv commutatorWord),
+      .pow (.commInvInv a b) 6,
+      .pow (.commInvInv a (.pow b 3)) 5,
+      .commInvInv a commutatorWord,
       finalWord ]
 
 /-- The generator names recorded for `He`. The row's body is sealed, so this is what lets a
@@ -263,7 +263,7 @@ theorem hePresentation_transcribed :
           .gen ⟨0, by simp⟩ ⬝ .pow (.gen ⟨1, by simp⟩) 3 ⬝ .gen ⟨0, by simp⟩ ⬝
           .pow (.inv (.gen ⟨1, by simp⟩)) 2 ⬝ .gen ⟨0, by simp⟩ ⬝
           .pow (.gen ⟨1, by simp⟩) 2 ] := by
-  simp [hePresentation]
+  simp [hePresentation, Relator.commInvInv]
 
 /-- The generator and relator counts recorded for `He` agree with the transcribed data. -/
 theorem hePresentation_matchesMetadata : hePresentation.matchesMetadata := by decide
@@ -290,7 +290,7 @@ theorem hePresentation_relatorsCyclicallyReduced :
     hePresentation.relatorsCyclicallyReduced := by
   simp only [GroupPresentation.relatorsCyclicallyReduced_iff, GroupPresentation.relators_def,
     hePresentation, List.map_cons, List.map_nil, Relator.toWord_mul, Relator.toWord_pow,
-    Relator.toWord_inv, Relator.toWord_comm, Relator.toWord_gen]
+    Relator.toWord_inv, Relator.toWord_commInvInv, Relator.toWord_gen]
   decide
 
 end TauCeti.Sporadic

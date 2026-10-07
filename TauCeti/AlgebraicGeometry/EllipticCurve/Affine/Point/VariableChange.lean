@@ -7,83 +7,62 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
--- Proof-only: `Point.cast_some`, the coordinates of a point transported along `AddEquiv.cast`.
+public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 
 /-!
 # The isomorphism of point groups induced by a change of variables
 
-Mathlib's affine `Point` API has `WeierstrassCurve.Affine.Point.map`, the group homomorphism
-induced by a map of the base field for a *fixed* curve, but nothing for the isomorphism between
-the point groups of two *different* curves related by an admissible change of variables. This file
-supplies it: for `C : VariableChange F` over a field, `(x, y) ↦ (u²x + r, u³y + u²sx + t)` is a
-group isomorphism `(C • W).Point ≃+ W.Point`.
+An admissible change of variables `C : VariableChange R` over a commutative ring induces a
+bijection `(C • W).toAffine.Point ≃ W.toAffine.Point` of nonsingular points, sending
+`(x, y)` to `(u²x + r, u³y + u²sx + t)` and fixing the point at infinity, with inverse
+induced by `C⁻¹`. Over a field it is a group isomorphism. No ellipticity hypothesis is needed,
+so this applies to the nonsingular points of singular Weierstrass curves as well.
 
-## Main definitions
+## Main definitions and results
 
-* `WeierstrassCurve.Affine.Point.equivVariableChange`: the group isomorphism
-  `(C • W).Point ≃+ W.Point`, whose inverse is the map induced by `C⁻¹` rather than an inverse
-  extracted from bijectivity. Everything here is computable given `[DecidableEq F]`.
-* `WeierstrassCurve.Affine.Point.equivVariableChange_some`: what it does to a point given by
-  coordinates, `@[simp]`. The underlying homomorphism is `(equivVariableChange W C).toAddMonoidHom`
-  — there is no separate `→+` in the public interface, since it would be the same map.
+* `WeierstrassCurve.Affine.Point.equivVariableChange`: the bijection of nonsingular points, over
+  a commutative ring.
+* `WeierstrassCurve.Affine.Point.equivVariableChange_some` and
+  `WeierstrassCurve.Affine.Point.equivVariableChange_symm_some`: the forward and inverse
+  coordinate formulas; `WeierstrassCurve.Affine.Point.equivVariableChange_zero` and
+  `WeierstrassCurve.Affine.Point.equivVariableChange_symm_zero`: both fix the point at
+  infinity. All four are tagged `@[simp]`.
+* `WeierstrassCurve.Affine.Point.addEquivVariableChange`: the group isomorphism over a field
+  with decidable equality, whose underlying functions are given by
+  `WeierstrassCurve.Affine.Point.coe_addEquivVariableChange` and
+  `WeierstrassCurve.Affine.Point.coe_addEquivVariableChange_symm`.
+* `WeierstrassCurve.pointEquivVariableChange`: for `W` and `C` over a commutative ring `R` and a
+  field `L` over `R`, the group isomorphism between the points over `L` of `C • W` and of `W`, that
+  is `((C • W).baseChange L).toAffine.Point ≃+ (W.baseChange L).toAffine.Point`, with its coordinate
+  lemmas `pointEquivVariableChange_some` and `pointEquivVariableChange_symm_some`.
 
-Transport of the point group along an equality of curves — needed to use a `C • W = W'` fact on
-points — is Mathlib's `AddEquiv.cast`, instantiated at `fun V ↦ V.toAffine.Point`; this file adds
-no wrapper for it. Its value on a point given by coordinates is `Point.cast_some`
-(`Affine/Point/Basic.lean`).
+These maps identify the point groups of different Weierstrass models and, in particular, a
+quadratic twist with its original curve over a splitting field.
 
-## Implementation notes
-
-The route is the group-law formulae, and those are a separate topic: what the change of variables
-does to `negY`, `addX`, `negAddY`, `addY`, `slope`, `Equation` and `Nonsingular` is
-`Affine/Formula/VariableChange.lean`, imported here. Nothing in that file mentions `Point`, and
-nothing here restates it — the split follows Mathlib's own, which puts the formulae in
-`Affine/Formula.lean` and the point type in `Affine/Point.lean`. In particular
-`variableChange_equation` and `variableChange_nonsingular` are what let the map carry points to
-points, and `variableChange_slope`, `variableChange_addX` and `variableChange_addY` are what make
-it additive.
-
-`mapVariableChangeFun`, its equation lemmas and injectivity, `variableChange_negY_ne` and
-`mapVariableChange` are all `private`: they are how the
-isomorphism is built, not part of what it offers. The public surface is `equivVariableChange` with
-its two coordinate lemmas `equivVariableChange_some` and `equivVariableChange_symm_some`, both
-`@[simp]`, so a consumer never needs to unfold anything. Anyone wanting the bare homomorphism
-takes `(equivVariableChange W C).toAddMonoidHom`.
-
-That is also why the section is a plain `public section` rather than `@[expose]`. Exposing the
-whole file would publish every proof body to make three `rfl`s go through, and it is incompatible
-with the helpers being private — a public declaration may not refer to a private one, so the
-exposed body of `mapVariableChange` would fail to elaborate with
-`Unknown identifier 'mapVariableChangeFun'`. Routing the two public coordinate lemmas through the
-private equation lemma removes the need for exposure entirely.
-
-This is a prerequisite for `TauCetiRoadmap/EllipticCurves/README.md` §Layer 5's point isomorphism
-for the quadratic twist: that statement is about the point groups of `E` and its twist, which
-become isomorphic over `L` by a change of variables, and it cannot even be stated without the
-isomorphism defined here.
+## References
 
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
-`FLT/Mathlib/AlgebraicGeometry/EllipticCurve/Affine/Point.lean` at the roadmap's pin
-`bc2fe8ff7396`, FLT PR #1088, Apache 2.0). That file's own header reads
-`Authors: Michael Stoll, Claude`. Following this repository's convention for adapted material, the
-upstream authorship is credited here rather than in the copyright header.
+`FLT/Mathlib/AlgebraicGeometry/EllipticCurve/Affine/Point.lean` at commit `bc2fe8ff7396`,
+FLT PR #1088, Apache 2.0), by Michael Stoll and Claude.
 -/
 
 public section
 
 namespace WeierstrassCurve.Affine
 
-variable {F : Type*} [Field F] (W : WeierstrassCurve F) (C : VariableChange F)
+section CommRing
+
+variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) (C : VariableChange R)
 
 /-- The image of a pair of points under the change of variables satisfies the `y₁ = -y₂`
 degeneracy condition (`negY`) only if the original pair does. This is the case split of the
 addition formula, transported; it is what lets `add_some` be applied on both sides at once. -/
-private lemma variableChange_negY_ne {x₁ x₂ y₁ y₂ : F}
+private lemma variableChange_negY_ne {x₁ x₂ y₁ y₂ : R}
     (hxy : ¬(x₁ = x₂ ∧ y₁ = (C • W).toAffine.negY x₂ y₂)) :
-    ¬((C.u : F) ^ 2 * x₁ + C.r = (C.u : F) ^ 2 * x₂ + C.r ∧
-      (C.u : F) ^ 3 * y₁ + (C.u : F) ^ 2 * C.s * x₁ + C.t = W.toAffine.negY
-        ((C.u : F) ^ 2 * x₂ + C.r) ((C.u : F) ^ 3 * y₂ + (C.u : F) ^ 2 * C.s * x₂ + C.t)) := by
+    ¬((C.u : R) ^ 2 * x₁ + C.r = (C.u : R) ^ 2 * x₂ + C.r ∧
+      (C.u : R) ^ 3 * y₁ + (C.u : R) ^ 2 * C.s * x₁ + C.t = W.toAffine.negY
+        ((C.u : R) ^ 2 * x₂ + C.r) ((C.u : R) ^ 3 * y₂ + (C.u : R) ^ 2 * C.s * x₂ + C.t)) := by
   rintro ⟨hX, hY⟩
   have hx : x₁ = x₂ := (C.u.isUnit.pow 2).mul_left_cancel (by linear_combination hX)
   subst hx
@@ -96,118 +75,196 @@ namespace Point
 `(x, y)` to `(u²x + r, u³y + u²sx + t)`. -/
 private def mapVariableChangeFun : (C • W).toAffine.Point → W.toAffine.Point
   | .zero => .zero
-  | .some x y h => .some ((C.u : F) ^ 2 * x + C.r)
-      ((C.u : F) ^ 3 * y + (C.u : F) ^ 2 * C.s * x + C.t)
+  | .some x y h => .some ((C.u : R) ^ 2 * x + C.r)
+      ((C.u : R) ^ 3 * y + (C.u : R) ^ 2 * C.s * x + C.t)
       ((variableChange_nonsingular W C x y).mpr h)
 
 @[simp] private lemma mapVariableChangeFun_zero : mapVariableChangeFun W C 0 = 0 := rfl
 
-private lemma mapVariableChangeFun_some {x y : F} (h : (C • W).toAffine.Nonsingular x y) :
+private lemma mapVariableChangeFun_some {x y : R} (h : (C • W).toAffine.Nonsingular x y) :
     mapVariableChangeFun W C (.some x y h)
-      = .some ((C.u : F) ^ 2 * x + C.r) ((C.u : F) ^ 3 * y + (C.u : F) ^ 2 * C.s * x + C.t)
+      = .some ((C.u : R) ^ 2 * x + C.r) ((C.u : R) ^ 3 * y + (C.u : R) ^ 2 * C.s * x + C.t)
           ((variableChange_nonsingular W C x y).mpr h) := rfl
 
 private lemma mapVariableChangeFun_injective :
     Function.Injective (mapVariableChangeFun W C) := by
-  have hu : (C.u : F) ≠ 0 := C.u.ne_zero
   rintro (_ | ⟨x₁, y₁, h₁⟩) (_ | ⟨x₂, y₂, h₂⟩) h
   · rfl
   · simp [mapVariableChangeFun] at h
   · simp [mapVariableChangeFun] at h
   · rw [mapVariableChangeFun_some, mapVariableChangeFun_some] at h
     injection h with hX hY
-    have hx : x₁ = x₂ := mul_left_cancel₀ (pow_ne_zero 2 hu) (by linear_combination hX)
+    have hx : x₁ = x₂ := (C.u.isUnit.pow 2).mul_left_cancel (by linear_combination hX)
     simp only [some.injEq]
     exact ⟨hx,
-      mul_left_cancel₀ (pow_ne_zero 3 hu) (by linear_combination hY - (C.u : F) ^ 2 * C.s * hx)⟩
+      (C.u.isUnit.pow 3).mul_left_cancel (by linear_combination hY - (C.u : R) ^ 2 * C.s * hx)⟩
 
-variable [DecidableEq F] [W.IsElliptic]
+/-- The inverse map `W.Point → (C • W).Point`, induced by `C⁻¹` via `C⁻¹ • (C • W) = W`. -/
+private def mapVariableChangeInvFun (P : W.toAffine.Point) : (C • W).toAffine.Point :=
+  mapVariableChangeFun (C • W) C⁻¹
+    (Equiv.cast (congrArg (fun V : WeierstrassCurve R ↦ V.toAffine.Point)
+      (inv_smul_smul C W).symm) P)
 
-/-! From here on `[W.IsElliptic]` is unavoidable: Mathlib puts the `AddCommGroup` structure on
-`Point` under that hypothesis (`Affine/Point.lean`, the section opened by
-`variable [Nontrivial R] [W'.IsElliptic]`), so without it `(C • W).Point` is not an additive group
-and the statements below do not even typecheck. The underlying map and its injectivity hold for an
-arbitrary Weierstrass curve over a field, and the transformation laws they rest on for an
-arbitrary Weierstrass curve over a commutative ring. -/
+private lemma mapVariableChangeInvFun_some {x y : R} (h : W.toAffine.Nonsingular x y) :
+    mapVariableChangeInvFun W C (.some x y h)
+      = .some (((C⁻¹).u : R) ^ 2 * x + (C⁻¹).r)
+          (((C⁻¹).u : R) ^ 3 * y + ((C⁻¹).u : R) ^ 2 * (C⁻¹).s * x + (C⁻¹).t)
+          ((variableChange_nonsingular (C • W) C⁻¹ x y).mpr
+            ((inv_smul_smul C W).symm ▸ h)) := by
+  rw [mapVariableChangeInvFun, Equiv.cast_apply, cast_some (inv_smul_smul C W).symm,
+    mapVariableChangeFun_some]
 
-/-- The group homomorphism `(C • W).Point →+ W.Point` induced by the admissible change of
-variables, as scaffolding: its `map_add'` is what `equivVariableChange` is built from. Private,
-since `(equivVariableChange W C).toAddMonoidHom` is the same homomorphism and is the canonical
-way to ask for it. -/
-private def mapVariableChange : (C • W).toAffine.Point →+ W.toAffine.Point where
+private lemma mapVariableChangeFun_mapVariableChangeInvFun (P : W.toAffine.Point) :
+    mapVariableChangeFun W C (mapVariableChangeInvFun W C P) = P := by
+  rcases P with _ | ⟨x, y, h⟩
+  · rw [mapVariableChangeInvFun, ← zero_def, Equiv.cast_apply,
+      cast_zero (inv_smul_smul C W).symm, mapVariableChangeFun_zero, mapVariableChangeFun_zero]
+  · have hu : (C.u : R) * ((C.u⁻¹ : Rˣ) : R) = 1 := C.u.mul_inv
+    rw [mapVariableChangeInvFun_some, mapVariableChangeFun_some]
+    simp only [some.injEq, VariableChange.inv_def]
+    set a := (C.u : R) * ((C.u⁻¹ : Rˣ) : R)
+    exact ⟨by linear_combination (a + 1) * (x - C.r) * hu,
+      by linear_combination ((a ^ 2 + a + 1) * (y - C.s * x + C.r * C.s - C.t)
+        + (a + 1) * (C.s * x - C.s * C.r)) * hu⟩
+
+/-- The bijection `(C • W).Point ≃ W.Point` of nonsingular points induced by the admissible
+change of variables `(x, y) ↦ (u²x + r, u³y + u²sx + t)`, with inverse coming from `C⁻¹`. -/
+def equivVariableChange : (C • W).toAffine.Point ≃ W.toAffine.Point where
   toFun := mapVariableChangeFun W C
-  map_zero' := rfl
-  map_add' := by
-    rintro (_ | ⟨x₁, y₁, h₁⟩) (_ | ⟨x₂, y₂, h₂⟩)
-    any_goals rfl
-    simp only [mapVariableChangeFun_some]
-    have e₁ : (C • W).toAffine.Equation x₁ y₁ := equation_iff_nonsingular.mpr h₁
-    have e₂ : (C • W).toAffine.Equation x₂ y₂ := equation_iff_nonsingular.mpr h₂
-    by_cases hxy : x₁ = x₂ ∧ y₁ = (C • W).toAffine.negY x₂ y₂
-    · rw [add_of_Y_eq hxy.1 hxy.2, mapVariableChangeFun_zero]
-      refine (add_of_Y_eq ?_ ?_).symm
-      · rw [hxy.1]
-      · rw [variableChange_negY, hxy.2, hxy.1]
-    · rw [add_some hxy, mapVariableChangeFun_some, add_some (variableChange_negY_ne W C hxy)]
-      simp only [variableChange_slope W C e₁ e₂ hxy, variableChange_addX, variableChange_addY]
+  invFun := mapVariableChangeInvFun W C
+  left_inv := Function.RightInverse.leftInverse_of_injective
+    (mapVariableChangeFun_mapVariableChangeInvFun W C) (mapVariableChangeFun_injective W C)
+  right_inv := mapVariableChangeFun_mapVariableChangeInvFun W C
 
-/-- The group isomorphism `(C • W).Point ≃+ W.Point` induced by the admissible change of
-variables `(x, y) ↦ (u²x + r, u³y + u²sx + t)`, with inverse coming from `C⁻¹`. -/
-def equivVariableChange : (C • W).toAffine.Point ≃+ W.toAffine.Point :=
-  have hright : ∀ P, mapVariableChangeFun W C
-      (mapVariableChangeFun (C • W) C⁻¹
-        (AddEquiv.cast (M := fun V : WeierstrassCurve F ↦ V.toAffine.Point)
-          (inv_smul_smul C W).symm P)) = P := by
-    have hu : (C.u : F) ≠ 0 := C.u.ne_zero
-    rintro (_ | ⟨X, Y, h⟩)
-    · have hz : (AddEquiv.cast (M := fun V : WeierstrassCurve F ↦ V.toAffine.Point)
-        (inv_smul_smul C W).symm) 0 = 0 := _root_.map_zero _
-      rw [← zero_def, hz, mapVariableChangeFun_zero, mapVariableChangeFun_zero]
-    · rw [cast_some, mapVariableChangeFun_some, mapVariableChangeFun_some]
-      simp only [some.injEq]
-      refine ⟨?_, ?_⟩ <;>
-        (simp only [VariableChange.inv_def, Units.val_inv_eq_inv_val]; field)
-  { toFun := mapVariableChangeFun W C
-    invFun := fun P ↦ mapVariableChangeFun (C • W) C⁻¹
-      (AddEquiv.cast (M := fun V : WeierstrassCurve F ↦ V.toAffine.Point)
-        (inv_smul_smul C W).symm P)
-    left_inv := Function.RightInverse.leftInverse_of_injective hright
-      (mapVariableChangeFun_injective W C)
-    right_inv := hright
-    map_add' := (mapVariableChange W C).map_add' }
-
-/-- **What the isomorphism does to a point given by coordinates.** Its inverse is
-`equivVariableChange_symm_some`. The coerced homomorphism `(equivVariableChange W C).toAddMonoidHom`
-is characterised by this same equation. -/
-@[simp] lemma equivVariableChange_some {x y : F} (h : (C • W).toAffine.Nonsingular x y) :
+/-- The forward coordinate formula for the change-of-variables bijection. -/
+@[simp] lemma equivVariableChange_some {x y : R} (h : (C • W).toAffine.Nonsingular x y) :
     equivVariableChange W C (.some x y h)
-      = .some ((C.u : F) ^ 2 * x + C.r) ((C.u : F) ^ 3 * y + (C.u : F) ^ 2 * C.s * x + C.t)
+      = .some ((C.u : R) ^ 2 * x + C.r) ((C.u : R) ^ 3 * y + (C.u : R) ^ 2 * C.s * x + C.t)
           ((variableChange_nonsingular W C x y).mpr h) :=
   mapVariableChangeFun_some W C h
 
-/-- The inverse of `equivVariableChange` on the nose: it *is* the map induced by `C⁻¹`, transported
-along `C⁻¹ • (C • W) = W`. Stated separately so the public coordinate lemma below is proved by
-rewriting rather than by `change`: the equivalence's `invFun` is a structure field, and without
-this step a proof of the coordinate law would silently depend on how that record is written. -/
-private lemma equivVariableChange_symm_apply (P : W.toAffine.Point) :
-    (equivVariableChange W C).symm P
-      = mapVariableChangeFun (C • W) C⁻¹
-          (AddEquiv.cast (M := fun V : WeierstrassCurve F ↦ V.toAffine.Point)
-            (inv_smul_smul C W).symm P) := rfl
+/-- The change-of-variables bijection fixes the point at infinity. -/
+@[simp] lemma equivVariableChange_zero : equivVariableChange W C 0 = 0 :=
+  mapVariableChangeFun_zero W C
 
-/-- **What the inverse isomorphism does to a point given by coordinates.** It is the map induced by
-`C⁻¹`, so the coordinates are those of `C⁻¹` — this is the sense in which the inverse "comes from
-`C⁻¹`" rather than from bijectivity. -/
-@[simp] lemma equivVariableChange_symm_some {x y : F} (h : W.toAffine.Nonsingular x y) :
+/-- The inverse of the change-of-variables bijection fixes the point at infinity. -/
+@[simp] lemma equivVariableChange_symm_zero : (equivVariableChange W C).symm 0 = 0 :=
+  (Equiv.symm_apply_eq _).2 (equivVariableChange_zero W C).symm
+
+private lemma equivVariableChange_symm_apply (P : W.toAffine.Point) :
+    (equivVariableChange W C).symm P = mapVariableChangeInvFun W C P := rfl
+
+/-- The inverse coordinate formula, given by the inverse change of variables. -/
+@[simp] lemma equivVariableChange_symm_some {x y : R} (h : W.toAffine.Nonsingular x y) :
     (equivVariableChange W C).symm (.some x y h)
-      = .some (((C⁻¹).u : F) ^ 2 * x + (C⁻¹).r)
-          (((C⁻¹).u : F) ^ 3 * y + ((C⁻¹).u : F) ^ 2 * (C⁻¹).s * x + (C⁻¹).t)
+      = .some (((C⁻¹).u : R) ^ 2 * x + (C⁻¹).r)
+          (((C⁻¹).u : R) ^ 3 * y + ((C⁻¹).u : R) ^ 2 * (C⁻¹).s * x + (C⁻¹).t)
           ((variableChange_nonsingular (C • W) C⁻¹ x y).mpr
             ((inv_smul_smul C W).symm ▸ h)) := by
-  rw [equivVariableChange_symm_apply, cast_some, mapVariableChangeFun_some]
+  rw [equivVariableChange_symm_apply, mapVariableChangeInvFun_some]
+
+end Point
+
+end CommRing
+
+namespace Point
+
+variable {F : Type*} [Field F] [DecidableEq F]
+  (W : WeierstrassCurve F) (C : VariableChange F)
+
+/-- The group isomorphism `(C • W).Point ≃+ W.Point` induced by the admissible change of
+variables; its underlying bijection is `equivVariableChange`. -/
+def addEquivVariableChange : (C • W).toAffine.Point ≃+ W.toAffine.Point where
+  __ := equivVariableChange W C
+  map_add' := by
+    rintro (_ | ⟨x₁, y₁, h₁⟩) (_ | ⟨x₂, y₂, h₂⟩)
+    any_goals rfl
+    simp only [Equiv.toFun_as_coe, equivVariableChange_some]
+    by_cases hxy : x₁ = x₂ ∧ y₁ = (C • W).toAffine.negY x₂ y₂
+    · rw [add_of_Y_eq hxy.1 hxy.2]
+      refine (add_of_Y_eq ?_ ?_).symm
+      · rw [hxy.1]
+      · rw [variableChange_negY, hxy.2, hxy.1]
+    · rw [add_some hxy, equivVariableChange_some, add_some (variableChange_negY_ne W C hxy)]
+      simp only [variableChange_slope W C h₁.1 h₂.1 hxy, variableChange_addX, variableChange_addY]
+
+private lemma addEquivVariableChange_apply (P : (C • W).toAffine.Point) :
+    addEquivVariableChange W C P = equivVariableChange W C P := rfl
+
+private lemma addEquivVariableChange_symm_apply (P : W.toAffine.Point) :
+    (addEquivVariableChange W C).symm P = (equivVariableChange W C).symm P := rfl
+
+/-- The group isomorphism `addEquivVariableChange` has underlying function
+`equivVariableChange`. -/
+@[simp] lemma coe_addEquivVariableChange :
+    ⇑(addEquivVariableChange W C) = equivVariableChange W C :=
+  funext (addEquivVariableChange_apply W C)
+
+/-- The inverse of the group isomorphism `addEquivVariableChange` has underlying function the
+inverse of `equivVariableChange`. -/
+@[simp] lemma coe_addEquivVariableChange_symm :
+    ⇑(addEquivVariableChange W C).symm = (equivVariableChange W C).symm :=
+  funext (addEquivVariableChange_symm_apply W C)
 
 end Point
 
 end WeierstrassCurve.Affine
+
+namespace WeierstrassCurve
+
+/-! ### Curves over a ring and their points over a field -/
+
+section BaseChange
+
+variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) (L : Type*) [Field L] [DecidableEq L]
+  [Algebra R L] (C : VariableChange R)
+
+/-- **The points over `L` of `C • W` and of `W` are identified by a change of variables `C` over
+`R`**: the group isomorphism `(x, y) ↦ (u²x + r, u³y + u²sx + t)` between the points of their base
+changes to a field `L`. It is `WeierstrassCurve.Affine.Point.addEquivVariableChange` for the base
+change of `C` to `L`, read on the base change of `C • W`. -/
+def pointEquivVariableChange :
+    ((C • W).baseChange L).toAffine.Point ≃+ (W.baseChange L).toAffine.Point :=
+  (AddEquiv.cast (M := fun V : WeierstrassCurve L ↦ V.toAffine.Point)
+    (baseChange_smul_baseChange L C W).symm).trans
+    (Affine.Point.addEquivVariableChange (W.baseChange L) (C.baseChange L))
+
+/-- What the identification `pointEquivVariableChange` does to a point given by coordinates: it is
+the change of variables `C`, base changed to `L`. -/
+@[simp]
+theorem pointEquivVariableChange_some {x y : L}
+    (h : ((C • W).baseChange L).toAffine.Nonsingular x y) :
+    W.pointEquivVariableChange L C (.some x y h) =
+      .some (((C.baseChange L).u : L) ^ 2 * x + (C.baseChange L).r)
+        (((C.baseChange L).u : L) ^ 3 * y + ((C.baseChange L).u : L) ^ 2 * (C.baseChange L).s * x +
+          (C.baseChange L).t)
+        ((Affine.variableChange_nonsingular (W.baseChange L) (C.baseChange L) x y).mpr
+          ((baseChange_smul_baseChange L C W).symm ▸ h)) := by
+  rw [pointEquivVariableChange, AddEquiv.trans_apply, AddEquiv.cast_apply,
+    Affine.Point.cast_some (baseChange_smul_baseChange L C W).symm,
+    Affine.Point.coe_addEquivVariableChange,
+    Affine.Point.equivVariableChange_some]
+
+/-- What the inverse of the identification `pointEquivVariableChange` does to a point given by
+coordinates: it is the change of variables `C⁻¹`, base changed to `L`. -/
+@[simp]
+theorem pointEquivVariableChange_symm_some {x y : L}
+    (h : (W.baseChange L).toAffine.Nonsingular x y) :
+    (W.pointEquivVariableChange L C).symm (.some x y h) =
+      .some (((C.baseChange L)⁻¹.u : L) ^ 2 * x + (C.baseChange L)⁻¹.r)
+        (((C.baseChange L)⁻¹.u : L) ^ 3 * y +
+          ((C.baseChange L)⁻¹.u : L) ^ 2 * (C.baseChange L)⁻¹.s * x + (C.baseChange L)⁻¹.t)
+        (baseChange_smul_baseChange L C W ▸
+          (Affine.variableChange_nonsingular (C.baseChange L • W.baseChange L)
+            (C.baseChange L)⁻¹ x y).mpr
+            ((inv_smul_smul (C.baseChange L) (W.baseChange L)).symm ▸ h)) := by
+  rw [pointEquivVariableChange, AddEquiv.symm_trans_apply,
+    Affine.Point.coe_addEquivVariableChange_symm,
+    Affine.Point.equivVariableChange_symm_some, AddEquiv.symm_apply_eq, AddEquiv.cast_apply,
+    Affine.Point.cast_some (baseChange_smul_baseChange L C W).symm]
+
+end BaseChange
+
+end WeierstrassCurve
 
 end

@@ -10,6 +10,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Generation
 public import TauCeti.Topology.Algebra.Group.Profinite.Hopfian
 public import TauCeti.Topology.Algebra.Group.Profinite.Limit
 public import TauCeti.Topology.Compactness.InverseSystem
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # Finite-quotient determinacy of profinite groups

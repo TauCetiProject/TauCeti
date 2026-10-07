@@ -163,8 +163,8 @@ private theorem sqrt_isLittleO_div_log : Real.sqrt =o[atTop] fun x ↦ x / Real.
 
 /-- The primes of residue degree above one and norm at most `x` number `o(x / log x)`.  The
 comparison is with the explicit function `x / log x`, not with the full prime count `π_K(x)`;
-`x / log x` is the order of magnitude the prime ideal theorem gives for `π_K`, but that theorem
-is not available here, so this is not a statement of natural density zero. -/
+combined with the prime ideal theorem `π_K(x) ~ x / log x` it gives natural density zero,
+`TauCeti.hasNaturalDensity_higherDegreePrimes`. -/
 theorem primeCount_higherDegreePrimes_isLittleO :
     primeCount K (higherDegreePrimes K) =o[atTop] fun x ↦ x / Real.log x :=
   primeCount_higherDegreePrimes_isBigO.trans_isLittleO sqrt_isLittleO_div_log

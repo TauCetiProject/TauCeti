@@ -90,13 +90,9 @@ theorem mem_descentSubgroup_iff_apply (f : WithConv (H →ₐ[R] B)) :
       ∀ h, (includeLeft (R := A) (S := A) (A := B) (B := B)) (f h) =
         (includeRight (R := A) (A := B) (B := B)) (f h) := by
   rw [mem_descentSubgroup_iff_maps]
-  constructor
-  · intro hf h
-    exact DFunLike.congr_fun (congr_arg WithConv.ofConv hf) h
-  · intro hf
-    apply WithConv.toConv_injective
-    ext h
-    exact hf h
+  simp only [AlgHom.mapValue_apply, WithConv.toConv_injective.eq_iff, DFunLike.ext_iff,
+    AlgHom.comp_apply, faithfullyFlatDescentLeft, faithfullyFlatDescentRight,
+    AlgHom.coe_restrictScalars']
 
 end CommSemiring
 

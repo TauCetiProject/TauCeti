@@ -13,7 +13,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Infin
 -- public surface.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRing
 -- Proof-only: the generic point's equation, and the general two-to-three pole ratio it feeds.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.ValuationIntegrality
 import Mathlib.NumberTheory.RatFunc.Ostrowski
 import TauCeti.RingTheory.Valuation.IsTrivialOn

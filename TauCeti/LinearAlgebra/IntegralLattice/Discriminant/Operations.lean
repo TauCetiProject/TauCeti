@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
-public import TauCeti.LinearAlgebra.IntegralLattice.OrthogonalSum
+public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.Sum
 public import TauCeti.LinearAlgebra.IntegralLattice.Scaling
 public import TauCeti.LinearAlgebra.Quotient.Prod
 

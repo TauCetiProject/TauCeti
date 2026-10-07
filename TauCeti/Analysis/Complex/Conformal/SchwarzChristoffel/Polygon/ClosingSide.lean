@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.GlobalTurnin
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.ShortTurn
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.UnboundedEdge
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Boundary
+import TauCeti.Analysis.Complex.PlaneSeparation.Segment
 
 /-!
 # Separation of Schwarz--Christoffel sides from the closing side
@@ -216,17 +217,7 @@ private lemma eq_of_mem_segment_schwarzChristoffelVertex_of_im_le (a e : Fin (n 
     z = schwarzChristoffelVertex a e z₀ k := by
   have hk := im_schwarzChristoffelVertex_zero_le a e z₀ ha he hsum k
   have hk' := im_schwarzChristoffelVertex_zero_lt a e z₀ ha he hsum hk₀ hkn
-  obtain ⟨s, t, hs, ht, hst, rfl⟩ := hz
-  simp only [Complex.add_im, Complex.smul_im, smul_eq_mul] at hzh
-  -- Both endpoints are at least as high as the line and the second is strictly higher, so a
-  -- convex combination reaching the line puts no weight on the second endpoint.
-  have hsh : s * (schwarzChristoffelVertex a e z₀ 0).im +
-      t * (schwarzChristoffelVertex a e z₀ 0).im = (schwarzChristoffelVertex a e z₀ 0).im := by
-    rw [← add_mul, hst, one_mul]
-  have ht0 : t = 0 := le_antisymm (not_lt.mp fun htpos ↦ by
-    linarith [mul_le_mul_of_nonneg_left hk hs, mul_lt_mul_of_pos_left hk' htpos]) ht
-  obtain rfl : s = 1 := by linarith
-  simp [ht0]
+  exact eq_left_of_mem_segment_of_im_le_of_lt hk hk' hz hzh
 
 /-- **A bounded side misses the nonadjacent right-hand closing side.**  Under the classical
 convex-polygon hypotheses, the bounded side from vertex `i` to vertex `i + 1`, where `i + 1` is not

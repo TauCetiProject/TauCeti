@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
-public import TauCeti.Probability.Exchangeability.Basic
+public import TauCeti.Probability.Process.PathLaw.Basic
 public import TauCeti.Probability.Process.Tail.Basic
 public import Mathlib.MeasureTheory.MeasurableSpace.Invariants
 

@@ -37,7 +37,8 @@ pointwise algebra happens before integration; a later layer proves invariance un
 * `abs_rectIntegral_le_cutNorm` and `cutNorm_le` are the introduction and elimination rules for the
   supremum, and `exists_cutNorm_eq_abs_rectIntegral` says it is attained on a finite carrier.
 * `cutNorm_zero`, `cutNorm_neg`, `cutNorm_add_le`, and `cutNorm_smul` are the seminorm laws.
-* `cutNorm_le_integral_abs` bounds the cut norm by the `L¹` norm.
+* `cutNorm_le_integral_abs` bounds the cut norm by the `L¹` norm, and
+  `cutNorm_eq_abs_of_forall_eq` computes it for a constant kernel on a probability carrier.
 * `rectIntegral_comap_preimage` and `cutNorm_le_cutNorm_comap` are the change of variables along a
   pushforward: a rectangle downstairs pulls back to one upstairs with the same integral, so the cut
   norm does not increase when a carrier is replaced by one it is a pushforward of.
@@ -245,6 +246,13 @@ theorem cutNorm_le_of_forall_abs_le [IsProbabilityMeasure μ] (K : SymmKernel Ω
     ∫ p, |K p.1 p.2| ∂(μ.prod μ) ≤ ∫ _p : Ω × Ω, C ∂(μ.prod μ) :=
       integral_mono K.integrable_uncurry.abs (integrable_const C) fun p => hK p.1 p.2
     _ = C := by simp
+
+/-- A kernel with the constant value `c` has cut norm `|c|` on a probability carrier: the whole
+square is an extremal rectangle. -/
+theorem cutNorm_eq_abs_of_forall_eq [IsProbabilityMeasure μ] {K : SymmKernel Ω μ} {c : ℝ}
+    (hK : ∀ x y, K x y = c) : cutNorm μ K = |c| := by
+  refine le_antisymm (cutNorm_le_of_forall_abs_le μ K fun x y => (hK x y).symm ▸ le_rfl) ?_
+  simpa [hK] using abs_rectIntegral_le_cutNorm μ K MeasurableSet.univ MeasurableSet.univ
 
 /-- The zero kernel has cut norm zero. -/
 @[simp]

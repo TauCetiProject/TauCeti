@@ -31,6 +31,9 @@ the arrows of `Reflect V i`, by `TauCeti.Quiver.hom_reflectAt_eq_hom_reflect` �
   structure it started from.
 * `TauCeti.Quiver.reflectList_reverse_reflectList`: reflecting along a list and then along its
   reverse returns the original quiver structure.
+* `Quiver.nonempty_reflectList_sum_hom_equiv`: reflecting along any list keeps the arrows
+  joining two vertices in either direction, so it changes the orientation of a quiver but not its
+  underlying multigraph.
 * `TauCeti.Quiver.hom_reflectList` and `TauCeti.Quiver.hom_reflectList_of_not_iff`: reflecting
   along a repetition-free list reverses exactly the arrows joining a vertex of the list to a
   vertex outside it.
@@ -158,6 +161,43 @@ noncomputable def fintypeHomReflectList :
   | [], _, hq, a, b => hq a b
   | i :: l, q, hq, a, b =>
       fintypeHomReflectList l (reflectAt q i) (@instFintypeReflectHom V q hq i) a b
+
+/-! ### The underlying multigraph -/
+
+/-- **Reflection at a vertex keeps the arrows joining two vertices**, only redistributing them
+between the two directions: the arrows running from `a` to `b` or from `b` to `a` are the same
+before and after the reflection. -/
+theorem _root_.Quiver.nonempty_reflectAt_sum_hom_equiv (q : _root_.Quiver.{v} V) (i a b : V) :
+    Nonempty ((@_root_.Quiver.Hom V (reflectAt q i) a b ⊕ @_root_.Quiver.Hom V (reflectAt q i) b a)
+      ≃ (@_root_.Quiver.Hom V q a b ⊕ @_root_.Quiver.Hom V q b a)) := by
+  rw [hom_reflectAt, hom_reflectAt]
+  by_cases hai : a = i
+  · subst hai
+    by_cases hba : b = a
+    · subst hba
+      rw [@reflectHom_left V q]
+      exact ⟨Equiv.refl _⟩
+    · rw [@reflectHom_left V q, @reflectHom_right V q]
+      exact ⟨Equiv.sumComm _ _⟩
+  · by_cases hbi : b = i
+    · subst hbi
+      rw [@reflectHom_right V q, @reflectHom_left V q]
+      exact ⟨Equiv.sumComm _ _⟩
+    · rw [@reflectHom_of_ne_of_ne V q i a b hai hbi, @reflectHom_of_ne_of_ne V q i b a hbi hai]
+      exact ⟨Equiv.refl _⟩
+
+/-- **Reflection along any list keeps the underlying multigraph**: the arrows joining two vertices,
+in either direction, are the same before and after the reflections. -/
+theorem _root_.Quiver.nonempty_reflectList_sum_hom_equiv :
+    ∀ (q : _root_.Quiver.{v} V) (l : List V) (a b : V),
+      Nonempty ((@_root_.Quiver.Hom V (reflectList q l) a b ⊕
+          @_root_.Quiver.Hom V (reflectList q l) b a) ≃
+        (@_root_.Quiver.Hom V q a b ⊕ @_root_.Quiver.Hom V q b a))
+  | _, [], _, _ => ⟨Equiv.refl _⟩
+  | q, i :: l, a, b => by
+      obtain ⟨e⟩ := nonempty_reflectList_sum_hom_equiv (reflectAt q i) l a b
+      obtain ⟨f⟩ := nonempty_reflectAt_sum_hom_equiv q i a b
+      exact ⟨e.trans f⟩
 
 /-! ### Reflecting along a repetition-free list -/
 

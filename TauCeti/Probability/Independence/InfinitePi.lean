@@ -11,9 +11,12 @@ import TauCeti.Probability.Independence.DisjointBlocks
 /-!
 # Independence of disjoint coordinate restrictions of an infinite product
 
-The restrictions of a product sample to disjoint index sets are independent.  The resulting
-joint-law identity is useful when a conditionally independent process is split into observed and
-unobserved coordinates.
+The restrictions of a product sample to disjoint index sets are independent, and so are its
+selections along maps with disjoint ranges.  The resulting joint-law identities are useful when a
+conditionally independent process is split into observed and unobserved coordinates.
+
+When one of two factors has no atoms, the two corresponding coordinates of a product sample are
+moreover almost surely different, so a sample can be used to order the indices it is attached to.
 -/
 
 public section
@@ -56,5 +59,45 @@ theorem infinitePi_map_pair_domRestrict (P : ∀ i, Measure (α i))
   have hprod := hind.map_prod_eq_prod_map_map
     (Set.measurable_restrict S).aemeasurable (Set.measurable_restrict T).aemeasurable
   simpa only [Measure.infinitePi_map_restrict'] using hprod
+
+/-- Under a product law, selections along maps with disjoint ranges are independent, and an
+injective selection has the product of the selected factors as its law. The first selection need
+not be injective. -/
+theorem infinitePi_map_pair_comp {ι κ₁ κ₂ β : Type*} [MeasurableSpace β] (P : ι → Measure β)
+    [∀ i, IsProbabilityMeasure (P i)] {e : κ₁ → ι} {g : κ₂ → ι} (hg : Function.Injective g)
+    (heg : Disjoint (Set.range e) (Set.range g)) :
+    (Measure.infinitePi P).map (fun x => (fun a => x (e a), fun b => x (g b))) =
+      ((Measure.infinitePi P).map fun x a => x (e a)).prod
+        (Measure.infinitePi fun b => P (g b)) := by
+  have hS (a : κ₁) : e a ∈ (Set.range g)ᶜ := Set.disjoint_left.mp heg ⟨a, rfl⟩
+  have hφ : Measurable fun (y : ↥(Set.range g)ᶜ → β) a => y ⟨e a, hS a⟩ :=
+    Measurable.of_eval fun a => measurable_pi_apply _
+  have hψ : Measurable fun (y : ↥(Set.range g) → β) b => y ⟨g b, b, rfl⟩ :=
+    Measurable.of_eval fun b => measurable_pi_apply _
+  have hind : IndepFun (fun x : ι → β => fun a => x (e a)) (fun x b => x (g b))
+      (Measure.infinitePi P) :=
+    (indepFun_domRestrict_infinitePi P disjoint_compl_left).comp hφ hψ
+  rw [hind.map_prod_eq_prod_map_map
+    (Measurable.of_eval fun a => measurable_pi_apply _).aemeasurable
+    (Measurable.of_eval fun b => measurable_pi_apply _).aemeasurable,
+    Measure.map_infinitePi_infinitePi_of_inj hg]
+
+/-- **Two coordinates of a product are almost surely distinct when one law is atomless.** Under a
+product of probability laws on a space with a measurable diagonal, two distinct coordinates `i` and
+`j` of a sample almost surely take different values as soon as the law at `j` has no atoms. -/
+theorem ae_eval_ne_eval_infinitePi {ι β : Type*} [MeasurableSpace β] [MeasurableEq β]
+    (P : ι → Measure β) [∀ i, IsProbabilityMeasure (P i)] {i j : ι} [NullSingletonClass (P j)]
+    (hij : i ≠ j) :
+    ∀ᵐ x ∂Measure.infinitePi P, x i ≠ x j := by
+  have hmeas : Measurable fun x : ι → β => (x i, x j) :=
+    (measurable_pi_apply i).prodMk (measurable_pi_apply j)
+  have hdiag : MeasurableSet {p : β × β | p.1 = p.2} :=
+    measurableSet_eq_fun measurable_fst measurable_snd
+  have hset : {x : ι → β | ¬x i ≠ x j} = (fun x => (x i, x j)) ⁻¹' {p | p.1 = p.2} := by
+    ext x
+    simp
+  rw [ae_iff, hset, ← Measure.map_apply hmeas hdiag, Measure.infinitePi_map_eval_prod hij,
+    Measure.prod_apply hdiag]
+  simp
 
 end TauCeti.Probability

@@ -29,6 +29,10 @@ that a construction proceeding by recursion on the degree, such as the cup produ
 bidegrees, needs no transport along equalities of degrees between its recursive steps; the cup
 product transports its result once, at the end, to the requested target degree.
 
+The composites of two consecutive upward shifts, on the group (`dimensionShiftUpTwoIso`, from
+degree `0` to degree `2`) and on a finite subgroup (`dimensionShiftUpTwoResIso`), present a
+degree-two class as the double shift of a degree-zero class.
+
 Each isomorphism below has Mathlib's connecting homomorphism `TateCohomology.δ` as its forward
 map. Thus its naturality in a morphism of the short exact sequences is the existing theorem
 `TateCohomology.δ_naturality`; no choices of abstract isomorphisms enter the construction.
@@ -101,6 +105,19 @@ theorem dimensionShiftDownIso_hom :
           (dimensionShiftDownι_comp_indBotCounit A))
         (by simpa only [dimensionShiftDownSES_def] using
           dimensionShiftDownSES_shortExact A) n := (rfl)
+
+/-- Two upward dimension shifts identify degree-zero Tate cohomology of the twice-shifted
+representation with degree-two Tate cohomology of the representation itself. -/
+def dimensionShiftUpTwoIso :
+    tateCohomology (dimensionShiftUp (dimensionShiftUp A)) 0 ≅ tateCohomology A 2 :=
+  dimensionShiftUpIso (dimensionShiftUp A) 0 ≪≫ dimensionShiftUpIso A 1
+
+/-- The double shift is the composite of the two upward dimension shifts. -/
+@[simp]
+theorem dimensionShiftUpTwoIso_hom :
+    (dimensionShiftUpTwoIso A).hom =
+      (dimensionShiftUpIso (dimensionShiftUp A) 0).hom ≫ (dimensionShiftUpIso A 1).hom := by
+  rw [dimensionShiftUpTwoIso, Iso.trans_hom]
 
 variable {A} in
 /-- Upward dimension shifting commutes with a morphism of coefficient representations. -/
@@ -399,6 +416,22 @@ theorem dimensionShiftDownResIso_hom :
           (dimensionShiftDownι_comp_indBotCounit A)).map (resFunctor S.subtype))
         (by simpa only [dimensionShiftDownSES_def] using
           dimensionShiftDownSES_res_shortExact A S.subtype) n := (rfl)
+
+/-- Two upward dimension shifts after restriction to a finite subgroup identify Tate cohomology
+of the twice-shifted representation in degree `n` with Tate cohomology of the representation
+itself in degree `n + 1 + 1`. -/
+def dimensionShiftUpTwoResIso :
+    tateCohomology (res S.subtype (dimensionShiftUp (dimensionShiftUp A))) n ≅
+      tateCohomology (res S.subtype A) (n + 1 + 1) :=
+  dimensionShiftUpResIso (dimensionShiftUp A) S n ≪≫ dimensionShiftUpResIso A S (n + 1)
+
+/-- The restricted double shift is the composite of the two restricted upward dimension shifts. -/
+@[simp]
+theorem dimensionShiftUpTwoResIso_hom :
+    (dimensionShiftUpTwoResIso A S n).hom =
+      (dimensionShiftUpResIso (dimensionShiftUp A) S n).hom ≫
+        (dimensionShiftUpResIso A S (n + 1)).hom := by
+  rw [dimensionShiftUpTwoResIso, Iso.trans_hom]
 
 /-- Vanishing in degree `n` of an upward shift is vanishing in degree `n + 1` of the original
 module, also on a finite subgroup. -/

@@ -13,13 +13,16 @@ public import TauCeti.RingTheory.Valuation.Discrete.Order
 import TauCeti.RingTheory.Valuation.Discrete.Normalize
 
 /-!
-# Normalized valuations of the fraction field of a Dedekind domain are adic
+# Adic valuations on the fraction field of a Dedekind domain
 
 Mathlib attaches to every height one prime `𝔭` of a Dedekind domain `R` a normalized
 `ℤᵐ⁰`-valued valuation `𝔭.valuation K` of the fraction field `K`, and shows that distinct primes
 give inequivalent valuations. This file proves the converse: a normalized valuation of `K` whose
 valuation ring contains `R` *is* `𝔭.valuation K` for a unique height one prime `𝔭` of `R`, namely
 the centre of the valuation on `R`.
+
+The adic valuation is trivial on any semifield of constants acting on `R`: every nonzero
+constant is a unit of `R`, so it lies outside every prime ideal.
 
 The general centre construction and its membership lemmas are in
 `TauCeti.RingTheory.Valuation.Center`. There, `Valuation.heightOneSpectrum` bundles a nonzero
@@ -40,6 +43,8 @@ by the class-group interface and the multiplicative value can be read off from o
 * `IsDedekindDomain.HeightOneSpectrum.neg_log_valuation_eq_one_iff`: order of vanishing `1` at `v`
   is the value `WithZero.exp (-1)`, which relates the multiplicative value group of the adic
   valuation to the additive order of vanishing used by the class-group interface.
+* `IsDedekindDomain.HeightOneSpectrum.isTrivialOn_valuation`: adic valuations are trivial on
+  semifield constants.
 
 ## Implementation notes
 
@@ -206,3 +211,19 @@ theorem neg_log_valuation_eq_one_iff (v : HeightOneSpectrum R) (x : K) :
 end IsDedekindDomain.HeightOneSpectrum
 
 end ValueGroup
+
+namespace IsDedekindDomain.HeightOneSpectrum
+
+variable (k : Type*) (F : Type*) {R : Type*} [Semifield k] [Field F] [CommRing R]
+  [IsDedekindDomain R] [Algebra k R] [Algebra R F] [IsFractionRing R F] [Algebra k F]
+  [IsScalarTower k R F]
+
+/-- The adic valuation of a height-one prime of a Dedekind `k`-algebra is trivial on the
+semifield `k`: a nonzero constant is a unit of `R`, hence lies outside every prime ideal. -/
+instance isTrivialOn_valuation (p : HeightOneSpectrum R) :
+    (p.valuation F).IsTrivialOn k where
+  eq_one c hc := by
+    rw [IsScalarTower.algebraMap_apply k R F, valuation_eq_one_iff_notMem]
+    exact Ideal.notMem_of_isUnit _ ((isUnit_iff_ne_zero.mpr hc).map (algebraMap k R))
+
+end IsDedekindDomain.HeightOneSpectrum

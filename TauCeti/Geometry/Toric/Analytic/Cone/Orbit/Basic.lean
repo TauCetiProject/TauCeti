@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Face
+public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Separation
 public import TauCeti.Geometry.Toric.Analytic.Cone.Manifold
 public import TauCeti.Geometry.Toric.Analytic.Cone.TorusAction.Basic
 public import TauCeti.Topology.ZeroPattern
@@ -40,6 +40,8 @@ single character of the dual semigroup.
 * `TauCeti.Toric.mem_affineConeOrbit_iff_coneChartEquiv`: its coordinate zero-pattern.
 * `TauCeti.Toric.closure_affineConeOrbit_eq_setOf_coneChartEquiv_fst_eq_zero`: the coordinate
   form of its closure.
+* `TauCeti.Toric.closure_affineConeOrbit_toricRay_eq_setOf_coneChartEquiv_fst_eq_zero`: the
+  closure of the orbit of a ray is a coordinate hyperplane.
 * `TauCeti.Toric.isLocallyClosed_affineConeOrbit`: every affine-cone orbit is locally closed.
 * `TauCeti.Toric.closure_affineConeOrbit`: the intrinsic union formula for its closure.
 * `TauCeti.Toric.affineConeOrbit_subset_closure_iff`: face inclusion is the reverse closure order.
@@ -59,6 +61,8 @@ single character of the dual semigroup.
 * `TauCeti.Toric.isManifold_affineConeOrbitChartedSpace`: these coordinates give the orbit a
   complex-manifold structure.
 * `TauCeti.Toric.contMDiff_affineConeOrbitAmbient`: the defining orbit chart is holomorphic.
+* `TauCeti.Toric.contMDiff_subtypeVal_affineConeOrbit`: the inclusion of an affine orbit in its
+  cone chart is holomorphic.
 
 ## References
 
@@ -232,6 +236,21 @@ theorem closure_affineConeOrbit_eq_setOf_coneChartEquiv_fst_eq_zero
         (coneChartEquiv hi hσ.toIsToricCone hb x).1 ρ = 0} := by
       rw [closure_zeroPatternSet]
       rfl
+
+/-- The closure of the orbit of a ray is the coordinate hyperplane on which the coordinate of
+that ray vanishes. -/
+theorem closure_affineConeOrbit_toricRay_eq_setOf_coneChartEquiv_fst_eq_zero
+    (hi : IsIntegralLattice i) (hσ : IsRegularCone i σ)
+    {b : Module.Basis (ToricRay σ ⊕ ι) ℤ N}
+    (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (ρ : ToricRay σ)
+    (g : AddGeneratingFamily (dualSemigroup hi σ) s) :
+    let _ := affinePointTopology g
+    closure (affineConeOrbit hi ρ.1) =
+      {x | (coneChartEquiv hi hσ.toIsToricCone hb x).1 ρ = 0} := by
+  dsimp only
+  rw [closure_affineConeOrbit_eq_setOf_coneChartEquiv_fst_eq_zero hi hσ hb ρ.1 g,
+    hσ.faceOrderIso_toricRay hi ρ]
+  simp
 
 /-- A point of the orbit of `G` lies in the closure of the orbit of `F` exactly when `F` is a
 face of `G`. -/
@@ -507,6 +526,92 @@ theorem contMDiff_affineConeOrbitAmbient (hi : IsIntegralLattice i)
     (nonempty_affineConeOrbit hi hσ F).to_subtype
   exact contMDiff_isOpenEmbedding (isOpenEmbedding_affineConeOrbitAmbient hi hσ hb F g)
 
+/-- The inclusion of an affine-cone orbit into the affine analytic chart is holomorphic. In
+regular coordinates it inserts zero in precisely the ray coordinates belonging to the face and
+retains all other coordinates. -/
+theorem contMDiff_subtypeVal_affineConeOrbit (hi : IsIntegralLattice i)
+    (hσ : IsRegularCone i σ) {k l : ℕ} {b : Module.Basis (ToricRay σ ⊕ Fin l) ℤ N}
+    (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (κ : ToricRay σ ≃ Fin k)
+    (F : σ.Face) (g : AddGeneratingFamily (dualSemigroup hi σ) s)
+    [Fintype {ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F}] (n : ℕ∞ω) :
+    let _ := affinePointTopology g
+    let _ := affineConeOrbitChartedSpace hi hσ hb F g
+    let _ := coneChartedSpace hi hσ.toIsToricCone hb κ g
+    ContMDiff
+      𝓘(ℂ, (({ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F} → ℂ) × (Fin l → ℂ)))
+      𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n
+      (fun x : affineConeOrbit hi F ↦ x.1) := by
+  classical
+  let _ := affinePointTopology g
+  let _ := affineConeOrbitChartedSpace hi hσ hb F g
+  let _ := coneChartedSpace hi hσ.toIsToricCone hb κ g
+  apply (contMDiff_coneChartAmbient_comp_iff hi hσ.toIsToricCone hb κ g).1
+  let c :
+      (({ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F} → ℂ) × (Fin l → ℂ)) →
+        (Fin k → ℂ) × (Fin l → ℂ) := fun w ↦
+    (fun a ↦ if h : κ.symm a ∈ hσ.faceOrderIso hi F then 0 else w.1 ⟨κ.symm a, h⟩, w.2)
+  have hc : ContDiff ℂ n c := by
+    apply ContDiff.prodMk
+    · rw [contDiff_pi]
+      intro a
+      by_cases h : κ.symm a ∈ hσ.faceOrderIso hi F
+      · convert (contDiff_const : ContDiff ℂ n (fun _ :
+          (({ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F} → ℂ) × (Fin l → ℂ)) ↦ (0 : ℂ)))
+        rw [dite_eq_left h]
+      · convert (contDiff_apply ℂ ℂ (⟨κ.symm a, h⟩ :
+          {ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F})).comp contDiff_fst
+        rw [dite_eq_right h]
+        rfl
+    · exact contDiff_snd
+  refine (hc.comp_contMDiff (contMDiff_affineConeOrbitAmbient hi hσ hb F g n)).congr fun x ↦ ?_
+  ext a
+  · rw [Function.comp_apply, Function.comp_apply, coneChartAmbient_fst_apply]
+    dsimp only [c]
+    by_cases h : κ.symm a ∈ hσ.faceOrderIso hi F
+    · rw [((mem_affineConeOrbit_iff_coneChartEquiv hi hσ hb F x.1).1 x.2 _).2 h, dite_eq_left h]
+    · rw [dite_eq_right h, affineConeOrbitAmbient_fst_apply]
+  · simp [c, Function.comp_apply, coneChartAmbient_snd_apply,
+      affineConeOrbitAmbient_snd_apply]
+
+/-- A map into an affine-cone orbit is holomorphic when its composite with the inclusion into the
+affine analytic chart is holomorphic. This is the elimination principle for the orbit's regular
+coordinate chart. -/
+theorem contMDiff_of_contMDiff_subtypeVal_affineConeOrbit (hi : IsIntegralLattice i)
+    (hσ : IsRegularCone i σ) {k l : ℕ} {b : Module.Basis (ToricRay σ ⊕ Fin l) ℤ N}
+    (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (κ : ToricRay σ ≃ Fin k)
+    (F : σ.Face) (g : AddGeneratingFamily (dualSemigroup hi σ) s)
+    [Fintype {ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F}]
+    {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [TopologicalSpace H]
+    {I : ModelWithCorners ℂ E H} [TopologicalSpace M] [ChartedSpace H M]
+    {f : M → affineConeOrbit hi F} {n : ℕ∞ω}
+    (hf :
+      let _ := affinePointTopology g
+      let _ := coneChartedSpace hi hσ.toIsToricCone hb κ g
+      ContMDiff I 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n (fun x ↦ (f x).1)) :
+    let _ := affinePointTopology g
+    let _ := affineConeOrbitChartedSpace hi hσ hb F g
+    ContMDiff I
+      𝓘(ℂ, (({ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F} → ℂ) × (Fin l → ℂ))) n f := by
+  classical
+  let _ := affinePointTopology g
+  let _ := coneChartedSpace hi hσ.toIsToricCone hb κ g
+  let _ := affineConeOrbitChartedSpace hi hσ hb F g
+  let _ : Nonempty (affineConeOrbit hi F) := (nonempty_affineConeOrbit hi hσ F).to_subtype
+  apply ContMDiff.of_comp_isOpenEmbedding
+    (isOpenEmbedding_affineConeOrbitAmbient hi hσ hb F g)
+  let p : (Fin k → ℂ) × (Fin l → ℂ) →
+      ({ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F} → ℂ) × (Fin l → ℂ) := fun w ↦
+    (fun ρ ↦ w.1 (κ ρ.1), w.2)
+  have hp : ContDiff ℂ n p := by
+    apply ContDiff.prodMk
+    · rw [contDiff_pi]
+      exact fun ρ ↦ (contDiff_apply ℂ ℂ (κ ρ.1)).comp contDiff_fst
+    · exact contDiff_snd
+  refine (hp.comp_contMDiff
+    ((contMDiff_coneChartAmbient hi hσ.toIsToricCone hb κ g n).comp hf)).congr fun x ↦ ?_
+  ext ρ <;> simp [p, Function.comp_apply, affineConeOrbitAmbient_fst_apply,
+    affineConeOrbitAmbient_snd_apply]
+
 /-! ### The strata are the torus orbits -/
 
 section TorusOrbit
@@ -730,7 +835,7 @@ theorem mem_stabilizer_distinguishedPoint_iff (hi : IsIntegralLattice i) (hσ : 
       simp only [ambient_smul_apply_single, distinguishedPoint_apply_single, ite_eq_left hs,
         mul_one] at h
       exact Units.ext h
-    obtain ⟨u, hu, hFu⟩ := hσ.exists_mem_dualSemigroup_inf_ker_eq hi F.isFaceOf
+    obtain ⟨u, hu, hFu⟩ := hσ.rational.exists_mem_dualSemigroup_inf_ker_eq hi F.isFaceOf
     have huF (y : V) (hy : y ∈ F) : hi.realCharacter u y = 0 := by
       have hy' : y ∈ σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter u)) := by
         rw [hFu]

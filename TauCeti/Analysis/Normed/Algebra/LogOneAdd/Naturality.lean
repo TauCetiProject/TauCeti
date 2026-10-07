@@ -22,10 +22,8 @@ local identity as an equality of germs at the origin.
 * `NormedSpace.eventually_map_logOneAdd`: naturality near the origin.
 * `NormedSpace.map_logOneAdd_germ`: naturality as an equality of germs.
 
-## References
+## See also
 
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 3, "Baker--Campbell--Hausdorff".
 * `NormedSpace.map_exp_of_mem_ball` in Mathlib's exponential naturality development.
 -/
 
