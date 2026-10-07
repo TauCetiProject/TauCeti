@@ -75,6 +75,7 @@ theorem a2VertexEquiv_two :
 
 /-- With vertices listed as `S₁`, `S₂`, `P₁`, the only arrows are `1 → 2` and `2 → 0`,
 each with multiplicity one. -/
+@[simp↓]
 theorem card_arrows_a2VertexEquiv (i j : Fin 3) :
     Nat.card (a2VertexEquiv k A i ⟶ a2VertexEquiv k A j) =
       if (i = 1 ∧ j = 2) ∨ (i = 2 ∧ j = 0) then 1 else 0 := by
