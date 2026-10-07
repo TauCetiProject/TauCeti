@@ -14,8 +14,8 @@ import Mathlib.Tactic.Ring
 Suppose the columns of `C` give coordinates on an invariant rank-`n` submodule
 contained in the kernel of a covector `w`, and `A * C = C * X` expresses the
 restriction of `A` in those coordinates. If `A` kills `u`, with last coordinate
-one, then the determinant of `X` is determined by the last principal minor of `A`
-and the pairing of `w` with `u`.
+one, then the weighted determinant `w (Fin.last n) * det X` equals the pairing
+of `w` with `u` times the last principal minor of `A`.
 
 The determinant of the first rows of `C` must be a unit. Neither the last coordinate
 of `w` nor the pairing need be a unit, or even nonzero. This form therefore
