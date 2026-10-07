@@ -25,6 +25,14 @@ included in the local upper bound.
 These results transfer ambient order on root sections from a product of active polynomials
 to its individual factors. They concern order in all polynomial variables, rather than
 multiplicity in a specialized univariate fiber.
+
+## References
+
+* S. McCallum, *An improved projection operation for cylindrical algebraic decomposition*,
+  in *Quantifier Elimination and Cylindrical Algebraic Decomposition*, Springer (1998),
+  pp. 242–268, the product order-invariance lemma. `IsPreconnected.orderAt_eq_of_prod`
+  generalizes its product-to-factors implication to continuous parametrizations over
+  topological domains.
 -/
 
 public section
