@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Subspace
+public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.Basis.Submodule
 

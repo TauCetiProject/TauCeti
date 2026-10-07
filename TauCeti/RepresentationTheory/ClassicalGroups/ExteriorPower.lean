@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.ExteriorPower.Basic
+public import TauCeti.LinearAlgebra.ExteriorPower.Basis
 public import TauCeti.RepresentationTheory.ClassicalGroups.Determinant
 public import TauCeti.RepresentationTheory.ClassicalGroups.Diagonal
 public import TauCeti.RepresentationTheory.ExteriorPower
@@ -34,9 +34,9 @@ by its determinant, so that exterior power is the determinant representation.
 * `TauCeti.extPowerRep_self_apply` and `TauCeti.char_extPowerRep_self` compute the top-degree
   action and character as the determinant.
 
-Importing this file also makes `exteriorPower.eq_zero_of_finrank_lt` available, which says that
-`⋀[k]^d (Fin n → k)`, and hence `extPowerRep k n d`, is zero once `n < d`. The degree-zero and
-degree-one identifications of `extPowerRep k n` are the generic
+Vanishing of `⋀[k]^d (Fin n → k)`, and hence `extPowerRep k n d`, once `n < d` is given by
+`exteriorPower.eq_zero_of_finrank_lt` in `TauCeti.LinearAlgebra.ExteriorPower.Basic`. The
+degree-zero and degree-one identifications of `extPowerRep k n` are the generic
 `(stdRep k n).exteriorPowerZeroEquiv` and `(stdRep k n).exteriorPowerOneEquiv`.
 
 ## References
