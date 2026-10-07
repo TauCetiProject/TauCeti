@@ -187,7 +187,7 @@ theorem isAtkinLehnerMatrix_atkinLehnerMatrix (h : Q ∥ N) :
 `Q * w - (N / Q) * z = 1`: in the notation `!![Q * x, y; N * z, Q * w]` of Atkin and Li it has
 `x = 1` and `y = 1`, so `x ≡ 1` modulo `N / Q` and `y ≡ 1` modulo `Q`. Its lower-right entry
 `Q * w` is `1` modulo `N / Q` (`intCast_atkinLiMatrix_one_one`), which is the normalization under
-which the square of `W_Q` on a nebentypus space is the constant `Q ^ (k - 2) χ_Q(-1) χ̄_{N/Q}(Q)`.
+which the square of `W_Q` on a nebentypus space is the constant `Q ^ (k - 2) χ_Q(-1) χ_{N/Q}(Q)⁻¹`.
 It is an Atkin–Lehner matrix for every exact divisor `Q` of `N`
 (`isAtkinLehnerMatrix_atkinLiMatrix`). -/
 def atkinLiMatrix (N Q : ℕ) : Matrix (Fin 2) (Fin 2) ℤ :=

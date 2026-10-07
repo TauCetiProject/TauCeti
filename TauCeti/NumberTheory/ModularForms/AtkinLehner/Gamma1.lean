@@ -69,7 +69,7 @@ up to a scalar there. At `Q = N` the Fricke matrix gives the Fricke operator of
 * `TauCeti.atkinLehnerOperatorGamma1_atkinLehnerOperatorGamma1_of_mem_modFormCharSpace`,
   `TauCeti.atkinLehnerOperatorGamma1Cusp_atkinLehnerOperatorGamma1Cusp_of_mem_cuspFormCharSpace`:
   for `W₁₁ ≡ 1` modulo `N / Q`, the square on `M_k(N, χ_Q χ_{N/Q})` is the constant
-  `Q ^ (k - 2) χ_Q(-1) χ̄_{N/Q}(Q)` of Atkin and Li.
+  `Q ^ (k - 2) χ_Q(-1) χ_{N/Q}(Q)⁻¹` of Atkin and Li.
 
 ## References
 
@@ -387,7 +387,7 @@ and the scalar `Q` slashes as `Q ^ (k - 2)`, so on `M_k(Γ₁(N))` the square of
 `Q ^ (k - 2)` times the diamond operator of `γ`. Its label is `-1` modulo `Q`, and modulo `N / Q`
 it is fixed by `Q * u ≡ W₁₁ ^ 2`. Under Atkin and Li's normalization `W₁₁ ≡ 1` modulo `N / Q`
 (`atkinLiMatrix`) the label is `Q⁻¹` modulo `N / Q`, so on `M_k(N, χ)` with `χ = χ_Q · χ_{N/Q}`
-the square is the constant `Q ^ (k - 2) χ_Q(-1) χ̄_{N/Q}(Q)` of Atkin and Li.
+the square is the constant `Q ^ (k - 2) χ_Q(-1) χ_{N/Q}(Q)⁻¹` of Atkin and Li.
 -/
 
 /-- **The square of `W_Q` on `M_k(Γ₁(N))` is a diamond operator**: `W_Q ∘ W_Q = Q ^ (k - 2) ⟨u⟩`,
@@ -421,7 +421,7 @@ theorem atkinLehnerOperatorGamma1Cusp_atkinLehnerOperatorGamma1Cusp (hQ : 0 < Q)
 
 /-- **Atkin and Li's square of `W_Q` on a nebentypus space**: if the lower-right entry of `W` is
 `1` modulo `N / Q` (as for `atkinLiMatrix`) and `f ∈ M_k(N, χ)` with `χ = χ_Q · χ_{N/Q}` split
-along `N = Q · (N / Q)`, then `W_Q (W_Q f) = Q ^ (k - 2) χ_Q(-1) χ̄_{N/Q}(Q) f`. -/
+along `N = Q · (N / Q)`, then `W_Q (W_Q f) = Q ^ (k - 2) χ_Q(-1) χ_{N/Q}(Q)⁻¹ f`. -/
 theorem atkinLehnerOperatorGamma1_atkinLehnerOperatorGamma1_of_mem_modFormCharSpace
     (hQ : 0 < Q) (hQN : Q ∣ N) (h : IsAtkinLehnerMatrix N Q M)
     (hM : ((M 1 1 : ℤ) : ZMod (N / Q)) = 1) (ψ : (ZMod Q)ˣ →* ℂˣ) (φ : (ZMod (N / Q))ˣ →* ℂˣ)
