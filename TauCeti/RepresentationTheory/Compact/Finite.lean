@@ -121,7 +121,7 @@ not even `[Fact (1 ≤ p)]`, since `MeasureTheory.MemLp.of_discrete` produces th
 at every exponent, whereas `ContinuousMap.toLp`, being a continuous linear map, needs a norm on
 `Lp` and hence that hypothesis — and `[RCLike 𝕜]` and `p = 2` appear from the inner-product
 statements on.
-Cardinalities are written `Nat.card G` throughout, matching the rest of the roadmap;
+Cardinalities are written `Nat.card G` throughout;
 `Nat.card_eq_fintype_card` converts.
 
 `IsTopologicalGroup G`, `CompactSpace G`, `T2Space G` and `MeasurableSingletonClass G` are all
@@ -145,10 +145,8 @@ The scalar in the averaged sums is real, not `𝕜`: the Bochner integral being 
 
 ## References
 
-The compact-group theory specialized here is the one developed in the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-and each statement below is the finite case of the compact one named beside it. `haarProb G` is the
-normalized counting measure `|G|⁻¹ • count`, and the counting identity
+Each statement below is the finite case of the compact-group theorem named beside it.
+`haarProb G` is the normalized counting measure `|G|⁻¹ • count`, and the counting identity
 `dim V^G = |G|⁻¹ ∑ g, χ_π g` is the finite shadow of
 `ContRepresentation.integral_character_eq_finrank_invariants`, matching Mathlib's
 `FDRep.average_char_eq_finrank_invariants` for the purely algebraic theory. `L²(G)` is `G → 𝕜` by
@@ -498,7 +496,7 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [IsAlgClosed 𝕜] [Group G] [Fintype 
 representation of dimension `d`,
 `|G|⁻¹ ∑ g, conj ⟪π g v₁, w₁⟫ * ⟪π g v₂, w₂⟫ = d⁻¹ * (conj ⟪v₁, v₂⟫ * ⟪w₁, w₂⟫)`.
 
-This is `TauCeti.ContRepresentation.schur_orthogonality_self` with the Haar integral of the
+This is `ContRepresentation.schur_orthogonality_self` with the Haar integral of the
 compact theory replaced by the group average; the normalization `|G|⁻¹` is exactly the one that
 makes normalized Haar measure a probability measure. Neither continuity of `π` nor a measurable
 structure on `G` is asked: the statement mentions no measure and no continuity proof, and the proof
@@ -513,12 +511,12 @@ theorem schur_orthogonality_self_sum (π : ContRepresentation 𝕜 G V)
   have _ : BorelSpace G := ⟨rfl⟩
   rw [← inner_matrixCoeffLp_eq_inv_mul_sum π continuous_of_discreteTopology π
       continuous_of_discreteTopology,
-    schur_orthogonality_self π continuous_of_discreteTopology hunitary hirr]
+    π.schur_orthogonality_self continuous_of_discreteTopology hunitary hirr]
 
 /-- **The first Schur orthogonality relation for a finite group, in an orthonormal basis.** If
 `πᵢⱼ(g) = ⟪π g eⱼ, eᵢ⟫`, then `|G|⁻¹ ∑ g, conj (πᵢⱼ g) * πₖₗ g = d⁻¹ δⱼₗ δᵢₖ`.
 
-This is `TauCeti.ContRepresentation.schur_orthogonality_basis` with the Haar integral replaced by
+This is `ContRepresentation.schur_orthogonality_basis` with the Haar integral replaced by
 the group average, and it is the form the matrix coefficients of a finite group present themselves
 in: the index order and the placement of the conjugation are the ones fixed there, Kronecker deltas
 being real. -/
@@ -531,7 +529,7 @@ theorem schur_orthogonality_basis_sum (π : ContRepresentation 𝕜 G V)
   have _ : BorelSpace G := ⟨rfl⟩
   rw [← inner_matrixCoeffLp_eq_inv_mul_sum π continuous_of_discreteTopology π
       continuous_of_discreteTopology,
-    schur_orthogonality_basis π continuous_of_discreteTopology hunitary hirr]
+    π.schur_orthogonality_basis continuous_of_discreteTopology hunitary hirr]
 
 end SchurSelf
 
@@ -565,7 +563,7 @@ theorem schur_orthogonality_distinct_sum (π : ContRepresentation 𝕜 G V)
 
 /-- **The second Schur orthogonality relation for a finite group.** Matrix coefficients of
 inequivalent irreducible representations, the second of them unitary, have vanishing group average,
-this being `TauCeti.ContRepresentation.schur_orthogonality` read through the finite Hermitian
+this being `ContRepresentation.schur_orthogonality` read through the finite Hermitian
 pairing. No continuity is asked of either representation, for the reason given at
 `ContRepresentation.schur_orthogonality_self_sum`. -/
 theorem schur_orthogonality_sum (π : ContRepresentation 𝕜 G V)
@@ -578,7 +576,7 @@ theorem schur_orthogonality_sum (π : ContRepresentation 𝕜 G V)
   have _ : BorelSpace G := ⟨rfl⟩
   rw [← inner_matrixCoeffLp_eq_inv_mul_sum π continuous_of_discreteTopology ρ
       continuous_of_discreteTopology,
-    schur_orthogonality π continuous_of_discreteTopology ρ continuous_of_discreteTopology
+    π.schur_orthogonality continuous_of_discreteTopology ρ continuous_of_discreteTopology
       hunitary hirrπ hirrρ hne]
 
 end SchurDistinct

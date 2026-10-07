@@ -37,7 +37,7 @@ subspace of `L²(G)`.
 Inequivalence is the hypothesis `Pairwise fun i j ↦ IsEmpty (ContRepresentation.Equiv (π i) (π j))`.
 Nothing here selects the family: "one representative per equivalence class" is chosen data,
 supplied by the caller as `π` together with the orthonormal bases `e`, exactly as the Peter-Weyl
-basis of Layer 5 will need it.
+basis needs it.
 
 Both systems live in the *same* `L²(G)`, so the index of the matrix-coefficient system is a sigma
 type over the family rather than a product: different `i` contribute different numbers of
@@ -48,10 +48,7 @@ basis of `V i` and so equals `Module.finrank 𝕜 (V i)` by `Module.finrank_eq_c
 basis index as data rather than reading it off `Module.finrank` is what lets the caller keep
 whatever indexing the representation came with.
 
-This is the orthonormal-system item of Layer 4, together with the system half of the
-character-orthonormality item of Layer 6, of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md).
-The completeness of the first system is the Layer 5 summit, proved in
+The completeness of the first system is proved in
 `TauCeti/RepresentationTheory/Compact/PeterWeyl.lean` for a family that also exhausts the
 irreducibles; the completeness of the second (class-function completeness) is proved in
 `TauCeti/RepresentationTheory/Compact/Character/Basis.lean`. The mathematical development follows
@@ -111,12 +108,12 @@ theorem orthonormal_matrixCoeffLp {n : ι → ℕ} (hunitary : ∀ i, IsUnitary 
       exact_mod_cast Fin.pos a
     have hsq : (Real.sqrt (n i) : 𝕜) * (Real.sqrt (n i) : 𝕜) = (n i : 𝕜) := by
       rw [← RCLike.ofReal_mul, Real.mul_self_sqrt hn.le, RCLike.ofReal_natCast]
-    rw [schur_orthogonality_basis (π i) (hπ i) (hunitary i) (hirr i) (e i) b a d c,
+    rw [(π i).schur_orthogonality_basis (hπ i) (hunitary i) (hirr i) (e i) b a d c,
       ← mul_assoc, ← mul_assoc, hsq]
     have hn' : (n i : 𝕜) ≠ 0 := by
       exact_mod_cast hn.ne'
     split_ifs <;> simp_all [Sigma.ext_iff, Prod.ext_iff]
-  · rw [schur_orthogonality (π i) (hπ i) (π j) (hπ j) (hunitary j) (hirr i) (hirr j) (hne hij)]
+  · rw [(π i).schur_orthogonality (hπ i) (π j) (hπ j) (hunitary j) (hirr i) (hirr j) (hne hij)]
     simp [Sigma.ext_iff, hij]
 
 /-- **The irreducible characters are orthonormal.** The characters of a family of pairwise

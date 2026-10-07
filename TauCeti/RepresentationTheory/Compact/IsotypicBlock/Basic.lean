@@ -39,7 +39,7 @@ not even be independent: for the two-dimensional real rotation representation of
 order three the four of them span a block of dimension two, not four.
 
 Distinct blocks are orthogonal, by the second Schur orthogonality relation
-(`TauCeti.ContRepresentation.schur_orthogonality`), and together they span `L²(G)` densely,
+(`ContRepresentation.schur_orthogonality`), and together they span `L²(G)` densely,
 because their supremum is the span of the whole Peter-Weyl family. So `L²(G)` is the Hilbert sum
 of the blocks (`TauCeti.isHilbertSum_peterWeylBlock`), whose `IsHilbertSum.linearIsometryEquiv` is
 an isometry of `L²(G)` onto the `ℓ²` sum of the **block subspaces**; that much is true for every
@@ -510,7 +510,7 @@ theorem isOrtho_peterWeylBlock {model model' : IrrepModel 𝕜 G}
     peterWeylBlock model ⟂ peterWeylBlock model' := by
   refine Submodule.isOrtho_span.2 ?_
   rintro - ⟨v, w, rfl⟩ - ⟨v', w', rfl⟩
-  exact ContRepresentation.schur_orthogonality _ model.continuous_rep _ model'.continuous_rep
+  exact model.rep.schur_orthogonality model.continuous_rep _ model'.continuous_rep
     model'.isUnitary model.isIrreducible model'.isIrreducible hne v w v' w'
 
 section Orthogonality

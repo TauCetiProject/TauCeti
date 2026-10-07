@@ -62,11 +62,9 @@ from `inner_characterLp_eq_sum` on, where an orthonormal basis enters. The scala
 even for that packaging: `ContinuousMap.toLp` needs `SecondCountableTopologyEither G 𝕜`, which a
 general complete nontrivially normed field does not supply.
 
-This is the first half of Layer 6 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md);
-its remaining item, that the characters span the central subspace of `L²(G)`, needs the Peter-Weyl
-theorem of Layer 5 and is proved in `TauCeti/RepresentationTheory/Compact/Character/Basis.lean`.
-The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
+Class-function completeness is proved using Peter-Weyl in
+`TauCeti/RepresentationTheory/Compact/Character/Basis.lean`. The mathematical development follows
+Daniel Bump, *Lie Groups*, second edition, Chapter 2.
 -/
 
 public section
@@ -193,7 +191,7 @@ theorem character_orthonormal_self [IsAlgClosed 𝕜] (hunitary : IsUnitary π)
   have hrow : ∀ i, ∑ k, ⟪matrixCoeffLp π hπ (e k) (e k), matrixCoeffLp π hπ (e i) (e i)⟫_𝕜 =
       (Module.finrank 𝕜 V : 𝕜)⁻¹ := by
     intro i
-    simp only [schur_orthogonality_basis π hπ hunitary hirr e]
+    simp only [π.schur_orthogonality_basis hπ hunitary hirr e]
     rw [Finset.sum_eq_single i (fun k _ hk ↦ by simp [hk]) (by simp)]
     simp
   rw [inner_characterLp_eq_sum π hπ π hπ e e, Finset.sum_congr rfl fun i _ ↦ hrow i,
