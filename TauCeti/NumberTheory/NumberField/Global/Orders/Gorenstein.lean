@@ -35,12 +35,22 @@ Gorenstein.
 
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.mem_traceDual_iff`: membership is integrality of
   the trace pairing against every element of the order.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.one_le_traceDual`: the order lies in its trace dual.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.multiplierRing_traceDual`: the trace dual is a
   proper fractional ideal.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.isGorenstein_of_isDedekindDomain`: an order that is
+  a Dedekind domain is Gorenstein.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.isGorenstein_maximalNumberFieldOrder`: the maximal
   order is Gorenstein.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.isGorenstein_of_finrank_eq_two`: every quadratic
   order is Gorenstein.
+
+## Implementation notes
+
+The construction is a thin wrapper around Mathlib's trace-dual API: the underlying submodule is
+`Submodule.traceDual ℤ ℚ 1`, its finite generation comes from `Submodule.traceDual_span_of_basis`
+applied to a `ℚ`-basis of `K` spanning the order over `ℤ`, and reflexivity is
+`Module.Basis.traceDual_traceDual`.
 
 ## References
 
@@ -75,26 +85,16 @@ private noncomputable def rationalBasis (O : NumberFieldOrder K) :
       ((((1 : FractionalOrderIdeal O) : Submodule O.toSubalgebra K).restrictScalars ℤ).subtype)
       (Submodule.ker_subtype _))
 
+private theorem range_rationalBasis (O : NumberFieldOrder K) :
+    Set.range O.rationalBasis = Set.range fun i ↦ (O.integerBasis i : K) := by
+  rw [rationalBasis, Module.Basis.coe_mk]
+
 private theorem restrictScalars_one_eq_span_integerBasis (O : NumberFieldOrder K) :
     ((1 : Submodule O.toSubalgebra K).restrictScalars ℤ) =
       Submodule.span ℤ (Set.range O.rationalBasis) := by
-  have hspan :
-      (Submodule.span ℤ (Set.range O.rationalBasis) : Set K) =
-        (1 : FractionalOrderIdeal O) := by
-    simpa [rationalBasis, integerBasis] using
-      O.span_int_range_basis O.integerBasis
-  have hspanSub : Submodule.span ℤ (Set.range O.rationalBasis) =
-      (((1 : FractionalOrderIdeal O) : Submodule O.toSubalgebra K).restrictScalars ℤ) := by
-    ext x
-    change x ∈ (Submodule.span ℤ (Set.range O.rationalBasis) : Set K) ↔
-      x ∈ (1 : FractionalOrderIdeal O)
-    rw [hspan]
-    exact FractionalIdeal.mem_coe
-  calc
-    (1 : Submodule O.toSubalgebra K).restrictScalars ℤ =
-        (((1 : FractionalOrderIdeal O) : Submodule O.toSubalgebra K).restrictScalars ℤ) := by
-      rw [FractionalIdeal.coe_one]
-    _ = Submodule.span ℤ (Set.range O.rationalBasis) := hspanSub.symm
+  apply SetLike.coe_injective
+  rw [O.range_rationalBasis, O.span_int_range_basis, Submodule.coe_restrictScalars,
+    ← FractionalIdeal.coe_one, FractionalIdeal.coeToSet_coeToSubmodule]
 
 private theorem traceDual_restrictScalars_eq_span (O : NumberFieldOrder K) :
     (Submodule.traceDual ℤ ℚ (1 : Submodule O.toSubalgebra K)).restrictScalars ℤ =
@@ -122,6 +122,7 @@ theorem coe_traceDual (O : NumberFieldOrder K) :
 
 /-- Membership in the trace dual means that the trace pairing against every element of the order
 is integral. -/
+@[simp]
 theorem mem_traceDual_iff (O : NumberFieldOrder K) (x : K) :
     x ∈ O.traceDual ↔
       ∀ y : O.toSubalgebra,
@@ -134,14 +135,20 @@ theorem mem_traceDual_iff (O : NumberFieldOrder K) (x : K) :
     obtain ⟨z, rfl⟩ := Submodule.mem_one.mp hy
     simpa [Algebra.traceForm_apply] using h z
 
-/-- The unit element belongs to the trace dual of every number-field order. -/
-theorem one_mem_traceDual (O : NumberFieldOrder K) : (1 : K) ∈ O.traceDual := by
+/-- The order, viewed as the unit fractional ideal, is contained in its trace dual. -/
+theorem one_le_traceDual (O : NumberFieldOrder K) :
+    (1 : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) ≤ O.traceDual := by
+  intro x hx
+  obtain ⟨a, rfl⟩ := (FractionalIdeal.mem_one_iff _).mp hx
   rw [O.mem_traceDual_iff]
   intro y
-  have htr : IsIntegral ℤ (Algebra.trace ℚ K (y : K)) :=
-    Algebra.isIntegral_trace (R := ℤ) (L := ℚ) (F := K) (O.isIntegral y)
-  simpa using
-    (IsIntegrallyClosed.isIntegral_iff.mp htr)
+  have htr : IsIntegral ℤ (Algebra.trace ℚ K ((a * y : O.toSubalgebra) : K)) :=
+    Algebra.isIntegral_trace (R := ℤ) (L := ℚ) (F := K) (O.isIntegral (a * y))
+  simpa using IsIntegrallyClosed.isIntegral_iff.mp htr
+
+/-- The unit element belongs to the trace dual of every number-field order. -/
+theorem one_mem_traceDual (O : NumberFieldOrder K) : (1 : K) ∈ O.traceDual :=
+  O.one_le_traceDual (FractionalIdeal.one_mem_one _)
 
 /-- The trace dual of an order is nonzero. -/
 theorem traceDual_ne_zero (O : NumberFieldOrder K) : O.traceDual ≠ 0 := by
@@ -185,13 +192,15 @@ theorem isProperFractionalIdeal_traceDual (O : NumberFieldOrder K) :
   exact O.multiplierRing_traceDual
 
 /-- A number-field order is **Gorenstein** when its trace-dual fractional ideal is invertible. -/
-def IsGorenstein (O : NumberFieldOrder K) : Prop :=
-  IsUnit O.traceDual
+structure IsGorenstein (O : NumberFieldOrder K) : Prop where
+  /-- The trace dual of a Gorenstein order is invertible. -/
+  isUnit_traceDual : IsUnit O.traceDual
 
-/-- Gorensteinness is invertibility of the trace dual. -/
-theorem isGorenstein_iff (O : NumberFieldOrder K) :
-    O.IsGorenstein ↔ IsUnit O.traceDual :=
-  Iff.rfl
+/-- An order that is a Dedekind domain is Gorenstein, since every nonzero fractional ideal of a
+Dedekind domain is invertible. -/
+theorem isGorenstein_of_isDedekindDomain (O : NumberFieldOrder K)
+    [IsDedekindDomain O.toSubalgebra] : O.IsGorenstein :=
+  ⟨isUnit_iff_ne_zero.mpr O.traceDual_ne_zero⟩
 
 /-- The maximal order of a number field is Gorenstein. -/
 theorem isGorenstein_maximalNumberFieldOrder :
@@ -199,15 +208,12 @@ theorem isGorenstein_maximalNumberFieldOrder :
   let _ : IsDedekindDomain (maximalNumberFieldOrder K).toSubalgebra := by
     rw [maximalNumberFieldOrder_toSubalgebra]
     exact IsIntegralClosure.isDedekindDomain ℤ ℚ K _
-  rw [isGorenstein_iff]
-  exact isUnit_iff_ne_zero.mpr (traceDual_ne_zero (maximalNumberFieldOrder K))
+  exact isGorenstein_of_isDedekindDomain _
 
 /-- Every order in a quadratic number field is Gorenstein. -/
 theorem isGorenstein_of_finrank_eq_two (O : NumberFieldOrder K)
-    (hK : Module.finrank ℚ K = 2) : O.IsGorenstein := by
-  rw [isGorenstein_iff]
-  exact IsProperFractionalIdeal.isUnit_of_finrank_eq_two hK
-    O.isProperFractionalIdeal_traceDual
+    (hK : Module.finrank ℚ K = 2) : O.IsGorenstein :=
+  ⟨IsProperFractionalIdeal.isUnit_of_finrank_eq_two hK O.isProperFractionalIdeal_traceDual⟩
 
 end NumberFieldOrder
 
