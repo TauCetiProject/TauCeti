@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Ring.Real
 public import Mathlib.Topology.ContinuousOn
-public import TauCeti.Analysis.Convex.Polyhedron
+public import TauCeti.Analysis.Convex.Polyhedron.Basic
 
 /-!
 # Piecewise-linear maps between real topological vector spaces

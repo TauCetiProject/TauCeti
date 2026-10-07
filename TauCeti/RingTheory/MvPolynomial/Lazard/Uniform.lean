@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPolynomial.LazardEvaluation
+public import TauCeti.RingTheory.MvPolynomial.Lazard.Evaluation
 import Mathlib.Data.Set.Finite.Lemmas
 
 /-!

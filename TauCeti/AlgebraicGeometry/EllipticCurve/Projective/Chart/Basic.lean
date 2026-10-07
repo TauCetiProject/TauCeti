@@ -32,6 +32,8 @@ projective model is checked.
 * `WeierstrassCurve.Projective.awayEquivChartRing W' i`: the isomorphism `A_(Xᵢ) ≃+* ChartRing`.
 * `WeierstrassCurve.Projective.chartPoint W' i`: the universal point of the chart, whose
   coordinates are the classes of `X₀, X₁, X₂` in `ChartRing W' i`.
+* `WeierstrassCurve.Projective.awayEvalHom W' g hP hi`: the homomorphism `A_(Xᵢ) →+* S`,
+  `a / Xᵢⁿ ↦ a(P) / Pᵢⁿ`, at a solution `P` of the equation of `W'.map g` with `Pᵢ` a unit.
 
 ## Main results
 
@@ -246,5 +248,39 @@ theorem equation_chartPoint : (W'.baseChange (W'.ChartRing i)).Equation (W'.char
   -- evaluation at the classes of the variables is the quotient map, which kills `W'.polynomial`
   rw [Equation, map_polynomial, eval_map, ← aeval_def, ← aeval_unique, Ideal.Quotient.mkₐ_eq_mk,
     ← chartRelation_zero W' i, Ideal.Quotient.mk_span_range]
+
+section AwayEval
+
+variable {S : Type*} [CommRing S] (g : R →+* S) {P : Fin 3 → S} (hP : (W'.map g).Equation P) {i}
+
+/-- The ring homomorphism `A_(Xᵢ) →+* S`, `a / Xᵢⁿ ↦ a(P) / Pᵢⁿ` (`awayEvalHom_mk`), on the
+degree-zero part `A_(Xᵢ)` of the localization of the homogeneous coordinate ring away from `Xᵢ`, at
+a solution `P` of the projective Weierstrass equation of `W'.map g` whose coordinate `Pᵢ` is a unit.
+It restricts to `g` on `R` (`awayEvalHom_comp_algebraMap`). -/
+noncomputable def awayEvalHom (hi : IsUnit (P i)) : Away W'.grading (W'.coord i) →+* S :=
+  Away.lift _ (W'.evalHom g hP) <| by rwa [evalHom_mk, eval₂_X]
+
+/-- `awayEvalHom` is the homomorphism `HomogeneousLocalization.Away.lift` induced by the evaluation
+`evalHom` of the homogeneous coordinate ring at `P`. -/
+theorem awayEvalHom_def (hi : IsUnit (P i)) :
+    W'.awayEvalHom g hP hi = Away.lift _ (W'.evalHom g hP) (by rwa [evalHom_mk, eval₂_X]) :=
+  (rfl)
+
+/-- `awayEvalHom` sends the fraction `a / Xᵢⁿ` to `a(P) / Pᵢⁿ`. -/
+@[simp]
+theorem awayEvalHom_mk (hi : IsUnit (P i)) (n : ℕ) (a : W'.CoordinateRing)
+    (ha : a ∈ W'.grading (n • 1)) :
+    W'.awayEvalHom g hP hi (Away.mk W'.grading (W'.coord_mem_grading i) n a ha) =
+      W'.evalHom g hP a * ↑(hi.unit ^ n)⁻¹ := by
+  simp [awayEvalHom]
+
+/-- `awayEvalHom` restricts to `g` on the base ring `R`, which maps to `A_(Xᵢ)` through the
+degree-zero part of the homogeneous coordinate ring. -/
+theorem awayEvalHom_comp_algebraMap (hi : IsUnit (P i)) :
+    (W'.awayEvalHom g hP hi).comp ((fromZeroRingHom _ _).comp (algebraMap R (W'.grading 0))) = g :=
+  RingHom.ext fun r ↦ (Away.lift_algebraMap _ _ _).trans <|
+    RingHom.congr_fun (W'.evalHom_comp_algebraMap g hP) r
+
+end AwayEval
 
 end WeierstrassCurve.Projective
