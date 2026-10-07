@@ -10,7 +10,7 @@ public import TauCeti.Geometry.RealAlgebraic.Stack.Delineation
 /-!
 # Gluing local delineations
 
-Local delineations of a real polynomial family glue over a nonempty preconnected base.
+Local delineations of a real polynomial family glue over a preconnected base.
 The ordered real roots have no permutation ambiguity on overlaps, so their number,
 multiplicities, and the degrees and nullification status of the family members are constant.
 The resulting continuous root functions form one global delineation. No finiteness assumption
@@ -144,11 +144,13 @@ private theorem signs_of_local_delineations [PreconnectedSpace X]
       rw [mem_sectorSet]
       constructor
       · intro i hi
-        have hi' : (Fin.cast (hc a) i).castSucc < j := hi
+        have hi' : (Fin.cast (hc a) i).castSucc < j := by
+          simpa only [Fin.lt_def, Fin.val_cast, Fin.val_castSucc] using hi
         simpa only [hrU a ⟨v.1, hv.2⟩, Fin.cast_cast, Fin.cast_refl, id_eq] using
           (mem_sectorSet.mp hv.1).1 (Fin.cast (hc a) i) hi'
       · intro i hi
-        have hi' : j ≤ (Fin.cast (hc a) i).castSucc := hi
+        have hi' : j ≤ (Fin.cast (hc a) i).castSucc := by
+          simpa only [Fin.le_def, Fin.val_cast, Fin.val_castSucc] using hi
         simpa only [hrU a ⟨v.1, hv.2⟩, Fin.cast_cast, Fin.cast_refl, id_eq] using
           (mem_sectorSet.mp hv.1).2 (Fin.cast (hc a) i) hi'
     rw [signInvariant_def]
@@ -156,13 +158,28 @@ private theorem signs_of_local_delineations [PreconnectedSpace X]
       _ (hmem hv) _ (hmem hw)
 
 /-- A family with a delineation on a neighborhood of every point has a global delineation on
-any nonempty preconnected base. Local root counts, multiplicities, degrees, nullification and
+any preconnected base. Local root counts, multiplicities, degrees, nullification and
 signs are allowed to depend on the neighborhood; their global constancy is a conclusion. -/
-theorem nonempty_delineation_of_locally [PreconnectedSpace X] [Nonempty X]
+theorem nonempty_delineation_of_locally [PreconnectedSpace X]
     (hlocal : ∀ x : X, ∃ U : Set X, IsOpen U ∧ x ∈ U ∧
       Nonempty (Delineation fun k (y : U) ↦ P k y)) :
     Nonempty (Delineation P) := by
   classical
+  rcases isEmpty_or_nonempty X with hX | hX
+  · -- Over an empty base the empty stack is a delineation.
+    exact ⟨{
+      count := 0
+      root := Fin.elim0
+      continuous_root := fun i ↦ i.elim0
+      strictMono_root := fun x ↦ isEmptyElim x
+      multiplicity := fun _ ↦ Fin.elim0
+      rootMultiplicity_root := fun _ i ↦ i.elim0
+      exists_root_eq := fun _ x ↦ isEmptyElim x
+      exists_multiplicity_pos := fun i ↦ i.elim0
+      eq_zero_or_ne_zero := fun _ ↦ .inl isEmptyElim
+      natDegree_eq := fun _ x ↦ isEmptyElim x
+      signInvariant_sectionSet := fun _ i ↦ i.elim0
+      signInvariant_sectorSet := fun _ _ ↦ subsingleton_of_subsingleton.signInvariant }⟩
   choose U hU hxU hD using hlocal
   let D (x : X) := (hD x).some
   obtain ⟨hdeg, hnull⟩ := invariants_of_local_delineations hU hxU D

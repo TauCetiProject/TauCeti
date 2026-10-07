@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Connected.TotallyDisconnected
 public import Mathlib.Topology.Instances.Sign
-import Mathlib.Topology.LocallyConstant.Basic
+import TauCeti.Topology.LocallyConstant.Preconnected
 
 /-!
 # Sign-invariant functions
@@ -153,13 +153,11 @@ theorem _root_.IsPreconnected.signInvariant_of_locally [Zero R] [Preorder R] [De
     [TopologicalSpace α] {f : α → R} {s : Set α} (hs : IsPreconnected s)
     (hlocal : ∀ x ∈ s, ∃ U : Set α, IsOpen U ∧ x ∈ U ∧ SignInvariant f (s ∩ U)) :
     SignInvariant f s := by
-  let : PreconnectedSpace s := isPreconnected_iff_preconnectedSpace.mp hs
-  have hsign : IsLocallyConstant (fun x : s ↦ SignType.sign (f x)) := by
-    refine (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦ ?_
-    obtain ⟨U, hU, hx, h⟩ := hlocal x x.property
-    filter_upwards [continuous_subtype_val.continuousAt.preimage_mem_nhds (hU.mem_nhds hx)]
-      with y hy
-    exact h y ⟨y.property, hy⟩ x ⟨x.property, hx⟩
-  exact fun x hx y hy ↦ hsign.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
+  rw [signInvariant_def]
+  refine fun x hx y hy ↦ hs.apply_eq_of_eventually_eq
+    (f := fun a ↦ SignType.sign (f a)) (fun a ha ↦ ?_) hx hy
+  obtain ⟨U, hU, haU, h⟩ := hlocal a ha
+  filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (hU.mem_nhds haU)] with b hb hbU
+  exact h b ⟨hb, hbU⟩ a ⟨ha, haU⟩
 
 end TauCeti
