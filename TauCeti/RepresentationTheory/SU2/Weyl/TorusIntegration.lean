@@ -20,9 +20,9 @@ each regular conjugacy class twice, so
 its Haar probability measure is weighted by half the squared Weyl denominator
 `|z - z⁻¹|²`. The singular elements `z = ±1` cause no division by a vanishing denominator.
 
-The results consume `TauCeti.SU2.weyl_integration_formula`, Mathlib's
-`AddCircle.intervalIntegral_preimage`, and the preservation of Haar probability measure by
-continuous surjective group homomorphisms (`MonoidHom.measurePreserving`).
+These are equivalent forms of `TauCeti.SU2.weyl_integration_formula` for continuous class
+functions. The circle formulations allow their integrals to be expressed in the same coordinates
+as Fourier analysis on the torus.
 
 ## References
 
@@ -105,9 +105,7 @@ theorem weyl_integration_formula_circle {f : SU2 → ℂ} (hf : Continuous f)
       ∫ z : Circle, f (torusHom z) * (Complex.normSq ((z : ℂ) - ↑z⁻¹) : ℂ)
         ∂haarProb Circle := by
   let e : Multiplicative (AddCircle (2 * Real.pi)) →* Circle :=
-    { toFun := fun θ ↦ AddCircle.toCircle θ.toAdd
-      map_one' := AddCircle.toCircle_zero
-      map_mul' := fun θ φ ↦ AddCircle.toCircle_add θ.toAdd φ.toAdd }
+    AddCircle.toCircle_addChar.toMonoidHom
   have he : MeasurePreserving e (haarProb (Multiplicative (AddCircle (2 * Real.pi))))
       (haarProb Circle) := MonoidHom.measurePreserving
     AddCircle.continuous_toCircle
@@ -126,8 +124,8 @@ theorem weyl_integration_formula_circle {f : SU2 → ℂ} (hf : Continuous f)
     exact (AddCircle.homeomorphCircle_apply _ θ).symm
   rw [weyl_integration_formula_addCircle hf hconj]
   congr 1
-  simpa only [e, Function.comp_apply, MonoidHom.coe_mk, OneHom.coe_mk,
-    toAdd_ofAdd] using hmap.integral_comp hmeas
+  simpa only [e, Function.comp_apply, AddChar.toMonoidHom_apply, AddCircle.toCircle_addChar,
+    AddChar.coe_mk, toAdd_ofAdd] using hmap.integral_comp hmeas
       (fun z : Circle ↦ f (torusHom z) * (Complex.normSq ((z : ℂ) - ↑z⁻¹) : ℂ))
 
 /-- **Weyl integration on the maximal torus itself.** The difference of the diagonal
