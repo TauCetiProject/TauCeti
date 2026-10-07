@@ -40,7 +40,7 @@ variable {k G : Type} [Field k] [Group G]
 
 /-- A natural number `n` kills a cohomology class over an algebraically closed field exactly
 when the class has a normalized representative valued in the `n`-th roots of unity. -/
-theorem nsmul_eq_zero_iff_exists_factorSet [IsAlgClosed k] {n : ℕ}
+theorem nsmul_eq_zero_iff_exists_factorSet_pow_eq_one [IsAlgClosed k] {n : ℕ}
     (x : groupCohomology.H2 (Rep.ofMulDistribMulAction G kˣ)) :
     n • x = 0 ↔ ∃ β : FactorSet G kˣ, β.cohomologyClass = x ∧ ∀ p, β p ^ n = 1 := by
   constructor
@@ -54,7 +54,7 @@ theorem nsmul_eq_zero_iff_exists_factorSet [IsAlgClosed k] {n : ℕ}
         intro h
         exact a.ne_zero (by simpa [h, zero_pow hn.ne'] using hz.symm)
       exact ⟨Units.mk0 z hz0, Units.ext hz⟩
-    exact α.exists_cohomologyClass_eq_and_pow_eq_one trivialMulDistribMulAction_smul hroot hx
+    exact α.exists_cohomologyClass_eq_and_pow_eq_one hroot hx
   · rintro ⟨β, rfl, hβ⟩
     apply (β.nsmul_cohomologyClass_eq_zero_iff n).2
     exact ⟨fun _ ↦ 1, fun g h ↦ by simp [hβ]⟩
@@ -81,7 +81,7 @@ theorem IsProjectiveRep.exists_rootsOfUnityExtension_linearization
           (LinearEquiv.smulOfUnit ((x.left : kˣ) * c (FactorSet.rightHom β x))) := by
   rw [IsProjectiveRep.cohomologyClass_def] at hclass
   obtain ⟨γ, hγ, hpow⟩ :=
-    (FactorSet.nsmul_eq_zero_iff_exists_factorSet hρ.factorSet.cohomologyClass).1 hclass
+    (FactorSet.nsmul_eq_zero_iff_exists_factorSet_pow_eq_one hρ.factorSet.cohomologyClass).1 hclass
   obtain ⟨c, hc⟩ := (FactorSet.cohomologyClass_eq_iff γ hρ.factorSet).1 hγ
   simp only [trivialMulDistribMulAction_smul, IsProjectiveRep.factorSet_apply] at hc
   have hc1 : c 1 = 1 := by simpa [hρ.isFactorSet.one_left] using hc 1 1
