@@ -52,10 +52,17 @@ instance instFlatToProjectiveOrbit (m : M) (hm : Module.IsUnimodular k m) :
     (projectiveOrbitToSpec (H := H) m hm)
   let a (g : WithConv (H →ₐ[k] k)) : Spec (.of H) ≅ Spec (.of H) :=
     Scheme.Spec.mapIso (HopfAlgebra.leftTranslationAlgEquiv g).toRingEquiv.toCommRingCatIso.op
+  -- Mapping the opposite ring isomorphism through Spec gives the morphism induced by
+  -- the forward translation algebra homomorphism used in the equivariance identity.
+  have a_hom (g : WithConv (H →ₐ[k] k)) : (a g).hom =
+      Spec.map (CommRingCat.ofHom
+        (HopfAlgebra.leftTranslationAlgEquiv g).toAlgHom.toRingHom) := rfl
   let b (g : WithConv (H →ₐ[k] k)) : Y ≅ Y := projectiveOrbitTranslation m hm g
   have := Algebra.FiniteType.isNoetherianRing k H
   apply f.flat_of_transitive_closedPoints_of_finiteType a b
-    (fun g ↦ (toProjectiveOrbit_projectiveOrbitTranslation_hom m hm g).symm)
+    (fun g ↦ by
+      rw [a_hom]
+      exact (toProjectiveOrbit_projectiveOrbitTranslation_hom m hm g).symm)
   intro y z hy hz
   exact exists_projectiveOrbitTranslation_eq_of_mem_closedPoints m hm hy hz
 
