@@ -157,13 +157,14 @@ theorem edgePair_closure_cons_cons_of_mem {p : Fin n} {j : Fin v.length}
   · rfl
   · rw [incomingSlot_congr (hletter (v.nextCrossing p j)) p]
 
-/-! The incoming version of the unaffected-position formula is the other external arc
-of the inserted clasp.  Keeping it in terms of the original word makes it usable when the
-closure is compared with `PDCode.insertClasp`, without unfolding the closure matching. -/
+/-! The incoming version of the unaffected-position formula describes the external arc at an
+old crossing after inserting two crossings with the same generator index.  Keeping it in terms
+of the original word makes it usable when the closure is compared with `PDCode.insertClasp`,
+without unfolding the closure matching. -/
 
-/-- The incoming arc at an old crossing on an unaffected position is unchanged by inserting an
-inverse pair on two other positions. -/
-theorem edgePair_closure_cons_cons_of_not_affected {p : Fin n}
+/-- The incoming arc at an old crossing on an unaffected position is unchanged by inserting two
+crossings with the same generator index on two other positions. -/
+theorem edgePair_closure_cons_cons_incomingSlot_of_ne {p : Fin n}
     (hp : p ≠ strand i) (hp' : p ≠ strandSucc i) {j : Fin v.length}
     (hj : j ∈ v.crossingsAt p) :
     let w : BraidWord n := (i, ε) :: (i, η) :: v
