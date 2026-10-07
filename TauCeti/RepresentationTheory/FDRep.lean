@@ -169,10 +169,10 @@ theorem _root_.MonoidHom.forget₂_map_actionRes {k : Type u} [Ring k]
       (Rep.resFunctor f).map ((forget₂ (FDRep k K) (Rep k K)).map g) :=
   rfl
 
-/-- Forgetting finite-dimensionality keeps the finite-generation instance on the carrier. -/
-instance moduleFinite_forget₂_obj {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+/-- Forgetting finite generation keeps the finite-generation instance on the carrier. -/
+instance moduleFinite_forget₂_obj {R : Type u} {G : Type v} [Ring R] [Monoid G]
     (A : FDRep R G) : Module.Finite R ((forget₂ (FDRep R G) (Rep R G)).obj A) :=
-  inferInstanceAs (Module.Finite R A)
+  inferInstanceAs (Module.Finite R A.V)
 
 /-- Forgetting finite-dimensionality does not change the dimension of the carrier. -/
 @[simp]
