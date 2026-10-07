@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Homological.TateCohomology.Basic
 public import TauCeti.NumberTheory.LocalField.Unramified.Basic
-public import TauCeti.NumberTheory.LocalField.UnitFiltration.GaloisAction
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.HerbrandQuotient
 import TauCeti.FieldTheory.GaloisCohomology.Inflation
 import TauCeti.NumberTheory.LocalField.Norm.Unramified.Basic
 import TauCeti.NumberTheory.LocalField.ResidueCorrespondence
-import TauCeti.NumberTheory.LocalField.UnitFiltration.HerbrandQuotient
 
 /-!
 # The units of an unramified extension have no Tate cohomology
