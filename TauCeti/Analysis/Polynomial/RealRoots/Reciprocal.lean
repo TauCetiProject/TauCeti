@@ -79,7 +79,7 @@ theorem exists_analyticOnNhd_ordered_roots_of_reflect
     (hzero : ∀ᶠ x in 𝓝 x₀, (F x).eval 0 ≠ 0)
     (hroots : ∀ᶠ x in 𝓝 x₀, ∀ t,
       ((F x).reflect N).IsRoot t ↔ ∃ i, r i x = t)
-    (hmult : ∀ᶠ x in 𝓝 x₀, ∀ i,
+    (hmult : ∀ᶠ x in 𝓝 x₀, ∀ i, r i x₀ ≠ 0 →
       ((F x).reflect N).rootMultiplicity (r i x) =
         ((F x₀).reflect N).rootMultiplicity (r i x₀)) :
     ∃ k : ℕ, ∃ s : Fin k → E → ℝ, ∃ U : Set E, IsOpen U ∧ x₀ ∈ U ∧
@@ -115,7 +115,7 @@ theorem exists_analyticOnNhd_ordered_roots_of_reflect
       have h := (F x).rootMultiplicity_reflect hx (Units.mk0 (r i x)⁻¹ (inv_ne_zero hi))
       simpa only [Units.val_inv_eq_inv_val, Units.val_mk0, inv_inv, f] using h.symm
     rw [hm x (hx.2 ▸ hdN) hi, hm x₀ (hF.self_of_nhds.2 ▸ hdN) i.property]
-    exact hmx i
+    exact hmx i i.property
   -- The original zero coordinate is excluded by the nonvanishing constant coefficient.
   have hcover : ∀ᶠ x in 𝓝 x₀, ∀ t,
       (F x).IsRoot t ↔ ∃ i : J, f i x = t := by
@@ -162,7 +162,7 @@ theorem exists_analyticOnNhd_ordered_roots_of_reflect_comp_X_add_C {τ : ℝ}
     (hτ : ∀ᶠ x in 𝓝 x₀, (F x).eval τ ≠ 0)
     (hroots : ∀ᶠ x in 𝓝 x₀, ∀ t,
       (((F x).comp (X + C τ)).reflect N).IsRoot t ↔ ∃ i, r i x = t)
-    (hmult : ∀ᶠ x in 𝓝 x₀, ∀ i,
+    (hmult : ∀ᶠ x in 𝓝 x₀, ∀ i, r i x₀ ≠ 0 →
       (((F x).comp (X + C τ)).reflect N).rootMultiplicity (r i x) =
         (((F x₀).comp (X + C τ)).reflect N).rootMultiplicity (r i x₀)) :
     ∃ k : ℕ, ∃ s : Fin k → E → ℝ, ∃ U : Set E, IsOpen U ∧ x₀ ∈ U ∧
