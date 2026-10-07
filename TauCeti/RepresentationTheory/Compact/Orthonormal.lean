@@ -29,7 +29,7 @@ subspace of `L²(G)`.
 * `TauCeti.ContRepresentation.orthonormal_matrixCoeffLp`: the normalized matrix coefficients of a
   family of pairwise inequivalent irreducible unitary representations form an orthonormal system
   in `L²(G)`.
-* `TauCeti.ContRepresentation.orthonormal_characterLp`: the characters of such a family form an
+* `ContRepresentation.orthonormal_characterLp`: the characters of such a family form an
   orthonormal system in `L²(G)`.
 
 ## Implementation notes
@@ -126,7 +126,7 @@ This is the system form of the two character orthogonality relations: normalizat
 and orthogonality across the family is the second, whose intertwiner hypothesis Schur's lemma
 supplies from inequivalence. For a finite group it is the statement that the irreducible characters
 are an orthonormal set of class functions. -/
-theorem orthonormal_characterLp (hunitary : ∀ i, IsUnitary (π i))
+theorem _root_.ContRepresentation.orthonormal_characterLp (hunitary : ∀ i, IsUnitary (π i))
     (hirr : ∀ i, Representation.IsIrreducible (π i).toRepresentation)
     (hne : Pairwise fun i j ↦ IsEmpty (_root_.ContRepresentation.Equiv (π i) (π j))) :
     Orthonormal 𝕜 fun i ↦ characterLp (π i) (hπ i) := by

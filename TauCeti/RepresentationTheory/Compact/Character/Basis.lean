@@ -310,14 +310,14 @@ variable {models : ι → IrrepModel 𝕜 G}
 
 omit [T2Space G] in
 /-- **The characters of a pairwise inequivalent family are orthonormal in the class functions.**
-This is the character orthogonality of `TauCeti.ContRepresentation.orthonormal_characterLp`, read
+This is the character orthogonality of `ContRepresentation.orthonormal_characterLp`, read
 inside the subspace, where the inner product is the restriction of the one on `L²(G)`.  Only
 inequivalence is used; exhaustivity of a skeleton is what the completeness below needs. -/
 theorem orthonormal_characterFamily
     (hne : Pairwise fun i j ↦
       IsEmpty (_root_.ContRepresentation.Equiv (models i).rep (models j).rep)) :
     Orthonormal 𝕜 (characterFamily models) := by
-  have hL2 := ContRepresentation.orthonormal_characterLp (fun i ↦ (models i).rep)
+  have hL2 := _root_.ContRepresentation.orthonormal_characterLp (fun i ↦ (models i).rep)
     (fun i ↦ (models i).continuous_rep) (fun i ↦ (models i).isUnitary)
     (fun i ↦ (models i).isIrreducible) hne
   exact hL2.codRestrict _ fun i ↦ ContRepresentation.characterLp_mem_classFunctionLp _ _
