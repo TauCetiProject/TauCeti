@@ -1,0 +1,119 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Algebra.Module.AuslanderReiten.Full
+public import TauCeti.Algebra.Module.AuslanderReiten.Faithful
+public import TauCeti.Algebra.Module.AuslanderReiten.ProjectiveSummand
+public import TauCeti.Algebra.Category.ModuleCat.Projective.Stable
+public import TauCeti.Algebra.Category.ModuleCat.ProjectiveStable.Reflection
+
+/-!
+# Indecomposability of minimal transposes
+
+The transpose of a finite minimal projective presentation of a finite-length indecomposable
+module is indecomposable exactly when the original module is not projective. For arbitrary
+finite projective presentations, the corresponding assertion holds in the projective stable
+category. Minimality excludes the projective retracts that this category forgets, so the
+conclusion then holds for actual modules.
+
+Together with `TauCeti.AuslanderReitenTranslate.isIndecomposableModule_iff`, the transpose
+characterization gives the corresponding result for the Auslander–Reiten translate when
+the transpose is reflexive over the base. In particular, this applies to finite-dimensional
+modules over finite-dimensional algebras over a field, and supplies the preservation of
+indecomposability needed to classify modules by their translates.
+
+## References
+
+* M. Auslander, I. Reiten, S. O. Smalø, *Representation Theory of Artin Algebras*,
+  Cambridge University Press (1995), Section IV.1.
+-/
+
+public section
+
+namespace TauCeti.FiniteProjectivePresentation
+
+open CategoryTheory CategoryTheory.Limits
+
+universe u v
+
+variable {A : Type u} [Ring A] {M : ModuleCat.{v} A} [Small.{v} A]
+
+local notation "S" =>
+  ExactStructure.projectiveStableFunctor (ExactStructure.abelian (ModuleCat A))
+local notation "T" =>
+  ExactStructure.projectiveStableFunctor (ExactStructure.abelian (ModuleCat Aᵐᵒᵖ))
+
+/-- A finite projective presentation of a non-projective finite-length indecomposable module
+has an indecomposable transpose in the projective stable category. Minimality is not needed. -/
+theorem indecomposable_stableTranspose (P : FiniteProjectivePresentation M)
+    (hM : IsFiniteLength A M) (hiM : IsIndecomposableModule A M)
+    (hpM : ¬ Module.Projective A M) :
+    Indecomposable ((T).obj (ModuleCat.of Aᵐᵒᵖ (AuslanderReitenTranspose P.p))) := by
+  have hi : Indecomposable M := (indecomposable_iff_isIndecomposableModule M).mpr hiM
+  have hs := (ModuleCat.indecomposable_projectiveStableFunctor_obj_iff M hM hi).mpr
+    (fun h ↦ by let := h; exact hpM inferInstance)
+  have : IsLocalRing (End M) := (indecomposable_iff_isLocalRing_end M hM).mp hi
+  have : Nontrivial (End ((S).obj M)) :=
+    nontrivial_of_ne (𝟙 ((S).obj M)) 0
+      (fun h ↦ hs.1 ((IsZero.iff_id_eq_zero _).mpr h))
+  have : IsLocalRing (End ((S).obj M)) := IsLocalRing.of_surjective'
+    ({ (S).mapEnd M, (S).mapAddHom with } : End M →+* End ((S).obj M))
+    (S).map_surjective
+  let f := AuslanderReitenTranspose.stableMap P.exact.linearMap_comp_eq_zero
+    P.exact P.surjective
+  let e := Equiv.ofBijective f
+    ⟨AuslanderReitenTranspose.stableMap_injective P.exact P.surjective P.exact P.surjective,
+      AuslanderReitenTranspose.stableMap_surjective P.exact P.surjective P.exact P.surjective⟩
+  have he_zero : e 0 = 0 := f.map_zero
+  have he_id : e (𝟙 ((S).obj M)) = 𝟙 _ :=
+    AuslanderReitenTranspose.stableMap_id P.exact P.surjective
+  have he_comp (a b : End ((S).obj M)) : e (a ≫ b) = e b ≫ e a :=
+    AuslanderReitenTranspose.stableMap_comp P.exact.linearMap_comp_eq_zero
+      P.exact P.surjective P.exact P.surjective a b
+  refine indecomposable_of_injective_of_isLocalRing (R := End ((S).obj M)) ?_
+    (fun g ↦ (e.symm g : End ((S).obj M))) e.symm.injective
+    (e.symm_apply_eq.mpr he_zero.symm) ?_ ?_
+  · intro hzero
+    apply hs.1
+    apply (IsZero.iff_id_eq_zero _).mpr
+    apply e.injective
+    rw [he_id, he_zero]
+    exact (IsZero.iff_id_eq_zero _).mp hzero
+  · simpa only [End.one_def] using e.symm_apply_eq.mpr he_id.symm
+  · intro g
+    apply e.injective
+    simpa only [End.mul_def, e.apply_symm_apply] using
+      (he_comp (e.symm g) (e.symm g)).symm
+
+/-- The transpose of a finite minimal presentation of a finite-length indecomposable module
+is indecomposable exactly when the original module is not projective. -/
+@[simp]
+theorem isIndecomposableModule_auslanderReitenTranspose_iff
+    (P : FiniteProjectivePresentation M) (hP : IsMinimalProjectivePresentation P.p P.π)
+    (hM : IsFiniteLength A M) (hiM : IsIndecomposableModule A M) :
+    IsIndecomposableModule Aᵐᵒᵖ (AuslanderReitenTranspose P.p) ↔
+      ¬ Module.Projective A M := by
+  constructor
+  · intro h hproj
+    let := hproj
+    let := hP.subsingleton_auslanderReitenTranspose_of_projective
+    exact not_nontrivial _
+      (isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem.mp h).1
+  · intro hpM
+    apply (indecomposable_iff_isIndecomposableModule
+      (ModuleCat.of Aᵐᵒᵖ (AuslanderReitenTranspose P.p))).mp
+    apply (ModuleCat.indecomposable_iff_isZero_projective_retract _
+      (P.indecomposable_stableTranspose hM hiM hpM)).mpr
+    intro Q r hQ
+    let := hQ
+    have hzero := hP.isSuperfluous_ker.subsingleton_of_retract_auslanderReitenTranspose
+      r.r.hom r.i.hom (by
+        simpa only [ModuleCat.hom_comp, ModuleCat.hom_id] using
+          congrArg ModuleCat.Hom.hom r.retract)
+    exact ModuleCat.isZero_iff_subsingleton.mpr hzero
+
+end TauCeti.FiniteProjectivePresentation
