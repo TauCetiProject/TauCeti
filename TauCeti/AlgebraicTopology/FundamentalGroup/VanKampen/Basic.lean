@@ -374,6 +374,14 @@ noncomputable def vanKampenLift (A B : Set X) (x : X) (hxA : x ∈ A) (hxB : x �
     (FundamentalGroup.map (ContinuousMap.subtypeVal A) ⟨x, hxA⟩)
     (FundamentalGroup.map (ContinuousMap.subtypeVal B) ⟨x, hxB⟩)
 
+/-- The canonical free-product map is the lift of the two inclusion-induced homomorphisms. -/
+theorem vanKampenLift_def (A B : Set X) (x : X) (hxA : x ∈ A) (hxB : x ∈ B) :
+    vanKampenLift A B x hxA hxB =
+      Monoid.Coprod.lift
+        (FundamentalGroup.map (ContinuousMap.subtypeVal A) ⟨x, hxA⟩)
+        (FundamentalGroup.map (ContinuousMap.subtypeVal B) ⟨x, hxB⟩) :=
+  (rfl)
+
 /-- `vanKampenLift` restricts on the left factor to the map induced by inclusion. -/
 @[simp]
 theorem vanKampenLift_apply_inl (A B : Set X) (x : X) (hxA : x ∈ A) (hxB : x ∈ B)
