@@ -32,7 +32,7 @@ namespace Polynomial.Chebyshev
 variable {R : Type*} [CommRing R]
 
 /-- The rescaled Chebyshev polynomial expresses a pair of opposite Laurent powers. -/
-theorem eval₂_C_add_T_neg (n : ℕ) :
+@[simp] theorem eval₂_C_add_T_neg (n : ℕ) :
     Polynomial.eval₂ LaurentPolynomial.C
       (LaurentPolynomial.T 1 + LaurentPolynomial.T (-1) : R[T;T⁻¹]) (C R n) =
       LaurentPolynomial.T (n : ℤ) + LaurentPolynomial.T (-(n : ℤ)) := by
@@ -64,7 +64,7 @@ variable {R : Type*} [CommRing R]
 
 /-- Split a Laurent polynomial into its nonnegative and negative powers, correcting
 the double-counted constant term. -/
-theorem toLaurent_trunc_add_invert (p : R[T;T⁻¹]) :
+@[simp] theorem toLaurent_trunc_add_invert (p : R[T;T⁻¹]) :
     (trunc p).toLaurent + invert ((trunc (invert p)).toLaurent) - C (p.coeff 0) = p := by
   induction p using LaurentPolynomial.induction_on' with
   | add p q hp hq =>
@@ -89,6 +89,25 @@ end LaurentPolynomial
 namespace Polynomial
 
 variable {R : Type*} [CommRing R]
+
+/-- Substitution of `s⁻¹ - s` in `q(X²)` agrees with evaluating the Laurent
+polynomial `q(T + T⁻¹ - 2)` at `T = s²`, under any coefficient homomorphism. -/
+theorem eval₂_comp_X_sq_eq_laurent_eval₂ {S : Type*} [CommRing S]
+    (q : R[X]) (f : R →+* S) (s : Sˣ) :
+    Polynomial.eval₂ f ((s⁻¹ : Sˣ).val - s.val) (q.comp (Polynomial.X ^ 2)) =
+      LaurentPolynomial.eval₂ f (s ^ 2)
+        (Polynomial.eval₂ LaurentPolynomial.C (T 1 + T (-1) - 2) q) := by
+  rw [Polynomial.hom_eval₂, Polynomial.eval₂_comp]
+  have hc : (LaurentPolynomial.eval₂ f (s ^ 2)).comp LaurentPolynomial.C = f := by
+    ext r
+    simp
+  rw [hc]
+  congr 1
+  simp only [Polynomial.eval₂_pow, Polynomial.eval₂_X, map_sub, map_add, map_ofNat,
+    LaurentPolynomial.eval₂_T, zpow_one, zpow_neg_one, Units.inv_pow_eq_pow_inv,
+    Units.val_pow_eq_pow_val]
+  have hs := s.inv_mul
+  linear_combination -2 * hs
 
 /-- The positive and reflected negative parts of an ordinary polynomial, with the
 constant counted once, are a polynomial in `T + T⁻¹`. -/
@@ -122,7 +141,7 @@ variable {R : Type*} [CommRing R]
 
 /-- A Laurent polynomial is fixed by inversion exactly when it is an ordinary
 polynomial in `T + T⁻¹`. This holds without inverting two. -/
-theorem invert_eq_iff_exists_eval₂ (p : R[T;T⁻¹]) :
+theorem invert_eq_self_iff_exists_eval₂ (p : R[T;T⁻¹]) :
     invert p = p ↔ ∃ q : R[X], Polynomial.eval₂ C (T 1 + T (-1)) q = p := by
   constructor
   · intro hp
@@ -139,7 +158,7 @@ theorem invert_eq_iff_exists_eval₂ (p : R[T;T⁻¹]) :
 `T + T⁻¹ - 2`, the square of the Conway variable after doubling exponents. -/
 theorem exists_eval₂_add_T_neg_sub_two {p : R[T;T⁻¹]} (hp : invert p = p) :
     ∃ q : R[X], Polynomial.eval₂ C (T 1 + T (-1) - 2) q = p := by
-  obtain ⟨q, hq⟩ := (invert_eq_iff_exists_eval₂ p).mp hp
+  obtain ⟨q, hq⟩ := (invert_eq_self_iff_exists_eval₂ p).mp hp
   refine ⟨q.comp (Polynomial.X + 2), ?_⟩
   rw [Polynomial.eval₂_comp]
   simpa using hq

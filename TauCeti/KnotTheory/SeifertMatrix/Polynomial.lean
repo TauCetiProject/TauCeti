@@ -57,17 +57,7 @@ theorem exists_conwayPolynomial {g : ℕ} (V : Matrix ι ι R)
   obtain ⟨q, hq⟩ := exists_polynomial_eval₂_eq_alexander V h
   refine ⟨q, ?_⟩
   intro S _ f s
-  rw [← hq, Polynomial.hom_eval₂, Polynomial.eval₂_comp]
-  have hc : (LaurentPolynomial.eval₂ f (s ^ 2)).comp C = f := by
-    ext r
-    simp
-  rw [hc]
-  congr 1
-  simp only [Polynomial.eval₂_pow, Polynomial.eval₂_X, map_sub, map_add, map_ofNat,
-    LaurentPolynomial.eval₂_T, zpow_one, zpow_neg_one, Units.inv_pow_eq_pow_inv,
-    Units.val_pow_eq_pow_val]
-  have hs := s.inv_mul
-  linear_combination -2 * hs
+  rw [Polynomial.eval₂_comp_X_sq_eq_laurent_eval₂, hq]
 
 end Matrix
 
@@ -79,12 +69,12 @@ theorem eval₂_conway_trefoil {S : Type*} [CommRing S] {s : Sˣ} :
       (1 + Polynomial.X ^ 2 : ℤ[X]) =
       LaurentPolynomial.eval₂ (Int.castRingHom S) (s ^ 2)
         (alexander trefoilSeifertMatrix) := by
-  rw [alexander_trefoilSeifertMatrix]
-  simp only [Polynomial.eval₂_add, Polynomial.eval₂_one, Polynomial.eval₂_pow,
-    Polynomial.eval₂_X, map_add, map_sub, map_one, LaurentPolynomial.eval₂_T,
-    zpow_one, zpow_neg_one, Units.inv_pow_eq_pow_inv, Units.val_pow_eq_pow_val]
-  have hs := s.inv_mul
-  linear_combination -2 * hs
+  have hp : (1 + Polynomial.X ^ 2 : ℤ[X]) =
+      (1 + Polynomial.X : ℤ[X]).comp (Polynomial.X ^ 2) := by simp
+  rw [hp, Polynomial.eval₂_comp_X_sq_eq_laurent_eval₂, alexander_trefoilSeifertMatrix]
+  congr 1
+  simp only [Polynomial.eval₂_add, Polynomial.eval₂_one, Polynomial.eval₂_X]
+  ring
 
 /-- The figure-eight's Seifert invariant has Conway polynomial `1 - z²`. -/
 theorem eval₂_conway_figureEight {S : Type*} [CommRing S] {s : Sˣ} :
@@ -92,11 +82,11 @@ theorem eval₂_conway_figureEight {S : Type*} [CommRing S] {s : Sˣ} :
       (1 - Polynomial.X ^ 2 : ℤ[X]) =
       LaurentPolynomial.eval₂ (Int.castRingHom S) (s ^ 2)
         (alexander figureEightSeifertMatrix) := by
-  rw [alexander_figureEightSeifertMatrix]
-  simp only [Polynomial.eval₂_sub, Polynomial.eval₂_one, Polynomial.eval₂_pow,
-    Polynomial.eval₂_X, map_sub, map_add, map_neg, map_ofNat, LaurentPolynomial.eval₂_T,
-    zpow_one, zpow_neg_one, Units.inv_pow_eq_pow_inv, Units.val_pow_eq_pow_val]
-  have hs := s.inv_mul
-  linear_combination 2 * hs
+  have hp : (1 - Polynomial.X ^ 2 : ℤ[X]) =
+      (1 - Polynomial.X : ℤ[X]).comp (Polynomial.X ^ 2) := by simp
+  rw [hp, Polynomial.eval₂_comp_X_sq_eq_laurent_eval₂, alexander_figureEightSeifertMatrix]
+  congr 1
+  simp only [Polynomial.eval₂_sub, Polynomial.eval₂_one, Polynomial.eval₂_X]
+  ring
 
 end TauCeti.KnotTheory
