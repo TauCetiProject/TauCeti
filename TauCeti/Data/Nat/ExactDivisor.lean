@@ -44,7 +44,8 @@ vertical line `‖`; it is scoped, so it never competes with the `∥` of `Affin
 * `TauCeti.Nat.IsExactDivisor.div`: for `N ≠ 0` the complementary divisor `N / Q` is exact too.
 * `TauCeti.Nat.IsExactDivisor.ne_zero`: an exact divisor is nonzero. There is no exact divisor
   `0`, because `Nat.Coprime 0 0` is false.
-* `TauCeti.Nat.IsExactDivisor.not_sq_dvd`: an exact divisor `Q ≠ 1` of `N` has `Q ^ 2 ∤ N`.
+* `TauCeti.Nat.IsExactDivisor.not_sq_dvd`: an exact divisor `Q ≠ 1` of `N` has `Q ^ 2 ∤ N`; for a
+  prime `p ∣ N` the converse is `TauCeti.Nat.IsExactDivisor.of_not_sq_dvd`.
 * `TauCeti.Nat.isExactDivisor_one`, `TauCeti.Nat.isExactDivisor_self`: `1` and (for `N ≠ 0`) `N`
   itself.
 * `TauCeti.Nat.IsExactDivisor.mul`: coprime exact divisors multiply to an exact divisor, so the
@@ -120,6 +121,13 @@ theorem IsExactDivisor.not_sq_dvd (h : IsExactDivisor Q N) (hQ : Q ≠ 1) : ¬ Q
   have hdiv : Q ^ 2 * m / Q = Q * m := by
     rw [pow_two, mul_assoc, Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero h.ne_zero)]
   exact hQ (Nat.Coprime.eq_one_of_dvd h.coprime (by rw [hdiv]; exact dvd_mul_right _ _))
+
+/-- **A prime dividing `N` only once is an exact divisor**, the converse of
+`IsExactDivisor.not_sq_dvd` for a prime: if `p ∣ N/p` then `p ^ 2 ∣ N`, so `p` is prime to
+`N / p`. -/
+theorem IsExactDivisor.of_not_sq_dvd {p : ℕ} (hp : p.Prime) (hpN : p ∣ N) (hpsq : ¬ p ^ 2 ∣ N) :
+    IsExactDivisor p N :=
+  ⟨hpN, hp.coprime_iff_not_dvd.mpr fun h ↦ hpsq (pow_two p ▸ Nat.mul_dvd_of_dvd_div hpN h)⟩
 
 /-- `1` is an exact divisor of every `N`. -/
 theorem isExactDivisor_one : IsExactDivisor 1 N :=

@@ -191,11 +191,16 @@ namespace Newform
 /-- **The bad-prime eigenvalue at `p ∥ N`** (Atkin–Lehner, Theorem 3): a newform `f` of trivial
 nebentypus has `a_p(f) = -ε_p(f) · (√p) ^ (k - 2)` at every prime `p` exactly dividing the
 level, where `ε_p(f) = ±1` is its Atkin–Lehner sign at `p`. With
-`Newform.heckeUCuspNat_eq_qExpansion_coeff_smul` this is the eigenvalue of `U_p` on `f`. -/
+`Newform.heckeUCuspNat_eq_qExpansion_coeff_smul` this is the eigenvalue of `U_p` on `f`.
+
+The hypothesis `p ∥ N` is taken as `p ∣ N` and `¬ p ^ 2 ∣ N`
+(`TauCeti.Nat.IsExactDivisor.of_not_sq_dvd`), side conditions `simp` can discharge. -/
+@[simp]
 theorem qExpansion_coeff_prime_eq_neg_atkinLehnerSign_mul (f : Newform N k) (hχ : f.χ = 1)
-    (hp : p.Prime) (h : p ∥ N) :
+    (hp : p.Prime) (hpN : p ∣ N) (hpsq : ¬ p ^ 2 ∣ N) :
     (qExpansion 1 f.toCuspForm).coeff p =
-      -(f.atkinLehnerSign hχ h * ((Real.sqrt p : ℝ) : ℂ) ^ (k - 2)) := by
+      -(f.atkinLehnerSign hχ (.of_not_sq_dvd hp hpN hpsq) * ((Real.sqrt p : ℝ) : ℂ) ^ (k - 2)) := by
+  have h : p ∥ N := .of_not_sq_dvd hp hpN hpsq
   set c : ℂ := ((Real.sqrt p : ℝ) : ℂ) ^ (k - 2) with hc
   -- `W_p f = c • ε_p • f`, undoing the normalization of `𝒲_p f = ε_p • f`
   have hW : h.atkinLehnerOperatorCusp k (f.toCuspFormGamma0 hχ) =
@@ -225,7 +230,8 @@ theorem qExpansion_coeff_prime_eq_neg_atkinLehnerSign_mul (f : Newform N k) (hχ
 it is `±(√p) ^ (k - 2)` (`qExpansion_coeff_prime_eq_neg_atkinLehnerSign_mul`). -/
 theorem qExpansion_coeff_prime_ne_zero_of_isExactDivisor (f : Newform N k) (hχ : f.χ = 1)
     (hp : p.Prime) (h : p ∥ N) : (qExpansion 1 f.toCuspForm).coeff p ≠ 0 := by
-  rw [f.qExpansion_coeff_prime_eq_neg_atkinLehnerSign_mul hχ hp h, neg_ne_zero]
+  rw [f.qExpansion_coeff_prime_eq_neg_atkinLehnerSign_mul hχ hp h.dvd (h.not_sq_dvd hp.one_lt.ne'),
+    neg_ne_zero]
   refine mul_ne_zero ?_ (zpow_ne_zero _ (Complex.ofReal_ne_zero.mpr
     (Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr hp.pos))))
   rcases f.atkinLehnerSign_eq_one_or_neg_one hχ h with hε | hε <;> simp [hε]
@@ -238,8 +244,8 @@ theorem qExpansion_coeff_prime_sq_of_isExactDivisor (f : Newform N k) (hχ : f.�
     rcases f.atkinLehnerSign_eq_one_or_neg_one hχ h with hε | hε <;> simp [hε]
   have hs : ((Real.sqrt p : ℝ) : ℂ) ^ 2 = p := by
     rw [← Complex.ofReal_pow, Real.sq_sqrt (Nat.cast_nonneg p), Complex.ofReal_natCast]
-  rw [f.qExpansion_coeff_prime_eq_neg_atkinLehnerSign_mul hχ hp h, neg_sq, mul_pow, hε, one_mul,
-    ← zpow_natCast, ← zpow_mul, mul_comm, zpow_mul, zpow_natCast, hs]
+  rw [f.qExpansion_coeff_prime_eq_neg_atkinLehnerSign_mul hχ hp h.dvd (h.not_sq_dvd hp.one_lt.ne'),
+    neg_sq, mul_pow, hε, one_mul, ← zpow_natCast, ← zpow_mul, mul_comm, zpow_mul, zpow_natCast, hs]
 
 end Newform
 
