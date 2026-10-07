@@ -33,9 +33,9 @@ namespace TauCeti.ClassFieldTheory
 /-- An isomorphism of fields supplies an additive equivalence of their cohomological Brauer
 groups, using a chosen identification of separable closures. -/
 def brCongr {K L : Type*} [Field K] [Field L] (e : K ≃+* L) : Br K ≃+ Br L := by
-  let φ : AbsoluteGaloisGroup L ≃ₜ* AbsoluteGaloisGroup K := absoluteGaloisGroupCongr e
+  let φ : AbsoluteGaloisGroup L ≃ₜ* AbsoluteGaloisGroup K := e.absoluteGaloisGroupCongr
   let c : UnitsCoeff L ≃+ UnitsCoeff K :=
-    (Units.mapEquiv (separableClosureRingEquivCongr e).toMulEquiv).toAdditive
+    (Units.mapEquiv e.separableClosureCongr.toMulEquiv).toAdditive
   have hc (g : AbsoluteGaloisGroup L) (x : UnitsCoeff K) :
       c.symm (φ g • x) = g • c.symm x := by
     apply c.injective
@@ -45,9 +45,8 @@ def brCongr {K L : Type*} [Field K] [Field L] (e : K ≃+* L) : Br K ≃+ Br L :
     -- The coefficient actions are evaluation by field automorphisms; taking values exposes
     -- the conjugation formula supplied by the absolute-Galois-group equivalence.
     change (φ g) (x.toMul : SeparableClosure K) =
-      separableClosureRingEquivCongr e
-        (g ((separableClosureRingEquivCongr e).symm (x.toMul : SeparableClosure K)))
-    exact absoluteGaloisGroupCongr_apply e g _
+      e.separableClosureCongr (g (e.separableClosureCongr.symm (x.toMul : SeparableClosure K)))
+    exact e.absoluteGaloisGroupCongr_apply g _
   exact (unitsRepH2Equiv K).symm.trans
     ((ContCohomology.explicitMap2Equiv (AbsoluteGaloisGroup K) (UnitsCoeff K)
       (AbsoluteGaloisGroup L) (UnitsCoeff L) φ c.symm

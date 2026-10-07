@@ -59,7 +59,7 @@ private noncomputable def absoluteGaloisGroupEquivReal (w : InfinitePlace K) (hw
     AbsoluteGaloisGroup w.Completion ≃* (ℂ ≃ₐ[ℝ] ℂ) := by
   letI : IsAlgClosure ℝ ℂ := ⟨inferInstance, inferInstance⟩
   let eC := IsSepClosure.equiv ℝ (SeparableClosure ℝ) ℂ
-  exact (absoluteGaloisGroupCongr (Completion.ringEquivRealOfIsReal hw)).symm.toMulEquiv.trans
+  exact (Completion.ringEquivRealOfIsReal hw).absoluteGaloisGroupCongr.symm.toMulEquiv.trans
     eC.autCongr
 
 /-- The absolute Galois group of a real infinite completion has two elements. -/
@@ -133,12 +133,8 @@ theorem surjective_brInfl_realOpenNormalSubgroup (w : InfinitePlace K) (hw : w.I
         (NormalLayer.ofOpenNormal V).ground := by
       apply OpenSubgroup.toSubgroup_injective
       simpa using hV
-    let _ : Subsingleton (NormalLayer.ofOpenNormal V).Gal :=
-      (NormalLayer.ofOpenNormal V).subsingleton_gal_of_top_eq_ground htrivial
-    let _ : Subsingleton ((NormalLayer.ofOpenNormal V).H
-        (unitsFormation w.Completion) 2) := ModuleCat.subsingleton_of_isZero
-      (isZero_groupCohomology_succ_of_subsingleton
-        ((NormalLayer.ofOpenNormal V).rep (unitsFormation w.Completion)) 1)
+    let _ := (NormalLayer.ofOpenNormal V).subsingleton_H_succ_of_top_eq_ground
+      (unitsFormation w.Completion) htrivial 1
     refine ⟨0, ?_⟩
     rw [map_zero, ← hy, Subsingleton.elim y 0, map_zero]
 
@@ -182,10 +178,7 @@ theorem realLayerInv_injective (w : InfinitePlace K) (hw : w.IsReal)
     (L : NormalLayer (AbsoluteGaloisGroup w.Completion)) :
     Function.Injective (realLayerInv w hw L) := by
   rcases L.top_eq_ground_or_eq_realLayer_of_isReal w hw with hL | hL
-  · let _ : Subsingleton L.Gal := L.subsingleton_gal_of_top_eq_ground hL
-    let _ : Subsingleton (L.H (unitsFormation w.Completion) 2) :=
-      ModuleCat.subsingleton_of_isZero
-        (isZero_groupCohomology_succ_of_subsingleton (L.rep (unitsFormation w.Completion)) 1)
+  · let _ := L.subsingleton_H_succ_of_top_eq_ground (unitsFormation w.Completion) hL 1
     exact fun _ _ _ => Subsingleton.elim _ _
   · subst L
     rw [realLayerInv_realLayer]
@@ -216,11 +209,7 @@ theorem realLayerInv_cohomologyRes (w : InfinitePlace K) (hw : w.IsReal)
       T.relativeDegree • realLayerInv w hw big x := by
   rcases small.top_eq_ground_or_eq_realLayer_of_isReal w hw with hsmall | hsmall
   · rcases big.top_eq_ground_or_eq_realLayer_of_isReal w hw with hbig | hbig
-    · let _ : Subsingleton big.Gal := big.subsingleton_gal_of_top_eq_ground hbig
-      let _ : Subsingleton (big.H (unitsFormation w.Completion) 2) :=
-        ModuleCat.subsingleton_of_isZero
-          (isZero_groupCohomology_succ_of_subsingleton
-            (big.rep (unitsFormation w.Completion)) 1)
+    · let _ := big.subsingleton_H_succ_of_top_eq_ground (unitsFormation w.Completion) hbig 1
       have hx : x = 0 := Subsingleton.elim _ _
       subst x
       simp
@@ -235,10 +224,8 @@ theorem realLayerInv_cohomologyRes (w : InfinitePlace K) (hw : w.IsReal)
           (NormalLayer.ofOpenNormal (realOpenNormalSubgroup w hw)) x ∈
           Set.range (realLayerInv w hw
             (NormalLayer.ofOpenNormal (realOpenNormalSubgroup w hw))) := ⟨x, rfl⟩
-      rw [range_realLayerInv w hw] at hx
-      rw [degree_realLayer] at hx
-      change (2 : ℤ) • realLayerInv w hw
-        (NormalLayer.ofOpenNormal (realOpenNormalSubgroup w hw)) x = 0 at hx
+      rw [range_realLayerInv w hw, degree_realLayer, SetLike.mem_coe,
+        AddSubgroup.torsionBy.nsmul_iff] at hx
       exact hx.symm
   · subst small
     have hbig : big = NormalLayer.ofOpenNormal (realOpenNormalSubgroup w hw) := by
@@ -262,11 +249,7 @@ theorem realLayerInv_cohomologyInfl (w : InfinitePlace K) (hw : w.IsReal)
     realLayerInv w hw new (T.cohomologyInfl (unitsFormation w.Completion) 2 x) =
       realLayerInv w hw old x := by
   rcases old.top_eq_ground_or_eq_realLayer_of_isReal w hw with hold | hold
-  · let _ : Subsingleton old.Gal := old.subsingleton_gal_of_top_eq_ground hold
-    let _ : Subsingleton (old.H (unitsFormation w.Completion) 2) :=
-      ModuleCat.subsingleton_of_isZero
-        (isZero_groupCohomology_succ_of_subsingleton
-          (old.rep (unitsFormation w.Completion)) 1)
+  · let _ := old.subsingleton_H_succ_of_top_eq_ground (unitsFormation w.Completion) hold 1
     have hx : x = 0 := Subsingleton.elim _ _
     subst x
     simp
@@ -291,13 +274,8 @@ theorem realLayerInv_apply (w : InfinitePlace K) (hw : w.IsReal)
       if x = 0 then 0 else ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) := by
   classical
   rcases L.top_eq_ground_or_eq_realLayer_of_isReal w hw with hL | hL
-  · have hx : x = 0 := by
-      let _ : Subsingleton L.Gal := L.subsingleton_gal_of_top_eq_ground hL
-      let _ : Subsingleton (L.H (unitsFormation w.Completion) 2) :=
-        ModuleCat.subsingleton_of_isZero
-          (isZero_groupCohomology_succ_of_subsingleton
-            (L.rep (unitsFormation w.Completion)) 1)
-      exact Subsingleton.elim _ _
+  · have hx : x = 0 :=
+      (L.subsingleton_H_succ_of_top_eq_ground (unitsFormation w.Completion) hL 1).elim _ _
     subst x
     simp
   · subst L
@@ -333,6 +311,15 @@ noncomputable def infiniteClassFormationOfIsReal (w : InfinitePlace K) (hw : w.I
   inv_infl := realLayerInv_cohomologyInfl w hw
   inv_conj := realLayerInv_conjugateCohomologyIso w hw
 
+/-- The invariant of the real-place class formation is `realLayerInv`. -/
+@[simp]
+theorem infiniteClassFormationOfIsReal_inv_apply (w : InfinitePlace K) (hw : w.IsReal)
+    (L : NormalLayer (AbsoluteGaloisGroup w.Completion))
+    (x : L.H (unitsFormation w.Completion) 2) :
+    (infiniteClassFormationOfIsReal w hw).inv L x = realLayerInv w hw L x := by
+  unfold infiniteClassFormationOfIsReal
+  rfl
+
 /-- The invariant of the real-place class formation is the normalized archimedean Brauer
 invariant of the inflated class. -/
 theorem infiniteClassFormationOfIsReal_inv (w : InfinitePlace K) (hw : w.IsReal)
@@ -345,19 +332,14 @@ theorem infiniteClassFormationOfIsReal_inv (w : InfinitePlace K) (hw : w.IsReal)
       apply OpenNormalSubgroup.toSubgroup_injective
       simpa using hV
     subst V
-    change realLayerInv w hw
-      (NormalLayer.ofOpenNormal (realOpenNormalSubgroup w hw)) x = _
-    rw [realLayerInv_realLayer, AddMonoidHom.comp_apply]
+    rw [infiniteClassFormationOfIsReal_inv_apply, realLayerInv_realLayer,
+      AddMonoidHom.comp_apply]
   · have htrivial : (NormalLayer.ofOpenNormal V).top =
         (NormalLayer.ofOpenNormal V).ground := by
       apply OpenSubgroup.toSubgroup_injective
       simpa using hV
-    let _ : Subsingleton (NormalLayer.ofOpenNormal V).Gal :=
-      (NormalLayer.ofOpenNormal V).subsingleton_gal_of_top_eq_ground htrivial
-    let _ : Subsingleton ((NormalLayer.ofOpenNormal V).H
-        (unitsFormation w.Completion) 2) := ModuleCat.subsingleton_of_isZero
-      (isZero_groupCohomology_succ_of_subsingleton
-        ((NormalLayer.ofOpenNormal V).rep (unitsFormation w.Completion)) 1)
+    let _ := (NormalLayer.ofOpenNormal V).subsingleton_H_succ_of_top_eq_ground
+      (unitsFormation w.Completion) htrivial 1
     have hx : x = 0 := Subsingleton.elim _ _
     subst x
     simp

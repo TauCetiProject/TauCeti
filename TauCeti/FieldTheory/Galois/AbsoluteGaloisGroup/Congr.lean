@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: The Tau Ceti contributors, Codex
 -/
 module
 
@@ -15,28 +15,48 @@ Galois groups.  This file packages that identification as an isomorphism of topo
 It is useful when a field is presented through a canonical completion or another isomorphic
 model, while Galois-cohomological constructions are available on the standard model.
 
-## Main definition
+The construction is extracted from the transport of cohomological Brauer groups in
+`TauCeti.NumberTheory.ClassFieldTheory.Brauer.Congr`, which now reuses it.
 
-* `TauCeti.separableClosureRingEquivCongr`: the chosen equivalence of separable closures induced
-  by a field isomorphism.
-* `TauCeti.absoluteGaloisGroupCongr`: the continuous group equivalence induced by a field
+## Main definitions
+
+* `RingEquiv.separableClosureCongr`: the chosen equivalence of separable closures induced by a
+  field isomorphism.
+* `RingEquiv.absoluteGaloisGroupCongr`: the continuous group equivalence induced by a field
   isomorphism.
 -/
 
 public noncomputable section
 
-namespace TauCeti
+open TauCeti
+
+namespace RingEquiv
 
 variable {K L : Type*} [Field K] [Field L]
 
 /-- A field isomorphism induces a chosen ring equivalence of separable closures. -/
-def separableClosureRingEquivCongr (e : K ≃+* L) :
+def separableClosureCongr (e : K ≃+* L) :
     SeparableClosure L ≃+* SeparableClosure K := by
   let _ : Algebra K L := e.toRingHom.toAlgebra
   let eA : K ≃ₐ[K] L := { e with commutes' := fun _ => rfl }
   let σ : L →ₐ[K] SeparableClosure K :=
     (Algebra.ofId K (SeparableClosure K)).comp eA.symm.toAlgHom
   exact separableClosureRingEquiv K L σ
+
+/-- The chosen equivalence of separable closures extends `e.symm`. -/
+@[simp]
+theorem separableClosureCongr_algebraMap (e : K ≃+* L) (y : L) :
+    e.separableClosureCongr (algebraMap L (SeparableClosure L) y) =
+      algebraMap K (SeparableClosure K) (e.symm y) := by
+  let _ : Algebra K L := e.toRingHom.toAlgebra
+  exact separableClosureRingEquiv_algebraMap K L _ y
+
+/-- The inverse of the chosen equivalence of separable closures extends `e`. -/
+@[simp]
+theorem separableClosureCongr_symm_algebraMap (e : K ≃+* L) (x : K) :
+    e.separableClosureCongr.symm (algebraMap K (SeparableClosure K) x) =
+      algebraMap L (SeparableClosure L) (e x) := by
+  rw [RingEquiv.symm_apply_eq, separableClosureCongr_algebraMap, e.symm_apply_apply]
 
 /-- A field isomorphism `K ≃+* L` induces a contravariant continuous equivalence
 `G_L ≃ₜ* G_K` of absolute Galois groups. -/
@@ -75,12 +95,11 @@ through the chosen equivalence of separable closures. -/
 theorem absoluteGaloisGroupCongr_apply (e : K ≃+* L) (g : AbsoluteGaloisGroup L)
     (x : SeparableClosure K) :
     absoluteGaloisGroupCongr e g x =
-      separableClosureRingEquivCongr e
-        (g ((separableClosureRingEquivCongr e).symm x)) := by
+      e.separableClosureCongr (g (e.separableClosureCongr.symm x)) := by
   let _ : Algebra K L := e.toRingHom.toAlgebra
   let eA : K ≃ₐ[K] L := { e with commutes' := fun _ => rfl }
   let σ : L →ₐ[K] SeparableClosure K :=
     (Algebra.ofId K (SeparableClosure K)).comp eA.symm.toAlgHom
   exact absoluteGaloisGroupEquivFixingSubgroup_apply K L σ g x
 
-end TauCeti
+end RingEquiv
