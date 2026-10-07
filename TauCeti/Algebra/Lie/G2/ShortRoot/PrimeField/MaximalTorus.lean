@@ -100,13 +100,6 @@ section Extension
 
 variable (k : Type) [CommRing k] [Algebra (ZMod 3) k]
 
-/-- The extended carrier's points identified with its matrix-valued prime-field points. -/
-abbrev baseChangePointsEquiv :
-    HopfAlgebra.points (R := k) (H := CommHopfAlgCat.baseChange (K := k) carrierAlgebra)
-      (CommAlgCat.of k k) ≃* points k :=
-  (AlgHom.baseChangePointsMulEquiv (k := ZMod 3) (K := k) (A := carrierAlgebra)
-    (R := k)).symm.trans (pointsMulEquiv (CommAlgCat.of (ZMod 3) k))
-
 /-- The extended torus ideal cuts out the same matrix-valued torus points. -/
 theorem map_quotientPointsSubgroup_baseChangeHopfIdeal_weightTorusDefiningIdeal :
     (CommHopfAlgCat.quotientPointsSubgroup

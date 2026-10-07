@@ -120,6 +120,13 @@ noncomputable def pointsMulEquiv (A : CommAlgCat.{v} (ZMod 3)) :
     (MulEquiv.subgroupCongr (by
       simpa only [definingIdeal_def] using points_eq_hopfIdealPointsSubgroup A)).symm
 
+/-- The extended carrier's points identified with its matrix-valued prime-field points. -/
+noncomputable abbrev baseChangePointsEquiv (k : Type) [CommRing k] [Algebra (ZMod 3) k] :
+    HopfAlgebra.points (R := k) (H := CommHopfAlgCat.baseChange (K := k) carrierAlgebra)
+      (CommAlgCat.of k k) ≃* points k :=
+  (AlgHom.baseChangePointsMulEquiv (k := ZMod 3) (K := k) (A := carrierAlgebra)
+    (R := k)).symm.trans (pointsMulEquiv (CommAlgCat.of (ZMod 3) k))
+
 /-- A common-kernel quotient point is its underlying general-linear point read as a matrix. -/
 private theorem coe_pointsMulEquiv_apply (A : CommAlgCat.{v} (ZMod 3))
     (q : HopfAlgebra.points
