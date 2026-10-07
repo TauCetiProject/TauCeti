@@ -146,15 +146,16 @@ theorem smul_map_eq_of_isCocycle₂_of_mul_eq_mul {f : K × K → A} (hf : IsCoc
   rw [h₂] at e2
   linear_combination (norm := abel) -e1 + e2 - hf a b d₂
 
+/-- A `2`-cocycle of a monoid `K` vanishing on `K × N`, for a subset `N`, is unchanged by right
+multiplication of its second argument by `N`. -/
+theorem apply_mul_snd_of_isCocycle₂_of_vanishing {K A : Type*} [Monoid K] [AddCommGroup A]
+    [DistribMulAction K A] {N : Set K} {f : K × K → A} (hf : IsCocycle₂ f)
+    (hR : ∀ (g : K) (n : N), f (g, n) = 0) (g h : K) (n : N) : f (g, h * n) = f (g, h) := by
+  simpa [hR] using (hf g h n).symm
+
 section Vanishing
 
 variable {G A : Type*} [Group G] [AddCommGroup A] [DistribMulAction G A] {N : Subgroup G}
-
-/-- A `2`-cocycle vanishing on `G × N` is unchanged by right multiplication of its second argument
-by `N`. -/
-theorem apply_mul_snd_of_isCocycle₂_of_vanishing {f : G × G → A} (hf : IsCocycle₂ f)
-    (hR : ∀ (g : G) (n : N), f (g, n) = 0) (g h : G) (n : N) : f (g, h * n) = f (g, h) := by
-  simpa [hR] using (hf g h n).symm
 
 /-- A `2`-cocycle vanishing on `G × N` and on `N × G`, for a normal subgroup `N`, is unchanged by
 right multiplication of its first argument by `N`. -/
