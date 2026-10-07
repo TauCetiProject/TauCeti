@@ -342,11 +342,11 @@ theorem _root_.Representation.IntertwiningMap.baseChange_baseChange_apply_of_app
     {f : _root_.Representation.IntertwiningMap ρ σ} {g : _root_.Representation.IntertwiningMap σ ρ}
     {r : R} (hgf : ∀ v, g (f v) = r • v) (A : Type*) [Semiring A] [Algebra R A]
     (x : A ⊗[R] V) : g.baseChange A (f.baseChange A x) = r • x := by
+  have hcomp : g.toLinearMap ∘ₗ f.toLinearMap = r • LinearMap.id := LinearMap.ext hgf
   have h := congrArg (fun φ ↦ φ.toLinearMap)
     (_root_.Representation.IntertwiningMap.baseChange_comp g f A)
   rw [_root_.Representation.IntertwiningMap.toLinearMap_baseChange,
-    _root_.Representation.IntertwiningMap.comp_toLinearMap,
-    show g.toLinearMap ∘ₗ f.toLinearMap = r • LinearMap.id from LinearMap.ext hgf,
+    _root_.Representation.IntertwiningMap.comp_toLinearMap, hcomp,
     LinearMap.baseChange_smul, LinearMap.baseChange_id] at h
   exact (LinearMap.congr_fun h x).symm
 
