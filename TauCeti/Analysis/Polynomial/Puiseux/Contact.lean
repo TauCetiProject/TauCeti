@@ -174,7 +174,6 @@ are locally constant, including contacts between labels colliding there. Analyti
 splitting, and the power-times-unit discriminant identity are only required as germs
 at the central point. -/
 theorem eventually_min_analyticOrderAt_root_sub_eq
-    (hN : N ≠ 0)
     (hr : ∀ i, AnalyticAt ℂ (r i) (x₀, 0))
     (hP : ∀ᶠ b in 𝓝 (x₀, (0 : ℂ)), P (b.1, b.2 ^ N) = ∏ i, (X - C (r i b)))
     (hu : AnalyticAt ℂ u (x₀, 0)) (hu0 : u (x₀, 0) ≠ 0)
@@ -183,6 +182,8 @@ theorem eventually_min_analyticOrderAt_root_sub_eq
     ∀ᶠ x in 𝓝 x₀, ∀ i j,
       min (N : ℕ∞) (analyticOrderAt (fun t ↦ r j (x, t) - r i (x, 0)) 0) =
         min (N : ℕ∞) (analyticOrderAt (fun t ↦ r j (x₀, t) - r i (x₀, 0)) 0) := by
+  by_cases hN : N = 0
+  · simp [hN]
   -- Shrink all germ hypotheses to one connected cylinder preserved by rotation.
   have hlocal : ∀ᶠ b in 𝓝 (x₀, (0 : ℂ)),
       (∀ i, AnalyticAt ℂ (r i) b) ∧
