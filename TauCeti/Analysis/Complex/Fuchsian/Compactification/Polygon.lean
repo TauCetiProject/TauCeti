@@ -26,7 +26,7 @@ cofinite group is not asserted here.
 
 * `ConvexPolygon.exists_isCompact_cover_quotient_horodiscs`: compact representatives outside
   an arbitrary family of cusp horodiscs.
-* `ConvexPolygon.compactSpace_compactifiedQuotient`: compactness when the cusp set is finite.
+* `ConvexPolygon.compactSpace_compactifiedQuotient`: compactness with finitely many cusp orbits.
 * `ConvexPolygon.isCompact_compl_iUnion_image_horodisc`: compactness of the truncated
   coarse quotient.
 
@@ -112,7 +112,7 @@ theorem isCompact_compl_iUnion_image_horodisc
   · exact hqK
   · exact False.elim (hq (mem_iUnion.mpr ⟨C, hqC⟩))
 
-/-- A discrete group's cusp compactification is compact if its cusp set is finite and a
+/-- A discrete group's cusp compactification is compact if it has finitely many cusp orbits and a
 finite-sided convex polygon with cuspidal ideal vertices meets every upper-half-plane orbit. -/
 theorem compactSpace_compactifiedQuotient [Finite Γ.CuspOrbit]
     (hcover : ∀ q : orbitRel.Quotient Γ ℍ, q ∈ Quotient.mk (orbitRel Γ ℍ) '' P.carrier)
