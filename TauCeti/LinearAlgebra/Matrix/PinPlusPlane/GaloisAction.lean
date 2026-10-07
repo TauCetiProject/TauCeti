@@ -76,6 +76,7 @@ section Sign
 variable {F : Type*} [Field F] [NeZero (2 : F)] {r2 : F}
 
 /-- Changing the square root of two changes a section lift by the sign of its swap coordinate. -/
+@[simp]
 theorem pinLift_neg (hr2 : r2 ^ 2 = 2) (w : WreathC2) :
     pinLift (show (-r2) ^ 2 = 2 by simpa using hr2) w =
       (-1 : F) ^ (coordC w).val • pinLift hr2 w := by
