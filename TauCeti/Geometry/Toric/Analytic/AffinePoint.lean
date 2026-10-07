@@ -54,7 +54,9 @@ cone, induces a homeomorphism.
 * `TauCeti.Toric.isClosedEmbedding_monomialEmbedding`: the monomial embedding is a closed
   embedding, whence the Hausdorff, second countable and locally compact conclusions.
 * `TauCeti.Toric.isCompact_setOf_forall_norm_apply_single_le_one`: the points at which every
-  monomial has absolute value at most `1` form a compact set.
+  monomial has absolute value at most `1` form a compact set, and
+  `TauCeti.Toric.isCompact_setOf_forall_norm_apply_single_toFun_le`: so do the points at which
+  the monomials of a generating family are bounded by any constant.
 * `TauCeti.Toric.AffineSemigroupComplexPoint.comap`: the map on complex points induced by a
   homomorphism of additive monoids, with `TauCeti.Toric.AffineSemigroupComplexPoint.comap_id`
   and `TauCeti.Toric.AffineSemigroupComplexPoint.comap_comp`.
@@ -343,6 +345,23 @@ theorem locallyCompactSpace_affinePointTopology (g : AddGeneratingFamily S r) :
   letI := affinePointTopology g
   (isClosedEmbedding_monomialEmbedding g).locallyCompactSpace
 
+/-- The complex points at which the monomials of a finite generating family have absolute value at
+most `R` form a compact set: it is the preimage of a closed polydisc under the monomial embedding,
+which is a closed embedding. -/
+theorem isCompact_setOf_forall_norm_apply_single_toFun_le (g : AddGeneratingFamily S r) (R : ℝ) :
+    letI := affinePointTopology g
+    IsCompact {x : AffineSemigroupComplexPoint S |
+      ∀ j, ‖x (MonoidAlgebra.single (ofAdd (g.toFun j)) 1)‖ ≤ R} := by
+  let _ := affinePointTopology g
+  have h : {x : AffineSemigroupComplexPoint S |
+      ∀ j, ‖x (MonoidAlgebra.single (ofAdd (g.toFun j)) 1)‖ ≤ R} =
+      monomialEmbedding g ⁻¹' Set.univ.pi fun _ ↦ Metric.closedBall 0 R := by
+    ext x
+    simp
+  rw [h]
+  exact (isClosedEmbedding_monomialEmbedding g).isCompact_preimage
+    (isCompact_univ_pi fun _ ↦ isCompact_closedBall 0 R)
+
 /-- The complex points at which every monomial has absolute value at most `1` form a compact set.
 For the dual semigroup of a cone, this is the part of the affine chart lying over the cone under
 the logarithm of absolute values; for a complete fan these parts of the charts cover the analytic
@@ -351,16 +370,12 @@ theorem isCompact_setOf_forall_norm_apply_single_le_one (g : AddGeneratingFamily
     letI := affinePointTopology g
     IsCompact {x : AffineSemigroupComplexPoint S |
       ∀ s : S, ‖x (MonoidAlgebra.single (ofAdd s) 1)‖ ≤ 1} := by
-  let _ := affinePointTopology g
-  -- A monomial is a product of powers of generators, so the set is the preimage of the closed
-  -- unit polydisc under the monomial embedding, which is a closed embedding.
+  -- A monomial is a product of powers of generators, so it suffices to bound the generators.
   have h : {x : AffineSemigroupComplexPoint S |
       ∀ s : S, ‖x (MonoidAlgebra.single (ofAdd s) 1)‖ ≤ 1} =
-      monomialEmbedding g ⁻¹' Metric.closedBall 0 1 := by
+      {x | ∀ j, ‖x (MonoidAlgebra.single (ofAdd (g.toFun j)) 1)‖ ≤ 1} := by
     ext x
-    simp only [Set.mem_ofPred_eq, Set.mem_preimage, mem_closedBall_zero_iff,
-      pi_norm_le_iff_of_nonneg zero_le_one]
-    refine ⟨fun hx j ↦ by simpa using hx (g.toFun j), fun hx s ↦ ?_⟩
+    refine ⟨fun hx j ↦ hx (g.toFun j), fun hx s ↦ ?_⟩
     obtain ⟨a, ha⟩ := AddSubmonoid.exists_of_mem_closure_range g.toFun s (by
       rw [g.spans]
       trivial)
@@ -369,7 +384,7 @@ theorem isCompact_setOf_forall_norm_apply_single_le_one (g : AddGeneratingFamily
       rw [norm_pow]
       exact pow_le_one₀ (norm_nonneg _) (hx j)
   rw [h]
-  exact (isClosedEmbedding_monomialEmbedding g).isCompact_preimage (isCompact_closedBall 0 1)
+  exact isCompact_setOf_forall_norm_apply_single_toFun_le g 1
 
 /-! ### Functoriality in the semigroup -/
 
