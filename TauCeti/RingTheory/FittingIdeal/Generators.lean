@@ -75,15 +75,12 @@ variable {R F : Type*} [CommRing R] [AddCommGroup F] [Module R F]
 theorem minorsIdeal_span (s : Set F) (p : ℕ) :
     (Submodule.span R s).minorsIdeal p = TauCeti.minorsIdealOfSet s p := by
   refine le_antisymm (minorsIdeal_le_iff.2 fun f v hv ↦ ?_) ?_
-  · let μ : MultilinearMap R (fun _ : Fin p ↦ F) R :=
-      Matrix.detRowAlternating.toMultilinearMap.compLinearMap fun _ ↦ LinearMap.pi f
-    have hμ (w : Fin p → F) : μ w = (Matrix.of fun i j ↦ f j (w i)).det := by
-      simp only [μ, MultilinearMap.compLinearMap_apply, Matrix.det]
-      congr 1
-    rw [← hμ]
-    refine Submodule.span_le.2 ?_ (μ.map_mem_span_image_pi (fun _ ↦ s) hv)
+  · let ω := Matrix.detRowAlternating.compLinearMap (LinearMap.pi f)
+    rw [← Matrix.detRowAlternating_pi_apply]
+    refine Submodule.span_le.2 ?_ (ω.toMultilinearMap.map_mem_span_image_pi (fun _ ↦ s) hv)
     rintro _ ⟨w, hw, rfl⟩
-    rw [hμ]
+    rw [AlternatingMap.coe_multilinearMap, AlternatingMap.compLinearMap_apply,
+      Matrix.detRowAlternating_pi_apply]
     exact TauCeti.det_mem_minorsIdealOfSet f fun i ↦ hw i trivial
   · refine Ideal.span_le.2 ?_
     rintro _ ⟨f, v, hv, rfl⟩

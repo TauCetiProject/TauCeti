@@ -38,14 +38,7 @@ theorem elementaryIdeal_one_eq_span_alexander_of_ker_eq_range (D : OrientedPDCod
     (hπ : Function.Surjective π)
     (h : LinearMap.ker π = LinearMap.range (KnotTheory.alexanderMatrix V).mulVecLin) :
     D.elementaryIdeal 1 = Ideal.span {KnotTheory.alexander V} := by
-  calc
-    D.elementaryIdeal 1 = fittingIdeal ℤ[T;T⁻¹] D.ReducedAlexanderModule 0 :=
-      D.elementaryIdeal_succ_eq_fittingIdeal_reduced 0
-    _ = fittingIdeal ℤ[T;T⁻¹]
-        ((ι → ℤ[T;T⁻¹]) ⧸ LinearMap.range (KnotTheory.alexanderMatrix V).mulVecLin) 0 := by
-      rw [LinearMap.fittingIdeal_coker_zero_eq_span_det]
-      exact LinearMap.fittingIdeal_zero_eq_span_det_of_ker_eq_range _ hπ h
-    _ = Ideal.span {KnotTheory.alexander V} :=
-      V.fittingIdeal_coker_alexanderMatrix_zero_eq_span_alexander
+  rw [D.elementaryIdeal_succ_eq_fittingIdeal_reduced 0]
+  exact V.fittingIdeal_zero_eq_span_alexander_of_ker_eq_range hπ h
 
 end TauCeti.OrientedPDCode

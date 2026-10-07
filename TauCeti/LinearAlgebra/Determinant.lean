@@ -204,6 +204,20 @@ end LinearEquiv
 
 namespace Matrix
 
+/-- Evaluating the row determinant form after a family of linear functionals gives the
+matrix of those functionals evaluated on the input vectors. -/
+@[simp]
+theorem detRowAlternating_pi_apply {ι R F : Type*} [Fintype ι]
+    [DecidableEq ι] [CommRing R] [AddCommGroup F] [Module R F]
+    (f : ι → Module.Dual R F) (v : ι → F) :
+    detRowAlternating (fun i => LinearMap.pi f (v i)) =
+      (Matrix.of fun i j => f j (v i)).det := by
+  have hmatrix : (fun i => LinearMap.pi f (v i)) = Matrix.of (fun i j => f j (v i)) := by
+    ext i j
+    simp only [LinearMap.pi_apply, Matrix.of_apply]
+  -- Mathlib defines `det` as evaluation of `detRowAlternating` on the rows.
+  simpa only [Matrix.det] using congrArg Matrix.det hmatrix
+
 /-- Multiplication by a square matrix scales the standard-basis determinant form by its
 determinant. This is `AlternatingMap.compLinearMap_eq_det_smul` at `ω = (Pi.basisFun R ι).det`,
 in matrix vocabulary. -/

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FittingIdeal.Basic
-public import TauCeti.LinearAlgebra.Determinant
 
 /-!
 # The Fitting ideal of a square presentation
@@ -46,14 +45,11 @@ theorem minorsIdeal_range_finrank_eq_span_det (φ : F →ₗ[R] F) :
     choose w hw using hv
     let ω : F [⋀^Fin (finrank R F)]→ₗ[R] R :=
       Matrix.detRowAlternating.compLinearMap (LinearMap.pi f)
-    have hω (u : Fin (finrank R F) → F) :
-        ω u = (Matrix.of fun i j => f j (u i)).det := by
-      simp only [ω, AlternatingMap.compLinearMap_apply, Matrix.det]
-      congr 1
     have hdet : (Matrix.of fun i j => f j (v i)).det = φ.det * ω w := by
-      simpa only [AlternatingMap.compLinearMap_apply, AlternatingMap.smul_apply,
-        smul_eq_mul, hω, hw] using
-        congr($(AlternatingMap.compLinearMap_eq_det_smul b ω φ) w)
+      have hscale := congr($(AlternatingMap.compLinearMap_eq_det_smul b ω φ) w)
+      rw [AlternatingMap.compLinearMap_apply, AlternatingMap.smul_apply, smul_eq_mul] at hscale
+      simpa only [ω, AlternatingMap.compLinearMap_apply, Matrix.detRowAlternating_pi_apply,
+        hw] using hscale
     rw [hdet]
     exact Ideal.mul_mem_right _ _ (Ideal.subset_span (by simp))
   · rintro _ (rfl : _ = φ.det)
