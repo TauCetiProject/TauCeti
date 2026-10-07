@@ -385,24 +385,18 @@ def singularChainComplexShortComplexFunctor : TopPair.{w} ⥤ ShortComplex (Chai
   map_id P := by
     rw [CategoryTheory.Functor.map_id]
     apply ShortComplex.hom_ext
-    · rw [SSetPair.chainComplexShortComplexMap_τ₁, ShortComplex.id_τ₁]
-      -- The left component is the map of the forgetful functor to the subobject.
-      change ((SSet.chainComplexFunctor C).obj R).map
-        ((MorphismProperty.Arrow.forget _ _ _ ⋙ Arrow.leftFunc).map
-          (𝟙 (_root_.TopPair.toSSetPair.obj P))) = _
-      simp only [CategoryTheory.Functor.map_id]
-      -- The forgetful functor has object `P.left` (respectively `P.right`), and
-      -- `SSet.chainComplex` abbreviates the object of the coefficient chain functor.
-      rfl
-    · rw [SSetPair.chainComplexShortComplexMap_τ₂, ShortComplex.id_τ₂]
-      -- The right component is the map of the forgetful functor to the ambient object.
-      change ((SSet.chainComplexFunctor C).obj R).map
-        ((MorphismProperty.Arrow.forget _ _ _ ⋙ Arrow.rightFunc).map
-          (𝟙 (_root_.TopPair.toSSetPair.obj P))) = _
-      simp only [CategoryTheory.Functor.map_id]
-      -- The forgetful functor has object `P.left` (respectively `P.right`), and
-      -- `SSet.chainComplex` abbreviates the object of the coefficient chain functor.
-      rfl
+    -- `chainComplex` and `chainComplexMap` abbreviate the objects and maps of the
+    -- coefficient chain functor. The comma identity lemmas identify the pair components.
+    · simpa only [SSetPair.chainComplexShortComplexMap_τ₁, ShortComplex.id_τ₁,
+        SSet.chainComplex.eq_def, Functor.id_obj, SSet.chainComplexMap.eq_def,
+        ← MorphismProperty.Comma.Hom.hom_left, MorphismProperty.Comma.id_hom,
+        Comma.id_left] using
+        ((SSet.chainComplexFunctor C).obj R).map_id (_root_.TopPair.toSSetPair.obj P).left
+    · simpa only [SSetPair.chainComplexShortComplexMap_τ₂, ShortComplex.id_τ₂,
+        SSet.chainComplex.eq_def, Functor.id_obj, SSet.chainComplexMap.eq_def,
+        ← MorphismProperty.Comma.Hom.hom_right, MorphismProperty.Comma.id_hom,
+        Comma.id_right] using
+        ((SSet.chainComplexFunctor C).obj R).map_id (_root_.TopPair.toSSetPair.obj P).right
     · simpa only [SSetPair.chainComplexShortComplexMap_τ₃, ShortComplex.id_τ₃] using
         ((SSetPair.chainComplexFunctor C).obj R).map_id (_root_.TopPair.toSSetPair.obj P)
   map_comp f g := by
