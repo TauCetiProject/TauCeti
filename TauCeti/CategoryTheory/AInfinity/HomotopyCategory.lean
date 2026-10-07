@@ -142,6 +142,23 @@ theorem homClass_add {X Y : C} (f g : homModule (R := R) X Y)
   apply Subtype.ext
   exact (𝒞.homClassLinearMap X Y).map_add ⟨f, hf⟩ ⟨g, hg⟩
 
+/-- Taking a Hom class respects negation. -/
+@[simp]
+theorem homClass_neg {X Y : C} (f : homModule (R := R) X Y)
+    (hf : f ∈ 𝒞.homCyclesZero X Y) :
+    𝒞.homClass (-f) ((𝒞.homCyclesZero X Y).neg_mem hf) = -𝒞.homClass f hf := by
+  apply Subtype.ext
+  exact (𝒞.homClassLinearMap X Y).map_neg ⟨f, hf⟩
+
+/-- Taking a Hom class respects subtraction. -/
+@[simp]
+theorem homClass_sub {X Y : C} (f g : homModule (R := R) X Y)
+    (hf : f ∈ 𝒞.homCyclesZero X Y) (hg : g ∈ 𝒞.homCyclesZero X Y) :
+    𝒞.homClass (f - g) ((𝒞.homCyclesZero X Y).sub_mem hf hg) =
+      𝒞.homClass f hf - 𝒞.homClass g hg := by
+  apply Subtype.ext
+  exact (𝒞.homClassLinearMap X Y).map_sub ⟨f, hf⟩ ⟨g, hg⟩
+
 /-- Taking a Hom class respects scalar multiplication. -/
 @[simp]
 theorem homClass_smul {X Y : C} (r : R) (f : homModule (R := R) X Y)
@@ -411,6 +428,21 @@ theorem homOf_add {X Y : C} (f g : homModule (R := R) X Y)
     homOf (h𝒞 := h𝒞) (f + g) ((𝒞.homCyclesZero X Y).add_mem hf hg) =
       homOf f hf + homOf g hg :=
   𝒞.homClass_add f g hf hg
+
+/-- Taking a morphism to `H⁰(𝒞)` preserves negation. -/
+@[simp]
+theorem homOf_neg {X Y : C} (f : homModule (R := R) X Y)
+    (hf : f ∈ 𝒞.homCyclesZero X Y) :
+    homOf (h𝒞 := h𝒞) (-f) ((𝒞.homCyclesZero X Y).neg_mem hf) = -homOf f hf :=
+  𝒞.homClass_neg f hf
+
+/-- Taking a morphism to `H⁰(𝒞)` preserves subtraction. -/
+@[simp]
+theorem homOf_sub {X Y : C} (f g : homModule (R := R) X Y)
+    (hf : f ∈ 𝒞.homCyclesZero X Y) (hg : g ∈ 𝒞.homCyclesZero X Y) :
+    homOf (h𝒞 := h𝒞) (f - g) ((𝒞.homCyclesZero X Y).sub_mem hf hg) =
+      homOf f hf - homOf g hg :=
+  𝒞.homClass_sub f g hf hg
 
 /-- Taking a morphism to `H⁰(𝒞)` preserves scalar multiplication. -/
 @[simp]

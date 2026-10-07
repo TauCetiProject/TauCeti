@@ -196,8 +196,7 @@ theorem homInclusion_homDifferential (X Y : C) (f : homModule (R := R) X Y) :
   rwa [e] at h
 
 /-- Taking a component intertwines the total differential with the Hom differential.
-This is an explicit rewrite: `differential_apply` already simplifies the total differential
-to `m₁`. -/
+In particular, it sends total boundaries to boundaries in the selected Hom module. -/
 theorem homProjection_differential (X Y : C) (x : TotalHom R C) :
     homProjection X Y (𝒞.differential x) =
       𝒞.homDifferential X Y (homProjection X Y x) := by
