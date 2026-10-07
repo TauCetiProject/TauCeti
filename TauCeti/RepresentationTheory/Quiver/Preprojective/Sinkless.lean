@@ -259,16 +259,21 @@ private noncomputable def toEnd : pathAlgebra k (Symmetrify Q) →ₐ[k] Module.
 
 /-! ### The local relations act by zero -/
 
+private theorem sum_eq_zero_iff_neg_eq_sum_compl {ι M : Type*} [Fintype ι] [AddCommGroup M]
+    [DecidableEq ι] (f : ι → M) (i : ι) :
+    (∑ j, f j) = 0 ↔ -f i = ∑ j ∈ ({i} : Finset ι)ᶜ, f j := by
+  rw [← Finset.sum_add_sum_compl ({i} : Finset ι), Finset.sum_singleton,
+    neg_eq_iff_add_eq_zero]
+
 open scoped Classical in
 /-- The local relation at `u` acts by zero on a path ending at `u`: its `β_u` term is the rewritten
 backtrack `β_u α_u`, and it cancels the other terms. -/
 private theorem sum_arrowMap_act_reverse {a u : Symmetrify Q} (p : Path a u) :
     ∑ s : Σ i, i ⟶ u, doubledArrowSign k s.2 • arrowMap k σ s.2 (act k σ p (reverse s.2)) =
       0 := by
-  rw [← Finset.sum_add_sum_compl ({⟨_, reverse (chosenArrow σ u)⟩} : Finset (Σ i, i ⟶ u)),
-    Finset.sum_singleton,
+  rw [sum_eq_zero_iff_neg_eq_sum_compl _ ⟨_, reverse (chosenArrow σ u)⟩,
     reverse_reverse, act_chosenArrow, arrowMap_single, one_smul, act_cons_backtrack,
-    doubledArrowSign_reverse, doubledArrowSign_chosenArrow, neg_one_smul, neg_add_eq_zero]
+    doubledArrowSign_reverse, doubledArrowSign_chosenArrow, neg_one_smul, neg_neg]
   refine Finset.sum_congr rfl fun s hs => ?_
   rw [arrowMap_eq_append k σ s.2 (Finset.mem_compl.1 hs <| Finset.mem_singleton.2 ·)]
 
@@ -336,10 +341,10 @@ private theorem preprojectiveMk_backtrack (v : Q) :
     rw [Fintype.sum_sigma]
     simpa only [localPreprojectiveRelator_eq_sum_ofArrow_mul, map_sum, mul_smul_comm, map_smul]
       using preprojectiveMk_localPreprojectiveRelator k v
-  rwa [← Finset.sum_add_sum_compl ({⟨_, reverse (chosenArrow σ (Symmetrify.of.obj v))⟩} :
-      Finset (Σ i, i ⟶ Symmetrify.of.obj v)),
-    Finset.sum_singleton, reverse_reverse, doubledArrowSign_reverse, doubledArrowSign_chosenArrow,
-    neg_one_smul, neg_add_eq_zero] at h
+  rw [sum_eq_zero_iff_neg_eq_sum_compl _
+    ⟨_, reverse (chosenArrow σ (Symmetrify.of.obj v))⟩] at h
+  simpa only [reverse_reverse, doubledArrowSign_reverse, doubledArrowSign_chosenArrow,
+    neg_one_smul, neg_neg] using h
 
 /-- The class in `Π` of a linear combination of paths. -/
 private noncomputable def readOff (x : Symmetrify Q) :
@@ -425,9 +430,17 @@ private theorem readOffAll_toEnd_unitVec (f : pathAlgebra k (Symmetrify Q)) :
   | add f f' hf hf' => rw [map_add, LinearMap.add_apply, map_add, hf, hf', map_add]
   | single x c =>
     obtain ⟨a, b, p⟩ := x
-    rw [single_eq_smul_ofPath, map_smul, LinearMap.smul_apply, map_smul, toEnd,
-      liftAlgHom_ofPath, pathEnd_apply, readOffAll_single, readOff_pathMap, unitVec,
-      readOff_single, one_smul, ← map_mul, ofPath_mul_ofPath_of_comp, Path.nil_comp, map_smul]
+    have haction :
+        toEnd k σ (ofPath ⟨a, b, p⟩) (unitVec k Q) =
+          Pi.single b (pathMap k σ p (Finsupp.single ⟨a, Path.nil⟩ 1)) := by
+      rw [toEnd, liftAlgHom_ofPath, pathEnd_apply, unitVec]
+    have hread :
+        readOff k b (pathMap k σ p (Finsupp.single ⟨a, Path.nil⟩ 1)) =
+          preprojectiveMk k Q (ofPath ⟨a, b, p⟩) := by
+      rw [readOff_pathMap, readOff_single, one_smul, ← map_mul, ofPath_mul_ofPath_of_comp,
+        Path.nil_comp]
+    rw [single_eq_smul_ofPath, map_smul, LinearMap.smul_apply, haction, map_smul,
+      readOffAll_single, hread, map_smul]
 
 /-- **The action is faithful**: `y` is read back from its action on the trivial paths. -/
 private theorem readOffAll_toEndPreprojective_unitVec (y : preprojectiveAlgebra k Q) :
