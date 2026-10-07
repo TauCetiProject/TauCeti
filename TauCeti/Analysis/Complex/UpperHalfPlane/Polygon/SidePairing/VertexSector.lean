@@ -38,12 +38,6 @@ namespace TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing
 
 variable {n : ℕ} [NeZero n] {P : ConvexPolygon n} (σ : P.SidePairing)
 
-/-- Pulling the vertex at the `m`th successor back to the original vertex gives the centre of
-the `m`th tile. -/
-theorem vertex_inv_partialCycleMap_smul (j : Fin n) (m : ℕ) :
-    ((σ.partialCycleMap j m)⁻¹ • P).vertex (σ.next^[m] j) = P.vertex j := by
-  rw [vertex_smul, ← σ.partialCycleMap_smul_vertex, inv_smul_smul]
-
 /-- Successive pulled-back sectors are separated by the supporting geodesic of the side
 leaving the current vertex. -/
 theorem inv_map_smul_vertexSector_next_subset_closure_rightHalfPlane (j : Fin n) :
