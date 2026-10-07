@@ -19,8 +19,10 @@ The complexification, transverse direction, branches and discriminant unit are c
 from the real data. Neither a prepared discriminant nor a splitting is assumed.
 
 The branches retain repeated labels on the exceptional hyperplane. Their restrictions there
-supply real root sections, even when the central fiber has multiple roots. This result does
-not assert constancy of the ambient order of the original polynomial on those sections.
+give complex roots, even when the central fiber has multiple roots. The real branches are
+subsequently selected to construct real root sections in
+`TauCeti.Geometry.RealAlgebraic.Stack.Discriminant`. This result does not assert constancy of
+the ambient order of the original polynomial on those sections.
 
 ## References
 
