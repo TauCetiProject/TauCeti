@@ -127,9 +127,11 @@ private theorem freeLocus_mem_nhds_polynomial {R : Type uR} [CommRing R] [Algebr
           (Submodule.submoduleOf_eq_top.mpr hNsucc.le)
     have hker : LinearMap.ker ψ = (K j).restrictScalars A := by
       ext c
-      change ((N j).submoduleOf (N (j + 1))).mkQ ⟨φ j c, hmem c⟩ = 0 ↔ φ j c ∈ F j
-      simp only [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-      rfl
+      simp only [LinearMap.mem_ker, ψ, LinearMap.comp_apply, Submodule.mkQ_apply,
+        Submodule.Quotient.mk_eq_zero]
+      simp only [N, K, OrderHom.coe_mk, Submodule.restrictScalars_mem, Submodule.submoduleOf,
+        Submodule.mem_comap, LinearMap.codRestrict_apply, LinearMap.restrictScalars_apply,
+        Submodule.coe_subtype]
     exact freeLocus_congr ((Submodule.Quotient.restrictScalarsEquiv A (K j)).symm ≪≫ₗ
       Submodule.quotEquivOfEq _ _ hker.symm ≪≫ₗ ψ.quotKerEquivOfSurjective hψ)
   -- Only the finitely many subquotients with `j ≤ j₀` matter.
