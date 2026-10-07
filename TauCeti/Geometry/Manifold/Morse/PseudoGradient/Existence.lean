@@ -33,8 +33,6 @@ is possible because a Morse function on a compact manifold has finitely many cri
 
 * `TauCeti.MorseChart.field`: the linear field of a Morse chart, on the manifold, with
   `TauCeti.MorseChart.mvfderiv_field_apply_lt_zero` and `TauCeti.MorseChart.mfderiv_eq_zero_iff`.
-* `TauCeti.IsMorse.nonempty_morseChart`: every critical point of a Morse function has a Morse
-  chart.
 * `TauCeti.IsMorse.finite_setOf_mfderiv_eq_zero`: finiteness of the critical set.
 * `TauCeti.IsMorse.exists_isAdaptedPseudoGradient`: existence of adapted pseudo-gradients.
 
@@ -228,12 +226,6 @@ end MorseChartField
 section Existence
 
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M]
-
-/-- Every critical point of a Morse function has a Morse chart. -/
-theorem IsMorse.nonempty_morseChart (hf : IsMorse 𝓘(ℝ, E) f) {x : M}
-    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) : Nonempty (MorseChart E f x) :=
-  ((isMorse_iff.1 hf).2 x ((mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm hf.contMDiff x).1
-    hx)).nonempty_morseChart (Filter.Eventually.of_forall fun _ ↦ hf.contMDiff.contMDiffAt)
 
 /-- **A Morse function on a compact manifold has finitely many critical points.** They form a
 closed set, each of them is isolated by its Morse chart, and a closed discrete subset of a compact

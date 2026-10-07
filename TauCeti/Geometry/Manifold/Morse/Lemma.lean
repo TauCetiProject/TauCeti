@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Index
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Analysis.Calculus.Morse.LocalNormalForm
+import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
 # The Morse lemma on a smooth manifold
@@ -32,6 +33,8 @@ stable and unstable manifolds are then studied.
   centre.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.nonempty_morseChart`: the Morse lemma on a
   manifold, for a function smooth near the critical point.
+* `TauCeti.IsMorse.nonempty_morseChart`: every critical point of a Morse function has a Morse
+  chart.
 
 ## References
 
@@ -177,6 +180,12 @@ theorem IsManifoldNondegenerateCriticalPoint.nonempty_morseChart
     rw [hessianQuadraticForm_apply] at hQ
     rw [← hQ, QuadraticMap.weightedSumSquares_apply]
     simp [sq]
+
+/-- Every critical point of a Morse function has a Morse chart. -/
+theorem IsMorse.nonempty_morseChart (hf : IsMorse 𝓘(ℝ, E) f) {x : M}
+    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) : Nonempty (MorseChart E f x) :=
+  ((isMorse_iff.1 hf).2 x ((mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm hf.contMDiff x).1
+    hx)).nonempty_morseChart (Filter.Eventually.of_forall fun _ ↦ hf.contMDiff.contMDiffAt)
 
 end Manifold
 
