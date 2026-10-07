@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PermutationTriple.Passport.OfTriple
-public import TauCeti.Combinatorics.PermutationTriple.Enumeration
+import Mathlib.GroupTheory.Perm.Cycle.Concrete
 -- Kernel reduction of the finite searches needs the unexposed cycle-data and cycle-factor bodies.
 import all TauCeti.Combinatorics.PermutationTriple.CycleData
 import all Mathlib.GroupTheory.Perm.Cycle.Factors
@@ -23,14 +23,20 @@ all twenty-six degree-four classes. The degree-four table also determines their 
 geometry types: six classes have genus one, four are Euclidean, three are hyperbolic, and the
 rest are spherical. Fixed points are included in every displayed partition.
 
-The finite classifications are checked by kernel reduction, using Mathlib's permutation
-partition and Tau Ceti's decidable relabeling relation. No representatives are selected.
+Through degree three, the classification compares every pair of connected triples by kernel
+reduction. In degree four such brute force over all connected triples needs more than 20 GB of
+memory, so the file fixes one representative triple per class instead. Conjugating the first
+component of a connected triple to a fixed permutation of its cycle type leaves at most
+twenty-four triples to match against the representatives. The number of classes,
+`TauCeti.ConnectedIsoClass.card_four`, then follows from the classification.
 
 ## References
 
 * S. K. Lando, A. K. Zvonkin, *Graphs on Surfaces and Their Applications*, Encyclopaedia of
   Mathematical Sciences 141, Springer 2004, §1.5.
 -/
+
+open Equiv
 
 public section
 
@@ -55,11 +61,78 @@ def degreeFourCycleData : Finset (Multiset ℕ × Multiset ℕ × Multiset ℕ) 
     ({4}, {3, 1}, {2, 1, 1}), ({4}, {3, 1}, {4}),
     ({4}, {4}, {1, 1, 1, 1}), ({4}, {4}, {2, 2}), ({4}, {4}, {3, 1})}
 
+/-- One permutation of `Fin 4` of each cycle type. -/
+private def degreeFourCycleTypeReps : List (Perm (Fin 4)) :=
+  [1, c[0, 1], c[0, 1] * c[2, 3], c[0, 1, 2], c[0, 1, 2, 3]]
+
+/-- One connected degree-four triple from each isomorphism class, in the order of
+`degreeFourCycleData`, each with first component in `degreeFourCycleTypeReps`. -/
+private def degreeFourClassReps : List (PermutationTriple 4) :=
+  [ofTwo 1 c[0, 1, 2, 3],
+    ofTwo c[0, 1] (c[0, 2] * c[1, 3]), ofTwo c[0, 1] c[0, 2, 3],
+    ofTwo c[0, 1] c[0, 2, 1, 3], ofTwo c[0, 1] c[0, 1, 2, 3],
+    ofTwo (c[0, 1] * c[2, 3]) c[0, 2], ofTwo (c[0, 1] * c[2, 3]) (c[0, 2] * c[1, 3]),
+    ofTwo (c[0, 1] * c[2, 3]) c[0, 1, 2], ofTwo (c[0, 1] * c[2, 3]) c[0, 1, 2, 3],
+    ofTwo (c[0, 1] * c[2, 3]) c[0, 2, 1, 3],
+    ofTwo c[0, 1, 2] c[0, 3], ofTwo c[0, 1, 2] (c[0, 1] * c[2, 3]),
+    ofTwo c[0, 1, 2] c[0, 1, 3], ofTwo c[0, 1, 2] c[0, 2, 3],
+    ofTwo c[0, 1, 2] c[0, 2, 1, 3], ofTwo c[0, 1, 2] c[0, 1, 2, 3],
+    ofTwo c[0, 1, 2, 3] 1,
+    ofTwo c[0, 1, 2, 3] c[0, 2], ofTwo c[0, 1, 2, 3] c[0, 1],
+    ofTwo c[0, 1, 2, 3] (c[0, 1] * c[2, 3]), ofTwo c[0, 1, 2, 3] (c[0, 2] * c[1, 3]),
+    ofTwo c[0, 1, 2, 3] c[0, 2, 1], ofTwo c[0, 1, 2, 3] c[0, 1, 2],
+    ofTwo c[0, 1, 2, 3] c[0, 3, 2, 1], ofTwo c[0, 1, 2, 3] c[0, 1, 2, 3],
+    ofTwo c[0, 1, 2, 3] c[0, 1, 3, 2]]
+
+private theorem exists_conj_mem_degreeFourCycleTypeReps :
+    ∀ σ : Perm (Fin 4), ∃ τ : Perm (Fin 4), τ * σ * τ⁻¹ ∈ degreeFourCycleTypeReps := by
+  decide +kernel
+
+private theorem exists_smul_ofTwo_mem_degreeFourClassReps :
+    ∀ σ0 ∈ degreeFourCycleTypeReps, ∀ σ1 : Perm (Fin 4), (ofTwo σ0 σ1).IsConnected →
+      ∃ τ : Perm (Fin 4), τ • ofTwo σ0 σ1 ∈ degreeFourClassReps := by
+  decide +kernel
+
+private theorem isConnected_of_mem_degreeFourClassReps :
+    ∀ r ∈ degreeFourClassReps, r.IsConnected := by
+  decide +kernel
+
+private theorem nodup_map_cycleData_degreeFourClassReps :
+    (degreeFourClassReps.map cycleData).Nodup := by
+  decide +kernel
+
+private theorem toFinset_map_cycleData_degreeFourClassReps :
+    (degreeFourClassReps.map cycleData).toFinset = degreeFourCycleData := by
+  decide +kernel
+
+/-- Every connected degree-four triple is a relabeling of one of the representatives. -/
+private theorem exists_smul_mem_degreeFourClassReps (t : ConnectedTriple 4) :
+    ∃ τ : Perm (Fin 4), τ • t.1 ∈ degreeFourClassReps := by
+  obtain ⟨τ₀, hτ₀⟩ := exists_conj_mem_degreeFourCycleTypeReps t.1.σ0
+  have ht : τ₀ • t.1 = ofTwo (τ₀ * t.1.σ0 * τ₀⁻¹) (τ₀ * t.1.σ1 * τ₀⁻¹) := ext_of_two rfl rfl
+  obtain ⟨τ₁, hτ₁⟩ := exists_smul_ofTwo_mem_degreeFourClassReps _ hτ₀ _ <| by
+    rw [← ht]
+    exact (isConnected_smul_iff τ₀ t.1).2 t.2
+  exact ⟨τ₁ * τ₀, by rwa [mul_smul, ht]⟩
+
 /-- The complete table of ordered full cycle data in degree four. -/
 theorem image_cycleData_four :
     (Finset.univ : Finset (ConnectedTriple 4)).image (fun t => t.1.cycleData) =
       degreeFourCycleData := by
-  decide +kernel
+  rw [← toFinset_map_cycleData_degreeFourClassReps]
+  ext d
+  simp only [Finset.mem_image, Finset.mem_univ, true_and, List.mem_toFinset, List.mem_map]
+  constructor
+  · rintro ⟨t, rfl⟩
+    obtain ⟨τ, hτ⟩ := exists_smul_mem_degreeFourClassReps t
+    exact ⟨τ • t.1, hτ, cycleData_smul τ t.1⟩
+  · rintro ⟨r, hr, rfl⟩
+    exact ⟨⟨r, isConnected_of_mem_degreeFourClassReps r hr⟩, rfl⟩
+
+private theorem cycleData_mem_degreeFourCycleData (t : ConnectedTriple 4) :
+    t.1.cycleData ∈ degreeFourCycleData := by
+  rw [← image_cycleData_four]
+  exact Finset.mem_image_of_mem _ (Finset.mem_univ t)
 
 private theorem equivalent_of_cycleData_eq_two :
     ∀ t t' : ConnectedTriple 2, t.1.cycleData = t'.1.cycleData → Equivalent t.1 t'.1 := by
@@ -69,38 +142,14 @@ private theorem equivalent_of_cycleData_eq_three :
     ∀ t t' : ConnectedTriple 3, t.1.cycleData = t'.1.cycleData → Equivalent t.1 t'.1 := by
   decide +kernel
 
-private theorem equivalent_of_cycleData_eq_four :
-    ∀ t t' : ConnectedTriple 4, t.1.cycleData = t'.1.cycleData → Equivalent t.1 t'.1 := by
-  let f : ConnectedIsoClass 4 → {d // d ∈ degreeFourCycleData} := fun c =>
-    Quotient.liftOn' c
-      (fun t => ⟨t.1.cycleData, by
-        rw [← image_cycleData_four]
-        exact Finset.mem_image_of_mem _ (Finset.mem_univ t)⟩)
-      fun t t' h => by
-        apply Subtype.ext
-        exact cycleData_eq_of_equivalent
-          (ConnectedIsoClass.mk_eq_mk_iff_equivalent.mp (Quotient.sound' h))
-  have hf_surjective : Function.Surjective f := by
-    intro d
-    have hd : d.1 ∈ (Finset.univ : Finset (ConnectedTriple 4)).image
-        (fun t => t.1.cycleData) := by
-      rw [image_cycleData_four]
-      exact d.2
-    obtain ⟨t, -, ht⟩ := Finset.mem_image.mp hd
-    refine ⟨ConnectedIsoClass.mk t, ?_⟩
-    apply Subtype.ext
-    exact ht
-  have hf_card : Fintype.card (ConnectedIsoClass 4) =
-      Fintype.card {d // d ∈ degreeFourCycleData} := by
-    rw [ConnectedIsoClass.card_four]
-    decide
-  have hf_injective :=
-    ((Fintype.bijective_iff_surjective_and_card f).mpr ⟨hf_surjective, hf_card⟩).injective
-  intro t t' h
-  apply ConnectedIsoClass.mk_eq_mk_iff_equivalent.mp
-  apply hf_injective
-  apply Subtype.ext
-  exact h
+private theorem equivalent_of_cycleData_eq_four (t t' : ConnectedTriple 4)
+    (h : t.1.cycleData = t'.1.cycleData) : Equivalent t.1 t'.1 := by
+  obtain ⟨τ, hτ⟩ := exists_smul_mem_degreeFourClassReps t
+  obtain ⟨τ', hτ'⟩ := exists_smul_mem_degreeFourClassReps t'
+  have hr : τ • t.1 = τ' • t'.1 :=
+    List.inj_on_of_nodup_map nodup_map_cycleData_degreeFourClassReps hτ hτ' <| by
+      rw [cycleData_smul, cycleData_smul, h]
+  exact equivalent_iff_exists_smul_eq.mpr ⟨τ'⁻¹ * τ, by rw [mul_smul, hr, inv_smul_smul]⟩
 
 /-- Through degree four, the ordered full cycle partitions classify connected triples up to
 simultaneous relabeling. The monodromy group is not needed as an additional invariant. -/
@@ -148,9 +197,7 @@ theorem eulerChar_eq_ite_of_degree_four (t : ConnectedTriple 4) :
         ({3, 1}, {4}, {4}), ({4}, {3, 1}, {4}), ({4}, {4}, {3, 1})} :
           Finset (Multiset ℕ × Multiset ℕ × Multiset ℕ))
     then 0 else 2 := by
-  have hd : t.1.cycleData ∈ degreeFourCycleData := by
-    rw [← image_cycleData_four]
-    exact Finset.mem_image_of_mem _ (Finset.mem_univ t)
+  have hd := cycleData_mem_degreeFourCycleData t
   simp only [degreeFourCycleData, Finset.mem_insert, Finset.mem_singleton] at hd
   rw [eulerChar_eq_cycleCounts, cycleCounts_eq_card_cycleData]
   rcases hd with hd | hd | hd | hd | hd | hd | hd | hd | hd | hd | hd | hd | hd |
@@ -184,9 +231,7 @@ theorem geometryType_eq_ite_of_degree_four (t : ConnectedTriple 4) :
             Finset (Multiset ℕ × Multiset ℕ × Multiset ℕ))
       then .euclidean
       else .spherical := by
-  have hd : t.1.cycleData ∈ degreeFourCycleData := by
-    rw [← image_cycleData_four]
-    exact Finset.mem_image_of_mem _ (Finset.mem_univ t)
+  have hd := cycleData_mem_degreeFourCycleData t
   simp only [degreeFourCycleData, Finset.mem_insert, Finset.mem_singleton] at hd
   rcases hd with hd | hd | hd | hd | hd | hd | hd | hd | hd | hd | hd | hd | hd |
     hd | hd | hd | hd | hd | hd | hd | hd | hd | hd | hd | hd | hd
@@ -263,6 +308,32 @@ theorem geometryType_eq_ite_of_degree_le_three {n : ℕ} (hn : n ≤ 3)
       exact h hd
 
 end PermutationTriple
+
+namespace ConnectedIsoClass
+
+/-- There are twenty-six isomorphism classes of connected permutation triples of degree four. -/
+theorem card_four : Fintype.card (ConnectedIsoClass 4) = 26 := by
+  let f : ConnectedIsoClass 4 → {d // d ∈ PermutationTriple.degreeFourCycleData} := fun c =>
+    Quotient.liftOn' c
+      (fun t => ⟨t.1.cycleData, PermutationTriple.cycleData_mem_degreeFourCycleData t⟩)
+      fun t t' h => Subtype.ext <| PermutationTriple.cycleData_eq_of_equivalent <|
+        mk_eq_mk_iff_equivalent.mp (Quotient.sound' h)
+  have hf : Function.Bijective f := by
+    refine ⟨fun c c' h => ?_, fun d => ?_⟩
+    · obtain ⟨t, rfl⟩ := mk_surjective c
+      obtain ⟨t', rfl⟩ := mk_surjective c'
+      exact mk_eq_mk_iff_equivalent.mpr
+        (PermutationTriple.equivalent_of_cycleData_eq_four t t' (congrArg Subtype.val h))
+    · have hd : d.1 ∈ (Finset.univ : Finset (ConnectedTriple 4)).image
+          (fun t => t.1.cycleData) := by
+        rw [PermutationTriple.image_cycleData_four]
+        exact d.2
+      obtain ⟨t, -, ht⟩ := Finset.mem_image.mp hd
+      exact ⟨mk t, Subtype.ext ht⟩
+  rw [Fintype.card_of_bijective hf, Fintype.card_coe]
+  decide
+
+end ConnectedIsoClass
 
 namespace PassportSpec
 

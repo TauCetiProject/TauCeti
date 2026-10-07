@@ -15,11 +15,11 @@ form a computable finset, and so do their isomorphism classes, each class listed
 connected triples it contains — the relabeling orbit, not a chosen representative. This file
 records both finsets and identifies their members and cardinalities with the corresponding types,
 and then establishes the number of isomorphism classes of connected triples — equivalently, of
-connected dessins d'enfants with a given number of edges — in degrees one to four:
+connected dessins d'enfants with a given number of edges — in degrees one to three:
 
 ```text
-degree               1   2   3    4
-connected classes    1   3   7   26
+degree               1   2   3
+connected classes    1   3   7
 ```
 
 The three degree-two classes are the double cover of the sphere branched at two of the three
@@ -27,7 +27,9 @@ branch points, one class for each choice of the unbranched point. The seven degr
 are the cyclic cover `z ↦ z³` in its three orderings of the branch points (monodromy `C₃`, one
 branch point unramified), the `S₃`-cover `TauCeti.PermutationTriple.s3Triple` in its three
 orderings (monodromy `S₃`), and the genus-one cover with a three-cycle at every branch point
-(monodromy `C₃`).
+(monodromy `C₃`). The twenty-six degree-four classes are counted by
+`TauCeti.ConnectedIsoClass.card_four` in `TauCeti.Combinatorics.PermutationTriple.SmallDegrees`,
+as a consequence of their classification by cycle data.
 
 ## Main definitions
 
@@ -43,8 +45,8 @@ orderings (monodromy `S₃`), and the genus-one cover with a three-cycle at ever
 * `TauCeti.card_connectedTriples`, `TauCeti.card_isoClasses`: the two finsets have the
   cardinalities of `TauCeti.ConnectedTriple n` and `TauCeti.ConnectedIsoClass n`.
 * `TauCeti.ConnectedIsoClass.card_one`, `TauCeti.ConnectedIsoClass.card_two`,
-  `TauCeti.ConnectedIsoClass.card_three`, `TauCeti.ConnectedIsoClass.card_four`: the number of
-  isomorphism classes of connected permutation triples in degrees one through four.
+  `TauCeti.ConnectedIsoClass.card_three`: the number of isomorphism classes of connected
+  permutation triples of degree one, two, and three.
 -/
 
 open Equiv
@@ -111,9 +113,6 @@ theorem card_two : Fintype.card (ConnectedIsoClass 2) = 3 := by decide
 
 /-- There are seven isomorphism classes of connected permutation triples of degree three. -/
 theorem card_three : Fintype.card (ConnectedIsoClass 3) = 7 := by decide +kernel
-
-/-- There are twenty-six isomorphism classes of connected permutation triples of degree four. -/
-theorem card_four : Fintype.card (ConnectedIsoClass 4) = 26 := by decide +kernel
 
 end ConnectedIsoClass
 
