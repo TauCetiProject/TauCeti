@@ -17,7 +17,7 @@ through restriction to `E`, the character has open kernel, and its carry cocycle
 `a ∈ ((Fˢ)ˣ)^{G_F}`,
 
 ```text
-(g, h) ↦ a ^ ⌊χ̃(g|_E) + χ̃(h|_E)⌋,
+(g, h) ↦ a ^ ⌊χ'(g|_E) + χ'(h|_E)⌋,
 ```
 
 is a class of `Br F`: classically, the cup product `a ∪ δχ`, the class of the cyclic algebra of

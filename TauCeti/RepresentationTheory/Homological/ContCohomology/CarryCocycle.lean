@@ -14,16 +14,16 @@ public import Mathlib.Topology.LocallyConstant.Basic
 # The carry cocycle of a character
 
 Let `G` be a topological group, `M` a topological `G`-module, `χ : G → ℚ/ℤ` a character with open
-kernel and `a ∈ M^G` an invariant. Write `χ̃(g) ∈ [0, 1)` for the representative of `χ(g)`. Then
+kernel and `a ∈ M^G` an invariant. Write `χ'(g) ∈ [0, 1)` for the representative of `χ(g)`. Then
 
 ```text
-(g, h) ↦ (χ̃(g) + χ̃(h) - χ̃(gh)) • a = ⌊χ̃(g) + χ̃(h)⌋ • a
+(g, h) ↦ (χ'(g) + χ'(h) - χ'(gh)) • a = ⌊χ'(g) + χ'(h)⌋ • a
 ```
 
 is a continuous `2`-cocycle, the **carry cocycle** `characterCarryCocycle χ hχ a` of `χ` and `a`.
 Classically, its class is the cup product `a ∪ δχ` of `a ∈ H⁰(G, M)` with the image `δχ` of
 `χ ∈ H¹(G, ℚ/ℤ)` under the connecting map of `0 → ℤ → ℚ → ℚ/ℤ → 0`: the integer-valued cochain
-`(g, h) ↦ χ̃(g) + χ̃(h) - χ̃(gh)` is the coboundary of the rational lift `χ̃` of `χ`. When `G` is
+`(g, h) ↦ χ'(g) + χ'(h) - χ'(gh)` is the coboundary of the rational lift `χ'` of `χ`. When `G` is
 cyclic of order `n` and `χ` sends a generator `g` to `1 / n`, its value at `(gⁱ, gʲ)`, for
 `i, j < n`, is `a` if `n ≤ i + j` and `0` otherwise (`characterCarry_eq_ite`): these are the
 values of the carry cocycle of `a` at `g` that represents the two-periodicity class of `a`.
@@ -36,13 +36,13 @@ a character taking the value `1 / n` on a generator.
 
 ## Main definitions
 
-* `TauCeti.ContCohomology.characterCarry χ g h`: the integer `⌊χ̃(g) + χ̃(h)⌋`.
+* `TauCeti.ContCohomology.characterCarry χ g h`: the integer `⌊χ'(g) + χ'(h)⌋`.
 * `TauCeti.ContCohomology.characterCarryCocycle χ hχ`: the carry cocycle of `χ`, additive in the
   invariant `a`.
 
 ## Main results
 
-* `TauCeti.ContCohomology.intCast_characterCarry`: `⌊χ̃(g) + χ̃(h)⌋ = χ̃(g) + χ̃(h) - χ̃(gh)`.
+* `TauCeti.ContCohomology.intCast_characterCarry`: `⌊χ'(g) + χ'(h)⌋ = χ'(g) + χ'(h) - χ'(gh)`.
 * `TauCeti.ContCohomology.characterCarry_eq_ite`: if `χ(g)` and `χ(h)` are the classes of
   `i / n` and `j / n` with `i, j < n`, the carry is `1` if `n ≤ i + j` and `0` otherwise.
 * `TauCeti.ContCohomology.cocyclesMap2_characterCarryCocycle`: pulling back the carry cocycle of
@@ -72,8 +72,8 @@ section Carry
 
 variable {G : Type u} [Group G]
 
-/-- **The carry of a character** `χ : G → ℚ/ℤ` at `(g, h)`: the integer `⌊χ̃(g) + χ̃(h)⌋`, where
-`χ̃(x) ∈ [0, 1)` is the representative of `χ(x)`. It is `χ̃(g) + χ̃(h) - χ̃(gh)`
+/-- **The carry of a character** `χ : G → ℚ/ℤ` at `(g, h)`: the integer `⌊χ'(g) + χ'(h)⌋`, where
+`χ'(x) ∈ [0, 1)` is the representative of `χ(x)`. It is `χ'(g) + χ'(h) - χ'(gh)`
 (`intCast_characterCarry`). -/
 def characterCarry (χ : Additive G →+ AddCircle (1 : ℚ)) (g h : G) : ℤ :=
   ⌊(AddCircle.equivIco 1 0 (χ (.ofMul g)) : ℚ) + AddCircle.equivIco 1 0 (χ (.ofMul h))⌋
@@ -94,7 +94,7 @@ private theorem intCast_floor_equivIco_add (x y : AddCircle (1 : ℚ)) :
   rw [zsmul_one] at hk
   rw [← hk, Int.floor_eq_iff.2 ⟨by linarith, by linarith⟩]
 
-/-- The carry of `χ` at `(g, h)` is the defect `χ̃(g) + χ̃(h) - χ̃(gh)` of additivity of the
+/-- The carry of `χ` at `(g, h)` is the defect `χ'(g) + χ'(h) - χ'(gh)` of additivity of the
 representatives in `[0, 1)`. -/
 theorem intCast_characterCarry (χ : Additive G →+ AddCircle (1 : ℚ)) (g h : G) :
     (characterCarry χ g h : ℚ) =
@@ -190,7 +190,7 @@ private theorem characterCarry_smul_mem_Z2 {χ : Additive G →+ AddCircle (1 : 
   simp only [smul_comm g _ (a : M), hfix, ← add_smul, hcarry]
 
 /-- **The carry cocycle of a character** `χ : G → ℚ/ℤ` with open kernel and an invariant
-`a ∈ M^G`: the continuous `2`-cocycle `(g, h) ↦ ⌊χ̃(g) + χ̃(h)⌋ • a`, where `χ̃(x) ∈ [0, 1)`
+`a ∈ M^G`: the continuous `2`-cocycle `(g, h) ↦ ⌊χ'(g) + χ'(h)⌋ • a`, where `χ'(x) ∈ [0, 1)`
 represents `χ(x)` (`characterCarryCocycle_apply`). It is additive in `a`. -/
 def characterCarryCocycle (χ : Additive G →+ AddCircle (1 : ℚ))
     (hχ : IsOpen (χ.ker : Set (Additive G))) : H0 G M →+ Z2 G M where
@@ -227,7 +227,7 @@ private theorem isOpen_ker_add {χ₁ χ₂ : Additive G →+ AddCircle (1 : ℚ
     (fun x hx ↦ by simp_all [AddSubgroup.mem_inf]) (hχ₁.inter hχ₂)
 
 /-- **The class of the carry cocycle is additive in the character.** The carry cocycles of
-`χ₁ + χ₂`, `χ₁` and `χ₂` differ by the coboundary of `g ↦ ⌊χ̃₁(g) + χ̃₂(g)⌋ • a`. The classes are
+`χ₁ + χ₂`, `χ₁` and `χ₂` differ by the coboundary of `g ↦ ⌊χ₁'(g) + χ₂'(g)⌋ • a`. The classes are
 read in `Z² / B²`, which is `H2 G M` whenever the latter is defined. -/
 theorem characterCarryCocycle_add_character
     {χ₁ χ₂ : Additive G →+ AddCircle (1 : ℚ)}
@@ -236,7 +236,7 @@ theorem characterCarryCocycle_add_character
     (characterCarryCocycle (χ₁ + χ₂) hχ a : Z2 G M ⧸ (B2 G M).addSubgroupOf (Z2 G M)) =
       characterCarryCocycle χ₁ hχ₁ a + characterCarryCocycle χ₂ hχ₂ a := by
   rw [← QuotientAddGroup.mk_add, H2pi_eq_iff]
-  -- The primitive is `g ↦ -e(g) • a`, with `e(g) = ⌊χ̃₁(g) + χ̃₂(g)⌋`.
+  -- The primitive is `g ↦ -e(g) • a`, with `e(g) = ⌊χ₁'(g) + χ₂'(g)⌋`.
   let e : G → ℤ := fun g ↦
     ⌊(AddCircle.equivIco 1 0 (χ₁ (.ofMul g)) : ℚ) + AddCircle.equivIco 1 0 (χ₂ (.ofMul g))⌋
   have he (g : G) : (e g : ℚ) = AddCircle.equivIco 1 0 (χ₁ (.ofMul g)) +
