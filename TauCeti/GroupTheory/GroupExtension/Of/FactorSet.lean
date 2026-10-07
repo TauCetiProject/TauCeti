@@ -9,7 +9,6 @@ public import Mathlib.Data.FunLike.Fintype
 public import Mathlib.GroupTheory.GroupExtension.Defs
 public import Mathlib.GroupTheory.SemidirectProduct
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LowDegree
-public import TauCeti.Algebra.GroupAction.TypeTags
 
 /-!
 # Group extensions built from a factor set
@@ -123,12 +122,6 @@ variable (α : FactorSet G M)
 /-- The cocycle identity of a factor set, restated for the coercion `⇑α` rather than for the
 field `toFun`, so that it rewrites in the goals the rest of the API produces. -/
 theorem isMulCocycle₂ : IsMulCocycle₂ ⇑α := α.isMulCocycle₂'
-
-/-- A factor set, read additively, satisfies the additive `2`-cocycle identity: the two identities
-are the same statement in the two notations. -/
-theorem isCocycle₂_ofMul :
-    groupCohomology.IsCocycle₂ fun p : G × G => Additive.ofMul (α p) := fun g h j =>
-  congrArg Additive.ofMul (α.isMulCocycle₂ g h j)
 
 /-- The normalization of a factor set, restated for the coercion `⇑α` rather than for the field
 `toFun`, so that it rewrites in the goals the rest of the API produces. Not `@[simp]`: the two

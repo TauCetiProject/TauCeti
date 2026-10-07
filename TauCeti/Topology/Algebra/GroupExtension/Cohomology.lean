@@ -60,7 +60,7 @@ pushforward is the image of the class under the coefficient map
 `TauCeti.ContCohomology.explicitCoeff2` of `f`, read additively
 (`TauCeti.FactorSet.contCohomologyClass_map`,
 `TauCeti.ProfiniteGroupExtension.contCohomologyClass_map`). So the bijection commutes with
-pushforward (`TauCeti.ProfiniteGroupExtension.contCohomologyClassEquiv_map`).
+pushforward (`MulDistribMulActionHom.profiniteGroupExtensionContCohomologyClassEquiv_map`).
 
 Naturality also compares extensions by *different* kernels (Neukirch–Schmidt–Wingberg, I §5
 Exercise 4, at `ϕ = id`). The extension `X` maps to its pushforward `X.map f hf` by a canonical
@@ -118,9 +118,9 @@ a profinite group computes with.
 * `TauCeti.ProfiniteGroupExtension.subsingleton_H2_of_forall_exists_splitting`: for profinite `G`
   and `M`, if every profinite extension of `G` by `M` splits continuously then `H²(G, M) = 0`.
 * `TauCeti.FactorSet.contCohomologyClass_map` and
-  `TauCeti.ProfiniteGroupExtension.contCohomologyClassEquiv_map`: **the classification is natural
-  in the coefficient module**: the class of a pushforward is the image of the class under the
-  coefficient map.
+  `MulDistribMulActionHom.profiniteGroupExtensionContCohomologyClassEquiv_map`:
+  **the classification is natural in the coefficient module**: the class of a pushforward is the
+  image of the class under the coefficient map.
 * `TauCeti.ProfiniteGroupExtension.exists_continuous_monoidHom_of_contCohomologyClass_map_eq` and
   `TauCeti.ProfiniteGroupExtension.contCohomologyClass_map_eq_of_continuous_monoidHom`: **lifting
   a coefficient map along the class**: a continuous equivariant `f : M → N` is the restriction to
@@ -708,8 +708,9 @@ theorem continuousEquivSetoid_map (X Y : ProfiniteGroupExtension G M)
 /-- **The classification is natural in the coefficient module**: the bijection
 `TauCeti.ProfiniteGroupExtension.contCohomologyClassEquiv` commutes with pushforward along `f` on
 the extensions and with the coefficient map of `f` on `H²`. -/
-theorem contCohomologyClassEquiv_map [TotallyDisconnectedSpace M]
-    (q : Quotient (continuousEquivSetoid G M)) (f : M →*[G] N) (hf : Continuous f) :
+theorem _root_.MulDistribMulActionHom.profiniteGroupExtensionContCohomologyClassEquiv_map
+    [TotallyDisconnectedSpace M] (f : M →*[G] N) (hf : Continuous f)
+    (q : Quotient (continuousEquivSetoid G M)) :
     contCohomologyClassEquiv G N
         (Quotient.map' (fun X => X.map f hf) (fun X Y => X.continuousEquivSetoid_map Y f hf) q) =
       explicitCoeff2 G (Additive M) f.toAdditive (f.continuous_toAdditive hf)

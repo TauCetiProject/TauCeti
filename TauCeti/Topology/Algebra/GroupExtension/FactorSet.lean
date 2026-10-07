@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Group.Basic
 public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.Homeomorph.TransferInstance
+public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.GroupTheory.GroupExtension.Of.FactorSet
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 
@@ -285,7 +286,8 @@ theorem ofMul_mem_Z2_iff (α : FactorSet G M) :
     (fun p : G × G => Additive.ofMul (α p)) ∈ ContCohomology.Z2 G (Additive M) ↔
       Continuous ⇑α :=
   ContCohomology.mem_Z2_iff.trans
-    ⟨fun h => h.1, fun h => ⟨h, α.isCocycle₂_ofMul⟩⟩
+    ⟨fun h => h.1, fun h => ⟨h, fun g h j =>
+      congrArg Additive.ofMul (α.isMulCocycle₂ g h j)⟩⟩
 
 variable {z : G × G → Additive M}
 
