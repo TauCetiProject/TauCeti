@@ -25,8 +25,9 @@ namespace TauCeti
 
 variable {𝕜 ι E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [Fintype ι] [DecidableEq ι]
+  [Fintype ι]
 
+open Classical in
 /-- The signed permutation sum has operator norm at most the factorial of its degree. -/
 theorem norm_alternatization_le (f : ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ E) F) :
     ‖ContinuousMultilinearMap.alternatization f‖ ≤ (Fintype.card ι).factorial * ‖f‖ := by
@@ -40,8 +41,9 @@ theorem norm_alternatization_le (f : ContinuousMultilinearMap 𝕜 (fun _ : ι �
 
 /-- Mathlib's unnormalized alternatization, bundled as a continuous linear map. -/
 def alternatizationCLM :
-    ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ E) F →L[𝕜] E [⋀^ι]→L[𝕜] F :=
-  LinearMap.mkContinuous
+    ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ E) F →L[𝕜] E [⋀^ι]→L[𝕜] F := by
+  classical
+  exact LinearMap.mkContinuous
     { toFun := ContinuousMultilinearMap.alternatization
       map_add' := map_add _
       map_smul' := by
@@ -53,11 +55,13 @@ def alternatizationCLM :
         exact Finset.sum_congr rfl fun σ _ ↦ smul_comm _ _ _ }
     (Fintype.card ι).factorial norm_alternatization_le
 
+open Classical in
 /-- Evaluation of the continuous linear alternatization is the existing signed sum. -/
 @[simp]
 theorem alternatizationCLM_apply (f : ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ E) F) :
     alternatizationCLM f = ContinuousMultilinearMap.alternatization f := (rfl)
 
+open Classical in
 /-- Alternatization multiplies an already alternating map by its degree factorial. -/
 @[simp]
 theorem alternatization_toContinuousMultilinearMap (f : E [⋀^ι]→L[𝕜] F) :
