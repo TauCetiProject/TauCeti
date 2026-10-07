@@ -93,8 +93,8 @@ theorem exists_linearIsometryEquiv_congr_eq {π : ContRepresentation 𝕜 G V}
   have hTinj : Function.Injective T := by
     intro x y hxy
     apply φ.toContinuousLinearEquiv.injective
-    simpa only [hTdef, ← φ.toContinuousLinearEquiv_toContinuousLinearMap,
-      ContinuousLinearEquiv.coe_coe] using hxy
+    simpa only [φ.toContinuousLinearEquiv_apply,
+      ← φ.toContIntertwiningMap.toContinuousLinearMap_apply, ← hTdef] using hxy
   have hTv₀ : (0 : ℝ) < ‖T v₀‖ := norm_pos_iff.2 fun h ↦
     hv₀ (hTinj (by simpa using h))
   have hcpos : 0 < ‖c‖ := (mul_pos_iff_of_pos_right (sq_pos_of_pos hv₀norm)).mp
