@@ -103,7 +103,7 @@ theorem IsManifoldNondegenerateCriticalPoint.nonempty_morseChart
       fun _ hz ↦ hz.2).contDiffOn
   have h' : IsNondegenerateCriticalPoint g a := (isManifoldNondegenerateCriticalPoint_iff _).1 h
   obtain ⟨φ, -, haφ, hφa, hφ, hφsymm, hφg⟩ :=
-    h'.exists_morse_chart_of_contDiffOn hU haU hg
+    h'.exists_morse_chart_of_contDiffOn (hU.mem_nhds haU) hg
   obtain ⟨w, hw, ⟨e⟩⟩ := h'.exists_hessianQuadraticForm_equivalent_weightedSumSquares
   have hext : ∀ y, extChartAt 𝓘(ℝ, E) x y = c y := fun y ↦ by simp [hc]
   have hleft : ∀ y ∈ c.source, g (c y) = f y := fun y hy ↦ by
