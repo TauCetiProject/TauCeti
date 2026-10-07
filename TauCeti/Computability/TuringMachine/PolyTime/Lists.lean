@@ -5,7 +5,7 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.Computability.TuringMachine.PolyTimeIteration
+public import TauCeti.Computability.TuringMachine.PolyTime.Iteration
 
 /-!
 # Polynomial-time list searches

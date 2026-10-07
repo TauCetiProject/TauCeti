@@ -5,7 +5,7 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.Computability.TuringMachine.PolyTimeCodec
+public import TauCeti.Computability.TuringMachine.PolyTime.Codec
 
 /-!
 # Polynomial-time parser repetition

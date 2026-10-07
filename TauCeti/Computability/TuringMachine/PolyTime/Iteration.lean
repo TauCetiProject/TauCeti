@@ -5,7 +5,7 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.Computability.TuringMachine.PolyTime
+public import TauCeti.Computability.TuringMachine.PolyTime.Basic
 
 /-!
 # Polynomially bounded folds and iterations

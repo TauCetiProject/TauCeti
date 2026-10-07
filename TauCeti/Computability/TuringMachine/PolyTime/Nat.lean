@@ -5,7 +5,7 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.Computability.TuringMachine.PolyTimeLists
+public import TauCeti.Computability.TuringMachine.PolyTime.Lists
 public import Mathlib.Data.Nat.Size
 public import Mathlib.Data.Nat.Prime.Defs
 

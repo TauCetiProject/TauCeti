@@ -5,7 +5,7 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.Computability.TuringMachine.BitCombinators
+public import TauCeti.Computability.TuringMachine.Bit.Combinators
 public import Mathlib.Algebra.Polynomial.Eval.Degree
 
 /-!

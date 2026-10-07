@@ -5,7 +5,7 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.Computability.TuringMachine.BitLists
+public import TauCeti.Computability.TuringMachine.Bit.Lists
 public import Mathlib.Tactic.FunProp
 
 /-!

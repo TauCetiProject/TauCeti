@@ -5,7 +5,7 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.Computability.TuringMachine.PolyTimeNat
+public import TauCeti.Computability.TuringMachine.PolyTime.Nat
 public import TauCeti.Computability.Encoding.BooleanList
 
 /-!

@@ -5,7 +5,7 @@ Authors: Vincent Quenneville-Belair
 -/
 module
 
-public import TauCeti.Computability.TuringMachine.PolyTimeParser
+public import TauCeti.Computability.TuringMachine.PolyTime.Parser.Basic
 
 /-!
 # Polynomial-time parser composition and proof erasure
