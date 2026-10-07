@@ -140,7 +140,7 @@ theorem alexanderTwoℤ_sub_two_mul_card_OColumns {r : GridRectangleBetween x y}
   exact_mod_cast hq
 
 /-- The integer form of the Alexander grading change across an arbitrary rectangle: it raises the
-doubled Alexander grading by twice the number of `O`-markings minus the number of `X`-markings it
+doubled Alexander grading by twice the difference between the numbers of `O`- and `X`-markings it
 carries. -/
 theorem alexanderTwoℤ_eq_add_two_mul_card_sub_card (r : GridRectangleBetween x y) :
     G.alexanderTwoℤ y = G.alexanderTwoℤ x + 2 * (((G.OColumns r.toGridRectangle).card : ℤ) -
