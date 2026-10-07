@@ -5,15 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.FieldTheory.KrullTopology
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Invariant
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CarryCocycle
+import TauCeti.NumberTheory.ClassFieldTheory.Local.Unramified
 
 /-!
 # The local invariant of the carry class of an unramified character
 
 Let `F` be a nonarchimedean local field, `E/F` a finite unramified Galois extension inside `Fˢ`
 with arithmetic Frobenius `φ`, `χ : Gal(E/F) → ℚ/ℤ` a character and `a ∈ Fˣ`. Read on `G_F`
-through restriction to `E`, the character has open kernel, and its carry cocycle with the invariant
+through restriction to `E`, the character has open kernel
+(`IntermediateField.isOpen_ker_comp_restrictNormalHom`), and its carry cocycle with the invariant
 `a ∈ ((Fˢ)ˣ)^{G_F}`,
 
 ```text
@@ -27,11 +30,13 @@ is a class of `Br F`: classically, the cup product `a ∪ δχ`, the class of th
 inv_F (a ∪ δχ) = v_F(a) · χ(φ)       (invMap_characterCarryCocycle).
 ```
 
-For the character with `χ(φ) = 1 / [E : F]` the carry cocycle is the inflation of the carry
-cocycle of `a` at `φ`, which represents the unramified class `unramifiedClass F E a` of invariant
-`v_F(a) / [E : F]` (`TauCeti.ClassFieldTheory.unramifiedInv_unramifiedClass`). Every character of
-the cyclic group `Gal(E/F)` is an integer multiple of that one, and the class of the carry cocycle
-is additive in the character (`TauCeti.ContCohomology.characterCarryCocycle_zsmul_character`).
+For the character with `χ(φ) = 1 / [E : F]`, the Frobenius character
+`TauCeti.ClassFieldTheory.frobeniusCharacter` read on `Gal(E/F)`, the carry cocycle is the
+inflation of the carry cocycle of `a` at `φ`, which represents the unramified class
+`unramifiedClass F E a` of invariant `v_F(a) / [E : F]`
+(`TauCeti.ClassFieldTheory.unramifiedInv_unramifiedClass`). Every character of the cyclic group
+`Gal(E/F)` is an integer multiple of that one, and the class of the carry cocycle is additive in
+the character (`TauCeti.ContCohomology.characterCarryCocycle_zsmul_character`).
 
 This is the local computation behind the global classes with prescribed local invariants: the
 carry cocycle of a global character and an idele localizes, by naturality along the decomposition
@@ -40,8 +45,6 @@ local characters and the components of the idele.
 
 ## Main results
 
-* `IntermediateField.isOpen_ker_comp_restrictNormalHom`: a character of `Gal(E/F)` read
-  on `G_F` has open kernel.
 * `TauCeti.ClassFieldTheory.invMap_characterCarryCocycle`: the local invariant of the carry class
   of an unramified character `χ` and `a ∈ Fˣ` is `v_F(a) · χ(φ)`.
 
@@ -55,23 +58,6 @@ local characters and the components of the idele.
 public section
 
 noncomputable section
-
-namespace IntermediateField
-
-variable {F : Type} [Field F]
-
-/-- **A character of a finite Galois layer has open kernel on `G_F`**: a character of
-`Gal(E/F)` read on `G_F` through restriction to `E` vanishes on the open subgroup fixing `E`. -/
-theorem isOpen_ker_comp_restrictNormalHom (E : IntermediateField F (SeparableClosure F))
-    [FiniteDimensional F E] [Normal F E] (χ : Additive Gal(E/F) →+ AddCircle (1 : ℚ)) :
-    IsOpen ((χ.comp (AlgEquiv.restrictNormalHom (K₁ := SeparableClosure F) E).toAdditive).ker :
-      Set (Additive (TauCeti.AbsoluteGaloisGroup F))) := by
-  refine AddSubgroup.isOpen_mono (H₁ := Subgroup.toAddSubgroup E.fixingSubgroup)
-    (fun x hx ↦ ?_) (E.fixingSubgroup_isOpen.preimage continuous_toMul)
-  rw [Additive.mem_toAddSubgroup, ← restrictNormalHom_ker, MonoidHom.mem_ker] at hx
-  simp [hx]
-
-end IntermediateField
 
 namespace TauCeti.ClassFieldTheory
 
@@ -89,43 +75,27 @@ private theorem mem_zmultiples_ofMul_frobeniusAlgEquiv (x : Additive Gal(E/F)) :
     ((zpowers_frobeniusAlgEquiv (K := F) (L := E)).symm ▸ Subgroup.mem_top x.toMul)
   exact AddSubgroup.mem_zmultiples_iff.2 ⟨k, by rw [← ofMul_zpow, hk, ofMul_toMul]⟩
 
-/-- The order of arithmetic Frobenius is the degree `[E : F]`. -/
-private theorem addOrderOf_ofMul_frobeniusAlgEquiv :
-    addOrderOf (Additive.ofMul (frobeniusAlgEquiv (K := F) (L := E))) = Module.finrank F E := by
-  rw [addOrderOf_ofMul_eq_orderOf, orderOf_frobeniusAlgEquiv,
-    IsUnramified.inertiaDegree_eq_finrank]
-
-/-- **The Frobenius character** of an unramified layer: the character of `Gal(E/F)` sending
-arithmetic Frobenius to `1 / [E : F]`. -/
-private def frobeniusCharacter : Additive Gal(E/F) →+ AddCircle (1 : ℚ) :=
-  addMonoidHomOfForallMemZMultiples (mem_zmultiples_ofMul_frobeniusAlgEquiv E)
-    (g' := ((1 / Module.finrank F E : ℚ) : AddCircle (1 : ℚ))) <| by
-      rw [addOrderOf_ofMul_frobeniusAlgEquiv,
-        AddCircle.addOrderOf_period_div Module.finrank_pos]
-
-/-- The Frobenius character sends `φ ^ i` to the class of `i / [E : F]`. -/
-private theorem frobeniusCharacter_pow (i : ℕ) :
-    frobeniusCharacter E (Additive.ofMul (frobeniusAlgEquiv (K := F) (L := E) ^ i)) =
-      ((i / Module.finrank F E : ℚ) : AddCircle (1 : ℚ)) := by
-  rw [ofMul_pow, map_nsmul, frobeniusCharacter, addMonoidHomOfForallMemZMultiples_apply_gen,
-    ← AddCircle.coe_nsmul, nsmul_eq_mul, mul_one_div]
-
-/-- **The invariant of the carry class of the Frobenius character** is `v_F(a) / [E : F]`: its
-carry cocycle is the inflation of the carry cocycle of `a` at Frobenius, which represents the
-unramified class of `a`. -/
-private theorem invMap_characterCarryCocycle_frobeniusCharacter (a : Fˣ) :
-    invMap F (unitsRepH2Equiv F (characterCarryCocycle ((frobeniusCharacter E).comp
-      (AlgEquiv.restrictNormalHom (K₁ := SeparableClosure F) E).toAdditive)
-      (E.isOpen_ker_comp_restrictNormalHom _) (baseUnitsEquivInvariants F (.ofMul a)))) =
+/-- **The invariant of the carry class of a Frobenius character** is `v_F(a) / [E : F]`: for a
+character `χ₀` sending arithmetic Frobenius to `1 / [E : F]`, the carry cocycle is the inflation
+of the carry cocycle of `a` at Frobenius, which represents the unramified class of `a`. -/
+private theorem invMap_characterCarryCocycle_of_apply_frobenius
+    (χ₀ : Additive Gal(E/F) →+ AddCircle (1 : ℚ))
+    (hχ₀ : χ₀ (.ofMul (frobeniusAlgEquiv (K := F) (L := E))) =
+      ((1 / Module.finrank F E : ℚ) : AddCircle (1 : ℚ))) (a : Fˣ) :
+    invMap F (unitsRepH2Equiv F (characterCarryCocycle
+      (χ₀.comp (AlgEquiv.restrictNormalHom (K₁ := SeparableClosure F) E).toAdditive)
+      (E.isOpen_ker_comp_restrictNormalHom χ₀) (baseUnitsEquivInvariants F (.ofMul a)))) =
       (((normalizedValuation F a).toAdd / Module.finrank F E : ℚ) : AddCircle (1 : ℚ)) := by
   set n := Module.finrank F E
   set φ := frobeniusAlgEquiv (K := F) (L := E)
+  have hpow (i : ℕ) : χ₀ (.ofMul (φ ^ i)) = ((i / n : ℚ) : AddCircle (1 : ℚ)) := by
+    rw [ofMul_pow, map_nsmul, hχ₀, ← AddCircle.coe_nsmul, nsmul_eq_mul, mul_one_div]
   set b : Eˣ := Units.map (algebraMap F E : F →* E) a
   -- The carry cocycle is read off `Gal(E/F)`, with the value `b ^ carry` at `(s, t)`.
   obtain ⟨c, hcu, hc⟩ := exists_relBrCocycle_eq F E E.val
-    (characterCarryCocycle _ (E.isOpen_ker_comp_restrictNormalHom (frobeniusCharacter E))
+    (characterCarryCocycle _ (E.isOpen_ker_comp_restrictNormalHom χ₀)
       (baseUnitsEquivInvariants F (.ofMul a)))
-    (fun p ↦ b ^ characterCarry (frobeniusCharacter E) p.1 p.2) fun g h ↦ by
+    (fun p ↦ b ^ characterCarry χ₀ p.1 p.2) fun g h ↦ by
       apply Additive.toMul.injective
       apply Units.ext
       simp [characterCarryCocycle_apply, b]
@@ -141,7 +111,7 @@ private theorem invMap_characterCarryCocycle_frobeniusCharacter (a : Fˣ) :
   rw [horder] at hi hj ⊢
   -- The values of `c` are read in `Eˣ` through `Rep.toAdditive`, which is the identity.
   refine (hcu (φ ^ i, φ ^ j)).trans ?_
-  rw [characterCarry_eq_ite _ hi hj (frobeniusCharacter_pow E i) (frobeniusCharacter_pow E j)]
+  rw [characterCarry_eq_ite _ hi hj (hpow i) (hpow j)]
   split_ifs <;> simp [b]
 
 /-- **The local invariant of the carry class of an unramified character.** For a character `χ` of
@@ -157,25 +127,27 @@ theorem invMap_characterCarryCocycle (χ : Additive Gal(E/F) →+ AddCircle (1 :
   set φ := frobeniusAlgEquiv (K := F) (L := E)
   have hn : (n : ℚ) ≠ 0 := Nat.cast_ne_zero.2 Module.finrank_pos.ne'
   -- `χ(φ)` is killed by `n`, so it is `k / n` for an integer `k`, and `χ = k • χ₀` for the
-  -- Frobenius character `χ₀`.
+  -- Frobenius character `χ₀`, read on `Gal(E/F)`.
+  set χ₀ := (frobeniusCharacter F E).comp (Abelianization.of (G := Gal(E/F))).toAdditive
+  have hχ₀ : χ₀ (.ofMul φ) = ((1 / n : ℚ) : AddCircle (1 : ℚ)) := by
+    rw [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply, toMul_ofMul]
+    exact frobeniusCharacter_frobenius F E
   have hmem : χ (.ofMul φ) ∈ AddSubgroup.torsionBy (AddCircle (1 : ℚ)) n := by
     have horder : n = orderOf φ := by
       rw [orderOf_frobeniusAlgEquiv, IsUnramified.inertiaDegree_eq_finrank]
     rw [AddSubgroup.torsionBy.nsmul_iff, ← map_nsmul, ← ofMul_pow, horder, pow_orderOf_eq_one,
       ofMul_one, map_zero]
   obtain ⟨k, hk⟩ := AddCircle.exists_zsmul_eq_of_mem_torsionBy (p := (1 : ℚ)) hn hmem
-  have hχ : χ = k • frobeniusCharacter E :=
+  have hχ : χ = k • χ₀ :=
     (AddMonoidHom.eq_iff_eq_on_generator (mem_zmultiples_ofMul_frobeniusAlgEquiv E) _ _).2 <| by
-      rw [AddMonoidHom.smul_apply, frobeniusCharacter, addMonoidHomOfForallMemZMultiples_apply_gen,
-        hk]
+      rw [AddMonoidHom.smul_apply, hχ₀, hk]
   have hcomp : χ.comp (AlgEquiv.restrictNormalHom (K₁ := SeparableClosure F) E).toAdditive =
-      k • (frobeniusCharacter E).comp
-        (AlgEquiv.restrictNormalHom (K₁ := SeparableClosure F) E).toAdditive := by
+      k • χ₀.comp (AlgEquiv.restrictNormalHom (K₁ := SeparableClosure F) E).toAdditive := by
     rw [hχ, AddMonoidHom.smul_comp]
   simp only [hcomp]
   rw [characterCarryCocycle_zsmul_character (E.isOpen_ker_comp_restrictNormalHom _) k, map_zsmul,
-    map_zsmul, invMap_characterCarryCocycle_frobeniusCharacter, ← hk, ← AddCircle.coe_zsmul,
-    ← AddCircle.coe_zsmul, ← AddCircle.coe_zsmul]
+    map_zsmul, invMap_characterCarryCocycle_of_apply_frobenius E χ₀ hχ₀, ← hk,
+    ← AddCircle.coe_zsmul, ← AddCircle.coe_zsmul, ← AddCircle.coe_zsmul]
   congr 1
   simp only [zsmul_eq_mul]
   ring
