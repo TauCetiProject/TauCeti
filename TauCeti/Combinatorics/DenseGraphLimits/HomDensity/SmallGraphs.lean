@@ -35,9 +35,9 @@ general statement.  A further entry in this catalogue — a single edge on three
 empty graph — costs only that substitution.
 
 **Where the transports come from.**  For two vertices it is Mathlib's `MeasurableEquiv.finTwoArrow`
-with `measurePreserving_finTwoArrow`; for three vertices it is `MeasurableEquiv.finThreeArrow` with
+with `measurePreserving_finTwoArrow`; for three vertices it is `finThreeArrow` with
 `measurePreserving_finThreeArrow`, from `TauCeti.MeasureTheory.Constructions.Pi`.  The four-vertex
-transport composes `MeasurableEquiv.finFourArrow` with a reordering of the coordinates, pairing them
+transport composes `finFourArrow` with a reordering of the coordinates, pairing them
 as `((x 0, x 2), (x 1, x 3))` for the four-cycle formulas.
 
 ## Main results
@@ -106,9 +106,9 @@ theorem homDensity_fin_three (F : SimpleGraph (Fin 3)) [DecidableRel F.Adj] (W :
     have hx : ![x 0, x 1, x 2] = x := FinVec.etaExpand_eq x
     rw [hx]
   rw [homDensity_def, ← (measurePreserving_finThreeArrow μ).integral_comp
-    MeasurableEquiv.finThreeArrow.measurableEmbedding
+    finThreeArrow.measurableEmbedding
     (fun p : Ω × Ω × Ω => ∏ e ∈ F.edgeFinset, edgeFactor W ![p.1, p.2.1, p.2.2] e)]
-  simp only [MeasurableEquiv.finThreeArrow_apply]
+  simp only [finThreeArrow_apply]
   exact integral_congr_ae (ae_of_all _ fun x => key x)
 
 /-- **Transported integrability, two vertices.**  For any graph on `Fin 2`, the transported
@@ -130,9 +130,9 @@ theorem integrable_prod_edgeFactor_fin_three (F : SimpleGraph (Fin 3)) [Decidabl
     Integrable (fun p : Ω × Ω × Ω => ∏ e ∈ F.edgeFinset, edgeFactor W ![p.1, p.2.1, p.2.2] e)
       (μ.prod (μ.prod μ)) := by
   refine ((measurePreserving_finThreeArrow μ).integrable_comp_emb
-    MeasurableEquiv.finThreeArrow.measurableEmbedding).mp ?_
+    finThreeArrow.measurableEmbedding).mp ?_
   refine (integrable_homDensity_integrand F W).congr (ae_of_all _ fun x => ?_)
-  simp only [Function.comp_apply, MeasurableEquiv.finThreeArrow_apply]
+  simp only [Function.comp_apply, finThreeArrow_apply]
   have hx : ![x 0, x 1, x 2] = x := FinVec.etaExpand_eq x
   rw [hx]
 
@@ -149,16 +149,14 @@ private def reorderFour (Ω : Type*) [MeasurableSpace Ω] :
 
 private def finFourArrowPairPair (Ω : Type*) [MeasurableSpace Ω] :
     (Fin 4 → Ω) ≃ᵐ (Ω × Ω) × (Ω × Ω) :=
-  (MeasurableEquiv.finFourArrow (β := Ω)).trans (reorderFour Ω) |>.trans
+  (finFourArrow (β := Ω)).trans (reorderFour Ω) |>.trans
     ((MeasurableEquiv.prodAssoc : ((Ω × Ω) × (Ω × Ω)) ≃ᵐ Ω × Ω × (Ω × Ω)).symm)
 
 private theorem middleSwap_apply (p : Ω × Ω × Ω) :
     middleSwap Ω p = (p.2.1, p.1, p.2.2) := by
   rfl
 
-/-- The local reordering behind the four-cycle transport, read off on a quadruple: it unfolds
-`reorderFour` and `middleSwap` of this file and Mathlib's `prodAssoc`, which have no application
-lemmas of their own. -/
+/-- The reordering behind the four-cycle transport sends `(a, b, c, d)` to `((a, c), (b, d))`. -/
 private theorem prodAssoc_symm_reorderFour_apply (p : Ω × Ω × Ω × Ω) :
     (MeasurableEquiv.prodAssoc : ((Ω × Ω) × (Ω × Ω)) ≃ᵐ Ω × Ω × (Ω × Ω)).symm (reorderFour Ω p) =
       ((p.1, p.2.2.1), (p.2.1, p.2.2.2)) := (rfl)
@@ -167,7 +165,7 @@ private theorem prodAssoc_symm_reorderFour_apply (p : Ω × Ω × Ω × Ω) :
 private theorem finFourArrowPairPair_apply (x : Fin 4 → Ω) :
     finFourArrowPairPair Ω x = ((x 0, x 2), (x 1, x 3)) := by
   rw [finFourArrowPairPair, MeasurableEquiv.trans_apply, MeasurableEquiv.trans_apply,
-    MeasurableEquiv.finFourArrow_apply, prodAssoc_symm_reorderFour_apply]
+    finFourArrow_apply, prodAssoc_symm_reorderFour_apply]
 
 private theorem measurePreserving_middleSwap (μ : Measure Ω) [SigmaFinite μ] :
     MeasurePreserving (middleSwap Ω) (μ.prod (μ.prod μ)) (μ.prod (μ.prod μ)) := by
@@ -195,7 +193,7 @@ private theorem measurePreserving_finFourArrowPairPair (μ : Measure Ω) [SigmaF
   convert hassoc.comp (hswap.comp hright) using 1
   funext x
   rw [finFourArrowPairPair_apply, Function.comp_apply, Function.comp_apply,
-    MeasurableEquiv.finFourArrow_apply, prodAssoc_symm_reorderFour_apply]
+    finFourArrow_apply, prodAssoc_symm_reorderFour_apply]
 
 /-- **The four-vertex transport.**  For any graph on `Fin 4`, the homomorphism density is an
 integral over two copies of `Ω × Ω`, with the coordinates paired for the four-cycle formulas. -/
