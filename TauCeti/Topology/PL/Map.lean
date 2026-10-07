@@ -88,6 +88,13 @@ def IsPiecewiseAffineOn (f : E → F) (V : Set E) : Prop :=
   ∃ (n : ℕ) (C : Fin n → Set E) (A : Fin n → (E →ᴬ[ℝ] F)),
     (∀ i, IsConvexPolyhedron (C i)) ∧ V ⊆ ⋃ i, C i ∧ ∀ i, EqOn f (A i) (V ∩ C i)
 
+/-- The finite polyhedral decomposition characterizing piecewise affineness. -/
+theorem isPiecewiseAffineOn_iff :
+    IsPiecewiseAffineOn f V ↔
+      ∃ (n : ℕ) (C : Fin n → Set E) (A : Fin n → (E →ᴬ[ℝ] F)),
+        (∀ i, IsConvexPolyhedron (C i)) ∧ V ⊆ ⋃ i, C i ∧
+          ∀ i, EqOn f (A i) (V ∩ C i) := Iff.rfl
+
 /-- The constructor of `TauCeti.IsPiecewiseAffineOn` for a cover indexed by an arbitrary finite
 type, rather than by `Fin n`. -/
 theorem isPiecewiseAffineOn_of_finite {ι : Type*} [Finite ι] {C : ι → Set E}
@@ -169,6 +176,10 @@ has a neighbourhood in `s` covered by finitely many convex polyhedra on each of 
 with a continuous affine map. -/
 def IsPLOn (f : E → F) (s : Set E) : Prop :=
   ∀ x ∈ s, ∃ V ∈ 𝓝[s] x, IsPiecewiseAffineOn f V
+
+/-- The local finite-decomposition characterization of piecewise linearity. -/
+theorem isPLOn_iff :
+    IsPLOn f s ↔ ∀ x ∈ s, ∃ V ∈ 𝓝[s] x, IsPiecewiseAffineOn f V := Iff.rfl
 
 /-- A piecewise affine map is piecewise linear on the set carrying its decomposition. -/
 theorem IsPiecewiseAffineOn.isPLOn (h : IsPiecewiseAffineOn f V) : IsPLOn f V :=
