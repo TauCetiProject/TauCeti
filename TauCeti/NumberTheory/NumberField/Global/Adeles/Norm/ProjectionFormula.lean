@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Relative
+public import TauCeti.NumberTheory.NumberField.Global.Adeles.Norm.Basic
 
 /-!
 # Projection formulas for adelic norm maps
@@ -16,19 +16,17 @@ the base adele. This is the projection formula
 
 `N_{L/K}(a x) = a ^ [L : K] N_{L/K}(x)`.
 
-The formula is stated for finite adeles, infinite adeles, full adeles, ideles, and idele classes.
-At the three adele-ring levels, scalar multiplication uses the algebra structure induced by the
-corresponding extension map. At the two group levels, the formula is written directly using the
-extension homomorphism.
+The formula is stated for finite adeles, infinite adeles, and full adeles, where scalar
+multiplication uses the algebra structure induced by the corresponding extension map. For ideles
+and idele classes, the extension is a group homomorphism rather than an algebra structure, and
+the formula is the `simp` normal form given by `map_mul` together with
+`ideleNormMap_ideleExtension` and `ideleClassNormMap_ideleClassExtension`.
 
 ## Main results
 
 * `TauCeti.GlobalNumberFields.finiteAdeleNorm_smul`: the finite-adele projection formula.
 * `TauCeti.GlobalNumberFields.infiniteAdeleNorm_smul`: the infinite-adele projection formula.
 * `TauCeti.GlobalNumberFields.adeleNorm_smul`: the full-adele projection formula.
-* `TauCeti.GlobalNumberFields.ideleNormMap_mul_ideleExtension`: the idele projection formula.
-* `TauCeti.GlobalNumberFields.ideleClassNormMap_mul_ideleClassExtension`: the idele-class
-  projection formula.
 
 ## References
 
@@ -72,25 +70,5 @@ theorem adeleNorm_smul (a : AdeleRing (𝓞 K) K) (x : AdeleRing (𝓞 L) L) :
     adeleNorm K L (a • x) = a ^ Module.finrank K L * adeleNorm K L x := by
   rw [Algebra.smul_def, algebraMap_adeleExtensionAlgebra, map_mul,
     adeleNorm_adeleExtension]
-
-/-- **The idele projection formula.** The relative norm of an idele multiplied by an extended
-base idele is the norm of the original idele multiplied by the field-degree power of the base
-idele. -/
-@[simp]
-theorem ideleNormMap_mul_ideleExtension (a : IdeleGroup (𝓞 K) K)
-    (x : IdeleGroup (𝓞 L) L) :
-    ideleNormMap K L (ideleExtension K L a * x) =
-      a ^ Module.finrank K L * ideleNormMap K L x := by
-  rw [map_mul, ideleNormMap_ideleExtension]
-
-/-- **The idele-class projection formula.** The relative norm of an idele class multiplied by an
-extended base class is the norm of the original class multiplied by the field-degree power of the
-base class. -/
-@[simp]
-theorem ideleClassNormMap_mul_ideleClassExtension (a : IdeleClassGroup (𝓞 K) K)
-    (x : IdeleClassGroup (𝓞 L) L) :
-    ideleClassNormMap K L (ideleClassExtension K L a * x) =
-      a ^ Module.finrank K L * ideleClassNormMap K L x := by
-  rw [map_mul, ideleClassNormMap_ideleClassExtension]
 
 end TauCeti.GlobalNumberFields
