@@ -41,7 +41,7 @@ is the minimal polynomial of `x`. In particular, every quadratic order is Gorens
 
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.dual_dual`: the trace dual is an involution.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.isProperFractionalIdeal_iff_mul_dual_eq_dual_one`:
-  a nonzero fractional ideal `I` is proper if and only if `I Iᵛ = Oᵛ`.
+  a fractional ideal `I` is proper if and only if `I Iᵛ = Oᵛ`.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.isProperFractionalIdeal_iff_isUnit_of_isGorenstein`:
   in a Gorenstein order, proper fractional ideals are exactly the invertible ones.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.isGorenstein_iff_forall_isUnit`: an order is
@@ -345,10 +345,13 @@ theorem mem_multiplierRing_iff_mem_dual {I : FractionalIdeal O.toSubalgebra⁰ K
   rw [← hmul, ← hdual, ← FractionalIdeal.mem_coe, coe_dual (mul_dual_ne_zero hI),
     FractionalIdeal.coe_mul, coe_dual hI]
 
-/-- **A nonzero fractional ideal `I` is proper exactly when `I Iᵛ = Oᵛ`.** -/
+/-- **A fractional ideal `I` is proper exactly when `I Iᵛ = Oᵛ`.** -/
 theorem isProperFractionalIdeal_iff_mul_dual_eq_dual_one
-    {I : FractionalIdeal O.toSubalgebra⁰ K} (hI : I ≠ 0) :
+    {I : FractionalIdeal O.toSubalgebra⁰ K} :
     O.IsProperFractionalIdeal I ↔ I * O.dual I = O.dual 1 := by
+  rcases eq_or_ne I 0 with rfl | hI
+  · rw [zero_mul, eq_comm, dual_eq_zero_iff]
+    exact iff_of_false (fun h ↦ h.ne_zero rfl) one_ne_zero
   rw [← (dual_injective O).eq_iff, dual_dual, O.isProperFractionalIdeal_def,
     SetLike.ext_iff, FractionalIdeal.ext_iff]
   refine forall_congr' fun x ↦ ?_
@@ -375,7 +378,7 @@ attribute [simp] isGorenstein_iff
 /-- **In a Gorenstein order every proper fractional ideal is invertible.** -/
 theorem IsGorenstein.isUnit_of_isProperFractionalIdeal (hO : O.IsGorenstein)
     {I : FractionalIdeal O.toSubalgebra⁰ K} (hI : O.IsProperFractionalIdeal I) : IsUnit I := by
-  have h := (isProperFractionalIdeal_iff_mul_dual_eq_dual_one hI.ne_zero).mp hI
+  have h := isProperFractionalIdeal_iff_mul_dual_eq_dual_one.mp hI
   have hdual : IsUnit (O.dual 1) := by
     rw [O.dual_one_eq_traceDual]
     exact hO.isUnit_traceDual
