@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Isogeny.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Conjugation
-import Mathlib.RingTheory.Nilpotent.GeometricallyReduced
 import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.FaithfullyFlat
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Smooth
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
@@ -132,6 +131,7 @@ end Ring
 when its coordinate morphism is injective. Over a field, finiteness
 and centrality always hold, and once the coordinate morphism is injective, `PGLₙ` inherits
 geometric reducedness from the smooth group `SLₙ`, which makes the morphism faithfully flat. -/
+@[simp]
 theorem isCentralIsogeny_conjugationMap_iff_injective (k : Type u) [Field k] :
     CommHopfAlgCat.IsCentralIsogeny (conjugationMap n k) ↔
       Function.Injective (conjugationMap n k).hom := by

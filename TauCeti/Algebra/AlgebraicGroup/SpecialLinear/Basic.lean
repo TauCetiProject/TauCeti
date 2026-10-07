@@ -235,6 +235,7 @@ theorem coordinateMap_ker :
 
 /-- The generic matrix of `SLₙ`, the image in `O(SLₙ)` of the generic matrix of `GLₙ`, has
 determinant one. -/
+@[simp↓]
 theorem det_map_genericMatrix_coordinateMap :
     ((GeneralLinear.genericMatrix R n).map (coordinateMap R n).hom).det = 1 := by
   rw [← (coordinateMap R n).hom.coe_toAlgHom,
