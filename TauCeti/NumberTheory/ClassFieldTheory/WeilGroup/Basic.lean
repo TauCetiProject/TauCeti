@@ -307,10 +307,7 @@ theorem weilDegree_inertiaToWeil (σ : inertiaSubgroup K) : weilDegree K (inerti
 /-- The image of inertia in the Weil group is the preimage of `I_K` under `W_K → G_K`, that is,
 the kernel of the degree (`ker_weilDegree`). -/
 theorem range_inertiaToWeil :
-    (inertiaToWeil K).range = (inertiaSubgroup K).comap (weilToAbsolute K) := by
-  ext w
-  refine ⟨?_, fun hw ↦ ⟨⟨_, hw⟩, injective_weilToAbsolute K (by simp)⟩⟩
-  rintro ⟨σ, rfl⟩
-  simp
+    (inertiaToWeil K).range = (inertiaSubgroup K).comap (weilToAbsolute K) :=
+  (Subgroup.inclusion_range _).trans (Subgroup.comap_subtype _ _).symm
 
 end TauCeti.ClassFieldTheory
