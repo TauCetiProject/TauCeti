@@ -15,9 +15,12 @@ The sum of effective Cartier divisors is represented by the product of their ide
 On a flat scheme over a base, sums of relative effective Cartier divisors are again relative
 effective Cartier. In particular, the multiples of a section divisor on a smooth relative curve
 remain relative effective Cartier, even when the sections coincide or the base is nonreduced.
-The binary-sum results are `isEffectiveCartier_mul` and `isRelativeEffectiveCartier_mul`;
-`isEffectiveCartier_pow` and `isRelativeEffectiveCartier_pow` give multiples, and the corresponding
-`_prod` lemmas give finite sums.
+The absolute closure results `TauCeti.isEffectiveCartier_mul`, `TauCeti.isEffectiveCartier_pow`,
+and `TauCeti.isEffectiveCartier_prod` are provided by
+`TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Basic`. This module proves their relative
+counterparts: `TauCeti.isRelativeEffectiveCartier_mul` gives binary sums,
+`TauCeti.isRelativeEffectiveCartier_pow` gives multiples, and
+`TauCeti.isRelativeEffectiveCartier_prod` gives finite sums.
 
 ## References
 
