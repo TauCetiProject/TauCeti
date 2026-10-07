@@ -70,6 +70,19 @@ theorem closedStarMap_of_lt (f : geometricLink K v → geometricLink L w)
           ⟨x.1.1 v, Realization.nonneg K x.1 v, hx⟩).2).1⟩ := by
   simp [closedStarMap, hx]
 
+/-- Away from the apex, radial extension preserves its coordinate and scales the link image
+coordinates by the mass outside the apex. -/
+@[simp]
+theorem closedStarMap_apply_of_lt (f : geometricLink K v → geometricLink L w)
+    (x : closedStarRealization K {v}) (hx : x.1.1 v < 1) (j : κ) :
+    (closedStarMap f x).1.1 j = if j = w then x.1.1 v else
+      (1 - x.1.1 v) * (f (starLinkProjection K v
+        ⟨x.1, (mem_puncturedClosedStar K v _).mpr ⟨x.2, hx⟩⟩)).1.1 j := by
+  rw [closedStarMap_of_lt f x hx]
+  by_cases hj : j = w
+  · simp [hj]
+  · simp [hj, Ne.symm hj]
+
 /-- On a link point, radial extension agrees with the original link map. -/
 @[simp]
 theorem closedStarMap_link (f : geometricLink K v → geometricLink L w)
