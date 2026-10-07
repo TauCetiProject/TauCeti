@@ -67,7 +67,7 @@ variable (H : Type u) [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
 attribute [local instance] TopRep.distribMulAction
 
 /-- `H` acts continuously on the trivial coefficients `𝔽₂`, which are smooth discrete. -/
-local instance : ContinuousSMul H (trivialF2 H).V :=
+local instance continuousSMul_trivialF2_indexTwoNorm : ContinuousSMul H (trivialF2 H).V :=
   (isSmoothDiscrete_trivialF2 H).continuousSMul
 
 /-- The class of a continuous homomorphism `α : H → 𝔽₂` in `continuousCohomology 1 (trivialF2 H)`:
