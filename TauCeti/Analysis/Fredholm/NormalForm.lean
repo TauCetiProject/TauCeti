@@ -272,8 +272,7 @@ theorem hasFDerivAt_obstructionSlice {f : E → F} {a : E}
       ((fderiv 𝕜 (pkg.obstructionMap hf) y).comp
         (ContinuousLinearMap.inr 𝕜 pkg.decCodom.X₁ pkg.decDom.X₀)) y.2 := by
   rw [funext (pkg.obstructionSlice_apply hf y.1)]
-  exact hq.hasFDerivAt.comp y.2
-    ((hasFDerivAt_const (𝕜 := 𝕜) y.1 y.2).prodMk (hasFDerivAt_id y.2))
+  exact hq.hasFDerivAt.comp y.2 (hasFDerivAt_prodMk_right (𝕜 := 𝕜) y.1 y.2)
 
 /-- At the coordinate of the base point the obstruction is the inessential-codomain component
 of `f a`. Not a `simp` lemma: `obstructionMap_apply` and
