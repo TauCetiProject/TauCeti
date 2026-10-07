@@ -104,7 +104,7 @@ as `Representation.card_inv_mul_sum_char_mul_char_eq_finrank`, for the algebraic
 `Representation.IntertwiningMap`, which in finite dimensions is the continuous one because every
 linear map out of a finite-dimensional normed space is continuous. Both routes are exhibited by
 anonymous `example`s, as are both branches of Mathlib's `Representation.char_orthonormal`: the
-diagonal one is `TauCeti.ContRepresentation.character_orthonormal_self` read through the finite
+diagonal one is `ContRepresentation.character_orthonormal_self` read through the finite
 pairing — Mathlib and `TauCeti.ClassFunction.characterPairing_ofCharacter_self` both already prove
 that identity, so no name is claimed for it either — and the off-diagonal one is
 `character_orthonormal_distinct_sum` with its intertwiner hypothesis discharged, for a pair of
@@ -121,7 +121,7 @@ not even `[Fact (1 ≤ p)]`, since `MeasureTheory.MemLp.of_discrete` produces th
 at every exponent, whereas `ContinuousMap.toLp`, being a continuous linear map, needs a norm on
 `Lp` and hence that hypothesis — and `[RCLike 𝕜]` and `p = 2` appear from the inner-product
 statements on.
-Cardinalities are written `Nat.card G` throughout, matching the rest of the roadmap;
+Cardinalities are written `Nat.card G` throughout;
 `Nat.card_eq_fintype_card` converts.
 
 `IsTopologicalGroup G`, `CompactSpace G`, `T2Space G` and `MeasurableSingletonClass G` are all
@@ -132,7 +132,7 @@ the two pairing lemmas are about the `L²` classes `matrixCoeffLp π hπ` and `c
 take the continuity proof as an argument, so a caller of them holds one already. The orthogonality
 relations ask for none: the Schur ones are stated as bare sums `∑ g, ⟪π g v, w⟫ · …`, and the
 character one uses Mathlib's `Representation.character`, which is by
-`TauCeti.ContRepresentation.coe_character` the function underlying `character π hπ`. Those
+`ContRepresentation.coe_character` the function underlying `character π hπ`. Those
 statements mention no measure either, so they ask for no measurable structure on `G`: their proofs
 install `borel G` themselves, and the caller is left with a bare finite discrete group. The two
 Maschke statements go one step further: mentioning no topology on `G` at all, they have their proof
@@ -145,10 +145,8 @@ The scalar in the averaged sums is real, not `𝕜`: the Bochner integral being 
 
 ## References
 
-The compact-group theory specialized here is the one developed in the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-and each statement below is the finite case of the compact one named beside it. `haarProb G` is the
-normalized counting measure `|G|⁻¹ • count`, and the counting identity
+Each statement below is the finite case of the compact-group theorem named beside it.
+`haarProb G` is the normalized counting measure `|G|⁻¹ • count`, and the counting identity
 `dim V^G = |G|⁻¹ ∑ g, χ_π g` is the finite shadow of
 `ContRepresentation.integral_character_eq_finrank_invariants`, matching Mathlib's
 `FDRep.average_char_eq_finrank_invariants` for the purely algebraic theory. `L²(G)` is `G → 𝕜` by
@@ -171,6 +169,8 @@ matrix-coefficient basis of the functions on `G`, is proved in
 -/
 
 public section
+
+open _root_.ContRepresentation
 
 open MeasureTheory Set
 open scoped ENNReal InnerProductSpace
@@ -547,7 +547,7 @@ omit [FiniteDimensional 𝕜 V] in
 /-- **Schur orthogonality for a finite group and a vanishing intertwiner space.** If the only
 continuous intertwiner `π → ρ` is zero and `ρ` is unitary, then every matrix coefficient of `π` has
 vanishing group average against every matrix coefficient of `ρ`. This is
-`TauCeti.ContRepresentation.schur_orthogonality_distinct` read through the finite Hermitian
+`ContRepresentation.schur_orthogonality_distinct` read through the finite Hermitian
 pairing; Schur's lemma is what supplies the hypothesis for a pair of inequivalent irreducibles, as
 in `ContRepresentation.schur_orthogonality_sum` below. No continuity is asked of either
 representation, for the reason given at `ContRepresentation.schur_orthogonality_self_sum`. -/
@@ -640,12 +640,12 @@ omit [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W] in
 /-- **The off-diagonal branch of first (row) character orthogonality for a finite group**: for a
 *unitary* `π`, the group average of `conj χ_π · χ_ρ` vanishes when no nonzero continuous intertwiner
 `ρ → π` exists, which for a pair of irreducibles is Schur's lemma. Unitarity is asked of `π` alone,
-as in the compact source `TauCeti.ContRepresentation.character_orthonormal_distinct`. (The second
+as in the compact source `ContRepresentation.character_orthonormal_distinct`. (The second
 orthogonality relation, the column sum over the irreducible characters, is a different statement and
 is not proved here.)
 
 The characters are written as Mathlib's `Representation.character` of the underlying
-representations, which is by `TauCeti.ContRepresentation.coe_character` the function underlying
+representations, which is by `ContRepresentation.coe_character` the function underlying
 `character π hπ`; so no continuity proof is asked of the caller, and no measurable structure on `G`
 either, the statement mentioning neither. -/
 theorem character_orthonormal_distinct_sum (ρ : ContRepresentation 𝕜 G W)
@@ -669,10 +669,10 @@ include hπ
 /- **The diagonal branch of first (row) character orthogonality for a finite group**, which is the
 diagonal half of Mathlib's `Representation.char_orthonormal`, in its `χ_π(g) · χ_π(g⁻¹)` spelling,
 obtained through the compact theory:
-`TauCeti.ContRepresentation.character_orthonormal_self` says the character of an irreducible
+`ContRepresentation.character_orthonormal_self` says the character of an irreducible
 unitary representation is an `L²` unit vector, `inner_characterLp_eq_inv_mul_sum` turns that pairing
 into a group average, and unitarity turns the inverse into a conjugate by
-`TauCeti.ContRepresentation.character_apply_inv`.
+`ContRepresentation.character_apply_inv`.
 
 No name is claimed, for the same reason as in the two counting identities above: the identity is
 already Mathlib's `Representation.char_orthonormal` (its diagonal branch) at `π.toRepresentation`,
@@ -720,7 +720,7 @@ section Unitarization
 
 variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [Fintype G] [TopologicalSpace G]
   [DiscreteTopology G] [MeasurableSpace G] [BorelSpace G]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V]
+  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
   [CompleteSpace V]
 
 variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
@@ -730,34 +730,34 @@ include hπ
 /-- **The averaged invariant form of a finite group is the group average**
 `⟪v, w⟫_G = |G|⁻¹ ∑ g, ⟪π g v, π g w⟫`. This is the form Weyl's unitarian trick averages into
 existence, read off the Gram operator that represents it
-(`TauCeti.ContRepresentation.inner_gramOperator`) through
+(`ContRepresentation.inner_gramOperator`) through
 `TauCeti.integral_haarProb_eq_inv_mul_sum`; for a finite group it is the classical averaging
 `⟪·, ·⟫ ↦ |G|⁻¹ ∑ g, ⟪π g ·, π g ·⟫` of the finite-group proof, and the normalization `|G|⁻¹` is
 the one that fixes the form on the invariants. -/
 theorem inner_gramOperator_eq_inv_mul_sum (v w : V) :
-    ⟪v, gramOperator π hπ w⟫_𝕜 = (Nat.card G : 𝕜)⁻¹ * ∑ g, ⟪π g v, π g w⟫_𝕜 := by
-  rw [inner_gramOperator, integral_haarProb_eq_inv_mul_sum]
+    ⟪v, π.gramOperator hπ w⟫_𝕜 = (Nat.card G : 𝕜)⁻¹ * ∑ g, ⟪π g v, π g w⟫_𝕜 := by
+  rw [π.inner_gramOperator hπ, integral_haarProb_eq_inv_mul_sum]
 
 /-- **The averaged form of a finite group on the diagonal is the average of `‖π g v‖ ^ 2`.** This is
 the finite form of the positive definiteness that makes the unitarian trick work: the average of
 `|G|` nonnegative reals, one of which is `‖v‖ ^ 2` at `g = 1`, is positive for `v ≠ 0`. Compactness
-of `G` enters the general statement `TauCeti.ContRepresentation.inner_gramOperator_self` only to
+of `G` enters the general statement `ContRepresentation.inner_gramOperator_self` only to
 make `g ↦ ‖π g v‖ ^ 2` integrable; it is the *strict* positivity
-`TauCeti.ContRepresentation.re_inner_gramOperator_self_pos` that also needs the compactness bound
+`ContRepresentation.re_inner_gramOperator_self_pos` that also needs the compactness bound
 on the operator norms from below. A finite group needs neither. -/
 theorem inner_gramOperator_self_eq_inv_mul_sum (v : V) :
-    ⟪gramOperator π hπ v, v⟫_𝕜 = (((Nat.card G : ℝ)⁻¹ * ∑ g, ‖π g v‖ ^ 2 : ℝ) : 𝕜) := by
-  rw [inner_gramOperator_self, integral_haarProb, smul_eq_mul]
+    ⟪π.gramOperator hπ v, v⟫_𝕜 = (((Nat.card G : ℝ)⁻¹ * ∑ g, ‖π g v‖ ^ 2 : ℝ) : 𝕜) := by
+  rw [π.inner_gramOperator_self hπ, integral_haarProb, smul_eq_mul]
 
 /-- **The Gram operator of a finite group is the averaged sum of the operators `(π g)† ∘ (π g)`.**
 This is `ContRepresentation.inner_gramOperator_eq_inv_mul_sum` at the level of operators:
 each summand is the Gram operator of the pulled-back form `(v, w) ↦ ⟪π g v, π g w⟫`, and the Haar
 average of the family is their group average. -/
 theorem gramOperator_eq_smul_sum :
-    gramOperator π hπ =
+    π.gramOperator hπ =
       (Nat.card G : 𝕜)⁻¹ • ∑ g, (ContinuousLinearMap.adjoint (π g)).comp (π g) := by
   refine ContinuousLinearMap.ext fun w ↦ ext_inner_left 𝕜 fun v ↦ ?_
-  rw [inner_gramOperator_eq_inv_mul_sum, smul_apply, sum_apply, inner_smul_right, inner_sum]
+  rw [π.inner_gramOperator_eq_inv_mul_sum hπ, smul_apply, sum_apply, inner_smul_right, inner_sum]
   exact congrArg _ (Finset.sum_congr rfl fun g _ ↦
     (ContinuousLinearMap.adjoint_inner_right (π g) v (π g w)).symm)
 
@@ -766,14 +766,14 @@ end Unitarization
 section Maschke
 
 variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [Finite G]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V]
+  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
   [FiniteDimensional 𝕜 V]
 
 /-- **The unitarian trick for a finite group.** Every finite-dimensional representation of a finite
 group on an inner product space is conjugate, by a continuous linear automorphism of the carrier,
 to one preserving the inner product.
 
-This is `TauCeti.ContRepresentation.exists_isUnitary_congr` with all of its compact-group
+This is `ContRepresentation.exists_isUnitary_congr` with all of its compact-group
 hypotheses discharged: the statement mentions neither a topology on `G` nor a measure, so the proof
 installs the discrete topology and the Borel structure it averages against — a finite discrete
 group is compact and every representation of it is continuous by `continuous_of_discreteTopology` —

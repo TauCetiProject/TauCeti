@@ -306,6 +306,32 @@ lemma forget_μ_comp_map_pushforward_μ (M N : SheafOfModules.{u} (ringCatSheaf 
   exact (congrArg _ ((sheafificationForgetAdjunction S).homEquiv_counit _ _ _).symm).trans
     (Equiv.apply_symm_apply _ _)
 
+/-- On pure tensors of sections, the tensor map of sheaf pushforward is the inclusion of
+the corresponding pure tensor on the source site into the sheaf tensor product. -/
+lemma pushforward_μ_app_tmul (M N : SheafOfModules.{u} (ringCatSheaf R)) (U : Cᵒᵖ)
+    (m : M.val.obj (F.op.obj U)) (n : N.val.obj (F.op.obj U)) :
+    (Functor.LaxMonoidal.μ (_root_.SheafOfModules.pushforward φ) M N).val.app U
+      ((Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf S))
+        ((_root_.SheafOfModules.pushforward φ).obj M)
+        ((_root_.SheafOfModules.pushforward φ).obj N)).app U (m ⊗ₜ[S.obj.obj U] n)) =
+    (Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N).app
+      (F.op.obj U) (m ⊗ₜ[R.obj.obj (F.op.obj U)] n) := by
+  have h := congrArg (fun p ↦ (p.app U).hom (m ⊗ₜ[S.obj.obj U] n))
+    (forget_μ_comp_map_pushforward_μ φ M N)
+  -- Evaluate the presheaf composites as functions; their restriction-of-scalars wrappers
+  -- prevent rewriting the bundled module compositions directly.
+  change (Functor.LaxMonoidal.μ (_root_.SheafOfModules.pushforward φ) M N).val.app U
+      ((Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf S))
+        ((_root_.SheafOfModules.pushforward φ).obj M)
+        ((_root_.SheafOfModules.pushforward φ).obj N)).app U (m ⊗ₜ[S.obj.obj U] n)) =
+    (Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N).app
+      (F.op.obj U)
+      ((Functor.LaxMonoidal.μ (presheafPushforward φ) M.val N.val).app U
+        (m ⊗ₜ[S.obj.obj U] n)) at h
+  exact h.trans (congrArg
+    ((Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N).app
+      (F.op.obj U)) (presheafPushforward_μ_app_tmul φ M.val N.val U m n))
+
 /-- Pushforward of sheaves of modules respects symmetry: its lax tensor map commutes with
 interchanging the factors. -/
 instance pushforwardLaxBraided : (_root_.SheafOfModules.pushforward φ).LaxBraided where

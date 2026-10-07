@@ -171,7 +171,7 @@ theorem tau_le_tau_sub_of_comp_eq_X_pow_smul {δ : ℤ} (k : ℕ) :
   have h := InternalGrading.supNonTorsionDegree_add_le
     ((InternalGrading.nonTorsionDegrees_nonempty_iff _).mpr hT)
     (hG'.bddAbove_nonTorsionDegrees_alexanderUnblockedHomologyGrading K) hf
-    (Submodule.comap_torsion_le_of_comp_eq_smul (pow_mem Polynomial.X_mem_nonzeroDivisors k) hgf)
+    (Submodule.comap_torsion_le_of_comp_eq_smul (pow_mem Polynomial.X_mem_nonZeroDivisors k) hgf)
   rw [tau_def, tau_def]
   omega
 

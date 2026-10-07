@@ -86,8 +86,8 @@ integral ideals underlies no weight, because `→*₀` forces the value `0` at `
 everywhere-one function on the *nonzero* ideals is the trivial weight instead
 (`TauCeti.MultiplicativeIdealWeight.toIdealArithmeticFunction_one`).
 `TauCeti.UnitaryIdealWeight.norm_normTwist_apply_ne_one` says that a norm twist with
-`Re z ≠ 0` changes the modulus at every good ideal of absolute norm greater than one, so such
-twists live only in the general carrier.
+`Re z ≠ 0` has modulus different from one at every ideal of absolute norm greater than one, so
+such twists live only in the general carrier.
 
 ## References
 
@@ -532,15 +532,6 @@ theorem IsTrivialOnGood.apply_eq_one {χ : MultiplicativeIdealWeight K} (h : χ.
     {I : Ideal (𝓞 K)} (hI : χ.IsGood I) : χ I = 1 :=
   h I hI
 
-/-- A weight trivial on its good ideals takes only the values `0` and `1`, so it is bounded by one
-on every ideal. -/
-theorem IsTrivialOnGood.norm_apply_le_one {χ : MultiplicativeIdealWeight K}
-    (h : χ.IsTrivialOnGood) {I : Ideal (𝓞 K)} : ‖χ I‖ ≤ 1 := by
-  by_cases hI : χ.IsGood I
-  · rw [h.apply_eq_one hI, norm_one]
-  · rw [(χ.apply_eq_zero_iff_not_isGood I).mpr hI, norm_zero]
-    exact zero_le_one
-
 /-- The norm twists with parameter `0` on the good ideals are the weights that are trivial
 there. -/
 @[simp]
@@ -728,11 +719,6 @@ section Transport
 
 variable {L M : Type*} [Field L] [NumberField L] [Field M] [NumberField M]
 
-omit [NumberField K] [NumberField L] in
-private theorem asIdeal_equivOfRingEquiv_symm (e : K ≃+* L) (𝔮 : HeightOneSpectrum (𝓞 L)) :
-    ((HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e)).symm 𝔮).asIdeal =
-      Ideal.comap (RingOfIntegers.mapRingEquiv e) 𝔮.asIdeal := rfl
-
 /-- **Transport along an isomorphism of fields.** An isomorphism `e : K ≃+* L` carries a
 multiplicative ideal weight on `K` to one on `L`, by pulling ideals of `𝓞 L` back to `𝓞 K`
 along `NumberField.RingOfIntegers.mapRingEquiv e`. -/
@@ -744,7 +730,7 @@ noncomputable def map (e : K ≃+* L) (χ : MultiplicativeIdealWeight K) :
     refine (χ.finite_badPrimes.image
       (HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e))).subset fun 𝔮 h𝔮 ↦ ?_
     refine ⟨_, ?_, Equiv.apply_symm_apply _ 𝔮⟩
-    rw [mem_badPrimes, asIdeal_equivOfRingEquiv_symm]
+    rw [mem_badPrimes, HeightOneSpectrum.asIdeal_equivOfRingEquiv_symm]
     simpa [badPrimes] using h𝔮
 
 @[simp]
@@ -760,7 +746,7 @@ theorem badPrimes_map (e : K ≃+* L) (χ : MultiplicativeIdealWeight K) :
       HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) '' χ.badPrimes := by
   ext 𝔮
   rw [Equiv.image_eq_preimage_symm, Set.mem_preimage, mem_badPrimes, mem_badPrimes,
-    asIdeal_equivOfRingEquiv_symm, map_apply]
+    HeightOneSpectrum.asIdeal_equivOfRingEquiv_symm, map_apply]
 
 @[simp]
 theorem toIdealArithmeticFunction_map (e : K ≃+* L) (χ : MultiplicativeIdealWeight K) :
@@ -891,6 +877,17 @@ theorem norm_le_one (χ : UnitaryIdealWeight K) (I : Ideal (𝓞 K)) : ‖χ.1 I
   · rw [(MultiplicativeIdealWeight.apply_eq_zero_iff_not_isGood χ.1 I).mpr hI, norm_zero]
     exact zero_le_one
 
+end UnitaryIdealWeight
+
+/-- A weight trivial on its good ideals is unitary, so it is bounded by one on every ideal
+(`TauCeti.UnitaryIdealWeight.norm_le_one`). -/
+theorem MultiplicativeIdealWeight.IsTrivialOnGood.norm_apply_le_one
+    {χ : MultiplicativeIdealWeight K} (h : χ.IsTrivialOnGood) {I : Ideal (𝓞 K)} : ‖χ I‖ ≤ 1 :=
+  UnitaryIdealWeight.norm_le_one
+    ⟨χ, fun _ h𝔭 ↦ by rw [h.apply_eq_one (Ideal.isPrimeTo_asIdeal_iff.mpr h𝔭), norm_one]⟩ I
+
+namespace UnitaryIdealWeight
+
 /-- The trivial weight is unitary. -/
 noncomputable instance : One (UnitaryIdealWeight K) :=
   ⟨1, fun 𝔭 _ ↦ by simp [MultiplicativeIdealWeight.one_apply, 𝔭.ne_bot]⟩
@@ -991,18 +988,22 @@ theorem norm_normTwist (χ : UnitaryIdealWeight K) (z : ℂ) {I : Ideal (𝓞 K)
   rw [MultiplicativeIdealWeight.normTwist_apply, norm_mul, norm_eq_one χ hI, one_mul,
     Complex.norm_natCast_cpow_of_pos hN, Complex.neg_re]
 
-/-- **Rejection test.** A norm twist with `Re z ≠ 0` leaves the unitary carrier: at every good
-ideal of absolute norm greater than one its modulus differs from `1`. Such twists therefore
-live only in `TauCeti.MultiplicativeIdealWeight`. -/
+/-- **Rejection test.** A norm twist with `Re z ≠ 0` leaves the unitary carrier: at every ideal
+of absolute norm greater than one its modulus differs from `1`, being `N(I) ^ (-Re z)` at a good
+ideal and `0` elsewhere. Such twists therefore live only in `TauCeti.MultiplicativeIdealWeight`. -/
 theorem norm_normTwist_apply_ne_one (χ : UnitaryIdealWeight K) {z : ℂ} (hz : z.re ≠ 0)
-    {I : Ideal (𝓞 K)} (hI : χ.1.IsGood I) (hN : 1 < Ideal.absNorm I) :
+    {I : Ideal (𝓞 K)} (hN : 1 < Ideal.absNorm I) :
     ‖MultiplicativeIdealWeight.normTwist z χ.1 I‖ ≠ 1 := by
-  have hN' : (1 : ℝ) < (Ideal.absNorm I : ℝ) := by exact_mod_cast hN
-  rw [norm_normTwist χ z hI]
-  rcases lt_trichotomy z.re 0 with h | h | h
-  · exact ne_of_gt ((Real.one_lt_rpow_iff_of_pos (by linarith)).mpr (Or.inl ⟨hN', by linarith⟩))
-  · exact absurd h hz
-  · exact ne_of_lt (Real.rpow_lt_one_of_one_lt_of_neg hN' (by linarith))
+  by_cases hI : χ.1.IsGood I
+  · have hN' : (1 : ℝ) < (Ideal.absNorm I : ℝ) := by exact_mod_cast hN
+    rw [norm_normTwist χ z hI]
+    rcases lt_trichotomy z.re 0 with h | h | h
+    · exact ne_of_gt ((Real.one_lt_rpow_iff_of_pos (by linarith)).mpr (Or.inl ⟨hN', by linarith⟩))
+    · exact absurd h hz
+    · exact ne_of_lt (Real.rpow_lt_one_of_one_lt_of_neg hN' (by linarith))
+  · rw [MultiplicativeIdealWeight.normTwist_apply,
+      (MultiplicativeIdealWeight.apply_eq_zero_iff_not_isGood χ.1 I).mpr hI, zero_mul, norm_zero]
+    exact zero_ne_one
 
 /-- The conjugate of a unitary weight is unitary. -/
 def conj (χ : UnitaryIdealWeight K) : UnitaryIdealWeight K :=
@@ -1070,7 +1071,7 @@ noncomputable def map (e : K ≃+* L) (χ : UnitaryIdealWeight K) : UnitaryIdeal
     rw [MultiplicativeIdealWeight.badPrimes_map, Equiv.image_eq_preimage_symm,
       Set.mem_preimage] at h𝔮
     rw [MultiplicativeIdealWeight.map_apply,
-      ← MultiplicativeIdealWeight.asIdeal_equivOfRingEquiv_symm]
+      ← HeightOneSpectrum.asIdeal_equivOfRingEquiv_symm]
     exact χ.2 _ h𝔮⟩
 
 @[simp]
