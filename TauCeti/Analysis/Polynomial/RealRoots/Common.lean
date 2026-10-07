@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Polynomial.CommonRoots
 public import TauCeti.Analysis.Polynomial.RealRoots.Ordered
 
 import TauCeti.RingTheory.Polynomial.Roots
-import TauCeti.Topology.Algebra.Polynomial
+import TauCeti.Topology.Algebra.Polynomial.Basic
 import TauCeti.Topology.MetricSpace.SeparatedBalls
 
 /-!

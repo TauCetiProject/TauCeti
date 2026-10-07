@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Polynomial.RealRoots.Common
 public import TauCeti.Geometry.RealAlgebraic.Stack.Sign
 import TauCeti.Algebra.MvPolynomial.Equiv
 import TauCeti.RingTheory.Polynomial.Roots
-import TauCeti.Topology.Algebra.Polynomial
+import TauCeti.Topology.Algebra.Polynomial.Basic
 
 /-!
 # Delineations of families of real polynomials
