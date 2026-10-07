@@ -17,9 +17,9 @@ subdivided polyhedron bijectively with the original polyhedron. The complexes ma
 and may have unused vertices. This is the point-set identification; no topology on the
 precomplex polyhedra or piecewise-linear compatibility is asserted here.
 
-Surjectivity subtracts the least coordinate on the starred face and puts the removed mass
-at the new vertex. Injectivity uses the fact that each subdivision face misses at least one
-vertex of the starred face: that zero coordinate recovers the mass at the new vertex.
+The module supplies the linear map, its coordinate and vertex formulas, mass preservation,
+and its image, injectivity, and surjectivity properties on the corresponding polyhedra.
+Together these give a point-set identification for the geometric realization of a stellar move.
 
 ## References
 
@@ -104,12 +104,17 @@ private theorem exists_zero_coordinate {x : ι →₀ ℝ} (hvσ : v ∉ σ)
         hix (Finset.mem_erase.mpr ⟨hiv, h⟩)⟩
 
 /-- The barycentric map sends the stellar polyhedron into the original polyhedron. -/
-theorem mapsTo_stellarSubdivisionLinearMap (hσne : σ.Nonempty) (hvσ : v ∉ σ) :
+theorem mapsTo_stellarSubdivisionLinearMap (hvσ : v ∉ σ) :
     MapsTo (stellarSubdivisionLinearMap σ v)
       (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) (stellarSubdivision K σ v)).space
       (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) K).space := by
   intro x hx
   obtain ⟨hxpos, hxsum, hxface⟩ := Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mp hx
+  by_cases hσempty : σ = ∅
+  · subst σ
+    rw [mem_stellarSubdivision_iff] at hxface
+    simp at hxface
+  have hσne : σ.Nonempty := Finset.nonempty_iff_ne_empty.mpr hσempty
   rw [Geometry.SimplicialComplex.mem_space_onFinsupp_iff]
   refine ⟨?_, (sum_stellarSubdivisionLinearMap hσne x).trans hxsum, ?_⟩
   · intro i
@@ -147,8 +152,8 @@ theorem mapsTo_stellarSubdivisionLinearMap (hσne : σ.Nonempty) (hvσ : v ∉ �
       rw [heq]
       exact ((mem_stellarSubdivision_iff_of_notMem hvx).mp hxface).1
 
-/-- Missing starred-face coordinates recover the new vertex's mass, so the barycentric
-map is injective on the stellar polyhedron. -/
+/-- The barycentric map is injective on the stellar polyhedron when the new vertex
+lies outside the starred face. -/
 theorem injOn_stellarSubdivisionLinearMap (hvσ : v ∉ σ) :
     InjOn (stellarSubdivisionLinearMap σ v)
       (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) (stellarSubdivision K σ v)).space := by
@@ -163,8 +168,8 @@ theorem injOn_stellarSubdivisionLinearMap (hvσ : v ∉ σ) :
   have hej := DFunLike.congr_fun heq j
   simp only [stellarSubdivisionLinearMap_apply, hi, hj, ite_true, hiv, hjv, ite_false,
     sub_zero, hxi, hyj, zero_add] at hei hej
-  have hc : 0 < (σ.card : ℝ)⁻¹ := inv_pos.mpr (by
-    exact_mod_cast (show σ.Nonempty from ⟨i, hi⟩).card_pos)
+  have hσne : σ.Nonempty := ⟨i, hi⟩
+  have hc : 0 < (σ.card : ℝ)⁻¹ := inv_pos.mpr (by exact_mod_cast hσne.card_pos)
   have hxyv : x v = y v := by nlinarith [hxpos j, hypos i]
   ext k
   have hek := DFunLike.congr_fun heq k
@@ -188,8 +193,8 @@ private theorem stellarSubdivisionLinearMap_lift (hσ : σ.Nonempty) (hvσ : v �
   simp only [hxv, ite_true, hvσ, ite_false, sub_zero, zero_add]
   by_cases hiv : i = v <;> by_cases his : i ∈ σ <;> simp [hiv, his, hvσ, hxv, hc]
 
-/-- Subtracting the least coordinate on the starred face lifts every original point
-to the stellar polyhedron. -/
+/-- Every point of the original polyhedron has a preimage in the stellar polyhedron
+when the starred face belongs to the original complex and the new vertex is unused. -/
 theorem surjOn_stellarSubdivisionLinearMap (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K) :
     SurjOn (stellarSubdivisionLinearMap σ v)
       (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) (stellarSubdivision K σ v)).space
@@ -273,8 +278,7 @@ theorem bijOn_stellarSubdivisionLinearMap (hσ : σ ∈ K) (hv : ({v} : Finset �
     BijOn (stellarSubdivisionLinearMap σ v)
       (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) (stellarSubdivision K σ v)).space
       (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) K).space :=
-  ⟨mapsTo_stellarSubdivisionLinearMap (K.isRelLowerSet_faces hσ).1
-      (notMem_of_singleton_notMem hv hσ),
+  ⟨mapsTo_stellarSubdivisionLinearMap (notMem_of_singleton_notMem hv hσ),
     injOn_stellarSubdivisionLinearMap (notMem_of_singleton_notMem hv hσ),
     surjOn_stellarSubdivisionLinearMap hσ hv⟩
 
