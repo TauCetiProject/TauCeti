@@ -103,10 +103,9 @@ theorem IsTotallyRamified.addVal_eq_iInf_integralPowerBasis_repr (h : IsTotallyR
       ⨅ i, ramificationIndex K L •
         IsDiscreteValuationRing.addVal 𝒪[K] ((h.integralPowerBasis hϖ).basis.repr x i) +
           (i : ℕ) := by
-  set pb := h.integralPowerBasis hϖ
-  conv_lhs => rw [← pb.basis.sum_repr x]
-  simpa [pb, Algebra.smul_def] using
-    addVal_sum_algebraMap_mul_pow_of_irreducible hϖ (h.integralPowerBasis_dim hϖ).le
-      (pb.basis.repr x)
+  conv_lhs =>
+    rw [← (h.integralPowerBasis hϖ).basis.sum_repr x]
+    simp only [PowerBasis.coe_basis, h.integralPowerBasis_gen, Algebra.smul_def]
+  exact addVal_sum_algebraMap_mul_pow_of_irreducible hϖ (h.integralPowerBasis_dim hϖ).le _
 
 end TauCeti
