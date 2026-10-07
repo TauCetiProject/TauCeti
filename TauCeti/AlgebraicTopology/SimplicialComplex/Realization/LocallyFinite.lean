@@ -72,13 +72,17 @@ theorem isOpen_openStarRealization (v : ι) : IsOpen (K.openStarRealization v) :
 
 omit [DecidableEq ι] in
 /-- Every realization point belongs to an open vertex star. -/
-@[simp]
-theorem iUnion_openStarRealization : ⋃ v, K.openStarRealization v = univ := by
+theorem exists_mem_openStarRealization (x : Realization K) :
+    ∃ v, x ∈ K.openStarRealization v := by
   classical
-  apply Set.eq_univ_of_forall
-  intro x
   obtain ⟨v, hv⟩ := K.isRelLowerSet_faces.prop_of_mem (support_mem K x)
-  exact mem_iUnion.mpr ⟨v, (K.mem_openStarRealization_iff_mem_support).mpr hv⟩
+  exact ⟨v, (K.mem_openStarRealization_iff_mem_support).mpr hv⟩
+
+omit [DecidableEq ι] in
+/-- The open vertex stars cover the realization. -/
+@[simp]
+theorem iUnion_openStarRealization : ⋃ v, K.openStarRealization v = univ :=
+  Set.eq_univ_of_forall fun x => mem_iUnion.mpr (K.exists_mem_openStarRealization x)
 
 /-- Each open star lies in its closed star. -/
 theorem openStarRealization_subset_closedStarRealization (v : ι) :
@@ -89,32 +93,6 @@ theorem openStarRealization_subset_closedStarRealization (v : ι) :
   rw [Finset.union_singleton,
     Finset.insert_eq_of_mem ((K.mem_openStarRealization_iff_mem_support).mp hx)]
   exact support_mem K x
-
-omit [DecidableEq ι] in
-/-- A finite subcomplex occupies a compact subset of the weak realization. -/
-theorem isCompact_setOf_support_mem {L : PreAbstractSimplicialComplex ι}
-    (hL : L ≤ K.toPreAbstractSimplicialComplex) (hfin : L.faces.Finite) :
-    IsCompact {x : Realization K | x.1.support ∈ L} := by
-  let C : L.faces → Set (Realization K) :=
-    fun σ => range (faceInclusion K ⟨σ.1, hL σ.2⟩)
-  have : Finite L.faces := hfin.to_subtype
-  have heq : {x : Realization K | x.1.support ∈ L} = ⋃ σ, C σ := by
-    ext x
-    constructor
-    · intro hx
-      exact mem_iUnion.mpr ⟨⟨x.1.support, hx⟩,
-        ⟨⟨x.1, by simpa only [carrier_val] using mem_convexHull_carrier K x⟩,
-          Subtype.ext (faceInclusion_val _ _ _)⟩⟩
-    · intro hx
-      obtain ⟨σ, y, rfl⟩ := mem_iUnion.mp hx
-      have hne := K.isRelLowerSet_faces.prop_of_mem
-        (support_mem K (faceInclusion K ⟨σ.1, hL σ.2⟩ y))
-      simp only [faceInclusion_val] at hne
-      have hyL : y.1.support ∈ L :=
-        L.isRelLowerSet_faces.mem_of_le σ.2 (StandardSimplex.support_subset y) hne
-      simpa only [mem_ofPred_eq, faceInclusion_val] using hyL
-  rw [heq]
-  exact isCompact_iUnion fun σ => isCompact_range (continuous_faceInclusion K ⟨σ.1, hL σ.2⟩)
 
 /-- The realization of a finite closed star is compact. -/
 theorem isCompact_closedStarRealization {v : ι}
@@ -129,7 +107,7 @@ theorem locallyCompactSpace_realization_of_finite_vertex_stars
       (PreAbstractSimplicialComplex.closedStar K.toPreAbstractSimplicialComplex {v}).faces.Finite) :
     LocallyCompactSpace (Realization K) := by
   have : WeaklyLocallyCompactSpace (Realization K) := ⟨fun x => by
-    obtain ⟨v, hv⟩ := mem_iUnion.mp (K.iUnion_openStarRealization ▸ mem_univ x)
+    obtain ⟨v, hv⟩ := K.exists_mem_openStarRealization x
     exact ⟨K.closedStarRealization v, K.isCompact_closedStarRealization (hfin v),
       mem_of_superset ((K.isOpen_openStarRealization v).mem_nhds hv)
         (K.openStarRealization_subset_closedStarRealization v)⟩⟩
@@ -145,12 +123,19 @@ theorem isEmbedding_realization_coe_of_finite_vertex_stars
   let U : ι → TopologicalSpace.Opens (range c) := fun v =>
     ⟨{y | 0 < y.1 v}, isOpen_lt continuous_const
       ((continuous_apply v).comp continuous_subtype_val)⟩
+  have hpreimage (v : ι) : (rangeFactorization c) ⁻¹' (U v) = K.openStarRealization v := by
+    ext x
+    simp only [U, TopologicalSpace.Opens.coe_mk, mem_preimage, mem_ofPred_eq,
+      mem_openStarRealization, rangeFactorization, c]
   have hcover : TopologicalSpace.IsOpenCover U := by
     refine TopologicalSpace.IsOpenCover.of_sets (fun v => (U v).isOpen) ?_
     apply Set.eq_univ_of_forall
     rintro ⟨_, x, rfl⟩
-    obtain ⟨v, hv⟩ := mem_iUnion.mp (K.iUnion_openStarRealization ▸ mem_univ x)
-    simpa [U, c, openStarRealization] using mem_iUnion.mpr ⟨v, hv⟩
+    obtain ⟨v, hv⟩ := K.exists_mem_openStarRealization x
+    have hx : x ∈ (rangeFactorization c) ⁻¹' (U v) := by
+      rw [hpreimage v]
+      exact hv
+    exact mem_iUnion.mpr ⟨v, hx⟩
   have hc : Continuous (rangeFactorization c) := (continuous_realization_coe K).rangeFactorization
   have he : Topology.IsEmbedding (rangeFactorization c) := by
     apply (hcover.isEmbedding_iff_restrictPreimage hc).mpr
@@ -160,10 +145,10 @@ theorem isEmbedding_realization_coe_of_finite_vertex_stars
       isCompact_iff_compactSpace.mp (K.isCompact_closedStarRealization (hfin v))
     have hC : Topology.IsEmbedding (fun x : C => c x.1) :=
       ((continuous_realization_coe K).comp continuous_subtype_val).isClosedEmbedding
-        (fun _ _ h => Subtype.ext (Subtype.ext (Finsupp.ext fun w => congrFun h w))) |>.isEmbedding
+        ((injective_realization_coe K).comp Subtype.val_injective) |>.isEmbedding
     have hsub : (rangeFactorization c) ⁻¹' (U v) ⊆ C := by
-      simpa [U, c, C, openStarRealization, closedStarRealization] using
-        K.openStarRealization_subset_closedStarRealization v
+      rw [hpreimage v]
+      exact K.openStarRealization_subset_closedStarRealization v
     have hi := hC.comp (Topology.IsEmbedding.inclusion hsub)
     -- Forget the two range subtypes to compare the restricted coordinate map with
     -- its factorization through the compact closed star.
