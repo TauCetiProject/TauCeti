@@ -222,9 +222,12 @@ theorem abelianizationProPTransferLe_mk_inclusion [V.Normal]
     abelianizationProPTransferLe p hVW hV (abelianizationProPMk p G W (Subgroup.inclusion hVW v)) =
       ∏ s : W.map (QuotientGroup.mk' V), (s : G ⧸ V) • abelianizationProPMk p G V v := by
   have hv : Subgroup.inclusion hVW v ∈ V.subgroupOf W := v.2
+  -- The inclusion and the corresponding element of `V.subgroupOf W` have definitionally equal
+  -- carriers; there is no separate inclusion map between these two presentations to rewrite.
+  have hinclusion : Subgroup.inclusion hVW v =
+      ((⟨Subgroup.inclusion hVW v, hv⟩ : V.subgroupOf W) : W) := rfl
   rw [abelianizationProPTransferLe_mk_eq_subgroupOfEquiv]
-  rw [show Subgroup.inclusion hVW v = ((⟨_, hv⟩ : V.subgroupOf W) : W) from rfl,
-    abelianizationProPTransfer_apply_of_mem, map_prod]
+  rw [hinclusion, abelianizationProPTransfer_apply_of_mem, map_prod]
   refine Fintype.prod_equiv (quotientSubgroupOfEquivMap V W hV).toEquiv _ _ fun q ↦ ?_
   rw [abelianizationProPSubgroupOfEquiv_smul p hVW hV, abelianizationProPSubgroupOfEquiv_mk]
   -- The element `⟨inclusion v, hv⟩` of `V` is `v` by structure eta.
@@ -251,9 +254,11 @@ noncomputable def abelianizationProPInfl1 :
     (Additive (abelianizationProP p G V))
     ⟨QuotientGroup.mapOfLE hVW, QuotientGroup.continuous_mapOfLE hVW⟩
     (abelianizationProPTransferLe p hVW hV).toAdditive
-    -- Stated at the `toAdditive` coercion, so that `explicitMap1_mk` rewrites this map.
-    (show Continuous (abelianizationProPTransferLe p hVW hV).toAdditive from
-      continuous_abelianizationProPTransferLe p hVW hV)
+    -- `Additive` preserves the topology, but the named continuity theorem uses the multiplicative
+    -- presentation, so make the expected additive presentation explicit.
+    (by
+      change Continuous (abelianizationProPTransferLe p hVW hV).toAdditive
+      exact continuous_abelianizationProPTransferLe p hVW hV)
     (abelianizationProPTransferLe_toAdditive_smul p hVW hV)
 
 /-- `abelianizationProPInfl1` is `explicitMap1` along its compatible pair. -/
@@ -263,8 +268,10 @@ theorem abelianizationProPInfl1_def :
         (Additive (abelianizationProP p G V))
         ⟨QuotientGroup.mapOfLE hVW, QuotientGroup.continuous_mapOfLE hVW⟩
         (abelianizationProPTransferLe p hVW hV).toAdditive
-        (show Continuous (abelianizationProPTransferLe p hVW hV).toAdditive from
-          continuous_abelianizationProPTransferLe p hVW hV)
+        -- Match the additive presentation used by `abelianizationProPInfl1`.
+        (by
+          change Continuous (abelianizationProPTransferLe p hVW hV).toAdditive
+          exact continuous_abelianizationProPTransferLe p hVW hV)
         (abelianizationProPTransferLe_toAdditive_smul p hVW hV) :=
   (rfl)
 
@@ -277,9 +284,11 @@ noncomputable def abelianizationProPInfl2 :
     (Additive (abelianizationProP p G V))
     ⟨QuotientGroup.mapOfLE hVW, QuotientGroup.continuous_mapOfLE hVW⟩
     (abelianizationProPTransferLe p hVW hV).toAdditive
-    -- Stated at the `toAdditive` coercion, so that `explicitMap2_mk` rewrites this map.
-    (show Continuous (abelianizationProPTransferLe p hVW hV).toAdditive from
-      continuous_abelianizationProPTransferLe p hVW hV)
+    -- `Additive` preserves the topology, but the named continuity theorem uses the multiplicative
+    -- presentation, so make the expected additive presentation explicit.
+    (by
+      change Continuous (abelianizationProPTransferLe p hVW hV).toAdditive
+      exact continuous_abelianizationProPTransferLe p hVW hV)
     (abelianizationProPTransferLe_toAdditive_smul p hVW hV)
 
 /-- `abelianizationProPInfl2` is `explicitMap2` along its compatible pair. -/
@@ -289,8 +298,10 @@ theorem abelianizationProPInfl2_def :
         (Additive (abelianizationProP p G V))
         ⟨QuotientGroup.mapOfLE hVW, QuotientGroup.continuous_mapOfLE hVW⟩
         (abelianizationProPTransferLe p hVW hV).toAdditive
-        (show Continuous (abelianizationProPTransferLe p hVW hV).toAdditive from
-          continuous_abelianizationProPTransferLe p hVW hV)
+        -- Match the additive presentation used by `abelianizationProPInfl2`.
+        (by
+          change Continuous (abelianizationProPTransferLe p hVW hV).toAdditive
+          exact continuous_abelianizationProPTransferLe p hVW hV)
         (abelianizationProPTransferLe_toAdditive_smul p hVW hV) :=
   (rfl)
 

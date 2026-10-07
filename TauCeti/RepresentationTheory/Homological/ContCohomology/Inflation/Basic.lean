@@ -714,8 +714,10 @@ theorem explicitInfl2_injective [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgro
       linear_combination (norm := abel) -h
     have hfixed (n : N) (g : G) : (n : G) • k g = k g := by
       have h := hdk n g
-      rw [quotientMk_coe_eq_one, hkN, hF1',
-        show (n : G) * g = g * (g⁻¹ * n * g) by group,
+      -- Express left translation by `n` as right translation by its conjugate, which remains in
+      -- `N`, so that `hright` proves the needed fixedness.
+      have hconj : (n : G) * g = g * (g⁻¹ * n * g) := by group
+      rw [quotientMk_coe_eq_one, hkN, hF1', hconj,
         hright g ⟨_, ‹N.Normal›.conj_mem' _ n.2 g⟩] at h
       linear_combination (norm := abel) h
     -- `k` descends to a continuous primitive of `f` on `G ⧸ N`.
