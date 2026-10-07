@@ -75,12 +75,15 @@ theorem eq_of_castHom_eq (h : Q ∥ N) {x y : ZMod N}
     (hQ : ZMod.castHom h.dvd (ZMod Q) x = ZMod.castHom h.dvd (ZMod Q) y)
     (hR : ZMod.castHom (Nat.div_dvd_of_dvd h.dvd) (ZMod (N / Q)) x =
       ZMod.castHom (Nat.div_dvd_of_dvd h.dvd) (ZMod (N / Q)) y) : x = y := by
-  rw [← ZMod.intCast_zmod_cast x, ← ZMod.intCast_zmod_cast y] at hQ hR ⊢
-  simp only [map_intCast, ZMod.intCast_eq_intCast_iff_dvd_sub] at hQ hR ⊢
-  have hN : ((Q : ℤ) * ((N / Q : ℕ) : ℤ)) = (N : ℤ) := by
-    exact_mod_cast Nat.mul_div_cancel' h.dvd
-  rw [← hN]
-  exact (Nat.isCoprime_iff_coprime.mpr h.coprime).mul_dvd hQ hR
+  -- Mathlib's `ZMod.chineseRemainder`, transported to `ZMod N`, is injective, and as a ring hom out
+  -- of `ZMod N` it is the pair of reductions modulo `Q` and modulo `N / Q`.
+  let e : ZMod N ≃+* ZMod Q × ZMod (N / Q) :=
+    (ZMod.ringEquivCongr (Nat.mul_div_cancel' h.dvd).symm).trans (ZMod.chineseRemainder h.coprime)
+  have he : (e : ZMod N →+* ZMod Q × ZMod (N / Q)) =
+      (ZMod.castHom h.dvd (ZMod Q)).prod (ZMod.castHom (Nat.div_dvd_of_dvd h.dvd) _) :=
+    RingHom.ext_zmod _ _
+  refine e.injective ?_
+  rw [← RingEquiv.coe_toRingHom, he, RingHom.prod_apply, RingHom.prod_apply, hQ, hR]
 
 /-- `e_Q` is `1` modulo `Q`. -/
 theorem castHom_exactDivisorIdempotent_left (h : Q ∥ N) :
