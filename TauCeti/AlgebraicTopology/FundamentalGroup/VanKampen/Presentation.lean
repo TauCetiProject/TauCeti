@@ -223,10 +223,15 @@ lemma vanKampenWideRelations_le_ker :
   rw [vanKampenWideRelations_def]
   apply Subgroup.normalClosure_le_normal
   rintro _ ⟨i, j, g, rfl⟩
+  -- The factor basepoints agree with the images of the intersection basepoint at default
+  -- transparency. Each composite `C → U k → X` is the inclusion of `C`, so both sides are the
+  -- image of `g` under `C → X`, and only their ambient types are spelled differently.
   erw [MonoidHom.mem_ker, map_mul, map_inv, vanKampenWideLift_of, vanKampenWideLift_of,
-    mul_inv_eq_one]
-  induction g using Path.Homotopic.Quotient.ind with
-  | mk γ => rfl
+    mul_inv_eq_one, FundamentalGroup.map_apply, FundamentalGroup.map_apply,
+    FundamentalGroup.map_apply, FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.map_comp,
+    ← Path.Homotopic.Quotient.map_comp]
+  simp only [ContinuousMap.subtypeVal_comp_inclusion]
+  rfl
 
 variable {C} {hCU} {hx}
 
