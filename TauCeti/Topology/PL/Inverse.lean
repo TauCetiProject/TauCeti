@@ -18,6 +18,11 @@ supplied as a function with the left inverse law; continuity and PL regularity f
 the simplex formulas. This is the inverse regularity criterion used when identifying
 polyhedra by subdivisions.
 
+The finite-cover conclusion gives `TauCeti.IsPLOn` by
+`TauCeti.IsPiecewiseAffineOn.isPLOn` and restricts to chart domains by `TauCeti.IsPLOn.mono`.
+This is the local map predicate used by `TauCeti.PLPregroupoid` and `TauCeti.PLGroupoid`
+in `TauCeti.Geometry.Manifold.PLGroupoid`.
+
 The image simplices give the polyhedral cover, and affine interpolation on their vertices
 gives the inverse formulas. The ambient target is finite dimensional; the source may be
 any topological real vector space. The simplices and their images may have positive
