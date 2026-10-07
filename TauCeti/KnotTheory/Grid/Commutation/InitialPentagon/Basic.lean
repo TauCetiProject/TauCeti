@@ -64,7 +64,10 @@ coefficient vanishes in characteristic two.
   exactly when `y` is `x` with column `b` swapped against another column `j` and the turn row lies
   between the rows of `x` on `b` and on `j`; `Subsingleton` records that it is then unique.
 * `TauCeti.GridInitialPentagonBetween.mem_coveredSquares_iff_of_ne`: away from columns `a` and `b`
-  the covered squares are those of the underlying rectangle.
+  the covered squares are those of the underlying rectangle;
+  `TauCeti.GridInitialPentagonBetween.mk_mem_coveredSquares_left_column` and
+  `TauCeti.GridInitialPentagonBetween.mk_mem_coveredSquares_right_column` give them in those two
+  columns.
 * `TauCeti.GridInitialPentagonBetween.disjoint_coveredSquares_XSet_iff`: the `X`-avoidance
   condition column by column.
 * `TauCeti.GridDiagram.commutationMap_apply_apply`: the matrix coefficients of `Φ` are the sums of
@@ -107,6 +110,15 @@ variable {n : ℕ} {a s : Fin n} {x y : GridState n}
 `γ`. -/
 theorem right_ne (P : GridInitialPentagonBetween a s x y) : P.right ≠ finRotate n a :=
   P.left_eq ▸ P.left_ne_right.symm
+
+/-- The two columns next to the replaced line of a pentagon turning on its initial side are
+distinct. -/
+theorem ne_finRotate (P : GridInitialPentagonBetween a s x y) : a ≠ finRotate n a := fun h => by
+  -- The initial side `finRotate n a` lies in the column arc, but `a` never does.
+  have hmem : a ∈ Grid.cIco (finRotate n a) P.right :=
+    Eq.subst (motive := fun c => c ∈ Grid.cIco (finRotate n a) P.right) h.symm
+      (Grid.left_mem_cIco P.right_ne.symm)
+  simp at hmem
 
 /-- The turn row lies in the rows spanned by the initial side, from the row of `x` on the replaced
 line to its row on the terminal side. -/
@@ -213,6 +225,21 @@ theorem mem_coveredSquares_iff_of_ne (P : GridInitialPentagonBetween a s x y)
     GridRectangleBetween.toGridRectangle_right, GridRectangleBetween.toGridRectangle_bottom,
     GridRectangleBetween.toGridRectangle_top, P.left_eq, ha, hb, ne_eq, not_false_eq_true,
     true_and, false_and, or_false] using P.mem_coveredSquares p
+
+/-- In the column before the replaced line an initial-side pentagon covers the rows strictly
+between the turn row and its top row. -/
+theorem mk_mem_coveredSquares_left_column (P : GridInitialPentagonBetween a s x y)
+    (t : Fin n) : (a, t) ∈ P.coveredSquares ↔ t ∈ Grid.cIoo s P.top := by
+  have ha : a ∉ Grid.cIco (finRotate n a) P.right := by simp
+  simp only [P.mem_coveredSquares, ha, P.ne_finRotate, ne_eq, not_false_eq_true, true_and,
+    false_and, false_or, or_false]
+
+/-- In the column after the replaced line an initial-side pentagon covers the rows from its
+bottom row up to the turn row. -/
+theorem mk_mem_coveredSquares_right_column (P : GridInitialPentagonBetween a s x y)
+    (t : Fin n) : (finRotate n a, t) ∈ P.coveredSquares ↔ t ∈ Grid.cIco P.bottom s := by
+  simp only [P.mem_coveredSquares, P.ne_finRotate.symm, ne_eq, not_true_eq_false, false_and,
+    true_and, false_or]
 
 /-- A pentagon turning on its initial side carries no `X`-marking exactly when the underlying
 rectangle carries none away from columns `a` and `finRotate n a`, the `X`-marking of column `a` is

@@ -39,7 +39,7 @@ not even be independent: for the two-dimensional real rotation representation of
 order three the four of them span a block of dimension two, not four.
 
 Distinct blocks are orthogonal, by the second Schur orthogonality relation
-(`TauCeti.ContRepresentation.schur_orthogonality`), and together they span `L²(G)` densely,
+(`ContRepresentation.schur_orthogonality`), and together they span `L²(G)` densely,
 because their supremum is the span of the whole Peter-Weyl family. So `L²(G)` is the Hilbert sum
 of the blocks (`TauCeti.isHilbertSum_peterWeylBlock`), whose `IsHilbertSum.linearIsometryEquiv` is
 an isometry of `L²(G)` onto the `ℓ²` sum of the **block subspaces**; that much is true for every
@@ -291,7 +291,7 @@ theorem peterWeylBlock_eq_of_equiv {model model' : IrrepModel 𝕜 G}
   exact le_antisymm (key φ.symm) (key φ)
 
 /-- **The conjugate character of a model lies in its own block.** It is the sum of the `dᵢ`
-diagonal matrix coefficients (`TauCeti.ContRepresentation.star_character`), so it spans the trace
+diagonal matrix coefficients (`ContRepresentation.star_character`), so it spans the trace
 direction of the block -- which for an algebraically closed `𝕜` is the copy of `End(V_π)` that
 `TauCeti.endEquivPeterWeylBlock` exhibits; the conjugation is forced by Mathlib's inner product
 being conjugate linear in its first argument. -/
@@ -510,7 +510,7 @@ theorem isOrtho_peterWeylBlock {model model' : IrrepModel 𝕜 G}
     peterWeylBlock model ⟂ peterWeylBlock model' := by
   refine Submodule.isOrtho_span.2 ?_
   rintro - ⟨v, w, rfl⟩ - ⟨v', w', rfl⟩
-  exact ContRepresentation.schur_orthogonality _ model.continuous_rep _ model'.continuous_rep
+  exact model.rep.schur_orthogonality model.continuous_rep _ model'.continuous_rep
     model'.isUnitary model.isIrreducible model'.isIrreducible hne v w v' w'
 
 section Orthogonality
@@ -682,7 +682,7 @@ theorem peterWeylBlockAveraging_eq_of_equiv {model model' : IrrepModel 𝕜 G}
 
 /-- **The character averaging operator fixes the matrix coefficients of its own model.** The
 kernel `dim V_π · conj χ_π` acts on the carrier of `π` as the identity, by
-`TauCeti.ContRepresentation.finrank_smul_integratedOperator_star_character_self`. -/
+`ContRepresentation.finrank_smul_integratedOperator_star_character_self`. -/
 theorem peterWeylBlockAveraging_matrixCoeffLp_self [IsAlgClosed 𝕜] (model : IrrepModel 𝕜 G)
     (v w : EuclideanSpace 𝕜 (Fin model.dim)) :
     peterWeylBlockAveraging model
@@ -699,7 +699,7 @@ theorem peterWeylBlockAveraging_matrixCoeffLp_self [IsAlgClosed 𝕜] (model : I
 
 /-- **The character averaging operator kills the matrix coefficients of an inequivalent model.**
 The kernel `dim V_π · conj χ_π` acts as zero on the carrier of a model inequivalent to `π`, by
-`TauCeti.ContRepresentation.integratedOperator_star_character_eq_zero`; Schur's lemma is what turns
+`ContRepresentation.integratedOperator_star_character_eq_zero`; Schur's lemma is what turns
 inequivalence into the vanishing of every intertwiner. No algebraic closedness is needed here: it
 is the *identity* on a model's own block, not the vanishing on the others, that holds only over an
 algebraically closed `𝕜`. -/

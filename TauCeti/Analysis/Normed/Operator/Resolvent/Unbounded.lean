@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.Algebra.Spectrum.Basic
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Analysis.SpecificLimits.Normed
-public import Mathlib.LinearAlgebra.LinearPMap
 public import Mathlib.Tactic.Module
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent
 
 /-!
 # The resolvent set of an unbounded operator
@@ -19,13 +19,15 @@ Mathlib's `resolventSet` and `resolvent` are Banach-algebra notions: they ask th
 of that algebra. The infinitesimal generator of a C₀-semigroup is not such an element — it is
 an unbounded operator, carried here by `LinearPMap` — so it needs its own resolvent notion.
 
-This file supplies it over an arbitrary nontrivially normed field. For `A : X →ₗ.[𝕜] X` and
+The continuous-inverse foundation is defined in
+`TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent`. This file develops its normed theory
+over an arbitrary nontrivially normed field. For `A : X →ₗ.[𝕜] X` and
 `lambda : 𝕜` we say that a *bounded* operator
-`R : X →L[𝕜] X` is a resolvent of `A` at `lambda` (`TauCeti.LinearPMap.IsResolventAt`)
+`R : X →L[𝕜] X` is a resolvent of `A` at `lambda` (`LinearPMap.IsResolventAt`)
 when `R` takes values in `D(A)` and is a two-sided inverse of `lambda • I - A : D(A) → X`. Such
 an `R` is unique when it exists, so the *resolvent set*
-`TauCeti.LinearPMap.resolventSet` and the *resolvent*
-`TauCeti.LinearPMap.resolvent` are well defined, and the resolvent obeys the usual
+`LinearPMap.resolventSet` and the *resolvent*
+`LinearPMap.resolvent` are well defined, and the resolvent obeys the usual
 identities.
 
 Nothing here mentions semigroups: the theory is stated for an arbitrary `A : X →ₗ.[𝕜] X`, which
@@ -37,8 +39,8 @@ Two bridges keep this from being a parallel universe.
 
 * **To Mathlib's bounded notion.** A bounded operator `T : X →L[𝕜] X`, read as the everywhere
   defined unbounded operator `(T : X →ₗ[𝕜] X).toPMap ⊤`, has exactly Mathlib's resolvent set
-  and resolvent (`LinearPMap.mem_resolventSet_toPMap_top_iff`,
-  `LinearPMap.resolvent_toPMap_top`), proved here.
+  and resolvent (`ContinuousLinearMap.mem_resolventSet_toPMap_top_iff`,
+  `ContinuousLinearMap.resolvent_toPMap_top`), proved here.
 * **To the Laplace-transform resolvent.** For a C₀-semigroup `S` with growth bound `(ω, M)`,
   every `lambda > ω` lies in the resolvent set of the generator and the resolvent there *is*
   the Laplace transform `∫₀^∞ e^{-λt} S(t) x dt`
@@ -46,30 +48,30 @@ Two bridges keep this from being a parallel universe.
   `TauCeti/Analysis/Semigroups/Resolvent/Identity.lean`, which then derives the semigroup
   resolvent identity from the abstract one below.
 
-## Main definitions
+## Definitions from the continuous-inverse foundation
 
-* `TauCeti.LinearPMap.IsResolventAt`: `R` inverts `lambda • I - A`.
-* `TauCeti.LinearPMap.resolventSet`: the set of `lambda` at which such an `R` exists.
-* `TauCeti.LinearPMap.resolvent`: that `R`, chosen by `Classical.choose`.
+* `LinearPMap.IsResolventAt`: `R` inverts `lambda • I - A`.
+* `LinearPMap.resolventSet`: the set of `lambda` at which such an `R` exists.
+* `LinearPMap.resolvent`: that `R`, chosen by `Classical.choose`.
 
 ## Main results
 
-* `TauCeti.LinearPMap.IsResolventAt.unique`: the inverse is unique, so the resolvent
+* `LinearPMap.IsResolventAt.unique`: the inverse is unique, so the resolvent
   is well defined.
-* `TauCeti.LinearPMap.isResolventAt_iff_forall_mem_graph`: the inverse condition read on the
+* `LinearPMap.isResolventAt_iff_forall_mem_graph`: the inverse condition read on the
   graph of `A`.
 * `TauCeti.LinearPMap.resolvent_sub_resolvent`: the resolvent identity
   `R(lambda) - R(mu) = (mu - lambda) R(lambda) R(mu)`, and
   `TauCeti.LinearPMap.resolvent_comm`.
 * `TauCeti.LinearPMap.mem_resolventSet_of_norm_mul_lt_one` and
-  `TauCeti.LinearPMap.isOpen_resolventSet`: the Neumann-series perturbation of a
+  `LinearPMap.isOpen_resolventSet`: the Neumann-series perturbation of a
   resolvent point, and the openness of the resolvent set it gives.
 * `TauCeti.LinearPMap.resolvent_eq_mul_inverse_one_sub`: the local Neumann formula for the
   resolvent itself.
-* `TauCeti.LinearPMap.eq_of_le_of_mem_resolventSet`: an operator has no proper extension
+* `LinearPMap.eq_of_le_of_mem_resolventSet`: an operator has no proper extension
   sharing a resolvent point.
-* `TauCeti.LinearPMap.mem_resolventSet_toPMap_top_iff` and
-  `TauCeti.LinearPMap.resolvent_toPMap_top`: the bounded bridge.
+* `ContinuousLinearMap.mem_resolventSet_toPMap_top_iff` and
+  `ContinuousLinearMap.resolvent_toPMap_top`: the bounded bridge.
 
 ## References
 
@@ -88,209 +90,31 @@ variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup X] 
 
 namespace LinearPMap
 
+open _root_.LinearPMap (
+  IsResolventAt resolvent_eq_of_isResolventAt resolvent_mem_domain resolvent_smul_sub_apply
+  smul_sub_apply_resolvent)
+
 variable {A : X →ₗ.[𝕜] X} {lambda mu : 𝕜} {R : X →L[𝕜] X}
-
-/-! ## Inverting `lambda • I - A` -/
-
-/-- `IsResolventAt A lambda R` says that the **bounded** operator `R : X →L[𝕜] X` inverts
-`lambda • I - A : D(A) → X`: it takes its values in `D(A)`, is a right inverse of
-`lambda • I - A` on all of `X`, and is a left inverse of it on `D(A)`.
-
-For an unbounded `A` this replaces the Banach-algebra condition
-`IsUnit (algebraMap 𝕜 (X →L[𝕜] X) lambda - A)` behind Mathlib's `resolventSet`, which cannot be
-formed because `A` is not an element of `X →L[𝕜] X`. The two conditions agree when `A` is a
-bounded operator read as an everywhere defined `LinearPMap`; see
-`TauCeti.LinearPMap.mem_resolventSet_toPMap_top_iff`. -/
-structure IsResolventAt (A : X →ₗ.[𝕜] X) (lambda : 𝕜) (R : X →L[𝕜] X) : Prop where
-  /-- The inverse takes its values in the domain of `A`. -/
-  mem_domain (y : X) : R y ∈ A.domain
-  /-- `R` is a right inverse: `(lambda • I - A) (R y) = y` for every `y : X`. -/
-  smul_sub_apply (y : X) : lambda • R y - A ⟨R y, mem_domain y⟩ = y
-  /-- `R` is a left inverse: `R ((lambda • I - A) x) = x` for every `x ∈ D(A)`. -/
-  apply_smul_sub (x : A.domain) : R (lambda • (x : X) - A x) = (x : X)
-
-/-- An inverse of `lambda • I - A` is unique: a left inverse and a right inverse of the same
-map agree. -/
-theorem IsResolventAt.unique (h : IsResolventAt A lambda R) {R' : X →L[𝕜] X}
-    (h' : IsResolventAt A lambda R') : R = R' := by
-  ext y
-  have hy : R (lambda • R' y - A ⟨R' y, h'.mem_domain y⟩) = R' y :=
-    h.apply_smul_sub ⟨R' y, h'.mem_domain y⟩
-  rwa [h'.smul_sub_apply y] at hy
-
-/-- `lambda • I - A` is injective on `D(A)` whenever it has a left inverse. -/
-theorem IsResolventAt.smul_sub_injective (h : IsResolventAt A lambda R) :
-    Function.Injective fun x : A.domain => lambda • (x : X) - A x := by
-  intro x y hxy
-  replace hxy : lambda • (x : X) - A x = lambda • (y : X) - A y := hxy
-  exact Subtype.ext (by rw [← h.apply_smul_sub x, ← h.apply_smul_sub y, hxy])
-
-/-- `lambda • I - A` maps `D(A)` onto `X` whenever it has a right inverse. -/
-theorem IsResolventAt.smul_sub_surjective (h : IsResolventAt A lambda R) :
-    Function.Surjective fun x : A.domain => lambda • (x : X) - A x :=
-  fun y => ⟨⟨R y, h.mem_domain y⟩, h.smul_sub_apply y⟩
-
-/-- `lambda • I - A : D(A) → X` is a bijection at a point of the resolvent set. -/
-theorem IsResolventAt.smul_sub_bijective (h : IsResolventAt A lambda R) :
-    Function.Bijective fun x : A.domain => lambda • (x : X) - A x :=
-  ⟨h.smul_sub_injective, h.smul_sub_surjective⟩
-
-/-- The graph form of `IsResolventAt`: `R` inverts `lambda • I - A` exactly when every
-`(R y, lambda • R y - y)` lies on the graph of `A`, and `R (lambda • x - w) = x` for every point
-`(x, w)` of that graph. This form transfers along any construction described by its graph. -/
-theorem isResolventAt_iff_forall_mem_graph :
-    IsResolventAt A lambda R ↔
-      (∀ y : X, (R y, lambda • R y - y) ∈ A.graph) ∧
-        ∀ p ∈ A.graph, R (lambda • p.1 - p.2) = p.1 := by
-  constructor
-  · intro h
-    refine ⟨fun y => (A.mem_graph_iff).mpr ⟨⟨R y, h.mem_domain y⟩, rfl, ?_⟩, fun p hp => ?_⟩
-    · exact eq_sub_of_add_eq (sub_eq_iff_eq_add'.mp (h.smul_sub_apply y)).symm
-    · obtain ⟨u, hu, hAu⟩ := (A.mem_graph_iff).mp hp
-      rw [← hu, ← hAu]
-      exact h.apply_smul_sub u
-  · rintro ⟨hgraph, hleft⟩
-    have hmem (y : X) : R y ∈ A.domain := by
-      obtain ⟨⟨v, hv⟩, hu, -⟩ := (A.mem_graph_iff).mp (hgraph y)
-      simp only at hu
-      exact hu ▸ hv
-    refine ⟨hmem, fun y => ?_, fun x => hleft _ (A.mem_graph x)⟩
-    obtain ⟨u, hu, hAu⟩ := (A.mem_graph_iff).mp (hgraph y)
-    have huR : u = ⟨R y, hmem y⟩ := Subtype.ext hu
-    subst huR
-    simp only at hAu
-    rw [hAu, sub_sub_cancel]
-
-/-! ## The resolvent set and the resolvent -/
-
-/-- The **resolvent set** of an unbounded operator `A : X →ₗ.[𝕜] X`: those `lambda : 𝕜` for which
-`lambda • I - A : D(A) → X` is a bijection with bounded inverse. -/
-def resolventSet (A : X →ₗ.[𝕜] X) : Set 𝕜 :=
-  {lambda | ∃ R : X →L[𝕜] X, IsResolventAt A lambda R}
-
-/-- Membership in the resolvent set unfolds to the existence of a bounded inverse of
-`lambda • I - A`. -/
-theorem mem_resolventSet_iff :
-    lambda ∈ resolventSet A ↔ ∃ R : X →L[𝕜] X, IsResolventAt A lambda R :=
-  Iff.rfl
-
-/-- Exhibiting an inverse puts `lambda` in the resolvent set. -/
-theorem IsResolventAt.mem_resolventSet (h : IsResolventAt A lambda R) :
-    lambda ∈ resolventSet A :=
-  ⟨R, h⟩
-
-/-- An inverse of `lambda • I - A` exists conditionally on `lambda` lying in the resolvent set;
-this is what lets `TauCeti.LinearPMap.resolvent` be defined by `Classical.choose`
-without a decidability side-condition. -/
-private theorem exists_isResolventAt_of_mem (A : X →ₗ.[𝕜] X) (lambda : 𝕜) :
-    ∃ R : X →L[𝕜] X, lambda ∈ resolventSet A → IsResolventAt A lambda R := by
-  by_cases h : lambda ∈ resolventSet A
-  · exact ⟨h.choose, fun _ => h.choose_spec⟩
-  · exact ⟨0, fun h' => absurd h' h⟩
-
-/-- The **resolvent** `R(lambda, A) = (lambda • I - A)⁻¹` of an unbounded operator, as a bounded
-operator on `X`.
-
-Off the resolvent set the value is an unspecified junk value; every lemma below carries the
-hypothesis `lambda ∈ resolventSet A`. Uniqueness of the inverse
-(`TauCeti.LinearPMap.IsResolventAt.unique`) makes the choice immaterial on the
-resolvent set: `TauCeti.LinearPMap.resolvent_eq_of_isResolventAt` identifies it with
-any inverse one can exhibit. -/
-noncomputable def resolvent (A : X →ₗ.[𝕜] X) (lambda : 𝕜) : X →L[𝕜] X :=
-  (exists_isResolventAt_of_mem A lambda).choose
-
-/-- On the resolvent set, `resolvent A lambda` really does invert `lambda • I - A`. -/
-theorem isResolventAt_resolvent (h : lambda ∈ resolventSet A) :
-    IsResolventAt A lambda (resolvent A lambda) :=
-  (exists_isResolventAt_of_mem A lambda).choose_spec h
-
-/-- Any exhibited inverse of `lambda • I - A` *is* the resolvent. -/
-theorem resolvent_eq_of_isResolventAt (h : IsResolventAt A lambda R) :
-    resolvent A lambda = R :=
-  (isResolventAt_resolvent h.mem_resolventSet).unique h
-
-/-- The resolvent takes its values in `D(A)`. -/
-theorem resolvent_mem_domain (h : lambda ∈ resolventSet A) (y : X) :
-    resolvent A lambda y ∈ A.domain :=
-  (isResolventAt_resolvent h).mem_domain y
-
-/-- The right-inverse identity `(lambda • I - A) R(lambda) y = y`. -/
-@[simp] theorem smul_sub_apply_resolvent (h : lambda ∈ resolventSet A) (y : X) :
-    lambda • resolvent A lambda y - A ⟨resolvent A lambda y, resolvent_mem_domain h y⟩ = y :=
-  (isResolventAt_resolvent h).smul_sub_apply y
-
-/-- The left-inverse identity `R(lambda) (lambda • x - A x) = x` on `D(A)`. -/
-@[simp] theorem resolvent_smul_sub_apply (h : lambda ∈ resolventSet A) (x : A.domain) :
-    resolvent A lambda (lambda • (x : X) - A x) = (x : X) :=
-  (isResolventAt_resolvent h).apply_smul_sub x
-
-/-- The right-inverse identity solved for `A`: `A R(lambda) y = lambda • R(lambda) y - y`. -/
-theorem apply_resolvent (h : lambda ∈ resolventSet A) (y : X) :
-    A ⟨resolvent A lambda y, resolvent_mem_domain h y⟩ = lambda • resolvent A lambda y - y := by
-  calc A ⟨resolvent A lambda y, resolvent_mem_domain h y⟩
-      = lambda • resolvent A lambda y -
-          (lambda • resolvent A lambda y -
-            A ⟨resolvent A lambda y, resolvent_mem_domain h y⟩) := by abel
-    _ = lambda • resolvent A lambda y - y := by rw [smul_sub_apply_resolvent h y]
-
-/-- At a point of the resolvent set, `lambda • I - A : D(A) → X` is a bijection. -/
-theorem smul_sub_bijective (h : lambda ∈ resolventSet A) :
-    Function.Bijective fun x : A.domain => lambda • (x : X) - A x :=
-  (isResolventAt_resolvent h).smul_sub_bijective
-
-/-- **An operator has no proper extension sharing a resolvent point.** If `A ≤ B` and some
-`lambda` lies in the resolvent set of both, then `A = B`.
-
-A vector `y ∈ D(B)` has `lambda • y - B y = lambda • x - A x` for a unique `x ∈ D(A)`, by
-surjectivity for `A`; injectivity for `B` then forces `y = x`, so `D(B) ⊆ D(A)`.
-
-This is the step that upgrades "`A` is a restriction of the generator" to "`A` *is* the
-generator" in the generation theorems. -/
-theorem eq_of_le_of_mem_resolventSet {A B : X →ₗ.[𝕜] X} (hAB : A ≤ B)
-    (hA : lambda ∈ resolventSet A) (hB : lambda ∈ resolventSet B) : A = B := by
-  refine LinearPMap.eq_of_le_of_domain_eq hAB (le_antisymm hAB.1 fun y hy => ?_)
-  obtain ⟨x, hx⟩ := (smul_sub_bijective hA).surjective (lambda • y - B ⟨y, hy⟩)
-  obtain ⟨x', hx'coe, hx'val⟩ := LinearPMap.exists_of_le hAB x
-  have hxy : x' = (⟨y, hy⟩ : B.domain) := by
-    refine (smul_sub_bijective hB).injective ?_
-    simp only [← hx'coe, ← hx'val]
-    exact hx
-  have hcoe : (x : X) = y := by rw [hx'coe, hxy]
-  rw [← hcoe]
-  exact x.property
-
-/-- The resolvent commutes with `A` on `D(A)`: `R(lambda) (A x) = A (R(lambda) x)`. -/
-theorem resolvent_apply_comm (h : lambda ∈ resolventSet A) (x : A.domain) :
-    resolvent A lambda (A x) =
-      A ⟨resolvent A lambda (x : X), resolvent_mem_domain h (x : X)⟩ := by
-  have hx : lambda • resolvent A lambda (x : X) - resolvent A lambda (A x) = (x : X) := by
-    have := resolvent_smul_sub_apply h x
-    rwa [map_sub, map_smul] at this
-  rw [apply_resolvent h (x : X)]
-  calc resolvent A lambda (A x)
-      = lambda • resolvent A lambda (x : X) -
-          (lambda • resolvent A lambda (x : X) - resolvent A lambda (A x)) := by abel
-    _ = lambda • resolvent A lambda (x : X) - (x : X) := by rw [hx]
 
 /-! ## The resolvent identity -/
 
 /-- Pointwise form of the **resolvent identity**
 `R(lambda) - R(mu) = (mu - lambda) R(lambda) R(mu)`. -/
-theorem resolvent_sub_resolvent_apply (hl : lambda ∈ resolventSet A)
-    (hm : mu ∈ resolventSet A) (y : X) :
-    resolvent A lambda y - resolvent A mu y
-      = (mu - lambda) • resolvent A lambda (resolvent A mu y) := by
+theorem resolvent_sub_resolvent_apply (hl : lambda ∈ A.resolventSet)
+    (hm : mu ∈ A.resolventSet) (y : X) :
+    A.resolvent lambda y - A.resolvent mu y
+      = (mu - lambda) • A.resolvent lambda (A.resolvent mu y) := by
   have hmem := resolvent_mem_domain hm y
-  have hy : mu • resolvent A mu y - A ⟨resolvent A mu y, hmem⟩ = y :=
+  have hy : mu • A.resolvent mu y - A ⟨A.resolvent mu y, hmem⟩ = y :=
     smul_sub_apply_resolvent hm y
-  have hleft : resolvent A lambda
-      (lambda • resolvent A mu y - A ⟨resolvent A mu y, hmem⟩) = resolvent A mu y :=
-    resolvent_smul_sub_apply hl ⟨resolvent A mu y, hmem⟩
-  have hkey : resolvent A lambda (mu • resolvent A mu y - A ⟨resolvent A mu y, hmem⟩)
-      = resolvent A mu y + (mu - lambda) • resolvent A lambda (resolvent A mu y) := by
-    have hsplit : mu • resolvent A mu y - A ⟨resolvent A mu y, hmem⟩
-        = (lambda • resolvent A mu y - A ⟨resolvent A mu y, hmem⟩)
-          + (mu - lambda) • resolvent A mu y := by module
+  have hleft : A.resolvent lambda
+      (lambda • A.resolvent mu y - A ⟨A.resolvent mu y, hmem⟩) = A.resolvent mu y :=
+    resolvent_smul_sub_apply hl ⟨A.resolvent mu y, hmem⟩
+  have hkey : A.resolvent lambda (mu • A.resolvent mu y - A ⟨A.resolvent mu y, hmem⟩)
+      = A.resolvent mu y + (mu - lambda) • A.resolvent lambda (A.resolvent mu y) := by
+    have hsplit : mu • A.resolvent mu y - A ⟨A.resolvent mu y, hmem⟩
+        = (lambda • A.resolvent mu y - A ⟨A.resolvent mu y, hmem⟩)
+          + (mu - lambda) • A.resolvent mu y := by module
     rw [hsplit, map_add, map_smul, hleft]
   rw [hy] at hkey
   rw [hkey]
@@ -298,22 +122,22 @@ theorem resolvent_sub_resolvent_apply (hl : lambda ∈ resolventSet A)
 
 /-- The **resolvent identity** `R(lambda) - R(mu) = (mu - lambda) R(lambda) R(mu)`, as an
 equality of bounded operators. -/
-theorem resolvent_sub_resolvent (hl : lambda ∈ resolventSet A) (hm : mu ∈ resolventSet A) :
-    resolvent A lambda - resolvent A mu
-      = (mu - lambda) • (resolvent A lambda ∘L resolvent A mu) := by
+theorem resolvent_sub_resolvent (hl : lambda ∈ A.resolventSet) (hm : mu ∈ A.resolventSet) :
+    A.resolvent lambda - A.resolvent mu
+      = (mu - lambda) • (A.resolvent lambda ∘L A.resolvent mu) := by
   ext y
   simpa using resolvent_sub_resolvent_apply hl hm y
 
 /-- Resolvents at two points of the resolvent set commute. -/
-theorem resolvent_comm (hl : lambda ∈ resolventSet A) (hm : mu ∈ resolventSet A) :
-    resolvent A lambda ∘L resolvent A mu = resolvent A mu ∘L resolvent A lambda := by
+theorem resolvent_comm (hl : lambda ∈ A.resolventSet) (hm : mu ∈ A.resolventSet) :
+    A.resolvent lambda ∘L A.resolvent mu = A.resolvent mu ∘L A.resolvent lambda := by
   rcases eq_or_ne lambda mu with rfl | hne
   · rfl
   · have hsub : (mu - lambda) ≠ 0 := sub_ne_zero.mpr (Ne.symm hne)
     have h1 := resolvent_sub_resolvent hl hm
     have h2 := resolvent_sub_resolvent hm hl
-    have h3 : (mu - lambda) • (resolvent A lambda ∘L resolvent A mu)
-        = (mu - lambda) • (resolvent A mu ∘L resolvent A lambda) := by
+    have h3 : (mu - lambda) • (A.resolvent lambda ∘L A.resolvent mu)
+        = (mu - lambda) • (A.resolvent mu ∘L A.resolvent lambda) := by
       rw [← h1, ← neg_sub lambda mu, neg_smul, ← h2]
       abel
     have h4 := congrArg (fun T : X →L[𝕜] X => (mu - lambda)⁻¹ • T) h3
@@ -327,11 +151,12 @@ and `I - B R(lambda, A)` is invertible, then
 
 This is the lower-level construction shared by bounded perturbations and perturbations of the
 spectral parameter. -/
-theorem isResolventAt_vadd_of_isUnit_one_sub_mul_resolvent (B : X →L[𝕜] X)
-    (h : lambda ∈ resolventSet A) (hB : IsUnit (1 - B * resolvent A lambda)) :
+theorem _root_.ContinuousLinearMap.isResolventAt_vadd_of_isUnit_one_sub_mul_resolvent
+    (B : X →L[𝕜] X)
+    (h : lambda ∈ A.resolventSet) (hB : IsUnit (1 - B * A.resolvent lambda)) :
     IsResolventAt ((B : X →ₗ[𝕜] X) +ᵥ A) lambda
-      (resolvent A lambda * Ring.inverse (1 - B * resolvent A lambda)) := by
-  set R := resolvent A lambda with hRdef
+      (A.resolvent lambda * Ring.inverse (1 - B * A.resolvent lambda)) := by
+  set R := A.resolvent lambda with hRdef
   have hunit : IsUnit (1 - B * R) := by simpa only [hRdef] using hB
   rw [ContinuousLinearMap.mul_def]
   set U : X →L[𝕜] X := Ring.inverse (1 - B * R) with hUdef
@@ -368,19 +193,20 @@ variable [CompleteSpace X]
 
 /-- If `lambda` lies in the resolvent set of `A` and `‖B R(lambda, A)‖ < 1`, then
 `R(lambda, A) (I - B R(lambda, A))⁻¹` inverts `lambda • I - (B + A)`. -/
-theorem isResolventAt_vadd_of_norm_mul_resolvent_lt_one (B : X →L[𝕜] X)
-    (h : lambda ∈ resolventSet A) (hB : ‖B * resolvent A lambda‖ < 1) :
+theorem _root_.ContinuousLinearMap.isResolventAt_vadd_of_norm_mul_resolvent_lt_one
+    (B : X →L[𝕜] X)
+    (h : lambda ∈ A.resolventSet) (hB : ‖B * A.resolvent lambda‖ < 1) :
     IsResolventAt ((B : X →ₗ[𝕜] X) +ᵥ A) lambda
-      (resolvent A lambda * Ring.inverse (1 - B * resolvent A lambda)) :=
-  isResolventAt_vadd_of_isUnit_one_sub_mul_resolvent B h
+      (A.resolvent lambda * Ring.inverse (1 - B * A.resolvent lambda)) :=
+  ContinuousLinearMap.isResolventAt_vadd_of_isUnit_one_sub_mul_resolvent B h
     (isUnit_one_sub_of_norm_lt_one hB)
 
-private theorem isResolventAt_of_norm_mul_lt_one (h : lambda ∈ resolventSet A)
-    (hmu : ‖mu - lambda‖ * ‖resolvent A lambda‖ < 1) :
+private theorem isResolventAt_of_norm_mul_lt_one (h : lambda ∈ A.resolventSet)
+    (hmu : ‖mu - lambda‖ * ‖A.resolvent lambda‖ < 1) :
     IsResolventAt A mu
-      (resolvent A lambda * Ring.inverse (1 - (lambda - mu) • resolvent A lambda)) := by
+      (A.resolvent lambda * Ring.inverse (1 - (lambda - mu) • A.resolvent lambda)) := by
   let B : X →L[𝕜] X := (lambda - mu) • 1
-  have hbound : ‖B‖ * ‖resolvent A lambda‖ < 1 := by
+  have hbound : ‖B‖ * ‖A.resolvent lambda‖ < 1 := by
     have hBnorm : ‖B‖ ≤ ‖lambda - mu‖ := by
       dsimp only [B]
       rw [norm_smul]
@@ -389,14 +215,14 @@ private theorem isResolventAt_of_norm_mul_lt_one (h : lambda ∈ resolventSet A)
             mul_le_mul_of_nonneg_left ContinuousLinearMap.norm_id_le (norm_nonneg _)
         _ = ‖lambda - mu‖ := mul_one _
     exact (mul_le_mul_of_nonneg_right hBnorm (norm_nonneg _)).trans_lt (by rwa [norm_sub_rev])
-  have hB : ‖B * resolvent A lambda‖ < 1 :=
+  have hB : ‖B * A.resolvent lambda‖ < 1 :=
     lt_of_le_of_lt (norm_mul_le _ _) hbound
-  have hBR : B * resolvent A lambda = (lambda - mu) • resolvent A lambda := by
+  have hBR : B * A.resolvent lambda = (lambda - mu) • A.resolvent lambda := by
     simp only [B, smul_mul_assoc, one_mul]
   let U : X →L[𝕜] X :=
-    resolvent A lambda * Ring.inverse (1 - (lambda - mu) • resolvent A lambda)
+    A.resolvent lambda * Ring.inverse (1 - (lambda - mu) • A.resolvent lambda)
   have hpert : IsResolventAt ((B : X →ₗ[𝕜] X) +ᵥ A) lambda U := by
-    simpa only [U, hBR] using isResolventAt_vadd_of_norm_mul_resolvent_lt_one B h hB
+    simpa only [U, hBR] using B.isResolventAt_vadd_of_norm_mul_resolvent_lt_one h hB
   suffices IsResolventAt A mu U by simpa only [U]
   refine ⟨hpert.mem_domain, fun y => ?_, fun x => ?_⟩
   · calc
@@ -417,30 +243,30 @@ private theorem isResolventAt_of_norm_mul_lt_one (h : lambda ∈ resolventSet A)
 
 /-- **The Neumann perturbation of a resolvent point.** If `lambda` lies in the resolvent set and
 `‖mu - lambda‖ * ‖R(lambda)‖ < 1`, then `mu` lies in it too. -/
-theorem mem_resolventSet_of_norm_mul_lt_one (h : lambda ∈ resolventSet A)
-    (hmu : ‖mu - lambda‖ * ‖resolvent A lambda‖ < 1) : mu ∈ resolventSet A :=
+theorem mem_resolventSet_of_norm_mul_lt_one (h : lambda ∈ A.resolventSet)
+    (hmu : ‖mu - lambda‖ * ‖A.resolvent lambda‖ < 1) : mu ∈ A.resolventSet :=
   (isResolventAt_of_norm_mul_lt_one h hmu).mem_resolventSet
 
 /-- **Local Neumann formula for the resolvent.** Inside the ball
 `‖mu - lambda‖ * ‖R(lambda)‖ < 1`, the resolvent at `mu` is obtained by multiplying
 `R(lambda)` by the ring inverse of `1 - (lambda - mu) R(lambda)`. -/
-theorem resolvent_eq_mul_inverse_one_sub (h : lambda ∈ resolventSet A)
-    (hmu : ‖mu - lambda‖ * ‖resolvent A lambda‖ < 1) :
-    resolvent A mu = resolvent A lambda *
-      Ring.inverse (1 - (lambda - mu) • resolvent A lambda) :=
+theorem resolvent_eq_mul_inverse_one_sub (h : lambda ∈ A.resolventSet)
+    (hmu : ‖mu - lambda‖ * ‖A.resolvent lambda‖ < 1) :
+    A.resolvent mu = A.resolvent lambda *
+      Ring.inverse (1 - (lambda - mu) • A.resolvent lambda) :=
   resolvent_eq_of_isResolventAt (isResolventAt_of_norm_mul_lt_one h hmu)
 
 /-- **The resolvent set is open.** -/
-theorem isOpen_resolventSet (A : X →ₗ.[𝕜] X) : IsOpen (resolventSet A) := by
+theorem _root_.LinearPMap.isOpen_resolventSet (A : X →ₗ.[𝕜] X) : IsOpen (A.resolventSet) := by
   rw [Metric.isOpen_iff]
   intro lambda h
-  refine ⟨1 / (‖resolvent A lambda‖ + 1), by positivity, fun mu hmu => ?_⟩
+  refine ⟨1 / (‖A.resolvent lambda‖ + 1), by positivity, fun mu hmu => ?_⟩
   rw [Metric.mem_ball, dist_eq_norm] at hmu
   refine mem_resolventSet_of_norm_mul_lt_one h ?_
-  have hlt : ‖mu - lambda‖ * (‖resolvent A lambda‖ + 1) < 1 :=
+  have hlt : ‖mu - lambda‖ * (‖A.resolvent lambda‖ + 1) < 1 :=
     (lt_div_iff₀ (by positivity)).mp (by simpa using hmu)
-  calc ‖mu - lambda‖ * ‖resolvent A lambda‖
-      ≤ ‖mu - lambda‖ * (‖resolvent A lambda‖ + 1) :=
+  calc ‖mu - lambda‖ * ‖A.resolvent lambda‖
+      ≤ ‖mu - lambda‖ * (‖A.resolvent lambda‖ + 1) :=
         mul_le_mul_of_nonneg_left (by linarith) (norm_nonneg _)
     _ < 1 := hlt
 
@@ -458,7 +284,7 @@ variable {T : X →L[𝕜] X}
 
 /-- An inverse of `lambda • I - T` in the unbounded sense is a two-sided inverse in the algebra
 `X →L[𝕜] X`, so `lambda • I - T` is a unit there. -/
-theorem isUnit_of_isResolventAt_toPMap_top
+theorem _root_.LinearPMap.IsResolventAt.isUnit_toPMap_top
     (h : IsResolventAt ((T : X →ₗ[𝕜] X).toPMap ⊤) lambda R) :
     IsUnit (algebraMap 𝕜 (X →L[𝕜] X) lambda - T) := by
   have hright : (algebraMap 𝕜 (X →L[𝕜] X) lambda - T) * R = 1 := by
@@ -473,7 +299,7 @@ theorem isUnit_of_isResolventAt_toPMap_top
 
 /-- A unit `lambda • I - T` of the algebra `X →L[𝕜] X` inverts `lambda • I - T` in the
 unbounded sense, with the algebra inverse as the resolvent. -/
-theorem isResolventAt_toPMap_top_of_isUnit
+theorem _root_.IsUnit.isResolventAt_toPMap_top
     (h : IsUnit (algebraMap 𝕜 (X →L[𝕜] X) lambda - T)) :
     IsResolventAt ((T : X →ₗ[𝕜] X).toPMap ⊤) lambda
       ((h.unit⁻¹ : (X →L[𝕜] X)ˣ) : X →L[𝕜] X) where
@@ -491,17 +317,22 @@ theorem isResolventAt_toPMap_top_of_isUnit
 
 /-- **The bounded bridge, membership half.** For a bounded operator the unbounded resolvent set
 of `T` and Mathlib's Banach-algebra resolvent set agree. -/
-theorem mem_resolventSet_toPMap_top_iff (T : X →L[𝕜] X) (lambda : 𝕜) :
-    lambda ∈ resolventSet ((T : X →ₗ[𝕜] X).toPMap ⊤) ↔ lambda ∈ _root_.resolventSet 𝕜 T :=
-  ⟨fun ⟨_, hR⟩ => isUnit_of_isResolventAt_toPMap_top hR,
-    fun h => (isResolventAt_toPMap_top_of_isUnit h).mem_resolventSet⟩
+@[simp]
+theorem _root_.ContinuousLinearMap.mem_resolventSet_toPMap_top_iff
+    (T : X →L[𝕜] X) (lambda : 𝕜) :
+    lambda ∈ ((T : X →ₗ[𝕜] X).toPMap ⊤).resolventSet ↔ lambda ∈ _root_.resolventSet 𝕜 T :=
+  (_root_.LinearPMap.mem_resolventSet_iff).trans
+    ⟨fun ⟨_, hR⟩ => hR.isUnit_toPMap_top,
+      fun h => ⟨_, h.isResolventAt_toPMap_top⟩⟩
 
 /-- **The bounded bridge, value half.** For a bounded operator the unbounded resolvent is
 Mathlib's Banach-algebra resolvent. -/
-theorem resolvent_toPMap_top (T : X →L[𝕜] X) {lambda : 𝕜}
+@[simp]
+theorem _root_.ContinuousLinearMap.resolvent_toPMap_top
+    (T : X →L[𝕜] X) {lambda : 𝕜}
     (h : lambda ∈ _root_.resolventSet 𝕜 T) :
-    resolvent ((T : X →ₗ[𝕜] X).toPMap ⊤) lambda = _root_.resolvent T lambda := by
-  rw [resolvent_eq_of_isResolventAt (isResolventAt_toPMap_top_of_isUnit h),
+    ((T : X →ₗ[𝕜] X).toPMap ⊤).resolvent lambda = _root_.resolvent T lambda := by
+  rw [resolvent_eq_of_isResolventAt (h.isResolventAt_toPMap_top),
     spectrum.resolvent_eq h]
 
 end Bounded

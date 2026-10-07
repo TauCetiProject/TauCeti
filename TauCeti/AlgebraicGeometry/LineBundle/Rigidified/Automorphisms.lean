@@ -37,7 +37,9 @@ and its image consists of the classes of the line bundles whose pullback along `
   `Γ(Y, 𝒪_Y)ˣ → Γ(T, 𝒪_T)ˣ` by
   `RigidifiedLineBundle.unitsGlobalSectionsMulEquivAut_mem_autSubgroup_iff`;
 * `RigidifiedLineBundle.autSubgroup_eq_bot_iff`: **rigidity**, a rigidified line bundle has only
-  the identity automorphism exactly when `Γ(Y, 𝒪_Y)ˣ → Γ(T, 𝒪_T)ˣ` is injective;
+  the identity automorphism exactly when `Γ(Y, 𝒪_Y)ˣ → Γ(T, 𝒪_T)ˣ` is injective, and
+  `RigidifiedLineBundle.autSubgroup_eq_bot_of_comp_eq_id` the case where `s` is a section of a
+  morphism `p : Y ⟶ T` with `Γ(T, 𝒪_T) → Γ(Y, 𝒪_Y)` surjective;
 * the actions of `Γ(T, 𝒪_T)ˣ` on `RigidifiedLineBundle s` and on `RigidifiedLineBundleClass s`
   by rescaling the trivialization;
 * `RigidifiedLineBundleClass.mk_mk_eq_mk_mk_iff`: two rigidifications of the same line bundle
@@ -144,6 +146,21 @@ lemma autSubgroup_eq_bot_iff :
   · intro h e he
     obtain ⟨u, rfl⟩ := (unitsGlobalSectionsMulEquivAut P.lineBundle.obj).surjective e
     rw [h u ((key u).mpr he), map_one]
+
+/-- If `s` is a section of a morphism `p : Y ⟶ T` along which every global function on `Y` is
+pulled back from `T`, as when `p_* 𝒪_Y = 𝒪_T`, then a line bundle rigidified along `s` has no
+automorphisms other than the identity. -/
+lemma autSubgroup_eq_bot_of_comp_eq_id {p : Y ⟶ T} (h : s ≫ p = 𝟙 T)
+    (hp : Function.Surjective p.appTop) : P.autSubgroup = ⊥ := by
+  have hsp (a : Γ(T, ⊤)) : s.appTop (p.appTop a) = a := by
+    rw [← CommRingCat.comp_apply, ← Scheme.Hom.comp_appTop, h, Scheme.Hom.id_appTop,
+      CommRingCat.id_apply]
+  refine P.autSubgroup_eq_bot_iff.mpr (Units.map_injective fun a b hab ↦ ?_)
+  obtain ⟨a, rfl⟩ := hp a
+  obtain ⟨b, rfl⟩ := hp b
+  simp only [MonoidHom.coe_ofClass] at hab
+  rw [hsp, hsp] at hab
+  rw [hab]
 
 end Automorphisms
 

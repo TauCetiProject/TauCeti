@@ -13,6 +13,7 @@ public import TauCeti.FieldTheory.GaloisCohomology.Coefficients
 public import TauCeti.NumberTheory.NumberField.FiniteGaloisIntermediateField
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.GaloisAction
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Extension
+import TauCeti.NumberTheory.NumberField.Global.Ideles.GaloisDescent
 
 /-!
 # The ideles and idele classes of a separable closure of a number field
@@ -35,6 +36,13 @@ An element `g ∈ G_K` acts on `I_E` through its restriction to `Gal(E/K)` and t
 maps (`adeleTransition_adeleGaloisAction`), so they pass to the direct limit. The ideles of `E` are
 fixed by the open subgroup of `G_K` fixing `E` (`smul_ideleCoeffOf_of_mem_fixingSubgroup`), so
 both modules are discrete with open point stabilizers.
+
+Conversely, the ideles of `E` embed in `I_{Kˢ}` (`ideleCoeffOf_injective`) and are exactly the
+ideles of `Kˢ` fixed by the subgroup `G_E` of `G_K` fixing `E` (`mem_range_ideleCoeffOf_iff`):
+`(I_{Kˢ})^{G_E} = I_E`. A fixed idele is defined over a larger finite Galois subextension `E'`;
+every element of `Gal(E'/E)` lifts to `G_E`, so it is fixed by `Gal(E'/E)` and descends to `E` by
+Galois descent for the ideles of number fields
+(`TauCeti.GlobalNumberFields.mem_range_ideleExtension_iff`).
 
 A unit of `Kˢ` lies in a finite Galois subextension `E`, and its principal idele in `I_E` does not
 depend on the choice of `E`; this is the equivariant embedding `principalIdele : (Kˢ)ˣ → I_{Kˢ}`
@@ -65,6 +73,10 @@ is exact by `principalIdele_injective`, `ideleClassMk_eq_zero_iff` and
 
 * `TauCeti.ClassFieldTheory.exists_ideleCoeffOf_eq`: every idele of `Kˢ` comes from some `I_E`.
 * `TauCeti.ClassFieldTheory.smul_ideleCoeffOf`: the action of `G_K` on the ideles of `E`.
+* `TauCeti.ClassFieldTheory.ideleCoeffOf_injective`: the ideles of `E` embed in the ideles of
+  `Kˢ`.
+* `TauCeti.ClassFieldTheory.mem_range_ideleCoeffOf_iff`: **Galois descent**, an idele of `Kˢ` is
+  an idele of `E` exactly when it is fixed by the subgroup of `G_K` fixing `E`.
 * `TauCeti.ClassFieldTheory.principalIdele_injective`: the principal ideles embed `(Kˢ)ˣ`.
 
 ## Implementation notes
@@ -101,6 +113,13 @@ Galois subextensions of `Kˢ/K`. -/
 def adeleTransition {E E' : Ω} (h : E ≤ E') : AdeleRing (𝓞 E) E →+* AdeleRing (𝓞 E') E' :=
   letI := (IntermediateField.inclusion h).toRingHom.toAlgebra
   adeleExtension (𝓞 E) E (𝓞 E') E'
+
+/-- The extension map of adele rings along `E ≤ E'` is the extension map of adeles along the
+inclusion `E → E'`. -/
+theorem adeleTransition_apply {E E' : Ω} (h : E ≤ E') (a : AdeleRing (𝓞 E) E) :
+    letI := (IntermediateField.inclusion h).toRingHom.toAlgebra
+    adeleTransition h a = adeleExtension (𝓞 E) E (𝓞 E') E' a :=
+  (rfl)
 
 /-- The extension map of adele rings is continuous. -/
 theorem continuous_adeleTransition {E E' : Ω} (h : E ≤ E') :
@@ -376,6 +395,70 @@ instance : ContinuousSMul (AbsoluteGaloisGroup K) (IdeleCoeff K) := by
   obtain ⟨E, a, rfl⟩ := exists_ideleCoeffOf_eq x
   exact Subgroup.isOpen_mono (fun g hg ↦ smul_ideleCoeffOf_of_mem_fixingSubgroup hg a)
     (E : IntermediateField K (SeparableClosure K)).fixingSubgroup_isOpen
+
+/-! ### Galois descent for the ideles of `Kˢ` -/
+
+/-- The extension map of ideles along an inclusion of finite Galois subextensions of `Kˢ/K` is
+injective. -/
+theorem ideleTransition_injective {E E' : Ω} (h : E ≤ E') :
+    Function.Injective (ideleTransition K E E' h) := fun a b hab ↦ by
+  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
+  refine GlobalNumberFields.ideleExtension_injective E E' (Units.ext ?_)
+  rw [GlobalNumberFields.coe_ideleExtension, GlobalNumberFields.coe_ideleExtension,
+    ← adeleTransition_apply, ← adeleTransition_apply, ← coe_ideleTransition,
+    ← coe_ideleTransition, hab]
+
+/-- **The ideles of a finite Galois subextension `E` embed in the ideles of `Kˢ`.** -/
+theorem ideleCoeffOf_injective (E : Ω) : Function.Injective (ideleCoeffOf K E) := by
+  refine (injective_iff_map_eq_zero _).2 fun a ha ↦ ?_
+  obtain ⟨E', h, h1⟩ := ideleCoeffOf_eq_zero_iff.1 ha
+  exact Additive.toMul.injective (ideleTransition_injective h (h1.trans (map_one _).symm))
+
+/-- An idele of a finite Galois subextension `E'` that is fixed by the subgroup of `G_K` fixing
+a smaller `E` is fixed by `Gal(E'/E)`. -/
+private theorem adeleGaloisAction_eq_self {E E' : Ω} (h : E ≤ E') {a : IdeleGroup (𝓞 E') E'}
+    (ha : ∀ g ∈ (E : IntermediateField K (SeparableClosure K)).fixingSubgroup,
+      g • ideleCoeffOf K E' (.ofMul a) = ideleCoeffOf K E' (.ofMul a)) :
+    letI := (IntermediateField.inclusion h).toRingHom.toAlgebra
+    ∀ σ : E' ≃ₐ[E] E', GlobalNumberFields.adeleGaloisAction E E' σ a = a := by
+  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
+  have : IsScalarTower K E E' := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+  intro σ
+  -- Lift `σ` to an element `g` of `G_K`; it fixes `E`, because `σ` does.
+  set g := (σ.restrictScalars K).liftNormal (SeparableClosure K)
+  have hg : g.restrictNormal E' = σ.restrictScalars K := AlgEquiv.restrict_liftNormal _ _
+  have hgE : g ∈ (E : IntermediateField K (SeparableClosure K)).fixingSubgroup := by
+    rintro ⟨y, hy⟩
+    have := AlgEquiv.restrictNormal_commutes g E' (IntermediateField.inclusion h ⟨y, hy⟩)
+    rw [hg, AlgEquiv.restrictScalars_apply] at this
+    exact this.symm.trans (congrArg Subtype.val (σ.commutes ⟨y, hy⟩))
+  have hfix := ha g hgE
+  rw [smul_ideleCoeffOf] at hfix
+  have hfix := congrArg Units.val (Additive.ofMul.injective (ideleCoeffOf_injective E' hfix))
+  rw [Units.coe_map, MonoidHom.coe_ofClass, hg, GlobalNumberFields.adeleGaloisAction_apply] at hfix
+  rwa [AlgEquiv.toRingEquiv_restrictScalars, ← GlobalNumberFields.adeleGaloisAction_apply] at hfix
+
+/-- **Galois descent for the ideles of `Kˢ`**: an idele of `Kˢ` is an idele of the finite Galois
+subextension `E` exactly when it is fixed by the subgroup of `G_K` fixing `E`. -/
+theorem mem_range_ideleCoeffOf_iff {E : Ω} {x : IdeleCoeff K} :
+    x ∈ (ideleCoeffOf K E).range ↔
+      ∀ g ∈ (E : IntermediateField K (SeparableClosure K)).fixingSubgroup, g • x = x := by
+  refine ⟨?_, fun hx ↦ ?_⟩
+  · rintro ⟨a, rfl⟩ g hg
+    exact smul_ideleCoeffOf_of_mem_fixingSubgroup hg a.toMul
+  -- Write `x` as an idele of a finite Galois subextension `E'` containing `E`.
+  obtain ⟨E₀, a₀, rfl⟩ := exists_ideleCoeffOf_eq x
+  have h : E ≤ E ⊔ E₀ := le_sup_left
+  rw [← ideleCoeffOf_ideleTransition (le_sup_right : E₀ ≤ E ⊔ E₀)] at hx ⊢
+  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
+  have : IsScalarTower K E ↥(E ⊔ E₀) := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+  have : IsGalois E ↥(E ⊔ E₀) := IsGalois.tower_top_of_isGalois K E _
+  obtain ⟨b, hb⟩ := (GlobalNumberFields.mem_range_ideleExtension_iff E ↥(E ⊔ E₀)).2
+    (adeleGaloisAction_eq_self h hx)
+  refine ⟨.ofMul b, ?_⟩
+  rw [← ideleCoeffOf_ideleTransition h, ← hb]
+  refine congrArg (fun c ↦ ideleCoeffOf K _ (.ofMul c)) (Units.ext ?_)
+  rw [coe_ideleTransition, adeleTransition_apply, GlobalNumberFields.coe_ideleExtension]
 
 /-! ### The principal ideles -/
 
