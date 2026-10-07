@@ -25,9 +25,7 @@ presentation's Hom complex to be computed by tensoring its opposite-dual complex
 as in the tensor description of the transpose and Auslander–Reiten duality.
 
 Mathlib's `dualTensorHom` treats commutative scalars. Here the balancing relations
-replace commutativity. The finite-projective argument uses
-`Module.Finite.exists_comp_eq_id_of_projective`, as does the opposite double-dual
-construction in `TauCeti.LinearAlgebra.Dual.Opposite`.
+replace commutativity.
 
 ## References
 
@@ -73,6 +71,8 @@ over a possibly noncommutative algebra. -/
 theorem balancedDualTensorHom_bijective [Module.Finite A P] [Module.Projective A P] :
     Function.Bijective (balancedDualTensorHom k A P N) := by
   classical
+  /- The finite-projective argument uses `Module.Finite.exists_comp_eq_id_of_projective`,
+  as does the opposite double-dual construction in `TauCeti.LinearAlgebra.Dual.Opposite`. -/
   obtain ⟨d, f, g, -, -, hfg⟩ := Module.Finite.exists_comp_eq_id_of_projective A P
   let b : Fin d → P := fun i ↦ f (Pi.single i 1)
   let φ : Fin d → Module.Dual A P := fun i ↦ (LinearMap.proj i).comp g
