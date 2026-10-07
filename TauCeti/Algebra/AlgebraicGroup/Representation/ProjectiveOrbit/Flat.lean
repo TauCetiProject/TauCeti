@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Action
+public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Homogeneous
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Equivariance
 
 /-!
@@ -22,7 +22,7 @@ to any other. Their translates of the flat open cover the Jacobson orbit scheme,
 holds at every stalk, including nonclosed points. No connectedness or characteristic-zero
 assumption is needed. Reducedness is used to apply generic flatness to the orbit scheme.
 
-The proof combines `Comodule.projectiveOrbitTranslation`, closed-point lifting, and
+The proof combines `Comodule.exists_projectiveOrbitTranslation_eq_of_mem_closedPoints` and
 `Scheme.Hom.flat_of_transitive_closedPoints_of_finiteType`.
 
 ## References
@@ -57,26 +57,6 @@ instance instFlatToProjectiveOrbit (m : M) (hm : Module.IsUnimodular k m) :
   apply f.flat_of_transitive_closedPoints_of_finiteType a b
     (fun g ↦ (toProjectiveOrbit_projectiveOrbitTranslation_hom m hm g).symm)
   intro y z hy hz
-  -- Lift closed orbit points to closed source points, hence to rational group points.
-  have : JacobsonSpace (Spec (.of H)) := LocallyOfFiniteType.jacobsonSpace f
-  obtain ⟨x, hx, hxy⟩ := f.continuous.exists_isClosed_singleton_of_mem_range hy
-    (Set.mem_range.mpr (f.surjective y))
-  obtain ⟨w, hw, hwz⟩ := f.continuous.exists_isClosed_singleton_of_mem_range hz
-    (Set.mem_range.mpr (f.surjective z))
-  obtain ⟨g, hg⟩ := PrimeSpectrum.exists_kernelPoint_eq_of_isClosed (k := k) x hx
-  obtain ⟨h, hh⟩ := PrimeSpectrum.exists_kernelPoint_eq_of_isClosed (k := k) w hw
-  refine ⟨toConv h * (toConv g)⁻¹, ?_⟩
-  apply (projectiveOrbitι (H := H) m hm).isEmbedding.injective
-  rw [← hxy, ← hg, ← hwz, ← hh]
-  have htranslate := congrArg (fun q : Y ⟶ _ ↦ q (f (AlgHom.kernelPoint g)))
-    (projectiveOrbitTranslation_hom_ι m hm (toConv h * (toConv g)⁻¹))
-  have hι (p : Spec (.of H)) :
-      projectiveOrbitι (H := H) m hm (f p) = projectiveOrbitMap (H := H) m hm p :=
-    congrArg (fun q : Spec (.of H) ⟶ _ ↦ q p) (toProjectiveOrbit_projectiveOrbitι m hm)
-  have hpoint := projectivePointTranslation_projectiveOrbitMap_kernelPoint
-    (toConv h * (toConv g)⁻¹) (toConv g) m hm
-  simp only [ofConv_toConv, inv_mul_cancel_right] at hpoint
-  simp only [Scheme.Hom.comp_apply, hι] at htranslate
-  simpa only [hι] using htranslate.trans hpoint
+  exact exists_projectiveOrbitTranslation_eq_of_mem_closedPoints m hm hy hz
 
 end TauCeti.Comodule
