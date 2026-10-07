@@ -7,10 +7,10 @@ module
 
 public import Mathlib.RingTheory.AlgebraicIndependent.Adjoin
 public import Mathlib.RingTheory.Flat.Stability
-public import Mathlib.RingTheory.Ideal.Over
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 public import Mathlib.RingTheory.TensorProduct.Quotient
 public import TauCeti.RingTheory.Ideal.GoingDown
+public import TauCeti.RingTheory.Ideal.MinimalPrime.TensorProduct
 public import TauCeti.RingTheory.KrullDimension.FiniteType
 public import TauCeti.RingTheory.TensorProduct.IsDomain
 
@@ -41,8 +41,6 @@ is a rational function field over `K`, with `L / E` algebraic.
 
 ## Main results
 
-* `Ideal.comap_includeRight_mem_minimalPrimes`: for `L` flat over `K`, a minimal prime of
-  `L ⊗[K] A` contracts to a minimal prime of `A`.
 * `Ideal.ringKrullDim_quotient_tensorProduct_of_mem_minimalPrimes`: for finitely generated `A`,
   a minimal prime `Q` of `L ⊗[K] A` satisfies `dim ((L ⊗[K] A) ⧸ Q) = dim (A ⧸ Q ∩ A)`.
 * `TauCeti.isPureDimensional_primeSpectrum_tensorProduct_iff`: pure-dimensionality of the
@@ -60,39 +58,6 @@ open scoped TensorProduct
 open Algebra.TensorProduct (includeRight)
 
 namespace TauCeti
-
-section CommRing
-
-variable {K : Type*} [CommRing K] {A : Type*} [CommRing A] [Algebra K A]
-
-/-- A minimal prime `Q` over the extension of an ideal of `A` to `E ⊗[K] A` is the extension
-of its contraction `P` to `A`, provided `E ⊗[K] (A ⧸ P)` is a domain. -/
-theorem _root_.Ideal.eq_map_comap_includeRight_of_isDomain {E : Type*} [CommRing E] [Algebra K E]
-    (Q : Ideal (E ⊗[K] A)) {I : Ideal A} (hQ : Q ∈ (I.map includeRight).minimalPrimes)
-    (hdom : IsDomain (E ⊗[K] (A ⧸ Q.comap includeRight))) :
-    Q = (Q.comap includeRight).map includeRight := by
-  have hPQ : (Q.comap includeRight).map includeRight ≤ Q := Ideal.map_le_iff_le_comap.mpr le_rfl
-  refine Minimal.eq_of_ge (P := fun J : Ideal (E ⊗[K] A) ↦ J.IsPrime ∧ I.map includeRight ≤ J)
-    hQ ⟨?_, ?_⟩ hPQ
-  · -- `(E ⊗[K] A) ⧸ P.map includeRight` is `E ⊗[K] (A ⧸ P)`, a domain.
-    have := (Algebra.TensorProduct.tensorQuotientEquiv (R := K) K A E (Q.comap includeRight)).symm
-      |>.toMulEquiv.isDomain
-    exact Ideal.Quotient.isDomain_iff_prime _ |>.mp this
-  · exact Ideal.map_mono (Ideal.map_le_iff_le_comap.mp hQ.le)
-
-/-- A minimal prime of `L ⊗[K] A` contracts to a minimal prime of `A` when `L` is flat over `K`:
-then `L ⊗[K] A` is flat over `A` and satisfies going down. -/
-theorem _root_.Ideal.comap_includeRight_mem_minimalPrimes
-    {K : Type*} [CommSemiring K] {A : Type*} [CommRing A] [Algebra K A]
-    {L : Type*} [CommRing L] [Algebra K L]
-    [Module.Flat K L] (Q : Ideal (L ⊗[K] A)) (hQ : Q ∈ minimalPrimes (L ⊗[K] A)) :
-    Q.comap (includeRight : A →ₐ[K] L ⊗[K] A) ∈ minimalPrimes A := by
-  let := Algebra.TensorProduct.rightAlgebra (R := K) (A := L) (B := A)
-  have : Module.Flat A (L ⊗[K] A) :=
-    Module.Flat.of_linearEquiv (Algebra.TensorProduct.commRight K A L).symm.toLinearEquiv
-  simpa only [Ideal.under_def, Algebra.TensorProduct.algebraMap_eq_includeRight,
-    Ideal.comap_coe] using
-    (Ideal.under_mem_minimalPrimes (R := A) hQ)
 
 /-- For a flat, integral `E`-algebra `L` with compatible `K`-algebra structures, the ring
 `L ⊗[K] A` is integral and flat over `E ⊗[K] A`. So a minimal prime of `L ⊗[K] A` contracts to a
@@ -122,8 +87,6 @@ theorem _root_.Ideal.comap_mem_minimalPrimes_and_ringKrullDim_eq_of_isIntegral
   -- The algebra structure has `algebraMap = f`, so `Q` lies over its contraction along `f`.
   have : Q.LiesOver (Q.comap f) := ⟨rfl⟩
   exact ⟨Ideal.under_mem_minimalPrimes hQ, ringKrullDim_eq_of_isIntegral_of_faithfulSMul⟩
-
-end CommRing
 
 variable {K : Type*} [Field K] {A : Type*} [CommRing A] [Algebra K A]
 
