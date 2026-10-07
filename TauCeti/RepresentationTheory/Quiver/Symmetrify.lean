@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Combinatorics.Quiver.Symmetric
 public import Mathlib.Basic.Finite.Defs
-public import Mathlib.Data.Fintype.BigOperators
+public import Mathlib.Data.Fintype.Sum
 
 /-!
 # Symmetrified quivers
@@ -17,8 +17,6 @@ This file supplies general infrastructure for Mathlib's `Quiver.Symmetrify` cons
 ## Main results
 
 * `TauCeti.symmetrify_of_obj`: the doubling inclusion is the identity on vertices.
-* `TauCeti.sum_symmetrify_hom`: a sum over the arrows of the doubled quiver splits into a sum over
-  the arrows of `Q` and a sum over their formal reverses.
 
 ## References
 
@@ -65,16 +63,5 @@ vertices, hence bijective on them. -/
 theorem symmetrify_of_obj_bijective {Q : Type u} [Quiver.{v} Q] :
     Function.Bijective (Symmetrify.of (V := Q)).obj :=
   Function.bijective_id
-
-/-- **Summing over the arrows of the doubled quiver**: the arrows `i ⟶ j` of `Quiver.Symmetrify Q`
-are the arrows `a : i ⟶ j` of `Q` and the formal reverses of the arrows `a : j ⟶ i` of `Q`. -/
-theorem sum_symmetrify_hom {Q : Type u} [Quiver.{v} Q] [∀ i j : Q, Fintype (i ⟶ j)]
-    {M : Type*} [AddCommMonoid M] {i j : Q}
-    (f : (Symmetrify.of.obj i ⟶ Symmetrify.of.obj j) → M) :
-    ∑ b, f b = ∑ a : i ⟶ j, f (Symmetrify.of.map a) +
-      ∑ a : j ⟶ i, f (Quiver.reverse (Symmetrify.of.map a)) :=
-  -- The arrows of `Quiver.Symmetrify Q` are by definition a sum type, `Symmetrify.of.map` is
-  -- `Sum.inl`, and reversal is `Sum.swap`.
-  Fintype.sum_sum_type (α₁ := i ⟶ j) (α₂ := j ⟶ i) f
 
 end TauCeti

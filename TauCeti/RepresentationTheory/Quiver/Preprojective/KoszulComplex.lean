@@ -9,12 +9,13 @@ public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.RelationIdeal
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Grading
 
 /-!
-# The Koszul complex of a vertex simple of a preprojective algebra
+# The Koszul complex of a vertex module of a preprojective algebra
 
 Let `Q` be a finite quiver and `Π = Π_k(Q)` its preprojective algebra over a commutative ring `k`.
 For a vertex `v`, the right ideal `e_v Π` is the projective right `Π`-module at `v`, spanned by the
-classes of the paths of the doubled quiver ending at `v`. The simple right module `S_v` at `v` is
-its quotient by its part of positive degree. The Koszul complex of `S_v` is
+classes of the paths of the doubled quiver ending at `v`. The vertex augmentation module `S_v` at
+`v` is its quotient by its part of positive degree, a copy of `k` on which every arrow acts by zero;
+it is the simple right module at `v` when `k` is a field. The Koszul complex of `S_v` is
 
 ```text
 0 ⟶ e_v Π ⟶ ⨁_{b : i ⟶ v} e_i Π ⟶ e_v Π ⟶ S_v ⟶ 0,
@@ -101,14 +102,6 @@ theorem doubledArrowSign_inl {i j : Q} (a : i ⟶ j) :
 theorem doubledArrowSign_inr {i j : Q} (a : j ⟶ i) :
     doubledArrowSign k (Sum.inr a : Symmetrify.of.obj i ⟶ Symmetrify.of.obj j) = -1 := (rfl)
 
-/-- An arrow of `Q` has sign `1`, written through the doubling inclusion. -/
-theorem doubledArrowSign_of_map {i j : Q} (a : i ⟶ j) :
-    doubledArrowSign k (Symmetrify.of.map a) = 1 := (rfl)
-
-/-- The formal reverse of an arrow of `Q` has sign `-1`, written through the doubling inclusion. -/
-theorem doubledArrowSign_reverse_of_map {i j : Q} (a : i ⟶ j) :
-    doubledArrowSign k (Quiver.reverse (Symmetrify.of.map a)) = -1 := (rfl)
-
 end Sign
 
 variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v} Q] [Fintype Q]
@@ -125,13 +118,15 @@ theorem localPreprojectiveRelator_eq_sum_ofArrow_mul (v : Q) :
   -- The vertices of the doubled quiver are those of `Q`; at each of them, the arrows into `v` are
   -- the arrows of `Q` into `v` and the reverses of the arrows of `Q` out of `v`.
   refine Fintype.sum_equiv (Equiv.ofBijective _ symmetrify_of_obj_bijective) _ _ fun i => ?_
-  rw [Equiv.ofBijective_apply, sum_symmetrify_hom, sub_eq_add_neg, ← Finset.sum_neg_distrib]
+  rw [Equiv.ofBijective_apply, sub_eq_add_neg, ← Finset.sum_neg_distrib]
+  refine Eq.trans ?_ (Fintype.sum_sum_type (α₁ := i ⟶ v) (α₂ := v ⟶ i) _).symm
   congr 1
   · refine Finset.sum_congr rfl fun a _ => ?_
-    rw [doubledArrowSign_of_map, one_smul, ofArrow_mul_ofArrow_reverse_eq_headBacktrackElem]
+    exact (ofArrow_mul_ofArrow_reverse_eq_headBacktrackElem k a).symm.trans
+      (congrArg (_ * ·) (one_smul k _).symm)
   · refine Finset.sum_congr rfl fun a _ => ?_
-    rw [doubledArrowSign_reverse_of_map, Quiver.reverse_reverse, neg_one_smul, mul_neg,
-      ofArrow_reverse_mul_ofArrow_eq_tailBacktrackElem]
+    exact (congrArg Neg.neg (ofArrow_reverse_mul_ofArrow_eq_tailBacktrackElem k a)).symm.trans
+      ((neg_one_smul k _).symm.trans (mul_smul_comm _ _ _).symm)
 
 /-- **The Koszul complex is a complex**: the composite `y ↦ ∑_b b (ε_b b* y)` is left
 multiplication by the local relator `ρ_v`, which vanishes in the preprojective algebra. -/
@@ -204,8 +199,8 @@ private theorem preprojectiveMk_ofArrow_mul_mem_iSup {i j : Symmetrify Q} (b : i
     (preprojectiveMk_mem_preprojectiveGrade k Q (ofArrow_mem_grade_one b)) hz
 
 /-- **Exactness of the Koszul complex at `e_v Π`.** An element `x ∈ e_v Π` has positive degree,
-so maps to zero in the simple module at `v`, exactly when `x = ∑_b b z_b` for some `z_b ∈ e_i Π`,
-the sum over the arrows `b : i ⟶ v` of the doubled quiver. -/
+so maps to zero in the vertex augmentation module `S_v`, exactly when `x = ∑_b b z_b` for some
+`z_b ∈ e_i Π`, the sum over the arrows `b : i ⟶ v` of the doubled quiver. -/
 theorem mem_iSup_preprojectiveGrade_add_one_iff_exists_eq_sum (v : Q)
     {x : preprojectiveAlgebra k Q}
     (hx : preprojectiveMk k Q (doubledVertexIdempotent k v) * x = x) :
