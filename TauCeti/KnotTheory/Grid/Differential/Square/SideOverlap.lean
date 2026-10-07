@@ -381,6 +381,16 @@ theorem target_ne_source_of_hasOneCommonSide (D : GridRectangleDecomposition x z
     (h : D.HasOneCommonSide) : z ≠ x :=
   D.target_ne_source_iff.mpr (Or.inr h)
 
+/-- Two rectangles with the same initial side column and different terminal side columns share
+exactly one side column. -/
+theorem hasOneCommonSide_of_left_eq_left (D : GridRectangleDecomposition x z)
+    (hleft : D.first.left = D.second.left) (hright : D.first.right ≠ D.second.right) :
+    D.HasOneCommonSide := by
+  refine D.hasOneCommonSide_iff_existsUnique.mpr ⟨D.first.left, ?_, fun c hc => ?_⟩
+  · simp [GridRectangleBetween.mem_sideColumns, hleft]
+  · simp only [GridRectangleBetween.mem_sideColumns, ← hleft] at hc
+    grind
+
 /-- A decomposition sharing exactly one side column does not use the same unordered pair of side
 columns twice: coinciding side pairs are the diagonal case. -/
 theorem sideColumns_ne_of_hasOneCommonSide (D : GridRectangleDecomposition x z)
