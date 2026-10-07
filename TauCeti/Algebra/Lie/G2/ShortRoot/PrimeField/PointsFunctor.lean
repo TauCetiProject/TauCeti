@@ -473,7 +473,9 @@ private theorem pointsMulEquiv_commonKernelLift_root (k : Fin 2 ⊕ Fin 2)
         (CommAlgCat.of (ZMod 3) A) q).symm
     _ = _ := (coe_rootSubgroupPoints_gaPointsMulEquiv k A q).symm
 
-private theorem pointsMulEquiv_commonKernelLift_weightTorus
+/-- Under the carrier point equivalence, the point map induced by the factored weight-torus
+coordinate morphism is the named `weightTorusPoints` homomorphism. -/
+theorem pointsMulEquiv_commonKernelLift_weightTorus
     (A : Type) [CommRing A] [Algebra (ZMod 3) A]
     (q : HopfAlgebra.points (R := ZMod 3)
       (H := (DiagonalizableGroup.coordinateRing (ZMod 3)
