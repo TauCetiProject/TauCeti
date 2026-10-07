@@ -317,6 +317,7 @@ theorem _root_.IsUnit.isResolventAt_toPMap_top
 
 /-- **The bounded bridge, membership half.** For a bounded operator the unbounded resolvent set
 of `T` and Mathlib's Banach-algebra resolvent set agree. -/
+@[simp]
 theorem _root_.ContinuousLinearMap.mem_resolventSet_toPMap_top_iff
     (T : X →L[𝕜] X) (lambda : 𝕜) :
     lambda ∈ ((T : X →ₗ[𝕜] X).toPMap ⊤).resolventSet ↔ lambda ∈ _root_.resolventSet 𝕜 T :=
@@ -326,6 +327,7 @@ theorem _root_.ContinuousLinearMap.mem_resolventSet_toPMap_top_iff
 
 /-- **The bounded bridge, value half.** For a bounded operator the unbounded resolvent is
 Mathlib's Banach-algebra resolvent. -/
+@[simp]
 theorem _root_.ContinuousLinearMap.resolvent_toPMap_top
     (T : X →L[𝕜] X) {lambda : 𝕜}
     (h : lambda ∈ _root_.resolventSet 𝕜 T) :
