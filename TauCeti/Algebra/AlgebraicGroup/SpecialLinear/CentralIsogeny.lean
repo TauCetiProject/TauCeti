@@ -14,12 +14,16 @@ import TauCeti.RingTheory.Smooth.GeometricallyReduced
 /-!
 # Finiteness and centrality of `SLₙ → PGLₙ`
 
-The conjugation homomorphism `SLₙ → PGLₙ` is the standard central isogeny from the simply
-connected form to the adjoint form of type `Aₙ₋₁`. This file proves the two parts of that
-statement that hold over every commutative base ring, in every rank:
+The conjugation homomorphism `SLₙ → PGLₙ` is the map underlying the expected central isogeny
+from the simply connected form to the adjoint form of type `Aₙ₋₁` (for `n ≥ 1`). This file does
+not prove that it is a central isogeny. Over every commutative base ring, and in every rank, it
+proves:
 
 * its coordinate morphism `O(PGLₙ) → O(SLₙ)` is finite;
 * its scheme-theoretic kernel is central.
+
+Over a field, it also reduces the central-isogeny property to injectivity of the coordinate
+morphism, as explained below.
 
 Finiteness is integrality of the generic matrix `X` of `SLₙ` and of its inverse `Y`. The
 coordinates of `PGLₙ` pull back to the products `Xₚᵢ Yⱼq`, so for a fixed entry `c` of `X` the
@@ -30,7 +34,7 @@ of `X` and `Y` exchanged applies to the entries of `Y`, and these entries genera
 Over a field, the target `PGLₙ` is geometrically reduced as soon as the coordinate morphism is
 injective, since `SLₙ` is smooth. Injectivity then gives faithful flatness. Thus `SLₙ → PGLₙ` is
 a central isogeny exactly when its coordinate morphism is injective, that is, when the
-homomorphism is schematically dominant.
+homomorphism is schematically dominant. That injectivity is not proved in this file.
 
 ## Main declarations
 
