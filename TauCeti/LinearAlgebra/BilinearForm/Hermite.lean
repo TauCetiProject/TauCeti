@@ -216,7 +216,8 @@ private theorem hermiteBound_succ (n : ℕ) (ih : HermiteBound.{u} n) :
     simpa using hdet.le
   have : Nontrivial K := nontrivial_of_ne _ _ (bK.ne_zero ⟨0, hn⟩)
   obtain ⟨y, hy, hyb⟩ := ih S hSsymm hSpos bK
-  rw [show (n + 1).choose 2 = n.choose 2 + n by simp [Nat.choose_succ_succ', add_comm]]
+  have hchoose : (n + 1).choose 2 = n.choose 2 + n := by simp [Nat.choose_succ_succ', add_comm]
+  rw [hchoose]
   exact three_pow_mul_pow_succ_le hμ (hSlow y hy) hyb hdet
 
 /-- Hermite's inequality for a basis indexed by `Fin n`, by induction on `n`. -/

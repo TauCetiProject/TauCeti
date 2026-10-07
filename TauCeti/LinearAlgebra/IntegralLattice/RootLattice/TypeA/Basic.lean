@@ -216,6 +216,7 @@ theorem natCard_discriminantGroup_typeARootLattice :
 
 /-- For `n ≥ 1` the minimum of the type `Aₙ` root lattice is `2`: the lattice is even, and a
 simple root has norm `2`. -/
+@[simp]
 theorem minimum_typeARootLattice (hn : n ≠ 0) : (typeARootLattice n).minimum = 2 :=
   (isPosDef_typeARootLattice n).minimum_eq_two (isEven_typeARootLattice n)
     (x := typeASimpleRootBasis n ⟨0, Nat.pos_of_ne_zero hn⟩) <| by

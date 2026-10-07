@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
-public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA.Basic
+public import TauCeti.LinearAlgebra.IntegralLattice.Gram
+public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Minimum
 import Mathlib.Data.Nat.Choose.Cast
 import TauCeti.LinearAlgebra.BilinearForm.Hermite
 
@@ -27,7 +28,8 @@ once in the root form displayed above. Neither needs a rank hypothesis: in rank 
 `0`, the determinant is `1`, and both statements hold trivially.
 
 The constant is sharp in rank `2`: the root lattice `A₂` has minimum `2` and determinant `3`, and
-`2 = (4 / 3) ^ (1 / 2) · 3 ^ (1 / 2)`.
+`2 = (4 / 3) ^ (1 / 2) · 3 ^ (1 / 2)`; this is recorded in
+`TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA.Hermite`.
 
 ## Main results
 
@@ -35,8 +37,6 @@ The constant is sharp in rank `2`: the root lattice `A₂` has minimum `2` and d
   `3 ^ (n choose 2) · (min L)ⁿ ≤ 4 ^ (n choose 2) · det L`.
 * `TauCeti.IntegralLattice.IsPosDef.minimum_le_rpow_mul_determinant_rpow`:
   `min L ≤ (4 / 3) ^ ((n - 1) / 2) · (det L) ^ (1 / n)`.
-* `TauCeti.IntegralLattice.minimum_typeARootLattice_two_eq_rpow_mul_determinant_rpow`: `A₂`
-  attains equality in Hermite's inequality.
 
 ## References
 
@@ -98,20 +98,5 @@ theorem IsPosDef.minimum_le_rpow_mul_determinant_rpow (hL : L.IsPosDef) :
     one_div_mul_cancel (Nat.cast_ne_zero.mpr hn), Real.rpow_one, Real.rpow_natCast, div_pow,
     div_mul_eq_mul_div, le_div_iff₀ (by positivity), mul_comm]
   exact_mod_cast h
-
-/-! ### The root lattice `A₂` attains equality -/
-
-/-- **`A₂` attains equality in Hermite's inequality.** The root lattice of type `A₂` has rank `2`,
-minimum `2` and determinant `3`, and `2 = (4 / 3) ^ (1 / 2) · 3 ^ (1 / 2)`. -/
-theorem minimum_typeARootLattice_two_eq_rpow_mul_determinant_rpow :
-    ((typeARootLattice 2).minimum : ℝ) =
-      (4 / 3 : ℝ) ^ (((finrank ℤ (typeARootLattice 2) : ℝ) - 1) / 2) *
-        ((typeARootLattice 2).determinant : ℝ) ^ (1 / (finrank ℤ (typeARootLattice 2) : ℝ)) := by
-  rw [finrank_eq_card_basis (typeASimpleRootBasis 2), minimum_typeARootLattice 2 two_ne_zero,
-    determinant_typeARootLattice, Fintype.card_fin]
-  push_cast
-  rw [show ((2 : ℝ) - 1) / 2 = 1 / 2 by norm_num, ← Real.mul_rpow (by norm_num) (by norm_num),
-    show (4 / 3 * 3 : ℝ) = 2 ^ (2 : ℝ) by norm_num, ← Real.rpow_mul (by norm_num)]
-  norm_num
 
 end TauCeti.IntegralLattice

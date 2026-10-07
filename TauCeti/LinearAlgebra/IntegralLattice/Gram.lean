@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
-import Mathlib.LinearAlgebra.Determinant
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
 
 /-!
