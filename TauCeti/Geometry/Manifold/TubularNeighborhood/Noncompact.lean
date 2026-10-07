@@ -39,22 +39,6 @@ variable {V E H M : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
 
-/-- The normal vectors along `f` shorter than a radius depending on their base point. -/
-def normalTubeOfRadius (I : ModelWithCorners ℝ E H) (f : M → V) (r : M → ℝ) : Set (M × V) :=
-  {p | p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ < r p.1}
-
-@[simp]
-theorem mem_normalTubeOfRadius {f : M → V} {r : M → ℝ} {p : M × V} :
-    p ∈ normalTubeOfRadius I f r ↔ p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ < r p.1 :=
-  Iff.rfl
-
-/-- A constant radius gives the usual normal tube. -/
-@[simp]
-theorem normalTubeOfRadius_const (f : M → V) (ε : ℝ) :
-    normalTubeOfRadius I f (fun _ => ε) = normalTube I f ε := by
-  ext p
-  simp
-
 variable [FiniteDimensional ℝ V] [FiniteDimensional ℝ E]
   [I.Boundaryless] [IsManifold I 2 M]
 
@@ -75,6 +59,7 @@ theorem exists_isOpenEmbedding_normalTubeOfRadius {f : M → V}
   -- Compare the larger radius so that both normal vectors lie in one injective patch.
   have hinjT : InjOn Φ (normalTubeOfRadius I f r) := by
     intro p hp q hq heq
+    simp only [mem_normalTubeOfRadius] at hp hq
     have hdist : dist (f p.1) (f q.1) < r p.1 + r q.1 := by
       have hsub : f p.1 - f q.1 = q.2 - p.2 := by
         rw [sub_eq_sub_iff_add_eq_add, add_comm q.2]
@@ -104,11 +89,12 @@ theorem exists_isOpenEmbedding_normalTubeOfRadius {f : M → V}
       ext z
       constructor
       · rintro ⟨⟨p, hp⟩, hpO, rfl⟩
+        simp only [mem_normalTubeOfRadius] at hp
         obtain ⟨x, hpx, hrδ, -⟩ := hloc p.1
         exact mem_iUnion.mpr ⟨x, p, ⟨⟨hpO, hp.2⟩, hpx, hp.1, hp.2.trans hrδ⟩, rfl⟩
       · intro hz
         obtain ⟨x, p, ⟨⟨hpO, hpr⟩, -, hpN, -⟩, rfl⟩ := mem_iUnion.mp hz
-        exact ⟨⟨p, hpN, hpr⟩, hpO, rfl⟩
+        exact ⟨⟨p, mem_normalTubeOfRadius.mpr ⟨hpN, hpr⟩⟩, hpO, rfl⟩
     rw [himage]
     exact isOpen_iUnion fun x => hopen x _ (hO.inter hrad)
 

@@ -13,7 +13,8 @@ public import Mathlib.Topology.Metrizable.Uniformity
 # Continuous radii subordinate to a cover
 
 A map inducing the topology from a pseudometric space admits a positive continuous radius.
-Each ball in the image lies in one member of a prescribed open cover. The radius can also
+For each source point `x`, the preimage of the ball around `f x` with twice the chosen
+radius lies in one member of a prescribed open cover of the source. The radius can also
 be bounded by a positive constant assigned to that member. No local finiteness of the
 given cover or compactness of the source space is required.
 
