@@ -1,0 +1,202 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Ring.Subring.Units
+public import TauCeti.GroupTheory.Index.Exact
+public import TauCeti.NumberTheory.ClassFieldTheory.FiniteCohomology.DegreeTwo
+public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.RightExact
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.LongExact
+
+/-!
+# Additivity of the local Euler characteristic
+
+For a finite smooth discrete Galois representation `A` over a nonarchimedean local field, define
+the three-term local Euler characteristic
+
+```text
+χ_F(A) = |H⁰(F, A)| |H²(F, A)| / |H¹(F, A)|.
+```
+
+This file proves that `χ_F` is multiplicative in short exact sequences. The low-degree long exact
+cohomology sequence supplies the nine exact terms. Its right endpoint is surjective by local Tate
+duality (`coeffMap_two_surjective`), and
+`AddMonoidHom.card_mul_card_mul_card_mul_card_mul_card_of_exact` turns exactness into the required
+alternating identity of orders.
+
+## Main results
+
+* `TauCeti.ClassFieldTheory.localEulerCharacteristic`: the positive-rational-valued local Euler
+  characteristic of a finite smooth discrete Galois representation.
+* `TauCeti.ClassFieldTheory.localEulerCharacteristic_mul_of_exact`: multiplicativity in a short
+  exact sequence of finite smooth discrete representations.
+
+## References
+
+* J. S. Milne, *Arithmetic Duality Theorems*, 2nd ed., I, Theorem 2.8.
+* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., (7.3.1).
+-/
+
+public noncomputable section
+
+namespace TauCeti.ClassFieldTheory
+
+open CategoryTheory ContCohomology
+
+attribute [local instance] TopRep.distribMulAction
+
+variable {n : ℕ} {F : Type} [Field F] [ValuativeRel F] [TopologicalSpace F]
+  [IsNonarchimedeanLocalField F]
+
+/-- **The three-term local Euler characteristic** of a finite smooth discrete Galois
+representation, as a positive rational number:
+`χ_F(A) = |H⁰(F, A)| |H²(F, A)| / |H¹(F, A)|`. -/
+def localEulerCharacteristic (hn : (n : F) ≠ 0) (A : GalRep n F)
+    [Finite A.V] [Fact (IsSmoothDiscrete (ZMod n) A)] :
+    Units.posSubgroup ℚ := by
+  have h₀ : Finite (continuousCohomology 0 A) :=
+    finite_H (F := F) (n := n) hn A Fact.out (i := 0) (by omega)
+  have h₁ : Finite (continuousCohomology 1 A) :=
+    finite_H (F := F) (n := n) hn A Fact.out (i := 1) (by omega)
+  have h₂ : Finite (continuousCohomology 2 A) :=
+    finite_H (F := F) (n := n) hn A Fact.out (i := 2) (by omega)
+  let q : ℚ :=
+    (Nat.card (continuousCohomology 0 A) : ℚ) * Nat.card (continuousCohomology 2 A) /
+      Nat.card (continuousCohomology 1 A)
+  have hq : 0 < q := div_pos
+    (mul_pos
+      (by exact_mod_cast @Nat.card_pos (continuousCohomology 0 A) inferInstance h₀)
+      (by exact_mod_cast @Nat.card_pos (continuousCohomology 2 A) inferInstance h₂))
+    (by exact_mod_cast @Nat.card_pos (continuousCohomology 1 A) inferInstance h₁)
+  exact ⟨Units.mk0 q hq.ne', hq⟩
+
+/-- The value of `localEulerCharacteristic` in `ℚ`. -/
+@[simp]
+theorem localEulerCharacteristic_coe (hn : (n : F) ≠ 0) (A : GalRep n F)
+    [Finite A.V] [Fact (IsSmoothDiscrete (ZMod n) A)] :
+    ((localEulerCharacteristic hn A).1 : ℚ) =
+      (Nat.card (continuousCohomology 0 A) : ℚ) * Nat.card (continuousCohomology 2 A) /
+        Nat.card (continuousCohomology 1 A) := by
+  rfl
+
+/-- **Additivity of the local Euler characteristic.** If
+`0 → A → B → C → 0` is an exact sequence of finite smooth discrete representations, then
+`χ_F(B) = χ_F(A) χ_F(C)`. In applications it is enough to establish finiteness and smoothness of
+the middle representation: both properties pass to the subrepresentation and quotient. -/
+theorem localEulerCharacteristic_mul_of_exact (hn : IsUnit (n : F)) {A B C : GalRep n F}
+    [Finite A.V] [Finite B.V] [Finite C.V]
+    [Fact (IsSmoothDiscrete (ZMod n) A)] [Fact (IsSmoothDiscrete (ZMod n) B)]
+    [Fact (IsSmoothDiscrete (ZMod n) C)]
+    (f : A ⟶ B) (g : B ⟶ C) (hf : Function.Injective f.hom)
+    (hfg : Function.Exact f.hom g.hom) (hg : Function.Surjective g.hom) :
+    localEulerCharacteristic hn.ne_zero B =
+      localEulerCharacteristic hn.ne_zero A * localEulerCharacteristic hn.ne_zero C := by
+  let G := Field.absoluteGaloisGroup F
+  let _ : DiscreteTopology A.V :=
+    (Fact.out : IsSmoothDiscrete (ZMod n) A).discreteTopology
+  let _ : DiscreteTopology B.V :=
+    (Fact.out : IsSmoothDiscrete (ZMod n) B).discreteTopology
+  let _ : DiscreteTopology C.V :=
+    (Fact.out : IsSmoothDiscrete (ZMod n) C).discreteTopology
+  let _ : ContinuousSMul G A.V :=
+    (Fact.out : IsSmoothDiscrete (ZMod n) A).continuousSMul
+  let _ : ContinuousSMul G B.V :=
+    (Fact.out : IsSmoothDiscrete (ZMod n) B).continuousSMul
+  let _ : ContinuousSMul G C.V :=
+    (Fact.out : IsSmoothDiscrete (ZMod n) C).continuousSMul
+  let S : DiscreteShortExact G A.V B.V C.V :=
+    { incl := f.hom.toAddMonoidHom
+      proj := g.hom.toAddMonoidHom
+      incl_equivariant := fun σ a ↦ f.hom.isIntertwining σ a
+      proj_equivariant := fun σ b ↦ g.hom.isIntertwining σ b
+      incl_injective := hf
+      proj_surjective := hg
+      exact := hfg }
+  let g' : B.V →+[G] C.V :=
+    { g.hom.toAddMonoidHom with map_smul' := fun σ b ↦ g.hom.isIntertwining σ b }
+  have hSproj : S.projDistribMulActionHom = g' := by
+    ext b
+    rw [S.projDistribMulActionHom_apply]
+    dsimp only [S, g']
+    rfl
+  have hlast : Function.Surjective
+      (explicitCoeff2 G B.V S.projDistribMulActionHom continuous_of_discreteTopology) := by
+    rw [hSproj]
+    intro y
+    obtain ⟨x, hx⟩ := coeffMap_two_surjective hn g hg
+      (C.explicitH2AddEquivContinuousCohomologyOfDiscrete y)
+    let z := B.explicitH2AddEquivContinuousCohomologyOfDiscrete.symm x
+    refine ⟨z, ?_⟩
+    apply C.explicitH2AddEquivContinuousCohomologyOfDiscrete.injective
+    have hnat :
+        (ContinuousCohomology.coeffMap g 2).hom
+            (B.explicitH2AddEquivContinuousCohomologyOfDiscrete z) =
+          C.explicitH2AddEquivContinuousCohomologyOfDiscrete
+            (explicitCoeff2 G B.V g'
+              continuous_of_discreteTopology z) := by
+      rw [ContinuousCohomology.coeffMap_def]
+      rw [explicitCoeff2_eq_explicitMap2]
+      exact TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_map B C
+        (ContinuousMonoidHom.id G) g g'.toAddMonoidHom (fun _ ↦ rfl) g'.map_smul z
+    rw [← hnat, show B.explicitH2AddEquivContinuousCohomologyOfDiscrete z = x by
+      exact AddEquiv.apply_symm_apply _ x, hx]
+  have hex := AddMonoidHom.card_mul_card_mul_card_mul_card_mul_card_of_exact
+    (explicitCoeff0 G A.V S.inclDistribMulActionHom)
+    (explicitCoeff0 G B.V S.projDistribMulActionHom) S.explicitDelta0
+    (explicitCoeff1 G A.V S.inclDistribMulActionHom continuous_of_discreteTopology)
+    (explicitCoeff1 G B.V S.projDistribMulActionHom continuous_of_discreteTopology)
+    S.explicitDelta1
+    (explicitCoeff2 G A.V S.inclDistribMulActionHom continuous_of_discreteTopology)
+    (explicitCoeff2 G B.V S.projDistribMulActionHom continuous_of_discreteTopology)
+    S.explicitLongExact_H0A S.explicitLongExact_H0B S.explicitLongExact_H0C
+    S.explicitLongExact_H1A S.explicitLongExact_H1B S.explicitLongExact_H1C
+    S.explicitLongExact_H2A S.explicitLongExact_H2B hlast
+  have cardH0 (X : GalRep n F) [DiscreteTopology X.V] [ContinuousSMul G X.V] :
+      Nat.card (H0 G X.V) = Nat.card (continuousCohomology 0 X) :=
+    Nat.card_congr
+      (((explicitH0IsoContinuousCohomology G X.V).toContinuousLinearEquiv.toAddEquiv).trans
+        (ofDiscreteModuleRestrictScalarsIntEquiv X 0)).toEquiv
+  have cardH1 (X : GalRep n F) [DiscreteTopology X.V] [ContinuousSMul G X.V] :
+      Nat.card (H1 G X.V) = Nat.card (continuousCohomology 1 X) :=
+    Nat.card_congr X.explicitH1AddEquivContinuousCohomologyOfDiscrete.toEquiv
+  have cardH2 (X : GalRep n F) [DiscreteTopology X.V] [ContinuousSMul G X.V] :
+      Nat.card (H2 G X.V) = Nat.card (continuousCohomology 2 X) :=
+    Nat.card_congr X.explicitH2AddEquivContinuousCohomologyOfDiscrete.toEquiv
+  rw [cardH0 A, cardH0 B, cardH0 C, cardH1 A, cardH1 B, cardH1 C, cardH2 A, cardH2 B,
+    cardH2 C] at hex
+  apply Subtype.ext
+  apply Units.ext
+  simp only [localEulerCharacteristic_coe, Subgroup.coe_mul, Units.val_mul]
+  have hhex :
+      (Nat.card (continuousCohomology 0 B) : ℚ) *
+          Nat.card (continuousCohomology 2 B) *
+          (Nat.card (continuousCohomology 1 A) * Nat.card (continuousCohomology 1 C)) =
+        Nat.card (continuousCohomology 1 B) *
+          (Nat.card (continuousCohomology 0 A) * Nat.card (continuousCohomology 2 A) *
+            (Nat.card (continuousCohomology 0 C) * Nat.card (continuousCohomology 2 C))) := by
+    have h := (show
+      Nat.card (continuousCohomology 0 B) * Nat.card (continuousCohomology 2 B) *
+          (Nat.card (continuousCohomology 1 A) * Nat.card (continuousCohomology 1 C)) =
+        Nat.card (continuousCohomology 1 B) *
+          (Nat.card (continuousCohomology 0 A) * Nat.card (continuousCohomology 2 A) *
+            (Nat.card (continuousCohomology 0 C) * Nat.card (continuousCohomology 2 C))) by
+      ring_nf at hex ⊢
+      exact hex.symm)
+    exact_mod_cast h
+  have hA₁ : Finite (continuousCohomology 1 A) := finite_H hn.ne_zero A Fact.out (by omega)
+  have hB₁ : Finite (continuousCohomology 1 B) := finite_H hn.ne_zero B Fact.out (by omega)
+  have hC₁ : Finite (continuousCohomology 1 C) := finite_H hn.ne_zero C Fact.out (by omega)
+  have hA₁ne : (Nat.card (continuousCohomology 1 A) : ℚ) ≠ 0 := by
+    exact_mod_cast (@Nat.card_pos (continuousCohomology 1 A) inferInstance hA₁).ne'
+  have hB₁ne : (Nat.card (continuousCohomology 1 B) : ℚ) ≠ 0 := by
+    exact_mod_cast (@Nat.card_pos (continuousCohomology 1 B) inferInstance hB₁).ne'
+  have hC₁ne : (Nat.card (continuousCohomology 1 C) : ℚ) ≠ 0 := by
+    exact_mod_cast (@Nat.card_pos (continuousCohomology 1 C) inferInstance hC₁).ne'
+  field_simp [hA₁ne, hB₁ne, hC₁ne]
+  ring_nf at hhex ⊢
+  exact hhex
+
+end TauCeti.ClassFieldTheory
