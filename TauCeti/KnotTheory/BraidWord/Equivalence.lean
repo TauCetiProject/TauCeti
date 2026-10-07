@@ -16,11 +16,6 @@ and insertion or deletion of adjacent inverse letters. This is the algebraic inp
 closures of arbitrary words representing a fixed braid: a closure invariant need only respect
 these elementary moves.
 
-Completeness uses the universal property `BraidGroup.lift`. Prefixing a signed generator acts
-invertibly on the equivalence classes of words, and these permutations satisfy the Artin
-relations. Acting on the empty word recovers the class of any word. Thus equality in the braid
-group forces equivalence of words, without choosing normal forms.
-
 ## References
 
 * J. Birman, *Braids, Links, and Mapping Class Groups*, Annals of Mathematics Studies 82 (1974),
@@ -39,10 +34,6 @@ variable {n : ℕ} {w w' w'' : BraidWord n}
 Each elementary step already includes its surrounding word. -/
 def WordEquiv : BraidWord n → BraidWord n → Prop :=
   Relation.EqvGen fun u v => ArtinStep u v ∨ FreeCancelStep u v
-
-/-- The elementary-move characterization of braid-word equivalence. -/
-theorem wordEquiv_iff : WordEquiv w w' ↔
-    Relation.EqvGen (fun u v => ArtinStep u v ∨ FreeCancelStep u v) w w' := Iff.rfl
 
 namespace WordEquiv
 
@@ -144,25 +135,24 @@ private def wordSetoid (n : ℕ) : Setoid (BraidWord n) where
   r := WordEquiv
   iseqv := WordEquiv.equivalence
 
-private theorem wordSetoid_iff (u v : BraidWord n) :
-    (wordSetoid n) u v ↔ WordEquiv u v := Iff.rfl
-
 private abbrev WordClasses (n : ℕ) := Quotient (wordSetoid n)
 
+-- The `change` steps identify the private setoid relation with `WordEquiv`, so the quotient
+-- proofs below can use its API; `dsimp only [wordSetoid]` does not unfold this relation.
 private def letterPerm (a : Fin (n - 1) × ℤˣ) : Equiv.Perm (WordClasses n) where
   toFun := Quotient.map' (s₁ := wordSetoid n) (s₂ := wordSetoid n) (List.cons a) fun _ _ h => by
-    simpa only [wordSetoid_iff, List.singleton_append] using
-      ((wordSetoid_iff _ _).mp h).append_left [a]
+    change WordEquiv _ _ at h ⊢
+    simpa only [List.singleton_append] using h.append_left [a]
   invFun := Quotient.map' (s₁ := wordSetoid n) (s₂ := wordSetoid n)
     (List.cons (a.1, -a.2)) fun _ _ h => by
-    simpa only [wordSetoid_iff, List.singleton_append] using
-      ((wordSetoid_iff _ _).mp h).append_left [(a.1, -a.2)]
+    change WordEquiv _ _ at h ⊢
+    simpa only [List.singleton_append] using h.append_left [(a.1, -a.2)]
   left_inv := by
     intro x
     induction x using Quotient.inductionOn with
     | _ u =>
       apply Quotient.sound
-      apply (wordSetoid_iff _ _).mpr
+      change WordEquiv _ _
       simpa only [List.nil_append, List.cons_append, neg_neg,
         Prod.mk.eta] using WordEquiv.of_freeCancelStep (FreeCancelStep.delete [] u a.1 (-a.2))
   right_inv := by
@@ -170,7 +160,7 @@ private def letterPerm (a : Fin (n - 1) × ℤˣ) : Equiv.Perm (WordClasses n) w
     induction x using Quotient.inductionOn with
     | _ u =>
       apply Quotient.sound
-      apply (wordSetoid_iff _ _).mpr
+      change WordEquiv _ _
       simpa only [List.nil_append, List.cons_append, neg_neg,
         Prod.mk.eta] using WordEquiv.of_freeCancelStep (FreeCancelStep.delete [] u a.1 a.2)
 
