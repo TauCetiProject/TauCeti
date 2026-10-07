@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple
+public import TauCeti.Analysis.InnerProductSpace.Laplacian.DriftMaximumPrinciple
 
 /-!
 # The weak maximum principle for the heat equation
@@ -110,21 +110,18 @@ private theorem sub_mul_le_of_deriv_le_laplacian_add_fderiv (hK : IsCompact K) {
   have hint : x₀ ∈ interior K := by
     rw [← self_sdiff_frontier]
     exact ⟨hx₀, hfr⟩
-  -- In space, `x₀` is a local maximum of `u t₀`: the Laplacian is `≤ 0` and the gradient vanishes.
+  -- In space, `x₀` is a local maximum of `u t₀`.
   have hloc : IsLocalMax (u t₀) x₀ :=
     Filter.eventually_of_mem (isOpen_interior.mem_nhds hint) fun y hy ↦ by
       linarith [hmax' ht₀ (interior_subset hy)]
-  have hlap := laplacian_nonpos_of_isLocalMax (hcd ht₀T hint) hloc
-  have hdt : deriv (fun s ↦ u s x₀) t₀ ≤ 0 := by
-    have := hsub ht₀T hint
-    rw [hloc.fderiv_eq_zero, zero_apply, add_zero] at this
-    linarith
   -- In time, `t₀` maximizes `s ↦ u s x₀ - ε s` from the left, so its derivative is `≥ 0`.
   have hg : HasDerivAt (fun s ↦ u s x₀ - ε * s) (deriv (fun s ↦ u s x₀) t₀ - ε) t₀ := by
     simpa using (hdiff ht₀T hint).hasDerivAt.fun_sub ((hasDerivAt_id t₀).const_mul ε)
   have hleft : IsLocalMaxOn (fun s ↦ u s x₀ - ε * s) (Iic t₀) t₀ :=
     Filter.mem_of_superset (Icc_mem_nhdsLE hpos) fun s hs ↦ hmax' ⟨hs.1, hs.2.trans ht₀.2⟩ hx₀
-  linarith [hleft.hasDerivWithinAt_Iic_nonneg hg.hasDerivWithinAt]
+  -- Hence `0 < ε ≤ ∂ₜu ≤ Δu + b·∇u` at `(t₀, x₀)`, which rules out the spatial local maximum.
+  refine not_isLocalMax_of_laplacian_add_fderiv_pos (v := b t₀ x₀) (hcd ht₀T hint) ?_ hloc
+  linarith [hleft.hasDerivWithinAt_Iic_nonneg hg.hasDerivWithinAt, hsub ht₀T hint]
 
 /-- **Weak maximum principle for `∂ₜ - Δ - b·∇`.**
 
