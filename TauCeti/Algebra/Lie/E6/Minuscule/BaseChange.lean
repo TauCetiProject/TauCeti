@@ -285,21 +285,42 @@ noncomputable def rootSubgroupToBaseChangeCoordinateMap (k : Fin 6 ⊕ Fin 6) :
 
 /-- The factored root-subgroup map recovers its ambient transported coordinate map. -/
 @[simp]
-theorem mkQuotient_comp_rootSubgroupToBaseChangeCoordinateMap (k : Fin 6 ⊕ Fin 6) :
-    CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 27)
-          (baseChangeDefiningIdeal A) ≫
-        rootSubgroupToBaseChangeCoordinateMap A k =
+theorem coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap (k : Fin 6 ⊕ Fin 6) :
+    coordinateMap A ≫ rootSubgroupToBaseChangeCoordinateMap A k =
       kostantRootSubgroupBaseChangePresentationCoordinateMap
         (TauCeti.serreRootGenerator weightTable.cartanMatrix)
         (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
         weightTable.rep_kostantForm_mem_lattice
         weightTable.isNilpotent_rep_serreRootGenerator 𝓑 A k := by
-  unfold baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
+  unfold coordinateMap baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
   exact mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinateMap
     (TauCeti.serreRootGenerator weightTable.cartanMatrix)
     (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
     weightTable.rep_kostantForm_mem_lattice weightTable.isNilpotent_rep_serreRootGenerator 𝓑
     weightTable.weight A k
+
+/-- The specialized root-subgroup coordinate map sends an additive point to the numbered
+minuscule root matrix with the same parameter. -/
+-- Normalize the point before `AlgHom.mapDomain_apply` unfolds the inner map.
+@[simp↓]
+theorem pointToGeneralLinear_mapDomain_rootSubgroupToBaseChangeCoordinateMap_eq_rootSubgroupPoints
+    (i : Fin 6 ⊕ Fin 6) (B : CommAlgCat.{w} A)
+    (q : HopfAlgebra.points (R := A) (H := AdditiveGroup.coordinateHopfAlgebra A) B) :
+    GeneralLinear.pointToGeneralLinear 27
+        (AlgHom.mapDomain (coordinateMap A).hom
+          (WithConv.toConv
+            (q.ofConv.comp (rootSubgroupToBaseChangeCoordinateMap A i).hom.toAlgHom))) =
+      (rootSubgroupPoints i B (AdditiveGroup.gaPointsMulEquiv q) :
+        Matrix.GeneralLinearGroup (Fin 27) B) := by
+  rw [← GeneralLinear.pointsMulEquiv_apply, coe_rootSubgroupPoints]
+  -- Match the named specialized presentation to the generic Kostant point formula.
+  unfold coordinateMap baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
+  convert pointsMulEquiv_kostantRootSubgroupToralBaseChangeCoordinateMap
+      (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+      (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
+      weightTable.rep_kostantForm_mem_lattice weightTable.isNilpotent_rep_serreRootGenerator 𝓑
+      weightTable.weight A definingIdeal_def i B q using 1
+  congr 1
 
 /-- Under the base-change coordinate isomorphism, the factored `k`th root-subgroup map is the
 scalar extension of its integral coordinate map. -/

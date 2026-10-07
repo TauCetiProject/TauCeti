@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
+import Mathlib.LinearAlgebra.Eigenspace.ContinuousLinearMap
 
 /-!
 # Spectral decompositions of self-adjoint operators

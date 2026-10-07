@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.CharacterTable.ClassSum.MultiplicationMatrix
+import Mathlib.Data.List.GetD
 
 /-!
 # Executable conjugacy-class data
@@ -450,6 +451,21 @@ theorem getElem_structureConstantTable (i : ℕ) (hi : i < d.structureConstantTa
         (List.finRange d.numClasses).map fun k =>
           d.structureConstant ⟨i, d.length_structureConstantTable ▸ hi⟩ j k := by
   simp [structureConstantTable]
+
+/-- Reading the tabulated structure constants at three valid indices recovers the corresponding
+computed structure constant. This `getD` form is convenient when a whole literal table is rewritten
+at once. -/
+theorem getD_structureConstantTable (i j k : Fin d.numClasses) :
+    (((d.structureConstantTable.getD i.val []).getD j.val []).getD k.val 0) =
+      d.structureConstant i j k := by
+  symm
+  have hi : i.val < d.structureConstantTable.length := by simp
+  rw [List.getD_eq_getElem d.structureConstantTable [] hi]
+  rw [d.getElem_structureConstantTable]
+  rw [List.getD_eq_getElem _ [] (by simp)]
+  simp only [List.getElem_map, List.getElem_finRange]
+  rw [List.getD_eq_getElem _ 0 (by simp)]
+  simp
 
 end StructureConstants
 

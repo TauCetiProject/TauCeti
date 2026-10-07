@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Burnside
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicPow
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # Surjectivity detected by the Frattini quotient

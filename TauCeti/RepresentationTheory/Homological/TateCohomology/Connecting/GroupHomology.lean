@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.Embedding.HomEquiv
 public import Mathlib.RepresentationTheory.Homological.GroupHomology.LongExactSequence
-public import TauCeti.Algebra.Homology.Embedding.ExtendHomologySequence
+public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Sequence
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Functoriality
 
 /-!
@@ -173,22 +173,6 @@ theorem δ_comp_negSuccIso_hom {S : ShortComplex (Rep R G)} (hS : S.ShortExact) 
   rw [← toGroupHomology_eq_negSuccIso_hom, ← toGroupHomology_eq_negSuccIso_hom,
     δ_comp_toGroupHomology]
 
-/-- A norm-zero element, as a cycle of degree `-1` of the Tate complex, is the same element as a
-`0`-chain. -/
-private theorem HNegOneCyclesIso_inv_comp_iCycles (M : Rep R G) :
-    (HNegOneCyclesIso M).inv ≫ (tateComplex M).iCycles (-1) =
-      ModuleCat.ofHom (LinearMap.ker M.ρ.norm).subtype ≫ (chainsIso₀ M).inv :=
-  (Iso.eq_comp_inv (chainsIso₀ M)).2 ((Category.assoc _ _ _).trans
-    ((Iso.inv_comp_eq _).2 (HNegOneCyclesIso_hom_comp_subtype M).symm))
-
-/-- An invariant element, as a cycle of degree `0` of the Tate complex, is the same element as a
-`0`-cochain. -/
-private theorem H0CyclesIso_inv_comp_iCycles (M : Rep R G) :
-    (H0CyclesIso M).inv ≫ (tateComplex M).iCycles 0 =
-      ModuleCat.ofHom M.ρ.invariants.subtype ≫ (cochainsIso₀ M).inv :=
-  (Iso.eq_comp_inv (cochainsIso₀ M)).2 ((Category.assoc _ _ _).trans
-    ((Iso.inv_comp_eq _).2 (H0CyclesIso_hom_comp_subtype M).symm))
-
 /-- In degree `-1` the comparison with group homology sends the class of a norm-zero element to its
 class in `H₀(G, M)`. -/
 @[reassoc (attr := simp)]
@@ -212,7 +196,7 @@ theorem HNegOneπ_comp_toGroupHomology (M : Rep R G) :
       (congrArg (· ≫ _) (toExtendChainsApp_f M 0)).trans (Iso.inv_hom_id _)
     rw [e₁]
     exact (congrArg (_ ≫ ·) (Category.comp_id _)).trans (HNegOneCyclesIso_inv_comp_iCycles M)
-  rw [HNegOneπ_eq_cyclesIso_inv_comp_homologyπ]
+  rw [HNegOneπ_eq_HNegOneCyclesIso_inv_comp_homologyπ]
   exact (Category.assoc _ _ _).trans key
 
 /-- The comparison with group homology is natural in the coefficient representation. -/

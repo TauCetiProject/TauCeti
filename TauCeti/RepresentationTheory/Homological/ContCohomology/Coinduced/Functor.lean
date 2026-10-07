@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Coinduced
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Discrete
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 
 import all TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Discrete
 import TauCeti.RepresentationTheory.Continuous.TopRep.EqToHom
@@ -57,11 +57,6 @@ open CategoryTheory
 universe u v w
 
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
-
-local instance instDiscreteTopologyOfSmoothDiscreteCoind
-    {R : Type u} [Ring R] [TopologicalSpace R] {G : Type v} [Monoid G] [TopologicalSpace G]
-    (A : SmoothDiscreteTopRep.{u, v, w} R G) : DiscreteTopology A.obj.V :=
-  A.property.discreteTopology
 
 local instance instContinuousSMulOfSmoothDiscreteCoind
     {R : Type u} [Ring R] [TopologicalSpace R] {G : Type v} [Group G]
@@ -173,12 +168,10 @@ noncomputable def coindTraceHom [U.FiniteIndex]
     (coindTopRep R G U
       (⟨TopRep.res (U.subtype : U →* G) A.obj,
         A.property.res continuous_subtype_val⟩ : SmoothDiscreteTopRep R U)).obj ⟶ A.obj := by
-  letI : DiscreteTopology A.obj.V := A.property.discreteTopology
   letI : ContinuousSMul G A.obj.V := A.property.continuousSMul
   let X := coindTopRep R G U
     (⟨TopRep.res (U.subtype : U →* G) A.obj,
       A.property.res continuous_subtype_val⟩ : SmoothDiscreteTopRep R U)
-  letI : DiscreteTopology X.obj.V := X.property.discreteTopology
   exact CategoryTheory.ConcreteCategory.ofHom
     { toContinuousLinearMap :=
         ⟨DiscreteCoind.traceLinear (R := R) G U A.obj.V, continuous_of_discreteTopology⟩
@@ -218,7 +211,7 @@ private theorem coindFunctor_map_apply_impl {A B : SmoothDiscreteTopRep.{u, v, w
   change (show DiscreteCoind G U B.obj.V from
     ((toSmoothDiscrete R G).map
       ((coindDiscreteFunctor R G U).map ((ofSmoothDiscrete R U).map f))).hom.hom a) g = _
-  have htop := toSmoothDiscrete_map_hom_apply (R := R) (G := G)
+  have htop := toSmoothDiscrete_map_hom_hom_apply (R := R) (G := G)
     ((coindDiscreteFunctor R G U).map ((ofSmoothDiscrete R U).map f)) a
   -- The dictionary lemma returns an equality in the underlying carrier; identifying that carrier
   -- with `DiscreteCoind` makes point evaluation at `g` well typed.
@@ -376,7 +369,6 @@ variable (R : Type u) [Ring R] [TopologicalSpace R]
   (U : OpenSubgroup G)
   (A : SmoothDiscreteTopRep.{u, v, w} R U.toSubgroup)
 
-local instance : DiscreteTopology A.obj.V := A.property.discreteTopology
 local instance : ContinuousSMul U.toSubgroup A.obj.V := A.property.continuousSMul
 local instance : SMulCommClass U.toSubgroup R A.obj.V := TopRep.smulCommClass A.obj
 local instance : SMulCommClass G R (DiscreteCoind G U.toSubgroup A.obj.V) :=
@@ -493,10 +485,7 @@ noncomputable def algebraicCoindCounit :
     ⟨LinearMap.proj 1 ∘ₗ
       (Representation.coindV U.toSubgroup.subtype
         (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)).subtype,
-      by
-        let : DiscreteTopology (algebraicCoindAsSmooth R G U A).obj.V :=
-          (algebraicCoindAsSmooth R G U A).property.discreteTopology
-        exact continuous_of_discreteTopology⟩
+      continuous_of_discreteTopology⟩
   isIntertwining' u := by
     ext f
     let f' : Representation.coindV U.toSubgroup.subtype
@@ -546,7 +535,7 @@ private theorem topologicalCoindIsoAlgebraic_hom_hom_hom_apply_coe_impl
     ((topologicalCoindIsoAlgebraic R G U A).hom.hom.hom f).1 g =
       (discreteCoindEquivAlgebraic R G U A f).1 g := by
   rw [topologicalCoindIsoAlgebraic, Functor.mapIso_hom]
-  have h := toSmoothDiscrete_map_hom_apply
+  have h := toSmoothDiscrete_map_hom_hom_apply
     (R := R) (G := G) (discreteCoindIsoAlgebraic R G U A).hom f
   exact congrArg (fun b ↦ b.1 g) h
 
@@ -561,7 +550,7 @@ private theorem topologicalCoindIsoAlgebraic_inv_hom_hom_apply_coe_impl
       (topologicalCoindIsoAlgebraic R G U A).inv.hom.hom f) g =
         (discreteCoindEquivAlgebraic R G U A).symm f g := by
   rw [topologicalCoindIsoAlgebraic, Functor.mapIso_inv]
-  have h := toSmoothDiscrete_map_hom_apply
+  have h := toSmoothDiscrete_map_hom_hom_apply
     (R := R) (G := G) (discreteCoindIsoAlgebraic R G U A).inv f
   -- The dictionary lemma is an equality in the unfolded carrier; view it in `DiscreteCoind` to
   -- evaluate at `g`.

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.DirectSum.LinearMap
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.Trace.Square
+import Mathlib.RingTheory.TensorProduct.Finite
 
 /-!
 # Symmetric and antisymmetric tensors in a tensor square
@@ -20,13 +21,16 @@ complementary, so the tensor square is their internal direct sum; the two submod
 concrete models of `Sym²M` and `⋀²M`
 *inside* `M ⊗[R] M`, which is what a construction carrying extra structure on the tensor square —
 a topology, say — needs, the quotient and subobject constructions `Sym[R]^2 M` and `⋀[R]^2 M`
-living outside it.
+living outside it. That they really are those two modules, `f ⊗ f`-equivariantly, is
+`TauCeti.symmetricTensorsEquivSymmetricPower` and
+`TauCeti.antisymmetricTensorsEquivExteriorPower` in
+`TauCeti/LinearAlgebra/TensorSquare.lean`.
 
 The point of the file is the trace identity `TauCeti.trace_map_self_comp_comm`: composing
 `f ⊗ f` with the flip has trace `tr (f ∘ f)`, because on a basis the diagonal entry of the
 composite at `eᵢ ⊗ eⱼ` is `aᵢⱼ aⱼᵢ`, and summing those is
-`TauCeti.trace_eq_trace_comp_self_of_toMatrix_diag`, the step shared with the `Fin 2`-indexed
-tensor square of `TauCeti/RepresentationTheory/Tensor/Square.lean`. Splitting that trace along the
+`Module.Basis.trace_eq_trace_comp_self_of_toMatrix_diag`, the step shared with the `Fin 2`-indexed
+tensor square of `TauCeti/LinearAlgebra/TensorSquare.lean`. Splitting that trace along the
 symmetric and the antisymmetric tensors, where the flip is `+1` and `-1`, gives
 `TauCeti.trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict`: the traces of
 `f ⊗ f` on the symmetric and on the antisymmetric tensors differ by `tr (f ∘ f)`. That is the
@@ -40,6 +44,9 @@ the tensor square rather than on the symmetric and exterior powers.
 
 ## Main results
 
+* `TauCeti.add_comm_mem_symmetricTensors` and `TauCeti.sub_comm_mem_antisymmetricTensors`: the
+  symmetrization `z + flip z` and the antisymmetrization `z - flip z` of a tensor lie in the two
+  eigenspaces.
 * `TauCeti.isCompl_symmetricTensors_antisymmetricTensors` and
   `TauCeti.isInternal_symmetricTensors_antisymmetricTensors`: with `2` invertible the two
   submodules are complementary, hence an internal direct sum decomposition of the tensor square.
@@ -87,6 +94,12 @@ theorem mem_symmetricTensors {x : M ⊗[R] M} :
   rw [symmetricTensors, LinearMap.mem_eqLocus]
   exact Iff.rfl
 
+/-- The symmetrization `z + flip z` of a tensor is symmetric. -/
+theorem add_comm_mem_symmetricTensors (z : M ⊗[R] M) :
+    z + TensorProduct.comm R M M z ∈ symmetricTensors R M := by
+  rw [mem_symmetricTensors, map_add, TensorProduct.comm_comm]
+  exact add_comm _ _
+
 /-- `f ⊗ f` preserves the symmetric tensors, because it commutes with the flip. -/
 theorem map_self_mem_symmetricTensors (f : M →ₗ[R] M) {x : M ⊗[R] M}
     (hx : x ∈ symmetricTensors R M) : TensorProduct.map f f x ∈ symmetricTensors R M := by
@@ -121,6 +134,11 @@ theorem mem_antisymmetricTensors {x : M ⊗[R] M} :
     x ∈ antisymmetricTensors R M ↔ TensorProduct.comm R M M x = -x := by
   rw [antisymmetricTensors, Module.End.mem_eigenspace_iff, neg_one_smul]
   exact Iff.rfl
+
+/-- The antisymmetrization `z - flip z` of a tensor is antisymmetric. -/
+theorem sub_comm_mem_antisymmetricTensors (z : M ⊗[R] M) :
+    z - TensorProduct.comm R M M z ∈ antisymmetricTensors R M := by
+  rw [mem_antisymmetricTensors, map_sub, TensorProduct.comm_comm, neg_sub]
 
 /-- `f ⊗ f` preserves the antisymmetric tensors, because it commutes with the flip. -/
 theorem map_self_mem_antisymmetricTensors (f : M →ₗ[R] M) {x : M ⊗[R] M}
@@ -165,10 +183,8 @@ theorem isCompl_symmetricTensors_antisymmetricTensors [Invertible (2 : R)] :
         rw [two_smul]; abel
       rw [this, smul_smul, invOf_mul_self, one_smul]
     rw [hsum]
-    refine Submodule.add_mem_sup (Submodule.smul_mem _ _ ?_) (Submodule.smul_mem _ _ ?_)
-    · rw [mem_symmetricTensors, map_add, TensorProduct.comm_comm]
-      exact add_comm _ _
-    · rw [mem_antisymmetricTensors, map_sub, TensorProduct.comm_comm, neg_sub]
+    exact Submodule.add_mem_sup (Submodule.smul_mem _ _ (add_comm_mem_symmetricTensors x))
+      (Submodule.smul_mem _ _ (sub_comm_mem_antisymmetricTensors x))
 
 variable (R M) in
 /-- The symmetric and antisymmetric tensors decompose the tensor square as an internal direct
@@ -190,15 +206,15 @@ variable {K M : Type*} [CommSemiring K] [AddCommMonoid M] [Module K M]
 /-- **The trace of `f ⊗ f` composed with the flip is the trace of `f ∘ f`.** In a basis the
 diagonal entry of the composite at `eᵢ ⊗ eⱼ` is `aᵢⱼ aⱼᵢ`, and summing those over all pairs is the
 trace of the square of the matrix of `f`, which is
-`TauCeti.trace_eq_trace_comp_self_of_toMatrix_diag`. -/
+`Module.Basis.trace_eq_trace_comp_self_of_toMatrix_diag`. -/
 theorem trace_map_self_comp_comm [Module.Free K M] [Module.Finite K M] (f : M →ₗ[K] M) :
     LinearMap.trace K (M ⊗[K] M)
         (TensorProduct.map f f ∘ₗ (TensorProduct.comm K M M).toLinearMap)
       = LinearMap.trace K M (f ∘ₗ f) := by
   set b := Module.Free.chooseBasis K M
-  refine trace_eq_trace_comp_self_of_toMatrix_diag b (b.tensorProduct b) (Equiv.refl _) f _ ?_
+  refine b.trace_eq_trace_comp_self_of_toMatrix_diag (b.tensorProduct b) (Equiv.refl _) f _ ?_
   rintro ⟨i, j⟩
-  simp [LinearMap.toMatrix_apply, Module.Basis.tensorProduct_apply,
+  simp [Module.Basis.toMatrix_apply, Module.Basis.tensorProduct_apply,
     Module.Basis.tensorProduct_repr_tmul_apply, mul_comm]
 
 end Trace

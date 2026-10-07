@@ -24,16 +24,14 @@ subgroup order.
   cosets.
 * `TauCeti.character_indFDRep_eq_zero_of_notMem`: an induced character vanishes outside a normal
   subgroup of finite index.
-* `TauCeti.indClassFun_ofFDRep_character` and `TauCeti.ClassFunction.ind_ofFDRep` identify that
-  coset sum with `TauCeti.indClassFun`, the induced class function.
+* `Subgroup.indClassFun_ofFDRep_character` and `Subgroup.indClassFunction_ofFDRep` identify that
+  coset sum with `Subgroup.indClassFun`, the induced class function.
 * `TauCeti.character_ind` rewrites the coset sum as an average over the whole group when the
   subgroup order is invertible in the coefficient field; it is the specialization of
-  `TauCeti.indClassFun_eq_natCard_inv_mul_sum` to a character.
+  `Subgroup.indClassFun_eq_natCard_inv_mul_sum` to a character.
 
 ## References
 
-* [Induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md),
-  Layer 2.
 * J.-P. Serre, *Linear Representations of Finite Groups*, Chapter 7.
 -/
 
@@ -65,7 +63,7 @@ private theorem quotientRightRelEquivQuotientLeftRel_mk (S : Subgroup G) (x : G)
       @Quotient.mk'' G (QuotientGroup.leftRel S) x⁻¹
   apply Quotient.map'_mk''
 
-/-- A character is a class function, so `TauCeti.indTerm` applies to it. -/
+/-- A character is a class function, so `Function.indTerm` applies to it. -/
 private theorem character_mem_classFunction {V : Type u} [AddCommGroup V] [Module k V]
     (ρ : Representation k S V) : ρ.character ∈ ClassFunction k S :=
   ClassFunction.mem_iff.mpr ρ.char_conj
@@ -106,7 +104,7 @@ cosets. -/
 private theorem trace_ind_eq_sum_terms [S.FiniteIndex] [Fintype (RightCosets S)]
     (A : Rep.{u} k S) [FiniteDimensional k A] (g : G) :
     LinearMap.trace k (Rep.ind S.subtype A) ((Rep.ind S.subtype A).ρ g) =
-      ∑ q : RightCosets S, indTerm A.ρ.character g q.out⁻¹ := by
+      ∑ q : RightCosets S, Function.indTerm A.ρ.character g q.out⁻¹ := by
   rw [trace_ind_eq_sum_rightCosets A g]
   apply Finset.sum_congr rfl
   intro q _
@@ -119,7 +117,7 @@ private theorem trace_ind_eq_sum_terms [S.FiniteIndex] [Fintype (RightCosets S)]
         simpa [mul_assoc] using
           (QuotientGroup.rightRel_apply.mp (Quotient.exact' hq'))
       simpa [mul_assoc] using S.inv_mem hinv
-    rw [ite_eq_left hq, indTerm_apply, dite_eq_left (by simpa [mul_assoc] using hmem)]
+    rw [ite_eq_left hq, Function.indTerm_apply, dite_eq_left (by simpa [mul_assoc] using hmem)]
     have hfactor :
         rightCosetFactor (S := S) (q.out * g) =
           ⟨q.out * g * q.out⁻¹, hmem⟩ := by
@@ -142,7 +140,7 @@ private theorem trace_ind_eq_sum_terms [S.FiniteIndex] [Fintype (RightCosets S)]
       refine (Quotient.sound' ?_).trans (Quotient.out_eq' q)
       rw [QuotientGroup.rightRel_apply]
       simpa [mul_assoc] using S.inv_mem h
-    rw [ite_eq_right hq, indTerm_apply, dite_eq_right (by simpa [mul_assoc] using hmem)]
+    rw [ite_eq_right hq, Function.indTerm_apply, dite_eq_right (by simpa [mul_assoc] using hmem)]
 
 end Rep
 
@@ -188,11 +186,11 @@ theorem character_indFDRep_sum_quotient {k : Type u} {G : Type v} [Field k] [Gro
   rw [hcharacter, Rep.trace_ind_eq_sum_terms A' g]
   let e := QuotientGroup.quotientRightRelEquivQuotientLeftRel S
   calc
-    (∑ q : Rep.RightCosets S, indTerm A'.ρ.character g q.out⁻¹) =
-        ∑ t : G ⧸ S, indTerm A'.ρ.character g t.out := by
+    (∑ q : Rep.RightCosets S, Function.indTerm A'.ρ.character g q.out⁻¹) =
+        ∑ t : G ⧸ S, Function.indTerm A'.ρ.character g t.out := by
       apply Fintype.sum_equiv e
       intro q
-      refine indTerm_eq_of_mk_eq (Rep.character_mem_classFunction A'.ρ) _ _ _ ?_
+      refine Function.indTerm_eq_of_mk_eq _ (Rep.character_mem_classFunction A'.ρ) _ _ _ ?_
       have heq : e q = QuotientGroup.mk q.out⁻¹ := by
         calc
           e q = e (Quotient.mk'' q.out) :=
@@ -203,7 +201,7 @@ theorem character_indFDRep_sum_quotient {k : Type u} {G : Type v} [Field k] [Gro
     _ = _ := by
       apply Finset.sum_congr rfl
       intro t _
-      rw [indTerm_apply]
+      rw [Function.indTerm_apply]
       by_cases hmem : t.out⁻¹ * g * t.out ∈ S
       · rw [dite_eq_left hmem, dite_eq_left hmem, hforgetCharacter]
       · rw [dite_eq_right hmem, dite_eq_right hmem]
@@ -226,35 +224,37 @@ variable {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
 
 /-- The character of an induced representation is the induced class function of its character. -/
 @[simp]
-theorem indClassFun_ofFDRep_character [S.FiniteIndex] (A : FDRep k S) :
-    indClassFun S A.character = (indFDRep (k := k) (G := G) A).character := by
+theorem _root_.Subgroup.indClassFun_ofFDRep_character (S : Subgroup G) [S.FiniteIndex]
+    (A : FDRep k S) :
+    Subgroup.indClassFun S A.character = (indFDRep (k := k) (G := G) A).character := by
   funext g
-  rw [indClassFun_apply]
+  rw [Subgroup.indClassFun_apply]
   exact (character_indFDRep_sum_quotient A g).symm
 
 /-- Inducing the class function of a finite-dimensional representation gives the class function of
 the induced representation. -/
 @[simp]
-theorem ClassFunction.ind_ofFDRep [S.FiniteIndex] (A : FDRep k S) :
-    ClassFunction.ind S (ClassFunction.ofFDRep A) =
+theorem _root_.Subgroup.indClassFunction_ofFDRep (S : Subgroup G) [S.FiniteIndex] (A : FDRep k S) :
+    Subgroup.indClassFunction S (ClassFunction.ofFDRep A) =
       ClassFunction.ofFDRep (indFDRep (k := k) (G := G) A) := by
   have hcoe : ((ClassFunction.ofFDRep A : ClassFunction k S) : S → k) = A.character :=
     funext fun s => ClassFunction.ofFDRep_apply A s
   refine Subtype.ext (funext fun g => ?_)
-  rw [ClassFunction.ind_apply, hcoe, indClassFun_ofFDRep_character, ClassFunction.ofFDRep_apply]
+  rw [Subgroup.indClassFunction_apply, hcoe, Subgroup.indClassFun_ofFDRep_character,
+    ClassFunction.ofFDRep_apply]
 
 open scoped Classical in
 /-- The induced character at `g`, written as an average over the whole group. The subgroup
 order must be invertible in the coefficient field; without this hypothesis,
 `character_indFDRep_sum_quotient` is the division-free formula to use.
 
-This is the specialization of `TauCeti.indClassFun_eq_natCard_inv_mul_sum` to a character. -/
+This is the specialization of `Subgroup.indClassFun_eq_natCard_inv_mul_sum` to a character. -/
 theorem character_ind [Fintype G] (hS : IsUnit (Nat.card S : k)) (A : FDRep k S) (g : G) :
     (indFDRep (k := k) (G := G) A).character g =
       (Nat.card S : k)⁻¹ * ∑ x : G,
         if h : x⁻¹ * g * x ∈ S then A.character ⟨x⁻¹ * g * x, h⟩ else 0 := by
-  rw [← indClassFun_ofFDRep_character A]
-  exact indClassFun_eq_natCard_inv_mul_sum hS
+  rw [← Subgroup.indClassFun_ofFDRep_character S A]
+  exact Subgroup.indClassFun_eq_natCard_inv_mul_sum S hS
     (ClassFunction.mem_iff.mpr fun s t => A.char_conj s t) g
 
 end ClassFun

@@ -96,6 +96,13 @@ theorem coe_mem_span_singleton_iff {r : ℝ} (hr : r ≠ 0) {x p : Metric.sphere
     · rw [coe_neg_sphere]
       exact Submodule.neg_mem _ (Submodule.mem_span_singleton_self _)
 
+/-- The unit sphere minus `p` and `-p` is the set of its points off the line through `p`. -/
+theorem compl_singleton_inter_compl_singleton_neg_eq (p : Metric.sphere (0 : E) 1) :
+    ({p}ᶜ ∩ {-p}ᶜ : Set (Metric.sphere (0 : E) 1)) =
+      ({x | (x : E) ∉ ℝ ∙ (p : E)} : Set (Metric.sphere (0 : E) 1)) := by
+  ext x
+  simp [not_or]
+
 end Sphere
 
 section Normalization

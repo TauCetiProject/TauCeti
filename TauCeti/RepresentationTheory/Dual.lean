@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Character
+public import TauCeti.LinearAlgebra.LinearEquiv.Basic
 
 /-!
 # Invariants of the dual representation
+
+The inverse automorphism of the dual representation is the transpose of the original
+representation's automorphism.
 
 The dual `ρ.dual` of a representation acts on functionals by `ψ ↦ ψ ∘ ρ g⁻¹`, so a functional
 invariant for it is exactly one that the action of `G` on the space leaves unchanged:
@@ -40,6 +44,24 @@ invertible `|G|`; in characteristic `p` it is an identity of residues, and it is
 -/
 
 public section
+
+namespace Representation
+
+/-- The inverse linear automorphism of the dual representation is the transpose of the
+original representation's linear automorphism. -/
+theorem generalLinearEquiv_dual_asGroupHom_symm
+    {R G V : Type*} [CommSemiring R] [Group G] [AddCommMonoid V] [Module R V]
+    (ρ : Representation R G V) (g : G) :
+    ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (Module.Dual R V))
+      (ρ.dual.asGroupHom g)).symm =
+      ((LinearMap.GeneralLinearGroup.generalLinearEquiv R V) (ρ.asGroupHom g)).dualMap := by
+  rw [LinearEquiv.symm_eq_inv, ← map_inv, ← map_inv]
+  ext φ v
+  simp only [LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
+    asGroupHom_apply, dual_apply, inv_inv, Module.Dual.transpose_apply,
+    LinearEquiv.dualMap_apply, LinearMap.comp_apply]
+
+end Representation
 
 namespace TauCeti
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Corestriction
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.AllDegrees
+import TauCeti.RepresentationTheory.Coinvariants
 
 /-!
 # Restriction of finite-layer Tate cohomology
@@ -230,6 +231,17 @@ theorem tateRes_zero_H0π (T : LayerRestriction small big) (F : Formation G)
   rw [tateHZeroEquivNormQuotient_tateRes_H0π,
     NormalLayer.tateHZeroEquivNormQuotient_H0π, LinearEquiv.apply_symm_apply]
 
+-- Not `@[simp]`: the `@[simp]` lemma `tateRes_zero` rewrites its left-hand side first.
+/-- **In degree zero, restriction is the ground-level inclusion on zero-dimensional classes.** The
+zero-dimensional Tate class of an element of the ground level `A^U` of `K/F` restricts to the
+zero-dimensional Tate class of the same element in the ground level `A^{U'}` of `K/E`. -/
+theorem tateRes_zeroTateClass (T : LayerRestriction small big) (F : Formation G)
+    (a : F.level big.ground) :
+    T.tateRes F 0 (big.zeroTateClass F a) = small.zeroTateClass F (T.groundInclusion F a) := by
+  obtain ⟨x, rfl⟩ := (big.groundLevelEquiv F).surjective a
+  rw [NormalLayer.zeroTateClass_groundLevelEquiv, T.tateRes_zero_H0π,
+    ← NormalLayer.zeroTateClass_groundLevelEquiv, LinearEquiv.apply_symm_apply]
+
 /-- The **relative transfer of norm kernels** along a restriction: the transfer of the image of
 `Gal(K/E)` in `Gal(K/F)`, read back into the smaller layer through `repIso`. On representatives,
 degree `-1` restriction is this map (`tateRes_neg_one_HNegOneπ`); it is the wrong-way partner of
@@ -297,8 +309,8 @@ theorem kerNormTransfer_trans_sub_mem (T : LayerRestriction a b) (T' : LayerRest
   -- Read the augmentation submodule in `htrans` over the image of the smallest Galois group
   -- directly, rather than through the image of the middle one.
   rw [MonoidHom.comp_assoc, ← Subgroup.subtype_comp_subgroupOfEquivOfLe hKH,
-    Representation.coinvariantsKer_comp_comp_of_surjective
-      ((T.trans T').galHom.range.subtype) _
+    ← MonoidHom.comp_assoc, Representation.coinvariantsKer_comp_of_surjective
+      ((c.rep F).ρ.comp ((T.trans T').galHom.range.subtype)) _
       (Subgroup.subgroupOfEquivOfLe hKH).surjective] at htrans
   -- Reading an element of the middle layer back to the smallest one directly agrees with going
   -- across to the largest and back along the composite.
@@ -308,7 +320,7 @@ theorem kerNormTransfer_trans_sub_mem (T : LayerRestriction a b) (T' : LayerRest
     exact congrArg (T.repIso F).inv.hom ((T'.repIso F).hom_inv_id_apply u).symm
   rw [kerNormTransfer_apply, kerNormTransfer_apply, kerNormTransfer_apply, hrep, ← map_sub]
   refine Representation.coinvariantsKer_map_le
-    (ρ := (c.rep F).ρ.comp ((T.trans T').galHom.range).subtype)
+    ((c.rep F).ρ.comp ((T.trans T').galHom.range).subtype)
     (MonoidHom.ofInjective (T.trans T').galHom_injective).symm
     (((T.trans T').repIso F).inv.hom.toLinearMap) (repIso_inv_comm_apply (T.trans T') F)
     (Submodule.mem_map_of_mem ?_)

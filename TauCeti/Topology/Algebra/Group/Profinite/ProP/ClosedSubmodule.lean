@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Padics.Module
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicPow
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # Closed subgroups and quotient modules of abelian pro-p groups

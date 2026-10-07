@@ -45,6 +45,8 @@ inverse of the double-dual isomorphism `cartierDualDualIso`.
   `TauCeti.FiniteLocallyFreeCommAffineGroupSchemeCat.coordinateHopfAlgebra`: the Cartier dual of a
   group scheme and its coordinate Hopf algebra, related by `cartierDual_eq` and
   `coordinateHopfAlgebraCartierDualIso`.
+* `TauCeti.FiniteLocallyFreeCommAffineGroupSchemeCat.hopfSpecCoordinateHopfAlgebraIso`:
+  the comparison with the Hopf spectrum of the coordinate algebra in the ambient affine category.
 * `TauCeti.FiniteLocallyFreeCommAffineGroupSchemeCat.cartierDualDualIso`: the double-dual
   isomorphism `G ≅ D(D(G))`, natural by `cartierDualDualIso_hom_naturality`.
 
@@ -189,6 +191,41 @@ noncomputable def functorCompιIso (R : Type u) [CommRing R] :
         (CommHopfAlgCat.{u} R)).op
       (commHopfAlgCatOpEquivAffineGroupSchemeCat.functorCompιIso (CommRingCat.of R))
 
+/-- The object produced by the finite-locally-free Hopf/group-scheme anti-equivalence is
+its bundled Hopf spectrum. -/
+noncomputable def functorObjIso (R : Type u) [CommRing R]
+    (H : (FiniteLocallyFreeBicommutativeHopfAlgCat.{u} R)ᵒᵖ) :
+    (finiteLocallyFreeBicommutativeHopfAlgCatOpEquivFiniteLocallyFreeCommAffineGroupSchemeCat
+        R).functor.obj H ≅
+      ⟨⟨(hopfSpec (CommRingCat.of R)).obj (op H.unop.obj), by
+          rw [affineGroupSchemeProperty_iff, hopfSpec_obj_X_left]
+          infer_instance⟩, by
+        have hH := (finiteLocallyFreeBicommutativeHopfAlgProperty_iff R H.unop.obj).mp
+          H.unop.property
+        let _ : Module.Finite R H.unop.obj := hH.1
+        have hp := (moduleProjective_iff_flat_and_locallyOfFinitePresentation_hopfSpec
+          R H.unop.obj).mp hH.2.1
+        exact ⟨(moduleFinite_iff_isFinite_hopfSpec R H.unop.obj).mp
+          hH.1, hp.1, hp.2,
+          (isCocomm_iff_isCommMonObj_hopfSpec R H.unop.obj).mp hH.2.2⟩⟩ :=
+  (finiteLocallyFreeCommAffineGroupSchemeProperty (CommRingCat.of R)).ι.preimageIso
+    ((affineGroupSchemeProperty (CommRingCat.of R)).ι.preimageIso
+      ((functorCompιIso R).app H))
+
+/-- After forgetting the property proofs, the object comparison is the Hopf--spectrum
+functor comparison. -/
+theorem functorObjIso_hom_hom_hom (R : Type u) [CommRing R]
+    (H : (FiniteLocallyFreeBicommutativeHopfAlgCat.{u} R)ᵒᵖ) :
+    (functorObjIso R H).hom.hom.hom = (functorCompιIso R).hom.app H := by
+  calc
+    _ = (affineGroupSchemeProperty (CommRingCat.of R)).ι.map
+        ((finiteLocallyFreeCommAffineGroupSchemeProperty (CommRingCat.of R)).ι.map
+          (functorObjIso R H).hom) := rfl
+    _ = _ := by
+      rw [functorObjIso, Functor.preimageIso_hom, Functor.map_preimage,
+        Functor.preimageIso_hom, Functor.map_preimage]
+      rfl
+
 /-- The inverse restricted anti-equivalence computes as the unrestricted coordinate-Hopf-algebra
 functor after forgetting finite local freeness and commutativity. -/
 noncomputable def inverseCompιIso (R : Type u) [CommRing R] :
@@ -218,6 +255,8 @@ end
   finiteLocallyFreeBicommutativeHopfAlgCatOpEquivFiniteLocallyFreeCommAffineGroupSchemeCat
 
 namespace FiniteLocallyFreeCommAffineGroupSchemeCat
+
+open finiteLocallyFreeBicommutativeHopfAlgCatOpEquivFiniteLocallyFreeCommAffineGroupSchemeCat
 
 /-- **Cartier duality for finite locally free commutative affine group schemes over an arbitrary
 commutative base ring.**
@@ -271,6 +310,23 @@ noncomputable abbrev coordinateHopfAlgebra (R : Type u) [CommRing R]
   (finiteLocallyFreeBicommutativeHopfAlgCatOpEquivFiniteLocallyFreeCommAffineGroupSchemeCat
     R).rightOp.inverse.obj (op G)
 
+open finiteLocallyFreeBicommutativeHopfAlgCatOpEquivFiniteLocallyFreeCommAffineGroupSchemeCat in
+/-- The Hopf spectrum of the coordinate Hopf algebra recovers the original affine group scheme,
+after forgetting finite local freeness and commutativity. -/
+noncomputable def hopfSpecCoordinateHopfAlgebraIso (R : Type u) [CommRing R]
+    (G : FiniteLocallyFreeCommAffineGroupSchemeCat (CommRingCat.of R)) :
+    (commHopfAlgCatOpEquivAffineGroupSchemeCat (CommRingCat.of R)).functor.obj
+        (op (coordinateHopfAlgebra R G).obj) ≅
+      (finiteLocallyFreeCommAffineGroupSchemeProperty (CommRingCat.of R)).ι.obj G := by
+  -- `coordinateHopfAlgebra` uses `rightOp.inverse`; after taking `op` and forgetting the
+  -- property proofs it is the source of `inverseCompιIso.app G`.
+  let e := (inverseCompιIso R).app G
+  exact (affineGroupSchemeProperty (CommRingCat.of R)).ι.preimageIso
+    ((commHopfAlgCatOpEquivAffineGroupSchemeCat.functorCompιIso (CommRingCat.of R)).app
+        (op (coordinateHopfAlgebra R G).obj) ≪≫
+      (hopfSpec (CommRingCat.of R)).mapIso e ≪≫
+      AffineGroupSchemeCat.hopfSpecCoordinateHopfAlgebraIso R G.obj)
+
 /-- The Cartier dual of a finite locally free commutative affine group scheme. -/
 noncomputable abbrev cartierDual (R : Type u) [CommRing R]
     (G : FiniteLocallyFreeCommAffineGroupSchemeCat (CommRingCat.of R)) :
@@ -286,6 +342,34 @@ theorem cartierDual_eq (R : Type u) [CommRing R]
         R).functor.obj
           (op (FiniteLocallyFreeBicommutativeHopfAlgCat.dual (coordinateHopfAlgebra R G))) :=
   (rfl)
+
+/-- Cartier dualization of a Hopf spectrum is the Hopf spectrum of the finite dual. -/
+noncomputable def cartierDualHopfSpecIso (R : Type u) [CommRing R]
+    (H : FiniteLocallyFreeBicommutativeHopfAlgCat.{u} R) :
+    cartierDual R
+        ((finiteLocallyFreeBicommutativeHopfAlgCatOpEquivFiniteLocallyFreeCommAffineGroupSchemeCat
+          R).functor.obj (op H)) ≅
+      (finiteLocallyFreeBicommutativeHopfAlgCatOpEquivFiniteLocallyFreeCommAffineGroupSchemeCat
+        R).functor.obj (op (FiniteLocallyFreeBicommutativeHopfAlgCat.dual H)) := by
+  rw [cartierDual_eq]
+  exact
+    (finiteLocallyFreeBicommutativeHopfAlgCatOpEquivFiniteLocallyFreeCommAffineGroupSchemeCat
+      R).functor.mapIso
+        ((FiniteLocallyFreeBicommutativeHopfAlgCat.dualFunctor.mapIso
+          ((finiteLocallyFreeBicommutativeHopfAlgCatOpEquivFiniteLocallyFreeCommAffineGroupSchemeCat
+            R).unitIso.app (op H)).unop.op).op)
+
+/-- On morphisms, the Hopf--spectrum duality comparison is induced by the equivalence unit
+and finite dualization. -/
+theorem cartierDualHopfSpecIso_hom (R : Type u) [CommRing R]
+    (H : FiniteLocallyFreeBicommutativeHopfAlgCat.{u} R) :
+    let E :=
+      finiteLocallyFreeBicommutativeHopfAlgCatOpEquivFiniteLocallyFreeCommAffineGroupSchemeCat R
+    (cartierDualHopfSpecIso R H).hom =
+      eqToHom (cartierDual_eq R _) ≫ E.functor.map
+        ((FiniteLocallyFreeBicommutativeHopfAlgCat.dualFunctor.mapIso
+          (E.unitIso.app (op H)).unop.op).op.hom) := by
+  rfl
 
 /-- **The coordinate Hopf algebra of a Cartier dual is the finite dual of the coordinate Hopf
 algebra**, naturally in the group scheme. -/

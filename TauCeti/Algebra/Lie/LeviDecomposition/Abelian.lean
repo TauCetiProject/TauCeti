@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.HighestWeight.CompleteReducibility
-import TauCeti.Algebra.Lie.Quotient
+public import TauCeti.Algebra.Lie.Killing.Quotient
 
 /-!
 # Levi complements of abelian ideals
@@ -45,6 +45,12 @@ subalgebra with `I + S = L`, and `S ∩ I` consists of central elements.
 If `I` meets the centre trivially, `S` is already the complement; this is the classical argument.
 In general `S ∩ I` is a central ideal of `S` with quotient `L ⧸ I`, so the central case complements
 it inside `S`, and that complement is a complement of `I` in `L`.
+
+The last step holds for any Lie subalgebra `P` with `I + P = L`: the quotient `P ⧸ (I ∩ P)` is
+isomorphic to `L ⧸ I`, and a complement of `I ∩ P` in `P` is a complement of `I` in `L`. These
+statements are supplied by `TauCeti/Algebra/Lie/Quotient.lean` and
+`TauCeti/Algebra/Lie/Killing/Quotient.lean`, since the induction for solvable ideals uses them
+again.
 
 ## Main results
 
@@ -270,39 +276,16 @@ theorem _root_.LieIdeal.exists_lieSubalgebra_isCompl_of_isLieAbelian [CharZero K
     [FiniteDimensional K L] (I : LieIdeal K L) [IsLieAbelian I] [IsKilling K (L ⧸ I)] :
     ∃ S : LieSubalgebra K L, IsCompl I.toSubmodule S.toSubmodule := by
   obtain ⟨S, hIS, hSI⟩ := exists_lieSubalgebra_codisjoint (I := I)
-  -- The ideal `S ∩ I` of `S` is central, with quotient `L ⧸ I`, so it has a complement in `S`.
-  let g : S →ₗ⁅K⁆ L ⧸ I := I.mkQ.comp S.incl
-  have hg (x : S) : x ∈ g.ker ↔ (x : L) ∈ I := by
-    rw [LieHom.mem_ker, LieHom.comp_apply, LieSubalgebra.coe_incl, LieIdeal.mkQ_apply,
-      LieSubmodule.Quotient.mk_eq_zero']
-  have hgs : Function.Surjective g := by
-    intro y
-    obtain ⟨x, rfl⟩ := I.mkQ_surjective y
-    obtain ⟨i, hi, s, hs, rfl⟩ := Submodule.mem_sup.1 (hIS.eq_top ▸ Submodule.mem_top (x := x))
-    refine ⟨⟨s, hs⟩, ?_⟩
-    rw [LieHom.comp_apply, LieSubalgebra.coe_incl, ← sub_eq_zero, ← map_sub, ← LieHom.mem_ker,
-      LieIdeal.ker_mkQ, Subtype.coe_mk, sub_add_cancel_right]
-    exact I.neg_mem hi
-  have : IsKilling K (S ⧸ g.ker) := isKilling_of_equiv (LieEquiv.ofBijective (g.ker.liftQ g le_rfl)
-    ⟨g.ker.liftQ_injective g le_rfl le_rfl, g.ker.liftQ_surjective g le_rfl hgs⟩).symm
-  obtain ⟨J, hJ⟩ := g.ker.exists_isCompl_of_le_center fun x hx ↦ by
-    have hx := hSI x x.2 ((hg x).1 hx)
+  -- The ideal `I ∩ S` of `S` is central, with quotient `L ⧸ I`, so it has a complement in `S`.
+  have := I.isKilling_quotient_comap_incl hIS
+  obtain ⟨J, hJ⟩ := (I.comap S.incl).exists_isCompl_of_le_center fun x hx ↦ by
+    have hx := hSI x x.2 (LieIdeal.mem_comap.1 hx)
     rw [← self_module_ker_eq_center, LieModule.mem_ker] at hx ⊢
     intro y
     ext
     rw [LieSubalgebra.coe_bracket, hx, ZeroMemClass.coe_zero]
   rw [← LieSubmodule.isCompl_toSubmodule] at hJ
-  -- The complement of `S ∩ I` in `S` is a complement of `I` in `L`.
-  refine ⟨(J : LieSubalgebra K S).map S.incl, ⟨Submodule.disjoint_def.2 fun x hxI hxJ ↦ ?_,
-    codisjoint_iff.2 (Submodule.eq_top_iff'.2 fun x ↦ ?_)⟩⟩
-  · obtain ⟨j, hj, rfl⟩ := (LieSubalgebra.mem_map ..).1 hxJ
-    rw [LieSubalgebra.coe_incl] at hxI ⊢
-    rw [Submodule.disjoint_def.1 hJ.disjoint j ((hg j).2 hxI) hj, ZeroMemClass.coe_zero]
-  · obtain ⟨i, hi, s, hs, rfl⟩ := Submodule.mem_sup.1 (hIS.eq_top ▸ Submodule.mem_top (x := x))
-    obtain ⟨k, hk, j, hj, hkj⟩ := Submodule.mem_sup.1
-      (hJ.codisjoint.eq_top ▸ Submodule.mem_top (x := (⟨s, hs⟩ : S)))
-    refine Submodule.mem_sup.2 ⟨i + k, I.add_mem hi ((hg k).1 hk), j,
-      (LieSubalgebra.mem_map ..).2 ⟨j, hj, rfl⟩, ?_⟩
-    rw [add_assoc, ← AddMemClass.coe_add, hkj]
+  -- The complement of `I ∩ S` in `S` is a complement of `I` in `L`.
+  exact ⟨(J : LieSubalgebra K S).map S.incl, I.isCompl_map_incl hIS hJ⟩
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.AbelianImages
 public import TauCeti.Algebra.Category.GradedModuleCat.Basic
 public import TauCeti.Algebra.Module.GradedModule.DirectSum
@@ -47,6 +48,9 @@ graded abelian category, whose canonical exact structure is
   `TauCeti.GradedModuleCat.mem_productFan_pt_piece_iff`: the homogeneous elements of kernels,
   cokernels and finite products.
 * The instance `Abelian (TauCeti.GradedModuleCat 𝒜)`.
+* `TauCeti.GradedModuleCat.epi_iff_surjective` and `TauCeti.GradedModuleCat.mono_iff_injective`:
+  epimorphisms and monomorphisms are precisely the maps whose underlying linear maps are surjective
+  and injective, respectively.
 -/
 
 public section
@@ -55,7 +59,7 @@ namespace TauCeti.GradedModuleCat
 
 open CategoryTheory Limits
 
-universe v uk uA
+universe v w uk uA
 
 variable {k : Type uk} {A : Type uA} [CommRing k] [Ring A] [Algebra k A]
 variable {𝒜 : ℤ → Submodule k A} {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N)
@@ -77,6 +81,11 @@ noncomputable def kernelι : kernelObj f ⟶ M :=
   ofHom (M := kernelObj f) (LinearMap.ker f.hom).subtype <|
     LinearMap.isHomogeneous_def.2 fun _ _ hz ↦ by simpa [kernelObj] using hz
 
+/-- The underlying linear map of the kernel inclusion is the submodule inclusion. -/
+@[simp]
+theorem hom_kernelι : (kernelι f).hom = (LinearMap.ker f.hom).subtype :=
+  rfl
+
 @[reassoc (attr := simp)]
 theorem kernelι_comp : kernelι f ≫ f = 0 :=
   hom_ext <| LinearMap.ext fun z ↦ z.2
@@ -88,7 +97,7 @@ noncomputable def kernelCone : KernelFork f :=
 
 @[simp]
 theorem hom_kernelCone_ι : (kernelCone f).ι.hom = (LinearMap.ker f.hom).subtype :=
-  rfl
+  hom_kernelι f
 
 /-- An element of the kernel of `f` has degree `p` exactly when it has degree `p` in the source. -/
 @[simp]
@@ -197,17 +206,23 @@ instance : PreservesColimit (parallelPair f 0) toModuleCat :=
 
 end Cokernel
 
-section Product
+section DirectSum
 
-variable {J : Type} (M : J → GradedModuleCat.{v} 𝒜)
+variable {J : Type w} (M : J → GradedModuleCat.{v} 𝒜)
 
 /-- The direct sum of a family of graded modules, graded degreewise. -/
-abbrev directSumObj : GradedModuleCat.{v} 𝒜 where
+abbrev directSumObj : GradedModuleCat.{max w v} 𝒜 where
   carrier := DirectSum J fun j ↦ M j
   grading := InternalGrading.directSum fun j ↦ (M j).grading
   gradedSMul := ⟨fun {_ _} _ _ ha hx ↦ by
     rw [InternalGrading.directSum_piece, InternalGrading.mem_directSumPiece_iff] at hx ⊢
     exact fun j ↦ SetLike.GradedSMul.smul_mem (B := (M j).grading.piece) ha (hx j)⟩
+
+end DirectSum
+
+section Product
+
+variable {J : Type} (M : J → GradedModuleCat.{v} 𝒜)
 
 /-- The fan exhibiting the direct sum of a family of graded modules as their product, which it is
 when the family is finite. -/
@@ -276,5 +291,41 @@ instance {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N) :
 
 instance : Abelian (GradedModuleCat.{v} 𝒜) :=
   Abelian.ofCoimageImageComparisonIsIso
+
+/-- A morphism of graded modules is an epimorphism exactly when its underlying map is
+surjective. -/
+theorem epi_iff_surjective (f : M ⟶ N) : Epi f ↔ Function.Surjective f.hom := by
+  constructor
+  · intro hf
+    have hzero : cokernelπ f = 0 := (cancel_epi f).mp (by simp)
+    intro y
+    have hy := LinearMap.congr_fun (congrArg Hom.hom hzero) y
+    exact (Submodule.Quotient.mk_eq_zero _).mp hy
+  · intro hf
+    have : Epi (toModuleCat.map f) := (ModuleCat.epi_iff_surjective _).mpr hf
+    exact (toModuleCat (𝒜 := 𝒜)).epi_of_epi_map inferInstance
+
+/-- A morphism of graded modules is a monomorphism exactly when its underlying map is
+injective. -/
+theorem mono_iff_injective (f : M ⟶ N) : Mono f ↔ Function.Injective f.hom := by
+  constructor
+  · intro hf
+    have := NormalEpiCategory.preservesMonomorphisms_of_preservesKernels (toModuleCat (𝒜 := 𝒜))
+    exact (ModuleCat.mono_iff_injective (toModuleCat.map f)).1 inferInstance
+  · intro hf
+    have : Mono (toModuleCat.map f) := (ModuleCat.mono_iff_injective _).mpr hf
+    exact (toModuleCat (𝒜 := 𝒜)).mono_of_mono_map inferInstance
+
+/-- The forgetful functor preserves homology because kernels and cokernels are formed on
+underlying modules. -/
+instance : (toModuleCat (𝒜 := 𝒜)).PreservesHomology where
+
+/-- A short complex of graded modules is exact exactly when its underlying linear maps are
+exact. No additional condition on the internal degrees is needed. -/
+theorem exact_iff {S : ShortComplex (GradedModuleCat.{v} 𝒜)} :
+    S.Exact ↔ Function.Exact S.f.hom S.g.hom := by
+  rw [← S.exact_map_iff_of_faithful toModuleCat,
+    ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
+  rfl
 
 end TauCeti.GradedModuleCat

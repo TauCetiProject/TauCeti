@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Basic
+public import Mathlib.RingTheory.FractionalIdeal.Basic
 
 /-!
 # Orders in number fields
@@ -34,6 +35,8 @@ maximal order itself is packaged as `maximalNumberFieldOrder K`.
   ring of integers.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.toSubalgebra_ne_top`: an order is a proper subring
   of its number field.
+* `Ideal.restrictScalars_coeIdeal_map_toRingOfIntegersEquiv_mul_one`:
+  over `ℤ`, an ideal of an order times `𝓞 K` is its extension to `𝓞 K`.
 
 ## References
 
@@ -45,6 +48,7 @@ public section
 noncomputable section
 
 open NumberField
+open scoped nonZeroDivisors
 
 namespace TauCeti.GlobalNumberFields
 
@@ -94,6 +98,29 @@ theorem mem_toRingOfIntegers (O : NumberFieldOrder K) {x : 𝓞 K} :
     x ∈ O.toRingOfIntegers ↔ (x : K) ∈ O.toSubalgebra :=
   Iff.rfl
 
+/-- The copy `O.toRingOfIntegers` of an order inside `𝓞 K` is isomorphic to the order itself.
+This moves ideals of the order between the two models: comparisons with ideals of `𝓞 K` use the
+former, fractional ideals and Picard groups the latter. -/
+def toRingOfIntegersEquiv (O : NumberFieldOrder K) : O.toRingOfIntegers ≃+* O.toSubalgebra where
+  toFun x := ⟨((x : 𝓞 K) : K), x.2⟩
+  invFun y := ⟨⟨y, O.le_ringOfIntegers y.2⟩, O.mem_toRingOfIntegers.mpr y.2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+  map_add' _ _ := rfl
+
+/-- The isomorphism `toRingOfIntegersEquiv` does not change the underlying element of `K`. -/
+@[simp]
+theorem coe_toRingOfIntegersEquiv (O : NumberFieldOrder K) (x : O.toRingOfIntegers) :
+    (O.toRingOfIntegersEquiv x : K) = ((x : 𝓞 K) : K) :=
+  (rfl)
+
+/-- The inverse of `toRingOfIntegersEquiv` does not change the underlying element of `K`. -/
+@[simp]
+theorem coe_toRingOfIntegersEquiv_symm (O : NumberFieldOrder K) (y : O.toSubalgebra) :
+    (((O.toRingOfIntegersEquiv.symm y : O.toRingOfIntegers) : 𝓞 K) : K) = y :=
+  (rfl)
+
 /-- An order is a proper subring of its number field. -/
 theorem toSubalgebra_ne_top (O : NumberFieldOrder K) : O.toSubalgebra ≠ ⊤ := by
   intro h
@@ -137,6 +164,63 @@ instance isFractionRing (O : NumberFieldOrder K) : IsFractionRing O.toSubalgebra
   IsFractionRing.of_field O.toSubalgebra K fun z => by
     obtain ⟨a, b, _, hz⟩ := O.exists_order_div z
     exact ⟨a, b, hz⟩
+
+/-! ### Ideals of an order and of the maximal order -/
+
+section
+
+variable {O : NumberFieldOrder K}
+
+/-- An element of `K` lies in the fractional ideal of `O` attached to an ideal `I` of
+`O.toRingOfIntegers` exactly when it is an element of `I`. -/
+theorem mem_coeIdeal_map_toRingOfIntegersEquiv {I : Ideal O.toRingOfIntegers} {y : K} :
+    y ∈ ((I.map O.toRingOfIntegersEquiv : Ideal O.toSubalgebra) :
+        FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) ↔
+      ∃ x ∈ I, ((x : 𝓞 K) : K) = y := by
+  rw [FractionalIdeal.mem_coeIdeal]
+  constructor
+  · rintro ⟨a, ha, rfl⟩
+    obtain ⟨x, hx, rfl⟩ := (Ideal.mem_map_of_equiv _ a).mp ha
+    exact ⟨x, hx, by simp⟩
+  · rintro ⟨x, hx, rfl⟩
+    exact ⟨_, Ideal.mem_map_of_mem _ hx, by simp⟩
+
+/-- Over `ℤ`, the product of an ideal `I` of the order with `𝓞 K` is the extension of `I` to
+`𝓞 K`. -/
+theorem _root_.Ideal.restrictScalars_coeIdeal_map_toRingOfIntegersEquiv_mul_one
+    (I : Ideal O.toRingOfIntegers) :
+    (((I.map O.toRingOfIntegersEquiv : Ideal O.toSubalgebra) :
+        FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) :
+          Submodule O.toSubalgebra K).restrictScalars ℤ *
+        (1 : Submodule (𝓞 K) K).restrictScalars ℤ =
+      (((I.map (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K) : Ideal (𝓞 K)) :
+        FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K).restrictScalars ℤ := by
+  set i := (((I.map O.toRingOfIntegersEquiv : Ideal O.toSubalgebra) :
+    FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) :
+      Submodule O.toSubalgebra K).restrictScalars ℤ
+  -- The extension of `I` is the `𝓞 K`-span of the elements of `I`.
+  have hspan : (((I.map (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K) : Ideal (𝓞 K)) :
+      FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K) = Submodule.span (𝓞 K) (i : Set K) := by
+    rw [FractionalIdeal.coe_coeIdeal, Ideal.map, IsLocalization.coeSubmodule_span,
+      Set.image_image]
+    congr 1
+    ext y
+    exact mem_coeIdeal_map_toRingOfIntegersEquiv.symm
+  -- Over `ℤ`, that span is spanned by the products `r • x` with `r ∈ 𝓞 K` and `x ∈ i`.
+  rw [hspan, ← Submodule.span_smul_of_span_eq_top (R := ℤ) Submodule.span_univ]
+  conv_lhs => rw [← Submodule.span_eq i,
+    ← Submodule.span_eq ((1 : Submodule (𝓞 K) K).restrictScalars ℤ), Submodule.span_mul_span]
+  congr 1
+  ext y
+  simp only [Set.mem_mul, Set.mem_smul, Set.mem_univ, true_and, SetLike.mem_coe,
+    Submodule.restrictScalars_mem, Submodule.mem_one]
+  constructor
+  · rintro ⟨x, hx, _, ⟨r, rfl⟩, rfl⟩
+    exact ⟨r, x, hx, by rw [Algebra.smul_def, mul_comm]⟩
+  · rintro ⟨r, x, hx, rfl⟩
+    exact ⟨x, hx, _, ⟨r, rfl⟩, by rw [Algebra.smul_def, mul_comm]⟩
+
+end
 
 end NumberFieldOrder
 

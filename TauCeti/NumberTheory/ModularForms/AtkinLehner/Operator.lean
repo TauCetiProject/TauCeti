@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.AtkinLehner.Matrix
 public import TauCeti.NumberTheory.ModularForms.Basic
 public import TauCeti.NumberTheory.ModularForms.Fricke.Matrix
+import Mathlib.LinearAlgebra.Matrix.Integer
 
 /-!
 # The Atkin–Lehner slash operator

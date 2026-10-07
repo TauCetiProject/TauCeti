@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Schem
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Relations
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Rigidity
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.RootInToral
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Torus
 
 /-!
@@ -273,18 +274,6 @@ weights. -/
   exact TauCeti.UniversalEnvelopingAlgebra.coe_kostantToralWeightTorusPoints
     _ _ _ _ _ _ _ _ A s
 
-/-- The coordinate-algebra map representing a numbered root subgroup is surjective. -/
-private theorem representedRootCoordinateMap_surjective
-    (k : Fin (n + 1) ⊕ Fin (n + 1)) :
-    Function.Surjective
-      (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap (rootGenerator n)
-        (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
-        k (isNilpotent_rep_rootGenerator n k) (latticeBasis n)).hom :=
-  TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap_surjective _ _ _ _ _ _ _ _
-    isUnit_one (rep_rootGenerator_latticeBasis n k)
-    (rep_rootGenerator_rep_rootGenerator_eq_zero n k _)
-
 /-- The root-subgroup coordinate map remains surjective after adjoining the weight torus. -/
 theorem rootSubgroupCoordinateMap_surjective (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     Function.Surjective
@@ -292,18 +281,16 @@ theorem rootSubgroupCoordinateMap_surjective (k : Fin (n + 1) ⊕ Fin (n + 1)) :
         (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
         (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
         (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) k).hom :=
-  TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToralCoordinateMap_surjective_of_surjective
-    _ _ _ _ _ _ _ _ k (representedRootCoordinateMap_surjective n k)
+  TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToralCoordinateMap_surjective
+    _ _ _ _ _ k _ _ _ isUnit_one (rep_rootGenerator_latticeBasis n k)
+    (rep_rootGenerator_rep_rootGenerator_eq_zero n k _)
 
 /-- Every numbered root subgroup is a closed copy of the additive group. -/
 instance isClosedImmersion_rootSubgroup (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     IsClosedImmersion (rootSubgroup n k).hom.hom.left :=
-  TauCeti.UniversalEnvelopingAlgebra.isClosedImmersion_kostantRootSubgroupToToral_of_surjective
-    (rootGenerator n)
-    (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
-    (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) k
-    (rootSubgroupCoordinateMap_surjective n k)
+  TauCeti.UniversalEnvelopingAlgebra.isClosedImmersion_kostantRootSubgroupToToral
+    _ _ _ _ _ k _ _ _ isUnit_one (rep_rootGenerator_latticeBasis n k)
+    (rep_rootGenerator_rep_rootGenerator_eq_zero n k _)
 
 /-- The full-weight torus is a closed immersion into the type `C_(n+1)` carrier. -/
 instance isClosedImmersion_weightTorus : IsClosedImmersion (weightTorus n).hom.hom.left :=

@@ -257,15 +257,15 @@ theorem binaryFormSLRep_apply (γ : SL(2, ℤ)) (P : homogeneousSubmodule (Fin 2
 @[simp]
 theorem binaryFormSLRep_binaryFormRep (γ : SL(2, ℤ)) (P : homogeneousSubmodule (Fin 2) R w) :
     binaryFormSLRep R w γ (binaryFormRep R w (op (γ : Matrix (Fin 2) (Fin 2) ℤ)) P) = P := by
-  rw [binaryFormSLRep_apply, ← binaryFormRep_op_mul_apply, ← coe_mul, mul_inv_cancel, coe_one,
-    op_one, map_one, Module.End.one_apply]
+  rw [binaryFormSLRep_apply, ← binaryFormRep_op_mul_apply, ← Matrix.SpecialLinearGroup.coe_mul,
+    mul_inv_cancel, Matrix.SpecialLinearGroup.coe_one, op_one, map_one, Module.End.one_apply]
 
 /-- The right action undoes the left action: `(P ∣ γ⁻¹) ∣ γ = P`. Not `@[simp]`: simp first
 rewrites the inner `binaryFormSLRep R w γ P` to the adjugate action. -/
 theorem binaryFormRep_binaryFormSLRep (γ : SL(2, ℤ)) (P : homogeneousSubmodule (Fin 2) R w) :
     binaryFormRep R w (op (γ : Matrix (Fin 2) (Fin 2) ℤ)) (binaryFormSLRep R w γ P) = P := by
-  rw [binaryFormSLRep_apply, ← binaryFormRep_op_mul_apply, ← coe_mul, inv_mul_cancel, coe_one,
-    op_one, map_one, Module.End.one_apply]
+  rw [binaryFormSLRep_apply, ← binaryFormRep_op_mul_apply, ← Matrix.SpecialLinearGroup.coe_mul,
+    inv_mul_cancel, Matrix.SpecialLinearGroup.coe_one, op_one, map_one, Module.End.one_apply]
 
 /-- On `SL(2, ℤ)` the adjugate action `TauCeti.binaryFormAdjugateRep` on binary forms is the
 action `P ↦ P ∣ γ⁻¹` defining the modular symbols: the adjugate of a determinant-one matrix is its

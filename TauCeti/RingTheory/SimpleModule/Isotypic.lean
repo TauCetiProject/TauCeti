@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.SimpleModule.Isotypic
 
 /-!
-# A semisimple module is the direct sum of its isotypic components
+# Hom spaces and direct sums of isotypic components
 
 Mathlib shows that the isotypic components of a module are independent
 (`sSupIndep_isotypicComponents`) and, for a semisimple module, span it
@@ -18,7 +18,14 @@ semisimple module is the internal direct sum of its isotypic components. When th
 many components, for instance when the module is Noetherian, composing with
 `DFinsupp.linearEquivFunOnFintype` presents it as their product.
 
+Maps from a simple module `S` into `M` land in its `S`-isotypic component. Restricting the
+codomain therefore gives an equivalence of hom spaces, without any semisimplicity or
+finiteness assumption on `M`.
+
 ## Main definitions
+
+* `TauCeti.linearMapIsotypicComponentEquiv`: the hom space from `S` into its isotypic component
+  is linearly equivalent to the hom space from `S` into the ambient module.
 
 * `TauCeti.IsSemisimpleModule.linearEquivIsotypicComponents`: a semisimple module is linearly
   equivalent to the direct sum of its isotypic components.
@@ -31,6 +38,60 @@ many components, for instance when the module is Noetherian, composing with
 -/
 
 public section
+
+namespace TauCeti
+
+section Hom
+
+variable {R M S : Type*} [Ring R] [AddCommGroup M] [Module R M]
+  [AddCommGroup S] [Module R S]
+
+/-- A module is its own isotypic component: the top submodule is isomorphic to the module. -/
+@[simp]
+theorem isotypicComponent_self_eq_top : isotypicComponent R S S = ⊤ :=
+  eq_top_iff.mpr <| (Submodule.le_isotypicComponent ⊤).trans_eq
+    Submodule.topEquiv.isotypicComponent_eq
+
+variable [IsSimpleModule R S]
+
+/-- A map out of a simple module takes its values in the isotypic component of that type. -/
+theorem _root_.LinearMap.apply_mem_isotypicComponent (f : S →ₗ[R] M) (s : S) :
+    f s ∈ isotypicComponent R M S := by
+  have h := LinearMap.le_comap_isotypicComponent (M := S) (N := M) S f
+  rw [isotypicComponent_self_eq_top] at h
+  exact h Submodule.mem_top
+
+variable (k : Type*) [CommSemiring k] [Algebra k R] [Module k M] [IsScalarTower k R M]
+
+/-- Composition with the inclusion of the `S`-isotypic component is an equivalence of hom
+spaces out of the simple module `S`. Its inverse corestricts a map to that component.
+The equivalence is linear over the scalar semiring acting on the target. -/
+def linearMapIsotypicComponentEquiv :
+    (S →ₗ[R] isotypicComponent R M S) ≃ₗ[k] (S →ₗ[R] M) where
+  toFun g := (isotypicComponent R M S).subtype ∘ₗ g
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  invFun f := f.codRestrict _ f.apply_mem_isotypicComponent
+  left_inv _ := by ext s; rfl
+  right_inv _ := by ext s; rfl
+
+/-- The forward equivalence composes a map into the isotypic component with its inclusion
+into the ambient module. -/
+@[simp]
+theorem linearMapIsotypicComponentEquiv_apply
+    (f : S →ₗ[R] isotypicComponent R M S) (s : S) :
+    linearMapIsotypicComponentEquiv k f s = f s := (rfl)
+
+/-- The inverse equivalence corestricts a map into the ambient module to its isotypic
+component, preserving its values. -/
+@[simp]
+theorem linearMapIsotypicComponentEquiv_symm_apply (f : S →ₗ[R] M) (s : S) :
+    (linearMapIsotypicComponentEquiv k).symm f s =
+      ⟨f s, f.apply_mem_isotypicComponent s⟩ := (rfl)
+
+end Hom
+
+end TauCeti
 
 namespace TauCeti.IsSemisimpleModule
 

@@ -244,6 +244,15 @@ theorem strand_eq_strandSucc_of_succ {i j : Fin (n - 1)} (h : (i : ℕ) + 1 = j)
   apply Fin.ext
   simpa only [val_strand, val_strandSucc] using h.symm
 
+/-- Elementary braids on disjoint pairs of strands, with `i + 2 ≤ j` or `j + 2 ≤ i`, cross four
+distinct strands. -/
+theorem nodup_strand_strandSucc_strand_strandSucc {i j : Fin (n - 1)}
+    (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) :
+    [strand i, strandSucc i, strand j, strandSucc j].Nodup := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil, and_true,
+    not_or, not_false_eq_true, Fin.ext_iff, val_strand, val_strandSucc]
+  omega
+
 /-- The transposition of the two strands crossed by `sigma i`. -/
 def transposition (i : Fin (n - 1)) : Equiv.Perm (Fin n) :=
   Equiv.swap (strand i) (strandSucc i)
@@ -265,12 +274,8 @@ theorem transposition_eq_swap_castSucc_succ {m : ℕ} (i : Fin m) :
 /-- The adjacent transpositions underlying disjoint elementary braids commute. -/
 theorem transposition_mul_transposition_comm {i j : Fin (n - 1)}
     (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) :
-    transposition i * transposition j = transposition j * transposition i := by
-  have hnd : [strand i, strandSucc i, strand j, strandSucc j].Nodup := by
-    simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil, and_true,
-      not_or, not_false_eq_true, Fin.ext_iff, val_strand, val_strandSucc]
-    omega
-  exact (Equiv.Perm.disjoint_swap_swap hnd).commute.eq
+    transposition i * transposition j = transposition j * transposition i :=
+  (Equiv.Perm.disjoint_swap_swap (nodup_strand_strandSucc_strand_strandSucc h)).commute.eq
 
 /-- The adjacent transpositions underlying neighbouring elementary braids satisfy the braid
 relation. -/
@@ -325,6 +330,18 @@ def strandIncl {n : ℕ} : BraidGroup (n + 1) →* BraidGroup (n + 2) :=
 @[simp]
 theorem strandIncl_sigma {n : ℕ} (i : Fin n) : strandIncl (sigma i) = sigma i.castSucc := by
   rw [strandIncl, lift_sigma]
+
+/-- Adding an uncrossed strand does not change the exponent sum of a braid.
+
+Not `@[simp]`: the `BraidGroup` abbreviation puts its Coxeter index in the form `n + 2 - 1`,
+which `simp` normalizes to `n + 1`, so the left-hand side is not in simp normal form. -/
+theorem exponentSum_strandIncl {n : ℕ} (b : BraidGroup (n + 1)) :
+    ArtinGroup.exponentSum _ (strandIncl b) = ArtinGroup.exponentSum _ b := by
+  have h : (ArtinGroup.exponentSum (CoxeterMatrix.A (n + 2 - 1))).comp strandIncl =
+      ArtinGroup.exponentSum (CoxeterMatrix.A (n + 1 - 1)) :=
+    hom_ext fun i ↦ by
+      rw [MonoidHom.comp_apply, strandIncl_sigma i, exponentSum_sigma, exponentSum_sigma]
+  exact DFunLike.congr_fun h b
 
 /-- The added strand does not interfere: on the old strands, `strandIncl b` permutes exactly as
 `b` does. -/

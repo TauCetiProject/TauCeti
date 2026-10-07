@@ -16,16 +16,24 @@ public import TauCeti.InformationTheory.Coding.Reindex
 # Euclidean duals of derived codes
 
 This file computes the Euclidean dual of the codes obtained from a linear code by the elementary
-constructions: puncturing, shortening, direct sums, reindexing, and monomial transformations.
+constructions: puncturing, shortening, direct sums, reindexing, and linear (in particular
+monomial) equivalences of the coordinate space, and compares the automorphism groups of a code
+and of its dual.
 
 For a set `s` of *retained* coordinates, puncturing and shortening are exchanged by duality:
 `(puncture C s)^⊥ = shorten C^⊥ s` and `(shorten C s)^⊥ = puncture C^⊥ s`. The dual of a direct
-sum is the direct sum of the duals. A monomial transformation which rescales coordinates by units
-`u` acts on the dual through the contragredient transformation, which rescales by the inverse
-units `u⁻¹` and relabels the coordinates in the same way; in particular, monomially (respectively
-permutation) equivalent codes have monomially (respectively permutation) equivalent duals, and a
-coordinate permutation preserves self-orthogonality and self-duality. A direct sum is
-self-orthogonal (respectively self-dual) exactly when both summands are.
+sum is the direct sum of the duals. A linear equivalence of the coordinate space acts on the
+dual through its contragredient for the dot product. The contragredient of a monomial
+transformation which rescales coordinates by units `u` rescales by the inverse units `u⁻¹` and
+relabels the coordinates in the same way; in particular, monomially (respectively permutation)
+equivalent codes have monomially (respectively permutation) equivalent duals, and a coordinate
+permutation preserves self-orthogonality and self-duality. A direct sum is self-orthogonal
+(respectively self-dual) exactly when both summands are.
+
+Taking contragredients carries the monomial automorphisms of a code to those of its dual, and
+fixes every coordinate permutation. Over a field, where the dual of the dual is the code itself,
+a code and its dual therefore have the same permutation automorphism group and isomorphic
+monomial automorphism groups.
 
 ## Main statements
 
@@ -34,13 +42,19 @@ self-orthogonal (respectively self-dual) exactly when both summands are.
 * `Submodule.euclideanDual_directSum`: the dual of a direct sum.
 * `Submodule.isSelfDual_directSum_iff`: a direct sum is self-dual exactly when both summands are.
 * `TauCeti.euclideanDual_reindex`: duality commutes with a change of coordinates.
+* `Submodule.euclideanDual_map_linearEquiv`: the dual of the image of a code under a linear
+  equivalence is the image of the dual under the contragredient.
 * `TauCeti.euclideanDual_map_monomialEquiv`: the contragredient action of a monomial
   transformation on the dual.
+* `TauCeti.permutationAut_euclideanDual`: a code and its dual have the same permutation
+  automorphisms.
+* `TauCeti.mem_monomialAut_euclideanDual_iff`, `TauCeti.monomialAutEquivEuclideanDual`: taking
+  contragredients identifies the monomial automorphism groups of a code and of its dual.
 
 ## References
 
 * W. C. Huffman and V. Pless, *Fundamentals of Error-Correcting Codes*, Cambridge University
-  Press, 2003, Sections 1.5 and 1.6.
+  Press, 2003, Sections 1.5, 1.6 and 1.7.
 -/
 
 public section
@@ -84,6 +98,29 @@ theorem isSelfOrthogonal_directSum_iff {C : Submodule R (ι → R)} {D : Submodu
 theorem isSelfDual_directSum_iff {C : Submodule R (ι → R)} {D : Submodule R (κ → R)} :
     (directSum C D).IsSelfDual ↔ C.IsSelfDual ∧ D.IsSelfDual := by
   simp only [isSelfDual_iff, euclideanDual_directSum, directSum_inj]
+
+section Contragredient
+
+variable [DecidableEq ι] [DecidableEq κ]
+
+/-- The Euclidean dual of the image of a code under a linear equivalence is the image of the dual
+under the contragredient equivalence. -/
+@[simp]
+theorem euclideanDual_map_linearEquiv (C : Submodule R (ι → R)) (f : (ι → R) ≃ₗ[R] (κ → R)) :
+    euclideanDual (C.map (f : (ι → R) →ₗ[R] (κ → R))) =
+      (euclideanDual C).map (f.dotProductContragredient : (ι → R) →ₗ[R] (κ → R)) := by
+  ext y
+  obtain ⟨z, rfl⟩ := f.dotProductContragredient.surjective y
+  rw [mem_map_equiv, LinearEquiv.symm_apply_apply, mem_euclideanDual, mem_euclideanDual]
+  constructor
+  · intro h x hx
+    rw [← f.apply_dotProduct_dotProductContragredient_apply]
+    exact h _ (mem_map_of_mem hx)
+  · rintro h _ ⟨x, hx, rfl⟩
+    rw [LinearEquiv.coe_coe, f.apply_dotProduct_dotProductContragredient_apply]
+    exact h x hx
+
+end Contragredient
 
 end Submodule
 
@@ -147,21 +184,21 @@ theorem monomialEquiv_dotProduct (u : ι → Rˣ) (e : ι ≃ κ) (x : ι → R)
   rw [← e.sum_comp]
   exact Fintype.sum_congr _ _ fun i ↦ by rw [e.symm_apply_apply]; ring
 
+/-- The contragredient of a monomial transformation is the monomial transformation with the
+inverse scalars and the same relabelling. -/
+@[simp]
+theorem dotProductContragredient_monomialEquiv [DecidableEq ι] [DecidableEq κ] (u : ι → Rˣ)
+    (e : ι ≃ κ) : (monomialEquiv u e).dotProductContragredient = monomialEquiv u⁻¹ e := by
+  refine (LinearEquiv.eq_dotProductContragredient_iff.2 fun y x ↦ ?_).symm
+  rw [dotProduct_comm, monomialEquiv_dotProduct, LinearEquiv.symm_apply_apply, dotProduct_comm]
+
 /-- The Euclidean dual of the image of a code under a monomial transformation is the image of
 the dual under the contragredient transformation, with inverse scalars. -/
-@[simp]
 theorem euclideanDual_map_monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) (C : Submodule R (ι → R)) :
     euclideanDual (C.map (monomialEquiv u e : (ι → R) →ₗ[R] (κ → R))) =
       (euclideanDual C).map (monomialEquiv u⁻¹ e : (ι → R) →ₗ[R] (κ → R)) := by
-  ext y
-  rw [mem_euclideanDual, mem_map_equiv, mem_euclideanDual]
-  constructor
-  · intro h x hx
-    rw [← monomialEquiv_dotProduct]
-    exact h _ (mem_map_of_mem hx)
-  · rintro h _ ⟨x, hx, rfl⟩
-    rw [LinearEquiv.coe_coe, monomialEquiv_dotProduct]
-    exact h x hx
+  classical
+  rw [euclideanDual_map_linearEquiv, dotProductContragredient_monomialEquiv]
 
 /-- Monomially equivalent codes have monomially equivalent Euclidean duals. -/
 theorem IsMonomialEquivalent.euclideanDual {C : Submodule R (ι → R)} {D : Submodule R (κ → R)}
@@ -201,6 +238,107 @@ theorem IsPermutationEquivalent.isSelfDual_iff {C : Submodule R (ι → R)}
     (map_injective_of_injective (LinearEquiv.funCongrLeft R R e.symm).injective).eq_iff]
 
 end Monomial
+
+/-! ### Automorphism groups of the Euclidean dual -/
+
+section Aut
+
+variable {R : Type*} [CommSemiring R] [Fintype ι] {C : Submodule R (ι → R)}
+
+/-- The contragredient of a coordinate permutation is the permutation itself. -/
+theorem dotProductContragredient_eq_self_of_mem_permutationGroup [DecidableEq ι]
+    {f : (ι → R) ≃ₗ[R] (ι → R)} (hf : f ∈ permutationGroup R ι) :
+    f.dotProductContragredient = f := by
+  obtain ⟨e, rfl⟩ := mem_permutationGroup.1 hf
+  rw [← monomialEquiv_one, dotProductContragredient_monomialEquiv, inv_one]
+
+/-- The contragredient of a linear automorphism is monomial exactly when the automorphism is. -/
+theorem dotProductContragredient_mem_monomialGroup_iff [DecidableEq ι]
+    {f : (ι → R) ≃ₗ[R] (ι → R)} :
+    f.dotProductContragredient ∈ monomialGroup R ι ↔ f ∈ monomialGroup R ι := by
+  have key {g : (ι → R) ≃ₗ[R] (ι → R)} (hg : g ∈ monomialGroup R ι) :
+      g.dotProductContragredient ∈ monomialGroup R ι := by
+    obtain ⟨u, e, rfl⟩ := mem_monomialGroup.1 hg
+    rw [dotProductContragredient_monomialEquiv]
+    exact monomialEquiv_mem_monomialGroup _ _
+  exact ⟨fun h ↦ by
+    simpa only [LinearEquiv.dotProductContragredient_dotProductContragredient] using key h, key⟩
+
+/-- The contragredient of a monomial automorphism of a code is a monomial automorphism of its
+Euclidean dual. -/
+theorem dotProductContragredient_mem_monomialAut_euclideanDual [DecidableEq ι]
+    {f : (ι → R) ≃ₗ[R] (ι → R)} (hf : f ∈ monomialAut C) :
+    f.dotProductContragredient ∈ monomialAut (euclideanDual C) :=
+  mem_monomialAut.2 ⟨dotProductContragredient_mem_monomialGroup_iff.2 (mem_monomialAut.1 hf).1,
+    by rw [← euclideanDual_map_linearEquiv, (mem_monomialAut.1 hf).2]⟩
+
+/-- A permutation automorphism of a code is a permutation automorphism of its Euclidean dual. -/
+theorem permutationAut_le_permutationAut_euclideanDual :
+    permutationAut C ≤ permutationAut (euclideanDual C) := by
+  classical
+  intro f hf
+  have h := C.euclideanDual_map_linearEquiv f
+  obtain ⟨hf, hfC⟩ := mem_permutationAut.1 hf
+  rw [hfC, dotProductContragredient_eq_self_of_mem_permutationGroup hf] at h
+  exact mem_permutationAut.2 ⟨hf, h.symm⟩
+
+end Aut
+
+section AutField
+
+variable {K : Type*} [Field K] [Fintype ι]
+
+/-- A linear code and its Euclidean dual have the same permutation automorphisms. -/
+@[simp]
+theorem permutationAut_euclideanDual (C : Submodule K (ι → K)) :
+    permutationAut (euclideanDual C) = permutationAut C := by
+  refine le_antisymm ?_ permutationAut_le_permutationAut_euclideanDual
+  simpa only [Submodule.euclideanDual_euclideanDual] using
+    permutationAut_le_permutationAut_euclideanDual (C := euclideanDual C)
+
+variable [DecidableEq ι]
+
+/-- A linear automorphism is a monomial automorphism of the Euclidean dual of a linear code
+exactly when its contragredient is a monomial automorphism of the code. -/
+theorem mem_monomialAut_euclideanDual_iff {C : Submodule K (ι → K)}
+    {f : (ι → K) ≃ₗ[K] (ι → K)} :
+    f ∈ monomialAut (euclideanDual C) ↔ f.dotProductContragredient ∈ monomialAut C := by
+  refine ⟨fun h ↦ by
+    simpa only [Submodule.euclideanDual_euclideanDual] using
+      dotProductContragredient_mem_monomialAut_euclideanDual h, fun h ↦ ?_⟩
+  simpa only [LinearEquiv.dotProductContragredient_dotProductContragredient] using
+    dotProductContragredient_mem_monomialAut_euclideanDual h
+
+/-- The monomial automorphism groups of a linear code and of its Euclidean dual are isomorphic,
+by taking contragredients. -/
+def monomialAutEquivEuclideanDual (C : Submodule K (ι → K)) :
+    monomialAut C ≃* monomialAut (euclideanDual C) where
+  toFun f := ⟨(f : (ι → K) ≃ₗ[K] (ι → K)).dotProductContragredient,
+    dotProductContragredient_mem_monomialAut_euclideanDual f.2⟩
+  invFun f := ⟨(f : (ι → K) ≃ₗ[K] (ι → K)).dotProductContragredient,
+    mem_monomialAut_euclideanDual_iff.1 f.2⟩
+  left_inv f := Subtype.ext <|
+    (f : (ι → K) ≃ₗ[K] (ι → K)).dotProductContragredient_dotProductContragredient
+  right_inv f := Subtype.ext <|
+    (f : (ι → K) ≃ₗ[K] (ι → K)).dotProductContragredient_dotProductContragredient
+  map_mul' f g := Subtype.ext <| by
+    simp only [Subgroup.coe_mul, LinearEquiv.mul_eq_trans,
+      LinearEquiv.dotProductContragredient_trans]
+
+@[simp]
+theorem coe_monomialAutEquivEuclideanDual_apply (C : Submodule K (ι → K)) (f : monomialAut C) :
+    (monomialAutEquivEuclideanDual C f : (ι → K) ≃ₗ[K] (ι → K)) =
+      (f : (ι → K) ≃ₗ[K] (ι → K)).dotProductContragredient :=
+  (rfl)
+
+@[simp]
+theorem coe_monomialAutEquivEuclideanDual_symm_apply (C : Submodule K (ι → K))
+    (f : monomialAut (euclideanDual C)) :
+    ((monomialAutEquivEuclideanDual C).symm f : (ι → K) ≃ₗ[K] (ι → K)) =
+      (f : (ι → K) ≃ₗ[K] (ι → K)).dotProductContragredient :=
+  (rfl)
+
+end AutField
 
 /-- Euclidean duality commutes with a change of coordinates. -/
 @[simp]

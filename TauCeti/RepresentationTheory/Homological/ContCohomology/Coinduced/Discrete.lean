@@ -38,7 +38,9 @@ and the one Shapiro's lemma is stated against.
 * `TauCeti.DiscreteCoind.single`: for an open subgroup `U`, the coinduced function `single hU g a`
   supported on the right coset `U * g` with value `a` at `g`, additive in `a`; its values are
   `single_apply_mul` and `single_apply_of_notMem`, and `single_mul` and `smul_single` move its
-  base point along `U` and under the right-translation action of `G`.
+  base point along `U` and under the right-translation action of `G`;
+* `TauCeti.DiscreteCoind.conj`: for `g : G` and `V ≤ gUg⁻¹`, the `G`-equivariant conjugation map
+  `Coind_U^G M → Coind_V^G M`, `f ↦ (x ↦ g • f (g⁻¹ x))`.
 
 ## Main results
 
@@ -55,6 +57,9 @@ and the one Shapiro's lemma is stated against.
   in the coefficients;
 * `TauCeti.DiscreteCoind.eval_unit` and `TauCeti.DiscreteCoind.trace_unit`: evaluation at `1`
   retracts the unit, and the trace of the unit is multiplication by the index `[G : U]`;
+* `TauCeti.DiscreteCoind.trace_map_single`: the trace of the coinduction of an equivariant map
+  `f : A → M` applied to `single hU g a` is `g⁻¹ • f a`;
+* `TauCeti.DiscreteCoind.trace_conj`: for `V = gUg⁻¹`, conjugation commutes with the traces;
 * `TauCeti.DiscreteCoind.ofContinuousMap` and `TauCeti.DiscreteCoind.toContinuousMap`: a
   continuous map into a discrete group as an element of `Coind_1^G A`, and conversely, packaged as
   the additive equivalence `TauCeti.DiscreteCoind.addEquivContinuousMap : Coind_1^G A ≃+ C(G, A)`,
@@ -586,6 +591,37 @@ theorem smul_single (g' g : G) (a : A) :
   · rw [single_apply_of_notMem hU a hx, single_apply_of_notMem hU a]
     simpa [mul_assoc] using hx
 
+section Trace
+
+variable [U.FiniteIndex] {R : Type*} [Semiring R] [Module R A] [SMulCommClass U R A]
+  {M : Type*} [AddCommGroup M] [DistribMulAction G M] [Module R M] [SMulCommClass U R M]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+/-- **The trace of a coinduced single**: for a `U`-equivariant linear map `f : A → M` into a
+`G`-module, the trace of the coinduction of `f` applied to `single hU g a` is `g⁻¹ • f a`. Only the
+coset of `g⁻¹` contributes to the trace. -/
+theorem trace_map_single (f : A →ₗ[R] M) (hf : ∀ (u : U) (a : A), f (u • a) = u • f a)
+    (g : G) (a : A) : trace G U M (map f hf (single G U A hU g a)) = g⁻¹ • f a := by
+  have hg : single G U A hU g a = g⁻¹ • single G U A hU 1 a := by simp
+  rw [hg, map_smul, _root_.map_smul, trace_apply,
+    Finset.sum_eq_single_of_mem ((1 : G) : G ⧸ U) (Finset.mem_univ _)]
+  · have h1 : ((1 : G) : G ⧸ U).out⁻¹ ∈ U := by
+      simpa using QuotientGroup.eq.1 (QuotientGroup.out_eq' ((1 : G) : G ⧸ U))
+    have := single_apply_mul hU 1 a ⟨_, h1⟩
+    rw [mul_one] at this
+    rw [map_apply, this, hf, Subgroup.smul_def, smul_smul]
+    rw [smul_smul, mul_assoc, mul_inv_cancel, mul_one]
+  · intro x _ hx
+    rw [map_apply, single_apply_of_notMem hU, _root_.map_zero, smul_zero]
+    intro hmem
+    apply hx
+    rw [inv_one, mul_one] at hmem
+    rw [← QuotientGroup.out_eq' x]
+    exact QuotientGroup.eq.2 (by simpa using hmem)
+
+end Trace
+
 end Single
 
 /-- **`Coind_U^G A` is a discrete `G`-module over a compact group**: the right-translation action
@@ -600,6 +636,70 @@ instance instContinuousSMul [IsTopologicalGroup G] [CompactSpace G] :
 end DiscreteCoind
 
 end DiscreteCarrier
+
+/-! ### Conjugation of coinduced modules -/
+
+section Conjugation
+
+namespace DiscreteCoind
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G] {U V : Subgroup G}
+  {M : Type*} [AddCommGroup M] [DistribMulAction G M]
+
+variable (U V M) in
+/-- **Conjugation of coinduced modules.** For `g : G` and a subgroup `V ≤ gUg⁻¹`, the map
+`Coind_U^G M → Coind_V^G M` sending `f` to `x ↦ g • f (g⁻¹ x)`. It is `G`-equivariant for the
+right-translation actions, and for `V = gUg⁻¹` it commutes with the traces (`trace_conj`). -/
+def conj (g : G) (hVU : V ≤ U.map (MulAut.conj g).toMonoidHom) :
+    DiscreteCoind G U M →+[G] DiscreteCoind G V M where
+  toFun f := mk G V M (fun x => g • f (g⁻¹ * x))
+    ((f.isLocallyConstant.comp_continuous (continuous_const.mul continuous_id)).comp (g • ·))
+    fun v x => by
+      -- `g⁻¹ (v x) = (g⁻¹ v g) (g⁻¹ x)` with `g⁻¹ v g ∈ U`, and `g (g⁻¹ v g) = v g`.
+      have hv := Subgroup.mem_map_equiv.1 (hVU v.2)
+      rw [MulAut.conj_symm_apply] at hv
+      have hx : g⁻¹ * ((v : G) * x) = ((⟨g⁻¹ * v * g, hv⟩ : U) : G) * (g⁻¹ * x) := by
+        simp [mul_assoc]
+      rw [hx, apply_mul, Subgroup.smul_def, Subgroup.smul_def, smul_smul, smul_smul]
+      simp [mul_assoc]
+  map_zero' := ext fun x => by simp
+  map_add' f f' := ext fun x => by simp
+  map_smul' h f := ext fun x => by simp [mul_assoc]
+
+/-- The conjugation map sends `f` to `x ↦ g • f (g⁻¹ x)`. -/
+@[simp]
+theorem conj_apply (g : G) (hVU : V ≤ U.map (MulAut.conj g).toMonoidHom)
+    (f : DiscreteCoind G U M) (x : G) : conj U V M g hVU f x = g • f (g⁻¹ * x) :=
+  (rfl)
+
+variable [U.FiniteIndex] [V.FiniteIndex]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+/-- **Conjugation of coinduced modules commutes with the traces**: for `V = gUg⁻¹`, the trace of
+`Coind_V^G M` after conjugation by `g` is the trace of `Coind_U^G M`. Right multiplication by
+`g⁻¹` carries the cosets of `U` to those of `V`, and carries the term of the coset `xU` in one sum
+to the term of the coset `x g⁻¹ V` in the other. -/
+theorem trace_conj (g : G) (hVU : V = U.map (MulAut.conj g).toMonoidHom)
+    (f : DiscreteCoind G U M) : trace G V M (conj U V M g hVU.le f) = trace G U M f := by
+  have hmem (y : G) : y ∈ V ↔ g⁻¹ * y * g ∈ U := by
+    rw [hVU, Subgroup.mem_map_equiv, MulAut.conj_symm_apply]
+  -- Conjugating the quotient `(a g⁻¹)⁻¹ (b g⁻¹)` back by `g` recovers `a⁻¹ b`.
+  have hconj (a b : G) : g⁻¹ * ((a * g⁻¹)⁻¹ * (b * g⁻¹)) * g = a⁻¹ * b := by
+    simp [mul_assoc]
+  let E : G ⧸ U ≃ G ⧸ V := Quotient.congr (Equiv.mulRight g⁻¹) fun a b => by
+    simp only [QuotientGroup.leftRel_apply, Equiv.coe_mulRight, hmem]
+    rw [hconj]
+  have hE (x : G) : E (x : G ⧸ U) = ((x * g⁻¹ : G) : G ⧸ V) := rfl
+  rw [trace_eq_sum_transversal (fun q => (E.symm q).out * g⁻¹)
+    (fun q => by rw [← hE, QuotientGroup.out_eq', Equiv.apply_symm_apply]), trace_apply]
+  refine (E.symm.sum_comp (fun p : G ⧸ U => (p.out * g⁻¹) • conj U V M g hVU.le f
+    (p.out * g⁻¹)⁻¹)).trans (Finset.sum_congr rfl fun p _ => ?_)
+  simp [smul_smul]
+
+end DiscreteCoind
+
+end Conjugation
 
 /-! ### The coinduced module of the trivial subgroup -/
 

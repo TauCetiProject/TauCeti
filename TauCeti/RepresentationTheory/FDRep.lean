@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.RingTheory.Finiteness.Small
 public import Mathlib.RepresentationTheory.Character
+public import Mathlib.RepresentationTheory.Rep.Res
+public import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
 # Finite-dimensional representations
@@ -18,6 +20,9 @@ finrank and characters. These facts let results proved for representation carrie
 same spirit it records that rebundling the representation an object carries returns that object,
 which is the identification a construction phrased as `FDRep.of ρ` needs in order to be read as a
 statement about the object it started from.
+
+`FDRep.forget₂Rep` supplies the canonical forgetful functor over any ring, extending Mathlib's
+commutative-ring instance with the same underlying construction.
 
 It also records the character of a trivial representation, the constant `finrank`, in both the
 `Representation` and the `FDRep.of` spellings in which consumers meet it.
@@ -31,7 +36,8 @@ being a commutative ring throughout otherwise.
 
 Finally it records the structural properties of the character that Mathlib's
 `RepresentationTheory/Character.lean` leaves out beside `FDRep.char_iso` and `FDRep.char_tensor`:
-the character is **additive on biproducts** (and, unbundled, on products of representations), the
+the character is **additive on biproducts** (and, unbundled, on products of representations and on
+complementary subrepresentations), the
 character of the **tensor unit** is the constant function `1`, and the character is **constant on
 the cosets of its kernel**. The first two are what
 is still missing before the character can be read as a ring homomorphism out of the representation
@@ -51,9 +57,16 @@ subgroup.
   carrier, whence `FDRep.character_of_trivial` for the trivial representation on `k` itself.
 * `Representation.char_prod`: the character is additive on products of representations, the
   unbundled counterpart of `FDRep.char_biprod`.
+* `Subrepresentation.char_add_eq_of_isCompl`: the character is additive on complementary
+  subrepresentations.
+* `FDRep.character_eq_zero_of_finrank_intertwiningMap_eq_zero`: a representation without nonzero
+  equivariant endomorphisms has character zero.
+* `FDRep.forget₂Rep`: forgetting finite generation over any coefficient ring.
 * `FDRep.moduleFinite_forget₂_obj`: the forgotten carrier is module-finite.
 * `FDRep.finrank_forget₂_obj`: forgetting does not change finrank.
 * `FDRep.character_forget₂_obj`: forgetting does not change the character.
+* `MonoidHom.forget₂_map_actionRes`: restriction of intertwiners commutes with forgetting
+  finite-dimensionality.
 * `FDRep.character_actionRes`: restricting an action along a monoid homomorphism pulls back its
   character.
 * `FDRep.character_of`: bundling a representation with `FDRep.of` does not change its character.
@@ -101,9 +114,34 @@ theorem char_prod {k : Type u} {G : Type v} {V W : Type*} [Field k] [Monoid G]
 
 end Representation
 
+namespace Subrepresentation
+
+/-- **The character is additive on complementary subrepresentations**: if `ρ₁` and `ρ₂` are
+complementary subrepresentations of `ρ`, the characters of the representations they carry add up
+to the character of `ρ`. This is `Representation.char_prod` read through the splitting
+`Subrepresentation.equivProdOfIsCompl`. -/
+@[simp]
+theorem char_add_eq_of_isCompl {k : Type u} {G : Type v} {V : Type w} [Field k] [Monoid G]
+    [AddCommGroup V] [Module k V] [FiniteDimensional k V] {ρ : Representation k G V}
+    {ρ₁ ρ₂ : Subrepresentation ρ} (h : IsCompl ρ₁ ρ₂) :
+    ρ₁.toRepresentation.character + ρ₂.toRepresentation.character = ρ.character := by
+  funext g
+  rw [Pi.add_apply, ← Representation.char_prod, Representation.char_iso (equivProdOfIsCompl h)]
+
+end Subrepresentation
+
 namespace FDRep
 
 open CategoryTheory
+
+/-- Forgetting finite generation of a representation over any ring.
+
+This uses the same construction as Mathlib's `FDRep` forgetful instance, whose coefficient
+assumption is currently `CommRing`. The lower priority keeps that instance selected over
+commutative rings; the two functors agree definitionally. -/
+instance (priority := 100) forget₂Rep {R : Type u} [Ring R] {G : Type v} [Monoid G] :
+    HasForget₂ (FDRep R G) (Rep R G) where
+  forget₂ := (forget₂ (FGModuleCat R) (ModuleCat R)).mapAction G ⋙ Rep.ActionToRep R G
 
 /-- **The character of the trivial one-dimensional representation is constantly `1`**, that
 dimension being `1`. This is the form in which the trivial character enters a pairing or a
@@ -123,10 +161,18 @@ theorem character_actionRes {k : Type u} {G : Type v} {H : Type w} [Field k] [Mo
     FDRep.character ((Action.res (FGModuleCat k) phi).obj V) h = V.character (phi h) :=
   (rfl)
 
-/-- Forgetting finite-dimensionality keeps the finite-generation instance on the carrier. -/
-instance moduleFinite_forget₂_obj {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+/-- Restriction of an intertwiner commutes with forgetting finite generation. -/
+theorem _root_.MonoidHom.forget₂_map_actionRes {k : Type u} [Ring k]
+    {H : Type v} {K : Type w} [Monoid H] [Monoid K]
+    (f : H →* K) {A B : FDRep k K} (g : A ⟶ B) :
+    (forget₂ (FDRep k H) (Rep k H)).map ((Action.res (FGModuleCat k) f).map g) =
+      (Rep.resFunctor f).map ((forget₂ (FDRep k K) (Rep k K)).map g) :=
+  rfl
+
+/-- Forgetting finite generation keeps the finite-generation instance on the carrier. -/
+instance moduleFinite_forget₂_obj {R : Type u} {G : Type v} [Ring R] [Monoid G]
     (A : FDRep R G) : Module.Finite R ((forget₂ (FDRep R G) (Rep R G)).obj A) :=
-  inferInstanceAs (Module.Finite R A)
+  inferInstanceAs (Module.Finite R A.V)
 
 /-- Forgetting finite-dimensionality does not change the dimension of the carrier. -/
 @[simp]
@@ -321,6 +367,28 @@ theorem char_mul_of_mem_ker_left (V : FDRep k G) {g : G} (hg : g ∈ V.ρ.ker) (
   simp only [character, map_mul, MonoidHom.mem_ker.1 hg, one_mul]
 
 end Kernel
+
+section Zero
+
+variable {k : Type u} {G : Type v} [Field k] [Monoid G]
+
+open _root_.Representation in
+/-- A representation of dimension zero, recognised by its zero-dimensional space of equivariant
+endomorphisms, has character zero. -/
+theorem character_eq_zero_of_finrank_intertwiningMap_eq_zero (C : FDRep k G)
+    (hC : Module.finrank k (IntertwiningMap C.ρ C.ρ) = 0) : C.character = 0 := by
+  have : Subsingleton C := by
+    by_contra hC'
+    rw [not_subsingleton_iff_nontrivial] at hC'
+    obtain ⟨v, hv⟩ := exists_ne (0 : C)
+    have hid : IntertwiningMap.id C.ρ ≠ 0 := fun h0 =>
+      hv (by simpa using congrArg (fun φ : IntertwiningMap C.ρ C.ρ => φ v) h0)
+    exact (Module.finrank_pos_iff_exists_ne_zero.mpr ⟨_, hid⟩).ne' hC
+  funext g
+  rw [← FDRep.character_ρ, Representation.character, Subsingleton.elim (C.ρ g) 0, map_zero,
+    Pi.zero_apply]
+
+end Zero
 
 section CommonKernel
 

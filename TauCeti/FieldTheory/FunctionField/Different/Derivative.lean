@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Different.Complementary
+public import TauCeti.RingTheory.DedekindDomain.Different.Monogenic
 
 /-!
-# The different exponent is bounded by the derivative of a generating equation
+# The different exponent and derivatives of generating equations
 
 Let `F' / k'` be an extension of the field extension `F / k` with `F' / F` finite and separable,
 let `P'` be a place of `F'` over the place `P` of `F`, and suppose `F' = F(y)`. If `y` is a root
@@ -20,9 +21,14 @@ provided `ψ'(y) ≠ 0` (Stichtenoth, Theorem 3.5.10(a), where `ψ` is the minim
 `y`). This is the tool that computes different exponents from an explicit equation: a place at
 which `ψ'(y)` is a unit is unramified, with `d(P' ∣ P) = 0`.
 
+When an integral element generates the full local integral closure, the corresponding bound is
+an equality for the derivative of its minimal polynomial.
+
 ## Main results
 
 * `TauCeti.Place.differentExponent_le_ord_aeval_derivative`: `d(P' ∣ P) ≤ ord_{P'} (ψ'(y))`.
+* `TauCeti.Place.differentExponent_eq_ord_aeval_derivative_minpoly`: equality for a generator of
+  the integral closure.
 * `TauCeti.Place.differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one`: if `ψ'(y)` is a
   unit at `P'`, then `d(P' ∣ P) = 0`.
 
@@ -94,6 +100,32 @@ theorem differentExponent_le_ord_aeval_derivative {y : F'} (hgen : F⟮y⟯ = �
     exact hψ' hval.symm
   rw [← hval]
   exact differentExponent_le_ord_of_mem_differentIdeal k F P' hmem hne
+
+/-- For a generator of the integral closure over the valuation ring, the different exponent is
+the order of the derivative of its field minimal polynomial. -/
+theorem differentExponent_eq_ord_aeval_derivative_minpoly
+    {x : integralClosure (P'.restrict k F).integers F'}
+    (hx : Algebra.adjoin (P'.restrict k F).integers {x} = ⊤) :
+    (differentExponent k F P' : ℤ) = P'.ord
+      (aeval (algebraMap (integralClosure (P'.restrict k F).integers F') F' x)
+        (derivative (minpoly F
+          (algebraMap (integralClosure (P'.restrict k F).integers F') F' x)))) := by
+  let A := (P'.restrict k F).integers
+  let B := integralClosure A F'
+  have hdifferent := differentIdeal_eq_span_aeval_derivative_minpoly A F F' B x hx
+  have hderiv0 : aeval x (derivative (minpoly A x)) ≠ 0 := by
+    intro h
+    exact differentIdeal_ne_bot (A := A) (B := B)
+      (by rw [hdifferent, h, Ideal.span_singleton_eq_bot])
+  have hmap : algebraMap B F' (aeval x (derivative (minpoly A x))) =
+      aeval (algebraMap B F' x) (derivative (minpoly F (algebraMap B F' x))) := by
+    rw [minpoly.isIntegrallyClosed_eq_field_fractions F F'
+        (integralClosure.isIntegral x), derivative_map, aeval_map_algebraMap,
+      aeval_algebraMap_apply]
+  rw [← hmap, differentExponent_def, hdifferent,
+    P'.ord_algebraMap_eq_multiplicity_center
+      (algebraMap_mem_integers_of_mem_integralClosure k F P') hderiv0,
+    ← centerIntegralClosure_def]
 
 /-- **A place at which the derivative of a generating equation is a unit is unramified**
 (Stichtenoth, Theorem 3.5.10(a)): if `F' = F(y)`, `y` is a root of a monic `ψ ∈ F[X]` whose

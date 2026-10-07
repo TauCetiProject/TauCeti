@@ -20,6 +20,8 @@ exponent, so the graded bracket is `ℤ_p`-bilinear.
 ## Main definitions
 
 * `TauCeti.IsProP.gradedPieceModule`: the canonical `ℤ_p`-module structure on a graded piece.
+* `TauCeti.IsProP.gradedPieceModule_def`: its identification with the canonical module on the
+  underlying abelian pro-`p` quotient.
 
 ## Main results
 
@@ -68,6 +70,16 @@ noncomputable def IsProP.gradedPieceModule (hG : IsProP p G) (q n : ℕ) :
     rw [isClosed_induced_iff]
     exact ⟨pLowerCentralSeries q G (n + 1), isClosed_pLowerCentralSeries (n + 1), rfl⟩
   exact ((hG.subgroup R).quotient N).module
+
+/-- The graded-piece module is the canonical module on its underlying abelian pro-`p` quotient. -/
+theorem IsProP.gradedPieceModule_def (hG : IsProP p G) (q n : ℕ) :
+    hG.gradedPieceModule q n =
+      let R := pLowerCentralSeries q G n
+      let N := (pLowerCentralSeries q G (n + 1)).subgroupOf R
+      letI : IsClosed (R : Set G) := isClosed_pLowerCentralSeries n
+      letI : IsClosed (N : Set R) :=
+        (isClosed_pLowerCentralSeries (n + 1)).preimage continuous_subtype_val
+      ((hG.subgroup R).quotient N).module := (rfl)
 
 /-- In a pro-`p` group, the class of a `p`-adic power in a graded piece of the lower `q`-series is
 the corresponding `ℤ_p`-scalar multiple. -/

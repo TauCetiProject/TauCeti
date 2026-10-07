@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.BigOperators.Finset.Range
 public import TauCeti.RingTheory.Nilpotent.BaseChangeAction
 public import Mathlib.Algebra.Lie.Derivation.BaseChange
+import Mathlib.Tactic.FieldSimp
 
 /-!
 # Integral exponentials of nilpotent Lie derivations

@@ -198,7 +198,7 @@ theorem X_not_mem_coveredRows_of_disjoint (R : GridRectangle n) {b : Fin n}
   have hmem_sq : (b, G.X b) ∈ R.coveredSquares := by
     rw [GridRectangle.mem_coveredSquares]
     exact ⟨hb, hmem⟩
-  have hXmem : (b, G.X b) ∈ G.XSet := by simp [GridDiagram.XSet]
+  have hXmem : (b, G.X b) ∈ G.XSet := by simp [GridDiagram.XSet_def]
   exact (Finset.disjoint_left.mp hX) hmem_sq hXmem
 
 end GridDiagram

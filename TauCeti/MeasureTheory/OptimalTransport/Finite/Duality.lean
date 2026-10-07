@@ -264,7 +264,9 @@ private theorem isClosed_realPlans : IsClosed (RealPlans μ ν) := by
       isClosed_eq (continuous_finsetSum _ fun i _ ↦ continuous_apply (i, j)) continuous_const
   exact h1.inter (h2.inter h3)
 
-private theorem isCompact_realPlans : IsCompact (RealPlans μ ν) :=
+/-- Real transportation plans with prescribed finite marginals form a compact set. This permits
+continuous auxiliary objectives to select a plan among the minimizers of a transport cost. -/
+theorem isCompact_realPlans : IsCompact (RealPlans μ ν) :=
   IsCompact.of_isClosed_subset isCompact_stdSimplexSet isClosed_realPlans
     realPlans_subset_stdSimplex
 

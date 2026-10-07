@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.BigOperators.Finset.Pairing
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Terminal.Pairing
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Weight
 import Mathlib.Algebra.CharP.Two
@@ -163,9 +164,8 @@ rectangle--pentagon recuts. -/
 noncomputable def terminalSelfPairs (x z : GridState n) :
     Finset (GridRectanglePentagonDecomposition C.column C.turnRow x z) := by
   classical
-  exact G.terminalSelfPairSources C x z ∪
-    (G.terminalSelfPairSources C x z).attach.map
-      ⟨G.terminalSelfPairPartner C, G.terminalSelfPairPartner_injective C⟩
+  exact (G.terminalSelfPairSources C x z).withPartners
+    ⟨G.terminalSelfPairPartner C, G.terminalSelfPairPartner_injective C⟩
 
 /-- The family of terminal self-pairs consists of sources and recuts of sources, with the
 recut relation on the underlying rectangles specifying the partner uniquely. -/
@@ -177,8 +177,7 @@ theorem mem_terminalSelfPairs
         ∃ D ∈ G.terminalSelfPairSources C x z,
           D.toRectangleDecomposition.IsRecut E.toRectangleDecomposition := by
   classical
-  simp only [terminalSelfPairs, Finset.mem_union, Finset.mem_map, Finset.mem_attach,
-    true_and, Function.Embedding.coeFn_mk]
+  simp only [terminalSelfPairs, Finset.mem_withPartners, Function.Embedding.coeFn_mk]
   apply or_congr_right
   constructor
   · rintro ⟨D, rfl⟩
@@ -199,10 +198,10 @@ theorem terminalSelfPairs_subset_rectanglePentagonDecompositions :
     G.terminalSelfPairs C x z ⊆ G.rectanglePentagonDecompositions C x z := by
   classical
   intro E hE
-  rw [terminalSelfPairs, Finset.mem_union] at hE
+  rw [terminalSelfPairs, Finset.mem_withPartners] at hE
   rcases hE with hE | hE
   · exact ((G.mem_terminalSelfPairSources C E).1 hE).1
-  · obtain ⟨D, _, rfl⟩ := Finset.mem_map.mp hE
+  · obtain ⟨D, rfl⟩ := hE
     exact G.terminalSelfPairPartner_mem C D
 
 /-- The contributions of the terminal self-pairs cancel in characteristic two. No domain
@@ -211,21 +210,17 @@ theorem sum_rectanglePentagonWeight_terminalSelfPairs_eq_zero
     (R : Type*) [CommSemiring R] [CharP R 2] (x z : GridState n) :
     ∑ D ∈ G.terminalSelfPairs C x z, G.rectanglePentagonWeight C R D = 0 := by
   classical
-  have hdisjoint : Disjoint (G.terminalSelfPairSources C x z)
-      ((G.terminalSelfPairSources C x z).attach.map
-        ⟨G.terminalSelfPairPartner C, G.terminalSelfPairPartner_injective C⟩) := by
-    rw [Finset.disjoint_right]
-    intro E hE
-    obtain ⟨D, _, rfl⟩ := Finset.mem_map.mp hE
-    exact G.terminalSelfPairPartner_notMem C D
   have hweight (D : {D // D ∈ G.terminalSelfPairSources C x z}) :
       G.rectanglePentagonWeight C R (G.terminalSelfPairPartner C D) =
         G.rectanglePentagonWeight C R D.val := by
     unfold terminalSelfPairPartner
     exact G.rectanglePentagonWeight_recutRightEqRightSecond C R D.val _ _ _ _ _
-  rw [terminalSelfPairs, Finset.sum_union hdisjoint, Finset.sum_map]
-  simp only [Function.Embedding.coeFn_mk, hweight, Finset.sum_attach]
-  exact CharTwo.add_self_eq_zero _
+  apply Finset.sum_withPartners_eq_zero (G.terminalSelfPairSources C x z)
+    ⟨G.terminalSelfPairPartner C, G.terminalSelfPairPartner_injective C⟩
+    (G.rectanglePentagonWeight C R) (G.terminalSelfPairPartner_notMem C)
+  intro D
+  simpa only [Function.Embedding.coeFn_mk, hweight] using
+    (CharTwo.add_self_eq_zero (G.rectanglePentagonWeight C R D.val))
 
 open scoped Classical in
 /-- Remove the terminal self-pairs from the rectangle--pentagon side of the pentagon

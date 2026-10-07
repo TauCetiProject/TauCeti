@@ -209,10 +209,10 @@ theorem negOnePow_maslovOℤ (x : GridState n) :
       + ((Finset.univ.filter fun p : Fin n × Fin n ↦
         p.1 < p.2 ∧ G.O p.2 < G.O p.1).card : ℤ) =
       ((Finset.univ.filter fun p : Fin n × Fin n ↦ p.1 < p.2).card : ℤ) := by
-    rw [OSet, GridState.I_self_pointSet_eq_card]
+    rw [OSet_def, GridState.I_self_pointSet_eq_card]
     exact_mod_cast GridState.card_filter_noninversion_add_card_filter_inversion G.O
   obtain ⟨k, hk⟩ : Even ((GridPoint.JNumCenter x.pointSet G.OSet : ℤ) + n) := by
-    rw [OSet]
+    rw [OSet_def]
     exact GridState.even_JNumCenter_pointSet_add x G.O
   have heq : (G.maslovOℤ x).negOnePow =
       (((Finset.univ.filter fun p : Fin n × Fin n ↦ p.1 < p.2 ∧ x p.2 < x p.1).card : ℤ)
@@ -352,6 +352,20 @@ def relabelColumns (κ : Equiv.Perm (Fin n)) : OddComponentGridDiagram n :=
 theorem val_relabelColumns (κ : Equiv.Perm (Fin n)) :
     (G.relabelColumns κ).1 = G.1.relabelColumns κ :=
   (rfl)
+
+/-- The half-turn of the marking squares of a diagram with an odd number of components. -/
+abbrev rotate : OddComponentGridDiagram n :=
+  ⟨G.1.rotate, by rw [GridDiagram.componentCount_rotate]; exact G.2⟩
+
+/-- The underlying diagram of the half-turn is the half-turned underlying diagram. -/
+@[simp]
+theorem val_rotate : G.rotate.1 = G.1.rotate :=
+  (rfl)
+
+/-- The half-turn is an involution on diagrams with an odd number of components. -/
+@[simp]
+theorem rotate_rotate : G.rotate.rotate = G :=
+  Subtype.ext G.1.rotate_rotate
 
 /-- The integer Alexander grading of a grid state. -/
 def alexanderℤ (x : GridState n) : ℤ :=

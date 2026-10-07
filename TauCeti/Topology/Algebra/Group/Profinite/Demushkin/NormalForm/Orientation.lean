@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 public import TauCeti.NumberTheory.Padics.GeneratedClosedSubgroups
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicUnits
 import TauCeti.NumberTheory.Padics.PadicIntegers

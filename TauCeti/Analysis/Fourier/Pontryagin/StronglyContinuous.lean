@@ -8,8 +8,9 @@ module
 public import TauCeti.Analysis.Fourier.Pontryagin.Measure
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 import TauCeti.Analysis.CStarAlgebra.CharacterSpaceMeasure
+import TauCeti.MeasureTheory.Measure.Regular
 import TauCeti.RepresentationTheory.Continuous.Integrated.Algebra
-import TauCeti.RepresentationTheory.Continuous.Pontryagin
+import TauCeti.RepresentationTheory.Continuous.Pontryagin.Continuity
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
@@ -18,7 +19,7 @@ import Mathlib.MeasureTheory.Measure.Haar.Unique
 Let `π` be a strongly continuous unitary representation of a locally compact abelian group `G`
 on a complex Hilbert space `H`, and let `ξ ∈ H`. The
 diagonal matrix coefficient `g ↦ ⟪ξ, π(g) ξ⟫` is the Fourier–Stieltjes transform of a finite
-positive measure on the Pontryagin dual of `G`. This is the cyclic form of the
+inner regular positive measure on the Pontryagin dual of `G`. This is the cyclic form of the
 Stone–Naimark–Ambrose–Godement spectral theorem.
 
 The operators `π(g)` are only strongly continuous, so the spectral measure is built from the
@@ -29,7 +30,9 @@ on every integrated operator determines a continuous group character `χ_ω` wit
 `ω(π(g) π(f)) = χ_ω(g) ω(π(f))`; this assignment is continuous on the open set of such
 characters, and the image of `ν` under it is the required measure. The characters annihilating
 every integrated operator do not contribute: since `π(f) ξ` approximates `ξ`, the identity
-`∫ |ω(π(f)) - 1|² dν = ‖π(f) ξ - ξ‖²` forces `ω(π(f)) ≈ 1` in `L²(ν)`.
+`∫ |ω(π(f)) - 1|² dν = ‖π(f) ξ - ξ‖²` forces their measure to be zero.
+Compact approximation inside the open set of non-annihilating characters then proves that the
+pushforward measure is inner regular.
 
 No second countability of `G` and no separability of `H` is needed: the integrated form is defined
 for the Haar measure through its inner regularity for compact sets.
@@ -38,7 +41,7 @@ for the Haar measure through its inner regularity for compact sets.
 
 * `ContRepresentation.exists_pontryaginMeasureTransform_eq_inner`: a diagonal matrix coefficient
   of a strongly continuous unitary representation of a locally compact abelian group is the
-  Fourier–Stieltjes transform of a finite measure on the dual group.
+  Fourier–Stieltjes transform of a finite inner regular measure on the dual group.
 
 ## References
 
@@ -86,89 +89,81 @@ private lemma translate_eq (f : G →₁[Measure.addHaar] ℂ) (g : G) :
         (measurePreserving_add_left Measure.addHaar (-g)) f) :=
   π.translatedIntegratedOperatorL1_eq hcont _ _ f g
 
+private lemma mem_algebra (f : G →₁[Measure.addHaar] ℂ) :
+    π.integratedOperatorL1 hcont hπ.exists_norm_le Measure.addHaar f ∈ algebra π hcont hπ :=
+  π.integratedOperatorL1_mem_integratedAlgebra hcont _ _ f
+
+private lemma op_eq (f : G →₁[Measure.addHaar] ℂ) :
+    op π hcont hπ f = ⟨_, mem_algebra π hcont hπ f⟩ :=
+  Subtype.ext (π.coe_integratedOperatorL1ToAlgebra hcont _ _ f)
+
 /-- The characters of the integrated algebra that do not annihilate every integrated
 operator. -/
-private def support : Set (characterSpace ℂ (algebra π hcont hπ)) :=
-  {ω | ∃ f, ω (op π hcont hπ f) ≠ 0}
-
-private lemma isOpen_support : IsOpen (support π hcont hπ) := by
-  have : support π hcont hπ = ⋃ f, (fun ω ↦ ω (op π hcont hπ f)) ⁻¹' {0}ᶜ := by
-    ext ω
-    simp [support]
-  rw [this]
-  exact isOpen_iUnion fun f ↦ isOpen_compl_singleton.preimage
-    (gelfandTransform ℂ (algebra π hcont hπ) (op π hcont hπ f)).continuous
-
-/-- A character in the support satisfies the translation equation for some continuous group
-character. -/
-private lemma exists_dual_of_mem_support {ω : characterSpace ℂ (algebra π hcont hπ)}
-    (hω : ω ∈ support π hcont hπ) :
-    ∃ χ : PontryaginDual (Multiplicative G), ∀ g f,
-      ω (translate π hcont hπ f g) = (χ (.ofAdd g) : ℂ) * ω (op π hcont hπ f) := by
-  have hA (f : G →₁[Measure.addHaar] ℂ) :
-      π.integratedOperatorL1 hcont hπ.exists_norm_le Measure.addHaar f ∈
-        algebra π hcont hπ :=
-    π.integratedOperatorL1_mem_integratedAlgebra hcont _ _ f
-  have hop (f : G →₁[Measure.addHaar] ℂ) : op π hcont hπ f = ⟨_, hA f⟩ :=
-    Subtype.ext (π.coe_integratedOperatorL1ToAlgebra hcont _ _ f)
-  obtain ⟨f₀, hf₀⟩ := hω
-  obtain ⟨χ, hχ, -⟩ := π.existsUnique_pontryaginDual_of_integratedOperatorL1 (μ := Measure.addHaar)
-    hπ (algebra π hcont hπ) hA ω ⟨f₀, by rwa [← hop]⟩
-  refine ⟨χ, fun g f ↦ ?_⟩
-  rw [translate_eq, hop, hop]
-  exact hχ g f
+private abbrev support : Set (characterSpace ℂ (algebra π hcont hπ)) :=
+  π.integratedCharacterSet hcont hπ.exists_norm_le (algebra π hcont hπ) (mem_algebra π hcont hπ)
 
 open Classical in
 /-- The continuous group character attached to a character of the integrated algebra, and `1`
 for a character annihilating every integrated operator. -/
 private def dual (ω : characterSpace ℂ (algebra π hcont hπ)) :
     PontryaginDual (Multiplicative G) :=
-  if hω : ω ∈ support π hcont hπ then (exists_dual_of_mem_support π hcont hπ hω).choose else 1
+  if hω : ω ∈ support π hcont hπ then
+    π.integratedCharacterToPontryaginDual hcont hπ.exists_norm_le (algebra π hcont hπ)
+      (mem_algebra π hcont hπ) hπ ⟨ω, hω⟩
+  else 1
 
 /-- **The translation equation.** Every character of the integrated algebra multiplies a
 translated integrated operator by its group character. -/
 private lemma apply_translate (ω : characterSpace ℂ (algebra π hcont hπ)) (g : G)
     (f : G →₁[Measure.addHaar] ℂ) :
     ω (translate π hcont hπ f g) = (dual π hcont hπ ω (.ofAdd g) : ℂ) * ω (op π hcont hπ f) := by
+  rw [translate_eq, op_eq, op_eq]
   by_cases hω : ω ∈ support π hcont hπ
   · simp only [dual, hω, ↓reduceDIte]
-    exact (exists_dual_of_mem_support π hcont hπ hω).choose_spec g f
-  · have h0 (f : G →₁[Measure.addHaar] ℂ) : ω (op π hcont hπ f) = 0 := by
+    exact π.integratedCharacterToPontryaginDual_spec hcont _ _ _ hπ ⟨ω, hω⟩ g f
+  · have h0 (f : G →₁[Measure.addHaar] ℂ) : ω ⟨_, mem_algebra π hcont hπ f⟩ = 0 := by
       by_contra hf
-      exact hω ⟨f, hf⟩
-    rw [translate_eq, h0, h0, mul_zero]
-
-/-- Where a character is nonzero on `π(f₀)`, its group character is the quotient
-`ω(π(g) π(f₀)) / ω(π(f₀))`. -/
-private lemma coe_dual_apply_eq_div {ω : characterSpace ℂ (algebra π hcont hπ)}
-    {f₀ : G →₁[Measure.addHaar] ℂ} (hf₀ : ω (op π hcont hπ f₀) ≠ 0) (g : G) :
-    (dual π hcont hπ ω (.ofAdd g) : ℂ) = ω (translate π hcont hπ f₀ g) / ω (op π hcont hπ f₀) := by
-  rw [apply_translate, mul_div_cancel_right₀ _ hf₀]
+      exact hω ((π.mem_integratedCharacterSet_iff hcont _ _ _ ω).mpr ⟨f, hf⟩)
+    rw [h0, h0, mul_zero]
 
 /-- The group character of a character of the integrated algebra depends continuously on it, on
 the open set of characters that do not annihilate every integrated operator. -/
 private lemma continuousOn_dual : ContinuousOn (dual π hcont hπ) (support π hcont hπ) := by
-  intro ω₀ hω₀
-  obtain ⟨f₀, hf₀⟩ := hω₀
-  set V := {ω : characterSpace ℂ (algebra π hcont hπ) | ω (op π hcont hπ f₀) ≠ 0}
-  have hcV : Continuous fun ω : characterSpace ℂ (algebra π hcont hπ) ↦ ω (op π hcont hπ f₀) :=
-    (gelfandTransform ℂ (algebra π hcont hπ) (op π hcont hπ f₀)).continuous
-  have hV : IsOpen V := isOpen_compl_singleton.preimage hcV
-  -- On `V`, the group character is a quotient of jointly continuous functions.
-  have hnum : Continuous fun p : characterSpace ℂ (algebra π hcont hπ) × G ↦
-      p.1 (translate π hcont hπ f₀ p.2) :=
-    continuous_eval.comp
-      ((((gelfandTransform_isometry (algebra π hcont hπ)).continuous.comp
-        (π.continuous_translatedIntegratedOperatorL1 hcont _ _ f₀)).comp continuous_snd).prodMk
-        continuous_fst)
-  have hVcont : ContinuousOn (dual π hcont hπ) V := by
-    rw [continuousOn_iff_continuous_domRestrict]
-    refine ContinuousMonoidHom.continuous_of_continuous_uncurry _ (continuous_induced_rng.2 ?_)
-    refine ((hnum.comp ((continuous_subtype_val.comp continuous_fst).prodMk
-      (continuous_toAdd.comp continuous_snd))).div
-      (hcV.comp (continuous_subtype_val.comp continuous_fst)) fun p ↦ p.1.2).congr fun p ↦ ?_
-    exact (coe_dual_apply_eq_div π hcont hπ p.1.2 p.2.toAdd).symm
-  exact (hVcont.continuousAt (hV.mem_nhds hf₀)).continuousWithinAt
+  rw [continuousOn_iff_continuous_domRestrict]
+  refine (π.continuous_integratedCharacterToPontryaginDual hcont _ _ _ hπ).congr fun ω ↦ ?_
+  simp [dual, ω.2]
+
+/-- A vector-state measure gives zero mass to characters annihilating all integrated operators. -/
+private lemma ae_mem_support [MeasurableSpace (characterSpace ℂ (algebra π hcont hπ))]
+    [BorelSpace (characterSpace ℂ (algebra π hcont hπ))]
+    {ν : Measure (characterSpace ℂ (algebra π hcont hπ))} [IsFiniteMeasure ν] {ξ : H}
+    (hrep : ∀ a : algebra π hcont hπ, ⟪ξ, (a : H →L[ℂ] H) ξ⟫_ℂ = ∫ ω, ω a ∂ν) :
+    ∀ᵐ ω ∂ν, ω ∈ support π hcont hπ := by
+  rw [ae_iff]
+  refine le_antisymm (ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_) bot_le
+  have hεreal : 0 < (ε : ℝ) := by exact_mod_cast hε
+  obtain ⟨_, ⟨f, rfl⟩, hf⟩ := Metric.mem_closure_iff.mp
+    (π.mem_closure_range_integratedOperatorL1_apply (hcont := hcont)
+      (hbdd := hπ.exists_norm_le) (μ := Measure.addHaar) ξ)
+    (Real.sqrt ε) (Real.sqrt_pos.mpr hεreal)
+  let a := op π hcont hπ f - 1
+  have hint : Integrable (fun ω : characterSpace ℂ (algebra π hcont hπ) ↦ ‖ω a‖ ^ 2) ν :=
+    ((gelfandTransform ℂ _ a).continuous.norm.pow 2).integrable_of_hasCompactSupport
+      (.of_compactSpace _)
+  have hbound := hint.measure_le_integral (.of_forall fun _ ↦ sq_nonneg _)
+    (s := {ω | ω ∉ support π hcont hπ})
+    (fun ω hω ↦ by
+      have hzero : ω (op π hcont hπ f) = 0 := by
+        by_contra h
+        rw [op_eq] at h
+        exact hω ((π.mem_integratedCharacterSet_iff hcont _ _ _ ω).mpr ⟨f, h⟩)
+      simp [a, hzero])
+  rw [(algebra π hcont hπ).integral_norm_sq_eq_norm_apply_sq hrep a] at hbound
+  have ha : ‖(a : H →L[ℂ] H) ξ‖ < Real.sqrt ε := by
+    simpa [a, dist_eq_norm, norm_sub_rev] using hf
+  have hsq : ‖(a : H →L[ℂ] H) ξ‖ ^ 2 ≤ (ε : ℝ) := by
+    nlinarith [Real.sq_sqrt hεreal.le, norm_nonneg ((a : H →L[ℂ] H) ξ)]
+  simpa using hbound.trans (ENNReal.ofReal_le_ofReal hsq)
 
 /-- If `ν` represents the positive vector functional of `ξ`, then integrating `ω ↦ ω a` against
 a weight bounded by `1` costs at most `δ ν(Δ) + ‖a ξ‖² / δ`, for every `δ > 0`. This is the
@@ -206,7 +201,7 @@ private lemma measurable_dual [MeasurableSpace (characterSpace ℂ (algebra π h
     · simp [hω, dual]
   rw [← this]
   exact (continuousOn_dual π hcont hπ).measurable_piecewise continuousOn_const
-    (isOpen_support π hcont hπ).measurableSet
+    (π.isOpen_integratedCharacterSet hcont _ _ _).measurableSet
 
 /-- **The matrix coefficient is the integral of the group characters.** If `ν` represents the
 positive vector functional of `ξ` on the integrated algebra, then
@@ -284,21 +279,26 @@ variable {G : Type*} [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGrou
 /-- **Spectral theorem for strongly continuous unitary representations**, cyclic form. For a
 strongly continuous unitary representation `π` of a locally compact abelian group `G` on a
 Hilbert space `H` and a vector `ξ`, the matrix coefficient `g ↦ ⟪ξ, π(g) ξ⟫` is the
-Fourier–Stieltjes transform of a finite measure on the Pontryagin dual of `G`. -/
+Fourier–Stieltjes transform of a finite inner regular measure on the Pontryagin dual of `G`. -/
 theorem ContRepresentation.exists_pontryaginMeasureTransform_eq_inner
     (π : ContRepresentation ℂ (Multiplicative G) H)
     (hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v)
     (hπ : TauCeti.ContRepresentation.IsUnitary π) (ξ : H) :
     ∃ μ : FiniteMeasure (PontryaginDual (Multiplicative G)),
-      ∀ g, μ.pontryaginMeasureTransform g = ⟪ξ, π (.ofAdd g) ξ⟫_ℂ := by
+      μ.toMeasure.InnerRegular ∧ ∀ g, μ.pontryaginMeasureTransform g = ⟪ξ, π (.ofAdd g) ξ⟫_ℂ := by
   borelize G
   set A := algebra π hcont hπ
   borelize ↥(characterSpace ℂ A)
-  obtain ⟨ν, hν, hrep⟩ := A.exists_isFiniteMeasure_integral_characterSpace_eq_inner ξ
+  obtain ⟨ν, hν, hνreg, hrep⟩ := A.exists_isFiniteMeasure_integral_characterSpace_eq_inner ξ
   have hθ := measurable_dual π hcont hπ
   let νf : FiniteMeasure (characterSpace ℂ A) := ⟨ν, hν⟩
-  refine ⟨νf.map (dual π hcont hπ), fun g ↦ ?_⟩
-  rw [FiniteMeasure.pontryaginMeasureTransform_apply, FiniteMeasure.toMeasure_map,
-    integral_map hθ.aemeasurable
-      (TauCeti.PontryaginDual.continuous_coe_eval_const _).aestronglyMeasurable,
-    FiniteMeasure.toMeasure_mk, inner_eq_integral_dual π hcont hπ hrep]
+  refine ⟨νf.map (dual π hcont hπ), ?_, fun g ↦ ?_⟩
+  · rw [FiniteMeasure.toMeasure_map]
+    simp only [νf, FiniteMeasure.toMeasure_mk]
+    exact TauCeti.innerRegular_map_of_continuousOn hθ
+      (π.isOpen_integratedCharacterSet hcont _ _ _).measurableSet (continuousOn_dual π hcont hπ)
+      (ae_mem_support π hcont hπ hrep)
+  · rw [FiniteMeasure.pontryaginMeasureTransform_apply, FiniteMeasure.toMeasure_map,
+      integral_map hθ.aemeasurable
+        (TauCeti.PontryaginDual.continuous_coe_eval_const _).aestronglyMeasurable,
+      FiniteMeasure.toMeasure_mk, inner_eq_integral_dual π hcont hπ hrep]

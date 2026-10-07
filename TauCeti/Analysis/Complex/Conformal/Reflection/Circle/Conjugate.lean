@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Basic
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Circle.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.Calculus.FDeriv.Add
 
 /-!
 # Conjugating a holomorphic map by circle reflections

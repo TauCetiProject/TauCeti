@@ -29,6 +29,10 @@ identified with a pinned simply connected group scheme of type `Bₙ₊₁`.
   coordinate maps.
 * `TauCeti.TypeBSpinCarrier.generatedCoordinateHopfAlgebra`: the coordinate Hopf algebra of the
   generated closed subgroup.
+* `TauCeti.TypeBSpinCarrier.generatedCoordinateMap`: the quotient coordinate map of the generated
+  subgroup, representing its closed immersion into `GL_(2^(n+1))`.
+* `TauCeti.TypeBSpinCarrier.generatedCoordinateLift`: the named factorization of each generator
+  map through the generated subgroup.
 
 ## Main results
 
@@ -36,8 +40,8 @@ identified with a pinned simply connected group scheme of type `Bₙ₊₁`.
   generated subgroup's defining ideal exactly when every generator coordinate map kills it.
 * `TauCeti.TypeBSpinCarrier.baseChangeDefiningIdeal_le_generatedDefiningIdeal`: the base-changed
   integral carrier contains the generated subgroup.
-* `TauCeti.TypeBSpinCarrier.existsUnique_generatorCoordinateMap_factor`: each generator factors
-  uniquely through the generated subgroup.
+* `TauCeti.TypeBSpinCarrier.generatedCoordinateLift_unique`: each generator factors uniquely
+  through the generated subgroup.
 
 ## References
 
@@ -100,16 +104,50 @@ theorem generatedCoordinateHopfAlgebra_def :
         (generatedDefiningIdeal n A) := by
   simp [generatedCoordinateHopfAlgebra]
 
-/-- Each generator factors uniquely through the generated subgroup's coordinate quotient. -/
-theorem existsUnique_generatorCoordinateMap_factor (j : Sum (Fin (n + 1) ⊕ Fin (n + 1)) Unit) :
-    ∃! g : CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra A (dimension n))
-        (generatedDefiningIdeal n A) ⟶ generatorCoordinateAlgebra n A j,
-      CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A (dimension n))
-        (generatedDefiningIdeal n A) ≫ g = generatorCoordinateMap n A j := by
-  rw [generatedDefiningIdeal_def]
-  refine ⟨CommHopfAlgCat.commonKernelLift (generatorCoordinateMap n A) j, ?_, ?_⟩
-  · exact CommHopfAlgCat.mkQuotient_comp_commonKernelLift (generatorCoordinateMap n A) j
-  · intro g hg
-    exact CommHopfAlgCat.commonKernelLift_unique (generatorCoordinateMap n A) j g hg
+/-- The quotient coordinate morphism `O(GL_(2^(n+1))) ⟶ O(generated subgroup)`, representing
+its closed immersion into `GL_(2^(n+1))`. -/
+noncomputable def generatedCoordinateMap :
+    GeneralLinear.coordinateHopfAlgebra A (dimension n) ⟶ generatedCoordinateHopfAlgebra n A :=
+  CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A (dimension n))
+    (generatedDefiningIdeal n A)
+
+/-- The generated subgroup coordinate morphism is surjective. -/
+theorem generatedCoordinateMap_surjective :
+    Function.Surjective (generatedCoordinateMap n A).hom :=
+  CommHopfAlgCat.mkQuotient_surjective
+    (GeneralLinear.coordinateHopfAlgebra A (dimension n)) (generatedDefiningIdeal n A)
+
+/-- The kernel of the generated subgroup coordinate morphism is its defining ideal. -/
+@[simp]
+theorem generatedCoordinateMap_ker :
+    RingHom.ker (generatedCoordinateMap n A).hom = (generatedDefiningIdeal n A).toIdeal :=
+  CommHopfAlgCat.mkQuotient_ker
+    (GeneralLinear.coordinateHopfAlgebra A (dimension n)) (generatedDefiningIdeal n A)
+
+/-- The `j`th generator coordinate map factored through the generated subgroup. -/
+noncomputable def generatedCoordinateLift (j : Sum (Fin (n + 1) ⊕ Fin (n + 1)) Unit) :
+    generatedCoordinateHopfAlgebra n A ⟶ generatorCoordinateAlgebra n A j :=
+  CommHopfAlgCat.commonKernelLift (generatorCoordinateMap n A) j
+
+/-- Composing the quotient coordinate morphism with the `j`th lift recovers the generator. -/
+@[reassoc (attr := simp)]
+theorem generatedCoordinateMap_comp_generatedCoordinateLift
+    (j : Sum (Fin (n + 1) ⊕ Fin (n + 1)) Unit) :
+    generatedCoordinateMap n A ≫ generatedCoordinateLift n A j = generatorCoordinateMap n A j :=
+  CommHopfAlgCat.mkQuotient_comp_commonKernelLift (generatorCoordinateMap n A) j
+
+/-- The lift is the unique factorization of the `j`th generator coordinate map through the
+generated subgroup. -/
+theorem generatedCoordinateLift_unique (j : Sum (Fin (n + 1) ⊕ Fin (n + 1)) Unit)
+    (g : generatedCoordinateHopfAlgebra n A ⟶ generatorCoordinateAlgebra n A j)
+    (hg : generatedCoordinateMap n A ≫ g = generatorCoordinateMap n A j) :
+    g = generatedCoordinateLift n A j :=
+  CommHopfAlgCat.commonKernelLift_unique (generatorCoordinateMap n A) j g hg
+
+/-- The generated coordinate Hopf algebra is a finite-type `A`-algebra: it is a quotient of the
+coordinate algebra of `GL_(2^(n+1))`. -/
+instance : Algebra.FiniteType A (generatedCoordinateHopfAlgebra n A) :=
+  Algebra.FiniteType.of_surjective (generatedCoordinateMap n A).hom.toAlgHom
+    (generatedCoordinateMap_surjective n A)
 
 end TauCeti.TypeBSpinCarrier

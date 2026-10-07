@@ -31,6 +31,7 @@ on:
     branches: [main]
     paths:
       - 'web/**'
+      - 'scripts/arxiv_categories.py'
       - 'scripts/chart_style.py'
       - 'scripts/loc_graph.py'
       - 'scripts/loc_roadmap_graph.py'
@@ -221,6 +222,7 @@ jobs:
           # it fully before writing anything, so naming one path for both is safe.
           python3 scripts/pr_stats_graphs.py \
             --repo "${{ github.repository }}" \
+            --roadmap-dir /tmp/roadmap \
             --out-dir web/static_files \
             --since-data "$RUNNER_TEMP/pr-snapshot.json" \
             --dump-data "$RUNNER_TEMP/pr-snapshot.json" \
@@ -260,13 +262,7 @@ jobs:
       - name: Checkout the pinned merge policy (read-only)
         id: merge-policy
         continue-on-error: true
-        uses: actions/checkout@v4
-        with:
-          repository: TauCetiProject/TauCetiReview
-          ref: 95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
-          path: .tauceti-review
-          sparse-checkout: runner
-          persist-credentials: false
+        uses: ./.github/actions/checkout-merge-policy
 
       - name: Derive pipeline health from the same snapshot
         env:

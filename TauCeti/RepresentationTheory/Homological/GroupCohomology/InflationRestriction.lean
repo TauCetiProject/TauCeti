@@ -33,6 +33,12 @@ the exact sequence instead bounds the order of `Hⁿ⁺¹(G, A)` by those of its
 (`natCard_groupCohomology_succ_dvd_mul`), the form used to bound the order of a cohomology group of
 a solvable group by induction on the order of the group.
 
+The same sequence is exact for any extension `1 → H → G → Q → 1` and representations `B` of `Q`
+and `C` of `H` identified with `A^H` and with `A` restricted to `H`
+(`range_map_succ_eq_ker_map_succ`). This is the form in which it applies to a tower of Galois
+extensions `K ⊆ L ⊆ M`, where `Gal(M/L) → Gal(M/K) → Gal(L/K)` and the units of `M` fixed by
+`Gal(M/L)` are the units of `L`.
+
 ## Main definitions
 
 * `TauCeti.groupCohomology.infRes`: the complex `Hⁿ⁺¹(G ⧸ S, A^S) ⟶ Hⁿ⁺¹(G, A) ⟶ Hⁿ⁺¹(S, A)`.
@@ -45,6 +51,9 @@ a solvable group by induction on the order of the group.
   `0 < i ≤ n + 1`.
 * `TauCeti.groupCohomology.natCard_groupCohomology_succ_dvd_mul`: the order of `Hⁿ⁺¹(G, A)` divides
   the product of the orders of `Hⁿ⁺¹(G ⧸ S, A^S)` and `Hⁿ⁺¹(S, A)`.
+* `TauCeti.groupCohomology.map_succ_injective`,
+  `TauCeti.groupCohomology.range_map_succ_eq_ker_map_succ`: injectivity and exactness for an
+  extension `1 → H → G → Q → 1`.
 
 ## References
 
@@ -215,5 +224,103 @@ theorem natCard_groupCohomology_succ_dvd_mul (n : ℕ)
     AddMonoidHom.card_dvd_card_mul_card_of_exact T.f.hom.toAddMonoidHom T.g.hom.toAddMonoidHom <| by
       rw [← LinearMap.range_toAddSubgroup, ← LinearMap.ker_toAddSubgroup, hT.moduleCat_range_eq_ker]
   exact key _ (infRes_exact A n hA)
+
+section Extension
+
+variable {A} {Q H : Type u} [Group Q] [Group H] {π : G →* Q} (hπ : Function.Surjective π)
+  {B : Rep k Q} {φ : res π B ⟶ A} (hφ : Function.Injective φ.hom)
+  (hφA : LinearMap.range φ.hom.toLinearMap = Representation.invariants (A.ρ.comp π.ker.subtype))
+  {ι : H →* G} (hι : Function.Injective ι) (hιπ : ι.range = π.ker)
+  {C : Rep k H} {ψ : res ι A ⟶ C} (hψ : Function.Bijective ψ.hom)
+
+include hπ hφ hφA in
+/-- The cohomology of `B` is that of the `ker π`-invariants of `A` over `G ⧸ ker π`. -/
+private def quotientIso (m : ℕ) :
+    groupCohomology B m ≅ groupCohomology (A.quotientToInvariants π.ker) m :=
+  mapIso (QuotientGroup.quotientKerEquivOfSurjective π hπ).symm
+    ((LinearEquiv.ofInjective φ.hom.toLinearMap hφ).trans (LinearEquiv.ofEq _ _ hφA)) (fun q => by
+      obtain ⟨g, rfl⟩ := hπ q
+      ext b
+      have hg : (QuotientGroup.quotientKerEquivOfSurjective π hπ).symm (π g) = g :=
+        (MulEquiv.symm_apply_eq _).2 rfl
+      rw [LinearMap.comp_apply, LinearMap.comp_apply, hg]
+      exact hom_comm_apply φ g b) m
+
+/-- Inflation along `π` is inflation along `G → G ⧸ ker π` after `quotientIso`. -/
+private theorem map_eq_quotientIso_hom_comp (n : ℕ) :
+    (map π φ (n + 1)).hom =
+      (map (QuotientGroup.mk' π.ker) (ofHom <| A.ρ.quotientToInvariants_lift π.ker) (n + 1)).hom ∘ₗ
+        (quotientIso hπ hφ hφA (n + 1)).hom.hom := by
+  rw [← ModuleCat.hom_comp, quotientIso, mapIso_hom]
+  refine congrArg ModuleCat.Hom.hom ?_
+  refine Eq.symm <| (map_comp _ _ _ _ _).symm.trans (map_congr ?_ ?_ (n + 1))
+  -- `G ⧸ ker π ≃* Q` is induced by `π`, and the coefficient map is `φ` followed by the inclusion
+  -- of the invariants, both by definition.
+  · ext g
+    rfl
+  · ext b
+    rfl
+
+include hι hιπ hψ in
+/-- The cohomology of `A` restricted to `ker π` is that of `C` over `H`. -/
+private def kerIso (m : ℕ) :
+    groupCohomology (res π.ker.subtype A) m ≅ groupCohomology C m :=
+  mapIso ((MonoidHom.ofInjective hι).trans (MulEquiv.subgroupCongr hιπ)).symm
+    (LinearEquiv.ofBijective ψ.hom.toLinearMap hψ) (fun s => by
+      obtain ⟨h, rfl⟩ :=
+        ((MonoidHom.ofInjective hι).trans (MulEquiv.subgroupCongr hιπ)).surjective s
+      ext a
+      rw [LinearMap.comp_apply, LinearMap.comp_apply, MulEquiv.symm_apply_apply]
+      exact hom_comm_apply ψ h a) m
+
+/-- Restriction along `ι` is restriction to `ker π` followed by `kerIso`. -/
+private theorem map_eq_kerIso_hom_comp (n : ℕ) :
+    (map ι ψ (n + 1)).hom =
+      (kerIso hι hιπ hψ (n + 1)).hom.hom ∘ₗ
+        (map π.ker.subtype (𝟙 (res π.ker.subtype A)) (n + 1)).hom := by
+  rw [← ModuleCat.hom_comp, kerIso, mapIso_hom]
+  refine congrArg ModuleCat.Hom.hom ?_
+  refine Eq.symm <| (map_comp _ _ _ _ _).symm.trans (map_congr ?_ ?_ (n + 1))
+  -- `H ≃* ker π` is `ι` with its codomain restricted, and the coefficient map is `ψ`, both by
+  -- definition.
+  · ext h
+    rfl
+  · ext a
+    rfl
+
+include hπ hφ hφA in
+/-- **Inflation along a quotient map is injective.** Let `π : G →* Q` be surjective and let
+`φ : B ⟶ A` identify the `Q`-representation `B` with the invariants of `A` under `ker π`. If
+`Hⁱ(ker π, A) = 0` for `0 < i ≤ n`, then inflation `Hⁿ⁺¹(Q, B) ⟶ Hⁿ⁺¹(G, A)` is injective. -/
+theorem map_succ_injective (n : ℕ)
+    (hA : ∀ i < n, IsZero (groupCohomology (res π.ker.subtype A) (i + 1))) :
+    Function.Injective (map π φ (n + 1)).hom := by
+  rw [map_eq_quotientIso_hom_comp hπ hφ hφA n, LinearMap.coe_comp]
+  -- `(infRes A π.ker n).f` is inflation along `G → G ⧸ ker π` by definition (`infRes_f`).
+  exact ((ModuleCat.mono_iff_injective _).1 (mono_infRes_f A n hA)).comp
+    (quotientIso hπ hφ hφA (n + 1)).toLinearEquiv.injective
+
+include hπ hφ hφA hι hιπ hψ in
+/-- **The inflation-restriction sequence of a group extension.** Let `1 → H → G → Q → 1` be exact,
+given by `ι` and `π`, let `φ : B ⟶ A` identify the `Q`-representation `B` with the invariants of
+`A` under `ker π`, and let `ψ : A ⟶ C` identify `A`, restricted to `H`, with `C`. If
+`Hⁱ(H, C) = 0` for `0 < i ≤ n`, then inflation and restriction
+`Hⁿ⁺¹(Q, B) ⟶ Hⁿ⁺¹(G, A) ⟶ Hⁿ⁺¹(H, C)` form an exact sequence. -/
+theorem range_map_succ_eq_ker_map_succ (n : ℕ)
+    (hC : ∀ i < n, IsZero (groupCohomology C (i + 1))) :
+    LinearMap.range (map π φ (n + 1)).hom = LinearMap.ker (map ι ψ (n + 1)).hom := by
+  have h := (infRes_exact A n fun i hi =>
+    (hC i hi).of_iso (kerIso hι hιπ hψ (i + 1))).moduleCat_range_eq_ker
+  rw [map_eq_quotientIso_hom_comp hπ hφ hφA n, map_eq_kerIso_hom_comp hι hιπ hψ n,
+    LinearMap.range_comp_of_range_eq_top (f := (quotientIso hπ hφ hφA (n + 1)).hom.hom) _
+      (LinearMap.range_eq_top.2 (quotientIso hπ hφ hφA (n + 1)).toLinearEquiv.surjective),
+    LinearMap.ker_comp_of_ker_eq_bot _ (g := (kerIso hι hιπ hψ (n + 1)).hom.hom)
+      (LinearMap.ker_eq_bot.2 (kerIso hι hιπ hψ (n + 1)).toLinearEquiv.injective)]
+  -- The two maps of `infRes A π.ker n` are these by definition (`infRes_f`, `infRes_g`); `simp`
+  -- cannot rewrite them, as the terms of the short complex are not syntactically the cohomology
+  -- groups.
+  exact h
+
+end Extension
 
 end TauCeti.groupCohomology

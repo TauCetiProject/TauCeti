@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
 public import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
+public import TauCeti.FieldTheory.GaloisCohomology.Inflation
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.DegreeTwoDescent
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso
@@ -34,10 +35,13 @@ inflation is injective (`brLevelInfl_injective`). For a finite normal extension 
 `Kˢ` by `σ`, the level of `Gal(Kˢ/σ(L))` is identified with Mathlib's group cohomology
 `H²(Gal(L/K), Lˣ)` of the relative Brauer group (`relBrLevelEquiv`), which gives the injection
 `relBrInfl K L σ : H²(Gal(L/K), Lˣ) → Br K`; every Brauer class comes from a finite Galois
-subextension of `Kˢ` (`exists_relBrInfl_eq`). This finite-layer description is what an invariant
-defined on the finite layers, such as the unramified invariant
-`TauCeti.ClassFieldTheory.unramifiedInv` on `H²(Gal(L/K), Lˣ)`, has to be carried along to reach
-`Br K`.
+subextension of `Kˢ` (`exists_relBrInfl_eq`), and these inflations are compatible with towers
+`K ⊆ L ⊆ M` (`relBrInfl_map`). A class inflated from a finite normal `E/K` is inflated from
+another one `L/K` exactly when its restriction to `L` vanishes, the restriction being computed in
+any finite normal `M/K` in `Kˢ` containing both (`relBrInfl_mem_range_relBrInfl_iff`). This
+finite-layer description is what an invariant defined on the finite layers, such as the
+unramified invariant `TauCeti.ClassFieldTheory.unramifiedInv` on `H²(Gal(L/K), Lˣ)`, has to be
+carried along to reach `Br K`.
 
 `Br F` is the cohomological Brauer group. Its comparison with the Brauer group `BrauerGroup F` of
 central simple algebras is not made here.
@@ -62,6 +66,10 @@ underlying subgroup the fixing subgroup of `σ(L)` by definition, which is what 
 * `TauCeti.ClassFieldTheory.relBrLevelEquiv`: `H²(Gal(L/K), Lˣ)` as the level of the subgroup
   fixing `σ(L)`.
 * `TauCeti.ClassFieldTheory.relBrInfl`: inflation `H²(Gal(L/K), Lˣ) → Br K`.
+* `TauCeti.ClassFieldTheory.relBrCocycle`: the cocycle on `G_K` obtained from a relative
+  Brauer cocycle, with `relBrInfl_H2π` identifying its class with `relBrInfl`; conversely, a
+  cocycle on `G_K` read off `Gal(L/K)` with values in `σ(Lˣ)` is one of them
+  (`exists_relBrCocycle_eq`).
 
 ## Main results
 
@@ -71,6 +79,10 @@ underlying subgroup the fixing subgroup of `σ(L)` by definition, which is what 
   every Brauer class is inflated from a finite layer.
 * `TauCeti.ClassFieldTheory.brLevelInfl_explicitFiniteQuotientTransition2`: inflations from
   different levels are compatible.
+* `TauCeti.ClassFieldTheory.relBrInfl_map`: inflation from `H²(Gal(L/K), Lˣ)` into `Br K` factors
+  through inflation to `H²(Gal(M/K), Mˣ)` for every finite normal `M ⊇ L`.
+* `TauCeti.ClassFieldTheory.relBrInfl_mem_range_relBrInfl_iff`: a Brauer class split by `E` is
+  split by `L` exactly when its restriction to `L` vanishes.
 
 ## References
 
@@ -280,6 +292,236 @@ theorem exists_relBrInfl_eq (x : Br K) :
   obtain ⟨E, _, _, rfl⟩ := exists_galoisOpenNormalSubgroup_eq U
   exact ⟨E, inferInstance, inferInstance, _, relBrInfl_relBrLevelEquiv_symm K E E.val y⟩
 
+/-- The inflation to `Gal(Kˢ/K) ⧸ Gal(Kˢ/σ(L))` of a `2`-cocycle `c` of `Gal(L/K)` with values in
+`Lˣ`: its value at the classes of `g` and `h` is the image under `σ` of
+`c (σ.restrictNormalHom g, σ.restrictNormalHom h)` (`relBrLevelCocycle_apply`). -/
+private def relBrLevelCocycle
+    (c : groupCohomology.cocycles₂ (Rep.ofMulDistribMulAction Gal(L/K) Lˣ)) :
+    Z2 (AbsoluteGaloisGroup K ⧸ (galoisOpenNormalSubgroup K L σ).toSubgroup)
+      (FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L σ).toSubgroup (UnitsCoeff K)) :=
+  (Z2AddEquivCocycles₂ _ _).symm (groupCohomology.mapCocycles₂
+    (quotientFixingSubgroupFieldRangeEquiv K L σ).symm.symm.toMonoidHom
+    (Rep.ofHom ⟨(embeddedUnitsEquivInvariants K L σ).toIntLinearEquiv.toLinearMap, fun τ => by
+      induction τ using QuotientGroup.induction_on with
+      | _ g =>
+      refine LinearMap.ext fun b => Subtype.ext ?_
+      -- As in `relBrLevelEquiv`, both sides are the action on the image of `b` in `(Kˢ)ˣ`.
+      exact (congrArg (fun τ => (embeddedUnitsEquivInvariants K L σ
+        ((Rep.ofMulDistribMulAction Gal(L/K) Lˣ).ρ τ b) : UnitsCoeff K))
+          (quotientFixingSubgroupFieldRangeEquiv_mk K L σ g)).trans
+        (embeddedUnitsEquivInvariants_restrictNormalHom_smul K L σ g b)⟩) c)
+
+/-- The values of `relBrLevelCocycle K L σ c`. -/
+private theorem relBrLevelCocycle_apply
+    (c : groupCohomology.cocycles₂ (Rep.ofMulDistribMulAction Gal(L/K) Lˣ))
+    (g h : AbsoluteGaloisGroup K) :
+    ((relBrLevelCocycle K L σ c).1 (g, h) : UnitsCoeff K) =
+      embeddedUnitsEquivInvariants K L σ
+        (Rep.toAdditive (c (σ.restrictNormalHom g, σ.restrictNormalHom h))) := by
+  rw [relBrLevelCocycle]
+  exact (congrArg Subtype.val (congrFun (Z2AddEquivCocycles₂_symm_coe _ _ _)
+    ((g : AbsoluteGaloisGroup K ⧸ (galoisOpenNormalSubgroup K L σ).toSubgroup), (h : _)))).trans
+    (congrArg (fun p => ((embeddedUnitsEquivInvariants K L σ (Rep.toAdditive (c p))) :
+      UnitsCoeff K)) (Prod.ext (quotientFixingSubgroupFieldRangeEquiv_mk K L σ g)
+        (quotientFixingSubgroupFieldRangeEquiv_mk K L σ h)))
+
+/-- **The cocycle on `G_K` attached to a relative Brauer cocycle.** If
+`c : Z²(Gal(L/K), Lˣ)`, then `relBrCocycle K L σ c` is the cocycle
+
+`(g, h) ↦ σ (c (g|_L, h|_L))`
+
+on the absolute Galois group, with multiplicative coefficients written additively. Its class is
+the inflation `relBrInfl K L σ [c]` (`relBrInfl_H2π`). -/
+def relBrCocycle
+    (c : groupCohomology.cocycles₂ (Rep.ofMulDistribMulAction Gal(L/K) Lˣ)) :
+    Z2 (AbsoluteGaloisGroup K) (UnitsCoeff K) :=
+  cocyclesMap2
+    (AbsoluteGaloisGroup K ⧸ (galoisOpenNormalSubgroup K L σ).toSubgroup)
+    (FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L σ).toSubgroup (UnitsCoeff K))
+    (AbsoluteGaloisGroup K) (UnitsCoeff K)
+    (ContinuousMonoidHom.quotientMk (galoisOpenNormalSubgroup K L σ).toSubgroup)
+    (FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L σ).toSubgroup
+      (UnitsCoeff K)).subtype
+    (continuous_fixedPoints_addSubgroup_subtype _ _ _)
+    (subtype_quotientMk_smul _ _ _) (relBrLevelCocycle K L σ c)
+
+/-- The value of the relative Brauer cocycle is the embedded value of the original cocycle at
+the restrictions of the two absolute Galois elements. -/
+@[simp]
+theorem relBrCocycle_apply
+    (c : groupCohomology.cocycles₂ (Rep.ofMulDistribMulAction Gal(L/K) Lˣ))
+    (g h : AbsoluteGaloisGroup K) :
+    ((relBrCocycle K L σ c).1 (g, h) : UnitsCoeff K) =
+      embeddedUnitsEquivInvariants K L σ
+        (Rep.toAdditive (c (σ.restrictNormalHom g, σ.restrictNormalHom h))) := by
+  rw [relBrCocycle, cocyclesMap2_apply]
+  simpa only [ContinuousMonoidHom.quotientMk_apply, AddSubgroup.coe_subtype] using
+    relBrLevelCocycle_apply K L σ c g h
+
+/-- `relBrLevelEquiv K L σ` sends the class of a cocycle `c` to the class of any cocycle on
+`Gal(Kˢ/K) ⧸ Gal(Kˢ/σ(L))` whose value at the classes of `g` and `h` is the image under `σ` of
+`c (σ.restrictNormalHom g, σ.restrictNormalHom h)`, such as `relBrLevelCocycle K L σ c`. -/
+private theorem relBrLevelEquiv_H2π
+    (c : groupCohomology.cocycles₂ (Rep.ofMulDistribMulAction Gal(L/K) Lˣ))
+    (z : Z2 (AbsoluteGaloisGroup K ⧸ (galoisOpenNormalSubgroup K L σ).toSubgroup)
+      (FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L σ).toSubgroup (UnitsCoeff K)))
+    (hz : ∀ g h : AbsoluteGaloisGroup K, (z.1 (g, h) : UnitsCoeff K) =
+      embeddedUnitsEquivInvariants K L σ
+        (Rep.toAdditive (c (σ.restrictNormalHom g, σ.restrictNormalHom h)))) :
+    relBrLevelEquiv K L σ (groupCohomology.H2π _ c) = (z : H2 _ _) := by
+  -- `relBrLevelEquiv` is the inverse of `explicitH2IsoGroupCohomology` after `mapIso`.
+  refine (AddEquiv.symm_apply_eq _).2 ((groupCohomology.H2π_comp_map_apply _ _ c).trans
+    (Eq.trans ?_ (explicitH2IsoGroupCohomology_mk _ _ z).symm))
+  refine congrArg _ (Subtype.ext (funext fun q => ?_))
+  obtain ⟨⟨g⟩, ⟨h⟩⟩ := q
+  exact Subtype.ext ((congrArg (fun p => ((embeddedUnitsEquivInvariants K L σ
+    (Rep.toAdditive (c p))) : UnitsCoeff K)) (Prod.ext
+      (quotientFixingSubgroupFieldRangeEquiv_mk K L σ g)
+      (quotientFixingSubgroupFieldRangeEquiv_mk K L σ h))).trans <| (hz g h).symm.trans <|
+        congrArg Subtype.val (congrFun (Z2AddEquivCocycles₂_coe _ _ z).symm ((g : _), (h : _))))
+
+/-- **Relative inflation on cocycle classes.** The image under `relBrInfl` of the class of a
+relative cocycle `c` is the Brauer class represented by `relBrCocycle K L σ c`. -/
+@[simp]
+theorem relBrInfl_H2π
+    (c : groupCohomology.cocycles₂ (Rep.ofMulDistribMulAction Gal(L/K) Lˣ)) :
+    relBrInfl K L σ (groupCohomology.H2π _ c) =
+      unitsRepH2Equiv K (relBrCocycle K L σ c : H2 _ _) := by
+  rw [relBrInfl_apply,
+    relBrLevelEquiv_H2π K L σ c _ (relBrLevelCocycle_apply K L σ c),
+    brLevelInfl_apply, explicitInfl2_mk]
+  rfl
+
+/-- **A cocycle on `G_K` read off `Gal(L/K)` is a relative Brauer cocycle.** If a continuous
+`2`-cocycle `z` on `G_K` with values in `(Kˢ)ˣ` takes at `(g, h)` the value `σ (u (g|_L, h|_L))`
+for some function `u` on `Gal(L/K) × Gal(L/K)` with values in `Lˣ`, then `u` is a `2`-cocycle `c`
+and `z = relBrCocycle K L σ c`, so that the class of `z` is `relBrInfl K L σ [c]`
+(`relBrInfl_H2π`). -/
+theorem exists_relBrCocycle_eq (z : Z2 (AbsoluteGaloisGroup K) (UnitsCoeff K))
+    (u : Gal(L/K) × Gal(L/K) → Lˣ)
+    (hz : ∀ g h : AbsoluteGaloisGroup K, (z.1 (g, h) : UnitsCoeff K) =
+      embeddedUnitsEquivInvariants K L σ
+        (.ofMul (u (σ.restrictNormalHom g, σ.restrictNormalHom h)))) :
+    ∃ c : groupCohomology.cocycles₂ (Rep.ofMulDistribMulAction Gal(L/K) Lˣ),
+      (∀ p, (Rep.toAdditive (c p)).toMul = u p) ∧ relBrCocycle K L σ c = z := by
+  -- The embedding `Lˣ → (Kˢ)ˣ` by `σ` is injective and equivariant along `σ.restrictNormalHom`,
+  -- which is surjective, so the cocycle identity of `z` gives that of `u`.
+  let Φ : Rep.ofMulDistribMulAction Gal(L/K) Lˣ →+ UnitsCoeff K :=
+    ((AddSubgroup.subtype _).comp (embeddedUnitsEquivInvariants K L σ).toAddMonoidHom).comp
+      Rep.toAdditive.toAddMonoidHom
+  have hΦ : Function.Injective Φ :=
+    Subtype.val_injective.comp ((embeddedUnitsEquivInvariants K L σ).injective.comp
+      Rep.toAdditive.injective)
+  let f : Gal(L/K) × Gal(L/K) → Rep.ofMulDistribMulAction Gal(L/K) Lˣ :=
+    fun p ↦ Rep.toAdditive.symm (.ofMul (u p))
+  have hf : f ∈ groupCohomology.cocycles₂ (Rep.ofMulDistribMulAction Gal(L/K) Lˣ) := by
+    rw [groupCohomology.mem_cocycles₂_iff]
+    intro s t r
+    obtain ⟨g, rfl⟩ := σ.restrictNormalHom_surjective s
+    obtain ⟨h, rfl⟩ := σ.restrictNormalHom_surjective t
+    obtain ⟨j, rfl⟩ := σ.restrictNormalHom_surjective r
+    have hΦf (a b : AbsoluteGaloisGroup K) :
+        Φ (f (σ.restrictNormalHom a, σ.restrictNormalHom b)) = z.1 (a, b) :=
+      (hz a b).symm
+    have hΦρ (a : AbsoluteGaloisGroup K) (m : Rep.ofMulDistribMulAction Gal(L/K) Lˣ) :
+        Φ ((Rep.ofMulDistribMulAction Gal(L/K) Lˣ).ρ (σ.restrictNormalHom a) m) = a • Φ m :=
+      embeddedUnitsEquivInvariants_restrictNormalHom_smul K L σ a (Rep.toAdditive m)
+    apply hΦ
+    rw [← map_mul, ← map_mul, map_add, map_add, hΦρ, hΦf, hΦf, hΦf, hΦf]
+    exact (mem_Z2_iff.1 z.2).2 g h j
+  refine ⟨⟨f, hf⟩, fun _ ↦ rfl, Subtype.ext (funext fun ⟨g, h⟩ ↦ ?_)⟩
+  exact (relBrCocycle_apply K L σ _ g h).trans (hz g h).symm
+
+section Tower
+
+variable (M : Type) [Field M] [Algebra K M] [FiniteDimensional K M] [Normal K M] [Algebra L M]
+  [IsScalarTower K L M] (τ : M →ₐ[K] SeparableClosure K)
+
+/-- **Inflation into the Brauer group is compatible with towers.** For finite normal extensions
+`K ⊆ L ⊆ M` with `M` embedded in `Kˢ` by `τ`, inflating a class of `H²(Gal(L/K), Lˣ)` to
+`H²(Gal(M/K), Mˣ)` and then into `Br K` is inflating it into `Br K` directly, `L` being embedded
+by the restriction of `τ`. -/
+@[simp]
+theorem relBrInfl_map (x : groupCohomology (Rep.ofMulDistribMulAction Gal(L/K) Lˣ) 2) :
+    relBrInfl K M τ
+        (groupCohomology.map (AlgEquiv.restrictNormalHom L) (unitsInflationHom K L M) 2 x) =
+      relBrInfl K L (τ.comp (IsScalarTower.toAlgHom K L M)) x := by
+  set σ := τ.comp (IsScalarTower.toAlgHom K L M)
+  -- The level of `M` lies in that of `L`, since `τ(M)` contains `σ(L)`.
+  have hVU : galoisOpenNormalSubgroup K M τ ≤ galoisOpenNormalSubgroup K L σ :=
+    IntermediateField.fixingSubgroup_le (by
+      rintro _ ⟨y, rfl⟩
+      exact ⟨algebraMap L M y, rfl⟩)
+  -- Restricting to `M` and then to `L` is restricting along `σ`.
+  have hres (g : AbsoluteGaloisGroup K) :
+      AlgEquiv.restrictNormalHom L (τ.restrictNormalHom g) = σ.restrictNormalHom g :=
+    (σ.restrictNormalHom_eq_iff.2 fun x => (τ.restrictNormalHom_commutes g _).symm.trans
+      (congrArg τ (AlgEquiv.restrictNormal_commutes (τ.restrictNormalHom g) L x).symm)).symm
+  rw [relBrInfl_apply, relBrInfl_apply, ← brLevelInfl_explicitFiniteQuotientTransition2 hVU]
+  congr 1
+  induction x using groupCohomology.H2_induction_on with
+  | h c =>
+  -- Both sides are the classes of explicit cocycles on `Gal(Kˢ/K) ⧸ Gal(Kˢ/τ(M))`; compare
+  -- their values at the classes of `g` and `h`.
+  rw [groupCohomology.H2π_comp_map_apply,
+    relBrLevelEquiv_H2π K L σ c _ (relBrLevelCocycle_apply K L σ c),
+    explicitFiniteQuotientTransition2_mk]
+  refine relBrLevelEquiv_H2π K M τ _ _ fun g h => ?_
+  refine (congrArg Subtype.val (cocyclesMap2_apply
+    (AbsoluteGaloisGroup K ⧸ (galoisOpenNormalSubgroup K L σ).toSubgroup)
+    (FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L σ).toSubgroup (UnitsCoeff K))
+    (AbsoluteGaloisGroup K ⧸ (galoisOpenNormalSubgroup K M τ).toSubgroup)
+    (FixedPoints.addSubgroup (galoisOpenNormalSubgroup K M τ).toSubgroup (UnitsCoeff K))
+    _ _ _ _ (relBrLevelCocycle K L σ c) g h)).trans ?_
+  refine (coe_fixedPointsInclusion _ _).trans ?_
+  refine (congrArg₂ (fun a b => ((relBrLevelCocycle K L σ c).1 (a, b) : UnitsCoeff K))
+    (continuousFiniteQuotientMap_mk _ hVU g) (continuousFiniteQuotientMap_mk _ hVU h)).trans ?_
+  refine (relBrLevelCocycle_apply K L σ c g h).trans ?_
+  rw [← hres g, ← hres h]
+  have hinfl : Additive.toMul (Rep.toAdditive
+      ((groupCohomology.mapCocycles₂ (AlgEquiv.restrictNormalHom L) (unitsInflationHom K L M) c)
+        (τ.restrictNormalHom g, τ.restrictNormalHom h))) =
+      Units.map (algebraMap L M : L →* M) (Additive.toMul (Rep.toAdditive
+        (c (AlgEquiv.restrictNormalHom L (τ.restrictNormalHom g),
+          AlgEquiv.restrictNormalHom L (τ.restrictNormalHom h))))) :=
+    congrArg (fun x => Additive.toMul (Rep.toAdditive x)) (unitsInflationHom_apply K L M _)
+  refine Additive.toMul.injective (Units.ext ?_)
+  simp only [embeddedUnitsEquivInvariants_apply, toMul_coe_embeddedUnitsInvariants, hinfl,
+    Units.coe_map]
+  -- Both sides are `τ (algebraMap L M u)` for the same unit `u` of `L`, as `σ = τ ∘ algebraMap`.
+  rfl
+
+end Tower
+
 end Relative
+
+section Splitting
+
+variable (K : Type) [Field K] (E L M : Type) [Field E] [Field L] [Field M] [Algebra K E]
+  [Algebra K L] [Algebra K M] [Algebra E M] [Algebra L M] [IsScalarTower K E M]
+  [IsScalarTower K L M] [FiniteDimensional K E] [FiniteDimensional K L] [FiniteDimensional K M]
+  [Normal K E] [Normal K L] [Normal K M] (ρ : M →ₐ[K] SeparableClosure K)
+
+/-- **A Brauer class is split by `L` exactly when its restriction to `L` vanishes.** Let `E` and
+`L` be finite normal extensions of `K` inside a finite normal extension `M` embedded in `Kˢ` by
+`ρ`. A class of `Br K` inflated from `y ∈ H²(Gal(E/K), Eˣ)` is inflated from `H²(Gal(L/K), Lˣ)`
+exactly when the base change of `y` to `H²(Gal(M/L), Mˣ)` vanishes. -/
+theorem relBrInfl_mem_range_relBrInfl_iff
+    (y : groupCohomology (Rep.ofMulDistribMulAction Gal(E/K) Eˣ) 2) :
+    relBrInfl K E (ρ.comp (IsScalarTower.toAlgHom K E M)) y ∈
+        (relBrInfl K L (ρ.comp (IsScalarTower.toAlgHom K L M))).range ↔
+      groupCohomology.map ((AlgEquiv.restrictNormalHom E).comp (AlgEquiv.restrictScalarsHom K))
+        (unitsBaseChangeHom K E L M) 2 y = 0 := by
+  -- `M` is separable over `K`, being embedded in `Kˢ`.
+  have : Algebra.IsSeparable K M := Algebra.IsSeparable.of_algHom K (SeparableClosure K) ρ
+  have : IsGalois K M := {}
+  rw [← map_unitsInflationHom_comp_map_unitsBaseChangeHom, CategoryTheory.comp_apply,
+    ← mem_range_map_unitsInflationHom_two_iff, ← relBrInfl_map K E M ρ, AddMonoidHom.mem_range,
+    LinearMap.mem_range]
+  refine exists_congr fun z => ?_
+  rw [← relBrInfl_map K L M ρ]
+  exact (relBrInfl_injective K M ρ).eq_iff
+
+end Splitting
 
 end TauCeti.ClassFieldTheory

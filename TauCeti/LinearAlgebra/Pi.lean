@@ -32,9 +32,12 @@ weights.
   families vanishing outside them.
 * `LinearEquiv.piFinSnoc`: the linear splitting of a tuple of length `n + 1` into its initial `n`
   coordinates and its last one, with `Fin.snoc` as its inverse.
+* `Fin.snoc_zero_eq_single`: the tuple of length `n + 1` with vanishing initial segment is the
+  one-point family `Pi.single` at the last index.
 * `LinearEquiv.piEquivPiSubtypeProd`: `Equiv.piEquivPiSubtypeProd` as a linear equivalence,
   splitting `∀ i, M i` into the factors indexed by `p` and by `¬p`.
-* `LinearMap.toMatrix_piMap`: in a product basis, `LinearMap.piMap f` is block diagonal.
+* `LinearMap.toMatrix_piMap`: in product bases, `LinearMap.piMap f` is block diagonal, including
+  when its component maps have different source and target modules.
 * `LinearMap.det_piMap`: the determinant of a coordinatewise endomorphism `LinearMap.piMap f` of a
   finite dependent product is the product of the determinants of its components.
 * `TauCeti.exists_isRegular_single_sub_single_sub`: an ordered difference of standard coordinate
@@ -46,6 +49,16 @@ weights.
 * `TauCeti.exists_isRegular_neg_single_add_single_sub_single_add_single`: a negative coordinate
   sum and a coordinate sum on two different coordinates differ regularly at some coordinate.
 -/
+
+/-- **A tuple with vanishing initial segment is a one-point family.**  Appending `x` to the zero
+tuple of length `n` gives the family supported at the last index with value `x` there. -/
+public theorem Fin.snoc_zero_eq_single {n : ℕ} {M : Fin (n + 1) → Type*} [∀ i, Zero (M i)]
+    (x : M (Fin.last n)) :
+    Fin.snoc (0 : (i : Fin n) → M i.castSucc) x = Pi.single (Fin.last n) x := by
+  funext i
+  induction i using Fin.lastCases with
+  | last => simp
+  | cast i => simp
 
 namespace Submodule
 
@@ -115,14 +128,19 @@ end LinearEquiv
 
 namespace LinearMap
 
-/-- In the product basis `Pi.basis b`, the coordinatewise endomorphism `LinearMap.piMap f` has the
-block-diagonal matrix whose blocks are the matrices of the `f i` in the bases `b i`. -/
-public theorem toMatrix_piMap {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
-    {M : ι → Type*} [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] {κ : ι → Type*}
-    [∀ i, Fintype (κ i)] [∀ i, DecidableEq (κ i)] (b : ∀ i, Module.Basis (κ i) R (M i))
-    (f : ∀ i, M i →ₗ[R] M i) :
-    toMatrix (Pi.basis b) (Pi.basis b) (piMap f) =
-      Matrix.blockDiagonal' fun i ↦ toMatrix (b i) (b i) (f i) := by
+/-- In the product bases `Pi.basis b` and `Pi.basis c`, the coordinatewise linear map
+`LinearMap.piMap f` has the block-diagonal matrix whose blocks are the matrices of the `f i`.
+The source and target modules, and hence the row and column index types of each block, may
+differ. -/
+public theorem toMatrix_piMap {R ι : Type*} [CommSemiring R] [Fintype ι] [DecidableEq ι]
+    {M N : ι → Type*} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+    [∀ i, AddCommMonoid (N i)] [∀ i, Module R (N i)] {κ κ' : ι → Type*}
+    [∀ i, Fintype (κ i)] [∀ i, DecidableEq (κ i)]
+    [∀ i, Finite (κ' i)]
+    (b : ∀ i, Module.Basis (κ i) R (M i)) (c : ∀ i, Module.Basis (κ' i) R (N i))
+    (f : ∀ i, M i →ₗ[R] N i) :
+    toMatrix (Pi.basis b) (Pi.basis c) (piMap f) =
+      Matrix.blockDiagonal' fun i ↦ toMatrix (b i) (c i) (f i) := by
   ext ⟨i₁, j₁⟩ ⟨i₂, j₂⟩
   simp only [toMatrix_apply', Pi.basis_apply, Matrix.blockDiagonal'_apply]
   split_ifs with h
@@ -140,7 +158,7 @@ public theorem det_piMap {R ι : Type*} [CommRing R] [Fintype ι] {M : ι → Ty
     (piMap f).det = ∏ i, (f i).det := by
   classical
   let b (i : ι) := Module.Free.chooseBasis R (M i)
-  rw [← det_toMatrix (Pi.basis b), toMatrix_piMap, Matrix.det_blockDiagonal']
+  rw [← det_toMatrix (Pi.basis b), toMatrix_piMap b b, Matrix.det_blockDiagonal']
   exact Finset.prod_congr rfl fun i _ ↦ det_toMatrix (b i) (f i)
 
 end LinearMap

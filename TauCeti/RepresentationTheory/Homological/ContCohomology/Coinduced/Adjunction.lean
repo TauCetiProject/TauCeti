@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.
 
 import all TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Functor
 import all TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Discrete
-import all TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+import all TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 
 /-!
 # Continuous Frobenius reciprocity
@@ -44,9 +44,6 @@ section Ring
 variable (R : Type u) [Ring R] [TopologicalSpace R]
   (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
   (U : Subgroup G)
-
-local instance (X : SmoothDiscreteTopRep.{u, v, max v w} R G) : DiscreteTopology X.obj.V :=
-  X.property.discreteTopology
 
 local instance (X : SmoothDiscreteTopRep.{u, v, max v w} R G) : ContinuousSMul G X.obj.V :=
   X.property.continuousSMul

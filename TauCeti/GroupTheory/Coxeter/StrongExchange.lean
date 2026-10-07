@@ -8,6 +8,8 @@ module
 public import Mathlib.Data.List.Chain
 public import Mathlib.GroupTheory.Coxeter.Inversion
 public import TauCeti.GroupTheory.Coxeter.Basic
+import Mathlib.Data.List.GetD
+import Mathlib.Tactic.Group
 
 /-!
 # The strong exchange condition

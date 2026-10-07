@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.Diagonal
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.UpperTriangular.Basic
-import TauCeti.RingTheory.MvPolynomial.Finrank
 
 /-!
 # Upper-triangular contributions to the level-one trace formula
@@ -48,40 +47,6 @@ open Matrix MvPolynomial MulOpposite MonoidAlgebra
 
 namespace TauCeti
 
-private theorem binaryFormRep_upperTriangular_basis_repr {R : Type*} [CommRing R] (w : ℕ)
-    (a b d : ℤ) (s : {s : Fin 2 →₀ ℕ // s.degree = w}) :
-    (TauCeti.homogeneousMonomialBasis (R := R) w).repr
-        (binaryFormRep R w (op !![a, b; 0, d])
-          (TauCeti.homogeneousMonomialBasis (R := R) w s)) s =
-      (a : R) ^ s.1 0 * (d : R) ^ s.1 1 := by
-  rw [homogeneousMonomialBasis_repr_apply]
-  simp only [coe_binaryFormRep_apply, coe_homogeneousMonomialBasis]
-  have hm : (!![a, b; 0, d] : Matrix (Fin 2) (Fin 2) ℤ).map (Int.cast : ℤ → R) =
-      !![(a : R), (b : R); 0, (d : R)] := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp
-  rw [hm]
-  exact coeff_linearSubst_upperTriangular_monomial (a : R) (b : R) (d : R) s.1
-
-private theorem trace_binaryFormRep_upperTriangular_eq_sum {R : Type*} [CommRing R]
-    (w : ℕ) (a b d : ℤ) :
-    LinearMap.trace R (homogeneousSubmodule (Fin 2) R w)
-        (binaryFormRep R w (op !![a, b; 0, d])) =
-      ∑ s ∈ (Finset.univ : Finset (Fin 2)).finsuppAntidiag w,
-        (a : R) ^ s 0 * (d : R) ^ s 1 := by
-  classical
-  have : Fintype {s : Fin 2 →₀ ℕ // s.degree = w} :=
-    Fintype.ofFinset (p := {s : Fin 2 →₀ ℕ | s.degree = w})
-      ((Finset.univ : Finset (Fin 2)).finsuppAntidiag w) (fun s ↦ by
-        simp [Finset.mem_finsuppAntidiag, Finsupp.degree_eq_sum])
-  rw [LinearMap.trace_eq_matrix_trace R
-    (TauCeti.homogeneousMonomialBasis (R := R) w), Matrix.trace]
-  simp only [Matrix.diag_apply, LinearMap.toMatrix_apply,
-    binaryFormRep_upperTriangular_basis_repr]
-  exact (Finset.sum_subtype ((Finset.univ : Finset (Fin 2)).finsuppAntidiag w)
-    (by simp [Finset.mem_finsuppAntidiag, Finsupp.degree_eq_sum])
-    (fun s ↦ (a : R) ^ s 0 * (d : R) ^ s 1)).symm
-
 /-- The trace of an upper-triangular determinant matrix on degree-`w` binary forms is the
 Eichler--Selberg weight polynomial evaluated at its trace and determinant. In particular, the
 trace is independent of the upper-right entry. -/
@@ -91,23 +56,13 @@ theorem trace_binaryFormRep_upperTriangular_eq_dickson_eval {R : Type*} [CommRin
     LinearMap.trace R (homogeneousSubmodule (Fin 2) R w)
         (binaryFormRep R w (op !![a, b; 0, d])) =
       (Polynomial.dickson 2 ((a * d : ℤ) : R) w).eval ((a + d : ℤ) : R) := by
-  rw [trace_binaryFormRep_upperTriangular_eq_sum]
-  let e : (Fin 2 →₀ ℕ) ≃ ℕ × ℕ :=
-    Finsupp.equivFunOnFinite.trans (finTwoArrowEquiv ℕ)
-  have hs :
-      (∑ s ∈ (Finset.univ : Finset (Fin 2)).finsuppAntidiag w,
-        (a : R) ^ s 0 * (d : R) ^ s 1) =
-      ∑ p ∈ Finset.antidiagonal w, (a : R) ^ p.1 * (d : R) ^ p.2 := by
-    apply Finset.sum_equiv e
-    · intro s
-      simp [e, Finset.mem_finsuppAntidiag, Finset.mem_antidiagonal]
-    · intro s _
-      rfl
-  rw [hs, Finset.Nat.sum_antidiagonal_eq_sum_range_succ
-    (fun i j ↦ (a : R) ^ i * (d : R) ^ j) w]
+  have hm : (!![a, b; 0, d] : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom R) =
+      !![(a : R), (b : R); 0, (d : R)] := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp
+  rw [binaryFormRep_op, hm]
   simpa only [Int.cast_add, Int.cast_mul] using
-    (Polynomial.dickson_two_eval_add (x := (a : R)) (y := (d : R))
-      (a := (a : R) * (d : R)) rfl w).symm
+    trace_linearSubstRep_upperTriangular w (a : R) (b : R) (d : R)
 
 namespace PopaZagier
 

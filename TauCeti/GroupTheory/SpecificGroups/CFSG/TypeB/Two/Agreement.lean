@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup
+public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup.Basic
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Generation
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Two.Basic
 
@@ -225,9 +225,6 @@ private theorem one_eq_last : (1 : Fin 2) = Fin.last 1 := rfl
 
 private theorem zero_ne_last : (0 : Fin 2) ≠ Fin.last 1 := by decide
 
-private theorem next_zero : SpStd.next 1 0 zero_ne_last = 1 :=
-  Fin.ext (by rw [SpStd.val_next]; rfl)
-
 /-- **The carrier equivalence identifies each numbered simple-root subgroup with its standard
 symplectic root one-parameter subgroup.** -/
 @[simp]
@@ -241,7 +238,8 @@ theorem carrierEquivSymplectic_simpleRootSubgroup (i : Fin d.1.rank)
       SpStd.pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inl_of_ne_last 1 0 zero_ne_last,
       GLSymplecticFin.RootSubgroupIndex.hom_difference,
       GLSymplecticFin.differenceShortRootHom_apply]
-    exact GLSymplecticFin.differenceShortRootUnit_congr _ _ rfl next_zero _
+    exact GLSymplecticFin.differenceShortRootUnit_congr _ _ rfl
+      (by simpa using Fin.orderSucc_castSucc (0 : Fin 1) : Order.succ (0 : Fin 2) = 1) _
   · rw [h, d.symplecticRootIndex_of_carrierNode_eq_one h, one_eq_last,
       SpStd.pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inl_last,
       GLSymplecticFin.RootSubgroupIndex.hom_positiveLong,

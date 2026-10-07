@@ -43,8 +43,9 @@ from `formalThirdRoot` by composing with the formal inverse, which is left to a 
 * `WeierstrassCurve.coeff_formalSlope`, `WeierstrassCurve.formalIntercept_def` and
   `WeierstrassCurve.formalThirdRoot_def`: the defining formulas, as named lemmas. Rewrite with
   these rather than unfolding the definitions.
-* `WeierstrassCurve.formalSlope_mul_sub`: the defining property `λ · (z₂ - z₁) = w(z₂) - w(z₁)`
-  of the slope, which is what justifies calling it a divided difference.
+* `WeierstrassCurve.formalSlope_mul_X_add`: the defining property
+  `λ z₂ + w(z₁) = λ z₁ + w(z₂)` of the slope over a commutative semiring. Over a ring this
+  becomes `λ · (z₂ - z₁) = w(z₂) - w(z₁)`, which justifies calling it a divided difference.
 * `WeierstrassCurve.rename_swap_formalSlope`, `_formalIntercept`, `_formalThirdRoot`: all three
   series are invariant under exchanging the two parameters, so the chord depends on the two
   points and not on their order. This is what makes the eventual group law commutative.
@@ -60,11 +61,11 @@ from `formalThirdRoot` by composing with the formal inverse, which is left to a 
 
 `formalSlope` is defined by the coefficient formula rather than as a quotient of power series:
 `z₂ - z₁` is not a unit in `R⟦z₁, z₂⟧`, so the divided difference has to be written down
-directly and `formalSlope_mul_sub` recovers the property that names it.
+directly and `formalSlope_mul_X_add` recovers the property that names it.
 
-The slope and its coefficients need no subtraction, so they are stated over a `CommSemiring`,
-matching `formalW`. Everything from `formalSlope_mul_sub` onwards subtracts, and so is stated
-over a `CommRing`.
+The slope, its defining relation and the constant coefficient of the third-root denominator
+need no subtraction, so they are stated over a `CommSemiring`, matching `formalW`. The
+intercept and third-root constructions use subtraction and are stated over a `CommRing`.
 
 ## References
 
@@ -73,8 +74,7 @@ over a `CommRing`.
 ## Provenance
 
 Adapted from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, revision `66889eada51a`),
 `EllipticCurves/WeierstrassFormalGroup/Chord.lean`, its `Chord` section down to the third-root
 series together with the swap-invariance block — declarations `slopeSeries`, `coeff_slopeSeries`,
 `slopeSeries_mul_sub`, `interceptSeries`, `interceptSeries_eq`, `constantCoeff_slopeSeries`,
@@ -111,22 +111,6 @@ namespace WeierstrassCurve
 
 open MvPowerSeries
 
-private theorem eq_single_inr_iff (d : Unit ⊕ Unit →₀ ℕ) :
-    d = Finsupp.single (Sum.inr ()) (d (Sum.inr ())) ↔ d (Sum.inl ()) = 0 := by
-  refine ⟨fun h => by rw [h]; simp, fun h => ?_⟩
-  ext t
-  match t with
-  | .inl () => simpa using h
-  | .inr () => simp
-
-private theorem eq_single_inl_iff (d : Unit ⊕ Unit →₀ ℕ) :
-    d = Finsupp.single (Sum.inl ()) (d (Sum.inl ())) ↔ d (Sum.inr ()) = 0 := by
-  refine ⟨fun h => by rw [h]; simp, fun h => ?_⟩
-  ext t
-  match t with
-  | .inl () => simp
-  | .inr () => simpa using h
-
 section CommSemiring
 
 variable {R : Type*} [CommSemiring R] (W : WeierstrassCurve R)
@@ -137,7 +121,7 @@ variable {R : Type*} [CommSemiring R] (W : WeierstrassCurve R)
 divided difference `λ(z₁, z₂) = (w(z₂) - w(z₁)) / (z₂ - z₁)`.
 
 It is defined through its coefficients: the coefficient of `z₁ ^ i * z₂ ^ j` is the coefficient
-of `z ^ (i + j + 1)` in `w(z)`. See `formalSlope_mul_sub` for the property this encodes. -/
+of `z ^ (i + j + 1)` in `w(z)`. See `formalSlope_mul_X_add` for the property this encodes. -/
 noncomputable def formalSlope : MvPowerSeries (Unit ⊕ Unit) R :=
   fun d => PowerSeries.coeff (d (Sum.inl ()) + d (Sum.inr ()) + 1) (formalW W)
 
@@ -152,69 +136,55 @@ theorem coeff_formalSlope (d : Unit ⊕ Unit →₀ ℕ) :
 /-- The slope of the chord vanishes at the origin. -/
 @[simp]
 theorem constantCoeff_formalSlope : constantCoeff (formalSlope W) = 0 := by
-  have h : constantCoeff (formalSlope W) =
-      PowerSeries.coeff ((0 : Unit ⊕ Unit →₀ ℕ) (Sum.inl ()) +
-        (0 : Unit ⊕ Unit →₀ ℕ) (Sum.inr ()) + 1) (formalW W) :=
-    coeff_formalSlope W 0
-  rw [h, coeff_formalW]
-  exact formalWCoeff_eq_zero_of_lt W (by simp)
+  rw [← coeff_zero_eq_constantCoeff_apply, coeff_formalSlope]
+  simp
 
 /-- The slope is unchanged by exchanging the two parameters: it depends on the pair of points
 and not on their order. -/
 theorem rename_swap_formalSlope : rename Sum.swap (formalSlope W) = formalSlope W := by
   ext d
-  have hswap : (⇑(Equiv.sumComm Unit Unit).toEmbedding ∘ Sum.swap) = id := by
-    ext s
-    match s with
-    | .inl () => rfl
-    | .inr () => rfl
-  have hd : d = Finsupp.embDomain (Equiv.sumComm Unit Unit).toEmbedding
-      (Finsupp.mapDomain Sum.swap d) := by
-    rw [Finsupp.embDomain_eq_mapDomain, ← Finsupp.mapDomain_comp, hswap, Finsupp.mapDomain_id]
-  have hinl : Finsupp.mapDomain Sum.swap d (Sum.inl ()) = d (Sum.inr ()) := by
-    rw [show (Sum.inl () : Unit ⊕ Unit) = (Equiv.sumComm Unit Unit) (Sum.inr ()) from rfl]
-    exact (Finsupp.mapDomain_equiv_apply (f := Equiv.sumComm Unit Unit) d _).trans (by rfl)
-  have hinr : Finsupp.mapDomain Sum.swap d (Sum.inr ()) = d (Sum.inl ()) := by
-    rw [show (Sum.inr () : Unit ⊕ Unit) = (Equiv.sumComm Unit Unit) (Sum.inl ()) from rfl]
-    exact (Finsupp.mapDomain_equiv_apply (f := Equiv.sumComm Unit Unit) d _).trans (by rfl)
-  calc coeff d (rename Sum.swap (formalSlope W))
-      = coeff (Finsupp.mapDomain Sum.swap d) (formalSlope W) := by
-        conv_lhs => rw [hd]
-        exact coeff_embDomain_rename _ _ _
+  obtain ⟨d, rfl⟩ := (Finsupp.equivCongrLeft (Equiv.sumComm Unit Unit)).surjective d
+  rw [Finsupp.equivCongrLeft_apply, Finsupp.equivMapDomain_eq_mapDomain,
+    ← Equiv.coe_toEmbedding, ← Finsupp.embDomain_eq_mapDomain]
+  calc
     _ = coeff d (formalSlope W) := by
-        rw [coeff_formalSlope, coeff_formalSlope, hinl, hinr, add_comm (d (Sum.inr ()))]
+      simpa only [Equiv.coe_toEmbedding, Equiv.sumComm_apply] using
+        coeff_embDomain_rename (Equiv.sumComm Unit Unit).toEmbedding (formalSlope W) d
+    _ = _ := by
+      rw [coeff_formalSlope, coeff_formalSlope, Finsupp.embDomain_eq_mapDomain,
+        Equiv.coe_toEmbedding, Finsupp.mapDomain_equiv_apply, Finsupp.mapDomain_equiv_apply]
+      simp [add_comm]
+
+/-- The defining property of the slope, without subtraction:
+`λ(z₁, z₂) * z₂ + w(z₁) = λ(z₁, z₂) * z₁ + w(z₂)`.
+
+Over a ring this is the divided-difference identity
+`λ(z₁, z₂) * (z₂ - z₁) = w(z₂) - w(z₁)`. -/
+theorem formalSlope_mul_X_add :
+    formalSlope W * X (Sum.inr ()) + (formalW W).toMvPowerSeries (Sum.inl ()) =
+      formalSlope W * X (Sum.inl ()) + (formalW W).toMvPowerSeries (Sum.inr ()) := by
+  ext d
+  simp only [map_add, X_def, coeff_mul_monomial, PowerSeries.coeff_toMvPowerSeries,
+    mul_one, Finsupp.single_le_iff, coeff_formalSlope]
+  simp only [Finsupp.ext_iff, Sum.forall, Unique.forall_iff,
+    Finsupp.tsub_apply, Finsupp.single_apply, reduceCtorEq, ↓reduceIte, and_true, true_and]
+  split_ifs <;> simp_all
+  congr 1
+  omega
+
+/-- The denominator `1 + a₂λ + a₄λ² + a₆λ³` of Vieta's formula for the third root is `1` at the
+origin. Over a commutative ring this makes it a unit, allowing `formalThirdRoot` to divide by it. -/
+@[simp]
+theorem constantCoeff_formalThirdRootDenom :
+    constantCoeff (1 + C W.a₂ * formalSlope W + C W.a₄ * formalSlope W ^ 2 +
+      C W.a₆ * formalSlope W ^ 3) = 1 := by
+  simp
 
 end CommSemiring
 
 section CommRing
 
 variable {R : Type*} [CommRing R] (W : WeierstrassCurve R)
-
-/-- The defining property of the slope: `λ(z₁, z₂) * (z₂ - z₁) = w(z₂) - w(z₁)`. -/
-theorem formalSlope_mul_sub :
-    formalSlope W * (X (Sum.inr ()) - X (Sum.inl ())) =
-      (formalW W).toMvPowerSeries (Sum.inr ()) - (formalW W).toMvPowerSeries (Sum.inl ()) := by
-  ext d
-  set i := d (Sum.inl ()) with hi
-  set j := d (Sum.inr ()) with hj
-  rw [mul_sub, map_sub, map_sub, X_def (Sum.inr ()), X_def (Sum.inl ()),
-    coeff_mul_monomial, coeff_mul_monomial, PowerSeries.coeff_toMvPowerSeries,
-    PowerSeries.coeff_toMvPowerSeries]
-  have hsubr : 1 ≤ j → (d - Finsupp.single (Sum.inr ()) 1 : Unit ⊕ Unit →₀ ℕ) (Sum.inl ()) +
-      (d - Finsupp.single (Sum.inr ()) 1 : Unit ⊕ Unit →₀ ℕ) (Sum.inr ()) + 1 = i + j := by
-    intro h
-    simp only [Finsupp.tsub_apply, Finsupp.single_apply]
-    simp
-    omega
-  have hsubl : 1 ≤ i → (d - Finsupp.single (Sum.inl ()) 1 : Unit ⊕ Unit →₀ ℕ) (Sum.inl ()) +
-      (d - Finsupp.single (Sum.inl ()) 1 : Unit ⊕ Unit →₀ ℕ) (Sum.inr ()) + 1 = i + j := by
-    intro h
-    simp only [Finsupp.tsub_apply, Finsupp.single_apply]
-    simp
-    omega
-  simp only [mul_one, eq_single_inr_iff, eq_single_inl_iff, Finsupp.single_le_iff,
-    coeff_formalSlope]
-  split_ifs with h1 h2 h3 h4 <;> grind
 
 /-! ### The intercept of the chord -/
 
@@ -233,7 +203,7 @@ theorem formalIntercept_def :
 theorem formalIntercept_eq_inr :
     formalIntercept W =
       (formalW W).toMvPowerSeries (Sum.inr ()) - formalSlope W * X (Sum.inr ()) := by
-  have h := formalSlope_mul_sub W
+  have h := formalSlope_mul_X_add W
   rw [formalIntercept_def]
   linear_combination h
 
@@ -254,15 +224,6 @@ theorem rename_swap_formalIntercept :
   exact (formalIntercept_eq_inr W).symm
 
 /-! ### The third point of the chord -/
-
-/-- The denominator `1 + a₂λ + a₄λ² + a₆λ³` of Vieta's formula for the third root is `1` at the
-origin, hence a unit. This is what lets `formalThirdRoot` divide by it, and it is recorded here
-rather than reproved at each use. -/
-@[simp]
-theorem constantCoeff_formalThirdRootDenom :
-    constantCoeff (1 + C W.a₂ * formalSlope W + C W.a₄ * formalSlope W ^ 2 +
-      C W.a₆ * formalSlope W ^ 3) = 1 := by
-  simp
 
 /-- The parameter `z₃(z₁, z₂)` of the third point in which the chord through the points with
 parameters `z₁` and `z₂` meets the curve.

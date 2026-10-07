@@ -8,11 +8,15 @@ module
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 
 /-!
-# Dominance and injectivity on prime spectra
+# Dominance, injectivity and density on prime spectra
 
 An injective homomorphism of commutative semirings induces a dense map on prime spectra.
 For a reduced source ring, the converse holds. These facts supply the coordinate-ring criterion for
-dominance used in finite dominant affine group quotients.
+dominance used in dominant affine group quotients.
+
+A subset of the prime spectrum containing every minimal prime is dense. This is how
+generic properties, such as freeness of a module at the minimal primes of a reduced ring, are
+turned into dense subsets of the spectrum.
 -/
 
 public section
@@ -37,3 +41,18 @@ theorem denseRange_comap_iff_injective [CommRing R] [CommSemiring S] [IsReduced 
     nilradical_eq_zero, Ideal.zero_eq_bot, le_bot_iff]
 
 end RingHom
+
+namespace PrimeSpectrum
+
+variable {R : Type*} [CommSemiring R]
+
+/-- A subset of the prime spectrum containing every minimal prime is dense: every nonempty open
+set contains a minimal prime, namely a generization of any of its points. -/
+theorem dense_of_forall_mem_minimalPrimes {s : Set (PrimeSpectrum R)}
+    (hs : ∀ (p : Ideal R) (hp : p ∈ minimalPrimes R), ⟨p, hp.1.1⟩ ∈ s) : Dense s := by
+  refine dense_iff_inter_open.mpr fun U hU ⟨x, hx⟩ ↦ ?_
+  obtain ⟨q, hq, hqx⟩ := Ideal.exists_minimalPrimes_le (J := x.asIdeal) bot_le
+  have hspec : (⟨q, hq.1.1⟩ : PrimeSpectrum R) ⤳ x := (le_iff_specializes _ _).mp hqx
+  exact ⟨_, hspec.mem_open hU hx, hs q hq⟩
+
+end PrimeSpectrum
