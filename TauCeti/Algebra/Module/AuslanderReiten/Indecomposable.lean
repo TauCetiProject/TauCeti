@@ -78,31 +78,27 @@ theorem indecomposable_stableTransposeObj_iff (P : FiniteProjectivePresentation 
     have : IsLocalRing (End ((S).obj M)) := IsLocalRing.of_surjective'
       ({ (S).mapEnd M, (S).mapAddHom with } : End M →+* End ((S).obj M))
       (S).map_surjective
+    let X := (T).obj (ModuleCat.of Aᵐᵒᵖ (AuslanderReitenTranspose P.p))
     let f := AuslanderReitenTranspose.stableMap P.exact.linearMap_comp_eq_zero
       P.exact P.surjective
-    let e := Equiv.ofBijective f
-      ⟨AuslanderReitenTranspose.stableMap_injective P.exact P.surjective P.exact P.surjective,
-        AuslanderReitenTranspose.stableMap_surjective P.exact P.surjective P.exact P.surjective⟩
-    have he_zero : e 0 = 0 := f.map_zero
-    have he_id : e (𝟙 ((S).obj M)) = 𝟙 _ :=
-      AuslanderReitenTranspose.stableMap_id P.exact P.surjective
-    have he_comp (a b : End ((S).obj M)) : e (a ≫ b) = e b ≫ e a :=
-      AuslanderReitenTranspose.stableMap_comp P.exact.linearMap_comp_eq_zero
-        P.exact P.surjective P.exact P.surjective a b
-    refine indecomposable_of_injective_of_isLocalRing (R := End ((S).obj M)) ?_
-      (fun g ↦ (e.symm g : End ((S).obj M))) e.symm.injective
-      (e.symm_apply_eq.mpr he_zero.symm) ?_ ?_
-    · intro hzero
-      apply hs.1
-      apply (IsZero.iff_id_eq_zero _).mpr
-      apply e.injective
-      rw [he_id, he_zero]
-      exact (IsZero.iff_id_eq_zero _).mp hzero
-    · simpa only [End.one_def] using e.symm_apply_eq.mpr he_id.symm
-    · intro g
-      apply e.injective
-      simpa only [End.mul_def, e.apply_symm_apply] using
-        (he_comp (e.symm g) (e.symm g)).symm
+    -- Transposition reverses composition; the opposite ring accounts for that reversal.
+    let φ : (End ((S).obj M))ᵐᵒᵖ →+* End X :=
+      { toFun := fun a ↦ f a.unop
+        map_zero' := f.map_zero
+        map_one' := AuslanderReitenTranspose.stableMap_id P.exact P.surjective
+        map_add' := fun a b ↦ f.map_add a.unop b.unop
+        map_mul' := fun a b ↦ AuslanderReitenTranspose.stableMap_comp
+          P.exact.linearMap_comp_eq_zero P.exact P.surjective P.exact P.surjective
+          a.unop b.unop }
+    let e : (End ((S).obj M))ᵐᵒᵖ ≃+* End X := RingEquiv.ofBijective φ
+      ⟨(AuslanderReitenTranspose.stableMap_injective
+          P.exact P.surjective P.exact P.surjective).comp MulOpposite.unop_injective,
+        (AuslanderReitenTranspose.stableMap_surjective
+          P.exact P.surjective P.exact P.surjective).comp MulOpposite.unop_surjective⟩
+    have : IsLocalRing (End X) := IsLocalRing.of_ringEquiv e
+    exact indecomposable_of_injective_of_isLocalRing (R := End X)
+      (fun h ↦ one_ne_zero (α := End X) ((IsZero.iff_id_eq_zero _).mp h)) id
+      Function.injective_id rfl rfl (fun _ ↦ rfl)
 
 /-- The transpose of a finite minimal presentation of a finite-length indecomposable module
 is indecomposable exactly when the original module is not projective. -/
