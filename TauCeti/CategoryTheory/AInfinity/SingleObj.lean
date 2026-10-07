@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.DirectSum.FiniteSupport
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Map
 public import TauCeti.CategoryTheory.AInfinity.Basic
 
@@ -76,25 +77,30 @@ instance : GradedLinearQuiver.{0, uA, uR} R (AInfinitySingleObj 𝒜) where
 
 /-- The inclusion of the endomorphisms of the single object into the total module of morphisms is
 a linear equivalence, with inverse the projection. -/
-noncomputable def totalHomEquiv : A ≃ₗ[R] TotalHom R (AInfinitySingleObj 𝒜) where
-  __ := homInclusion (R := R) (star 𝒜) (star 𝒜)
-  invFun := homProjection (star 𝒜) (star 𝒜)
-  left_inv := homProjection_homInclusion (R := R) (star 𝒜) (star 𝒜)
-  right_inv x := totalHom_ext fun X Y ↦ by
-    obtain rfl := Subsingleton.elim X (star 𝒜)
-    obtain rfl := Subsingleton.elim Y (star 𝒜)
-    exact homProjection_homInclusion (R := R) _ _ _
+noncomputable def totalHomEquiv : A ≃ₗ[R] TotalHom R (AInfinitySingleObj 𝒜) :=
+  letI := Classical.decEq (AInfinitySingleObj 𝒜)
+  (DirectSum.componentLinearEquiv (R := R) (fun p ↦ homModule (R := R) p.1 p.2) (star 𝒜, star 𝒜)
+    fun _ h ↦ absurd (Subsingleton.elim _ _) h).symm
 
 /-- The equivalence `totalHomEquiv` is the inclusion of the endomorphisms of the single object. -/
 @[simp]
 theorem totalHomEquiv_apply (a : A) :
-    totalHomEquiv 𝒜 a = homInclusion (R := R) (star 𝒜) (star 𝒜) a := (rfl)
+    totalHomEquiv 𝒜 a = homInclusion (R := R) (star 𝒜) (star 𝒜) a := by
+  let := Classical.decEq (AInfinitySingleObj 𝒜)
+  rw [homInclusion_eq_lof]
+  exact DirectSum.componentLinearEquiv_symm_apply
+    (fun p : AInfinitySingleObj 𝒜 × AInfinitySingleObj 𝒜 ↦ homModule (R := R) p.1 p.2) _ _ a
 
 /-- The inverse of `totalHomEquiv` is the projection onto the endomorphisms of the single
 object. -/
 @[simp]
 theorem totalHomEquiv_symm_apply (x : TotalHom R (AInfinitySingleObj 𝒜)) :
-    (totalHomEquiv 𝒜).symm x = homProjection (R := R) (star 𝒜) (star 𝒜) x := (rfl)
+    (totalHomEquiv 𝒜).symm x = homProjection (R := R) (star 𝒜) (star 𝒜) x := by
+  rw [LinearEquiv.symm_apply_eq, totalHomEquiv_apply]
+  refine totalHom_ext fun X Y ↦ ?_
+  obtain rfl := Subsingleton.elim X (star 𝒜)
+  obtain rfl := Subsingleton.elim Y (star 𝒜)
+  rw [homProjection_homInclusion]
 
 /-- The **one-object `A∞` category** of an `A∞` algebra: the operations of the algebra,
 transported to the total module of morphisms of its one-object graded linear quiver. -/
@@ -108,7 +114,7 @@ noncomputable def aInfinityCategory : AInfinityCategory R (AInfinitySingleObj �
   isPathCompatible_m n :=
     { mem_range_homInclusion X _ := by
         obtain rfl : X = fun _ ↦ star 𝒜 := funext fun _ ↦ Subsingleton.elim _ _
-        exact (totalHomEquiv 𝒜).surjective _
+        exact ⟨_, (totalHomEquiv_apply 𝒜 _).symm.trans ((totalHomEquiv 𝒜).apply_symm_apply _)⟩
       eq_zero_of_ne _ _ _ _ _ _ hne := absurd (Subsingleton.elim _ _) hne }
 
 /-- The total `A∞` algebra of the one-object `A∞` category is the algebra, transported to the

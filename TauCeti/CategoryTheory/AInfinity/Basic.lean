@@ -50,6 +50,8 @@ differential squares to zero and satisfies the Leibniz rule
 
 * `TauCeti.AInfinityCategory.homInclusion_pathOperation`: the operation on a composable string
   is the total operation on the included morphisms.
+* `TauCeti.AInfinityCategory.ext_pathOperation`: an `A∞` category is determined by its
+  operations on composable strings.
 * `TauCeti.AInfinityCategory.homDifferential_homDifferential`: the differential squares to zero.
 * `TauCeti.AInfinityCategory.homDifferential_comp`: the Leibniz rule.
 
@@ -135,6 +137,21 @@ theorem homInclusion_pathOperation {n : ℕ} (X : Fin (n + 1) → C) (d : Fin n 
   rw [coe_pathOperation_apply]
   exact homInclusion_homProjection_of_mem_range
     ((𝒞.isPathCompatible_m n).mem_range_homInclusion X fun i ↦ (x i).1)
+
+/-- `A∞` categories on a graded linear quiver are determined by their operations on composable
+strings. -/
+theorem ext_pathOperation {𝒞 𝒞' : AInfinityCategory R C}
+    (h : ∀ (n : ℕ) (X : Fin (n + 1) → C), 𝒞.pathOperation X = 𝒞'.pathOperation X) :
+    𝒞 = 𝒞' := by
+  refine ext <| funext fun n ↦ (𝒞.isPathCompatible_m n).ext (𝒞'.isPathCompatible_m n) fun X x ↦ ?_
+  have e := InternalGrading.multilinearMap_ext
+    (f := (𝒞.m n).compLinearMap fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ))
+    (g := (𝒞'.m n).compLinearMap fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ))
+    (fun i ↦ grading (R := R) (X i.rev.castSucc) (X i.rev.succ)) fun d y hy ↦ by
+      rw [MultilinearMap.compLinearMap_apply, MultilinearMap.compLinearMap_apply,
+        ← 𝒞.homInclusion_pathOperation X d fun i ↦ ⟨y i, hy i⟩,
+        ← 𝒞'.homInclusion_pathOperation X d fun i ↦ ⟨y i, hy i⟩, h]
+  exact DFunLike.congr_fun e x
 
 /-! ### The differential and the composition -/
 

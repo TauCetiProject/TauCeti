@@ -7,7 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Graded.Basic
 public import TauCeti.Algebra.Module.GradedModule.DirectSum
-public import Mathlib.LinearAlgebra.Multilinear.Basic
+public import Mathlib.LinearAlgebra.Multilinear.DirectSum
 
 /-!
 # The total module of morphisms of a graded linear quiver
@@ -42,6 +42,8 @@ statements that use it.
   degree `n` exactly when each of its components has.
 * `TauCeti.GradedLinearQuiver.homInclusion_homProjection_of_mem_range`: an element of the image
   of a hom module is recovered from its component there.
+* `TauCeti.GradedLinearQuiver.IsPathCompatible.ext`: a path-compatible operation is determined
+  by its values on composable strings.
 
 ## References
 
@@ -167,5 +169,40 @@ structure IsPathCompatible {n : ℕ}
   eq_zero_of_ne (s t : Fin n → C) (x : ∀ i, homModule (R := R) (s i) (t i)) (i j : Fin n)
       (hij : (j : ℕ) = i + 1) (hne : t j ≠ s i) :
     f (fun k ↦ homInclusion (s k) (t k) (x k)) = 0
+
+/-- **Path-compatible operations are determined by their values on composable strings.** -/
+theorem IsPathCompatible.ext {n : ℕ}
+    {f g : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C)}
+    (hf : IsPathCompatible f) (hg : IsPathCompatible g)
+    (h : ∀ (X : Fin (n + 1) → C)
+      (x : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)),
+        f (fun i ↦ homInclusion _ _ (x i)) = g fun i ↦ homInclusion _ _ (x i)) :
+    f = g := by
+  classical
+  rcases n with _ | n
+  · refine MultilinearMap.ext fun x ↦ ?_
+    rcases isEmpty_or_nonempty C with hC | ⟨⟨c⟩⟩
+    · exact totalHom_ext fun X ↦ isEmptyElim X
+    · obtain rfl : x = fun i ↦ homInclusion c c i.elim0 := Subsingleton.elim _ _
+      exact h (fun _ ↦ c) fun i ↦ i.elim0
+  suffices key : ∀ (s t : Fin (n + 1) → C) (x : ∀ i, homModule (R := R) (s i) (t i)),
+      f (fun i ↦ homInclusion (s i) (t i) (x i)) = g fun i ↦ homInclusion (s i) (t i) (x i) by
+    refine MultilinearMap.directSum_ext fun p ↦ MultilinearMap.ext fun x ↦ ?_
+    have e (i : Fin (n + 1)) : DirectSum.lof R (C × C) (fun q ↦ homModule (R := R) q.1 q.2) (p i) =
+        homInclusion (p i).1 (p i).2 := (homInclusion_eq_lof _ _).symm
+    simp only [MultilinearMap.compLinearMap_apply, e]
+    exact key (fun i ↦ (p i).1) (fun i ↦ (p i).2) x
+  intro s t x
+  by_cases hst : ∀ j : Fin n, t j.succ = s j.castSucc
+  · obtain ⟨X, rfl, rfl⟩ : ∃ X : Fin (n + 2) → C,
+        s = (fun i ↦ X i.rev.castSucc) ∧ t = fun i ↦ X i.rev.succ := by
+      refine ⟨Fin.snoc (fun k ↦ s k.rev) (t 0), funext fun i ↦ by simp, funext fun i ↦ ?_⟩
+      cases i using Fin.cases with
+      | zero => simp
+      | succ j => simp [Fin.rev_succ, Fin.succ_castSucc, -Fin.castSucc_succ, hst]
+    exact h X x
+  · obtain ⟨j, hj⟩ := not_forall.1 hst
+    rw [hf.eq_zero_of_ne s t x j.castSucc j.succ (by simp) hj,
+      hg.eq_zero_of_ne s t x j.castSucc j.succ (by simp) hj]
 
 end TauCeti.GradedLinearQuiver
