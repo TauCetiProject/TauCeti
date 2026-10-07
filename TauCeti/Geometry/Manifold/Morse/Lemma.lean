@@ -73,17 +73,21 @@ structure MorseChart (f : M → ℝ) (x : M) where
 attribute [simp] MorseChart.mem_source MorseChart.apply_self
 
 /-- **The Morse lemma on a manifold.** At a nondegenerate critical point `x` of a function `f`
-that is smooth near `x`, on a manifold modelled on a finite-dimensional real normed space `E`,
-there is a Morse chart: a chart `ψ` of the maximal atlas, centred at `x`, and a linear change of
-coordinates `L : E ≃ (Fin n → ℝ)` such that on the source of `ψ`
+that is smooth at every point of a neighbourhood of `x`, on a manifold modelled on a
+finite-dimensional real normed space `E`, there is a Morse chart: a chart `ψ` of the maximal atlas,
+centred at `x`, and a linear change of coordinates `L : E ≃ (Fin n → ℝ)` such that on the source
+of `ψ`
 
 `f y = f x + (1/2) Σᵢ wᵢ (L (ψ y))ᵢ²`,
 
 where every weight `wᵢ` is `-1` or `1` and the number of negative weights is the manifold Morse
 index of `f` at `x`. -/
-theorem IsManifoldNondegenerateCriticalPoint.nonempty_morseChart {s : Set M}
-    (hf : ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ) ∞ f s) (hs : s ∈ 𝓝 x)
+theorem IsManifoldNondegenerateCriticalPoint.nonempty_morseChart
+    (hf : ∀ᶠ y in 𝓝 x, ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) ∞ f y)
     (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) : Nonempty (MorseChart E f x) := by
+  obtain ⟨s, hfs, hsopen, hxs⟩ := _root_.eventually_nhds_iff.1 hf
+  have hs : s ∈ 𝓝 x := hsopen.mem_nhds hxs
+  replace hf : ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ) ∞ f s := fun y hy ↦ (hfs y hy).contMDiffWithinAt
   set c := chartAt E x with hc
   set g : E → ℝ := f ∘ (extChartAt 𝓘(ℝ, E) x).symm with hgdef
   set a : E := extChartAt 𝓘(ℝ, E) x x with hadef

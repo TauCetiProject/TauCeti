@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.NormalForm
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 
 /-!
 # The Morse lemma for a locally smooth function
@@ -48,24 +48,9 @@ theorem IsNondegenerateCriticalPoint.exists_morse_chart_of_contDiffOn (hU : IsOp
     ∃ ψ : OpenPartialHomeomorph E E, ψ.source ⊆ U ∧ a ∈ ψ.source ∧ ψ a = 0 ∧
       ContDiffOn ℝ ∞ ψ ψ.source ∧ ContDiffOn ℝ ∞ ψ.symm ψ.target ∧
       ∀ y ∈ ψ.source, g y = g a + (2 : ℝ)⁻¹ * fderiv ℝ (fderiv ℝ g) a (ψ y) (ψ y) := by
-  obtain ⟨χ, hχ, -, hχ1, -, hχU⟩ :=
-    isCompact_singleton.exists_contDiff_cutoff hU (singleton_subset_iff.2 haU)
-  set V := interior (χ ⁻¹' {1})
-  have hVopen : IsOpen V := isOpen_interior
-  have haV : a ∈ V := hχ1 rfl
-  have hχV : ∀ y ∈ V, χ y = 1 := fun y hy ↦ by simpa using interior_subset hy
-  set G : E → ℝ := fun y ↦ χ y * g y with hGdef
-  have hG : ContDiff ℝ ∞ G := by
-    rw [contDiff_iff_contDiffAt]
-    intro y
-    by_cases hy : y ∈ U
-    · exact hχ.contDiffAt.mul ((hg y hy).contDiffAt (hU.mem_nhds hy))
-    · have h0 : G =ᶠ[𝓝 y] fun _ ↦ 0 := by
-        filter_upwards [notMem_tsupport_iff_eventuallyEq.1 fun hy' ↦ hy (hχU hy')] with z hz
-        simp [hGdef, hz]
-      exact contDiffAt_const.congr_of_eventuallyEq h0
-  have hGV : ∀ y ∈ V, G y = g y := fun y hy ↦ by simp [hGdef, hχV y hy]
-  have hGg : G =ᶠ[𝓝 a] g := Filter.eventuallyEq_of_mem (hVopen.mem_nhds haV) hGV
+  obtain ⟨G, hG, -, hGg⟩ := hg.exists_contDiff_eventuallyEq_of_finiteDimensional (n := ⊤)
+    (hU.mem_nhds haU)
+  obtain ⟨V, hGV, hVopen, haV⟩ := _root_.eventually_nhds_iff.1 hGg
   obtain ⟨φ, haφ, hφa, hφ, hφsymm, hφG⟩ :=
     (h.congr_of_eventuallyEq hGg.symm).exists_morse_chart hG
   have hD : fderiv ℝ (fderiv ℝ G) a = fderiv ℝ (fderiv ℝ g) a := hGg.fderiv.fderiv_eq
