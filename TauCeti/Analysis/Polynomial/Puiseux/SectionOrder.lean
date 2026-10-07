@@ -94,6 +94,7 @@ theorem eventually_orderAt_root_eq_of_puiseux {x₀ : E} (hN : 0 < N)
 power-times-unit discriminant has constant ambient plane order on every
 labelled root section. Analyticity, splitting, and the discriminant identity
 are only required as germs at each point of the distinguished hyperplane.
+The discriminant exponent may depend on the parameter point.
 The order can differ between sections. -/
 theorem orderAt_root_eq_of_puiseux {U : Set E}
     (hUc : IsPreconnected U) (hN : 0 < N)
@@ -103,15 +104,16 @@ theorem orderAt_root_eq_of_puiseux {U : Set E}
         ∏ i, (X - C (r i b)))
     (hu : ∀ x ∈ U, AnalyticAt ℂ u (x, 0))
     (hu0 : ∀ x ∈ U, u (x, 0) ≠ 0)
-    (hdiscr : ∀ x ∈ U, ∀ᶠ b in 𝓝 (x, (0 : ℂ)),
+    (hdiscr : ∀ x ∈ U, ∃ a : ℕ, ∀ᶠ b in 𝓝 (x, (0 : ℂ)),
       (MvPolynomial.aeval ![C (c b.1 + b.2 ^ N), X] (p b.1)).discr =
         b.2 ^ a * u b)
     {x y : E} (hx : x ∈ U) (hy : y ∈ U) (i : Fin n) :
     (p x).orderAt ![c x, r i (x, 0)] = (p y).orderAt ![c y, r i (y, 0)] := by
   apply hUc.apply_eq_of_eventually_eq _ hx hy
   intro z hz
+  obtain ⟨a, hdiscr⟩ := hdiscr z hz
   exact ((eventually_orderAt_root_eq_of_puiseux hN
     (hr z hz) (hsplit z hz) (hu z hz) (hu0 z hz)
-    (hdiscr z hz)).mono fun _ h ↦ h i).filter_mono nhdsWithin_le_nhds
+    hdiscr).mono fun _ h ↦ h i).filter_mono nhdsWithin_le_nhds
 
 end TauCeti
