@@ -271,12 +271,11 @@ theorem tateDualityPairing_perfect {F : Type} [Field F] [ValuativeRel F]
   exact forall_eq_zero_and_exists_eq_of_bijective_flip
     (fun x => ZModModule.char_nsmul_eq_zero n x) Φ hΦ
 
-/-- **Perfect local Tate duality in mixed characteristic.** For a nonarchimedean local field `F`
-containing `ℚ_p`, every finite smooth discrete `ZMod n`-representation has a perfect local
-Tate-duality pairing in complementary degrees. -/
-theorem tateDualityPairing_perfect_mixed (p : ℕ) [Fact p.Prime]
-    (F : Type) [Field F] [ValuativeRel F] [TopologicalSpace F]
-    [IsNonarchimedeanLocalField F] [Algebra ℚ_[p] F]
+/-- **Perfect local Tate duality in mixed characteristic.** For a characteristic-zero
+nonarchimedean local field `F`, every finite smooth discrete `ZMod n`-representation has a perfect
+local Tate-duality pairing in complementary degrees. -/
+theorem tateDualityPairing_perfect_mixed (F : Type) [Field F] [CharZero F] [ValuativeRel F]
+    [TopologicalSpace F] [IsNonarchimedeanLocalField F]
     (n : ℕ) (hn : n ≠ 0) (A : GalRep n F)
     (tr : continuousCohomology 2 (muNRep n F) ≃+ ZMod n) (hA : Finite A.V)
     [DiscreteTopology A.V] [Fact (IsSmoothDiscrete (ZMod n) A)]
@@ -287,7 +286,6 @@ theorem tateDualityPairing_perfect_mixed (p : ℕ) [Fact p.Prime]
         ∃ x : continuousCohomology i (tateDual A),
           ∀ y : continuousCohomology j A, tateDualityPairing A tr i j hij x y = φ y := by
   let _ := hA
-  have : CharZero F := charZero_of_injective_algebraMap (algebraMap ℚ_[p] F).injective
   exact tateDualityPairing_perfect (Nat.cast_ne_zero.mpr hn).isUnit A tr i j hij
 
 end TauCeti.ClassFieldTheory
