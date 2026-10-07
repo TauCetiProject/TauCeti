@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.CondExp
-public import TauCeti.Probability.Exchangeability.Cylinder
+public import TauCeti.Probability.Process.Cylinder
 public import TauCeti.Probability.DeFinetti.DirectingMeasure.Basic
 import TauCeti.Probability.DeFinetti.ViaL2.WindowProduct
 import TauCeti.Probability.DeFinetti.DirectingMeasure.Integral

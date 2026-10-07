@@ -220,47 +220,26 @@ theorem realCliffordOneTwoEquivComplexMatrix_star
   | mul x y hx hy =>
       simp only [star_mul, map_mul, hx, hy, Matrix.adjugate_mul_distrib]
 
-private def realCliffordOneZeroPositiveSqIsometry :
-    (realCliffordForm 1 0).IsometryEquiv
-      ((↑(1 : ℝˣ) : ℝ) • QuadraticMap.sq) where
-  toLinearEquiv := LinearEquiv.funUnique (Fin 1) ℝ ℝ
-  map_app' v := by
-    simp [realCliffordForm_one_zero_apply, QuadraticMap.sq_apply]
-
-private theorem realCliffordOneZeroPositiveSqIsometry_apply (v : Fin 1 → ℝ) :
-    realCliffordOneZeroPositiveSqIsometry v = v 0 := by
-  simp [realCliffordOneZeroPositiveSqIsometry,
-    ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv, LinearEquiv.funUnique_apply]
-
-private noncomputable def realCliffordThreeOneAugmentedIsometry :
+private def realCliffordThreeOneAugmentedIsometry :
     (realCliffordForm 3 1).IsometryEquiv
       ((realCliffordForm 2 1).prod
-        ((↑(1 : ℝˣ) : ℝ) • QuadraticMap.sq)) :=
-  (realCliffordSplitIsometry 2 1 1 0).trans
-    ((QuadraticMap.IsometryEquiv.refl (realCliffordForm 2 1)).prod
-      realCliffordOneZeroPositiveSqIsometry)
-
-private theorem realCliffordThreeOneAugmentedIsometry_apply_eq
-    (v : Fin (3 + 1) → ℝ) :
-    realCliffordThreeOneAugmentedIsometry v =
-      ((realCliffordSplitIsometry 2 1 1 0 v).1,
-        realCliffordOneZeroPositiveSqIsometry
-          (realCliffordSplitIsometry 2 1 1 0 v).2) := rfl
+        ((↑(1 : ℝˣ) : ℝ) • QuadraticMap.sq)) where
+  toLinearEquiv := (realCliffordPositiveSplitIsometry 2 1).toLinearEquiv
+  map_app' v := by
+    rw [Units.val_one, one_smul]
+    exact (realCliffordPositiveSplitIsometry 2 1).map_app v
 
 private theorem realCliffordThreeOneAugmentedIsometry_apply (v : Fin (3 + 1) → ℝ) :
     realCliffordThreeOneAugmentedIsometry v = (![v 0, v 1, v 3], v 2) := by
-  rw [realCliffordThreeOneAugmentedIsometry_apply_eq]
+  -- The two isometries share their linear equivalence; only the target form differs.
+  change realCliffordPositiveSplitIsometry 2 1 v = _
   apply Prod.ext
   · funext i
     fin_cases i
-    · simpa using
-        realCliffordSplitIsometry_fst_pos 2 1 1 0 v (0 : Fin 2)
-    · simpa using
-        realCliffordSplitIsometry_fst_pos 2 1 1 0 v (1 : Fin 2)
-    · simpa using
-        realCliffordSplitIsometry_fst_neg 2 1 1 0 v (0 : Fin 1)
-  · rw [realCliffordOneZeroPositiveSqIsometry_apply]
-    exact realCliffordSplitIsometry_snd_pos 2 1 1 0 v (0 : Fin 1)
+    · simpa using realCliffordPositiveSplitIsometry_fst_pos 2 1 v 0
+    · simpa using realCliffordPositiveSplitIsometry_fst_pos 2 1 v 1
+    · simpa using realCliffordPositiveSplitIsometry_fst_neg 2 1 v 0
+  · simpa using realCliffordPositiveSplitIsometry_snd 2 1 v
 
 private def realCliffordTwoOneScaleIsometry :
     (-(↑((1 : ℝˣ)⁻¹) : ℝ) • realCliffordForm 2 1).IsometryEquiv

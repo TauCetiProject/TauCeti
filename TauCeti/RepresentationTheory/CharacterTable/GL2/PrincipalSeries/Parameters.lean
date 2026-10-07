@@ -127,10 +127,12 @@ theorem finrank_hom_GL2PrincipalSeries (α β γ δ : Fˣ →* ℂˣ) :
       DoubleCoset.eq.mp (DoubleCoset.out_eq' oneCoset)
     rw [← finrank_hom_res_mackeyToH_mul_left_mul_right _ _ hh₁ hh₂, ← hout,
       finrank_mackeyTerm_one]
+    simp only [eq_comm]
   · obtain ⟨h₁, hh₁, h₂, hh₂, hout⟩ :=
       DoubleCoset.eq.mp (DoubleCoset.out_eq' weylCoset)
     rw [← finrank_hom_res_mackeyToH_mul_left_mul_right _ _ hh₁ hh₂, ← hout,
       finrank_mackeyTerm_weyl]
+    simp only [eq_comm, and_comm]
 
 /-- **Principal-series representations are parametrized by unordered pairs of characters.** Two
 such induced representations are isomorphic exactly when the ordered pairs agree directly or after

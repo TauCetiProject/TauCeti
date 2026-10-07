@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.PathSpace.Exchangeable.Sigma
-public import TauCeti.Probability.Exchangeability.PathSpace.Shift
+public import TauCeti.Probability.Process.PathLaw.Shift
 public import TauCeti.Probability.Process.Tail.Basic
 public import Mathlib.MeasureTheory.MeasurableSpace.Invariants
 
@@ -29,9 +29,10 @@ eventually a translation leaves every exactly shift-invariant event unchanged
 `preimage_reindex_eq_of_measurableSet_invariants_of_eventually_add` the invariant-measurable form).
 That is one of the two independent inputs a Koopman-style block argument needs — the other,
 measure preservation, comes from contractability and needs strict monotonicity, which this one does
-not. The function-level form lives beside its set-level counterpart in `PathSpace/Shift.lean`: a
-shift-invariant function is unchanged by such a reindexing, pointwise. The invariants-measurable
-corollary here is Mathlib's `MeasurableSpace.comp_eq_of_measurable_invariants` composed with it.
+not. The function-level form lives beside its set-level counterpart in
+`TauCeti.Probability.Process.PathLaw.Shift`: a shift-invariant function is unchanged by such a
+reindexing, pointwise. The invariants-measurable corollary here is Mathlib's
+`MeasurableSpace.comp_eq_of_measurable_invariants` composed with it.
 
 The Layer 2 exchangeability roadmap warns against silently identifying the tail σ-algebra with the
 shift-invariant σ-algebra for one-sided sequences; these two results are the exact form of that
@@ -55,7 +56,8 @@ Reindexing under an eventual translation:
   every invariants-measurable event;
 * `comp_reindex_apply_eq_of_measurable_invariants_of_eventually_add` — and leaves every
   invariants-measurable function unchanged, pointwise. The raw form,
-  `comp_reindex_apply_eq_of_comp_shift_eq_of_eventually_add`, is in `PathSpace/Shift.lean`.
+  `comp_reindex_apply_eq_of_comp_shift_eq_of_eventually_add`, is in
+  `TauCeti.Probability.Process.PathLaw.Shift`.
 
 * `tailFamily_coord_eq_comap_shift_iterate`
 * `pathTail_eq_iInf_comap_shift_iterate`

@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Adjunction.Unique
 public import Mathlib.RepresentationTheory.Coinduced
 public import Mathlib.RepresentationTheory.Induced
 public import TauCeti.RepresentationTheory.Induction.Restriction
+import TauCeti.RepresentationTheory.Coinduced
 
 /-!
 # Transitivity of induction and coinduction
@@ -162,19 +163,6 @@ lemma indV_ind_hom_ext {V W : Type*} [AddCommGroup V] [Module k V] [AddCommGroup
     Representation.IndV.hom_ext φ _ fun h => LinearMap.ext fun a => key κ h a
 
 end IndV
-
-section CoindV
-
-variable [CommRing k] [Monoid G] [Monoid H]
-
-/-- The coinduced action translates the argument of a function: `(h • f) h₁ = f (h₁ * h)`. Used to
-retype the values of a coinduced representation along the group action. -/
-private lemma coind_ρ_apply_coe_apply {V : Type*} [AddCommGroup V] [Module k V] (φ : G →* H)
-    (ρ : Representation k G V) (f : Representation.coindV φ ρ) (h h₁ : H) :
-    ((Representation.coind φ ρ h) f).1 h₁ = f.1 (h₁ * h) :=
-  rfl
-
-end CoindV
 
 section Restriction
 
@@ -443,7 +431,7 @@ lemma Rep.coindFunctorCompIso_hom_app_hom_apply_coe_apply (φ : G →* H) (ψ : 
       Rep.coindFunctor.{max u v w x} k ψ).obj A).ρ κ F)
   rw [hcomm] at h1
   simp only [Functor.comp_obj, Rep.coindFunctor_obj, Rep.of_ρ] at h1
-  rw [coind_ρ_apply_coe_apply, coind_ρ_apply_coe_apply] at h1
+  rw [Representation.coind_apply_coe_apply, Representation.coind_apply_coe_apply] at h1
   simpa using h1
 
 /-- **Coinduction in stages on functions, backwards**: the inverse of the coinduction-in-stages
@@ -463,7 +451,7 @@ lemma Rep.coindFunctorCompIso_inv_app_hom_apply_coe_apply_coe_apply (φ : G →*
   have hmem := (((Rep.coindFunctorCompIso φ ψ).inv.app A).hom f).2 h κ
   simp only [Rep.coindFunctor_obj, Rep.of_ρ] at hmem
   have hx : f.1 (ψ h * κ) = ((((Rep.coindFunctorCompIso φ ψ).inv.app A).hom f).1 κ).1 (1 * h) := by
-    rw [← hhom (ψ h * κ), hmem, coind_ρ_apply_coe_apply]
+    rw [← hhom (ψ h * κ), hmem, Representation.coind_apply_coe_apply]
   rw [hx, one_mul]
 
 end Coinduction

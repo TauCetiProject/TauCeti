@@ -18,7 +18,8 @@ Mathlib records the commutativity isometries of `QuadraticMap.prod`
 (`QuadraticMap.IsometryEquiv.prodComm` and `QuadraticMap.IsometryEquiv.prodProdProdComm`). This
 file adds the two remaining structural ones: the associator, and the deletion of a factor whose
 module is trivial. Together with `QuadraticMap.IsometryEquiv.prodComm` they are what makes
-orthogonal sum a commutative monoid operation on isometry classes of quadratic forms.
+orthogonal sum a commutative monoid operation on isometry classes of quadratic forms; the
+left-commutativity isometry `Q₁ ⊕ (Q₂ ⊕ Q₃) ≅ Q₂ ⊕ (Q₁ ⊕ Q₃)` is recorded as a composite of them.
 For an orthogonal sum `QuadraticMap.pi` indexed by `Fin (n + 1)`, splitting off the first summand
 is likewise isometric, which lets such a sum be assembled one summand at a time.
 
@@ -36,6 +37,8 @@ so the embedding restricts to the special orthogonal groups.
 ## Main definitions
 
 * `QuadraticMap.IsometryEquiv.prodAssoc`: `LinearEquiv.prodAssoc` is isometric.
+* `QuadraticMap.IsometryEquiv.prodLeftComm`: exchanging the first two factors of
+  `Q₁ ⊕ (Q₂ ⊕ Q₃)` is isometric.
 * `QuadraticMap.IsometryEquiv.uniqueProd`: `LinearEquiv.uniqueProd` is isometric.
 * `QuadraticMap.IsometryEquiv.consPi`: `Fin.consLinearEquiv` is isometric.
 * `QuadraticMap.IsometryEquiv.prodRestrictOrthogonal`: an orthogonal direct sum is isometric to
@@ -108,6 +111,24 @@ theorem IsometryEquiv.prodAssoc_symm_apply (Q₁ : QuadraticMap R M₁ P)
   -- Expose the underlying linear equivalence so its public inverse application lemma applies.
   change (LinearEquiv.prodAssoc R M₁ M₂ M₃).symm m = _
   exact Equiv.prodAssoc_symm_apply M₁ M₂ M₃ m
+
+/-- Exchanging the first two factors of an iterated orthogonal product is isometric:
+`Q₁ ⊕ (Q₂ ⊕ Q₃) ≅ Q₂ ⊕ (Q₁ ⊕ Q₃)`. It lets a summand be moved past others to its place in an
+orthogonal sum. -/
+def IsometryEquiv.prodLeftComm (Q₁ : QuadraticMap R M₁ P) (Q₂ : QuadraticMap R M₂ P)
+    (Q₃ : QuadraticMap R M₃ P) :
+    (Q₁.prod (Q₂.prod Q₃)).IsometryEquiv (Q₂.prod (Q₁.prod Q₃)) :=
+  (prodAssoc Q₁ Q₂ Q₃).symm.trans
+    (((prodComm Q₁ Q₂).prod (IsometryEquiv.refl Q₃)).trans (prodAssoc Q₂ Q₁ Q₃))
+
+/-- The forward map of `QuadraticMap.IsometryEquiv.prodLeftComm`. -/
+@[simp]
+theorem IsometryEquiv.prodLeftComm_apply (Q₁ : QuadraticMap R M₁ P) (Q₂ : QuadraticMap R M₂ P)
+    (Q₃ : QuadraticMap R M₃ P) (m : M₁ × M₂ × M₃) :
+    IsometryEquiv.prodLeftComm Q₁ Q₂ Q₃ m = (m.2.1, m.1, m.2.2) :=
+  -- Mathlib has no application lemma for `IsometryEquiv.trans`; the first two factors of the
+  -- composite reassociate and swap `m` to `((m.2.1, m.1), m.2.2)` by unfolding.
+  prodAssoc_apply Q₂ Q₁ Q₃ ((m.2.1, m.1), m.2.2)
 
 /-- `LinearEquiv.uniqueProd` is isometric: a factor carried by a trivial module may be deleted
 from an orthogonal product. -/
