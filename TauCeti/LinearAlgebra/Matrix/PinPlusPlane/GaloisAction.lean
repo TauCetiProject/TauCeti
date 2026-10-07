@@ -57,7 +57,7 @@ variable [NeZero (2 : F)] [NeZero (2 : E)] {r2 : F}
 @[simp]
 theorem map_pinDihedral (hr2 : r2 ^ 2 = 2) (φ : F →+* E) (z : DihedralGroup 8) :
     (pinDihedral hr2 z).map φ =
-      pinDihedral (show (φ r2) ^ 2 = 2 by
+      pinDihedral (r2 := φ r2) (by
         simpa only [map_pow, map_ofNat] using congrArg φ hr2) z := by
   cases z <;> simp [Matrix.map_mul, Matrix.map_pow]
 
@@ -65,7 +65,7 @@ theorem map_pinDihedral (hr2 : r2 ^ 2 = 2) (φ : F →+* E) (z : DihedralGroup 8
 @[simp]
 theorem map_pinLift (hr2 : r2 ^ 2 = 2) (φ : F →+* E) (w : WreathC2) :
     (pinLift hr2 w).map φ =
-      pinLift (show (φ r2) ^ 2 = 2 by
+      pinLift (r2 := φ r2) (by
         simpa only [map_pow, map_ofNat] using congrArg φ hr2) w := by
   simp [pinLift_def]
 
@@ -78,13 +78,14 @@ variable {F : Type*} [Field F] [NeZero (2 : F)] {r2 : F}
 /-- Changing the square root of two changes a section lift by the sign of its swap coordinate. -/
 @[simp]
 theorem pinLift_neg (hr2 : r2 ^ 2 = 2) (w : WreathC2) :
-    pinLift (show (-r2) ^ 2 = 2 by simpa using hr2) w =
+    pinLift (r2 := -r2) (by simpa using hr2) w =
       (-1 : F) ^ (coordC w).val • pinLift hr2 w := by
   rw [pinLift_def, pinLift_def, wreathSection_apply]
   generalize coordA w = a, coordB w = b, coordC w = c
-  rcases (show a = 0 ∨ a = 1 by revert a; decide) with rfl | rfl <;>
-    rcases (show b = 0 ∨ b = 1 by revert b; decide) with rfl | rfl <;>
-    rcases (show c = 0 ∨ c = 1 by revert c; decide) with rfl | rfl <;>
+  have hbit : ∀ x : ZMod 2, x = 0 ∨ x = 1 := by decide
+  rcases hbit a with rfl | rfl <;>
+    rcases hbit b with rfl | rfl <;>
+    rcases hbit c with rfl | rfl <;>
     norm_num [pinDihedral_r, pinDihedral_sr, pinT_neg, pow_succ,
       Matrix.mul_neg, Matrix.neg_mul, ZMod.val_zero, ZMod.val_one_eq_one_mod,
       ZMod.val_ofNat]
@@ -95,7 +96,8 @@ theorem map_pinLift_of_map_root (hr2 : r2 ^ 2 = 2) (φ : F →+* F) (ε : ZMod 2
     (hφ : φ r2 = (-1 : F) ^ ε.val * r2) (w : WreathC2) :
     (pinLift hr2 w).map φ = (-1 : F) ^ (ε * coordC w).val • pinLift hr2 w := by
   rw [map_pinLift]
-  rcases (show ∀ ε : ZMod 2, ε = 0 ∨ ε = 1 by decide) ε with rfl | rfl
+  have hbit : ∀ x : ZMod 2, x = 0 ∨ x = 1 := by decide
+  rcases hbit ε with rfl | rfl
   · simp only [ZMod.val_zero, pow_zero, one_mul] at hφ
     simp only [zero_mul, ZMod.val_zero, pow_zero, one_smul]
     congr 1
@@ -114,8 +116,9 @@ theorem pinLift_mul_map_mul_inv (hr2 : r2 ^ 2 = 2) (φ : F →+* F) (ε : ZMod 2
   rw [map_pinLift_of_map_root hr2 φ ε hφ, Matrix.mul_smul, Matrix.smul_mul,
     pinLift_mul_mul_inv]
   generalize wreathD16Cocycle (g, h) = c, ε * coordC h = d
-  rcases (show c = 0 ∨ c = 1 by revert c; decide) with rfl | rfl <;>
-    rcases (show d = 0 ∨ d = 1 by revert d; decide) with rfl | rfl <;>
+  have hbit : ∀ x : ZMod 2, x = 0 ∨ x = 1 := by decide
+  rcases hbit c with rfl | rfl <;>
+    rcases hbit d with rfl | rfl <;>
     norm_num [ZMod.val_zero, ZMod.val_one, ZMod.val_ofNat]
 
 end Sign
