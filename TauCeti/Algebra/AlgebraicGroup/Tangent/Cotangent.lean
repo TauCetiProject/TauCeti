@@ -79,7 +79,16 @@ noncomputable def cotangentMap : A →ₗ[R] CotangentSpace R A where
 lemma cotangentMap_apply (a : A) :
     cotangentMap R A a =
       (AugmentationIdeal R A).toCotangent
-        ⟨a - algebraMap R A (counit (R := R) a), by simp⟩ := (rfl)
+        ⟨a - algebraMap R A (counit (R := R) a), by simp⟩ := by
+  rw [cotangentMap, LinearMap.comp_apply, LinearMap.restrictScalars_apply]
+  apply (AugmentationIdeal R A).toCotangent.congr_arg
+  apply Subtype.ext
+  calc
+    ((augmentationProjection R A a : AugmentationIdeal R A) : A) =
+        counitDisplacement R A a := LinearMap.codRestrict_apply _ _ a
+    _ = _ := by
+      rw [counitDisplacement, LinearMap.sub_apply, LinearMap.id_apply,
+        LinearMap.comp_apply, Algebra.linearMap_apply]
 
 /-- The cotangent map vanishes on the unit of the coordinate algebra. -/
 @[simp]
