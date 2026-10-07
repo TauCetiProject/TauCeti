@@ -112,11 +112,11 @@ private theorem exists_lt_upperJump_of_finrank_prime (hℓ : (finrank K L).Prime
     top_le_iff.1 (htop ▸ lowerRamificationGroup_antitone K L (Int.natCast_nonneg t))
   have hψt : psiNat K L t = t := (psiNat_eq_self_iff K L).2 (htop.trans hG0.symm)
   have hlt : lowerRamificationGroup K L ((t : ℤ) + 1) < lowerRamificationGroup K L t := by
-    rw [htop, show (t : ℤ) + 1 = ((t + 1 : ℕ) : ℤ) by push_cast; rfl, ht1]
+    rw [htop, ← Nat.cast_add_one, ht1]
     exact bot_lt_iff_ne_bot.2 (htop ▸ htne)
   have hlower : LowerJump K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩ := by
     simpa using (lowerJump_intCast_iff K L (i := t)
-      (by exact_mod_cast (show (-1 : ℤ) ≤ t by omega))).2 hlt
+      (Nat.cast_mem_ramificationIndexDomain t)).2 hlt
   -- `ψ(t) = t`, so `φ(t) = t` and the lower break `t` is an upper break.
   have hinv : inverseHerbrand K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩ =
       ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩ :=

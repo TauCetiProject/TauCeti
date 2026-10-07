@@ -123,7 +123,8 @@ private theorem smul_div_mem_map_normUnits
   set N := (unitFiltration L 0).map (Algebra.normUnits F)
   -- `y ↦ σ y / y` is a homomorphism of the commutative group `Fˣ`.
   let c : Fˣ →* Fˣ := MulDistribMulAction.toMonoidHom Fˣ σ / MonoidHom.id Fˣ
-  have hc (x : Fˣ) : c x = σ • x / x := rfl
+  have hc (x : Fˣ) : c x = σ • x / x := by
+    rw [MonoidHom.div_apply, MulDistribMulAction.toMonoidHom_apply, MonoidHom.id_apply]
   obtain ⟨ϖ, hϖ⟩ := exists_isUniformizer (K := L)
   have htot : IsTotallyRamified F L := (lowerRamificationGroup_zero_eq_top_iff F L).1 <|
     top_le_iff.1 (lowerRamificationGroup_natCast_eq_top_of_upperJump F L hℓ ht ▸
@@ -194,7 +195,8 @@ theorem UpperJump.exists_psiNat_eq_of_isPGroup [IsCyclic (F ≃ₐ[K] F)]
     have hwt : w ∈ (unitFiltration L (psiNat F L t)).map (Algebra.normUnits F) := by
       rw [← map_normUnits_unitFiltration_zero_inf_of_le_break hℓ le_rfl ht]
       exact ⟨hwN, hw⟩
-    rw [show x = w * z by simp [w]]
+    have hwz : w * z = x := inv_mul_cancel_right x z
+    rw [← hwz]
     exact Subgroup.mul_mem_sup hwt hz'
   have hone := Subgroup.relIndex_eq_one.2 hle
   rw [relIndex_normUnits_unitFiltration_sup_at_break hℓ ht] at hone

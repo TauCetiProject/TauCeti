@@ -57,6 +57,7 @@ theorem normGroup_eq_top_of_isAlgClosed (K L : Type*) [Field K] [Field L] [Algeb
 
 /-- **The norm is Galois-equivariant.** For a tower `L/F/K` with `F/K` normal and an automorphism
 `σ` of `L/K`, the restriction of `σ` to `F` carries the norm `N_{L/F}(x)` to `N_{L/F}(σ x)`. -/
+@[simp]
 theorem _root_.AlgEquiv.restrictNormal_norm {K F L : Type*} [Field K] [Field F] [Field L]
     [Algebra K F] [Algebra K L] [Algebra F L] [IsScalarTower K F L] [Normal K F]
     (σ : L ≃ₐ[K] L) (x : L) :
