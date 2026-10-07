@@ -11,11 +11,11 @@ public import Mathlib.Topology.MetricSpace.ProperSpace
 /-!
 # Images of closed sets under maps tending to infinity
 
-Let `f` be continuous on a closed subset `A` of a proper metric space.  Points of `A` that are
-carried to a bounded region stay in a bounded region, so any choice of preimages of points
-escaping to infinity escapes to infinity as well.  If moreover `f` tends to infinity at infinity
-along `A`, then `f '' A` is closed, and when `f` is injective on `A` its inverse on `f '' A` is
-continuous: `f` restricted to `A` is a closed embedding.
+Let `f` be continuous on a closed subset `A` of a proper metric space.  The image of each
+bounded part of `A` is then bounded, since its closure in `A` is compact, so any choice of
+preimages of points escaping to infinity escapes to infinity as well.  If moreover `f` tends to
+infinity at infinity along `A`, then `f '' A` is closed, and when `f` is injective on `A` its
+inverse on `f '' A` is continuous: `f` restricted to `A` is a closed embedding.
 
 These facts let a map defined on a closed region, such as the closed upper half-plane, be
 inverted continuously up to the boundary of its image.
