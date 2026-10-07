@@ -32,6 +32,8 @@ weights.
   families vanishing outside them.
 * `LinearEquiv.piFinSnoc`: the linear splitting of a tuple of length `n + 1` into its initial `n`
   coordinates and its last one, with `Fin.snoc` as its inverse.
+* `Fin.snoc_zero_eq_single`: the tuple of length `n + 1` with vanishing initial segment is the
+  one-point family `Pi.single` at the last index.
 * `LinearEquiv.piEquivPiSubtypeProd`: `Equiv.piEquivPiSubtypeProd` as a linear equivalence,
   splitting `∀ i, M i` into the factors indexed by `p` and by `¬p`.
 * `LinearMap.toMatrix_piMap`: in product bases, `LinearMap.piMap f` is block diagonal, including
@@ -47,6 +49,16 @@ weights.
 * `TauCeti.exists_isRegular_neg_single_add_single_sub_single_add_single`: a negative coordinate
   sum and a coordinate sum on two different coordinates differ regularly at some coordinate.
 -/
+
+/-- **A tuple with vanishing initial segment is a one-point family.**  Appending `x` to the zero
+tuple of length `n` gives the family supported at the last index with value `x` there. -/
+public theorem Fin.snoc_zero_eq_single {n : ℕ} {M : Fin (n + 1) → Type*} [∀ i, Zero (M i)]
+    (x : M (Fin.last n)) :
+    Fin.snoc (0 : (i : Fin n) → M i.castSucc) x = Pi.single (Fin.last n) x := by
+  funext i
+  induction i using Fin.lastCases with
+  | last => simp
+  | cast i => simp
 
 namespace Submodule
 

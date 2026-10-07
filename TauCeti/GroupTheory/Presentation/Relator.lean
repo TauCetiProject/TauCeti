@@ -29,6 +29,7 @@ from Mathlib.
 
 * `TauCeti.PresentationWord`: Mathlib's left-to-right list of signed generators.
 * `TauCeti.Relator`: expressions built from generators, inverse, product, power, and commutator.
+* `TauCeti.Relator.map`: renaming generators while preserving the expression structure.
 * `TauCeti.Relator.toWord`: compilation of an expression to a signed word.
 * `TauCeti.Relator.length`: the length of that word, computed from the expression without
   expanding powers.
@@ -87,6 +88,56 @@ inductive Relator (α : Type*) where
   deriving DecidableEq
 
 namespace Relator
+
+/-- Rename the generators of an expression without changing its operations or exponents.
+The renaming function need not be injective. -/
+def map {α β : Type*} (f : α → β) : Relator α → Relator β
+  | .gen x => .gen (f x)
+  | .inv r => .inv (r.map f)
+  | .mul r s => .mul (r.map f) (s.map f)
+  | .pow r n => .pow (r.map f) n
+  | .comm r s => .comm (r.map f) (s.map f)
+
+/-- Renaming a generator applies the given function. -/
+@[simp]
+theorem map_gen {α β : Type*} (f : α → β) (x : α) :
+    (Relator.gen x).map f = Relator.gen (f x) := by
+  rfl
+
+/-- Renaming preserves inversion. -/
+@[simp]
+theorem map_inv {α β : Type*} (f : α → β) (r : Relator α) :
+    (Relator.inv r).map f = Relator.inv (r.map f) := by
+  rfl
+
+/-- Renaming preserves products. -/
+@[simp]
+theorem map_mul {α β : Type*} (f : α → β) (r s : Relator α) :
+    (Relator.mul r s).map f = Relator.mul (r.map f) (s.map f) := by
+  rfl
+
+/-- Renaming preserves natural powers, including their exponents. -/
+@[simp]
+theorem map_pow {α β : Type*} (f : α → β) (r : Relator α) (n : ℕ) :
+    (Relator.pow r n).map f = Relator.pow (r.map f) n := by
+  rfl
+
+/-- Renaming preserves commutators. -/
+@[simp]
+theorem map_comm {α β : Type*} (f : α → β) (r s : Relator α) :
+    (Relator.comm r s).map f = Relator.comm (r.map f) (s.map f) := by
+  rfl
+
+/-- Renaming each generator to itself leaves the expression unchanged. -/
+@[simp]
+theorem map_id {α : Type*} (r : Relator α) : r.map id = r := by
+  induction r <;> simp_all
+
+/-- Successive generator renamings compose. -/
+@[simp]
+theorem map_map {α β γ : Type*} (f : α → β) (g : β → γ) (r : Relator α) :
+    (r.map f).map g = r.map (g ∘ f) := by
+  induction r <;> simp_all
 
 /-- Compile a relator expression to a flat signed word.
 
@@ -344,6 +395,27 @@ theorem toWord_toFreeGroup {α : Type*} (r : Relator α) :
   | comm r s ihr ihs =>
     rw [toWord_comm, toFreeGroup_comm, commutatorElement_def, ← FreeGroup.mul_mk,
       ← FreeGroup.mul_mk, ← FreeGroup.mul_mk, ← FreeGroup.inv_mk, ← FreeGroup.inv_mk, ihr, ihs]
+
+/-- Renaming commutes with compilation: each signed letter keeps its sign. -/
+@[simp]
+theorem toWord_map {α β : Type*} (f : α → β) (r : Relator α) :
+    (r.map f).toWord = r.toWord.map (Prod.map f id) := by
+  induction r <;>
+    simp_all [FreeGroup.invRev, List.map_flatten, List.map_replicate,
+      List.map_map, Function.comp_def, Prod.map]
+
+/-- Renaming preserves the compiled length even when distinct generators are identified. -/
+@[simp]
+theorem length_map {α β : Type*} (f : α → β) (r : Relator α) :
+    (r.map f).length = r.length := by
+  rw [← length_toWord, toWord_map, List.length_map, length_toWord]
+
+/-- Structural interpretation commutes with the induced free-group homomorphism. -/
+@[simp]
+theorem toFreeGroup_map {α β : Type*} (f : α → β) (r : Relator α) :
+    (r.map f).toFreeGroup = FreeGroup.map f r.toFreeGroup := by
+  rw [← toWord_toFreeGroup, toWord_map, ← toWord_toFreeGroup r, FreeGroup.map.mk]
+  rfl
 
 /-- **Two relator lists with the same compiled-word membership denote the same relations.**
 

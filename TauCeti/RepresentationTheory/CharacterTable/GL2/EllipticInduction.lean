@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
--- `TauCeti.indClassFun` is the object computed here.
+-- `Subgroup.indClassFun` is the object computed here.
 public import TauCeti.RepresentationTheory.Induction.ClassFunction
 -- `FDRep.ofLinearCharacter` and `TauCeti.indFDRep` are the bodies of the constructions below.
 public import TauCeti.RepresentationTheory.Induction.LinearCharacter
@@ -26,7 +26,7 @@ import TauCeti.GroupTheory.QuotientGroup.Basic
 
 Let `E/F` be a quadratic extension of a finite field with `q` elements and let
 `T = TauCeti.GL2NonSplitTorus F E` be the resulting elliptic torus of `GL₂(F)`, a copy of `Eˣ`.
-This file computes the induced class function `TauCeti.indClassFun T f` on the four families of
+This file computes the induced class function `Subgroup.indClassFun T f` on the four families of
 conjugacy classes of `GL₂(F)`: at a central scalar `a` it is `[GL₂(F) : T] = q (q - 1)` copies of
 `f(a)`, it vanishes on the split semisimple and the non-semisimple families, and at an elliptic
 element coming from `u : Eˣ` outside `F` it is `f(u) + f(u^q)`.
@@ -83,7 +83,8 @@ That the four normal forms exhaust the conjugacy classes is
 `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ConjugacyClasses`; as in
 `TauCeti/RepresentationTheory/CharacterTable/GL2/CharacterValues.lean`, the values below are
 stated at the normal forms themselves rather than assembled into a single case distinction. None
-of the four class-function values is a `simp` lemma: they evaluate `indClassFun` of an arbitrary
+of the four class-function values is a `simp` lemma: they evaluate `Subgroup.indClassFun` of an
+arbitrary
 function at a normal form, and the right-hand side, a value of that function, is no normal form for
 `simp` either. The four character values they specialise to are `simp` lemmas: there the left-hand
 side is the character of `TauCeti.GL2EllipticInduction` at a normal form and the right-hand side is
@@ -117,9 +118,9 @@ theorem indClassFun_eq_zero_of_det_sub_algebraMap_eq_zero (f : GL2NonSplitTorus 
     (hg : (g : Matrix (Fin 2) (Fin 2) F) ∉ Set.range (Matrix.scalar (Fin 2))) {a : F}
     (ha : ((g : Matrix (Fin 2) (Fin 2) F) -
       algebraMap F (Matrix (Fin 2) (Fin 2) F) a).det = 0) :
-    indClassFun (GL2NonSplitTorus F E) f g = 0 := by
+    Subgroup.indClassFun (GL2NonSplitTorus F E) f g = 0 := by
   classical
-  rw [indClassFun_apply]
+  rw [Subgroup.indClassFun_apply]
   exact Finset.sum_eq_zero fun t _ =>
     dite_eq_right (conj_notMem_of_det_sub_algebraMap_eq_zero hg ha _)
 
@@ -130,7 +131,7 @@ itself and lies in the torus, so each of the `[GL₂(F) : T]` cosets contributes
 Over a field with `q` elements the index is `q (q - 1)` by
 `TauCeti.GL2NonSplitTorus.index_eq`. -/
 theorem indClassFun_scalar (f : GL2NonSplitTorus F E → k) (a : Fˣ) :
-    indClassFun (GL2NonSplitTorus F E) f (Matrix.GeneralLinearGroup.scalar (Fin 2) a) =
+    Subgroup.indClassFun (GL2NonSplitTorus F E) f (Matrix.GeneralLinearGroup.scalar (Fin 2) a) =
       (GL2NonSplitTorus F E).index •
         f ⟨Matrix.GeneralLinearGroup.scalar (Fin 2) a, scalar_mem a⟩ := by
   classical
@@ -140,13 +141,14 @@ theorem indClassFun_scalar (f : GL2NonSplitTorus F E → k) (a : Fˣ) :
     rw [mul_assoc, Matrix.GeneralLinearGroup.scalar_commute a x, ← mul_assoc, inv_mul_cancel,
       one_mul]
   let _ : Fintype (GL (Fin 2) F ⧸ GL2NonSplitTorus F E) := Fintype.ofFinite _
-  rw [indClassFun_apply, Subgroup.index_eq_card, Nat.card_eq_fintype_card, ← Finset.card_univ]
+  rw [Subgroup.indClassFun_apply, Subgroup.index_eq_card, Nat.card_eq_fintype_card, ←
+    Finset.card_univ]
   exact Finset.sum_eq_card_nsmul fun t _ => by rw [hconj, dite_eq_left (scalar_mem a)]
 
 /-- **The induced class function vanishes on the split semisimple classes**: an invertible
 diagonal matrix with distinct entries is non-scalar and has its entries as eigenvalues in `F`. -/
 theorem indClassFun_diagGL (f : GL2NonSplitTorus F E → k) {t : Fin 2 → Fˣ} (ht : t 0 ≠ t 1) :
-    indClassFun (GL2NonSplitTorus F E) f (diagGL t) = 0 := by
+    Subgroup.indClassFun (GL2NonSplitTorus F E) f (diagGL t) = 0 := by
   refine indClassFun_eq_zero_of_det_sub_algebraMap_eq_zero f
     (notMem_range_scalar_diagGL ht) (a := (t 0 : F)) ?_
   have hsub : ((diagGL t : Matrix (Fin 2) (Fin 2) F) -
@@ -160,7 +162,7 @@ theorem indClassFun_diagGL (f : GL2NonSplitTorus F E → k) {t : Fin 2 → Fˣ} 
 /-- **The induced class function vanishes on the non-semisimple classes**: a Jordan block with
 `b ≠ 0` is non-scalar and has its repeated diagonal entry as an eigenvalue in `F`. -/
 theorem indClassFun_jordanGL (f : GL2NonSplitTorus F E → k) (a : Fˣ) {b : F} (hb : b ≠ 0) :
-    indClassFun (GL2NonSplitTorus F E) f (jordanGL a b) = 0 := by
+    Subgroup.indClassFun (GL2NonSplitTorus F E) f (jordanGL a b) = 0 := by
   refine indClassFun_eq_zero_of_det_sub_algebraMap_eq_zero f
     (notMem_range_scalar_jordanGL hb) (a := (a : F)) ?_
   have hsub : ((jordanGL a b : Matrix (Fin 2) (Fin 2) F) -
@@ -275,7 +277,7 @@ elliptic element is the whole torus
 single coset. -/
 theorem indClassFun_gl2NonSplitTorusHom (f : GL2NonSplitTorus F E → k)
     (hu : (u : E) ∉ Set.range (algebraMap F E)) :
-    indClassFun (GL2NonSplitTorus F E) f (GL2NonSplitTorusHom F E u) =
+    Subgroup.indClassFun (GL2NonSplitTorus F E) f (GL2NonSplitTorusHom F E u) =
       f (unitsEquiv u) + f (unitsEquiv (u ^ Nat.card F)) := by
   classical
   have hgmem : GL2NonSplitTorusHom F E u ∈ GL2NonSplitTorus F E :=
@@ -296,16 +298,16 @@ theorem indClassFun_gl2NonSplitTorusHom (f : GL2NonSplitTorus F E → k)
     refine Subtype.ext ?_
     rw [Subgroup.coe_mul, Subgroup.coe_mul, Subgroup.coe_inv, ← hp, ← hr, ← map_inv, ← map_mul,
       ← map_mul, mul_comm r p, mul_assoc, mul_inv_cancel, mul_one]
-  rw [indClassFun_eq_sum_of_smul_eq_self_mem f _
+  rw [Subgroup.indClassFun_eq_sum_of_smul_eq_self_mem _ f _
     ({((1 : GL (Fin 2) F) : GL (Fin 2) F ⧸ GL2NonSplitTorus F E),
       (d : GL (Fin 2) F ⧸ GL2NonSplitTorus F E)} : Finset _) ?_, Finset.sum_pair hne]
   · congr 1
-    · rw [indTerm_eq_of_mk_eq_of_conj (fun y z => congrArg f (hcomm y z)) _ _
-          (1 : GL (Fin 2) F) (QuotientGroup.out_eq' _), indTerm_one,
+    · rw [Function.indTerm_eq_of_mk_eq_of_conj f (fun y z => congrArg f (hcomm y z)) _ _
+          (1 : GL (Fin 2) F) (QuotientGroup.out_eq' _), Function.indTerm_one,
         dite_eq_left hgmem]
       exact congrArg f (Subtype.ext (coe_unitsEquiv_apply u).symm)
-    · rw [indTerm_eq_of_mk_eq_of_conj (fun y z => congrArg f (hcomm y z)) _ _ d
-          (QuotientGroup.out_eq' _), indTerm_apply, hdg,
+    · rw [Function.indTerm_eq_of_mk_eq_of_conj f (fun y z => congrArg f (hcomm y z)) _ _ d
+          (QuotientGroup.out_eq' _), Function.indTerm_apply, hdg,
         dite_eq_left hgmem']
       exact congrArg f (Subtype.ext (coe_unitsEquiv_apply _).symm)
   · intro t ht
@@ -377,7 +379,7 @@ theorem character_GL2EllipticInduction_scalar (θ : Eˣ →* ℂˣ) (a : Fˣ) :
     (GL2EllipticInduction F E θ).character (Matrix.GeneralLinearGroup.scalar (Fin 2) a) =
       (Nat.card F : ℂ) * ((Nat.card F : ℂ) - 1) *
         θ (Units.map (algebraMap F E : F →* E) a) := by
-  rw [GL2EllipticInduction_def, ← indClassFun_ofFDRep_character,
+  rw [GL2EllipticInduction_def, ← Subgroup.indClassFun_ofFDRep_character,
     GL2NonSplitTorus.indClassFun_scalar _ a, character_GL2NonSplitTorusRep,
     GL2NonSplitTorus.unitsEquiv_symm_scalar, GL2NonSplitTorus.index_eq, nsmul_eq_mul, Nat.cast_mul,
     Nat.cast_sub Nat.card_pos]
@@ -387,14 +389,14 @@ theorem character_GL2EllipticInduction_scalar (θ : Eˣ →* ℂˣ) (a : Fˣ) :
 @[simp]
 theorem character_GL2EllipticInduction_diagGL (θ : Eˣ →* ℂˣ) {t : Fin 2 → Fˣ} (ht : t 0 ≠ t 1) :
     (GL2EllipticInduction F E θ).character (diagGL t) = 0 := by
-  rw [GL2EllipticInduction_def, ← indClassFun_ofFDRep_character]
+  rw [GL2EllipticInduction_def, ← Subgroup.indClassFun_ofFDRep_character]
   exact GL2NonSplitTorus.indClassFun_diagGL _ ht
 
 /-- **The elliptic induced character vanishes on the non-semisimple classes.** -/
 @[simp]
 theorem character_GL2EllipticInduction_jordanGL (θ : Eˣ →* ℂˣ) (a : Fˣ) {b : F} (hb : b ≠ 0) :
     (GL2EllipticInduction F E θ).character (jordanGL a b) = 0 := by
-  rw [GL2EllipticInduction_def, ← indClassFun_ofFDRep_character]
+  rw [GL2EllipticInduction_def, ← Subgroup.indClassFun_ofFDRep_character]
   exact GL2NonSplitTorus.indClassFun_jordanGL _ a hb
 
 /-- **The elliptic induced character at an elliptic element** is `θ(u) + θ(u^q)`: the two
@@ -404,7 +406,7 @@ theorem character_GL2EllipticInduction_gl2NonSplitTorusHom (θ : Eˣ →* ℂˣ)
     (hu : (u : E) ∉ Set.range (algebraMap F E)) :
     (GL2EllipticInduction F E θ).character (GL2NonSplitTorusHom F E u) =
       (θ u : ℂ) + θ (u ^ Nat.card F) := by
-  rw [GL2EllipticInduction_def, ← indClassFun_ofFDRep_character,
+  rw [GL2EllipticInduction_def, ← Subgroup.indClassFun_ofFDRep_character,
     GL2NonSplitTorus.indClassFun_gl2NonSplitTorusHom _ hu, character_GL2NonSplitTorusRep,
     character_GL2NonSplitTorusRep, MulEquiv.symm_apply_apply, MulEquiv.symm_apply_apply]
 

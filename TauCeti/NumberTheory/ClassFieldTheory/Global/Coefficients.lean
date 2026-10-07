@@ -116,6 +116,14 @@ theorem adeleTransition_algebraMap {E E' : Ω} (h : E ≤ E') (x : E) :
   let := (IntermediateField.inclusion h).toRingHom.toAlgebra
   exact adeleExtension_algebraMap (𝓞 E) E (𝓞 E') E' x
 
+/-- The infinite component of the extension of an adele is the extension of its infinite
+component. -/
+theorem adeleTransition_fst {E E' : Ω} (h : E ≤ E') (a : AdeleRing (𝓞 E) E) :
+    letI := (IntermediateField.inclusion h).toRingHom.toAlgebra
+    (adeleTransition h a).1 = infiniteAdeleExtension E E' a.1 := by
+  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
+  exact adeleExtension_fst (B := 𝓞 E') (L := E') a
+
 /-- The finite component of the extension of an adele is the extension of its finite
 component. -/
 theorem adeleTransition_snd {E E' : Ω} (h : E ≤ E') (a : AdeleRing (𝓞 E) E) :

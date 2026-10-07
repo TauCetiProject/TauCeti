@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
-public import Mathlib.CategoryTheory.Limits.MonoCoprod
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.AlgebraicTopology.LocalCoefficient
@@ -339,15 +338,8 @@ lemma twistedChainComplexCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J) :
 /-- An isomorphism of local coefficient systems induces an isomorphism of twisted chain
 complexes. -/
 def twistedChainComplexCoefficientIso (e : L ≅ K) :
-    twistedChainComplex L ≅ twistedChainComplex K where
-  hom := twistedChainComplexCoefficientMap e.hom
-  inv := twistedChainComplexCoefficientMap e.inv
-  hom_inv_id := by
-    rw [← twistedChainComplexCoefficientMap_comp, e.hom_inv_id,
-      twistedChainComplexCoefficientMap_id]
-  inv_hom_id := by
-    rw [← twistedChainComplexCoefficientMap_comp, e.inv_hom_id,
-      twistedChainComplexCoefficientMap_id]
+    twistedChainComplex L ≅ twistedChainComplex K :=
+  (twistedChainsFunctor R X ⋙ AlgebraicTopology.alternatingFaceMapComplex _).mapIso e
 
 @[simp]
 lemma twistedChainComplexCoefficientIso_hom (e : L ≅ K) :
@@ -472,6 +464,7 @@ lemma ι_twistedChainComplexConstantIso_inv (M : ModuleCat.{max v w} R) (k : ℕ
 variable (X) in
 /-- The comparison of the twisted chain complex with the ordinary singular chain complex is
 natural in the coefficient module. -/
+@[reassoc]
 lemma twistedChainComplexConstantIso_hom_naturality {M N : ModuleCat.{max v w} R} (φ : M ⟶ N) :
     twistedChainComplexCoefficientMap ((constantFunctor X).map φ) ≫
         (twistedChainComplexConstantIso X N).hom =
@@ -591,30 +584,14 @@ abbrev twistedHomologyMap (k : ℕ) :
     twistedHomology ((pullback f.hom).obj L) k ⟶ twistedHomology L k :=
   HomologicalComplex.homologyMap (twistedChainComplexMap f L) k
 
-/-- A monomorphism of spaces, that is, a continuous map with injective underlying function,
-induces a monomorphism of twisted chains in every degree: it reindexes the summands along an
-injection of singular simplices. -/
--- The term has type `Mono (Sigma.map' ((TopCat.toSSet.map f).app k) fun _ ↦ 𝟙 _)`, so it uses two
--- definitional equalities that the section otherwise keeps hidden: that `twistedChainsMap` is
--- `twistedChainsMapApp` in every degree, and that the summand `((pullback f.hom).obj L).obj
--- (initialVertex σ)` of the source is `L.obj (initialVertex ((TopCat.toSSet.map f).app k σ))`.
-instance mono_twistedChainsMap_app [Mono f] (k : SimplexCategoryᵒᵖ) :
-    Mono ((twistedChainsMap f L).app k) :=
-  MonoCoprod.mono_map'_of_injective (fun σ ↦ L.obj (initialVertex σ))
-    ((TopCat.toSSet.map f).app k)
-    ((CategoryTheory.mono_iff_injective ((TopCat.toSSet.map f).app k)).mp inferInstance)
-
-/-- A monomorphism of spaces induces a monomorphism of twisted chain complexes. -/
-instance mono_twistedChainComplexMap [Mono f] : Mono (twistedChainComplexMap f L) :=
-  HomologicalComplex.mono_of_mono_f _ fun _ ↦ mono_twistedChainsMap_app f L _
-
 /-- The monomorphism of twisted chains induced by a monomorphism of spaces is split in every
 degree: the retraction keeps the summands of the simplices coming from the subspace and kills the
 others.  This is what makes the twisted chain sequence of a pair stay exact after applying a
 contravariant `Hom(-, M)`. -/
--- The term has type `IsSplitMono (Sigma.map' ((TopCat.toSSet.map f).app k) fun _ ↦ 𝟙 _)`, so, like
--- `mono_twistedChainsMap_app`, it uses the definitional descriptions of `twistedChainsMap` and of
--- the coefficient module of each summand of its source.
+-- The term has type `IsSplitMono (Sigma.map' ((TopCat.toSSet.map f).app k) fun _ ↦ 𝟙 _)`, so it
+-- uses two definitional equalities that the section otherwise keeps hidden: that `twistedChainsMap`
+-- is `twistedChainsMapApp` in every degree, and that the summand `((pullback f.hom).obj L).obj
+-- (initialVertex σ)` of the source is `L.obj (initialVertex ((TopCat.toSSet.map f).app k σ))`.
 instance isSplitMono_twistedChainsMap_app [Mono f] (k : SimplexCategoryᵒᵖ) :
     IsSplitMono ((twistedChainsMap f L).app k) :=
   TauCeti.isSplitMono_sigmaMap' (fun σ ↦ L.obj (initialVertex σ)) ((TopCat.toSSet.map f).app k)
@@ -624,6 +601,10 @@ complexes. -/
 instance isSplitMono_twistedChainComplexMap_f [Mono f] (k : ℕ) :
     IsSplitMono ((twistedChainComplexMap f L).f k) :=
   isSplitMono_twistedChainsMap_app f L _
+
+/-- A monomorphism of spaces induces a monomorphism of twisted chain complexes. -/
+instance mono_twistedChainComplexMap [Mono f] : Mono (twistedChainComplexMap f L) :=
+  HomologicalComplex.mono_of_mono_f _ fun _ ↦ inferInstance
 
 end Map
 
@@ -710,6 +691,7 @@ lemma twistedChainsMap_naturality (η : L ⟶ K) :
   exact ιTwistedChains_twistedChainsCoefficientMap η n _
 
 /-- The chain-complex form of `twistedChainsMap_naturality`. -/
+@[reassoc]
 lemma twistedChainComplexMap_naturality (η : L ⟶ K) :
     twistedChainComplexMap f L ≫ twistedChainComplexCoefficientMap η =
       twistedChainComplexCoefficientMap ((pullback f.hom).map η) ≫ twistedChainComplexMap f K :=
@@ -781,6 +763,7 @@ lemma twistedChainsConstantIso_hom_space_naturality :
   exact key.symm.trans (Category.id_comp _).symm
 
 /-- The chain-complex form of `twistedChainsConstantIso_hom_space_naturality`. -/
+@[reassoc]
 lemma twistedChainComplexConstantIso_hom_space_naturality :
     twistedChainComplexMap f ((constantFunctor Y).obj M) ≫
         (twistedChainComplexConstantIso Y M).hom =
