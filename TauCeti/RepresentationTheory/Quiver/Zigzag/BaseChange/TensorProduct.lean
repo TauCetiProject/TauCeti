@@ -30,10 +30,10 @@ public section
 
 noncomputable section
 
-namespace TauCeti
+namespace SimpleGraph
 
 open scoped TensorProduct
-open PathAlgebra DoubledQuiver
+open TauCeti TauCeti.PathAlgebra TauCeti.DoubledQuiver
 
 universe u w z
 
@@ -199,4 +199,4 @@ theorem skewZigzagScalarExtensionEquiv_symm_skewZigzagMk_ofPath
   rw [AlgEquiv.apply_symm_apply, skewZigzagScalarExtensionEquiv_tmul,
     skewZigzagBaseChange_skewZigzagMk_ofPath, one_smul]
 
-end TauCeti
+end SimpleGraph
