@@ -151,7 +151,7 @@ theorem reduce_star (p : ℕ) (r : ZMod p)
     (hr : (Polynomial.cyclotomic e ℤ).eval₂ (Int.castRingHom (ZMod p)) r = 0)
     (x : Cyclotomic e) :
     reduce p r (star x) = reduce p (r ^ (e - 1)) x := by
-  rw [reduce, evalCoeffs_eq_eval₂, ← evalRingHom_apply _ _ hr, evalRingHom_star, reduce]
+  rw [reduce, ← evalRingHom_eq_evalCoeffs _ _ hr, evalRingHom_star, reduce]
 
 /-! The exact operation reduces in the kernel. -/
 

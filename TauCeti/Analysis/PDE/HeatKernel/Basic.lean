@@ -35,6 +35,8 @@ a heat kernel assumes `0 < t`.
 
 * `TauCeti.heatKernel`: the heat kernel `K_t(x)`.
 * `TauCeti.heatKernel_pos`: `K_t > 0` for `t > 0`.
+* `TauCeti.heatKernel_eq_mul_heatKernel_one_smul`: the parabolic scaling
+  `K_t(x) = (√t)⁻¹ ^ n K_1((√t)⁻¹ • x)`.
 * `TauCeti.contDiff_heatKernel`: `K_t` is smooth.
 * `TauCeti.integral_heatKernel`: `∫ K_t = 1` for `t > 0`.
 * `TauCeti.laplacian_heatKernel`: `Δ K_t(x) = (‖x‖² / (4t²) - n / (2t)) K_t(x)`.
@@ -80,6 +82,20 @@ theorem heatKernel_pos {t : ℝ} (ht : 0 < t) (x : E) : 0 < heatKernel t x := by
 @[simp]
 theorem heatKernel_neg (t : ℝ) (x : E) : heatKernel t (-x) = heatKernel t x := by
   simp [heatKernel_apply]
+
+/-- **Parabolic scaling of the heat kernel.** For `t > 0`, `K_t` is the `L¹`-normalized dilation
+of `K_1` by the factor `(√t)⁻¹`: `K_t(x) = (√t)⁻¹ ^ n K_1((√t)⁻¹ • x)` with `n = dim E`. -/
+theorem heatKernel_eq_mul_heatKernel_one_smul {t : ℝ} (ht : 0 < t) (x : E) :
+    heatKernel t x = (√t)⁻¹ ^ Module.finrank ℝ E * heatKernel 1 ((√t)⁻¹ • x) := by
+  have hst : 0 < √t := sqrt_pos.2 ht
+  have hpow : (√t)⁻¹ ^ Module.finrank ℝ E = t ^ (-(Module.finrank ℝ E : ℝ) / 2) := by
+    rw [sqrt_eq_rpow, ← rpow_natCast, inv_rpow (by positivity), ← rpow_mul ht.le, ← rpow_neg ht.le]
+    ring_nf
+  have hnorm : ‖(√t)⁻¹ • x‖ ^ 2 = ‖x‖ ^ 2 / t := by
+    rw [norm_smul, norm_inv, norm_of_nonneg hst.le, mul_pow, inv_pow, sq_sqrt ht.le]
+    ring
+  rw [heatKernel_apply, heatKernel_apply, hnorm, hpow, mul_one, mul_rpow (by positivity) ht.le]
+  field_simp
 
 /-- The heat kernel `K_t` is smooth in the space variable (for every `t`). -/
 theorem contDiff_heatKernel (t : ℝ) {k : WithTop ℕ∞} : ContDiff ℝ k (heatKernel t : E → ℝ) :=

@@ -30,7 +30,7 @@ so integrating that identity gives
 
 and the companion identity `χ(g)² = χ_{Sym²}(g) + χ_{Λ²}(g)` gives the two integrals separately in
 terms of `ν₂(π)` and `∫_G χ_π²`. Those two integrals are the (complexified) dimensions of the
-invariants of the two squares once the projection onto invariants built from the Layer 0 averaging
+invariants of the two squares once the projection onto invariants built from the Haar averaging
 operator is available; here only the character-level identities are proved, which is what makes them
 independent of that development.
 
@@ -75,7 +75,7 @@ values as invariant bilinear forms is
 
 ## Implementation notes
 
-The continuity hypothesis `hπ : Continuous π` is the one `TauCeti.ContRepresentation.character`
+The continuity hypothesis `hπ : Continuous π` is the one `ContRepresentation.character`
 already carries: `ContRepresentation` bundles continuous action *operators* without asking that the
 map to them be continuous. Since it is a `Prop` argument, two indicators built from different
 continuity proofs are equal by proof irrelevance.
@@ -84,22 +84,19 @@ Everything below is declared in the **root** `ContRepresentation` namespace rath
 `TauCeti.ContRepresentation`, so that `π.frobeniusSchurIndicator hπ` elaborates:
 `ContRepresentation` is Mathlib's type, and a namespace for it nested inside `TauCeti` does not
 support dot notation.
-That is why the ambient `TauCeti` names this file consumes — `TauCeti.haarProb`,
-`TauCeti.integrable_continuousMap`, `TauCeti.ContRepresentation.character` — are brought in by
-`open` instead of by being in scope.
+The ambient `TauCeti` names this file consumes, such as `TauCeti.haarProb` and
+`TauCeti.integrable_continuousMap`, are brought in by `open`. The character and its formulas are
+methods in `ContRepresentation`.
 
-The scalars are `ℂ`, as the compact-groups roadmap pins them. That is not only convention here: the
+The scalars are `ℂ`: the
 symmetric- and exterior-power representations of
 `TauCeti/RepresentationTheory/SymmetricPower.lean` and
 `TauCeti/RepresentationTheory/ExteriorPower.lean`, whose characters the square identities below
 speak of, are built over a base ring in `Type`, so a general `RCLike` field in an arbitrary universe
 would not even let the statements be formed.
 
-This is Layer 6b of the compact-groups roadmap, pinned in its
-[`Suggested.lean`](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/Suggested.lean),
-the compact-group half of the Frobenius-Schur reality invariant. The mathematical development
-follows Daniel Bump, *Lie Groups*, second edition, Chapter 2, and Bröcker-tom Dieck,
-*Representations of Compact Lie Groups*, Chapter II.
+The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2, and
+Bröcker-tom Dieck, *Representations of Compact Lie Groups*, Chapter II.
 -/
 
 public section
@@ -239,7 +236,7 @@ variable (π : ContRepresentation ℂ G V) (hπ : Continuous π)
 /-- **The Frobenius-Schur indicator of a unitary representation is real.**
 
 Conjugating the character inverts its argument
-(`TauCeti.ContRepresentation.character_apply_inv`), and `(g * g)⁻¹ = g⁻¹ * g⁻¹`, so the conjugate
+(`ContRepresentation.character_apply_inv`), and `(g * g)⁻¹ = g⁻¹ * g⁻¹`, so the conjugate
 indicator is the Haar average of `g ↦ χ(g⁻¹ * g⁻¹)`. Haar measure on a compact group is inversion
 invariant, which returns that average to the original one. -/
 @[simp]

@@ -25,6 +25,10 @@ power-substitution variable. The punctured product is connected and the roots ar
 there. The conclusions concern the given branches; their construction and their extension
 across the missing hyperplane are separate results.
 
+`existsUnique_root_conj_perm_of_subset_closure` extends this permutation to a larger
+parameter set on which the branches are continuous. Distinctness is needed only on the
+preconnected dense subset; roots may collide on its boundary.
+
 For real polynomial families, persistence of collisions also gives a local realness criterion
 without distinctness: a labelled root is real nearby exactly when it is real at the center.
 
@@ -124,5 +128,44 @@ theorem root_im_eq_zero_iff_of_fixed
   have h₁ := root_conj_perm_apply_eq_self_iff_im_eq_zero (hinj b₁)
     (fun j => by simpa [hb₁] using hσ j b₁) i
   exact h₀.symm.trans h₁
+
+end TauCeti
+
+namespace TauCeti
+
+variable {B ι : Type*} [TopologicalSpace B] [Finite ι]
+  {S T : Set B} {F : B → ℂ[X]} {r : ι → B → ℂ} {τ : B → B}
+
+/-- Conjugation of a complete, distinct root labelling on a preconnected subset extends
+uniquely to its continuous branches on a larger set contained in its closure. Roots may
+collide on the larger set. Polynomial symmetry and root coverage are required only on the
+dense subset. -/
+theorem existsUnique_root_conj_perm_of_subset_closure
+    (hS : IsPreconnected S) (hST : S ⊆ T) (hTS : T ⊆ closure S)
+    (hr : ∀ i, ContinuousOn (r i) T)
+    (hinj : ∀ b ∈ S, Function.Injective (fun i => r i b))
+    (hroot : ∀ b ∈ S, ∀ z, (F b).IsRoot z ↔ ∃ i, r i b = z)
+    (hτ : ContinuousOn τ T) (hτS : MapsTo τ S S) (hτT : MapsTo τ T T)
+    (hττ : ∀ b ∈ S, τ (τ b) = b)
+    (hF : ∀ b ∈ S, F (τ b) = (F b).map (starRingEnd ℂ)) (b₀ : S) :
+    ∃! σ : Equiv.Perm ι, Function.Involutive σ ∧
+      ∀ i b, b ∈ T → r (σ i) b = conj (r i (τ b)) := by
+  let := Subtype.preconnectedSpace hS
+  let τS : S → S := fun b => ⟨τ b, hτS b.property⟩
+  have hτSc : Continuous τS :=
+    ((hτ.mono hST).domRestrict).subtype_mk _
+  have hτSτS : Function.Involutive τS := fun b => Subtype.ext (hττ b b.property)
+  obtain ⟨σ, ⟨hσσ, hσ⟩, huniq⟩ := existsUnique_root_conj_perm
+    (fun i => ((hr i).mono hST).domRestrict) (fun b => hinj b b.property)
+    (fun b z => hroot b b.property z) hτSc hτSτS
+    (fun b => hF b b.property) b₀
+  refine ⟨σ, ⟨hσσ, ?_⟩, ?_⟩
+  · intro i
+    have heq : EqOn (r (σ i)) (fun b => conj (r i (τ b))) S :=
+      fun b hb => hσ i ⟨b, hb⟩
+    exact heq.of_subset_closure (hr (σ i))
+      (Complex.continuous_conj.comp_continuousOn ((hr i).comp hτ hτT)) hST hTS
+  · intro σ' hσ'
+    exact huniq σ' ⟨hσ'.1, fun i b => hσ'.2 i b (hST b.property)⟩
 
 end TauCeti
