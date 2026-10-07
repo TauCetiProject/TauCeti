@@ -52,14 +52,14 @@ def alternatingGroupFiveExponentCharacterTable :
     (alternatingGroupFiveCandidateCharacterTable i j)
 
 /-- Entrywise substitution describing the exponent-`30` central table. -/
-theorem alternatingGroupFiveExponentCentralCharacterTable_apply
+@[simp] theorem alternatingGroupFiveExponentCentralCharacterTable_apply
     (i j : AlternatingGroupFiveClassIndex) :
     alternatingGroupFiveExponentCentralCharacterTable i j =
       Cyclotomic.evalCoeffs (Int.castRingHom (Cyclotomic 30)) (Cyclotomic.zeta 30 ^ 6)
         (alternatingGroupFiveCandidateCentralCharacterTable i j) := (rfl)
 
 /-- Entrywise substitution describing the exponent-`30` ordinary table. -/
-theorem alternatingGroupFiveExponentCharacterTable_apply
+@[simp] theorem alternatingGroupFiveExponentCharacterTable_apply
     (i j : AlternatingGroupFiveClassIndex) :
     alternatingGroupFiveExponentCharacterTable i j =
       Cyclotomic.evalCoeffs (Int.castRingHom (Cyclotomic 30)) (Cyclotomic.zeta 30 ^ 6)
