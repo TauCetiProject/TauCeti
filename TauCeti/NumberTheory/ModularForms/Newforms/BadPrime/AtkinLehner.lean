@@ -83,28 +83,19 @@ theorem isAtkinLehnerMatrix_descendExtra (hp : p.Prime) (hpN : p ∣ N) (hpsq : 
         congr_fun₂ (congrArg Subtype.val (descendExtraGamma_map_intCast_zmod_eq_S hp hpN hpsq)) i j
   have h00 : ((descendExtraGamma p N 0 0 : ℤ) : ZMod p) = 0 := by
     simp [h 0 0, ModularGroup.coe_S]
-  have h11 : ((descendExtraGamma p N 1 1 : ℤ) : ZMod p) = 0 := by
-    simp [h 1 1, ModularGroup.coe_S]
   set γ := descendExtraGamma p N
-  have h10 := Gamma0_mem.mp (descendExtraGamma_mem_Gamma0 hp hpN hpsq)
+  obtain ⟨a, ha⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd _ p).mp h00
+  obtain ⟨c, hc⟩ : ((N / p : ℕ) : ℤ) ∣ γ 1 0 := (ZMod.intCast_zmod_eq_zero_iff_dvd _ (N / p)).mp
+    (Gamma0_mem.mp (descendExtraGamma_mem_Gamma0 hp hpN hpsq))
+  have hdet := Matrix.SpecialLinearGroup.det_coe γ
+  rw [Matrix.det_fin_two, ha, hc] at hdet
   have hM : !![1, 0; 0, (p : ℤ)] * (γ : Matrix (Fin 2) (Fin 2) ℤ) =
-      !![γ 0 0, γ 0 1; p * γ 1 0, p * γ 1 1] := by
+      !![(p : ℤ) * a, γ 0 1; (p : ℤ) * (N / p : ℕ) * c, (p : ℤ) * γ 1 1] := by
     ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
+    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two, ha, hc, mul_assoc]
   rw [hM]
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · simpa using (ZMod.intCast_zmod_eq_zero_iff_dvd _ p).mp h00
-  · obtain ⟨t, ht⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd _ (N / p)).mp h10
-    have hN : (N : ℤ) = p * ((N / p : ℕ) : ℤ) := by exact_mod_cast (Nat.mul_div_cancel' hpN).symm
-    refine ⟨t, ?_⟩
-    simp only [Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.empty_val', Matrix.cons_val_fin_one]
-    rw [ht, hN, mul_assoc]
-  · exact ⟨γ 1 1, by simp⟩
-  · have hdet := Matrix.SpecialLinearGroup.det_coe γ
-    rw [Matrix.det_fin_two] at hdet
-    rw [Matrix.det_fin_two_of]
-    linear_combination (p : ℤ) * hdet
+  exact isAtkinLehnerMatrix_of_entries (Nat.mul_div_cancel' hpN).symm _ _ _ _ <| by
+    linear_combination hdet
 
 /-- **The extra descent matrix, read in `GL (Fin 2) ℝ`, is the Atkin–Lehner matrix
 `[1, 0; 0, p] γ_p`.** This is the member of the descent family at the index `p`, present because
