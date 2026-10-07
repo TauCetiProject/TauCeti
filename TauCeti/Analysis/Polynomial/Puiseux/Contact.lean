@@ -170,41 +170,47 @@ private theorem eventually_min_analyticOrderAt_root_sub_self_eq
   rw [← hcap x hx i, ← hcap x₀ hx₀ i, hp i]
 
 /-- All capped contacts of ramified branches with labelled roots on the hyperplane
-are locally constant, including contacts between labels colliding there. -/
+are locally constant, including contacts between labels colliding there. Analyticity,
+splitting, and the power-times-unit discriminant identity are only required as germs
+at the central point. -/
 theorem eventually_min_analyticOrderAt_root_sub_eq
-    (hU : IsOpen U) (hx₀ : x₀ ∈ U) (hR : 0 < R)
     (hN : N ≠ 0)
-    (hr : ∀ i, AnalyticOnNhd ℂ (r i) (U ×ˢ ball 0 R))
-    (hP : ∀ b ∈ U ×ˢ ball 0 R, P (b.1, b.2 ^ N) = ∏ i, (X - C (r i b)))
-    (hu : AnalyticAt ℂ u (x₀, 0)) (hu0 : ∀ b ∈ U ×ˢ ball 0 R, u b ≠ 0)
-    (hdiscr : ∀ b ∈ U ×ˢ ball 0 R, (P (b.1, b.2 ^ N)).discr = b.2 ^ a * u b) :
+    (hr : ∀ i, AnalyticAt ℂ (r i) (x₀, 0))
+    (hP : ∀ᶠ b in 𝓝 (x₀, (0 : ℂ)), P (b.1, b.2 ^ N) = ∏ i, (X - C (r i b)))
+    (hu : AnalyticAt ℂ u (x₀, 0)) (hu0 : u (x₀, 0) ≠ 0)
+    (hdiscr : ∀ᶠ b in 𝓝 (x₀, (0 : ℂ)),
+      (P (b.1, b.2 ^ N)).discr = b.2 ^ a * u b) :
     ∀ᶠ x in 𝓝 x₀, ∀ i j,
       min (N : ℕ∞) (analyticOrderAt (fun t ↦ r j (x, t) - r i (x, 0)) 0) =
         min (N : ℕ∞) (analyticOrderAt (fun t ↦ r j (x₀, t) - r i (x₀, 0)) 0) := by
-  have hmem : ∀ᶠ b in 𝓝 (x₀, (0 : ℂ)), b ∈ U ×ˢ ball 0 R :=
-    (hU.prod isOpen_ball).mem_nhds ⟨hx₀, mem_ball_self hR⟩
+  -- Shrink all germ hypotheses to one connected cylinder preserved by rotation.
+  have hlocal : ∀ᶠ b in 𝓝 (x₀, (0 : ℂ)),
+      (∀ i, AnalyticAt ℂ (r i) b) ∧
+      P (b.1, b.2 ^ N) = ∏ i, (X - C (r i b)) ∧
+      (P (b.1, b.2 ^ N)).discr = b.2 ^ a * u b ∧ u b ≠ 0 := by
+    filter_upwards [eventually_all.2 (fun i ↦ (hr i).eventually_analyticAt),
+      hP, hdiscr, hu.continuousAt.eventually_ne hu0] with b hb hPb hdb hub
+    exact ⟨hb, hPb, hdb, hub⟩
+  obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff_ball.1 hlocal
+  rw [← ball_prod_same] at hball
   have hrel := eventually_all.2 fun i ↦ eventually_all.2 fun j ↦
-    eventually_root_eq_iff_on_hyperplane
-      (fun k ↦ hr k (x₀, 0) ⟨hx₀, mem_ball_self hR⟩) (hmem.mono hP)
-      hu (hu0 _ ⟨hx₀, mem_ball_self hR⟩)
-      (by simpa only [sub_zero] using hmem.mono hdiscr) i j
-  obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1 hU x₀ hx₀
-  have hsub : ball x₀ ε ×ˢ ball (0 : ℂ) R ⊆ U ×ˢ ball 0 R :=
-    prod_mono hεU subset_rfl
+    eventually_root_eq_iff_on_hyperplane hr hP hu hu0
+      (by simpa only [sub_zero] using hdiscr) i j
   have hself := eventually_min_analyticOrderAt_root_sub_self_eq
-    isOpen_ball (convex_ball x₀ ε).isPreconnected (mem_ball_self hε) hR hN
-    (fun i ↦ (hr i).mono hsub) (fun b hb ↦ hP b (hsub hb)) hu
-    (fun b hb ↦ hu0 b (hsub hb)) (fun b hb ↦ hdiscr b (hsub hb))
-  filter_upwards [hU.mem_nhds hx₀, hrel, hself]
+    isOpen_ball (convex_ball x₀ ε).isPreconnected (mem_ball_self hε) hε hN
+    (fun i b hb ↦ (hball b hb).1 i) (fun b hb ↦ (hball b hb).2.1) hu
+    (fun b hb ↦ (hball b hb).2.2.2) (fun b hb ↦ (hball b hb).2.2.1)
+  -- Persistent collisions reduce to self-contact; distinct central values have order zero.
+  filter_upwards [isOpen_ball.mem_nhds (mem_ball_self hε), hrel, hself]
     with x hx hrelx hself i j
   by_cases hij : r i (x₀, 0) = r j (x₀, 0)
   · simp only [hrelx i j |>.2 hij, hij]
     exact hself j
   · have hxij : r i (x, 0) ≠ r j (x, 0) := (hrelx i j).not.2 hij
     have hi : AnalyticAt ℂ (fun t ↦ r j (x, t) - r i (x, 0)) 0 :=
-      (hr j (x, 0) ⟨hx, mem_ball_self hR⟩).curry_right.sub analyticAt_const
+      ((hball (x, 0) ⟨hx, mem_ball_self hε⟩).1 j).curry_right.sub analyticAt_const
     have hi₀ : AnalyticAt ℂ (fun t ↦ r j (x₀, t) - r i (x₀, 0)) 0 :=
-      (hr j (x₀, 0) ⟨hx₀, mem_ball_self hR⟩).curry_right.sub analyticAt_const
+      (hr j).curry_right.sub analyticAt_const
     rw [hi.analyticOrderAt_eq_zero.2 (sub_ne_zero.2 hxij.symm),
       hi₀.analyticOrderAt_eq_zero.2 (sub_ne_zero.2 (Ne.symm hij))]
 
