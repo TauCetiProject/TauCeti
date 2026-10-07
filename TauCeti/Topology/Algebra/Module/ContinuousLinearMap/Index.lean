@@ -118,9 +118,12 @@ lemma index_eq_zero_of_bijective (T : E →L[𝕜] F)
 /-- The index is unchanged by negation. -/
 @[simp] lemma index_neg [IsTopologicalAddGroup F] (T : E →L[𝕜] F) : ContinuousLinearMap.index (-T)
     = ContinuousLinearMap.index T := by
-  rw [ContinuousLinearMap.index_def, ContinuousLinearMap.index_def,
-    ContinuousLinearMap.toLinearMap_neg, LinearMap.index_eq_finrank_sub,
-    LinearMap.index_eq_finrank_sub, LinearMap.ker_neg, LinearMap.range_neg]
+  have hneg : ((LinearEquiv.neg 𝕜 : F ≃ₗ[𝕜] F) : F →ₗ[𝕜] F).comp
+      (T : E →ₗ[𝕜] F) = -(T : E →ₗ[𝕜] F) := by
+    ext x
+    simp
+  simpa only [index_def, toLinearMap_neg, hneg] using
+    (T : E →ₗ[𝕜] F).index_equiv_comp (LinearEquiv.neg 𝕜)
 
 /-- Postcomposing with a continuous linear equivalence leaves the index unchanged. -/
 @[simp] lemma index_equiv_comp (T : E →L[𝕜] F) (e : F ≃L[𝕜] G) :
