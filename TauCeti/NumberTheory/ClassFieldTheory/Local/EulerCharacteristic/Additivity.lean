@@ -14,10 +14,11 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.LongExact
 # Additivity of the local Euler characteristic
 
 This file proves that the three-term local Euler characteristic `χ_F` is multiplicative in short
-exact sequences. The low-degree long exact cohomology sequence supplies the nine exact terms. Its
-right endpoint is surjective by local Tate duality (`coeffMap_two_surjective`), and
-`AddMonoidHom.card_mul_card_mul_card_mul_card_mul_card_of_exact` turns exactness into the required
-alternating identity of orders.
+exact sequences: if `0 → A → B → C → 0` is exact, then `χ_F(B) = χ_F(A) χ_F(C)`. Thus `χ_F`
+respects the relations defining the Grothendieck group of finite smooth discrete Galois
+representations, and by dévissage along a composition series the value of `χ_F` on any finite
+representation is the product of its values on the simple constituents. This is the reduction that
+underlies Tate's local Euler characteristic formula `χ_F(A) = [𝒪_F : #A · 𝒪_F]⁻¹`.
 
 ## Main results
 
