@@ -175,7 +175,6 @@ lemma groupScheme_X_left :
 
 /-- The structural morphism of the additive group scheme is induced by the symmetric algebra's
 `R`-algebra structure map. -/
-@[simp]
 lemma groupScheme_X_hom :
     (groupScheme R).X.hom =
       eqToHom (groupScheme_X_left R) ≫
