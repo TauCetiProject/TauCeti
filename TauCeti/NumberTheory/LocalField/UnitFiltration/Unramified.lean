@@ -20,23 +20,23 @@ Let `L/K` be a finite unramified Galois extension of nonarchimedean local fields
 group `G`. This file proves that the unit group `𝒪[L]ˣ = U(L, 0)`, with its Galois action and
 read as an integral representation of `G`, has vanishing Tate cohomology in every degree.
 
-In degree zero, `Ĥ⁰(G, 𝒪[L]ˣ) = 𝒪[K]ˣ / N_{L/K}(𝒪[L]ˣ)` vanishes because the norm of an
-unramified extension maps `𝒪[L]ˣ` onto `𝒪[K]ˣ` (`TauCeti.map_normUnits_unitFiltration`). The
+In degree zero, `H-hat^0(G, 𝒪[L]ˣ) = 𝒪[K]ˣ / N_{L/K}(𝒪[L]ˣ)` vanishes because the norm of
+an unramified extension maps `𝒪[L]ˣ` onto `𝒪[K]ˣ` (`TauCeti.map_normUnits_unitFiltration`). The
 group `G` is cyclic (`TauCeti.isCyclic_algEquiv`) and the Herbrand quotient of `𝒪[L]ˣ` is `1`
-(`TauCeti.TateCohomology.herbrandQuotient_unitFiltration_zero`), so `Ĥ⁻¹(G, 𝒪[L]ˣ)` vanishes as
-well, and two-periodicity gives every other degree.
+(`TauCeti.TateCohomology.herbrandQuotient_unitFiltration_zero`), so `H-hat^(-1)(G, 𝒪[L]ˣ)`
+vanishes as well, and two-periodicity gives every other degree.
 
 This is the local factor at the places outside `S` in the computation of the Herbrand quotient
 of the `S`-ideles of a cyclic extension of number fields: the unit groups at places unramified
 in `L` contribute nothing to the Tate cohomology of the ideles.
 
 ⚠ For ramified extensions only the Herbrand quotient survives: for `L = ℚ_2(√2)` the norms of the
-units of `𝒪[L]` have index `2` in `ℤ_2ˣ`, so `Ĥ⁰(G, 𝒪[L]ˣ)` has order `2`.
+units of `𝒪[L]` have index `2` in `ℤ_2ˣ`, so `H-hat^0(G, 𝒪[L]ˣ)` has order `2`.
 
 ## Main results
 
 * `TauCeti.TateCohomology.isZero_tateCohomology_unitFiltration_zero_of_isUnramified`:
-  `Ĥⁿ(G, 𝒪[L]ˣ) = 0` for every `n : ℤ`, for an unramified Galois extension `L/K`.
+  `H-hat^n(G, 𝒪[L]ˣ) = 0` for every `n : ℤ`, for an unramified Galois extension `L/K`.
 
 ## References
 
@@ -87,7 +87,7 @@ private theorem isZero_tateCohomology_zero_unitFiltration_zero_of_isUnramified :
 
 /-- **The units of an unramified extension are cohomologically trivial.** For a finite unramified
 Galois extension `L/K` of nonarchimedean local fields, the unit group `𝒪[L]ˣ` has vanishing Tate
-cohomology `Ĥⁿ(Gal(L/K), 𝒪[L]ˣ)` in every degree `n : ℤ`. -/
+cohomology `H-hat^n(Gal(L/K), 𝒪[L]ˣ)` in every degree `n : ℤ`. -/
 theorem isZero_tateCohomology_unitFiltration_zero_of_isUnramified (n : ℤ) :
     IsZero (tateCohomology (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)) n) := by
   set M := Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)
