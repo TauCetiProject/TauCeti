@@ -30,7 +30,7 @@ The point of the file is the trace identity `TauCeti.trace_map_self_comp_comm`: 
 `f ⊗ f` with the flip has trace `tr (f ∘ f)`, because on a basis the diagonal entry of the
 composite at `eᵢ ⊗ eⱼ` is `aᵢⱼ aⱼᵢ`, and summing those is
 `Module.Basis.trace_eq_trace_comp_self_of_toMatrix_diag`, the step shared with the `Fin 2`-indexed
-tensor square of `TauCeti/RepresentationTheory/Tensor/Square.lean`. Splitting that trace along the
+tensor square of `TauCeti/LinearAlgebra/TensorSquare.lean`. Splitting that trace along the
 symmetric and the antisymmetric tensors, where the flip is `+1` and `-1`, gives
 `TauCeti.trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict`: the traces of
 `f ⊗ f` on the symmetric and on the antisymmetric tensors differ by `tr (f ∘ f)`. That is the
