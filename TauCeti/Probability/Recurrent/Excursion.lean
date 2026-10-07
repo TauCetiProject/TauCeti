@@ -35,7 +35,7 @@ variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
   {μ : Measure Ω} {X : ℕ → Ω → α} {a₀ : α}
 
 /-- **The path law of a recurrent process started at `a₀` is the image of its excursion law.** -/
-theorem Recurrent.pathLaw_eq_map_pathOfExcursions [Countable α] [MeasurableSingletonClass α]
+theorem Recurrent.pathLaw_eq_map_pathOfExcursions [MeasurableSingletonClass α]
     (hrec : Recurrent μ X) (hX : ∀ i, AEMeasurable (X i) μ) (h0 : ∀ᵐ ω ∂μ, X 0 ω = a₀) :
     pathLaw μ X = (pathLaw μ (excursionProcess X a₀)).map (pathOfExcursions a₀) := by
   apply TauCeti.Probability.pathLaw_eq_map_pathOfExcursions hX _ h0
