@@ -173,13 +173,8 @@ private theorem isSimplyConnected_setOf_mul_im {ε : ℝ} (hε : ε ≠ 0) :
     IsSimplyConnected {z : ThricePuncturedSphere | 0 ≤ ε * (z : ℂ).im} := by
   rw [← isOpenEmbedding_coe.isEmbedding.isSimplyConnected_image]
   have himage : ((↑) : ThricePuncturedSphere → ℂ) '' {z | 0 ≤ ε * (z : ℂ).im} =
-      {w : ℂ | (w ≠ 0 ∧ w ≠ 1) ∧ 0 ≤ ε * w.im} := by
-    ext w
-    constructor
-    · rintro ⟨z, hz, rfl⟩
-      exact ⟨z.2, hz⟩
-    · rintro ⟨hw, hw'⟩
-      exact ⟨⟨w, hw⟩, hw', rfl⟩
+      {w : ℂ | (w ≠ 0 ∧ w ≠ 1) ∧ 0 ≤ ε * w.im} :=
+    Subtype.image_preimage_coe {w : ℂ | w ≠ 0 ∧ w ≠ 1} {w | 0 ≤ ε * w.im}
   rw [himage]
   have hmem : (ε * I : ℂ) ∈ {w : ℂ | (w ≠ 0 ∧ w ≠ 1) ∧ 0 ≤ ε * w.im} := by
     refine ⟨⟨by simpa using hε, fun h ↦ hε (by simpa using congrArg im h)⟩, ?_⟩
@@ -237,31 +232,38 @@ private theorem coe_δ_tPos : (δ tPos : ℂ) = (3 : ℝ) := by
   rw [coe_δ, θ₀_add_two_pi_mul_tPos]
   simp [circleMap]
 
-/-- The segment of the real axis from `−1/2 = γ0 (1/2)` to `−3 = δ tNeg`. -/
-private noncomputable def segNeg : Path (γ0 tHalf) (δ tNeg) where
-  toFun t := ⟨(-(1 / 2 + 5 / 2 * t : ℝ) : ℂ), fun h ↦ by
-    have := congrArg re h
-    simp at this
-    linarith [t.2.1], fun h ↦ by
-    have := congrArg re h
-    simp at this
-    linarith [t.2.1]⟩
+/-- The segment of the real axis between two real points `z = a` and `w = b` of `ℂ ∖ {0, 1}`
+lying on the same side of `0` and on the same side of `1`. -/
+private noncomputable def realSegment (z w : ThricePuncturedSphere) (a b : ℝ) (hz : (z : ℂ) = a)
+    (hw : (w : ℂ) = b) (h₀ : 0 < a * b) (h₁ : 0 < (a - 1) * (b - 1)) : Path z w where
+  toFun t := ⟨((1 - t) * a + t * b : ℝ),
+    -- a convex combination of two reals of the same sign is not zero, by convexity of the
+    -- open half-lines `Ioi 0` and `Iio 0`
+    have hne {a b : ℝ} (hab : 0 < a * b) : (1 - t) * a + t * b ≠ 0 := by
+      rcases mul_pos_iff.1 hab with ⟨ha, hb⟩ | ⟨ha, hb⟩
+      · exact (convex_Ioi 0 ha hb (sub_nonneg.2 t.2.2) t.2.1 (sub_add_cancel 1 _)).ne'
+      · exact (convex_Iio 0 ha hb (sub_nonneg.2 t.2.2) t.2.1 (sub_add_cancel 1 _)).ne
+    ⟨fun h ↦ hne h₀ (by exact_mod_cast h), fun h ↦ hne h₁ (by
+      have : ((1 - t) * a + t * b : ℝ) = 1 := by exact_mod_cast h
+      linear_combination this)⟩⟩
   continuous_toFun := by fun_prop
-  source' := Subtype.ext (by rw [coe_γ0_tHalf]; simp)
-  target' := Subtype.ext (by rw [coe_δ_tNeg]; norm_num)
+  source' := Subtype.ext (by simp [hz])
+  target' := Subtype.ext (by simp [hw])
+
+private theorem range_realSegment (z w : ThricePuncturedSphere) (a b : ℝ) (hz : (z : ℂ) = a)
+    (hw : (w : ℂ) = b) (h₀ : 0 < a * b) (h₁ : 0 < (a - 1) * (b - 1)) :
+    range (realSegment z w a b hz hw h₀ h₁) ⊆ {z | (z : ℂ).im = 0} := by
+  rintro _ ⟨t, rfl⟩
+  simp [realSegment]
+
+/-- The segment of the real axis from `−1/2 = γ0 (1/2)` to `−3 = δ tNeg`. -/
+private noncomputable def segNeg : Path (γ0 tHalf) (δ tNeg) :=
+  realSegment _ _ (-(1 / 2)) (-3) (by rw [coe_γ0_tHalf, ofReal_neg]) coe_δ_tNeg (by norm_num)
+    (by norm_num)
 
 /-- The segment of the real axis from `3/2 = γ1 (1/2)` to `3 = δ tPos`. -/
-private noncomputable def segPos : Path (γ1 tHalf) (δ tPos) where
-  toFun t := ⟨((3 / 2 + 3 / 2 * t : ℝ) : ℂ), fun h ↦ by
-    have := congrArg re h
-    simp at this
-    linarith [t.2.1], fun h ↦ by
-    have := congrArg re h
-    simp at this
-    linarith [t.2.1]⟩
-  continuous_toFun := by fun_prop
-  source' := Subtype.ext (by rw [coe_γ1_tHalf]; simp)
-  target' := Subtype.ext (by rw [coe_δ_tPos]; norm_num)
+private noncomputable def segPos : Path (γ1 tHalf) (δ tPos) :=
+  realSegment _ _ (3 / 2) 3 coe_γ1_tHalf coe_δ_tPos (by norm_num) (by norm_num)
 
 /-! ### The pieces and the half-planes containing them -/
 
@@ -334,14 +336,6 @@ private theorem mk_γ1 : Path.Homotopic.Quotient.mk γ1 =
 private theorem range_αPlus : range αPlus ⊆ {z | 0 ≤ (z : ℂ).im} := by
   rintro _ ⟨t, rfl⟩
   simpa using mul_nonneg t.2.1 (by positivity : (0 : ℝ) ≤ √35 / 2)
-
-private theorem range_segNeg : range segNeg ⊆ {z | (z : ℂ).im = 0} := by
-  rintro _ ⟨t, rfl⟩
-  simp [segNeg]
-
-private theorem range_segPos : range segPos ⊆ {z | (z : ℂ).im = 0} := by
-  rintro _ ⟨t, rfl⟩
-  simp [segPos]
 
 private theorem range_δ₁ : range δ₁ ⊆ {z | 0 ≤ (z : ℂ).im} := by
   refine (Path.range_subpath_of_le δ 0 tNeg unitInterval.nonneg').trans_subset ?_
@@ -438,13 +432,14 @@ theorem αPlus_trans_δ_trans_symm_homotopic_γ0_trans_γ1 :
       (by rw [Path.trans_range]; exact union_subset range_αPlus range_δ₁)
       (by
         rw [Path.trans_range]
-        exact union_subset range_γ0₁ (subset_halfPlanes_of_real range_segNeg).1)
+        exact union_subset range_γ0₁ (subset_halfPlanes_of_real (range_realSegment ..)).1)
   have hB : δ₂.Homotopic (segNeg.symm.trans (γ0₂.trans (γ1₁.trans segPos))) :=
     homotopic_of_range_subset isSimplyConnected_lower range_δ₂
       (by
         simp only [Path.trans_range, Path.symm_range]
-        exact union_subset (subset_halfPlanes_of_real range_segNeg).2 <| union_subset range_γ0₂ <|
-          union_subset range_γ1₁ (subset_halfPlanes_of_real range_segPos).2)
+        exact union_subset (subset_halfPlanes_of_real (range_realSegment ..)).2 <|
+          union_subset range_γ0₂ <|
+            union_subset range_γ1₁ (subset_halfPlanes_of_real (range_realSegment ..)).2)
   have hC : (δ₃.trans αPlus.symm).Homotopic (segPos.symm.trans γ1₂) :=
     homotopic_of_range_subset isSimplyConnected_upper
       (by
@@ -452,7 +447,7 @@ theorem αPlus_trans_δ_trans_symm_homotopic_γ0_trans_γ1 :
         exact union_subset range_δ₃ range_αPlus)
       (by
         rw [Path.trans_range, Path.symm_range]
-        exact union_subset (subset_halfPlanes_of_real range_segPos).1 range_γ1₂)
+        exact union_subset (subset_halfPlanes_of_real (range_realSegment ..)).1 range_γ1₂)
   -- assemble the pieces in the fundamental groupoid; the connecting segments cancel
   rw [← Path.Homotopic.Quotient.eq] at hA hB hC ⊢
   simp only [Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.mk_symm] at hA hB hC ⊢
@@ -501,30 +496,6 @@ private theorem im_coe_mob1Inf_nonneg {z : ThricePuncturedSphere} (hz : (z : ℂ
     0 ≤ (mob1Inf z : ℂ).im := by
   rw [im_coe_mob1Inf]
   exact div_nonneg (neg_nonneg.2 hz) (normSq_nonneg _)
-
-/-- The segment of the real axis between two real points `z = a` and `w = b` of `ℂ ∖ {0, 1}`
-lying on the same side of `0` and on the same side of `1`. -/
-private noncomputable def realSegment (z w : ThricePuncturedSphere) (a b : ℝ) (hz : (z : ℂ) = a)
-    (hw : (w : ℂ) = b) (h₀ : 0 < a * b) (h₁ : 0 < (a - 1) * (b - 1)) : Path z w where
-  toFun t := ⟨((1 - t) * a + t * b : ℝ),
-    -- a convex combination of two reals of the same sign is not zero, by convexity of the
-    -- open half-lines `Ioi 0` and `Iio 0`
-    have hne {a b : ℝ} (hab : 0 < a * b) : (1 - t) * a + t * b ≠ 0 := by
-      rcases mul_pos_iff.1 hab with ⟨ha, hb⟩ | ⟨ha, hb⟩
-      · exact (convex_Ioi 0 ha hb (sub_nonneg.2 t.2.2) t.2.1 (sub_add_cancel 1 _)).ne'
-      · exact (convex_Iio 0 ha hb (sub_nonneg.2 t.2.2) t.2.1 (sub_add_cancel 1 _)).ne
-    ⟨fun h ↦ hne h₀ (by exact_mod_cast h), fun h ↦ hne h₁ (by
-      have : ((1 - t) * a + t * b : ℝ) = 1 := by exact_mod_cast h
-      linear_combination this)⟩⟩
-  continuous_toFun := by fun_prop
-  source' := Subtype.ext (by simp [hz])
-  target' := Subtype.ext (by simp [hw])
-
-private theorem range_realSegment (z w : ThricePuncturedSphere) (a b : ℝ) (hz : (z : ℂ) = a)
-    (hw : (w : ℂ) = b) (h₀ : 0 < a * b) (h₁ : 0 < (a - 1) * (b - 1)) :
-    range (realSegment z w a b hz hw h₀ h₁) ⊆ {z | (z : ℂ).im = 0} := by
-  rintro _ ⟨t, rfl⟩
-  simp [realSegment]
 
 private theorem coe_mob1Inf_γ0_tHalf : (mob1Inf (γ0 tHalf) : ℂ) = (1 / 3 : ℝ) := by
   rw [coe_mob1Inf, coe_γ0_tHalf]

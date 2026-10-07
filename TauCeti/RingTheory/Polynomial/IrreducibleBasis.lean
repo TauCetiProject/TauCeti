@@ -283,6 +283,22 @@ theorem discr_ne_zero [CharZero D] (hB : F.IsIrreducibleBasis B) (hb : b ∈ B) 
   rwa [discr_map_of_natDegree_eq _ (natDegree_map_eq_of_injective hinj _),
     map_ne_zero_iff _ hinj] at h
 
+/-- In characteristic zero, the product of any subfamily of an irreducible basis has
+nonzero discriminant. This includes the empty subfamily, whose product is `1`. -/
+theorem discr_prod_ne_zero [CharZero D] (hB : F.IsIrreducibleBasis B)
+    {A : Finset D[X]} (hA : A ⊆ B) : (∏ b ∈ A, b).discr ≠ 0 := by
+  let K := FractionRing D
+  have hinj := IsFractionRing.injective D K
+  have : CharZero K := charZero_of_injective_algebraMap hinj
+  have hsep : (∏ b ∈ A, b.map (algebraMap D K)).Separable :=
+    PerfectField.separable_iff_squarefree.2 <|
+      (hB.squarefree_prod_map K).squarefree_of_dvd
+        (Finset.prod_dvd_prod_of_subset A B _ hA)
+  have h := (Polynomial.discr_ne_zero_iff hsep.ne_zero).2 hsep
+  rw [← Polynomial.map_prod, Polynomial.discr_map_of_natDegree_eq _
+    (Polynomial.natDegree_map_eq_of_injective hinj _), map_ne_zero_iff _ hinj] at h
+  exact h
+
 end IsIrreducibleBasis
 
 end Finset

@@ -13,8 +13,8 @@ public import TauCeti.RepresentationTheory.Induction.Mackey.Intertwining
 # The Mackey irreducibility criterion
 
 Let `H` be a subgroup of a finite group `G` and let `A` be a finite-dimensional representation of
-`H` over an algebraically closed field of characteristic zero.  The intertwining-number formula
-`TauCeti.finrank_hom_indFDRep_mackey_erase` reads
+`H` over an algebraically closed field in which `|G|` is invertible. The intertwining-number
+formula `TauCeti.finrank_hom_indFDRep_mackey_erase` reads
 
 `dim End_G(Ind_H^G A) = dim End_H A + ∑_{HsH ≠ H} dim Hom_{H ⊓ sHs⁻¹}(Res A, {}^s A)`,
 
@@ -28,7 +28,7 @@ double coset `HsH` other than `H` itself, the two restrictions `Res_{H ⊓ sHs�
 named here as `TauCeti.MackeyDisjoint`, and both forms of the criterion are stated through it.
 
 The criterion comes in two forms.  The primary one, `TauCeti.simple_indFDRep_iff_doubleCoset`,
-quantifies over the double cosets `H \ G / H` and, following the roadmap, reads each Mackey term at
+quantifies over the double cosets `H \ G / H` and reads each Mackey term at
 the fixed representative `Quotient.out`.  The elementwise form, `TauCeti.simple_indFDRep_iff`,
 quantifies over the group elements `s ∉ H` instead.
 
@@ -69,30 +69,17 @@ Passing between the two forms of the criterion needs the Mackey term to be const
 coset, which is `TauCeti.finrank_hom_res_mackeyToH_mul_left_mul_right`, proved with the formula it
 belongs to; `TauCeti.mackeyDisjoint_mul_left_mul_right_iff` is its reading through the predicate.
 
-The characteristic-zero hypothesis of the two criteria is inherited from
-`TauCeti.finrank_hom_indFDRep_mackey_erase`: the intertwining-number formula is proved as an
-identity in `k` of the casts of the dimensions, and reading it back as an identity of natural
-numbers -- which is what lets the summands be compared one by one -- needs `ℕ → k` injective.  Only
-those two statements carry it: `TauCeti.MackeyDisjoint` and its API hold over any field.
-
-That is also where Mathlib puts a simplicity criterion obtained from a character identity:
-`FDRep.simple_iff_char_is_norm_one` assumes `[CharZero k]`, and uses it for exactly this step
-(`Nat.cast_inj`), even though the rank-one criterion `FDRep.simple_iff_end_is_rank_one` it is
-derived from asks only for `[NeZero (Nat.card G : k)]`.  Reaching the criteria below over such a
-field means proving the intertwining-number formula in `ℕ` from the Mackey decomposition as an
-isomorphism of representations, which is a separate roadmap target (Layer 3a) and is not
-formalized here.
+The dimension formula follows from `FDRep.indHomMackeyLinearEquiv` and holds over every
+field. The criteria require only `[NeZero (Nat.card G : k)]`, the Maschke hypothesis used by
+Mathlib's `FDRep.simple_iff_end_is_rank_one`, rather than a characteristic-zero assumption.
+`TauCeti.MackeyDisjoint` and its API hold over any field.
 
 For a normal subgroup the Mackey subgroup is all of `H`.  Restricting along
 `TauCeti.mackeySubgroupNormalEquiv` shows that the corresponding Mackey term and
 `Hom_H(A, {}^s A)` have equal dimensions, and `TauCeti.simple_indFDRep_iff_of_normal` gives the
-resulting normal-subgroup corollary.  This is the form used by Clifford theory (Layer 5).
+resulting normal-subgroup corollary. This is the form used by Clifford theory.
 
 ## References
-
-Layer 4 of
-[the induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md),
-"the Mackey irreducibility criterion" and its "`∀ s ∉ H` corollary".
 
 * J.-P. Serre, *Linear Representations of Finite Groups*, Chapter 7.4, Proposition 23.
 * I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 5, Theorem 5.6 and Corollary 5.7.
@@ -140,26 +127,26 @@ Mackey subgroup `H ⊓ sHs⁻¹` admit no nonzero intertwiner.  The conjugation 
 This is the condition the Mackey irreducibility criterion imposes on every double coset other than
 `H` itself. -/
 def MackeyDisjoint (A : FDRep k H) (s : G) : Prop :=
-  Subsingleton (resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
+  Subsingleton (Subgroup.resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
     (Action.res (FGModuleCat k) (mackeyToH s H H)).obj A)
 
 /-- **Mackey disjointness unfolded.**  The body of `TauCeti.MackeyDisjoint` is not exposed, so
 this is how a consumer reads the definition. -/
 theorem mackeyDisjoint_iff_subsingleton (A : FDRep k H) (s : G) :
     MackeyDisjoint A s ↔
-      Subsingleton (resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
+      Subsingleton (Subgroup.resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
         (Action.res (FGModuleCat k) (mackeyToH s H H)).obj A) :=
   Iff.rfl
 
 /-- An intertwiner between the two restrictions of a Mackey disjoint pair is zero. -/
 theorem MackeyDisjoint.eq_zero {A : FDRep k H} {s : G} (h : MackeyDisjoint A s)
-    (φ : resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
+    (φ : Subgroup.resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
       (Action.res (FGModuleCat k) (mackeyToH s H H)).obj A) : φ = 0 :=
   @Subsingleton.elim _ h φ 0
 
 /-- Mackey disjointness holds as soon as every intertwiner between the two restrictions is zero. -/
 theorem mackeyDisjoint_of_forall_eq_zero {A : FDRep k H} {s : G}
-    (h : ∀ φ : resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
+    (h : ∀ φ : Subgroup.resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
       (Action.res (FGModuleCat k) (mackeyToH s H H)).obj A, φ = 0) : MackeyDisjoint A s :=
   ⟨fun φ ψ => (h φ).trans (h ψ).symm⟩
 
@@ -167,7 +154,7 @@ theorem mackeyDisjoint_of_forall_eq_zero {A : FDRep k H} {s : G}
 intertwining-number formula produces it. -/
 theorem mackeyDisjoint_iff_finrank_eq_zero (A : FDRep k H) (s : G) :
     MackeyDisjoint A s ↔
-      Module.finrank k (resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
+      Module.finrank k (Subgroup.resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
         (Action.res (FGModuleCat k) (mackeyToH s H H)).obj A) = 0 :=
   Module.finrank_zero_iff.symm
 
@@ -209,7 +196,7 @@ end NormalDisjoint
 
 section Criterion
 
-variable {k G : Type u} [Field k] [Group G] [Finite G] [IsAlgClosed k] [CharZero k]
+variable {k G : Type u} [Field k] [Group G] [Finite G] [IsAlgClosed k] [NeZero (Nat.card G : k)]
   {H : Subgroup G}
 
 /-- **The Mackey irreducibility criterion.**  The representation induced from `A` is irreducible
@@ -222,8 +209,8 @@ theorem simple_indFDRep_iff_doubleCoset (A : FDRep k H) :
   classical
   simp only [mackeyDisjoint_iff_finrank_eq_zero]
   let := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (H : Set G))
-  have : NeZero (Nat.card G : k) := ⟨Nat.cast_ne_zero.mpr Nat.card_pos.ne'⟩
-  have : NeZero (Nat.card H : k) := ⟨Nat.cast_ne_zero.mpr Nat.card_pos.ne'⟩
+  have : NeZero (Nat.card H : k) :=
+    ⟨(isUnit_natCard_subgroup H (isUnit_iff_ne_zero.mpr (NeZero.ne _))).ne_zero⟩
   -- The intertwining-number formula, read as an identity of natural numbers: the identity double
   -- coset contributes `dim End_H A` and every other summand is a Mackey term.
   rw [FDRep.simple_iff_end_is_rank_one, FDRep.simple_iff_end_is_rank_one,

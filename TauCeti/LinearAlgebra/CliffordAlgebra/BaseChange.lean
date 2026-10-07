@@ -25,6 +25,7 @@ Lipschitz, Pin, and Spin subgroups along scalar extensions.
 * `CliffordAlgebra.ofBaseChangeAux_reverse` proves naturality of Clifford reversal.
 * `CliffordAlgebra.ofBaseChangeAux_star` proves naturality of Clifford conjugation.
 * `CliffordAlgebra.ofBaseChangeAux_mem_even` proves preservation of the even subalgebra.
+* `CliffordAlgebra.ofBaseChangeAux_injective` proves injectivity for faithful flat extensions.
 * `CliffordAlgebra.ofBaseChangeAux_baseChange` identifies direct and successive scalar extension.
 -/
 
@@ -92,6 +93,27 @@ theorem ofBaseChangeAux_mem_even (Q : QuadraticForm R M) {x : CliffordAlgebra Q}
       simpa only [map_mul, ofBaseChangeAux_ι, zero_add] using
         SetLike.mul_mem_graded
           (ι_mul_ι_mem_evenOdd_zero (Q.baseChange A) (1 ⊗ₜ[R] m) (1 ⊗ₜ[R] n)) hx
+
+/-- Under the identification `Cℓ(A ⊗ M) ≃ A ⊗ Cℓ(M)` of `CliffordAlgebra.toBaseChange`, the
+canonical map to the Clifford algebra after extension of scalars sends `x` to `1 ⊗ x`. -/
+@[simp]
+theorem toBaseChange_ofBaseChangeAux (Q : QuadraticForm R M) (x : CliffordAlgebra Q) :
+    toBaseChange A Q (ofBaseChangeAux A Q x) = 1 ⊗ₜ x := by
+  have h : ofBaseChange A Q (1 ⊗ₜ x) = ofBaseChangeAux A Q x :=
+    (Algebra.TensorProduct.lift_tmul _ _ _ 1 x).trans (by rw [map_one, one_mul])
+  rw [← h, toBaseChange_ofBaseChange]
+
+/-- The canonical map to the Clifford algebra after extension of scalars is injective when the
+extension is faithful and the Clifford algebra is flat; in particular, for every extension of
+fields. -/
+theorem ofBaseChangeAux_injective [FaithfulSMul R A] (Q : QuadraticForm R M)
+    [Module.Flat R (CliffordAlgebra Q)] :
+    Function.Injective (ofBaseChangeAux A Q) := by
+  intro x y hxy
+  apply Algebra.TensorProduct.includeRight_injective (A := A)
+    (FaithfulSMul.algebraMap_injective R A)
+  simpa only [toBaseChange_ofBaseChangeAux, Algebra.TensorProduct.includeRight_apply] using
+    congrArg (toBaseChange A Q) hxy
 
 section ScalarTower
 

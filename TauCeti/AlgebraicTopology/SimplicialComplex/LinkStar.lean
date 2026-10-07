@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplicialComplex.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
 public import Mathlib.Data.Finset.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.IsCone
 
@@ -208,6 +208,41 @@ theorem deletion_mono (h : K ≤ L) : deletion K σ ≤ deletion L σ :=
   fun _ hρ => by
     obtain ⟨hρ, hσ⟩ := mem_deletion.mp hρ
     exact mem_deletion.mpr ⟨h hρ, hσ⟩
+
+variable {ρ : Finset ι}
+
+/-- A closed-star face is characterized by its nonempty part outside the starred face being
+a link face. An empty outside part is allowed. -/
+theorem mem_closedStar_iff_sdiff (hσ : σ ∈ K) :
+    ρ ∈ closedStar K σ ↔ ρ.Nonempty ∧ (ρ \ σ = ∅ ∨ ρ \ σ ∈ link K σ) := by
+  rw [mem_closedStar_nonempty]
+  constructor
+  · rintro ⟨hne, hface⟩
+    refine ⟨hne, ?_⟩
+    by_cases h : ρ \ σ = ∅
+    · exact Or.inl h
+    · exact Or.inr (mem_link_nonempty.mpr ⟨nonempty_iff_ne_empty.mpr h,
+        sdiff_disjoint, by rwa [sdiff_union_self_eq_union]⟩)
+  · rintro ⟨hne, h | h⟩
+    · exact ⟨hne, by rwa [union_eq_right.mpr (sdiff_eq_empty_iff_subset.mp h)]⟩
+    · exact ⟨hne, by simpa only [sdiff_union_self_eq_union] using
+        (mem_link_nonempty.mp h).2.2⟩
+
+/-- The intersection of the closed star with the deletion consists of faces whose part in `σ`
+is proper and whose nonempty part outside `σ` is in the link. -/
+theorem mem_closedStar_inf_deletion_iff_sdiff (hσ : σ ∈ K) :
+    ρ ∈ closedStar K σ ⊓ deletion K σ ↔
+      ρ.Nonempty ∧ ρ ∩ σ ⊂ σ ∧ (ρ \ σ = ∅ ∨ ρ \ σ ∈ link K σ) := by
+  rw [mem_inf, mem_closedStar_iff_sdiff hσ, mem_deletion]
+  have hproper : ρ ∩ σ ⊂ σ ↔ ¬ σ ⊆ ρ := by
+    simp [ssubset_iff_subset_ne, inter_eq_right]
+  rw [hproper]
+  constructor
+  · rintro ⟨⟨hne, hlink⟩, -, hnot⟩
+    exact ⟨hne, hnot, hlink⟩
+  · rintro ⟨hne, hnot, hlink⟩
+    have hstar := (mem_closedStar_iff_sdiff hσ).mpr ⟨hne, hlink⟩
+    exact ⟨⟨hne, hlink⟩, closedStar_le hstar, hnot⟩
 
 section IsCone
 
