@@ -214,7 +214,7 @@ theorem trace_map_self_comp_comm [Module.Free K M] [Module.Finite K M] (f : M �
   set b := Module.Free.chooseBasis K M
   refine b.trace_eq_trace_comp_self_of_toMatrix_diag (b.tensorProduct b) (Equiv.refl _) f _ ?_
   rintro ⟨i, j⟩
-  simp [LinearMap.toMatrix_apply, Module.Basis.tensorProduct_apply,
+  simp [Module.Basis.toMatrix_apply, Module.Basis.tensorProduct_apply,
     Module.Basis.tensorProduct_repr_tmul_apply, mul_comm]
 
 end Trace
