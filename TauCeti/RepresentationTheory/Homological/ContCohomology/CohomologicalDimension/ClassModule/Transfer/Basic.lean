@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Basic
 public import TauCeti.Topology.Algebra.Group.Transfer
+import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.MaximalProP
 
 /-!
 # Transfer to the pro-p class module

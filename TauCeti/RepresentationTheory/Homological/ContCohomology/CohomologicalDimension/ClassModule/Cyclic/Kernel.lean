@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Basic
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Extension
+import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.MaximalProP
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 
 /-!

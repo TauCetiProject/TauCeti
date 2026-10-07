@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cohomologi
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Transfer.StrictDimension
 import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteCyclic
+import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.MaximalProP
 import TauCeti.Algebra.GroupAction.TypeTags
 
 /-!
