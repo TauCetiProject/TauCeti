@@ -112,7 +112,9 @@ theorem gradedFiniteProjectiveModules_gradedVertexProjective (i : Q) :
     gradedFiniteProjectiveModules (integerGrade k Q) (gradedVertexProjective k Q i) := by
   let _ := integerGradedAlgebra k Q
   exact gradedFiniteProjectiveModules_ofIdeal_span_singleton
-    (isIdempotentElem_vertexIdempotent k i) (isHomogeneous_span_vertexIdempotent k Q i)
+    (show IsIdempotentElem (vertexIdempotent k i : pathAlgebra k Q) from
+      vertexIdempotent_mul_self i)
+    (isHomogeneous_span_vertexIdempotent k Q i)
 
 /-- The class of the vertex projective `kQ e_i` in the Laurent Grothendieck group of finite
 graded projective modules. -/
@@ -133,7 +135,9 @@ of `q^n` in the `e_i`-coordinate of the image of `[kQ e_j]` is the number of pat
 from `j` to `i`. -/
 @[simp]
 theorem coeff_gradedCartanMap_gradedVertexProjectiveClass (i j : Q) (n : ℕ) :
-    (gradedIdempotentCoordinate (isIdempotentElem_vertexIdempotent k i)
+    (gradedIdempotentCoordinate
+        (show IsIdempotentElem (vertexIdempotent k i : pathAlgebra k Q) from
+          vertexIdempotent_mul_self i)
         (vertexIdempotent_mem_integerGrade_zero k Q i)
         (gradedCartanMap (integerGrade k Q) (gradedVertexProjectiveClass k Q j))).coeff n =
       Nat.card (PathBetween Q n j i) := by
@@ -142,9 +146,11 @@ theorem coeff_gradedCartanMap_gradedVertexProjectiveClass (i j : Q) (n : ℕ) :
   let _ := integerGradedAlgebra k Q
   unfold gradedVertexProjectiveClass gradedVertexProjective
   rw [coeff_gradedIdempotentCoordinate_gradedCartanMap_ofIdeal_span_singleton
-      (he := isIdempotentElem_vertexIdempotent k i)
+      (he := show IsIdempotentElem (vertexIdempotent k i : pathAlgebra k Q) from
+        vertexIdempotent_mul_self i)
       (he₀ := vertexIdempotent_mem_integerGrade_zero k Q i)
-      (hf := isIdempotentElem_vertexIdempotent k j)
+      (hf := show IsIdempotentElem (vertexIdempotent k j : pathAlgebra k Q) from
+        vertexIdempotent_mul_self j)
       (hI := isHomogeneous_span_vertexIdempotent k Q j) (p := (n : ℤ)),
     integerGrade_ofNat, ← pathsBetween_eq_cornerSubmodule_inf_grade,
     finrank_pathsBetween]
@@ -152,15 +158,19 @@ theorem coeff_gradedCartanMap_gradedVertexProjectiveClass (i j : Q) (n : ℕ) :
 /-- The graded Cartan column of a vertex projective has no negative-degree coefficients. -/
 @[simp]
 theorem coeff_gradedCartanMap_gradedVertexProjectiveClass_of_neg (i j : Q) (d : ℤ) (hd : d < 0) :
-    (gradedIdempotentCoordinate (isIdempotentElem_vertexIdempotent k i)
+    (gradedIdempotentCoordinate
+        (show IsIdempotentElem (vertexIdempotent k i : pathAlgebra k Q) from
+          vertexIdempotent_mul_self i)
         (vertexIdempotent_mem_integerGrade_zero k Q i)
         (gradedCartanMap (integerGrade k Q) (gradedVertexProjectiveClass k Q j))).coeff d = 0 := by
   let _ := integerGradedAlgebra k Q
   unfold gradedVertexProjectiveClass gradedVertexProjective
   rw [coeff_gradedIdempotentCoordinate_gradedCartanMap_ofIdeal_span_singleton
-      (he := isIdempotentElem_vertexIdempotent k i)
+      (he := show IsIdempotentElem (vertexIdempotent k i : pathAlgebra k Q) from
+        vertexIdempotent_mul_self i)
       (he₀ := vertexIdempotent_mem_integerGrade_zero k Q i)
-      (hf := isIdempotentElem_vertexIdempotent k j)
+      (hf := show IsIdempotentElem (vertexIdempotent k j : pathAlgebra k Q) from
+        vertexIdempotent_mul_self j)
       (hI := isHomogeneous_span_vertexIdempotent k Q j) (p := d),
     integerGrade_eq_bot_of_neg k Q hd, inf_bot_eq, finrank_bot, Nat.cast_zero]
 
