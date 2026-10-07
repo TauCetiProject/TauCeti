@@ -73,6 +73,7 @@ theorem stellarSubdivisionLinearMap_single :
 omit [DecidableEq ι] in
 /-- The stellar realization map preserves total barycentric mass when the starred face
 is nonempty. -/
+@[simp]
 theorem sum_stellarSubdivisionLinearMap (hσ : σ.Nonempty) (x : ι →₀ ℝ) :
     (stellarSubdivisionLinearMap σ v x).sum (fun _ r => r) = x.sum (fun _ r => r) := by
   let S := Finsupp.linearCombination ℝ (fun _ : ι => (1 : ℝ))
