@@ -61,7 +61,7 @@ theorem mem_deletion_space_iff (K : PreAbstractSimplicialComplex ι) (hτ : τ �
 /-- A simplex strongly deformation retracts onto its intersection with the polyhedron
 obtained by deleting one of its nonempty facets. This is the local geometric realization of a
 free-pair collapse, including the case where the deleted facet is a vertex. -/
-theorem exists_deformationRetraction_simplex_deletion (K : PreAbstractSimplicialComplex ι)
+theorem exists_strong_deformation_retraction_simplex_deletion (K : PreAbstractSimplicialComplex ι)
     (hτ : τ ∈ K) (hστ : σ ⋖ τ) (hσne : σ.Nonempty) :
     let S : Set (StandardSimplex τ) :=
       {x | x.1 ∈ (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) (deletion K σ)).space}
