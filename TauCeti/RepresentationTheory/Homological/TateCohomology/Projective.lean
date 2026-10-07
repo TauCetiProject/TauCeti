@@ -24,7 +24,7 @@ subgroup with coefficients in `Ind_⊥^G A` vanishes
 
 ## Main statements
 
-* `TauCeti.TateCohomology.isZero_res_of_projective`: if `A.ρ.asModule` is a projective
+* `Rep.isZero_res_of_projective`: if `A.ρ.asModule` is a projective
   `k[G]`-module, then `H-hat^n(S, A) = 0` for every finite subgroup `S` of `G` and every `n : ℤ`.
 
 ## References
@@ -40,7 +40,7 @@ universe u
 
 open CategoryTheory Limits Rep
 
-namespace TauCeti.TateCohomology
+namespace Rep
 
 variable {k G : Type u} [CommRing k] [Group G]
 
@@ -55,7 +55,7 @@ theorem isZero_res_of_projective (A : Rep k G)
   -- `A` is a retract of `Ind_⊥^G A`, whose Tate cohomology on `S` vanishes.
   have h := (Retract.mk _ _ (Projective.factorThru_comp (𝟙 A) (indBotCounit A))).map
     (resFunctor (k := k) S.subtype) |>.map (tateCohomologyFunctor n)
-  rw [IsZero.iff_id_eq_zero, ← h.retract, (isZero_res_indBot S A.V n).eq_zero_of_tgt h.i,
-    zero_comp]
+  rw [IsZero.iff_id_eq_zero, ← h.retract,
+    (TauCeti.TateCohomology.isZero_res_indBot S A.V n).eq_zero_of_tgt h.i, zero_comp]
 
-end TauCeti.TateCohomology
+end Rep
