@@ -39,6 +39,7 @@ theorem free_of_isPrincipalIdealRing (N : Submodule R M) [Module.Free R M] :
   obtain ⟨ι, b⟩ := Module.Free.exists_basis (R := R) (M := M)
   let _ : LinearOrder ι := IsWellOrder.linearOrder WellOrderingRel
   let _ : IsWellOrder ι (· < ·) := by
+    -- The strict order induced by the preceding `LinearOrder` is definitionally `WellOrderingRel`.
     change IsWellOrder ι WellOrderingRel
     infer_instance
   -- The ideal of possible `i`-th coordinates of vectors of `N` supported at or below `i`.
@@ -73,12 +74,14 @@ theorem free_of_isPrincipalIdealRing (N : Submodule R M) [Module.Free R M] :
         have hsum_zero : ∑ j ∈ s, g j * b.coord a.1 (N.subtype (pivot j)) = 0 := by
           apply Finset.sum_eq_zero
           intro j hj
+          -- Applying `N.subtype` is definitionally the coercion used by `coord_pivot_eq_zero`.
           rw [show b.coord a.1 (N.subtype (pivot j)) = 0 by
             simpa using coord_pivot_eq_zero (hsa j hj), mul_zero]
         have hprod : g a * generator (I a) = 0 := by
           rw [Finset.sum_insert ha_not_mem] at hcoord
           simp only [map_add, map_sum, map_smul, map_zero, LinearMap.coe_comp,
             Function.comp_apply, smul_eq_mul] at hcoord
+          -- Applying `N.subtype` is definitionally the coercion used by `coord_pivot_eq`.
           rw [hsum_zero, add_zero, show b.coord a.1 (N.subtype (pivot a)) = generator (I a) by
             simpa using coord_pivot_eq a] at hcoord
           exact hcoord
@@ -90,6 +93,14 @@ theorem free_of_isPrincipalIdealRing (N : Submodule R M) [Module.Free R M] :
         · simpa [Finset.sum_insert, ha_not_mem, ha_zero] using hsum
         · exact hi
   let P : Submodule R N := span R (Set.range pivot)
+  have repr_support_nonempty {y : N} (hy : y ≠ 0) :
+      (b.repr (y : M)).support.Nonempty := by
+    rw [Finset.nonempty_iff_ne_empty]
+    intro hsupp
+    apply hy
+    apply Subtype.ext
+    apply b.repr.injective
+    simpa using Finsupp.support_eq_empty.mp hsupp
   have mem_P_of_bounded : ∀ i : ι, ∀ y : N,
       (↑(b.repr (y : M)).support : Set ι) ⊆ Set.Iic i → y ∈ P := by
     intro i
@@ -101,13 +112,7 @@ theorem free_of_isPrincipalIdealRing (N : Submodule R M) [Module.Free R M] :
         (hcoord : b.coord i z = 0) : z ∈ P := by
       by_cases hz0 : z = 0
       · simp [hz0]
-      have hsupp : (b.repr (z : M)).support.Nonempty := by
-        rw [Finset.nonempty_iff_ne_empty]
-        intro hsupp
-        apply hz0
-        apply Subtype.ext
-        apply b.repr.injective
-        simpa using Finsupp.support_eq_empty.mp hsupp
+      have hsupp := repr_support_nonempty hz0
       let j := (b.repr (z : M)).support.max' hsupp
       have hj_mem : j ∈ (b.repr (z : M)).support := Finset.max'_mem _ _
       have hj_le : j ≤ i := hz hj_mem
@@ -140,7 +145,9 @@ theorem free_of_isPrincipalIdealRing (N : Submodule R M) [Module.Free R M] :
       intro j hj
       exact (b.mem_span_image.mp hz_span) hj
     have hz_coord : b.coord i z = 0 := by
+      -- Unfolding `z` through the subtype coercion turns its coordinate into a difference.
       rw [show (z : M) = (y : M) - c • (pivot ji : M) from rfl, map_sub, map_smul]
+      -- The value of `ji` is definitionally `i`, so the pivot-coordinate lemma applies.
       rw [show b.coord i (pivot ji : M) = generator (I i) by
         simpa [ji] using coord_pivot_eq ji, hc, smul_eq_mul, mul_comm, sub_self]
     have hz_mem : z ∈ P := lower z hz_support hz_coord
@@ -153,13 +160,7 @@ theorem free_of_isPrincipalIdealRing (N : Submodule R M) [Module.Free R M] :
     intro y _
     by_cases hy0 : y = 0
     · simp [hy0]
-    have hsupp : (b.repr (y : M)).support.Nonempty := by
-      rw [Finset.nonempty_iff_ne_empty]
-      intro hsupp
-      apply hy0
-      apply Subtype.ext
-      apply b.repr.injective
-      simpa using Finsupp.support_eq_empty.mp hsupp
+    have hsupp := repr_support_nonempty hy0
     let i := (b.repr (y : M)).support.max' hsupp
     apply mem_P_of_bounded i y
     intro j hj
