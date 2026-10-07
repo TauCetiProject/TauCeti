@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.GaloisAction
-public import TauCeti.NumberTheory.LocalField.UnitFiltration.ValuationSequence
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.GaloisAction
+import Mathlib.Tactic.DSimpPercent
 
 /-!
 # Coinduction of semi-local integral units
@@ -35,11 +36,13 @@ open scoped NumberField AdicCompletionExtension Pointwise TensorProduct WithZero
 
 namespace TauCeti
 
-variable {K L : Type} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
+universe u
+
+variable {K L : Type u} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
 
 /-- The units of `K_v ⊗[K] L` whose components belong to the integer-unit groups
 of every completion above `v`. -/
-def semilocalIntegralUnits (L : Type) [Field L] [NumberField L] [Algebra K L]
+def semilocalIntegralUnits (L : Type u) [Field L] [NumberField L] [Algebra K L]
     (v : HeightOneSpectrum (𝓞 K)) : Subgroup (v.adicCompletion K ⊗[K] L)ˣ :=
   ⨅ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
     (unitFiltration (w.1.adicCompletion L) 0).comap
@@ -94,9 +97,26 @@ theorem coe_smul_semilocalIntegralUnits (v : HeightOneSpectrum (𝓞 K))
   (rfl)
 
 /-- The integral representation on the semi-local integer-unit group. -/
-abbrev semilocalIntegralUnitsRep (L : Type) [Field L] [NumberField L] [Algebra K L]
+abbrev semilocalIntegralUnitsRep (L : Type u) [Field L] [NumberField L] [Algebra K L]
     (v : HeightOneSpectrum (𝓞 K)) : Rep ℤ (L ≃ₐ[K] L) :=
   Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (semilocalIntegralUnits L v)
+
+/-- Inclusion of the integral semi-local units in the full semi-local unit representation. -/
+def semilocalIntegralUnitsIncl (L : Type u) [Field L] [NumberField L] [Algebra K L]
+    (v : HeightOneSpectrum (𝓞 K)) :
+    semilocalIntegralUnitsRep L v ⟶ semilocalUnitsRep L v :=
+  Rep.ofHom <| LinearMap.intertwiningMap_of_isIntertwiningMap _ _
+    (semilocalIntegralUnits L v).subtype.toAdditive.toIntLinearMap fun g y ↦
+      congrArg Additive.ofMul (coe_smul_semilocalIntegralUnits v g y.toMul)
+
+/-- The semi-local representation inclusion evaluates to the subgroup inclusion. -/
+-- Normalize the implicit restriction parameters so the simp rule matches after `Rep.res_obj_ρ`.
+@[simp]
+theorem semilocalIntegralUnitsIncl_apply (v : HeightOneSpectrum (𝓞 K))
+    (y : Additive (semilocalIntegralUnits L v)) :
+    dsimp% only [Rep.ofAlgebraAutOnUnits, Rep.res_obj_ρ]
+      ((semilocalIntegralUnitsIncl L v).hom y = Additive.ofMul y.toMul.1) :=
+  (rfl)
 
 variable (v : HeightOneSpectrum (𝓞 K)) (w : HeightOneSpectrum (𝓞 L))
   [w.asIdeal.LiesOver v.asIdeal]
@@ -149,7 +169,8 @@ theorem semilocalIntegralUnitsToCoind_apply (y : semilocalIntegralUnits L v)
         semilocalEquiv L v (semilocalGaloisHom L v g y.1) ⟨w, ‹_›⟩ :=
   (rfl)
 
-private def integralUnitsCoindIncl :
+/-- Coinduction of the inclusion of local integer units into the full local unit group. -/
+def integralUnitsCoindIncl :
     Rep.coind (MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal).subtype
       (decompositionIntegralUnitsRep v w) ⟶
     Rep.coind (MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal).subtype
@@ -157,12 +178,15 @@ private def integralUnitsCoindIncl :
   Rep.coindMap _ ((Rep.resFunctor (decompositionHom v w)).map
     (unitFiltrationZeroIncl (v.adicCompletion K) (w.adicCompletion L)))
 
-private theorem integralUnitsCoindIncl_apply
+/-- The coinduced inclusion applies the local subgroup inclusion at each automorphism. -/
+-- Normalize the implicit restriction parameters so the simp rule matches after `Rep.res_obj_ρ`.
+@[simp]
+theorem integralUnitsCoindIncl_apply
     (F : Rep.coind (MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal).subtype
       (decompositionIntegralUnitsRep v w)) (g : L ≃ₐ[K] L) :
-    ((integralUnitsCoindIncl v w).hom F).1 g = Additive.ofMul (F.1 g).toMul.1 := by
-  simp only [integralUnitsCoindIncl, Rep.coindMap, Rep.hom_ofHom,
-    Representation.coindMap_coe_apply_apply]
+    dsimp% only [Rep.ofAlgebraAutOnUnits, Rep.res_obj_ρ]
+      (((integralUnitsCoindIncl v w).hom F).1 g = Additive.ofMul (F.1 g).toMul.1) := by
+  simp only [integralUnitsCoindIncl, Rep.coindMap, Rep.hom_ofHom]
   exact unitFiltrationZeroIncl_apply _ _ _
 
 private theorem integralUnitsCoindIncl_injective :
@@ -184,11 +208,19 @@ private theorem integralUnitsToCoind_incl (y : semilocalIntegralUnits L v) :
         (semilocalUnitsToCoind v w).hom (Additive.ofMul y.1) := by
   apply Subtype.ext
   funext g
+  refine (integralUnitsCoindIncl_apply v w _ g).trans ?_
   apply Additive.toMul.injective
   apply Units.ext
-  rw [integralUnitsCoindIncl_apply]
   exact (semilocalIntegralUnitsToCoind_apply v w y g).trans
     (semilocalUnitsToCoind_apply v w y.1 g).symm
+
+/-- Integral coinduction is the restriction of full coinduction: the canonical inclusion
+square commutes as a square of Galois representations. -/
+theorem semilocalIntegralUnitsToCoind_comp_incl :
+    semilocalIntegralUnitsToCoind v w ≫ integralUnitsCoindIncl v w =
+      semilocalIntegralUnitsIncl L v ≫ semilocalUnitsToCoind v w := by
+  refine Rep.hom_ext (Representation.IntertwiningMap.ext (LinearMap.ext fun y ↦ ?_))
+  exact integralUnitsToCoind_incl v w y.toMul
 
 private theorem semilocalIntegralUnitsToCoind_bijective [IsGalois K L] :
     Function.Bijective (semilocalIntegralUnitsToCoind v w).hom := by
