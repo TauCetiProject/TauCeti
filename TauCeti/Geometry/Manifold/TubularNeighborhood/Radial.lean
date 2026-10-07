@@ -178,7 +178,7 @@ theorem contMDiffOn_normalBundleRadialInverse
 
 /-- The whole smooth normal bundle is diffeomorphic, by radial compression, to its
 open ball bundle of any positive fixed radius. The source is the entire total space. -/
-def normalBundleRadialDiffeomorph
+def normalBundleRadialPartialDiffeomorph
     (hf : ContMDiff I 𝓘(ℝ, V) (n + 1) f)
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x))
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E)
@@ -210,28 +210,28 @@ def normalBundleRadialDiffeomorph
       contMDiffOn_invFun := contMDiffOn_normalBundleRadialInverse hf himm hdim hε }
 
 /-- The radial diffeomorphism is defined on the entire normal bundle. -/
-@[simp] theorem normalBundleRadialDiffeomorph_source
+@[simp] theorem normalBundleRadialPartialDiffeomorph_source
     (hf : ContMDiff I 𝓘(ℝ, V) (n + 1) f)
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x))
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E)
     {ε : ℝ} (hε : 0 < ε) :
     haveI : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
     letI := normalFiberBundle (hf.of_le le_add_self) himm hdim
-    (normalBundleRadialDiffeomorph hf himm hdim hε).source = univ := (rfl)
+    (normalBundleRadialPartialDiffeomorph hf himm hdim hε).source = univ := (rfl)
 
 /-- The target consists exactly of normal vectors of norm less than the radius. -/
-@[simp] theorem normalBundleRadialDiffeomorph_target
+@[simp] theorem normalBundleRadialPartialDiffeomorph_target
     (hf : ContMDiff I 𝓘(ℝ, V) (n + 1) f)
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x))
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E)
     {ε : ℝ} (hε : 0 < ε) :
     haveI : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
     letI := normalFiberBundle (hf.of_le le_add_self) himm hdim
-    (normalBundleRadialDiffeomorph hf himm hdim hε).target =
+    (normalBundleRadialPartialDiffeomorph hf himm hdim hε).target =
       {p | ‖(p.2 : V)‖ < ε} := (rfl)
 
 /-- The radial diffeomorphism acts by fibrewise compression. -/
-@[simp] theorem normalBundleRadialDiffeomorph_apply
+@[simp] theorem normalBundleRadialPartialDiffeomorph_apply
     (hf : ContMDiff I 𝓘(ℝ, V) (n + 1) f)
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x))
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E)
@@ -239,10 +239,11 @@ def normalBundleRadialDiffeomorph
     (p : TotalSpace F (fun x => normalSubspace I f x)) :
     haveI : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
     letI := normalFiberBundle (hf.of_le le_add_self) himm hdim
-    normalBundleRadialDiffeomorph hf himm hdim hε p = normalBundleRadialMap f ε p := (rfl)
+    normalBundleRadialPartialDiffeomorph hf himm hdim hε p =
+      normalBundleRadialMap f ε p := (rfl)
 
 /-- The inverse radial diffeomorphism acts by fibrewise expansion. -/
-@[simp] theorem normalBundleRadialDiffeomorph_symm_apply
+@[simp] theorem normalBundleRadialPartialDiffeomorph_symm_apply
     (hf : ContMDiff I 𝓘(ℝ, V) (n + 1) f)
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x))
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E)
@@ -250,7 +251,7 @@ def normalBundleRadialDiffeomorph
     (p : TotalSpace F (fun x => normalSubspace I f x)) :
     haveI : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
     letI := normalFiberBundle (hf.of_le le_add_self) himm hdim
-    (normalBundleRadialDiffeomorph hf himm hdim hε).toPartialEquiv.symm p =
+    (normalBundleRadialPartialDiffeomorph hf himm hdim hε).toPartialEquiv.symm p =
       normalBundleRadialInverse f ε p := (rfl)
 
 end Smooth
