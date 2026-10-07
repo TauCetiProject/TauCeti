@@ -371,7 +371,6 @@ theorem schemePointsMulEquiv_gaSchemePointParamMul
 
 /-- A scheme-valued point corresponds to the value at the additive coordinate `ι(1)` of its
 canonical algebra point. -/
-@[simp]
 lemma toAdd_schemePointsMulEquiv
     (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of R)) ⟶
       (groupScheme R).X) :
@@ -402,7 +401,6 @@ theorem schemePointsMulEquiv_apply
 
 /-- The inverse scheme-points equivalence sends an element of the value algebra to the spectrum
 map induced by the corresponding symmetric-algebra point. -/
-@[simp]
 lemma schemePointsMulEquiv_symm_apply (a : Multiplicative A) :
     (schemePointsMulEquiv A).symm a =
       groupSchemePointMulEquiv A
