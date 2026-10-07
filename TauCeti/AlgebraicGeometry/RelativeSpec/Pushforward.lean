@@ -108,6 +108,13 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardSectionsPresheafIso_hom_app
       (f.pushforwardSectionsRingEquiv A U.unop).toCommRingCatIso.hom :=
   (rfl)
 
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardSectionsPresheafIso_inv_app
+    (U : Y.Opensᵒᵖ) :
+    (f.pushforwardSectionsPresheafIso A).inv.app U =
+      (f.pushforwardSectionsRingEquiv A U.unop).toCommRingCatIso.inv :=
+  (rfl)
+
 variable (X) in
 /-- The structure map of the tensor-unit algebra acts identically on regular functions. -/
 @[simp]
@@ -161,6 +168,13 @@ lemma _root_.AlgebraicGeometry.Scheme.structureAlgebraSectionsPresheafIso_hom_ap
     (X : Scheme.{u}) (U : X.Opensᵒᵖ) :
     X.structureAlgebraSectionsPresheafIso.hom.app U =
       (X.structureAlgebraSectionsRingEquiv U.unop).toCommRingCatIso.hom :=
+  (rfl)
+
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.structureAlgebraSectionsPresheafIso_inv_app
+    (X : Scheme.{u}) (U : X.Opensᵒᵖ) :
+    X.structureAlgebraSectionsPresheafIso.inv.app U =
+      (X.structureAlgebraSectionsRingEquiv U.unop).toCommRingCatIso.inv :=
   (rfl)
 
 -- Expose the object construction so that section-ring carriers compute on inverse images;
@@ -236,6 +250,15 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraPresheafIso
     (U : Y.Opensᵒᵖ) :
     f.pushforwardStructureAlgebraPresheafIso.hom.app U =
       (f.pushforwardStructureAlgebraSectionsRingEquiv U.unop).toCommRingCatIso.hom :=
+  (rfl)
+
+/-- The inverse comparison with regular functions is given on each open by the inverse
+section-ring equivalence of the function algebra. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraPresheafIso_inv_app
+    (U : Y.Opensᵒᵖ) :
+    f.pushforwardStructureAlgebraPresheafIso.inv.app U =
+      (f.pushforwardStructureAlgebraSectionsRingEquiv U.unop).toCommRingCatIso.inv :=
   (rfl)
 
 /-- The presheaf comparison identifies the algebra's structure map with the actual
