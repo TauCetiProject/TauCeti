@@ -19,6 +19,8 @@ needed for the smooth bundle of alternating maps.
 We use Mathlib's polynomial description of multilinear pullback and recover the alternating
 map by normalized alternatization. We only require the degree factorial to be nonzero in the
 scalar field; no completeness or finite-dimensionality assumption is needed.
+Over a characteristic-zero field, this condition follows from `Nat.factorial_ne_zero`.
+In positive characteristic, it permits degrees whose factorial has nonzero cast.
 -/
 
 public noncomputable section
@@ -33,7 +35,8 @@ variable {𝕜 ι E F G : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G] [Fintype ι]
   [NeZero ((Fintype.card ι).factorial : 𝕜)] {n : ℕ∞ω}
 
-/-- Pullback depends smoothly on the linear map, in the operator norm on alternating maps. -/
+/-- When the degree factorial is nonzero in the scalar field, pullback depends smoothly
+on the linear map, in the operator norm on alternating maps. -/
 theorem contDiff_compContinuousLinearMapCLM :
     ContDiff 𝕜 n
       (compContinuousLinearMapCLM : (E →L[𝕜] F) →

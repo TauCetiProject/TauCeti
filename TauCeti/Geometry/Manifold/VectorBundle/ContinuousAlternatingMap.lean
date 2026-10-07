@@ -13,7 +13,8 @@ public import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 # Smooth bundles of continuous alternating maps
 
 Continuous alternating maps between the fibers of two `C^n` vector bundles form a `C^n`
-vector bundle. The fibers can be infinite dimensional, and the base can have boundary or corners.
+vector bundle when the degree factorial is nonzero in the scalar field, in particular over `ℝ`.
+The fibers can be infinite dimensional, and the base can have boundary or corners.
 This supplies the smooth bundle in which bundle-valued differential forms are sections.
 
 We retain Mathlib's topology, atlas and coordinate representation. A map into the total space
@@ -21,6 +22,8 @@ is smooth exactly when its base map and its alternating-map coefficients in loca
 are smooth. The construction follows Mathlib's `Geometry.Manifold.VectorBundle.Hom`, by
 Floris van Doorn, and the topological alternating-map bundle by Yury Kudryashov, Heather Macbeth
 and Floris van Doorn.
+
+The coordinate regularity criteria do not require the factorial hypothesis.
 -/
 
 public noncomputable section
