@@ -118,6 +118,8 @@ theorem map_one : F 1 = 0 := by
   rw [one_mul, add_comm] at h
   simpa only [mul_zero] using add_eq_left.mp h.symm
 
+grind_pattern map_one => IsCrossedHom χ F
+
 /-- On a product of elements where the twist is trivial, a crossed homomorphism is additive. -/
 theorem map_list_prod_of_forall_eq_one {l : List H} (hl : ∀ a ∈ l, χ a = 1) :
     F l.prod = (l.map F).sum := by
