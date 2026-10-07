@@ -14,7 +14,7 @@ public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 /-!
 # Uniqueness of ordered couplings
 
-A nonnegative finitely supported function on a product of linear orders whose support is a
+A nonnegative finitely supported function on a product of partial orders whose support is a
 chain is determined by its two marginals. Its mass on a rectangle of lower sets is the infimum
 of the two marginal masses. Taking differences of four such rectangles recovers each coefficient.
 This is the uniqueness property underlying the staircase triangulation of a product of simplices.
@@ -86,12 +86,13 @@ theorem sum_indicator_prod_eq_inf [Preorder α] [Preorder β] [AddCommMonoid G] 
 /-- A coefficient is the alternating sum of the masses of the four lower rectangles whose
 upper bounds use strict or non-strict comparison with that coefficient's coordinates. -/
 @[simp]
-theorem sum_indicator_Iic_prod_sub_sub_add [LinearOrder α] [LinearOrder β]
+theorem sum_indicator_Iic_prod_sub_sub_add [PartialOrder α] [PartialOrder β]
     [AddCommGroup G] (u : (α × β) →₀ G) (a : α) (b : β) :
     u.sum (fun p r => (Iic (a, b)).indicator (fun _ => r) p) -
       u.sum (fun p r => (Iio a ×ˢ Iic b).indicator (fun _ => r) p) -
       u.sum (fun p r => (Iic a ×ˢ Iio b).indicator (fun _ => r) p) +
       u.sum (fun p r => (Iio a ×ˢ Iio b).indicator (fun _ => r) p) = u (a, b) := by
+  classical
   rw [← Iic_prod_Iic]
   simp only [Finsupp.sum, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
   calc
@@ -99,14 +100,14 @@ theorem sum_indicator_Iic_prod_sub_sub_add [LinearOrder α] [LinearOrder β]
       apply Finset.sum_congr rfl
       intro p _
       simp only [Set.indicator, mem_prod, mem_Iic, mem_Iio]
-      rcases lt_trichotomy p.1 a with h | h | h <;>
-        rcases lt_trichotomy p.2 b with h' | h' | h' <;>
-        simp [h, h', Prod.ext_iff, le_iff_lt_or_eq, lt_asymm, ne_of_lt, ne_of_gt]
+      by_cases ha : p.1 ≤ a <;> by_cases hb : p.2 ≤ b <;>
+        by_cases ha' : p.1 < a <;> by_cases hb' : p.2 < b <;>
+        simp_all [Prod.ext_iff, lt_iff_le_and_ne] <;> grind
     _ = u (a, b) := by
       simp [Finsupp.mem_support_iff, eq_comm]
 
 /-- Two nonnegative chain-supported couplings with equal marginals coincide. -/
-theorem eq_of_mapDomain_eq_of_isChain_support [LinearOrder α] [LinearOrder β]
+theorem eq_of_mapDomain_eq_of_isChain_support [PartialOrder α] [PartialOrder β]
     [AddCommGroup G] [SemilatticeInf G]
     [IsOrderedAddMonoid G] (w v : (α × β) →₀ G)
     (hw : ∀ p, 0 ≤ w p) (hv : ∀ p, 0 ≤ v p)
