@@ -41,8 +41,8 @@ with conjugation** (`TauCeti.Octonion.derivation_apply_conj`).
 The assignment is a homomorphism of Lie algebras `Der 𝕆 →ₗ⁅R⁆ Der J`, because applying a derivation
 entrywise is multiplicative for the composition of endomorphisms, and it is injective, because a
 single off-diagonal slot already sees all of `𝕆`. Over a field in which `2` is invertible the
-fourteen independent derivations of `𝕆` of
-`TauCeti.Octonion.fourteen_le_finrank_derivationLieAlgebra` therefore give
+fourteen independent derivations of `𝕆` counted by
+`TauCeti.Octonion.finrank_derivationLieAlgebra` therefore give
 `14 ≤ finrank (Der J)`, the first instalment of the dimension `52` of `F₄`.
 
 ## Main definitions
@@ -220,13 +220,13 @@ theorem ofOctonionDerivation_injective :
   simpa using h'
 
 /-- **`Der H₃(𝕆)` has rank at least `14`.** The fourteen independent derivations of the split
-octonions of `TauCeti.Octonion.fourteen_le_finrank_derivationLieAlgebra` remain
+octonions counted by `TauCeti.Octonion.finrank_derivationLieAlgebra` remain
 independent after being pushed into `Der H₃(𝕆)`. The matching `52`, and with it the identification
 of `Der H₃(𝕆)` with the exceptional Lie algebra `F₄`, needs the traceless anti-Hermitian
 derivations as well and is not proved here. -/
 theorem fourteen_le_finrank_derivationLieAlgebra (K : Type*) [Field K] [Invertible (2 : K)] :
     14 ≤ Module.finrank K (derivationLieAlgebra K (AlbertAlgebra K)) :=
-  le_trans (Octonion.fourteen_le_finrank_derivationLieAlgebra K)
+  le_trans (Octonion.finrank_derivationLieAlgebra K).ge
     (LinearMap.finrank_le_finrank_of_injective
       (f := (ofOctonionDerivation K).toLinearMap) (ofOctonionDerivation_injective K))
 
