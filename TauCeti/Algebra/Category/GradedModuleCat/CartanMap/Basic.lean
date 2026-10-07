@@ -376,30 +376,43 @@ private theorem gradedFiniteProjectiveModules_shift' :
   exact gradedFiniteProjectiveModules_shift
 
 /-- The induced graded exact structure on finite graded modules. -/
-@[expose]
 noncomputable def gradedFiniteModulesExactStructure (𝒜 : ℤ → Submodule k A) :
     GradedExactStructure (gradedFiniteModules 𝒜).FullSubcategory :=
-  (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).fullSubcategory _
-    (by
-      rw [GradedExactStructure.abelian_toExactStructure]
-      exact isExtensionClosed_gradedFiniteModules)
-    (by
-      rw [GradedExactStructure.abelian_shift]
-      exact gradedFiniteModules_shift)
+  (gradedModuleExactStructure 𝒜).fullSubcategory _
+    isExtensionClosed_gradedFiniteModules' gradedFiniteModules_shift'
 
 /-- The induced graded exact structure on finite graded modules with projective underlying
 module. When `𝒜` is a decomposition of `A`, it is the split exact structure, by
 `TauCeti.gradedFiniteProjectiveModulesExactStructure_eq_split`. -/
-@[expose]
 noncomputable def gradedFiniteProjectiveModulesExactStructure (𝒜 : ℤ → Submodule k A) :
     GradedExactStructure (gradedFiniteProjectiveModules 𝒜).FullSubcategory :=
-  (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).fullSubcategory _
-    (by
-      rw [GradedExactStructure.abelian_toExactStructure]
-      exact isExtensionClosed_gradedFiniteProjectiveModules)
-    (by
-      rw [GradedExactStructure.abelian_shift]
-      exact gradedFiniteProjectiveModules_shift)
+  (gradedModuleExactStructure 𝒜).fullSubcategory _
+    isExtensionClosed_gradedFiniteProjectiveModules' gradedFiniteProjectiveModules_shift'
+
+/-- The graded exact structure on finite graded modules is the one induced from the canonical
+graded exact structure on all graded modules, for any proofs of the side conditions. -/
+theorem gradedFiniteModulesExactStructure_eq_fullSubcategory
+    (hP : (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).toExactStructure
+      |>.IsExtensionClosed (gradedFiniteModules 𝒜))
+    (hshift : (gradedFiniteModules 𝒜).inverseImage
+        (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).shift.functor =
+      gradedFiniteModules 𝒜) :
+    gradedFiniteModulesExactStructure 𝒜 =
+      (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).fullSubcategory _ hP hshift := by
+  rw [gradedFiniteModulesExactStructure]
+
+/-- The graded exact structure on finite graded modules with projective underlying module is the
+one induced from the canonical graded exact structure on all graded modules, for any proofs of
+the side conditions. -/
+theorem gradedFiniteProjectiveModulesExactStructure_eq_fullSubcategory
+    (hP : (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).toExactStructure
+      |>.IsExtensionClosed (gradedFiniteProjectiveModules 𝒜))
+    (hshift : (gradedFiniteProjectiveModules 𝒜).inverseImage
+        (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).shift.functor =
+      gradedFiniteProjectiveModules 𝒜) :
+    gradedFiniteProjectiveModulesExactStructure 𝒜 =
+      (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).fullSubcategory _ hP hshift := by
+  rw [gradedFiniteProjectiveModulesExactStructure]
 
 /-- The shift on finite graded modules agrees with the ambient grading shift after applying the
 full-subcategory inclusion. -/
@@ -432,7 +445,7 @@ theorem gradedFiniteModulesExactStructure_conflation_iff
     (gradedFiniteModulesExactStructure 𝒜).Conflation S ↔
       (S.map (gradedFiniteModules 𝒜).ι).ShortExact := by
   rw [gradedFiniteModulesExactStructure, GradedExactStructure.fullSubcategory_conflation_iff,
-    GradedExactStructure.abelian_toExactStructure,
+    gradedModuleExactStructure, GradedExactStructure.abelian_toExactStructure,
     ExactStructure.abelian_conflation]
 
 /-- The conflations of finite graded modules with projective underlying module are the short
@@ -443,7 +456,7 @@ theorem gradedFiniteProjectiveModulesExactStructure_conflation_iff
     (gradedFiniteProjectiveModulesExactStructure 𝒜).Conflation S ↔
       (S.map (gradedFiniteProjectiveModules 𝒜).ι).ShortExact := by
   rw [gradedFiniteProjectiveModulesExactStructure,
-    GradedExactStructure.fullSubcategory_conflation_iff,
+    GradedExactStructure.fullSubcategory_conflation_iff, gradedModuleExactStructure,
     GradedExactStructure.abelian_toExactStructure, ExactStructure.abelian_conflation]
 
 /-! ### Classes of shifted modules -/

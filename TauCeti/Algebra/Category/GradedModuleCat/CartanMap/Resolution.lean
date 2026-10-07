@@ -85,6 +85,60 @@ private theorem finiteModules_extensionClosed :
       (isExtensionClosed_gradedFiniteModules (𝒜 := 𝒜))
 
 omit [DirectSum.Decomposition 𝒜] in
+private theorem finiteProjective_extensionClosed :
+    (gradedModuleCanonicalExactStructure 𝒜).toExactStructure.IsExtensionClosed
+      (gradedFiniteProjectiveModules 𝒜) := by
+  simpa only [gradedModuleCanonicalExactStructure,
+    GradedExactStructure.abelian_toExactStructure] using
+      (isExtensionClosed_gradedFiniteProjectiveModules (𝒜 := 𝒜))
+
+omit [DirectSum.Decomposition 𝒜] in
+/-- The identity identifies the graded exact structure on finite graded projectives with the one
+induced from the canonical structure, by
+`TauCeti.gradedFiniteProjectiveModulesExactStructure_eq_fullSubcategory`. -/
+private noncomputable def finiteProjectiveExactEquiv :
+    GradedExactEquiv (gradedFiniteProjectiveModulesExactStructure 𝒜)
+      ((gradedModuleCanonicalExactStructure 𝒜).fullSubcategory _
+        (finiteProjective_extensionClosed 𝒜) (finiteProjective_shift 𝒜)) where
+  equiv := CategoryTheory.Equivalence.refl
+  functor_additive := inferInstanceAs (𝟭 (gradedFiniteProjectiveModules 𝒜).FullSubcategory).Additive
+  isConflationExact := by
+    rw [gradedFiniteProjectiveModulesExactStructure_eq_fullSubcategory
+      (finiteProjective_extensionClosed 𝒜) (finiteProjective_shift 𝒜)]
+    exact ExactStructure.IsConflationExact.id
+  inverse_isConflationExact := by
+    rw [gradedFiniteProjectiveModulesExactStructure_eq_fullSubcategory
+      (finiteProjective_extensionClosed 𝒜) (finiteProjective_shift 𝒜)]
+    exact ExactStructure.IsConflationExact.id
+  commShift := by
+    rw [gradedFiniteProjectiveModulesExactStructure_eq_fullSubcategory
+      (finiteProjective_extensionClosed 𝒜) (finiteProjective_shift 𝒜)]
+    exact Functor.rightUnitor _ ≪≫ (Functor.leftUnitor _).symm
+
+omit [DirectSum.Decomposition 𝒜] in
+/-- The identity identifies the graded exact structure on finite graded modules with the one
+induced from the canonical structure, by
+`TauCeti.gradedFiniteModulesExactStructure_eq_fullSubcategory`. -/
+private noncomputable def finiteModulesExactEquiv :
+    GradedExactEquiv (gradedFiniteModulesExactStructure 𝒜)
+      ((gradedModuleCanonicalExactStructure 𝒜).fullSubcategory _
+        (finiteModules_extensionClosed 𝒜) (finiteModules_shift 𝒜)) where
+  equiv := CategoryTheory.Equivalence.refl
+  functor_additive := inferInstanceAs (𝟭 (gradedFiniteModules 𝒜).FullSubcategory).Additive
+  isConflationExact := by
+    rw [gradedFiniteModulesExactStructure_eq_fullSubcategory
+      (finiteModules_extensionClosed 𝒜) (finiteModules_shift 𝒜)]
+    exact ExactStructure.IsConflationExact.id
+  inverse_isConflationExact := by
+    rw [gradedFiniteModulesExactStructure_eq_fullSubcategory
+      (finiteModules_extensionClosed 𝒜) (finiteModules_shift 𝒜)]
+    exact ExactStructure.IsConflationExact.id
+  commShift := by
+    rw [gradedFiniteModulesExactStructure_eq_fullSubcategory
+      (finiteModules_extensionClosed 𝒜) (finiteModules_shift 𝒜)]
+    exact Functor.rightUnitor _ ≪≫ (Functor.leftUnitor _).symm
+
+omit [DirectSum.Decomposition 𝒜] in
 /-- A graded module admitting a finite resolution by finite graded projectives is itself finite.
 Each resolution step presents its target as a quotient of a finite graded module. -/
 theorem gradedAdmitsFiniteProjectiveResolution_le_finiteModules :
@@ -123,12 +177,10 @@ noncomputable def gradedFiniteProjectiveResolutionExactStructure :
 projectives. -/
 noncomputable def gradedModuleResolutionEquiv :
     LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) ≃ₗ[LaurentPolynomial ℤ]
-      LaurentK0.{uA} (gradedFiniteProjectiveResolutionExactStructure 𝒜) := by
-  unfold gradedFiniteProjectiveModulesExactStructure
-    gradedFiniteProjectiveResolutionExactStructure
-  exact GradedExactStructure.laurentResolutionEquiv.{uA}
-    (gradedModuleCanonicalExactStructure 𝒜)
-    (finiteProjective_le_projective 𝒜) (finiteProjective_shift 𝒜)
+      LaurentK0.{uA} (gradedFiniteProjectiveResolutionExactStructure 𝒜) :=
+  (LaurentK0.mapEquiv.{uA, uA} (finiteProjectiveExactEquiv 𝒜)).trans
+    (GradedExactStructure.laurentResolutionEquiv.{uA} (gradedModuleCanonicalExactStructure 𝒜)
+      (finiteProjective_le_projective 𝒜) (finiteProjective_shift 𝒜))
 
 /-- The graded resolution equivalence sends the class of a finite graded projective to its class
 among modules admitting finite graded-projective resolutions. -/
@@ -140,23 +192,23 @@ theorem gradedModuleResolutionEquiv_of
       LaurentK0.of.{uA} (gradedFiniteProjectiveResolutionExactStructure 𝒜)
         ⟨M.obj, (gradedModuleCanonicalExactStructure 𝒜).le_admitsFiniteResolution
           (gradedFiniteProjectiveModules 𝒜) M.obj M.property⟩ := by
-  change
-    (GradedExactStructure.laurentResolutionEquiv.{uA}
+  -- The transport `finiteProjectiveExactEquiv` is the identity on objects.
+  exact (congrArg (GradedExactStructure.laurentResolutionEquiv.{uA}
       (gradedModuleCanonicalExactStructure 𝒜)
       (finiteProjective_le_projective 𝒜) (finiteProjective_shift 𝒜))
-        (LaurentK0.of _ M) = LaurentK0.of _ _
-  exact GradedExactStructure.laurentResolutionEquiv_of.{uA}
-    (gradedModuleCanonicalExactStructure 𝒜)
-    (finiteProjective_le_projective 𝒜) (finiteProjective_shift 𝒜) M
+      (LaurentK0.mapEquiv_of.{uA, uA} (finiteProjectiveExactEquiv 𝒜) M)).trans
+    (GradedExactStructure.laurentResolutionEquiv_of.{uA}
+      (gradedModuleCanonicalExactStructure 𝒜)
+      (finiteProjective_le_projective 𝒜) (finiteProjective_shift 𝒜) M)
 
 private noncomputable def finiteResolutionToFiniteFunctor :
     GradedConflationExact
       (gradedFiniteProjectiveResolutionExactStructure 𝒜)
-      (gradedFiniteModulesExactStructure 𝒜)
+      ((gradedModuleCanonicalExactStructure 𝒜).fullSubcategory _
+        (finiteModules_extensionClosed 𝒜) (finiteModules_shift 𝒜))
       (ObjectProperty.ιOfLE
-        (gradedAdmitsFiniteProjectiveResolution_le_finiteModules 𝒜)) := by
-  unfold gradedFiniteProjectiveResolutionExactStructure gradedFiniteModulesExactStructure
-  exact GradedConflationExact.ιOfLE (gradedModuleCanonicalExactStructure 𝒜)
+        (gradedAdmitsFiniteProjectiveResolution_le_finiteModules 𝒜)) :=
+  GradedConflationExact.ιOfLE (gradedModuleCanonicalExactStructure 𝒜)
     ((gradedModuleCanonicalExactStructure 𝒜).admitsFiniteResolution
       (gradedFiniteProjectiveModules 𝒜))
     ((gradedModuleCanonicalExactStructure 𝒜).isExtensionClosed_admitsFiniteResolution
@@ -172,7 +224,8 @@ graded modules. -/
 noncomputable def fromGradedFiniteProjectiveResolution :
     LaurentK0.{uA} (gradedFiniteProjectiveResolutionExactStructure 𝒜) →ₗ[LaurentPolynomial ℤ]
       LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜) :=
-  LaurentK0.map.{uA, uA} (finiteResolutionToFiniteFunctor 𝒜)
+  (LaurentK0.mapEquiv.{uA, uA} (finiteModulesExactEquiv 𝒜)).symm.toLinearMap.comp
+    (LaurentK0.map.{uA, uA} (finiteResolutionToFiniteFunctor 𝒜))
 
 /-- The comparison map sends an object class to the class of the same finite graded module. -/
 @[simp]
@@ -184,7 +237,8 @@ theorem fromGradedFiniteProjectiveResolution_of
         (LaurentK0.of.{uA} (gradedFiniteProjectiveResolutionExactStructure 𝒜) ⟨M, hM⟩) =
       LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜)
         ⟨M, gradedAdmitsFiniteProjectiveResolution_le_finiteModules 𝒜 M hM⟩ := by
-  rw [fromGradedFiniteProjectiveResolution, LaurentK0.map_of]
+  rw [fromGradedFiniteProjectiveResolution, LinearMap.comp_apply, LaurentK0.map_of,
+    LinearEquiv.coe_coe, LaurentK0.mapEquiv_symm_of]
   exact congrArg _ <| ObjectProperty.FullSubcategory.ext
     (ObjectProperty.ιOfLE_obj_obj
       (gradedAdmitsFiniteProjectiveResolution_le_finiteModules 𝒜) ⟨M, hM⟩).symm
@@ -211,11 +265,11 @@ variable (h : gradedFiniteModules 𝒜 ≤
 
 private noncomputable def finiteToFiniteResolutionFunctor :
     GradedConflationExact
-      (gradedFiniteModulesExactStructure 𝒜)
+      ((gradedModuleCanonicalExactStructure 𝒜).fullSubcategory _
+        (finiteModules_extensionClosed 𝒜) (finiteModules_shift 𝒜))
       (gradedFiniteProjectiveResolutionExactStructure 𝒜)
-      (ObjectProperty.ιOfLE h) := by
-  unfold gradedFiniteModulesExactStructure gradedFiniteProjectiveResolutionExactStructure
-  exact GradedConflationExact.ιOfLE (gradedModuleCanonicalExactStructure 𝒜)
+      (ObjectProperty.ιOfLE h) :=
+  GradedConflationExact.ιOfLE (gradedModuleCanonicalExactStructure 𝒜)
     (gradedFiniteModules 𝒜) (finiteModules_extensionClosed 𝒜)
     ((gradedModuleCanonicalExactStructure 𝒜).isExtensionClosed_admitsFiniteResolution
       (finiteProjective_le_projective 𝒜))
@@ -228,7 +282,8 @@ subcategory of modules admitting finite graded-projective resolutions. -/
 noncomputable def toGradedFiniteProjectiveResolution :
     LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜) →ₗ[LaurentPolynomial ℤ]
       LaurentK0.{uA} (gradedFiniteProjectiveResolutionExactStructure 𝒜) :=
-  LaurentK0.map.{uA, uA} (finiteToFiniteResolutionFunctor 𝒜 h)
+  (LaurentK0.map.{uA, uA} (finiteToFiniteResolutionFunctor 𝒜 h)).comp
+    (LaurentK0.mapEquiv.{uA, uA} (finiteModulesExactEquiv 𝒜)).toLinearMap
 
 @[simp]
 theorem toGradedFiniteProjectiveResolution_of
@@ -237,7 +292,8 @@ theorem toGradedFiniteProjectiveResolution_of
         (LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) M) =
       LaurentK0.of.{uA} (gradedFiniteProjectiveResolutionExactStructure 𝒜)
         ⟨M.obj, h M.obj M.property⟩ := by
-  rw [toGradedFiniteProjectiveResolution, LaurentK0.map_of]
+  rw [toGradedFiniteProjectiveResolution, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    LaurentK0.mapEquiv_of, LaurentK0.map_of]
   exact congrArg _ <| ObjectProperty.FullSubcategory.ext
     (ObjectProperty.ιOfLE_obj_obj h M).symm
 
@@ -285,15 +341,27 @@ theorem gradedCartanInverse_of_eq_foldAlternating
         (LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) ⟨M, hM⟩) =
       r.foldAlternating fun Z hZ =>
         LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) ⟨Z, hZ⟩ := by
-  rw [gradedCartanInverse, LinearMap.comp_apply, toGradedFiniteProjectiveResolution_of]
-  change
-    (GradedExactStructure.laurentResolutionEquiv.{uA}
+  rw [gradedCartanInverse, LinearMap.comp_apply, toGradedFiniteProjectiveResolution_of,
+    LinearEquiv.coe_coe]
+  -- `gradedModuleResolutionEquiv` is the transport `finiteProjectiveExactEquiv` followed by the
+  -- generic resolution equivalence, whose inverse is the alternating class of `r`.
+  refine (congrArg (LaurentK0.mapEquiv.{uA, uA} (finiteProjectiveExactEquiv 𝒜)).symm
+    (GradedExactStructure.laurentResolutionEquiv_symm_of.{uA}
       (gradedModuleCanonicalExactStructure 𝒜)
-      (finiteProjective_le_projective 𝒜) (finiteProjective_shift 𝒜)).symm
-        (LaurentK0.of _ ⟨M, h M hM⟩) = _
-  exact GradedExactStructure.laurentResolutionEquiv_symm_of.{uA}
-    (gradedModuleCanonicalExactStructure 𝒜)
-    (finiteProjective_le_projective 𝒜) (finiteProjective_shift 𝒜) (h M hM) r
+      (finiteProjective_le_projective 𝒜) (finiteProjective_shift 𝒜) (h M hM) r)).trans ?_
+  clear hM
+  -- `finiteProjectiveExactEquiv` is the identity on objects, so each term is transported to the
+  -- class of the same module.
+  induction r with
+  | base hZ =>
+    rw [ExactStructure.FiniteResolution.foldAlternating_base,
+      ExactStructure.FiniteResolution.foldAlternating_base, LaurentK0.mapEquiv_symm_of]
+    rfl
+  | step hZ i p zero hp r ih =>
+    rw [ExactStructure.FiniteResolution.foldAlternating_step,
+      ExactStructure.FiniteResolution.foldAlternating_step, map_sub, ih,
+      LaurentK0.mapEquiv_symm_of]
+    rfl
 
 /-- If every finite graded module admits a finite graded-projective resolution, the graded Cartan
 map is an isomorphism of `ℤ[q,q⁻¹]`-modules. -/
