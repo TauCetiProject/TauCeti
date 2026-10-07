@@ -25,13 +25,14 @@ with a complex obtained by adding singletons. Thus deleting a free vertex is inc
 Only a nonempty facet and its upper face are needed for the local result; freeness is
 needed when extending it to the whole complex.
 
-The deformation transports `Convexity.StdSimplex.hornDeformationRetraction` through
-`Finset.standardSimplexHomeomorph`, reusing the existing barycentric horn retraction.
+Under `Finset.standardSimplexHomeomorph`, the retained part is the standard horn opposite
+the vertex complementary to the deleted facet.
 
 ## References
 
 * C. P. Rourke and B. J. Sanderson, *Introduction to Piecewise-Linear Topology* (1972),
   Chapter 3 (elementary collapse and its geometric deformation).
+* `Convexity.StdSimplex.hornDeformationRetraction`: the barycentric horn deformation.
 -/
 
 public noncomputable section
@@ -42,6 +43,34 @@ namespace PreAbstractSimplicialComplex
 
 variable {ι : Type*} [DecidableEq ι] {K : PreAbstractSimplicialComplex ι}
   {σ τ : Finset ι}
+
+/-- In a face of a precomplex, deleting the facet opposite `a` retains exactly the
+standard horn opposite `a` under the finite-simplex homeomorphism. -/
+theorem mem_deletion_space_iff_mem_horn (K : PreAbstractSimplicialComplex ι)
+    (hτ : τ ∈ K) (a : τ) (hσ : τ.erase a = σ) (x : StandardSimplex τ) :
+    x.1 ∈ (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) (deletion K σ)).space ↔
+      Finset.standardSimplexHomeomorph τ x ∈ Convexity.StdSimplex.horn a := by
+  classical
+  have hx : x.1.support ∈ K := K.isRelLowerSet_faces.mem_of_le hτ
+    (StandardSimplex.support_subset x)
+    (Finsupp.support_nonempty_iff.mpr fun hz => by
+      have hsum := StandardSimplex.sum_eq_one x
+      simp [hz] at hsum)
+  rw [mem_onFinsupp_space_iff, mem_deletion, Convexity.StdSimplex.mem_horn_iff]
+  simp only [hx, true_and, Finset.subset_iff, not_forall, exists_prop,
+    Finsupp.mem_support_iff, not_not, Finset.standardSimplexHomeomorph_weights]
+  constructor
+  · rintro ⟨v, hv, hxv⟩
+    have hvτ : v ∈ τ := Finset.erase_subset a.1 τ (hσ.symm ▸ hv)
+    refine ⟨⟨v, hvτ⟩, ?_, hxv⟩
+    intro h
+    have hval := congrArg Subtype.val h
+    rw [← hσ] at hv
+    exact (Finset.mem_erase.mp hv).1 hval
+  · rintro ⟨v, hv, hxv⟩
+    refine ⟨v.1, ?_, hxv⟩
+    rw [← hσ, Finset.mem_erase]
+    exact ⟨fun h => hv (Subtype.ext h), v.2⟩
 
 /-- A simplex strongly deformation retracts onto its intersection with the polyhedron
 obtained by deleting one of its nonempty facets. This is the local geometric realization of a
@@ -66,29 +95,8 @@ theorem exists_strong_deformation_retraction_simplex_deletion (K : PreAbstractSi
   let S : Set (StandardSimplex τ) :=
     {x | x.1 ∈ (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) (deletion K σ)).space}
   -- The geometric part retained by deletion is exactly the non-apex-coordinate horn.
-  have hS (x : StandardSimplex τ) : x ∈ S ↔ e x ∈ Convexity.StdSimplex.horn a' := by
-    have hx : x.1.support ∈ K := K.isRelLowerSet_faces.mem_of_le hτ
-      (StandardSimplex.support_subset x)
-      (Finsupp.support_nonempty_iff.mpr fun hz => by
-        have hsum := StandardSimplex.sum_eq_one x
-        simp [hz] at hsum)
-    simp only [S, mem_ofPred_eq]
-    rw [mem_onFinsupp_space_iff, mem_deletion, Convexity.StdSimplex.mem_horn_iff]
-    simp only [hx, true_and, Finset.subset_iff, not_forall, exists_prop,
-      Finsupp.mem_support_iff, not_not, e, Finset.standardSimplexHomeomorph_weights]
-    constructor
-    · rintro ⟨v, hv, hxv⟩
-      have hvτ : v ∈ τ := hστ.le hv
-      refine ⟨⟨v, hvτ⟩, ?_, ?_⟩
-      · intro h
-        have hval := congrArg Subtype.val h
-        rw [← hσ] at hv
-        exact (Finset.mem_erase.mp hv).1 hval
-      · exact hxv
-    · rintro ⟨v, hv, hxv⟩
-      refine ⟨v.1, ?_, hxv⟩
-      rw [← hσ, Finset.mem_erase]
-      exact ⟨fun h => hv (Subtype.ext h), v.2⟩
+  have hS (x : StandardSimplex τ) : x ∈ S ↔ e x ∈ Convexity.StdSimplex.horn a' :=
+    mem_deletion_space_iff_mem_horn K hτ a' hσ x
   -- Conjugate the bundled horn retraction and transport its relative homotopy.
   let eS := e.subtype hS
   let r := (eS.symm : C(Convexity.StdSimplex.horn a', S)).comp
@@ -107,7 +115,8 @@ theorem exists_strong_deformation_retraction_simplex_deletion (K : PreAbstractSi
       prop' := ?_ }
   · simpa only [ContinuousMap.comp_id] using e.symm_comp_toContinuousMap
   · ext x
-    rfl
+    simp only [ContinuousMap.comp_apply, ContinuousMap.coe_coe,
+      ContinuousMap.subtypeVal_apply, r, eS, Homeomorph.subtype_symm_apply_coe]
   · intro t x hx
     -- The relative-homotopy field uses `toFun`, so the application simp lemmas do not match.
     -- Express the cast and precomposition as an application of the transported homotopy.
