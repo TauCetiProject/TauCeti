@@ -70,7 +70,7 @@ theorem FDRep.finrank_invariants_add_of_shortExact {S : ShortComplex (FDRep k G)
     Module.finrank k (Representation.invariants S.X₂.ρ) =
       Module.finrank k (Representation.invariants S.X₁.ρ) +
         Module.finrank k (Representation.invariants S.X₃.ρ) := by
-  have hInv := Rep.shortExact_map_invariantsFunctor 
+  have hInv := Rep.shortExact_map_invariantsFunctor
     (hS.map_of_exact (forget₂ (FDRep k G) (Rep k G)))
   -- `Rep.invariantsFunctor` sends `forget₂ V` to the invariant subspace of `V.ρ`
   -- (`Rep.invariantsFunctor_obj_carrier`, `FDRep.forget₂_ρ`).
