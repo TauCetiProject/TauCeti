@@ -32,7 +32,9 @@ is a single cycle on each of its own orbits, the transport of its cycles along a
 types, and the factorization of an invariant function
 through a map on whose fibres the permutation is a single cycle, and a correction by a power of
 a cycle for a permutation commuting with it. It also identifies functions invariant under a
-permutation with functions on its cycle quotient (`TauCeti.invariantColouringEquiv`).
+permutation with functions on its cycle quotient (`TauCeti.invariantColouringEquiv`). Finally,
+right multiplication by `a` is a single cycle on the whole group exactly when `a` generates it
+(`Equiv.isCycleOn_mulRight_univ_iff`).
 -/
 
 public section
@@ -223,6 +225,23 @@ theorem IsCycleOn.permCongr {σ : Perm α} {β : Type*} (e : α ≃ β) {s : Set
     exact (sameCycle_permCongr σ e).2 (h.2 hx hy)
 
 end Equiv.Perm
+
+namespace Equiv
+
+/-- Right multiplication by `a` is a single cycle on the whole group exactly when `a` generates
+the group. -/
+@[to_additive /-- Right addition of `a` is a single cycle on the whole group exactly when `a`
+generates the group. -/]
+theorem isCycleOn_mulRight_univ_iff {G : Type*} [Group G] {a : G} :
+    (Equiv.mulRight a).IsCycleOn _root_.Set.univ ↔ Subgroup.zpowers a = ⊤ := by
+  simp only [Subgroup.eq_top_iff', Subgroup.mem_zpowers_iff]
+  refine ⟨fun h y => ?_, fun h => ⟨(Equiv.mulRight a).bijective.bijOn_univ, fun x _ y _ => ?_⟩⟩
+  · obtain ⟨k, hk⟩ := h.2 (Set.mem_univ 1) (Set.mem_univ y)
+    exact ⟨k, by simpa using hk⟩
+  · obtain ⟨k, hk⟩ := h (x⁻¹ * y)
+    exact ⟨k, by simp [hk]⟩
+
+end Equiv
 
 namespace TauCeti
 

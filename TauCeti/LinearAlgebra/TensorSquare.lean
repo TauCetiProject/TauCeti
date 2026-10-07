@@ -379,9 +379,9 @@ theorem trace_piTensorProduct_map_comp_tensorSwap {R : Type} {M : Type*}
   classical
   let b := Module.Free.chooseBasis R M
   let B := Basis.piTensorProduct fun _ : Fin 2 ↦ b
-  refine TauCeti.trace_eq_trace_comp_self_of_toMatrix_diag b B
+  refine b.trace_eq_trace_comp_self_of_toMatrix_diag B
     (finTwoArrowEquiv _) f _ fun p ↦ ?_
-  simp [B, LinearMap.toMatrix_apply, Basis.piTensorProduct_apply,
+  simp [B, Module.Basis.toMatrix_apply, Basis.piTensorProduct_apply,
     TauCeti.tensorSwap_tprod, PiTensorProduct.map_tprod,
     Basis.piTensorProduct_repr_tprod_apply, Fin.prod_univ_two]
 

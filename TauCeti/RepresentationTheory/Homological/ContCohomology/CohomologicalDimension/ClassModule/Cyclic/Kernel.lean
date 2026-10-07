@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Basic
-import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.Lift
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Extension
+import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.MaximalProP
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 
 /-!
@@ -197,10 +197,7 @@ theorem exists_abelianizationProPMk_eq_smul_div_of_mk_eq_one
     { mul_comm := (cyclicKernel_quotient_commutative p V s hs).is_comm.comm }
   have hpro := cyclicKernel_quotient_isProP p V hV hpV s
   let π : G →ₜ* G ⧸ K := ⟨QuotientGroup.mk' K, QuotientGroup.continuous_mk⟩
-  let πab := TopologicalAbelianization.lift π
-  have hkill := congrArg (maximalProPQuotient.lift hpro πab.toMonoidHom πab.continuous) hv
-  rw [maximalProPQuotient.mk_apply, maximalProPQuotient.lift_mk, map_one] at hkill
-  have hπ : π v.val = 1 := (TopologicalAbelianization.lift_mk π v.val).symm.trans hkill
+  have hπ : π v.val = 1 := eq_one_of_maximalProPQuotient_mk_eq_one hpro π hv
   have hvK : v.val ∈ K := (QuotientGroup.eq_one_iff _).mp hπ
   obtain ⟨w, hw, hwv⟩ := hvK
   have hwv' : w = v := Subtype.ext hwv

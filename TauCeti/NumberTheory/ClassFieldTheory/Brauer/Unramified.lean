@@ -76,6 +76,8 @@ Thus restriction preserves the representing unit and multiplies the invariant by
 
 ## Main results
 
+* `TauCeti.ClassFieldTheory.unramifiedClass_eq_cyclicClass`: the unramified class is the cyclic
+  class `TauCeti.cyclicClass` at arithmetic Frobenius.
 * `TauCeti.ClassFieldTheory.unramifiedClass_apply`: the unramified class is the explicit
   Frobenius-periodicity class of the embedded ground-field unit.
 * `TauCeti.ClassFieldTheory.unramifiedClass_eq_zero_iff`: the class of `a` vanishes exactly when
@@ -137,6 +139,13 @@ Frobenius, under two-periodicity of the cohomology of the cyclic group `Gal(L/K)
 generator, arithmetic Frobenius. -/
 def unramifiedClass : Additive Kˣ →+ H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) :=
   cyclicClass (mem_zpowers_frobeniusAlgEquiv K L)
+
+/-- The unramified class is the cyclic class at arithmetic Frobenius, for any proof that Frobenius
+generates `Gal(L/K)`. -/
+theorem unramifiedClass_eq_cyclicClass
+    (hg : ∀ σ : L ≃ₐ[K] L, σ ∈ Subgroup.zpowers (frobeniusAlgEquiv (K := K) (L := L))) :
+    unramifiedClass K L = cyclicClass hg :=
+  (rfl)
 
 /-- The unramified class of a ground-field unit is its image under Frobenius periodicity. -/
 theorem unramifiedClass_apply (a : Kˣ) :

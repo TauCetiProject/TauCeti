@@ -71,7 +71,7 @@ open _root_.ContRepresentation
 
 open scoped InnerProductSpace
 
-open TauCeti TauCeti.ContRepresentation
+open TauCeti
 
 namespace ContRepresentation
 

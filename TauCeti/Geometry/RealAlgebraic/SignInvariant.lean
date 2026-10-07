@@ -38,6 +38,8 @@ point from each of them realizes every sign vector that the functions take.
   sign-invariant realize all their sign vectors.
 * `IsPreconnected.signInvariant`: a continuous, nowhere-zero function on a preconnected set is
   sign-invariant.
+* `IsPreconnected.signInvariant_of_eq_zero_iff`: a continuous function on a preconnected set that
+  vanishes everywhere or nowhere there is sign-invariant.
 
 ## References
 
@@ -146,6 +148,17 @@ theorem _root_.IsPreconnected.signInvariant [Zero R] [LinearOrder R] [Topologica
     (hf : ContinuousOn f s) (h0 : ∀ x ∈ s, f x ≠ 0) : SignInvariant f s :=
   fun _ hx _ hy ↦ hs.constant (f := fun x ↦ SignType.sign (f x))
     (fun z hz ↦ (continuousAt_sign_of_ne_zero (h0 z hz)).comp_continuousWithinAt (hf z hz)) hx hy
+
+/-- A function that is continuous on a preconnected set, and vanishes either at every point of
+the set or at none, is sign-invariant there. -/
+theorem _root_.IsPreconnected.signInvariant_of_eq_zero_iff [Zero R] [LinearOrder R]
+    [TopologicalSpace R] [OrderTopology R] [TopologicalSpace α] {f : α → R} {s : Set α}
+    (hs : IsPreconnected s) (hf : ContinuousOn f s)
+    (h0 : ∀ x ∈ s, ∀ y ∈ s, f x = 0 ↔ f y = 0) : SignInvariant f s := by
+  intro x hx y hy
+  by_cases hfx : f x = 0
+  · rw [hfx, (h0 x hx y hy).1 hfx]
+  · exact hs.signInvariant hf (fun z hz hfz ↦ hfx ((h0 x hx z hz).2 hfz)) x hx y hy
 
 /-- Local sign-invariance on relative neighborhoods implies sign-invariance on a preconnected
 set. No continuity of the function itself is required. -/

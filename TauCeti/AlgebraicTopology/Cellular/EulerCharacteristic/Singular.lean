@@ -102,7 +102,7 @@ the alternating sum of the dimensions of relative singular homology is the coeff
 dimension times the alternating count of relative cells. Both sums have finite support. -/
 theorem finsum_finrank_singularHomology_complexBasePair [RelCWComplex.Finite C] :
     ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank k ((complexBasePair C).singularHomology M i : ModuleCat k) =
-      finrank k M * ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * Nat.card (cell C i) := by
+      finrank k M * cwEulerChar C := by
   simp_rw [← (cellularSingularHomologyIso C M _).toLinearEquiv.finrank_eq]
   simpa only [HomologicalComplex.homologyEulerChar, GradedObject.eulerChar,
     ComplexShape.eulerCharSignsDownNat_χ, Units.val_pow_eq_pow_val, Units.val_neg,
@@ -142,7 +142,7 @@ theorem finsum_finrank_singularHomology_of_finite_cwComplex [RelCWComplex.Finite
     ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank k
         (((AlgebraicTopology.singularHomologyFunctor.{w} (ModuleCat.{w} k) i).obj M).obj
           (TopCat.of C)) =
-      finrank k M * ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * Nat.card (cell C i) := by
+      finrank k M * cwEulerChar C := by
   calc
     _ = ∑ᶠ i : ℕ, (-1 : ℤ) ^ i *
         finrank k ((complexBasePair C).singularHomology M i : ModuleCat k) :=

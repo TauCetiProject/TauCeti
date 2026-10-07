@@ -75,7 +75,7 @@ values as invariant bilinear forms is
 
 ## Implementation notes
 
-The continuity hypothesis `hπ : Continuous π` is the one `TauCeti.ContRepresentation.character`
+The continuity hypothesis `hπ : Continuous π` is the one `ContRepresentation.character`
 already carries: `ContRepresentation` bundles continuous action *operators* without asking that the
 map to them be continuous. Since it is a `Prop` argument, two indicators built from different
 continuity proofs are equal by proof irrelevance.
@@ -84,9 +84,9 @@ Everything below is declared in the **root** `ContRepresentation` namespace rath
 `TauCeti.ContRepresentation`, so that `π.frobeniusSchurIndicator hπ` elaborates:
 `ContRepresentation` is Mathlib's type, and a namespace for it nested inside `TauCeti` does not
 support dot notation.
-That is why the ambient `TauCeti` names this file consumes — `TauCeti.haarProb`,
-`TauCeti.integrable_continuousMap`, `TauCeti.ContRepresentation.character` — are brought in by
-`open` instead of by being in scope.
+The ambient `TauCeti` names this file consumes, such as `TauCeti.haarProb` and
+`TauCeti.integrable_continuousMap`, are brought in by `open`. The character and its formulas are
+methods in `ContRepresentation`.
 
 The scalars are `ℂ`: the symmetric- and exterior-power representations of
 `TauCeti/RepresentationTheory/SymmetricPower.lean` and
@@ -104,7 +104,7 @@ open _root_.ContRepresentation
 
 open MeasureTheory
 
-open TauCeti TauCeti.ContRepresentation
+open TauCeti
 
 namespace ContRepresentation
 
@@ -237,7 +237,7 @@ variable (π : ContRepresentation ℂ G V) (hπ : Continuous π)
 /-- **The Frobenius-Schur indicator of a unitary representation is real.**
 
 Conjugating the character inverts its argument
-(`TauCeti.ContRepresentation.character_apply_inv`), and `(g * g)⁻¹ = g⁻¹ * g⁻¹`, so the conjugate
+(`ContRepresentation.character_apply_inv`), and `(g * g)⁻¹ = g⁻¹ * g⁻¹`, so the conjugate
 indicator is the Haar average of `g ↦ χ(g⁻¹ * g⁻¹)`. Haar measure on a compact group is inversion
 invariant, which returns that average to the original one. -/
 @[simp]

@@ -54,7 +54,7 @@ below ask for a compact group and `𝕜 = ℂ`.
 
 ## Implementation notes
 
-The carrier of `TauCeti.ContRepresentation.character` is pinned by name at every use below, as
+The carrier of `ContRepresentation.character` is pinned by name at every use below, as
 `character (𝕜 := ℂ) (V := symmetricTensors ℂ V) ...`. It has to be: the carrier is an implicit
 argument that the elaborator would have to read off the coercion `⇑(symmetricSquare π)`, and a
 submodule of `V ⊗[ℂ] V` receives its topology both as a subtype and through the norm its
@@ -64,9 +64,12 @@ try.
 
 ## References
 
-The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2, and
-T. Bröcker and T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
-Chapter II.
+The indicator is defined in `TauCeti/RepresentationTheory/Compact/FrobeniusSchur/Basic.lean`,
+and the invariant counts use `TauCeti/RepresentationTheory/Compact/Invariants.lean`. The
+trichotomy `ν₂ ∈ {1, 0, -1}` is proved in
+`TauCeti/RepresentationTheory/Compact/FrobeniusSchur/Trichotomy.lean`. The mathematical development
+follows Daniel Bump, *Lie Groups*, second edition, Chapter 2, and T. Bröcker and T. tom Dieck,
+*Representations of Compact Lie Groups*, Springer GTM 98 (1985), Chapter II.
 -/
 
 public section

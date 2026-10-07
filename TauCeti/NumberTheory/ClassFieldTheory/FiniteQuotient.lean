@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.SpecificGroups.Cyclic.ActionKernel
 public import TauCeti.NumberTheory.ClassFieldTheory.MuNRep
 public import TauCeti.RepresentationTheory.Continuous.TopRep.Discrete
 public import TauCeti.Topology.Algebra.GroupAction.Discrete
@@ -20,6 +21,14 @@ isomorphic to a value of this functor for some `V`.
 This is the coefficient reduction used to apply finite-group representation theory to local
 Euler characteristics. Neither a local-field hypothesis nor a prime exponent is needed for the
 reduction itself.
+
+The quotient can be enlarged so that it also sees the roots of unity: for `n` invertible in `F`,
+every `V` contains an open normal subgroup acting trivially on `μₙ`, of index dividing
+`[G_F : V] · φ n` and with commutative quotient when `G_F ⧸ V` is commutative
+(`exists_openNormalSubgroup_le_muNRep_ρ_eq_self`). On fixed fields this replaces a finite Galois
+extension `L` by `L(μₙ)`; for a prime `n = ℓ` it keeps the index prime to `ℓ`
+(`exists_openNormalSubgroup_le_muNRep_ρ_eq_self_of_coprime`), which is what descent of
+cohomology along the quotient requires.
 
 The functor uses `discreteTopRepFunctor` and Mathlib's `TopRep.resFunctor`. The converse uses the
 existing finite-set open-stabilizer theorem, not a second finite-quotient or Galois carrier.
@@ -139,5 +148,59 @@ theorem exists_galRepOfQuotient_iso (X : GalRep n F) [Finite X.V]
   have hfin : Finite ((galRepOfQuotient n F V).obj A).V :=
     Finite.of_equiv X.V ((forget (GalRep n F)).mapIso e).toEquiv.symm
   rwa [galRepOfQuotient_obj_V] at hfin
+
+variable {n F} in
+/-- **Adjoining `μₙ` to a finite Galois layer.** For `n` invertible in `F`, every open normal
+subgroup `V` of `G_F` contains an open normal subgroup `W` acting trivially on `μₙ`, of index
+dividing `[G_F : V] · φ n`, and with `G_F ⧸ W` commutative when `G_F ⧸ V` is. On fixed fields this
+replaces the layer `L` of `V` by `L(μₙ)`. The subgroup is `V` intersected with the kernel of the
+action on `μₙ`, a cyclic group of order `n`. -/
+theorem exists_openNormalSubgroup_le_muNRep_ρ_eq_self (hn : IsUnit (n : F))
+    (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F)) :
+    ∃ W : OpenNormalSubgroup (Field.absoluteGaloisGroup F), W ≤ V ∧
+      (∀ g ∈ W, ∀ x : (muNRep n F).V, (muNRep n F).ρ g x = x) ∧
+      W.toSubgroup.index ∣ V.toSubgroup.index * n.totient ∧
+      (IsMulCommutative (Field.absoluteGaloisGroup F ⧸ V.toSubgroup) →
+        IsMulCommutative (Field.absoluteGaloisGroup F ⧸ W.toSubgroup)) := by
+  have hcard : Nat.card (muNRep n F).V = n :=
+    (Nat.card_congr (kummerCoeffEquivMuNRep n F).toEquiv).symm.trans (natCard_kummerCoeff hn)
+  have : NeZero n := NeZero.of_neZero_natCast F (h := ⟨hn.ne_zero⟩)
+  have : Finite (muNRep n F).V := Nat.finite_of_card_ne_zero (hcard.trans_ne (NeZero.ne n))
+  have : IsAddCyclic (muNRep n F).V :=
+    isAddCyclic_of_surjective _
+      ((kummerCoeffAddEquivZMod hn).symm.trans (kummerCoeffEquivMuNRep n F)).surjective
+  set K := openActionKernel (Field.absoluteGaloisGroup F) (muNRep n F).V
+  refine ⟨V ⊓ K, inf_le_left, fun g hg x => ?_, ?_, fun hV => ?_⟩
+  · exact (TopRep.distribMulAction_smul _ g x).symm.trans
+      (openActionKernel_smul_eq_self _ _ ⟨g, (Subgroup.mem_inf.1 hg).2⟩ x)
+  · have hK := index_ker_toPermHom_dvd_totient (Field.absoluteGaloisGroup F) (muNRep n F).V
+    rw [hcard, ← openActionKernel_toSubgroup] at hK
+    rw [OpenNormalSubgroup.toSubgroup_inf, Subgroup.index_inf]
+    exact mul_dvd_mul (Subgroup.relIndex_dvd_index_of_normal _ _) hK
+  · have hK := isMulCommutative_quotient_ker_toPermHom (Field.absoluteGaloisGroup F)
+      (muNRep n F).V
+    rw [Subgroup.Normal.quotient_commutative_iff_commutator_le, ← openActionKernel_toSubgroup]
+      at hK
+    rw [Subgroup.Normal.quotient_commutative_iff_commutator_le] at hV ⊢
+    exact le_inf hV hK
+
+variable {n F} in
+/-- **Adjoining `μₗ` keeps the index prime to `ℓ`.** For a prime `ℓ` invertible in `F` and an
+open normal subgroup `V` of `G_F` of index prime to `ℓ`, some open normal subgroup `W ≤ V` acts
+trivially on `μₗ`, still has index prime to `ℓ`, and has commutative quotient when `V` has: its
+index divides `[G_F : V] · (ℓ - 1)`. -/
+theorem exists_openNormalSubgroup_le_muNRep_ρ_eq_self_of_coprime [Fact n.Prime]
+    (hn : IsUnit (n : F)) (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F))
+    (hV : V.toSubgroup.index.Coprime n) :
+    ∃ W : OpenNormalSubgroup (Field.absoluteGaloisGroup F), W ≤ V ∧
+      (∀ g ∈ W, ∀ x : (muNRep n F).V, (muNRep n F).ρ g x = x) ∧
+      W.toSubgroup.index.Coprime n ∧
+      (IsMulCommutative (Field.absoluteGaloisGroup F ⧸ V.toSubgroup) →
+        IsMulCommutative (Field.absoluteGaloisGroup F ⧸ W.toSubgroup)) := by
+  obtain ⟨W, hWV, hW, hdvd, hcomm⟩ := exists_openNormalSubgroup_le_muNRep_ρ_eq_self hn V
+  refine ⟨W, hWV, hW,
+    Nat.Coprime.coprime_dvd_left hdvd (Nat.coprime_mul_iff_left.2 ⟨hV, ?_⟩), hcomm⟩
+  rw [Nat.totient_prime Fact.out]
+  exact (Nat.coprime_self_sub_left (Fact.out : n.Prime).one_le).2 (Nat.coprime_one_left n)
 
 end TauCeti.ClassFieldTheory
