@@ -20,7 +20,7 @@ import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
 /-!
-# The localization of idele cohomology at a place
+# The localization of idele cohomology at the places of `K`
 
 Let `K` be a number field, `v` a finite place of `K` with completion `K_v`, and `G_K`, `G_{K_v}`
 the absolute Galois groups. A `K`-embedding `τ : Kˢ → K_vˢ` of separable closures picks out, for

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ClassFieldTheory.Formation.LayerInflation
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Layer.Inflation
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Formation
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleLocalization
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Basic
@@ -108,6 +108,7 @@ theorem ideleLayerCorInfl_cohomologyInfl {old new : NormalLayer (AbsoluteGaloisG
   -- Reading a class of `U` on the same subgroup `U` is conjugation by `1`.
   exact explicitCor2_explicitMap2_of_conj old.ground.toSubgroup new.ground.toSubgroup
     (IdeleCoeff K) 1 _ (fun v ↦ by simp) (AddMonoidHom.id _) (fun m ↦ (one_smul _ m).symm)
+    -- `(1 : MulAut G).toMonoidHom` is `MonoidHom.id G` by definition, so `Subgroup.map_id` applies.
     (by rw [map_one]; exact T.same_ground_toSubgroup.symm.trans (Subgroup.map_id _).symm)
     old.ground.isOpen new.ground.isOpen _
 
