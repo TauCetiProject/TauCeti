@@ -382,7 +382,8 @@ private theorem exists_comparison_of_halfStripExterior {ρ : ℝ} {c b : ℂ}
   -- `f` is a closed embedding of `A`; `φ` is its continuous inverse on the closed image.
   set φ := invFunOn f A
   have hfA : IsClosed (f '' A) := isClosed_image_of_tendsto_cobounded hA hfc hp
-  have hφc : ContinuousOn φ (f '' A) := continuousOn_invFunOn_of_tendsto_cobounded hA hfc hfi hp
+  have hφc : ContinuousOn φ (f '' A) :=
+    continuousOn_of_leftInvOn_of_tendsto_cobounded hA hfc hfi.leftInvOn_invFunOn hp
   have hφA : ∀ y ∈ f '' A, φ y ∈ A ∧ f (φ y) = y := fun y hy => ⟨invFunOn_mem hy, invFunOn_eq hy⟩
   have hφf : ∀ z ∈ A, φ (f z) = z := fun z hz => by
     simpa only [φ] using hfi.leftInvOn_invFunOn hz

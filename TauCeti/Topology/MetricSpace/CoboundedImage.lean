@@ -26,8 +26,8 @@ inverted continuously up to the boundary of its image.
   infinity.
 * `TauCeti.isClosed_image_of_tendsto_cobounded`: `f '' A` is closed when `f` tends to infinity
   at infinity along `A`.
-* `TauCeti.continuousOn_invFunOn_of_tendsto_cobounded`: the inverse of such an `f` that is
-  injective on `A` is continuous on `f '' A`.
+* `TauCeti.continuousOn_of_leftInvOn_of_tendsto_cobounded`: any left inverse on `A` of such an
+  `f`, for instance `invFunOn f A` when `f` is injective on `A`, is continuous on `f '' A`.
 -/
 
 public section
@@ -80,22 +80,23 @@ theorem isClosed_image_of_tendsto_cobounded [MetricSpace β] (hA : IsClosed A)
   rw [hK.isClosed.closure_eq] at hyK
   exact image_mono inter_subset_left hyK
 
-/-- **Continuity of the inverse of a map tending to infinity.**  If `f` is continuous and
-injective on a closed subset `A` of a proper space and tends to infinity at infinity along `A`,
-then its inverse `invFunOn f A` is continuous on `f '' A`. -/
-theorem continuousOn_invFunOn_of_tendsto_cobounded [Nonempty α] [MetricSpace β]
-    (hA : IsClosed A) (hf : ContinuousOn f A) (hinj : InjOn f A)
+/-- **Continuity of the inverse of a map tending to infinity.**  If `f` is continuous on a closed
+subset `A` of a proper space and tends to infinity at infinity along `A`, then any left inverse
+`g` of `f` on `A` is continuous on `f '' A`.  For `f` injective on `A`, this applies to
+`invFunOn f A` via `Set.InjOn.leftInvOn_invFunOn`. -/
+theorem continuousOn_of_leftInvOn_of_tendsto_cobounded [MetricSpace β] {g : β → α}
+    (hA : IsClosed A) (hf : ContinuousOn f A) (hg : LeftInvOn g f A)
     (hp : Tendsto f (cobounded α ⊓ 𝓟 A) (cobounded β)) :
-    ContinuousOn (invFunOn f A) (f '' A) := by
+    ContinuousOn g (f '' A) := by
   refine continuousOn_iff_isClosed.mpr fun t ht => ⟨f '' (A ∩ t), ?_, ?_⟩
   · exact isClosed_image_of_tendsto_cobounded (hA.inter ht) (hf.mono inter_subset_left)
       (hp.mono_left (inf_le_inf_left _ (principal_mono.mpr inter_subset_left)))
   · ext y
     constructor
     · rintro ⟨hyt, x, hx, rfl⟩
-      rw [mem_preimage, hinj.leftInvOn_invFunOn hx] at hyt
+      rw [mem_preimage, hg hx] at hyt
       exact ⟨⟨x, ⟨hx, hyt⟩, rfl⟩, x, hx, rfl⟩
     · rintro ⟨⟨x, ⟨hx, hxt⟩, rfl⟩, -⟩
-      exact ⟨by rwa [mem_preimage, hinj.leftInvOn_invFunOn hx], x, hx, rfl⟩
+      exact ⟨by rwa [mem_preimage, hg hx], x, hx, rfl⟩
 
 end TauCeti
