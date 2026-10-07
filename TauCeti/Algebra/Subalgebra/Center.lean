@@ -58,6 +58,7 @@ variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
 
 /-- The center of a subalgebra, included in the ambient algebra, consists of its elements
 which centralize the whole subalgebra. -/
+@[simp]
 theorem map_center_val (B : Subalgebra R A) :
     (center R B).map B.val = B ⊓ centralizer R (B : Set A) := by
   ext x
