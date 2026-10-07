@@ -14,7 +14,7 @@ import TauCeti.Geometry.Manifold.MFDeriv.Curve
 /-!
 # Pseudo-gradient fields adapted to a Morse function
 
-Let `f` be a smooth function on a boundaryless smooth manifold `M` modelled on a
+Let `f` be a real function on a boundaryless smooth manifold `M` modelled on a
 finite-dimensional real normed space `E`. A vector field `X` on `M` is a
 **pseudo-gradient field adapted to `f`** when
 
@@ -23,6 +23,10 @@ finite-dimensional real normed space `E`. A vector field `X` on `M` is a
 * near each critical point `x` there is a Morse chart (`TauCeti.MorseChart`) in which `X` is the
   negative gradient of the quadratic normal form: if `f = f x + (1/2) Σᵢ wᵢ zᵢ²` in the
   coordinates `z = L (ψ y)`, then `X` reads `z ↦ (-wᵢ zᵢ)ᵢ`.
+
+Smoothness of `f` is not part of the definition: the Morse chart condition already forces `f` to be
+a nondegenerate quadratic form near each critical point, and the results below that need `f` to be
+differentiable assume it separately.
 
 This is the class of vector fields with which Audin and Damian build Morse homology. Near a
 critical point the flow of an adapted pseudo-gradient is linear in the Morse chart, so its local
@@ -114,20 +118,19 @@ theorem eq_zero_iff (hX : IsAdaptedPseudoGradient f X) {x : M} :
 
 omit [FiniteDimensional ℝ E] in
 /-- **`f` is antitone along every integral curve of an adapted pseudo-gradient.** -/
-theorem antitone_comp (hX : IsAdaptedPseudoGradient f X) (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f)
-    (hγ : IsMIntegralCurve γ X) : Antitone (f ∘ γ) :=
-  antitone_of_hasDerivAt_nonpos
-    (fun t ↦ Manifold.hasDerivAt_comp_curve (hf.mdifferentiable (by simp) (γ t)) (hγ t))
+theorem antitone_comp (hX : IsAdaptedPseudoGradient f X)
+    (hf : ∀ t, MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f (γ t)) (hγ : IsMIntegralCurve γ X) :
+    Antitone (f ∘ γ) :=
+  antitone_of_hasDerivAt_nonpos (fun t ↦ Manifold.hasDerivAt_comp_curve (hf t) (hγ t))
     fun t ↦ hX.mvfderiv_apply_nonpos (γ t)
 
 omit [FiniteDimensional ℝ E] in
 /-- **`f` is strictly antitone along an integral curve of an adapted pseudo-gradient that never
 meets a critical point.** -/
-theorem strictAnti_comp (hX : IsAdaptedPseudoGradient f X) (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f)
-    (hγ : IsMIntegralCurve γ X) (hcrit : ∀ t, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (γ t) ≠ 0) :
-    StrictAnti (f ∘ γ) :=
-  strictAnti_of_hasDerivAt_neg
-    (fun t ↦ Manifold.hasDerivAt_comp_curve (hf.mdifferentiable (by simp) (γ t)) (hγ t))
+theorem strictAnti_comp (hX : IsAdaptedPseudoGradient f X)
+    (hf : ∀ t, MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f (γ t)) (hγ : IsMIntegralCurve γ X)
+    (hcrit : ∀ t, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (γ t) ≠ 0) : StrictAnti (f ∘ γ) :=
+  strictAnti_of_hasDerivAt_neg (fun t ↦ Manifold.hasDerivAt_comp_curve (hf t) (hγ t))
     fun t ↦ hX.mvfderiv_apply_lt_zero _ (hcrit t)
 
 end IsAdaptedPseudoGradient
