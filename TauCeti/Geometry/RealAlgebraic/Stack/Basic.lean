@@ -9,6 +9,8 @@ public import Mathlib.Order.Fin.Basic
 public import Mathlib.Topology.Algebra.Ring.Basic
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import TauCeti.Topology.Connected.Prod
+import Mathlib.Data.Fintype.Fin
+import Mathlib.Order.Interval.Finset.Fin
 
 /-!
 # Sections and sectors of a stack
@@ -37,6 +39,9 @@ cells `TauCeti.stackCells` of the stack in the ambient space.
 * `TauCeti.iUnion_sectionSet_union_iUnion_sectorSet`, `TauCeti.pairwise_disjoint_sectionSet`,
   `TauCeti.pairwise_disjoint_sectorSet`, `TauCeti.disjoint_sectionSet_sectorSet`: the sections and
   sectors partition the cylinder.
+* `TauCeti.mem_sectionSet_iff_card_filter_lt`, `TauCeti.mem_sectorSet_iff_card_filter_lt`: over a
+  point where the stack is strictly ordered, its sections and sectors are determined by whether a
+  point is a value of the stack and by how many values lie below it.
 * `TauCeti.exists_continuous_forall_mem_sectorSet`: every sector of a continuous strictly ordered
   stack contains the graph of a continuous function.
 * `TauCeti.isConnected_sectionSet`, `TauCeti.isConnected_sectorSet`: over a connected base, the
@@ -221,6 +226,76 @@ theorem iUnion_sectionSet_union_iUnion_sectorSet (hθ : ∀ x, Monotone fun i �
     simp only [not_exists, not_lt] at habove
     exact ⟨Fin.last k, fun i _ ↦ lt_of_le_of_ne (habove i) (hsec i),
       fun i hi ↦ absurd hi (not_le.2 (Fin.castSucc_lt_last i))⟩
+
+/-- A point of the `i`-th section of a stack that is strictly ordered over its base point lies
+strictly above exactly `i` sections. -/
+theorem card_filter_lt_of_mem_sectionSet {x : X} (hθ : StrictMono fun i ↦ θ i x) {i : Fin k}
+    {t : α} (h : (x, t) ∈ sectionSet θ i) :
+    (Finset.univ.filter fun i' ↦ θ i' x < t).card = i := by
+  obtain rfl : θ i x = t := mem_sectionSet.1 h
+  simp only [hθ.lt_iff_lt, Finset.filter_gt_eq_Iio, Fin.card_Iio]
+
+/-- A point of the `j`-th sector of a stack lies strictly above exactly `j` sections. -/
+theorem card_filter_lt_of_mem_sectorSet {x : X} {j : Fin (k + 1)} {t : α}
+    (h : (x, t) ∈ sectorSet θ j) : (Finset.univ.filter fun i ↦ θ i x < t).card = j := by
+  have hfilter : (Finset.univ.filter fun i ↦ θ i x < t) =
+      Finset.univ.filter fun i : Fin k ↦ (i : ℕ) < j := by
+    ext i
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+    rcases lt_or_ge i.castSucc j with hi | hi
+    · exact iff_of_true (h.1 i hi) (Fin.lt_def.1 hi)
+    · exact iff_of_false (h.2 i hi).not_gt (Fin.le_def.1 hi).not_gt
+  rw [hfilter, Fin.card_filter_val_lt, min_eq_right (Nat.lt_succ_iff.1 j.2)]
+
+/-- Over a base point where the stack is strictly ordered, counting the values of the stack
+below `t` is counting the elements of any finset `s` of these values below `t`. -/
+private theorem card_filter_lt_eq {x : X} (hθ : StrictMono fun i ↦ θ i x) {s : Finset α}
+    (hs : (s : Set α) = range fun i ↦ θ i x) (t : α) :
+    (s.filter (· < t)).card = (Finset.univ.filter fun i ↦ θ i x < t).card := by
+  classical
+  obtain rfl : s = Finset.univ.image fun i ↦ θ i x :=
+    Finset.coe_injective (by rw [hs, Finset.coe_image, Finset.coe_univ, image_univ])
+  rw [Finset.filter_image, Finset.card_image_of_injective _ hθ.injective]
+
+/-- **Sections by counting.** Let `s` be the finite set of values of a stack over a base point
+where it is strictly ordered. A point of the fiber lies on the `i`-th section exactly when it is
+one of these values and exactly `i` of them lie strictly below it. -/
+theorem mem_sectionSet_iff_card_filter_lt {x : X} (hθ : StrictMono fun i ↦ θ i x)
+    {s : Finset α} (hs : (s : Set α) = range fun i ↦ θ i x) {i : Fin k} {t : α} :
+    (x, t) ∈ sectionSet θ i ↔ t ∈ s ∧ (s.filter (· < t)).card = i := by
+  rw [card_filter_lt_eq hθ hs, ← Finset.mem_coe, hs]
+  refine ⟨fun h ↦ ⟨⟨i, h⟩, card_filter_lt_of_mem_sectionSet hθ h⟩, ?_⟩
+  rintro ⟨⟨i', rfl⟩, hcard⟩
+  obtain rfl : i' = i :=
+    Fin.ext <| (card_filter_lt_of_mem_sectionSet (t := θ i' x) hθ rfl).symm.trans hcard
+  rfl
+
+/-- **Sectors by counting.** Let `s` be the finite set of values of a stack over a base point
+where it is strictly ordered. A point of the fiber lies in the `j`-th sector exactly when it is
+not one of these values and exactly `j` of them lie strictly below it. -/
+theorem mem_sectorSet_iff_card_filter_lt {x : X} (hθ : StrictMono fun i ↦ θ i x)
+    {s : Finset α} (hs : (s : Set α) = range fun i ↦ θ i x) {j : Fin (k + 1)} {t : α} :
+    (x, t) ∈ sectorSet θ j ↔ t ∉ s ∧ (s.filter (· < t)).card = j := by
+  rw [card_filter_lt_eq hθ hs, ← Finset.mem_coe, hs]
+  refine ⟨fun h ↦ ⟨?_, card_filter_lt_of_mem_sectorSet h⟩, ?_⟩
+  · rintro ⟨i, hi⟩
+    exact disjoint_left.1 (disjoint_sectionSet_sectorSet θ i j) (mem_sectionSet.2 hi) h
+  rintro ⟨hst, hcard⟩
+  simp only [mem_range, not_exists] at hst
+  refine ⟨fun i hi ↦ (lt_or_gt_of_ne (hst i)).resolve_right fun hlt ↦ ?_,
+    fun i hi ↦ (lt_or_gt_of_ne (hst i)).resolve_left fun hlt ↦ ?_⟩
+  · -- the values below `t` are among the values below `θ i x`, so there are at most `i < j`
+    have hsub : (Finset.univ.filter fun i' ↦ θ i' x < t) ⊆ Finset.Iio i := fun i' hi' ↦
+      Finset.mem_Iio.2 (hθ.lt_iff_lt.1 ((Finset.mem_filter.1 hi').2.trans hlt))
+    have := Finset.card_le_card hsub
+    rw [hcard, Fin.card_Iio] at this
+    exact this.not_gt (Fin.lt_def.1 hi)
+  · -- the values up to `θ i x` lie below `t`, so there are at least `i + 1 > j`
+    have hsub : Finset.Iic i ⊆ Finset.univ.filter fun i' ↦ θ i' x < t := fun i' hi' ↦
+      Finset.mem_filter.2 ⟨Finset.mem_univ _, (hθ.monotone (Finset.mem_Iic.1 hi')).trans_lt hlt⟩
+    have := Finset.card_le_card hsub
+    rw [hcard, Fin.card_Iic] at this
+    exact this.not_gt (Nat.lt_succ_of_le (Fin.le_def.1 hi))
 
 /-- For pointwise strictly monotone `θ` with values in a densely ordered type without endpoints,
 each sector lies over the whole base. -/
