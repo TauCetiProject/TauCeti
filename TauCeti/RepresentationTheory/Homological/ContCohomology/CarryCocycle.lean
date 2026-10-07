@@ -66,7 +66,7 @@ namespace TauCeti.ContCohomology
 
 open groupCohomology
 
-universe u v
+universe u v uH uN
 
 section Carry
 
@@ -86,11 +86,12 @@ private theorem intCast_floor_equivIco_add (x y : AddCircle (1 : ℚ)) :
   obtain ⟨hz₀, hz₁⟩ := (AddCircle.equivIco 1 0 (x + y)).2
   -- The right-hand side maps to `0` in `ℚ/ℤ`, so it is an integer `k`, and the representative
   -- of `x + y` lying in `[0, 1)` forces `k` to be the floor.
-  obtain ⟨k, hk⟩ := (AddCircle.coe_eq_zero_iff (p := (1 : ℚ))).1 (show
-    ((AddCircle.equivIco 1 0 x + AddCircle.equivIco 1 0 y - AddCircle.equivIco 1 0 (x + y) : ℚ) :
-      AddCircle (1 : ℚ)) = 0 by
+  have hcoe :
+      ((AddCircle.equivIco 1 0 x + AddCircle.equivIco 1 0 y - AddCircle.equivIco 1 0 (x + y) : ℚ) :
+        AddCircle (1 : ℚ)) = 0 := by
     rw [AddCircle.coe_sub, AddCircle.coe_add, AddCircle.coe_equivIco, AddCircle.coe_equivIco,
-      AddCircle.coe_equivIco, sub_self])
+      AddCircle.coe_equivIco, sub_self]
+  obtain ⟨k, hk⟩ := (AddCircle.coe_eq_zero_iff (p := (1 : ℚ))).1 hcoe
   rw [zsmul_one] at hk
   rw [← hk, Int.floor_eq_iff.2 ⟨by linarith, by linarith⟩]
 
@@ -207,8 +208,8 @@ theorem characterCarryCocycle_apply (χ : Additive G →+ AddCircle (1 : ℚ))
 
 /-- **Naturality of the carry cocycle.** Pulling back the carry cocycle of `χ` and `a` along a
 compatible pair `(φ, f)` gives the carry cocycle of `χ ∘ φ` and `f a`. -/
-theorem cocyclesMap2_characterCarryCocycle {H : Type u} [Group H] [TopologicalSpace H]
-    [ContinuousMul H] {N : Type v} [AddCommGroup N] [TopologicalSpace N]
+theorem cocyclesMap2_characterCarryCocycle {H : Type uH} [Group H] [TopologicalSpace H]
+    [ContinuousMul H] {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
     [IsTopologicalAddGroup N] [DistribMulAction H N] (φ : H →ₜ* G) (f : M →+ N)
     (hf : Continuous f) (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
     (χ : Additive G →+ AddCircle (1 : ℚ)) (hχ : IsOpen (χ.ker : Set (Additive G))) (a : H0 G M) :
