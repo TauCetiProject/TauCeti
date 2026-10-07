@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.Compact.SchurOrthogonality
 public import TauCeti.RepresentationTheory.Continuous.Character
-import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.RepresentationTheory.Irreducible
 
 /-!
@@ -62,11 +61,9 @@ from `inner_characterLp_eq_sum` on, where an orthonormal basis enters. The scala
 even for that packaging: `ContinuousMap.toLp` needs `SecondCountableTopologyEither G 𝕜`, which a
 general complete nontrivially normed field does not supply.
 
-This is the first half of Layer 6 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md);
-its remaining item, that the characters span the central subspace of `L²(G)`, needs the Peter-Weyl
-theorem of Layer 5 and is proved in `TauCeti/RepresentationTheory/Compact/Character/Basis.lean`.
-The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
+Class-function completeness is proved using Peter-Weyl in
+`TauCeti/RepresentationTheory/Compact/Character/Basis.lean`. The mathematical development follows
+Daniel Bump, *Lie Groups*, second edition, Chapter 2.
 -/
 
 public section
@@ -118,19 +115,6 @@ variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTo
 
 variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
 
-/-- Conjugating both arguments of the `L²` inner product of two continuous functions conjugates
-the result: passing to `L²` is linear, and conjugation commutes with the Haar integral. -/
-private theorem inner_toLp_star (F H : C(G, 𝕜)) :
-    ⟪ContinuousMap.toLp 2 (haarProb G) 𝕜 (star F),
-        ContinuousMap.toLp 2 (haarProb G) 𝕜 (star H)⟫_𝕜 =
-      (starRingEnd 𝕜) ⟪ContinuousMap.toLp 2 (haarProb G) 𝕜 F,
-        ContinuousMap.toLp 2 (haarProb G) 𝕜 H⟫_𝕜 := by
-  rw [ContinuousMap.inner_toLp, ContinuousMap.inner_toLp, ← integral_conj]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun g ↦ ?_)
-  -- `integral_congr_ae` leaves the two integrands applied but unreduced.
-  beta_reduce
-  simp
-
 /-- **The `L²` inner product of two characters is a double sum of inner products of diagonal matrix
 coefficients.** The two arguments are transposed on the right-hand side because a character is the
 *conjugate* of the sum of its diagonal matrix coefficients
@@ -143,18 +127,15 @@ theorem inner_characterLp_eq_sum (ρ : ContRepresentation 𝕜 G W) (hρ : Conti
     (f : OrthonormalBasis κ 𝕜 W) :
     ⟪characterLp π hπ, characterLp ρ hρ⟫_𝕜 =
       ∑ i, ∑ k, ⟪matrixCoeffLp ρ hρ (f k) (f k), matrixCoeffLp π hπ (e i) (e i)⟫_𝕜 := by
-  have hstar := inner_toLp_star (character π hπ) (character ρ hρ)
-  rw [star_character π hπ e, star_character ρ hρ f, map_sum, map_sum] at hstar
-  simp only [← matrixCoeffLp_def, ← characterLp_def, sum_inner, inner_sum] at hstar
-  calc ⟪characterLp π hπ, characterLp ρ hρ⟫_𝕜
-      = (starRingEnd 𝕜) ((starRingEnd 𝕜) ⟪characterLp π hπ, characterLp ρ hρ⟫_𝕜) := by
-        simp
-    _ = (starRingEnd 𝕜)
-          (∑ k, ∑ i, ⟪matrixCoeffLp π hπ (e i) (e i), matrixCoeffLp ρ hρ (f k) (f k)⟫_𝕜) := by
-        rw [hstar]
-    _ = ∑ i, ∑ k, ⟪matrixCoeffLp ρ hρ (f k) (f k), matrixCoeffLp π hπ (e i) (e i)⟫_𝕜 := by
-        simp only [map_sum, inner_conj_symm]
-        exact Finset.sum_comm
+  -- Conjugating both scalar-valued functions transposes their `L²` pairing.
+  have hstar :
+      ⟪ContinuousMap.toLp 2 (haarProb G) 𝕜 (star (character ρ hρ)),
+        ContinuousMap.toLp 2 (haarProb G) 𝕜 (star (character π hπ))⟫_𝕜 =
+      ⟪characterLp π hπ, characterLp ρ hρ⟫_𝕜 := by
+    simp [characterLp_def, ContinuousMap.inner_toLp, mul_comm]
+  rw [star_character ρ hρ f, star_character π hπ e, map_sum, map_sum] at hstar
+  simp only [← matrixCoeffLp_def, sum_inner, inner_sum] at hstar
+  rw [← hstar, Finset.sum_comm]
 
 end CompactGroup
 
