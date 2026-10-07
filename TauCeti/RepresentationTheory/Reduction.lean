@@ -82,14 +82,14 @@ variable (k) in
 `k ⊗_ℤ V ⟶ k ⊗_ℤ W` of representations given by `a ⊗ v ↦ a ⊗ f v`. -/
 noncomputable def reductionMap (f : V →+[G] W) : reduction k G V ⟶ reduction k G W :=
   FDRep.forget₂HomLinearEquiv _ _ <| Rep.ofHom <|
-    (IntertwiningMap.ofDistribMulActionHom f).baseChange k
+    f.toIntertwiningMap.baseChange k
 
 /-- The linear map underlying the reduction of `f` is the base change of `f`. -/
 theorem reductionMap_hom_hom_hom (f : V →+[G] W) :
     (reductionMap k f).hom.hom.hom = f.toAddMonoidHom.toIntLinearMap.baseChange k := by
   -- `FDRep.forget₂HomLinearEquiv` and `Rep.ofHom` keep the underlying linear map
-  change ((IntertwiningMap.ofDistribMulActionHom f).baseChange k).toLinearMap = _
-  rw [IntertwiningMap.toLinearMap_baseChange, IntertwiningMap.toLinearMap_ofDistribMulActionHom]
+  change (f.toIntertwiningMap.baseChange k).toLinearMap = _
+  rw [IntertwiningMap.toLinearMap_baseChange, DistribMulActionHom.toLinearMap_toIntertwiningMap]
 
 /-- The reduction of `f` sends `a ⊗ v` to `a ⊗ f v`. -/
 @[simp]

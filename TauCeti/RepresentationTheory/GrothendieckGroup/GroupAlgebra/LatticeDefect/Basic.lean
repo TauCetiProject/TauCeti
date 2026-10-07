@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.TensorProduct.Quotient
 public import TauCeti.RepresentationTheory.AsModule
 public import TauCeti.RepresentationTheory.BaseChange
 public import TauCeti.RepresentationTheory.TorsionBy
--- Non-public: `IntertwiningMap.ofDistribMulActionHom` is used only in proofs.
+-- Non-public: `DistribMulActionHom.toIntertwiningMap` is used only in proofs.
 import TauCeti.RepresentationTheory.Intertwining
 
 /-!
@@ -284,11 +284,11 @@ theorem latticeDefect_add_of_exact [Fact ℓ.Prime] {A B C : Type u} [AddCommGro
   have := AddMonoid.FG.to_moduleFinite_int (G := Submodule.torsionBy ℤ B ℓ)
   have := AddMonoid.FG.to_moduleFinite_int (G := QuotSMulTop (ℓ : ℤ) C)
   have := AddMonoid.FG.to_moduleFinite_int (G := Submodule.torsionBy ℤ C ℓ)
-  have key := reductionK0_six_term k ℓ (f := IntertwiningMap.ofDistribMulActionHom f)
-    (g := IntertwiningMap.ofDistribMulActionHom g)
-    (by simpa only [IntertwiningMap.coe_ofDistribMulActionHom] using hfg)
-    (by simpa only [IntertwiningMap.coe_ofDistribMulActionHom] using hf)
-    (by simpa only [IntertwiningMap.coe_ofDistribMulActionHom] using hg)
+  have key := reductionK0_six_term k ℓ (f := f.toIntertwiningMap)
+    (g := g.toIntertwiningMap)
+    (by simpa only [DistribMulActionHom.coe_toIntertwiningMap] using hfg)
+    (by simpa only [DistribMulActionHom.coe_toIntertwiningMap] using hf)
+    (by simpa only [DistribMulActionHom.coe_toIntertwiningMap] using hg)
   rw [latticeDefect_def, latticeDefect_def, latticeDefect_def]
   linear_combination (norm := abel) key
 

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.TensorProduct.Quotient
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.LatticeDefect.Basic
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Ring
 public import TauCeti.RepresentationTheory.Reduction

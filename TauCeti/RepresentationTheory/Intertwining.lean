@@ -31,8 +31,8 @@ caller has already done.
   onto a subrepresentation that its image fills.
 * `Representation.IntertwiningMap.lcomp`: precomposition with an intertwining map, as an
   intertwining map of the conjugation representations `Representation.linHom`.
-* `Representation.IntertwiningMap.ofDistribMulActionHom`: an equivariant additive map of
-  `G`-modules, as an intertwining map of the attached representations over `ℤ`.
+* `DistribMulActionHom.toIntertwiningMap`: an equivariant additive map of `G`-modules, as an
+  intertwining map of the attached representations over `ℤ`.
 
 ## Main results
 
@@ -109,29 +109,31 @@ theorem lcomp_apply (u : IntertwiningMap ρ' ρ) (σ : Representation A G W) (φ
 
 end lcomp
 
-section DistribMulAction
+end Representation.IntertwiningMap
+
+namespace DistribMulActionHom
+
+open Representation
 
 variable {G V W : Type*} [Monoid G] [AddCommGroup V] [DistribMulAction G V] [AddCommGroup W]
   [DistribMulAction G W]
 
 /-- An equivariant additive map `f : V →+[G] W` of `G`-modules, as an intertwining map between the
 representations `Representation.ofDistribMulAction ℤ G` on `V` and on `W`. -/
-def ofDistribMulActionHom (f : V →+[G] W) :
+def toIntertwiningMap (f : V →+[G] W) :
     IntertwiningMap (ofDistribMulAction ℤ G V) (ofDistribMulAction ℤ G W) :=
   f.toAddMonoidHom.toIntLinearMap.intertwiningMap_of_isIntertwiningMap _ _ fun g v =>
     map_smul f g v
 
-/-- The linear map underlying `ofDistribMulActionHom f` is `f`, as a `ℤ`-linear map. -/
+/-- The linear map underlying `f.toIntertwiningMap` is `f`, as a `ℤ`-linear map. -/
 @[simp]
-theorem toLinearMap_ofDistribMulActionHom (f : V →+[G] W) :
-    (ofDistribMulActionHom f).toLinearMap = f.toAddMonoidHom.toIntLinearMap :=
+theorem toLinearMap_toIntertwiningMap (f : V →+[G] W) :
+    f.toIntertwiningMap.toLinearMap = f.toAddMonoidHom.toIntLinearMap :=
   (rfl)
 
-/-- `ofDistribMulActionHom f` acts as `f`. -/
+/-- `f.toIntertwiningMap` acts as `f`. -/
 @[simp]
-theorem coe_ofDistribMulActionHom (f : V →+[G] W) : ⇑(ofDistribMulActionHom f) = ⇑f :=
+theorem coe_toIntertwiningMap (f : V →+[G] W) : ⇑f.toIntertwiningMap = ⇑f :=
   (rfl)
 
-end DistribMulAction
-
-end Representation.IntertwiningMap
+end DistribMulActionHom
