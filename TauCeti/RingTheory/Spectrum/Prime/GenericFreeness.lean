@@ -110,25 +110,26 @@ private theorem freeLocus_mem_nhds_polynomial {R : Type uR} [CommRing R] [Algebr
   have hNmono : Monotone N := fun _ _ hij ↦ Submodule.restrictScalars_mono A (hFmono hij)
   have hsub (j : ℕ) : freeLocus A ((Fin t → R) ⧸ K j) =
       freeLocus A (N (j + 1) ⧸ (N j).submoduleOf (N (j + 1))) := by
+    have hNsucc : N (j + 1) = N j ⊔ LinearMap.range ((φ j).restrictScalars A) := by
+      simp only [N, hFsucc, LinearMap.range_restrictScalars, Submodule.restrictScalars_sup]
     have hmem (c : Fin t → R) : (φ j).restrictScalars A c ∈ N (j + 1) := by
-      rw [LinearMap.restrictScalars_apply, Submodule.restrictScalars_mem, hFsucc]
+      rw [hNsucc]
       exact Submodule.mem_sup_right ⟨c, rfl⟩
     let ψ : (Fin t → R) →ₗ[A] N (j + 1) ⧸ (N j).submoduleOf (N (j + 1)) :=
       ((N j).submoduleOf (N (j + 1))).mkQ ∘ₗ ((φ j).restrictScalars A).codRestrict _ hmem
     have hψ : Function.Surjective ψ := by
-      rw [← LinearMap.range_eq_top, LinearMap.range_comp, Submodule.map_mkQ_eq_top,
-        LinearMap.range_codRestrict, LinearMap.range_restrictScalars,
-        ← Submodule.submoduleOf]
-      rw [← Submodule.submoduleOf_sup_of_le (hNmono j.le_succ) (by
-        simpa only [N, Submodule.restrictScalars_le, hFsucc] using
-          (le_sup_right : LinearMap.range (φ j) ≤ F j ⊔ LinearMap.range (φ j)))]
-      simp [N, ← Submodule.restrictScalars_sup, ← hFsucc]
+      apply LinearMap.range_eq_top.mp
+      simp only [ψ, LinearMap.range_comp, Submodule.map_mkQ_eq_top,
+        LinearMap.range_codRestrict]
+      exact
+        (Submodule.submoduleOf_sup_of_le (hNmono j.le_succ)
+          (le_sup_right.trans_eq hNsucc.symm)).symm.trans
+          (Submodule.submoduleOf_eq_top.mpr hNsucc.le)
     have hker : LinearMap.ker ψ = (K j).restrictScalars A := by
-      rw [LinearMap.ker_comp, Submodule.ker_mkQ, LinearMap.comap_codRestrict,
-        Submodule.submoduleOf, Submodule.map_comap_subtype,
-        inf_of_le_right (hNmono j.le_succ)]
       ext c
-      simp [N, K]
+      change ((N j).submoduleOf (N (j + 1))).mkQ ⟨φ j c, hmem c⟩ = 0 ↔ φ j c ∈ F j
+      simp only [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
+      rfl
     exact freeLocus_congr ((Submodule.Quotient.restrictScalarsEquiv A (K j)).symm ≪≫ₗ
       Submodule.quotEquivOfEq _ _ hker.symm ≪≫ₗ ψ.quotKerEquivOfSurjective hψ)
   -- Only the finitely many subquotients with `j ≤ j₀` matter.
