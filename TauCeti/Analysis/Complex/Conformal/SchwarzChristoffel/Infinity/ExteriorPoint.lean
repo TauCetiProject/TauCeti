@@ -27,12 +27,12 @@ For total exponent less than `-1`, the image is bounded and its closure is compa
 At total exponent `1` the leading term `z ^ 2 / 2` maps the upper half-plane onto a slit plane,
 whose closure contains a full neighbourhood of infinity, and the logarithmic coefficient
 `C = ((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2` decides what is left out. When `C < 0`,
-for each `δ > 0` the closure of the image misses the points of the closed sub-band between the
-heights `im c + π * C + δ` and `im c - δ` that lie sufficiently far to the right, where `c` is the
+for each `δ > 0` the closure of the image misses the points of height strictly between
+`im c + π * C + δ` and `im c - δ` that lie sufficiently far to the right, where `c` is the
 quadratic constant at infinity and how far to the right depends on `δ`. The heights
-`im c + π * C` and `im c` carry the outer sides of an end of opening `2π`, so each such sub-band
-supplies exterior points. Without the sign condition there need not be an exterior point, as for
-the slit plane `z ↦ z ^ 2`.
+`im c + π * C` and `im c` carry the outer sides of an end of opening `2π`, so each such open
+sub-band supplies exterior points. Without the sign condition there need not be an exterior
+point, as for the slit plane `z ↦ z ^ 2`.
 
 ## References
 
