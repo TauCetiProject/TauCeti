@@ -12,7 +12,9 @@ import Mathlib.Analysis.Calculus.FDeriv.Equiv
 /-!
 # Tangent cones of linear subspaces and of curves
 
-Two basic facts about Mathlib's tangent cone `tangentConeAt`.
+Two basic facts about Mathlib's tangent cone `tangentConeAt`. The subspace calculation lets
+flattening charts identify their model subspaces with intrinsic tangent spaces, while the curve
+lemma places velocities of invariant flows in the tangent cones of their invariant sets.
 
 ## Main results
 

@@ -31,7 +31,8 @@ This file proves the two basic consequences of transversality at a point `y` of
   with `d + morseIndex f q = morseIndex f p`. This is the set of points on connecting
   trajectories, each trajectory counted once for every one of its points (the parametrized
   trajectory locus). The space of unparametrized trajectories, the quotient by the flow whose
-  points the Morse differential counts, is not constructed here; it has one dimension fewer,
+  points the Morse differential counts, is not constructed here. For nonconstant trajectories
+  with `p ≠ q`, after constructing the free flow quotient, its expected dimension is one fewer:
   `morseIndex f p - morseIndex f q - 1`.
 * If `p ≠ q`, the Morse index drops strictly: `morseIndex f q < morseIndex f p`. The velocity
   `-∇f y` of the trajectory through `y` is tangent to both invariant sets and is nonzero, so the
@@ -73,18 +74,6 @@ namespace IsNondegenerateCriticalPoint
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {f : E → ℝ} {p q y : E} {K : ℝ≥0}
 
-omit [FiniteDimensional ℝ E] in
-/-- A global straightening chart of the unstable or stable set has an invertible derivative at
-each point of its source. -/
-private theorem exists_hasFDerivAt_of_chart {e : OpenPartialHomeomorph E E} {z : E}
-    (hz : z ∈ e.source) (he : ∀ w ∈ e.source, ContDiffAt ℝ 1 e w)
-    (hes : ∀ w ∈ e.target, ContDiffAt ℝ 1 e.symm w) :
-    ∃ A : E ≃L[ℝ] E, HasFDerivAt e (A : E →L[ℝ] E) z := by
-  have hd := (he z hz).differentiableAt one_ne_zero
-  obtain ⟨A, hA⟩ := e.isInvertible_fderiv hz hd
-    ((hes _ (e.map_source hz)).differentiableAt one_ne_zero)
-  exact ⟨A, hA ▸ hd.hasFDerivAt⟩
-
 /-- The tangent space of the unstable set of a Morse critical point `p`, at any of its points, has
 dimension the Morse index of `p`. -/
 theorem finrank_span_tangentConeAt_unstableSet (hp : IsNondegenerateCriticalPoint f p)
@@ -94,7 +83,9 @@ theorem finrank_span_tangentConeAt_unstableSet (hp : IsNondegenerateCriticalPoin
         (Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y)) =
       morseIndex f p := by
   obtain ⟨e, hye, he, hes, hS⟩ := hp.exists_unstableSet_chart hfs hf hy
-  obtain ⟨A, hA⟩ := exists_hasFDerivAt_of_chart hye he hes
+  obtain ⟨A, hA⟩ := e.exists_hasFDerivAt_of_chart hye
+    ((he _ hye).differentiableAt one_ne_zero)
+    ((hes _ (e.map_source hye)).differentiableAt one_ne_zero)
   rw [(isSliceChart_iff.2 hS).finrank_span_tangentConeAt
     (Submodule.closed_of_finiteDimensional _) hye hy hA,
     hp.contDiffAt.finrank_unstableLinearSubspace]
@@ -108,7 +99,9 @@ theorem finrank_span_tangentConeAt_stableSet_add_morseIndex (hq : IsNondegenerat
         (Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y)) +
       morseIndex f q = Module.finrank ℝ E := by
   obtain ⟨e, hye, he, hes, hS⟩ := hq.exists_stableSet_chart hfs hf hy
-  obtain ⟨A, hA⟩ := exists_hasFDerivAt_of_chart hye he hes
+  obtain ⟨A, hA⟩ := e.exists_hasFDerivAt_of_chart hye
+    ((he _ hye).differentiableAt one_ne_zero)
+    ((hes _ (e.map_source hye)).differentiableAt one_ne_zero)
   rw [(isSliceChart_iff.2 hS).finrank_span_tangentConeAt
     (Submodule.closed_of_finiteDimensional _) hye hy hA]
   exact hq.finrank_stableLinearSubspace_add_morseIndex

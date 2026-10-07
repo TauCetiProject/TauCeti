@@ -14,11 +14,11 @@ import Mathlib.Analysis.Normed.Module.FiniteDimension
 # Transverse intersections of flattened sets
 
 Let `S₁` and `S₂` be subsets of a finite-dimensional space which are flattened, near a common
-point `y`, by `C^n` charts with `C^n` inverses (`n ≥ 1`), so that they are embedded `C^n`
-submanifolds near `y`. They meet **transversally** at `y` when their tangent spaces at `y` span
-the whole space. The tangent spaces are taken intrinsically, as the spans of Mathlib's tangent
-cones `tangentConeAt`; by `TauCeti.IsSliceChart.span_tangentConeAt_eq_comap` this agrees with the
-tangent space read off either chart.
+point `y`, by forward `C^n` charts (`n ≥ 1`) whose inverses are differentiable at the images of
+`y`. They meet **transversally** at `y` when their tangent spaces at `y` span the whole space. The
+tangent spaces are taken intrinsically, as the spans of Mathlib's tangent cones `tangentConeAt`;
+by `TauCeti.IsSliceChart.span_tangentConeAt_eq_comap` this agrees with the tangent space read off
+either chart.
 
 This file proves that a transverse intersection is again an embedded `C^n` submanifold near `y`,
 whose tangent space is the intersection of the two tangent spaces: there is a `C^n` chart with

@@ -57,10 +57,15 @@ theorem isInvertible_fderiv (e : OpenPartialHomeomorph E F) {y : E} (hy : y ∈ 
       rw [e.left_inv hy]; exact he.hasFDerivAt
     exact (he'.comp (e y) hes').unique <|
       (hasFDerivAt_id (e y)).congr_of_eventuallyEq (e.eventually_right_inverse (e.map_source hy))
-  refine ⟨ContinuousLinearEquiv.equivOfInverse (fderiv 𝕜 e y) (fderiv 𝕜 e.symm (e y))
-    (fun v ↦ ?_) (fun w ↦ ?_), rfl⟩
-  · simpa using congr($hleft v)
-  · simpa using congr($hright w)
+  exact _root_.ContinuousLinearMap.IsInvertible.of_inverse hright hleft
+
+/-- A chart which is differentiable at a point of its source, and whose inverse is differentiable
+at the image point, has a derivative represented by a continuous linear equivalence. -/
+theorem exists_hasFDerivAt_of_chart (e : OpenPartialHomeomorph E F) {y : E} (hy : y ∈ e.source)
+    (he : DifferentiableAt 𝕜 e y) (hes : DifferentiableAt 𝕜 e.symm (e y)) :
+    ∃ A : E ≃L[𝕜] F, HasFDerivAt e (A : E →L[𝕜] F) y := by
+  obtain ⟨A, hA⟩ := e.isInvertible_fderiv hy he hes
+  exact ⟨A, hA ▸ he.hasFDerivAt⟩
 
 end OpenPartialHomeomorph
 
