@@ -151,6 +151,17 @@ private theorem orientedAngle_rayToward_inv_partialCycleMap_smul_vertex {j : Fin
       orientedAngle_rev, h, Finset.sum_range_succ]
     simp only [neg_add, Real.Angle.coe_add, Real.Angle.coe_neg]
 
+/-- In the common coordinate at a finite vertex, the outgoing ray of the `m`-th tile is reached
+from the incoming ray of the first tile by turning clockwise through the first `m + 1` angles. -/
+private theorem orientedAngle_rayToward_inv_partialCycleMap_smul_vertex_add_one {j : Fin n}
+    {z : ℍ} (hz : P.vertex j = .inl z) (m : ℕ) :
+    orientedAngle z (geodesicLine (rayToward z (P.vertex (j - 1))) 1)
+        (geodesicLine (rayToward z
+          (((σ.partialCycleMap j m)⁻¹ • P).vertex (σ.next^[m] j + 1))) 1) =
+      ((-∑ l ∈ Finset.range (m + 1), P.interiorAngle (σ.next^[l] j) : ℝ) : Real.Angle) := by
+  rw [← σ.inv_partialCycleMap_succ_smul_vertex_sub_one]
+  exact σ.orientedAngle_rayToward_inv_partialCycleMap_smul_vertex hz (m + 1)
+
 /-- **The vertex sectors along a cycle cover the plane once their angles reach `2π`.** Pull back
 the sectors of the vertices `next^[m] j`, `m < r`, to the finite vertex `z = vertex j` by the
 inverse partial cycle maps. If their interior angles sum to at least `2π`, these sectors turn
@@ -188,16 +199,12 @@ theorem iUnion_inv_partialCycleMap_smul_vertexSector_eq_univ {j : Fin n} {z : �
   rw [Finset.mem_range] at hmr
   refine ⟨m, hmr, ?_⟩
   -- in the coordinate of the `m`-th tile, `w` is at angle `B (m + 1) + x ∈ [0, α m]`
-  have hQ := σ.inv_partialCycleMap_smul_vertex hz m
-  have hα := ((σ.partialCycleMap j m)⁻¹ • P).orientedAngle_rayToward_vertex_eq_interiorAngle hQ
-  have hE := σ.orientedAngle_rayToward_inv_partialCycleMap_smul_vertex hz m
-  rw [interiorAngle_smul] at hα
   rw [← vertexSector_smul,
-    ((σ.partialCycleMap j m)⁻¹ • P).mem_vertexSector_iff_toReal_orientedAngle_mem_Icc hQ hw,
-    interiorAngle_smul, ← orientedAngle_add _ _ E, ← orientedAngle_add _ _ (geodesicLine
-      (rayToward z (((σ.partialCycleMap j m)⁻¹ • P).vertex (σ.next^[m] j - 1))) 1),
-    hα, orientedAngle_rev, hE, ← hxw, ← Real.Angle.coe_neg, neg_neg, ← Real.Angle.coe_add,
-    ← Real.Angle.coe_add]
+    ((σ.partialCycleMap j m)⁻¹ • P).mem_vertexSector_iff_toReal_orientedAngle_mem_Icc
+      (σ.inv_partialCycleMap_smul_vertex hz m) hw,
+    interiorAngle_smul, ← orientedAngle_add _ _ E, orientedAngle_rev,
+    σ.orientedAngle_rayToward_inv_partialCycleMap_smul_vertex_add_one hz m, ← hxw,
+    ← Real.Angle.coe_neg, neg_neg, ← Real.Angle.coe_add]
   have hsucc : B (m + 1) = B m + P.interiorAngle (σ.next^[m] j) := Finset.sum_range_succ _ _
   have hle := P.interiorAngle_le_pi (σ.next^[m] j)
   rw [Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith [Real.pi_pos], by linarith⟩]

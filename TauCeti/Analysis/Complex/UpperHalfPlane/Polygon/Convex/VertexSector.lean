@@ -164,6 +164,36 @@ private theorem leftHalfPlane_sideGeodesic_sub_one_eq_rayToward {j : Fin n} {z :
   rw [← leftHalfPlane_mul_pslS,
     (isGeodesicFromTo_mul_pslS_iff.2 (isGeodesicFromTo_rayToward hne)).leftHalfPlane_eq hg]
 
+/-- For `z ≠ w`, `w` lies in the closed left half-plane of a ray from `z` exactly when its oriented
+angle at `z` from the ray is not negative. -/
+private theorem mem_closure_leftHalfPlane_rayToward_iff {z w : ℍ} (p : ℍ ⊕ OnePoint ℝ)
+    (hw : z ≠ w) :
+    w ∈ closure (leftHalfPlane (rayToward z p)) ↔
+      (orientedAngle z (geodesicLine (rayToward z p) 1) w).sign ≠ -1 := by
+  conv_lhs => rw [rayToward_eq_geodesicBetween z p]
+  exact mem_closure_leftHalfPlane_geodesicBetween_iff hw
+
+/-- For `z ≠ w`, `w` lies in the closed right half-plane of a ray from `z` exactly when its
+oriented angle at `z` from the ray is not positive. -/
+private theorem mem_closure_rightHalfPlane_rayToward_iff {z w : ℍ} (p : ℍ ⊕ OnePoint ℝ)
+    (hw : z ≠ w) :
+    w ∈ closure (rightHalfPlane (rayToward z p)) ↔
+      (orientedAngle z (geodesicLine (rayToward z p) 1) w).sign ≠ 1 := by
+  conv_lhs => rw [rayToward_eq_geodesicBetween z p]
+  exact mem_closure_rightHalfPlane_geodesicBetween_iff hw
+
+/-- At a finite vertex `z`, a point `w ≠ z` lies in the sector exactly when it is weakly
+counterclockwise of the ray towards the next vertex and weakly clockwise of the ray towards the
+previous vertex. -/
+private theorem mem_vertexSector_iff_sign_orientedAngle {j : Fin n} {z w : ℍ}
+    (hz : P.vertex j = .inl z) (hw : z ≠ w) :
+    w ∈ P.vertexSector j ↔
+      (orientedAngle z (geodesicLine (rayToward z (P.vertex (j - 1))) 1) w).sign ≠ 1 ∧
+        (orientedAngle z (geodesicLine (rayToward z (P.vertex (j + 1))) 1) w).sign ≠ -1 := by
+  rw [mem_vertexSector_iff, leftHalfPlane_sideGeodesic_sub_one_eq_rayToward hz,
+    leftHalfPlane_sideGeodesic_eq_rayToward hz, mem_closure_rightHalfPlane_rayToward_iff _ hw,
+    mem_closure_leftHalfPlane_rayToward_iff _ hw]
+
 /-- At a finite vertex, the ray towards the previous vertex contains a point strictly to the left
 of the outgoing side. -/
 private theorem exists_geodesicBetween_eq_rayToward_vertex_sub_one {j : Fin n} {z : ℍ}
@@ -243,11 +273,7 @@ theorem mem_vertexSector_iff_toReal_orientedAngle_mem_Icc {j : Fin n} {z w : ℍ
     rw [← orientedAngle_add z E D w, orientedAngle_rev, hD, hE,
       P.orientedAngle_rayToward_vertex_eq_interiorAngle hz, Real.Angle.coe_sub,
       Real.Angle.coe_toReal, neg_add_eq_sub]
-  rw [← hD, mem_vertexSector_iff, leftHalfPlane_sideGeodesic_sub_one_eq_rayToward hz,
-    leftHalfPlane_sideGeodesic_eq_rayToward hz, rayToward_eq_geodesicBetween z (P.vertex (j - 1)),
-    rayToward_eq_geodesicBetween z (P.vertex (j + 1)), ← hD, ← hE,
-    mem_closure_rightHalfPlane_geodesicBetween_iff hw,
-    mem_closure_leftHalfPlane_geodesicBetween_iff hw, hEw, Ne, Ne,
+  rw [mem_vertexSector_iff_sign_orientedAngle hz hw, ← hD, ← hE, hEw, Ne, Ne,
     ← Real.Angle.toReal_neg_iff_sign_neg, ← Real.Angle.toReal_mem_Ioo_iff_sign_pos, not_lt,
     Set.mem_Icc]
   refine ⟨fun ⟨h₁, h₀⟩ ↦ ⟨h₀, ?_⟩, fun ⟨h₀, h₁⟩ ↦ ⟨?_, h₀⟩⟩
