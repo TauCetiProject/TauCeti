@@ -319,6 +319,7 @@ theorem Realization.nonneg (K : AbstractSimplicialComplex ι) (x : Realization K
   StandardSimplex.nonneg (σ := (carrier K x).1) ⟨x.1, mem_convexHull_carrier K x⟩ v
 
 /-- The barycentric coordinates of a realization point sum to one. -/
+@[simp]
 theorem Realization.sum_eq_one (K : AbstractSimplicialComplex ι) (x : Realization K) :
     x.1.sum (fun _ r => r) = 1 :=
   StandardSimplex.sum_eq_one ⟨x.1, mem_convexHull_carrier K x⟩
