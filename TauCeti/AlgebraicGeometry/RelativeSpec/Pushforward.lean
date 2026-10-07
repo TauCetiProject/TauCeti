@@ -68,6 +68,8 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardSectionsRingEquiv_symm_appl
   (rfl)
 
 /-- The section-ring comparison for pushforward commutes with restriction to smaller opens. -/
+-- Not a simp lemma: `pushforwardSectionsRingEquiv_apply` and `restrictSections_apply`
+-- already simplify its left-hand side, so adding `[simp]` would violate `simpNF`.
 lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardSectionsRingEquiv_restrictSections
     {U V : Y.Opens} (i : V ⟶ U)
     (x : Γ(((Scheme.Modules.pushforward f).mapCommMon.obj A).X, U)) :
@@ -179,6 +181,8 @@ lemma _root_.AlgebraicGeometry.Scheme.structureAlgebraSectionsPresheafIso_inv_ap
 
 -- Expose the object construction so that section-ring carriers compute on inverse images;
 -- all ring operations and restriction comparisons are characterized by the public API.
+-- The `_one`, `_apply`, `_symm_apply`, and `_algebraMap` statements need this computation
+-- to type-check. The propositional `_X` equality cannot supply it during elaboration.
 /-- The algebra of regular functions of `X` over `Y`, carried by the actual pushforward
 `f_* 𝒪_X`. The algebra structure is induced by lax symmetric monoidal pushforward. -/
 @[expose]
