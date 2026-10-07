@@ -44,8 +44,8 @@ choosing `t` to be a nearest integer to `-B(v, y) / μ`, the minimality of `μ` 
 `3 μ² ≤ 4 S(y, y)` for every nonzero `y ∈ K`. The inductive hypothesis applied to `S` then
 bounds `μ`.
 
-Everything stays integral: no rational or real coefficients are needed, and the least norm exists
-because norms of nonzero vectors are positive integers.
+The forms and the determinant argument stay integral; only the nearest-integer step briefly
+divides in `ℚ`. The least norm exists because norms of nonzero vectors are positive integers.
 
 ## Main results
 
@@ -88,7 +88,8 @@ private theorem exists_four_mul_sq_le (t : ℤ) {μ : ℤ} (hμ : 0 < μ) :
     nlinarith [neg_le_of_abs_le hr]
   have hprod : 0 ≤ (μ / 2 - (c * μ + t : ℤ)) * (μ / 2 + (c * μ + t : ℤ) : ℚ) :=
     mul_nonneg (sub_nonneg.mpr hhi) (by linarith)
-  exact_mod_cast (show 4 * ((c * μ + t : ℤ) : ℚ) ^ 2 ≤ (μ : ℚ) ^ 2 by nlinarith)
+  have hq : 4 * ((c * μ + t : ℤ) : ℚ) ^ 2 ≤ (μ : ℚ) ^ 2 := by nlinarith
+  exact_mod_cast hq
 
 /-- **A positive definite integral form attains its minimum at a primitive vector.** On a
 nontrivial free `ℤ`-module, a bilinear form whose values `B(x, x)` on nonzero vectors are positive

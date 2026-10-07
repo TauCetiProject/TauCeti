@@ -153,8 +153,11 @@ index type and the basis to change. -/
 theorem gramDet_eq_gramDet {ι : Type v} {κ : Type w} [Fintype ι] [Fintype κ]
     [DecidableEq ι] [DecidableEq κ] (e : Basis ι ℤ L) (f : Basis κ ℤ L) :
     L.gramDet e = L.gramDet f := by
-  change (LinearMap.toMatrix₂Aux ℤ (e : ι → L) (e : ι → L) L.integralForm).det =
-    (LinearMap.toMatrix₂Aux ℤ (f : κ → L) (f : κ → L) L.integralForm).det
+  have he : L.gramMatrix e = LinearMap.toMatrix₂Aux ℤ (e : ι → L) (e : ι → L) L.integralForm :=
+    Matrix.ext fun i j ↦ by rw [gramMatrix_apply, LinearMap.toMatrix₂Aux_apply]
+  have hf : L.gramMatrix f = LinearMap.toMatrix₂Aux ℤ (f : κ → L) (f : κ → L) L.integralForm :=
+    Matrix.ext fun i j ↦ by rw [gramMatrix_apply, LinearMap.toMatrix₂Aux_apply]
+  rw [gramDet_def, gramDet_def, he, hf]
   exact (LinearMap.det_toMatrix₂Aux_eq_det_toMatrix₂Aux L.integralForm e f).symm
 
 /-- A Gram determinant is nonzero exactly when the ambient rational form is nondegenerate. -/
