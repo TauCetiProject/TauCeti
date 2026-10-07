@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Formula
 import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import TauCeti.Analysis.Complex.Conformal.LocalFrontier
 import TauCeti.Analysis.Complex.Conformal.Reflection.HalfStripExterior
-import TauCeti.Analysis.Complex.Conformal.Reflection.Infinity
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 
 /-!
