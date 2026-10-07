@@ -22,6 +22,7 @@ file defines the three-term local Euler characteristic
 
 * `TauCeti.ClassFieldTheory.localEulerCharacteristic`: the positive-rational-valued local Euler
   characteristic of a finite smooth discrete Galois representation.
+* `TauCeti.ClassFieldTheory.localEulerCharacteristic_congr`: invariance under isomorphism.
 -/
 
 public noncomputable section
@@ -63,5 +64,21 @@ theorem localEulerCharacteristic_coe (hn : (n : F) ≠ 0) (A : GalRep n F)
       (Nat.card (continuousCohomology 0 A) : ℚ) * Nat.card (continuousCohomology 2 A) /
         Nat.card (continuousCohomology 1 A) := by
   rfl
+
+/-- **Isomorphism invariance of the local Euler characteristic.** Isomorphic representations have
+the same local Euler characteristic; finiteness and smoothness of `B` follow from those of `A`
+along the isomorphism. -/
+theorem localEulerCharacteristic_congr (hn : (n : F) ≠ 0) {A B : GalRep n F}
+    [Finite A.V] [Fact (IsSmoothDiscrete (ZMod n) A)] (e : A ≅ B) :
+    haveI : Finite B.V := .of_surjective e.hom.hom fun y ↦ ⟨e.inv.hom y, by simp⟩
+    haveI : Fact (IsSmoothDiscrete (ZMod n) B) :=
+      ⟨.of_injective e.inv (fun x y h ↦ by simpa using congr(e.hom.hom $h)) Fact.out⟩
+    localEulerCharacteristic hn A = localEulerCharacteristic hn B := by
+  have hcard (i : ℕ) : Nat.card (continuousCohomology i A) = Nat.card (continuousCohomology i B) :=
+    Nat.card_congr ((ContinuousCohomology.continuousCohomologyFunctor (ZMod n) _ i).mapIso
+      e).toContinuousLinearEquiv.toEquiv
+  apply Subtype.ext
+  apply Units.ext
+  simp only [localEulerCharacteristic_coe, hcard]
 
 end TauCeti.ClassFieldTheory
