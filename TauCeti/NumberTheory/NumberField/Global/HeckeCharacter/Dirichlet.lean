@@ -72,9 +72,11 @@ theorem isFiniteOrder_ofDirichletCharacter (ψ : DirichletCharacter ℂ n) :
 
 /-- Increasing the Dirichlet level preserves the associated Hecke character. -/
 @[simp]
-theorem ofDirichletCharacter_changeLevel {d : ℕ} (hd : d ≠ 0) (h : d ∣ n)
+theorem ofDirichletCharacter_changeLevel {d : ℕ} (h : d ∣ n)
     (ψ : DirichletCharacter ℂ d) :
-    ofDirichletCharacter n hn (ψ.changeLevel h) = ofDirichletCharacter d hd ψ := by
+    ofDirichletCharacter n hn (ψ.changeLevel h) =
+      ofDirichletCharacter d (ne_zero_of_dvd_ne_zero hn h) ψ := by
+  have hd : d ≠ 0 := ne_zero_of_dvd_ne_zero hn h
   have hmod : ratModulus d hd ∣ ratModulus n hn := ratModulus_dvd_ratModulus_iff.mpr h
   have hη : (ratDirichletEquiv n hn).symm (ψ.changeLevel h) =
       ((ratDirichletEquiv d hd).symm ψ).induced hmod := by
