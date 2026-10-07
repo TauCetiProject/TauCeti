@@ -142,7 +142,7 @@ theorem eq_of_apply_eq_of_eqOn_orthogonal {f g : E →ₗ[𝕜] F} (hx : f x = g
 
 end LinearMap
 
-namespace Submodule
+namespace TauCeti
 
 open scoped InnerProductSpace
 
@@ -157,7 +157,7 @@ theorem orthogonalDecomposition_symm_apply_toSpanUnitSingleton (x : E) (hx : ‖
   simp only [Submodule.orthogonalDecomposition_symm_apply, WithLp.toLp_fst,
     WithLp.toLp_snd, LinearIsometryEquiv.toSpanUnitSingleton_apply]
 
-end Submodule
+end TauCeti
 
 namespace LinearIsometryEquiv
 
@@ -183,10 +183,10 @@ theorem extendOrthogonalComplement_apply_smul_add
     (e : (𝕜 ∙ x)ᗮ ≃ₗᵢ[𝕜] (𝕜 ∙ y)ᗮ) (hx : ‖x‖ = 1) (hy : ‖y‖ = 1)
     (r : 𝕜) (v : (𝕜 ∙ x)ᗮ) :
     e.extendOrthogonalComplement hx hy (r • x + v) = r • y + e v := by
-  rw [← Submodule.orthogonalDecomposition_symm_apply_toSpanUnitSingleton x hx]
+  rw [← TauCeti.orthogonalDecomposition_symm_apply_toSpanUnitSingleton x hx]
   simp only [extendOrthogonalComplement, trans_apply, apply_symm_apply,
     withLpProdCongr_apply, WithLp.toLp_fst, WithLp.toLp_snd, symm_apply_apply]
-  exact Submodule.orthogonalDecomposition_symm_apply_toSpanUnitSingleton y hy r (e v)
+  exact TauCeti.orthogonalDecomposition_symm_apply_toSpanUnitSingleton y hy r (e v)
 
 /-- The extension sends the distinguished unit vector to the distinguished target vector. -/
 @[simp]
