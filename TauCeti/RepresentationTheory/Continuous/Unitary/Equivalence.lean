@@ -18,8 +18,9 @@ notions of equivalence coincide. Isometric transport preserves matrix coefficien
 defining vectors move along the same map (`LinearIsometryEquiv.matrixCoeff_congr`).
 
 This identifies equivalence classes of finite-dimensional irreducible unitary representations
-with their unitary equivalence classes. It lets one choose representatives for the unitary dual
-and transport their matrix coefficients while preserving inner products.
+with their unitary equivalence classes. It lets one choose representatives for the
+finite-dimensional part of the unitary dual and transport their matrix coefficients while
+preserving inner products.
 
 ## Main statements
 
@@ -53,22 +54,31 @@ theorem exists_linearIsometryEquiv_congr_eq {π : ContRepresentation 𝕜 G V}
     ∃ e : V ≃ₗᵢ[𝕜] W, ContinuousLinearEquiv.congr e.toContinuousLinearEquiv π = ρ := by
   let : FiniteDimensional 𝕜 W := φ.toLinearEquiv.finiteDimensional
   set T : V →L[𝕜] W := φ.toContIntertwiningMap.toContinuousLinearMap with hTdef
-  have hT : ∀ g : G, T ∘L π g = ρ g ∘L T := fun g ↦ φ.isIntertwining g
-  have hTapp : ∀ (g : G) (v : V), T (π g v) = ρ g (T v) := fun g v ↦
-    congrArg (fun f : V →L[𝕜] W ↦ f v) (hT g)
+  have hT : ∀ g : G, T ∘L π g = ρ g ∘L T := fun g ↦ by
+    rw [hTdef]
+    exact φ.toContIntertwiningMap.isIntertwining' g
+  have hTapp : ∀ (g : G) (v : V), T (π g v) = ρ g (T v) := fun g v ↦ by
+    simpa only [ContinuousLinearMap.comp_apply] using
+      congrArg (fun f : V →L[𝕜] W ↦ f v) (hT g)
   -- The adjoint intertwines the other way, so `T† ∘ T` is a self-intertwiner of `π`
   have hadj : ∀ g : G, (ContinuousLinearMap.adjoint T) ∘L ρ g
       = π g ∘L ContinuousLinearMap.adjoint T := fun g ↦ by
     simpa only [ContinuousLinearMap.adjoint_comp, hπu.adjoint_eq_inv,
       hρu.adjoint_eq_inv, inv_inv] using
       (congrArg ContinuousLinearMap.adjoint (hT g⁻¹)).symm
-  let Tadj : ContIntertwiningMap ρ π :=
+  set Tadj : ContIntertwiningMap ρ π :=
     { toContinuousLinearMap := ContinuousLinearMap.adjoint T, isIntertwining' := hadj }
+    with hTadjDef
+  -- Project the field supplied in this local constructor before evaluating the composite.
+  have hTadj : Tadj.toContinuousLinearMap = ContinuousLinearMap.adjoint T :=
+    congrArg ContIntertwiningMap.toContinuousLinearMap hTadjDef
   -- Schur's lemma makes the composite intertwiner a scalar.
   obtain ⟨c, hc⟩ := π.exists_eq_smul_one_of_isIrreducible hirr
     (Tadj.comp φ.toContIntertwiningMap)
   have hcS : ∀ v : V, ContinuousLinearMap.adjoint T (T v) = c • v := fun v ↦ by
-    simpa [Tadj, T] using
+    simpa only [ContIntertwiningMap.toContinuousLinearMap_comp, hTadj, ← hTdef,
+      ContinuousLinearMap.comp_apply, ContIntertwiningMap.toContinuousLinearMap_smul,
+      smul_apply, ContIntertwiningMap.toContinuousLinearMap_one, one_apply_eq_self] using
       congrArg (fun f : ContIntertwiningMap π π ↦ f.toContinuousLinearMap v) hc
   have hinner : ∀ v : V, ((‖T v‖ : ℝ) : 𝕜) ^ 2 = (starRingEnd 𝕜) c * ((‖v‖ : ℝ) : 𝕜) ^ 2 := by
     intro v
@@ -80,7 +90,11 @@ theorem exists_linearIsometryEquiv_congr_eq {π : ContRepresentation 𝕜 G V}
   have : Nontrivial V := Representation.IsIrreducible.nontrivial hirr
   obtain ⟨v₀, hv₀⟩ := exists_ne (0 : V)
   have hv₀norm : (0 : ℝ) < ‖v₀‖ := norm_pos_iff.2 hv₀
-  have hTinj : Function.Injective T := φ.toContinuousLinearEquiv.injective
+  have hTinj : Function.Injective T := by
+    intro x y hxy
+    apply φ.toContinuousLinearEquiv.injective
+    simpa only [hTdef, ← φ.toContinuousLinearEquiv_toContinuousLinearMap,
+      ContinuousLinearEquiv.coe_coe] using hxy
   have hTv₀ : (0 : ℝ) < ‖T v₀‖ := norm_pos_iff.2 fun h ↦
     hv₀ (hTinj (by simpa using h))
   have hcpos : 0 < ‖c‖ := (mul_pos_iff_of_pos_right (sq_pos_of_pos hv₀norm)).mp
