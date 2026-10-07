@@ -40,8 +40,9 @@ defined using an invertible norm hold over an arbitrary commutative ring. The co
 lemmas assume a field, and the second spelling also requires `2 ≠ 0`. The equal-norm dichotomy,
 Witt transitivity and the fixed-subspace correction assume a field in which `2` is nonzero. The
 characteristic restriction is not incidental: in characteristic two `polar Q v v = 2 • Q v`
-vanishes, so `v` lies in the kernel of `polar Q v` and `reflection Q v` is not a reflection in a
-complement of `v`: it is a transvection when `polar Q v ≠ 0`, and the identity when it is zero.
+vanishes, so `v` lies in the kernel of `polar Q v`, `reflection Q v` fixes `v`, and it is not a
+reflection in a complement of `v`. Over a field it is a transvection when `polar Q v ≠ 0` and the
+identity when `polar Q v = 0`; over a general ring it can be the identity in other cases too.
 
 ## Main definitions
 
@@ -838,8 +839,9 @@ private theorem reflectionDual_apply_self : reflectionDual Q v v = 2 := by
 
 /-- The reflection in a vector `v` of invertible norm: `y ↦ y - (polar Q v y / Q v) • v`. This is
 Mathlib's `Module.reflection` for the functional `y ↦ polar Q v y / Q v`. When `2` is invertible it
-is the reflection in the hyperplane `v ^ ⊥`; in characteristic two `v` lies in the kernel of
-`polar Q v`, and the map is a transvection, or the identity when `polar Q v = 0`. -/
+is the reflection in the hyperplane `v ^ ⊥`. In characteristic two `v` lies in the kernel of
+`polar Q v` and the map fixes `v`; over a field it is then a transvection, or the identity when
+`polar Q v = 0`. -/
 noncomputable def reflection : M ≃ₗ[R] M :=
   Module.reflection (reflectionDual_apply_self Q v)
 
@@ -916,8 +918,9 @@ theorem det_reflection [Module.Free R M] [Module.Finite R M] :
 /-- **Reflections are orthogonal.** These are the generators a Cartan-Dieudonné theorem writes an
 orthogonal automorphism as a product of, over a field of characteristic not two, for a nondegenerate
 form, in finite dimension; none of that is assumed here. In characteristic two `polar Q v v` is
-`2 • Q v = 0`, so `v` lies in the kernel of `polar Q v` and `reflection Q v` is a transvection or
-the identity, which is why that theorem excludes characteristic two. They are also the image of the
+`2 • Q v = 0`, so `v` lies in the kernel of `polar Q v` and `reflection Q v` fixes `v` (over a
+field it is a transvection or the identity), which is why that theorem excludes characteristic
+two. They are also the image of the
 generating vectors of the Pin group under twisted conjugation. -/
 theorem reflection_mem_orthogonalGroup : reflection Q v ∈ orthogonalGroup Q := by
   intro y
