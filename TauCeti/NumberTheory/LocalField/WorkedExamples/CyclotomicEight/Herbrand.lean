@@ -33,14 +33,6 @@ namespace TauCeti.DyadicCyclotomicEight
 
 open LocalFieldsRamification
 
-/-- The real lower filtration is constant on `(-∞, 1]`, `(1, 3]`, and `(3, ∞)`. -/
-@[simp]
-theorem lowerRamificationGroupReal_eq (u : ℝ) :
-    lowerRamificationGroupReal ℚ_[2] DyadicCyclotomicEight u =
-      if u ≤ 1 then ⊤ else if u ≤ 3 then Subgroup.zpowers sigmaFive else ⊥ := by
-  rw [lowerRamificationGroupReal_def, lowerRamificationGroup_eq]
-  simp only [Int.ceil_le, Int.cast_one, Int.cast_ofNat]
-
 private theorem herbrand_one :
     (herbrand ℚ_[2] DyadicCyclotomicEight ⟨1, by norm_num⟩ : ℝ) = 1 := by
   rw [coe_herbrand_of_coe_eq_natCast ℚ_[2] DyadicCyclotomicEight 1 (by norm_num),
