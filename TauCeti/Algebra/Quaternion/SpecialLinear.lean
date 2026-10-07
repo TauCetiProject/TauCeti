@@ -55,6 +55,7 @@ variable {R : Type*} [CommRing R]
 
 /-- Any algebra equivalence from a quaternion algebra to two-by-two matrices carries quaternion
 conjugation to matrix adjugation. -/
+@[simp]
 theorem map_star_eq_adjugate_of_algEquiv_matrix {c₁ c₂ c₃ : R}
     (e : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R) (q : ℍ[R,c₁,c₂,c₃]) :
     e (star q) = Matrix.adjugate (e q) := by
