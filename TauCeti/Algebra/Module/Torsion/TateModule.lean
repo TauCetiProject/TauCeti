@@ -48,6 +48,8 @@ introducing an elliptic-curve-specific copy of the inverse-limit machinery.
   all its finite-level components are locally constant.
 * `TauCeti.TateModule.continuous_map_apply`: a family of homomorphisms moving each torsion point
   locally constantly acts jointly continuously on Tate modules.
+* `TauCeti.TateModule.surjective_of_forall_surjective_proj`: a continuous map from a compact
+  space into the Tate module is surjective when each of its components is.
 * `TauCeti.TateModule.proj_surjective`: if the transition maps are surjective, so is every
   projection.
 * `TauCeti.TateModule.nonempty_linearEquiv_of_natCard`: if `A[p^n]` has `(p^n)^r` elements for
@@ -416,6 +418,24 @@ theorem coe_proj_eq_pow_sub_nsmul (x : TateModule p A) {m n : ℕ} (h : m ≤ n)
     (proj m x : A) = p ^ (n - m) • (proj n x : A) := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
   rw [Nat.add_sub_cancel_left, coe_proj_eq_pow_nsmul]
+
+/-- **Surjectivity from the finite levels.** A continuous map from a compact space into a Tate
+module is surjective as soon as each of its components is surjective. -/
+theorem surjective_of_forall_surjective_proj {X : Type*} [TopologicalSpace X] [CompactSpace X]
+    {f : X → TateModule p A} (hf : Continuous f)
+    (h : ∀ n, Function.Surjective fun x ↦ proj n (f x)) : Function.Surjective f := by
+  intro y
+  -- The fibres over the components of `y` form a decreasing family of nonempty closed sets,
+  -- whose intersection is the fibre over `y`.
+  set t : ℕ → Set X := fun n ↦ {x | proj n (f x) = proj n y}
+  -- The level-`n` component determines the level-`m` component for `m ≤ n`.
+  have hsub {m n : ℕ} (hmn : m ≤ n) : t n ⊆ t m := fun x (hx : proj n (f x) = proj n y) ↦
+    Subtype.ext <| by rw [coe_proj_eq_pow_sub_nsmul _ hmn, coe_proj_eq_pow_sub_nsmul y hmn, hx]
+  obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed t
+    (fun m n ↦ ⟨max m n, hsub (le_max_left _ _), hsub (le_max_right _ _)⟩)
+    (fun n ↦ h n (proj n y)) (fun n ↦ ((continuous_iff.1 hf n).isClosed_fiber _).isCompact)
+    fun n ↦ (continuous_iff.1 hf n).isClosed_fiber _
+  exact ⟨x, ext fun n ↦ Set.mem_iInter.1 hx n⟩
 
 /-- If every transition map is surjective, then every point of every torsion level is a component
 of a Tate-module point. -/

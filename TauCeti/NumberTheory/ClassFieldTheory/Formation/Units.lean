@@ -44,10 +44,10 @@ The body of `unitsFormation` is not exposed; its coefficient module is read thro
   `TauCeti.UnitsCoeff K`.
 * `TauCeti.ClassFieldTheory.localFormationRestrict K L σ`: restriction from `G_K` to `G_L` as
   an isomorphism of topological representations.
+* `TauCeti.ClassFieldTheory.localFormationHomInv K L σ h`: the inverse `U' → U` of the embedding
+  `G_L → G_K` on a subgroup `U'` of the image of `U ≤ G_L`.
 * `TauCeti.ClassFieldTheory.unitsLevelEquiv ι hU`: the level of an open subgroup `U` whose fixed
   field is the image of `ι : E →ₐ[K] Kˢ` is `Eˣ`.
-* `TauCeti.ClassFieldTheory.layerCoeffEquiv L`: the coefficient module of a finite normal layer
-  `V ◁ U` is the subgroup `((Kˢ)ˣ)^V` of `(Kˢ)ˣ`.
 
 ## Main results
 
@@ -109,6 +109,21 @@ def localFormationHom : AbsoluteGaloisGroup L →* AbsoluteGaloisGroup K :=
   (TauCeti.galoisSubgroup K L σ).toSubgroup.subtype.comp
     (TauCeti.galoisSubgroupEquiv K L σ).toMulEquiv.toMonoidHom
 
+/-- The embedding `G_L → G_K` is `TauCeti.galoisSubgroupEquiv` followed by the inclusion of the
+open subgroup fixing `σ(L)`. -/
+theorem localFormationHom_apply (g : AbsoluteGaloisGroup L) :
+    localFormationHom K L σ g = TauCeti.galoisSubgroupEquiv K L σ g :=
+  (rfl)
+
+/-- The image of the embedding `G_L → G_K` is the open subgroup of `G_K` fixing `σ(L)`. -/
+theorem range_localFormationHom :
+    (localFormationHom K L σ).range = (TauCeti.galoisSubgroup K L σ).toSubgroup := by
+  ext g
+  refine ⟨?_, fun hg => ⟨(TauCeti.galoisSubgroupEquiv K L σ).symm ⟨g, hg⟩, ?_⟩⟩
+  · rintro ⟨h, rfl⟩
+    exact (TauCeti.galoisSubgroupEquiv K L σ h).2
+  · rw [localFormationHom_apply, ContinuousMulEquiv.apply_symm_apply]
+
 /-- The embedding of absolute Galois groups underlying restriction of the units formation is
 continuous. -/
 theorem continuous_localFormationHom : Continuous (localFormationHom K L σ) :=
@@ -125,11 +140,55 @@ theorem isOpenMap_localFormationHom : IsOpenMap (localFormationHom K L σ) :=
   (TauCeti.galoisSubgroup K L σ).isOpen.isOpenMap_subtype_val.comp
     (TauCeti.galoisSubgroupEquiv K L σ).isOpenMap
 
+/-- **The inverse of the embedding `G_L → G_K` on a subgroup of the image of `U ≤ G_L`**: the
+continuous homomorphism `U' → U`, for `U' ≤ U.map (localFormationHom K L σ)`, given by the
+inverse of `TauCeti.galoisSubgroupEquiv` (`localFormationHom_localFormationHomInv`). -/
+def localFormationHomInv {U : Subgroup (AbsoluteGaloisGroup L)}
+    {U' : Subgroup (AbsoluteGaloisGroup K)} (h : U' ≤ U.map (localFormationHom K L σ)) :
+    U' →ₜ* U where
+  toMonoidHom := ((TauCeti.galoisSubgroupEquiv K L σ).symm.toMulEquiv.toMonoidHom.comp
+      (Subgroup.inclusion (h.trans ((Subgroup.map_le_range _ U).trans
+        (range_localFormationHom K L σ).le)))).codRestrict U
+    fun u => by
+      obtain ⟨v, hv, hvu⟩ := h u.2
+      have hu : Subgroup.inclusion (h.trans ((Subgroup.map_le_range _ U).trans
+          (range_localFormationHom K L σ).le)) u = TauCeti.galoisSubgroupEquiv K L σ v :=
+        Subtype.ext (hvu.symm.trans (localFormationHom_apply K L σ v))
+      simpa [hu] using hv
+  continuous_toFun := ((TauCeti.galoisSubgroupEquiv K L σ).symm.continuous.comp
+    (continuous_subtype_val.subtype_mk _)).subtype_mk _
+
+/-- On underlying elements, `localFormationHomInv` is the inverse of
+`TauCeti.galoisSubgroupEquiv`. -/
+theorem localFormationHomInv_apply_coe {U : Subgroup (AbsoluteGaloisGroup L)}
+    {U' : Subgroup (AbsoluteGaloisGroup K)} (h : U' ≤ U.map (localFormationHom K L σ))
+    (u : U') :
+    (localFormationHomInv K L σ h u : AbsoluteGaloisGroup L) =
+      (TauCeti.galoisSubgroupEquiv K L σ).symm
+        ⟨u, (h.trans ((Subgroup.map_le_range _ U).trans (range_localFormationHom K L σ).le)) u.2⟩ :=
+  (rfl)
+
+/-- `localFormationHomInv` is a right inverse of the embedding `G_L → G_K`. -/
+@[simp]
+theorem localFormationHom_localFormationHomInv {U : Subgroup (AbsoluteGaloisGroup L)}
+    {U' : Subgroup (AbsoluteGaloisGroup K)} (h : U' ≤ U.map (localFormationHom K L σ))
+    (u : U') : localFormationHom K L σ (localFormationHomInv K L σ h u) = u := by
+  simp [localFormationHomInv, localFormationHom_apply]
+
 /-- The additive equivalence on the coefficient modules underlying restriction of the units
 formation along `L/K`. It sends a unit of `Kˢ` to its image in `Lˢ` under the inverse of the
 chosen identification `Lˢ ≃ Kˢ`. -/
 def localFormationCoeffEquiv : UnitsCoeff K ≃+ UnitsCoeff L :=
   (Units.mapEquiv (separableClosureRingEquiv K L σ).symm.toMulEquiv).toAdditive
+
+omit [FiniteDimensional K L] in
+/-- The inverse of the coefficient equivalence sends a unit of `Lˢ` to its image in `Kˢ` under the
+chosen identification `Lˢ ≃ Kˢ`. -/
+@[simp↓ high]
+theorem toMul_localFormationCoeffEquiv_symm_apply (y : UnitsCoeff L) :
+    ((localFormationCoeffEquiv K L σ).symm y).toMul =
+      Units.map (separableClosureRingEquiv K L σ).toMonoidHom y.toMul :=
+  (rfl)
 
 /-- The coefficient equivalence underlying `localFormationRestrict` is equivariant for the
 embedding `G_L → G_K`. -/
@@ -295,53 +354,6 @@ theorem unitsLevelEquiv_apply_coe (ι : E →ₐ[K] SeparableClosure K)
 
 end Level
 
-/-! ### The coefficients of a finite normal layer -/
-
-section LayerCoeff
-
-variable (L : NormalLayer (AbsoluteGaloisGroup K))
-
-/-- **The coefficient module of a layer** `V ◁ U` of the formation of units is the subgroup
-`((Kˢ)ˣ)^V` of fixed points of its top subgroup, read as a subgroup of the ground subgroup `U`.
-It moves no element of `(Kˢ)ˣ` (`layerCoeffEquiv_apply_coe`) and is equivariant for the Galois
-group of the layer (`layerCoeffEquiv_ρ`). -/
-def layerCoeffEquiv :
-    (L.rep (unitsFormation K)).V ≃+
-      FixedPoints.addSubgroup (L.top.toSubgroup.subgroupOf L.ground.toSubgroup)
-        (UnitsCoeff K) where
-  toFun x := ⟨(unitsCoeffEquivUnitsFormation K).symm (x : (unitsFormation K).level L.top),
-    (FixedPoints.mem_addSubgroup _ _ _).2 fun v =>
-      (Formation.mem_level _).1 x.2 _ (Subgroup.mem_subgroupOf.1 v.2)⟩
-  invFun m := ⟨unitsCoeffEquivUnitsFormation K m, (Formation.mem_level _).2 fun v hv =>
-    (unitsCoeffEquivUnitsFormation_smul K v m).symm.trans <| congrArg _ <|
-      (FixedPoints.mem_addSubgroup _ _ _).1 m.2 ⟨⟨v, L.top_le_ground hv⟩, hv⟩⟩
-  left_inv _ := Subtype.ext ((unitsCoeffEquivUnitsFormation K).apply_symm_apply _)
-  right_inv _ := Subtype.ext ((unitsCoeffEquivUnitsFormation K).symm_apply_apply _)
-  map_add' _ _ := Subtype.ext (map_add (unitsCoeffEquivUnitsFormation K).symm _ _)
-
-/-- `layerCoeffEquiv` moves no element of `(Kˢ)ˣ`: it only changes the coefficient dictionary. -/
-@[simp]
-theorem layerCoeffEquiv_apply_coe (x : (L.rep (unitsFormation K)).V) :
-    (layerCoeffEquiv L x : UnitsCoeff K) =
-      (unitsCoeffEquivUnitsFormation K).symm (x : (unitsFormation K).level L.top) :=
-  (rfl)
-
-/-- `layerCoeffEquiv` is equivariant for the Galois group of the layer. -/
-@[simp]
-theorem layerCoeffEquiv_ρ
-    (g : L.ground.toSubgroup ⧸ L.top.toSubgroup.subgroupOf L.ground.toSubgroup)
-    (x : (L.rep (unitsFormation K)).V) :
-    layerCoeffEquiv L ((L.rep (unitsFormation K)).ρ g x) = g • layerCoeffEquiv L x := by
-  induction g using QuotientGroup.induction_on with
-  | H u =>
-    refine Subtype.ext ?_
-    rw [layerCoeffEquiv_apply_coe, coe_quotient_smul_fixedPoints_addSubgroup,
-      coe_smul_fixedPoints_addSubgroup, layerCoeffEquiv_apply_coe, AddEquiv.symm_apply_eq,
-      Subgroup.smul_def, unitsCoeffEquivUnitsFormation_smul, AddEquiv.apply_symm_apply]
-    exact L.rep_ρ_mk_apply_coe _ u x
-
-end LayerCoeff
-
 /-! ### Hilbert 90 on the finite normal layers -/
 
 /-- Read a cocycle on a formation layer as a function valued in the corresponding fixed points
@@ -349,16 +361,18 @@ of `(Kˢ)ˣ`. -/
 private def unitsCocycle (L : NormalLayer (AbsoluteGaloisGroup K))
     (f : L.Gal → (L.rep (unitsFormation K)).V) :
     L.Gal → FixedPoints.addSubgroup L.relativeTop (UnitsCoeff K) := fun q =>
-  layerCoeffEquiv L (f q)
+  L.coeffFixedPointsEquiv (unitsCoeffEquivUnitsFormation K)
+    (unitsCoeffEquivUnitsFormation_smul K) (f q)
 
 /-- Reading a layer cocycle through the coefficient dictionary preserves the cocycle identity. -/
 private theorem isCocycle₁_unitsCocycle (L : NormalLayer (AbsoluteGaloisGroup K))
     {f : L.Gal → (L.rep (unitsFormation K)).V}
     (hf : ∀ σ τ, f (σ * τ) = (L.rep (unitsFormation K)).ρ σ (f τ) + f σ) :
     IsCocycle₁ (unitsCocycle L f) := fun σ τ => by
-  have h := congrArg (layerCoeffEquiv L) (hf σ τ)
+  have h := congrArg (L.coeffFixedPointsEquiv (unitsCoeffEquivUnitsFormation K)
+    (unitsCoeffEquivUnitsFormation_smul K)) (hf σ τ)
   rw [map_add] at h
-  exact h.trans (congrArg (· + _) (layerCoeffEquiv_ρ L σ (f τ)))
+  exact h.trans (congrArg (· + _) (L.coeffFixedPointsEquiv_ρ _ _ σ (f τ)))
 
 /-- Hilbert 90 on a finite layer `U ⧸ N` of a closed subgroup `U` of `G_K`, in the explicit form
 used by inflation. -/
@@ -390,8 +404,10 @@ theorem subsingleton_h1_unitsFormation (L : NormalLayer (AbsoluteGaloisGroup K))
   obtain ⟨m, hm⟩ := isCoboundary₁_of_isCocycle₁_quotient L.ground.toSubgroup L.ground.isClosed
     (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) (L.top.isOpen.preimage continuous_subtype_val)
     (f := unitsCocycle L f) (isCocycle₁_unitsCocycle L ((mem_cocycles₁_iff f).1 f.2))
-  refine ⟨(layerCoeffEquiv L).symm m, funext fun σ => (layerCoeffEquiv L).injective ?_⟩
-  rw [d₀₁_hom_apply, map_sub, layerCoeffEquiv_ρ, AddEquiv.apply_symm_apply]
+  let e := L.coeffFixedPointsEquiv (unitsCoeffEquivUnitsFormation K)
+    (unitsCoeffEquivUnitsFormation_smul K)
+  refine ⟨e.symm m, funext fun σ => e.injective ?_⟩
+  rw [d₀₁_hom_apply, map_sub, NormalLayer.coeffFixedPointsEquiv_ρ, AddEquiv.apply_symm_apply]
   exact hm σ
 
 end TauCeti.ClassFieldTheory

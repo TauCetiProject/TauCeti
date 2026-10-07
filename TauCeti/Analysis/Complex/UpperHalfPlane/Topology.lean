@@ -21,7 +21,7 @@ decay along the whole plane, provided it is continuous at sufficiently distant r
 
 A continuous injection of the closed upper half-plane sends every real point to the frontier of
 the image of the open half-plane.  The inversion `w ↦ -w⁻¹` preserves the closed upper
-half-plane.
+half-plane, and so transfers limits at infinity in it to limits at `0`.
 
 A function on the upper half-plane, extended to `ℂ` by `ofComplex`, is periodic with a real
 period exactly when the original function is invariant under the corresponding translation.
@@ -42,6 +42,7 @@ closed half-plane `{z | a ≤ z.re}`, and likewise for `{z | z.re < a}`; transpo
 * `TauCeti.mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero`.
 * `TauCeti.not_mem_image_upperHalfPlaneSet_of_im_eq_zero`.
 * `TauCeti.im_neg_inv_nonneg`.
+* `TauCeti.tendsto_comp_neg_inv_cobounded`.
 * `TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff`.
 * `TauCeti.UpperHalfPlane.closure_preimage_re`, `closure_setOfPred_lt_re`,
   `closure_setOfPred_re_lt`.
@@ -187,6 +188,17 @@ theorem im_neg_inv_pos {w : ℂ} : 0 < (-w⁻¹).im ↔ 0 < w.im := by
   · simp
   · have him : (-w⁻¹).im = w.im / normSq w := by simp [neg_div]
     rw [him, lt_div_iff₀ (normSq_pos.mpr hw), zero_mul]
+
+/-- `w ↦ -w⁻¹` carries the closed upper half-plane near `0` to the closed upper half-plane near
+infinity, so a limit of `f` at infinity in the closed upper half-plane is a limit of `w ↦ f (-w⁻¹)`
+at `0` in the punctured closed upper half-plane. -/
+theorem tendsto_comp_neg_inv_cobounded {α : Type*} {l : Filter α} {f : ℂ → α}
+    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) l) :
+    Tendsto (fun w => f (-w⁻¹)) (𝓝[{w : ℂ | 0 ≤ w.im} \ {0}] 0) l := by
+  refine hp.comp (tendsto_inf.mpr ⟨?_, tendsto_principal.mpr ?_⟩)
+  · exact (tendsto_neg_cobounded.comp tendsto_inv₀_nhdsNE_zero).mono_left
+      (nhdsWithin_mono _ fun w hw => hw.2)
+  · exact eventually_nhdsWithin_of_forall fun w hw => im_neg_inv_nonneg.mpr hw.1
 
 end TauCeti
 

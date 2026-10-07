@@ -84,6 +84,18 @@ theorem stableModuleFunctor_map_eq_zero_iff {X Y : FGModuleCat.{u} Aᵐᵒᵖ} (
       (ExactStructure.abelian (FGModuleCat.{u} Aᵐᵒᵖ)).isProjective _).mpr
       ⟨P, (ExactStructure.abelian_isProjective_iff P).mpr hP, i, p, rfl⟩
 
+/-- A map into `Y` vanishes in the stable module category exactly when it lifts along a given
+epimorphism `π : P ⟶ Y` from a projective module. -/
+theorem stableModuleFunctor_map_eq_zero_iff_exists_lift {X Y P : FGModuleCat.{u} Aᵐᵒᵖ}
+    [Projective P] (π : P ⟶ Y) [Epi π] (f : X ⟶ Y) :
+    (stableModuleFunctor A).map f = 0 ↔ ∃ g : X ⟶ P, g ≫ π = f := by
+  rw [stableModuleFunctor_map_eq_zero_iff]
+  constructor
+  · rintro ⟨Q, hQ, i, p, rfl⟩
+    exact ⟨i ≫ Projective.factorThru p π, by rw [Category.assoc, Projective.factorThru_comp]⟩
+  · rintro ⟨g, rfl⟩
+    exact ⟨P, inferInstance, g, π, rfl⟩
+
 /-- Two maps of finitely generated modules are equal in the stable module category exactly when
 their difference factors through a projective module. -/
 theorem stableModuleFunctor_map_eq_iff {X Y : FGModuleCat.{u} Aᵐᵒᵖ} (f g : X ⟶ Y) :

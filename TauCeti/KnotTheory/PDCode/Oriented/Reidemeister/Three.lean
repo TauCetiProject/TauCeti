@@ -80,7 +80,7 @@ def reidemeisterThree (D : OrientedPDCode n) (c : Fin 3 ↪ Fin n) : OrientedPDC
     simp only [reidemeisterThree_halfEdge, ← crossing_apply]
     rw [← crossingTurn_crossing, hturn, orientation_crossingTurn, crossing_apply]
   crossinglessComponents := D.crossinglessComponents
-  crossinglessComponents_card := by simp
+  card_crossinglessComponents := by simp
 
 variable (D : OrientedPDCode n) (c : Fin 3 ↪ Fin n)
 

@@ -23,7 +23,9 @@ cohomological pairing in complementary degrees whose perfectness is local Tate d
 
 The construction uses the internal hom and evaluation pairing from
 `TauCeti.Topology.Algebra.GroupAction.InternalHom`, rather than introducing a parallel dual.  The
-contravariant map on duals is precomposition, and evaluation is natural with respect to it.
+contravariant map on duals is precomposition, and evaluation is natural with respect to it.  When
+`n` is invertible in `F`, `μₙ` is cyclic of order `n`, hence an injective `ZMod n`-module, and
+the dual of a short exact sequence is short exact.
 
 The definitions follow the coefficient conventions of Neukirch--Schmidt--Wingberg,
 *Cohomology of Number Fields*, 2nd ed., (7.2.6), and Serre, *Galois Cohomology*, Chapter II,
@@ -38,6 +40,11 @@ The definitions follow the coefficient conventions of Neukirch--Schmidt--Wingber
 * `TauCeti.ClassFieldTheory.tateDualMap`: precomposition on Tate duals.
 * `TauCeti.ClassFieldTheory.tateDualityPairing`: evaluation cup product in complementary degrees,
   followed by a chosen local invariant on `H²(F, μₙ)`.
+
+## Main results
+
+* `TauCeti.ClassFieldTheory.tateDualMap_exact`: for `n` invertible in `F`, the Tate dual of a
+  short exact sequence is short exact.
 -/
 
 public noncomputable section
@@ -254,19 +261,22 @@ def tateDualMap {A B : GalRep n F} (f : A ⟶ B) : tateDual B ⟶ tateDual A :=
     fun g ψ => map_smul
       (InternalHom.precomp (Field.absoluteGaloisGroup F) (tateDualSourceMap f)) g ψ
 
+/-- On the `InternalHom` carriers, `tateDualMap f` is `InternalHom.precomp` along `f`. This
+mentions the carrier hidden by `tateDual`, so it is private; consumers use
+`tateDualEquiv_tateDualMap_apply`. -/
+private theorem coe_tateDualMap_hom {A B : GalRep n F} (f : A ⟶ B) :
+    ⇑(tateDualMap f).hom =
+      InternalHom.precomp (Field.absoluteGaloisGroup F) (tateDualSourceMap f) :=
+  funext fun _ => by apply ofDiscreteModuleMap_hom_apply
+
 /-- `tateDualMap f` acts by precomposition with `f`. -/
 @[simp]
 theorem tateDualEquiv_tateDualMap_apply {A B : GalRep n F} (f : A ⟶ B)
     (ψ : (tateDual B).V) (a : A.V) :
-    tateDualEquiv A ((tateDualMap f).hom ψ) a = tateDualEquiv B ψ (f.hom a) :=
-  by
-    rw [tateDualEquiv_apply, tateDualEquiv_apply]
-    have hmap : (tateDualMap f).hom ψ =
-        InternalHom.precomp (Field.absoluteGaloisGroup F) (tateDualSourceMap f) ψ := by
-      apply ofDiscreteModuleMap_hom_apply
-    rw [hmap]
-    exact congrArg (fun q : A.V →+ (muNRep n F).V => q a)
-      (InternalHom.toAddMonoidHom_precomp _ ψ)
+    tateDualEquiv A ((tateDualMap f).hom ψ) a = tateDualEquiv B ψ (f.hom a) := by
+  rw [tateDualEquiv_apply, tateDualEquiv_apply, coe_tateDualMap_hom]
+  exact congrArg (fun q : A.V →+ (muNRep n F).V => q a)
+    (InternalHom.toAddMonoidHom_precomp _ ψ)
 
 /-- Precomposition with the identity is the identity on the Tate dual. -/
 @[simp]
@@ -282,6 +292,43 @@ theorem tateDualMap_comp {A B C : GalRep n F} (f : A ⟶ B) (g : B ⟶ C) :
     AddMonoidHom.ext fun a => by
       rw [TopRep.comp_apply, tateDualEquiv_tateDualMap_apply, tateDualEquiv_tateDualMap_apply,
         tateDualEquiv_tateDualMap_apply, TopRep.comp_apply]
+
+/-! ### Exactness -/
+
+/-- **The Tate dual turns surjections into injections**: if `g` is surjective, a character of `C`
+vanishing on the image of `g` is zero. -/
+theorem tateDualMap_injective_of_surjective {B C : GalRep n F} {g : B ⟶ C}
+    (hg : Function.Surjective g.hom) : Function.Injective (tateDualMap g).hom := by
+  rw [coe_tateDualMap_hom]
+  exact InternalHom.precomp_injective hg
+
+/-- **The Tate dual is exact in the middle**: if `f, g` are exact with `g` surjective, then
+`g*, f*` are exact, a character of `B` killing the image of `f` factoring through `g`. -/
+theorem exact_tateDualMap {A B C : GalRep n F} {f : A ⟶ B} {g : B ⟶ C}
+    (hfg : Function.Exact f.hom g.hom) (hg : Function.Surjective g.hom) :
+    Function.Exact (tateDualMap g).hom (tateDualMap f).hom := by
+  rw [coe_tateDualMap_hom, coe_tateDualMap_hom]
+  exact InternalHom.exact_precomp (tateDualSourceMap f) (tateDualSourceMap g) hg hfg
+
+/-- **The Tate dual turns injections into surjections** when `n` is invertible in `F`: every
+character of `A` extends along an injection `A ⟶ B`, because `μₙ` is then an injective
+`ZMod n`-module (`baer_muNRep`). -/
+theorem tateDualMap_surjective_of_injective (hn : IsUnit (n : F)) {A B : GalRep n F} {f : A ⟶ B}
+    (hf : Function.Injective f.hom) : Function.Surjective (tateDualMap f).hom := by
+  rw [coe_tateDualMap_hom]
+  exact InternalHom.precomp_surjective_of_baer (baer_muNRep hn)
+    (fun b : B.V => by rw [← Nat.cast_smul_eq_nsmul (ZMod n), ZMod.natCast_self, zero_smul]) hf
+
+/-- **The Tate dual of a short exact sequence is short exact** when `n` is invertible in `F`: for
+`0 → A → B → C → 0` exact, `0 → C' → B' → A' → 0` is exact. -/
+theorem tateDualMap_exact (hn : IsUnit (n : F)) {A B C : GalRep n F} {f : A ⟶ B} {g : B ⟶ C}
+    (hf : Function.Injective f.hom) (hfg : Function.Exact f.hom g.hom)
+    (hg : Function.Surjective g.hom) :
+    Function.Injective (tateDualMap g).hom ∧
+      Function.Exact (tateDualMap g).hom (tateDualMap f).hom ∧
+        Function.Surjective (tateDualMap f).hom :=
+  ⟨tateDualMap_injective_of_surjective hg, exact_tateDualMap hfg hg,
+    tateDualMap_surjective_of_injective hn hf⟩
 
 /-- Evaluation is natural in the coefficient module: `⟨f* ψ, a⟩ = ⟨ψ, f a⟩`. -/
 theorem tateEvaluationPairing_tateDualMap {A B : GalRep n F} [DiscreteTopology A.V]

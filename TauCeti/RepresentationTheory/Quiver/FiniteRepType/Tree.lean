@@ -16,8 +16,7 @@ import Mathlib.Data.Fin.Tuple.Sort
 # Finite representation type of a tree quiver forces a positive definite Tits form
 
 This file proves the converse half of Gabriel's dichotomy for quivers whose underlying graph is a
-tree: such a quiver of finite representation type, if it has no pair of opposite arrows
-`a ⟶ b`, `b ⟶ a`, has a positive definite Tits form.
+tree: such a quiver of finite representation type has a positive definite Tits form.
 
 The argument is the graph-theoretic half of Gabriel's theorem. The extended Dynkin trees `D~ₘ₊₄`,
 `E₆~`, `E₇~` and `E₈~` obstruct finite representation type wherever they occur in the underlying
@@ -42,8 +41,7 @@ vertices is half the form of `2I - A` for its underlying graph
 * `SimpleGraph.IsTree.posDef_graphCartanMatrix`: a finite tree containing no copy of `D~ₘ₊₄`, `E₆~`,
   `E₇~` or `E₈~` has a positive definite matrix `2I - A`.
 * `TauCeti.IsFiniteRepType.posDef_titsForm_of_isTree`: **a quiver of finite representation type
-  whose underlying graph is a tree, and which has no pair of opposite arrows, has a positive
-  definite Tits form.**
+  whose underlying graph is a tree has a positive definite Tits form.**
 
 ## Implementation notes
 
@@ -51,11 +49,8 @@ The extended Dynkin trees are the underlying graphs of the quivers `TauCeti.Quiv
 `TauCeti.Quiver.AffineE6`, `TauCeti.Quiver.AffineE7` and `TauCeti.Quiver.AffineE8`, on which their
 infinite families of indecomposables are built, so the copies are stated for those graphs.
 
-The hypothesis excluding a pair of opposite arrows `a ⟶ b`, `b ⟶ a` is the only one not implied
-by finite representation type through the obstructions used here: loops and parallel arrows are
-excluded by `TauCeti.IsFiniteRepType.isEmpty_hom_self` and
-`TauCeti.IsFiniteRepType.subsingleton_hom`, while a pair of opposite arrows is the cyclically
-oriented `Ã₁`, a cycle of length two which the simple underlying graph records as a single edge.
+Loops, parallel arrows and opposite arrows are excluded by the obstruction theorems in
+`TauCeti.RepresentationTheory.Quiver.FiniteRepType.Obstructions`.
 
 ## References
 
@@ -352,8 +347,8 @@ section Quiver
 variable {k : Type u} [Field k] {Q : Type v} [_root_.Quiver.{w} Q]
 
 /-- **Finite representation type of a tree quiver forces a positive definite Tits form.** A finite
-quiver of finite representation type whose underlying graph is a tree, and which has no pair of
-opposite arrows `a ⟶ b`, `b ⟶ a`, has a positive definite Tits form.
+quiver of finite representation type whose underlying graph is a tree has a positive definite
+Tits form.
 
 This is the converse of `TauCeti.isFiniteRepType_of_titsForm_posDef` for such quivers. The
 underlying graph contains none of the extended Dynkin trees, which obstruct finite representation
@@ -362,10 +357,9 @@ form is the form of the matrix `2I - A` of the underlying graph
 (`TauCeti.titsForm_posDef_iff_posDef_graphCartanMatrix`). -/
 theorem IsFiniteRepType.posDef_titsForm_of_isTree [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)]
     (h : IsFiniteRepType.{u, v, w, u} k Q)
-    (hopp : ∀ ⦃a b : Q⦄, a ≠ b → (a ⟶ b) → IsEmpty (b ⟶ a))
     (htree : (underlyingGraph Q).IsTree) : (titsForm Q).PosDef := by
   classical
-  rw [titsForm_posDef_iff_posDef_graphCartanMatrix Q (h.card_hom_add_card_hom_le_one hopp)]
+  rw [titsForm_posDef_iff_posDef_graphCartanMatrix Q (h.card_hom_add_card_hom_le_one)]
   exact htree.posDef_graphCartanMatrix
     (fun m ⟨f⟩ ↦ not_isFiniteRepType_of_copy_affineD m f h)
     (fun ⟨f⟩ ↦ not_isFiniteRepType_of_copy_affineE6 f h)

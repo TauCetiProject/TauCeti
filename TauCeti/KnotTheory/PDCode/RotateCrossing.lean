@@ -246,7 +246,7 @@ def rotateCrossing (D : OrientedPDCode n) (i : Fin n) : OrientedPDCode n where
       simp [oppositeCrossingSlot_add_one]
     · simp [hj]
   crossinglessComponents := D.crossinglessComponents
-  crossinglessComponents_card := D.crossinglessComponents_card
+  card_crossinglessComponents := D.card_crossinglessComponents
 
 section RotateCrossing
 

@@ -21,6 +21,8 @@ Mathlib's `Subgroup.subtype` and `QuotientGroup.mk'` are bare `MonoidHom`s, and 
 packages those maps for a topological group and the subspace and quotient topologies. It also
 provides inverse conjugation `n ↦ g⁻¹ * n * g` on a normal subgroup, together with its evaluation,
 identity, and composition laws, and the continuous lift through a quotient by a normal subgroup.
+Named compatibility proofs describe subgroup inclusions and composition of scalar/coefficient maps
+for pullbacks of cochains; composition uses Mathlib's semiconjugacy API.
 A homomorphism from a topological group with open kernel is also continuous, for every topology
 on the target. The projections of a product of topological monoids onto its factors are
 packaged as `ContinuousMonoidHom.proj`, next to Mathlib's `ContinuousMonoidHom.fst` and
@@ -42,6 +44,24 @@ public section
 namespace TauCeti
 
 variable {G : Type*} [Group G] [TopologicalSpace G]
+
+/-- A continuous homomorphism from a compact monoid to a discrete torsion-free left-cancellative
+monoid is trivial:
+its image is finite, hence consists of finite-order elements. -/
+@[to_additive /-- A continuous additive homomorphism from a compact additive monoid to a discrete
+torsion-free left-cancellative additive monoid is zero: its image is finite. -/]
+theorem _root_.ContinuousMonoidHom.eq_one_of_isMulTorsionFree
+    {A B : Type*} [Monoid A] [TopologicalSpace A] [CompactSpace A]
+    [LeftCancelMonoid B] [TopologicalSpace B] [DiscreteTopology B] [IsMulTorsionFree B]
+    (f : A →ₜ* B) : f = 1 := by
+  ext a
+  by_contra ha
+  have hfin : (Set.range fun k : ℕ ↦ f a ^ k).Finite :=
+    (isCompact_range f.continuous).finite_of_discrete.subset <| by
+      rintro _ ⟨k, rfl⟩
+      exact ⟨a ^ k, map_pow f a k⟩
+  exact (Set.infinite_range_of_injective
+    (injective_pow_iff_not_isOfFinOrder.2 (not_isOfFinOrder_of_isMulTorsionFree ha))) hfin
 
 /-- A continuous homomorphism into a commutative topological group has finite order exactly when
 all its values have a common positive exponent equal to one. -/
@@ -119,6 +139,20 @@ theorem _root_.MonoidHom.isClosed_range_of_continuous [CompactSpace G] {H : Type
   exact (isCompact_range hf).isClosed
 
 namespace ContinuousMonoidHom
+
+/-- Compatible coefficient maps compose along continuous scalar homomorphisms. This supplies the
+compatibility hypothesis of the composite pair `(φ.comp ψ, q.comp f)` in cochain pullbacks. -/
+theorem _root_.ContinuousMonoidHom.comp_map_smul
+    {A B C M N P : Type*} [Monoid A] [Monoid B] [Monoid C]
+    [TopologicalSpace A] [TopologicalSpace B] [TopologicalSpace C]
+    [AddZero M] [AddZero N] [AddZero P]
+    [SMul A M] [SMul B N] [SMul C P]
+    (φ : B →ₜ* A) (ψ : C →ₜ* B) (f : M →+ N) (q : N →+ P)
+    (hf : ∀ b m, f (φ b • m) = b • f m)
+    (hq : ∀ c n, q (ψ c • n) = c • q n) (c : C) (m : M) :
+    (q.comp f) ((φ.comp ψ) c • m) = c • (q.comp f) m := by
+  simpa only [AddMonoidHom.comp_apply, ContinuousMonoidHom.coe_comp, Function.comp_apply]
+    using Function.Semiconj.trans (hf (ψ c)) (hq c) m
 
 /-- Evaluating a continuous homomorphism assembled from a homomorphism and a continuity proof. -/
 @[simp]
@@ -210,6 +244,12 @@ theorem coe_subgroupSubtype (S : Subgroup G) : (subgroupSubtype S : S →* G) = 
 @[simp]
 theorem subgroupSubtype_apply (S : Subgroup G) (s : S) : subgroupSubtype S s = (s : G) :=
   (rfl)
+
+/-- The identity coefficient map is compatible with the continuous inclusion of a subgroup. -/
+theorem id_subgroupSubtype_smul (M : Type*) [AddZero M] [SMul G M]
+    (S : Subgroup G) (s : S) (m : M) :
+    (AddMonoidHom.id M) (subgroupSubtype S s • m) = s • (AddMonoidHom.id M) m :=
+  rfl
 
 /-- The inclusion of a subgroup into a larger subgroup, both carrying the subspace topology, as a
 continuous homomorphism. -/

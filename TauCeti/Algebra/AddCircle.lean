@@ -68,7 +68,8 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
   exhaust it (`AddCircle.exists_mem_torsionBy_rat`).
 * `ZMod.toRatAddCircle` and `ZMod.toRatAddCircle_range`: the homomorphism from `ℤ/n` to `ℚ/ℤ`
   sending the class of an integer `k` to the class of `k / n`; for nonzero `n`, it is an
-  injection onto the `n`-torsion.
+  injection onto the `n`-torsion, so every element killed by `n` lies in its image
+  (`ZMod.exists_toRatAddCircle_eq_of_nsmul_eq_zero`).
 
 ## References
 
@@ -507,5 +508,14 @@ theorem toRatAddCircle_range [NeZero n] :
     rw [toRatAddCircle_intCast, ← hk, ← AddCircle.coe_zsmul, zsmul_eq_mul]
     congr 1
     ring
+
+/-- For a nonzero modulus, every element of `ℚ/ℤ` killed by `n` is the image of a residue
+class under the rational-circle character of `ℤ/n`. -/
+theorem exists_toRatAddCircle_eq_of_nsmul_eq_zero [NeZero n] {v : AddCircle (1 : ℚ)}
+    (hv : n • v = 0) : ∃ a : ZMod n, toRatAddCircle n a = v := by
+  have hmem : v ∈ (toRatAddCircle n).range := by
+    rw [toRatAddCircle_range, AddSubgroup.torsionBy.nsmul_iff]
+    exact hv
+  exact AddMonoidHom.mem_range.mp hmem
 
 end ZMod

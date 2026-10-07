@@ -66,6 +66,8 @@ infrastructure independent of the diamond operators.
   `CongruenceSubgroup.isUnit_intCast_apply_zero_zero_add_natCast_mul_apply_one_zero_of_mem_Gamma0`:
   shearing the first column by a natural-number multiple of the lower-left entry changes nothing
   modulo the level, so the sheared entry is a unit too.
+* `CongruenceSubgroup.mem_Gamma1_iff_toHomUnits_eq_one`: inside `Γ₀(N)`, `Γ₁(N)` is the kernel of
+  the unit-valued lower-right entry.
 * `CongruenceSubgroup.Gamma0_normalizes_Gamma1` and
   `CongruenceSubgroup.Gamma0_le_normalizer_Gamma1`: conjugation by `Γ₀(N)` preserves `Γ₁(N)`.
 * `CongruenceSubgroup.Gamma1_map_le_Gamma0_map`: the inclusion `Γ₁(N) ≤ Γ₀(N)` after mapping to
@@ -337,6 +339,13 @@ definitional step out of the `simp` sets that consume it, and gives downstream f
 rewrite with instead of unfolding the definition. -/
 theorem Gamma0Map_apply (g : ↥(Gamma0 N)) :
     Gamma0Map N g = (((g : Matrix (Fin 2) (Fin 2) ℤ) 1 1 : ℤ) : ZMod N) := (rfl)
+
+/-- **An element of `Γ₀(N)` lies in `Γ₁(N)` exactly when its diamond label is `1`**:
+`mem_Gamma1_iff` read through the unit-valued lower-right entry `(Gamma0Map N).toHomUnits`. -/
+theorem mem_Gamma1_iff_toHomUnits_eq_one (g : ↥(Gamma0 N)) :
+    (g : SL(2, ℤ)) ∈ Gamma1 N ↔ (Gamma0Map N).toHomUnits g = 1 := by
+  rw [mem_Gamma1_iff, Units.ext_iff, MonoidHom.coe_toHomUnits, Gamma0Map_apply, Units.val_one]
+  exact and_iff_right g.2
 
 /-- `(Gamma0Map N).toHomUnits` is surjective: every unit `u ∈ (ZMod N)ˣ` is realized as the
 lower-right entry of some `g ∈ Gamma0 N`, by strong approximation for `SL₂`. -/

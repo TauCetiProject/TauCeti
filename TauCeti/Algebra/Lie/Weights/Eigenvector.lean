@@ -12,23 +12,34 @@ public import Mathlib.Algebra.Lie.Weights.Killing
 
 Let `H` be a subalgebra of a Lie algebra `L` acting on a module `M`. A vector `v` on which every
 element of `H` acts by a scalar is a **simultaneous eigenvector**, its eigenvalue being the
-function `chi : H → R` that records those scalars. This file collects two facts about such a vector.
+function `chi : H → R` that records those scalars. This file collects facts about such a vector.
 When `H` is nilpotent, it lies in the generalized weight space of its eigenvalue. And applying to
 it an eigenvector `f` of the adjoint action shifts its eigenvalue by that of `f`, once per
-application; this second fact is one element of `L` at a time, so it needs no subalgebra at all.
+application; this second fact is stated both for the whole subalgebra `H`, as a statement about
+weight spaces, and for one element of `L` at a time, where it needs no subalgebra at all.
 
-Both are stated over a commutative ring; the weight-space result assumes the subalgebra is
-nilpotent. The Cartan subalgebra of a Lie algebra with non-degenerate Killing form, where the
-eigenvalue of `f` is a root, is the case the weight theory uses, and
+Both are stated over a commutative ring; only the generalized-weight-space result,
+`TauCeti.mem_genWeightSpace_of_forall_lie_eq_smul`, assumes the subalgebra is nilpotent. The
+Cartan subalgebra of a Lie algebra with non-degenerate Killing form, where the eigenvalue of `f`
+is a root, is the case the weight theory uses, and
 `TauCeti.lie_pow_toEnd_eq_smul_of_mem_rootSpace` records it.
+
+Dually, a linear functional on which an element acts by a scalar detects weights: over an
+integral domain it can be nonzero on a generalized weight vector only if that scalar is the value
+of the weight. This is how a weight is read off a coordinate of a vector in an explicit model.
 
 ## Main results
 
 * `TauCeti.mem_genWeightSpace_of_forall_lie_eq_smul`: a simultaneous eigenvector of `H` lies in the
   generalized weight space of its eigenvalue, at nilpotency index one.
+* `TauCeti.lie_mem_weightSpace_of_mem_weightSpace`: if `H` acts on `f` by `psi` under the adjoint
+  action, then `f` carries the weight space of `chi` into that of `psi + chi`.
 * `TauCeti.lie_pow_toEnd_eq_smul`: for a single `x : L`, applying an `x`-eigenvector `f` of
   eigenvalue `c` to an `x`-eigenvector of eigenvalue `a`, `k` times, gives an `x`-eigenvector of
   eigenvalue `a + k c`.
+* `TauCeti.apply_eq_of_mem_genWeightSpace`: dually, a linear functional on which `x` acts by the
+  scalar `c` and which does not vanish on a generalized weight vector of weight `chi` forces
+  `chi x = c`.
 * `TauCeti.lie_pow_toEnd_eq_smul_of_mem_rootSpace`: the specialization of the shift to a vector of
   the root space of `psi`, which is an adjoint eigenvector of weight `psi` by
   `LieAlgebra.IsKilling.lie_eq_smul_of_mem_rootSpace`.
@@ -64,6 +75,18 @@ theorem mem_genWeightSpace_of_forall_lie_eq_smul {chi : H → R} {v : M}
     rw [LieSubalgebra.coe_bracket_of_module]
     exact hv x
 
+/-- **Applying an adjoint eigenvector shifts the weight.** If `H` acts on `f` through `psi` under
+the adjoint action and `v` lies in the weight space of `chi`, then `⁅f, v⁆` lies in the weight space
+of `psi + chi`. -/
+theorem lie_mem_weightSpace_of_mem_weightSpace {f : L} {psi : H → R}
+    (hf : ∀ x : H, ⁅(x : L), f⁆ = psi x • f) {chi : H → R} {v : M}
+    (hv : v ∈ weightSpace M chi) : ⁅f, v⁆ ∈ weightSpace M (psi + chi) := by
+  rw [mem_weightSpace] at hv ⊢
+  intro x
+  have hvx := hv x
+  simp only [LieSubalgebra.coe_bracket_of_module] at hvx ⊢
+  rw [leibniz_lie, hf, hvx, smul_lie, lie_smul, Pi.add_apply, add_smul]
+
 /-- **Applying an adjoint eigenvector shifts the eigenvalue.** If `x` acts on `v` by `a` and `f`
 is an eigenvector of `ad x` of eigenvalue `c`, then `x` acts on `fᵏ v` by `a + k c`.
 
@@ -85,6 +108,33 @@ theorem lie_pow_toEnd_eq_smul {x f : L} {a c : R} {v : M} (hv : ⁅x, v⁆ = a �
       ring
 
 end CommRing
+
+section Domain
+
+variable {R : Type u} {L : Type v} [CommRing R] [IsDomain R] [LieRing L] [LieAlgebra R L]
+  [LieRing.IsNilpotent L] {M : Type w} [AddCommGroup M] [Module R M] [LieRingModule L M]
+  [LieModule R L M]
+
+/-- **A linear functional that is an eigenvector of the dual action reads off a generalized
+weight.** If `φ ⁅x, m⁆ = c * φ m` for every `m` and `v` lies in the generalized weight space of
+`chi`, then `φ v` is killed by a power of `c - chi x`; so `chi x = c` as soon as `φ v ≠ 0`. -/
+theorem apply_eq_of_mem_genWeightSpace {chi : L → R} {v : M} (hv : v ∈ genWeightSpace M chi)
+    (x : L) (φ : M →ₗ[R] R) {c : R} (hφ : ∀ m, φ ⁅x, m⁆ = c * φ m) (hv0 : φ v ≠ 0) :
+    chi x = c := by
+  obtain ⟨k, hk⟩ := (mem_genWeightSpace M chi v).mp hv x
+  have key : ∀ n : ℕ, φ (((toEnd R L M x - chi x • 1) ^ n) v) = (c - chi x) ^ n * φ v := by
+    intro n
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      rw [pow_succ', Module.End.mul_apply, LinearMap.sub_apply, map_sub, toEnd_apply_apply, hφ,
+        LinearMap.smul_apply, Module.End.one_apply, map_smul, ih, smul_eq_mul]
+      ring
+  have h0 := key k
+  rw [hk, map_zero, eq_comm, mul_eq_zero] at h0
+  exact (sub_eq_zero.mp (pow_eq_zero_iff'.mp (h0.resolve_right hv0)).1).symm
+
+end Domain
 
 section Killing
 

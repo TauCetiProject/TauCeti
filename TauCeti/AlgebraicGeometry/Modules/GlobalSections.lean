@@ -19,7 +19,7 @@ action is carried along a morphism of schemes `f : X ⟶ Y`: pushing forward mul
 action to the base ring for a scheme over a commutative ring, and the morphism
 `Scheme.baseRingToStructurePresheaf` from the constant presheaf of the base ring to the structure
 presheaf. Pullback of local functions by a morphism over the base preserves these images
-(`TauCeti.AlgebraicGeometry.Scheme.Modules.app_baseRingToStructurePresheaf`).
+(`AlgebraicGeometry.Scheme.Modules.app_baseRingToStructurePresheaf`).
 
 These constructions are independent of sheaf cohomology. They supply the scalar actions used by
 `TauCeti.AlgebraicGeometry.Cohomology.Module.Basic`.
@@ -29,15 +29,11 @@ public section
 
 open CategoryTheory Limits TopologicalSpace AlgebraicGeometry Scheme.Modules Opposite
 
-namespace TauCeti
-
-namespace AlgebraicGeometry
-
 universe u
 
 noncomputable section
 
-namespace Scheme.Modules
+namespace AlgebraicGeometry.Scheme.Modules
 
 variable {X : Scheme.{u}} {M N : X.Modules}
 
@@ -47,7 +43,7 @@ private def restrictGlobal (U : X.Opens) (r : Γ(X, ⊤)) :
   X.presheaf.map (homOfLE le_top).op r
 
 /-- Multiplication by a global function, as a morphism of sheaves of modules. -/
-def _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsSmul
+def globalSectionsSmul
     (M : X.Modules) (r : Γ(X, ⊤)) : M ⟶ M where
   val.app U := by
     letI : CommRing (X.ringCatSheaf.obj.obj U) :=
@@ -74,7 +70,7 @@ def _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsSmul
     congr
 
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsSmul_app
+lemma globalSectionsSmul_app
     (M : X.Modules) (r : Γ(X, ⊤)) (U : X.Opens) :
     (globalSectionsSmul M r).app U = M.smul (X.presheaf.map U.leTop.op r) := by
   rfl
@@ -83,14 +79,14 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsSmul_app
 -- The wrappers have no pointwise equality lemmas, so each `change` records the corresponding
 -- public presheaf/module formulation before applying the ring and module laws.
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsSmul_zero
+lemma globalSectionsSmul_zero
     (M : X.Modules) : globalSectionsSmul M 0 = 0 := by
   ext U x
   change X.presheaf.map U.leTop.op 0 • x = 0
   simp
 
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsSmul_add
+lemma globalSectionsSmul_add
     (M : X.Modules) (r s : Γ(X, ⊤)) :
     globalSectionsSmul M (r + s) = globalSectionsSmul M r + globalSectionsSmul M s := by
   ext U x
@@ -100,14 +96,14 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsSmul_add
   simp [add_smul]
 
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsSmul_one
+lemma globalSectionsSmul_one
     (M : X.Modules) : globalSectionsSmul M 1 = 𝟙 M := by
   ext U x
   change X.presheaf.map U.leTop.op 1 • x = x
   simp
 
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsSmul_mul
+lemma globalSectionsSmul_mul
     (M : X.Modules) (r s : Γ(X, ⊤)) :
     globalSectionsSmul M (r * s) = globalSectionsSmul M s ≫ globalSectionsSmul M r := by
   ext U x
@@ -118,7 +114,7 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsSmul_mul
 
 /-- Multiplication by a global unit is an isomorphism, with inverse multiplication by the inverse
 unit. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.isIso_globalSectionsSmul_units
+instance isIso_globalSectionsSmul_units
     (M : X.Modules) (u : Γ(X, ⊤)ˣ) : IsIso (globalSectionsSmul M u) :=
   ⟨globalSectionsSmul M ↑u⁻¹,
     by rw [← globalSectionsSmul_mul, Units.inv_mul, globalSectionsSmul_one],
@@ -126,7 +122,7 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isIso_globalSectionsSmul_units
 
 /-- The action of global functions on a sheaf of modules, bundled as a ring homomorphism into
 the endomorphism ring of the sheaf. -/
-def _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsAction
+def globalSectionsAction
     (M : X.Modules) : Γ(X, ⊤) →+* End M where
   toFun := globalSectionsSmul M
   map_one' := globalSectionsSmul_one M
@@ -137,14 +133,14 @@ def _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsAction
   map_add' := globalSectionsSmul_add M
 
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsAction_apply
+lemma globalSectionsAction_apply
     (M : X.Modules) (r : Γ(X, ⊤)) :
     globalSectionsAction M r = globalSectionsSmul M r :=
   by rfl
 
 /-- Multiplication by a global function is natural in the sheaf of modules. -/
 @[reassoc]
-lemma _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsSmul_naturality
+lemma globalSectionsSmul_naturality
     (f : M ⟶ N) (r : Γ(X, ⊤)) :
     globalSectionsSmul M r ≫ f = f ≫ globalSectionsSmul N r := by
   ext U x
@@ -160,11 +156,11 @@ variable {Y : Scheme.{u}} (f : X ⟶ Y)
 /-- Pushing forward multiplication by the pullback `f^♯ r` of a global function `r` on `Y` gives
 multiplication by `r` on the pushforward. -/
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Modules.pushforward_map_globalSectionsSmul
+lemma pushforward_map_globalSectionsSmul
     (N : X.Modules) (r : Γ(Y, ⊤)) :
     (pushforward f).map (globalSectionsSmul N (f.appTop r)) =
       globalSectionsSmul ((pushforward f).obj N) r := by
-  refine _root_.AlgebraicGeometry.Scheme.Modules.hom_ext _ _ fun U ↦ ?_
+  refine hom_ext _ _ fun U ↦ ?_
   rw [pushforward_map_app, globalSectionsSmul_app, globalSectionsSmul_app]
   -- The sections of the pushforward over `U` are the sections of `N` over `f ⁻¹ᵁ U`, with scalars
   -- restricted along `f.app U`; no lemma exposes this, so record it explicitly.
@@ -177,42 +173,50 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.pushforward_map_globalSectionsSmul
 /-- Pulling back multiplication by a global function `r` on `Y` gives multiplication by the
 pullback `f^♯ r` of `r` on the pullback. -/
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Modules.pullback_map_globalSectionsSmul
+lemma pullback_map_globalSectionsSmul
     (M : Y.Modules) (r : Γ(Y, ⊤)) :
-    (Scheme.Modules.pullback f).map (globalSectionsSmul M r) =
-      globalSectionsSmul ((Scheme.Modules.pullback f).obj M) (f.appTop r) := by
+    (pullback f).map (globalSectionsSmul M r) =
+      globalSectionsSmul ((pullback f).obj M) (f.appTop r) := by
   -- Both sides are determined by their adjuncts `M ⟶ f_* f^* M`, which agree by naturality of
   -- the unit and of the global-functions action.
   apply ((pullbackPushforwardAdjunction f).homEquiv M
-    ((Scheme.Modules.pullback f).obj M)).injective
+    ((pullback f).obj M)).injective
   simp only [Adjunction.homEquiv_apply, pushforward_map_globalSectionsSmul]
   exact ((pullbackPushforwardAdjunction f).unit.naturality (globalSectionsSmul M r)).symm.trans
     (globalSectionsSmul_naturality ((pullbackPushforwardAdjunction f).unit.app M) r)
 
 end Functoriality
 
+end AlgebraicGeometry.Scheme.Modules
+
 section Base
 
 variable (R : Type u) [CommRing R] (X : Scheme.{u}) [X.Over (Spec (.of R))]
 
+namespace AlgebraicGeometry.Scheme.Modules
+
 /-- The homomorphism from the base ring to global functions on a scheme over that ring. -/
-def _root_.AlgebraicGeometry.Scheme.Modules.baseRingToGlobalSections : R →+* Γ(X, ⊤) :=
+def baseRingToGlobalSections : R →+* Γ(X, ⊤) :=
   ((Scheme.ΓSpecIso (.of R)).inv ≫ (X ↘ Spec (.of R)).appTop).hom
 
 /-- The base ring acts through the pullback along the structure morphism: `r` is sent to the
 global function obtained by pulling back the function on `Spec R` corresponding to `r`. -/
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Modules.baseRingToGlobalSections_apply (r : R) :
+lemma baseRingToGlobalSections_apply (r : R) :
     baseRingToGlobalSections R X r =
       (X ↘ Spec (.of R)).appTop ((Scheme.ΓSpecIso (.of R)).inv r) :=
   (rfl)
 
+end AlgebraicGeometry.Scheme.Modules
+
+namespace AlgebraicGeometry.Scheme
+
 /-- The morphism from the constant presheaf of rings `R` to the structure presheaf of a scheme
 over `R`: on an open `U` it is the base ring map to global functions followed by restriction
 to `U`. -/
-def _root_.AlgebraicGeometry.Scheme.baseRingToStructurePresheaf :
+def baseRingToStructurePresheaf :
     (Functor.const X.Opensᵒᵖ).obj (CommRingCat.of R) ⟶ X.presheaf where
-  app U := CommRingCat.ofHom (Scheme.Modules.baseRingToGlobalSections R X) ≫
+  app U := CommRingCat.ofHom (Modules.baseRingToGlobalSections R X) ≫
     X.presheaf.map U.unop.leTop.op
   naturality U V i := by
     simp only [Functor.const_obj_obj, Functor.const_obj_map, Category.id_comp, Category.assoc,
@@ -222,23 +226,27 @@ def _root_.AlgebraicGeometry.Scheme.baseRingToStructurePresheaf :
 /-- On an open `U`, the base ring maps to sections over `U` through global functions followed by
 restriction to `U`. -/
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.baseRingToStructurePresheaf_app (U : X.Opensᵒᵖ) :
+lemma baseRingToStructurePresheaf_app (U : X.Opensᵒᵖ) :
     (X.baseRingToStructurePresheaf R).app U =
-      CommRingCat.ofHom (Scheme.Modules.baseRingToGlobalSections R X) ≫
+      CommRingCat.ofHom (Modules.baseRingToGlobalSections R X) ≫
         X.presheaf.map U.unop.leTop.op :=
   (rfl)
 
 /-- On an open `U`, the base-ring map `R → Γ(X, U)` is the composite of `R ≅ Γ(Spec R, ⊤)` with
 the map on functions induced by the structure morphism. -/
-lemma _root_.AlgebraicGeometry.Scheme.baseRingToStructurePresheaf_app_eq_appLE (U : X.Opens) :
+lemma baseRingToStructurePresheaf_app_eq_appLE (U : X.Opens) :
     (X.baseRingToStructurePresheaf R).app (op U) =
       (Scheme.ΓSpecIso (.of R)).inv ≫ (X ↘ Spec (.of R)).appLE ⊤ U le_top := by
   ext r
-  rw [Scheme.baseRingToStructurePresheaf_app, CommRingCat.comp_apply, CommRingCat.comp_apply,
-    CommRingCat.ofHom_apply, Scheme.Modules.baseRingToGlobalSections_apply]
+  rw [baseRingToStructurePresheaf_app, CommRingCat.comp_apply, CommRingCat.comp_apply,
+    CommRingCat.ofHom_apply, Modules.baseRingToGlobalSections_apply]
   -- Both sides restrict the pullback of `r` from `⊤` to `U`; `appLE ⊤ U` is by definition
   -- `app ⊤` followed by that restriction.
   rfl
+
+end AlgebraicGeometry.Scheme
+
+namespace AlgebraicGeometry.Scheme.Modules
 
 variable {X} in
 /-- Pullback of local functions along a morphism over `Spec R` preserves the image of the
@@ -249,35 +257,31 @@ lemma app_baseRingToStructurePresheaf {Y : Scheme.{u}} [Y.Over (Spec (.of R))]
       (X.baseRingToStructurePresheaf R).app (op (f ⁻¹ᵁ U)) r := by
   rw [Scheme.baseRingToStructurePresheaf_app, Scheme.baseRingToStructurePresheaf_app]
   -- The maps obtained from `CommRingCat.ofHom` compute through their bundled ring homs.
-  change f.app U (Y.presheaf.map U.leTop.op (Scheme.Modules.baseRingToGlobalSections R Y r)) =
-    X.presheaf.map (f ⁻¹ᵁ U).leTop.op (Scheme.Modules.baseRingToGlobalSections R X r)
+  change f.app U (Y.presheaf.map U.leTop.op (baseRingToGlobalSections R Y r)) =
+    X.presheaf.map (f ⁻¹ᵁ U).leTop.op (baseRingToGlobalSections R X r)
   rw [← ConcreteCategory.comp_apply, f.naturality U.leTop.op]
   have h := congrArg Scheme.Hom.appTop
     (HomIsOver.comp_over (f := f) (S := Spec (.of R)))
   rw [Scheme.Hom.comp_appTop] at h
-  rw [ConcreteCategory.comp_apply, Scheme.Modules.baseRingToGlobalSections_apply,
-    Scheme.Modules.baseRingToGlobalSections_apply, ← h, ConcreteCategory.comp_apply]
+  rw [ConcreteCategory.comp_apply, baseRingToGlobalSections_apply,
+    baseRingToGlobalSections_apply, ← h, ConcreteCategory.comp_apply]
   rfl
 
 /-- Global sections of a sheaf of modules on a scheme over a commutative ring form a module over
 the base ring. The priority is below the default so that the canonical action of
 `Γ(X, ⊤)` is still the one found when the base ring is the ring of global functions itself. -/
-instance (priority := 900) _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsBaseModule
+instance (priority := 900) globalSectionsBaseModule
     (M : X.Modules) : Module R Γ(M, ⊤) :=
   Module.compHom Γ(M, ⊤) (baseRingToGlobalSections R X)
 
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Modules.base_smul_globalSections
+lemma base_smul_globalSections
     (M : X.Modules) (r : R) (x : Γ(M, ⊤)) :
     r • x = baseRingToGlobalSections R X r • x :=
   rfl
 
+end AlgebraicGeometry.Scheme.Modules
+
 end Base
 
-end Scheme.Modules
-
 end
-
-end AlgebraicGeometry
-
-end TauCeti

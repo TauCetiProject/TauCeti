@@ -38,7 +38,7 @@ transpose, so the resulting map is continuous for the induced topology.
 
 public section
 
-open Matrix
+open Matrix QuadraticMap
 
 namespace TauCeti
 

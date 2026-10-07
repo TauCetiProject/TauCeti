@@ -44,6 +44,8 @@ and `mem_Z2_of_incl_comp_mem_Z2` are what put it back into the continuous cocycl
 * `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta0_surjective_of_subsingleton` and
   `explicitDelta1_bijective_of_subsingleton`: when `H¹(G, B)` and `H²(G, B)` vanish, `δ⁰` is onto
   and `δ¹` is bijective.
+* `TauCeti.ContCohomology.DiscreteShortExact.explicitCoeff0_surjective_of_subsingleton`: when
+  `H¹(G, A)` vanishes, `H⁰(G, B) → H⁰(G, C)` is onto.
 
 The maps and their normalization are those of
 `TauCeti/RepresentationTheory/Homological/ContCohomology/LowDegree.lean`,
@@ -592,6 +594,30 @@ theorem explicitDelta1_bijective_of_subsingleton [ContinuousMul G] [ContinuousSM
     rwa [← S.explicitLongExact_H2A] at hx
 
 end AcyclicMiddle
+
+/-! ### An acyclic first term
+
+When `A` has vanishing `H¹`, the connecting map `δ⁰` is zero, so taking invariants is exact on the
+right: every invariant of `C` is the image of an invariant of `B`. -/
+
+section AcyclicLeft
+
+variable {G : Type u} [Group G] [TopologicalSpace G]
+  {A : Type vA} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
+    [DistribMulAction G A] [ContinuousSMul G A]
+  {B : Type vB} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B]
+    [DistribMulAction G B] [ContinuousSMul G B]
+  {C : Type vC} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C]
+    [DistribMulAction G C]
+  (S : DiscreteShortExact G A B C)
+
+/-- If the first term has vanishing `H¹`, then `H⁰(G, B) → H⁰(G, C)` is surjective. -/
+theorem explicitCoeff0_surjective_of_subsingleton [Subsingleton (H1 G A)] :
+    Function.Surjective (explicitCoeff0 G B S.projDistribMulActionHom) := fun c => by
+  have hc : c ∈ S.explicitDelta0.ker := Subsingleton.elim _ _
+  rwa [← S.explicitLongExact_H0C] at hc
+
+end AcyclicLeft
 
 end DiscreteShortExact
 

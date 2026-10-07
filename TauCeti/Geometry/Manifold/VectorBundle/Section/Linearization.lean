@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
-public import TauCeti.Analysis.Fredholm.Index
+public import TauCeti.Analysis.Fredholm.Basic
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 
 import TauCeti.Geometry.Manifold.MFDeriv.ContinuousLinearMap
 
@@ -166,6 +167,18 @@ theorem surjective_sectionLinearization_iff
   rw [sectionLinearization_eq_symmL_comp hb he hs hzero,
     ← e.symm_continuousLinearEquivAt_eq' he]
   exact Function.Surjective.of_comp_iff' (e.continuousLinearEquivAt 𝕜 (b x) he).symm.bijective _
+
+/-- At a zero, the intrinsic linearization has the same kernel as the derivative of any
+differentiable fiber-coordinate expression. -/
+theorem ker_sectionLinearization
+    (hb : ContinuousAt b x) (he : b x ∈ e.baseSet)
+    (hs : MDifferentiableAt IM 𝓘(𝕜, F) (fun y ↦ (e ⟨b y, s y⟩).2) x) (hzero : s x = 0) :
+    (sectionLinearization (F := F) IM b s x).ker =
+      (mvfderiv IM (fun y ↦ (e ⟨b y, s y⟩).2) x).ker := by
+  rw [sectionLinearization_eq_symmL_comp hb he hs hzero,
+    ← e.symm_continuousLinearEquivAt_eq' he]
+  ext v
+  simp
 
 /-- At a zero, the intrinsic linearization and any differentiable fiber-coordinate
 expression have the same Fredholm index. -/

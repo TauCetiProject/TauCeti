@@ -14,7 +14,9 @@ public import Mathlib.AlgebraicGeometry.Pullbacks
 
 This file identifies the closed subscheme of an ideal sheaf pulled back along a fibre-product
 projection with the corresponding base change. It also records the resulting preservation of
-flatness for the closed subscheme.
+flatness for the closed subscheme, and the affine-local form of that flatness: over affine opens
+`W ⊆ S` and `U ⊆ f⁻¹ W`, the quotient `Γ(X, U) ⧸ I(U)` is flat over `Γ(S, W)`
+(`flat_appLE_comp_ofHom_quotient_mk`).
 -/
 
 public section
@@ -69,5 +71,17 @@ theorem flat_comap_subschemeι_comp_snd (I : X.IdealSheafData) (f : X ⟶ S)
     Flat ((I.comap (pullback.fst f g)).subschemeι ≫ pullback.snd f g) := by
   rw [← comapPullbackFstIso_hom_snd]
   infer_instance
+
+/-- If the closed subscheme of `I` is flat over `S`, then over an affine open `W` of `S`, the
+quotient `Γ(X, U) ⧸ I(U)` is flat over `Γ(S, W)` for every affine open `U ⊆ f⁻¹ W`. -/
+theorem flat_appLE_comp_ofHom_quotient_mk (I : X.IdealSheafData) (f : X ⟶ S)
+    [Flat (I.subschemeι ≫ f)] {W : S.Opens} (hW : IsAffineOpen W) (U : X.affineOpens)
+    (hUW : U.1 ≤ f ⁻¹ᵁ W) :
+    (f.appLE W U hUW ≫ CommRingCat.ofHom (Ideal.Quotient.mk (I.ideal U))).hom.Flat := by
+  have h := (I.subschemeι ≫ f).flat_appLE hW (U.2.preimage I.subschemeι)
+    ((Scheme.Hom.preimage_mono _ hUW).trans_eq rfl)
+  rw [← Scheme.Hom.appLE_comp_appLE I.subschemeι f W U.1 _ hUW le_rfl,
+    ← Scheme.Hom.app_eq_appLE, subschemeι_app, ← Category.assoc] at h
+  exact (RingHom.Flat.respectsIso.cancel_right_isIso _ _).mp h
 
 end AlgebraicGeometry.Scheme.IdealSheafData

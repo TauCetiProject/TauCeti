@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Category.GradedModuleCat.Projective
+public import TauCeti.Algebra.Category.GradedModuleCat.Shift
 public import TauCeti.CategoryTheory.Exact.Projective
 public import TauCeti.CategoryTheory.GrothendieckGroup.Laurent.FullSubcategory
 
@@ -62,6 +63,10 @@ Grothendieck groups live in the same universe as the coefficient data.
 * `TauCeti.gradedFiniteModulesExactStructureShiftFunctorCompιIso` and
   `TauCeti.gradedFiniteProjectiveModulesExactStructureShiftFunctorCompιIso`: the restricted shifts
   agree with the ambient grading shift after inclusion.
+* `TauCeti.laurentK0_of_shiftObj`: `[M{d}] = qᵈ [M]` in the graded Grothendieck group of finite
+  graded modules.
+* `TauCeti.laurentK0_projective_of_shiftObj`: `[P{d}] = qᵈ [P]` in the graded Grothendieck group
+  of finite graded projectives.
 * `TauCeti.gradedFiniteProjectiveModulesExactStructure_eq_split`: the underlying exact structure
   on finite graded projectives is split when `𝒜` is a decomposition of `A`.
 * `TauCeti.gradedCartanMap_of`: the graded Cartan map sends the class of a projective to the class
@@ -428,6 +433,91 @@ theorem gradedFiniteProjectiveModulesExactStructure_conflation_iff
   rw [gradedFiniteProjectiveModulesExactStructure,
     GradedExactStructure.fullSubcategory_conflation_iff, gradedModuleExactStructure,
     GradedExactStructure.abelian_toExactStructure, ExactStructure.abelian_conflation]
+
+/-! ### Classes of shifted modules -/
+
+/-- An internal shift of a finite graded module is finite: it has the same underlying module. -/
+theorem gradedFiniteModules_shiftObj {M : GradedModuleCat.{uA} 𝒜} (hM : gradedFiniteModules 𝒜 M)
+    (d : ℤ) : gradedFiniteModules 𝒜 (M.shiftObj d) :=
+  gradedFiniteModules_iff.2 (gradedFiniteModules_iff.1 hM)
+
+/-- In a full subcategory stable under internal shifts, whose exact-structure shift agrees with
+the ambient grading shift, the class of the explicit `d`-shift is `T d` times the original class. -/
+private theorem laurentK0_of_shiftObj_aux {P : ObjectProperty (GradedModuleCat.{uA} 𝒜)}
+    [HasZeroObject P.FullSubcategory] [HasBinaryBiproducts P.FullSubcategory]
+    [ObjectProperty.EssentiallySmall.{uA} P]
+    (E : GradedExactStructure P.FullSubcategory)
+    (hP : ∀ {M}, P M → ∀ d : ℤ, P (M.shiftObj d))
+    (hshift : E.shift.functor ⋙ P.ι ≅ P.ι ⋙ (GradedModuleCat.shift 𝒜).functor)
+    (M : P.FullSubcategory) (d : ℤ) :
+    LaurentK0.of.{uA} E ⟨M.obj.shiftObj d, hP M.property d⟩ =
+      (LaurentPolynomial.T d : LaurentPolynomial ℤ) • LaurentK0.of.{uA} E M := by
+  -- One application of the shift of the full subcategory is the explicit shift by one.
+  have step : ∀ X : P.FullSubcategory,
+      (LaurentPolynomial.T 1 : LaurentPolynomial ℤ) •
+          LaurentK0.of.{uA} E X =
+        LaurentK0.of.{uA} E
+          ⟨X.obj.shiftObj 1, hP X.property 1⟩ := fun X => by
+    rw [LaurentK0.T_one_smul_of]
+    exact LaurentK0.of_congr _
+      (ObjectProperty.isoMk _ (hshift.app X))
+  -- Shifting by `d` and then by one is shifting by `d + 1`.
+  have hadd : ∀ d : ℤ,
+      LaurentK0.of.{uA} E
+          ⟨M.obj.shiftObj (d + 1), hP M.property _⟩ =
+        (LaurentPolynomial.T 1 : LaurentPolynomial ℤ) •
+          LaurentK0.of.{uA} E
+            ⟨M.obj.shiftObj d, hP M.property d⟩ := fun d => by
+    rw [step]
+    exact LaurentK0.of_congr _
+      (ObjectProperty.isoMk _ ((GradedModuleCat.shiftFunctorAddIso 𝒜 d 1).app M.obj).symm)
+  induction d using Int.induction_on with
+  | zero =>
+    rw [LaurentPolynomial.T_zero, one_smul]
+    exact LaurentK0.of_congr _
+      (ObjectProperty.isoMk _ ((GradedModuleCat.shiftFunctorZeroIso 𝒜).app M.obj))
+  | succ d ih => rw [hadd, ih, smul_smul, ← LaurentPolynomial.T_add, add_comm]
+  | pred d ih =>
+    have h := hadd (-(d : ℤ) - 1)
+    rw [sub_add_cancel, ih] at h
+    calc _ = (LaurentPolynomial.T (-1) : LaurentPolynomial ℤ) •
+          (LaurentPolynomial.T 1 : LaurentPolynomial ℤ) •
+            LaurentK0.of.{uA} E
+              ⟨M.obj.shiftObj (-(d : ℤ) - 1), hP M.property _⟩ := by
+          rw [smul_smul, ← LaurentPolynomial.T_add, neg_add_cancel, LaurentPolynomial.T_zero,
+            one_smul]
+      _ = _ := by rw [← h, smul_smul, ← LaurentPolynomial.T_add, neg_add_eq_sub]
+
+/-- **`[M{d}] = qᵈ [M]`** in the graded Grothendieck group of finite graded modules, for the
+explicit internal shift `M{d}` with `(M{d})ₚ = M_{p-d}`. -/
+theorem laurentK0_of_shiftObj (M : (gradedFiniteModules 𝒜).FullSubcategory) (d : ℤ) :
+    LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜)
+        ⟨M.obj.shiftObj d, gradedFiniteModules_shiftObj M.property d⟩ =
+      (LaurentPolynomial.T d : LaurentPolynomial ℤ) •
+        LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) M :=
+  laurentK0_of_shiftObj_aux (P := gradedFiniteModules 𝒜)
+    (gradedFiniteModulesExactStructure 𝒜) (fun hM d => gradedFiniteModules_shiftObj hM d)
+    gradedFiniteModulesExactStructureShiftFunctorCompιIso M d
+
+/-- An internal shift of a finite graded projective has the same underlying finite projective
+module. -/
+theorem gradedFiniteProjectiveModules_shiftObj {M : GradedModuleCat.{uA} 𝒜}
+    (hM : gradedFiniteProjectiveModules 𝒜 M) (d : ℤ) :
+    gradedFiniteProjectiveModules 𝒜 (M.shiftObj d) :=
+  gradedFiniteProjectiveModules_iff.2 (gradedFiniteProjectiveModules_iff.1 hM)
+
+/-- **`[P{d}] = qᵈ [P]`** in the Laurent Grothendieck group of finite graded projectives, for the
+explicit internal shift with `(P{d})ₚ = P_{p-d}`. -/
+theorem laurentK0_projective_of_shiftObj
+    (P : (gradedFiniteProjectiveModules 𝒜).FullSubcategory) (d : ℤ) :
+    LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
+        ⟨P.obj.shiftObj d, gradedFiniteProjectiveModules_shiftObj P.property d⟩ =
+      (LaurentPolynomial.T d : LaurentPolynomial ℤ) •
+        LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) P :=
+  laurentK0_of_shiftObj_aux (P := gradedFiniteProjectiveModules 𝒜)
+    (gradedFiniteProjectiveModulesExactStructure 𝒜)
+    (fun hM d => gradedFiniteProjectiveModules_shiftObj hM d)
+    gradedFiniteProjectiveModulesExactStructureShiftFunctorCompιIso P d
 
 /-! ### The graded Cartan map -/
 

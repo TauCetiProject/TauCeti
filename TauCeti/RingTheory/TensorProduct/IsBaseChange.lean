@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.TensorProduct.Lift
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.IsTensorProduct
+public import Mathlib.RingTheory.Localization.BaseChange
 
 /-!
 # Base change of a tensor product, and injectivity of the lifted map
@@ -25,12 +25,17 @@ If `f : M →ₗ[R] N` exhibits `N` as the base change of `M` along `R → S`, t
 `S ⊗[R] M →ₗ[S] N` it induces, Mathlib's `LinearMap.liftBaseChange`, is injective: it is the
 equivalence `IsBaseChange.equiv`.
 
+Over a fraction ring, extension also preserves injectivity of any linear map from an arbitrary
+module, without requiring its image to span the target.
+
 ## Main results
 
 * `IsBaseChange.tensorProduct`: a tensor product of base changes is a base change of the tensor
   product.
 * `IsBaseChange.liftBaseChange_injective`: the map `S ⊗[R] M →ₗ[S] N` induced by a base change is
   injective.
+* `LinearMap.liftBaseChange_injective`: extension to a fraction ring preserves injectivity of a
+  map from an arbitrary module, without a full-span hypothesis.
 -/
 
 public section
@@ -64,3 +69,25 @@ theorem IsBaseChange.liftBaseChange_injective {f : M →ₗ[R] N} (hf : IsBaseCh
     simp [IsBaseChange.equiv_tmul]
   rw [this]
   exact hf.equiv.injective
+
+namespace TauCeti
+
+section
+
+variable {R K M V : Type*} [CommRing R] [CommRing K] [Algebra R K] [IsFractionRing R K]
+variable [AddCommGroup M] [Module R M]
+variable [AddCommGroup V] [Module R V] [Module K V] [IsScalarTower R K V]
+
+/-- Extension to a fraction ring preserves injectivity of a linear map from an arbitrary module.
+Neither freeness, finite generation nor a full-span hypothesis is needed. -/
+theorem _root_.LinearMap.liftBaseChange_injective (f : M →ₗ[R] V)
+    (hf : Function.Injective f) : Function.Injective (f.liftBaseChange K) := by
+  refine IsLocalizedModule.injective_of_map_zero (nonZeroDivisors R)
+    (TensorProduct.mk R K M 1) (g := (f.liftBaseChange K).restrictScalars R) ?_
+  intro m hm
+  have hm' : m = 0 := hf (by simpa using hm)
+  rw [hm', map_zero]
+
+end
+
+end TauCeti

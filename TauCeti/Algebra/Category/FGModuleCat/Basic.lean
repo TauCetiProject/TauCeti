@@ -18,6 +18,8 @@ feeds the Grothendieck-group computation for finite-dimensional vector spaces.
 
 ## Main results
 
+* `FGModuleCat.hom_hom_ofHom`: the linear map underlying `FGModuleCat.ofHom f` is `f`, the
+  analogue of Mathlib's `ModuleCat.hom_ofHom`.
 * `FGModuleCat.finrank_biprod`: rank is additive on biproducts of finite free modules.
 -/
 
@@ -28,6 +30,13 @@ namespace TauCeti
 open CategoryTheory CategoryTheory.Limits
 
 universe u v
+
+/-- The linear map underlying `FGModuleCat.ofHom f` is `f`. -/
+@[simp]
+theorem _root_.FGModuleCat.hom_hom_ofHom {R : Type u} [Ring R] {V W : Type v} [AddCommGroup V]
+    [Module R V] [Module.Finite R V] [AddCommGroup W] [Module R W] [Module.Finite R W]
+    (f : V →ₗ[R] W) : (FGModuleCat.ofHom f).hom.hom = f :=
+  (rfl)
 
 attribute [local instance] HasBinaryBiproducts.of_hasBinaryCoproducts
 

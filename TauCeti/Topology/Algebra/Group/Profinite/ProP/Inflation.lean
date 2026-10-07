@@ -29,6 +29,8 @@ embeds in `H²(G, 𝔽_p)`, so bounds on the latter bound the former.
   for `R` the pro-`p` kernel, is injective for trivial coefficients killed by `p`.
 * `TauCeti.inflH1MaximalProP`: degree-one inflation from `G(p)` to `G` is a linear equivalence.
 * `TauCeti.inflH2MaximalProP_injective`: degree-two inflation from `G(p)` to `G` is injective.
+* `TauCeti.inflH2MaximalProP_surjective_of_map₂_cupFp_eq_top`: degree-two inflation from `G(p)`
+  to `G` is surjective when `H²(G, 𝔽_p)` is spanned by cup products of degree-one classes.
 
 ## References
 
@@ -143,5 +145,24 @@ theorem inflH2MaximalProP_injective :
     ← cohomFpAddEquivH2_cohomFpMap_quotientMk_eq_explicitInfl2 p G R htrivG htrivQ eR
       (zmodEquivFixedPointsOfTrivialAction_apply p G R htrivG) hequiv,
     hxy]
+
+omit [CompactSpace G] [TotallyDisconnectedSpace G] in
+/-- **Degree-two inflation from the maximal pro-`p` quotient is surjective when `H²(G, 𝔽_p)` is
+spanned by cup products.** Every class `a ⌣ b` with `a, b ∈ H¹(G, 𝔽_p)` is inflated from `G(p)`,
+since degree-one inflation is bijective and inflation commutes with the cup product. -/
+theorem inflH2MaximalProP_surjective_of_map₂_cupFp_eq_top
+    (h : Submodule.map₂ (cupFp p G) ⊤ ⊤ = ⊤) :
+    Function.Surjective (cohomFpMap p (ContinuousMonoidHom.quotientMk (proPKernel p G)) 2) := by
+  have hle : Submodule.map₂ (cupFp p G) ⊤ ⊤ ≤
+      LinearMap.range
+        (cohomFpMap p (ContinuousMonoidHom.quotientMk (proPKernel p G)) 2).hom.toLinearMap := by
+    rw [Submodule.map₂_le]
+    rintro a - b -
+    obtain ⟨a, rfl⟩ := (inflH1MaximalProP p G).surjective a
+    obtain ⟨b, rfl⟩ := (inflH1MaximalProP p G).surjective b
+    rw [inflH1MaximalProP_apply, inflH1MaximalProP_apply, ← cupFp_map]
+    exact LinearMap.mem_range_self _ _
+  intro x
+  exact hle (h ▸ Submodule.mem_top)
 
 end TauCeti

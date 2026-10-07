@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.Group.End
 public import Mathlib.Algebra.Ring.Parity
+public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Logic.Equiv.Fin.Rotate
 public import Mathlib.Data.Fin.SuccPredOrder
 public import Mathlib.Order.SuccPred.IntervalSucc
@@ -32,6 +33,8 @@ range, so the value is a `dite` rather than a plain application.
 
 * `TauCeti.perm_fin_two_eq_one_or_swap`: every permutation of `Fin 2` is the identity or the
   transposition.
+* `TauCeti.forall_cons_swap_eq_zero_iff`: vanishing of the final coordinates after swapping
+  coordinate zero with coordinate `d` in a vector built with `Fin.cons`.
 * `Fin.rev_finRotate_rev` and `Fin.rev_finRotate_symm`: reversal carries forward rotation to
   backward rotation and conversely.
 * `Fin.finRotate_rev_finRotate_rev`: negation modulo `n`, written as `i ↦ finRotate n i.rev`, is
@@ -48,6 +51,8 @@ range, so the value is a `dite` rather than a plain application.
   the last and penultimate indices differ from `0` and `1` in the nondegenerate cases.
 * `Fin.sum_univ_eq_zero_add_last_add_sum_erase`: a sum over `Fin (n + 1)` with its first and last
   summands split off.
+* `Fin.natCast_ne_zero`: the cast of a natural number `0 < a < n` to `Fin n` (under
+  `open Fin.NatCast`) is nonzero.
 * `Fin.predAbove_succ_succAbove`: `Fin.predAbove p` inverts `p.succ.succAbove`, the
   counterpart of Mathlib's `Fin.predAbove_succAbove` for `p.castSucc.succAbove`.
 * `Fin.val_succAbove`: the value of `p.succAbove i`, read off the comparison of `i` with `p`.
@@ -312,6 +317,11 @@ theorem sum_univ_eq_zero_add_last_add_sum_erase {n : ℕ} {M : Type*} [AddCommMo
     (Finset.mem_erase.2 ⟨mt last_eq_zero_iff.1 hn, Finset.mem_univ _⟩),
     Finset.add_sum_erase _ _ (Finset.mem_univ 0)]
 
+open Fin.NatCast in
+/-- The cast of a natural number `0 < a < n` to `Fin n` is nonzero. -/
+theorem natCast_ne_zero {n a : ℕ} [NeZero n] (ha : a ≠ 0) (han : a < n) : (a : Fin n) ≠ 0 :=
+  natCast_eq_zero.not.2 (Nat.not_dvd_of_pos_of_lt (Nat.pos_of_ne_zero ha) han)
+
 /-- Below the top element of `Fin n`, the order successor increments the value. -/
 theorem val_orderSucc_of_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n) :
     ((Order.succ i : Fin n) : ℕ) = (i : ℕ) + 1 := by
@@ -327,6 +337,40 @@ theorem orderSucc_eq_self_of_not_lt {n : ℕ} {i : Fin n} (h : ¬(i : ℕ) + 1 <
 end Fin
 
 namespace TauCeti
+
+/-- After swapping coordinates zero and `d`, the entries of `Fin.cons a y` at indices at least
+`d` vanish exactly when `a` and the entries of `y` at indices at least `d` vanish. -/
+theorem forall_cons_swap_eq_zero_iff {α : Type*} [Zero α] {n d : ℕ}
+    (hd : d ≤ n) (a : α) (y : Fin n → α) :
+    (∀ i : Fin (n + 1), d ≤ i.val →
+      (Fin.cons a y : Fin (n + 1) → α) (Equiv.swap 0 ⟨d, by omega⟩ i) = 0) ↔
+      a = 0 ∧ ∀ j : Fin n, d ≤ j.val → y j = 0 := by
+  constructor
+  · intro h
+    refine ⟨?_, fun j hj ↦ ?_⟩
+    · simpa using h ⟨d, by omega⟩ (by simp)
+    · have h0 : j.succ ≠ (0 : Fin (n + 1)) := Fin.succ_ne_zero j
+      have hd' : j.succ ≠ (⟨d, by omega⟩ : Fin (n + 1)) := by
+        intro heq
+        have := congrArg Fin.val heq
+        simp only [Fin.val_succ] at this
+        omega
+      simpa [Equiv.swap_apply_of_ne_of_ne h0 hd'] using h j.succ (by simp; omega)
+  · rintro ⟨ha, hy⟩ i hi
+    by_cases hid : i = ⟨d, by omega⟩
+    · rw [hid, Equiv.swap_apply_right, Fin.cons_zero]
+      exact ha
+    have hi0 : i ≠ 0 := by
+      intro h0
+      subst i
+      have : d = 0 := by simpa using hi
+      apply hid
+      ext
+      simp [this]
+    rw [Equiv.swap_apply_of_ne_of_ne hi0 hid]
+    obtain ⟨j, rfl⟩ := Fin.eq_succ_of_ne_zero (i := i) hi0
+    have hne : j.val + 1 ≠ d := fun h ↦ hid (Fin.ext h)
+    exact hy j (by simp only [Fin.val_succ] at hi; omega)
 
 /-- A decreasing parent table gives a word carrying its root to every vertex. -/
 theorem exists_foldl_eq_of_parent {n : ℕ} {J : Type*}

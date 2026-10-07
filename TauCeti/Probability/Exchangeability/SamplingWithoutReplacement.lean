@@ -112,9 +112,6 @@ theorem ExchangeableAt.sampleWithoutReplacement_eq_prefixLaw
     ⟨Fin.castLE hmn, fun _ _ hxy => Fin.castLE_injective hmn hxy⟩
   let _ : IsProbabilityMeasure (uniformOn E) :=
     isProbabilityMeasure_uniformOn hEfin hEne
-  let _ : IsFiniteMeasure (prefixLaw μ X n) := by
-    rw [prefixLaw_def, blockLaw_def]
-    exact Measure.isFiniteMeasure_map μ (fun ω => fun i : Fin n => X i.val ω)
   have hae : ∀ᵐ k ∂uniformOn E, Function.Injective k := by
     simpa only [uniformOn, E, Set.mem_ofPred_eq] using
       (ae_cond_mem (μ := Measure.count) hEfin.measurableSet)

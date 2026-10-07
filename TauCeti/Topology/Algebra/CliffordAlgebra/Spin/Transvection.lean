@@ -40,6 +40,7 @@ variable {K : Type u} [Field K] [TopologicalSpace K] [Invertible (2 : K)]
 
 /-- Continuously varying isotropic vectors and orthogonal parameters determine continuously varying
 Spin lifts of Eichler transvections. -/
+@[fun_prop]
 theorem continuous_spinTransvection {X : Type w} [TopologicalSpace X] (u w : X → V)
     (hQ : Q.Nondegenerate) (hu : ∀ x, Q (u x) = 0)
     (huw : ∀ x, polar Q (u x) (w x) = 0)

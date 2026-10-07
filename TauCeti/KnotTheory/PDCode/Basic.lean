@@ -73,7 +73,7 @@ def crossingSlotEquiv (n : ℕ) : Fin n × Fin 4 ≃ Fin (4 * n) :=
 
 /-- The crossing-slot equivalence numbers slot `s` at crossing `i` by `s + 4 * i`. -/
 @[simp]
-theorem crossingSlotEquiv_apply_val (n : ℕ) (i : Fin n) (slot : Fin 4) :
+theorem crossingSlotEquiv_apply_val {n : ℕ} (i : Fin n) (slot : Fin 4) :
     (crossingSlotEquiv n (i, slot)).val = slot.val + 4 * i.val :=
   (rfl)
 
@@ -98,7 +98,7 @@ theorem crossingSlotEquiv_succ_last {n : ℕ} (slot : Fin 4) :
 
 -- Not `@[simp]`: `crossingSlotEquiv_apply_val` already rewrites the left-hand side.
 /-- The slot of a half-edge is recovered from its position modulo four. -/
-theorem crossingSlotEquiv_apply_val_mod_four (n : ℕ) (i : Fin n) (slot : Fin 4) :
+theorem crossingSlotEquiv_apply_val_mod_four {n : ℕ} (i : Fin n) (slot : Fin 4) :
     (crossingSlotEquiv n (i, slot)).val % 4 = slot.val := by
   rw [crossingSlotEquiv_apply_val]
   omega
@@ -226,7 +226,7 @@ structure OrientedPDCode (n : ℕ) extends PDCode n where
   `TauCeti.OrientedPDCode.reverse` exchanges. -/
   crossinglessComponents : Multiset Bool
   /-- The orientation multiset has one entry per crossing-free component of the underlying code. -/
-  crossinglessComponents_card : crossinglessComponents.card = crossinglessComponentCount
+  card_crossinglessComponents : crossinglessComponents.card = crossinglessComponentCount
 
 /-- A framed oriented PD-code.
 
@@ -247,13 +247,13 @@ structure FramedOrientedPDCode (n : ℕ) extends OrientedPDCode n where
   /-- The orientation and Seifert-relative framing coefficient of each crossing-free component. -/
   crossinglessFramings : Multiset (Bool × ℤ)
   /-- Forgetting framings recovers the oriented crossing-free components. -/
-  crossinglessFramings_map_fst : crossinglessFramings.map Prod.fst = crossinglessComponents
+  map_fst_crossinglessFramings : crossinglessFramings.map Prod.fst = crossinglessComponents
 
 attribute [simp] OrientedPDCode.orientation_edgePair
   OrientedPDCode.orientation_oppositeCrossingSlot
-  OrientedPDCode.crossinglessComponents_card
+  OrientedPDCode.card_crossinglessComponents
   FramedOrientedPDCode.framing_edgePair FramedOrientedPDCode.framing_oppositeCrossingSlot
-  FramedOrientedPDCode.crossinglessFramings_map_fst
+  FramedOrientedPDCode.map_fst_crossinglessFramings
 
 namespace PDCode
 
@@ -578,7 +578,14 @@ namespace OrientedPDCode
 
 variable {n : ℕ}
 
-/-- The sign of crossing `i`: `1` if the crossing is right-handed and `-1` if it is left-handed,
+/-- The orientation reverses between two opposite slots `s` and `t = s + 2` of a crossing. -/
+theorem orientation_crossing_of_add_two_eq (D : OrientedPDCode n) (i : Fin n) {s t : Fin 4}
+    (hst : s + 2 = t) :
+    D.orientation (D.crossing i t) = !D.orientation (D.crossing i s) := by
+  rw [← hst, ← PDCode.oppositeCrossingSlot_apply, PDCode.crossing_apply, PDCode.crossing_apply,
+    D.orientation_oppositeCrossingSlot]
+
+/-- The sign of crossing `i`:`1` if the crossing is right-handed and `-1` if it is left-handed,
 as in Lickorish, Chapter 1. The slots are read counterclockwise in the oriented plane and
 `orientation` is `true` at the half-edges where the strands leave the crossing. The crossing is
 right-handed when a counterclockwise quarter turn takes the direction of the over-strand to that
@@ -629,7 +636,7 @@ def reverse (D : OrientedPDCode n) : OrientedPDCode n where
   orientation_edgePair := by simp
   orientation_oppositeCrossingSlot := by simp
   crossinglessComponents := D.crossinglessComponents.map (!·)
-  crossinglessComponents_card := by simp
+  card_crossinglessComponents := by simp
 
 /-- Forgetting orientation after reversal leaves the underlying code unchanged. -/
 @[simp] theorem reverse_toPDCode (D : OrientedPDCode n) :
@@ -659,7 +666,7 @@ def mirror (D : OrientedPDCode n) : OrientedPDCode n where
   orientation_edgePair := by simp
   orientation_oppositeCrossingSlot := by simp
   crossinglessComponents := D.crossinglessComponents
-  crossinglessComponents_card := by simp
+  card_crossinglessComponents := by simp
 
 /-- Forgetting orientation after reflection gives reflection of the underlying code. -/
 @[simp] theorem mirror_toPDCode (D : OrientedPDCode n) :
@@ -693,7 +700,7 @@ def relabel {m : ℕ} (D : OrientedPDCode n) (half : Fin (4 * n) ≃ Fin (4 * m)
   orientation_edgePair := by simp
   orientation_oppositeCrossingSlot := by simp
   crossinglessComponents := D.crossinglessComponents
-  crossinglessComponents_card := by simp
+  card_crossinglessComponents := by simp
 
 section Relabel
 
@@ -779,7 +786,7 @@ def mirror (D : FramedOrientedPDCode n) : FramedOrientedPDCode n where
   framing_oppositeCrossingSlot := by simp
   crossinglessFramings := D.crossinglessFramings.map fun component =>
     (component.1, -component.2)
-  crossinglessFramings_map_fst := by simp
+  map_fst_crossinglessFramings := by simp
 
 /-- Forgetting framing after reflection gives reflection of the underlying oriented code. -/
 @[simp] theorem mirror_toOrientedPDCode (D : FramedOrientedPDCode n) :
@@ -807,7 +814,7 @@ def relabel {m : ℕ} (D : FramedOrientedPDCode n) (half : Fin (4 * n) ≃ Fin (
   framing_edgePair := by simp
   framing_oppositeCrossingSlot := by simp
   crossinglessFramings := D.crossinglessFramings
-  crossinglessFramings_map_fst := by simp
+  map_fst_crossinglessFramings := by simp
 
 section Relabel
 
@@ -847,9 +854,9 @@ def reverse (D : FramedOrientedPDCode n) : FramedOrientedPDCode n where
   framing_oppositeCrossingSlot := by simp
   crossinglessFramings := D.crossinglessFramings.map fun component =>
     (!component.1, component.2)
-  crossinglessFramings_map_fst := by
+  map_fst_crossinglessFramings := by
     rw [Multiset.map_map, OrientedPDCode.reverse_crossinglessComponents]
-    rw [← D.crossinglessFramings_map_fst, Multiset.map_map]
+    rw [← D.map_fst_crossinglessFramings, Multiset.map_map]
     rfl
 
 /-- Forgetting framing after reversal gives reversal of the underlying oriented code. -/
@@ -903,7 +910,7 @@ def unlink (orientations : Multiset Bool) : OrientedPDCode 0 where
   orientation_edgePair h := h.elim0
   orientation_oppositeCrossingSlot i := i.elim0
   crossinglessComponents := orientations
-  crossinglessComponents_card := rfl
+  card_crossinglessComponents := rfl
 
 /-- The unlink constructor retains exactly its component-orientation multiset. -/
 @[simp]
@@ -915,7 +922,7 @@ theorem crossinglessComponents_unlink (orientations : Multiset Bool) :
 theorem eq_unlink (D : OrientedPDCode 0) :
     D = unlink D.crossinglessComponents :=
   OrientedPDCode.ext (PDCode.ext (Equiv.ext (·.elim0)) (Subtype.ext (Equiv.ext (·.elim0)))
-    D.crossinglessComponents_card.symm (funext (·.elim0))) (funext (·.elim0)) rfl
+    D.card_crossinglessComponents.symm (funext (·.elim0))) (funext (·.elim0)) rfl
 
 /-- Multisets of orientations are equivalent to zero-crossing oriented PD-codes. -/
 def unlinkEquiv : Multiset Bool ≃ OrientedPDCode 0 where
@@ -953,10 +960,9 @@ theorem unknot_ne_empty (orientation : Bool) :
     unknot orientation ≠ empty :=
   unlinkEquiv.injective.ne (Multiset.singleton_ne_zero orientation)
 
-/-- The two explicit orientation choices give distinct crossing-free circle presentations. -/
-theorem unknot_true_ne_false :
-    unknot true ≠ unknot false :=
-  unlinkEquiv.injective.ne (by simp)
+/-- Distinct orientation choices give distinct crossing-free circle presentations. -/
+theorem unknot_injective : Function.Injective unknot := fun _ _ h =>
+  Multiset.singleton_inj.1 (congrArg crossinglessComponents h)
 
 /-- Reflection fixes every zero-crossing oriented PD-code. -/
 @[simp]
@@ -979,7 +985,7 @@ def positiveKink : OrientedPDCode 1 where
     fin_cases t <;> decide
   orientation_oppositeCrossingSlot := by decide
   crossinglessComponents := 0
-  crossinglessComponents_card := by simp
+  card_crossinglessComponents := by simp
 
 /-- The underlying PD-code of `positiveKink` is the kink. -/
 @[simp]
@@ -997,10 +1003,11 @@ theorem orientation_positiveKink (h : Fin (4 * 1)) :
 theorem crossinglessComponents_positiveKink : positiveKink.crossinglessComponents = 0 :=
   (rfl)
 
-/-- The distinguished crossing of `positiveKink` has positive sign. -/
+/-- The crossing of `positiveKink` has positive sign. -/
 @[simp]
-theorem crossingSign_positiveKink :
-    positiveKink.crossingSign 0 = 1 := by
+theorem crossingSign_positiveKink (i : Fin 1) :
+    positiveKink.crossingSign i = 1 := by
+  fin_cases i
   decide
 
 end OrientedPDCode

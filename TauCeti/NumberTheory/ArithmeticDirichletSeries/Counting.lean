@@ -12,6 +12,7 @@ public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 import Mathlib.NumberTheory.Padics.HeightOneSpectrum
 import Mathlib.Order.Filter.AtTopBot.Finset
 import Mathlib.RingTheory.Ideal.GoingUp
+import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Norm
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
@@ -689,15 +690,9 @@ theorem tendsto_primeCount_univ_atTop (K : Type*) [Field K] [NumberField K] :
   let _ : Infinite (HeightOneSpectrum ℤ) :=
     Infinite.of_surjective Rat.HeightOneSpectrum.primesEquiv
       Rat.HeightOneSpectrum.primesEquiv.surjective
-  have hsurj : Function.Surjective (HeightOneSpectrum.under ℤ :
-      HeightOneSpectrum (𝓞 K) → HeightOneSpectrum ℤ) := by
-    intro p
-    let Q := Classical.choice (Ideal.nonempty_primesOver (S := 𝓞 K) p.asIdeal)
-    refine ⟨⟨Q.1, Q.2.1, Ideal.ne_bot_of_mem_primesOver p.ne_bot Q.2⟩,
-      HeightOneSpectrum.ext ?_⟩
-    exact Q.2.2.over.symm
   let _ : Infinite (HeightOneSpectrum (𝓞 K)) :=
-    Infinite.of_surjective (HeightOneSpectrum.under ℤ) hsurj
+    Infinite.of_surjective (HeightOneSpectrum.under ℤ)
+      (HeightOneSpectrum.under_surjective ℤ (𝓞 K))
   have hcarrier : Tendsto (primesLE K) atTop atTop := by
     rw [Filter.tendsto_atTop]
     intro s

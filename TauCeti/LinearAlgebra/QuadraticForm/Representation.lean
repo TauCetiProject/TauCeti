@@ -35,22 +35,22 @@ public section
 
 open _root_.QuadraticMap
 
-namespace TauCeti
+namespace QuadraticMap
 
 variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
   [AddCommMonoid N] [Module R N]
 
 /-- A value `a : N` is represented by a quadratic map if it is the value of the map at a vector. -/
-def _root_.QuadraticMap.Represents (Q : QuadraticMap R M N) (a : N) : Prop := ∃ v, Q v = a
+def Represents (Q : QuadraticMap R M N) (a : N) : Prop := ∃ v, Q v = a
 
 /-- A quadratic map is represented by another if it admits an injective isometry into it. -/
-def _root_.QuadraticMap.IsRepresentedBy {M' : Type*} [AddCommMonoid M'] [Module R M']
+def IsRepresentedBy {M' : Type*} [AddCommMonoid M'] [Module R M']
     (Q : QuadraticMap R M N) (Q' : QuadraticMap R M' N) : Prop :=
   ∃ f : Q →qᵢ Q', Function.Injective f
 
 /-- Representation by a quadratic map is witnessed by an injective linear map preserving the
 quadratic map. -/
-theorem _root_.QuadraticMap.isRepresentedBy_iff {M' : Type*}
+theorem isRepresentedBy_iff {M' : Type*}
     [AddCommMonoid M'] [Module R M'] (Q : QuadraticMap R M N) (Q' : QuadraticMap R M' N) :
     Q.IsRepresentedBy Q' ↔
       ∃ f : M →ₗ[R] M', Function.Injective f ∧ ∀ x, Q' (f x) = Q x := by
@@ -61,25 +61,25 @@ theorem _root_.QuadraticMap.isRepresentedBy_iff {M' : Type*}
     exact ⟨⟨f, hQ⟩, hf⟩
 
 /-- The restriction of a quadratic map to a submodule is represented by the ambient map. -/
-theorem _root_.QuadraticMap.restrict_isRepresentedBy (Q : QuadraticMap R M N)
+theorem restrict_isRepresentedBy (Q : QuadraticMap R M N)
     (U : Submodule R M) : (Q.restrict U).IsRepresentedBy Q :=
   (isRepresentedBy_iff _ _).mpr ⟨U.subtype, Subtype.coe_injective, fun _ ↦ rfl⟩
 
 /-- The right factor of an orthogonal product is represented by the product. -/
-theorem _root_.QuadraticMap.isRepresentedBy_prod_right (Q₁ : QuadraticMap R M N)
+theorem isRepresentedBy_prod_right (Q₁ : QuadraticMap R M N)
     {M₂ : Type*} [AddCommMonoid M₂] [Module R M₂] (Q₂ : QuadraticMap R M₂ N) :
     Q₂.IsRepresentedBy (Q₁.prod Q₂) :=
   ⟨Isometry.inr Q₁ Q₂, LinearMap.inr_injective⟩
 
 /-- Every quadratic map is represented by itself. -/
 @[refl]
-theorem _root_.QuadraticMap.IsRepresentedBy.refl (Q : QuadraticMap R M N) :
+theorem IsRepresentedBy.refl (Q : QuadraticMap R M N) :
     Q.IsRepresentedBy Q :=
   ⟨QuadraticMap.Isometry.id Q, Function.injective_id⟩
 
 /-- Representation of quadratic maps is transitive. -/
 @[trans]
-theorem _root_.QuadraticMap.IsRepresentedBy.trans
+theorem IsRepresentedBy.trans
     {M₁ M₂ M₃ : Type*} [AddCommMonoid M₁] [Module R M₁]
     [AddCommMonoid M₂] [Module R M₂] [AddCommMonoid M₃] [Module R M₃]
     {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
@@ -90,7 +90,7 @@ theorem _root_.QuadraticMap.IsRepresentedBy.trans
   exact ⟨g.comp f, hg.comp hf⟩
 
 /-- An equivalent quadratic map is represented by the other map. -/
-theorem _root_.QuadraticMap.Equivalent.isRepresentedBy
+theorem Equivalent.isRepresentedBy
     {M₁ M₂ : Type*} [AddCommMonoid M₁] [Module R M₁]
     [AddCommMonoid M₂] [Module R M₂]
     {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
@@ -99,7 +99,7 @@ theorem _root_.QuadraticMap.Equivalent.isRepresentedBy
   exact ⟨e.toIsometry, e.injective⟩
 
 /-- A scalar represented by a represented quadratic map is represented by the ambient map. -/
-theorem _root_.QuadraticMap.IsRepresentedBy.represents
+theorem IsRepresentedBy.represents
     {M₁ M₂ : Type*} [AddCommMonoid M₁] [Module R M₁]
     [AddCommMonoid M₂] [Module R M₂]
     {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N} {a : N}
@@ -109,7 +109,7 @@ theorem _root_.QuadraticMap.IsRepresentedBy.represents
   exact ⟨f x, (f.map_app x).trans hx⟩
 
 /-- An ambient quadratic map is isotropic when it represents an isotropic quadratic map. -/
-theorem _root_.QuadraticMap.IsRepresentedBy.not_anisotropic
+theorem IsRepresentedBy.not_anisotropic
     {M₁ M₂ : Type*} [AddCommMonoid M₁] [Module R M₁]
     [AddCommMonoid M₂] [Module R M₂]
     {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
@@ -120,7 +120,7 @@ theorem _root_.QuadraticMap.IsRepresentedBy.not_anisotropic
   exact ⟨f x, fun hzero ↦ hx (hf (by simpa using hzero)), (f.map_app x).trans hQx⟩
 
 /-- Anisotropy is an invariant of isometry. -/
-theorem _root_.QuadraticMap.Equivalent.anisotropic_iff
+theorem Equivalent.anisotropic_iff
     {M₁ M₂ : Type*} [AddCommMonoid M₁] [Module R M₁]
     [AddCommMonoid M₂] [Module R M₂]
     {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N} (h : Q₁.Equivalent Q₂) :
@@ -129,7 +129,7 @@ theorem _root_.QuadraticMap.Equivalent.anisotropic_iff
     fun h₂ => not_not.mp fun h₁ => h.isRepresentedBy.not_anisotropic h₁ h₂⟩
 
 /-- Replacing either quadratic map by an equivalent one preserves representation. -/
-theorem _root_.QuadraticMap.Equivalent.isRepresentedBy_congr
+theorem Equivalent.isRepresentedBy_congr
     {M₁ M₂ M₃ M₄ : Type*} [AddCommMonoid M₁] [Module R M₁]
     [AddCommMonoid M₂] [Module R M₂] [AddCommMonoid M₃] [Module R M₃]
     [AddCommMonoid M₄] [Module R M₄]
@@ -149,11 +149,11 @@ theorem _root_.QuadraticMap.Equivalent.isRepresentedBy_congr
 
 /-- Every quadratic map represents zero. -/
 @[simp]
-theorem _root_.QuadraticMap.represents_zero (Q : QuadraticMap R M N) : Represents Q 0 :=
+theorem represents_zero (Q : QuadraticMap R M N) : Represents Q 0 :=
   ⟨0, Q.map_zero⟩
 
 /-- Representation is the same as membership in the range of the quadratic map. -/
-theorem _root_.QuadraticMap.represents_iff (Q : QuadraticMap R M N) (a : N) :
+theorem represents_iff (Q : QuadraticMap R M N) (a : N) :
     Represents Q a ↔ a ∈ Set.range Q :=
   Iff.rfl
 
@@ -161,17 +161,17 @@ theorem _root_.QuadraticMap.represents_iff (Q : QuadraticMap R M N) (a : N) :
 
 This is the classical value set `D(Q)` over a field; over a general commutative semiring it is
 the set of units represented by `Q`, rather than the full value set. -/
-def _root_.QuadraticMap.unitValueSet (Q : QuadraticMap R M R) : Set Rˣ :=
+def unitValueSet (Q : QuadraticMap R M R) : Set Rˣ :=
   {a | Represents Q (a : R)}
 
 /-- Membership in `unitValueSet` is representation of the underlying scalar. -/
 @[simp]
-theorem _root_.QuadraticMap.mem_unitValueSet {Q : QuadraticMap R M R} {a : Rˣ} :
+theorem mem_unitValueSet {Q : QuadraticMap R M R} {a : Rˣ} :
     a ∈ unitValueSet Q ↔ Represents Q (a : R) :=
   Iff.rfl
 
 /-- Representation is preserved by an isometric equivalence of quadratic maps. -/
-theorem _root_.QuadraticMap.IsometryEquiv.represents_iff
+theorem IsometryEquiv.represents_iff
     {M₁ M₂ N : Type*} [AddCommMonoid M₁] [AddCommMonoid M₂] [AddCommMonoid N]
     [Module R M₁] [Module R M₂] [Module R N]
     {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
@@ -184,7 +184,7 @@ theorem _root_.QuadraticMap.IsometryEquiv.represents_iff
     exact ⟨e.symm v, (e.symm.map_app v).trans hv⟩
 
 /-- Equivalent quadratic forms have the same represented-unit value set. -/
-theorem _root_.QuadraticMap.Equivalent.unitValueSet_eq
+theorem Equivalent.unitValueSet_eq
     {M₁ M₂ : Type*} [AddCommMonoid M₁] [AddCommMonoid M₂]
     [Module R M₁] [Module R M₂]
     {Q₁ : QuadraticMap R M₁ R} {Q₂ : QuadraticMap R M₂ R}
@@ -195,7 +195,7 @@ theorem _root_.QuadraticMap.Equivalent.unitValueSet_eq
   exact e.represents_iff a
 
 /-- A value represented by each factor is represented by their product. -/
-theorem _root_.QuadraticMap.Represents.prod
+theorem Represents.prod
     {M₁ M₂ P : Type*} [AddCommMonoid M₁] [AddCommMonoid M₂] [AddCommMonoid P]
     [Module R M₁] [Module R M₂] [Module R P]
     {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P} {a b : P}
@@ -207,7 +207,7 @@ theorem _root_.QuadraticMap.Represents.prod
 
 /-- If one factor represents a nonzero value `a` and the other represents `-a`, then their
 orthogonal product is isotropic. -/
-theorem _root_.QuadraticMap.not_anisotropic_prod_of_represents_neg
+theorem not_anisotropic_prod_of_represents_neg
     {M₁ M₂ P : Type*} [AddCommMonoid M₁] [AddCommMonoid M₂] [AddCommGroup P]
     [Module R M₁] [Module R M₂] [Module R P]
     {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P} {a : P}
@@ -220,7 +220,7 @@ theorem _root_.QuadraticMap.not_anisotropic_prod_of_represents_neg
   exact ha (by rw [← hv, (Prod.mk_eq_zero.mp hvw).1, map_zero])
 
 /-- Representing a value is preserved after multiplying it by the square of any scalar. -/
-theorem _root_.QuadraticMap.Represents.smul_mul_self
+theorem Represents.smul_mul_self
     {M N : Type*} [AddCommMonoid M] [AddCommMonoid N]
     [Module R M] [Module R N] {Q : QuadraticMap R M N} {a : N}
     (h : Represents Q a) (b : R) : Represents Q ((b * b) • a) := by
@@ -228,7 +228,7 @@ theorem _root_.QuadraticMap.Represents.smul_mul_self
   exact ⟨b • v, by rw [Q.map_smul, hv]⟩
 
 /-- Representation is invariant under multiplication by the square of a unit. -/
-@[simp] theorem _root_.QuadraticMap.represents_smul_mul_self_iff
+@[simp] theorem represents_smul_mul_self_iff
     {M N : Type*} [AddCommMonoid M] [AddCommMonoid N]
     [Module R M] [Module R N] (Q : QuadraticMap R M N) (a : N) (b : Rˣ) :
     Represents Q (((b : R) * b) • a) ↔ Represents Q a := by
@@ -241,7 +241,7 @@ theorem _root_.QuadraticMap.Represents.smul_mul_self
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
 
 /-- A quadratic form with trivial radical and a nonzero isotropic vector represents every scalar. -/
-theorem _root_.QuadraticMap.represents_of_radical_eq_bot_of_not_anisotropic
+theorem represents_of_radical_eq_bot_of_not_anisotropic
     (Q : QuadraticForm K V)
     (hQ : Q.radical = ⊥) (hiso : ¬Q.Anisotropic) (a : K) :
     Represents Q a := by
@@ -271,14 +271,14 @@ theorem _root_.QuadraticMap.represents_of_radical_eq_bot_of_not_anisotropic
   ring
 
 /-- A nondegenerate quadratic form with a nonzero isotropic vector represents every scalar. -/
-theorem _root_.QuadraticMap.represents_of_nondegenerate_of_not_anisotropic
+theorem represents_of_nondegenerate_of_not_anisotropic
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) (a : K) :
     Represents Q a :=
   represents_of_radical_eq_bot_of_not_anisotropic Q hQ.radical_eq_bot hiso a
 
 /-- Over a field, a quadratic form representing a nonzero scalar `a` represents every `b` for
 which `b / a` is a square. -/
-theorem _root_.QuadraticMap.Represents.of_isSquare_div {Q : QuadraticForm K V} {a b : K}
+theorem Represents.of_isSquare_div {Q : QuadraticForm K V} {a b : K}
     (h : Represents Q a) (ha : a ≠ 0) (hab : IsSquare (b / a)) : Represents Q b := by
   obtain ⟨r, hr⟩ := hab
   simpa only [← hr, smul_eq_mul, div_mul_cancel₀ b ha] using h.smul_mul_self r
@@ -286,7 +286,7 @@ theorem _root_.QuadraticMap.Represents.of_isSquare_div {Q : QuadraticForm K V} {
 /-- If the orthogonal sum of a form with trivial radical and an anisotropic form on a nonzero
 space is isotropic, then some nonzero value of the first form is the negative of a value of the
 second (O'Meara, *Introduction to Quadratic Forms*, 66:1). -/
-theorem _root_.QuadraticMap.Anisotropic.exists_ne_zero_eq_neg_of_not_anisotropic_prod
+theorem Anisotropic.exists_ne_zero_eq_neg_of_not_anisotropic_prod
     {V' : Type*} [AddCommGroup V'] [Module K V'] [Nontrivial V']
     {U : QuadraticForm K V} {W : QuadraticForm K V'} (hW : W.Anisotropic)
     (hU : U.radical = ⊥) (h : ¬(U.prod W).Anisotropic) :
@@ -306,7 +306,7 @@ theorem _root_.QuadraticMap.Anisotropic.exists_ne_zero_eq_neg_of_not_anisotropic
 
 /-- For a nondegenerate quadratic form, every nonzero isotropic vector `x` has an isotropic partner
 `y` with `polar Q x y = 1`, so that `x, y` is a hyperbolic pair. -/
-theorem _root_.QuadraticMap.Nondegenerate.exists_isotropic_polar_eq_one
+theorem Nondegenerate.exists_isotropic_polar_eq_one
     {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) {x : V} (hx : x ≠ 0) (hxQ : Q x = 0) :
     ∃ y : V, Q y = 0 ∧ polar Q x y = 1 := by
   obtain ⟨w, hw⟩ : ∃ w, polar Q x w ≠ 0 := by
@@ -336,7 +336,7 @@ theorem _root_.QuadraticMap.Nondegenerate.exists_isotropic_polar_eq_one
 
 /-- A nondegenerate isotropic quadratic form contains two isotropic vectors whose polar pairing
 is one. -/
-theorem _root_.QuadraticMap.Nondegenerate.exists_isotropic_pair
+theorem Nondegenerate.exists_isotropic_pair
     {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) :
     ∃ x y : V, x ≠ 0 ∧ Q x = 0 ∧ Q y = 0 ∧ polar Q x y = 1 := by
   obtain ⟨x, hx, hxQ⟩ := (not_anisotropic_iff_exists Q).mp hiso
@@ -344,14 +344,14 @@ theorem _root_.QuadraticMap.Nondegenerate.exists_isotropic_pair
   exact ⟨x, y, hx, hxQ, hyQ, hxy⟩
 
 /-- Multiplying a represented scalar by the square of a unit preserves representation. -/
-@[simp] theorem _root_.QuadraticMap.represents_mul_sq_iff (Q : QuadraticMap R M R) (a : R)
+@[simp] theorem represents_mul_sq_iff (Q : QuadraticMap R M R) (a : R)
     (b : Rˣ) :
     Represents Q (a * (b : R) ^ 2) ↔ Represents Q a := by
   simpa [smul_eq_mul, pow_two, mul_comm] using
     (represents_smul_mul_self_iff Q a b)
 
 /-- Membership in `unitValueSet` is invariant under multiplication by a unit square. -/
-theorem _root_.QuadraticMap.mem_unitValueSet_mul_sq_iff (Q : QuadraticMap R M R) (a b : Rˣ) :
+theorem mem_unitValueSet_mul_sq_iff (Q : QuadraticMap R M R) (a b : Rˣ) :
     (a * b ^ 2) ∈ unitValueSet Q ↔ a ∈ unitValueSet Q := by
   simpa only [mem_unitValueSet, Units.val_mul, Units.val_pow_eq_pow_val] using
     (represents_mul_sq_iff Q (a : R) b)
@@ -361,7 +361,7 @@ triviality of the quadratic radical.
 
 The added line is the one-dimensional form `x ↦ -a * x²`, written as a scalar multiple of
 `QuadraticMap.sq`. -/
-theorem _root_.QuadraticMap.mem_unitValueSet_iff_not_anisotropic_prod_of_radical_eq_bot
+theorem mem_unitValueSet_iff_not_anisotropic_prod_of_radical_eq_bot
     (Q : QuadraticForm K V) (hQ : Q.radical = ⊥) (a : Kˣ) :
     a ∈ unitValueSet Q ↔
       ¬(Q.prod ((-(a : K)) • (QuadraticMap.sq : QuadraticForm K K))).Anisotropic := by
@@ -393,7 +393,7 @@ theorem _root_.QuadraticMap.mem_unitValueSet_iff_not_anisotropic_prod_of_radical
 
 /-- For a nondegenerate form, a unit is represented exactly when adjoining its negative line
 makes the form isotropic. -/
-theorem _root_.QuadraticMap.mem_unitValueSet_iff_not_anisotropic_prod
+theorem mem_unitValueSet_iff_not_anisotropic_prod
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (a : Kˣ) :
     a ∈ unitValueSet Q ↔
       ¬(Q.prod ((-(a : K)) • (QuadraticMap.sq : QuadraticForm K K))).Anisotropic :=
@@ -402,7 +402,7 @@ theorem _root_.QuadraticMap.mem_unitValueSet_iff_not_anisotropic_prod
 /-- The orthogonal sum of a form `Q₁` with trivial radical and some unit value and a form `Q₂`
 with trivial radical on a nonzero space is isotropic exactly when some unit value `x` of `Q₁` has
 `-x` a value of `Q₂`. -/
-theorem _root_.QuadraticMap.not_anisotropic_prod_iff_exists_mem_unitValueSet_neg_mem
+theorem not_anisotropic_prod_iff_exists_mem_unitValueSet_neg_mem
     {V' : Type*} [AddCommGroup V'] [Module K V'] [Nontrivial V']
     {Q₁ : QuadraticForm K V} {Q₂ : QuadraticForm K V'} (hQ₁ : Q₁.radical = ⊥)
     (hQ₂ : Q₂.radical = ⊥) (h : (unitValueSet Q₁).Nonempty) :
@@ -424,4 +424,4 @@ theorem _root_.QuadraticMap.not_anisotropic_prod_iff_exists_mem_unitValueSet_neg
     exact not_anisotropic_prod_of_represents_neg (mem_unitValueSet.mp hx₁)
       (by simpa using mem_unitValueSet.mp hx₂) x.ne_zero
 
-end TauCeti
+end QuadraticMap

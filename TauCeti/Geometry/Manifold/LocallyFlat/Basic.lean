@@ -90,6 +90,7 @@ discs (topological sliceness) and for stating the annulus conjecture.
   the origin of the complementary model is closed.
 * `TauCeti.isLocallyFlat_prodMkLeft`: over a domain charted on `F`, the standard model
   `x ↦ (x, 0)` is locally flat.
+* `TauCeti.isLocallyFlat_graph`: the graph of a continuous map is locally flat.
 * `TauCeti.exists_isSliceChart_of_inter_eq_inter_range`: a set which, near a point, is the graph of
   a continuous map over the first coordinate of a homeomorphism `M ≃ₜ F × F'` is flattened by a
   chart around that point.
@@ -794,6 +795,28 @@ end StandardSlice
 /-! ### Graphs -/
 
 section Graph
+
+/-- The graph of a continuous map is locally flat, with complementary model `F`. -/
+theorem isLocallyFlat_graph
+    {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F] (f : E → F) (hf : Continuous f) :
+    IsLocallyFlat E F (fun x : E => (x, f x)) := by
+  let shear : E × F ≃ₜ E × F :=
+    { toFun := fun p => (p.1, p.2 + f p.1)
+      invFun := fun p => (p.1, p.2 - f p.1)
+      left_inv := by
+        intro p
+        simp
+      right_inv := by
+        intro p
+        simp
+      continuous_toFun := continuous_fst.prodMk (continuous_snd.add (hf.comp continuous_fst))
+      continuous_invFun := continuous_fst.prodMk (continuous_snd.sub (hf.comp continuous_fst)) }
+  have h := (isLocallyFlat_prodMkLeft (N := E) (F := E) (F' := F)).homeomorph_comp shear
+  convert h using 1
+  ext x
+  · rfl
+  · dsimp [Function.comp_apply, shear]
+    simp only [zero_add]
 
 variable [AddGroup F'] [IsTopologicalAddGroup F']
 

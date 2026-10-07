@@ -32,7 +32,8 @@ The discriminant and the sextic alone do not separate `5T1` from `5T2`: the cycl
 `X⁵ + X⁴ - 4X³ - 3X² + 3X + 1` also has a square discriminant and a separable resolvent sextic
 with an integral root. The factorization of type `(1,2,2)` is the datum that
 does. Conversely, every factorization type of `X⁵ - 5X - 12` at a good prime is a cycle type of
-`D₅ ≤ A₅`, so no factorization excludes `A₅`; that upper bound comes from the sextic.
+`D₅ ≤ A₅`, so no factorization excludes `A₅`; that upper bound comes from the sextic
+(`TauCeti.factorDegrees_do_not_distinguish_D5_A5`).
 
 ## Main results
 
@@ -47,6 +48,9 @@ does. Conversely, every factorization type of `X⁵ - 5X - 12` at a good prime i
   certificate checks.
 * `TauCeti.hasGaloisLabel_X_pow_five_sub_five_mul_X_sub_twelve`: `X⁵ - 5X - 12` has label `5T2`,
   and `TauCeti.natCard_gal_X_pow_five_sub_five_mul_X_sub_twelve`: its Galois group has order `10`.
+* `TauCeti.factorDegrees_do_not_distinguish_D5_A5`: every factorization type of `X⁵ - 5X - 12`
+  at a good prime is the full cycle type of an even permutation, although the Galois image does
+  not contain `A₅`.
 
 ## References
 
@@ -194,5 +198,55 @@ theorem natCard_gal_X_pow_five_sub_five_mul_X_sub_twelve :
     simp
   rw [← hmap, hasGaloisLabel_X_pow_five_sub_five_mul_X_sub_twelve.natCard_gal,
     natCard_referenceSubgroup_five_one]
+
+attribute [local instance] Gal.splits_ℚ_ℂ
+
+local instance factSplitsSplittingField_dihedral (f : ℚ[X]) :
+    Fact ((f.map (algebraMap ℚ f.SplittingField)).Splits) :=
+  ⟨SplittingField.splits f⟩
+
+open scoped Classical in
+/-- **Factorization types do not separate `D₅` from `A₅`.** At every prime `p` not dividing the
+discriminant, the degrees of the irreducible factors of `X⁵ - 5X - 12` modulo `p` are the full
+cycle type of an even permutation of its complex roots; yet its Galois image, the dihedral group
+of order `10`, does not contain the alternating group. So no factorization type of this
+polynomial, at any good prime, rules out the label `5T4`: factorization types only exhibit
+elements of the Galois image, and every element of `D₅` lies in `A₅`. The upper bound that
+excludes `A₅` comes from the root `40` of the resolvent sextic instead. -/
+theorem factorDegrees_do_not_distinguish_D5_A5 :
+    (∀ (p : ℕ) [Fact p.Prime], ¬ (p : ℤ) ∣ (X ^ 5 - 5 * X - 12 : ℤ[X]).discr →
+      ∃ σ ∈ alternatingGroup (((X ^ 5 - 5 * X - 12 : ℤ[X]).map (Int.castRingHom ℚ)).rootSet ℂ),
+        σ.fullCycleType = (X ^ 5 - 5 * X - 12 : ℤ[X]).factorDegrees p) ∧
+      ¬ alternatingGroup (((X ^ 5 - 5 * X - 12 : ℤ[X]).map (Int.castRingHom ℚ)).rootSet ℂ) ≤
+        (Gal.galActionHom ((X ^ 5 - 5 * X - 12 : ℤ[X]).map (Int.castRingHom ℚ)) ℂ).range := by
+  have hf : (X ^ 5 - 5 * X - 12 : ℤ[X]).Monic := by monicity!
+  have hdeg : (X ^ 5 - 5 * X - 12 : ℤ[X]).natDegree = 5 := by compute_degree!
+  have hroots :
+      Nat.card (((X ^ 5 - 5 * X - 12 : ℤ[X]).map (Int.castRingHom ℚ)).rootSet ℂ) = 5 := by
+    rw [natCard_rootSet_complex_eq_natDegree
+      (by rw [discr_X_pow_five_sub_five_mul_X_sub_twelve]; norm_num), hdeg]
+  -- The label `5T2` makes the Galois image even, read in the splitting field; transport along
+  -- the identification of the roots there with the complex roots preserves signs.
+  have hA₀ :=
+    hasGaloisLabel_X_pow_five_sub_five_mul_X_sub_twelve.range_le_alternatingGroup_iff.mpr
+      referenceSubgroup_five_one_le_alternatingGroup
+  have hA : (Gal.galActionHom ((X ^ 5 - 5 * X - 12 : ℤ[X]).map (Int.castRingHom ℚ)) ℂ).range ≤
+      alternatingGroup (((X ^ 5 - 5 * X - 12 : ℤ[X]).map (Int.castRingHom ℚ)).rootSet ℂ) := by
+    rintro _ ⟨g, rfl⟩
+    rw [Gal.galActionHom_eq_permCongr (E := ((X ^ 5 - 5 * X - 12 : ℤ[X]).map
+      (Int.castRingHom ℚ)).SplittingField) _ ℂ g, Equiv.Perm.mem_alternatingGroup,
+      Equiv.Perm.sign_permCongr]
+    exact Equiv.Perm.mem_alternatingGroup.mp (hA₀ ⟨g, rfl⟩)
+  refine ⟨fun p _ hp => ?_, fun hle => ?_⟩
+  · obtain ⟨σ, hσ, htype⟩ := exists_mem_range_galActionHom_fullCycleType_eq_factorDegrees hf p hp
+    exact ⟨σ, hA hσ, htype⟩
+  · have : Nontrivial (((X ^ 5 - 5 * X - 12 : ℤ[X]).map (Int.castRingHom ℚ)).rootSet ℂ) :=
+      Finite.one_lt_card_iff_nontrivial.mp (by rw [hroots]; norm_num)
+    have hmap : (X ^ 5 - 5 * X - 12 : ℤ[X]).map (Int.castRingHom ℚ) = X ^ 5 - 5 * X - 12 := by
+      simp
+    have hcard := Subgroup.card_le_of_le hle
+    rw [nat_card_alternatingGroup, hroots, natCard_galActionHom_range, hmap,
+      natCard_gal_X_pow_five_sub_five_mul_X_sub_twelve] at hcard
+    norm_num [Nat.factorial] at hcard
 
 end TauCeti

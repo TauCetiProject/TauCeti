@@ -304,12 +304,7 @@ theorem recutTerminal_mem_pentagonRectangleDecompositions
   have hPX := ((G.mem_pentagons _).1 hP).2
   have hRX := (((G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles _).1 hR).2
   have hmapX : Disjoint (D.rectangle.toGridRectangle.coveredSquares.map e) G.XSet := by
-    rw [Finset.disjoint_left]
-    intro p hp' hX
-    obtain ⟨q, hq, rfl⟩ := Finset.mem_map.mp hp'
-    apply Finset.disjoint_left.mp hRX hq
-    simpa only [mem_XSet_swapColumns, e, Equiv.coe_toEmbedding, Equiv.prodCongr_apply,
-      Prod.map_apply', Equiv.refl_apply] using hX
+    exact (G.disjoint_map_swapColumns_XSet_iff C.column (finRotate n C.column) _).2 hRX
   have hunion := congrArg Multiset.toFinset
     (D.coveredSquares_val_add_recutTerminal hcommon hcol hp hr)
   simp only [Multiset.toFinset_add, Finset.val_toFinset] at hunion
@@ -329,11 +324,7 @@ theorem recutTerminal_mem_pentagonRectangleDecompositions
       GridPentagonRectangleDecomposition.toRectangleDecomposition_middle,
       GridPentagonRectangleDecomposition.toRectangleDecomposition_second_toGridRectangle]
       using hrecut.isEmpty_second
-  · rw [Finset.disjoint_left]
-    intro q hq hX
-    apply Finset.disjoint_left.mp hER (Finset.mem_map.mpr ⟨q, hq, rfl⟩)
-    simpa only [mem_XSet_swapColumns, e, Equiv.coe_toEmbedding, Equiv.prodCongr_apply,
-      Prod.map_apply', Equiv.refl_apply] using hX
+  · exact (G.disjoint_map_swapColumns_XSet_iff C.column (finRotate n C.column) _).1 hER
 
 /-- The terminal self-recut preserves the monomial contribution to the pentagon--rectangle
 coefficient sum over any commutative semiring. -/
