@@ -38,39 +38,6 @@ attribute [local instance] trivialMulDistribMulAction
 
 variable {k G : Type} [Field k] [Group G]
 
-/-- A factor set whose class is killed by `n` over an algebraically closed field has a cohomologous
-representative with values in the `n`-th roots of unity, including when `n = 0`. -/
-theorem exists_cohomologyClass_eq_and_pow_eq_one [IsAlgClosed k]
-    (α : FactorSet G kˣ) {n : ℕ} (hα : n • α.cohomologyClass = 0) :
-    ∃ β : FactorSet G kˣ, β.cohomologyClass = α.cohomologyClass ∧
-      ∀ p, β p ^ n = 1 := by
-  by_cases hn : n = 0
-  · exact ⟨α, rfl, fun p ↦ by simp [hn]⟩
-  have hn : 0 < n := Nat.pos_of_ne_zero hn
-  have hroot : Function.Surjective (fun z : kˣ ↦ z ^ n) := by
-    intro a
-    obtain ⟨z, hz⟩ := IsAlgClosed.exists_pow_nat_eq (a : k) hn
-    have hz0 : z ≠ 0 := by
-      intro h
-      exact a.ne_zero (by simpa [h, zero_pow hn.ne'] using hz.symm)
-    exact ⟨Units.mk0 z hz0, Units.ext hz⟩
-  obtain ⟨d, hd1, hd⟩ := α.exists_rescale_pow_eq_one trivialMulDistribMulAction_smul hroot hα
-  let β : FactorSet G kˣ :=
-    { toFun p := d p.1 * d p.2 * (d (p.1 * p.2))⁻¹ * α p
-      isMulCocycle₂' := by
-        intro g h j
-        have ha := α.isMulCocycle₂ g h j
-        simp only [trivialMulDistribMulAction_smul] at ha ⊢
-        convert congrArg (fun a ↦ d g * d h * d j * (d (g * h * j))⁻¹ * a) ha using 1 <;>
-          simp only [mul_assoc] <;> apply Additive.ofMul.injective <;>
-          simp only [ofMul_mul, ofMul_inv] <;> abel
-      map_one_one' := by simp [hd1] }
-  refine ⟨β, (cohomologyClass_eq_iff β α).2 ⟨d, fun g h ↦ ?_⟩, ?_⟩
-  · simp [β, trivialMulDistribMulAction_smul, div_eq_mul_inv,
-      mul_assoc, mul_comm]
-  · rintro ⟨g, h⟩
-    exact hd g h
-
 /-- A natural number `n` kills a cohomology class over an algebraically closed field exactly
 when the class has a normalized representative valued in the `n`-th roots of unity. -/
 theorem nsmul_eq_zero_iff_exists_factorSet [IsAlgClosed k] {n : ℕ}
@@ -79,7 +46,15 @@ theorem nsmul_eq_zero_iff_exists_factorSet [IsAlgClosed k] {n : ℕ}
   constructor
   · intro hx
     obtain ⟨α, rfl⟩ := exists_cohomologyClass_eq x
-    exact α.exists_cohomologyClass_eq_and_pow_eq_one hx
+    have hroot : n ≠ 0 → Function.Surjective (fun z : kˣ ↦ z ^ n) := by
+      intro hn a
+      have hn : 0 < n := Nat.pos_of_ne_zero hn
+      obtain ⟨z, hz⟩ := IsAlgClosed.exists_pow_nat_eq (a : k) hn
+      have hz0 : z ≠ 0 := by
+        intro h
+        exact a.ne_zero (by simpa [h, zero_pow hn.ne'] using hz.symm)
+      exact ⟨Units.mk0 z hz0, Units.ext hz⟩
+    exact α.exists_cohomologyClass_eq_and_pow_eq_one trivialMulDistribMulAction_smul hroot hx
   · rintro ⟨β, rfl, hβ⟩
     apply (β.nsmul_cohomologyClass_eq_zero_iff n).2
     exact ⟨fun _ ↦ 1, fun g h ↦ by simp [hβ]⟩
@@ -105,7 +80,8 @@ theorem IsProjectiveRep.exists_rootsOfUnityExtension_linearization
         π x = (ρ (FactorSet.rightHom β x)).trans
           (LinearEquiv.smulOfUnit ((x.left : kˣ) * c (FactorSet.rightHom β x))) := by
   rw [IsProjectiveRep.cohomologyClass_def] at hclass
-  obtain ⟨γ, hγ, hpow⟩ := hρ.factorSet.exists_cohomologyClass_eq_and_pow_eq_one hclass
+  obtain ⟨γ, hγ, hpow⟩ :=
+    (FactorSet.nsmul_eq_zero_iff_exists_factorSet hρ.factorSet.cohomologyClass).1 hclass
   obtain ⟨c, hc⟩ := (FactorSet.cohomologyClass_eq_iff γ hρ.factorSet).1 hγ
   simp only [trivialMulDistribMulAction_smul, IsProjectiveRep.factorSet_apply] at hc
   have hc1 : c 1 = 1 := by simpa [hρ.isFactorSet.one_left] using hc 1 1

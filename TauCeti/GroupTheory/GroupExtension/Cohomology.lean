@@ -162,17 +162,19 @@ end Class
 
 /-- For a trivial coefficient action, if `n` kills the class of a factor set and the
 coefficient group is `n`-divisible, a normalized scalar rescaling makes every value have
-`n`-th power one. -/
+`n`-th power one. When `n = 0`, no divisibility hypothesis is needed. -/
 theorem exists_rescale_pow_eq_one (α : FactorSet G M) (htriv : ∀ (g : G) (a : M), g • a = a) {n : ℕ}
-    (hroot : Function.Surjective (fun z : M ↦ z ^ n))
+    (hroot : n ≠ 0 → Function.Surjective (fun z : M ↦ z ^ n))
     (hα : n • α.cohomologyClass = 0) :
     ∃ d : G → M, d 1 = 1 ∧ ∀ g h,
       (d g * d h * (d (g * h))⁻¹ * α (g, h)) ^ n = 1 := by
   classical
+  by_cases hn : n = 0
+  · exact ⟨fun _ ↦ 1, rfl, fun _ _ ↦ by simp [hn]⟩
   obtain ⟨c, hc⟩ := (α.nsmul_cohomologyClass_eq_zero_iff n).1 hα
   simp only [htriv] at hc
   have hc1 : c 1 = 1 := by simpa using hc 1 1
-  choose e he using fun g ↦ hroot (c g)⁻¹
+  choose e he using fun g ↦ hroot hn (c g)⁻¹
   let d (g : G) := if g = 1 then 1 else e g
   have hd (g : G) : d g ^ n = (c g)⁻¹ := by
     by_cases hg : g = 1
@@ -183,6 +185,32 @@ theorem exists_rescale_pow_eq_one (α : FactorSet G M) (htriv : ∀ (g : G) (a :
   apply Additive.ofMul.injective
   simp only [ofMul_mul, ofMul_inv, ofMul_one]
   abel
+
+/-- For a trivial coefficient action, a factor set whose class is killed by `n` has a
+cohomologous representative with `n`-th power one whenever the coefficient power map is
+surjective for nonzero `n`. For `n = 0`, the original factor set is already such a
+representative. -/
+theorem exists_cohomologyClass_eq_and_pow_eq_one (α : FactorSet G M)
+    (htriv : ∀ (g : G) (a : M), g • a = a) {n : ℕ}
+    (hroot : n ≠ 0 → Function.Surjective (fun z : M ↦ z ^ n))
+    (hα : n • α.cohomologyClass = 0) :
+    ∃ β : FactorSet G M, β.cohomologyClass = α.cohomologyClass ∧
+      ∀ p, β p ^ n = 1 := by
+  obtain ⟨d, hd1, hd⟩ := α.exists_rescale_pow_eq_one htriv hroot hα
+  let β : FactorSet G M :=
+    { toFun p := d p.1 * d p.2 * (d (p.1 * p.2))⁻¹ * α p
+      isMulCocycle₂' := by
+        intro g h j
+        have ha := α.isMulCocycle₂ g h j
+        simp only [htriv] at ha ⊢
+        convert congrArg (fun a ↦ d g * d h * d j * (d (g * h * j))⁻¹ * a) ha using 1 <;>
+          simp only [mul_assoc] <;> apply Additive.ofMul.injective <;>
+          simp only [ofMul_mul, ofMul_inv] <;> abel
+      map_one_one' := by simp [hd1] }
+  refine ⟨β, (cohomologyClass_eq_iff β α).2 ⟨d, fun g h ↦ ?_⟩, ?_⟩
+  · simp [β, htriv, div_eq_mul_inv, mul_assoc, mul_comm]
+  · rintro ⟨g, h⟩
+    exact hd g h
 
 /-! ### Normalizing a cocycle -/
 
