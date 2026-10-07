@@ -16,11 +16,11 @@ A closed embedded submanifold of a finite-dimensional Euclidean space admits a p
 continuous radius for which the closed normal discs embed as a closed neighbourhood and
 the normal spheres are the frontier of the open tube. The core need not be compact.
 
-Bound the radius uniformly before shrinking inside an injective tube. Closedness of the
-core and compactness of the ambient displacement ball then make the disc image closed.
-The open tube comes from `exists_isOpenEmbedding_normalTubeOfRadius`.
-The bundle closure calculation is fibrewise and needs only positivity and continuity of
-the radius, with no uniform positive lower bound.
+For a `C¹` closed Euclidean embedding, a continuous uniformly bounded radius gives
+closed normal disc images. A smaller positive radius inside an embedded open tube gives
+closed disc embeddings and identifies the frontier with the normal sphere image. For a
+`C²` immersion that is a closed embedding, such a radius exists. These closed normal
+neighbourhoods and their boundary spheres provide the neighbourhoods removed in surgery.
 
 ## References
 
@@ -41,81 +41,9 @@ variable {V E H M : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
 
-variable (I) in
-/-- Closed normal discs with radius depending on the base point. -/
-def normalDiscBundleOfRadius (f : M → V) (r : M → ℝ) : Set (M × V) :=
-  {p | p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ ≤ r p.1}
-
-variable (I) in
-/-- Normal spheres with radius depending on the base point. -/
-def normalSphereBundleOfRadius (f : M → V) (r : M → ℝ) : Set (M × V) :=
-  {p | p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ = r p.1}
-
-@[simp] theorem mem_normalDiscBundleOfRadius {f : M → V} {r : M → ℝ} {p : M × V} :
-    p ∈ normalDiscBundleOfRadius I f r ↔
-      p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ ≤ r p.1 := Iff.rfl
-
-@[simp] theorem mem_normalSphereBundleOfRadius {f : M → V} {r : M → ℝ} {p : M × V} :
-    p ∈ normalSphereBundleOfRadius I f r ↔
-      p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ = r p.1 := Iff.rfl
-
-@[simp] theorem normalDiscBundleOfRadius_const (f : M → V) (ε : ℝ) :
-    normalDiscBundleOfRadius I f (fun _ => ε) = normalDiscBundle I f ε := by
-  ext p
-  simp
-
-@[simp] theorem normalSphereBundleOfRadius_const (f : M → V) (ε : ℝ) :
-    normalSphereBundleOfRadius I f (fun _ => ε) = normalSphereBundle I f ε := by
-  ext p
-  simp
-
-/-- The difference between closed normal discs and their open tube consists of the
-normal spheres. -/
-@[simp] theorem normalDiscBundleOfRadius_sdiff_normalTubeOfRadius (f : M → V) (r : M → ℝ) :
-    normalDiscBundleOfRadius I f r \ normalTubeOfRadius I f r =
-      normalSphereBundleOfRadius I f r := by
-  ext p
-  simp only [mem_sdiff, mem_normalDiscBundleOfRadius, mem_normalTubeOfRadius,
-    mem_normalSphereBundleOfRadius]
-  grind
-
 section Regularity
 
 variable [I.Boundaryless] [IsManifold I 1 M] {f : M → V} {r : M → ℝ}
-
-/-- Continuous variable-radius closed normal discs are closed in the ambient product. -/
-theorem isClosed_normalDiscBundleOfRadius (hf : ContMDiff I 𝓘(ℝ, V) 1 f)
-    (hr : Continuous r) : IsClosed (normalDiscBundleOfRadius I f r) :=
-  (isClosed_setOf_mem_normalSubspace hf).inter
-    (isClosed_le (continuous_norm.comp continuous_snd) (hr.comp continuous_fst))
-
-/-- Continuous variable-radius normal spheres are closed in the ambient product. -/
-theorem isClosed_normalSphereBundleOfRadius (hf : ContMDiff I 𝓘(ℝ, V) 1 f)
-    (hr : Continuous r) : IsClosed (normalSphereBundleOfRadius I f r) :=
-  (isClosed_setOf_mem_normalSubspace hf).inter
-    (isClosed_eq (continuous_norm.comp continuous_snd) (hr.comp continuous_fst))
-
-/-- The closure of an open normal tube with positive continuous radius is its closed
-normal disc bundle. -/
-theorem closure_normalTubeOfRadius (hf : ContMDiff I 𝓘(ℝ, V) 1 f)
-    (hr : Continuous r) (hpos : ∀ x, 0 < r x) :
-    closure (normalTubeOfRadius I f r) = normalDiscBundleOfRadius I f r := by
-  refine subset_antisymm
-    (closure_minimal (fun p hp => ⟨(mem_normalTubeOfRadius.mp hp).1,
-      (mem_normalTubeOfRadius.mp hp).2.le⟩)
-      (isClosed_normalDiscBundleOfRadius hf hr)) ?_
-  rintro ⟨x, v⟩ ⟨hv, hnorm⟩
-  let w : normalSubspace I f x := ⟨v, hv⟩
-  have hw : w ∈ closure (Metric.ball 0 (r x)) := by
-    rw [closure_ball _ (hpos x).ne']
-    exact mem_closedBall_zero_iff.mpr hnorm
-  have hc : Continuous fun u : normalSubspace I f x => (x, (u : V)) :=
-    continuous_const.prodMk continuous_subtype_val
-  have hsub : (fun u : normalSubspace I f x => (x, (u : V))) '' Metric.ball 0 (r x) ⊆
-      normalTubeOfRadius I f r := by
-    rintro _ ⟨u, hu, rfl⟩
-    exact mem_normalTubeOfRadius.mpr ⟨u.2, mem_ball_zero_iff.mp hu⟩
-  exact closure_mono hsub (mem_closure_image (hc.continuousAt (x := w)) hw)
 
 variable [FiniteDimensional ℝ V]
 
@@ -129,7 +57,7 @@ theorem isClosed_image_normalDiscBundleOfRadius (hf : ContMDiff I 𝓘(ℝ, V) 1
   have hsub : Prod.snd '' (Prod.map f id '' normalDiscBundleOfRadius I f r) ⊆
       Metric.closedBall (0 : V) R := by
     rintro _ ⟨_, ⟨p, hp, rfl⟩, rfl⟩
-    exact mem_closedBall_zero_iff.mpr (hp.2.trans (hbound p.1))
+    exact mem_closedBall_zero_iff.mpr ((mem_normalDiscBundleOfRadius.mp hp).2.trans (hbound p.1))
   simpa only [image_image, Function.comp_def, Prod.map_fst, Prod.map_snd, id_eq] using
     hs.image_add_of_snd_subset (isCompact_closedBall (0 : V) R) hsub
 
@@ -141,8 +69,8 @@ theorem closure_image_normalTubeOfRadius (hf : ContMDiff I 𝓘(ℝ, V) 1 f)
     closure ((fun p : M × V => f p.1 + p.2) '' normalTubeOfRadius I f r) =
       (fun p : M × V => f p.1 + p.2) '' normalDiscBundleOfRadius I f r := by
   refine subset_antisymm (closure_minimal (image_mono
-    (fun p hp => ⟨(mem_normalTubeOfRadius.mp hp).1,
-      (mem_normalTubeOfRadius.mp hp).2.le⟩))
+    (fun p hp => mem_normalDiscBundleOfRadius.mpr
+      ⟨(mem_normalTubeOfRadius.mp hp).1, (mem_normalTubeOfRadius.mp hp).2.le⟩))
     (isClosed_image_normalDiscBundleOfRadius hf hclosed hr hbound)) ?_
   rw [← closure_normalTubeOfRadius hf hr hpos]
   exact image_closure_subset_closure_image
@@ -158,7 +86,9 @@ theorem isClosedEmbedding_normalDiscBundleOfRadius (hf : ContMDiff I 𝓘(ℝ, V
     IsClosedEmbedding ((normalDiscBundleOfRadius I f r).domRestrict
       fun p : M × V => f p.1 + p.2) := by
   have hsub : normalDiscBundleOfRadius I f r ⊆ normalTubeOfRadius I f s :=
-    fun p hp => mem_normalTubeOfRadius.mpr ⟨hp.1, hp.2.trans_lt (hrs p.1)⟩
+    fun p hp => mem_normalTubeOfRadius.mpr
+      ⟨(mem_normalDiscBundleOfRadius.mp hp).1,
+        (mem_normalDiscBundleOfRadius.mp hp).2.trans_lt (hrs p.1)⟩
   refine ⟨h.comp (IsEmbedding.inclusion hsub), ?_⟩
   simpa only [range_domRestrict] using
     isClosed_image_normalDiscBundleOfRadius hf hclosed hr hbound
@@ -173,26 +103,17 @@ theorem frontier_image_normalTubeOfRadius (hf : ContMDiff I 𝓘(ℝ, V) 1 f)
     frontier ((fun p : M × V => f p.1 + p.2) '' normalTubeOfRadius I f r) =
       (fun p : M × V => f p.1 + p.2) '' normalSphereBundleOfRadius I f r := by
   let Φ : M × V → V := fun p => f p.1 + p.2
-  have hsub : normalTubeOfRadius I f r ⊆ normalTubeOfRadius I f s :=
-    fun p hp => mem_normalTubeOfRadius.mpr
-      ⟨(mem_normalTubeOfRadius.mp hp).1, (mem_normalTubeOfRadius.mp hp).2.trans (hrs p.1)⟩
   have hopen : IsOpen (Φ '' normalTubeOfRadius I f r) := by
-    have hi : IsOpenEmbedding ((normalTubeOfRadius I f r).domRestrict Φ) :=
-      h.comp (IsOpenEmbedding.inclusion hsub ?_)
-    · simpa only [range_domRestrict] using hi.isOpen_range
-    · convert isOpen_lt ((continuous_norm.comp continuous_snd).comp
-        (continuous_subtype_val : Continuous (Subtype.val : normalTubeOfRadius I f s → M × V)))
-        (hr.comp (continuous_fst.comp continuous_subtype_val)) using 1
-      ext p
-      simp only [mem_preimage, mem_normalTubeOfRadius, mem_ofPred_eq, Function.comp_apply]
-      exact and_iff_right (mem_normalTubeOfRadius.mp p.2).1
+    simpa only [range_domRestrict] using
+      (isOpenEmbedding_normalTubeOfRadius_of_le hr (fun x => (hrs x).le) h).isOpen_range
   have hinj : InjOn Φ (normalDiscBundleOfRadius I f r) := by
     intro p hp q hq hpq
     exact congrArg Subtype.val
       ((isClosedEmbedding_normalDiscBundleOfRadius hf hclosed hr hbound hrs h.isEmbedding).injective
         (a₁ := ⟨p, hp⟩) (a₂ := ⟨q, hq⟩) hpq)
   have htd : normalTubeOfRadius I f r ⊆ normalDiscBundleOfRadius I f r :=
-    fun p hp => ⟨(mem_normalTubeOfRadius.mp hp).1, (mem_normalTubeOfRadius.mp hp).2.le⟩
+    fun p hp => mem_normalDiscBundleOfRadius.mpr
+      ⟨(mem_normalTubeOfRadius.mp hp).1, (mem_normalTubeOfRadius.mp hp).2.le⟩
   rw [frontier, closure_image_normalTubeOfRadius hf hclosed hr hpos hbound,
     hopen.interior_eq, ← hinj.image_sdiff_subset htd,
     normalDiscBundleOfRadius_sdiff_normalTubeOfRadius]
@@ -226,19 +147,10 @@ theorem exists_isClosedEmbedding_normalDiscBundleOfRadius [FiniteDimensional ℝ
   have hd :=
     isClosedEmbedding_normalDiscBundleOfRadius hf1 hclosed r.continuous hbound hrs h.isEmbedding
   have hsub : normalSphereBundleOfRadius I f r ⊆ normalDiscBundleOfRadius I f r :=
-    fun p hp => ⟨hp.1, hp.2.le⟩
-  have htr : normalTubeOfRadius I f r ⊆ normalTubeOfRadius I f s := fun p hp =>
-    mem_normalTubeOfRadius.mpr
-      ⟨(mem_normalTubeOfRadius.mp hp).1, (mem_normalTubeOfRadius.mp hp).2.trans (hrs p.1)⟩
-  have hopen : IsOpenEmbedding ((normalTubeOfRadius I f r).domRestrict
-      fun p : M × V => f p.1 + p.2) := by
-    apply h.comp (IsOpenEmbedding.inclusion htr ?_)
-    convert isOpen_lt ((continuous_norm.comp continuous_snd).comp
-      (continuous_subtype_val : Continuous (Subtype.val : normalTubeOfRadius I f s → M × V)))
-      (r.continuous.comp (continuous_fst.comp continuous_subtype_val)) using 1
-    ext p
-    simp only [mem_preimage, mem_normalTubeOfRadius, mem_ofPred_eq, Function.comp_apply]
-    exact and_iff_right (mem_normalTubeOfRadius.mp p.2).1
+    fun p hp => mem_normalDiscBundleOfRadius.mpr
+      ⟨(mem_normalSphereBundleOfRadius.mp hp).1, (mem_normalSphereBundleOfRadius.mp hp).2.le⟩
+  have hopen :=
+    isOpenEmbedding_normalTubeOfRadius_of_le r.continuous (fun x => (hrs x).le) h
   exact ⟨r, hr, hopen, hd,
     hd.comp (IsClosedEmbedding.inclusion hsub
       ((isClosed_normalSphereBundleOfRadius hf1 r.continuous).preimage continuous_subtype_val)),
