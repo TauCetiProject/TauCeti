@@ -22,21 +22,22 @@ tangent space read off either chart.
 
 This file proves that a transverse intersection is again an embedded `C^n` submanifold near `y`,
 whose tangent space is the intersection of the two tangent spaces: there is a `C^n` chart with
-`C^n` inverse flattening `S₁ ∩ S₂` onto that intersection of subspaces. Its dimension is therefore
+`C^n` inverse flattening `S₁ ∩ S₂` onto that intersection of subspaces, and the span of the tangent
+cone of `S₁ ∩ S₂` at `y` is that intersection. Its dimension is therefore
 `dim T₁ + dim T₂ - dim E`.
 
 The proof writes `S₁ ∩ S₂` near `y` as the zero set of the map `z ↦ (P₁ (e₁ z), P₂ (e₂ z))`, where
 `Pᵢ` projects onto a complement of the model subspace of the chart `eᵢ`. Transversality is
 exactly the surjectivity of its derivative at `y`, so the zero set is flattened by the chart that
-the implicit function theorem attaches to a map with surjective derivative.
+the implicit function theorem attaches to a map with surjective derivative
+(`HasStrictFDerivAt.exists_isSliceChart_preimage_zero`).
 
 ## Main results
 
-* `HasStrictFDerivAt.exists_isSliceChart_preimage_zero`: near a point where a `C^n` map has
-  surjective derivative with complemented kernel, a `C^n` ambient chart flattens its zero set onto
-  that kernel.
 * `TauCeti.exists_isSliceChart_inter_of_span_tangentConeAt_sup_eq_top`: a transverse
   intersection of two flattened sets is flattened onto the intersection of their tangent spaces.
+* `TauCeti.span_tangentConeAt_inter_of_span_tangentConeAt_sup_eq_top`: the tangent space of a
+  transverse intersection is the intersection of the two tangent spaces.
 
 ## References
 
@@ -47,56 +48,6 @@ public section
 
 open Filter Set Topology
 open scoped ContDiff
-
-namespace HasStrictFDerivAt
-
-variable {K E F : Type*} [NontriviallyNormedField K]
-  [NormedAddCommGroup E] [NormedSpace K E] [CompleteSpace E]
-  [NormedAddCommGroup F] [NormedSpace K F] [CompleteSpace F]
-
-/-- **A regular zero set is flattened by an ambient chart.** If `f` is `C^n` (`n ≠ 0`) on an open
-set `U` around `a`, with surjective strict derivative `f'` at `a` whose kernel is complemented,
-then a `C^n` chart of `E` with `C^n` inverse, defined around `a` with source inside `U`, flattens
-the zero set of `f` onto `ker f'`. -/
-theorem exists_isSliceChart_preimage_zero {n : ℕ∞ω} (hn : n ≠ 0) {f : E → F} {f' : E →L[K] F}
-    {a : E} (hf : HasStrictFDerivAt f f' a) (hf' : f'.range = ⊤)
-    (hker : f'.ker.ClosedComplemented) {U : Set E} (hU : IsOpen U) (haU : a ∈ U)
-    (hC : ∀ z ∈ U, ContDiffAt K n f z) :
-    ∃ e : OpenPartialHomeomorph E E, a ∈ e.source ∧ e.source ⊆ U ∧
-      (∀ z ∈ e.source, ContDiffAt K n e z) ∧
-      (∀ z ∈ e.target, ContDiffAt K n e.symm z) ∧
-      TauCeti.IsSliceChart e (f'.ker : Set E) (f ⁻¹' {0}) := by
-  have : CompleteSpace f'.ker := hker.isClosed.completeSpace_coe
-  -- Straighten `f` with the implicit-function chart `x ↦ (f x, P (x - a))`, then return to `E`
-  -- through its derivative `J`, which carries `{0} × ker f'` onto `ker f'`.
-  set Φ := hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker
-  set J := f'.implicitCoordEquiv hf' hker
-  have hJ (p : F × f'.ker) : f' (J.symm p) = p.1 := by
-    have := congrArg Prod.fst (J.apply_symm_apply p)
-    rwa [← ContinuousLinearEquiv.coe_coe, ContinuousLinearMap.coe_implicitCoordEquiv] at this
-  set W := U ∩ hf.implicitCoordSource hf' hker
-  have hW : IsOpen W := hU.inter (hf.isOpen_implicitCoordSource hf' hker)
-  refine ⟨(Φ.restrOpen W hW).transHomeomorph J.symm.toHomeomorph,
-    ⟨hf.mem_implicitToOpenPartialHomeomorphOfComplemented_source hf' hker, haU,
-      hf.mem_implicitCoordSource hf' hker⟩, fun z hz ↦ hz.2.1, fun z hz ↦ ?_, fun w hw ↦ ?_,
-    TauCeti.isSliceChart_iff.2 fun z _ ↦ ?_⟩
-  · exact J.symm.contDiff.contDiffAt.comp z
-      (hf.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented (hC z hz.2.1) hf' hker)
-  · obtain ⟨hwt, hwW⟩ := hw
-    simp only [mem_preimage] at hwt hwW
-    have hCw := hC _ hwW.1
-    simpa only [ContinuousLinearEquiv.toHomeomorph_symm, Homeomorph.symm_symm,
-      OpenPartialHomeomorph.transHomeomorph_symm_apply, OpenPartialHomeomorph.coe_restrOpen_symm,
-      ContinuousLinearEquiv.coe_toHomeomorph, Function.comp_def, Homeomorph.coe_symm_toEquiv] using
-      (hf.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm_of_mem hf' hker hwt
-        hwW.2 ((hCw.differentiableAt hn).hasFDerivAt) hCw).comp w J.contDiff.contDiffAt
-  · simp only [OpenPartialHomeomorph.transHomeomorph_apply, Function.comp_apply,
-      ContinuousLinearEquiv.coe_toHomeomorph, SetLike.mem_coe, LinearMap.mem_ker,
-      ContinuousLinearMap.coe_coe, hJ, OpenPartialHomeomorph.coe_restrOpen, Φ,
-      HasStrictFDerivAt.implicitToOpenPartialHomeomorphOfComplemented_fst, mem_preimage,
-      mem_singleton_iff]
-
-end HasStrictFDerivAt
 
 namespace TauCeti
 
@@ -170,5 +121,32 @@ theorem exists_isSliceChart_inter_of_span_tangentConeAt_sup_eq_top {n : ℕ∞ω
     exact ContinuousLinearMap.ker_prod _ _
   rw [← hker, ← he.mem_iff hz]
   simp [g, hP₁, hP₂, h₁.mem_iff (hes hz).1, h₂.mem_iff (hes hz).2]
+
+/-- **The tangent space of a transverse intersection.** Under the hypotheses of
+`TauCeti.exists_isSliceChart_inter_of_span_tangentConeAt_sup_eq_top`, the tangent space of
+`S₁ ∩ S₂` at `y`, taken intrinsically as the span of its tangent cone, is the intersection of the
+tangent spaces of `S₁` and `S₂` at `y`. -/
+theorem span_tangentConeAt_inter_of_span_tangentConeAt_sup_eq_top {n : ℕ∞ω} (hn : n ≠ 0)
+    {S₁ S₂ : Set E} {L₁ L₂ : Submodule 𝕜 E} {e₁ e₂ : OpenPartialHomeomorph E E} {y : E}
+    (h₁ : IsSliceChart e₁ (L₁ : Set E) S₁) (h₂ : IsSliceChart e₂ (L₂ : Set E) S₂)
+    (hy₁ : y ∈ e₁.source) (hy₂ : y ∈ e₂.source) (hyS₁ : y ∈ S₁) (hyS₂ : y ∈ S₂)
+    (hc₁ : ∀ z ∈ e₁.source, ContDiffAt 𝕜 n e₁ z) (hc₂ : ∀ z ∈ e₂.source, ContDiffAt 𝕜 n e₂ z)
+    (hs₁ : DifferentiableAt 𝕜 e₁.symm (e₁ y)) (hs₂ : DifferentiableAt 𝕜 e₂.symm (e₂ y))
+    (htr : Submodule.span 𝕜 (tangentConeAt 𝕜 S₁ y) ⊔
+      Submodule.span 𝕜 (tangentConeAt 𝕜 S₂ y) = ⊤) :
+    Submodule.span 𝕜 (tangentConeAt 𝕜 (S₁ ∩ S₂) y) =
+      Submodule.span 𝕜 (tangentConeAt 𝕜 S₁ y) ⊓ Submodule.span 𝕜 (tangentConeAt 𝕜 S₂ y) := by
+  obtain ⟨e, hye, hC, hCs, he⟩ := exists_isSliceChart_inter_of_span_tangentConeAt_sup_eq_top hn
+    h₁ h₂ hy₁ hy₂ hyS₁ hyS₂ hc₁ hc₂ hs₁ hs₂ htr
+  have hd := (hC y hye).differentiableAt hn
+  obtain ⟨A, hA⟩ := e.isInvertible_fderiv hye hd
+    ((hCs _ (e.map_source hye)).differentiableAt hn)
+  -- The tangent cone of `S₁ ∩ S₂` lies in both tangent spaces, and has the same dimension as
+  -- their intersection, read off the chart `e`.
+  refine Submodule.eq_of_le_of_finrank_eq (Submodule.span_le.2 fun v hv ↦
+    ⟨Submodule.subset_span (tangentConeAt_mono inter_subset_left hv),
+      Submodule.subset_span (tangentConeAt_mono inter_subset_right hv)⟩) ?_
+  exact he.finrank_span_tangentConeAt (Submodule.closed_of_finiteDimensional _) hye
+    ⟨hyS₁, hyS₂⟩ (hA ▸ hd.hasFDerivAt)
 
 end TauCeti

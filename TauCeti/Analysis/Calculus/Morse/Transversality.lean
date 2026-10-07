@@ -8,15 +8,16 @@ module
 public import TauCeti.Analysis.Calculus.Morse.GlobalChart
 public import TauCeti.Analysis.Calculus.TransverseIntersection
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import TauCeti.Dynamics.Flow.ConnectingOrbit
+import TauCeti.Analysis.Calculus.Morse.RegularLevel
 
 /-!
 # Transverse intersections of unstable and stable manifolds
 
 Let `p` and `q` be nondegenerate critical points of a globally `C²` function `f` with globally
-Lipschitz gradient on a finite-dimensional real inner product space. The trajectories of the
-negative-gradient flow running from `p` to `q` are the points of `W^u(p) ∩ W^s(q)`, the
-intersection of the unstable set of `p` with the stable set of `q`. The **Morse–Smale condition**
+Lipschitz gradient on a finite-dimensional real inner product space. The points of
+`W^u(p) ∩ W^s(q)`, the intersection of the unstable set of `p` with the stable set of `q`, are the
+points lying on trajectories of the negative-gradient flow running from `p` to `q`. The
+**Morse–Smale condition**
 asks that these two embedded submanifolds meet transversally: at every common point `y`, their
 tangent spaces span the ambient space. Tangent spaces are taken intrinsically, as spans of the
 tangent cones `tangentConeAt ℝ _ y`.
@@ -26,9 +27,12 @@ This file proves the two basic consequences of transversality at a point `y` of
 
 * Near `y`, the intersection is an embedded `C¹` submanifold of dimension
   `morseIndex f p - morseIndex f q`: a `C¹` chart with `C¹` inverse flattens it onto the
-  intersection of the two tangent spaces, whose dimension `d` satisfies
-  `d + morseIndex f q = morseIndex f p`. This is the space of connecting trajectories whose
-  points, counted modulo the flow, define the Morse differential.
+  intersection of the two tangent spaces, which is its own tangent space at `y`, of dimension `d`
+  with `d + morseIndex f q = morseIndex f p`. This is the set of points on connecting
+  trajectories, each trajectory counted once for every one of its points (the parametrized
+  trajectory locus). The space of unparametrized trajectories, the quotient by the flow whose
+  points the Morse differential counts, is not constructed here; it has one dimension fewer,
+  `morseIndex f p - morseIndex f q - 1`.
 * If `p ≠ q`, the Morse index drops strictly: `morseIndex f q < morseIndex f p`. The velocity
   `-∇f y` of the trajectory through `y` is tangent to both invariant sets and is nonzero, so the
   intersection has positive dimension.
@@ -44,7 +48,9 @@ of `p`, and the complementary dimension for the stable set of `q`.
 * `TauCeti.IsNondegenerateCriticalPoint.exists_unstableSet_inter_stableSet_chart`: a transverse
   intersection of an unstable and a stable set is an embedded `C¹` submanifold, flattened onto the
   intersection of the tangent spaces.
-* `TauCeti.IsNondegenerateCriticalPoint.finrank_span_tangentConeAt_inf_add_morseIndex`: that
+* `TauCeti.IsNondegenerateCriticalPoint.span_tangentConeAt_unstableSet_inter_stableSet`: the
+  tangent space of the intersection is the intersection of the tangent spaces.
+* `TauCeti.IsNondegenerateCriticalPoint.finrank_span_tangentConeAt_inter_add_morseIndex`: the
   intersection has dimension `morseIndex f p - morseIndex f q`.
 * `TauCeti.IsNondegenerateCriticalPoint.morseIndex_lt_of_mem_unstableSet_inter_stableSet`: along a
   transverse trajectory joining distinct critical points, the Morse index drops strictly.
@@ -109,7 +115,7 @@ theorem finrank_span_tangentConeAt_stableSet_add_morseIndex (hq : IsNondegenerat
 
 /-- **Transverse unstable and stable sets meet in an embedded submanifold.** If the unstable set of
 a Morse critical point `p` and the stable set of a Morse critical point `q` meet transversally at
-`y`, then near `y` their intersection, the set of points on trajectories from `p` to `q`, is
+`y`, then near `y` their intersection, the set of points lying on trajectories from `p` to `q`, is
 flattened by a `C¹` chart with `C¹` inverse onto the intersection of their tangent spaces. -/
 theorem exists_unstableSet_inter_stableSet_chart (hp : IsNondegenerateCriticalPoint f p)
     (hq : IsNondegenerateCriticalPoint f q) (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
@@ -134,26 +140,45 @@ theorem exists_unstableSet_inter_stableSet_chart (hp : IsNondegenerateCriticalPo
     ((hes₂ _ (e₂.map_source hy₂)).differentiableAt one_ne_zero) htr
   exact ⟨e, hye, he, hes, isSliceChart_iff.1 hS⟩
 
-/-- **The space of connecting trajectories has dimension the index difference.** If the unstable set
-of a Morse critical point `p` and the stable set of a Morse critical point `q` meet transversally
-at `y`, then the intersection of their tangent spaces at `y`, which is the tangent space of
-`W^u(p) ∩ W^s(q)` by `exists_unstableSet_inter_stableSet_chart`, has dimension
+/-- **The tangent space of a transverse intersection.** If the unstable set of a Morse critical
+point `p` and the stable set of a Morse critical point `q` meet transversally at `y`, then the
+tangent space of `W^u(p) ∩ W^s(q)` at `y` is the intersection of their tangent spaces. -/
+theorem span_tangentConeAt_unstableSet_inter_stableSet (hp : IsNondegenerateCriticalPoint f p)
+    (hq : IsNondegenerateCriticalPoint f q) (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
+    (hyu : y ∈ Flow.unstableSet (negativeGradientFlow f hf) p)
+    (hys : y ∈ Flow.stableSet (negativeGradientFlow f hf) q)
+    (htr : Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊔
+      Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) = ⊤) :
+    Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p ∩
+        Flow.stableSet (negativeGradientFlow f hf) q) y) =
+      Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊓
+        Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) := by
+  obtain ⟨e₁, hy₁, he₁, hes₁, hS₁⟩ := hp.exists_unstableSet_chart hfs hf hyu
+  obtain ⟨e₂, hy₂, he₂, hes₂, hS₂⟩ := hq.exists_stableSet_chart hfs hf hys
+  exact span_tangentConeAt_inter_of_span_tangentConeAt_sup_eq_top one_ne_zero
+    (isSliceChart_iff.2 hS₁) (isSliceChart_iff.2 hS₂) hy₁ hy₂ hyu hys he₁ he₂
+    ((hes₁ _ (e₁.map_source hy₁)).differentiableAt one_ne_zero)
+    ((hes₂ _ (e₂.map_source hy₂)).differentiableAt one_ne_zero) htr
+
+/-- **The intersection has dimension the index difference.** If the unstable set of a Morse
+critical point `p` and the stable set of a Morse critical point `q` meet transversally at `y`,
+then the tangent space of `W^u(p) ∩ W^s(q)` at `y` has dimension
 `morseIndex f p - morseIndex f q`. -/
-theorem finrank_span_tangentConeAt_inf_add_morseIndex (hp : IsNondegenerateCriticalPoint f p)
+theorem finrank_span_tangentConeAt_inter_add_morseIndex (hp : IsNondegenerateCriticalPoint f p)
     (hq : IsNondegenerateCriticalPoint f q) (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
     (hyu : y ∈ Flow.unstableSet (negativeGradientFlow f hf) p)
     (hys : y ∈ Flow.stableSet (negativeGradientFlow f hf) q)
     (htr : Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊔
       Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) = ⊤) :
     Module.finrank ℝ
-        (Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊓
-          Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) :
-            Submodule ℝ E) +
+        (Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p ∩
+          Flow.stableSet (negativeGradientFlow f hf) q) y)) +
       morseIndex f q = morseIndex f p := by
   have hdim := Submodule.finrank_sup_add_finrank_inf_eq
     (Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y))
     (Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y))
-  rw [htr, finrank_top, hp.finrank_span_tangentConeAt_unstableSet hfs hf hyu] at hdim
+  rw [htr, finrank_top, hp.finrank_span_tangentConeAt_unstableSet hfs hf hyu,
+    ← hp.span_tangentConeAt_unstableSet_inter_stableSet hq hfs hf hyu hys htr] at hdim
   have hs := hq.finrank_span_tangentConeAt_stableSet_add_morseIndex hfs hf hys
   omega
 
@@ -169,29 +194,25 @@ theorem morseIndex_lt_of_mem_unstableSet_inter_stableSet (hp : IsNondegenerateCr
     (htr : Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊔
       Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) = ⊤) :
     morseIndex f q < morseIndex f p := by
-  have hdim := hp.finrank_span_tangentConeAt_inf_add_morseIndex hq hfs hf hyu hys htr
+  have hdim := hp.finrank_span_tangentConeAt_inter_add_morseIndex hq hfs hf hyu hys htr
   set φ := negativeGradientFlow f hf
-  -- The velocity `-∇f y` of the trajectory through `y` is tangent to both invariant sets.
+  -- The velocity `-∇f y` of the trajectory through `y` is tangent to the invariant set
+  -- `W^u(p) ∩ W^s(q)`.
   have hvel : HasDerivAt (fun t ↦ φ t y) (-∇ f y) 0 := by
     simpa only [φ, _root_.Flow.map_zero_apply] using
       (isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y 0
-  have htan {S : Set E} (hS : IsInvariant φ S) (hyS : y ∈ S) :
-      -∇ f y ∈ Submodule.span ℝ (tangentConeAt ℝ S y) := by
+  have hmem : -∇ f y ∈
+      Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet φ p ∩ Flow.stableSet φ q) y) := by
     refine Submodule.subset_span ?_
     simpa only [φ, _root_.Flow.map_zero_apply] using
-      hvel.mem_tangentConeAt (Filter.Eventually.of_forall fun t ↦ hS t hyS)
+      hvel.mem_tangentConeAt (S := Flow.unstableSet φ p ∩ Flow.stableSet φ q)
+        (Filter.Eventually.of_forall fun t ↦
+          ⟨Flow.isInvariant_unstableSet φ p t hyu, Flow.isInvariant_stableSet φ q t hys⟩)
   -- It is nonzero, since `y` lies on a nonconstant trajectory.
-  have hgrad : ∇ f y ≠ 0 := fun h ↦ by
-    have hinj := Flow.orbit_injective_of_ne_of_mem_unstableSet_inter_stableSet hpq ⟨hyu, hys⟩
-    have hfix := (forall_negativeGradientFlow_eq_self_iff f hf y).2 h
-    exact zero_ne_one (hinj ((hfix 0).trans (hfix 1).symm))
-  have hmem : -∇ f y ∈ Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet φ p) y) ⊓
-      Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet φ q) y) :=
-    Submodule.mem_inf.2 ⟨htan (Flow.isInvariant_unstableSet φ p) hyu,
-      htan (Flow.isInvariant_stableSet φ q) hys⟩
+  have hgrad : ∇ f y ≠ 0 := Flow.gradient_ne_zero_of_mem_unstableSet_inter_stableSet
+    (fun z ↦ (forall_negativeGradientFlow_eq_self_iff f hf z).2) hpq ⟨hyu, hys⟩
   have hpos : 0 < Module.finrank ℝ
-      (Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet φ p) y) ⊓
-        Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet φ q) y) : Submodule ℝ E) := by
+      (Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet φ p ∩ Flow.stableSet φ q) y)) := by
     refine Nat.pos_of_ne_zero fun h ↦ hgrad ?_
     rw [Submodule.finrank_eq_zero.1 h, Submodule.mem_bot, neg_eq_zero] at hmem
     exact hmem
