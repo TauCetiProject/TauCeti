@@ -95,7 +95,7 @@ theorem hasOneCommonSide_of_initial_overlap (D : GridRectangleInitialPentagonDec
 
 variable (D : GridRectangleInitialPentagonDecomposition a s x z)
   (hcommon : D.first.left = D.second.left)
-  (hcol : D.second.right ∈ Grid.cIoo D.first.left D.first.right) (hone : D.HasOneCommonSide)
+  (hcol : D.second.right ∈ Grid.cIoo D.first.left D.first.right)
   (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty)
 
 include hcommon hcol in
@@ -103,9 +103,12 @@ include hcommon hcol in
 column interval, the two rectangles of the recut start on the common side and on the pentagon's
 terminal side. -/
 private theorem recut_lefts_of_left_eq_left :
-    (D.recut hone hfirst hsecond).first.left = D.first.left ∧
-      (D.recut hone hfirst hsecond).second.left = D.second.right := by
-  rcases (D.isRecutOfLeftEqLeft_recut hcommon hone hfirst hsecond).recut_branch with
+    (D.recut (D.hasOneCommonSide_of_initial_overlap hcommon hcol) hfirst hsecond).first.left =
+        D.first.left ∧
+      (D.recut (D.hasOneCommonSide_of_initial_overlap hcommon hcol) hfirst hsecond).second.left =
+        D.second.right := by
+  rcases (D.isRecutOfLeftEqLeft_recut hcommon (D.hasOneCommonSide_of_initial_overlap hcommon hcol)
+      hfirst hsecond).recut_branch with
     ⟨h, -⟩ | ⟨-, -, h⟩
   · exact False.elim (Finset.disjoint_left.mp
       (Grid.disjoint_cIoo_swap D.first.left D.second.right) h (Grid.mem_cIoo_cyclic_left hcol))
@@ -116,8 +119,9 @@ include hcommon hcol in
 column interval, the first rectangle of the recut starts on the replaced grid line, like the
 original pentagon. -/
 theorem recut_first_left_of_left_eq_left :
-    (D.recut hone hfirst hsecond).first.left = finRotate n a :=
-  (D.recut_lefts_of_left_eq_left hcommon hcol hone hfirst hsecond).1.trans
+    (D.recut (D.hasOneCommonSide_of_initial_overlap hcommon hcol) hfirst hsecond).first.left =
+      finRotate n a :=
+  (D.recut_lefts_of_left_eq_left hcommon hcol hfirst hsecond).1.trans
     (hcommon.trans D.second_left_eq)
 
 include hcommon in
@@ -137,12 +141,15 @@ include hcommon hcol in
 column interval, the first rectangle of the recut has the rectangle's bottom row and the
 pentagon's top row. -/
 private theorem recut_first_bottom_top :
-    (D.recut hone hfirst hsecond).first.bottom = D.first.bottom ∧
-      (D.recut hone hfirst hsecond).first.top = D.second.top := by
-  have hdata := D.isRecutOfLeftEqLeft_recut hcommon hone hfirst hsecond
+    (D.recut (D.hasOneCommonSide_of_initial_overlap hcommon hcol) hfirst hsecond).first.bottom =
+        D.first.bottom ∧
+      (D.recut (D.hasOneCommonSide_of_initial_overlap hcommon hcol) hfirst hsecond).first.top =
+        D.second.top := by
+  have hdata := D.isRecutOfLeftEqLeft_recut hcommon
+    (D.hasOneCommonSide_of_initial_overlap hcommon hcol) hfirst hsecond
   rw [GridRectangleBetween.bottom_def, GridRectangleBetween.bottom_def,
     GridRectangleBetween.top_def, hdata.recut_sides.1, D.second_top_eq hcol,
-    (D.recut_lefts_of_left_eq_left hcommon hcol hone hfirst hsecond).1]
+    (D.recut_lefts_of_left_eq_left hcommon hcol hfirst hsecond).1]
   exact ⟨rfl, rfl⟩
 
 include hcommon hcol hfirst hsecond in
@@ -159,11 +166,12 @@ include hcommon hcol in
 column interval, the first rectangle of the recut contains the turn row on its initial side: its
 rows contain those of the original pentagon. -/
 theorem turn_mem_recut_first_of_left_eq_left :
-    s ∈ Grid.cIco (D.recut hone hfirst hsecond).first.bottom
-      (D.recut hone hfirst hsecond).first.top := by
+    s ∈ Grid.cIco
+      (D.recut (D.hasOneCommonSide_of_initial_overlap hcommon hcol) hfirst hsecond).first.bottom
+      (D.recut (D.hasOneCommonSide_of_initial_overlap hcommon hcol) hfirst hsecond).first.top := by
   have hturn := D.second_turn_mem
   rw [D.second_bottom_eq_first_top hcommon] at hturn
-  obtain ⟨hbottom, htop⟩ := D.recut_first_bottom_top hcommon hcol hone hfirst hsecond
+  obtain ⟨hbottom, htop⟩ := D.recut_first_bottom_top hcommon hcol hfirst hsecond
   rw [hbottom, htop]
   exact Grid.cIco_subset_of_mem_cIoo (D.first_top_mem_cIoo hcommon hcol hfirst hsecond) hturn
 
@@ -172,40 +180,42 @@ include hcommon hcol in
 initial for both and the pentagon's terminal side lies inside the rectangle's column interval,
 and promote the first new rectangle to an initial-side pentagon. -/
 noncomputable def recutLeftEqLeft : GridInitialPentagonRectangleDecomposition a s x z where
-  toGridRectangleDecomposition := D.recut hone hfirst hsecond
-  first_left_eq := D.recut_first_left_of_left_eq_left hcommon hcol hone hfirst hsecond
-  first_turn_mem := D.turn_mem_recut_first_of_left_eq_left hcommon hcol hone hfirst hsecond
+  toGridRectangleDecomposition :=
+    D.recut (D.hasOneCommonSide_of_initial_overlap hcommon hcol) hfirst hsecond
+  first_left_eq := D.recut_first_left_of_left_eq_left hcommon hcol hfirst hsecond
+  first_turn_mem := D.turn_mem_recut_first_of_left_eq_left hcommon hcol hfirst hsecond
 
 /-- Forgetting the turn row of the promoted decomposition recovers the generic recut. -/
 @[simp]
 theorem recutLeftEqLeft_toGridRectangleDecomposition :
-    (D.recutLeftEqLeft hcommon hcol hone hfirst hsecond).toGridRectangleDecomposition =
-      D.recut hone hfirst hsecond :=
+    (D.recutLeftEqLeft hcommon hcol hfirst hsecond).toGridRectangleDecomposition =
+      D.recut (D.hasOneCommonSide_of_initial_overlap hcommon hcol) hfirst hsecond :=
   (rfl)
 
 /-- The promoted decomposition carries the generic recut relation. In particular its two
 underlying rectangles are empty and repartition the squares of the original two. -/
 theorem isRecut_recutLeftEqLeft :
-    D.IsRecut (D.recutLeftEqLeft hcommon hcol hone hfirst hsecond).toGridRectangleDecomposition :=
-  D.isRecut_recut hone hfirst hsecond
+    D.IsRecut (D.recutLeftEqLeft hcommon hcol hfirst hsecond).toGridRectangleDecomposition :=
+  D.isRecut_recut (D.hasOneCommonSide_of_initial_overlap hcommon hcol) hfirst hsecond
 
 /-- The promoted decomposition covers the squares of the original one with the same
 multiplicities, the rectangle of the commuted diagram being read in the original diagram with the
 two columns next to the replaced line exchanged. -/
 theorem coveredSquares_val_add_val_recutLeftEqLeft :
-    (D.recutLeftEqLeft hcommon hcol hone hfirst hsecond).pentagon.coveredSquares.val +
-        ((D.recutLeftEqLeft hcommon hcol hone hfirst hsecond).second.toGridRectangle.coveredSquares
+    (D.recutLeftEqLeft hcommon hcol hfirst hsecond).pentagon.coveredSquares.val +
+        ((D.recutLeftEqLeft hcommon hcol hfirst hsecond).second.toGridRectangle.coveredSquares
           |>.map ((Equiv.swap a (finRotate n a)).prodCongr (Equiv.refl (Fin n))).toEmbedding).val =
       D.first.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val := by
-  set E := D.recutLeftEqLeft hcommon hcol hone hfirst hsecond
+  set E := D.recutLeftEqLeft hcommon hcol hfirst hsecond
   have hdata : D.IsRecutOfLeftEqLeft E.toGridRectangleDecomposition :=
-    D.isRecutOfLeftEqLeft_recut hcommon hone hfirst hsecond
+    D.isRecutOfLeftEqLeft_recut hcommon (D.hasOneCommonSide_of_initial_overlap hcommon hcol)
+      hfirst hsecond
   have hEleft : E.second.left = D.second.right :=
-    (D.recut_lefts_of_left_eq_left hcommon hcol hone hfirst hsecond).2
+    (D.recut_lefts_of_left_eq_left hcommon hcol hfirst hsecond).2
   have hEbottom : E.first.bottom = D.first.bottom :=
-    (D.recut_first_bottom_top hcommon hcol hone hfirst hsecond).1
+    (D.recut_first_bottom_top hcommon hcol hfirst hsecond).1
   have hEtop : E.first.top = D.second.top :=
-    (D.recut_first_bottom_top hcommon hcol hone hfirst hsecond).2
+    (D.recut_first_bottom_top hcommon hcol hfirst hsecond).2
   have hEright : E.second.right = D.first.right := hdata.recut_sides.2
   have hrow := D.first_top_mem_cIoo hcommon hcol hfirst hsecond
   have hturn := D.second_turn_mem
@@ -224,7 +234,7 @@ theorem coveredSquares_val_add_val_recutLeftEqLeft :
   have hbmem : finRotate n a ∈ Grid.cIco D.first.left D.first.right :=
     hb ▸ Grid.left_mem_cIco D.first.left_ne_right
   refine D.coveredSquares_val_add_val_eq_of_isRepartition E
-    (D.isRecut_recutLeftEqLeft hcommon hcol hone hfirst hsecond).isRepartition
+    (D.isRecut_recutLeftEqLeft hcommon hcol hfirst hsecond).isRepartition
     (fun t => ?_) (fun t => ?_)
   -- In column `a` neither rectangle covers anything, and the two pentagons have the same top.
   · simp only [GridRectangleBetween.mem_toGridRectangle_coveredSquares, hEleft, hEright, hb',
@@ -252,7 +262,7 @@ variable (R : Type*) [CommSemiring R]
 variable {x z : GridState n}
   (D : GridRectangleInitialPentagonDecomposition C.column C.turnRow x z)
   (hcommon : D.first.left = D.second.left)
-  (hcol : D.second.right ∈ Grid.cIoo D.first.left D.first.right) (hone : D.HasOneCommonSide)
+  (hcol : D.second.right ∈ Grid.cIoo D.first.left D.first.right)
   (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty)
 
 /-- Recutting a rectangle followed by an initial-side pentagon along their common initial side,
@@ -260,17 +270,17 @@ when the pentagon's terminal side lies inside the rectangle's column interval, p
 weight. -/
 @[simp]
 theorem initialPentagonRectangleWeight_recutLeftEqLeft :
-    G.initialPentagonRectangleWeight C R (D.recutLeftEqLeft hcommon hcol hone hfirst hsecond) =
+    G.initialPentagonRectangleWeight C R (D.recutLeftEqLeft hcommon hcol hfirst hsecond) =
       G.rectangleInitialPentagonWeight C R D :=
   G.initialPentagonRectangleWeight_eq_rectangleInitialPentagonWeight_of_val_add_val_eq C R D _
-    (D.coveredSquares_val_add_val_recutLeftEqLeft hcommon hcol hone hfirst hsecond)
+    (D.coveredSquares_val_add_val_recutLeftEqLeft hcommon hcol hfirst hsecond)
 
 end Weights
 
 variable {x z : GridState n}
   (D : GridRectangleInitialPentagonDecomposition C.column C.turnRow x z)
   (hcommon : D.first.left = D.second.left)
-  (hcol : D.second.right ∈ Grid.cIoo D.first.left D.first.right) (hone : D.HasOneCommonSide)
+  (hcol : D.second.right ∈ Grid.cIoo D.first.left D.first.right)
   (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty)
 
 /-- The recut of a counted rectangle--initial-side pentagon domain with a common initial side,
@@ -278,12 +288,12 @@ whose pentagon's terminal side lies inside the rectangle's column interval, is a
 initial-side pentagon--rectangle domain. -/
 theorem recutLeftEqLeft_mem_initialPentagonRectangleDecompositions
     (hD : D ∈ G.rectangleInitialPentagonDecompositions C x z) :
-    D.recutLeftEqLeft hcommon hcol hone hfirst hsecond ∈
+    D.recutLeftEqLeft hcommon hcol hfirst hsecond ∈
       G.initialPentagonRectangleDecompositions C x z :=
-  have hrecut := D.isRecut_recutLeftEqLeft hcommon hcol hone hfirst hsecond
+  have hrecut := D.isRecut_recutLeftEqLeft hcommon hcol hfirst hsecond
   G.mem_initialPentagonRectangleDecompositions_of_val_add_val_eq C hD hrecut.isEmpty_first
     hrecut.isEmpty_second
-    (D.coveredSquares_val_add_val_recutLeftEqLeft hcommon hcol hone hfirst hsecond)
+    (D.coveredSquares_val_add_val_recutLeftEqLeft hcommon hcol hfirst hsecond)
 
 /-! ### Cancelling the common-initial-side cross terms -/
 
@@ -323,7 +333,6 @@ private noncomputable def initialPentagonInitialCrossOverlapPartner
   D.val.recutLeftEqLeft
     (G.initialPentagonInitialCrossOverlapSource_data C D.val D.property).1
     (G.initialPentagonInitialCrossOverlapSource_data C D.val D.property).2.1
-    (G.initialPentagonInitialCrossOverlapSource_data C D.val D.property).2.2.1
     (G.initialPentagonInitialCrossOverlapSource_data C D.val D.property).2.2.2.1
     (G.initialPentagonInitialCrossOverlapSource_data C D.val D.property).2.2.2.2
 
@@ -331,7 +340,7 @@ private theorem initialPentagonInitialCrossOverlapPartner_isRecut
     (D : {D // D ∈ G.initialPentagonInitialCrossOverlapSources C x z}) :
     D.val.IsRecut
       (G.initialPentagonInitialCrossOverlapPartner C D).toGridRectangleDecomposition :=
-  D.val.isRecut_recutLeftEqLeft _ _ _ _ _
+  D.val.isRecut_recutLeftEqLeft _ _ _ _
 
 private theorem initialPentagonInitialCrossOverlapPartner_injective :
     Function.Injective (G.initialPentagonInitialCrossOverlapPartner C (x := x) (z := z)) := by
@@ -357,7 +366,7 @@ private theorem initialPentagonInitialCrossOverlapPartner_mem
     G.initialPentagonInitialCrossOverlapPartner C D ∈
       G.initialPentagonRectangleDecompositions C x z := by
   unfold initialPentagonInitialCrossOverlapPartner
-  exact G.recutLeftEqLeft_mem_initialPentagonRectangleDecompositions C D.val _ _ _ _ _
+  exact G.recutLeftEqLeft_mem_initialPentagonRectangleDecompositions C D.val _ _ _ _
     ((G.mem_initialPentagonInitialCrossOverlapSources C D.val).1 D.property).1
 
 variable (x z) in
@@ -422,7 +431,7 @@ theorem sum_rectangleInitialPentagonWeight_initialCrossOverlapSources_eq_sum_par
   have hweight (D : {D // D ∈ G.initialPentagonInitialCrossOverlapSources C x z}) :
       G.initialPentagonRectangleWeight C R (G.initialPentagonInitialCrossOverlapPartner C D) =
         G.rectangleInitialPentagonWeight C R D.val :=
-    G.initialPentagonRectangleWeight_recutLeftEqLeft C R D.val _ _ _ _ _
+    G.initialPentagonRectangleWeight_recutLeftEqLeft C R D.val _ _ _ _
   rw [initialPentagonInitialCrossOverlapPartners, Finset.sum_map]
   simp only [Function.Embedding.coeFn_mk, hweight, Finset.sum_attach]
 
