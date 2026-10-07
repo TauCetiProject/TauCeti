@@ -40,18 +40,21 @@ theorem coeff_natAbs_le_of_complexEmbedding_eq_char (ρ : Representation ℂ G V
     (hx : Cyclotomic.complexEmbedding x = ρ.character g) (j : ℕ) :
     (x.coeff j).natAbs ≤ finrank ℂ V * Cyclotomic.rootCoeffBound e := by
   obtain ⟨s, hcard, hroot, hsum⟩ := ρ.exists_multiset_rootsOfUnity_char_eq_sum hg
-  obtain ⟨y, hy, hbound⟩ := Cyclotomic.exists_complexEmbedding_eq_sum s hroot
+  obtain ⟨y, hy, hbound⟩ :=
+    Cyclotomic.exists_complexEmbedding_eq_sum_and_coeff_natAbs_le s hroot
   have hxy : x = y := Cyclotomic.complexEmbedding_injective (hx.trans (hsum.trans hy.symm))
   simpa only [hxy, hcard] using hbound j
 
 /-- For an exact value satisfying `dim V * ω = m * χ(g)`, every coefficient is bounded by
 `m * rootCoeffBound e`. This is the degree-independent bound on central-character values. -/
-theorem coeff_natAbs_le_of_mul_complexEmbedding_eq_char (ρ : Representation ℂ G V)
+theorem coeff_natAbs_le_of_finrank_mul_complexEmbedding_eq_natCast_mul_char
+    (ρ : Representation ℂ G V)
     {g : G} (hg : g ^ e = 1) (hdim : 0 < finrank ℂ V) {x : Cyclotomic e} {m : ℕ}
     (hx : (finrank ℂ V : ℂ) * Cyclotomic.complexEmbedding x = m * ρ.character g)
     (j : ℕ) : (x.coeff j).natAbs ≤ m * Cyclotomic.rootCoeffBound e := by
   obtain ⟨s, hcard, hroot, hsum⟩ := ρ.exists_multiset_rootsOfUnity_char_eq_sum hg
-  obtain ⟨y, hy, hbound⟩ := Cyclotomic.exists_complexEmbedding_eq_sum s hroot
+  obtain ⟨y, hy, hbound⟩ :=
+    Cyclotomic.exists_complexEmbedding_eq_sum_and_coeff_natAbs_le s hroot
   have heq : (finrank ℂ V : Cyclotomic e) * x = (m : Cyclotomic e) * y := by
     apply Cyclotomic.complexEmbedding_injective
     simpa only [map_mul, map_natCast, hy, ← hsum] using hx

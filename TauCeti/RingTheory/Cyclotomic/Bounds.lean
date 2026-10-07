@@ -49,7 +49,7 @@ theorem coeff_pow_natAbs_le_rootCoeffBound {k : ℕ} (hk : k < e) (j : ℕ) :
 
 /-- A sum of `e`-th roots of unity has an exact cyclotomic representative whose coefficients
 are bounded by the number of summands times `rootCoeffBound e`. Multiplicities are retained. -/
-theorem exists_complexEmbedding_eq_sum [NeZero e] (s : Multiset ℂ)
+theorem exists_complexEmbedding_eq_sum_and_coeff_natAbs_le [NeZero e] (s : Multiset ℂ)
     (hs : ∀ μ ∈ s, μ ^ e = 1) :
     ∃ x : Cyclotomic e, complexEmbedding x = s.sum ∧
       ∀ j, (x.coeff j).natAbs ≤ s.card * rootCoeffBound e := by

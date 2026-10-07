@@ -324,6 +324,30 @@ theorem coeff_add (x y : Cyclotomic e) (j : ℕ) :
     (x + y).coeff j = x.coeff j + y.coeff j := by
   simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_add x y
 
+/-- Negation negates every power-basis coefficient. -/
+@[simp]
+theorem coeff_neg (x : Cyclotomic e) (j : ℕ) :
+    (-x).coeff j = -x.coeff j := by
+  simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_neg x
+
+/-- Subtraction subtracts power-basis coefficients. -/
+@[simp]
+theorem coeff_sub (x y : Cyclotomic e) (j : ℕ) :
+    (x - y).coeff j = x.coeff j - y.coeff j := by
+  simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_sub x y
+
+/-- Natural scalar multiplication scales every power-basis coefficient. -/
+@[simp↓]
+theorem coeff_nsmul (n : ℕ) (x : Cyclotomic e) (j : ℕ) :
+    (n • x).coeff j = n • x.coeff j := by
+  simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_nsmul n x
+
+/-- Integer scalar multiplication scales every power-basis coefficient. -/
+@[simp↓]
+theorem coeff_zsmul (z : ℤ) (x : Cyclotomic e) (j : ℕ) :
+    (z • x).coeff j = z • x.coeff j := by
+  simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_zsmul z x
+
 /-- Integer scalar multiplication scales every power-basis coefficient. -/
 @[simp]
 theorem coeff_intCast_mul (z : ℤ) (x : Cyclotomic e) (j : ℕ) :

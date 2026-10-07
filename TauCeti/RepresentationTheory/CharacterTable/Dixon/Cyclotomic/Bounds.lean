@@ -18,10 +18,10 @@ reconstructs a certified table. The threshold is computable from the group order
 without inspecting the unknown character table.
 
 The bound follows from the ordinary character's eigenvalues and the degree-free central bound
-in `Representation.coeff_natAbs_le_of_mul_complexEmbedding_eq_char`. The existing solver's
-completeness theorem then applies to the balanced residue window. This supplies a sufficient
-size bound; it does not assert that the smaller threshold `2 * sqrt |G|` suffices for the
-power-basis coordinates.
+in `Representation.coeff_natAbs_le_of_finrank_mul_complexEmbedding_eq_natCast_mul_char`.
+The existing solver's completeness theorem then applies to the balanced residue window.
+This supplies a sufficient size bound; it does not assert that the smaller threshold
+`2 * sqrt |G|` suffices for the power-basis coordinates.
 
 ## References
 
@@ -39,10 +39,11 @@ variable {omega table : Matrix (Fin d.numClasses) (Fin d.numClasses) (Cyclotomic
 variable {degree : Fin d.numClasses → ℕ}
 
 /-- Each central-character coefficient is bounded by the class size times the largest
-power-basis coefficient of an `e`-th root of unity. -/
+power-basis coefficient of an `e`-th root of unity, whenever the class representative
+satisfies `d.rep k ^ e = 1`. -/
 theorem central_coeff_natAbs_le
     (h : d.IsCyclotomicCharacterTableSpec e omega table degree)
-    (he : e = Monoid.exponent G) (i k : Fin d.numClasses) (j : ℕ) :
+    (i k : Fin d.numClasses) (hk : d.rep k ^ e = 1) (j : ℕ) :
     ((omega i k).coeff j).natAbs ≤ (d.classFinset k).card * Cyclotomic.rootCoeffBound e := by
   let row := finCongr d.numClasses_eq_card_conjClasses i
   obtain ⟨r, hr⟩ := h.isCharacterTableSpec.exists_eq_characterTable row
@@ -57,8 +58,8 @@ theorem central_coeff_natAbs_le
       (irreducibleRepresentation ℂ r).character (d.rep k) := by
     rw [← d.complexTableOfCyclotomic_apply_classOf e table i k, hr, d.classOf_eq_mk,
       characterTable_apply, character_irreducibleRepresentation]
-  apply (irreducibleRepresentation ℂ r).coeff_natAbs_le_of_mul_complexEmbedding_eq_char
-    (he ▸ Monoid.pow_exponent_eq_one (d.rep k))
+  apply Representation.coeff_natAbs_le_of_finrank_mul_complexEmbedding_eq_natCast_mul_char
+    (irreducibleRepresentation ℂ r) hk
     (by simpa using characterDegree_pos ℂ r)
   have hc := congrArg Cyclotomic.complexEmbedding (h.degree_mul_central i k)
   simpa only [map_mul, map_natCast, ht, hdeg, Module.finrank_fintype_fun_eq_card,
@@ -83,7 +84,7 @@ theorem isSome_dixonCyclotomicCharacterTable_of_rootCoeffBound (d : ClassData G)
   apply d.isSome_dixonCyclotomicCharacterTable_of_spec e he q omega table degree hspec
   intro i k j
   exact lt_of_le_of_lt (Nat.mul_le_mul_left 2
-    ((hspec.central_coeff_natAbs_le he i k j).trans
+    ((hspec.central_coeff_natAbs_le i k (he ▸ Monoid.pow_exponent_eq_one (d.rep k)) j).trans
       (Nat.mul_le_mul_right _ (Finset.card_le_univ _)))) hp
 
 end TauCeti.ClassData
