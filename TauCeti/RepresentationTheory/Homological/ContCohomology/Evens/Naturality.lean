@@ -82,7 +82,7 @@ theorem trivialF2Map_graphClass (φ : H →ₜ* G) (U : OpenSubgroup G)
     graphClass_eq_evensGraphCochainClass _ hφU s hs, evensGraphCochainClass_def U,
     evensGraphCochainClass_def (U.comap (φ : H →* G) φ.continuous)]
   have hmap := eqToHom_comp_trivialF2Map φ (ofDiscreteModule_trivialF2 G)
-    (ofDiscreteModule_trivialF2 H) trivialF2Transfer (trivialF2Transfer_smul φ)
+    (ofDiscreteModule_trivialF2 H) trivialF2CoeffHom (trivialF2CoeffHom_smul (φ : H →* G))
     (fun m ↦ by
       simp [eqToHom_ofDiscreteModule_trivialF2_apply]) 2
   have happ := ConcreteCategory.congr_hom hmap
@@ -90,11 +90,11 @@ theorem trivialF2Map_graphClass (φ : H →ₜ* G) (U : OpenSubgroup G)
       (evensGraphCocycle U (φ s) α hU hφs hα))
   rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
     explicitH2AddEquivContinuousCohomology_map G (trivialF2 G).V H (trivialF2 H).V φ
-      trivialF2Transfer (trivialF2Transfer_smul φ), explicitMap2_mk] at happ
+      trivialF2CoeffHom (trivialF2CoeffHom_smul (φ : H →* G)), explicitMap2_mk] at happ
   rw [happ]
   congr 3
   ext ⟨h, k⟩
-  simp only [cocyclesMap2_apply, coe_evensGraphCocycle, trivialF2Transfer_apply,
+  simp only [cocyclesMap2_apply, coe_evensGraphCocycle, trivialF2CoeffHom_apply,
     AddEquiv.apply_symm_apply]
   exact congrArg _ (evensGraphCochain_comap (φ : H →* G) U.toSubgroup s α h k).symm
 

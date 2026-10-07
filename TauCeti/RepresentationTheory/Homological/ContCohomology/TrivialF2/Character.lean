@@ -211,26 +211,26 @@ theorem trivialF2Map_homClass (φ : H →ₜ* G) (α : G →* Multiplicative (ZM
     trivialF2Map φ 1 (homClass G α hα) =
       homClass H (α.comp φ) (hα.comp φ.continuous) := by
   have hmap := eqToHom_comp_trivialF2Map φ (ofDiscreteModule_trivialF2 G)
-    (ofDiscreteModule_trivialF2 H) trivialF2Transfer (trivialF2Transfer_smul φ)
+    (ofDiscreteModule_trivialF2 H) trivialF2CoeffHom (trivialF2CoeffHom_smul (φ : H →* G))
     (fun m => by simp [eqToHom_ofDiscreteModule_trivialF2_apply]) 1
   have hcocycle :
-      cocyclesMap1 G (trivialF2 G).V H (trivialF2 H).V φ trivialF2Transfer
-          continuous_of_discreteTopology (trivialF2Transfer_smul φ)
+      cocyclesMap1 G (trivialF2 G).V H (trivialF2 H).V φ trivialF2CoeffHom
+          continuous_of_discreteTopology (trivialF2CoeffHom_smul (φ : H →* G))
             (evensHomCocycle (G := G) α hα) =
         evensHomCocycle (G := H) (α.comp (φ : H →* G)) (hα.comp φ.continuous) := by
     ext h
     rw [cocyclesMap1_apply, coe_evensHomCocycle, coe_evensHomCocycle]
     simp
   have hexp :
-      explicitMap1 G (trivialF2 G).V H (trivialF2 H).V φ trivialF2Transfer
-          continuous_of_discreteTopology (trivialF2Transfer_smul φ)
+      explicitMap1 G (trivialF2 G).V H (trivialF2 H).V φ trivialF2CoeffHom
+          continuous_of_discreteTopology (trivialF2CoeffHom_smul (φ : H →* G))
             (evensHomCocycle (G := G) α hα : H1 G (trivialF2 G).V) =
         ((evensHomCocycle (G := H) (α.comp (φ : H →* G)) (hα.comp φ.continuous) :
             Z1 H (trivialF2 H).V) : H1 H (trivialF2 H).V) := by
     rw [explicitMap1_mk, hcocycle]
   rw [homClass_def, homClass_def, ← ConcreteCategory.comp_apply, hmap,
-    ConcreteCategory.comp_apply, explicitH1AddEquivContinuousCohomology_map, hexp]
-  exact trivialF2Transfer_smul φ
+    ConcreteCategory.comp_apply, explicitH1AddEquivContinuousCohomology_map G (trivialF2 G).V H
+      (trivialF2 H).V φ trivialF2CoeffHom (trivialF2CoeffHom_smul (φ : H →* G)), hexp]
 
 end Naturality
 
