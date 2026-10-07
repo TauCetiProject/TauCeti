@@ -21,6 +21,7 @@ open IsDedekindDomain
 open scoped Pointwise
 
 namespace TauCeti
+namespace IsDedekindDomain.HeightOneSpectrum
 
 variable {G R : Type*} [Group G] [CommRing R] [MulSemiringAction G R]
 
@@ -47,4 +48,5 @@ theorem asIdeal_smul (g : G) (v : HeightOneSpectrum R) :
     (g • v).asIdeal = g • v.asIdeal :=
   HeightOneSpectrum.asIdeal_equivOfRingEquiv (MulSemiringAction.toRingEquiv G R g) v
 
+end IsDedekindDomain.HeightOneSpectrum
 end TauCeti
