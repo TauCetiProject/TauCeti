@@ -432,16 +432,11 @@ theorem atkinLehnerOperatorGamma1_atkinLehnerOperatorGamma1_of_mem_modFormCharSp
       ((Q : ℂ) ^ (k - 2) *
         ↑(ψ (-1) * (φ (ZMod.unitOfCoprime Q (h.isExactDivisor hQ.ne' hQN).coprime))⁻¹)) • f := by
   obtain ⟨γ, hγ, hsq⟩ := h.exists_mem_Gamma0_mul_self hQ.ne' hQN
-  have hu' : (Q : ZMod N) * ((Gamma0Map N).toHomUnits ⟨γ, hγ⟩ : (ZMod N)ˣ) =
-      ((M 1 1 : ℤ) : ZMod N) ^ 2 := by
-    rw [MonoidHom.coe_toHomUnits, Gamma0Map_apply]
-    exact h.natCast_mul_intCast_apply_one_one_of_mul_self_eq hsq
   rw [atkinLehnerOperatorGamma1_atkinLehnerOperatorGamma1 hQ hQN h
-      (h.unitsMap_toHomUnits_gamma0Map_of_mul_self_eq hQ.ne' hQN hγ hsq) hu' f,
-    diamondOp_apply_of_mem_modFormCharSpace k _ _ hf, smul_smul, MonoidHom.mul_apply,
-    MonoidHom.comp_apply, MonoidHom.comp_apply,
-    h.unitsMap_toHomUnits_gamma0Map_of_mul_self_eq hQ.ne' hQN hγ hsq,
-    h.unitsMap_div_toHomUnits_gamma0Map_of_mul_self_eq hQ.ne' hQN hM hγ hsq, map_inv]
+      (h.unitsMap_toHomUnits_gamma0Map_of_mul_self_eq hQ.ne' hQN hγ hsq)
+      (h.natCast_mul_toHomUnits_gamma0Map_of_mul_self_eq hγ hsq) f,
+    diamondOp_apply_of_mem_modFormCharSpace k _ _ hf, smul_smul,
+    h.mul_comp_unitsMap_toHomUnits_gamma0Map_of_mul_self_eq hQ.ne' hQN hM ψ φ hγ hsq]
 
 /-- **Atkin and Li's square of `W_Q` on a nebentypus space of cusp forms**: the cusp-form
 counterpart of `atkinLehnerOperatorGamma1_atkinLehnerOperatorGamma1_of_mem_modFormCharSpace`. -/
@@ -455,15 +450,10 @@ theorem atkinLehnerOperatorGamma1Cusp_atkinLehnerOperatorGamma1Cusp_of_mem_cuspF
       ((Q : ℂ) ^ (k - 2) *
         ↑(ψ (-1) * (φ (ZMod.unitOfCoprime Q (h.isExactDivisor hQ.ne' hQN).coprime))⁻¹)) • f := by
   obtain ⟨γ, hγ, hsq⟩ := h.exists_mem_Gamma0_mul_self hQ.ne' hQN
-  have hu' : (Q : ZMod N) * ((Gamma0Map N).toHomUnits ⟨γ, hγ⟩ : (ZMod N)ˣ) =
-      ((M 1 1 : ℤ) : ZMod N) ^ 2 := by
-    rw [MonoidHom.coe_toHomUnits, Gamma0Map_apply]
-    exact h.natCast_mul_intCast_apply_one_one_of_mul_self_eq hsq
   rw [atkinLehnerOperatorGamma1Cusp_atkinLehnerOperatorGamma1Cusp hQ hQN h
-      (h.unitsMap_toHomUnits_gamma0Map_of_mul_self_eq hQ.ne' hQN hγ hsq) hu' f,
-    diamondOpCusp_apply_of_mem_cuspFormCharSpace k _ _ hf, smul_smul, MonoidHom.mul_apply,
-    MonoidHom.comp_apply, MonoidHom.comp_apply,
-    h.unitsMap_toHomUnits_gamma0Map_of_mul_self_eq hQ.ne' hQN hγ hsq,
-    h.unitsMap_div_toHomUnits_gamma0Map_of_mul_self_eq hQ.ne' hQN hM hγ hsq, map_inv]
+      (h.unitsMap_toHomUnits_gamma0Map_of_mul_self_eq hQ.ne' hQN hγ hsq)
+      (h.natCast_mul_toHomUnits_gamma0Map_of_mul_self_eq hγ hsq) f,
+    diamondOpCusp_apply_of_mem_cuspFormCharSpace k _ _ hf, smul_smul,
+    h.mul_comp_unitsMap_toHomUnits_gamma0Map_of_mul_self_eq hQ.ne' hQN hM ψ φ hγ hsq]
 
 end TauCeti

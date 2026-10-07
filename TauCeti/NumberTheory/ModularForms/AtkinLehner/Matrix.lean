@@ -79,7 +79,9 @@ normalizes `Γ₁(N)` too, and acts on the diamond labels through `Nat.IsExactDi
 * `TauCeti.IsAtkinLehnerMatrix.toHomUnits_gamma0Map_of_mul_self_eq`: the diamond label of that `γ`
   is the unit that is `-1` modulo `Q` and satisfies `Q * u = W₁₁ ^ 2` modulo `N`; under the
   Atkin–Li normalization it is `Q⁻¹` modulo `N / Q`
-  (`TauCeti.IsAtkinLehnerMatrix.unitsMap_div_toHomUnits_gamma0Map_of_mul_self_eq`).
+  (`TauCeti.IsAtkinLehnerMatrix.unitsMap_div_toHomUnits_gamma0Map_of_mul_self_eq`), so a split
+  character takes the value `χ_Q(-1) χ_{N/Q}(Q)⁻¹` on it
+  (`TauCeti.IsAtkinLehnerMatrix.mul_comp_unitsMap_toHomUnits_gamma0Map_of_mul_self_eq`).
 * `TauCeti.IsAtkinLehnerMatrix.mul`: the multiplicativity of the family in the divisor.
 * `TauCeti.IsAtkinLehnerMatrix.isExactDivisor`: a divisor of the level that carries an
   Atkin–Lehner matrix is an exact divisor.
@@ -551,5 +553,30 @@ theorem IsAtkinLehnerMatrix.unitsMap_div_toHomUnits_gamma0Map_of_mul_self_eq (hQ
   rw [Units.val_mul, ZMod.coe_unitOfCoprime, ZMod.unitsMap_val, MonoidHom.coe_toHomUnits,
     Gamma0Map_apply, ZMod.cast_intCast (Nat.div_dvd_of_dvd hQN), Units.val_one]
   exact key
+
+/-- **The diamond label of `W ^ 2 / Q`, multiplied by `Q`, is `W₁₁ ^ 2` modulo `N`**: the units form
+of `IsAtkinLehnerMatrix.natCast_mul_intCast_apply_one_one_of_mul_self_eq`. -/
+theorem IsAtkinLehnerMatrix.natCast_mul_toHomUnits_gamma0Map_of_mul_self_eq
+    (h : IsAtkinLehnerMatrix N Q M) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N)
+    (hsq : M * M = (Q : ℤ) • (γ : Matrix (Fin 2) (Fin 2) ℤ)) :
+    (Q : ZMod N) * ((Gamma0Map N).toHomUnits ⟨γ, hγ⟩ : (ZMod N)ˣ) =
+      ((M 1 1 : ℤ) : ZMod N) ^ 2 := by
+  rw [MonoidHom.coe_toHomUnits, Gamma0Map_apply]
+  exact h.natCast_mul_intCast_apply_one_one_of_mul_self_eq hsq
+
+/-- **A split character on the diamond label of `W ^ 2 / Q`, under the Atkin–Li normalization**:
+if the lower-right entry of `W` is `1` modulo `N / Q` and `W * W = Q • γ` with `γ ∈ Γ₀(N)`, then
+`χ = χ_Q · χ_{N/Q}` split along `N = Q · (N / Q)` takes the value `χ_Q(-1) χ_{N/Q}(Q)⁻¹` on the
+diamond label of `γ`. -/
+theorem IsAtkinLehnerMatrix.mul_comp_unitsMap_toHomUnits_gamma0Map_of_mul_self_eq {G : Type*}
+    [CommGroup G] (hQ : Q ≠ 0) (hQN : Q ∣ N) (h : IsAtkinLehnerMatrix N Q M)
+    (hM : ((M 1 1 : ℤ) : ZMod (N / Q)) = 1) (ψ : (ZMod Q)ˣ →* G) (φ : (ZMod (N / Q))ˣ →* G)
+    {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) (hsq : M * M = (Q : ℤ) • (γ : Matrix (Fin 2) (Fin 2) ℤ)) :
+    (ψ.comp (ZMod.unitsMap hQN) * φ.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hQN)))
+        ((Gamma0Map N).toHomUnits ⟨γ, hγ⟩) =
+      ψ (-1) * (φ (ZMod.unitOfCoprime Q (h.isExactDivisor hQ hQN).coprime))⁻¹ := by
+  rw [MonoidHom.mul_apply, MonoidHom.comp_apply, MonoidHom.comp_apply,
+    h.unitsMap_toHomUnits_gamma0Map_of_mul_self_eq hQ hQN hγ hsq,
+    h.unitsMap_div_toHomUnits_gamma0Map_of_mul_self_eq hQ hQN hM hγ hsq, map_inv]
 
 end TauCeti
