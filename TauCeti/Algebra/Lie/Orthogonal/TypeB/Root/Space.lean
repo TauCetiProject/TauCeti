@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SumRootGenerators
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.SumGenerators
 import TauCeti.Algebra.Lie.GeneralLinear.RootSpace
 
 /-!
@@ -80,6 +80,50 @@ noncomputable def typeBMatrixWeight (a b : Unit ⊕ ι ⊕ ι) :
 /-- The defining equation of a matrix-entry weight. -/
 theorem typeBMatrixWeight_def (a b : Unit ⊕ ι ⊕ ι) :
     typeBMatrixWeight (K := K) a b = typeBCoordinateWeight a - typeBCoordinateWeight b := (rfl)
+
+/-- The middle-to-positive entry has weight `-εⱼ`. -/
+@[simp] theorem typeBMatrixWeight_inl_inr_inl (u : Unit) (j : ι) :
+    typeBMatrixWeight (K := K) (.inl u) (.inr (.inl j)) = -typeBEpsilon j := by
+  simp [typeBMatrixWeight]
+
+/-- The middle-to-negative entry has weight `εⱼ`. -/
+@[simp] theorem typeBMatrixWeight_inl_inr_inr (u : Unit) (j : ι) :
+    typeBMatrixWeight (K := K) (.inl u) (.inr (.inr j)) = typeBEpsilon j := by
+  simp [typeBMatrixWeight]
+
+/-- The positive-to-middle entry has weight `εᵢ`. -/
+@[simp] theorem typeBMatrixWeight_inr_inl_inl (i : ι) (u : Unit) :
+    typeBMatrixWeight (K := K) (.inr (.inl i)) (.inl u) = typeBEpsilon i := by
+  simp [typeBMatrixWeight]
+
+/-- The positive-to-positive entry has weight `εᵢ - εⱼ`. -/
+@[simp] theorem typeBMatrixWeight_inr_inl_inr_inl (i j : ι) :
+    typeBMatrixWeight (K := K) (.inr (.inl i)) (.inr (.inl j)) =
+      typeBEpsilon i - typeBEpsilon j := by
+  simp [typeBMatrixWeight]
+
+/-- The positive-to-negative entry has weight `εᵢ + εⱼ`. -/
+@[simp] theorem typeBMatrixWeight_inr_inl_inr_inr (i j : ι) :
+    typeBMatrixWeight (K := K) (.inr (.inl i)) (.inr (.inr j)) =
+      typeBEpsilon i + typeBEpsilon j := by
+  simp [typeBMatrixWeight]
+
+/-- The negative-to-middle entry has weight `-εᵢ`. -/
+@[simp] theorem typeBMatrixWeight_inr_inr_inl (i : ι) (u : Unit) :
+    typeBMatrixWeight (K := K) (.inr (.inr i)) (.inl u) = -typeBEpsilon i := by
+  simp [typeBMatrixWeight]
+
+/-- The negative-to-positive entry has weight `-(εᵢ + εⱼ)`. -/
+@[simp] theorem typeBMatrixWeight_inr_inr_inr_inl (i j : ι) :
+    typeBMatrixWeight (K := K) (.inr (.inr i)) (.inr (.inl j)) =
+      -(typeBEpsilon i + typeBEpsilon j) := by
+  simp [typeBMatrixWeight, sub_eq_add_neg, add_comm]
+
+/-- The negative-to-negative entry has weight `εⱼ - εᵢ`. -/
+@[simp] theorem typeBMatrixWeight_inr_inr_inr_inr (i j : ι) :
+    typeBMatrixWeight (K := K) (.inr (.inr i)) (.inr (.inr j)) =
+      typeBEpsilon j - typeBEpsilon i := by
+  simp [typeBMatrixWeight, sub_eq_add_neg, add_comm]
 
 /-- Matrix-entry weights evaluate as differences of diagonal entries. -/
 @[simp] theorem typeBMatrixWeight_apply (a b : Unit ⊕ ι ⊕ ι)
@@ -160,6 +204,39 @@ theorem typeBDiagonalCartan_lie_apply (A : typeBDiagonalCartan K ι)
     exact mem_diagonalCartan_iff_isDiag.mp (typeBDiagonalMatrix_mem_diagonalCartan d)
   rw [lie_apply_of_mem_diagonalCartan hA, typeBMatrixWeight_apply]
 
+/-- An entry of a generalized root vector vanishes when its weight difference from the root is
+regular at some element of the diagonal Cartan. No reducedness or domain hypothesis is needed. -/
+theorem rootSpace_typeBDiagonalCartan_apply_eq_zero_of_isRegular
+    {χ : Module.Dual K (typeBDiagonalCartan K ι)}
+    {X : LieAlgebra.Orthogonal.typeB ι K}
+    (hX : X ∈ LieAlgebra.rootSpace (typeBDiagonalCartan K ι) χ)
+    (a b : Unit ⊕ ι ⊕ ι) (A : typeBDiagonalCartan K ι)
+    (hreg : IsRegular (typeBMatrixWeight a b A - χ A)) :
+    (X : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) a b = 0 := by
+  obtain ⟨k, hk⟩ := (LieModule.mem_genWeightSpace _ _ _).mp hX A
+  let T := LieModule.toEnd K (typeBDiagonalCartan K ι)
+    (LieAlgebra.Orthogonal.typeB ι K) A - χ A • 1
+  have hpow (n : ℕ) (Y : LieAlgebra.Orthogonal.typeB ι K) :
+      ((T ^ n) Y : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) a b =
+        (typeBMatrixWeight a b A - χ A) ^ n *
+          (Y : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) a b := by
+    induction n generalizing Y with
+    | zero => simp
+    | succ n ih =>
+      rw [pow_succ, Module.End.mul_apply, ih]
+      simp only [T, LinearMap.sub_apply, LinearMap.smul_apply, Module.End.one_apply,
+        LieModule.toEnd_apply_apply, LieSubalgebra.coe_bracket_of_module,
+        LieSubalgebra.coe_bracket, AddSubgroupClass.coe_sub, SetLike.val_smul,
+        Matrix.sub_apply, Matrix.smul_apply, smul_eq_mul, typeBDiagonalCartan_lie_apply]
+      ring
+  have hab : (typeBMatrixWeight a b A - χ A) ^ k *
+      (X : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) a b = 0 := by
+    rw [← hpow k X]
+    have hk' : (T ^ k) X = 0 := hk
+    rw [hk']
+    rfl
+  exact (isRegular_iff_eq_zero_of_mul.mp (hreg.pow k)).1 _ hab
+
 /-- A type-`B` matrix supported on entries of weight `χ` belongs to the `χ` root space. -/
 theorem mem_rootSpace_typeBDiagonalCartan_of_forall
     {χ : Module.Dual K (typeBDiagonalCartan K ι)}
@@ -196,14 +273,8 @@ theorem mem_rootSpace_typeBDiagonalCartan_iff
     by_contra hcon
     push Not at hcon
     exact hab ((typeBDiagonalCartanBasis (K := K) (ι := ι)).ext hcon)
-  rw [rootSpace_typeBDiagonalCartan_eq_weightSpace, LieModule.mem_weightSpace] at hX
-  let A := typeBDiagonalCartanBasis (K := K) (ι := ι) k
-  have hEq := congrArg Subtype.val (hX A)
-  have hentry := congrFun (congrFun hEq a) b
-  rw [SetLike.val_smul, Matrix.smul_apply] at hentry
-  simp only [LieSubalgebra.coe_bracket_of_module, LieSubalgebra.coe_bracket] at hentry
-  rw [typeBDiagonalCartan_lie_apply] at hentry
-  exact (mul_eq_zero.mp (by linear_combination hentry)).resolve_left (sub_ne_zero.mpr hk)
+  exact rootSpace_typeBDiagonalCartan_apply_eq_zero_of_isRegular hX a b _
+    (isRegular_iff_ne_zero.mpr (sub_ne_zero.mpr hk))
 
 /-- The standard positive short-root generator belongs to its coordinate root space. -/
 theorem typeBShortRootGenerator_mem_rootSpace (i : ι) :

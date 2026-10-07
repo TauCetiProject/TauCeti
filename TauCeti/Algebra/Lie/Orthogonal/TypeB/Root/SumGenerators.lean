@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Orthogonal.TypeB.RootGenerators
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.Generators
 
 /-!
 # Sum-root generators for the split orthogonal Lie algebra of type B
 
 Relative to the split diagonal Cartan of `LieAlgebra.Orthogonal.typeB ι K`, the roots are the
 short roots `±εᵢ` and the long roots `±εᵢ ± εⱼ` for `i ≠ j`. The companion file
-`TauCeti/Algebra/Lie/Orthogonal/TypeB/RootGenerators.lean` builds the short roots and the
+`TauCeti/Algebra/Lie/Orthogonal/TypeB/Root/Generators.lean` builds the short roots and the
 difference long roots `εᵢ - εⱼ`. This file supplies the remaining two families, the *sum* long
 roots
 
@@ -87,7 +87,7 @@ root `εᵢ + εⱼ` pairs `typeBSumRootGenerator i j` with `typeBSumNegativeRoo
   root vectors and the structure constants of a non-simply-laced system.
 
 The declaration order and proof layout follow the difference-root and short-root sections of
-`TauCeti.Algebra.Lie.Orthogonal.TypeB.RootGenerators`, and the corresponding type-`D` family in
+`TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.Generators`, and the corresponding type-`D` family in
 `TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.AllGenerators`.
 -/
 
