@@ -327,6 +327,17 @@ theorem _root_.Representation.IntertwiningMap.toLinearMap_baseChange
     (f.baseChange A).toLinearMap = f.toLinearMap.baseChange A :=
   (rfl)
 
+/-- **Base change preserves a scalar composite**: if `g ∘ f` is multiplication by `r : R`, then so
+is the composite of the base changes `A ⊗ g ∘ A ⊗ f`. -/
+theorem _root_.Representation.IntertwiningMap.baseChange_baseChange_apply_of_apply_eq_smul
+    {f : _root_.Representation.IntertwiningMap ρ σ} {g : _root_.Representation.IntertwiningMap σ ρ}
+    {r : R} (hgf : ∀ v, g (f v) = r • v) (A : Type*) [Semiring A] [Algebra R A]
+    (x : A ⊗[R] V) : g.baseChange A (f.baseChange A x) = r • x := by
+  have h := congrArg (LinearMap.baseChange A)
+    (LinearMap.ext hgf : g.toLinearMap ∘ₗ f.toLinearMap = r • LinearMap.id)
+  rw [LinearMap.baseChange_comp, LinearMap.baseChange_smul, LinearMap.baseChange_id] at h
+  exact LinearMap.congr_fun h x
+
 /-- **Base change transports an equivalence of representations**: an equivariant isomorphism
 `ρ ≃ σ` becomes an equivariant isomorphism `A ⊗[R] V ≃ A ⊗[R] W` after extending the scalars,
 because the extension acts on the second factor, where the equivalence already intertwines the

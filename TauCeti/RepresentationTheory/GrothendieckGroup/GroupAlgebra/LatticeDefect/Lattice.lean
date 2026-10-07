@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Torsion.Int
-public import TauCeti.RepresentationTheory.BaseChange
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.LatticeDefect.Finite
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Permutation.Basic
 public import TauCeti.RepresentationTheory.Lattice
@@ -165,18 +163,14 @@ theorem reductionK0_eq_of_nonempty_equiv (V W : Type u)
     (Int.cast_ne_zero.mpr (nonZeroDivisors.coe_ne_zero s)).isUnit
   have hcomp {X Y : Type u} [AddCommGroup X] [AddCommGroup Y]
       {ρ : Representation ℤ G X} {σ : Representation ℤ G Y}
-      (a : ρ.IntertwiningMap σ) (b : σ.IntertwiningMap ρ) (hab : ∀ x, b (a x) = (s : ℤ) • x)
+      {a : ρ.IntertwiningMap σ} {b : σ.IntertwiningMap ρ} (hab : ∀ x, b (a x) = (s : ℤ) • x)
       (x : k ⊗[ℤ] X) : b.baseChange k (a.baseChange k x) = ((s : ℤ) : k) • x := by
-    induction x using TensorProduct.inductionOn with
-    | tmul c x =>
-      rw [Representation.IntertwiningMap.baseChange_tmul,
-        Representation.IntertwiningMap.baseChange_tmul, hab, TensorProduct.tmul_smul,
-        Int.cast_smul_eq_zsmul]
-    | add x y hx hy => simp only [map_add, hx, hy, smul_add]
+    rw [Representation.IntertwiningMap.baseChange_baseChange_apply_of_apply_eq_smul hab,
+      Int.cast_smul_eq_zsmul]
   have hbij : Function.Bijective (f.baseChange k) := by
     refine ⟨fun x y hxy ↦ hs.smul_left_cancel.mp ?_, fun y ↦ ⟨f'.baseChange k (hs.unit⁻¹ • y), ?_⟩⟩
-    · rw [← hcomp f f' hf'f, ← hcomp f f' hf'f, hxy]
-    · rw [hcomp f' f hff']
+    · rw [← hcomp hf'f, ← hcomp hf'f, hxy]
+    · rw [hcomp hff']
       exact smul_inv_smul hs.unit y
   rw [reductionK0_def, reductionK0_def]
   exact ExactK0.of_congr
