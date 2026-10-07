@@ -49,6 +49,10 @@ differentiable in time), together with continuity on the closed cylinder `[0, T]
   principle.
 * `TauCeti.eqOn_of_deriv_sub_laplacian_add_fderiv_eq_of_eqOn_parabolicBoundary`: uniqueness for
   the initial-boundary value problem `∂ₜu - Δu - b·∇u = f`, `u = g` on the parabolic boundary.
+* `TauCeti.ge_of_laplacian_le_deriv_ge_parabolicBoundary`,
+  `TauCeti.le_of_deriv_sub_laplacian_le_of_le_parabolicBoundary`,
+  `TauCeti.eqOn_of_deriv_sub_laplacian_eq_of_eqOn_parabolicBoundary`: the minimum principle,
+  comparison principle and uniqueness for the heat equation (`b = 0`).
 
 ## References
 
@@ -196,6 +200,22 @@ theorem ge_of_laplacian_add_fderiv_le_deriv_ge_parabolicBoundary (hK : IsCompact
   simp only [Pi.neg_apply] at h
   linarith
 
+/-- **Weak minimum principle for the heat equation.** A supersolution `Δu ≤ ∂ₜu` of the heat
+equation, continuous on the closed cylinder `[0, T] × K` over a compact `K` and regular on the
+open cylinder `(0, T) × interior K`, satisfies on `[0, T] × K` any lower bound it satisfies on the
+parabolic boundary `({0} × K) ∪ ([0, T] × frontier K)`. -/
+theorem ge_of_laplacian_le_deriv_ge_parabolicBoundary (hK : IsCompact K) {m : ℝ}
+    (hcont : ContinuousOn (Function.uncurry u) (Icc 0 T ×ˢ K))
+    (hcd : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 (u t) x)
+    (hdiff : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K →
+      DifferentiableAt ℝ (fun s ↦ u s x) t)
+    (hsuper : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K → Δ (u t) x ≤ deriv (fun s ↦ u s x) t)
+    (hinit : ∀ ⦃x⦄, x ∈ K → m ≤ u 0 x)
+    (hlat : ∀ ⦃t⦄, t ∈ Icc 0 T → ∀ ⦃x⦄, x ∈ frontier K → m ≤ u t x) :
+    ∀ ⦃t⦄, t ∈ Icc 0 T → ∀ ⦃x⦄, x ∈ K → m ≤ u t x :=
+  ge_of_laplacian_add_fderiv_le_deriv_ge_parabolicBoundary (b := 0) hK hcont hcd hdiff
+    (fun t ht x hx ↦ by simpa using hsuper ht hx) hinit hlat
+
 /-- **Comparison principle for `∂ₜ - Δ - b·∇`.** If `(∂ₜ - Δ - b·∇) u ≤ (∂ₜ - Δ - b·∇) v` on the
 open cylinder `(0, T) × interior K` and `u ≤ v` on the parabolic boundary, then `u ≤ v` on all of
 `[0, T] × K`. -/
@@ -229,6 +249,27 @@ theorem le_of_deriv_sub_laplacian_add_fderiv_le_of_le_parabolicBoundary (hK : Is
     (fun y hy ↦ sub_nonpos.mpr (hinit hy)) (fun s hs y hy ↦ sub_nonpos.mpr (hlat hs hy)) ht hx
   exact sub_nonpos.mp h
 
+/-- **Comparison principle for the heat equation.** If `∂ₜu - Δu ≤ ∂ₜv - Δv` on the open
+cylinder `(0, T) × interior K` and `u ≤ v` on the parabolic boundary, then `u ≤ v` on all of
+`[0, T] × K`. -/
+theorem le_of_deriv_sub_laplacian_le_of_le_parabolicBoundary (hK : IsCompact K)
+    {v : ℝ → E → ℝ}
+    (hucont : ContinuousOn (Function.uncurry u) (Icc 0 T ×ˢ K))
+    (hvcont : ContinuousOn (Function.uncurry v) (Icc 0 T ×ˢ K))
+    (hucd : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 (u t) x)
+    (hvcd : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 (v t) x)
+    (hudiff : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K →
+      DifferentiableAt ℝ (fun s ↦ u s x) t)
+    (hvdiff : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K →
+      DifferentiableAt ℝ (fun s ↦ v s x) t)
+    (hL : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K →
+      deriv (fun s ↦ u s x) t - Δ (u t) x ≤ deriv (fun s ↦ v s x) t - Δ (v t) x)
+    (hinit : ∀ ⦃x⦄, x ∈ K → u 0 x ≤ v 0 x)
+    (hlat : ∀ ⦃t⦄, t ∈ Icc 0 T → ∀ ⦃x⦄, x ∈ frontier K → u t x ≤ v t x) :
+    ∀ ⦃t⦄, t ∈ Icc 0 T → ∀ ⦃x⦄, x ∈ K → u t x ≤ v t x :=
+  le_of_deriv_sub_laplacian_add_fderiv_le_of_le_parabolicBoundary (b := 0) hK hucont hvcont
+    hucd hvcd hudiff hvdiff (fun t ht x hx ↦ by simpa using hL ht hx) hinit hlat
+
 /-- **Uniqueness for the initial-boundary value problem of `∂ₜ - Δ - b·∇`.** Two functions with
 equal values of `∂ₜ - Δ - b·∇` on the open cylinder `(0, T) × interior K` and equal values on the
 parabolic boundary agree on all of `[0, T] × K`. -/
@@ -256,6 +297,27 @@ theorem eqOn_of_deriv_sub_laplacian_add_fderiv_eq_of_eqOn_parabolicBoundary (hK 
   · exact le_of_deriv_sub_laplacian_add_fderiv_le_of_le_parabolicBoundary hK hvcont hucont
       hvcd hucd hvdiff hudiff (fun s hs y hy ↦ (hL hs hy).ge) (fun y hy ↦ (hinit hy).ge)
       (fun s hs y hy ↦ (hlat hs hy).ge) ht hx
+
+/-- **Uniqueness for the initial-boundary value problem of the heat equation.** Two functions with
+equal values of `∂ₜ - Δ` on the open cylinder `(0, T) × interior K` and equal values on the
+parabolic boundary agree on all of `[0, T] × K`. -/
+theorem eqOn_of_deriv_sub_laplacian_eq_of_eqOn_parabolicBoundary (hK : IsCompact K)
+    {v : ℝ → E → ℝ}
+    (hucont : ContinuousOn (Function.uncurry u) (Icc 0 T ×ˢ K))
+    (hvcont : ContinuousOn (Function.uncurry v) (Icc 0 T ×ˢ K))
+    (hucd : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 (u t) x)
+    (hvcd : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 (v t) x)
+    (hudiff : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K →
+      DifferentiableAt ℝ (fun s ↦ u s x) t)
+    (hvdiff : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K →
+      DifferentiableAt ℝ (fun s ↦ v s x) t)
+    (hL : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K →
+      deriv (fun s ↦ u s x) t - Δ (u t) x = deriv (fun s ↦ v s x) t - Δ (v t) x)
+    (hinit : EqOn (u 0) (v 0) K)
+    (hlat : ∀ ⦃t⦄, t ∈ Icc 0 T → EqOn (u t) (v t) (frontier K)) :
+    EqOn (Function.uncurry u) (Function.uncurry v) (Icc 0 T ×ˢ K) :=
+  eqOn_of_deriv_sub_laplacian_add_fderiv_eq_of_eqOn_parabolicBoundary (b := 0) hK hucont hvcont
+    hucd hvcd hudiff hvdiff (fun t ht x hx ↦ by simpa using hL ht hx) hinit hlat
 
 end TauCeti
 
