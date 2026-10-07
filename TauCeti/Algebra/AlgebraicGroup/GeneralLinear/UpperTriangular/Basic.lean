@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Funct
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Subgroup
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Transvection
 
 /-!
 # The upper-triangular subgroup scheme of the general linear group
@@ -425,16 +426,8 @@ theorem rootSubgroupPoints_mem (hij : i < j)
       CommHopfAlgCat.quotientPointsSubgroup
         (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
         (CommAlgCat.of R A) := by
-  rw [mem_definingPointsSubgroup_iff, GeneralLinear.pointsMulEquiv_rootSubgroupPoints,
-    UpperTriangularGroup.mem_iff]
-  intro a b hba
-  simp only [id_eq] at hba
-  have hab : a ≠ b := hba.ne.symm
-  have hroot : ¬ (i = a ∧ j = b) := by
-    rintro ⟨rfl, rfl⟩
-    exact lt_asymm hij hba
-  rw [coe_transvectionUnit, Matrix.transvection]
-  simp [Matrix.add_apply, hab, hroot]
+  rw [mem_definingPointsSubgroup_iff, GeneralLinear.pointsMulEquiv_rootSubgroupPoints]
+  exact transvectionUnit_mem_upperTriangularGroup hij _
 
 /-- The coordinate morphism of the root subgroup `x_ij`, for `i < j`, into the standard
 upper-triangular coordinate Hopf algebra. -/
@@ -442,31 +435,13 @@ noncomputable def rootSubgroupCoordinateMap (hij : i < j) :
     coordinateHopfAlgebra R n ⟶ AdditiveGroup.coordinateHopfAlgebra R :=
   CommHopfAlgCat.liftQuotient (definingHopfIdeal R n)
     (GeneralLinear.rootSubgroupCoordinateMap hij.ne) (by
-      rw [definingHopfIdeal_toIdeal, Ideal.span_le]
+      have hmem := rootSubgroupPoints_mem R hij
+        (toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R)))
+      rw [← GeneralLinear.mapPointsFunctor_rootSubgroupCoordinateMap_app,
+        CommHopfAlgCat.mapPointsFunctor_app_apply,
+        CommHopfAlgCat.mem_quotientPointsSubgroup_iff] at hmem
       intro x hx
-      rw [mem_definingRelationSet_iff] at hx
-      obtain ⟨a, b, hba, rfl⟩ := hx
-      rw [SetLike.mem_coe, RingHom.mem_ker]
-      let q : HopfAlgebra.points
-          (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R)
-          (CommAlgCat.of R (AdditiveGroup.coordinateHopfAlgebra R)) :=
-        toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R))
-      have hmem := rootSubgroupPoints_mem R hij q
-      rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff] at hmem
-      have hzero := hmem
-        (GeneralLinear.coordinateHopfAlgebraAlgEquiv R n
-          (GeneralLinear.coordinateRingMap R n (MvPolynomial.X (a, b))))
-        (HopfIdeal.mem_toIdeal.mp
-          (definingHopfIdeal_toIdeal R n ▸ Ideal.subset_span
-            ((mem_definingRelationSet_iff R n _).2 ⟨a, b, hba, rfl⟩)))
-      have hpoint :
-          GeneralLinear.rootSubgroupPoints hij.ne q =
-            (CommHopfAlgCat.mapPointsFunctor
-              (GeneralLinear.rootSubgroupCoordinateMap hij.ne)).app
-              (CommAlgCat.of R (AdditiveGroup.coordinateHopfAlgebra R)) q := by
-        rw [GeneralLinear.mapPointsFunctor_rootSubgroupCoordinateMap_app]
-      rw [hpoint, CommHopfAlgCat.mapPointsFunctor_app_apply] at hzero
-      exact hzero)
+      exact hmem x hx)
 
 /-- Precomposing a factored positive-root coordinate morphism with the upper-triangular quotient
 map recovers the ambient general-linear root-subgroup coordinate morphism. -/
@@ -550,23 +525,12 @@ into `GL_n` recovers the ambient root subgroup `x_ij`. -/
 @[simp]
 theorem rootSubgroup_comp_inclusion (hij : i < j) :
     rootSubgroup R hij ≫ inclusion R n = GeneralLinear.rootSubgroup hij.ne := by
+  have hcomp := CommHopfAlgCat.hopfSpec_map_comp_quotientSpecι
+    (definingHopfIdeal R n) (rootSubgroupCoordinateMap R hij)
+  rw [← coordinateMap_def, coordinateMap_comp_rootSubgroupCoordinateMap] at hcomp
   rw [rootSubgroup_def, inclusion, GeneralLinear.rootSubgroup_def,
-    GeneralLinear.weightParabolicInclusion_def]
-  simp only [Category.assoc, eqToHom_refl, Category.id_comp]
-  rw [CommHopfAlgCat.quotientSpecι_def]
-  have hmap :
-      (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
-          (rootSubgroupCoordinateMap R hij).op ≫
-        (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
-          (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R n)
-            (definingHopfIdeal R n)).op =
-        (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
-          (GeneralLinear.rootSubgroupCoordinateMap hij.ne).op := by
-    rw [← Functor.map_comp, ← op_comp, ← coordinateMap_def R n,
-      coordinateMap_comp_rootSubgroupCoordinateMap]
-  congr 1
-  rw [← Category.assoc, hmap]
-  rfl
+    GeneralLinear.weightParabolicInclusion_def, ← hcomp]
+  simp only [Category.assoc, eqToHom_refl, Category.id_comp, eqToIso.hom]
 
 end
 
