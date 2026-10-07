@@ -61,8 +61,9 @@ variable {k Q}
 
 /-- The vertex type as Mathlib's skeleton of finite-dimensional indecomposables.
 
-This equivalence makes the identification available to importing modules: the definition of
-`irreducibleMorphismQuiver` is not exposed, so they cannot use `Equiv.refl` directly. -/
+This equivalence transports classifications of indecomposables to the vertex type. In files using
+`module` with a regular `public import`, the body of `irreducibleMorphismQuiver` is not exposed,
+so this identification is available through the equivalence and its lemmas. -/
 def equivSkeleton : irreducibleMorphismQuiver.{u, v, w, t} k Q ≃
     Skeleton (ObjectProperty.FullSubcategory
       (fun M : QuiverRep.{u, v, w, t} k Q ↦ IsFinDim k Q M ∧ Indecomposable M)) :=
