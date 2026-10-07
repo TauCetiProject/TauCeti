@@ -34,12 +34,12 @@ open Filter Topology
 
 namespace Polynomial
 
-variable {B R : Type*} [TopologicalSpace B] [CommRing R] [TopologicalSpace R]
-  [IsTopologicalSemiring R] {F : B → R[X]} {r : B → R} {x₀ : B} {d : ℕ}
+variable {B R : Type*} [TopologicalSpace B] [TopologicalSpace R]
+  {r : B → R} {x₀ : B} {d : ℕ}
 
 /-- Evaluation of a Hasse derivative along a continuous point is continuous for a
 coefficientwise continuous family whose degrees are locally bounded. -/
-theorem continuousAt_hasseDeriv_eval
+theorem continuousAt_hasseDeriv_eval [Semiring R] [IsTopologicalSemiring R] {F : B → R[X]}
     (hF : ∀ i ≤ d, ContinuousAt (fun x ↦ (F x).coeff i) x₀)
     (hdeg : ∀ᶠ x in 𝓝 x₀, (F x).natDegree ≤ d) (hr : ContinuousAt r x₀) (m : ℕ) :
     ContinuousAt (fun x ↦ (hasseDeriv m (F x)).eval (r x)) x₀ := by
@@ -59,6 +59,8 @@ theorem continuousAt_hasseDeriv_eval
       (hasseDeriv m (F x)).coeff i * r x ^ i) x₀ :=
     tendsto_finsetSum _ fun i _ ↦ (hcoeff i).mul (hr.pow i)
   exact hc.congr_of_eventuallyEq heq
+
+variable [CommRing R] [IsTopologicalSemiring R] {F : B → R[X]}
 
 /-- Multiplicity at a continuous point cannot increase nearby when the central polynomial
 is nonzero. Zero nearby polynomials are allowed, with their usual multiplicity zero. -/
@@ -90,8 +92,7 @@ theorem eventually_rootMultiplicity_eq_of_prod [IsDomain R] [T1Space R]
       (∏ k, F k x).rootMultiplicity (r x) = ∑ k, (F k x).rootMultiplicity (r x) := by
     rw [← count_roots, roots_prod _ _ (Finset.prod_ne_zero_iff.2 fun k _ ↦ hx k),
       Multiset.count_bind]
-    simp only [count_roots]
-    rfl
+    simp only [count_roots, Finset.sum_map_val]
   have hle := eventually_all.2 fun k ↦
     eventually_rootMultiplicity_le (hF k) (hdeg k) hr (hne k)
   have hnonzero : ∀ᶠ x in 𝓝 x₀, ∀ k, F k x ≠ 0 := eventually_all.2 fun k ↦ by
