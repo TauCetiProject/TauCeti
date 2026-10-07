@@ -132,7 +132,7 @@ def gradedProjectiveExtEuler :
 
 /-- The projective/module q-Euler form is the generic graded Ext-Euler sesquilinear form for the
 two induced graded abelian exact subcategories. -/
-theorem gradedProjectiveExtEuler_eq :
+theorem gradedProjectiveExtEuler_def :
     gradedProjectiveExtEuler 𝒜 =
       gradedExtEulerSesquilinear.{uA} _ _ _ _
         isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules_gradedFiniteModules :=
