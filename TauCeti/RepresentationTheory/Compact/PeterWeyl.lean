@@ -38,7 +38,7 @@ such a family says nothing about which functions the basis consists of. Both are
   representation on a standard model space is carried onto some `models i` by a linear isometry
   equivalence. Exhaustion is asked for in unitary form, which is no restriction: between
   irreducible unitary representations Schur's lemma makes every intertwining isomorphism a scalar
-  multiple of an isometry (`TauCeti.ContRepresentation.exists_linearIsometryEquiv_congr_eq`).
+  multiple of an isometry (`ContRepresentation.exists_linearIsometryEquiv_congr_eq`).
 * `TauCeti.peterWeylBasis` is a `HilbertBasis`, defined outright rather than existentially, and
   `TauCeti.coe_peterWeylBasis` identifies its elements as the normalized matrix coefficients
   `TauCeti.peterWeylFamily`. The element-level content is therefore available on the nose.
@@ -203,7 +203,7 @@ on a standard model space is carried onto some `models i` by a linear isometry e
 
 Exhaustion in *unitary* form is no restriction. Between finite-dimensional irreducible unitary
 representations Schur's lemma makes any intertwining isomorphism a scalar multiple of a unitary
-one (`TauCeti.ContRepresentation.exists_linearIsometryEquiv_congr_eq`), so a family exhaustive up
+one (`ContRepresentation.exists_linearIsometryEquiv_congr_eq`), so a family exhaustive up
 to isomorphism is exhaustive up to unitary isomorphism. -/
 structure IsIrrepSkeleton (models : ι → IrrepModel 𝕜 G) : Prop where
   /-- Distinct members of the family are inequivalent. -/
@@ -676,7 +676,7 @@ variable (𝕜 G)
 equivalence classes form one.
 
 Pairwise inequivalence is the substance. Distinct classes are inequivalent *unitarily* by
-construction, and `TauCeti.ContRepresentation.exists_linearIsometryEquiv_congr_eq` upgrades that
+construction, and `ContRepresentation.exists_linearIsometryEquiv_congr_eq` upgrades that
 to inequivalence outright, since between irreducible unitary representations every intertwining
 isomorphism can be rescaled to an isometry. Exhaustion is then the tautology that every model
 lies in its own class. -/

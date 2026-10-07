@@ -244,7 +244,7 @@ theorem isotypicProjector_apply_subtype_of_equiv (hunitary : IsUnitary rho)
   let rhoTau := subrepresentation rho tau.toSubmodule hTauInv
   let hTau : Continuous rhoTau := continuous_subrepresentation hrho
   have hTauRep : rhoTau.toRepresentation = tau.toRepresentation :=
-    tau.toRepresentation_subrepresentation_toSubmodule hTauInv
+    tau.toRepresentation_subrepresentation_toSubmodule
   have hirrTau : Representation.IsIrreducible rhoTau.toRepresentation := by
     rw [hTauRep]
     exact Representation.isIrreducible_toRepresentation_of_isAtom htau
@@ -329,7 +329,7 @@ private theorem isotypicProjector_apply_subtype_of_not_equiv_of_isUnitary
   let rhoTau := subrepresentation rho tau.toSubmodule hTauInv
   let hTau : Continuous rhoTau := continuous_subrepresentation hrho
   have hTauRep : rhoTau.toRepresentation = tau.toRepresentation :=
-    tau.toRepresentation_subrepresentation_toSubmodule hTauInv
+    tau.toRepresentation_subrepresentation_toSubmodule
   have hirrTau : Representation.IsIrreducible rhoTau.toRepresentation := by
     rw [hTauRep]
     exact Representation.isIrreducible_toRepresentation_of_isAtom htau

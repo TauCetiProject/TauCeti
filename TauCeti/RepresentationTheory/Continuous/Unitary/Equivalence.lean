@@ -26,7 +26,7 @@ wanted.
 
 ## Main statements
 
-* `TauCeti.ContRepresentation.exists_linearIsometryEquiv_congr_eq`: an equivalence between
+* `ContRepresentation.exists_linearIsometryEquiv_congr_eq`: an equivalence between
   finite-dimensional irreducible unitary continuous representations can be replaced by a linear
   isometry equivalence transporting one onto the other.
 

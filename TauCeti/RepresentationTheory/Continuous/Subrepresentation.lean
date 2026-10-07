@@ -104,11 +104,9 @@ theorem toRepresentation_subrepresentation : (subrepresentation π W hW).toRepre
 `σ.toRepresentation` as its underlying representation: both restrict the ambient action to the
 same submodule. -/
 theorem _root_.Subrepresentation.toRepresentation_subrepresentation_toSubmodule
-    (σ : Subrepresentation π.toRepresentation)
-    (hσ : ∀ g, ∀ v ∈ σ.toSubmodule, π g v ∈ σ.toSubmodule) :
-    (subrepresentation π σ.toSubmodule hσ).toRepresentation = σ.toRepresentation := by
-  rw [toRepresentation_subrepresentation]
-  ext g v
+    (σ : Subrepresentation π.toRepresentation) :
+    (subrepresentation π σ.toSubmodule
+      (fun g _ hv ↦ σ.apply_mem_toSubmodule g hv)).toRepresentation = σ.toRepresentation := by
   rfl
 
 end Restriction
