@@ -18,7 +18,8 @@ The marked isomorphism records the cyclotomic orientation: its value on the seco
 is `(1 - p)⁻¹`, and its values on all other generators are `1`. The commutator convention is
 `(x, y) = x⁻¹ y⁻¹ x y`, and the quotient uses the closed normal closure of the relator.
 
-The statement applies to any compatible local-field model of the cyclotomic extension.
+The statement applies to any compatible local-field model of the cyclotomic extension in
+`Type 0`, the universe supported by the marked classification theorem used here.
 Its arithmetic inputs are `TauCeti.finrank_cyclotomic_prime_pow_ratPadic` and
 `TauCeti.localRootOfUnityOrder_cyclotomic_prime_pow_ratPadic`: the field degree is `p - 1`
 and the root-of-unity order is exactly `p`. The generator rank `p + 1` is also computed
