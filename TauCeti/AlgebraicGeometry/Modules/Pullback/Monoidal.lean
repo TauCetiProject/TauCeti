@@ -16,7 +16,9 @@ Pullback from quasicoherent sheaves to all modules on the source of an arbitrary
 morphism is strong symmetric monoidal. Its inverse tensor comparison is the canonical oplax
 tensorator of module pullback, and its inverse unit comparison is the structure-sheaf
 identification. The existing identity and composition formulas for these canonical comparisons
-therefore still apply. No flatness or finiteness assumptions are needed.
+therefore still apply. The canonical `QuasicoherentSheaf.pullback` functor inherits this strong
+symmetric monoidal structure, with characteristic equations for all four comparisons on
+underlying modules. No flatness or finiteness assumptions are needed.
 
 In particular, arbitrary pullback preserves both left and right dualizability inside the
 quasicoherent subcategories. This lets dualizability be transported to affine charts, where
@@ -143,6 +145,91 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.pullbackToModulesBraided :
       (Functor.Monoidal.δ_μ H F E)).trans (Category.comp_id _)).symm
 
 namespace QuasicoherentSheaf
+
+/-- The canonical quasicoherent pullback inherits the oplax comparisons of module pullback. -/
+instance pullbackOplaxMonoidal : (pullback f).OplaxMonoidal where
+  η := ObjectProperty.homMk
+    (η ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f))
+  δ E F := ObjectProperty.homMk
+    (δ ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f) E F)
+  δ_natural_left φ E := by
+    apply ObjectProperty.hom_ext
+    exact Functor.OplaxMonoidal.δ_natural_left
+      ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f) φ E
+  δ_natural_right E φ := by
+    apply ObjectProperty.hom_ext
+    exact Functor.OplaxMonoidal.δ_natural_right
+      ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f) E φ
+  oplax_associativity E F G := by
+    apply ObjectProperty.hom_ext
+    exact Functor.OplaxMonoidal.associativity
+      ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f) E F G
+  oplax_left_unitality E := by
+    apply ObjectProperty.hom_ext
+    exact Functor.OplaxMonoidal.left_unitality
+      ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f) E
+  oplax_right_unitality E := by
+    apply ObjectProperty.hom_ext
+    exact Functor.OplaxMonoidal.right_unitality
+      ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f) E
+
+/-- Pullback of quasicoherent sheaves is strong monoidal for every morphism of schemes. -/
+instance pullbackMonoidal : (pullback f).Monoidal := by
+  have : IsIso (η (pullback f)) := by
+    apply (ObjectProperty.isIso_hom_iff _).mp
+    exact inferInstanceAs (IsIso (η
+      ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f)))
+  have (E F : QuasicoherentSheaf Y) : IsIso (δ (pullback f) E F) := by
+    apply (ObjectProperty.isIso_hom_iff _).mp
+    exact inferInstanceAs (IsIso (δ
+      ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f) E F))
+  exact Functor.Monoidal.ofOplaxMonoidal (pullback f)
+
+/-- The inverse tensor comparison of quasicoherent pullback is the module comparison. -/
+@[simp]
+theorem pullback_δ_hom (E F : QuasicoherentSheaf Y) :
+    (δ (pullback f) E F).hom = δ (Scheme.Modules.pullback f) E.obj F.obj :=
+  Scheme.Modules.pullbackToModules_δ f E F
+
+/-- The inverse unit comparison of quasicoherent pullback is the structure-sheaf comparison. -/
+@[simp]
+theorem pullback_η_hom :
+    (η (pullback f)).hom = (Scheme.Modules.pullbackObjUnitIso f).hom :=
+  Scheme.Modules.pullbackToModules_η f
+
+/-- The tensor comparison of quasicoherent pullback inverts the module comparison. -/
+@[simp]
+theorem pullback_μ_hom (E F : QuasicoherentSheaf Y) :
+    (μ (pullback f) E F).hom =
+      inv (δ ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙
+        Scheme.Modules.pullback f) E F) := by
+  rw [← Functor.Monoidal.inv_δ, ObjectProperty.hom_inv]
+  rfl
+
+/-- The unit comparison of quasicoherent pullback inverts the structure-sheaf comparison. -/
+@[simp]
+theorem pullback_ε_hom :
+    (ε (pullback f)).hom = (Scheme.Modules.pullbackObjUnitIso f).inv := by
+  rw [← Functor.Monoidal.inv_η, ObjectProperty.hom_inv]
+  -- Express the lifted comparison in `X.Modules`: rewriting under `inv` otherwise mixes
+  -- the full-subcategory and ambient category instances at reducible transparency.
+  change inv (η ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙
+    Scheme.Modules.pullback f)) = _
+  apply IsIso.inv_eq_of_hom_inv_id
+  rw [Scheme.Modules.pullbackToModules_η]
+  exact (Scheme.Modules.pullbackObjUnitIso f).hom_inv_id
+
+/-- The canonical quasicoherent pullback respects the symmetry of tensor products. -/
+instance pullbackBraided : (pullback f).Braided where
+  toMonoidal := pullbackMonoidal f
+  braided E F := by
+    apply ObjectProperty.hom_ext
+    -- Forget the full-subcategory composite so the comparison lemmas can rewrite its factors.
+    change (μ (pullback f) E F).hom ≫ _ = _ ≫ (μ (pullback f) F E).hom
+    rw [pullback_μ_hom, pullback_μ_hom]
+    exact @Functor.LaxBraided.braided _ _ _ _ _ _ _ _
+      ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f)
+      inferInstance E F
 
 /-- Arbitrary pullback carries a left dual of a quasicoherent sheaf to a left dual of its
 pullback. -/

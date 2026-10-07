@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Dual
+public import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Basic
+public import TauCeti.AlgebraicGeometry.VectorBundle.OpenCover
 
 /-!
 # Dualizable quasicoherent sheaves are finite locally free
@@ -35,6 +37,32 @@ open _root_.AlgebraicGeometry
 universe u
 
 noncomputable section
+
+/-- A quasicoherent sheaf on an affine scheme `X` is dualizable in `QuasicoherentSheaf X` if and
+only if it is finite locally free. -/
+private theorem nonempty_hasLeftDual_iff_isFiniteLocallyFree_of_isAffine
+    {X : Scheme.{u}} [IsAffine X] (E : QuasicoherentSheaf X) :
+    Nonempty (HasLeftDual E) ↔ Scheme.Modules.isFiniteLocallyFree X E.obj := by
+  refine ⟨fun h ↦ ?_, nonempty_hasLeftDual_of_isFiniteLocallyFree E⟩
+  -- Finite local freeness can be checked after pullback along the isomorphism
+  -- `Spec Γ(X, ⊤) ≅ X`, which preserves dualizability since `X` is affine.
+  refine (Scheme.Modules.isFiniteLocallyFree_iff_forall_pullback
+    (Scheme.coverOfIsIso.{u} (P := @IsOpenImmersion) X.isoSpec.inv) E.obj).mpr fun _ ↦ ?_
+  let F := (pullback X.isoSpec.inv).obj E
+  -- On `Spec Γ(X, ⊤)`, the dualizable sheaf `F` is the sheaf associated with its finite
+  -- projective module of global sections.
+  obtain ⟨_, _⟩ := (nonempty_hasLeftDual_iff_finite_projective F).mp
+    (E.nonempty_hasLeftDual_pullback X.isoSpec.inv h)
+  have hF : Scheme.Modules.isFiniteLocallyFree (Spec Γ(X, ⊤)) F.obj :=
+    (Scheme.Modules.isFiniteLocallyFree _).prop_of_iso
+      ((ObjectProperty.ι _).mapIso (tildeEquiv.counitIso.app F))
+      (isFiniteLocallyFree_tilde (moduleSpecΓFunctor.obj F.obj))
+  -- The single member of the cover is `X.isoSpec.inv` by definition (`Scheme.coverOfIsIso_X`,
+  -- `Scheme.coverOfIsIso_f`). Neither `rw` nor `simp` can apply these equations: the goal states
+  -- `E.obj : SheafOfModules X.ringCatSheaf` as an object of `X.Modules`, which is not
+  -- type-correct at reducible transparency.
+  exact (Scheme.Modules.isFiniteLocallyFree _).prop_of_iso
+    (eqToIso (C := (Spec Γ(X, ⊤)).Modules) (pullback_obj_obj X.isoSpec.inv E)) hF
 
 variable {X : Scheme.{u}}
 

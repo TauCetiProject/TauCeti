@@ -143,6 +143,8 @@ theorem coevaluation_free_hom (I : Type u) [Finite I] :
 
 variable {X} in
 /-- The pullback of quasicoherent sheaves along a morphism of schemes `f : X ⟶ Y`. -/
+-- Exposed so the monoidal comparisons can be lifted from the underlying module pullback.
+@[expose]
 def pullback {Y : Scheme.{u}} (f : X ⟶ Y) :
     QuasicoherentSheaf Y ⥤ QuasicoherentSheaf X :=
   (_root_.SheafOfModules.isQuasicoherent X.ringCatSheaf).lift
