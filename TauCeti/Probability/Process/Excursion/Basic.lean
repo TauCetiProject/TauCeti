@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.MeasureSpaceDef
 public import TauCeti.MeasureTheory.MeasurableSpace.List
 public import TauCeti.Combinatorics.Enumerative.ExcursionProcess
-import TauCeti.Probability.Exchangeability.SuccessorArray
+import TauCeti.Probability.Process.SuccessorArray
 
 /-!
 # Excursion processes
