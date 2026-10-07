@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Connected.TotallyDisconnected
 public import Mathlib.Topology.Instances.Sign
+import TauCeti.Topology.LocallyConstant.Preconnected
 
 /-!
 # Sign-invariant functions
@@ -145,5 +146,18 @@ theorem _root_.IsPreconnected.signInvariant [Zero R] [LinearOrder R] [Topologica
     (hf : ContinuousOn f s) (h0 : ∀ x ∈ s, f x ≠ 0) : SignInvariant f s :=
   fun _ hx _ hy ↦ hs.constant (f := fun x ↦ SignType.sign (f x))
     (fun z hz ↦ (continuousAt_sign_of_ne_zero (h0 z hz)).comp_continuousWithinAt (hf z hz)) hx hy
+
+/-- Local sign-invariance on relative neighborhoods implies sign-invariance on a preconnected
+set. No continuity of the function itself is required. -/
+theorem _root_.IsPreconnected.signInvariant_of_locally [Zero R] [Preorder R] [DecidableLT R]
+    [TopologicalSpace α] {f : α → R} {s : Set α} (hs : IsPreconnected s)
+    (hlocal : ∀ x ∈ s, ∃ U : Set α, IsOpen U ∧ x ∈ U ∧ SignInvariant f (s ∩ U)) :
+    SignInvariant f s := by
+  rw [signInvariant_def]
+  refine fun x hx y hy ↦ hs.apply_eq_of_eventually_eq
+    (f := fun a ↦ SignType.sign (f a)) (fun a ha ↦ ?_) hx hy
+  obtain ⟨U, hU, haU, h⟩ := hlocal a ha
+  filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (hU.mem_nhds haU)] with b hb hbU
+  exact h b ⟨hb, hbU⟩ a ⟨ha, haU⟩
 
 end TauCeti

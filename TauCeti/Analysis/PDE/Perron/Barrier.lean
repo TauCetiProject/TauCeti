@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Harmonic.LogNorm
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Basic
 public import TauCeti.Analysis.PDE.Perron.Basic
 
@@ -27,8 +28,10 @@ problem `Δu = 0` in `Ω`, `u = g` on `frontier Ω`.
 
 If a closed ball `closedBall y R` meets `closure Ω` only at `ξ`, the function
 `G(ξ - y) - G(x - y)`, built from the Newtonian kernel `G = TauCeti.newtonianKernel n` with pole
-at `y`, is a barrier at `ξ`. In `ℝⁿ` with `n ≠ 2`, the Dirichlet problem is therefore solvable on
-every bounded open set satisfying this exterior sphere condition at each boundary point.
+at `y`, is a barrier at `ξ` in `ℝⁿ` for `n ≠ 2`. In a two-dimensional space the logarithmic
+function `log ‖x - y‖ - log ‖ξ - y‖` plays the same role. In every dimension `n`, the Dirichlet
+problem in `ℝⁿ` is therefore solvable on every bounded open set satisfying this exterior sphere
+condition at each boundary point.
 
 ## Main declarations
 
@@ -40,10 +43,11 @@ every bounded open set satisfying this exterior sphere condition at each boundar
   solution of continuous boundary data is continuous on `closure Ω`.
 * `TauCeti.exists_harmonicOnNhd_continuousOn_closure_eqOn_frontier`: **the Dirichlet problem**
   is solvable when every boundary point admits a barrier.
-* `TauCeti.isBarrier_newtonianKernel_sub`: the exterior sphere barrier.
+* `TauCeti.isBarrier_newtonianKernel_sub`: the exterior sphere barrier in `ℝⁿ`, `n ≠ 2`.
+* `TauCeti.isBarrier_log_norm_sub`: the logarithmic exterior sphere barrier in two dimensions.
 * `TauCeti.exists_harmonicOnNhd_continuousOn_closure_eqOn_frontier_of_exterior_sphere`: the
-  Dirichlet problem is solvable on bounded open subsets of `ℝⁿ`, `n ≠ 2`, satisfying the exterior
-  sphere condition.
+  Dirichlet problem is solvable on bounded open subsets of `ℝⁿ` satisfying the exterior sphere
+  condition.
 
 ## References
 
@@ -235,14 +239,9 @@ theorem isBarrier_newtonianKernel_sub {n : ℕ} (hn : n ≠ 2) {Ω : Set (Euclid
     {ξ y : EuclideanSpace ℝ (Fin n)} (hξy : ξ ≠ y)
     (h : ∀ x ∈ closure Ω, x ≠ ξ → dist ξ y < dist x y) :
     IsBarrier Ω ξ fun x ↦ newtonianKernel n (ξ - y) - newtonianKernel n (x - y) := by
-  -- The pole `y` lies outside `closure Ω`, where the kernel is harmonic.
-  have hy : closure Ω ⊆ {y}ᶜ := fun x hx hxy ↦ by
-    rcases eq_or_ne x ξ with rfl | hxξ
-    · exact hξy hxy
-    · have := h x hx hxξ
-      rw [mem_singleton_iff.1 hxy, dist_self] at this
-      exact dist_nonneg.not_gt this
-  have hH := (harmonicOnNhd_newtonianKernel_sub n y).mono hy
+  -- The pole `y` lies outside `closure Ω`, since `dist ξ y < dist y y = 0` is impossible.
+  have hH := (harmonicOnNhd_newtonianKernel_sub n y).mono
+    (subset_compl_singleton_iff.2 fun hy ↦ (h y hy hξy.symm).not_ge (by simp))
   refine ⟨?_, continuousOn_const.sub hH.continuousOn, by simp, fun x hx hxξ ↦ sub_pos.2 ?_⟩
   · have heq : -(fun x ↦ newtonianKernel n (ξ - y) - newtonianKernel n (x - y)) =
         (fun x ↦ newtonianKernel n (x - y)) - fun _ ↦ newtonianKernel n (ξ - y) := by
@@ -254,18 +253,40 @@ theorem isBarrier_newtonianKernel_sub {n : ℕ} (hn : n ≠ 2) {Ω : Set (Euclid
     rw [dist_eq_norm, dist_eq_norm] at this
     exact newtonianKernel_lt_newtonianKernel_of_norm_lt n hn (sub_ne_zero.2 hξy) this
 
+/-- **The planar exterior sphere barrier.** In a two-dimensional space, suppose a closed ball
+centred at `y ≠ ξ` meets `closure Ω` only at `ξ`, that is, every other point of `closure Ω` is
+farther from `y` than `ξ`. Then `x ↦ log ‖x - y‖ - log ‖ξ - y‖` is a barrier at `ξ` relative to
+`Ω`. -/
+theorem isBarrier_log_norm_sub (hE : Module.finrank ℝ E = 2) {y : E} (hξy : ξ ≠ y)
+    (h : ∀ x ∈ closure Ω, x ≠ ξ → dist ξ y < dist x y) :
+    IsBarrier Ω ξ fun x ↦ Real.log ‖x - y‖ - Real.log ‖ξ - y‖ := by
+  -- The pole `y` lies outside `closure Ω`, since `dist ξ y < dist y y = 0` is impossible.
+  have hH := (harmonicOnNhd_log_norm_sub_of_finrank_eq_two hE y).mono
+    (subset_compl_singleton_iff.2 fun hy ↦ (h y hy hξy.symm).not_ge (by simp))
+  refine ⟨?_, hH.continuousOn.sub continuousOn_const, sub_self _, fun x hx hxξ ↦ sub_pos.2 ?_⟩
+  · have heq : -(fun x ↦ Real.log ‖x - y‖ - Real.log ‖ξ - y‖) =
+        (fun _ ↦ Real.log ‖ξ - y‖) - fun x ↦ Real.log ‖x - y‖ := by
+      ext x
+      simp
+    rw [heq]
+    exact ((harmonicOnNhd_const _).sub (hH.mono subset_closure)).subharmonicOn
+  · have := h x hx hxξ
+    rw [dist_eq_norm, dist_eq_norm] at this
+    exact Real.log_lt_log (norm_pos_iff.2 (sub_ne_zero.2 hξy)) this
+
 /-- **The Dirichlet problem under the exterior sphere condition.** Let `Ω` be a bounded open
-subset of `ℝⁿ`, `n ≠ 2`, such that at every boundary point `ξ` some closed ball centred at a point
-`y ≠ ξ` meets `closure Ω` only at `ξ`. For boundary data `g` continuous on `frontier Ω`, there is
-a function harmonic in `Ω`, continuous on `closure Ω` and equal to `g` on `frontier Ω`. -/
+subset of `ℝⁿ` such that at every boundary point `ξ` some closed ball centred at a point `y ≠ ξ`
+meets `closure Ω` only at `ξ`. For boundary data `g` continuous on `frontier Ω`, there is a
+function harmonic in `Ω`, continuous on `closure Ω` and equal to `g` on `frontier Ω`. -/
 theorem exists_harmonicOnNhd_continuousOn_closure_eqOn_frontier_of_exterior_sphere {n : ℕ}
-    (hn : n ≠ 2) {Ω : Set (EuclideanSpace ℝ (Fin n))} (hΩ : IsOpen Ω)
-    (hb : Bornology.IsBounded Ω)
+    {Ω : Set (EuclideanSpace ℝ (Fin n))} (hΩ : IsOpen Ω) (hb : Bornology.IsBounded Ω)
     (hext : ∀ ξ ∈ frontier Ω, ∃ y ≠ ξ, ∀ x ∈ closure Ω, x ≠ ξ → dist ξ y < dist x y)
     {g : EuclideanSpace ℝ (Fin n) → ℝ} (hg : ContinuousOn g (frontier Ω)) :
-    ∃ u, HarmonicOnNhd u Ω ∧ ContinuousOn u (closure Ω) ∧ EqOn u g (frontier Ω) :=
-  exists_harmonicOnNhd_continuousOn_closure_eqOn_frontier hΩ hb (fun ξ hξ ↦
-    let ⟨_, hyξ, hy⟩ := hext ξ hξ
-    ⟨_, isBarrier_newtonianKernel_sub hn hyξ.symm hy⟩) hg
+    ∃ u, HarmonicOnNhd u Ω ∧ ContinuousOn u (closure Ω) ∧ EqOn u g (frontier Ω) := by
+  refine exists_harmonicOnNhd_continuousOn_closure_eqOn_frontier hΩ hb (fun ξ hξ ↦ ?_) hg
+  obtain ⟨y, hyξ, hy⟩ := hext ξ hξ
+  rcases eq_or_ne n 2 with rfl | hn
+  · exact ⟨_, isBarrier_log_norm_sub finrank_euclideanSpace_fin hyξ.symm hy⟩
+  · exact ⟨_, isBarrier_newtonianKernel_sub hn hyξ.symm hy⟩
 
 end TauCeti

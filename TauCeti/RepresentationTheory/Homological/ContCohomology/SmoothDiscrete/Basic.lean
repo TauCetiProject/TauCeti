@@ -8,7 +8,7 @@ module
 public import Mathlib.CategoryTheory.Action.Continuous
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.RepresentationTheory.Continuous.TopRep
-public import Mathlib.Topology.Algebra.MulAction
+public import Mathlib.Topology.Instances.ZMod
 
 /-!
 # Smooth discrete topological representations
@@ -195,7 +195,7 @@ end TopRep
 
 namespace TauCeti
 
-open CategoryTheory ContRepresentation
+open CategoryTheory
 
 universe u v w
 
@@ -349,7 +349,6 @@ lemma isSmoothDiscrete_iff_continuousSMul (X : TopRep R G) [DiscreteTopology X.V
 /-- The derived action on a smooth discrete object is continuous, so the underlying module of such
 an object is a discrete `G`-module in the unbundled classes. -/
 lemma IsSmoothDiscrete.continuousSMul {X : TopRep R G} (hX : IsSmoothDiscrete R X) :
-    haveI := hX.discreteTopology
     ContinuousSMul G X.V :=
   haveI := hX.discreteTopology
   (isSmoothDiscrete_iff_continuousSMul X).1 hX
@@ -693,7 +692,7 @@ to the smooth discrete object it names, and an equivariant map to the morphism i
     ((toSmoothDiscrete R G).obj X).obj = ofDiscreteModule R G X.V := (rfl)
 
 /-- `toSmoothDiscrete` sends a morphism `f` to the morphism acting as `f`. -/
-@[simp] lemma toSmoothDiscrete_map_hom_apply {X Y : DiscreteRep.{u, v, w} R G} (f : X ⟶ Y)
+@[simp] lemma toSmoothDiscrete_map_hom_hom_apply {X Y : DiscreteRep.{u, v, w} R G} (f : X ⟶ Y)
     (x : X.V) : ((toSmoothDiscrete R G).map f).hom.hom x = f.toLinearMap x := (rfl)
 
 end CoefficientCategories
@@ -710,12 +709,12 @@ variable {R G} in
 underlying representation is definitionally `TopRep.res U.subtype A.obj`. The object map of
 `smoothDiscreteResFunctor` is not exposed, so statements that must see this definitional equality
 (for instance the domain of `coindTraceHom`) use this abbreviation instead. -/
-noncomputable abbrev smoothDiscreteResTopRep (A : SmoothDiscreteTopRep.{u, v, w} R G) :
+abbrev smoothDiscreteResTopRep (A : SmoothDiscreteTopRep.{u, v, w} R G) :
     SmoothDiscreteTopRep.{u, v, w} R U :=
   ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩
 
 /-- Restriction along `U → G` on smooth discrete representations. -/
-noncomputable def smoothDiscreteResFunctor :
+def smoothDiscreteResFunctor :
     SmoothDiscreteTopRep.{u, v, w} R G ⥤ SmoothDiscreteTopRep.{u, v, w} R U where
   obj A := ⟨TopRep.res (U.subtype : U →* G) A.obj,
     A.property.res continuous_subtype_val⟩
@@ -762,10 +761,10 @@ end Restriction
 
 /-! ### The equivalence of coefficient categories -/
 
-/-- The underlying module of a smooth discrete object is discrete. Recording this as a local
-instance is what lets the object map of `TauCeti.ofSmoothDiscrete` below build a
-`TauCeti.DiscreteRep` on it. -/
-local instance instDiscreteTopologyOfSmoothDiscrete {R : Type u} [Ring R] [TopologicalSpace R]
+/-- The underlying module of a smooth discrete object is discrete. This is what lets the object
+map of `TauCeti.ofSmoothDiscrete` below build a `TauCeti.DiscreteRep` on it, and what downstream
+constructions on smooth discrete objects use to treat their modules as discrete. -/
+instance instDiscreteTopologyOfSmoothDiscrete {R : Type u} [Ring R] [TopologicalSpace R]
     {G : Type v} [Monoid G] [TopologicalSpace G] (X : SmoothDiscreteTopRep.{u, v, w} R G) :
     DiscreteTopology X.obj.V :=
   X.property.discreteTopology
@@ -858,12 +857,6 @@ end CoefficientEquivalence
 /-! ### The smooth discrete subcategory is proper -/
 
 section NotSmooth
-
-/-- The coefficients of the non-example below carry the discrete topology. -/
-local instance instTopologicalSpaceZModThree : TopologicalSpace (ZMod 3) := ⊥
-
-/-- The topology chosen just above is by definition the discrete one. -/
-local instance instDiscreteTopologyZModThree : DiscreteTopology (ZMod 3) := ⟨rfl⟩
 
 /-- The group of the non-example below carries the indiscrete topology, whose only open sets are
 `∅` and the whole group. -/

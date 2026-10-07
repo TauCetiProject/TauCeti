@@ -113,15 +113,8 @@ theorem tangentMatrix_mapValue_coe {C : Type*} [CommRing C] [Algebra R C]
       (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) B)) :
     (tangentMatrix n (Derivation.mapValue φ d) : Matrix (Fin n) (Fin n) C) =
       (tangentMatrix n d : Matrix (Fin n) (Fin n) B).map φ := by
-  rw [tangentMatrix_apply_coe, tangentMatrix_apply_coe]
-  ext i j
-  simp only [GeneralLinear.tangentMatrix_apply,
-    HopfIdeal.quotientLieHom_apply_apply, Derivation.mapValue_apply, Matrix.map_apply]
-  -- The quotient and ambient counit-algebra indices must be identified to apply their
-  -- identity-on-coefficients computation rules.
-  erw [Bialgebra.CounitAlgebra.algEquivSelf_apply,
-    Bialgebra.CounitAlgebra.algEquivSelf_apply, Bialgebra.CounitAlgebra.algEquivSelf_apply,
-    Bialgebra.CounitAlgebra.algEquivSelf_apply]
+  rw [tangentMatrix_apply_coe, tangentMatrix_apply_coe,
+    HopfIdeal.quotientLieHom_mapValue, GeneralLinear.tangentMatrix_mapValue]
 
 /-- An entry of the special-linear tangent matrix is the derivation evaluated on the image of
 the corresponding generic matrix coordinate in the determinant-one quotient. -/

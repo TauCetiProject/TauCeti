@@ -13,7 +13,7 @@ public import Mathlib.RingTheory.Flat.Basic
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import TauCeti.Geometry.Hodge.Conjugation
 import TauCeti.LinearAlgebra.LinearMap.PseudoInverse
-public import TauCeti.RingTheory.IsTensorProduct
+public import TauCeti.RingTheory.IsTensorProduct.Basic
 
 /-!
 # Rational subspaces in an abstract complexification

@@ -147,13 +147,8 @@ theorem basisReflection_involutive (i : Fin (n + 1)) :
 theorem foldl_basisReflection (l : List (Fin (n + 1))) (t : Finset (Fin (n + 1))) :
     l.foldl (fun b j ↦ basisReflection n j b) (Fintype.equivFin (Finset (Fin (n + 1))) t) =
       Fintype.equivFin (Finset (Fin (n + 1)))
-        (l.foldl (fun t j ↦ DynkinType.typeBSpinReflection j t) t) := by
-  induction l generalizing t with
-  | nil => rfl
-  | cons j l ih =>
-    rw [List.foldl_cons, List.foldl_cons, ← ih]
-    congr 1
-    simp [basisReflection, signSet]
+        (l.foldl (fun t j ↦ DynkinType.typeBSpinReflection j t) t) :=
+  List.foldl_hom _ fun _ _ ↦ by simp [basisReflection, signSet]
 
 /-- A reindexed lattice-basis vector is the exterior basis vector of its sign set. -/
 @[simp]
@@ -276,9 +271,9 @@ theorem exists_rep_rootGenerator_inl_exteriorBasis (i : Fin (n + 1))
     have hrefl := DynkinType.typeBSpinReflection_eq_insert_erase_of_not_mem hlt hj
       (by simpa using hsucc)
     rw [Fin.orderSucc_castSucc] at hrefl
-    rw [rep_rootGenerator_inl_castSucc, TauCeti.ExteriorAlgebra.contractLeft_coord_basis,
-      ite_eq_left hsucc, mul_smul_comm, TauCeti.ExteriorAlgebra.ι_mul_basis,
-      ite_eq_right (by simp [hj]), smul_smul, hrefl]
+    rw [rep_rootGenerator_inl_castSucc,
+      TauCeti.ExteriorAlgebra.ι_mul_contractLeft_coord_basis_of_not_mem_of_mem _ _ _ _ hj hsucc,
+      hrefl]
     exact ⟨_, rfl⟩
 
 /-- A negative numbered simple root generator moves an exterior basis vector whose spin weight
@@ -309,9 +304,9 @@ theorem exists_rep_rootGenerator_inr_exteriorBasis (i : Fin (n + 1))
     have hrefl := DynkinType.typeBSpinReflection_eq_insert_erase_of_mem hlt hj
       (by simpa using hsucc)
     rw [Fin.orderSucc_castSucc] at hrefl
-    rw [rep_rootGenerator_inr_castSucc, TauCeti.ExteriorAlgebra.contractLeft_coord_basis,
-      ite_eq_left hj, mul_smul_comm, TauCeti.ExteriorAlgebra.ι_mul_basis,
-      ite_eq_right (by simp [hsucc]), smul_smul, hrefl]
+    rw [rep_rootGenerator_inr_castSucc,
+      TauCeti.ExteriorAlgebra.ι_mul_contractLeft_coord_basis_of_not_mem_of_mem _ _ _ _ hsucc hj,
+      hrefl]
     exact ⟨_, rfl⟩
 
 /-- Every exterior basis vector has its named integral type-`B` spin weight. -/
@@ -329,17 +324,10 @@ theorem isCartanWeightVector_latticeBasis (i : Fin (dimension n)) :
 /-- The full spin weights span the simply connected type-`B` character lattice. -/
 theorem span_range_basisWeight_eq_top :
     Submodule.span ℤ (Set.range (basisWeight n)) = ⊤ := by
-  have hrange :
-      Set.range (fun i : Fin (dimension n) ↦
-        TauCeti.DynkinType.typeBSpinWeight (signSet n i)) =
-        Set.range (TauCeti.DynkinType.typeBSpinWeight (n := n + 1)) := by
-    ext w
-    constructor
-    · rintro ⟨i, rfl⟩
-      exact ⟨signSet n i, rfl⟩
-    · rintro ⟨s, rfl⟩
-      exact ⟨Fintype.equivFin (Finset (Fin (n + 1))) s, by simp [signSet]⟩
-  rw [hrange, TauCeti.DynkinType.span_range_typeBSpinWeight_eq_top]
+  rw [← TauCeti.DynkinType.span_range_typeBSpinWeight_eq_top (n := n + 1),
+    ← (Fintype.equivFin (Finset (Fin (n + 1)))).symm.surjective.range_comp]
+  -- `basisWeight n` is `typeBSpinWeight` after `signSet n`, the inverse enumeration.
+  rfl
 
 /-- The exterior basis vector of the singleton `{i}` has weight `1` at the simple coroot `hᵢ`, so
 the represented coroot is nonzero. -/

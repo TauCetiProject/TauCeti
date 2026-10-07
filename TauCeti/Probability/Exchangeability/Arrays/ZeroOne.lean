@@ -11,7 +11,7 @@ public import TauCeti.Probability.Exchangeability.Arrays.Tail
 -- Non-public: the zero-one law for a self-independent event is used only inside a proof.
 import Mathlib.Probability.Independence.ZeroOne
 import TauCeti.Probability.Martingale.Convergence
-import TauCeti.Probability.Exchangeability.PermutationExtension
+import TauCeti.Data.Finset.Basic
 
 /-!
 # Joint dissociation and the corner tail of an array
