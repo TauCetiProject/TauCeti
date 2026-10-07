@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.TotalPath
+public import TauCeti.Combinatorics.Quiver.TotalPath
 public import Mathlib.Algebra.Algebra.NonUnitalHom
 public import Mathlib.LinearAlgebra.Dimension.Finite
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
@@ -20,7 +20,7 @@ The path algebra `kQ` of a quiver `Q` over a semiring `k` is the free `k`-module
 `Q`, with the product of two paths their concatenation when they are composable and `0` otherwise.
 
 The path index `TauCeti.Quiver.TotalPath` and its partial concatenation are developed in
-`TauCeti.RepresentationTheory.Quiver.TotalPath`, independently of the coefficient semiring.
+`TauCeti.Combinatorics.Quiver.TotalPath`, independently of the coefficient semiring.
 
 Paths are concatenated in the *later factor first* order: for `p : Path a b` and `q : Path c a`,
 the product of the corresponding basis elements is the basis element of `q.comp p : Path c b`.
