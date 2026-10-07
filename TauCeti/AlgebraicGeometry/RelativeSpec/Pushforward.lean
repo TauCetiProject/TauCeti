@@ -85,6 +85,29 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardSectionsRingEquiv_restrictS
             (congrArg (A.restrictSections _)
               (f.pushforwardSectionsRingEquiv_apply A U x).symm))))
 
+/-- The presheaf of sections of a pushed-forward commutative algebra is naturally the direct
+image of its presheaf of sections. -/
+def _root_.AlgebraicGeometry.Scheme.Hom.pushforwardSectionsPresheafIso :
+    ((Scheme.Modules.pushforward f).mapCommMon.obj A).sectionsPresheaf ≅
+      (TopologicalSpace.Opens.map f.base).op ⋙ A.sectionsPresheaf :=
+  NatIso.ofComponents
+    (fun U ↦ (f.pushforwardSectionsRingEquiv A U.unop).toCommRingCatIso)
+    (fun {U V} i ↦ by
+      ext x
+      -- Evaluate the bundled maps to use the restriction equation on sections.
+      change f.pushforwardSectionsRingEquiv A V.unop
+          (((Scheme.Modules.pushforward f).mapCommMon.obj A).restrictSections i.unop x) =
+        A.restrictSections ((TopologicalSpace.Opens.map f.base).map i.unop)
+          (f.pushforwardSectionsRingEquiv A U.unop x)
+      exact f.pushforwardSectionsRingEquiv_restrictSections A i.unop x)
+
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardSectionsPresheafIso_hom_app
+    (U : Y.Opensᵒᵖ) :
+    (f.pushforwardSectionsPresheafIso A).hom.app U =
+      (f.pushforwardSectionsRingEquiv A U.unop).toCommRingCatIso.hom :=
+  (rfl)
+
 variable (X) in
 /-- The structure map of the tensor-unit algebra acts identically on regular functions. -/
 @[simp]
@@ -116,6 +139,30 @@ lemma _root_.AlgebraicGeometry.Scheme.structureAlgebraSectionsRingEquiv_symm_app
     (X.structureAlgebraSectionsRingEquiv U).symm x = x :=
   X.structureAlgebraSections_algebraMap U x
 
+variable (X) in
+/-- The presheaf of sections of the tensor-unit algebra is the structure presheaf. -/
+def _root_.AlgebraicGeometry.Scheme.structureAlgebraSectionsPresheafIso :
+    (CommMon.trivial X.Modules).sectionsPresheaf ≅ X.presheaf :=
+  NatIso.ofComponents
+    (fun U ↦ (X.structureAlgebraSectionsRingEquiv U.unop).toCommRingCatIso)
+    (fun {U V} i ↦ by
+      ext x
+      -- Evaluate the bundled maps to compare restriction of regular functions.
+      change X.structureAlgebraSectionsRingEquiv V.unop
+          ((CommMon.trivial X.Modules).restrictSections i.unop x) =
+        X.presheaf.map i (X.structureAlgebraSectionsRingEquiv U.unop x)
+      exact (X.structureAlgebraSectionsRingEquiv_apply V.unop _).trans
+        ((CommMon.restrictSections_apply _ i.unop x).trans
+          (congrArg (X.presheaf.map i)
+            (X.structureAlgebraSectionsRingEquiv_apply U.unop x).symm)))
+
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.structureAlgebraSectionsPresheafIso_hom_app
+    (X : Scheme.{u}) (U : X.Opensᵒᵖ) :
+    X.structureAlgebraSectionsPresheafIso.hom.app U =
+      (X.structureAlgebraSectionsRingEquiv U.unop).toCommRingCatIso.hom :=
+  (rfl)
+
 -- Expose the object construction so that section-ring carriers compute on inverse images;
 -- all ring operations and restriction comparisons are characterized by the public API.
 /-- The algebra of regular functions of `X` over `Y`, carried by the actual pushforward
@@ -142,23 +189,23 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebra_one :
 
 /-- On each open of the base, the function algebra is the ordinary ring of regular functions
 on the inverse image. -/
-def _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraSections (U : Y.Opens) :
+def _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraSectionsRingEquiv (U : Y.Opens) :
     Γ(f.pushforwardStructureAlgebra.X, U) ≃+* Γ(X, f ⁻¹ᵁ U) :=
   f.pushforwardSectionsRingEquiv (CommMon.trivial X.Modules) U |>.trans
     (X.structureAlgebraSectionsRingEquiv (f ⁻¹ᵁ U))
 
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraSections_apply
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraSectionsRingEquiv_apply
     (U : Y.Opens) (x : Γ(f.pushforwardStructureAlgebra.X, U)) :
-    f.pushforwardStructureAlgebraSections U x = x := by
+    f.pushforwardStructureAlgebraSectionsRingEquiv U x = x := by
   exact (X.structureAlgebraSectionsRingEquiv_apply (f ⁻¹ᵁ U)
     (f.pushforwardSectionsRingEquiv (CommMon.trivial X.Modules) U x)).trans
       (f.pushforwardSectionsRingEquiv_apply (CommMon.trivial X.Modules) U x)
 
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraSections_symm_apply
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraSectionsRingEquiv_symm_apply
     (U : Y.Opens) (x : Γ(X, f ⁻¹ᵁ U)) :
-    (f.pushforwardStructureAlgebraSections U).symm x = x := by
+    (f.pushforwardStructureAlgebraSectionsRingEquiv U).symm x = x := by
   exact (f.pushforwardSectionsRingEquiv_symm_apply (CommMon.trivial X.Modules) U
     ((X.structureAlgebraSectionsRingEquiv (f ⁻¹ᵁ U)).symm x)).trans
       (X.structureAlgebraSectionsRingEquiv_symm_apply (f ⁻¹ᵁ U) x)
@@ -178,20 +225,9 @@ the structure presheaf. -/
 def _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraPresheafIso :
     f.pushforwardStructureAlgebra.sectionsPresheaf ≅
       (TopologicalSpace.Opens.map f.base).op ⋙ X.presheaf :=
-  NatIso.ofComponents
-    (fun U ↦ (f.pushforwardStructureAlgebraSections U.unop).toCommRingCatIso)
-    (fun {U V} i ↦ by
-      ext x
-      -- Evaluate the bundled ring maps to expose restriction of functions on inverse images.
-      change f.pushforwardStructureAlgebraSections V.unop
-          (f.pushforwardStructureAlgebra.restrictSections i.unop x) =
-        X.presheaf.map ((TopologicalSpace.Opens.map f.base).map i.unop).op
-          (f.pushforwardStructureAlgebraSections U.unop x)
-      let x' : Γ(f.pushforwardStructureAlgebra.X, U.unop) := x
-      exact (f.pushforwardStructureAlgebraSections_apply V.unop _).trans
-        ((CommMon.restrictSections_apply _ i.unop x').trans
-          (congrArg (X.presheaf.map ((TopologicalSpace.Opens.map f.base).map i.unop).op)
-            (f.pushforwardStructureAlgebraSections_apply U.unop x').symm)))
+  f.pushforwardSectionsPresheafIso (CommMon.trivial X.Modules) ≪≫
+    Functor.isoWhiskerLeft (TopologicalSpace.Opens.map f.base).op
+      X.structureAlgebraSectionsPresheafIso
 
 /-- The comparison with regular functions is given on each open by the section-ring
 equivalence of the function algebra. -/
@@ -199,7 +235,7 @@ equivalence of the function algebra. -/
 lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraPresheafIso_hom_app
     (U : Y.Opensᵒᵖ) :
     f.pushforwardStructureAlgebraPresheafIso.hom.app U =
-      (f.pushforwardStructureAlgebraSections U.unop).toCommRingCatIso.hom :=
+      (f.pushforwardStructureAlgebraSectionsRingEquiv U.unop).toCommRingCatIso.hom :=
   (rfl)
 
 /-- The presheaf comparison identifies the algebra's structure map with the actual
@@ -211,7 +247,7 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebra_toSections
   ext U r
   rw [NatTrans.comp_app, CommMon.toSectionsPresheaf_app,
     Scheme.Hom.pushforwardStructureAlgebraPresheafIso_hom_app]
-  exact (f.pushforwardStructureAlgebraSections_apply U _).trans
+  exact (f.pushforwardStructureAlgebraSectionsRingEquiv_apply U _).trans
     (f.pushforwardStructureAlgebra_algebraMap U r)
 
 end
