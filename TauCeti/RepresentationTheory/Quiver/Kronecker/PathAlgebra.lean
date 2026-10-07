@@ -14,17 +14,16 @@ public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Basic
 The generalized Kronecker quiver on `n` arrows has `n + 2` paths: the two trivial paths and the
 arrows themselves. Over a semiring satisfying the strong rank condition, its path algebra has
 finite rank `n + 2`; for the Kronecker quiver `• ⇉ •` itself this is `4`.
+The path classification and count are developed in
+`TauCeti.RepresentationTheory.Quiver.Kronecker.Basic`.
 Finite-dimensionality needs nothing specific to this quiver: it is acyclic, so
 `TauCeti.finiteDimensional_pathAlgebra_of_isAcyclic` applies to it as it stands, via
 `TauCeti.Quiver.Kronecker.isAcyclic`.
 
 ## Main results
 
-* `TauCeti.Quiver.Kronecker.card_totalPath` and
-  `TauCeti.Quiver.Kronecker.finrank_pathAlgebra`: there are `n + 2` paths, so the path algebra has
+* `TauCeti.Quiver.Kronecker.finrank_pathAlgebra`: the `n + 2` paths give the path algebra
   finite rank `n + 2`.
-* `TauCeti.Quiver.Kronecker.totalPath_eq_or`: each path is a trivial path or a single arrow,
-  with no finiteness assumption on the arrow type.
 * `TauCeti.Quiver.Kronecker.finrank_pathAlgebra_eq_four` and
   `TauCeti.Quiver.Kronecker.finrank_pathAlgebra_eq_three`: for the Kronecker quiver `• ⇉ •` the
   path algebra has finite rank four, and for the `A₂` quiver `• → •` finite rank three.
@@ -46,26 +45,6 @@ universe v w
 namespace Quiver.Kronecker
 
 variable {A : Type v}
-
-/-- The generalized Kronecker quiver on `n` arrows has `n + 2` paths: the two trivial paths and the
-arrows themselves. -/
-theorem card_totalPath [Fintype A] :
-    Fintype.card (Quiver.TotalPath (Kronecker A)) = Fintype.card A + 2 := by
-  simp only [Fintype.card_sigma, sum_univ, card_path_src_tgt, Fintype.card_unique,
-    Fintype.card_eq_zero]
-  omega
-
-/-- Each path of a generalized Kronecker quiver is a trivial path at one of its two vertices,
-or the length-one path traced by an arrow. -/
-theorem totalPath_eq_or (x : Quiver.TotalPath (Kronecker A)) :
-    x = ⟨tgt, tgt, Path.nil⟩ ∨ (∃ a : A, x = ⟨src, tgt, arrowPath a⟩) ∨
-      x = ⟨src, src, Path.nil⟩ := by
-  obtain ⟨a, b, p⟩ := x
-  cases a <;> cases b
-  · exact Or.inr (Or.inr (by rw [path_src_src_eq_nil p]))
-  · exact Or.inr (Or.inl ⟨pathEquivArrow p, by rw [arrowPath_pathEquivArrow]⟩)
-  · exact isEmptyElim p
-  · exact Or.inl (by rw [path_tgt_tgt_eq_nil p])
 
 /-- The path algebra of the generalized Kronecker quiver on `n` arrows has finite rank `n + 2`
 over a semiring satisfying the strong rank condition. For `• ⇉ •` this is `4`. -/

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Quiver.TotalPath
 public import TauCeti.RepresentationTheory.Quiver.Acyclic.Basic
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Basic
 public import Mathlib.Data.Fintype.BigOperators
@@ -48,16 +49,16 @@ infinite as soon as there are two arrows -- is settled in
   same way.
 * `TauCeti.Quiver.Kronecker.card_path_src_tgt`: there are as many paths from the source to the
   target as there are arrows.
+* `TauCeti.Quiver.Kronecker.totalPath_eq_or`: every indexed path is trivial at a vertex or
+  traces a single arrow, with no finiteness assumption on the arrow type.
+* `TauCeti.Quiver.Kronecker.card_totalPath`: with `n` arrows there are `n + 2` indexed paths.
 * `TauCeti.Quiver.Kronecker.isSink_reflect_src`: reflecting at `tgt` makes the source a sink, so
   the reflected quiver is the generalized Kronecker quiver with the opposite orientation.
 
 ## References
 
-This file supplies the “Kronecker quiver” worked example of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, alongside the one-loop
-quiver of `TauCeti.RepresentationTheory.Quiver.OneLoop.Basic`. See Derksen--Weyman, *An
-Introduction to Quiver Representations*, and Assem--Simson--Skowroński, *Elements of the
-Representation Theory of Associative Algebras I*, Ch. II.
+Derksen--Weyman, *An Introduction to Quiver Representations*, and Assem--Simson--Skowroński,
+*Elements of the Representation Theory of Associative Algebras I*, Ch. II.
 -/
 
 public section
@@ -307,6 +308,18 @@ theorem arrowPath_pathEquivArrow (p : Path (src : Kronecker A) tgt) :
     arrowPath (pathEquivArrow p) = p := by
   rw [← pathEquivArrow_symm_apply, Equiv.symm_apply_apply]
 
+/-- Each path of a generalized Kronecker quiver is a trivial path at one of its two vertices,
+or the length-one path traced by an arrow. -/
+theorem totalPath_eq_or (x : Quiver.TotalPath (Kronecker A)) :
+    x = ⟨tgt, tgt, Path.nil⟩ ∨ (∃ a : A, x = ⟨src, tgt, arrowPath a⟩) ∨
+      x = ⟨src, src, Path.nil⟩ := by
+  obtain ⟨a, b, p⟩ := x
+  cases a <;> cases b
+  · exact Or.inr (Or.inr (by rw [path_src_src_eq_nil p]))
+  · exact Or.inr (Or.inl ⟨pathEquivArrow p, by rw [arrowPath_pathEquivArrow]⟩)
+  · exact isEmptyElim p
+  · exact Or.inl (by rw [path_tgt_tgt_eq_nil p])
+
 noncomputable instance instFintypePath [Fintype A] : ∀ a b : Kronecker A, Fintype (Path a b)
   | .src, .src => Unique.fintype
   | .src, .tgt => Fintype.ofEquiv A pathEquivArrow.symm
@@ -319,6 +332,14 @@ noncomputable instance instFintypePath [Fintype A] : ∀ a b : Kronecker A, Fint
 theorem card_path_src_tgt [Fintype A] :
     Fintype.card (Path (src : Kronecker A) tgt) = Fintype.card A :=
   Fintype.card_congr pathEquivArrow
+
+/-- The generalized Kronecker quiver on `n` arrows has `n + 2` paths: the two trivial paths and the
+arrows themselves. -/
+theorem card_totalPath [Fintype A] :
+    Fintype.card (Quiver.TotalPath (Kronecker A)) = Fintype.card A + 2 := by
+  simp only [Fintype.card_sigma, sum_univ, card_path_src_tgt, Fintype.card_unique,
+    Fintype.card_eq_zero]
+  omega
 
 /-! ### The reflected quiver
 
