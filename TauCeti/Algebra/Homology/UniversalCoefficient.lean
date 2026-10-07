@@ -21,8 +21,9 @@ boundaries, and `Hⁱ(Hom(X, Y))` for the cohomology of the cochain complex
 
 is exact and split when the inclusions of the cycles `Zᵢ ⟶ Xᵢ` and `Zⱼ ⟶ Xⱼ` are split
 monomorphisms and `Zⱼ` is projective. The second map is the Kronecker map
-`TauCeti.ChainComplex.kronecker`. This is the universal coefficient theorem for cohomology. Over a
-hereditary ring, such as a principal ideal domain, these hypotheses hold for a degreewise
+`TauCeti.ChainComplex.kronecker`, which `TauCeti.ChainComplex.kroneckerSection` splits (in
+`TauCeti.Algebra.Homology.Kronecker`). This is the universal coefficient theorem for cohomology.
+Over a hereditary ring, such as a principal ideal domain, these hypotheses hold for a degreewise
 projective complex: the cycles and the boundaries are submodules of projective modules, hence
 projective, and a surjection onto the projective boundaries splits.
 
@@ -35,8 +36,6 @@ morphisms extending to `Zⱼ`.
 
 ## Main declarations
 
-* `TauCeti.ChainComplex.kroneckerSection`: a `k`-linear right inverse of the Kronecker map, built
-  from a retraction of the cycles; `TauCeti.ChainComplex.kronecker_surjective_of_isSplitMono`.
 * `TauCeti.ChainComplex.extToHomology`: the map `Ext¹(Hⱼ(X), Y) →ₗ[k] Hⁱ(Hom(X, Y))`,
   characterized by `TauCeti.ChainComplex.extToHomology_extClass_comp_mk₀`.
 * `TauCeti.ChainComplex.extToHomology_injective` and
@@ -61,42 +60,6 @@ universe w
 namespace TauCeti.ChainComplex
 
 variable {C : Type*} [Category* C] [Abelian C] {α : Type*} [AddRightCancelSemigroup α] [One α]
-
-section Ring
-
-variable {k : Type*} [Ring k] [Linear k C] {X : ChainComplex C α} {Y : C}
-
-variable (k X Y) in
-/-- **The splitting of the universal coefficient sequence**: given a retraction of the inclusion
-of the cycles `Zᵢ ⟶ Xᵢ`, the `k`-linear right inverse of the Kronecker map sending `g : Hᵢ(X) ⟶ Y`
-to the class of the cocycle `Xᵢ ⟶ Zᵢ ⟶ Hᵢ(X) ⟶ Y`. It depends on the chosen retraction. -/
-def kroneckerSection (i : α) [IsSplitMono (X.iCycles i)] :
-    (X.homology i ⟶ Y) →ₗ[k] (X.linearYonedaObj k Y).homology i :=
-  homologyClassOfComp k Y (retraction (X.iCycles i) ≫ X.homologyπ i) (by
-    rw [← X.toCycles_i, Category.assoc, IsSplitMono.id_assoc, toCycles_comp_homologyπ])
-
-/-- `kroneckerSection k X Y i g` is the class of the cocycle `Xᵢ ⟶ Zᵢ ⟶ Hᵢ(X) ⟶ Y` built from the
-chosen retraction of the cycles. -/
-lemma kroneckerSection_apply (i : α) [IsSplitMono (X.iCycles i)] (g : X.homology i ⟶ Y)
-    (φ : (X.linearYonedaObj k Y).cycles i)
-    (hφ : (X.linearYonedaObj k Y).iCycles i φ = retraction (X.iCycles i) ≫ X.homologyπ i ≫ g) :
-    kroneckerSection k X Y i g = (X.linearYonedaObj k Y).homologyπ i φ :=
-  homologyClassOfComp_eq _ _ g φ (hφ.trans (Category.assoc ..).symm)
-
-/-- `TauCeti.ChainComplex.kroneckerSection` is a right inverse of the Kronecker map. -/
-@[simp]
-lemma kronecker_kroneckerSection (i : α) [IsSplitMono (X.iCycles i)] (g : X.homology i ⟶ Y) :
-    kronecker k X Y i (kroneckerSection k X Y i g) = g := by
-  rw [← cancel_epi (X.homologyπ i), kroneckerSection, homologyπ_kronecker_homologyClassOfComp,
-    Category.assoc, IsSplitMono.id_assoc]
-
-/-- If the inclusion of the cycles `Zᵢ ⟶ Xᵢ` is a split monomorphism, then every morphism
-`Hᵢ(X) ⟶ Y` is the evaluation of a cohomology class of `Hom(X, Y)`. -/
-theorem kronecker_surjective_of_isSplitMono (i : α) [IsSplitMono (X.iCycles i)] :
-    Function.Surjective (kronecker k X Y i) :=
-  fun g ↦ ⟨kroneckerSection k X Y i g, kronecker_kroneckerSection i g⟩
-
-end Ring
 
 section Ext
 
