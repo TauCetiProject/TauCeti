@@ -227,29 +227,4 @@ theorem exists_complexification_open_directions_eval_add_smul_eq_pow_mul [Fintyp
   exact ⟨min ρ s, lt_min hρ hs, min_le_left _ _, u,
     fun z hz ↦ (hlocal z hz).1, fun z hz ↦ (hlocal z hz).2⟩
 
-/-- A finite-dimensional real analytic parametrization of constant finite polynomial order
-admits a conjugation-compatible complexification and a real direction on a polydisc where
-polynomial evaluation is a distinguished-coordinate power times a nowhere-zero analytic unit.
-Neither complex constant order nor a power-times-unit representation is assumed. -/
-theorem exists_complexification_eval_add_smul_eq_pow_mul [Fintype σ]
-    (p : MvPolynomial σ ℝ) {φ : (ι → ℝ) → σ → ℝ} {a : ι → ℝ} {m : ℕ}
-    (hφ : AnalyticAt ℝ φ a) (hm : ∀ᶠ x in 𝓝 a, p.orderAt (φ x) = m) :
-    ∃ r > (0 : ℝ), ∃ Φ : (ι → ℂ) → σ → ℂ, ∃ v : σ → ℝ,
-      ∃ u : (ι → ℂ) × ℂ → ℂ,
-        AnalyticOnNhd ℂ Φ (Metric.ball (fun j ↦ (a j : ℂ)) r) ∧
-        (∀ x ∈ Metric.ball a r, Φ (fun j ↦ (x j : ℂ)) = fun i ↦ (φ x i : ℂ)) ∧
-        (∀ z, Φ (star z) = star (Φ z)) ∧
-        AnalyticOnNhd ℂ u
-          (Metric.ball (fun j ↦ (a j : ℂ)) r ×ˢ Metric.ball 0 r) ∧
-        ∀ z ∈ Metric.ball (fun j ↦ (a j : ℂ)) r ×ˢ Metric.ball 0 r,
-          u z ≠ 0 ∧
-            eval (Φ z.1 + z.2 • (fun i ↦ (v i : ℂ))) (p.map Complex.ofRealHom) =
-              z.2 ^ m * u z := by
-  obtain ⟨ρ, hρ, Φ, V, -, hdense, hΦ, hreal, hstar, hV⟩ :=
-    p.exists_complexification_open_directions_eval_add_smul_eq_pow_mul hφ hm
-  obtain ⟨v, hv⟩ := hdense.nonempty
-  obtain ⟨r, hr, hrρ, u, hu, heq⟩ := hV v hv
-  exact ⟨r, hr, Φ, v, u, hΦ.mono (Metric.ball_subset_ball hrρ),
-    fun x hx ↦ hreal x (Metric.ball_subset_ball hrρ hx), hstar, hu, heq⟩
-
 end MvPolynomial
