@@ -118,8 +118,10 @@ instance instCompactSpaceStandardSimplex (σ : Finset ι) : CompactSpace (Standa
       ℝ
   have hind : Topology.IsInducing (fun x : StandardSimplex σ => (x.1 : ι → ℝ)) := ⟨rfl⟩
   have hr : range (fun x : StandardSimplex σ => (x.1 : ι → ℝ)) =
-      c '' convexHull ℝ (σ.image (fun v => Finsupp.single v (1 : ℝ)) : Set (ι →₀ ℝ)) :=
-    (range_comp c Subtype.val).trans (congrArg (fun s => c '' s) Subtype.range_coe)
+      c '' convexHull ℝ (σ.image (fun v => Finsupp.single v (1 : ℝ)) : Set (ι →₀ ℝ)) := by
+    have hcoe : (fun x : StandardSimplex σ => (x.1 : ι → ℝ)) = ⇑c ∘ Subtype.val := rfl
+    rw [hcoe]
+    exact (range_comp c Subtype.val).trans (congrArg (fun s => c '' s) Subtype.range_coe)
   refine ⟨hind.isCompact_iff.mpr ?_⟩
   rw [image_univ, hr]
   exact hc

@@ -41,9 +41,10 @@ variable {ι : Type*} [DecidableEq ι] (K : AbstractSimplicialComplex ι)
 that vertex. Equivalently, their carriers contain the vertex. -/
 def openStarRealization (v : ι) : Set (Realization K) := {x | 0 < x.1 v}
 
-/-- The realized closed star consists of points whose carriers lie in the closed star. -/
-def closedStarRealization (v : ι) : Set (Realization K) :=
-  {x | x.1.support ∈ PreAbstractSimplicialComplex.closedStar K.toPreAbstractSimplicialComplex {v}}
+/-- The realized closed star of a finite vertex set consists of points whose carriers lie
+in its closed star. -/
+def closedStarRealization (σ : Finset ι) : Set (Realization K) :=
+  {x | x.1.support ∈ PreAbstractSimplicialComplex.closedStar K.toPreAbstractSimplicialComplex σ}
 
 omit [DecidableEq ι] in
 /-- Membership in the open star is positivity of the corresponding coordinate. -/
@@ -53,9 +54,9 @@ theorem mem_openStarRealization {v : ι} {x : Realization K} :
 
 /-- Membership in the realized closed star is closed-star membership of the carrier. -/
 @[simp]
-theorem mem_closedStarRealization {v : ι} {x : Realization K} :
-    x ∈ K.closedStarRealization v ↔
-      x.1.support ∈ PreAbstractSimplicialComplex.closedStar K.toPreAbstractSimplicialComplex {v} :=
+theorem mem_closedStarRealization {σ : Finset ι} {x : Realization K} :
+    x ∈ K.closedStarRealization σ ↔
+      x.1.support ∈ PreAbstractSimplicialComplex.closedStar K.toPreAbstractSimplicialComplex σ :=
   Iff.rfl
 
 omit [DecidableEq ι] in
@@ -86,7 +87,7 @@ theorem iUnion_openStarRealization : ⋃ v, K.openStarRealization v = univ :=
 
 /-- Each open star lies in its closed star. -/
 theorem openStarRealization_subset_closedStarRealization (v : ι) :
-    K.openStarRealization v ⊆ K.closedStarRealization v := by
+    K.openStarRealization v ⊆ K.closedStarRealization {v} := by
   intro x hx
   apply PreAbstractSimplicialComplex.mem_closedStar.mpr
   refine ⟨support_mem K x, ?_⟩
@@ -95,10 +96,10 @@ theorem openStarRealization_subset_closedStarRealization (v : ι) :
   exact support_mem K x
 
 /-- The realization of a finite closed star is compact. -/
-theorem isCompact_closedStarRealization {v : ι}
+theorem isCompact_closedStarRealization {σ : Finset ι}
     (hfin :
-      (PreAbstractSimplicialComplex.closedStar K.toPreAbstractSimplicialComplex {v}).faces.Finite) :
-    IsCompact (K.closedStarRealization v) :=
+      (PreAbstractSimplicialComplex.closedStar K.toPreAbstractSimplicialComplex σ).faces.Finite) :
+    IsCompact (K.closedStarRealization σ) :=
   K.isCompact_setOf_support_mem PreAbstractSimplicialComplex.closedStar_le hfin
 
 /-- Finite vertex stars provide a compact neighbourhood around every realization point. -/
@@ -108,7 +109,7 @@ theorem locallyCompactSpace_realization_of_finite_vertex_stars
     LocallyCompactSpace (Realization K) := by
   have : WeaklyLocallyCompactSpace (Realization K) := ⟨fun x => by
     obtain ⟨v, hv⟩ := K.exists_mem_openStarRealization x
-    exact ⟨K.closedStarRealization v, K.isCompact_closedStarRealization (hfin v),
+    exact ⟨K.closedStarRealization {v}, K.isCompact_closedStarRealization (hfin v),
       mem_of_superset ((K.isOpen_openStarRealization v).mem_nhds hv)
         (K.openStarRealization_subset_closedStarRealization v)⟩⟩
   infer_instance
@@ -140,7 +141,7 @@ theorem isEmbedding_realization_coe_of_finite_vertex_stars
   have he : Topology.IsEmbedding (rangeFactorization c) := by
     apply (hcover.isEmbedding_iff_restrictPreimage hc).mpr
     intro v
-    let C := K.closedStarRealization v
+    let C := K.closedStarRealization {v}
     have : CompactSpace C :=
       isCompact_iff_compactSpace.mp (K.isCompact_closedStarRealization (hfin v))
     have hC : Topology.IsEmbedding (fun x : C => c x.1) :=
