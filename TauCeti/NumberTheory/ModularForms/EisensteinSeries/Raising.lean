@@ -75,7 +75,9 @@ def charEisensteinSeriesMFRaise (t : ℕ) (hk : 3 ≤ k) (htuv : t * (u * v) ∣
   exact ModularForm.levelRaise t (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv)
     (charEisensteinSeriesMF ψ φ hk dvd_rfl)
 
-/-- The raised series is the degeneracy image of the base series at its natural level. -/
+/-- The raised series is the degeneracy image of the base series at its natural level.
+This equality characterizes the construction for importing modules, where the definition's
+body is not exposed. -/
 theorem charEisensteinSeriesMFRaise_eq_levelRaise (t : ℕ) (hk : 3 ≤ k)
     (htuv : t * (u * v) ∣ N) :
     haveI : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
