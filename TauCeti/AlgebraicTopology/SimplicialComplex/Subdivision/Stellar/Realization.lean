@@ -41,7 +41,8 @@ namespace Finset
 
 variable {ι : Type*} [DecidableEq ι] {σ : Finset ι} {v : ι}
 
-/-- Replace the coordinate vector of `v` by the barycenter of `σ`, fixing all other vertices.
+/-- Replace the coordinate vector of `v` by the normalized coordinate sum over `σ`, fixing
+all other vertices. This sum is the barycenter when `σ` is nonempty, and zero when `σ` is empty.
 On the stellar subdivision at `σ` with fresh vertex `v`, this is the barycentric realization
 map to the original polyhedron. -/
 def stellarSubdivisionLinearMap (σ : Finset ι) (v : ι) : (ι →₀ ℝ) →ₗ[ℝ] (ι →₀ ℝ) :=
@@ -63,7 +64,8 @@ theorem stellarSubdivisionLinearMap_single_of_ne {w : ι} (hw : w ≠ v) (r : �
   simp [stellarSubdivisionLinearMap, hw]
 
 omit [DecidableEq ι] in
-/-- The new vertex is sent to the barycenter of the starred face. -/
+/-- The coordinate vector of `v` is sent to the normalized coordinate sum over `σ`,
+which is the barycenter when `σ` is nonempty, and zero when `σ` is empty. -/
 @[simp]
 theorem stellarSubdivisionLinearMap_single :
     stellarSubdivisionLinearMap σ v (Finsupp.single v 1) =
