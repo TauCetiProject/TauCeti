@@ -236,6 +236,16 @@ instance : (eval₁ C w).Linear R where
 instance (f : X ⟶ Y) [IsIso f] : IsIso f.f₀ := (eval₀ C w).map_isIso f
 instance (f : X ⟶ Y) [IsIso f] : IsIso f.f₁ := (eval₁ C w).map_isIso f
 
+/-- The even component of the inverse of an isomorphism is the inverse of its even component. -/
+@[simp]
+theorem inv_f₀ (f : X ⟶ Y) [IsIso f] : (inv f).f₀ = inv f.f₀ :=
+  IsIso.eq_inv_of_hom_inv_id (by rw [← comp_f₀, IsIso.hom_inv_id, id_f₀])
+
+/-- The odd component of the inverse of an isomorphism is the inverse of its odd component. -/
+@[simp]
+theorem inv_f₁ (f : X ⟶ Y) [IsIso f] : (inv f).f₁ = inv f.f₁ :=
+  IsIso.eq_inv_of_hom_inv_id (by rw [← comp_f₁, IsIso.hom_inv_id, id_f₁])
+
 /-- A constructor for isomorphisms of curved duplexes from isomorphisms of their components
 commuting with the differentials. -/
 @[simps]
