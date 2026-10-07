@@ -30,35 +30,13 @@ public section
 
 open Filter Function Metric Set Topology
 
-namespace AnalyticAt
-
-variable {ι κ : Type*} [Fintype ι] [Fintype κ]
-
-/-- Complex analytic extensions of real maps that are inverse near a real point remain inverse
-near that point in the complex domain. Only continuity of the inner real map is required. -/
-theorem eventually_comp_eq_id_of_eventually_real
-    {f : (ι → ℝ) → κ → ℝ} {g : (κ → ℝ) → ι → ℝ} {a : ι → ℝ}
-    {F : (ι → ℂ) → κ → ℂ} {G : (κ → ℂ) → ι → ℂ}
-    (hF : AnalyticAt ℂ F (fun i ↦ (a i : ℂ)))
-    (hG : AnalyticAt ℂ G (fun i ↦ (f a i : ℂ))) (hf : ContinuousAt f a)
-    (hFr : ∀ᶠ x in 𝓝 a, F (fun i ↦ (x i : ℂ)) = fun i ↦ (f x i : ℂ))
-    (hGr : ∀ᶠ y in 𝓝 (f a), G (fun i ↦ (y i : ℂ)) = fun i ↦ (g y i : ℂ))
-    (hgf : ∀ᶠ x in 𝓝 a, g (f x) = x) :
-    ∀ᶠ z in 𝓝 (fun i ↦ (a i : ℂ)), G (F z) = z := by
-  have hFa := hFr.self_of_nhds
-  apply (hG.comp_of_eq hF hFa).eventuallyEq_of_eventually_real analyticAt_id
-  filter_upwards [hFr, hf.eventually hGr, hgf] with x hFx hGx hgfx
-  simp only [comp_apply, id_eq, hFx, hGx, hgfx]
-
-end AnalyticAt
-
 namespace OpenPartialHomeomorph
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ]
 
 /-- A real chart analytic at a source point, with inverse analytic at its image, extends to a
 complex chart analytic on its source with analytic inverse on its target. Both maps agree with
-the original chart near the real points and commute with conjugation there. -/
+the original chart near the real points and commute with conjugation at every complex point. -/
 theorem exists_complexification (e : OpenPartialHomeomorph (ι → ℝ) (κ → ℝ))
     {a : ι → ℝ} (ha : a ∈ e.source) (he : AnalyticAt ℝ e a)
     (he' : AnalyticAt ℝ e.symm (e a)) :
@@ -77,12 +55,12 @@ theorem exists_complexification (e : OpenPartialHomeomorph (ι → ℝ) (κ → 
     filter_upwards [ball_mem_nhds (e a) hs] with y hy using hGr y hy
   have hFa := hFr'.self_of_nhds
   have hGF := (hF _ (mem_ball_self hr)).eventually_comp_eq_id_of_eventually_real
-    (hG _ (mem_ball_self hs)) (e.continuousAt ha) hFr' hGr'
+    (hG _ (mem_ball_self hs)) hFr' hGr'
     (e.eventually_left_inverse ha)
   have hFG : ∀ᶠ z in 𝓝 (fun i ↦ (e a i : ℂ)), F (G z) = z := by
     have h := (hG _ (mem_ball_self hs)).eventually_comp_eq_id_of_eventually_real
       (by simpa only [e.left_inv ha] using hF _ (mem_ball_self hr))
-      (e.symm.continuousAt (e.map_source ha)) hGr'
+      hGr'
       (by simpa only [e.left_inv ha] using hFr')
       (e.eventually_right_inverse' ha)
     exact h
@@ -92,20 +70,21 @@ theorem exists_complexification (e : OpenPartialHomeomorph (ι → ℝ) (κ → 
   let V' := V ∩ ball (fun i ↦ (e a i : ℂ)) s
   have hFU : AnalyticOnNhd ℂ F U' := hF.mono inter_subset_right
   have hGV : AnalyticOnNhd ℂ G V' := hG.mono inter_subset_right
-  obtain ⟨E, hEF, hEG, hsource, htarget⟩ :=
-    hFU.continuousOn.exists_openPartialHomeomorph_of_invOn hGV.continuousOn
-      (hUopen.inter isOpen_ball) (hVopen.inter isOpen_ball)
-      (fun x hx ↦ hUinv x hx.1) (fun y hy ↦ hVinv y hy.1)
+  have hgf : LeftInvOn G F (U' ∩ F ⁻¹' V') := fun x hx ↦ hUinv x hx.1.1
+  have hfg : RightInvOn G F (V' ∩ G ⁻¹' U') := fun y hy ↦ hVinv y hy.1.1
+  let E := hFU.continuousOn.toOpenPartialHomeomorph hGV.continuousOn
+    (hUopen.inter isOpen_ball) (hVopen.inter isOpen_ball) hgf hfg
   refine ⟨E, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [hsource, mem_inter_iff, mem_preimage, hFa]
+  · dsimp only [E]
+    rw [ContinuousOn.toOpenPartialHomeomorph_source, mem_inter_iff, mem_preimage, hFa]
     exact ⟨⟨haU, mem_ball_self hr⟩, ⟨haV, mem_ball_self hs⟩⟩
-  · rw [hEF]
-    exact hFU.mono (hsource ▸ inter_subset_left)
-  · rw [hEG]
-    exact hGV.mono (htarget ▸ inter_subset_left)
-  · simpa only [hEF] using hFr'
-  · simpa only [hEG] using hGr'
-  · simpa only [hEF] using hFs
-  · simpa only [hEG] using hGs
+  · simpa only [E, ContinuousOn.coe_toOpenPartialHomeomorph,
+      ContinuousOn.toOpenPartialHomeomorph_source] using hFU.mono inter_subset_left
+  · simpa only [E, ContinuousOn.coe_toOpenPartialHomeomorph_symm,
+      ContinuousOn.toOpenPartialHomeomorph_target] using hGV.mono inter_subset_left
+  · simpa only [E, ContinuousOn.coe_toOpenPartialHomeomorph] using hFr'
+  · simpa only [E, ContinuousOn.coe_toOpenPartialHomeomorph_symm] using hGr'
+  · simpa only [E, ContinuousOn.coe_toOpenPartialHomeomorph] using hFs
+  · simpa only [E, ContinuousOn.coe_toOpenPartialHomeomorph_symm] using hGs
 
 end OpenPartialHomeomorph
