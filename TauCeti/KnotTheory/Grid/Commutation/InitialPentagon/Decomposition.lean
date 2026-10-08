@@ -255,6 +255,19 @@ theorem initialPentagonRectangleWeight_eq_rectangleInitialPentagonWeight_of_val_
   simp only [← swapSquareWeight_def, Finset.prod_eq_multiset_prod, ← Multiset.prod_add,
     ← Multiset.map_add, h]
 
+/-- Two rectangle--initial-side-pentagon decompositions have the same weight when their
+composite domains cover the same squares with the same multiplicities. -/
+theorem rectangleInitialPentagonWeight_eq_of_val_add_val_eq {x z : GridState n}
+    (D E : GridRectangleInitialPentagonDecomposition C.column C.turnRow x z)
+    (h : E.first.toGridRectangle.coveredSquares.val + E.pentagon.coveredSquares.val =
+      D.first.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val) :
+    G.rectangleInitialPentagonWeight C R E = G.rectangleInitialPentagonWeight C R D := by
+  rw [rectangleInitialPentagonWeight_def, rectangleInitialPentagonWeight_def,
+    rename_OMonomial_eq_prod_swapSquareWeight, rename_OMonomial_eq_prod_swapSquareWeight,
+    initialPentagonWeight_eq_prod_coveredSquares, initialPentagonWeight_eq_prod_coveredSquares]
+  simp only [← swapSquareWeight_def, Finset.prod_eq_multiset_prod, ← Multiset.prod_add,
+    ← Multiset.map_add, h]
+
 /-- The matrix product for the initial-side pentagon map after the original differential is the
 sum of the weights of the counted rectangle--initial-side pentagon decompositions. -/
 theorem sum_rename_unblockedCoefficient_mul_initialPentagonCoefficient (x z : GridState n) :
