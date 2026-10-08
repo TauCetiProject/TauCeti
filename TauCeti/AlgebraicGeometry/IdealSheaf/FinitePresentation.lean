@@ -18,10 +18,8 @@ of divisor inclusions over arbitrary bases.
 
 ## References
 
-* Stacks Project, *Morphisms of Schemes*, closed immersions of finite presentation, Tag 01TQ.
-* Mathlib's `Scheme.IdealSheafData.ker_subschemeι_app` identifies the defining ideal with the
-  kernel; `Algebra.FinitePresentation.ker_fG_of_surjective` and
-  `RingHom.FinitePresentation.of_surjective` give the algebraic criterion.
+* Stacks Project, *Morphisms of Schemes*, closed immersions of finite presentation, Tag 01TV.
+* Stacks Project, *Morphisms of Schemes*, affine-local criteria for finite presentation, Tag 01TQ.
 -/
 
 public section
