@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Symplectic.IsotropicFlag.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Symplectic.IsotropicFlag.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.Base
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup.Basic
 

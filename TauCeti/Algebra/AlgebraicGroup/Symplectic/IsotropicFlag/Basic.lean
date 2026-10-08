@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic
-public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.IsotropicFlag
@@ -251,49 +250,7 @@ theorem isSolvable_points :
 
 end Points
 
-section SchemePoints
 
-/-- The flag subgroup's underlying scheme is the spectrum of its coordinate Hopf algebra. -/
-theorem groupScheme_X_left :
-    (groupScheme R m).X.left =
-      AlgebraicGeometry.Spec (CommRingCat.of (coordinateHopfAlgebra R m)) :=
-  TauCeti.hopfSpec_obj_X_left R (coordinateHopfAlgebra R m)
-
-variable (A : Type u) [CommRing A] [Algebra R A]
-
-/-- Spectrum identifies algebra points of the flag subgroup with its scheme-valued points. -/
-noncomputable def groupSchemePointMulEquiv :
-    WithConv (coordinateHopfAlgebra R m →ₐ[R] A) ≃*
-      ((AlgebraicGeometry.Spec (CommRingCat.of A)).asOver
-        (AlgebraicGeometry.Spec (CommRingCat.of R)) ⟶ (groupScheme R m).X) :=
-  CommHopfAlgCat.mapMulEquivOfPresentation (coordinateHopfAlgebra R m) A rfl
-
-/-- The underlying spectrum map corresponding to an algebra point of the flag subgroup. -/
-theorem groupSchemePointMulEquiv_apply_left
-    (f : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) :
-    (groupSchemePointMulEquiv R m A f).left =
-      AlgebraicGeometry.Spec.map (CommRingCat.ofHom f.ofConv.toRingHom) ≫
-        eqToHom (groupScheme_X_left R m).symm := by
-  simpa only [groupSchemePointMulEquiv, AlgHom.toRingHom_eq_coe] using
-    CommHopfAlgCat.mapMulEquivOfPresentation_apply_left
-      (coordinateHopfAlgebra R m) A (G := groupScheme R m) rfl
-        (groupScheme_X_left R m) f
-
-/-- Scheme-valued points of the flag subgroup are the flag-preserving symplectic matrices. -/
-noncomputable def schemePointsMulEquiv :
-    ((AlgebraicGeometry.Spec (CommRingCat.of A)).asOver
-      (AlgebraicGeometry.Spec (CommRingCat.of R)) ⟶ (groupScheme R m).X) ≃*
-        matrixSubgroup m (A := A) :=
-  (groupSchemePointMulEquiv R m A).symm.trans (pointsMulEquiv R m (A := A))
-
-/-- A scheme point presented by an algebra point gives the same flag-preserving matrix. -/
-theorem schemePointsMulEquiv_groupSchemePointMulEquiv
-    (f : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) :
-    schemePointsMulEquiv R m A (groupSchemePointMulEquiv R m A f) =
-      pointsMulEquiv R m (A := A) f := by
-  simp only [schemePointsMulEquiv, MulEquiv.trans_apply, MulEquiv.symm_apply_apply]
-
-end SchemePoints
 
 /-- The isotropic flag subgroup has solvable geometric points over every field. -/
 theorem geometricallySolvablePointsCommHopfAlgProperty_coordinateHopfAlgebra

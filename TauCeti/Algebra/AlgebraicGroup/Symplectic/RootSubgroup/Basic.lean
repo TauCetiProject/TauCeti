@@ -363,11 +363,11 @@ theorem mapPointsFunctor_rootSubgroupCoordinateMap_app
   simp only [AlgHom.mapValue_apply, toConv_ofConv, q₀, AlgHom.comp_id] at h
   exact h
 
-/-- On a same-universe algebra, the positive coordinate morphism induces the constructed point
+/-- Over any value algebra, the positive coordinate morphism induces the constructed point
 homomorphism. -/
 @[simp]
 theorem mapPointsFunctor_positiveLongRootSubgroupCoordinateMap_app (i : Fin m)
-    (A : CommAlgCat.{u} R)
+    (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
     (CommHopfAlgCat.mapPointsFunctor
       (positiveLongRootSubgroupCoordinateMap (R := R) i)).app A f =
@@ -375,11 +375,11 @@ theorem mapPointsFunctor_positiveLongRootSubgroupCoordinateMap_app (i : Fin m)
   rw [positiveLongRootSubgroupCoordinateMap, positiveLongRootSubgroupPoints,
     mapPointsFunctor_rootSubgroupCoordinateMap_app]
 
-/-- On a same-universe algebra, the negative coordinate morphism induces the constructed point
+/-- Over any value algebra, the negative coordinate morphism induces the constructed point
 homomorphism. -/
 @[simp]
 theorem mapPointsFunctor_negativeLongRootSubgroupCoordinateMap_app (i : Fin m)
-    (A : CommAlgCat.{u} R)
+    (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
     (CommHopfAlgCat.mapPointsFunctor
       (negativeLongRootSubgroupCoordinateMap (R := R) i)).app A f =
@@ -387,10 +387,10 @@ theorem mapPointsFunctor_negativeLongRootSubgroupCoordinateMap_app (i : Fin m)
   rw [negativeLongRootSubgroupCoordinateMap, negativeLongRootSubgroupPoints,
     mapPointsFunctor_rootSubgroupCoordinateMap_app]
 
-/-- On a same-universe algebra, a short-root coordinate morphism induces its point homomorphism. -/
+/-- Over any value algebra, a short-root coordinate morphism induces its point homomorphism. -/
 @[simp]
 theorem mapPointsFunctor_shortRootSubgroupCoordinateMap_app
-    (family : GLSymplecticFin.ShortRootFamily) (hij : i ≠ j) (A : CommAlgCat.{u} R)
+    (family : GLSymplecticFin.ShortRootFamily) (hij : i ≠ j) (A : CommAlgCat.{w} R)
     (q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
     (CommHopfAlgCat.mapPointsFunctor
       (shortRootSubgroupCoordinateMap (R := R) family hij)).app A q =
