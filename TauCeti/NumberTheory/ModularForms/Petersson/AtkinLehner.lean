@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ModularForms.AtkinLehner.Gamma1
 public import TauCeti.NumberTheory.ModularForms.AtkinLehner.Normalized
 public import TauCeti.NumberTheory.ModularForms.Fricke.Normalized
 public import TauCeti.NumberTheory.ModularForms.Petersson.Unitary
@@ -13,9 +14,10 @@ public import TauCeti.NumberTheory.ModularForms.Petersson.Unitary
 # The Fricke and Atkin–Lehner operators are Petersson-unitary
 
 The Fricke matrix `W_N = !![0, -1; N, 0]` normalises `Γ₁(N)`, and an Atkin–Lehner matrix `W_Q`
-for an exact divisor `Q ∥ N` normalises `Γ₀(N)`. Their determinants are `N`, respectively `Q`,
-so for `N ≠ 1`, respectively `Q ≠ 1`, they do not lie in `SL₂(ℤ)`. Slashing both arguments of
-the Petersson product by such a matrix of determinant `D` multiplies the product by `D ^ (k - 2)`
+for an exact divisor `Q ∥ N` normalises both `Γ₀(N)` and `Γ₁(N)`. Their determinants are `N`,
+respectively `Q`, so for `N ≠ 1`, respectively `Q ≠ 1`, they do not lie in `SL₂(ℤ)`. Slashing both
+arguments of the Petersson product by such a matrix of determinant `D` multiplies the product by
+`D ^ (k - 2)`
 (`TauCeti.CuspForm.peterssonInnerCosets_slash_of_inv_conjAct_eq`), and the arithmetic
 normalization `𝒲_Q = (√Q) ^ (2 - k) • (· ∣[k] W_Q)` is exactly the one that cancels this factor:
 the normalizer is real and its square is `Q ^ (2 - k)`. So the normalized operators are
@@ -45,6 +47,8 @@ Atkin–Lehner sign.
   complement of a `𝒲_N`-stable subspace is `𝒲_N`-stable.
 * `TauCeti.Nat.IsExactDivisor.peterssonInnerCosets_atkinLehnerOperatorCusp`: the raw
   Atkin–Lehner operator scales the Petersson product by `Q ^ (k - 2)`.
+* `TauCeti.peterssonInnerCosets_atkinLehnerOperatorGamma1Cusp`: the same scaling law for an
+  arbitrary choice of Atkin–Lehner matrix acting on `S_k(Γ₁(N))`.
 * `TauCeti.Nat.IsExactDivisor.peterssonInnerCosets_normalizedAtkinLehnerOperatorCusp`: `𝒲_Q` is
   unitary.
 * `TauCeti.Nat.IsExactDivisor.peterssonInnerCosets_normalizedAtkinLehnerOperatorCusp_left`:
@@ -133,9 +137,24 @@ end Fricke
 
 /-! ### The Atkin–Lehner operators -/
 
-namespace Nat.IsExactDivisor
+variable {N Q : ℕ} [NeZero N] {W : Matrix (Fin 2) (Fin 2) ℤ}
 
-variable {N Q : ℕ} [NeZero N]
+/-- **An Atkin–Lehner operator on `S_k(Γ₁(N))` scales the Petersson product by
+`Q ^ (k - 2)`.** -/
+theorem peterssonInnerCosets_atkinLehnerOperatorGamma1Cusp
+    (hQ : 0 < Q) (hQN : Q ∣ N) (hW : IsAtkinLehnerMatrix N Q W)
+    (f g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
+    CuspForm.peterssonInnerCosets (atkinLehnerOperatorGamma1Cusp hQ hQN hW k f)
+        (atkinLehnerOperatorGamma1Cusp hQ hQN hW k g) =
+      (Q : ℂ) ^ (k - 2) * CuspForm.peterssonInnerCosets f g := by
+  rw [CuspForm.peterssonInnerCosets_slash_of_inv_conjAct_eq
+      (val_det_atkinLehnerGL_pos hQ hW)
+      (Gamma1_map_inv_conjAct_atkinLehnerGL_eq hQ hQN hW)
+      (coe_atkinLehnerOperatorGamma1Cusp hQ hQN hW f)
+      (coe_atkinLehnerOperatorGamma1Cusp hQ hQN hW g),
+    ← Matrix.GeneralLinearGroup.val_det_apply, val_det_atkinLehnerGL, Complex.ofReal_natCast]
+
+namespace Nat.IsExactDivisor
 
 /-- **The raw Atkin–Lehner operator scales the Petersson product by `Q ^ (k - 2)`**:
 `⟪f ∣[k] W_Q, g ∣[k] W_Q⟫ = Q ^ (k - 2) · ⟪f, g⟫` on `S_k(Γ₀(N))`, the determinant of an
