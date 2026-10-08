@@ -15,7 +15,8 @@ public import TauCeti.Data.Finsupp.OrderedCoupling.Uniqueness
 The staircase triangulation of a product has a canonical continuous map to the product of the
 factor realizations, obtained by adding barycentric weights along each coordinate fibre.
 This map is injective: on each staircase the nonnegative weights have chain support, so they
-are uniquely determined by their marginals. If the product has finitely many faces, it is a closed embedding.
+are uniquely determined by their marginals. If the product has finitely many faces, it is a
+closed embedding.
 
 Surjectivity, and hence the identification with the entire product, requires existence of a
 chain-supported coupling with prescribed marginals and is not asserted here.
