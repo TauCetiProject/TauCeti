@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Projection
-public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.LatticeDefect.Lattice
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Permutation.FixedPointCount
 public import TauCeti.RepresentationTheory.Induction.Artin.PermutationIdentity
 
 /-!
@@ -14,9 +14,9 @@ public import TauCeti.RepresentationTheory.Induction.Artin.PermutationIdentity
 
 For a finite group `G`, let `a_C = C.artinCoeff * |C|`.  The two actual `G`-sets
 `TauCeti.ArtinPositiveSet G` and `TauCeti.ArtinNegativeSet G` split the positive and negative
-parts of the coefficients `a_C`.  Their fixed-point counts agree.  Their integral permutation
-lattices have equivalent rationalizations, so the lattice reduction comparison identifies their
-classes in `G₀(k[G])` over every field, including when the characteristic divides `|G|`.
+parts of the coefficients `a_C`. Their fixed-point counts agree, so the permutation-class
+comparison identifies their classes in `G₀(k[G])` over every field, including when the
+characteristic divides `|G|`.
 Expanding the two disjoint unions and recombining the positive and negative parts gives
 
 `|G| [k] = ∑ᶠ C, a_C [k[G/C]]`.
@@ -83,18 +83,11 @@ section Field
 
 variable (k G : Type u) [Field k] [Group G] [Finite G]
 
-attribute [local instance] Finsupp.comapSMul Finsupp.comapMulAction Finsupp.comapDistribMulAction
-  comapSMulCommClass
-
 /-- The positive and negative Artin sets have equal permutation classes over every field. -/
 theorem permK0_artinPositiveSet_eq_artinNegativeSet :
-    permK0 k G (ArtinPositiveSet G) = permK0 k G (ArtinNegativeSet G) := by
-  have h := reductionK0_eq_of_nonempty_equiv_baseChange_rat k G
-    (ArtinPositiveSet G →₀ ℤ) (ArtinNegativeSet G →₀ ℤ)
-    (nonempty_equiv_rationalized_artinPermutationLattices G)
-  rw [reductionK0_def, reductionK0_def] at h
-  rwa [permK0_eq_of_equiv k _ _ (baseChangeComapEquiv ℤ k G (ArtinPositiveSet G)).symm,
-    permK0_eq_of_equiv k _ _ (baseChangeComapEquiv ℤ k G (ArtinNegativeSet G)).symm]
+    permK0 k G (ArtinPositiveSet G) = permK0 k G (ArtinNegativeSet G) :=
+  permK0_eq_of_forall_natCard_fixedBy_eq k
+    card_fixedBy_artinPositiveSet_eq_card_fixedBy_artinNegativeSet
 
 /-- **Artin's signed permutation identity in the exact Grothendieck group over every field.** -/
 theorem natCard_nsmul_permK0_quotient_top_eq_sum_artinCoeff :

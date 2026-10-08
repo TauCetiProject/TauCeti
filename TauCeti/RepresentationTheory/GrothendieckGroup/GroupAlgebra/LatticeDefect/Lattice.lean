@@ -19,7 +19,8 @@ is finitely generated and has no `ℓ`-torsion, such as a `G`-stable lattice, th
 reduction of the quotient map `V → V ⧸ ℓV` is an isomorphism `k ⊗_ℤ V ≅ k ⊗_ℤ (V ⧸ ℓV)`.
 
 For the permutation lattice `ℤ[X] = X →₀ ℤ` of a finite `G`-set `X`, whose reduction is the
-permutation representation `k[X]` (`TauCeti.baseChangeComapEquiv`), this gives
+permutation representation `k[X]` (`TauCeti.baseChangeComapEquiv`), so its reduction class is the
+permutation class (`TauCeti.reductionK0_finsupp_int`), and this gives
 `latticeDefect ℤ[X] = [k[X]]` (`TauCeti.latticeDefect_finsupp_int`).
 
 Two lattices `V` and `W` with equivalent rationalizations `ℚ ⊗_ℤ V ≅ ℚ ⊗_ℤ W` have the same
@@ -38,6 +39,8 @@ finite cokernel, so the two lattices have the same lattice defect
 ## Main results
 
 * `TauCeti.latticeDefect_eq_reductionK0`: the defect of a lattice is its reduction class.
+* `TauCeti.reductionK0_finsupp_int`: the reduction class of the permutation lattice `ℤ[X]` is the
+  permutation class `[k[X]]`.
 * `TauCeti.latticeDefect_finsupp_int`: the defect of the permutation lattice `ℤ[X]` is the
   permutation class `[k[X]]`.
 * `TauCeti.reductionK0_eq_of_nonempty_equiv_baseChange_rat_of_charP` and
@@ -129,13 +132,18 @@ section Permutation
 attribute [local instance] Finsupp.comapSMul Finsupp.comapMulAction Finsupp.comapDistribMulAction
   comapSMulCommClass
 
+/-- **The reduction class of a permutation lattice** `ℤ[X] = X →₀ ℤ`, on which `G` acts by
+pushing the support forward (`Finsupp.comapDistribMulAction`), is the permutation class `[k[X]]`. -/
+theorem reductionK0_finsupp_int (X : Type u) [MulAction G X] [Finite X] :
+    reductionK0 k (Representation.ofDistribMulAction ℤ G (X →₀ ℤ)) = permK0 k G X := by
+  rw [reductionK0_def, permK0_eq_of_equiv k X _ (baseChangeComapEquiv ℤ k G X).symm]
+
 /-- **The lattice defect of a permutation lattice** `ℤ[X] = X →₀ ℤ`, on which `G` acts by pushing
 the support forward (`Finsupp.comapDistribMulAction`), is the permutation class `[k[X]]` in
 characteristic `ℓ ≠ 0`. -/
 theorem latticeDefect_finsupp_int [CharP k ℓ] [NeZero ℓ] (X : Type u) [MulAction G X] [Finite X] :
     latticeDefect k G ℓ (X →₀ ℤ) = permK0 k G X := by
-  rw [latticeDefect_eq_reductionK0, reductionK0_def,
-    permK0_eq_of_equiv k X _ (baseChangeComapEquiv ℤ k G X).symm]
+  rw [latticeDefect_eq_reductionK0, reductionK0_finsupp_int]
 
 end Permutation
 
