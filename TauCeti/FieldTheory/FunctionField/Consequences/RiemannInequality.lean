@@ -23,7 +23,9 @@ The proof counts sections.  For a divisor `A` of `F₀`, the products `u zᵢ` o
 `F₀`; and they lie in `L(Con A + C)`.  Hence `n ℓ(A) ≤ ℓ(Con A + C)`.  The conorm multiplies
 degrees by `n`, Riemann's theorem bounds `ℓ(A)` below by `deg A + 1 - g(F₀)`, and Riemann–Roch
 evaluates `ℓ(Con A + C)` as `n deg A + deg C + 1 - g(F)` once `deg A` is large; comparing the two
-gives the bound.
+gives the bound.  The section count is
+`TauCeti.Divisor.card_mul_dim_le_dim_conorm_add` in
+`TauCeti.FieldTheory.FunctionField.RiemannRoch.Conorm`.
 
 For `F₀ = k(x)` and `F = k(x, y)`, the powers `1, y, …, y^{m - 1}` with `m = [F : k(x)]` form a
 basis of `F / k(x)` lying in `L((m - 1) (y)_∞)`, a divisor of degree `(m - 1) [F : k(y)]`.  Since
@@ -38,8 +40,6 @@ deg A + 1 - g(F₀)` is used there.
 
 ## Main results
 
-* `TauCeti.Divisor.card_mul_dim_le_dim_conorm_add`: an `F₀`-linearly independent family of `r`
-  functions in `L(C)` gives `r ℓ(A) ≤ ℓ(Con A + C)` for every divisor `A` of `F₀`.
 * `TauCeti.genus_le_one_add_finrank_mul_genus_sub_one_add_degree`:
   `g(F) ≤ 1 + [F : F₀] (g(F₀) - 1) + deg C` for a basis of `F / F₀` in `L(C)`.
 * `TauCeti.genus_le_finrank_sub_one_mul_finrank_sub_one`: **Riemann's inequality**
@@ -62,34 +62,6 @@ open AlgebraicGeometry
 variable {k F₀ F : Type*} [Field k] [Field F₀] [Field F]
 variable [Algebra k F₀] [Algebra k F] [Algebra F₀ F] [IsScalarTower k F₀ F]
 variable [FiniteDimensional F₀ F]
-
-/-- An `F₀`-linearly independent family of `r` functions in `L(C)` multiplies the dimension of
-the Riemann–Roch space of any divisor `A` of `F₀`: `r ℓ(A) ≤ ℓ(Con A + C)`.  The products of a
-`k`-basis of `L(A)` with the family are `k`-linearly independent and lie in `L(Con A + C)`. -/
-theorem Divisor.card_mul_dim_le_dim_conorm_add (hF : IsFunctionField k F) {ι : Type*} [Fintype ι]
-    {z : ι → F} (hz : LinearIndependent F₀ z) {C : Divisor k F}
-    (hzC : ∀ i, z i ∈ riemannRochSpace C) (A : Divisor k F₀) :
-    Fintype.card ι * Divisor.dim A ≤ Divisor.dim (Divisor.conorm k F A + C) := by
-  have : Algebra.IsAlgebraic F₀ F := Algebra.IsAlgebraic.of_finite F₀ F
-  have hF₀ : IsFunctionField k F₀ := hF.of_isAlgebraic_top
-  have := finiteDimensional_riemannRochSpace hF₀ A
-  have := finiteDimensional_riemannRochSpace hF (Divisor.conorm k F A + C)
-  let u := Module.finBasis k (riemannRochSpace A)
-  have hu : LinearIndependent k fun j ↦ (u j : F₀) :=
-    u.linearIndependent.map' _ (Submodule.ker_subtype _)
-  have hmem : ∀ p : Fin (Module.finrank k (riemannRochSpace A)) × ι,
-      (u p.1 : F₀) • z p.2 ∈ riemannRochSpace (Divisor.conorm k F A + C) := fun p ↦ by
-    rw [Algebra.smul_def]
-    exact mul_mem_riemannRochSpace_add
-      ((mem_riemannRochSpace_conorm_iff hF A _).mpr (u p.1).2) (hzC p.2)
-  have hv : LinearIndependent k fun p : Fin (Module.finrank k (riemannRochSpace A)) × ι ↦
-      (⟨(u p.1 : F₀) • z p.2, hmem p⟩ : riemannRochSpace (Divisor.conorm k F A + C)) := by
-    refine LinearIndependent.of_comp (riemannRochSpace (Divisor.conorm k F A + C)).subtype ?_
-    simpa [Function.comp_def] using linearIndependent_smul hu hz
-  have hcard := hv.fintype_card_le_finrank
-  rw [Fintype.card_prod, Fintype.card_fin] at hcard
-  rw [Divisor.dim_def, Divisor.dim_def, mul_comm]
-  exact hcard
 
 /-- **An upper bound for the genus from a subfield**: if `F / k` has exact constants, `F₀` is a
 subfield over which `F` is finite, and a basis of `F / F₀` lies in `L(C)`, then
