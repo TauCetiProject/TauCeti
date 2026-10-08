@@ -45,6 +45,8 @@ vector and `w` is the geometric vector `(1, t, …, t ^ n)`.
   turns the determinant into the corner minor.
 * `Matrix.submatrix_mul_of_mulVec_single`: deleting the last row and column commutes with a
   product when the left factor fixes the last standard basis vector.
+* `Matrix.mulVec_snoc_zero`: multiplying by a vector with last coordinate zero only involves the
+  first `n` columns.
 * `Matrix.det_updateCol_last_smul_col_sub_single_of_det_sub_one_eq_zero`: a determinant formula
   for replacing the last column of `M - 1` by a linear combination of the last columns of `M`
   and `1`.
@@ -136,6 +138,12 @@ theorem submatrix_mul_of_mulVec_single (X Y : Matrix (Fin (n + 1)) (Fin (n + 1))
   rw [Matrix.submatrix_apply, Matrix.mul_apply, Matrix.mul_apply, Fin.sum_univ_castSucc, hentry,
     Pi.single_eq_of_ne (Fin.castSucc_lt_last u).ne, zero_mul, add_zero]
   rfl
+
+/-- Multiplying by a vector whose last coordinate is zero only involves the first `n` columns. -/
+theorem mulVec_snoc_zero {m : Type*} (A : Matrix m (Fin (n + 1)) R) (z : Fin n → R) :
+    A *ᵥ Fin.snoc z 0 = A.submatrix id Fin.castSucc *ᵥ z := by
+  ext i
+  simp [mulVec, dotProduct, Fin.sum_univ_castSucc]
 
 private theorem projCastSucc_mul {m : Type*} (A : Matrix (Fin (n + 1)) m R) :
     projCastSucc n R * A = A.submatrix Fin.castSucc id := by
