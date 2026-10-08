@@ -87,9 +87,10 @@ theorem exists_analyticOnNhd_nonmonic_powerSubstitution_conj
     simpa only [mem_ball_zero_iff, Complex.norm_conj] using hz
   have hκ : ContinuousOn κ T := hτ.prodMap Complex.continuous_conj.continuousOn
   have hκT : MapsTo κ T T := hτU.prodMap hconjBall
-  have hκS : MapsTo κ S S := TauCeti.mapsTo_prod_conj_diff_zero hτU hconjBall
+  have hκS : MapsTo κ S S :=
+    hτU.prodMap (fun z hz ↦ ⟨hconjBall hz.1, by simpa using hz.2⟩)
   have hκκ : ∀ b ∈ S, κ (κ b) = b :=
-    fun b hb ↦ TauCeti.prod_conj_apply_prod_conj hττ b hb.1
+    fun b hb ↦ Prod.ext (hττ b.1 hb.1) (Complex.conj_conj b.2)
   have hroot (b : E × ℂ) (hb : b ∈ S) (z : ℂ) :
       (F (q b)).IsRoot z ↔ ∃ i, r i b = z := by
     have hl : (F (q b)).coeff d ≠ 0 := by

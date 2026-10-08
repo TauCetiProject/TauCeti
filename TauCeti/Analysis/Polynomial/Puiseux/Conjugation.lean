@@ -75,9 +75,9 @@ theorem exists_analyticOnNhd_monicOfCoeff_eq_prod_X_sub_C_conj
   have hκ : ContinuousOn κ (U ×ˢ s) := hτ.prodMap Complex.continuous_conj.continuousOn
   have hκT : MapsTo κ (U ×ˢ s) (U ×ˢ s) := hτU.prodMap hconj
   have hκS : MapsTo κ (U ×ˢ (s \ {0})) (U ×ˢ (s \ {0})) :=
-    TauCeti.mapsTo_prod_conj_diff_zero hτU hconj
+    hτU.prodMap (fun z hz ↦ ⟨hconj hz.1, by simpa using hz.2⟩)
   have hκκ : ∀ p ∈ U ×ˢ (s \ {0}), κ (κ p) = p :=
-    fun p hp ↦ TauCeti.prod_conj_apply_prod_conj hττ p hp.1
+    fun p hp ↦ Prod.ext (hττ p.1 hp.1) (Complex.conj_conj p.2)
   have hdense : U ×ˢ s ⊆ closure (U ×ˢ (s \ {(0 : ℂ)})) := by
     rw [closure_prod_eq, Set.sdiff_eq]
     exact prod_mono subset_closure

@@ -133,20 +133,6 @@ end TauCeti
 
 namespace TauCeti
 
-/-- Conjugation also preserves the product after the zero section is removed. -/
-theorem mapsTo_prod_conj_diff_zero {X : Type*} {τ : X → X} {U : Set X} {s : Set ℂ}
-    (hτU : MapsTo τ U U) (hs : MapsTo conj s s) :
-    MapsTo (fun p : X × ℂ ↦ (τ p.1, conj p.2))
-      (U ×ˢ (s \ {0})) (U ×ˢ (s \ {0})) := by
-  intro p hp
-  exact ⟨hτU hp.1, hs hp.2.1, by simpa using hp.2.2⟩
-
-/-- A parameter involution paired with conjugation is an involution on the product. -/
-theorem prod_conj_apply_prod_conj {X : Type*} {τ : X → X} {U : Set X}
-    (hττ : ∀ x ∈ U, τ (τ x) = x) (p : X × ℂ) (hp : p.1 ∈ U) :
-    (τ (τ p.1), conj (conj p.2)) = p :=
-  Prod.ext (hττ p.1 hp) (Complex.conj_conj p.2)
-
 variable {B ι : Type*} [TopologicalSpace B] [Finite ι]
   {S T : Set B} {F : B → ℂ[X]} {r : ι → B → ℂ} {τ : B → B}
 
