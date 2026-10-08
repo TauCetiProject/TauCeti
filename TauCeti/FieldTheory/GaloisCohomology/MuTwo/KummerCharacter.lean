@@ -104,6 +104,13 @@ theorem rootSign_eq_one_iff {r : SeparableClosure K} {g : AbsoluteGaloisGroup K}
 theorem rootSign_one (r : SeparableClosure K) : rootSign r 1 = 0 :=
   rootSign_of_apply_eq rfl
 
+/-- An element sending `r` to `±r` acts on `r` by the sign `(-1) ^ rootSign r g`. -/
+theorem apply_eq_neg_one_pow_rootSign_mul {r : SeparableClosure K} {g : AbsoluteGaloisGroup K}
+    (hg : g r = r ∨ g r = -r) : g r = (-1) ^ (rootSign r g).val * r := by
+  by_cases h : g r = r
+  · simp [h]
+  · rw [rootSign_of_apply_ne h, ZMod.val_one, pow_one, neg_one_mul, hg.resolve_left h]
+
 /-- **The sign of a root is additive** on the elements that send `r` to `±r`. -/
 theorem rootSign_mul {r : SeparableClosure K} {g h : AbsoluteGaloisGroup K}
     (hg : g r = r ∨ g r = -r) (hh : h r = r ∨ h r = -r) :
