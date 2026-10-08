@@ -24,7 +24,7 @@ completion, such as the profinite integers, map to profinite groups in any unive
 A continuous homomorphism out of the completion is surjective onto a Hausdorff target when it has
 dense range on `G` (`surjective_continuousMonoidHom_of_denseRange`), and injective when every
 finite-index normal subgroup of `G` contains the elements sent near `1`
-(`injective_continuousMonoidHom_of_forall_exists_nhds`).
+(`injective_continuousMonoidHom_of_forall_exists_nhds_one_comap_le`).
 
 The continuous finite quotients of the completion are exactly the finite quotients of `G`
 (`isFiniteContinuousQuotient_iff_exists_surjective`), and the completion of a finitely generated
@@ -223,7 +223,7 @@ theorem surjective_continuousMonoidHom_of_denseRange
 `F` from the profinite completion of `G` to a topological monoid is injective if every
 finite-index normal subgroup `H` of `G` contains every `g` that `F` maps into some fixed
 neighbourhood of `1`. -/
-theorem injective_continuousMonoidHom_of_forall_exists_nhds
+theorem injective_continuousMonoidHom_of_forall_exists_nhds_one_comap_le
     {Q : Type v} [Monoid Q] [TopologicalSpace Q]
     (F : ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) →ₜ* Q)
     (h : ∀ H : FiniteIndexNormalSubgroup G, ∃ U ∈ nhds (1 : Q), ∀ g : G,

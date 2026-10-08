@@ -107,7 +107,8 @@ completion of `Kˣ` is injective: every subgroup of finite index of `Kˣ` is a n
 (`exists_openSubgroup_artinMap_mem_iff`). -/
 theorem injective_profiniteCompletionArtinMap [CharZero K] :
     Function.Injective (profiniteCompletionArtinMap K) := by
-  refine ProfiniteCompletion.injective_continuousMonoidHom_of_forall_exists_nhds _ _ fun H ↦ ?_
+  refine ProfiniteCompletion.injective_continuousMonoidHom_of_forall_exists_nhds_one_comap_le _ _
+    fun H ↦ ?_
   obtain ⟨V, hV⟩ := localExistence H.toSubgroup
   obtain ⟨U, hU⟩ := exists_openSubgroup_artinMap_mem_iff K V
   refine ⟨U, U.mem_nhds_one, fun x hx ↦ ?_⟩
