@@ -216,6 +216,17 @@ section CommRing
 
 variable {R : Type*} [CommRing R]
 
+/-- Signed permutation matrices are orthogonal over every commutative ring. -/
+theorem wreathSignedPerm_mem_orthogonalGroup (w : WreathC2) :
+    wreathSignedPerm w ∈ orthogonalGroup (Fin 2) R := by
+  rw [mem_orthogonalGroup_iff', wreathSignedPerm_apply]
+  generalize coordA w = a, coordB w = b, coordC w = c
+  obtain rfl | rfl : c = 0 ∨ c = 1 := by revert c; decide
+  all_goals
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+      simp [pinE2_def, Matrix.mul_apply, Fin.sum_univ_two, ZMod.val_one, ← mul_pow]
+
 /-- **The vector** `y₀ e₁ + y₁ e₂` of the plane `R²` inside its Clifford model `M₂(R)`. -/
 def pinVec : (Fin 2 → R) →ₗ[R] Matrix (Fin 2) (Fin 2) R :=
   (LinearMap.proj 0).smulRight pinE1 + (LinearMap.proj 1).smulRight pinE2
