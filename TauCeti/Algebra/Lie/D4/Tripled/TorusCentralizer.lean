@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Lie.D4.Tripled.GroupScheme
 # The centralizer of the tripled type-D₄ weight torus
 
 Over an infinite field, a point of the tripled type-`D₄` carrier centralizes the weight torus
-exactly when its matrix in the weight basis of `8ᵥ ⊕ 8ₛ ⊕ 8꜀` is diagonal. The twenty-four weights
+exactly when its matrix in the weight basis of `8v ⊕ 8s ⊕ 8c` is diagonal. The twenty-four weights
 of the three eight-dimensional summands are distinct, and over an infinite field distinct weights
 are distinct characters of the split torus, so the torus separates every pair of basis vectors,
 including vectors in different summands. The centralizer is therefore the inverse image of the
