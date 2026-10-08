@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.NormSplit.BaseChange
 import Mathlib.Algebra.CharP.Quotient
 import Mathlib.RingTheory.Flat.TorsionFree
 import TauCeti.RepresentationTheory.Coinvariants
+import TauCeti.RepresentationTheory.Invariants
 import TauCeti.RepresentationTheory.NormSplit.PGroup
 import TauCeti.RepresentationTheory.Homological.TateCohomology.HomologySequence
 
@@ -138,14 +139,15 @@ theorem ker_norm_baseChange_le_coinvariantsKer [Fintype G] (A : Rep k G) (p : k)
   rwa [Submodule.mem_comap, map_sub, (hred_eq_zero _).2 ⟨w, rfl⟩, sub_zero] at this
 
 /-- **Nakayama–Rim, Sylow form** (Serre, *Local Fields*, IX §§3–5; Rim, Ann. of Math. 69 (1959)).
-Let `k` be an integral domain of characteristic zero, `G` a finite group, and `A` a representation
-of `G` on a projective `k`-module. Suppose that for each prime `p` dividing `|G|` some Sylow
-`p`-subgroup `P` satisfies: `p` is a unit in `k`, or `pk` is a maximal ideal and
-`H_Tate⁰(P, A) = H_Tate⁻¹(P, A) = 0`. Then `A` is projective over `k[G]`. -/
-theorem projective_of_isZero_res_sylow [Finite G] [IsDomain k] [CharZero k]
+Let `k` be a commutative ring, `G` a finite group, and `A` a representation of `G` on a
+projective `k`-module. Suppose that for each prime `p` dividing `|G|` some Sylow `p`-subgroup `P`
+satisfies: `p` is a unit in `k`, or `pk` is a maximal ideal, multiplication by `p` is injective
+on `A`, and `H_Tate⁰(P, A) = H_Tate⁻¹(P, A) = 0`. Then `A` is projective over `k[G]`. -/
+theorem projective_of_isZero_res_sylow [Finite G]
     (A : Rep k G) [Module.Projective k A.V]
     (h : ∀ p : ℕ, p.Prime → p ∣ Nat.card G → ∃ (P : Sylow p G) (_ : Fintype P),
       IsUnit (p : k) ∨ (Ideal.span {(p : k)}).IsMaximal ∧
+        (∀ v : A.V, (p : k) • v = 0 → v = 0) ∧
         IsZero (tateCohomology (res (P : Subgroup G).subtype A) 0) ∧
         IsZero (tateCohomology (res (P : Subgroup G).subtype A) (-1))) :
     Module.Projective (MonoidAlgebra k G) A.ρ.asModule := by
@@ -162,21 +164,20 @@ theorem projective_of_isZero_res_sylow [Finite G] [IsDomain k] [CharZero k]
   -- of the restriction `A.ρ.comp P.subtype`, the form the norm-splitting lemmas are stated in.
   suffices LinearMap.id ∈ LinearMap.range (Representation.linHom (A.ρ.comp (P : Subgroup G).subtype)
       (A.ρ.comp (P : Subgroup G).subtype)).norm from this
-  rcases hP with hunit | ⟨hmax, h0, h1⟩
-  · -- `|P|` is a unit, and the identity is the norm of `|P|⁻¹ • id`.
-    obtain ⟨u, hu⟩ := hunit.pow m
-    refine ⟨(↑u⁻¹ : k) • LinearMap.id, LinearMap.ext fun x ↦ ?_⟩
-    rw [Representation.norm_linHom_apply]
-    simp only [LinearMap.smul_apply, LinearMap.id_apply, map_smul, Representation.self_inv_apply,
-      Finset.sum_const, Finset.card_univ, hcard, ← Nat.cast_smul_eq_nsmul k, smul_smul,
-      Nat.cast_pow, ← hu, Units.mul_inv, one_smul]
+  rcases hP with hunit | ⟨hmax, hreg, h0, h1⟩
+  · -- When `|P|` is a unit, the norm maps onto the invariant endomorphisms.
+    have hunitCard : IsUnit (Fintype.card P : k) := by
+      simpa only [hcard, Nat.cast_pow] using hunit.pow m
+    letI := hunitCard.invertible
+    rw [Representation.range_norm_eq_invariants]
+    intro g
+    ext x
+    simp only [Representation.linHom_apply, LinearMap.id_apply, Representation.self_inv_apply]
   · -- `k/pk` is a field of characteristic `p`.
     let := Ideal.Quotient.field (Ideal.span {(p : k)})
     have : CharP (k ⧸ Ideal.span {(p : k)}) p :=
       CharP.quotient k p (mem_nonunits_iff.2 fun hu ↦ hmax.ne_top
         (Ideal.span_singleton_eq_top.2 hu))
-    have hp0 : (p : k) ≠ 0 := Nat.cast_ne_zero.2 hp.ne_zero
-    have hreg (v : A.V) (hv : (p : k) • v = 0) : v = 0 := (smul_eq_zero.1 hv).resolve_left hp0
     exact Representation.id_mem_range_norm_linHom_of_baseChange (A.ρ.comp (P : Subgroup G).subtype)
       hcard hreg
       (Representation.id_mem_range_norm_linHom_of_ker_norm_le p P.isPGroup' _
@@ -198,7 +199,10 @@ theorem projective_of_isZero_res [Finite G] [IsDomain k] [CharZero k]
     have := Fact.mk hp
     let P : Sylow p G := Classical.arbitrary _
     letI : Fintype P := .ofFinite P
-    ⟨P, inferInstance, (hk p hp).imp_right fun hmax ↦ ⟨hmax, hA P 0, hA P (-1)⟩⟩
+    have hp0 : (p : k) ≠ 0 := Nat.cast_ne_zero.2 hp.ne_zero
+    have hreg (v : A.V) (hv : (p : k) • v = 0) : v = 0 :=
+      (smul_eq_zero.1 hv).resolve_left hp0
+    ⟨P, inferInstance, (hk p hp).imp_right fun hmax ↦ ⟨hmax, hreg, hA P 0, hA P (-1)⟩⟩
 
 /-- **Projective dimension at most one implies cohomological triviality.** Let
 `0 → P₁ → P₀ → A → 0` be an exact sequence of `k[G]`-modules with `P₀` and `P₁` projective. Then
