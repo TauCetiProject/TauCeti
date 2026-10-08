@@ -57,15 +57,6 @@ universe u
 
 variable {K : Type u} [Field K] {L : Type u} [Field L] [Algebra K L] [FiniteDimensional K L]
 
-/-- An element of `G_L` acts on the Kummer coordinate `σ(y) r` through the sign of `r`. -/
-private theorem apply_mul_eq_neg_one_pow_rootSign_mul (σ : L →ₐ[K] SeparableClosure K) {a : L}
-    {r : SeparableClosure K} (hr : r ^ 2 = σ a) (y : L) {q : AbsoluteGaloisGroup K}
-    (hq : q ∈ galoisSubgroup K L σ) :
-    q (σ y * r) = (-1) ^ (rootSign r q).val * (σ y * r) := by
-  rw [map_mul, (mem_galoisSubgroup_iff K L σ).1 hq y,
-    apply_eq_neg_one_pow_rootSign_mul (apply_eq_or_eq_neg_of_sq_eq_galoisSubgroup σ hr ⟨q, hq⟩)]
-  ring
-
 /-- **The Galois action on the transferred plane** is the transpose of the induced Kummer
 representation: for `g ∈ G_K`, applying `g` to the coordinates of the Kummer point
 `φ(y) = (σ(y) r, s(σ(y) r))` gives `ρ_a(g)ᵀ φ(y)`, where `ρ_a = kummerInd σ hdeg a r hr s hs`

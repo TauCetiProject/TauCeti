@@ -212,6 +212,16 @@ theorem apply_eq_or_eq_neg_of_sq_eq_galoisSubgroup (σ : L →ₐ[K] SeparableCl
     rw [← map_pow, hr]
     exact (mem_galoisSubgroup_iff K L σ).1 γ.2 a
 
+/-- An element of `G_L = galoisSubgroup K L σ` acts on the Kummer coordinate `σ(y) r` through the
+sign of `r`, for a square root `r` of `σ a`. -/
+theorem apply_mul_eq_neg_one_pow_rootSign_mul (σ : L →ₐ[K] SeparableClosure K) {a : L}
+    {r : SeparableClosure K} (hr : r ^ 2 = σ a) (y : L) {q : AbsoluteGaloisGroup K}
+    (hq : q ∈ galoisSubgroup K L σ) :
+    q (σ y * r) = (-1) ^ (rootSign r q).val * (σ y * r) := by
+  rw [map_mul, (mem_galoisSubgroup_iff K L σ).1 hq y,
+    apply_eq_neg_one_pow_rootSign_mul (apply_eq_or_eq_neg_of_sq_eq_galoisSubgroup σ hr ⟨q, hq⟩)]
+  ring
+
 /-- **The Kummer character of `a ∈ Lˣ` on `G_L = galoisSubgroup K L σ`**, `γ ↦ rootSign r γ` for a
 square root `r` of `σ a`: every `γ` in `G_L` fixes `σ L`, hence `r²`, so `γ r = ±r`. -/
 def galoisKummerCharacter (σ : L →ₐ[K] SeparableClosure K) (a : Lˣ) (r : SeparableClosure K)
