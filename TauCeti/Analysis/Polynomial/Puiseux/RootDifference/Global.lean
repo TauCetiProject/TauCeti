@@ -16,7 +16,7 @@ Let an analytic polynomial family split into analytic linear factors on a produc
 If its discriminant is a power of the distinguished coordinate times a nowhere-zero analytic
 function, each difference of distinctly labelled roots has the same form throughout the domain,
 with a fixed exponent and a nowhere-zero analytic unit. The parameter domain must be connected
-and open, and the distinguished domain must be open and contain the center of the power.
+and open, and the distinguished domain must be a neighborhood of the center of the power.
 Roots may collide at that center.
 
 The local root-difference theorem makes the slice order locally constant. Connectedness fixes
@@ -43,7 +43,7 @@ the parameter, and the unit is nonzero even where the roots collide on `y = c`. 
 theorem exists_analyticOnNhd_root_sub_eq_pow_mul_unit
     {n : ℕ} {r : Fin n → E × 𝕜 → 𝕜} {P : E × 𝕜 → Polynomial 𝕜}
     {U : Set E} {s : Set 𝕜} {c : 𝕜} (hU : IsOpen U) (hUc : IsConnected U)
-    (hs : IsOpen s) (hc : c ∈ s)
+    (hs : s ∈ 𝓝 c)
     (hr : ∀ i, AnalyticOnNhd 𝕜 (r i) (U ×ˢ s))
     (hP : ∀ p ∈ U ×ˢ s, P p = ∏ i, (X - C (r i p)))
     {a : ℕ} {u : E × 𝕜 → 𝕜} (hu : AnalyticOnNhd 𝕜 u (U ×ˢ s))
@@ -53,12 +53,13 @@ theorem exists_analyticOnNhd_root_sub_eq_pow_mul_unit
     ∃ b : ℕ, ∃ v : E × 𝕜 → 𝕜, AnalyticOnNhd 𝕜 v (U ×ˢ s) ∧
       (∀ p ∈ U ×ˢ s, v p ≠ 0) ∧
       ∀ p ∈ U ×ˢ s, r i p - r j p = (p.2 - c) ^ b * v p := by
+  have hc : c ∈ s := mem_of_mem_nhds hs
   have hdiff : AnalyticOnNhd 𝕜 (fun p ↦ r i p - r j p) (U ×ˢ s) :=
     (hr i).sub (hr j)
   -- Each local power-times-unit form identifies the nearby slice orders.
   have hlocal (x : E) (hx : x ∈ U) : ∃ b : ℕ,
       ∀ᶠ w in 𝓝 x, analyticOrderAt (fun y ↦ r i (w, y) - r j (w, y)) c = b := by
-    have hmem : U ×ˢ s ∈ 𝓝 (x, c) := (hU.prod hs).mem_nhds ⟨hx, hc⟩
+    have hmem : U ×ˢ s ∈ 𝓝 (x, c) := prod_mem_nhds (hU.mem_nhds hx) hs
     obtain ⟨b, v, hv, hv0, heq⟩ := exists_root_sub_eq_pow_mul_unit
       (fun k ↦ hr k (x, c) ⟨hx, hc⟩)
       (eventually_of_mem hmem fun p hp ↦ hP p hp)
@@ -80,7 +81,8 @@ theorem exists_analyticOnNhd_root_sub_eq_pow_mul_unit
   have horder (x : E) (hx : x ∈ U) :
       analyticOrderAt (fun y ↦ r i (x, y) - r j (x, y)) c = b :=
     (hconst.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨x₀, hx₀⟩).trans hb.self_of_nhds
-  obtain ⟨v, hv, hv0, heq⟩ := hdiff.exists_eq_pow_mul_of_analyticOrderAt hU hc horder
+  obtain ⟨v, hv, hv0, heq⟩ := hdiff.exists_eq_pow_smul_of_analyticOrderAt hU hc horder
+  simp only [smul_eq_mul] at heq
   refine ⟨b, v, hv, ?_, heq⟩
   intro p hp
   by_cases hpc : p.2 = c
