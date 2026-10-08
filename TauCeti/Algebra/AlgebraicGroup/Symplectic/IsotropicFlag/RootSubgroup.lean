@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.IsotropicFlag.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.Base
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup.Basic
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 
 /-!
 # Positive root subgroups of the symplectic isotropic flag subgroup
