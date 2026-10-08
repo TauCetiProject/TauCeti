@@ -219,8 +219,7 @@ theorem transport_δZero_eq_periph0 :
         (FundamentalGroup.fromPath (.mk δZero))) = periph0 := by
   rw [FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map,
     periph0_def]
-  exact fundamentalGroupMulEquivOfPath_symm_fromPath_of_homotopic αZero
-    γ0_trans_αZero_homotopic
+  exact fundamentalGroupMulEquivOfPath_symm_fromPath_of_homotopic γ0_trans_αZero_homotopic
 
 /-- The point `3/4` inside the standard neighborhood of `1`. -/
 def oneBasePt : puncturedNeighborhoodOne :=
@@ -323,8 +322,7 @@ theorem transport_δOne_eq_periph1 :
         (FundamentalGroup.fromPath (.mk δOne))) = periph1 := by
   rw [FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map,
     periph1_def]
-  exact fundamentalGroupMulEquivOfPath_symm_fromPath_of_homotopic αOne
-    γ1_trans_αOne_homotopic
+  exact fundamentalGroupMulEquivOfPath_symm_fromPath_of_homotopic γ1_trans_αOne_homotopic
 
 /-- Transport along any connecting path gives the peripheral conjugacy class at `0`. -/
 theorem conjClassesEquivOfPath_δZero {x : ThricePuncturedSphere}

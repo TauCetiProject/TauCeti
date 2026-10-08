@@ -504,10 +504,10 @@ namespace TauCeti
 /-- If a loop commutes past a connecting path up to homotopy, inverse basepoint change
 along that path carries the loop at its target to the loop at its source.
 
-Apply as `TauCeti.fundamentalGroupMulEquivOfPath_symm_fromPath_of_homotopic α h`, where
-`h : (γ.trans α).Homotopic (α.trans δ)`. -/
+Apply as `TauCeti.fundamentalGroupMulEquivOfPath_symm_fromPath_of_homotopic h`, where
+`h : (γ.trans α).Homotopic (α.trans δ)` determines the connecting path `α`. -/
 theorem fundamentalGroupMulEquivOfPath_symm_fromPath_of_homotopic
-    {X : Type*} [TopologicalSpace X] {x y : X} (α : Path x y)
+    {X : Type*} [TopologicalSpace X] {x y : X} {α : Path x y}
     {γ : Path x x} {δ : Path y y} (h : (γ.trans α).Homotopic (α.trans δ)) :
     (FundamentalGroup.fundamentalGroupMulEquivOfPath α).symm
       (FundamentalGroup.fromPath (.mk δ)) = FundamentalGroup.fromPath (.mk γ) := by
