@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Group.Exponent
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiveTerm
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.H1ZMod
 
 /-!
 # Descent along a normal subgroup of index prime to the coefficients
@@ -54,6 +55,8 @@ invariants is bijective (`explicitResConj1_bijective_of_coprime`).
 * `TauCeti.ContCohomology.explicitResConj1_bijective_of_coprime`: restriction
   `H¹(G, M) → H¹(N, M)^{G/N}` is bijective for an open normal subgroup of index prime to an
   exponent of `M`.
+* `TauCeti.h1CoprimeDescentEquiv`: for `ZMod n`-module coefficients, the same restriction is a
+  linear equivalence.
 
 ## References
 
@@ -197,3 +200,26 @@ theorem explicitResConj1_bijective_of_coprime (N : Subgroup G) [N.Normal] [N.Fin
 end Cohomology
 
 end TauCeti.ContCohomology
+
+namespace TauCeti
+
+open ContCohomology
+
+universe u v
+
+variable {n : ℕ} {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  {N : Subgroup G} [N.Normal]
+  {A : Type v} [AddCommGroup A] [Module (ZMod n) A] [TopologicalSpace A]
+  [IsTopologicalAddGroup A] [DistribMulAction G A] [ContinuousSMul G A]
+
+/-- **Coprime restriction as a linear equivalence onto the conjugation invariants.** If `N` is
+open and normal of finite index prime to `n`, restriction identifies `H¹(G, A)` with the
+`G/N`-invariant part of `H¹(N, A)`. -/
+noncomputable def h1CoprimeDescentEquiv [N.FiniteIndex] (hopen : IsOpen (N : Set G))
+    (hcop : N.index.Coprime n) :
+    H1 G A ≃ₗ[ZMod n] AddSubgroup.toZModSubmodule n (H1ConjInvariants G A N) :=
+  LinearEquiv.ofBijective
+    (AddMonoidHom.toZModLinearMap n (explicitResConj1 G A N))
+    (explicitResConj1_bijective_of_coprime N hopen (ZModModule.char_nsmul_eq_zero n) hcop)
+
+end TauCeti

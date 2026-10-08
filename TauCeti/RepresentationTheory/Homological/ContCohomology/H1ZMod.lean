@@ -102,7 +102,7 @@ include htriv
 
 /-- For a trivial action on a `ZMod n`-module `A`, first cohomology is the `ZMod n`-module of
 continuous homomorphisms from `G` to the additive group of `A`. -/
-@[expose] noncomputable def h1EquivContinuousZModHom :
+noncomputable def h1EquivContinuousZModHom :
     H1 G A ≃ₗ[ZMod n] Additive (G →ₜ* Multiplicative A) :=
   (H1EquivOfSmulEqSelf htriv).toLinearEquiv
     (ZMod.map_smul (H1EquivOfSmulEqSelf htriv))
@@ -137,7 +137,7 @@ include htriv
 /-- **`H¹(G, ZMod n)` is the continuous `ZMod n`-dual of `G`.** A class of `H¹(G, ZMod n)` is
 sent to the continuous homomorphism `G → Multiplicative ZMod n` that its cocycle defines, which
 for trivial coefficients is that cocycle itself, as an isomorphism of `ZMod n`-modules. -/
-@[expose] noncomputable def h1EquivContinuousZModDual :
+noncomputable def h1EquivContinuousZModDual :
     H1 G (ZMod n) ≃ₗ[ZMod n] continuousZModDual n G :=
   h1EquivContinuousZModHom (n := n) htriv
 

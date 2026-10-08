@@ -5,15 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.Algebra.Module.ZMod.SMulCommClass
 public import TauCeti.Data.ZMod.TrivialAction
-public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Invariants
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.CoprimeDescent
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.H1ZMod
 public import TauCeti.Topology.Algebra.ContinuousZModDual
 
 /-!
-# First cohomology after a prime-to-order descent
+# First cohomology tensor comparison and prime-to-index descent
 
 Let `N` be an open normal subgroup of `G`, let `p` be prime to `[G : N]`, and let `A` be a
 finite `ZMod p`-module on which `N` acts trivially. This file constructs the canonical
@@ -31,9 +31,8 @@ conjugation on `H¹(N, A)`. Restriction and the prime-to-`p` coprime-descent the
 dim H¹(G, A) = dim (H¹(N, ZMod p) ⊗ A)^G.
 ```
 
-The final form is stated using the quotient representation of `G/N`. Combined with
-`TauCeti.finrankTensorInvariantsK0`, it identifies this dimension with the value of the additive
-invariant-dimension functional on the Grothendieck group of `ZMod p[G/N]`-modules.
+The final form is stated using the quotient representation of `G/N`, so it can be consumed by
+representation-theoretic invariant-dimension results.
 
 ## Main definitions
 
@@ -81,7 +80,7 @@ variable {p : ℕ} {G : Type uG} [Group G] [TopologicalSpace G] [IsTopologicalGr
 /-- **The first-cohomology tensor comparison.** If `N` acts trivially on a finite
 `ZMod p`-module `A`, evaluation identifies `H¹(N, ZMod p) ⊗ A` with `H¹(N, A)`.
 The map is canonical even though a basis is used to prove its bijectivity. -/
-@[expose] noncomputable def h1TensorEquiv
+noncomputable def h1TensorEquiv
     (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Fact p.Prime]
     [Module.Finite (ZMod p) A] :
     H1 N (ZMod p) ⊗[ZMod p] A ≃ₗ[ZMod p] H1 N A :=
@@ -133,6 +132,16 @@ noncomputable def h1TensorConj (g : G) :
     (AddMonoidHom.toZModLinearMap p (explicitConj1 (M := ZMod p) N g))
     (AddMonoidHom.toZModLinearMap p (DistribSMul.toAddMonoidHom A g))
 
+omit [TopologicalSpace A] [IsTopologicalAddGroup A] [ContinuousSMul G A]
+    [DiscreteTopology A] in
+/-- The diagonal conjugation map acts on a pure tensor by conjugating the first factor and
+applying the coefficient action to the second. -/
+@[simp]
+theorem h1TensorConj_tmul (g : G) (x : H1 N (ZMod p)) (a : A) :
+    h1TensorConj g (x ⊗ₜ a) = explicitConj1 N g x ⊗ₜ (g • a) := by
+  rw [h1TensorConj, TensorProduct.map_tmul, AddMonoidHom.coe_toZModLinearMap,
+    AddMonoidHom.coe_toZModLinearMap, DistribSMul.toAddMonoidHom_apply]
+
 /-- Equivariance of `h1TensorEquiv` on pure tensors. -/
 theorem h1TensorEquiv_conj_tmul
     (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Fact p.Prime]
@@ -174,19 +183,25 @@ theorem h1TensorEquiv_conj
     h1TensorEquiv hN (h1TensorConj g z) = explicitConj1 N g (h1TensorEquiv hN z) := by
   induction z using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
-  | tmul x a =>
-      rw [h1TensorConj, TensorProduct.map_tmul,
-        AddMonoidHom.coe_toZModLinearMap, AddMonoidHom.coe_toZModLinearMap]
-      exact h1TensorEquiv_conj_tmul hN g x a
+  | tmul x a => simpa only [h1TensorConj_tmul] using h1TensorEquiv_conj_tmul hN g x a
 
-/-- The subspace fixed by every diagonal conjugation map on
-`H¹(N, ZMod p) ⊗ A`. Since elements of `N` act trivially, this is the invariant subspace for
-the induced `G/N`-representation. -/
+/-- The subspace fixed by every diagonal conjugation map on `H¹(N, ZMod p) ⊗ A`. When `N`
+acts trivially on `A`, the diagonal action factors through `G/N`, and this is the invariant
+subspace of the induced quotient representation. -/
 def h1TensorConjInvariants : Submodule (ZMod p) (H1 N (ZMod p) ⊗[ZMod p] A) where
   carrier := {z | ∀ g : G, h1TensorConj g z = z}
   zero_mem' g := map_zero _
   add_mem' hx hy g := by rw [map_add, hx g, hy g]
   smul_mem' c z hz g := by rw [map_smul, hz g]
+
+omit [TopologicalSpace A] [IsTopologicalAddGroup A] [ContinuousSMul G A]
+    [DiscreteTopology A] in
+/-- Membership in `h1TensorConjInvariants` means being fixed by every diagonal conjugation map. -/
+@[simp]
+theorem mem_h1TensorConjInvariants_iff {z : H1 N (ZMod p) ⊗[ZMod p] A} :
+    z ∈ h1TensorConjInvariants (p := p) (G := G) (N := N) (A := A) ↔
+      ∀ g : G, h1TensorConj g z = z :=
+  Iff.rfl
 
 /-- Equivariance restricts `h1TensorEquiv` to the invariant subspaces. -/
 noncomputable def h1TensorInvariantsEquiv
@@ -206,14 +221,6 @@ noncomputable def h1TensorInvariantsEquiv
   right_inv x := Subtype.ext ((h1TensorEquiv (p := p) hN).apply_symm_apply x)
   map_add' x y := Subtype.ext (map_add (h1TensorEquiv (p := p) hN) x.1 y.1)
   map_smul' c x := Subtype.ext (map_smul (h1TensorEquiv (p := p) hN) c x.1)
-
-/-- Coprime restriction as a linear equivalence onto the conjugation invariants. -/
-noncomputable def h1CoprimeDescentEquiv [N.FiniteIndex] (hopen : IsOpen (N : Set G))
-    (hcop : N.index.Coprime p) :
-    H1 G A ≃ₗ[ZMod p] AddSubgroup.toZModSubmodule p (H1ConjInvariants G A N) :=
-  LinearEquiv.ofBijective
-    (AddMonoidHom.toZModLinearMap p (explicitResConj1 G A N))
-    (explicitResConj1_bijective_of_coprime N hopen (ZModModule.char_nsmul_eq_zero p) hcop)
 
 /-- **Coprime descent followed by the tensor comparison.** -/
 noncomputable def h1CoprimeTensorInvariantsEquiv
@@ -245,7 +252,7 @@ variable {p : ℕ} {G : Type uG} [Group G] [TopologicalSpace G] [IsTopologicalGr
 
 /-- Conjugation makes `H¹(N, ZMod p)` a `G/N`-representation. Inner conjugation by an element
 of `N` is trivial on cohomology, so the ambient `G`-action factors through the quotient. -/
-@[expose] noncomputable def h1ConjRepresentation :
+noncomputable def h1ConjRepresentation :
     Representation (ZMod p) (G ⧸ N) (H1 N (ZMod p)) := by
   let ρ : Representation (ZMod p) G (H1 N (ZMod p)) :=
     { toFun := fun g ↦ AddMonoidHom.toZModLinearMap p (explicitConj1 N g)
@@ -262,6 +269,8 @@ of `N` is trivial on cohomology, so the ambient `G`-action factors through the q
   letI : Representation.IsTrivial (ρ.comp N.subtype) := ⟨fun n ↦ by
     apply LinearMap.ext
     intro x
+    -- The local representation `ρ` has no separately named application lemma; reducing its
+    -- composition with the subgroup inclusion exposes exactly the conjugation map defined above.
     change explicitConj1 N (n : G) x = x
     rw [explicitConj1_eq_id_of_mem]
     rfl⟩
@@ -307,8 +316,7 @@ theorem h1TensorConjInvariants_eq_representationInvariants
           AddMonoidHom.coe_toZModLinearMap, h1ConjRepresentation_quotient_mk_apply, hρ]
         rfl
   ext z
-  change (∀ g : G, h1TensorConj g z = z) ↔
-    ∀ q : G ⧸ N, (h1ConjRepresentation (p := p) (G := G) (N := N)).tprod ρ q z = z
+  rw [mem_h1TensorConjInvariants_iff, Representation.mem_invariants]
   constructor
   · intro hz q
     induction q using QuotientGroup.induction_on with
