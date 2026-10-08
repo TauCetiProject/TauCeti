@@ -192,6 +192,24 @@ def inverseShiftProjective
       rw [ObjectProperty.prop_inverseImage_iff]
       exact (E.isProjective_inverseShift_iff Q).2 hQ
 
+/-- Shifting a projective resolution is the general functorial transport along the grading
+shift, with projectivity supplied by shift invariance. -/
+theorem shiftProjective_eq_map
+    (r : E.toExactStructure.FiniteResolution E.isProjective X) :
+    r.shiftProjective = r.map E.shift_exact (fun Q hQ => by
+      rw [ObjectProperty.prop_inverseImage_iff]
+      exact (E.isProjective_shift_iff Q).2 hQ) :=
+  (rfl)
+
+/-- Inversely shifting a projective resolution is the general functorial transport along the
+inverse grading shift, with projectivity supplied by shift invariance. -/
+theorem inverseShiftProjective_eq_map
+    (r : E.toExactStructure.FiniteResolution E.isProjective X) :
+    r.inverseShiftProjective = r.map E.shift_inverse_exact (fun Q hQ => by
+      rw [ObjectProperty.prop_inverseImage_iff]
+      exact (E.isProjective_inverseShift_iff Q).2 hQ) :=
+  (rfl)
+
 @[simp] theorem shiftProjective_base {X : C} (hX : E.isProjective X) :
     (FiniteResolution.base (E := E.toExactStructure) hX).shiftProjective =
       FiniteResolution.base ((E.isProjective_shift_iff X).2 hX) := by
