@@ -157,6 +157,7 @@ theorem chartRiemannianVolume_pos [I.Boundaryless]
       exact e.map_target hy
     have hpos : 0 < chartVolumeDensity (I := I) α (e.symm y) :=
       chartVolumeDensity_pos α hbase
+    -- Unfold `Function.support` so the density's nonvanishing is explicit.
     change d.toFun y ≠ 0
     rw [d.eq_on_target hy]
     exact (ENNReal.ofReal_pos.mpr hpos).ne'
