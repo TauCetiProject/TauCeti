@@ -23,6 +23,8 @@ when an isomorphism `P ≃ H` is equivariant up to the character of `V`.
 
 public section
 
+open scoped TensorProduct
+
 noncomputable section
 
 namespace TauCeti
@@ -33,13 +35,15 @@ variable {k : Type u} {G : Type v}
 
 section CommSemiring
 
-variable [CommSemiring k] [Group G]
+variable [CommSemiring k]
   {V : Type w} [AddCommMonoid V] [Module k V]
   {P : Type x} [AddCommMonoid P] [Module k P]
 
+-- Adapted from the Tau Ceti lookahead branch
+-- `lookahead/ClassFieldTheory/kummer-equiv-mixed-equivariant` (split 1).
 /-- A choice of coordinate on a rank-one module identifies a vector with the linear map obtained
 by multiplying that coordinate by the vector. -/
-@[expose] def rankOneHomEquiv (e : V ≃ₗ[k] k) : P ≃ₗ[k] V →ₗ[k] P :=
+def rankOneHomEquiv (e : V ≃ₗ[k] k) : P ≃ₗ[k] V →ₗ[k] P :=
   (LinearMap.ringLmapEquivSelf k k P).symm.trans
     (e.symm.arrowCongr (LinearEquiv.refl k P))
 
@@ -56,10 +60,29 @@ theorem rankOneHomEquiv_symm_apply (e : V ≃ₗ[k] k) (f : V →ₗ[k] P) :
     (rankOneHomEquiv e).symm f = f (e.symm 1) :=
   by simp [rankOneHomEquiv]
 
-/-- The scalar through which a group element acts on a representation with a chosen rank-one
-coordinate. -/
-def rankOneCharacter (rho : Representation k G V) (e : V ≃ₗ[k] k) (g : G) : k :=
-  e (rho g (e.symm 1))
+section Monoid
+
+variable [Monoid G]
+
+-- Adapted from the Tau Ceti lookahead branch
+-- `lookahead/ClassFieldTheory/kummer-equiv-mixed-equivariant` (split 1).
+/-- The character through which a monoid acts on a representation with a chosen rank-one
+coordinate: `g` acts by the coordinate of the image of the vector with coordinate `1`. -/
+def rankOneCharacter (rho : Representation k G V) (e : V ≃ₗ[k] k) : G →* k where
+  toFun g := e (rho g (e.symm 1))
+  map_one' := by simp
+  map_mul' g h := by
+    have hv : rho h (e.symm 1) = e (rho h (e.symm 1)) • e.symm 1 := e.injective (by simp)
+    rw [map_mul, Module.End.mul_apply]
+    nth_rw 1 [hv]
+    rw [map_smul, map_smul, smul_eq_mul, mul_comm]
+
+/-- The value of the rank-one character at `g` is the coordinate of `g` applied to the vector
+with coordinate `1`. -/
+theorem rankOneCharacter_apply (rho : Representation k G V) (e : V ≃ₗ[k] k) (g : G) :
+    rankOneCharacter rho e g = e (rho g (e.symm 1)) := by
+  unfold rankOneCharacter
+  rfl
 
 /-- A representation on a module with a coordinate `V ≃ k` acts through its rank-one
 character. -/
@@ -69,37 +92,32 @@ theorem rankOneCharacter_smul (rho : Representation k G V) (e : V ≃ₗ[k] k)
   have hv : v = e v • e.symm 1 := by
     apply e.injective
     simp
-  rw [hv, map_smul, rankOneCharacter]
+  rw [hv, map_smul, rankOneCharacter_apply]
   apply e.injective
   simp [mul_comm]
+
+end Monoid
+
+section Group
+
+variable [Group G]
+
+/-- The rank-one character of a group representation takes unit values. -/
+theorem isUnit_rankOneCharacter (rho : Representation k G V) (e : V ≃ₗ[k] k) (g : G) :
+    IsUnit (rankOneCharacter rho e g) :=
+  (Group.isUnit g).map (rankOneCharacter rho e)
 
 /-- The rank-one character of a representation is nonzero. -/
 theorem rankOneCharacter_ne_zero [Nontrivial k]
     (rho : Representation k G V) (e : V ≃ₗ[k] k)
     (g : G) :
-    rankOneCharacter rho e g ≠ 0 := by
-  intro h
-  have hz : rho g (e.symm 1) = 0 := by
-    rw [rankOneCharacter_smul rho e, h, zero_smul]
-  have hgen : e.symm 1 ≠ 0 := by
-    intro hgen
-    have h : (1 : k) = 0 := by
-      calc
-        (1 : k) = e (e.symm 1) := (e.apply_symm_apply 1).symm
-        _ = e 0 := congrArg e hgen
-        _ = 0 := map_zero e
-    exact one_ne_zero h
-  exact hgen ((rho.apply_bijective g).1 (hz.trans (map_zero _).symm))
+    rankOneCharacter rho e g ≠ 0 :=
+  (isUnit_rankOneCharacter rho e g).ne_zero
 
-end CommSemiring
+variable {H : Type*} [AddCommMonoid H] [Module k H]
 
-section Field
-
-variable [Field k] [Group G]
-  {V : Type w} [AddCommGroup V] [Module k V]
-  {P : Type x} [AddCommGroup P] [Module k P]
-  {H : Type*} [AddCommGroup H] [Module k H]
-
+-- Adapted from the Tau Ceti lookahead branch
+-- `lookahead/ClassFieldTheory/kummer-equiv-mixed-equivariant` (split 1).
 /-- **Removal of a rank-one twist.** If `Psi : P ≃ H` satisfies
 `chi(g) · g(Psi x) = Psi(gx)` for the character of the rank-one representation `rho`, then
 `H` is equivariantly isomorphic to `rho⁺ ⊗ P`. -/
@@ -107,46 +125,53 @@ def rankOneTwistEquiv (rho : Representation k G V) (sigma : Representation k G P
     (tau : Representation k G H) (e : V ≃ₗ[k] k) (Psi : P ≃ₗ[k] H)
     (hPsi : ∀ (g : G) (x : P),
       rankOneCharacter rho e g • tau g (Psi x) = Psi (sigma g x)) :
-    tau.Equiv (rho.dual.tprod sigma) := by
-  letI : Module.Finite k V := Module.Finite.equiv e.symm
-  letI : Module.Projective k V := Module.Projective.of_equiv' e.symm
-  let homEquiv : tau.Equiv (Representation.linHom rho sigma) :=
-    .mk (Psi.symm.trans (rankOneHomEquiv e)) fun g ↦ by
-      ext y v
-      -- Unfold the representation equivalence so the intertwining goal can be evaluated at `v`.
-      change (Psi.symm.trans (rankOneHomEquiv e)) (tau g y) v =
-        (Representation.linHom rho sigma g
-          ((Psi.symm.trans (rankOneHomEquiv e)) y)) v
-      rw [Representation.linHom_apply]
-      simp only [LinearMap.comp_apply]
-      rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-        rankOneHomEquiv_apply_apply, rankOneHomEquiv_apply_apply]
-      let c := rankOneCharacter rho e g
-      have hc : c ≠ 0 := rankOneCharacter_ne_zero rho e g
-      let x := Psi.symm y
-      have hy : y = Psi x := by simp [x]
-      have hinv : v = c • rho g⁻¹ v := by
-        calc
-          v = rho 1 v := by simp
-          _ = rho (g * g⁻¹) v := by simp
-          _ = rho g (rho g⁻¹ v) := by rw [map_mul]; rfl
-          _ = c • rho g⁻¹ v := rankOneCharacter_smul rho e g _
-      apply ((isUnit_iff_ne_zero.mpr hc).smul_left_cancel).mp
-      rw [hy]
-      have htwist : c • Psi.symm (tau g (Psi x)) = sigma g x := by
-        rw [← map_smul, hPsi, Psi.symm_apply_apply]
-      have heinv : e v = c * e (rho g⁻¹ v) := by
-        simpa using congrArg e hinv
-      rw [map_smul, Psi.symm_apply_apply]
-      calc
-        c • (e v • Psi.symm (tau g (Psi x))) =
-            e v • (c • Psi.symm (tau g (Psi x))) := by
-              simp [smul_smul, mul_comm]
-        _ = e v • sigma g x := by rw [htwist]
-        _ = c • (e (rho g⁻¹ v) • sigma g x) := by
-          rw [heinv, smul_smul]
-  exact homEquiv.trans (Representation.Equiv.dualTensorHomOfProjective rho sigma).symm
+    tau.Equiv (rho.dual.tprod sigma) :=
+  haveI : Module.Finite k V := Module.Finite.equiv e.symm
+  haveI : Module.Projective k V := Module.Projective.of_equiv' e.symm
+  (Representation.Equiv.mk (Psi.symm.trans (rankOneHomEquiv e)) fun g ↦ by
+    ext y v
+    have htwist : rankOneCharacter rho e g • Psi.symm (tau g y) = sigma g (Psi.symm y) := by
+      rw [← map_smul, ← Psi.symm_apply_apply (sigma g _), ← hPsi, Psi.apply_symm_apply]
+    have hinv : e (rho g⁻¹ v) = rankOneCharacter rho e g⁻¹ * e v := by
+      rw [rankOneCharacter_smul rho e g⁻¹ v, map_smul, smul_eq_mul]
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
+      Representation.linHom_apply, rankOneHomEquiv_apply_apply, hinv, map_smul, ← htwist,
+      smul_smul]
+    rw [mul_right_comm, ← map_mul, inv_mul_cancel, map_one, one_mul]).trans
+    (Representation.Equiv.dualTensorHomOfProjective rho sigma).symm
 
-end Field
+/-- After contraction, the twist-removal equivalence sends `y` to the coordinate map of
+`Psi⁻¹ y`. -/
+@[simp]
+theorem dualTensorHom_rankOneTwistEquiv (rho : Representation k G V)
+    (sigma : Representation k G P) (tau : Representation k G H) (e : V ≃ₗ[k] k)
+    (Psi : P ≃ₗ[k] H)
+    (hPsi : ∀ (g : G) (x : P),
+      rankOneCharacter rho e g • tau g (Psi x) = Psi (sigma g x)) (y : H) :
+    dualTensorHom k V P (rankOneTwistEquiv rho sigma tau e Psi hPsi y) =
+      rankOneHomEquiv e (Psi.symm y) := by
+  have : Module.Finite k V := Module.Finite.equiv e.symm
+  have : Module.Projective k V := Module.Projective.of_equiv' e.symm
+  rw [← Representation.Equiv.dualTensorHomOfProjective_apply rho sigma, rankOneTwistEquiv,
+    Representation.Equiv.trans_apply, Representation.Equiv.apply_symm_apply,
+    Representation.Equiv.mk_apply, LinearEquiv.trans_apply]
+
+/-- The inverse of the twist-removal equivalence evaluates the contracted tensor on the vector
+with coordinate `1` and applies `Psi`. -/
+@[simp]
+theorem rankOneTwistEquiv_symm_apply (rho : Representation k G V)
+    (sigma : Representation k G P) (tau : Representation k G H) (e : V ≃ₗ[k] k)
+    (Psi : P ≃ₗ[k] H)
+    (hPsi : ∀ (g : G) (x : P),
+      rankOneCharacter rho e g • tau g (Psi x) = Psi (sigma g x))
+    (t : Module.Dual k V ⊗[k] P) :
+    (rankOneTwistEquiv rho sigma tau e Psi hPsi).symm t =
+      Psi (dualTensorHom k V P t (e.symm 1)) := by
+  obtain ⟨y, rfl⟩ := (rankOneTwistEquiv rho sigma tau e Psi hPsi).surjective t
+  simp
+
+end Group
+
+end CommSemiring
 
 end TauCeti
