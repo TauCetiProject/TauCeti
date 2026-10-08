@@ -8,7 +8,6 @@ module
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Character
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
 public import TauCeti.NumberTheory.Cyclotomic.CyclotomicCharacter
-import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Surjectivity
 import TauCeti.RingTheory.RootsOfUnity.AlgebraicallyClosed
 
 /-!
@@ -54,9 +53,13 @@ involved are trivial.
   `TauCeti.relIndex_range_localCyclotomicCharacter_dvd_finrank`: for a finite separable extension
   `L/K`, the cyclotomic image of `G_L` lies in that of `G_K`, with relative index dividing
   `[L : K]`.
-* `TauCeti.range_localCyclotomicCharacter_le_ratPadic`,
-  `TauCeti.index_range_localCyclotomicCharacter_dvd_finrank`: the comparison with `ℚ_p`; the
-  cyclotomic image of a finite extension `K` of `ℚ_p` has index dividing `[K : ℚ_p]` in `ℤ_pˣ`.
+* `TauCeti.range_localCyclotomicCharacter_le_ratPadic`: the comparison with `ℚ_p`; the
+  cyclotomic image of a finite extension `K` of `ℚ_p` has relative index dividing `[K : ℚ_p]`
+  in the image of `G_{ℚ_p}`.
+
+## References
+
+* J.-P. Serre, *Local Fields*, Chapter IV, §4.
 -/
 
 public section
@@ -141,11 +144,5 @@ theorem range_localCyclotomicCharacter_le_ratPadic :
         Module.finrank ℚ_[p] K :=
   ⟨range_localCyclotomicCharacter_le_range p ℚ_[p] K,
     relIndex_range_localCyclotomicCharacter_dvd_finrank p ℚ_[p] K⟩
-
-/-- **The cyclotomic image of a finite extension `K` of `ℚ_p` has index dividing `[K : ℚ_p]` in
-`ℤ_pˣ`.** -/
-theorem index_range_localCyclotomicCharacter_dvd_finrank :
-    (localCyclotomicCharacter p K).range.index ∣ Module.finrank ℚ_[p] K := by
-  simpa using relIndex_range_localCyclotomicCharacter_dvd_finrank p ℚ_[p] K
 
 end TauCeti

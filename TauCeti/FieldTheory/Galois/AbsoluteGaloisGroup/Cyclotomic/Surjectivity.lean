@@ -143,18 +143,11 @@ theorem range_localCyclotomicCharacter_ratPadic : (localCyclotomicCharacter p �
 automorphism of the `p^n`-th roots of unity, `ζ ↦ ζ^a` with `a` prime to `p`, is induced by an
 element of `G_{ℚ_p}`. -/
 theorem surjective_toZModPow_localCyclotomicCharacter_ratPadic (n : ℕ) :
-    Function.Surjective fun σ : Field.absoluteGaloisGroup ℚ_[p] ↦
-      Units.map (PadicInt.toZModPow n : ℤ_[p] →+* ZMod (p ^ n)).toMonoidHom
-        (localCyclotomicCharacter p ℚ_[p] σ) := by
-  refine Function.Surjective.comp ?_ (surjective_localCyclotomicCharacter_ratPadic p)
-  rcases n with _ | n
-  · have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
-    exact fun _ ↦ ⟨1, Units.ext (Subsingleton.elim _ _)⟩
-  · have : Fact (1 < p ^ (n + 1)) :=
-      ⟨Nat.one_lt_pow n.succ_ne_zero (Fact.out : p.Prime).one_lt⟩
-    have hsurj : Function.Surjective (PadicInt.toZModPow (p := p) (n + 1)) :=
-      fun x ↦ ⟨x.val, by simp⟩
-    exact IsLocalRing.surjective_units_map_of_local_ringHom _ hsurj (.of_surjective _ hsurj)
+    Function.Surjective (PadicInt.unitsToZModPow n ∘ localCyclotomicCharacter p ℚ_[p]) := by
+  intro u
+  obtain ⟨σ, hσ⟩ := ((PadicInt.surjective_units_map_toZModPow n).comp
+    (surjective_localCyclotomicCharacter_ratPadic p)) u
+  exact ⟨σ, Units.ext (by simpa using congrArg Units.val hσ)⟩
 
 end RatPadic
 
