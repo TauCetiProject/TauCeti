@@ -38,8 +38,8 @@ In the basis of fundamental weights `ωᵢ`, dual to its simple coroots, the wei
 is exactly the dual basis vector `ωₗ` at the terminal short node, the abstract last fundamental
 weight of the basis. These are the hypotheses of the Lie-basis characterization
 `LieAlgebra.Basis.isHighestWeightVector_iff_forall_e` of highest-weight vectors, which applies
-once the Killing form of the split type-`B` Lie algebra is known to be nondegenerate; that
-nondegeneracy is not proved here.
+over a field of characteristic zero once the Killing form of the split type-`B` Lie algebra is
+known to be nondegenerate; that nondegeneracy is not proved here.
 
 The annihilation is read off the two ways a simple-root generator acts on the exterior basis. The
 terminal short generator creates the last coordinate (after the grade involution, and scaled by
@@ -82,6 +82,8 @@ enveloping-algebra weight-vector statement is over `ℚ`, where
 * C. Chevalley, *The Algebraic Theory of Spinors*, Chapter II.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Section 20.2.
 * N. Bourbaki, *Groupes et algèbres de Lie*, Chapters 4--6, Planche II.
+* The comparison with the fundamental weights follows the type-`D` one in
+  `TauCeti/RepresentationTheory/Spin/Polarization/TypeD/HighestWeight.lean`.
 -/
 
 public section
@@ -221,19 +223,11 @@ theorem typeBWeightEquiv_spinWeight_apply_simpleCorootGenerator
   simp only [typeBWeightEquiv_apply, typeBSimpleCorootGenerator_eq_diagonal,
     coe_typeBDiagonalEquiv_apply, typeBDiagonalMatrix_apply, typeBDiagonalValue_inr_inl,
     ↓reduceIte]
+  rw [typeBSpinCorootWeight_eq_typeBSpinWeight, ← eq_intCast (algebraMap ℤ K),
+    DynkinType.algebraMap_typeBSpinWeight_apply]
   refine Fin.lastCases ?_ (fun j ↦ ?_) i
-  · rw [typeBSimpleCorootCoordinate_last, typeBSpinCorootWeight_last]
-    simp only [Pi.smul_apply, Pi.single_apply, smul_ite, smul_zero, mul_ite, mul_zero,
-      Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, two_smul, mul_add, mul_one]
-    by_cases h : Fin.last n ∈ s
-    · simp [h, invOf_two_add_invOf_two]
-    · simp [h, ← neg_add, invOf_two_add_invOf_two]
-  · have hne : j.castSucc ≠ j.succ := Fin.castSucc_lt_succ.ne
-    rw [typeBSimpleCorootCoordinate_castSucc, typeBSpinCorootWeight_castSucc]
-    simp only [Pi.sub_apply, Pi.single_apply, mul_sub, mul_ite, mul_one, mul_zero,
-      Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
-    by_cases h₁ : j.castSucc ∈ s <;> by_cases h₂ : j.succ ∈ s <;>
-      simp [h₁, h₂, sub_eq_add_neg, ← neg_add, invOf_two_add_invOf_two]
+  · simp [Pi.single_apply, mul_two]
+  · simp [Fin.orderSucc_castSucc, Pi.single_apply, mul_sub, Finset.sum_sub_distrib]
 
 end CommRing
 

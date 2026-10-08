@@ -24,8 +24,9 @@ This package makes the concrete matrix realization available to the generic Lie-
 numbered generators lie in the simple-root spaces (`TauCeti.lieBasis_e_mem_rootSpace` and
 `TauCeti.lieBasis_f_mem_rootSpace`), in characteristic zero the Cartan action is triangularizable
 (`LieAlgebra.Basis.isTriangularizable`), and the basis dual to the simple coroots
-`LieAlgebra.Basis.cartanBasis` is the basis of fundamental weights. Once the Killing form is known
-to be nondegenerate, the generic results also describe the compatible Borel subalgebra
+`LieAlgebra.Basis.cartanBasis` is the basis of fundamental weights. Over a field of characteristic
+zero, once the Killing form is known to be nondegenerate, the generic results also describe the
+compatible Borel subalgebra
 (`LieAlgebra.Basis.borelSubalgebra_eq_sup_lieSpan_e`) and reduce highest-weight vectors to
 annihilation by the raising generators (`LieAlgebra.Basis.isHighestWeightVector_iff_forall_e`).
 
@@ -40,6 +41,8 @@ annihilation by the raising generators (`LieAlgebra.Basis.isHighestWeightVector_
 
 * N. Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4--6, Plate II.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §§12--14.
+* The construction follows the split type-`D` Lie algebra basis `TauCeti.TypeDStd.lieBasis` in
+  `TauCeti/Algebra/Lie/Orthogonal/TypeD/Basis.lean`.
 -/
 
 public section
