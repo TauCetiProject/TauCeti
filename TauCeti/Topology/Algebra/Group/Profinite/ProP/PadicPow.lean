@@ -32,9 +32,6 @@ For an abelian pro-`p` group this action makes the group a `ℤ_[p]`-module,
 `TauCeti.IsProP.module`, which is the form in which the structure theory of finitely generated
 abelian pro-`p` groups is stated.
 
-`TauCeti.IsProP.powHomeomorph` is adapted from the prime-to-`p` power-map argument in the Tau Ceti
-lookahead branch `lookahead/ProfiniteCohomology/abelianization-pro-p-class-generates`.
-
 ## Main definitions
 
 * `TauCeti.IsProP.padicPow`: the power `a ^ l` of an element of a pro-`p` group by a `p`-adic
@@ -421,6 +418,8 @@ theorem closedZpowers_padicPow (hA : IsProP p A) (a : A) (u : ℤ_[p]ˣ) :
 /-- **Powers prime to `p` are homeomorphisms.** For `n` prime to `p` the natural number `n` is a
 unit of `ℤ_[p]`, and the `n`-th power map of `A` is `TauCeti.IsProP.padicPowHomeomorph` at that
 unit. This is the pro-`p` counterpart of `IsPGroup.powEquiv` for finite `p`-groups. -/
+-- Adapted from the prime-to-`p` power-map argument in the Tau Ceti lookahead branch
+-- `lookahead/ProfiniteCohomology/abelianization-pro-p-class-generates`.
 noncomputable def powHomeomorph (hA : IsProP p A) {n : ℕ} (hn : p.Coprime n) : A ≃ₜ A :=
   hA.padicPowHomeomorph (PadicInt.isUnit_iff.mpr (PadicInt.norm_natCast_eq_one_iff.mpr hn)).unit
 

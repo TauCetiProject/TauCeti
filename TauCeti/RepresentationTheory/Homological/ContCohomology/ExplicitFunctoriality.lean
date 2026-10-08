@@ -47,10 +47,6 @@ restriction, inflation and coefficient maps. The comparison with the canonical m
 The formulas follow Mathlib's `groupCohomology.cochainsMap₁`, `cochainsMap₂`, `mapCocycles₁`, and
 `mapCocycles₂`, with universe-polymorphic unbundled continuous coefficients. The coefficient maps
 and their equivalences apply to monoid actions; restriction to subgroups requires a group.
-
-The multiplication lemmas `explicitCoeff1_eq_nsmul`, `nsmul_right_bijective_H1_of_homeomorph`, and
-`nsmul_right_bijective_H2_of_homeomorph` are adapted from the Tau Ceti lookahead branch
-`lookahead/ProfiniteCohomology/abelianization-pro-p-class-generates`.
 -/
 
 public section
@@ -735,6 +731,8 @@ theorem explicitCoeff1_id :
 
 /-- A coefficient map which is multiplication by `k` on `M` induces multiplication by `k` on
 explicit `H¹`. -/
+-- Adapted from the Tau Ceti lookahead branch
+-- `lookahead/ProfiniteCohomology/abelianization-pro-p-class-generates`.
 theorem explicitCoeff1_eq_nsmul (f : M →+[G] M) (hf : Continuous f) {k : ℕ}
     (hk : ∀ m, f m = k • m) (x : H1 G M) : explicitCoeff1 G M f hf x = k • x := by
   induction x using QuotientAddGroup.induction_on with
@@ -939,6 +937,8 @@ theorem explicitCoeff2_bijective [ContinuousMul G] [DiscreteTopology M] {N : Typ
 
 /-- If multiplication by `k` is a homeomorphism of `M`, then multiplication by `k` is bijective
 on explicit `H¹`. For instance, this applies to `k` prime to `p` on an abelian pro-`p` group. -/
+-- Adapted, with `nsmul_right_bijective_H2_of_homeomorph`, from the Tau Ceti lookahead branch
+-- `lookahead/ProfiniteCohomology/abelianization-pro-p-class-generates`.
 theorem nsmul_right_bijective_H1_of_homeomorph {k : ℕ} (e : M ≃ₜ M) (he : ∀ m, e m = k • m) :
     Function.Bijective fun x : H1 G M ↦ k • x := by
   let f : M ≃+ M := { e.toEquiv with map_add' := fun a b ↦ by simp [he] }

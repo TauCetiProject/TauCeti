@@ -24,9 +24,6 @@ analogue).
 This is the step of NSW (3.6.3) and (3.6.4), (i) ⇒ (iii), that reduces the class module of a
 finite quotient to that of a Sylow `p`-subgroup.
 
-The definitions and injectivity results in this file are adapted from the Tau Ceti lookahead branch
-`lookahead/ProfiniteCohomology/abelianization-pro-p-class-generates`.
-
 ## Main definitions
 
 * `TauCeti.abelianizationProPRes1`, `TauCeti.abelianizationProPRes2`: restriction of
@@ -78,6 +75,8 @@ private theorem abelianizationProPNsmulHomeomorph_apply (hp : p.Prime) (V : Subg
 
 /-- Restriction `H¹(G ⧸ V, V^ab(p)) → H¹(S, V^ab(p))` of the first cohomology of the class module
 to a subgroup `S` of `G ⧸ V`. -/
+-- Adapted, with `abelianizationProPRes2`, from the Tau Ceti lookahead branch
+-- `lookahead/ProfiniteCohomology/abelianization-pro-p-class-generates`.
 noncomputable abbrev abelianizationProPRes1 (p : ℕ) (V : Subgroup G) [V.Normal]
     (S : Subgroup (G ⧸ V)) :
     H1 (G ⧸ V) (Additive (abelianizationProP p G V)) →+
@@ -94,6 +93,8 @@ noncomputable abbrev abelianizationProPRes2 (p : ℕ) (V : Subgroup G) [V.Normal
 
 /-- **Restriction to a subgroup of index prime to `p` is injective on `H¹(G ⧸ V, V^ab(p))`**, for
 an open normal subgroup `V` of a compact group `G`. -/
+-- Adapted, with `abelianizationProPRes2_injective`, from the Tau Ceti lookahead branch
+-- `lookahead/ProfiniteCohomology/abelianization-pro-p-class-generates`.
 theorem abelianizationProPRes1_injective (hp : p.Prime) (V : Subgroup G) [V.Normal]
     (hV : IsOpen (V : Set G)) (S : Subgroup (G ⧸ V)) (hS : ¬p ∣ S.index) :
     Function.Injective (abelianizationProPRes1 p V S) := by
