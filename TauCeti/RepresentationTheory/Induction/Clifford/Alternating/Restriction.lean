@@ -30,8 +30,6 @@ of `S₄` lying over either constituent.
 
 * I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 6.
 * J.-P. Serre, *Linear Representations of Finite Groups*, §7.2.
-* Mathlib's `Rep.indResHomEquiv`, through `TauCeti.finrank_hom_indFDRep`, supplies
-  Frobenius reciprocity; `FDRep.nonempty_iso_of_character_eq` supplies character detection.
 -/
 
 public section
@@ -42,9 +40,9 @@ namespace MonoidHom
 
 open TauCeti
 
-universe u
+universe u v
 
-variable {k α : Type u} [Field k] [DecidableEq α] [Fintype α] [Nontrivial α]
+variable {k : Type u} {α : Type v} [Field k] [DecidableEq α] [Fintype α] [Nontrivial α]
 
 /-- On the alternating subgroup, induction of a linear character has character `χ + χ⁻¹`.
 This division-free formula holds over every field. -/
@@ -71,6 +69,7 @@ theorem character_indFDRep_ofLinearCharacter_alternatingGroup
 
 /-- Inducing inverse linear characters of the alternating group gives the same character
 on the entire symmetric group. -/
+@[simp]
 theorem character_indFDRep_ofLinearCharacter_alternatingGroup_inv
     (χ : alternatingGroup α →* kˣ) :
     (indFDRep (FDRep.ofLinearCharacter χ⁻¹)).character =
@@ -128,11 +127,12 @@ theorem liesOver_alternatingGroup_iff_nonempty_iso_indFDRep
     simple_indFDRep_ofLinearCharacter_alternatingGroup hχ
   constructor
   · intro h
+    -- `finrank_hom_indFDRep` transports Mathlib's `Rep.indResHomEquiv`.
     have hpos : 0 < Module.finrank k (indFDRep (ofLinearCharacter χ) ⟶ W) := by
       rw [finrank_hom_indFDRep]
       exact Module.finrank_pos_iff_exists_ne_zero.mpr (liesOver_iff.mp h)
-    by_contra hiso
-    exact hpos.ne' (finrank_hom_simple_simple_eq_zero_of_not_iso k fun e => hiso ⟨e⟩)
+    apply (finrank_hom_simple_simple_eq_one_iff k _ _).mp
+    exact Nat.le_antisymm (finrank_hom_simple_simple_le_one k _ _) hpos
   · rintro ⟨e⟩
     obtain ⟨r⟩ := χ.nonempty_iso_res_indFDRep_ofLinearCharacter_alternatingGroup
     have h : (indFDRep (ofLinearCharacter χ)).LiesOver
