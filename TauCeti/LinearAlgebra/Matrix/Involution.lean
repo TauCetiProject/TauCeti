@@ -21,22 +21,23 @@ is either symmetric or skew-symmetric. Composing `φ` with the transpose gives a
 automorphism, which is inner by the Skolem–Noether theorem for matrix algebras; involutivity then
 forces `Cᵀ = ±C`.
 
-The two cases are told apart by the dimension of the skew elements: when `C` is symmetric (an
-orthogonal involution), the matrices on which `φ` acts as `-1`, Mathlib's
+When `2 ≠ 0`, the two cases are told apart by the dimension of the skew elements: when `C` is
+symmetric (an orthogonal involution), the matrices on which `φ` acts as `-1`, Mathlib's
 `skewAdjointMatricesSubmodule C`, form a space of dimension at most `n(n - 1) / 2`. When `C` is
-skew-symmetric (a symplectic involution) and `2 ≠ 0`, a symplectic basis of the alternating form
-of `C` conjugates `φ` into the standard symplectic adjoint `X ↦ J⁻¹ Xᵀ J = -(J Xᵀ J)`, whose
+skew-symmetric (a symplectic involution), a symplectic basis of the alternating form of `C`
+conjugates `φ` into the standard symplectic adjoint `X ↦ J⁻¹ Xᵀ J = -(J Xᵀ J)`, whose
 unitary group is Mathlib's `Matrix.symplecticGroup`.
 
 ## Main results
 
 * `Matrix.exists_forall_eq_inv_mul_transpose_mul`: an involutive anti-automorphism of `Mₙ(K)` is
   `X ↦ C⁻¹ Xᵀ C` with `Cᵀ = C` or `Cᵀ = -C`.
-* `Matrix.finrank_skewAdjointMatricesSubmodule_le_choose_two`: for invertible symmetric `C`, the
-  matrices on which `X ↦ C⁻¹ Xᵀ C` is `-1` form a space of dimension at most `n.choose 2`.
-* `Matrix.exists_algEquiv_inv_mul_transpose_mul_eq_neg_J_mul_transpose_mul_J`: for skew-symmetric
-  `C`, an algebra isomorphism `Mₙ(K) ≃ M_{2m}(K)` carries `X ↦ C⁻¹ Xᵀ C` to
-  `X ↦ -(J Xᵀ J)`.
+* `Matrix.finrank_skewAdjointMatricesSubmodule_le_choose_two`: for invertible symmetric `C` and
+  `2 ≠ 0`, the matrices on which `X ↦ C⁻¹ Xᵀ C` is `-1` form a space of dimension at most
+  `n.choose 2`.
+* `Matrix.exists_algEquiv_inv_mul_transpose_mul_eq_neg_J_mul_transpose_mul_J`: for invertible
+  skew-symmetric `C` and `2 ≠ 0`, an algebra isomorphism `Mₙ(K) ≃ M_{2m}(K)` carries
+  `X ↦ C⁻¹ Xᵀ C` to `X ↦ -(J Xᵀ J)`.
 
 ## References
 

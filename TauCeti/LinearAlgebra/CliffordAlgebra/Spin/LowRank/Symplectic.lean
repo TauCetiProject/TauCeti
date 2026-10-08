@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.SymplecticGroup
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Five
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Symplectic
 import Mathlib.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
 import TauCeti.LinearAlgebra.Matrix.Involution
-import TauCeti.LinearAlgebra.SymplecticGroup
 
 /-!
 # Spin in dimension five as a symplectic group
@@ -19,9 +18,9 @@ For a nondegenerate quadratic form `Q` on a five-dimensional space over a field 
 not two, the even Clifford algebra `C₀` is central simple of degree four
 (`TauCeti.CliffordAlgebra.deg_even_of_finrank_eq_five`), and `Spin(Q)` is its group `U(C₀, σ)` of
 reverse-unitary elements (`CliffordAlgebra.range_spinGroup_toUnits_eq_evenUnitaryGroup`). The
-canonical involution `σ = reverse` is **symplectic**. When `C₀` splits, `C₀ ≃ M₄(K)`, this file
-shows that the isomorphism can be chosen to carry `σ` to the standard symplectic adjoint
-`X ↦ J⁻¹ Xᵀ J = -(J Xᵀ J)`, and hence that `Spin(Q) ≅ Sp₄(K)`.
+canonical involution is `σ = reverse`. When `C₀` splits, `C₀ ≃ M₄(K)`, this file shows that `σ`
+is **symplectic**: the isomorphism can be chosen to carry `σ` to the standard symplectic adjoint
+`X ↦ J⁻¹ Xᵀ J = -(J Xᵀ J)`, and hence `Spin(Q) ≅ Sp₄(K)`. The nonsplit case is not treated here.
 
 The argument transports `σ` to an involutive anti-automorphism of `M₄(K)`, which is the adjoint
 involution `X ↦ C⁻¹ Xᵀ C` of an invertible `C` with `Cᵀ = ±C`
@@ -34,11 +33,9 @@ symplectic basis for it conjugates `σ` to the standard symplectic adjoint
 
 ## Main definitions
 
-* `CliffordAlgebra.evenUnitaryGroupEquivSymplecticGroup`: an algebra isomorphism from `C₀` to a
-  matrix algebra carrying `σ` to the symplectic adjoint identifies `U(C₀, σ)` with the symplectic
-  group.
-* `CliffordAlgebra.spinGroupEquivSymplecticGroup`: the resulting identification of `Spin(Q)`, in
-  dimensions one to five.
+* `CliffordAlgebra.spinGroupEquivSymplecticGroup`: an algebra isomorphism from `C₀` to a matrix
+  algebra carrying `σ` to the symplectic adjoint identifies `Spin(Q)` with the symplectic group, in
+  dimensions one to five, via `CliffordAlgebra.evenUnitaryGroupEquivSymplecticGroup`.
 
 ## Main results
 
@@ -58,46 +55,6 @@ public section
 open Matrix Module
 
 namespace CliffordAlgebra
-
-section Transport
-
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] (Q : QuadraticForm R M)
-  {l : Type*} [Fintype l] [DecidableEq l]
-
-/-- An algebra isomorphism from the even Clifford algebra to a matrix algebra of even size which
-carries reversal to the symplectic adjoint `X ↦ -(J Xᵀ J)` identifies the even unitary carrier
-`U(C₀, σ)` with the symplectic group. -/
-noncomputable def evenUnitaryGroupEquivSymplecticGroup
-    (e : even Q ≃ₐ[R] Matrix (l ⊕ l) (l ⊕ l) R)
-    (he : ∀ x, e (reverseEven Q x) = -(J l R * (e x)ᵀ * J l R)) :
-    evenUnitaryGroup Q ≃* symplecticGroup l R :=
-  evenUnitaryGroupEquivOfAlgEquiv Q e (· ∈ symplecticGroup l R) (symplecticGroup l R).subtype
-    Subtype.val_injective (fun a ha => ⟨a, ha⟩) (fun _ _ => rfl) (fun g => g.2) fun x => by
-      rw [SymplecticGroup.mem_iff_neg_J_mul_transpose_mul_J_mul_eq_one, ← Matrix.neg_mul, ← he,
-        ← map_mul, ← map_one e, e.injective.eq_iff]
-
-/-- The symplectic transport applies the algebra isomorphism to the even Clifford value. -/
-@[simp]
-theorem coe_evenUnitaryGroupEquivSymplecticGroup_apply
-    (e : even Q ≃ₐ[R] Matrix (l ⊕ l) (l ⊕ l) R)
-    (he : ∀ x, e (reverseEven Q x) = -(J l R * (e x)ᵀ * J l R)) (x : evenUnitaryGroup Q) :
-    (evenUnitaryGroupEquivSymplecticGroup Q e he x : Matrix (l ⊕ l) (l ⊕ l) R) =
-      e (evenUnitaryGroupEvenPart Q x) := by
-  rw [evenUnitaryGroupEquivSymplecticGroup]
-  exact coe_evenUnitaryGroupEquivOfAlgEquiv_apply Q e _ (symplecticGroup l R).subtype _ _ _ _ _ x
-
-/-- The inverse symplectic transport applies the inverse algebra isomorphism. -/
-@[simp]
-theorem evenUnitaryGroupEvenPart_evenUnitaryGroupEquivSymplecticGroup_symm_apply
-    (e : even Q ≃ₐ[R] Matrix (l ⊕ l) (l ⊕ l) R)
-    (he : ∀ x, e (reverseEven Q x) = -(J l R * (e x)ᵀ * J l R)) (g : symplecticGroup l R) :
-    evenUnitaryGroupEvenPart Q ((evenUnitaryGroupEquivSymplecticGroup Q e he).symm g) =
-      e.symm g := by
-  rw [evenUnitaryGroupEquivSymplecticGroup]
-  exact evenUnitaryGroupEquivOfAlgEquiv_symm_apply_evenPart Q e _ (symplecticGroup l R).subtype
-    _ _ _ _ _ g
-
-end Transport
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [Invertible (2 : K)]
   {l : Type*} [Fintype l] [DecidableEq l]
