@@ -120,7 +120,7 @@ theorem exists_rootMultiplicity_lazardEval_eq_sum (hB : F.IsIrreducibleBasis B)
     Polynomial.roots_prod _ B hp]
   simp [Polynomial.roots_pow, Multiset.count_bind, Polynomial.count_roots]
 
-/-- The common real or algebraic roots of the nonzero inputs' Lazard evaluations are
+/-- The union of the roots in `R` of the nonzero inputs' Lazard evaluations is
 exactly the roots of the basis evaluations. Thus a complete basis stack also covers the
 input family, and every basis section is used by an input. -/
 theorem exists_isRoot_lazardEval_iff (hB : F.IsIrreducibleBasis B) (a : Fin n → R) (t : R) :
