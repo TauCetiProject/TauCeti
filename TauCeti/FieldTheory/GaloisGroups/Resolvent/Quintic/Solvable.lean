@@ -8,9 +8,7 @@ module
 public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Quintic.Basic
 public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Root
 
-import TauCeti.FieldTheory.GaloisGroups.Degree
-import TauCeti.FieldTheory.GaloisGroups.Orbits
-import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Solvable
+import TauCeti.FieldTheory.GaloisGroups.Label
 
 /-!
 # Solvability of a quintic from its resolvent sextic
@@ -32,9 +30,6 @@ the exact-stabilizer criterion used here.
 
 ## Main results
 
-* `TauCeti.isSolvable_gal_iff_exists_le_map_conj_referenceSubgroup_five_two`: the Galois group of
-  an irreducible quintic is solvable exactly when its permutation image lies in a conjugate of
-  `F₂₀`.
 * `TauCeti.exists_isRoot_specialize_quinticF20Spec_of_isSolvable`: a solvable Galois group gives
   the `F₂₀` resolvent a root in the base field, with no hypothesis on the resolvent.
 * `TauCeti.isSolvable_gal_iff_exists_isRoot_specialize_quinticF20Spec`: the Galois group of an
@@ -57,31 +52,6 @@ namespace TauCeti
 universe u
 
 variable {F : Type u} [Field F] {f : F[X]}
-
-/-- **The group-side quintic criterion.** The Galois group of an irreducible quintic is solvable
-exactly when its permutation image, read on `Fin 5` through any numbering `e` of the roots, lies
-in a conjugate of the Frobenius group `F₂₀`, the reference subgroup of `5T3`. No resolvent and no
-separability of a resolvent is involved. -/
-theorem isSolvable_gal_iff_exists_le_map_conj_referenceSubgroup_five_two
-    [Fact ((f.map (algebraMap F f.SplittingField)).Splits)] (hirr : Irreducible f)
-    (e : f.rootSet f.SplittingField ≃ Fin 5) :
-    Group.IsSolvable f.Gal ↔
-      ∃ τ : Equiv.Perm (Fin 5),
-        (Gal.galActionHom f f.SplittingField).range.map e.permCongrHom.toMonoidHom ≤
-          (referenceSubgroup 5 ⟨2, by simp⟩).map (MulAut.conj τ).toMonoidHom := by
-  let G : Subgroup (Equiv.Perm (Fin 5)) :=
-    (Gal.galActionHom f f.SplittingField).range.map e.permCongrHom.toMonoidHom
-  have htrans : IsPretransitive G (Fin 5) := by
-    dsimp only [G]
-    rw [Equiv.isPretransitive_map_permCongrHom_iff]
-    exact isPretransitive_range_galActionHom f.SplittingField hirr
-  let _ : IsPretransitive G (Fin 5) := htrans
-  have hgal : Group.IsSolvable f.Gal ↔ Group.IsSolvable G :=
-    MulEquiv.isSolvable_congr <|
-      (MonoidHom.ofInjective (Gal.galActionHom_injective f f.SplittingField)).trans
-        (e.permCongrHom.subgroupMap _)
-  rw [hgal]
-  exact isSolvable_iff_exists_le_map_conj_referenceSubgroup_five_two G
 
 /-- **A solvable quintic Galois group gives the resolvent a root.** Let `f` be a monic irreducible
 separable quintic over a field. If the polynomial Galois group is solvable, then the
