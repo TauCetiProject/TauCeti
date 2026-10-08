@@ -113,7 +113,7 @@ theorem reductionK0_def (ρ : Representation ℤ G W) :
 
 /-- Equivalent scalar extensions have equal reduction classes. -/
 theorem reductionK0_congr_baseChange {W' : Type u} [AddCommGroup W'] [Module ℤ W']
-    [Module.Finite ℤ W'] {ρ : Representation ℤ G W} {σ : Representation ℤ G W'}
+    [Module.Finite k (k ⊗[ℤ] W')] {ρ : Representation ℤ G W} {σ : Representation ℤ G W'}
     (e : (Representation.baseChange k ρ).Equiv (Representation.baseChange k σ)) :
     reductionK0 k ρ = reductionK0 k σ := by
   rw [reductionK0_def, reductionK0_def]
