@@ -120,11 +120,7 @@ theorem isScalarTower_centralSubalgebraAlgebra :
 
 section FiniteOverCenter
 
-/-- The local algebra structure on the ambient algebra for the finiteness transfer. -/
-local instance finiteOverCenterAlgebra : Algebra S A := centralSubalgebraAlgebra S
-/-- The local algebra structure on the center for the finiteness transfer. -/
-local instance finiteOverCenterCenterAlgebra : Algebra S (center R A) :=
-  S.val.toRingHom.toAlgebra
+attribute [local instance] centralSubalgebraAlgebra
 
 /-- Finiteness over a central subalgebra implies finiteness over the whole center. -/
 theorem finite_over_center_of_finite [Module.Finite S A] :
@@ -142,11 +138,7 @@ section FiniteOverCentralSubalgebra
 variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
   (S : Subalgebra R (center R A))
 
-/-- The local algebra structure on the ambient algebra for the Noetherian transfer. -/
-local instance finiteOverCentralSubalgebraAlgebra : Algebra S A := centralSubalgebraAlgebra S
-/-- The local algebra structure on the center for the Noetherian transfer. -/
-local instance finiteOverCentralSubalgebraCenterAlgebra : Algebra S (center R A) :=
-  S.val.toRingHom.toAlgebra
+attribute [local instance] centralSubalgebraAlgebra
 
 /-- The center, regarded as a submodule over a central subalgebra. -/
 private def centerSubmodule : Submodule S A where
@@ -196,11 +188,7 @@ section NoetherianCenter
 variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
   (S : Subalgebra R (center R A))
 
-/-- The local algebra structure on the ambient algebra for the Noetherian-center theorem. -/
-local instance noetherianCenterAlgebra : Algebra S A := centralSubalgebraAlgebra S
-/-- The local algebra structure on the center for the Noetherian-center theorem. -/
-local instance noetherianCenterCenterAlgebra : Algebra S (center R A) :=
-  S.val.toRingHom.toAlgebra
+attribute [local instance] centralSubalgebraAlgebra
 
 /-- A finite algebra over a Noetherian central subalgebra has Noetherian center. -/
 theorem isNoetherianRing_center_of_finite [IsNoetherianRing S] [Module.Finite S A] :

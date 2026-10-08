@@ -58,7 +58,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits Convexity SimplexCategory
+open CategoryTheory Limits SimplexCategory
 
 open scoped Simplicial
 
@@ -138,7 +138,7 @@ def vertexTransport (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
   pathTransport σ (toTopInitialVertex m.unop) (toTop.map α.unop (toTopInitialVertex n.unop))
 
 /-- Reindexing along an identity does not move the initial vertex, so the transport it induces is
-the canonical identification of the two coefficient modules. -/
+the `eqToHom` between the two (equal) initial vertices. -/
 lemma vertexTransport_id (σ : (TopCat.toSSet.obj X).obj n) :
     vertexTransport (𝟙 n) σ = eqToHom (by simp) := by
   have hz : toTopInitialVertex n.unop =
@@ -341,11 +341,15 @@ def twistedChainComplexCoefficientIso (e : L ≅ K) :
     twistedChainComplex L ≅ twistedChainComplex K :=
   (twistedChainsFunctor R X ⋙ AlgebraicTopology.alternatingFaceMapComplex _).mapIso e
 
+/-- The forward map of the induced isomorphism of twisted chain complexes is the map induced by
+`e.hom`. -/
 @[simp]
 lemma twistedChainComplexCoefficientIso_hom (e : L ≅ K) :
     (twistedChainComplexCoefficientIso e).hom = twistedChainComplexCoefficientMap e.hom :=
   (rfl)
 
+/-- The inverse of the induced isomorphism of twisted chain complexes is the map induced by
+`e.inv`. -/
 @[simp]
 lemma twistedChainComplexCoefficientIso_inv (e : L ≅ K) :
     (twistedChainComplexCoefficientIso e).inv = twistedChainComplexCoefficientMap e.inv :=
@@ -516,7 +520,7 @@ end Constant
 
 section Map
 
-variable {Y : TopCat.{v}} (f : X ⟶ Y) (L : LocalCoefficientSystem.{u, v, max v w} R Y)
+variable (f : X ⟶ Y) (L : LocalCoefficientSystem.{u, v, max v w} R Y)
 
 -- The degreewise map is kept as a separate definition so that the coefficient modules of the
 -- two sides, which agree only definitionally, stay hidden from the naturality proof below.
@@ -610,7 +614,7 @@ end Map
 
 section MapComp
 
-variable {Y Z : TopCat.{v}} (f : X ⟶ Y) (g : Y ⟶ Z)
+variable {Z : TopCat.{v}} (f : X ⟶ Y) (g : Y ⟶ Z)
 
 /-- The identity map induces on twisted chains the map coming from the identification of a
 coefficient system with its pullback along the identity. -/
@@ -676,7 +680,7 @@ end MapComp
 
 section MapCoefficient
 
-variable {Y : TopCat.{v}} (f : X ⟶ Y) {L K : LocalCoefficientSystem.{u, v, max v w} R Y}
+variable (f : X ⟶ Y) {L K : LocalCoefficientSystem.{u, v, max v w} R Y}
 
 /-- The morphism of twisted chains induced by a continuous map is natural in the coefficient
 system: pushing simplices forward along `f` and then applying a morphism of systems on `Y` is the
@@ -731,7 +735,7 @@ end MapSquare
 
 section ConstantMap
 
-variable {Y : TopCat.{v}} (f : X ⟶ Y) (M : ModuleCat.{max v w} R)
+variable (f : X ⟶ Y) (M : ModuleCat.{max v w} R)
 
 /-- The comparison of twisted chains with ordinary singular chains is natural in the space: a
 continuous map acts on both sides by pushing singular simplices forward, once the pullback of a

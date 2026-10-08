@@ -40,6 +40,9 @@ trivial coefficient object for that subgroup.
   `ZMod 2`-module structure `TauCeti.cohomF2.instModule`.
 * `TauCeti.trivialF2ResMap`: restriction on continuous cohomology with trivial `𝔽₂`
   coefficients.
+* `TauCeti.trivialF2CoeffHom`: the identification of the trivial `𝔽₂` coefficients of two
+  monoids, with `TauCeti.trivialF2CoeffHom_smul` its equivariance along a monoid
+  homomorphism.
 * `TauCeti.trivialF2Map`: pullback along any continuous group homomorphism with trivial
   `𝔽₂` coefficients, and `TauCeti.trivialF2Iso` for a topological group isomorphism.
 * `TauCeti.trivialF2QuotientEquivFixedPoints`: trivial `𝔽₂` coefficients on a quotient `G ⧸ N`,
@@ -245,6 +248,29 @@ noncomputable instance cohomF2.instModule (n : ℕ) : Module (ZMod 2) (cohomF2 G
   AddCommGroup.zmodModule (cohomF2.two_nsmul_eq_zero G n)
 
 end Group
+
+section CoeffHom
+
+variable {G H : Type u} [Monoid G] [Monoid H]
+
+attribute [local instance] TopRep.distribMulAction
+
+/-- The identification of the trivial `𝔽₂` coefficients of `G` with those of `H`. -/
+noncomputable def trivialF2CoeffHom : (trivialF2 G).V →+ (trivialF2 H).V :=
+  ((trivialF2Equiv G).trans (trivialF2Equiv H).symm).toAddMonoidHom
+
+/-- The coefficient identification sends an element to the one with the same underlying value. -/
+@[simp]
+theorem trivialF2CoeffHom_apply (m : (trivialF2 G).V) :
+    trivialF2CoeffHom m = (trivialF2Equiv H).symm (trivialF2Equiv G m) :=
+  (rfl)
+
+/-- The identification `trivialF2CoeffHom` is equivariant along every monoid homomorphism. -/
+theorem trivialF2CoeffHom_smul (φ : H →* G) (h : H) (m : (trivialF2 G).V) :
+    trivialF2CoeffHom (φ h • m) = h • (trivialF2CoeffHom m : (trivialF2 H).V) := by
+  simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]
+
+end CoeffHom
 
 section Hom
 
