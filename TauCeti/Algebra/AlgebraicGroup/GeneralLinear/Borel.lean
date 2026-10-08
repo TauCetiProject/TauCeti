@@ -38,8 +38,6 @@ subgroup over every field (`TauCeti.GeneralLinear.UpperTriangular.isBorel_defini
 
 public section
 
-open CategoryTheory
-
 namespace TauCeti.GeneralLinear.Borel
 
 universe u
@@ -56,10 +54,9 @@ theorem lowerLeftCoordinate_def :
     lowerLeftCoordinate R =
       GeneralLinear.coordinateHopfAlgebraAlgEquiv R 2
         (GeneralLinear.coordinateRingMap R 2
-          (MvPolynomial.X ((1 : Fin 2), (0 : Fin 2)))) :=
-  by
-    unfold lowerLeftCoordinate
-    rfl
+          (MvPolynomial.X ((1 : Fin 2), (0 : Fin 2)))) := by
+  unfold lowerLeftCoordinate
+  rfl
 
 /-- The weights `(1, 0)` whose weight parabolic is the standard upper-triangular Borel. -/
 abbrev weights : Fin 2 → ℤ :=
@@ -70,16 +67,7 @@ lower-left coordinate. -/
 theorem weightParabolicRelationSet_weights :
     GeneralLinear.weightParabolicRelationSet R weights = {lowerLeftCoordinate R} := by
   ext x
-  rw [GeneralLinear.mem_weightParabolicRelationSet_iff, Set.mem_singleton_iff]
-  constructor
-  · rintro ⟨i, j, hij, rfl⟩
-    fin_cases i <;> fin_cases j
-    · simp [weights] at hij
-    · simp [weights] at hij
-    · exact (lowerLeftCoordinate_def R).symm
-    · simp [weights] at hij
-  · rintro rfl
-    exact ⟨(1 : Fin 2), (0 : Fin 2), by simp [weights], (lowerLeftCoordinate_def R).symm⟩
+  simp [Fin.exists_fin_two, lowerLeftCoordinate_def]
 
 /-- The Hopf ideal `(X₁₀)` cutting out the upper-triangular matrices inside `GL₂`. -/
 noncomputable abbrev definingHopfIdeal :
@@ -88,8 +76,8 @@ noncomputable abbrev definingHopfIdeal :
 
 /-- The underlying ideal of the Borel Hopf ideal is the principal ideal `(X₁₀)`. -/
 theorem definingHopfIdeal_toIdeal :
-    (definingHopfIdeal R).toIdeal = Ideal.span {lowerLeftCoordinate R} :=
-  by rw [definingHopfIdeal, GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal,
+    (definingHopfIdeal R).toIdeal = Ideal.span {lowerLeftCoordinate R} := by
+  rw [definingHopfIdeal, GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal,
     weightParabolicRelationSet_weights]
 
 /-- The coordinate Hopf algebra of the upper-triangular Borel subgroup scheme of `GL₂`. -/

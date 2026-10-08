@@ -125,17 +125,6 @@ instance isClosedImmersion_hopfIdealInclusion
     CommHopfAlgCat.isClosedImmersion_hopfSpec_map_comp_eqToHom_iff (groupScheme_def R n)]
   exact CommHopfAlgCat.mkQuotient_surjective _ I
 
-/-- A subgroup of `GL_n` cut out by a Hopf ideal is locally of finite type over the base. -/
-instance locallyOfFiniteType_hopfIdealQuotientSpec
-    (I : HopfIdeal R (coordinateHopfAlgebra R n)) :
-    LocallyOfFiniteType
-      (CommHopfAlgCat.quotientSpec (coordinateHopfAlgebra R n) I).X.hom :=
-  FiniteTypeCommHopfAlgCat.locallyOfFiniteType_quotientSpec
-    (⟨coordinateHopfAlgebra R n,
-      inferInstanceAs (Algebra.FiniteType R (coordinateHopfAlgebra R n))⟩ :
-      FiniteTypeCommHopfAlgCat R)
-    I
-
 /-- The scheme underlying the general linear group scheme is the spectrum of its bundled
 coordinate Hopf algebra. -/
 lemma groupScheme_X_left :
@@ -439,20 +428,9 @@ theorem schemePointsMulEquiv_mapValue (φ : A →ₐ[R] B)
         ((Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver
             (Spec (CommRingCat.of R)) ≫ p) =
       Matrix.GeneralLinearGroup.map φ.toRingHom (schemePointsMulEquiv n A p) := by
-  let q : WithConv (coordinateHopfAlgebra R n →ₐ[R] A) :=
-    (groupSchemePointMulEquiv n A).symm p
-  have hpre :
-      (groupSchemePointMulEquiv n B).symm
-          ((Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver
-            (Spec (CommRingCat.of R)) ≫ p) =
-        HopfAlgebra.mapPoints (H := coordinateHopfAlgebra R n)
-          (CommAlgCat.ofHom φ) q := by
-    simpa only [q, groupSchemePointMulEquiv] using
-      CommHopfAlgCat.mapMulEquivOfPresentation_mapValue
-        (coordinateHopfAlgebra R n) φ (groupScheme_def R n) p
-  simp only [schemePointsMulEquiv, MulEquiv.trans_apply]
-  rw [hpre, HopfAlgebra.mapPoints_apply, ← AlgHom.mapValue_apply]
-  exact pointsMulEquiv_mapValue n φ q
+  unfold schemePointsMulEquiv groupSchemePointMulEquiv
+  exact CommHopfAlgCat.mapMulEquivOfPresentation_symm_trans_mapValue
+    (coordinateHopfAlgebra R n) φ (groupScheme_def R n) _ _ _ (pointsMulEquiv_mapValue n φ) p
 
 end SchemePoints
 

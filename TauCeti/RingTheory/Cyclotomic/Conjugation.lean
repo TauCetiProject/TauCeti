@@ -39,9 +39,8 @@ Burnside--Dixon--Schneider character-table solver.
 
 ## References
 
-This supplies the exact conjugation needed by Layer 6, “The assembled solver”, of the character
-theory roadmap: the exact checker must verify the Hermitian row-orthogonality relation in
-`Cyclotomic e` before embedding its output into `ℂ`.
+* I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 2, Corollary 2.14 and Lemma 2.15(d),
+  for row orthogonality and complex conjugation of character values.
 -/
 
 public section

@@ -79,6 +79,9 @@ commutative ring is the base change of that curve.
   extensionality behind it: the images of the five indeterminates determine the homomorphism.
 * `WeierstrassCurve.specializeElliptic_map`: the classifying homomorphism is natural in the base
   ring.
+* `WeierstrassCurve.exists_map_eq_of_isElliptic`: an elliptic Weierstrass curve over a commutative
+  ring in `Type u` is the base change of an elliptic Weierstrass curve over a Noetherian integral
+  domain in `Type u`.
 
 ## Implementation notes
 
@@ -178,7 +181,13 @@ and `specializeElliptic` extends `specialize`. `EllipticRing.ringHom_ext` is new
 `specializeElliptic_map` takes the ellipticity of `W.map f` from Mathlib's instance instead of a
 second hypothesis. The Noetherian instance is not declared: instance search derives it from
 Mathlib's instances once `Coeff` is a `Fintype`. The source's `ULift` copies in higher universes
-(`WeierstrassAtlasRingU`, `universalWeierstrassLocU`, `classifyRingHomU`) are not ported.
+(`WeierstrassAtlasRingU`, `universalWeierstrassLocU` and `classifyRingHomU`, in
+`EllipticCurve/AdditionBaseChange.lean`) are not ported as declarations. In their place,
+`exists_map_eq_of_isElliptic` states only that such a ring, curve and homomorphism exist. It is
+adapted from those three, from the `IsDomain` instance on `WeierstrassAtlasRingU` and
+`universalWeierstrassLocU_map_classifyRingHomU` (same file), and from the `IsNoetherianRing`
+instance on `WeierstrassAtlasRingU` (`EllipticCurve/GroupLawAxioms.lean`, whose header reads
+`Authors: The AINTLIB Authors`).
 -/
 
 public section
@@ -653,5 +662,29 @@ lemma specializeElliptic_ellipticCurve :
   simpa only [map_id] using specializeElliptic_map_ellipticCurve (RingHom.id Universal.EllipticRing)
 
 end SpecializeElliptic
+
+section Universe
+
+universe u
+
+variable {R : Type u} [CommRing R] (W : WeierstrassCurve R) [W.IsElliptic]
+
+/-- Every elliptic Weierstrass curve `W` over a commutative ring `R` in `Type u` is the base change
+`W₀.map f` of an elliptic Weierstrass curve `W₀` over a Noetherian integral domain `R₀` in the same
+universe `Type u`, along a ring homomorphism `f : R₀ →+* R`. Compare `map_specializeElliptic`,
+whose base ring `Universal.EllipticRing` is a Noetherian integral domain in `Type`. -/
+theorem exists_map_eq_of_isElliptic :
+    ∃ (R₀ : Type u) (_ : CommRing R₀) (_ : IsDomain R₀) (_ : IsNoetherianRing R₀)
+      (W₀ : WeierstrassCurve R₀) (_ : W₀.IsElliptic) (f : R₀ →+* R), W₀.map f = W :=
+  -- the copy `ULift.{u} Universal.EllipticRing` of the universal ring in `Type u`
+  ⟨ULift.{u} Universal.EllipticRing, inferInstance,
+    ULift.ringEquiv.toMulEquiv.isDomain Universal.EllipticRing,
+    isNoetherianRing_of_ringEquiv Universal.EllipticRing ULift.ringEquiv.symm,
+    Universal.ellipticCurve.map ULift.ringEquiv.symm.toRingHom, inferInstance,
+    W.specializeElliptic.comp ULift.ringEquiv.toRingHom, by
+      rw [map_map, RingHom.comp_assoc, RingEquiv.toRingHom_comp_symm_toRingHom, RingHom.comp_id,
+        map_specializeElliptic]⟩
+
+end Universe
 
 end WeierstrassCurve

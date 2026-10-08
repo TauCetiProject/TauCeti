@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.ZMod
-public import Mathlib.LinearAlgebra.BilinearMap
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries
 
@@ -308,6 +307,18 @@ by `p`. -/
 instance instModuleZModGradedPiece (k : ℕ) : Module (ZMod p) (gradedPiece p G k) :=
   AddCommGroup.zmodModule fun x => nsmul_gradedPiece_eq_zero x
 
+/-- For a normal subgroup `R` equal to the term `λ_k` of the lower `p`-series, the quotient
+`R ⧸ Rᵖ[R, G]` is the graded piece `gr_k(G) = λ_k ⧸ λ_{k+1}`, up to the additive notation; in
+particular they have the same cardinality. The equation `R = λ_k` is a hypothesis rather than a
+substitution, so that the statement applies to the relation subgroup of a presentation, whose
+quotient type depends on it. -/
+theorem natCard_quotient_pLowerCentralStep_eq_natCard_gradedPiece {R : Subgroup G} [R.Normal]
+    {k : ℕ} (hR : R = pLowerCentralSeries p G k) :
+    Nat.card (R ⧸ (pLowerCentralStep p R).subgroupOf R) = Nat.card (gradedPiece p G k) := by
+  subst hR
+  exact Nat.card_congr
+    ((quotientPLowerCentralSeriesSuccMulEquiv p G k).symm.toEquiv.trans Additive.ofMul)
+
 /-! ### The inclusion into `G ⧸ λ_{k+1}` -/
 
 variable (p G) in
@@ -334,9 +345,8 @@ theorem gradedPieceInclusion_zero_surjective :
     Function.Surjective (gradedPieceInclusion p G 0) := by
   intro x
   obtain ⟨g, hg⟩ := QuotientGroup.mk_surjective x.toMul
-  refine ⟨gradedMk p G 0 ⟨g, ?_⟩, ?_⟩
-  · rw [pLowerCentralSeries_zero]; exact mem_top g
-  · rw [gradedPieceInclusion_gradedMk, coe_mk, hg, ofMul_toMul]
+  refine ⟨gradedMk p G 0 ⟨g, mem_pLowerCentralSeries_zero p g⟩, ?_⟩
+  rw [gradedPieceInclusion_gradedMk, coe_mk, hg, ofMul_toMul]
 
 variable (p G) in
 /-- **The degree-zero piece is `G ⧸ λ_1`.** For a profinite group and a prime `p`, `λ_1` is the
@@ -352,18 +362,6 @@ theorem gradedPieceZeroEquiv_gradedMk (x : pLowerCentralSeries p G 0) :
     gradedPieceZeroEquiv p G (gradedMk p G 0 x) =
       Additive.ofMul ((x : G) : G ⧸ pLowerCentralSeries p G 1) :=
   gradedPieceInclusion_gradedMk x
-
-/-- For a normal subgroup `R` equal to the term `λ_k` of the lower `p`-series, the quotient
-`R ⧸ Rᵖ[R, G]` is the graded piece `gr_k(G) = λ_k ⧸ λ_{k+1}`, up to the additive notation; in
-particular they have the same cardinality. The equation `R = λ_k` is a hypothesis rather than a
-substitution, so that the statement applies to the relation subgroup of a presentation, whose
-quotient type depends on it. -/
-theorem natCard_quotient_pLowerCentralStep_eq_natCard_gradedPiece {R : Subgroup G} [R.Normal]
-    {k : ℕ} (hR : R = pLowerCentralSeries p G k) :
-    Nat.card (R ⧸ (pLowerCentralStep p R).subgroupOf R) = Nat.card (gradedPiece p G k) := by
-  subst hR
-  exact Nat.card_congr
-    ((quotientPLowerCentralSeriesSuccMulEquiv p G k).symm.toEquiv.trans Additive.ofMul)
 
 /-! ### The class of an element of `G` in degree zero -/
 
@@ -1071,7 +1069,7 @@ and `h` (`TauCeti.gradedPowIterBracket_zero`), and `π` raises `m` by one
 the bracket in `gr_2(G)` of the degree-one class `[ξ_g, ξ_h]` with `ξ_g`
 (`TauCeti.gradedPow_gradedBracket_zero_zero`), which is why they occur as spanning vectors of
 their own in the span statements of the dyadic classification. -/
-noncomputable def gradedPowIterBracket (m : ℕ) (g h : G) : gradedPiece p G (m + 1) :=
+def gradedPowIterBracket (m : ℕ) (g h : G) : gradedPiece p G (m + 1) :=
   gradedMk p G (m + 1) ⟨⁅g, h⁆ ^ p ^ m, commutatorElement_pow_pow_mem_pLowerCentralSeries p g h m⟩
 
 theorem gradedPowIterBracket_def (m : ℕ) (g h : G) :
