@@ -49,11 +49,11 @@ invariants, rather than merely providing abstract class formations on the same c
 
 public noncomputable section
 
-open NumberField NumberField.InfinitePlace
+open NumberField NumberField.InfinitePlace TauCeti
 
-namespace TauCeti.ClassFieldTheory
+namespace NumberField.InfinitePlace
 
-variable {K : Type} [Field K]
+variable {K : Type*} [Field K]
 
 private noncomputable def absoluteGaloisGroupEquivReal (w : InfinitePlace K) (hw : w.IsReal) :
     AbsoluteGaloisGroup w.Completion ≃* (ℂ ≃ₐ[ℝ] ℂ) := by
@@ -62,11 +62,17 @@ private noncomputable def absoluteGaloisGroupEquivReal (w : InfinitePlace K) (hw
   exact (Completion.ringEquivRealOfIsReal hw).absoluteGaloisGroupCongr.symm.toMulEquiv.trans
     eC.autCongr
 
-/-- The absolute Galois group of a real infinite completion has two elements. -/
+/-- The absolute Galois group of a real infinite completion has order two. -/
 theorem natCard_absoluteGaloisGroup_of_isReal (w : InfinitePlace K) (hw : w.IsReal) :
     Nat.card (AbsoluteGaloisGroup w.Completion) = 2 := by
   rw [Nat.card_congr (absoluteGaloisGroupEquivReal w hw).toEquiv,
     IsGalois.card_aut_eq_finrank, Complex.finrank_real_complex]
+
+end NumberField.InfinitePlace
+
+namespace TauCeti.ClassFieldTheory
+
+variable {K : Type} [Field K]
 
 /-- Every subgroup of the absolute Galois group of a real infinite completion is either trivial
 or the whole group. -/
@@ -80,14 +86,14 @@ theorem subgroup_eq_bot_or_eq_top_of_isReal (w : InfinitePlace K) (hw : w.IsReal
 noncomputable def realOpenNormalSubgroup (w : InfinitePlace K) (hw : w.IsReal) :
     OpenNormalSubgroup (AbsoluteGaloisGroup w.Completion) := by
   let _ : Finite (AbsoluteGaloisGroup w.Completion) :=
-    Finite.of_equiv (ℂ ≃ₐ[ℝ] ℂ) (absoluteGaloisGroupEquivReal w hw).toEquiv.symm
+    Nat.finite_of_card_ne_zero (by rw [natCard_absoluteGaloisGroup_of_isReal w hw]; decide)
   exact openNormalSubgroupBot _
 
 @[simp]
 theorem realOpenNormalSubgroup_toSubgroup (w : InfinitePlace K) (hw : w.IsReal) :
     (realOpenNormalSubgroup w hw).toSubgroup = ⊥ := by
   let _ : Finite (AbsoluteGaloisGroup w.Completion) :=
-    Finite.of_equiv (ℂ ≃ₐ[ℝ] ℂ) (absoluteGaloisGroupEquivReal w hw).toEquiv.symm
+    Nat.finite_of_card_ne_zero (by rw [natCard_absoluteGaloisGroup_of_isReal w hw]; decide)
   exact openNormalSubgroupBot_toSubgroup _
 
 /-- A finite normal layer over a real infinite completion is either trivial or the unique
@@ -117,26 +123,6 @@ theorem degree_realLayer (w : InfinitePlace K) (hw : w.IsReal) :
     OpenSubgroup.toSubgroup_top, Subgroup.relIndex_bot_left,
     Subgroup.card_top,
     natCard_absoluteGaloisGroup_of_isReal w hw]
-
-/-- Inflation from the unique nontrivial layer at a real place exhausts its Brauer group. -/
-theorem brInfl_realOpenNormalSubgroup_surjective (w : InfinitePlace K) (hw : w.IsReal) :
-    Function.Surjective (brInfl (realOpenNormalSubgroup w hw)) := by
-  intro x
-  obtain ⟨V, y, hy⟩ := exists_brInfl_eq w.Completion x
-  rcases subgroup_eq_bot_or_eq_top_of_isReal w hw V.toSubgroup with hV | hV
-  · have hV' : V = realOpenNormalSubgroup w hw := by
-      apply OpenNormalSubgroup.toSubgroup_injective
-      simpa using hV
-    subst V
-    exact ⟨y, hy⟩
-  · have htrivial : (NormalLayer.ofOpenNormal V).top =
-        (NormalLayer.ofOpenNormal V).ground := by
-      apply OpenSubgroup.toSubgroup_injective
-      simpa using hV
-    let _ := (NormalLayer.ofOpenNormal V).subsingleton_H_succ_of_top_eq_ground
-      (unitsFormation w.Completion) htrivial 1
-    refine ⟨0, ?_⟩
-    rw [map_zero, ← hy, Subsingleton.elim y 0, map_zero]
 
 /-- The invariant of a finite normal layer at a real place. It is zero on a trivial layer; on the
 unique quadratic layer it is the archimedean invariant after inflation into the Brauer group. -/
@@ -197,7 +183,8 @@ theorem range_realLayerInv (w : InfinitePlace K) (hw : w.IsReal)
     simp [AddSubgroup.torsionBy, eq_comm]
   · subst L
     rw [realLayerInv_realLayer, AddMonoidHom.coe_comp, Set.range_comp,
-      (brInfl_realOpenNormalSubgroup_surjective w hw).range_eq, Set.image_univ,
+      (brInfl_surjective_of_toSubgroup_eq_bot (realOpenNormalSubgroup_toSubgroup w hw)).range_eq,
+      Set.image_univ,
       range_infiniteInvMap_of_isReal w hw, degree_realLayer]
     norm_num
 
