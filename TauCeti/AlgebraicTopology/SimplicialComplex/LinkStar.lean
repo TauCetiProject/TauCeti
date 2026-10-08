@@ -111,6 +111,14 @@ theorem mem_link_nonempty {ρ : Finset ι} :
     ρ ∈ link K σ ↔ ρ.Nonempty ∧ Disjoint ρ σ ∧ ρ ∪ σ ∈ K :=
   Iff.rfl
 
+/-- A fresh vertex of a complex is absent from every vertex link. -/
+theorem notMem_link_of_notMem (hv : ({v} : Finset ι) ∉ K) {w : ι} :
+    ({v} : Finset ι) ∉ link K {w} := by
+  intro h
+  obtain ⟨-, -, hface⟩ := mem_link_nonempty.mp h
+  apply hv
+  exact (K.isRelLowerSet_faces hface).2 (by simp) (by simp)
+
 omit [DecidableEq ι] in
 @[simp]
 theorem mem_deletion {ρ : Finset ι} : ρ ∈ deletion K σ ↔ ρ ∈ K ∧ ¬ σ ⊆ ρ := Iff.rfl

@@ -67,15 +67,9 @@ sphere bundle. -/
 theorem isOpenEmbedding_normalTube_of_le {f : M → V} {ε R : ℝ} (hεR : ε ≤ R)
     (h : IsOpenEmbedding ((normalTube I f R).domRestrict fun p : M × V => f p.1 + p.2)) :
     IsOpenEmbedding ((normalTube I f ε).domRestrict fun p : M × V => f p.1 + p.2) := by
-  have hsub : normalTube I f ε ⊆ normalTube I f R := fun p hp =>
-    mem_normalTube.mpr ⟨(mem_normalTube.mp hp).1, (mem_normalTube.mp hp).2.trans_le hεR⟩
-  apply h.comp (IsOpenEmbedding.inclusion hsub ?_)
-  convert isOpen_lt ((continuous_norm.comp continuous_snd).comp
-    (continuous_subtype_val : Continuous (Subtype.val : normalTube I f R → M × V)))
-    (continuous_const : Continuous fun _ : normalTube I f R => ε) using 1
-  ext p
-  simp only [mem_preimage, mem_normalTube, mem_ofPred_eq, Function.comp_apply]
-  exact and_iff_right (mem_normalTube.mp p.2).1
+  rw [← normalTubeOfRadius_const f R] at h
+  rw [← normalTubeOfRadius_const f ε]
+  exact isOpenEmbedding_normalTubeOfRadius_of_le continuous_const (fun _ => hεR) h
 
 section Regularity
 

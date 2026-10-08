@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Unimodular
+import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.RingTheory.LocalRing.Basic
 
 /-!
-# Unimodular elements: unit rescaling and coordinate vectors over a local ring
+# Unimodular elements: scalar extension, unit rescaling, and local coordinates
 
 Complements to `Mathlib.LinearAlgebra.Unimodular`. Unimodularity of an element `v` of an
 `R`-module (some linear functional takes the value `1` at `v`) is preserved by multiplication by a
@@ -22,6 +23,7 @@ projective schemes over a local ring are normalised.
 ## Main results
 
 * `TauCeti.Module.isUnimodular_units_smul`: multiplication by a unit preserves unimodularity.
+* `Module.IsUnimodular.one_tmul`: scalar extension preserves a unimodular vector.
 * `TauCeti.Module.isUnimodular_of_isUnit_apply`: a coordinate vector with a unit coordinate is
   unimodular.
 * `TauCeti.Module.isUnimodular_iff_exists_isUnit`: over a local ring, a coordinate vector with
@@ -30,7 +32,17 @@ projective schemes over a local ring are normalised.
 
 public section
 
+open scoped TensorProduct
+
 namespace TauCeti.Module
+
+/-- Extending scalars preserves a unimodular vector. No flatness assumption is needed. -/
+theorem _root_.Module.IsUnimodular.one_tmul {R S M : Type*} [CommSemiring R] [CommSemiring S]
+    [Algebra R S] [AddCommMonoid M] [Module R M] {m : M}
+    (hm : Module.IsUnimodular R m) : Module.IsUnimodular S (1 ⊗ₜ[R] m : S ⊗[R] M) := by
+  obtain ⟨φ, hφ⟩ := Module.isUnimodular_iff.mp hm
+  exact Module.isUnimodular_of_apply_eq_one
+    (f := Module.Dual.baseChange S φ) (by simp [hφ])
 
 section Semiring
 

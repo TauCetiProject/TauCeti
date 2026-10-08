@@ -26,6 +26,9 @@ new crossings with the corresponding clasp in the PD-code.
 * `TauCeti.BraidWord.toBraid_freeCancel` and `writhe_closure_freeCancel`: invariance of the
   represented braid and closure writhe under one step.
 
+The closure-level crossing signs and over-pair data for an appended inverse pair are in
+`TauCeti.KnotTheory.BraidWord.FreeCancellation.Reidemeister`.
+
 The general crossing-order formula is `TauCeti.BraidWord.crossingsAt_cons_cons_same_index`
 in `BraidWord.PDCode`; successor and internal-arc formulas are in `BraidWord.DoubleCrossing`.
 
