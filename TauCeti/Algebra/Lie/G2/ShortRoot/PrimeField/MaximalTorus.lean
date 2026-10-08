@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.ClosedGenerators
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.TorusCentralizer
+public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Maximal
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
 public import Mathlib.Algebra.Field.ZMod
 import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
@@ -222,6 +223,105 @@ theorem isMaximalTorus_weightTorusDefiningIdeal :
         (BialgHom.id (AlgebraicClosure (ZMod 3)) _) = _
       exact HopfIdeal.map_id _)
     (isMaximalTorus_baseChangeHopfIdeal_weightTorusDefiningIdeal (AlgebraicClosure (ZMod 3)))
+
+private def weightTorusCharacterEquiv :
+    Multiplicative (Fin 2 →₀ ℤ) ≃*
+      Multiplicative (ULift.{0} (Fin 2) →₀ ℤ) :=
+  AddEquiv.toMultiplicative (Finsupp.domCongr (M := ℤ) Equiv.ulift.symm)
+
+private def weightTorusCoordinateIso :
+    generatorCodomain (.inr ()) ≅
+      (DiagonalizableGroup.coordinateRing (ZMod 3)
+        (SplitTorus.characterGroup (ULift.{0} (Fin 2)))).obj :=
+  _root_.CommHopfAlgCat.isoMk (MonoidAlgebra.domCongrBialgEquiv (ZMod 3) (ZMod 3)
+    weightTorusCharacterEquiv)
+
+/-- The character reindexing sends the standard character of index `i` to that of index
+`ULift.up i`. -/
+private theorem weightTorusCharacterEquiv_ofAdd_single (i : Fin 2) :
+    weightTorusCharacterEquiv (.ofAdd (Finsupp.single i 1)) =
+      .ofAdd (Finsupp.single (ULift.up i) 1) := by
+  rw [weightTorusCharacterEquiv, AddEquiv.toMultiplicative_apply_apply, toAdd_ofAdd,
+    Finsupp.domCongr_apply, Finsupp.equivMapDomain_single, Equiv.ulift_symm_apply]
+
+/-- The coordinate reindexing is `MonoidAlgebra.domCongr` along `weightTorusCharacterEquiv`. -/
+private theorem weightTorusCoordinateIso_hom_apply
+    (x : (generatorCodomain (.inr ()) : Type)) :
+    weightTorusCoordinateIso.hom.hom x =
+      MonoidAlgebra.domCongr (ZMod 3) (ZMod 3) weightTorusCharacterEquiv x :=
+  rfl
+
+/-- The coordinate reindexing acts on monomials through `weightTorusCharacterEquiv`. -/
+private theorem weightTorusCoordinateIso_hom_single
+    (c : Multiplicative (Fin 2 →₀ ℤ)) (r : ZMod 3) :
+    weightTorusCoordinateIso.hom.hom (MonoidAlgebra.single c r) =
+      MonoidAlgebra.single (weightTorusCharacterEquiv c) r := by
+  rw [weightTorusCoordinateIso_hom_apply, MonoidAlgebra.domCongr_single]
+
+/-- Restriction from the short-root type-`G₂` carrier to its weight torus, reindexed in the
+standard rank-two coordinates used by `SplitMaximalTorus`. -/
+def splitMaximalTorusCoordinateMap : carrierAlgebra ⟶
+    (DiagonalizableGroup.coordinateRing (ZMod 3)
+      (SplitTorus.characterGroup (ULift.{0} (Fin 2)))).obj :=
+  weightTorusCoordinateMap ≫ weightTorusCoordinateIso.hom
+
+/-- The standard-coordinate weight-torus morphism is surjective. -/
+theorem splitMaximalTorusCoordinateMap_surjective :
+    Function.Surjective splitMaximalTorusCoordinateMap.hom := by
+  rw [splitMaximalTorusCoordinateMap, CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
+  exact (ConcreteCategory.bijective_of_isIso weightTorusCoordinateIso.hom).2.comp
+    weightTorusCoordinateMap_surjective
+
+/-- Under the carrier point equivalence, the point map induced by the standard-coordinate
+weight-torus morphism is `weightTorusPoints`. -/
+theorem pointsMulEquiv_mapDomain_splitMaximalTorusCoordinateMap
+    (A : Type) [CommRing A] [Algebra (ZMod 3) A]
+    (q : HopfAlgebra.points (R := ZMod 3)
+      (H := (DiagonalizableGroup.coordinateRing (ZMod 3)
+        (SplitTorus.characterGroup (ULift.{0} (Fin 2)))).obj) (CommAlgCat.of (ZMod 3) A)) :
+    pointsMulEquiv (CommAlgCat.of (ZMod 3) A)
+        (AlgHom.mapDomain splitMaximalTorusCoordinateMap.hom q) =
+      weightTorusPoints A (fun i ↦ SplitTorus.pointsMulEquiv q (ULift.up i)) := by
+  rw [splitMaximalTorusCoordinateMap, CommHopfAlgCat.hom_comp, AlgHom.mapDomain_comp,
+    MonoidHom.comp_apply, AlgHom.mapDomain_apply,
+    ← CommHopfAlgCat.mapPointsFunctor_app_apply,
+    pointsMulEquiv_commonKernelLift_weightTorus]
+  congr 1
+  funext i
+  ext
+  rw [SplitTorus.pointsMulEquiv_apply_coe, SplitTorus.pointsMulEquiv_apply_coe,
+    AlgHom.mapDomain_apply, WithConv.ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom,
+    weightTorusCoordinateIso_hom_single, weightTorusCharacterEquiv_ofAdd_single]
+
+private theorem ker_splitMaximalTorusCoordinateMap :
+    HopfIdeal.kerOfSurjective splitMaximalTorusCoordinateMap.hom
+        splitMaximalTorusCoordinateMap_surjective = weightTorusDefiningIdeal := by
+  ext x
+  rw [HopfIdeal.mem_kerOfSurjective, weightTorusDefiningIdeal,
+    HopfIdeal.mem_kerOfSurjective, splitMaximalTorusCoordinateMap,
+    CommHopfAlgCat.hom_comp, BialgHom.coe_comp, Function.comp_apply]
+  constructor
+  · intro h
+    apply (ConcreteCategory.bijective_of_isIso weightTorusCoordinateIso.hom).1
+    simpa only [map_zero] using h
+  · intro h
+    rw [h, map_zero]
+
+/-- The rank-two weight torus as a chosen split maximal torus in the short-root type-`G₂`
+carrier over `𝔽₃`. -/
+def splitMaximalTorus : SplitMaximalTorus (ZMod 3) carrierAlgebra 2 where
+  coordinateMap := splitMaximalTorusCoordinateMap
+  surjective := splitMaximalTorusCoordinateMap_surjective
+  maximal := by
+    intro k _ _ _
+    rw [ker_splitMaximalTorusCoordinateMap]
+    exact isMaximalTorus_baseChangeHopfIdeal_weightTorusDefiningIdeal k
+
+/-- The chosen split maximal torus uses the standard-coordinate weight-torus morphism. -/
+@[simp]
+theorem splitMaximalTorus_coordinateMap :
+    splitMaximalTorus.coordinateMap = splitMaximalTorusCoordinateMap := by
+  rfl
 
 end
 

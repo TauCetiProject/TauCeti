@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Homogeneous
-public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace
+public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Basic
 
 /-!
 # Completeness of the upper-half-space metric

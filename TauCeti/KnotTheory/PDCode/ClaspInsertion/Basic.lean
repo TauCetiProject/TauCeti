@@ -57,8 +57,10 @@ components, and it is planar exactly when `D` is (`TauCeti.PDCode.isPlanar_inser
 face condition cannot be dropped: if the two arcs lie in one connected component but the face at
 `D.edgePair.val p` is not the face at `q`, the clasp joins two faces into one, which its bigon
 only makes up for, and the new code is never planar
-(`TauCeti.PDCode.not_isPlanar_insertClasp_of_face_ne`). The insertion applies only to codes with a
-crossing; an insertion involving a crossing-free circle is not treated here.
+(`TauCeti.PDCode.not_isPlanar_insertClasp_of_face_ne`). When the two arcs instead lie in distinct
+crossing-graph components, the clasp joins exactly those two components and preserves planarity
+(`TauCeti.PDCode.isPlanar_insertClasp_iff_of_not_mem_orbit`). The insertion applies only to codes
+with a crossing; an insertion involving a crossing-free circle is not treated here.
 
 ## Main definitions
 
@@ -77,6 +79,9 @@ crossing; an insertion involving a crossing-free circle is not treated here.
   at `D.edgePair.val p` is the face at `q`, and none otherwise.
 * `TauCeti.PDCode.card_monodromyOrbit_insertClasp`: the insertion keeps the connected components
   of the underlying graph when the two arcs lie in one of them.
+* `TauCeti.PDCode.card_monodromyOrbit_insertClasp_add_one_of_not_mem_orbit`: a clasp between
+  different crossing-graph components merges exactly two components.
+* `TauCeti.PDCode.isPlanar_insertClasp_iff_of_not_mem_orbit`: such a clasp preserves planarity.
 * `TauCeti.PDCode.isPlanar_insertClasp_iff`: when the face at `D.edgePair.val p` is the face at
   `q`, the clasp keeps the code planar, and `TauCeti.PDCode.not_isPlanar_insertClasp_of_face_ne`:
   otherwise, between arcs of one component, it never yields a planar code.
@@ -967,12 +972,11 @@ private theorem oldOrbit_sumCongr (z : (Fin (4 * n) ⊕ Fin 4) ⊕ Fin 4) :
   · rw [Perm.sumCongr_apply, Sum.map_inr, oldOrbit_inr, oldOrbit_inr]
 
 include hqp hqe in
-private theorem oldOrbit_claspFun
-    (hpq : q ∈ MulAction.orbit D.toPermutationTriple.monodromyGroup p)
+private theorem oldOrbit_claspFun {β : Type*}
+    (g : D.toPermutationTriple.MonodromyOrbit → β)
+    (hq : g (Quotient.mk _ q) = g (Quotient.mk _ p))
     (z : (Fin (4 * n) ⊕ Fin 4) ⊕ Fin 4) :
-    oldOrbit D p (claspFun D.edgePair.val p q z) = oldOrbit D p z := by
-  have hq : (Quotient.mk _ q : D.toPermutationTriple.MonodromyOrbit) = Quotient.mk _ p :=
-    Quotient.sound hpq
+    g (oldOrbit D p (claspFun D.edgePair.val p q z)) = g (oldOrbit D p z) := by
   have he (x : Fin (4 * n)) :
       (Quotient.mk _ (D.edgePair.val x) : D.toPermutationTriple.MonodromyOrbit) =
         Quotient.mk _ x := by
@@ -994,47 +998,100 @@ private theorem oldOrbit_claspFun
   · fin_cases i <;> simp [claspFun, oldOrbit_inl_inl, oldOrbit_inl_inr, oldOrbit_inr, hq]
   · fin_cases i <;> simp [claspFun, oldOrbit_inl_inl, oldOrbit_inl_inr, oldOrbit_inr, hq, he]
 
+/-- Every old graph component maps into a component of the clasped graph. -/
+private def claspComponentMap : D.toPermutationTriple.MonodromyOrbit →
+    (D.insertClasp p q b hqp hqe).toPermutationTriple.MonodromyOrbit :=
+  Quotient.lift (fun x => claspOrbit D p q b hqp hqe (.inl (.inl x))) (by
+    rintro _ x ⟨⟨σ, hσ⟩, rfl⟩
+    refine PermutationTriple.apply_eq_of_mem_monodromyGroup _
+      (f := fun x => claspOrbit D p q b hqp hqe (.inl (.inl x)))
+      (fun x => ?_) (fun x => ?_) hσ x
+    · simpa [toPermutationTriple_σ0] using
+        claspOrbit_sumCongr D p q b hqp hqe (.inl (.inl x))
+    · rw [toPermutationTriple_σ1]
+      exact claspOrbit_inl_inl_edgePair D p q b hqp hqe x)
+
+private theorem claspComponentMap_surjective :
+    Function.Surjective (claspComponentMap D p q b hqp hqe) := by
+  intro c
+  obtain ⟨y, rfl⟩ := Quotient.exists_rep c
+  obtain ⟨z, rfl⟩ := (halfEdgeTwoSuccEquiv n).surjective y
+  obtain ⟨hu, hv, hends⟩ := claspOrbit_eq_inl_inr_zero D p q b hqp hqe
+  rcases z with (x | i) | i
+  · exact ⟨Quotient.mk _ x, rfl⟩
+  · exact ⟨Quotient.mk _ p, (hends p (.inl rfl)).trans (hu i).symm⟩
+  · exact ⟨Quotient.mk _ p, (hends p (.inl rfl)).trans (hv i).symm⟩
+
+/-- A function of the old components descends to the new components when it
+identifies the components of the cut arcs. -/
+private def claspComponentLift {β : Type*} (g : D.toPermutationTriple.MonodromyOrbit → β)
+    (hq : g (Quotient.mk _ q) = g (Quotient.mk _ p)) :
+    (D.insertClasp p q b hqp hqe).toPermutationTriple.MonodromyOrbit → β :=
+  Quotient.lift (fun y => g (oldOrbit D p ((halfEdgeTwoSuccEquiv n).symm y))) (by
+    rintro _ y ⟨⟨σ, hσ⟩, rfl⟩
+    refine PermutationTriple.apply_eq_of_mem_monodromyGroup _
+      (f := fun y => g (oldOrbit D p ((halfEdgeTwoSuccEquiv n).symm y)))
+      (fun y => ?_) (fun y => ?_) hσ y
+    · obtain ⟨z, rfl⟩ := (halfEdgeTwoSuccEquiv n).surjective y
+      rw [toPermutationTriple_σ0, crossingRotation_insertClasp_apply,
+        symm_apply_apply, symm_apply_apply, oldOrbit_sumCongr]
+    · obtain ⟨z, rfl⟩ := (halfEdgeTwoSuccEquiv n).surjective y
+      rw [toPermutationTriple_σ1, insertClasp_edgePair_apply,
+        symm_apply_apply, symm_apply_apply, oldOrbit_claspFun D p q hqp hqe g hq])
+
+private theorem claspComponentLift_map {β : Type*}
+    (g : D.toPermutationTriple.MonodromyOrbit → β)
+    (hq : g (Quotient.mk _ q) = g (Quotient.mk _ p))
+    (c : D.toPermutationTriple.MonodromyOrbit) :
+    claspComponentLift D p q b hqp hqe g hq (claspComponentMap D p q b hqp hqe c) = g c := by
+  induction c using Quotient.ind
+  simp [claspComponentMap, claspComponentLift, claspOrbit, oldOrbit_inl_inl]
+
 /-- **Clasp insertion keeps the connected components** of the underlying graph when the two cut
 arcs already lie in one component. -/
 theorem card_monodromyOrbit_insertClasp
     (hpq : q ∈ MulAction.orbit D.toPermutationTriple.monodromyGroup p) :
     Nat.card (D.insertClasp p q b hqp hqe).toPermutationTriple.MonodromyOrbit =
       Nat.card D.toPermutationTriple.MonodromyOrbit := by
-  -- The components correspond: a component of the new code containing an old half-edge goes to
-  -- the component of `D` containing it, and the component of the clasp to that of `p`. Both maps
-  -- are constant along the crossing rotation and the arc matching, which is checked on old
-  -- half-edges and new slots, and they are inverse to each other.
-  obtain ⟨hu, hv, hends⟩ := claspOrbit_eq_inl_inr_zero D p q b hqp hqe
-  refine Nat.card_congr
-    { toFun := Quotient.lift (fun y => oldOrbit D p ((halfEdgeTwoSuccEquiv n).symm y)) ?_
-      invFun := Quotient.lift (fun x => claspOrbit D p q b hqp hqe (.inl (.inl x))) ?_
-      left_inv := Quotient.ind fun y => ?_
-      right_inv := Quotient.ind fun x => ?_ }
-  · rintro _ y ⟨⟨σ, hσ⟩, rfl⟩
-    refine PermutationTriple.apply_eq_of_mem_monodromyGroup _
-      (f := fun y => oldOrbit D p ((halfEdgeTwoSuccEquiv n).symm y)) (fun y => ?_) (fun y => ?_) hσ
-      y
-    · obtain ⟨z, rfl⟩ := (halfEdgeTwoSuccEquiv n).surjective y
-      rw [toPermutationTriple_σ0, crossingRotation_insertClasp_apply, symm_apply_apply,
-        symm_apply_apply, oldOrbit_sumCongr]
-    · obtain ⟨z, rfl⟩ := (halfEdgeTwoSuccEquiv n).surjective y
-      rw [toPermutationTriple_σ1, insertClasp_edgePair_apply, symm_apply_apply,
-        symm_apply_apply, oldOrbit_claspFun D p q hqp hqe hpq]
-  · rintro _ x ⟨⟨σ, hσ⟩, rfl⟩
-    refine PermutationTriple.apply_eq_of_mem_monodromyGroup _
-      (f := fun x => claspOrbit D p q b hqp hqe (.inl (.inl x))) (fun x => ?_) (fun x => ?_) hσ x
-    · simpa [toPermutationTriple_σ0] using claspOrbit_sumCongr D p q b hqp hqe (.inl (.inl x))
-    · rw [toPermutationTriple_σ1]
-      exact claspOrbit_inl_inl_edgePair D p q b hqp hqe x
-  · obtain ⟨z, rfl⟩ := (halfEdgeTwoSuccEquiv n).surjective y
-    simp only [Quotient.lift_mk, symm_apply_apply]
-    rcases z with (x | i) | i
-    · rw [oldOrbit_inl_inl, Quotient.lift_mk, claspOrbit]
-    · rw [oldOrbit_inl_inr, Quotient.lift_mk]
-      exact (hends p (.inl rfl)).trans (hu i).symm
-    · rw [oldOrbit_inr, Quotient.lift_mk]
-      exact (hends p (.inl rfl)).trans (hv i).symm
-  · simp only [claspOrbit, Quotient.lift_mk, symm_apply_apply, oldOrbit_inl_inl]
+  have hq : (Quotient.mk _ q : D.toPermutationTriple.MonodromyOrbit) = Quotient.mk _ p :=
+    Quotient.sound hpq
+  apply Nat.card_congr
+  exact (Equiv.ofBijective (claspComponentMap D p q b hqp hqe)
+    ⟨Function.LeftInverse.injective (claspComponentLift_map D p q b hqp hqe id hq),
+      claspComponentMap_surjective D p q b hqp hqe⟩).symm
+
+/-- A clasp between different crossing-graph components joins exactly those two components:
+the resulting graph has one fewer connected component. -/
+theorem card_monodromyOrbit_insertClasp_add_one_of_not_mem_orbit
+    (hpq : q ∉ MulAction.orbit D.toPermutationTriple.monodromyGroup p) :
+    Nat.card (D.insertClasp p q b hqp hqe).toPermutationTriple.MonodromyOrbit + 1 =
+      Nat.card D.toPermutationTriple.MonodromyOrbit := by
+  classical
+  let P : D.toPermutationTriple.MonodromyOrbit := Quotient.mk _ p
+  let Q : D.toPermutationTriple.MonodromyOrbit := Quotient.mk _ q
+  have hQP : Q ≠ P := fun h => hpq (Quotient.exact h)
+  let g : D.toPermutationTriple.MonodromyOrbit → D.toPermutationTriple.MonodromyOrbit :=
+    fun c => if c = Q then P else c
+  have hg : g Q = g P := by simp [g]
+  -- Remove the component of `q`, which is absorbed into the component of `p`.
+  let e : {c : D.toPermutationTriple.MonodromyOrbit // c ≠ Q} ≃
+      (D.insertClasp p q b hqp hqe).toPermutationTriple.MonodromyOrbit :=
+    Equiv.ofBijective (fun c => claspComponentMap D p q b hqp hqe c.val) ⟨by
+      intro c d hcd
+      have h := congrArg (claspComponentLift D p q b hqp hqe g hg) hcd
+      apply Subtype.ext
+      simpa [claspComponentLift_map, g, c.property, d.property] using h,
+      by
+        intro c
+        obtain ⟨d, rfl⟩ := claspComponentMap_surjective D p q b hqp hqe c
+        by_cases hd : d = Q
+        · subst d
+          refine ⟨⟨P, hQP.symm⟩, ?_⟩
+          obtain ⟨-, -, hends⟩ := claspOrbit_eq_inl_inr_zero D p q b hqp hqe
+          exact (hends p (.inl rfl)).trans (hends q (.inr (.inr (.inl rfl)))).symm
+        · exact ⟨⟨d, hd⟩, rfl⟩⟩
+  rw [← Nat.card_congr e, ← Finite.card_option]
+  exact Nat.card_congr (Equiv.optionSubtypeNe Q)
 
 /-- **Clasp insertion inside a face keeps planarity.** When the face at the far end
 `D.edgePair.val p` of the arc ending at `p` is the face at `q`, the clasp insertion is the second
@@ -1055,6 +1112,18 @@ theorem not_isPlanar_insertClasp_of_face_ne (hface : D.face (D.edgePair.val p) �
   rw [isPlanar_iff_faceCount_eq, faceCount_insertClasp_of_face_ne D p q b hqp hqe hface,
     card_monodromyOrbit_insertClasp D p q b hqp hqe hpq]
   have := D.faceCount_le
+  omega
+
+/-- A clasp joining distinct crossing-graph components preserves planarity. No common-face
+condition is required, since the separate components can be placed beside one another. -/
+theorem isPlanar_insertClasp_iff_of_not_mem_orbit
+    (hpq : q ∉ MulAction.orbit D.toPermutationTriple.monodromyGroup p) :
+    (D.insertClasp p q b hqp hqe).IsPlanar ↔ D.IsPlanar := by
+  have hface : D.face (D.edgePair.val p) ≠ D.face q :=
+    fun h => hpq (D.mem_orbit_of_face_edgePair_eq_face h)
+  have hc := card_monodromyOrbit_insertClasp_add_one_of_not_mem_orbit D p q b hqp hqe hpq
+  rw [isPlanar_iff_faceCount_eq, isPlanar_iff_faceCount_eq,
+    faceCount_insertClasp_of_face_ne D p q b hqp hqe hface]
   omega
 
 end PDCode
