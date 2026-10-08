@@ -235,9 +235,14 @@ theorem mem_support_iff (e : Equiv X Y) (x : X) :
 /-- The isometric equivalence induced on the supports of the reference measures. -/
 def supportIsometryEquiv (e : Equiv X Y) : X.supportSpace ≃ᵢ Y.supportSpace where
   toEquiv := e.toIsometryEquiv.toEquiv.subtypeEquiv (fun x ↦ (e.mem_support_iff x).symm)
-  -- Both support spaces carry the induced subtype metric, whose `edist` is the ambient one.
-  isometry_toFun := fun x y ↦ e.toIsometryEquiv.edist_eq
-    (x : X.referenceMeasure.support).val (y : X.referenceMeasure.support).val
+  isometry_toFun := by
+    -- Expose the support subtypes and their induced metrics for the distance rewrites.
+    change Isometry (e.toIsometryEquiv.toEquiv.subtypeEquiv
+      (fun x ↦ (e.mem_support_iff x).symm))
+    intro x y
+    rw [Subtype.edist_eq, Subtype.edist_eq]
+    simp only [_root_.Equiv.subtypeEquiv_apply]
+    exact e.toIsometryEquiv.edist_eq x.val y.val
 
 -- Rewrite before simp reduces the coercions through the bundled support carriers.
 @[simp↓]
@@ -298,8 +303,13 @@ def supportSpaceEquivOfFullSupport (X : MetricMeasureSpace) [X.referenceMeasure.
     Equiv X.supportSpace X where
   toIsometryEquiv :=
     { toEquiv := _root_.Equiv.subtypeUnivEquiv (fun x ↦ by simp [Measure.support_eq_univ])
-      -- `subtypeUnivEquiv` has the subtype coercion as its forward map definitionally.
-      isometry_toFun := isometry_subtype_coe }
+      isometry_toFun := by
+        -- Expose the support subtype so the equivalence application lemma can rewrite.
+        change Isometry (_root_.Equiv.subtypeUnivEquiv
+          (fun x : X ↦ by simp [Measure.support_eq_univ]))
+        intro x y
+        simp only [_root_.Equiv.subtypeUnivEquiv_apply]
+        exact isometry_subtype_coe x y }
   measurePreserving' := X.measurePreserving_subtype_val
 
 @[simp↓]
