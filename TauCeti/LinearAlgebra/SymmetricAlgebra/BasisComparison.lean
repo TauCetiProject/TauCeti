@@ -152,10 +152,7 @@ theorem _root_.SymmetricAlgebra.equivMvPolynomial_mapₛₗ {ι : Type w}
           map_add' := fun y z ↦ by simp
           map_smul' := fun r y ↦ by simp [Algebra.smul_def] }
       have hmaps : lhs = rhs := b.ext fun i ↦ by
-        change c.constr S MvPolynomial.X (f (b i)) =
-          MvPolynomial.map φ (b.constr R MvPolynomial.X (b i))
-        rw [h i]
-        simp
+        simp [lhs, rhs, h i]
       exact DFunLike.congr_fun hmaps x
   | mul x y hx hy => simp [hx, hy]
   | add x y hx hy => simp [hx, hy]

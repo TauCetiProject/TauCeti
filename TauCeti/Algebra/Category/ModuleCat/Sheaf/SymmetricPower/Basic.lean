@@ -134,7 +134,8 @@ theorem symmetricPowerOneIso_hom_app (M : SheafOfModules.{u} (ringCatSheaf R)) :
 section Pushforward
 
 open TauCeti.SheafOfModules (pushforwardCommRing pushforwardModule pushforwardRingIso
-  pushforwardSheafificationIso pushforwardSheafificationIso_inv_naturality)
+  pushforwardSheafificationIso pushforwardSheafificationNatIso
+  pushforwardSheafificationNatIso_hom_app)
 
 variable {D : Type u₂} [Category.{v₂} D] {K : GrothendieckTopology D}
   [K.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
@@ -226,23 +227,13 @@ theorem pushforwardSymmetricPowerIso_hom (n : ℕ)
         (symmetricPowerIso n ((pushforwardModule (J := K) F R).obj M)).inv :=
   (rfl)
 
-/-- `pushforwardSheafificationIso`, viewed as a natural isomorphism on presheaves. -/
-private def pushforwardSheafificationNatIso :
-    PresheafOfModules.sheafification (R₀ := (ringCatSheaf R).obj) (R := ringCatSheaf R) (𝟙 _) ⋙
-        pushforwardModule (J := K) F R ≅
-      PresheafOfModules.pushforward (F := F) (pushforwardRingIso (J := K) F (ringCatSheaf R)).inv ⋙
-        PresheafOfModules.sheafification
-          (R := (F.sheafPushforwardContinuous RingCat K J).obj (ringCatSheaf R)) (𝟙 _) :=
-  (NatIso.ofComponents (fun P ↦ (pushforwardSheafificationIso F (ringCatSheaf R) P).symm)
-    (fun f ↦ pushforwardSheafificationIso_inv_naturality F (ringCatSheaf R) f)).symm
-
 /-- The natural isomorphism whose components are `pushforwardSymmetricPowerIso`. -/
 private def pushforwardSymmetricPowerNatIso (n : ℕ) :
     symmetricPower R n ⋙ pushforwardModule (J := K) F R ≅
       pushforwardModule (J := K) F R ⋙ symmetricPower (pushforwardCommRing (J := K) F R) n :=
   Functor.isoWhiskerLeft (SheafOfModules.forget (ringCatSheaf R) ⋙
       PresheafOfModulesOfCommRing.symmetricPower (R := R.obj) n)
-      (pushforwardSheafificationNatIso F) ≪≫
+      (pushforwardSheafificationNatIso F (ringCatSheaf R)) ≪≫
     Functor.isoWhiskerRight (Functor.isoWhiskerLeft (SheafOfModules.forget (ringCatSheaf R))
       (presheafPushforwardSymmetricPowerIso (K := K) F n))
       (PresheafOfModules.sheafification
@@ -253,7 +244,13 @@ private theorem pushforwardSymmetricPowerIso_hom_eq (n : ℕ)
     (M : SheafOfModules.{u} (ringCatSheaf R)) :
     (pushforwardSymmetricPowerIso F n M).hom =
       (pushforwardSymmetricPowerNatIso (K := K) F n).hom.app M :=
-  (rfl)
+  -- the remaining factors agree definitionally (`symmetricPowerIso` is `Iso.refl`), so only the
+  -- component of the sheafification--pushforward comparison needs its component lemma
+  (congrArg (· ≫ (PresheafOfModules.sheafification
+      (𝟙 (ringCatSheaf (pushforwardCommRing (J := K) F R)).obj)).map
+        ((presheafPushforwardSymmetricPowerIso (K := K) F n).hom.app M.val))
+    (pushforwardSheafificationNatIso_hom_app F (ringCatSheaf R)
+      ((PresheafOfModulesOfCommRing.symmetricPower (R := R.obj) n).obj M.val))).symm
 
 /-- `pushforwardSymmetricPowerIso` is natural in the sheaf of modules. -/
 @[reassoc]
