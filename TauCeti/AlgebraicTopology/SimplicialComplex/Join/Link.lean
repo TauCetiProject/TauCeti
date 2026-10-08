@@ -5,15 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Join.Star
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Join.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.LinkStar
 
 /-!
 # Links in joins
 
-The link of a nonempty face in a join is the join of its links in the two factors. The face is
-represented as a disjoint sum, so the formula keeps the two vertex types separate. This is the
-combinatorial join calculation used when reducing links of higher-dimensional faces to the
-vertex-link cases in the combinatorial-manifold construction.
+The link in a join of a disjoint sum of componentwise faces (allowing empty components) is the
+join of the component links. The face is represented as a disjoint sum, so the formula keeps the
+two vertex types separate. This is the combinatorial join calculation used when reducing links of
+higher-dimensional faces to the vertex-link cases in the combinatorial-manifold construction.
 
 The description follows Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter
 2, and Lickorish, *Simplicial moves on complexes and manifolds*, Geom. Topol. Monogr. 2 (1999),
@@ -30,106 +31,117 @@ variable {α β : Type*} [DecidableEq α] [DecidableEq β]
   {K : PreAbstractSimplicialComplex α} {L : PreAbstractSimplicialComplex β}
   {s : Finset α} {t : Finset β}
 
-/-- The link of a face in a join is the join of the links of its two projections. -/
-theorem link_join (h : s.disjSum t ∈ join K L) :
+omit [DecidableEq α] [DecidableEq β] in
+private theorem disjoint_disjSum_iff {ρ : Finset (α ⊕ β)} :
+    Disjoint ρ (s.disjSum t) ↔ Disjoint ρ.toLeft s ∧ Disjoint ρ.toRight t := by
+  classical
+  constructor
+  · intro h
+    constructor
+    · refine Finset.disjoint_left.mpr ?_
+      intro a haρ has
+      exact (Finset.disjoint_left.mp h (Finset.mem_toLeft.mp haρ))
+        (Finset.mem_disjSum.mpr (Or.inl ⟨a, has, rfl⟩))
+    · refine Finset.disjoint_left.mpr ?_
+      intro b hbρ hbt
+      exact (Finset.disjoint_left.mp h (Finset.mem_toRight.mp hbρ))
+        (Finset.mem_disjSum.mpr (Or.inr ⟨b, hbt, rfl⟩))
+  · rintro ⟨hleft, hright⟩
+    refine Finset.disjoint_left.mpr ?_
+    intro x hxρ hxst
+    rcases x with a | b
+    · rcases Finset.mem_disjSum.mp hxst with ⟨a', ha', haa'⟩ | h
+      · have : a' = a := Sum.inl.inj haa'
+        subst a'
+        exact (Finset.disjoint_left.mp hleft (Finset.mem_toLeft.mpr hxρ)) ha'
+      · rcases h with ⟨b', hb', hab'⟩
+        cases hab'
+    · rcases Finset.mem_disjSum.mp hxst with h | ⟨b', hb', hbb'⟩
+      · rcases h with ⟨a', ha', hab'⟩
+        cases hab'
+      · have : b' = b := Sum.inr.inj hbb'
+        subst b'
+        exact (Finset.disjoint_left.mp hright (Finset.mem_toRight.mpr hxρ)) hb'
+
+private theorem toLeft_mem_link_of_mem_join {ρ : Finset (α ⊕ β)}
+    (hρ : ρ ∈ join K L) (hρst : ρ ∪ s.disjSum t ∈ join K L)
+    (hdis : Disjoint ρ (s.disjSum t)) :
+    ρ.toLeft = ∅ ∨ ρ.toLeft ∈ link K s := by
+  have hρparts := mem_join_iff.mp hρ
+  have hρstparts := mem_join_iff.mp hρst
+  by_cases hleft : ρ.toLeft = ∅
+  · exact Or.inl hleft
+  · right
+    have hleftUnion : ρ.toLeft ∪ s ∈ K := by
+      have h := hρstparts.2.1
+      rw [Finset.toLeft_union, Finset.toLeft_disjSum] at h
+      exact h.resolve_left <| Finset.nonempty_iff_ne_empty.mp <|
+        (Finset.nonempty_iff_ne_empty.mpr hleft).mono subset_union_left
+    exact mem_link.mpr ⟨hρparts.2.1.resolve_left hleft,
+      (disjoint_disjSum_iff.mp hdis).1, hleftUnion⟩
+
+private theorem toRight_mem_link_of_mem_join {ρ : Finset (α ⊕ β)}
+    (hρ : ρ ∈ join K L) (hρst : ρ ∪ s.disjSum t ∈ join K L)
+    (hdis : Disjoint ρ (s.disjSum t)) :
+    ρ.toRight = ∅ ∨ ρ.toRight ∈ link L t := by
+  have hρparts := mem_join_iff.mp hρ
+  have hρstparts := mem_join_iff.mp hρst
+  by_cases hright : ρ.toRight = ∅
+  · exact Or.inl hright
+  · right
+    have hrightUnion : ρ.toRight ∪ t ∈ L := by
+      have h := hρstparts.2.2
+      rw [Finset.toRight_union, Finset.toRight_disjSum] at h
+      exact h.resolve_left <| Finset.nonempty_iff_ne_empty.mp <|
+        (Finset.nonempty_iff_ne_empty.mpr hright).mono subset_union_left
+    exact mem_link.mpr ⟨hρparts.2.2.resolve_left hright,
+      (disjoint_disjSum_iff.mp hdis).2, hrightUnion⟩
+
+private theorem toLeft_union_mem_of_mem_link {ρ : Finset (α ⊕ β)}
+    (hleft : ρ.toLeft = ∅ ∨ ρ.toLeft ∈ link K s) (hs : s = ∅ ∨ s ∈ K) :
+    (ρ ∪ s.disjSum t).toLeft = ∅ ∨ (ρ ∪ s.disjSum t).toLeft ∈ K := by
+  rw [Finset.toLeft_union, Finset.toLeft_disjSum]
+  rcases hleft with he | hl
+  · rcases hs with hs | hs
+    · exact Or.inl (by rw [he, empty_union]; exact hs)
+    · exact Or.inr (by rw [he, empty_union]; exact hs)
+  · exact Or.inr (mem_link.mp hl).2.2
+
+private theorem toRight_union_mem_of_mem_link {ρ : Finset (α ⊕ β)}
+    (hright : ρ.toRight = ∅ ∨ ρ.toRight ∈ link L t) (ht : t = ∅ ∨ t ∈ L) :
+    (ρ ∪ s.disjSum t).toRight = ∅ ∨ (ρ ∪ s.disjSum t).toRight ∈ L := by
+  rw [Finset.toRight_union, Finset.toRight_disjSum]
+  rcases hright with he | hr
+  · rcases ht with ht | ht
+    · exact Or.inl (by rw [he, empty_union]; exact ht)
+    · exact Or.inr (by rw [he, empty_union]; exact ht)
+  · exact Or.inr (mem_link.mp hr).2.2
+
+/- The link of a disjoint sum of componentwise faces is the join of the links of its projections. -/
+@[simp]
+theorem link_join (hs : s = ∅ ∨ s ∈ K) (ht : t = ∅ ∨ t ∈ L) :
     link (join K L) (s.disjSum t) = join (link K s) (link L t) := by
-  obtain ⟨hne, hs, ht⟩ := disjSum_mem_join_iff.mp h
   refine SetLike.ext fun ρ => ?_
   constructor
   · intro hmem
     rcases mem_link.mp hmem with ⟨hρ, hdis, hρst⟩
-    have hρparts := mem_join_iff.mp hρ
-    have hρstparts := mem_join_iff.mp hρst
     apply mem_join_iff.mpr
-    refine ⟨hρparts.1, ?_, ?_⟩
-    · by_cases hleft : ρ.toLeft = ∅
-      · exact Or.inl hleft
-      · right
-        have hleftUnion : ρ.toLeft ∪ s ∈ K := by
-          rcases hρstparts.2.1 with hempty | hface
-          · exfalso
-            rw [Finset.toLeft_union, Finset.toLeft_disjSum] at hempty
-            apply hleft
-            apply Finset.eq_empty_of_forall_notMem
-            intro a ha
-            have ha' : a ∈ ρ.toLeft ∪ s := Finset.mem_union_left s ha
-            exact (Finset.notMem_empty a) (hempty ▸ ha')
-          · simpa only [Finset.toLeft_union, Finset.toLeft_disjSum] using hface
-        have hdis' : Disjoint ρ.toLeft s := by
-          refine Finset.disjoint_left.mpr ?_
-          intro a haρ has
-          have hnot : Sum.inl a ∉ s.disjSum t :=
-            (Finset.disjoint_left.mp hdis) (Finset.mem_toLeft.mp haρ)
-          exact hnot (Finset.mem_disjSum.mpr (Or.inl ⟨a, has, rfl⟩))
-        exact mem_link.mpr ⟨hρparts.2.1.resolve_left hleft, hdis', hleftUnion⟩
-    · by_cases hright : ρ.toRight = ∅
-      · exact Or.inl hright
-      · right
-        have hrightUnion : ρ.toRight ∪ t ∈ L := by
-          rcases hρstparts.2.2 with hempty | hface
-          · exfalso
-            rw [Finset.toRight_union, Finset.toRight_disjSum] at hempty
-            apply hright
-            apply Finset.eq_empty_of_forall_notMem
-            intro b hb
-            have hb' : b ∈ ρ.toRight ∪ t := Finset.mem_union_left t hb
-            exact (Finset.notMem_empty b) (hempty ▸ hb')
-          · simpa only [Finset.toRight_union, Finset.toRight_disjSum] using hface
-        have hdis' : Disjoint ρ.toRight t := by
-          refine Finset.disjoint_left.mpr ?_
-          intro b hbρ hbt
-          have hnot : Sum.inr b ∉ s.disjSum t :=
-            (Finset.disjoint_left.mp hdis) (Finset.mem_toRight.mp hbρ)
-          exact hnot (Finset.mem_disjSum.mpr (Or.inr ⟨b, hbt, rfl⟩))
-        exact mem_link.mpr ⟨hρparts.2.2.resolve_left hright, hdis', hrightUnion⟩
+    refine ⟨(mem_join_iff.mp hρ).1, ?_, ?_⟩
+    · exact toLeft_mem_link_of_mem_join hρ hρst hdis
+    · exact toRight_mem_link_of_mem_join hρ hρst hdis
   · intro hmem
     rcases mem_join_iff.mp hmem with ⟨hρne, hleft, hright⟩
     have hρ : ρ ∈ join K L := mem_join_iff.mpr ⟨hρne,
       hleft.imp_right fun h => (mem_link.mp h).1,
       hright.imp_right fun h => (mem_link.mp h).1⟩
-    have hdis : Disjoint ρ (s.disjSum t) := by
-      refine Finset.disjoint_left.mpr ?_
-      intro x hxρ
-      rcases x with a | b
-      · have haρ : a ∈ ρ.toLeft := (Finset.mem_toLeft (u := ρ)).mpr hxρ
-        have hnot : a ∉ s := by
-          rcases hleft with he | hl
-          · simp [he] at haρ
-          · exact (Finset.disjoint_left.mp (mem_link.mp hl).2.1) haρ
-        intro hxa
-        have has : a ∈ s := by
-          rcases Finset.mem_disjSum.mp hxa with ⟨a', ha', haa'⟩ | ⟨b', hb', hab'⟩
-          · cases haa'
-            exact ha'
-          · cases hab'
-        exact hnot has
-      · have hbρ : b ∈ ρ.toRight := (Finset.mem_toRight (u := ρ)).mpr hxρ
-        have hnot : b ∉ t := by
-          rcases hright with he | hr
-          · simp [he] at hbρ
-          · exact (Finset.disjoint_left.mp (mem_link.mp hr).2.1) hbρ
-        intro hxb
-        have hbt : b ∈ t := by
-          rcases Finset.mem_disjSum.mp hxb with ⟨a', ha', haa'⟩ | ⟨b', hb', hbb'⟩
-          · cases haa'
-          · cases hbb'
-            exact hb'
-        exact hnot hbt
+    have hdis : Disjoint ρ (s.disjSum t) := disjoint_disjSum_iff.mpr ⟨
+      hleft.elim (fun h => by simp [h]) (fun h => (mem_link.mp h).2.1),
+      hright.elim (fun h => by simp [h]) (fun h => (mem_link.mp h).2.1)⟩
     have hρst : ρ ∪ s.disjSum t ∈ join K L := by
       apply mem_join_iff.mpr
       refine ⟨hρne.mono subset_union_left, ?_, ?_⟩
-      · rw [Finset.toLeft_union, Finset.toLeft_disjSum]
-        rcases hleft with he | hl
-        · rcases hs with hs | hs
-          · exact Or.inl (by rw [he, empty_union]; exact hs)
-          · exact Or.inr (by rw [he, empty_union]; exact hs)
-        · exact Or.inr (mem_link.mp hl).2.2
-      · rw [Finset.toRight_union, Finset.toRight_disjSum]
-        rcases hright with he | hr
-        · rcases ht with ht | ht
-          · exact Or.inl (by rw [he, empty_union]; exact ht)
-          · exact Or.inr (by rw [he, empty_union]; exact ht)
-        · exact Or.inr (mem_link.mp hr).2.2
+      · exact toLeft_union_mem_of_mem_link hleft hs
+      · exact toRight_union_mem_of_mem_link hright ht
     exact mem_link.mpr ⟨hρ, hdis, hρst⟩
 
 end PreAbstractSimplicialComplex
