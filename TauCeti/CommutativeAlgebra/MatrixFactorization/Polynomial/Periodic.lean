@@ -171,7 +171,7 @@ theorem powerXPeriodicComplex_acyclic (hi : i ≤ n) :
 
 /-! ### Comparison with reduction of the matrix factorization -/
 
-/-- The unit comparison `η` of the monoidal functor `ModuleCat.extendScalars` intertwines the
+/-- The counit morphism `η` of the monoidal functor `ModuleCat.extendScalars` intertwines the
 base change of multiplication by `X ^ j` with multiplication by `x ^ j`. -/
 theorem extendScalars_η_comp_rootPowHom (n j : ℕ) :
     η (ModuleCat.extendScalars (AdjoinRoot.mk (X ^ n : R[X]))) ≫ rootPowHom R n j =
@@ -199,8 +199,8 @@ noncomputable def powerXOfLEBaseChangeDuplexIso (hi : i ≤ n) :
     (extendScalars_η_comp_rootPowHom R n i)
     (extendScalars_η_comp_rootPowHom R n (n - i))
 
-/-- The even component of `powerXOfLEBaseChangeDuplexIso.hom` is the unit
-comparison `η` of `ModuleCat.extendScalars`. -/
+/-- The even component of `powerXOfLEBaseChangeDuplexIso.hom` is the counit
+morphism `η` of `ModuleCat.extendScalars`. -/
 @[simp]
 theorem powerXOfLEBaseChangeDuplexIso_hom_f₀ (hi : i ≤ n) :
     (powerXOfLEBaseChangeDuplexIso R hi).hom.f₀ =
@@ -208,8 +208,8 @@ theorem powerXOfLEBaseChangeDuplexIso_hom_f₀ (hi : i ≤ n) :
   unfold powerXOfLEBaseChangeDuplexIso
   rfl
 
-/-- The odd component of `powerXOfLEBaseChangeDuplexIso.hom` is the unit
-comparison `η` of `ModuleCat.extendScalars`. -/
+/-- The odd component of `powerXOfLEBaseChangeDuplexIso.hom` is the counit
+morphism `η` of `ModuleCat.extendScalars`. -/
 @[simp]
 theorem powerXOfLEBaseChangeDuplexIso_hom_f₁ (hi : i ≤ n) :
     (powerXOfLEBaseChangeDuplexIso R hi).hom.f₁ =
@@ -218,7 +218,7 @@ theorem powerXOfLEBaseChangeDuplexIso_hom_f₁ (hi : i ≤ n) :
   rfl
 
 /-- The even component of `powerXOfLEBaseChangeDuplexIso.inv` is the unit
-`ε` of `ModuleCat.extendScalars`. -/
+morphism `ε` of `ModuleCat.extendScalars`. -/
 @[simp]
 theorem powerXOfLEBaseChangeDuplexIso_inv_f₀ (hi : i ≤ n) :
     (powerXOfLEBaseChangeDuplexIso R hi).inv.f₀ =
@@ -227,7 +227,7 @@ theorem powerXOfLEBaseChangeDuplexIso_inv_f₀ (hi : i ≤ n) :
   rfl
 
 /-- The odd component of `powerXOfLEBaseChangeDuplexIso.inv` is the unit
-`ε` of `ModuleCat.extendScalars`. -/
+morphism `ε` of `ModuleCat.extendScalars`. -/
 @[simp]
 theorem powerXOfLEBaseChangeDuplexIso_inv_f₁ (hi : i ≤ n) :
     (powerXOfLEBaseChangeDuplexIso R hi).inv.f₁ =
@@ -242,8 +242,8 @@ noncomputable def powerXOfLEBaseChangePeriodicIso (hi : i ≤ n) :
         (powerXOfLE R hi) ≅ powerXPeriodicComplex R hi :=
   (CurvedDuplex.toPeriodicComplex _ _).mapIso (powerXOfLEBaseChangeDuplexIso R hi)
 
-/-- The degree-zero component of `powerXOfLEBaseChangePeriodicIso.hom` is the unit
-comparison `η` of `ModuleCat.extendScalars`. -/
+/-- The degree-zero component of `powerXOfLEBaseChangePeriodicIso.hom` is the counit
+morphism `η` of `ModuleCat.extendScalars`. -/
 @[simp]
 theorem powerXOfLEBaseChangePeriodicIso_hom_f_zero (hi : i ≤ n) :
     (powerXOfLEBaseChangePeriodicIso R hi).hom.f 0 =
@@ -251,8 +251,8 @@ theorem powerXOfLEBaseChangePeriodicIso_hom_f_zero (hi : i ≤ n) :
   unfold powerXOfLEBaseChangePeriodicIso
   exact powerXOfLEBaseChangeDuplexIso_hom_f₀ R hi
 
-/-- The degree-one component of `powerXOfLEBaseChangePeriodicIso.hom` is the unit
-comparison `η` of `ModuleCat.extendScalars`. -/
+/-- The degree-one component of `powerXOfLEBaseChangePeriodicIso.hom` is the counit
+morphism `η` of `ModuleCat.extendScalars`. -/
 @[simp]
 theorem powerXOfLEBaseChangePeriodicIso_hom_f_one (hi : i ≤ n) :
     (powerXOfLEBaseChangePeriodicIso R hi).hom.f 1 =
@@ -261,7 +261,7 @@ theorem powerXOfLEBaseChangePeriodicIso_hom_f_one (hi : i ≤ n) :
   exact powerXOfLEBaseChangeDuplexIso_hom_f₁ R hi
 
 /-- The degree-zero component of `powerXOfLEBaseChangePeriodicIso.inv` is the unit
-`ε` of `ModuleCat.extendScalars`. -/
+morphism `ε` of `ModuleCat.extendScalars`. -/
 @[simp]
 theorem powerXOfLEBaseChangePeriodicIso_inv_f_zero (hi : i ≤ n) :
     (powerXOfLEBaseChangePeriodicIso R hi).inv.f 0 =
@@ -270,7 +270,7 @@ theorem powerXOfLEBaseChangePeriodicIso_inv_f_zero (hi : i ≤ n) :
   exact powerXOfLEBaseChangeDuplexIso_inv_f₀ R hi
 
 /-- The degree-one component of `powerXOfLEBaseChangePeriodicIso.inv` is the unit
-`ε` of `ModuleCat.extendScalars`. -/
+morphism `ε` of `ModuleCat.extendScalars`. -/
 @[simp]
 theorem powerXOfLEBaseChangePeriodicIso_inv_f_one (hi : i ≤ n) :
     (powerXOfLEBaseChangePeriodicIso R hi).inv.f 1 =
