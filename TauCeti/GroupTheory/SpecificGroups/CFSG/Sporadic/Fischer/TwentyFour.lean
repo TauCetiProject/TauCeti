@@ -663,8 +663,8 @@ private theorem sum_map_length_flatMap_fi24SchreierRewrite (l : List (Relator (F
 
 By `TauCeti.Sporadic.length_fi24SchreierRewrite` the two rewrites of a source relator have
 the same length, namely its number of letters other than `a`, so the total is twice the `538`
-letters the `68` source relators selected for rewriting contribute: `524` from the off-diagonal
-Coxeter relators, `110` from the source equation for `l`, and `442` from the final source relation.
+letters the `68` source relators selected for rewriting contribute: `262` from the off-diagonal
+Coxeter relators, `55` from the source equation for `l`, and `221` from the final source relation.
 
 Neither Kim--Michler nor Hall--Soicher publishes a presentation length, so this figure is a
 property of the transcribed data and not a check against a recorded number. It is a count of
