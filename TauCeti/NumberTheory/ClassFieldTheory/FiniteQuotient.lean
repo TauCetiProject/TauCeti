@@ -11,6 +11,8 @@ public import TauCeti.NumberTheory.ClassFieldTheory.MuNRep
 public import TauCeti.RepresentationTheory.Continuous.TopRep.Discrete
 public import TauCeti.Topology.Algebra.GroupAction.Discrete
 
+import TauCeti.RepresentationTheory.Continuous.Restriction
+
 /-!
 # Finite-quotient Galois coefficient representations
 
@@ -101,6 +103,20 @@ theorem galRepOfQuotient_map_apply (V : OpenNormalSubgroup (Field.absoluteGalois
     {A B : Rep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup)} (f : A ⟶ B) (a : A.V) :
     ((galRepOfQuotient n F V).map f).hom a = f.hom a :=
   (rfl)
+
+/-- Inflation is faithful: it leaves the underlying coefficient maps unchanged. -/
+instance (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F)) :
+    (galRepOfQuotient n F V).Faithful :=
+  inferInstanceAs (discreteTopRepFunctor (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup) ⋙
+    TopRep.resFunctor (QuotientGroup.mk' V.toSubgroup)).Faithful
+
+/-- Inflation is full: a map of inflated representations commuting with `G_F` commutes with its
+quotient `G_F ⧸ V`, every class of which lifts to `G_F`. -/
+instance (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F)) :
+    (galRepOfQuotient n F V).Full :=
+  have := TopRep.full_res (k := ZMod n) (QuotientGroup.mk'_surjective V.toSubgroup)
+  inferInstanceAs (discreteTopRepFunctor (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup) ⋙
+    TopRep.resFunctor (QuotientGroup.mk' V.toSubgroup)).Full
 
 /-- The inflated coefficient object carries the discrete topology. -/
 instance (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F))
