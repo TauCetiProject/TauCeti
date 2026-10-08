@@ -24,12 +24,13 @@ Independence is detected by an explicit representation of `Π`. Every vertex car
 coordinate space `(Bool × ℕ) →₀ k`. For `t > 0`, the coordinate `(true, t)` stands for the
 alternating word of `t` leaf backtracks whose leftmost factor is `x`, and `(false, t)` for the one
 whose leftmost factor is `y`. The coordinate `(true, 0)` is the empty word. At the arm vertex
-`j ≤ c`, the maps only use the finite word subspace spanned by `(true, t)` for `t ≤ j + 1` and
-`(false, t)` for `1 ≤ t ≤ j`: these are the fork-corner words of `D_{j+3}`, and the coordinates
-outside this subspace are sent to zero. The longest `y`-word, of length `j + 1`, is minus the
-longest `x`-word in `D_{j+3}`, so it gets no coordinate of its own: the maps (through `bWord`)
-encode it as the vector `-(true, j + 1)`. This is a choice of encoding, not a relation in the
-ambient space, where `(false, j + 1)` and `(true, j + 1)` stay independent coordinates.
+`j ≤ c`, the fork-corner words of `D_{j+3}` are encoded in the finite subspace spanned by
+`(true, t)` for `t ≤ j + 1` and `(false, t)` for `1 ≤ t ≤ j`. The maps are defined on the whole
+ambient space, and the relations are checked there; only these finite subspaces carry the word
+interpretation. The longest `y`-word, of length `j + 1`, is minus the longest `x`-word in
+`D_{j+3}`, so it gets no coordinate of its own: the maps (through `bWord`) encode it as the vector
+`-(true, j + 1)`. This is a choice of encoding, not a relation in the ambient space, where
+`(false, j + 1)` and `(true, j + 1)` stay independent coordinates.
 
 The arrow from the fork to a leaf multiplies on the left by `x` or by `y`. The arrow back
 projects onto the words with that leftmost factor. Along the arm, the arrow towards the fork
@@ -68,8 +69,8 @@ attribute [local instance] forkNeighborSetFintype
 /-! ### The word operators -/
 
 /-- The ambient coordinate space of the detecting representation. Its basis vectors index
-words in the two leaf backtracks; at each vertex only the finite subspace of fork-corner words
-described in the module docstring is used. -/
+words in the two leaf backtracks; at each arm vertex the fork-corner words are encoded in the
+finite subspace described in the module docstring. -/
 private abbrev ForkCoord (k : Type*) [Field k] := (Bool × ℕ) →₀ k
 
 /-- The word of length `t` with leftmost factor `y`, at the arm vertex `j`. The longest word
