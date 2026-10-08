@@ -606,17 +606,36 @@ private theorem eq_withDensity_tilted_of_eq_withDensity [IsProbabilityMeasure μ
     ring
   rw [hexponent, Real.exp_sub, Real.exp_add, Real.exp_log hZ, div_mul_eq_mul_div]
 
+/-- Changing the potentials on null sets does not change a Gibbs density against `μ.prod ν`. -/
+private theorem withDensity_exp_congr_ae [SFinite ν] {φ₀ : X → ℝ} {ψ₀ : Y → ℝ}
+    (hφ : φ =ᵐ[μ] φ₀) (hψ : ψ =ᵐ[ν] ψ₀) :
+    ((μ.prod ν).withDensity fun z ↦
+      ENNReal.ofReal (Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε))) =
+      (μ.prod ν).withDensity fun z ↦
+        ENNReal.ofReal (Real.exp ((φ₀ z.1 + ψ₀ z.2 - (c z).toReal) / ε)) := by
+  refine withDensity_congr_ae ?_
+  filter_upwards [Measure.quasiMeasurePreserving_fst.ae_eq_comp hφ,
+    Measure.quasiMeasurePreserving_snd.ae_eq_comp hψ] with z h₁ h₂
+  simp only [Function.comp_apply] at h₁ h₂
+  rw [h₁, h₂]
+
 /-- **A Gibbs density certifies the entropic optimal plan.** For probability measures `μ` and
 `ν`, a cost `c` finite `μ.prod ν`-almost everywhere, and a positive temperature `ε`, a coupling
-`π` whose density against `μ.prod ν` is `exp ((φ(x) + ψ(y) - c(x, y)) / ε)`, for measurable
-potentials `φ ∈ L¹(μ)` and `ψ ∈ L¹(ν)`, is optimal for the regularised transport problem. -/
+`π` whose density against `μ.prod ν` is `exp ((φ(x) + ψ(y) - c(x, y)) / ε)`, for potentials
+`φ ∈ L¹(μ)` and `ψ ∈ L¹(ν)`, is optimal for the regularised transport problem. -/
 theorem IsCoupling.lintegral_add_mul_klDiv_eq_entropicTransportCost_of_eq_withDensity
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (hπ : IsCoupling π μ ν)
     (hc : AEMeasurable c (μ.prod ν)) (hc_top : ∀ᵐ z ∂μ.prod ν, c z ≠ ∞) (hε : ε ≠ 0)
     (hπc : π = (μ.prod ν).withDensity fun z ↦
       ENNReal.ofReal (Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε)))
-    (hφ : Measurable φ) (hψ : Measurable ψ) (hφi : Integrable φ μ) (hψi : Integrable ψ ν) :
+    (hφi : Integrable φ μ) (hψi : Integrable ψ ν) :
     ∫⁻ z, c z ∂π + ε * klDiv π (μ.prod ν) = entropicTransportCost c ε μ ν := by
+  wlog hφψ : Measurable φ ∧ Measurable ψ generalizing φ ψ
+  · have hφ₀ := hφi.1.ae_eq_mk
+    have hψ₀ := hψi.1.ae_eq_mk
+    exact this (hπc.trans (withDensity_exp_congr_ae hφ₀ hψ₀)) ((integrable_congr hφ₀).1 hφi)
+      ((integrable_congr hψ₀).1 hψi) ⟨hφi.1.measurable_mk, hψi.1.measurable_mk⟩
+  obtain ⟨hφ, hψ⟩ := hφψ
   have hexp : Integrable (fun z ↦ Real.exp (-((c z).toReal / ε))) (μ.prod ν) :=
     MeasureTheory.integrable_exp_neg_of_ae_nonneg (hc.ennreal_toReal.div_const _) <|
       ae_of_all _ fun z ↦ by positivity
@@ -630,7 +649,7 @@ theorem IsCoupling.lintegral_add_mul_klDiv_eq_entropicTransportCost_of_eq_withDe
 
 /-- **The entropic transport cost from its potentials.** For probability measures `μ` and `ν`,
 a cost `c` finite `μ.prod ν`-almost everywhere, and a positive temperature `ε`, if some coupling
-has density `exp ((φ(x) + ψ(y) - c(x, y)) / ε)` against `μ.prod ν`, for measurable potentials
+has density `exp ((φ(x) + ψ(y) - c(x, y)) / ε)` against `μ.prod ν`, for potentials
 `φ ∈ L¹(μ)` and `ψ ∈ L¹(ν)`, then the regularised transport cost is the dual value
 `∫ φ dμ + ∫ ψ dν` of the potentials. -/
 theorem entropicTransportCost_eq_ofReal_of_eq_withDensity [IsProbabilityMeasure μ]
@@ -638,8 +657,16 @@ theorem entropicTransportCost_eq_ofReal_of_eq_withDensity [IsProbabilityMeasure 
     (hc_top : ∀ᵐ z ∂μ.prod ν, c z ≠ ∞) (hε : ε ≠ 0)
     (hπc : π = (μ.prod ν).withDensity fun z ↦
       ENNReal.ofReal (Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε)))
-    (hφ : Measurable φ) (hψ : Measurable ψ) (hφi : Integrable φ μ) (hψi : Integrable ψ ν) :
+    (hφi : Integrable φ μ) (hψi : Integrable ψ ν) :
     entropicTransportCost c ε μ ν = ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) := by
+  wlog hφψ : Measurable φ ∧ Measurable ψ generalizing φ ψ
+  · have hφ₀ := hφi.1.ae_eq_mk
+    have hψ₀ := hψi.1.ae_eq_mk
+    rw [kantorovichDualValue_def, integral_congr_ae hφ₀, integral_congr_ae hψ₀,
+      ← kantorovichDualValue_def]
+    exact this (hπc.trans (withDensity_exp_congr_ae hφ₀ hψ₀)) ((integrable_congr hφ₀).1 hφi)
+      ((integrable_congr hψ₀).1 hψi) ⟨hφi.1.measurable_mk, hψi.1.measurable_mk⟩
+  obtain ⟨hφ, hψ⟩ := hφψ
   have hexp : Integrable (fun z ↦ Real.exp (-((c z).toReal / ε))) (μ.prod ν) :=
     MeasureTheory.integrable_exp_neg_of_ae_nonneg (hc.ennreal_toReal.div_const _) <|
       ae_of_all _ fun z ↦ by positivity
