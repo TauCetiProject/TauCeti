@@ -8,6 +8,7 @@ module
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.BaseChange
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Polynomial.Basic
 public import TauCeti.RingTheory.AdjoinRoot.Basic
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Adjunction
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
@@ -39,7 +40,7 @@ universe u
 
 namespace TauCeti.MatrixFactorization
 
-open CategoryTheory Polynomial
+open CategoryTheory Polynomial Functor.LaxMonoidal Functor.OplaxMonoidal
 
 variable (R : Type u) [CommRing R] {i n : ℕ}
 
@@ -172,48 +173,17 @@ theorem powerXPeriodicComplex_acyclic (hi : i ≤ n) :
 
 /-! ### Comparison with reduction of the matrix factorization -/
 
-/-- Extending the regular `R[X]`-module to `R[X]/(X ^ n)` gives the regular module over the
-quotient. This is the component isomorphism in the comparison with `powerXOfLE`. -/
-noncomputable def powerXRegularBaseChangeIso (n : ℕ) :
-    (ModuleCat.extendScalars (AdjoinRoot.mk (X ^ n : R[X]))).obj
-        (ModuleCat.of (Polynomial R) (Polynomial R)) ≅
-      ModuleCat.of (AdjoinRoot (X ^ n : R[X])) (AdjoinRoot (X ^ n : R[X])) := by
-  letI : Algebra (Polynomial R) (AdjoinRoot (X ^ n : R[X])) :=
-    ((algebraMap (AdjoinRoot (X ^ n : R[X])) (AdjoinRoot (X ^ n : R[X]))).comp
-      (AdjoinRoot.mk (X ^ n : R[X]))).toAlgebra
-  exact LinearEquiv.toModuleIso
-    (TensorProduct.AlgebraTensorModule.rid (Polynomial R)
-      (AdjoinRoot (X ^ n : R[X])) (AdjoinRoot (X ^ n : R[X])))
-
-open scoped ChangeOfRings in
-/-- On pure tensors, `powerXRegularBaseChangeIso` multiplies the scalar by the residue class of
-the polynomial. -/
-@[simp]
-theorem powerXRegularBaseChangeIso_hom_tmul (n : ℕ) (a : AdjoinRoot (X ^ n : R[X]))
-    (p : Polynomial R) :
-    (powerXRegularBaseChangeIso R n).hom (a ⊗ₜ[Polynomial R, AdjoinRoot.mk (X ^ n : R[X])] p) =
-      AdjoinRoot.mk (X ^ n : R[X]) p * a := by
-  unfold powerXRegularBaseChangeIso
-  rfl
-
-open scoped ChangeOfRings in
-/-- The inverse of `powerXRegularBaseChangeIso` sends `a` to the pure tensor `a ⊗ 1`. -/
-@[simp]
-theorem powerXRegularBaseChangeIso_inv_apply (n : ℕ) (a : AdjoinRoot (X ^ n : R[X])) :
-    (powerXRegularBaseChangeIso R n).inv a =
-      a ⊗ₜ[Polynomial R, AdjoinRoot.mk (X ^ n : R[X])] (1 : Polynomial R) := by
-  unfold powerXRegularBaseChangeIso
-  rfl
-
-/-- `powerXRegularBaseChangeIso` intertwines the base change of multiplication by `X ^ j` with
-multiplication by `x ^ j`. -/
-theorem powerXRegularBaseChangeIso_naturality (n j : ℕ) :
-    (powerXRegularBaseChangeIso R n).hom ≫ rootPowHom R n j =
+/-- The unit comparison `η` of the monoidal functor `ModuleCat.extendScalars` intertwines the
+base change of multiplication by `X ^ j` with multiplication by `x ^ j`. -/
+theorem extendScalars_η_comp_rootPowHom (n j : ℕ) :
+    η (ModuleCat.extendScalars (AdjoinRoot.mk (X ^ n : R[X]))) ≫ rootPowHom R n j =
       (ModuleCat.extendScalars (AdjoinRoot.mk (X ^ n : R[X]))).map
           ((X ^ j : Polynomial R) • 𝟙 (ModuleCat.of (Polynomial R) (Polynomial R))) ≫
-        (powerXRegularBaseChangeIso R n).hom := by
+        η (ModuleCat.extendScalars (AdjoinRoot.mk (X ^ n : R[X]))) := by
   rw [rootPowHom_eq_smul_id, ModuleCat.extendScalars_map_smul_id]
   simp [← AdjoinRoot.mk_X, ← map_pow]
+  -- `𝟙` of the regular module is `𝟙` of the monoidal unit `𝟙_`, up to unfolding `𝟙_`.
+  rfl
 
 /-- Reducing `powerXOfLE` along `R[X] → R[X]/(X ^ n)` gives the explicit square-zero duplex
 with alternating differentials `x ^ i` and `x ^ (n - i)`. -/
@@ -225,39 +195,45 @@ noncomputable def powerXOfLEBaseChangeDuplexIso (hi : i ≤ n) :
   -- The forgetful functor `FGModuleCat → ModuleCat` sends `X ^ j • 𝟙` to `X ^ j • 𝟙`
   -- definitionally, but `simp` does not push it through the scalar multiplication, so the
   -- naturality squares are supplied directly.
-  CurvedDuplex.isoMk (powerXRegularBaseChangeIso R n) (powerXRegularBaseChangeIso R n)
-    (powerXRegularBaseChangeIso_naturality R n i)
-    (powerXRegularBaseChangeIso_naturality R n (n - i))
+  CurvedDuplex.isoMk
+    (Functor.Monoidal.εIso (ModuleCat.extendScalars.{u} (AdjoinRoot.mk (X ^ n : R[X])))).symm
+    (Functor.Monoidal.εIso (ModuleCat.extendScalars.{u} (AdjoinRoot.mk (X ^ n : R[X])))).symm
+    (extendScalars_η_comp_rootPowHom R n i)
+    (extendScalars_η_comp_rootPowHom R n (n - i))
 
-/-- The even component of `powerXOfLEBaseChangeDuplexIso.hom` is
-`powerXRegularBaseChangeIso.hom`. -/
+/-- The even component of `powerXOfLEBaseChangeDuplexIso.hom` is the unit
+comparison `η` of `ModuleCat.extendScalars`. -/
 @[simp]
 theorem powerXOfLEBaseChangeDuplexIso_hom_f₀ (hi : i ≤ n) :
-    (powerXOfLEBaseChangeDuplexIso R hi).hom.f₀ = (powerXRegularBaseChangeIso R n).hom := by
+    (powerXOfLEBaseChangeDuplexIso R hi).hom.f₀ =
+      η (ModuleCat.extendScalars (AdjoinRoot.mk (X ^ n : R[X]))) := by
   unfold powerXOfLEBaseChangeDuplexIso
   rfl
 
-/-- The odd component of `powerXOfLEBaseChangeDuplexIso.hom` is
-`powerXRegularBaseChangeIso.hom`. -/
+/-- The odd component of `powerXOfLEBaseChangeDuplexIso.hom` is the unit
+comparison `η` of `ModuleCat.extendScalars`. -/
 @[simp]
 theorem powerXOfLEBaseChangeDuplexIso_hom_f₁ (hi : i ≤ n) :
-    (powerXOfLEBaseChangeDuplexIso R hi).hom.f₁ = (powerXRegularBaseChangeIso R n).hom := by
+    (powerXOfLEBaseChangeDuplexIso R hi).hom.f₁ =
+      η (ModuleCat.extendScalars (AdjoinRoot.mk (X ^ n : R[X]))) := by
   unfold powerXOfLEBaseChangeDuplexIso
   rfl
 
-/-- The even component of `powerXOfLEBaseChangeDuplexIso.inv` is
-`powerXRegularBaseChangeIso.inv`. -/
+/-- The even component of `powerXOfLEBaseChangeDuplexIso.inv` is the unit
+`ε` of `ModuleCat.extendScalars`. -/
 @[simp]
 theorem powerXOfLEBaseChangeDuplexIso_inv_f₀ (hi : i ≤ n) :
-    (powerXOfLEBaseChangeDuplexIso R hi).inv.f₀ = (powerXRegularBaseChangeIso R n).inv := by
+    (powerXOfLEBaseChangeDuplexIso R hi).inv.f₀ =
+      ε (ModuleCat.extendScalars (AdjoinRoot.mk (X ^ n : R[X]))) := by
   unfold powerXOfLEBaseChangeDuplexIso
   rfl
 
-/-- The odd component of `powerXOfLEBaseChangeDuplexIso.inv` is
-`powerXRegularBaseChangeIso.inv`. -/
+/-- The odd component of `powerXOfLEBaseChangeDuplexIso.inv` is the unit
+`ε` of `ModuleCat.extendScalars`. -/
 @[simp]
 theorem powerXOfLEBaseChangeDuplexIso_inv_f₁ (hi : i ≤ n) :
-    (powerXOfLEBaseChangeDuplexIso R hi).inv.f₁ = (powerXRegularBaseChangeIso R n).inv := by
+    (powerXOfLEBaseChangeDuplexIso R hi).inv.f₁ =
+      ε (ModuleCat.extendScalars (AdjoinRoot.mk (X ^ n : R[X]))) := by
   unfold powerXOfLEBaseChangeDuplexIso
   rfl
 
@@ -268,35 +244,39 @@ noncomputable def powerXOfLEBaseChangePeriodicIso (hi : i ≤ n) :
         (powerXOfLE R hi) ≅ powerXPeriodicComplex R hi :=
   (CurvedDuplex.toPeriodicComplex _ _).mapIso (powerXOfLEBaseChangeDuplexIso R hi)
 
-/-- The degree-zero component of `powerXOfLEBaseChangePeriodicIso.hom` is
-`powerXRegularBaseChangeIso.hom`. -/
+/-- The degree-zero component of `powerXOfLEBaseChangePeriodicIso.hom` is the unit
+comparison `η` of `ModuleCat.extendScalars`. -/
 @[simp]
 theorem powerXOfLEBaseChangePeriodicIso_hom_f_zero (hi : i ≤ n) :
-    (powerXOfLEBaseChangePeriodicIso R hi).hom.f 0 = (powerXRegularBaseChangeIso R n).hom := by
+    (powerXOfLEBaseChangePeriodicIso R hi).hom.f 0 =
+      η (ModuleCat.extendScalars (AdjoinRoot.mk (X ^ n : R[X]))) := by
   unfold powerXOfLEBaseChangePeriodicIso
   exact powerXOfLEBaseChangeDuplexIso_hom_f₀ R hi
 
-/-- The degree-one component of `powerXOfLEBaseChangePeriodicIso.hom` is
-`powerXRegularBaseChangeIso.hom`. -/
+/-- The degree-one component of `powerXOfLEBaseChangePeriodicIso.hom` is the unit
+comparison `η` of `ModuleCat.extendScalars`. -/
 @[simp]
 theorem powerXOfLEBaseChangePeriodicIso_hom_f_one (hi : i ≤ n) :
-    (powerXOfLEBaseChangePeriodicIso R hi).hom.f 1 = (powerXRegularBaseChangeIso R n).hom := by
+    (powerXOfLEBaseChangePeriodicIso R hi).hom.f 1 =
+      η (ModuleCat.extendScalars (AdjoinRoot.mk (X ^ n : R[X]))) := by
   unfold powerXOfLEBaseChangePeriodicIso
   exact powerXOfLEBaseChangeDuplexIso_hom_f₁ R hi
 
-/-- The degree-zero component of `powerXOfLEBaseChangePeriodicIso.inv` is
-`powerXRegularBaseChangeIso.inv`. -/
+/-- The degree-zero component of `powerXOfLEBaseChangePeriodicIso.inv` is the unit
+`ε` of `ModuleCat.extendScalars`. -/
 @[simp]
 theorem powerXOfLEBaseChangePeriodicIso_inv_f_zero (hi : i ≤ n) :
-    (powerXOfLEBaseChangePeriodicIso R hi).inv.f 0 = (powerXRegularBaseChangeIso R n).inv := by
+    (powerXOfLEBaseChangePeriodicIso R hi).inv.f 0 =
+      ε (ModuleCat.extendScalars (AdjoinRoot.mk (X ^ n : R[X]))) := by
   unfold powerXOfLEBaseChangePeriodicIso
   exact powerXOfLEBaseChangeDuplexIso_inv_f₀ R hi
 
-/-- The degree-one component of `powerXOfLEBaseChangePeriodicIso.inv` is
-`powerXRegularBaseChangeIso.inv`. -/
+/-- The degree-one component of `powerXOfLEBaseChangePeriodicIso.inv` is the unit
+`ε` of `ModuleCat.extendScalars`. -/
 @[simp]
 theorem powerXOfLEBaseChangePeriodicIso_inv_f_one (hi : i ≤ n) :
-    (powerXOfLEBaseChangePeriodicIso R hi).inv.f 1 = (powerXRegularBaseChangeIso R n).inv := by
+    (powerXOfLEBaseChangePeriodicIso R hi).inv.f 1 =
+      ε (ModuleCat.extendScalars (AdjoinRoot.mk (X ^ n : R[X]))) := by
   unfold powerXOfLEBaseChangePeriodicIso
   exact powerXOfLEBaseChangeDuplexIso_inv_f₁ R hi
 
