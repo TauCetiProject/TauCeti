@@ -101,6 +101,25 @@ theorem tensorInternalHomAdjunction_unit_app_hom (F : QuasicoherentSheaf X) :
     ((congrArg (· ≫ 𝟙 _) ((ihom (C := X.Modules) E.obj).map_id _)).trans
       (Category.id_comp _)))
 
+/-- A finite locally free sheaf is closed in the quasicoherent category, with right adjoint
+its ordinary sheaf internal Hom. -/
+instance closedToQuasicoherent : Closed ((toQuasicoherent X).obj E) where
+  rightAdj := internalHom E
+  adj := tensorInternalHomAdjunction E
+
+/-- The chosen internal Hom in the quasicoherent category is ordinary sheaf internal Hom. -/
+@[simp]
+theorem ihom_toQuasicoherent :
+    ihom ((toQuasicoherent X).obj E) = internalHom E :=
+  (rfl)
+
+/-- Evaluation in the quasicoherent category is ordinary sheaf evaluation. -/
+@[simp]
+theorem ihom_ev_toQuasicoherent_app_hom (F : QuasicoherentSheaf X) :
+    ((ihom.ev ((toQuasicoherent X).obj E)).app F).hom =
+      E.obj ◁ eqToHom (internalHom_obj_obj E F) ≫ (ihom.ev E.obj).app F.obj :=
+  tensorInternalHomAdjunction_counit_app_hom E F
+
 -- The sheaf-level instance is stated on `X.Modules`, whose definition instance search
 -- does not unfold when inferring invertibility of a component at an underlying sheaf.
 local instance : IsIso (dualTensorIhom (C := X.Modules) E.obj) :=
