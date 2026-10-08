@@ -383,7 +383,9 @@ theorem finite_faces_orderedProd (hK : K.faces.Finite) (hL : L.faces.Finite) :
   exact PreAbstractSimplicialComplex.finite_faces_orderedProd hK hL
 
 /-- The ordered simplicial cylinder on `K`, obtained by taking its ordered product with the
-standard one-simplex on `Fin 2`. -/
+standard one-simplex on `Fin 2`. The body is exposed so constructions on ordered products
+specialize directly to cylinders. -/
+@[expose]
 def orderedCylinder (K : AbstractSimplicialComplex α) :
     AbstractSimplicialComplex (α × Fin 2) :=
   orderedProd K (⊤ : AbstractSimplicialComplex (Fin 2))
