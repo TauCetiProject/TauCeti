@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.GradedModuleCat.IdempotentHead
+public import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.Head
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.SimpleBasis
 
 /-!

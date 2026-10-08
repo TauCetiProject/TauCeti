@@ -279,6 +279,13 @@ noncomputable def zigzagGradedSimple (i : V) :
   gradedIdempotentHead (zigzagIntegerGrade k G)
     (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G i)
 
+/-- A graded vertex simple is the generic graded head of its vertex idempotent. -/
+theorem zigzagGradedSimple_def (i : V) :
+    zigzagGradedSimple k G i =
+      let _ := zigzagIntegerGradedAlgebra k G
+      gradedIdempotentHead (zigzagIntegerGrade k G)
+        (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G i) := rfl
+
 /-- A graded vertex simple is a finite graded module. -/
 theorem gradedFiniteModules_zigzagGradedSimple (i : V) :
     gradedFiniteModules (zigzagIntegerGrade k G) (zigzagGradedSimple k G i) :=
