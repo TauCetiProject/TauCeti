@@ -22,16 +22,17 @@ integers and extraction of prime parts by their idempotents.
 
 ## Main results
 
-* `TauCeti.zpowHat_eq_pow_val_toZMod_six`: profinite powers in `Multiplicative (ZMod 6)` are
+* `Multiplicative.zpowHat_eq_pow_val_toZMod_six`: profinite powers in `Multiplicative (ZMod 6)` are
   ordinary powers by the residue modulo six.
-* `TauCeti.zpowHat_idem_two_eq_cube_zmod_six`: the `2`-primary part of `x` is `x ^ 3`.
+* `Multiplicative.zpowHat_idem_two_eq_cube_zmod_six`: the `2`-primary part of `x` is `x ^ 3`.
 -/
 
 public section
 
-namespace TauCeti
+open TauCeti
+open scoped TauCeti.zHat
 
-open scoped zHat
+namespace Multiplicative
 
 /-- In the cyclic group `Multiplicative (ZMod 6)`, a profinite power is the ordinary power by
 the exponent's residue modulo six. -/
@@ -74,4 +75,4 @@ theorem zpowHat_idem_two_eq_cube_zmod_six (x : Multiplicative (ZMod 6)) :
   rw [ZMod.cast_eq_val, ← Nat.cast_zero, ZMod.natCast_eq_natCast_iff'] at h3
   omega
 
-end TauCeti
+end Multiplicative
