@@ -204,8 +204,7 @@ theorem exists_notMem_closure_of_forall_mem_re_div_pos {c b : ℂ} {ρ : ℝ} (h
 
 /-- If, far from `c`, no point `z` of a set `U` lies in the open half-strip
 `{0 < re ((z - c) / b), 0 < im ((z - c) / b) < π}` (as for a set that coincides far out with the
-exterior of the closed half-strip), then some point lies outside the closure of `U`, far out on
-the midline of the half-strip. -/
+exterior of the closed half-strip), then some point lies outside the closure of `U`. -/
 theorem exists_notMem_closure_of_forall_mem_notMem_halfStrip {c b : ℂ} {ρ : ℝ} (hb : b ≠ 0)
     (hU : ∀ z : ℂ, ρ < ‖z - c‖ → z ∈ U →
       ¬(0 < ((z - c) / b).re ∧ ((z - c) / b).im ∈ Ioo 0 Real.pi)) :
