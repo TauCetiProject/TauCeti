@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
-public import Mathlib.Algebra.Category.FGModuleCat.Colimits
 public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Category.ModuleCat.Projective
@@ -116,7 +115,7 @@ public section
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Limits CategoryTheory.ObjectProperty
+open CategoryTheory CategoryTheory.Limits
 
 universe u
 
@@ -456,7 +455,7 @@ end CategoryTheory.Equivalence
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Limits CategoryTheory.ObjectProperty
+open CategoryTheory
 
 universe u
 
