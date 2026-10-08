@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
-public import Mathlib.NumberTheory.NumberField.DirichletDensity
 public import TauCeti.NumberTheory.NumberField.DirichletDensityBounds
 -- `NumberField.Set.HasDirichletDensity` is not exposed and Mathlib exports no lemma unfolding it;
 -- its defining limit is needed to compare it with the logarithmic normalization.
