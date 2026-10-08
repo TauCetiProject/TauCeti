@@ -116,7 +116,8 @@ theorem unary_eq_zero (h : 𝒞.StrictUnit e) (X : C) :
 theorem homDifferential_eq_zero (h : 𝒞.StrictUnit e) (X : C) :
     𝒞.homDifferential X X (e X) = 0 := by
   apply homInclusion_injective X X
-  rw [𝒞.homInclusion_homDifferential, h.unary_eq_zero, map_zero]
+  rw [𝒞.homInclusion_homDifferential, AInfinityAlgebra.differential_apply, h.unary_eq_zero,
+    map_zero]
 
 /-! ### Uniqueness -/
 
