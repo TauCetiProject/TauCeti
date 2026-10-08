@@ -476,7 +476,8 @@ theorem isExhaustiveGradedSimpleFamily_gradedIdempotentHead [Module.Finite k A] 
   have hinj : Function.Injective φ.hom := by
     rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
     intro y hy
-    obtain ⟨c, rfl⟩ := exists_eq_smul_headGenerator hneg hcomplete.toOrthogonalIdempotents he₀ hspan i y
+    obtain ⟨c, rfl⟩ :=
+      exists_eq_smul_headGenerator hneg hcomplete.toOrthogonalIdempotents he₀ hspan i y
     rw [LinearMap.mem_ker, LinearMap.map_smul_of_tower, hφg, smul_eq_zero] at hy
     rw [hy.resolve_right hi, zero_smul]
   have : Mono φ := (GradedModuleCat.mono_iff_injective φ).2 hinj
