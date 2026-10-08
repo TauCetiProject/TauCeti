@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Adic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.GaussPoint
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
@@ -13,19 +14,23 @@ import TauCeti.AlgebraicGeometry.AdicSpace.Cont.DominatingUnit
 import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 
 /-!
-# The open unit disc is not quasi-compact
+# The open unit disc
 
 For any scalar `c`, `discExhaustion c n` is the subset `|T|^(n+1) ≤ |c| ≠ 0` of the
 closed unit disc, and `discExhaustionUnion c` is their increasing open union. For a
 pseudouniformiser `c`, this union is the underlying open unit disc. Over `ℚ_[p]`, taking
-`c = p` gives the usual exhaustion. This file constructs subsets and proves topological
-properties; it does not construct their coordinate rings or their adic-space structures.
+`c = p` gives the usual exhaustion. This file proves the topological properties of the union,
+constructs its pre-adic-space structure, and supplies its rational affinoid exhaustion.
 
 Over an ultrametric normed field, for `c ≠ 0` and `‖c‖ < 1`, the Gauss points in the union
 are exactly those of radii `0 < r < 1`. Every compact subset is contained in one exhaustion
 member, but Gauss points with radii sufficiently close to one escape that member.
 Consequently the union is not quasi-compact and cannot be homeomorphic to an affinoid
 adic spectrum.
+
+The open unit disc is the restriction of the closed-disc pre-adic space to this union.  It is an
+adic space because open restrictions of adic spaces are adic, and its exhaustion members are
+open affinoid subspaces given by the displayed rational subsets.
 
 The construction uses valuation inequalities, not real-valued radii for arbitrary points.
 The real radius is used only for the existing Gauss points. Independence of the choice of
@@ -234,5 +239,123 @@ theorem not_nonempty_homeomorph_discExhaustionUnion_spa {c : K} (hc₀ : c ≠ 0
   exact not_isCompact_discExhaustionUnion hc₀ hc₁ (isCompact_iff_compactSpace.mpr inferInstance)
 
 end NormedField
+
+section AdicSpace
+
+open _root_.AlgebraicGeometry _root_.CategoryTheory _root_.TopologicalSpace
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
+  [CompleteSpace K] [IsTateRing K]
+
+attribute [local instance] Classical.decEq
+
+local notation "𝒯" => weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K))
+  isWeightFamily_one_weight
+local notation "X" => weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0
+local notation "C" => weightedC (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight
+
+/-- The `n`-th rational subset in the closed unit disc used to exhaust the open unit disc. -/
+noncomputable def openUnitDiscExhaustionOpen (P : PairOfDefinition K) (c : K) (n : ℕ) :
+    Opens (closedPolydiscPreAdicSpace 1 P) :=
+  spaBasicOpen (powerBoundedSubring 𝒯) {X ^ (n + 1), C c} (C c)
+
+/-- The open of the closed unit disc exhausted by the rational subsets
+`|T|^(n+1) ≤ |c| ≠ 0`.  When `c` is a pseudouniformiser, this is the open unit disc; the
+definition is useful for an arbitrary scalar as well. -/
+noncomputable def openUnitDiscOpen (P : PairOfDefinition K) (c : K) :
+    Opens (closedPolydiscPreAdicSpace 1 P) :=
+  ⨆ n : ℕ, openUnitDiscExhaustionOpen P c n
+
+omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
+/-- Membership in the open unit disc is membership in one of its rational exhaustion subsets. -/
+@[simp]
+theorem mem_openUnitDiscOpen (P : PairOfDefinition K) (c : K)
+    (v : closedPolydiscPreAdicSpace 1 P) :
+    v ∈ openUnitDiscOpen P c ↔ ∃ n : ℕ,
+      v ∈ openUnitDiscExhaustionOpen P c n := by
+  exact Opens.mem_iSup
+
+/-- The open-unit-disc pre-adic space, obtained by restricting the closed-disc structure to the
+rational exhaustion associated to `c`.  A pseudouniformiser gives the usual open unit disc. -/
+-- The body is exposed so that a point can be used definitionally as a point of the restricted
+-- closed disc in statements about its rational charts.
+@[expose] noncomputable def openUnitDiscPreAdicSpace
+    (P : PairOfDefinition K) (c : K) : PreAdicSpace :=
+  (closedPolydiscPreAdicSpace 1 P).restrict (openUnitDiscOpen P c).isOpenEmbedding
+
+omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
+/-- The space underlying `openUnitDiscPreAdicSpace` is the open `openUnitDiscOpen c`. -/
+@[simp]
+theorem openUnitDiscPreAdicSpace_carrier (P : PairOfDefinition K) (c : K) :
+    ((openUnitDiscPreAdicSpace P c).toPresheafedSpace : TopCat) =
+      TopCat.of ↥(openUnitDiscOpen P c) := by
+  rfl
+
+/-- **The open unit disc is an adic space.**  More generally, the restriction associated to any
+scalar `c` is adic; identifying it with the usual open unit disc uses that `c` is a
+pseudouniformiser. -/
+theorem isAdic_openUnitDiscPreAdicSpace (P : PairOfDefinition K) (c : K) :
+    PreAdicSpace.isAdic (openUnitDiscPreAdicSpace P c) := by
+  rw [openUnitDiscPreAdicSpace]
+  exact PreAdicSpace.isAdic_restrict (openUnitDiscOpen P c).isOpenEmbedding
+    (isAdic_closedPolydiscPreAdicSpace 1 P)
+
+/-- The `n`-th rational exhaustion subset, regarded as an open of the open-unit-disc pre-adic
+space. -/
+noncomputable def openUnitDiscChart (P : PairOfDefinition K) (c : K) (n : ℕ) :
+    Opens (openUnitDiscPreAdicSpace P c) :=
+  (Opens.map (openUnitDiscOpen P c).inclusion').obj
+    (openUnitDiscExhaustionOpen P c n)
+
+omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
+/-- Membership in an open-unit-disc chart is membership in the corresponding rational subset of
+the closed disc. -/
+@[simp]
+theorem mem_openUnitDiscChart (P : PairOfDefinition K) (c : K) (n : ℕ)
+    (v : openUnitDiscPreAdicSpace P c) :
+    v ∈ openUnitDiscChart P c n ↔
+      ((closedPolydiscPreAdicSpace 1 P).ofRestrict
+        (openUnitDiscOpen P c).isOpenEmbedding).base v ∈
+          openUnitDiscExhaustionOpen P c n :=
+  Iff.rfl
+
+omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
+/-- The rational exhaustion charts cover the open unit disc. -/
+theorem iSup_openUnitDiscChart (P : PairOfDefinition K) (c : K) :
+    ⨆ n : ℕ, openUnitDiscChart P c n = ⊤ := by
+  rw [eq_top_iff]
+  intro v _
+  obtain ⟨n, hn⟩ := (mem_openUnitDiscOpen P c v.val).mp v.property
+  apply Opens.mem_iSup.mpr
+  refine ⟨n, ?_⟩
+  apply (mem_openUnitDiscChart P c n v).mpr
+  rw [PreAdicSpace.ofRestrict_base]
+  exact hn
+
+omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
+/-- Every exhaustion chart of the open unit disc is affinoid.  Its coordinate ring is the
+completed rational localisation for the presentation
+`R({T^(n+1), c}/c)`, conventionally written `K⟨T, T^(n+1)/c⟩`. -/
+theorem openUnitDiscChart_mem_affinoidOpens (P : PairOfDefinition K) {c : K}
+    (hc : IsUnit c) (n : ℕ) :
+    openUnitDiscChart P c n ∈ (openUnitDiscPreAdicSpace P c).affinoidOpens := by
+  let Q := P.weighted (T := fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight
+  have hunit : IsUnit (C c) := hc.map C
+  have hspan : Ideal.span (({X ^ (n + 1), C c} : Finset 𝒯) : Set 𝒯) = ⊤ :=
+    Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) hunit
+  have hopen : IsOpen (Ideal.span (({X ^ (n + 1), C c} : Finset 𝒯) : Set 𝒯) : Set 𝒯) := by
+    rw [hspan]
+    exact isOpen_univ
+  refine (PreAdicSpace.mem_affinoidOpens_restrict_iff
+    (closedPolydiscPreAdicSpace 1 P) (openUnitDiscOpen P c).isOpenEmbedding
+      (openUnitDiscChart P c n)).mpr ?_
+  have hle : openUnitDiscExhaustionOpen P c n ≤ openUnitDiscOpen P c := by
+    rw [openUnitDiscOpen]
+    exact le_iSup (openUnitDiscExhaustionOpen P c) n
+  rw [openUnitDiscChart, Opens.functor_map_eq_inf, inf_eq_left.mpr hle]
+  exact spaBasicOpen_mem_affinoidOpens Q (powerBoundedSubring 𝒯)
+    (fun _ ha ↦ mem_powerBoundedSubring.mp ha) Q.le_powerBoundedSubring hopen
+
+end AdicSpace
 
 end TauCeti.ValuationSpectrum

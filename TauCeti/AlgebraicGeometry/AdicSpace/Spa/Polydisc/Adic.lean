@@ -85,7 +85,9 @@ variable (k : ℕ) (P : PairOfDefinition K)
 /-- **The presentation-limit pre-adic space of the closed unit `k`-polydisc over `K`.** Its
 coordinate ring is the ordinary restricted-series ring, its plus ring is the power-bounded
 subring, and its pair of definition is obtained from `P` coefficientwise. -/
-noncomputable def closedPolydiscPreAdicSpace : PreAdicSpace.{u} :=
+-- The body is exposed so that opens of the underlying adic spectrum can be used as opens of this
+-- pre-adic space without transporting across `closedPolydiscPreAdicSpace_carrier`.
+@[expose] noncomputable def closedPolydiscPreAdicSpace : PreAdicSpace.{u} :=
   let B := weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K))
     isWeightFamily_one_weight
   let Q : PairOfDefinition B := P.weighted (T := fun _ : Fin k ↦ ({1} : Set K))
