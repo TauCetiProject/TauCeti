@@ -12,6 +12,7 @@ public import Mathlib.Order.Filter.AtTopBot.Finset
 public import Mathlib.Order.Northcott
 public import Mathlib.Topology.Algebra.Order.Floor
 public import Mathlib.Topology.UniformSpace.Real
+import Mathlib.Algebra.BigOperators.Group.Finset.Indicator
 
 /-!
 # Finite real-cutoff carriers for Northcott functions
@@ -125,24 +126,8 @@ theorem summatory_indicator_biUnion_finset {κ M : Type*} [AddCommMonoid M]
     (w : ι → M) (x : ℝ) :
     summatory N ((⋃ i ∈ s, f i).indicator w) x =
       ∑ i ∈ s, summatory N ((f i).indicator w) x := by
-  classical
-  induction s using Finset.induction with
-  | empty =>
-      have hset : (⋃ i ∈ (∅ : Finset κ), f i) = ∅ := by simp
-      have hindicator : (∅ : Set ι).indicator w = 0 := by
-        ext i
-        simp
-      rw [hset, hindicator, Finset.sum_empty]
-      exact summatory_zero N x
-  | @insert a s ha ih =>
-      have has : Disjoint (f a) (⋃ i ∈ s, f i) := by
-        rw [Set.disjoint_iUnion₂_right]
-        intro i hi
-        exact hdisj (by simp) (by simp [hi]) fun h => ha (h ▸ hi)
-      rw [Finset.set_biUnion_insert, Finset.sum_insert ha,
-        Set.indicator_union_of_disjoint has, ← Pi.add_def]
-      exact (summatory_add N ((f a).indicator w) ((⋃ i ∈ s, f i).indicator w) x).trans <|
-        congrArg (summatory N ((f a).indicator w) x + ·) (ih (hdisj.subset (by simp)))
+  simp_rw [summatory_apply, Finset.indicator_biUnion_apply s f hdisj]
+  exact Finset.sum_comm
 
 /-- Summation distributes over pointwise subtraction of weights. -/
 theorem summatory_sub {M : Type*} [SubtractionCommMonoid M] (w₁ w₂ : ι → M) (x : ℝ) :
