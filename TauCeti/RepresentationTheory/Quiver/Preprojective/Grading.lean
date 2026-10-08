@@ -42,6 +42,8 @@ graded-algebra structure and computes the concrete pieces.
 * `TauCeti.signlessPreprojectiveRelator_mem_grade_two`: so does the signless local relator.
 * `TauCeti.isHomogeneous_preprojectiveIdeal`: **the preprojective relation ideal is
   homogeneous.**
+* `TauCeti.preprojectiveMk_ofArrow_mul_mem_iSup`: left multiplication by an arrow lands in
+  positive degree.
 * `TauCeti.isInternal_preprojectiveGrade`: **the preprojective algebra is the internal direct
   sum of its graded pieces**, the comparison of the direct-sum graded algebra with the ungraded
   quotient rather than with a separate graded copy.
@@ -205,6 +207,23 @@ theorem mul_mem_preprojectiveGrade {m n : ℕ} {x y : preprojectiveAlgebra k Q}
     (hx : x ∈ preprojectiveGrade k Q m) (hy : y ∈ preprojectiveGrade k Q n) :
     x * y ∈ preprojectiveGrade k Q (m + n) :=
   TauCeti.GradedAlgebra.mul_mem_quotientPiece _ _ hx hy
+
+variable {Q} in
+/-- Left multiplication by an arrow raises degrees: `b z` has positive degree for every `z`. -/
+theorem preprojectiveMk_ofArrow_mul_mem_iSup {i j : Symmetrify Q} (b : i ⟶ j)
+    (z : preprojectiveAlgebra k Q) :
+    preprojectiveMk k Q (ofArrow b) * z ∈ ⨆ n, preprojectiveGrade k Q (n + 1) := by
+  have hz : z ∈ ⨆ n, preprojectiveGrade k Q n := by
+    rw [(isInternal_preprojectiveGrade k Q).submodule_iSup_eq_top]
+    trivial
+  refine Submodule.iSup_induction (motive := fun z =>
+      preprojectiveMk k Q (ofArrow b) * z ∈ ⨆ n, preprojectiveGrade k Q (n + 1)) _ hz
+    (fun n z hz => ?_) (by rw [mul_zero]; exact zero_mem _)
+    fun z z' hz hz' => by rw [mul_add]; exact add_mem hz hz'
+  refine Submodule.mem_iSup_of_mem n ?_
+  rw [add_comm]
+  exact mul_mem_preprojectiveGrade k Q
+    (preprojectiveMk_mem_preprojectiveGrade k Q (ofArrow_mem_grade_one b)) hz
 
 /-- **The preprojective algebra is a graded algebra** for the induced path-length grading. This
 is kept as a definition rather than an instance so that callers choose when to introduce it

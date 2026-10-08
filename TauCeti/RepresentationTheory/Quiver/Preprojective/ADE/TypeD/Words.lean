@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.Basic
+import all TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.Basic
 public import TauCeti.RingTheory.Idempotents.Corner
 
 /-!
@@ -115,6 +116,22 @@ theorem signlessPreprojectiveDBranchWord_def (a b : Fin (DynkinType.D n).rank) (
         (if l then turn (c + 1) else turn (c + 2)) * (turn (c + 1) + turn (c + 2)) ^ (t - 1)) *
           entry * e a := by
   rw [signlessPreprojectiveDBranchWord]
+
+/-- The two longest alternating fork words cancel in every source/target corner of `Dₙ`.
+The exponent counts backtracks, each of arrow length two. -/
+@[simp]
+theorem signlessPreprojectiveDBranchWord_add_eq_zero (hn : 3 ≤ n)
+    (a b : Fin (DynkinType.D n).rank) :
+    signlessPreprojectiveDBranchWord k a b true (c + 1) +
+      signlessPreprojectiveDBranchWord k a b false (c + 1) = 0 := by
+  have hsum := forkTurn_add_pow_eq_zero k (G := DG) («c» := n - 3)
+    (by rw [DynkinType.rank_D]; omega) (diagramGraph_D_adj hn)
+  simp only [forkTurn] at hsum
+  simp only [signlessPreprojectiveDBranchWord_def, Nat.add_eq_zero_iff,
+    Nat.one_ne_zero, and_false, ite_false, Bool.false_eq_true, ite_true,
+    Nat.add_sub_cancel]
+  rw [← add_mul, ← add_mul, ← mul_add, ← add_mul, ← pow_succ', hsum]
+  simp only [mul_zero, zero_mul]
 
 /-- Every fork word lies in its source/target corner. -/
 @[simp]

@@ -57,6 +57,7 @@ restriction with a single `G`-orbit.
 * `TauCeti.inertia_congr`: isomorphic representations have the same inertia group, so the inertia
   group is an invariant of the isomorphism class.
 * `TauCeti.inertia_conjNormalFDRep`: conjugating the representation conjugates its inertia group.
+* `FDRep.inertia_resFDRep`: a representation restricted from `G` to `N` has full inertia.
 * `TauCeti.char_conj_eq_of_mem_inertia`: the character of `A` is invariant under conjugation
   by an element of the inertia group.
 
@@ -172,6 +173,29 @@ theorem mem_inertia_iff_exists_linearEquiv {A : FDRep k N} {g : G} :
 end Field
 
 end TauCeti
+
+namespace FDRep
+
+open TauCeti
+
+variable {k : Type u} {G : Type v} [Ring k] [Group G]
+
+/-- A representation restricted from the ambient group has full inertia: the ambient
+operators implement conjugation on the normal subgroup. No simplicity is required. -/
+@[simp]
+theorem inertia_resFDRep (W : FDRep k G) (N : Subgroup G) [N.Normal] :
+    inertia (N.resFDRep W) = ⊤ := by
+  apply top_unique
+  intro g _
+  refine mem_inertia_iff.mpr ⟨Action.mkIso (W.ρAut g) fun n ↦ ?_⟩
+  -- Restriction preserves the underlying object. Rewriting `Action.res_obj_ρ` alone would
+  -- leave incompatible object types in the compositions, so expose the ambient operators.
+  change Action.ρ W (MulAut.conjNormal g⁻¹ n : G) ≫ Action.ρ W g =
+    Action.ρ W g ≫ Action.ρ W (n : G)
+  ext v
+  exact Representation.apply_conjNormal_inv ((forget₂ (FDRep k G) (Rep k G)).obj W).ρ g n v
+
+end FDRep
 
 namespace Representation.IntertwiningMap
 

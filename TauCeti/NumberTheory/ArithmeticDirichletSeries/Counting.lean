@@ -539,32 +539,32 @@ variable (χ : MultiplicativeIdealWeight K)
 `χ` and a prime `𝔭 ∉ S`, the partial sums of `χ` over the ideals prime to `insert 𝔭 S` are those
 over the ideals prime to `S`, minus `χ(𝔭)` times the same partial sum at the cutoff divided by
 `N(𝔭)`: the ideals prime to `S` and divisible by `𝔭` are `𝔭` times the ideals prime to `S`. -/
-theorem idealSummatory_restrict_insert
+theorem idealSummatory_restrictAway_insert
     {S : Set (HeightOneSpectrum (𝓞 K))} (hS : S.Finite)
     {𝔭 : HeightOneSpectrum (𝓞 K)} (h𝔭 : 𝔭 ∉ S) (x : ℝ) :
-    idealSummatory K (χ.restrict (insert 𝔭 S) (hS.insert 𝔭)).toIdealArithmeticFunction x =
-      idealSummatory K (χ.restrict S hS).toIdealArithmeticFunction x -
-        χ 𝔭.asIdeal * idealSummatory K (χ.restrict S hS).toIdealArithmeticFunction
+    idealSummatory K (χ.restrictAway (insert 𝔭 S) (hS.insert 𝔭)).toIdealArithmeticFunction x =
+      idealSummatory K (χ.restrictAway S hS).toIdealArithmeticFunction x -
+        χ 𝔭.asIdeal * idealSummatory K (χ.restrictAway S hS).toIdealArithmeticFunction
           (x / Ideal.absNorm 𝔭.asIdeal) := by
   classical
-  set f := (χ.restrict S hS).toIdealArithmeticFunction with hf
+  set f := (χ.restrictAway S hS).toIdealArithmeticFunction with hf
   set P : (Ideal (𝓞 K))⁰ := ⟨𝔭.asIdeal, mem_nonZeroDivisors_of_ne_zero 𝔭.ne_bot⟩ with hPdef
   -- on the multiples `𝔭 * J` the restricted weight factors, because `𝔭` is prime to `S`
   have hstep : ∀ J : (Ideal (𝓞 K))⁰, f (P * J) = χ 𝔭.asIdeal * f J := by
     intro J
     simp only [hf, MultiplicativeIdealWeight.toIdealArithmeticFunction_apply, Submonoid.coe_mul,
-      hPdef, MultiplicativeIdealWeight.restrict_apply, Ideal.isPrimeTo_mul_iff,
+      hPdef, MultiplicativeIdealWeight.restrictAway_apply, Ideal.isPrimeTo_mul_iff,
       Ideal.isPrimeTo_asIdeal_iff, h𝔭, not_false_eq_true, true_and]
     split_ifs <;> simp [_root_.map_mul]
   have hsplit : idealSummatory K
-      (χ.restrict (insert 𝔭 S) (hS.insert 𝔭)).toIdealArithmeticFunction x =
+      (χ.restrictAway (insert 𝔭 S) (hS.insert 𝔭)).toIdealArithmeticFunction x =
       idealSummatory K f x -
         idealSummatory K (fun I ↦ if 𝔭.asIdeal ∣ (I : Ideal (𝓞 K)) then f I else 0) x := by
     rw [idealSummatory_apply, idealSummatory_apply, idealSummatory_apply,
       ← Finset.sum_sub_distrib]
     refine Finset.sum_congr rfl fun I _ ↦ ?_
     rw [MultiplicativeIdealWeight.toIdealArithmeticFunction_apply,
-      MultiplicativeIdealWeight.restrict_insert_apply χ hS]
+      MultiplicativeIdealWeight.restrictAway_insert_apply χ hS]
     split_ifs <;> simp [hf]
   rw [hsplit, idealSummatory_ite_dvd K P f x]
   congr 1
