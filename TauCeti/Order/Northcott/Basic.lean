@@ -118,6 +118,32 @@ theorem summatory_add {M : Type*} [AddCommMonoid M] (w₁ w₂ : ι → M) (x : 
     summatory N (w₁ + w₂) x = summatory N w₁ x + summatory N w₂ x := by
   simp [summatory, Finset.sum_add_distrib]
 
+/-- An indicator-weighted summatory function is additive along a finite pairwise disjoint family
+of supports. -/
+theorem summatory_indicator_biUnion_finset {κ M : Type*} [AddCommMonoid M]
+    (s : Finset κ) (f : κ → Set ι) (hdisj : (s : Set κ).PairwiseDisjoint f)
+    (w : ι → M) (x : ℝ) :
+    summatory N ((⋃ i ∈ s, f i).indicator w) x =
+      ∑ i ∈ s, summatory N ((f i).indicator w) x := by
+  classical
+  induction s using Finset.induction with
+  | empty =>
+      have hset : (⋃ i ∈ (∅ : Finset κ), f i) = ∅ := by simp
+      have hindicator : (∅ : Set ι).indicator w = 0 := by
+        ext i
+        simp
+      rw [hset, hindicator, Finset.sum_empty]
+      exact summatory_zero N x
+  | @insert a s ha ih =>
+      have has : Disjoint (f a) (⋃ i ∈ s, f i) := by
+        rw [Set.disjoint_iUnion₂_right]
+        intro i hi
+        exact hdisj (by simp) (by simp [hi]) fun h => ha (h ▸ hi)
+      rw [Finset.set_biUnion_insert, Finset.sum_insert ha,
+        Set.indicator_union_of_disjoint has, ← Pi.add_def]
+      exact (summatory_add N ((f a).indicator w) ((⋃ i ∈ s, f i).indicator w) x).trans <|
+        congrArg (summatory N ((f a).indicator w) x + ·) (ih (hdisj.subset (by simp)))
+
 /-- Summation distributes over pointwise subtraction of weights. -/
 theorem summatory_sub {M : Type*} [SubtractionCommMonoid M] (w₁ w₂ : ι → M) (x : ℝ) :
     summatory N (w₁ - w₂) x = summatory N w₁ x - summatory N w₂ x := by
