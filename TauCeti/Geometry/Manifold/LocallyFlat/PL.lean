@@ -26,8 +26,8 @@ public section
 
 namespace TauCeti
 
-/-- The graph theorem for continuous maps turns global PL regularity into a locally-flat embedding.
-It is the graph-shaped PL embedding case of the general locally-flatness API. -/
+/-- A map piecewise linear on all of `E` has a locally flat graph `x ↦ (x, f x)` with
+complementary model `F`. -/
 theorem IsPLOn.isLocallyFlat_graph
     {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F}
