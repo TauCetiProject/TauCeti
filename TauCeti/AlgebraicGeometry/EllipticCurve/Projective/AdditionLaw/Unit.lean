@@ -37,6 +37,7 @@ variable {R : Type u} [CommRing R] (W : Projective R)
 
 /-- The Bosma–Lenstra addition law attached to `Z = 0`, evaluated at `P` and the point at infinity
 `[0 : 1 : 0]`, is the scalar multiple `-P₂ • P`. -/
+@[simp]
 theorem addXYZ_zero_right (P : Fin 3 → R) :
     W.addXYZ P ![0, 1, 0] = -P 2 • P := by
   funext i
@@ -44,6 +45,7 @@ theorem addXYZ_zero_right (P : Fin 3 → R) :
 
 /-- The Bosma–Lenstra addition law attached to `Y = 0`, evaluated at `P` and the point at infinity
 `[0 : 1 : 0]`, is the scalar multiple `P₁ • P`. -/
+@[simp]
 theorem dblAddXYZ_zero_right (P : Fin 3 → R) :
     W.dblAddXYZ P ![0, 1, 0] = P 1 • P := by
   funext i

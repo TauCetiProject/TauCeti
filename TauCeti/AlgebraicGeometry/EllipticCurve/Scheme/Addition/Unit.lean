@@ -31,15 +31,10 @@ one in each case, so both laws define the original projective point.
 
 * W. Bosma and H. W. Lenstra, Jr., *Complete systems of two addition laws for elliptic curves*,
   J. Number Theory 53 (1995), 229–240.
-
-## Provenance
-
-New in Tau Ceti; no code was ported. AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) proves
-the corresponding right-unit statement as `mulOver_oneOver` in
-`projects/ModularCurves/ModularCurves/EllipticCurve/GroupLawAxioms.lean` at commit
-`c3415f32a313e19ace43e05479aeaa0d56ca287a`, by descent from a universal atlas and field-valued
-points. The proof here instead works directly on two affine charts over the original arbitrary
-base ring.
+* AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), `mulOver_oneOver` in
+  `projects/ModularCurves/ModularCurves/EllipticCurve/GroupLawAxioms.lean` at commit
+  `c3415f32a313e19ace43e05479aeaa0d56ca287a`: a formalization of the same right unit law, proved
+  by descent from a universal atlas and field-valued points rather than on two affine charts.
 -/
 
 public section
