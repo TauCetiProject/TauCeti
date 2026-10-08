@@ -54,7 +54,8 @@ theorem mem_tangentRange_iff (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠
 
 /-- The normal space of a smooth embedding at `x`: ambient tangent vectors modulo vectors
 tangent to the embedded submanifold. -/
-noncomputable def NormalSpace (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) : Type _ :=
+@[expose] noncomputable def NormalSpace
+    (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) : Type _ :=
   TangentSpace J (f x) ⧸ f.tangentRange x hn
 
 /-- The tangent range is closed because the differential of an immersion has a continuous
@@ -97,6 +98,10 @@ instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
 noncomputable def normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     TangentSpace J (f x) →ₗ[𝕜] f.NormalSpace x hn :=
   (f.tangentRange x hn).mkQ
+
+/-- The normal-class map is the quotient map by the tangent range. -/
+theorem normalClass_eq_mkQ (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
+    f.normalClass x hn = (f.tangentRange x hn).mkQ := (rfl)
 
 /-- The kernel of the normal-class map is exactly the tangent range. -/
 @[simp]
