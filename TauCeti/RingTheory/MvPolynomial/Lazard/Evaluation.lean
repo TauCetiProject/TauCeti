@@ -294,6 +294,47 @@ theorem lazardExponent_mul {p q : MvPolynomial (Fin n) S} (hp : p ≠ 0) (hq : q
       Polynomial.trailingCoeff_mul, Polynomial.natTrailingDegree_mul hP hQ, Finsupp.cons_add_cons]
     rw [ih (by simpa using hP) (by simpa using hQ)]
 
+/-- Lazard evaluation as a multiplicative map preserving zero and one. It need not
+preserve addition: cancellation can change the first surviving Taylor coefficient. -/
+noncomputable def lazardEvalHom (a : Fin n → S) : MvPolynomial (Fin n) S →*₀ S where
+  toFun p := p.lazardEval a
+  map_zero' := lazardEval_zero a
+  map_one' := by simpa using lazardEval_C (1 : S) a
+  map_mul' p q := lazardEval_mul p q a
+
+/-- The multiplicative Lazard evaluation map evaluates a polynomial by Lazard evaluation. -/
+@[simp]
+theorem lazardEvalHom_apply (a : Fin n → S) (p : MvPolynomial (Fin n) S) :
+    lazardEvalHom a p = p.lazardEval a := (rfl)
+
+/-- The exponents removed from a power of a nonzero polynomial are multiplied by the power. -/
+theorem lazardExponent_pow {p : MvPolynomial (Fin n) S} (hp : p ≠ 0)
+    (a : Fin n → S) (k : ℕ) : (p ^ k).lazardExponent a = k • p.lazardExponent a := by
+  rcases subsingleton_or_nontrivial S with hS | hS
+  · exact False.elim (hp (by ext d; exact Subsingleton.elim _ _))
+  induction k with
+  | zero => simpa using lazardExponent_C (1 : S) a
+  | succ k ih => rw [pow_succ, lazardExponent_mul (pow_ne_zero _ hp) hp, ih, succ_nsmul]
+
+/-- The exponents removed from a product of nonzero polynomials are the sum of their exponents. -/
+theorem lazardExponent_prod {ι : Type*} (s : Finset ι)
+    (p : ι → MvPolynomial (Fin n) S)
+    (hp : ∀ i ∈ s, p i ≠ 0) (a : Fin n → S) :
+    (∏ i ∈ s, p i).lazardExponent a = ∑ i ∈ s, (p i).lazardExponent a := by
+  classical
+  rcases subsingleton_or_nontrivial S with hS | hS
+  · have hz (q : MvPolynomial (Fin n) S) : q = 0 := by
+      ext d
+      exact Subsingleton.elim _ _
+    simp [hz]
+  induction s using Finset.induction_on with
+  | empty => simpa using lazardExponent_C (1 : S) a
+  | @insert i s hi ih =>
+    rw [Finset.prod_insert hi, Finset.sum_insert hi,
+      lazardExponent_mul (hp i (Finset.mem_insert_self _ _))
+        (Finset.prod_ne_zero_iff.mpr fun j hj ↦ hp j (Finset.mem_insert_of_mem hj)),
+      ih (fun j hj ↦ hp j (Finset.mem_insert_of_mem hj))]
+
 end NoZeroDivisors
 
 end MvPolynomial
