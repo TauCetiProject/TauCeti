@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
 public import TauCeti.Topology.Algebra.Module.ExtendByZero
+public import TauCeti.Data.Finsupp.MapDomain
 
 /-!
 # Linear coordinate formulas for relabeling polyhedra
@@ -38,34 +39,22 @@ variable {α β : Type*} [DecidableEq β]
   (hK : P ≤ K.toPreAbstractSimplicialComplex)
   (hL : P.map e ≤ L.toPreAbstractSimplicialComplex)
 
-/-- Injective relabeling of polyhedra and its inverse are restrictions of ambient
-continuous linear coordinate maps. Restriction is a left inverse to extension on the
-entire coordinate space; unused target coordinates are zero on the polyhedron. -/
-theorem exists_continuousLinearMap_relabelingHomeomorph :
-    ∃ (A : (α → ℝ) →L[ℝ] (β → ℝ)) (B : (β → ℝ) →L[ℝ] (α → ℝ)),
-      Function.LeftInverse B A ∧
-      (∀ x : {x : Realization K // x.1.support ∈ P},
-        ((P.relabelingHomeomorph e hK hL x).1.1 : β → ℝ) = A (x.1.1 : α → ℝ)) ∧
-      (∀ y : {y : Realization L // y.1.support ∈ P.map e},
-        (((P.relabelingHomeomorph e hK hL).symm y).1.1 : α → ℝ) =
-          B (y.1.1 : β → ℝ)) := by
-  let A := Function.ExtendByZero.continuousLinearMap ℝ e
-  let B : (β → ℝ) →L[ℝ] (α → ℝ) :=
-    ContinuousLinearMap.pi fun i => ContinuousLinearMap.proj (e i)
-  refine ⟨A, B, ?_, ?_, ?_⟩
-  · intro x
-    ext i
-    simp [A, B, e.injective]
-  · intro x
-    ext j
-    rw [relabelingHomeomorph_val]
-    by_cases hj : j ∈ Set.range e
-    · obtain ⟨i, rfl⟩ := hj
-      simp [A, e.injective]
-    · simp [A, Finsupp.mapDomain_of_notMem_range _ _ hj,
-        Function.extend_apply' _ _ _ hj]
-  · intro y
-    ext i
-    simp [B]
+/-- Relabeling of polyhedra extends the ambient coordinate vector by zero. -/
+theorem relabelingHomeomorph_coe_eq_extendByZero
+    (x : {x : Realization K // x.1.support ∈ P}) :
+    ((P.relabelingHomeomorph e hK hL x).1.1 : β → ℝ) =
+      Function.ExtendByZero.continuousLinearMap ℝ e (x.1.1 : α → ℝ) := by
+  rw [relabelingHomeomorph_val, Function.ExtendByZero.continuousLinearMap_apply]
+  exact Finsupp.coe_mapDomain_eq_extend e.injective _
+
+/-- Inverse relabeling of polyhedra restricts the ambient coordinate vector along the
+vertex embedding. -/
+theorem relabelingHomeomorph_symm_coe_eq_restriction
+    (y : {y : Realization L // y.1.support ∈ P.map e}) :
+    (((P.relabelingHomeomorph e hK hL).symm y).1.1 : α → ℝ) =
+      Function.ExtendByZero.restriction ℝ e (y.1.1 : β → ℝ) := by
+  ext i
+  simp only [relabelingHomeomorph_symm_val, Finsupp.comapDomain_apply,
+    Function.ExtendByZero.restriction_apply, Function.comp_apply]
 
 end PreAbstractSimplicialComplex

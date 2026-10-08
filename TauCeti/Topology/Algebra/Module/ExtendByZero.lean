@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.PiProd
 
 /-!
@@ -47,5 +46,20 @@ noncomputable def continuousLinearMap : (ι → R) →L[R] (κ → R) :=
 @[simp]
 theorem continuousLinearMap_apply (x : ι → R) :
     continuousLinearMap R e x = Function.extend e x 0 := (rfl)
+
+/-- Restrict coordinate functions along an index map, as a continuous linear map. -/
+def restriction : (κ → R) →L[R] (ι → R) :=
+  ContinuousLinearMap.pi fun i => ContinuousLinearMap.proj (e i)
+
+/-- Coordinate restriction is precomposition with the index map. -/
+@[simp]
+theorem restriction_apply (x : κ → R) : restriction R e x = x ∘ e := rfl
+
+/-- Restriction recovers every function extended along an injective index map. -/
+theorem restriction_leftInverse (he : Function.Injective e) :
+    Function.LeftInverse (restriction R e) (continuousLinearMap R e) := by
+  intro x
+  ext i
+  simp [he]
 
 end Function.ExtendByZero
