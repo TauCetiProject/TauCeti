@@ -74,6 +74,8 @@ public section
 
 namespace TauCeti
 
+open RootPairing
+
 open Function Pointwise Set
 
 universe u v w x

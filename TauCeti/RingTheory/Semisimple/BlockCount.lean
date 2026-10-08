@@ -24,9 +24,9 @@ Wedderburn presentation exists, but is not needed to compare presentations.
 The underlying factor matching and cardinality invariance for arbitrary products of simple rings
 are `RingEquiv.exists_equiv_factors` and `RingEquiv.card_eq_of_pi_of_isSimpleRing` in
 `TauCeti/RingTheory/SimpleRing/Pi.lean`. The finer uniqueness of the matrix sizes and division
-rings is `TauCeti.wedderburn_blocks_unique` in
+rings is `RingEquiv.wedderburn_blocks_unique` in
 `TauCeti/RingTheory/Semisimple/Wedderburn/Uniqueness.lean`, which applies
-`TauCeti.wedderburn_data_unique` to the matched matrix blocks.
+`TauCeti.nonempty_ringEquiv_matrix_iff` to the matched matrix blocks.
 
 ## Main results
 

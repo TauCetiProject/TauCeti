@@ -336,12 +336,8 @@ theorem even_length_of_mem_fi24AutomorphismRelators :
   simp only [fi24AutomorphismRelators, List.mem_append] at hr
   rcases hr with hr | hr
   · obtain ⟨i, j, rfl⟩ := mem_coxeterRelators_iff.mp hr
-    have hlen :
-        (coxeterRelator fi24AutomorphismCoxeterMatrix s(i, j).inf s(i, j).sup).toWord.length =
-          fi24AutomorphismCoxeterMatrix s(i, j).inf s(i, j).sup * 2 := by
-      simp
-    rw [hlen]
-    exact even_iff_two_dvd.mpr ⟨_, Nat.mul_comm _ 2⟩
+    rw [length_toWord_coxeterRelator]
+    exact even_two_mul _
   · simp only [fi24AutomorphismAdditionalRelators, List.mem_cons, List.not_mem_nil,
       or_false] at hr
     rcases hr with rfl | rfl
@@ -723,21 +719,14 @@ theorem abelianizationOf_fi24AutomorphismGroup_of (i : Fin 12) :
       Abelianization.of (PresentedGroup.of i : Fi24AutomorphismGroup) =
         Abelianization.of (PresentedGroup.of j) := by
     intro i j hij
-    set u := Abelianization.of (PresentedGroup.of i : Fi24AutomorphismGroup) with hu
-    set v := Abelianization.of (PresentedGroup.of j : Fi24AutomorphismGroup) with hv
-    have hu2 : u * u = 1 := by
-      rw [hu, ← map_mul, fi24AutomorphismGroup_of_mul_of_self, map_one]
-    have hv2 : v * v = 1 := by
-      rw [hv, ← map_mul, fi24AutomorphismGroup_of_mul_of_self, map_one]
-    have huv : (u * v) ^ 3 = 1 := by
-      rw [hu, hv, ← map_mul, ← map_pow, ← hij, fi24AutomorphismGroup_of_mul_of_pow, map_one]
-    have huv1 : u * v = 1 := by
-      calc u * v = (u * v) ^ 2 * (u * v) := by
-            rw [mul_pow, sq, sq, hu2, hv2, one_mul, one_mul]
-        _ = (u * v) ^ 3 := (pow_succ _ 2).symm
-        _ = 1 := huv
-    rw [mul_eq_one_iff_eq_inv] at huv1
-    rw [huv1, inv_eq_of_mul_eq_one_right hv2]
+    have hsquare (k : Fin 12) :
+        Abelianization.of (PresentedGroup.of k : Fi24AutomorphismGroup) ^ 2 = 1 := by
+      rw [← map_pow, sq, fi24AutomorphismGroup_of_mul_of_self, map_one]
+    have hprod := congrArg Abelianization.of (fi24AutomorphismGroup_of_mul_of_pow i j)
+    rw [hij, map_pow, map_mul, map_one, mul_pow, pow_succ _ 2, pow_succ _ 2,
+      hsquare, hsquare, one_mul, one_mul] at hprod
+    apply mul_right_cancel (b := Abelianization.of (PresentedGroup.of j : Fi24AutomorphismGroup))
+    simpa only [← sq, hsquare] using hprod
   have edge : ∀ i j : Fin 12, (i, j) ∈ fi24AutomorphismEdges ∨ (j, i) ∈ fi24AutomorphismEdges →
       i ≠ j →
       Abelianization.of (PresentedGroup.of i : Fi24AutomorphismGroup) =

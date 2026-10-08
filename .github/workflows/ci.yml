@@ -15,8 +15,9 @@ permissions:
 # cancelled before it can publish, while superseded pending commits do not each
 # start an expensive cache-miss rebuild. In a burst, this deliberately coalesces
 # intermediate commits' post-merge checks too; the newest pending tip rechecks
-# the entire tree, though localizing a failure may then require bisection. No
-# merge decision consumes this post-merge workflow's per-commit conclusion.
+# the entire tree, though localizing a failure may then require bisection.
+# Dependency reconciliation uses conclusive runs as evidence for the current
+# pin, skipping coalesced commits without a completed build.
 concurrency:
   group: main-ci-cache-publisher
   cancel-in-progress: false
@@ -113,6 +114,7 @@ jobs:
       - name: Infrastructure policy unit tests
         run: |
           PYTHONPATH=scripts python3 scripts/test_loc_graph.py
+          PYTHONPATH=scripts python3 scripts/test_roadmap_completion.py
           PYTHONPATH=scripts python3 scripts/test_loc_roadmap_graph.py
           PYTHONPATH=scripts python3 scripts/test_roadmap_progress.py
           PYTHONPATH=scripts python3 scripts/test_participant_graph.py
@@ -130,6 +132,7 @@ jobs:
           python3 scripts/test_queue_release.py
           python3 scripts/test_bwrap_pin.py
           PYTHONPATH=scripts python3 scripts/test_bump_manifest.py
+          python3 scripts/test_bump_report.py
           python3 scripts/test_lint_scope.py
           python3 scripts/test_build_lint_driver.py
           python3 scripts/test_elan_pin.py

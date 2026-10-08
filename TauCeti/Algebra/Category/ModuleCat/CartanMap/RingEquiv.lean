@@ -211,32 +211,28 @@ conflation-exact. -/
 theorem isConflationExact_finiteModulesEquivalence_functor :
     (finiteModulesExactStructure S).IsConflationExact (finiteModulesExactStructure R)
       e.finiteModulesEquivalence.functor :=
-  Equivalence.isConflationExact_finiteModules_congrFullSubcategory_functor _
-    (ExactStructure.isConflationExact_abelian _) _
+  Equivalence.isConflationExact_finiteModules_congrFullSubcategory_functor _ _
 
 /-- The inverse of the equivalence of finitely generated module categories induced by a ring
 isomorphism is conflation-exact. -/
 theorem isConflationExact_finiteModulesEquivalence_inverse :
     (finiteModulesExactStructure R).IsConflationExact (finiteModulesExactStructure S)
       e.finiteModulesEquivalence.inverse :=
-  Equivalence.isConflationExact_finiteModules_congrFullSubcategory_inverse _
-    (ExactStructure.isConflationExact_abelian _) _
+  Equivalence.isConflationExact_finiteModules_congrFullSubcategory_inverse _ _
 
 /-- The equivalence of finitely generated projective module categories induced by a ring
 isomorphism is conflation-exact. -/
 theorem isConflationExact_finiteProjectiveModulesEquivalence_functor :
     (finiteProjectiveModulesExactStructure S).IsConflationExact
       (finiteProjectiveModulesExactStructure R) e.finiteProjectiveModulesEquivalence.functor :=
-  Equivalence.isConflationExact_finiteProjectiveModules_congrFullSubcategory_functor _
-    (ExactStructure.isConflationExact_abelian _) _
+  Equivalence.isConflationExact_finiteProjectiveModules_congrFullSubcategory_functor _ _
 
 /-- The inverse of the equivalence of finitely generated projective module categories induced by
 a ring isomorphism is conflation-exact. -/
 theorem isConflationExact_finiteProjectiveModulesEquivalence_inverse :
     (finiteProjectiveModulesExactStructure R).IsConflationExact
       (finiteProjectiveModulesExactStructure S) e.finiteProjectiveModulesEquivalence.inverse :=
-  Equivalence.isConflationExact_finiteProjectiveModules_congrFullSubcategory_inverse _
-    (ExactStructure.isConflationExact_abelian _) _
+  Equivalence.isConflationExact_finiteProjectiveModules_congrFullSubcategory_inverse _ _
 
 /-! ### The induced isomorphisms of Grothendieck groups -/
 
