@@ -130,12 +130,11 @@ theorem isOpen_span_discExhaustionNumerators {c : K} (hc : IsUnit c) (n : ℕ) :
   exact isOpen_univ
 
 omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
-/-- Each member of the open-disc exhaustion is an open affinoid subspace of the closed disc;
-`discExhaustionOpenIso` identifies its coordinate ring. -/
-theorem discExhaustionOpen_mem_affinoidOpens (hc : IsPseudoUniformizer c) (n : ℕ) :
+/-- For a unit `c`, each member of the open-disc exhaustion is an open affinoid subspace of the
+closed disc; `discExhaustionOpenIso` identifies its coordinate ring. -/
+theorem discExhaustionOpen_mem_affinoidOpens (hc : IsUnit c) (n : ℕ) :
     discExhaustionOpen c P n ∈ (closedPolydiscPreAdicSpace 1 P).affinoidOpens :=
-  closedPolydiscBasicOpen_mem_affinoidOpens 1 P
-    (isOpen_span_discExhaustionNumerators hc.isUnit n)
+  closedPolydiscBasicOpen_mem_affinoidOpens 1 P (isOpen_span_discExhaustionNumerators hc n)
 
 open PairOfDefinition in
 open scoped Classical in

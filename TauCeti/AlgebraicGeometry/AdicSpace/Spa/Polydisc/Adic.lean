@@ -110,15 +110,19 @@ lemma closedPolydiscPreAdicSpace_def :
           isWeightFamily_one_weight).le_powerBoundedSubring :=
   (rfl)
 
+/-! The declarations below are stated for `closedPolydiscPreAdicSpace k P` but built from the
+presentation-limit API, elaborating against the unfolding recorded by the definitional equation
+`closedPolydiscPreAdicSpace_def`. That equation cannot be used with `rw` here: the opens, their
+restrictions, and `affinoidOpens` all have types depending on `closedPolydiscPreAdicSpace k P`,
+so the rewrite motive is not type correct. -/
+
 /-- A basic rational open of the closed-polydisc pre-adic space. -/
 noncomputable def closedPolydiscBasicOpen
     (T : Finset (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K))
       isWeightFamily_one_weight))
     (s : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K))
-      isWeightFamily_one_weight) : Opens (closedPolydiscPreAdicSpace k P) := by
-  rw [closedPolydiscPreAdicSpace_def]
-  change Opens (spa (powerBoundedSubring _))
-  exact spaBasicOpen (powerBoundedSubring _) T s
+      isWeightFamily_one_weight) : Opens (closedPolydiscPreAdicSpace k P) :=
+  spaBasicOpen (powerBoundedSubring _) T s
 
 omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
 /-- A rational open of the closed polydisc whose numerators span an open ideal is an open
@@ -133,18 +137,8 @@ theorem closedPolydiscBasicOpen_mem_affinoidOpens
         isWeightFamily_one_weight)) :
         Set (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K))
           isWeightFamily_one_weight))) :
-    closedPolydiscBasicOpen k P T s ∈ (closedPolydiscPreAdicSpace k P).affinoidOpens := by
-  change PreAdicSpace.isAffinoid
-    ((closedPolydiscPreAdicSpace k P).restrict
-      (closedPolydiscBasicOpen k P T s).isOpenEmbedding)
-  change PreAdicSpace.isAffinoid
-    ((presentationLimitPreAdicSpace
-      (P.weighted (T := fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight)
-      (powerBoundedSubring _) (fun _ ha ↦ mem_powerBoundedSubring.mp ha)
-      (P.weighted (T := fun _ : Fin k ↦ ({1} : Set K))
-        isWeightFamily_one_weight).le_powerBoundedSubring).restrict
-      (spaBasicOpen (powerBoundedSubring _) T s).isOpenEmbedding)
-  exact spaBasicOpen_mem_affinoidOpens _ _ _ _ hT
+    closedPolydiscBasicOpen k P T s ∈ (closedPolydiscPreAdicSpace k P).affinoidOpens :=
+  spaBasicOpen_mem_affinoidOpens _ _ _ _ hT
 
 open PairOfDefinition in
 /-- **The coordinate ring of an admissible rational open of the closed polydisc.** Restricting
@@ -183,16 +177,13 @@ noncomputable def closedPolydiscBasicOpenIso
       Set.range (spaComapLocHom Q (powerBoundedSubring _) T s _ hden) := by
     rw [Opens.set_range_inclusion', coe_spaComapLocHom,
       range_spaComapLoc Q _ Q.le_powerBoundedSubring T s _ hden]
-  change (presentationLimitPreAdicSpace Q (powerBoundedSubring _)
-      (fun _ ha ↦ mem_powerBoundedSubring.mp ha) Q.le_powerBoundedSubring).restrict
-      (spaBasicOpen (powerBoundedSubring _) T s).isOpenEmbedding ≅ _
-  exact (presentationLimitPreAdicSpace Q (powerBoundedSubring _)
+  exact ((presentationLimitPreAdicSpace Q (powerBoundedSubring _)
       (fun _ ha ↦ mem_powerBoundedSubring.mp ha) Q.le_powerBoundedSubring).restrictIsoOfRangeEq
       (spaBasicOpen (powerBoundedSubring _) T s).isOpenEmbedding
       (isOpenEmbedding_spaComapLocHom Q (powerBoundedSubring _) Q.le_powerBoundedSubring T s _
         hden) hrange ≪≫
     presentationLimitPreAdicSpaceLocIso Q (powerBoundedSubring _) T s _ hden
-      (fun _ ha ↦ mem_powerBoundedSubring.mp ha) Q.le_powerBoundedSubring hT
+      (fun _ ha ↦ mem_powerBoundedSubring.mp ha) Q.le_powerBoundedSubring hT :)
 
 omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
 /-- The topological space underlying `closedPolydiscPreAdicSpace` is the closed polydisc
