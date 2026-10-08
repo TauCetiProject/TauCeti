@@ -239,11 +239,7 @@ namespace IsNondegenerateCriticalPoint
 /-- **Morse index drops along a broken forward limit.** Suppose every point in the closure of
 `Wˢ(q)` converges forward to a nondegenerate critical point, and all connecting stable and
 unstable manifolds meet transversally. If that closure meets `Wˢ(x)` for `x ≠ q`, then the
-Morse index of `q` is strictly smaller than that of `x`.
-
-The proof iterates the one-break theorem. At every new limiting critical point, Morse--Smale
-transversality strictly lowers the index, so strong induction on the index forces the chain to
-terminate at `q`. -/
+Morse index of `q` is strictly smaller than that of `x`. -/
 theorem morseIndex_lt_of_mem_closure_stableSet_inter_stableSet
     (hx : IsNondegenerateCriticalPoint f x) (hfs : ContDiff ℝ 2 f)
     (hf : LipschitzWith K (∇ f)) (hqx : q ≠ x)
@@ -261,6 +257,9 @@ theorem morseIndex_lt_of_mem_closure_stableSet_inter_stableSet
         Submodule.span ℝ (tangentConeAt ℝ
           (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤) :
     morseIndex f q < morseIndex f x := by
+  -- Iterate the one-break theorem. At every new limiting critical point, Morse--Smale
+  -- transversality strictly lowers the index, so strong induction on the index forces the chain
+  -- to terminate at `q`.
   have H : ∀ n x, morseIndex f x = n → IsNondegenerateCriticalPoint f x → q ≠ x →
       (closure (Flow.stableSet (negativeGradientFlow f hf) q) ∩
         Flow.stableSet (negativeGradientFlow f hf) x).Nonempty →
@@ -285,11 +284,8 @@ theorem morseIndex_lt_of_mem_closure_stableSet_inter_stableSet
 /-- **Morse index drops along a broken backward limit.** Suppose every point in the closure of
 `Wᵘ(p)` converges backward to a nondegenerate critical point, and all connecting stable and
 unstable manifolds meet transversally. If that closure meets `Wᵘ(x)` for `x ≠ p`, then the
-Morse index of `x` is strictly smaller than that of `p`.
-
-This is the backward counterpart of
-`morseIndex_lt_of_mem_closure_stableSet_inter_stableSet`; induction is on the codimension of the
-unstable manifold, which decreases at every preceding critical point. -/
+Morse index of `x` is strictly smaller than that of `p`. This is the backward counterpart of
+`morseIndex_lt_of_mem_closure_stableSet_inter_stableSet`. -/
 theorem morseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet
     (hx : IsNondegenerateCriticalPoint f x) (hfs : ContDiff ℝ 2 f)
     (hf : LipschitzWith K (∇ f)) (hpx : p ≠ x)
@@ -307,6 +303,8 @@ theorem morseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet
         Submodule.span ℝ (tangentConeAt ℝ
           (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤) :
     morseIndex f x < morseIndex f p := by
+  -- Induct on the codimension of the unstable manifold, which decreases at every preceding
+  -- critical point.
   let d := Module.finrank ℝ E
   have H : ∀ n x, d - morseIndex f x = n → IsNondegenerateCriticalPoint f x → p ≠ x →
       (closure (Flow.unstableSet (negativeGradientFlow f hf) p) ∩
@@ -336,12 +334,7 @@ theorem morseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet
 /-- **An index-one Morse trajectory slice is closed.** Assume that points in the closures of the
 relevant stable and unstable manifolds converge to nondegenerate critical points, and that all
 such manifolds meet transversally. If the Morse indices of `p` and `q` differ by one, then their
-connecting set, cut at any value strictly between `f q` and `f p`, is closed.
-
-Indeed, a limit point has backward and forward critical limits `a` and `b`. The two preceding
-index-control theorems and the trajectory from `a` to `b` fit their indices between two consecutive
-integers. Any extra break would force a strict intermediate index; the only remaining degenerate
-possibilities put the limit point at `p` or `q`, away from the chosen level. -/
+connecting set, cut at any value strictly between `f q` and `f p`, is closed. -/
 theorem isClosed_unstableSet_inter_stableSet_inter_level
     (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
     (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
@@ -362,6 +355,10 @@ theorem isClosed_unstableSet_inter_stableSet_inter_level
           (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤) :
     IsClosed (Flow.unstableSet (negativeGradientFlow f hf) p ∩
       Flow.stableSet (negativeGradientFlow f hf) q ∩ {z | f z = c}) := by
+  -- A limit point has backward and forward critical limits `a` and `b`. The two preceding
+  -- index-control theorems and the trajectory from `a` to `b` fit their indices between two
+  -- consecutive integers. Any extra break would force a strict intermediate index; the only
+  -- remaining degenerate possibilities put the limit point at `p` or `q`, away from the level.
   apply isClosed_of_closure_subset
   intro y hy
   have hyU : y ∈ closure (Flow.unstableSet (negativeGradientFlow f hf) p) :=
@@ -420,9 +417,10 @@ theorem isClosed_unstableSet_inter_stableSet_inter_level
   subst a
   exact ⟨⟨hya, hyb⟩, hyc⟩
 
-/-- **A compact index-one Morse trajectory slice is finite.** This is the finiteness needed to
-define the coefficient of the Morse differential: compactness supplies a finite subcover, while
-Morse--Smale transversality and the index difference make the slice discrete. -/
+/-- **A compact index-one Morse trajectory slice is finite.** Under the hypotheses of
+`isClosed_unstableSet_inter_stableSet_inter_level`, if the slice is contained in a compact set
+then it is finite. This is the finiteness needed to define the coefficient of the Morse
+differential. -/
 theorem finite_unstableSet_inter_stableSet_inter_level
     (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
     (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
@@ -446,6 +444,8 @@ theorem finite_unstableSet_inter_stableSet_inter_level
       Flow.stableSet (negativeGradientFlow f hf) q ∩ {z | f z = c} ⊆ C) :
     (Flow.unstableSet (negativeGradientFlow f hf) p ∩
       Flow.stableSet (negativeGradientFlow f hf) q ∩ {z | f z = c}).Finite := by
+  -- The slice is a closed subset of a compact set, and Morse--Smale transversality together with
+  -- the index difference makes it discrete.
   apply (hC.of_isClosed_subset
     (hp.isClosed_unstableSet_inter_stableSet_inter_level hq hfs hf hind hc hconvS hconvU htr)
     hsub).finite
