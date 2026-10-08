@@ -105,44 +105,6 @@ theorem adjointCliffordHom_cartan_eq_sum_weight
   simp only [bivector_def, map_smul, smul_mul_assoc, mul_smul_comm]
   module
 
-private noncomputable def bivectorBilin
-    (Q : QuadraticForm K L) : L →ₗ[K] L →ₗ[K] CliffordAlgebra Q :=
-  LinearMap.mk₂ K (bivector Q)
-    (fun x y z ↦ by
-      rw [← bivectorAlternating_apply, ← bivectorAlternating_apply,
-        ← bivectorAlternating_apply]
-      have hu (a b : L) : Function.update ![0, b] 0 a = ![a, b] := by
-        funext i
-        fin_cases i <;> simp
-      simpa only [hu] using
-        (bivectorAlternating Q).map_update_add (v := ![0, z]) 0 x y)
-    (fun c x y ↦ by
-      rw [← bivectorAlternating_apply, ← bivectorAlternating_apply]
-      have hu (a b : L) : Function.update ![0, b] 0 a = ![a, b] := by
-        funext i
-        fin_cases i <;> simp
-      simpa only [hu] using
-        (bivectorAlternating Q).map_update_smul (v := ![0, y]) 0 c x)
-    (fun x y z ↦ by
-      rw [← bivectorAlternating_apply, ← bivectorAlternating_apply,
-        ← bivectorAlternating_apply]
-      have hu (a b : L) : Function.update ![a, 0] 1 b = ![a, b] := by
-        funext i
-        fin_cases i <;> simp
-      simpa only [hu] using
-        (bivectorAlternating Q).map_update_add (v := ![x, 0]) 1 y z)
-    (fun c x y ↦ by
-      rw [← bivectorAlternating_apply, ← bivectorAlternating_apply]
-      have hu (a b : L) : Function.update ![a, 0] 1 b = ![a, b] := by
-        funext i
-        fin_cases i <;> simp
-      simpa only [hu] using
-        (bivectorAlternating Q).map_update_smul (v := ![x, 0]) 1 c y)
-
-omit [CharZero K] [IsAlgClosed K] [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
-private theorem bivectorBilin_apply (Q : QuadraticForm K L) (x y : L) :
-    bivectorBilin Q x y = bivector Q x y := rfl
-
 omit [CharZero K] [IsAlgClosed K] in
 private theorem projectedBivectorSum_neg
     {iota : Type w} [Fintype iota] [DecidableEq iota]
@@ -155,7 +117,7 @@ private theorem projectedBivectorSum_neg
         (TauCeti.genWeightSpaceProjection K H L (-chi) (TauCeti.killingDualBasis b i)) := by
   let f : L →ₗ[K] L →ₗ[K]
       CliffordAlgebra (TauCeti.LieAlgebra.killingQuadraticForm K L) :=
-    (bivectorBilin (TauCeti.LieAlgebra.killingQuadraticForm K L)).comp
+    (bivectorBilinear (TauCeti.LieAlgebra.killingQuadraticForm K L)).comp
       (TauCeti.genWeightSpaceProjection K H L (-chi)) |>.compl₂
         (TauCeti.genWeightSpaceProjection K H L chi)
   have hb := TauCeti.sum_apply_killingDualBasis_eq f b (TauCeti.killingDualBasis b)
@@ -167,7 +129,7 @@ private theorem projectedBivectorSum_neg
       ∑ i, bivector (TauCeti.LieAlgebra.killingQuadraticForm K L)
         (TauCeti.genWeightSpaceProjection K H L (-chi) (TauCeti.killingDualBasis b i))
         (TauCeti.genWeightSpaceProjection K H L chi (b i)) := by
-    convert hb using 1 <;> simp only [bivectorBilin_apply]
+    simpa only [bivectorBilinear_apply] using hb
   rw [hb']
   calc
     _ = ∑ i, -bivector (TauCeti.LieAlgebra.killingQuadraticForm K L)
