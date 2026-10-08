@@ -53,14 +53,7 @@ theorem unitSphereIsomHom_surjective (hn : n ≠ 0) :
   refine ⟨e, TauCeti.RiemannianIsometry.ext_of_mfderiv_eq (p := x) (unitSphereIsomHom e) Φ ?_ ?_⟩
   · simpa only [unitSphereIsomHom_apply, coe_unitSphereRiemannianIsometry] using he
   · rw [unitSphereIsomHom_apply]
-    rw [show ⇑(unitSphereRiemannianIsometry e) = unitSphereEquiv e from
-      coe_unitSphereRiemannianIsometry e]
+    rw [coe_unitSphereRiemannianIsometry]
     exact hde
-
-/-- The restriction homomorphism from ambient linear isometries to a positive-dimensional round
-sphere is bijective. -/
-theorem unitSphereIsomHom_bijective (hn : n ≠ 0) :
-    Function.Bijective (unitSphereIsomHom (E := E) (n := n)) :=
-  ⟨unitSphereIsomHom_injective, unitSphereIsomHom_surjective hn⟩
 
 end LinearIsometryEquiv
