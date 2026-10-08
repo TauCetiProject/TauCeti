@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.Topology.LocallyConstant.Basic
+import Mathlib.Topology.Algebra.OpenSubgroup
 
 /-!
 # Stabilizers for the Krull topology are open
@@ -28,6 +29,8 @@ asks for; `TauCeti.unitsCoeff_continuousSMul` is that consequence for a separabl
   `Gal(L/K)`.
 * `IsIntegral.isLocallyConstant_apply`: for `x` integral over `K`, the orbit map
   `σ ↦ σ x` on `Gal(L/K)` is locally constant.
+* `IntermediateField.isOpen_ker_comp_restrictNormalHom`: a character of `Gal(E/K)` for a finite
+  normal intermediate field `E`, read on `Gal(L/K)` through restriction, has open kernel.
 -/
 
 public section
@@ -59,5 +62,19 @@ theorem _root_.IsIntegral.isLocallyConstant_apply {x : L} (hx : IsIntegral K x) 
   simp only [smul_eq_mul, AlgEquiv.mul_apply]
   rw [(IntermediateField.mem_fixingSubgroup_iff _ _).1 hτ x
     (IntermediateField.mem_adjoin_simple_self K x)]
+
+/-- **A character of a finite normal layer has open kernel**: a character of `Gal(E/K)` for a
+finite normal intermediate field `E`, read on `Gal(L/K)` through restriction to `E`, vanishes on
+the open subgroup fixing `E`. -/
+theorem _root_.IntermediateField.isOpen_ker_comp_restrictNormalHom {A : Type*} [AddGroup A]
+    (E : IntermediateField K L) [FiniteDimensional K E] [Normal K E]
+    (χ : Additive Gal(E/K) →+ A) :
+    IsOpen ((χ.comp (AlgEquiv.restrictNormalHom (K₁ := L) E).toAdditive).ker :
+      Set (Additive Gal(L/K))) := by
+  refine AddSubgroup.isOpen_mono (H₁ := Subgroup.toAddSubgroup E.fixingSubgroup)
+    (fun x hx ↦ ?_) (E.fixingSubgroup_isOpen.preimage continuous_toMul)
+  rw [Additive.mem_toAddSubgroup, ← IntermediateField.restrictNormalHom_ker,
+    MonoidHom.mem_ker] at hx
+  simp [hx]
 
 end TauCeti

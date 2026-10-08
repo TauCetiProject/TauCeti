@@ -6,21 +6,37 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import Mathlib.LinearAlgebra.Prod
 
 /-!
-# Finiteness consequences of exact sequences
+# Exact sequences of linear maps
 
-This file records two elementary consequences of exactness at the middle term: finite-dimensional
-outer vector spaces (over a division ring) force the middle vector space to be finite-dimensional,
-and trivial outer types force the middle type to be trivial. The second carries no algebraic
-structure at all beyond the zero of the target `P`, which is the one `Function.Exact` itself
-refers to: exactness sends every element of `N` into the range of `f`, and a trivial `M` makes
-that range trivial.
+This file records elementary constructions and consequences for exact pairs of linear maps.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- The product of exact pairs of linear maps is exact. -/
+theorem _root_.Function.Exact.prodMap
+    {R M₁ N₁ P₁ M₂ N₂ P₂ : Type*} [Semiring R]
+    [AddCommMonoid M₁] [AddCommMonoid N₁] [AddCommMonoid P₁]
+    [AddCommMonoid M₂] [AddCommMonoid N₂] [AddCommMonoid P₂]
+    [Module R M₁] [Module R N₁] [Module R P₁]
+    [Module R M₂] [Module R N₂] [Module R P₂]
+    {f₁ : M₁ →ₗ[R] N₁} {g₁ : N₁ →ₗ[R] P₁}
+    {f₂ : M₂ →ₗ[R] N₂} {g₂ : N₂ →ₗ[R] P₂}
+    (h₁ : Function.Exact f₁ g₁) (h₂ : Function.Exact f₂ g₂) :
+    Function.Exact (f₁.prodMap f₂) (g₁.prodMap g₂) := by
+  intro x
+  constructor
+  · intro hx
+    obtain ⟨y₁, hy₁⟩ := (h₁ x.1).1 (congrArg Prod.fst hx)
+    obtain ⟨y₂, hy₂⟩ := (h₂ x.2).1 (congrArg Prod.snd hx)
+    exact ⟨(y₁, y₂), by ext <;> assumption⟩
+  · rintro ⟨y, rfl⟩
+    exact Prod.ext ((h₁ _).2 ⟨y.1, rfl⟩) ((h₂ _).2 ⟨y.2, rfl⟩)
 
 /-- If `M --f--> N --g--> P` is exact at `N` and both `M` and `P` are finite-dimensional, then so
 is `N`.

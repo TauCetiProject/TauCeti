@@ -41,6 +41,8 @@ the level divides `2 · det L`, and for a nondegenerate lattice it kills the dis
   `N • G⁻¹` is integral with even diagonal.
 * `TauCeti.IntegralLattice.IsEven.level_dvd_iff`: for an even lattice, the level divides `N`
   exactly when `N` kills the discriminant quadratic form.
+* `TauCeti.IntegralLattice.IsEven.level_eq_addOrderOf`: when the discriminant group is cyclic,
+  the level is the additive order of the quadratic value of a generator.
 * `TauCeti.IntegralLattice.level_nsmul_mem_carrier` and
   `TauCeti.IntegralLattice.exponent_discriminantGroup_dvd_level`: the level of a nondegenerate
   lattice kills `A_L`.
@@ -278,6 +280,21 @@ theorem IsEven.level_dvd_iff {L : IntegralLattice V} (hL : L.IsEven) (N : ℤ) :
     refine ⟨k, ?_⟩
     rw [norm_apply]
     linear_combination -2 * hk
+
+/-- If a class generates the discriminant group of an even lattice, the level is the additive
+order of its quadratic value. No nondegeneracy hypothesis is needed. -/
+theorem IsEven.level_eq_addOrderOf {L : IntegralLattice V} (hL : L.IsEven)
+    (a : L.DiscriminantGroup) (ha : AddSubgroup.zmultiples a = ⊤) :
+    L.level = addOrderOf (L.discriminantQuadraticMap hL a) := by
+  have h (N : ℤ) : (L.level : ℤ) ∣ N ↔ N • L.discriminantQuadraticMap hL a = 0 := by
+    rw [hL.level_dvd_iff]
+    refine ⟨fun h ↦ h a, fun h b ↦ ?_⟩
+    obtain ⟨k, rfl⟩ := AddSubgroup.mem_zmultiples_iff.mp (ha ▸ AddSubgroup.mem_top b)
+    rw [QuadraticMap.map_smul, smul_comm N, h, smul_zero]
+  apply Nat.dvd_antisymm
+  · exact Int.natCast_dvd_natCast.mp ((h _).mpr (by simp))
+  · exact Int.natCast_dvd_natCast.mp
+      (addOrderOf_dvd_iff_zsmul_eq_zero.mpr ((h _).mp dvd_rfl))
 
 /-! ## Unimodular lattices -/
 

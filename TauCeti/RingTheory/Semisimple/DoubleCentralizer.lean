@@ -30,9 +30,9 @@ The last section restates the theorem in the form a representation uses: for a s
 `Module.End K N` is `A` itself. Here faithfulness is automatic, `A` being a set of endomorphisms,
 so only Mathlib's surjectivity is needed; the centralizer `A'` is the ring of `A`-linear
 endomorphisms of `N`, and an element of `A''` is exactly an `A'`-linear endomorphism. This is a
-different theorem from `TauCeti.centralizer_centralizer` of
-`TauCeti/Algebra/CentralSimple/Centralizer.lean`, which computes the double centralizer of a
-*central simple* subalgebra of a central simple algebra by a dimension count; neither hypothesis
+different theorem from `Subalgebra.centralizer_centralizer_of_isSimpleRing` of
+`TauCeti/Algebra/CentralSimple/Centralizer/Simple.lean`, which computes the double centralizer of a
+*simple* subalgebra of a central simple algebra by a dimension count; neither hypothesis
 implies the other.
 
 ## Main results

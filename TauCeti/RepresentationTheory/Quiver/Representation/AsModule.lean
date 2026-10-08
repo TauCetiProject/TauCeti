@@ -280,7 +280,7 @@ reconciled: the public identification is its `k`-linear upgrade
 private def asModuleAddEquiv : asModule k Q M ≃+ DirectSum Q (vertexSpace k Q M) := AddEquiv.refl _
 
 /-- The defining action, read through the identity additive equivalence; the public form is
-`TauCeti.QuiverRep.smul_asModule_def`. -/
+`TauCeti.QuiverRep.asModuleEquiv_map_smul`. -/
 private theorem asModuleAddEquiv_smul_pathAlgebra (f : pathAlgebra k Q) (x : asModule k Q M) :
     asModuleAddEquiv k Q M (f • x) = toEnd k Q M f (asModuleAddEquiv k Q M x) := (rfl)
 
@@ -299,10 +299,13 @@ This is the identification consumers should go through, the `k`-action on
 noncomputable def asModuleEquiv : asModule k Q M ≃ₗ[k] DirectSum Q (vertexSpace k Q M) :=
   { asModuleAddEquiv k Q M with map_smul' := asModuleAddEquiv_smul k Q M }
 
-/-- The defining action on `TauCeti.QuiverRep.asModule`: an element of the path algebra acts
-through `TauCeti.QuiverRep.toEnd`. -/
-theorem smul_asModule_def (f : pathAlgebra k Q) (x : asModule k Q M) :
-    f • x = toEnd k Q M f (asModuleEquiv k Q M x) := (rfl)
+/-- The defining action on `TauCeti.QuiverRep.asModule`: read through
+`TauCeti.QuiverRep.asModuleEquiv`, an element of the path algebra acts through
+`TauCeti.QuiverRep.toEnd`. The statement and its name follow Mathlib's
+`Representation.asModuleEquiv_map_smul` for the group algebra. -/
+@[simp]
+theorem asModuleEquiv_map_smul (f : pathAlgebra k Q) (x : asModule k Q M) :
+    asModuleEquiv k Q M (f • x) = toEnd k Q M f (asModuleEquiv k Q M x) := (rfl)
 
 /-- The inclusion of a vertex space into the module carried by a representation. -/
 noncomputable def ofVertex (v : Q) : vertexSpace k Q M v →ₗ[k] asModule k Q M :=
@@ -366,9 +369,8 @@ theorem smul_ofPath {a b : Q} (p : _root_.Quiver.Path a b) (x : asModule k Q M) 
     (ofPath ⟨a, b, p⟩ : pathAlgebra k Q) • x
       = ofVertex k Q M b (mapₗ k Q M p (toVertex k Q M a x)) := by
   apply (asModuleEquiv k Q M).injective
-  rw [smul_asModule_def, toEnd_ofPath, pathEnd_mk_apply, asModuleEquiv_ofVertex, toVertex_apply]
-  -- what is left is the outer `TauCeti.QuiverRep.asModuleEquiv`, which is the identity map
-  rfl
+  rw [asModuleEquiv_map_smul, toEnd_ofPath, pathEnd_mk_apply, asModuleEquiv_ofVertex,
+    toVertex_apply]
 
 /-- **A path acts on the image of its source through the structure map**: this is the naturality
 that makes `TauCeti.QuiverRep.asModuleIso` a morphism of representations. -/

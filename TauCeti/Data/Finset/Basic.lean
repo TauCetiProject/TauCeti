@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Algebra.BigOperators.Group.Finset.Powerset
 import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Logic.Equiv.Fintype
 public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Finset.Interval
 public import Mathlib.Data.Finset.SymmDiff
@@ -22,6 +23,8 @@ import Mathlib.Tactic.NoncommRing
 
 * `Finset.exists_nat_prod_lt` bounds both coordinates of a finite set of pairs of
   natural numbers.
+* `Finset.exists_perm_eqOn_le_apply` gives a permutation of `ℕ` fixing one finite set pointwise
+  and carrying a disjoint one past any bound.
 * `TauCeti.product_union_eq_union_product` rearranges a union of products of finsets.
 * `TauCeti.card_nonempty_finset` counts the nonempty finsets of a finite type.
 * `TauCeti.card_even_card_finset` and `TauCeti.card_odd_card_finset` count the finsets of a
@@ -262,6 +265,35 @@ theorem exists_nat_prod_lt (I : Finset (ℕ × ℕ)) :
   refine ⟨(I.sup fun p ↦ max p.1 p.2) + 1, fun p hp ↦ ?_⟩
   have hle := le_sup (f := fun p : ℕ × ℕ ↦ max p.1 p.2) hp
   omega
+
+/-- A permutation of `ℕ` that fixes a finite set `I` pointwise and carries a finite set `J`,
+disjoint from `I`, past `n`. -/
+theorem exists_perm_eqOn_le_apply (I J : Finset ℕ) (hIJ : Disjoint I J) (n : ℕ) :
+    ∃ ρ : Equiv.Perm ℕ, (∀ i ∈ I, ρ i = i) ∧ ∀ j ∈ J, n ≤ ρ j := by
+  classical
+  -- shift `J` by `N`, large enough to clear both `n` and everything in `I`
+  set N : ℕ := n + (I ∪ J).sup id + 1 with hN
+  let g : ↥(I ∪ J) → ℕ := fun x => if (x : ℕ) ∈ I then x else x + N
+  -- every element of `J` is sent past `N`, hence past everything in `I ∪ J`
+  have hbig : ∀ x : ↥(I ∪ J), (x : ℕ) < N := fun x => by
+    have := Finset.le_sup (f := id) x.property
+    simp only [id] at this; omega
+  have hg : Function.Injective g := by
+    intro x y hxy
+    simp only [g] at hxy
+    apply Subtype.ext
+    have hx := hbig x
+    have hy := hbig y
+    split_ifs at hxy <;> omega
+  obtain ⟨ρ, hρ⟩ := Equiv.Perm.exists_extending_pair (fun x : ↥(I ∪ J) => (x : ℕ)) g
+    Subtype.val_injective hg
+  refine ⟨ρ, fun i hi => ?_, fun j hj => ?_⟩
+  · have := hρ ⟨i, Finset.mem_union_left _ hi⟩
+    simpa [g, hi] using this
+  · have hjI : j ∉ I := Finset.disjoint_right.mp hIJ hj
+    have := hρ ⟨j, Finset.mem_union_right _ hj⟩
+    simp only [g, hjI, ite_false] at this
+    rw [this]; omega
 
 open Classical in
 /-- A double sum over a chain `a ≤ b ≤ c`, summed first over `b` and then over `c`, can instead
