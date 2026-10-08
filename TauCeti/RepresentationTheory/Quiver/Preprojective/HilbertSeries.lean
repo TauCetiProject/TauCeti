@@ -202,6 +202,30 @@ private theorem preprojectiveMk_ofArrow_mul_decompose {i j : Symmetrify Q} (b : 
     (preprojectiveMk_mem_preprojectiveGrade k Q (ofArrow_mem_grade_one b)) (by omega : 1 ≤ m + 1),
     Nat.add_sub_cancel]
 
+/-- The degree-zero component of a scalar multiple of an arrow multiple vanishes. -/
+private theorem decompose_smul_ofArrow_mul_zero {i j : Symmetrify Q}
+    (c : k) (b : i ⟶ j) (y : preprojectiveAlgebra k Q) :
+    (DirectSum.decompose (preprojectiveGrade k Q)
+        (c • (preprojectiveMk k Q (ofArrow b) * y)) 0 :
+      preprojectiveAlgebra k Q) = 0 := by
+  rw [DirectSum.decompose_smul, DirectSum.smul_apply, Submodule.coe_smul,
+    DirectSum.coe_decompose_mul_of_left_mem_of_not_le _
+      (preprojectiveMk_mem_preprojectiveGrade k Q (ofArrow_mem_grade_one b)) (by omega),
+    smul_zero]
+
+/-- Taking a positive-degree component commutes with a scalar multiple of an arrow multiple and a
+subsequent right factor. -/
+private theorem smul_ofArrow_mul_decompose_mul {i j : Symmetrify Q}
+    (c : k) (b : i ⟶ j) (y e : preprojectiveAlgebra k Q) (m : ℕ) :
+    c •
+        (preprojectiveMk k Q (ofArrow b) *
+          ((DirectSum.decompose (preprojectiveGrade k Q) y m : preprojectiveAlgebra k Q) * e)) =
+      (DirectSum.decompose (preprojectiveGrade k Q)
+          (c • (preprojectiveMk k Q (ofArrow b) * y)) (m + 1) :
+        preprojectiveAlgebra k Q) * e := by
+  rw [← mul_assoc, preprojectiveMk_ofArrow_mul_decompose, DirectSum.decompose_smul,
+    DirectSum.smul_apply, Submodule.coe_smul, smul_mul_assoc]
+
 /-- Cutting the degree-`m` component of an element of `e_v Π` down on the right by `e_i` gives an
 element of `e_v Π_m e_i`. -/
 private theorem decompose_mul_mem_preprojectiveCorner {v : Q} {y : preprojectiveAlgebra k Q}
@@ -290,10 +314,7 @@ private theorem ker_koszulSum_zero (i : Symmetrify Q) (v : Q) :
   have h0 := (mem_preprojectiveCorner_iff.1 (z w b).2).1
   refine Subtype.ext ?_
   rw [Pi.zero_apply, Pi.zero_apply, Submodule.coe_zero, ← DirectSum.decompose_of_mem_same _ h0,
-    hy w b, DirectSum.decompose_smul, DirectSum.smul_apply, Submodule.coe_smul,
-    DirectSum.coe_decompose_mul_of_left_mem_of_not_le _
-      (preprojectiveMk_mem_preprojectiveGrade k Q (ofArrow_mem_grade_one _)) (by omega),
-    smul_zero]
+    hy w b, decompose_smul_ofArrow_mul_zero]
 
 /-- The left map `y ↦ (ε_b b* y)_b` of the Koszul complex of `S_v`, in degree `m` and cut down on
 the right by `e_i`. -/
@@ -324,10 +345,13 @@ private theorem ker_koszulSum_succ (m : ℕ) (i : Symmetrify Q) (v : Q) :
     refine ⟨⟨_, decompose_mul_mem_preprojectiveCorner k hyv m i⟩, funext fun w => funext fun b =>
       Subtype.ext ?_⟩
     have h1 := (mem_preprojectiveCorner_iff.1 (z w b).2).1
-    rw [koszulDiff_apply, ← mul_preprojectiveMk_vertexIdempotent_of_mem_preprojectiveCorner
-      (z w b).2, ← DirectSum.decompose_of_mem_same _ h1, hy w b, DirectSum.decompose_smul,
-      DirectSum.smul_apply, Submodule.coe_smul, smul_mul_assoc, ← mul_assoc,
-      preprojectiveMk_ofArrow_mul_decompose]
+    rw [koszulDiff_apply]
+    change doubledArrowSign k b • (preprojectiveMk k Q (ofArrow (Quiver.reverse b)) *
+      ((DirectSum.decompose (preprojectiveGrade k Q) y m : preprojectiveAlgebra k Q) *
+        preprojectiveMk k Q (vertexIdempotent k i))) = z w b
+    rw [smul_ofArrow_mul_decompose_mul, ← hy w b,
+      DirectSum.decompose_of_mem_same _ h1,
+      mul_preprojectiveMk_vertexIdempotent_of_mem_preprojectiveCorner (z w b).2]
   · rintro _ ⟨y, rfl⟩
     rw [LinearMap.mem_ker, koszulSum_apply]
     simp only [koszulDiff_apply]
@@ -487,9 +511,9 @@ private theorem mul_preprojectiveHilbertSeries_apply (v i : Q) :
       ((1 : ℤ⟦X⟧) + X ^ 2) * preprojectiveHilbertSeries k Q v i -
         (X : ℤ⟦X⟧) * ∑ w : Q, (Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) : ℤ⟦X⟧) *
           preprojectiveHilbertSeries k Q w i := by
-  rw [sub_mul, Matrix.smul_mul, Matrix.smul_mul, Matrix.one_mul, Matrix.sub_apply,
-    Matrix.smul_apply, Matrix.smul_apply, smul_eq_mul, smul_eq_mul, Matrix.mul_apply]
-  simp only [Matrix.of_apply]
+  rw [sub_mul]
+  simp only [Matrix.smul_mul, Matrix.one_mul, Matrix.sub_apply,
+    Matrix.smul_apply, smul_eq_mul, Matrix.mul_apply, Matrix.of_apply]
 
 /-- The coefficient of `X^{m+2}` in an entry of `((1 + X²) I - X A) H`. -/
 private theorem coeff_add_two_mul_preprojectiveHilbertSeries (m : ℕ) (v i : Q) :
@@ -501,13 +525,45 @@ private theorem coeff_add_two_mul_preprojectiveHilbertSeries (m : ℕ) (v i : Q)
         ((∑ w : Q, Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) *
           Module.finrank k (preprojectiveCorner k Q (m + 1) (Symmetrify.of.obj i)
             (Symmetrify.of.obj w)) : ℕ) : ℤ) := by
-  rw [mul_preprojectiveHilbertSeries_apply, map_sub, add_mul, one_mul, map_add,
-    coeff_X_pow_mul', ite_eq_left (by omega : 2 ≤ m + 2), Nat.add_sub_cancel, coeff_succ_X_mul]
-  simp only [map_sum, coeff_natCast_mul, coeff_preprojectiveHilbertSeries, Nat.cast_add,
+  simp only [mul_preprojectiveHilbertSeries_apply, map_sub, add_mul, one_mul, map_add,
+    coeff_X_pow_mul', ite_eq_left (by omega : 2 ≤ m + 2), Nat.add_sub_cancel,
+    coeff_succ_X_mul, map_sum, coeff_natCast_mul, coeff_preprojectiveHilbertSeries, Nat.cast_add,
     Nat.cast_sum, Nat.cast_mul]
 
-/-- **The Hilbert series identity is Koszulity.** Let `A` be the arrow-count matrix of the doubled
-quiver, `A_{v,w} = #(w ⟶ v)`, and `H` the matrix Hilbert series of `Π`. Then
+/-- The constant coefficient of the Hilbert-series product is the identity matrix. -/
+private theorem coeff_zero_mul_preprojectiveHilbertSeries (v i : Q) :
+    coeff 0 ((hilbertDenominator Q * preprojectiveHilbertSeries k Q) v i) =
+      if v = i then 1 else 0 := by
+  rw [mul_preprojectiveHilbertSeries_apply]
+  simp only [map_sub, coeff_zero_X_mul, sub_zero, add_mul, one_mul, map_add,
+    coeff_X_pow_mul', ite_eq_right (by omega : ¬2 ≤ 0), add_zero]
+  rw [coeff_preprojectiveHilbertSeries, finrank_preprojectiveCorner_zero]
+  by_cases hvi : v = i
+  · subst i
+    rw [ite_eq_left rfl, ite_eq_left rfl]
+    norm_num
+  · rw [ite_eq_right fun e => hvi e.symm, ite_eq_right hvi]
+    simp
+
+/-- The linear coefficient of the Hilbert-series product vanishes. -/
+private theorem coeff_one_mul_preprojectiveHilbertSeries (v i : Q) :
+    coeff 1 ((hilbertDenominator Q * preprojectiveHilbertSeries k Q) v i) = 0 := by
+  rw [mul_preprojectiveHilbertSeries_apply]
+  simp only [map_sub, add_mul, one_mul, map_add, coeff_X_pow_mul',
+    ite_eq_right (by omega : ¬2 ≤ 1), add_zero, coeff_preprojectiveHilbertSeries,
+    finrank_preprojectiveCorner_one, coeff_succ_X_mul, map_sum]
+  rw [Finset.sum_eq_single i]
+  · rw [coeff_natCast_mul, coeff_preprojectiveHilbertSeries,
+      finrank_preprojectiveCorner_zero, ite_eq_left rfl]
+    simp
+  · intro w _ hw
+    rw [coeff_natCast_mul, coeff_preprojectiveHilbertSeries,
+      finrank_preprojectiveCorner_zero, ite_eq_right fun e => hw e.symm, Nat.cast_zero, mul_zero]
+  · simp
+
+/-- **The Hilbert series identity characterizes injectivity of the left Koszul map.** Let `A` be
+the arrow-count matrix of the doubled quiver, `A_{v,w} = #(w ⟶ v)`, and `H` the matrix Hilbert
+series of `Π`. Then
 
 ```text
 ((1 + X²) I - X A) H = I
@@ -565,25 +621,14 @@ theorem mul_preprojectiveHilbertSeries_eq_one_iff :
   · intro h
     refine Matrix.ext fun v i => PowerSeries.ext fun n => ?_
     obtain _ | _ | m := n
-    · rw [mul_preprojectiveHilbertSeries_apply, Matrix.one_apply, map_sub, coeff_zero_X_mul,
-        sub_zero, add_mul, one_mul, map_add, coeff_X_pow_mul', ite_eq_right (by omega : ¬2 ≤ 0),
-        add_zero, coeff_preprojectiveHilbertSeries, finrank_preprojectiveCorner_zero]
+    · rw [coeff_zero_mul_preprojectiveHilbertSeries, Matrix.one_apply]
       by_cases hvi : v = i
-      · subst hvi
-        rw [ite_eq_left rfl, ite_eq_left rfl]
-        simp
-      · rw [ite_eq_right fun e => hvi e.symm, ite_eq_right hvi]
-        simp
-    · rw [mul_preprojectiveHilbertSeries_apply, Matrix.one_apply, map_sub, add_mul, one_mul,
-        map_add, coeff_X_pow_mul', ite_eq_right (by omega : ¬2 ≤ 1), add_zero,
-        coeff_preprojectiveHilbertSeries, finrank_preprojectiveCorner_one, coeff_succ_X_mul,
-        map_sum, Finset.sum_eq_single i, coeff_natCast_mul, coeff_preprojectiveHilbertSeries,
-        finrank_preprojectiveCorner_zero, ite_eq_left rfl]
-      · split_ifs <;> simp
-      · intro w _ hw
-        rw [coeff_natCast_mul, coeff_preprojectiveHilbertSeries, finrank_preprojectiveCorner_zero,
-          ite_eq_right fun e => hw e.symm, Nat.cast_zero, mul_zero]
-      · simp
+      · rw [ite_eq_left hvi, ite_eq_left hvi, coeff_one, ite_eq_left rfl]
+      · rw [ite_eq_right hvi, ite_eq_right hvi, map_zero]
+    · rw [coeff_one_mul_preprojectiveHilbertSeries, Matrix.one_apply]
+      by_cases hvi : v = i
+      · rw [ite_eq_left hvi, coeff_one, ite_eq_right (by omega : 1 ≠ 0)]
+      · rw [ite_eq_right hvi, map_zero]
     · exact (hdeg m v i).2 fun y hy => h v y (by
         rw [doubledVertexIdempotent_def]
         exact preprojectiveMk_vertexIdempotent_mul_of_mem_preprojectiveCorner hy)
