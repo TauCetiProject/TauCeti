@@ -62,17 +62,14 @@ subgroups is separate from this carrier construction.
 
 public section
 
-open scoped Matrix
-
 universe v
 
 namespace TauCeti.TypeBSpinCarrier
 
 open AlgebraicGeometry CategoryTheory
 open TauCeti.UniversalEnvelopingAlgebra
-open scoped CategoryTheory.MonObj TensorProduct
+open scoped CategoryTheory.MonObj
 
-attribute [local instance] TauCeti.moduleNNRat
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
 
@@ -181,7 +178,7 @@ theorem nilpotencyClass_rep_rootGenerator_le_two (k : Fin (n + 1) ⊕ Fin (n + 1
     nilpotencyClass (rep n
       (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (TauCeti.typeBSimpleRootGeneratorFamily k))) ≤ 2 :=
-  Nat.sInf_le (pow_two_rep_rootGenerator_eq_zero n k)
+  nilpotencyClass_le_of_pow_eq_zero (pow_two_rep_rootGenerator_eq_zero n k)
 
 /-- The simple-generator type-`B` Kostant form preserves the exterior coordinate lattice. -/
 theorem rep_kostantForm_mem_lattice

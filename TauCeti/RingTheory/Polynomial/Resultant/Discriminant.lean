@@ -67,7 +67,7 @@ depressed specialization of that formula is used to compare a quartic with its c
   correct statement passes to the fraction field.
 * `Polynomial.discr_ne_zero_iff`: over a field, a nonzero polynomial that need not be monic is
   separable exactly when its discriminant is nonzero.
-* `Polynomial.Monic.separable_map_iff_map_discr_ne_zero`,
+* `Polynomial.separable_map_iff_map_discr_ne_zero`,
   `Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr`: the same criterion read along a ring
   homomorphism into a field, and its specialization to reduction of an integral polynomial modulo
   a prime.
@@ -686,16 +686,18 @@ theorem discr_ne_zero_iff {K : Type*} [Field K] {f : K[X]} (hf : f ≠ 0) :
     hmonic.discr_ne_zero_iff]
   exact ⟨fun h ↦ h.of_mul_right, Separable.unit_mul (isUnit_C.mpr hc.isUnit)⟩
 
-namespace Monic
-
-/-- A monic polynomial becomes separable along a ring homomorphism into a field exactly when its
-discriminant does not become zero. No injectivity is needed: the discriminant commutes with base
-change because monicity preserves the degree. -/
+/-- A degree-preserving specialization into a field is separable exactly when the formal
+discriminant specializes to a nonzero value. The leading coefficient may be any nonzero value. -/
 @[simp]
 theorem separable_map_iff_map_discr_ne_zero {K : Type*} [Field K]
-    {f : R[X]}
-    (hf : f.Monic) (φ : R →+* K) : (f.map φ).Separable ↔ φ f.discr ≠ 0 := by
-  rw [← (hf.map φ).discr_ne_zero_iff, hf.discr_map]
+    (f : R[X]) (φ : R →+* K) (hlc : φ f.leadingCoeff ≠ 0) :
+    (f.map φ).Separable ↔ φ f.discr ≠ 0 := by
+  have hn : f.map φ ≠ 0 := leadingCoeff_ne_zero.mp <| by
+    rwa [leadingCoeff_map_of_leadingCoeff_ne_zero φ hlc]
+  rw [← discr_ne_zero_iff hn,
+    discr_map_of_natDegree_eq φ (natDegree_map_of_leadingCoeff_ne_zero φ hlc)]
+
+namespace Monic
 
 /-- Over a domain, the discriminant of a monic polynomial is nonzero exactly when the polynomial
 becomes separable over the fraction field: over a domain the separability criterion is the one
@@ -704,19 +706,20 @@ formulated after passage to a fraction field. -/
 theorem discr_ne_zero_iff_separable_map (K : Type*) [Field K]
     [Algebra R K] [IsFractionRing R K] {f : R[X]} (hf : f.Monic) :
     f.discr ≠ 0 ↔ (f.map (algebraMap R K)).Separable := by
-  rw [hf.separable_map_iff_map_discr_ne_zero, map_ne_zero_iff _
+  rw [f.separable_map_iff_map_discr_ne_zero _ (by simp [hf.leadingCoeff]), map_ne_zero_iff _
     (FaithfulSMul.algebraMap_injective R K)]
 
 /-- A monic integral polynomial has separable reduction modulo a prime exactly when that prime
 does not divide its discriminant. -/
 -- Tagged `@[simp high]` rather than `@[simp]`: at the default priority the general
--- `Monic.separable_map_iff_map_discr_ne_zero` rewrites this left-hand side first, so the prime
+-- The general specialization criterion rewrites this left-hand side first, so the prime
 -- divisibility form would not be the simp normal form.
 @[simp high]
 theorem separable_map_zmod_iff_not_dvd_discr {f : ℤ[X]} (hf : f.Monic)
     (p : ℕ) [Fact p.Prime] :
     (f.map (Int.castRingHom (ZMod p))).Separable ↔ ¬ (p : ℤ) ∣ f.discr := by
-  rw [hf.separable_map_iff_map_discr_ne_zero, Int.coe_castRingHom, ne_eq,
+  rw [f.separable_map_iff_map_discr_ne_zero _ (by simp [hf.leadingCoeff]),
+    Int.coe_castRingHom, ne_eq,
     ZMod.intCast_zmod_eq_zero_iff_dvd]
 
 /-- The discriminant of a monic integral polynomial is a square in `ℚ` exactly when it is a square
