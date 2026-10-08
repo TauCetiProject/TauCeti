@@ -51,9 +51,11 @@ binomial coefficient of the binomial ring `ℤ_[p]`.
 * `TauCeti.HeisenbergGroup.padicPow_mk_zero_zero`: the `p`-adic power of `(0, 0, z)` by `c` is
   `(0, 0, c z)`.
 * `TauCeti.HeisenbergGroup.level`, `TauCeti.HeisenbergGroup.mem_level_iff`,
+  `TauCeti.HeisenbergGroup.level_zero`, `TauCeti.HeisenbergGroup.level_antitone`,
   `TauCeti.HeisenbergGroup.index_level`, `TauCeti.HeisenbergGroup.hasBasis_nhds_one_level`: the
-  triples with all coordinates in `p ^ n ℤ_p` form an open normal subgroup of index `p ^ (3 n)`,
-  and these subgroups form a basis of neighbourhoods of `1`.
+  triples with all coordinates in `p ^ n ℤ_p` form an open normal subgroup of index `p ^ (3 n)`;
+  these subgroups decrease in `n` from the whole group at `n = 0` and form a basis of
+  neighbourhoods of `1`.
 
 ## References
 
@@ -158,11 +160,7 @@ variable (p : ℕ) [Fact p.Prime] (n : ℕ)
 /-- Reduction of the coordinates modulo `p ^ n`, `HeisenbergGroup ℤ_[p] →* HeisenbergGroup
 (ZMod (p ^ n))`, is continuous for the discrete topology on the target. -/
 theorem continuous_map_toZModPow : Continuous (map (PadicInt.toZModPow (p := p) n)) :=
-  continuous_iff.mpr <| by
-    simp only [map_apply]
-    exact ⟨(PadicInt.continuous_toZModPow n).comp continuous_x,
-      (PadicInt.continuous_toZModPow n).comp continuous_y,
-      (PadicInt.continuous_toZModPow n).comp continuous_z⟩
+  continuous_map _ (PadicInt.continuous_toZModPow n)
 
 /-- **The level `p ^ n` of the Heisenberg group over `ℤ_p`**: the open normal subgroup of triples
 whose three coordinates lie in `p ^ n ℤ_p` (`mem_level_iff`), the kernel of reduction modulo
@@ -191,6 +189,17 @@ theorem mem_level_iff {a : HeisenbergGroup ℤ_[p]} :
   · rintro ⟨hx, hy, hz⟩
     ext <;> simp [hx, hy, hz]
 
+/-- The level `p ^ 0` is the whole group. -/
+@[simp]
+theorem level_zero : (level p 0).toSubgroup = ⊤ :=
+  Subgroup.eq_top_iff' _ |>.mpr fun a ↦ (mem_level_iff p 0).mpr (by simp)
+
+/-- The levels decrease as the exponent grows. -/
+theorem level_antitone : Antitone (level p) := fun m n hmn a ha ↦ by
+  obtain ⟨hx, hy, hz⟩ := (mem_level_iff p n).mp ha
+  have h := pow_dvd_pow (p : ℤ_[p]) hmn
+  exact (mem_level_iff p m).mpr ⟨h.trans hx, h.trans hy, h.trans hz⟩
+
 /-- **The level `p ^ n` has index `p ^ (3 n)`.** -/
 @[simp]
 theorem index_level : (level p n).toSubgroup.index = p ^ (3 * n) := by
@@ -199,9 +208,7 @@ theorem index_level : (level p n).toSubgroup.index = p ^ (3 * n) := by
       (map_surjective (ZMod.ringHom_surjective (PadicInt.toZModPow (p := p) n))),
     Subgroup.index_bot, card_eq, Nat.card_zmod, ← pow_mul, mul_comm]
 
-/-- **The levels form a basis of neighbourhoods of `1`.** A neighbourhood of `1` contains a ball
-`max (‖x‖, ‖y‖, ‖z‖) < ε` in the coordinates, and the level `p ^ n` with `p ^ (-n) < ε` lies
-in it. -/
+/-- **The levels form a basis of neighbourhoods of `1`.** -/
 theorem hasBasis_nhds_one_level :
     (nhds (1 : HeisenbergGroup ℤ_[p])).HasBasis (fun _ : ℕ ↦ True)
       (fun n ↦ (level p n : Set (HeisenbergGroup ℤ_[p]))) := by
