@@ -56,11 +56,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [MeasurableSpace M] [BorelSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
-/-- The Borel measurable space on the model vector space, used for chart volume. -/
-local instance chartVolumeMeasurableSpaceE : MeasurableSpace E := borel E
-
-/-- The model vector space's measurable space is its Borel measurable space. -/
-local instance chartVolumeBorelSpaceE : BorelSpace E := ⟨rfl⟩
+attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
 
 /-- The coordinate density in a chart, extended measurably by zero off the chart target. -/
 private structure ChartVolumeDensityData (I : ModelWithCorners ℝ E H) (M : Type*)

@@ -28,6 +28,8 @@ predicates `Equation` and `Nonsingular` that cut the curve out.
 * `WeierstrassCurve.Affine.variableChange_equation`, `_nonsingular`: `(x, y)` lies on `C • W`,
   respectively is a smooth point of it, exactly when its image lies on `W`. Both are `@[simp]`.
   These are what make the change of variables carry points to points.
+* `WeierstrassCurve.Affine.baseChange_variableChange_equation`: the criterion of
+  `variableChange_equation` for a pair `(x, y)` of elements of an `R`-algebra. It is `@[simp]`.
 * `WeierstrassCurve.Affine.variableChange_slope`: the slope of the chord or tangent scales by `u`
   and translates by `s`.
 
@@ -156,6 +158,21 @@ change of variables scales the Weierstrass polynomial by `u⁶`, and `u` is a un
       + (C.u : R) ^ 4 * x ^ 2 * u_pow_mul_variableChange_a₂ W C
       - (C.u : R) ^ 3 * y * u_pow_mul_variableChange_a₃ W C
       + (C.u : R) ^ 2 * x * u_pow_mul_variableChange_a₄ W C + u_pow_mul_variableChange_a₆ W C
+
+/-- A pair `(x, y)` of elements of an `R`-algebra `A` satisfies the Weierstrass equation of the
+base change of `C • W` to `A` if and only if `(u²x + r, u³y + u²sx + t)` satisfies that of the
+base change of `W`, where `u`, `r`, `s` and `t` are mapped to `A`. -/
+@[simp] lemma baseChange_variableChange_equation {A : Type*} [CommRing A] [Algebra R A] (x y : A) :
+    (W.baseChange A).toAffine.Equation (algebraMap R A C.u ^ 2 * x + algebraMap R A C.r)
+        (algebraMap R A C.u ^ 3 * y + algebraMap R A C.u ^ 2 * algebraMap R A C.s * x
+          + algebraMap R A C.t)
+      ↔ ((C • W).baseChange A).toAffine.Equation x y := by
+  -- the base change of `C • W` is that of `W` acted on by the image of `C` over `A`
+  rw [WeierstrassCurve.baseChange, WeierstrassCurve.baseChange, ← map_variableChange,
+    ← variableChange_equation]
+  -- the components of the image of `C` over `A` are the images of `u`, `r`, `s` and `t`
+  simp only [VariableChange.map_u, Units.coe_map, MonoidHom.coe_ofClass, VariableChange.map_r,
+    VariableChange.map_s, VariableChange.map_t]
 
 /-- **`polynomialY` under the change of variables**, scaling by `u³`. The `Y`-partial derivative
 of the Weierstrass polynomial, evaluated at the image point, is `u³` times the corresponding

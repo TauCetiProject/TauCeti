@@ -122,8 +122,8 @@ Strict monotonicity of `φ` is **not** needed for this set identity; it enters s
 two facts are the pair of inputs the Koopman block factorization needs.
 
 The eventual-translation hypothesis is exactly the conclusion recorded by
-`exists_strictMono_nat_extending_fin_eventually_add`, whose docstring describes this argument as its
-intended use; this theorem is the consumer of that clause. -/
+`StrictMono.exists_strictMono_nat_extending_fin_eventually_add`; this theorem is the consumer of
+that clause. -/
 theorem preimage_reindex_eq_of_preimage_shift_eq_of_eventually_add {m C : ℕ} {φ : ℕ → ℕ}
     {A : Set (ℕ → α)} (hshift : shift α ⁻¹' A = A)
     (hφ : ∀ n, m ≤ n → φ n = n + C) :

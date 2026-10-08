@@ -140,7 +140,7 @@ theorem _root_.Polynomial.psc_succ_right {p q : R[X]} {m n j : ℕ}
     (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (hjm : j ≤ m) (hjn : j ≤ n) :
     psc p q m (n + 1) j = p.coeff m * psc p q m n j := by
   by_cases hjm' : j < m
-  · simpa only [subresultantCoeff_index] using
+  · simpa only [subresultantCoeff_self] using
       subresultantCoeff_succ_right hm hn hjm' hjn j
   · have hjeq : j = m := by omega
     subst j
@@ -155,7 +155,7 @@ theorem _root_.Polynomial.psc_eq_coeff_pow_mul_of_right_degree_drop {p q : R[X]}
     (hN : n ≤ N) (hjm : j ≤ m) (hjn : j ≤ n) :
     psc p q m N j = p.coeff m ^ (N - n) * psc p q m n j := by
   by_cases hjm' : j < m
-  · simpa only [subresultantCoeff_index] using
+  · simpa only [subresultantCoeff_self] using
       subresultantCoeff_eq_coeff_pow_mul_of_right_degree_drop hm hn hN hjm' hjn j
   · have hjeq : j = m := by omega
     subst j
@@ -171,7 +171,7 @@ theorem _root_.Polynomial.psc_eq_sign_mul_coeff_pow_mul_of_left_degree_drop {p q
     psc p q M n j =
       (-1) ^ ((M - m) * (n - j)) * q.coeff n ^ (M - m) * psc p q m n j := by
   by_cases hjn' : j < n
-  · simpa only [subresultantCoeff_index] using
+  · simpa only [subresultantCoeff_self] using
       subresultantCoeff_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hm hn hM hjm hjn' j
   · have hjeq : j = n := by omega
     subst j

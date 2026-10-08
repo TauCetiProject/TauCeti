@@ -60,7 +60,7 @@ The `Universal` section of the same file (declarations `universal_Δ_ne_zero` an
 here. Four of that section's nine declarations are not ported, because this repository already
 has them: `universal`, `exists_map_universal` and `universal_Δ_ne_zero` are `Universal.curve`,
 `map_specialize` and `Universal.curve_Δ_ne_zero`, and the source's `X_ne_X` and `X_ne_zero'` are
-Mathlib's `MvPowerSeries.X_inj` and `nonZeroDivisors.ne_zero MvPowerSeries.X_mem_nonzeroDivisors`.
+Mathlib's `MvPowerSeries.X_inj` and `nonZeroDivisors.ne_zero MvPowerSeries.X_mem_nonZeroDivisors`.
 
 The source's `interceptSeries_ne_zero` and `X_pair_intercept_ne_zero` have no counterpart. The
 source needs them only because it supplies the nonvanishing intercept two different ways, an
@@ -588,11 +588,11 @@ private theorem assoc_formalAdd_universal :
   have hc₃ : constantCoeff (X (Sum.inr (Sum.inr ())) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R) = 0 :=
     constantCoeff_X _
   have h10 : (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R) ≠ 0 :=
-    nonZeroDivisors.ne_zero X_mem_nonzeroDivisors
+    nonZeroDivisors.ne_zero X_mem_nonZeroDivisors
   have h20 : (X (Sum.inr (Sum.inl ())) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R) ≠ 0 :=
-    nonZeroDivisors.ne_zero X_mem_nonzeroDivisors
+    nonZeroDivisors.ne_zero X_mem_nonZeroDivisors
   have h30 : (X (Sum.inr (Sum.inr ())) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R) ≠ 0 :=
-    nonZeroDivisors.ne_zero X_mem_nonzeroDivisors
+    nonZeroDivisors.ne_zero X_mem_nonZeroDivisors
   have hχ1 := subst_coordSpecialize_X_self (O := R) (Sum.inl () : Unit ⊕ Unit ⊕ Unit)
   have hχ2 := subst_coordSpecialize_X_of_ne (O := R)
     (i := (Sum.inl () : Unit ⊕ Unit ⊕ Unit)) (j := Sum.inr (Sum.inl ())) (by simp)

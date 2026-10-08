@@ -29,6 +29,8 @@ sum, providing the isometric block maps for the equivariant Peter-Weyl decomposi
 
 public section
 
+open _root_.ContRepresentation
+
 open MeasureTheory
 open scoped InnerProductSpace
 open TauCeti TauCeti.ContRepresentation
@@ -49,7 +51,7 @@ theorem inner_traceCoeffLp (π : ContRepresentation 𝕜 G V) (hπ : Continuous 
       (Module.finrank 𝕜 V : 𝕜)⁻¹ * ∑ i, ⟪T (e i), S (e i)⟫_𝕜 := by
   classical
   rw [traceCoeffLp_eq_sum π hπ hunitary e, traceCoeffLp_eq_sum π hπ hunitary e]
-  simp_rw [sum_inner, inner_sum, schur_orthogonality_self π hπ hunitary hirr,
+  simp_rw [sum_inner, inner_sum, π.schur_orthogonality_self hπ hunitary hirr,
     orthonormal_iff_ite.mp e.orthonormal]
   simp [Finset.mul_sum]
 
@@ -124,7 +126,7 @@ theorem coe_traceCoeffBlockIsometry (model : IrrepModel 𝕜 G)
 is postcomposition by `π g` and precomposition by `π h⁻¹`. -/
 noncomputable def peterWeylMatrixRep (model : IrrepModel 𝕜 G) :
     ContRepresentation 𝕜 (G × G) (EuclideanSpace 𝕜 (Fin model.dim × Fin model.dim)) :=
-  ContRepresentation.congr (traceCoeffBlockIsometry model).symm.toContinuousLinearEquiv
+  ContinuousLinearEquiv.congr (traceCoeffBlockIsometry model).symm.toContinuousLinearEquiv
     (peterWeylBlockRep model)
 
 /-- The normalized trace isometry intertwines the matrix action and bi-translation. -/
@@ -132,7 +134,7 @@ theorem traceCoeffBlockIsometry_intertwines (model : IrrepModel 𝕜 G) (p : G �
     (a : EuclideanSpace 𝕜 (Fin model.dim × Fin model.dim)) :
     (traceCoeffBlockIsometry model (peterWeylMatrixRep model p a) : Lp 𝕜 2 (haarProb G)) =
       biRegularLp 𝕜 G p (traceCoeffBlockIsometry model a : Lp 𝕜 2 (haarProb G)) := by
-  rw [peterWeylMatrixRep, ContRepresentation.congr_apply]
+  rw [peterWeylMatrixRep, ContinuousLinearEquiv.congr_apply]
   simp [coe_peterWeylBlockRep_apply]
 
 /-- The matrix action preserves the Hilbert-Schmidt inner product. -/
@@ -143,7 +145,7 @@ theorem isUnitary_peterWeylMatrixRep (model : IrrepModel 𝕜 G) :
 /-- The matrix action is continuous in the operator norm. -/
 theorem continuous_peterWeylMatrixRep (model : IrrepModel 𝕜 G) :
     Continuous (peterWeylMatrixRep model) :=
-  ContRepresentation.continuous_congr _ (continuous_peterWeylBlockRep model)
+  ContinuousLinearEquiv.continuous_congr _ (continuous_peterWeylBlockRep model)
 
 /-- In operator form, the action on Hilbert-Schmidt matrices is `T ↦ π g ∘ T ∘ π h⁻¹`.
 This characterizes the transported action without referring to Peter-Weyl blocks. -/

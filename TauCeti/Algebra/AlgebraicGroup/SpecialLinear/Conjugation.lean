@@ -12,14 +12,17 @@ public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Projective
 # Conjugation from the special linear group to the projective general linear group
 
 Construct the coordinate morphism of `SLₙ → PGLₙ` by restricting the general linear
-conjugation morphism. Over every commutative value algebra it sends a determinant-one matrix
-to its inner automorphism of the matrix algebra. Over a field, for positive `n`, its
+conjugation morphism. In coordinates, it sends the generic matrix of `PGLₙ ⊆ GL_{n²}` to
+the conjugation matrix of the generic matrix of `SLₙ` and its inverse. Over every commutative
+value algebra it sends a determinant-one matrix to its inner automorphism of the matrix
+algebra. Over a field, for positive `n`, its
 scheme-theoretic kernel is the represented centre of `SLₙ`, hence `μₙ`. This identifies
 the whole kernel scheme, including its infinitesimal structure when the characteristic
 divides `n`.
 
-The morphism is surjective on algebraically closed field-valued points. This file does not
-assert faithful flatness or finiteness of the morphism, which require scheme-level arguments.
+The morphism is surjective on algebraically closed field-valued points. Its finiteness and the
+centrality of its kernel are proved in
+`TauCeti.Algebra.AlgebraicGroup.SpecialLinear.CentralIsogeny`; faithful flatness is not asserted.
 
 ## References
 
@@ -49,6 +52,23 @@ def conjugationMap (R : Type u) [CommRing R] :
 theorem conjugationMap_def (R : Type u) [CommRing R] :
     conjugationMap n R =
       ProjectiveGeneralLinear.conjugationMap n R ≫ coordinateMap R n := (rfl)
+
+/-- **`SLₙ → PGLₙ` in coordinates**: the conjugation homomorphism sends the generic matrix of
+`GL_{n²}`, read in `O(PGLₙ)`, to the conjugation matrix of the generic matrix `X` of `SLₙ`, whose
+entry at `((p, q), (i, j))` is `Xₚᵢ (X⁻¹)ⱼq`. -/
+theorem map_genericMatrix_conjugationMap (R : Type u) [CommRing R] :
+    (GeneralLinear.genericMatrix R (n * n)).map
+        (CommHopfAlgCat.mkQuotient _ (ProjectiveGeneralLinear.definingHopfIdeal n R) ≫
+          conjugationMap n R).hom =
+      ProjectiveGeneralLinear.conjugationMatrix
+        ((GeneralLinear.genericMatrix R n).map (coordinateMap R n).hom)
+        ((GeneralLinear.genericMatrix R n).map (coordinateMap R n).hom)⁻¹ := by
+  have h := congrArg (Matrix.map · (coordinateMap R n).hom)
+    (ProjectiveGeneralLinear.map_genericMatrix_conjugationMap n R)
+  simp only [Matrix.map_map, ProjectiveGeneralLinear.conjugationMatrix_map] at h
+  rw [← (coordinateMap R n).hom.coe_toAlgHom, ← GeneralLinear.map_inv_genericMatrix,
+    (coordinateMap R n).hom.coe_toAlgHom, ← h, conjugationMap_def, ← Category.assoc,
+    CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
 
 /-- On algebra-valued points, the conjugation morphism sends a special-linear matrix to its
 inner automorphism of the matrix algebra. -/

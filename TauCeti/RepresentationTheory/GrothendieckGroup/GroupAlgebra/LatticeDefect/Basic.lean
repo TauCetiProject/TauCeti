@@ -102,11 +102,19 @@ theorem reductionK0_def (ρ : Representation ℤ G W) :
     reductionK0 k ρ = ExactK0.of (FGModuleCat.of k[G] (Representation.baseChange k ρ).asModule) :=
   (rfl)
 
+/-- Equivalent scalar extensions have equal reduction classes. -/
+theorem reductionK0_congr_baseChange {W' : Type u} [AddCommGroup W'] [Module ℤ W']
+    [Module.Finite ℤ W'] {ρ : Representation ℤ G W} {σ : Representation ℤ G W'}
+    (e : (Representation.baseChange k ρ).Equiv (Representation.baseChange k σ)) :
+    reductionK0 k ρ = reductionK0 k σ := by
+  rw [reductionK0_def, reductionK0_def]
+  exact ExactK0.of_congr (Representation.asModuleLinearEquivOfEquiv e).toFGModuleCatIso
+
 /-- Equivalent representations have equal reduction classes. -/
 theorem reductionK0_congr {W' : Type u} [AddCommGroup W'] [Module ℤ W'] [Module.Finite ℤ W']
     {ρ : Representation ℤ G W} {σ : Representation ℤ G W'} (e : ρ.Equiv σ) :
     reductionK0 k ρ = reductionK0 k σ :=
-  ExactK0.of_congr (Representation.asModuleLinearEquivOfEquiv (e.baseChange k)).toFGModuleCatIso
+  reductionK0_congr_baseChange k (e.baseChange k)
 
 /-- The reduction class of a zero module is zero. -/
 @[simp]
