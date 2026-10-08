@@ -24,9 +24,11 @@ relative Picard presheaf `T ↦ Pic(X_T) / Pic(T)`, as a natural transformation
 (`TauCeti.AlgebraicGeometry.abelMap_app_top`).
 
 For a smooth proper curve `X` over a field, restricting to divisors of degree `d` gives the Abel
-maps `Symᵈ X ⟶ Pic^d`, and in degree one the Abel–Jacobi map; when `f` has a section, the target
-is also the rigidified Picard functor (`TauCeti.AlgebraicGeometry.rigidifiedPicardFunctorIso`).
-Neither the degree nor the representability of these functors is treated here.
+maps `Symᵈ X ⟶ Pic^d`, and in degree one the degree-one Abel map `X ⟶ Pic¹`. A base point `x₀`
+then gives the Abel–Jacobi map `x ↦ 𝒪(x - x₀)` into `Pic⁰`, by translating by `𝒪(-x₀)`.
+Separately, when `f` has a section, the target of the Abel map is also the rigidified Picard
+functor (`TauCeti.AlgebraicGeometry.rigidifiedPicardFunctorIso`). Neither the degree nor the
+representability of these functors is treated here.
 
 The functor `Div_{X/S}` takes values in `Type u`, while line-bundle classes live in `Type (u + 1)`,
 so the source of the Abel map is `Div_{X/S}` composed with `uliftFunctor`.
@@ -87,13 +89,18 @@ def abelMap : (relativeEffectiveCartierSubfunctor f).toFunctor ⋙ uliftFunctor.
     ext ⟨D⟩
     exact (relativePicardPresheaf_map_abelClass f φ D).symm
 
+-- The source and target of `(abelMap f).app T` are spelled out in their simp-normal form (without
+-- `Functor.comp_obj`), so that the left-hand side passes the `simpNF` linter.
 /-- The Abel map sends a relative effective Cartier divisor `D` on `X_T` to the image in
 `Pic(X_T) / Pic(T)` of the inverse of the class of its ideal sheaf, that is, of the class of
 `𝒪(D)`. -/
+@[simp]
 lemma abelMap_app_apply {T : (Over S)ᵒᵖ}
     (D : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T) :
-    (abelMap f).app T (ULift.up D) = (QuotientGroup.mk (LineBundleClass.mk
-      ((mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp
+    ConcreteCategory.hom (C := Type (u + 1))
+      (X := uliftFunctor.{u + 1}.obj ((relativeEffectiveCartierSubfunctor f).obj T))
+      (Y := ToType ((relativePicardPresheaf f).obj T)) ((abelMap f).app T) (ULift.up D) =
+      (QuotientGroup.mk (LineBundleClass.mk ((mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp
         D.2).isEffectiveCartier.toInvertibleSheaf)⁻¹ : (relativePicardPresheaf f).obj T) :=
   (rfl)
 

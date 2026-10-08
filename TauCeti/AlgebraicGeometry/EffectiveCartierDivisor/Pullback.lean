@@ -57,6 +57,8 @@ theorem isIso_pullbackSheafHom (hI : I.IsEffectiveCartier)
   refine Scheme.Modules.isIso_of_forall_exists_bijective_smul _ fun x ↦ ?_
   obtain ⟨U, hxU, a, -, hIa⟩ := (isEffectiveCartier_iff I).mp hI (g x)
   obtain ⟨V₀, hxV₀, b, hb, hIb⟩ := (isEffectiveCartier_iff _).mp hI' x
+  -- The `show` fixes the open set: `exists_subset_of_mem_open` takes it as an implicit set, so a
+  -- bare `⟨hxV₀, hxU⟩` fails with "the expected type of this term could not be determined".
   obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVle⟩ := X.isBasis_affineOpens.exists_subset_of_mem_open
     (show x ∈ V₀.1 ⊓ g ⁻¹ᵁ U.1 from ⟨hxV₀, hxU⟩) (V₀.1 ⊓ g ⁻¹ᵁ U.1).isOpen
   replace hVle : V ≤ V₀.1 ⊓ g ⁻¹ᵁ U.1 := hVle
