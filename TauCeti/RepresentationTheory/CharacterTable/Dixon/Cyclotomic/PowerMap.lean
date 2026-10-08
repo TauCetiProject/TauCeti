@@ -8,7 +8,7 @@ module
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Reduction
 public import TauCeti.RepresentationTheory.CharacterTable.Cyclotomic.PowerMap
 public import TauCeti.RingTheory.Cyclotomic.Power
-public import TauCeti.GroupTheory.ConjClass.Power
+public import TauCeti.Algebra.Group.Conj
 
 /-!
 # Power-map alignment of cyclotomic character-table residues
