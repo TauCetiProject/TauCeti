@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Cyclotomic.Basic
-public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
-public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 public import TauCeti.NumberTheory.LocalField.ProP.Rank
-public import TauCeti.Topology.Algebra.Group.Profinite.Rank
+import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
+import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 
 /-!
 # The lower bound for the generator rank of a local absolute Galois group
@@ -35,8 +33,8 @@ proof of topological finite generation as an argument.
 
 ## Main results
 
-* `TauCeti.finrank_add_two_le_card_of_topologicalClosure_closure_eq_top`: every finite subset of
-  `G_K` generating a dense subgroup has at least `[K : ℚ_p] + 2` elements.
+* `TauCeti.finrank_add_two_le_card_of_topologicalClosure_closure_eq_top_absoluteGaloisGroup`:
+  every finite subset of `G_K` generating a dense subgroup has at least `[K : ℚ_p] + 2` elements.
 * `TauCeti.le_topologicalGeneratorRankNat_absoluteGaloisGroup`: `[K : ℚ_p] + 2 ≤ d(G_K)`.
 
 ## References
@@ -96,15 +94,16 @@ theorem le_topologicalGeneratorRankNat_absoluteGaloisGroup
     ← Module.finrank_mul_finrank ℚ_[p] K L] at hpro
   -- `Nm + 2 ≤ 1 + m (d(G_K) - 1)` forces `N + 2 ≤ d(G_K)`.
   by_contra! hlt
-  have := Nat.mul_le_mul_left (Module.finrank K L)
-    (show topologicalGeneratorRankNat (Field.absoluteGaloisGroup K) hG - 1 ≤
-      Module.finrank ℚ_[p] K by omega)
+  have hsub : topologicalGeneratorRankNat (Field.absoluteGaloisGroup K) hG - 1 ≤
+      Module.finrank ℚ_[p] K := by
+    omega
+  have := Nat.mul_le_mul_left (Module.finrank K L) hsub
   linarith [hpro.trans hschreier]
 
 /-- **Every finite set topologically generating a local absolute Galois group has at least
 `[K : ℚ_p] + 2` elements.** This is the lower half of the exact generator rank of `G_K`, stated
 without assuming topological finite generation: a finite generating set is itself a witness. -/
-theorem finrank_add_two_le_card_of_topologicalClosure_closure_eq_top
+theorem finrank_add_two_le_card_of_topologicalClosure_closure_eq_top_absoluteGaloisGroup
     (s : Finset (Field.absoluteGaloisGroup K))
     (hs : (Subgroup.closure (s : Set (Field.absoluteGaloisGroup K))).topologicalClosure = ⊤) :
     Module.finrank ℚ_[p] K + 2 ≤ s.card :=
