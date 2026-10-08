@@ -76,14 +76,17 @@ theorem isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom
 compact `Spin(n)` that kill the kernel of the double-cover projection. -/
 @[expose] noncomputable def realCliffordSpinHomEquivKer (n : ℕ) [NeZero n]
     [CompactSpace (realCliffordSpinGroupZero n)]
-    {H : Type*} [Group H] [TopologicalSpace H] :
+    {H : Type*} [Monoid H] [TopologicalSpace H] :
     (QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) →ₜ* H) ≃
       {f : realCliffordSpinGroupZero n →ₜ* H //
         (realCliffordSpinDoubleCoverZero n).rightHom.ker ≤
           (f : realCliffordSpinGroupZero n →* H).ker} :=
   ContinuousMonoidHom.homEquivOfIsQuotientMap (realCliffordSpinProjectionZero n) <|
     by
-      change Topology.IsQuotientMap (realCliffordSpinDoubleCoverZero n).rightHom
+      rw [show (realCliffordSpinProjectionZero n : realCliffordSpinGroupZero n →
+          QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)) =
+          (realCliffordSpinDoubleCoverZero n).rightHom from
+        funext (realCliffordSpinProjectionZero_apply n)]
       exact
         (isQuotientCoveringMap_realCliffordSpinDoubleCoverZero_rightHom n).toIsQuotientMap
 
@@ -92,7 +95,7 @@ Spin projection. -/
 @[simp]
 theorem realCliffordSpinHomEquivKer_apply_coe (n : ℕ) [NeZero n]
     [CompactSpace (realCliffordSpinGroupZero n)]
-    {H : Type*} [Group H] [TopologicalSpace H]
+    {H : Type*} [Monoid H] [TopologicalSpace H]
     (f : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) →ₜ* H) :
     ((realCliffordSpinHomEquivKer n f :
       {g : realCliffordSpinGroupZero n →ₜ* H //
@@ -107,7 +110,7 @@ recovers the original homomorphism. -/
 @[simp]
 theorem realCliffordSpinHomEquivKer_symm_apply_comp (n : ℕ) [NeZero n]
     [CompactSpace (realCliffordSpinGroupZero n)]
-    {H : Type*} [Group H] [TopologicalSpace H]
+    {H : Type*} [Monoid H] [TopologicalSpace H]
     (f : {g : realCliffordSpinGroupZero n →ₜ* H //
       (realCliffordSpinDoubleCoverZero n).rightHom.ker ≤
         (g : realCliffordSpinGroupZero n →* H).ker}) :

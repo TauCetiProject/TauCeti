@@ -26,7 +26,7 @@ namespace TauCeti.UniversalCover
 
 variable {G K : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyPathConnectedSpace G] [PathConnectedSpace G] [SemilocallySimplyConnectedSpace G]
-  [Group K] [TopologicalSpace K]
+  [Monoid K] [TopologicalSpace K]
 
 /-- Continuous homomorphisms out of a path-connected group are equivalent to continuous
 homomorphisms out of its universal cover that kill the projection kernel. -/
