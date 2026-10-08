@@ -47,13 +47,13 @@ theorem sum_indicator_prod_eq_right_and_le_of_support_imp {δ : Type*} [AddCommM
   constructor
   · apply Finsupp.sum_congr
     intro p hp
-    by_cases hpt : g p ∈ t <;> simp [Set.indicator_apply, hpt, hsub p hp]
+    by_cases hpt : g p ∈ t <;> simp [hpt, hsub p hp]
   · simp only [Finsupp.sum]
     apply Finset.sum_le_sum
     intro p hp
     by_cases hpt : g p ∈ t
-    · simp [Set.indicator_apply, hpt, hsub p hp hpt]
-    · by_cases hps : f p ∈ s <;> simp [Set.indicator_apply, hpt, hps, hw p]
+    · simp [hpt, hsub p hp hpt]
+    · by_cases hps : f p ∈ s <;> simp [hpt, hps, hw p]
 
 /-- The mass of a lower rectangle in a nonnegative chain-supported coupling equals one
 coordinate lower-set mass, and that mass is at most the other. -/
@@ -123,7 +123,7 @@ theorem sum_indicator_Iic_prod_add_sum_indicator_Iio_prod [PartialOrder α] [Par
       -- non-strict inequalities agree after excluding coordinate equality.
       by_cases ha : p.1 = a <;> by_cases hb : p.2 = b <;>
         simp [Set.indicator_apply, mem_prod, mem_Iic, mem_Iio, ha, hb,
-          Prod.ext_iff, lt_iff_le_and_ne]
+          Prod.ext_iff, Prod.le_def, lt_iff_le_and_ne]
     _ = _ := by
       rw [Finsupp.sum_add, Finsupp.sum_add, Finsupp.sum_ite_self_eq']
 
