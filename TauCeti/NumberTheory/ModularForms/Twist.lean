@@ -43,7 +43,7 @@ becomes the classical expression of the twist through Gauss sums.
 
 ## Main definitions
 
-* `TauCeti.ModularForm.twist`, `TauCeti.CuspForm.twist`: the twist `f ⊗ Φ`, from level `Γ₁(N)`
+* `ModularForm.twist`, `CuspForm.twist`: the twist `f ⊗ Φ`, from level `Γ₁(N)`
   to level `Γ₁(L)` for `N * M ∣ L` and `M * M ∣ L`, with their `ℂ`-linear packagings
   `twistₗ`.
 
@@ -53,11 +53,11 @@ becomes the classical expression of the twist through Gauss sums.
   `[1, a/M; 0, 1]` past `γ ∈ SL(2, ℤ)` with `M² ∣ γ₁₀` yields `γ' [1, a'/M; 0, 1]` for an integral
   `γ'` and any `a' ≡ a d² (mod M)`.
 * `TauCeti.Gamma1_map_le_conjAct_upperRightHom`: `Γ₁(L) ≤ [1, a/M; 0, 1]⁻¹ Γ₁(N) [1, a/M; 0, 1]`.
-* `TauCeti.ModularForm.twist_apply`: `(f ⊗ Φ)(τ) = M⁻¹ ∑ₐ 𝓕Φ(a) f(τ + a / M)`.
-* `TauCeti.ModularForm.qExpansion_twist_coeff`, `TauCeti.CuspForm.qExpansion_twist_coeff`:
+* `ModularForm.twist_apply`: `(f ⊗ Φ)(τ) = M⁻¹ ∑ₐ 𝓕Φ(a) f(τ + a / M)`.
+* `ModularForm.qExpansion_twist_coeff`, `CuspForm.qExpansion_twist_coeff`:
   `aₙ(f ⊗ Φ) = Φ(n) aₙ(f)`.
-* `TauCeti.ModularForm.twist_mem_modFormCharSpace`,
-  `TauCeti.CuspForm.twist_mem_cuspFormCharSpace`: the twist of `f ∈ M_k(Γ₁(N), χ)` by a
+* `ModularForm.twist_mem_modFormCharSpace`,
+  `CuspForm.twist_mem_cuspFormCharSpace`: the twist of `f ∈ M_k(Γ₁(N), χ)` by a
   Dirichlet character `ψ` modulo `M` lies in `M_k(Γ₁(L), χψ²)`, and likewise for `S_k`.
 
 ## References
@@ -159,13 +159,11 @@ theorem Gamma1_map_le_conjAct_upperRightHom [NeZero M] (hNL : N * M ∣ L) (hML 
     by simpa [map_one] using congrArg (ZMod.castHom hNL' (ZMod N)) hD,
     by simpa using congrArg (ZMod.castHom hNL' (ZMod N)) hC⟩
 
-namespace ModularForm
-
 /-- **The twist of a modular form by a function modulo `M`.** For `Φ : ZMod M → ℂ` and a modular
 form `f` for `Γ₁(N)`, the modular form `f ⊗ Φ` for `Γ₁(L)`, where `N * M ∣ L` and `M * M ∣ L`,
 given by `(f ⊗ Φ)(τ) = M⁻¹ ∑_{a mod M} 𝓕Φ(a) f(τ + a / M)` (`twist_apply`). Its `q`-expansion is
 `∑ Φ(n) aₙ(f) qⁿ` (`qExpansion_twist_coeff`). -/
-def twist [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L) (hML : M * M ∣ L)
+def _root_.ModularForm.twist [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L) (hML : M * M ∣ L)
     (f : _root_.ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
     _root_.ModularForm ((Gamma1 L).map (mapGL ℝ)) k :=
   (M : ℂ)⁻¹ • ∑ a : ZMod M, 𝓕 Φ a •
@@ -174,19 +172,23 @@ def twist [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L) (hML : M * M ∣ 
 
 /-- The defining formula of the twist: `(f ⊗ Φ)(τ) = M⁻¹ ∑ₐ 𝓕Φ(a) f(τ + a / M)`. -/
 @[simp]
-lemma twist_apply [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L) (hML : M * M ∣ L)
+lemma _root_.ModularForm.twist_apply [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L)
+    (hML : M * M ∣ L)
     (f : _root_.ModularForm ((Gamma1 N).map (mapGL ℝ)) k) (τ : ℍ) :
-    twist Φ hNL hML f τ = (M : ℂ)⁻¹ * ∑ a : ZMod M, 𝓕 Φ a * f (((a.val : ℝ) / M) +ᵥ τ) := by
-  simp only [twist, FunLike.coe_smul, FunLike.coe_sum, Pi.smul_apply, Finset.sum_apply,
+    ModularForm.twist Φ hNL hML f τ =
+      (M : ℂ)⁻¹ * ∑ a : ZMod M, 𝓕 Φ a * f (((a.val : ℝ) / M) +ᵥ τ) := by
+  simp only [ModularForm.twist, FunLike.coe_smul, FunLike.coe_sum, Pi.smul_apply,
+    Finset.sum_apply,
     smul_eq_mul,
     _root_.ModularForm.coe_restrict, _root_.ModularForm.coe_translate,
     ModularForm.slash_upperRightHom_apply, Int.cast_natCast]
 
 /-- The twist by `Φ`, as a `ℂ`-linear map `M_k(Γ₁(N)) → M_k(Γ₁(L))`. -/
-def twistₗ [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L) (hML : M * M ∣ L) :
+def _root_.ModularForm.twistₗ [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L)
+    (hML : M * M ∣ L) :
     _root_.ModularForm ((Gamma1 N).map (mapGL ℝ)) k →ₗ[ℂ]
       _root_.ModularForm ((Gamma1 L).map (mapGL ℝ)) k where
-  toFun := twist Φ hNL hML
+  toFun := ModularForm.twist Φ hNL hML
   map_add' f g := by
     ext τ
     simp [Finset.sum_add_distrib, mul_add]
@@ -195,29 +197,27 @@ def twistₗ [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L) (hML : M * M �
     simp [Finset.mul_sum, mul_left_comm]
 
 @[simp]
-lemma twistₗ_apply [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L) (hML : M * M ∣ L)
+lemma _root_.ModularForm.twistₗ_apply [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L)
+    (hML : M * M ∣ L)
     (f : _root_.ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
-    twistₗ Φ hNL hML f = twist Φ hNL hML f := (rfl)
+    ModularForm.twistₗ Φ hNL hML f = ModularForm.twist Φ hNL hML f := (rfl)
 
 /-- The twist as a combination of slashes by the translation matrices `[1, a/M; 0, 1]`. This is
 the form in which the transformation law of the twist is computed. -/
-lemma coe_twist_eq_sum_slash [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L) (hML : M * M ∣ L)
+lemma _root_.ModularForm.coe_twist_eq_sum_slash [NeZero M] (Φ : ZMod M → ℂ)
+    (hNL : N * M ∣ L) (hML : M * M ∣ L)
     (f : _root_.ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
-    ⇑(twist Φ hNL hML f) =
+    ⇑(ModularForm.twist Φ hNL hML f) =
       (M : ℂ)⁻¹ • ∑ a : ZMod M, 𝓕 Φ a • (⇑f ∣[k] upperRightHom ((a.val : ℝ) / M)) := by
   ext τ
-  simp only [twist_apply, Pi.smul_apply, Finset.sum_apply, smul_eq_mul,
+  simp only [ModularForm.twist_apply, Pi.smul_apply, Finset.sum_apply, smul_eq_mul,
     ModularForm.slash_upperRightHom_apply]
-
-end ModularForm
-
-namespace CuspForm
 
 /-- **The twist of a cusp form by a function modulo `M`.** For `Φ : ZMod M → ℂ` and a cusp form
 `f` for `Γ₁(N)`, the cusp form `f ⊗ Φ` for `Γ₁(L)`, where `N * M ∣ L` and `M * M ∣ L`, given by
 `(f ⊗ Φ)(τ) = M⁻¹ ∑_{a mod M} 𝓕Φ(a) f(τ + a / M)`. Its underlying function is that of the twist
 of `f` as a modular form (`coe_twist`). -/
-def twist [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L) (hML : M * M ∣ L)
+def _root_.CuspForm.twist [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L) (hML : M * M ∣ L)
     (f : _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
     _root_.CuspForm ((Gamma1 L).map (mapGL ℝ)) k :=
   (M : ℂ)⁻¹ • ∑ a : ZMod M, 𝓕 Φ a •
@@ -226,18 +226,22 @@ def twist [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L) (hML : M * M ∣ 
 
 /-- The defining formula of the twist of a cusp form: `(f ⊗ Φ)(τ) = M⁻¹ ∑ₐ 𝓕Φ(a) f(τ + a / M)`. -/
 @[simp]
-lemma twist_apply [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L) (hML : M * M ∣ L)
+lemma _root_.CuspForm.twist_apply [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L)
+    (hML : M * M ∣ L)
     (f : _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k) (τ : ℍ) :
-    twist Φ hNL hML f τ = (M : ℂ)⁻¹ * ∑ a : ZMod M, 𝓕 Φ a * f (((a.val : ℝ) / M) +ᵥ τ) := by
-  simp only [twist, FunLike.coe_smul, FunLike.coe_sum, Pi.smul_apply, Finset.sum_apply,
+    CuspForm.twist Φ hNL hML f τ =
+      (M : ℂ)⁻¹ * ∑ a : ZMod M, 𝓕 Φ a * f (((a.val : ℝ) / M) +ᵥ τ) := by
+  simp only [CuspForm.twist, FunLike.coe_smul, FunLike.coe_sum, Pi.smul_apply,
+    Finset.sum_apply,
     smul_eq_mul, _root_.CuspForm.coe_restrict, _root_.CuspForm.coe_translate,
     ModularForm.slash_upperRightHom_apply, Int.cast_natCast]
 
 /-- The twist by `Φ`, as a `ℂ`-linear map `S_k(Γ₁(N)) → S_k(Γ₁(L))`. -/
-def twistₗ [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L) (hML : M * M ∣ L) :
+def _root_.CuspForm.twistₗ [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L)
+    (hML : M * M ∣ L) :
     _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k →ₗ[ℂ]
       _root_.CuspForm ((Gamma1 L).map (mapGL ℝ)) k where
-  toFun := twist Φ hNL hML
+  toFun := CuspForm.twist Φ hNL hML
   map_add' f g := by
     ext τ
     simp [Finset.sum_add_distrib, mul_add]
@@ -246,27 +250,29 @@ def twistₗ [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L) (hML : M * M �
     simp [Finset.mul_sum, mul_left_comm]
 
 @[simp]
-lemma twistₗ_apply [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L) (hML : M * M ∣ L)
+lemma _root_.CuspForm.twistₗ_apply [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L)
+    (hML : M * M ∣ L)
     (f : _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
-    twistₗ Φ hNL hML f = twist Φ hNL hML f := (rfl)
+    CuspForm.twistₗ Φ hNL hML f = CuspForm.twist Φ hNL hML f := (rfl)
 
 /-- The twist of a cusp form has the same underlying function as the twist of `f` regarded as a
 modular form. -/
-lemma coe_twist [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L) (hML : M * M ∣ L)
+lemma _root_.CuspForm.coe_twist [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L)
+    (hML : M * M ∣ L)
     (f : _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
-    ⇑(twist Φ hNL hML f) =
+    ⇑(CuspForm.twist Φ hNL hML f) =
       ⇑(ModularForm.twist Φ hNL hML (f : _root_.ModularForm ((Gamma1 N).map (mapGL ℝ)) k)) := by
   ext τ
   simp
 
-end CuspForm
-
 section QExpansion
 
 /-- **The `q`-expansion of a twist.** `aₙ(f ⊗ Φ) = Φ(n) aₙ(f)` for every `n`. -/
-theorem ModularForm.qExpansion_twist_coeff [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L)
+theorem _root_.ModularForm.qExpansion_twist_coeff [NeZero M] (Φ : ZMod M → ℂ)
+    (hNL : N * M ∣ L)
     (hML : M * M ∣ L) (f : _root_.ModularForm ((Gamma1 N).map (mapGL ℝ)) k) (n : ℕ) :
-    (qExpansion 1 (twist Φ hNL hML f)).coeff n = Φ n * (qExpansion 1 f).coeff n := by
+    (qExpansion 1 (ModularForm.twist Φ hNL hML f)).coeff n =
+      Φ n * (qExpansion 1 f).coeff n := by
   have : Fact (IsCusp OnePoint.infty ((Gamma1 N).map (mapGL ℝ))) :=
     ⟨Subgroup.isCusp_of_mem_strictPeriods one_pos (one_mem_strictPeriods_Gamma1_map N)⟩
   -- Fourier inversion on `ZMod M` expresses `Φ` through the additive characters
@@ -288,9 +294,9 @@ theorem ModularForm.qExpansion_twist_coeff [NeZero M] (Φ : ZMod M → ℂ) (hNL
     push_cast
     field_simp
   have key : ∀ τ : ℍ, HasSum (fun m : ℕ ↦ (Φ m * (qExpansion 1 f).coeff m) •
-      Function.Periodic.qParam 1 (τ : ℂ) ^ m) (twist Φ hNL hML f τ) := by
+      Function.Periodic.qParam 1 (τ : ℂ) ^ m) (ModularForm.twist Φ hNL hML f τ) := by
     intro τ
-    rw [twist_apply]
+    rw [ModularForm.twist_apply]
     refine ((hasSum_sum fun a _ ↦ (_root_.ModularForm.hasSum_qExpansion f one_pos
       (one_mem_strictPeriods_Gamma1_map N) (((a.val : ℝ) / M) +ᵥ τ)).mul_left (𝓕 Φ a)).mul_left
       (M : ℂ)⁻¹).congr_fun fun m ↦ ?_
@@ -302,9 +308,11 @@ theorem ModularForm.qExpansion_twist_coeff [NeZero M] (Φ : ZMod M → ℂ) (hNL
     key n).symm
 
 /-- **The `q`-expansion of a twisted cusp form.** `aₙ(f ⊗ Φ) = Φ(n) aₙ(f)` for every `n`. -/
-theorem CuspForm.qExpansion_twist_coeff [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L)
+theorem _root_.CuspForm.qExpansion_twist_coeff [NeZero M] (Φ : ZMod M → ℂ)
+    (hNL : N * M ∣ L)
     (hML : M * M ∣ L) (f : _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k) (n : ℕ) :
-    (qExpansion 1 (twist Φ hNL hML f)).coeff n = Φ n * (qExpansion 1 f).coeff n := by
+    (qExpansion 1 (CuspForm.twist Φ hNL hML f)).coeff n =
+      Φ n * (qExpansion 1 f).coeff n := by
   rw [CuspForm.coe_twist]
   exact ModularForm.qExpansion_twist_coeff Φ hNL hML _ n
 
@@ -390,28 +398,29 @@ private lemma sum_slash_upperRightHom_slash_mapGL [NeZero M] (ψ : DirichletChar
 /-- **The nebentypus of a twist.** For a Dirichlet character `ψ` modulo `M` and
 `f ∈ M_k(Γ₁(N), χ)`, the twist `f ⊗ ψ` lies in `M_k(Γ₁(L), χψ²)`, both characters read at level
 `L` along the reduction maps. -/
-theorem ModularForm.twist_mem_modFormCharSpace [NeZero M] (ψ : DirichletCharacter ℂ M)
+theorem _root_.ModularForm.twist_mem_modFormCharSpace [NeZero M]
+    (ψ : DirichletCharacter ℂ M)
     (hNL : N * M ∣ L) (hML : M * M ∣ L) {χ : (ZMod N)ˣ →* ℂˣ}
     {f : _root_.ModularForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ modFormCharSpace k χ) :
-    twist ψ hNL hML f ∈ modFormCharSpace k
+    ModularForm.twist ψ hNL hML f ∈ modFormCharSpace k
       (χ.comp (unitsMap (dvd_of_mul_right_dvd hNL)) *
         (ψ.toUnitHom.comp (unitsMap (dvd_of_mul_left_dvd hML))) ^ 2) := by
   rw [mem_modFormCharSpace_iff_nebentypus] at hf ⊢
   intro g
-  rw [coe_twist_eq_sum_slash]
+  rw [ModularForm.coe_twist_eq_sum_slash]
   exact sum_slash_upperRightHom_slash_mapGL ψ hNL hML hf g
 
 /-- **The nebentypus of a twisted cusp form.** For a Dirichlet character `ψ` modulo `M` and
 `f ∈ S_k(Γ₁(N), χ)`, the twist `f ⊗ ψ` lies in `S_k(Γ₁(L), χψ²)`. -/
-theorem CuspForm.twist_mem_cuspFormCharSpace [NeZero M] (ψ : DirichletCharacter ℂ M)
+theorem _root_.CuspForm.twist_mem_cuspFormCharSpace [NeZero M] (ψ : DirichletCharacter ℂ M)
     (hNL : N * M ∣ L) (hML : M * M ∣ L) {χ : (ZMod N)ˣ →* ℂˣ}
     {f : _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ) :
-    twist ψ hNL hML f ∈ cuspFormCharSpace k
+    CuspForm.twist ψ hNL hML f ∈ cuspFormCharSpace k
       (χ.comp (unitsMap (dvd_of_mul_right_dvd hNL)) *
         (ψ.toUnitHom.comp (unitsMap (dvd_of_mul_left_dvd hML))) ^ 2) := by
   rw [mem_cuspFormCharSpace_iff_nebentypus] at hf ⊢
   intro g
-  rw [coe_twist, ModularForm.coe_twist_eq_sum_slash]
+  rw [CuspForm.coe_twist, ModularForm.coe_twist_eq_sum_slash]
   exact sum_slash_upperRightHom_slash_mapGL ψ hNL hML hf g
 
 end Nebentypus
