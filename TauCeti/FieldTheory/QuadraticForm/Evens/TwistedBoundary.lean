@@ -19,7 +19,7 @@ This is the nonabelian boundary used to compare lifts of orthogonal Galois cocyc
 cochain by the Galois-twisted conjugation `x(g) ↦ Q⁻¹ x(g) g(Q)` conjugates its boundary by the
 constant matrix `Q`.  In particular, a scalar boundary is unchanged.  The mod-two reading
 `twistedBoundaryF2` records whether the boundary is the identity; when `K` has characteristic
-different from two and the boundary is a sign matrix `±1`, this is its exponent.
+different from two, `n` is nonempty, and the boundary is a sign matrix `±1`, this is its exponent.
 
 The convention for the order of the Galois action is important: applying `h` to the entries and
 then `g` is the action of `g * h`.  This is the convention of `Gal(SeparableClosure K / K)` and is
@@ -29,7 +29,7 @@ the one needed for the descent cocycles of transferred quadratic forms.
 
 * `TauCeti.twistedBoundary`: the matrix-valued twisted boundary.
 * `TauCeti.twistedBoundaryF2`: its mod-two reading, the exponent of a sign boundary away from
-  characteristic two.
+  characteristic two when `n` is nonempty.
 
 ## Main results
 
@@ -94,8 +94,8 @@ theorem twistedBoundary_eq_one_iff
     rw [twistedBoundary_apply, hδ, Matrix.mul_nonsing_inv _ hx]
 
 /-- The twisted boundary read in `𝔽₂`: it is `0` at the identity and `1` elsewhere.  When `K`
-has characteristic different from two and the boundary is a sign matrix `±1`, this is precisely
-its exponent. -/
+has characteristic different from two, `n` is nonempty, and the boundary is a sign matrix `±1`,
+this is precisely its exponent. -/
 noncomputable def twistedBoundaryF2
     (x : AbsoluteGaloisGroup K → Matrix n n (SeparableClosure K))
     (q : AbsoluteGaloisGroup K × AbsoluteGaloisGroup K) : ZMod 2 := by
