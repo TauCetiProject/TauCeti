@@ -59,8 +59,9 @@ private theorem mpullback_const (v : P) :
   -- Name the dependent field to keep the pullback well typed during rewriting.
   change mpullback J J coe A = constantField v
   funext x
-  rw [mpullback_apply,
-    TauCeti.Manifold.mfderiv_subtype_val (I := J) (show upperHalfSpaceOpens E from x),
+  rw [mpullback_apply]
+  dsimp only [coe]
+  rw [TauCeti.Manifold.mfderiv_subtype_val (I := J) (show upperHalfSpaceOpens E from x),
     ContinuousLinearMap.inverse_equiv]
   rfl
 
@@ -72,6 +73,7 @@ private theorem mdifferentiableAt_constantField (v : P) (x : UpperHalfSpace E) :
     (contDiffAt_const (c := v))).mdifferentiableAt one_ne_zero |>.mpullback_vectorField
       (contMDiff_coe.of_le (show (2 : ℕ∞ω) ≤ ω from le_top) x)
       (by
+        dsimp only [coe]
         rw [TauCeti.Manifold.mfderiv_subtype_val (I := J) (show upperHalfSpaceOpens E from x)]
         exact ContinuousLinearMap.isInvertible_equiv) le_rfl
 
@@ -103,8 +105,9 @@ private theorem mvfderiv_inner_constantField (u v w : P) (x : UpperHalfSpace E) 
   have h := hs.comp_hasFDerivAt (coe x) hd
   simp only [Function.comp_def, Pi.pow_apply, id_eq] at h
   rw [mvfderiv_comp_apply x h.differentiableAt.mdifferentiableAt
-    (contMDiff_coe.mdifferentiable (by simp) x),
-    TauCeti.Manifold.mfderiv_subtype_val (I := J) (show upperHalfSpaceOpens E from x)]
+    (contMDiff_coe.mdifferentiable (by simp) x)]
+  dsimp only [coe]
+  rw [TauCeti.Manifold.mfderiv_subtype_val (I := J) (show upperHalfSpaceOpens E from x)]
   -- Read the manifold derivative in the model and cancel the tangent-space casts.
   rw [mvfderiv_eq_fderiv]
   change fderiv ℝ (fun p : P => inner ℝ u v / p.snd ^ 2) (coe x) w = _
