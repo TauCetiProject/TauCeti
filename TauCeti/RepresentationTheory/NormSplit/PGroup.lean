@@ -12,11 +12,12 @@ import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.RepresentationTheory.PGroupInvariants
 
 /-!
-# Representations of `p`-groups in characteristic `p` with vanishing `Ĥ⁻¹`
+# Representations of `p`-groups with vanishing degree `-1` Tate cohomology
 
 Let `G` be a finite `p`-group and `ρ` a representation of `G` on a vector space `V` over a field
 of characteristic `p`. If every vector of norm zero lies in the augmentation submodule — that is,
-if the Tate group `Ĥ⁻¹(G, V)` vanishes — then the identity of `V` is a norm
+if the degree `-1` Tate cohomology of `G` with coefficients in `V` vanishes — then the identity of
+`V` is a norm
 `x ↦ ∑ g, ρ g (φ (ρ g⁻¹ x))` for the conjugation action of `G` on `End(V)`
 (Serre, *Local Fields*, IX §3, Theorem 4; Brown, *Cohomology of Groups*, VI 8.5). No finiteness is
 assumed on `V`.
@@ -49,9 +50,10 @@ namespace Representation
 variable {F G V : Type*} [Field F] [Group G] [Fintype G] [AddCommGroup V] [Module F V]
   (p : ℕ) [Fact p.Prime] [CharP F p]
 
-/-- **A representation of a `p`-group in characteristic `p` with `Ĥ⁻¹ = 0` has the identity as a
-norm.** If `G` is a finite `p`-group, `F` has characteristic `p`, and every vector of `V` of norm
-zero lies in the augmentation submodule, then the identity of `V` is the norm
+/-- **A representation of a `p`-group in characteristic `p` with vanishing degree `-1` Tate
+cohomology has the identity as a norm.** If `G` is a finite `p`-group, `F` has characteristic `p`,
+and every vector of `V` of norm zero lies in the augmentation submodule, then the identity is the
+norm
 `∑ g, ρ g ∘ φ ∘ ρ g⁻¹` of an `F`-linear `φ`. -/
 theorem id_mem_range_norm_linHom_of_ker_norm_le (hG : IsPGroup p G) (ρ : Representation F G V)
     (h : LinearMap.ker ρ.norm ≤ Coinvariants.ker ρ) :
