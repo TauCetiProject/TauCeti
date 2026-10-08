@@ -56,7 +56,7 @@ theorem exists_continuous_range_eq_rays (ℓ : V →ₗ[ℝ] ℝ) {d₁ d₂ : V
     · by_cases ht0 : t = 0
       · subst t
         exact ⟨0, by simp⟩
-      · have hs : 0 < t * ℓ d₂ := mul_pos (lt_of_le_of_ne ht ht0.symm) h₂
+      · have hs : 0 < t * ℓ d₂ := mul_pos (lt_of_le_of_ne ht (Ne.symm ht0)) h₂
         exact ⟨t * ℓ d₂, by simp [not_le.mpr hs, mul_div_cancel_right₀ _ h₂.ne']⟩
 
 end LinearMap
