@@ -92,21 +92,21 @@ theorem isZero_X₃_of_surjective_of_injective (m n : ℤ) (hmn : m + 1 = n)
   obtain rfl : m + 1 = j := hj
   exact (ModuleCat.mono_iff_injective _).2 hinj
 
-/-- If `Ĥⁿ(G, X₁) = 0` and `Ĥⁿ(G, X₃) = 0`, then `Ĥⁿ(G, X₂) = 0`. -/
+/-- If `Ĥⁿ(G, X₁) = 0` and `Ĥⁿ(G, X₃) = 0`, then `Ĥⁿ(G, X₂) = 0`. -/
 theorem isZero_X₂_of_isZero_X₁_of_isZero_X₃ (n : ℤ) (h₁ : IsZero (tateCohomology S.X₁ n))
     (h₃ : IsZero (tateCohomology S.X₃ n)) : IsZero (tateCohomology S.X₂ n) :=
   (_root_.TateCohomology.exact₂ hS n).isZero_of_both_isZero h₁ h₃
 
-/-- If `Ĥᵐ(G, X₂) = 0` and `Ĥⁿ(G, X₁) = 0` in the next degree `n = m + 1`, then
-`Ĥᵐ(G, X₃) = 0`. -/
+/-- If `Ĥᵐ(G, X₂) = 0` and `Ĥⁿ(G, X₁) = 0` in the next degree `n = m + 1`, then
+`Ĥᵐ(G, X₃) = 0`. -/
 theorem isZero_X₃_of_isZero_X₂_of_isZero_X₁ (m n : ℤ) (hmn : m + 1 = n)
     (h₂ : IsZero (tateCohomology S.X₂ m)) (h₁ : IsZero (tateCohomology S.X₁ n)) :
     IsZero (tateCohomology S.X₃ m) := by
   subst hmn
   exact (_root_.TateCohomology.exact₃ hS m).isZero_of_both_isZero h₂ h₁
 
-/-- If `Ĥᵐ(G, X₃) = 0` and `Ĥⁿ(G, X₂) = 0` in the next degree `n = m + 1`, then
-`Ĥⁿ(G, X₁) = 0`. -/
+/-- If `Ĥᵐ(G, X₃) = 0` and `Ĥⁿ(G, X₂) = 0` in the next degree `n = m + 1`, then
+`Ĥⁿ(G, X₁) = 0`. -/
 theorem isZero_X₁_of_isZero_X₃_of_isZero_X₂ (m n : ℤ) (hmn : m + 1 = n)
     (h₃ : IsZero (tateCohomology S.X₃ m)) (h₂ : IsZero (tateCohomology S.X₂ n)) :
     IsZero (tateCohomology S.X₁ n) := by
