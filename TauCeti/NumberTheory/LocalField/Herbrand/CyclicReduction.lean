@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
-public import TauCeti.NumberTheory.LocalField.Herbrand.HasseArf
+public import TauCeti.NumberTheory.LocalField.Herbrand.HasseArf.PrimeDegree
 public import TauCeti.NumberTheory.LocalField.Herbrand.UpperQuotient
 public import Mathlib.FieldTheory.Galois.Abelian
 import TauCeti.GroupTheory.FiniteAbelian.Quotient
