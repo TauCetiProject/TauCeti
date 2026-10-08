@@ -18,8 +18,8 @@ uses one direction for negative parameters and the other for positive parameters
 graph description of two rays meeting at a vertex, used to construct local charts for polygonal
 curves.
 
-No norm or continuity of `ℓ` is needed: continuity of addition, scalar multiplication, and the
-affine action suffices.
+No norm or continuity of `ℓ` is needed: continuity of scalar multiplication and the affine
+action suffices.
 
 ## Main results
 
@@ -32,7 +32,7 @@ public section
 namespace LinearMap
 
 variable {V P : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
-  [ContinuousAdd V] [ContinuousSMul ℝ V] [AddTorsor V P] [TopologicalSpace P]
+  [ContinuousSMul ℝ V] [AddTorsor V P] [TopologicalSpace P]
   [ContinuousVAdd V P]
 
 /-- If `ℓ d₁ < 0 < ℓ d₂`, the union of the rays from `z` along `d₁` and along `d₂` is the range of
@@ -42,18 +42,21 @@ theorem exists_continuous_range_eq_rays (ℓ : V →ₗ[ℝ] ℝ) {d₁ d₂ : V
     (h₂ : 0 < ℓ d₂) (z : P) : ∃ g : ℝ → P, Continuous g ∧ (∀ s, ℓ (g s -ᵥ z) = s) ∧
       ∀ y, y ∈ Set.range g ↔
         (∃ t : ℝ, 0 ≤ t ∧ y = t • d₁ +ᵥ z) ∨ (∃ t : ℝ, 0 ≤ t ∧ y = t • d₂ +ᵥ z) := by
-  refine ⟨fun s => ((max s 0 / ℓ d₂) • d₂ + (min s 0 / ℓ d₁) • d₁) +ᵥ z, by fun_prop,
-    fun s => ?_, fun y => ⟨?_, ?_⟩⟩
-  · simp [h₁.ne, h₂.ne', max_add_min]
+  refine ⟨fun s => if s ≤ 0 then (s / ℓ d₁) • d₁ +ᵥ z else (s / ℓ d₂) • d₂ +ᵥ z,
+    continuous_if_le continuous_id continuous_const (by fun_prop) (by fun_prop)
+      (fun s hs => by simp [hs]), fun s => ?_, fun y => ⟨?_, ?_⟩⟩
+  · by_cases hs : s ≤ 0 <;> simp [hs, h₁.ne, h₂.ne']
   · rintro ⟨s, rfl⟩
-    rcases le_total 0 s with hs | hs
-    · exact .inr ⟨s / ℓ d₂, div_nonneg hs h₂.le, by simp [max_eq_left hs, min_eq_right hs]⟩
-    · exact .inl ⟨s / ℓ d₁, div_nonneg_of_nonpos hs h₁.le,
-        by simp [max_eq_right hs, min_eq_left hs]⟩
+    by_cases hs : s ≤ 0
+    · exact .inl ⟨s / ℓ d₁, div_nonneg_of_nonpos hs h₁.le, by simp [hs]⟩
+    · exact .inr ⟨s / ℓ d₂, div_nonneg (le_of_not_ge hs) h₂.le, by simp [hs]⟩
   · rintro (⟨t, ht, rfl⟩ | ⟨t, ht, rfl⟩)
     · have hs : t * ℓ d₁ ≤ 0 := mul_nonpos_of_nonneg_of_nonpos ht h₁.le
-      exact ⟨t * ℓ d₁, by simp [max_eq_right hs, min_eq_left hs, mul_div_cancel_right₀ _ h₁.ne]⟩
-    · have hs : 0 ≤ t * ℓ d₂ := mul_nonneg ht h₂.le
-      exact ⟨t * ℓ d₂, by simp [max_eq_left hs, min_eq_right hs, mul_div_cancel_right₀ _ h₂.ne']⟩
+      exact ⟨t * ℓ d₁, by simp [hs, mul_div_cancel_right₀ _ h₁.ne]⟩
+    · by_cases ht0 : t = 0
+      · subst t
+        exact ⟨0, by simp⟩
+      · have hs : 0 < t * ℓ d₂ := mul_pos (lt_of_le_of_ne ht ht0.symm) h₂
+        exact ⟨t * ℓ d₂, by simp [not_le.mpr hs, mul_div_cancel_right₀ _ h₂.ne']⟩
 
 end LinearMap
