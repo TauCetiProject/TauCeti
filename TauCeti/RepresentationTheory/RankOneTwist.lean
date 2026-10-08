@@ -79,6 +79,7 @@ def rankOneCharacter (rho : Representation k G V) (e : V ≃ₗ[k] k) : G →* k
 
 /-- The value of the rank-one character at `g` is the coordinate of `g` applied to the vector
 with coordinate `1`. -/
+@[simp]
 theorem rankOneCharacter_apply (rho : Representation k G V) (e : V ≃ₗ[k] k) (g : G) :
     rankOneCharacter rho e g = e (rho g (e.symm 1)) := by
   unfold rankOneCharacter
