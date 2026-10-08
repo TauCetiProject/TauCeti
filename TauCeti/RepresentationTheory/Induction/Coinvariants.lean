@@ -20,6 +20,9 @@ The comparison identifies the image of the projection formula under coinvariants
 Mathlib's `Rep.coinvariantsTensorIndIso`. This makes the representation-level tensor identity
 and the coinvariants tensor identity agree as isomorphisms.
 
+The tensor comparison uses a common universe for `k`, `G`, and `H`, as required by
+Mathlib's `Rep.coinvariantsTensorIndIso`.
+
 ## References
 
 C. W. Curtis and I. Reiner, *Methods of Representation Theory, Vol. I*, §10.
