@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.JointEigenvalueSearch.Basic
+import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 
 /-!
 # Successive refinement of common eigenspaces
@@ -23,8 +24,8 @@ In dimension zero it returns nothing, including for an empty family. For an empt
 positive dimension it returns the unique empty tuple.
 
 The search uses `TauCeti.eigenvalueSearch` and `TauCeti.jointEigenspaceBasis`; it recomputes the
-stacked kernel at each extension. It does not yet restrict the next matrix to a basis of a
-surviving eigenspace or stop refinement early at a one-dimensional block.
+stacked kernel at each extension, without restricting the next matrix to a basis of a
+surviving eigenspace or stopping refinement early at a one-dimensional block.
 
 ## References
 
@@ -47,7 +48,7 @@ variable {m n : ℕ}
 
 /-- Search for common eigenvalue tuples by successively intersecting eigenspaces.
 Only prefixes with nonzero common eigenspace are extended to the next matrix. -/
-@[expose] def jointEigenvalueSearch : {m : ℕ} →
+def jointEigenvalueSearch : {m : ℕ} →
     (Fin m → Matrix (Fin n) (Fin n) F) → Finset (Fin m → F)
   | 0, _ => if n = 0 then ∅ else {Fin.elim0}
   | m + 1, A =>
@@ -102,8 +103,7 @@ theorem card_jointEigenvalueSearch_le (A : Fin m → Matrix (Fin n) (Fin n) F) :
   let p (a : Fin m → F) : Submodule F (Fin n → F) :=
     ⨅ i, Module.End.eigenspace (Matrix.toLin' (A i)) (a i)
   have hp : iSupIndep p :=
-    iSupIndep.iInf (fun i => Module.End.eigenspace (Matrix.toLin' (A i)))
-      (fun i => Module.End.eigenspaces_iSupIndep (Matrix.toLin' (A i)))
+    iSupIndep_iInf_eigenspace (fun i => Matrix.toLin' (A i))
   have hmem (a : Fin m → F) : a ∈ jointEigenvalueSearch A ↔ p a ≠ ⊥ := by
     rw [mem_jointEigenvalueSearch, Submodule.ne_bot_iff]
     simp only [p, Submodule.mem_iInf, Module.End.mem_eigenspace_iff, Matrix.toLin'_apply]
