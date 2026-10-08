@@ -148,7 +148,13 @@ theorem coeff_laurentSeriesExpansion_sub_natCast (n : ℕ) {z : F}
 uniformizer: the coefficient of `t⁻¹` in its Laurent expansion (Stichtenoth,
 Definition 4.2.8). It is `k`-linear. -/
 noncomputable def residue : F →ₗ[k] k :=
-  (HahnSeries.coeff.linearMap (-1)).comp (P.laurentSeriesExpansion hP ht).toLinearMap
+  -- Use the coefficientwise Hahn-series module structure expected by `coeff.linearMap`.
+  (HahnSeries.coeff.linearMap (-1)).comp
+    { toFun := P.laurentSeriesExpansion hP ht
+      map_add' := (P.laurentSeriesExpansion hP ht).map_add
+      map_smul' := fun c z => by
+        rw [Algebra.smul_def, map_mul, AlgHom.commutes, HahnSeries.algebraMap_apply',
+          PowerSeries.algebraMap_eq, HahnSeries.ofPowerSeries_C, HahnSeries.C_mul_eq_smul] }
 
 /-- The residue is the coefficient of `T⁻¹` in the Laurent expansion. -/
 theorem residue_apply (z : F) :
