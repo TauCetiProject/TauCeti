@@ -61,37 +61,6 @@ namespace WeierstrassCurve.Affine
 
 variable {F : Type*} [Field F] (W : WeierstrassCurve.Affine F)
 
-/-! ### The different exponent of a quadratic equation -/
-
-section Quadratic
-
-variable {L : Type*} [Field L] [Algebra F L] [Algebra (RatFunc F) L]
-  [IsScalarTower F (RatFunc F) L] [FiniteDimensional (RatFunc F) L]
-  [Algebra.IsSeparable (RatFunc F) L]
-
-/-- The different exponent at a place `P` of a quadratic extension `L = F(x)(z)` with
-`z² + u z - v = 0` and `u, v` regular at `P` is at most the order of `2 z + u` at `P`. -/
-private theorem differentExponent_le_ord_two_mul_add (P : Place F L) {u v : RatFunc F}
-    (hu : algebraMap (RatFunc F) L u ∈ P.integers) (hv : algebraMap (RatFunc F) L v ∈ P.integers)
-    {z : L} (hgen : (RatFunc F)⟮z⟯ = ⊤)
-    (hz : z ^ 2 + algebraMap (RatFunc F) L u * z - algebraMap (RatFunc F) L v = 0)
-    (hne : 2 * z + algebraMap (RatFunc F) L u ≠ 0) :
-    (Place.differentExponent F (RatFunc F) P : ℤ) ≤ P.ord (2 * z + algebraMap (RatFunc F) L u) := by
-  have hψ : (X ^ 2 + C u * X - C v : (RatFunc F)[X]).Monic := by monicity!
-  have hderiv : aeval z (derivative (X ^ 2 + C u * X - C v : (RatFunc F)[X])) =
-      2 * z + algebraMap (RatFunc F) L u := by
-    simp only [derivative_sub, derivative_X_pow, derivative_C_mul_X, derivative_C, sub_zero,
-      map_add, map_mul, aeval_C, Nat.cast_ofNat, map_ofNat]
-    norm_num
-  rw [← hderiv]
-  refine Place.differentExponent_le_ord_aeval_derivative F (RatFunc F) hgen hψ (fun i ↦ ?_)
-    (by simpa using hz) (by rwa [hderiv])
-  rw [Place.mem_integers_restrict_iff]
-  rcases i with _ | _ | _ | i <;>
-    simp [coeff_X, coeff_C, coeff_X_pow, neg_mem_iff, hu, hv]
-
-end Quadratic
-
 /-! ### The local bound -/
 
 section Local
@@ -154,7 +123,7 @@ private theorem differentExponent_le (P : Place F W.FunctionField) :
         invariantDifferentialDenom W := by
       simp only [map_add, map_mul, hX, hC, hden]
       ring
-    have h := differentExponent_le_ord_two_mul_add P
+    have h := Place.differentExponent_le_ord_two_mul_add F (RatFunc F) (P' := P)
       (u := algebraMap F (RatFunc F) W.a₁ * RatFunc.X + algebraMap F (RatFunc F) W.a₃)
       (v := RatFunc.X ^ 3 + algebraMap F (RatFunc F) W.a₂ * RatFunc.X ^ 2 +
         algebraMap F (RatFunc F) W.a₄ * RatFunc.X + algebraMap F (RatFunc F) W.a₆) (z := y)
@@ -191,7 +160,7 @@ private theorem differentExponent_le (P : Place F W.FunctionField) :
       field_simp
       ring
     have hx2 : (x ^ 2)⁻¹ ≠ 0 := inv_ne_zero (pow_ne_zero _ hx0)
-    have h := differentExponent_le_ord_two_mul_add P
+    have h := Place.differentExponent_le_ord_two_mul_add F (RatFunc F) (P' := P)
       (u := algebraMap F (RatFunc F) W.a₁ * RatFunc.X⁻¹ +
         algebraMap F (RatFunc F) W.a₃ * RatFunc.X⁻¹ ^ 2)
       (v := RatFunc.X⁻¹ + algebraMap F (RatFunc F) W.a₂ * RatFunc.X⁻¹ ^ 2 +
