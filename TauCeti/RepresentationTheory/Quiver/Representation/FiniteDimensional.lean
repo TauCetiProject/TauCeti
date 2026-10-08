@@ -168,8 +168,7 @@ variable (k Q) [Finite Q]
 
 /-- Over a finite quiver, the module carried by a representation with finite-dimensional vertex
 spaces is finite-dimensional, being the direct sum of those spaces. This is the quiver counterpart
-of Mathlib's instance `Module.Finite k ρ.asModule` for `Representation.asModule`, and is proved the
-same way, by transport along the linear equivalence with the underlying space. -/
+of Mathlib's instance `Module.Finite k ρ.asModule` for `Representation.asModule`. -/
 instance [DecidableEq Q] (M : QuiverRep.{u, v, w, t} k Q)
     [∀ i, Module.Finite k (QuiverRep.vertexSpace k Q M i)] :
     Module.Finite k (QuiverRep.asModule k Q M) :=
