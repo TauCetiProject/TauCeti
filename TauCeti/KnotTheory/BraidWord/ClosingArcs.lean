@@ -57,6 +57,7 @@ def closingHalfEdge (v : BraidWord n) (p : Fin n) (h : v.crossingsAt p ≠ []) :
 
 /-- The successor of the last crossing on a strand position is its first crossing, through the
 closing arc. -/
+@[simp]
 theorem nextCrossing_getLast_crossingsAt (v : BraidWord n) (p : Fin n)
     (h : v.crossingsAt p ≠ []) :
     v.nextCrossing p ((v.crossingsAt p).getLast h) = (v.crossingsAt p).head h := by
@@ -75,6 +76,7 @@ theorem orientation_closingHalfEdge (v : BraidWord n) (p : Fin n)
 
 /-- The closing arc on a strand position joins the outgoing half-edge at its last crossing to the
 incoming half-edge at its first crossing. -/
+@[simp]
 theorem edgePair_closingHalfEdge (v : BraidWord n) (p : Fin n)
     (h : v.crossingsAt p ≠ []) :
     v.closure.edgePair.val (v.closingHalfEdge p h) =
@@ -97,8 +99,8 @@ theorem closingHalfEdge_ne (v : BraidWord n) {p q : Fin n}
   rw [hj] at hmp hslot
   exact hpq (v.eq_of_outgoingSlot_eq hmp hmq hslot)
 
-/-- A closing endpoint is not the partner of any closing endpoint. Equivalently, the closing
-arcs selected on any two crossing-bearing strand positions are not the same arc. -/
+/-- A closing endpoint is not the partner of any closing endpoint, including one selected on the
+same strand position. -/
 theorem closingHalfEdge_ne_edgePair_closingHalfEdge (v : BraidWord n) (p q : Fin n)
     (hp : v.crossingsAt p ≠ []) (hq : v.crossingsAt q ≠ []) :
     v.closingHalfEdge q hq ≠ v.closure.edgePair.val (v.closingHalfEdge p hp) := by
