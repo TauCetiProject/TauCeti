@@ -578,20 +578,19 @@ theorem cliffordInvariant_eq_hasseInvariant_mul (x : RegularFormClass K) :
   exact lamFormula_add_mk_rankOne a ⟨m, by omega⟩ (by omega)
     (lamFormula_of_rank_eq_two_mul m _ (by rw [rank_mul, rank_mk, one_mul]; omega))
 
-/-- **Lam's comparison on the square of the fundamental ideal.** For a class of rank `2m` with
-trivial signed discriminant, `c(q) = s(q) · [(-1,-1)]^C(m,2)`: the discriminant correction in
-`TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul` cancels. These are the classes
-whose Witt class lies in the square of the fundamental ideal
-(`TauCeti.wittClass_mem_fundamentalIdeal_sq_iff`). -/
-theorem cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero {x : RegularFormClass K}
-    {m : ℕ} (hx : x.rank = 2 * m) (hd : signedDiscr x = 0) :
-    cliffordInvariant x = hasseInvariant x * quaternionClass (-1) (-1) ^ m.choose 2 := by
-  rw [cliffordInvariant_eq_hasseInvariant_mul, discr_eq_sign_add_signedDiscr, hd,
-    add_zero (M := SquareClassGroup K), hx, ← squareClass_pow,
-    quaternionClassOnSquareClasses_squareClass, quaternionClass_pow_right, ← pow_mul, mul_assoc,
-    ← pow_add]
-  congr 1
-  refine pow_eq_pow_of_modEq ?_ (quaternionClass_sq _ _)
+/-- With trivial signed discriminant the discriminant is the sign `C(n,2) • [-1]`, so a quaternion
+symbol against it is a power of the symbol against `-1`. -/
+private theorem quaternionClassOnSquareClasses_discr_of_signedDiscr_eq_zero (u : Kˣ)
+    {x : RegularFormClass K} (hd : signedDiscr x = 0) :
+    quaternionClassOnSquareClasses (squareClass u) (discr x) =
+      quaternionClass u (-1) ^ x.rank.choose 2 := by
+  rw [discr_eq_sign_add_signedDiscr, hd, add_zero (M := SquareClassGroup K), ← squareClass_pow,
+    quaternionClassOnSquareClasses_squareClass, quaternionClass_pow_right]
+
+/-- The parity of the exponent of `[(-1,-1)]` in Lam's comparison in rank `2m` with trivial signed
+discriminant: `C(2m,2) C(2m-1,2) + C(2m+1,4) ≡ C(m,2) (mod 2)`. -/
+private theorem choose_mul_choose_add_choose_modEq (m : ℕ) :
+    (2 * m).choose 2 * (2 * m - 1).choose 2 + (2 * m + 1).choose 4 ≡ m.choose 2 [MOD 2] := by
   rcases m with _ | k
   · rfl
   have hN := Choose.choose_mul_mul_modEq_choose_nat (p := 2) (a := k + 1) (b := 1)
@@ -606,6 +605,23 @@ theorem cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero {x : Regu
   unfold Nat.ModEq
   omega
 
+/-- **Lam's comparison on the square of the fundamental ideal.** For a class of rank `2m` with
+trivial signed discriminant, `c(q) = s(q) · [(-1,-1)]^C(m,2)`: the discriminant correction in
+`TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul` cancels. These are the classes
+whose Witt class lies in the square of the fundamental ideal
+(`TauCeti.wittClass_mem_fundamentalIdeal_sq_iff`). -/
+theorem cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero {x : RegularFormClass K}
+    {m : ℕ} (hx : x.rank = 2 * m) (hd : signedDiscr x = 0) :
+    cliffordInvariant x = hasseInvariant x * quaternionClass (-1) (-1) ^ m.choose 2 :=
+  calc cliffordInvariant x
+      = hasseInvariant x * quaternionClass (-1) (-1) ^
+          ((2 * m).choose 2 * (2 * m - 1).choose 2 + (2 * m + 1).choose 4) := by
+        rw [cliffordInvariant_eq_hasseInvariant_mul,
+          quaternionClassOnSquareClasses_discr_of_signedDiscr_eq_zero _ hd, hx, ← pow_mul, pow_add,
+          mul_assoc]
+    _ = hasseInvariant x * quaternionClass (-1) (-1) ^ m.choose 2 := by
+        rw [pow_eq_pow_of_modEq (choose_mul_choose_add_choose_modEq m) (quaternionClass_sq _ _)]
+
 end Lam
 
 /-- The hyperbolic plane has trivial Clifford invariant: its Clifford algebra `ℍ[K, 1, -1]` is
@@ -616,13 +632,6 @@ theorem cliffordInvariant_hyperbolicClass : cliffordInvariant (hyperbolicClass K
 
 /-! ### Additivity on the square of the fundamental ideal -/
 
-private theorem signedDiscr_mk_rankOne_mul_eq_zero (t : Kˣ) {x : RegularFormClass K}
-    (hx : Even x.rank) (hd : signedDiscr x = 0) :
-    signedDiscr (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => t⟩ * x) = 0 := by
-  obtain ⟨k, hk⟩ := hx
-  rw [signedDiscr_mk_rankOne_mul, hd, hk, ← two_mul, mul_nsmul',
-    ZModModule.char_nsmul_eq_zero 2 (k • squareClass t), add_zero (M := SquareClassGroup K)]
-
 /-- **On the square of the fundamental ideal the Clifford invariant is a similarity invariant**:
 for a class `x` of even rank with trivial signed discriminant, `c(⟨t⟩ ⊗ x) = c(x)`. -/
 theorem cliffordInvariant_mk_rankOne_mul_of_signedDiscr_eq_zero (t : Kˣ)
@@ -631,22 +640,29 @@ theorem cliffordInvariant_mk_rankOne_mul_of_signedDiscr_eq_zero (t : Kˣ)
       cliffordInvariant x := by
   obtain ⟨m, hm⟩ := hx
   have hm2 : x.rank = 2 * m := by omega
-  rw [cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero (m := m)
-      (by rw [rank_mul, rank_mk, one_mul, hm2])
-      (signedDiscr_mk_rankOne_mul_eq_zero t ⟨m, hm⟩ hd),
-    cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero hm2 hd,
-    hasseInvariant_mk_rankOne_mul, discr_eq_sign_add_signedDiscr, hd,
-    add_zero (M := SquareClassGroup K), hm2, ← squareClass_pow,
-    BrauerGroup.quaternionClassOnSquareClasses_squareClass, BrauerGroup.quaternionClass_pow_right,
-    ← pow_mul, mul_assoc (hasseInvariant x), ← pow_add]
-  -- The two sign corrections combine to `[(t, -1)]` raised to an even power.
-  obtain ⟨N, hN⟩ : ∃ N, (2 * m).choose 2 + (2 * m).choose 2 * (2 * m - 1) = 2 * N := by
-    rcases m with _ | m
-    · exact ⟨0, rfl⟩
-    · refine ⟨(2 * (m + 1)).choose 2 * (m + 1), ?_⟩
-      rw [show 2 * (m + 1) - 1 = 2 * m + 1 by omega]
-      ring
-  rw [hN, pow_mul, BrauerGroup.quaternionClass_sq, one_pow, mul_one]
+  have htx : rank (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => t⟩ * x) = 2 * m := by
+    rw [rank_mul, rank_mk, one_mul, hm2]
+  -- Scaling multiplies the Hasse invariant by `u · u ^ (2m - 1)` with `u = [(t, -1)]^C(2m,2)`,
+  -- which is trivial since `u² = 1`.
+  have hcancel : BrauerGroup.quaternionClass t (-1) ^ (2 * m).choose 2 *
+      (BrauerGroup.quaternionClass t (-1) ^ (2 * m).choose 2) ^ (2 * m - 1) = 1 := by
+    have hu : (BrauerGroup.quaternionClass t (-1) ^ (2 * m).choose 2) ^ 2 = 1 := by
+      rw [← pow_mul, mul_comm, pow_mul, BrauerGroup.quaternionClass_sq, one_pow]
+    rcases m with _ | k
+    · simp
+    · have hk : 2 * (k + 1) - 1 = 2 * k + 1 := by omega
+      rw [hk, pow_succ, pow_mul, hu, one_pow, one_mul, ← pow_two, hu]
+  calc cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => t⟩ * x)
+      = hasseInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => t⟩ * x) *
+          BrauerGroup.quaternionClass (-1) (-1) ^ m.choose 2 :=
+        cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero htx
+          ((signedDiscr_mk_rankOne_mul_of_even t ⟨m, hm⟩).trans hd)
+    _ = hasseInvariant x * BrauerGroup.quaternionClass (-1) (-1) ^ m.choose 2 := by
+        rw [hasseInvariant_mk_rankOne_mul,
+          quaternionClassOnSquareClasses_discr_of_signedDiscr_eq_zero t hd, hm2,
+          mul_assoc (hasseInvariant x), hcancel, mul_one]
+    _ = cliffordInvariant x :=
+        (cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero hm2 hd).symm
 
 /-- **Additivity of the Clifford invariant on the square of the fundamental ideal**: if `x` has
 even rank and trivial signed discriminant, that is if its Witt class lies in `I(K)²`
@@ -665,7 +681,7 @@ theorem cliffordInvariant_add_of_signedDiscr_eq_zero {x : RegularFormClass K} (h
         cliffordInvariant x * cliffordInvariant z := by
     have hxt : Even (rank (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => t⟩ * x)) := by
       rwa [rank_mul, rank_mk, one_mul]
-    rw [ih _ hz hxt (signedDiscr_mk_rankOne_mul_eq_zero t hx hd) z rfl,
+    rw [ih _ hz hxt ((signedDiscr_mk_rankOne_mul_of_even t hx).trans hd) z rfl,
       cliffordInvariant_mk_rankOne_mul_of_signedDiscr_eq_zero t hx hd]
   rcases Nat.even_or_odd n with ⟨k, hk⟩ | ⟨k, hk⟩
   · rcases Nat.eq_zero_or_pos k with rfl | hk0
