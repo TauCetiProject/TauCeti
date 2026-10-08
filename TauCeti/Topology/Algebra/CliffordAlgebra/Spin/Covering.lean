@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Descent
 public import Mathlib.Topology.Covering.Quotient
 
 /-!
@@ -22,6 +23,8 @@ group `Multiplicative (ZMod 2)`, so the standard quotient-covering construction 
   compact real Spin projection as a quotient covering map by its kernel.
 * `CliffordAlgebra.isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom` packages the projection
   as an ordinary covering map.
+* `CliffordAlgebra.realCliffordSpinHomEquivKer` identifies continuous homomorphisms out of
+  `SO(n)` with continuous homomorphisms out of `Spin(n)` that kill the double-cover kernel.
 
 ## References
 
@@ -33,6 +36,21 @@ public section
 namespace CliffordAlgebra
 
 open TauCeti
+
+/-- The compact real Spin projection, bundled as a continuous homomorphism. -/
+@[expose] noncomputable def realCliffordSpinProjectionZero (n : ℕ) [NeZero n] :
+    realCliffordSpinGroupZero n →ₜ*
+      QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) :=
+  ⟨(realCliffordSpinDoubleCoverZero n).rightHom,
+    continuous_realCliffordSpinDoubleCoverZero_rightHom n⟩
+
+/-- The bundled compact real Spin projection agrees with the projection of the double-cover
+extension. -/
+@[simp]
+theorem realCliffordSpinProjectionZero_apply (n : ℕ) [NeZero n]
+    (x : realCliffordSpinGroupZero n) :
+    realCliffordSpinProjectionZero n x = (realCliffordSpinDoubleCoverZero n).rightHom x :=
+  rfl
 
 /-- The compact real Spin projection is a quotient covering map by its kernel. -/
 theorem isQuotientCoveringMap_realCliffordSpinDoubleCoverZero_rightHom
@@ -53,5 +71,47 @@ theorem isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom
     (n : ℕ) [NeZero n] [CompactSpace (realCliffordSpinGroupZero n)] :
     IsCoveringMap (realCliffordSpinDoubleCoverZero n).rightHom :=
   (isQuotientCoveringMap_realCliffordSpinDoubleCoverZero_rightHom n).isCoveringMap
+
+/-- Continuous homomorphisms out of `SO(n)` are equivalent to continuous homomorphisms out of
+compact `Spin(n)` that kill the kernel of the double-cover projection. -/
+@[expose] noncomputable def realCliffordSpinHomEquivKer (n : ℕ) [NeZero n]
+    [CompactSpace (realCliffordSpinGroupZero n)]
+    {H : Type*} [Group H] [TopologicalSpace H] :
+    (QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) →ₜ* H) ≃
+      {f : realCliffordSpinGroupZero n →ₜ* H //
+        (realCliffordSpinDoubleCoverZero n).rightHom.ker ≤
+          (f : realCliffordSpinGroupZero n →* H).ker} :=
+  ContinuousMonoidHom.homEquivOfIsQuotientMap (realCliffordSpinProjectionZero n) <|
+    by
+      change Topology.IsQuotientMap (realCliffordSpinDoubleCoverZero n).rightHom
+      exact
+        (isQuotientCoveringMap_realCliffordSpinDoubleCoverZero_rightHom n).toIsQuotientMap
+
+/-- The compact Spin correspondence sends a homomorphism on `SO(n)` to its composition with the
+Spin projection. -/
+@[simp]
+theorem realCliffordSpinHomEquivKer_apply_coe (n : ℕ) [NeZero n]
+    [CompactSpace (realCliffordSpinGroupZero n)]
+    {H : Type*} [Group H] [TopologicalSpace H]
+    (f : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) →ₜ* H) :
+    ((realCliffordSpinHomEquivKer n f :
+      {g : realCliffordSpinGroupZero n →ₜ* H //
+        (realCliffordSpinDoubleCoverZero n).rightHom.ker ≤
+          (g : realCliffordSpinGroupZero n →* H).ker}) :
+      realCliffordSpinGroupZero n →ₜ* H) =
+        f.comp (realCliffordSpinProjectionZero n) :=
+  rfl
+
+/-- Descending a homomorphism from compact `Spin(n)` and composing again with the Spin projection
+recovers the original homomorphism. -/
+@[simp]
+theorem realCliffordSpinHomEquivKer_symm_apply_comp (n : ℕ) [NeZero n]
+    [CompactSpace (realCliffordSpinGroupZero n)]
+    {H : Type*} [Group H] [TopologicalSpace H]
+    (f : {g : realCliffordSpinGroupZero n →ₜ* H //
+      (realCliffordSpinDoubleCoverZero n).rightHom.ker ≤
+        (g : realCliffordSpinGroupZero n →* H).ker}) :
+    ((realCliffordSpinHomEquivKer n).symm f).comp (realCliffordSpinProjectionZero n) = f.1 := by
+  exact ContinuousMonoidHom.liftOfIsQuotientMap_comp _ _ _ _
 
 end CliffordAlgebra
