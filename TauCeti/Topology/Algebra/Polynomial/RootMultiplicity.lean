@@ -39,16 +39,16 @@ variable {B R : Type*} [TopologicalSpace B] [TopologicalSpace R]
   {r : B → R} {x₀ : B} {d : ℕ}
 
 /-- Evaluation of a Hasse derivative along a point continuous at `x₀` is continuous at `x₀`
-for a family whose coefficients of index at most `d` are continuous at `x₀` and whose degrees
-are bounded by `d` near `x₀`. -/
+for a family whose coefficients of indices from `m` through `d` are continuous at `x₀` and
+whose degrees are bounded by `d` near `x₀`. Coefficients below `m` do not affect the derivative. -/
 theorem continuousAt_hasseDeriv_eval [Semiring R] [IsTopologicalSemiring R] {F : B → R[X]}
-    (hF : ∀ i ≤ d, ContinuousAt (fun x ↦ (F x).coeff i) x₀)
-    (hdeg : ∀ᶠ x in 𝓝 x₀, (F x).natDegree ≤ d) (hr : ContinuousAt r x₀) (m : ℕ) :
+    (m : ℕ) (hF : ∀ i, m ≤ i → i ≤ d → ContinuousAt (fun x ↦ (F x).coeff i) x₀)
+    (hdeg : ∀ᶠ x in 𝓝 x₀, (F x).natDegree ≤ d) (hr : ContinuousAt r x₀) :
     ContinuousAt (fun x ↦ (hasseDeriv m (F x)).eval (r x)) x₀ := by
   have hcoeff (i : ℕ) : ContinuousAt (fun x ↦ (hasseDeriv m (F x)).coeff i) x₀ := by
     by_cases hi : i + m ≤ d
     · simp only [hasseDeriv_coeff]
-      exact continuousAt_const.mul (hF _ hi)
+      exact continuousAt_const.mul (hF _ (Nat.le_add_left m i) hi)
     · refine (continuousAt_const (y := (0 : R))).congr_of_eventuallyEq ?_
       filter_upwards [hdeg] with x hx
       simp [hasseDeriv_coeff, coeff_eq_zero_of_natDegree_lt (hx.trans_lt (Nat.lt_of_not_ge hi))]
@@ -68,7 +68,7 @@ theorem eventually_rootMultiplicity_le [T1Space R]
   have hcenter : (hasseDeriv ((F x₀).rootMultiplicity (r x₀)) (F x₀)).eval (r x₀) ≠ 0 := by
     rw [← taylor_coeff, rootMultiplicity_eq_natTrailingDegree, ← taylor_apply]
     exact coeff_natTrailingDegree_ne_zero.2 ((taylor_eq_zero _ _).not.2 hne)
-  filter_upwards [(continuousAt_hasseDeriv_eval hF hdeg hr _).eventually_ne hcenter] with x hx
+  filter_upwards [(continuousAt_hasseDeriv_eval _ (fun i _ hi ↦ hF i hi) hdeg hr).eventually_ne hcenter] with x hx
   rw [rootMultiplicity_eq_natTrailingDegree, ← taylor_apply]
   exact natTrailingDegree_le_of_ne_zero (by rwa [taylor_coeff])
 
