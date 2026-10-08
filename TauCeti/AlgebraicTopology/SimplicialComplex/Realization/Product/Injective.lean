@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Product
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Product.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
 public import TauCeti.Data.Finsupp.OrderedCoupling.Uniqueness
 
@@ -16,7 +15,7 @@ public import TauCeti.Data.Finsupp.OrderedCoupling.Uniqueness
 The staircase triangulation of a product has a canonical continuous map to the product of the
 factor realizations, obtained by adding barycentric weights along each coordinate fibre.
 This map is injective: on each staircase the nonnegative weights have chain support, so they
-are uniquely determined by their marginals. For finite vertex types it is a closed embedding.
+are uniquely determined by their marginals. If the product has finitely many faces, it is a closed embedding.
 
 Surjectivity, and hence the identification with the entire product, requires existence of a
 chain-supported coupling with prescribed marginals and is not asserted here.
@@ -35,41 +34,6 @@ namespace AbstractSimplicialComplex
 
 variable {α β : Type*} [LinearOrder α] [LinearOrder β]
 
-/-- The coordinate projections of the staircase triangulation, realized continuously.
-Each coordinate adds barycentric weights over a fibre of the corresponding vertex projection. -/
-def orderedProdRealizationMap (K : AbstractSimplicialComplex α)
-    (L : AbstractSimplicialComplex β) :
-    C(Realization (K.orderedProd L), Realization K × Realization L) :=
-  let fst' : PreAbstractSimplicialComplex.SimplicialMap
-      (K.orderedProd L).toPreAbstractSimplicialComplex K.toPreAbstractSimplicialComplex :=
-    ⟨Prod.fst, fun _ h ↦ image_fst_mem_of_mem_orderedProd h⟩
-  let snd' : PreAbstractSimplicialComplex.SimplicialMap
-      (K.orderedProd L).toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex :=
-    ⟨Prod.snd, fun _ h ↦ image_snd_mem_of_mem_orderedProd h⟩
-  fst'.realizationMap.prodMk snd'.realizationMap
-
-/-- The first marginal of the barycentric coordinates. -/
-@[simp]
-theorem orderedProdRealizationMap_fst_val (K : AbstractSimplicialComplex α)
-    (L : AbstractSimplicialComplex β) (x : Realization (K.orderedProd L)) :
-    (K.orderedProdRealizationMap L x).1.1 = Finsupp.mapDomain Prod.fst x.1 := by
-  simp [orderedProdRealizationMap]
-
-/-- The second marginal of the barycentric coordinates. -/
-@[simp]
-theorem orderedProdRealizationMap_snd_val (K : AbstractSimplicialComplex α)
-    (L : AbstractSimplicialComplex β) (x : Realization (K.orderedProd L)) :
-    (K.orderedProdRealizationMap L x).2.1 = Finsupp.mapDomain Prod.snd x.1 := by
-  simp [orderedProdRealizationMap]
-
-/-- A product vertex projects to its two factor vertices. -/
-@[simp]
-theorem orderedProdRealizationMap_vertex (K : AbstractSimplicialComplex α)
-    (L : AbstractSimplicialComplex β) (a : α) (b : β) :
-    K.orderedProdRealizationMap L (vertex (K.orderedProd L) (a, b)) =
-      (vertex K a, vertex L b) := by
-  simp [orderedProdRealizationMap]
-
 /-- The coordinate projections uniquely determine a point of the staircase triangulation. -/
 theorem orderedProdRealizationMap_injective (K : AbstractSimplicialComplex α)
     (L : AbstractSimplicialComplex β) : Function.Injective (K.orderedProdRealizationMap L) := by
@@ -86,10 +50,10 @@ theorem orderedProdRealizationMap_injective (K : AbstractSimplicialComplex α)
 with a closed subspace of the product of realizations. -/
 theorem isClosedEmbedding_orderedProdRealizationMap
     (K : AbstractSimplicialComplex α) (L : AbstractSimplicialComplex β)
-    (hK : K.faces.Finite) (hL : L.faces.Finite) :
+    (hprod : (K.orderedProd L).faces.Finite) :
     Topology.IsClosedEmbedding (K.orderedProdRealizationMap L) := by
   have : CompactSpace (Realization (K.orderedProd L)) :=
-    (K.orderedProd L).compactSpace_realization_of_finite_faces (finite_faces_orderedProd hK hL)
+    (K.orderedProd L).compactSpace_realization_of_finite_faces hprod
   exact (K.orderedProdRealizationMap L).continuous.isClosedEmbedding
     (K.orderedProdRealizationMap_injective L)
 
