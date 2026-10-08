@@ -36,8 +36,8 @@ the algebraic dual, injectively.
 * `TauCeti.continuousZModDual.evalₗ`: evaluation at a point, as a linear functional on the dual.
 * `TauCeti.continuousZModHom.evalₗ`: evaluation at a point, as a linear map on continuous
   homomorphisms into a `ZMod n`-module.
-* `TauCeti.continuousZModDualTensorEquiv`: for prime `p` and finite-dimensional `A`, evaluation
-  identifies `continuousZModDual p G ⊗ A` with the continuous homomorphisms `G → A`.
+* `TauCeti.continuousZModDualTensorEquiv`: for prime `p` and finite-dimensional discrete `A`,
+  evaluation identifies `continuousZModDual p G ⊗ A` with the continuous homomorphisms `G → A`.
 * `ContinuousMonoidHom.continuousZModDualMap`: precomposition with a continuous homomorphism, the
   transpose map between continuous duals.
   The transpose of a topological group isomorphism is bijective
@@ -430,8 +430,8 @@ private theorem continuousZModDualTensorInv_map [Fact n.Prime] [DiscreteTopology
             rw [TensorProduct.tmul_sum]
         _ = x ⊗ₜ a := by rw [(Module.finBasis (ZMod n) A).sum_repr]
 
-/-- For prime `p` and finite-dimensional `A`, the canonical evaluation map from the tensor product
-to the space of continuous `A`-valued homomorphisms is bijective. -/
+/-- For prime `p` and finite-dimensional `A` with the discrete topology, the canonical evaluation
+map from the tensor product to the space of continuous `A`-valued homomorphisms is bijective. -/
 theorem continuousZModDualTensorMap_bijective [Fact n.Prime] [DiscreteTopology A]
     [Module.Finite (ZMod n) A] : Function.Bijective
       (continuousZModDualTensorMap (n := n) (G := G) (A := A)) :=
@@ -441,8 +441,8 @@ theorem continuousZModDualTensorMap_bijective [Fact n.Prime] [DiscreteTopology A
       fun f ↦ ⟨continuousZModDualTensorInv (n := n) (G := G) (A := A) f,
         continuousZModDualTensorMap_inv (n := n) (G := G) (A := A) f⟩⟩
 
-/-- **Tensoring the continuous `ZMod p`-dual with a finite vector space.** For prime `p`,
-evaluation is the canonical equivalence
+/-- **Tensoring the continuous `ZMod p`-dual with a finite vector space.** For prime `p` and a
+finite-dimensional `A` with the discrete topology, evaluation is the canonical equivalence
 `Hom_cont(G, ZMod p) ⊗ A ≃ Hom_cont(G, A)`. The inverse uses a basis only to prove
 bijectivity; the exported forward map is basis-independent. -/
 noncomputable def continuousZModDualTensorEquiv [Fact n.Prime] [DiscreteTopology A]

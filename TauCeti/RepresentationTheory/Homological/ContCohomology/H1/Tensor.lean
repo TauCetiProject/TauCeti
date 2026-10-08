@@ -14,8 +14,9 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestrict
 # First cohomology tensor comparison and prime-to-index descent
 
 Let `N` be an open normal subgroup of `G`, let `p` be prime to `[G : N]`, and let `A` be a
-finite `ZMod p`-module on which `N` acts trivially. This file constructs the canonical
-comparison (available for any topological group acting trivially on `A`)
+finite `ZMod p`-module with the discrete topology on which `N` acts trivially. This file
+constructs the canonical comparison (available for any topological group acting trivially on a
+discrete `A`)
 
 ```text
 H¹(N, ZMod p) ⊗ A ≃ H¹(N, A).
@@ -75,8 +76,8 @@ variable {p : ℕ} {H : Type uG} [Group H] [TopologicalSpace H]
   [DiscreteTopology A]
 
 /-- **The first-cohomology tensor comparison.** If `H` acts trivially on a finite
-`ZMod p`-module `A`, evaluation identifies `H¹(H, ZMod p) ⊗ A` with `H¹(H, A)`.
-The map is canonical even though a basis is used to prove its bijectivity. -/
+`ZMod p`-module `A` with the discrete topology, evaluation identifies `H¹(H, ZMod p) ⊗ A` with
+`H¹(H, A)`. The map is canonical even though a basis is used to prove its bijectivity. -/
 noncomputable def h1TensorEquiv
     (htriv : ∀ (h : H) (a : A), h • a = a) [Fact p.Prime]
     [Module.Finite (ZMod p) A] :
