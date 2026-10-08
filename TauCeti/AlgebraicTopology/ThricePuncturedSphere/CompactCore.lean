@@ -24,9 +24,11 @@ means approaching one of the three punctures. The core of radius `1 / 2` is the 
 the three standard punctured neighbourhoods.
 
 A finite cover of `ℂ ∖ {0, 1}` is a proper map, so the preimage of every compact core is compact.
-This is the compactness input for filling in the punctures of a finite cover: the cover is the
-union of this compact preimage and of its parts over small punctured discs about `0`, `1` and
-`∞`, and those parts become finitely many closed discs once their centres are added.
+This is the compactness input for filling in the punctures of a finite cover: for small `ρ > 0`,
+the cover is the union of the compact preimage of `compactCore ρ` and of its parts over the closed
+punctured discs `0 < ‖w‖ ≤ ρ` in the coordinates `w` at `0`, `1` and `∞`. In the filling charts,
+each of these parts becomes a finite union of closed discs, hence compact, once its centres are
+added.
 
 ## Main definitions
 
