@@ -185,8 +185,12 @@ theorem isIntegrallyClosedIn_of_isTotallyRamified [FiniteDimensional F F']
   let : IsScalarTower k K E := .of_algebraMap_eq fun a ↦ by
     apply Subtype.ext
     exact IsScalarTower.algebraMap_apply k K F' a
-  let : IsScalarTower k E F' := .of_algebraMap_eq fun _ ↦ rfl
-  let : IsScalarTower K E F' := .of_algebraMap_eq fun _ ↦ rfl
+  let : IsScalarTower k E F' := .of_algebraMap_eq fun a ↦ by
+    rw [IsScalarTower.algebraMap_apply k F E, ← IsScalarTower.algebraMap_apply F E F',
+      ← IsScalarTower.algebraMap_apply k F F']
+  let : IsScalarTower K E F' := .of_algebraMap_eq fun a ↦
+    (RingHom.codRestrict_apply (algebraMap K F') E
+      (algebraMap_mem_constantCompositum F K F') a).symm
   have hrange : E.val '' Set.range (algebraMap K E) = Set.range (algebraMap K F') := by
     rw [← Set.range_comp]
     congr 1
@@ -209,12 +213,8 @@ theorem isIntegrallyClosedIn_of_isTotallyRamified [FiniteDimensional F F']
       _ = Place.ramificationIdx E P' * (P'.restrict k E).ramificationIdx F := htower
       _ = Place.ramificationIdx E P' := by rw [hQ', mul_one]
       _ ≤ Module.finrank E F' := Place.ramificationIdx_le_finrank E P'
-  have hfinrank : Module.finrank F E = 1 := by
-    have hmul := Module.finrank_mul_finrank F E F'
-    have hpos : 0 < Module.finrank E F' := Module.finrank_pos
-    have hpos' : 0 < Module.finrank F E := Module.finrank_pos
-    nlinarith
-  have hEbot : E = ⊥ := IntermediateField.finrank_eq_one_iff.mp hfinrank
+  have hEbot : E = ⊥ := (IntermediateField.eq_of_le_of_finrank_le' bot_le <| by
+    rwa [IntermediateField.finrank_bot']).symm
   have hcmem : c ∈ E := algebraMap_mem_constantCompositum F K F'
     ⟨c, IntermediateField.mem_adjoin_simple_self k c⟩
   rw [hEbot, IntermediateField.mem_bot] at hcmem
