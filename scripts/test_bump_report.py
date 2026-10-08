@@ -67,9 +67,9 @@ class ReportTests(unittest.TestCase):
                 self.parents = parents
                 self.assertFalse(self.decide()[0])
 
-    def test_success_before_validation_does_not_disprove_report(self):
+    def test_success_during_a_long_validation_supersedes_older_source(self):
         self.run["updated_at"] = "2026-10-07T01:00:00Z"
-        self.assertFalse(self.decide()[0])
+        self.assertTrue(self.decide()[0])
 
     def test_success_on_reported_source_does_not_disprove_failure(self):
         self.run["head_sha"] = TESTED
@@ -168,6 +168,20 @@ class ReportTests(unittest.TestCase):
                 patch("sys.argv", ["bump_report.py"]):
             br.main()
         fetch.assert_called_once_with("lkg")
+
+    def test_absent_runs_entry_waits_without_losing_the_boundary(self):
+        boundary = {"downstreams": {"TauCeti": {
+            "repo": "TauCetiProject/TauCeti", "first_known_bad_commit": FKB}}}
+        manifest = json.dumps({"packages": [{"name": "mathlib", "rev": PIN}]})
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "output"
+            with patch.object(br, "fetch_snapshot", side_effect=[boundary, {"downstreams": {}}]), \
+                    patch.object(br.Path, "read_text", return_value=manifest), \
+                    patch.object(br, "gh_api", return_value={"status": "ahead"}), \
+                    patch.dict(br.os.environ, {"GITHUB_OUTPUT": str(output), "GITHUB_STEP_SUMMARY": ""}), \
+                    patch("sys.argv", ["bump_report.py"]):
+                br.main()
+            self.assertEqual(output.read_text(), f"commit={FKB}\nawaiting_revalidation=true\n")
 
 
 class GitHistoryTests(unittest.TestCase):

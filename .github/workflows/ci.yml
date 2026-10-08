@@ -15,8 +15,9 @@ permissions:
 # cancelled before it can publish, while superseded pending commits do not each
 # start an expensive cache-miss rebuild. In a burst, this deliberately coalesces
 # intermediate commits' post-merge checks too; the newest pending tip rechecks
-# the entire tree, though localizing a failure may then require bisection. No
-# merge decision consumes this post-merge workflow's per-commit conclusion.
+# the entire tree, though localizing a failure may then require bisection.
+# Dependency reconciliation uses conclusive runs as evidence for the current
+# pin, skipping coalesced commits without a completed build.
 concurrency:
   group: main-ci-cache-publisher
   cancel-in-progress: false

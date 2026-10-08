@@ -31,8 +31,11 @@ def pin(manifest):
     return sha(next(p["rev"] for p in manifest["packages"] if p["name"] == "mathlib"))
 
 
-def entry(snapshot, repo):
-    return next(v for v in snapshot["downstreams"].values() if v["repo"] == repo)
+def entry(snapshot, repo, *, required=True):
+    result = next((v for v in snapshot["downstreams"].values() if v["repo"] == repo), None)
+    if result is None and required:
+        raise ValueError(f"Downstream {repo} is absent from the snapshot")
+    return result or {}
 
 
 def timestamp(value):
@@ -60,7 +63,7 @@ def decision(fkb, current_pin, report, ci_runs, *, compare, ancestor, pin_at):
     if not reported_at or not tested:
         return True, "The report has no validation timestamp or source revision; awaiting revalidation."
     tested = sha(tested)
-    validated = timestamp(reported_at)
+    timestamp(reported_at)
     # A report that already tested this pin is fresh evidence of a real
     # disagreement, even if unrelated later source revisions pass main CI.
     tested_pin = pin_at(tested)
@@ -77,8 +80,7 @@ def decision(fkb, current_pin, report, ci_runs, *, compare, ancestor, pin_at):
             # The newest conclusive run for this pin owns the signal. Looking
             # only at successes would hide a later main failure.
             if (run.get("conclusion") == "success" and green != tested
-                    and ancestor(tested, green)
-                    and timestamp(run["updated_at"]) >= validated):
+                    and ancestor(tested, green)):
                 return True, (
                     f"Report tested {tested} at {reported_at}. Main CI succeeded on "
                     f"{green} with pin {current_pin}; awaiting downstream revalidation."
@@ -133,7 +135,9 @@ def main():
         sha(fkb)
         relation = "identical" if fkb == current_pin else gh_api(
             f"repos/leanprover-community/mathlib4/compare/{fkb}...{current_pin}")["status"]
-    report = entry(fetch_snapshot("runs"), args.repo) if relation in {"identical", "ahead"} else {}
+    report = {}
+    if relation in {"identical", "ahead"}:
+        report = entry(fetch_snapshot("runs"), args.repo, required=False)
     waiting, message = decision(
         fkb, current_pin, report,
         lambda: gh_api(f"repos/{args.repo}/actions/workflows/ci.yml/runs"

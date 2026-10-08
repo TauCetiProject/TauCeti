@@ -260,8 +260,8 @@ def detect_stuck_bump():
         # open LKG PR older than the window is reliably stuck. The build-status
         # `updated_at` is the wrong clock here: repeated branch updates can
         # re-run the same red build and reset that timestamp, masking a
-        # genuine multi-day wedge (observed
-        # on PR #1057). Requiring the build to be currently red avoids firing on a
+        # genuine multi-day wedge (observed on PR #1057). Requiring the build to
+        # be currently red avoids firing on a
         # PR that has since gone green and is merging.
         if state in ("failure", "error") and hours_since(pr["created_at"]) >= BUMP_STUCK_HOURS:
             out.append({
