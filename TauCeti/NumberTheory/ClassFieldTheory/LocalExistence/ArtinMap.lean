@@ -18,9 +18,6 @@ of `ℚ_p`. Local existence (`localExistence`) makes every subgroup of finite in
 subgroup, and this file draws its two consequences for the absolute local Artin map
 `artinMap K : Kˣ →* G_K^ab`.
 
-* **Injectivity** (`injective_artinMap`). The kernel of `artinMap K` is the intersection of all norm
-  subgroups (`ker_artinMap_eq_iInf`), so it lies in every subgroup of finite index of `Kˣ`. These
-  intersect in `1`, because `Kˣ` is residually finite (`TauCeti.residuallyFinite_units`).
 * **The profinite completion.** Since `G_K^ab` is profinite, `artinMap K` extends uniquely to a
   continuous homomorphism `profiniteCompletionArtinMap K` on the profinite completion `(Kˣ)^`. It
   is surjective for every local field, as `artinMap K` has dense image. In characteristic zero it
@@ -28,6 +25,9 @@ subgroup, and this file draws its two consequences for the absolute local Artin 
   subgroup `U` of `G_K^ab` (`exists_openSubgroup_artinMap_mem_iff`), and the `H`-coordinate of an
   element of `(Kˣ)^` is read off its image in `G_K^ab ⧸ U`. So it is an isomorphism of
   topological groups `profiniteCompletionArtinEquiv K : (Kˣ)^ ≃ₜ* G_K^ab`.
+* **Injectivity** (`injective_artinMap`). Since `Kˣ` is residually finite
+  (`TauCeti.residuallyFinite_units`), it embeds in `(Kˣ)^`, so `artinMap K` is injective as the
+  restriction of the injective `profiniteCompletionArtinMap K`.
 
 Neither statement is claimed in characteristic `p`: existence is only proved there for subgroups
 of index prime to `p`, all of which contain the pro-`p` group of principal units.
@@ -62,19 +62,6 @@ namespace TauCeti.ClassFieldTheory
 
 variable (K : Type) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
-
-/-- **The absolute local Artin map is injective in characteristic zero**, in particular for a
-finite extension of `ℚ_p`: its kernel lies in every norm subgroup (`ker_artinMap_eq_iInf`), hence,
-by local existence, in every subgroup of finite index of the residually finite group `Kˣ`. -/
-theorem injective_artinMap [CharZero K] : Function.Injective (artinMap K) := by
-  rw [injective_iff_map_eq_one]
-  intro x hx
-  have hker : x ∈ ⨅ V : OpenNormalSubgroup (AbsoluteGaloisGroup K), localNormSubgroup K V := by
-    rw [← ker_artinMap_eq_iInf]
-    exact hx
-  refine Group.residuallyFinite_iff_forall_finiteIndex.1 inferInstance x fun N _ ↦ ?_
-  obtain ⟨V, hV⟩ := localExistence N
-  exact hV ▸ Subgroup.mem_iInf.1 hker V
 
 /-! ### The profinite completion of `Kˣ` -/
 
@@ -114,6 +101,17 @@ theorem injective_profiniteCompletionArtinMap [CharZero K] :
   refine ⟨U, U.mem_nhds_one, fun x hx ↦ ?_⟩
   rw [SetLike.mem_coe, profiniteCompletionArtinMap_etaFn, hU, hV] at hx
   exact hx
+
+/-- **The absolute local Artin map is injective in characteristic zero**, in particular for a
+finite extension of `ℚ_p`: it is the composite of the injective extension
+`profiniteCompletionArtinMap K` with the map of `Kˣ` into its profinite completion, which is
+injective because `Kˣ` is residually finite. -/
+theorem injective_artinMap [CharZero K] : Function.Injective (artinMap K) := by
+  have hη := (ProfiniteGrp.ProfiniteCompletion.etaFn_injective_iff_residuallyFinite
+    (G := GrpCat.of Kˣ)).2 inferInstance
+  intro x y hxy
+  rw [← profiniteCompletionArtinMap_etaFn, ← profiniteCompletionArtinMap_etaFn] at hxy
+  exact hη (injective_profiniteCompletionArtinMap K hxy)
 
 /-- **The profinite completion of `Kˣ` is `G_K^ab`.** In characteristic zero, in particular for a
 finite extension of `ℚ_p`, the absolute local Artin map extends to an isomorphism of topological
