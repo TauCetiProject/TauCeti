@@ -262,7 +262,7 @@ section SchemePoints
 theorem groupScheme_X_left :
     (groupScheme R m).X.left =
       AlgebraicGeometry.Spec (CommRingCat.of (coordinateHopfAlgebra R m)) :=
-  AlgebraicGeometry.hopfSpec_obj_X_left R (coordinateHopfAlgebra R m)
+  TauCeti.hopfSpec_obj_X_left R (coordinateHopfAlgebra R m)
 
 variable (A : Type u) [CommRing A] [Algebra R A]
 
