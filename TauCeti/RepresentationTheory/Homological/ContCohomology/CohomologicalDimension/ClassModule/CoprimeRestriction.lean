@@ -24,6 +24,9 @@ analogue).
 This is the step of NSW (3.6.3) and (3.6.4), (i) ⇒ (iii), that reduces the class module of a
 finite quotient to that of a Sylow `p`-subgroup.
 
+The definitions and injectivity results in this file are adapted from the Tau Ceti lookahead branch
+`lookahead/ProfiniteCohomology/abelianization-pro-p-class-generates`.
+
 ## Main definitions
 
 * `TauCeti.abelianizationProPRes1`, `TauCeti.abelianizationProPRes2`: restriction of

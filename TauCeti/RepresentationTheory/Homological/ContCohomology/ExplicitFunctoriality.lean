@@ -47,6 +47,10 @@ restriction, inflation and coefficient maps. The comparison with the canonical m
 The formulas follow Mathlib's `groupCohomology.cochainsMap₁`, `cochainsMap₂`, `mapCocycles₁`, and
 `mapCocycles₂`, with universe-polymorphic unbundled continuous coefficients. The coefficient maps
 and their equivalences apply to monoid actions; restriction to subgroups requires a group.
+
+The multiplication lemmas `explicitCoeff1_eq_nsmul`, `nsmul_right_bijective_H1_of_homeomorph`, and
+`nsmul_right_bijective_H2_of_homeomorph` are adapted from the Tau Ceti lookahead branch
+`lookahead/ProfiniteCohomology/abelianization-pro-p-class-generates`.
 -/
 
 public section

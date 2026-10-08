@@ -32,6 +32,9 @@ For an abelian pro-`p` group this action makes the group a `ℤ_[p]`-module,
 `TauCeti.IsProP.module`, which is the form in which the structure theory of finitely generated
 abelian pro-`p` groups is stated.
 
+`TauCeti.IsProP.powHomeomorph` is adapted from the prime-to-`p` power-map argument in the Tau Ceti
+lookahead branch `lookahead/ProfiniteCohomology/abelianization-pro-p-class-generates`.
+
 ## Main definitions
 
 * `TauCeti.IsProP.padicPow`: the power `a ^ l` of an element of a pro-`p` group by a `p`-adic
