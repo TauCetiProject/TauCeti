@@ -57,6 +57,8 @@ theorem centralizer_centralizer_of_isSimpleRing :
 
 /-- The centers of a simple subalgebra and its centralizer have the same image in the
 ambient central simple algebra. The centralizer need not be central over the base field. -/
+-- `map_center_val` already simplifies the left-hand side to an intersection.
+-- Use this theorem explicitly to rewrite it as the mapped center of `B`.
 theorem map_center_centralizer_val :
     (center K ↥(centralizer K (B : Set A))).map (centralizer K (B : Set A)).val =
       (center K B).map B.val := by
