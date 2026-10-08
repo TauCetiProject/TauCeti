@@ -24,7 +24,7 @@ The energy used here is `∫ ‖∂ₛu‖²`, with `∂ₛu = fderiv ℝ u z 1`
 `∂ₜu = J(u) ∂ₛu` controls the other derivative. Integrability on the outer open disk is explicit,
 so a nonintegrable energy density cannot acquire the Bochner integral's junk value zero.
 The energy threshold is independent of the disk's centre and radius. The common Lipschitz
-constant may depend on the radius but not on the curve.
+constant may depend on the radius but not on the centre or the curve.
 
 This is the local compactness input away from energy concentration in bubbling arguments.
 It combines the energy-density mean-value estimate in
@@ -48,11 +48,11 @@ variable {J : V → V →L[ℝ] V} {W K : Set V}
 
 /-- Small-energy pseudoholomorphic curves with image in a fixed compact set share a Lipschitz
 bound on the concentric half disk. The energy threshold is uniform in the centre and radius;
-the Lipschitz constant may depend on the radius. -/
+the Lipschitz constant is uniform in the centre and may depend on the radius. -/
 theorem exists_pos_forall_lipschitzOnWith_of_small_energy
     (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
     (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v) :
-    ∃ δ > 0, ∀ (z₀ : ℂ) (r : ℝ), 0 < r → ∃ C : ℝ≥0, ∀ (u : ℂ → V),
+    ∃ δ > 0, ∀ (r : ℝ), 0 < r → ∃ C : ℝ≥0, ∀ (z₀ : ℂ) (u : ℂ → V),
       ContDiffOn ℝ 3 u (ball z₀ r) →
       (∀ z ∈ ball z₀ r, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1)) →
       MapsTo u (ball z₀ r) K →
@@ -63,12 +63,12 @@ theorem exists_pos_forall_lipschitzOnWith_of_small_energy
     exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball
       hW hJ hK hKW hJsq
   obtain ⟨a, ha⟩ := hK.exists_bound_of_continuousOn (hJ.continuousOn.mono hKW)
-  refine ⟨δ, hδ, fun z₀ r hr ↦ ?_⟩
+  refine ⟨δ, hδ, fun r hr ↦ ?_⟩
   let B := 1 + 8 * δ / (Real.pi * (r / 4) ^ 2)
   have hB : 0 ≤ B := by dsimp [B]; positivity
   let C : ℝ≥0 := ⟨(1 + max a 0) * B, by positivity⟩
   have hCcoe : (C : ℝ) = (1 + max a 0) * B := rfl
-  refine ⟨C, fun u hu hCR huK hInt hE ↦ ?_⟩
+  refine ⟨C, fun z₀ u hu hCR huK hInt hE ↦ ?_⟩
   have hinner : closedBall z₀ (r / 2) ⊆ ball z₀ r :=
     closedBall_subset_ball (by linarith)
   have hDu : ContinuousOn (fderiv ℝ u) (ball z₀ r) :=
@@ -125,28 +125,31 @@ theorem exists_pos_forall_lipschitzOnWith_of_small_energy
 
 /-- Every sequence of small-energy pseudoholomorphic curves with image in a compact set has a
 subsequence converging uniformly on the concentric half disk to a Lipschitz map into that set.
-The almost complex structure may vary with the target point. -/
+The energy threshold is uniform in the centre and radius; the limit's Lipschitz constant is
+uniform in the centre and sequence and may depend on the radius. The almost complex structure
+may vary with the target point. -/
 theorem exists_pos_forall_tendstoUniformlyOn_subseq_of_small_energy
     (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
     (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v) :
-    ∃ δ > 0, ∀ (z₀ : ℂ) (r : ℝ), 0 < r → ∀ (u : ℕ → ℂ → V),
+    ∃ δ > 0, ∀ (r : ℝ), 0 < r → ∃ C : ℝ≥0, ∀ (z₀ : ℂ) (u : ℕ → ℂ → V),
       (∀ n, ContDiffOn ℝ 3 (u n) (ball z₀ r)) →
       (∀ n z, z ∈ ball z₀ r → fderiv ℝ (u n) z I = J (u n z) (fderiv ℝ (u n) z 1)) →
       (∀ n, MapsTo (u n) (ball z₀ r) K) →
       (∀ n, IntegrableOn (fun z ↦ ‖fderiv ℝ (u n) z 1‖ ^ 2) (ball z₀ r)) →
       (∀ n, (∫ z in ball z₀ r, ‖fderiv ℝ (u n) z 1‖ ^ 2) < δ) →
-      ∃ (C : ℝ≥0) (v : ℂ → V) (φ : ℕ → ℕ), StrictMono φ ∧
+      ∃ (v : ℂ → V) (φ : ℕ → ℕ), StrictMono φ ∧
         LipschitzOnWith C v (closedBall z₀ (r / 2)) ∧
         MapsTo v (closedBall z₀ (r / 2)) K ∧
         TendstoUniformlyOn (fun n ↦ u (φ n)) v atTop (closedBall z₀ (r / 2)) := by
   classical
   obtain ⟨δ, hδ, hLip⟩ := exists_pos_forall_lipschitzOnWith_of_small_energy hW hJ hK hKW hJsq
-  refine ⟨δ, hδ, fun z₀ r hr u hu hCR huK hInt hE ↦ ?_⟩
-  obtain ⟨C, hC⟩ := hLip z₀ r hr
+  refine ⟨δ, hδ, fun r hr ↦ ?_⟩
+  obtain ⟨C, hC⟩ := hLip r hr
+  refine ⟨C, fun z₀ u hu hCR huK hInt hE ↦ ?_⟩
   let D := closedBall z₀ (r / 2)
   have hD : D ⊆ ball z₀ r := closedBall_subset_ball (by linarith)
   have hL : ∀ n, LipschitzOnWith C (u n) D :=
-    fun n ↦ hC (u n) (hu n) (hCR n) (huK n) (hInt n) (hE n)
+    fun n ↦ hC z₀ (u n) (hu n) (hCR n) (huK n) (hInt n) (hE n)
   let U : ℕ → D →ᵇ V := fun n ↦ BoundedContinuousFunction.mkOfCompact
     ⟨D.domRestrict (u n), (hL n).continuousOn.domRestrict⟩
   let A : Set (D →ᵇ V) := {f | LipschitzWith C f ∧ ∀ z, f z ∈ K}
@@ -168,7 +171,7 @@ theorem exists_pos_forall_tendstoUniformlyOn_subseq_of_small_energy
   -- Extend the limit off the disk only to express uniform convergence on a subset of `ℂ`.
   let v' : ℂ → V := fun z ↦ if hz : z ∈ D then v ⟨z, hz⟩ else 0
   have hv' : D.domRestrict v' = v := by funext z; simp [v', Set.domRestrict]
-  refine ⟨C, v', φ, hφ, ?_, ?_, ?_⟩
+  refine ⟨v', φ, hφ, ?_, ?_, ?_⟩
   · rw [lipschitzOnWith_iff_restrict, hv']
     exact hv.1
   · intro z hz
