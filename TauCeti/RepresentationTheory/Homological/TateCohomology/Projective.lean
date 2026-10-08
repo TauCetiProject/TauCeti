@@ -37,17 +37,17 @@ It suffices that the identity of `A` is a norm `∑ g, A.ρ g ∘ φ ∘ A.ρ g�
 (`Rep.moduleProjective_of_id_mem_range_norm_linHom`), and this may be checked on a Sylow
 `p`-subgroup `P` for each prime `p` (`Representation.id_mem_range_norm_linHom_of_forall_prime`).
 If `p` is a unit in `k`, the identity is `|P|⁻¹` times the norm of the identity. Otherwise
-`F = k/pk` is a field of characteristic `p`. The vanishing of `Ĥ⁰(P, A)` and `Ĥ⁻¹(P, A)` gives the
-vanishing of `Ĥ⁻¹(P, A/pA)` (`Rep.ker_norm_baseChange_le`), so the identity of `A/pA` is a norm
-(`Representation.id_mem_range_norm_linHom_of_ker_norm_le`), and so is the identity of `A`
-(`Representation.id_mem_range_norm_linHom_of_baseChange`).
+`F = k/pk` is a field of characteristic `p`. The vanishing of `H_Tate⁰(P, A)` and
+`H_Tate⁻¹(P, A)` gives the vanishing of `H_Tate⁻¹(P, A/pA)` (`Rep.ker_norm_baseChange_le`), so the
+identity of `A/pA` is a norm (`Representation.id_mem_range_norm_linHom_of_ker_norm_le`), and so is
+the identity of `A` (`Representation.id_mem_range_norm_linHom_of_baseChange`).
 
 ## Main statements
 
 * `Rep.isZero_res_of_projective`: if `A.ρ.asModule` is a projective
   `k[G]`-module, then `H-hat^n(S, A) = 0` for every finite subgroup `S` of `G` and every `n : ℤ`.
-* `Rep.ker_norm_baseChange_le`: if `Ĥ⁰(G, A) = Ĥ⁻¹(G, A) = 0` and `p` is regular on `A`, then
-  `Ĥ⁻¹(G, (k/pk) ⊗ A) = 0`, in the form `ker N ≤ I_G ((k/pk) ⊗ A)`.
+* `Rep.ker_norm_baseChange_le`: if `H_Tate⁰(G, A) = H_Tate⁻¹(G, A) = 0` and `p` is regular on
+  `A`, then `H_Tate⁻¹(G, (k/pk) ⊗ A) = 0`, in the form `ker N ≤ I_G ((k/pk) ⊗ A)`.
 * `Rep.projective_of_isZero_res`: over `k` as above, a cohomologically trivial representation of a
   finite group whose underlying `k`-module is projective is projective over `k[G]`.
 
@@ -83,9 +83,9 @@ theorem isZero_res_of_projective (A : Rep k G)
   rw [IsZero.iff_id_eq_zero, ← h.retract,
     (TauCeti.TateCohomology.isZero_res_indBot S A.V n).eq_zero_of_tgt h.i, zero_comp]
 
-/-- **`Ĥ⁻¹` modulo `p`.** If `Ĥ⁰(G, A)` and `Ĥ⁻¹(G, A)` vanish and multiplication by `p` is
-injective on `A`, then every vector of `(k/pk) ⊗ A` of norm zero lies in the augmentation
-submodule; that is, `Ĥ⁻¹(G, (k/pk) ⊗ A) = 0`. -/
+/-- **`H_Tate⁻¹` modulo `p`.** If `H_Tate⁰(G, A)` and `H_Tate⁻¹(G, A)` vanish and multiplication
+by `p` is injective on `A`, then every vector of `(k/pk) ⊗ A` of norm zero lies in the augmentation
+submodule; that is, `H_Tate⁻¹(G, (k/pk) ⊗ A) = 0`. -/
 theorem ker_norm_baseChange_le [Fintype G] (A : Rep k G) (p : k)
     (hp : ∀ v : A.V, p • v = 0 → v = 0) (h0 : IsZero (tateCohomology A 0))
     (h1 : IsZero (tateCohomology A (-1))) :
