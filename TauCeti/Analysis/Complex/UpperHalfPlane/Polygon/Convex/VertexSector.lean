@@ -7,10 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Orientation
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex
-<<<<<<< HEAD
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Sides
-=======
->>>>>>> origin/main
 import TauCeti.Data.Fin.Basic
 
 /-!
@@ -29,7 +26,6 @@ semicircle with `∞` strictly on its left.
 The construction commutes with projective transformations and cyclic relabelling, allowing the
 same local description to be used for translated polygon tiles.
 
-<<<<<<< HEAD
 At a finite vertex `z` the sector is an angular sector: measuring oriented angles at `z` from the
 ray towards the next vertex, the ray towards the previous vertex sits at the interior angle, and a
 point `w ≠ z` lies in the sector exactly when its oriented angle lies between `0` and the interior
@@ -45,16 +41,10 @@ theorem.
   vertex from the outgoing to the incoming ray is the interior angle.
 * `ConvexPolygon.mem_vertexSector_iff_toReal_orientedAngle_mem_Icc`: the sector at a finite
   vertex in angular coordinates.
-=======
-## Main results
-
-* `ConvexPolygon.eventuallyEq_carrier_vertexSector`: near a finite vertex, the polygon is its
-  sector.
 * `ConvexPolygon.mem_vertexSector_iff_of_vertex_eq_inr_infty`: the sector at a vertex at `∞` is
   a vertical strip.
 * `ConvexPolygon.eventuallyEq_carrier_vertexSector_atImInfty`: near a vertex at `∞`, the polygon
   is that strip.
->>>>>>> origin/main
 
 ## References
 
@@ -65,11 +55,7 @@ Poincaré's polygon theorem). Walkden, *Hyperbolic geometry*, §§14.2 and 19–
 public section
 
 open Set Topology UpperHalfPlane
-<<<<<<< HEAD
-open scoped MatrixGroups Pointwise Real
-=======
-open scoped MatrixGroups Pointwise OnePoint
->>>>>>> origin/main
+open scoped MatrixGroups Pointwise Real OnePoint
 
 namespace TauCeti.UpperHalfPlane.ConvexPolygon
 
@@ -153,7 +139,54 @@ theorem eventuallyEq_carrier_vertexSector_of_eventually {l : Filter ℍ} {j : Fi
   · simpa only [hi₂] using ((P.mem_vertexSector_iff j w).1 h).2
   exact subset_closure (hw i hi₁ hi₂)
 
-<<<<<<< HEAD
+/-- Near a finite vertex, the polygon agrees with the sector bounded by its two incident sides.
+No conditions on side pairings or other vertices are needed. -/
+theorem eventuallyEq_carrier_vertexSector {j : Fin n} {z : ℍ}
+    (hz : P.vertex j = .inl z) : P.carrier =ᶠ[𝓝 z] P.vertexSector j := by
+  refine P.eventuallyEq_carrier_vertexSector_of_eventually fun i hi ↦ ?_
+  rw [hz, inl_mem_extLeftHalfPlane_iff] at hi
+  exact (isOpen_leftHalfPlane _).mem_nhds hi
+
+/-! ### The sector at an ideal vertex at `∞` -/
+
+/-- At a vertex at `∞`, the sector is the closed vertical strip between the verticals through
+the next and the previous vertex. -/
+theorem mem_vertexSector_iff_of_vertex_eq_inr_infty {j : Fin n} (hj : P.vertex j = .inr ∞)
+    (z : ℍ) :
+    z ∈ P.vertexSector j ↔ (toComplex (P.vertex (j + 1))).re ≤ z.re ∧
+      z.re ≤ (toComplex (P.vertex (j - 1))).re := by
+  have hprev := P.isGeodesicFromTo_sideGeodesic (j - 1)
+  have hnext := P.isGeodesicFromTo_sideGeodesic j
+  rw [sub_add_cancel, hj] at hprev
+  rw [hj] at hnext
+  rw [mem_vertexSector_iff, mem_closure_leftHalfPlane_iff_sideForm_nonpos,
+    mem_closure_leftHalfPlane_iff_sideForm_nonpos,
+    hprev.sideForm_eq_of_inr_infty_right (hj ▸ P.vertex_ne_vertex_sub_one j).symm,
+    hnext.sideForm_eq_of_inr_infty_left (hj ▸ P.vertex_ne_vertex_add_one j).symm, coe_re,
+    sub_nonpos, sub_nonpos, and_comm]
+
+/-- At a vertex at `∞`, the vertical through the next vertex lies strictly to the left of the
+vertical through the previous vertex, so the sector there is a strip of positive width. -/
+theorem re_toComplex_vertex_add_one_lt_of_vertex_eq_inr_infty {j : Fin n}
+    (hj : P.vertex j = .inr ∞) :
+    (toComplex (P.vertex (j + 1))).re < (toComplex (P.vertex (j - 1))).re := by
+  have hprev := P.isGeodesicFromTo_sideGeodesic (j - 1)
+  rw [sub_add_cancel, hj] at hprev
+  have h := P.sideForm_sideGeodesic_toComplex_neg (i := j - 1) (j := j + 1)
+    (hj ▸ (P.vertex_ne_vertex_add_one j).symm)
+    (fun h ↦ add_one_add_one_ne_self P.three_le j (by rw [h, sub_add_cancel]))
+    (fun h ↦ P.vertex_ne_vertex_add_one j (by rw [sub_add_cancel] at h; rw [h]))
+  rwa [hprev.sideForm_eq_of_inr_infty_right (hj ▸ P.vertex_ne_vertex_sub_one j).symm,
+    sub_neg] at h
+
+/-- Near an ideal vertex at `∞`, the polygon agrees with the vertical strip of its vertex sector:
+above some height, the sides not incident to that vertex impose no constraint. -/
+theorem eventuallyEq_carrier_vertexSector_atImInfty {j : Fin n} (hj : P.vertex j = .inr ∞) :
+    P.carrier =ᶠ[atImInfty] P.vertexSector j := by
+  refine P.eventuallyEq_carrier_vertexSector_of_eventually fun i hi ↦ ?_
+  rw [hj, inr_mem_extLeftHalfPlane_iff] at hi
+  exact eventually_mem_leftHalfPlane_of_infty_mem_boundaryLeftHalfPlane hi
+
 /-! ### The sector in angular coordinates -/
 
 variable {P}
@@ -283,54 +316,5 @@ theorem mem_vertexSector_iff_toReal_orientedAngle_mem_Icc {j : Fin n} {z w : ℍ
     exact h₁ ⟨by linarith, by linarith⟩
   · rw [Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith, by linarith⟩]
     exact fun h ↦ h.1.not_ge (by linarith)
-=======
-/-- Near a finite vertex, the polygon agrees with the sector bounded by its two incident sides.
-No conditions on side pairings or other vertices are needed. -/
-theorem eventuallyEq_carrier_vertexSector {j : Fin n} {z : ℍ}
-    (hz : P.vertex j = .inl z) : P.carrier =ᶠ[𝓝 z] P.vertexSector j := by
-  refine P.eventuallyEq_carrier_vertexSector_of_eventually fun i hi ↦ ?_
-  rw [hz, inl_mem_extLeftHalfPlane_iff] at hi
-  exact (isOpen_leftHalfPlane _).mem_nhds hi
-
-/-! ### The sector at an ideal vertex at `∞` -/
-
-/-- At a vertex at `∞`, the sector is the closed vertical strip between the verticals through
-the next and the previous vertex. -/
-theorem mem_vertexSector_iff_of_vertex_eq_inr_infty {j : Fin n} (hj : P.vertex j = .inr ∞)
-    (z : ℍ) :
-    z ∈ P.vertexSector j ↔ (toComplex (P.vertex (j + 1))).re ≤ z.re ∧
-      z.re ≤ (toComplex (P.vertex (j - 1))).re := by
-  have hprev := P.isGeodesicFromTo_sideGeodesic (j - 1)
-  have hnext := P.isGeodesicFromTo_sideGeodesic j
-  rw [sub_add_cancel, hj] at hprev
-  rw [hj] at hnext
-  rw [mem_vertexSector_iff, mem_closure_leftHalfPlane_iff_sideForm_nonpos,
-    mem_closure_leftHalfPlane_iff_sideForm_nonpos,
-    hprev.sideForm_eq_of_inr_infty_right (hj ▸ P.vertex_ne_vertex_sub_one j).symm,
-    hnext.sideForm_eq_of_inr_infty_left (hj ▸ P.vertex_ne_vertex_add_one j).symm, coe_re,
-    sub_nonpos, sub_nonpos, and_comm]
-
-/-- At a vertex at `∞`, the vertical through the next vertex lies strictly to the left of the
-vertical through the previous vertex, so the sector there is a strip of positive width. -/
-theorem re_toComplex_vertex_add_one_lt_of_vertex_eq_inr_infty {j : Fin n}
-    (hj : P.vertex j = .inr ∞) :
-    (toComplex (P.vertex (j + 1))).re < (toComplex (P.vertex (j - 1))).re := by
-  have hprev := P.isGeodesicFromTo_sideGeodesic (j - 1)
-  rw [sub_add_cancel, hj] at hprev
-  have h := P.sideForm_sideGeodesic_toComplex_neg (i := j - 1) (j := j + 1)
-    (hj ▸ (P.vertex_ne_vertex_add_one j).symm)
-    (fun h ↦ add_one_add_one_ne_self P.three_le j (by rw [h, sub_add_cancel]))
-    (fun h ↦ P.vertex_ne_vertex_add_one j (by rw [sub_add_cancel] at h; rw [h]))
-  rwa [hprev.sideForm_eq_of_inr_infty_right (hj ▸ P.vertex_ne_vertex_sub_one j).symm,
-    sub_neg] at h
-
-/-- Near an ideal vertex at `∞`, the polygon agrees with the vertical strip of its vertex sector:
-above some height, the sides not incident to that vertex impose no constraint. -/
-theorem eventuallyEq_carrier_vertexSector_atImInfty {j : Fin n} (hj : P.vertex j = .inr ∞) :
-    P.carrier =ᶠ[atImInfty] P.vertexSector j := by
-  refine P.eventuallyEq_carrier_vertexSector_of_eventually fun i hi ↦ ?_
-  rw [hj, inr_mem_extLeftHalfPlane_iff] at hi
-  exact eventually_mem_leftHalfPlane_of_infty_mem_boundaryLeftHalfPlane hi
->>>>>>> origin/main
 
 end TauCeti.UpperHalfPlane.ConvexPolygon
