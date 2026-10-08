@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Category.Pointed
-public import TauCeti.AlgebraicTopology.Homotopy.BasedTopPair
+public import TauCeti.Topology.Category.BasedTopPair
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 
 /-!
