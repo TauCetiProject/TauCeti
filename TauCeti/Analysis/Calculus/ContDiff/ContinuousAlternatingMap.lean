@@ -17,10 +17,8 @@ linear map, also as an operator on alternating maps. This is the flat regularity
 needed for the smooth bundle of alternating maps.
 
 We use Mathlib's polynomial description of multilinear pullback and recover the alternating
-map by normalized alternatization. We only require the degree factorial to be nonzero in the
-scalar field; no completeness or finite-dimensionality assumption is needed.
-Over a characteristic-zero field, this condition follows from `Nat.factorial_ne_zero`.
-In positive characteristic, it permits degrees whose factorial has nonzero cast.
+map by normalized alternatization over `ℝ`. No completeness or finite-dimensionality
+assumption is needed.
 The regularity parameter ranges over `ℕ∞ω`, including analytic regularity `ω`.
 -/
 
@@ -31,30 +29,30 @@ namespace TauCeti
 open ContinuousAlternatingMap
 open scoped ContDiff
 
-variable {𝕜 ι E F G : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [NormedAddCommGroup G] [NormedSpace 𝕜 G] [Fintype ι]
-  [NeZero ((Fintype.card ι).factorial : 𝕜)] {n : ℕ∞ω}
+variable {ι E F G : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [NormedAddCommGroup G] [NormedSpace ℝ G] [Fintype ι]
+  {n : ℕ∞ω}
 
-/-- When the degree factorial is nonzero in the scalar field, pullback depends smoothly
-on the linear map, in the operator norm on alternating maps. -/
+/-- Pullback over `ℝ` depends smoothly on the linear map, in the operator norm on
+alternating maps. -/
 theorem contDiff_compContinuousLinearMapCLM :
-    ContDiff 𝕜 n
-      (compContinuousLinearMapCLM : (E →L[𝕜] F) →
-        (F [⋀^ι]→L[𝕜] G) →L[𝕜] E [⋀^ι]→L[𝕜] G) := by
+    ContDiff ℝ n
+      (compContinuousLinearMapCLM : (E →L[ℝ] F) →
+        (F [⋀^ι]→L[ℝ] G) →L[ℝ] E [⋀^ι]→L[ℝ] G) := by
   classical
   -- Alternatization restricts to factorial multiplication on alternating maps, so its
   -- normalization is a left inverse of their inclusion into multilinear maps.
-  let P : ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ E) G →L[𝕜] E [⋀^ι]→L[𝕜] G :=
-    ((Fintype.card ι).factorial : 𝕜)⁻¹ • alternatizationCLM
+  let P : ContinuousMultilinearMap ℝ (fun _ : ι ↦ E) G →L[ℝ] E [⋀^ι]→L[ℝ] G :=
+    ((Fintype.card ι).factorial : ℝ)⁻¹ • alternatizationCLM
   let Q := ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear
-    𝕜 (fun _ : ι ↦ E) (fun _ ↦ F) G
-  have hQ : ContDiff 𝕜 n (fun g : E →L[𝕜] F ↦ Q (fun _ ↦ g)) :=
+    ℝ (fun _ : ι ↦ E) (fun _ ↦ F) G
+  have hQ : ContDiff ℝ n (fun g : E →L[ℝ] F ↦ Q (fun _ ↦ g)) :=
     Q.analyticOnNhd.contDiff.comp (contDiff_pi.mpr fun _ ↦ contDiff_id)
   have h := contDiff_const (c := P) |>.clm_comp
-    (hQ.clm_comp (contDiff_const (c := toContinuousMultilinearMapCLM 𝕜)))
-  have hQ_apply (g : E →L[𝕜] F) (f : F [⋀^ι]→L[𝕜] G) :
-      Q (fun _ ↦ g) (toContinuousMultilinearMapCLM 𝕜 f) =
+    (hQ.clm_comp (contDiff_const (c := toContinuousMultilinearMapCLM ℝ)))
+  have hQ_apply (g : E →L[ℝ] F) (f : F [⋀^ι]→L[ℝ] G) :
+      Q (fun _ ↦ g) (toContinuousMultilinearMapCLM ℝ f) =
         (f.compContinuousLinearMap g).toContinuousMultilinearMap := by
     ext v
     simp only [Q,
@@ -68,6 +66,7 @@ theorem contDiff_compContinuousLinearMapCLM :
   simp only [ContinuousLinearMap.comp_apply, P, _root_.smul_apply,
     hQ_apply, alternatizationCLM_apply, alternatization_toContinuousMultilinearMap,
     compContinuousLinearMapCLM_apply]
-  rw [← Nat.cast_smul_eq_nsmul 𝕜, inv_smul_smul₀ (NeZero.ne _)]
+  rw [← Nat.cast_smul_eq_nsmul ℝ, inv_smul_smul₀ (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _) :
+    ((Fintype.card ι).factorial : ℝ) ≠ 0)]
 
 end TauCeti
