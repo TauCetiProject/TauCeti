@@ -230,6 +230,7 @@ theorem apply_mem_conwayMutation_of_one_lt_norm {x : EuclideanSpace ℝ (Fin 3)}
   exact (mem_closedBall_zero_iff.1 hx').not_gt hx
 
 /-- Mutating twice along the same ball and half-turn gives back the original set. -/
+@[simp]
 theorem conwayMutation_conwayMutation : conwayMutation e i (conwayMutation e i S) = S := by
   ext y
   by_cases hy : y ∈ e '' closedBall 0 1
@@ -341,6 +342,15 @@ def IsConwayMutant (K K' : SmoothCircleEmbedding (𝓡 3) M) : Prop :=
         ∃ h : ℝ ≃o ℝ, ∀ᶠ t in 𝓝 θ, K' (Circle.exp (h t)) = K (Circle.exp t)
 
 variable {K K' : SmoothCircleEmbedding (𝓡 3) M}
+
+/-- Conway mutation is characterized by a Conway sphere, the mutated image, and local
+orientation agreement on an outside arc. -/
+theorem isConwayMutant_iff : IsConwayMutant K K' ↔
+    ∃ (e : SmoothEmbedding (𝓡 3) (𝓡 3) ∞ (EuclideanSpace ℝ (Fin 3)) M) (i : Fin 3),
+      IsConwaySphere K e i ∧ range K' = conwayMutation e i (range K) ∧
+        ∃ θ : ℝ, K (Circle.exp θ) ∉ e '' closedBall 0 1 ∧
+          ∃ h : ℝ ≃o ℝ, ∀ᶠ t in 𝓝 θ, K' (Circle.exp (h t)) = K (Circle.exp t) :=
+  Iff.rfl
 
 /-- **Mutation is symmetric**: rotating the tangle of a mutant back along the same Conway sphere
 recovers the original knot. -/
