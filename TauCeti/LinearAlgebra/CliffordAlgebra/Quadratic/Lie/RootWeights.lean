@@ -108,12 +108,42 @@ theorem adjointCliffordHom_cartan_eq_sum_weight
 private noncomputable def bivectorBilin
     (Q : QuadraticForm K L) : L →ₗ[K] L →ₗ[K] CliffordAlgebra Q :=
   LinearMap.mk₂ K (bivector Q)
-    (fun _ _ _ ↦ by simp [bivector_def, add_mul, mul_add]; module)
-    (fun _ _ _ ↦ by simp [bivector_def, smul_sub, smul_smul, mul_comm])
-    (fun _ _ _ ↦ by simp [bivector_def, add_mul, mul_add]; module)
-    (fun _ _ _ ↦ by simp [bivector_def, smul_sub, smul_smul, mul_comm])
+    (fun x y z ↦ by
+      rw [← bivectorAlternating_apply, ← bivectorAlternating_apply,
+        ← bivectorAlternating_apply]
+      have hu (a b : L) : Function.update ![0, b] 0 a = ![a, b] := by
+        funext i
+        fin_cases i <;> simp
+      simpa only [hu] using
+        (bivectorAlternating Q).map_update_add (v := ![0, z]) 0 x y)
+    (fun c x y ↦ by
+      rw [← bivectorAlternating_apply, ← bivectorAlternating_apply]
+      have hu (a b : L) : Function.update ![0, b] 0 a = ![a, b] := by
+        funext i
+        fin_cases i <;> simp
+      simpa only [hu] using
+        (bivectorAlternating Q).map_update_smul (v := ![0, y]) 0 c x)
+    (fun x y z ↦ by
+      rw [← bivectorAlternating_apply, ← bivectorAlternating_apply,
+        ← bivectorAlternating_apply]
+      have hu (a b : L) : Function.update ![a, 0] 1 b = ![a, b] := by
+        funext i
+        fin_cases i <;> simp
+      simpa only [hu] using
+        (bivectorAlternating Q).map_update_add (v := ![x, 0]) 1 y z)
+    (fun c x y ↦ by
+      rw [← bivectorAlternating_apply, ← bivectorAlternating_apply]
+      have hu (a b : L) : Function.update ![a, 0] 1 b = ![a, b] := by
+        funext i
+        fin_cases i <;> simp
+      simpa only [hu] using
+        (bivectorAlternating Q).map_update_smul (v := ![x, 0]) 1 c y)
 
-omit [IsAlgClosed K] in
+omit [CharZero K] [IsAlgClosed K] [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
+private theorem bivectorBilin_apply (Q : QuadraticForm K L) (x y : L) :
+    bivectorBilin Q x y = bivector Q x y := rfl
+
+omit [CharZero K] [IsAlgClosed K] in
 private theorem projectedBivectorSum_neg
     {iota : Type w} [Fintype iota] [DecidableEq iota]
     (b : Module.Basis iota K L) (chi : Weight K H L) :
@@ -131,13 +161,14 @@ private theorem projectedBivectorSum_neg
   have hb := TauCeti.sum_apply_killingDualBasis_eq f b (TauCeti.killingDualBasis b)
   simp only [f, LinearMap.compl₂_apply, LinearMap.comp_apply,
     TauCeti.killingDualBasis_killingDualBasis] at hb
-  change (∑ i, bivector (TauCeti.LieAlgebra.killingQuadraticForm K L)
-      (TauCeti.genWeightSpaceProjection K H L (-chi) (b i))
-      (TauCeti.genWeightSpaceProjection K H L chi (TauCeti.killingDualBasis b i))) =
-    ∑ i, bivector (TauCeti.LieAlgebra.killingQuadraticForm K L)
-      (TauCeti.genWeightSpaceProjection K H L (-chi) (TauCeti.killingDualBasis b i))
-      (TauCeti.genWeightSpaceProjection K H L chi (b i)) at hb
-  rw [hb]
+  have hb' : (∑ i, bivector (TauCeti.LieAlgebra.killingQuadraticForm K L)
+        (TauCeti.genWeightSpaceProjection K H L (-chi) (b i))
+        (TauCeti.genWeightSpaceProjection K H L chi (TauCeti.killingDualBasis b i))) =
+      ∑ i, bivector (TauCeti.LieAlgebra.killingQuadraticForm K L)
+        (TauCeti.genWeightSpaceProjection K H L (-chi) (TauCeti.killingDualBasis b i))
+        (TauCeti.genWeightSpaceProjection K H L chi (b i)) := by
+    convert hb using 1 <;> simp only [bivectorBilin_apply]
+  rw [hb']
   calc
     _ = ∑ i, -bivector (TauCeti.LieAlgebra.killingQuadraticForm K L)
         (TauCeti.genWeightSpaceProjection K H L chi (b i))
@@ -166,43 +197,50 @@ theorem adjointCliffordHom_cartan_eq_sum_posRoots
       (TauCeti.genWeightSpaceProjection K H L (-chi) (TauCeti.killingDualBasis b i))
   have hcneg (chi : Weight K H L) : c (-chi) = -c chi := by
     simpa only [c, neg_neg] using projectedBivectorSum_neg H b chi
-  rw [adjointCliffordHom_cartan_eq_sum_weight H b h]
-  change (4 : K)⁻¹ • ∑ chi : Weight K H L, chi h • c chi = _
-  rw [← Finset.sum_sdiff (Finset.subset_univ H.root)]
-  have hzero : ∑ chi ∈ Finset.univ \ H.root, chi h • c chi = 0 := by
-    refine Finset.sum_eq_zero fun chi hchi ↦ ?_
-    have hz : chi.IsZero := not_not.mp (by simpa [LieSubalgebra.root] using
-      (Finset.mem_sdiff.mp hchi).2)
-    rw [hz.eq]
-    simp
-  rw [hzero, zero_add, ← Finset.sum_coe_sort H.root,
-    TauCeti.sum_root_eq_sum_posRootsFinset (H := H) base]
-  have hpair : ∀ a : H.root,
-      ((a : Weight K H L) h • c a + ((-a : H.root) : Weight K H L) h •
-        c ((-a : H.root) : Weight K H L)) =
-        (2 : K) • ((a : Weight K H L) h • c a) := by
-    intro a
-    change (a : Weight K H L) h • c a + (-((a : Weight K H L) h)) •
-      c (-(a : Weight K H L)) = _
-    rw [hcneg]
-    simp only [smul_neg]
-    module
-  have hsum :
-      ∑ a ∈ TauCeti.posRootsFinset (LieAlgebra.IsKilling.rootSystem H) base,
-          ((a : Weight K H L) h • c (a : Weight K H L) +
-            ((-a : H.root) : Weight K H L) h • c ((-a : H.root) : Weight K H L)) =
-        (2 : K) • ∑ a ∈ TauCeti.posRootsFinset (LieAlgebra.IsKilling.rootSystem H) base,
+  have hregroup :
+      (4 : K)⁻¹ • ∑ chi : Weight K H L, chi h • c chi =
+        (2 : K)⁻¹ • ∑ a ∈
+          TauCeti.posRootsFinset (LieAlgebra.IsKilling.rootSystem H) base,
           ((a : Weight K H L) h • c (a : Weight K H L)) := by
-    rw [Finset.sum_congr rfl fun a _ ↦ hpair a, ← Finset.smul_sum]
-  calc
-    _ = (4 : K)⁻¹ • ((2 : K) •
+    rw [← Finset.sum_sdiff (Finset.subset_univ H.root)]
+    have hzero : ∑ chi ∈ Finset.univ \ H.root, chi h • c chi = 0 := by
+      refine Finset.sum_eq_zero fun chi hchi ↦ ?_
+      have hz : chi.IsZero := not_not.mp (by simpa [LieSubalgebra.root] using
+        (Finset.mem_sdiff.mp hchi).2)
+      rw [hz.eq]
+      simp
+    rw [hzero, zero_add, ← Finset.sum_coe_sort H.root,
+      TauCeti.sum_root_eq_sum_posRootsFinset (H := H) base]
+    have hpair : ∀ a : H.root,
+        ((a : Weight K H L) h • c a + ((-a : H.root) : Weight K H L) h •
+          c ((-a : H.root) : Weight K H L)) =
+          (2 : K) • ((a : Weight K H L) h • c a) := by
+      intro a
+      have hneg_apply : ((-a : H.root) : Weight K H L) h = -((a : Weight K H L) h) :=
+        rfl
+      have hneg_coe : ((-a : H.root) : Weight K H L) = -(a : Weight K H L) := rfl
+      rw [hneg_apply, hneg_coe, hcneg]
+      simp only [smul_neg]
+      module
+    have hsum :
         ∑ a ∈ TauCeti.posRootsFinset (LieAlgebra.IsKilling.rootSystem H) base,
-          ((a : Weight K H L) h • c (a : Weight K H L))) :=
-      congrArg ((4 : K)⁻¹ • ·) hsum
-    _ = _ := by
-      rw [smul_smul]
-      congr 1
-      norm_num
+            ((a : Weight K H L) h • c (a : Weight K H L) +
+              ((-a : H.root) : Weight K H L) h •
+                c ((-a : H.root) : Weight K H L)) =
+          (2 : K) • ∑ a ∈ TauCeti.posRootsFinset (LieAlgebra.IsKilling.rootSystem H) base,
+            ((a : Weight K H L) h • c (a : Weight K H L)) := by
+      rw [Finset.sum_congr rfl fun a _ ↦ hpair a, ← Finset.smul_sum]
+    calc
+      _ = (4 : K)⁻¹ • ((2 : K) •
+          ∑ a ∈ TauCeti.posRootsFinset (LieAlgebra.IsKilling.rootSystem H) base,
+            ((a : Weight K H L) h • c (a : Weight K H L))) :=
+        congrArg ((4 : K)⁻¹ • ·) hsum
+      _ = _ := by
+        rw [smul_smul]
+        congr 1
+        norm_num
+  rw [adjointCliffordHom_cartan_eq_sum_weight H b h]
+  simpa only [c] using hregroup
 
 open scoped CliffordAlgebra in
 omit [LieModule.IsTriangularizable K H L] in
