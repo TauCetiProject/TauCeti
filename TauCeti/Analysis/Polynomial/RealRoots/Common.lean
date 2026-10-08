@@ -151,10 +151,10 @@ theorem exists_continuous_ordered_common_roots_of_preconnectedSpace [Finite ι]
   suffices h : IsLocallyConstant fun x => (F k x).rootMultiplicity (r x i) from
     h.apply_eq_of_preconnectedSpace
   refine (IsLocallyConstant.iff_eventually_eq _).2 fun x₀ => ?_
-  exact (eventually_rootMultiplicity_eq_of_prod
-    (fun k j hj => (hF k j hj).continuousAt)
-    (fun k => .of_forall fun x => (natDegree_eq_of_degree_eq_some (hdeg k x)).le)
-    (hrc i).continuousAt (fun k => hne k x₀)
-    (.of_forall fun x => hmult i x x₀)).mono fun _ hx => hx k
+  exact (eventually_rootMultiplicity_eq_of_prod Finset.univ
+    (fun k _ j hj => (hF k j hj).continuousAt)
+    (fun k _ => .of_forall fun x => (natDegree_eq_of_degree_eq_some (hdeg k x)).le)
+    (hrc i).continuousAt (fun k _ => hne k x₀)
+    (.of_forall fun x => hmult i x x₀)).mono fun _ hx => hx k (Finset.mem_univ k)
 
 end Polynomial

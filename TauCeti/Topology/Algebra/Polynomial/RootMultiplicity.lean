@@ -15,9 +15,10 @@ import Mathlib.Algebra.Order.BigOperators.Group.Finset
 
 For a coefficientwise continuous family of locally bounded degree, multiplicity at a continuous
 point is locally bounded above by its central value, provided the central polynomial is nonzero.
-Hasse derivatives give this statement in arbitrary characteristic. If the multiplicity in a
-finite product is locally constant, every factor multiplicity is locally constant as well:
-none can increase, and their sum cannot decrease.
+Hasse derivatives give this statement in arbitrary characteristic. Over an integral domain,
+if each factor is nonzero at the base point and the multiplicity in a finite product is locally
+constant, every factor multiplicity is locally constant: none can increase, and their sum cannot
+decrease.
 
 This transfers the multiplicities of root sections of a product to its individual factors,
 including factors sharing roots and roots of multiplicity greater than one.
@@ -37,8 +38,9 @@ namespace Polynomial
 variable {B R : Type*} [TopologicalSpace B] [TopologicalSpace R]
   {r : B → R} {x₀ : B} {d : ℕ}
 
-/-- Evaluation of a Hasse derivative along a continuous point is continuous for a
-coefficientwise continuous family whose degrees are locally bounded. -/
+/-- Evaluation of a Hasse derivative along a point continuous at `x₀` is continuous at `x₀`
+for a family whose coefficients of index at most `d` are continuous at `x₀` and whose degrees
+are bounded by `d` near `x₀`. -/
 theorem continuousAt_hasseDeriv_eval [Semiring R] [IsTopologicalSemiring R] {F : B → R[X]}
     (hF : ∀ i ≤ d, ContinuousAt (fun x ↦ (F x).coeff i) x₀)
     (hdeg : ∀ᶠ x in 𝓝 x₀, (F x).natDegree ≤ d) (hr : ContinuousAt r x₀) (m : ℕ) :
@@ -50,15 +52,9 @@ theorem continuousAt_hasseDeriv_eval [Semiring R] [IsTopologicalSemiring R] {F :
     · refine (continuousAt_const (y := (0 : R))).congr_of_eventuallyEq ?_
       filter_upwards [hdeg] with x hx
       simp [hasseDeriv_coeff, coeff_eq_zero_of_natDegree_lt (hx.trans_lt (Nat.lt_of_not_ge hi))]
-  have heq : (fun x ↦ (hasseDeriv m (F x)).eval (r x)) =ᶠ[𝓝 x₀]
-      fun x ↦ ∑ i ∈ Finset.range (d + 1), (hasseDeriv m (F x)).coeff i * r x ^ i := by
-    filter_upwards [hdeg] with x hx
-    exact eval_eq_sum_range' (Nat.lt_succ_of_le
-      ((natDegree_hasseDeriv_le _ _).trans ((Nat.sub_le _ _).trans hx))) _
-  have hc : ContinuousAt (fun x ↦ ∑ i ∈ Finset.range (d + 1),
-      (hasseDeriv m (F x)).coeff i * r x ^ i) x₀ :=
-    tendsto_finsetSum _ fun i _ ↦ (hcoeff i).mul (hr.pow i)
-  exact hc.congr_of_eventuallyEq heq
+  exact continuousAt_eval (fun i _ ↦ hcoeff i)
+    (hdeg.mono fun x hx ↦
+      (natDegree_hasseDeriv_le _ _).trans ((Nat.sub_le _ _).trans hx)) hr
 
 variable [CommRing R] [IsTopologicalSemiring R] {F : B → R[X]}
 
@@ -79,28 +75,30 @@ theorem eventually_rootMultiplicity_le [T1Space R]
 /-- Along a continuous point, locally constant multiplicity in a nonzero finite product
 forces locally constant multiplicity in every factor. No coprimality is required. -/
 theorem eventually_rootMultiplicity_eq_of_prod [IsDomain R] [T1Space R]
-    {ι : Type*} [Fintype ι] {F : ι → B → R[X]} {d : ι → ℕ}
-    (hF : ∀ k, ∀ i ≤ d k, ContinuousAt (fun x ↦ (F k x).coeff i) x₀)
-    (hdeg : ∀ k, ∀ᶠ x in 𝓝 x₀, (F k x).natDegree ≤ d k) (hr : ContinuousAt r x₀)
-    (hne : ∀ k, F k x₀ ≠ 0)
+    {ι : Type*} {F : ι → B → R[X]} {d : ι → ℕ} (s : Finset ι)
+    (hF : ∀ k ∈ s, ∀ i ≤ d k, ContinuousAt (fun x ↦ (F k x).coeff i) x₀)
+    (hdeg : ∀ k ∈ s, ∀ᶠ x in 𝓝 x₀, (F k x).natDegree ≤ d k) (hr : ContinuousAt r x₀)
+    (hne : ∀ k ∈ s, F k x₀ ≠ 0)
     (hmult : ∀ᶠ x in 𝓝 x₀,
-      (∏ k, F k x).rootMultiplicity (r x) = (∏ k, F k x₀).rootMultiplicity (r x₀)) :
-    ∀ᶠ x in 𝓝 x₀, ∀ k, (F k x).rootMultiplicity (r x) =
+      (∏ k ∈ s, F k x).rootMultiplicity (r x) =
+        (∏ k ∈ s, F k x₀).rootMultiplicity (r x₀)) :
+    ∀ᶠ x in 𝓝 x₀, ∀ k ∈ s, (F k x).rootMultiplicity (r x) =
       (F k x₀).rootMultiplicity (r x₀) := by
   classical
-  have hsum (x : B) (hx : ∀ k, F k x ≠ 0) :
-      (∏ k, F k x).rootMultiplicity (r x) = ∑ k, (F k x).rootMultiplicity (r x) := by
-    rw [← count_roots, roots_prod _ _ (Finset.prod_ne_zero_iff.2 fun k _ ↦ hx k),
-      Multiset.count_bind]
+  have hsum (x : B) (hx : ∀ k ∈ s, F k x ≠ 0) :
+      (∏ k ∈ s, F k x).rootMultiplicity (r x) =
+        ∑ k ∈ s, (F k x).rootMultiplicity (r x) := by
+    rw [← count_roots, roots_prod _ _ (Finset.prod_ne_zero_iff.2 hx), Multiset.count_bind]
     simp only [count_roots, Finset.sum_map_val]
-  have hle := eventually_all.2 fun k ↦
-    eventually_rootMultiplicity_le (hF k) (hdeg k) hr (hne k)
-  have hnonzero : ∀ᶠ x in 𝓝 x₀, ∀ k, F k x ≠ 0 := eventually_all.2 fun k ↦ by
-    have hc := (hF k _ (hdeg k).self_of_nhds).eventually_ne
-      (by simpa only [coeff_natDegree] using (leadingCoeff_ne_zero.2 (hne k)))
-    exact hc.mono fun x hx hzero ↦ hx (by simp [hzero])
+  have hle := (eventually_all_finset s).2 fun k hk ↦
+    eventually_rootMultiplicity_le (hF k hk) (hdeg k hk) hr (hne k hk)
+  have hnonzero : ∀ᶠ x in 𝓝 x₀, ∀ k ∈ s, F k x ≠ 0 :=
+    (eventually_all_finset s).2 fun k hk ↦ by
+      have hc := (hF k hk _ (hdeg k hk).self_of_nhds).eventually_ne
+        (by simpa only [coeff_natDegree] using (leadingCoeff_ne_zero.2 (hne k hk)))
+      exact hc.mono fun x hx hzero ↦ hx (by simp [hzero])
   filter_upwards [hle, hnonzero, hmult] with x hx hxne hxm
   rw [hsum x hxne, hsum x₀ hne] at hxm
-  exact fun k ↦ (Finset.sum_eq_sum_iff_of_le (fun k _ ↦ hx k)).1 hxm k (Finset.mem_univ k)
+  exact (Finset.sum_eq_sum_iff_of_le hx).1 hxm
 
 end Polynomial
