@@ -116,7 +116,7 @@ theorem reductionK0_eq_of_nonempty_equiv_of_charP [Fact ℓ.Prime] [CharP k ℓ]
   obtain ⟨f, hf, hfin⟩ := h.some.exists_injective_finite_quotient_range
   let g : V →+[G] W :=
     { f.toLinearMap.toAddMonoidHom with
-      map_smul' := fun a v ↦ f.isIntertwining a v }
+      map_smul' := fun a v ↦ Representation.IntertwiningMap.isIntertwining _ _ f a v }
   have : Finite (W ⧸ (g : V →+ W).range) := hfin
   have : (g : V →+ W).range.FiniteIndex := AddSubgroup.finiteIndex_of_finite_quotient
   rw [← latticeDefect_eq_reductionK0 k G ℓ V, ← latticeDefect_eq_reductionK0 k G ℓ W]
