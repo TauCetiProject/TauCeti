@@ -114,6 +114,20 @@ theorem coeff_aeval_C_add_C_mul_X_eq_zero (p : MvPolynomial σ R) (a v : σ → 
     · rfl
   simp [hzero]
 
+/-- Restriction to an affine line cannot decrease the ambient order, including the zero
+polynomial and lines on which the restriction vanishes identically. -/
+theorem orderAt_le_trailingDegree_aeval_C_add_C_mul_X (p : MvPolynomial σ R)
+    (a v : σ → R) :
+    p.orderAt a ≤
+      (aeval (fun i ↦ Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X)
+        p).trailingDegree := by
+  rw [Polynomial.trailingDegree]
+  apply Finset.le_min
+  intro k hk
+  by_contra h
+  exact (Polynomial.mem_support_iff.1 hk)
+    (p.coeff_aeval_C_add_C_mul_X_eq_zero a v (lt_of_not_ge h))
+
 end CommSemiring
 
 section InfiniteDomain

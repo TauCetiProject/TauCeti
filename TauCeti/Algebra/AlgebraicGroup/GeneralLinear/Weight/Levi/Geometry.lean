@@ -130,54 +130,18 @@ theorem weightLeviQuotient_mk_genericMatrix_apply_of_ne (w : Fin N → ℤ)
     rw [genericMatrix_apply]
     exact Ideal.subset_span (X_mem_weightParabolicRelationSet R (-w) (by simpa using hji))
 
-/-- Evaluate the ambient matrix-polynomial coordinates at the generic block-diagonal matrix. -/
-private def weightLeviPolynomialEvaluation (w : Fin N → ℤ) :
-    MatrixMonoid.CoordinateRing R N →ₐ[R] WeightLeviCoordinateRing R w :=
-  MvPolynomial.aeval fun ij ↦ weightLeviLocalizedGenericMatrix R w ij.1 ij.2
-
-private theorem weightLeviPolynomialEvaluation_determinant_isUnit (w : Fin N → ℤ) :
-    IsUnit (weightLeviPolynomialEvaluation R w
-      (Matrix.det (Matrix.mvPolynomialX (Fin N) (Fin N) R))) := by
-  rw [weightLeviPolynomialEvaluation, AlgHom.map_det,
-    Matrix.mvPolynomialX_mapMatrix_aeval]
-  exact isUnit_det_weightLeviLocalizedGenericMatrix R w
-
-/-- Extend block-diagonal evaluation across the determinant localization defining `GL_N`. -/
-private def weightLeviLocalizedEvaluation (w : Fin N → ℤ) :
-    CoordinateRing R N →ₐ[R] WeightLeviCoordinateRing R w :=
-  IsLocalization.Away.liftAlgHom
-    (Matrix.det (Matrix.mvPolynomialX (Fin N) (Fin N) R))
-    (weightLeviPolynomialEvaluation_determinant_isUnit R w)
-
-private theorem weightLeviLocalizedEvaluation_coordinateRingMap
-    (w : Fin N → ℤ) (x : MatrixMonoid.CoordinateRing R N) :
-    weightLeviLocalizedEvaluation R w (coordinateRingMap R N x) =
-      weightLeviPolynomialEvaluation R w x := by
-  rw [coordinateRingMap_apply]
-  simp [-coordinateRingMap_apply, weightLeviLocalizedEvaluation]
-
 /-- Block-diagonal evaluation on the bundled coordinate algebra of `GL_N`. -/
 private def weightLeviAmbientToCoordinateRing (w : Fin N → ℤ) :
     coordinateHopfAlgebra R N →ₐ[R] WeightLeviCoordinateRing R w :=
-  (weightLeviLocalizedEvaluation R w).comp
-    (coordinateHopfAlgebraAlgEquiv R N).symm.toAlgHom
+  (generalLinearToPoint N (Matrix.GeneralLinearGroup.mk''
+    (weightLeviLocalizedGenericMatrix R w)
+    (isUnit_det_weightLeviLocalizedGenericMatrix R w))).ofConv
 
 private theorem weightLeviAmbientToCoordinateRing_genericMatrix_apply
     (w : Fin N → ℤ) (i j : Fin N) :
     weightLeviAmbientToCoordinateRing R w ((genericMatrix R N) i j) =
       weightLeviLocalizedGenericMatrix R w i j := by
-  calc
-    _ = weightLeviLocalizedEvaluation R w
-        ((coordinateHopfAlgebraAlgEquiv R N).symm
-          (coordinateHopfAlgebraAlgEquiv R N
-            (coordinateRingMap R N (MvPolynomial.X (i, j))))) := by
-      rw [genericMatrix_apply]
-      rfl
-    _ = weightLeviLocalizedEvaluation R w
-        (coordinateRingMap R N (MvPolynomial.X (i, j))) := by simp
-    _ = weightLeviPolynomialEvaluation R w (MvPolynomial.X (i, j)) :=
-      weightLeviLocalizedEvaluation_coordinateRingMap R w _
-    _ = _ := by simp [weightLeviPolynomialEvaluation, weightLeviLocalizedGenericMatrix]
+  simp [genericMatrix_apply, weightLeviAmbientToCoordinateRing]
 
 private theorem weightLeviDefiningIdeal_le_ker_ambientToCoordinateRing
     (w : Fin N → ℤ) :

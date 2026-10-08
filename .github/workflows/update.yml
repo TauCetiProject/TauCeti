@@ -1,7 +1,7 @@
 name: Update Dependencies
 
 # Keeps the mathlib pin moving using the leanprover-community/downstream-reports
-# composite actions (TauCeti is registered as a downstream there). Daily behavior:
+# composite actions (TauCeti is registered as a downstream there). Hourly behavior:
 #   - mathlib compatible: open/update a single "bump to last-known-good" PR.
 #   - mathlib incompatible: open a tracking issue naming the first-known-bad mathlib
 #     commit, plus a fix PR whose manifest is pinned at that commit (a ready-made branch to fix in
@@ -12,8 +12,13 @@ name: Update Dependencies
 
 on:
   schedule:
-  - cron: "0 17 * * *"
+  - cron: "17 * * * *"   # consume refreshed reports without waiting a day
   workflow_dispatch:
+
+# Serialize branch and issue reconciliation; keep an active bump build running.
+concurrency:
+  group: mathlib-bump-reconciliation
+  cancel-in-progress: false
 
 env:
   LKG_BRANCH: hopscotch/lkg-bump
@@ -23,6 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: read
       pull-requests: write
     steps:
       - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
@@ -39,14 +45,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           token: ${{ steps.app-token.outputs.token }}
+          ref: main
+          fetch-depth: 0
 
       # Suppress the LKG bump while a regression is active: the only open PR
       # should be the fix one carrying the first-known-bad manifest pin.
-      - name: Check whether an incompatibility is reported
+      - name: Reconcile the report with green main
         id: fkb
-        uses: leanprover-community/downstream-reports/.github/actions/query-latest@62750c6a09e73013f9c23c7ee007c612793fe9a2
-        with:
-          query-type: first-known-bad
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/bump_report.py
 
       - name: Bump to latest mathlib
         id: bump
@@ -54,6 +62,7 @@ jobs:
         uses: leanprover-community/downstream-reports/.github/actions/bump-to-latest@62750c6a09e73013f9c23c7ee007c612793fe9a2
         with:
           preserve-lakefile: true
+          branch: ${{ env.LKG_BRANCH }}
 
       - name: Open or update PR
         if: steps.fkb.outputs.commit == '' && steps.bump.outputs.updated == 'true'
@@ -73,6 +82,7 @@ jobs:
     permissions:
       issues: write
       contents: write
+      actions: read
       pull-requests: write
     steps:
       - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
@@ -87,9 +97,20 @@ jobs:
           permission-pull-requests: write
 
       - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      # Recheck here: main or the published report may have advanced during the bump job.
+      - name: Reconcile the report with green main
+        id: fkb
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/bump_report.py
 
       - name: Open or update incompatibility issue and fix PR
         id: track
+        if: steps.fkb.outputs.awaiting_revalidation != 'true'
         uses: leanprover-community/downstream-reports/.github/actions/track-incompatibility@62750c6a09e73013f9c23c7ee007c612793fe9a2
         with:
           open-pr: true

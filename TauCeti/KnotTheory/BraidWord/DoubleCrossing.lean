@@ -157,6 +157,37 @@ theorem edgePair_closure_cons_cons_of_mem {p : Fin n} {j : Fin v.length}
   · rfl
   · rw [incomingSlot_congr (hletter (v.nextCrossing p j)) p]
 
+/-! The incoming version of the unaffected-position formula describes the external arc at an
+old crossing after inserting two crossings with the same generator index.  Keeping it in terms
+of the original word makes it usable when the closure is compared with `PDCode.insertClasp`,
+without unfolding the closure matching. -/
+
+/-- The incoming arc at an old crossing on an unaffected position is unchanged by inserting two
+crossings with the same generator index on two other positions. -/
+theorem edgePair_closure_cons_cons_incomingSlot_of_ne {p : Fin n}
+    (hp : p ≠ strand i) (hp' : p ≠ strandSucc i) {j : Fin v.length}
+    (hj : j ∈ v.crossingsAt p) :
+    let w : BraidWord n := (i, ε) :: (i, η) :: v
+    w.closure.edgePair.val
+        (w.closure.crossing j.succ.succ (w.incomingSlot j.succ.succ p)) =
+      w.closure.crossing ((v.nextCrossing p).symm j).succ.succ
+        (w.outgoingSlot ((v.nextCrossing p).symm j).succ.succ p) := by
+  dsimp only
+  let w : BraidWord n := (i, ε) :: (i, η) :: v
+  let j' : Fin v.length := (v.nextCrossing p).symm j
+  have hletter (k : Fin v.length) : w[k.succ.succ.val] = v[k.val] := by simp [w]
+  have hmem : j.succ.succ ∈ w.crossingsAt p := by
+    apply (mem_crossingsAt (w := w) (j := j.succ.succ)).mpr
+    rw [hletter]
+    exact (mem_crossingsAt (w := v)).mp hj
+  have hnext : w.nextCrossing p j'.succ.succ = j.succ.succ := by
+    rw [nextCrossing_cons_cons_of_ne v i ε η hp hp']
+    simp [j']
+  have hinv : (w.nextCrossing p).symm j.succ.succ = j'.succ.succ := by
+    apply (w.nextCrossing p).injective
+    rw [Equiv.apply_symm_apply, hnext]
+  rw [edgePair_closure_incomingSlot w hmem, hinv, outgoingSlot_congr (hletter j') p]
+
 /-- The upper internal arc of the inserted pair joins slot `1` of the first crossing to
 slot `0` of the second. -/
 theorem edgePair_closure_cons_cons_one :

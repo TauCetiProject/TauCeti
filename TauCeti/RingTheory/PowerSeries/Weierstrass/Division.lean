@@ -98,10 +98,12 @@ theorem IsDistinguished.le_gaussNorm_mul_add (hf : IsDistinguished c s f) (hc : 
   · rw [PowerSeries.gaussNorm_zero norm c (norm_zero : ‖(0 : R)‖ = 0), zero_mul]
     exact PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg
   obtain ⟨n, hn⟩ := exists_isDistinguished hc hq hq0
-  have hbqf := hasGaussNorm_mul hc.le (hasGaussNorm_of_isRestricted hq) hf.hasGaussNorm
+  -- Explicit boundedness types fix the coefficient ring before inferring the seminormed norm.
+  have hbqf : (q * f).HasGaussNorm norm c :=
+    hasGaussNorm_mul hc.le (hasGaussNorm_of_isRestricted hq) hf.hasGaussNorm
   have hbr : r.HasGaussNorm norm c :=
     hasGaussNorm_of_isRestricted (isRestricted_of_forall_coeff_eq_zero hr)
-  have hsum := hasGaussNorm_add hc.le hbqf hbr
+  have hsum : (q * f + r).HasGaussNorm norm c := hasGaussNorm_add hc.le hbqf hbr
   have hcoeff : (q * f + r).coeff (n + s) = (q * f).coeff (n + s) := by
     rw [map_add, hr (n + s) (Nat.le_add_left s n), add_zero]
   calc q.gaussNorm norm c * f.gaussNorm norm c
@@ -117,10 +119,11 @@ the sum is at least the Gauss norm of `r`. -/
 theorem IsDistinguished.gaussNorm_le_gaussNorm_mul_add (hf : IsDistinguished c s f) (hc : 0 < c)
     (hq : q.IsRestricted c) (hr : ∀ m, s ≤ m → r.coeff m = 0) :
     r.gaussNorm norm c ≤ (q * f + r).gaussNorm norm c := by
-  have hbqf := hasGaussNorm_mul hc.le (hasGaussNorm_of_isRestricted hq) hf.hasGaussNorm
+  have hbqf : (q * f).HasGaussNorm norm c :=
+    hasGaussNorm_mul hc.le (hasGaussNorm_of_isRestricted hq) hf.hasGaussNorm
   have hbr : r.HasGaussNorm norm c :=
     hasGaussNorm_of_isRestricted (isRestricted_of_forall_coeff_eq_zero hr)
-  have hbsum := hasGaussNorm_add hc.le hbqf hbr
+  have hbsum : (q * f + r).HasGaussNorm norm c := hasGaussNorm_add hc.le hbqf hbr
   have hqf : (q * f).gaussNorm norm c ≤ (q * f + r).gaussNorm norm c :=
     (MvPowerSeries.gaussNorm_mul_le norm (fun _ : Unit ↦ c) q f (fun _ ↦ hc.le)
       norm_nonneg norm_mul_le IsUltrametricDist.isNonarchimedean_norm norm_zero
