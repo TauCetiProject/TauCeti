@@ -18,7 +18,8 @@ For a matrix-valued one-cochain `x` of the absolute Galois group, its twisted bo
 This is the nonabelian boundary used to compare lifts of orthogonal Galois cocycles.  Changing a
 cochain by the Galois-twisted conjugation `x(g) ↦ Q⁻¹ x(g) g(Q)` conjugates its boundary by the
 constant matrix `Q`.  In particular, a scalar boundary is unchanged.  The mod-two reading
-`twistedBoundaryF2` records the exponent when the boundary is a sign matrix.
+`twistedBoundaryF2` records whether the boundary is the identity; when `K` has characteristic
+different from two and the boundary is a sign matrix `±1`, this is its exponent.
 
 The convention for the order of the Galois action is important: applying `h` to the entries and
 then `g` is the action of `g * h`.  This is the convention of `Gal(SeparableClosure K / K)` and is
@@ -27,7 +28,8 @@ the one needed for the descent cocycles of transferred quadratic forms.
 ## Main definitions
 
 * `TauCeti.twistedBoundary`: the matrix-valued twisted boundary.
-* `TauCeti.twistedBoundaryF2`: its mod-two exponent when the boundary is a sign.
+* `TauCeti.twistedBoundaryF2`: its mod-two reading, the exponent of a sign boundary away from
+  characteristic two.
 
 ## Main results
 
@@ -54,19 +56,19 @@ open Matrix
 
 universe u
 
-variable {K : Type u} [Field K]
+variable {K : Type u} [Field K] {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- The twisted boundary of a matrix-valued one-cochain of the absolute Galois group:
 `δx(g, h) = x(g) · g(x(h)) · x(gh)⁻¹`. -/
 def twistedBoundary
-    (x : AbsoluteGaloisGroup K → Matrix (Fin 2) (Fin 2) (SeparableClosure K))
+    (x : AbsoluteGaloisGroup K → Matrix n n (SeparableClosure K))
     (q : AbsoluteGaloisGroup K × AbsoluteGaloisGroup K) :
-    Matrix (Fin 2) (Fin 2) (SeparableClosure K) :=
+    Matrix n n (SeparableClosure K) :=
   x q.1 * (x q.2).map q.1 * (x (q.1 * q.2))⁻¹
 
 /-- The defining equation for the twisted boundary. -/
 theorem twistedBoundary_apply
-    (x : AbsoluteGaloisGroup K → Matrix (Fin 2) (Fin 2) (SeparableClosure K))
+    (x : AbsoluteGaloisGroup K → Matrix n n (SeparableClosure K))
     (g h : AbsoluteGaloisGroup K) :
     twistedBoundary x (g, h) = x g * (x h).map g * (x (g * h))⁻¹ :=
   (rfl)
@@ -74,13 +76,13 @@ theorem twistedBoundary_apply
 /-- The twisted boundary of the constant identity cochain is the identity matrix. -/
 @[simp]
 theorem twistedBoundary_one (g h : AbsoluteGaloisGroup K) :
-    twistedBoundary (fun _ ↦ (1 : Matrix (Fin 2) (Fin 2) (SeparableClosure K))) (g, h) = 1 := by
+    twistedBoundary (fun _ ↦ (1 : Matrix n n (SeparableClosure K))) (g, h) = 1 := by
   simp [twistedBoundary]
 
 /-- The twisted boundary is the identity exactly when the cochain satisfies the multiplicative
 one-cocycle equation at `(g, h)`. -/
 theorem twistedBoundary_eq_one_iff
-    (x : AbsoluteGaloisGroup K → Matrix (Fin 2) (Fin 2) (SeparableClosure K))
+    (x : AbsoluteGaloisGroup K → Matrix n n (SeparableClosure K))
     (g h : AbsoluteGaloisGroup K) (hx : IsUnit (x (g * h)).det) :
     twistedBoundary x (g, h) = 1 ↔ x g * (x h).map g = x (g * h) := by
   constructor
@@ -91,10 +93,11 @@ theorem twistedBoundary_eq_one_iff
   · intro hδ
     rw [twistedBoundary_apply, hδ, Matrix.mul_nonsing_inv _ hx]
 
-/-- The twisted boundary read in `𝔽₂`: it is `0` at the identity and `1` elsewhere.  When
-the boundary is a sign matrix, this is precisely its exponent. -/
+/-- The twisted boundary read in `𝔽₂`: it is `0` at the identity and `1` elsewhere.  When `K`
+has characteristic different from two and the boundary is a sign matrix `±1`, this is precisely
+its exponent. -/
 noncomputable def twistedBoundaryF2
-    (x : AbsoluteGaloisGroup K → Matrix (Fin 2) (Fin 2) (SeparableClosure K))
+    (x : AbsoluteGaloisGroup K → Matrix n n (SeparableClosure K))
     (q : AbsoluteGaloisGroup K × AbsoluteGaloisGroup K) : ZMod 2 := by
   classical
   exact if twistedBoundary x q = 1 then 0 else 1
@@ -102,7 +105,7 @@ noncomputable def twistedBoundaryF2
 /-- The mod-two twisted boundary vanishes exactly when the matrix boundary is the identity. -/
 @[simp]
 theorem twistedBoundaryF2_eq_zero_iff
-    (x : AbsoluteGaloisGroup K → Matrix (Fin 2) (Fin 2) (SeparableClosure K))
+    (x : AbsoluteGaloisGroup K → Matrix n n (SeparableClosure K))
     (q : AbsoluteGaloisGroup K × AbsoluteGaloisGroup K) :
     twistedBoundaryF2 x q = 0 ↔ twistedBoundary x q = 1 := by
   classical
@@ -111,7 +114,7 @@ theorem twistedBoundaryF2_eq_zero_iff
 /-- The mod-two twisted boundary is `1` exactly when the matrix boundary is not the identity. -/
 @[simp]
 theorem twistedBoundaryF2_eq_one_iff
-    (x : AbsoluteGaloisGroup K → Matrix (Fin 2) (Fin 2) (SeparableClosure K))
+    (x : AbsoluteGaloisGroup K → Matrix n n (SeparableClosure K))
     (q : AbsoluteGaloisGroup K × AbsoluteGaloisGroup K) :
     twistedBoundaryF2 x q = 1 ↔ twistedBoundary x q ≠ 1 := by
   classical
@@ -120,15 +123,15 @@ theorem twistedBoundaryF2_eq_one_iff
 /-- The mod-two twisted boundary vanishes exactly when the cochain satisfies the multiplicative
 one-cocycle equation at `(g, h)`. -/
 theorem twistedBoundaryF2_eq_zero_iff_mul
-    (x : AbsoluteGaloisGroup K → Matrix (Fin 2) (Fin 2) (SeparableClosure K))
+    (x : AbsoluteGaloisGroup K → Matrix n n (SeparableClosure K))
     (g h : AbsoluteGaloisGroup K) (hx : IsUnit (x (g * h)).det) :
     twistedBoundaryF2 x (g, h) = 0 ↔ x g * (x h).map g = x (g * h) :=
   (twistedBoundaryF2_eq_zero_iff x (g, h)).trans (twistedBoundary_eq_one_iff x g h hx)
 
 /-- Twisted conjugation of a cochain conjugates its boundary by the constant matrix. -/
 theorem twistedBoundary_conj
-    (x : AbsoluteGaloisGroup K → Matrix (Fin 2) (Fin 2) (SeparableClosure K))
-    (Q : Matrix (Fin 2) (Fin 2) (SeparableClosure K)) (hQ : IsUnit Q.det)
+    (x : AbsoluteGaloisGroup K → Matrix n n (SeparableClosure K))
+    (Q : Matrix n n (SeparableClosure K)) (hQ : IsUnit Q.det)
     (g h : AbsoluteGaloisGroup K) :
     twistedBoundary (fun j ↦ Q⁻¹ * x j * Q.map j) (g, h) =
       Q⁻¹ * twistedBoundary x (g, h) * Q := by
@@ -161,8 +164,8 @@ theorem twistedBoundary_conj
 
 /-- A scalar twisted boundary is unchanged by twisted conjugation. -/
 theorem twistedBoundary_conj_of_eq_scalar
-    (x : AbsoluteGaloisGroup K → Matrix (Fin 2) (Fin 2) (SeparableClosure K))
-    (Q : Matrix (Fin 2) (Fin 2) (SeparableClosure K)) (hQ : IsUnit Q.det)
+    (x : AbsoluteGaloisGroup K → Matrix n n (SeparableClosure K))
+    (Q : Matrix n n (SeparableClosure K)) (hQ : IsUnit Q.det)
     (g h : AbsoluteGaloisGroup K) (a : SeparableClosure K)
     (hx : twistedBoundary x (g, h) = a • 1) :
     twistedBoundary (fun j ↦ Q⁻¹ * x j * Q.map j) (g, h) = a • 1 := by
