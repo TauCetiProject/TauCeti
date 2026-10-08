@@ -17,19 +17,17 @@ import TauCeti.Algebra.AlgebraicGroup.Torus.Characterization
 /-!
 # A split maximal torus in the short-root G₂ carrier over 𝔽₃
 
-The rank-two weight torus of the short-root type-`G₂` carrier over `𝔽₃` is maximal on every
-geometric fiber. The proof transports geometric-fiber points to the existing matrix-valued
-carrier points. A competing torus gives a commutative point subgroup containing the weight
-torus; the weight torus is self-centralizing, so the two point subgroups agree. Reduced
-finite-type point separation then upgrades pointwise equality to equality of Hopf ideals.
-
-The coordinate morphism is reindexed from `Fin 2` to `ULift (Fin 2)` to match the standard
-rank-two coordinates required by `SplitMaximalTorus`.
+The rank-two weight torus of the short-root type-`G₂` carrier over `𝔽₃` is a split maximal
+torus: it is a closed split subtorus whose base change to every algebraically closed field is a
+maximal torus. Its coordinate morphism is written in the standard rank-two coordinates
+`ULift (Fin 2)` used by `SplitMaximalTorus`.
 
 ## Main declarations
 
 * `TauCeti.G2ShortRoot.PrimeField.weightTorusCoordinateMap`: restriction from the carrier to
   the standard rank-two split torus.
+* `TauCeti.G2ShortRoot.PrimeField.pointsMulEquiv_mapDomain_weightTorusCoordinateMap`: on
+  points, `weightTorusCoordinateMap` induces `weightTorusPoints`.
 * `TauCeti.G2ShortRoot.PrimeField.splitMaximalTorus`: the weight torus packaged as a chosen
   split maximal torus over `𝔽₃`.
 
@@ -37,9 +35,6 @@ rank-two coordinates required by `SplitMaximalTorus`.
 
 * J. E. Humphreys, *Linear Algebraic Groups*, §§16.1 and 26.3.
 * J. S. Milne, *Algebraic Groups* (2017), §§12 and 17.
-
-This supplies the type-`G₂` maximal-torus input for Layer 9, "Chevalley--Demazure group
-schemes, pinnings, and carrier recognition", of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -112,9 +107,7 @@ private def torusCoordinateMap : carrierAlgebra ⟶ generatorCodomain (.inr ()) 
 
 private theorem torusCoordinateMap_surjective : Function.Surjective torusCoordinateMap.hom := by
   apply Function.Surjective.of_comp (g := carrierQuotient.hom)
-  change Function.Surjective
-    ((CommHopfAlgCat.commonKernelLift generator (.inr ())).hom ∘ carrierQuotient.hom)
-  rw [← BialgHom.coe_comp, ← CommHopfAlgCat.hom_comp,
+  rw [torusCoordinateMap, ← BialgHom.coe_comp, ← CommHopfAlgCat.hom_comp,
     CommHopfAlgCat.mkQuotient_comp_commonKernelLift]
   exact generator_surjective (.inr ())
 
@@ -128,9 +121,7 @@ private theorem pointsMulEquiv_mapPoints_torusCoordinateMap
     pointsMulEquiv (CommAlgCat.of (ZMod 3) A)
         (AlgHom.mapDomain torusCoordinateMap.hom q) =
       weightTorusPoints A (SplitTorus.pointsMulEquiv q) := by
-  change pointsMulEquiv (CommAlgCat.of (ZMod 3) A)
-      ((CommHopfAlgCat.mapPointsFunctor torusCoordinateMap).app
-        (CommAlgCat.of (ZMod 3) A) q) = _
+  rw [AlgHom.mapDomain_apply, ← CommHopfAlgCat.mapPointsFunctor_app_apply, torusCoordinateMap]
   exact pointsMulEquiv_commonKernelLift_weightTorus A q
 
 private def geometricPointsMulEquiv (k : Type) [Field k] [Algebra (ZMod 3) k] :=
@@ -159,14 +150,10 @@ private theorem map_range_geometricTorusCoordinateMap (k : Type) [Field k]
   ext x
   constructor
   · rintro ⟨y, ⟨q, rfl⟩, rfl⟩
-    let A₀ := CommAlgCat.restrictScalarsObj
-      (algebraMap (ZMod 3) k) (CommAlgCat.of k k)
     let s := SplitTorus.baseChangePointsMulEquiv q
     refine ⟨s, ?_⟩
-    change weightTorusPoints k s = restrictScalarsPointsMulEquiv k
-        (pointsMulEquiv A₀
-          (CommHopfAlgCat.baseChangePointsMulEquiv (CommAlgCat.of k k) carrierAlgebra
-            (AlgHom.mapDomain (geometricTorusCoordinateMap k).hom q)))
+    rw [MulEquiv.coe_toMonoidHom, geometricPointsMulEquiv, MulEquiv.trans_apply,
+      MulEquiv.trans_apply]
     symm
     rw [geometricTorusCoordinateMap,
       CommHopfAlgCat.baseChangePointsMulEquiv_mapDomain]
@@ -176,18 +163,12 @@ private theorem map_range_geometricTorusCoordinateMap (k : Type) [Field k]
     simpa only [s, restrictScalarsSplitTorusPointsMulEquiv] using
       restrictScalarsSplitTorusPointsMulEquiv_baseChangePointsMulEquiv k q
   · rintro ⟨s, rfl⟩
-    let A₀ := CommAlgCat.restrictScalarsObj
-      (algebraMap (ZMod 3) k) (CommAlgCat.of k k)
     let q := (SplitTorus.baseChangePointsMulEquiv (k := ZMod 3) (K := k)
       (A := k) (σ := Fin 2)).symm s
     refine ⟨AlgHom.mapDomain (A := CommAlgCat.of k k)
       (geometricTorusCoordinateMap k).hom q, ⟨q, rfl⟩, ?_⟩
-    change restrictScalarsPointsMulEquiv k
-        (pointsMulEquiv A₀
-          (CommHopfAlgCat.baseChangePointsMulEquiv (CommAlgCat.of k k) carrierAlgebra
-            (AlgHom.mapDomain (geometricTorusCoordinateMap k).hom q))) =
-      weightTorusPoints k s
-    rw [geometricTorusCoordinateMap,
+    rw [MulEquiv.coe_toMonoidHom, geometricPointsMulEquiv, MulEquiv.trans_apply,
+      MulEquiv.trans_apply, geometricTorusCoordinateMap,
       CommHopfAlgCat.baseChangePointsMulEquiv_mapDomain,
       pointsMulEquiv_mapPoints_torusCoordinateMap,
       restrictScalarsPointsMulEquiv_weightTorusPoints]
@@ -288,6 +269,30 @@ theorem weightTorusCoordinateMap_surjective :
   exact (ConcreteCategory.bijective_of_isIso weightTorusCoordinateIso.hom).2.comp
     torusCoordinateMap_surjective
 
+/-- Under the carrier point equivalence, the point map induced by `weightTorusCoordinateMap` is
+`weightTorusPoints`, read in the standard coordinates `ULift (Fin 2)` of the split torus. -/
+theorem pointsMulEquiv_mapDomain_weightTorusCoordinateMap
+    (A : Type) [CommRing A] [Algebra (ZMod 3) A]
+    (q : HopfAlgebra.points (R := ZMod 3)
+      (H := (DiagonalizableGroup.coordinateRing (ZMod 3)
+        (SplitTorus.characterGroup (ULift.{0} (Fin 2)))).obj) (CommAlgCat.of (ZMod 3) A)) :
+    pointsMulEquiv (CommAlgCat.of (ZMod 3) A)
+        (AlgHom.mapDomain weightTorusCoordinateMap.hom q) =
+      weightTorusPoints A (fun i ↦ SplitTorus.pointsMulEquiv q (ULift.up i)) := by
+  rw [weightTorusCoordinateMap, CommHopfAlgCat.hom_comp, AlgHom.mapDomain_comp,
+    MonoidHom.comp_apply, pointsMulEquiv_mapPoints_torusCoordinateMap]
+  congr 1
+  funext i
+  ext
+  simp only [weightTorusCoordinateIso, MonoidAlgebra.domCongrBialgEquiv,
+    weightTorusCharacterEquiv, CommHopfAlgCat.isoMk_hom, ConcreteCategory.hom_ofHom,
+    AlgHom.mapDomain_apply, SplitTorus.pointsMulEquiv_apply_coe, AlgHom.coe_comp,
+    BialgHom.coe_toAlgHom, BialgHom.coe_coe, Function.comp_apply, BialgEquiv.ofAlgEquiv_apply,
+    AlgEquiv.toEquiv_eq_coe, Equiv.toFun_as_coe, EquivLike.coe_coe,
+    MonoidAlgebra.domCongr_single]
+  rw [AddEquiv.toMultiplicative_apply_apply, toAdd_ofAdd, Finsupp.domCongr_apply,
+    Finsupp.equivMapDomain_single, Equiv.ulift_symm_apply]
+
 private theorem ker_weightTorusCoordinateMap :
     HopfIdeal.kerOfSurjective weightTorusCoordinateMap.hom
         weightTorusCoordinateMap_surjective = torusDefiningIdeal := by
@@ -323,7 +328,7 @@ private theorem baseChange_torusDefiningIdeal (k : Type) [Field k] [Algebra (ZMo
 
 /-- The rank-two weight torus is a chosen split maximal torus in the short-root type-`G₂`
 carrier over `𝔽₃`. -/
-@[expose] def splitMaximalTorus : SplitMaximalTorus (ZMod 3) carrierAlgebra 2 where
+def splitMaximalTorus : SplitMaximalTorus (ZMod 3) carrierAlgebra 2 where
   coordinateMap := weightTorusCoordinateMap
   surjective := weightTorusCoordinateMap_surjective
   maximal := by
@@ -334,19 +339,9 @@ carrier over `𝔽₃`. -/
 /-- The chosen split maximal torus uses the reindexed weight-torus coordinate morphism. -/
 @[simp]
 theorem splitMaximalTorus_coordinateMap :
-    splitMaximalTorus.coordinateMap = weightTorusCoordinateMap :=
+    splitMaximalTorus.coordinateMap = weightTorusCoordinateMap := by
+  unfold splitMaximalTorus
   rfl
-
-/-- The chosen split maximal torus is cut out by the kernel of its weight-torus coordinate
-morphism. -/
-@[simp]
-theorem splitMaximalTorus_definingIdeal :
-    splitMaximalTorus.definingIdeal =
-      HopfIdeal.kerOfSurjective weightTorusCoordinateMap.hom
-        weightTorusCoordinateMap_surjective := by
-  ext x
-  rw [SplitMaximalTorus.mem_definingIdeal, splitMaximalTorus_coordinateMap,
-    HopfIdeal.mem_kerOfSurjective]
 
 end
 
