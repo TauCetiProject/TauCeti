@@ -39,12 +39,6 @@ nontrivial subgroup of local square classes.
 public section
 
 namespace TauCeti
-
--- Cache Mathlib's commutative-ring instance for the p-adic spinor-norm coordinates.
--- Imported simp rules otherwise repeat the general rank-condition instance search.
-private instance padicStrongRankCondition (p : Nat.Primes) : StrongRankCondition ℚ_[p] :=
-  commRing_strongRankCondition ℚ_[p]
-
 namespace QuadraticMap
 
 open _root_.QuadraticMap
@@ -64,7 +58,6 @@ variable {V : Type*} [AddCommGroup V] [Module ℚ V] [FiniteDimensional ℚ V]
   {Q : QuadraticForm ℚ V} (U : OrthogonalCompactOpens Q)
 
 /-- The local spinor norm restricted to the derived special orthogonal reference subgroup. -/
-@[expose]
 def OrthogonalCompactOpens.localSpinorNorm (hQ : Q.Nondegenerate) (p : Nat.Primes) :
     U.specialOrthogonal p →* Multiplicative (SquareClassGroup ℚ_[p]) :=
   (CliffordAlgebra.spinorNorm (Q.baseChange ℚ_[p])
@@ -75,7 +68,8 @@ def OrthogonalCompactOpens.localSpinorNorm (hQ : Q.Nondegenerate) (p : Nat.Prime
 theorem OrthogonalCompactOpens.localSpinorNorm_apply (hQ : Q.Nondegenerate)
     (p : Nat.Primes) (g : U.specialOrthogonal p) :
     U.localSpinorNorm hQ p g = CliffordAlgebra.spinorNorm (Q.baseChange ℚ_[p])
-      (QuadraticForm.Nondegenerate.baseChange hQ) g := rfl
+      (QuadraticForm.Nondegenerate.baseChange hQ) g := by
+  rw [localSpinorNorm, MonoidHom.comp_apply, Subgroup.subtype_apply]
 
 /-- The reference subgroup in the local square-class group is the image of the derived special
 orthogonal reference subgroup under the spinor norm. -/

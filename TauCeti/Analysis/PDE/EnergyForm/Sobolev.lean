@@ -597,7 +597,6 @@ theorem norm_energyFormH1L_le_of_bounds
 
 /-- The energy form on `H¹₀(Ω)` as a continuous bilinear form, obtained by restricting
 `energyFormH1L` along the closed-subspace inclusion. -/
-@[expose]
 def energyFormH1L0
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
     W1p0 mu Omega 2 →L[ℝ] W1p0 mu Omega 2 →L[ℝ] ℝ :=
