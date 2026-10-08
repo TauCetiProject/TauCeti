@@ -30,8 +30,12 @@ are the positive-degree counterparts of `explicitRes0_eq_explicitMap0` and
 `explicitCoeff2Equiv` upgrade a continuous equivariant additive equivalence of coefficient modules
 to additive equivalences on explicit `H¹` and `H²`, and `explicitCoeff1_bijective` and
 `explicitCoeff2_bijective` record that a bijective equivariant homomorphism of discrete coefficient
-modules induces bijections. Finally, `explicitCoeff2_eq_card_nsmul` records that the norm of a
-finite normal subgroup `N`, as a coefficient map, acts on `H²` as multiplication by `#N`.
+modules induces bijections. A coefficient map which is multiplication by `k` acts on `H¹` and
+`H²` as multiplication by `k` (`explicitCoeff1_eq_nsmul`, `explicitCoeff2_eq_nsmul`); hence when
+multiplication by `k` is a homeomorphism of the coefficients, it is bijective on `H¹` and `H²`
+(`nsmul_right_bijective_H1_of_homeomorph`, `nsmul_right_bijective_H2_of_homeomorph`). Finally,
+`explicitCoeff2_eq_card_nsmul` records that the norm of a finite normal subgroup `N`, as a
+coefficient map, acts on `H²` as multiplication by `#N`.
 
 This is functoriality of the *explicit* model: the carriers are the quotients `Z¹/B¹` and `Z²/B²`
 of plain continuous cochains. Mathlib's `ContinuousCohomology.map` is the compatible-pair pullback
@@ -725,6 +729,16 @@ theorem explicitCoeff1_id :
     explicitCoeff1 G M (DistribMulActionHom.id G) continuous_id = AddMonoidHom.id _ :=
   explicitMap1_id G M fun _ _ => rfl
 
+/-- A coefficient map which is multiplication by `k` on `M` induces multiplication by `k` on
+explicit `H¹`. -/
+theorem explicitCoeff1_eq_nsmul (f : M →+[G] M) (hf : Continuous f) {k : ℕ}
+    (hk : ∀ m, f m = k • m) (x : H1 G M) : explicitCoeff1 G M f hf x = k • x := by
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    rw [explicitCoeff1_mk, ← QuotientAddGroup.mk_nsmul]
+    exact congrArg (fun z : Z1 G M ↦ (z : H1 G M))
+      (Subtype.ext (funext fun g ↦ (cocyclesMap1_apply _ _ _ _ _ _ _ _ c g).trans (hk _)))
+
 /-- Coefficient maps on explicit `H¹` respect composition. -/
 theorem explicitCoeff1_comp {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
     [IsTopologicalAddGroup N] [DistribMulAction G N] [ContinuousSMul G N]
@@ -918,6 +932,34 @@ theorem explicitCoeff2_bijective [ContinuousMul G] [DiscreteTopology M] {N : Typ
     exact congrArg (fun φ : M →+[G] N => explicitCoeff2 G M φ continuous_of_discreteTopology x)
       (AddEquiv.ofBijective_toDistribMulActionHom hf)
   rwa [e] at h
+
+/-- If multiplication by `k` is a homeomorphism of `M`, then multiplication by `k` is bijective
+on explicit `H¹`. For instance, this applies to `k` prime to `p` on an abelian pro-`p` group. -/
+theorem nsmul_right_bijective_H1_of_homeomorph {k : ℕ} (e : M ≃ₜ M) (he : ∀ m, e m = k • m) :
+    Function.Bijective fun x : H1 G M ↦ k • x := by
+  let f : M ≃+ M := { e.toEquiv with map_add' := fun a b ↦ by simp [he] }
+  have hf : ∀ (g : G) (m : M), f (g • m) = g • f m := fun g m ↦ by
+    simp [f, he, smul_comm g k m]
+  -- `f` and its inverse have the underlying functions of `e` and `e.symm`.
+  have hc : Continuous f := e.continuous
+  have hc' : Continuous f.symm := e.symm.continuous
+  convert (explicitCoeff1Equiv G M f hc hc' hf).bijective using 1
+  exact funext fun x ↦ ((explicitCoeff1Equiv_apply G M f hc hc' hf x).trans
+    (explicitCoeff1_eq_nsmul G M _ hc he x)).symm
+
+/-- If multiplication by `k` is a homeomorphism of `M`, then multiplication by `k` is bijective
+on explicit `H²`. For instance, this applies to `k` prime to `p` on an abelian pro-`p` group. -/
+theorem nsmul_right_bijective_H2_of_homeomorph [ContinuousMul G] {k : ℕ} (e : M ≃ₜ M)
+    (he : ∀ m, e m = k • m) : Function.Bijective fun x : H2 G M ↦ k • x := by
+  let f : M ≃+ M := { e.toEquiv with map_add' := fun a b ↦ by simp [he] }
+  have hf : ∀ (g : G) (m : M), f (g • m) = g • f m := fun g m ↦ by
+    simp [f, he, smul_comm g k m]
+  -- `f` and its inverse have the underlying functions of `e` and `e.symm`.
+  have hc : Continuous f := e.continuous
+  have hc' : Continuous f.symm := e.symm.continuous
+  convert (explicitCoeff2Equiv G M f hc hc' hf).bijective using 1
+  exact funext fun x ↦ ((explicitCoeff2Equiv_apply G M f hc hc' hf x).trans
+    (explicitCoeff2_eq_nsmul G M _ hc he x)).symm
 
 end CoefficientMaps
 

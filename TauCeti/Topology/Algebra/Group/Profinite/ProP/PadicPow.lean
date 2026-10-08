@@ -39,6 +39,8 @@ abelian pro-`p` groups is stated.
 * `TauCeti.IsProP.module`: the `ℤ_[p]`-module structure on an abelian pro-`p` group.
 * `TauCeti.IsProP.padicPowHomeomorph`: for a unit `u` of `ℤ_[p]`, the power `a ↦ a ^ u` as a
   homeomorphism of the group, with inverse `a ↦ a ^ u⁻¹`.
+* `TauCeti.IsProP.powHomeomorph`: for `n` prime to `p`, the natural power `a ↦ a ^ n` as a
+  homeomorphism of the group.
 
 ## Main results
 
@@ -412,6 +414,18 @@ theorem closedZpowers_padicPow (hA : IsProP p A) (a : A) (u : ℤ_[p]ˣ) :
     closedZpowers (hA.padicPow a u) = closedZpowers a :=
   (hA.closedZpowers_padicPow_le a u).antisymm
     (by simpa using hA.closedZpowers_padicPow_le (hA.padicPow a u) ↑u⁻¹)
+
+/-- **Powers prime to `p` are homeomorphisms.** For `n` prime to `p` the natural number `n` is a
+unit of `ℤ_[p]`, and the `n`-th power map of `A` is `TauCeti.IsProP.padicPowHomeomorph` at that
+unit. This is the pro-`p` counterpart of `IsPGroup.powEquiv` for finite `p`-groups. -/
+noncomputable def powHomeomorph (hA : IsProP p A) {n : ℕ} (hn : p.Coprime n) : A ≃ₜ A :=
+  hA.padicPowHomeomorph (PadicInt.isUnit_iff.mpr (PadicInt.norm_natCast_eq_one_iff.mpr hn)).unit
+
+/-- The homeomorphism `TauCeti.IsProP.powHomeomorph hn` is the `n`-th power map. -/
+@[simp]
+theorem powHomeomorph_apply (hA : IsProP p A) {n : ℕ} (hn : p.Coprime n) (a : A) :
+    hA.powHomeomorph hn a = a ^ n := by
+  rw [powHomeomorph, padicPowHomeomorph_apply, IsUnit.unit_spec, padicPow_natCast]
 
 /-! ### Quotients -/
 
