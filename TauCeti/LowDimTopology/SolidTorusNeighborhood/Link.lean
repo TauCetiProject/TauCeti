@@ -24,8 +24,8 @@ disjoint tubular neighbourhoods of the link.
 * `TauCeti.exists_isSolidTorusLinkNeighborhood` constructs these neighbourhoods for a finite
   family of pairwise disjoint `C²` embedded circles in `ℝ³`.
 
-The resulting disjoint solid-torus images provide the componentwise neighborhoods used when forming a
-link exterior. The canonical `SmoothLinkEmbedding` presentation has the same
+The resulting disjoint solid-torus images provide the componentwise neighborhoods used when
+forming a link exterior. The canonical `SmoothLinkEmbedding` presentation has the same
 existence result via `SmoothLinkEmbedding.exists_isSolidTorusLinkNeighborhood`.
 -/
 
