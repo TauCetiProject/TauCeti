@@ -21,10 +21,10 @@ The algebraic closure `PadicAlgCl p` of `ℚ_p` carries the spectral norm, which
 `p`-adic field it generates.
 
 * A `ℚ`-subfield `K` is dense in its `ℚ_p`-span.
-* For `K / ℚ` finite Galois, a `ℚ`-automorphism of `PadicAlgCl p` preserving the norm on `K`
+* For `K / ℚ` finite Galois, a `ℚ`-embedding of `K` into `PadicAlgCl p` preserving the norm
   agrees on `K` with an element of `G_{ℚ_p}`: the embeddings of `K` inducing the given absolute
-  value are the conjugates under `G_{ℚ_p}`. The fixed field in `K` of the image of `G_{ℚ_p}` lies
-  in `ℚ_p`, and `ℚ` is dense in `ℚ_p`, so a norm-preserving `τ` fixes it.
+  value are the conjugates under `G_{ℚ_p}`. These are the embeddings whose product computes the
+  norm down to `ℚ_p`.
 * The norm `N_{K/ℚ}(Y)` is close to `N_{M/ℚ_p}(y)`, for `M` the field `K` generates over `ℚ_p`,
   when `Y` is close to `y` and every embedding of `K` not coming from `G_{ℚ_p}` sends `Y` close to
   `1`; and `N_{K/ℚ}(Y)` is close to `1` in `ℚ_q` when every embedding into `PadicAlgCl q` sends
@@ -32,6 +32,7 @@ The algebraic closure `PadicAlgCl p` of `ℚ_p` carries the spectral norm, which
 
 ## Main results
 
+* `AlgEquiv.norm_apply`: elements of `G_{ℚ_p}` preserve the norm of `PadicAlgCl p`.
 * `TauCeti.exists_mem_norm_sub_lt_of_mem_adjoin`
 * `TauCeti.exists_algEquiv_apply_eq_of_norm_apply_eq`
 * `TauCeti.algebraMap_norm_eq_prod_embeddings_of_le_adjoin`: the norm down to `ℚ_p` of an element
@@ -46,15 +47,19 @@ public section
 
 open NumberField
 
-namespace TauCeti
+namespace AlgEquiv
 
 /-- `ℚ_[p]`-automorphisms of `AlgebraicClosure ℚ_[p]` preserve its (spectral) norm. -/
 @[simp]
-theorem norm_algEquiv_apply {p : ℕ} [Fact p.Prime]
+theorem norm_apply {p : ℕ} [Fact p.Prime]
     (σ : AlgebraicClosure ℚ_[p] ≃ₐ[ℚ_[p]] AlgebraicClosure ℚ_[p]) (x : AlgebraicClosure ℚ_[p]) :
     ‖σ x‖ = ‖x‖ := by
   rw [← PadicAlgCl.spectralNorm_eq, ← PadicAlgCl.spectralNorm_eq]
   exact (spectralNorm_eq_of_equiv σ x).symm
+
+end AlgEquiv
+
+namespace TauCeti
 
 open scoped Classical in
 /-- Let `K ⊆ M` with `M` contained in the field `K` generates over `ℚ_p`. The norm from `M` to
@@ -142,7 +147,7 @@ theorem norm_algebraNorm_sub_algebraNorm_lt (p : ℕ) [Fact p.Prime]
     obtain ⟨h, hh⟩ := MulAction.exists_smul_eq
       (AlgebraicClosure ℚ_[p] ≃ₐ[ℚ_[p]] AlgebraicClosure ℚ_[p]) M.val ψ
     rw [← hh, AlgEquiv.smul_algHom_apply, AlgEquiv.smul_algHom_apply, IntermediateField.coe_val,
-      ← map_div₀, ← map_one h, ← map_sub, norm_algEquiv_apply, div_sub_one hy',
+      ← map_div₀, ← map_one h, ← map_sub, h.norm_apply, div_sub_one hy',
       norm_div]
     exact (div_lt_iff₀ (norm_pos_iff.2 hy')).2 hYy
   have hlt : ‖a - b‖ < ε * ‖b‖ := by
@@ -199,10 +204,8 @@ theorem algHom_apply_eq_of_norm_apply_eq_of_mem_bot (p : ℕ) [Fact p.Prime]
 
 /-- **Embeddings with the same absolute value are conjugate under `G_{ℚ_p}`.** Let
 `K ⊆ PadicAlgCl p` be finite Galois over `ℚ`. A `ℚ`-embedding of `K` into `PadicAlgCl p` preserving
-the norm agrees on `K` with an element of `G_{ℚ_p}`.
-
-The embedding is an automorphism of `K`. It fixes the field cut out in `K` by the restrictions of
-`G_{ℚ_p}`, which lies in `ℚ_p`, so by Galois theory in `K / ℚ` it is such a restriction. -/
+the norm agrees on `K` with an element of `G_{ℚ_p}`, so these are exactly the embeddings
+contributing to the norm down to `ℚ_p` in `algebraMap_norm_eq_prod_embeddings_of_le_adjoin`. -/
 theorem exists_algEquiv_apply_eq_of_norm_apply_eq (p : ℕ) [Fact p.Prime]
     (K : IntermediateField ℚ (AlgebraicClosure ℚ_[p])) [FiniteDimensional ℚ K] [IsGalois ℚ K]
     (φ : K →ₐ[ℚ] AlgebraicClosure ℚ_[p])
@@ -220,6 +223,8 @@ theorem exists_algEquiv_apply_eq_of_norm_apply_eq (p : ℕ) [Fact p.Prime]
     (Algebra.IsAlgebraic.algHom_bijective _)
   have hφ' (y : K) : (φ' y : AlgebraicClosure ℚ_[p]) = φ y :=
     AlgHom.coe_codRestrict φ K.toSubalgebra hmem y
+  -- `φ'` fixes the field cut out in `K` by the restrictions of `G_{ℚ_p}`, since that field lies
+  -- in `ℚ_p`; so by Galois theory in `K / ℚ` it is such a restriction.
   have key : φ' ∈ r.range := by
     rw [← IntermediateField.fixingSubgroup_fixedField r.range,
       IntermediateField.mem_fixingSubgroup_iff]
