@@ -20,11 +20,11 @@ disjoint tubular neighbourhoods of the link.
 ## Main declarations
 
 * `TauCeti.IsSolidTorusLinkNeighborhood` records solid-torus neighbourhoods of every component
-  together with pairwise disjoint closed solid-torus images.
+  together with pairwise disjoint images of the closed solid tori.
 * `TauCeti.exists_isSolidTorusLinkNeighborhood` constructs these neighbourhoods for a finite
   family of pairwise disjoint `C²` embedded circles in `ℝ³`.
 
-The resulting disjoint closed images provide the componentwise neighborhoods used when forming a
+The resulting disjoint solid-torus images provide the componentwise neighborhoods used when forming a
 link exterior. The canonical `SmoothLinkEmbedding` presentation has the same
 existence result via `SmoothLinkEmbedding.exists_isSolidTorusLinkNeighborhood`.
 -/
@@ -38,12 +38,12 @@ namespace TauCeti
 
 variable {ι X : Type*} [TopologicalSpace X]
 
-/-- A family of solid-torus neighbourhoods whose closed images are pairwise disjoint. -/
+/-- A family of solid-torus neighbourhoods whose solid-torus images are pairwise disjoint. -/
 structure IsSolidTorusLinkNeighborhood (f : ι → Circle → X)
     (Φ : ι → SolidTorus → X) : Prop where
   /-- Each component has a solid-torus neighbourhood. -/
   neighborhood : ∀ i, IsSolidTorusNeighborhood (f i) (Φ i)
-  /-- The closed solid torus images of distinct components are disjoint. -/
+  /-- The images of the closed solid tori for distinct components are disjoint. -/
   pairwiseDisjoint_range : Pairwise (Disjoint on fun i => range (Φ i))
 
 namespace IsSolidTorusLinkNeighborhood
