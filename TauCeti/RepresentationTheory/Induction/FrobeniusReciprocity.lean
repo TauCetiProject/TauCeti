@@ -90,21 +90,22 @@ This is Mathlib's `Rep.indResHomEquiv`, the linear form of the adjunction
 
 It is private: only `finrank_hom_indFDRep` is intended as API. -/
 private noncomputable def indResFDRepHomEquiv [S.FiniteIndex] (A : FDRep k S) (B : FDRep k G) :
-    (indFDRep A ⟶ B) ≃ₗ[k] (A ⟶ resFDRep S B) :=
-  -- `resFDRep` is an abbreviation for `Action.res`, so its image under `forget₂` is `Rep.res`
+    (indFDRep A ⟶ B) ≃ₗ[k] (A ⟶ Subgroup.resFDRep S B) :=
+  -- `Subgroup.resFDRep` is an abbreviation for `Action.res`, so its image under `forget₂` is
+  -- `Rep.res`
   -- definitionally and the restriction side needs no comparison isomorphism.
   -- The universes of `Rep.indResHomEquiv` are pinned: left to unification, the constraint
   -- `max ?w u u = u` makes elaborating this composite cost about a second (see #8353).
   (FDRep.forget₂HomLinearEquiv (indFDRep A) B).symm.trans <|
     ((Linear.homCongr k (indFDRepForgetIso A) (Iso.refl _)).trans
       (Rep.indResHomEquiv.{u, u, u, u} S.subtype _ _)).trans
-        (FDRep.forget₂HomLinearEquiv A (resFDRep S B))
+        (FDRep.forget₂HomLinearEquiv A (Subgroup.resFDRep S B))
 
 /-- The intertwining space out of an induced representation has the same dimension as the
 intertwining space into the corresponding restriction. This is the quantitative content of
 Frobenius reciprocity, and holds over an arbitrary field. -/
 theorem finrank_hom_indFDRep [S.FiniteIndex] (A : FDRep k S) (B : FDRep k G) :
-    Module.finrank k (indFDRep A ⟶ B) = Module.finrank k (A ⟶ resFDRep S B) :=
+    Module.finrank k (indFDRep A ⟶ B) = Module.finrank k (A ⟶ Subgroup.resFDRep S B) :=
   (indResFDRepHomEquiv A B).finrank_eq
 
 /-- **The second reciprocity**, available because induction from a finite-index subgroup is also a
@@ -116,13 +117,13 @@ with coinduction; the pair is the finite-dimensional shadow of `Rep.resIndAdjunc
 
 It is private: only `finrank_hom_resFDRep` is intended as API. -/
 private noncomputable def resIndFDRepHomEquiv [S.FiniteIndex] (A : FDRep k S) (B : FDRep k G) :
-    (resFDRep S B ⟶ A) ≃ₗ[k] (B ⟶ indFDRep A) :=
+    (Subgroup.resFDRep S B ⟶ A) ≃ₗ[k] (B ⟶ indFDRep A) :=
   -- `Rep.indCoindIso` picks coset representatives, so it wants the coset relation to be decidable.
   -- The universes of `Rep.resCoindHomEquiv` and `Rep.indCoindIso` are pinned: left to
   -- unification, the constraints `max ?w u = u` make this composite cost about a second
   -- (see #8353).
   letI : DecidableRel ⇑(QuotientGroup.rightRel S) := Classical.decRel _
-  (FDRep.forget₂HomLinearEquiv (resFDRep S B) A).symm.trans <|
+  (FDRep.forget₂HomLinearEquiv (Subgroup.resFDRep S B) A).symm.trans <|
     (Rep.resCoindHomEquiv.{u, u, u, u} S.subtype _ _).trans <|
       (Linear.homCongr k (Iso.refl _)
         ((indFDRepForgetIso A).trans (Rep.indCoindIso.{u, u, u} _)).symm).trans
@@ -130,7 +131,7 @@ private noncomputable def resIndFDRepHomEquiv [S.FiniteIndex] (A : FDRep k S) (B
 
 /-- The dimension form of the second reciprocity. -/
 theorem finrank_hom_resFDRep [S.FiniteIndex] (A : FDRep k S) (B : FDRep k G) :
-    Module.finrank k (resFDRep S B ⟶ A) = Module.finrank k (B ⟶ indFDRep A) :=
+    Module.finrank k (Subgroup.resFDRep S B ⟶ A) = Module.finrank k (B ⟶ indFDRep A) :=
   (resIndFDRepHomEquiv A B).finrank_eq
 
 end HomSpaces
@@ -159,11 +160,11 @@ theorem frobenius_reciprocity [Fintype G] (hG : IsUnit (Nat.card G : k))
           (ClassFunction.ofFDRep B) := (ClassFunction.characterPairing_ofFDRep _ _).symm
     _ = (Module.finrank k (B ⟶ indFDRep A) : k) :=
         ClassFunction.characterPairing_ofFDRep_eq_finrank _ _
-    _ = (Module.finrank k (resFDRep S B ⟶ A) : k) := by rw [finrank_hom_resFDRep]
+    _ = (Module.finrank k (Subgroup.resFDRep S B ⟶ A) : k) := by rw [finrank_hom_resFDRep]
     _ = ClassFunction.characterPairing (ClassFunction.ofFDRep A)
-          (ClassFunction.ofFDRep (resFDRep S B)) :=
+          (ClassFunction.ofFDRep (Subgroup.resFDRep S B)) :=
         (ClassFunction.characterPairing_ofFDRep_eq_finrank _ _).symm
-    _ = (Nat.card S : k)⁻¹ * ∑ s : S, A.character s * (resFDRep S B).character s⁻¹ :=
+    _ = (Nat.card S : k)⁻¹ * ∑ s : S, A.character s * (Subgroup.resFDRep S B).character s⁻¹ :=
         ClassFunction.characterPairing_ofFDRep _ _
     _ = (Nat.card S : k)⁻¹ * ∑ s : S, A.character s * B.character ((s : G)⁻¹) := by simp
 
@@ -175,7 +176,7 @@ theorem characterPairing_indFDRep [Fintype G] (hG : IsUnit (Nat.card G : k))
     ClassFunction.characterPairing (ClassFunction.ofFDRep (indFDRep A))
         (ClassFunction.ofFDRep B) =
       ClassFunction.characterPairing (ClassFunction.ofFDRep A)
-        (ClassFunction.ofFDRep (resFDRep S B)) := by
+        (ClassFunction.ofFDRep (Subgroup.resFDRep S B)) := by
   rw [ClassFunction.characterPairing_apply, ClassFunction.characterPairing_apply]
   simpa using frobenius_reciprocity hG A B
 
@@ -185,11 +186,11 @@ open scoped Classical in
 `characterPairing_indFDRep` with both sides flipped. -/
 theorem characterPairing_resFDRep [Fintype G] (hG : IsUnit (Nat.card G : k))
     (A : FDRep k S) (B : FDRep k G) :
-    ClassFunction.characterPairing (ClassFunction.ofFDRep (resFDRep S B))
+    ClassFunction.characterPairing (ClassFunction.ofFDRep (Subgroup.resFDRep S B))
         (ClassFunction.ofFDRep A) =
       ClassFunction.characterPairing (ClassFunction.ofFDRep B)
         (ClassFunction.ofFDRep (indFDRep A)) := by
-  rw [ClassFunction.characterPairing_symm (ClassFunction.ofFDRep (resFDRep S B)),
+  rw [ClassFunction.characterPairing_symm (ClassFunction.ofFDRep (Subgroup.resFDRep S B)),
     ClassFunction.characterPairing_symm (ClassFunction.ofFDRep B)]
   exact (characterPairing_indFDRep hG A B).symm
 

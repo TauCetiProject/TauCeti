@@ -63,7 +63,8 @@ theorem nonempty_iso_of_liesOver_inertia_of_nonempty_iso_indFDRep
   by_contra hAB
   have hterm (D : DoubleCoset.Quotient (inertia V : Set G) (inertia V : Set G)) :
       Module.finrank k
-          (resFDRep ((mackeySubgroup D.out (inertia V) (inertia V)).subgroupOf (inertia V)) A ⟶
+          (Subgroup.resFDRep
+            ((mackeySubgroup D.out (inertia V) (inertia V)).subgroupOf (inertia V)) A ⟶
             (Action.res (FGModuleCat k)
               (mackeyToH D.out (inertia V) (inertia V))).obj B) = 0 := by
     by_cases hs : D.out ∈ inertia V

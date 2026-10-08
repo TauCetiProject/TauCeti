@@ -612,7 +612,8 @@ theorem energyFormH1L0_apply
     (u v : W1p0 mu Omega 2) :
     energyFormH1L0 hcoeff u v =
       energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) := by
-  rw [energyFormH1L0, ContinuousLinearMap.bilinearComp_apply, energyFormH1L_apply]
+  unfold energyFormH1L0
+  rw [ContinuousLinearMap.bilinearComp_apply, energyFormH1L_apply]
   simp only [Submodule.subtypeL_apply]
 
 /-- **Symmetry of the bundled `H¹₀` energy form.**  Only symmetry of `energyFormH1` at the

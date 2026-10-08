@@ -202,12 +202,7 @@ type. -/
 instance locallyOfFiniteType_groupScheme :
     AlgebraicGeometry.LocallyOfFiniteType (groupScheme R n).X.hom := by
   unfold groupScheme
-  exact FiniteTypeCommHopfAlgCat.locallyOfFiniteType_quotientSpec
-    (⟨GeneralLinear.coordinateHopfAlgebra R n, by
-        rw [← GeneralLinear.finiteTypeCoordinateHopfAlgebra_obj]
-        exact (GeneralLinear.finiteTypeCoordinateHopfAlgebra R n).property⟩ :
-      FiniteTypeCommHopfAlgCat R)
-    (definingHopfIdeal R n)
+  infer_instance
 
 /-! ### Algebra-valued points -/
 

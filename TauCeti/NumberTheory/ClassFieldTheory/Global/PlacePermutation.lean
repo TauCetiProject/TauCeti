@@ -74,15 +74,7 @@ theorem herbrandQuotient_ofMulAction_primesAbove
         ∏ v : S, (Module.finrank (v.1.adicCompletion K) ((w v).1.adicCompletion L) : ℚ) := by
   let e := ofMulActionIsoCongr ℤ (sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) ↑S)
     (sigmaPrimesOverEquivPrimesAbove_smul K L ↑S)
-  have h : TateCohomology.herbrandQuotient
-      (Rep.ofMulAction ℤ (L ≃ₐ[K] L) (Σ v : S, v.1.asIdeal.primesOver (𝓞 L))) =
-      TateCohomology.herbrandQuotient
-        (Rep.ofMulAction ℤ (L ≃ₐ[K] L) ↥(HeightOneSpectrum.primesAbove (𝓞 K) (𝓞 L) ↑S)) := by
-    simp only [TateCohomology.herbrandQuotient_def]
-    exact congrArg₂ (fun n d : ℕ ↦ (n : ℚ) / d)
-      (Nat.card_congr ((tateCohomologyFunctor 0).mapIso e).toLinearEquiv.toEquiv)
-      (Nat.card_congr ((tateCohomologyFunctor (-1)).mapIso e).toLinearEquiv.toEquiv)
-  rw [← h]
+  rw [← TateCohomology.herbrandQuotient_eq_of_iso e]
   exact herbrandQuotient_ofMulAction_sigma_primesOver S w
 
 end TauCeti.ClassFieldTheory

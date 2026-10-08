@@ -22,7 +22,7 @@ every real point `lambda` of the resolvent set of `A` is a point of the complex 
 `R(lambda, A_ℂ) = R(lambda, A)_ℂ`.
 
 No growth bound is needed; the proof goes through the componentwise description of the generator
-graph and the graph form of `TauCeti.LinearPMap.IsResolventAt`.
+graph and the graph form of `LinearPMap.IsResolventAt`.
 
 Together with the complex half-plane theory of
 `TauCeti/Analysis/Semigroups/Resolvent/Complex.lean`, applied to `S_ℂ` with the growth bound
