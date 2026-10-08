@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.AbsoluteValue.Equivalence
-public import Mathlib.NumberTheory.NumberField.InfinitePlace.Basic
 public import Mathlib.NumberTheory.Ostrowski
 
 /-!
@@ -26,15 +25,13 @@ value: two such that are equivalent are equal.
 
 * `TauCeti.exists_forall_apply_sub_lt`: simultaneous approximation for a finite set of absolute
   values in which equivalent ones are equal.
+* `AbsoluteValue.IsEquiv.eq_of_apply_eq`: equivalent absolute values agreeing at a nonzero element
+  where they are not `1` are equal.
 * `AbsoluteValue.IsEquiv.eq_of_isStandard`: equivalent absolute values with standard restrictions
   to `ℚ` are equal.
-* `NumberField.InfinitePlace.apply_ratCast_eq_real`: an infinite place restricts to the real
-  absolute value.
 -/
 
 public section
-
-open NumberField
 
 namespace TauCeti
 
@@ -53,18 +50,17 @@ theorem exists_forall_apply_sub_lt {F : Type*} [Field F] (S : Finset (AbsoluteVa
   have h := (dist_pi_lt_iff hε).mp hx ⟨v, hv⟩
   rwa [dist_comm, dist_eq_norm, WithAbs.norm_eq_apply_ofAbs, WithAbs.ofAbs_sub] at h
 
-/-- Two equivalent absolute values on a field of characteristic zero which agree on `ℚ`, and are
-not trivial there, are equal. -/
-theorem _root_.AbsoluteValue.IsEquiv.eq_of_forall_ratCast_eq {F : Type*} [Field F] [CharZero F]
-    {v w : AbsoluteValue F ℝ} (h : v.IsEquiv w) (hvw : ∀ r : ℚ, v r = w r) {r₀ : ℚ}
-    (hr₀ : r₀ ≠ 0) (hv : v r₀ ≠ 1) : v = w := by
+/-- Two equivalent absolute values on a field are equal as soon as they agree at a nonzero element
+at which they do not take the value `1`. -/
+theorem _root_.AbsoluteValue.IsEquiv.eq_of_apply_eq {F : Type*} [Field F]
+    {v w : AbsoluteValue F ℝ} (h : v.IsEquiv w) {x : F} (hx : x ≠ 0) (hv : v x ≠ 1)
+    (hvw : v x = w x) : v = w := by
   obtain ⟨c, hc, hcw⟩ := AbsoluteValue.isEquiv_iff_exists_rpow_eq.mp h
-  have hpos : 0 < v r₀ := v.pos (by exact_mod_cast hr₀)
-  have h1 : v r₀ ^ c = v r₀ ^ (1 : ℝ) := by
-    rw [Real.rpow_one, congrFun hcw (r₀ : F), hvw]
-  have hc1 : c = 1 := (Real.rpow_right_inj hpos hv).mp h1
-  ext x
-  rw [← congrFun hcw x, hc1, Real.rpow_one]
+  have h1 : v x ^ c = v x ^ (1 : ℝ) := by
+    rw [Real.rpow_one, congrFun hcw x, hvw]
+  have hc1 : c = 1 := (Real.rpow_right_inj (v.pos hx) hv).mp h1
+  ext y
+  rw [← congrFun hcw y, hc1, Real.rpow_one]
 
 /-- The standard absolute values on `ℚ`: the real one and the `q`-adic ones. -/
 def _root_.Rat.AbsoluteValue.IsStandard (a : AbsoluteValue ℚ ℝ) : Prop :=
@@ -117,8 +113,8 @@ theorem _root_.AbsoluteValue.IsEquiv.eq_of_isStandard {F : Type*} [Field F] [Cha
     rw [← hva, ← hwb]
     exact h.lt_one_iff
   obtain ⟨r₀, hr₀, hr₀'⟩ := ha.exists_ne_one
-  exact h.eq_of_forall_ratCast_eq (fun r ↦ by rw [hva, hwb, hab]) hr₀
-    (by rwa [hva])
+  exact h.eq_of_apply_eq (x := (r₀ : F)) (by exact_mod_cast hr₀) (by rwa [hva])
+    (by rw [hva, hwb, hab])
 
 /-- An absolute value restricting to a standard one on `ℚ` is nontrivial. -/
 theorem _root_.AbsoluteValue.isNontrivial_of_isStandard {F : Type*} [Field F] [CharZero F]
@@ -126,11 +122,5 @@ theorem _root_.AbsoluteValue.isNontrivial_of_isStandard {F : Type*} [Field F] [C
     (hva : ∀ r : ℚ, v r = a r) : v.IsNontrivial := by
   obtain ⟨r₀, hr₀, hr₀'⟩ := ha.exists_ne_one
   exact ⟨r₀, by exact_mod_cast hr₀, by rwa [hva]⟩
-
-/-- An infinite place restricts on `ℚ` to the real absolute value. -/
-theorem _root_.NumberField.InfinitePlace.apply_ratCast_eq_real {K : Type*} [Field K]
-    (w : InfinitePlace K) (r : ℚ) : w (r : K) = Rat.AbsoluteValue.real r := by
-  rw [InfinitePlace.map_ratCast, Rat.AbsoluteValue.real_eq_abs, Rat.cast_abs, ← Real.norm_eq_abs,
-    Rat.norm_cast_real]
 
 end TauCeti
