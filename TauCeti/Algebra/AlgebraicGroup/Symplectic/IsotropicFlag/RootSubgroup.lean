@@ -17,7 +17,9 @@ flag subgroup. Its coordinate restriction is surjective, so the factored root in
 is a closed immersion. On algebra-valued points it gives the usual symplectic root matrix.
 
 The construction reuses the flag subgroup's defining Hopf ideal and quotient coordinate
-algebra, together with the ambient symplectic root-coordinate maps.
+algebra, together with the ambient symplectic root-coordinate maps. The factorization follows
+the formal template in
+`TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.RootSubgroup`.
 
 ## References
 
@@ -140,6 +142,16 @@ noncomputable def rootSubgroup (root : GLSymplecticFin.RootSubgroupIndex m)
     (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
       (rootSubgroupCoordinateMap R m root hroot).op
 
+/-- A positive root morphism is relative spectrum applied to its coordinate restriction. -/
+theorem rootSubgroup_def (root : GLSymplecticFin.RootSubgroupIndex m)
+    (hroot : (diagonalRootBase.{u} m).IsPos root) :
+    rootSubgroup R m root hroot =
+      eqToHom (AdditiveGroup.groupScheme_def R) ≫
+        (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
+          (rootSubgroupCoordinateMap R m root hroot).op := by
+  unfold rootSubgroup
+  rfl
+
 /-- Composing a factored positive root with inclusion recovers its symplectic morphism. -/
 @[reassoc (attr := simp)]
 theorem rootSubgroup_comp_inclusion (root : GLSymplecticFin.RootSubgroupIndex m)
@@ -181,5 +193,42 @@ theorem pointsMulEquiv_rootSubgroupCoordinateMap (root : GLSymplecticFin.RootSub
   rw [← pointsMulEquiv_coe, ← hquot]
   rw [Symplectic.mapPointsFunctor_rootSubgroupCoordinateMap_app,
     Symplectic.pointsMulEquiv_rootSubgroupPoints]
+
+section SchemePoints
+
+variable (A : Type u) [CommRing A] [Algebra R A]
+
+private theorem groupSchemePointMulEquiv_comp_rootSubgroup
+    (root : GLSymplecticFin.RootSubgroupIndex m)
+    (hroot : (diagonalRootBase.{u} m).IsPos root)
+    (f : WithConv (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R] A)) :
+    AdditiveGroup.groupSchemePointMulEquiv A f ≫ (rootSubgroup R m root hroot).hom.hom =
+      groupSchemePointMulEquiv R m A
+        (toConv (f.ofConv.comp (rootSubgroupCoordinateMap R m root hroot).hom)) := by
+  rw [rootSubgroup_def]
+  simpa only [eqToHom_refl, Category.comp_id,
+    CommHopfAlgCat.mapPointsFunctor_app_apply] using
+    CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
+      (R := R) A rfl (AdditiveGroup.groupScheme_def R)
+      (groupSchemePointMulEquiv R m A) (AdditiveGroup.groupSchemePointMulEquiv A)
+      (fun f => by simpa only [eqToHom_refl, Category.comp_id] using
+        groupSchemePointMulEquiv_apply_left R m A f)
+      (AdditiveGroup.groupSchemePointMulEquiv_apply_left A)
+      (rootSubgroupCoordinateMap R m root hroot) f
+
+/-- A positive root subgroup on scheme-valued points is its standard symplectic root matrix. -/
+theorem schemePointsMulEquiv_rootSubgroup (root : GLSymplecticFin.RootSubgroupIndex m)
+    (hroot : (diagonalRootBase.{u} m).IsPos root)
+    (p : (AlgebraicGeometry.Spec (CommRingCat.of A)).asOver
+      (AlgebraicGeometry.Spec (CommRingCat.of R)) ⟶ (AdditiveGroup.groupScheme R).X) :
+    (schemePointsMulEquiv R m A (p ≫ (rootSubgroup R m root hroot).hom.hom) :
+      GLSymplecticFin m A) = root.hom (AdditiveGroup.schemePointsMulEquiv A p) := by
+  obtain ⟨f, rfl⟩ := (AdditiveGroup.groupSchemePointMulEquiv A).surjective p
+  rw [groupSchemePointMulEquiv_comp_rootSubgroup,
+    schemePointsMulEquiv_groupSchemePointMulEquiv,
+    pointsMulEquiv_rootSubgroupCoordinateMap,
+    AdditiveGroup.schemePointsMulEquiv_groupSchemePointMulEquiv]
+
+end SchemePoints
 
 end TauCeti.Symplectic.IsotropicFlag
