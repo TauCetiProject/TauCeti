@@ -47,8 +47,8 @@ a full subcategory of a cohomologically unital `A∞` category is cohomologicall
 
 ## References
 
-* B. Keller, *Introduction to A-infinity algebras and modules*, Sections 7.3 (`A∞` categories)
-  and 7.6 (full `A∞` subcategories).
+* B. Keller, *Introduction to A-infinity algebras and modules*, Section 7, for `A∞` categories.
+  A full subcategory keeps the morphisms between the chosen objects and the operations on them.
 -/
 
 public section
@@ -67,11 +67,9 @@ variable {R : Type w} [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, w} R 
 /-- The image of the total module of morphisms of the full subquiver is closed under the
 operations of `𝒞`. -/
 private theorem m_totalHomInclusion_mem_range (n : ℕ)
-    (x : Fin n → TotalHom R (FullSubquiver P)) :
-    𝒞.m n (fun i ↦ totalHomInclusion R P (x i)) ∈ LinearMap.range (totalHomInclusion R P) := by
-  rcases n with _ | n
-  · rw [𝒞.m_zero, zero_apply]
-    exact zero_mem _
+    (x : Fin (n + 1) → TotalHom R (FullSubquiver P)) :
+    𝒞.m (n + 1) (fun i ↦ totalHomInclusion R P (x i)) ∈
+      LinearMap.range (totalHomInclusion R P) := by
   refine multilinearMap_apply_mem (f := (𝒞.m (n + 1)).compLinearMap fun _ ↦ totalHomInclusion R P)
     (fun X x ↦ ?_) (fun s t x i j hij hne ↦ ?_) x
   · simp only [MultilinearMap.compLinearMap_apply, totalHomInclusion_homInclusion]
@@ -88,7 +86,9 @@ private noncomputable def fullSubcategoryAlgebra :
   𝒞.toAInfinityAlgebra.comap (totalGrading R (FullSubquiver P)) (totalHomInclusion R P)
     totalHomInclusion_injective
     (fun _ _ ↦ by rw [𝒞.grading_eq, totalHomInclusion_mem_totalGrading_piece_iff])
-    (𝒞.m_totalHomInclusion_mem_range P)
+    (fun _ hn ↦ by
+      obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn.ne'
+      exact 𝒞.m_totalHomInclusion_mem_range P n)
 
 private theorem totalHomInclusion_fullSubcategoryAlgebra_m (n : ℕ)
     (x : Fin n → TotalHom R (FullSubquiver P)) :
@@ -125,11 +125,14 @@ theorem totalHomInclusion_fullSubcategory_m (n : ℕ) (x : Fin n → TotalHom R 
 /-- The full subcategory is the unique `A∞` category on the full subquiver whose operations the
 inclusion of total modules intertwines with those of `𝒞`. -/
 theorem eq_fullSubcategory {𝒟 : AInfinityCategory R (FullSubquiver P)}
-    (h : ∀ (n : ℕ) (x : Fin n → TotalHom R (FullSubquiver P)),
+    (h : ∀ n, 0 < n → ∀ x : Fin n → TotalHom R (FullSubquiver P),
       totalHomInclusion R P (𝒟.m n x) = 𝒞.m n fun i ↦ totalHomInclusion R P (x i)) :
-    𝒟 = 𝒞.fullSubcategory P :=
-  ext <| funext fun n ↦ MultilinearMap.ext fun x ↦ totalHomInclusion_injective <| by
-    rw [h, totalHomInclusion_fullSubcategory_m]
+    𝒟 = 𝒞.fullSubcategory P := by
+  refine ext <| funext fun n ↦ ?_
+  rcases n.eq_zero_or_pos with rfl | hn
+  · rw [𝒟.m_zero, AInfinityAlgebra.m_zero]
+  · exact MultilinearMap.ext fun x ↦ totalHomInclusion_injective <| by
+      rw [h n hn, totalHomInclusion_fullSubcategory_m]
 
 /-- The operation of the full subcategory on a composable string is the operation of `𝒞` on the
 same string. -/

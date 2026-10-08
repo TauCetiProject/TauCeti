@@ -94,21 +94,30 @@ section Comap
 
 variable (ℬ : AInfinityAlgebra R B) (G : InternalGrading R A) (f : A →ₗ[R] B)
   (hf : Function.Injective f) (hG : ∀ (p : ℤ) (a : A), f a ∈ ℬ.grading.piece p ↔ a ∈ G.piece p)
-  (hm : ∀ (n : ℕ) (x : Fin n → A), ℬ.m n (fun i ↦ f (x i)) ∈ LinearMap.range f)
+  (hm : ∀ n, 0 < n → ∀ x : Fin n → A, ℬ.m n (fun i ↦ f (x i)) ∈ LinearMap.range f)
+
+include hm in
+/-- The image of `f` is closed under every operation of `ℬ`, including the zero nullary one. -/
+private theorem m_mem_range (n : ℕ) (x : Fin n → A) :
+    ℬ.m n (fun i ↦ f (x i)) ∈ LinearMap.range f := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · rw [ℬ.m_zero, zero_apply]
+    exact zero_mem _
+  · exact hm n hn x
 
 /-- The operations of the pullback: `mₙ(a₁, …, aₙ)` is the preimage under `f` of
 `mₙ(f a₁, …, f aₙ)`. -/
 private noncomputable def comapOperation (n : ℕ) : MultilinearMap R (fun _ : Fin n ↦ A) A :=
   (LinearEquiv.ofInjective f hf).symm.toLinearMap.compMultilinearMap
-    (((ℬ.m n).compLinearMap fun _ ↦ f).codRestrict _ (hm n))
+    (((ℬ.m n).compLinearMap fun _ ↦ f).codRestrict _ (m_mem_range ℬ f hm n))
 
 private theorem apply_comapOperation (n : ℕ) (x : Fin n → A) :
     f (comapOperation ℬ f hf hm n x) = ℬ.m n fun i ↦ f (x i) :=
   LinearEquiv.ofInjective_symm_apply f _
 
 /-- The **pullback** of an `A∞` algebra `ℬ` on `B` along an injective linear map `f : A → B`
-whose image is closed under the operations of `ℬ`, for a grading `G` of `A` whose degree `f`
-detects.  The operation `mₙ(a₁, …, aₙ)` is the unique preimage under `f` of
+whose image is closed under the operations of `ℬ` of positive arity, for a grading `G` of `A`
+whose degree `f` detects.  The operation `mₙ(a₁, …, aₙ)` is the unique preimage under `f` of
 `mₙ(f a₁, …, f aₙ)`, as recorded by `TauCeti.AInfinityAlgebra.map_m_comap`. -/
 noncomputable def comap : AInfinityAlgebra R A :=
   ofStasheff G (comapOperation ℬ f hf hm)
@@ -138,10 +147,12 @@ theorem map_m_comap (n : ℕ) (x : Fin n → A) :
 /-- The pullback of an `A∞` algebra is the unique `A∞` structure on `A` with grading `G` whose
 operations the injective map intertwines with those of the algebra. -/
 theorem eq_comap {ℬ' : AInfinityAlgebra R A} (hG' : ℬ'.grading = G)
-    (hm' : ∀ (n : ℕ) (x : Fin n → A), f (ℬ'.m n x) = ℬ.m n fun i ↦ f (x i)) :
-    ℬ' = ℬ.comap G f hf hG hm :=
-  ext (by rw [hG', comap_grading]) <| funext fun n ↦ MultilinearMap.ext fun x ↦
-    hf (by rw [hm', map_m_comap])
+    (hm' : ∀ n, 0 < n → ∀ x : Fin n → A, f (ℬ'.m n x) = ℬ.m n fun i ↦ f (x i)) :
+    ℬ' = ℬ.comap G f hf hG hm := by
+  refine ext (by rw [hG', comap_grading]) <| funext fun n ↦ ?_
+  rcases n.eq_zero_or_pos with rfl | hn
+  · rw [ℬ'.m_zero, AInfinityAlgebra.m_zero]
+  · exact MultilinearMap.ext fun x ↦ hf (by rw [hm' n hn, map_m_comap])
 
 /-- The injective map along which an `A∞` algebra is pulled back, as a strict `A∞` morphism. -/
 noncomputable def comapStrictHom : AInfinityStrictHom (ℬ.comap G f hf hG hm) ℬ where
