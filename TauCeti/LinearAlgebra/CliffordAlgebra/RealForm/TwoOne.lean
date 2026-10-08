@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Scaling
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 public import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Three
 import TauCeti.LinearAlgebra.Matrix.Adjugate.FinTwo
 
 /-!
@@ -93,6 +94,7 @@ noncomputable def realCliffordTwoOneVectorEquivSymmetric :
     fin_cases i <;> simp [realCliffordTwoOneVectorMatrix]
   right_inv A := by
     have hA := A.2
+    -- Expose the self-adjoint subtype predicate as the matrix equation used below.
     change IsSelfAdjoint (A.1 : Matrix (Fin 2) (Fin 2) ℝ) at hA
     rw [isSelfAdjoint_iff] at hA
     have h01 := congrFun (congrFun hA 0) 1
@@ -140,6 +142,7 @@ private def realCliffordTwoOneAugmentedIsometry :
 
 private theorem realCliffordTwoOneAugmentedIsometry_apply (v : Fin (2 + 1) → ℝ) :
     realCliffordTwoOneAugmentedIsometry v = (![v 0, v 2], v 1) := by
+  -- Expose the underlying signature-splitting isometry before comparing coordinates.
   change realCliffordPositiveSplitIsometry 1 1 v = _
   apply Prod.ext
   · funext i
@@ -164,26 +167,6 @@ private theorem realCliffordOneOneScaleIsometry_apply (v : Fin (1 + 1) → ℝ) 
   · simpa [realCliffordOneOneScaleIsometry,
       ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv] using
       realCliffordFormNegIsometry_apply_natAdd 1 1 v (0 : Fin 1)
-
-private theorem realCliffordOneOneEquivMatrix_star
-    (x : CliffordAlgebra (realCliffordForm 1 1)) :
-    realCliffordOneOneEquivMatrix (star x) =
-      Matrix.adjugate (realCliffordOneOneEquivMatrix x) := by
-  induction x using CliffordAlgebra.induction with
-  | algebraMap r =>
-      ext i j
-      fin_cases i <;> fin_cases j <;>
-        simp [Algebra.algebraMap_eq_smul_one] <;> ring
-  | ι v =>
-      rw [CliffordAlgebra.star_ι, map_neg, realCliffordOneOneEquivMatrix_ι]
-      ext i j
-      fin_cases i <;> fin_cases j <;> simp
-  | add x y hx hy =>
-      simp only [star_add, map_add, hx, hy]
-      ext i j
-      fin_cases i <;> fin_cases j <;> simp <;> ring
-  | mul x y hx hy =>
-      simp only [star_mul, map_mul, hx, hy, Matrix.adjugate_mul_distrib]
 
 /-- The split even-algebra model `Cl⁺(2,1) ≃ M₂(ℝ)`. -/
 noncomputable def realCliffordTwoOneEvenEquivMatrix :
@@ -218,12 +201,9 @@ theorem realCliffordTwoOneEvenEquivMatrix_reverseEven
     (x : CliffordAlgebra.even (realCliffordForm 2 1)) :
     realCliffordTwoOneEvenEquivMatrix
         (CliffordAlgebra.reverseEven (realCliffordForm 2 1) x) =
-      Matrix.adjugate (realCliffordTwoOneEvenEquivMatrix x) := by
-  simp only [realCliffordTwoOneEvenEquivMatrix, AlgEquiv.trans_apply]
-  rw [CliffordAlgebra.evenEquivOfIsometry_reverseEven,
-    CliffordAlgebra.evenProdSMulSqEquiv_reverseEven]
-  simp only [CliffordAlgebra.equivOfIsometry_apply]
-  rw [CliffordAlgebra.map_star, realCliffordOneOneEquivMatrix_star]
+      Matrix.adjugate (realCliffordTwoOneEvenEquivMatrix x) :=
+  CliffordAlgebra.map_reverseEven_eq_adjugate_of_finrank_eq_three
+    (realCliffordForm 2 1) (by norm_num) realCliffordTwoOneEvenEquivMatrix x
 
 /-- In the split three-dimensional matrix model, the reverse norm-one equation is determinant
 one. -/
@@ -231,16 +211,9 @@ one. -/
 theorem realCliffordTwoOne_reverseEven_mul_self_eq_one_iff_det_eq_one
     (x : CliffordAlgebra.even (realCliffordForm 2 1)) :
     CliffordAlgebra.reverseEven (realCliffordForm 2 1) x * x = 1 ↔
-      (realCliffordTwoOneEvenEquivMatrix x).det = 1 := by
-  let A := realCliffordTwoOneEvenEquivMatrix x
-  rw [← Matrix.adjugate_mul_self_eq_one_iff_det_eq_one A]
-  constructor
-  · intro h
-    have hm := congrArg realCliffordTwoOneEvenEquivMatrix h
-    simpa [A] using hm
-  · intro h
-    apply realCliffordTwoOneEvenEquivMatrix.injective
-    simpa [A] using h
+      (realCliffordTwoOneEvenEquivMatrix x).det = 1 :=
+  CliffordAlgebra.reverseEven_mul_eq_one_iff_det_eq_one_of_finrank_eq_three
+    (realCliffordForm 2 1) (by norm_num) realCliffordTwoOneEvenEquivMatrix x
 
 end TauCeti
 

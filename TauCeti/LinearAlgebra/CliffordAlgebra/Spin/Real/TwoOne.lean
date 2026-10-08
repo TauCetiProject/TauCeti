@@ -137,6 +137,7 @@ private def realCliffordTwoOneLastVector : Fin 3 → ℝ := Pi.single 2 1
 
 private theorem realCliffordTwoOneLastVector_negOne :
     realCliffordFormTwoOne realCliffordTwoOneLastVector = -1 := by
+  -- Unfold the local abbreviations so the coordinate formula applies directly.
   change realCliffordForm 2 1 (Pi.single 2 1) = -1
   rw [realCliffordForm_apply_single, realCliffordWeight_of_le (by simp), one_pow, mul_one]
 
@@ -170,6 +171,7 @@ private theorem realCliffordTwoOneConjugateLastEvenHom_ι (m n : Fin 3 → ℝ) 
   apply Subtype.ext
   simp only [realCliffordTwoOneConjugateLastEvenHom]
   rw [CliffordAlgebra.coe_conjugateNegativeIotaEven]
+  -- Move from the even-subalgebra wrapper to the ambient Clifford product.
   change (-CliffordAlgebra.ι realCliffordFormTwoOne realCliffordTwoOneLastVector *
       (CliffordAlgebra.ι realCliffordFormTwoOne m *
         CliffordAlgebra.ι realCliffordFormTwoOne n)) *
@@ -179,21 +181,6 @@ private theorem realCliffordTwoOneConjugateLastEvenHom_ι (m n : Fin 3 → ℝ) 
       (CliffordAlgebra.ι realCliffordFormTwoOne n *
         CliffordAlgebra.ι realCliffordFormTwoOne realCliffordTwoOneLastVector)
   noncomm_ring
-
-private noncomputable def realTransposeAdjugateFinTwoAlgHom :
-    Matrix (Fin 2) (Fin 2) ℝ →ₐ[ℝ] Matrix (Fin 2) (Fin 2) ℝ where
-  toFun A := (Matrix.adjugate A)ᵀ
-  map_zero' := by ext i j; fin_cases i <;> fin_cases j <;> simp
-  map_one' := by ext i j; fin_cases i <;> fin_cases j <;> simp
-  map_add' A B := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp <;> ring
-  map_mul' A B := by
-    rw [Matrix.adjugate_mul_distrib, Matrix.transpose_mul]
-  commutes' r := by
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [Algebra.algebraMap_eq_smul_one] <;> ring
 
 private theorem realCliffordTwoOneEvenEquivMatrix_conjugate_generator
     (m n : Fin 3 → ℝ) :
@@ -215,9 +202,28 @@ private theorem realCliffordTwoOneEvenEquivMatrix_conjugate
     realCliffordTwoOneEvenEquivMatrix
         (realCliffordTwoOneConjugateLastEvenHom x) =
       (Matrix.adjugate (realCliffordTwoOneEvenEquivMatrix x))ᵀ := by
+  -- Package transpose after adjugation as an algebra hom so the even-algebra extensionality
+  -- theorem reduces the comparison to generator pairs.
+  let transposeAdjugate :
+      Matrix (Fin 2) (Fin 2) ℝ →ₐ[ℝ] Matrix (Fin 2) (Fin 2) ℝ :=
+    { toFun := fun A => (Matrix.adjugate A)ᵀ
+      map_zero' := by ext i j; fin_cases i <;> fin_cases j <;> simp
+      map_one' := by ext i j; fin_cases i <;> fin_cases j <;> simp
+      map_add' := by
+        intro A B
+        ext i j
+        fin_cases i <;> fin_cases j <;> simp <;> ring
+      map_mul' := by
+        intro A B
+        rw [Matrix.adjugate_mul_distrib, Matrix.transpose_mul]
+      commutes' := by
+        intro r
+        ext i j
+        fin_cases i <;> fin_cases j <;>
+          simp [Algebra.algebraMap_eq_smul_one] <;> ring }
   have hhom : realCliffordTwoOneEvenEquivMatrix.toAlgHom.comp
         realCliffordTwoOneConjugateLastEvenHom =
-      realTransposeAdjugateFinTwoAlgHom.comp
+      transposeAdjugate.comp
         realCliffordTwoOneEvenEquivMatrix.toAlgHom := by
     apply CliffordAlgebra.even.algHom_ext
     rw [CliffordAlgebra.EvenHom.ext_iff]
@@ -226,10 +232,11 @@ private theorem realCliffordTwoOneEvenEquivMatrix_conjugate
     apply LinearMap.ext
     intro n
     simp only [CliffordAlgebra.EvenHom.compr₂_bilin, LinearMap.compr₂_apply]
+    -- Unfold both composed algebra homomorphisms at an even Clifford generator pair.
     change realCliffordTwoOneEvenEquivMatrix
         (realCliffordTwoOneConjugateLastEvenHom
           ((CliffordAlgebra.even.ι realCliffordFormTwoOne).bilin m n)) =
-      realTransposeAdjugateFinTwoAlgHom
+      transposeAdjugate
         (realCliffordTwoOneEvenEquivMatrix
           ((CliffordAlgebra.even.ι realCliffordFormTwoOne).bilin m n))
     rw [realCliffordTwoOneConjugateLastEvenHom_ι]
