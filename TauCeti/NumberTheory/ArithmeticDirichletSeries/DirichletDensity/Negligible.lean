@@ -205,6 +205,18 @@ theorem isUpperDirichletDensityBound_iff_of_symmDiff (h : (S ∆ T).HasDirichlet
     IsUpperDirichletDensityBound S δ ↔ IsUpperDirichletDensityBound T δ :=
   ⟨fun hS ↦ hS.of_symmDiff (symmDiff_comm S T ▸ h), fun hT ↦ hT.of_symmDiff h⟩
 
+/-- If `δ` is a lower Dirichlet-density bound for `T` and `S` differs from `T` in finitely many
+primes, then `δ` is a lower bound for `S`. -/
+theorem IsLowerDirichletDensityBound.of_finite_symmDiff (hT : IsLowerDirichletDensityBound T δ)
+    (hST : (S ∆ T).Finite) : IsLowerDirichletDensityBound S δ :=
+  hT.of_symmDiff (hasDirichletDensity_of_finite hST)
+
+/-- If `δ` is an upper Dirichlet-density bound for `T` and `S` differs from `T` in finitely many
+primes, then `δ` is an upper bound for `S`. -/
+theorem IsUpperDirichletDensityBound.of_finite_symmDiff (hT : IsUpperDirichletDensityBound T δ)
+    (hST : (S ∆ T).Finite) : IsUpperDirichletDensityBound S δ :=
+  hT.of_symmDiff (hasDirichletDensity_of_finite hST)
+
 /-- **Finite changes do not affect lower Dirichlet-density bounds.** -/
 theorem isLowerDirichletDensityBound_iff_of_finite_symmDiff (hST : (S ∆ T).Finite) :
     IsLowerDirichletDensityBound S δ ↔ IsLowerDirichletDensityBound T δ :=
