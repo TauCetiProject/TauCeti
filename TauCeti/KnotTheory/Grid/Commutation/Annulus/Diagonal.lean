@@ -603,11 +603,11 @@ private theorem sum_pentagonRectangleOppositeSideOrder_eq (x : GridState n) :
 
 /-! ### The diagonal coefficient -/
 
-/-- The horizontal annular terms with a pentagon turning on its terminal side first, and those
-with a pentagon turning on its initial side first, contribute equally to the two sides of the
-commutation chain-map equation: both exist exactly when the row of `x` on the replaced line is the
-turn row, both are counted exactly when the `X`-marking in the turn row lies in the first commuted
-column, and both carry the variable of the turn row's `O`-marking. -/
+/-- The horizontal annular terms made of a rectangle followed by a pentagon turning on its terminal
+side, and those made of a pentagon turning on its initial side followed by a rectangle, contribute
+equally to the two sides of the commutation chain-map equation: both exist exactly when the row of
+`x` on the replaced line is the turn row, both are counted exactly when the `X`-marking in the turn
+row lies in the first commuted column, and both carry the variable of the turn row's `O`-marking. -/
 theorem sum_rectanglePentagonOppositeSideOrder_eq_sum_initialPentagonRectangleOppositeSideOrder
     (x : GridState n) :
     ∑ D ∈ G.rectanglePentagonOppositeSideOrder C x, G.rectanglePentagonWeight C R D =
