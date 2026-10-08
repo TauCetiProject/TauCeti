@@ -266,12 +266,12 @@ theorem linearIndependent_zigzagGradedProjectiveClass :
 /-- The degree-zero piece of the path-length grading is spanned by the vertex idempotents. -/
 private theorem zigzagIntegerGrade_zero_le_span :
     zigzagIntegerGrade k G 0 ≤ Submodule.span k (Set.range (zigzagVertexIdempotent k G)) := by
-  rw [show (0 : ℤ) = (0 : ℕ) from rfl, zigzagIntegerGrade_ofNat,
-    zigzagGrade_zero_eq_span_range_vertexIdempotent]
+  simpa only [zigzagIntegerGrade_ofNat] using
+    (zigzagGrade_zero_eq_span_range_vertexIdempotent k G).le
 
 /-- **The graded simple module `S_i`** at a vertex: the head of the graded vertex projective
 `P_i = Z e_i`, its quotient by the span of the paths of positive length starting at `i`. -/
-noncomputable abbrev zigzagGradedSimple (i : V) :
+noncomputable def zigzagGradedSimple (i : V) :
     GradedModuleCat.{max u w} (zigzagIntegerGrade k G) :=
   let _ := zigzagIntegerGradedAlgebra k G
   gradedIdempotentHead (zigzagIntegerGrade k G)
@@ -288,9 +288,9 @@ theorem simple_zigzagGradedSimple (i : V) : Simple (zigzagGradedSimple k G i) :=
   let _ := zigzagIntegerGradedAlgebra k G
   let _ := Fintype.ofFinite V
   simple_gradedIdempotentHead (fun _ => zigzagIntegerGrade_eq_bot_of_neg k G)
-    (completeOrthogonalIdempotents_zigzagVertexIdempotent k G)
+    (completeOrthogonalIdempotents_zigzagVertexIdempotent k G).toOrthogonalIdempotents
     (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G)
-    (zigzagIntegerGrade_zero_le_span k G) (zigzagVertexIdempotent_ne_zero k G) i
+    (zigzagIntegerGrade_zero_le_span k G) i (zigzagVertexIdempotent_ne_zero k G i)
 
 /-- **Every simple finite graded `Z`-module is a shift `S_i{d}` of a graded vertex simple.** -/
 theorem isExhaustiveGradedSimpleFamily_zigzagGradedSimple :
