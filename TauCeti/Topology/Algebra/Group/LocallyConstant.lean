@@ -27,10 +27,8 @@ Uniform local constancy is what makes the coinduced module of locally constant e
 
 The uniformity statement itself needs only a compact *set* `K ⊆ G` and continuous multiplication:
 `IsLocallyConstant.exists_isOpen_forall_mem_mul_right_eq` is that statement, uniform in the point
-`x ∈ K`. It applies `IsLocallyConstant.exists_isOpen_forall_mem_eq` to `(x, g) ↦ f (x * g)`
-and pulls the resulting neighbourhood back along a parameter map continuous at the chosen point.
-No associativity, identity or inverse is needed. The stabilizer's openness follows by taking
-`K = G` and translating near `1`.
+`x ∈ K`, for the family `x ↦ f (x * σ p)`. The parameter map `σ` needs continuity only at the
+chosen point; no associativity, identity or inverse is needed.
 
 `IsLocallyConstant.exists_isOpen_forall_mul_right_eq` specializes to a compact space.
 `IsLocallyConstant.exists_isOpen_translate₂` and `IsLocallyConstant.exists_isOpen_translate₃` give
@@ -73,8 +71,10 @@ theorem exists_isOpen_forall_mem_mul_right_eq
     {f : G → A} (hf : IsLocallyConstant f) {K : Set G} (hK : IsCompact K) {P : Type*}
     [TopologicalSpace P] {σ : P → G} (p₀ : P) (hσ : ContinuousAt σ p₀) :
     ∃ V : Set P, IsOpen V ∧ p₀ ∈ V ∧ ∀ p ∈ V, ∀ x ∈ K, f (x * σ p) = f (x * σ p₀) := by
+  -- The compact-family lemma applied to `(x, g) ↦ f (x * g)` gives a uniform neighbourhood.
   obtain ⟨V, hVopen, hVσ, hV⟩ :=
     (hf.comp_continuous continuous_mul).exists_isOpen_forall_mem_eq hK (σ p₀)
+  -- Continuity at `p₀` pulls this neighbourhood back to the parameter space.
   obtain ⟨W, hWV, hWopen, hWp₀⟩ :=
     mem_nhds_iff.mp (hσ.preimage_mem_nhds (hVopen.mem_nhds hVσ))
   exact ⟨W, hWopen, hWp₀, fun p hp x hx ↦ hV (σ p) (hWV hp) x hx⟩

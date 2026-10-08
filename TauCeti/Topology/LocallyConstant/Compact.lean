@@ -14,9 +14,6 @@ A locally constant family `f : X × P → A` is locally constant in its paramete
 uniformly over any compact set `K ⊆ X`. The neighbourhood of a parameter can therefore be
 chosen independently of the point of `K`. This is the compactness input for uniform local
 constancy of translations on compact groups.
-
-The proof uses Mathlib's `generalized_tube_lemma` on the open locus where `f (x, p)` agrees
-with `f (x, p₀)`.
 -/
 
 public section
@@ -33,6 +30,7 @@ theorem exists_isOpen_forall_mem_eq {f : X × P → A} (hf : IsLocallyConstant f
     hf.comp_continuous (continuous_fst.prodMk continuous_const)
   have hopen : IsOpen {q : X × P | f q = f (q.1, p₀)} :=
     (hf.prodMk hfixed) {a : A × A | a.1 = a.2}
+  -- Mathlib's tube lemma applies to this open agreement locus containing `K × {p₀}`.
   obtain ⟨u, v, -, hvopen, hKu, hv, huv⟩ :=
     generalized_tube_lemma hK (isCompact_singleton (x := p₀)) hopen (by
       rintro ⟨x, p⟩ ⟨_, rfl⟩
