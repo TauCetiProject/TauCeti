@@ -37,7 +37,7 @@ subcategory of an `A∞` category form a sub-`A∞` algebra of the total algebra
 
 * `TauCeti.AInfinityAlgebra.map_grading` and `TauCeti.AInfinityAlgebra.map_m_apply`: the grading
   and the operations of the transported algebra.
-* `TauCeti.AInfinityAlgebra.comap_grading` and `TauCeti.AInfinityAlgebra.apply_comap_m`: the
+* `TauCeti.AInfinityAlgebra.comap_grading` and `TauCeti.AInfinityAlgebra.map_m_comap`: the
   grading of the pulled-back algebra, and the injective map intertwines the operations.
 
 ## References
@@ -109,7 +109,7 @@ private theorem apply_comapOperation (n : ℕ) (x : Fin n → A) :
 /-- The **pullback** of an `A∞` algebra `ℬ` on `B` along an injective linear map `f : A → B`
 whose image is closed under the operations of `ℬ`, for a grading `G` of `A` whose degree `f`
 detects.  The operation `mₙ(a₁, …, aₙ)` is the unique preimage under `f` of
-`mₙ(f a₁, …, f aₙ)`, as recorded by `TauCeti.AInfinityAlgebra.apply_comap_m`. -/
+`mₙ(f a₁, …, f aₙ)`, as recorded by `TauCeti.AInfinityAlgebra.map_m_comap`. -/
 noncomputable def comap : AInfinityAlgebra R A :=
   ofStasheff G (comapOperation ℬ f hf hm)
     (MultilinearMap.ext fun x ↦ hf <| by
@@ -131,7 +131,7 @@ theorem comap_grading : (ℬ.comap G f hf hG hm).grading = G := by
 /-- **The injective map intertwines the operations** of the pullback with those of the
 algebra. -/
 @[simp]
-theorem apply_comap_m (n : ℕ) (x : Fin n → A) :
+theorem map_m_comap (n : ℕ) (x : Fin n → A) :
     f ((ℬ.comap G f hf hG hm).m n x) = ℬ.m n fun i ↦ f (x i) := by
   rw [comap, ofStasheff_m, apply_comapOperation]
 
@@ -141,7 +141,7 @@ theorem eq_comap {ℬ' : AInfinityAlgebra R A} (hG' : ℬ'.grading = G)
     (hm' : ∀ (n : ℕ) (x : Fin n → A), f (ℬ'.m n x) = ℬ.m n fun i ↦ f (x i)) :
     ℬ' = ℬ.comap G f hf hG hm :=
   ext (by rw [hG', comap_grading]) <| funext fun n ↦ MultilinearMap.ext fun x ↦
-    hf (by rw [hm', apply_comap_m])
+    hf (by rw [hm', map_m_comap])
 
 /-- The injective map along which an `A∞` algebra is pulled back, as a strict `A∞` morphism. -/
 noncomputable def comapStrictHom : AInfinityStrictHom (ℬ.comap G f hf hG hm) ℬ where

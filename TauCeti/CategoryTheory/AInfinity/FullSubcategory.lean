@@ -47,7 +47,8 @@ a full subcategory of a cohomologically unital `A∞` category is cohomologicall
 
 ## References
 
-* B. Keller, *Introduction to A-infinity algebras and modules*, Section 7.1.
+* B. Keller, *Introduction to A-infinity algebras and modules*, Sections 7.3 (`A∞` categories)
+  and 7.6 (full `A∞` subcategories).
 -/
 
 public section
@@ -93,7 +94,7 @@ private theorem totalHomInclusion_fullSubcategoryAlgebra_m (n : ℕ)
     (x : Fin n → TotalHom R (FullSubquiver P)) :
     totalHomInclusion R P ((𝒞.fullSubcategoryAlgebra P).m n x) =
       𝒞.m n fun i ↦ totalHomInclusion R P (x i) :=
-  AInfinityAlgebra.apply_comap_m _ _ _ _ _ _ n x
+  AInfinityAlgebra.map_m_comap _ _ _ _ _ _ n x
 
 /-- The **full subcategory** of an `A∞` category on the objects satisfying `P`: the `A∞` category
 on the full subquiver whose operations on composable strings are those of `𝒞`

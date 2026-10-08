@@ -40,7 +40,8 @@ string which is not composable in `C`, since the objects of the full subquiver a
 
 ## References
 
-* B. Keller, *Introduction to A-infinity algebras and modules*, Section 7.1.
+* B. Keller, *Introduction to A-infinity algebras and modules*, Sections 7.3 (`A∞` categories)
+  and 7.6 (full `A∞` subcategories).
 -/
 
 public section
