@@ -172,7 +172,7 @@ theorem baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebra
   simp only [generatedCoordinateHopfAlgebraBaseChangeIso, Iso.trans_hom]
   rw [← Category.assoc, hbase, ← Category.assoc,
     CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom,
-    Category.assoc,
-    mkQuotient_comp_generatedCoordinateHopfAlgebra_eqToIso_symm_hom]
+    Category.assoc, ← generatedCoordinateMap_comp_eqToIso_hom]
+  simp
 
 end TauCeti.E7Minuscule

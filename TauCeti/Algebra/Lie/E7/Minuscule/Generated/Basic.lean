@@ -91,20 +91,11 @@ theorem generatedCoordinateMap_comp_eqToIso_hom :
     generatedCoordinateMap A ≫ (eqToIso (generatedCoordinateHopfAlgebra_def A)).hom =
       CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 56)
         (generatedDefiningIdeal A) := by
+  -- In this defining module the deliberately opaque named quotient and quotient map reduce,
+  -- so the equality transport is the identity.  Consumers use this theorem as the interface.
   change CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 56)
       (generatedDefiningIdeal A) ≫ 𝟙 _ = _
   simp
-
-/-- Transporting the quotient morphism back to the named generated coordinate algebra recovers
-the generated coordinate map. -/
-theorem mkQuotient_comp_generatedCoordinateHopfAlgebra_eqToIso_symm_hom :
-    CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 56)
-          (generatedDefiningIdeal A) ≫
-        (eqToIso (generatedCoordinateHopfAlgebra_def A).symm).hom =
-      generatedCoordinateMap A := by
-  change CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 56)
-      (generatedDefiningIdeal A) ≫ 𝟙 _ = _
-  simp [generatedCoordinateMap]
 
 /-- The generated subgroup coordinate morphism is surjective. -/
 theorem generatedCoordinateMap_surjective : Function.Surjective (generatedCoordinateMap A).hom :=
