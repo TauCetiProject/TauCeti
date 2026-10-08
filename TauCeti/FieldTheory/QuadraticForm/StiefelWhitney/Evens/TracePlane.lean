@@ -64,6 +64,40 @@ def kummerPoint {L : Type v} [Field L] [Algebra K L]
     (y : L) : Fin 2 → SeparableClosure K :=
   ![σ y * r, s (σ y * r)]
 
+section kummerPoint
+
+variable {L : Type v} [Field L] [Algebra K L]
+  (σ : L →ₐ[K] SeparableClosure K) (r : SeparableClosure K) (s : AbsoluteGaloisGroup K)
+
+/-- `kummerPoint σ r s y` is the vector `![σ y * r, s (σ y * r)]`. -/
+theorem kummerPoint_def (y : L) : kummerPoint σ r s y = ![σ y * r, s (σ y * r)] := by
+  unfold kummerPoint
+  rfl
+
+/-- The first coordinate of `kummerPoint σ r s y` is `σ(y) r`. -/
+@[simp]
+theorem kummerPoint_apply_zero (y : L) : kummerPoint σ r s y 0 = σ y * r := by
+  simp [kummerPoint_def]
+
+/-- The second coordinate of `kummerPoint σ r s y` is `s(σ(y) r)`. -/
+@[simp]
+theorem kummerPoint_apply_one (y : L) : kummerPoint σ r s y 1 = s (σ y * r) := by
+  simp [kummerPoint_def]
+
+/-- `kummerPoint σ r s` is additive in `y`. -/
+theorem kummerPoint_add (y y' : L) :
+    kummerPoint σ r s (y + y') = kummerPoint σ r s y + kummerPoint σ r s y' := by
+  ext i
+  fin_cases i <;> simp [add_mul]
+
+/-- `kummerPoint σ r s` is `K`-homogeneous in `y`. -/
+theorem kummerPoint_smul (c : K) (y : L) :
+    kummerPoint σ r s (c • y) = c • kummerPoint σ r s y := by
+  ext i
+  fin_cases i <;> simp
+
+end kummerPoint
+
 /-- **The transferred-plane identity:** if `L/K` is separable quadratic, `r² = σ(a)`, and
 `s ∈ G_K` does not fix `σ(L)`, then
 `φ(y) · φ(y') = Tr_{L/K}(a y y')` after embedding into `Kˢ`.
@@ -84,8 +118,7 @@ theorem kummerPoint_dotProduct {L : Type v} [Field L] [Algebra K L]
     apply hs
     rw [mem_galoisSubgroup_iff]
     intro z
-    change τ z = σ z
-    exact DFunLike.congr_fun h z
+    simpa only [τ, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply] using DFunLike.congr_fun h z
   let ι : SeparableClosure K →ₐ[K] AlgebraicClosure K :=
     IsScalarTower.toAlgHom K (SeparableClosure K) (AlgebraicClosure K)
   let σ' : L →ₐ[K] AlgebraicClosure K := ι.comp σ
