@@ -49,6 +49,140 @@ variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
 variable {B : Type v} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
   {P' : PairOfDefinition B} {Bplus : Subring B}
 
+/-- The base change `A⟨p⟩ → B⟨q⟩` of `φ` as a ring homomorphism of completed rational
+localizations: the underlying ring map of `Presentation.mapHom`, transported along
+`Presentation.completionLocObjCommRingCatIso`. -/
+private noncomputable def mapHomRingHom (φ : A →+* B) (hφ : Continuous φ) (p : Presentation P)
+    (q : Presentation P') (hden : q.den = φ p.den) (hnum : ∀ t ∈ p.num, φ t ∈ q.num) :
+    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+    UniformSpace.Completion (Localization.Away p.den) →+*
+      UniformSpace.Completion (Localization.Away q.den) :=
+  letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  letI := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+  letI := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+  letI := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+  ((Presentation.completionLocObjCommRingCatIso p).inv ≫
+    (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
+      (p.mapHom φ hφ q hden hnum) ≫
+    (Presentation.completionLocObjCommRingCatIso q).hom).hom
+
+/-- `mapHomRingHom` is the ring map underlying `Presentation.mapHom`, transported along
+`completionLocObj_obj` in `TopCommRingCat`. -/
+private theorem mapHomRingHom_eq (φ : A →+* B) (hφ : Continuous φ) (p : Presentation P)
+    (q : Presentation P') (hden : q.den = φ p.den) (hnum : ∀ t ∈ p.num, φ t ∈ q.num) :
+    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+    mapHomRingHom φ hφ p q hden hnum =
+      (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm ≫
+        (p.mapHom φ hφ q hden hnum).hom ≫
+        eqToHom (completionLocObj_obj P' q.num q.den _ q.hasDenominatorPower)).1 := by
+  rw [mapHomRingHom]
+  simp only [Functor.comp_map, Presentation.completionLocObjCommRingCatIso_inv,
+    Presentation.completionLocObjCommRingCatIso_hom]
+  -- `forget₂ TopCommRingCat CommRingCat` and `isCompleteSeparated.ι` act on morphisms by
+  -- forgetting continuity and the property, so both sides are the same ring homomorphism.
+  rfl
+
+/-- The base change of completed rational localizations is continuous. -/
+private theorem continuous_mapHomRingHom (φ : A →+* B) (hφ : Continuous φ) (p : Presentation P)
+    (q : Presentation P') (hden : q.den = φ p.den) (hnum : ∀ t ∈ p.num, φ t ∈ q.num) :
+    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+    Continuous (mapHomRingHom φ hφ p q hden hnum) := by
+  let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  let _ := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+  have _ := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+  have _ := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+  rw [mapHomRingHom_eq]
+  exact (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm ≫
+    (p.mapHom φ hφ q hden hnum).hom ≫
+    eqToHom (completionLocObj_obj P' q.num q.den _ q.hasDenominatorPower)).2
+
+/-- The base change of completed rational localizations carries the structure map of `p` to that
+of `q` after `φ`. -/
+private theorem mapHomRingHom_comp_toCompletionLoc (φ : A →+* B) (hφ : Continuous φ)
+    (p : Presentation P) (q : Presentation P') (hden : q.den = φ p.den)
+    (hnum : ∀ t ∈ p.num, φ t ∈ q.num) :
+    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+    (mapHomRingHom φ hφ p q hden hnum).comp
+        (toCompletionLoc P p.num p.den _ p.hasDenominatorPower) =
+      (toCompletionLoc P' q.num q.den _ q.hasDenominatorPower).comp φ := by
+  let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  let _ := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+  have _ := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+  have _ := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+  have h := congrArg (fun k ↦ k ≫
+    eqToHom (completionLocObj_obj P' q.num q.den _ q.hasDenominatorPower))
+    (Presentation.toCompletionLocTopHom_comp_mapHom φ hφ p q hden hnum)
+  rw [Presentation.toCompletionLocTopHom_eq, Presentation.toCompletionLocTopHom_eq] at h
+  simp only [Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id] at h
+  rw [mapHomRingHom_eq]
+  exact congrArg Subtype.val h
+
+/-- Composing with `Presentation.completionLocObjCommRingCatIso` turns `Presentation.mapHom` into
+`mapHomRingHom`. -/
+private theorem completionLocObjCommRingCatIso_hom_comp_ofHom_mapHomRingHom (φ : A →+* B)
+    (hφ : Continuous φ) (p : Presentation P) (q : Presentation P') (hden : q.den = φ p.den)
+    (hnum : ∀ t ∈ p.num, φ t ∈ q.num) :
+    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+    (Presentation.completionLocObjCommRingCatIso p).hom ≫
+        CommRingCat.ofHom (mapHomRingHom φ hφ p q hden hnum) =
+      (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
+          (p.mapHom φ hφ q hden hnum) ≫
+        (Presentation.completionLocObjCommRingCatIso q).hom := by
+  rw [mapHomRingHom, CommRingCat.ofHom_hom, Iso.hom_inv_id_assoc]
+
+/-- The point of `Spa(A⟨p⟩, A⟨p⟩⁺)` attached to `x ∈ R(p)` pulls back along the structure
+map to `x`. -/
+private theorem comap_toCompletionLoc_spaCompletedLocalizationHomeomorph_symm
+    (hP : P.ringOfDefinition ≤ Aplus) (p : Presentation P) (x : spa Aplus)
+    (hx : x ∈ spaBasicOpen Aplus p.num p.den) :
+    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    comap (toCompletionLoc P p.num p.den _ p.hasDenominatorPower)
+        ((spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _
+          p.hasDenominatorPower).symm ⟨x, mem_spaBasicOpen.mp hx⟩).1 = x := by
+  let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  have hw := spaCompletedLocalizationHomeomorph_apply P Aplus hP p.num p.den _
+    p.hasDenominatorPower ((spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _
+      p.hasDenominatorPower).symm ⟨x, mem_spaBasicOpen.mp hx⟩)
+  rw [Homeomorph.apply_symm_apply] at hw
+  have hxw := congrArg (fun z ↦ z.1.1) hw
+  simp only [spaLocToRationalSubset_val, spaComapLoc_val] at hxw
+  exact hxw.symm
+
 /-- Pulling a rational-localization point back along the completed base-change map gives the
 rational-localization point attached to the pulled-back valuation. -/
 theorem comap_mapHom_rationalLocalizationPoint (φ : A →+* B) (hφ : Continuous φ)
@@ -68,92 +202,39 @@ theorem comap_mapHom_rationalLocalizationPoint (φ : A →+* B) (hφ : Continuou
   let _ := locUniformSpace P' q.num q.den (Localization.Away q.den) q.hasDenominatorPower
   have _ := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
   have _ := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-  let y := spaComap φ hφ Aplus Bplus hplus x
-  change y ∈ spaBasicOpen Aplus p.num p.den at hy
+  set y := spaComap φ hφ Aplus Bplus hplus x with hy_def
   set w := (spaCompletedLocalizationHomeomorph P' Bplus hP' q.num q.den _
     q.hasDenominatorPower).symm ⟨x, mem_spaBasicOpen.mp hx⟩
-  let σTop : TopCommRingCat.of (UniformSpace.Completion (Localization.Away p.den)) ⟶
-      TopCommRingCat.of (UniformSpace.Completion (Localization.Away q.den)) :=
-    eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm ≫
-      (p.mapHom φ hφ q hden hnum).hom ≫
-      eqToHom (completionLocObj_obj P' q.num q.den _ q.hasDenominatorPower)
-  let σComm := (Presentation.completionLocObjCommRingCatIso p).inv ≫
-    (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
-      (p.mapHom φ hφ q hden hnum) ≫
-    (Presentation.completionLocObjCommRingCatIso q).hom
-  let σ : UniformSpace.Completion (Localization.Away p.den) →+*
-      UniformSpace.Completion (Localization.Away q.den) := σComm.hom
-  have hσσTop : σ = σTop.1 := by
-    have hc : σComm = (forget₂ TopCommRingCat CommRingCat).map σTop := by
-      simp only [σComm, σTop, Functor.map_comp,
-        Functor.comp_map,
-        Presentation.completionLocObjCommRingCatIso_inv,
-        Presentation.completionLocObjCommRingCatIso_hom]
-      rfl
-    exact congrArg CommRingCat.Hom.hom hc
-  have hσ : Continuous σ := hσσTop.symm ▸ σTop.2
-  have hcomp : σ.comp (toCompletionLoc P p.num p.den _ p.hasDenominatorPower) =
-      (toCompletionLoc P' q.num q.den _ q.hasDenominatorPower).comp φ := by
-    have hTop :
-        (⟨toCompletionLoc P p.num p.den _ p.hasDenominatorPower,
-            continuous_toCompletionLoc P p.num p.den _ p.hasDenominatorPower⟩ :
-          TopCommRingCat.of A ⟶
-            TopCommRingCat.of (UniformSpace.Completion (Localization.Away p.den))) ≫ σTop =
-        (⟨φ, hφ⟩ : TopCommRingCat.of A ⟶ TopCommRingCat.of B) ≫
-          (⟨toCompletionLoc P' q.num q.den _ q.hasDenominatorPower,
-            continuous_toCompletionLoc P' q.num q.den _ q.hasDenominatorPower⟩ :
-          TopCommRingCat.of B ⟶
-            TopCommRingCat.of (UniformSpace.Completion (Localization.Away q.den))) := by
-      have h := congrArg (fun k ↦ k ≫
-        eqToHom (completionLocObj_obj P' q.num q.den _ q.hasDenominatorPower))
-        (Presentation.toCompletionLocTopHom_comp_mapHom φ hφ p q hden hnum)
-      rw [Presentation.toCompletionLocTopHom_eq, Presentation.toCompletionLocTopHom_eq] at h
-      simpa only [σTop, Category.assoc,
-        eqToHom_trans_assoc, eqToHom_trans, eqToHom_refl, Category.id_comp,
-        Category.comp_id] using h
-    rw [hσσTop]
-    exact congrArg Subtype.val hTop
-  have hwx : comap (toCompletionLoc P' q.num q.den _ q.hasDenominatorPower) w.1 = x := by
-    have hw := spaCompletedLocalizationHomeomorph_apply P' Bplus hP' q.num q.den _
-      q.hasDenominatorPower w
-    rw [Homeomorph.apply_symm_apply] at hw
-    have hxw := congrArg (fun z ↦ z.1.1) hw
-    simp only [spaLocToRationalSubset_val, spaComapLoc_val] at hxw
-    exact hxw.symm
-  have hmem : comap σ w.1 ∈
+  have hcomp := mapHomRingHom_comp_toCompletionLoc φ hφ p q hden hnum
+  have hwx : comap (toCompletionLoc P' q.num q.den _ q.hasDenominatorPower) w.1 = x :=
+    comap_toCompletionLoc_spaCompletedLocalizationHomeomorph_symm hP' q x hx
+  -- Pulling `w` back along the base change gives a point of `Spa(A⟨p⟩, A⟨p⟩⁺)` over `y`.
+  have hcomap : comap ((mapHomRingHom φ hφ p q hden hnum).comp
+      (toCompletionLoc P p.num p.den _ p.hasDenominatorPower)) w.1 = y.1 := by
+    rw [hcomp, comap_comp, Function.comp_apply, hwx, hy_def, spaComap_val]
+  have hmem : comap (mapHomRingHom φ hφ p q hden hnum) w.1 ∈
       spa (completedPlusSubring P Aplus p.num p.den _ p.hasDenominatorPower) := by
-    refine comap_mem_spa_completedPlusSubring P Aplus p.num p.den _ p.hasDenominatorPower σ hσ
-      ((mem_spa_iff _ _).mp w.2).1 (fun a ha ↦ ?_) ?_
+    refine comap_mem_spa_completedPlusSubring P Aplus p.num p.den _ p.hasDenominatorPower _
+      (continuous_mapHomRingHom φ hφ p q hden hnum) ((mem_spa_iff _ _).mp w.2).1
+      (fun a ha ↦ ?_) ?_
     · rw [← RingHom.comp_apply, hcomp, RingHom.comp_apply]
       exact ((mem_spa_iff _ _).mp w.2).2 _
         (toCompletionLoc_mem_completedPlusSubring P' Bplus q.num q.den _
           q.hasDenominatorPower (hplus a ha))
-    · rw [hcomp, comap_comp, Function.comp_apply, hwx]
-      simpa only [y, spaComap_val] using mem_spaBasicOpen.mp hy
-  have hcomap : comap (σ.comp (toCompletionLoc P p.num p.den _ p.hasDenominatorPower)) w.1 =
-      y.1 := by
-    rw [hcomp, comap_comp, Function.comp_apply, hwx]
-    exact (spaComap_val φ hφ Aplus Bplus hplus x).symm
+    · rw [hcomap]
+      exact mem_spaBasicOpen.mp hy
   have hpt :
       (spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _
-        p.hasDenominatorPower).symm ⟨y, mem_spaBasicOpen.mp hy⟩ = ⟨comap σ w.1, hmem⟩ := by
+        p.hasDenominatorPower).symm ⟨y, mem_spaBasicOpen.mp hy⟩ =
+        ⟨comap (mapHomRingHom φ hφ p q hden hnum) w.1, hmem⟩ := by
     rw [Homeomorph.symm_apply_eq]
     refine Subtype.ext (Subtype.ext ?_)
     rw [spaCompletedLocalizationHomeomorph_apply, spaLocToRationalSubset_val, ← hcomap,
       spaComapLoc_val, comap_comp, Function.comp_apply]
-  rw [rationalLocalizationPoint_def, rationalLocalizationPoint_def, hpt]
-  have hc :
-      (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
-          (p.mapHom φ hφ q hden hnum) ≫
-        (Presentation.completionLocObjCommRingCatIso q).hom =
-      (Presentation.completionLocObjCommRingCatIso p).hom ≫ σComm := by
-    simp only [σComm, Iso.hom_inv_id_assoc]
-  exact (comap_hom_comap_hom
-    ((TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
-      (p.mapHom φ hφ q hden hnum))
-    (Presentation.completionLocObjCommRingCatIso q).hom w.1).trans <|
-    (congrArg (fun f ↦ comap f.hom w.1) hc).trans <|
-      (comap_hom_comap_hom (Presentation.completionLocObjCommRingCatIso p).hom σComm w.1).symm
+  -- Both points are now pullbacks of `w`; compare the two composite ring maps.
+  rw [rationalLocalizationPoint_def, rationalLocalizationPoint_def, hpt, comap_hom_comap_hom,
+    ← completionLocObjCommRingCatIso_hom_comp_ofHom_mapHomRingHom, ← comap_hom_comap_hom,
+    CommRingCat.hom_ofHom]
 
 /-- The morphism of presentation-limit presheafed spaces induced contravariantly by a continuous
 ring homomorphism preserving the chosen rings of integral elements and carrying open ideals to
@@ -171,6 +252,38 @@ ideals generating open ideals. -/
       (presentationLimitPreAdicSpace P Aplus hAplus hP).toPresheafedSpace where
   base := spaComapTopHom φ hφ hplus
   c := presentationLimitPresheafComap φ hφ hopen hplus hBplus hsheaf
+
+/-- The continuous map underlying `presentationLimitPresheafedSpaceComap` is the induced map
+`spaComapTopHom` of adic spectra. -/
+@[simp]
+theorem presentationLimitPresheafedSpaceComap_base
+    (φ : A →+* B) (hφ : Continuous φ)
+    (hopen : ∀ ⦃J : Ideal A⦄, IsOpen (J : Set A) → IsOpen (J.map φ : Set B))
+    (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b)
+    (hP : P.ringOfDefinition ≤ Aplus) (hP' : P'.ringOfDefinition ≤ Bplus)
+    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
+      (presentationLimitPresheaf P' Bplus)) :
+    (presentationLimitPresheafedSpaceComap φ hφ hopen hplus hAplus hBplus hP hP' hsheaf).base =
+      spaComapTopHom φ hφ hplus :=
+  rfl
+
+/-- The map of structure presheaves underlying `presentationLimitPresheafedSpaceComap` is
+`presentationLimitPresheafComap`. -/
+@[simp]
+theorem presentationLimitPresheafedSpaceComap_c
+    (φ : A →+* B) (hφ : Continuous φ)
+    (hopen : ∀ ⦃J : Ideal A⦄, IsOpen (J : Set A) → IsOpen (J.map φ : Set B))
+    (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b)
+    (hP : P.ringOfDefinition ≤ Aplus) (hP' : P'.ringOfDefinition ≤ Bplus)
+    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
+      (presentationLimitPresheaf P' Bplus)) :
+    (presentationLimitPresheafedSpaceComap φ hφ hopen hplus hAplus hBplus hP hP' hsheaf).c =
+      presentationLimitPresheafComap φ hφ hopen hplus hBplus hsheaf :=
+  rfl
 
 private noncomputable def presentationLimitRingPresheafedSpaceComap
     (φ : A →+* B) (hφ : Continuous φ)
@@ -212,6 +325,157 @@ private theorem presentationLimitRingPresheafedSpaceComap_c_app
   simp only [Functor.map_comp, eqToHom_map, Category.assoc]
   cat_disch
 
+/-- The presentation index of the rational open `R(p)` given by `p` itself. -/
+private abbrev selfIndex (Aplus : Subring A) (p : Presentation P)
+    (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) :
+    PresentationIndex (P := P) Aplus (spaBasicOpen Aplus p.num p.den) :=
+  ⟨p, hp, le_rfl⟩
+
+omit [IsTopologicalRing A] in
+/-- The numerators of the induced presentation contain the images of the numerators. -/
+private theorem map_mem_comap_pres_num
+    (φ : A →+* B) (hφ : Continuous φ)
+    (hopen : ∀ ⦃J : Ideal A⦄, IsOpen (J : Set A) → IsOpen (J.map φ : Set B))
+    (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+    {U : Opens ↥(spa Aplus)} (i : PresentationIndex (P := P) Aplus U) {t : A}
+    (ht : t ∈ i.pres.num) : φ t ∈ (i.comap (P' := P') φ hφ hopen hplus).pres.num := by
+  classical
+  rw [PresentationIndex.map_pres_num]
+  exact Finset.mem_image_of_mem φ ht
+
+/-- The index of the rational open `R(φ(p)) = f⁻¹(R(p))` induced by `p`. -/
+private noncomputable abbrev comapSelfIndex (φ : A →+* B) (hφ : Continuous φ)
+    (hopen : ∀ ⦃J : Ideal A⦄, IsOpen (J : Set A) → IsOpen (J.map φ : Set B))
+    (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) (p : Presentation P)
+    (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) :
+    PresentationIndex (P := P') Bplus
+      ((Opens.map (spaComapTopHom φ hφ hplus)).obj (spaBasicOpen Aplus p.num p.den)) :=
+  (selfIndex Aplus p hp).comap φ hφ hopen hplus
+
+/-- On the rational open `R(p)`, the structure-presheaf map followed by restriction to
+`R(φ(p))` is the base change `A⟨p⟩ → B⟨φ(p)⟩`, under the rational comparison
+isomorphisms. -/
+private theorem presentationLimitRationalIso_inv_comp_comap_comp_hom
+    (φ : A →+* B) (hφ : Continuous φ)
+    (hopen : ∀ ⦃J : Ideal A⦄, IsOpen (J : Set A) → IsOpen (J.map φ : Set B))
+    (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b)
+    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
+      (presentationLimitPresheaf P' Bplus))
+    (p : Presentation P) (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) :
+    (presentationLimitRationalIso Aplus hAplus p hp).inv ≫
+        presentationLimitComap φ hφ hopen hplus hBplus hsheaf (spaBasicOpen Aplus p.num p.den) ≫
+        presentationLimitMap (comapSelfIndex (P' := P') φ hφ hopen hplus p hp).le_open ≫
+        (presentationLimitRationalIso Bplus hBplus _
+          (comapSelfIndex (P' := P') φ hφ hopen hplus p hp).isOpen_span).hom =
+      p.mapHom φ hφ (comapSelfIndex (P' := P') φ hφ hopen hplus p hp).pres
+            (PresentationIndex.map_pres_den φ hφ hopen hplus _ (selfIndex Aplus p hp))
+            (fun _ ↦ map_mem_comap_pres_num φ hφ hopen hplus (selfIndex Aplus p hp)) := by
+  rw [presentationLimitComap_comp_map_comp_hom, ← Category.assoc,
+    presentationLimitRationalIso_inv_comp_π, homOfRationalSubsetSubset_self, Category.id_comp]
+
+/-- After forgetting topology, the component of `presentationLimitRingPresheafedSpaceComap` on
+`R(p)`, restricted to `R(φ(p))`, is the base change `A⟨p⟩ → B⟨φ(p)⟩`, under the rational
+comparison isomorphisms. -/
+private theorem presentationLimitRationalIsoInCommRingCat_inv_comp_c_app_comp_map
+    (φ : A →+* B) (hφ : Continuous φ)
+    (hopen : ∀ ⦃J : Ideal A⦄, IsOpen (J : Set A) → IsOpen (J.map φ : Set B))
+    (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b)
+    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
+      (presentationLimitPresheaf P' Bplus))
+    (p : Presentation P) (hp : IsOpen (Ideal.span (p.num : Set A) : Set A))
+    (hq : spaBasicOpen Bplus (comapSelfIndex (P' := P') φ hφ hopen hplus p hp).pres.num
+        (comapSelfIndex (P' := P') φ hφ hopen hplus p hp).pres.den ≤
+      (Opens.map (presentationLimitRingPresheafedSpaceComap φ hφ hopen hplus hBplus
+        hsheaf).base).obj (spaBasicOpen Aplus p.num p.den)) :
+    (presentationLimitRationalIsoInCommRingCat hAplus p hp).inv ≫
+        (presentationLimitRingPresheafedSpaceComap φ hφ hopen hplus hBplus hsheaf).c.app
+          (Opposite.op (spaBasicOpen Aplus p.num p.den)) ≫
+        (presentationLimitPresheafInCommRingCat P' Bplus).map (homOfLE hq).op =
+      (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
+          (p.mapHom φ hφ (comapSelfIndex (P' := P') φ hφ hopen hplus p hp).pres
+            (PresentationIndex.map_pres_den φ hφ hopen hplus _ (selfIndex Aplus p hp))
+            (fun _ ↦ map_mem_comap_pres_num φ hφ hopen hplus (selfIndex Aplus p hp))) ≫
+        (presentationLimitRationalIsoInCommRingCat hBplus _
+          (comapSelfIndex (P' := P') φ hφ hopen hplus p hp).isOpen_span).inv := by
+  rw [presentationLimitRingPresheafedSpaceComap_c_app]
+  -- Unfold `base` to `spaComapTopHom`, the form in which
+  -- `presentationLimitPresheafInCommRingCat_map` is stated.
+  dsimp only [presentationLimitRingPresheafedSpaceComap] at hq ⊢
+  rw [← cancel_mono (presentationLimitRationalIsoInCommRingCat hBplus _
+    (comapSelfIndex (P' := P') φ hφ hopen hplus p hp).isOpen_span).hom]
+  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  rw [presentationLimitRationalIsoInCommRingCat_hom,
+    reassoc_of% presentationLimitPresheafInCommRingCat_map P' Bplus (homOfLE hq).op]
+  simpa only [presentationLimitRationalIsoInCommRingCat_inv,
+    Functor.comp_map, Functor.map_comp, Category.assoc, eqToHom_trans_assoc,
+    eqToHom_trans, eqToHom_refl, Category.id_comp, Category.comp_id] using congrArg
+      (fun k ↦ (TopCommRingCat.isCompleteSeparated.ι ⋙
+        forget₂ TopCommRingCat CommRingCat).map k)
+      (presentationLimitRationalIso_inv_comp_comap_comp_hom φ hφ hopen hplus hAplus hBplus hsheaf
+        p hp)
+
+/-- The stalk map of `presentationLimitRingPresheafedSpaceComap` carries the germ of the rational
+open `R(p)` to the germ of `R(φ(p))` after the base change `A⟨p⟩ → B⟨φ(p)⟩`. -/
+private theorem presentationLimitRationalGerm_comp_stalkMap
+    (φ : A →+* B) (hφ : Continuous φ)
+    (hopen : ∀ ⦃J : Ideal A⦄, IsOpen (J : Set A) → IsOpen (J.map φ : Set B))
+    (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b)
+    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
+      (presentationLimitPresheaf P' Bplus))
+    (p : Presentation P) (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) (x : spa Bplus)
+    (hy : (presentationLimitRingPresheafedSpaceComap φ hφ hopen hplus hBplus hsheaf).base x ∈
+      spaBasicOpen Aplus p.num p.den)
+    (hx : x ∈ spaBasicOpen Bplus (comapSelfIndex (P' := P') φ hφ hopen hplus p hp).pres.num
+      (comapSelfIndex (P' := P') φ hφ hopen hplus p hp).pres.den) :
+    presentationLimitRationalGerm hAplus p hp _ hy ≫
+        (presentationLimitRingPresheafedSpaceComap φ hφ hopen hplus hBplus hsheaf).stalkMap x =
+      (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
+          (p.mapHom φ hφ (comapSelfIndex (P' := P') φ hφ hopen hplus p hp).pres
+            (PresentationIndex.map_pres_den φ hφ hopen hplus _ (selfIndex Aplus p hp))
+            (fun _ ↦ map_mem_comap_pres_num φ hφ hopen hplus (selfIndex Aplus p hp))) ≫
+        presentationLimitRationalGerm hBplus _
+          (comapSelfIndex (P' := P') φ hφ hopen hplus p hp).isOpen_span x hx := by
+  have hq : spaBasicOpen Bplus (comapSelfIndex (P' := P') φ hφ hopen hplus p hp).pres.num
+      (comapSelfIndex (P' := P') φ hφ hopen hplus p hp).pres.den ≤
+      (Opens.map (presentationLimitRingPresheafedSpaceComap (P := P) φ hφ hopen hplus hBplus
+        hsheaf).base).obj (spaBasicOpen Aplus p.num p.den) :=
+    (comapSelfIndex (P' := P') φ hφ hopen hplus p hp).le_open
+  rw [presentationLimitRationalGerm_def, presentationLimitRationalGerm_def, Category.assoc,
+    PresheafedSpace.stalkMap_germ (presentationLimitRingPresheafedSpaceComap φ hφ hopen hplus
+      hBplus hsheaf) _ x hy, ← (presentationLimitPresheafInCommRingCat P' Bplus).germ_res
+      (homOfLE hq) x hx,
+    reassoc_of% presentationLimitRationalIsoInCommRingCat_inv_comp_c_app_comp_map φ hφ hopen hplus
+      hAplus hBplus hsheaf p hp hq, Functor.comp_map]
+
+/-- Forgetting the topology on sections of `presentationLimitPresheafedSpaceComap` gives
+`presentationLimitRingPresheafedSpaceComap`, so the two pull the canonical stalk valuation back
+in the same way. -/
+private theorem comap_stalkMap_presentationLimitPresheafedSpaceComap
+    (φ : A →+* B) (hφ : Continuous φ)
+    (hopen : ∀ ⦃J : Ideal A⦄, IsOpen (J : Set A) → IsOpen (J.map φ : Set B))
+    (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b)
+    (hP : P.ringOfDefinition ≤ Aplus) (hP' : P'.ringOfDefinition ≤ Bplus)
+    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
+      (presentationLimitPresheaf P' Bplus)) (x : spa Bplus) :
+    comap ((TauCeti.PreAdicSpace.toRingPresheafedSpaceHom
+        (presentationLimitPresheafedSpaceComap φ hφ hopen hplus hAplus hBplus hP hP'
+          hsheaf)).stalkMap x).hom
+        ((presentationLimitPreAdicSpace P' Bplus hBplus hP').stalkValuation x) =
+      comap ((presentationLimitRingPresheafedSpaceComap φ hφ hopen hplus hBplus
+        hsheaf).stalkMap x).hom (presentationLimitStalkValuation hBplus hP' x) := by
+  rw [presentationLimitPreAdicSpace_stalkValuation P' Bplus hBplus hP' x]
+  -- `toRingPresheafedSpaceHom` forgets the topology on sections componentwise, which is how
+  -- `presentationLimitRingPresheafedSpaceComap` is built from `presentationLimitPresheafComap`.
+  rfl
+
 /-- The underlying morphism of presheafed spaces preserves the canonical stalk valuations. -/
 theorem presentationLimitPresheafedSpaceComap_stalkValuation
     (φ : A →+* B) (hφ : Continuous φ)
@@ -230,124 +494,23 @@ theorem presentationLimitPresheafedSpaceComap_stalkValuation
         ((presentationLimitPreAdicSpace P' Bplus hBplus hP').stalkValuation x) := by
   refine (presentationLimitPreAdicSpace_stalkValuation P Aplus hAplus hP
     (spaComap φ hφ Aplus Bplus hplus x)).trans ?_
-  rw [presentationLimitPreAdicSpace_stalkValuation P' Bplus hBplus hP' x]
-  change presentationLimitStalkValuation hAplus hP (spaComap φ hφ Aplus Bplus hplus x) =
-    comap ((presentationLimitRingPresheafedSpaceComap φ hφ hopen hplus hBplus
-      hsheaf).stalkMap x).hom
-      (presentationLimitStalkValuation hBplus hP' x)
+  rw [comap_stalkMap_presentationLimitPresheafedSpaceComap]
+  -- Replace the point `spaComap φ hφ Aplus Bplus hplus x` by its definitional form `f.base x`,
+  -- the source point of the stalk map `f.stalkMap x`, so that germs at it compose with it.
   let f := presentationLimitRingPresheafedSpaceComap (P := P) (P' := P') φ hφ hopen hplus
     hBplus hsheaf
-  have hbase : f.base x = spaComap φ hφ Aplus Bplus hplus x := by
-    apply Subtype.ext
-    dsimp [f, presentationLimitRingPresheafedSpaceComap]
+  have hbase : f.base x = spaComap φ hφ Aplus Bplus hplus x := rfl
   cases hbase
-  symm
-  apply eq_presentationLimitStalkValuation (x := f.base x) hAplus hP
-  intro p hp hy
-  let i : PresentationIndex (P := P) Aplus (spaBasicOpen Aplus p.num p.den) :=
-    ⟨p, hp, le_rfl⟩
-  let q := (i.comap (P' := P') φ hφ hopen hplus).pres
-  have hx : x ∈ spaBasicOpen Bplus q.num q.den := by
-    rw [show spaBasicOpen Bplus q.num q.den =
-      (Opens.map (spaComapTopHom φ hφ hplus)).obj
-        (spaBasicOpen Aplus p.num p.den) by
-      exact PresentationIndex.spaBasicOpen_map_pres φ hφ hopen hplus _ i]
+  -- Check the pulled-back valuation on the rational germs at `f.base x`.
+  refine (eq_presentationLimitStalkValuation (x := f.base x) hAplus hP fun p hp hy ↦ ?_).symm
+  have hx : x ∈ spaBasicOpen Bplus (comapSelfIndex (P' := P') φ hφ hopen hplus p hp).pres.num
+      (comapSelfIndex (P' := P') φ hφ hopen hplus p hp).pres.den := by
+    rw [PresentationIndex.spaBasicOpen_map_pres φ hφ hopen hplus _ (selfIndex Aplus p hp)]
     exact Opens.mem_map.mpr hy
-  have hq : spaBasicOpen Bplus q.num q.den ≤
-      (Opens.map f.base).obj (spaBasicOpen Aplus p.num p.den) := by
-    dsimp only [f, presentationLimitRingPresheafedSpaceComap]
-    exact (i.comap (P' := P') φ hφ hopen hplus).le_open
-  have hgerm :
-      presentationLimitRationalGerm hAplus p hp
-          (f.base x) hy ≫ f.stalkMap x =
-        (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
-            (p.mapHom φ hφ q
-              (PresentationIndex.map_pres_den φ hφ hopen hplus _ i) (fun t ht ↦ by
-                classical
-                rw [PresentationIndex.map_pres_num]
-                exact Finset.mem_image_of_mem φ ht)) ≫
-          presentationLimitRationalGerm hBplus q
-            (i.comap (P' := P') φ hφ hopen hplus).isOpen_span x hx := by
-    rw [presentationLimitRationalGerm_def, presentationLimitRationalGerm_def]
-    rw [Category.assoc]
-    have hsm := PresheafedSpace.stalkMap_germ f (spaBasicOpen Aplus p.num p.den) x hy
-    rw [hsm]
-    have hcTop :
-        (presentationLimitRationalIso Aplus hAplus p hp).inv ≫
-            presentationLimitComap φ hφ hopen hplus hBplus hsheaf
-              (spaBasicOpen Aplus p.num p.den) ≫
-            presentationLimitMap (i.comap (P' := P') φ hφ hopen hplus).le_open =
-          p.mapHom φ hφ q
-              (PresentationIndex.map_pres_den φ hφ hopen hplus _ i) (fun t ht ↦ by
-                classical
-                rw [PresentationIndex.map_pres_num]
-                exact Finset.mem_image_of_mem φ ht) ≫
-            (presentationLimitRationalIso Bplus hBplus q
-              (i.comap (P' := P') φ hφ hopen hplus).isOpen_span).inv := by
-      rw [← cancel_mono (presentationLimitRationalIso Bplus hBplus q
-        (i.comap (P' := P') φ hφ hopen hplus).isOpen_span).hom]
-      simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
-      rw [presentationLimitComap_comp_map_comp_hom]
-      simp only [← Category.assoc, presentationLimitRationalIso_inv_comp_π,
-        homOfRationalSubsetSubset_self, Category.id_comp]
-      rfl
-    have hc :
-        (presentationLimitRationalIsoInCommRingCat hAplus p hp).inv ≫
-            f.c.app (Opposite.op (spaBasicOpen Aplus p.num p.den)) ≫
-            (presentationLimitPresheafInCommRingCat P' Bplus).map
-              (homOfLE hq).op =
-          (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
-            (p.mapHom φ hφ q
-              (PresentationIndex.map_pres_den φ hφ hopen hplus _ i) (fun t ht ↦ by
-                classical
-                rw [PresentationIndex.map_pres_num]
-                exact Finset.mem_image_of_mem φ ht)) ≫
-            (presentationLimitRationalIsoInCommRingCat hBplus q
-              (i.comap (P' := P') φ hφ hopen hplus).isOpen_span).inv := by
-      rw [show f.c.app (Opposite.op (spaBasicOpen Aplus p.num p.den)) = _ from by
-        simpa only [f] using
-          presentationLimitRingPresheafedSpaceComap_c_app
-            φ hφ hopen hplus hBplus hsheaf
-              (Opposite.op (spaBasicOpen Aplus p.num p.den))]
-      dsimp only [f, presentationLimitRingPresheafedSpaceComap] at hq ⊢
-      rw [← cancel_mono (presentationLimitRationalIsoInCommRingCat hBplus q
-        (i.comap (P' := P') φ hφ hopen hplus).isOpen_span).hom]
-      simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
-      rw [presentationLimitRationalIsoInCommRingCat_hom]
-      rw [reassoc_of% presentationLimitPresheafInCommRingCat_map P' Bplus
-        (homOfLE hq).op]
-      have hcTop' :
-          (presentationLimitRationalIso Aplus hAplus p hp).inv ≫
-              presentationLimitComap φ hφ hopen hplus hBplus hsheaf
-                (spaBasicOpen Aplus p.num p.den) ≫
-              presentationLimitMap (i.comap (P' := P') φ hφ hopen hplus).le_open ≫
-              (presentationLimitRationalIso Bplus hBplus q
-                (i.comap (P' := P') φ hφ hopen hplus).isOpen_span).hom =
-            p.mapHom φ hφ q
-              (PresentationIndex.map_pres_den φ hφ hopen hplus _ i) (fun t ht ↦ by
-                classical
-                rw [PresentationIndex.map_pres_num]
-                exact Finset.mem_image_of_mem φ ht) := by
-        simpa only [Category.assoc, Iso.inv_hom_id, Category.comp_id] using congrArg
-          (fun k ↦ k ≫ (presentationLimitRationalIso Bplus hBplus q
-            (i.comap (P' := P') φ hφ hopen hplus).isOpen_span).hom) hcTop
-      simpa only [presentationLimitRationalIsoInCommRingCat_inv,
-        Functor.comp_map, Functor.map_comp, Category.assoc, eqToHom_trans_assoc,
-        eqToHom_trans, eqToHom_refl, Category.id_comp, Category.comp_id] using congrArg
-          (fun k ↦ (TopCommRingCat.isCompleteSeparated.ι ⋙
-            forget₂ TopCommRingCat CommRingCat).map k) hcTop'
-    rw [← (presentationLimitPresheafInCommRingCat P' Bplus).germ_res
-      (homOfLE hq) x hx]
-    with_unfolding_all rw [reassoc_of% hc]
-    rfl
-  rw [comap_hom_comap_hom, hgerm, ← comap_hom_comap_hom,
+  rw [comap_hom_comap_hom, presentationLimitRationalGerm_comp_stalkMap φ hφ hopen hplus hAplus
+      hBplus hsheaf p hp x hy hx, ← comap_hom_comap_hom,
     comap_presentationLimitRationalGerm_presentationLimitStalkValuation]
-  exact (show comap _ (rationalLocalizationPoint hP' q x hx) = _ from
-    comap_mapHom_rationalLocalizationPoint φ hφ hplus hP hP' p q
-      (PresentationIndex.map_pres_den φ hφ hopen hplus _ i) (fun t ht ↦ by
-        classical
-        rw [PresentationIndex.map_pres_num]
-        exact Finset.mem_image_of_mem φ ht) x hx hy)
+  exact comap_mapHom_rationalLocalizationPoint φ hφ hplus hP hP' p _ _ _ x hx hy
 
 /-- The morphism of presentation-limit pre-adic spaces induced contravariantly by a continuous
 ring homomorphism preserving the chosen rings of integral elements and carrying open ideals to
@@ -368,6 +531,22 @@ noncomputable def presentationLimitPreAdicSpaceComap
   stalkValuation_eq x :=
     presentationLimitPresheafedSpaceComap_stalkValuation φ hφ hopen hplus hAplus hBplus
       hP hP' hsheaf x
+
+/-- The morphism of presheafed spaces underlying `presentationLimitPreAdicSpaceComap` is
+`presentationLimitPresheafedSpaceComap`. -/
+@[simp]
+theorem presentationLimitPreAdicSpaceComap_toHom
+    (φ : A →+* B) (hφ : Continuous φ)
+    (hopen : ∀ ⦃J : Ideal A⦄, IsOpen (J : Set A) → IsOpen (J.map φ : Set B))
+    (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b)
+    (hP : P.ringOfDefinition ≤ Aplus) (hP' : P'.ringOfDefinition ≤ Bplus)
+    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
+      (presentationLimitPresheaf P' Bplus)) :
+    (presentationLimitPreAdicSpaceComap φ hφ hopen hplus hAplus hBplus hP hP' hsheaf).toHom =
+      presentationLimitPresheafedSpaceComap φ hφ hopen hplus hAplus hBplus hP hP' hsheaf := by
+  rw [presentationLimitPreAdicSpaceComap]
 
 end TauCeti.ValuationSpectrum
 
