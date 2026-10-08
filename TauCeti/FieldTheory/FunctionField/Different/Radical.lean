@@ -181,14 +181,16 @@ theorem differentExponent_add_one_eq_of_pow_eq_of_gcd_ord_eq_one {y : F'} {n : �
   have : (differentExponent k F P' : ℤ) + 1 = n := by linarith
   exact_mod_cast this
 
-/-- Both halves of the ramification data of a radical extension at once, proved through the tower
-`F ⊆ F(y ^ (n / r_P)) ⊆ F'`: the element `y ^ (n / r_P)` is an `r_P`-th root of `u`, so `P` is
-unramified in the middle field, and `y` is an `(n / r_P)`-th root of an element of order coprime
-to `n / r_P` there, so the places of the middle field below `P'` are totally ramified in `F'`. -/
+/-- For a radical extension `F' = F(y)`, `y ^ n = u`, both `e(P' ∣ P)` and `d(P' ∣ P) + 1` equal
+`n / gcd(n, ord_P u)`. -/
 private theorem ramificationIdx_eq_and_differentExponent_add_one_eq_of_pow_eq {y : F'} {n : ℕ}
     {u : F} (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0) (hu : u ≠ 0) :
     ramificationIdx F P' = n / Int.gcd n ((P'.restrict k F).ord u) ∧
       differentExponent k F P' + 1 = n / Int.gcd n ((P'.restrict k F).ord u) := by
+  -- Work through the tower `F ⊆ F(y ^ (n / r_P)) ⊆ F'`: the element `y ^ (n / r_P)` is an
+  -- `r_P`-th root of `u`, so `P` is unramified in the middle field, and `y` is an
+  -- `(n / r_P)`-th root of an element of order coprime to `n / r_P` there, so the places of the
+  -- middle field below `P'` are totally ramified in `F'`.
   have hn0 : n ≠ 0 := by
     rintro rfl
     exact hn Nat.cast_zero

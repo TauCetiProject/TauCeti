@@ -48,7 +48,10 @@ of the Hurwitz genus formula: the constant fields `k` of `F` and `k'` of `F'` ar
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Proposition 3.7.3 and Theorem 3.4.13.
+  Proposition 3.7.3, Corollary 3.7.4 and Theorem 3.4.13.
+
+The divisor, degree and Hurwitz assembly follows the Artin–Schreier genus formula in
+`TauCeti.FieldTheory.FunctionField.ArtinSchreier.Genus`.
 -/
 
 public section
