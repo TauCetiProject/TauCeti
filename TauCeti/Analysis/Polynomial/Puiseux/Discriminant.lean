@@ -63,8 +63,12 @@ theorem _root_.Polynomial.exists_analyticAt_prod_X_sub_C_of_orderAt_discr_eq
             (Φ z.1 + z.2 ^ p.natDegree.factorial • (fun i ↦ (v i : ℂ))))).discr =
               z.2 ^ (p.natDegree.factorial * m) * u z := by
   -- Prepare the discriminant on one complex polydisc directly from its real ambient order.
-  obtain ⟨ρ, hρ, Φ, v, u, hΦ, hreal, -, hu, hunit⟩ :=
-    p.discr.exists_complexification_eval_add_smul_eq_pow_mul hφ hm
+  obtain ⟨ρ₀, hρ₀, Φ, V, -, hV, hΦ₀, hreal₀, -, hdir⟩ :=
+    p.discr.exists_complexification_dense_open_directions_eval_add_smul_eq_pow_mul hφ hm
+  obtain ⟨v, hv⟩ := hV.nonempty
+  obtain ⟨ρ, hρ, hρle, u, hu, hunit⟩ := hdir v hv
+  have hΦ := hΦ₀.mono (ball_subset_ball hρle)
+  have hreal := fun x hx ↦ hreal₀ x (ball_subset_ball hρle hx)
   let ac : ι → ℂ := fun j ↦ (a j : ℂ)
   let U := ball ac ρ
   let F : (ι → ℂ) × ℂ → ℂ[X] := fun z ↦
