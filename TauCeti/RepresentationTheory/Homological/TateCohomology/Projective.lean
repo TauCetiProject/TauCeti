@@ -5,10 +5,10 @@ Authors: Claude
 -/
 module
 
+public import Mathlib.GroupTheory.Sylow
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Coinduced
 public import TauCeti.RepresentationTheory.NormSplit.BaseChange
 import Mathlib.Algebra.CharP.Quotient
-import Mathlib.GroupTheory.Sylow
 import Mathlib.RingTheory.Flat.TorsionFree
 import TauCeti.RepresentationTheory.NormSplit.PGroup
 import TauCeti.RepresentationTheory.Homological.TateCohomology.HomologySequence
@@ -41,16 +41,22 @@ It suffices that the identity of `A` is a norm `∑ g, A.ρ g ∘ φ ∘ A.ρ g�
 `p`-subgroup `P` for each prime `p` (`Representation.id_mem_range_norm_linHom_of_forall_prime`).
 If `p` is a unit in `k`, the identity is `|P|⁻¹` times the norm of the identity. Otherwise
 `F = k/pk` is a field of characteristic `p`. The vanishing of `H_Tate⁰(P, A)` and
-`H_Tate⁻¹(P, A)` gives the vanishing of `H_Tate⁻¹(P, A/pA)` (`Rep.ker_norm_baseChange_le`), so the
-identity of `A/pA` is a norm (`Representation.id_mem_range_norm_linHom_of_ker_norm_le`), and so is
-the identity of `A` (`Representation.id_mem_range_norm_linHom_of_baseChange`).
+`H_Tate⁻¹(P, A)` gives the vanishing of `H_Tate⁻¹(P, A/pA)`
+(`Rep.ker_norm_baseChange_le_coinvariantsKer`), so the identity of `A/pA` is a norm
+(`Representation.id_mem_range_norm_linHom_of_ker_norm_le`), and so is the identity of `A`
+(`Representation.id_mem_range_norm_linHom_of_baseChange`). Only primes dividing `|G|`, and only
+the degrees `0` and `-1` on one Sylow subgroup for each of them, are used
+(`Rep.projective_of_isZero_res_sylow`).
 
 ## Main statements
 
 * `Rep.isZero_res_of_projective`: if `A.ρ.asModule` is a projective
   `k[G]`-module, then `H-hat^n(S, A) = 0` for every finite subgroup `S` of `G` and every `n : ℤ`.
-* `Rep.ker_norm_baseChange_le`: if `H_Tate⁰(G, A) = H_Tate⁻¹(G, A) = 0` and `p` is regular on
-  `A`, then `H_Tate⁻¹(G, (k/pk) ⊗ A) = 0`, in the form `ker N ≤ I_G ((k/pk) ⊗ A)`.
+* `Rep.ker_norm_baseChange_le_coinvariantsKer`: if `H_Tate⁰(G, A) = H_Tate⁻¹(G, A) = 0` and `p`
+  is regular on `A`, then `H_Tate⁻¹(G, (k/pk) ⊗ A) = 0`, in the form `ker N ≤ I_G ((k/pk) ⊗ A)`.
+* `Rep.projective_of_isZero_res_sylow`: a representation of a finite group on a projective
+  `k`-module is projective over `k[G]` if, for each prime `p` dividing `|G|`, either `p` is a unit
+  in `k`, or `pk` is maximal and `H_Tate⁰` and `H_Tate⁻¹` vanish on a Sylow `p`-subgroup.
 * `Rep.projective_of_isZero_res`: over `k` as above, a cohomologically trivial representation of a
   finite group whose underlying `k`-module is projective is projective over `k[G]`.
 * `Rep.isZero_res_of_exact`: the same vanishing when `A.ρ.asModule` has a projective resolution
@@ -91,7 +97,7 @@ theorem isZero_res_of_projective (A : Rep k G)
 /-- **`H_Tate⁻¹` modulo `p`.** If `H_Tate⁰(G, A)` and `H_Tate⁻¹(G, A)` vanish and multiplication
 by `p` is injective on `A`, then every vector of `(k/pk) ⊗ A` of norm zero lies in the augmentation
 submodule; that is, `H_Tate⁻¹(G, (k/pk) ⊗ A) = 0`. -/
-theorem ker_norm_baseChange_le [Fintype G] (A : Rep k G) (p : k)
+theorem ker_norm_baseChange_le_coinvariantsKer [Fintype G] (A : Rep k G) (p : k)
     (hp : ∀ v : A.V, p • v = 0 → v = 0) (h0 : IsZero (tateCohomology A 0))
     (h1 : IsZero (tateCohomology A (-1))) :
     LinearMap.ker (A.ρ.baseChange (k ⧸ Ideal.span {p})).norm ≤
@@ -129,23 +135,24 @@ theorem ker_norm_baseChange_le [Fintype G] (A : Rep k G) (p : k)
   have := hcoinv hmem
   rwa [Submodule.mem_comap, map_sub, (hred_eq_zero _).2 ⟨w, rfl⟩, sub_zero] at this
 
-/-- **Nakayama–Rim, lattice form** (Serre, *Local Fields*, IX §§3–5; Rim, Ann. of Math. 69
-(1959)). Over an integral domain of characteristic zero in which every prime number is a unit or
-generates a maximal ideal (for instance `ℤ`, `ℤ_[p]` or `ℤ_(p)`), a cohomologically trivial
-representation of a finite group whose underlying `k`-module is projective — for instance free, of
-any rank — is projective over `k[G]`. -/
-theorem projective_of_isZero_res [Finite G] [IsDomain k] [CharZero k]
-    (hk : ∀ p : ℕ, p.Prime → IsUnit (p : k) ∨ (Ideal.span {(p : k)}).IsMaximal)
+/-- **Nakayama–Rim, Sylow form** (Serre, *Local Fields*, IX §§3–5; Rim, Ann. of Math. 69 (1959)).
+Let `k` be an integral domain of characteristic zero, `G` a finite group, and `A` a representation
+of `G` on a projective `k`-module. Suppose that for each prime `p` dividing `|G|` some Sylow
+`p`-subgroup `P` satisfies: `p` is a unit in `k`, or `pk` is a maximal ideal and
+`H_Tate⁰(P, A) = H_Tate⁻¹(P, A) = 0`. Then `A` is projective over `k[G]`. -/
+theorem projective_of_isZero_res_sylow [Finite G] [IsDomain k] [CharZero k]
     (A : Rep k G) [Module.Projective k A.V]
-    (hA : ∀ (S : Subgroup G) [Fintype S] (n : ℤ),
-      IsZero (tateCohomology (res S.subtype A) n)) :
+    (h : ∀ p : ℕ, p.Prime → p ∣ Nat.card G → ∃ (P : Sylow p G) (_ : Fintype P),
+      IsUnit (p : k) ∨ (Ideal.span {(p : k)}).IsMaximal ∧
+        IsZero (tateCohomology (res (P : Subgroup G).subtype A) 0) ∧
+        IsZero (tateCohomology (res (P : Subgroup G).subtype A) (-1))) :
     Module.Projective (MonoidAlgebra k G) A.ρ.asModule := by
   classical
   have := Fintype.ofFinite G
   refine Rep.moduleProjective_of_id_mem_range_norm_linHom A
-    (A.ρ.id_mem_range_norm_linHom_of_forall_prime fun p hp _ ↦ ?_)
+    (A.ρ.id_mem_range_norm_linHom_of_forall_prime fun p hp hpG ↦ ?_)
   have := Fact.mk hp
-  obtain ⟨P⟩ := (inferInstance : Nonempty (Sylow p G))
+  obtain ⟨P, _, hP⟩ := h p hp (by rwa [Nat.card_eq_fintype_card])
   refine ⟨P, inferInstance, P.not_dvd_index, ?_⟩
   obtain ⟨m, hm⟩ := IsPGroup.iff_card.1 P.isPGroup'
   have hcard : Fintype.card P = p ^ m := by rw [← hm, Nat.card_eq_fintype_card]
@@ -153,7 +160,7 @@ theorem projective_of_isZero_res [Finite G] [IsDomain k] [CharZero k]
   -- of the restriction `A.ρ.comp P.subtype`, the form the norm-splitting lemmas are stated in.
   suffices LinearMap.id ∈ LinearMap.range (Representation.linHom (A.ρ.comp (P : Subgroup G).subtype)
       (A.ρ.comp (P : Subgroup G).subtype)).norm from this
-  rcases hk p hp with hunit | hmax
+  rcases hP with hunit | ⟨hmax, h0, h1⟩
   · -- `|P|` is a unit, and the identity is the norm of `|P|⁻¹ • id`.
     obtain ⟨u, hu⟩ := hunit.pow m
     refine ⟨(↑u⁻¹ : k) • LinearMap.id, LinearMap.ext fun x ↦ ?_⟩
@@ -171,8 +178,25 @@ theorem projective_of_isZero_res [Finite G] [IsDomain k] [CharZero k]
     exact Representation.id_mem_range_norm_linHom_of_baseChange (A.ρ.comp (P : Subgroup G).subtype)
       hcard hreg
       (Representation.id_mem_range_norm_linHom_of_ker_norm_le p P.isPGroup' _
-        (ker_norm_baseChange_le (res (P : Subgroup G).subtype A) (p : k) hreg (hA P 0)
-          (hA P (-1))))
+        (ker_norm_baseChange_le_coinvariantsKer (res (P : Subgroup G).subtype A) (p : k) hreg h0
+          h1))
+
+/-- **Nakayama–Rim, lattice form** (Serre, *Local Fields*, IX §§3–5; Rim, Ann. of Math. 69
+(1959)). Over an integral domain of characteristic zero in which every prime number is a unit or
+generates a maximal ideal (for instance `ℤ`, `ℤ_[p]` or `ℤ_(p)`), a cohomologically trivial
+representation of a finite group whose underlying `k`-module is projective — for instance free, of
+any rank — is projective over `k[G]`. -/
+theorem projective_of_isZero_res [Finite G] [IsDomain k] [CharZero k]
+    (hk : ∀ p : ℕ, p.Prime → IsUnit (p : k) ∨ (Ideal.span {(p : k)}).IsMaximal)
+    (A : Rep k G) [Module.Projective k A.V]
+    (hA : ∀ (S : Subgroup G) [Fintype S] (n : ℤ),
+      IsZero (tateCohomology (res S.subtype A) n)) :
+    Module.Projective (MonoidAlgebra k G) A.ρ.asModule :=
+  projective_of_isZero_res_sylow A fun p hp _ ↦
+    have := Fact.mk hp
+    let P : Sylow p G := Classical.arbitrary _
+    letI : Fintype P := .ofFinite P
+    ⟨P, inferInstance, (hk p hp).imp_right fun hmax ↦ ⟨hmax, hA P 0, hA P (-1)⟩⟩
 
 /-- **Projective dimension at most one implies cohomological triviality.** Let
 `0 → P₁ → P₀ → A → 0` be an exact sequence of `k[G]`-modules with `P₀` and `P₁` projective. Then
