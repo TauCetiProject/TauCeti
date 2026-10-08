@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.DirectSum.FiniteSupport
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Map
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.Unit
 public import TauCeti.CategoryTheory.AInfinity.Unit
 
 /-!

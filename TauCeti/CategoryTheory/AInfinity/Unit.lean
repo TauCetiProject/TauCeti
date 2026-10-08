@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.AInfinity.Algebra.Unit
 public import TauCeti.CategoryTheory.AInfinity.Basic
 
 /-!
