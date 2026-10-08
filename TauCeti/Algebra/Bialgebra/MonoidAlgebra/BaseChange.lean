@@ -113,14 +113,13 @@ end TauCeti.MonoidAlgebra
 
 namespace MonoidAlgebra
 
-variable (k : Type*) (K : Type*) [CommSemiring k] [CommSemiring K] [Algebra k K]
-variable {G : Type*} [CommMonoid G]
+variable {k : Type*} [CommSemiring k] {G : Type*} [CommMonoid G]
 
 /-- Applying the monoid-algebra scalar-extension equivalence in two stages agrees with applying
 it directly. -/
-theorem scalarTensorBialgEquiv_tower {L : Type*} [CommSemiring L]
-    [Algebra k L] [Algebra L K] [IsScalarTower k L K]
-    (p : MonoidAlgebra k G) :
+theorem scalarTensorBialgEquiv_tower (p : MonoidAlgebra k G) (K : Type*) [CommSemiring K]
+    [Algebra k K] {L : Type*} [CommSemiring L] [Algebra k L] [Algebra L K]
+    [IsScalarTower k L K] :
     TauCeti.MonoidAlgebra.scalarTensorBialgEquiv L K
         (1 ⊗ₜ[L] TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k L (1 ⊗ₜ[k] p)) =
       TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k K (1 ⊗ₜ[k] p) := by
