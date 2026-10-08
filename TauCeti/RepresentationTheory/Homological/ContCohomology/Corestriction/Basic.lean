@@ -74,8 +74,9 @@ carrier had not yet landed.
   the canonical transversal.
 * `TauCeti.ContCohomology.explicitCor1_comp_res1`: the normalization
   `cor¹ ∘ res¹ = (G : U) • id` on `H¹`.
-* `TauCeti.ContCohomology.explicitRes1_injective_of_nsmul_homeomorph`: restriction is injective
-  on `H¹` when multiplication by the index is a homeomorphism of the coefficients.
+* `TauCeti.ContCohomology.explicitRes1_injective_of_nsmul_injective`: restriction is injective
+  on `H¹` when multiplication by the index is injective on `H¹`, with the specialization
+  `explicitRes1_injective_of_nsmul_homeomorph` to coefficients on which it is a homeomorphism.
 * `TauCeti.ContCohomology.explicitCor1_explicitMap1_id`: degree-one corestriction is natural in
   an equivariant coefficient map.
 * `TauCeti.ContCohomology.cochainsCor2`: the degree-two corestriction cochain for a variable
@@ -87,7 +88,8 @@ carrier had not yet landed.
   the canonical transversal.
 * `TauCeti.ContCohomology.explicitCor2_comp_res2`: the normalization
   `cor² ∘ res² = (G : U) • id` on `H²`.
-* `TauCeti.ContCohomology.explicitRes2_injective_of_nsmul_homeomorph`: the same on `H²`.
+* `TauCeti.ContCohomology.explicitRes2_injective_of_nsmul_injective` and
+  `TauCeti.ContCohomology.explicitRes2_injective_of_nsmul_homeomorph`: the same on `H²`.
 
 ## References
 
@@ -510,14 +512,21 @@ theorem explicitCor1_comp_res1 (x : H1 G M) :
     explicitCor1 G M U hU (explicitRes1 G M U x) = U.index • x :=
   explicitCor1Transversal_comp_res1 G M U Quotient.out Quotient.out_eq hU x
 
-/-- **Restriction is injective on `H¹`** when multiplication by the index `(G : U)` is a
-homeomorphism of `M`, since `cor¹ ∘ res¹ = (G : U) • id`. For instance, this applies when the
-index is prime to `p` and `M` is an abelian pro-`p` group. -/
-theorem explicitRes1_injective_of_nsmul_homeomorph (e : M ≃ₜ M) (he : ∀ m, e m = U.index • m) :
+/-- **Restriction is injective on `H¹`** when multiplication by the index `(G : U)` is
+injective on `H¹(G, M)`, since `cor¹ ∘ res¹ = (G : U) • id`. -/
+theorem explicitRes1_injective_of_nsmul_injective
+    (h : Function.Injective fun x : H1 G M ↦ U.index • x) :
     Function.Injective (explicitRes1 G M U) := by
-  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
-  refine (nsmul_right_bijective_H1_of_homeomorph G M e he).injective ?_
+  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ h ?_
   simp only [← explicitCor1_comp_res1 G M U hU x, hx, map_zero, nsmul_zero]
+
+/-- **Restriction is injective on `H¹`** when multiplication by the index `(G : U)` is a
+homeomorphism of `M`. For instance, this applies when the index is prime to `p` and `M` is an
+abelian pro-`p` group. -/
+theorem explicitRes1_injective_of_nsmul_homeomorph (e : M ≃ₜ M) (he : ∀ m, e m = U.index • m) :
+    Function.Injective (explicitRes1 G M U) :=
+  explicitRes1_injective_of_nsmul_injective G M U hU
+    (nsmul_right_bijective_H1_of_homeomorph G M e he).injective
 
 /-- **Degree-one corestriction is natural in the coefficients**: for a continuous `G`-equivariant
 `f : M →+ N`, applying `f` on `H¹(U, -)` and then corestricting agrees with corestricting and then
@@ -904,14 +913,21 @@ theorem explicitCor2_comp_res2 (x : H2 G M) :
     explicitCor2 G M U hU (explicitRes2 G M U x) = U.index • x :=
   explicitCor2Transversal_comp_res2 G M U Quotient.out Quotient.out_eq hU x
 
-/-- **Restriction is injective on `H²`** when multiplication by the index `(G : U)` is a
-homeomorphism of `M`, since `cor² ∘ res² = (G : U) • id`. For instance, this applies when the
-index is prime to `p` and `M` is an abelian pro-`p` group. -/
-theorem explicitRes2_injective_of_nsmul_homeomorph (e : M ≃ₜ M) (he : ∀ m, e m = U.index • m) :
+/-- **Restriction is injective on `H²`** when multiplication by the index `(G : U)` is
+injective on `H²(G, M)`, since `cor² ∘ res² = (G : U) • id`. -/
+theorem explicitRes2_injective_of_nsmul_injective
+    (h : Function.Injective fun x : H2 G M ↦ U.index • x) :
     Function.Injective (explicitRes2 G M U) := by
-  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
-  refine (nsmul_right_bijective_H2_of_homeomorph G M e he).injective ?_
+  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ h ?_
   simp only [← explicitCor2_comp_res2 G M U hU x, hx, map_zero, nsmul_zero]
+
+/-- **Restriction is injective on `H²`** when multiplication by the index `(G : U)` is a
+homeomorphism of `M`. For instance, this applies when the index is prime to `p` and `M` is an
+abelian pro-`p` group. -/
+theorem explicitRes2_injective_of_nsmul_homeomorph (e : M ≃ₜ M) (he : ∀ m, e m = U.index • m) :
+    Function.Injective (explicitRes2 G M U) :=
+  explicitRes2_injective_of_nsmul_injective G M U hU
+    (nsmul_right_bijective_H2_of_homeomorph G M e he).injective
 
 end DegreeTwo
 

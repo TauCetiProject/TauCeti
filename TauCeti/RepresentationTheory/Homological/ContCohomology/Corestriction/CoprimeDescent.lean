@@ -170,10 +170,9 @@ variable {G M}
 `H¹(G, M) → H¹(U, M)` is injective, because `cor ∘ res = [G : U]` is invertible on `H¹(G, M)`. -/
 theorem explicitRes1_injective_of_coprime (U : Subgroup G) [U.FiniteIndex]
     (hU : IsOpen (U : Set G)) {e : ℕ} (he : ∀ y : M, e • y = 0) (hcop : U.index.Coprime e) :
-    Function.Injective (explicitRes1 G M U) := by
-  refine (injective_iff_map_eq_zero _).2 fun x hx => ?_
-  refine (nsmul_right_bijective_of_coprime (nsmul_H1_eq_zero he) hcop).injective ?_
-  simp only [← explicitCor1_comp_res1 G M U hU x, hx, map_zero, nsmul_zero]
+    Function.Injective (explicitRes1 G M U) :=
+  explicitRes1_injective_of_nsmul_injective G M U hU
+    (nsmul_right_bijective_of_coprime (nsmul_H1_eq_zero he) hcop).injective
 
 /-- **Restriction onto the conjugation invariants is bijective for an index prime to the
 coefficients** (NSW, proof of (7.3.1)). If `N` is an open normal subgroup of finite index and an
