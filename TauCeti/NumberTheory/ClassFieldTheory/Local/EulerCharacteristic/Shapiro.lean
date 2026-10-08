@@ -126,14 +126,14 @@ instance [IsGalois F (AlgebraicClosure F)] : FiniteDimensional F (shapiroField F
     rw [finrank_shapiroField, ← shapiroOpenSubgroup_index]
     exact Nat.pos_of_ne_zero Subgroup.FiniteIndex.index_ne_zero
 
-/-- The inclusion of the Shapiro fixed field into the separable closure `Fˢ ⊆ F̄`: when `F̄/F` is
-Galois, every element of `F̄` is separable over `F`. -/
+/-- The inclusion of the Shapiro fixed field into the separable closure of `F`: when
+`AlgebraicClosure F` is Galois over `F`, every element of it is separable over `F`. -/
 noncomputable def shapiroFieldEmbedding [IsGalois F (AlgebraicClosure F)] :
     shapiroField F V C →ₐ[F] SeparableClosure F :=
   IntermediateField.inclusion fun x _ ↦
     (mem_separableClosure_iff (F := F)).2 (Algebra.IsSeparable.isSeparable F x)
 
-/-- `shapiroFieldEmbedding` is the inclusion of subfields of `F̄`. -/
+/-- `shapiroFieldEmbedding` is the inclusion of subfields of `AlgebraicClosure F`. -/
 @[simp]
 theorem coe_shapiroFieldEmbedding_apply [IsGalois F (AlgebraicClosure F)]
     (x : shapiroField F V C) :
@@ -149,8 +149,9 @@ theorem range_absoluteGaloisGroupExtend_shapiroFieldEmbedding [IsGalois F (Algeb
   ext g
   rw [mem_range_absoluteGaloisGroupExtend_iff, mem_galoisSubgroup_iff,
     ← shapiroOpenSubgroup_toSubgroup, ← fixingSubgroup_shapiroField]
-  -- `G_F` and `Gal(F̄/F)` carry different (defeq) group instances, so the membership in the fixing
-  -- subgroup is unfolded by `IntermediateField.mem_fixingSubgroup_iff` as a term, not rewritten.
+  -- `G_F` and `Gal(AlgebraicClosure F/F)` carry different (defeq) group instances, so the
+  -- membership in the fixing subgroup is unfolded by `IntermediateField.mem_fixingSubgroup_iff`
+  -- as a term, not rewritten.
   refine ⟨fun h ↦ (IntermediateField.mem_fixingSubgroup_iff _ _).2 fun x hx ↦ ?_,
     fun h x ↦ Subtype.ext ?_⟩
   · exact (coe_absoluteGaloisGroupRestrictEquiv_apply (K := F) g _).symm.trans
