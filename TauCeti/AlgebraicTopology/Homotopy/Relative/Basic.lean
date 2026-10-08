@@ -39,7 +39,10 @@ the compression criterion); in particular `π_{n+1}(X, X, x₀)` is trivial.
 ## Main declarations
 
 * `TauCeti.RelGenLoop N X`: relative cubes `I × I^N → X` of the based pair `X`.
-* `TauCeti.RelGenLoop.Homotopic`: homotopy through relative cubes.
+* `TauCeti.RelGenLoop.mk`: the relative cube given by a continuous map satisfying the face
+  conditions.
+* `TauCeti.RelGenLoop.Homotopic`: homotopy through relative cubes, characterised by
+  `TauCeti.RelGenLoop.homotopic_iff`.
 * `TauCeti.RelHomotopyGroup N X`: the relative homotopy set `π_{n+1}(X, A, a₀)`, with
   induced maps `TauCeti.RelHomotopyGroup.map` and the functor
   `TauCeti.RelHomotopyGroup.functor`.
@@ -87,10 +90,24 @@ theorem coe_coe (p : RelGenLoop N X) : ⇑(p : C(I × (I^N), X.pair.fst)) = p :=
 theorem ext {p q : RelGenLoop N X} (h : ∀ y, p y = q y) : p = q :=
   DFunLike.coe_injective (funext h)
 
+/-- The relative cube given by a continuous map `I × I^N → X` that sends the face `{0} × I^N`
+into the subspace, and the face `{1} × I^N` and the sides `I × ∂I^N` to the basepoint. -/
+def mk (p : C(I × (I^N), X.pair.fst)) (h₀ : ∀ t, p (0, t) ∈ Set.range X.pair.map)
+    (h₁ : ∀ s t, (s = 1 ∨ t ∈ Cube.boundary N) → p (s, t) = X.pair.map X.basepoint) :
+    RelGenLoop N X :=
+  ⟨p, h₀, h₁⟩
+
 @[simp]
-theorem mk_apply (p : C(I × (I^N), X.pair.fst)) (hp : p ∈ RelGenLoop N X) (y : I × (I^N)) :
-    (⟨p, hp⟩ : RelGenLoop N X) y = p y :=
-  rfl
+theorem coe_mk (p : C(I × (I^N), X.pair.fst)) (h₀ : ∀ t, p (0, t) ∈ Set.range X.pair.map)
+    (h₁ : ∀ s t, (s = 1 ∨ t ∈ Cube.boundary N) → p (s, t) = X.pair.map X.basepoint) :
+    (mk p h₀ h₁ : C(I × (I^N), X.pair.fst)) = p :=
+  (rfl)
+
+@[simp]
+theorem mk_apply (p : C(I × (I^N), X.pair.fst)) (h₀ : ∀ t, p (0, t) ∈ Set.range X.pair.map)
+    (h₁ : ∀ s t, (s = 1 ∨ t ∈ Cube.boundary N) → p (s, t) = X.pair.map X.basepoint)
+    (y : I × (I^N)) : mk p h₀ h₁ y = p y :=
+  (rfl)
 
 /-- A relative cube sends the face `{0} × I^N` into the subspace. -/
 theorem apply_zero_mem_range (p : RelGenLoop N X) (t : I^N) :
@@ -124,6 +141,13 @@ instance : Inhabited (RelGenLoop N X) :=
 relative cubes. On the face `{0} × I^N` the homotopy may move inside the subspace. -/
 def Homotopic (p q : RelGenLoop N X) : Prop :=
   ContinuousMap.HomotopicWith (p : C(I × (I^N), X.pair.fst)) q (· ∈ RelGenLoop N X)
+
+/-- The characteristic property of `Homotopic`: a homotopy through relative cubes is a homotopy
+of the underlying continuous maps all of whose stages are relative cubes. -/
+theorem homotopic_iff {p q : RelGenLoop N X} :
+    Homotopic p q ↔
+      ContinuousMap.HomotopicWith (p : C(I × (I^N), X.pair.fst)) q (· ∈ RelGenLoop N X) :=
+  Iff.rfl
 
 namespace Homotopic
 
