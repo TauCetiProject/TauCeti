@@ -20,7 +20,7 @@ value: two such that are equivalent are equal.
 
 ## Main definitions
 
-* `TauCeti.Rat.AbsoluteValue.IsStandard`: being the real or a `q`-adic absolute value on `ℚ`.
+* `Rat.AbsoluteValue.IsStandard`: being the real or a `q`-adic absolute value on `ℚ`.
 
 ## Main results
 
@@ -67,21 +67,21 @@ theorem _root_.AbsoluteValue.IsEquiv.eq_of_forall_ratCast_eq {F : Type*} [Field 
   rw [← congrFun hcw x, hc1, Real.rpow_one]
 
 /-- The standard absolute values on `ℚ`: the real one and the `q`-adic ones. -/
-def Rat.AbsoluteValue.IsStandard (a : AbsoluteValue ℚ ℝ) : Prop :=
+def _root_.Rat.AbsoluteValue.IsStandard (a : AbsoluteValue ℚ ℝ) : Prop :=
   a = Rat.AbsoluteValue.real ∨ ∃ (q : ℕ) (_ : Fact q.Prime), a = Rat.AbsoluteValue.padic q
 
 /-- The real absolute value on `ℚ` is standard. -/
-theorem Rat.AbsoluteValue.IsStandard.real :
+theorem _root_.Rat.AbsoluteValue.IsStandard.real :
     Rat.AbsoluteValue.IsStandard Rat.AbsoluteValue.real :=
   .inl rfl
 
 /-- The `q`-adic absolute value on `ℚ` is standard. -/
-theorem Rat.AbsoluteValue.IsStandard.padic (q : ℕ) [Fact q.Prime] :
+theorem _root_.Rat.AbsoluteValue.IsStandard.padic (q : ℕ) [Fact q.Prime] :
     Rat.AbsoluteValue.IsStandard (Rat.AbsoluteValue.padic q) :=
   .inr ⟨q, inferInstance, rfl⟩
 
 /-- Two equivalent standard absolute values on `ℚ` are equal. -/
-theorem Rat.AbsoluteValue.IsStandard.eq_of_isEquiv {a b : AbsoluteValue ℚ ℝ}
+theorem _root_.Rat.AbsoluteValue.IsStandard.eq_of_isEquiv {a b : AbsoluteValue ℚ ℝ}
     (ha : Rat.AbsoluteValue.IsStandard a) (hb : Rat.AbsoluteValue.IsStandard b) (h : a.IsEquiv b) :
     a = b := by
   rcases ha with rfl | ⟨q, _, rfl⟩ <;> rcases hb with rfl | ⟨q', _, rfl⟩
@@ -98,7 +98,7 @@ theorem Rat.AbsoluteValue.IsStandard.eq_of_isEquiv {a b : AbsoluteValue ℚ ℝ}
     rfl
 
 /-- A standard absolute value on `ℚ` takes a value other than `1` at a nonzero rational. -/
-theorem Rat.AbsoluteValue.IsStandard.exists_ne_one {a : AbsoluteValue ℚ ℝ}
+theorem _root_.Rat.AbsoluteValue.IsStandard.exists_ne_one {a : AbsoluteValue ℚ ℝ}
     (ha : Rat.AbsoluteValue.IsStandard a) : ∃ r : ℚ, r ≠ 0 ∧ a r ≠ 1 := by
   rcases ha with rfl | ⟨q, hq, rfl⟩
   · exact ⟨2, two_ne_zero, by norm_num⟩
