@@ -45,12 +45,12 @@ into good primes; this is the engine behind both
 * `TauCeti.MultiplicativeIdealWeight.ext_heightOneSpectrum`: a weight is determined by its
   values at the height-one primes;
 * `TauCeti.MultiplicativeIdealWeight.ofBadPrimes`, the pointwise `CommMonoid` structure (whose
-  unit is the trivial weight), `TauCeti.MultiplicativeIdealWeight.restrict`,
+  unit is the trivial weight), `TauCeti.MultiplicativeIdealWeight.restrictAway`,
   `TauCeti.MultiplicativeIdealWeight.conj` and
   `TauCeti.MultiplicativeIdealWeight.normTwist`: the constructors and operations;
 * `TauCeti.MultiplicativeIdealWeight.badPrimes_pow`, `TauCeti.MultiplicativeIdealWeight.conj_pow`,
   `TauCeti.MultiplicativeIdealWeight.normTwist_pow` and
-  `TauCeti.MultiplicativeIdealWeight.restrict_pow`, with their unitary counterparts: powers, in
+  `TauCeti.MultiplicativeIdealWeight.restrictAway_pow`, with their unitary counterparts: powers, in
   particular the pointwise square `χ ^ 2` used by the `3-4-1` argument, keep the bad primes and
   commute with the operations, the `n`-th power of a twist by `z` being the twist by `n * z`.
   Preservation of bad primes and compatibility with restriction require a nonzero exponent;
@@ -67,7 +67,7 @@ into good primes; this is the engine behind both
   `TauCeti.UnitaryIdealWeight.norm_eq_one` on all good ideals,
   `TauCeti.UnitaryIdealWeight.norm_normTwist` for the modulus of an arbitrary norm twist,
   `TauCeti.UnitaryIdealWeight.ofPowEqOne` for finite-order weights, and the operations
-  `TauCeti.UnitaryIdealWeight.conj`, `TauCeti.UnitaryIdealWeight.restrict` and
+  `TauCeti.UnitaryIdealWeight.conj`, `TauCeti.UnitaryIdealWeight.restrictAway` and
   `TauCeti.UnitaryIdealWeight.normTwist` (the last for the imaginary norm twists only), and
   `TauCeti.UnitaryIdealWeight.toIdealArithmeticFunction` for its passage to the general carrier;
 * `TauCeti.MultiplicativeIdealWeight.map` and `TauCeti.UnitaryIdealWeight.map`, with their
@@ -338,25 +338,25 @@ theorem isGood_one_iff {I : Ideal (𝓞 K)} :
 
 /-- **Restriction away from a finite set of primes**: `χ` is left unchanged on the ideals prime
 to `S` and set to `0` on the others. -/
-noncomputable def restrict (χ : MultiplicativeIdealWeight K)
+noncomputable def restrictAway (χ : MultiplicativeIdealWeight K)
     (S : Set (HeightOneSpectrum (𝓞 K))) (hS : S.Finite) : MultiplicativeIdealWeight K :=
   χ * ofBadPrimes S hS
 
 open scoped Classical in
 @[simp]
-theorem restrict_apply (χ : MultiplicativeIdealWeight K) (hS : S.Finite) (I : Ideal (𝓞 K)) :
-    χ.restrict S hS I = if Ideal.IsPrimeTo I S then χ I else 0 := by
-  by_cases h : Ideal.IsPrimeTo I S <;> simp [restrict, ofBadPrimes_apply, h]
+theorem restrictAway_apply (χ : MultiplicativeIdealWeight K) (hS : S.Finite) (I : Ideal (𝓞 K)) :
+    χ.restrictAway S hS I = if Ideal.IsPrimeTo I S then χ I else 0 := by
+  by_cases h : Ideal.IsPrimeTo I S <;> simp [restrictAway, ofBadPrimes_apply, h]
 
 @[simp]
-theorem badPrimes_restrict (χ : MultiplicativeIdealWeight K) (hS : S.Finite) :
-    (χ.restrict S hS).badPrimes = χ.badPrimes ∪ S := by
-  simp [restrict]
+theorem badPrimes_restrictAway (χ : MultiplicativeIdealWeight K) (hS : S.Finite) :
+    (χ.restrictAway S hS).badPrimes = χ.badPrimes ∪ S := by
+  simp [restrictAway]
 
 /-- Restricting away from no prime at all changes nothing. -/
 @[simp]
-theorem restrict_empty (χ : MultiplicativeIdealWeight K)
-    (hS : (∅ : Set (HeightOneSpectrum (𝓞 K))).Finite) : χ.restrict ∅ hS = χ := by
+theorem restrictAway_empty (χ : MultiplicativeIdealWeight K)
+    (hS : (∅ : Set (HeightOneSpectrum (𝓞 K))).Finite) : χ.restrictAway ∅ hS = χ := by
   ext I
   rcases eq_or_ne I ⊥ with rfl | hI
   · simp
@@ -365,26 +365,26 @@ theorem restrict_empty (χ : MultiplicativeIdealWeight K)
 open scoped Classical in
 /-- **Forbidding one more prime.** Restricting away from `insert 𝔭 S` kills the ideals divisible
 by `𝔭` and agrees with the restriction away from `S` on the others. -/
-theorem restrict_insert_apply (χ : MultiplicativeIdealWeight K)
+theorem restrictAway_insert_apply (χ : MultiplicativeIdealWeight K)
     {𝔭 : HeightOneSpectrum (𝓞 K)} (hS : S.Finite) (I : Ideal (𝓞 K)) :
-    χ.restrict (insert 𝔭 S) (hS.insert 𝔭) I =
-      if 𝔭.asIdeal ∣ I then 0 else χ.restrict S hS I := by
-  rw [restrict_apply, restrict_apply, Ideal.isPrimeTo_insert_iff]
+    χ.restrictAway (insert 𝔭 S) (hS.insert 𝔭) I =
+      if 𝔭.asIdeal ∣ I then 0 else χ.restrictAway S hS I := by
+  rw [restrictAway_apply, restrictAway_apply, Ideal.isPrimeTo_insert_iff]
   by_cases hdvd : 𝔭.asIdeal ∣ I <;> simp [hdvd]
 
 /-- Restricting the trivial weight away from `S` gives the indicator weight of ideals prime to
 every prime in `S`. -/
 @[simp]
-theorem one_restrict (hS : S.Finite) :
-    (1 : MultiplicativeIdealWeight K).restrict S hS = ofBadPrimes S hS :=
+theorem one_restrictAway (hS : S.Finite) :
+    (1 : MultiplicativeIdealWeight K).restrictAway S hS = ofBadPrimes S hS :=
   one_mul _
 
 /-- **Restriction commutes with nonzero powers.** The exponent must be nonzero:
-`(χ ^ 0).restrict S hS` is the indicator weight `ofBadPrimes S hS`, while
-`χ.restrict S hS ^ 0` is the trivial weight. -/
+`(χ ^ 0).restrictAway S hS` is the indicator weight `ofBadPrimes S hS`, while
+`χ.restrictAway S hS ^ 0` is the trivial weight. -/
 @[simp]
-theorem restrict_pow (χ : MultiplicativeIdealWeight K) (hS : S.Finite) {n : ℕ} (hn : n ≠ 0) :
-    (χ ^ n).restrict S hS = χ.restrict S hS ^ n := by
+theorem restrictAway_pow (χ : MultiplicativeIdealWeight K) (hS : S.Finite) {n : ℕ} (hn : n ≠ 0) :
+    (χ ^ n).restrictAway S hS = χ.restrictAway S hS ^ n := by
   classical
   ext I
   by_cases hI : Ideal.IsPrimeTo I S <;> simp [hI, hn]
@@ -812,12 +812,12 @@ theorem map_ofBadPrimes (e : K ≃+* L) (hS : S.Finite) :
 
 /-- Transport commutes with restriction after carrying the excluded prime set forward. -/
 @[simp]
-theorem map_restrict (e : K ≃+* L) (χ : MultiplicativeIdealWeight K) (hS : S.Finite) :
-    map e (χ.restrict S hS) =
-      (map e χ).restrict
+theorem map_restrictAway (e : K ≃+* L) (χ : MultiplicativeIdealWeight K) (hS : S.Finite) :
+    map e (χ.restrictAway S hS) =
+      (map e χ).restrictAway
         (HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) '' S)
         (hS.image _) := by
-  rw [restrict, map_mul, map_ofBadPrimes, restrict]
+  rw [restrictAway, map_mul, map_ofBadPrimes, restrictAway]
 
 /-- Transport commutes with complex conjugation. -/
 @[simp]
@@ -1033,32 +1033,32 @@ theorem conj_pow (χ : UnitaryIdealWeight K) (n : ℕ) : conj (χ ^ n) = conj χ
 
 /-- Restricting a unitary weight away from a finite set of primes keeps it unitary: the
 restricted weight is unchanged at the primes that are good for it. -/
-noncomputable def restrict (χ : UnitaryIdealWeight K) (S : Set (HeightOneSpectrum (𝓞 K)))
+noncomputable def restrictAway (χ : UnitaryIdealWeight K) (S : Set (HeightOneSpectrum (𝓞 K)))
     (hS : S.Finite) : UnitaryIdealWeight K :=
-  ⟨χ.1.restrict S hS, fun 𝔭 h𝔭 ↦ by
-    rw [MultiplicativeIdealWeight.badPrimes_restrict, Set.mem_union, not_or] at h𝔭
-    rw [MultiplicativeIdealWeight.restrict_apply]
+  ⟨χ.1.restrictAway S hS, fun 𝔭 h𝔭 ↦ by
+    rw [MultiplicativeIdealWeight.badPrimes_restrictAway, Set.mem_union, not_or] at h𝔭
+    rw [MultiplicativeIdealWeight.restrictAway_apply]
     simp [h𝔭.2, χ.2 𝔭 h𝔭.1]⟩
 
 @[simp]
-theorem val_restrict (χ : UnitaryIdealWeight K) (S : Set (HeightOneSpectrum (𝓞 K)))
-    (hS : S.Finite) : (restrict χ S hS).1 = χ.1.restrict S hS := (rfl)
+theorem val_restrictAway (χ : UnitaryIdealWeight K) (S : Set (HeightOneSpectrum (𝓞 K)))
+    (hS : S.Finite) : (restrictAway χ S hS).1 = χ.1.restrictAway S hS := (rfl)
 
 /-- Restricting a unitary weight away from no prime at all changes nothing. -/
 @[simp]
-theorem restrict_empty (χ : UnitaryIdealWeight K)
-    (hS : (∅ : Set (HeightOneSpectrum (𝓞 K))).Finite) : restrict χ ∅ hS = χ :=
-  Subtype.ext (by rw [val_restrict, MultiplicativeIdealWeight.restrict_empty])
+theorem restrictAway_empty (χ : UnitaryIdealWeight K)
+    (hS : (∅ : Set (HeightOneSpectrum (𝓞 K))).Finite) : restrictAway χ ∅ hS = χ :=
+  Subtype.ext (by rw [val_restrictAway, MultiplicativeIdealWeight.restrictAway_empty])
 
 /-- **Restriction of unitary weights commutes with nonzero powers**, in particular with the
-pointwise square. As for `TauCeti.MultiplicativeIdealWeight.restrict_pow`, the exponent `0` is
+pointwise square. As for `TauCeti.MultiplicativeIdealWeight.restrictAway_pow`, the exponent `0` is
 excluded. -/
 @[simp]
-theorem restrict_pow (χ : UnitaryIdealWeight K) (S : Set (HeightOneSpectrum (𝓞 K)))
-    (hS : S.Finite) {n : ℕ} (hn : n ≠ 0) : restrict (χ ^ n) S hS = restrict χ S hS ^ n :=
+theorem restrictAway_pow (χ : UnitaryIdealWeight K) (S : Set (HeightOneSpectrum (𝓞 K)))
+    (hS : S.Finite) {n : ℕ} (hn : n ≠ 0) : restrictAway (χ ^ n) S hS = restrictAway χ S hS ^ n :=
   Subtype.ext (by
-    rw [val_restrict, val_pow, val_pow, val_restrict,
-      MultiplicativeIdealWeight.restrict_pow _ _ hn])
+    rw [val_restrictAway, val_pow, val_pow, val_restrictAway,
+      MultiplicativeIdealWeight.restrictAway_pow _ _ hn])
 
 section Transport
 
@@ -1119,15 +1119,15 @@ theorem mapEquiv_symm_apply (e : K ≃+* L) (χ : UnitaryIdealWeight L) :
 /-- Transport commutes with restriction on unitary weights after carrying the excluded prime set
 forward. -/
 @[simp]
-theorem map_restrict (e : K ≃+* L) (χ : UnitaryIdealWeight K)
+theorem map_restrictAway (e : K ≃+* L) (χ : UnitaryIdealWeight K)
     (S : Set (HeightOneSpectrum (𝓞 K))) (hS : S.Finite) :
-    map e (χ.restrict S hS) =
-      (map e χ).restrict
+    map e (χ.restrictAway S hS) =
+      (map e χ).restrictAway
         (HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) '' S)
         (hS.image _) :=
   Subtype.ext (by
-    rw [val_map, val_restrict, val_restrict, val_map,
-      MultiplicativeIdealWeight.map_restrict])
+    rw [val_map, val_restrictAway, val_restrictAway, val_map,
+      MultiplicativeIdealWeight.map_restrictAway])
 
 /-- Transport commutes with complex conjugation on unitary weights. -/
 @[simp]

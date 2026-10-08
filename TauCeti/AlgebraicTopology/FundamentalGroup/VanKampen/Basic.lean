@@ -71,6 +71,8 @@ and `fB` to `π₁(A ∩ B, x)`, so they glue. Uniqueness is the generation half
   cover `X` and whose pairwise intersections are path connected.
 * `TauCeti.isColimitFundamentalGroupWideCocone`: **the Seifert--van Kampen theorem for such a
   family**, as a wide pushout in the category of groups.
+* `TauCeti.vanKampenWideLift_surjective`: the canonical map from the indexed free product is
+  surjective when all pairwise intersections are path connected.
 * `TauCeti.vanKampenWideLift`, `TauCeti.vanKampenWideEquiv`: the canonical homomorphism from the
   free product of the groups `π₁(U i, x)`, and the resulting isomorphism when `C` is simply
   connected.
@@ -659,6 +661,27 @@ theorem vanKampenWideLift_of (U : ι → Set X) (x : X) (hx : ∀ i, x ∈ U i) 
         (Monoid.CoprodI.of (M := fun i ↦ FundamentalGroup (U i) ⟨x, hx i⟩) g) =
       FundamentalGroup.map (ContinuousMap.subtypeVal (U i)) ⟨x, hx i⟩ g :=
   Monoid.CoprodI.lift_of (M := fun i ↦ FundamentalGroup (U i) ⟨x, hx i⟩) _ g
+
+/-- **The generation half of van Kampen's theorem for a family.** Every loop class is the image
+of an element of the indexed free product when all pairwise intersections of the cover members
+are path connected. -/
+theorem vanKampenWideLift_surjective (hU : ∀ y, ∃ i, U i ∈ 𝓝 y) (hxU : ∀ i, x ∈ U i)
+    (hpc : ∀ i j, IsPathConnected (U i ∩ U j)) :
+    Function.Surjective (vanKampenWideLift U x hxU) := by
+  let f (i : ι) : FundamentalGroup (U i) ⟨x, hxU i⟩ →* FundamentalGroup X x :=
+    FundamentalGroup.map (ContinuousMap.subtypeVal (U i)) ⟨x, hxU i⟩
+  have htop : (⨆ i, (f i).range : Subgroup (FundamentalGroup X x)) = ⊤ := by
+    convert FundamentalGroup.iSup_range_map_subtypeVal_eq_top (U := U) (x := x) hU hxU hpc
+      using 1
+    congr 1
+  intro y
+  have hy : y ∈ (⨆ i, (f i).range : Subgroup (FundamentalGroup X x)) := by
+    rw [htop]
+    trivial
+  rw [← Monoid.CoprodI.range_eq_iSup (fun i ↦ FundamentalGroup (U i) ⟨x, hxU i⟩) f] at hy
+  obtain ⟨z, hz⟩ := hy
+  refine ⟨z, ?_⟩
+  simpa only [vanKampenWideLift, f] using hz
 
 /-- **The Seifert--van Kampen theorem for a family with a simply connected common pairwise
 intersection.** If the interiors of the path-connected sets `U i` cover `X`, all of them contain

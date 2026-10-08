@@ -410,20 +410,10 @@ theorem schemePointsMulEquiv_mapValue (φ : A →ₐ[R] B)
             (Spec (CommRingCat.of R)) ≫ p) =
       Multiplicative.ofAdd
         (φ (Multiplicative.toAdd (schemePointsMulEquiv A p))) := by
-  let q : WithConv (SymmetricAlgebra R R →ₐ[R] A) :=
-    (groupSchemePointMulEquiv A).symm p
-  have hpre :
-      (groupSchemePointMulEquiv B).symm
-          ((Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver
-            (Spec (CommRingCat.of R)) ≫ p) =
-        HopfAlgebra.mapPoints (H := coordinateHopfAlgebra R)
-          (CommAlgCat.ofHom φ) q := by
-    simpa only [q, groupSchemePointMulEquiv] using
-      CommHopfAlgCat.mapMulEquivOfPresentation_mapValue
-        (coordinateHopfAlgebra R) φ (groupScheme_def R) p
-  simp only [schemePointsMulEquiv, MulEquiv.trans_apply]
-  rw [hpre, HopfAlgebra.mapPoints_apply, ← AlgHom.mapValue_apply]
-  exact gaPointsMulEquiv_mapValue φ q
+  unfold schemePointsMulEquiv groupSchemePointMulEquiv
+  exact CommHopfAlgCat.mapMulEquivOfPresentation_symm_trans_mapValue
+    (coordinateHopfAlgebra R) φ (groupScheme_def R) _ _
+    (fun a ↦ Multiplicative.ofAdd (φ (Multiplicative.toAdd a))) (gaPointsMulEquiv_mapValue φ) p
 
 /-- Multiplication of scheme-point parameters is natural in the value algebra. -/
 theorem mapValue_gaSchemePointParamMul (φ : A →ₐ[R] B)

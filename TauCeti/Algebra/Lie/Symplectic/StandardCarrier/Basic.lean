@@ -47,10 +47,11 @@ In simple-coroot coordinates, the map
 is unimodular. Thus the standard weights generate the whole character lattice, unlike the roots
 of the adjoint carrier. This makes the rank-`n + 1` split torus a closed subgroup of the carrier.
 
-This file does not prove reductivity or maximality of the torus, and it does not identify this
-carrier with the separately constructed symplectic group scheme. Those root-datum and generation
-statements remain part of Layer 9 of the reductive-groups roadmap. No finite or simple group is
-asserted here.
+This file does not prove that the carrier is reductive or that its weight torus is maximal. Two
+related statements are proved in sibling files: the comparison with the symplectic group scheme
+over a field is `TauCeti.SpStd.baseChangeSymplecticIso`, and generation by the numbered root
+subgroups is `TauCeti.SpStd.groupScheme_eq_kostantGeneratedGroupScheme`. No finite or simple group
+is asserted here.
 
 ## Main definitions
 
@@ -96,11 +97,6 @@ follow the type-`A` standard-carrier implementation in
 [TauCetiProject/TauCeti#4603](https://github.com/TauCetiProject/TauCeti/pull/4603), commits
 `998d5984` and `f4239801`; the symplectic matrices, doubled coordinate action, type-`C` weight
 calculation, and their proofs are specific to this file.
-
-This advances the Chevalley--Demazure construction, pinning, and root-subgroup targets of Layer 9
-of `TauCetiRoadmap/ReductiveGroups/README.md`. Its consumer is milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md`, which needs a simply connected pinned carrier for every
-valid Lie-type family.
 -/
 
 public section
@@ -181,15 +177,15 @@ def weight (a : Fin (n + 1) ⊕ Fin (n + 1)) : Fin (n + 1) → ℤ :=
   let x := (Equiv.boolProdEquivSum (Fin (n + 1))).symm a
   DynkinType.TypeC.signedWeight (x.2, x.1)
 
-@[simp] theorem weight_inl (a i : Fin (n + 1)) :
-    weight n (.inl a) i = DynkinType.TypeC.weight (n + 1) a i := by
+@[simp] theorem weight_inl (a : Fin (n + 1)) :
+    weight n (.inl a) = DynkinType.TypeC.weight (n + 1) a := by
   simp only [weight, Equiv.boolProdEquivSum_symm_apply, Sum.elim_inl,
     DynkinType.TypeC.signedWeight_false]
 
-@[simp] theorem weight_inr (a i : Fin (n + 1)) :
-    weight n (.inr a) i = -DynkinType.TypeC.weight (n + 1) a i := by
+@[simp] theorem weight_inr (a : Fin (n + 1)) :
+    weight n (.inr a) = -DynkinType.TypeC.weight (n + 1) a := by
   simp only [weight, Equiv.boolProdEquivSum_symm_apply, Sum.elim_inr,
-    DynkinType.TypeC.signedWeight_true, Pi.neg_apply]
+    DynkinType.TypeC.signedWeight_true]
 
 /-- The diagonal matrix of the `i`-th simple coroot in the standard symplectic representation. -/
 def cartanGeneratorMatrix (i : Fin (n + 1)) :
@@ -319,8 +315,8 @@ theorem rootGeneratorWeight_inl_eq_root (i : Fin (n + 1)) :
   by_cases hi : i = Fin.last n
   · subst hi
     rw [rootGeneratorWeight, rootTarget_inl, rootSource_inl_last]
-    simp only [weight_inl, weight_inr, DynkinType.TypeC.weight_apply, CartanMatrix.C,
-      of_apply, Fin.val_last, Nat.add_sub_cancel]
+    simp only [weight_inl, weight_inr, Pi.neg_apply, DynkinType.TypeC.weight_apply,
+      CartanMatrix.C, of_apply, Fin.val_last, Nat.add_sub_cancel]
     split_ifs <;> simp only [Fin.ext_iff, Fin.val_last] at * <;> omega
   · rw [rootGeneratorWeight, rootTarget_inl, rootSource_inl_of_ne_last n i hi]
     simp only [weight_inl, DynkinType.TypeC.weight_apply, CartanMatrix.C, of_apply]
@@ -458,17 +454,18 @@ private theorem lie_cartanGeneratorMatrix_positiveRootMatrix (i j : Fin (n + 1))
     have hlower : weight n (.inr (Order.succ i)) j - weight n (.inr i) j =
         rootGeneratorWeight n (.inl i) j := by
       rw [← hupper]
-      simp only [weight_inl, weight_inr]
+      simp only [weight_inl, weight_inr, Pi.neg_apply]
       ring
     rw [positiveRootMatrix_of_ne_last n i hi, lie_sub, lie_cartanGeneratorMatrix_single,
       lie_cartanGeneratorMatrix_single, hupper, hlower, smul_sub]
 
-/-- The matrix commutator of a Cartan generator with a lowering generator, read off from the
-raising case by transposing: the diagonal matrix `cartanGeneratorMatrix` is invariant under
-transposition and the lowering root character is the negative of the raising one. -/
+/-- The matrix commutator of a Cartan generator with a lowering generator. -/
 private theorem lie_cartanGeneratorMatrix_negativeRootMatrix (i j : Fin (n + 1)) :
     ⁅cartanGeneratorMatrix n j, negativeRootMatrix n i⁆ =
       ((rootGeneratorWeight n (.inr i) j : ℤ) : ℚ) • negativeRootMatrix n i := by
+  -- Read off from the raising case by transposing: the diagonal matrix `cartanGeneratorMatrix`
+  -- is invariant under transposition and the lowering root character is the negative of the
+  -- raising one.
   have hsymm : (cartanGeneratorMatrix n j)ᵀ = cartanGeneratorMatrix n j := by
     rw [cartanGeneratorMatrix, diagonal_transpose]
   have hpos := lie_cartanGeneratorMatrix_positiveRootMatrix n i j
@@ -568,6 +565,8 @@ theorem isSl2Triple_rootGenerator (i : Fin (n + 1)) :
       two_nsmul]
     push_cast
     rw [neg_smul, two_smul]
+
+/-! ## Serre relations and the square-zero action on the standard module -/
 
 /-- The standard type-`C` Chevalley generators satisfy the Serre relations for the transposed
 Cartan matrix, in the convention used by `IsSerreSystem`. -/
@@ -811,16 +810,16 @@ theorem span_range_weight_eq_top : Submodule.span ℤ (Set.range (weight n)) = �
   rw [← DynkinType.TypeC.span_range_weight_eq_top (n + 1)]
   apply Submodule.span_mono
   rintro _ ⟨a, rfl⟩
-  refine ⟨Sum.inl a, ?_⟩
-  funext i
-  exact weight_inl n a i
+  exact ⟨Sum.inl a, weight_inl n a⟩
 
-/-- Enumerating the coordinate basis does not change the span of its weights. -/
+/-- The weights of the enumerated coordinate basis span the whole character lattice. -/
 theorem span_range_basisWeight_eq_top : Submodule.span ℤ (Set.range (basisWeight n)) = ⊤ := by
   have hrange : Set.range (basisWeight n) = Set.range (weight n) :=
     finSumFinEquiv.symm.surjective.range_comp (weight n)
   rw [hrange]
   exact span_range_weight_eq_top n
+
+/-! ## Root subgroups, torus points, and the pinning equation -/
 
 /-- A root generator sends its designated coordinate basis vector to the designated target with
 coefficient one. -/
