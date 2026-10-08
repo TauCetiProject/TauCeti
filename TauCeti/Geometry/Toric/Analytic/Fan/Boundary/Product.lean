@@ -6,15 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Analytic.Fan.Boundary.Naturality
-public import TauCeti.Geometry.Toric.Analytic.Fan.Product
+public import TauCeti.Geometry.Toric.Analytic.Fan.Orbit.Product
 
 /-!
-# Orbits and boundary components of product toric realizations
+# Boundary components of product toric realizations
 
 Under the canonical homeomorphism between the realization of a product of regular fans and the
-product of their realizations, torus orbits and boundary components are products. The orbit of
-a product cone `σ × τ` is the product of the orbits of `σ` and `τ`, and the distinguished point
-of `σ × τ` is the pair of distinguished points.
+product of their realizations, boundary components are products. The corresponding formulas for
+distinguished points and torus orbits are in `TauCeti.Geometry.Toric.Analytic.Fan.Orbit.Product`.
 
 A ray of the product fan is a ray of one factor times the zero cone of the other, by
 `TauCeti.Toric.Fan.prodRayEquiv`. Its boundary component is the product of the component of
@@ -28,10 +27,6 @@ given by `TauCeti.Toric.Fan.prodRayEquiv`.
 
 ## Main declarations
 
-* `TauCeti.Toric.Fan.analyticProdHomeomorph_analyticDistinguishedPoint`: distinguished points of
-  product cones are pairs of distinguished points.
-* `TauCeti.Toric.Fan.image_analyticProdHomeomorph_analyticConeOrbit_prodCone`: the orbit of a
-  product cone is the product of the factor orbits.
 * `TauCeti.Toric.Fan.image_analyticProdHomeomorph_analyticBoundaryComponent_of_eq_prod_bot` and
   `TauCeti.Toric.Fan.image_analyticProdHomeomorph_analyticBoundaryComponent_of_eq_bot_prod`:
   boundary components of the product are products of a factor component with a whole factor.
@@ -54,59 +49,6 @@ variable {N N' V V' : Type u} [AddCommGroup N] [AddCommGroup N']
   [AddCommGroup V] [AddCommGroup V'] [Module ℝ V] [Module ℝ V']
   {i : N →+ V} {i' : N' →+ V'} (Φ : Fan i) (Ψ : Fan i')
   (hΦ : Φ.IsRegular) (hΨ : Ψ.IsRegular)
-
-/-- The distinguished point of a product cone corresponds to the pair of distinguished points of
-its factors. -/
-@[simp]
-theorem analyticProdHomeomorph_analyticDistinguishedPoint (σ : Φ.cones) (τ : Ψ.cones) :
-    Φ.analyticProdHomeomorph Ψ hΦ hΨ
-        ((Φ.prod Ψ).analyticDistinguishedPoint (Fan.IsRegular.prod Φ Ψ hΦ hΨ)
-          (Φ.prodCone Ψ σ τ)) =
-      (Φ.analyticDistinguishedPoint hΦ σ, Ψ.analyticDistinguishedPoint hΨ τ) := by
-  simp only [coe_analyticProdHomeomorph, analyticProdComparison_apply,
-    FanHom.analyticMap_analyticDistinguishedPoint, FanHom.fst_leastCone_prodCone,
-    FanHom.snd_leastCone_prodCone]
-
-/-- A point of the product realization lies in the orbit of a product cone exactly when its two
-components lie in the orbits of the factor cones. -/
-theorem analyticProdHomeomorph_mem_prod_analyticConeOrbit_iff {σ : Φ.cones} {τ : Ψ.cones}
-    {x : (Φ.prod Ψ).analyticRealization (Fan.IsRegular.prod Φ Ψ hΦ hΨ)} :
-    Φ.analyticProdHomeomorph Ψ hΦ hΨ x ∈
-        Φ.analyticConeOrbit hΦ σ ×ˢ Ψ.analyticConeOrbit hΨ τ ↔
-      x ∈ (Φ.prod Ψ).analyticConeOrbit (Fan.IsRegular.prod Φ Ψ hΦ hΨ) (Φ.prodCone Ψ σ τ) := by
-  -- A point of the orbit of `σ' × τ'` maps into the product of the factor orbits.
-  have hmem {σ' : Φ.cones} {τ' : Ψ.cones} {y : (Φ.prod Ψ).analyticRealization _}
-      (hy : y ∈ (Φ.prod Ψ).analyticConeOrbit _ (Φ.prodCone Ψ σ' τ')) :
-      Φ.analyticProdHomeomorph Ψ hΦ hΨ y ∈
-        Φ.analyticConeOrbit hΦ σ' ×ˢ Ψ.analyticConeOrbit hΨ τ' := by
-    rw [coe_analyticProdHomeomorph, analyticProdComparison_apply]
-    exact ⟨((FanHom.fst Φ Ψ).analyticMap_mem_analyticConeOrbit_iff _ hΦ hy).2
-        (FanHom.fst_leastCone_prodCone σ' τ'),
-      ((FanHom.snd Φ Ψ).analyticMap_mem_analyticConeOrbit_iff _ hΨ hy).2
-        (FanHom.snd_leastCone_prodCone σ' τ')⟩
-  refine ⟨fun h ↦ ?_, hmem⟩
-  obtain ⟨ξ, hx⟩ := (Φ.prod Ψ).exists_mem_analyticConeOrbit _ x
-  obtain ⟨σ', τ', rfl⟩ := Φ.exists_prodCone_eq Ψ ξ
-  -- Orbits of a regular fan are disjoint, so the factor cones are `σ` and `τ`.
-  rwa [Φ.eq_of_mem_analyticConeOrbit hΦ h.1 (hmem hx).1,
-    Ψ.eq_of_mem_analyticConeOrbit hΨ h.2 (hmem hx).2]
-
-/-- The orbit of a product cone is the preimage of the product of the factor orbits. -/
-theorem preimage_analyticProdHomeomorph_prod_analyticConeOrbit (σ : Φ.cones) (τ : Ψ.cones) :
-    Φ.analyticProdHomeomorph Ψ hΦ hΨ ⁻¹'
-        (Φ.analyticConeOrbit hΦ σ ×ˢ Ψ.analyticConeOrbit hΨ τ) =
-      (Φ.prod Ψ).analyticConeOrbit (Fan.IsRegular.prod Φ Ψ hΦ hΨ) (Φ.prodCone Ψ σ τ) := by
-  ext x
-  exact Φ.analyticProdHomeomorph_mem_prod_analyticConeOrbit_iff Ψ hΦ hΨ
-
-/-- **Orbits of a product.** The product homeomorphism carries the orbit of a product cone onto
-the product of the orbits of its factors. -/
-theorem image_analyticProdHomeomorph_analyticConeOrbit_prodCone (σ : Φ.cones) (τ : Ψ.cones) :
-    Φ.analyticProdHomeomorph Ψ hΦ hΨ ''
-        (Φ.prod Ψ).analyticConeOrbit (Fan.IsRegular.prod Φ Ψ hΦ hΨ) (Φ.prodCone Ψ σ τ) =
-      Φ.analyticConeOrbit hΦ σ ×ˢ Ψ.analyticConeOrbit hΨ τ := by
-  rw [← Φ.preimage_analyticProdHomeomorph_prod_analyticConeOrbit Ψ hΦ hΨ σ τ,
-    Homeomorph.image_preimage]
 
 /-- The boundary component of a product ray `ρ × 0` is the preimage of the component of `ρ` times
 the whole second factor. -/
