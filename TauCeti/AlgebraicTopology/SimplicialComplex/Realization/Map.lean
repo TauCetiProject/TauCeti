@@ -27,6 +27,8 @@ characterizes this restriction. The induced map is injective exactly when the ve
 ## Main definitions
 
 * `AbstractSimplicialComplex.StandardSimplex.map`: affine pushforward on a closed simplex.
+* `AbstractSimplicialComplex.StandardSimplex.comap`: the inverse affine pullback for an injective
+  vertex map, used to identify polyhedra under relabeling.
 * `PreAbstractSimplicialComplex.SimplicialMap.realizationMap`: the induced continuous map.
 * `PreAbstractSimplicialComplex.SimplicialMap.realizationHomeomorph`: the homeomorphism induced by
   mutually inverse simplicial maps.
@@ -90,6 +92,48 @@ theorem continuous_map (f : α → β) :
   have hg : (Subtype.val : σ.image f → β) ∘ g = f ∘ (Subtype.val : σ → α) := rfl
   rw [hg, Finsupp.mapDomain_comp, ← Finset.standardSimplexHomeomorph_symm_val,
     Homeomorph.symm_apply_apply]
+
+/-- Pull barycentric coordinates back along an injective vertex map. This is the inverse of
+its affine pushforward on the simplex spanned by its image. -/
+def comap {f : α ↪ β} (x : StandardSimplex (σ.image f)) : StandardSimplex σ :=
+  ⟨Finsupp.comapDomain f x.1 f.injective.injOn, by
+    classical
+    have h := mem_image_of_mem (Finsupp.lcomapDomain (R := ℝ) (M := ℝ) f f.injective) x.2
+    rw [(Finsupp.lcomapDomain f f.injective).image_convexHull] at h
+    simpa only [Finset.coe_image, image_image, Function.comp_def,
+      Finsupp.lcomapDomain_apply, Finsupp.comapDomain_single] using h⟩
+
+/-- Pullback of a simplex point pulls back its finitely supported coordinate vector. -/
+@[simp]
+theorem comap_val {f : α ↪ β} (x : StandardSimplex (σ.image f)) :
+    (comap (f := f) x : α →₀ ℝ) = Finsupp.comapDomain f x.1 f.injective.injOn := (rfl)
+
+/-- Pulling coordinates back after pushing them forward recovers a simplex point. -/
+@[simp]
+theorem comap_map (x : StandardSimplex σ) (f : α ↪ β) : comap (map x f) = x := by
+  apply Subtype.ext
+  rw [comap_val, map_val]
+  exact Finsupp.comapDomain_mapDomain f f.injective _
+
+/-- Pushing coordinates forward after pulling them back recovers an image-simplex point. -/
+@[simp]
+theorem map_comap {f : α ↪ β} (x : StandardSimplex (σ.image f)) : map (comap (f := f) x) f = x := by
+  apply Subtype.ext
+  rw [map_val, comap_val]
+  exact Finsupp.mapDomain_comapDomain f f.injective x.1 fun b hb => by
+    obtain ⟨a, -, rfl⟩ := Finset.mem_image.mp (support_subset x hb)
+    exact mem_range_self a
+
+/-- Affine pullback between coordinate simplices is continuous, including on empty simplices. -/
+theorem continuous_comap (f : α ↪ β) :
+    Continuous (fun x : StandardSimplex (σ.image f) => comap (f := f) x) := by
+  apply continuous_induced_rng.mpr
+  apply continuous_pi
+  intro a
+  have hc : Continuous (fun x : StandardSimplex (σ.image f) => (x.1 : β → ℝ)) :=
+    continuous_induced_dom
+  simpa only [Function.comp_def, comap_val, Finsupp.comapDomain_apply] using
+    (continuous_apply (f a)).comp hc
 
 end AbstractSimplicialComplex.StandardSimplex
 

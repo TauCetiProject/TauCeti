@@ -20,6 +20,9 @@ computations on finite lists of integers; multiplication convolves coefficient l
 `TauCeti.Polynomial.mulCoeffList` and then applies the computable cyclotomic reduction from
 `TauCeti.RingTheory.Polynomial.Cyclotomic.Computable`.
 
+The coefficient accessor is additive (`TauCeti.Cyclotomic.coeffAddHom`), and integer scalar
+multiplication scales each coordinate (`TauCeti.Cyclotomic.coeff_intCast_mul`).
+
 The ring is identified with Mathlib's `AdjoinRoot (Polynomial.cyclotomic e ℤ)`.  For nonzero `e`,
 evaluation at `exp (2 * π * I / e)` then gives the distinguished embedding into `ℂ` used to state
 the correctness of exact character-table computations.
@@ -303,6 +306,59 @@ noncomputable def toAdjoinRootRingHom : Cyclotomic e →+* AdjoinRoot (cyclotomi
 @[simp]
 theorem toAdjoinRootRingHom_apply (x : Cyclotomic e) :
     toAdjoinRootRingHom x = toAdjoinRoot x := (rfl)
+
+/-- The additive map reading a single power-basis coefficient. -/
+noncomputable def coeffAddHom (e j : ℕ) : Cyclotomic e →+ ℤ :=
+  ((Polynomial.lcoeff ℤ j).toAddMonoidHom.comp
+    (AdjoinRoot.modByMonicHom (Polynomial.cyclotomic.monic e ℤ)).toAddMonoidHom).comp
+      toAdjoinRootRingHom.toAddMonoidHom
+
+/-- The coefficient map agrees with the coefficient-vector accessor. -/
+@[simp]
+theorem coeffAddHom_apply (x : Cyclotomic e) (j : ℕ) : coeffAddHom e j x = x.coeff j := by
+  simp [coeffAddHom, toAdjoinRoot, coeff_toPolynomial]
+
+/-- Addition adds power-basis coefficients. -/
+@[simp]
+theorem coeff_add (x y : Cyclotomic e) (j : ℕ) :
+    (x + y).coeff j = x.coeff j + y.coeff j := by
+  simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_add x y
+
+/-- Negation negates every power-basis coefficient. -/
+@[simp]
+theorem coeff_neg (x : Cyclotomic e) (j : ℕ) :
+    (-x).coeff j = -x.coeff j := by
+  simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_neg x
+
+/-- Subtraction subtracts power-basis coefficients. -/
+@[simp]
+theorem coeff_sub (x y : Cyclotomic e) (j : ℕ) :
+    (x - y).coeff j = x.coeff j - y.coeff j := by
+  simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_sub x y
+
+/-- Natural scalar multiplication scales every power-basis coefficient. -/
+@[simp↓]
+theorem coeff_nsmul (n : ℕ) (x : Cyclotomic e) (j : ℕ) :
+    (n • x).coeff j = n • x.coeff j := by
+  simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_nsmul n x
+
+/-- Integer scalar multiplication scales every power-basis coefficient. -/
+@[simp↓]
+theorem coeff_zsmul (z : ℤ) (x : Cyclotomic e) (j : ℕ) :
+    (z • x).coeff j = z • x.coeff j := by
+  simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_zsmul z x
+
+/-- Integer scalar multiplication scales every power-basis coefficient. -/
+@[simp]
+theorem coeff_intCast_mul (z : ℤ) (x : Cyclotomic e) (j : ℕ) :
+    ((z : Cyclotomic e) * x).coeff j = z * x.coeff j := by
+  simpa [zsmul_eq_mul] using (coeffAddHom e j).map_zsmul z x
+
+/-- A finite sum adds power-basis coefficients. -/
+@[simp]
+theorem coeff_sum {ι : Type*} (s : Finset ι) (f : ι → Cyclotomic e) (j : ℕ) :
+    (∑ i ∈ s, f i).coeff j = ∑ i ∈ s, (f i).coeff j := by
+  simpa only [coeffAddHom_apply] using map_sum (coeffAddHom e j) f s
 
 /-- Every class modulo `Φ_e` has an exact coefficient-vector representative. -/
 theorem toAdjoinRoot_surjective : Function.Surjective (toAdjoinRoot : Cyclotomic e → _) := by
