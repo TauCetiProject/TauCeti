@@ -22,8 +22,9 @@ This file shows that this identification is also topological: the units topology
 ideles is the restricted-product topology of the groups `K_vˣ`. The local integer rings are open in
 the completions, so this is a case of `ContinuousMulEquiv.restrictedProductUnits`. In particular,
 a map into the finite ideles is continuous as soon as it is continuous into the restricted product
-of the local unit groups, and the finite ideles carry the usual idelic topology, which is not the
-subspace topology from the finite adeles.
+of the local unit groups, and the finite ideles carry the usual idelic topology. This topology is
+finer than the subspace topology from the finite adeles, and can be strictly finer (for instance
+for the ring of integers of a number field).
 
 ## Main results
 
