@@ -54,6 +54,17 @@ private def zeroBallHomeomorph : puncturedNeighborhoodZero ≃ₜ
         mem_singleton_iff, norm_pos_iff]
       tauto))
 
+/-- The standard punctured neighborhood of `0` is path connected. -/
+theorem isPathConnected_puncturedNeighborhoodZero : IsPathConnected puncturedNeighborhoodZero := by
+  have := pathConnectedSpace_ball_diff_singleton (0 : ℂ) (by norm_num : (0 : ℝ) < 1 / 2)
+  exact isPathConnected_iff_pathConnectedSpace.2 zeroBallHomeomorph.symm.pathConnectedSpace
+
+/-- The standard punctured neighborhood of `1` is path connected. -/
+theorem isPathConnected_puncturedNeighborhoodOne : IsPathConnected puncturedNeighborhoodOne := by
+  have := isPathConnected_iff_pathConnectedSpace.1 isPathConnected_puncturedNeighborhoodZero
+  exact isPathConnected_iff_pathConnectedSpace.2
+    puncturedNeighborhoodOneHomeomorphZero.symm.pathConnectedSpace
+
 /-- The direction of the affine coordinate at the puncture `0`. -/
 def directionAtZero : C(puncturedNeighborhoodZero, Circle) :=
   ((0 : ℂ).directionFrom (ball 0 (1 / 2))).comp
