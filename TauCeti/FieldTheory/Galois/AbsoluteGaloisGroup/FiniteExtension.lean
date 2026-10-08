@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 public import TauCeti.FieldTheory.Galois.Quotient
 public import TauCeti.FieldTheory.Galois.Restriction
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The absolute Galois group of a finite separable extension as an open subgroup
@@ -286,19 +287,11 @@ continuous injection from a compact group to a Hausdorff one. -/
 def absoluteGaloisGroupExtendEquiv {U : Subgroup (Field.absoluteGaloisGroup K)}
     (hU : (absoluteGaloisGroupExtend K L σ).range = U) : Field.absoluteGaloisGroup L ≃ₜ* U :=
   haveI : T2Space (Field.absoluteGaloisGroup K) := krullTopology_t2
-  let f : Field.absoluteGaloisGroup L →* U :=
-    (absoluteGaloisGroupExtend K L σ).codRestrict U fun g ↦ hU ▸ ⟨g, rfl⟩
-  have hf : Function.Bijective f := by
-    refine ⟨fun a b h ↦ injective_absoluteGaloisGroupExtend K L σ (congrArg Subtype.val h), ?_⟩
-    rintro ⟨x, hx⟩
-    rw [← hU] at hx
-    obtain ⟨g, rfl⟩ := hx
-    exact ⟨g, rfl⟩
-  have hc : Continuous f := (continuous_absoluteGaloisGroupExtend K L σ).subtype_mk _
-  { MulEquiv.ofBijective f hf with
-    continuous_toFun := hc
-    continuous_invFun :=
-      (hc.homeoOfEquivCompactToT2 (f := Equiv.ofBijective f hf)).symm.continuous }
+  let f : Field.absoluteGaloisGroup L →ₜ* Field.absoluteGaloisGroup K :=
+    ⟨absoluteGaloisGroupExtend K L σ, continuous_absoluteGaloisGroupExtend K L σ⟩
+  have hf : (f : Field.absoluteGaloisGroup L →* Field.absoluteGaloisGroup K).range = U := hU
+  hf ▸ f.equivRangeOfIsEmbedding ((continuous_absoluteGaloisGroupExtend K L σ).isClosedEmbedding
+    (injective_absoluteGaloisGroupExtend K L σ)).isEmbedding
 
 /-- `absoluteGaloisGroupExtendEquiv` is `absoluteGaloisGroupExtend` with its codomain restricted
 to the image. -/
@@ -306,8 +299,10 @@ to the image. -/
 theorem coe_absoluteGaloisGroupExtendEquiv_apply {U : Subgroup (Field.absoluteGaloisGroup K)}
     (hU : (absoluteGaloisGroupExtend K L σ).range = U) (g : Field.absoluteGaloisGroup L) :
     (absoluteGaloisGroupExtendEquiv K L σ hU g : Field.absoluteGaloisGroup K) =
-      absoluteGaloisGroupExtend K L σ g :=
-  (rfl)
+      absoluteGaloisGroupExtend K L σ g := by
+  subst hU
+  unfold absoluteGaloisGroupExtendEquiv
+  exact congrArg Subtype.val (ContinuousMonoidHom.equivRangeOfIsEmbedding_apply _ _ g)
 
 /-! ### Normal extensions: the quotient by the open subgroup -/
 
