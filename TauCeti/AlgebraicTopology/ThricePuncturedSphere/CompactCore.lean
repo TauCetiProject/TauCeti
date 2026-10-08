@@ -62,8 +62,8 @@ namespace ThricePuncturedSphere
 
 /-- The **compact core** of radius `ρ` of the thrice-punctured sphere: the points at distance at
 least `ρ` from `0` and from `1`, and at distance at most `ρ⁻¹` from `0`. In the standard local
-coordinates `z`, `1 - z` and `1 / z` at the three punctures, these are the points whose coordinate
-has norm at least `ρ`. -/
+coordinates `z`, `1 - z` and `1 / z` at the three punctures, for `ρ > 0` these are the points whose
+coordinate has norm at least `ρ`. For `ρ ≤ 0`, the compact core is empty. -/
 def compactCore (ρ : ℝ) : Set ThricePuncturedSphere :=
   {z | ρ ≤ ‖(z : ℂ)‖ ∧ ρ ≤ ‖(z : ℂ) - 1‖ ∧ ‖(z : ℂ)‖ ≤ ρ⁻¹}
 
@@ -118,8 +118,8 @@ theorem exists_subset_compactCore {K : Set ThricePuncturedSphere} (hK : IsCompac
   rw [le_inv_comm₀ (norm_pos_iff.mpr z.ne_zero) (hpos z₀)]
   exact hle.trans (min_le_right _ _)
 
-/-- **The ends of the thrice-punctured sphere are its three punctures**: the complements of the
-compact cores of positive radius form a basis of the cocompact filter. -/
+/-- The complements of the compact cores of positive radius form a basis of the cocompact filter
+on the thrice-punctured sphere. -/
 theorem hasBasis_cocompact :
     (cocompact ThricePuncturedSphere).HasBasis (fun ρ : ℝ ↦ 0 < ρ) fun ρ ↦ (compactCore ρ)ᶜ :=
   Filter.hasBasis_cocompact.to_hasBasis
