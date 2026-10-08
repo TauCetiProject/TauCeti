@@ -31,11 +31,17 @@ presentation `R({T^(n+1), c}/c)`.
   their union.
 * `TauCeti.ValuationSpectrum.openUnitDiscAdicSpace`: the resulting object of the category of
   adic spaces.
+* `TauCeti.ValuationSpectrum.discExhaustionOpenIso`: the restriction of the closed disc to an
+  exhaustion member is the presentation-limit pre-adic space of the completed rational
+  localisation for `R({T^(n+1), c}/c)`.
 
 ## Main results
 
+* `TauCeti.ValuationSpectrum.coe_discExhaustionOpen`,
+  `TauCeti.ValuationSpectrum.coe_openUnitDiscOpen`: on points of the closed unit disc, the
+  exhaustion opens and their union are `discExhaustion c n` and `discExhaustionUnion c`.
 * `TauCeti.ValuationSpectrum.discExhaustionOpen_mem_affinoidOpens`: every exhaustion member is
-  an open affinoid subspace with its rational-localisation coordinate ring.
+  an open affinoid subspace.
 * `TauCeti.ValuationSpectrum.isAdic_openUnitDiscPreAdicSpace`: the open unit disc is an adic
   space.
 
@@ -74,6 +80,17 @@ noncomputable def discExhaustionOpen (n : ℕ) :
   classical
   exact closedPolydiscBasicOpen 1 P {X ^ (n + 1), C c} (C c)
 
+omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
+/-- Under the identification of points with the closed unit disc, the `n`-th exhaustion open is
+the rational subset `discExhaustion c n`. -/
+theorem coe_discExhaustionOpen (n : ℕ) :
+    (discExhaustionOpen c P n : Set (closedPolydiscPreAdicSpace 1 P)) =
+      closedPolydiscPreAdicSpaceHomeomorph 1 P ⁻¹' discExhaustion c n := by
+  classical
+  ext x
+  rw [discExhaustion_eq_rationalSubset]
+  exact mem_closedPolydiscBasicOpen 1 P
+
 /-- The open unit disc, as the union of the rational exhaustion opens in the closed-disc
 pre-adic space. -/
 noncomputable def openUnitDiscOpen (_hc : IsPseudoUniformizer c) :
@@ -94,17 +111,59 @@ theorem discExhaustionOpen_le_openUnitDiscOpen (hc : IsPseudoUniformizer c) (n :
   exact le_iSup (discExhaustionOpen c P) n
 
 omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
-/-- Each member of the open-disc exhaustion is an open affinoid subspace of the closed disc.
-Its coordinate ring is the completed rational localisation for
-`R({T^(n+1), c}/c)`. -/
-theorem discExhaustionOpen_mem_affinoidOpens (hc : IsPseudoUniformizer c) (n : ℕ) :
-    discExhaustionOpen c P n ∈ (closedPolydiscPreAdicSpace 1 P).affinoidOpens := by
-  classical
-  have hspan : Ideal.span (({X ^ (n + 1), C c} : Finset 𝒯) : Set 𝒯) = ⊤ :=
-    Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) (hc.isUnit.map C)
-  apply closedPolydiscBasicOpen_mem_affinoidOpens
-  rw [hspan]
+/-- Under the identification of points with the closed unit disc, the open unit disc is the
+exhaustion union `discExhaustionUnion c`. -/
+theorem coe_openUnitDiscOpen (hc : IsPseudoUniformizer c) :
+    (openUnitDiscOpen c P hc : Set (closedPolydiscPreAdicSpace 1 P)) =
+      closedPolydiscPreAdicSpaceHomeomorph 1 P ⁻¹' discExhaustionUnion c := by
+  rw [openUnitDiscOpen_eq_iSup, Opens.coe_iSup, discExhaustionUnion_eq_iUnion,
+    Set.preimage_iUnion]
+  exact Set.iUnion_congr (coe_discExhaustionOpen c P)
+
+omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
+open scoped Classical in
+/-- For a unit `c`, the numerators `T^(n+1), c` of the `n`-th exhaustion member span the unit
+ideal, which is open; so `R({T^(n+1), c}/c)` is an admissible rational localisation. -/
+theorem isOpen_span_discExhaustionNumerators {c : K} (hc : IsUnit c) (n : ℕ) :
+    IsOpen (Ideal.span (({X ^ (n + 1), C c} : Finset 𝒯) : Set 𝒯) : Set 𝒯) := by
+  rw [Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) (hc.map C)]
   exact isOpen_univ
+
+omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
+/-- Each member of the open-disc exhaustion is an open affinoid subspace of the closed disc;
+`discExhaustionOpenIso` identifies its coordinate ring. -/
+theorem discExhaustionOpen_mem_affinoidOpens (hc : IsPseudoUniformizer c) (n : ℕ) :
+    discExhaustionOpen c P n ∈ (closedPolydiscPreAdicSpace 1 P).affinoidOpens :=
+  closedPolydiscBasicOpen_mem_affinoidOpens 1 P
+    (isOpen_span_discExhaustionNumerators hc.isUnit n)
+
+open PairOfDefinition in
+open scoped Classical in
+/-- **The explicit coordinate ring of an exhaustion member.** For a unit `c`, restricting the
+closed disc to the `n`-th exhaustion open gives the presentation-limit pre-adic space of the
+completed rational localisation `K⟨T⟩⟨T^(n+1)/c, c/c⟩` of the rational subset
+`R({T^(n+1), c}/c)`. -/
+noncomputable def discExhaustionOpenIso {c : K} (hc : IsUnit c) (n : ℕ) :
+    letI Q := P.weighted (T := fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight
+    letI hden := hasDenominatorPower_of_isOpen_span Q {X ^ (n + 1), C c} (C c)
+      (Localization.Away (C c)) (isOpen_span_discExhaustionNumerators hc n)
+    letI := locUniformSpace Q {X ^ (n + 1), C c} (C c) (Localization.Away (C c)) hden
+    letI := isUniformAddGroup_locUniformSpace Q {X ^ (n + 1), C c} (C c)
+      (Localization.Away (C c)) hden
+    letI := isTopologicalRing_locUniformSpace Q {X ^ (n + 1), C c} (C c)
+      (Localization.Away (C c)) hden
+    (closedPolydiscPreAdicSpace 1 P).restrict (discExhaustionOpen c P n).isOpenEmbedding ≅
+      presentationLimitPreAdicSpace
+        (completionLocalization Q {X ^ (n + 1), C c} (C c) (Localization.Away (C c)) hden)
+        (completedPlusSubring Q (powerBoundedSubring 𝒯) {X ^ (n + 1), C c} (C c)
+          (Localization.Away (C c)) hden)
+        (isPowerBounded_of_mem_completedPlusSubring Q (powerBoundedSubring 𝒯)
+          (fun _ ha ↦ mem_powerBoundedSubring.mp ha) {X ^ (n + 1), C c} (C c)
+          (Localization.Away (C c)) hden)
+        (completionLocalization_ringOfDefinition_le_completedPlusSubring Q
+          (powerBoundedSubring 𝒯) Q.le_powerBoundedSubring {X ^ (n + 1), C c} (C c)
+          (Localization.Away (C c)) hden) :=
+  closedPolydiscBasicOpenIso 1 P (isOpen_span_discExhaustionNumerators hc n)
 
 /-- The open unit disc as the restriction of the closed-disc pre-adic space to its rational
 exhaustion. -/
