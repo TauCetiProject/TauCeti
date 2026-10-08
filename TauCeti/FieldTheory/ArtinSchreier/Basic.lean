@@ -19,6 +19,13 @@ form `w ^ p - w` in the base field, the extension has degree `p` and its Galois 
 is the additive group of `ZMod p`. This supplies the field-theoretic input for the
 ramification theory of Artin–Schreier covers.
 
+That degree computation also settles irreducibility of the polynomial itself: in its splitting
+field a root generates, so the polynomial is that root's minimal polynomial as soon as the class of
+`u` is nontrivial, and conversely a root in the base field is a linear factor. So
+`X ^ p - X - u` is irreducible exactly when `u` is not of the form `w ^ p - w`
+(`TauCeti.ArtinSchreier.irreducible_polynomial_iff`), which is what constructs an Artin–Schreier
+extension of a given field from a given `u`.
+
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
@@ -48,6 +55,16 @@ omit [CharP K p] in
 private theorem integral_root (hy : y ^ p - y = algebraMap K L u) : IsIntegral K y := by
   refine ⟨X ^ p - X - C u, monic_polynomial u, ?_⟩
   simp [hy]
+
+omit [CharP K p] in
+private theorem natDegree_polynomial (u : K) : (X ^ p - X - C u : K[X]).natDegree = p := by
+  have h1 : 1 < p := (Fact.out : p.Prime).one_lt
+  have he : (X ^ p - X - C u : K[X]) = X ^ p - (X + C u) := by ring
+  rw [he, natDegree_sub_eq_left_of_natDegree_lt]
+  · exact natDegree_X_pow p
+  · rw [natDegree_X_pow]
+    rw [natDegree_X_add_C]
+    exact h1
 
 /-- An Artin–Schreier polynomial splits in any field containing one of its roots. -/
 theorem splits (hy : y ^ p - y = algebraMap K L u) :
@@ -193,5 +210,86 @@ theorem autEquivZmod_symm_apply (hy : y ^ p - y = algebraMap K L u) (hgen : K⟮
     (autEquivZmod hy hgen hu).symm c y = y + (ZMod.cast c.toAdd : L) := by
   rw [aut_apply_eq_add_translationHom hy, ← autEquivZmod_apply hy hgen hu,
     MulEquiv.apply_symm_apply]
+
+private theorem exists_translation_of_isRoot (hy : y ^ p - y = algebraMap K L u) {r : L}
+    (hr : r ^ p - r = algebraMap K L u) : ∃ c : ZMod p, (ZMod.cast c : L) = r - y := by
+  have : CharP L p := charP_of_injective_algebraMap (algebraMap K L).injective p
+  have hp : (r - y) ^ p = r - y := by
+    rw [sub_pow_char]
+    linear_combination hr - hy
+  have hm := (Subfield.mem_bot_iff_pow_eq_self L p).mpr hp
+  rw [← ZMod.fieldRange_castHom_eq_bot p] at hm
+  exact hm
+
+/-- **The Artin–Schreier criterion**: over a field of characteristic `p`, the polynomial
+`X ^ p - X - u` is irreducible exactly when `u` is not of the form `w ^ p - w`.  One direction is
+the linear factor a root provides; the other is that a root generates an extension of degree `p`,
+so the polynomial is the minimal polynomial of that root. -/
+theorem irreducible_polynomial_iff (u : K) :
+    Irreducible (X ^ p - X - C u : K[X]) ↔ ∀ w : K, w ^ p - w ≠ u := by
+  classical
+  have hp1 : 1 < p := (Fact.out : p.Prime).one_lt
+  have hmonic : (X ^ p - X - C u : K[X]).Monic := monic_polynomial u
+  have hdeg : (X ^ p - X - C u : K[X]).natDegree = p := natDegree_polynomial u
+  constructor
+  · -- A root of an irreducible polynomial of degree `p > 1` is impossible.
+    intro hirr w hw
+    have hroot : (X ^ p - X - C u : K[X]).IsRoot w := by simp [IsRoot, hw]
+    obtain ⟨q, hq⟩ := dvd_iff_isRoot.mpr hroot
+    have hq0 : q ≠ 0 := fun h0 ↦ hmonic.ne_zero (by rw [hq, h0, mul_zero])
+    rcases hirr.isUnit_or_isUnit hq with h | h
+    · simpa using natDegree_eq_zero_of_isUnit h
+    · rw [hq, natDegree_mul (X_sub_C_ne_zero w) hq0, natDegree_X_sub_C,
+        natDegree_eq_zero_of_isUnit h] at hdeg
+      omega
+  · -- Without a root the polynomial is the minimal polynomial of a root in its splitting field.
+    intro hu
+    set L := (X ^ p - X - C u : K[X]).SplittingField with hL
+    set g : L[X] := (X ^ p - X - C u : K[X]).map (algebraMap K L) with hg
+    have hmap : g.natDegree = p := by
+      rw [hg, natDegree_map_eq_of_injective (algebraMap K L).injective, hdeg]
+    have hg0 : g ≠ 0 := fun h0 ↦ by rw [h0, natDegree_zero] at hmap; omega
+    obtain ⟨y, hymem⟩ : ∃ y : L, y ∈ g.roots := by
+      refine Multiset.card_pos_iff_exists_mem.mp ?_
+      have hcard := (IsSplittingField.splits L (X ^ p - X - C u)).natDegree_eq_card_roots
+      rw [← hg, hmap] at hcard
+      omega
+    have hyroot : g.IsRoot y := (mem_roots hg0).mp hymem
+    have hy : y ^ p - y = algebraMap K L u := by
+      have h := hyroot
+      rw [hg] at h
+      simp only [IsRoot, eval_map, ← aeval_def, map_sub, map_pow, aeval_X, aeval_C] at h
+      linear_combination h
+    -- Every root differs from `y` by a prime-field element, so `y` generates the splitting field.
+    have hgen : K⟮y⟯ = ⊤ := by
+      refine top_unique fun x _ ↦ ?_
+      have hsub : Algebra.adjoin K ((X ^ p - X - C u : K[X]).rootSet L) ≤
+          (K⟮y⟯).toSubalgebra := by
+        refine Algebra.adjoin_le fun r hr ↦ ?_
+        have hrroot : r ^ p - r = algebraMap K L u := by
+          have h := (mem_rootSet.mp hr).2
+          simp only [aeval_def, eval₂_sub, eval₂_pow, eval₂_X, eval₂_C] at h
+          linear_combination h
+        obtain ⟨c, hc⟩ := exists_translation_of_isRoot hy hrroot
+        have hr' : r = y + ((c.val : ℕ) : L) := by
+          rw [← ZMod.natCast_val] at hc
+          linear_combination -hc
+        rw [hr']
+        exact add_mem (IntermediateField.mem_adjoin_simple_self K y)
+          (Subalgebra.natCast_mem _ _)
+      rw [IsSplittingField.adjoin_rootSet (L := L) (X ^ p - X - C u)] at hsub
+      exact hsub Algebra.mem_top
+    have hint : IsIntegral K y := integral_root hy
+    have hmindeg : (minpoly K y).natDegree = p := by
+      rw [← IntermediateField.adjoin.finrank hint, hgen, IntermediateField.finrank_top',
+        finrank_eq hy hgen hu]
+    have haeval : Polynomial.aeval y (X ^ p - X - C u : K[X]) = 0 := by
+      simp only [map_sub, map_pow, aeval_X, aeval_C]
+      linear_combination hy
+    have hdvd : minpoly K y ∣ (X ^ p - X - C u : K[X]) := minpoly.dvd K y haeval
+    have heq := Polynomial.eq_of_monic_of_dvd_of_natDegree_le (minpoly.monic hint) hmonic hdvd
+      (by omega)
+    rw [heq]
+    exact minpoly.irreducible hint
 
 end TauCeti.ArtinSchreier
