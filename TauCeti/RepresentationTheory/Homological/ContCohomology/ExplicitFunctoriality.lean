@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.GroupAction.Equiv
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
+import TauCeti.RepresentationTheory.Homological.GroupCohomology.LowDegree
 
 /-!
 # Functoriality of explicit continuous cohomology in degrees one and two
@@ -29,7 +30,10 @@ are the positive-degree counterparts of `explicitRes0_eq_explicitMap0` and
 `explicitCoeff2Equiv` upgrade a continuous equivariant additive equivalence of coefficient modules
 to additive equivalences on explicit `H¹` and `H²`, and `explicitCoeff1_bijective` and
 `explicitCoeff2_bijective` record that a bijective equivariant homomorphism of discrete coefficient
-modules induces bijections.
+modules induces bijections. The lemmas `explicitCoeff1_eq_nsmul` and `explicitCoeff2_eq_nsmul`
+identify coefficient maps given by multiplication by a natural number, while
+`explicitCoeff2_eq_card_nsmul` records that the norm of a finite normal subgroup `N`, as a
+coefficient map, acts on `H²` as multiplication by `#N`.
 
 This is functoriality of the *explicit* model: the carriers are the quotients `Z¹/B¹` and `Z²/B²`
 of plain continuous cochains. Mathlib's `ContinuousCohomology.map` is the compatible-pair pullback
@@ -723,6 +727,16 @@ theorem explicitCoeff1_id :
     explicitCoeff1 G M (DistribMulActionHom.id G) continuous_id = AddMonoidHom.id _ :=
   explicitMap1_id G M fun _ _ => rfl
 
+/-- A coefficient map which is multiplication by `k` on `M` induces multiplication by `k` on
+explicit `H¹`: the class of a `1`-cocycle `c` goes to the class of `k • c`. -/
+theorem explicitCoeff1_eq_nsmul (f : M →+[G] M) (hf : Continuous f) {k : ℕ}
+    (hk : ∀ m, f m = k • m) (x : H1 G M) : explicitCoeff1 G M f hf x = k • x := by
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    rw [explicitCoeff1_mk, ← QuotientAddGroup.mk_nsmul]
+    exact congrArg (fun z : Z1 G M ↦ (z : H1 G M))
+      (Subtype.ext (funext fun g ↦ (cocyclesMap1_apply _ _ _ _ _ _ _ _ c g).trans (hk _)))
+
 /-- Coefficient maps on explicit `H¹` respect composition. -/
 theorem explicitCoeff1_comp {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
     [IsTopologicalAddGroup N] [DistribMulAction G N] [ContinuousSMul G N]
@@ -918,5 +932,37 @@ theorem explicitCoeff2_bijective [ContinuousMul G] [DiscreteTopology M] {N : Typ
   rwa [e] at h
 
 end CoefficientMaps
+
+section Norm
+
+variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G]
+  (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [DistribMulAction G M] [ContinuousSMul G M]
+
+/-- **The norm of a finite normal subgroup acts on explicit `H²` as multiplication by its order.**
+The norm `m ↦ ∑ n : N, n • m` of a finite normal subgroup `N` of `G`, as a coefficient map,
+induces multiplication by `#N` on `H²(G, M)`. The norm is `G`-equivariant because `N` is normal,
+and it is multiplication by `#N` on the invariants, but not in general on `M`. -/
+theorem explicitCoeff2_eq_card_nsmul (N : Subgroup G) [N.Normal] [Fintype N] (x : H2 G M) :
+    explicitCoeff2 G M (groupNormHom N M) (continuous_groupNormHom N M) x = Nat.card N • x := by
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    obtain ⟨hcont, hc⟩ := mem_Z2_iff.1 c.2
+    rw [explicitCoeff2_mk, ← QuotientAddGroup.mk_nsmul, H2pi_eq_iff, mem_B2_iff']
+    -- The norm of `c` is `#N • c` plus the coboundary of `k ↦ ∑ n : N, (c (n, k) - c (k, n))`.
+    refine ⟨fun k ↦ ∑ n : N, ((c : G × G → M) (n, k) - (c : G × G → M) (k, n)),
+      continuous_finsetSum _ fun n _ ↦
+        (hcont.comp (continuous_const.prodMk continuous_id)).sub
+          (hcont.comp (continuous_id.prodMk continuous_const)), fun g h ↦ ?_⟩
+    -- `cocyclesMap2_apply` is applied as a term: rewriting it would abstract the equivariance
+    -- proof of the norm into an ill-typed motive.
+    rw [Pi.sub_apply]
+    refine Eq.trans ?_ (congrArg₂ (· - ·) (cocyclesMap2_apply _ _ _ _ _ _ _ _ c g h).symm rfl)
+    simp only [ContinuousMonoidHom.coe_id, id, AddMonoidHom.coe_ofClass, groupNormHom_apply,
+      groupNorm_apply, Subgroup.smul_def, AddSubgroup.coe_nsmul, Pi.smul_apply,
+      TauCeti.groupCohomology.sum_smul_apply_of_isCocycle₂ N hc g h]
+    abel
+
+end Norm
 
 end TauCeti.ContCohomology

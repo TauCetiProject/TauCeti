@@ -113,11 +113,6 @@ noncomputable abbrev coordinateMap :
     Symplectic.coordinateHopfAlgebra R m ⟶ coordinateHopfAlgebra R m :=
   CommHopfAlgCat.mkQuotient (Symplectic.coordinateHopfAlgebra R m) (definingHopfIdeal R m)
 
-/-- The isotropic flag subgroup has finite-type coordinate algebra. -/
-instance instAlgebraFiniteTypeCoordinateHopfAlgebra :
-    Algebra.FiniteType R (coordinateHopfAlgebra R m) :=
-  Algebra.FiniteType.quotient R (definingHopfIdeal R m).toIdeal
-
 /-- The closed subgroup scheme of `Sp₂ₘ` of symplectic matrices preserving the standard
 complete isotropic flag. -/
 noncomputable abbrev groupScheme :=
@@ -141,9 +136,6 @@ theorem mem_definingPointsSubgroup_iff
         (Symplectic.coordinateHopfAlgebra R m) (definingHopfIdeal R m)
         (CommAlgCat.of R A) ↔
       Symplectic.pointsMulEquiv R m (A := A) g ∈ matrixSubgroup m := by
-  have hsurj : Function.Surjective (Symplectic.coordinateMap R m).hom := by
-    rw [Symplectic.coordinateMap_def]
-    exact CommHopfAlgCat.mkQuotient_surjective _ _
   have hpullback :
       (CommHopfAlgCat.mapPointsFunctor (Symplectic.coordinateMap R m)).app
           (CommAlgCat.of R A) g =
@@ -159,8 +151,8 @@ theorem mem_definingPointsSubgroup_iff
             (GeneralLinear.weightParabolicDefiningHopfIdeal R (weights m))
             (CommAlgCat.of R A) := by
       rw [definingHopfIdeal_def]
-      exact CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff_of_surjective
-        (Symplectic.coordinateMap R m) hsurj _ _ g
+      exact CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff
+        (Symplectic.coordinateMap R m) _ _ g
     _ ↔ (GeneralLinear.pointsMulEquiv (m + m)
           ((CommHopfAlgCat.mapPointsFunctor (Symplectic.coordinateMap R m)).app
             (CommAlgCat.of R A) g) : Matrix _ _ A).BlockTriangular

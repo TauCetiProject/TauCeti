@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.Pullback
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
 
 /-!
 # Functorial pullback of line bundles
@@ -15,8 +16,11 @@ Pulling back an invertible sheaf along an identity morphism leaves it unchanged,
 along a composite agrees with successive pullback. These comparisons make the pullback operation
 on isomorphism classes of line bundles contravariantly functorial. Pullback also preserves the
 class of the trivial line bundle (`LineBundleClass.pullback_one`), through
-the comparison `Scheme.Modules.pullbackObjUnitIso : f^* 𝒪_Y ≅ 𝒪_X`; compatibility of pullback
-with tensor product requires a separate comparison.
+the comparison `Scheme.Modules.pullbackObjUnitIso : f^* 𝒪_Y ≅ 𝒪_X`, and tensor products of line
+bundles (`LineBundleClass.pullback_mul`), through the tensor comparison
+`f^*(L ⊗ K) ≅ f^*L ⊗ f^*K`, which is invertible because line bundles are quasicoherent
+(`Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent`). So pullback is a homomorphism of Picard
+groups (`LineBundleClass.pullbackHom`), as needed for the Picard functor `T ↦ Pic(X_T)`.
 
 The comparisons are restrictions of Mathlib's `Scheme.Modules.pullbackId` and
 `Scheme.Modules.pullbackComp`.
@@ -91,8 +95,8 @@ namespace LineBundleClass
 
 variable {X Y Z : Scheme.{u}}
 
-/-- Pullback of an isomorphism class of line bundles along a scheme morphism.
-This is the underlying class map; tensor-product compatibility requires a separate comparison. -/
+/-- Pullback of an isomorphism class of line bundles along a scheme morphism. It is a group
+homomorphism by `LineBundleClass.pullback_mul`, bundled as `LineBundleClass.pullbackHom`. -/
 def pullback (f : X ⟶ Y) (a : LineBundleClass Y) : LineBundleClass X :=
   lift (fun L ↦ mk ((InvertibleSheaf.pullback f).obj L)) (fun _ _ ⟨e⟩ ↦
     mk_eq_mk_iff.mpr ⟨(SheafOfModules.isInvertible X).ι.mapIso
@@ -129,6 +133,50 @@ lemma pullback_one (f : X ⟶ Y) : pullback f 1 = 1 := by
   exact ⟨(Scheme.Modules.pullback f).mapIso
     (InvertibleSheaf.trivialObjIsoUnit Y) ≪≫
       Scheme.Modules.pullbackObjUnitIso f⟩
+
+/-- Pullback of line-bundle classes is compatible with tensor product:
+`[f^*(L ⊗ K)] = [f^*L] [f^*K]`. -/
+@[simp]
+lemma pullback_mul (f : X ⟶ Y) (a b : LineBundleClass Y) :
+    pullback f (a * b) = pullback f a * pullback f b := by
+  obtain ⟨L, rfl⟩ := mk_surjective a
+  obtain ⟨K, rfl⟩ := mk_surjective b
+  simp only [← mk_tensorProduct, pullback_mk, mk_eq_mk_iff, InvertibleSheaf.tensorProduct_obj,
+    InvertibleSheaf.pullback_obj_obj]
+  -- A line bundle is locally free, hence quasicoherent, so the tensor comparison of pullback is
+  -- invertible; the tensor product of line bundles is identified with the monoidal tensor
+  -- product through `tensorUnderlyingIso`.
+  have : L.obj.IsQuasicoherent :=
+    have : TauCeti.SheafOfModules.IsInvertible (R := Y.ringCatSheaf) L.obj := L.property
+    let F : _root_.SheafOfModules Y.ringCatSheaf := L.obj
+    inferInstanceAs F.IsQuasicoherent
+  exact ⟨(Scheme.Modules.pullback f).mapIso (SheafOfModules.tensorProductIso Y.sheaf L.obj K.obj ≪≫
+      (L.obj.tensorUnderlyingIso K.obj).symm) ≪≫
+    asIso (Functor.OplaxMonoidal.δ (Scheme.Modules.pullback f) L.obj K.obj) ≪≫
+    ((Scheme.Modules.pullback f).obj L.obj).tensorUnderlyingIso
+      ((Scheme.Modules.pullback f).obj K.obj) ≪≫
+    (SheafOfModules.tensorProductIso X.sheaf _ _).symm⟩
+
+/-- Pullback of line-bundle classes along a scheme morphism, as a homomorphism of Picard
+groups. -/
+def pullbackHom (f : X ⟶ Y) : LineBundleClass Y →* LineBundleClass X :=
+  MonoidHom.mk' (pullback f) (pullback_mul f)
+
+/-- The Picard group homomorphism `pullbackHom f` is pullback of line-bundle classes. -/
+@[simp]
+lemma pullbackHom_apply (f : X ⟶ Y) (a : LineBundleClass Y) : pullbackHom f a = pullback f a :=
+  (rfl)
+
+/-- Pullback of Picard groups along the identity is the identity. -/
+@[simp]
+lemma pullbackHom_id (X : Scheme.{u}) : pullbackHom (𝟙 X) = MonoidHom.id _ :=
+  MonoidHom.ext pullback_id
+
+/-- Pullback of Picard groups is contravariantly functorial under composition. -/
+@[simp]
+lemma pullbackHom_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
+    (pullbackHom f).comp (pullbackHom g) = pullbackHom (f ≫ g) :=
+  MonoidHom.ext (pullback_comp f g)
 
 end LineBundleClass
 

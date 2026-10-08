@@ -102,11 +102,6 @@ noncomputable abbrev coordinateMap :
     SpecialLinear.coordinateHopfAlgebra R n ⟶ coordinateHopfAlgebra R n :=
   CommHopfAlgCat.mkQuotient (SpecialLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
 
-/-- The upper-triangular special-linear coordinate Hopf algebra is finite type. -/
-instance instAlgebraFiniteTypeCoordinateHopfAlgebra :
-    Algebra.FiniteType R (coordinateHopfAlgebra R n) :=
-  Algebra.FiniteType.quotient R (definingHopfIdeal R n).toIdeal
-
 section Points
 
 variable {A : Type w} [CommRing A] [Algebra R A]
@@ -123,10 +118,7 @@ theorem mem_definingPointsSubgroup_iff
       Matrix.SpecialLinearGroup.toGL (SpecialLinear.pointsMulEquiv (R := R) (A := A) n g) ∈
         upperTriangularGroup (Fin n) A := by
   rw [definingHopfIdeal_def,
-    CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff_of_surjective
-      (SpecialLinear.coordinateMap R n)
-      (CommHopfAlgCat.mkQuotient_surjective
-        (GeneralLinear.coordinateHopfAlgebra R n) (SpecialLinear.definingHopfIdeal R n)),
+    CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff (SpecialLinear.coordinateMap R n),
     GeneralLinear.UpperTriangular.mem_definingPointsSubgroup_iff,
     CommHopfAlgCat.mapPointsFunctor_app_apply,
     ← CommHopfAlgCat.quotientPointsHom_apply

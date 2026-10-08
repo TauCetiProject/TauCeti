@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Polynomial.Puiseux.RootDifference
+public import TauCeti.Analysis.Polynomial.Puiseux.Multiplicity
+public import TauCeti.Analysis.Analytic.FiniteFamily
 public import TauCeti.Analysis.Polynomial.Conjugation
 
 /-!
@@ -15,8 +16,8 @@ A complete analytic complex splitting with discriminant a power of the distingui
 coordinate times an analytic unit yields analytic real root branches on the hyperplane.
 Restrict to an analytic real parametrization on which the polynomial has real coefficients.
 The labels that are real at the central parameter stay real nearby, and they cover exactly
-the real roots. Labels may coincide on the hyperplane; the resulting list retains repeated
-labels and is not asserted to be ordered or distinct.
+the real roots. The first construction retains repeated labels. The ordered construction removes
+repeated labels on a common open neighborhood and retains constant positive root multiplicities.
 
 The discriminant condition prevents a collision class from splitting along the hyperplane.
 Conjugation and continuity then prevent a real class from leaving the real line. This is
@@ -36,7 +37,6 @@ open Filter Polynomial Set Topology
 namespace TauCeti
 
 variable {E B : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-  [NormedSpace ℝ E] [IsScalarTower ℝ ℂ E]
   [NormedAddCommGroup B] [NormedSpace ℝ B]
 
 /-- A complete analytic complex splitting with power-times-unit discriminant restricts on
@@ -107,5 +107,71 @@ theorem exists_analyticAt_real_roots_on_hyperplane {n a : ℕ}
     exact Complex.ofReal_injective ((hsr ⟨i, him⟩).trans hi)
   · rintro ⟨i, hi⟩
     exact ⟨i.val, (hsr i).symm.trans (congrArg (fun t : ℝ ↦ (t : ℂ)) hi)⟩
+
+/-- A prepared analytic complex splitting gives a complete, strictly ordered analytic list
+of real roots on the distinguished hyperplane, with constant positive multiplicities.
+The neighborhood, distinct root count, and multiplicities are conclusions. -/
+theorem exists_analyticOnNhd_ordered_real_roots_on_hyperplane {n a : ℕ}
+    {P : E × ℂ → ℂ[X]} {r : Fin n → E × ℂ → ℂ} {φ : B → E} {b₀ : B}
+    {F : B → ℝ[X]} {u : E × ℂ → ℂ}
+    (hr : ∀ i, AnalyticAt ℂ (r i) (φ b₀, 0))
+    (hP : ∀ᶠ p in 𝓝 (φ b₀, (0 : ℂ)), P p = ∏ i, (X - C (r i p)))
+    (hu : AnalyticAt ℂ u (φ b₀, 0)) (hu0 : u (φ b₀, 0) ≠ 0)
+    (hdiscr : ∀ᶠ p in 𝓝 (φ b₀, (0 : ℂ)), (P p).discr = p.2 ^ a * u p)
+    (hφ : AnalyticAt ℝ φ b₀)
+    (hreal : ∀ᶠ b in 𝓝 b₀, P (φ b, 0) = (F b).map (algebraMap ℝ ℂ)) :
+    ∃ k : ℕ, ∃ s : Fin k → B → ℝ, ∃ U : Set B, IsOpen U ∧ b₀ ∈ U ∧
+      (∀ i, AnalyticOnNhd ℝ (s i) U) ∧
+      (∀ b ∈ U, StrictMono (fun i ↦ s i b)) ∧
+      (∀ b ∈ U, ∀ t, (F b).IsRoot t ↔ ∃ i, s i b = t) ∧
+      (∀ i, 0 < (F b₀).rootMultiplicity (s i b₀)) ∧
+      ∀ b ∈ U, ∀ i,
+        (F b).rootMultiplicity (s i b) = (F b₀).rootMultiplicity (s i b₀) := by
+  classical
+  obtain ⟨f, hf, hfr⟩ := exists_analyticAt_real_roots_on_hyperplane
+    hr hP hu hu0 hdiscr hφ hreal
+  have hcollision : ∀ᶠ b in 𝓝 b₀, ∀ i j : Fin n,
+      r i (φ b, 0) = r j (φ b, 0) ↔ r i (φ b₀, 0) = r j (φ b₀, 0) :=
+    eventually_all.2 fun i ↦ eventually_all.2 fun j ↦
+    hφ.continuousAt.tendsto.eventually (eventually_root_eq_iff_on_hyperplane hr hP hu hu0
+      (by simpa only [sub_zero] using hdiscr) i j)
+  have heq (i j : {i : Fin n // (r i (φ b₀, 0)).im = 0})
+      (hij : f i b₀ = f j b₀) : f i =ᶠ[𝓝 b₀] f j := by
+    have hcentral := hfr.self_of_nhds.1
+    have hc : r i.val (φ b₀, 0) = r j.val (φ b₀, 0) := by
+      rw [← hcentral i, ← hcentral j, hij]
+    filter_upwards [hfr, hcollision] with b hb hbc
+    apply Complex.ofReal_injective
+    rw [hb.1 i, hb.1 j]
+    exact (hbc i.val j.val).2 hc
+  obtain ⟨k, e, V, hV, hbV, hs, horder⟩ :=
+    exists_analyticOnNhd_strictMono_range_eq hf heq
+  have hmult := hφ.continuousAt.tendsto.eventually
+    (eventually_rootMultiplicity_eq_on_hyperplane hr hP hu hu0
+      (by simpa only [sub_zero] using hdiscr))
+  have hm : ∀ᶠ b in 𝓝 b₀, ∀ i,
+      (F b).rootMultiplicity (f (e i) b) =
+        (F b₀).rootMultiplicity (f (e i) b₀) := by
+    filter_upwards [hfr, hreal, hmult] with b hb hFb hmb i
+    rw [eq_rootMultiplicity_map (algebraMap ℝ ℂ).injective,
+      eq_rootMultiplicity_map (algebraMap ℝ ℂ).injective (f (e i) b₀),
+      ← hFb, ← hreal.self_of_nhds, Complex.coe_algebraMap, hb.1 (e i), hfr.self_of_nhds.1 (e i)]
+    exact hmb (e i).val
+  obtain ⟨U, hU, hopen, hbU⟩ := eventually_nhds_iff.1
+    (Filter.Eventually.and (hV.mem_nhds hbV) (hfr.and hm))
+  have hF0 : F b₀ ≠ 0 := by
+    apply (Polynomial.map_ne_zero_iff (algebraMap ℝ ℂ).injective).1
+    rw [← hreal.self_of_nhds, hP.self_of_nhds]
+    exact (monic_prod_X_sub_C _ _).ne_zero
+  refine ⟨k, fun i ↦ f (e i), U, hopen, hbU,
+    fun i ↦ (hs i).mono fun b hb ↦ (hU b hb).1,
+    fun b hb ↦ (horder b (hU b hb).1).1, ?_, ?_,
+    fun b hb ↦ (hU b hb).2.2⟩
+  · intro b hb t
+    rw [(hU b hb).2.1.2 t]
+    exact (congrArg (t ∈ ·) (horder b (hU b hb).1).2).symm.to_iff
+  · intro i
+    apply (rootMultiplicity_pos hF0).2
+    exact hfr.self_of_nhds.2 _ |>.2 ⟨e i, rfl⟩
 
 end TauCeti

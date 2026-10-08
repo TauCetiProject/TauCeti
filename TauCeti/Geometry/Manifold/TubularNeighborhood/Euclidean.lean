@@ -301,6 +301,27 @@ theorem normalTubeOfRadius_const (f : M → V) (ε : ℝ) :
   simp
 
 omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
+/-- Shrinking a variable normal tube to a smaller continuous radius preserves the open
+embedding of normal addition. No regularity of the original radius is needed. -/
+theorem isOpenEmbedding_normalTubeOfRadius_of_le {f : M → V} {r R : M → ℝ}
+    (hr : Continuous r) (hrR : ∀ x, r x ≤ R x)
+    (h : IsOpenEmbedding ((normalTubeOfRadius I f R).domRestrict
+      fun p : M × V => f p.1 + p.2)) :
+    IsOpenEmbedding ((normalTubeOfRadius I f r).domRestrict
+      fun p : M × V => f p.1 + p.2) := by
+  have hsub : normalTubeOfRadius I f r ⊆ normalTubeOfRadius I f R := fun p hp =>
+    mem_normalTubeOfRadius.mpr ⟨(mem_normalTubeOfRadius.mp hp).1,
+      (mem_normalTubeOfRadius.mp hp).2.trans_le (hrR p.1)⟩
+  apply h.comp (IsOpenEmbedding.inclusion hsub ?_)
+  convert isOpen_lt ((continuous_norm.comp continuous_snd).comp
+    (continuous_subtype_val : Continuous
+      (Subtype.val : normalTubeOfRadius I f R → M × V)))
+    ((hr.comp continuous_fst).comp continuous_subtype_val) using 1
+  ext p
+  simp only [mem_preimage, mem_normalTubeOfRadius, mem_ofPred_eq, Function.comp_apply]
+  exact and_iff_right (mem_normalTubeOfRadius.mp p.2).1
+
+omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
 /-- At a point `y` of the source of a chart, the normal space of `f` is the orthogonal complement
 of the range of the derivative of the coordinate expression of `f`. -/
 theorem normalSubspace_eq_of_mem_source [IsManifold I 1 M] {f : M → V} {x y : M}

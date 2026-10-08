@@ -64,6 +64,10 @@ theorem cornerMap_apply (e f x : A) : cornerMap k e f x = e * x * f :=
 def cornerSubmodule (e f : A) : Submodule k A :=
   LinearMap.range (cornerMap k e f)
 
+/-- The corner submodule is the range of the corner map. -/
+theorem cornerSubmodule_def (e f : A) :
+    cornerSubmodule k e f = LinearMap.range (cornerMap k e f) := (rfl)
+
 /-- For idempotents `e` and `f`, an element belongs to the corner `eAf` exactly when multiplying it
 by `e` on the left and by `f` on the right fixes it. -/
 @[simp]

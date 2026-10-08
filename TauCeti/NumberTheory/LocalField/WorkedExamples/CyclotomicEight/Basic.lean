@@ -70,6 +70,10 @@ instance : IsNonarchimedeanLocalField DyadicCyclotomicEight :=
 def zetaEight : DyadicCyclotomicEight :=
   IsCyclotomicExtension.zeta 8 ℚ_[2] DyadicCyclotomicEight
 
+/-- Identify the distinguished root with Mathlib's cyclotomic generator. -/
+theorem zetaEight_def : zetaEight = IsCyclotomicExtension.zeta 8 ℚ_[2] DyadicCyclotomicEight :=
+  (rfl)
+
 /-- The distinguished root has order eight. -/
 theorem isPrimitiveRoot_zetaEight : IsPrimitiveRoot zetaEight 8 :=
   IsCyclotomicExtension.zeta_spec 8 ℚ_[2] DyadicCyclotomicEight
