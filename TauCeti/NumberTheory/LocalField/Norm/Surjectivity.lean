@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Norm.Index
-import TauCeti.GroupTheory.Solvable
-import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
+import TauCeti.NumberTheory.LocalField.FiniteExtension.GaloisInduction
 import TauCeti.NumberTheory.LocalField.Herbrand.Unramified
 import TauCeti.NumberTheory.LocalField.Herbrand.UpperQuotient
 import TauCeti.NumberTheory.LocalField.Norm.Unramified.Basic
-import TauCeti.NumberTheory.LocalField.Solvable
 
 /-!
 # Norm surjectivity above a ramification break
@@ -129,6 +127,17 @@ private theorem exists_lt_upperJump_of_finrank_prime (hℓ : (finrank K L).Prime
   rw [psiNat_eq_self_of_le_break K L hℓ hvt hjump] at hv
   exact htne (eq_bot_iff.2 (hv ▸ lowerRamificationGroup_antitone K L (by exact_mod_cast hvt)))
 
+/-- A trivial inertia group makes the extension unramified, so the norm is surjective at
+all integral Herbrand depths. No prime-degree hypothesis is needed. -/
+private theorem map_normUnits_unitFiltration_psiNat_eq_of_lowerRamificationGroup_zero_eq_bot
+    (h0 : lowerRamificationGroup K L 0 = ⊥) (v : ℕ) :
+    (unitFiltration L (psiNat K L v)).map (Algebra.normUnits K) = unitFiltration K v := by
+  have he : ramificationIndex K L = 1 := by
+    rw [← natCard_lowerRamificationGroup_zero K L, h0, Subgroup.card_bot]
+  have := (isUnramified_iff_ramificationIndex_eq_one (K := K) (L := L)).2 he
+  rw [psiNat_of_isUnramified]
+  exact map_normUnits_unitFiltration K L v
+
 /-- In prime degree, the norm is surjective at every depth `v` at which the lower ramification
 group `G_{ψℕ(v)}` is trivial: either `L/K` is unramified, or `v` lies above the break. -/
 private theorem map_normUnits_unitFiltration_psiNat_eq_of_finrank_prime
@@ -136,11 +145,7 @@ private theorem map_normUnits_unitFiltration_psiNat_eq_of_finrank_prime
     (hv : lowerRamificationGroup K L (psiNat K L v) = ⊥) :
     (unitFiltration L (psiNat K L v)).map (Algebra.normUnits K) = unitFiltration K v := by
   by_cases h0 : lowerRamificationGroup K L 0 = ⊥
-  · have he : ramificationIndex K L = 1 := by
-      rw [← natCard_lowerRamificationGroup_zero K L, h0, Subgroup.card_bot]
-    have := (isUnramified_iff_ramificationIndex_eq_one (K := K) (L := L)).2 he
-    rw [psiNat_of_isUnramified]
-    exact map_normUnits_unitFiltration K L v
+  · exact map_normUnits_unitFiltration_psiNat_eq_of_lowerRamificationGroup_zero_eq_bot h0 v
   obtain ⟨t, htv, ht⟩ := exists_lt_upperJump_of_finrank_prime hℓ hv h0
   exact map_normUnits_unitFiltration_after_break hℓ htv ht
 
@@ -189,43 +194,26 @@ private theorem normSurj_of_forall_finrank_lt
       [IsGalois F L], finrank F L < finrank K L → NormSurj F L) :
     NormSurj K L := by
   rcases subsingleton_or_nontrivial (L ≃ₐ[K] L) with hG | hG
-  · intro v _
-    have he : ramificationIndex K L = 1 := by
-      rw [← natCard_lowerRamificationGroup_zero K L,
-        Subgroup.eq_bot_of_subsingleton (lowerRamificationGroup K L 0), Subgroup.card_bot]
-    have := (isUnramified_iff_ramificationIndex_eq_one (K := K) (L := L)).2 he
-    rw [psiNat_of_isUnramified]
-    exact map_normUnits_unitFiltration K L v
-  · obtain ⟨H, hH, hp⟩ := Group.IsSolvable.exists_normal_index_prime (L ≃ₐ[K] L)
-    let F := IntermediateField.fixedField H
+  · exact fun v _ ↦ map_normUnits_unitFiltration_psiNat_eq_of_lowerRamificationGroup_zero_eq_bot
+      (Subgroup.eq_bot_of_subsingleton _) v
+  · obtain ⟨F, hGalois, hp, hlt⟩ := exists_prime_degree_intermediateField K L
     let _ := finiteIntermediateFieldValuativeRel K L F
     let _ := finiteIntermediateFieldTopology K L F
     have := finiteIntermediateField_isNonarchimedeanLocalField K L F
     have := finiteIntermediateField_valuativeExtension K L F
+    have := hGalois
     have := IsGalois.tower_top_of_isGalois K F L
-    have hF : finrank K F = H.index := by
-      rw [IntermediateField.finrank_eq_fixingSubgroup_index,
-        IntermediateField.fixingSubgroup_fixedField]
-    have hlt : finrank F L < finrank K L := by
-      rw [← Module.finrank_mul_finrank K F L, hF]
-      have := hp.two_le
-      have := Module.finrank_pos (R := F) (M := L)
-      nlinarith
-    exact NormSurj.trans (normSurj_of_finrank_prime (hF ▸ hp)) (ih F hlt)
+    exact NormSurj.trans (normSurj_of_finrank_prime hp) (ih F hlt)
 
 /-- Norm surjectivity for every finite Galois extension `L/F` with `F` in the universe of `L` and
 `[L : F] ≤ d`, by induction on `d`. -/
 private theorem normSurj_of_finrank_le (d : ℕ) :
     ∀ (F : Type v) [Field F] [ValuativeRel F] [TopologicalSpace F]
       [IsNonarchimedeanLocalField F] [Algebra F L] [ValuativeExtension F L] [Module.Finite F L]
-      [IsGalois F L], finrank F L ≤ d → NormSurj F L := by
-  induction d with
-  | zero =>
-    intro F _ _ _ _ _ _ _ _ h
-    exact absurd h (Nat.not_le.2 Module.finrank_pos)
-  | succ d ih =>
-    intro F _ _ _ _ _ _ _ _ h
-    exact normSurj_of_forall_finrank_lt fun F' _ _ _ _ _ _ _ _ h' ↦ ih F' (by omega)
+      [IsGalois F L], finrank F L ≤ d → NormSurj F L :=
+  finiteGaloisLocalField_induction_on_finrank_le L
+    (fun F _ _ _ _ _ _ _ _ ↦ NormSurj F L)
+    (fun F _ _ _ _ _ _ _ _ ↦ normSurj_of_forall_finrank_lt) d
 
 /-- **The norm is surjective above every upper break.** For a finite Galois extension `L/K` of
 nonarchimedean local fields whose upper ramification group `G^v` is trivial at a natural number

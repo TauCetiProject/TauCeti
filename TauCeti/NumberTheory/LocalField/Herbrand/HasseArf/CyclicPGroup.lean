@@ -258,11 +258,7 @@ subgroup of order `p` has integral upper breaks by induction, and the remaining 
 private theorem UpperJump.exists_eq_intCast_of_hasseArfBelow [IsCyclic (L ≃ₐ[K] L)] {p : ℕ}
     [hp' : Fact p.Prime] (hp : IsPGroup p (L ≃ₐ[K] L)) (ih : HasseArfBelow.{u, v} K p (finrank K L))
     {u : RamificationIndexDomain} (hu : UpperJump K L u) : ∃ z : ℤ, (u : ℝ) = z := by
-  rcases subsingleton_or_nontrivial (L ≃ₐ[K] L) with hG | hG
-  · -- A trivial Galois group has no upper break.
-    have hdrop := (upperJump_iff K L u).1 hu ⟨(u : ℝ) + 1, u.property.trans (by linarith)⟩
-      (Subtype.mk_lt_mk.2 (by linarith))
-    exact absurd (Subsingleton.elim _ _) hdrop.ne
+  have := hu.nontrivial K L
   obtain ⟨h, hh⟩ := exists_prime_orderOf_dvd_card' (G := L ≃ₐ[K] L) p
     ((hp.card_eq_or_dvd).resolve_left Finite.one_lt_card.ne')
   let H := Subgroup.zpowers h
