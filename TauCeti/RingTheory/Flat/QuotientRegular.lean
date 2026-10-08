@@ -7,9 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.Tensor
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
-import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 import Mathlib.RingTheory.Flat.Equalizer
-import Mathlib.RingTheory.TensorProduct.Basic
 
 /-!
 # Flat quotients by universally regular elements
@@ -38,7 +36,7 @@ once `I ⊗[R] (B ⧸ (g)) → R ⊗[R] (B ⧸ (g))` is injective for every fini
 * `Module.Flat.lTensor_mulLeft_injective_of_quotient_span_singleton`: flatness of `B ⧸ (g)`
   makes multiplication by a regular `g` stay injective after tensoring with any module.
 * `Module.Flat.isSMulRegular_one_tmul_of_quotient_span_singleton`: after any algebra base change
-  `R → S`, the element `1 ⊗ g` is a nonzerodivisor on `S ⊗[R] B`.
+  `R → S`, including noncommutative ring algebras, `1 ⊗ g` is a nonzerodivisor on `S ⊗[R] B`.
 * `Module.Flat.quotient_span_singleton_iff_forall_lTensor_mulLeft_injective`: for a flat
   `R`-algebra `B` and a nonzerodivisor `g` on `B`, flatness of `B ⧸ (g)` is equivalent to
   injectivity after tensoring with every `R`-module.
@@ -92,31 +90,20 @@ theorem lTensor_mulLeft_injective_of_quotient_span_singleton {g : B}
     (Ideal.Quotient.mkₐ R (Ideal.span {g})).toLinearMap
   have hπ : Function.Surjective π := Ideal.Quotient.mk_surjective
   have hexact : Function.Exact (LinearMap.mulLeft R g) π := fun y ↦ by
-    simp only [π, AlgHom.toLinearMap_apply, Ideal.Quotient.mkₐ_eq_mk,
-      Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton', Set.mem_range,
-      LinearMap.mulLeft_apply]
-    exact exists_congr fun a ↦ by rw [mul_comm]
+    simp [π, Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton', mul_comm]
   exact LinearMap.lTensor_injective_of_exact_of_flat π hπ (LinearMap.mulLeft R g) hg
     hexact M
 
 /-- If `g` is a nonzerodivisor on `B` and `B ⧸ (g)` is flat over `R`, then `1 ⊗ g` is a
-nonzerodivisor after every algebra base change `R → S`. No flatness assumption on `S` is needed. -/
+nonzerodivisor after every algebra base change `R → S`, even when `S` is noncommutative.
+No flatness assumption on `S` is needed. -/
 theorem isSMulRegular_one_tmul_of_quotient_span_singleton {g : B}
     (hg : IsSMulRegular B g) [Flat R (B ⧸ Ideal.span {g})]
-    (S : Type w) [CommRing S] [Algebra R S] :
+    (S : Type w) [Ring S] [Algebra R S] :
     IsSMulRegular (S ⊗[R] B) ((1 : S) ⊗ₜ[R] g) := by
-  have hmap : LinearMap.lTensor S (LinearMap.mulLeft R g) =
-      LinearMap.mulLeft R ((1 : S) ⊗ₜ[R] g) := by
-    ext s b
-    simp [Algebra.TensorProduct.tmul_mul_tmul]
-  have hinjective : Function.Injective
-      (LinearMap.mulLeft R ((1 : S) ⊗ₜ[R] g)) := by
-    rw [← hmap]
-    exact lTensor_mulLeft_injective_of_quotient_span_singleton (R := R) (B := B) hg S
-  rw [IsSMulRegular]
-  intro x y hxy
-  apply hinjective
-  simpa only [LinearMap.mulLeft_apply, smul_eq_mul] using hxy
+  simpa only [IsSMulRegular, smul_eq_mul, ← LinearMap.mulLeft_apply (R := R),
+    LinearMap.mulLeft_tmul, LinearMap.mulLeft_one, ← LinearMap.lTensor_def] using
+    lTensor_mulLeft_injective_of_quotient_span_singleton (R := R) hg S
 
 /-! ### Universal regularity gives a flat quotient -/
 
@@ -131,14 +118,10 @@ theorem quotient_span_singleton_of_lTensor_mulLeft_injective [Flat R B] (g : B)
     Flat R (B ⧸ Ideal.span {g}) := by
   rw [iff_rTensor_injective]
   intro I hI
-  set v : B →ₗ[R] B := LinearMap.mulLeft R g with hv
-  set π : B →ₗ[R] B ⧸ Ideal.span {g} := (Ideal.Quotient.mkₐ R (Ideal.span {g})).toLinearMap
-    with hπ
+  let v : B →ₗ[R] B := LinearMap.mulLeft R g
+  let π : B →ₗ[R] B ⧸ Ideal.span {g} := (Ideal.Quotient.mkₐ R (Ideal.span {g})).toLinearMap
   have hexact : Function.Exact v π := fun y ↦ by
-    simp only [hπ, AlgHom.toLinearMap_apply, Ideal.Quotient.mkₐ_eq_mk,
-      Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton', Set.mem_range, hv,
-      LinearMap.mulLeft_apply]
-    exact exists_congr fun a ↦ by rw [mul_comm]
+    simp [v, π, Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton', mul_comm]
   have hπv : π ∘ₗ v = 0 := hexact.linearMap_comp_eq_zero
   have hqι : I.mkQ ∘ₗ I.subtype = 0 := (LinearMap.exact_subtype_mkQ I).linearMap_comp_eq_zero
   rw [injective_iff_map_eq_zero]
@@ -146,8 +129,8 @@ theorem quotient_span_singleton_of_lTensor_mulLeft_injective [Flat R B] (g : B)
   obtain ⟨z', rfl⟩ := LinearMap.lTensor_surjective I (g := π) Ideal.Quotient.mk_surjective z
   -- `rTensor B I.subtype z'` is killed by `lTensor R π`, so it is `g` times some `w`.
   have h1 : LinearMap.lTensor R π (LinearMap.rTensor B I.subtype z') = 0 := by
-    rwa [← LinearMap.comp_apply, LinearMap.lTensor_comp_rTensor, ← LinearMap.rTensor_comp_lTensor,
-      LinearMap.comp_apply]
+    simpa only [← LinearMap.comp_apply, LinearMap.lTensor_comp_rTensor,
+      LinearMap.rTensor_comp_lTensor] using hz
   obtain ⟨w, hw⟩ := ((lTensor_exact R hexact) _).mp h1
   -- The image of `w` in `(R ⧸ I) ⊗ B` is killed by `g`, hence zero, so `w` comes from `I ⊗ B`.
   have h2 : LinearMap.lTensor (R ⧸ I) v (LinearMap.rTensor B I.mkQ w) = 0 := by
@@ -159,8 +142,8 @@ theorem quotient_span_singleton_of_lTensor_mulLeft_injective [Flat R B] (g : B)
   -- Flatness of `B` makes `I ⊗ B → R ⊗ B` injective, so `z' = g • z₀`.
   have h4 : LinearMap.lTensor I v z₀ = z' :=
     rTensor_preserves_injective_linearMap I.subtype I.injective_subtype <| by
-      rw [← LinearMap.comp_apply, LinearMap.rTensor_comp_lTensor, ← LinearMap.lTensor_comp_rTensor,
-        LinearMap.comp_apply, hz₀, hw]
+      simpa only [← hz₀, ← LinearMap.comp_apply, LinearMap.lTensor_comp_rTensor,
+        LinearMap.rTensor_comp_lTensor] using hw
   rw [← h4, ← LinearMap.comp_apply, ← LinearMap.lTensor_comp, hπv, LinearMap.lTensor_zero,
     LinearMap.zero_apply]
 
@@ -182,11 +165,12 @@ theorem quotient_span_singleton_iff_forall_lTensor_mulLeft_injective [Flat R B] 
 
 /-- **Flatness of a quotient by a nonzerodivisor is equivalent to universal regularity.**
 If `B` is flat over `R` and `g` is a nonzerodivisor on `B`, then `B ⧸ (g)` is flat over `R`
-exactly when `1 ⊗ g` is a nonzerodivisor on `S ⊗[R] B` for every `R`-algebra `S`. -/
+exactly when `1 ⊗ g` is a nonzerodivisor on `S ⊗[R] B` for every ring `R`-algebra `S`,
+including noncommutative algebras. -/
 theorem quotient_span_singleton_iff_forall_isSMulRegular_one_tmul [Flat R B] (g : B)
     (hg : IsSMulRegular B g) :
     Flat R (B ⧸ Ideal.span {g}) ↔
-      ∀ (S : Type u) [CommRing S] [Algebra R S],
+      ∀ (S : Type u) [Ring S] [Algebra R S],
         IsSMulRegular (S ⊗[R] B) ((1 : S) ⊗ₜ[R] g) := by
   constructor
   · intro h S _ _
@@ -195,18 +179,8 @@ theorem quotient_span_singleton_iff_forall_isSMulRegular_one_tmul [Flat R B] (g 
   · intro h
     apply quotient_span_singleton_of_lTensor_mulLeft_injective g
     intro I _
-    have hregular := h (R ⧸ I)
-    have hmap : LinearMap.lTensor (R ⧸ I) (LinearMap.mulLeft R g) =
-        LinearMap.mulLeft R ((1 : R ⧸ I) ⊗ₜ[R] g) := by
-      ext x b
-      simp [Algebra.TensorProduct.tmul_mul_tmul]
-    rw [IsSMulRegular] at hregular
-    have hinjective : Function.Injective
-        (LinearMap.mulLeft R ((1 : R ⧸ I) ⊗ₜ[R] g)) := by
-      intro x y hxy
-      apply hregular
-      simpa only [LinearMap.mulLeft_apply, smul_eq_mul] using hxy
-    rwa [← hmap] at hinjective
+    simpa only [IsSMulRegular, smul_eq_mul, ← LinearMap.mulLeft_apply (R := R),
+      LinearMap.mulLeft_tmul, LinearMap.mulLeft_one, ← LinearMap.lTensor_def] using h (R ⧸ I)
 
 end Module.Flat
 
@@ -224,11 +198,7 @@ theorem flat_quotient_span_singleton_mul [Module.Flat R B] {a b : B}
     Module.Flat R (B ⧸ Ideal.span {a * b}) := by
   apply quotient_span_singleton_of_lTensor_mulLeft_injective
   intro I _
-  have hmul : LinearMap.mulLeft R (a * b) =
-      (LinearMap.mulLeft R a).comp (LinearMap.mulLeft R b) := by
-    ext x
-    simp
-  rw [hmul, LinearMap.lTensor_comp]
+  rw [LinearMap.mulLeft_mul, LinearMap.lTensor_comp]
   exact (lTensor_mulLeft_injective_of_quotient_span_singleton ha (R ⧸ I)).comp
     (lTensor_mulLeft_injective_of_quotient_span_singleton hb (R ⧸ I))
 
