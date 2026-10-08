@@ -34,15 +34,11 @@ crossing-free circles, whose generators are free; the Burau matrix fixes their b
 
 ## Main definitions
 
-* `TauCeti.BraidWord.crossinglessPosition`: the strand position of a crossing-free circle of the
-  closure.
 * `TauCeti.BraidWord.closureAlexanderModuleEquiv`: the Alexander module of the closure is the
   cokernel of the Burau matrix minus the identity.
 
 ## Main results
 
-* `TauCeti.BraidWord.range_crossinglessPosition`: the crossing-free circles of the closure are the
-  strand positions crossed by no letter.
 * `TauCeti.BraidWord.closureAlexanderModuleEquiv_incomingSlot`,
   `TauCeti.BraidWord.closureAlexanderModuleEquiv_outgoingSlot` and
   `TauCeti.BraidWord.closureAlexanderModuleEquiv_crossinglessGenerator`: its values on the
@@ -72,42 +68,6 @@ namespace BraidWord
 open BraidGroup KnotTheory PDCode
 
 variable {n : ℕ} (w : BraidWord n)
-
-/-! ### The crossing-free circles of the closure -/
-
-/-- The strand position of a crossing-free circle of the closure. The crossing-free circles are
-the strand positions crossed by no letter, numbered in increasing order. -/
-def crossinglessPosition (c : Fin w.closure.crossinglessComponentCount) : Fin n :=
-  ((Finset.univ.filter fun p ↦ w.crossingsAt p = []).orderIsoOfFin
-    w.crossinglessComponentCount_closure.symm c).1
-
-/-- No letter crosses the strand position of a crossing-free circle. -/
-@[simp]
-theorem crossingsAt_crossinglessPosition (c : Fin w.closure.crossinglessComponentCount) :
-    w.crossingsAt (w.crossinglessPosition c) = [] :=
-  (Finset.mem_filter.1 ((Finset.univ.filter fun p ↦ w.crossingsAt p = []).orderIsoOfFin
-    w.crossinglessComponentCount_closure.symm c).2).2
-
-/-- The crossing-free circles are numbered in increasing order of their strand positions. -/
-theorem crossinglessPosition_strictMono : StrictMono w.crossinglessPosition :=
-  fun _ _ h ↦ ((Finset.univ.filter fun p ↦ w.crossingsAt p = []).orderIsoOfFin
-    w.crossinglessComponentCount_closure.symm).strictMono h
-
-/-- The crossing-free circle on a strand position crossed by no letter. -/
-private def crossinglessIndex {p : Fin n} (h : w.crossingsAt p = []) :
-    Fin w.closure.crossinglessComponentCount :=
-  ((Finset.univ.filter fun p ↦ w.crossingsAt p = []).orderIsoOfFin
-    w.crossinglessComponentCount_closure.symm).symm ⟨p, by simpa using h⟩
-
-private theorem crossinglessPosition_crossinglessIndex {p : Fin n} (h : w.crossingsAt p = []) :
-    w.crossinglessPosition (w.crossinglessIndex h) = p := by
-  simp [crossinglessPosition, crossinglessIndex]
-
-/-- The strand positions of the crossing-free circles are exactly those crossed by no letter. -/
-theorem range_crossinglessPosition :
-    Set.range w.crossinglessPosition = {p | w.crossingsAt p = []} :=
-  Set.ext fun _ ↦ ⟨by rintro ⟨c, rfl⟩; exact w.crossingsAt_crossinglessPosition c,
-    fun h ↦ ⟨w.crossinglessIndex h, w.crossinglessPosition_crossinglessIndex h⟩⟩
 
 /-! ### The Burau matrices of the letters and of the prefixes -/
 
@@ -511,6 +471,24 @@ private theorem levelGen_succ_of_not_mem {p : Fin n} {j : Fin w.length}
     (hj : j ∉ w.crossingsAt p) : w.levelGen (j + 1) p = w.levelGen j p := by
   rw [levelGen, levelGen, w.firstAbove_succ_of_not_mem hj]
 
+private theorem levelGen_crossing_strand (j : Fin w.length) :
+    (letterCoeff w[j.1].2 * T 1) • w.levelGen j (strandSucc w[j.1].1) +
+        (1 - letterCoeff w[j.1].2 * T 1) • w.levelGen j (strand w[j.1].1) =
+      w.outGen j (strand w[j.1].1) := by
+  rw [w.levelGen_of_mem (w.mem_crossingsAt_strandSucc j),
+    w.levelGen_of_mem (w.mem_crossingsAt_strand j), ← alexanderWeight_closure_zero, outGen, inGen,
+    inGen, outgoingSlot_strand, incomingSlot_strand, incomingSlot_strandSucc]
+  exact (w.closure.alexanderGenerator_crossing_two j).symm
+
+private theorem levelGen_crossing_strandSucc (j : Fin w.length) :
+    letterCoeff w[j.1].2 • w.levelGen j (strand w[j.1].1) +
+        (1 - letterCoeff w[j.1].2) • w.levelGen j (strandSucc w[j.1].1) =
+      w.outGen j (strandSucc w[j.1].1) := by
+  rw [w.levelGen_of_mem (w.mem_crossingsAt_strand j),
+    w.levelGen_of_mem (w.mem_crossingsAt_strandSucc j), ← alexanderWeight_closure_three, outGen,
+    inGen, inGen, outgoingSlot_strandSucc, incomingSlot_strand, incomingSlot_strandSucc]
+  simpa using (w.closure.alexanderGenerator_crossing_add_two j 3).symm
+
 /-- The inverse map on the free module: the basis vector of `q` goes to `T ^ q` times the
 generator on `q` at the bottom of the braid. -/
 private def ofFree : (Fin n → ℤ[T;T⁻¹]) →ₗ[ℤ[T;T⁻¹]] w.closure.AlexanderModule :=
@@ -533,19 +511,15 @@ private theorem ofFree_prefixMatrix_mulVec_twist (p : Fin n) {m : ℕ} (hm : m �
     rw [← hj, prefixMatrix_succ, ← mulVec_mulVec]
     by_cases hp : j ∈ w.crossingsAt p
     · rw [w.levelGen_succ_of_mem hp]
-      have hs := w.mem_crossingsAt_strand j
-      have hS := w.mem_crossingsAt_strandSucc j
       rcases w.mem_crossingsAt.1 hp with rfl | rfl
-      · rw [letterMatrix_mulVec_twist_strand, mulVec_add, mulVec_smul, mulVec_smul, map_add,
-          map_smul, map_smul, ih _ hmL.le, ih _ hmL.le, ← hj, w.levelGen_of_mem hs,
-          w.levelGen_of_mem hS, ← alexanderWeight_closure_zero, outGen, inGen, inGen,
-          outgoingSlot_strand, incomingSlot_strand, incomingSlot_strandSucc,
-          OrientedPDCode.alexanderGenerator_crossing_two]
-      · rw [letterMatrix_mulVec_twist_strandSucc, mulVec_add, mulVec_smul, mulVec_smul, map_add,
-          map_smul, map_smul, ih _ hmL.le, ih _ hmL.le, ← hj, w.levelGen_of_mem hs,
-          w.levelGen_of_mem hS, ← alexanderWeight_closure_three, outGen, inGen, inGen,
-          outgoingSlot_strandSucc, incomingSlot_strand, incomingSlot_strandSucc]
-        simpa using (w.closure.alexanderGenerator_crossing_add_two j 3).symm
+      · rw [letterMatrix_mulVec_twist_strand]
+        simp only [mulVec_add, mulVec_smul, map_add, map_smul]
+        rw [ih _ hmL.le, ih _ hmL.le, ← hj]
+        exact w.levelGen_crossing_strand j
+      · rw [letterMatrix_mulVec_twist_strandSucc]
+        simp only [mulVec_add, mulVec_smul, map_add, map_smul]
+        rw [ih _ hmL.le, ih _ hmL.le, ← hj]
+        exact w.levelGen_crossing_strandSucc j
     · rw [mem_crossingsAt, not_or] at hp
       rw [letterMatrix_mulVec_twist_of_ne _ hp.1 hp.2, ih _ hmL.le, hj,
         ← w.levelGen_succ_of_not_mem (j := j) (by simpa [not_or] using hp)]
