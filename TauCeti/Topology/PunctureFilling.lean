@@ -78,7 +78,8 @@ topology is the final topology of the inclusion `PunctureFilling.incl` of `E` an
 discs `PunctureFilling.disc φ i : 𝔻 → PunctureFilling φ`.
 
 Its points are those of the sum `E ⊕ ι`; the constructor is private, and points are built with
-`PunctureFilling.incl` and `PunctureFilling.center` and taken apart with `PunctureFilling.ind`. -/
+`PunctureFilling.incl` and `PunctureFilling.center` and taken apart with
+`PunctureFilling.induction`. -/
 structure PunctureFilling (φ : ι → 𝔻* → E) : Type _ where
   private mk ::
   /-- A point of the puncture filling as a point of `E ⊕ ι`: a point of `E`, or the index of the
@@ -100,10 +101,6 @@ def center (i : ι) : PunctureFilling φ :=
 /-- A nonzero point of the unit disc, as a point of the punctured unit disc. -/
 private def puncture {z : 𝔻} (hz : z ≠ 0) : 𝔻* :=
   ⟨z, z.2, fun h => hz (Subtype.ext h)⟩
-
-private theorem inclusion_puncture {z : 𝔻} (hz : z ≠ 0) :
-    inclusion sdiff_subset (puncture hz) = z :=
-  rfl
 
 open Classical in
 /-- The `i`-th filled disc: the unit disc mapped into the puncture filling, sending `0` to the
@@ -139,7 +136,7 @@ theorem center_ne_incl (i : ι) (x : E) : center φ i ≠ incl φ x :=
 
 /-- Induction on the points of the puncture filling: each is a point of `E` or an added point. -/
 @[elab_as_elim]
-theorem ind {P : PunctureFilling φ → Prop} (incl : ∀ x, P (incl φ x))
+protected theorem induction {P : PunctureFilling φ → Prop} (incl : ∀ x, P (incl φ x))
     (center : ∀ i, P (center φ i)) (y : PunctureFilling φ) : P y := by
   rcases y with ⟨x | i⟩
   exacts [incl x, center i]
@@ -149,7 +146,7 @@ theorem isCompl_range_incl_range_center : IsCompl (range (incl φ)) (range (cent
   refine isCompl_iff.2 ⟨disjoint_left.2 ?_, codisjoint_iff.2 (eq_univ_of_forall fun y => ?_)⟩
   · rintro _ ⟨x, rfl⟩ ⟨i, hi⟩
     exact incl_ne_center x i hi.symm
-  · induction y using ind with
+  · induction y using PunctureFilling.induction with
     | incl x => exact Or.inl (mem_range_self x)
     | center i => exact Or.inr (mem_range_self i)
 
@@ -171,10 +168,6 @@ theorem disc_zero (i : ι) : disc φ i 0 = center φ i :=
 theorem disc_inclusion (i : ι) (w : 𝔻*) : disc φ i (inclusion sdiff_subset w) = incl φ (φ i w) :=
   dite_eq_right fun (h : inclusion sdiff_subset w = 0) => w.2.2 (congrArg Subtype.val h)
 
-/-- Every nonzero point of the unit disc comes from the punctured unit disc. -/
-private theorem exists_inclusion_eq {z : 𝔻} (hz : z ≠ 0) : ∃ w : 𝔻*, inclusion sdiff_subset w = z :=
-  ⟨puncture hz, inclusion_puncture hz⟩
-
 /-- A point of the `i`-th filled disc lies in `E` exactly when it is a point `φ i w` of the
 punctured disc. -/
 theorem disc_eq_incl_iff {i : ι} {z : 𝔻} {x : E} :
@@ -183,7 +176,7 @@ theorem disc_eq_incl_iff {i : ι} {z : 𝔻} {x : E} :
   · intro h
     by_cases hz : z = 0
     · simp [hz] at h
-    · obtain ⟨w, rfl⟩ := exists_inclusion_eq hz
+    · obtain ⟨w, rfl⟩ : ∃ w, inclusion sdiff_subset w = z := ⟨puncture hz, rfl⟩
       exact ⟨w, rfl, incl_injective ((disc_inclusion i w).symm.trans h)⟩
   · rintro ⟨w, rfl, rfl⟩
     exact disc_inclusion i w
@@ -194,7 +187,7 @@ theorem disc_eq_center_iff {i j : ι} {z : 𝔻} : disc φ i z = center φ j ↔
   · intro h
     by_cases hz : z = 0
     · simpa [hz] using h
-    · obtain ⟨w, rfl⟩ := exists_inclusion_eq hz
+    · obtain ⟨w, rfl⟩ : ∃ w, inclusion sdiff_subset w = z := ⟨puncture hz, rfl⟩
       simp at h
   · rintro ⟨rfl, rfl⟩
     exact disc_zero i
@@ -205,7 +198,7 @@ theorem disc_injective {i : ι} (hi : Function.Injective (φ i)) : Function.Inje
   by_cases hz : z' = 0
   · rw [hz, disc_zero, disc_eq_center_iff] at h
     rw [h.1, hz]
-  · obtain ⟨w', rfl⟩ := exists_inclusion_eq hz
+  · obtain ⟨w', rfl⟩ : ∃ w, inclusion sdiff_subset w = z' := ⟨puncture hz, rfl⟩
     obtain ⟨w, rfl, hw⟩ := disc_eq_incl_iff.1 (h.trans (disc_inclusion i w'))
     rw [hi hw]
 
@@ -214,7 +207,7 @@ theorem disc_preimage_range_incl (i : ι) : disc φ i ⁻¹' range (incl φ) = {
   ext z
   by_cases hz : z = 0
   · simp [hz]
-  · obtain ⟨w, rfl⟩ := exists_inclusion_eq hz
+  · obtain ⟨w, rfl⟩ : ∃ w, inclusion sdiff_subset w = z := ⟨puncture hz, rfl⟩
     simp [hz]
 
 /-- The points of the `i`-th filled disc which land in `incl φ '' V` are the points `w` of the
@@ -273,11 +266,6 @@ theorem continuous_incl : Continuous (incl φ) :=
 theorem continuous_disc (i : ι) : Continuous (disc φ i) :=
   (continuous_iff.1 continuous_id).2 i
 
-/-- The inclusion of the punctured unit disc into the unit disc is an open embedding. -/
-private theorem isOpenEmbedding_inclusion_diff :
-    IsOpenEmbedding (inclusion (sdiff_subset : ball (0 : ℂ) 1 \ {0} ⊆ ball 0 1)) :=
-  .inclusion _ <| (isOpen_ball.sdiff isClosed_singleton).preimage continuous_subtype_val
-
 /-- `E` is an open subset of its puncture filling. -/
 theorem isOpen_range_incl : IsOpen (range (incl φ)) := by
   refine isOpen_iff.2 ⟨by simp, fun i => ?_⟩
@@ -295,7 +283,8 @@ theorem isOpenEmbedding_incl (hφ : ∀ i, Continuous (φ i)) : IsOpenEmbedding 
   refine .of_continuous_injective_isOpenMap continuous_incl incl_injective fun U hU =>
     isOpen_iff.2 ⟨by rwa [incl_injective.preimage_image], fun i => ?_⟩
   rw [disc_preimage_image_incl]
-  exact isOpenEmbedding_inclusion_diff.isOpenMap _ (hU.preimage (hφ i))
+  exact (IsOpenEmbedding.inclusion _ <| (isOpen_ball.sdiff isClosed_singleton).preimage
+    continuous_subtype_val).isOpenMap _ (hU.preimage (hφ i))
 
 /-- If the punctured discs `φ j` are continuous and `φ i` is an open embedding, the `i`-th filled
 disc is an open subspace of the puncture filling. -/
@@ -320,12 +309,13 @@ theorem isOpenEmbedding_disc (hφ : ∀ j, Continuous (φ j)) {i : ι} (hi : IsO
     rw [disc_zero, disc_eq_center_iff] at hw
     exact hk hw.2.symm
   rw [h, disc_preimage_image_incl]
-  exact isOpenEmbedding_inclusion_diff.isOpenMap _ (hincl.preimage (hφ k))
+  exact (IsOpenEmbedding.inclusion _ <| (isOpen_ball.sdiff isClosed_singleton).preimage
+    continuous_subtype_val).isOpenMap _ (hincl.preimage (hφ k))
 
 /-- `E` is dense in its puncture filling: every added point is a limit of points of `E`. -/
 theorem denseRange_incl : DenseRange (incl φ) := by
   intro y
-  induction y using ind with
+  induction y using PunctureFilling.induction with
   | incl x => exact subset_closure (mem_range_self x)
   | center i =>
     have h0 : (0 : 𝔻) ∈ closure ({0}ᶜ : Set 𝔻) := by
@@ -371,21 +361,28 @@ theorem hasBasis_nhds_center (hφ : ∀ j, Continuous (φ j)) {i : ι} (hi : IsO
   ext z
   simp [Subtype.dist_eq]
 
-/-- **The added points are isolated from one another**: each filled disc contains exactly one of
-them. -/
-theorem isDiscrete_range_center (hφ : ∀ i, IsOpenEmbedding (φ i)) :
-    IsDiscrete (range (center φ)) := by
+/-- **The added points are isolated from one another**: every set of added points is closed, as
+each filled disc meets it at most in its centre. -/
+theorem isDiscrete_range_center : IsDiscrete (range (center φ)) := by
   rw [isDiscrete_iff_forall_mem_exists_isOpen]
   rintro _ ⟨i, rfl⟩
-  refine ⟨range (disc φ i),
-    (isOpenEmbedding_disc (fun j => (hφ j).continuous) (hφ i)).isOpen_range, ?_⟩
-  ext y
-  simp only [mem_inter_iff, mem_range, mem_singleton_iff]
-  constructor
-  · rintro ⟨⟨z, hz⟩, j, rfl⟩
-    rw [(disc_eq_center_iff.1 hz).2]
-  · rintro rfl
-    exact ⟨⟨0, disc_zero i⟩, i, rfl⟩
+  refine ⟨(center φ '' {i}ᶜ)ᶜ, isOpen_iff.2 ⟨?_, fun k => ?_⟩, ?_⟩
+  · convert isOpen_univ
+    ext x
+    simp
+  · rw [preimage_compl, isOpen_compl_iff]
+    refine Set.Subsingleton.isClosed fun z hz z' hz' => ?_
+    obtain ⟨j, -, hj⟩ := hz
+    obtain ⟨j', -, hj'⟩ := hz'
+    rw [(disc_eq_center_iff.1 hj.symm).1, (disc_eq_center_iff.1 hj'.symm).1]
+  · ext y
+    simp only [mem_inter_iff, mem_compl_iff, mem_image, mem_range, mem_singleton_iff]
+    constructor
+    · rintro ⟨hy, j, rfl⟩
+      by_contra hj
+      exact hy ⟨j, fun h => hj (congrArg _ h), rfl⟩
+    · rintro rfl
+      exact ⟨fun ⟨j, hj, h⟩ => hj (center_injective h), i, rfl⟩
 
 /-! ### Separation, compactness, connectedness and countability -/
 
@@ -404,9 +401,9 @@ theorem t2Space [T2Space E] (hφ : ∀ i, IsOpenEmbedding (φ i))
       (mem_pure.2 rfl) (range_mem_map)
   rw [t2Space_iff_disjoint_nhds]
   intro a b hab
-  induction a using ind with
+  induction a using PunctureFilling.induction with
   | incl x =>
-    induction b using ind with
+    induction b using PunctureFilling.induction with
     | incl y =>
       rw [nhds_incl hc, nhds_incl hc, disjoint_map incl_injective]
       exact disjoint_nhds_nhds.2 fun h => hab (congrArg _ h)
@@ -415,7 +412,7 @@ theorem t2Space [T2Space E] (hφ : ∀ i, IsOpenEmbedding (φ i))
         disjoint_map incl_injective]
       exact ⟨(hpure j _).symm, hend j x⟩
   | center i =>
-    induction b using ind with
+    induction b using PunctureFilling.induction with
     | incl y =>
       rw [nhds_incl hc, nhds_center hc (hφ i), disjoint_sup_left, ← map_map,
         disjoint_map incl_injective]
@@ -437,7 +434,7 @@ theorem compactSpace [Finite ι] {r : ℝ} (hr : r < 1)
   refine ⟨(((hK.image continuous_incl).union (finite_range (center φ)).isCompact).union
     (isCompact_iUnion fun i => hdisc.image (continuous_disc i))).of_isClosed_subset
     isClosed_univ fun y _ => ?_⟩
-  induction y using ind with
+  induction y using PunctureFilling.induction with
   | incl x =>
     by_cases hx : x ∈ ⋃ i, φ i '' {w | ‖(w : ℂ)‖ < r}
     · obtain ⟨i, w, hw, rfl⟩ := mem_iUnion.1 hx
@@ -467,7 +464,7 @@ theorem secondCountableTopology [SecondCountableTopology E] [Countable ι]
     · exact (isOpenEmbedding_incl hc).isOpen_range
     · exact (isOpenEmbedding_disc hc (hφ i)).isOpen_range
   · refine eq_univ_of_forall fun y => mem_iUnion.2 ?_
-    induction y using ind with
+    induction y using PunctureFilling.induction with
     | incl x => exact ⟨none, mem_range_self x⟩
     | center i => exact ⟨some i, 0, disc_zero i⟩
 
