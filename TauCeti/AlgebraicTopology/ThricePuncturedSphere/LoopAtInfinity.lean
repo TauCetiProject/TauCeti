@@ -104,8 +104,7 @@ local notation "θ₀" => arccos (1 / 6)
 
 private theorem θ₀_pos : 0 < θ₀ := arccos_pos.2 (by norm_num)
 
-private theorem θ₀_lt_pi : θ₀ < π :=
-  (arccos_lt_pi_div_two.2 (by norm_num)).trans (by linarith [pi_pos])
+private theorem θ₀_lt_pi : θ₀ < π := arccos_lt_pi.2 (by norm_num)
 
 private theorem cos_θ₀ : Real.cos θ₀ = 1 / 6 :=
   Real.cos_arccos (by norm_num) (by norm_num)
@@ -144,7 +143,7 @@ theorem coe_δ (t : unitInterval) : (δ t : ℂ) = circleMap 0 3 (arccos (1 / 6)
 -- `coe_δ` and `norm_circleMap_zero` already simplify this statement; marking it `@[simp]`
 -- would fail the simpNF linter.
 theorem norm_coe_δ (t : unitInterval) : ‖(δ t : ℂ)‖ = 3 := by
-  simp [norm_circleMap_zero]
+  simp
 
 /-! ### The closed upper and lower half-planes -/
 
@@ -280,10 +279,10 @@ private theorem sin_nonpos_of_pi_le {x : ℝ} (h₁ : π ≤ x) (h₂ : x ≤ 2 
   exact sin_nonpos_of_nonpos_of_neg_pi_le (by linarith) (by linarith)
 
 private theorem im_coe_δ (t : unitInterval) : (δ t : ℂ).im = 3 * Real.sin (θ₀ + 2 * π * t) := by
-  simp only [coe_δ, circleMap, zero_add, im_ofReal_mul, exp_ofReal_mul_I_im]
+  rw [coe_δ, circleMap_zero_im]
 
 private theorem im_coe_γ0 (t : unitInterval) : (γ0 t : ℂ).im = 1 / 2 * Real.sin (2 * π * t) := by
-  simp only [coe_γ0, circleMap, zero_add, im_ofReal_mul, exp_ofReal_mul_I_im]
+  rw [coe_γ0, circleMap_zero_im]
 
 private theorem im_coe_γ1 (t : unitInterval) : (γ1 t : ℂ).im = -(1 / 2) * Real.sin (2 * π * t) := by
   simp only [coe_γ1, circleMap, add_im, one_im, zero_add, im_ofReal_mul, exp_ofReal_mul_I_im]
@@ -575,9 +574,9 @@ private theorem mk_map_mob1Inf {γ : Path basePt basePt} {p : Path basePt (γ tH
 /-- **`z ↦ z / (z − 1)` fixes the peripheral element at `0`.** -/
 @[simp]
 theorem mob1InfMulAut_periph0 : mob1InfMulAut periph0 = periph0 := by
-  -- The image of `γ0` is a circle about `0` through `−1` and `1/3`. Its lower half, from `−1` to
-  -- `1/3`, and its upper half, back to `−1`, are homotopic in the closed lower and upper
-  -- half-planes to paths made of the halves of `γ0` and segments of the real axis.
+  -- The image of `γ0` is the circle `|z + 1/3| = 2/3`, through `−1` and `1/3`. Its lower half,
+  -- from `−1` to `1/3`, and its upper half, back to `−1`, are homotopic in the closed lower and
+  -- upper half-planes to paths made of the halves of `γ0` and segments of the real axis.
   have hL : (γ0₁.map mob1Inf.continuous).Homotopic ((segLeft.trans γ0₂).trans segMid.symm) :=
     homotopic_of_range_subset isSimplyConnected_lower
       (by

@@ -32,6 +32,9 @@ particular, local equations can be shrunk into any neighbourhood
 
 The empty closed subscheme is an effective Cartier divisor, with equation `1`. Equations
 need not generate proper ideals; a zero equation is permitted only on the empty scheme.
+Sums, nonnegative multiples, and finite sums are effective Cartier
+(`TauCeti.isEffectiveCartier_mul`, `TauCeti.isEffectiveCartier_pow`, and
+`TauCeti.isEffectiveCartier_prod`).
 
 ## References
 
@@ -215,3 +218,46 @@ theorem IsEffectiveCartier.comap {I : Y.IdealSheafData} (hI : I.IsEffectiveCarti
       rw [comap_ofIdealTop, Ideal.map_span, Set.image_singleton]
 
 end AlgebraicGeometry.Scheme.IdealSheafData
+
+namespace TauCeti
+
+open AlgebraicGeometry AlgebraicGeometry.Scheme.IdealSheafData
+
+variable {X : Scheme.{u}}
+
+/-- The sum of two effective Cartier divisors, represented by multiplication of their ideals,
+is effective Cartier. The divisors need not be disjoint. -/
+theorem isEffectiveCartier_mul {I J : X.IdealSheafData}
+    (hI : I.IsEffectiveCartier) (hJ : J.IsEffectiveCartier) :
+    (I * J).IsEffectiveCartier := by
+  rw [isEffectiveCartier_iff]
+  intro x
+  obtain ⟨U, hxU, a, ha, hIa⟩ := (isEffectiveCartier_iff I).mp hI x
+  obtain ⟨V, hVU, hxV, b, hb, hJb⟩ := hJ.exists_eq_span_singleton_le U.1 hxU
+  let a' := X.presheaf.map (homOfLE hVU).op a
+  have ha' : IsSMulRegular Γ(X, V) a' := U.2.isSMulRegular_map hVU ha
+  have hIa' : I.ideal V = Ideal.span {a'} := by
+    rw [← I.map_ideal hVU, hIa, Ideal.map_span, Set.image_singleton]
+    rfl
+  exact ⟨V, hxV, a' * b, ha'.mul hb, by
+    simp only [ideal_mul, Pi.mul_apply, hIa', hJb, Ideal.span_singleton_mul_span_singleton]⟩
+
+/-- Every nonnegative multiple of an effective Cartier divisor is effective Cartier. -/
+theorem isEffectiveCartier_pow {I : X.IdealSheafData} (hI : I.IsEffectiveCartier) (n : ℕ) :
+    (I ^ n).IsEffectiveCartier := by
+  induction n with
+  | zero => simp
+  | succ n hn => simpa only [pow_succ] using isEffectiveCartier_mul hn hI
+
+/-- A finite sum of effective Cartier divisors is effective Cartier. -/
+theorem isEffectiveCartier_prod {ι : Type*} {s : Finset ι} {I : ι → X.IdealSheafData}
+    (hI : ∀ i ∈ s, (I i).IsEffectiveCartier) : (∏ i ∈ s, I i).IsEffectiveCartier := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | @insert i s hi hs =>
+    rw [Finset.prod_insert hi]
+    exact isEffectiveCartier_mul (hI i (Finset.mem_insert_self i s))
+      (hs fun j hj ↦ hI j (Finset.mem_insert_of_mem hj))
+
+end TauCeti

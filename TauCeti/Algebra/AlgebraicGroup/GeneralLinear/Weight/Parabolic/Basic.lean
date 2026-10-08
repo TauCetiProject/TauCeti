@@ -28,17 +28,19 @@ block-triangular invertible matrix is block triangular.
   forbidden coordinates.
 * `TauCeti.GeneralLinear.weightParabolicGroupScheme`: the resulting closed subgroup scheme.
 * `TauCeti.GeneralLinear.weightParabolicInclusion`: its closed immersion into `GL_N`.
+* `TauCeti.GeneralLinear.mem_weightParabolicDefiningPointsSubgroup_iff_blockTriangular`: a point
+  of `GL_N` over an `R`-algebra lies in the subgroup cut out by the ideal exactly when its matrix
+  is block triangular for the order dual of `w`, that is, its `(i,j)` entry vanishes whenever
+  `w i < w j`.
 
 ## References
 
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
 * The Hopf-ideal quotient, closed-subgroup packaging, and algebra-valued points construction
-  adapt `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Borel` (which in turn adapts
-  `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic`).
-
-This advances the dynamic-parabolic route in Layer 7, "Structure theory", of the ReductiveGroups
-roadmap.
+  were adapted from the original construction of
+  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Borel`, which in turn adapted
+  `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic`.
 -/
 
 public section
@@ -248,11 +250,6 @@ theorem weightParabolicFiniteTypeCoordinateHopfAlgebra_obj (w : Fin N → ℤ) :
     (weightParabolicFiniteTypeCoordinateHopfAlgebra R w).obj =
       weightParabolicCoordinateHopfAlgebra R w := by
   rfl
-
-/-- The weight-parabolic group scheme is locally of finite type over the base. -/
-instance locallyOfFiniteType_weightParabolicGroupScheme (w : Fin N → ℤ) :
-    LocallyOfFiniteType (weightParabolicGroupScheme R w).X.hom := by
-  infer_instance
 
 /-- The subgroup cut out by the weight-parabolic ideal consists exactly of block-triangular
 ambient points. -/
