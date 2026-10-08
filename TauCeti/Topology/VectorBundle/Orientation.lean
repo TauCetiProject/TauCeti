@@ -84,6 +84,8 @@ def mapOrientation (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B} (hb 
 
 variable {ι}
 
+-- Keep this lemma for explicit rewriting: a simp attribute unfolds the left-hand side of
+-- `mapOrientation_neg`, making that simp lemma fail the `simpNF` linter.
 theorem mapOrientation_apply (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B}
     (hb : b ∈ e.baseSet) (o : Orientation ℝ (E b) ι) :
     e.mapOrientation ι hb o = Orientation.map ι (e.linearEquivAt ℝ b hb) o :=
