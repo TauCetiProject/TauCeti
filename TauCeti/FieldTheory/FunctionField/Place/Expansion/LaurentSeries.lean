@@ -34,26 +34,20 @@ namespace TauCeti.Place
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 variable (P : Place k F) {t : F} (hP : P.degree = 1) (ht : P.ord t = 1)
 
+/-- The constant scalars on `k((T))` factor through `k[[T]]`. The scalar actions are stated through
+the algebra structures, since the `k`-algebra structure on `k((T))` is the one inherited from
+`k[[T]]` rather than the coefficientwise action. -/
+@[local instance]
+private theorem isScalarTower_powerSeries_laurentSeries :
+    @IsScalarTower k (PowerSeries k) (LaurentSeries k) Algebra.toSMul Algebra.toSMul
+      Algebra.toSMul :=
+  .of_algebraMap_eq' rfl
+
 /-- Uniformizer expansion identifies the completed field at a rational place with the Laurent
 series field over the constants. It is the unique extension to fraction fields of
 `TauCeti.Place.completionIntegersEquivPowerSeries`. -/
 noncomputable def completionEquivLaurentSeries : P.Completion ≃ₐ[k] LaurentSeries k :=
-  { IsFractionRing.ringEquivOfRingEquiv
-      (P.completionIntegersEquivPowerSeries hP ht).toRingEquiv with
-    commutes' := fun c ↦ by
-      -- The two fraction-ring algebras hide the constant embeddings through their valuation
-      -- rings, so expose those embeddings before applying the fraction-ring computation rule.
-      change IsFractionRing.ringEquivOfRingEquiv
-          (P.completionIntegersEquivPowerSeries hP ht).toRingEquiv
-          (algebraMap P.completionPlace.integers P.Completion
-            (algebraMap k P.completionPlace.integers c)) = _
-      rw [IsFractionRing.ringEquivOfRingEquiv_algebraMap]
-      -- `toRingEquiv` hides the `k`-linearity of the completed-ring expansion.
-      change algebraMap (PowerSeries k) (LaurentSeries k)
-        (P.completionIntegersEquivPowerSeries hP ht
-          (algebraMap k P.completionPlace.integers c)) = _
-      rw [(P.completionIntegersEquivPowerSeries hP ht).commutes]
-      rfl }
+  IsFractionRing.algEquivOfAlgEquiv (P.completionIntegersEquivPowerSeries hP ht)
 
 /-- On the completed valuation ring, Laurent expansion is the coercion of power-series
 expansion. -/
@@ -62,15 +56,7 @@ theorem completionEquivLaurentSeries_apply (x : P.completionPlace.integers) :
     P.completionEquivLaurentSeries hP ht (x : P.Completion) =
       HahnSeries.ofPowerSeries ℤ k (P.completionIntegersEquivPowerSeries hP ht x) := by
   rw [completionEquivLaurentSeries]
-  -- Expose the ring equivalence underlying the `k`-algebra equivalence so the generic
-  -- fraction-ring computation rule applies without unfolding either valuation ring.
-  change IsFractionRing.ringEquivOfRingEquiv
-      (P.completionIntegersEquivPowerSeries hP ht).toRingEquiv
-      (algebraMap P.completionPlace.integers P.Completion x) =
-    algebraMap (PowerSeries k) (LaurentSeries k)
-      ((P.completionIntegersEquivPowerSeries hP ht).toRingEquiv x)
-  exact IsFractionRing.ringEquivOfRingEquiv_algebraMap
-    (P.completionIntegersEquivPowerSeries hP ht).toRingEquiv x
+  exact IsFractionRing.algEquivOfAlgEquiv_algebraMap _ x
 
 /-- The inverse Laurent expansion sends an embedded power series to the corresponding element of
 the completed valuation ring. -/
