@@ -40,33 +40,39 @@ variable {𝕜 M E F ι : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
 
-/-- Linear maps with equal pullback inner products have equal kernels. The common source
+/-- Linear maps with equal self inner products have equal kernels. The common source
 need only be a module. -/
-theorem ker_eq_of_inner_eq {S : M →ₗ[𝕜] E} {T : M →ₗ[𝕜] F}
-    (h : ∀ x y, ⟪S x, S y⟫_𝕜 = ⟪T x, T y⟫_𝕜) : S.ker = T.ker := by
+theorem ker_eq_of_inner_self_eq {S : M →ₗ[𝕜] E} {T : M →ₗ[𝕜] F}
+    (h : ∀ x, ⟪S x, S x⟫_𝕜 = ⟪T x, T x⟫_𝕜) : S.ker = T.ker := by
   ext x
-  have hzero : ⟪S x, S x⟫_𝕜 = 0 ↔ ⟪T x, T x⟫_𝕜 = 0 := by rw [h x x]
+  have hzero : ⟪S x, S x⟫_𝕜 = 0 ↔ ⟪T x, T x⟫_𝕜 = 0 := by rw [h x]
   simpa only [LinearMap.mem_ker, inner_self_eq_zero] using hzero
 
 /-- The canonical range isometry induced by equal pullback inner products, sending `S x`
 to `T x`. -/
 def rangeEquivOfInnerEq {S : M →ₗ[𝕜] E} {T : M →ₗ[𝕜] F}
-    (h : ∀ x y, ⟪S x, S y⟫_𝕜 = ⟪T x, T y⟫_𝕜) : S.range ≃ₗᵢ[𝕜] T.range :=
+    (h : ∀ x y, ⟪S x, S y⟫_𝕜 = ⟪T x, T y⟫_𝕜) : S.range ≃ₗᵢ[𝕜] T.range := by
   let e := S.quotKerEquivRange.symm.trans
-    ((Submodule.quotEquivOfEq _ _ (ker_eq_of_inner_eq h)).trans T.quotKerEquivRange)
-  e.isometryOfInner fun x y => by
-    obtain ⟨x, rfl⟩ := S.quotKerEquivRange.surjective x
-    obtain ⟨y, rfl⟩ := S.quotKerEquivRange.surjective y
-    induction x using Submodule.Quotient.induction_on with | _ x =>
-    induction y using Submodule.Quotient.induction_on with | _ y =>
-    simpa [e, Submodule.coe_inner] using (h x y).symm
+    ((Submodule.quotEquivOfEq _ _ (ker_eq_of_inner_self_eq fun x => h x x)).trans
+      T.quotKerEquivRange)
+  have he (x : M) : e ⟨S x, LinearMap.mem_range_self S x⟩ =
+      ⟨T x, LinearMap.mem_range_self T x⟩ := by
+    apply Subtype.ext
+    simp only [e, LinearEquiv.trans_apply, LinearMap.quotKerEquivRange_symm_apply_image,
+      Submodule.mkQ_apply, Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivRange_apply_mk]
+  exact e.isometryOfInner fun x y => by
+    obtain ⟨_, x, rfl⟩ := x
+    obtain ⟨_, y, rfl⟩ := y
+    simpa only [he, Submodule.coe_inner] using (h x y).symm
 
 /-- The range isometry sends each image under the first map to the corresponding image
 under the second map. -/
 @[simp]
 theorem rangeEquivOfInnerEq_apply {S : M →ₗ[𝕜] E} {T : M →ₗ[𝕜] F}
     (h : ∀ x y, ⟪S x, S y⟫_𝕜 = ⟪T x, T y⟫_𝕜) (x : M) :
-    (rangeEquivOfInnerEq h ⟨S x, LinearMap.mem_range_self S x⟩ : F) = T x := by
+    rangeEquivOfInnerEq h ⟨S x, LinearMap.mem_range_self S x⟩ =
+      ⟨T x, LinearMap.mem_range_self T x⟩ := by
+  apply Subtype.ext
   simp only [rangeEquivOfInnerEq, LinearEquiv.coe_isometryOfInner, LinearEquiv.trans_apply,
     LinearMap.quotKerEquivRange_symm_apply_image, Submodule.mkQ_apply,
     Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivRange_apply_mk]
@@ -96,8 +102,10 @@ def spanEquivOfInnerEq {v : ι → E} {w : ι → F}
 @[simp]
 theorem spanEquivOfInnerEq_apply {v : ι → E} {w : ι → F}
     (h : ∀ i j, ⟪v i, v j⟫_𝕜 = ⟪w i, w j⟫_𝕜) (i : ι) :
-    (spanEquivOfInnerEq h ⟨v i, Submodule.subset_span (Set.mem_range_self i)⟩ : F) = w i := by
+    spanEquivOfInnerEq h ⟨v i, Submodule.subset_span (Set.mem_range_self i)⟩ =
+      ⟨w i, Submodule.subset_span (Set.mem_range_self i)⟩ := by
   classical
+  apply Subtype.ext
   rw [spanEquivOfInnerEq, LinearIsometryEquiv.trans_apply,
     LinearIsometryEquiv.trans_apply, LinearIsometryEquiv.coe_ofEq_apply]
   have hcast :
@@ -127,7 +135,7 @@ theorem eq_spanEquivOfInnerEq {v : ι → E} {w : ι → F}
   intro i
   apply Subtype.ext
   simpa only [LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv,
-    spanEquivOfInnerEq_apply] using he i
+    spanEquivOfInnerEq_apply, Subtype.coe_mk] using he i
 
 /-- Equal Gram data for two families in a finite-dimensional space can be realized by an
 ambient linear isometric equivalence. The indexing type need not be finite. -/
