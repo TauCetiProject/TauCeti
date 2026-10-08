@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Link.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Link
 
 /-!
 # Combinatorial manifolds under stellar subdivision

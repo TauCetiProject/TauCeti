@@ -277,6 +277,42 @@ theorem link_stellarSubdivision_singleton (hv : ({v} : Finset ι) ∉ K) :
     exact ⟨hne, Finset.disjoint_singleton_right.mpr hvρ,
       (insert_mem_stellarSubdivision_iff hvρ).mpr ⟨hρσ, hstar⟩⟩
 
+/-- The link of a face containing the new vertex is the corresponding link in the boundary of
+the closed star of the original starred face. -/
+@[simp]
+theorem link_stellarSubdivision_insert {ρ : Finset ι} (hv : ({v} : Finset ι) ∉ K)
+    (hvρ : v ∉ ρ) :
+    link (stellarSubdivision K σ v) (insert v ρ) =
+      link (closedStar K σ ⊓ deletion K σ) ρ := by
+  have hdis : Disjoint ({v} : Finset ι) ρ := Finset.disjoint_singleton_left.mpr hvρ
+  calc
+    link (stellarSubdivision K σ v) (insert v ρ) =
+        link (link (stellarSubdivision K σ v) {v}) ρ := by
+      rw [link_link hdis, Finset.singleton_union]
+    _ = link (closedStar K σ ⊓ deletion K σ) ρ := by
+      rw [link_stellarSubdivision_singleton hv]
+
+/-- Every face in the link of a stellar face containing the new vertex belongs to the boundary
+of the original closed star. This containment does not require freshness of the vertex. -/
+theorem link_stellarSubdivision_insert_le_closedStar_inf_deletion {ρ : Finset ι} :
+    link (stellarSubdivision K σ v) (insert v ρ) ≤ closedStar K σ ⊓ deletion K σ := by
+  intro τ hτ
+  obtain ⟨hne, hdis, hface⟩ := mem_link_nonempty.mp hτ
+  have hvτ : v ∉ τ := (Finset.disjoint_insert_right.mp hdis).1
+  have hρ : insert v (ρ.erase v) = insert v ρ := by simp
+  have hvτρ : v ∉ τ ∪ ρ.erase v := by simp [hvτ]
+  have hface' : insert v (τ ∪ ρ.erase v) ∈ stellarSubdivision K σ v := by
+    rw [← Finset.union_insert, hρ]
+    exact hface
+  obtain ⟨hσ, hK⟩ := (insert_mem_stellarSubdivision_iff hvτρ).mp hface'
+  refine mem_inf.mpr ⟨mem_closedStar_nonempty.mpr ⟨hne, ?_⟩, mem_deletion.mpr ⟨?_, ?_⟩⟩
+  · exact (K.isRelLowerSet_faces hK).2
+      (Finset.union_subset_union Finset.subset_union_left Subset.rfl) hne
+  · exact (K.isRelLowerSet_faces hK).2
+      (Finset.subset_union_left.trans Finset.subset_union_left) hne
+  · intro hστ
+    exact hσ (hστ.trans Finset.subset_union_left)
+
 /-! ### Relabeling -/
 
 /-- An injective relabeling commutes with stellar subdivision. -/
