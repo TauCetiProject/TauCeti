@@ -23,6 +23,12 @@ candidates are excluded by the index--discriminant formula.  This gives the proo
 
 ## Main results
 
+* `TauCeti.NumberField.Cubic23.cubic_candidate_coefficients_of_root`: only `X³ + X² - 2X - 1`
+  and `X³ + 2X² - 3X - 1` among the candidates have a real root strictly between `1` and the
+  value of `u`.
+* `TauCeti.NumberField.Cubic23.discr_X_pow_three_add_X_sq_sub_two_mul_X_sub_one` and
+  `TauCeti.NumberField.Cubic23.discr_X_pow_three_add_two_mul_X_sq_sub_three_mul_X_sub_one`: these
+  two survivors have discriminants `49` and `257`.
 * `TauCeti.NumberField.Cubic23.cubicUnitEliminationCertificate`: the concrete elimination
   certificate for the 98 candidate cubics.
 * `TauCeti.NumberField.Cubic23.cubicUnitEliminationCertificate_sound`: `u` generates the units
@@ -301,7 +307,10 @@ private theorem cubic_candidate_coefficients_const_neg_one_of_root (a b : ℤ)
     have hbu' : b < (-3 : ℤ) := by exact_mod_cast hbu
     omega
 
-private theorem cubic_candidate_coefficients_of_root (a b c : ℤ)
+/-- **The two survivors of the root test.** Let `B > 1` be the real root of `X³ - X - 1`. A monic
+cubic `X³ + aX² + bX + c` with `|a|, |b| ≤ 3` and `c = ±1` that has a real root strictly between
+`1` and `B` is `X³ + X² - 2X - 1` or `X³ + 2X² - 3X - 1`. -/
+theorem cubic_candidate_coefficients_of_root (a b c : ℤ)
     (haL : -4 < a) (haU : a < 4) (hbL : -4 < b) (hbU : b < 4)
     (hc : c = 1 ∨ c = -1) {B x : ℝ} (hBcubic : B ^ 3 - B - 1 = 0)
     (hB : B < 4 / 3) (hx1 : 1 < x) (hxB : x < B)
@@ -316,6 +325,18 @@ private theorem cubic_candidate_coefficients_of_root (a b c : ℤ)
       hx1 hxB hroot with h | h
     · exact Or.inl ⟨h.1, h.2, rfl⟩
     · exact Or.inr ⟨h.1, h.2, rfl⟩
+
+/-- The first survivor of the root test, `X³ + X² - 2X - 1`, has discriminant `49`. -/
+theorem discr_X_pow_three_add_X_sq_sub_two_mul_X_sub_one :
+    (X ^ 3 + X ^ 2 - 2 * X - 1 : ℤ[X]).discr = 49 := by
+  rw [Polynomial.discr_of_degree_eq_three (by compute_degree <;> norm_num)]
+  norm_num [coeff_add, coeff_sub, coeff_X_pow, coeff_one, coeff_X, coeff_C_mul]
+
+/-- The second survivor of the root test, `X³ + 2X² - 3X - 1`, has discriminant `257`. -/
+theorem discr_X_pow_three_add_two_mul_X_sq_sub_three_mul_X_sub_one :
+    (X ^ 3 + 2 * X ^ 2 - 3 * X - 1 : ℤ[X]).discr = 257 := by
+  rw [Polynomial.discr_of_degree_eq_three (by compute_degree <;> norm_num)]
+  norm_num [coeff_add, coeff_sub, coeff_X_pow, coeff_one, coeff_X, coeff_C_mul]
 
 /-- **The 98-candidate elimination certificate.** Every monic cubic with constant coefficient
 `±1` and the coefficient bounds forced by a unit below `θ² - θ` is excluded either by having no

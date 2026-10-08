@@ -49,6 +49,8 @@ residue degree is not obtained by the same recipe with `D/I` in place of `D`: th
 * `Ideal.ramificationIdx_mul_inertiaDeg_doubleCosetQuotientEquivPrimesOver_mul_card` and
   `Ideal.ramificationIdx_mul_inertiaDeg_doubleCosetQuotientEquivPrimesOver_eq_card_div`: the same
   formula for the prime attached to a double coset, read on the double coset itself.
+* `IntermediateField.sum_card_quotToDoubleCoset_div_card_eq_finrank`: the numbers `|HσD| / |H|`
+  add up to `[M ^ H : K]`.
 
 ## References
 
@@ -129,3 +131,25 @@ theorem ramificationIdx_mul_inertiaDeg_doubleCosetQuotientEquivPrimesOver_eq_car
     Nat.mul_div_cancel _ Nat.card_pos]
 
 end Ideal
+
+namespace IntermediateField
+
+variable {K M : Type*} [Field K] [Field M] [Algebra K M] [FiniteDimensional K M] [IsGalois K M]
+
+/-- **The double-coset sizes add up to the degree of the fixed field**: for subgroups `H` and `D`
+of `G = Gal(M/K)`, the numbers `|HσD| / |H|` add up, over `H \ G / D`, to `[M ^ H : K]`. With `D`
+the decomposition group of a prime `Q`, these numbers are the local degrees `e · f` of the primes
+of `M ^ H` below the translates of `Q`
+(`Ideal.ramificationIdx_mul_inertiaDeg_doubleCosetQuotientEquivPrimesOver_eq_card_div`), and the
+sum is the fundamental identity. -/
+theorem sum_card_quotToDoubleCoset_div_card_eq_finrank (H D : Subgroup (M ≃ₐ[K] M))
+    [Fintype (DoubleCoset.Quotient (H : Set (M ≃ₐ[K] M)) (D : Set (M ≃ₐ[K] M)))] :
+    ∑ q, Nat.card (DoubleCoset.quotToDoubleCoset H D q) / Nat.card H =
+      Module.finrank K (fixedField H) := by
+  rw [Subgroup.sum_card_quotToDoubleCoset_div_card_eq_index]
+  have h := H.index_mul_card
+  rw [IsGalois.card_aut_eq_finrank, ← Module.finrank_mul_finrank K (fixedField H) M,
+    finrank_fixedField_eq_card] at h
+  exact Nat.eq_of_mul_eq_mul_right Nat.card_pos h
+
+end IntermediateField
