@@ -130,6 +130,16 @@ theorem mem_stellarSubdivision_iff :
       (v ∉ τ ∧ τ ∈ K ∧ ¬ σ ⊆ τ) ∨ (v ∈ τ ∧ ¬ σ ⊆ τ.erase v ∧ τ.erase v ∪ σ ∈ K) :=
   Iff.rfl
 
+/-- Every stellar simplex omits a vertex of the starred face, including simplices containing
+its new barycentric vertex. -/
+theorem exists_notMem_of_mem_stellarSubdivision (hvσ : v ∉ σ)
+    (hτ : τ ∈ stellarSubdivision K σ v) : ∃ a ∈ σ, a ∉ τ := by
+  rcases mem_stellarSubdivision_iff.mp hτ with ⟨-, -, h⟩ | ⟨-, h, -⟩
+  · exact Finset.not_subset.mp h
+  · obtain ⟨a, ha, haτ⟩ := Finset.not_subset.mp h
+    exact ⟨a, ha, fun hat => haτ (Finset.mem_erase.mpr
+      ⟨fun hav => hvσ (hav ▸ ha), hat⟩)⟩
+
 /-- A set missing the new vertex is a face of the stellar subdivision exactly when it is a face of
 `K` not containing the starred face: these are precisely the faces of `deletion K σ`. -/
 @[simp]
