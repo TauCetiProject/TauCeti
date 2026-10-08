@@ -144,7 +144,7 @@ private theorem normShift_of_finrank_le (d : ℕ) :
     ∀ (F : Type v) [Field F] [ValuativeRel F] [TopologicalSpace F]
       [IsNonarchimedeanLocalField F] [Algebra F L] [ValuativeExtension F L] [Module.Finite F L]
       [IsGalois F L], finrank F L ≤ d → NormShift F L :=
-  finiteGaloisLocalField_induction_on_finrank_le L
+  finiteGaloisLocalField_induction_finrank_le L
     (fun F _ _ _ _ _ _ _ _ ↦ NormShift F L)
     (fun F _ _ _ _ _ _ _ _ ↦ normShift_of_forall_finrank_lt (K := F)) d
 

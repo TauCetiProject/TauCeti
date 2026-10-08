@@ -105,7 +105,7 @@ private theorem smul_div_mem_map_normUnits_of_mem_unitFiltration_zero
     | succ n ih =>
       rw [Function.iterate_succ_apply', ih, QuotientGroup.map_mk,
         MulDistribMulAction.toMonoidHom_apply, pow_succ', mul_smul]
-  have hfix := MonoidHom.apply_eq_self_of_iterate_pow_eq_self hcard f (k := k)
+  have hfix := f.apply_eq_self_of_iterate_pow_eq_self hcard (k := k)
     (fun a ↦ QuotientGroup.induction_on a fun u ↦ by rw [hiter, hσ, one_smul])
     (⟨y, hy⟩ : U)
   have hmem := Subgroup.mem_subgroupOf.1 (QuotientGroup.eq.1 hfix.symm)

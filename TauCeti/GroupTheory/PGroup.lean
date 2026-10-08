@@ -146,7 +146,7 @@ is itself the identity. This is the form in which a `p`-group acts trivially on 
 `p`: the endomorphism is a power map `a ↦ a ^ m` of the cyclic group, and `m ^ (p ^ k) ≡ m`
 modulo `p`. -/
 theorem _root_.MonoidHom.apply_eq_self_of_iterate_pow_eq_self [Fact p.Prime] {A : Type*}
-    [Group A] (hA : Nat.card A = p) (f : A →* A) {k : ℕ} (hf : ∀ a, f^[p ^ k] a = a) (a : A) :
+    [Group A] (f : A →* A) (hA : Nat.card A = p) {k : ℕ} (hf : ∀ a, f^[p ^ k] a = a) (a : A) :
     f a = a := by
   have : IsCyclic A := isCyclic_of_prime_card (p := p) hA
   obtain ⟨m, hm⟩ := f.map_cyclic

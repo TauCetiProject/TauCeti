@@ -48,7 +48,7 @@ theorem exists_prime_degree_intermediateField (K : Type u) (L : Type v)
 
 /-- Induction on the finite degree of a Galois local-field extension, keeping the top field
 fixed. The step may use the property over every base with smaller remaining degree. -/
-theorem finiteGaloisLocalField_induction_on_finrank_le (L : Type v)
+theorem finiteGaloisLocalField_induction_finrank_le (L : Type v)
     [Field L] [ValuativeRel L]
     (P : ∀ (F : Type v) [Field F] [ValuativeRel F] [TopologicalSpace F]
       [IsNonarchimedeanLocalField F] [Algebra F L] [ValuativeExtension F L] [Module.Finite F L]
