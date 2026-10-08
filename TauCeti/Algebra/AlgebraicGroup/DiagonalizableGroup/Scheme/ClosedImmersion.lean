@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Scheme.Basic
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.ClosedImmersion
-import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # Closed immersions of diagonalizable group schemes
@@ -41,19 +40,10 @@ diagonalizable group schemes. -/
 theorem isClosedImmersion_groupSchemeMap_of_surjective {G H : FGCommGrpCat.{u}} (φ : G ⟶ H)
     (hφ : Function.Surjective (FGCommGrpCat.toMonoidHom φ)) :
     IsClosedImmersion (groupSchemeMap R φ).hom.hom.left := by
-  let e₁ := (eqToHom (groupScheme_def R H)).hom.hom.left
-  let e₂ := (eqToHom (groupScheme_def R G).symm).hom.hom.left
-  let c := ((hopfSpec (CommRingCat.of R)).map (coordinateMap R φ).hom.op).hom.hom.left
-  have hc : IsClosedImmersion c :=
-    (CommHopfAlgCat.isClosedImmersion_hopfSpec_map_iff _).2
-      (coordinateMap_surjective_of_surjective R φ hφ)
-  have hc₂ : IsClosedImmersion (c ≫ e₂) :=
-    (MorphismProperty.cancel_right_of_respectsIso _ c e₂).2 hc
-  have he₁c₂ : IsClosedImmersion (e₁ ≫ (c ≫ e₂)) :=
-    (MorphismProperty.cancel_left_of_respectsIso _ e₁ (c ≫ e₂)).2 hc₂
-  rw [groupSchemeMap_def]
-  simp only [Grp.comp', Mon.comp_hom', Over.comp_left]
-  exact he₁c₂
+  rw [groupSchemeMap_def,
+    CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_comp_eqToHom_iff
+      (groupScheme_def R H) (groupScheme_def R G)]
+  exact coordinateMap_surjective_of_surjective R φ hφ
 
 end DiagonalizableGroup
 
