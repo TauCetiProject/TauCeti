@@ -40,11 +40,8 @@ in the same universe, which is reflected in all scheme-level declarations in thi
   `quotientSpecι` is a closed immersion.
 * `TauCeti.CommHopfAlgCat.quotientSpecMapOfLe`: the closed subgroup morphism induced by
   `I ≤ J`.
-* `TauCeti.FiniteTypeCommHopfAlgCat.locallyOfFiniteType_quotientSpec`: a finite-type Hopf
-  algebra has quotient group schemes locally of finite type over `Spec R`.
-* `TauCeti.CommHopfAlgCat.locallyOfFiniteType_quotientSpec`: the same statement for a
-  commutative Hopf algebra with an `Algebra.FiniteType` instance, which is the form instance
-  search uses.
+* `CommHopfAlgCat.locallyOfFiniteType_quotientSpec`: a finite-type commutative Hopf algebra has
+  quotient group schemes locally of finite type over `Spec R`.
 
 ## References
 
@@ -174,45 +171,27 @@ lemma quotientSpecMapOfLe_comp (H : _root_.CommHopfAlgCat.{u} R)
 
 end CommHopfAlgCat
 
-namespace FiniteTypeCommHopfAlgCat
-
-open AlgebraicGeometry
-
-variable {R : Type u} [CommRing R]
-
-/-- If `H` is a finite-type commutative Hopf algebra, then the group scheme represented by
-`H ⧸ I` is locally of finite type over `Spec R`. No finite-generation hypothesis on `I` is
-needed. -/
-instance locallyOfFiniteType_quotientSpec (H : FiniteTypeCommHopfAlgCat.{u, u} R)
-    (I : HopfIdeal R H) :
-    LocallyOfFiniteType (CommHopfAlgCat.quotientSpec H.obj I).X.hom := by
-  let Q := quotient H I
-  let : Algebra.FiniteType R (H ⧸ I.toIdeal) := Q.property
-  -- Mathlib's `specOverSpec` has a documented `OverClass` instance diamond. A standalone
-  -- rewrite lemma for this structural morphism selects the other instance path, after which
-  -- typeclass search cannot use `Q.property`; `change` preserves the local finite-type instance.
-  change LocallyOfFiniteType
-    (Spec (CommRingCat.of (H ⧸ I.toIdeal)) ↘ Spec (CommRingCat.of R))
-  infer_instance
-
-end FiniteTypeCommHopfAlgCat
+end TauCeti
 
 namespace CommHopfAlgCat
 
-open AlgebraicGeometry
+open AlgebraicGeometry TauCeti TauCeti.CommHopfAlgCat
+
+universe u
 
 variable {R : Type u} [CommRing R]
 
 /-- If the commutative Hopf algebra `H` is of finite type, then the group scheme represented by
-`H ⧸ I` is locally of finite type over `Spec R`. This is
-`FiniteTypeCommHopfAlgCat.locallyOfFiniteType_quotientSpec` for an unbundled `H`, the form
-instance search finds. -/
+`H ⧸ I` is locally of finite type over `Spec R`. No finite-generation hypothesis on `I` is
+needed. -/
 instance locallyOfFiniteType_quotientSpec (H : _root_.CommHopfAlgCat.{u} R)
-    [hH : Algebra.FiniteType R H] (I : HopfIdeal R H) :
-    LocallyOfFiniteType (quotientSpec H I).X.hom :=
-  FiniteTypeCommHopfAlgCat.locallyOfFiniteType_quotientSpec
-    (⟨H, hH⟩ : FiniteTypeCommHopfAlgCat R) I
+    [Algebra.FiniteType R H] (I : HopfIdeal R H) :
+    LocallyOfFiniteType (quotientSpec H I).X.hom := by
+  -- Mathlib's `specOverSpec` has a documented `OverClass` instance diamond. A standalone
+  -- rewrite lemma for this structural morphism selects the other instance path, after which
+  -- typeclass search cannot use the finite-type instance of `H ⧸ I`; `change` keeps it usable.
+  change LocallyOfFiniteType
+    (Spec (CommRingCat.of (H ⧸ I.toIdeal)) ↘ Spec (CommRingCat.of R))
+  infer_instance
 
 end CommHopfAlgCat
-
-end TauCeti
