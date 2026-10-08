@@ -9,6 +9,8 @@ public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 public import TauCeti.FieldTheory.Galois.Quotient
 public import TauCeti.FieldTheory.Galois.Restriction
+-- Proof-only: a `K`-algebra of dimension two has no subalgebras but `⊥` and `⊤`.
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
 # The absolute Galois group of a finite separable extension as an open subgroup
@@ -69,6 +71,9 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
 
 ## Main results
 
+* `TauCeti.mem_galoisSubgroup_iff_apply_eq_of_adjoin_eq_top`,
+  `TauCeti.mem_galoisSubgroup_iff_apply_eq_of_finrank_eq_two`: when `x` generates `L`, for instance
+  any `x ∉ K` in a quadratic `L`, membership in `galoisSubgroup K L σ` is fixing `σ x`.
 * `TauCeti.galoisSubgroup_index`: the index of `galoisSubgroup K L σ` in `G_K` is `[L : K]`, so
   the subgroup fixing `σ(L)` has finite index
   (`TauCeti.finiteIndex_fixingSubgroup_fieldRange`, `TauCeti.finiteIndex_galoisSubgroup`).
@@ -132,6 +137,25 @@ theorem mem_galoisSubgroup_iff {g : AbsoluteGaloisGroup K} :
   rw [← OpenSubgroup.mem_toSubgroup, galoisSubgroup_toSubgroup,
     IntermediateField.mem_fixingSubgroup_iff]
   simp
+
+/-- If `x` generates `L` as a `K`-algebra, an automorphism of `Kˢ` lies in
+`galoisSubgroup K L σ` exactly when it fixes `σ x`. -/
+theorem mem_galoisSubgroup_iff_apply_eq_of_adjoin_eq_top {x : L}
+    (hx : Algebra.adjoin K {x} = ⊤) {g : AbsoluteGaloisGroup K} :
+    g ∈ galoisSubgroup K L σ ↔ g (σ x) = σ x := by
+  refine ⟨fun hg => (mem_galoisSubgroup_iff K L σ).1 hg x, fun hg => ?_⟩
+  have h : (g : SeparableClosure K →ₐ[K] SeparableClosure K).comp σ = σ :=
+    AlgHom.ext_of_adjoin_eq_top hx (Set.eqOn_singleton.2 hg)
+  exact (mem_galoisSubgroup_iff K L σ).2 fun y => DFunLike.congr_fun h y
+
+/-- **In a quadratic extension `L/K`**, an automorphism of `Kˢ` lies in `galoisSubgroup K L σ`
+exactly when it fixes `σ x`, for any `x ∈ L` not in `K`: such an `x` generates `L`. -/
+theorem mem_galoisSubgroup_iff_apply_eq_of_finrank_eq_two (hdeg : Module.finrank K L = 2) {x : L}
+    (hx : x ∉ Set.range (algebraMap K L)) {g : AbsoluteGaloisGroup K} :
+    g ∈ galoisSubgroup K L σ ↔ g (σ x) = σ x :=
+  mem_galoisSubgroup_iff_apply_eq_of_adjoin_eq_top K L σ <|
+    ((Subalgebra.isSimpleOrder_of_finrank hdeg).eq_bot_or_eq_top _).resolve_left fun h =>
+      hx (Algebra.mem_bot.1 (h ▸ Algebra.self_mem_adjoin_singleton K x))
 
 /-- **The index of `galoisSubgroup K L σ` is the degree `[L : K]`.** -/
 theorem galoisSubgroup_index : (galoisSubgroup K L σ).toSubgroup.index = Module.finrank K L := by
