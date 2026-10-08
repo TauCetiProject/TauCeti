@@ -42,6 +42,7 @@ runs:
     # namespace here so publishers and restore-only consumers cannot silently drift apart.
     - name: Restore compressed download cache
       id: restore
+      continue-on-error: true
       uses: actions/cache/restore@v4
       with:
         # Cache only content-addressed artifacts, never cache-tool scratch files or executables.

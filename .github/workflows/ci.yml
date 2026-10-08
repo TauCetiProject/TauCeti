@@ -131,6 +131,7 @@ jobs:
           python3 scripts/test_queue_release.py
           python3 scripts/test_bwrap_pin.py
           PYTHONPATH=scripts python3 scripts/test_bump_manifest.py
+          python3 scripts/test_mathlib_cache_get.py
           python3 scripts/test_bump_report.py
           python3 scripts/test_lint_scope.py
           python3 scripts/test_build_lint_driver.py
@@ -207,12 +208,8 @@ jobs:
           lean --version
           lake --version
 
-      - name: Fetch Mathlib oleans, retrying with a forced full refetch
-        run: |
-          if ! lake exe cache get; then
-            echo "::warning::lake exe cache get failed; forcing a full refetch"
-            lake exe cache get!
-          fi
+      - name: Fetch Mathlib oleans, falling back to compilation on cache failure
+        run: bash scripts/mathlib-cache-get.sh . "$GITHUB_WORKSPACE/cache-get.log"
 
       # --- Lake artifact-cache restore (dormant until configured) --------------------
       # Restore TauCeti's OWN oleans before building, exactly as pr-build.yml does. Without

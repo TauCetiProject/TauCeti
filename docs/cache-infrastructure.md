@@ -35,6 +35,13 @@ incompatible, bump `mathlib-ltar-v1` once in
 `gh cache delete <key> --repo TauCetiProject/TauCeti`. A failed fetch also retries once with
 `lake exe cache get!`, which forces every linked file to be downloaded and unpacked again.
 
+In `ci.yml` and `pr-build.yml`, `scripts/mathlib-cache-get.sh` makes cache restore best-effort:
+after a failed retry, or a partial hit, CI warns and builds the missing dependencies from source.
+The GitHub Actions snapshot restore is also best-effort. A bump does not require a complete
+remote cache or a successful upstream cache-publishing run; its trusted forward dependency and
+toolchain checks, build, audits, and lints still have to pass. Cache outages can therefore make
+CI slower without independently blocking a bump.
+
 Downloads go to the cache tool's default read endpoint. The escape hatch is a repository
 variable. Every workflow that runs `lake exe cache get` (`ci.yml`, `pr-build.yml`,
 `pr-profile.yml`, `nightly-verify.yml`, `pages.yml`) exports
