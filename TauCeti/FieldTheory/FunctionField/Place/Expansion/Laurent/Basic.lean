@@ -75,7 +75,8 @@ theorem laurentSeriesExpansion_coe (x : P.integers) :
     completionIntegersEquivPowerSeries_completionIntegersEmbedding]
 
 /-- Every integer power of the chosen uniformizer expands as the corresponding monomial. -/
-@[simp]
+-- The left side already simplifies by `map_zpow₀` and `laurentSeriesExpansion_uniformizer`.
+-- A `simp` annotation here is rejected by the `simpNF` linter.
 theorem laurentSeriesExpansion_zpow_uniformizer (n : ℤ) :
     P.laurentSeriesExpansion hP ht (t ^ n) = HahnSeries.single n 1 := by
   rw [map_zpow₀, laurentSeriesExpansion_apply,
