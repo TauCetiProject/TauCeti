@@ -21,11 +21,11 @@ homogeneous quotients. They apply to nonreduced subgroups and value algebras.
 
 ## Main results
 
-* `HopfIdeal.ofConv_mul_orbitCoordinates_of_mem_weightSpace`: homogeneous orbit coordinates
+* `HopfIdeal.convMul_apply_orbitCoordinates_of_mem_weightSpace`: homogeneous orbit coordinates
   transform by the corresponding power of the subgroup character.
-* `HopfIdeal.isUnit_ofConv_mul_orbitCoordinates_iff`: right subgroup translation preserves
+* `HopfIdeal.isUnit_convMul_apply_orbitCoordinates_iff`: right subgroup translation preserves
   membership in a standard projective chart.
-* `HopfIdeal.awayLift_ofConv_mul_orbitCoordinates_eq`: the two translated points give the same
+* `HopfIdeal.awayLift_convMul_apply_orbitCoordinates_eq`: the two translated points give the same
   map on the chart, including its nilpotent functions.
 
 ## References
@@ -74,7 +74,7 @@ variable {A : Type x} [CommSemiring A] [Algebra R A]
 
 /-- Right multiplication by a subgroup point rescales a homogeneous orbit coordinate of
 degree `n` by the `n`th power of the value of the subgroup character. -/
-theorem ofConv_mul_orbitCoordinates_of_mem_weightSpace
+theorem convMul_apply_orbitCoordinates_of_mem_weightSpace
     (I : HopfIdeal R H) (χ : GroupLike R (H ⧸ I.toIdeal))
     {m : M} (hm : m ∈ I.weightSpace M χ)
     (g : WithConv (H →ₐ[R] A)) (h : WithConv ((H ⧸ I.toIdeal) →ₐ[R] A))
@@ -97,7 +97,7 @@ theorem ofConv_mul_orbitCoordinates_of_mem_weightSpace
 
 /-- A right subgroup translate lies in the same standard projective chart as the original
 point: its homogeneous coordinate is a unit exactly when the original coordinate is. -/
-theorem isUnit_ofConv_mul_orbitCoordinates_iff
+theorem isUnit_convMul_apply_orbitCoordinates_iff
     (I : HopfIdeal R H) (χ : GroupLike R (H ⧸ I.toIdeal))
     {m : M} (hm : m ∈ I.weightSpace M χ)
     (g : WithConv (H →ₐ[R] A)) (h : WithConv ((H ⧸ I.toIdeal) →ₐ[R] A))
@@ -106,7 +106,7 @@ theorem isUnit_ofConv_mul_orbitCoordinates_iff
     IsUnit ((g * toConv (h.ofConv.comp (Ideal.Quotient.mkₐ R I.toIdeal))).ofConv
         (Comodule.orbitCoordinates (H := H) m s)) ↔
       IsUnit (g.ofConv (Comodule.orbitCoordinates (H := H) m s)) := by
-  rw [I.ofConv_mul_orbitCoordinates_of_mem_weightSpace χ hm g h hs, IsUnit.mul_iff]
+  rw [I.convMul_apply_orbitCoordinates_of_mem_weightSpace χ hm g h hs, IsUnit.mul_iff]
   exact and_iff_right ((χ.2.isUnit.map h.ofConv).pow n)
 
 end Points
@@ -117,7 +117,7 @@ variable {A : Type x} [CommRing A] [Algebra R A]
 
 /-- The maps on a homogeneous affine chart defined by a group point and its right subgroup
 translate agree. This is equality of ring maps, including on nilpotent functions. -/
-theorem awayLift_ofConv_mul_orbitCoordinates_eq
+theorem awayLift_convMul_apply_orbitCoordinates_eq
     (I : HopfIdeal R H) (χ : GroupLike R (H ⧸ I.toIdeal))
     {m : M} (hm : m ∈ I.weightSpace M χ)
     (g : WithConv (H →ₐ[R] A)) (h : WithConv ((H ⧸ I.toIdeal) →ₐ[R] A))
@@ -127,14 +127,14 @@ theorem awayLift_ofConv_mul_orbitCoordinates_eq
     Away.lift (SymmetricAlgebra.homogeneousSubmodule R (Module.Dual R M))
         (((g * toConv (h.ofConv.comp (Ideal.Quotient.mkₐ R I.toIdeal))).ofConv).comp
           (Comodule.orbitCoordinates (H := H) m)).toRingHom
-        ((I.isUnit_ofConv_mul_orbitCoordinates_iff χ hm g h hs).mpr hg) =
+        ((I.isUnit_convMul_apply_orbitCoordinates_iff χ hm g h hs).mpr hg) =
       Away.lift (SymmetricAlgebra.homogeneousSubmodule R (Module.Dual R M))
         (g.ofConv.comp (Comodule.orbitCoordinates (H := H) m)).toRingHom hg := by
   apply Away.lift_eq_of_forall_mem _ _
     (Units.map h.ofConv.toMonoidHom (_root_.GroupLike.toUnits R χ)) _ hs
   intro n a ha
   simpa [_root_.GroupLike.toUnits] using
-    I.ofConv_mul_orbitCoordinates_of_mem_weightSpace χ hm g h ha
+    I.convMul_apply_orbitCoordinates_of_mem_weightSpace χ hm g h ha
 
 end Charts
 
