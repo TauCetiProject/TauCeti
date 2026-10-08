@@ -37,6 +37,10 @@ block-triangular invertible matrix is block triangular.
 
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
+* The Hopf-ideal quotient, closed-subgroup packaging, and algebra-valued points construction
+  were adapted from the original construction of
+  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Borel`, which in turn adapted
+  `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic`.
 -/
 
 public section
