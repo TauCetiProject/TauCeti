@@ -113,7 +113,7 @@ theorem reductionK0_eq_of_nonempty_equiv_of_charP [Fact ℓ.Prime] [CharP k ℓ]
     reductionK0 k (Representation.ofDistribMulAction ℤ G V) =
       reductionK0 k (Representation.ofDistribMulAction ℤ G W) := by
   have : NeZero ℓ := ⟨(Fact.out : ℓ.Prime).ne_zero⟩
-  obtain ⟨f, hf, _⟩ := exists_injective_finite_quotient_range_of_nonempty_equiv h
+  obtain ⟨f, hf, _⟩ := h.some.exists_injective_finite_quotient_range
   have : (f : V →+ W).range.FiniteIndex := AddSubgroup.finiteIndex_of_finite_quotient
   rw [← latticeDefect_eq_reductionK0 k G ℓ V, ← latticeDefect_eq_reductionK0 k G ℓ W]
   exact latticeDefect_eq_of_finiteIndex k G ℓ f hf
