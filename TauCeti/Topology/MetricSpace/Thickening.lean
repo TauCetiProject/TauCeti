@@ -35,7 +35,7 @@ theorem exists_thickenings_pairwiseDisjoint
   | inl hι =>
       exact ⟨1, zero_lt_one, fun i j hij => False.elim (hι.false i)⟩
   | inr hι =>
-      letI : Nonempty ι := hι
+      let : Nonempty ι := hι
       have hex : ∀ i j, i ≠ j → ∃ δ : ℝ, 0 < δ ∧
           Disjoint (thickening δ (K i)) (thickening δ (K j)) := by
         intro i j hij
