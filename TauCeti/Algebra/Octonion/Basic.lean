@@ -358,6 +358,12 @@ theorem trace_one : trace (1 : Octonion R) = 2 := by
 theorem add_conj (x : Octonion R) : x + conj x = trace x • 1 := by
   refine Octonion.ext ?_ ?_ ?_ ?_ <;> simp [add_comm]
 
+/-- Conjugation is reflection in the trace: `conj x = trace x • 1 - x`. -/
+theorem conj_eq_trace_smul_one_sub (x : Octonion R) :
+    conj x = trace x • (1 : Octonion R) - x := by
+  rw [← add_conj]
+  abel
+
 /-- Conjugation preserves the trace: it only exchanges the two diagonal entries. Not a `simp`
 lemma, for the same reason as `TauCeti.Octonion.trace_one`. -/
 theorem trace_conj (x : Octonion R) : trace (conj x) = trace x := by

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.ProP
 public import TauCeti.Topology.Algebra.Group.Subgroup
+import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 
 /-!
 # Profinite groups defined by generators and relators
@@ -312,32 +313,35 @@ theorem map_surjective {φ : freeProfiniteGroup X →ₜ* freeProfiniteGroup Y}
     Function.Surjective (map φ hφ) :=
   lift_surjective hφ ((mk_surjective rels').comp hs)
 
+/-- The relator-wise hypotheses of `congr` say that `e` carries the closed normal closure of the
+relators onto that of the other relators. -/
+private theorem map_closure_eq_of_congr (e : freeProfiniteGroup X ≃ₜ* freeProfiniteGroup Y)
+    (h : ∀ r ∈ rels, mk rels' (e r) = 1) (h' : ∀ r ∈ rels', mk rels (e.symm r) = 1) :
+    (Subgroup.normalClosure rels).topologicalClosure.map e.toMulEquiv.toMonoidHom =
+      (Subgroup.normalClosure rels').topologicalClosure := by
+  refine le_antisymm ?_ fun y hy ↦ ⟨e.symm y, ?_, by simp⟩
+  · rintro _ ⟨x, hx, rfl⟩
+    have := mk_eq_one_of_mk_eq_one (e : freeProfiniteGroup X →ₜ* freeProfiniteGroup Y)
+      (by simpa using h) ((mk_eq_one_iff x).mpr hx)
+    simpa using this
+  · exact (mk_eq_one_iff _).mp <|
+      mk_eq_one_of_mk_eq_one (e.symm : freeProfiniteGroup Y →ₜ* freeProfiniteGroup X)
+        (by simpa using h') ((mk_eq_one_iff y).mpr hy)
+
 /-- A topological isomorphism of the free profinite groups sending each set of relators into the
 closed normal closure of the other induces a topological isomorphism of the presented profinite
 groups. -/
 noncomputable def congr (e : freeProfiniteGroup X ≃ₜ* freeProfiniteGroup Y)
     (h : ∀ r ∈ rels, mk rels' (e r) = 1) (h' : ∀ r ∈ rels', mk rels (e.symm r) = 1) :
-    presentedProfiniteGroup X rels ≃ₜ* presentedProfiniteGroup Y rels' where
-  toFun := map (e : freeProfiniteGroup X →ₜ* freeProfiniteGroup Y) fun r hr ↦ by
-    simpa using h r hr
-  invFun := map (e.symm : freeProfiniteGroup Y →ₜ* freeProfiniteGroup X) fun r hr ↦ by
-    simpa using h' r hr
-  left_inv y := by
-    obtain ⟨x, rfl⟩ := mk_surjective rels y
-    simp
-  right_inv y := by
-    obtain ⟨x, rfl⟩ := mk_surjective rels' y
-    simp
-  map_mul' := map_mul _
-  continuous_toFun := map_continuous _
-  continuous_invFun := map_continuous _
+    presentedProfiniteGroup X rels ≃ₜ* presentedProfiniteGroup Y rels' :=
+  e.quotientCongr _ _ (map_closure_eq_of_congr e h h')
 
 /-- The induced isomorphism computes on classes as the isomorphism of free profinite groups. -/
 @[simp]
 theorem congr_mk (e : freeProfiniteGroup X ≃ₜ* freeProfiniteGroup Y)
     (h : ∀ r ∈ rels, mk rels' (e r) = 1) (h' : ∀ r ∈ rels', mk rels (e.symm r) = 1)
     (x : freeProfiniteGroup X) : congr e h h' (mk rels x) = mk rels' (e x) :=
-  map_mk _ _ x
+  e.quotientCongr_mk _ _ _ x
 
 /-- The inverse of the induced isomorphism computes on classes as the inverse isomorphism of free
 profinite groups. -/
@@ -345,7 +349,7 @@ profinite groups. -/
 theorem congr_symm_mk (e : freeProfiniteGroup X ≃ₜ* freeProfiniteGroup Y)
     (h : ∀ r ∈ rels, mk rels' (e r) = 1) (h' : ∀ r ∈ rels', mk rels (e.symm r) = 1)
     (y : freeProfiniteGroup Y) : (congr e h h').symm (mk rels' y) = mk rels (e.symm y) :=
-  map_mk _ _ y
+  e.quotientCongr_symm_mk _ _ _ y
 
 end Map
 
@@ -355,17 +359,8 @@ noncomputable def congrOfClosureEq {rels₂ : Set (freeProfiniteGroup X)}
     (h : (Subgroup.normalClosure rels).topologicalClosure =
       (Subgroup.normalClosure rels₂).topologicalClosure) :
     presentedProfiniteGroup X rels ≃ₜ* presentedProfiniteGroup X rels₂ :=
-  congr (ContinuousMulEquiv.refl (freeProfiniteGroup X))
-    (fun r hr ↦ by
-      have hmem : r ∈ (Subgroup.normalClosure rels).topologicalClosure :=
-        Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hr)
-      rw [mk_eq_one_iff, ← h]
-      exact hmem)
-    (fun r hr ↦ by
-      have hmem : r ∈ (Subgroup.normalClosure rels₂).topologicalClosure :=
-        Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hr)
-      rw [mk_eq_one_iff, h]
-      exact hmem)
+  (ContinuousMulEquiv.refl (freeProfiniteGroup X)).quotientCongr _ _
+    (by rw [← h]; exact Subgroup.map_id _)
 
 /-- The isomorphism between presentations with the same closed normal closure fixes the class of
 every element of the free profinite group. -/
@@ -374,7 +369,7 @@ theorem congrOfClosureEq_mk {rels₂ : Set (freeProfiniteGroup X)}
     (h : (Subgroup.normalClosure rels).topologicalClosure =
       (Subgroup.normalClosure rels₂).topologicalClosure) (x : freeProfiniteGroup X) :
     congrOfClosureEq h (mk rels x) = mk rels₂ x :=
-  congr_mk _ _ _ x
+  (ContinuousMulEquiv.refl _).quotientCongr_mk _ _ _ x
 
 /-- The inverse of the isomorphism between presentations with the same closed normal closure also
 fixes the class of every element of the free profinite group. -/
@@ -383,7 +378,7 @@ theorem congrOfClosureEq_symm_mk {rels₂ : Set (freeProfiniteGroup X)}
     (h : (Subgroup.normalClosure rels).topologicalClosure =
       (Subgroup.normalClosure rels₂).topologicalClosure) (x : freeProfiniteGroup X) :
     (congrOfClosureEq h).symm (mk rels₂ x) = mk rels x :=
-  congr_symm_mk _ _ _ x
+  (ContinuousMulEquiv.refl _).quotientCongr_symm_mk _ _ _ x
 
 /-! ## The empty set of relators -/
 
@@ -704,32 +699,35 @@ theorem map_surjective {φ : freeProP p X →ₜ* freeProP p Y}
     Function.Surjective (map φ hφ) :=
   lift_surjective hφ ((mk_surjective p rels').comp hs)
 
+/-- The relator-wise hypotheses of `congr` say that `e` carries the closed normal closure of the
+relators onto that of the other relators. -/
+private theorem map_closure_eq_of_congr (e : freeProP p X ≃ₜ* freeProP p Y)
+    (h : ∀ r ∈ rels, mk p rels' (e r) = 1) (h' : ∀ r ∈ rels', mk p rels (e.symm r) = 1) :
+    (Subgroup.normalClosure rels).topologicalClosure.map e.toMulEquiv.toMonoidHom =
+      (Subgroup.normalClosure rels').topologicalClosure := by
+  refine le_antisymm ?_ fun y hy ↦ ⟨e.symm y, ?_, by simp⟩
+  · rintro _ ⟨x, hx, rfl⟩
+    have := mk_eq_one_of_mk_eq_one (e : freeProP p X →ₜ* freeProP p Y)
+      (by simpa using h) ((mk_eq_one_iff x).mpr hx)
+    simpa using this
+  · exact (mk_eq_one_iff _).mp <|
+      mk_eq_one_of_mk_eq_one (e.symm : freeProP p Y →ₜ* freeProP p X)
+        (by simpa using h') ((mk_eq_one_iff y).mpr hy)
+
 /-- A topological isomorphism of the free pro-`p` groups sending each set of relators into the
 closed normal closure of the other induces a topological isomorphism of the presented pro-`p`
 groups. -/
 noncomputable def congr (e : freeProP p X ≃ₜ* freeProP p Y)
     (h : ∀ r ∈ rels, mk p rels' (e r) = 1) (h' : ∀ r ∈ rels', mk p rels (e.symm r) = 1) :
-    presentedProP p X rels ≃ₜ* presentedProP p Y rels' where
-  toFun := map (e : freeProP p X →ₜ* freeProP p Y) fun r hr ↦ by
-    simpa using h r hr
-  invFun := map (e.symm : freeProP p Y →ₜ* freeProP p X) fun r hr ↦ by
-    simpa using h' r hr
-  left_inv y := by
-    obtain ⟨x, rfl⟩ := mk_surjective p rels y
-    simp
-  right_inv y := by
-    obtain ⟨x, rfl⟩ := mk_surjective p rels' y
-    simp
-  map_mul' := map_mul _
-  continuous_toFun := map_continuous _
-  continuous_invFun := map_continuous _
+    presentedProP p X rels ≃ₜ* presentedProP p Y rels' :=
+  e.quotientCongr _ _ (map_closure_eq_of_congr e h h')
 
 /-- The induced isomorphism computes on classes as the isomorphism of free pro-`p` groups. -/
 @[simp]
 theorem congr_mk (e : freeProP p X ≃ₜ* freeProP p Y) (h : ∀ r ∈ rels, mk p rels' (e r) = 1)
     (h' : ∀ r ∈ rels', mk p rels (e.symm r) = 1) (x : freeProP p X) :
     congr e h h' (mk p rels x) = mk p rels' (e x) :=
-  map_mk _ _ x
+  e.quotientCongr_mk _ _ _ x
 
 /-- The inverse of the induced isomorphism computes on classes as the inverse isomorphism of free
 pro-`p` groups. -/
@@ -737,7 +735,7 @@ pro-`p` groups. -/
 theorem congr_symm_mk (e : freeProP p X ≃ₜ* freeProP p Y) (h : ∀ r ∈ rels, mk p rels' (e r) = 1)
     (h' : ∀ r ∈ rels', mk p rels (e.symm r) = 1) (y : freeProP p Y) :
     (congr e h h').symm (mk p rels' y) = mk p rels (e.symm y) :=
-  map_mk _ _ y
+  e.quotientCongr_symm_mk _ _ _ y
 
 /-- A topological isomorphism of the free pro-`p` groups carrying the relator `r` to the relator
 `r'` induces a topological isomorphism of the one-relator presented pro-`p` groups
@@ -779,17 +777,8 @@ noncomputable def congrOfClosureEq {rels₂ : Set (freeProP p X)}
     (h : (Subgroup.normalClosure rels).topologicalClosure =
       (Subgroup.normalClosure rels₂).topologicalClosure) :
     presentedProP p X rels ≃ₜ* presentedProP p X rels₂ :=
-  congr (ContinuousMulEquiv.refl (freeProP p X))
-    (fun r hr ↦ by
-      have hmem : r ∈ (Subgroup.normalClosure rels).topologicalClosure :=
-        Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hr)
-      rw [mk_eq_one_iff, ← h]
-      exact hmem)
-    (fun r hr ↦ by
-      have hmem : r ∈ (Subgroup.normalClosure rels₂).topologicalClosure :=
-        Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hr)
-      rw [mk_eq_one_iff, h]
-      exact hmem)
+  (ContinuousMulEquiv.refl (freeProP p X)).quotientCongr _ _
+    (by rw [← h]; exact Subgroup.map_id _)
 
 /-- The isomorphism between presentations with the same closed normal closure fixes the class of
 every element of the free pro-`p` group. -/
@@ -798,7 +787,7 @@ theorem congrOfClosureEq_mk {rels₂ : Set (freeProP p X)}
     (h : (Subgroup.normalClosure rels).topologicalClosure =
       (Subgroup.normalClosure rels₂).topologicalClosure) (x : freeProP p X) :
     congrOfClosureEq h (mk p rels x) = mk p rels₂ x :=
-  congr_mk _ _ _ x
+  (ContinuousMulEquiv.refl _).quotientCongr_mk _ _ _ x
 
 /-- The inverse of the isomorphism between presentations with the same closed normal closure also
 fixes the class of every element of the free pro-`p` group. -/
@@ -807,7 +796,7 @@ theorem congrOfClosureEq_symm_mk {rels₂ : Set (freeProP p X)}
     (h : (Subgroup.normalClosure rels).topologicalClosure =
       (Subgroup.normalClosure rels₂).topologicalClosure) (x : freeProP p X) :
     (congrOfClosureEq h).symm (mk p rels₂ x) = mk p rels x :=
-  congr_symm_mk _ _ _ x
+  (ContinuousMulEquiv.refl _).quotientCongr_symm_mk _ _ _ x
 
 /-! ## The empty set of relators -/
 

@@ -10,6 +10,8 @@ public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Converse
+import TauCeti.Analysis.InnerProductSpace.Laplacian.StrongMaximumPrinciple
+import TauCeti.Analysis.PDE.PoissonIntegral.Ball
 import TauCeti.MeasureTheory.Integral.SubMeanValue
 
 /-!
@@ -30,6 +32,11 @@ function that dominates it on the boundary sphere of a ball. The proof reduces t
 principle for the sub-mean-value property on a compact superlevel set
 (`TauCeti.exists_mem_frontier_isMaxOn_of_le_setAverage_ball`).
 
+The comparison principle also holds between a subharmonic function `u` and a *superharmonic*
+function `w` (one with `-w` subharmonic): if `u ≤ w` on `frontier U`, both continuous on
+`closure U`, then `u ≤ w` on `closure U`. This is the form needed to compare members of the Perron
+family with upper barriers.
+
 ## Main declarations
 
 * `TauCeti.SubharmonicOn`: continuous functions with the local sub-mean-value inequality.
@@ -37,10 +44,14 @@ principle for the sub-mean-value property on a compact superlevel set
 * `TauCeti.SubharmonicOn.frequently_le_setAverage_of_le`: a continuous function touching a
   subharmonic function from above satisfies the sub-mean-value inequality at the contact point.
 * `TauCeti.SubharmonicOn.sup`: the pointwise maximum of two subharmonic functions is subharmonic.
+* `TauCeti.SubharmonicOn.const_smul`: a nonnegative multiple of a subharmonic function is
+  subharmonic.
 * `TauCeti.SubharmonicOn.sub_harmonicOnNhd`: subtracting a harmonic function preserves
   subharmonicity.
 * `TauCeti.SubharmonicOn.le_of_le_frontier`: the comparison principle on a bounded open set.
 * `TauCeti.SubharmonicOn.le_of_le_sphere`: the comparison principle on a ball.
+* `TauCeti.SubharmonicOn.le_of_le_frontier_of_subharmonicOn_neg`: the comparison principle
+  between a subharmonic and a superharmonic function on a bounded open set.
 
 ## References
 
@@ -104,6 +115,14 @@ theorem SubharmonicOn.sup (hu : SubharmonicOn u U) (hv : SubharmonicOn v U) (hU 
   rcases le_total (v x) (u x) with h | h
   · exact hu.frequently_le_setAverage_of_le hU huv (fun _ _ ↦ le_sup_left) hx (sup_eq_left.2 h)
   · exact hv.frequently_le_setAverage_of_le hU huv (fun _ _ ↦ le_sup_right) hx (sup_eq_right.2 h)
+
+/-- A nonnegative multiple of a subharmonic function is subharmonic. -/
+theorem SubharmonicOn.const_smul (hu : SubharmonicOn u U) {c : ℝ} (hc : 0 ≤ c) :
+    SubharmonicOn (c • u) U := by
+  refine ⟨hu.continuousOn.const_smul c, fun x hx ↦ (hu.frequently_le_setAverage x hx).mono
+    fun r hr ↦ ?_⟩
+  simp only [Pi.smul_apply, smul_eq_mul, average_const_mul]
+  exact mul_le_mul_of_nonneg_left hr hc
 
 /-- Subtracting a harmonic function from a subharmonic function on an open set gives a
 subharmonic function. -/
@@ -178,5 +197,89 @@ theorem SubharmonicOn.le_of_le_sphere {c : E} {r : ℝ} (hu : SubharmonicOn u (b
   rw [← closure_ball c hr.ne'] at huc hhc ⊢
   exact hu.le_of_le_frontier isOpen_ball isBounded_ball huc hh hhc
     (by rwa [frontier_ball c hr.ne'])
+
+/-- If `u` is subharmonic and `-w` is subharmonic on `ball c r`, both continuous on
+`closedBall c r`, and `u - w` on `sphere c r` is at most its value at the centre, then `u - w` is
+constant on `sphere c r`. The harmonic liftings of `u` and `-w` lie above them, and their sum is
+harmonic, agrees with `u - w` on the sphere and attains its maximum at the centre. -/
+private lemma SubharmonicOn.sub_eq_of_mem_sphere {c : E} {r : ℝ} (hr : 0 < r)
+    (hu : SubharmonicOn u (ball c r)) (huc : ContinuousOn u (closedBall c r))
+    (hw : SubharmonicOn (-w) (ball c r)) (hwc : ContinuousOn w (closedBall c r))
+    (hle : ∀ x ∈ sphere c r, u x - w x ≤ u c - w c) :
+    ∀ x ∈ sphere c r, u x - w x = u c - w c := by
+  obtain ⟨H₁, hH₁, hH₁c, hH₁u⟩ :=
+    exists_harmonicOnNhd_ball_continuousOn_closedBall_eqOn_sphere
+      (huc.mono sphere_subset_closedBall)
+  obtain ⟨H₂, hH₂, hH₂c, hH₂w⟩ :=
+    exists_harmonicOnNhd_ball_continuousOn_closedBall_eqOn_sphere
+      (hwc.neg.mono sphere_subset_closedBall)
+  have hc : c ∈ closedBall c r := mem_closedBall_self hr.le
+  have hH : ∀ x ∈ sphere c r, (H₁ + H₂) x = u x - w x := fun x hx ↦ by
+    rw [Pi.add_apply, hH₁u hx, hH₂w hx, Pi.neg_apply, sub_eq_add_neg]
+  -- The sum of the liftings is at most `u c - w c` on the closed ball, and at least at `c`.
+  have hHle : ∀ x ∈ closedBall c r, (H₁ + H₂) x ≤ u c - w c :=
+    (hH₁.add hH₂).subharmonicOn.le_of_le_sphere (hH₁c.add hH₂c) (harmonicOnNhd_const _)
+      continuousOn_const fun x hx ↦ (hH x hx).trans_le (hle x hx)
+  have hHc : u c - w c ≤ (H₁ + H₂) c := by
+    have h₁ := hu.le_of_le_sphere huc hH₁ hH₁c (fun x hx ↦ (hH₁u hx).ge) c hc
+    have h₂ := hw.le_of_le_sphere hwc.neg hH₂ hH₂c (fun x hx ↦ (hH₂w hx).ge) c hc
+    rw [Pi.neg_apply] at h₂
+    rw [Pi.add_apply]
+    linarith
+  -- By the strong maximum principle the sum is constant on the ball, hence on its closure.
+  have hconst := (eqOn_const_of_harmonicOnNhd_of_isMaxOn_of_isOpen isOpen_ball
+    (mem_ball_self hr) (convex_ball c r).isPreconnected (hH₁.add hH₂)
+    (isMaxOn_iff.2 fun x hx ↦ (hHle x (ball_subset_closedBall hx)).trans hHc)).of_subset_closure
+    (hH₁c.add hH₂c) continuousOn_const ball_subset_closedBall (closure_ball c hr.ne').ge
+  intro x hx
+  rw [← hH x hx, hconst (sphere_subset_closedBall hx), Function.const_apply]
+  exact le_antisymm (hHle c hc) hHc
+
+/-- **The comparison principle between a subharmonic and a superharmonic function.** Let `U` be
+a bounded open set, `u` subharmonic on `U` and `w` superharmonic on `U` (that is, `-w` is
+subharmonic), both continuous on `closure U`. If `u ≤ w` on `frontier U`, then `u ≤ w` on
+`closure U`. -/
+theorem SubharmonicOn.le_of_le_frontier_of_subharmonicOn_neg (hU : IsOpen U)
+    (hUb : Bornology.IsBounded U) (hu : SubharmonicOn u U) (huc : ContinuousOn u (closure U))
+    (hw : SubharmonicOn (-w) U) (hwc : ContinuousOn w (closure U))
+    (hle : ∀ x ∈ frontier U, u x ≤ w x) : ∀ x ∈ closure U, u x ≤ w x := by
+  -- The sub-mean-value inequalities of `u` and `-w` may hold along different radii, so they
+  -- cannot be added. Instead, near an interior maximum point of `u - w`, both functions are
+  -- compared with their harmonic liftings in small balls (`sub_eq_of_mem_sphere`), and the
+  -- strong maximum principle shows that the set of maximum points is open.
+  by_contra! ⟨x, hx, hlt⟩
+  have hfc : ContinuousOn (fun y ↦ u y - w y) (closure U) := huc.sub hwc
+  obtain ⟨z, hz, hzmax⟩ := hUb.isCompact_closure.exists_isMaxOn ⟨x, hx⟩ hfc
+  have hpos : 0 < u z - w z := (sub_pos.2 hlt).trans_le (hzmax hx)
+  -- The set `S` of maximum points of `u - w` on `closure U` lies in `U`, and is closed.
+  set S := closure U ∩ (fun y ↦ u y - w y) ⁻¹' {u z - w z}
+  have hSU : S ⊆ U := fun y ⟨hyc, hy⟩ ↦ by
+    by_contra hyU
+    have := hle y (hU.frontier_eq ▸ ⟨hyc, hyU⟩)
+    simp only [mem_preimage, mem_singleton_iff] at hy
+    linarith
+  have hSc : IsClosed S :=
+    hfc.preimage_isClosed_of_isClosed isClosed_closure isClosed_singleton
+  -- `S` is also open: around a point `y ∈ S`, `u - w` is constant on every small sphere.
+  have hSo : IsOpen S := by
+    refine isOpen_iff_mem_nhds.2 fun y hy ↦ ?_
+    obtain ⟨r, hr, hrU⟩ := Metric.mem_nhds_iff.1 (hU.mem_nhds (hSU hy))
+    refine mem_of_superset (ball_mem_nhds y hr) fun y' hy' ↦ ?_
+    rcases eq_or_ne y' y with rfl | hne
+    · exact hy
+    have hρ : 0 < dist y' y := dist_pos.2 hne
+    have hρU : closedBall y (dist y' y) ⊆ U :=
+      (closedBall_subset_ball (mem_ball.1 hy')).trans hrU
+    have hmax : ∀ x ∈ sphere y (dist y' y), u x - w x ≤ u y - w y := fun x hx ↦ by
+      have : u y - w y = u z - w z := hy.2
+      rw [this]
+      exact hzmax (subset_closure (hρU (sphere_subset_closedBall hx)))
+    have heq := sub_eq_of_mem_sphere hρ (hu.mono (ball_subset_closedBall.trans hρU))
+      (hu.continuousOn.mono hρU) (hw.mono (ball_subset_closedBall.trans hρU))
+      (hwc.mono (hρU.trans subset_closure)) hmax y' (mem_sphere.2 rfl)
+    exact ⟨subset_closure (hρU (mem_closedBall.2 le_rfl)), heq.trans hy.2⟩
+  -- A nonempty bounded clopen subset of `E` cannot exist.
+  have hS : S = univ := IsClopen.eq_univ ⟨hSc, hSo⟩ ⟨z, hz, rfl⟩
+  exact NormedSpace.unbounded_univ ℝ E (hS ▸ hUb.subset hSU)
 
 end TauCeti

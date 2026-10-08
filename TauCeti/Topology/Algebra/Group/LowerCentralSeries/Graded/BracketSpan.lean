@@ -140,7 +140,7 @@ theorem gradedBracketSpan_le_iff {k : ℕ} {W : Submodule (ZMod p) (gradedPiece 
 
 /-- **Elements of the bracket span are classes of commutators**: every element of `C_{k+1}(G)` is
 the class of an element of `λ_{k+1}(G)` lying in the commutator subgroup of `G`. -/
-theorem exists_mem_commutator_gradedMk_eq_of_mem_gradedBracketSpan [NeZero p] {k : ℕ}
+theorem exists_mem_commutator_gradedMk_eq_of_mem_gradedBracketSpan {k : ℕ}
     {y : gradedPiece p G (k + 1)} (hy : y ∈ gradedBracketSpan p G k) :
     ∃ z : pLowerCentralSeries p G (k + 1), (z : G) ∈ commutator G ∧ gradedMk p G (k + 1) z = y := by
   induction hy using gradedBracketSpan_induction with
@@ -158,8 +158,8 @@ theorem exists_mem_commutator_gradedMk_eq_of_mem_gradedBracketSpan [NeZero p] {k
     exact ⟨z * z', mul_mem hz hz', gradedMk_mul z z'⟩
   | smul c x _ hx =>
     obtain ⟨z, hz, rfl⟩ := hx
-    refine ⟨z ^ c.val, pow_mem hz _, ?_⟩
-    rw [gradedMk_pow, ← Nat.cast_smul_eq_nsmul (ZMod p), ZMod.natCast_zmod_val]
+    refine ⟨z ^ (c.cast : ℤ), zpow_mem hz _, ?_⟩
+    rw [gradedMk_zpow, ← Int.cast_smul_eq_zsmul (ZMod p), ZMod.intCast_zmod_cast]
 
 /-- **`π` carries the bracket span into the next bracket span**: `π C_{k+1}(G) ≤ C_{k+2}(G)`. Away
 from degree zero `π [x, y] = [π x, y]`, and in degree zero
@@ -268,14 +268,6 @@ theorem gradedBracketSpan_sup_span_range_gradedPowIter_eq_top {k : ℕ}
     obtain ⟨c, hc, t, ht, rfl⟩ := mem_sup.mp hv
     rw [gradedPow_add_of_one_le (Nat.le_add_left 1 k)]
     refine add_mem (mem_sup_left (gradedPow_mem_gradedBracketSpan hc)) (mem_sup_right ?_)
-    -- `π` carries the iterated `p`-powers `π^{k+1} z` to `π^{k+2} z`, linearly above degree zero.
-    have hmap : (span (ZMod p) (Set.range (gradedPowIter p G (k + 1)))).map
-        ((gradedPowAddMonoidHom p G (Nat.le_add_left 1 k)).toZModLinearMap p) ≤
-          span (ZMod p) (Set.range (gradedPowIter p G (k + 1 + 1))) := by
-      rw [map_span, span_le]
-      rintro _ ⟨_, ⟨z, rfl⟩, rfl⟩
-      exact subset_span ⟨z, by
-        rw [AddMonoidHom.coe_toZModLinearMap, gradedPowAddMonoidHom_apply, gradedPowIter_succ]⟩
-    exact hmap ⟨t, ht, by rw [AddMonoidHom.coe_toZModLinearMap, gradedPowAddMonoidHom_apply]⟩
+    exact gradedPow_mem_span_range_gradedPowIter_succ id (Nat.le_add_left 1 k) ht
 
 end TauCeti

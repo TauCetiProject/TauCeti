@@ -23,7 +23,7 @@ worked example of induction from a linear character opens with.
 The second is a character identity, for a linear character of `N` that extends to the ambient
 group -- that is, one of the form `χ ∘ N.subtype` for `χ : G →* kˣ`. The character of
 `Ind_N^G (Res_N χ)` is then `χ` times the permutation character `Ind_N^G 1`. This is the
-character-level form of the projection formula, `TauCeti.indClassFun_comp_subtype_mul` read on the
+character-level form of the projection formula, `Subgroup.indClassFun_comp_subtype_mul` read on the
 class function of `χ` against the constant function `1`; like that formula it holds over any field
 and for any subgroup of finite index, with no hypothesis on the characteristic.
 
@@ -60,12 +60,12 @@ theorem character_indFDRep_ofLinearCharacter_comp_subtype (χ : G →* kˣ) (g :
       (χ g : k) * (indFDRep (FDRep.of (Representation.trivial k N k))).character g := by
   have hχ : (fun x : G => (χ x : k)) ∈ ClassFunction k G :=
     χ.comp_mem_classFunction Units.val
-  have hproj := congrFun (indClassFun_comp_subtype_mul (S := N) hχ
+  have hproj := congrFun (Subgroup.indClassFun_comp_subtype_mul N hχ
     (FDRep.of (Representation.trivial k N k)).character) g
   have hchar : (FDRep.ofLinearCharacter (χ.comp N.subtype)).character
       = (fun s : N => (χ (s : G) : k)) * (FDRep.of (Representation.trivial k N k)).character :=
     funext fun s => by simp
-  rw [← indClassFun_ofFDRep_character, ← indClassFun_ofFDRep_character, hchar]
+  rw [← Subgroup.indClassFun_ofFDRep_character, ← Subgroup.indClassFun_ofFDRep_character, hchar]
   exact hproj
 
 end TauCeti

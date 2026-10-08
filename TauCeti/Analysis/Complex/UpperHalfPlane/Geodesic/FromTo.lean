@@ -30,6 +30,8 @@ line. Reading a point of `ℍ ⊕ OnePoint ℝ` other than `∞` as a complex nu
 is negative at points strictly to the left of a line
 (`sideForm_toComplex_neg_of_mem_extLeftHalfPlane`), and zero at the two points a line runs between
 (`IsGeodesicFromTo.sideForm_toComplex_left`, `IsGeodesicFromTo.sideForm_toComplex_right`).
+Geodesic lines with the same image have the same extended left half-plane, up to orientation
+reversal (`extLeftHalfPlane_eq_or_eq_mul_pslS_of_range_eq`).
 
 ## Main declarations
 
@@ -330,6 +332,25 @@ theorem IsGeodesicFromTo.extLeftHalfPlane_eq {g g' : PSL(2, ℝ)} {p q : ℍ ⊕
     extLeftHalfPlane g' = extLeftHalfPlane g := by
   rw [extLeftHalfPlane, extLeftHalfPlane, hg.leftHalfPlane_eq hg',
     hg.boundaryLeftHalfPlane_eq hg']
+
+/-- Geodesic lines with the same image have the same extended left half-plane, possibly after
+reversing the orientation of one of them. -/
+theorem extLeftHalfPlane_eq_or_eq_mul_pslS_of_range_eq {g k : PSL(2, ℝ)}
+    (h : Set.range (geodesicLine g) = Set.range (geodesicLine k)) :
+    extLeftHalfPlane k = extLeftHalfPlane g ∨
+      extLeftHalfPlane k = extLeftHalfPlane (g * pslS) := by
+  obtain ⟨s, hs⟩ := h ▸ (Set.mem_range_self 0 : geodesicLine g 0 ∈ Set.range (geodesicLine g))
+  obtain ⟨t, ht⟩ := h ▸ (Set.mem_range_self 1 : geodesicLine g 1 ∈ Set.range (geodesicLine g))
+  have hst : s ≠ t := by
+    intro heq
+    have he := geodesicLine_injective g (hs.symm.trans (heq ▸ ht))
+    exact zero_ne_one he
+  have hg : IsGeodesicFromTo g (.inl (geodesicLine g 0)) (.inl (geodesicLine g 1)) :=
+    ⟨0, 1, zero_lt_one, rfl, rfl⟩
+  rcases lt_or_gt_of_ne hst with hst | hts
+  · exact Or.inl (hg.extLeftHalfPlane_eq ⟨s, t, hst, hs, ht⟩)
+  · exact Or.inr ((isGeodesicFromTo_mul_pslS_iff.2 hg).extLeftHalfPlane_eq
+      ⟨t, s, hts, ht, hs⟩)
 
 /-- The points strictly to the left of `geodesicFromTo` transform naturally under the action. -/
 theorem extLeftHalfPlane_geodesicFromTo_smul (h : PSL(2, ℝ)) {p q : ℍ ⊕ OnePoint ℝ}

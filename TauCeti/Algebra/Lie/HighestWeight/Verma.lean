@@ -8,6 +8,10 @@ module
 public import TauCeti.Algebra.Lie.HighestWeight.Maximal
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Character
+-- Non-public: `U(n⁻)` is a domain containing `n⁻`, used only to prove that lowering the canonical
+-- generator never gives zero.
+import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Domain
+import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Embedding
 
 /-!
 # Verma modules
@@ -108,6 +112,8 @@ is a linear equivalence (`TauCeti.universalEnvelopingEquivVermaModule`). Through
   `TauCeti.universalEnvelopingEquivVermaModule_apply` and
   `TauCeti.universalEnvelopingEquivVermaModule_mul`: **`M(lam)` is a free `U(n⁻)`-module of rank
   one on `v_lam`**, the map `y ↦ y · v_lam` being a `U(n⁻)`-linear equivalence `U(n⁻) ≃ M(lam)`.
+* `TauCeti.pow_toEnd_vermaGenerator_ne_zero`: lowering `v_lam` by a nonzero element of `n⁻`, any
+  number of times, never gives zero.
 * `TauCeti.irreducibleQuotientMk_surjective` and
   `TauCeti.lieSpan_irreducibleQuotientGenerator_eq_top`: every vector of `L(lam)` is the class of
   one of `M(lam)`, and the canonical generator generates `L(lam)`.
@@ -484,6 +490,27 @@ theorem universalEnvelopingEquivVermaModule_mul
       UniversalEnvelopingAlgebra.map K (negativeNilradical H b).incl y •
         universalEnvelopingEquivVermaModule b lam z := by
   simp [mul_smul]
+
+/-- **Lowering the canonical generator never gives zero**: for a nonzero `f` in the negative
+nilradical, `f^k · v_lam ≠ 0` in `M(lam)` for every `k`. Through the freeness `U(n⁻) ≃ M(lam)` the
+vector is the image of `(ι f)^k`, which is nonzero because `U(n⁻)` is a domain containing `n⁻`, by
+Poincaré--Birkhoff--Witt. -/
+theorem pow_toEnd_vermaGenerator_ne_zero {f : L} (hf : f ∈ negativeNilradical H b) (hf0 : f ≠ 0)
+    (k : ℕ) : ((toEnd K L (VermaModule b lam) f) ^ k) (vermaGenerator b lam) ≠ 0 := by
+  have key : ((toEnd K L (VermaModule b lam) f) ^ k) (vermaGenerator b lam) =
+      universalEnvelopingEquivVermaModule b lam
+        ((_root_.UniversalEnvelopingAlgebra.ι K (⟨f, hf⟩ : negativeNilradical H b)) ^ k) := by
+    rw [universalEnvelopingEquivVermaModule_apply, map_pow, UniversalEnvelopingAlgebra.map_ι]
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      rw [pow_succ', Module.End.mul_apply, ih, pow_succ', mul_smul, LieSubalgebra.coe_incl,
+        vermaModule_ι_smul, toEnd_apply_apply]
+  rw [key, LinearEquiv.map_ne_zero_iff]
+  refine pow_ne_zero _ fun h ↦ hf0 ?_
+  have := UniversalEnvelopingAlgebra.ι_injective K (negativeNilradical H b)
+    (h.trans (map_zero _).symm)
+  simpa using congrArg Subtype.val this
 
 /-- **The irreducible quotient `L(lam)`**: the quotient of the Verma module by the maximal
 submodule of `TauCeti/Algebra/Lie/HighestWeight/Maximal.lean`. As with

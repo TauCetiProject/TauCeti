@@ -129,8 +129,8 @@ restricted power-series algebra `A⟨X₁,…,Xₖ⟩` over it is noetherian. Fo
 that the separated completion of `A` be noetherian.
 
 This is the hypothesis of Wedhorn's Theorem 8.28, the strongly noetherian form of Tate
-acyclicity; Wedhorn states it for Tate rings, and every complete rank-one nonarchimedean
-field satisfies it (BGR 5.2.6 — not yet formalised). -/
+acyclicity; Wedhorn states it for Tate rings, and every complete nonarchimedean normed field
+satisfies it (BGR 5.2.6; `TauCeti.Huber.IsStronglyNoetherian.of_normedField`). -/
 @[mk_iff]
 class IsStronglyNoetherian : Prop where
   isNoetherianRing (k : ℕ) : IsNoetherianRing (restrictedMvPowerSeriesCompletion k A)

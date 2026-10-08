@@ -81,7 +81,7 @@ private theorem length_sort_parts_le (ν : n.Partition) (hν : ν.parts.card ≤
 
 /-- The power-sum product of the partition indexing the class of `π` is the power-sum product over
 the cycle type of `π`: both take one power sum per cycle. -/
-private theorem psumPart_eq_psumPart_partition {ρ : n.Partition} {π : Perm (Fin n)}
+theorem psumPart_eq_psumPart_partition {ρ : n.Partition} {π : Perm (Fin n)}
     (hπ : ConjClasses.mk π = partitionEquivConjClasses n ρ) :
     psumPart σ R ρ = psumPart σ R π.partition := by
   rw [psumPart, psumPart, ← (partitionEquivConjClasses n).symm_apply_apply ρ, ← hπ,

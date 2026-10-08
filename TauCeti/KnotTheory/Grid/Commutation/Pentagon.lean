@@ -58,8 +58,8 @@ other intersection point as its turn row.
 
 The pentagons here lie to the left of `β ∪ γ`. The commutation map `Φ` also counts the pentagons
 lying to its right, whose initial side turns at the same point; those, and `Φ` itself
-(`GridDiagram.commutationMap`), are in `Commutation/InitialPentagon.lean`. The map defined here
-is only one part of `Φ` and is not a chain map on its own.
+(`GridDiagram.commutationMap`), are in `Commutation/InitialPentagon/Basic.lean`. The map defined
+here is only one part of `Φ` and is not a chain map on its own.
 
 This file sets up the pentagons and the map. That `Φ` is a chain map, and that together with the
 reverse map it is a chain homotopy equivalence via the hexagon-counting homotopies, is not proved
@@ -334,6 +334,25 @@ theorem mem_coveredSquares (P : GridPentagonBetween a s x y) (p : Fin n × Fin n
   simp only [coveredSquares, Finset.mem_union, Finset.mem_product, Finset.mem_erase,
     Finset.mem_singleton, and_assoc]
 
+/-- Every square covered by a pentagon lies in the row arc of its underlying rectangle. -/
+theorem mem_cIco_of_mem_coveredSquares (P : GridPentagonBetween a s x y)
+    {p : Fin n × Fin n} (hp : p ∈ P.coveredSquares) :
+    p.2 ∈ Grid.cIco P.bottom P.top := by
+  have hsplit := Grid.ite_mem_cIco_eq_add_add P.turn_mem_cIco_bottom_top p.2
+  rcases (P.mem_coveredSquares p).1 hp with h | h | h
+  · exact h.2.2
+  · split_ifs at hsplit <;> grind
+  · split_ifs at hsplit <;> grind
+
+/-- A pentagon covers no square in a set supported on the complementary row arc. -/
+theorem disjoint_coveredSquares_of_forall_mem_cIco (P : GridPentagonBetween a s x y)
+    {S : Finset (Fin n × Fin n)}
+    (hS : ∀ p ∈ S, p.2 ∈ Grid.cIco P.top P.bottom) :
+    Disjoint P.coveredSquares S := by
+  refine Finset.disjoint_left.2 fun p hp h => ?_
+  exact Finset.disjoint_left.mp (Grid.disjoint_cIco_swap P.bottom P.top)
+    (P.mem_cIco_of_mem_coveredSquares hp) (hS p h)
+
 /-- A pentagon spanning one cyclic row has its turn in that row and covers only the
 columns of its underlying rectangle other than the first commuted column. -/
 theorem coveredSquares_eq_product_singleton_of_top_eq_finRotate_bottom
@@ -477,9 +496,7 @@ the squares it covers. -/
 theorem card_pentagonOColumns {x y : GridState n} (C : ColumnCommutationData G)
     (P : GridPentagonBetween C.column C.turnRow x y) :
     (G.pentagonOColumns C P).card = (G.OSet ∩ P.coveredSquares).card := by
-  rw [OSet_inter_eq_image_OColumnsOfSquares, Finset.card_image_of_injective _
-    fun a b hab => congrArg Prod.fst hab]
-  rfl
+  exact G.card_OColumnsOfSquares P.coveredSquares
 
 variable (R : Type*) [CommSemiring R]
 
@@ -501,12 +518,9 @@ theorem pentagonWeight_eq_prod_coveredSquares {x y : GridState n}
       ∏ p ∈ P.coveredSquares,
         if p ∈ G.OSet then MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) p.1)
         else (1 : MvPolynomial (Fin n) R) := by
-  classical
-  rw [pentagonWeight, Finset.prod_ite_mem, Finset.inter_comm,
-    G.OSet_inter_eq_image_OColumnsOfSquares P.coveredSquares]
-  simp only [pentagonOColumns]
-  rw [
-    Finset.prod_image fun _ _ _ _ hab => congrArg Prod.fst hab]
+  rw [pentagonWeight, pentagonOColumns, G.prod_ite_OSet_eq_prod_OColumnsOfSquares
+    (fun c => (MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) c) :
+      MvPolynomial (Fin n) R))]
 
 /-- The weight of a pentagon is the product of the variables of the columns of the commuted
 diagram whose `O`-marking the pentagon carries. -/
@@ -522,6 +536,17 @@ theorem pentagonWeight_eq_prod_swapColumns {x y : GridState n}
     (Equiv.swap C.column (finRotate n C.column))
     (by simp [swapColumns_O, GridState.swapColumns_apply])
     (by simp [swapColumns_O, GridState.swapColumns_apply]) (by simp) (by simp) (by simp)
+
+/-- The pentagon weight is the squarefree monomial of its covered `O`-columns, with variables
+renamed by the column swap. -/
+theorem pentagonWeight_eq_monomial {x y : GridState n}
+    (C : ColumnCommutationData G) (P : GridPentagonBetween C.column C.turnRow x y) :
+    G.pentagonWeight R C P =
+      MvPolynomial.monomial (∑ c ∈ G.pentagonOColumns C P,
+        Finsupp.single (Equiv.swap C.column (finRotate n C.column) c) 1) 1 := by
+  classical
+  rw [pentagonWeight, MvPolynomial.monomial_sum_one]
+  simp only [← MvPolynomial.X_pow_eq_monomial, pow_one]
 
 /-! ### The pentagon map -/
 

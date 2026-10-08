@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Smooth.LieAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
+public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
 
 /-!
 # Lie-stable subspaces in characteristic zero
@@ -28,7 +29,8 @@ in it. A nontrivial finite constant group has zero Lie algebra, so every subspac
 representation is `Lie`-stable.
 
 This is the bridge that lets complete reducibility of `Lie(G)`-representations be transported to
-representations of `G` in characteristic zero.
+representations of `G` in characteristic zero: a representation of `G` is completely reducible
+exactly when every `Lie(G)`-stable subspace has a `Lie(G)`-stable complement.
 
 ## Main declarations
 
@@ -36,6 +38,9 @@ representations of `G` in characteristic zero.
   a vector of a `Lie(G)`-stable subspace `W` lies in `W ⊗ H`.
 * `Submodule.exists_subcomodule_iff_forall_differential_mem`: in characteristic zero, a subspace
   is a subcomodule exactly when it is `Lie(G)`-stable.
+* `TauCeti.Comodule.isCompletelyReducible_iff_forall_differential_mem`: in characteristic zero,
+  a representation is completely reducible exactly when its `Lie(G)`-stable subspaces have
+  `Lie(G)`-stable complements.
 
 ## References
 
@@ -88,3 +93,33 @@ theorem exists_subcomodule_iff_forall_differential_mem (W : Submodule k M) :
     exact ⟨⟨W, fun _ hw ↦ coact_mem_range_of_forall_differential_mem W hW hw⟩, rfl⟩
 
 end Submodule
+
+namespace TauCeti.Comodule
+
+variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
+variable {H : FiniteTypeCommHopfAlgCat.{u, u} k} [ConnectedSpace (PrimeSpectrum H)]
+variable {M : Type w} [AddCommGroup M] [Module k M] [Comodule k H M]
+
+/-- In characteristic zero, a representation of a connected group over an algebraically closed
+field is completely reducible exactly when every subspace stable under the differentiated action
+of the Lie algebra has a complement that is again stable under it. -/
+theorem isCompletelyReducible_iff_forall_differential_mem :
+    IsCompletelyReducible k H M ↔
+      ∀ W : Submodule k M,
+        (∀ d : Derivation k H (Bialgebra.CounitAlgebra k H k), ∀ w ∈ W,
+          differential (R := k) (H := H) (M := M) d w ∈ W) →
+        ∃ W' : Submodule k M,
+          (∀ d : Derivation k H (Bialgebra.CounitAlgebra k H k), ∀ w ∈ W',
+            differential (R := k) (H := H) (M := M) d w ∈ W') ∧ IsCompl W W' := by
+  constructor
+  · intro h W hW
+    obtain ⟨N, rfl⟩ := (Submodule.exists_subcomodule_iff_forall_differential_mem W).2 hW
+    obtain ⟨Q, hQ⟩ := h.exists_isCompl N
+    exact ⟨Q.toSubmodule, fun d _ hw ↦ Q.differential_mem d hw, hQ⟩
+  · intro h
+    refine IsCompletelyReducible.of_exists_isCompl fun N ↦ ?_
+    obtain ⟨W', hW', hNW'⟩ := h N.toSubmodule fun d _ hw ↦ N.differential_mem d hw
+    obtain ⟨Q, rfl⟩ := (Submodule.exists_subcomodule_iff_forall_differential_mem W').2 hW'
+    exact ⟨Q, hNW'⟩
+
+end TauCeti.Comodule

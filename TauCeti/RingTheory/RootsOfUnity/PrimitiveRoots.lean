@@ -25,6 +25,9 @@ Over a normal extension of `ℚ`, every coprime power of a primitive root is att
 automorphism. Indeed the two primitive roots have the same cyclotomic minimal polynomial, and
 normality extends that conjugacy to the ambient field.
 
+Multiplying one `n`-th root of a nonzero `a` by the powers of a primitive `n`-th root of unity gives
+`n` distinct `n`-th roots of `a`, and these are all of them.
+
 ## Main results
 
 * `IsPrimitiveRoot.map_eq_pow`: a ring endomorphism sending a primitive `n`-th root of
@@ -33,6 +36,8 @@ normality extends that conjugacy to the ambient field.
   when it fixes the chosen primitive root.
 * `IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime`: every coprime power of a primitive
   root in a normal extension of `ℚ` is realized by an automorphism.
+* `IsPrimitiveRoot.card_nthRootsFinset_of_pow_eq`: in the presence of a primitive `n`-th root of
+  unity, a nonzero element with one `n`-th root has exactly `n` of them.
 
 ## References
 
@@ -71,6 +76,16 @@ theorem _root_.IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime
       (hζ.minpoly_eq_cyclotomic_of_irreducible
         (Polynomial.cyclotomic.irreducible_rat (NeZero.pos n))).symm]
   exact hconj.exists_algEquiv
+
+open Polynomial in
+/-- If `R` has a primitive `n`-th root of unity, then a nonzero `a` with one `n`-th root `α` has
+exactly `n` distinct `n`-th roots, namely `α` times the `n`-th roots of unity. This generalizes
+Mathlib's `IsPrimitiveRoot.card_nthRootsFinset` from `a = 1`. -/
+theorem _root_.IsPrimitiveRoot.card_nthRootsFinset_of_pow_eq {n : ℕ} {ζ α a : R}
+    (hζ : IsPrimitiveRoot ζ n) (hα : α ^ n = a) (ha : a ≠ 0) : (nthRootsFinset n a).card = n := by
+  classical
+  rw [nthRootsFinset_def, Multiset.toFinset_card_of_nodup (hζ.nthRoots_nodup ha),
+    hζ.card_nthRoots, ite_eq_left ⟨α, hα⟩]
 
 end TauCeti
 

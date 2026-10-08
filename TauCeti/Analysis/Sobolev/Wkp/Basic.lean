@@ -76,8 +76,7 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory Set TopologicalSpace
-open scoped Distributions ENNReal InnerProductSpace
+open MeasureTheory TopologicalSpace
 
 universe u
 
@@ -87,7 +86,7 @@ variable {E : Type u} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSp
 
 /-- The bundled data used to iterate weak-derivative graph spaces.  Its `j`th stage carries the
 space of order `j + 1` and its highest derivative projection. -/
-structure SobolevStage (mu : Measure E) [mu.IsAddHaarMeasure] (Omega : Opens E)
+structure SobolevStage (mu : Measure E) (Omega : Opens E)
     (p : ENNReal) [Fact (1 <= p)] (j : ℕ) where
   /-- The Sobolev space of order `j + 1`. -/
   Space : Type u
@@ -102,33 +101,32 @@ structure SobolevStage (mu : Measure E) [mu.IsAddHaarMeasure] (Omega : Opens E)
 
 /-- The first stage of the arbitrary-order construction is `W1p`, whose highest-derivative
 projection is the weak gradient. -/
-@[reducible, expose] noncomputable def firstSobolevStage : SobolevStage mu Omega p 0 where
+@[reducible, expose] def firstSobolevStage : SobolevStage mu Omega p 0 where
   Space := W1p mu Omega p
   iteratedGradientL := W1p.gradientL
 
 /-- Adjoin the weak derivative of a stage's highest derivative field. -/
-@[reducible, expose] noncomputable def SobolevStage.next (S : SobolevStage mu Omega p j) :
-    SobolevStage mu Omega p (j + 1) := by
+@[reducible, expose] def SobolevStage.next {j : ℕ} (S : SobolevStage mu Omega p j) :
+    SobolevStage mu Omega p (j + 1) :=
   letI : NormedAddCommGroup S.Space := S.normedAddCommGroup
   letI : NormedSpace ℝ S.Space := S.normedSpace
   letI : CompleteSpace S.Space := S.completeSpace
-  exact
-    { Space := WeakDerivStep mu Omega p S.iteratedGradientL
-      iteratedGradientL := WeakDerivStep.weakFDerivL S.iteratedGradientL }
+  { Space := WeakDerivStep mu Omega p S.iteratedGradientL
+    iteratedGradientL := WeakDerivStep.weakFDerivL S.iteratedGradientL }
 
 /-- The `j`th iterated weak-derivative stage, representing Sobolev order `j + 1`. -/
-@[expose] noncomputable def sobolevStage : (j : ℕ) → SobolevStage mu Omega p j
+@[expose] def sobolevStage : (j : ℕ) → SobolevStage mu Omega p j
   | 0 => firstSobolevStage
   | j + 1 => (sobolevStage j).next
 
-@[instance_reducible, expose] noncomputable def SobolevStage.instNormedAddCommGroup
+@[instance_reducible, expose] def SobolevStage.instNormedAddCommGroup
     (j : ℕ) : NormedAddCommGroup
       (sobolevStage (mu := mu) (Omega := Omega) (p := p) j).Space :=
   (sobolevStage (mu := mu) (Omega := Omega) (p := p) j).normedAddCommGroup
 
 attribute [instance] SobolevStage.instNormedAddCommGroup
 
-@[instance_reducible, expose] noncomputable def SobolevStage.instNormedSpace
+@[instance_reducible, expose] def SobolevStage.instNormedSpace
     (j : ℕ) : NormedSpace ℝ
       (sobolevStage (mu := mu) (Omega := Omega) (p := p) j).Space :=
   (sobolevStage (mu := mu) (Omega := Omega) (p := p) j).normedSpace
@@ -144,19 +142,19 @@ attribute [instance] SobolevStage.instCompleteSpace
 /-- The arbitrary-order, real-valued weak Sobolev space `W^{k,p}(Ω)`.  At order zero this is
 `Lᵖ(Ω)`; order one is `W1p`; every further order adjoins the weak derivative of the highest
 derivative field from the preceding order. -/
-@[reducible, expose] noncomputable def Wkp (mu : Measure E) [mu.IsAddHaarMeasure] (Omega : Opens E)
+@[reducible, expose] def Wkp (mu : Measure E) [mu.IsAddHaarMeasure] (Omega : Opens E)
     (p : ENNReal) [Fact (1 <= p)] : ℕ → Type u
   | 0 => Lp ℝ p (mu.restrict Omega)
   | k + 1 => (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).Space
 
-@[instance_reducible, expose] noncomputable def Wkp.instNormedAddCommGroup :
+@[instance_reducible, expose] def Wkp.instNormedAddCommGroup :
     (k : ℕ) → NormedAddCommGroup (Wkp mu Omega p k)
   | 0 => inferInstance
   | k + 1 => (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).normedAddCommGroup
 
 attribute [instance] Wkp.instNormedAddCommGroup
 
-@[instance_reducible, expose] noncomputable def Wkp.instNormedSpace :
+@[instance_reducible, expose] def Wkp.instNormedSpace :
     (k : ℕ) → NormedSpace ℝ (Wkp mu Omega p k)
   | 0 => inferInstance
   | k + 1 => (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).normedSpace
@@ -210,8 +208,8 @@ theorem firstOrderL_apply (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
 
 /-- Forgetting one derivative before taking the first-order part has no effect. -/
 theorem firstOrder_succ (k : ℕ) (u : Wkp mu Omega p (k + 2)) :
-    firstOrder (k + 1) u = firstOrder k (lowerOrder (k + 1) u) := by
-  simp only [firstOrder, firstOrderL, lowerOrder, ContinuousLinearMap.comp_apply]
+    firstOrder (k + 1) u = firstOrder k (lowerOrder (k + 1) u) :=
+  (rfl)
 
 /-- The continuous projection to the highest weak derivative of a positive-order Sobolev
 function.  For `W^{k+1,p}` its target is `Lᵖ(Ω; IteratedGradient E k)`. -/
@@ -246,33 +244,32 @@ theorem valueL_apply (k : ℕ) (u : Wkp mu Omega p k) : valueL k u = value k u :
 /-- The value component preserves addition. -/
 @[simp]
 theorem value_add (k : ℕ) (u v : Wkp mu Omega p k) :
-    value k (u + v) = value k u + value k v := by
-  simpa only [← valueL_apply] using (valueL k).map_add u v
+    value k (u + v) = value k u + value k v :=
+  map_add (valueL k) u v
 
 /-- The value component preserves scalar multiplication. -/
 @[simp]
 theorem value_smul (k : ℕ) (c : ℝ) (u : Wkp mu Omega p k) :
-    value k (c • u) = c • value k u := by
-  simpa only [← valueL_apply] using (valueL k).map_smul c u
+    value k (c • u) = c • value k u :=
+  map_smul (valueL k) c u
 
 /-- At order zero, the value component of a Sobolev function is the function itself. -/
 @[simp]
 theorem value_zero (u : Wkp mu Omega p 0) : value 0 u = u :=
-  by simp only [value, valueL, ContinuousLinearMap.id_apply]
+  (rfl)
 
 /-- Taking the value component commutes with forgetting the highest derivative. -/
 theorem value_succ (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
     value (k + 1) u = value k (lowerOrder k u) :=
-  by simp only [value, valueL, lowerOrder, ContinuousLinearMap.comp_apply]
+  (rfl)
 
 /-- At first order, the generic lower-order projection is the `W1p` value projection. -/
 @[simp]
 theorem lowerOrder_zero (u : Wkp mu Omega p 1) : lowerOrder 0 u = W1p.value u :=
-  by
-    -- `lowerOrderL 0` is `W1p.valueL`, and `exact` unfolds `Wkp … 1` to `W1p` (`sobolevStage 0`
-    -- is `firstSobolevStage`).  `W1p.value` is sealed, so the identification goes through its
-    -- application theorem.
-    exact W1p.valueL_apply u
+  -- `lowerOrderL 0` is `W1p.valueL`, and `Wkp … 1` unfolds to `W1p` (`sobolevStage 0` is
+  -- `firstSobolevStage`).  `W1p.value` is sealed, so the identification goes through its
+  -- application theorem.
+  W1p.valueL_apply u
 
 /-- At first order, the generic value projection is the `W1p` value projection. -/
 @[simp]
@@ -283,23 +280,17 @@ theorem value_one (u : Wkp mu Omega p 1) : value 1 u = W1p.value u := by
 @[simp]
 theorem iteratedGradient_zero (u : Wkp mu Omega p 1) :
     iteratedGradient 0 u = W1p.gradient u :=
-  by
-    -- `iteratedGradientL 0` is `W1p.gradientL`, and `exact` unfolds `Wkp … 1` to `W1p`
-    -- (`sobolevStage 0` is `firstSobolevStage`).  `W1p.gradient` is sealed, so the
-    -- identification goes through its application theorem.
-    exact W1p.gradientL_apply u
+  -- `iteratedGradientL 0` is `W1p.gradientL`, and `Wkp … 1` unfolds to `W1p` (`sobolevStage 0`
+  -- is `firstSobolevStage`).  `W1p.gradient` is sealed, so the identification goes through its
+  -- application theorem.
+  W1p.gradientL_apply u
 
 /-- Forgetting higher derivatives preserves the `Lᵖ` value. -/
 @[simp] theorem value_firstOrder (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
     W1p.value (firstOrder k u) = value (k + 1) u := by
   induction k with
   | zero => exact (value_one u).symm
-  | succ k ih =>
-      calc
-        W1p.value (firstOrder (k + 1) u) =
-            value (k + 1) (lowerOrder (k + 1) u) := by
-              rw [firstOrder_succ, ih]
-        _ = value (k + 1 + 1) u := (value_succ (k + 1) u).symm
+  | succ k ih => rw [firstOrder_succ, ih, value_succ (k + 1) u]
 
 /-- The highest derivative projection is the one stored in the corresponding recursive stage. -/
 theorem iteratedGradient_eq_sobolevStage_iteratedGradientL
@@ -312,16 +303,16 @@ theorem iteratedGradient_eq_sobolevStage_iteratedGradientL
 generic weak-derivative graph step. -/
 theorem lowerOrder_succ (k : ℕ) (u : Wkp mu Omega p (k + 2)) :
     lowerOrder (k + 1) u = WeakDerivStep.prev
-      (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u := by
-  exact WeakDerivStep.prevL_apply
+      (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u :=
+  WeakDerivStep.prevL_apply
     (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
 
 /-- Above first order, the highest derivative is the derivative component of the generic
 weak-derivative graph step. -/
 theorem iteratedGradient_succ (k : ℕ) (u : Wkp mu Omega p (k + 2)) :
     iteratedGradient (k + 1) u = WeakDerivStep.weakFDeriv
-      (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u := by
-  exact WeakDerivStep.weakFDerivL_apply
+      (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u :=
+  WeakDerivStep.weakFDerivL_apply
     (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
 
 /-- The first weak derivative identity, with the gradient identified with a linear functional
@@ -336,8 +327,8 @@ theorem hasWeakFDerivOn_value (u : Wkp mu Omega p 1) :
 derivative of its highest derivative. -/
 def mk (k : ℕ) (u : Wkp mu Omega p (k + 1))
     (D : Lp (IteratedGradient E (k + 1)) p (mu.restrict Omega))
-    (h : HasWeakFDerivOn mu Omega (iteratedGradient k u) D) : Wkp mu Omega p (k + 2) := by
-  exact WeakDerivStep.mk
+    (h : HasWeakFDerivOn mu Omega (iteratedGradient k u) D) : Wkp mu Omega p (k + 2) :=
+  WeakDerivStep.mk
     (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u D h
 
 /-- Forgetting the adjoined derivative of `mk k u D h` recovers `u`. -/
@@ -393,9 +384,7 @@ Successive uniqueness of weak derivatives determines every higher component. -/
 @[ext]
 theorem ext : ∀ (k : ℕ) {u v : Wkp mu Omega p k}, value k u = value k v → u = v
   | 0, _, _, h => by simpa only [value_zero] using h
-  | 1, _, _, h => W1p.ext_value (by simpa only [value_one] using h)
-  | k + 2, _, _, h => ext_lowerOrder (k + 1) (ext (k + 1) (by
-      simpa only [value_succ] using h))
+  | k + 1, _, _, h => ext_lowerOrder k (ext k (by simpa only [value_succ] using h))
 
 /-- The graph norm controls the one-order-lower Sobolev component. -/
 theorem norm_lowerOrder_le (k : ℕ) (u : Wkp mu Omega p (k + 1)) :

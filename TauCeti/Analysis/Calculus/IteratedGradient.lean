@@ -52,7 +52,7 @@ open scoped ContDiff
 universe u
 
 /-- The normed-space data underlying an iterated gradient. -/
-structure IteratedGradientModel (E : Type u) [NormedAddCommGroup E] [NormedSpace ℝ E] where
+structure IteratedGradientModel : Type (u + 1) where
   /-- The carrier space for the iterated gradient. -/
   Space : Type u
   /-- The normed additive commutative group structure on `Space`. -/
@@ -62,7 +62,7 @@ structure IteratedGradientModel (E : Type u) [NormedAddCommGroup E] [NormedSpace
 
 /-- The recursively bundled target of an iterated gradient. -/
 @[reducible, expose] noncomputable def iteratedGradientModel (E : Type u)
-    [NormedAddCommGroup E] [NormedSpace ℝ E] : ℕ → IteratedGradientModel E
+    [NormedAddCommGroup E] [NormedSpace ℝ E] : ℕ → IteratedGradientModel.{u}
   | 0 => { Space := E }
   | j + 1 =>
       let S := iteratedGradientModel E j
@@ -109,13 +109,13 @@ noncomputable def iteratedGradientChain (f : F → ℝ) :
 
 @[simp]
 theorem iteratedGradientChain_zero (f : F → ℝ) :
-    iteratedGradientChain f 0 = fun x => gradient f x :=
-  by rw [iteratedGradientChain]
+    iteratedGradientChain f 0 = gradient f :=
+  (rfl)
 
 @[simp]
 theorem iteratedGradientChain_succ (f : F → ℝ) (j : ℕ) :
     iteratedGradientChain f (j + 1) = fderiv ℝ (iteratedGradientChain f j) :=
-  by rw [iteratedGradientChain]
+  (rfl)
 
 /-- The `j`th iterated-gradient field is `C^m` at a point whenever the scalar function
 is `C^n` there with `m + j + 1 ≤ n`. -/
@@ -132,6 +132,19 @@ theorem contDiffAt_iteratedGradientChain {f : F → ℝ} {x : F} {m n : ℕ∞ω
       have hs := ih (m := m + 1) (by
         simpa only [Nat.cast_add, Nat.cast_one, add_assoc, add_comm, add_left_comm] using h)
       exact hs.fderiv_right le_rfl
+
+/-- Iterated gradients do not enlarge the topological support of a scalar function.
+No differentiability assumption is needed. -/
+theorem tsupport_iteratedGradientChain_subset (f : F → ℝ) (j : ℕ) :
+    tsupport (iteratedGradientChain f j) ⊆ tsupport f := by
+  induction j with
+  | zero =>
+      rw [iteratedGradientChain_zero]
+      exact (tsupport_comp_subset (map_zero (InnerProductSpace.toDual ℝ F).symm) _).trans
+        (tsupport_fderiv_subset ℝ)
+  | succ j ih =>
+      rw [iteratedGradientChain_succ]
+      exact (tsupport_fderiv_subset ℝ).trans ih
 
 /-- Every field in the iterated-gradient chain of a compactly supported function has compact
 support. -/

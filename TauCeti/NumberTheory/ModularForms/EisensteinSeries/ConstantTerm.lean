@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.Cusps.ConstantTerm
-public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Character
+public import TauCeti.NumberTheory.ModularForms.Cusps.LevelRaise
+public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Raising
 import Mathlib.Analysis.Normed.Group.Tannery
 import TauCeti.Analysis.Complex.UpperHalfPlane.ResToImagAxis
 import TauCeti.NumberTheory.ModularForms.QExpansion.BigO
@@ -38,6 +38,8 @@ decomposition `M_k(N, χ) = S_k(N, χ) ⊕ E_k(N, χ)`.
   `G_W` at every cusp.
 * `TauCeti.EisensteinSeries.constantTermAt_charEisensteinSeriesMF`: the constant term of
   `G_k^{ψ,φ}` at every cusp.
+* `TauCeti.EisensteinSeries.constantTermAt_charEisensteinSeriesMFRaise`: the constant term of
+  `G_k^{ψ,φ}(tz)` at every cusp, with the scaling factor `(gcd(c,t)/t)^k`.
 
 ## References
 
@@ -61,7 +63,7 @@ variable {N : ℕ} (W : (Fin 2 → ZMod N) → ℂ) {k : ℤ}
 
 /-- On the imaginary axis, a summand `(x₀ z + x₁)^(-k)` with `x₀ ≠ 0` tends to `0`, and a
 summand with `x₀ = 0` is the constant `x₁^(-k)`. -/
-private lemma tendsto_eisSummand_ofComplex_I_mul (hk : 0 < k) (x : Fin 2 → ℤ) :
+lemma tendsto_eisSummand_ofComplex_I_mul (hk : 0 < k) (x : Fin 2 → ℤ) :
     Tendsto (fun t : ℝ ↦ eisSummand k x (ofComplex (I * t))) atTop
       (𝓝 (if x 0 = 0 then (x 1 : ℂ) ^ (-k) else 0)) := by
   by_cases hx : x 0 = 0
@@ -212,5 +214,34 @@ theorem constantTermAt_charEisensteinSeriesMF (hk : 3 ≤ k) (huv : u * v ∣ N)
     (SL_slash _ γ).symm
   rw [constantTermAt_eq_valueAtInfty, coe_translate, coe_charEisensteinSeriesMF, h,
     valueAtInfty_weightedEisensteinSeries_slash _ hk, tsum_charWeight_mul_zpow ψ φ huv]
+
+/-- **The constant term of a raised character Eisenstein series at every cusp.** At the cusp
+`a/c`, put `g = gcd(c,t)`. The constant term of `G_k^{ψ,φ}(tz)` is `(g/t)^k` times
+`ψ(-c/(gv)) φ⁻¹(ta/g) ∑ₙ ψ(n) φ⁻¹(n) n^(-k)` when `v ∣ c/g`, and is zero otherwise.
+No primitivity or parity hypothesis is needed. The integer divisions are exact in the
+nonvanishing branch. -/
+theorem constantTermAt_charEisensteinSeriesMFRaise {t : ℕ} (hk : 3 ≤ k)
+    (htuv : t * (u * v) ∣ N) (γ : SL(2, ℤ)) :
+    constantTermAt γ (charEisensteinSeriesMFRaise ψ φ t hk htuv) =
+      ((Int.gcd (γ 1 0) t : ℂ) / t) ^ k *
+        (if (v : ℤ) ∣ γ 1 0 / Int.gcd (γ 1 0) t then
+          ψ ((-(γ 1 0 / Int.gcd (γ 1 0) t / v) : ℤ) : ZMod u) *
+            φ⁻¹ (((t : ℤ) * γ 0 0 / Int.gcd (γ 1 0) t : ℤ) : ZMod v) *
+            ∑' n : ℤ, ψ (n : ZMod u) * φ⁻¹ (n : ZMod v) * (n : ℂ) ^ (-k)
+        else 0) := by
+  let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
+  let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
+  obtain ⟨δ, ha, hc⟩ := γ.exists_scaled_cusp_reduction (t := t)
+  have hg : (Int.gcd (γ 1 0) t : ℤ) ≠ 0 := by
+    exact_mod_cast (Int.gcd_pos_of_ne_zero_right (γ 1 0)
+      (Nat.cast_ne_zero.mpr (NeZero.ne t))).ne'
+  have hδa : δ 0 0 = (t : ℤ) * γ 0 0 / Int.gcd (γ 1 0) t := by
+    rw [ha, Int.mul_ediv_cancel _ hg]
+  have hδc : δ 1 0 = γ 1 0 / Int.gcd (γ 1 0) t := by
+    exact ((congrArg (fun c : ℤ ↦ c / Int.gcd (γ 1 0) t) hc).trans
+      (Int.mul_ediv_cancel _ hg)).symm
+  rw [charEisensteinSeriesMFRaise_eq_levelRaise,
+    _root_.ModularForm.constantTermAt_levelRaise _ _ γ δ ha hc,
+    constantTermAt_charEisensteinSeriesMF ψ φ hk dvd_rfl, hδa, hδc]
 
 end TauCeti.EisensteinSeries

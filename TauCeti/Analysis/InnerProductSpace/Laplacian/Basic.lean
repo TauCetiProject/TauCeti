@@ -46,7 +46,8 @@ the second Fréchet derivative and the base second-derivative computation `lapla
 (`Δ ‖x‖² = 2 · dim E`), a reusable characteristic value of the Laplacian on the squared norm,
 its chain-rule generalization `ContDiff.laplacian_comp_norm_sq` to radial functions
 `x ↦ ρ (‖x‖²)`, the Leibniz rules `ContDiffAt.laplacian_fun_mul` and
-`ContDiffAt.laplacian_fun_smul` for products with a scalar function, and the locality
+`ContDiffAt.laplacian_fun_smul` for products with a scalar function, the companion rule
+`ContDiffAt.laplacian_norm_sq` for the squared norm of a vector-valued function, and the locality
 statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes identically.
 
 ## Main declarations
@@ -67,6 +68,8 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `ContDiffAt.laplacian_fun_mul`: the Leibniz rule `Δ (f g) = f Δg + 2 ⟪∇f, ∇g⟫ + g Δf`.
 * `ContDiffAt.laplacian_fun_smul`: its vector-valued form
   `Δ (f • g) = f • Δg + 2 Dg(∇f) + Δf • g`.
+* `ContDiffAt.laplacian_norm_sq`: the Laplacian of a squared norm,
+  `Δ ‖f‖² = 2 ∑ᵢ ‖Df (bᵢ)‖² + 2 ⟪f, Δf⟫` for an orthonormal basis `b`.
 * `TauCeti.tsupport_laplacian_subset`: `tsupport (Δ f) ⊆ tsupport f`.
 -/
 
@@ -341,6 +344,46 @@ theorem _root_.ContDiffAt.laplacian_fun_smul {f : E → ℝ} {g : E → F} {x : 
   rw [← Function.comp_apply (f := ℓ), ← h]
   simp only [Function.comp_apply, map_add, map_smul, smul_eq_mul, ContinuousLinearMap.comp_apply]
   ring
+
+open Topology in
+/-- **The Laplacian of a squared norm.** For a function `f` with values in a real inner product
+space, twice differentiable at `x`, and any orthonormal basis `b` of `E`,
+`Δ ‖f‖² = 2 ∑ᵢ ‖Df (bᵢ)‖² + 2 ⟪f, Δf⟫` at `x`. The first term does not depend on `b`: it is
+twice the squared Hilbert--Schmidt norm of `Df x`. -/
+theorem _root_.ContDiffAt.laplacian_norm_sq {G : Type*} [NormedAddCommGroup G]
+    [InnerProductSpace ℝ G] {f : E → G} {x : E} (hf : ContDiffAt ℝ 2 f x) {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) :
+    Δ (fun y ↦ ‖f y‖ ^ 2) x = 2 * ∑ i, ‖fderiv ℝ f x (b i)‖ ^ 2 + 2 * ⟪f x, Δ f x⟫_ℝ := by
+  have hfd : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ f y :=
+    (hf.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt (by simp)
+  have hf' : DifferentiableAt ℝ (fderiv ℝ f) x :=
+    (hf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  have hw : DifferentiableAt ℝ (fderiv ℝ fun y ↦ ‖f y‖ ^ 2) x :=
+    ((hf.norm_sq ℝ).fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  -- Each diagonal Hessian entry, by differentiating `D ‖f‖² · v = 2 ⟪f, Df v⟫` once more.
+  have hterm : ∀ v, iteratedFDeriv ℝ 2 (fun y ↦ ‖f y‖ ^ 2) x ![v, v] =
+      2 * ‖fderiv ℝ f x v‖ ^ 2 + 2 * ⟪f x, iteratedFDeriv ℝ 2 f x ![v, v]⟫_ℝ := by
+    intro v
+    have hd : (fun y ↦ fderiv ℝ (fun y ↦ ‖f y‖ ^ 2) y v) =ᶠ[𝓝 x]
+        fun y ↦ 2 * ⟪f y, fderiv ℝ f y v⟫_ℝ := by
+      filter_upwards [hfd] with y hy
+      rw [hy.hasFDerivAt.norm_sq.fderiv]
+      simp
+    have hv : DifferentiableAt ℝ (fun y ↦ fderiv ℝ f y v) x :=
+      hf'.clm_apply (differentiableAt_const v)
+    have hsnd : fderiv ℝ (fderiv ℝ fun y ↦ ‖f y‖ ^ 2) x v v =
+        fderiv ℝ (fun y ↦ fderiv ℝ (fun y ↦ ‖f y‖ ^ 2) y v) x v := by
+      rw [fderiv_clm_apply hw (differentiableAt_const v)]
+      simp
+    rw [iteratedFDeriv_two_apply, iteratedFDeriv_two_apply]
+    simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+    rw [hsnd, hd.fderiv_eq, fderiv_const_mul (hfd.self_of_nhds.inner ℝ hv), smul_apply,
+      fderiv_inner_apply ℝ hfd.self_of_nhds hv, fderiv_clm_apply hf' (differentiableAt_const v)]
+    simp
+    ring
+  rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis _ b) x,
+    congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis f b) x]
+  simp_rw [hterm, Finset.sum_add_distrib, ← Finset.mul_sum, inner_sum]
 
 open Topology in
 /-- The Laplacian vanishes wherever the function vanishes identically: `Δ` is local. -/

@@ -23,9 +23,7 @@ Bourbaki-numbered simple-root family `TauCeti.typeBSimpleRootGeneratorFamily`, i
 the binomial coefficients in the simple coroots. As in
 `TauCeti/LinearAlgebra/RootSystem/SimplyConnectedRootDatum/KostantForm.lean`, identifying that
 subring with the canonical all-root Kostant `ℤ`-form is a separate theorem and is not claimed
-here; it would first need root vectors for the roots `εᵢ + εⱼ`, which the library does not yet
-have, since `TauCeti.typeBLongRootGenerator` covers only `εᵢ - εⱼ` and
-`TauCeti.typeBShortRootGenerator` only `εᵢ`.
+here.
 
 The positive and negative simple-root vectors act through square-zero Clifford bivectors, so
 their divided powers preserve the lattice. The simple coroots act diagonally on the exterior
@@ -104,7 +102,7 @@ private theorem typeBQuadraticEquiv_typeBSimpleRootGenerator_mul_self
   · rw [typeBSimpleRootGenerator_last, pow_two]
     exact P.typeBQuadraticEquiv_typeBShortRootGenerator_mul_self b z hz (Fin.last n)
   · rw [typeBSimpleRootGenerator_castSucc, pow_two]
-    exact P.typeBQuadraticEquiv_typeBLongRootGenerator_mul_self b z hz
+    exact P.typeBQuadraticEquiv_typeBDifferenceRootGenerator_mul_self b z hz
       j.castSucc j.succ (ne_of_lt j.castSucc_lt_succ)
 
 private theorem typeBQuadraticEquiv_typeBSimpleNegativeRootGenerator_mul_self
@@ -115,7 +113,7 @@ private theorem typeBQuadraticEquiv_typeBSimpleNegativeRootGenerator_mul_self
   · rw [typeBSimpleNegativeRootGenerator_last, pow_two]
     exact P.typeBQuadraticEquiv_typeBShortNegativeRootGenerator_mul_self b z hz (Fin.last n)
   · rw [typeBSimpleNegativeRootGenerator_castSucc, pow_two]
-    exact P.typeBQuadraticEquiv_typeBLongRootGenerator_mul_self b z hz
+    exact P.typeBQuadraticEquiv_typeBDifferenceRootGenerator_mul_self b z hz
       j.succ j.castSucc (ne_of_gt j.castSucc_lt_succ)
 
 /-- Every represented positive or negative simple-root vector is square-zero. -/
@@ -131,16 +129,16 @@ theorem typeBSpinRep_simpleRootGenerator_sq (k : Fin (n + 1) ⊕ Fin (n + 1)) :
       rw [typeBSimpleRootGeneratorFamily_inr, ← pow_two,
         P.typeBQuadraticEquiv_typeBSimpleNegativeRootGenerator_mul_self b z hz i, map_zero]
 
-/-- The long-root operator indexed by distinct coordinates `i` and `j` contracts the `j`-th
+/-- The difference-root operator indexed by distinct coordinates `i` and `j` contracts the `j`-th
 exterior coordinate and then creates the `i`-th one. -/
-theorem typeBSpinRep_longRootGenerator_apply (i j : Fin (n + 1)) (hij : i ≠ j)
+theorem typeBSpinRep_differenceRootGenerator_apply (i j : Fin (n + 1)) (hij : i ≠ j)
     (x : ExteriorAlgebra K P.W) :
     P.typeBSpinRep b z hz
-        (_root_.UniversalEnvelopingAlgebra.ι K (typeBLongRootGenerator i j hij)) x =
+        (_root_.UniversalEnvelopingAlgebra.ι K (typeBDifferenceRootGenerator i j hij)) x =
       ExteriorAlgebra.ι K (b i) *
         CliffordAlgebra.contractLeft (b.coord j) x := by
   rw [_root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι b z hz,
-    P.typeBQuadraticEquiv_typeBLongRootGenerator b z hz,
+    P.typeBQuadraticEquiv_typeBDifferenceRootGenerator b z hz,
     bivector_eq_ι_mul_ι_of_isOrtho Q (P.isOrtho_basis_dualVector b hij), map_mul,
     Module.End.mul_apply, spinAction_ι_wedge, spinAction_ι_contract,
     P.pairingEquiv_dualVector]
@@ -154,7 +152,7 @@ theorem typeBSpinRep_simpleRootGenerator_castSucc_exteriorBasis_singleton (j : F
         (b.ExteriorAlgebra {j.succ}) =
       b.ExteriorAlgebra {j.castSucc} := by
   rw [typeBSimpleRootGeneratorFamily_inl, typeBSimpleRootGenerator_castSucc,
-    P.typeBSpinRep_longRootGenerator_apply b z hz,
+    P.typeBSpinRep_differenceRootGenerator_apply b z hz,
     TauCeti.ExteriorAlgebra.basis_singleton, CliffordAlgebra.contractLeft_ι]
   simp [TauCeti.ExteriorAlgebra.basis_singleton]
 
@@ -167,7 +165,7 @@ theorem typeBSpinRep_simpleNegativeRootGenerator_castSucc_exteriorBasis_singleto
         (b.ExteriorAlgebra {j.castSucc}) =
       b.ExteriorAlgebra {j.succ} := by
   rw [typeBSimpleRootGeneratorFamily_inr, typeBSimpleNegativeRootGenerator_castSucc,
-    P.typeBSpinRep_longRootGenerator_apply b z hz,
+    P.typeBSpinRep_differenceRootGenerator_apply b z hz,
     TauCeti.ExteriorAlgebra.basis_singleton, CliffordAlgebra.contractLeft_ι]
   simp [TauCeti.ExteriorAlgebra.basis_singleton]
 
@@ -269,7 +267,7 @@ theorem spinAction_typeBQuadraticEquiv_typeBSimpleCorootGenerator_basis
       P.spinAction_typeBQuadraticEquiv_typeBShortCorootGenerator_basis b z hz]
     by_cases hlast : Fin.last n ∈ s <;> simp [hlast]
   · rw [typeBSimpleCorootGenerator_castSucc,
-      P.spinAction_typeBQuadraticEquiv_typeBLongCorootGenerator_basis b z hz,
+      P.spinAction_typeBQuadraticEquiv_typeBDifferenceCorootGenerator_basis b z hz,
       spinWeight_sub_spinWeight]
     simp
 
@@ -306,7 +304,7 @@ private theorem typeBQuadraticEquiv_typeBSimpleRootGenerator_mem_integralSpinAct
     exact P.typeBQuadraticEquiv_typeBShortRootGenerator_mem_integralSpinActionSubring
       b z hz (Fin.last n)
   · rw [typeBSimpleRootGenerator_castSucc]
-    exact P.typeBQuadraticEquiv_typeBLongRootGenerator_mem_integralSpinActionSubring
+    exact P.typeBQuadraticEquiv_typeBDifferenceRootGenerator_mem_integralSpinActionSubring
       b z hz j.castSucc j.succ (ne_of_lt j.castSucc_lt_succ)
 
 private theorem
@@ -320,7 +318,7 @@ private theorem
     exact P.typeBQuadraticEquiv_typeBShortNegativeRootGenerator_mem_integralSpinActionSubring
       b z hz (Fin.last n)
   · rw [typeBSimpleNegativeRootGenerator_castSucc]
-    exact P.typeBQuadraticEquiv_typeBLongRootGenerator_mem_integralSpinActionSubring
+    exact P.typeBQuadraticEquiv_typeBDifferenceRootGenerator_mem_integralSpinActionSubring
       b z hz j.succ j.castSucc (ne_of_gt j.castSucc_lt_succ)
 
 /-- Every represented positive or negative simple-root vector preserves the coordinate spinor

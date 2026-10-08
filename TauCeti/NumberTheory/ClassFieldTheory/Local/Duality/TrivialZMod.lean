@@ -52,6 +52,8 @@ appears in Shapiro's lemma.
 
 * `TauCeti.ClassFieldTheory.cupFp_bijective_of_isPrimitiveRoot`: the cup square on
   `H¹(G_K, ℤ/n)` is a perfect pairing when `K` contains a primitive `n`th root of unity.
+* `TauCeti.ClassFieldTheory.map₂_cupFp_absoluteGaloisGroup_eq_top_of_isPrimitiveRoot`: for a
+  prime `p`, `H²(G_K, 𝔽_p)` is spanned by cup products of classes in `H¹(G_K, 𝔽_p)`.
 * `TauCeti.ClassFieldTheory.dualityMap0_zmod_bijective_of_isPrimitiveRoot`,
   `TauCeti.ClassFieldTheory.dualityMap1_zmod_bijective_of_isPrimitiveRoot`: Tate's duality maps
   `α₀` and `α₁` at the trivial module `ℤ/n` are bijective, for any topological group isomorphic to
@@ -106,6 +108,23 @@ theorem cupFp_bijective_of_isPrimitiveRoot :
     ((injective_iff_map_eq_zero _).2 fun a ha => hsep a fun b => ?_) hcard.le
   -- `a ⌣ b` vanishes for every `b`, so `b ⌣ a` does too, by graded commutativity
   rw [cupFp_eq_zero_comm, ha, LinearMap.zero_apply]
+
+/-- **`H²(G_K, 𝔽_p)` is spanned by cup products** when the nonarchimedean local field `K` contains a
+primitive `p`th root of unity for a prime `p`: it is one-dimensional, and the perfect cup square
+takes a nonzero value on the nontrivial space `H¹(G_K, 𝔽_p)`. -/
+theorem map₂_cupFp_absoluteGaloisGroup_eq_top_of_isPrimitiveRoot [Fact n.Prime] :
+    Submodule.map₂ (cupFp n (Field.absoluteGaloisGroup K)) ⊤ ⊤ = ⊤ := by
+  have := nontrivial_cohomFp_one_absoluteGaloisGroup_of_isPrimitiveRoot n K hζ
+  obtain ⟨a, ha⟩ := exists_ne (0 : cohomFp n (Field.absoluteGaloisGroup K) 1)
+  obtain ⟨b, hb⟩ : ∃ b, cupFp n (Field.absoluteGaloisGroup K) a b ≠ 0 := by
+    by_contra! h
+    exact ha ((cupFp_bijective_of_isPrimitiveRoot hζ).injective (LinearMap.ext fun b => by
+      rw [h, map_zero, LinearMap.zero_apply]))
+  -- a nonzero vector spans the one-dimensional space `H²(G_K, 𝔽_p)`
+  rw [eq_top_iff, ← (finrank_eq_one_iff_of_nonzero _ hb).1
+    (finrank_cohomFp_two_absoluteGaloisGroup_of_isPrimitiveRoot hζ), Submodule.span_le,
+    Set.singleton_subset_iff]
+  exact Submodule.apply_mem_map₂ _ Submodule.mem_top Submodule.mem_top
 
 variable {H : Type} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
   (φ : AbsoluteGaloisGroup K ≃ₜ* H) [DistribMulAction H (ZMod n)] [ContinuousSMul H (ZMod n)]

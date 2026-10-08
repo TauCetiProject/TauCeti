@@ -17,7 +17,8 @@ public import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 For a module `M` over a commutative semiring `R`, this file defines the degree-`n` piece of
 `SymmetricAlgebra R M` to be the `n`-th power of the range of the canonical generator map,
 identifies it with the span of the products of exactly `n` generators, and records that degrees add
-under multiplication. The pieces span the whole symmetric algebra, but no internal direct-sum
+under multiplication and that scaling linear evaluation scales degree-`n` values by the `n`-th
+power. The pieces span the whole symmetric algebra, but no internal direct-sum
 decomposition is proven here. A derivation of the symmetric algebra that sends every generator to
 degree one preserves every homogeneous submodule.
 
@@ -57,6 +58,20 @@ abbrev homogeneousSubmodule (n : ℕ) : Submodule R (SymmetricAlgebra R M) :=
 theorem ι_mem_homogeneousSubmodule (x : M) :
     SymmetricAlgebra.ι R M x ∈ homogeneousSubmodule R M 1 := by
   simpa only [pow_one] using LinearMap.mem_range_self (SymmetricAlgebra.ι R M) x
+
+/-- Scaling a linear evaluation by `r` scales the value of a homogeneous polynomial of
+degree `n` by `rⁿ`. -/
+theorem lift_smul_of_mem_homogeneousSubmodule {A : Type*} [CommSemiring A] [Algebra R A]
+    (f : M →ₗ[R] A) (r : R) {n : ℕ} {p : SymmetricAlgebra R M}
+    (hp : p ∈ homogeneousSubmodule R M n) :
+    SymmetricAlgebra.lift (r • f) p = r ^ n • SymmetricAlgebra.lift f p := by
+  induction hp using Submodule.pow_induction_on_left' with
+  | algebraMap a => simp
+  | add x y i hx hy ihx ihy => simp [ihx, ihy, smul_add]
+  | mem_mul m hm i x hx ih =>
+      obtain ⟨y, rfl⟩ := hm
+      simp only [map_mul, SymmetricAlgebra.lift_ι_apply, LinearMap.smul_apply, ih]
+      simp [pow_succ, Algebra.smul_def, mul_left_comm, mul_assoc]
 
 /-- A product of `n` symmetric-algebra generators is homogeneous of degree `n`. -/
 theorem prod_map_ι_mem_homogeneousSubmodule (l : List M) :

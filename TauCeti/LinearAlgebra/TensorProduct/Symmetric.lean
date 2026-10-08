@@ -29,8 +29,8 @@ living outside it. That they really are those two modules, `f ⊗ f`-equivariant
 The point of the file is the trace identity `TauCeti.trace_map_self_comp_comm`: composing
 `f ⊗ f` with the flip has trace `tr (f ∘ f)`, because on a basis the diagonal entry of the
 composite at `eᵢ ⊗ eⱼ` is `aᵢⱼ aⱼᵢ`, and summing those is
-`TauCeti.trace_eq_trace_comp_self_of_toMatrix_diag`, the step shared with the `Fin 2`-indexed
-tensor square of `TauCeti/RepresentationTheory/Tensor/Square.lean`. Splitting that trace along the
+`Module.Basis.trace_eq_trace_comp_self_of_toMatrix_diag`, the step shared with the `Fin 2`-indexed
+tensor square of `TauCeti/LinearAlgebra/TensorSquare.lean`. Splitting that trace along the
 symmetric and the antisymmetric tensors, where the flip is `+1` and `-1`, gives
 `TauCeti.trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict`: the traces of
 `f ⊗ f` on the symmetric and on the antisymmetric tensors differ by `tr (f ∘ f)`. That is the
@@ -206,15 +206,15 @@ variable {K M : Type*} [CommSemiring K] [AddCommMonoid M] [Module K M]
 /-- **The trace of `f ⊗ f` composed with the flip is the trace of `f ∘ f`.** In a basis the
 diagonal entry of the composite at `eᵢ ⊗ eⱼ` is `aᵢⱼ aⱼᵢ`, and summing those over all pairs is the
 trace of the square of the matrix of `f`, which is
-`TauCeti.trace_eq_trace_comp_self_of_toMatrix_diag`. -/
+`Module.Basis.trace_eq_trace_comp_self_of_toMatrix_diag`. -/
 theorem trace_map_self_comp_comm [Module.Free K M] [Module.Finite K M] (f : M →ₗ[K] M) :
     LinearMap.trace K (M ⊗[K] M)
         (TensorProduct.map f f ∘ₗ (TensorProduct.comm K M M).toLinearMap)
       = LinearMap.trace K M (f ∘ₗ f) := by
   set b := Module.Free.chooseBasis K M
-  refine trace_eq_trace_comp_self_of_toMatrix_diag b (b.tensorProduct b) (Equiv.refl _) f _ ?_
+  refine b.trace_eq_trace_comp_self_of_toMatrix_diag (b.tensorProduct b) (Equiv.refl _) f _ ?_
   rintro ⟨i, j⟩
-  simp [LinearMap.toMatrix_apply, Module.Basis.tensorProduct_apply,
+  simp [Module.Basis.toMatrix_apply, Module.Basis.tensorProduct_apply,
     Module.Basis.tensorProduct_repr_tmul_apply, mul_comm]
 
 end Trace
