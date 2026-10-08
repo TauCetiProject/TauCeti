@@ -60,6 +60,8 @@ theorem coe_norm_unitFiltrationZero [IsGalois K L]
   -- Compare in `Lˣ`, where the representation norm is the field norm.
   have hc := congr($(Rep.norm_comm (unitFiltrationZeroIncl K L)).hom x)
   simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_apply] at hc
+  rw [unitFiltrationZeroIncl_apply K L x, unitFiltrationZeroIncl_apply K L
+    ((Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)).norm.hom x)] at hc
   rw [← groupCohomology.norm_ofAlgebraAutOnUnits_eq]
   exact congr(((Additive.toMul (Rep.toAdditive $hc.symm) : Lˣ) : L))
 
@@ -92,6 +94,9 @@ theorem unitsValuationHom_eq_zero_iff (x : Rep.ofMulDistribMulAction (L ≃ₐ[K
 theorem unitFiltrationZeroIncl_comp_unitsValuationHom :
     unitFiltrationZeroIncl K L ≫ unitsValuationHom K L = 0 := by
   ext x
+  simp only [Rep.hom_comp, Representation.IntertwiningMap.toLinearMap_apply,
+    Representation.IntertwiningMap.comp_apply]
+  rw [unitFiltrationZeroIncl_apply K L x]
   exact (unitsValuationHom_eq_zero_iff K L _).2 x.toMul.2
 
 /-- The canonical valuation short complex of integral Galois representations. The last term
@@ -128,8 +133,10 @@ theorem unitsValuationSequence_shortExact : (unitsValuationSequence K L).ShortEx
     rw [unitsValuationHom_eq_zero_iff]
     constructor
     · intro hx
-      exact ⟨Additive.ofMul ⟨(Rep.toAdditive x).toMul, hx⟩, rfl⟩
+      exact ⟨Additive.ofMul ⟨(Rep.toAdditive x).toMul, hx⟩,
+        (unitFiltrationZeroIncl_apply K L _).trans (by rfl)⟩
     · rintro ⟨y, rfl⟩
+      rw [unitFiltrationZeroIncl_apply K L y]
       exact y.toMul.2
   · exact unitFiltrationZeroIncl_injective K L
   · intro n

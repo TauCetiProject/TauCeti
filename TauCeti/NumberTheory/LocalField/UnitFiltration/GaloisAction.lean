@@ -143,8 +143,7 @@ variable (K L : Type u) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
 
 /-- Inclusion of the valuation-zero units in the multiplicative group, as a morphism of
-integral Galois representations. The body exposes the underlying subgroup inclusion. -/
-@[expose]
+integral Galois representations. -/
 def unitFiltrationZeroIncl :
     Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0) ⟶
       Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ :=
