@@ -85,7 +85,7 @@ theorem generatorCoordinateMap_baseChange (j : Sum (Fin 7 ⊕ Fin 7) Unit) :
         CommHopfAlgCat.baseChangeMap_apply_tmul,
         GeneralLinear.coordinateHopfAlgebraBaseChangeIso_inv_X,
         CommHopfAlgCat.baseChangeMap_apply_tmul]
-      exact AdditiveGroup.gaScalarTensorBialgEquiv_tower _
+      exact AdditiveGroup.gaScalarTensorBialgEquiv_one_tmul_gaScalarTensorBialgEquiv_one_tmul _
   | inr j =>
       rw [generatorCoordinateMap_inr, generatorCoordinateMap_inr,
         GeneralLinear.coordinateHopfAlgebraBaseChangeMap_X]
@@ -99,7 +99,7 @@ theorem generatorCoordinateMap_baseChange (j : Sum (Fin 7 ⊕ Fin 7) Unit) :
         CommHopfAlgCat.baseChangeMap_apply_tmul,
         DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_apply,
         DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_apply]
-      exact MonoidAlgebra.scalarTensorBialgEquiv_tower _ _
+      exact MonoidAlgebra.scalarTensorBialgEquiv_one_tmul_scalarTensorBialgEquiv_one_tmul _ _
 
 /-- The scalar extension of the generated subgroup's defining ideal is carried by the canonical
 general-linear coordinate isomorphism to the defining ideal generated over the extension ring. -/
