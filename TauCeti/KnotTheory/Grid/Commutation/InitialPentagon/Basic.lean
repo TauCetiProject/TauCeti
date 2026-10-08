@@ -339,6 +339,32 @@ theorem initialPentagonWeight_eq_prod_coveredSquares {x y : GridState n}
     (fun c => (MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) c) :
       MvPolynomial (Fin n) R))]
 
+/-- Renamed back by the column swap, the weight of a pentagon turning on its initial side is the
+product, over the squares it covers, of the variable of the square's column in `G` at the
+`O`-marked squares and of `1` elsewhere. -/
+theorem rename_initialPentagonWeight {x y : GridState n} (C : ColumnCommutationData G)
+    (P : GridInitialPentagonBetween C.column C.turnRow x y) :
+    rename (Equiv.swap C.column (finRotate n C.column)) (G.initialPentagonWeight R C P) =
+      ∏ p ∈ P.coveredSquares,
+        if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R) := by
+  rw [initialPentagonWeight_eq_prod_coveredSquares, map_prod]
+  refine Finset.prod_congr rfl fun p _ => ?_
+  split_ifs <;> simp
+
+/-- The weight of a pentagon of the reverse commutation turning on its initial side, counted in the
+commuted diagram, is the product, over the squares it covers read in `G` by exchanging the two
+commuted columns, of the variable of the square's column at the `O`-marked squares of `G` and of
+`1` elsewhere. -/
+theorem initialPentagonWeight_reverse {y z : GridState n} (C : ColumnCommutationData G)
+    (Q : GridInitialPentagonBetween C.reverse.column C.reverse.turnRow y z) :
+    (G.swapColumns C.column (finRotate n C.column)).initialPentagonWeight R C.reverse Q =
+      ∏ p ∈ Q.coveredSquares.map
+          ((Equiv.swap C.column (finRotate n C.column)).prodCongr (Equiv.refl (Fin n))).toEmbedding,
+        if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R) := by
+  rw [initialPentagonWeight_eq_prod_coveredSquares, Finset.prod_map]
+  refine Finset.prod_congr rfl fun p _ => ?_
+  simp [ColumnCommutationData.reverse_column]
+
 /-- The matrix coefficient from `x` to `y` of the map counting pentagons turning on their initial
 side: the sum of the weights of the counted ones. -/
 noncomputable def initialPentagonCoefficient (C : ColumnCommutationData G) (x y : GridState n) :
