@@ -266,7 +266,9 @@ theorem linearIndependent_zigzagGradedProjectiveClass :
 /-- The degree-zero piece of the path-length grading is spanned by the vertex idempotents. -/
 private theorem zigzagIntegerGrade_zero_le_span :
     zigzagIntegerGrade k G 0 ≤ Submodule.span k (Set.range (zigzagVertexIdempotent k G)) := by
-  rw [zigzagIntegerGrade_ofNat k G 0]
+  have h0 : zigzagIntegerGrade k G 0 = zigzagGrade k G 0 := by
+    simpa only [Nat.cast_zero] using zigzagIntegerGrade_ofNat k G 0
+  rw [h0]
   exact (zigzagGrade_zero_eq_span_range_vertexIdempotent k G).le
 
 /-- **The graded simple module `S_i`** at a vertex: the head of the graded vertex projective
