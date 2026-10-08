@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Exact.Opposite
 public import TauCeti.CategoryTheory.Exact.Projective
+public import TauCeti.CategoryTheory.ObjectProperty.FactorsThrough
 
 /-!
 # Relative injectives in an exact category
@@ -78,6 +79,19 @@ theorem comp_factorThru {I : C} (hI : E.isInjective I) {X Y : C} {i : X ⟶ Y}
   (hI hi f).choose_spec
 
 end isInjective
+
+/-- Factoring through any relative injective is equivalent to extending across a fixed
+inflation into a relative injective. -/
+theorem factorsThrough_injective_iff_exists_extension (E : ExactStructure C)
+    {X I Y : C} (i : X ⟶ I)
+    (hi : E.IsInflation i) (hI : E.isInjective I) (f : X ⟶ Y) :
+    E.isInjective.FactorsThrough f ↔ ∃ g : I ⟶ Y, i ≫ g = f := by
+  constructor
+  · intro hf
+    obtain ⟨J, hJ, a, b, rfl⟩ := (ObjectProperty.factorsThrough_iff _ _).mp hf
+    exact ⟨hJ.factorThru hi a ≫ b, by simp⟩
+  · rintro ⟨g, rfl⟩
+    exact ObjectProperty.factorsThrough_comp E.isInjective hI i g
 
 /-- Relative injectives are closed under retracts. -/
 instance : (E.isInjective).IsStableUnderRetracts where
