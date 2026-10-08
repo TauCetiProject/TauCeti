@@ -4,7 +4,7 @@
 Read daily first-parent snapshots of TauCetiRoadmap, without checking them out or querying
 GitHub. Specification size counts Markdown and Lean inside actual roadmap directories,
 excluding generated STATUS.md / PROGRESS.md. Completed/ remains in the denominator.
-Layer recognition and coverage validation use the Progress page's existing rules.
+Layer recognition and machine coverage validation use the Progress page's existing rules.
 
 Completion is first observed in an archived roadmap or a coverage report. Those observation
 dates are approximate; do not backdate a new report's verdicts into older snapshots. Completion
@@ -28,6 +28,9 @@ import tempfile
 import loc_graph
 import roadmap_progress as progress
 from chart_style import MUTED, PALETTE, base_css, card_rect, css_px
+
+ASSET_NAMES = ("loc-roadmap.svg", "roadmap-layers.svg", "roadmap-exhaustion.svg",
+               "roadmap-completion.json")
 
 
 def git(repo, *args):
@@ -314,7 +317,8 @@ def render_forecasts(data, out):
     width, height = 980, 350
     svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" role="img" '
            'aria-label="Rough time to roadmap exhaustion, with and without continued authoring">',
-           f'<style>{base_css(width)}.estimate{{font-size:{css_px(width,18)};font-weight:600}}</style>',
+           f'<style>{base_css(width)}.estimate{{font-size:{css_px(width,18)};font-weight:600}}'
+           f'.forecast{{fill:{PALETTE[0]}}}</style>',
            card_rect(width, height),
            '<text class="title" x="35" y="35">Rough time to exhaustion</text>',
            f'<text class="subtitle" x="35" y="60">Recent pace: {data["library_growth_lines_per_day"]:,.0f} added Lean lines/day · seven days through {data["last_full_day"]}</text>',
@@ -327,7 +331,7 @@ def render_forecasts(data, out):
         svg += [f'<text class="estimate" x="35" y="{top}">{label}</text>',
                 f'<text class="subtitle" x="35" y="{top+24}">{estimate["backlog"]:,} {unit} remaining</text>']
         for scenario_name, pos in (("stop_authoring", 325), ("continue_authoring", 625)):
-            svg.append(f'<text class="estimate" x="{pos}" y="{top}" fill="{PALETTE[0]}">{duration(estimate[scenario_name])}</text>')
+            svg.append(f'<text class="estimate forecast" x="{pos}" y="{top}">{duration(estimate[scenario_name])}</text>')
         capacity = estimate["completion_units_per_day"]
         rate = f"{capacity:,.1f}" if capacity is not None else "unknown"
         svg.append(f'<text class="subtitle" x="325" y="{top+24}">Inferred completion: {rate}/day · authoring: {estimate["authoring_units_per_day"]:,.1f}/day</text>')
@@ -336,7 +340,10 @@ def render_forecasts(data, out):
 
 
 def generate(roadmap_repo, roadmap_ref, code_repo, code_ref, out_dir, today=None, code_data=None):
-    today = today or dt.datetime.now(dt.timezone.utc).date()
+    # A cached LOC series fixes the common cutoff, including if generation crosses midnight.
+    if today is None:
+        today = (dt.date.fromisoformat(code_data[-1][0]) + dt.timedelta(days=1)
+                 if code_data else dt.datetime.now(dt.timezone.utc).date())
     for repo in (roadmap_repo, code_repo):
         if git(repo, "rev-parse", "--is-shallow-repository").strip() == "true":
             raise ValueError(f"full git history is required for completion forecasts: {repo}")
@@ -352,10 +359,11 @@ def generate(roadmap_repo, roadmap_ref, code_repo, code_ref, out_dir, today=None
                "last_full_day": rows[-1]["date"], "history": rows, "completion_events": events,
                "forecast": forecast,
                "definitions": {
-                   "spec_lines": "Markdown and Lean within roadmap directories, excluding generated STATUS.md and PROGRESS.md; includes Completed/.",
+                   "spec_lines": "Markdown and Lean within roadmap directories, including reference notes and Completed/, excluding generated STATUS.md and PROGRESS.md.",
                    "completed_roadmap": "A roadmap under Completed/, the maintainers' archival decision.",
-                   "completed_layer": "A current layer recorded done by a coverage report, or belonging to an archived roadmap. Partial/unassessed earn zero credit.",
+                   "completed_layer": "A current layer recorded done by a machine coverage marker, or belonging to an archived roadmap. Partial/unassessed earn zero credit; transitional hand-read assessments are not replayed.",
                    "observation_date": "First observed in the last first-parent commit of a complete UTC day; reporting and archival may lag implementation.",
+                   "completion_events": "Signed changes in recorded completion credit; archival can emit offsetting negative active-layer and positive archived-layer entries, with no net new completion.",
                    "calibration": "Net observed completions (roadmap size frozen at archival) divided by added library LOC over the recorded roadmap history.",
                    "authoring": "Nonnegative net increase in all specification lines or layers over seven complete UTC days, divided by seven.",
                }}
@@ -371,8 +379,8 @@ def generate(roadmap_repo, roadmap_ref, code_repo, code_ref, out_dir, today=None
                        "Roadmap layers / lanes — completion", "layers / lanes", staging / "roadmap-layers.svg")
         render_forecasts(forecast, staging / "roadmap-exhaustion.svg")
         (staging / "roadmap-completion.json").write_text(json.dumps(payload, indent=2, allow_nan=False) + "\n")
-        for path in staging.iterdir():
-            path.replace(out_dir / path.name)
+        for name in ASSET_NAMES:
+            (staging / name).replace(out_dir / name)
     return payload
 
 

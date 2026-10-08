@@ -136,16 +136,17 @@ the last complete UTC day and are rebuilt at each deploy.
 :::
 
 The library figure counts the mathematics under `TauCeti/`, plus `TauCeti.lean`.
-Roadmap size counts Markdown specifications and Lean target statements in both active
-and archived roadmap directories. Moving a roadmap to `Completed/` keeps it in the total
-and moves its size into the completed portion. Machine-generated reports are excluded,
+Roadmap size counts Markdown and Lean files, including target statements and reference
+notes, in both active and archived roadmap directories. Moving a roadmap to `Completed/`
+keeps it in the total and moves its size into the completed portion. Machine-generated reports are excluded,
 so writing a progress report does not look like authoring more work.
 
 :::blob roadmapCompletionGraphs
 :::
 
 The second chart measures the fraction of named layers and lanes that are complete.
-It uses the existing generated coverage assessments; a roadmap archived by its maintainers
+It uses generated coverage reports. Older reports without recorded layer assessments
+appear as unassessed here, even if the Progress page has a manual reading. A roadmap archived by its maintainers
 counts as complete even if its last report predates that decision. The shaded unassessed
 portion remains in the total. Layer sizes differ, so this is a fraction of goals, rather
 than a fraction of effort. Reports may lag the code, and a changed specification may need

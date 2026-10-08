@@ -219,6 +219,16 @@ class GitHistory(unittest.TestCase):
         self.assertEqual(saved, payload)
         self.assertEqual(saved["history"][-1]["completed_layers"], 1)
         self.assertEqual(len(list(out.glob("*.svg"))), 3)
+        self.assertEqual({path.name for path in out.iterdir()}, set(completion.ASSET_NAMES))
+
+    def test_cached_loc_data_fixes_the_cutoff_across_midnight(self):
+        self.commit(1)
+        (self.area / "STATUS.md").write_text(report())
+        self.commit(8)
+        payload = completion.generate(self.repo, "HEAD", self.repo, "HEAD", self.root / "output",
+                                      code_data=[("2026-07-01", 100), ("2026-07-07", 700)])
+        self.assertEqual(payload["last_full_day"], "2026-07-07")
+        self.assertEqual(payload["history"][-1]["completed_layers"], 0)
 
 
 if __name__ == "__main__":

@@ -14,17 +14,20 @@ python3 scripts/roadmap_completion.py \
 For a reproducible snapshot, add `--today 2026-10-08`; measurements stop at the
 previous complete UTC day. The workflow avoids counting library history twice by
 passing `--code-data`, the daily pairs exported by `loc_graph.py --dump-data`.
+When those pairs are supplied, their final date fixes the cutoff (unless `--today`
+is explicit), so crossing midnight between generators does not change the window.
 
 ## Charts
 
 - `loc-roadmap.svg`: Markdown and Lean specification lines in actual roadmap
-  directories under both `TauCetiRoadmap/` and `Completed/`. Generated
-  `STATUS.md` and `PROGRESS.md` are excluded. Archiving transfers size into the
+  directories under both `TauCetiRoadmap/` and `Completed/`, including reference notes.
+  Generated `STATUS.md` and `PROGRESS.md` are excluded. Archiving transfers size into the
   completed portion without removing it from the total. An active successor
   and an archived roadmap with the same name remain separate specifications.
 - `roadmap-layers.svg`: all currently named layers/lanes, including constituent
   roadmaps of an umbrella without double-counting their parent's layers.
-  Coverage uses `roadmap_progress.py`'s heading and marker validation rules.
+  Coverage uses `roadmap_progress.py`'s heading and machine marker validation rules;
+  the Progress page's transitional hand-read assessments are not replayed here.
   Only `done` receives credit; partial, untouched and unassessed remain in the
   denominator. The graph highlights unassessed layers. Human archival marks all
   that archived specification's layers complete, even if a report still has gaps.
@@ -57,7 +60,9 @@ later edits to an archived document do not create completion credit. Reopening
 withdraws that credit. Layer credit follows the currently recorded done set,
 so withdrawn assessments or removed layers reduce credit. Completion events in
 the JSON include the library LOC at their observation date, allowing other fits
-without re-reading git history.
+without re-reading git history. Events are signed credit changes: archival can
+emit offsetting removals of active-layer keys and additions of archived-layer keys.
+Consumers should sum their signed units; these pairs create no net new completion.
 
 Absent positive completion history or positive recent library growth produces
 `insufficient-history` with `days: null`. An incomplete seven-day observation

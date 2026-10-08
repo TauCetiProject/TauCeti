@@ -4248,10 +4248,11 @@
     }
   },
   "definitions": {
-    "spec_lines": "Markdown and Lean within roadmap directories, excluding generated STATUS.md and PROGRESS.md; includes Completed/.",
+    "spec_lines": "Markdown and Lean within roadmap directories, including reference notes and Completed/, excluding generated STATUS.md and PROGRESS.md.",
     "completed_roadmap": "A roadmap under Completed/, the maintainers' archival decision.",
-    "completed_layer": "A current layer recorded done by a coverage report, or belonging to an archived roadmap. Partial/unassessed earn zero credit.",
+    "completed_layer": "A current layer recorded done by a machine coverage marker, or belonging to an archived roadmap. Partial/unassessed earn zero credit; transitional hand-read assessments are not replayed.",
     "observation_date": "First observed in the last first-parent commit of a complete UTC day; reporting and archival may lag implementation.",
+    "completion_events": "Signed changes in recorded completion credit; archival can emit offsetting negative active-layer and positive archived-layer entries, with no net new completion.",
     "calibration": "Net observed completions (roadmap size frozen at archival) divided by added library LOC over the recorded roadmap history.",
     "authoring": "Nonnegative net increase in all specification lines or layers over seven complete UTC days, divided by seven."
   }
