@@ -132,6 +132,21 @@ def profiniteCompletionArtinEquiv [CharZero K] :
 theorem profiniteCompletionArtinEquiv_apply [CharZero K]
     (c : ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of Kˣ)) :
     profiniteCompletionArtinEquiv K c = profiniteCompletionArtinMap K c :=
-  (rfl)
+  by
+    let e := Equiv.ofBijective (profiniteCompletionArtinMap K)
+      ⟨injective_profiniteCompletionArtinMap K, surjective_profiniteCompletionArtinMap K⟩
+    let he : Continuous e := by
+      apply Continuous.congr (map_continuous (profiniteCompletionArtinMap K))
+      exact fun x ↦ (Equiv.ofBijective_apply _ _ x).symm
+    let h := he.homeoOfEquivCompactToT2
+    calc
+      profiniteCompletionArtinEquiv K c =
+          ContinuousMulEquiv.mk' h (map_mul (profiniteCompletionArtinMap K)) c := by rfl
+      _ = h c := congrFun (ContinuousMulEquiv.coe_mk' h _) c
+      _ = e c := by
+        change h.toEquiv c = e c
+        dsimp only [h]
+        rw [Continuous.toEquiv_homeoOfEquivCompactToT2]
+      _ = profiniteCompletionArtinMap K c := Equiv.ofBijective_apply _ _ _
 
 end TauCeti.ClassFieldTheory
