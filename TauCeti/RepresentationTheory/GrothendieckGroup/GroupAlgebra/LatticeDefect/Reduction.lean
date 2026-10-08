@@ -67,7 +67,7 @@ theorem fdRepK0RingEquiv_of_reduction (V : Type u) [AddCommGroup V] [DistribMulA
       reductionK0 k (Representation.ofDistribMulAction ℤ G V) := by
   rw [fdRepK0RingEquiv_of, reductionK0_def]
   -- `(reduction k G V).ρ` is `Representation.baseChange k (ofDistribMulAction ℤ G V)` by
-  -- definition (`TauCeti.reduction_ρ`)
+  -- definition (`TauCeti.reduction_ρ_hom_hom`)
   rfl
 
 /-- **The lattice defect is `[k ⊗_ℤ V] - [k ⊗_ℤ V[ℓ]]`** in characteristic `ℓ`, with `[k ⊗_ℤ V]`
