@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Basic
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
+import TauCeti.AlgebraicGeometry.AffineGroupScheme.FiniteType
 
 /-!
 # The general linear group scheme
@@ -338,14 +339,9 @@ instance isAffine_groupScheme : IsAffine (groupScheme R n).X.left := by
 /-- The structural morphism of the general linear group scheme is locally of finite type. -/
 instance locallyOfFiniteType_groupScheme :
     LocallyOfFiniteType (groupScheme R n).X.hom := by
-  rw [groupScheme_X_hom]
-  let : LocallyOfFiniteType (groupSchemeSpecIso R n).hom :=
-    locallyOfFiniteType_of_isOpenImmersion _
-  let : LocallyOfFiniteType
-      (Spec.map (CommRingCat.ofHom (algebraMap R (CoordinateRing R n)))) := by
-    rw [← AlgebraicGeometry.specOverSpec_over]
-    infer_instance
-  exact locallyOfFiniteType_comp _ _
+  rw [groupScheme_def]
+  exact (algebraFiniteType_iff_locallyOfFiniteType_hopfSpec R (coordinateHopfAlgebra R n)).mp
+    inferInstance
 
 section SchemePoints
 

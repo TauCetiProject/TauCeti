@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.CoveringMap
+public import Mathlib.GroupTheory.Perm.Cycle.Basic
 public import Mathlib.RingTheory.RootsOfUnity.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroup.PuncturedStarConvex
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Cyclic
@@ -13,6 +14,9 @@ public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Quotient.ActingGroup
 
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.RingTheory.RootsOfUnity.Complex
+import TauCeti.GroupTheory.GroupAction.Transitive
+import TauCeti.GroupTheory.Perm.PermCongr
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.RingTheory.RootsOfUnity.PowFiber
 import TauCeti.Topology.IsLocalHomeomorph
@@ -42,6 +46,9 @@ unique, but only unique up to the rotations of `𝔻*` by `e`-th roots of unity.
 * `TauCeti.isQuotientCoveringMap_puncturedDiscPow`: it is the quotient covering by the rotations
   through the `e`-th roots of unity.
 * `TauCeti.card_puncturedDiscPow_preimage_singleton`: each of its fibres has `e` points.
+* `TauCeti.puncturedDiscCircle`: the canonical counterclockwise generator based at `1/2`.
+* `TauCeti.isCycleOn_monodromyPerm_puncturedDiscCircle`: monodromy of the power map around this
+  generator is one cycle on its `e`-element fibre.
 * `TauCeti.puncturedDiscPowDeckMulEquiv`: **its deck group is the group of `e`-th roots of
   unity**, acting by rotations.
 * `IsCoveringMap.exists_homeomorph_puncturedDiscPow_comp_eq`: **a connected cover of `𝔻*`
@@ -67,6 +74,63 @@ open Metric Set
 namespace TauCeti
 
 variable {e : ℕ}
+
+private theorem puncturedDiscRadius_pos : (0 : ℝ) < 1 / 2 := by
+  norm_num
+
+private theorem puncturedDiscSphere_subset : sphere (0 : ℂ) (1 / 2) ⊆ ball 0 1 :=
+  sphere_subset_ball (by norm_num)
+
+private theorem puncturedDiscStarConvex : StarConvex ℝ (0 : ℂ) (ball 0 1) :=
+  (convex_ball (0 : ℂ) 1).starConvex (mem_ball_self one_pos)
+
+/-- The basepoint `1/2` in the punctured unit disc. -/
+noncomputable def puncturedDiscBasepoint : ↥(ball (0 : ℂ) 1 \ {0}) :=
+  puncturedDiscStarConvex.sphereHomotopyEquiv puncturedDiscRadius_pos
+    puncturedDiscSphere_subset ((sphereCircleHomeomorph 0 puncturedDiscRadius_pos).symm 1)
+
+/-- The punctured-disc basepoint is the positive real point `1/2`. -/
+@[simp]
+theorem coe_puncturedDiscBasepoint : (puncturedDiscBasepoint : ℂ) = 1 / 2 := by
+  rw [puncturedDiscBasepoint, StarConvex.coe_sphereHomotopyEquiv_apply,
+    coe_sphereCircleHomeomorph_symm_apply]
+  norm_num
+
+/-- The counterclockwise circle of radius `1/2` about zero, regarded as a loop in the punctured
+unit disc based at `puncturedDiscBasepoint`. -/
+noncomputable def puncturedDiscCircle : Path puncturedDiscBasepoint puncturedDiscBasepoint :=
+  (Complex.sphereLoop 0 puncturedDiscRadius_pos).map
+    (puncturedDiscStarConvex.sphereHomotopyEquiv puncturedDiscRadius_pos
+      puncturedDiscSphere_subset).toFun.continuous
+
+/-- The punctured-disc circle is the usual positive parametrization
+`t ↦ (1/2) * exp (2πit)`. -/
+@[simp]
+theorem coe_puncturedDiscCircle_apply (t : unitInterval) :
+    (puncturedDiscCircle t : ℂ) = circleMap 0 (1 / 2) (2 * Real.pi * t) := by
+  -- `puncturedDiscCircle` is by definition this mapped loop; `rw [puncturedDiscCircle]` is not
+  -- usable, since the endpoints of the mapped loop only agree with `puncturedDiscBasepoint` up to
+  -- unfolding, so we evaluate the mapped loop with `Path.map_coe` and let `refine` unfold it.
+  have hmap := congrFun (Path.map_coe (Complex.sphereLoop 0 puncturedDiscRadius_pos)
+    (puncturedDiscStarConvex.sphereHomotopyEquiv puncturedDiscRadius_pos
+      puncturedDiscSphere_subset).toFun.continuous) t
+  refine (congrArg Subtype.val hmap).trans ?_
+  rw [Function.comp_apply, StarConvex.coe_sphereHomotopyEquiv_apply,
+    Complex.coe_sphereLoop_apply]
+
+/-- The counterclockwise circle generates the fundamental group of the punctured disc. -/
+theorem zpowers_puncturedDiscCircle_eq_top :
+    Subgroup.zpowers (FundamentalGroup.fromPath
+      (Path.Homotopic.Quotient.mk puncturedDiscCircle)) = ⊤ := by
+  let x : sphere (0 : ℂ) (1 / 2) :=
+    (sphereCircleHomeomorph 0 puncturedDiscRadius_pos).symm 1
+  let W := puncturedDiscStarConvex.fundamentalGroupMulEquivInt puncturedDiscRadius_pos
+    puncturedDiscSphere_subset x
+  apply W.zpowers_eq_top_of_apply_eq_ofAdd_one
+  simpa only [W, puncturedDiscBasepoint, puncturedDiscCircle, FundamentalGroup.map_apply,
+    Path.Homotopic.Quotient.mk_map] using
+    puncturedDiscStarConvex.fundamentalGroupMulEquivInt_sphereLoop puncturedDiscRadius_pos
+      puncturedDiscSphere_subset
 
 /-- The scalar action of the `e`-th roots of unity on the punctured disc is rotation. -/
 noncomputable instance puncturedDiscSMul [NeZero e] :
@@ -147,6 +211,24 @@ theorem isCoveringMap_puncturedDiscPow (he : e ≠ 0) : IsCoveringMap (punctured
   -- map, so the composite below is `puncturedDiscPow he` by definition.
   exact (((isCoveringMapOn_npow (𝕜 := ℂ) e (Nat.cast_ne_zero.2 he)).mono
     fun _ hz => hz.2).isCoveringMap_restrictPreimage).comp_homeomorph (.setCongr hs.symm)
+
+/-- **Monodromy of the power map around the puncture is one cycle.** For the positive generator
+`puncturedDiscCircle` of the fundamental group, monodromy acts transitively by the powers of a
+single permutation on the entire fibre over `puncturedDiscBasepoint`. -/
+theorem isCycleOn_monodromyPerm_puncturedDiscCircle (he : e ≠ 0) :
+    ((isCoveringMap_puncturedDiscPow he).monodromyPerm puncturedDiscBasepoint
+      (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk puncturedDiscCircle))).IsCycleOn
+        Set.univ := by
+  let hp := isCoveringMap_puncturedDiscPow he
+  let _ := pathConnectedSpace_ball_diff_singleton (0 : ℂ) one_pos
+  have htransitive : MulAction.IsPretransitive
+      (hp.monodromyPerm puncturedDiscBasepoint).range
+      (puncturedDiscPow he ⁻¹' {puncturedDiscBasepoint}) := by
+    rw [← hp.toPermHom_eq_monodromyPerm puncturedDiscBasepoint,
+      MulAction.isPretransitive_range_toPermHom_iff]
+    exact hp.monodromy_isPretransitive puncturedDiscBasepoint
+  exact (hp.monodromyPerm puncturedDiscBasepoint).isCycleOn_apply_of_zpowers_eq_top
+    htransitive zpowers_puncturedDiscCircle_eq_top
 
 /-- **The power map is the quotient covering by rotations through the `e`-th roots of unity.**
 Its fibres are exactly the rotation orbits. -/

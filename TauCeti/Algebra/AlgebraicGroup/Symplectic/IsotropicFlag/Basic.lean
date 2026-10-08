@@ -113,11 +113,6 @@ noncomputable abbrev coordinateMap :
     Symplectic.coordinateHopfAlgebra R m ⟶ coordinateHopfAlgebra R m :=
   CommHopfAlgCat.mkQuotient (Symplectic.coordinateHopfAlgebra R m) (definingHopfIdeal R m)
 
-/-- The isotropic flag subgroup has finite-type coordinate algebra. -/
-instance instAlgebraFiniteTypeCoordinateHopfAlgebra :
-    Algebra.FiniteType R (coordinateHopfAlgebra R m) :=
-  Algebra.FiniteType.quotient R (definingHopfIdeal R m).toIdeal
-
 /-- The closed subgroup scheme of `Sp₂ₘ` of symplectic matrices preserving the standard
 complete isotropic flag. -/
 noncomputable abbrev groupScheme :=

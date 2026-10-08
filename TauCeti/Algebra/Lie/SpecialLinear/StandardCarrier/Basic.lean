@@ -16,7 +16,6 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Schem
 public import TauCeti.Algebra.Lie.UniversalEnveloping.MatrixRepresentation
 import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.RootInToral
-import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # The full-weight Chevalley carrier of type `A`
@@ -114,8 +113,6 @@ universe v
 open LieAlgebra.SpecialLinear
 open scoped Matrix TensorProduct
 open scoped CategoryTheory.MonObj
-
-attribute [local instance] TauCeti.moduleNNRat
 
 variable (r : ℕ)
 
@@ -257,7 +254,6 @@ theorem weight_eq_ite_single_sub_ite_single (k : Fin (r + 1)) :
     weight r k =
       (if hk : (k : ℕ) < r then Pi.single ⟨k, hk⟩ 1 else 0) -
         (if hk : 0 < (k : ℕ) then Pi.single ⟨k - 1, by omega⟩ 1 else 0) := by
-  classical
   funext i
   simp only [weight_def, Pi.sub_apply]
   split_ifs

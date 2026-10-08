@@ -51,7 +51,7 @@ finite; this is proved in `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCe
 * `TauCeti.quotientPLowerCentralSeriesSuccMulEquiv`: `λ_k ⧸ λ_{k+1}` is the quotient
   `λ_k ⧸ λ_kᵖ[λ_k, G]` of `λ_k` by one step of the lower `p`-series, through which `gr_k(G)`
   inherits its commutativity and its exponent.
-* `TauCeti.natCard_quotient_pLowerCentralStep_eq_natCard_gradedPiece`: for a normal subgroup
+* `TauCeti.natCard_quotient_pLowerCentralStep_eq_natCard_gradedPiece`: for a subgroup
   `R = λ_k`, the quotient `R ⧸ Rᵖ[R, G]` has as many elements as `gr_k(G)`.
 * `TauCeti.gradedBracket_self`, `TauCeti.gradedBracket_jacobi`: the bracket is alternating and
   satisfies the Jacobi identity.
@@ -67,7 +67,7 @@ finite; this is proved in `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCe
 * `TauCeti.gradedMap_symm_gradedMap`: the graded map of the inverse of a topological isomorphism
   inverts the graded map of the isomorphism.
 * `MulEquiv.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_pow`: in a discrete group
-  isomorphic to `ℤ/pⁿ⁺¹`, `π^n` of the class of the generator is nonzero.
+  isomorphic to `ℤ/pⁿ⁺¹` with `1 < p`, `π^n` of the class of the generator is nonzero.
 
 ## References
 
@@ -307,12 +307,12 @@ by `p`. -/
 instance instModuleZModGradedPiece (k : ℕ) : Module (ZMod p) (gradedPiece p G k) :=
   AddCommGroup.zmodModule fun x => nsmul_gradedPiece_eq_zero x
 
-/-- For a normal subgroup `R` equal to the term `λ_k` of the lower `p`-series, the quotient
+/-- For a subgroup `R` equal to the term `λ_k` of the lower `p`-series, the quotient
 `R ⧸ Rᵖ[R, G]` is the graded piece `gr_k(G) = λ_k ⧸ λ_{k+1}`, up to the additive notation; in
 particular they have the same cardinality. The equation `R = λ_k` is a hypothesis rather than a
 substitution, so that the statement applies to the relation subgroup of a presentation, whose
 quotient type depends on it. -/
-theorem natCard_quotient_pLowerCentralStep_eq_natCard_gradedPiece {R : Subgroup G} [R.Normal]
+theorem natCard_quotient_pLowerCentralStep_eq_natCard_gradedPiece {R : Subgroup G}
     {k : ℕ} (hR : R = pLowerCentralSeries p G k) :
     Nat.card (R ⧸ (pLowerCentralStep p R).subgroupOf R) = Nat.card (gradedPiece p G k) := by
   subst hR
@@ -1032,19 +1032,18 @@ theorem gradedPow_mem_span_range_gradedPowIter_succ {ι : Type*} (x : ι → gra
   simpa only [Function.comp_def, AddMonoidHom.coe_toZModLinearMap, gradedPowAddMonoidHom_apply,
     gradedPowIter_succ] using h
 
-variable [Fact p.Prime] {H : Type u} [Group H] [TopologicalSpace H] [DiscreteTopology H] in
-/-- In a discrete group isomorphic to `ℤ/pⁿ⁺¹`, the iterated `p`-power class `π^n` of the
-generator is nonzero in `gr_n`. -/
+variable {H : Type u} [Group H] [TopologicalSpace H] [DiscreteTopology H] in
+/-- In a discrete group isomorphic to `ℤ/pⁿ⁺¹` with `1 < p`, the iterated `p`-power class `π^n`
+of the generator is nonzero in `gr_n`. -/
 theorem _root_.MulEquiv.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_pow {n : ℕ}
-    (e : H ≃* Multiplicative (ZMod (p ^ (n + 1)))) :
+    (e : H ≃* Multiplicative (ZMod (p ^ (n + 1)))) (hp : 1 < p) :
     gradedPowIter p H n (gradedMkZero p H (e.symm (Multiplicative.ofAdd 1))) ≠ 0 := by
   rw [gradedPowIter_gradedMkZero, ne_eq, gradedMk_eq_zero_iff, Subgroup.coe_mk,
     e.pLowerCentralSeries_eq_bot_multiplicative_zmod_pow, Subgroup.mem_bot, ← map_pow,
     e.symm.map_eq_one_iff]
-  have hp : p.Prime := Fact.out
-  apply pow_ne_one_of_lt_orderOf (pow_ne_zero n hp.ne_zero)
+  apply pow_ne_one_of_lt_orderOf (pow_ne_zero n (Nat.ne_zero_of_lt hp))
   rw [orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
-  exact Nat.pow_lt_pow_right hp.one_lt n.lt_succ_self
+  exact Nat.pow_lt_pow_right hp n.lt_succ_self
 
 end PowIter
 

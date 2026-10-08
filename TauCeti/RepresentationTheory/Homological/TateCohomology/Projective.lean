@@ -11,21 +11,24 @@ import Mathlib.Algebra.CharP.Quotient
 import Mathlib.GroupTheory.Sylow
 import Mathlib.RingTheory.Flat.TorsionFree
 import TauCeti.RepresentationTheory.NormSplit.PGroup
+import TauCeti.RepresentationTheory.Homological.TateCohomology.HomologySequence
 
 /-!
-# Projective representations and cohomological triviality
+# Projectivity and cohomological triviality
 
 Let `k` be a commutative ring and `G` a group. A representation `A` of `G` over `k` whose
 `k[G]`-module is projective has vanishing Tate cohomology in every degree on every finite subgroup
-of `G` (Serre, *Local Fields*, IX §5; Brown, *Cohomology of Groups*, VI §8). This is
-the easy half of the theorem of Nakayama and Rim, which for `k = ℤ` characterizes the
-cohomologically trivial `G`-modules of a finite group `G` as those of projective dimension at most
-one over `ℤ[G]`.
+of `G` (Serre, *Local Fields*, IX §5; Brown, *Cohomology of Groups*, VI §8). More generally, so
+does a representation of projective dimension at most one over `k[G]`. This is the easy half of
+the theorem of Nakayama and Rim, which for `k = ℤ` characterizes the cohomologically trivial
+`G`-modules of a finite group `G` as those of projective dimension at most one over `ℤ[G]`.
 
 The projection `Ind_⊥^G A → A` from the representation induced from the trivial subgroup is an
 epimorphism, so a projective `A` is a retract of `Ind_⊥^G A`. The Tate cohomology of every finite
 subgroup with coefficients in `Ind_⊥^G A` vanishes
-(`TauCeti.TateCohomology.isZero_res_indBot`), hence so does that of its retract `A`.
+(`TauCeti.TateCohomology.isZero_res_indBot`), hence so does that of its retract `A`. If
+`0 → P₁ → P₀ → A → 0` is exact with `P₀` and `P₁` projective, the Tate cohomology of `A` sits in
+the long exact sequence between that of `P₀` and that of `P₁`, both of which vanish.
 
 Conversely, let `k` be an integral domain of characteristic zero in which every prime number is a
 unit or generates a maximal ideal, for instance `ℤ`, `ℤ_[p]`, `ℤ_(p)` or a field of characteristic
@@ -50,6 +53,8 @@ the identity of `A` (`Representation.id_mem_range_norm_linHom_of_baseChange`).
   `A`, then `H_Tate⁻¹(G, (k/pk) ⊗ A) = 0`, in the form `ker N ≤ I_G ((k/pk) ⊗ A)`.
 * `Rep.projective_of_isZero_res`: over `k` as above, a cohomologically trivial representation of a
   finite group whose underlying `k`-module is projective is projective over `k[G]`.
+* `Rep.isZero_res_of_exact`: the same vanishing when `A.ρ.asModule` has a projective resolution
+  `0 → P₁ → P₀ → A → 0` of length one.
 
 ## References
 
@@ -168,5 +173,33 @@ theorem projective_of_isZero_res [Finite G] [IsDomain k] [CharZero k]
       (Representation.id_mem_range_norm_linHom_of_ker_norm_le p P.isPGroup' _
         (ker_norm_baseChange_le (res (P : Subgroup G).subtype A) (p : k) hreg (hA P 0)
           (hA P (-1))))
+
+/-- **Projective dimension at most one implies cohomological triviality.** Let
+`0 → P₁ → P₀ → A → 0` be an exact sequence of `k[G]`-modules with `P₀` and `P₁` projective. Then
+the Tate cohomology of every finite subgroup `S` of `G` with coefficients in `A` vanishes in every
+degree. -/
+theorem isZero_res_of_exact (A : Rep k G) {P₀ P₁ : Type u}
+    [AddCommGroup P₀] [Module (MonoidAlgebra k G) P₀] [Module.Projective (MonoidAlgebra k G) P₀]
+    [AddCommGroup P₁] [Module (MonoidAlgebra k G) P₁] [Module.Projective (MonoidAlgebra k G) P₁]
+    {d : P₁ →ₗ[MonoidAlgebra k G] P₀} {q : P₀ →ₗ[MonoidAlgebra k G] A.ρ.asModule}
+    (hd : Function.Injective d) (hdq : Function.Exact d q) (hq : Function.Surjective q)
+    (S : Subgroup G) [Fintype S] (n : ℤ) :
+    IsZero (tateCohomology (res S.subtype A) n) := by
+  -- Carry the sequence of `k[G]`-modules to representations of `G`, then restrict to `S`.
+  have hT := ((ModuleCat.shortComplex_shortExact
+    (ModuleCat.shortComplexOfCompEqZero d q hdq.linearMap_comp_eq_zero) hdq hd hq).map_of_exact
+      ofModuleMonoidAlgebra).map_of_exact (resFunctor S.subtype)
+  -- The representation attached to a projective `k[G]`-module is cohomologically trivial.
+  have hP (M : ModuleCat (MonoidAlgebra k G)) [Module.Projective (MonoidAlgebra k G) M] (m : ℤ) :
+      IsZero (tateCohomology (res S.subtype (ofModuleMonoidAlgebra.obj M)) m) :=
+    have : Module.Projective (MonoidAlgebra k G) (ofModuleMonoidAlgebra.obj M).ρ.asModule :=
+      .of_equiv (equivalenceModuleMonoidAlgebra.counitIso.app M).toLinearEquiv.symm
+    isZero_res_of_projective _ S m
+  -- The terms of `hT` are, by definition of `ShortComplex.map`, the restrictions of the
+  -- representations attached to `P₁`, `P₀` and `A.ρ.asModule`; the last is isomorphic to `A`.
+  exact (TauCeti.TateCohomology.isZero_X₃_of_isZero_X₂_of_isZero_X₁ hT n (n + 1) rfl
+    (hP (.of _ P₀) n) (hP (.of _ P₁) (n + 1))).of_iso
+      ((tateCohomologyFunctor n).mapIso ((resFunctor S.subtype).mapIso
+        (equivalenceModuleMonoidAlgebra.unitIso.app A)))
 
 end Rep

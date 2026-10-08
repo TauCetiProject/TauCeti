@@ -77,8 +77,8 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory Set TopologicalSpace
-open scoped ContDiff Distributions ENNReal InnerProductSpace
+open MeasureTheory TopologicalSpace
+open scoped Distributions InnerProductSpace
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E]
 variable {mu : Measure E} {Omega : Opens E} {p : ENNReal}
