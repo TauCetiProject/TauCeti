@@ -16,7 +16,7 @@ A closed embedded submanifold of a finite-dimensional Euclidean space admits a p
 continuous radius for which the closed normal discs embed as a closed neighbourhood and
 the normal spheres are the frontier of the open tube. The core need not be compact.
 
-For a `C¹` closed embedding into a proper real inner product space, a continuous uniformly
+For a proper `C¹` map into a proper real inner product space, a continuous uniformly
 bounded radius gives closed normal disc images. A smaller positive radius inside an embedded
 open tube gives closed disc embeddings and identifies the frontier with the normal sphere
 image. For a `C²` Euclidean immersion that is a closed embedding, such a radius exists.
@@ -48,12 +48,12 @@ variable [I.Boundaryless] [IsManifold I 1 M] {f : M → V} {r : M → ℝ}
 
 variable [ProperSpace V]
 
-/-- For a closed core and a uniformly bounded continuous radius, the normal disc image
+/-- For a proper core map and a uniformly bounded continuous radius, the normal disc image
 under addition is closed. Injectivity of normal addition is not required. -/
 theorem isClosed_image_normalDiscBundleOfRadius (hf : ContMDiff I 𝓘(ℝ, V) 1 f)
-    (hclosed : IsClosedEmbedding f) (hr : Continuous r) {R : ℝ} (hbound : ∀ x, r x ≤ R) :
+    (hproper : IsProperMap f) (hr : Continuous r) {R : ℝ} (hbound : ∀ x, r x ≤ R) :
     IsClosed ((fun p : M × V => f p.1 + p.2) '' normalDiscBundleOfRadius I f r) := by
-  have hs := (hclosed.prodMap (IsClosedEmbedding.id : IsClosedEmbedding (id : V → V))).isClosedMap
+  have hs := (hproper.prodMap (isProperMap_id : IsProperMap (id : V → V))).isClosedMap
     _ (isClosed_normalDiscBundleOfRadius hf hr)
   have hsub : Prod.snd '' (Prod.map f id '' normalDiscBundleOfRadius I f r) ⊆
       Metric.closedBall (0 : V) R := by
@@ -62,25 +62,25 @@ theorem isClosed_image_normalDiscBundleOfRadius (hf : ContMDiff I 𝓘(ℝ, V) 1
   simpa only [image_image, Function.comp_def, Prod.map_fst, Prod.map_snd, id_eq] using
     hs.image_add_of_snd_subset (isCompact_closedBall (0 : V) R) hsub
 
-/-- The closure of a bounded variable-radius tube image over a closed core is exactly
+/-- The closure of a bounded variable-radius tube image for a proper core map is exactly
 the closed disc image. -/
 theorem closure_image_normalTubeOfRadius (hf : ContMDiff I 𝓘(ℝ, V) 1 f)
-    (hclosed : IsClosedEmbedding f) (hr : Continuous r) (hpos : ∀ x, 0 < r x)
+    (hproper : IsProperMap f) (hr : Continuous r) (hpos : ∀ x, 0 < r x)
     {R : ℝ} (hbound : ∀ x, r x ≤ R) :
     closure ((fun p : M × V => f p.1 + p.2) '' normalTubeOfRadius I f r) =
       (fun p : M × V => f p.1 + p.2) '' normalDiscBundleOfRadius I f r := by
   refine subset_antisymm (closure_minimal (image_mono
     (fun p hp => mem_normalDiscBundleOfRadius.mpr
       ⟨(mem_normalTubeOfRadius.mp hp).1, (mem_normalTubeOfRadius.mp hp).2.le⟩))
-    (isClosed_image_normalDiscBundleOfRadius hf hclosed hr hbound)) ?_
+    (isClosed_image_normalDiscBundleOfRadius hf hproper hr hbound)) ?_
   rw [← closure_normalTubeOfRadius hf hr hpos]
   exact image_closure_subset_closure_image
     ((hf.continuous.comp continuous_fst).add continuous_snd)
 
 /-- Closed normal discs strictly inside an embedded tube form a closed embedding if
-the core is closed and the disc radius is continuous and uniformly bounded. -/
+the core map is proper and the disc radius is continuous and uniformly bounded. -/
 theorem isClosedEmbedding_normalDiscBundleOfRadius (hf : ContMDiff I 𝓘(ℝ, V) 1 f)
-    (hclosed : IsClosedEmbedding f) (hr : Continuous r) {R : ℝ} (hbound : ∀ x, r x ≤ R)
+    (hproper : IsProperMap f) (hr : Continuous r) {R : ℝ} (hbound : ∀ x, r x ≤ R)
     {s : M → ℝ} (hrs : ∀ x, r x < s x)
     (h : IsEmbedding ((normalTubeOfRadius I f s).domRestrict
       fun p : M × V => f p.1 + p.2)) :
@@ -92,12 +92,12 @@ theorem isClosedEmbedding_normalDiscBundleOfRadius (hf : ContMDiff I 𝓘(ℝ, V
         (mem_normalDiscBundleOfRadius.mp hp).2.trans_lt (hrs p.1)⟩
   refine ⟨h.comp (IsEmbedding.inclusion hsub), ?_⟩
   simpa only [range_domRestrict] using
-    isClosed_image_normalDiscBundleOfRadius hf hclosed hr hbound
+    isClosed_image_normalDiscBundleOfRadius hf hproper hr hbound
 
-/-- The frontier of an embedded bounded variable-radius tube over a closed core is
+/-- The frontier of an embedded bounded variable-radius tube for a proper core map is
 the corresponding normal sphere image. -/
 theorem frontier_image_normalTubeOfRadius (hf : ContMDiff I 𝓘(ℝ, V) 1 f)
-    (hclosed : IsClosedEmbedding f) (hr : Continuous r) (hpos : ∀ x, 0 < r x)
+    (hproper : IsProperMap f) (hr : Continuous r) (hpos : ∀ x, 0 < r x)
     {R : ℝ} (hbound : ∀ x, r x ≤ R) {s : M → ℝ} (hrs : ∀ x, r x < s x)
     (h : IsOpenEmbedding ((normalTubeOfRadius I f s).domRestrict
       fun p : M × V => f p.1 + p.2)) :
@@ -110,12 +110,12 @@ theorem frontier_image_normalTubeOfRadius (hf : ContMDiff I 𝓘(ℝ, V) 1 f)
   have hinj : InjOn Φ (normalDiscBundleOfRadius I f r) := by
     intro p hp q hq hpq
     exact congrArg Subtype.val
-      ((isClosedEmbedding_normalDiscBundleOfRadius hf hclosed hr hbound hrs h.isEmbedding).injective
+      ((isClosedEmbedding_normalDiscBundleOfRadius hf hproper hr hbound hrs h.isEmbedding).injective
         (a₁ := ⟨p, hp⟩) (a₂ := ⟨q, hq⟩) hpq)
   have htd : normalTubeOfRadius I f r ⊆ normalDiscBundleOfRadius I f r :=
     fun p hp => mem_normalDiscBundleOfRadius.mpr
       ⟨(mem_normalTubeOfRadius.mp hp).1, (mem_normalTubeOfRadius.mp hp).2.le⟩
-  rw [frontier, closure_image_normalTubeOfRadius hf hclosed hr hpos hbound,
+  rw [frontier, closure_image_normalTubeOfRadius hf hproper hr hpos hbound,
     hopen.interior_eq, ← hinj.image_sdiff_subset htd,
     normalDiscBundleOfRadius_sdiff_normalTubeOfRadius]
 
@@ -146,12 +146,13 @@ theorem exists_isClosedEmbedding_normalDiscBundleOfRadius [FiniteDimensional ℝ
   have hbound : ∀ x, r x ≤ 1 := fun x => min_le_right _ _
   have hf1 : ContMDiff I 𝓘(ℝ, V) 1 f := hf.of_le (by norm_num)
   have hd :=
-    isClosedEmbedding_normalDiscBundleOfRadius hf1 hclosed r.continuous hbound hrs h.isEmbedding
+    isClosedEmbedding_normalDiscBundleOfRadius hf1 hclosed.isProperMap r.continuous
+      hbound hrs h.isEmbedding
   have hopen :=
     isOpenEmbedding_normalTubeOfRadius_of_le r.continuous (fun x => (hrs x).le) h
   exact ⟨r, hr, hopen, hd,
     hd.comp (IsClosedEmbedding.inclusion normalSphereBundleOfRadius_subset_normalDiscBundleOfRadius
       ((isClosed_normalSphereBundleOfRadius hf1 r.continuous).preimage continuous_subtype_val)),
-    frontier_image_normalTubeOfRadius hf1 hclosed r.continuous hr hbound hrs h⟩
+    frontier_image_normalTubeOfRadius hf1 hclosed.isProperMap r.continuous hr hbound hrs h⟩
 
 end TauCeti
