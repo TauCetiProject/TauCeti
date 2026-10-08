@@ -5,9 +5,11 @@ Authors: Claude
 -/
 module
 
+public import TauCeti.Algebra.Module.LinearMap.EndQuotient
 public import TauCeti.LinearAlgebra.TensorProduct.Quotient
 public import TauCeti.RepresentationTheory.BaseChange
 public import TauCeti.RepresentationTheory.NormSplit.Basic
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Lifting a norm decomposition of the identity from `k/pk`
@@ -62,11 +64,11 @@ theorem id_mem_range_norm_linHom_of_baseChange [Module.Projective k V] (ρ : Rep
   have hπ (v : V) : red (π v) = πQ (red v) := LinearMap.congr_fun hπ' v
   have hdiv (δ : V →ₗ[k] V) (hδ : ∀ v, red (δ v) = 0) :
       ∃ θ : V →ₗ[k] V, ∀ v, δ v = (p : k) • θ v := by
-    let μ : V →ₗ[k] V := (p : k) • LinearMap.id
-    obtain ⟨θ, hθ⟩ := Module.projective_lifting_property μ.rangeRestrict
-      (δ.codRestrict (LinearMap.range μ) fun v ↦ by simpa [μ] using hred_eq_zero _ (hδ v))
-      μ.surjective_rangeRestrict
-    exact ⟨θ, fun v ↦ by simpa [μ] using congr($(LinearMap.congr_fun hθ v).1).symm⟩
+    have hker : δ ∈ RingHom.ker (Ideal.endMapQ (Ideal.span {algebraMap k k (p : k)}) V) :=
+      (Ideal.mem_ker_endMapQ_iff _ _).2 fun _ ⟨v, hv⟩ ↦ hv ▸
+        (Submodule.mem_span_algebraMap_smul_top_iff (p : k)).2 (hred_eq_zero _ (hδ v))
+    obtain ⟨θ, rfl⟩ := (Ideal.endMapQ_span_algebraMap_eq_zero_iff (p : k) δ).1 hker
+    exact ⟨θ, fun _ ↦ rfl⟩
   obtain ⟨θ, hθ⟩ := hdiv ((linHom ρ ρ).norm π - LinearMap.id) fun v ↦ by
     rw [LinearMap.sub_apply, map_sub, norm_linHom_apply, map_sum, LinearMap.id_apply]
     conv_rhs => rw [← sub_self (red v)]
