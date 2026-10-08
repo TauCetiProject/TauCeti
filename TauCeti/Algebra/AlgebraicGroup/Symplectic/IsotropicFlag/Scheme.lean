@@ -100,7 +100,8 @@ theorem schemePointsMulEquiv_mapValue (φ : A →ₐ[R] B)
 
 private theorem groupSchemePointMulEquiv_comp_inclusion
     (f : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) :
-    groupSchemePointMulEquiv R m A f ≫ (inclusion R m).hom.hom =
+    groupSchemePointMulEquiv R m A f ≫ (inclusion R m).hom.hom ≫
+        (eqToHom (Symplectic.groupScheme_def R m).symm).hom.hom =
       Symplectic.groupSchemePointMulEquiv m A
         (CommHopfAlgCat.quotientPointsHom (Symplectic.coordinateHopfAlgebra R m)
           (definingHopfIdeal R m) (CommAlgCat.of R A) f) := by
@@ -112,17 +113,17 @@ private theorem groupSchemePointMulEquiv_comp_inclusion
       (fun f => by simpa only [AlgHom.toRingHom_eq_coe] using
         groupSchemePointMulEquiv_apply_left R m A f) (coordinateMap R m) f
   erw [CommHopfAlgCat.mapPointsFunctor_app_apply] at h
-  have he := congrArg
-    (fun p => p ≫ (eqToHom (Symplectic.groupScheme_def R m)).hom.hom) h
+  rw [inclusion, CommHopfAlgCat.quotientSpecι_def]
   erw [CommHopfAlgCat.quotientPointsHom_apply]
-  simpa only [eqToHom_refl, Category.id_comp, inclusion,
-    CommHopfAlgCat.quotientSpecι_def, Category.assoc, Grp.hom_comp,
-    Over.comp_left, eqToHom_trans, Category.comp_id] using he
+  simpa only [eqToHom_refl, Category.id_comp, Grp.comp_hom_hom, coordinateMap,
+    Category.assoc] using h
 
 /-- Composing with the flag-subgroup inclusion gives the underlying symplectic matrix. -/
 theorem schemePointsMulEquiv_comp_inclusion
     (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of R)) ⟶ (groupScheme R m).X) :
-    Symplectic.schemePointsMulEquiv m A (p ≫ (inclusion R m).hom.hom) =
+    Symplectic.schemePointsMulEquiv m A
+        (p ≫ (inclusion R m).hom.hom ≫
+          (eqToHom (Symplectic.groupScheme_def R m).symm).hom.hom) =
       (schemePointsMulEquiv R m A p : GLSymplecticFin m A) := by
   obtain ⟨f, rfl⟩ := (groupSchemePointMulEquiv R m A).surjective p
   rw [groupSchemePointMulEquiv_comp_inclusion,
