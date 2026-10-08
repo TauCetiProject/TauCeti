@@ -47,7 +47,8 @@ theorem center_typeB_eq_bot (h2 : IsRegular (2 : K)) : center K (Orthogonal.type
   have hd0 : d = 0 := by
     funext i
     have h := hc (typeBShortRootGenerator i)
-    rw [hx', coe_typeBDiagonalEquiv_apply, ← lie_skew, typeBDiagonalMatrix_lie_shortRootGenerator, neg_eq_zero] at h
+    rw [hx', coe_typeBDiagonalEquiv_apply, ← lie_skew,
+      typeBDiagonalMatrix_lie_shortRootGenerator, neg_eq_zero] at h
     have he := congrArg (fun a : Orthogonal.typeB ι K ↦
       (a : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inr (.inl i)) (.inl ())) h
     simpa [coe_typeBShortRootGenerator, typeBShortRootMatrix_def,

@@ -144,6 +144,7 @@ theorem typeBDiagonalMatrix_mem_typeB (d : ι → K) :
     · simp [typeBDiagonalMatrix, typeBDiagonalValue,
         LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD, Matrix.mul_apply, Matrix.one_apply]
 
+omit [Fintype ι] in
 /-- The type-`B` diagonal matrix of zero coordinates is zero. -/
 @[simp]
 theorem typeBDiagonalMatrix_zero : typeBDiagonalMatrix (0 : ι → K) = 0 := by
