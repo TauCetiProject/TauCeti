@@ -110,8 +110,9 @@ theorem _root_.Polynomial.subresultantMatrix_apply_eq_coeff [Semiring R]
 @[simp]
 theorem _root_.Polynomial.subresultantMatrix_zero [Semiring R]
     (p q : R[X]) (m n : ℕ) :
-    subresultantMatrix p q m n 0 = p.sylvester q m n :=
-  (rfl)
+    subresultantMatrix p q m n 0 = p.sylvester q m n := by
+  ext i k
+  induction k using Fin.addCases <;> simp [subresultantMatrix, Polynomial.sylvester]
 
 /-- Mapping coefficients maps every entry of the fixed-bound principal subresultant matrix. -/
 @[simp]
