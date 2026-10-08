@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.SubgroupWeights
-public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization
+public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
 public import Mathlib.RingTheory.HopfAlgebra.GroupLike
 
 /-!
