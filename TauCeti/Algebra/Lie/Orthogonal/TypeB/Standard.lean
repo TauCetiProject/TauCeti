@@ -16,7 +16,7 @@ characteristic different from two, including when `ι` is empty. This supplies a
 irreducible module for the reductivity criterion.
 
 The matrix conventions and root operators are those of
-`TauCeti.Algebra.Lie.Orthogonal.TypeB.RootGenerators`.
+`TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.Generators`.
 
 ## References
 

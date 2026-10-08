@@ -41,22 +41,18 @@ theorem center_typeB_eq_bot (h2 : IsRegular (2 : K)) : center K (Orthogonal.type
     intro y _
     rw [hc y]
     exact (typeBDiagonalCartan K ι).zero_mem
-  obtain ⟨d, hd⟩ := mem_typeBDiagonalCartan_iff.mp hxH
-  have hx' : x = ⟨typeBDiagonalMatrix d, typeBDiagonalMatrix_mem_typeB d⟩ :=
-    Subtype.ext hd
+  let d := (typeBDiagonalEquiv (K := K) (ι := ι)).symm ⟨x, hxH⟩
+  have hx' : x = (typeBDiagonalEquiv d : typeBDiagonalCartan K ι) := by
+    simp only [d, LinearEquiv.apply_symm_apply]
   have hd0 : d = 0 := by
     funext i
     have h := hc (typeBShortRootGenerator i)
-    rw [hx', ← lie_skew, typeBDiagonalMatrix_lie_shortRootGenerator, neg_eq_zero] at h
+    rw [hx', coe_typeBDiagonalEquiv_apply, ← lie_skew, typeBDiagonalMatrix_lie_shortRootGenerator, neg_eq_zero] at h
     have he := congrArg (fun a : Orthogonal.typeB ι K ↦
       (a : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inr (.inl i)) (.inl ())) h
     simpa [coe_typeBShortRootGenerator, typeBShortRootMatrix_def,
       h2.right.mul_right_eq_zero_iff] using he
-  apply Subtype.ext
-  rw [hd, hd0]
-  ext (a | (i | i)) b
-  · cases a; simp [typeBDiagonalMatrix_apply]
-  · simp [typeBDiagonalMatrix_apply]
-  · simp [typeBDiagonalMatrix_apply]
+  rw [hx', hd0, map_zero]
+  rfl
 
 end TauCeti

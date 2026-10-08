@@ -144,6 +144,12 @@ theorem typeBDiagonalMatrix_mem_typeB (d : ι → K) :
     · simp [typeBDiagonalMatrix, typeBDiagonalValue,
         LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD, Matrix.mul_apply, Matrix.one_apply]
 
+/-- The type-`B` diagonal matrix of zero coordinates is zero. -/
+@[simp]
+theorem typeBDiagonalMatrix_zero : typeBDiagonalMatrix (0 : ι → K) = 0 := by
+  ext a b
+  simp [typeBDiagonalMatrix, typeBDiagonalValue]
+
 /-! ### The Cartan subalgebra and its coordinates -/
 
 variable (K ι)
@@ -153,7 +159,9 @@ type `B`. -/
 def typeBDiagonalCartan : LieSubalgebra K (LieAlgebra.Orthogonal.typeB ι K) where
   carrier := {A | ∃ d : ι → K,
     (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) = typeBDiagonalMatrix d}
-  zero_mem' := ⟨0, by ext a b; simp [typeBDiagonalMatrix, typeBDiagonalValue]⟩
+  zero_mem' := ⟨0, by
+    change (0 : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) = typeBDiagonalMatrix 0
+    rw [typeBDiagonalMatrix_zero]⟩
   add_mem' := by
     rintro A B ⟨d, hd⟩ ⟨e, he⟩
     refine ⟨d + e, ?_⟩
@@ -185,9 +193,8 @@ def typeBDiagonalCartan : LieSubalgebra K (LieAlgebra.Orthogonal.typeB ι K) whe
     change (⁅(A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K),
       (B : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K)⁆ :
         Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) = typeBDiagonalMatrix 0
-    rw [lie_eq_zero_of_isDiag (hd ▸ isDiag_diagonal _) (he ▸ isDiag_diagonal _)]
-    ext a b
-    simp [typeBDiagonalMatrix, typeBDiagonalValue]
+    rw [lie_eq_zero_of_isDiag (hd ▸ isDiag_diagonal _) (he ▸ isDiag_diagonal _),
+      typeBDiagonalMatrix_zero]
 
 variable {K ι}
 
