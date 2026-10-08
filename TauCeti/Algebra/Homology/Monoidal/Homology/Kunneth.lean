@@ -30,8 +30,8 @@ which hold in any such category:
   their tensor product is again a homotopy equivalence (`HomotopyEquiv.mapBifunctor`).
 
 Combining the two, the Künneth map is an isomorphism whenever `K` and `L` are homotopy equivalent
-to complexes with zero differential.  A separate splitting result shows that every chain complex
-of vector spaces over a field is of this kind.
+to complexes with zero differential.  Every chain complex of vector spaces over a field is of
+this kind, since its cycles and boundaries split off as direct summands.
 
 ## Main definitions and results
 
@@ -120,12 +120,9 @@ theorem isIso_homologyKunneth_iff_of_homotopyEquiv (eK : HomotopyEquiv K K')
       (fun q ↦ homologyMap eL.hom q)) :=
     (GradedObject.Monoidal.tensorIso (GradedObject.isoMk _ _ fun p ↦ eK.toHomologyIso p)
       (GradedObject.isoMk _ _ fun q ↦ eL.toHomologyIso q)).isIso_hom
-  have h : homologyMap (tensorHom eK.hom eL.hom) n =
-      ((HomotopyEquiv.mapBifunctor (curriedTensor C) c eK eL).toHomologyIso n).hom := by
-    change homologyMap (mapBifunctorMap eK.hom eL.hom (curriedTensor C) c) n =
-      homologyMap (HomotopyEquiv.mapBifunctor (curriedTensor C) c eK eL).hom n
-    rw [HomotopyEquiv.mapBifunctor_hom]
-  have : IsIso (homologyMap (tensorHom eK.hom eL.hom) n) := h ▸ inferInstance
+  have : IsIso (homologyMap (tensorHom eK.hom eL.hom) n) := by
+    rw [tensorHom, ← HomotopyEquiv.mapBifunctor_hom (F := curriedTensor C) (c := c) eK eL]
+    exact ((HomotopyEquiv.mapBifunctor (curriedTensor C) c eK eL).toHomologyIso n).isIso_hom
   rw [← isIso_comp_right_iff (homologyKunneth K L n) (homologyMap (tensorHom eK.hom eL.hom) n),
     ← e, isIso_comp_left_iff]
 
@@ -209,8 +206,8 @@ variable {K L K' L' : HomologicalComplex C c} [HasTensor K L] [HasTensor K' L'] 
   [GradedObject.HasTensor (fun p ↦ K'.homology p) (fun q ↦ L'.homology q)]
 
 /-- **The Künneth map is an isomorphism for complexes homotopy equivalent to complexes with zero
-differentials.**  A separate splitting result shows that every chain complex of vector spaces over
-a field is of this kind. -/
+differentials.**  Every chain complex of vector spaces over a field is of this kind, since its
+cycles and boundaries split off as direct summands. -/
 theorem isIso_homologyKunneth_of_homotopyEquiv_of_d_eq_zero (eK : HomotopyEquiv K K')
     (eL : HomotopyEquiv L L') (hK' : ∀ i j, K'.d i j = 0) (hL' : ∀ i j, L'.d i j = 0) :
     IsIso (homologyKunneth K L n) :=
