@@ -157,6 +157,7 @@ private theorem image_range_reflection (e : P.Equiv Q) :
   rw [← Set.range_comp, h, e.indexEquiv.surjective.range_comp]
 
 /-- **Conjugation maps the Weyl group of `P` onto the Weyl group of `Q`.** -/
+@[simp]
 theorem _root_.RootPairing.Equiv.map_weylGroup (e : P.Equiv Q) :
     (weylGroup P).map (e.autCongr : Aut P →* Aut Q) = weylGroup Q := by
   rw [RootPairing.weylGroup, MonoidHom.map_closure, image_range_reflection e,
@@ -217,7 +218,10 @@ section Functoriality
 theorem _root_.RootPairing.Equiv.autCongr_id :
     (RootPairing.Equiv.id P).autCongr = MulEquiv.refl (Aut P) :=
   MulEquiv.ext fun g ↦ by
-    rw [RootPairing.Equiv.autCongr_apply, RootPairing.Equiv.symm_id,
+    -- `RootPairing.Equiv.symm P P` and `RootPairing.Equiv.id P` are the inversion and the unit of
+    -- the group `RootPairing.Equiv P P`, so the inverse of the identity is `inv_one`.
+    have h : RootPairing.Equiv.symm P P (RootPairing.Equiv.id P) = RootPairing.Equiv.id P := inv_one
+    rw [RootPairing.Equiv.autCongr_apply, h,
       RootPairing.Equiv.id_comp, RootPairing.Equiv.comp_id]
     rfl
 

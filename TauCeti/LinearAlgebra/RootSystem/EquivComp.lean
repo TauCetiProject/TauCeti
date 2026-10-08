@@ -13,20 +13,21 @@ public import Mathlib.LinearAlgebra.RootSystem.Hom
 Equivalences of root pairings form a groupoid: `RootPairing.Equiv.comp` composes them,
 `RootPairing.Equiv.id` is the identity and `RootPairing.Equiv.symm` inverts. This file records the
 laws of that groupoid which relate composition and inversion, together with the weight- and
-coweight-space linear equivalences of an identity and of a composite.
+coweight-space linear equivalences of a composite.
 
 The statements are about two or three root pairings with unrelated index sets, weight spaces and
 coweight spaces; nothing here needs any finiteness, reducedness or crystallographic hypothesis.
+Laws about a single pairing are already available from the `Group (RootPairing.Equiv P P)`
+instance, so they are not restated here.
 
 ## Main results
 
 * `RootPairing.Equiv.self_comp_symm` and `RootPairing.Equiv.symm_comp_self`: an equivalence
   composes with its inverse to the identity, in both orders.
-* `RootPairing.Equiv.symm_id` and `RootPairing.Equiv.symm_comp`: the inverse of an identity is the
-  identity, and the inverse of a composite is the composite of the inverses in the reverse order.
-* `RootPairing.Equiv.weightEquiv_id`, `RootPairing.Equiv.coweightEquiv_id`,
-  `RootPairing.Equiv.weightEquiv_comp` and `RootPairing.Equiv.coweightEquiv_comp`: the weight- and
-  coweight-space equivalences of an identity and of a composite.
+* `RootPairing.Equiv.symm_comp`: the inverse of a composite is the composite of the inverses in
+  the reverse order.
+* `RootPairing.Equiv.weightEquiv_comp` and `RootPairing.Equiv.coweightEquiv_comp`: the weight- and
+  coweight-space equivalences of a composite.
 
 ## References
 
@@ -58,18 +59,6 @@ theorem _root_.RootPairing.Equiv.symm_comp_self (e : P.Equiv Q) :
     RootPairing.Equiv.comp (RootPairing.Equiv.symm P Q e) e = RootPairing.Equiv.id P := by
   ext x <;> simp
 
-/-- The weight-space equivalence of the identity equivalence is the identity. -/
-@[simp]
-theorem _root_.RootPairing.Equiv.weightEquiv_id :
-    weightEquiv (RootPairing.Equiv.id P) = LinearEquiv.refl R M :=
-  LinearEquiv.ext fun _ ↦ rfl
-
-/-- The coweight-space equivalence of the identity equivalence is the identity. -/
-@[simp]
-theorem _root_.RootPairing.Equiv.coweightEquiv_id :
-    RootPairing.Equiv.coweightEquiv (RootPairing.Equiv.id P) = LinearEquiv.refl R N :=
-  LinearEquiv.ext fun _ ↦ rfl
-
 /-- The weight-space equivalence of a composite is the composite of the weight-space
 equivalences. -/
 @[simp]
@@ -84,12 +73,6 @@ theorem _root_.RootPairing.Equiv.coweightEquiv_comp (e : P.Equiv Q) (f : Q.Equiv
     RootPairing.Equiv.coweightEquiv (RootPairing.Equiv.comp f e) =
       f.coweightEquiv ≪≫ₗ e.coweightEquiv :=
   LinearEquiv.ext fun _ ↦ rfl
-
-/-- The identity equivalence of a root pairing is its own inverse. -/
-@[simp]
-theorem _root_.RootPairing.Equiv.symm_id :
-    RootPairing.Equiv.symm P P (RootPairing.Equiv.id P) = RootPairing.Equiv.id P := by
-  ext x <;> simp
 
 /-- The inverse of a composite of equivalences is the composite of the inverses, in the reverse
 order. -/
