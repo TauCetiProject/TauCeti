@@ -20,7 +20,10 @@ base-changed integral carrier contains it; equality of the two closed subgroups 
 question.
 
 Connectedness is one geometric input to identifying this explicit generated group with a pinned
-split reductive group, alongside the comparison with the integral carrier.
+split reductive group, alongside the comparison with the integral carrier. The coordinate
+quotient `generatedCoordinateMap` and the generator lifts `generatedCoordinateLift` expose the
+generated subgroup's representation and generator maps. Their composition and uniqueness laws
+characterize the lifts without unfolding the common-kernel construction.
 
 ## References
 
@@ -84,17 +87,49 @@ theorem generatedCoordinateHopfAlgebra_def :
         (generatedDefiningIdeal k) := by
   simp [generatedCoordinateHopfAlgebra]
 
-/-- Each generator factors uniquely through the generated subgroup's coordinate quotient. -/
-theorem existsUnique_generatorCoordinateMap_factor (j : Sum (Fin 4 ⊕ Fin 4) Unit) :
-    ∃! g : CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra k 24)
-        (generatedDefiningIdeal k) ⟶ generatorCoordinateAlgebra k j,
-      CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra k 24)
-        (generatedDefiningIdeal k) ≫ g = generatorCoordinateMap k j := by
-  rw [generatedDefiningIdeal_def]
-  refine ⟨CommHopfAlgCat.commonKernelLift (generatorCoordinateMap k) j, ?_, ?_⟩
-  · exact CommHopfAlgCat.mkQuotient_comp_commonKernelLift (generatorCoordinateMap k) j
-  · intro g hg
-    exact CommHopfAlgCat.commonKernelLift_unique (generatorCoordinateMap k) j g hg
+/-- The coordinate quotient defining the generated subgroup's closed immersion into `GL₂₄`. -/
+noncomputable def generatedCoordinateMap :
+    GeneralLinear.coordinateHopfAlgebra k 24 ⟶ generatedCoordinateHopfAlgebra k :=
+  CommHopfAlgCat.mkQuotient _ _
+
+/-- The coordinate quotient of the generated subgroup is surjective. -/
+theorem generatedCoordinateMap_surjective :
+    Function.Surjective (generatedCoordinateMap k).hom :=
+  CommHopfAlgCat.mkQuotient_surjective _ _
+
+/-- The coordinate quotient has kernel the generated subgroup's defining ideal. -/
+@[simp]
+theorem generatedCoordinateMap_ker :
+    RingHom.ker (generatedCoordinateMap k).hom = (generatedDefiningIdeal k).toIdeal :=
+  CommHopfAlgCat.mkQuotient_ker _ _
+
+/-- The `j`th generator coordinate morphism factored through the generated subgroup. -/
+noncomputable def generatedCoordinateLift (j : Sum (Fin 4 ⊕ Fin 4) Unit) :
+    generatedCoordinateHopfAlgebra k ⟶ generatorCoordinateAlgebra k j :=
+  CommHopfAlgCat.liftQuotient (generatedDefiningIdeal k) (generatorCoordinateMap k j)
+    ((le_generatedDefiningIdeal_iff k _).mp le_rfl j)
+
+/-- Composing the coordinate quotient with a generator lift recovers the generator. -/
+@[reassoc (attr := simp)]
+theorem generatedCoordinateMap_comp_generatedCoordinateLift
+    (j : Sum (Fin 4 ⊕ Fin 4) Unit) :
+    generatedCoordinateMap k ≫ generatedCoordinateLift k j = generatorCoordinateMap k j :=
+  CommHopfAlgCat.mkQuotient_comp_liftQuotient _ _ _
+
+/-- The generator lift is the unique factorization of its coordinate morphism. -/
+theorem generatedCoordinateLift_unique (j : Sum (Fin 4 ⊕ Fin 4) Unit)
+    (g : generatedCoordinateHopfAlgebra k ⟶ generatorCoordinateAlgebra k j)
+    (hg : generatedCoordinateMap k ≫ g = generatorCoordinateMap k j) :
+    g = generatedCoordinateLift k j :=
+  CommHopfAlgCat.liftQuotient_unique _ _ _ g hg
+
+instance : Algebra.FiniteType k (generatedCoordinateHopfAlgebra k) := by
+  rw [generatedCoordinateHopfAlgebra_def]
+  infer_instance
+
+/-- The generated subgroup with its finite-type coordinate algebra. -/
+noncomputable abbrev generatedFiniteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat k :=
+  FiniteTypeCommHopfAlgCat.of k (generatedCoordinateHopfAlgebra k)
 
 end Construction
 
