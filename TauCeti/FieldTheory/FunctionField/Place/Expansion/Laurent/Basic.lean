@@ -132,14 +132,14 @@ theorem coeff_laurentSeriesExpansion_eq_of_sub_sum_mem_filtration {m : ℤ} {z :
 
 /-- Multiplying by `t ^ n` to make a function integral shifts its Laurent coefficients onto
 the coefficients of a power-series expansion. -/
-theorem coeff_laurentSeriesExpansion_sub_natCast (n : ℕ) {z : F}
+theorem coeff_laurentSeriesExpansion_sub (n : ℤ) {z : F}
     (hz : t ^ n * z ∈ P.integers) (i : ℕ) :
     (P.laurentSeriesExpansion hP ht z).coeff ((i : ℤ) - n) =
       PowerSeries.coeff i (P.powerSeriesExpansion hP ht ⟨t ^ n * z, hz⟩) := by
   rw [← HahnSeries.ofPowerSeries_apply_coeff (Γ := ℤ), ← laurentSeriesExpansion_coe]
   -- Reduce the coercion of the anonymous-constructor element of `P.integers`.
   dsimp only
-  rw [map_mul, ← zpow_natCast, laurentSeriesExpansion_zpow_uniformizer,
+  rw [map_mul, laurentSeriesExpansion_zpow_uniformizer,
     HahnSeries.coeff_single_mul, one_mul]
 
 /-! ### Residues -/
@@ -190,7 +190,10 @@ theorem residue_eq_coeff_powerSeriesExpansion (n : ℕ) {z : F}
     (hz : t ^ (n + 1) * z ∈ P.integers) :
     P.residue hP ht z =
       PowerSeries.coeff n (P.powerSeriesExpansion hP ht ⟨t ^ (n + 1) * z, hz⟩) := by
-  rw [residue_apply, ← P.coeff_laurentSeriesExpansion_sub_natCast hP ht (n + 1) hz n]
+  have h := P.coeff_laurentSeriesExpansion_sub hP ht ((n + 1 : ℕ) : ℤ)
+    (by simpa only [zpow_natCast] using hz) n
+  simp only [zpow_natCast] at h
+  rw [residue_apply, ← h]
   congr 1
   omega
 

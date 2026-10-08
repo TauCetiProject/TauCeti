@@ -158,7 +158,8 @@ theorem completionIntegersEquivPowerSeries_completionIntegersEmbedding (x : P.in
   have h := P.sub_sum_truncatedExpansion_mem_filtration hP ht (n + 1) x
   rw [← P.completionEmbedding_mem_filtration_iff] at h
   exact congrFun ((P.completionPlace.truncatedExpansion_eq_iff _ _ (n + 1) _ _).mpr
-    (by simpa using h)) _
+    (by simpa only [completionIntegersEmbedding_apply, map_sub, map_sum, map_mul,
+      map_pow, AlgHom.commutes] using h)) _
 
 /-- The chosen uniformizer maps to the power-series variable. -/
 theorem completionIntegersEquivPowerSeries_uniformizer :
