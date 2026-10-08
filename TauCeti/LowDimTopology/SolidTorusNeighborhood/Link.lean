@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.KnotTheory.SmoothLink.Basic
 public import TauCeti.Topology.MetricSpace.Thickening
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Basic
 
@@ -24,7 +25,8 @@ disjoint tubular neighbourhoods of the link.
   family of pairwise disjoint `C²` embedded circles in `ℝ³`.
 
 The resulting disjoint open images provide the componentwise neighborhoods used when forming a
-link exterior.
+link exterior. The canonical `SmoothLinkEmbedding` presentation has the same
+existence result via `SmoothLinkEmbedding.exists_isSolidTorusLinkNeighborhood`.
 -/
 
 public section
@@ -85,7 +87,7 @@ theorem exists_isSolidTorusLinkNeighborhood
       have hcompact : ∀ i, IsCompact (range (f i)) := fun i =>
         isCompact_range (hf i).continuous
       obtain ⟨δ, hδ, hV_disj⟩ :=
-        exists_thickening_pairwiseDisjoint (fun i => range (f i)) hcompact hdisj
+        exists_thickenings_pairwiseDisjoint (fun i => range (f i)) hcompact hdisj
       have hV_mem (i : ι) : thickening δ (range (f i)) ∈ 𝓝ˢ (range (f i)) :=
         thickening_mem_nhdsSet _ hδ
       choose Φ hΦ hΦsub using fun i =>
@@ -97,5 +99,20 @@ theorem exists_isSolidTorusLinkNeighborhood
         exact hΦsub i ⟨p, rfl⟩
       · rintro _ ⟨p, hp, rfl⟩
         exact hΦsub j ⟨p, rfl⟩
+
+namespace SmoothLinkEmbedding
+
+/-- A smooth link presentation in Euclidean three-space admits pairwise disjoint
+solid-torus neighbourhoods of all its labeled components. -/
+theorem exists_isSolidTorusLinkNeighborhood {n : ℕ}
+    (L : SmoothLinkEmbedding 𝓘(ℝ, ℝ³) ℝ³ n) :
+    ∃ Φ : Fin n → SolidTorus → ℝ³,
+      IsSolidTorusLinkNeighborhood (fun i => L i) Φ :=
+  TauCeti.exists_isSolidTorusLinkNeighborhood
+    (fun i => (L i).contMDiff.of_le (by simp))
+    (fun i z => (L i).isImmersion.mfderiv_injective (by simp) z)
+    (fun i => (L i).isEmbedding.injective) L.pairwiseDisjoint_range
+
+end SmoothLinkEmbedding
 
 end TauCeti

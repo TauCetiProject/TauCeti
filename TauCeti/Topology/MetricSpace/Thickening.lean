@@ -22,7 +22,7 @@ namespace TauCeti
 
 /-- A finite family of pairwise disjoint compact sets admits pairwise disjoint thickenings of one
 common positive radius. -/
-theorem exists_thickening_pairwiseDisjoint
+theorem exists_thickenings_pairwiseDisjoint
     {X ι : Type*} [MetricSpace X] [Finite ι]
     (K : ι → Set X) (hK : ∀ i, IsCompact (K i))
     (hdisj : Pairwise (Disjoint on K)) :
