@@ -70,6 +70,9 @@ coefficient vanishes in characteristic two.
   columns.
 * `TauCeti.GridInitialPentagonBetween.disjoint_coveredSquares_XSet_iff`: the `X`-avoidance
   condition column by column.
+* `TauCeti.GridInitialPentagonBetween.
+  coveredSquares_eq_product_singleton_of_top_eq_finRotate_bottom`: the covered squares of a
+  pentagon spanning one cyclic row.
 * `TauCeti.GridDiagram.commutationMap_apply_apply`: the matrix coefficients of `Φ` are the sums of
   those of the two pentagon maps.
 
@@ -131,6 +134,21 @@ theorem turn_mem_cIco_bottom_top (P : GridInitialPentagonBetween a s x y) :
     s ∈ Grid.cIco P.bottom P.top := by
   rw [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def]
   exact P.turn_mem
+
+/-- An initial-side pentagon spanning one cyclic row turns at its bottom row. -/
+theorem turn_eq_bottom_of_top_eq_finRotate_bottom (P : GridInitialPentagonBetween a s x y)
+    (hthin : P.top = finRotate n P.bottom) : s = P.bottom := by
+  have hrows := Grid.cIco_eq_singleton_iff.2 ⟨rfl, hthin, P.bottom_ne_top⟩
+  have ht := P.turn_mem_cIco_bottom_top
+  rw [hrows] at ht
+  exact Finset.mem_singleton.mp ht
+
+/-- The row interval of a thin initial-side pentagon consists exactly of its turn row. -/
+theorem cIco_bottom_top_eq_singleton_of_top_eq_finRotate_bottom
+    (P : GridInitialPentagonBetween a s x y) (hthin : P.top = finRotate n P.bottom) :
+    Grid.cIco P.bottom P.top = {s} := by
+  simpa only [P.turn_eq_bottom_of_top_eq_finRotate_bottom hthin] using
+    Grid.cIco_eq_singleton_iff.2 ⟨rfl, hthin, P.bottom_ne_top⟩
 
 /-- A pentagon turning on its initial side is determined by its underlying rectangle. -/
 theorem toGridRectangleBetween_injective :
@@ -264,6 +282,19 @@ theorem disjoint_coveredSquares_XSet_iff (P : GridInitialPentagonBetween a s x y
     · exact h₁ p.1 hcb hc hr
     · exact h₂ (hpa ▸ hr)
     · exact h₃ (hpb ▸ hr)
+
+/-- An initial-side pentagon spanning one cyclic row has its turn in that row and covers only
+the columns of its underlying rectangle other than the second commuted column. -/
+theorem coveredSquares_eq_product_singleton_of_top_eq_finRotate_bottom
+    (P : GridInitialPentagonBetween a s x y) (hthin : P.top = finRotate n P.bottom) :
+    P.coveredSquares =
+      (Grid.cIco (finRotate n a) P.right).erase (finRotate n a) ×ˢ {s} := by
+  have hs := P.turn_eq_bottom_of_top_eq_finRotate_bottom hthin
+  ext p
+  simp only [mem_coveredSquares, Finset.mem_product, Finset.mem_erase,
+    hs, Grid.cIco_eq_singleton_iff.2 ⟨rfl, hthin, P.bottom_ne_top⟩, Finset.mem_singleton]
+  simp only [hthin, Grid.cIoo_finRotate_eq_empty, Grid.cIco_self,
+    Finset.notMem_empty, and_false, or_false, and_assoc]
 
 /-- Initial-side pentagons with the same underlying toroidal rectangle cover the same squares. -/
 theorem coveredSquares_eq_of_toGridRectangle_eq {u v : GridState n}
