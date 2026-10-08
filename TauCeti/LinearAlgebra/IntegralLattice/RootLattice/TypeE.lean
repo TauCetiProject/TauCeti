@@ -102,8 +102,6 @@ namespace TauCeti
 
 namespace IntegralLattice
 
-open Finset
-
 /-! ## The root lattice of type `E₆` -/
 
 /-- The root lattice of type `E₆`: the rank-six integral lattice on `Fin 6 → ℚ` whose Gram
@@ -144,7 +142,7 @@ private theorem det_cartanMatrixE₆_ne_zero : (CartanMatrix.E 6).det ≠ 0 := b
   norm_num
 
 /-- The type `E₆` root lattice is nondegenerate because its Cartan matrix is nonsingular. -/
-noncomputable instance instIsNondegenerateTypeE₆RootLattice :
+instance instIsNondegenerateTypeE₆RootLattice :
     typeE₆RootLattice.IsNondegenerate := by
   rw [typeE₆RootLattice]
   refine isNondegenerate_ofGramMatrix _ _ _ ?_
@@ -185,7 +183,7 @@ theorem natCard_discriminantGroup_typeE₆RootLattice :
 private def typeE₆WeightCoeff : Fin 6 → ℤ := ![4, 3, 5, 6, 4, 2]
 
 /-- The minuscule fundamental weight `ϖ₁` of type `E₆`, in simple-root coordinates. -/
-noncomputable def typeE₆MinusculeWeight : Fin 6 → ℚ :=
+def typeE₆MinusculeWeight : Fin 6 → ℚ :=
   fun j ↦ (typeE₆WeightCoeff j : ℚ) / 3
 
 @[simp]
@@ -429,7 +427,7 @@ private theorem det_cartanMatrixE₇_ne_zero : (CartanMatrix.E 7).det ≠ 0 := b
   norm_num
 
 /-- The type `E₇` root lattice is nondegenerate because its Cartan matrix is nonsingular. -/
-noncomputable instance instIsNondegenerateTypeE₇RootLattice :
+instance instIsNondegenerateTypeE₇RootLattice :
     typeE₇RootLattice.IsNondegenerate := by
   rw [typeE₇RootLattice]
   refine isNondegenerate_ofGramMatrix _ _ _ ?_
@@ -470,7 +468,7 @@ theorem natCard_discriminantGroup_typeE₇RootLattice :
 private def typeE₇WeightCoeff : Fin 7 → ℤ := ![2, 3, 4, 6, 5, 4, 3]
 
 /-- The minuscule fundamental weight `ϖ₇` of type `E₇`, in simple-root coordinates. -/
-noncomputable def typeE₇MinusculeWeight : Fin 7 → ℚ :=
+def typeE₇MinusculeWeight : Fin 7 → ℚ :=
   fun j ↦ (typeE₇WeightCoeff j : ℚ) / 2
 
 @[simp]
@@ -723,7 +721,7 @@ private theorem det_cartanMatrixE₈_ne_zero : (CartanMatrix.E 8).det ≠ 0 := b
   norm_num
 
 /-- The type `E₈` root lattice is nondegenerate because its Cartan matrix is nonsingular. -/
-noncomputable instance instIsNondegenerateTypeE₈RootLattice :
+instance instIsNondegenerateTypeE₈RootLattice :
     typeE₈RootLattice.IsNondegenerate := by
   rw [typeE₈RootLattice]
   refine isNondegenerate_ofGramMatrix _ _ _ ?_
