@@ -108,9 +108,15 @@ noncomputable def puncturedDiscCircle : Path puncturedDiscBasepoint puncturedDis
 @[simp]
 theorem coe_puncturedDiscCircle_apply (t : unitInterval) :
     (puncturedDiscCircle t : ℂ) = circleMap 0 (1 / 2) (2 * Real.pi * t) := by
-  change ((puncturedDiscStarConvex.sphereHomotopyEquiv puncturedDiscRadius_pos
-    puncturedDiscSphere_subset) ((Complex.sphereLoop 0 puncturedDiscRadius_pos) t) : ℂ) = _
-  rw [StarConvex.coe_sphereHomotopyEquiv_apply, Complex.coe_sphereLoop_apply]
+  -- `puncturedDiscCircle` is by definition this mapped loop; `rw [puncturedDiscCircle]` is not
+  -- usable, since the endpoints of the mapped loop only agree with `puncturedDiscBasepoint` up to
+  -- unfolding, so we evaluate the mapped loop with `Path.map_coe` and let `refine` unfold it.
+  have hmap := congrFun (Path.map_coe (Complex.sphereLoop 0 puncturedDiscRadius_pos)
+    (puncturedDiscStarConvex.sphereHomotopyEquiv puncturedDiscRadius_pos
+      puncturedDiscSphere_subset).toFun.continuous) t
+  refine (congrArg Subtype.val hmap).trans ?_
+  rw [Function.comp_apply, StarConvex.coe_sphereHomotopyEquiv_apply,
+    Complex.coe_sphereLoop_apply]
 
 /-- The counterclockwise circle generates the fundamental group of the punctured disc. -/
 theorem zpowers_puncturedDiscCircle_eq_top :
