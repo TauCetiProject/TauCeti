@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Norm.Trace
-public import TauCeti.RingTheory.Ideal.Maps
 public import TauCeti.RingTheory.DedekindDomain.Different.DualFamily
 
 /-!
@@ -243,11 +242,16 @@ theorem differentIdeal_integralSemilocal :
           (Algebra.TensorProduct.includeRight : 𝒪 L →ₐ[𝒪 K] _).toRingHom) :=
     Ideal.map_map (Algebra.TensorProduct.includeRight : 𝒪 L →ₐ[𝒪 K] _).toRingHom
       (integralSemilocalEquiv L v).toRingEquiv.toRingHom
-  rw [hmap, Ideal.map_eq_pi_map_comp_evalRingHom]
-  congr 1
+  rw [hmap]
+  apply Ideal.piOrderIso.injective
   funext u
-  have := u.2
-  rw [← map_differentIdeal_eq_differentIdeal_adicCompletionIntegers v u.1]
+  let hu : u.1.asIdeal.LiesOver v.asIdeal := u.2
+  -- Read the order isomorphism as the tuple of images under the factor projections.
+  simp only [Ideal.piOrderIso, OrderIso.symm_mk, RelIso.coe_fn_mk,
+    Equiv.coe_fn_symm_mk, RingEquiv.toRingHom_eq_coe, AlgEquiv.toRingEquiv_toRingHom,
+    AlgHom.toRingHom_eq_coe]
+  rw [Ideal.map_evalRingHom_pi, Ideal.map_map,
+    ← map_differentIdeal_eq_differentIdeal_adicCompletionIntegers v u.1]
   -- At `u`, the composite sends `x` to `1 · x`, the image of `x` in `𝒪_u`.
   congr 1
   ext x
