@@ -182,6 +182,7 @@ theorem disc_eq_incl_iff {i : ι} {z : 𝔻} {x : E} :
     exact disc_inclusion i w
 
 /-- The only added point on the `i`-th filled disc is its centre `center φ i`. -/
+@[simp]
 theorem disc_eq_center_iff {i j : ι} {z : 𝔻} : disc φ i z = center φ j ↔ z = 0 ∧ i = j := by
   constructor
   · intro h
@@ -203,6 +204,7 @@ theorem disc_injective {i : ι} (hi : Function.Injective (φ i)) : Function.Inje
     rw [hi hw]
 
 /-- A point of the `i`-th filled disc lies in `E` exactly when it is not the centre `0`. -/
+@[simp]
 theorem disc_preimage_range_incl (i : ι) : disc φ i ⁻¹' range (incl φ) = {0}ᶜ := by
   ext z
   by_cases hz : z = 0
