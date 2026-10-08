@@ -43,14 +43,19 @@ public section
 
 open NumberField
 
-namespace TauCeti
+namespace AlgEquiv
 
 /-- `ℚ_[p]`-automorphisms of `AlgebraicClosure ℚ_[p]` preserve its (spectral) norm. -/
-theorem norm_algEquiv_apply {p : ℕ} [Fact p.Prime]
+@[simp]
+theorem norm_apply_padicAlgCl {p : ℕ} [Fact p.Prime]
     (σ : AlgebraicClosure ℚ_[p] ≃ₐ[ℚ_[p]] AlgebraicClosure ℚ_[p]) (x : AlgebraicClosure ℚ_[p]) :
     ‖σ x‖ = ‖x‖ := by
   rw [← PadicAlgCl.spectralNorm_eq, ← PadicAlgCl.spectralNorm_eq]
   exact (spectralNorm_eq_of_equiv σ x).symm
+
+end AlgEquiv
+
+namespace TauCeti
 
 /-- The global norm of `Y` is close to the local norm of `y` when `Y` is close to `y` and every
 embedding of `K` that does not extend to a `ℚ_[p]`-automorphism sends `Y` close to `1`. -/
@@ -59,14 +64,18 @@ theorem norm_algebraNorm_sub_algebraNorm_lt (p : ℕ) [Fact p.Prime]
     (M : IntermediateField ℚ_[p] (AlgebraicClosure ℚ_[p])) [FiniteDimensional ℚ_[p] M]
     (hKM : ∀ x ∈ K, x ∈ M)
     (hMK : M ≤ IntermediateField.adjoin ℚ_[p] (K : Set (AlgebraicClosure ℚ_[p])))
-    (Y : K) (y : M) (hy : y ≠ 0) {ε : ℝ} (hε : ε ≤ 1)
+    (Y : K) (y : M) {ε : ℝ} (hε : ε ≤ 1)
     (hYy : ‖(Y : AlgebraicClosure ℚ_[p]) - y‖ < ε * ‖(y : AlgebraicClosure ℚ_[p])‖)
     (hφ : ∀ φ : K →ₐ[ℚ] AlgebraicClosure ℚ_[p],
       (∃ h : AlgebraicClosure ℚ_[p] ≃ₐ[ℚ_[p]] AlgebraicClosure ℚ_[p], ∀ x : K, φ x = h x) ∨
         ‖φ Y - 1‖ < ε) :
     ‖((Algebra.norm ℚ Y : ℚ) : ℚ_[p]) - Algebra.norm ℚ_[p] y‖ < ε * ‖Algebra.norm ℚ_[p] y‖ := by
   classical
-  have hy' : (y : AlgebraicClosure ℚ_[p]) ≠ 0 := by simpa using hy
+  have hy' : (y : AlgebraicClosure ℚ_[p]) ≠ 0 := by
+    rintro h
+    rw [h, norm_zero, mul_zero] at hYy
+    exact (norm_nonneg _).not_gt hYy
+  have hy : y ≠ 0 := by simpa using hy'
   have hε0 : 0 < ε := pos_of_mul_pos_left ((norm_nonneg _).trans_lt hYy) (norm_nonneg _)
   -- Every `ℚ_[p]`-embedding of `M` extends to an automorphism of the algebraic closure.
   have hext : ∀ ψ : M →ₐ[ℚ_[p]] AlgebraicClosure ℚ_[p],
@@ -116,8 +125,8 @@ theorem norm_algebraNorm_sub_algebraNorm_lt (p : ℕ) [Fact p.Prime]
     refine norm_mul_sub_one_lt hε (norm_prod_sub_one_lt _ _ hε0 hε fun ψ _ ↦ ?_)
       (norm_prod_sub_one_lt _ _ hε0 hε fun φ hφ' ↦ (hφ φ).resolve_left (Finset.mem_filter.1 hφ').2)
     obtain ⟨h, hh⟩ := hext ψ
-    rw [hh, hh, ← map_div₀, ← map_one h, ← map_sub, norm_algEquiv_apply, div_sub_one hy',
-      norm_div]
+    rw [hh, hh, ← map_div₀, ← map_one h, ← map_sub, AlgEquiv.norm_apply_padicAlgCl,
+      div_sub_one hy', norm_div]
     exact (div_lt_iff₀ (norm_pos_iff.2 hy')).2 hYy
   have hlt : ‖a - b‖ < ε * ‖b‖ := by
     have : a - b = (a / b - 1) * b := by field_simp
