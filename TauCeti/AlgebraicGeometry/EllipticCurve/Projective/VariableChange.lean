@@ -34,6 +34,9 @@ and `W`.
   action `(C * C') • W = C • C' • W`.
 * `WeierstrassCurve.VariableChange.toMatrix_map`: `toMatrix` commutes with mapping along a ring
   homomorphism.
+* `WeierstrassCurve.VariableChange.toMatrix_injective` and
+  `WeierstrassCurve.VariableChange.toMatrix_inj`: a change of variables is determined by its
+  matrix.
 * `WeierstrassCurve.Projective.equation_variableChange`: `P` solves the projective Weierstrass
   equation of `C • W` exactly when `C.toMatrix *ᵥ P` solves that of `W`.
 * `WeierstrassCurve.Projective.linearSubst_polynomial`: the substitution multiplies the
@@ -50,6 +53,16 @@ and `W`.
 
 * [J. H. Silverman, *The Arithmetic of Elliptic Curves*, III.1][silverman2009]
 * N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, 2.2.
+
+## Provenance
+
+`toMatrix_injective` is adapted from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at commit
+`c3415f32a313e19ace43e05479aeaa0d56ca287a`, file
+`projects/ModularCurves/ModularCurves/EllipticCurve/ComparisonInjective.lean`: it is the last step
+of the proof of `projModelVCIso_injective'`, which recovers `u` from `u²` and `u³`, and `s` from
+`u²` and `u²s`, by cancelling the unit `u²`, and concludes by `VariableChange.ext`. The source has
+no matrix of a change of variables and applies this step to coefficients it has read off the
+affine coordinate ring; here it is stated for the entries of `toMatrix`.
 -/
 
 public section
@@ -99,6 +112,24 @@ theorem toMatrix_map {S : Type*} [CommRing S] (C : VariableChange R) (f : R →+
     (C.map f).toMatrix = C.toMatrix.map f := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [toMatrix]
+
+/-- A change of variables `C = (u, r, s, t)` is determined by its matrix `C.toMatrix`. -/
+theorem toMatrix_injective :
+    Function.Injective (toMatrix : VariableChange R → Matrix (Fin 3) (Fin 3) R) := by
+  intro C C' h
+  -- the entries `u²`, `r`, `u²s`, `u³` and `t` of the two matrices agree
+  simp only [toMatrix_def, Equiv.apply_eq_iff_eq, Matrix.vecCons_inj, and_true, true_and] at h
+  obtain ⟨⟨h00, h02⟩, h10, h11, h12⟩ := h
+  -- `u = u³ / u²`, and then `s = u²s / u²`
+  have hu : (C.u : R) = C'.u :=
+    (C.u.isUnit.pow 2).mul_left_cancel (by linear_combination h11 - (C'.u : R) * h00)
+  exact VariableChange.ext (Units.ext hu) h02
+    ((C.u.isUnit.pow 2).mul_left_cancel (by rw [h10, h00])) h12
+
+/-- Two changes of variables have the same matrix exactly when they are equal. -/
+@[simp]
+theorem toMatrix_inj {C C' : VariableChange R} : C.toMatrix = C'.toMatrix ↔ C = C' :=
+  toMatrix_injective.eq_iff
 
 end VariableChange
 

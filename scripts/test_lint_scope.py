@@ -29,6 +29,8 @@ FAKE_GH = textwrap.dedent('''\
     path = path.split("?")[0]
     if path not in responses:
         sys.exit(f"fake gh: no response for {path}")
+    if "_error" in responses[path]:
+        sys.exit(responses[path]["_error"])
     data = json.dumps(responses[path])
     if "--jq" in args:
         data = subprocess.run(["jq", "-r", args[args.index("--jq") + 1]], input=data,
@@ -248,6 +250,31 @@ class LintScopeTest(unittest.TestCase):
                      "repos/o/r/pulls/7": pr()},
                     files=[f("added", f"TauCeti/M{i}.lean") for i in range(350)]),
                                  sorted(f"TauCeti.M{i}" for i in range(350)))
+
+    def test_compare_api_failure_lints_everything(self):
+        # Reproduce the bors failure: GitHub can reject compare metadata before the
+        # complete local diff is read. An API outage must widen scope, not abort CI.
+        error = {"_error": "gh: too many files changed (HTTP 422)"}
+        for event in ("pull_request_target", "workflow_dispatch", *self.BATCH_EVENTS):
+            with self.subTest(event=event):
+                env = dict(self.PR_ENV, EVENT=event)
+                endpoint = (self.PR_COMPARE if event not in self.BATCH_EVENTS else
+                            f"repos/o/r/compare/{SHA_A}...{SHA_B}")
+                self.assertIsNone(self.run_scope(
+                    env, {endpoint: error}, files=[f("added", "TauCeti/A.lean")]))
+
+    def test_unavailable_pr_lint_policy_lints_everything(self):
+        # Without label/branch metadata we cannot rule out a full-lint request.
+        compare = {"total_commits": 1,
+                   "commits": [{"commit": {"message": "feat: x (#12)"}}]}
+        for event in ("pull_request_target", "workflow_dispatch", *self.BATCH_EVENTS):
+            with self.subTest(event=event):
+                env = dict(self.PR_ENV, EVENT=event)
+                endpoint = (self.PR_COMPARE if event not in self.BATCH_EVENTS else
+                            f"repos/o/r/compare/{SHA_A}...{SHA_B}")
+                self.assertIsNone(self.run_scope(
+                    env, {endpoint: compare, "repos/o/r/pulls/12": {"_error": "HTTP 503"}},
+                    files=[f("added", "TauCeti/A.lean")]))
 
     def test_moving_refs_worktree_and_live_pr_metadata_do_not_change_scope(self):
         def move(checkout, git, base, head, env, responses):

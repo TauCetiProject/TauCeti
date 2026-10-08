@@ -199,13 +199,13 @@ theorem toUnitaryIdealWeight_mul (χ ψ : RayClassCharacter 𝔪) :
 primes of the larger modulus. -/
 theorem toUnitaryIdealWeight_induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪) :
     (induced h χ).toUnitaryIdealWeight =
-      χ.toUnitaryIdealWeight.restrict 𝔫.support 𝔫.support.finite_toSet := by
+      χ.toUnitaryIdealWeight.restrictAway 𝔫.support 𝔫.support.finite_toSet := by
   apply Subtype.ext
   ext I
   by_cases hI : Ideal.IsPrimeTo I 𝔫.support
   · have hI𝔪 : Ideal.IsPrimeTo I 𝔪.support := hI.mono (Modulus.support_mono h)
-    rw [TauCeti.UnitaryIdealWeight.val_restrict,
-      TauCeti.MultiplicativeIdealWeight.restrict_apply]
+    rw [TauCeti.UnitaryIdealWeight.val_restrictAway,
+      TauCeti.MultiplicativeIdealWeight.restrictAway_apply]
     simp only [hI, ite_true]
     rw [val_toUnitaryIdealWeight, val_toUnitaryIdealWeight,
       toMultiplicativeIdealWeight_apply_of_isPrimeTo _ hI,
@@ -213,8 +213,8 @@ theorem toUnitaryIdealWeight_induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter
       onIdeals_induced]
     congr 2
     exact Subtype.ext (coe_integralIdealsPrimeToInclusion h _)
-  · rw [TauCeti.UnitaryIdealWeight.val_restrict,
-      TauCeti.MultiplicativeIdealWeight.restrict_apply]
+  · rw [TauCeti.UnitaryIdealWeight.val_restrictAway,
+      TauCeti.MultiplicativeIdealWeight.restrictAway_apply]
     simp only [hI, ite_false]
     rw [val_toUnitaryIdealWeight,
       toMultiplicativeIdealWeight_apply_of_not_isPrimeTo _ hI]

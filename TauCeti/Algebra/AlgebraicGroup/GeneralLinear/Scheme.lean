@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Basic
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
+import TauCeti.AlgebraicGeometry.AffineGroupScheme.FiniteType
 
 /-!
 # The general linear group scheme
@@ -25,6 +26,9 @@ multiplication, and inversion are induced contravariantly by the algebra structu
 comultiplication, and antipode, respectively. The multiplication source is identified with the
 spectrum of the tensor square of the raw coordinate ring.
 
+A Hopf ideal of the coordinate Hopf algebra cuts out a closed subgroup of the group scheme, and
+the file records its inclusion.
+
 For a same-universe commutative `R`-algebra `A`, Mathlib's spectrum-points equivalence followed by
 `GeneralLinear.pointsMulEquiv` identifies scheme-valued points with invertible matrices over `A`.
 The resulting identification computes entries by evaluation on the bundled matrix coordinates and
@@ -37,9 +41,11 @@ lie in the same universe, so this file uses that same-universe setting.
 ## Main declarations
 
 * `TauCeti.GeneralLinear.groupScheme`: the general linear group scheme over `Spec R`.
-* `TauCeti.GeneralLinear.hopfIdealInclusion`: the generic closed immersion into `GL_n`
-  cut out by a Hopf ideal.
-* `TauCeti.GeneralLinear.groupSchemeSpecIso`: its canonical raw-coordinate presentation.
+* `TauCeti.GeneralLinear.hopfIdealInclusion`: the inclusion into `GL_n` of the subgroup cut out
+  by a Hopf ideal, a closed immersion by
+  `TauCeti.GeneralLinear.isClosedImmersion_hopfIdealInclusion`.
+* `TauCeti.GeneralLinear.groupSchemeSpecIso`: the canonical raw-coordinate presentation of the
+  group scheme.
 * `TauCeti.GeneralLinear.groupSchemeMulSourceIso`: the tensor-coordinate presentation of the
   multiplication source.
 * `TauCeti.GeneralLinear.groupScheme_one_left`,
@@ -81,7 +87,7 @@ universe u
 
 namespace GeneralLinear
 
-open AlgebraicGeometry MonObj MonoidalCategory WithConv
+open AlgebraicGeometry MonObj MonoidalCategory
 
 variable (R : Type u) [CommRing R] (n : ℕ)
 
@@ -124,17 +130,6 @@ instance isClosedImmersion_hopfIdealInclusion
   rw [hopfIdealInclusion_def, eqToIso.hom, CommHopfAlgCat.quotientSpecι_def,
     CommHopfAlgCat.isClosedImmersion_hopfSpec_map_comp_eqToHom_iff (groupScheme_def R n)]
   exact CommHopfAlgCat.mkQuotient_surjective _ I
-
-/-- A subgroup of `GL_n` cut out by a Hopf ideal is locally of finite type over the base. -/
-instance locallyOfFiniteType_hopfIdealQuotientSpec
-    (I : HopfIdeal R (coordinateHopfAlgebra R n)) :
-    LocallyOfFiniteType
-      (CommHopfAlgCat.quotientSpec (coordinateHopfAlgebra R n) I).X.hom :=
-  FiniteTypeCommHopfAlgCat.locallyOfFiniteType_quotientSpec
-    (⟨coordinateHopfAlgebra R n,
-      inferInstanceAs (Algebra.FiniteType R (coordinateHopfAlgebra R n))⟩ :
-      FiniteTypeCommHopfAlgCat R)
-    I
 
 /-- The scheme underlying the general linear group scheme is the spectrum of its bundled
 coordinate Hopf algebra. -/
@@ -343,20 +338,15 @@ lemma groupScheme_inv_left :
     (coordinateHopfAlgebra_antipodeAlgHom R n)
 
 /-- The general linear group scheme is affine. -/
-instance isAffine_groupScheme : IsAffine (groupScheme R n).X.left := by
-  exact .of_isIso (groupSchemeSpecIso R n).hom
+instance isAffine_groupScheme : IsAffine (groupScheme R n).X.left :=
+  .of_isIso (groupSchemeSpecIso R n).hom
 
 /-- The structural morphism of the general linear group scheme is locally of finite type. -/
 instance locallyOfFiniteType_groupScheme :
     LocallyOfFiniteType (groupScheme R n).X.hom := by
-  rw [groupScheme_X_hom]
-  let : LocallyOfFiniteType (groupSchemeSpecIso R n).hom :=
-    locallyOfFiniteType_of_isOpenImmersion _
-  let : LocallyOfFiniteType
-      (Spec.map (CommRingCat.ofHom (algebraMap R (CoordinateRing R n)))) := by
-    rw [← AlgebraicGeometry.specOverSpec_over]
-    infer_instance
-  exact locallyOfFiniteType_comp _ _
+  rw [groupScheme_def]
+  exact (algebraFiniteType_iff_locallyOfFiniteType_hopfSpec R (coordinateHopfAlgebra R n)).mp
+    inferInstance
 
 section SchemePoints
 
@@ -410,8 +400,8 @@ lemma schemePointsMulEquiv_apply
   rw [schemePointsMulEquiv, MulEquiv.trans_apply, pointsMulEquiv_apply,
     pointToGeneralLinear_apply]
 
-/-- Evaluating the scheme-points equivalence on a point presented by `groupSchemePointMulEquiv`
-recovers the canonical algebra point. -/
+/-- A scheme point presented by an algebra point corresponds to the invertible matrix of that
+algebra point under `schemePointsMulEquiv`. -/
 @[simp]
 theorem schemePointsMulEquiv_groupSchemePointMulEquiv
     (q : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :

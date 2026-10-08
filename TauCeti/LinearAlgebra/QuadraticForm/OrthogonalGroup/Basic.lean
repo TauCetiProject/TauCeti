@@ -463,11 +463,11 @@ namespace QuadraticMap
 section Neg
 
 variable {R : Type u} {M : Type v} {N : Type w} [CommRing R] [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] (Q : QuadraticMap R M N)
+  [AddCommMonoid N] [Module R N] (Q : QuadraticMap R M N)
 
 /-- Negation `x ↦ -x` preserves every quadratic map. -/
 theorem neg_mem_orthogonalGroup : LinearEquiv.neg R ∈ TauCeti.QuadraticMap.orthogonalGroup Q :=
-  fun m ↦ Q.map_neg m
+  fun m ↦ by simpa using Q.map_smul (-1) m
 
 /-- The isometry `x ↦ -x`, as an element of the orthogonal group. On a free module of rank one
 over a domain, it and `1` are the only isometries of a nonzero quadratic map valued in a
