@@ -33,9 +33,9 @@ UnitsCoeff K = Additive (Kˢ)ˣ,      KummerCoeff K n = Additive μₙ,
 
 with `μₙ = rootsOfUnity n Kˢ`. Both are **discrete** `G_K`-modules: their point stabilizers are
 open because every element of `Kˢ` is separable over `K`, hence lies in a finite subextension
-(`TauCeti.stabilizer_isOpen_units`). The action on `μₙ` is in general nontrivial, and the Kummer
-isomorphism is false for the trivial action, so it is the module and not the abstract group that
-is named here.
+(`Units.stabilizer_isOpen_of_isIntegral`). The action on `μₙ` is in general nontrivial, and the
+Kummer isomorphism is false for the trivial action, so it is the module and not the abstract group
+that is named here.
 
 The two maps between them assemble the **Kummer sequence**
 
@@ -115,7 +115,8 @@ instance : DiscreteTopology (UnitsCoeff K) := ⟨rfl⟩
 /-- **`(Kˢ)ˣ` is a discrete `G_K`-module**: every unit of `Kˢ` is separable over `K`, so it lies
 in a finite subextension and its stabilizer is open. -/
 instance unitsCoeff_continuousSMul : ContinuousSMul (AbsoluteGaloisGroup K) (UnitsCoeff K) :=
-  continuousSMul_iff_stabilizer_isOpen.2 fun x => stabilizer_isOpen_units (K := K) x.toMul
+  continuousSMul_iff_stabilizer_isOpen.2 fun x =>
+    x.toMul.stabilizer_isOpen_of_isIntegral (Algebra.IsIntegral.isIntegral _)
 
 /-! ### The roots of unity -/
 
@@ -136,7 +137,8 @@ the underlying unit of `Kˢ`, which is open. -/
 instance kummerCoeff_continuousSMul :
     ContinuousSMul (AbsoluteGaloisGroup K) (KummerCoeff K n) :=
   continuousSMul_iff_stabilizer_isOpen.2 fun x => by
-    convert stabilizer_isOpen_units (K := K) (x.toMul : (SeparableClosure K)ˣ) using 2
+    convert Units.stabilizer_isOpen_of_isIntegral (x.toMul : (SeparableClosure K)ˣ)
+      (Algebra.IsIntegral.isIntegral (R := K) _) using 2
     ext σ
     refine ⟨fun h => ?_, fun h => Additive.toMul.injective (Subtype.ext (by simpa using h))⟩
     simpa using
