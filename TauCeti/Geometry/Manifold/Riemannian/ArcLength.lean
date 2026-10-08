@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.PathELength
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
-public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
+public import Mathlib.Analysis.Calculus.Deriv.Inverse
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.Topology.Order.IntermediateValue
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
@@ -17,17 +17,17 @@ import Mathlib.Analysis.Calculus.ContDiff.RCLike
 /-!
 # Arc-length reparametrization of regular Riemannian curves
 
-Every regular `C¹` curve on an open parameter set admits a unit-speed forward
-reparametrization on each compact subinterval. The new parameter is the accumulated Riemannian
-speed
+Every regular `C¹` curve on a compact interval admits a unit-speed forward reparametrization,
+whether it is `C¹` on an open parameter set containing the interval or only within the interval
+itself. The new parameter is the accumulated Riemannian speed
 
 `s(t) = ∫ r in a..t, ‖γ'(r)‖`.
 
-Its derivative is the positive continuous speed, so `s` is strictly increasing. The one-variable
-inverse function theorem supplies a `C¹` inverse `ψ`; the chain rule then gives
-`‖(γ ∘ ψ)'‖ = 1`. Besides unit speed, the theorem records the inverse identities, endpoint
-values, monotonicity, and invariance of `Manifold.pathELength`, making the result usable without
-unfolding its construction.
+Extending the speed by constants outside `[a, b]` makes `s` a `C¹` increasing bijection of `ℝ`
+with positive derivative. Its inverse `ψ` is `C¹`, with derivative the reciprocal speed, and
+the chain rule then gives `‖(γ ∘ ψ)'‖ = 1`. Besides unit speed, the theorems record the inverse
+identities, endpoint values, monotonicity, and invariance of `Manifold.pathELength`, making the
+results usable without unfolding their construction.
 
 ## Main results
 
@@ -35,8 +35,11 @@ unfolding its construction.
   a parameter set with unique derivatives.
 * `ContMDiffOn.pathELength_eq_ofReal_integral_norm_curveVelocityWithin`: the Riemannian length of a
   `C¹` curve over a compact interval is the integral of its speed.
-* `TauCeti.Manifold.exists_unit_speed_reparametrization`: a regular `C¹` curve has a `C¹`,
-  unit-speed reparametrization on the interval from zero to its length.
+* `TauCeti.Manifold.exists_unit_speed_reparametrization`: a regular curve, `C¹` on an open set
+  containing `[a, b]`, has a `C¹`, unit-speed reparametrization on the interval from zero to its
+  length.
+* `TauCeti.Manifold.exists_unit_speed_reparametrization_Icc`: the same for a curve which is only
+  `C¹` within `[a, b]`, with velocities read within the parameter intervals.
 
 ## References
 
@@ -97,6 +100,82 @@ theorem _root_.ContMDiffOn.pathELength_eq_ofReal_integral_norm_curveVelocityWith
   -- both sides are the Riemannian norm at `γ t`; they differ only in how the fibre is presented
   rfl
 
+/-! ### Inverting accumulated speed -/
+
+/-- Accumulated speed `t ↦ ∫ r in a..t, v r`, for a speed `v` continuous and positive on `[a, b]`,
+has an inverse `ψ` on `[0, ∫ r in a..b, v r]` which is the restriction of a strictly increasing
+`C¹` function on `ℝ`, maps into `[a, b]`, and has derivative the reciprocal speed. -/
+private theorem exists_contDiff_inverse_intervalIntegral {v : ℝ → ℝ} {a b : ℝ} (hab : a ≤ b)
+    (hv : ContinuousOn v (Icc a b)) (hpos : ∀ t ∈ Icc a b, 0 < v t) :
+    ∃ ψ : ℝ → ℝ, StrictMono ψ ∧ ContDiff ℝ 1 ψ ∧
+      (∀ t ∈ Icc a b, ψ (∫ r in a..t, v r) = t) ∧
+      ∀ s ∈ Icc (0 : ℝ) (∫ r in a..b, v r),
+        ψ s ∈ Icc a b ∧ (∫ r in a..ψ s, v r) = s ∧ HasDerivAt ψ (v (ψ s))⁻¹ s := by
+  -- Extend the speed by constants outside `[a, b]`. Its primitive `φ` is then `C¹`, with
+  -- derivative bounded below by a positive constant, hence an increasing bijection of `ℝ`.
+  let c : ℝ → ℝ := fun t ↦ max a (min b t)
+  have hcmem : ∀ t, c t ∈ Icc a b := fun t ↦ ⟨le_max_left _ _, max_le hab (min_le_left _ _)⟩
+  have hcid : ∀ t ∈ Icc a b, c t = t := fun t ht ↦ by simp [c, ht.1, ht.2]
+  let w : ℝ → ℝ := fun t ↦ v (c t)
+  have hw : Continuous w :=
+    hv.comp_continuous (continuous_const.max (continuous_const.min continuous_id)) hcmem
+  have hwpos : ∀ t, 0 < w t := fun t ↦ hpos _ (hcmem t)
+  obtain ⟨x₀, hx₀, hmin⟩ := isCompact_Icc.exists_isMinOn (nonempty_Icc.2 hab) hv
+  have hm : 0 < v x₀ := hpos x₀ hx₀
+  have hwm : ∀ t, v x₀ ≤ w t := fun t ↦ hmin (hcmem t)
+  let φ : ℝ → ℝ := fun t ↦ ∫ r in a..t, w r
+  have hφ : ∀ t, HasDerivAt φ (w t) t := fun t ↦ (hw.integral_hasStrictDerivAt a t).hasDerivAt
+  have hφcont : Continuous φ := continuous_iff_continuousAt.2 fun t ↦ (hφ t).continuousAt
+  have hφmono : StrictMono φ := strictMono_of_hasDerivAt_pos hφ hwpos
+  have hg : Monotone fun t ↦ φ t - v x₀ * t := by
+    have hgd : ∀ t, HasDerivAt (fun t ↦ φ t - v x₀ * t) (w t - v x₀) t := fun t ↦
+      (hφ t).sub (by simpa using (hasDerivAt_id t).const_mul (v x₀))
+    refine monotone_of_deriv_nonneg (fun t ↦ (hgd t).differentiableAt) fun t ↦ ?_
+    rw [(hgd t).deriv]
+    exact sub_nonneg.2 (hwm t)
+  have htop : Tendsto φ atTop atTop := by
+    refine tendsto_atTop_mono' atTop ?_
+      (tendsto_atTop_add_const_left _ (φ 0) (tendsto_id.const_mul_atTop hm))
+    filter_upwards [eventually_ge_atTop 0] with t ht
+    have h := hg ht
+    simp only [mul_zero, sub_zero] at h
+    simp only [id]
+    linarith
+  have hbot : Tendsto φ atBot atBot := by
+    refine tendsto_atBot_mono' atBot ?_
+      (tendsto_atBot_add_const_left _ (φ 0) (tendsto_id.const_mul_atBot hm))
+    filter_upwards [eventually_le_atBot 0] with t ht
+    have h := hg ht
+    simp only [mul_zero, sub_zero] at h
+    simp only [id]
+    linarith
+  let e : ℝ ≃o ℝ := StrictMono.orderIsoOfSurjective φ hφmono (hφcont.surjective htop hbot)
+  let ψ : ℝ → ℝ := e.symm
+  have hψφ : ∀ t, ψ (φ t) = t := e.symm_apply_apply
+  have hφψ : ∀ s, φ (ψ s) = s := e.apply_symm_apply
+  have hψcont : Continuous ψ := e.symm.continuous
+  have hψd : ∀ s, HasDerivAt ψ (w (ψ s))⁻¹ s := fun s ↦
+    HasDerivAt.of_local_left_inverse hψcont.continuousAt (hφ (ψ s)) (hwpos _).ne'
+      (Eventually.of_forall hφψ)
+  have hψC1 : ContDiff ℝ 1 ψ := by
+    refine contDiff_one_iff_deriv.2 ⟨fun s ↦ (hψd s).differentiableAt, ?_⟩
+    rw [show deriv ψ = fun s ↦ (w (ψ s))⁻¹ from funext fun s ↦ (hψd s).deriv]
+    exact (hw.comp hψcont).inv₀ fun s ↦ (hwpos _).ne'
+  -- On `[a, b]` the extended primitive is the accumulated speed itself.
+  have hφeq : ∀ t ∈ Icc a b, φ t = ∫ r in a..t, v r := fun t ht ↦
+    intervalIntegral.integral_congr fun r hr ↦
+      congrArg v (hcid r (uIcc_subset_Icc (left_mem_Icc.2 hab) ht hr))
+  have hψa : ψ 0 = a := by
+    simpa [φ] using hψφ a
+  refine ⟨ψ, e.symm.strictMono, hψC1, fun t ht ↦ by rw [← hφeq t ht, hψφ], fun s hs ↦ ?_⟩
+  have hψs : ψ s ∈ Icc a b := by
+    constructor
+    · exact hψa ▸ e.symm.monotone hs.1
+    · rw [← hψφ b, hφeq b (right_mem_Icc.2 hab)]
+      exact e.symm.monotone hs.2
+  refine ⟨hψs, by rw [← hφeq _ hψs, hφψ], ?_⟩
+  simpa only [w, hcid _ hψs] using hψd s
+
 /-! ### Unit-speed reparametrization -/
 
 /-- **Arc-length reparametrization of a regular curve.** Let `γ` be `C¹` on an open set `J`
@@ -107,7 +186,8 @@ has the same endpoints and path length as `γ`, and its velocity has norm one th
 parameter interval. The accumulated-speed endpoint is identified with the real value of
 `Manifold.pathELength`.
 
-The case `a = b` is included: the new parameter interval is then the singleton `{0}`. -/
+The case `a = b` is included: the new parameter interval is then the singleton `{0}`. For a curve
+which is only `C¹` within `[a, b]`, see `exists_unit_speed_reparametrization_Icc`. -/
 theorem exists_unit_speed_reparametrization {γ : ℝ → M} {J : Set ℝ} (hJ : IsOpen J)
     (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ J) {a b : ℝ} (hab : a ≤ b)
     (hsub : Icc a b ⊆ J) (hreg : ∀ t ∈ Icc a b, curveVelocity I γ t ≠ 0) :
@@ -126,228 +206,105 @@ theorem exists_unit_speed_reparametrization {γ : ℝ → M} {J : Set ℝ} (hJ :
       Manifold.pathELength I (γ ∘ ψ) 0 (∫ r in a..b, ‖curveVelocity I γ r‖) =
         Manifold.pathELength I γ a b ∧
       (∫ r in a..b, ‖curveVelocity I γ r‖) = (Manifold.pathELength I γ a b).toReal := by
-  let v : ℝ → ℝ := fun t ↦ ‖curveVelocity I γ t‖
-  have hvelocity : ContinuousOn (curveVelocityLift I γ) J :=
-    ContMDiffOn.continuousOn_curveVelocityLift hγ hJ
-  have hvelocity' : ContinuousOn
-      (fun t ↦ (TotalSpace.mk' E (γ t) (curveVelocity I γ t) : TangentBundle I M)) J := by
-    simpa only [← curveVelocityLift_apply] using hvelocity
-  have hsq : ContinuousOn
-      (fun t ↦ inner ℝ (curveVelocity I γ t) (curveVelocity I γ t)) J := by
-    exact hvelocity'.inner_bundle (F := E) hvelocity'
-  have hv : ContinuousOn v J := by
-    refine (Real.continuous_sqrt.comp_continuousOn hsq).congr fun t _ ↦ ?_
-    exact (norm_eq_sqrt_real_inner (curveVelocity I γ t)).symm
-  let V : Set ℝ := {t | t ∈ J ∧ 0 < v t}
-  have hV_open : IsOpen V := by
-    have hV_eq : V = J ∩ v ⁻¹' Ioi 0 := by
-      ext t
-      simp only [V, mem_ofPred_eq, mem_inter_iff, mem_preimage, mem_Ioi]
-    rw [hV_eq]
-    exact hv.isOpen_inter_preimage hJ isOpen_Ioi
-  have haV : a ∈ V := ⟨hsub (left_mem_Icc.mpr hab),
-    norm_pos_iff.mpr (hreg a (left_mem_Icc.mpr hab))⟩
-  have hbV : b ∈ V := ⟨hsub (right_mem_Icc.mpr hab),
-    norm_pos_iff.mpr (hreg b (right_mem_Icc.mpr hab))⟩
-  -- Enlarge `[a, b]` slightly inside the regular locus, so the inverse constructed below is
-  -- smooth at both endpoints of the new parameter interval as well as in its interior.
-  obtain ⟨εa, hεa, hballa⟩ := Metric.isOpen_iff.mp hV_open a haV
-  obtain ⟨εb, hεb, hballb⟩ := Metric.isOpen_iff.mp hV_open b hbV
-  let δ : ℝ := min εa εb / 2
-  have hδ : 0 < δ := by
-    dsimp only [δ]
-    positivity
-  let U : Set ℝ := Ioo (a - δ) (b + δ)
-  have hU_open : IsOpen U := isOpen_Ioo
-  have hU_sub : U ⊆ V := by
-    intro t ht
-    have hδεa : δ ≤ εa := (half_le_self (lt_min hεa hεb).le).trans (min_le_left εa εb)
-    have hδεb : δ ≤ εb := (half_le_self (lt_min hεa hεb).le).trans (min_le_right εa εb)
-    rcases lt_or_ge t a with hta | hta
-    · apply hballa
-      rw [Metric.mem_ball, Real.dist_eq, abs_sub_lt_iff]
-      have ht_lower := ht.1
-      constructor <;> linarith
-    rcases le_or_gt t b with htb | htb
-    · exact ⟨hsub ⟨hta, htb⟩, norm_pos_iff.mpr (hreg t ⟨hta, htb⟩)⟩
-    · apply hballb
-      rw [Metric.mem_ball, Real.dist_eq, abs_sub_lt_iff]
-      have ht_upper := ht.2
-      constructor <;> linarith
-  have hIccU : Icc a b ⊆ U := fun t ht ↦ ⟨by linarith [ht.1], by linarith [ht.2]⟩
-  have haU : a ∈ U := hIccU (left_mem_Icc.mpr hab)
-  have hbU : b ∈ U := hIccU (right_mem_Icc.mpr hab)
-  have hU_ord : ∀ s ∈ U, ∀ t ∈ U, Icc s t ⊆ U := by
-    intro s hs t ht r hr
-    exact ⟨lt_of_lt_of_le hs.1 hr.1, lt_of_le_of_lt hr.2 ht.2⟩
-  have hU_J : U ⊆ J := fun t ht ↦ (hU_sub ht).1
-  have hvU : ContinuousOn v U := hv.mono hU_J
-  have hInt : ∀ s ∈ U, ∀ t ∈ U, IntervalIntegrable v volume s t := by
-    intro s hs t ht
-    apply (hvU.mono ?_).intervalIntegrable
-    rcases le_total s t with hst | hts
-    · rw [uIcc_of_le hst]
-      exact hU_ord s hs t ht
-    · rw [uIcc_of_ge hts]
-      exact hU_ord t ht s hs
-  have hlength_toReal :
-      (∫ r in a..b, v r) = (Manifold.pathELength I γ a b).toReal := by
-    rw [intervalIntegral.integral_of_le hab, ← integral_Icc_eq_integral_Ioc]
-    rw [MeasureTheory.integral_eq_lintegral_of_nonneg_ae
-      (Eventually.of_forall fun _ ↦ norm_nonneg _)
-      ((intervalIntegrable_iff_integrableOn_Icc_of_le hab).mp
-        (hInt a haU b hbU)).aestronglyMeasurable]
-    rw [Manifold.pathELength_eq_lintegral_mfderiv_Icc]
+  -- On an open parameter set the velocity is the velocity within that set.
+  have hvJ : ContinuousOn (fun t ↦ ‖curveVelocity I γ t‖) J :=
+    (hγ.continuousOn_norm_curveVelocityWithin hJ.uniqueMDiffOn).congr fun t ht ↦ by
+      dsimp only
+      rw [curveVelocityWithin_of_mem_nhds (hJ.mem_nhds ht)]
+  have hv := hvJ.mono hsub
+  obtain ⟨ψ, hψmono, hψC1, hleft, hright⟩ :=
+    exists_contDiff_inverse_intervalIntegral hab hv fun t ht ↦ norm_pos_iff.2 (hreg t ht)
+  set L := ∫ r in a..b, ‖curveVelocity I γ r‖ with hLdef
+  have hψa : ψ 0 = a := by simpa using hleft a (left_mem_Icc.2 hab)
+  have hψb : ψ L = b := hleft b (right_mem_Icc.2 hab)
+  have hL : 0 ≤ L := intervalIntegral.integral_nonneg hab fun _ _ ↦ norm_nonneg _
+  have hlength : Manifold.pathELength I (γ ∘ ψ) 0 L = Manifold.pathELength I γ a b := by
+    have h := Manifold.pathELength_comp_of_monotoneOn (I := I) hL (hψmono.monotone.monotoneOn _)
+      (hψC1.differentiable one_ne_zero).differentiableOn
+      (by rw [hψa, hψb]; exact (hγ.mdifferentiableOn one_ne_zero).mono hsub)
+    simpa only [hψa, hψb] using h
+  have hlength_toReal : L = (Manifold.pathELength I γ a b).toReal := by
+    rw [hLdef, intervalIntegral.integral_of_le hab, ← integral_Icc_eq_integral_Ioc,
+      MeasureTheory.integral_eq_lintegral_of_nonneg_ae
+        (Eventually.of_forall fun _ ↦ norm_nonneg _)
+        (hv.integrableOn_compact isCompact_Icc).aestronglyMeasurable,
+      Manifold.pathELength_eq_lintegral_mfderiv_Icc]
     congr 1
-    apply lintegral_congr
-    intro t
+    refine lintegral_congr fun t ↦ ?_
     rw [curveVelocity_apply, ofReal_norm]
     rfl
-  -- The accumulated-speed function is `C¹` with positive derivative, hence strictly increasing.
-  let φ : ℝ → ℝ := fun t ↦ ∫ r in a..t, v r
-  have hφ_deriv : ∀ t ∈ U, HasDerivAt φ (v t) t := by
-    intro t ht
-    exact intervalIntegral.integral_hasDerivAt_right (hInt a haU t ht)
-      (hvU.stronglyMeasurableAtFilter hU_open t ht)
-      ((hvU t ht).continuousAt (hU_open.mem_nhds ht))
-  have hφ_strict : StrictMonoOn φ U := by
-    have hU_convex : Convex ℝ U := convex_Ioo _ _
-    apply strictMonoOn_of_deriv_pos hU_convex
-    · exact fun t ht ↦ (hφ_deriv t ht).continuousAt.continuousWithinAt
-    · intro t ht
-      rw [hU_open.interior_eq] at ht
-      rw [(hφ_deriv t ht).deriv]
-      exact (hU_sub ht).2
-  have hφ_contDiff : ContDiffOn ℝ 1 φ U := by
-    rw [contDiffOn_one_iff_derivWithin hU_open.uniqueDiffOn]
-    refine ⟨fun t ht ↦ (hφ_deriv t ht).differentiableAt.differentiableWithinAt, ?_⟩
-    refine hvU.congr fun t ht ↦ ?_
-    rw [derivWithin_of_isOpen hU_open ht, (hφ_deriv t ht).deriv]
-  have hφ_inj : InjOn φ U := hφ_strict.injOn
-  -- Its set-theoretic inverse agrees locally with the inverse supplied by the inverse function
-  -- theorem. This gives both an open domain of definition and a `C¹` inverse there.
-  let ψ : ℝ → ℝ := Function.invFunOn φ U
-  have hleft : ∀ t ∈ U, ψ (φ t) = t := fun t ht ↦ hφ_inj.leftInvOn_invFunOn ht
-  let W : Set ℝ := φ '' U
-  have hψ_local : ∀ t ∈ U, HasDerivAt ψ (v t)⁻¹ (φ t) ∧ W ∈ 𝓝 (φ t) := by
-    intro t ht
-    have hv_ne : v t ≠ 0 := (hU_sub ht).2.ne'
-    have hφ_strictDeriv : HasStrictDerivAt φ (v t) t := by
-      have h := (hφ_contDiff.contDiffAt (hU_open.mem_nhds ht)).hasStrictDerivAt one_ne_zero
-      rwa [(hφ_deriv t ht).deriv] at h
-    let ζ : ℝ → ℝ := hφ_strictDeriv.localInverse φ _ t hv_ne
-    have hζ_deriv : HasDerivAt ζ (v t)⁻¹ (φ t) :=
-      (hφ_strictDeriv.to_localInverse hv_ne).hasDerivAt
-    have hζ_t : ζ (φ t) = t :=
-      (hφ_strictDeriv.eventually_left_inverse hv_ne).self_of_nhds
-    have hζ_mem : ∀ᶠ x in 𝓝 (φ t), ζ x ∈ U := by
-      apply hζ_deriv.continuousAt.eventually_mem
-      simpa only [hζ_t] using hU_open.mem_nhds ht
-    have hψζ : ψ =ᶠ[𝓝 (φ t)] ζ := by
-      filter_upwards [hφ_strictDeriv.eventually_right_inverse hv_ne, hζ_mem] with x hx hxU
-      have hex : ∃ y ∈ U, φ y = x := ⟨ζ x, hxU, hx⟩
-      apply hφ_inj (Function.invFunOn_mem hex) hxU
-      exact (Function.invFunOn_eq hex).trans hx.symm
-    refine ⟨hζ_deriv.congr_of_eventuallyEq hψζ, ?_⟩
-    have hmap := hφ_strictDeriv.map_nhds_eq hv_ne
-    rw [← hmap]
-    exact mem_map.mpr (mem_of_superset (hU_open.mem_nhds ht) (subset_preimage_image φ U))
-  have hW_open : IsOpen W := by
-    rw [isOpen_iff_mem_nhds]
-    rintro _ ⟨t, ht, rfl⟩
-    exact (hψ_local t ht).2
-  have hψ_mem : ∀ s ∈ W, ψ s ∈ U := by
-    rintro _ ⟨t, ht, rfl⟩
-    rw [hleft t ht]
-    exact ht
-  have hψ_deriv : ∀ s ∈ W, HasDerivAt ψ (v (ψ s))⁻¹ s := by
-    rintro _ ⟨t, ht, rfl⟩
-    rw [hleft t ht]
-    exact (hψ_local t ht).1
-  have hψ_diff : DifferentiableOn ℝ ψ W := fun s hs ↦
-    (hψ_deriv s hs).differentiableAt.differentiableWithinAt
-  have hψ_contDiff : ContDiffOn ℝ 1 ψ W := by
-    rw [contDiffOn_one_iff_derivWithin hW_open.uniqueDiffOn]
-    refine ⟨hψ_diff, ?_⟩
-    have hcomp : ContinuousOn (fun s ↦ v (ψ s)) W :=
-      hvU.comp hψ_diff.continuousOn hψ_mem
-    have hinv : ContinuousOn (fun s ↦ (v (ψ s))⁻¹) W :=
-      hcomp.inv₀ fun s hs ↦ (hU_sub (hψ_mem s hs)).2.ne'
-    refine hinv.congr fun s hs ↦ ?_
-    rw [derivWithin_of_isOpen hW_open hs, (hψ_deriv s hs).deriv]
-  -- The intermediate value theorem identifies the whole closed parameter interval inside the
-  -- open image `W` where the inverse is `C¹`.
-  have hφa : φ a = 0 := by simp [φ]
-  have hφ_cont : ContinuousOn φ (Icc a b) :=
-    (hφ_contDiff.mono hIccU).continuousOn
-  have himage : Icc (0 : ℝ) (φ b) ⊆ φ '' Icc a b := by
-    have h := intermediate_value_Icc hab hφ_cont
-    rwa [hφa] at h
-  have hL : 0 ≤ φ b := by
-    rw [← hφa]
-    exact hφ_strict.monotoneOn haU hbU hab
-  have hIccW : Icc (0 : ℝ) (φ b) ⊆ W := by
-    intro s hs
-    obtain ⟨t, ht, rfl⟩ := himage hs
-    exact ⟨t, hIccU ht, rfl⟩
-  have hright : ∀ s ∈ Icc (0 : ℝ) (φ b), φ (ψ s) = s := by
-    intro s hs
-    obtain ⟨t, ht, hts⟩ := himage hs
-    rw [← hts, hleft t (hIccU ht)]
-  have hψ_Icc : ∀ s ∈ Icc (0 : ℝ) (φ b), ψ s ∈ Icc a b := by
-    intro s hs
-    obtain ⟨t, ht, hts⟩ := himage hs
-    rw [← hts, hleft t (hIccU ht)]
-    exact ht
-  have hψ_strict : StrictMonoOn ψ (Icc (0 : ℝ) (φ b)) := by
-    intro s hs t ht hst
-    have hsU := hψ_mem s (hIccW hs)
-    have htU := hψ_mem t (hIccW ht)
-    by_contra hnot
-    have hle : ψ t ≤ ψ s := le_of_not_gt hnot
-    have := hφ_strict.monotoneOn htU hsU hle
-    rw [hright s hs, hright t ht] at this
-    exact (not_le_of_gt hst) this
-  have hη : ContMDiffOn 𝓘(ℝ, ℝ) I 1 (γ ∘ ψ) (Icc 0 (φ b)) := by
-    apply (hγ.mono hU_J).comp
-    · rw [contMDiffOn_iff_contDiffOn]
-      exact hψ_contDiff.mono hIccW
-    · exact fun s hs ↦ hψ_mem s (hIccW hs)
-  have hunit : ∀ s ∈ Icc (0 : ℝ) (φ b), ‖curveVelocity I (γ ∘ ψ) s‖ = 1 := by
-    intro s hs
-    have hsW := hIccW hs
-    have hψsU := hψ_mem s hsW
-    have hγdiff : MDifferentiableAt 𝓘(ℝ, ℝ) I γ (ψ s) :=
-      (hγ.contMDiffAt (hJ.mem_nhds (hU_J hψsU))).mdifferentiableAt one_ne_zero
-    rw [curveVelocity_comp (hψ_deriv s hsW) hγdiff, norm_smul, Real.norm_eq_abs,
-      abs_of_pos (inv_pos.mpr (hU_sub hψsU).2)]
-    exact inv_mul_cancel₀ (hU_sub hψsU).2.ne'
-  have hlength : Manifold.pathELength I (γ ∘ ψ) 0 (φ b) =
-      Manifold.pathELength I γ a b := by
-    have hψ_zero : ψ 0 = a := by
-      rw [← hφa, hleft a haU]
-    have hψ_end : ψ (φ b) = b := hleft b hbU
-    have hγdiff : MDifferentiableOn 𝓘(ℝ, ℝ) I γ (Icc (ψ 0) (ψ (φ b))) := by
-      rw [hψ_zero, hψ_end]
-      exact hγ.mdifferentiableOn one_ne_zero |>.mono hsub
-    have h := Manifold.pathELength_comp_of_monotoneOn (I := I) hL hψ_strict.monotoneOn
-      (hψ_contDiff.differentiableOn one_ne_zero |>.mono hIccW)
-      hγdiff
-    simpa only [hψ_zero, hψ_end] using h
-  -- Rewrite the local names `v` and `φ` back to the intrinsic formula in the public statement.
-  refine ⟨ψ, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · intro t ht
-    simpa only [φ, v] using hleft t (hIccU ht)
-  · simpa only [φ, v] using hright
-  · simpa only [φ, v] using hψ_Icc
-  · simpa only [φ, v] using hψ_strict
-  · exact hψ_contDiff.mono hIccW
-  · simpa only [φ, v] using hη
-  · rw [← hφa, Function.comp_apply, hleft a haU]
-  · simpa only [φ, v, Function.comp_apply] using congrArg γ (hleft b hbU)
-  · simpa only [φ, v] using hunit
-  · simpa only [φ, v] using hlength
-  · simpa only [v] using hlength_toReal
+  refine ⟨ψ, hleft, fun s hs ↦ (hright s hs).2.1, fun s hs ↦ (hright s hs).1,
+    hψmono.strictMonoOn _, hψC1.contDiffOn,
+    hγ.comp (contMDiffOn_iff_contDiffOn.2 hψC1.contDiffOn) fun s hs ↦ hsub (hright s hs).1,
+    by rw [Function.comp_apply, hψa], by rw [Function.comp_apply, hψb], fun s hs ↦ ?_,
+    hlength, hlength_toReal⟩
+  obtain ⟨hψs, -, hψd⟩ := hright s hs
+  have hpos : 0 < ‖curveVelocity I γ (ψ s)‖ := norm_pos_iff.2 (hreg _ hψs)
+  rw [curveVelocity_comp hψd
+      ((hγ.contMDiffAt (hJ.mem_nhds (hsub hψs))).mdifferentiableAt one_ne_zero),
+    norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hpos)]
+  exact inv_mul_cancel₀ hpos.ne'
+
+/-- **Arc-length reparametrization of a regular curve on a closed interval.** Let `γ` be `C¹`
+within `[a, b]`, where `a < b`, with nonzero velocity within `[a, b]` at every point of `[a, b]`.
+There is an increasing `C¹` function `ψ` from `[0, ∫_a^b ‖γ'(t)‖ dt]` onto `[a, b]` which inverts
+accumulated length. The curve `γ ∘ ψ` has the same endpoints and path length as `γ`, and its
+velocity within its parameter interval has norm one throughout that interval. The
+accumulated-speed endpoint is identified with the real value of `Manifold.pathELength`.
+
+Unlike `exists_unit_speed_reparametrization`, nothing is assumed about `γ` outside `[a, b]`, and
+all velocities are read within the parameter interval. The interval is nondegenerate because a
+velocity within a singleton carries no information. -/
+theorem exists_unit_speed_reparametrization_Icc {γ : ℝ → M} {a b : ℝ} (hab : a < b)
+    (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ (Icc a b))
+    (hreg : ∀ t ∈ Icc a b, curveVelocityWithin I γ (Icc a b) t ≠ 0) :
+    ∃ ψ : ℝ → ℝ,
+      (∀ t ∈ Icc a b, ψ (∫ r in a..t, ‖curveVelocityWithin I γ (Icc a b) r‖) = t) ∧
+      (∀ s ∈ Icc (0 : ℝ) (∫ r in a..b, ‖curveVelocityWithin I γ (Icc a b) r‖),
+        (∫ r in a..ψ s, ‖curveVelocityWithin I γ (Icc a b) r‖) = s) ∧
+      (∀ s ∈ Icc (0 : ℝ) (∫ r in a..b, ‖curveVelocityWithin I γ (Icc a b) r‖),
+        ψ s ∈ Icc a b) ∧
+      StrictMonoOn ψ (Icc 0 (∫ r in a..b, ‖curveVelocityWithin I γ (Icc a b) r‖)) ∧
+      ContDiffOn ℝ 1 ψ (Icc 0 (∫ r in a..b, ‖curveVelocityWithin I γ (Icc a b) r‖)) ∧
+      ContMDiffOn 𝓘(ℝ, ℝ) I 1 (γ ∘ ψ)
+        (Icc 0 (∫ r in a..b, ‖curveVelocityWithin I γ (Icc a b) r‖)) ∧
+      (γ ∘ ψ) 0 = γ a ∧
+      (γ ∘ ψ) (∫ r in a..b, ‖curveVelocityWithin I γ (Icc a b) r‖) = γ b ∧
+      (∀ s ∈ Icc (0 : ℝ) (∫ r in a..b, ‖curveVelocityWithin I γ (Icc a b) r‖),
+        ‖curveVelocityWithin I (γ ∘ ψ)
+          (Icc 0 (∫ r in a..b, ‖curveVelocityWithin I γ (Icc a b) r‖)) s‖ = 1) ∧
+      Manifold.pathELength I (γ ∘ ψ) 0 (∫ r in a..b, ‖curveVelocityWithin I γ (Icc a b) r‖) =
+        Manifold.pathELength I γ a b ∧
+      (∫ r in a..b, ‖curveVelocityWithin I γ (Icc a b) r‖) =
+        (Manifold.pathELength I γ a b).toReal := by
+  have hU : UniqueMDiffOn 𝓘(ℝ, ℝ) (Icc a b) :=
+    uniqueMDiffOn_iff_uniqueDiffOn.2 (uniqueDiffOn_Icc hab)
+  obtain ⟨ψ, hψmono, hψC1, hleft, hright⟩ :=
+    exists_contDiff_inverse_intervalIntegral hab.le
+      (hγ.continuousOn_norm_curveVelocityWithin hU) fun t ht ↦ norm_pos_iff.2 (hreg t ht)
+  set L := ∫ r in a..b, ‖curveVelocityWithin I γ (Icc a b) r‖ with hLdef
+  have hψa : ψ 0 = a := by simpa using hleft a (left_mem_Icc.2 hab.le)
+  have hψb : ψ L = b := hleft b (right_mem_Icc.2 hab.le)
+  have hL : 0 < L := hψmono.lt_iff_lt.1 (by rw [hψa, hψb]; exact hab)
+  have hmaps : MapsTo ψ (Icc 0 L) (Icc a b) := fun s hs ↦ (hright s hs).1
+  have hlength : Manifold.pathELength I (γ ∘ ψ) 0 L = Manifold.pathELength I γ a b := by
+    have h := Manifold.pathELength_comp_of_monotoneOn (I := I) hL.le (hψmono.monotone.monotoneOn _)
+      (hψC1.differentiable one_ne_zero).differentiableOn
+      (by rw [hψa, hψb]; exact hγ.mdifferentiableOn one_ne_zero)
+    simpa only [hψa, hψb] using h
+  have hlength_toReal : L = (Manifold.pathELength I γ a b).toReal := by
+    rw [hγ.pathELength_eq_ofReal_integral_norm_curveVelocityWithin hU hab.le subset_rfl,
+      ENNReal.toReal_ofReal (intervalIntegral.integral_nonneg hab.le fun _ _ ↦ norm_nonneg _)]
+  refine ⟨ψ, hleft, fun s hs ↦ (hright s hs).2.1, hmaps, hψmono.strictMonoOn _,
+    hψC1.contDiffOn, hγ.comp (contMDiffOn_iff_contDiffOn.2 hψC1.contDiffOn) hmaps,
+    by rw [Function.comp_apply, hψa], by rw [Function.comp_apply, hψb], fun s hs ↦ ?_,
+    hlength, hlength_toReal⟩
+  obtain ⟨hψs, -, hψd⟩ := hright s hs
+  have hpos : 0 < ‖curveVelocityWithin I γ (Icc a b) (ψ s)‖ := norm_pos_iff.2 (hreg _ hψs)
+  rw [curveVelocityWithin_comp hψd.hasDerivWithinAt hmaps
+      (hγ.mdifferentiableOn one_ne_zero _ hψs) (uniqueDiffOn_Icc hL s hs),
+    norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hpos)]
+  exact inv_mul_cancel₀ hpos.ne'
 
 end TauCeti.Manifold
 

@@ -15,6 +15,10 @@ This module provides the escape estimate for normal neighbourhoods: a path that 
 centre and leaves the exponential image of the domain has length at least the radius of a smaller
 tangent ball contained in that domain. It also provides a strict comparison with the radial segment
 to a point in the smaller ball when the path leaves the larger domain.
+The strict comparison for piecewise `C¹` paths is
+`TauCeti.Manifold.IsNormalDomain.pathELength_riemannianExp_smul_lt_of_piecewise` in
+`TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Distance`, since its proof goes through the
+distance identities proved there.
 
 ## References
 
