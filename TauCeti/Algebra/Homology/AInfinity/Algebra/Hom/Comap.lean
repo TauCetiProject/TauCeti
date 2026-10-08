@@ -38,7 +38,8 @@ noncomputable def comapStrictHom : AInfinityStrictHom (ℬ.comap G f hf hG hm) �
 /-- The underlying linear map of the strict pullback inclusion is the given map. -/
 @[simp]
 theorem comapStrictHom_toLinearMap :
-    (ℬ.comapStrictHom G f hf hG hm).toLinearMap = f := rfl
+    (ℬ.comapStrictHom G f hf hG hm).toLinearMap = f := by
+  simp [comapStrictHom]
 
 /-- The strict `A∞` morphism `comapStrictHom` is the injective map along which the algebra is
 pulled back. -/
