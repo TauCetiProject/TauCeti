@@ -21,9 +21,9 @@ used to put the Frobenius exact structure on Gorenstein-projective modules.
 
 ## Main declarations
 
-* `TauCeti.CochainComplex.cyclesShortComplex`: the short complex formed by two consecutive
+* `TauCeti.cyclesShortComplex`: the short complex formed by two consecutive
   cycle objects and the intervening term of a cochain complex.
-* `TauCeti.CochainComplex.cyclesShortComplex_shortExact`: this short complex is
+* `TauCeti.cyclesShortComplex_shortExact`: this short complex is
   short exact for a totally acyclic complex.
 * `TauCeti.IsGorensteinProjective.exists_projectivePresentation`: every
   Gorenstein-projective module has a projective presentation whose kernel is again
@@ -55,8 +55,8 @@ theorem IsGorensteinProjective.exists_projectivePresentation
     ∃ (S : ShortComplex (ModuleCat.{v} A)), S.ShortExact ∧ Nonempty (S.X₃ ≅ M) ∧
       Module.Finite A S.X₂ ∧ Projective S.X₂ ∧ IsGorensteinProjective A S.X₁ := by
   obtain ⟨P, hP, ⟨e⟩⟩ := (isGorensteinProjective_iff M).mp hM
-  refine ⟨CochainComplex.cyclesShortComplex P (-1),
-    CochainComplex.cyclesShortComplex_shortExact (-1) (hP.acyclic 0), ?_, ?_, ?_, ?_⟩
+  refine ⟨cyclesShortComplex P (-1),
+    cyclesShortComplex_shortExact (-1) (hP.acyclic 0), ?_, ?_, ?_, ?_⟩
   · simpa using Nonempty.intro e
   · exact hP.finite (-1)
   · exact hP.projective (-1)
@@ -69,8 +69,8 @@ theorem IsGorensteinProjective.exists_projectiveCopresentation
     ∃ (S : ShortComplex (ModuleCat.{v} A)), S.ShortExact ∧ Nonempty (S.X₁ ≅ M) ∧
       Module.Finite A S.X₂ ∧ Projective S.X₂ ∧ IsGorensteinProjective A S.X₃ := by
   obtain ⟨P, hP, ⟨e⟩⟩ := (isGorensteinProjective_iff M).mp hM
-  refine ⟨CochainComplex.cyclesShortComplex P 0,
-    CochainComplex.cyclesShortComplex_shortExact 0 (hP.acyclic 1), ⟨e⟩, ?_, ?_, ?_⟩
+  refine ⟨cyclesShortComplex P 0,
+    cyclesShortComplex_shortExact 0 (hP.acyclic 1), ⟨e⟩, ?_, ?_, ?_⟩
   · exact hP.finite 0
   · exact hP.projective 0
   · exact hP.isGorensteinProjective_cycles 1

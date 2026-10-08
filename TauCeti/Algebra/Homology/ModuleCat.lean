@@ -20,7 +20,7 @@ is a cycle, `HomologicalComplex.moduleCatCyclesMk`.  This constructor directly r
 an element of `K.cycles n` for modules over a ring in any universe, whereas Mathlib's
 `HomologicalComplex.cyclesMk` returns an element of `(forget₂ C Ab).obj (K.cycles n)`.
 
-For a cochain complex `K`, `TauCeti.CochainComplex.cyclesShortComplex K n` is the sequence
+For a cochain complex `K`, `TauCeti.cyclesShortComplex K n` is the sequence
 `Zⁿ(K) ⟶ Kⁿ ⟶ Zⁿ⁺¹(K)`. It is short exact whenever `K` is exact in degree `n + 1`.
 -/
 
@@ -61,8 +61,6 @@ lemma iCycles_moduleCatCyclesMk (x : K.X n) (m : ι) (hm : c.next n = m)
 end HomologicalComplex
 
 namespace TauCeti
-
-namespace CochainComplex
 
 variable {R : Type*} [Ring R]
 
@@ -132,7 +130,5 @@ theorem cyclesShortComplex_shortExact {K : CochainComplex (ModuleCat.{u} R) ℤ}
     rw [← h, hx, map_zero]
   exact ⟨K.moduleCatCyclesMk (n := n) x (n + 1) (by simp) hdx,
     K.iCycles_moduleCatCyclesMk n x (n + 1) (by simp) hdx⟩
-
-end CochainComplex
 
 end TauCeti
