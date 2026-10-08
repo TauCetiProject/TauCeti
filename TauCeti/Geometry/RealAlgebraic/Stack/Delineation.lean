@@ -148,6 +148,15 @@ theorem isRoot_iff {k : ι} {x : X} (hk : P k x ≠ 0) (t : ℝ) :
   isRoot_iff_of_rootMultiplicity (fun i ↦ D.rootMultiplicity_root k i x)
     (D.exists_root_eq k x hk) hk t
 
+/-- On a sector, the evaluation of a nonzero fiber cannot vanish: every root lies
+on a section, and sections are disjoint from sectors. -/
+theorem eval_ne_zero_of_mem_sectorSet {k : ι} {j : Fin (D.count + 1)} {z : X × ℝ}
+    (hk : P k z.1 ≠ 0) (hz : z ∈ sectorSet D.root j) : (P k z.1).eval z.2 ≠ 0 := by
+  intro hzero
+  obtain ⟨i, hi⟩ := D.exists_root_eq k z.1 hk z.2 hzero
+  exact disjoint_left.1 (disjoint_sectionSet_sectorSet D.root i j)
+    (mem_sectionSet.2 hi) hz
+
 /-- A member of the family has positive multiplicity in a root function exactly when it is
 nonzero and vanishes there. -/
 theorem multiplicity_pos_iff {k : ι} {i : Fin D.count} (x : X) :
