@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Toric.Analytic.Fan.Boundary.Naturality
 public import TauCeti.Geometry.Toric.Analytic.Fan.Product
-public import TauCeti.LinearAlgebra.Submodule.Prod
 
 /-!
 # Orbits and boundary components of product toric realizations
@@ -75,22 +74,22 @@ theorem analyticProdHomeomorph_mem_prod_analyticConeOrbit_iff {σ : Φ.cones} {�
     Φ.analyticProdHomeomorph Ψ hΦ hΨ x ∈
         Φ.analyticConeOrbit hΦ σ ×ˢ Ψ.analyticConeOrbit hΨ τ ↔
       x ∈ (Φ.prod Ψ).analyticConeOrbit (Fan.IsRegular.prod Φ Ψ hΦ hΨ) (Φ.prodCone Ψ σ τ) := by
+  -- A point of the orbit of `σ' × τ'` maps into the product of the factor orbits.
+  have hmem {σ' : Φ.cones} {τ' : Ψ.cones} {y : (Φ.prod Ψ).analyticRealization _}
+      (hy : y ∈ (Φ.prod Ψ).analyticConeOrbit _ (Φ.prodCone Ψ σ' τ')) :
+      Φ.analyticProdHomeomorph Ψ hΦ hΨ y ∈
+        Φ.analyticConeOrbit hΦ σ' ×ˢ Ψ.analyticConeOrbit hΨ τ' := by
+    rw [coe_analyticProdHomeomorph, analyticProdComparison_apply]
+    exact ⟨((FanHom.fst Φ Ψ).analyticMap_mem_analyticConeOrbit_iff _ hΦ hy).2
+        (FanHom.fst_leastCone_prodCone σ' τ'),
+      ((FanHom.snd Φ Ψ).analyticMap_mem_analyticConeOrbit_iff _ hΨ hy).2
+        (FanHom.snd_leastCone_prodCone σ' τ')⟩
+  refine ⟨fun h ↦ ?_, hmem⟩
   obtain ⟨ξ, hx⟩ := (Φ.prod Ψ).exists_mem_analyticConeOrbit _ x
   obtain ⟨σ', τ', rfl⟩ := Φ.exists_prodCone_eq Ψ ξ
-  rw [coe_analyticProdHomeomorph, analyticProdComparison_apply, mem_prod,
-    (FanHom.fst Φ Ψ).analyticMap_mem_analyticConeOrbit_iff _ hΦ hx,
-    (FanHom.snd Φ Ψ).analyticMap_mem_analyticConeOrbit_iff _ hΨ hx,
-    FanHom.fst_leastCone_prodCone, FanHom.snd_leastCone_prodCone]
-  constructor
-  · rintro ⟨hσ, hτ⟩
-    rwa [← Subtype.ext hσ, ← Subtype.ext hτ]
-  · intro h
-    have hle := le_of_eq (congrArg Subtype.val
-      ((Φ.prod Ψ).eq_of_mem_analyticConeOrbit _ hx h))
-    have hge := le_of_eq (congrArg Subtype.val
-      ((Φ.prod Ψ).eq_of_mem_analyticConeOrbit _ h hx))
-    simp only [Submodule.prod_le_prod_iff] at hle hge
-    exact ⟨le_antisymm hle.1 hge.1, le_antisymm hle.2 hge.2⟩
+  -- Orbits of a regular fan are disjoint, so the factor cones are `σ` and `τ`.
+  rwa [Φ.eq_of_mem_analyticConeOrbit hΦ h.1 (hmem hx).1,
+    Ψ.eq_of_mem_analyticConeOrbit hΨ h.2 (hmem hx).2]
 
 /-- The orbit of a product cone is the preimage of the product of the factor orbits. -/
 theorem preimage_analyticProdHomeomorph_prod_analyticConeOrbit (σ : Φ.cones) (τ : Ψ.cones) :
@@ -118,12 +117,9 @@ theorem preimage_analyticProdHomeomorph_analyticBoundaryComponent_prod_univ {ρ 
   ext x
   obtain ⟨ζ, hx⟩ := (Φ.prod Ψ).exists_mem_analyticConeOrbit _ x
   obtain ⟨σ, τ, rfl⟩ := Φ.exists_prodCone_eq Ψ ζ
-  rw [mem_preimage, coe_analyticProdHomeomorph, analyticProdComparison_apply, mem_prod,
-    and_iff_left (mem_univ _),
-    (FanHom.fst Φ Ψ).analyticMap_mem_analyticBoundaryComponent_iff _ hΦ hx,
-    FanHom.fst_leastCone_prodCone, (Φ.prod Ψ).mem_analyticBoundaryComponent_iff _ hx,
-    ← Subtype.coe_le_coe, h, coe_prodCone, Submodule.prod_le_prod_iff]
-  simp
+  simp [(FanHom.fst Φ Ψ).analyticMap_mem_analyticBoundaryComponent_iff _ hΦ hx,
+    (Φ.prod Ψ).mem_analyticBoundaryComponent_iff _ hx, ← Subtype.coe_le_coe, h,
+    Submodule.le_prod_iff]
 
 /-- The boundary component of a product ray `0 × ρ` is the preimage of the whole first factor
 times the component of `ρ`. -/
@@ -134,12 +130,9 @@ theorem preimage_analyticProdHomeomorph_analyticBoundaryComponent_univ_prod {ρ 
   ext x
   obtain ⟨ζ, hx⟩ := (Φ.prod Ψ).exists_mem_analyticConeOrbit _ x
   obtain ⟨σ, τ, rfl⟩ := Φ.exists_prodCone_eq Ψ ζ
-  rw [mem_preimage, coe_analyticProdHomeomorph, analyticProdComparison_apply, mem_prod,
-    and_iff_right (mem_univ _),
-    (FanHom.snd Φ Ψ).analyticMap_mem_analyticBoundaryComponent_iff _ hΨ hx,
-    FanHom.snd_leastCone_prodCone, (Φ.prod Ψ).mem_analyticBoundaryComponent_iff _ hx,
-    ← Subtype.coe_le_coe, h, coe_prodCone, Submodule.prod_le_prod_iff]
-  simp
+  simp [(FanHom.snd Φ Ψ).analyticMap_mem_analyticBoundaryComponent_iff _ hΨ hx,
+    (Φ.prod Ψ).mem_analyticBoundaryComponent_iff _ hx, ← Subtype.coe_le_coe, h,
+    Submodule.le_prod_iff]
 
 /-- **Boundary components of a product, first factor.** The product homeomorphism carries the
 boundary component of a product ray `ρ × 0` onto the component of `ρ` times the whole second

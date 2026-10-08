@@ -84,19 +84,16 @@ private theorem prodRayOfSum_surjective (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonem
   obtain ⟨σ, τ, hξ⟩ := Φ.exists_prodCone_eq Ψ ξ.toCone
   -- View `ξ` as a ray of the cone `σ × τ` and split it into a ray of one factor.
   let G := ξ.toToricRay (Φ.prod Ψ) (Φ.prodCone Ψ σ τ) hξ.ge
+  have hGcone : G.toPointedCone = ξ.toCone.1 := Ray.toPointedCone_toToricRay _ _ _ _
   have hσ := (Φ.isToricCone σ.2).salient
   have hτ := (Ψ.isToricCone τ.2).salient
   have hG : (ToricRay.prodSplit hσ hτ).symm (ToricRay.prodSplit hσ hτ G) = G :=
     (ToricRay.prodSplit hσ hτ).symm_apply_apply G
   rcases hsplit : ToricRay.prodSplit hσ hτ G with ρ | ρ
   · refine ⟨.inl (Ray.ofToricRay Φ σ ρ), Subtype.ext (Subtype.ext ?_)⟩
-    rw [hsplit, ToricRay.prodSplit_symm_inl] at hG
-    rw [coe_toCone_prodRayOfSum_inl, Ray.toCone_ofToricRay, ← ToricRay.toPointedCone_prodInl hτ,
-      hG, Ray.toPointedCone_toToricRay]
+    simpa [hsplit, hGcone, coe_toCone_prodRayOfSum_inl] using congrArg ToricRay.toPointedCone hG
   · refine ⟨.inr (Ray.ofToricRay Ψ τ ρ), Subtype.ext (Subtype.ext ?_)⟩
-    rw [hsplit, ToricRay.prodSplit_symm_inr] at hG
-    rw [coe_toCone_prodRayOfSum_inr, Ray.toCone_ofToricRay, ← ToricRay.toPointedCone_prodInr hσ,
-      hG, Ray.toPointedCone_toToricRay]
+    simpa [hsplit, hGcone, coe_toCone_prodRayOfSum_inr] using congrArg ToricRay.toPointedCone hG
 
 /-- The rays of a product of nonempty fans are exactly the rays of the two factors. A ray of the
 product projects to a ray of one factor and to the zero cone of the other; conversely, a ray of
