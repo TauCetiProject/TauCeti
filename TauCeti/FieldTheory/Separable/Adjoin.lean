@@ -15,8 +15,7 @@ import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 In a possibly noncommutative domain over a field, a pairwise commuting set of separable
 elements generates a separable commutative subalgebra. This permits adjoining separable
 elements to subfields of a division algebra without requiring the ambient algebra to be
-commutative. Mathlib's `Field.isSeparable_add` and `Field.isSeparable_mul` apply inside
-the generated commutative domain, which is a field by integrality.
+commutative.
 -/
 
 public section
@@ -36,7 +35,8 @@ theorem isSeparable_adjoin_iff {s : Set A} (hcomm : s.Pairwise Commute) :
     Algebra.IsSeparable K (adjoin K s) ↔ ∀ x ∈ s, IsSeparable K x := by
   refine ⟨fun h x hx ↦ (Subalgebra.isSeparable_iff.mp h) x (subset_adjoin hx), fun hsep ↦ ?_⟩
   have : IsMulCommutative (adjoin K s) := isMulCommutative_adjoin K hcomm
-  -- First establish integrality in the commutative subalgebra, so it can be made a field.
+  -- Mathlib's `Field.isSeparable_add` and `Field.isSeparable_mul` apply inside
+  -- the generated commutative domain, which is a field by integrality.
   have : Algebra.IsIntegral K (adjoin K s) := ⟨fun x ↦ by
     obtain ⟨x, hx⟩ := x
     induction hx using adjoin_induction with
