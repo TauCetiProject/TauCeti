@@ -8,6 +8,9 @@ module
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
 
+-- Access the constructor only to supply its missing public characterization.
+import all Mathlib.Geometry.Manifold.LocalDiffeomorph
+
 /-!
 # Differentials of diffeomorphisms
 
@@ -15,7 +18,8 @@ The differentials of a diffeomorphism and its inverse undo each other, and the d
 diffeomorphism undoes the pullback of vector fields along it.
 Differentiability at a point is also preserved by postcomposition with a diffeomorphism.
 These facts support inverse isometries and transport of curve differentiability through
-diffeomorphisms.
+diffeomorphisms. The underlying equivalence of a diffeomorphism viewed as a partial
+diffeomorphism is also characterized, for composition with partial coordinates.
 -/
 
 public section
@@ -33,6 +37,12 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {n : ℕ∞ω}
 
 namespace Diffeomorph
+
+/-- The partial equivalence underlying a diffeomorphism viewed as a partial diffeomorphism
+is its everywhere-defined equivalence. -/
+@[simp]
+theorem toPartialDiffeomorph_toPartialEquiv (h : M ≃ₘ^n⟮I, J⟯ N) :
+    h.toPartialDiffeomorph.toPartialEquiv = h.toEquiv.toPartialEquiv := (rfl)
 
 /-- The differentials of a diffeomorphism and its inverse compose to the identity. -/
 @[simp]

@@ -51,7 +51,8 @@ Finally the density is transported to `L²(G)`. The continuous functions are den
 finite measure on a compact space (`ContinuousMap.toLp_denseRange`) and `𝓡(G)` is uniformly dense
 in them, so the images of the matrix coefficients span a dense subspace of `L²(G)`, whose
 orthogonal complement is therefore trivial. That vanishing complement is the hypothesis of
-`HilbertBasis.mkOfOrthogonalEqBot`, so it is the form in which Layer 5 consumes this file.
+`HilbertBasis.mkOfOrthogonalEqBot`, so it is the form used to construct the Peter-Weyl Hilbert
+basis.
 
 ## Implementation notes
 
@@ -82,12 +83,6 @@ separation axiom stated at the strength the proof actually uses.
 
 ## References
 
-This is `representativeStarSubalgebra_dense` and its corollary
-`representativeStarSubalgebra_separatesPoints` from Layer 5 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-whose non-circular route to Peter-Weyl asks precisely that density be proved from the convolution
-operators and an approximate identity, with point separation drawn from it afterwards.
-
 * G. B. Folland, *A Course in Abstract Harmonic Analysis*, 2nd ed., CRC (2016), §5.2.
 * D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapter 2.
 * T. Bröcker, T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
@@ -95,6 +90,8 @@ operators and an approximate identity, with point separation drawn from it after
 -/
 
 public section
+
+open _root_.ContRepresentation
 
 open MeasureTheory Set
 open scoped InnerProductSpace
@@ -152,7 +149,7 @@ theorem representativeStarSubalgebra_dense :
 
 /-- **The representative ring separates the points of a compact Hausdorff group.**
 
-Point separation is a *corollary* of `TauCeti.dense_representativeSubmodule`, and the roadmap's
+Point separation is a *corollary* of `TauCeti.dense_representativeSubmodule`, and the
 non-circular route to Peter-Weyl depends on its never being assumed beforehand. -/
 theorem exists_mem_representativeSubmodule_apply_ne [T1Space G] (x y : G) (hxy : x ≠ y) :
     ∃ f ∈ representativeSubmodule 𝕜 G, f x ≠ f y := by
@@ -180,8 +177,7 @@ theorem exists_mem_representativeSubmodule_apply_ne [T1Space G] (x y : G) (hxy :
   rw [hFx, hFy] at hlt
   simp at hlt
 
-/-- Point separation, read on the representative `*`-subalgebra: this is the roadmap's
-`representativeStarSubalgebra_separatesPoints`. -/
+/-- The representative `*`-subalgebra separates points. -/
 theorem representativeStarSubalgebra_separatesPoints [T1Space G] (x y : G) (hxy : x ≠ y) :
     ∃ f ∈ representativeStarSubalgebra 𝕜 G, f x ≠ f y := by
   obtain ⟨f, hf, hne⟩ := exists_mem_representativeSubmodule_apply_ne (𝕜 := 𝕜) x y hxy

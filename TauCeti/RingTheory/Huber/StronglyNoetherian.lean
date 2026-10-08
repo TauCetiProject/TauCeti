@@ -51,6 +51,10 @@ discrete case below is proved through it.
   `TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate` read as a statement about the
   predicate; `[IsHuberRing A]` is what that isomorphism asks of the base, and the predicate itself
   does not.
+* `TauCeti.Huber.IsStronglyNoetherian.weightedRestrictedSubring_one_weight`: when the ordinary
+  restricted-series ring is complete and Hausdorff, it is strongly noetherian too, because it is
+  bicontinuously isomorphic to the completed algebra above. A complete Hausdorff base supplies
+  these hypotheses.
 * `TauCeti.Huber.isNoetherianRing_completion_of_isStronglyNoetherian`: the zero-variable
   *consequence* of the predicate — strong noetherianness quantifies over every `k`, and its
   `k = 0` component says the separated completion `Â` is noetherian. The identification behind it,
@@ -267,6 +271,26 @@ theorem isStronglyNoetherian_congr (e : A ≃+* B) (he : Continuous e) (he' : Co
   · exact isNoetherianRing_of_ringEquiv _ (restrictedMvPowerSeriesCompletionCongr e he he' k).symm
 
 end Transport
+
+/-! ### The uncompleted restricted-series algebra -/
+
+/-- **Strong noetherianity passes to the ordinary restricted-series ring when that ring is
+complete and Hausdorff.** It then agrees bicontinuously with the completed algebra
+`A⟨X₁, …, Xₖ⟩`, which is strongly noetherian by iteration. A complete Hausdorff base supplies
+the two hypotheses on the restricted-series ring.
+
+Completeness and separation are needed precisely for this comparison with the completion. -/
+instance IsStronglyNoetherian.weightedRestrictedSubring_one_weight
+    [IsHuberRing A] [IsStronglyNoetherian A] (k : ℕ)
+    [CompleteSpace (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight)]
+    [T0Space (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight)] :
+    IsStronglyNoetherian
+      (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :=
+  (isStronglyNoetherian_congr (restrictedMvPowerSeriesCompletionEquiv k A)
+    uniformContinuous_restrictedMvPowerSeriesCompletionEquiv.continuous
+    uniformContinuous_restrictedMvPowerSeriesCompletionEquiv_symm.continuous).mp inferInstance
 
 /-! ### Descent along an open quotient map -/
 

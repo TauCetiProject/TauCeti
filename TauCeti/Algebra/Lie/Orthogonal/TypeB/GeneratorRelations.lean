@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Orthogonal.TypeB.RootGenerators
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.Generators
+public import Mathlib.Algebra.Lie.Sl2
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 
 /-!
@@ -38,14 +39,16 @@ subsequent steps.
 * `TauCeti.typeBSimpleCorootGenerator_lie_root` and
   `TauCeti.typeBSimpleCorootGenerator_lie_negativeRoot`: the uniform integral
   Cartan-action relations.
+* `TauCeti.isSl2Triple_typeBSimpleRootGenerator`: the simple generators at each node form an
+  `sl₂` triple.
 
 ## References
 
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate II.
 * R. W. Carter, *Simple Groups of Lie Type*, Section 4.2.
 
-This supplies the next matrix-model input to the Chevalley--Demazure construction and pinnings in
-Layer 9 of the ReductiveGroups roadmap.
+These relations supply matrix-model input both to the Chevalley--Demazure construction and to a
+Chevalley-style basis of the split type-`B` Lie algebra.
 -/
 
 public section
@@ -214,5 +217,47 @@ theorem typeBSimpleCorootGenerator_lie_negativeRoot (i j : Fin (n + 1)) :
   · rw [typeBSimpleNegativeRootGenerator_castSucc,
       typeBSimpleCorootGenerator_lie_negativeRoot_castSucc, ← neg_sub,
       typeBSimpleCorootCoordinate_sub_eq_cartan_transpose, neg_smul, Int.cast_smul_eq_zsmul]
+
+/-- Each simple coroot generator is nonzero away from characteristic two. -/
+theorem typeBSimpleCorootGenerator_ne_zero [NeZero (2 : K)]
+    (i : Fin (n + 1)) :
+    typeBSimpleCorootGenerator (K := K) i ≠ 0 := by
+  refine Fin.lastCases ?_ (fun j => ?_) i
+  · intro h
+    have h' : (2 : K) = 0 := by
+      simpa [typeBSimpleCorootGenerator_last, typeBShortCorootGenerator_eq_diagonal,
+        typeBDiagonalMatrix_apply] using congrArg
+        (fun x : LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K =>
+          (x : Matrix (Unit ⊕ Fin (n + 1) ⊕ Fin (n + 1))
+            (Unit ⊕ Fin (n + 1) ⊕ Fin (n + 1)) K)
+            (.inr (.inl (Fin.last n))) (.inr (.inl (Fin.last n)))) h
+    exact NeZero.ne 2 h'
+  · intro h
+    have h' : (1 : K) = 0 := by
+      simpa [typeBSimpleCorootGenerator_castSucc, typeBDifferenceCorootGenerator_eq_diagonal,
+        typeBDiagonalMatrix_apply, Fin.castSucc_lt_succ.ne] using congrArg
+        (fun x : LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K =>
+          (x : Matrix (Unit ⊕ Fin (n + 1) ⊕ Fin (n + 1))
+            (Unit ⊕ Fin (n + 1) ⊕ Fin (n + 1)) K)
+            (.inr (.inl j.castSucc)) (.inr (.inl j.castSucc))) h
+    apply NeZero.ne (2 : K)
+    rw [← one_add_one_eq_two, h', zero_add]
+
+/-- The positive and negative simple-root generators at each type-`B` node, together with the
+simple coroot generator, form an `sl₂` triple. -/
+theorem isSl2Triple_typeBSimpleRootGenerator [NeZero (2 : K)]
+    (i : Fin (n + 1)) :
+    _root_.IsSl2Triple
+      (typeBSimpleCorootGenerator (K := K) i)
+      (typeBSimpleRootGenerator (K := K) i)
+      (typeBSimpleNegativeRootGenerator (K := K) i) where
+  h_ne_zero := typeBSimpleCorootGenerator_ne_zero i
+  lie_e_f := typeBSimpleRootGenerator_lie_negative i
+  lie_h_e_nsmul := by
+    rw [typeBSimpleCorootGenerator_lie_root, CartanMatrix.B_diag]
+    simp only [two_zsmul, two_nsmul]
+  lie_h_f_nsmul := by
+    rw [typeBSimpleCorootGenerator_lie_negativeRoot, CartanMatrix.B_diag]
+    simp only [two_zsmul, two_nsmul]
 
 end TauCeti

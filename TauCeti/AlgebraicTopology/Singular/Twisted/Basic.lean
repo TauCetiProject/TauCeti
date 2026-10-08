@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
-public import Mathlib.CategoryTheory.Limits.MonoCoprod
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.AlgebraicTopology.LocalCoefficient
@@ -59,7 +58,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits Convexity SimplexCategory
+open CategoryTheory Limits SimplexCategory
 
 open scoped Simplicial
 
@@ -139,7 +138,7 @@ def vertexTransport (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
   pathTransport σ (toTopInitialVertex m.unop) (toTop.map α.unop (toTopInitialVertex n.unop))
 
 /-- Reindexing along an identity does not move the initial vertex, so the transport it induces is
-the canonical identification of the two coefficient modules. -/
+the `eqToHom` between the two (equal) initial vertices. -/
 lemma vertexTransport_id (σ : (TopCat.toSSet.obj X).obj n) :
     vertexTransport (𝟙 n) σ = eqToHom (by simp) := by
   have hz : toTopInitialVertex n.unop =
@@ -339,21 +338,18 @@ lemma twistedChainComplexCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J) :
 /-- An isomorphism of local coefficient systems induces an isomorphism of twisted chain
 complexes. -/
 def twistedChainComplexCoefficientIso (e : L ≅ K) :
-    twistedChainComplex L ≅ twistedChainComplex K where
-  hom := twistedChainComplexCoefficientMap e.hom
-  inv := twistedChainComplexCoefficientMap e.inv
-  hom_inv_id := by
-    rw [← twistedChainComplexCoefficientMap_comp, e.hom_inv_id,
-      twistedChainComplexCoefficientMap_id]
-  inv_hom_id := by
-    rw [← twistedChainComplexCoefficientMap_comp, e.inv_hom_id,
-      twistedChainComplexCoefficientMap_id]
+    twistedChainComplex L ≅ twistedChainComplex K :=
+  (twistedChainsFunctor R X ⋙ AlgebraicTopology.alternatingFaceMapComplex _).mapIso e
 
+/-- The forward map of the induced isomorphism of twisted chain complexes is the map induced by
+`e.hom`. -/
 @[simp]
 lemma twistedChainComplexCoefficientIso_hom (e : L ≅ K) :
     (twistedChainComplexCoefficientIso e).hom = twistedChainComplexCoefficientMap e.hom :=
   (rfl)
 
+/-- The inverse of the induced isomorphism of twisted chain complexes is the map induced by
+`e.inv`. -/
 @[simp]
 lemma twistedChainComplexCoefficientIso_inv (e : L ≅ K) :
     (twistedChainComplexCoefficientIso e).inv = twistedChainComplexCoefficientMap e.inv :=
@@ -472,6 +468,7 @@ lemma ι_twistedChainComplexConstantIso_inv (M : ModuleCat.{max v w} R) (k : ℕ
 variable (X) in
 /-- The comparison of the twisted chain complex with the ordinary singular chain complex is
 natural in the coefficient module. -/
+@[reassoc]
 lemma twistedChainComplexConstantIso_hom_naturality {M N : ModuleCat.{max v w} R} (φ : M ⟶ N) :
     twistedChainComplexCoefficientMap ((constantFunctor X).map φ) ≫
         (twistedChainComplexConstantIso X N).hom =
@@ -523,7 +520,7 @@ end Constant
 
 section Map
 
-variable {Y : TopCat.{v}} (f : X ⟶ Y) (L : LocalCoefficientSystem.{u, v, max v w} R Y)
+variable (f : X ⟶ Y) (L : LocalCoefficientSystem.{u, v, max v w} R Y)
 
 -- The degreewise map is kept as a separate definition so that the coefficient modules of the
 -- two sides, which agree only definitionally, stay hidden from the naturality proof below.
@@ -591,30 +588,14 @@ abbrev twistedHomologyMap (k : ℕ) :
     twistedHomology ((pullback f.hom).obj L) k ⟶ twistedHomology L k :=
   HomologicalComplex.homologyMap (twistedChainComplexMap f L) k
 
-/-- A monomorphism of spaces, that is, a continuous map with injective underlying function,
-induces a monomorphism of twisted chains in every degree: it reindexes the summands along an
-injection of singular simplices. -/
--- The term has type `Mono (Sigma.map' ((TopCat.toSSet.map f).app k) fun _ ↦ 𝟙 _)`, so it uses two
--- definitional equalities that the section otherwise keeps hidden: that `twistedChainsMap` is
--- `twistedChainsMapApp` in every degree, and that the summand `((pullback f.hom).obj L).obj
--- (initialVertex σ)` of the source is `L.obj (initialVertex ((TopCat.toSSet.map f).app k σ))`.
-instance mono_twistedChainsMap_app [Mono f] (k : SimplexCategoryᵒᵖ) :
-    Mono ((twistedChainsMap f L).app k) :=
-  MonoCoprod.mono_map'_of_injective (fun σ ↦ L.obj (initialVertex σ))
-    ((TopCat.toSSet.map f).app k)
-    ((CategoryTheory.mono_iff_injective ((TopCat.toSSet.map f).app k)).mp inferInstance)
-
-/-- A monomorphism of spaces induces a monomorphism of twisted chain complexes. -/
-instance mono_twistedChainComplexMap [Mono f] : Mono (twistedChainComplexMap f L) :=
-  HomologicalComplex.mono_of_mono_f _ fun _ ↦ mono_twistedChainsMap_app f L _
-
 /-- The monomorphism of twisted chains induced by a monomorphism of spaces is split in every
 degree: the retraction keeps the summands of the simplices coming from the subspace and kills the
 others.  This is what makes the twisted chain sequence of a pair stay exact after applying a
 contravariant `Hom(-, M)`. -/
--- The term has type `IsSplitMono (Sigma.map' ((TopCat.toSSet.map f).app k) fun _ ↦ 𝟙 _)`, so, like
--- `mono_twistedChainsMap_app`, it uses the definitional descriptions of `twistedChainsMap` and of
--- the coefficient module of each summand of its source.
+-- The term has type `IsSplitMono (Sigma.map' ((TopCat.toSSet.map f).app k) fun _ ↦ 𝟙 _)`, so it
+-- uses two definitional equalities that the section otherwise keeps hidden: that `twistedChainsMap`
+-- is `twistedChainsMapApp` in every degree, and that the summand `((pullback f.hom).obj L).obj
+-- (initialVertex σ)` of the source is `L.obj (initialVertex ((TopCat.toSSet.map f).app k σ))`.
 instance isSplitMono_twistedChainsMap_app [Mono f] (k : SimplexCategoryᵒᵖ) :
     IsSplitMono ((twistedChainsMap f L).app k) :=
   TauCeti.isSplitMono_sigmaMap' (fun σ ↦ L.obj (initialVertex σ)) ((TopCat.toSSet.map f).app k)
@@ -625,11 +606,15 @@ instance isSplitMono_twistedChainComplexMap_f [Mono f] (k : ℕ) :
     IsSplitMono ((twistedChainComplexMap f L).f k) :=
   isSplitMono_twistedChainsMap_app f L _
 
+/-- A monomorphism of spaces induces a monomorphism of twisted chain complexes. -/
+instance mono_twistedChainComplexMap [Mono f] : Mono (twistedChainComplexMap f L) :=
+  HomologicalComplex.mono_of_mono_f _ fun _ ↦ inferInstance
+
 end Map
 
 section MapComp
 
-variable {Y Z : TopCat.{v}} (f : X ⟶ Y) (g : Y ⟶ Z)
+variable {Z : TopCat.{v}} (f : X ⟶ Y) (g : Y ⟶ Z)
 
 /-- The identity map induces on twisted chains the map coming from the identification of a
 coefficient system with its pullback along the identity. -/
@@ -695,7 +680,7 @@ end MapComp
 
 section MapCoefficient
 
-variable {Y : TopCat.{v}} (f : X ⟶ Y) {L K : LocalCoefficientSystem.{u, v, max v w} R Y}
+variable (f : X ⟶ Y) {L K : LocalCoefficientSystem.{u, v, max v w} R Y}
 
 /-- The morphism of twisted chains induced by a continuous map is natural in the coefficient
 system: pushing simplices forward along `f` and then applying a morphism of systems on `Y` is the
@@ -710,6 +695,7 @@ lemma twistedChainsMap_naturality (η : L ⟶ K) :
   exact ιTwistedChains_twistedChainsCoefficientMap η n _
 
 /-- The chain-complex form of `twistedChainsMap_naturality`. -/
+@[reassoc]
 lemma twistedChainComplexMap_naturality (η : L ⟶ K) :
     twistedChainComplexMap f L ≫ twistedChainComplexCoefficientMap η =
       twistedChainComplexCoefficientMap ((pullback f.hom).map η) ≫ twistedChainComplexMap f K :=
@@ -749,7 +735,7 @@ end MapSquare
 
 section ConstantMap
 
-variable {Y : TopCat.{v}} (f : X ⟶ Y) (M : ModuleCat.{max v w} R)
+variable (f : X ⟶ Y) (M : ModuleCat.{max v w} R)
 
 /-- The comparison of twisted chains with ordinary singular chains is natural in the space: a
 continuous map acts on both sides by pushing singular simplices forward, once the pullback of a
@@ -781,6 +767,7 @@ lemma twistedChainsConstantIso_hom_space_naturality :
   exact key.symm.trans (Category.id_comp _).symm
 
 /-- The chain-complex form of `twistedChainsConstantIso_hom_space_naturality`. -/
+@[reassoc]
 lemma twistedChainComplexConstantIso_hom_space_naturality :
     twistedChainComplexMap f ((constantFunctor Y).obj M) ≫
         (twistedChainComplexConstantIso Y M).hom =
