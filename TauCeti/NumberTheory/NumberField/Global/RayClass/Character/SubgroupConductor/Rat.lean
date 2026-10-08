@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.SubgroupConductor
+public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.SubgroupConductor.Basic
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Rat
 
 import Mathlib.Data.Nat.Totient
@@ -28,9 +28,9 @@ bijection, which is why the finite part drops to `(d)`.
 
 ## Main results
 
-* `TauCeti.GlobalNumberFields.subgroupConductor_bot_ratModulus_of_le_two`,
-  `TauCeti.GlobalNumberFields.subgroupConductor_bot_ratModulus`, and
-  `TauCeti.GlobalNumberFields.subgroupConductor_bot_ratModulus_of_mod_four_eq_two`: the conductor
+* `Subgroup.rayClassConductor_bot_ratModulus_of_le_two`,
+  `Subgroup.rayClassConductor_bot_ratModulus`, and
+  `Subgroup.rayClassConductor_bot_ratModulus_of_mod_four_eq_two`: the conductor
   of the trivial subgroup of `RayClassGroup (ratModulus n _)`.
 
 ## References
@@ -65,33 +65,6 @@ theorem ker_classMap_ratModulus_eq_bot_iff {d : ℕ} {hd : d ≠ 0}
     ← card_rayClassGroup_ratModulus hd]
   exact ⟨fun hinj ↦ Nat.card_eq_of_bijective _ ⟨hinj, classMap_surjective h⟩,
     fun hc ↦ ((classMap_surjective h).bijective_of_nat_card_le hc.le).1⟩
-
--- A divisor `d` of `n` with `φ d = φ n` is `n`, or `n / 2` for `n` twice an odd number.
-private theorem eq_or_eq_two_mul_of_totient_eq {d : ℕ} (hn : n ≠ 0) (hdn : d ∣ n)
-    (h : n.totient = d.totient) : d = n ∨ (n = 2 * d ∧ Odd d) := by
-  obtain ⟨e, rfl⟩ := hdn
-  have hd : d ≠ 0 := left_ne_zero_of_mul hn
-  have he : e ≠ 0 := right_ne_zero_of_mul hn
-  -- `φ (gcd d e) φ (d e) = φ d φ e gcd d e` with `φ (d e) = φ d` gives `φ g = φ e g`.
-  have key := Nat.totient_gcd_mul_totient_mul d e
-  rw [h] at key
-  have hφd : 0 < d.totient := Nat.totient_pos.mpr (Nat.pos_of_ne_zero hd)
-  have hg : 0 < d.gcd e := Nat.gcd_pos_of_pos_left _ (Nat.pos_of_ne_zero hd)
-  have key' : (d.gcd e).totient = e.totient * d.gcd e :=
-    Nat.eq_of_mul_eq_mul_right hφd (by rw [key]; ring)
-  have hφe : 0 < e.totient := Nat.totient_pos.mpr (Nat.pos_of_ne_zero he)
-  have hle := Nat.totient_le (d.gcd e)
-  have he1 : e.totient = 1 := by
-    rcases Nat.lt_or_ge 1 e.totient with h1 | h1
-    · nlinarith
-    · omega
-  have hg1 : d.gcd e = 1 := by
-    rw [he1, one_mul] at key'
-    by_contra hne
-    exact absurd key' (Nat.totient_lt _ (by omega)).ne
-  rcases Nat.totient_eq_one_iff.mp he1 with rfl | rfl
-  · exact Or.inl (mul_one d).symm
-  · exact Or.inr ⟨mul_comm d 2, Nat.coprime_two_right.mp hg1⟩
 
 -- A divisor of `(n)·∞` is `(d)·∞` or `(d)` for a divisor `d` of `n`.
 private theorem exists_eq_ratModulus_or_eq_ratFiniteModulus {𝔫 : Modulus ℚ}
@@ -136,11 +109,19 @@ private theorem ker_classMap_ratFiniteModulus_ne_bot (h2 : 2 < n) {d : ℕ} {hd 
       ⟨fun _ ↦ -1, fun w hw ↦ by simp at hw, rfl⟩
   exact fun hbot ↦ hc1 ((MonoidHom.ker_eq_bot_iff _).mp hbot (hc.trans (map_one _).symm))
 
+end TauCeti.GlobalNumberFields
+
+namespace Subgroup
+
+open TauCeti.GlobalNumberFields
+
+variable {n : ℕ} {hn : n ≠ 0}
+
 /-- **The conductor of the trivial subgroup modulo `(n)·∞` for `n ≤ 2` is trivial**: the ray class
 group is then trivial. -/
-theorem subgroupConductor_bot_ratModulus_of_le_two (h2 : n ≤ 2) :
-    subgroupConductor (⊥ : Subgroup (RayClassGroup (ratModulus n hn))) = Modulus.one ℚ := by
-  refine Modulus.eq_one_of_dvd_one ((subgroupConductor_dvd_iff (Modulus.one_dvd _) ⊥).mpr ?_)
+theorem rayClassConductor_bot_ratModulus_of_le_two (h2 : n ≤ 2) :
+    rayClassConductor (⊥ : Subgroup (RayClassGroup (ratModulus n hn))) = Modulus.one ℚ := by
+  refine Modulus.eq_one_of_dvd_one ((rayClassConductor_dvd_iff (Modulus.one_dvd _) ⊥).mpr ?_)
   have : Subsingleton (RayClassGroup (ratModulus n hn)) := by
     rw [← Finite.card_le_one_iff_subsingleton, card_rayClassGroup_ratModulus,
       Nat.totient_eq_one_iff.mpr (by omega)]
@@ -148,50 +129,56 @@ theorem subgroupConductor_bot_ratModulus_of_le_two (h2 : n ≤ 2) :
 
 -- For `n > 2` the conductor of the trivial subgroup is `(d)·∞` for the least divisor `d` of `n`
 -- with `φ d = φ n`.
-private theorem exists_subgroupConductor_bot_ratModulus_eq (h2 : 2 < n) :
+private theorem exists_rayClassConductor_bot_ratModulus_eq (h2 : 2 < n) :
     ∃ (d : ℕ) (hd : d ≠ 0), d ∣ n ∧ n.totient = d.totient ∧
-      subgroupConductor (⊥ : Subgroup (RayClassGroup (ratModulus n hn))) = ratModulus d hd ∧
+      rayClassConductor (⊥ : Subgroup (RayClassGroup (ratModulus n hn))) = ratModulus d hd ∧
       ∀ d' : ℕ, d' ≠ 0 → d' ∣ n → n.totient = d'.totient → d ∣ d' := by
-  set 𝔣 := subgroupConductor (⊥ : Subgroup (RayClassGroup (ratModulus n hn)))
+  set 𝔣 := rayClassConductor (⊥ : Subgroup (RayClassGroup (ratModulus n hn)))
   have key {𝔫 : Modulus ℚ} (h : 𝔫 ∣ ratModulus n hn) : 𝔣 ∣ 𝔫 ↔ (classMap h).ker = ⊥ := by
-    rw [subgroupConductor_dvd_iff h, le_bot_iff]
+    rw [rayClassConductor_dvd_iff h, le_bot_iff]
   obtain ⟨d, hd, hdn, heq | heq⟩ :=
-    exists_eq_ratModulus_or_eq_ratFiniteModulus (subgroupConductor_dvd ⊥)
-  · have h' : ratModulus d hd ∣ ratModulus n hn := heq ▸ subgroupConductor_dvd ⊥
+    exists_eq_ratModulus_or_eq_ratFiniteModulus (rayClassConductor_dvd ⊥)
+  · have h' : ratModulus d hd ∣ ratModulus n hn := heq ▸ rayClassConductor_dvd ⊥
     refine ⟨d, hd, hdn, (ker_classMap_ratModulus_eq_bot_iff h').mp
       ((key h').mp (heq ▸ Modulus.dvd_refl _)), heq, fun d' hd' hd'n hφ ↦ ?_⟩
     have h'' : ratModulus d' hd' ∣ ratModulus n hn := ratModulus_dvd_ratModulus_iff.mpr hd'n
     have := (key h'').mpr ((ker_classMap_ratModulus_eq_bot_iff h'').mpr hφ)
-    rwa [show 𝔣 = ratModulus d hd from heq, ratModulus_dvd_ratModulus_iff] at this
-  · have h' : ratFiniteModulus d hd ∣ ratModulus n hn := heq ▸ subgroupConductor_dvd ⊥
+    have hf : 𝔣 = ratModulus d hd := heq
+    rwa [hf, ratModulus_dvd_ratModulus_iff] at this
+  · have h' : ratFiniteModulus d hd ∣ ratModulus n hn := heq ▸ rayClassConductor_dvd ⊥
     exact absurd ((key h').mp (heq ▸ Modulus.dvd_refl _))
       (ker_classMap_ratFiniteModulus_ne_bot h2 h')
 
 /-- **The conductor of the trivial subgroup modulo `(n)·∞` is `(n)·∞`** for `n > 2` not equal to
 `2` modulo `4`. -/
-theorem subgroupConductor_bot_ratModulus (h2 : 2 < n) (h4 : n % 4 ≠ 2) :
-    subgroupConductor (⊥ : Subgroup (RayClassGroup (ratModulus n hn))) = ratModulus n hn := by
-  obtain ⟨d, hd, hdn, hφ, heq, -⟩ := exists_subgroupConductor_bot_ratModulus_eq h2
-  rcases eq_or_eq_two_mul_of_totient_eq hn hdn hφ with hdn' | ⟨hnd, k, hk⟩
+theorem rayClassConductor_bot_ratModulus (h2 : 2 < n) (h4 : n % 4 ≠ 2) :
+    rayClassConductor (⊥ : Subgroup (RayClassGroup (ratModulus n hn))) = ratModulus n hn := by
+  obtain ⟨d, hd, hdn, hφ, heq, -⟩ := exists_rayClassConductor_bot_ratModulus_eq h2
+  rcases Nat.eq_or_eq_of_totient_eq_totient hdn hφ.symm with hdn' | hnd
   · exact heq.trans (by subst hdn'; rfl)
-  · omega
+  · have hodd : Odd d := Nat.not_even_iff_odd.mp fun hd ↦ by
+      have := hd.eq_of_totient_eq_totient hdn hφ.symm
+      omega
+    obtain ⟨k, hk⟩ := hodd
+    omega
 
 /-- **The conductor of the trivial subgroup modulo `(n)·∞` is `(n / 2)·∞`** for `n > 2` equal to
 `2` modulo `4`: reduction `(ZMod n)ˣ → (ZMod (n / 2))ˣ` is then a bijection. -/
-theorem subgroupConductor_bot_ratModulus_of_mod_four_eq_two (h2 : 2 < n) (h4 : n % 4 = 2) :
-    subgroupConductor (⊥ : Subgroup (RayClassGroup (ratModulus n hn))) =
+theorem rayClassConductor_bot_ratModulus_of_mod_four_eq_two (h2 : 2 < n) (h4 : n % 4 = 2) :
+    rayClassConductor (⊥ : Subgroup (RayClassGroup (ratModulus n hn))) =
       ratModulus (n / 2) (by omega) := by
-  obtain ⟨d, hd, hdn, hφ, heq, hmin⟩ := exists_subgroupConductor_bot_ratModulus_eq h2
-  -- `n / 2` is odd and `φ n = φ 2 φ (n / 2) = φ (n / 2)`.
+  obtain ⟨d, hd, hdn, hφ, heq, hmin⟩ := exists_rayClassConductor_bot_ratModulus_eq h2
+  -- `n / 2` is odd, so doubling it does not change its totient.
   have hodd : Odd (n / 2) := ⟨n / 4, by omega⟩
-  have hφ' : n.totient = (n / 2).totient := by
-    conv_lhs => rw [show n = 2 * (n / 2) by omega]
-    rw [Nat.totient_mul (Nat.coprime_two_left.mpr hodd), Nat.totient_two, one_mul]
+  have hn : n = 2 * (n / 2) := by omega
+  have hφ' : n.totient = (n / 2).totient := calc
+    n.totient = (2 * (n / 2)).totient := congrArg Nat.totient hn
+    _ = (n / 2).totient := Nat.totient_two_mul_of_odd hodd
   have hdvd := hmin (n / 2) (by omega) (Nat.div_dvd_of_dvd (by omega)) hφ'
-  rcases eq_or_eq_two_mul_of_totient_eq hn hdn hφ with hdn' | ⟨hnd, -⟩
+  rcases Nat.eq_or_eq_of_totient_eq_totient hdn hφ.symm with hdn' | hnd
   · exact absurd (Nat.le_of_dvd (by omega) hdvd) (by omega)
   · refine heq.trans ?_
     congr 1
     omega
 
-end TauCeti.GlobalNumberFields
+end Subgroup

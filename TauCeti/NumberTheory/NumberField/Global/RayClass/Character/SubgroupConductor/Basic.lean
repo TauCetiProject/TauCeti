@@ -29,16 +29,16 @@ modulus through which the Artin map factors.
 
 ## Main definitions
 
-* `TauCeti.GlobalNumberFields.subgroupConductor`: the conductor of a subgroup of a ray class
+* `Subgroup.rayClassConductor`: the conductor of a subgroup of a ray class
   group.
 
 ## Main results
 
-* `TauCeti.GlobalNumberFields.subgroupConductor_dvd_iff_forall_conductor_dvd`: the conductor of
+* `Subgroup.rayClassConductor_dvd_iff_forall_conductor_dvd`: the conductor of
   `H` divides `𝔫` exactly when the conductor of every ray class character trivial on `H` does.
-* `TauCeti.GlobalNumberFields.subgroupConductor_dvd_iff`: for `𝔫 ∣ 𝔪`, the conductor of `H`
+* `Subgroup.rayClassConductor_dvd_iff`: for `𝔫 ∣ 𝔪`, the conductor of `H`
   divides `𝔫` exactly when the kernel of `classMap` lies in `H`.
-* `TauCeti.GlobalNumberFields.subgroupConductor_dvd`: the conductor of `H` divides `𝔪`.
+* `Subgroup.rayClassConductor_dvd`: the conductor of `H` divides `𝔪`.
 
 ## References
 
@@ -78,6 +78,14 @@ theorem ker_classMap_le_iff (h : 𝔫 ∣ 𝔪) (H : Subgroup (RayClassGroup �
   simp only [RayClassCharacter.induced_apply, MonoidHom.mem_ker.mp hc, map_one] at hc'
   simpa using hc'.symm
 
+end TauCeti.GlobalNumberFields
+
+namespace Subgroup
+
+open TauCeti.GlobalNumberFields
+
+variable {K : Type*} [Field K] [NumberField K] {𝔪 𝔫 : Modulus K}
+
 /-- The moduli dividing the conductor of every ray class character of `𝔪` trivial on `H`. -/
 private def conductorBounds (H : Subgroup (RayClassGroup 𝔪)) : Set (Modulus K) :=
   {𝔫 | ∀ η : RayClassCharacter 𝔪, H ≤ η.ker → η.conductor ∣ 𝔫}
@@ -88,54 +96,60 @@ private theorem mem_conductorBounds_self (H : Subgroup (RayClassGroup 𝔪)) :
 
 /-- **The conductor of a subgroup of a ray class group**: the least modulus divisible by the
 conductor of every ray class character trivial on the subgroup
-(`subgroupConductor_dvd_iff_forall_conductor_dvd`). For `𝔫 ∣ 𝔪` it divides `𝔫` exactly when the
+(`rayClassConductor_dvd_iff_forall_conductor_dvd`). For `𝔫 ∣ 𝔪` it divides `𝔫` exactly when the
 subgroup contains the kernel of `classMap : RayClassGroup 𝔪 →* RayClassGroup 𝔫`
-(`subgroupConductor_dvd_iff`). -/
-def subgroupConductor (H : Subgroup (RayClassGroup 𝔪)) : Modulus K :=
+(`rayClassConductor_dvd_iff`). -/
+def rayClassConductor (H : Subgroup (RayClassGroup 𝔪)) : Modulus K :=
   Modulus.wellFounded_dvd_and_ne.min (conductorBounds H) ⟨𝔪, mem_conductorBounds_self H⟩
 
 /-- **The conductor of a subgroup is the least common multiple of the conductors of the
 characters trivial on it**: it divides `𝔫` exactly when the conductor of every ray class character
 trivial on the subgroup divides `𝔫`. -/
-theorem subgroupConductor_dvd_iff_forall_conductor_dvd (H : Subgroup (RayClassGroup 𝔪)) :
-    subgroupConductor H ∣ 𝔫 ↔ ∀ η : RayClassCharacter 𝔪, H ≤ η.ker → η.conductor ∣ 𝔫 := by
-  have hmem : subgroupConductor H ∈ conductorBounds H :=
+theorem rayClassConductor_dvd_iff_forall_conductor_dvd (H : Subgroup (RayClassGroup 𝔪)) :
+    rayClassConductor H ∣ 𝔫 ↔ ∀ η : RayClassCharacter 𝔪, H ≤ η.ker → η.conductor ∣ 𝔫 := by
+  have hmem : rayClassConductor H ∈ conductorBounds H :=
     WellFounded.min_mem _ _ ⟨𝔪, mem_conductorBounds_self H⟩
   refine ⟨fun h η hη ↦ Modulus.dvd_trans (hmem η hη) h, fun h ↦ ?_⟩
   -- The greatest common divisor of the conductor and `𝔫` is again a bound, so by minimality it is
   -- the conductor.
-  have hgcd : (subgroupConductor H).gcd 𝔫 ∈ conductorBounds H :=
+  have hgcd : (rayClassConductor H).gcd 𝔫 ∈ conductorBounds H :=
     fun η hη ↦ Modulus.dvd_gcd (hmem η hη) (h η hη)
   have hmin := Modulus.wellFounded_dvd_and_ne.not_lt_min (conductorBounds H) hgcd
-  have heq : (subgroupConductor H).gcd 𝔫 = subgroupConductor H :=
+  have heq : (rayClassConductor H).gcd 𝔫 = rayClassConductor H :=
     not_not.mp fun hne ↦ hmin ⟨Modulus.gcd_dvd_left _ _, hne⟩
   exact heq ▸ Modulus.gcd_dvd_right _ _
-
-/-- The conductor of a ray class character trivial on `H` divides the conductor of `H`. -/
-theorem RayClassCharacter.conductor_dvd_subgroupConductor {H : Subgroup (RayClassGroup 𝔪)}
-    {η : RayClassCharacter 𝔪} (hη : H ≤ η.ker) : η.conductor ∣ subgroupConductor H :=
-  (subgroupConductor_dvd_iff_forall_conductor_dvd H).mp (Modulus.dvd_refl _) η hη
 
 /-- **The conductor of a subgroup is the least modulus through which it is defined**: for
 `𝔫 ∣ 𝔪`, the conductor of `H` divides `𝔫` exactly when the kernel of
 `classMap : RayClassGroup 𝔪 →* RayClassGroup 𝔫` lies in `H`. -/
-theorem subgroupConductor_dvd_iff (h : 𝔫 ∣ 𝔪) (H : Subgroup (RayClassGroup 𝔪)) :
-    subgroupConductor H ∣ 𝔫 ↔ (classMap h).ker ≤ H := by
-  rw [subgroupConductor_dvd_iff_forall_conductor_dvd, ker_classMap_le_iff]
+theorem rayClassConductor_dvd_iff (h : 𝔫 ∣ 𝔪) (H : Subgroup (RayClassGroup 𝔪)) :
+    rayClassConductor H ∣ 𝔫 ↔ (classMap h).ker ≤ H := by
+  rw [rayClassConductor_dvd_iff_forall_conductor_dvd, ker_classMap_le_iff]
 
 /-- The conductor of a subgroup of the ray class group of `𝔪` divides `𝔪`. -/
-theorem subgroupConductor_dvd (H : Subgroup (RayClassGroup 𝔪)) : subgroupConductor H ∣ 𝔪 :=
-  (subgroupConductor_dvd_iff_forall_conductor_dvd H).mpr fun η _ ↦ η.conductor_dvd
+theorem rayClassConductor_dvd (H : Subgroup (RayClassGroup 𝔪)) : rayClassConductor H ∣ 𝔪 :=
+  (rayClassConductor_dvd_iff_forall_conductor_dvd H).mpr fun η _ ↦ η.conductor_dvd
 
 /-- The kernel of the transition map from `𝔪` to the conductor of `H` lies in `H`. -/
-theorem ker_classMap_subgroupConductor_le (H : Subgroup (RayClassGroup 𝔪)) :
-    (classMap (subgroupConductor_dvd H)).ker ≤ H :=
-  (subgroupConductor_dvd_iff (subgroupConductor_dvd H) H).mp (Modulus.dvd_refl _)
+theorem ker_classMap_rayClassConductor_le (H : Subgroup (RayClassGroup 𝔪)) :
+    (classMap (rayClassConductor_dvd H)).ker ≤ H :=
+  (rayClassConductor_dvd_iff (rayClassConductor_dvd H) H).mp (Modulus.dvd_refl _)
 
 /-- A larger subgroup has a smaller conductor. -/
-theorem subgroupConductor_dvd_of_le {H H' : Subgroup (RayClassGroup 𝔪)} (hle : H ≤ H') :
-    subgroupConductor H' ∣ subgroupConductor H :=
-  (subgroupConductor_dvd_iff_forall_conductor_dvd H').mpr fun _ hη ↦
-    RayClassCharacter.conductor_dvd_subgroupConductor (hle.trans hη)
+theorem rayClassConductor_dvd_of_le {H H' : Subgroup (RayClassGroup 𝔪)} (hle : H ≤ H') :
+    rayClassConductor H' ∣ rayClassConductor H :=
+  (rayClassConductor_dvd_iff_forall_conductor_dvd H').mpr fun _ hη ↦
+    (rayClassConductor_dvd_iff_forall_conductor_dvd H).mp (Modulus.dvd_refl _) _ (hle.trans hη)
+
+end Subgroup
+
+namespace TauCeti.GlobalNumberFields
+
+variable {K : Type*} [Field K] [NumberField K] {𝔪 : Modulus K}
+
+/-- The conductor of a ray class character trivial on `H` divides the conductor of `H`. -/
+theorem RayClassCharacter.conductor_dvd_rayClassConductor {H : Subgroup (RayClassGroup 𝔪)}
+    {η : RayClassCharacter 𝔪} (hη : H ≤ η.ker) : η.conductor ∣ H.rayClassConductor :=
+  (H.rayClassConductor_dvd_iff_forall_conductor_dvd).mp (Modulus.dvd_refl _) η hη
 
 end TauCeti.GlobalNumberFields

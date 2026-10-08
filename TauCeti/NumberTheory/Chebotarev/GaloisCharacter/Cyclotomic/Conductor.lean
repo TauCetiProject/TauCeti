@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Cyclotomic.Basic
-public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.SubgroupConductorRat
+public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.SubgroupConductor.Rat
 
 import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
 import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Cyclotomic.Surjective
@@ -18,7 +18,7 @@ import TauCeti.NumberTheory.NumberField.Global.RayClass.Exact
 Let `F = K(μ_m)` be an `m`-th cyclotomic extension of a number field `K`. Its Artin map
 `cyclotomicArtin K F m` factors through the ray class group of the admissible modulus
 `cyclotomicModulus K m`, with finite part `(m)` and every real place. The **conductor** of `F / K`
-is the least modulus through which the Artin map factors: the conductor `subgroupConductor` of the
+is the least modulus through which the Artin map factors: the conductor `rayClassConductor` of the
 kernel of `cyclotomicArtin K F m` in the sense of Global Number Fields. It divides
 `cyclotomicModulus K m`, and it is the least common multiple of the conductors of the ray class
 characters `χ ∘ cyclotomicArtin K F m` for the characters `χ` of `Gal(F/K)`.
@@ -35,6 +35,7 @@ Over `ℚ` the Artin map is injective, and the conductor of `ℚ(ζ_m)/ℚ` is:
 
 ## Main results
 
+* `NumberField.Chebotarev.cyclotomicArtin_rat_injective`: the Artin map over `ℚ` is injective.
 * `NumberField.Chebotarev.cyclotomicConductor_dvd`: the conductor divides
   `cyclotomicModulus K m`.
 * `NumberField.Chebotarev.cyclotomicConductor_dvd_iff`: for `𝔫 ∣ cyclotomicModulus K m`, the
@@ -58,7 +59,7 @@ open scoped NumberField
 
 namespace NumberField.Chebotarev
 
-open TauCeti.GlobalNumberFields
+open TauCeti.GlobalNumberFields Subgroup
 
 section Conductor
 
@@ -69,11 +70,11 @@ variable (K : Type*) [Field K] [NumberField K] (F : Type*) [Field F] [NumberFiel
 the Artin map `cyclotomicArtin K F m` factors (`cyclotomicConductor_dvd_iff`): the conductor of the
 kernel of the Artin map. It divides `cyclotomicModulus K m` (`cyclotomicConductor_dvd`). -/
 noncomputable def cyclotomicConductor : Modulus K :=
-  subgroupConductor (cyclotomicArtin K F m).ker
+  rayClassConductor (cyclotomicArtin K F m).ker
 
 /-- The conductor of `K(μ_m) / K` divides the cyclotomic modulus `(m)` times the real places. -/
 theorem cyclotomicConductor_dvd : cyclotomicConductor K F m ∣ cyclotomicModulus K m :=
-  subgroupConductor_dvd _
+  rayClassConductor_dvd _
 
 variable {K F m}
 
@@ -83,7 +84,7 @@ map factors through the transition map to the ray class group of `𝔫`. -/
 theorem cyclotomicConductor_dvd_iff {𝔫 : Modulus K} (h : 𝔫 ∣ cyclotomicModulus K m) :
     cyclotomicConductor K F m ∣ 𝔫 ↔
       ∃ φ : RayClassGroup 𝔫 →* (F ≃ₐ[K] F), φ.comp (classMap h) = cyclotomicArtin K F m := by
-  rw [cyclotomicConductor, subgroupConductor_dvd_iff h]
+  rw [cyclotomicConductor, rayClassConductor_dvd_iff h]
   refine ⟨fun hker ↦ ⟨(classMap h).liftOfSurjective (classMap_surjective h) ⟨_, hker⟩,
     MonoidHom.ext fun c ↦ by
       rw [MonoidHom.comp_apply, MonoidHom.liftOfRightInverse_comp_apply]⟩, ?_⟩
@@ -97,7 +98,7 @@ theorem cyclotomicConductor_dvd_iff_forall_conductor_dvd {𝔫 : Modulus K} :
     cyclotomicConductor K F m ∣ 𝔫 ↔
       ∀ χ : (F ≃ₐ[K] F) →* ℂˣ,
         RayClassCharacter.conductor (χ.comp (cyclotomicArtin K F m)) ∣ 𝔫 := by
-  rw [cyclotomicConductor, subgroupConductor_dvd_iff_forall_conductor_dvd]
+  rw [cyclotomicConductor, rayClassConductor_dvd_iff_forall_conductor_dvd]
   refine ⟨fun h χ ↦ h _ fun c hc ↦ by
     rw [MonoidHom.mem_ker, MonoidHom.comp_apply, MonoidHom.mem_ker.mp hc, map_one], fun h η hη ↦ ?_⟩
   -- A ray class character trivial on the kernel of the surjective Artin map factors through it.
@@ -130,23 +131,22 @@ theorem cyclotomicModulus_rat : cyclotomicModulus ℚ m = ratModulus m (NeZero.n
 variable (F : Type*) [Field F] [NumberField F] [IsCyclotomicExtension {m} ℚ F] [IsGalois ℚ F]
   {m}
 
--- Over `ℚ` the Artin map is injective: it is surjective between groups of order `φ m`.
-private theorem ker_cyclotomicArtin_rat : (cyclotomicArtin ℚ F m).ker = ⊥ := by
+/-- The cyclotomic Artin map over `ℚ` is injective. -/
+theorem cyclotomicArtin_rat_injective : Function.Injective (cyclotomicArtin ℚ F m) := by
   have hcard : Nat.card (RayClassGroup (cyclotomicModulus ℚ m)) ≤ Nat.card (F ≃ₐ[ℚ] F) := by
     rw [cyclotomicModulus_rat, card_rayClassGroup_ratModulus,
       Nat.card_congr (IsCyclotomicExtension.Rat.galEquivZMod m F).toEquiv,
       Nat.card_eq_fintype_card, ZMod.card_units_eq_totient]
-  exact (MonoidHom.ker_eq_bot_iff _).mpr
-    ((cyclotomicArtin_surjective ℚ F m).bijective_of_nat_card_le hcard).1
+  exact ((cyclotomicArtin_surjective ℚ F m).bijective_of_nat_card_le hcard).1
 
 -- Over `ℚ` the conductor is that of the trivial subgroup of the ray class group of `(m)·∞`.
 private theorem cyclotomicConductor_rat_eq :
     cyclotomicConductor ℚ F m =
-      subgroupConductor (⊥ : Subgroup (RayClassGroup (ratModulus m (NeZero.ne m)))) := by
-  rw [cyclotomicConductor, ker_cyclotomicArtin_rat]
+      rayClassConductor (⊥ : Subgroup (RayClassGroup (ratModulus m (NeZero.ne m)))) := by
+  rw [cyclotomicConductor, (MonoidHom.ker_eq_bot_iff _).mpr (cyclotomicArtin_rat_injective F)]
   have key : ∀ 𝔪 : Modulus ℚ, 𝔪 = ratModulus m (NeZero.ne m) →
-      subgroupConductor (⊥ : Subgroup (RayClassGroup 𝔪)) =
-        subgroupConductor (⊥ : Subgroup (RayClassGroup (ratModulus m (NeZero.ne m)))) := by
+      rayClassConductor (⊥ : Subgroup (RayClassGroup 𝔪)) =
+        rayClassConductor (⊥ : Subgroup (RayClassGroup (ratModulus m (NeZero.ne m)))) := by
     rintro _ rfl
     rfl
   exact key _ (cyclotomicModulus_rat m)
@@ -154,18 +154,18 @@ private theorem cyclotomicConductor_rat_eq :
 /-- **The conductor of `ℚ(ζ_m)/ℚ` for `m ≤ 2` is trivial**: then `ℚ(ζ_m) = ℚ`. -/
 theorem cyclotomicConductor_rat_of_le_two (hm : m ≤ 2) :
     cyclotomicConductor ℚ F m = Modulus.one ℚ := by
-  rw [cyclotomicConductor_rat_eq, subgroupConductor_bot_ratModulus_of_le_two hm]
+  rw [cyclotomicConductor_rat_eq, rayClassConductor_bot_ratModulus_of_le_two hm]
 
 /-- **The conductor of `ℚ(ζ_m)/ℚ` is `(m)·∞`** for `m > 2` not equal to `2` modulo `4`. -/
 theorem cyclotomicConductor_rat (h2 : 2 < m) (h4 : m % 4 ≠ 2) :
     cyclotomicConductor ℚ F m = ratModulus m (NeZero.ne m) := by
-  rw [cyclotomicConductor_rat_eq, subgroupConductor_bot_ratModulus h2 h4]
+  rw [cyclotomicConductor_rat_eq, rayClassConductor_bot_ratModulus h2 h4]
 
 /-- **The conductor of `ℚ(ζ_m)/ℚ` is `(m / 2)·∞`** for `m > 2` equal to `2` modulo `4`: then
 `ℚ(ζ_m) = ℚ(ζ_{m/2})` with `m / 2` odd. -/
 theorem cyclotomicConductor_rat_of_mod_four_eq_two (h2 : 2 < m) (h4 : m % 4 = 2) :
     cyclotomicConductor ℚ F m = ratModulus (m / 2) (by omega) := by
-  rw [cyclotomicConductor_rat_eq, subgroupConductor_bot_ratModulus_of_mod_four_eq_two h2 h4]
+  rw [cyclotomicConductor_rat_eq, rayClassConductor_bot_ratModulus_of_mod_four_eq_two h2 h4]
 
 end Rat
 
