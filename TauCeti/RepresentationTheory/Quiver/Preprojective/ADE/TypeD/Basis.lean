@@ -20,17 +20,23 @@ proves that they are linearly independent over every field, characteristic two i
 they form a basis of the fork corner, and `dim e_c Π e_c = 2 n - 4`. These are the fork-corner
 coordinates for the Frobenius pairing of the type-`D` preprojective algebra.
 
-Independence is detected by an explicit representation of `Π`. Every vertex carries the space
-with basis `Bool × ℕ`. For `t > 0`, the vector `(true, t)` stands for the alternating word of `t`
-leaf backtracks whose leftmost factor is `x`, and `(false, t)` for the one whose leftmost factor
-is `y`. The vector `(true, 0)` is the empty word. At the arm vertex `j ≤ c`, only the words of
-length at most `j + 1` are used, with `(false, j + 1) = -(true, j + 1)`. These are the fork-corner
-words of `D_{j+3}`, and every other basis vector is sent to zero. The arrow from the fork to a leaf
-multiplies on the left by `x` or by `y`. The arrow back projects onto the words with that leftmost
-factor. Along the arm, the arrow towards the fork multiplies by `x + y`, and the arrow away from
-it truncates, with alternating signs. With these maps the signless relations hold. The fork words
-send the empty word at the fork to distinct basis vectors. Multiplication uses later-factor-first
-order. The construction parallels the grid representation of
+Independence is detected by an explicit representation of `Π`. Every vertex carries the ambient
+coordinate space `(Bool × ℕ) →₀ k`. For `t > 0`, the coordinate `(true, t)` stands for the
+alternating word of `t` leaf backtracks whose leftmost factor is `x`, and `(false, t)` for the one
+whose leftmost factor is `y`. The coordinate `(true, 0)` is the empty word. At the arm vertex
+`j ≤ c`, the maps only use the finite word subspace spanned by `(true, t)` for `t ≤ j + 1` and
+`(false, t)` for `1 ≤ t ≤ j`: these are the fork-corner words of `D_{j+3}`, and the coordinates
+outside this subspace are sent to zero. The longest `y`-word, of length `j + 1`, is minus the
+longest `x`-word in `D_{j+3}`, so it gets no coordinate of its own: the maps (through `bWord`)
+encode it as the vector `-(true, j + 1)`. This is a choice of encoding, not a relation in the
+ambient space, where `(false, j + 1)` and `(true, j + 1)` stay independent coordinates.
+
+The arrow from the fork to a leaf multiplies on the left by `x` or by `y`. The arrow back
+projects onto the words with that leftmost factor. Along the arm, the arrow towards the fork
+multiplies by `x + y`, and the arrow away from it truncates, with alternating signs. With these
+maps the signless relations hold. The fork words send the empty word at the fork to distinct
+basis vectors. Multiplication uses later-factor-first order. The construction parallels the grid
+representation of
 `TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeA.Basis`.
 
 ## Main results
@@ -61,7 +67,9 @@ attribute [local instance] forkNeighborSetFintype
 
 /-! ### The word operators -/
 
-/-- The coordinate space of the detecting representation, with basis the fork words. -/
+/-- The ambient coordinate space of the detecting representation. Its basis vectors index
+words in the two leaf backtracks; at each vertex only the finite subspace of fork-corner words
+described in the module docstring is used. -/
 private abbrev ForkCoord (k : Type*) [Field k] := (Bool × ℕ) →₀ k
 
 /-- The word of length `t` with leftmost factor `y`, at the arm vertex `j`. The longest word
@@ -242,6 +250,21 @@ private theorem dStep_down {c j : ℕ} (h : j + 1 ≤ c) :
 private theorem dStep_up {c j : ℕ} (h : j + 1 ≤ c) : dStep k c j (j + 1) = sStep k (j + 1) := by
   unfold dStep; split_ifs <;> first | rfl | omega
 
+/-- The two leaf backtracks at the fork add up to multiplication by `x + y`. -/
+private theorem xProj_comp_xStep_add_yProj_comp_yStep (j : ℕ) :
+    xProj k j ∘ₗ xStep k j + yProj k j ∘ₗ yStep k j = sStep k j := by
+  rw [xProj_comp_xStep, yProj_comp_yStep, sStep]
+
+/-- The backtrack from the arm vertex `j + 1` towards the fork and back. -/
+private theorem dStep_up_comp_down {c j : ℕ} (h : j + 1 ≤ c) :
+    dStep k c j (j + 1) ∘ₗ dStep k c (j + 1) j = (-1 : k) ^ (c - j) • sStep k (j + 1) := by
+  rw [dStep_down k h, dStep_up k h, LinearMap.comp_smul, sStep_comp_truncStep]
+
+/-- The backtrack from the arm vertex `j` away from the fork and back. -/
+private theorem dStep_down_comp_up {c j : ℕ} (h : j + 1 ≤ c) :
+    dStep k c (j + 1) j ∘ₗ dStep k c j (j + 1) = (-1 : k) ^ (c - j) • sStep k j := by
+  rw [dStep_down k h, dStep_up k h, LinearMap.smul_comp, truncStep_comp_sStep]
+
 private theorem sum_range_dStep_eq_sum (c i : ℕ) (S : Finset ℕ) (hS : ∀ j ∈ S, j < c + 3)
     (hout : ∀ j < c + 3, DAdj c i j → j ∈ S) :
     ∑ j ∈ Finset.range (c + 3), dStep k c j i ∘ₗ dStep k c i j =
@@ -267,27 +290,23 @@ private theorem sum_range_dStep_comp (c i : ℕ) (hi : i < c + 3) :
       rw [sum_range_dStep_eq_sum k 0 0 {1, 2} (by simp) (by
         intro j _ h; unfold DAdj at h; simp only [Finset.mem_insert, Finset.mem_singleton]; omega),
         Finset.sum_pair (by omega), dStep_fork_left, dStep_left_fork, dStep_fork_right,
-        dStep_right_fork, xProj_comp_xStep, yProj_comp_yStep, ← sStep, sStep_zero]
+        dStep_right_fork, xProj_comp_xStep_add_yProj_comp_yStep, sStep_zero]
     | succ m =>
       rw [sum_range_dStep_eq_sum k (m + 1) (m + 1) {m, m + 2, m + 3} (by simp; omega) (by
         intro j _ h; unfold DAdj at h; simp only [Finset.mem_insert, Finset.mem_singleton]; omega),
-        Finset.sum_insert (by simp), Finset.sum_pair (by omega), dStep_down k le_rfl,
-        dStep_up k le_rfl, dStep_fork_left, dStep_left_fork, dStep_fork_right, dStep_right_fork,
-        xProj_comp_xStep, yProj_comp_yStep, ← sStep, LinearMap.comp_smul, sStep_comp_truncStep,
-        Nat.add_sub_cancel_left, pow_one]
+        Finset.sum_insert (by simp), Finset.sum_pair (by omega), dStep_up_comp_down k le_rfl,
+        dStep_fork_left, dStep_left_fork, dStep_fork_right, dStep_right_fork,
+        xProj_comp_xStep_add_yProj_comp_yStep, Nat.add_sub_cancel_left, pow_one]
       exact forkCoord_ext k fun l t => by simp
   · -- On the long arm, consecutive backtracks carry opposite signs.
     obtain rfl | ⟨m, rfl⟩ : i = 0 ∨ ∃ m, i = m + 1 := by rcases i with _ | m <;> simp
     · rw [sum_range_dStep_eq_sum k c 0 {1} (by simp) (by
         intro j _ h; unfold DAdj at h; simp only [Finset.mem_singleton]; omega),
-        Finset.sum_singleton, dStep_down k (by omega), dStep_up k (by omega), LinearMap.smul_comp,
-        truncStep_comp_sStep, sStep_zero, smul_zero]
+        Finset.sum_singleton, dStep_down_comp_up k (by omega), sStep_zero, smul_zero]
     · rw [sum_range_dStep_eq_sum k c (m + 1) {m, m + 2} (by simp; omega) (by
         intro j _ h; unfold DAdj at h; simp only [Finset.mem_insert, Finset.mem_singleton]; omega),
-        Finset.sum_pair (by omega), dStep_down k (by omega), dStep_up k (by omega),
-        dStep_down k (j := m + 1) (by omega), dStep_up k (j := m + 1) (by omega),
-        LinearMap.comp_smul, LinearMap.smul_comp, sStep_comp_truncStep, truncStep_comp_sStep,
-        ← add_smul]
+        Finset.sum_pair (by omega), dStep_up_comp_down k (by omega),
+        dStep_down_comp_up k (j := m + 1) (by omega), ← add_smul]
       obtain ⟨e, he⟩ : ∃ e, c - m = e + 1 := ⟨c - m - 1, by omega⟩
       rw [he, show c - (m + 1) = e by omega, pow_succ, mul_neg_one, neg_add_cancel, zero_smul]
 
@@ -440,6 +459,16 @@ private theorem forkAction_turn_right (hn : 3 ≤ n) (x : ForkCoord k) :
   rwa [dStep_fork_right, dStep_right_fork, show yProj k (n - 3) (yStep k (n - 3) x) =
     yStep k (n - 3) x from LinearMap.congr_fun (yProj_comp_yStep k _) x] at h
 
+/-- The sum of the two leaf backtracks at the fork acts as `x + y`. -/
+private theorem forkAction_turn_add (hn : 3 ≤ n) (x : ForkCoord k) :
+    forkAction k hn
+        (signlessArrow k DG (n - 3 + 1) (n - 3) * signlessArrow k DG (n - 3) (n - 3 + 1) +
+          signlessArrow k DG (n - 3 + 2) (n - 3) * signlessArrow k DG (n - 3) (n - 3 + 2))
+        (forkVector k (preprojectiveDForkVertex n hn) x) =
+      forkVector k (preprojectiveDForkVertex n hn) (sStep k (n - 3) x) := by
+  rw [map_add, LinearMap.add_apply, forkAction_turn_left, forkAction_turn_right, ← map_add,
+    sStep_apply]
+
 private theorem forkAction_turn_add_pow (hn : 3 ≤ n) (t : ℕ) (x : ForkCoord k) :
     forkAction k hn
         ((signlessArrow k DG (n - 3 + 1) (n - 3) * signlessArrow k DG (n - 3) (n - 3 + 1) +
@@ -448,10 +477,7 @@ private theorem forkAction_turn_add_pow (hn : 3 ≤ n) (t : ℕ) (x : ForkCoord 
       forkVector k (preprojectiveDForkVertex n hn) ((sStep k (n - 3) ^ t) x) := by
   induction t generalizing x with
   | zero => simp only [pow_zero, map_one, Module.End.one_apply]
-  | succ t ih =>
-    rw [pow_succ, map_mul, Module.End.mul_apply, map_add, LinearMap.add_apply,
-      forkAction_turn_left, forkAction_turn_right, ← map_add, ← sStep_apply, ih, pow_succ,
-      Module.End.mul_apply]
+  | succ t ih => simp only [pow_succ, map_mul, Module.End.mul_apply, forkAction_turn_add, ih]
 
 private theorem forkAction_branchWord (hn : 3 ≤ n) (l : Bool) (t : ℕ) (x : ForkCoord k) :
     forkAction k hn (signlessPreprojectiveDBranchWord k (preprojectiveDForkVertex n hn)
