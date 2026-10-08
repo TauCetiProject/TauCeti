@@ -156,14 +156,15 @@ section Ramified
 if `k` is the exact constant field of `F` and some place of `F'` is totally ramified over `F`,
 then `k` is also the exact constant field of `F'`.
 
-Indeed, adjoining any constant `c : F'` algebraic over `k` gives a finite separable constant
-extension `F(c) / F`, so the restriction of the totally ramified place to `F(c)` is unramified.
-Multiplicativity of ramification indices and degrees then forces `F(c) = F`, after which exactness
-of `k` in `F` gives `c ∈ k`.  This is the exact-constant-field criterion used for Kummer
-extensions (Stichtenoth, Proposition 3.7.3(c)). -/
+This is the exact-constant-field criterion used for Kummer extensions
+(Stichtenoth, Proposition 3.7.3(c)). -/
 theorem isIntegrallyClosedIn_of_isTotallyRamified [FiniteDimensional F F']
     [Algebra.IsSeparable F F'] (hex : IsIntegrallyClosedIn k F) {P' : Place k F'}
     (hP' : P'.IsTotallyRamified F) : IsIntegrallyClosedIn k F' := by
+  -- Adjoining a constant `c : F'` algebraic over `k` gives a finite separable constant extension
+  -- `E = F(c)` of `F`, so the restriction of the totally ramified place to `E` is unramified.
+  -- Multiplicativity of ramification indices and degrees then forces `E = F`, after which
+  -- exactness of `k` in `F` gives `c ∈ k`.
   refine isIntegrallyClosedIn_iff_forall_isAlgebraic.2 fun c hc ↦ ?_
   have hci : IsIntegral k c := hc.isIntegral
   let K := k⟮c⟯
