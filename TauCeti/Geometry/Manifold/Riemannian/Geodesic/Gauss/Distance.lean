@@ -44,8 +44,6 @@ In the namespace `TauCeti.Manifold.IsNormalDomain`:
   balls.
 * `edist_eq_ofReal_add_infEDist`: the distance to a point outside a geodesic ball is its radius
   plus the distance to the geodesic sphere.
-* `pathELength_riemannianExp_smul_lt_of_piecewise`: the escape estimate for piecewise `C¹`
-  competitors.
 
 In the namespace `TauCeti.Manifold`:
 
@@ -271,33 +269,6 @@ theorem image_riemannianExp_ball (h : IsNormalDomain I M p U)
       rw [h.image_riemannianExp_closedBall hclosed hs]
       exact (mem_closedEBall').2 hqs'
     exact image_mono (Metric.closedBall_subset_ball hsr) hqclosed
-
-/-- **The escape estimate for piecewise `C¹` competitors.** A piecewise `C¹` path from the centre
-`p` that leaves the larger normal neighbourhood `exp_p '' U` is strictly longer than the radial
-segment to any point of a smaller normal ball. This extends
-`pathELength_riemannianExp_smul_lt_of_not_mapsTo` from `C¹` paths on `[0, 1]`. -/
-theorem pathELength_riemannianExp_smul_lt_of_piecewise (h : IsNormalDomain I M p U)
-    (hU : closedBall 0 r ⊆ U) (hv : v ∈ Metric.ball 0 r) {γ : ℝ → M} {a b : ℝ}
-    (hγ : IsPiecewiseContMDiffOn I 1 γ a b) (hγa : γ a = p)
-    (hleave : ¬ MapsTo γ (Icc a b) (riemannianExp I M p '' U)) :
-    pathELength I (fun t : ℝ ↦ riemannianExp I M p (t • v)) 0 1 < pathELength I γ a b := by
-  obtain ⟨t, ht, hq⟩ := not_forall₂.1 hleave
-  have hvr : ‖v‖ < r := mem_ball_zero_iff.1 hv
-  have hq' : γ t ∉ riemannianExp I M p '' Metric.ball 0 r := fun h' ↦
-    hq (image_mono (Metric.ball_subset_closedBall.trans hU) h')
-  rw [h.pathELength_riemannianExp_smul_eq_edist hU (Metric.ball_subset_closedBall hv),
-    h.edist_riemannianExp_eq hU (Metric.ball_subset_closedBall hv)]
-  -- The path reaches `γ t`, whose distance from `p` is at least `r`.
-  calc ‖v‖ₑ < ENNReal.ofReal r := by
-        rw [← ofReal_norm]
-        exact (ENNReal.ofReal_lt_ofReal_iff ((norm_nonneg v).trans_lt hvr)).2 hvr
-    _ ≤ edist p (γ t) := by
-        rw [h.edist_eq_ofReal_add_infEDist hU ((norm_nonneg v).trans hvr.le) hq']
-        exact le_self_add
-    _ ≤ pathELength I γ a t := hγa ▸ hγ.edist_le_pathELength_of_subset le_rfl ht.1 ht.2
-    _ ≤ pathELength I γ a b := by
-        rw [← pathELength_add ht.1 ht.2]
-        exact le_self_add
 
 end IsNormalDomain
 
