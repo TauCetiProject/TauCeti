@@ -23,8 +23,8 @@ it is an object `TauCeti.reduction k G V` of `FDRep k G`, and an equivariant add
 Reduction is **right exact**: a surjective equivariant map reduces to an epimorphism
 (`TauCeti.epi_reductionMap`), and for `k` Noetherian, where `FDRep k G` is abelian, an exact
 sequence `U → V → W → 0` of `G`-modules reduces to an exact sequence of representations
-(`TauCeti.exact_reductionMap`), because tensoring over `ℤ` is right exact. It need not be left exact,
-since `k` need not be flat over `ℤ`.
+(`TauCeti.exact_reductionMap`), because tensoring over `ℤ` is right exact. It need not be left
+exact, since `k` need not be flat over `ℤ`.
 
 In characteristic `ℓ`, `k ⊗_ℤ V` is finitely generated as soon as `V ⧸ ℓV` is finite
 (`TauCeti.finite_baseChange_of_finite_quotSMulTop`), even when `V` is not finitely generated, as
