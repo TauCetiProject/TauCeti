@@ -45,6 +45,6 @@ theorem isPLOn_extendByZero_iff :
     (Function.ExtendByZero.continuousLinearMap ℝ d).toContinuousAffineMap
     (Function.ExtendByZero.restriction ℝ d).toContinuousAffineMap
     (fun x _ ↦ Function.ExtendByZero.restriction_leftInverse ℝ e e.injective x)
-    (Function.ExtendByZero.restriction_leftInverse ℝ d d.injective)
+    (fun x _ ↦ Function.ExtendByZero.restriction_leftInverse ℝ d d.injective (f x))
 
 end TauCeti

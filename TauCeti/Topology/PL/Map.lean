@@ -266,11 +266,11 @@ theorem IsPLOn.affine_transport (hf : IsPLOn f s)
     (hf.comp (isPLOn_continuousAffineMap B (A '' s)) hBs) (fun _ _ ↦ Set.mem_univ _)
 
 /-- PL regularity is preserved and reflected by continuous affine extensions with left
-inverses; the domain inverse need only hold on the set under consideration. -/
+inverses on the set and its image under the map under consideration. -/
 theorem isPLOn_affine_transport_iff
     (A : E →ᴬ[ℝ] E') (B : E' →ᴬ[ℝ] E)
     (C : F →ᴬ[ℝ] F') (D : F' →ᴬ[ℝ] F)
-    (hBA : ∀ x ∈ s, B (A x) = x) (hDC : Function.LeftInverse D C) :
+    (hBA : ∀ x ∈ s, B (A x) = x) (hDC : ∀ x ∈ s, D (C (f x)) = f x) :
     IsPLOn (C ∘ f ∘ B) (A '' s) ↔ IsPLOn f s := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.affine_transport A B C hBA⟩
   have hcomp := (isPLOn_continuousAffineMap D Set.univ).comp
@@ -278,7 +278,7 @@ theorem isPLOn_affine_transport_iff
     (fun _ _ ↦ Set.mem_univ _)
   refine hcomp.congr ?_
   intro x hx
-  simp only [Function.comp_apply, hBA x hx, hDC (f x)]
+  simp only [Function.comp_apply, hBA x hx, hDC x hx]
 
 end AffineTransport
 
