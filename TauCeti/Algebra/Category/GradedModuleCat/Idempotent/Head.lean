@@ -203,9 +203,8 @@ theorem gradedPositiveMulQuotientLift_gradedPositiveMulQuotientMk (he₀ : e ∈
     [AddCommGroup M] [Module A M] (m : M) (hm : ∀ y ∈ gradedPositiveMulIdeal 𝒜 e, y • m = 0)
     (x : (Ideal.span {e} : Ideal A)) :
     gradedPositiveMulQuotientLift he₀ m hm (gradedPositiveMulQuotientMk he₀ x) = (x : A) • m := by
-  simp only [gradedPositiveMulQuotientLift, gradedPositiveMulQuotientMk, Submodule.mkQ_apply,
-    Submodule.liftQ_apply, LinearMap.comp_apply, Submodule.subtype_apply,
-    LinearMap.toSpanSingleton_apply]
+  unfold gradedPositiveMulQuotientLift gradedPositiveMulQuotientMk
+  exact Submodule.liftQ_apply _ _ x
 
 /-- Two linear maps out of `Ae / A₊e` agreeing on the classes of all elements of `Ae` are
 equal. -/
