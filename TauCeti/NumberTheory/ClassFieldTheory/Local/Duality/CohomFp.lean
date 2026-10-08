@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.FiniteModule
+import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.Algebra.Module.ZMod.Dual
 import TauCeti.NumberTheory.LocalField.Kummer
 import TauCeti.RingTheory.RootsOfUnity.Basic
@@ -31,6 +32,10 @@ freeness of the maximal pro-`p` quotient of `G_K` and to its generator rank.
   when `μₙ(K)` is trivial.
 * `TauCeti.ClassFieldTheory.natCard_cohomFp_one_absoluteGaloisGroup`: `H¹(G_K, ℤ/n)` has as many
   elements as `Kˣ/(Kˣ)ⁿ`.
+* `TauCeti.finrank_cohomFp_one_absoluteGaloisGroup_of_isUnit_of_not_mu`: away from the residue
+  characteristic, `H¹(G_K, 𝔽_p)` has dimension one when `K` does not contain `μ_p`.
+* `TauCeti.finrank_cohomFp_one_absoluteGaloisGroup_le_two_of_coprime_ringChar`: away from the
+  residue characteristic, `H¹(G_K, 𝔽_p)` has dimension at most two.
 * `TauCeti.subsingleton_cohomFp_two_absoluteGaloisGroup_of_not_mu`: `H²(G_K, 𝔽_p) = 0` for a prime
   `p` when `K` contains no primitive `p`th root of unity.
 * `TauCeti.finrank_cohomFp_one_absoluteGaloisGroup_of_not_mu`: `dim H¹(G_K, 𝔽_p) = [K : ℚ_[p]] + 1`
@@ -44,6 +49,8 @@ freeness of the maximal pro-`p` quotient of `G_K` and to its generator rank.
 -/
 
 public section
+
+open ValuativeRel
 
 namespace TauCeti.ClassFieldTheory
 
@@ -156,6 +163,41 @@ theorem subsingleton_cohomFp_two_absoluteGaloisGroup_of_not_mu [NeZero (p : K)]
     Subsingleton (cohomFp p (Field.absoluteGaloisGroup K) 2) :=
   ClassFieldTheory.subsingleton_cohomFp_two_absoluteGaloisGroup (NeZero.ne (p : K)).isUnit
     (rootsOfUnity_eq_bot_iff.2 hmu)
+
+/-- **Away from the residue characteristic, `H¹(G_K, 𝔽_p)` has dimension one when
+`μ_p ⊄ K`.** This follows from local duality and Kummer theory: `H¹(G_K, 𝔽_p)` has as many
+elements as `Kˣ/(Kˣ)^p`, whose order is `p` when `K` has no nontrivial `p`th root of unity. -/
+theorem finrank_cohomFp_one_absoluteGaloisGroup_of_isUnit_of_not_mu
+    (hpK : IsUnit ((p : ℕ) : 𝒪[K])) (hmu : ¬ ∃ ζ : K, IsPrimitiveRoot ζ p) :
+    Module.finrank (ZMod p) (cohomFp p (Field.absoluteGaloisGroup K) 1) = 1 := by
+  have : NeZero (p : K) := ⟨natCast_ne_zero_of_isUnit hpK⟩
+  have hcard := ClassFieldTheory.natCard_cohomFp_one_absoluteGaloisGroup
+    (NeZero.ne (p : K)).isUnit
+  rw [powerClassQuotient, powerSubgroup_eq_range_powMonoidHom,
+    card_powerClasses_of_isUnit hpK, rootsOfUnity_eq_bot_iff.2 hmu, Subgroup.card_bot,
+    mul_one] at hcard
+  have hfin := Module.natCard_eq_pow_finrank (K := ZMod p)
+    (V := cohomFp p (Field.absoluteGaloisGroup K) 1)
+  rw [Nat.card_zmod, hcard] at hfin
+  exact Nat.pow_right_injective (Fact.out : p.Prime).two_le (by simpa using hfin.symm)
+
+/-- **Away from the residue characteristic, `H¹(G_K, 𝔽_p)` has dimension at most two.** -/
+theorem finrank_cohomFp_one_absoluteGaloisGroup_le_two_of_isUnit
+    (hpK : IsUnit ((p : ℕ) : 𝒪[K])) :
+    Module.finrank (ZMod p) (cohomFp p (Field.absoluteGaloisGroup K) 1) ≤ 2 := by
+  by_cases hmu : ∃ ζ : K, IsPrimitiveRoot ζ p
+  · rw [finrank_cohomFp_one_absoluteGaloisGroup_of_isUnit_of_exists_isPrimitiveRoot p K hpK hmu]
+  · rw [finrank_cohomFp_one_absoluteGaloisGroup_of_isUnit_of_not_mu p K hpK hmu]
+    omega
+
+/-- **Degree-one local Galois cohomology has dimension at most two at every prime different from
+the residue characteristic.** -/
+theorem finrank_cohomFp_one_absoluteGaloisGroup_le_two_of_coprime_ringChar
+    (hp : p.Coprime (ringChar 𝓀[K])) :
+    Module.finrank (ZMod p) (cohomFp p (Field.absoluteGaloisGroup K) 1) ≤ 2 :=
+  finrank_cohomFp_one_absoluteGaloisGroup_le_two_of_isUnit p K
+    (IsLocalRing.isUnit_natCast_iff_not_dvd.2
+      ((CharP.prime_ringChar 𝓀[K]).coprime_iff_not_dvd.mp hp.symm))
 
 /-- If a finite compatible extension `K` of `ℚ_[p]` contains no primitive `p`th root of unity,
 then `dim H¹(G_K, 𝔽_p) = [K : ℚ_[p]] + 1`: by local duality and Kummer theory `H¹(G_K, 𝔽_p)` has

@@ -30,6 +30,8 @@ homomorphisms into addition of classes.
   cochain `inhomogeneousCochain1` of the homomorphism.
 * `TauCeti.ContCohomology.trivialF2Map_homClass`: pullback of the class of a homomorphism along a
   continuous homomorphism is the class of the composite.
+* `TauCeti.ContCohomology.trivialF2ResMap_homClass`: restriction of the class of a homomorphism to
+  a subgroup is the class of its restriction.
 * `TauCeti.ContCohomology.homClass_one`, `TauCeti.ContCohomology.homClass_mul`: `homClass` sends
   the trivial homomorphism to `0` and products to sums.
 * `TauCeti.ContCohomology.homClass_surjective`: every degree-one class is the class of a continuous
@@ -209,6 +211,15 @@ theorem trivialF2Map_homClass (φ : H →ₜ* G) (α : G →* Multiplicative (ZM
       homClass H (α.comp (φ : H →* G)) (hα.comp φ.continuous) := by
   rw [homClass_eq_cochainClass, homClass_eq_cochainClass]
   exact trivialF2Map_cochainClass_inhomogeneousCochain1 φ _ _ _ _
+
+/-- **Restriction of the class of a homomorphism.** For a subgroup `S` of `G`, restricting the
+class of a continuous `α : G → 𝔽₂` to `S` gives the class of `α|_S`. -/
+theorem trivialF2ResMap_homClass (S : Subgroup G) (α : G →* Multiplicative (ZMod 2))
+    (hα : Continuous α) :
+    trivialF2ResMap G S 1 (homClass G α hα) =
+      homClass S (α.comp S.subtype) (hα.comp continuous_subtype_val) := by
+  rw [← trivialF2Map_subgroupSubtype, trivialF2Map_homClass, homClass_inj,
+    ContinuousMonoidHom.coe_subgroupSubtype]
 
 end Naturality
 

@@ -68,7 +68,7 @@ such a family of affine pieces.
 
 This is part of the structure-group track of layer 1 of the geometric-topology roadmap
 (`TauCetiRoadmap/GeometricTopology/README.md`); the groupoid built from it lives in
-`TauCeti/Geometry/Manifold/PLGroupoid.lean`.
+`TauCeti/Geometry/Manifold/PLGroupoid/Basic.lean`.
 -/
 
 public section

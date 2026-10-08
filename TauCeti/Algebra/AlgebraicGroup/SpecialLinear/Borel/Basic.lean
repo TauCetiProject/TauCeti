@@ -127,7 +127,7 @@ variable {A : Type w} [CommRing A] [Algebra R A]
 
 /-- An algebra-valued point belongs to the subgroup cut out in `SL₂` exactly when its matrix is
 upper triangular, equivalently when it belongs to `SL2Borel`. -/
-@[simp]
+@[simp↓]
 theorem mem_definingPointsSubgroup_iff
     (g : HopfAlgebra.points (R := R) (H := SpecialLinear.coordinateHopfAlgebra R 2)
       (CommAlgCat.of R A)) :
@@ -148,7 +148,7 @@ noncomputable def pointsMulEquiv :
 
 /-- Under the Borel and special-linear point equivalences, the quotient-point inclusion is the
 ordinary inclusion of the standard Borel into `SL₂`. -/
-@[simp]
+@[simp↓]
 theorem pointsMulEquiv_coe
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R)
       (CommAlgCat.of R A)) :
@@ -162,7 +162,7 @@ theorem pointsMulEquiv_coe
 
 /-- The ambient point attached to a standard Borel matrix is the special-linear point attached
 to its ordinary inclusion. -/
-@[simp]
+@[simp↓]
 theorem quotientPointsHom_pointsMulEquiv_symm (g : SL2Borel A) :
     CommHopfAlgCat.quotientPointsHom
         (SpecialLinear.coordinateHopfAlgebra R 2) (definingHopfIdeal R)
@@ -174,7 +174,7 @@ theorem quotientPointsHom_pointsMulEquiv_symm (g : SL2Borel A) :
 variable {B : Type*} [CommRing B] [Algebra R B]
 
 /-- The standard Borel point equivalence is natural in the value algebra. -/
-@[simp]
+@[simp↓]
 theorem pointsMulEquiv_mapValue (phi : A →ₐ[R] B)
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R)
       (CommAlgCat.of R A)) :

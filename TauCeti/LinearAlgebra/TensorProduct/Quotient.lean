@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Isomorphisms
+public import Mathlib.LinearAlgebra.TensorProduct.Quotient
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 
@@ -30,6 +31,9 @@ relations, for instance the rationalisation of a module over an integral group r
 
 ## Main results
 
+* `TensorProduct.exists_one_tmul_eq`: every element of `(R ⧸ I) ⊗ M` is `1 ⊗ x`.
+* `TensorProduct.one_tmul_eq_zero_iff_exists_smul_eq`: `1 ⊗ x` vanishes in
+  `(R ⧸ (r)) ⊗ M` exactly when `x` is a multiple of `r`.
 * `TensorProduct.AlgebraTensorModule.ker_rTensor_mkQ`: the kernel of the tensored
   quotient map `mkQ ⊗ 𝟙 N` is the range of `f ⊗ 𝟙 N`.
 * `TensorProduct.AlgebraTensorModule.rTensor_mkQ_surjective`: the tensored quotient map
@@ -37,6 +41,28 @@ relations, for instance the rationalisation of a module over an integral group r
 -/
 
 public section
+
+open scoped TensorProduct
+
+namespace TensorProduct
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- Every element of `(R ⧸ I) ⊗[R] M` is of the form `1 ⊗ x`. -/
+theorem exists_one_tmul_eq (I : Ideal R) (y : (R ⧸ I) ⊗[R] M) : ∃ x : M, 1 ⊗ₜ x = y := by
+  obtain ⟨x, hx⟩ := Submodule.Quotient.mk_surjective _ (quotTensorEquivQuotSMul M I y)
+  exact ⟨x, by rw [← quotTensorEquivQuotSMul_symm_mk, hx, LinearEquiv.symm_apply_apply]⟩
+
+/-- In `(R ⧸ (r)) ⊗[R] M`, the element `1 ⊗ x` vanishes exactly when `x` is a multiple of `r`. -/
+@[simp]
+theorem one_tmul_eq_zero_iff_exists_smul_eq (r : R) (x : M) :
+    (1 : R ⧸ Ideal.span {r}) ⊗ₜ[R] x = 0 ↔ ∃ y : M, r • y = x := by
+  rw [← quotTensorEquivQuotSMul_symm_mk, LinearEquiv.map_eq_zero_iff,
+    Submodule.Quotient.mk_eq_zero, Submodule.ideal_span_singleton_smul,
+    Submodule.mem_smul_pointwise_iff_exists]
+  exact ⟨fun ⟨y, _, hy⟩ ↦ ⟨y, hy⟩, fun ⟨y, hy⟩ ↦ ⟨y, Submodule.mem_top, hy⟩⟩
+
+end TensorProduct
 
 namespace TensorProduct.AlgebraTensorModule
 

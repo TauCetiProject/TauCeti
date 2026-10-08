@@ -48,8 +48,6 @@ of fraction fields.
   generating set are equal.
 * `TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top`: an automorphism fixing each
   element of a generating set is `1`.
-* `TauCeti.IntermediateField.adjoin_adjoinSimpleGen_eq_top`: the distinguished generator of a
-  simple adjoin generates that field.
 * `TauCeti.IntermediateField.adjoin_sup_fieldRange_eq_top`: for a tower `K ⊆ L ⊆ M` in which
   `t` generates `M` over `L`, the compositum `K(t) ⊔ L` is `⊤` inside `M`.
 * `TauCeti.IntermediateField.adjoin_range_eq_adjoin_image`: over any intermediate base, the image
@@ -106,17 +104,6 @@ the identity. -/
 theorem algEquiv_eq_one_of_adjoin_eq_top (htop : IntermediateField.adjoin F s = ⊤)
     {σ : E ≃ₐ[F] E} (hfix : ∀ x ∈ s, σ x = x) : σ = 1 :=
   algEquiv_ext_of_adjoin_eq_top htop (σ := σ) (τ := 1) (by simpa using hfix)
-
-/-- The distinguished generator of `F⟮x⟯`, viewed as an element of that field, generates
-`F⟮x⟯` over `F`. -/
-theorem adjoin_adjoinSimpleGen_eq_top (x : E) :
-    IntermediateField.adjoin F {IntermediateField.AdjoinSimple.gen F x} = ⊤ := by
-  refine IntermediateField.map_injective (IntermediateField.adjoin F {x}).val ?_
-  rw [IntermediateField.adjoin_map, ← AlgHom.fieldRange_eq_map,
-    IntermediateField.fieldRange_val]
-  congr 1
-  ext y
-  simp
 
 /-- **The compositum step.** If a set `t` generates `M` over `L`, then inside `M` the
 compositum of `K(t)` with the image of `L` is all of `M`, for any base field `K` of the
