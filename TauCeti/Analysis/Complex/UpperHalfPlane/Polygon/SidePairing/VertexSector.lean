@@ -100,7 +100,8 @@ theorem eventuallyEq_inv_partialCycleMap_smul_carrier_vertexSector {j : Fin n} {
     (σ.partialCycleMap j m)⁻¹ • P.carrier =ᶠ[𝓝 z]
       (σ.partialCycleMap j m)⁻¹ • P.vertexSector (σ.next^[m] j) := by
   simpa only [carrier_smul, vertexSector_smul] using
-    ((σ.partialCycleMap j m)⁻¹ • P).eventuallyEq_carrier_vertexSector (σ.inv_partialCycleMap_smul_vertex hz m)
+    ((σ.partialCycleMap j m)⁻¹ • P).eventuallyEq_carrier_vertexSector
+      (σ.inv_partialCycleMap_smul_vertex hz m)
 
 /-- A finite fan of tiles along a vertex cycle locally equals its fan of sectors. -/
 theorem eventuallyEq_iUnion_inv_partialCycleMap_smul_carrier_vertexSector {j : Fin n} {z : ℍ}
@@ -138,7 +139,8 @@ private theorem orientedAngle_rayToward_inv_partialCycleMap_smul_vertex {j : Fin
     rw [interiorAngle_smul] at h
     rw [(show (((σ.partialCycleMap j (m + 1))⁻¹ • P).vertex (σ.next^[m + 1] j - 1)) =
         (((σ.partialCycleMap j m)⁻¹ • P).vertex (σ.next^[m] j + 1)) from
-      by simpa only [vertex_smul] using σ.inv_partialCycleMap_succ_smul_vertex_sub_one j m), ← orientedAngle_add _ _ (geodesicLine
+      by simpa only [vertex_smul] using σ.inv_partialCycleMap_succ_smul_vertex_sub_one j m),
+      ← orientedAngle_add _ _ (geodesicLine
       (rayToward z (((σ.partialCycleMap j m)⁻¹ • P).vertex (σ.next^[m] j - 1))) 1), ih,
       orientedAngle_rev, h, Finset.sum_range_succ]
     simp only [neg_add, Real.Angle.coe_add, Real.Angle.coe_neg]
