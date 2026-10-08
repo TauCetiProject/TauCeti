@@ -54,17 +54,12 @@ degree off any algebra structure whose structure map is the pullback.
   sits `2 · deg φ` below the function field.
 * `TauCeti.Isogeny.degree_comp`: **the tower formula** `deg (ψ ∘ φ) = deg ψ * deg φ`.
 
-These are the `Isogeny.finiteDimensional` and `degree_pos` seeds of
-`TauCetiRoadmap/EllipticCurves/Suggested.lean` together with the degree multiplicativity named
-in `README.md` §Layer 1. The mathematics is Silverman, *The Arithmetic of Elliptic Curves*,
-II.2.4(a) and II.2.4(c) — where finiteness of the extension is exactly what makes a nonconstant
-map of curves finite.
+The mathematics is Silverman, *The Arithmetic of Elliptic Curves*, II.2.4(a) and II.2.4(c),
+where finiteness of the extension is exactly what makes a nonconstant map of curves finite.
 
 `degree` is the coordinate-ring form of D. Angdinata's function-field definition, as the
-`Isogeny` structure itself is, and `finiteDimensional` is ⚠ mathlib-track material: it is proved
-in that shared upstream development, in its function-field form, ahead of the mathlib PRs
-(`TauCetiRoadmap/EllipticCurves/README.md` §Provenance). It is built here until those land; the
-proofs below are written against the coordinate-ring form rather than ported.
+`Isogeny` structure itself is. The finiteness result also follows that development's
+function-field formulation.
 
 ## Provenance
 
@@ -145,7 +140,7 @@ globally would create a diamond, since different isogenies induce different ones
 theorem degree_eq_finrank (φ : Isogeny W₁ W₂) [Algebra W₂.FunctionField W₁.FunctionField]
     (h : ∀ z, algebraMap W₂.FunctionField W₁.FunctionField z = φ.fieldPullback z) :
     φ.degree = Module.finrank W₂.FunctionField W₁.FunctionField :=
-  φ.degree_def.trans (AlgHom.finrank_fieldRange φ.fieldPullback h)
+  φ.degree_def.trans (φ.fieldPullback.finrank_fieldRange h)
 
 
 /-- **The degree of an isogeny is positive.** The extension is finite and the source function

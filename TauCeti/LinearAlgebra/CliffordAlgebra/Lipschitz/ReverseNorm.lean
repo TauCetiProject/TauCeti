@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Norm
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.BaseChange
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
@@ -35,6 +36,9 @@ reverse norm one.
   even elements and differ by `(-1) ^ r` on a product of `r` vectors.
 * `CliffordAlgebra.cliffordNorm`: the unit-valued reverse norm on the Lipschitz group, with its
   defining equation `CliffordAlgebra.reverse_mul_self_eq_algebraMap_cliffordNorm`.
+* `CliffordAlgebra.cliffordNorm_comp_lipschitzGroupMap` and
+  `CliffordAlgebra.cliffordNorm_comp_lipschitzGroupBaseChange`: the Clifford norm is natural under
+  quadratic isometries and extension of scalars.
 * `CliffordAlgebra.cliffordNorm_unitι`: a vector `v` with unit `Q v` has reverse norm `Q v`.
 * `CliffordAlgebra.cliffordNorm_eq_sq_mul_of_coe_eq_algebraMap_mul`: rescaling by a scalar unit
   `c` multiplies the reverse norm by `c ^ 2`.
@@ -131,6 +135,63 @@ theorem self_mul_reverse_eq_algebraMap_cliffordNorm (x : lipschitzGroup Q) :
         reverse ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
       algebraMap R (CliffordAlgebra Q) (cliffordNorm Q x : R) :=
   self_mul_reverse_of_reverse_mul_self (reverse_mul_self_eq_algebraMap_cliffordNorm x)
+
+/-! ### Naturality -/
+
+/-- The Clifford norm is unchanged when a Lipschitz element is mapped along a quadratic
+isometry. -/
+@[simp]
+theorem cliffordNorm_lipschitzGroupMap
+    {N : Type*} [AddCommGroup N] [Module R N] {Q' : QuadraticForm R N}
+    (f : Q →qᵢ Q') (x : lipschitzGroup Q) :
+    cliffordNorm Q' (f.lipschitzGroupMap x) = cliffordNorm Q x := by
+  apply Units.ext
+  apply algebraMap_injective Q'
+  rw [← reverse_mul_self_eq_algebraMap_cliffordNorm,
+    QuadraticMap.Isometry.coe_lipschitzGroupMap_apply, ← map_reverse, ← map_mul,
+    reverse_mul_self_eq_algebraMap_cliffordNorm, (map f).commutes]
+
+/-- The Clifford norm commutes with the map of Lipschitz groups induced by a quadratic
+isometry. -/
+@[simp]
+theorem cliffordNorm_comp_lipschitzGroupMap
+    {N : Type*} [AddCommGroup N] [Module R N] {Q' : QuadraticForm R N}
+    (f : Q →qᵢ Q') :
+    (cliffordNorm Q').comp f.lipschitzGroupMap = cliffordNorm Q := by
+  apply MonoidHom.ext
+  exact cliffordNorm_lipschitzGroupMap f
+
+/-- Extending a Lipschitz element's scalars sends its Clifford norm along the induced map on
+units. -/
+@[simp]
+theorem cliffordNorm_lipschitzGroupBaseChange
+    {A : Type*} [CommRing A] [Algebra R A] (x : lipschitzGroup Q) :
+    letI : Invertible (2 : A) :=
+      (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+    cliffordNorm (Q.baseChange A) (lipschitzGroupBaseChange (A := A) Q x) =
+      Units.map (algebraMap R A).toMonoidHom (cliffordNorm Q x) := by
+  let : Invertible (2 : A) :=
+    (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+  apply Units.ext
+  apply algebraMap_injective (Q.baseChange A)
+  rw [← reverse_mul_self_eq_algebraMap_cliffordNorm, coe_lipschitzGroupBaseChange_apply,
+    ← ofBaseChangeAux_reverse, ← map_mul, reverse_mul_self_eq_algebraMap_cliffordNorm,
+    (ofBaseChangeAux A Q).commutes,
+    IsScalarTower.algebraMap_apply R A (CliffordAlgebra (Q.baseChange A)), Units.coe_map]
+  rfl
+
+/-- The Clifford norm commutes with extension of scalars on the Lipschitz group. -/
+@[simp]
+theorem cliffordNorm_comp_lipschitzGroupBaseChange
+    {A : Type*} [CommRing A] [Algebra R A] :
+    letI : Invertible (2 : A) :=
+      (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+    (cliffordNorm (Q.baseChange A)).comp (lipschitzGroupBaseChange (A := A) Q) =
+      (Units.map (algebraMap R A).toMonoidHom : Rˣ →* Aˣ).comp (cliffordNorm Q) := by
+  let : Invertible (2 : A) :=
+    (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+  apply MonoidHom.ext
+  exact cliffordNorm_lipschitzGroupBaseChange
 
 /-- A vector `v` with unit `Q v` has Clifford norm `Q v`, with no sign. -/
 @[simp]

@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.ODE.Transform
 import Mathlib.Topology.Order.MonotoneConvergence
 import Mathlib.Topology.UniformSpace.HeineCantor
+import TauCeti.Topology.Connected.TotallyDisconnected
 
 /-!
 # Convergence of a negative gradient trajectory
@@ -55,8 +56,9 @@ energy converges. Hence `∇ f (γ t) → 0`.
 
 *The ω-limit set is a point.* Every cluster point of `γ` along `atTop` is therefore a critical
 point in `K`, so the ω-limit set is finite; and it is preconnected, by
-`TauCeti.isPreconnected_setOf_mapClusterPt_atTop`. A finite preconnected set is a single point, and
-a map into a compact set with a unique cluster point converges to it.
+`TauCeti.isPreconnected_setOf_mapClusterPt_atTop`. A finite preconnected set is a single point
+(`Set.Finite.isTotallyDisconnected`), and a map into a compact set with a unique cluster point
+converges to it.
 
 ## Main results
 
@@ -284,15 +286,8 @@ theorem exists_tendsto_atTop
   have hconn : IsPreconnected {y | MapClusterPt y atTop γ} :=
     isPreconnected_setOf_mapClusterPt_atTop hK hγ.continuousOn hmaps
   -- A finite preconnected set is a single point.
-  have hone : ∀ y ∈ K, MapClusterPt y atTop γ → y = p := by
-    intro y _ hy
-    by_contra hne
-    obtain ⟨z, -, hz1, hz2⟩ := isPreconnected_closed_iff.mp hconn {p}
-      ({y | MapClusterPt y atTop γ} \ {p}) isClosed_singleton
-      (((hfin.subset hsub).sdiff).isClosed)
-      (fun w hw ↦ (em (w = p)).imp id fun hwp ↦ ⟨hw, hwp⟩)
-      ⟨p, hp, rfl⟩ ⟨y, hy, hy, hne⟩
-    exact hz2.2 hz1
+  have hone : ∀ y ∈ K, MapClusterPt y atTop γ → y = p := fun y _ hy ↦
+    (hfin.subset hsub).isTotallyDisconnected _ subset_rfl hconn hy hp
   exact ⟨p, hpK, (hsub hp).2,
     hK.tendsto_nhds_of_unique_mapClusterPt
       (by filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht using hmaps (mem_Ici.mpr ht))

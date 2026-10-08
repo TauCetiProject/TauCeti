@@ -30,6 +30,8 @@ for noncompact submanifolds the radius has to be a positive continuous function 
 * `TauCeti.normalSubspace I f x`: the orthogonal complement in `V` of the range of the
   differential of `f` at `x`.
 * `TauCeti.normalTube I f ε`: the normal vectors of length less than `ε`, as a subset of `M × V`.
+* `TauCeti.normalTubeOfRadius I f r`: the normal vectors shorter than a radius `r` depending on
+  their base point.
 
 ## Main results
 
@@ -279,6 +281,46 @@ theorem mem_normalTube {f : M → V} {ε : ℝ} {p : M × V} :
     p ∈ normalTube I f ε ↔ p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ < ε :=
   Iff.rfl
 
+variable (I) in
+/-- The normal vectors along `f` shorter than a radius depending on their base point. -/
+def normalTubeOfRadius (f : M → V) (r : M → ℝ) : Set (M × V) :=
+  {p | p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ < r p.1}
+
+omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
+@[simp]
+theorem mem_normalTubeOfRadius {f : M → V} {r : M → ℝ} {p : M × V} :
+    p ∈ normalTubeOfRadius I f r ↔ p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ < r p.1 :=
+  Iff.rfl
+
+omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
+/-- A constant radius gives the usual normal tube. -/
+@[simp]
+theorem normalTubeOfRadius_const (f : M → V) (ε : ℝ) :
+    normalTubeOfRadius I f (fun _ => ε) = normalTube I f ε := by
+  ext p
+  simp
+
+omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
+/-- Shrinking a variable normal tube to a smaller continuous radius preserves the open
+embedding of normal addition. No regularity of the original radius is needed. -/
+theorem isOpenEmbedding_normalTubeOfRadius_of_le {f : M → V} {r R : M → ℝ}
+    (hr : Continuous r) (hrR : ∀ x, r x ≤ R x)
+    (h : IsOpenEmbedding ((normalTubeOfRadius I f R).domRestrict
+      fun p : M × V => f p.1 + p.2)) :
+    IsOpenEmbedding ((normalTubeOfRadius I f r).domRestrict
+      fun p : M × V => f p.1 + p.2) := by
+  have hsub : normalTubeOfRadius I f r ⊆ normalTubeOfRadius I f R := fun p hp =>
+    mem_normalTubeOfRadius.mpr ⟨(mem_normalTubeOfRadius.mp hp).1,
+      (mem_normalTubeOfRadius.mp hp).2.trans_le (hrR p.1)⟩
+  apply h.comp (IsOpenEmbedding.inclusion hsub ?_)
+  convert isOpen_lt ((continuous_norm.comp continuous_snd).comp
+    (continuous_subtype_val : Continuous
+      (Subtype.val : normalTubeOfRadius I f R → M × V)))
+    ((hr.comp continuous_fst).comp continuous_subtype_val) using 1
+  ext p
+  simp only [mem_preimage, mem_normalTubeOfRadius, mem_ofPred_eq, Function.comp_apply]
+  exact and_iff_right (mem_normalTubeOfRadius.mp p.2).1
+
 omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
 /-- At a point `y` of the source of a chart, the normal space of `f` is the orthogonal complement
 of the range of the derivative of the coordinate expression of `f`. -/
@@ -294,7 +336,7 @@ theorem normalSubspace_eq_of_mem_source [IsManifold I 1 M] {f : M → V} {x y : 
 /-- The local tubular neighbourhood theorem on `M`: around every point there is an open set `W`
 and a radius `δ` such that the normal map is injective, and sends relatively open sets to open
 sets, on the normal vectors of length less than `δ` at points of `W`. -/
-private theorem exists_injOn_isOpen_image_normalTube [I.Boundaryless] [IsManifold I 2 M]
+theorem exists_injOn_isOpen_image_normalTube [I.Boundaryless] [IsManifold I 2 M]
     {f : M → V} (hf : ContMDiff I 𝓘(ℝ, V) 2 f) (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x))
     (x₀ : M) :
     ∃ W : Set M, IsOpen W ∧ x₀ ∈ W ∧ ∃ δ > 0,
@@ -430,15 +472,16 @@ theorem exists_isOpenEmbedding_normalTube [I.Boundaryless] [IsManifold I 2 M] [C
     rw [himage]
     exact isOpen_biUnion fun x _ => hopen x _ (hO₁.inter (isOpen_univ.prod Metric.isOpen_ball))
 
-/-- The total space of the normal bundle of `f` carries the topology of a subspace of `M × V`. -/
-instance instTopologicalSpaceTotalSpaceNormalSubspace (f : M → V) :
-    TopologicalSpace (TotalSpace V fun x : M => normalSubspace I f x) :=
+/-- The total space of the normal bundle of `f` carries the topology of a subspace of `M × V`,
+independently of its model-fibre parameter `F`. -/
+instance instTopologicalSpaceTotalSpaceNormalSubspace {F : Type*} (f : M → V) :
+    TopologicalSpace (TotalSpace F fun x : M => normalSubspace I f x) :=
   TopologicalSpace.induced (fun p => (p.proj, (p.2 : V))) inferInstance
 
 omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
 /-- The total space of the normal bundle of `f` is embedded in `M × V`. -/
-theorem isEmbedding_totalSpace_normalSubspace (f : M → V) :
-    IsEmbedding fun p : TotalSpace V (fun x : M => normalSubspace I f x) =>
+theorem isEmbedding_totalSpace_normalSubspace {F : Type*} (f : M → V) :
+    IsEmbedding fun p : TotalSpace F (fun x : M => normalSubspace I f x) =>
       (p.proj, (p.2 : V)) := by
   refine ⟨⟨rfl⟩, ?_⟩
   rintro ⟨x, v⟩ ⟨y, w⟩ h

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
--- `TauCeti.indClassFun` is the object the four values below are computed for.
+-- `Subgroup.indClassFun` is the object the four values below are computed for.
 public import TauCeti.RepresentationTheory.Induction.ClassFunction
 -- `FDRep.ofLinearCharacter` and `TauCeti.indFDRep` are the bodies of the constructions below.
 public import TauCeti.RepresentationTheory.Induction.LinearCharacter
@@ -30,7 +30,7 @@ import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
 Let `F` be a finite field with `q` elements and let `Z U = TauCeti.GL2ScalarUnipotent F` be the
 product of the centre of `GL₂(F)` with the unipotent radical of the Borel subgroup: the matrices
 `!![x, y; 0, x]`, a copy of `Fˣ × (F, +)`.  This file computes the induced class function
-`TauCeti.indClassFun (GL2ScalarUnipotent F) f` on the four families of conjugacy classes of
+`Subgroup.indClassFun (GL2ScalarUnipotent F) f` on the four families of conjugacy classes of
 `GL₂(F)`: at a central scalar `a` it is `[GL₂(F) : Z U] = q² - 1` copies of `f(a)`, it vanishes on
 the split semisimple and the elliptic families, and at a non-semisimple element with repeated
 eigenvalue `a` it is the sum of `f` over the `q - 1` Jordan blocks `!![a, c; 0, a]` with `c ≠ 0`.
@@ -108,7 +108,8 @@ That the four normal forms exhaust the conjugacy classes is
 `TauCeti/RepresentationTheory/CharacterTable/GL2/PrincipalSeries/CharacterValues.lean`, the values
 below are stated at the normal forms themselves rather than assembled into a single case
 distinction.  Each of the four class-function values is a `simp` lemma, as are the four character
-values it specialises to: the left-hand side is `indClassFun` (respectively the character) at one
+values it specialises to: the left-hand side is `Subgroup.indClassFun` (respectively the
+character) at one
 of the normal forms, and the right-hand side is the closed form it reduces to.
 
 ## References
@@ -272,9 +273,9 @@ a conjugate in `Z U` differs from a scalar by a square-zero matrix, so no coset 
 theorem indClassFun_eq_zero_of_forall_sq_ne_zero (f : GL2ScalarUnipotent F → k)
     {g : GL (Fin 2) F} (hg : ∀ u : Fˣ, ((g : Matrix (Fin 2) (Fin 2) F) -
       algebraMap F (Matrix (Fin 2) (Fin 2) F) (u : F)) ^ 2 ≠ 0) :
-    indClassFun (GL2ScalarUnipotent F) f g = 0 := by
+    Subgroup.indClassFun (GL2ScalarUnipotent F) f g = 0 := by
   classical
-  rw [indClassFun_apply]
+  rw [Subgroup.indClassFun_apply]
   refine Finset.sum_eq_zero fun t _ => dite_eq_right fun hmem => ?_
   obtain ⟨u, hu⟩ := exists_sq_sub_algebraMap_eq_zero_of_conj_mem hmem
   exact absurd hu (hg u)
@@ -285,7 +286,7 @@ the same value.  Over a field with `q` elements the index is `q² - 1`, by
 `TauCeti.index_gl2ScalarUnipotent`. -/
 @[simp]
 theorem indClassFun_scalar (f : GL2ScalarUnipotent F → k) (a : Fˣ) :
-    indClassFun (GL2ScalarUnipotent F) f (Matrix.GeneralLinearGroup.scalar (Fin 2) a) =
+    Subgroup.indClassFun (GL2ScalarUnipotent F) f (Matrix.GeneralLinearGroup.scalar (Fin 2) a) =
       (GL2ScalarUnipotent F).index •
         f ⟨Matrix.GeneralLinearGroup.scalar (Fin 2) a, scalar_mem a⟩ := by
   classical
@@ -295,7 +296,8 @@ theorem indClassFun_scalar (f : GL2ScalarUnipotent F → k) (a : Fˣ) :
     rw [mul_assoc, Matrix.GeneralLinearGroup.scalar_commute a x, ← mul_assoc, inv_mul_cancel,
       one_mul]
   let _ : Fintype (GL (Fin 2) F ⧸ GL2ScalarUnipotent F) := Fintype.ofFinite _
-  rw [indClassFun_apply, Subgroup.index_eq_card, Nat.card_eq_fintype_card, ← Finset.card_univ]
+  rw [Subgroup.indClassFun_apply, Subgroup.index_eq_card, Nat.card_eq_fintype_card, ←
+    Finset.card_univ]
   exact Finset.sum_eq_card_nsmul fun t _ => by rw [hconj, dite_eq_left (scalar_mem a)]
 
 /-- **The induced class function vanishes on the split semisimple classes**: if `diag (a, b)`
@@ -303,7 +305,7 @@ differed from a scalar `u` by a square-zero matrix then `(a - u)² = (b - u)² =
 `a = u = b`. -/
 @[simp]
 theorem indClassFun_diagGL (f : GL2ScalarUnipotent F → k) {t : Fin 2 → Fˣ} (ht : t 0 ≠ t 1) :
-    indClassFun (GL2ScalarUnipotent F) f (diagGL t) = 0 := by
+    Subgroup.indClassFun (GL2ScalarUnipotent F) f (diagGL t) = 0 := by
   refine indClassFun_eq_zero_of_forall_sq_ne_zero f fun u hu => ht ?_
   have hentry : ∀ i : Fin 2, ((t i : F) - (u : F)) ^ 2 = 0 := fun i => by
     have hii := congrFun₂ hu i i
@@ -322,7 +324,7 @@ variable {E : Type*} [Field E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
 @[simp]
 theorem indClassFun_gl2NonSplitTorusHom (f : GL2ScalarUnipotent F → k) {x : Eˣ}
     (hx : (x : E) ∉ Set.range (algebraMap F E)) :
-    indClassFun (GL2ScalarUnipotent F) f (GL2NonSplitTorusHom F E x) = 0 := by
+    Subgroup.indClassFun (GL2ScalarUnipotent F) f (GL2NonSplitTorusHom F E x) = 0 := by
   refine indClassFun_eq_zero_of_forall_sq_ne_zero f fun u hu => hx ⟨(u : F), ?_⟩
   -- the square-zero matrix is the matrix of `(x - u)²`, and `leftMulMatrix` is injective
   have hpow : ((x : E) - algebraMap F E (u : F)) ^ 2 = 0 :=
@@ -339,7 +341,7 @@ end Finite
 
 /-- **Conjugation inside `Z U` is trivial**, because the subgroup is abelian.  It is what makes a
 summand of the induced class function depend only on the coset of its representative, by
-`TauCeti.indTerm_eq_of_mk_eq_of_conj`. -/
+`Function.indTerm_eq_of_mk_eq_of_conj`. -/
 private theorem conj_eq_self (s y : GL2ScalarUnipotent F) : s * y * s⁻¹ = y := by
   rw [mul_comm' s y, mul_assoc, mul_inv_cancel, mul_one]
 
@@ -349,7 +351,7 @@ variable {k : Type*} [Semiring k]
 
 /-- Every function on the abelian subgroup `Z U` is a class function, so the summands of the
 induced class function depend only on the coset of their representative.  It is the hypothesis of
-`TauCeti.ClassFunction.ind` and of `TauCeti.indClassFun_mem_classFunction` for `Z U`. -/
+`Subgroup.indClassFunction` and of `Subgroup.indClassFun_mem_classFunction` for `Z U`. -/
 theorem mem_classFunction (f : GL2ScalarUnipotent F → k) :
     f ∈ ClassFunction k (GL2ScalarUnipotent F) :=
   ClassFunction.mem_iff.mpr fun g h => congrArg f (conj_eq_self h g)
@@ -368,7 +370,7 @@ diagonal entry `a` and nonzero off-diagonal entry.  In particular the value does
 `b`. -/
 @[simp]
 theorem indClassFun_jordanGL (f : GL2ScalarUnipotent F → k) (a : Fˣ) {b : F} (hb : b ≠ 0) :
-    indClassFun (GL2ScalarUnipotent F) f (jordanGL a b) =
+    Subgroup.indClassFun (GL2ScalarUnipotent F) f (jordanGL a b) =
       ∑ c : Fˣ, f ⟨jordanGL a (c : F), jordanGL_mem_gl2ScalarUnipotent a (c : F)⟩ := by
   classical
   -- the cosets that contribute are exactly those of the `diag (c, 1)`
@@ -382,16 +384,16 @@ theorem indClassFun_jordanGL (f : GL2ScalarUnipotent F → k) (a : Fˣ) {b : F} 
     exact Finset.mem_image.mpr ⟨c, Finset.mem_univ c, hc.symm⟩
   -- and each of them contributes the value of `f` at a rescaled Jordan block
   have hterm : ∀ c : Fˣ,
-      indTerm f (jordanGL a b) (Quotient.out
+      Function.indTerm f (jordanGL a b) (Quotient.out
           (QuotientGroup.mk (diagGL ![c, 1]) : GL (Fin 2) F ⧸ GL2ScalarUnipotent F)) =
         f ⟨jordanGL a (((c⁻¹ : Fˣ) : F) * b),
           jordanGL_mem_gl2ScalarUnipotent a (((c⁻¹ : Fˣ) : F) * b)⟩ := fun c => by
-    rw [indTerm_eq_of_mk_eq_of_conj (fun y s => congrArg f (conj_eq_self s y)) _ _
+    rw [Function.indTerm_eq_of_mk_eq_of_conj f (fun y s => congrArg f (conj_eq_self s y)) _ _
         (diagGL ![c, 1]) (QuotientGroup.out_eq' _),
-      indTerm_apply, dite_eq_left ((inv_diagGL_mul_jordanGL_mul_diagGL a b c) ▸
+      Function.indTerm_apply, dite_eq_left ((inv_diagGL_mul_jordanGL_mul_diagGL a b c) ▸
         jordanGL_mem_gl2ScalarUnipotent a (((c⁻¹ : Fˣ) : F) * b))]
     exact congrArg f (Subtype.ext (inv_diagGL_mul_jordanGL_mul_diagGL a b c))
-  rw [indClassFun_eq_sum_of_smul_eq_self_mem _ _ _ hT,
+  rw [Subgroup.indClassFun_eq_sum_of_smul_eq_self_mem _ _ _ _ hT,
     Finset.sum_image fun c _ d _ h => quotient_mk_diagGL_injective h,
     Finset.sum_congr rfl fun c _ => hterm c]
   exact Fintype.sum_equiv ((Equiv.inv Fˣ).trans (Equiv.mulRight (Units.mk0 b hb))) _ _
@@ -490,8 +492,8 @@ variable (μ : Fˣ →* ℂˣ) (ψ : AddChar F ℂ)
 
 private theorem character_GL2ScalarUnipotentInduction_eq_indClassFun (g : GL (Fin 2) F) :
     (GL2ScalarUnipotentInduction F μ ψ).character g =
-      indClassFun (GL2ScalarUnipotent F) (GL2ScalarUnipotentRep F μ ψ).character g := by
-  rw [GL2ScalarUnipotentInduction, ← indClassFun_ofFDRep_character]
+      Subgroup.indClassFun (GL2ScalarUnipotent F) (GL2ScalarUnipotentRep F μ ψ).character g := by
+  rw [GL2ScalarUnipotentInduction, ← Subgroup.indClassFun_ofFDRep_character]
 
 /-- **The scalar--unipotent induced character at a scalar matrix** is `(q² - 1) μ(a)`: every coset
 contributes the value of the inducing character at the unchanged scalar. -/

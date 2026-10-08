@@ -38,13 +38,13 @@ continuation of the L-series of `χ` across the line `Re s = 1`.
 Both are stable under deleting finitely many Euler factors, the operation a character family
 needs at the bad primes of its modulus. A one-prime recurrence relates the partial sums after
 inserting a forbidden prime to two partial sums before the insertion
-(`TauCeti.MultiplicativeIdealWeight.idealSummatory_restrict_insert`). Iterating this recurrence
-shows that cancellation passes to the restriction (`TauCeti.HasCancellation.restrict`); on
+(`TauCeti.MultiplicativeIdealWeight.idealSummatory_restrictAway_insert`). Iterating this recurrence
+shows that cancellation passes to the restriction (`TauCeti.HasCancellation.restrictAway`); on
 `Re s > 1` the two continued
 `L`-functions differ by the entire factor `∏ 𝔭 ∈ S, (1 - χ(𝔭) N(𝔭) ^ (-s))`
-(`TauCeti.continuedLFunctionOfWeight_restrict_of_one_lt_re`), and under cancellation that identity
-propagates to the whole half-plane `Re s > 1 - 1 / d`
-(`TauCeti.continuedLFunctionOfWeight_restrict`).
+(`TauCeti.continuedLFunctionOfWeight_restrictAway_of_one_lt_re`), and under cancellation that
+identity propagates to the whole half-plane `Re s > 1 - 1 / d`
+(`TauCeti.continuedLFunctionOfWeight_restrictAway`).
 
 In number-field degree greater than one, cancellation is also invariant under purely imaginary
 norm twists (`TauCeti.hasCancellation_normTwist_iff`). Abel summation supplies this because the
@@ -217,9 +217,9 @@ the same order, at the cutoffs `x` and `x / N(𝔭)`.
 
 Character-family arguments use this to pass between a weight and the one whose Euler factors at a
 finite set of bad primes have been deleted. -/
-theorem HasCancellation.restrict {χ : UnitaryIdealWeight K} (hχ : HasCancellation χ)
+theorem HasCancellation.restrictAway {χ : UnitaryIdealWeight K} (hχ : HasCancellation χ)
     (S : Set (HeightOneSpectrum (𝓞 K))) (hS : S.Finite) :
-    HasCancellation (χ.restrict S hS) := by
+    HasCancellation (χ.restrictAway S hS) := by
   set θ : ℝ := 1 - 1 / (Module.finrank ℚ K : ℝ)
   have hθ : 0 ≤ θ := by
     have hd : (1 : ℝ) ≤ Module.finrank ℚ K := by exact_mod_cast Module.finrank_pos
@@ -232,15 +232,15 @@ theorem HasCancellation.restrict {χ : UnitaryIdealWeight K} (hχ : HasCancellat
       have hN : (2 : ℝ) ≤ (Ideal.absNorm 𝔭.asIdeal : ℝ) := two_le_absNorm_asIdeal_real 𝔭
       have hxpow : (0 : ℝ) ≤ x ^ θ := Real.rpow_nonneg (zero_le_one.trans hx) θ
       have hkey : idealSummatory K
-          (χ.restrict (insert 𝔭 T) (hT.insert 𝔭)).toIdealArithmeticFunction x =
-          idealSummatory K (χ.restrict T hT).toIdealArithmeticFunction x -
-            χ.1 𝔭.asIdeal * idealSummatory K (χ.restrict T hT).toIdealArithmeticFunction
+          (χ.restrictAway (insert 𝔭 T) (hT.insert 𝔭)).toIdealArithmeticFunction x =
+          idealSummatory K (χ.restrictAway T hT).toIdealArithmeticFunction x -
+            χ.1 𝔭.asIdeal * idealSummatory K (χ.restrictAway T hT).toIdealArithmeticFunction
               (x / Ideal.absNorm 𝔭.asIdeal) := by
         rw [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val,
-          UnitaryIdealWeight.toIdealArithmeticFunction_eq_val, UnitaryIdealWeight.val_restrict,
-          UnitaryIdealWeight.val_restrict]
-        exact χ.1.idealSummatory_restrict_insert hT h𝔭 x
-      have hsecond : ‖idealSummatory K (χ.restrict T hT).toIdealArithmeticFunction
+          UnitaryIdealWeight.toIdealArithmeticFunction_eq_val, UnitaryIdealWeight.val_restrictAway,
+          UnitaryIdealWeight.val_restrictAway]
+        exact χ.1.idealSummatory_restrictAway_insert hT h𝔭 x
+      have hsecond : ‖idealSummatory K (χ.restrictAway T hT).toIdealArithmeticFunction
           (x / Ideal.absNorm 𝔭.asIdeal)‖ ≤ max C 0 * x ^ θ := by
         rcases lt_or_ge (x / (Ideal.absNorm 𝔭.asIdeal : ℝ)) 1 with hy | hy
         · rw [idealSummatory_eq_zero_of_lt_one K _ hy, norm_zero]
@@ -251,7 +251,7 @@ theorem HasCancellation.restrict {χ : UnitaryIdealWeight K} (hχ : HasCancellat
             (Real.rpow_le_rpow (by linarith) hxN hθ) (Real.rpow_nonneg (by linarith) θ)
             (le_max_right C 0))
       calc ‖idealSummatory K
-            (χ.restrict (insert 𝔭 T) (hT.insert 𝔭)).toIdealArithmeticFunction x‖
+            (χ.restrictAway (insert 𝔭 T) (hT.insert 𝔭)).toIdealArithmeticFunction x‖
           ≤ max C 0 * x ^ θ + 1 * (max C 0 * x ^ θ) := by
             rw [hkey]
             refine (norm_sub_le _ _).trans (add_le_add ?_ ?_)
@@ -330,28 +330,28 @@ theorem differentiableAt_continuedLFunctionOfWeight {χ : UnitaryIdealWeight K}
 converge absolutely, restricting a unitary weight away from a finite set `S` of primes multiplies
 its continued `L`-function by the reciprocals `∏ 𝔭 ∈ S, (1 - χ(𝔭) N(𝔭) ^ (-s))` of the deleted
 local factors. -/
-theorem continuedLFunctionOfWeight_restrict_of_one_lt_re (χ : UnitaryIdealWeight K)
+theorem continuedLFunctionOfWeight_restrictAway_of_one_lt_re (χ : UnitaryIdealWeight K)
     (S : Finset (HeightOneSpectrum (𝓞 K))) {s : ℂ} (hs : 1 < s.re) :
     continuedLFunctionOfWeight
-        (χ.restrict (S : Set (HeightOneSpectrum (𝓞 K))) S.finite_toSet) s =
+        (χ.restrictAway (S : Set (HeightOneSpectrum (𝓞 K))) S.finite_toSet) s =
       continuedLFunctionOfWeight χ s *
         ∏ 𝔭 ∈ S, (1 - χ.1 𝔭.asIdeal / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s) := by
   rw [continuedLFunctionOfWeight_eq_LSeries _ hs, continuedLFunctionOfWeight_eq_LSeries _ hs,
     UnitaryIdealWeight.toIdealArithmeticFunction_eq_val,
-    UnitaryIdealWeight.toIdealArithmeticFunction_eq_val, UnitaryIdealWeight.val_restrict]
-  exact χ.1.LSeries_restrict S (by
+    UnitaryIdealWeight.toIdealArithmeticFunction_eq_val, UnitaryIdealWeight.val_restrictAway]
+  exact χ.1.LSeries_restrictAway S (by
     rw [← UnitaryIdealWeight.toIdealArithmeticFunction_eq_val]
     exact summable_idealTerm_of_unitary_of_one_lt_re χ hs)
 
 /-- **Deleting finitely many Euler factors, across the line `Re s = 1`.** Under cancellation both
-sides of `TauCeti.continuedLFunctionOfWeight_restrict_of_one_lt_re` are holomorphic on the
+sides of `TauCeti.continuedLFunctionOfWeight_restrictAway_of_one_lt_re` are holomorphic on the
 half-plane `Re s > 1 - 1 / [K : ℚ]`, which is connected, so the identity propagates there from
 the half-plane `Re s > 1` where it was proved. The correction factor is entire. -/
-theorem continuedLFunctionOfWeight_restrict {χ : UnitaryIdealWeight K}
+theorem continuedLFunctionOfWeight_restrictAway {χ : UnitaryIdealWeight K}
     (hχ : HasCancellation χ) (S : Finset (HeightOneSpectrum (𝓞 K))) {s : ℂ}
     (hs : 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re) :
     continuedLFunctionOfWeight
-        (χ.restrict (S : Set (HeightOneSpectrum (𝓞 K))) S.finite_toSet) s =
+        (χ.restrictAway (S : Set (HeightOneSpectrum (𝓞 K))) S.finite_toSet) s =
       continuedLFunctionOfWeight χ s *
         ∏ 𝔭 ∈ S, (1 - χ.1 𝔭.asIdeal / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s) := by
   have hcorr : Differentiable ℂ
@@ -364,9 +364,9 @@ theorem continuedLFunctionOfWeight_restrict {χ : UnitaryIdealWeight K}
       (differentiable_id.const_cpow (.inl h𝔭))
       fun s ↦ by simp [Complex.cpow_eq_zero_iff, h𝔭])
   exact eq_of_differentiableOn_of_eq_on_halfPlane (cancellationExponent_lt_one (K := K))
-    (differentiableOn_continuedLFunctionOfWeight (hχ.restrict _ S.finite_toSet))
+    (differentiableOn_continuedLFunctionOfWeight (hχ.restrictAway _ S.finite_toSet))
     ((differentiableOn_continuedLFunctionOfWeight hχ).mul hcorr.differentiableOn)
-    (fun z hz ↦ continuedLFunctionOfWeight_restrict_of_one_lt_re χ S hz) hs
+    (fun z hz ↦ continuedLFunctionOfWeight_restrictAway_of_one_lt_re χ S hz) hs
 
 /-!
 ### Conjugation and imaginary norm twists

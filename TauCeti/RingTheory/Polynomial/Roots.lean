@@ -24,6 +24,7 @@ Second, the root set of a product of polynomials whose base changes to `E` are n
 union of the root sets of the factors. This is the lemma that decomposes the roots of a
 polynomial along a factorisation, for instance the roots of a monic integer polynomial along its
 monic irreducible factors. The same holds for the distinct roots of a finite product.
+For a separable product, the root sets of the factors are pairwise disjoint.
 
 Third, dividing a polynomial by the linear factor of a simple root removes exactly that root
 from the root set. Here `a` only has to be a simple root in `E`: `f a` vanishes and `f' a` does
@@ -46,8 +47,12 @@ the number of distinct roots.
   its root set enumerates its full root multiset after base change.
 * `Polynomial.rootSet_mul`: the root set of a product of polynomials whose base changes to `E` are
   nonzero is the union of the root sets of the factors.
+* `Polynomial.roots_prod_toFinset`: the distinct roots of a finite product of nonzero polynomials
+  are those of the factors together.
 * `Polynomial.aroots_prod_toFinset`: the distinct roots of a finite product of polynomials whose
   base changes to `E` are nonzero are those of the factors together.
+* `Polynomial.Separable.pairwiseDisjoint_rootSet`: the factors of a separable product have
+  pairwise disjoint root sets.
 * `Polynomial.rootSet_divByMonic_X_sub_C`: if `f a = 0` and `f' a ≠ 0` in `E`, then the roots of
   `f /ₘ (X - C a)` are the roots of `f` other than `a`.
 * `Polynomial.rootSet_comp_X_add_C`: the roots of `f(X + t)` are the roots of `f` moved by `-t`.
@@ -93,6 +98,15 @@ theorem _root_.Polynomial.rootSet_mul {g : F[X]} (hf : f.map (algebraMap F E) �
   simp only [Set.mem_union, mem_rootSet', Polynomial.map_mul, map_mul, mul_eq_zero, ne_eq, hf, hg,
     or_self, not_false_eq_true, true_and]
 
+/-- The distinct roots of a finite product of nonzero polynomials are those of the factors
+together. -/
+theorem _root_.Polynomial.roots_prod_toFinset [IsDomain F] [DecidableEq F]
+    {ι : Type*} (s : Finset ι)
+    (f : ι → F[X]) (hf : ∀ k ∈ s, f k ≠ 0) :
+    (s.prod f).roots.toFinset = s.biUnion fun k ↦ (f k).roots.toFinset := by
+  classical
+  rw [roots_prod _ _ (Finset.prod_ne_zero_iff.mpr hf), Finset.bind_toFinset, s.val_toFinset]
+
 /-- The distinct roots in `E` of a finite product of polynomials are those of the factors together,
 provided no factor vanishes after base change to `E`. -/
 theorem _root_.Polynomial.aroots_prod_toFinset [DecidableEq E] {ι : Type*} (s : Finset ι)
@@ -103,6 +117,22 @@ theorem _root_.Polynomial.aroots_prod_toFinset [DecidableEq E] {ι : Type*} (s :
     Finset.prod_ne_zero_iff.2 hf, ne_eq, not_false_eq_true, true_and, map_prod,
     Finset.prod_eq_zero_iff]
   exact ⟨fun ⟨k, hk, h⟩ ↦ ⟨k, hk, hf k hk, h⟩, fun ⟨k, hk, _, h⟩ ↦ ⟨k, hk, h⟩⟩
+
+/-- The factors of a separable product have pairwise disjoint root sets: a common root of two
+factors would be a repeated root of the product. Together with `Polynomial.rootSet_prod`, the
+root set of the product is the disjoint union of the root sets of the factors. -/
+theorem _root_.Polynomial.Separable.pairwiseDisjoint_rootSet {ι : Type*} {s : Finset ι}
+    {g : ι → F[X]} (hsep : (∏ i ∈ s, g i).Separable) :
+    (s : Set ι).PairwiseDisjoint fun i => (g i).rootSet E := by
+  classical
+  intro i hi j hj hij
+  refine Set.disjoint_left.mpr fun y hyi hyj => ?_
+  have hdvd : g i * g j ∣ ∏ k ∈ s, g k := by
+    rw [← Finset.prod_pair hij]
+    exact Finset.prod_dvd_prod_of_subset _ _ _ (Finset.insert_subset hi (by simpa using hj))
+  obtain ⟨a, b, hab⟩ := (hsep.of_dvd hdvd).isCoprime
+  have := congrArg (aeval y) hab
+  simp [(mem_rootSet'.mp hyi).2, (mem_rootSet'.mp hyj).2] at this
 
 /-- Removing the linear factor of a simple root `a` removes exactly that root: if, in `E`, `f a`
 vanishes and `f' a` does not, then the roots of `f /ₘ (X - C a)` in `E` are the roots of `f`
