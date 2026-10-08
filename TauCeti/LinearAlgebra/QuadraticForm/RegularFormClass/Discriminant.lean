@@ -258,6 +258,13 @@ theorem signedDiscr_eq_sign_add_discr (x : RegularFormClass K) :
     signedDiscr x = (rank x).choose 2 • squareClass (-1 : Kˣ) + discr x :=
   (rfl)
 
+/-- The discriminant is the signed discriminant corrected by the same sign: the correction is its
+own inverse in the square-class group. -/
+theorem discr_eq_sign_add_signedDiscr (x : RegularFormClass K) :
+    discr x = (rank x).choose 2 • squareClass (-1 : Kˣ) + signedDiscr x := by
+  rw [signedDiscr_eq_sign_add_discr, ← add_assoc, ← two_nsmul, ZModModule.char_nsmul_eq_zero 2]
+  exact (zero_add (discr x)).symm
+
 /-- The signed discriminant of the class of a presentation. -/
 @[simp]
 theorem signedDiscr_mk (p : RegularFormPresentation K) :

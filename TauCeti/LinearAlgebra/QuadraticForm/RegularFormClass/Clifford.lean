@@ -18,6 +18,7 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Quaternion
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Scaling
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.CliffordAlgebra.QuaternionPlane
+import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Semiring
 
 /-!
 # The Clifford invariant of a regular quadratic form
@@ -57,6 +58,11 @@ trivial signed discriminant, which is a class whose Witt class lies in the squar
 fundamental ideal, the formula becomes `c(q) = s(q) · [(-1,-1)]^C(m,2)`. Lam (p. 120) cautions
 that the version of this formula published by C. T. C. Wall is incorrect.
 
+On such a class `x` the Clifford invariant is additive: `c(x ⊥ y) = c(x) · c(y)` for every class
+`y`. This follows by induction on the rank of `y` from the two recurrences, since rescaling `x`
+does not change `c(x)`. In particular adding a hyperbolic plane does not change the Clifford
+invariant, so it depends only on the Witt class.
+
 ## Main definitions
 
 * `TauCeti.RegularFormClass.cliffordInvariant`: the Clifford invariant of an isometry class of
@@ -91,6 +97,12 @@ that the version of this formula published by C. T. C. Wall is incorrect.
   Clifford and Hasse invariants in every rank.
 * `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero`: its
   form `c = s · [(-1,-1)]^C(m,2)` in rank `2m` with trivial signed discriminant.
+* `TauCeti.RegularFormClass.cliffordInvariant_mk_rankOne_mul_of_signedDiscr_eq_zero`: on such a
+  class the Clifford invariant is unchanged by scaling.
+* `TauCeti.RegularFormClass.cliffordInvariant_add_of_signedDiscr_eq_zero`: `c(x ⊥ y) = c(x) · c(y)`
+  when `x` has even rank and trivial signed discriminant.
+* `TauCeti.RegularFormClass.cliffordInvariant_nsmul_hyperbolicClass_add`: adding hyperbolic planes
+  does not change the Clifford invariant.
 
 ## References
 
@@ -574,16 +586,10 @@ whose Witt class lies in the square of the fundamental ideal
 theorem cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero {x : RegularFormClass K}
     {m : ℕ} (hx : x.rank = 2 * m) (hd : signedDiscr x = 0) :
     cliffordInvariant x = hasseInvariant x * quaternionClass (-1) (-1) ^ m.choose 2 := by
-  have hdx : discr x = (2 * m).choose 2 • squareClass (-1 : Kˣ) := by
-    rw [signedDiscr_eq_sign_add_discr, hx] at hd
-    rw [← ZModModule.neg_eq_self ((2 * m).choose 2 • squareClass (-1 : Kˣ))]
-    exact eq_neg_of_add_eq_zero_right hd
-  have hpow (N : ℕ) : quaternionClass (-1 : Kˣ) ((-1) ^ N) = quaternionClass (-1) (-1) ^ N := by
-    induction N with
-    | zero => rw [pow_zero, pow_zero, quaternionClass_one_right]
-    | succ N ih => rw [pow_succ, quaternionClass_mul, ih, pow_succ]
-  rw [cliffordInvariant_eq_hasseInvariant_mul, hx, hdx, ← squareClass_pow,
-    quaternionClassOnSquareClasses_squareClass, hpow, ← pow_mul, mul_assoc, ← pow_add]
+  rw [cliffordInvariant_eq_hasseInvariant_mul, discr_eq_sign_add_signedDiscr, hd,
+    add_zero (M := SquareClassGroup K), hx, ← squareClass_pow,
+    quaternionClassOnSquareClasses_squareClass, quaternionClass_pow_right, ← pow_mul, mul_assoc,
+    ← pow_add]
   congr 1
   refine pow_eq_pow_of_modEq ?_ (quaternionClass_sq _ _)
   rcases m with _ | k
@@ -607,6 +613,87 @@ split. -/
 @[simp]
 theorem cliffordInvariant_hyperbolicClass : cliffordInvariant (hyperbolicClass K) = 1 := by
   rw [hyperbolicClass_def, cliffordInvariant_mk_binary, BrauerGroup.quaternionClass_one_left]
+
+/-! ### Additivity on the square of the fundamental ideal -/
+
+private theorem signedDiscr_mk_rankOne_mul_eq_zero (t : Kˣ) {x : RegularFormClass K}
+    (hx : Even x.rank) (hd : signedDiscr x = 0) :
+    signedDiscr (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => t⟩ * x) = 0 := by
+  obtain ⟨k, hk⟩ := hx
+  rw [signedDiscr_mk_rankOne_mul, hd, hk, ← two_mul, mul_nsmul',
+    ZModModule.char_nsmul_eq_zero 2 (k • squareClass t), add_zero (M := SquareClassGroup K)]
+
+/-- **On the square of the fundamental ideal the Clifford invariant is a similarity invariant**:
+for a class `x` of even rank with trivial signed discriminant, `c(⟨t⟩ ⊗ x) = c(x)`. -/
+theorem cliffordInvariant_mk_rankOne_mul_of_signedDiscr_eq_zero (t : Kˣ)
+    {x : RegularFormClass K} (hx : Even x.rank) (hd : signedDiscr x = 0) :
+    cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => t⟩ * x) =
+      cliffordInvariant x := by
+  obtain ⟨m, hm⟩ := hx
+  have hm2 : x.rank = 2 * m := by omega
+  rw [cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero (m := m)
+      (by rw [rank_mul, rank_mk, one_mul, hm2])
+      (signedDiscr_mk_rankOne_mul_eq_zero t ⟨m, hm⟩ hd),
+    cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero hm2 hd,
+    hasseInvariant_mk_rankOne_mul, discr_eq_sign_add_signedDiscr, hd,
+    add_zero (M := SquareClassGroup K), hm2, ← squareClass_pow,
+    BrauerGroup.quaternionClassOnSquareClasses_squareClass, BrauerGroup.quaternionClass_pow_right,
+    ← pow_mul, mul_assoc (hasseInvariant x), ← pow_add]
+  -- The two sign corrections combine to `[(t, -1)]` raised to an even power.
+  obtain ⟨N, hN⟩ : ∃ N, (2 * m).choose 2 + (2 * m).choose 2 * (2 * m - 1) = 2 * N := by
+    rcases m with _ | m
+    · exact ⟨0, rfl⟩
+    · refine ⟨(2 * (m + 1)).choose 2 * (m + 1), ?_⟩
+      rw [show 2 * (m + 1) - 1 = 2 * m + 1 by omega]
+      ring
+  rw [hN, pow_mul, BrauerGroup.quaternionClass_sq, one_pow, mul_one]
+
+/-- **Additivity of the Clifford invariant on the square of the fundamental ideal**: if `x` has
+even rank and trivial signed discriminant, that is if its Witt class lies in `I(K)²`
+(`TauCeti.wittClass_mem_fundamentalIdeal_sq_iff`), then `c(x ⊥ y) = c(x) · c(y)` for every class
+`y`. The identity fails for a general pair: for `x = y = ⟨-1⟩` the left side is
+`c⟨-1, -1⟩ = [(-1, -1)]`, which is nontrivial over `ℝ`, while `c⟨-1⟩ = 1` in rank one. -/
+theorem cliffordInvariant_add_of_signedDiscr_eq_zero {x : RegularFormClass K} (hx : Even x.rank)
+    (hd : signedDiscr x = 0) (y : RegularFormClass K) :
+    cliffordInvariant (x + y) = cliffordInvariant x * cliffordInvariant y := by
+  induction hn : y.rank using Nat.strong_induction_on generalizing x y with
+  | _ n ih =>
+  -- By induction, the statement holds for every scaled class `⟨t⟩ ⊗ x` and every `z` of smaller
+  -- rank; scaling does not change `c(x)`.
+  have hscale (t : Kˣ) (z : RegularFormClass K) (hz : z.rank < n) :
+      cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => t⟩ * x + z) =
+        cliffordInvariant x * cliffordInvariant z := by
+    have hxt : Even (rank (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => t⟩ * x)) := by
+      rwa [rank_mul, rank_mk, one_mul]
+    rw [ih _ hz hxt (signedDiscr_mk_rankOne_mul_eq_zero t hx hd) z rfl,
+      cliffordInvariant_mk_rankOne_mul_of_signedDiscr_eq_zero t hx hd]
+  rcases Nat.even_or_odd n with ⟨k, hk⟩ | ⟨k, hk⟩
+  · rcases Nat.eq_zero_or_pos k with rfl | hk0
+    · obtain rfl : y = 0 := rank_eq_zero_iff.mp (by omega)
+      rw [add_zero, cliffordInvariant_zero, mul_one]
+    -- Split a binary plane off `y`.
+    obtain ⟨a, b, z, hz, rfl⟩ := exists_eq_mk_binary_add (x := y) (by omega)
+    have hze : Even z.rank := ⟨k - 1, by omega⟩
+    rw [add_left_comm, cliffordInvariant_mk_binary_add a b (by rw [rank_add]; exact hx.add hze),
+      mul_add (R := RegularFormClass K), hscale _ _ (by rw [rank_mul, rank_mk, one_mul]; omega),
+      cliffordInvariant_mk_binary_add a b hze, mul_left_comm]
+  · -- Split a line off `y`.
+    obtain ⟨a, z, hz, rfl⟩ := exists_eq_add_mk_rankOne (x := y) (by omega)
+    have hze : Even z.rank := ⟨k, by omega⟩
+    rw [← add_assoc, cliffordInvariant_add_mk_rankOne a (by rw [rank_add]; exact hx.add hze),
+      mul_add (R := RegularFormClass K), hscale _ _ (by rw [rank_mul, rank_mk, one_mul]; omega),
+      cliffordInvariant_add_mk_rankOne a hze]
+
+/-- Adding hyperbolic planes does not change the Clifford invariant, so the Clifford invariant
+depends only on the Witt class. -/
+theorem cliffordInvariant_nsmul_hyperbolicClass_add (m : ℕ) (x : RegularFormClass K) :
+    cliffordInvariant (m • hyperbolicClass K + x) = cliffordInvariant x := by
+  induction m with
+  | zero => rw [zero_nsmul, zero_add]
+  | succ m ih =>
+    rw [succ_nsmul', add_assoc, cliffordInvariant_add_of_signedDiscr_eq_zero
+      (by rw [rank_hyperbolicClass]; exact even_two) signedDiscr_hyperbolicClass,
+      cliffordInvariant_hyperbolicClass, one_mul, ih]
 
 end RegularFormClass
 
