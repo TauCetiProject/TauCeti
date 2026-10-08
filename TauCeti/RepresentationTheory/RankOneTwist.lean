@@ -16,8 +16,8 @@ when an isomorphism `P ≃ H` is equivariant up to the character of `V`.
 
 ## Main definitions
 
-* `TauCeti.rankOneHomEquiv`: the coordinate isomorphism `P ≃ Hom(V, P)`.
-* `TauCeti.rankOneTwistEquiv`: an isomorphism `H ≃ V⁺ ⊗ P` from an isomorphism
+* `LinearEquiv.rankOneHomEquiv`: the coordinate isomorphism `P ≃ Hom(V, P)`.
+* `Representation.rankOneTwistEquiv`: an isomorphism `H ≃ V⁺ ⊗ P` from an isomorphism
   `P ≃ H` equivariant up to the character of `V`.
 -/
 
@@ -26,8 +26,6 @@ public section
 open scoped TensorProduct
 
 noncomputable section
-
-namespace TauCeti
 
 universe u v w x
 
@@ -38,6 +36,8 @@ section CommSemiring
 variable [CommSemiring k]
   {V : Type w} [AddCommMonoid V] [Module k V]
   {P : Type x} [AddCommMonoid P] [Module k P]
+
+namespace LinearEquiv
 
 -- Adapted from the Tau Ceti lookahead branch
 -- `lookahead/ClassFieldTheory/kummer-equiv-mixed-equivariant` (split 1).
@@ -50,15 +50,19 @@ def rankOneHomEquiv (e : V ≃ₗ[k] k) : P ≃ₗ[k] V →ₗ[k] P :=
 /-- Evaluation of the coordinate identification `P ≃ Hom(V, P)`. -/
 @[simp]
 theorem rankOneHomEquiv_apply_apply (e : V ≃ₗ[k] k) (x : P) (v : V) :
-    rankOneHomEquiv e x v = e v • x :=
+    e.rankOneHomEquiv x v = e v • x :=
   by simp [rankOneHomEquiv]
 
 /-- The inverse coordinate identification evaluates a linear map on the vector with coordinate
 `1`. -/
 @[simp]
 theorem rankOneHomEquiv_symm_apply (e : V ≃ₗ[k] k) (f : V →ₗ[k] P) :
-    (rankOneHomEquiv e).symm f = f (e.symm 1) :=
+    e.rankOneHomEquiv.symm f = f (e.symm 1) :=
   by simp [rankOneHomEquiv]
+
+end LinearEquiv
+
+namespace Representation
 
 section Monoid
 
@@ -129,15 +133,15 @@ def rankOneTwistEquiv (rho : Representation k G V) (sigma : Representation k G P
     tau.Equiv (rho.dual.tprod sigma) :=
   haveI : Module.Finite k V := Module.Finite.equiv e.symm
   haveI : Module.Projective k V := Module.Projective.of_equiv' e.symm
-  (Representation.Equiv.mk (Psi.symm.trans (rankOneHomEquiv e)) fun g ↦ by
+  (Representation.Equiv.mk (Psi.symm.trans e.rankOneHomEquiv) fun g ↦ by
     ext y v
     have htwist : rankOneCharacter rho e g • Psi.symm (tau g y) = sigma g (Psi.symm y) := by
       rw [← map_smul, ← Psi.symm_apply_apply (sigma g _), ← hPsi, Psi.apply_symm_apply]
     have hinv : e (rho g⁻¹ v) = rankOneCharacter rho e g⁻¹ * e v := by
       rw [rankOneCharacter_smul rho e g⁻¹ v, map_smul, smul_eq_mul]
     simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
-      Representation.linHom_apply, rankOneHomEquiv_apply_apply, hinv, map_smul, ← htwist,
-      smul_smul]
+      Representation.linHom_apply, LinearEquiv.rankOneHomEquiv_apply_apply, hinv, map_smul,
+      ← htwist, smul_smul]
     rw [mul_right_comm, ← map_mul, inv_mul_cancel, map_one, one_mul]).trans
     (Representation.Equiv.dualTensorHomOfProjective rho sigma).symm
 
@@ -150,7 +154,7 @@ theorem dualTensorHom_rankOneTwistEquiv (rho : Representation k G V)
     (hPsi : ∀ (g : G) (x : P),
       rankOneCharacter rho e g • tau g (Psi x) = Psi (sigma g x)) (y : H) :
     dualTensorHom k V P (rankOneTwistEquiv rho sigma tau e Psi hPsi y) =
-      rankOneHomEquiv e (Psi.symm y) := by
+      e.rankOneHomEquiv (Psi.symm y) := by
   have : Module.Finite k V := Module.Finite.equiv e.symm
   have : Module.Projective k V := Module.Projective.of_equiv' e.symm
   rw [← Representation.Equiv.dualTensorHomOfProjective_apply rho sigma, rankOneTwistEquiv,
@@ -173,6 +177,6 @@ theorem rankOneTwistEquiv_symm_apply (rho : Representation k G V)
 
 end Group
 
-end CommSemiring
+end Representation
 
-end TauCeti
+end CommSemiring
