@@ -313,7 +313,7 @@ theorem generalLinearFunctor_map {A B : CommAlgCat.{w} R} (phi : A ⟶ B) :
   (rfl)
 
 /-- Entrywise computation of the value-algebra map on the general linear functor. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem generalLinearFunctor_map_apply_apply {A B : CommAlgCat.{w} R} (phi : A ⟶ B)
     (g : ULift.{u, w} (Matrix.GeneralLinearGroup (Fin n) A)) (i j : Fin n) :
     (eqToHom (generalLinearFunctor_obj (R := R) n B)
@@ -338,7 +338,7 @@ noncomputable def pointsNatIso :
 
 /-- After transport along `generalLinearFunctor_obj`, the forward component of `pointsNatIso` is
 the pointwise general-linear equivalence. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem pointsNatIso_hom_app_apply (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n) A) :
     (eqToHom (generalLinearFunctor_obj (R := R) n A)
@@ -347,7 +347,7 @@ theorem pointsNatIso_hom_app_apply (A : CommAlgCat.{w} R)
 
 /-- After transport back along `generalLinearFunctor_obj`, the inverse component of `pointsNatIso`
 is evaluation at an invertible matrix. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem pointsNatIso_inv_app_apply (A : CommAlgCat.{w} R)
     (g : ULift.{u, w} (Matrix.GeneralLinearGroup (Fin n) A)) :
     (pointsNatIso (R := R) n).inv.app A

@@ -60,6 +60,11 @@ zero section corresponding to the point at infinity.
 * `WeierstrassCurve.SpecMap_projModelPoint`: the point is natural in the ring `S`.
 * `WeierstrassCurve.chartι_eq_projModelPoint`: the chart `D₊(Xᵢ)` is the point with homogeneous
   coordinates the universal point of the chart ring.
+* `WeierstrassCurve.projModelPoint_eqToHom`: an equality of Weierstrass curves identifies the
+  points with the same homogeneous coordinates.
+* `WeierstrassCurve.projModelPoint_projModelVariableChangeIso_hom`: the isomorphism
+  `projModel (C • W) ≅ projModel W` induced by a change of variables `C` sends the point with
+  homogeneous coordinates `P` to the point with homogeneous coordinates `(C.map g).toMatrix *ᵥ P`.
 * `WeierstrassCurve.projModelPointsEquivUnimodular_projModelZero`: the zero section corresponds to
   the class of `(0, 1, 0)`.
 * `WeierstrassCurve.projModelPointsEquivUnimodular_projModelPoint`: the section with homogeneous
@@ -275,6 +280,51 @@ theorem chartι_eq_projModelPoint (i : Fin 3) :
     Projective.awayEvalHom_mk, Projective.evalHom_mk, hu, one_pow, inv_one, Units.val_one, mul_one]
   rw [← aeval_def, ← Ideal.Quotient.mkₐ_eq_mk R, aeval_unique (Ideal.Quotient.mkₐ R _)]
   exact congrArg (aeval · p) (funext fun k ↦ (W.toProjective.chartPoint_apply i k).symm)
+
+/-- Transport of points along an equality of Weierstrass curves: the point of `projModel W₁` with
+homogeneous coordinates `P`, followed by the identification of `projModel W₁` with `projModel W₂`
+induced by `h : W₁ = W₂`, is the point of `projModel W₂` with the same coordinates. -/
+@[reassoc]
+theorem projModelPoint_eqToHom {W₁ W₂ : WeierstrassCurve R} (h : W₁ = W₂)
+    {hP : (W₁.toProjective.map g).Equation P} (hi : IsUnit (P i)) :
+    W₁.projModelPoint g hP hi ≫ eqToHom (congrArg projModel h) =
+      W₂.projModelPoint g (h ▸ hP) hi := by
+  subst h
+  simp
+
+open Matrix in
+/-- The isomorphism `projModel (C • W) ≅ projModel W` induced by a change of variables `C` sends
+the point `projModelPoint (C • W) g hP hi` with homogeneous coordinates `P` to the point with
+homogeneous coordinates `(C.map g).toMatrix *ᵥ P = [u²P₀ + rP₂ : u²sP₀ + u³P₁ + tP₂ : P₂]`
+(with `u, r, s, t` mapped along `g`), defined through any chart `D₊(Xⱼ)` on which that
+coordinate is a unit. -/
+@[reassoc]
+theorem projModelPoint_projModelVariableChangeIso_hom {C : VariableChange R}
+    {hP : ((C • W).toProjective.map g).Equation P} (hi : IsUnit (P i)) {j : Fin 3}
+    (hj : IsUnit (((C.map g).toMatrix *ᵥ P) j)) :
+    (C • W).projModelPoint g hP hi ≫ (W.projModelVariableChangeIso C).hom =
+      W.projModelPoint g ((Projective.equation_variableChange (W.map g) (C.map g) P).mp
+        (by simpa only [map_variableChange] using hP)) hj := by
+  set hQ := (Projective.equation_variableChange (W.map g) (C.map g) P).mp
+    (by simpa only [map_variableChange] using hP)
+  -- evaluating at `P` after the change of variables is evaluating at `(C.map g).toMatrix *ᵥ P`
+  have hF : ((C • W).toProjective.evalHom g hP).comp (variableChangeGradedHom W C).toRingHom =
+      W.toProjective.evalHom g hQ := by
+    refine Projective.eq_evalHom _ _ _ (RingHom.ext fun r ↦ ?_) (funext fun k ↦ ?_)
+    · simpa [variableChangeGradedHom_apply] using
+        RingHom.congr_fun ((C • W).toProjective.evalHom_comp_algebraMap g hP) r
+    · simp [variableChangeGradedHom_apply, Projective.coord, mulVec, dotProduct]
+  -- the image of `Xⱼ` under the change of variables takes the unit value `Qⱼ` at `P`
+  have hFj : IsUnit ((C • W).toProjective.evalHom g hP
+      (variableChangeGradedHom W C (W.toProjective.coord j))) := by
+    rwa [← GradedRingHom.coe_toRingHom, ← RingHom.comp_apply, hF, Projective.evalHom_mk, eval₂_X]
+  -- read the point on the chart cut out by the image of `Xⱼ`, which the isomorphism carries
+  -- into `D₊(Xⱼ)`
+  rw [projModelPoint, projModelPoint, projModelVariableChangeIso, Proj.mapIso_hom,
+    Projective.awayEvalHom_def, Projective.awayEvalHom_def, Proj.SpecMap_awayLift_awayι_eq _ _
+      one_pos (GradedFunLike.map_mem _ (W.toProjective.coord_mem_grading j)) one_pos _ hFj,
+    Category.assoc, Proj.awayι_comp_map _ _ one_pos _ (W.toProjective.coord_mem_grading j)]
+  simp [← Spec.map_comp_assoc, ← CommRingCat.ofHom_comp, hF]
 
 -- A solution of the equation of `W` solves the equation of `W.map (RingHom.id R)`, which is `W`
 -- only up to unfolding `WeierstrassCurve.map`: `hP` itself is accepted by `awayEvalHom` and

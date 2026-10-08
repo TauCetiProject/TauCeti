@@ -110,10 +110,11 @@ theorem map_baseChange_generatedDefiningIdeal :
   rw [generatedDefiningIdeal_def, generatedDefiningIdeal_def,
     CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal,
     CommHopfAlgCat.map_commonKernelHopfIdeal]
-  rw [← CommHopfAlgCat.commonKernelHopfIdeal_comp_iso
+  rw [← CommHopfAlgCat.commonKernelHopfIdeal_comp_of_injective
     (fun j ↦ (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S 56).inv ≫
       CommHopfAlgCat.baseChangeMap (generatorCoordinateMap R j))
-    (generatorCoordinateAlgebraBaseChangeIso R S)]
+    (fun j ↦ (generatorCoordinateAlgebraBaseChangeIso R S j).hom) fun j ↦
+      (ConcreteCategory.bijective_of_isIso (generatorCoordinateAlgebraBaseChangeIso R S j).hom).1]
   congr 1
   funext j
   exact generatorCoordinateMap_baseChange R S j

@@ -249,11 +249,6 @@ theorem weightParabolicFiniteTypeCoordinateHopfAlgebra_obj (w : Fin N → ℤ) :
       weightParabolicCoordinateHopfAlgebra R w := by
   rfl
 
-/-- The weight-parabolic group scheme is locally of finite type over the base. -/
-instance locallyOfFiniteType_weightParabolicGroupScheme (w : Fin N → ℤ) :
-    LocallyOfFiniteType (weightParabolicGroupScheme R w).X.hom := by
-  infer_instance
-
 /-- The subgroup cut out by the weight-parabolic ideal consists exactly of block-triangular
 ambient points. -/
 @[simp]
