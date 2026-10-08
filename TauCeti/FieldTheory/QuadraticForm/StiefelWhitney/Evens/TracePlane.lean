@@ -31,7 +31,7 @@ the computation of the Evens norm of a Kummer class.
 
 ## Main definitions
 
-* `TauCeti.kummerPoint`: the point `φ(y) = (σ(y) r, s(σ(y) r))` of `(Kˢ)²`.
+* `TauCeti.kummerPoint`: the `K`-linear map `y ↦ φ(y) = (σ(y) r, s(σ(y) r))` from `L` to `(Kˢ)²`.
 
 ## Main results
 
@@ -57,12 +57,19 @@ universe u v
 variable {K : Type u} [Field K]
 
 /-- **The point of the transferred plane associated to `y ∈ L`:**
-`φ(y) = (σ(y) r, s(σ(y) r)) ∈ (Kˢ)²`. When `r² = σ(a)` and `s` represents the nontrivial
-coset of `G_L` in `G_K`, the image of `φ` carries the transferred form `Tr_*⟨a⟩`. -/
+`φ(y) = (σ(y) r, s(σ(y) r)) ∈ (Kˢ)²`, bundled as a `K`-linear map in `y`. When `r² = σ(a)` and
+`s` represents the nontrivial coset of `G_L` in `G_K`, the image of `φ` carries the transferred
+form `Tr_*⟨a⟩`. -/
 def kummerPoint {L : Type v} [Field L] [Algebra K L]
-    (σ : L →ₐ[K] SeparableClosure K) (r : SeparableClosure K) (s : AbsoluteGaloisGroup K)
-    (y : L) : Fin 2 → SeparableClosure K :=
-  ![σ y * r, s (σ y * r)]
+    (σ : L →ₐ[K] SeparableClosure K) (r : SeparableClosure K) (s : AbsoluteGaloisGroup K) :
+    L →ₗ[K] Fin 2 → SeparableClosure K where
+  toFun y := ![σ y * r, s (σ y * r)]
+  map_add' y y' := by
+    ext i
+    fin_cases i <;> simp [add_mul]
+  map_smul' c y := by
+    ext i
+    fin_cases i <;> simp
 
 section kummerPoint
 
@@ -83,18 +90,6 @@ theorem kummerPoint_apply_zero (y : L) : kummerPoint σ r s y 0 = σ y * r := by
 @[simp]
 theorem kummerPoint_apply_one (y : L) : kummerPoint σ r s y 1 = s (σ y * r) := by
   simp [kummerPoint_def]
-
-/-- `kummerPoint σ r s` is additive in `y`. -/
-theorem kummerPoint_add (y y' : L) :
-    kummerPoint σ r s (y + y') = kummerPoint σ r s y + kummerPoint σ r s y' := by
-  ext i
-  fin_cases i <;> simp [add_mul]
-
-/-- `kummerPoint σ r s` is `K`-homogeneous in `y`. -/
-theorem kummerPoint_smul (c : K) (y : L) :
-    kummerPoint σ r s (c • y) = c • kummerPoint σ r s y := by
-  ext i
-  fin_cases i <;> simp
 
 end kummerPoint
 
@@ -147,8 +142,8 @@ theorem kummerPoint_dotProduct {L : Type v} [Field L] [Algebra K L]
       _ = σ' z + τ' z := by rw [huniv, Finset.sum_pair hστ]
       _ = ι (σ z + τ z) := by simp [σ', τ']
   rw [htrace]
-  simp only [kummerPoint, dotProduct, Fin.sum_univ_two, Matrix.cons_val_zero,
-    Matrix.cons_val_one, map_mul, τ]
+  simp only [dotProduct, Fin.sum_univ_two, kummerPoint_apply_zero, kummerPoint_apply_one,
+    map_mul, τ]
   have hr' : r * r = σ a := by simpa only [pow_two] using hr
   have hsr' : s r * s r = s (σ a) := by rw [← map_mul, hr']
   ring_nf at hr' hsr' ⊢
