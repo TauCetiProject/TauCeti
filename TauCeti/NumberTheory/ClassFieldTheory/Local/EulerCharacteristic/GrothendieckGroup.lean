@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.FDRep
 public import TauCeti.Algebra.Order.Ring.Units
 public import TauCeti.NumberTheory.ClassFieldTheory.FiniteQuotient
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.EulerCharacteristic.Additivity
@@ -67,60 +66,6 @@ open scoped MonoidAlgebra
 
 variable (n : ℕ) (F : Type) [Field F] (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F))
 
-/-- **Inflation of finite-dimensional representations** of a finite Galois quotient: the
-restriction of `galRepOfQuotient` along Mathlib's forgetful functor `FDRep → Rep`. Its values are
-finite for `n ≠ 0`. The body is exposed so the pointwise action and morphism equations can use the
-original algebraic carriers. -/
-@[expose] def fdGalRepOfQuotient :
-    FDRep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup) ⥤ GalRep n F :=
-  forget₂ (FDRep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup))
-    (Rep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup)) ⋙ galRepOfQuotient n F V
-
-/-- The inflation of a finite-dimensional representation is `galRepOfQuotient` of its underlying
-representation. -/
-theorem fdGalRepOfQuotient_obj (A : FDRep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup)) :
-    (fdGalRepOfQuotient n F V).obj A =
-      (galRepOfQuotient n F V).obj
-        ((forget₂ (FDRep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup))
-          (Rep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup))).obj A) :=
-  (rfl)
-
-/-- The inflation of `FDRep.of A.ρ` is `galRepOfQuotient` of `A`. -/
-theorem fdGalRepOfQuotient_obj_of (A : Rep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup))
-    [Module.Finite (ZMod n) A.V] :
-    (fdGalRepOfQuotient n F V).obj (FDRep.of A.ρ) = (galRepOfQuotient n F V).obj A :=
-  (rfl)
-
-/-- The inflated action is the quotient action evaluated on the class of the automorphism. -/
-@[simp]
-theorem fdGalRepOfQuotient_ρ_apply
-    (A : FDRep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup))
-    (g : Field.absoluteGaloisGroup F) (a : A) :
-    ((fdGalRepOfQuotient n F V).obj A).ρ g a = A.ρ (QuotientGroup.mk g) a :=
-  (rfl)
-
-/-- The inflation leaves the underlying coefficient map unchanged. -/
-@[simp]
-theorem fdGalRepOfQuotient_map_apply
-    {A B : FDRep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup)} (f : A ⟶ B) (a : A) :
-    ((fdGalRepOfQuotient n F V).map f).hom a = f.hom.hom a :=
-  (rfl)
-
-/-- The inflated coefficient object carries the discrete topology. -/
-instance (A : FDRep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup)) :
-    DiscreteTopology ((fdGalRepOfQuotient n F V).obj A).V :=
-  inferInstanceAs (DiscreteTopology ((galRepOfQuotient n F V).obj _).V)
-
-/-- The inflation of a finite-dimensional representation is smooth. -/
-instance (A : FDRep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup)) :
-    Fact (IsSmoothDiscrete (ZMod n) ((fdGalRepOfQuotient n F V).obj A)) :=
-  inferInstanceAs (Fact (IsSmoothDiscrete (ZMod n) ((galRepOfQuotient n F V).obj _)))
-
-/-- For `n ≠ 0`, the inflation of a finite-dimensional representation has finite coefficients. -/
-instance [NeZero n] (A : FDRep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup)) :
-    Finite ((fdGalRepOfQuotient n F V).obj A).V :=
-  Module.finite_of_finite (ZMod n) (M := A)
-
 variable {n F V} [NeZero n] in
 /-- A short exact sequence of finite-dimensional representations of a finite Galois quotient
 inflates to an injection, an exact pair and a surjection of Galois representations. -/
@@ -131,6 +76,7 @@ private theorem injective_exact_surjective_fdGalRepOfQuotient
       Function.Exact ((fdGalRepOfQuotient n F V).map S.f).hom
         ((fdGalRepOfQuotient n F V).map S.g).hom ∧
       Function.Surjective ((fdGalRepOfQuotient n F V).map S.g).hom := by
+  apply (fdGalRepOfQuotient_injective_exact_surjective_iff n F V S.f S.g).2
   have h := hS.map_of_exact (forget₂ (FDRep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup))
     (Rep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup)) ⋙
       forget₂ (Rep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup)) (ModuleCat (ZMod n)))
@@ -244,8 +190,7 @@ theorem localEulerCharacteristicK0_eq_localCardNormK0_iff (hn : IsUnit (n : F)) 
       rwa [galRepOfQuotient_obj_V] at hfin
     exact localEulerCharacteristic_eq_localCardNorm_of_iso V p hn h A e
   · refine (liftFDRepK0_unique _ _ _ fun A ↦ ?_).symm
-    -- `fdGalRepOfQuotient` is `galRepOfQuotient` after `forget₂` (`fdGalRepOfQuotient_obj`).
-    rw [localCardNormK0_of, h _ fun g hg x ↦ galRepOfQuotient_ρ_eq_self n F V _ hg x]
+    rw [localCardNormK0_of, h _ fun g hg x ↦ fdGalRepOfQuotient_ρ_eq_self n F V A hg x]
 
 /-- **The Euler characteristic formula and `G₀`.** Tate's local Euler characteristic formula
 `χ_F(X) = φ_F(X)` holds for every finite smooth discrete Galois representation `X` exactly when, for
