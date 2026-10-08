@@ -15,8 +15,8 @@ Galois groups.  This file packages that identification as an isomorphism of topo
 It is useful when a field is presented through a canonical completion or another isomorphic
 model, while Galois-cohomological constructions are available on the standard model.
 
-The construction is extracted from the transport of cohomological Brauer groups in
-`TauCeti.NumberTheory.ClassFieldTheory.Brauer.Congr`, which now reuses it.
+These equivalences underlie the transport of cohomological Brauer groups along field
+isomorphisms in `TauCeti.NumberTheory.ClassFieldTheory.Brauer.Congr`.
 
 ## Main definitions
 
@@ -92,6 +92,7 @@ def absoluteGaloisGroupCongr (e : K ≃+* L) :
 
 /-- The absolute-Galois-group equivalence induced by a field isomorphism acts by conjugation
 through the chosen equivalence of separable closures. -/
+@[simp]
 theorem absoluteGaloisGroupCongr_apply (e : K ≃+* L) (g : AbsoluteGaloisGroup L)
     (x : SeparableClosure K) :
     absoluteGaloisGroupCongr e g x =
@@ -101,5 +102,17 @@ theorem absoluteGaloisGroupCongr_apply (e : K ≃+* L) (g : AbsoluteGaloisGroup 
   let σ : L →ₐ[K] SeparableClosure K :=
     (Algebra.ofId K (SeparableClosure K)).comp eA.symm.toAlgHom
   exact absoluteGaloisGroupEquivFixingSubgroup_apply K L σ g x
+
+/-- The inverse of the absolute-Galois-group equivalence induced by a field isomorphism acts by
+conjugation through the inverse of the chosen equivalence of separable closures. -/
+@[simp]
+theorem absoluteGaloisGroupCongr_symm_apply (e : K ≃+* L) (g : AbsoluteGaloisGroup K)
+    (x : SeparableClosure L) :
+    (absoluteGaloisGroupCongr e).symm g x =
+      e.separableClosureCongr.symm (g (e.separableClosureCongr x)) := by
+  have h := absoluteGaloisGroupCongr_apply e ((absoluteGaloisGroupCongr e).symm g)
+    (e.separableClosureCongr x)
+  rw [ContinuousMulEquiv.apply_symm_apply, RingEquiv.symm_apply_apply] at h
+  rw [h, RingEquiv.symm_apply_apply]
 
 end RingEquiv
