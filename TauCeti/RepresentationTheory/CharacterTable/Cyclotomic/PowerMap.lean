@@ -12,9 +12,10 @@ public import TauCeti.RingTheory.Cyclotomic.Basic
 /-!
 # Power maps on exact cyclotomic character values
 
-An exact cyclotomic integer representing `χ(g)` can be evaluated at another primitive root.
-Replacing the distinguished root by its `n`-th power gives `χ(g ^ n)`. This formulation uses
-ring homomorphisms from the exact integer ring, so it applies before extending them to fields.
+When `g ^ e = 1` (equivalently, the order of `g` divides `e`), an exact cyclotomic integer
+in `Cyclotomic e` representing `χ(g)` can be evaluated at another primitive root. Replacing the
+distinguished root by its `n`-th power gives `χ(g ^ n)`. This formulation uses ring homomorphisms
+from the exact integer ring, so it applies before extending them to fields.
 It supplies the power-map identity needed to align modular residues for cyclotomic lifting.
 
 ## References
@@ -33,7 +34,7 @@ variable {G V : Type*} [Monoid G] [AddCommGroup V] [Module ℂ V]
   [FiniteDimensional ℂ V] {e : ℕ} [NeZero e]
 
 /-- Evaluating an exact cyclotomic character value at the `n`-th power of the distinguished
-root gives the character value at `g ^ n`. -/
+root gives the character value at `g ^ n`, provided `g ^ e = 1` (the order of `g` divides `e`). -/
 theorem map_cyclotomic_character_eq_character_pow (ρ : Representation ℂ G V)
     {g : G} (hg : g ^ e = 1) {x : Cyclotomic e}
     (hx : Cyclotomic.complexEmbedding x = ρ.character g)

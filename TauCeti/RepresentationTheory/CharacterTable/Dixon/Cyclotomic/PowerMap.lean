@@ -13,10 +13,11 @@ public import TauCeti.GroupTheory.ConjClass.Power
 /-!
 # Power-map alignment of cyclotomic character-table residues
 
-For a certified exact table, a coprime power substitution on its entries is the same as powering
-its column representatives. This holds for ordinary and central characters because coprime
-powers preserve class sizes. Hence every conjugate residue of a row is determined by one
-modular row, without searching permutations of the rows across embeddings.
+For a certified exact table whose cyclotomic conductor `e` equals `Monoid.exponent G`, a coprime
+power substitution on its entries is the same as powering its column representatives. This holds
+for ordinary and central characters because coprime powers preserve class sizes. Hence every
+conjugate residue of a row is determined by one modular row, without searching permutations of the
+rows across embeddings.
 
 ## References
 
@@ -34,7 +35,7 @@ variable {G : Type*} [Group G] [Fintype G] [DecidableEq G]
   {degree : Fin d.numClasses → ℕ}
 
 /-- Coprime substitution on the ordinary entries of a certified table powers its class
-representatives. -/
+representatives when the cyclotomic conductor `e` equals `Monoid.exponent G`. -/
 theorem powRingHom_table (h : d.IsCyclotomicCharacterTableSpec e omega table degree)
     (he : e = Monoid.exponent G) {n : ℕ} (hn : e.Coprime n) (i k : Fin d.numClasses) :
     Cyclotomic.powRingHom hn (table i k) = table i (d.index (d.rep k ^ n)) := by
@@ -55,7 +56,7 @@ theorem powRingHom_table (h : d.IsCyclotomicCharacterTableSpec e omega table deg
   exact hpow.trans (hentry (d.rep k ^ n)).symm
 
 /-- Coprime substitution on the central entries of a certified table powers its class
-representatives. -/
+representatives when the cyclotomic conductor `e` equals `Monoid.exponent G`. -/
 theorem powRingHom_omega (h : d.IsCyclotomicCharacterTableSpec e omega table degree)
     (he : e = Monoid.exponent G) {n : ℕ} (hn : e.Coprime n) (i k : Fin d.numClasses) :
     Cyclotomic.powRingHom hn (omega i k) = omega i (d.index (d.rep k ^ n)) := by
@@ -74,7 +75,8 @@ theorem powRingHom_omega (h : d.IsCyclotomicCharacterTableSpec e omega table deg
   exact mul_left_cancel₀ (Nat.cast_ne_zero.mpr (h.degree_pos i).ne' : (degree i : ℂ) ≠ 0) hmap
 
 /-- Every conjugate residue of a certified central row is obtained by powering column
-representatives in its reduction at one primitive root. -/
+representatives in its reduction at one primitive root, when the cyclotomic conductor `e` equals
+`Monoid.exponent G`. -/
 theorem conjugateResidues_omega (h : d.IsCyclotomicCharacterTableSpec e omega table degree)
     (he : e = Monoid.exponent G) {p : ℕ} [Fact p.Prime] {α : ZMod p}
     (hα : IsPrimitiveRoot α e) (i k : Fin d.numClasses) (j : Fin e.totient) :

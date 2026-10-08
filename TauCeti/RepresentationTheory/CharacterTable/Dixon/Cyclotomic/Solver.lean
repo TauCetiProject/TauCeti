@@ -228,11 +228,10 @@ private def dixonCyclotomicCharacterTableCandidates (e : ℕ) (q : DixonPrimeDat
 The function uses power maps to align the modular residues at all conjugate roots, applies the
 structured cyclotomic lift, searches the possible character degrees, computes candidate ordinary
 character entries, and returns the first candidate accepted by the exact cyclotomic checker.
-The conductor `e` is
-passed explicitly, together with its equality to the group exponent, so evaluating the solver
-does not attempt to compute Mathlib's noncomputable `Monoid.exponent`. -/
-def dixonCyclotomicCharacterTable? (e : ℕ) (_he : e = Monoid.exponent G)
-    (q : DixonPrimeData G) :
+The conductor `e` is passed explicitly, so evaluating the solver does not attempt to compute
+Mathlib's noncomputable `Monoid.exponent`. Soundness holds for any conductor; the completeness
+criterion requires it to equal the group exponent. -/
+def dixonCyclotomicCharacterTable? (e : ℕ) (q : DixonPrimeData G) :
     Option (d.CyclotomicCharacterTableData e) :=
   (d.dixonCyclotomicCharacterTableCandidates e q).find? fun output ↦
     d.cyclotomicCharacterTableChecker e
@@ -309,7 +308,7 @@ theorem isSome_dixonCyclotomicCharacterTable_of_spec (e : ℕ)
     (hspec : d.IsCyclotomicCharacterTableSpec e omega table degree)
     (hcoeff : ∀ i k (l : Fin e.totient),
       2 * ((omega i k).coeff l).natAbs < q.p) :
-    (d.dixonCyclotomicCharacterTable? e he q).isSome = true := by
+    (d.dixonCyclotomicCharacterTable? e q).isSome = true := by
   have : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
   obtain ⟨base, hrows⟩ := d.exists_base_canonicalModularRow_eq_reduce e he q hspec
   rw [dixonCyclotomicCharacterTable?, List.find?_isSome]
@@ -322,9 +321,9 @@ theorem isSome_dixonCyclotomicCharacterTable_of_spec (e : ℕ)
 /-- Every successful exact-cyclotomic Dixon--Schneider output passes the exact cyclotomic
 character-table specification. -/
 theorem isCyclotomicCharacterTableSpec_of_dixonCyclotomicCharacterTable?_eq_some
-    {d : ClassData G} (e : ℕ) (he : e = Monoid.exponent G) (q : DixonPrimeData G)
+    {d : ClassData G} (e : ℕ) (q : DixonPrimeData G)
     {output : d.CyclotomicCharacterTableData e}
-    (h : d.dixonCyclotomicCharacterTable? e he q = some output) :
+    (h : d.dixonCyclotomicCharacterTable? e q = some output) :
     d.IsCyclotomicCharacterTableSpec e
       output.omega output.table output.degree := by
   simp only [dixonCyclotomicCharacterTable?] at h
@@ -337,12 +336,12 @@ returned by the modular central-character search. -/
 theorem conjugateResidueRow_mem_centralCharacterSearch_of_dixonCyclotomicCharacterTable?_eq_some
     {d : ClassData G} (e : ℕ) (he : e = Monoid.exponent G) (q : DixonPrimeData G)
     {output : d.CyclotomicCharacterTableData e}
-    (h : d.dixonCyclotomicCharacterTable? e he q = some output)
+    (h : d.dixonCyclotomicCharacterTable? e q = some output)
     (i : Fin d.numClasses) (j : Fin e.totient) :
     (fun k ↦ Cyclotomic.conjugateResidues q.root (output.omega i k) j) ∈
       d.centralCharacterSearch := by
   have _ : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
-  have hspec := d.isCyclotomicCharacterTableSpec_of_dixonCyclotomicCharacterTable?_eq_some e he q h
+  have hspec := d.isCyclotomicCharacterTableSpec_of_dixonCyclotomicCharacterTable?_eq_some e q h
   simpa only [Cyclotomic.reduceRingHom_apply, Cyclotomic.conjugateResidues_apply] using
     hspec.map_mem_centralCharacterSearch
       (Cyclotomic.reduceRingHom q.p _
@@ -351,13 +350,13 @@ theorem conjugateResidueRow_mem_centralCharacterSearch_of_dixonCyclotomicCharact
 /-- Every successful exact-cyclotomic Dixon--Schneider output, embedded in `ℂ` and reindexed by
 conjugacy classes, satisfies the complex character-table specification. -/
 theorem isCharacterTableSpec_of_dixonCyclotomicCharacterTable?_eq_some
-    {d : ClassData G} (e : ℕ) [NeZero e] (he : e = Monoid.exponent G) (q : DixonPrimeData G)
+    {d : ClassData G} (e : ℕ) [NeZero e] (q : DixonPrimeData G)
     {output : d.CyclotomicCharacterTableData e}
-    (h : d.dixonCyclotomicCharacterTable? e he q = some output) :
+    (h : d.dixonCyclotomicCharacterTable? e q = some output) :
     IsCharacterTableSpec G
       (d.complexTableOfCyclotomic e output.table) :=
   (d.isCyclotomicCharacterTableSpec_of_dixonCyclotomicCharacterTable?_eq_some
-    e he q h).isCharacterTableSpec
+    e q h).isCharacterTableSpec
 
 /-! ### Searching for the prime
 
@@ -373,13 +372,13 @@ Mathlib's noncomputable `Monoid.exponent`; the order of the group is `Fintype.ca
 def characterTableDixon? (e : ℕ) (he : e = Monoid.exponent G) (fuel : ℕ) :
     Option (d.CyclotomicCharacterTableData e) :=
   (DixonPrimeData.candidates e he (Fintype.card G) Nat.card_eq_fintype_card.symm fuel).findSome?
-    (d.dixonCyclotomicCharacterTable? e he)
+    (d.dixonCyclotomicCharacterTable? e)
 
 /-- **The algorithm succeeds exactly when the solver does at some searched prime.** -/
 theorem isSome_characterTableDixon?_iff (e : ℕ) (he : e = Monoid.exponent G) (fuel : ℕ) :
     (d.characterTableDixon? e he fuel).isSome ↔
       ∃ q ∈ DixonPrimeData.candidates e he (Fintype.card G) Nat.card_eq_fintype_card.symm fuel,
-        (d.dixonCyclotomicCharacterTable? e he q).isSome := by
+        (d.dixonCyclotomicCharacterTable? e q).isSome := by
   rw [characterTableDixon?]
   exact List.findSome?_isSome_iff
 
@@ -388,7 +387,7 @@ theorem exists_mem_candidates_of_characterTableDixon?_eq_some (e : ℕ)
     (he : e = Monoid.exponent G) {fuel : ℕ} {output : d.CyclotomicCharacterTableData e}
     (h : d.characterTableDixon? e he fuel = some output) :
     ∃ q ∈ DixonPrimeData.candidates e he (Fintype.card G) Nat.card_eq_fintype_card.symm fuel,
-      d.dixonCyclotomicCharacterTable? e he q = some output := by
+      d.dixonCyclotomicCharacterTable? e q = some output := by
   rw [characterTableDixon?] at h
   exact List.exists_of_findSome?_eq_some h
 
@@ -398,7 +397,7 @@ is at most `e · fuel + 1`, then the algorithm returns a table, possibly found a
 theorem isSome_characterTableDixon?_of_isSome (e : ℕ) (he : e = Monoid.exponent G) {fuel : ℕ}
     (q : DixonPrimeData G)
     (hq : DixonPrimeData.ofPrime? e he (Fintype.card G) Nat.card_eq_fintype_card.symm q.p = some q)
-    (hfuel : q.p ≤ e * fuel + 1) (hsolve : (d.dixonCyclotomicCharacterTable? e he q).isSome) :
+    (hfuel : q.p ≤ e * fuel + 1) (hsolve : (d.dixonCyclotomicCharacterTable? e q).isSome) :
     (d.characterTableDixon? e he fuel).isSome :=
   (d.isSome_characterTableDixon?_iff e he fuel).mpr
     ⟨q, DixonPrimeData.mem_candidates_iff.mpr ⟨hq, hfuel⟩, hsolve⟩
@@ -420,7 +419,7 @@ theorem isCyclotomicCharacterTableSpec_of_characterTableDixon?_eq_some (e : ℕ)
     (h : d.characterTableDixon? e he fuel = some output) :
     d.IsCyclotomicCharacterTableSpec e output.omega output.table output.degree := by
   obtain ⟨q, -, hq⟩ := d.exists_mem_candidates_of_characterTableDixon?_eq_some e he h
-  exact isCyclotomicCharacterTableSpec_of_dixonCyclotomicCharacterTable?_eq_some e he q hq
+  exact isCyclotomicCharacterTableSpec_of_dixonCyclotomicCharacterTable?_eq_some e q hq
 
 /-- **Soundness of the Burnside--Dixon--Schneider algorithm.** Every table the algorithm returns,
 embedded in `ℂ` and reindexed by the conjugacy classes, satisfies the complex character-table

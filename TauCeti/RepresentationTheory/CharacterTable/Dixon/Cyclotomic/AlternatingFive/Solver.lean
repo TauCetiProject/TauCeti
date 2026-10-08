@@ -112,8 +112,7 @@ theorem alternatingGroupFiveExponentCentralCharacterTable_two_mul_natAbs_coeff_l
 `61`, independently of the chosen primitive thirtieth root. -/
 theorem isSome_dixonCyclotomicCharacterTable_alternatingGroupFive
     (q : DixonPrimeData (alternatingGroup (Fin 5))) (hq : q.p = 61) :
-    (alternatingGroupFiveClassData.dixonCyclotomicCharacterTable? 30
-      exponent_alternatingGroup_five.symm q).isSome = true := by
+    (alternatingGroupFiveClassData.dixonCyclotomicCharacterTable? 30 q).isSome = true := by
   apply alternatingGroupFiveClassData.isSome_dixonCyclotomicCharacterTable_of_spec 30
     exponent_alternatingGroup_five.symm q
     alternatingGroupFiveExponentCentralCharacterTable alternatingGroupFiveExponentCharacterTable
