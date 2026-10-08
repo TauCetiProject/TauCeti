@@ -143,13 +143,13 @@ noncomputable def h1EquivContinuousZModDual :
 
 /-- The continuous-dual equivalence has the same underlying map as
 `H1EquivOfSmulEqSelf`. -/
+@[simp]
 theorem h1EquivContinuousZModDual_apply (x : H1 G (ZMod n)) :
     h1EquivContinuousZModDual htriv x = H1EquivOfSmulEqSelf htriv x :=
   h1EquivContinuousZModHom_apply htriv x
 
 /-- The image of a class of `H¹(G, ZMod n)` is the character its cocycle defines: evaluated at `g`
 it is the cocycle's value at `g`, read in the multiplicative encoding of `ZMod n`. -/
-@[simp]
 theorem h1EquivContinuousZModDual_apply_mk (f : Z1 G (ZMod n)) (g : G) :
     Additive.toMul (h1EquivContinuousZModDual htriv (f : H1 G (ZMod n))) g
       = Multiplicative.ofAdd ((f : G → ZMod n) g) := by

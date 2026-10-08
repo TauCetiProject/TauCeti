@@ -9,8 +9,6 @@ public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.Algebra.Module.ZMod.SMulCommClass
 public import TauCeti.Data.ZMod.TrivialAction
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.CoprimeDescent
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.H1ZMod
-public import TauCeti.Topology.Algebra.ContinuousZModDual
 
 /-!
 # First cohomology tensor comparison and prime-to-index descent

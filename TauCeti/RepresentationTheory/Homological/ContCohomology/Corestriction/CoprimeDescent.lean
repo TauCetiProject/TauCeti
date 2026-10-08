@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Group.Exponent
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiveTerm
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.H1ZMod
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.H1.ZMod
 
 /-!
 # Descent along a normal subgroup of index prime to the coefficients
@@ -218,8 +218,45 @@ open and normal of finite index prime to `n`, restriction identifies `H¹(G, A)`
 noncomputable def h1CoprimeDescentEquiv [N.FiniteIndex] (hopen : IsOpen (N : Set G))
     (hcop : N.index.Coprime n) :
     H1 G A ≃ₗ[ZMod n] AddSubgroup.toZModSubmodule n (H1ConjInvariants G A N) :=
-  LinearEquiv.ofBijective
-    (AddMonoidHom.toZModLinearMap n (explicitResConj1 G A N))
-    (explicitResConj1_bijective_of_coprime N hopen (ZModModule.char_nsmul_eq_zero n) hcop)
+  let f : H1 G A →ₗ[ZMod n]
+      AddSubgroup.toZModSubmodule n (H1ConjInvariants G A N) :=
+    LinearMap.codRestrict (AddSubgroup.toZModSubmodule n (H1ConjInvariants G A N))
+      (AddMonoidHom.toZModLinearMap n (explicitRes1 G A N)) fun x ↦
+        (AddSubgroup.mem_toZModSubmodule n).2 (explicitRes1_mem_conjInvariants G A N x)
+  let hf : Function.Bijective f := by
+    have hb := explicitResConj1_bijective_of_coprime N hopen
+      (fun y : A ↦ ZModModule.char_nsmul_eq_zero n y) hcop
+    constructor
+    · intro x y hxy
+      apply hb.injective
+      apply Subtype.ext
+      rw [coe_explicitResConj1, coe_explicitResConj1]
+      simpa only [f, LinearMap.codRestrict_apply, AddMonoidHom.coe_toZModLinearMap] using
+        congrArg Subtype.val hxy
+    · intro y
+      let z : H1ConjInvariants G A N :=
+        ⟨y, (AddSubgroup.mem_toZModSubmodule n).1 y.2⟩
+      obtain ⟨x, hx⟩ := hb.surjective z
+      refine ⟨x, Subtype.ext ?_⟩
+      have hx' := congrArg Subtype.val hx
+      rw [coe_explicitResConj1] at hx'
+      simpa only [f, LinearMap.codRestrict_apply, AddMonoidHom.coe_toZModLinearMap, z] using hx'
+  { toFun := f
+    map_add' := f.map_add
+    map_smul' := f.map_smul
+    invFun := fun y ↦ Classical.choose (hf.surjective y)
+    left_inv := fun x ↦ hf.injective (Classical.choose_spec (hf.surjective (f x)))
+    right_inv := fun y ↦ Classical.choose_spec (hf.surjective y) }
+
+/-- The forward map of `h1CoprimeDescentEquiv` is restriction to the conjugation invariants. -/
+@[simp]
+theorem h1CoprimeDescentEquiv_apply [N.FiniteIndex] (hopen : IsOpen (N : Set G))
+    (hcop : N.index.Coprime n) (x : H1 G A) :
+    (h1CoprimeDescentEquiv hopen hcop x : H1 N A) =
+      (explicitResConj1 G A N x : H1 N A) :=
+  by
+    rw [h1CoprimeDescentEquiv]
+    change explicitRes1 G A N x = (explicitResConj1 G A N x : H1 N A)
+    exact (coe_explicitResConj1 G A N x).symm
 
 end TauCeti
