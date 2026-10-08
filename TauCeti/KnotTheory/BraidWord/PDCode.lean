@@ -510,6 +510,7 @@ def crossinglessIndex {p : Fin n} (h : w.crossingsAt p = []) :
     w.crossinglessComponentCount_closure.symm).symm ⟨p, by simpa using h⟩
 
 /-- The crossing-free circle indexed by a crossing-free strand position lies on that position. -/
+@[simp]
 theorem crossinglessPosition_crossinglessIndex {p : Fin n} (h : w.crossingsAt p = []) :
     w.crossinglessPosition (w.crossinglessIndex h) = p := by
   simp [crossinglessPosition, crossinglessIndex]
