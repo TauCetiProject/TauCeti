@@ -68,9 +68,10 @@ continuity proved here.
 
 ## Implementation notes
 
-The declarations extending `LinearIsometryEquiv` here and in
-`TauCeti.Geometry.Sphere.LinearIsometry` live in the root-level `LinearIsometryEquiv` namespace,
-allowing receiver notation. The reference inclusion remains project-owned top-level API in
+The declarations in the `LinearIsometryEquiv` namespace here and in
+`TauCeti.Geometry.Sphere.LinearIsometry` support receiver notation. For the differential identity,
+use the qualified call `TauCeti.mfderiv_coe_sphere_unitSphereEquiv e x v`.
+The reference inclusion remains project-owned top-level API in
 `TauCeti`; the auxiliary linear-map lemma remains in `TauCeti.LinearMap` as explained in the
 generic file.
 -/
