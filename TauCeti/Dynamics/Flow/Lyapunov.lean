@@ -27,8 +27,8 @@ pseudo-gradient field adapted to a Morse function `f`, the function is `f` and `
 set of critical points.
 
 Along an orbit converging to `x`, a function antitone along orbits stays above its value at `x`
-in forward time and below it in backward time. Hence a strict maximum of the function at a fixed
-point has trivial stable set, and a strict minimum has trivial unstable set.
+in forward time and below it in backward time. Hence a strict maximum of the function is a fixed
+point with trivial stable set, and a strict minimum is a fixed point with trivial unstable set.
 
 ## Main declarations
 
@@ -69,23 +69,51 @@ theorem le_of_mem_unstableSet_of_antitone (hy : y ∈ φ.unstableSet x) (hg : Co
     (hanti : Antitone fun t ↦ g (φ t y)) : g y ≤ g x := by
   simpa only [map_zero_apply] using hanti.ge_of_tendsto (hg.tendsto.comp (mem_unstableSet.1 hy)) 0
 
+/-- A strict global maximum of a function antitone along every orbit is a fixed point: in
+backward time the orbit cannot go below the maximum, and in forward time it is the inverse
+of a backward orbit. -/
+private theorem fixed_of_antitone_of_strictMax (hanti : ∀ y, Antitone fun t ↦ g (φ t y))
+    (hmax : ∀ y, y ≠ x → g y < g x) (t : ℝ) : φ t x = x := by
+  have hneg : ∀ s ≤ 0, φ s x = x := fun s hs ↦ by
+    by_contra hne
+    have h : g x ≤ g (φ s x) := by simpa only [map_zero_apply] using hanti x hs
+    exact (hmax _ hne).not_ge h
+  rcases le_total t 0 with ht | ht
+  · exact hneg t ht
+  · calc φ t x = φ t (φ (-t) x) := by rw [hneg (-t) (neg_nonpos.2 ht)]
+      _ = x := by rw [← map_add, add_neg_cancel, map_zero_apply]
+
 /-- **The stable set of a strict maximum is a point.** Let `g` be antitone along every orbit and
-continuous at a fixed point `x` at which it has a strict global maximum. Then no other orbit
-converges to `x` in forward time. -/
+continuous at a point `x` at which it has a strict global maximum. Then no other orbit converges
+to `x` in forward time. -/
 theorem stableSet_eq_singleton_of_antitone (hg : ContinuousAt g x)
-    (hanti : ∀ y, Antitone fun t ↦ g (φ t y)) (hx : ∀ t, φ t x = x)
-    (hmax : ∀ y, y ≠ x → g y < g x) : φ.stableSet x = {x} := by
+    (hanti : ∀ y, Antitone fun t ↦ g (φ t y)) (hmax : ∀ y, y ≠ x → g y < g x) :
+    φ.stableSet x = {x} := by
+  have hx := fixed_of_antitone_of_strictMax hanti hmax
   refine eq_singleton_iff_unique_mem.2 ⟨mem_stableSet.2 ?_, fun y hy ↦ ?_⟩
   · simpa only [hx] using tendsto_const_nhds
   · by_contra hyx
     exact (hmax y hyx).not_ge (le_of_mem_stableSet_of_antitone hy hg (hanti y))
 
+/-- A strict global minimum of a function antitone along every orbit is a fixed point. -/
+private theorem fixed_of_antitone_of_strictMin (hanti : ∀ y, Antitone fun t ↦ g (φ t y))
+    (hmin : ∀ y, y ≠ x → g x < g y) (t : ℝ) : φ t x = x := by
+  have hpos : ∀ s, 0 ≤ s → φ s x = x := fun s hs ↦ by
+    by_contra hne
+    have h : g (φ s x) ≤ g x := by simpa only [map_zero_apply] using hanti x hs
+    exact (hmin _ hne).not_ge h
+  rcases le_total 0 t with ht | ht
+  · exact hpos t ht
+  · calc φ t x = φ t (φ (-t) x) := by rw [hpos (-t) (neg_nonneg.2 ht)]
+      _ = x := by rw [← map_add, add_neg_cancel, map_zero_apply]
+
 /-- **The unstable set of a strict minimum is a point.** Let `g` be antitone along every orbit and
-continuous at a fixed point `x` at which it has a strict global minimum. Then no other orbit
-converges to `x` in backward time. -/
+continuous at a point `x` at which it has a strict global minimum. Then no other orbit converges
+to `x` in backward time. -/
 theorem unstableSet_eq_singleton_of_antitone (hg : ContinuousAt g x)
-    (hanti : ∀ y, Antitone fun t ↦ g (φ t y)) (hx : ∀ t, φ t x = x)
-    (hmin : ∀ y, y ≠ x → g x < g y) : φ.unstableSet x = {x} := by
+    (hanti : ∀ y, Antitone fun t ↦ g (φ t y)) (hmin : ∀ y, y ≠ x → g x < g y) :
+    φ.unstableSet x = {x} := by
+  have hx := fixed_of_antitone_of_strictMin hanti hmin
   refine eq_singleton_iff_unique_mem.2 ⟨mem_unstableSet.2 ?_, fun y hy ↦ ?_⟩
   · simpa only [hx] using tendsto_const_nhds
   · by_contra hyx
