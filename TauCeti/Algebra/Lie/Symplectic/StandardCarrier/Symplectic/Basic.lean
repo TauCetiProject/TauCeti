@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Codex
 -/
 module
 
@@ -32,9 +32,9 @@ The resulting quotient isomorphism identifies the base-changed explicit carrier 
 Hopf algebra of `Sp_(2n+2)`. It is also promoted to an isomorphism from the scheme-theoretic base
 change of the integral carrier to the symplectic group scheme. The isomorphism commutes with the
 closed immersions into `GL_(2n+2)`, and its action on algebra-valued points preserves the underlying
-matrix. This ambient-matrix compatibility prepares the later comparison of the already constructed
-integral pinning with the pinned symplectic group, rather than merely matching abstract groups of
-field-valued points.
+matrix. This ambient-matrix compatibility prepares the later comparison of the existing integral
+root-subgroup and torus data with the pinned symplectic group, rather than merely matching abstract
+groups of field-valued points.
 
 The comparison allows nonreduced base and value rings. No flatness of the new base ring over
 `ℤ`, characteristic restriction, or inversion of two is required. It identifies the underlying
@@ -267,13 +267,21 @@ private theorem baseChangePresentationSymplecticIso_hom_comp_inclusion :
 
 In particular, every transported root subgroup and torus map can be compared after composing
 with the same closed immersion into `GL_(2n+2)`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem baseChangeSymplecticIso_hom_comp_inclusion :
     (baseChangeSymplecticIso n k).hom ≫ Symplectic.inclusion k (n + 1) =
       baseChangeι n k := by
   rw [baseChangeSymplecticIso, Iso.trans_hom, Category.assoc,
     baseChangePresentationSymplecticIso_hom_comp_inclusion]
   exact (baseChangeι_eq_presentation n k).symm
+
+/-- The inverse carrier--symplectic comparison preserves the ambient matrix realization. -/
+@[reassoc (attr := simp)]
+theorem baseChangeSymplecticIso_inv_comp_baseChangeι :
+    (baseChangeSymplecticIso n k).inv ≫ baseChangeι n k =
+      Symplectic.inclusion k (n + 1) := by
+  rw [← baseChangeSymplecticIso_hom_comp_inclusion, ← Category.assoc,
+    Iso.inv_hom_id, Category.id_comp]
 
 end GroupScheme
 

@@ -37,6 +37,22 @@ namespace TauCeti.SpStd
 
 variable (n : ℕ)
 
+private theorem quotientSymplecticIso_hom_comp_inclusion
+    (R : Type) [CommRing R]
+    {I : HopfIdeal R (GeneralLinear.coordinateHopfAlgebra R ((n + 1) + (n + 1)))}
+    (h : I = Symplectic.definingHopfIdeal R (n + 1)) :
+    (eqToIso (congrArg
+        (CommHopfAlgCat.quotientSpec
+          (GeneralLinear.coordinateHopfAlgebra R ((n + 1) + (n + 1)))) h) ≪≫
+      (eqToIso (Symplectic.groupScheme_def R (n + 1))).symm).hom ≫
+        Symplectic.inclusion R (n + 1) =
+      GeneralLinear.hopfIdealInclusion R ((n + 1) + (n + 1)) I := by
+  rw [Iso.trans_hom, Iso.symm_hom, eqToIso.hom, eqToIso.inv,
+    Symplectic.inclusion_def]
+  simp only [eqToHom_refl, Category.comp_id]
+  rw [GeneralLinear.hopfIdealInclusion_def, GeneralLinear.hopfIdealInclusion_def,
+    ← Category.assoc, CommHopfAlgCat.eqToHom_comp_quotientSpecι _ h]
+
 /-- The integral full-weight type-`C_(n+1)` Kostant carrier is canonically isomorphic to
 `Sp_(2n+2)` over `ℤ`. The comparison uses the same ambient general-linear coordinates. -/
 noncomputable def symplecticIso :
@@ -53,14 +69,10 @@ ambient general linear group. Thus it preserves the full matrix-valued functor o
 @[reassoc (attr := simp)]
 theorem symplecticIso_hom_comp_inclusion :
     (symplecticIso n).hom ≫ Symplectic.inclusion ℤ (n + 1) = carrierι n := by
-  rw [symplecticIso, Iso.trans_hom, Iso.trans_hom,
-    Symplectic.inclusion_def, carrierι_eq_eqToHom_comp_hopfIdealInclusion,
-    GeneralLinear.hopfIdealInclusion_def, GeneralLinear.hopfIdealInclusion_def]
-  simp only [eqToIso.hom, Iso.symm_hom, eqToIso.inv, eqToHom_refl, Category.id_comp,
-    Category.assoc]
-  rw [← Category.assoc (eqToHom _) (CommHopfAlgCat.quotientSpecι _ _) _,
-    CommHopfAlgCat.eqToHom_comp_quotientSpecι _
-      (definingIdeal_eq_symplecticDefiningHopfIdeal n)]
+  rw [symplecticIso, Iso.trans_hom, Category.assoc,
+    quotientSymplecticIso_hom_comp_inclusion n ℤ
+      (definingIdeal_eq_symplecticDefiningHopfIdeal n),
+    carrierι_eq_eqToHom_comp_hopfIdealInclusion, eqToIso.hom]
 
 /-- The inverse integral comparison also preserves the ambient matrix realization. -/
 @[reassoc (attr := simp)]
