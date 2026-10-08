@@ -15,7 +15,8 @@ A rough bundle-valued differential form assigns a continuous alternating map to 
 tangent fiber, with values in an arbitrary family of real modules equipped with arbitrary
 topologies. No regularity in the base point, global trivialization, connection, or fiber norm
 is required.
-Fixed-coefficient forms are the specialization to the trivial value bundle.
+Fixed-coefficient forms are the specialization to the trivial value bundle, and a function
+`f : M → F` is the fixed-coefficient `0`-form `RoughForm.ofFunction I f`.
 
 This is the unbundled section description of differential forms from Lee,
 *Introduction to Smooth Manifolds*, second edition, Chapter 14, using Mathlib's
@@ -40,5 +41,19 @@ abbrev RoughForm (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
     [ChartedSpace H M] (F : Type*) [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
     (k : ℕ) : Type _ :=
   RoughBundleForm I M (Bundle.Trivial M F) k
+
+/-- The `0`-form of a function: at each point, the alternating map of degree zero with value
+`f x`. -/
+noncomputable def RoughForm.ofFunction (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
+    [ChartedSpace H M] {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+    (f : M → F) : RoughForm I M F 0 :=
+  fun x ↦ ContinuousAlternatingMap.constOfIsEmpty ℝ (TangentSpace I x) (Fin 0) (f x)
+
+/-- Evaluation of the `0`-form of a function on the empty tuple of tangent vectors. -/
+@[simp]
+theorem RoughForm.ofFunction_apply {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
+    [ChartedSpace H M] {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+    (f : M → F) (x : M) (v : Fin 0 → TangentSpace I x) :
+    RoughForm.ofFunction I f x v = f x := (rfl)
 
 end TauCeti
