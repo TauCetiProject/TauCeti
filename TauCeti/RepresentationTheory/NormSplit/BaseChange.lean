@@ -12,8 +12,8 @@ public import TauCeti.RepresentationTheory.NormSplit.Basic
 /-!
 # Lifting a norm decomposition of the identity from `k/pk`
 
-Let `G` be a finite group of order `p ^ m` acting on a free `k`-module `V` on which multiplication
-by `p` is injective. If the identity of the reduction `(k/pk) ⊗ V` is a norm
+Let `G` be a finite group of order `p ^ m` acting on a projective `k`-module `V` on which
+multiplication by `p` is injective. If the identity of the reduction `(k/pk) ⊗ V` is a norm
 `y ↦ ∑ g, ρ g (π (ρ g⁻¹ y))` for the conjugation action of `G`, then so is the identity of `V`
 (Serre, *Local Fields*, IX §5). This reduces the identity-norm condition for `p`-groups over `k`
 to the same condition over `k/pk`.
@@ -36,9 +36,9 @@ namespace Representation
 variable {k G V : Type*} [CommRing k] [Group G] [Fintype G] [AddCommGroup V] [Module k V]
 
 /-- **Lifting a norm decomposition of the identity from `k/pk`.** Let `G` have order `p ^ m` and
-act on a free `k`-module `V` on which multiplication by `p` is injective. If the identity of
+act on a projective `k`-module `V` on which multiplication by `p` is injective. If the identity of
 `(k/pk) ⊗ V` is a norm for the conjugation action of `G`, then so is the identity of `V`. -/
-theorem id_mem_range_norm_linHom_of_baseChange [Module.Free k V] (ρ : Representation k G V)
+theorem id_mem_range_norm_linHom_of_baseChange [Module.Projective k V] (ρ : Representation k G V)
     {p m : ℕ} (hcard : Fintype.card G = p ^ m) (hp : ∀ v : V, (p : k) • v = 0 → v = 0)
     (h : LinearMap.id ∈ LinearMap.range
       (linHom (ρ.baseChange (k ⧸ Ideal.span {(p : k)}))
@@ -54,22 +54,19 @@ theorem id_mem_range_norm_linHom_of_baseChange [Module.Free k V] (ρ : Represent
   have hred_eq_zero (v : V) (hv : red v = 0) : ∃ w : V, (p : k) • w = v :=
     (TensorProduct.one_tmul_eq_zero_iff_exists_smul_eq (p : k) v).1 hv
   have hredρ (g : G) (v : V) : ρQ g (red v) = red (ρ g v) := by simp [ρQ, red]
-  let b := Module.Free.chooseBasis k V
   -- Lift `πQ` to `π`, and write `N π = id + p θ`.
   obtain ⟨πQ, hπQ⟩ := h
   have hπQ' (y : Q ⊗[k] V) : y = ∑ g : G, ρQ g (πQ (ρQ g⁻¹ y)) := by
     rw [← norm_linHom_apply, hπQ, LinearMap.id_apply]
-  let π : V →ₗ[k] V := b.constr k fun i ↦ (hred_surj (πQ (red (b i)))).choose
-  have hπ (v : V) : red (π v) = πQ (red v) := by
-    refine LinearMap.congr_fun (b.ext (f₁ := red ∘ₗ π) (f₂ := πQ.restrictScalars k ∘ₗ red)
-      fun i ↦ ?_) v
-    simpa [π, b.constr_basis] using (hred_surj (πQ (red (b i)))).choose_spec
+  obtain ⟨π, hπ'⟩ := Module.projective_lifting_property red (πQ.restrictScalars k ∘ₗ red) hred_surj
+  have hπ (v : V) : red (π v) = πQ (red v) := LinearMap.congr_fun hπ' v
   have hdiv (δ : V →ₗ[k] V) (hδ : ∀ v, red (δ v) = 0) :
       ∃ θ : V →ₗ[k] V, ∀ v, δ v = (p : k) • θ v := by
-    refine ⟨b.constr k fun i ↦ (hred_eq_zero _ (hδ (b i))).choose, fun v ↦ ?_⟩
-    refine LinearMap.congr_fun (b.ext (f₁ := δ) (f₂ := (p : k) • b.constr k fun i ↦
-      (hred_eq_zero _ (hδ (b i))).choose) fun i ↦ ?_) v
-    simpa [b.constr_basis] using (hred_eq_zero _ (hδ (b i))).choose_spec.symm
+    let μ : V →ₗ[k] V := (p : k) • LinearMap.id
+    obtain ⟨θ, hθ⟩ := Module.projective_lifting_property μ.rangeRestrict
+      (δ.codRestrict (LinearMap.range μ) fun v ↦ by simpa [μ] using hred_eq_zero _ (hδ v))
+      μ.surjective_rangeRestrict
+    exact ⟨θ, fun v ↦ by simpa [μ] using congr($(LinearMap.congr_fun hθ v).1).symm⟩
   obtain ⟨θ, hθ⟩ := hdiv ((linHom ρ ρ).norm π - LinearMap.id) fun v ↦ by
     rw [LinearMap.sub_apply, map_sub, norm_linHom_apply, map_sum, LinearMap.id_apply]
     conv_rhs => rw [← sub_self (red v)]
@@ -82,9 +79,14 @@ theorem id_mem_range_norm_linHom_of_baseChange [Module.Free k V] (ρ : Represent
       (hψ : ∀ x, δ x = (p : k) • ψ x) (g : G) (x : V) : ψ (ρ g x) = ρ g (ψ x) := by
     refine sub_eq_zero.1 (hp _ ?_)
     rw [smul_sub, ← hψ, ← map_smul, ← hψ, hδ, sub_self]
+  have hNπρ (g : G) (x : V) :
+      (linHom ρ ρ).norm π (ρ g x) = ρ g ((linHom ρ ρ).norm π x) := by
+    have := LinearMap.congr_fun (self_norm_apply (linHom ρ ρ) g π) (ρ g x)
+    rw [linHom_apply] at this
+    simpa using this.symm
   have hθρ (g : G) (x : V) : θ (ρ g x) = ρ g (θ x) :=
     hcancel (δ := (linHom ρ ρ).norm π - LinearMap.id)
-      (fun g x ↦ by simp) hθ g x
+      (fun g x ↦ by simp [hNπρ]) hθ g x
   -- For every `j`, the identity is a norm plus `p ^ j` times an equivariant endomorphism.
   have key (j : ℕ) : ∃ φ ψ : V →ₗ[k] V, (∀ g x, ψ (ρ g x) = ρ g (ψ x)) ∧
       ∀ x, x = (linHom ρ ρ).norm φ x + ((p : k) ^ j) • ψ x := by

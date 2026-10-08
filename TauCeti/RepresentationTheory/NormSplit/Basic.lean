@@ -15,9 +15,9 @@ public import TauCeti.RepresentationTheory.RelativeNorm
 Let `ρ` be a representation of a finite group `G` on a `k`-module `V`. The group acts on
 `End_k(V)` by conjugation (`Representation.linHom ρ ρ`), and the norm of this action sends `φ` to
 `x ↦ ∑ g, ρ g (φ (ρ g⁻¹ x))`. When the identity of `V` is such a norm, `V` is a direct summand of
-the induced module `k[G] ⊗_k V`; if moreover `V` is free over `k`, then `V` is a projective
-`k[G]`-module. This is the easy direction of Higman's criterion, and the way the theorem of
-Nakayama and Rim produces projective modules (Serre, *Local Fields*, IX §§3–5).
+the induced module `k[G] ⊗_k V`; if moreover `V` is projective over `k`, then `V` is a
+projective `k[G]`-module. This is the easy direction of Higman's criterion, and the way the
+theorem of Nakayama and Rim produces projective modules (Serre, *Local Fields*, IX §§3–5).
 
 Whether the identity is a norm can be decided one prime at a time: if for every prime `p` some
 subgroup of index prime to `p` has the identity as a norm, then so does `G`.
@@ -25,14 +25,13 @@ subgroup of index prime to `p` has the identity as a norm, then so does `G`.
 ## Main statements
 
 * `Representation.norm_linHom_apply`: the norm of the conjugation action on `End_k(V)`.
-* `Representation.norm_linHom_apply_equivariant`: such a norm is a `G`-equivariant endomorphism.
 * `Representation.index_nsmul_id_mem_range_norm_linHom`: if the identity is an `H`-norm, then
   `[G : H]` times the identity is a `G`-norm.
 * `Representation.id_mem_range_norm_linHom_of_forall_prime`: if for every prime `p` the identity
   is a norm for a subgroup of index prime to `p`, then it is a `G`-norm.
 * `Rep.projective_of_id_mem_range_norm_linHom`,
-  `Rep.moduleProjective_of_id_mem_range_norm_linHom`: a representation that is free over `k` and
-  whose identity is a norm is projective, in `Rep k G` and as a `k[G]`-module.
+  `Rep.moduleProjective_of_id_mem_range_norm_linHom`: a representation that is projective over
+  `k` and whose identity is a norm is projective, in `Rep k G` and as a `k[G]`-module.
 
 ## References
 
@@ -54,15 +53,6 @@ variable {k G V : Type*} [CommRing k] [Group G] [Fintype G] [AddCommGroup V] [Mo
 theorem norm_linHom_apply (φ : V →ₗ[k] V) (x : V) :
     (linHom ρ ρ).norm φ x = ∑ g : G, ρ g (φ (ρ g⁻¹ x)) := by
   simp [Representation.norm, linHom_apply]
-
-/-- The norm of the conjugation action on `End_k(V)` is a `G`-equivariant endomorphism. -/
-@[simp]
-theorem norm_linHom_apply_equivariant (φ : V →ₗ[k] V) (h : G)
-    (x : V) : (linHom ρ ρ).norm φ (ρ h x) = ρ h ((linHom ρ ρ).norm φ x) := by
-  rw [norm_linHom_apply, norm_linHom_apply, map_sum]
-  refine Fintype.sum_equiv (Equiv.mulLeft h⁻¹) _ _ fun g ↦ ?_
-  rw [Equiv.coe_mulLeft, ← Module.End.mul_apply (ρ h), ← map_mul, mul_inv_cancel_left,
-    ← Module.End.mul_apply (ρ g⁻¹), ← map_mul, mul_inv_rev, inv_inv]
 
 /-- If the identity of `V` is the norm of `φ` for the conjugation action of a subgroup `H`, then
 `[G : H]` times the identity is the norm of `φ` for the conjugation action of `G`. -/
@@ -116,26 +106,28 @@ namespace Rep
 
 open CategoryTheory
 
-/-- **A free representation whose identity is a norm is projective.** If `A` is free over `k` and
+/-- **A representation whose identity is a norm is projective.** If `A` is projective over `k` and
 `id_A = ∑ g, A.ρ g ∘ φ ∘ A.ρ g⁻¹` for a `k`-linear `φ`, then `A` is projective. -/
 theorem projective_of_id_mem_range_norm_linHom {k G : Type u} [CommRing k] [Group G] [Fintype G]
-    (A : Rep.{u} k G) [Module.Free k A.V]
+    (A : Rep.{u} k G) [Module.Projective k A.V]
     (h : LinearMap.id ∈ LinearMap.range (Representation.linHom A.ρ A.ρ).norm) : Projective A := by
   classical
   obtain ⟨φ, hφ⟩ := h
   have hφ' (x : A.V) : x = ∑ g : G, A.ρ g (φ (A.ρ g⁻¹ x)) := by
     rw [← Representation.norm_linHom_apply, hφ, LinearMap.id_apply]
-  -- `A` is a retract of the free representation on a `k`-basis of `A`.
-  let b := Module.Free.chooseBasis k A.V
-  let ι := Module.Free.ChooseBasisIndex k A.V
-  let r : free k G ι ⟶ A := freeLift (k := k) (G := G) (A := A) (fun i ↦ b i)
-  -- `e` sends a vector to its coordinates, placed at `1 ∈ G`; `r` undoes it.
+  -- `A` is a retract of the free representation on the underlying set of `A`.
+  obtain ⟨σ, hσ⟩ := Module.projective_def'.1 (inferInstance : Module.Projective k A.V)
+  let ι := A.V
+  let r : free k G ι ⟶ A := freeLift (k := k) (G := G) (A := A) id
+  -- `e` sends a vector to a `k`-linear splitting of it, placed at `1 ∈ G`; `r` undoes it.
   let e : A.V →ₗ[k] (ι →₀ MonoidAlgebra k G) :=
-    Finsupp.mapRange.linearMap (MonoidAlgebra.lsingle 1) ∘ₗ b.repr.toLinearMap
+    Finsupp.mapRange.linearMap (MonoidAlgebra.lsingle 1) ∘ₗ σ
   have he (x : A.V) : r.hom (e x) = x := by
-    have : r.hom.toLinearMap ∘ₗ e = LinearMap.id := b.ext fun i ↦ by
-      simp [e, r]
-    exact LinearMap.congr_fun this x
+    have : r.hom.toLinearMap ∘ₗ Finsupp.mapRange.linearMap (MonoidAlgebra.lsingle 1) =
+        Finsupp.linearCombination k id := Finsupp.lhom_ext fun v c ↦ by
+      simp [r]
+    calc r.hom (e x) = Finsupp.linearCombination k id (σ x) := LinearMap.congr_fun this (σ x)
+      _ = x := LinearMap.congr_fun hσ x
   let ψ₀ : A.V →ₗ[k] (ι →₀ MonoidAlgebra k G) :=
     ∑ g : G, (Representation.free k G ι g) ∘ₗ e ∘ₗ φ ∘ₗ A.ρ g⁻¹
   let s : A ⟶ free k G ι := ofHom <|
@@ -155,10 +147,10 @@ theorem projective_of_id_mem_range_norm_linHom {k G : Type u} [CommRing k] [Grou
   conv_rhs => rw [← he (φ (A.ρ g⁻¹ x))]
   exact LinearMap.congr_fun (r.hom.isIntertwining' g) _
 
-/-- A representation that is free over `k` and whose identity is a norm is a projective
+/-- A representation that is projective over `k` and whose identity is a norm is a projective
 `k[G]`-module. -/
 theorem moduleProjective_of_id_mem_range_norm_linHom {k G : Type u} [CommRing k] [Group G]
-    [Fintype G] (A : Rep.{u} k G) [Module.Free k A.V]
+    [Fintype G] (A : Rep.{u} k G) [Module.Projective k A.V]
     (h : LinearMap.id ∈ LinearMap.range (Representation.linHom A.ρ A.ρ).norm) :
     Module.Projective (MonoidAlgebra k G) A.ρ.asModule := by
   have := projective_of_id_mem_range_norm_linHom A h
