@@ -846,12 +846,14 @@ of prime sets. -/
 theorem primeTheta_biUnion_finset {ι : Type*} (s : Finset ι)
     (f : ι → Set (HeightOneSpectrum (𝓞 K))) (hdisj : (s : Set ι).PairwiseDisjoint f) (x : ℝ) :
     primeTheta K (⋃ i ∈ s, f i) x = ∑ i ∈ s, primeTheta K (f i) x := by
+  simp only [primeTheta]
   exact summatory_indicator_biUnion_finset _ s f hdisj _ x
 
 /-- The unweighted prime count is additive along a finite pairwise disjoint family of prime sets. -/
 theorem primeCount_biUnion_finset {ι : Type*} (s : Finset ι)
     (f : ι → Set (HeightOneSpectrum (𝓞 K))) (hdisj : (s : Set ι).PairwiseDisjoint f) (x : ℝ) :
     primeCount K (⋃ i ∈ s, f i) x = ∑ i ∈ s, primeCount K (f i) x := by
+  simp only [primeCount]
   exact summatory_indicator_biUnion_finset _ s f hdisj _ x
 
 /-- The logarithmically weighted count of `S` exceeds that of `T` by at most the weighted count
