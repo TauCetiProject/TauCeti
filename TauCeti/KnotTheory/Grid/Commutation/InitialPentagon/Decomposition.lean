@@ -313,6 +313,19 @@ theorem initialPentagonRectangleWeight_eq_rectangleInitialPentagonWeight_of_val_
   simp only [← swapSquareWeight_def, Finset.prod_eq_multiset_prod, ← Multiset.prod_add,
     ← Multiset.map_add, h]
 
+/-- Two rectangle--initial-side-pentagon decompositions have the same weight when their
+composite domains cover the same squares with the same multiplicities. -/
+theorem rectangleInitialPentagonWeight_eq_of_val_add_val_eq {x z : GridState n}
+    (D E : GridRectangleInitialPentagonDecomposition C.column C.turnRow x z)
+    (h : E.first.toGridRectangle.coveredSquares.val + E.pentagon.coveredSquares.val =
+      D.first.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val) :
+    G.rectangleInitialPentagonWeight C R E = G.rectangleInitialPentagonWeight C R D := by
+  rw [rectangleInitialPentagonWeight_def, rectangleInitialPentagonWeight_def,
+    rename_OMonomial_eq_prod_swapSquareWeight, rename_OMonomial_eq_prod_swapSquareWeight,
+    initialPentagonWeight_eq_prod_coveredSquares, initialPentagonWeight_eq_prod_coveredSquares]
+  simp only [← swapSquareWeight_def, Finset.prod_eq_multiset_prod, ← Multiset.prod_add,
+    ← Multiset.map_add, h]
+
 /-- An initial-side pentagon followed by a rectangle of the commuted diagram is counted when its
 two underlying rectangles are empty and its composite domain covers, with multiplicity, the
 squares of a counted rectangle followed by an initial-side pentagon, the rectangle of the commuted

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
 public import TauCeti.RingTheory.Polynomial.Cyclotomic.Computable
 
@@ -189,7 +188,7 @@ theorem degree_toPolynomial_lt (x : Cyclotomic e) :
 
 /-- The canonical representative is already reduced modulo the cyclotomic polynomial. -/
 @[simp]
-theorem modByMonic_toPolynomial (x : Cyclotomic e) :
+theorem toPolynomial_modByMonic (x : Cyclotomic e) :
     x.toPolynomial %ₘ cyclotomic e ℤ = x.toPolynomial :=
   (modByMonic_eq_self_iff (cyclotomic.monic e ℤ)).2 x.degree_toPolynomial_lt
 
@@ -197,7 +196,7 @@ theorem modByMonic_toPolynomial (x : Cyclotomic e) :
 theorem toAdjoinRoot_injective : Function.Injective (toAdjoinRoot : Cyclotomic e → _) := by
   intro x y h
   have h' := congrArg (AdjoinRoot.modByMonicHom (cyclotomic.monic e ℤ)) h
-  simp only [toAdjoinRoot, AdjoinRoot.modByMonicHom_mk, modByMonic_toPolynomial] at h'
+  simp only [toAdjoinRoot, AdjoinRoot.modByMonicHom_mk, toPolynomial_modByMonic] at h'
   exact ext_coeffs
     (eq_of_length_eq_of_ofCoeffList_eq (x.length_coeffs.trans y.length_coeffs.symm) h')
 
@@ -562,8 +561,8 @@ theorem complexEmbedding_apply [NeZero e] (x : Cyclotomic e) :
   rw [complexEmbedding, evalRingHom_apply, aeval_def, algebraMap_int_eq]
 
 @[simp]
-theorem complexEmbedding_zeta [NeZero e] : complexEmbedding (zeta e) = complexRoot e := by
-  exact evalRingHom_zeta _ _ _
+theorem complexEmbedding_zeta [NeZero e] : complexEmbedding (zeta e) = complexRoot e :=
+  evalRingHom_zeta _ _ _
 
 /-- The distinguished complex realization of exact cyclotomic integers is injective. -/
 theorem complexEmbedding_injective [NeZero e] :

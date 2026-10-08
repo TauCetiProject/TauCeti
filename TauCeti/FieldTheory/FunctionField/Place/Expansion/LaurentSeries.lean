@@ -11,98 +11,133 @@ public import Mathlib.RingTheory.LaurentSeries
 /-!
 # Laurent-series expansions at rational places
 
-At a rational place with a chosen uniformizer `t`, uniformizer expansion identifies the
-completed field with `k((T))`. This extends the power-series identification of the completed
-valuation ring: an integral element has the same image whether it is first expanded in `k[[T]]`
-or mapped directly to `k((T))`. In particular, the chosen uniformizer maps to `T`.
+The completion of a function field at a rational place is isomorphic to the Laurent-series field
+over the constant field.  The isomorphism is the fraction-field extension of the uniformizer
+expansion of the completed valuation ring, so it sends a chosen uniformizer to `X` and restricts
+to the previously constructed power-series expansion on integral elements.
 
-This is the field-level expansion needed to read Laurent coefficients of local functions, and
-in particular to define residues as coefficients of degree `-1`.
+This supplies the local Laurent coefficients used to define residues of differentials.  Keeping
+the construction as the canonical fraction-field extension makes its behaviour on quotients and
+on the valuation ring available without choosing numerator-denominator presentations.
 
-## References
+## Main results
 
-* H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Section IV.2.
+* `TauCeti.Place.completionEquivLaurentSeries`: the completed local field is `k((X))`.
+* `TauCeti.Place.completionEquivLaurentSeries_apply_integer`: the equivalence restricts to the
+  power-series expansion on the completed valuation ring.
+* `TauCeti.Place.completionEquivLaurentSeries_uniformizer`: a chosen uniformizer maps to `X`.
+
+## Reference
+
+H. Stichtenoth, *Algebraic Function Fields and Codes*, second edition, Section IV.2.
 -/
 
 public section
 
-open scoped LaurentSeries
+open scoped LaurentSeries WithZero
 
 namespace TauCeti.Place
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 variable (P : Place k F) {t : F} (hP : P.degree = 1) (ht : P.ord t = 1)
 
-/-- The constant scalars on `k((T))` factor through `k[[T]]`. The scalar actions are stated through
-the algebra structures, since the `k`-algebra structure on `k((T))` is the one inherited from
-`k[[T]]` rather than the coefficientwise action. -/
+/-- The constant scalars on `k((X))` factor through `k[[X]]`. The scalar actions are stated through
+the algebra structures, since the `k`-algebra structure on `k((X))` is the one inherited from
+`k[[X]]` rather than the coefficientwise action. -/
 @[local instance]
 private theorem isScalarTower_powerSeries_laurentSeries :
     @IsScalarTower k (PowerSeries k) (LaurentSeries k) Algebra.toSMul Algebra.toSMul
       Algebra.toSMul :=
   .of_algebraMap_eq' rfl
 
-/-- Uniformizer expansion identifies the completed field at a rational place with the Laurent
-series field over the constants. It is the unique extension to fraction fields of
-`TauCeti.Place.completionIntegersEquivPowerSeries`. -/
+/-- **Laurent-series expansion at a rational place.**  A chosen uniformizer identifies the
+completion of the local function field with the Laurent-series field over the constants.  This is
+the fraction-field extension of `TauCeti.Place.completionIntegersEquivPowerSeries`. -/
 noncomputable def completionEquivLaurentSeries : P.Completion ≃ₐ[k] LaurentSeries k :=
   IsFractionRing.algEquivOfAlgEquiv (P.completionIntegersEquivPowerSeries hP ht)
 
-/-- On the completed valuation ring, Laurent expansion is the coercion of power-series
-expansion. -/
+/-- Laurent-series expansion restricts to power-series expansion on the completed valuation
+ring. -/
 @[simp]
-theorem completionEquivLaurentSeries_apply_coe (x : P.completionPlace.integers) :
+theorem completionEquivLaurentSeries_apply_integer (x : P.completionPlace.integers) :
     P.completionEquivLaurentSeries hP ht (x : P.Completion) =
-      HahnSeries.ofPowerSeries ℤ k (P.completionIntegersEquivPowerSeries hP ht x) := by
+      (P.completionIntegersEquivPowerSeries hP ht x : LaurentSeries k) := by
   rw [completionEquivLaurentSeries]
   exact IsFractionRing.algEquivOfAlgEquiv_algebraMap _ x
 
-/-- The inverse Laurent expansion sends an embedded power series to the corresponding element of
-the completed valuation ring. -/
+/-- The inverse Laurent-series expansion restricts to the inverse power-series expansion. -/
 @[simp]
-theorem completionEquivLaurentSeries_symm_apply_ofPowerSeries (f : PowerSeries k) :
-    (P.completionEquivLaurentSeries hP ht).symm
-        (HahnSeries.ofPowerSeries ℤ k f) =
+theorem completionEquivLaurentSeries_symm_apply_powerSeries (f : PowerSeries k) :
+    (P.completionEquivLaurentSeries hP ht).symm (f : LaurentSeries k) =
       ((P.completionIntegersEquivPowerSeries hP ht).symm f : P.Completion) := by
   apply (P.completionEquivLaurentSeries hP ht).injective
-  rw [AlgEquiv.apply_symm_apply, P.completionEquivLaurentSeries_apply_coe hP ht,
-    AlgEquiv.apply_symm_apply]
+  rw [AlgEquiv.apply_symm_apply, P.completionEquivLaurentSeries_apply_integer]
+  simp
 
 /-- A completed function is integral exactly when its Laurent expansion comes from a power
 series. -/
 @[simp]
 theorem exists_powerSeries_eq_completionEquivLaurentSeries_iff_mem_integers
     (z : P.Completion) :
-    (∃ f : PowerSeries k, HahnSeries.ofPowerSeries ℤ k f =
-      P.completionEquivLaurentSeries hP ht z) ↔ z ∈ P.completionPlace.integers := by
+    (∃ f : PowerSeries k, (f : LaurentSeries k) = P.completionEquivLaurentSeries hP ht z) ↔
+      z ∈ P.completionPlace.integers := by
   constructor
   · rintro ⟨f, hf⟩
     have hz : z =
         ((P.completionIntegersEquivPowerSeries hP ht).symm f : P.Completion) := by
       apply (P.completionEquivLaurentSeries hP ht).injective
-      rw [hf.symm, P.completionEquivLaurentSeries_apply_coe hP ht,
-        AlgEquiv.apply_symm_apply]
+      rw [hf.symm, P.completionEquivLaurentSeries_apply_integer, AlgEquiv.apply_symm_apply]
     rw [hz]
     exact Subtype.property _
   · intro hz
-    refine ⟨P.completionIntegersEquivPowerSeries hP ht ⟨z, hz⟩, ?_⟩
-    exact (P.completionEquivLaurentSeries_apply_coe hP ht ⟨z, hz⟩).symm
+    exact ⟨P.completionIntegersEquivPowerSeries hP ht ⟨z, hz⟩,
+      (P.completionEquivLaurentSeries_apply_integer hP ht ⟨z, hz⟩).symm⟩
 
 /-- The chosen uniformizer maps to the Laurent-series variable. -/
 @[simp]
 theorem completionEquivLaurentSeries_uniformizer :
     P.completionEquivLaurentSeries hP ht (P.completionEmbedding t) =
-      HahnSeries.single (1 : ℤ) (1 : k) := by
-  let tInt : P.completionPlace.integers :=
-    P.completionIntegersEmbedding
-      ⟨t, P.mem_integers_iff_ord_nonneg.mpr (by omega)⟩
-  have htInt : (tInt : P.Completion) = P.completionEmbedding t := by
-    exact P.completionIntegersEmbedding_apply _
-  have htExpansion :
-      P.completionIntegersEquivPowerSeries hP ht tInt = PowerSeries.X :=
-    P.completionIntegersEquivPowerSeries_uniformizer hP ht
-  rw [← htInt, P.completionEquivLaurentSeries_apply_coe hP ht, htExpansion,
-    HahnSeries.ofPowerSeries_X]
+      ((PowerSeries.X : PowerSeries k) : LaurentSeries k) := by
+  let t₀ : P.integers := ⟨t, P.mem_integers_iff_ord_nonneg.mpr (by omega)⟩
+  let tᵢ : P.completionPlace.integers := P.completionIntegersEmbedding t₀
+  rw [← show (tᵢ : P.Completion) = P.completionEmbedding t by
+      exact P.completionIntegersEmbedding_apply t₀,
+    P.completionEquivLaurentSeries_apply_integer]
+  exact congrArg ((↑) : PowerSeries k → LaurentSeries k)
+    (P.completionIntegersEquivPowerSeries_uniformizer hP ht)
+
+/-- Laurent-series expansion preserves the normalized valuation.  Thus the power of `X` at the
+first nonzero Laurent coefficient is the order at the original place. -/
+@[simp]
+theorem valuation_completionEquivLaurentSeries (x : P.Completion) :
+    Valued.v (P.completionEquivLaurentSeries hP ht x) = P.completionPlace.valuation x := by
+  let e := P.completionEquivLaurentSeries hP ht
+  let w : Valuation (LaurentSeries k) ℤᵐ⁰ := Valued.v
+  have hequiv : P.completionPlace.valuation.IsEquiv
+      (w.comap e.toRingHom) := by
+    apply Valuation.isEquiv_of_val_le_one
+    intro z
+    rw [Valuation.comap_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+      LaurentSeries.val_le_one_iff_eq_coe]
+    exact P.completionPlace.mem_integers_iff.symm.trans
+      (P.exists_powerSeries_eq_completionEquivLaurentSeries_iff_mem_integers hP ht z).symm
+  have hsurj : Function.Surjective
+      (w.comap e.toRingHom) := by
+    intro γ
+    obtain ⟨y, hy⟩ := LaurentSeries.valuation_surjective k γ
+    refine ⟨e.symm y, ?_⟩
+    simpa [Valuation.comap_apply, e] using hy
+  have hvaluation := Valuation.eq_of_isEquiv_of_surjective
+    P.completionPlace.valuation_surjective hsurj hequiv
+  exact DFunLike.congr_fun hvaluation.symm x
+
+/-- Laurent-series expansion preserves the additive order, including its conventional junk value
+`0` at the zero element. -/
+@[simp]
+theorem ord_completionEquivLaurentSeries (x : P.Completion) :
+    Valuation.ord (show Valuation (LaurentSeries k) ℤᵐ⁰ from Valued.v)
+        (P.completionEquivLaurentSeries hP ht x) =
+      P.completionPlace.ord x := by
+  rw [Valuation.ord_def, ord_def, P.valuation_completionEquivLaurentSeries hP ht]
 
 end TauCeti.Place

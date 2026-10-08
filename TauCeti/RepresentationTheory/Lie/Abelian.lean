@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.TrivSqZeroExt.Basic
-public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Algebra.Lie.OfAssociative
+import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
@@ -25,9 +26,17 @@ Over a field, this gives an explicit faithful representation of an `n`-dimension
 algebra by square-zero endomorphisms of an `(n + 1)`-dimensional vector space. It is the basic
 abelian model for faithful nilrepresentations.
 
+The construction is the left-regular representation (`LieHom.leftRegularRep`) of the inclusion
+of `L` into the trivial square-zero extension `TrivSqZeroExt R L`.
+
 ## Main definition
 
 * `TauCeti.abelianSquareZeroRepresentation`: the resulting faithful Lie representation.
+
+## Main result
+
+* `TauCeti.exists_faithful_squareZeroRepresentation`: a faithful square-zero representation
+  on a vector space of dimension `Module.finrank K L + 1`.
 -/
 
 public section
@@ -38,14 +47,16 @@ namespace TauCeti
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-variable (R : Type u) [CommRing R]
-variable (L : Type v) [LieRing L] [LieAlgebra R L]
-
 /-- The right scalar action on `L` induced by commutativity of `R`. -/
-private local instance moduleMulOpposite : Module Rᵐᵒᵖ L :=
+private local instance moduleMulOpposite {R : Type u} [CommSemiring R]
+    {L : Type v} [AddCommMonoid L] [Module R L] : Module Rᵐᵒᵖ L :=
   Module.compHom _ ((RingHom.id R).fromOpposite mul_comm)
 
-private local instance isCentralScalar : IsCentralScalar R L := ⟨fun _ _ ↦ rfl⟩
+private local instance isCentralScalar {R : Type u} [CommSemiring R]
+    {L : Type v} [AddCommMonoid L] [Module R L] : IsCentralScalar R L := ⟨fun _ _ ↦ rfl⟩
+
+variable (R : Type u) [CommRing R]
+variable (L : Type v) [LieRing L] [LieAlgebra R L]
 
 private def abelianSquareZeroLieHom [IsLieAbelian L] :
     LieHom R L (TrivSqZeroExt R L) :=
@@ -59,40 +70,36 @@ private theorem abelianSquareZeroLieHom_apply [IsLieAbelian L] (x : L) :
     abelianSquareZeroLieHom R L x = TrivSqZeroExt.inr x :=
   (rfl)
 
-private theorem abelianSquareZeroLeftRegular_apply_apply [IsLieAbelian L] (x : L)
-    (z : TrivSqZeroExt R L) :
-    LieHom.leftRegularRep (abelianSquareZeroLieHom R L) x z =
-      TrivSqZeroExt.inr (z.fst • x) := by
-  rw [LieHom.leftRegularRep_apply, abelianSquareZeroLieHom_apply]
-  refine TrivSqZeroExt.ext ?_ ?_ <;> simp
-
-private theorem abelianSquareZeroLeftRegular_mul_eq_zero [IsLieAbelian L] (x y : L) :
-    LieHom.leftRegularRep (abelianSquareZeroLieHom R L) x *
-      LieHom.leftRegularRep (abelianSquareZeroLieHom R L) y = 0 := by
-  apply LinearMap.ext
-  intro z
-  rw [Module.End.mul_apply, abelianSquareZeroLeftRegular_apply_apply,
-    abelianSquareZeroLeftRegular_apply_apply]
-  simp
-
 /-- The canonical representation of an abelian Lie algebra by square-zero operators on `R × L`.
 The first coordinate records the scalar that the acting element transfers to the second
 coordinate. -/
 def abelianSquareZeroRepresentation [IsLieAbelian L] :
     L →ₗ⁅R⁆ Module.End R (R × L) :=
+  -- Mathlib exposes `TrivSqZeroExt R L` as `R × L`, with the same additive and scalar
+  -- structures. This lets the left-regular construction act directly on the product.
   LieHom.leftRegularRep (abelianSquareZeroLieHom R L)
 
-/-- The canonical representation acts by the square-zero operator construction. -/
+/-- The acting element sends the first coordinate, as a scalar multiple of itself, to the
+second coordinate and kills the second coordinate. -/
 @[simp, grind =]
 theorem abelianSquareZeroRepresentation_apply_apply [IsLieAbelian L] (x : L) (z : R × L) :
-    abelianSquareZeroRepresentation R L x z = (0, z.1 • x) :=
-  abelianSquareZeroLeftRegular_apply_apply R L x z
+    abelianSquareZeroRepresentation R L x z = (0, z.1 • x) := by
+  -- Keep the intermediate equality on the square-zero extension so rewriting does not cross
+  -- the definitional identification of its bundled maps with maps on the product.
+  have h (z : TrivSqZeroExt R L) :
+      LieHom.leftRegularRep (abelianSquareZeroLieHom R L) x z =
+      TrivSqZeroExt.inr (z.fst • x) := by
+    rw [LieHom.leftRegularRep_apply, abelianSquareZeroLieHom_apply]
+    refine TrivSqZeroExt.ext ?_ ?_ <;> simp
+  exact h z
 
 /-- Any two operators in the canonical abelian representation have zero product. -/
 @[simp]
 theorem abelianSquareZeroRepresentation_mul_eq_zero [IsLieAbelian L] (x y : L) :
-    abelianSquareZeroRepresentation R L x * abelianSquareZeroRepresentation R L y = 0 :=
-  abelianSquareZeroLeftRegular_mul_eq_zero R L x y
+    abelianSquareZeroRepresentation R L x * abelianSquareZeroRepresentation R L y = 0 := by
+  apply LinearMap.ext
+  intro z
+  simp [Module.End.mul_apply]
 
 /-- Every operator in the canonical abelian representation is square-zero. -/
 @[simp]

@@ -190,8 +190,13 @@ instance : AddCommGroup (X ⟶ Y) where
   neg_add_cancel _ := by ext <;> apply neg_add_cancel
   add_comm _ _ := by ext <;> apply add_comm
   sub_eq_add_neg _ _ := by ext <;> apply sub_eq_add_neg
-  nsmul := nsmulRec
-  zsmul := zsmulRec
+  nsmul n f := { f₀ := n • f.f₀, f₁ := n • f.f₁ }
+  zsmul n f := { f₀ := n • f.f₀, f₁ := n • f.f₁ }
+  nsmul_zero _ := by ext <;> apply zero_smul
+  nsmul_succ _ _ := by ext <;> apply succ_nsmul
+  zsmul_zero' _ := by ext <;> apply zero_zsmul
+  zsmul_succ' _ _ := by ext <;> apply SubNegMonoid.zsmul_succ'
+  zsmul_neg' _ _ := by ext <;> apply SubNegMonoid.zsmul_neg'
 
 instance : Preadditive (CurvedDuplex C w) where
 

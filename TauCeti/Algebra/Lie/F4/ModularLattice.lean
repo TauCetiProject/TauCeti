@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Derivation.IntegralExp
-public import Mathlib.Algebra.Lie.BaseChange
 public import TauCeti.Algebra.Lie.F4.ChevalleyAction
 public import TauCeti.Algebra.Lie.Weights.Root.IntegralBasis
 import Mathlib.Algebra.Lie.AdjointAction.Derivation
@@ -45,7 +44,7 @@ public section
 
 namespace TauCeti.DynkinType
 
-open _root_.LieAlgebra _root_.LieAlgebra.IsKilling LieModule Module Set
+open _root_.LieAlgebra _root_.LieAlgebra.IsKilling LieModule Module
 open scoped TensorProduct
 
 noncomputable section
@@ -288,8 +287,8 @@ theorem f4Modular_lie_rootVector_of_add_of_length_eq (α β γ : Fin 48)
     (hβγ : f4Length β = f4Length γ)
     (h : f4SimplyConnectedRootDatum.root γ =
       f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root α) :
-    ⁅f4ModularRootVector α, f4ModularRootVector β⁆ = f4ModularRootVector γ := by
-  exact f4Modular_lie_rootVector_of_add_of_chainBotCoeff_eq_zero α β γ h
+    ⁅f4ModularRootVector α, f4ModularRootVector β⁆ = f4ModularRootVector γ :=
+  f4Modular_lie_rootVector_of_add_of_chainBotCoeff_eq_zero α β γ h
     (f4_chainBotCoeff_eq_zero_of_add_of_length_eq α β γ hβγ h)
 
 /-- Modular root vectors bracket to zero when their rational root-space sum is absent. -/
@@ -538,7 +537,6 @@ theorem f4_root_eq_add_of_repr_lie_rootVector_ne_zero
     f4ModularChevalleyBasis_repr_rootVector_self, smul_eq_mul, mul_one]
   simp only [c, hcoeff]
 
-
 /-- A root-vector bracket has no coordinate at an unrelated root label. -/
 @[simp] theorem f4ModularChevalleyBasis_repr_lie_rootVector_eq_zero
     (δ β γ : Fin 48)
@@ -572,6 +570,8 @@ theorem f4_root_eq_add_of_repr_lie_rootVector_ne_zero
 
 /-! ## Integral root exponentials -/
 
+-- Use the module structure carried by the explicit `ℤ`-algebra. Although an algebra structure
+-- over `ℤ` is unique, category objects need not store the canonical instance definitionally.
 attribute [local instance high] Algebra.toModule
 
 /-- The adjoint derivation of the Chevalley root vector of a signed simple root: `.inl i` labels
@@ -580,7 +580,6 @@ noncomputable def f4RootAdjointDerivation (k : Fin 4 ⊕ Fin 4) :
     LieDerivation ℚ (F4.lieAlgebra valid_F4) (F4.lieAlgebra valid_F4) :=
   LieDerivation.ad ℚ (F4.lieAlgebra valid_F4)
     (f4ChevalleyRootVector (f4KillingRoot (f4SignedSimpleRootIndex k)))
-
 
 /-- The adjoint derivation of a signed simple root acts by the rational Lie bracket with its root
 vector. -/
@@ -615,7 +614,6 @@ theorem isNilpotent_f4RootAdjointDerivation (k : Fin 4 ⊕ Fin 4) :
   rw [f4RootAdjointDerivation_toLinearMap]
   exact f4ChevalleyRootVector_isChevalleySystem.toIsSl2System.isNilpotent_ad_rootVector
     (f4KillingRoot (f4SignedSimpleRootIndex k))
-
 
 /-- The integral exponential of a signed simple root, after extension to an arbitrary parameter
 ring. -/
@@ -738,26 +736,25 @@ noncomputable def f4RootExponentialLieEquiv {A : Type*} [CommRing A] [Algebra �
     (f4RootAdjointDerivation_dividedPower_mem k)
     (isNilpotent_f4RootAdjointDerivation k) t
 
-
 /-- The root exponential at parameter zero is the identity endomorphism. -/
 @[simp] theorem f4RootExponential_zero {A : Type*} [CommRing A] [Algebra ℤ A]
-    (k : Fin 4 ⊕ Fin 4) : f4RootExponential (A := A) k 0 = 1 := by
-  exact baseChangeExp_zero (f4RootAdjointDerivation k).toLinearMap f4ChevalleyLieLattice
+    (k : Fin 4 ⊕ Fin 4) : f4RootExponential (A := A) k 0 = 1 :=
+  baseChangeExp_zero (f4RootAdjointDerivation k).toLinearMap f4ChevalleyLieLattice
     (f4RootAdjointDerivation_dividedPower_mem k)
     (isNilpotent_f4RootAdjointDerivation k)
 
 /-- Root exponentials compose by adding their parameters. -/
 theorem f4RootExponential_add {A : Type*} [CommRing A] [Algebra ℤ A]
     (k : Fin 4 ⊕ Fin 4) (t u : A) :
-    f4RootExponential k (t + u) = f4RootExponential k t * f4RootExponential k u := by
-  exact baseChangeExp_add (f4RootAdjointDerivation k).toLinearMap f4ChevalleyLieLattice
+    f4RootExponential k (t + u) = f4RootExponential k t * f4RootExponential k u :=
+  baseChangeExp_add (f4RootAdjointDerivation k).toLinearMap f4ChevalleyLieLattice
     (f4RootAdjointDerivation_dividedPower_mem k)
     (isNilpotent_f4RootAdjointDerivation k) t u
 
 /-- The root Lie automorphism at parameter zero is the identity. -/
 @[simp] theorem f4RootExponentialLieEquiv_zero {A : Type*} [CommRing A] [Algebra ℤ A]
-    (k : Fin 4 ⊕ Fin 4) : f4RootExponentialLieEquiv (A := A) k 0 = LieEquiv.refl := by
-  exact baseChangeExpLieEquiv_zero (f4RootAdjointDerivation k) f4ChevalleyLieLattice
+    (k : Fin 4 ⊕ Fin 4) : f4RootExponentialLieEquiv (A := A) k 0 = LieEquiv.refl :=
+  baseChangeExpLieEquiv_zero (f4RootAdjointDerivation k) f4ChevalleyLieLattice
     (f4RootAdjointDerivation_dividedPower_mem k)
     (isNilpotent_f4RootAdjointDerivation k)
 
@@ -765,17 +762,16 @@ theorem f4RootExponential_add {A : Type*} [CommRing A] [Algebra ℤ A]
 theorem f4RootExponentialLieEquiv_trans {A : Type*} [CommRing A] [Algebra ℤ A]
     (k : Fin 4 ⊕ Fin 4) (t u : A) :
     (f4RootExponentialLieEquiv k t).trans (f4RootExponentialLieEquiv k u) =
-      f4RootExponentialLieEquiv k (t + u) := by
-  exact baseChangeExpLieEquiv_trans (f4RootAdjointDerivation k) f4ChevalleyLieLattice
+      f4RootExponentialLieEquiv k (t + u) :=
+  baseChangeExpLieEquiv_trans (f4RootAdjointDerivation k) f4ChevalleyLieLattice
     (f4RootAdjointDerivation_dividedPower_mem k)
     (isNilpotent_f4RootAdjointDerivation k) t u
-
 
 /-- The Lie equivalence acts by the integral root exponential on every vector. -/
 @[simp] theorem f4RootExponentialLieEquiv_apply {A : Type*} [CommRing A] [Algebra ℤ A]
     (k : Fin 4 ⊕ Fin 4) (t : A) (x : A ⊗[ℤ] f4ChevalleyLieLattice) :
-    f4RootExponentialLieEquiv k t x = f4RootExponential k t x := by
-  exact baseChangeExpLieEquiv_apply (f4RootAdjointDerivation k) f4ChevalleyLieLattice
+    f4RootExponentialLieEquiv k t x = f4RootExponential k t x :=
+  baseChangeExpLieEquiv_apply (f4RootAdjointDerivation k) f4ChevalleyLieLattice
     (f4RootAdjointDerivation_dividedPower_mem k)
     (isNilpotent_f4RootAdjointDerivation k) t x
 

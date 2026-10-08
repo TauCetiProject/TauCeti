@@ -639,9 +639,11 @@ by `TauCeti.DynkinType.root_typeCSimpleIndex` carry the simple roots in Bourbaki
     k ∈ (typeCSimplyConnectedBase n).support ↔ (k : ℕ) < n :=
   mem_simpleSupport_iff_lt (typeCSimpleIndex_injective (n := n)) (fun _ ↦ typeCSimpleIndex_val _)
 
-private lemma pairing_typeCSimpleIndex (i j : Fin n) :
-    (typeCSimplyConnectedRootDatum n).pairing (typeCSimpleIndex n i) (typeCSimpleIndex n j)
-      = CartanMatrix.C n i j := by
+/-- The pairing of two Bourbaki-indexed simple roots and coroots is the corresponding entry of
+the type-`C` Cartan matrix. -/
+@[simp] lemma pairing_typeCSimpleIndex (i j : Fin n) :
+    (typeCSimplyConnectedRootDatum n).pairing (typeCSimpleIndex n i) (typeCSimpleIndex n j) =
+      CartanMatrix.C n i j := by
   rw [pairing_typeCSimplyConnectedRootDatum, root_typeCSimpleIndex, coroot_typeCSimpleIndex,
     dotProduct_single, mul_one]
 
