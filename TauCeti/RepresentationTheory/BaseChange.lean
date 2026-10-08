@@ -329,6 +329,7 @@ theorem _root_.Representation.IntertwiningMap.toLinearMap_baseChange
 
 /-- **Base change preserves composition**: the base change of `g ∘ f` is the composite of the base
 changes `A ⊗ g ∘ A ⊗ f`. -/
+@[simp]
 theorem _root_.Representation.IntertwiningMap.baseChange_comp {U : Type*} [AddCommMonoid U]
     [Module R U] {τ : _root_.Representation R G U}
     (g : _root_.Representation.IntertwiningMap σ τ) (f : _root_.Representation.IntertwiningMap ρ σ)
@@ -351,11 +352,12 @@ theorem _root_.Representation.IntertwiningMap.baseChange_apply_baseChange_apply_
   exact (LinearMap.congr_fun h x).symm
 
 /-- An intertwining map with two scalar inverse composites becomes bijective after base
-change whenever that scalar becomes a unit in the new coefficient semiring. -/
+change whenever both scalars become units in the new coefficient semiring. -/
 theorem _root_.Representation.IntertwiningMap.bijective_baseChange_of_comp_eq_smul
     {f : _root_.Representation.IntertwiningMap ρ σ} {g : _root_.Representation.IntertwiningMap σ ρ}
-    {r : R} (hgf : ∀ v, g (f v) = r • v) (hfg : ∀ w, f (g w) = r • w)
-    (A : Type*) [Semiring A] [Algebra R A] (hr : IsUnit (algebraMap R A r)) :
+    {r s : R} (hgf : ∀ v, g (f v) = r • v) (hfg : ∀ w, f (g w) = s • w)
+    (A : Type*) [Semiring A] [Algebra R A] (hr : IsUnit (algebraMap R A r))
+    (hs : IsUnit (algebraMap R A s)) :
     Function.Bijective (f.baseChange A) := by
   have hgfA (x : A ⊗[R] V) :
       g.baseChange A (f.baseChange A x) = algebraMap R A r • x := by
@@ -363,15 +365,15 @@ theorem _root_.Representation.IntertwiningMap.bijective_baseChange_of_comp_eq_sm
       _root_.Representation.IntertwiningMap.baseChange_apply_baseChange_apply_of_comp_eq_smul
         hgf A x
   have hfgA (y : A ⊗[R] W) :
-      f.baseChange A (g.baseChange A y) = algebraMap R A r • y := by
+      f.baseChange A (g.baseChange A y) = algebraMap R A s • y := by
     simpa only [IsScalarTower.algebraMap_smul] using
       _root_.Representation.IntertwiningMap.baseChange_apply_baseChange_apply_of_comp_eq_smul
         hfg A y
   refine ⟨fun x y hxy ↦ hr.smul_left_cancel.mp ?_,
-    fun y ↦ ⟨g.baseChange A (hr.unit⁻¹ • y), ?_⟩⟩
+    fun y ↦ ⟨g.baseChange A (hs.unit⁻¹ • y), ?_⟩⟩
   · rw [← hgfA, ← hgfA, hxy]
   · rw [hfgA]
-    exact smul_inv_smul hr.unit y
+    exact smul_inv_smul hs.unit y
 
 /-- **Base change transports an equivalence of representations**: an equivariant isomorphism
 `ρ ≃ σ` becomes an equivariant isomorphism `A ⊗[R] V ≃ A ⊗[R] W` after extending the scalars,

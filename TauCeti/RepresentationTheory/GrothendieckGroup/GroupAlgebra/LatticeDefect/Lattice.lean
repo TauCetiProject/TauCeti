@@ -168,7 +168,7 @@ theorem reductionK0_eq_of_nonempty_equiv_baseChange_rat (V W : Type u)
   have hs : IsUnit ((s : ℤ) : k) :=
     (Int.cast_ne_zero.mpr (nonZeroDivisors.coe_ne_zero s)).isUnit
   have hbij := Representation.IntertwiningMap.bijective_baseChange_of_comp_eq_smul
-    hf'f hff' k hs
+    hf'f hff' k hs hs
   exact reductionK0_congr_baseChange k ((f.baseChange k).ofBijective hbij)
 
 end TauCeti
