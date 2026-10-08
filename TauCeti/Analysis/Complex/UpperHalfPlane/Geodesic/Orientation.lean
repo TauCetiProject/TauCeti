@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.InteriorAngle
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Ray
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Semicircle
 public import TauCeti.Geometry.Euclidean.Angle.Oriented.Basic
 
