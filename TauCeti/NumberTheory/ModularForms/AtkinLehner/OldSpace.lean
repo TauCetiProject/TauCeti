@@ -208,9 +208,6 @@ private lemma atkinLehnerOperatorGamma1Cusp_levelRaise_mem_cuspFormsOld [NeZero 
   let _ := hd₂
   obtain ⟨W', hW', hmul⟩ :=
     hW.exists_scaleGL_mul_atkinLehnerGL h.pos h₁.pos hQ hN
-  have hd₁C : (d₁ : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne d₁)
-  have he₁C : (e₁ : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne e₁)
-  have hd₂C : (d₂ : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne d₂)
   have hop :
       atkinLehnerOperatorGamma1Cusp h.pos h.dvd hW k
           (CuspForm.levelRaise (d₁ * d₂) (Gamma1_map_le_conjAct_scaleGL_of_dvd hdM) g) =
@@ -219,18 +216,8 @@ private lemma atkinLehnerOperatorGamma1Cusp_levelRaise_mem_cuspFormsOld [NeZero 
             (atkinLehnerOperatorGamma1Cusp h₁.pos h₁.dvd hW' k g) := by
     refine DFunLike.coe_injective ?_
     rw [coe_atkinLehnerOperatorGamma1Cusp, CuspForm.coe_levelRaise, FunLike.coe_smul,
-      CuspForm.coe_levelRaise, coe_atkinLehnerOperatorGamma1Cusp,
-      ModularForm.smul_slash_of_det_pos k (val_det_atkinLehnerGL_pos _ _),
-      ← SlashAction.slash_mul, hmul, SlashAction.slash_mul, ModularForm.slash_scalar,
-      SlashAction.slash_mul,
-      ModularForm.smul_slash_of_det_pos k (val_det_atkinLehnerGL_pos _ _),
-      ModularForm.smul_slash_of_det_pos k val_det_scaleGL_pos, smul_smul, smul_smul]
-    congr 1
-    simp only [Units.val_mk0, Complex.ofReal_natCast]
-    push_cast
-    rw [mul_zpow, mul_zpow, zpow_sub₀ hd₁C, zpow_sub₀ hd₁C, zpow_sub₀ he₁C, zpow_sub₀ he₁C,
-      zpow_sub₀ hd₂C]
-    field_simp
+      CuspForm.coe_levelRaise, coe_atkinLehnerOperatorGamma1Cusp]
+    exact hW.smul_slash_scaleGL_slash_atkinLehnerGL h.pos h₁.pos hW' hmul _
   rw [hop]
   exact Submodule.smul_mem _ _ (levelRaise_mem_cuspFormsOld heM hMN k _)
 
