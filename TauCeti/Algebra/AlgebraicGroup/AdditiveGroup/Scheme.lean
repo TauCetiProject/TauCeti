@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.AffineSpace
-public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import Mathlib.RingTheory.Smooth.Basic
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.FiniteType
 
 /-!
 # The additive group scheme
@@ -43,16 +43,18 @@ affine-space APIs.
 
 * `TauCeti.AdditiveGroup.coordinateHopfAlgebra`: the symmetric Hopf algebra representing `G_a`.
 * `TauCeti.AdditiveGroup.coordinateAlgEquiv`: its rank-one polynomial presentation.
+* `TauCeti.AdditiveGroup.connectedSpace_primeSpectrum_coordinateHopfAlgebra`: its prime spectrum
+  is connected over a domain.
+* `TauCeti.AdditiveGroup.isReduced_coordinateHopfAlgebra`: it is reduced over a reduced ring.
 * `TauCeti.AdditiveGroup.groupScheme`: the additive group scheme over `Spec R`.
 * `TauCeti.AdditiveGroup.groupSchemeAffineSpaceIso`: its canonical identification with affine
   one-space over the base.
 * `TauCeti.AdditiveGroup.groupScheme_one_left`,
   `TauCeti.AdditiveGroup.groupScheme_mul_left`, and
   `TauCeti.AdditiveGroup.groupScheme_inv_left`: the underlying scheme maps of its operations.
-* `TauCeti.AdditiveGroup.isAffine_groupScheme`,
-  `TauCeti.AdditiveGroup.locallyOfFinitePresentation_groupScheme`, and
-  `TauCeti.AdditiveGroup.locallyOfFiniteType_groupScheme`: affineness, local finite presentation,
-  and local finite type.
+* `TauCeti.AdditiveGroup.isAffine_groupScheme` and
+  `TauCeti.AdditiveGroup.locallyOfFinitePresentation_groupScheme`: affineness and local finite
+  presentation. Local finite type follows by instance search.
 * `TauCeti.AdditiveGroup.groupSchemePointMulEquiv`: the canonical passage between algebra points
   and scheme-valued points.
 * `TauCeti.AdditiveGroup.schemePointsMulEquiv`: scheme-valued points are the additive group of
@@ -64,15 +66,14 @@ affine-space APIs.
 ## References
 
 The Hopf structure and algebra-valued point calculation are
-`TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra` and
+`TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra.Basic` and
 `TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Basic`. The operation formulas specialize
 `TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec`. The affine coordinate presentation follows
 the spectrum-transport pattern in `TauCetiProject/TauCeti`, revision
 `90f7e09cf472553c4d268db39fcae6b84bd91e04`,
 `TauCeti/Algebra/AlgebraicGroup/GeneralLinear/Scheme.lean` (Apache 2.0), specialized to Mathlib's
 rank-one symmetric-algebra and affine-space equivalences. The scheme-valued-points interface follows
-the “Functor of points is the notion of points” design note in
-`TauCetiRoadmap/ReductiveGroups/README.md` and its cited Lean Zulip discussion
+the Lean Zulip discussion
 [#Is there code for X? > Algebraic groups](https://leanprover.zulipchat.com/#narrow/channel/217875-Is%20there%20code%20for%20X%3F/topic/Algebraic%20groups).
 -/
 
@@ -116,19 +117,6 @@ lemma coordinateAlgEquiv_ι_one :
 
 end CoordinateAlgebra
 
-section FiniteType
-
-variable (R : Type u) [CommSemiring R]
-
-/-- The coordinate algebra of `𝔾ₐ` is of finite type: it is the polynomial algebra on the single
-generator `x`. -/
-instance instFiniteTypeSymmetricAlgebra : Algebra.FiniteType R (SymmetricAlgebra R R) :=
-  Algebra.FiniteType.equiv
-    (inferInstanceAs (Algebra.FiniteType R (MvPolynomial (CoordinateIndex.{u}) R)))
-    (coordinateAlgEquiv R).symm
-
-end FiniteType
-
 variable (R : Type u) [CommRing R]
 
 /-- The commutative Hopf algebra representing the one-dimensional additive group. Its carrier is
@@ -142,6 +130,17 @@ instance instSmoothSymmetricAlgebra : Algebra.Smooth R (SymmetricAlgebra R R) :=
   letI : Algebra.Smooth R (MvPolynomial (CoordinateIndex.{u}) R) :=
     ⟨inferInstance, inferInstance⟩
   Algebra.Smooth.of_equiv (coordinateAlgEquiv R).symm
+
+/-- The coordinate Hopf algebra of `𝔾ₐ` has connected prime spectrum over a domain. -/
+theorem connectedSpace_primeSpectrum_coordinateHopfAlgebra [IsDomain R] :
+    ConnectedSpace (PrimeSpectrum (coordinateHopfAlgebra R)) :=
+  inferInstanceAs (ConnectedSpace (PrimeSpectrum (SymmetricAlgebra R R)))
+
+/-- The coordinate Hopf algebra of `𝔾ₐ` is reduced over a reduced ring: it is the polynomial
+algebra on the single generator `x`. -/
+theorem isReduced_coordinateHopfAlgebra [IsReduced R] :
+    IsReduced (coordinateHopfAlgebra R) :=
+  isReduced_of_injective (coordinateAlgEquiv R).toRingHom (coordinateAlgEquiv R).injective
 
 /-- The additive group scheme obtained by applying relative spectrum to the symmetric Hopf
 algebra on one generator.
@@ -282,18 +281,9 @@ instance isAffine_groupScheme : IsAffine (groupScheme R).X.left := by
 /-- The structural morphism of the additive group scheme is locally of finite presentation. -/
 instance locallyOfFinitePresentation_groupScheme :
     LocallyOfFinitePresentation (groupScheme R).X.hom := by
-  rw [groupScheme_X_hom]
-  let : LocallyOfFinitePresentation (eqToHom (groupScheme_X_left R)) :=
-    locallyOfFinitePresentation_of_isOpenImmersion _
-  let : LocallyOfFinitePresentation
-      (Spec.map (CommRingCat.ofHom (algebraMap R (SymmetricAlgebra R R)))) := by
-    rw [LocallyOfFinitePresentation.SpecMap_iff]
-    exact RingHom.finitePresentation_algebraMap.mpr inferInstance
-  exact locallyOfFinitePresentation_comp _ _
-
-/-- The structural morphism of the additive group scheme is locally of finite type. -/
-instance locallyOfFiniteType_groupScheme :
-    LocallyOfFiniteType (groupScheme R).X.hom := inferInstance
+  rw [groupScheme_def]
+  exact (algebraFinitePresentation_iff_locallyOfFinitePresentation_hopfSpec R
+    (coordinateHopfAlgebra R)).mp inferInstance
 
 section SchemePoints
 
@@ -371,7 +361,6 @@ theorem schemePointsMulEquiv_gaSchemePointParamMul
 
 /-- A scheme-valued point corresponds to the value at the additive coordinate `ι(1)` of its
 canonical algebra point. -/
-@[simp]
 lemma toAdd_schemePointsMulEquiv
     (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of R)) ⟶
       (groupScheme R).X) :
@@ -402,7 +391,6 @@ theorem schemePointsMulEquiv_apply
 
 /-- The inverse scheme-points equivalence sends an element of the value algebra to the spectrum
 map induced by the corresponding symmetric-algebra point. -/
-@[simp]
 lemma schemePointsMulEquiv_symm_apply (a : Multiplicative A) :
     (schemePointsMulEquiv A).symm a =
       groupSchemePointMulEquiv A
@@ -422,20 +410,10 @@ theorem schemePointsMulEquiv_mapValue (φ : A →ₐ[R] B)
             (Spec (CommRingCat.of R)) ≫ p) =
       Multiplicative.ofAdd
         (φ (Multiplicative.toAdd (schemePointsMulEquiv A p))) := by
-  let q : WithConv (SymmetricAlgebra R R →ₐ[R] A) :=
-    (groupSchemePointMulEquiv A).symm p
-  have hpre :
-      (groupSchemePointMulEquiv B).symm
-          ((Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver
-            (Spec (CommRingCat.of R)) ≫ p) =
-        HopfAlgebra.mapPoints (H := coordinateHopfAlgebra R)
-          (CommAlgCat.ofHom φ) q := by
-    simpa only [q, groupSchemePointMulEquiv] using
-      CommHopfAlgCat.mapMulEquivOfPresentation_mapValue
-        (coordinateHopfAlgebra R) φ (groupScheme_def R) p
-  simp only [schemePointsMulEquiv, MulEquiv.trans_apply]
-  rw [hpre, HopfAlgebra.mapPoints_apply, ← AlgHom.mapValue_apply]
-  exact gaPointsMulEquiv_mapValue φ q
+  unfold schemePointsMulEquiv groupSchemePointMulEquiv
+  exact CommHopfAlgCat.mapMulEquivOfPresentation_symm_trans_mapValue
+    (coordinateHopfAlgebra R) φ (groupScheme_def R) _ _
+    (fun a ↦ Multiplicative.ofAdd (φ (Multiplicative.toAdd a))) (gaPointsMulEquiv_mapValue φ) p
 
 /-- Multiplication of scheme-point parameters is natural in the value algebra. -/
 theorem mapValue_gaSchemePointParamMul (φ : A →ₐ[R] B)

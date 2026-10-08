@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Ring.Real
 public import Mathlib.Topology.ContinuousOn
-public import TauCeti.Analysis.Convex.Polyhedron
+public import TauCeti.Analysis.Convex.Polyhedron.Basic
 
 /-!
 # Piecewise-linear maps between real topological vector spaces
@@ -61,6 +61,8 @@ such a family of affine pieces.
   argument.
 * `TauCeti.IsPLOn.mono`, `TauCeti.IsPLOn.congr`, `TauCeti.isPLOn_of_locally`,
   `TauCeti.IsPLOn.comp`: the four closure properties a `Pregroupoid` property must have.
+* `ContinuousAffineMap.isPLOn_affineGraph`: the graph of a continuous affine map is piecewise
+  affine on every subset of its domain.
 * `TauCeti.isPLOn_abs` and `TauCeti.not_exists_continuousAffineMap_eq_abs`: the absolute value is
   piecewise linear and is not affine, so the predicate is strictly weaker than affineness.
 
@@ -85,6 +87,13 @@ on each of which the map `f` agrees with a continuous affine map. -/
 def IsPiecewiseAffineOn (f : E → F) (V : Set E) : Prop :=
   ∃ (n : ℕ) (C : Fin n → Set E) (A : Fin n → (E →ᴬ[ℝ] F)),
     (∀ i, IsConvexPolyhedron (C i)) ∧ V ⊆ ⋃ i, C i ∧ ∀ i, EqOn f (A i) (V ∩ C i)
+
+/-- The finite polyhedral decomposition characterizing piecewise affineness. -/
+theorem isPiecewiseAffineOn_iff :
+    IsPiecewiseAffineOn f V ↔
+      ∃ (n : ℕ) (C : Fin n → Set E) (A : Fin n → (E →ᴬ[ℝ] F)),
+        (∀ i, IsConvexPolyhedron (C i)) ∧ V ⊆ ⋃ i, C i ∧
+          ∀ i, EqOn f (A i) (V ∩ C i) := Iff.rfl
 
 /-- The constructor of `TauCeti.IsPiecewiseAffineOn` for a cover indexed by an arbitrary finite
 type, rather than by `Fin n`. -/
@@ -168,6 +177,10 @@ with a continuous affine map. -/
 def IsPLOn (f : E → F) (s : Set E) : Prop :=
   ∀ x ∈ s, ∃ V ∈ 𝓝[s] x, IsPiecewiseAffineOn f V
 
+/-- The local finite-decomposition characterization of piecewise linearity. -/
+theorem isPLOn_iff :
+    IsPLOn f s ↔ ∀ x ∈ s, ∃ V ∈ 𝓝[s] x, IsPiecewiseAffineOn f V := Iff.rfl
+
 /-- A piecewise affine map is piecewise linear on the set carrying its decomposition. -/
 theorem IsPiecewiseAffineOn.isPLOn (h : IsPiecewiseAffineOn f V) : IsPLOn f V :=
   fun _ _ => ⟨V, self_mem_nhdsWithin, h⟩
@@ -175,6 +188,16 @@ theorem IsPiecewiseAffineOn.isPLOn (h : IsPiecewiseAffineOn f V) : IsPLOn f V :=
 /-- A continuous affine map is piecewise linear on every set. -/
 theorem isPLOn_continuousAffineMap (A : E →ᴬ[ℝ] F) (s : Set E) : IsPLOn (⇑A) s :=
   (isPiecewiseAffineOn_continuousAffineMap A s).isPLOn
+
+/-- The graph of a continuous affine map is piecewise affine on every subset of its domain. -/
+theorem _root_.ContinuousAffineMap.isPLOn_affineGraph
+    {E F : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+    [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+    (A : E →ᴬ[ℝ] F) (s : Set E) :
+    IsPLOn (fun x : E => (x, A x)) s := by
+  convert isPLOn_continuousAffineMap ((ContinuousAffineMap.id ℝ E).prod A) s using 1
+  funext x
+  rfl
 
 /-- The identity is piecewise linear on every set. -/
 theorem isPLOn_id (s : Set E) : IsPLOn (id : E → E) s :=

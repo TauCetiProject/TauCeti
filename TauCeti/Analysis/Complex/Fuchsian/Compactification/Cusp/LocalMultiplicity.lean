@@ -13,7 +13,9 @@ public import TauCeti.Analysis.Complex.RiemannSurface.LocalMultiplicity
 
 For an inclusion of discrete Fuchsian groups, compatible normalized cusp data give local
 coordinates in which the induced map of compactified quotients is a power map. Consequently its
-local multiplicity at the adjoined cusp is the canonical cusp width index.
+local multiplicity at the adjoined cusp is the canonical cusp width index. Since that index is the
+relative index of the cusp stabilizers, the local multiplicity at the orbit of a cusp point `c`
+is `[stabilizer Γ c : stabilizer Δ c]`, with no choice of cusp data.
 
 The cusp-coordinate and width conventions follow Diamond and Shurman, *A First Course in Modular
 Forms*, §2.4.
@@ -21,7 +23,7 @@ Forms*, §2.4.
 
 public noncomputable section
 
-open Filter IsManifold Topology TauCeti.Subgroup.CuspDatum TauCeti.RiemannSurface
+open Filter IsManifold MulAction OnePoint Topology TauCeti.Subgroup.CuspDatum TauCeti.RiemannSurface
 open scoped Manifold MatrixGroups
 
 namespace Subgroup.CompactifiedQuotient
@@ -61,25 +63,33 @@ theorem localMultiplicity_compactifiedQuotientMap_ofCusp_eq_widthIndex [Discrete
   have hf : ∀ᶠ y in 𝓝 x,
       MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (compactifiedQuotientMap h) y := by
     exact Filter.Eventually.of_forall (mdifferentiable_compactifiedQuotientMap h)
-  rw [localMultiplicity_eq_analyticOrderNatAt he he' hxe hfxe hf]
   have hex : e x = 0 := by simp [e, x]
   have hefx : e' (compactifiedQuotientMap h x) = 0 := by simp [e', hfx]
-  rw [hex]
-  simp only [hefx]
-  have heq : (fun z ↦ e' (compactifiedQuotientMap h (e.symm z)) - 0) =ᶠ[𝓝 0]
-      fun z : ℂ ↦ z ^ n - 0 ^ n := by
+  have hpow : (fun z ↦ e' (compactifiedQuotientMap h (e.symm z))) =ᶠ[𝓝 0]
+      fun z : ℂ ↦ z ^ n := by
     filter_upwards [hex ▸ e.open_target.mem_nhds (e.map_source hxe)] with z hz
     have hz' : e.symm z ∈ cuspNhd D D.width := by
       simpa [e] using e.map_target hz
     rw [cuspChart_compactifiedQuotientMap_eq_pow_widthIndex h D E hc hσ hD hz']
-    simp [e, n, e.right_inv hz, zero_pow hn.ne']
-  calc
-    analyticOrderNatAt (fun z ↦ e' (compactifiedQuotientMap h (e.symm z)) - 0) 0 =
-        analyticOrderNatAt (fun z : ℂ ↦ z ^ n - 0 ^ n) 0 := by
-      exact TauCeti.analyticOrderNatAt_congr heq
-    _ = localMultiplicity (fun z : ℂ ↦ z ^ n) 0 := by
-      rw [localMultiplicity_eq_analyticOrderNatAt_sub]
-    _ = n := localMultiplicity_pow_zero n
-    _ = widthIndex h D E hc hσ := rfl
+    simp [e, n, e.right_inv hz]
+  exact localMultiplicity_eq_of_coordinate_eventuallyEq_pow_zero
+    he he' hxe hfxe hf hn hex hefx hpow
+
+/-- The local multiplicity of a compactified quotient map at the orbit of a cusp point `c` is the
+relative index of the smaller group in the stabilizer of `c` in the larger group, that is,
+`[stabilizer Γ c : stabilizer Δ c]`. -/
+theorem localMultiplicity_compactifiedQuotientMap_ofCusp_cuspOrbitMk [DiscreteTopology Γ]
+    (h : Δ ≤ Γ) (c : Δ.cuspPoints) :
+    letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
+    localMultiplicity (compactifiedQuotientMap h) (ofCusp (Δ.cuspOrbitMk c)) =
+      (Δ.subgroupOf Γ).relIndex (stabilizer Γ (c : OnePoint ℝ)) := by
+  have : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
+  have hc := mem_cuspPoints.mp c.2
+  obtain ⟨σ, hσ⟩ := MulAction.exists_smul_eq PSL(2, ℝ) (c : OnePoint ℝ) ∞
+  obtain ⟨D, hDc, hDσ⟩ := hc.exists_cuspDatum hσ
+  obtain ⟨E, hEc, hEσ⟩ := (hc.mono h).exists_cuspDatum hσ
+  have hD : D.cuspOrbit = Δ.cuspOrbitMk c := Subtype.ext (by simp [hDc])
+  rw [← hD, localMultiplicity_compactifiedQuotientMap_ofCusp_eq_widthIndex h D E
+    (hDσ.trans hEσ.symm), widthIndex_eq_relIndex, hEc]
 
 end Subgroup.CompactifiedQuotient

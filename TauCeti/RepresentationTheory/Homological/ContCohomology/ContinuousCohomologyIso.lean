@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.GroupAction.QuotientAddGroup
 public import TauCeti.RepresentationTheory.Continuous.Invariants
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CocycleComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeZero
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 
 /-!
 # The explicit model against the canonical object, in degree zero
@@ -51,11 +52,15 @@ the image of `TauCeti.ofDiscreteModule`, as Layer 3 of the roadmap requires: a g
   invariant element `m` to the class of its homogeneous `0`-cocycle
   `TauCeti.ContCohomology.cocycle0 m`, which is how the cocycle-level comparisons of the higher
   degrees read it.
+* `TauCeti.ContCohomology.finite_continuousCohomology_zero`: `H⁰(G, M)` is finite for a finite
+  discrete `M`.
 * `TauCeti.ContCohomology.explicitH0Iso_map`: the comparison is natural in compatible pairs.
 * `TauCeti.ContCohomology.explicitH0Iso_res`, `TauCeti.ContCohomology.explicitH0Iso_coeffMap`: its
   two named instances, carrying the explicit restriction and coefficient maps of degree zero to
   the canonical ones. The restriction square is typed by `TauCeti.res_ofDiscreteModule`, which
   identifies the restriction of a canonical object with the canonical object of the restriction.
+* `TauCeti.coeffMap_zero_injective`: the coefficient map of an injective equivariant map is
+  injective on `H⁰`.
 
 ## Roadmap
 
@@ -200,6 +205,12 @@ theorem coe_explicitH0IsoContinuousCohomology_inv_apply
   H0ContinuousLinearEquivInvariants_symm_val G M
     ((ContinuousCohomology.zeroIso (ofDiscreteModule ℤ G M)).hom y)
 
+variable {G} in
+/-- **`H⁰` of a finite discrete module is finite**: it is the subgroup of invariants. -/
+theorem finite_continuousCohomology_zero [Finite M] :
+    Finite (continuousCohomology 0 (ofDiscreteModule ℤ G M)) :=
+  Finite.of_equiv _ (explicitH0IsoContinuousCohomology G M).toContinuousLinearEquiv.toEquiv
+
 end Comparison
 
 section Cocycle
@@ -296,3 +307,61 @@ theorem explicitH0Iso_coeffMap (N : Type u) [AddCommGroup N] [TopologicalSpace N
 end Transport
 
 end TauCeti.ContCohomology
+
+namespace TauCeti
+
+section CoefficientLifting
+
+open CategoryTheory ContCohomology _root_.TauCeti.ContinuousCohomology
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+/-- In degree zero, a class of `H⁰(G, M)` killed by `k` is the image of a class of
+`H⁰(G, M[k])`, where `M[k]` is the `G`-submodule killed by `k`. -/
+theorem exists_coeffMap_ker_nsmul_eq (M : Type u) [AddCommGroup M] [TopologicalSpace M]
+    [DiscreteTopology M] [DistribMulAction G M] {k : ℕ}
+    (hK : ∀ g : G, ∀ m ∈ (nsmulAddMonoidHom k : M →+ M).ker, g • m ∈ (nsmulAddMonoidHom k).ker)
+    {x : continuousCohomology 0 (ofDiscreteModule ℤ G M)} (hx : k • x = 0) :
+    letI := (nsmulAddMonoidHom k : M →+ M).ker.restrictDistribMulAction hK
+    ∃ z : continuousCohomology 0 (ofDiscreteModule ℤ G (nsmulAddMonoidHom k : M →+ M).ker),
+      coeffMap (ofDiscreteModuleMap (nsmulAddMonoidHom k : M →+ M).ker.subtype.toIntLinearMap
+        ((nsmulAddMonoidHom k : M →+ M).ker.restrictDistribMulAction_coe_smul hK)) 0 z = x := by
+  set K := (nsmulAddMonoidHom k : M →+ M).ker
+  let := K.restrictDistribMulAction hK
+  set e := explicitH0IsoContinuousCohomology G M
+  -- the invariant element `m` underlying `x` is killed by `k`
+  set m : H0 G M := e.inv x
+  have hm : k • (m : M) = 0 := by
+    rw [← AddSubgroup.coe_nsmul, ← map_nsmul, hx, _root_.map_zero, AddSubgroup.coe_zero]
+  let ι : K →+[G] M :=
+    { K.subtype with map_smul' := K.restrictDistribMulAction_coe_smul hK }
+  let mK : H0 G K := ⟨⟨m, hm⟩, (FixedPoints.mem_addSubgroup G K _).2 fun g ↦ Subtype.ext <|
+    (K.restrictDistribMulAction_coe_smul hK g _).trans
+      ((FixedPoints.mem_addSubgroup G M _).1 m.2 g)⟩
+  refine ⟨(explicitH0IsoContinuousCohomology G K).hom mK, ?_⟩
+  have hmK : explicitCoeff0 G K ι mK = m := Subtype.ext (coe_explicitCoeff0 G K ι mK)
+  rw [explicitH0Iso_coeffMap G K M ι mK, hmK]
+  simpa only [m, e] using
+    (Iso.inv_hom_id_apply (explicitH0IsoContinuousCohomology G M) x)
+
+/-- **Degree-zero cohomology is left exact**: the coefficient map of an injective equivariant map
+is injective on `H⁰`, which is the invariants (`TauCeti.ContCohomology.explicitH0Iso_coeffMap`). -/
+theorem coeffMap_zero_injective {M N : Type u} [AddCommGroup M] [TopologicalSpace M]
+    [DiscreteTopology M] [DistribMulAction G M] [AddCommGroup N] [TopologicalSpace N]
+    [DiscreteTopology N] [DistribMulAction G N] (f : M →+[G] N) (hf : Function.Injective f) :
+    Function.Injective (coeffMap
+      (ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap fun g m ↦ map_smul f g m) 0) := by
+  intro x y hxy
+  set e := explicitH0IsoContinuousCohomology G M
+  rw [← e.inv_hom_id_apply x, ← e.inv_hom_id_apply y, explicitH0Iso_coeffMap G M N f,
+    explicitH0Iso_coeffMap G M N f] at hxy
+  -- the explicit coefficient map applies `f` to the underlying invariant elements
+  have h₀ := congrArg (explicitH0IsoContinuousCohomology G N).inv hxy
+  rw [Iso.hom_inv_id_apply, Iso.hom_inv_id_apply] at h₀
+  have h := congrArg Subtype.val h₀
+  rw [coe_explicitCoeff0, coe_explicitCoeff0] at h
+  rw [← e.inv_hom_id_apply x, ← e.inv_hom_id_apply y, Subtype.ext (hf h)]
+
+end CoefficientLifting
+
+end TauCeti

@@ -45,9 +45,6 @@ ideal, so the represented closed subgroup is canonical.
 
 * J. S. Milne, *Algebraic Groups* (2017), §1.k and §2.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
-
-This constructs the center `Z(G)` required in Layer 6, "Reductive and semisimple groups", of
-`TauCetiRoadmap/ReductiveGroups/README.md`.
 -/
 
 public section
@@ -443,11 +440,6 @@ noncomputable abbrev centerGroupSchemeι (H : _root_.CommHopfAlgCat.{u} k) :
     centerGroupScheme H ⟶
       (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).obj (Opposite.op H) :=
   quotientSpecι H (centerDefiningIdeal H)
-
-/-- The center is a closed subgroup scheme of the ambient affine group scheme. -/
-instance isClosedImmersion_centerGroupSchemeι (H : _root_.CommHopfAlgCat.{u} k) :
-    IsClosedImmersion (centerGroupSchemeι H).hom.hom.left :=
-  inferInstance
 
 /-- A central closed subgroup scheme cut out by `I` includes canonically into the center. -/
 noncomputable def centralSubgroupToCenter (H : _root_.CommHopfAlgCat.{u} k)

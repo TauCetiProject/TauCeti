@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.BaseChange
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.BaseChange
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 
@@ -52,10 +53,15 @@ torus maps lies in the base change of the integral toral carrier; equality is no
 * `kostantRootSubgroupBaseChangePresentationCoordinateMap` and
   `kostantRootSubgroupToralBaseChangePresentationCoordinateMap`: the transported base change of a
   root subgroup and its factorization through the transported toral carrier.
+* `kostantRootSubgroupBaseChangePresentationCoordinateMap_baseChange`: base change of the
+  transported root subgroup along a further extension `A → B` is the transported root subgroup
+  over `B`.
 * `kostantWeightTorusToralBaseChangePresentationCoordinateMap`: the factorization of the
   transported weight-torus coordinate map through the transported carrier.
 * `kostantToralBaseChangePresentationIdeal_le_commonKernelHopfIdeal`: the generated-over-`A`
   carrier is a closed subgroup of the transported integral carrier.
+* `kostantToralBaseChangePresentationIdeal_eq_generated_of_definingIdeal_eq`: equal integral
+  toral and root-generated defining ideals give equal transported presentations.
 * `kostantToralBaseChangePresentationIsoOfEq`,
   `kostantRootSubgroupToralCoordinateMapOfEq` and `kostantWeightTorusToralCoordinateMapOfEq`:
   the same identification and integral generator maps, read through a named spelling `J` of the
@@ -97,7 +103,7 @@ open CategoryTheory
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
-universe u w x
+universe u w x y z
 
 -- Match tensor products to the `ℤ`-algebra structure used by scalar extension.
 attribute [local instance high] Algebra.toModule
@@ -218,6 +224,23 @@ theorem kostantRootSubgroupBaseChangePresentationCoordinateMap_def (i : I) :
   unfold kostantRootSubgroupBaseChangePresentationCoordinateMap
   rfl
 
+omit [Finite κ] in
+/-- **The transported root subgroups are compatible with towers.** For a ring map `A → B`, scalar
+extension of the root subgroup transported to `A` is the root subgroup transported to `B`, once
+the scalar extensions to `B` of the coordinate Hopf algebras of `GLₙ` and `𝔾ₐ` over `A` are
+identified with those over `B`. -/
+theorem kostantRootSubgroupBaseChangePresentationCoordinateMap_baseChange
+    (A : Type y) (B : Type max y z) [CommRing A] [CommRing B] [Algebra A B] (i : I) :
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso A B n).inv ≫
+        CommHopfAlgCat.baseChangeMap
+          (kostantRootSubgroupBaseChangePresentationCoordinateMap e h ρ M hM hnil b A i) ≫
+        (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso A B).hom =
+      kostantRootSubgroupBaseChangePresentationCoordinateMap e h ρ M hM hnil b B i := by
+  rw [kostantRootSubgroupBaseChangePresentationCoordinateMap_def,
+    kostantRootSubgroupBaseChangePresentationCoordinateMap_def]
+  exact GeneralLinear.coordinateHopfAlgebraBaseChangeIso_inv_comp_baseChangeMap_tower ℤ A B n
+    _ _ _ _ AdditiveGroup.gaScalarTensorBialgEquiv_one_tmul_gaScalarTensorBialgEquiv_one_tmul
+
 /-- The transported base change of the `i`th root-subgroup coordinate map, factored through the
 transported toral carrier. -/
 noncomputable def kostantRootSubgroupToralBaseChangePresentationCoordinateMap (i : I) :
@@ -309,6 +332,20 @@ theorem kostantToralBaseChangePresentationIdeal_le_commonKernelHopfIdeal :
       e h ρ M hM hnil b wt A i
   · exact kostantToralBaseChangePresentationIdeal_toIdeal_le_torus_ker
       e h ρ M hM hnil b wt A
+
+/-- Equality of the integral toral and root-generated defining ideals makes the transported
+toral and root-generated presentations in `O(GLₙ/A)` equal, for every commutative ring `A`. This
+does not identify them with the common kernel of the root-subgroup maps formed anew over `A`. -/
+theorem kostantToralBaseChangePresentationIdeal_eq_generated_of_definingIdeal_eq
+    (hideal : kostantToralDefiningIdeal e h ρ M hM hnil b wt =
+      kostantGeneratedDefiningIdeal e h ρ M hM hnil b) :
+    kostantToralBaseChangePresentationIdeal e h ρ M hM hnil b wt A =
+      kostantGeneratedGeneralLinearBaseChangeIdeal e h ρ M hM hnil b A := by
+  apply HopfIdeal.ext
+  intro x
+  rw [mem_kostantToralBaseChangePresentationIdeal_iff,
+    mem_kostantGeneratedGeneralLinearBaseChangeIdeal_iff,
+    kostantToralBaseChangeIdeal_def, kostantGeneratedBaseChangeIdeal_def, hideal]
 
 /-! ## Transport along a named spelling of the integral defining ideal
 

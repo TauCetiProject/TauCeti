@@ -11,6 +11,9 @@ public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.LinearAlgebra.DirectSum.Finite
+-- Non-public: a monomorphism of functors into a category with pullbacks is a monomorphism at every
+-- object.
+import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
 
 /-!
 # Finite-dimensional quiver representations
@@ -28,9 +31,13 @@ finite-dimensional over the base field gives such a representation.
 ## Main results
 
 * `TauCeti.IsFinDim.of_iso`: pointwise finite-dimensionality transports along an isomorphism.
+* `TauCeti.IsFinDim.of_mono`: a subobject of a pointwise finite-dimensional representation is
+  pointwise finite-dimensional.
 * The full subcategory of `IsFinDim` representations is essentially small for finite `Q`.
 * `TauCeti.module_finite_asModule_of_isFinDim`: a pointwise finite-dimensional representation
   gives a finite module over the path algebra when the vertex set is finite.
+* `TauCeti.module_finite_quiverRepEquivalenceFunctorObj_of_isFinDim`: the module it is carried to
+  by `TauCeti.quiverRepEquivalence` is finite-dimensional over the base field.
 * `TauCeti.isFinDim_quiverRepFunctor_obj`: finite-dimensionality passes from a module to its
   associated representation.
 
@@ -75,6 +82,19 @@ theorem IsFinDim.of_iso {M N : QuiverRep.{u, v, w, t} k Q} (h : IsFinDim k Q M) 
   intro v
   have := h v
   exact (e.app v).toLinearEquiv.finiteDimensional
+
+/-- **A subobject of a pointwise finite-dimensional representation is pointwise
+finite-dimensional.** A monomorphism of representations is a monomorphism at every vertex, hence an
+injective linear map into a finite-dimensional space. The intended instance is a biproduct summand,
+`CategoryTheory.Limits.biproduct.ι` being a split monomorphism. -/
+theorem IsFinDim.of_mono {M N : QuiverRep.{u, v, w, t} k Q} (hM : IsFinDim k Q M)
+    (f : N ⟶ M) [Mono f] : IsFinDim k Q N := by
+  rw [isFinDim_iff] at hM ⊢
+  intro x
+  have hMx := hM x
+  have hmono : Mono (f.app x) := inferInstance
+  rw [ModuleCat.mono_iff_injective] at hmono
+  exact FiniteDimensional.of_injective (f.app x).hom hmono
 
 section ExactStructure
 
@@ -157,6 +177,26 @@ theorem module_finite_asModule_of_isFinDim [DecidableEq Q]
   let hmodule : Module.Finite k (QuiverRep.asModule k Q M) :=
     Module.Finite.equiv (QuiverRep.asModuleEquiv k Q M).symm
   exact Module.Finite.of_restrictScalars_finite k _ _
+
+/-- **A pointwise finite-dimensional representation of a finite quiver is carried to a
+finite-dimensional module** by `TauCeti.quiverRepEquivalence`.  That module is the direct sum of
+the vertex spaces, so finite-dimensionality at every vertex is finite-dimensionality of the module.
+Finite-dimensionality over `k` is what makes the module Artinian and Noetherian over `kQ`, by
+`isArtinian_of_tower` and `isNoetherian_of_tower`, and so is the route by which a theorem about
+modules of finite length reaches a finite-dimensional representation. -/
+theorem module_finite_quiverRepEquivalenceFunctorObj_of_isFinDim
+    (M : QuiverRep.{u, v, w, t} k Q) (hM : IsFinDim k Q M) :
+    Module.Finite k ((quiverRepEquivalence.{u, v, w, t} k Q).functor.obj M) := by
+  classical
+  rw [isFinDim_iff] at hM
+  let h (i : Q) : Module.Finite k (QuiverRep.vertexSpace k Q M i) := hM ((Paths.of Q).obj i)
+  let hsum : Module.Finite k (DirectSum Q (QuiverRep.vertexSpace k Q M)) := inferInstance
+  let hmodule : Module.Finite k (QuiverRep.asModule k Q M) :=
+    Module.Finite.equiv (QuiverRep.asModuleEquiv k Q M).symm
+  let hshrink : Module.Finite k (QuiverRep.asModuleShrink k Q M : Type t) :=
+    Module.Finite.equiv ((QuiverRep.asModuleShrinkEquiv k Q M).restrictScalars k).symm
+  exact Module.Finite.equiv
+    ((quiverRepEquivalenceFunctorObjShrinkIso k Q M).toLinearEquiv.restrictScalars k).symm
 
 /-- Pointwise finite-dimensional representations of a finite quiver form an essentially small
 category, via their finitely generated modules over the path algebra. -/

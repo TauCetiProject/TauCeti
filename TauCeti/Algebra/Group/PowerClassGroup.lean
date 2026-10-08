@@ -12,16 +12,18 @@ public import TauCeti.Algebra.Group.PowMonoidHom
 
 For a commutative group `G` the subgroup `Gⁿ` of `n`th powers is the range of `powMonoidHom n`,
 and this file names it together with the quotient `G ⧸ Gⁿ` and the class of an element. At `n = 2`
-the subgroup is Mathlib's `Subgroup.square G`, by `TauCeti.square_eq_powMonoidHom_two_range`.
+the subgroup is Mathlib's `Subgroup.square G`, by `TauCeti.square_eq_range_powMonoidHom`.
 
 ## Main definitions
 
 * `TauCeti.powerSubgroup`: the subgroup `Gⁿ ≤ G`, whose elements are characterised as the `n`th
-  powers by `TauCeti.mem_powerSubgroup_iff`.
+  powers by `TauCeti.mem_powerSubgroup_iff`, and which is the range of `powMonoidHom n` by
+  `TauCeti.powerSubgroup_eq_range_powMonoidHom`.
 * `TauCeti.powerClassQuotient`, `TauCeti.powerClassHom`: the quotient `G ⧸ Gⁿ` and the map taking
   an element to its power class. It is surjective (`TauCeti.powerClassHom_surjective`) with kernel
   `Gⁿ` (`TauCeti.ker_powerClassHom`), so it presents `G ⧸ Gⁿ` as the quotient of `G` by the `n`th
   powers.
+* `Subgroup.powerSubgroup_index_le`: a subgroup of index `m` contains `Gᵐ`.
 * `TauCeti.powerClassMap`: the map `G ⧸ Gⁿ → H ⧸ Hⁿ` induced by a homomorphism `G →* H`, which
   carries `n`th powers to `n`th powers. It is functorial (`TauCeti.powerClassMap_id`,
   `TauCeti.powerClassMap_comp`); for a field extension `L/K` and `f` the map `Kˣ →* Lˣ` it is the
@@ -37,6 +39,11 @@ variable (G : Type*) [CommGroup G] (n : ℕ)
 /-- **The subgroup of `n`th powers** `Gⁿ ≤ G`. -/
 def powerSubgroup : Subgroup G :=
   (powMonoidHom n : G →* G).range
+
+/-- The subgroup `Gⁿ` is the range of the `n`th power homomorphism. -/
+theorem powerSubgroup_eq_range_powMonoidHom :
+    powerSubgroup G n = (powMonoidHom n : G →* G).range :=
+  (rfl)
 
 /-- **The group of `n`th power classes** `G ⧸ Gⁿ`. -/
 abbrev powerClassQuotient : Type _ :=
@@ -67,6 +74,14 @@ theorem powerClassHom_apply (g : G) : powerClassHom G n g = QuotientGroup.mk g :
 theorem mem_powerSubgroup_iff {g : G} : g ∈ powerSubgroup G n ↔ ∃ h : G, h ^ n = g := by
   rw [powerSubgroup, MonoidHom.mem_range]
   exact exists_congr fun h => by rw [powMonoidHom_apply]
+
+/-- **A subgroup contains the powers to the exponent of its index**: `(G ⧸ H)` has order
+`[G : H]`, so `g ^ [G : H] ∈ H` for every `g`. When `H` has infinite index the exponent is `0`
+and the statement is trivial. -/
+theorem _root_.Subgroup.powerSubgroup_index_le (H : Subgroup G) :
+    powerSubgroup G H.index ≤ H := fun _ hx ↦ by
+  obtain ⟨g, rfl⟩ := (mem_powerSubgroup_iff _).1 hx
+  exact H.pow_index_mem g
 
 /-! ### Functoriality -/
 

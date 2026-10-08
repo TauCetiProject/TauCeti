@@ -11,9 +11,13 @@ public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 # Improper-integral asymptotics and logarithmic decay
 
 This file extends Mathlib's improper-integral estimates with an asymptotic estimate for weighted
-integrals and integrability at infinity of `(t (1 + log t) ^ 2)⁻¹`.
+integrals, integrability at infinity of `(t (1 + log t) ^ 2)⁻¹`, and the closed form
+`∫_A^∞ dy / y² = 1 / A` as a Lebesgue integral.
 
 ## Main declarations
+
+* `TauCeti.lintegral_Ioi_inv_sq`: `∫⁻ y in Ioi A, (1 / ‖y‖₊) ^ 2 = ofReal A⁻¹` for `0 < A`, the
+  integrand being the density of the hyperbolic area measure.
 
 * `TauCeti.integrableAtFilter_inv_mul_one_add_log_sq`: the function
   `t ↦ (t (1 + log t) ^ 2)⁻¹` is integrable at infinity.
@@ -108,5 +112,22 @@ theorem integrableAtFilter_inv_mul_one_add_log_sq :
   rw [Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity)]
   gcongr
   nlinarith
+
+/-- **The improper integral of `1 / y²`**: `∫_A^∞ dy / y² = 1 / A` for `0 < A`, as a Lebesgue
+integral of the nonnegative function `(1 / ‖y‖₊) ^ 2`. -/
+theorem lintegral_Ioi_inv_sq {A : ℝ} (hA : 0 < A) :
+    ∫⁻ y in Ioi A, (((1 / ‖y‖₊) ^ 2 : NNReal) : ENNReal) = ENNReal.ofReal A⁻¹ := by
+  have hint := integrableOn_Ioi_rpow_of_lt (a := -2) (by norm_num) hA
+  have hval : ∫ y in Ioi A, y ^ (-2 : ℝ) = A⁻¹ := by
+    convert integral_Ioi_rpow_of_lt (a := -2) (by norm_num) hA using 1
+    norm_num [Real.rpow_neg_one]
+  rw [← hval, ofReal_integral_eq_lintegral_ofReal hint
+    (ae_restrict_of_forall_mem measurableSet_Ioi fun y hy ↦
+      Real.rpow_nonneg (hA.trans hy).le _)]
+  refine setLIntegral_congr_fun measurableSet_Ioi fun y hy ↦ ?_
+  have hy : 0 < y := hA.trans hy
+  rw [← ENNReal.ofReal_coe_nnreal]
+  congr 1
+  simp [Real.rpow_neg hy.le, Real.nnnorm_of_nonneg hy.le]
 
 end TauCeti

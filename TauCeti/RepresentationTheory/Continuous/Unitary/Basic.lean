@@ -17,8 +17,6 @@ characterizes unitarity through norm preservation, isometries, and Mathlib's `un
 continuous linear operators, and records the basic inner-product identities, the coefficient bound,
 and that unitarity passes to restrictions.
 
-The definition and its API implement the unitarity-predicate milestone in Layer 1 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/roadmap/representation-theory/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md).
 The operator characterizations reuse Mathlib's adjoint and unitary-operator theory.
 
 The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapters 2–4.
@@ -27,8 +25,6 @@ The mathematical development follows Daniel Bump, *Lie Groups*, second edition, 
 public section
 
 open scoped InnerProductSpace
-
-namespace TauCeti
 
 namespace ContRepresentation
 
@@ -82,6 +78,15 @@ theorem inner_map_map (hπ : IsUnitary π) (g : G) (v w : V) :
 theorem norm_map (hπ : IsUnitary π) (g : G) (v : V) :
     ‖π g v‖ = ‖v‖ :=
   (isUnitary_iff_norm_map π).mp hπ g v
+
+/-- Every action operator of a unitary representation has operator norm at most `1`. -/
+theorem norm_le_one (hπ : IsUnitary π) (g : G) : ‖π g‖ ≤ 1 :=
+  (π g).opNorm_le_bound zero_le_one fun v ↦ by simp [hπ.norm_map]
+
+/-- The action operators of a unitary representation are uniformly bounded, in the form taken
+by the integrated-form API. -/
+theorem exists_norm_le (hπ : IsUnitary π) : ∃ C, ∀ g, ‖π g‖ ≤ C :=
+  ⟨1, hπ.norm_le_one⟩
 
 /-- Every action map of a unitary representation is an isometry. -/
 theorem isometry (hπ : IsUnitary π) (g : G) : Isometry (π g) :=
@@ -192,5 +197,3 @@ end IsUnitary
 end Group
 
 end ContRepresentation
-
-end TauCeti

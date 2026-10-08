@@ -278,9 +278,8 @@ lemma toLineBundleClass_eq_mk_iff {L : InvertibleSheaf X} :
 @[simp]
 lemma toLineBundleClass_principalCartierDivisor (f : X.functionFieldˣ) :
     (principalCartierDivisor X f).toLineBundleClass = 1 := by
-  rw [← LineBundleClass.mk_trivial, toLineBundleClass_eq_mk_iff, InvertibleSheaf.trivial_obj]
-  exact ⟨(unitIsoSheafPrincipalCartierDivisor X f).symm ≪≫
-    (TauCeti.SheafOfModules.freePUnitIsoUnit X.ringCatSheaf).symm⟩
+  rw [toLineBundleClass, LineBundleClass.mk_eq_one_iff, toInvertibleSheaf_obj]
+  exact ⟨(unitIsoSheafPrincipalCartierDivisor X f).symm⟩
 
 /-- The zero Cartier divisor has the trivial line-bundle class. -/
 @[simp]

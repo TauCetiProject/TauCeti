@@ -12,14 +12,17 @@ public import Mathlib.Analysis.Analytic.Order
 
 Extensions of Mathlib's analytic-order calculus: `analyticOrderNatAt` respects eventual equality,
 the order is additive over finite products, composing with `q ↦ q ^ N` at `0` multiplies the order
-by `N`, the power map `w ↦ w ^ m` recentred at `0` has order `m` there for `m ≠ 0`, and the
-recentred function `f · - f x` has order `1` at `x` exactly when `deriv f x ≠ 0`. The finiteness a
-zero count also needs is
+by `N`, the power map `w ↦ w ^ m` recentred at `0` has order `m` there for `m ≠ 0`, the
+recentred function `f · - f x` has order `1` at `x` exactly when `deriv f x ≠ 0`, and the order is
+monotone under domination (`=O`), hence invariant under equivalence up to constant factors (`=Θ`).
+The finiteness a zero count also needs is
 `TauCeti.finite_setOf_mem_and_eq_zero_of_isCompact`, provided by
 `TauCeti.Analysis.Analytic.IsolatedZeros`, which mentions no order.
 
 ## Main declarations
 
+* `AnalyticAt.exists_analyticOrderAt_monomial_sub_eq_min`: outside at most two scalar
+  coefficients, subtraction of a scalar monomial has the minimum of the two orders.
 * `TauCeti.analyticOrderNatAt_congr`: eventual equality preserves the natural analytic order.
 * `TauCeti.analyticOrderAt_prod`: the order of `∏ i ∈ s, F i` is `∑ i ∈ s`, of the orders.
 * `TauCeti.analyticOrderAt_comp_pow_zero`: the order of `q ↦ f (q ^ N)` at `0` is `N` times
@@ -29,11 +32,15 @@ zero count also needs is
 * `AnalyticAt.analyticOrderAt_sub_eq_one_iff_deriv_ne_zero`: `f · - f x` has order `1` at `x`
   exactly when `deriv f x ≠ 0`, the `iff` form of Mathlib's
   `AnalyticAt.analyticOrderAt_sub_eq_one_of_deriv_ne_zero`.
+* `AnalyticAt.analyticOrderAt_le_of_isBigO` and `AnalyticAt.analyticOrderAt_eq_of_isTheta`: an
+  analytic function dominated by `f` vanishes to at least the order of `f`, so analytic functions
+  equivalent up to constant factors have the same order.
 
 ## References
 
 * [Mathlib PR #39083](https://github.com/leanprover-community/mathlib4/pull/39083)
-  (Chris Birkbeck) — the upstream draft this file ports onto the current Mathlib pin.
+  (Chris Birkbeck) — the upstream draft from which this file ports the eventual-equality,
+  product, power-map and derivative lemmas onto the current Mathlib pin.
 -/
 
 public section
@@ -93,6 +100,73 @@ theorem _root_.AnalyticAt.analyticOrderAt_sub_eq_one_iff_deriv_ne_zero {E : Type
   rw [← hf.analyticOrderAt_deriv_add_one, ← hf.deriv.analyticOrderAt_eq_zero]
   simp
 
+/-- A function analytic at `z₀` and dominated there by `f` vanishes to at least the order of `f`
+at `z₀`. No analyticity of `f` is needed: a non-analytic `f` has order `0`. -/
+theorem _root_.AnalyticAt.analyticOrderAt_le_of_isBigO {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : 𝕜 → E} {g : 𝕜 → F}
+    (hg : AnalyticAt 𝕜 g z₀) (hgf : g =O[𝓝 z₀] f) :
+    analyticOrderAt f z₀ ≤ analyticOrderAt g z₀ := by
+  by_cases hf : AnalyticAt 𝕜 f z₀
+  swap
+  · simp [analyticOrderAt_of_not_analyticAt hf]
+  by_cases hftop : analyticOrderAt f z₀ = ⊤
+  · -- a function dominated by one vanishing near `z₀` vanishes near `z₀`
+    rw [hftop, top_le_iff, analyticOrderAt_eq_top]
+    exact Asymptotics.isBigO_zero_right_iff.1
+      (hgf.trans_eventuallyEq (analyticOrderAt_eq_top.1 hftop))
+  by_cases hgtop : analyticOrderAt g z₀ = ⊤
+  · simp [hgtop]
+  rw [← Nat.cast_analyticOrderNatAt hftop, ← Nat.cast_analyticOrderNatAt hgtop, Nat.cast_le]
+  by_contra! hlt
+  -- otherwise `(z - z₀) ^ b`, for `b` the order of `g`, would be negligible compared to itself
+  have hpow : (fun z => (z - z₀) ^ analyticOrderNatAt f z₀) =o[𝓝 z₀]
+      fun z => (z - z₀) ^ analyticOrderNatAt g z₀ :=
+    Asymptotics.isLittleO_norm_norm.1 <| by
+      simpa only [norm_pow] using Asymptotics.isLittleO_pow_sub_pow_sub z₀ hlt
+  refine Asymptotics.isLittleO_irrefl' ?_ <|
+    ((hg.isTheta_pow_sub hgtop).symm.isBigO.trans hgf).trans_isLittleO
+      ((hf.isTheta_pow_sub hftop).isBigO.trans_isLittleO hpow)
+  exact ((eventually_nhdsWithin_of_forall (s := {z₀}ᶜ) fun z hz =>
+    norm_ne_zero_iff.2 (pow_ne_zero _ (sub_ne_zero.2 hz))).frequently).filter_mono
+      nhdsWithin_le_nhds
+
+/-- Two functions analytic at `z₀` that are equivalent up to constant factors near `z₀` vanish to
+the same order there. -/
+theorem _root_.AnalyticAt.analyticOrderAt_eq_of_isTheta {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : 𝕜 → E} {g : 𝕜 → F}
+    (hf : AnalyticAt 𝕜 f z₀) (hg : AnalyticAt 𝕜 g z₀) (hfg : f =Θ[𝓝 z₀] g) :
+    analyticOrderAt f z₀ = analyticOrderAt g z₀ :=
+  le_antisymm (hg.analyticOrderAt_le_of_isBigO hfg.2) (hf.analyticOrderAt_le_of_isBigO hfg.isBigO)
+
 end TauCeti
+
+/-- Outside zero and at most one additional scalar, subtracting an analytic germ from
+a scalar multiple of a monomial has order equal to the minimum of their orders. The
+exceptional scalar accounts for cancellation when the two orders coincide. -/
+theorem AnalyticAt.exists_analyticOrderAt_monomial_sub_eq_min {𝕜 : Type*}
+    [NontriviallyNormedField 𝕜] {f : 𝕜 → 𝕜} (hf : AnalyticAt 𝕜 f 0) (N : ℕ) :
+    ∃ b : 𝕜, ∀ c : 𝕜, c ≠ 0 → c ≠ b →
+      analyticOrderAt (fun t ↦ c * t ^ N - f t) 0 = min (N : ℕ∞) (analyticOrderAt f 0) := by
+  have hmono (c : 𝕜) (hc : c ≠ 0) :
+      analyticOrderAt (fun t : 𝕜 ↦ c * t ^ N) 0 = N := by
+    apply (analyticAt_const.mul (analyticAt_id.pow N)).analyticOrderAt_eq_natCast.2
+    exact ⟨fun _ ↦ c, analyticAt_const, hc, .of_forall fun t ↦ by
+      simp [smul_eq_mul, mul_comm]⟩
+  by_cases heq : analyticOrderAt f 0 = N
+  · obtain ⟨g, hg, -, hfg⟩ := hf.analyticOrderAt_eq_natCast.1 heq
+    refine ⟨g 0, fun c _ hcb ↦ ?_⟩
+    rw [heq, min_self]
+    apply ((analyticAt_const.mul (analyticAt_id.pow N)).sub hf).analyticOrderAt_eq_natCast.2
+    refine ⟨fun t ↦ c - g t, analyticAt_const.sub hg, sub_ne_zero.2 hcb, ?_⟩
+    filter_upwards [hfg] with t ht
+    simp only [sub_zero, smul_eq_mul, Pi.sub_apply, Pi.mul_apply, Pi.pow_apply, id_eq] at ht ⊢
+    rw [ht]
+    ring
+  · refine ⟨0, fun c hc _ ↦ ?_⟩
+    have hne : analyticOrderAt (fun t : 𝕜 ↦ c * t ^ N) 0 ≠ analyticOrderAt (-f) 0 := by
+      simpa [hmono c hc] using Ne.symm heq
+    have hsum := analyticOrderAt_add_of_ne hne
+    rw [analyticOrderAt_neg, hmono c hc] at hsum
+    simpa only [Pi.add_def, Pi.neg_def, sub_eq_add_neg] using hsum
 
 end

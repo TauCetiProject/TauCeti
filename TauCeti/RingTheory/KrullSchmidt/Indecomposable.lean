@@ -32,6 +32,8 @@ local-endomorphism-ring theorem. Both are supplied here.
 
 * `TauCeti.isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem`: indecomposability
   says exactly that `M` is nontrivial and `0` and `1` are the only idempotents of `Module.End A M`.
+* `TauCeti.isIndecomposableModule_iff_isIndecomposableModule_of_algebraMap_surjective`:
+  indecomposability is unchanged by restricting scalars along a surjective algebra map.
 * `TauCeti.IsIndecomposableModule.bijective_of_bijective_comp`: a split injection into an
   indecomposable module is an isomorphism, that is, if `g ∘ₗ f` is bijective and the module `f`
   lands in is indecomposable, then `f` is bijective.
@@ -46,15 +48,16 @@ local-endomorphism-ring theorem. Both are supplied here.
   holds too, so indecomposability is *equivalent* to having a local endomorphism ring.
 * `TauCeti.isIndecomposableModule_self`: a local ring is indecomposable over itself.
 * `TauCeti.IsIndecomposableModule.nonempty_linearEquiv_of_free`: an indecomposable free module is
-  isomorphic to the ring.
+  isomorphic to the scalar semiring.
 
 ## Implementation notes
 
-`IsIndecomposableModule`, its two projections, and its transport along a linear equivalence are
+`IsIndecomposableModule`, its two projections, and its transport along a semilinear equivalence are
 stated for a semimodule over a semiring, since the submodule lattice and the order isomorphism it
-inherits from a linear equivalence need no subtraction; so is `nontrivial_of_isLocalRing_end`,
-which only reads `0 ≠ 1` off the endomorphism semiring. Everything from the idempotent
-reformulation onwards is stated over a ring, which is where Mathlib puts the tools it uses:
+inherits from a semilinear equivalence need no subtraction; so is `nontrivial_of_isLocalRing_end`,
+which only reads `0 ≠ 1` off the endomorphism semiring. The free-module theorem also works over
+a semiring. The idempotent, splitting, and Fitting results are stated over a ring, where Mathlib
+puts the tools they use:
 `LinearMap.IsIdempotentElem.isCompl` and `Submodule.projection` build a projection by subtracting,
 and `IsSimpleModule` is itself only defined for modules over a ring.
 
@@ -65,10 +68,6 @@ on the lemmas that consume it, which is what Mathlib's Fitting decomposition ask
 unpack it through `isFiniteLength_iff_isNoetherian_isArtinian`.
 
 ## References
-
-This implements the Fitting's lemma bullet of Layer 2 ("the Krull-Schmidt theorem") of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, pinned as
-`isLocalRing_end_of_isIndecomposable` in its `Suggested.lean`.
 
 See I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
 Algebras, Vol. 1*, Section I.4.
@@ -110,10 +109,12 @@ theorem IsIndecomposableModule.eq_bot_or_eq_bot (h : IsIndecomposableModule A M)
     {N P : Submodule A M} (hNP : IsCompl N P) : N = ⊥ ∨ P = ⊥ :=
   h.2 N P hNP
 
-/-- Indecomposability transfers along a linear equivalence: the induced order isomorphism of
-submodules carries a decomposition of the target back to one of the source. -/
-theorem IsIndecomposableModule.of_linearEquiv {N : Type w} [AddCommMonoid N] [Module A N]
-    (h : IsIndecomposableModule A M) (e : M ≃ₗ[A] N) : IsIndecomposableModule A N := by
+/-- Indecomposability transfers along a semilinear equivalence over mutually inverse scalar
+homomorphisms. -/
+theorem IsIndecomposableModule.of_linearEquiv {B : Type*} [Semiring B]
+    {σ : A →+* B} {τ : B →+* A} [RingHomInvPair σ τ] [RingHomInvPair τ σ]
+    {N : Type w} [AddCommMonoid N] [Module B N]
+    (h : IsIndecomposableModule A M) (e : M ≃ₛₗ[σ] N) : IsIndecomposableModule B N := by
   have := h.nontrivial
   refine ⟨e.symm.toEquiv.nontrivial, fun P Q hPQ ↦ ?_⟩
   simpa using h.eq_bot_or_eq_bot ((Submodule.orderIsoMapComap e.symm).isCompl hPQ)
@@ -131,6 +132,20 @@ end Semiring
 section Ring
 
 variable {A : Type u} {M : Type v} [Ring A] [AddCommGroup M] [Module A M]
+
+/-! ### Restriction of scalars along a surjection -/
+
+/-- **Indecomposability is insensitive to restriction of scalars along a surjection**: when
+`algebraMap R A` is surjective, the `R`-submodules and the `A`-submodules of `M` are the same, so
+`M` is indecomposable over `R` exactly when it is over `A`. -/
+theorem isIndecomposableModule_iff_isIndecomposableModule_of_algebraMap_surjective
+    {R : Type*} [CommRing R] [Algebra R A] [Module R M] [IsScalarTower R A M]
+    (h : Function.Surjective (algebraMap R A)) :
+    IsIndecomposableModule R M ↔ IsIndecomposableModule A M := by
+  let e := Submodule.orderIsoOfAlgebraMapSurjective (M := M) h
+  refine and_congr_right fun _ ↦ ⟨fun hR N P hNP ↦ ?_, fun hA N P hNP ↦ ?_⟩
+  · simpa using hR (e N) (e P) (e.isCompl hNP)
+  · simpa using hA (e.symm N) (e.symm P) (e.symm.isCompl hNP)
 
 /-! ### Indecomposability through idempotent endomorphisms -/
 
@@ -173,6 +188,16 @@ theorem IsSimpleModule.isIndecomposableModule [IsSimpleModule A M] :
   · refine Or.inr ?_
     have hdisj : Disjoint (⊤ : Submodule A M) P := hN ▸ hNP.disjoint
     simpa using hdisj
+
+/-- An indecomposable semisimple module is simple. -/
+theorem IsIndecomposableModule.isSimpleModule [IsSemisimpleModule A M]
+    (h : IsIndecomposableModule A M) : IsSimpleModule A M := by
+  have := h.nontrivial
+  refine (isSimpleModule_iff A M).mpr ⟨fun N ↦ ?_⟩
+  obtain ⟨P, hNP⟩ := exists_isCompl N
+  rcases h.eq_bot_or_eq_bot hNP with hN | hP
+  · exact Or.inl hN
+  · exact Or.inr (by simpa [hP] using hNP.sup_eq_top)
 
 /-! ### Splitting off an indecomposable module -/
 
@@ -226,19 +251,10 @@ theorem IsIndecomposableModule.isNilpotent_or_bijective (h : IsIndecomposableMod
   -- `f ^ (n + 1)`; the threshold `n` alone could be `0`, where the decomposition says nothing.
   have hcompl := hn (n + 1) (Nat.le_succ n)
   rcases h.eq_bot_or_eq_bot hcompl with hker | hrange
-  · refine Or.inr ⟨?_, ?_⟩
-    · have hinj : Function.Injective (f ^ (n + 1)) := LinearMap.ker_eq_bot.mp hker
-      intro x y hxy
-      refine hinj ?_
-      have hpow : f ^ (n + 1) = f ^ n * f := pow_succ f n
-      simp only [hpow, Module.End.mul_apply, hxy]
-    · have htop : LinearMap.range (f ^ (n + 1)) = ⊤ := by
-        have hsup := hcompl.sup_eq_top
-        rwa [hker, bot_sup_eq] at hsup
-      have hle : LinearMap.range (f ^ (n + 1)) ≤ LinearMap.range f := by
-        rw [pow_succ' f n]
-        exact LinearMap.range_comp_le_range _ _
-      exact LinearMap.range_eq_top.mp (top_le_iff.mp (htop ▸ hle))
+  · apply Or.inr
+    rw [← Module.End.isUnit_iff, ← isUnit_pow_succ_iff (n := n), Module.End.isUnit_iff]
+    refine ⟨LinearMap.ker_eq_bot.mp hker, LinearMap.range_eq_top.mp ?_⟩
+    simpa [hker] using hcompl.sup_eq_top
   · exact Or.inl ⟨n + 1, LinearMap.range_eq_bot.mp hrange⟩
 
 /-- **Fitting's lemma**, restated: an endomorphism of an indecomposable module that is both
@@ -295,11 +311,17 @@ theorem isIndecomposableModule_self [IsLocalRing A] : IsIndecomposableModule A A
     .of_surjective' (RingEquiv.moduleEndSelf A).toRingHom (RingEquiv.moduleEndSelf A).surjective
   exact isIndecomposableModule_of_isLocalRing_end
 
+end Ring
+
 /-! ### Indecomposable free modules -/
 
-/-- **An indecomposable free module is isomorphic to the ring.** For a basis vector `b i`, the span
-of `b i` and the span of the remaining basis vectors are complementary, so the latter span is zero
-and `i` is the only index. -/
+section Free
+
+variable {A : Type u} {M : Type v} [Semiring A] [AddCommMonoid M] [Module A M]
+
+/-- **An indecomposable free module is isomorphic to the scalar semiring.** For a basis vector
+`b i`, its span and the span of the remaining basis vectors are complementary, so the latter span
+is zero and `i` is the only index. -/
 theorem IsIndecomposableModule.nonempty_linearEquiv_of_free [Module.Free A M]
     (h : IsIndecomposableModule A M) : Nonempty (M ≃ₗ[A] A) := by
   have := h.nontrivial
@@ -316,6 +338,6 @@ theorem IsIndecomposableModule.nonempty_linearEquiv_of_free [Module.Free A M]
     ⟨fun j j' ↦ (hi j).trans (hi j').symm⟩
   exact ⟨b.repr.trans (Finsupp.uniqueLinearEquiv A A i)⟩
 
-end Ring
+end Free
 
 end TauCeti

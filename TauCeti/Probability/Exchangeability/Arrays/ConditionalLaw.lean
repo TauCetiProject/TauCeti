@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Exchangeability.Arrays.Extreme.Basic
 public import Mathlib.Probability.Kernel.Condexp
 import Mathlib.Probability.Independence.Conditional
-import TauCeti.Probability.Exchangeability.PermutationExtension
+import TauCeti.Data.Finset.Basic
 import TauCeti.Probability.Kernel.Invariant
 import TauCeti.Probability.Martingale.Convergence
 

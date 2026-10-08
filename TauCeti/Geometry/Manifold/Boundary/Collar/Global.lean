@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Tactic.NormNum
+import Mathlib.Topology.LocalAtTarget
 
 /-!
 # Global collar data
@@ -24,6 +25,11 @@ consequences.
 The collar-neighborhood formulation follows J. Lee, *Introduction to Smooth Manifolds*, 2nd ed.,
 Theorem 9.25; this declaration is its topological abstraction.  The API adapts the existing
 `TauCeti.Geometry.Manifold.LocallyFlat.Bicollar` formalization by replacing `ℝ` with `Ico 0 1`.
+
+The file also defines M. Brown's local notion, `TauCeti.IsLocallyCollared`: every point has an
+open neighbourhood on which the map is collared, by a collar meeting the image of the map only in
+its zero slice.  Brown's theorem that local collars assemble into a global one is in
+`TauCeti.Geometry.Manifold.Boundary.Collar.Brown`.
 -/
 
 public section
@@ -198,5 +204,71 @@ theorem comp_homeomorph (h : IsCollared f) (e : P ≃ₜ N) : IsCollared (f ∘ 
   h.comp_isOpenEmbedding e.isOpenEmbedding
 
 end IsCollared
+
+/-- A map `f : N → M` is **locally collared** if every point of `N` has an open neighbourhood `U`
+such that the restriction of `f` to `U` admits a collar `c : U × [0, 1) → M` whose points of
+positive depth avoid the image of `f`, so that the collar takes values in `(M \ f(N)) ∪ f(U)`.
+This is M. Brown's definition of a locally collared subset: `f(U)` is collared in
+`(M \ f(N)) ∪ f(U)`. -/
+def IsLocallyCollared (f : N → M) : Prop :=
+  ∀ x, ∃ U : Set N, IsOpen U ∧ x ∈ U ∧ ∃ c : U × Ico (0 : ℝ) 1 → M,
+    IsCollar (f ∘ ((↑) : U → N)) c ∧ ∀ p, c p ∈ range f → (p.2 : ℝ) = 0
+
+/-- A map is locally collared exactly when every point has an open neighbourhood `U` on which the
+restriction of the map has a collar whose only points in the image of the map are those of depth
+zero. -/
+theorem isLocallyCollared_iff : IsLocallyCollared f ↔
+    ∀ x, ∃ U : Set N, IsOpen U ∧ x ∈ U ∧ ∃ c : U × Ico (0 : ℝ) 1 → M,
+      IsCollar (f ∘ ((↑) : U → N)) c ∧ ∀ p, c p ∈ range f → (p.2 : ℝ) = 0 :=
+  Iff.rfl
+
+/-- A collared map is locally collared: the global collar serves as a local collar everywhere. -/
+theorem IsCollared.isLocallyCollared (h : IsCollared f) : IsLocallyCollared f := by
+  obtain ⟨c, hc⟩ := isCollared_iff.1 h
+  exact fun x => ⟨univ, isOpen_univ, mem_univ x, _, hc.restrict isOpen_univ,
+    fun p hp => congrArg Subtype.val (hc.preimage_range.subset hp).2⟩
+
+/-- A locally collared map is continuous. -/
+theorem IsLocallyCollared.continuous (h : IsLocallyCollared f) : Continuous f := by
+  refine continuous_iff_continuousAt.2 fun x => ?_
+  obtain ⟨U, hU, hxU, c, hc, -⟩ := h x
+  exact (continuousOn_iff_continuous_domRestrict.2 hc.continuous).continuousAt (hU.mem_nhds hxU)
+
+namespace IsLocallyCollared
+
+variable {N' : Type*} [TopologicalSpace N']
+
+/-- Precomposing a locally collared map with an open embedding keeps it locally collared. -/
+theorem comp_isOpenEmbedding (h : IsLocallyCollared f) {e : P → N} (he : IsOpenEmbedding e) :
+    IsLocallyCollared (f ∘ e) := by
+  intro x
+  obtain ⟨U, hU, hxU, c, hc, hc0⟩ := h (e x)
+  refine ⟨e ⁻¹' U, hU.preimage he.continuous, hxU, _,
+    hc.comp_isOpenEmbedding (U.restrictPreimage_isOpenEmbedding he), fun p hp => ?_⟩
+  -- The image of `f ∘ e` lies in the image of `f`, so the old local collar condition applies.
+  obtain ⟨y, hy⟩ := hp
+  exact hc0 _ ⟨e y, hy⟩
+
+/-- Local collaring is inherited by the restriction to an open subset of the domain. -/
+theorem restrict (h : IsLocallyCollared f) {U : Set N} (hU : IsOpen U) :
+    IsLocallyCollared (f ∘ ((↑) : U → N)) :=
+  h.comp_isOpenEmbedding hU.isOpenEmbedding_subtypeVal
+
+/-- Local collaring is invariant under homeomorphisms of the domain. -/
+theorem comp_homeomorph (h : IsLocallyCollared f) (e : N' ≃ₜ N) :
+    IsLocallyCollared (f ∘ e) :=
+  h.comp_isOpenEmbedding e.isOpenEmbedding
+
+/-- Local collars are carried along by open embeddings of the ambient space. -/
+theorem isOpenEmbedding_comp {g : M → P} (h : IsLocallyCollared f) (hg : IsOpenEmbedding g) :
+    IsLocallyCollared (g ∘ f) := by
+  intro x
+  obtain ⟨U, hU, hxU, c, hc, hc0⟩ := h x
+  refine ⟨U, hU, hxU, g ∘ c, hc.isOpenEmbedding_comp hg, fun p hp => hc0 p ?_⟩
+  -- `g` is injective, so `g (c p) = g (f y)` forces `c p = f y`.
+  obtain ⟨y, hy⟩ := hp
+  exact ⟨y, hg.injective hy⟩
+
+end IsLocallyCollared
 
 end TauCeti

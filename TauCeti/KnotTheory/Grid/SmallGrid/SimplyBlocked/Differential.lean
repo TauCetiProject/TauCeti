@@ -76,10 +76,8 @@ private theorem twoByTwoRectangle_eq (r :
   twoByTwoRectangleZeroOne.eq_or_eq_swapSides r
 
 private theorem twoByTwoRectangleZeroOne_ne_oneZero :
-    twoByTwoRectangleZeroOne ≠ twoByTwoRectangleOneZero := by
-  intro h
-  have hleft := congrArg GridRectangleBetween.left h
-  simp [twoByTwoRectangleZeroOne, twoByTwoRectangleOneZero] at hleft
+    twoByTwoRectangleZeroOne ≠ twoByTwoRectangleOneZero :=
+  (GridRectangleBetween.swapSides_ne_self _).symm
 
 private theorem cIco_zero_one : Grid.cIco (0 : Fin 2) 1 = {0} :=
   Grid.cIco_eq_singleton_iff.mpr (by decide)
@@ -127,8 +125,7 @@ private theorem twoByTwo_simplyBlockedRectangles_id_swap :
   rcases twoByTwoRectangle_eq r with rfl | rfl
   · simp [twoByTwoRectangleZeroOne_squares,
       twoByTwo_XSet, twoByTwoRectangleZeroOne_ne_oneZero]
-  · simp [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
-      GridRectangle.interior_eq_empty_of_le_two (n := 2) le_rfl,
+  · simp [GridRectangleBetween.isEmpty_of_le_two (n := 2) le_rfl,
       twoByTwoRectangleOneZero_squares, twoByTwo_XSet]
 
 private theorem twoByTwo_simplyBlockedRectangles_swap_id :
@@ -136,8 +133,7 @@ private theorem twoByTwo_simplyBlockedRectangles_swap_id :
   ext r
   simp only [mem_simplyBlockedRectangles, Finset.notMem_empty, iff_false, not_and]
   intro _ hdisjoint _
-  apply Finset.disjoint_left.mp hdisjoint
-    (GridRectangle.squares_eq_coveredSquares r.toGridRectangle ▸ r.left_bottom_mem_squares)
+  apply Finset.disjoint_left.mp hdisjoint r.left_bottom_mem_coveredSquares
   exact twoByTwo.mk_mem_XSet r.left (GridState.twoByTwoSwap r.left) |>.mpr rfl
 
 variable (R : Type*) [CommSemiring R]

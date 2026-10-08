@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
-public import TauCeti.NumberTheory.LocalField.PowerSubgroup
+public import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.Algebra.Group.PowMonoidHom
@@ -20,9 +20,9 @@ import TauCeti.RingTheory.Finite.ArtinSchreier
 # Deep units are squares, at the sharp depth
 
 In a nonarchimedean local field of characteristic different from two, every unit in
-`U(K, 2 v_K(2) + 1)` is a square. In particular the subgroup of squares is open, including
-in residue characteristic two. This supplies the neighborhoods in which a nonzero value
-stays in one square class, used in approximation arguments for quadratic forms.
+`U(K, 2 v_K(2) + 1)` is a square. The resulting openness of the square subgroup, including
+in residue characteristic two, is proved in `PowerSubgroup.Open` and supplies neighborhoods
+in which a nonzero value stays in one square class.
 
 The exponent is `natCastValuation K 2 h2`, so no choice of a dyadic base field is needed.
 The inclusion is the case `p = 2`, `i = v_K(2) + 1` of
@@ -257,13 +257,13 @@ theorem exists_mem_unitFiltration_not_isSquare (h2 : (2 : K) ≠ 0) :
 /-- Every unit of depth `2 * dyadicLevel K + 1` is a square. -/
 theorem unitFiltration_le_square (h2 : (2 : K) ≠ 0) :
     unitFiltration K (2 * dyadicLevel K h2 + 1) ≤ Subgroup.square Kˣ := by
-  rw [square_eq_powMonoidHom_two_range]
+  rw [square_eq_range_powMonoidHom]
   simpa only [dyadicLevel_def] using unitFiltration_le_range_powMonoidHom_two h2
 
 /-- The sharp depth cannot be decreased: units at `2 * dyadicLevel K` are not all squares. -/
 theorem not_unitFiltration_le_square (h2 : (2 : K) ≠ 0) :
     ¬ (unitFiltration K (2 * dyadicLevel K h2) ≤ Subgroup.square Kˣ) := by
-  rw [square_eq_powMonoidHom_two_range]
+  rw [square_eq_range_powMonoidHom]
   simpa only [dyadicLevel_def] using not_unitFiltration_le_range_powMonoidHom_two h2
 
 /-- The exact depth of the local square theorem: `U(K, n)` consists of squares if and only if
@@ -366,19 +366,6 @@ theorem not_isSquare_one_add_pow_odd (h2 : (2 : K) ≠ 0) {π : 𝒪[K]}
     simpa [pow_two] using hξ
   rw [← hξ']
   simp only [Units.val_mk0, add_sub_cancel_left, map_pow]
-
-/-- The square subgroup of a nonarchimedean local field of characteristic different from two
-is open in its unit group, also at dyadic places. -/
-theorem isOpen_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
-    IsOpen ((powMonoidHom 2 : Kˣ →* Kˣ).range : Set Kˣ) :=
-  Subgroup.isOpen_mono (unitFiltration_le_range_powMonoidHom_two h2)
-    (isOpen_unitFiltration _)
-
-/-- The square subgroup is closed in the unit group of a nonarchimedean local field of
-characteristic different from two. -/
-theorem isClosed_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
-    IsClosed ((powMonoidHom 2 : Kˣ →* Kˣ).range : Set Kˣ) :=
-  Subgroup.isClosed_of_isOpen _ (isOpen_range_powMonoidHom_two h2)
 
 /-- **Squares in a nonarchimedean local field.** Written against a uniformizer `π`, an element
 `π ^ m * w` with `w` of even valuation is a square exactly when `m` is even and `w` is a square.

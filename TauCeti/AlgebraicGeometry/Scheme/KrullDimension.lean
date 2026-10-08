@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
-public import TauCeti.RingTheory.KrullDimension.FiniteType
+public import Mathlib.AlgebraicGeometry.Properties
+public import TauCeti.RingTheory.KrullDimension.Equidimensional
 public import TauCeti.Topology.KrullDimension
 
 /-!
@@ -23,12 +24,20 @@ case follows by covering `X` with affine opens, whose base changes cover the fib
 
 This is the input for the stability of fibrewise dimension bounds of morphisms under base change:
 the fibre of a base change is the base change of a fibre along an extension of residue fields.
+Likewise `X` is pure-dimensional of dimension `d` exactly when `X ×_{Spec K} Spec L` is: on affine
+charts, the irreducible components of `Spec (L ⊗[K] A)` lie over those of `Spec A` and have the
+same dimension (`TauCeti.isPureDimensional_primeSpectrum_tensorProduct_iff`).
 
 On a scheme locally of finite type over a field, a nonempty open part `Z ∩ U` of an irreducible
 closed subset `Z` has the Krull dimension of `Z`. On an affine chart this is the corresponding
 statement for spectra of finitely generated algebras
 (`TauCeti.topologicalKrullDim_inter_eq_of_finiteType`), and `Z` is covered by the charts it meets.
 This is the input for the locality of pure-dimensionality on such schemes.
+
+On an irreducible scheme locally of finite type over a field, the local ring at every closed point
+has the dimension of the scheme. On an affine chart `Spec A` this is the statement that every
+maximal ideal of the finitely generated irreducible algebra `A` has height `dim A`
+(`TauCeti.height_eq_ringKrullDim_of_isMaximal`), and the chart has the dimension of the scheme.
 
 ## Main declarations
 
@@ -39,6 +48,14 @@ This is the input for the locality of pure-dimensionality on such schemes.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_inter_eq_of_locallyOfFiniteType`: on a scheme
   locally of finite type over a field, a nonempty open part of an irreducible closed subset has
   the dimension of that subset.
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_eq_of_isOpenEmbedding_of_locallyOfFiniteType`:
+  a nonempty open subspace of an irreducible scheme locally of finite type over a field has the
+  dimension of the scheme.
+* `TauCeti.AlgebraicGeometry.isPureDimensional_pullback_Spec_map_iff_of_field`: pure-dimensionality
+  of a scheme locally of finite type over a field is invariant under extension of the base field.
+* `TauCeti.AlgebraicGeometry.ringKrullDim_stalk_eq_topologicalKrullDim_of_isClosed`: on an
+  irreducible scheme locally of finite type over a field, the local ring at a closed point has the
+  dimension of the scheme.
 
 ## References
 
@@ -138,6 +155,84 @@ theorem topologicalKrullDim_inter_eq_of_locallyOfFiniteType {K : Type u} [Field 
     _ ≤ topologicalKrullDim ↥(Z ∩ U) :=
         (((he i).isEmbedding.comp IsEmbedding.subtypeVal).codRestrict (Z ∩ U)
           fun y ↦ y.2).isInducing.topologicalKrullDim_le
+
+/-- A nonempty open subspace of an irreducible scheme locally of finite type over a field has
+the Krull dimension of the scheme. -/
+theorem topologicalKrullDim_eq_of_isOpenEmbedding_of_locallyOfFiniteType
+    {K : Type u} [Field K] {X : Scheme.{u}} (f : X ⟶ Spec (.of K))
+    [LocallyOfFiniteType f] [IrreducibleSpace X] {Y : Type*} [TopologicalSpace Y]
+    [Nonempty Y] {g : Y → X} (hg : IsOpenEmbedding g) :
+    topologicalKrullDim Y = topologicalKrullDim X := by
+  obtain ⟨y⟩ : Nonempty Y := inferInstance
+  have hdim := topologicalKrullDim_inter_eq_of_locallyOfFiniteType f
+    (IrreducibleSpace.isIrreducible_univ X) isClosed_univ hg.isOpen_range
+    ⟨g y, Set.mem_univ _, y, rfl⟩
+  rw [Set.univ_inter] at hdim
+  rw [(Homeomorph.Set.univ X).symm.isHomeomorph.topologicalKrullDim_eq, ← hdim]
+  exact hg.toHomeomorph.isHomeomorph.topologicalKrullDim_eq
+
+/-- The spectrum of a finitely generated algebra over a field `K` is pure-dimensional of dimension
+`d` exactly when its base change to a field extension `L / K` is. -/
+private theorem isPureDimensional_pullback_Spec_iff_of_field {K L : Type u} [Field K] [Field L]
+    [Algebra K L] {A : CommRingCat.{u}} (g : Spec A ⟶ Spec (.of K)) [hg : LocallyOfFiniteType g]
+    {d : ℕ} :
+    IsPureDimensional d (pullback g (Spec.map (CommRingCat.ofHom (algebraMap K L))) : Scheme.{u})
+      ↔ IsPureDimensional d (Spec A) := by
+  obtain ⟨φ, rfl⟩ : ∃ φ, Spec.map φ = g := ⟨_, Spec.map_preimage g⟩
+  let := φ.hom.toAlgebra
+  have : Algebra.FiniteType K A :=
+    (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType) (φ := φ)).mp ‹_›
+  -- The underlying space of `Spec R` is `PrimeSpectrum R` by definition.
+  exact (pullbackSpecIso K A L).hom.homeomorph.isPureDimensional_iff.trans <|
+    (PrimeSpectrum.homeomorphOfRingEquiv (Algebra.TensorProduct.comm K A L).toRingEquiv
+      |>.isPureDimensional_iff).trans (isPureDimensional_primeSpectrum_tensorProduct_iff L)
+
+/-- A scheme locally of finite type over a field `K` is pure-dimensional of dimension `d` exactly
+when its base change to a field extension `L / K` is. -/
+theorem isPureDimensional_pullback_Spec_map_iff_of_field {K L : Type u} [Field K] [Field L]
+    [Algebra K L] {X : Scheme.{u}} (f : X ⟶ Spec (.of K)) [LocallyOfFiniteType f] {d : ℕ} :
+    IsPureDimensional d (pullback f (Spec.map (CommRingCat.ofHom (algebraMap K L))) : Scheme.{u})
+      ↔ IsPureDimensional d X := by
+  let 𝒰 := X.affineOpenCover.openCover
+  let 𝒱 := Scheme.Pullback.openCoverOfLeft 𝒰 f (Spec.map (CommRingCat.ofHom (algebraMap K L)))
+  -- Both sides are local on the affine charts of `X` and on their base changes, since
+  -- irreducible components of schemes locally of finite type over a field have open parts of
+  -- full dimension.
+  rw [isPureDimensional_iff_forall_of_isOpenEmbedding (fun Z hZ _ hU hZU ↦
+      topologicalKrullDim_inter_eq_of_locallyOfFiniteType (pullback.snd f _) hZ.1
+        (isClosed_of_mem_irreducibleComponents Z hZ) hU hZU)
+      (fun i ↦ 𝒱.f i) (fun i ↦ (𝒱.f i).isOpenEmbedding) fun x ↦ (𝒱.exists_eq x).imp fun _ ↦ id,
+    isPureDimensional_iff_forall_of_isOpenEmbedding (fun Z hZ _ hU hZU ↦
+      topologicalKrullDim_inter_eq_of_locallyOfFiniteType f hZ.1
+        (isClosed_of_mem_irreducibleComponents Z hZ) hU hZU)
+      (fun i ↦ 𝒰.f i) (fun i ↦ (𝒰.f i).isOpenEmbedding) fun x ↦ (𝒰.exists_eq x).imp fun _ ↦ id]
+  refine forall_congr' fun (i : 𝒰.I₀) ↦ ?_
+  have : LocallyOfFiniteType (𝒰.f i ≫ f) := inferInstance
+  exact isPureDimensional_pullback_Spec_iff_of_field (A := X.affineOpenCover.X i) (hg := this) _
+
+/-- On an irreducible scheme `X` locally of finite type over a field, the local ring at a closed
+point has the Krull dimension of `X`. -/
+theorem ringKrullDim_stalk_eq_topologicalKrullDim_of_isClosed {K : Type u} [Field K]
+    {X : Scheme.{u}} (f : X ⟶ Spec (.of K)) [LocallyOfFiniteType f] [IrreducibleSpace X] {x : X}
+    (hx : IsClosed {x}) :
+    ringKrullDim (X.presheaf.stalk x) = topologicalKrullDim X := by
+  -- Pass to an affine chart `Spec R` around `x`, in which `x` is a maximal ideal of the finitely
+  -- generated `K`-algebra `R`; its height is `dim R`, and the chart has the dimension of `X`.
+  obtain ⟨R, g, _, ⟨y, rfl⟩, -⟩ :=
+    X.exists_affine_mem_range_and_range_subset (x := x) (U := ⊤) (by simp)
+  obtain ⟨φ, hφ⟩ : ∃ φ, Spec.map φ = g ≫ f := ⟨_, Spec.map_preimage _⟩
+  let := φ.hom.toAlgebra
+  have : Algebra.FiniteType K R :=
+    (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType) (φ := φ)).mp (hφ ▸ inferInstance)
+  have : Nonempty (Spec R) := ⟨y⟩
+  have : IrreducibleSpace (PrimeSpectrum R) := g.isOpenEmbedding.irreducibleSpace
+  have hy : IsClosed ({y} : Set (Spec R)) := by
+    have := hx.preimage g.continuous
+    rwa [← Set.image_singleton, g.isOpenEmbedding.injective.preimage_image] at this
+  have : y.asIdeal.IsMaximal := (PrimeSpectrum.isClosed_singleton_iff_isMaximal y).mp hy
+  rw [ringKrullDim_stalk_eq_coheight, coheight_eq_of_isOpenImmersion, ← idealHeight_eq_coheight,
+    height_eq_ringKrullDim_of_isMaximal K, ← PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim]
+  exact topologicalKrullDim_eq_of_isOpenEmbedding_of_locallyOfFiniteType f g.isOpenEmbedding
 
 end AlgebraicGeometry
 

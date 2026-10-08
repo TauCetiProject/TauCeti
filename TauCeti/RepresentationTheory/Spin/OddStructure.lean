@@ -37,7 +37,7 @@ The argument avoids reducing an odd-dimensional form to an even-dimensional one.
 with the Fock action. The image of `(1, 0)` is a central idempotent of a simple ring, hence `0` or
 `1` (`TauCeti.centralIdempotents_eq_pair`), and in either case one of the two coordinate maps
 `a ↦ φ (a, 0)`, `a ↦ φ (0, a)` is already a surjective algebra map `A →ₐ[F] M_{2^l}(F)`: that is
-`TauCeti.exists_algHom_surjective_of_prod`. A dimension count closes it. The even subalgebra has
+`AlgHom.exists_algHom_surjective_of_prod`. A dimension count closes it. The even subalgebra has
 half the dimension of the whole (`CliffordAlgebra.finrank_even`), so
 `dim A = 2 ^ (2 * l + 1 - 1) = 2 ^ l · 2 ^ l` is the dimension of the target and the surjection is
 injective as well.
@@ -81,8 +81,6 @@ only its even half is, the whole algebra being two copies of that half.
   Theorem 4.3.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), §20.1, Proposition 20.15
   and the discussion of the odd case following it.
-* [Spin-representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 1, "The odd-dimensional case".
 -/
 
 public section
@@ -147,7 +145,7 @@ variable [IsSepClosed F]
 /-- **The even subalgebra of an odd-dimensional Clifford algebra is a matrix algebra.** The Fock
 action of a polarization is onto the endomorphism algebra of the spinor module, of dimension
 `2 ^ l`; composed with the two-block splitting it becomes a surjection from a product of two copies
-of `even Q`, which `TauCeti.exists_algHom_surjective_of_prod` turns into a surjection out of a
+of `even Q`, which `AlgHom.exists_algHom_surjective_of_prod` turns into a surjection out of a
 single copy. Both sides have dimension `2 ^ l · 2 ^ l` — the even subalgebra by
 `CliffordAlgebra.finrank_even` — so that surjection is an isomorphism. -/
 theorem nonempty_algEquiv_even_matrix_of_finrank_eq_two_mul_add_one {l : ℕ}
@@ -167,7 +165,7 @@ theorem nonempty_algEquiv_even_matrix_of_finrank_eq_two_mul_add_one {l : ℕ}
     toMatrix.surjective.comp (spinAction_surjective P)
   -- Transport it along the two-block splitting and drop one block.
   obtain ⟨e⟩ := nonempty_algEquiv_even_prod_of_odd_finrank hQ (hV ▸ ⟨l, by ring⟩)
-  obtain ⟨ψ, hψ⟩ := exists_algHom_surjective_of_prod (π.comp e.symm.toAlgHom)
+  obtain ⟨ψ, hψ⟩ := (π.comp e.symm.toAlgHom).exists_algHom_surjective_of_prod
     (hπsurj.comp e.symm.surjective)
   -- Equal dimensions upgrade the surjection to an isomorphism.
   have hdim : finrank F ↥(even Q) = finrank F (Matrix (Fin (2 ^ l)) (Fin (2 ^ l)) F) := by
@@ -244,11 +242,7 @@ theorem evenSpinAction_surjective : Function.Surjective (evenSpinAction Q P) := 
     (P.nondegenerate ((isUnit_of_invertible (2 : F)).isSMulRegular F)).exists_list_pairwise_isOrtho
   set ω : CliffordAlgebra Q := (l.map (ι Q)).prod
   set c : F := (-1 : F) ^ l.length.choose 2 * (l.map Q).prod
-  have hc : c ≠ 0 := by
-    refine mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)) (List.prod_ne_zero ?_)
-    rintro hmem
-    obtain ⟨v, hv, hv0⟩ := List.mem_map.mp hmem
-    exact hQl v hv hv0
+  have hc : c ≠ 0 := neg_one_pow_choose_two_mul_prod_map_ne_zero hQl
   have hsq : ω * ω = algebraMap F (CliffordAlgebra Q) c := prod_map_ι_sq_scalar hl
   have hsqEnd : spinAction Q P ω * spinAction Q P ω =
       algebraMap F (Module.End F (ExteriorAlgebra F P.W)) c := by

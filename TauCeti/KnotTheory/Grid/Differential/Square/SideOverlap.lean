@@ -231,7 +231,7 @@ theorem target_eq_source_iff_sideColumns_eq (D : GridRectangleDecomposition x z)
   constructor
   · intro hzx
     have hpairs := x.sym2_mk_eq_of_swapColumns_swapColumns_eq_self
-      D.first.left_ne_right D.second.left_ne_right (by
+      D.first.left_ne_right (by
         calc
           (x.swapColumns D.first.left D.first.right).swapColumns
               D.second.left D.second.right =
@@ -254,8 +254,7 @@ theorem target_eq_source_iff_sideColumns_eq (D : GridRectangleDecomposition x z)
       _ = (x.swapColumns D.first.left D.first.right).swapColumns
           D.second.left D.second.right := by rw [← D.first.target_eq_swapColumns]
       _ = x :=
-        (x.swapColumns_swapColumns_eq_self_iff_sym2_mk_eq
-          D.first.left_ne_right D.second.left_ne_right).mpr hpairs
+        (x.swapColumns_swapColumns_eq_self_iff_sym2_mk_eq D.first.left_ne_right).mpr hpairs
 
 /-- Both side columns are common exactly when the two-step rectangle path returns to its source. -/
 @[simp]

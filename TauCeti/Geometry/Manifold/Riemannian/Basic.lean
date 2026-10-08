@@ -129,7 +129,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [MetricSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M]
-  [T2Space (TangentBundle I M)]
 
 /-- The metric `g` induces the Riemannian distance on `M` through the ambient metric space. -/
 def InducesRiemannianDistance
@@ -137,7 +136,7 @@ def InducesRiemannianDistance
   letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
   IsRiemannianManifold I M
 
-omit [FiniteDimensional ℝ E] [T2Space (TangentBundle I M)] in
+omit [FiniteDimensional ℝ E] in
 /-- The metric's induced-distance condition yields the corresponding Riemannian-manifold
 structure after installing its metric bundle. -/
 theorem InducesRiemannianDistance.toIsRiemannianManifold

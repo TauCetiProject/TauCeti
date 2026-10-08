@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Young.BetaNumbers
 public import TauCeti.Combinatorics.Young.Kostka
 import TauCeti.Combinatorics.Young.OfRowLens
 
@@ -27,6 +28,11 @@ entry form a prefix, and columns increase strictly, so `μᵢ₊₁ ≤ νᵢ`. 
 interlacing does its work: filling every cell of `μ / ν` with the single letter `n` keeps the
 columns strict exactly because `μ / ν` has no two cells in a column, which is `μᵢ₊₁ ≤ νᵢ`.
 
+Interlacing also has a reading on beta-numbers, `TauCeti.forall_betaNumber_le_iff_interlacedBy`:
+shifting the row lengths by the staircase turns the alternating inequalities into the statement that
+the comparisons `ν_j + (N - 1 - j) ≤ μ_i + (N - 1 - i)` hold exactly for `i ≤ j`.  That is the form
+in which horizontal strips appear in the Pieri rule.
+
 The bijection is stated fibrewise, as `TauCeti.BoundedSSYT.fiberEquiv`: the tableaux of shape `μ`
 whose sub-shape of small entries is a *given* `ν` are the tableaux of shape `ν`.  Phrasing it this
 way keeps every type non-dependent, so the resulting sum decomposition
@@ -47,6 +53,8 @@ way keeps every type non-dependent, so the resulting sum decomposition
 * `YoungDiagram.sum_interlacingShapes_eq_sum_piFinset`: the shapes with at most `n` rows
   interlacing a shape with at most `n + 1` rows are parametrized by their row lengths, the `j`-th
   drawn freely from `[μ_{j+1}, μ_j]`.
+* `TauCeti.forall_betaNumber_le_iff_interlacedBy`: interlacing read on beta-numbers, the
+  comparisons of the beta-numbers of the two shapes cutting out the initial segments.
 * `TauCeti.BoundedSSYT.restrictShape_mem_interlacingShapes`: the sub-shape of small entries
   interlaces `μ` and has at most `n` rows.
 * `TauCeti.BoundedSSYT.content_restrict`: erasing the top letter leaves unchanged how often each
@@ -162,6 +170,45 @@ theorem sum_interlacingShapes_eq_sum_piFinset {M : Type*} [AddCommMonoid M] {n :
 end YoungDiagram
 
 namespace TauCeti
+
+/-- **Interlacing, read on beta-numbers.**  For diagrams `μ` and `ν` with at most `N` rows, the
+beta-number of `ν` at `j` is at most the beta-number of `μ` at `i` exactly for `i ≤ j` precisely
+when the row lengths interlace, `μ₀ ≥ ν₀ ≥ μ₁ ≥ ⋯`, that is, when `μ / ν` is a horizontal strip. -/
+theorem forall_betaNumber_le_iff_interlacedBy {N : ℕ} {μ ν : YoungDiagram}
+    (hμ : μ.colLen 0 ≤ N) (hν : ν.colLen 0 ≤ N) :
+    (∀ i j : Fin N, ν.betaNumber N j ≤ μ.betaNumber N i ↔ i ≤ j) ↔
+      μ.InterlacedBy ν := by
+  simp only [YoungDiagram.betaNumber_def, YoungDiagram.interlacedBy_iff]
+  constructor
+  · intro h i
+    have h' : ∀ a b : ℕ, a < N → b < N →
+        (ν.rowLen b + (N - 1 - b) ≤ μ.rowLen a + (N - 1 - a) ↔ a ≤ b) := by
+      intro a b ha hb
+      simpa [Fin.le_def] using h ⟨a, ha⟩ ⟨b, hb⟩
+    refine ⟨?_, ?_⟩
+    · by_cases hi : i + 1 < N
+      · have hlt := ((h' (i + 1) i hi (by omega)).not).mpr (by omega)
+        omega
+      · rw [YoungDiagram.rowLen_eq_zero_of_colLen_le (hμ.trans (by omega))]
+        exact Nat.zero_le _
+    · by_cases hi : i < N
+      · have := (h' i i hi hi).mpr le_rfl
+        omega
+      · rw [YoungDiagram.rowLen_eq_zero_of_colLen_le (hν.trans (by omega))]
+        exact Nat.zero_le _
+  · intro h i j
+    rw [Fin.le_def]
+    have hiN : (i : ℕ) < N := i.isLt
+    have hjN : (j : ℕ) < N := j.isLt
+    refine ⟨fun hle => ?_, fun hle => ?_⟩
+    · by_contra hij
+      have hij' : (j : ℕ) < (i : ℕ) := by omega
+      have h1 : μ.rowLen i ≤ μ.rowLen ((j : ℕ) + 1) := μ.rowLen_anti _ _ (by omega)
+      have h2 : μ.rowLen ((j : ℕ) + 1) ≤ ν.rowLen j := (h j).1
+      omega
+    · have h1 : ν.rowLen j ≤ μ.rowLen j := (h j).2
+      have h2 : μ.rowLen j ≤ μ.rowLen i := μ.rowLen_anti _ _ hle
+      omega
 
 namespace BoundedSSYT
 

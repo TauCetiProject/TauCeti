@@ -8,6 +8,7 @@ module
 -- `Module.End`, `Matrix` and `algEquivMatrix` occur in the statement and the body below; this is
 -- also the Mathlib file that `algEquivMatrix` itself lives in.
 public import Mathlib.LinearAlgebra.Matrix.ToLin
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 -- `FiniteDimensional` and `Module.finrank` occur in the statement, and
 -- `Module.finBasisOfFinrankEq` in the body.
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
@@ -30,6 +31,10 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   `Module.finBasisOfFinrankEq`.
 * `TauCeti.toLinAlgEquiv_single_apply_basis`: the endomorphism of a matrix unit sends a basis
   vector to a single coordinate.
+* `TauCeti.matrixGeneralLinearEquiv`: matrix `GL` and the linear automorphisms of coordinate
+  vectors are equivalent over a commutative semiring.
+* `TauCeti.toMatrixAlgEquiv_eq_single_of_apply_basis`: an endomorphism with one matrix-unit
+  coordinate action has the corresponding single-entry matrix.
 
 The first is used to turn the Azumaya isomorphism of a finite-dimensional central simple algebra
 into a matrix algebra in `TauCeti/Algebra/CentralSimple/Opposite.lean`.
@@ -38,6 +43,24 @@ into a matrix algebra in `TauCeti/Algebra/CentralSimple/Opposite.lean`.
 public section
 
 namespace TauCeti
+
+/-- The matrix general linear group is the group of linear automorphisms of coordinate vectors
+over a commutative semiring. Mathlib's `Matrix.GeneralLinearGroup.toLin` requires a commutative
+ring. -/
+def matrixGeneralLinearEquiv {R : Type*} [CommSemiring R] {n : Type*} [Fintype n]
+    [DecidableEq n] :
+    Matrix.GeneralLinearGroup n R ≃* LinearMap.GeneralLinearGroup R (n → R) :=
+  Units.mapEquiv Matrix.toLinAlgEquiv'.toMulEquiv
+
+/-- A general linear matrix acts on coordinate vectors by matrix-vector multiplication. -/
+@[simp]
+theorem matrixGeneralLinearEquiv_apply {R : Type*} [CommSemiring R] {n : Type*}
+    [Fintype n] [DecidableEq n] (A : Matrix.GeneralLinearGroup n R) (v : n → R) :
+    (LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)
+      (matrixGeneralLinearEquiv A)) v = Matrix.mulVec (A : Matrix n n R) v := by
+  rw [LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
+    matrixGeneralLinearEquiv, Units.coe_mapEquiv]
+  exact Matrix.toLinAlgEquiv'_apply _ _
 
 /-- **A matrix unit acts on a basis by a single coordinate.** The endomorphism attached to
 `Matrix.single p q v` sends the basis vector indexed by the column `q` to `v • bas p`, and every
@@ -49,6 +72,21 @@ theorem toLinAlgEquiv_single_apply_basis {R : Type*} [CommSemiring R] {M : Type*
       (if q = c then v else 0) • bas p := by
   rw [Matrix.toLinAlgEquiv_self]
   simp [Matrix.single_apply, ite_and, ite_smul]
+
+/-- **An endomorphism with a matrix-unit action has a single-entry matrix.** If an endomorphism
+sends the basis vector indexed by `q` to `v • bas p` and every other basis vector to zero, its
+matrix in `bas` is `Matrix.single p q v`. -/
+theorem toMatrixAlgEquiv_eq_single_of_apply_basis {R : Type*} [CommSemiring R] {M : Type*}
+    [AddCommMonoid M] [Module R M] {n : Type*} [Fintype n] [DecidableEq n]
+    (bas : Module.Basis n R M) (f : Module.End R M) (p q : n) (v : R)
+    (h : ∀ c, f (bas c) = (if q = c then v else 0) • bas p) :
+    LinearMap.toMatrixAlgEquiv bas f = Matrix.single p q v := by
+  apply (Matrix.toLinAlgEquiv bas).injective
+  rw [Matrix.toLinAlgEquiv_toMatrixAlgEquiv]
+  apply bas.ext
+  intro c
+  rw [toLinAlgEquiv_single_apply_basis]
+  exact h c
 
 namespace Algebra
 

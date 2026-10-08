@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
 public import Mathlib.RepresentationTheory.AlgebraRepresentation.Basic
 
 /-!
@@ -50,8 +51,7 @@ computation to an arbitrary equivalent target.
 * `TauCeti.nonempty_algEquiv_self_of_isIntegral`: a domain algebra over an algebraically closed
   field that is integral over that field is isomorphic to it as an algebra, with
   `TauCeti.nonempty_algEquiv_self_of_finiteDimensional_divisionRing` the finite-dimensional
-  division algebra special case, also available under the name the roadmap pins,
-  `TauCeti.algEquiv_self_of_finiteDimensional_divisionRing`.
+  division algebra special case.
 * `TauCeti.endAlgEquivSelfOfIsSimpleModule`: the endomorphism ring of a finite-dimensional simple
   module over an algebraically closed field collapses to that field, canonically, as the inverse
   of the structure map; `TauCeti.nonempty_end_algEquiv_self_of_isSimpleModule` is its existence
@@ -149,10 +149,6 @@ uses. -/
 theorem nonempty_algEquiv_self_of_finiteDimensional_divisionRing [DivisionRing D] [Algebra k D]
     [FiniteDimensional k D] : Nonempty (D ≃ₐ[k] k) :=
   nonempty_algEquiv_self_of_isIntegral
-
-/-- The roadmap pins the previous theorem under this name; it is available under both. -/
-alias algEquiv_self_of_finiteDimensional_divisionRing :=
-  nonempty_algEquiv_self_of_finiteDimensional_divisionRing
 
 end IsAlgClosed
 
@@ -272,6 +268,25 @@ theorem finiteDimensional_linearMap_of_isEmpty_linearEquiv (h : IsEmpty (S ≃�
 
 end Vanishing
 
+section SimpleSymmetry
+
+variable {k A : Type*} [CommSemiring k] [Nontrivial k] [Ring A] [Algebra k A]
+
+/-- Hom-space finrank is symmetric between simple modules over an algebra. -/
+theorem finrank_linearMap_comm_of_isSimpleModule
+    (S N : Type*) [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
+    [AddCommGroup N] [Module k N] [Module A N] [IsScalarTower k A N]
+    [IsSimpleModule A S] [IsSimpleModule A N] :
+    Module.finrank k (S →ₗ[A] N) = Module.finrank k (N →ₗ[A] S) := by
+  by_cases h : Nonempty (S ≃ₗ[A] N)
+  · obtain ⟨e⟩ := h
+    exact ((homCongrRight k e.symm).trans (LinearEquiv.congrLeft S k e)).finrank_eq
+  · rw [finrank_linearMap_eq_zero_of_isEmpty_linearEquiv (not_nonempty_iff.mp h),
+      finrank_linearMap_eq_zero_of_isEmpty_linearEquiv
+        ⟨fun e ↦ h ⟨e.symm⟩⟩]
+
+end SimpleSymmetry
+
 section SchurDimension
 
 variable {k A S : Type*} [Field k] [IsAlgClosed k] [Ring A] [Algebra k A]
@@ -292,13 +307,13 @@ theorem finrank_linearMap_eq_one_of_nonempty_linearEquiv (e : S ≃ₗ[A] N) :
   rw [← (homCongrRight k (S := S) e).finrank_eq]
   exact hend
 
+omit [IsAlgClosed k] in
 /-- The hom space out of a finite-dimensional simple module into a simple module is
-finite-dimensional: by Schur's lemma it is a line or trivial. -/
+finite-dimensional over any field: it is isomorphic to the endomorphism space of the source
+or is trivial. -/
 theorem finiteDimensional_linearMap_of_isSimpleModule : FiniteDimensional k (S →ₗ[A] N) := by
   by_cases h : Nonempty (S ≃ₗ[A] N)
-  · have hend : FiniteDimensional k (S →ₗ[A] S) :=
-      Module.Finite.equiv
-        (endAlgEquivSelfOfIsSimpleModule (k := k) (A := A) (S := S)).toLinearEquiv.symm
+  · have hend : FiniteDimensional k (S →ₗ[A] S) := inferInstance
     exact Module.Finite.equiv (homCongrRight k (S := S) h.some)
   · exact finiteDimensional_linearMap_of_isEmpty_linearEquiv (not_nonempty_iff.mp h)
 

@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Basic
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Cohomology
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.TrivialF2
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.TrivialF2.Basic
 
 /-!
 # Cup products of mod-two Kummer classes
@@ -23,11 +22,16 @@ Kˣ/(Kˣ)² × Kˣ/(Kˣ)² → H²(G_K, 𝔽₂),   ([a], [b]) ↦ [a] ⌣ [b].
 The source is the additive square-class group `TauCeti.SquareClassGroup K`; consequently
 biadditivity and invariance under changing representatives are carried by the type. The
 representative formula `TauCeti.kummerCup_squareClass_squareClass` identifies this pairing with
-the cup of the classes constructed in `TauCeti.FieldTheory.GaloisCohomology.MuTwo.Basic`.
+the cup of the classes constructed in `TauCeti.FieldTheory.GaloisCohomology.MuTwo.Basic`, and
+`TauCeti.kummerCup_comm` records that the pairing is symmetric.
 
 ## Main definitions
 
 * `TauCeti.kummerCup`: the bilinear cup pairing on square classes.
+
+## Main results
+
+* `TauCeti.kummerCup_comm`: the Kummer cup pairing is symmetric.
 
 ## References
 
@@ -80,5 +84,10 @@ theorem kummerCup_squareClass_squareClass (a b : Kˣ) :
       (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
         (kummerClass a) (kummerClass b) := by
   rw [kummerCup_apply, kummerSquareClassEquiv_squareClass, kummerSquareClassEquiv_squareClass]
+
+/-- **The Kummer cup pairing is symmetric**: `[a] ⌣ [b] = [b] ⌣ [a]`. -/
+theorem kummerCup_comm (x y : SquareClassGroup K) : kummerCup K x y = kummerCup K y x := by
+  rw [kummerCup_apply, trivialF2TopPairing_cup_comm, ContinuousCohomology.degreeCast_rfl,
+    CategoryTheory.Iso.refl_hom, CategoryTheory.ConcreteCategory.id_apply, ← kummerCup_apply]
 
 end TauCeti

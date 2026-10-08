@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
 public import TauCeti.Geometry.Manifold.Riemannian.VariationField
+import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
 # The Gauss lemma for the Riemannian exponential map
@@ -62,7 +63,7 @@ variable [FiniteDimensional ℝ E]
 
 section RadialVariation
 
-variable [I.Boundaryless] [T2Space (TangentBundle I M)] {p : M} {v w : TangentSpace I p}
+variable [I.Boundaryless] [T2Space M] {p : M} {v w : TangentSpace I p}
   {F : ℝ → ℝ → M}
 
 /-! ### The radial variation
@@ -107,12 +108,12 @@ private theorem contMDiffAt_radialVariation
 
 /-- The covariant acceleration of a radial curve of the variation vanishes on its maximal
 interval. -/
-private theorem alongCurve_curveVelocity_radialVariation_eq_zero
+private theorem acceleration_radialVariation_eq_zero
     (hF : ∀ u t : ℝ, F u t = riemannianExp I M p (t • (v + u • w))) {u t : ℝ}
     (ht : t ∈ geodesicInterval I M p (v + u • w)) :
-    alongCurve (leviCivitaConnection I M) (F u) (curveVelocity I (F u)) t = 0 := by
+    acceleration (leviCivitaConnection I M) (F u) t = 0 := by
   rw [radialVariation_eq_maximalGeodesic hF u]
-  exact alongCurve_curveVelocity_maximalGeodesic_eq_zero ht
+  exact acceleration_maximalGeodesic_eq_zero ht
 
 /-- A radial curve of the variation has the squared speed of its initial velocity. -/
 private theorem inner_curveVelocity_radialVariation_self
@@ -164,7 +165,7 @@ end RadialVariation
 /-- **The Gauss lemma.** The differential of the Riemannian exponential map preserves the inner
 product with the radial direction at every vector in its natural domain. -/
 theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
-    [T2Space (TangentBundle I M)] {p : M} {v w : TangentSpace I p}
+    [T2Space M] {p : M} {v w : TangentSpace I p}
     (hv : v ∈ expDomain I M p) :
     inner ℝ
         (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v)
@@ -193,8 +194,8 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
       mem_geodesicInterval_iff_smul_mem_expDomain.mp htJ
     have hsurface : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I ∞ (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t) :=
       contMDiffAt_radialVariation hF (u := 0) (t := t) (by simpa using htExp)
-    have haccel : alongCurve cov (F 0) (curveVelocity I (F 0)) t = 0 :=
-      alongCurve_curveVelocity_radialVariation_eq_zero hF (u := 0) (by simpa using htJ)
+    have haccel : acceleration cov (F 0) t = 0 :=
+      acceleration_radialVariation_eq_zero hF (u := 0) (by simpa using htJ)
     have hDtV_inner : inner ℝ (alongCurve cov (F 0) (variationField I F) t) (P 0 t) =
         inner ℝ v w :=
       inner_alongCurve_variationField_radialVariation hF htJ
@@ -277,7 +278,7 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
 /-- **Radial norm preservation.** The differential of the Riemannian exponential map preserves
 the norm of the radial direction at every vector in its natural domain. -/
 @[simp] theorem norm_mfderiv_riemannianExp_radial [I.Boundaryless]
-    [T2Space (TangentBundle I M)] {p : M} {v : TangentSpace I p}
+    [T2Space M] {p : M} {v : TangentSpace I p}
     (hv : v ∈ expDomain I M p) :
     ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v‖ = ‖v‖ := by
   rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), sq, sq,

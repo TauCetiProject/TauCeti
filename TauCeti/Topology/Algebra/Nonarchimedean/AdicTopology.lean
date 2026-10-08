@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.OpenSubgroup
+public import Mathlib.RingTheory.Finiteness.Ideal
 
 /-!
 # Powers of the ideal defining an adic topology
@@ -37,6 +38,8 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
   of `I`.
 * `IsAdic.isLinearTopology` : a ring whose topology is `I`-adic is linearly topologized, the
   `IsAdic` counterpart of `Ideal.isLinearTopology`.
+* `IsAdic.continuous_of_map_le_radical` : a ring homomorphism from an `I`-adic ring to a `J`-adic
+  ring is continuous when it carries the finitely generated ideal `I` into the radical of `J`.
 
 ## Provenance
 
@@ -103,5 +106,23 @@ neighbourhood basis of zero consisting of ideals. This is the `IsAdic` counterpa
 `Ideal.isLinearTopology`. -/
 theorem isLinearTopology (hI : IsAdic I) : IsLinearTopology R R :=
   hI ▸ I.isLinearTopology
+
+/-- A ring homomorphism from an `I`-adic ring to a `J`-adic ring is continuous as soon as it
+carries `I` into the radical of `J`, provided `I` is finitely generated. Mapping `I` into `J`
+itself is the special case `J ≤ J.radical`. -/
+theorem continuous_of_map_le_radical {S : Type*} [CommRing S] [TopologicalSpace S] {J : Ideal S}
+    (hI : IsAdic I) (hJ : IsAdic J) (hfg : I.FG) {f : R →+* S} (hf : I.map f ≤ J.radical) :
+    Continuous f := by
+  have : IsTopologicalRing R := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  have : IsTopologicalRing S := hJ ▸ J.nonarchimedean.toIsTopologicalRing
+  -- the image of `I` is finitely generated, so some power `(f I) ^ k` lies in `J`, and `f`
+  -- carries `I ^ (k * n)` into `J ^ n`
+  obtain ⟨k, hk⟩ := Ideal.exists_pow_le_of_le_radical_of_fg hf (hfg.map f)
+  refine continuous_of_tendsto_nhds_zero f ?_
+  rw [hI.hasBasis_nhds_zero.tendsto_iff hJ.hasBasis_nhds_zero]
+  refine fun n _ ↦ ⟨k * n, trivial, fun x hx ↦ ?_⟩
+  have hmem : f x ∈ (I ^ (k * n)).map f := Ideal.mem_map_of_mem f hx
+  rw [Ideal.map_pow, pow_mul] at hmem
+  exact Ideal.pow_right_mono hk n hmem
 
 end IsAdic

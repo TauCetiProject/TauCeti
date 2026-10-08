@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.ArrayLaw
-public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.InfiniteSampling
+public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Infinite.Sampling
 public import Mathlib.Probability.Kernel.Composition.MeasureComp
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 

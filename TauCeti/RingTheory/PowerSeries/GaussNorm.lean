@@ -7,10 +7,13 @@ module
 
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.RingTheory.PowerSeries.GaussNorm
-public import Mathlib.RingTheory.PowerSeries.Trunc
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
+public import Mathlib.RingTheory.Valuation.Basic
 public import TauCeti.RingTheory.PowerSeries.Restricted
-import Mathlib.Topology.Algebra.InfiniteSum.NatInt
+import Mathlib.Algebra.Order.GroupWithZero.Finset
+import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 import Mathlib.Topology.Order.LiminfLimsup
+import Mathlib.RingTheory.Polynomial.GaussNorm
 
 /-!
 # The Gauss norm of restricted power series
@@ -23,26 +26,40 @@ dominant coefficient in a product, and the Gauss norm is therefore multiplicativ
 series.
 
 The distinguished degree is the datum Weierstrass division and preparation for Tate algebras are
-organised around. No completeness hypothesis is needed for the norm identities here. The radius is
-any positive real number, including the unit radius of the usual Tate algebra.
+organised around. Distinguishedness and its product law need only a seminormed coefficient ring;
+nonzero restricted series attain a distinguished degree over a normed ring. No completeness
+hypothesis is needed for these norm identities. The radius is any positive real number, including
+the unit radius of the usual Tate algebra.
 
-Completeness enters only at the end of the file, where a family of restricted series with
+Completeness enters only in the summation section, where a family of restricted series with
 summable Gauss norms is summed coefficientwise. This is the convergence statement that
 successive-approximation arguments over a complete nonarchimedean ring run on, and it takes the
 place of completeness of the Tate algebra for the Gauss norm.
 
+Multiplicativity and the ultrametric inequality together make the Gauss norm a valuation with
+values in `ℝ≥0` on the ring of restricted series, `gaussValuation`, whose support is trivial.
+Pulled back to the Tate algebra at radii at most one, these valuations give the Gauss points of the
+closed unit disc.
+
 ## Main definitions
 
+* `TauCeti.PowerSeries.gaussValuation`: at a positive radius, the Gauss norm as a valuation with
+  values in `ℝ≥0` on the ring of restricted series.
 * `TauCeti.PowerSeries.IsDistinguished`: the Gauss norm is attained in degree `s` and every later
   coefficient is strictly smaller.
 
 ## Main results
 
+* `TauCeti.PowerSeries.hasGaussNorm_add` and `TauCeti.PowerSeries.hasGaussNorm_mul`: bounded
+  weighted coefficient norms are preserved by addition and multiplication over an ultrametric
+  seminormed ring, at any nonnegative radius.
 * `TauCeti.PowerSeries.gaussNorm_eq_of_forall_le`: the Gauss norm is attained at a degree whose
   weighted coefficient dominates.
 * `TauCeti.PowerSeries.exists_isDistinguished`: at a positive radius, every nonzero restricted
   series is distinguished of some degree.
 * `TauCeti.PowerSeries.IsDistinguished.unique`: of no more than one degree.
+* `TauCeti.PowerSeries.isDistinguished_of_norm_coeff_sub_lt`: over an ultrametric ring, a series
+  is distinguished once its coefficient in degree `s` is close to an element of maximal norm.
 * `TauCeti.PowerSeries.IsDistinguished.trunc`,
   `TauCeti.PowerSeries.IsDistinguished.gaussNorm_trunc` and
   `TauCeti.PowerSeries.IsDistinguished.gaussNorm_sub_trunc_lt`: the polynomial part of a
@@ -51,6 +68,7 @@ place of completeness of the Tate algebra for the Gauss norm.
 * `TauCeti.PowerSeries.IsDistinguished.norm_coeff_mul_mul_pow_eq_gaussNorm_mul`: the dominant
   coefficient of a product of distinguished series.
 * `TauCeti.PowerSeries.gaussNorm_mul_of_isRestricted`: multiplicativity of the Gauss norm.
+* `TauCeti.PowerSeries.gaussValuation_eq_zero_iff`: the Gauss valuation vanishes only at zero.
 * `TauCeti.PowerSeries.summable_coeff_of_summable_gaussNorm` and
   `TauCeti.PowerSeries.isRestricted_mk_tsum_coeff`: over a complete ring, a family of restricted
   series with summable Gauss norms has summable coefficients, and its coefficientwise sum is
@@ -72,6 +90,65 @@ namespace TauCeti.PowerSeries
 open Filter
 open scoped Topology
 
+section SeminormedRing
+
+variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R]
+  {c : ℝ} {f g : PowerSeries R}
+
+/-- The sum of two power series with bounded weighted coefficient norms again has bounded weighted
+coefficient norms at a nonnegative radius. -/
+theorem hasGaussNorm_add (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
+    (hg : g.HasGaussNorm norm c) : (f + g).HasGaussNorm norm c := by
+  have key (m : ℕ) :
+      ‖(f + g).coeff m‖ * c ^ m ≤ max (f.gaussNorm norm c) (g.gaussNorm norm c) := by
+    rw [map_add]
+    calc
+      ‖f.coeff m + g.coeff m‖ * c ^ m ≤ max ‖f.coeff m‖ ‖g.coeff m‖ * c ^ m :=
+        mul_le_mul_of_nonneg_right (IsUltrametricDist.isNonarchimedean_norm _ _) (pow_nonneg hc m)
+      _ = max (‖f.coeff m‖ * c ^ m) (‖g.coeff m‖ * c ^ m) :=
+        max_mul_of_nonneg _ _ (pow_nonneg hc m)
+      _ ≤ max (f.gaussNorm norm c) (g.gaussNorm norm c) :=
+        max_le_max (PowerSeries.le_gaussNorm norm c _ hf m)
+          (PowerSeries.le_gaussNorm norm c _ hg m)
+  exact ⟨_, Set.forall_mem_range.mpr key⟩
+
+/-- The product of two power series with bounded weighted coefficient norms again has bounded
+weighted coefficient norms at a nonnegative radius. -/
+theorem hasGaussNorm_mul (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
+    (hg : g.HasGaussNorm norm c) : (f * g).HasGaussNorm norm c := by
+  have key (m : ℕ) :
+      ‖(f * g).coeff m‖ * c ^ m ≤ f.gaussNorm norm c * g.gaussNorm norm c := by
+    rw [PowerSeries.coeff_mul]
+    have hne := Finset.HasAntidiagonal.nonempty_antidiagonal m
+    calc
+      ‖∑ p ∈ Finset.antidiagonal m, f.coeff p.1 * g.coeff p.2‖ * c ^ m
+          ≤ (Finset.antidiagonal m).sup' hne
+              (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖) * c ^ m :=
+        mul_le_mul_of_nonneg_right (hne.norm_sum_le_sup'_norm
+          (fun p : ℕ × ℕ ↦ f.coeff p.1 * g.coeff p.2)) (pow_nonneg hc m)
+      _ = (Finset.antidiagonal m).sup' hne
+          (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖ * c ^ m) :=
+        Finset.sup'_mul₀ (pow_nonneg hc m) _ _ _
+      _ ≤ f.gaussNorm norm c * g.gaussNorm norm c :=
+        (Finset.sup'_le_iff hne
+          (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖ * c ^ m)).2 fun p hp ↦ by
+          have hsum : p.1 + p.2 = m := Finset.mem_antidiagonal.mp hp
+          rw [← hsum, pow_add]
+          calc
+            ‖f.coeff p.1 * g.coeff p.2‖ * (c ^ p.1 * c ^ p.2)
+                ≤ ‖f.coeff p.1‖ * ‖g.coeff p.2‖ * (c ^ p.1 * c ^ p.2) :=
+              mul_le_mul_of_nonneg_right (norm_mul_le _ _)
+                (mul_nonneg (pow_nonneg hc _) (pow_nonneg hc _))
+            _ = (‖f.coeff p.1‖ * c ^ p.1) * (‖g.coeff p.2‖ * c ^ p.2) := by ring
+            _ ≤ f.gaussNorm norm c * g.gaussNorm norm c :=
+              mul_le_mul (PowerSeries.le_gaussNorm norm c f hf p.1)
+                (PowerSeries.le_gaussNorm norm c g hg p.2)
+                (mul_nonneg (norm_nonneg _) (pow_nonneg hc _))
+                (PowerSeries.gaussNorm_nonneg norm c f norm_nonneg)
+  exact ⟨_, Set.forall_mem_range.mpr key⟩
+
+end SeminormedRing
+
 variable {R : Type*} [NormedRing R] {c : ℝ} {i j s t : ℕ} {f g : PowerSeries R}
 
 /-- A restricted power series has bounded weighted coefficient norms. -/
@@ -86,6 +163,10 @@ theorem gaussNorm_eq_of_forall_le {S : Type*} [Semiring S] {v : S → ℝ} {a : 
     a.gaussNorm v c = v (a.coeff s) * c ^ s :=
   le_antisymm ((PowerSeries.gaussNorm_eq v c a).trans_le (ciSup_le h))
     (PowerSeries.le_gaussNorm v c a ⟨_, Set.forall_mem_range.mpr h⟩ s)
+
+section Distinguished
+
+variable {R : Type*} [SeminormedRing R] {f : PowerSeries R}
 
 section
 
@@ -140,14 +221,9 @@ theorem IsDistinguished.coeff_ne_zero (hf : IsDistinguished c s f) : f.coeff s �
 /-- The weighted coefficient norms of a distinguished series are bounded above. -/
 theorem IsDistinguished.hasGaussNorm (hf : IsDistinguished c s f) :
     f.HasGaussNorm norm c := by
-  let a : ℕ → ℝ := fun n ↦ ‖f.coeff n‖ * c ^ n
-  have hfinite : Set.Finite (a '' {n | n ≤ s}) := (Set.finite_le_nat s).image a
-  obtain ⟨b, hb⟩ := hfinite.bddAbove
-  refine ⟨max b (f.gaussNorm norm c), ?_⟩
-  rintro _ ⟨n, rfl⟩
-  by_cases hn : n ≤ s
-  · exact (hb ⟨n, hn, rfl⟩).trans (le_max_left _ _)
-  · exact (hf.norm_coeff_mul_pow_lt n (Nat.lt_of_not_ge hn)).le.trans (le_max_right _ _)
+  refine (Filter.isBoundedUnder_of_eventually_le (a := f.gaussNorm norm c) ?_).bddAbove_range
+  filter_upwards [Filter.eventually_gt_atTop s] with n hn
+  exact (hf.norm_coeff_mul_pow_lt n hn).le
 
 /-- The distinguished degree is unique: a series cannot be distinguished of two degrees at the
 same radius. -/
@@ -157,6 +233,8 @@ theorem IsDistinguished.unique (hf : IsDistinguished c s f) (hf' : IsDistinguish
   · exact absurd hf'.norm_coeff_mul_pow_eq (hf.norm_coeff_mul_pow_lt t h).ne
   · exact h
   · exact absurd hf.norm_coeff_mul_pow_eq (hf'.norm_coeff_mul_pow_lt s h).ne
+
+end Distinguished
 
 /-- Every nonzero restricted series is distinguished of some degree: its last coefficient
 attaining the Gauss norm supplies that degree. -/
@@ -180,9 +258,7 @@ theorem exists_isDistinguished (hc : 0 < c) (hf : f.IsRestricted c) (hf0 : f ≠
     · exact hmax m hm
     · have hm' : a m < a i := by simpa [S] using hm
       exact hm'.le.trans (hmax i hi_mem)
-  have heq : a k = f.gaussNorm norm c := by
-    rw [PowerSeries.gaussNorm_eq]
-    exact (ciSup_eq_of_forall_le_of_forall_lt_exists_gt hbound fun _ h ↦ ⟨k, h⟩).symm
+  have heq : a k = f.gaussNorm norm c := (gaussNorm_eq_of_forall_le hbound).symm
   let T := S.filter fun n ↦ a n = a k
   have hk_mem : k ∈ T := by simp [T, hk]
   obtain ⟨n, hn, hnmax⟩ := T.exists_max_image id ⟨k, hk_mem⟩
@@ -197,40 +273,38 @@ theorem exists_isDistinguished (hc : 0 < c) (hf : f.IsRestricted c) (hf0 : f ≠
 
 section Truncation
 
+section
+
+variable {R : Type*} [SeminormedRing R] {f : PowerSeries R}
+
 /-- Truncating a series just past a degree in which its Gauss norm is attained leaves that norm
 unchanged. -/
 @[simp] theorem IsDistinguished.gaussNorm_trunc (hf : IsDistinguished c s f) :
     ((f.trunc (s + 1) : Polynomial R) : PowerSeries R).gaussNorm norm c
       = f.gaussNorm norm c := by
-  have hcoeff (m : ℕ) : ((f.trunc (s + 1) : Polynomial R) : PowerSeries R).coeff m =
-      if m < s + 1 then f.coeff m else 0 := by
-    rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc]
-  refine le_antisymm ?_ ?_
-  · rw [PowerSeries.gaussNorm_eq]
-    refine ciSup_le fun m ↦ ?_
-    rw [hcoeff m]
+  refine (gaussNorm_eq_of_forall_le (s := s) fun m ↦ ?_).trans ?_
+  · simp only [Polynomial.coeff_coe, PowerSeries.coeff_trunc,
+      ite_eq_left (by omega : s < s + 1)]
+    rw [hf.norm_coeff_mul_pow_eq]
     split_ifs
     · exact PowerSeries.le_gaussNorm norm c f hf.hasGaussNorm m
     · simpa using PowerSeries.gaussNorm_nonneg norm c f norm_nonneg
-  · have hbdd : ((f.trunc (s + 1) : Polynomial R) : PowerSeries R).HasGaussNorm norm c :=
-      hasGaussNorm_of_isRestricted (isRestricted_of_forall_coeff_eq_zero (n := s + 1)
-        fun m hm ↦ by rw [hcoeff m, ite_eq_right (by omega)])
-    have h := PowerSeries.le_gaussNorm norm c _ hbdd s
-    rw [hcoeff s, ite_eq_left (Nat.lt_succ_self s)] at h
-    exact le_of_eq_of_le hf.norm_coeff_mul_pow_eq.symm h
+  · simpa only [Polynomial.coeff_coe, PowerSeries.coeff_trunc,
+      ite_eq_left (by omega : s < s + 1)] using hf.norm_coeff_mul_pow_eq
 
 /-- The truncation of a distinguished series just past its distinguished degree is again
 distinguished of that degree. It is the polynomial part `f⁻` a Weierstrass division divides by. -/
 theorem IsDistinguished.trunc (hf : IsDistinguished c s f) :
     IsDistinguished c s ((f.trunc (s + 1) : Polynomial R) : PowerSeries R) := by
-  have hcoeff (m : ℕ) : ((f.trunc (s + 1) : Polynomial R) : PowerSeries R).coeff m =
-      if m < s + 1 then f.coeff m else 0 := by
-    rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc]
   refine ⟨?_, fun m hm ↦ ?_⟩
-  · rw [hcoeff s, ite_eq_left (Nat.lt_succ_self s), hf.gaussNorm_trunc]
+  · rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc,
+      ite_eq_left (by omega : s < s + 1), hf.gaussNorm_trunc]
     exact hf.norm_coeff_mul_pow_eq
-  · rw [hcoeff m, ite_eq_right (by omega), hf.gaussNorm_trunc]
-    simpa using hf.gaussNorm_pos
+  · simpa only [Polynomial.coeff_coe, PowerSeries.coeff_trunc,
+      ite_eq_right (by omega : ¬ m < s + 1), norm_zero, zero_mul, hf.gaussNorm_trunc]
+      using hf.gaussNorm_pos
+
+end
 
 /-- The tail `f⁺` left by truncating a restricted distinguished series just past its
 distinguished degree has strictly smaller Gauss norm than the series itself. This is the
@@ -245,9 +319,8 @@ theorem IsDistinguished.gaussNorm_sub_trunc_lt (hf : IsDistinguished c s f) (hc 
     split_ifs <;> simp
   have htr : (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)).IsRestricted c := by
     rw [sub_eq_add_neg]
-    exact PowerSeries.isRestricted.add c hfr (PowerSeries.isRestricted.neg c
-      (isRestricted_of_forall_coeff_eq_zero (n := s + 1) fun m hm ↦ by
-        rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc, ite_eq_right (by omega)]))
+    exact PowerSeries.isRestricted.add c hfr
+      (PowerSeries.isRestricted.neg c (isRestricted_polynomial _))
   rcases eq_or_ne (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)) 0 with h0 | h0
   · rw [h0, PowerSeries.gaussNorm_zero norm c (norm_zero : ‖(0 : R)‖ = 0)]
     exact hf.gaussNorm_pos
@@ -260,59 +333,27 @@ theorem IsDistinguished.gaussNorm_sub_trunc_lt (hf : IsDistinguished c s f) (hc 
 
 end Truncation
 
+section Recognition
+
+variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R] {f : PowerSeries R}
+
+/-- **Recognising a distinguished series.** At a positive radius, `f` is distinguished of degree
+`s` once its weighted coefficient in degree `s` is closer than the Gauss norm to an element `a`
+of weighted norm equal to the Gauss norm, and every later weighted coefficient norm is smaller
+than the Gauss norm. -/
+theorem isDistinguished_of_norm_coeff_sub_lt (hc : 0 < c) {a : R}
+    (ha : ‖a‖ * c ^ s = f.gaussNorm norm c)
+    (hs : ‖f.coeff s - a‖ * c ^ s < f.gaussNorm norm c)
+    (hm : ∀ m, s < m → ‖f.coeff m‖ * c ^ m < f.gaussNorm norm c) :
+    IsDistinguished c s f := by
+  have hlt : ‖f.coeff s - a‖ < ‖a‖ := lt_of_mul_lt_mul_right (ha ▸ hs) (pow_pos hc s).le
+  refine ⟨?_, hm⟩
+  rw [← ha, ← sub_add_cancel (f.coeff s) a,
+    IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm hlt.ne, max_eq_right hlt.le]
+
+end Recognition
+
 variable [IsUltrametricDist R]
-
-/-- The sum of two power series with bounded weighted coefficient norms again has bounded weighted
-coefficient norms at a nonnegative radius. -/
-theorem hasGaussNorm_add (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
-    (hg : g.HasGaussNorm norm c) : (f + g).HasGaussNorm norm c := by
-  have key (m : ℕ) :
-      ‖(f + g).coeff m‖ * c ^ m ≤ max (f.gaussNorm norm c) (g.gaussNorm norm c) := by
-    rw [map_add]
-    calc
-      ‖f.coeff m + g.coeff m‖ * c ^ m ≤ max ‖f.coeff m‖ ‖g.coeff m‖ * c ^ m :=
-        mul_le_mul_of_nonneg_right (IsUltrametricDist.isNonarchimedean_norm _ _) (pow_nonneg hc m)
-      _ = max (‖f.coeff m‖ * c ^ m) (‖g.coeff m‖ * c ^ m) :=
-        max_mul_of_nonneg _ _ (pow_nonneg hc m)
-      _ ≤ max (f.gaussNorm norm c) (g.gaussNorm norm c) :=
-        max_le_max (PowerSeries.le_gaussNorm norm c _ hf m)
-          (PowerSeries.le_gaussNorm norm c _ hg m)
-  exact ⟨_, Set.forall_mem_range.mpr key⟩
-
-/-- The product of two power series with bounded weighted coefficient norms again has bounded
-weighted coefficient norms at a nonnegative radius. -/
-theorem hasGaussNorm_mul (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
-    (hg : g.HasGaussNorm norm c) : (f * g).HasGaussNorm norm c := by
-  have key (m : ℕ) :
-      ‖(f * g).coeff m‖ * c ^ m ≤ f.gaussNorm norm c * g.gaussNorm norm c := by
-    rw [PowerSeries.coeff_mul]
-    have hne := Finset.HasAntidiagonal.nonempty_antidiagonal m
-    calc
-      ‖∑ p ∈ Finset.antidiagonal m, f.coeff p.1 * g.coeff p.2‖ * c ^ m
-          ≤ (Finset.antidiagonal m).sup' hne
-              (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖) * c ^ m :=
-        mul_le_mul_of_nonneg_right (hne.norm_sum_le_sup'_norm
-          (fun p : ℕ × ℕ ↦ f.coeff p.1 * g.coeff p.2)) (pow_nonneg hc m)
-      _ = (Finset.antidiagonal m).sup' hne
-          (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖ * c ^ m) :=
-        Finset.sup'_mul₀ (pow_nonneg hc m) _ _ _
-      _ ≤ f.gaussNorm norm c * g.gaussNorm norm c :=
-        (Finset.sup'_le_iff hne
-          (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖ * c ^ m)).2 fun p hp ↦ by
-          have hsum : p.1 + p.2 = m := Finset.mem_antidiagonal.mp hp
-          rw [← hsum, pow_add]
-          calc
-            ‖f.coeff p.1 * g.coeff p.2‖ * (c ^ p.1 * c ^ p.2)
-                ≤ ‖f.coeff p.1‖ * ‖g.coeff p.2‖ * (c ^ p.1 * c ^ p.2) :=
-              mul_le_mul_of_nonneg_right (norm_mul_le _ _)
-                (mul_nonneg (pow_nonneg hc _) (pow_nonneg hc _))
-            _ = (‖f.coeff p.1‖ * c ^ p.1) * (‖g.coeff p.2‖ * c ^ p.2) := by ring
-            _ ≤ f.gaussNorm norm c * g.gaussNorm norm c :=
-              mul_le_mul (PowerSeries.le_gaussNorm norm c f hf p.1)
-                (PowerSeries.le_gaussNorm norm c g hg p.2)
-                (mul_nonneg (norm_nonneg _) (pow_nonneg hc _))
-                (PowerSeries.gaussNorm_nonneg norm c f norm_nonneg)
-  exact ⟨_, Set.forall_mem_range.mpr key⟩
 
 section Summation
 
@@ -376,7 +417,32 @@ theorem isRestricted_mk_tsum_coeff (hc : 0 < c) (ha : ∀ k, (a k).IsRestricted 
 
 end Summation
 
-variable [NormMulClass R]
+section Multiplication
+
+variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R] [NormMulClass R]
+  {f g : PowerSeries R}
+
+omit [IsUltrametricDist R] in
+/-- A product term is strictly below the product of the Gauss norms when one of its
+coefficients lies beyond the corresponding distinguished degree. -/
+private theorem IsDistinguished.norm_coeff_mul_mul_pow_lt (hf : IsDistinguished c i f)
+    (hg : IsDistinguished c j g) (hc : 0 < c) {m n : ℕ} (h : i < m ∨ j < n) :
+    ‖f.coeff m * g.coeff n‖ * c ^ (m + n) <
+      f.gaussNorm norm c * g.gaussNorm norm c := by
+  have hweight : ‖f.coeff m * g.coeff n‖ * c ^ (m + n) =
+      (‖f.coeff m‖ * c ^ m) * (‖g.coeff n‖ * c ^ n) := by
+    rw [norm_mul, pow_add]
+    ring
+  rw [hweight]
+  rcases h with h | h
+  · exact (mul_le_mul_of_nonneg_left
+      (PowerSeries.le_gaussNorm norm c g hg.hasGaussNorm n)
+      (mul_nonneg (norm_nonneg _) (pow_nonneg hc.le _))).trans_lt
+        (mul_lt_mul_of_pos_right (hf.norm_coeff_mul_pow_lt _ h) hg.gaussNorm_pos)
+  · exact (mul_le_mul_of_nonneg_right
+      (PowerSeries.le_gaussNorm norm c f hf.hasGaussNorm m)
+      (mul_nonneg (norm_nonneg _) (pow_nonneg hc.le _))).trans_lt
+        (mul_lt_mul_of_pos_left (hg.norm_coeff_mul_pow_lt _ h) hf.gaussNorm_pos)
 
 /-- **The dominant coefficient of a product of distinguished series.** If `f` is distinguished of
 degree `i` and `g` of degree `j`, then the coefficient of `f * g` in degree `i + j` realises the
@@ -384,30 +450,20 @@ product of the two Gauss norms. -/
 theorem IsDistinguished.norm_coeff_mul_mul_pow_eq_gaussNorm_mul (hf : IsDistinguished c i f)
     (hg : IsDistinguished c j g) (hc : 0 < c) :
     ‖(f * g).coeff (i + j)‖ * c ^ (i + j) = f.gaussNorm norm c * g.gaussNorm norm c := by
-  have hbf := hf.hasGaussNorm
-  have hbg := hg.hasGaussNorm
-  have hfp := hf.gaussNorm_pos
-  have hgp := hg.gaussNorm_pos
   have hdom (p : ℕ × ℕ) (hp : p ∈ Finset.antidiagonal (i + j)) (hne : p ≠ (i, j)) :
       ‖f.coeff p.1 * g.coeff p.2‖ < ‖f.coeff i * g.coeff j‖ := by
     have hsum : p.1 + p.2 = i + j := Finset.mem_antidiagonal.mp hp
-    have hweight (x y : ℕ) (hxy : x + y = i + j) :
-        ‖f.coeff x * g.coeff y‖ * c ^ (i + j) =
-          (‖f.coeff x‖ * c ^ x) * (‖g.coeff y‖ * c ^ y) := by
-      rw [norm_mul, ← hxy, pow_add]
-      ring
+    have hdegree : i < p.1 ∨ j < p.2 := by
+      have : p.1 ≠ i ∨ p.2 ≠ j := by simpa only [Ne, Prod.ext_iff, not_and_or] using hne
+      omega
     apply (mul_lt_mul_iff_left₀ (pow_pos hc (i + j))).mp
-    rw [hweight _ _ hsum, hweight _ _ rfl, hf.norm_coeff_mul_pow_eq, hg.norm_coeff_mul_pow_eq]
-    by_cases hpi : i < p.1
-    · exact (mul_le_mul_of_nonneg_left (PowerSeries.le_gaussNorm norm c g hbg p.2)
-        (mul_nonneg (norm_nonneg _) (pow_nonneg hc.le _))).trans_lt
-          (mul_lt_mul_of_pos_right (hf.norm_coeff_mul_pow_lt _ hpi) hgp)
-    · have hpj : j < p.2 := by
-        have : p.1 ≠ i ∨ p.2 ≠ j := by simpa only [Ne, Prod.ext_iff, not_and_or] using hne
-        omega
-      exact (mul_le_mul_of_nonneg_right (PowerSeries.le_gaussNorm norm c f hbf p.1)
-        (mul_nonneg (norm_nonneg _) (pow_nonneg hc.le _))).trans_lt
-          (mul_lt_mul_of_pos_left (hg.norm_coeff_mul_pow_lt _ hpj) hfp)
+    calc
+      ‖f.coeff p.1 * g.coeff p.2‖ * c ^ (i + j)
+          < f.gaussNorm norm c * g.gaussNorm norm c := by
+        simpa only [hsum] using hf.norm_coeff_mul_mul_pow_lt hg hc hdegree
+      _ = ‖f.coeff i * g.coeff j‖ * c ^ (i + j) := by
+        rw [norm_mul, pow_add, ← hf.norm_coeff_mul_pow_eq, ← hg.norm_coeff_mul_pow_eq]
+        ring
   have hcoeff : ‖(f * g).coeff (i + j)‖ = ‖f.coeff i * g.coeff j‖ := by
     rw [PowerSeries.coeff_mul]
     exact IsUltrametricDist.isNonarchimedean_norm.apply_sum_eq_of_lt
@@ -416,36 +472,15 @@ theorem IsDistinguished.norm_coeff_mul_mul_pow_eq_gaussNorm_mul (hf : IsDistingu
   rw [hcoeff, norm_mul, pow_add, ← hf.norm_coeff_mul_pow_eq, ← hg.norm_coeff_mul_pow_eq]
   ring
 
-/-- The Gauss norm is multiplicative on restricted power series at every positive radius. -/
-theorem gaussNorm_mul_of_isRestricted (hc : 0 < c) (hf : f.IsRestricted c)
-    (hg : g.IsRestricted c) :
-    (f * g).gaussNorm norm c = f.gaussNorm norm c * g.gaussNorm norm c := by
-  by_cases hf0 : f = 0
-  · simp [hf0, PowerSeries.gaussNorm_zero norm c (norm_zero : ‖(0 : R)‖ = 0)]
-  by_cases hg0 : g = 0
-  · simp [hg0, PowerSeries.gaussNorm_zero norm c (norm_zero : ‖(0 : R)‖ = 0)]
-  obtain ⟨i, hi⟩ := exists_isDistinguished hc hf hf0
-  obtain ⟨j, hj⟩ := exists_isDistinguished hc hg hg0
-  refine le_antisymm (MvPowerSeries.gaussNorm_mul_le norm (fun _ : Unit ↦ c) f g
-    (fun _ ↦ hc.le) norm_nonneg norm_mul_le IsUltrametricDist.isNonarchimedean_norm
-    norm_zero (hasGaussNorm_of_isRestricted hf).hasMvGaussNorm
-    (hasGaussNorm_of_isRestricted hg).hasMvGaussNorm) ?_
-  calc
-    f.gaussNorm norm c * g.gaussNorm norm c = ‖(f * g).coeff (i + j)‖ * c ^ (i + j) :=
-      (hi.norm_coeff_mul_mul_pow_eq_gaussNorm_mul hj hc).symm
-    _ ≤ (f * g).gaussNorm norm c := PowerSeries.le_gaussNorm norm c (f * g)
-      (hasGaussNorm_of_isRestricted (PowerSeries.isRestricted.mul c hf hg)) _
-
 /-- The product of series distinguished in degrees `i` and `j` is distinguished in degree
 `i + j` at a positive radius. -/
 theorem IsDistinguished.mul (hf : IsDistinguished c i f) (hg : IsDistinguished c j g)
     (hc : 0 < c) :
     IsDistinguished c (i + j) (f * g) := by
-  have hfp := hf.gaussNorm_pos
-  have hgp := hg.gaussNorm_pos
   have hbf := hf.hasGaussNorm
   have hbg := hg.hasGaussNorm
-  have hbmul := hasGaussNorm_mul hc.le hbf hbg
+  -- The explicit type fixes the norm's seminormed-ring instance before elaborating the arguments.
+  have hbmul : (f * g).HasGaussNorm norm c := hasGaussNorm_mul hc.le hbf hbg
   have hmul : (f * g).gaussNorm norm c = f.gaussNorm norm c * g.gaussNorm norm c :=
     le_antisymm
       (MvPowerSeries.gaussNorm_mul_le norm (fun _ : Unit ↦ c) f g (fun _ ↦ hc.le)
@@ -469,19 +504,98 @@ theorem IsDistinguished.mul (hf : IsDistinguished c i f) (hg : IsDistinguished c
     _ < f.gaussNorm norm c * g.gaussNorm norm c :=
       (Finset.sup'_lt_iff hne).2 fun p hp ↦ by
       have hsum : p.1 + p.2 = m := Finset.mem_antidiagonal.mp hp
-      rw [← hsum, norm_mul, pow_add]
-      have hweight :
-          ‖f.coeff p.1‖ * ‖g.coeff p.2‖ * (c ^ p.1 * c ^ p.2) =
-            (‖f.coeff p.1‖ * c ^ p.1) * (‖g.coeff p.2‖ * c ^ p.2) := by ring
-      rw [hweight]
-      by_cases hpi : i < p.1
-      · exact (mul_le_mul_of_nonneg_left (PowerSeries.le_gaussNorm norm c g hbg p.2)
-            (mul_nonneg (norm_nonneg _) (pow_nonneg hc.le _))).trans_lt
-          (mul_lt_mul_of_pos_right (hf.norm_coeff_mul_pow_lt _ hpi) hgp)
-      · have hpj : j < p.2 := by omega
-        exact (mul_le_mul_of_nonneg_right (PowerSeries.le_gaussNorm norm c f hbf p.1)
-              (mul_nonneg (norm_nonneg _) (pow_nonneg hc.le _))).trans_lt
-          (mul_lt_mul_of_pos_left (hg.norm_coeff_mul_pow_lt _ hpj) hfp)
+      simpa only [hsum] using hf.norm_coeff_mul_mul_pow_lt hg hc (by omega : i < p.1 ∨ j < p.2)
     _ = (f * g).gaussNorm norm c := hmul.symm
+
+end Multiplication
+
+variable [NormMulClass R]
+
+/-- The Gauss norm is multiplicative on restricted power series at every positive radius. -/
+theorem gaussNorm_mul_of_isRestricted (hc : 0 < c) (hf : f.IsRestricted c)
+    (hg : g.IsRestricted c) :
+    (f * g).gaussNorm norm c = f.gaussNorm norm c * g.gaussNorm norm c := by
+  let : Fact (0 < c) := ⟨hc⟩
+  -- Mathlib's univariate predicates and norms abbreviate the Unit-indexed multivariate ones.
+  simp only [PowerSeries.IsRestricted] at hf hg
+  simpa only [PowerSeries.gaussNorm] using
+    (MvPowerSeries.IsRestricted.gaussNorm_mul (c := fun _ : Unit ↦ c) hf hg)
+
+/-! ### The Gauss valuation -/
+
+section Valuation
+
+open scoped NNReal
+
+variable [NormOneClass R]
+
+/-- **The Gauss valuation** at a positive radius `c`: the Gauss norm `f ↦ sup ‖aₙ‖ cⁿ`, as a
+valuation with values in `ℝ≥0` on the ring of power series restricted at `c`. -/
+noncomputable def gaussValuation (hc : 0 < c) :
+    Valuation (PowerSeries.IsRestricted.subring (R := R) c) ℝ≥0 where
+  toFun f := ⟨(f : PowerSeries R).gaussNorm norm c,
+    PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg⟩
+  map_zero' := NNReal.eq <| PowerSeries.gaussNorm_zero norm c norm_zero
+  map_one' := NNReal.eq <| by
+    -- The subring's one coerces to `PowerSeries.one`; `NNReal.eq` exposes the real Gauss norm.
+    change (1 : PowerSeries R).gaussNorm norm c = 1
+    rw [← map_one (PowerSeries.C : R →+* PowerSeries R)]
+    exact (PowerSeries.gaussNorm_C
+      (v := (NormMulClass.isAbsoluteValue_norm (α := R)).toAbsoluteValue)
+      (hc := hc.le) (r := (1 : R))).trans norm_one
+  map_mul' f g := NNReal.eq <| gaussNorm_mul_of_isRestricted hc f.2 g.2
+  map_add_le_max' f g :=
+    PowerSeries.gaussNorm_add_le_max norm c _ _ hc.le norm_nonneg
+      IsUltrametricDist.isNonarchimedean_norm
+      (hasGaussNorm_of_isRestricted f.2) (hasGaussNorm_of_isRestricted g.2)
+
+/-- The Gauss valuation is the Gauss norm, read in `ℝ`. -/
+@[simp]
+theorem coe_gaussValuation (hc : 0 < c) (f : PowerSeries.IsRestricted.subring (R := R) c) :
+    (gaussValuation hc f : ℝ) = (f : PowerSeries R).gaussNorm norm c := (rfl)
+
+/-- The Gauss valuation of a constant series is the norm of its coefficient. -/
+@[simp]
+theorem gaussValuation_C (hc : 0 < c) (a : R) :
+    gaussValuation hc
+      (⟨PowerSeries.C a, PowerSeries.isRestricted_C c a⟩ :
+        PowerSeries.IsRestricted.subring (R := R) c) = ‖a‖₊ := by
+  apply NNReal.eq
+  rw [coe_gaussValuation]
+  exact PowerSeries.gaussNorm_C
+    (v := (NormMulClass.isAbsoluteValue_norm (α := R)).toAbsoluteValue)
+    (hc := hc.le) (r := a)
+
+/-- The Gauss valuation of the variable is the radius. -/
+@[simp]
+theorem gaussValuation_X (hc : 0 < c) :
+    gaussValuation hc
+      (⟨(PowerSeries.X : PowerSeries R), by
+          rw [PowerSeries.X_eq]
+          exact PowerSeries.isRestricted_monomial c 1 (1 : R)⟩ :
+        PowerSeries.IsRestricted.subring (R := R) c) = ⟨c, hc.le⟩ := by
+  apply NNReal.eq
+  rw [coe_gaussValuation]
+  -- The coercion to reals exposes the Gauss norm and the real radius.
+  change (PowerSeries.X : PowerSeries R).gaussNorm norm c = c
+  rw [PowerSeries.X_eq]
+  have h := PowerSeries.gaussNorm_monomial
+      (v := (NormMulClass.isAbsoluteValue_norm (α := R)).toAbsoluteValue)
+      (hc := hc.le) (n := 1) (r := (1 : R))
+  have hv : (⇑(NormMulClass.isAbsoluteValue_norm (α := R)).toAbsoluteValue : R → ℝ) =
+      norm := rfl
+  rw [hv] at h
+  simpa only [norm_one, one_mul, pow_one] using h
+
+/-- The Gauss valuation vanishes only at zero: its support is trivial. -/
+@[simp]
+theorem gaussValuation_eq_zero_iff (hc : 0 < c)
+    {f : PowerSeries.IsRestricted.subring (R := R) c} :
+    gaussValuation hc f = 0 ↔ f = 0 := by
+  rw [← NNReal.coe_eq_zero, coe_gaussValuation, PowerSeries.gaussNorm_eq_zero_iff norm c _
+    norm_zero norm_nonneg (fun _ ↦ norm_eq_zero.mp) hc (hasGaussNorm_of_isRestricted f.2),
+    ZeroMemClass.coe_eq_zero]
+
+end Valuation
 
 end TauCeti.PowerSeries

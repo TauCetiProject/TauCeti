@@ -5,11 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.ZMod
 public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.GroupTheory.GroupAction.FixedPoints
 public import TauCeti.RepresentationTheory.Continuous.Restriction
+public import TauCeti.RepresentationTheory.Continuous.TopRep.EqToHom
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.InnerConjugation
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Torsion
+public import TauCeti.Topology.Algebra.Group.ContinuousAut.Basic
 
 /-!
 # The trivial F₂ coefficient representation
@@ -31,8 +36,13 @@ trivial coefficient object for that subgroup.
 
 * `TauCeti.trivialF2`: trivial `𝔽₂` coefficients over an arbitrary
   universe.
+* `TauCeti.cohomF2`: continuous cohomology with trivial `𝔽₂` coefficients, with its canonical
+  `ZMod 2`-module structure `TauCeti.cohomF2.instModule`.
 * `TauCeti.trivialF2ResMap`: restriction on continuous cohomology with trivial `𝔽₂`
   coefficients.
+* `TauCeti.trivialF2CoeffHom`: the identification of the trivial `𝔽₂` coefficients of two
+  monoids, with `TauCeti.trivialF2CoeffHom_smul` its equivariance along a monoid
+  homomorphism.
 * `TauCeti.trivialF2Map`: pullback along any continuous group homomorphism with trivial
   `𝔽₂` coefficients, and `TauCeti.trivialF2Iso` for a topological group isomorphism.
 * `TauCeti.trivialF2QuotientEquivFixedPoints`: trivial `𝔽₂` coefficients on a quotient `G ⧸ N`,
@@ -41,8 +51,11 @@ trivial coefficient object for that subgroup.
 ## Main results
 
 * `TauCeti.trivialF2_V`: the carrier is `ULift (ZMod 2)`.
-* `TauCeti.trivialF2Equiv`: the additive equivalence that crosses the universe lift.
+* `TauCeti.trivialF2Equiv`: the additive equivalence that crosses the universe lift, with
+  `TauCeti.trivialF2Equiv_cast` its invariance under casts between the carriers of two groups.
 * `TauCeti.trivialF2_ρ_apply_apply`: every monoid element acts trivially.
+* `TauCeti.trivialF2_two_nsmul_eq_zero`, `TauCeti.cohomF2.two_nsmul_eq_zero`: the coefficients,
+  and hence every cohomology class, are killed by `2`.
 * `TauCeti.trivialF2Pairing`: multiplication in `𝔽₂` as a biadditive pairing on the lifted
   carrier, with `TauCeti.trivialF2Pairing_smul_smul` its equivariance.
 * `TauCeti.ofDiscreteModule_trivialF2`: the coefficient dictionary recovers `trivialF2`, with
@@ -51,6 +64,10 @@ trivial coefficient object for that subgroup.
 * `TauCeti.res_trivialF2`: restriction preserves the coefficient object on the nose.
 * `TauCeti.trivialF2Map_subgroupSubtype`: the general pullback recovers subgroup restriction.
 * `TauCeti.trivialF2Map_id`, `TauCeti.trivialF2Map_comp`: the functoriality laws.
+* `TauCeti.trivialF2Map_eq_of_conj`: over a locally compact target, pullbacks along two
+  homomorphisms that differ by an inner automorphism agree.
+* `TauCeti.eqToHom_comp_trivialF2Map`: read in discrete models of the coefficients, the pullback
+  is the compatible-pair map of any coefficient map that is the identity of `𝔽₂`.
 * `TauCeti.isSmoothDiscrete_trivialF2`: the coefficient object is smooth discrete.
 * `TauCeti.trivialF2QuotientEquivFixedPoints_smul`: that identification is equivariant for the
   `G ⧸ N`-actions, with `TauCeti.trivialF2Equiv_apply_trivialF2QuotientEquivFixedPoints` its
@@ -98,6 +115,17 @@ theorem trivialF2Equiv_symm_apply (x : ZMod 2) :
   -- As above, the parenthesized proof keeps the hidden definition out of downstream reduction.
   (rfl)
 
+/-- The carriers of the trivial `𝔽₂` objects of two monoids are the same lifted `ZMod 2`, and a
+cast between them does not change the underlying value. This is how an element transported along
+an equality of coefficient objects, such as `CategoryTheory.eqToHom` in `TopRep`, is read back. -/
+theorem trivialF2Equiv_cast {H : Type u} [Monoid H] (h : (trivialF2 G).V = (trivialF2 H).V)
+    (x : (trivialF2 G).V) :
+    trivialF2Equiv H (cast h x) = trivialF2Equiv G x := by
+  obtain ⟨y, rfl⟩ : ∃ y, cast (trivialF2_V G).symm y = x :=
+    ⟨cast (trivialF2_V G) x, cast_cast _ _ x⟩
+  rw [cast_cast, trivialF2Equiv_apply]
+  exact (trivialF2Equiv_apply G y).symm
+
 /-- The lifted carrier of `trivialF2 G` has the discrete topology. -/
 instance : DiscreteTopology (trivialF2 G).V :=
   inferInstanceAs (DiscreteTopology (ULift.{u} (ZMod 2)))
@@ -131,7 +159,7 @@ theorem eqToHom_ofDiscreteModule_trivialF2_apply (x : (trivialF2 G).V) :
 carriers**: `TauCeti.eqToHom (ofDiscreteModule_trivialF2 G).symm` is the inverse morphism
 `TauCeti.eqToIso (ofDiscreteModule_trivialF2 G)` read by `TauCeti.eqToIso.inv`, so it too is the
 identity on the carrier of `trivialF2 G`. -/
-@[simp]
+-- Not `@[simp]`: `TopRep.eqToHom_hom_apply` rewrites the left-hand side to a cast first.
 theorem eqToHom_ofDiscreteModule_trivialF2_symm_apply (x : (trivialF2 G).V) :
     (CategoryTheory.eqToHom (ofDiscreteModule_trivialF2 G).symm) x = x := by
   rw [CategoryTheory.eqToHom]
@@ -165,6 +193,10 @@ theorem trivialF2Pairing_apply (x y : (trivialF2 G).V) :
 theorem trivialF2Pairing_smul_smul (g : G) (x y : (trivialF2 G).V) :
     trivialF2Pairing G (g • x) (g • y) = g • trivialF2Pairing G x y := by
   simp
+
+/-- Every element of the trivial `𝔽₂` coefficient object is killed by `2`. -/
+theorem trivialF2_two_nsmul_eq_zero (x : (trivialF2 G).V) : 2 • x = 0 :=
+  (trivialF2Equiv G).injective (by rw [map_nsmul, map_zero, two_nsmul, CharTwo.add_self_eq_zero])
 
 variable [TopologicalSpace G]
 
@@ -201,7 +233,44 @@ theorem trivialF2ResMap_def (S : Subgroup G) (n : ℕ) :
       eqToHom (congrArg (continuousCohomology n) (res_trivialF2 G S)) :=
   (rfl)
 
+/-- Continuous cohomology with trivial `𝔽₂` coefficients, indexed by its degree. It is the
+`ℤ`-coefficient counterpart of `TauCeti.cohomFp`. -/
+noncomputable abbrev cohomF2 (n : ℕ) : Type u :=
+  continuousCohomology n (trivialF2 G)
+
+/-- Every class of continuous cohomology with trivial `𝔽₂` coefficients is killed by `2`. -/
+theorem cohomF2.two_nsmul_eq_zero (n : ℕ) (x : cohomF2 G n) : 2 • x = 0 :=
+  ContinuousCohomology.nsmul_continuousCohomology_eq_zero (trivialF2_two_nsmul_eq_zero G) n x
+
+/-- The canonical `ZMod 2`-module structure on continuous cohomology with trivial `𝔽₂`
+coefficients, which is killed by `2` (`TauCeti.cohomF2.two_nsmul_eq_zero`). -/
+noncomputable instance cohomF2.instModule (n : ℕ) : Module (ZMod 2) (cohomF2 G n) :=
+  AddCommGroup.zmodModule (cohomF2.two_nsmul_eq_zero G n)
+
 end Group
+
+section CoeffHom
+
+variable {G H : Type u} [Monoid G] [Monoid H]
+
+attribute [local instance] TopRep.distribMulAction
+
+/-- The identification of the trivial `𝔽₂` coefficients of `G` with those of `H`. -/
+noncomputable def trivialF2CoeffHom : (trivialF2 G).V →+ (trivialF2 H).V :=
+  ((trivialF2Equiv G).trans (trivialF2Equiv H).symm).toAddMonoidHom
+
+/-- The coefficient identification sends an element to the one with the same underlying value. -/
+@[simp]
+theorem trivialF2CoeffHom_apply (m : (trivialF2 G).V) :
+    trivialF2CoeffHom m = (trivialF2Equiv H).symm (trivialF2Equiv G m) :=
+  (rfl)
+
+/-- The identification `trivialF2CoeffHom` is equivariant along every monoid homomorphism. -/
+theorem trivialF2CoeffHom_smul (φ : H →* G) (h : H) (m : (trivialF2 G).V) :
+    trivialF2CoeffHom (φ h • m) = h • (trivialF2CoeffHom m : (trivialF2 H).V) := by
+  simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]
+
+end CoeffHom
 
 section Hom
 
@@ -299,6 +368,21 @@ theorem trivialF2Map_comp (φ : H →ₜ* G) (ψ : J →ₜ* H) (n : ℕ) :
           eqToHom (res_trivialF2_hom ψ) =
             eqToHom (res_trivialF2_hom (φ.comp ψ))).symm) n
 
+/-- **Pullback is invariant under inner automorphisms of the target**: if two continuous
+homomorphisms `φ ψ : H →ₜ* G` differ by conjugation by `g : G`, they induce the same map on
+continuous cohomology with trivial `𝔽₂` coefficients, in every degree: inner automorphisms act
+trivially on `Hⁿ(G, 𝔽₂)` (`TauCeti.ContinuousCohomology.map_eq_id_of_inner`). -/
+theorem trivialF2Map_eq_of_conj [LocallyCompactSpace G] (φ ψ : H →ₜ* G) (g : G)
+    (h : ∀ x, ψ x = g * φ x * g⁻¹) (n : ℕ) : trivialF2Map ψ n = trivialF2Map φ n := by
+  let c : G →ₜ* G := ContinuousMonoidHom.toContinuousMonoidHom (ContinuousAut.conj g)
+  have hψ : ψ = c.comp φ := ContinuousMonoidHom.ext fun x => by simp [c, h]
+  have hc : trivialF2Map c n = 𝟙 _ := by
+    rw [trivialF2Map_def]
+    exact ContinuousCohomology.map_eq_id_of_inner g⁻¹ c (fun x => by simp [c]) _
+      (fun v => by rw [TopRep.eqToHom_hom_apply, trivialF2_ρ_apply_apply, cast_eq])
+      (isSmoothDiscrete_trivialF2 G) n
+  rw [hψ, trivialF2Map_comp, hc, Category.id_comp]
+
 /-- A topological group isomorphism induces an equivalence on continuous cohomology with
 trivial `𝔽₂` coefficients. The cohomology map runs along the inverse group isomorphism. -/
 noncomputable def trivialF2Iso (e : G ≃ₜ* H) (n : ℕ) :
@@ -330,6 +414,43 @@ theorem trivialF2Iso_inv (e : G ≃ₜ* H) (n : ℕ) :
     (trivialF2Iso e n).inv =
       trivialF2Map (ContinuousMonoidHom.toContinuousMonoidHom e) n :=
   (rfl)
+
+variable {M : Type u} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  [DistribMulAction G M]
+  {N : Type u} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+  [DistribMulAction H N]
+
+/-- **`trivialF2Map` in a discrete model of the coefficients.** Suppose the discrete `G`-module `M`
+and the discrete `H`-module `N` are models of the trivial `𝔽₂` objects, `hM` and `hN`, and
+`f : M →+ N` is compatible with `φ : H →ₜ* G` and is the identity of `𝔽₂` read in the two models.
+Then pullback `trivialF2Map φ n`, read in the models, is the compatible-pair map of `φ` and `f`.
+This is what lets pullback on trivial `𝔽₂` coefficients be computed on explicit cocycles valued
+in `M`. -/
+theorem eqToHom_comp_trivialF2Map (φ : H →ₜ* G)
+    (hM : ofDiscreteModule ℤ G M = trivialF2 G) (hN : ofDiscreteModule ℤ H N = trivialF2 H)
+    (f : M →+ N) (hf : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
+    (hfM : ∀ m : M,
+      trivialF2Equiv H ((eqToHom hN).hom (f m)) = trivialF2Equiv G ((eqToHom hM).hom m))
+    (n : ℕ) :
+    eqToHom (congrArg (continuousCohomology n) hM) ≫ trivialF2Map φ n =
+      _root_.ContinuousCohomology.map φ (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap hf) n ≫
+        eqToHom (congrArg (continuousCohomology n) hN) := by
+  -- Generalize both trivial objects, so that their identifications with the discrete models can
+  -- be substituted away; the claim is then that the coefficient morphism is the compatible pair.
+  have key : ∀ (T : TopRep ℤ G) (hT : ofDiscreteModule ℤ G M = T) (S : TopRep ℤ H)
+      (hS : ofDiscreteModule ℤ H N = S) (g : TopRep.res (φ : H →* G) T ⟶ S),
+      (∀ m : M, g.hom ((eqToHom hT).hom m) = (eqToHom hS).hom (f m)) →
+      eqToHom (congrArg (continuousCohomology n) hT) ≫ _root_.ContinuousCohomology.map φ g n =
+        _root_.ContinuousCohomology.map φ
+            (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap hf) n ≫
+          eqToHom (congrArg (continuousCohomology n) hS) := by
+    rintro T rfl S rfl g hg
+    rw [eqToHom_refl, eqToHom_refl, Category.id_comp, Category.comp_id,
+      ofDiscreteModulePair_eq_of_hom_apply (φ : H →* G) f.toIntLinearMap hf g (fun m => hg m)]
+  rw [trivialF2Map_def]
+  refine key _ hM _ hN _ fun m => (trivialF2Equiv H).injective ?_
+  rw [hfM, TopRep.eqToHom_hom_apply]
+  exact trivialF2Equiv_cast G _ _
 
 end Hom
 

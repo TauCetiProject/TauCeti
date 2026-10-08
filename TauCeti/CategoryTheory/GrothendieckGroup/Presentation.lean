@@ -68,9 +68,6 @@ a hypothesis about the chosen generating relations only, which is what a caller 
   where `K₀` of a small abelian category is presented by generators and relations and the
   set-theoretic care taken here is discussed, and Section 6.1.2 for the universal property of an
   additive invariant.
-* `TauCetiRoadmap/GrothendieckEulerForms/Suggested.lean`, whose `ObjectCode`/`objectCode` naming
-  and free-abelian-group-modulo-relations presentation are followed here, with the relations left
-  as a parameter so that the split, exact, abelian, and triangulated groups share one engine.
 * `Mathlib/GroupTheory/PresentedGroup.lean` and
   `Mathlib/Algebra/PresentedMonoid/Basic.lean`, whose set-of-relations parameter and
   `mk`/`of`/`closure_range_of`/lift-and-uniqueness/extensionality/map API layout are adapted here
@@ -284,6 +281,14 @@ theorem hom_ext {f g : PresentedK0 rels →+ G} (h : ∀ X : C, f (of X) = g (of
   AddMonoidHom.eq_of_eqOn_dense closure_range_of (by rintro _ ⟨X, rfl⟩; exact h X)
 
 end HomExt
+
+/-- A homomorphism into a presented Grothendieck group whose range contains the class of every
+object of `C` is surjective, since those classes generate. -/
+theorem surjective_of_forall_of_mem_range {G : Type*} [AddGroup G] {f : G →+ PresentedK0 rels}
+    (h : ∀ X : C, of X ∈ f.range) : Function.Surjective f := by
+  rw [← AddMonoidHom.range_eq_top, eq_top_iff, ← closure_range_of, AddSubgroup.closure_le]
+  rintro _ ⟨X, rfl⟩
+  exact h X
 
 variable {G : Type*} [AddCommGroup G]
 

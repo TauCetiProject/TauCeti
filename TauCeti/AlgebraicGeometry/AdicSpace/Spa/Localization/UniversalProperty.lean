@@ -31,9 +31,10 @@ Wedhorn's proof has three steps, and all three are discharged here:
 The step `φ s ∈ B^×` is Wedhorn's Proposition 7.52(2), which is on hand for a complete Hausdorff
 Huber pair as `TauCeti.ValuationSpectrum.isUnit_iff_forall_mem_spa_notMem_supp`; the step
 `|φ(t)/φ(s)|_w ≤ 1` is a division by that unit. The step from there to `φ(t)/φ(s) ∈ B⁺` is
-Proposition 7.52(1), available as `TauCeti.ValuationSpectrum.mem_of_forall_vle_one`, which the
-assembly consumes at its one use site. All three steps are therefore proved, and each asks of the
-target only what a complete affinoid ring supplies.
+Proposition 7.52(1), available for a ring of integral elements as
+`TauCeti.Huber.IsRingOfIntegralElements.mem_of_forall_vle_one`, which the assembly consumes at its
+one use site. All three steps are therefore proved, and each asks of the target only what a
+complete affinoid ring supplies.
 
 The other half of Lemma 8.1, that `Spa ρ : Spa A⟨T/s⟩ → Spa A` factors through `U`, is already
 `TauCeti.ValuationSpectrum.spaComapLoc_mem_rationalSubset`; it is not repeated here.
@@ -65,9 +66,9 @@ when it is `⊤`, so a nonzero Tate ring has no open maximal ideal at all, and t
 ## What this file consumes
 
 Wedhorn's Proposition 7.52(1) — that `f ∈ B⁺` as soon as `|f(x)| ≤ 1` for all `x ∈ Spa B` — is
-what turns the sub-unit bound on `φ t / φ s` into membership in `B⁺`. It is supplied by
-`TauCeti.ValuationSpectrum.mem_of_forall_vle_one`, landed in #4552. It asks three things of the
-target:
+what turns the sub-unit bound on `φ t / φ s` into membership in `B⁺`. It is supplied, for a ring
+of integral elements, by `TauCeti.Huber.IsRingOfIntegralElements.mem_of_forall_vle_one`; its
+general form `TauCeti.ValuationSpectrum.mem_of_forall_vle_one` asks three things of the target:
 
 * `IsOpen (Bplus : Set B)`,
 * `[IsIntegrallyClosedIn Bplus B]`,
@@ -173,10 +174,11 @@ first is the hypothesis `hs`; the second is discharged from the geometric one: e
 `vle_one_of_comap_mem_rationalSubset`, hence lies in `B⁺` and so is power-bounded.
 
 The passage from "sub-unit at every point of `Spa (B, B⁺)`" to "in `B⁺`" is Wedhorn's
-Proposition 7.52(1), applied through `mem_of_forall_vle_one`; its hypotheses on the target are
-openness of `B⁺`, `[IsIntegrallyClosedIn Bplus B]` and `[IsHuberRing B]`. The proof also uses
-`B⁺ ⊆ B°`. Those three conditions on `B⁺` are exactly the fields of `IsRingOfIntegralElements`,
-so they are carried by the single hypothesis `hB` rather than spelled out one by one.
+Proposition 7.52(1), whose hypotheses on the target are openness of `B⁺`,
+`[IsIntegrallyClosedIn Bplus B]` and `[IsHuberRing B]`; it is applied through
+`IsRingOfIntegralElements.mem_of_forall_vle_one`. The proof also uses `B⁺ ⊆ B°`. Those three
+conditions on `B⁺` are exactly the fields of `IsRingOfIntegralElements`, so they are carried by
+the single hypothesis `hB` rather than spelled out one by one.
 
 Asking `B` to be Huber is not a restriction added here: Wedhorn states Lemma 8.1 for a continuous
 homomorphism into a *complete affinoid ring*, and an affinoid ring is a Huber pair.
@@ -202,15 +204,10 @@ theorem existsUnique_continuous_ringHom_of_isUnit_of_forall_comap_mem_rationalSu
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
     ∃! g : UniformSpace.Completion S →+* B,
-      Continuous g ∧ g.comp (toCompletionLoc P T s S hden) = φ := by
-  let _ := locUniformSpace P T s S hden
-  have _ := isUniformAddGroup_locUniformSpace P T s S hden
-  have _ := isTopologicalRing_locUniformSpace P T s S hden
-  refine existsUnique_continuous_ringHom_completion_locTopology P T s S hden hφ hs fun t ht ↦ ?_
-  have := hB.isIntegrallyClosedIn
-  exact mem_powerBoundedSubring.mp
-    (hB.le_powerBoundedSubring (mem_of_forall_vle_one hB.isOpen fun w hw ↦
-      vle_one_of_comap_mem_rationalSubset hs (hfac w hw) ht))
+      Continuous g ∧ g.comp (toCompletionLoc P T s S hden) = φ :=
+  existsUnique_continuous_ringHom_completion_locTopology P T s S hden hφ hs fun _ ht ↦
+    hB.isPowerBounded_of_mem <| hB.mem_of_forall_vle_one fun w hw ↦
+      vle_one_of_comap_mem_rationalSubset hs (hfac w hw) ht
 
 /-- **Wedhorn's Lemma 8.1.** The geometric universal property in the shape Wedhorn states it: the
 unit `φ s` is not assumed but derived from the factorisation, which is step 1. -/

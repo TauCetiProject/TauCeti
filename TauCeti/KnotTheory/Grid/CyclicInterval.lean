@@ -29,6 +29,8 @@ directions before taking products.
 
 * `TauCeti.Grid.cIco`: the clockwise half-open arc, the one-dimensional shape of the squares a
   toroidal rectangle covers.
+* `TauCeti.Grid.cyclicPosition`: the position of a point on the cycle read clockwise from the
+  successor of a basepoint.
 
 ## Main results
 
@@ -48,7 +50,12 @@ directions before taking products.
 * `TauCeti.Grid.cIoo_image_rev`: reversing a clockwise open arc by `Fin.rev` gives the clockwise
   open arc with reversed, exchanged endpoints.
 * `TauCeti.Grid.mem_cIoo_finRotate_finRotate`, `TauCeti.Grid.mem_cIco_finRotate_finRotate`: the
-  cyclic permutation `finRotate n` preserves the open and half-open arcs.
+  cyclic permutation `finRotate n` preserves the open and half-open arcs, as do its powers
+  (`TauCeti.Grid.mem_cIoo_finRotate_pow_finRotate_pow`,
+  `TauCeti.Grid.mem_cIco_finRotate_pow_finRotate_pow`).
+* `TauCeti.Grid.mem_cIoo_finRotate_rev`, `TauCeti.Grid.rev_mem_cIco_finRotate_rev`: the half-turn
+  `x ↦ finRotate n x.rev` of the grid points reverses the open arcs of points, and acts on the
+  half-open arcs of squares as `Fin.rev`.
 * `TauCeti.Grid.finRotate_ne_self`: on a cycle of length at least two, the cyclic successor has
   no fixed point.
 * `TauCeti.Grid.cIoo_finRotate_eq_empty`, `TauCeti.Grid.cIco_eq_singleton_iff`: the arcs from a
@@ -68,6 +75,11 @@ directions before taking products.
 * `TauCeti.Grid.Noninterleaving`: two endpoint pairs lie on the same cyclic side of each other.
 * `TauCeti.Grid.noninterleaving_rev`: non-interleaving is preserved by reversing every endpoint
   with `Fin.rev`, exchanging the two endpoints within each pair.
+* `TauCeti.Grid.noninterleaving_of_eq_finRotate`, `TauCeti.Grid.noninterleaving_of_finRotate_eq`:
+  an endpoint pair of two cyclically adjacent points is non-interleaving with every endpoint pair
+  that avoids its endpoints suitably, using `TauCeti.Grid.finRotate_mem_cIoo_iff` (stepping to the
+  cyclic successor stays on the same side of an arc) and `TauCeti.Grid.mem_cIoo_finRotate_left_iff`
+  (the arc from the successor of `a` back to `a` misses only these two points).
 * `TauCeti.Grid.mem_cIoo_succAbove_succAbove`,
   `TauCeti.Grid.mem_cIco_succAbove_succAbove`: inserting a point into the cycle with
   `Fin.succAbove` preserves the arcs between old points, and
@@ -80,8 +92,15 @@ directions before taking products.
 * `TauCeti.Grid.mem_cIco_of_mem_cIco_of_mem_cIoo`: the membership form of that nesting.
 * `TauCeti.Grid.notMem_cIco_finRotate_left`: a point is never in the half-open arc starting at
   its own cyclic successor.
+* `TauCeti.Grid.self_mem_cIco_finRotate`: a point always lies in a nondegenerate half-open arc
+  ending at its own cyclic successor.
+* `TauCeti.Grid.ite_mem_cIco_finRotate_sub_ite_mem_cIco_finRotate`: moving from `p` to `q` enters
+  the arc from `finRotate n α` to `finRotate n β` when passing `α` and leaves it when passing
+  `β`.
 * `TauCeti.Grid.notMem_cIco_of_cIco_union`: a point missing both halves of a half-open arc
   cut at an interior point misses the whole arc.
+* `TauCeti.Grid.cyclicPosition_lt_of_notMem_cIco`: two distinct points whose half-open arc
+  avoids the basepoint come in increasing order of cyclic position.
 
 ## References
 
@@ -467,6 +486,34 @@ theorem cIoo_subset_cIoo_left_of_mem_cIoo {a b c : Fin n} (h : b ∈ cIoo a c) :
   rw [← cIoo_union_insert_cIoo_eq_cIoo_of_mem_cIoo h]
   exact Finset.subset_union_right.trans' (Finset.subset_insert _ _)
 
+/-- A point `v` strictly inside the arc from `u` to `w` cuts every arc from `u` to a point `s` of
+the arc from `v` to `w`, counted. -/
+theorem ite_mem_cIco_eq_add_of_mem_cIoo {u v w s : Fin n} (hv : v ∈ cIoo u w)
+    (hs : s ∈ cIco v w) (t : Fin n) :
+    (if t ∈ cIco u s then 1 else 0 : ℕ) =
+      (if t ∈ cIco u v then 1 else 0) + if t ∈ cIco v s then 1 else 0 := by
+  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hv hs ⊢
+  split_ifs at hv hs ⊢ <;> omega
+
+/-- A point `v` strictly inside the arc from `u` to `w` cuts the open arc from a point `s` of the
+arc from `u` to `v` to `w` into the open arc from `s` to `v` and the arc from `v` to `w`,
+counted. -/
+theorem ite_mem_cIoo_eq_add_of_mem_cIoo {u v w s : Fin n} (hv : v ∈ cIoo u w)
+    (hs : s ∈ cIco u v) (t : Fin n) :
+    (if t ∈ cIoo s w then 1 else 0 : ℕ) =
+      (if t ∈ cIoo s v then 1 else 0) + if t ∈ cIco v w then 1 else 0 := by
+  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hv hs ⊢
+  split_ifs at hv hs ⊢ <;> omega
+
+/-- A point `s` of the arc from `u` to `w` cuts it into the arc before `s`, the point `s` and the
+open arc after `s`, counted. -/
+theorem ite_mem_cIco_eq_add_add {u w s : Fin n} (hs : s ∈ cIco u w) (t : Fin n) :
+    (if t ∈ cIco u w then 1 else 0 : ℕ) =
+      (if t ∈ cIco u s then 1 else 0) + (if t = s then 1 else 0) +
+        if t ∈ cIoo s w then 1 else 0 := by
+  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hs ⊢
+  split_ifs at hs ⊢ <;> omega
+
 /-- A point outside the clockwise interval from `a` to `b` is either an endpoint or lies in
 the opposite clockwise interval. -/
 theorem not_mem_cIoo_iff {a b x : Fin n} (h : a ≠ b) :
@@ -638,6 +685,48 @@ theorem mem_cIco_finRotate_finRotate (a b x : Fin n) :
       Finset.mem_insert, Finset.mem_insert, (finRotate n).injective.eq_iff,
       mem_cIoo_finRotate_finRotate]
 
+/-- The half-turn `x ↦ finRotate n x.rev` of the cycle, which is negation modulo `n`, reverses
+the cyclic order: it carries the clockwise open arc from `a` to `b` onto the clockwise open arc
+between the images of `b` and `a`. -/
+theorem mem_cIoo_finRotate_rev (a b x : Fin n) :
+    finRotate n x.rev ∈ cIoo (finRotate n b.rev) (finRotate n a.rev) ↔ x ∈ cIoo a b := by
+  rw [mem_cIoo_finRotate_finRotate, mem_cIoo_rev_rev]
+
+/-- On squares named by their lower-left grid points, the half-turn `x ↦ finRotate n x.rev` of
+the grid points acts as `Fin.rev`: it carries the clockwise half-open arc of squares from `a` to
+`b` onto the one between the images of `b` and `a` under the half-turn of the grid points. -/
+theorem rev_mem_cIco_finRotate_rev (a b x : Fin n) :
+    x.rev ∈ cIco (finRotate n b.rev) (finRotate n a.rev) ↔ x ∈ cIco a b := by
+  cases n with
+  | zero => exact x.elim0
+  | succ n =>
+    have := a.isLt; have := b.isLt; have := x.isLt
+    simp only [mem_cIco, ne_eq, coe_finRotate, Fin.ext_iff, Fin.val_last, Fin.val_rev,
+      Nat.succ_eq_add_one]
+    split_ifs <;>
+      (try simp only [not_false_eq_true, not_true_eq_false, true_and, false_and, false_iff]) <;>
+      omega
+
+/-- Powers of the cyclic permutation `finRotate n` preserve and reflect membership in open cyclic
+intervals. -/
+theorem mem_cIoo_finRotate_pow_finRotate_pow (k : ℕ) (a b x : Fin n) :
+    (finRotate n ^ k) x ∈ cIoo ((finRotate n ^ k) a) ((finRotate n ^ k) b) ↔ x ∈ cIoo a b := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [pow_succ', Equiv.Perm.mul_apply, Equiv.Perm.mul_apply, Equiv.Perm.mul_apply,
+      mem_cIoo_finRotate_finRotate, ih]
+
+/-- Powers of the cyclic permutation `finRotate n` preserve and reflect membership in half-open
+cyclic intervals. -/
+theorem mem_cIco_finRotate_pow_finRotate_pow (k : ℕ) (a b x : Fin n) :
+    (finRotate n ^ k) x ∈ cIco ((finRotate n ^ k) a) ((finRotate n ^ k) b) ↔ x ∈ cIco a b := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [pow_succ', Equiv.Perm.mul_apply, Equiv.Perm.mul_apply, Equiv.Perm.mul_apply,
+      mem_cIco_finRotate_finRotate, ih]
+
 /-- Replacing a point by its cyclic successor preserves membership in a half-open cyclic interval
 when the successor is not an endpoint. -/
 theorem mem_cIco_finRotate_iff_of_ne {a b c : Fin n}
@@ -662,6 +751,37 @@ theorem mem_cIco_finRotate_iff_of_ne {a b c : Fin n}
       rw [hrot] at haVal hbVal ⊢
       split_ifs <;> omega
 
+/-- The value of the cyclic successor, split into the wrapping and the non-wrapping case. -/
+theorem val_finRotate_cases {m : ℕ} (i : Fin (m + 1)) :
+    (i.val = m ∧ (finRotate (m + 1) i).val = 0) ∨
+      (i.val < m ∧ (finRotate (m + 1) i).val = i.val + 1) := by
+  rw [coe_finRotate]
+  have := i.isLt
+  split_ifs with h
+  · exact Or.inl ⟨by simpa [Fin.ext_iff] using h, rfl⟩
+  · exact Or.inr ⟨by rw [Fin.ext_iff, Fin.val_last] at h; omega, rfl⟩
+
+/-- **Crossing count for a shifted arc.** For distinct `α` and `β`, going from `p` to `q` enters
+the half-open arc from `finRotate n α` to `finRotate n β` once if the arc from `p` to `q` passes
+`α`, and leaves it once if it passes `β`. On a grid, with `α` and `β` naming rows of squares and
+`p`, `q` horizontal grid lines, the shifted arc is the band of lines `α + 1, …, β` strictly above
+the centre of square row `α` and below the centre of square row `β`. -/
+theorem ite_mem_cIco_finRotate_sub_ite_mem_cIco_finRotate {p q α β : Fin n}
+    (hpq : p ≠ q) (hαβ : α ≠ β) :
+    ((if q ∈ cIco (finRotate n α) (finRotate n β) then 1 else 0 : ℤ) -
+        if p ∈ cIco (finRotate n α) (finRotate n β) then 1 else 0) =
+      (if α ∈ cIco p q then 1 else 0 : ℤ) - if β ∈ cIco p q then 1 else 0 := by
+  cases n with
+  | zero => exact p.elim0
+  | succ m =>
+    have hα := val_finRotate_cases α
+    have hβ := val_finRotate_cases β
+    simp only [mem_cIco, ne_eq, Fin.ext_iff, ite_prop_iff_or]
+    simp only [ne_eq, Fin.ext_iff] at hpq hαβ
+    have := p.isLt
+    have := q.isLt
+    split_ifs <;> omega
+
 /-- On a cycle of length at least two, no point is fixed by the cyclic successor `finRotate n`. -/
 theorem finRotate_ne_self (hn : 1 < n) (a : Fin n) : finRotate n a ≠ a := by
   cases n with
@@ -682,6 +802,47 @@ theorem cIoo_finRotate_eq_empty (a : Fin n) : cIoo a (finRotate n a) = ∅ := by
     have := a.isLt; have := x.isLt
     rw [coe_finRotate]
     split_ifs with h₁ h₂ <;> simp only [Fin.ext_iff, Fin.val_last] at h₁ <;> omega
+
+/-- Moving from a point `x` to its cyclic successor does not cross the endpoints of an open
+cyclic interval that starts away from `x` and ends away from its successor. -/
+theorem finRotate_mem_cIoo_iff {a b x : Fin n} (ha : a ≠ x) (hb : b ≠ finRotate n x) :
+    finRotate n x ∈ cIoo a b ↔ x ∈ cIoo a b := by
+  cases n with
+  | zero => exact x.elim0
+  | succ m =>
+    have hx := val_finRotate_cases x
+    simp only [mem_cIoo, ne_eq, Fin.ext_iff] at ha hb ⊢
+    have := a.isLt; have := b.isLt
+    rcases hx with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> rw [h2] at hb ⊢ <;> split_ifs <;> omega
+
+/-- The open cyclic interval from the cyclic successor of `a` back to `a` contains every point
+except these two, provided they are distinct. -/
+theorem mem_cIoo_finRotate_left_iff {a x : Fin n} (ha : a ≠ finRotate n a) :
+    x ∈ cIoo (finRotate n a) a ↔ x ≠ a ∧ x ≠ finRotate n a := by
+  rw [← mem_cIoo_or_mem_cIoo_swap_iff ha, cIoo_finRotate_eq_empty]
+  simp
+
+/-- An endpoint pair whose second point is the cyclic successor of its first is non-interleaving
+with every endpoint pair whose first point avoids the first and whose second point avoids the
+second. -/
+theorem noninterleaving_of_eq_finRotate {a₀ a₁ b₀ b₁ : Fin n} (ha : a₁ = finRotate n a₀)
+    (hb₀ : b₀ ≠ a₀) (hb₁ : b₁ ≠ a₁) : Noninterleaving a₀ a₁ b₀ b₁ := by
+  subst ha
+  refine ⟨(finRotate_mem_cIoo_iff hb₀ hb₁).symm, ?_⟩
+  rw [cIoo_finRotate_eq_empty]
+  simp
+
+/-- An endpoint pair whose first point is the cyclic successor of its second is non-interleaving
+with every endpoint pair disjoint from it. -/
+theorem noninterleaving_of_finRotate_eq {a₀ a₁ b₀ b₁ : Fin n} (ha : a₀ = finRotate n a₁)
+    (hb₀ : b₀ ≠ a₀) (hb₀' : b₀ ≠ a₁) (hb₁ : b₁ ≠ a₀) (hb₁' : b₁ ≠ a₁) :
+    Noninterleaving a₀ a₁ b₀ b₁ := by
+  subst ha
+  refine ⟨finRotate_mem_cIoo_iff hb₀' hb₁, ?_⟩
+  by_cases h : a₁ = finRotate n a₁
+  · simp [← h]
+  · rw [mem_cIoo_finRotate_left_iff h, mem_cIoo_finRotate_left_iff h]
+    exact ⟨fun _ ↦ ⟨hb₁', hb₁⟩, fun _ ↦ ⟨hb₀', hb₀⟩⟩
 
 /-- A half-open cyclic interval is a single point exactly when that point is its initial endpoint
 and its terminal endpoint is the distinct cyclic successor of that point. -/
@@ -801,6 +962,15 @@ theorem mem_cIco_of_mem_cIco_of_mem_cIoo {A B C s : Fin n}
   rw [← hunion]
   exact Finset.mem_union.mpr (Or.inl hmem)
 
+/-- If `s` lies in the half-open cyclic interval from `A` to `C` and `s'` lies strictly between
+`s` and `C`, then the closed cyclic interval from `s` to `s'` lies in the one from `A` to `C`. -/
+theorem insert_cIco_subset_cIco {A C s s' : Fin n} (hs : s ∈ cIco A C) (hs' : s' ∈ cIoo s C) :
+    insert s' (cIco s s') ⊆ cIco A C := by
+  intro r hr
+  have hr' : r = s' ∨ r ∈ cIco s s' := Finset.mem_insert.mp hr
+  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hs hs' hr' ⊢
+  split_ifs at hs hs' hr' ⊢ <;> omega
+
 /-- A point is never in the half-open cyclic interval starting at its own successor.
 Going clockwise from `c + 1`, the point `c` is the last point reached — only after a full
 cycle. The half-open arc `cIco (c + 1) r` stops before `r`, hence before completing the
@@ -835,6 +1005,18 @@ theorem notMem_cIco_finRotate_left (c r : Fin n) :
       rw [hrot] at hmem hne'
       split_ifs at hmem with h <;> omega
 
+/-- A point lies in every nondegenerate half-open cyclic interval ending at its own cyclic
+successor: going clockwise, `a` is the last point reached before `finRotate n a`, so any arc
+that stops there and does not start there has already passed through `a`. -/
+theorem self_mem_cIco_finRotate {a c : Fin n} (h : c ≠ finRotate n a) :
+    a ∈ cIco c (finRotate n a) := by
+  have hmem : a ∈ cIco c (finRotate n a) ∪ cIco (finRotate n a) c := by
+    rw [cIco_union_swap h]
+    exact Finset.mem_univ a
+  -- The complementary arc starts at the cyclic successor of `a`, so it misses `a`: that is
+  -- `notMem_cIco_finRotate_left`, which `simp` applies once `finRotate n a` is normalized.
+  exact (Finset.mem_union.mp hmem).resolve_right (by simp)
+
 /-- A point missing both halves of a half-open cyclic interval cut at an interior point
 misses the whole interval. -/
 theorem notMem_cIco_of_cIco_union {p r₀ r₁ s : Fin n}
@@ -846,6 +1028,46 @@ theorem notMem_cIco_of_cIco_union {p r₀ r₁ s : Fin n}
   rcases Finset.mem_union.mp hmem with h | h
   · exact h₁ h
   · exact h₂ h
+
+/-! ### Positions on the cycle -/
+
+/-- The position of `r` on the cycle `Fin n` read clockwise from the cyclic successor of `p`: the
+length of the half-open arc from `finRotate n p` to `r`. The successor of `p` has position `0`
+and `p` itself comes last. -/
+noncomputable def cyclicPosition (p r : Fin n) : ℕ :=
+  (cIco (finRotate n p) r).card
+
+/-- The cyclic successor `p + 1` of `p` (that is, `finRotate n p`) comes first, in position
+`0`. -/
+@[simp]
+theorem cyclicPosition_add_one_self (p : Fin n) :
+    haveI := p.neZero; cyclicPosition p (p + 1) = 0 := by
+  cases n with
+  | zero => exact p.elim0
+  | succ n => simp [cyclicPosition, cIco_self]
+
+/-- The point `p` itself comes last, in position `n - 1`. -/
+@[simp]
+theorem cyclicPosition_self (p : Fin n) : cyclicPosition p p = n - 1 := by
+  cases n with
+  | zero => exact p.elim0
+  | succ n =>
+    have := p.isLt
+    simp only [cyclicPosition, card_cIco, ← Fin.val_inj, coe_finRotate, Fin.val_last]
+    split_ifs <;> omega
+
+/-- Two distinct points whose half-open arc avoids `p` come in strictly increasing order of
+position read from the cyclic successor of `p`. -/
+theorem cyclicPosition_lt_of_notMem_cIco {p a b : Fin n} (hab : a ≠ b) (h : p ∉ cIco a b) :
+    cyclicPosition p a < cyclicPosition p b := by
+  cases n with
+  | zero => exact p.elim0
+  | succ n =>
+    have := p.isLt; have := a.isLt; have := b.isLt
+    have hab' : a.val ≠ b.val := fun e ↦ hab (Fin.ext e)
+    simp only [cyclicPosition, card_cIco, mem_cIco, ne_eq, ← Fin.val_inj, coe_finRotate,
+      Fin.val_last] at h ⊢
+    split_ifs at h ⊢ <;> omega
 
 end Grid
 

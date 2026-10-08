@@ -46,6 +46,8 @@ restriction with a single `G`-orbit.
 
 * `TauCeti.mem_inertia_iff`: membership in the inertia group is the existence of an isomorphism
   `{}^g A ≅ A`.
+* `TauCeti.mem_inertia_iff_exists_linearEquiv`: equivalently, conjugation by `g` on `N` is
+  implemented by an invertible operator on `A`.
 * `Representation.IntertwiningMap.mem_inertia`: a nonzero intertwiner from an irreducible
   representation to one of its conjugates puts the conjugating element in the inertia group.
 * `Representation.IntertwiningMap.inv_mem_inertia_of_comp_ne_zero`: if an intertwiner from `V`
@@ -55,6 +57,7 @@ restriction with a single `G`-orbit.
 * `TauCeti.inertia_congr`: isomorphic representations have the same inertia group, so the inertia
   group is an invariant of the isomorphism class.
 * `TauCeti.inertia_conjNormalFDRep`: conjugating the representation conjugates its inertia group.
+* `FDRep.inertia_resFDRep`: a representation restricted from `G` to `N` has full inertia.
 * `TauCeti.char_conj_eq_of_mem_inertia`: the character of `A` is invariant under conjugation
   by an element of the inertia group.
 
@@ -139,9 +142,60 @@ theorem char_conj_eq_of_mem_inertia {A : FDRep k N} {g : G} (hg : g ∈ inertia 
   obtain ⟨e⟩ := mem_inertia_iff.1 hg
   rw [← char_conjNormalFDRep_mk, FDRep.char_iso e]
 
+/-- Membership in the inertia group, read on operators: `g ∈ inertia A` exactly when conjugation
+by `g` on `N` is implemented by an invertible operator `a` on `A`, that is,
+`a ∘ A.ρ n = A.ρ (g n g⁻¹) ∘ a` for all `n : N`.  Such an `a` is an isomorphism `{}^g A ≅ A` read
+on the common underlying space. -/
+theorem mem_inertia_iff_exists_linearEquiv {A : FDRep k N} {g : G} :
+    g ∈ inertia A ↔
+      ∃ a : A ≃ₗ[k] A, ∀ n x, a (A.ρ n x) = A.ρ (MulAut.conjNormal g n) (a x) := by
+  rw [mem_inertia_iff, nonempty_fdRepIso_iff]
+  constructor
+  · rintro ⟨e⟩
+    refine ⟨e.toLinearEquiv, fun n x ↦ ?_⟩
+    have h := Representation.IntertwiningMap.isIntertwining _ _ e.toIntertwiningMap
+      (MulAut.conjNormal g n) x
+    have hn : MulAut.conjNormal g⁻¹ (MulAut.conjNormal g n) = n := by simp
+    rw [conjNormalFDRep_ρ, hn] at h
+    -- `h` evaluates `e` through its `Representation.Equiv` coercion, which is
+    -- `e.toLinearEquiv` by `Representation.Equiv.toLinearEquiv_apply` (a `rfl` lemma).  It cannot
+    -- be rewritten with: `A.ρ n` in `h` is linear over the `CommRing` semiring structure on `k`
+    -- that `FDRep` uses, while the goal is stated over the `Field` one.
+    exact h
+  · rintro ⟨a, ha⟩
+    refine ⟨_root_.Representation.Equiv.mk a fun n ↦ LinearMap.ext fun x ↦ ?_⟩
+    have hn : MulAut.conjNormal g (MulAut.conjNormal g⁻¹ n) = n := by simp
+    -- The goal is `a ∘ₗ (conjNormalFDRep g A).ρ n = A.ρ n ∘ₗ a` at `x`, where the action of the
+    -- conjugate is `A.ρ (conjNormal g⁻¹ n)` (`conjNormalFDRep_ρ`, a `rfl` lemma); as above, the
+    -- two semiring structures on `k` block rewriting, so the instance of `ha` is closed directly.
+    exact (ha _ x).trans (congrArg (fun m ↦ A.ρ m (a x)) hn)
+
 end Field
 
 end TauCeti
+
+namespace FDRep
+
+open TauCeti
+
+variable {k : Type u} {G : Type v} [Ring k] [Group G]
+
+/-- A representation restricted from the ambient group has full inertia: the ambient
+operators implement conjugation on the normal subgroup. No simplicity is required. -/
+@[simp]
+theorem inertia_resFDRep (W : FDRep k G) (N : Subgroup G) [N.Normal] :
+    inertia (N.resFDRep W) = ⊤ := by
+  apply top_unique
+  intro g _
+  refine mem_inertia_iff.mpr ⟨Action.mkIso (W.ρAut g) fun n ↦ ?_⟩
+  -- Restriction preserves the underlying object. Rewriting `Action.res_obj_ρ` alone would
+  -- leave incompatible object types in the compositions, so expose the ambient operators.
+  change Action.ρ W (MulAut.conjNormal g⁻¹ n : G) ≫ Action.ρ W g =
+    Action.ρ W g ≫ Action.ρ W (n : G)
+  ext v
+  exact Representation.apply_conjNormal_inv ((forget₂ (FDRep k G) (Rep k G)).obj W).ρ g n v
+
+end FDRep
 
 namespace Representation.IntertwiningMap
 

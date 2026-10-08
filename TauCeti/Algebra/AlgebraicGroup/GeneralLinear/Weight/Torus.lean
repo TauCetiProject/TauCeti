@@ -57,6 +57,8 @@ No faithfulness is asserted: an arbitrary weight family may have a common kernel
   underlying bialgebra morphism is the direct construction over `K`.
 * `TauCeti.GeneralLinear.weightTorusBaseChangeCoordinateMap_eq`: the transported map agrees with
   the categorical weight-torus coordinate morphism over `K` when all data share one universe.
+* `TauCeti.GeneralLinear.weightTorusBaseChangeCoordinateMap_baseChange`: base change of the
+  transported map along a further extension `A → B` is the transported map over `B`.
 * `TauCeti.GeneralLinear.weightTorus`: the represented morphism `𝔾ₘ^κ → GL_N`.
 * `TauCeti.GeneralLinear.isClosedImmersion_weightTorus`: spanning weights make the represented
   morphism a closed immersion.
@@ -89,7 +91,7 @@ open scoped CategoryTheory.MonObj TensorProduct
 
 namespace TauCeti.GeneralLinear
 
-universe u v
+universe u v w
 
 variable {R κ : Type u} [CommRing R] {N : ℕ}
 
@@ -185,6 +187,38 @@ theorem corestrict_standardComodule_weightTorusCoordinateBialgHom_eq_ofWeights
       · intro i _ hia
         simp [hia]
       · simp
+
+/-- If a weight-torus morphism factors through another coordinate Hopf algebra, restricting the
+corestricted standard comodule along that factor gives the same prescribed weight comodule. -/
+theorem corestrict_corestrict_standardComodule_eq_ofWeights [Fintype sigma]
+    {H : Type*} [CommRing H] [HopfAlgebra S H]
+    (f : coordinateHopfAlgebra S N →ₐc[S] H)
+    (g : H →ₐc[S] MonoidAlgebra S (Multiplicative (sigma →₀ ℤ)))
+    (wt : Fin N → sigma → ℤ) (hcomp : g.comp f = weightTorusCoordinateBialgHom wt) :
+    let _ := standardComodule S N
+    let _ : Comodule S H (Fin N → S) := Comodule.Corestrict f.toCoalgHom
+    Comodule.Corestrict g.toCoalgHom =
+      Comodule.ofWeights (Pi.basisFun S (Fin N))
+        (fun a ↦ SplitTorus.weightCharacter (wt a)) := by
+  let _ := standardComodule S N
+  let _ : Comodule S H (Fin N → S) := Comodule.Corestrict f.toCoalgHom
+  have hcharacters : (fun a ↦ SplitTorus.weightCharacter (wt a)) =
+      (fun a ↦ Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (wt a))) := by
+    funext a
+    apply Multiplicative.toAdd.injective
+    ext j
+    simp
+  rw [hcharacters]
+  apply Comodule.ext
+  rw [Comodule.corestrict_coact, ← Comodule.corestrictCoact_comp f.toCoalgHom g.toCoalgHom]
+  have hc : g.toCoalgHom.comp f.toCoalgHom = (weightTorusCoordinateBialgHom wt).toCoalgHom := by
+    apply DFunLike.ext _ _
+    intro x
+    exact DFunLike.congr_fun hcomp x
+  rw [hc]
+  simpa only [Comodule.corestrict_coact] using
+    congrArg (fun c : Comodule S _ (Fin N → S) ↦ c.coact)
+      (corestrict_standardComodule_weightTorusCoordinateBialgHom_eq_ofWeights wt)
 
 end DirectCoordinateMap
 
@@ -406,6 +440,24 @@ theorem weightTorusBaseChangeCoordinateMap_eq
       weightTorusCoordinateMap (R := K) wt := by
   apply _root_.CommHopfAlgCat.hom_ext
   rw [hom_weightTorusBaseChangeCoordinateMap, hom_weightTorusCoordinateMap]
+
+/-- **The transported weight-torus coordinate map is compatible with towers.** For ring maps
+`R → A → B`, scalar extension along `A → B` of the weight torus transported to `A` is the weight
+torus transported to `B`, once the scalar extensions to `B` of the coordinate Hopf algebras of
+`GL_N` and of the split torus over `A` are identified with those over `B`. -/
+theorem weightTorusBaseChangeCoordinateMap_baseChange
+    (R : Type u) (A : Type max u v) (B : Type max u v w) [CommRing R] [CommRing A] [CommRing B]
+    [Algebra R A] [Algebra A B] [Algebra R B] [IsScalarTower R A B] (wt : Fin N → κ → ℤ) :
+    (coordinateHopfAlgebraBaseChangeIso.{max u v, w} A B N).inv ≫
+        CommHopfAlgCat.baseChangeMap (weightTorusBaseChangeCoordinateMap.{u, v} R A wt) ≫
+        (_root_.CommHopfAlgCat.isoMk
+          (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv A B
+            (G := SplitTorus.characterGroup κ))).hom =
+      weightTorusBaseChangeCoordinateMap.{u, max v w} R B wt := by
+  rw [weightTorusBaseChangeCoordinateMap_def, weightTorusBaseChangeCoordinateMap_def]
+  exact coordinateHopfAlgebraBaseChangeIso_inv_comp_baseChangeMap_tower R A B N _ _ _ _
+    fun _ ↦
+      TauCeti.MonoidAlgebra.scalarTensorBialgEquiv_one_tmul_scalarTensorBialgEquiv_one_tmul A B
 
 end BaseChange
 

@@ -54,7 +54,9 @@ theorem OrderedIntermediateField.isSquare_of_isMax (P : OrderedIntermediateField
   have := ho
   let f : E →ₐ[P.toIntermediateField] L := IsAlgClosed.lift
   let y : E := QuadraticAlgebra.omega
-  have hy := P.mem_of_isMax hP f hf.monotone y
+  let hOrderedModule : IsOrderedModule P.toIntermediateField E :=
+    IsOrderedModule.of_algebraMap_mono hf.monotone
+  have hy := P.mem_of_isMax hP f y
   apply hn
   refine ⟨⟨f y, hy⟩, ?_⟩
   rw [Subtype.ext_iff, IntermediateField.coe_mul]
@@ -79,7 +81,9 @@ theorem OrderedIntermediateField.exists_isRoot_of_isMax
   let := o
   have := ho
   let f : AdjoinRoot q →ₐ[P.toIntermediateField] L := IsAlgClosed.lift
-  have hy := P.mem_of_isMax hP f hf.monotone (AdjoinRoot.root q)
+  let hOrderedModule : IsOrderedModule P.toIntermediateField (AdjoinRoot q) :=
+    IsOrderedModule.of_algebraMap_mono hf.monotone
+  have hy := P.mem_of_isMax hP f (AdjoinRoot.root q)
   let y : P.toIntermediateField := ⟨f (AdjoinRoot.root q), hy⟩
   refine ⟨y, ?_⟩
   have hpval : aeval (AdjoinRoot.root q) p = 0 := by

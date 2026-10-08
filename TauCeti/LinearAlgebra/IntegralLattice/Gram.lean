@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.Isometry
-import Mathlib.LinearAlgebra.Determinant
+public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
+import TauCeti.LinearAlgebra.BilinearMap.GramCongruence
 
 /-!
 # Gram determinants of integral lattices
@@ -30,12 +30,16 @@ discriminant group.
 * `TauCeti.IntegralLattice.gramDet`: its signed determinant.
 * `TauCeti.IntegralLattice.determinant`: the basis-independent signed determinant.
 * `TauCeti.IntegralLattice.discriminant`: the nonnegative absolute determinant.
+* `TauCeti.IntegralLattice.determinantUnit`: the signed determinant of a nondegenerate lattice as a
+  nonzero rational number.
 
 ## Main results
 
 * `TauCeti.IntegralLattice.gramDet_eq_gramDet`: Gram determinants agree in any two bases.
 * `TauCeti.IntegralLattice.gramDet_ne_zero_iff`: a Gram determinant is nonzero exactly when the
   ambient form is nondegenerate.
+* `TauCeti.IntegralLattice.nondegenerate_integralForm_iff`: the integral form on the carrier is
+  nondegenerate exactly when the ambient form is.
 * `TauCeti.IntegralLattice.gramMatrix_ofGramMatrix`: the Gram matrix of `ofGramMatrix` in its
   canonical basis is `G`.
 * `TauCeti.IntegralLattice.determinant_ofGramMatrix`: the signed determinant of `ofGramMatrix` is
@@ -46,6 +50,8 @@ discriminant group.
   absolute determinant of `G`.
 * `TauCeti.IntegralLattice.Isometry.determinant_eq` and `Isometry.discriminant_eq`: isometry
   invariance of the basis-free invariants.
+* `TauCeti.IntegralLattice.Isometry.ofGramMatrixEq`: lattices with bases of equal Gram matrices
+  are isometric.
 
 ## References
 
@@ -142,37 +148,17 @@ theorem gramDet_reindex {ι : Type v} {κ : Type w} [Fintype ι] [Fintype κ]
     L.gramDet (e.reindex σ) = L.gramDet e := by
   rw [gramDet_def, gramMatrix_reindex, Matrix.det_submatrix_equiv_self, ← gramDet_def]
 
-/-- Two carrier bases with the same index type give the same signed Gram determinant. -/
-private theorem gramDet_eq_gramDet_sameIndex {ι : Type v} [Fintype ι] [DecidableEq ι]
-    (e f : Basis ι ℤ L) : L.gramDet e = L.gramDet f := by
-  have hchange : IsUnit (f.toMatrix e).det := f.isUnit_det e
-  rw [Int.isUnit_iff, ← sq_eq_one_iff] at hchange
-  have hmatrix :
-      (f.toMatrix e).transpose * LinearMap.BilinForm.toMatrix f L.integralForm * f.toMatrix e =
-        LinearMap.BilinForm.toMatrix e L.integralForm :=
-    LinearMap.BilinForm.toMatrix_mul_basis_toMatrix (b := f) e L.integralForm
-  rw [gramDet_def, gramDet_def, gramMatrix_eq_toMatrix, gramMatrix_eq_toMatrix]
-  calc
-    Matrix.det (LinearMap.BilinForm.toMatrix e L.integralForm) =
-        Matrix.det ((f.toMatrix e).transpose *
-          LinearMap.BilinForm.toMatrix f L.integralForm * f.toMatrix e) :=
-      congrArg Matrix.det hmatrix.symm
-    _ = (f.toMatrix e).det ^ 2 *
-        Matrix.det (LinearMap.BilinForm.toMatrix f L.integralForm) := by
-      rw [Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose]
-      ring
-    _ = Matrix.det (LinearMap.BilinForm.toMatrix f L.integralForm) := by
-      rw [hchange, one_mul]
-
 /-- **The signed Gram determinant is independent of the carrier basis.** This permits both the
 index type and the basis to change. -/
 theorem gramDet_eq_gramDet {ι : Type v} {κ : Type w} [Fintype ι] [Fintype κ]
     [DecidableEq ι] [DecidableEq κ] (e : Basis ι ℤ L) (f : Basis κ ℤ L) :
     L.gramDet e = L.gramDet f := by
-  let σ : ι ≃ κ := e.indexEquiv f
-  calc
-    L.gramDet e = L.gramDet (e.reindex σ) := (gramDet_reindex L e σ).symm
-    _ = L.gramDet f := gramDet_eq_gramDet_sameIndex L _ _
+  have he : L.gramMatrix e = LinearMap.toMatrix₂Aux ℤ (e : ι → L) (e : ι → L) L.integralForm :=
+    Matrix.ext fun i j ↦ by rw [gramMatrix_apply, LinearMap.toMatrix₂Aux_apply]
+  have hf : L.gramMatrix f = LinearMap.toMatrix₂Aux ℤ (f : κ → L) (f : κ → L) L.integralForm :=
+    Matrix.ext fun i j ↦ by rw [gramMatrix_apply, LinearMap.toMatrix₂Aux_apply]
+  rw [gramDet_def, gramDet_def, he, hf]
+  exact (LinearMap.det_toMatrix₂Aux_eq_det_toMatrix₂Aux L.integralForm e f).symm
 
 /-- A Gram determinant is nonzero exactly when the ambient rational form is nondegenerate. -/
 @[simp]
@@ -228,6 +214,25 @@ theorem determinant_ne_zero_iff (L : IntegralLattice V) :
     L.determinant ≠ 0 ↔ L.form.Nondegenerate := by
   classical
   rw [determinant, gramDet_ne_zero_iff]
+
+/-- The signed Gram determinant of a nondegenerate integral lattice, regarded as a nonzero
+rational number. -/
+noncomputable def determinantUnit (L : IntegralLattice V) [L.IsNondegenerate] : ℚˣ :=
+  Units.mk0 (L.determinant : ℚ) <| by
+    exact_mod_cast (L.determinant_ne_zero_iff.mpr L.form_nondegenerate)
+
+/-- The value underlying `determinantUnit` is the integral Gram determinant cast to `ℚ`. -/
+@[simp]
+theorem coe_determinantUnit (L : IntegralLattice V) [L.IsNondegenerate] :
+    (L.determinantUnit : ℚ) = L.determinant :=
+  (rfl)
+
+/-- The integral form on the carrier is nondegenerate exactly when the ambient rational form is. -/
+theorem nondegenerate_integralForm_iff (L : IntegralLattice V) :
+    L.integralForm.Nondegenerate ↔ L.form.Nondegenerate := by
+  classical
+  rw [LinearMap.BilinForm.nondegenerate_iff_det_ne_zero (Module.Free.chooseBasis ℤ L),
+    ← gramMatrix_eq_toMatrix, ← gramDet_def, gramDet_ne_zero_iff]
 
 open Classical in
 /-- An integral lattice constructed from a nonsingular Gram matrix is nondegenerate. -/
@@ -303,6 +308,33 @@ theorem determinant_eq (e : Isometry L M) : L.determinant = M.determinant := by
 /-- The nonnegative discriminant is invariant under integral-lattice isometry. -/
 theorem discriminant_eq (e : Isometry L M) : L.discriminant = M.discriminant := by
   rw [L.discriminant_def, M.discriminant_def, e.determinant_eq]
+
+/-- The equivalence matching two bases with equal Gram matrices preserves the integral forms. -/
+private theorem integralForm_basisEquiv {ι : Type v} (b : Basis ι ℤ L) (b' : Basis ι ℤ M)
+    (h : L.gramMatrix b = M.gramMatrix b') (x y : L) :
+    M.integralForm (b.equiv b' (Equiv.refl ι) x) (b.equiv b' (Equiv.refl ι) y) =
+      L.integralForm x y := by
+  have hforms : M.integralForm.compl₁₂ (b.equiv b' (Equiv.refl ι)).toLinearMap
+      (b.equiv b' (Equiv.refl ι)).toLinearMap = L.integralForm :=
+    LinearMap.BilinForm.ext_basis b fun i j ↦ by
+      simpa [gramMatrix_apply] using (congrFun (congrFun h i) j).symm
+  simpa using LinearMap.congr_fun₂ hforms x y
+
+/-- **Lattices with bases of equal Gram matrices are isometric.** The isometry carries the `i`-th
+vector of the first basis to the `i`-th vector of the second; this is the converse of
+`TauCeti.IntegralLattice.Isometry.gramMatrix_carrierBasisEquiv`. -/
+noncomputable def ofGramMatrixEq {ι : Type v} (b : Basis ι ℤ L) (b' : Basis ι ℤ M)
+    (h : L.gramMatrix b = M.gramMatrix b') : Isometry L M :=
+  ofCarrierEquiv (b.equiv b' (Equiv.refl ι)) (integralForm_basisEquiv b b' h)
+
+/-- The isometry `ofGramMatrixEq b b' h` carries each vector of `b` to the corresponding vector
+of `b'`. -/
+@[simp]
+theorem ofGramMatrixEq_apply_basis {ι : Type v} (b : Basis ι ℤ L) (b' : Basis ι ℤ M)
+    (h : L.gramMatrix b = M.gramMatrix b') (i : ι) :
+    ofGramMatrixEq b b' h (b i) = b' i := by
+  rw [ofGramMatrixEq, ofCarrierEquiv_apply, LinearEquiv.extendOfIsLattice_apply, Basis.equiv_apply,
+    Equiv.refl_apply]
 
 end Isometry
 

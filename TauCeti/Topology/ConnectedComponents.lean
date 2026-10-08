@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Connected.Clopen
 public import Mathlib.Topology.Connected.LocallyConnected
 public import Mathlib.Topology.Irreducible
+public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Topology.PathComponent
 import Mathlib.Topology.Homeomorph.Lemmas
 
@@ -23,17 +24,21 @@ space by them.
   the connected component of the image point.
 * `TauCeti.frontier_connectedComponentIn_subset_compl`: in a locally connected space, a connected
   component of an open set has its frontier in the complement of that set.
+* `TauCeti.isPreconnected_compl_of_isPreconnected_frontier`: in a preconnected, locally connected
+  space, an open set with preconnected frontier has preconnected complement.
 * `TauCeti.instT1SpaceConnectedComponents`: the connected-components quotient of any topological
   space is a T1 space.
 * `TauCeti.connectedComponentsSigmaHomeomorph`: a locally connected space is homeomorphic
   to the disjoint union of its connected components.
 * `TauCeti.finite_connectedComponents_of_finite_irreducibleComponents`: finiteness of the
   irreducible components implies finiteness of the connected components.
+* `TauCeti.natCard_connectedComponents_eq_of_iUnion_eq_univ`: a space covered by finitely many
+  pairwise disjoint closed connected sets has exactly as many connected components as sets.
 -/
 
 public section
 
-open Set Topology
+open Function Set Topology
 
 universe u
 
@@ -65,6 +70,51 @@ theorem frontier_connectedComponentIn_subset_compl [LocallyConnectedSpace X] {F 
     rw [connectedComponentIn_eq hzx, ← connectedComponentIn_eq hzy]
     exact mem_connectedComponentIn hyF
   exact hy.2 (by rwa [hC.interior_eq])
+
+/-- **An open set with preconnected frontier has preconnected complement**, in a preconnected,
+locally connected space.
+
+Openness is needed: in `ℝ` the frontier of `{0}` is `{0}`, while `{0}ᶜ` is disconnected. -/
+theorem isPreconnected_compl_of_isPreconnected_frontier [LocallyConnectedSpace X]
+    [PreconnectedSpace X] {U : Set X} (hU : IsOpen U) (hf : IsPreconnected (frontier U)) :
+    IsPreconnected Uᶜ := by
+  -- If `frontier U` is nonempty, each nonempty component `D` of the exterior `(closure U)ᶜ`
+  -- reaches `frontier U` through its own frontier: a frontier point of `D` lies in `closure U`
+  -- but, being a limit of exterior points, not in the open set `U`. So `frontier U ∪ D` is
+  -- preconnected, and `Uᶜ` is the union of these sets, all of which contain `frontier U`.
+  rcases (frontier U).eq_empty_or_nonempty with h | ⟨p, hp⟩
+  · rcases frontier_eq_empty_iff.mp h with rfl | rfl
+    · simpa using isPreconnected_univ
+    · simpa using isPreconnected_empty
+  have hpiece : ∀ y, IsPreconnected (frontier U ∪ connectedComponentIn (closure U)ᶜ y) := by
+    intro y
+    set D := connectedComponentIn (closure U)ᶜ y
+    rcases D.eq_empty_or_nonempty with hD | hD
+    · simpa [hD] using hf
+    have hDu : D ≠ univ := fun h =>
+      connectedComponentIn_subset _ _ (h ▸ mem_univ p : p ∈ D) hp.1
+    obtain ⟨q, hq⟩ := nonempty_frontier_iff.mpr ⟨hD, hDu⟩
+    have hqU : q ∈ frontier U := by
+      refine ⟨?_, ?_⟩
+      · simpa using frontier_connectedComponentIn_subset_compl isClosed_closure.isOpen_compl y hq
+      · rw [hU.interior_eq]
+        intro hqU
+        obtain ⟨z, hzU, hzD⟩ := mem_closure_iff.mp hq.1 U hU hqU
+        exact connectedComponentIn_subset _ _ hzD (subset_closure hzU)
+    have hins : IsPreconnected (insert q D) :=
+      isPreconnected_connectedComponentIn.subset_closure (subset_insert q D)
+        (insert_subset hq.1 subset_closure)
+    have := hf.union' ⟨q, hqU, mem_insert q D⟩ hins
+    rwa [union_insert, insert_eq_of_mem (mem_union_left D hqU)] at this
+  have hcover : Uᶜ = ⋃ y, frontier U ∪ connectedComponentIn (closure U)ᶜ y := by
+    refine Subset.antisymm (fun x hx => mem_iUnion.mpr ⟨x, ?_⟩) (iUnion_subset fun y => ?_)
+    · by_cases hxc : x ∈ closure U
+      · exact Or.inl (hU.frontier_eq ▸ ⟨hxc, hx⟩)
+      · exact Or.inr (mem_connectedComponentIn hxc)
+    · refine union_subset (hU.frontier_eq ▸ fun x hx => hx.2) fun x hx hxU => ?_
+      exact connectedComponentIn_subset _ _ hx (subset_closure hxU)
+  rw [hcover]
+  exact isPreconnected_iUnion ⟨p, mem_iInter.mpr fun _ => Or.inl hp⟩ hpiece
 
 /-- The quotient of a topological space by its connected components is a T1 space. -/
 instance instT1SpaceConnectedComponents : T1Space (ConnectedComponents X) :=
@@ -134,5 +184,30 @@ theorem finite_connectedComponents_of_finite_irreducibleComponents
     obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe c
     exact Set.mem_biUnion (irreducibleComponent_mem_irreducibleComponents x)
       ⟨x, mem_irreducibleComponent, rfl⟩
+
+/-- A space covered by finitely many pairwise disjoint closed connected sets has exactly as many
+connected components as sets: the sets are its connected components. -/
+theorem natCard_connectedComponents_eq_of_iUnion_eq_univ {ι : Type*} [Finite ι] {U : ι → Set X}
+    (hclosed : ∀ i, IsClosed (U i)) (hdisj : Pairwise (Disjoint on U))
+    (hunion : ⋃ i, U i = univ) (hconn : ∀ i, IsConnected (U i)) :
+    Nat.card (ConnectedComponents X) = Nat.card ι := by
+  -- Each set is open, its complement being the finite union of the other sets.
+  have hclopen (i : ι) : IsClopen (U i) := by
+    refine ⟨hclosed i, ?_⟩
+    have : (U i)ᶜ = ⋃ j : {j // j ≠ i}, U j := by
+      ext x
+      obtain ⟨k, hk⟩ := mem_iUnion.1 (hunion ▸ mem_univ x)
+      simp only [mem_compl_iff, mem_iUnion, Subtype.exists, exists_prop]
+      refine ⟨fun hx ↦ ⟨k, fun h ↦ hx (h ▸ hk), hk⟩, ?_⟩
+      rintro ⟨j, hji, hj⟩ hi
+      exact disjoint_left.1 (hdisj hji) hj hi
+    rw [← isClosed_compl_iff, this]
+    exact isClosed_iUnion_of_finite fun j ↦ hclosed j
+  have (i : ι) : Unique (ConnectedComponents (U i)) :=
+    have := isPreconnected_iff_preconnectedSpace.1 (hconn i).isPreconnected
+    have := (hconn i).nonempty.to_subtype
+    uniqueOfSubsingleton (ConnectedComponents.mk (Classical.arbitrary _))
+  exact Nat.card_congr ((ConnectedComponents.equivOfIsClopen hclopen hdisj hunion).trans
+    (Equiv.sigmaUnique ι _))
 
 end TauCeti

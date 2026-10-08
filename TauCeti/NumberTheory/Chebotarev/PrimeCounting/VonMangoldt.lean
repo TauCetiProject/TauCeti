@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.PowerIndex
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.Psi
 public import TauCeti.Algebra.Group.Conj
 public import TauCeti.NumberTheory.Chebotarev.FrobeniusPrimeSet
+public import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 
 /-!
 # Frobenius von Mangoldt coefficients
@@ -36,6 +39,9 @@ their contribution is `o(x)`.
 
 ## Main results
 
+* `NumberField.Chebotarev.frobeniusVonMangoldtCoeff_rat_natGenerator_pow`: over `ℚ`, the
+  coefficient at `p ^ (k + 1)` is the powered Frobenius weight of `𝔭 ^ (k + 1)`, the only ideal
+  of that norm.
 * `NumberField.Chebotarev.frobeniusPsi_eq_sum_range`: `frobeniusPsi` is the inclusive partial sum
   of `frobeniusVonMangoldtCoeff`.
 * `NumberField.Chebotarev.frobeniusPsi_eq_sum_Icc`: the same sum indexed from `1`.
@@ -351,6 +357,17 @@ theorem frobeniusVonMangoldtCoeff_eq_zero_of_not_isPrimePow
 theorem frobeniusVonMangoldtCoeff_apply_one (C : ConjClasses (L ≃ₐ[K] L)) :
     frobeniusVonMangoldtCoeff K L C 1 = 0 :=
   frobeniusVonMangoldtCoeff_eq_zero_of_not_isPrimePow C not_isPrimePow_one
+
+/-- Over `ℚ`, the Frobenius von Mangoldt coefficient at `p ^ (k + 1)`, for `p` the rational prime
+below `𝔭`, is the powered Frobenius weight of `𝔭 ^ (k + 1)`, the only ideal of that norm. -/
+@[simp]
+theorem frobeniusVonMangoldtCoeff_rat_natGenerator_pow {L : Type*} [Field L] [NumberField L]
+    [IsGalois ℚ L] (C : ConjClasses (L ≃ₐ[ℚ] L)) (𝔭 : HeightOneSpectrum (𝓞 ℚ)) (k : ℕ) :
+    frobeniusVonMangoldtCoeff ℚ L C (Rat.HeightOneSpectrum.natGenerator 𝔭 ^ (k + 1)) =
+      frobeniusPrimePowerWeight ℚ L C (𝔭.idealPrimePowerOf k) := by
+  rw [← Rat.HeightOneSpectrum.absNorm_asIdeal, ← map_pow, frobeniusVonMangoldtCoeff_apply,
+    ← HeightOneSpectrum.coe_idealPrimePowerOf, normFiber_rat_absNorm, Finset.sum_singleton,
+    frobeniusVonMangoldtWeight_idealPrimePower]
 
 /-- Frobenius `ψ` is the inclusive partial sum of the Frobenius von Mangoldt coefficients. -/
 theorem frobeniusPsi_eq_sum_range (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :

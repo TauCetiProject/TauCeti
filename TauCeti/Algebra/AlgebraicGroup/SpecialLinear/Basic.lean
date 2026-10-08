@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Ring.GeomSum
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Determinant
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Kernel
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Naturality
+public import TauCeti.Algebra.AlgebraicGroup.Hopf.PointConjugation
 
 /-!
 # The special linear group coordinate Hopf algebra
@@ -41,6 +42,9 @@ reductivity, or base-change theorem is asserted here.
 * `TauCeti.SpecialLinear.definingHopfIdeal_toIdeal_le_ker_of_map_determinant_eq_one`: a coordinate
   morphism that kills `det - 1` kills the defining ideal of `SLₙ`.
 * `TauCeti.SpecialLinear.coordinateHopfAlgebra`: the determinant-one quotient Hopf algebra.
+* `TauCeti.SpecialLinear.det_map_genericMatrix_coordinateMap` and
+  `TauCeti.SpecialLinear.adjoin_range_map_genericMatrix`: the generic matrix of `SLₙ` has
+  determinant one, and its entries generate `O(SLₙ)`.
 * `TauCeti.SpecialLinear.pointsMulEquiv`: the natural multiplicative equivalence between quotient
   Hopf points and `Matrix.SpecialLinearGroup`.
 * `TauCeti.SpecialLinear.pointsNatIso`: the corresponding natural isomorphism of group-valued
@@ -227,6 +231,50 @@ theorem coordinateMap_ker :
         {(GeneralLinear.determinantGroupLike R n :
             GeneralLinear.coordinateHopfAlgebra R n) - 1} := by
   rw [CommHopfAlgCat.mkQuotient_ker, definingHopfIdeal_toIdeal]
+
+/-- The generic matrix of `SLₙ`, the image in `O(SLₙ)` of the generic matrix of `GLₙ`, has
+determinant one. -/
+@[simp↓]
+theorem det_map_genericMatrix_coordinateMap :
+    ((GeneralLinear.genericMatrix R n).map (coordinateMap R n).hom).det = 1 := by
+  rw [← (coordinateMap R n).hom.coe_toAlgHom,
+    GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear,
+    ← GeneralLinear.point_apply_determinantGroupLike, ofConv_toConv, BialgHom.coe_toAlgHom,
+    coordinateMap_determinantGroupLike]
+
+/-- The entries of the generic matrix of `SLₙ` generate `O(SLₙ)`. -/
+theorem adjoin_range_map_genericMatrix :
+    Algebra.adjoin R (Set.range (fun ij : Fin n × Fin n ↦
+      (GeneralLinear.genericMatrix R n).map (coordinateMap R n).hom ij.1 ij.2)) = ⊤ := by
+  let X := (GeneralLinear.genericMatrix R n).map (coordinateMap R n).hom
+  let T := Algebra.adjoin R (Set.range (fun ij : Fin n × Fin n ↦ X ij.1 ij.2))
+  let q := (coordinateMap R n).hom.toAlgHom
+  have hq : Function.Surjective q :=
+    CommHopfAlgCat.mkQuotient_surjective _ (definingHopfIdeal R n)
+  -- The entries of `X` and of `X⁻¹` are the images of the generators of `O(GLₙ)` under
+  -- `O(GLₙ) ↠ O(SLₙ)`.
+  have himage := congrArg (Subalgebra.map q)
+    (GeneralLinear.adjoin_coordinateHopfAlgebra_X_union_antipode_X R n)
+  rw [Algebra.map_top, (AlgHom.range_eq_top q).mpr hq, ← Algebra.adjoin_image, Set.image_union,
+    ← Set.range_comp, ← Set.range_comp] at himage
+  rw [eq_top_iff, ← himage, Algebra.adjoin_le_iff]
+  -- Since `det X = 1`, the inverse `X⁻¹` is the adjugate of `X`, whose entries lie in `T`.
+  let M : Matrix (Fin n) (Fin n) T := .of fun i j ↦ ⟨X i j, Algebra.subset_adjoin ⟨(i, j), rfl⟩⟩
+  have hM : T.val.mapMatrix M = X := rfl
+  have hinv : X⁻¹ = T.val.mapMatrix M.adjugate := by
+    rw [Matrix.inv_def, det_map_genericMatrix_coordinateMap, Ring.inverse_one, one_smul,
+      AlgHom.map_adjugate, hM]
+  rintro _ (⟨⟨i, j⟩, rfl⟩ | ⟨⟨i, j⟩, rfl⟩)
+  · exact Algebra.subset_adjoin ⟨(i, j), by
+      beta_reduce
+      rw [Function.comp_apply, Matrix.map_apply, GeneralLinear.genericMatrix_apply,
+        BialgHom.coe_toAlgHom]⟩
+  · rw [Function.comp_apply, ← HopfAlgebra.antipodeAlgHom_apply,
+      ← GeneralLinear.genericMatrix_apply, ← Matrix.map_apply (f := HopfAlgebra.antipodeAlgHom R _),
+      GeneralLinear.map_antipode_genericMatrix, ← Matrix.map_apply (f := q),
+      GeneralLinear.map_inv_genericMatrix, BialgHom.coe_toAlgHom]
+    rw [hinv]
+    exact (M.adjugate i j).2
 
 /-- The special-linear coordinate Hopf algebra bundled with its finite-type algebra property. -/
 noncomputable def finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat R :=
@@ -454,6 +502,69 @@ theorem pointsMulEquiv_mapValue (phi : A →ₐ[R] B)
   apply Matrix.GeneralLinearGroup.ext
   intro i j
   rfl
+
+/-- Conjugating an `SLₙ` point by the point attached to the inverse of `s` becomes ordinary
+matrix conjugation after extension of scalars and inclusion into `GLₙ`. -/
+theorem pointsMulEquiv_comp_pointConjugationAlgHom_symm
+    (s : Matrix.SpecialLinearGroup (Fin n) R)
+    (φ : coordinateHopfAlgebra R n →ₐ[R] A) :
+    Matrix.SpecialLinearGroup.toGL
+      (pointsMulEquiv (R := R) (A := A) n
+        (toConv (φ.comp (HopfAlgebra.pointConjugationAlgHom
+          ((pointsMulEquiv (R := R) (A := R) n).symm s⁻¹))))) =
+      (Matrix.GeneralLinearGroup.map (algebraMap R A) s)⁻¹ *
+        GeneralLinear.pointsMulEquiv n
+          (toConv (φ.comp (coordinateMap R n).hom)) *
+        Matrix.GeneralLinearGroup.map (algebraMap R A) s := by
+  set g := (pointsMulEquiv (R := R) (A := R) n).symm s⁻¹
+  have hπ : Matrix.SpecialLinearGroup.toGL
+      (pointsMulEquiv (R := R) (A := A) n (toConv φ)) =
+      GeneralLinear.pointsMulEquiv n
+        (toConv (φ.comp (coordinateMap R n).hom)) :=
+    (pointsMulEquiv_toGL R n _).symm
+  have hg : Matrix.SpecialLinearGroup.toGL
+      (pointsMulEquiv (R := R) (A := A) n
+        (AlgHom.mapValue (H := coordinateHopfAlgebra R n) (Algebra.ofId R A) g)) =
+      Matrix.GeneralLinearGroup.map (algebraMap R A) s⁻¹ := by
+    rw [pointsMulEquiv_mapValue, MulEquiv.apply_symm_apply, map_inv, map_inv, map_inv,
+      AlgHom.toRingHom_eq_coe, Algebra.toRingHom_ofId]
+    congr 1
+    ext i j
+    rw [Matrix.SpecialLinearGroup.coe_GL_coe_matrix,
+      Matrix.SpecialLinearGroup.map_apply_coe, Matrix.GeneralLinearGroup.map_apply]
+    rfl
+  calc
+    _ = Matrix.GeneralLinearGroup.map (algebraMap R A) s⁻¹ *
+        Matrix.SpecialLinearGroup.toGL (pointsMulEquiv (R := R) (A := A) n (toConv φ)) *
+        (Matrix.GeneralLinearGroup.map (algebraMap R A) s⁻¹)⁻¹ := by
+      rw [HopfAlgebra.comp_pointConjugationAlgHom, map_mul, map_mul, map_inv,
+        map_mul, map_mul, map_inv, hg]
+    _ = _ := by rw [hπ, map_inv, inv_inv]
+
+/-- Conjugation by a determinant-one general-linear matrix, expressed through its corresponding
+special-linear point. -/
+theorem pointsMulEquiv_comp_pointConjugationAlgHom_symm_toGLKerEquiv_symm
+    (P : Matrix.GeneralLinearGroup (Fin n) R)
+    (hdet : Matrix.GeneralLinearGroup.det P = 1)
+    (φ : coordinateHopfAlgebra R n →ₐ[R] A) :
+    Matrix.SpecialLinearGroup.toGL
+      (pointsMulEquiv (R := R) (A := A) n
+        (toConv (φ.comp
+          (HopfAlgebra.pointConjugationAlgHom
+            ((pointsMulEquiv (R := R) (A := R) n).symm
+              (Matrix.SpecialLinearGroup.toGLKerEquiv.symm ⟨P, hdet⟩)⁻¹))))) =
+      (Matrix.GeneralLinearGroup.map (algebraMap R A) P)⁻¹ *
+        GeneralLinear.pointsMulEquiv n
+          (toConv (φ.comp (coordinateMap R n).hom)) *
+        Matrix.GeneralLinearGroup.map (algebraMap R A) P := by
+  let s := Matrix.SpecialLinearGroup.toGLKerEquiv.symm ⟨P, hdet⟩
+  have hs : Matrix.SpecialLinearGroup.toGL s = P :=
+    congrArg Subtype.val
+      (Matrix.SpecialLinearGroup.toGLKerEquiv.apply_symm_apply ⟨P, hdet⟩)
+  have h := pointsMulEquiv_comp_pointConjugationAlgHom_symm (R := R) (n := n) s
+    φ
+  rw [hs] at h
+  simpa only [s] using h
 
 end Points
 

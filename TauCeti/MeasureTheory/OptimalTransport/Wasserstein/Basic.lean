@@ -9,8 +9,8 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Count
 public import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
-public import TauCeti.MeasureTheory.OptimalTransport.Existence
-public import TauCeti.MeasureTheory.OptimalTransport.GraphPlan
+public import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.GraphPlan.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Gluing
 
 /-!
@@ -333,11 +333,11 @@ theorem wassersteinEDist_add_smul_dirac_le
       = eLpNorm (E.indicator f) p (σ.map (fun x ↦ (x, x)) + τ.map (fun x ↦ (x, x₀))) := by
         rw [hind]
     _ = eLpNorm f p ((σ.map (fun x ↦ (x, x)) + τ.map (fun x ↦ (x, x₀))).restrict E) :=
-        eLpNorm_indicator_eq_eLpNorm_restrict hE
+        eLpNorm_indicator_eq_eLpNorm_restrict hE.nullMeasurableSet
     _ = eLpNorm f p ((τ.map (fun x ↦ (x, x₀))).restrict E) := by
         rw [Measure.restrict_add, Measure.restrict_eq_zero.2 hAE, zero_add]
     _ = eLpNorm (E.indicator f) p (τ.map (fun x ↦ (x, x₀))) :=
-        (eLpNorm_indicator_eq_eLpNorm_restrict hE).symm
+        (eLpNorm_indicator_eq_eLpNorm_restrict hE.nullMeasurableSet).symm
     _ = eLpNorm f p (τ.map (fun x ↦ (x, x₀))) := by rw [hind]
     _ = eLpNorm (fun x ↦ edist x x₀) p τ :=
         eLpNorm_map_measure hd.aestronglyMeasurable hpair.aemeasurable

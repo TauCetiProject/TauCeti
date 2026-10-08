@@ -83,10 +83,10 @@ theorem ext {D E : GridRectangleDecomposition x z}
           dsimp only at hmiddle
           subst Emiddle
           have hfirst : Dfirst = Efirst :=
-            GridRectangleBetween.eq_of_sides hfirstLeft hfirstRight
+            GridRectangleBetween.ext hfirstLeft hfirstRight
           subst Efirst
           have hsecond : Dsecond = Esecond :=
-            GridRectangleBetween.eq_of_sides hsecondLeft hsecondRight
+            GridRectangleBetween.ext hsecondLeft hsecondRight
           subst Esecond
           rfl
 

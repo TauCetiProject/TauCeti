@@ -32,6 +32,8 @@ has `#𝓀[K]` elements.
 * `TauCeti.natCard_unitFiltrationGraded_succ` and
   `TauCeti.relIndex_unitFiltration_succ_succ`: the positive graded pieces and relative indices
   have cardinality `#𝓀[K]`.
+* `TauCeti.unitFiltration_isFiniteRelIndex_zero`: every step of the unit filtration has finite
+  index in `U(K,0) = 𝒪[K]ˣ`.
 * `TauCeti.relIndex_unitFiltration_add_succ_succ` and
   `TauCeti.natCard_unitFiltration_succ_quotient_add_succ`: more generally,
   `U(K,m+1) / U(K,m+n+1)` has `#𝓀[K] ^ n` elements.
@@ -311,6 +313,18 @@ noncomputable instance unitFiltration_isFiniteRelIndex_succ (m n : ℕ) :
   · obtain ⟨k, rfl⟩ : ∃ k, m = n + k + 1 := ⟨m - n - 1, by omega⟩
     rw [relIndex_unitFiltration_add_succ_succ]
     exact pow_ne_zero k Nat.card_pos.ne'
+
+/-- Every `U(K,m)` has finite index in the unit group `U(K,0) = 𝒪[K]ˣ`. -/
+noncomputable instance unitFiltration_isFiniteRelIndex_zero (m : ℕ) :
+    (unitFiltration K m).IsFiniteRelIndex (unitFiltration K 0) := by
+  rw [Subgroup.isFiniteRelIndex_iff_relIndex_ne_zero]
+  rcases Nat.eq_zero_or_pos m with rfl | hm
+  · rw [Subgroup.relIndex_self]
+    exact one_ne_zero
+  rw [← Subgroup.relIndex_mul_relIndex _ _ _ (unitFiltration_antitone hm)
+    (unitFiltration_antitone (Nat.zero_le 1)), relIndex_unitFiltration_one_zero]
+  have : 1 < Nat.card 𝓀[K] := Finite.one_lt_card
+  exact mul_ne_zero Subgroup.relIndex_ne_zero (by omega)
 
 /-- The positive-depth finite-level quotient `U(K,m+1) / U(K,m+n+1)` has `q ^ n` elements,
 where `q = #𝓀[K]`. -/

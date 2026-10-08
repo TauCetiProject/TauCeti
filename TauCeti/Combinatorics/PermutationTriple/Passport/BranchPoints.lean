@@ -35,21 +35,6 @@ public section
 
 namespace TauCeti
 
-namespace ConnectedTriple
-
-variable {n : ℕ}
-
-/-- Reorder the branch points of a connected triple. -/
-def reindexBranchPoints (t : ConnectedTriple n) (ρ : Perm (Fin 3)) : ConnectedTriple n :=
-  ⟨t.1.reindexBranchPoints ρ,
-    (PermutationTriple.isConnected_reindexBranchPoints_iff t.1 ρ).2 t.2⟩
-
-@[simp]
-theorem coe_reindexBranchPoints (t : ConnectedTriple n) (ρ : Perm (Fin 3)) :
-    (t.reindexBranchPoints ρ).1 = t.1.reindexBranchPoints ρ := (rfl)
-
-end ConnectedTriple
-
 namespace PassportSpec
 
 variable {n : ℕ}

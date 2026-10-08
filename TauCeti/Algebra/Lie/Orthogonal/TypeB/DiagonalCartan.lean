@@ -98,6 +98,11 @@ theorem typeBDiagonalMatrix_apply (d : ι → K) (i j : Unit ⊕ ι ⊕ ι) :
     typeBDiagonalMatrix d i j = if i = j then typeBDiagonalValue d i else 0 :=
   (rfl)
 
+/-- Every `diag(0, d, -d)` lies in the ambient diagonal Cartan subalgebra of matrices. -/
+theorem typeBDiagonalMatrix_mem_diagonalCartan (d : ι → K) :
+    typeBDiagonalMatrix d ∈ diagonalCartan K (Unit ⊕ ι ⊕ ι) :=
+  diagonal_mem_diagonalCartan (typeBDiagonalValue d)
+
 /-- Every `diag(0, d, -d)` is skew-adjoint for the split type-`B` form. -/
 theorem typeBDiagonalMatrix_mem_typeB (d : ι → K) :
     typeBDiagonalMatrix d ∈ LieAlgebra.Orthogonal.typeB ι K := by

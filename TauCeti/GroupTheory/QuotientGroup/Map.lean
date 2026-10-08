@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Subgroup.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 
 /-!
@@ -38,6 +39,8 @@ rewritable.
   quotients.
 * `TauCeti.QuotientGroup.mapOfLE_surjective`: the map is surjective.
 * `TauCeti.QuotientGroup.ker_mapOfLE`: its kernel is the image of `U` in `G ⧸ V`.
+* `TauCeti.QuotientGroup.map_injective_of_eq_comap`: the homomorphism `G ⧸ f⁻¹(M) →* H ⧸ M`
+  induced by `f : G →* H` is injective.
 
 ## Usage
 
@@ -119,6 +122,13 @@ theorem mapOfLE_surjective [U.Normal] [V.Normal] (hVU : V ≤ U) :
 theorem ker_mapOfLE [U.Normal] [V.Normal] (hVU : V ≤ U) :
     (mapOfLE hVU).ker = U.map (_root_.QuotientGroup.mk' V) :=
   (_root_.QuotientGroup.ker_map V U (.id G) fun _ hv ↦ hVU hv).trans (by rw [Subgroup.comap_id])
+
+/-- The homomorphism `G ⧸ N →* H ⧸ M` induced by `f : G →* H` on the quotients is injective when
+`N` is the preimage `f⁻¹(M)`: its kernel is the image of `f⁻¹(M)`, which is trivial in `G ⧸ N`. -/
+theorem map_injective_of_eq_comap {H : Type*} [Group H] (f : G →* H) [U.Normal] (M : Subgroup H)
+    [M.Normal] (h : U = M.comap f) : Function.Injective (_root_.QuotientGroup.map U M f h.le) :=
+  (_root_.QuotientGroup.injective_lift_iff _ _ _).mpr
+    (by rw [← MonoidHom.comap_ker, _root_.QuotientGroup.ker_mk']; exact h)
 
 end QuotientGroup
 

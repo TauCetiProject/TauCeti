@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
-public import TauCeti.LinearAlgebra.IntegralLattice.Isometry
+public import Mathlib.LinearAlgebra.QuadraticForm.Radical
+public import TauCeti.LinearAlgebra.BilinearForm.Basic
+public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
 /-!
 # Norms of integral lattices
@@ -30,6 +33,8 @@ the integral norm on the carrier.
 ## Main results
 
 * `TauCeti.IntegralLattice.norm_apply`: evaluating the rational norm yields self-pairing.
+* `TauCeti.IntegralLattice.nondegenerate_norm`: the rational norm of a nondegenerate lattice is
+  nondegenerate.
 * `TauCeti.IntegralLattice.integralNorm_apply`: evaluating the integral norm yields
   integral self-pairing.
 * `TauCeti.IntegralLattice.integralNorm_cast`: the integral norm recovers the rational norm in `ℚ`.
@@ -40,7 +45,8 @@ the integral norm on the carrier.
 * `TauCeti.IntegralLattice.integralNorm_add`: polarization identity for the integral norm.
 * `TauCeti.IntegralLattice.integralNorm_sub`: subtractive polarization identity for the integral
   norm.
-* `TauCeti.IntegralLattice.mem_vectorsOfNorm_intCast`: characterization of integer-norm vectors.
+* `TauCeti.IntegralLattice.mem_vectorsOfNorm_intCast` and
+  `TauCeti.IntegralLattice.mem_vectorsOfNorm_natCast`: characterization of integer-norm vectors.
 
 ## References
 
@@ -70,6 +76,12 @@ def norm (L : IntegralLattice V) : QuadraticForm ℚ V := L.form.toQuadraticMap
 theorem norm_def (L : IntegralLattice V) :
     L.norm = L.form.toQuadraticMap :=
   (rfl)
+
+/-- The ambient rational norm form of a nondegenerate integral lattice is nondegenerate. -/
+theorem nondegenerate_norm (L : IntegralLattice V) [L.IsNondegenerate] :
+    L.norm.Nondegenerate := by
+  rw [norm_def]
+  exact L.form_nondegenerate.toQuadraticMap L.form_flip
 
 -- The evaluation and negation identities below remain explicit rewrite lemmas. Registering them
 -- with `simp` makes the specialized cast, zero, and scaling rules fail the `simpNF` linter.
@@ -140,9 +152,8 @@ theorem norm_smul (L : IntegralLattice V) (a : ℚ) (x : V) :
 /-- Polarization of the norm using symmetry of the lattice form. -/
 theorem norm_add (L : IntegralLattice V) (x y : V) :
     L.norm (x + y) = L.norm x + L.norm y + 2 * L.form x y := by
-  rw [QuadraticMap.map_add L.norm x y, norm, LinearMap.BilinMap.polar_toQuadraticMap,
-    L.isSymm.eq y x]
-  ring
+  simp only [norm_apply]
+  exact L.isSymm.apply_add_self x y
 
 /-- The subtraction form of the norm polarization identity. -/
 theorem norm_sub (L : IntegralLattice V) (x y : V) :
@@ -169,9 +180,8 @@ theorem integralNorm_zsmul (L : IntegralLattice V) (a : ℤ) (x : L) :
 theorem integralNorm_add (L : IntegralLattice V) (x y : L) :
     L.integralNorm (x + y) =
       L.integralNorm x + L.integralNorm y + 2 * L.integralForm x y := by
-  rw [QuadraticMap.map_add L.integralNorm x y, integralNorm,
-    LinearMap.BilinMap.polar_toQuadraticMap, L.isSymm_integralForm.eq y x]
-  ring
+  simp only [integralNorm_apply]
+  exact L.isSymm_integralForm.apply_add_self x y
 
 /-- The norm modulo two, as an additive character of the carrier. -/
 noncomputable def normParity (L : IntegralLattice V) : L →+ ZMod 2 where
@@ -211,6 +221,12 @@ theorem mem_vectorsOfNorm_intCast (L : IntegralLattice V) {n : ℤ} {x : L} :
     x ∈ L.vectorsOfNorm (n : ℚ) ↔ L.integralNorm x = n := by
   rw [mem_vectorsOfNorm, ← L.integralNorm_cast x]
   exact Int.cast_inj
+
+/-- Membership in `vectorsOfNorm (n : ℚ)` for a natural number `n` is equivalent to having integral
+norm equal to `n`. -/
+theorem mem_vectorsOfNorm_natCast (L : IntegralLattice V) {n : ℕ} {x : L} :
+    x ∈ L.vectorsOfNorm (n : ℚ) ↔ L.integralNorm x = n := by
+  rw [← Int.cast_natCast, L.mem_vectorsOfNorm_intCast]
 
 /-- The zero vector in an integral lattice has norm zero. -/
 theorem zero_mem_vectorsOfNorm (L : IntegralLattice V) : (0 : L) ∈ L.vectorsOfNorm 0 := by

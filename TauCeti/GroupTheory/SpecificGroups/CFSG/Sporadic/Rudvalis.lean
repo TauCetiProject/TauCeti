@@ -34,7 +34,7 @@ only `u` as not known to be an involution, which contributes the implicit relato
 The third section lists generators of the subgroup used for coset enumeration and contributes no
 relator. The fourth section is empty, so it contributes no Coxeter relations. The ten words in the
 fifth section are the remaining relators. The source's parser expands a commutator as
-`r⁻¹s⁻¹rs`, so source commutators are represented using `Relator.comm (.inv r) (.inv s)`.
+`r⁻¹s⁻¹rs`, so source commutators are represented using `Relator.commInvInv r s`.
 The proved `TauCeti.Relator.toWord_toFreeGroup` theorem is the audit boundary between these
 structured expressions and the signed words used by `PresentedGroup`.
 
@@ -105,14 +105,10 @@ private abbrev t : Relator (Fin 3) := .gen 2
 @[inherit_doc Relator.mul]
 local infixl:70 " ⬝ " => Relator.mul
 
-/-- The source's commutator `[r,s] = r⁻¹s⁻¹rs`, represented in Mathlib's convention. -/
-private abbrev sourceComm (r s : Relator (Fin 3)) : Relator (Fin 3) :=
-  .comm (.inv r) (.inv s)
-
 /-- The relator `(u[t,u⁻¹][u⁻²tu²,[u⁻¹,t]])³` in the source file. -/
 private abbrev eighthWord : Relator (Fin 3) :=
-  .pow (u ⬝ sourceComm t (.inv u) ⬝
-    sourceComm (.pow (.inv u) 2 ⬝ t ⬝ .pow u 2) (sourceComm (.inv u) t)) 3
+  .pow (u ⬝ .commInvInv t (.inv u) ⬝
+    .commInvInv (.pow (.inv u) 2 ⬝ t ⬝ .pow u 2) (.commInvInv (.inv u) t)) 3
 
 /-- The relator `(u(uv)⁻¹t(uv)(tu²)⁴(uv)⁻¹tuv)²` in the source file. -/
 private abbrev ninthWord : Relator (Fin 3) :=
@@ -121,7 +117,7 @@ private abbrev ninthWord : Relator (Fin 3) :=
 
 /-- The relator `(uvtv[(uv)⁻¹tuv,u]²)²` in the source file. -/
 private abbrev tenthWord : Relator (Fin 3) :=
-  .pow (u ⬝ v ⬝ t ⬝ v ⬝ .pow (sourceComm (.inv (u ⬝ v) ⬝ t ⬝ u ⬝ v) u) 2) 2
+  .pow (u ⬝ v ⬝ t ⬝ v ⬝ .pow (.commInvInv (.inv (u ⬝ v) ⬝ t ⬝ u ⬝ v) u) 2) 2
 
 /-- Leonard Soicher's `tcenum` finite presentation of the Rudvalis sporadic group `Ru` on
 generators `u`, `v`, and `t`.
@@ -157,8 +153,8 @@ def ruPresentation : GroupPresentation where
       .pow u 4,
       .pow (u ⬝ v) 7,
       .pow (.pow u 2 ⬝ v) 3,
-      sourceComm t (v ⬝ u ⬝ v),
-      sourceComm t (.inv u ⬝ v ⬝ u),
+      .commInvInv t (v ⬝ u ⬝ v),
+      .commInvInv t (.inv u ⬝ v ⬝ u),
       .pow (u ⬝ t) 10,
       .pow (u ⬝ v ⬝ u ⬝ t) 13,
       eighthWord,
@@ -260,7 +256,7 @@ theorem ruPresentation_transcribed :
                 (.inv (.inv (.gen ⟨0, by decide⟩ ⬝ .gen ⟨1, by decide⟩) ⬝
                   .gen ⟨2, by decide⟩ ⬝ .gen ⟨0, by decide⟩ ⬝ .gen ⟨1, by decide⟩))
                 (.inv (.gen ⟨0, by decide⟩))) 2) 2 ] := by
-  simp [ruPresentation, eighthWord, ninthWord, tenthWord, sourceComm]
+  simp [ruPresentation, eighthWord, ninthWord, tenthWord, Relator.commInvInv]
 
 /-- The generator and relator counts recorded for `Ru` agree with the transcribed data. -/
 theorem ruPresentation_matchesMetadata : ruPresentation.matchesMetadata := by
