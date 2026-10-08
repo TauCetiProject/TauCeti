@@ -90,6 +90,20 @@ theorem mul_mem_gradedPositiveMulIdeal {p : ℤ} (hp : 0 < p) {x : A} (hx : x �
   Ideal.subset_span ⟨p, hp, x, hx, rfl⟩
 
 omit [GradedAlgebra 𝒜] in
+/-- A left ideal contains `A₊e` exactly when it contains every positive homogeneous product
+`x e`. -/
+theorem gradedPositiveMulIdeal_le_iff {J : Ideal A} :
+    gradedPositiveMulIdeal 𝒜 e ≤ J ↔
+      ∀ (p : ℤ), 0 < p → ∀ x ∈ 𝒜 p, x * e ∈ J := by
+  rw [gradedPositiveMulIdeal, Ideal.span_le]
+  constructor
+  · intro h p hp x hx
+    exact h ⟨p, hp, x, hx, rfl⟩
+  · intro h y hy
+    obtain ⟨p, hp, x, hx, rfl⟩ := hy
+    exact h p hp x hx
+
+omit [GradedAlgebra 𝒜] in
 private theorem positiveMulIdeal_le (e : A) :
     gradedPositiveMulIdeal 𝒜 e ≤ Ideal.span {e} := by
   rw [gradedPositiveMulIdeal, Ideal.span_le]
@@ -217,7 +231,7 @@ end CommRing
 section Field
 
 variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
-  {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜] {I : Type uI} [Finite I] {e : I → A}
+  {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜] {I : Type uI} {e : I → A}
   (hneg : ∀ p < 0, 𝒜 p = ⊥) (he : OrthogonalIdempotents e) (he₀ : ∀ i, e i ∈ 𝒜 0)
   (hspan : 𝒜 0 ≤ Submodule.span k (Set.range e)) (hne : ∀ i, e i ≠ 0)
 
@@ -269,15 +283,26 @@ include he hspan in
 private theorem exists_eq_smul_of_mem_zero {i : I} {x : A} (hx : x ∈ 𝒜 0)
     (hxi : x ∈ (Ideal.span {e i} : Ideal A)) : ∃ c : k, x = c • e i := by
   classical
-  let _ := Fintype.ofFinite I
-  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun k).1 (hspan hx)
-  refine ⟨c i, ?_⟩
+  have hmul : ∀ y ∈ Submodule.span k (Set.range e), ∃ c : k, y * e i = c • e i := by
+    intro y hy
+    induction hy using Submodule.span_induction with
+    | mem y hy =>
+      obtain ⟨j, rfl⟩ := hy
+      by_cases hji : j = i
+      · subst j
+        exact ⟨1, by rw [(he.idem i).eq, one_smul]⟩
+      · exact ⟨0, by rw [he.ortho hji, zero_smul]⟩
+    | zero => exact ⟨0, by rw [zero_mul, zero_smul]⟩
+    | add y z _ _ hy hz =>
+      obtain ⟨a, ha⟩ := hy
+      obtain ⟨b, hb⟩ := hz
+      exact ⟨a + b, by rw [add_mul, ha, hb, add_smul]⟩
+    | smul a y _ hy =>
+      obtain ⟨b, hb⟩ := hy
+      exact ⟨a * b, by rw [smul_mul_assoc, hb, smul_smul]⟩
+  obtain ⟨c, hc⟩ := hmul x (hspan hx)
   rw [mem_span_singleton_iff_mul_eq_self (he.idem i)] at hxi
-  rw [← hxi, ← hc, Finset.sum_mul, Finset.sum_eq_single i]
-  · rw [smul_mul_assoc, (he.idem i).eq]
-  · intro j _ hji
-    rw [smul_mul_assoc, he.ortho hji, smul_zero]
-  · simp
+  exact ⟨c, hxi ▸ hc⟩
 
 variable (e) in
 /-- The class of `eᵢ` in the head of `A eᵢ`. -/
@@ -300,7 +325,6 @@ private theorem exists_eq_smul_headGenerator (i : I) (y : gradedIdempotentHead �
     DirectSum.sub_apply, DirectSum.smul_apply, Submodule.coe_sub, Submodule.coe_smul_of_tower,
     decompose_of_mem_same 𝒜 (he₀ i), hc, sub_self]
 
-omit [Finite I] in
 include hneg in
 /-- The class of `eᵢ` in the head of `A eᵢ` is nonzero. -/
 private theorem headGenerator_ne_zero (i : I) (hne : e i ≠ 0) : headGenerator e he₀ i ≠ 0 := by
@@ -310,7 +334,6 @@ private theorem headGenerator_ne_zero (i : I) (hne : e i ≠ 0) : headGenerator 
   rw [decompose_of_mem_same 𝒜 (he₀ i)] at h₀
   exact hne h₀
 
-omit [Finite I] in
 include he in
 /-- The idempotent `eⱼ` acts on the class of `eᵢ` by `δᵢⱼ`. -/
 private theorem smul_headGenerator [DecidableEq I] (j i : I) :
@@ -340,7 +363,6 @@ private theorem head_piece_zero (i : I) :
     exact ⟨c • ⟨e i, Ideal.subset_span rfl⟩, Submodule.smul_mem _ c (he₀ i), by
       rw [LinearMap.map_smul_of_tower, headGenerator]⟩
 
-omit [Finite I] in
 include hneg he in
 /-- The head of `A eᵢ` vanishes outside degree zero. -/
 private theorem head_piece_eq_bot (i : I) {p : ℤ} (hp : p ≠ 0) :
