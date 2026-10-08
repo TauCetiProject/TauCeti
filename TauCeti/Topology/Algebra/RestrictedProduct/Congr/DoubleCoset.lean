@@ -11,11 +11,7 @@ public import TauCeti.GroupTheory.DoubleCoset.Map
 /-!
 # Change of reference family and double cosets
 
-A componentwise multiplicative equivalence which eventually carries one reference family
-bijectively to another gives an equivalence of the ambient restricted products. The induced
-bijection on double-coset spaces is `doubleCosetCongrRight`.
-
-For the coordinatewise identity comparison, `restrictedProductCongr` identifies the ambient
+The coordinatewise identity comparison `restrictedProductCongr` identifies the ambient
 restricted products only. It need not carry the everywhere-integral subgroup of one family onto
 that of the other; the counterexample `exists_map_integralSubgroup_ne` is recorded alongside the
 isomorphism in `TauCeti.Topology.Algebra.RestrictedProduct.Congr.Basic`. For this reason
@@ -34,91 +30,10 @@ namespace TauCeti
 open Filter
 open scoped RestrictedProduct
 
-universe u v w
+universe u v
 
 variable {ι : Type u} {G : ι → Type v}
 variable [∀ i, Group (G i)]
-
-/-- A componentwise equivalence which carries the reference subgroup bijectively at every index
-carries the everywhere-integral subgroup onto the everywhere-integral subgroup. The hypothesis is
-deliberately pointwise, rather than eventual: the latter only identifies the ambient restricted
-products and is insufficient for this conclusion. -/
-theorem map_integralSubgroup_restrictedProductCongrRight
-    {H : ι → Type w} [∀ i, Group (H i)]
-    (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
-    (φ : ∀ i, G i ≃* H i)
-    (hφ : ∀ i, Set.BijOn (φ i) (U i) (U' i)) :
-    (integralSubgroup U).map
-        (restrictedProductCongrRight U U' φ (.of_forall hφ) :
-          (Πʳ i, [G i, (U i : Set (G i))]) →*
-            Πʳ i, [H i, (U' i : Set (H i))]) =
-      integralSubgroup U' := by
-  apply le_antisymm
-  · rintro _ ⟨x, hx, rfl⟩
-    apply (mem_integralSubgroup U' _).mpr
-    intro i
-    change restrictedProductCongrRight U U' φ (.of_forall hφ) x i ∈ U' i
-    rw [restrictedProductCongrRight_apply]
-    exact (hφ i).mapsTo ((mem_integralSubgroup U x).mp hx i)
-  · intro y hy
-    refine ⟨(restrictedProductCongrRight U U' φ (.of_forall hφ)).symm y, ?_, ?_⟩
-    · apply (mem_integralSubgroup U _).mpr
-      intro i
-      rw [restrictedProductCongrRight_symm_apply]
-      exact (hφ i).equiv_symm.mapsTo ((mem_integralSubgroup U' y).mp hy i)
-    · exact (restrictedProductCongrRight U U' φ (.of_forall hφ)).apply_symm_apply y
-
-/-- Transport of a double-coset space along a componentwise equivalence of restricted products.
-The subgroups on the right are the images of the subgroups on the left. -/
-def doubleCosetCongrRight {H : ι → Type w} [∀ i, Group (H i)]
-    (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
-    (φ : ∀ i, G i ≃* H i)
-    (hφ : ∀ᶠ i in cofinite, Set.BijOn (φ i) (U i) (U' i))
-    (Γ K : Subgroup (Πʳ i, [G i, (U i : Set (G i))])) :
-    DoubleCoset.Quotient (Γ : Set (Πʳ i, [G i, (U i : Set (G i))])) K ≃
-      DoubleCoset.Quotient
-        (Γ.map (restrictedProductCongrRight U U' φ hφ :
-            (Πʳ i, [G i, (U i : Set (G i))]) →* Πʳ i, [H i, (U' i : Set (H i))]) :
-          Set (Πʳ i, [H i, (U' i : Set (H i))]))
-        (K.map (restrictedProductCongrRight U U' φ hφ :
-            (Πʳ i, [G i, (U i : Set (G i))]) →* Πʳ i, [H i, (U' i : Set (H i))]) :
-          Set (Πʳ i, [H i, (U' i : Set (H i))])) :=
-  DoubleCoset.quotientCongr Γ K (restrictedProductCongrRight U U' φ hφ) rfl rfl
-
-/-- The transported double-coset space sends the class of `x` to the class of the
-componentwise image of `x`. -/
-theorem doubleCosetCongrRight_apply_mk {H : ι → Type w} [∀ i, Group (H i)]
-    (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
-    (φ : ∀ i, G i ≃* H i)
-    (hφ : ∀ᶠ i in cofinite, Set.BijOn (φ i) (U i) (U' i))
-    (Γ K : Subgroup (Πʳ i, [G i, (U i : Set (G i))]))
-    (x : Πʳ i, [G i, (U i : Set (G i))]) :
-    doubleCosetCongrRight U U' φ hφ Γ K (DoubleCoset.mk Γ K x) =
-      DoubleCoset.mk
-        (Γ.map (restrictedProductCongrRight U U' φ hφ :
-          (Πʳ i, [G i, (U i : Set (G i))]) →* Πʳ i, [H i, (U' i : Set (H i))]))
-        (K.map (restrictedProductCongrRight U U' φ hφ :
-          (Πʳ i, [G i, (U i : Set (G i))]) →* Πʳ i, [H i, (U' i : Set (H i))]))
-        (restrictedProductCongrRight U U' φ hφ x) :=
-  DoubleCoset.quotientCongr_apply_mk Γ K _ rfl rfl x
-
-/-- The inverse transport sends the class of `y` to the class of its componentwise inverse
-image. -/
-theorem doubleCosetCongrRight_symm_apply_mk {H : ι → Type w} [∀ i, Group (H i)]
-    (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
-    (φ : ∀ i, G i ≃* H i)
-    (hφ : ∀ᶠ i in cofinite, Set.BijOn (φ i) (U i) (U' i))
-    (Γ K : Subgroup (Πʳ i, [G i, (U i : Set (G i))]))
-    (y : Πʳ i, [H i, (U' i : Set (H i))]) :
-    (doubleCosetCongrRight U U' φ hφ Γ K).symm
-        (DoubleCoset.mk
-          (Γ.map (restrictedProductCongrRight U U' φ hφ :
-            (Πʳ i, [G i, (U i : Set (G i))]) →* Πʳ i, [H i, (U' i : Set (H i))]))
-          (K.map (restrictedProductCongrRight U U' φ hφ :
-            (Πʳ i, [G i, (U i : Set (G i))]) →* Πʳ i, [H i, (U' i : Set (H i))]))
-          y) =
-      DoubleCoset.mk Γ K ((restrictedProductCongrRight U U' φ hφ).symm y) :=
-  DoubleCoset.quotientCongr_symm_apply_mk Γ K _ rfl rfl y
 
 /-- Transport of a double-coset space along a change of reference family. The subgroups on the
 right are the images of those on the left under `restrictedProductCongr`, not the integral

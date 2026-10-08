@@ -85,6 +85,18 @@ def finiteAdelicOrthogonalDoubleCosetMapOfLE
   DoubleCoset.quotientMapOfLERight U.finiteAdelicOrthogonalDiagonal.range hK
 
 omit [FiniteDimensional ℚ V] in
+/-- Enlarging the orthogonal right subgroup preserves representatives. -/
+@[simp]
+theorem finiteAdelicOrthogonalDoubleCosetMapOfLE_apply_mk
+    (K : Subgroup U.finiteAdelicOrthogonal) (hK : integralSubgroup U.orthogonal ≤ K)
+    (x : U.finiteAdelicOrthogonal) :
+    U.finiteAdelicOrthogonalDoubleCosetMapOfLE K hK
+        (DoubleCoset.mk U.finiteAdelicOrthogonalDiagonal.range
+          (integralSubgroup U.orthogonal) x) =
+      DoubleCoset.mk U.finiteAdelicOrthogonalDiagonal.range K x :=
+  DoubleCoset.quotientMapOfLERight_apply_mk U.finiteAdelicOrthogonalDiagonal.range hK x
+
+omit [FiniteDimensional ℚ V] in
 /-- The finite adelic orthogonal double-coset map obtained by enlarging the right subgroup is
 surjective. -/
 theorem finiteAdelicOrthogonalDoubleCosetMapOfLE_surjective
@@ -104,12 +116,48 @@ def finiteAdelicOrthogonalDoubleCosetConj (g : U.finiteAdelicOrthogonal) :
   DoubleCoset.quotientConjRight U.finiteAdelicOrthogonalDiagonal.range
     (integralSubgroup U.orthogonal) g
 
+omit [FiniteDimensional ℚ V] in
+/-- Orthogonal right translation sends the class of `x` to the class of `x * g`. -/
+theorem finiteAdelicOrthogonalDoubleCosetConj_apply_mk (g x : U.finiteAdelicOrthogonal) :
+    U.finiteAdelicOrthogonalDoubleCosetConj g
+        (DoubleCoset.mk U.finiteAdelicOrthogonalDiagonal.range
+          (integralSubgroup U.orthogonal) x) =
+      DoubleCoset.mk U.finiteAdelicOrthogonalDiagonal.range
+        ((integralSubgroup U.orthogonal).map
+          ((MulAut.conj g).symm : U.finiteAdelicOrthogonal →* U.finiteAdelicOrthogonal))
+        (x * g) :=
+  DoubleCoset.quotientConjRight_apply_mk U.finiteAdelicOrthogonalDiagonal.range
+    (integralSubgroup U.orthogonal) g x
+
+omit [FiniteDimensional ℚ V] in
+/-- The inverse orthogonal right translation sends the class of `y` to the class of `y * g⁻¹`. -/
+theorem finiteAdelicOrthogonalDoubleCosetConj_symm_apply_mk (g y : U.finiteAdelicOrthogonal) :
+    (U.finiteAdelicOrthogonalDoubleCosetConj g).symm
+        (DoubleCoset.mk U.finiteAdelicOrthogonalDiagonal.range
+          ((integralSubgroup U.orthogonal).map
+            ((MulAut.conj g).symm : U.finiteAdelicOrthogonal →* U.finiteAdelicOrthogonal)) y) =
+      DoubleCoset.mk U.finiteAdelicOrthogonalDiagonal.range
+        (integralSubgroup U.orthogonal) (y * g⁻¹) :=
+  DoubleCoset.quotientConjRight_symm_apply_mk U.finiteAdelicOrthogonalDiagonal.range
+    (integralSubgroup U.orthogonal) g y
+
 /-- Enlarging the right subgroup of the finite adelic Spin class set gives a surjection. -/
 def finiteAdelicSpinDoubleCosetMapOfLE
     (K : Subgroup U.finiteAdelicSpin) (hK : integralSubgroup U.spin ≤ K) :
     U.finiteAdelicSpinDoubleCoset →
       DoubleCoset.Quotient (U.finiteAdelicSpinDiagonal.range : Set U.finiteAdelicSpin) K :=
   DoubleCoset.quotientMapOfLERight U.finiteAdelicSpinDiagonal.range hK
+
+omit [FiniteDimensional ℚ V] in
+/-- Enlarging the Spin right subgroup preserves representatives. -/
+@[simp]
+theorem finiteAdelicSpinDoubleCosetMapOfLE_apply_mk
+    (K : Subgroup U.finiteAdelicSpin) (hK : integralSubgroup U.spin ≤ K)
+    (x : U.finiteAdelicSpin) :
+    U.finiteAdelicSpinDoubleCosetMapOfLE K hK
+        (DoubleCoset.mk U.finiteAdelicSpinDiagonal.range (integralSubgroup U.spin) x) =
+      DoubleCoset.mk U.finiteAdelicSpinDiagonal.range K x :=
+  DoubleCoset.quotientMapOfLERight_apply_mk U.finiteAdelicSpinDiagonal.range hK x
 
 omit [FiniteDimensional ℚ V] in
 /-- The finite adelic Spin double-coset map obtained by enlarging the right subgroup is
@@ -129,6 +177,28 @@ def finiteAdelicSpinDoubleCosetConj (g : U.finiteAdelicSpin) :
           Set U.finiteAdelicSpin) :=
   DoubleCoset.quotientConjRight U.finiteAdelicSpinDiagonal.range (integralSubgroup U.spin) g
 
+omit [FiniteDimensional ℚ V] in
+/-- Spin right translation sends the class of `x` to the class of `x * g`. -/
+theorem finiteAdelicSpinDoubleCosetConj_apply_mk (g x : U.finiteAdelicSpin) :
+    U.finiteAdelicSpinDoubleCosetConj g
+        (DoubleCoset.mk U.finiteAdelicSpinDiagonal.range (integralSubgroup U.spin) x) =
+      DoubleCoset.mk U.finiteAdelicSpinDiagonal.range
+        ((integralSubgroup U.spin).map
+          ((MulAut.conj g).symm : U.finiteAdelicSpin →* U.finiteAdelicSpin)) (x * g) :=
+  DoubleCoset.quotientConjRight_apply_mk U.finiteAdelicSpinDiagonal.range
+    (integralSubgroup U.spin) g x
+
+omit [FiniteDimensional ℚ V] in
+/-- The inverse Spin right translation sends the class of `y` to the class of `y * g⁻¹`. -/
+theorem finiteAdelicSpinDoubleCosetConj_symm_apply_mk (g y : U.finiteAdelicSpin) :
+    (U.finiteAdelicSpinDoubleCosetConj g).symm
+        (DoubleCoset.mk U.finiteAdelicSpinDiagonal.range
+          ((integralSubgroup U.spin).map
+            ((MulAut.conj g).symm : U.finiteAdelicSpin →* U.finiteAdelicSpin)) y) =
+      DoubleCoset.mk U.finiteAdelicSpinDiagonal.range (integralSubgroup U.spin) (y * g⁻¹) :=
+  DoubleCoset.quotientConjRight_symm_apply_mk U.finiteAdelicSpinDiagonal.range
+    (integralSubgroup U.spin) g y
+
 /-- Enlarging the right subgroup of the finite adelic special-orthogonal class set gives a
 surjection. -/
 def finiteAdelicSpecialOrthogonalDoubleCosetMapOfLE
@@ -138,6 +208,18 @@ def finiteAdelicSpecialOrthogonalDoubleCosetMapOfLE
       DoubleCoset.Quotient (U.finiteAdelicSpecialOrthogonalDiagonal.range :
         Set U.finiteAdelicSpecialOrthogonal) K :=
   DoubleCoset.quotientMapOfLERight U.finiteAdelicSpecialOrthogonalDiagonal.range hK
+
+/-- Enlarging the special-orthogonal right subgroup preserves representatives. -/
+@[simp]
+theorem finiteAdelicSpecialOrthogonalDoubleCosetMapOfLE_apply_mk
+    (K : Subgroup U.finiteAdelicSpecialOrthogonal)
+    (hK : integralSubgroup U.specialOrthogonal ≤ K) (x : U.finiteAdelicSpecialOrthogonal) :
+    U.finiteAdelicSpecialOrthogonalDoubleCosetMapOfLE K hK
+        (DoubleCoset.mk U.finiteAdelicSpecialOrthogonalDiagonal.range
+          (integralSubgroup U.specialOrthogonal) x) =
+      DoubleCoset.mk U.finiteAdelicSpecialOrthogonalDiagonal.range K x :=
+  DoubleCoset.quotientMapOfLERight_apply_mk
+    U.finiteAdelicSpecialOrthogonalDiagonal.range hK x
 
 /-- The finite adelic special-orthogonal double-coset map obtained by enlarging the right subgroup
 is surjective. -/
@@ -161,84 +243,229 @@ def finiteAdelicSpecialOrthogonalDoubleCosetConj
   DoubleCoset.quotientConjRight U.finiteAdelicSpecialOrthogonalDiagonal.range
     (integralSubgroup U.specialOrthogonal) g
 
+/-- Special-orthogonal right translation sends the class of `x` to the class of `x * g`. -/
+theorem finiteAdelicSpecialOrthogonalDoubleCosetConj_apply_mk
+    (g x : U.finiteAdelicSpecialOrthogonal) :
+    U.finiteAdelicSpecialOrthogonalDoubleCosetConj g
+        (DoubleCoset.mk U.finiteAdelicSpecialOrthogonalDiagonal.range
+          (integralSubgroup U.specialOrthogonal) x) =
+      DoubleCoset.mk U.finiteAdelicSpecialOrthogonalDiagonal.range
+        ((integralSubgroup U.specialOrthogonal).map
+          ((MulAut.conj g).symm :
+            U.finiteAdelicSpecialOrthogonal →* U.finiteAdelicSpecialOrthogonal)) (x * g) :=
+  DoubleCoset.quotientConjRight_apply_mk U.finiteAdelicSpecialOrthogonalDiagonal.range
+    (integralSubgroup U.specialOrthogonal) g x
+
+/-- The inverse special-orthogonal right translation sends the class of `y` to the class of
+`y * g⁻¹`. -/
+theorem finiteAdelicSpecialOrthogonalDoubleCosetConj_symm_apply_mk
+    (g y : U.finiteAdelicSpecialOrthogonal) :
+    (U.finiteAdelicSpecialOrthogonalDoubleCosetConj g).symm
+        (DoubleCoset.mk U.finiteAdelicSpecialOrthogonalDiagonal.range
+          ((integralSubgroup U.specialOrthogonal).map
+            ((MulAut.conj g).symm :
+              U.finiteAdelicSpecialOrthogonal →* U.finiteAdelicSpecialOrthogonal)) y) =
+      DoubleCoset.mk U.finiteAdelicSpecialOrthogonalDiagonal.range
+        (integralSubgroup U.specialOrthogonal) (y * g⁻¹) :=
+  DoubleCoset.quotientConjRight_symm_apply_mk U.finiteAdelicSpecialOrthogonalDiagonal.range
+    (integralSubgroup U.specialOrthogonal) g y
+
 /-! ### Change of compatible tuple -/
 
-/-- Componentwise equivalences which preserve every orthogonal reference subgroup and every
-rational diagonal point identify the actual finite adelic orthogonal class sets. -/
+/-- Componentwise equivalences which preserve every orthogonal reference subgroup and carry the
+rational diagonal subgroup onto the target diagonal subgroup identify the finite adelic class
+sets. -/
 def finiteAdelicOrthogonalDoubleCosetCongr (U' : OrthogonalCompactOpens Q)
     (φ : ∀ p : Nat.Primes,
       orthogonalGroup (Q.baseChange ℚ_[p]) ≃* orthogonalGroup (Q.baseChange ℚ_[p]))
     (hφ : ∀ p, Set.BijOn (φ p) (U.orthogonal p) (U'.orthogonal p))
-    (hdiag : ∀ (g : orthogonalGroup Q) (p : Nat.Primes),
-      φ p (orthogonalGroupBaseChange (A := ℚ_[p]) Q g) =
-        orthogonalGroupBaseChange (A := ℚ_[p]) Q g) :
+    (hdiag : U.finiteAdelicOrthogonalDiagonal.range.map
+      (restrictedProductCongrRight U.orthogonal U'.orthogonal φ (.of_forall hφ) :
+        U.finiteAdelicOrthogonal →* U'.finiteAdelicOrthogonal) =
+      U'.finiteAdelicOrthogonalDiagonal.range) :
     U.finiteAdelicOrthogonalDoubleCoset ≃ U'.finiteAdelicOrthogonalDoubleCoset := by
-  let e := restrictedProductCongrRight U.orthogonal U'.orthogonal φ (.of_forall hφ)
   apply DoubleCoset.quotientCongr U.finiteAdelicOrthogonalDiagonal.range
-    (integralSubgroup U.orthogonal) e
-  · rw [MonoidHom.map_range]
-    congr 1
-    ext g p : 2
-    change (e (U.finiteAdelicOrthogonalDiagonal g)) p =
-      U'.finiteAdelicOrthogonalDiagonal g p
-    rw [show (e (U.finiteAdelicOrthogonalDiagonal g)) p =
-      φ p (U.finiteAdelicOrthogonalDiagonal g p) from
-        restrictedProductCongrRight_apply U.orthogonal U'.orthogonal φ (.of_forall hφ)
-          _ p]
-    simpa only [finiteAdelicOrthogonalDiagonal_apply] using hdiag g p
-  · exact map_integralSubgroup_restrictedProductCongrRight U.orthogonal U'.orthogonal φ hφ
+    (integralSubgroup U.orthogonal)
+    (restrictedProductCongrRight U.orthogonal U'.orthogonal φ (.of_forall hφ)) hdiag
+    (map_integralSubgroup_restrictedProductCongrRight U.orthogonal U'.orthogonal φ hφ)
 
-/-- Componentwise equivalences which preserve every Spin reference subgroup and every rational
-diagonal point identify the actual finite adelic Spin class sets. -/
+omit [FiniteDimensional ℚ V] in
+/-- Change of orthogonal tuple applies the componentwise equivalence to representatives. -/
+@[simp]
+theorem finiteAdelicOrthogonalDoubleCosetCongr_apply_mk (U' : OrthogonalCompactOpens Q)
+    (φ : ∀ p : Nat.Primes,
+      orthogonalGroup (Q.baseChange ℚ_[p]) ≃* orthogonalGroup (Q.baseChange ℚ_[p]))
+    (hφ : ∀ p, Set.BijOn (φ p) (U.orthogonal p) (U'.orthogonal p))
+    (hdiag : U.finiteAdelicOrthogonalDiagonal.range.map
+      (restrictedProductCongrRight U.orthogonal U'.orthogonal φ (.of_forall hφ) :
+        U.finiteAdelicOrthogonal →* U'.finiteAdelicOrthogonal) =
+      U'.finiteAdelicOrthogonalDiagonal.range)
+    (x : U.finiteAdelicOrthogonal) :
+    U.finiteAdelicOrthogonalDoubleCosetCongr U' φ hφ hdiag
+        (DoubleCoset.mk U.finiteAdelicOrthogonalDiagonal.range
+          (integralSubgroup U.orthogonal) x) =
+      DoubleCoset.mk U'.finiteAdelicOrthogonalDiagonal.range
+        (integralSubgroup U'.orthogonal)
+        (restrictedProductCongrRight U.orthogonal U'.orthogonal φ (.of_forall hφ) x) :=
+  DoubleCoset.quotientCongr_apply_mk U.finiteAdelicOrthogonalDiagonal.range
+    (integralSubgroup U.orthogonal)
+    (restrictedProductCongrRight U.orthogonal U'.orthogonal φ (.of_forall hφ)) hdiag
+    (map_integralSubgroup_restrictedProductCongrRight U.orthogonal U'.orthogonal φ hφ) x
+
+omit [FiniteDimensional ℚ V] in
+/-- The inverse change of orthogonal tuple applies the inverse componentwise equivalence to
+representatives. -/
+@[simp]
+theorem finiteAdelicOrthogonalDoubleCosetCongr_symm_apply_mk (U' : OrthogonalCompactOpens Q)
+    (φ : ∀ p : Nat.Primes,
+      orthogonalGroup (Q.baseChange ℚ_[p]) ≃* orthogonalGroup (Q.baseChange ℚ_[p]))
+    (hφ : ∀ p, Set.BijOn (φ p) (U.orthogonal p) (U'.orthogonal p))
+    (hdiag : U.finiteAdelicOrthogonalDiagonal.range.map
+      (restrictedProductCongrRight U.orthogonal U'.orthogonal φ (.of_forall hφ) :
+        U.finiteAdelicOrthogonal →* U'.finiteAdelicOrthogonal) =
+      U'.finiteAdelicOrthogonalDiagonal.range)
+    (y : U'.finiteAdelicOrthogonal) :
+    (U.finiteAdelicOrthogonalDoubleCosetCongr U' φ hφ hdiag).symm
+        (DoubleCoset.mk U'.finiteAdelicOrthogonalDiagonal.range
+          (integralSubgroup U'.orthogonal) y) =
+      DoubleCoset.mk U.finiteAdelicOrthogonalDiagonal.range
+        (integralSubgroup U.orthogonal)
+        ((restrictedProductCongrRight U.orthogonal U'.orthogonal φ (.of_forall hφ)).symm y) :=
+  DoubleCoset.quotientCongr_symm_apply_mk U.finiteAdelicOrthogonalDiagonal.range
+    (integralSubgroup U.orthogonal)
+    (restrictedProductCongrRight U.orthogonal U'.orthogonal φ (.of_forall hφ)) hdiag
+    (map_integralSubgroup_restrictedProductCongrRight U.orthogonal U'.orthogonal φ hφ) y
+
+/-- Componentwise equivalences which preserve every Spin reference subgroup and carry the
+rational diagonal subgroup onto the target diagonal subgroup identify the finite adelic class
+sets. -/
 def finiteAdelicSpinDoubleCosetCongr (U' : OrthogonalCompactOpens Q)
     (φ : ∀ p : Nat.Primes,
       spinGroup (Q.baseChange ℚ_[p]) ≃* spinGroup (Q.baseChange ℚ_[p]))
     (hφ : ∀ p, Set.BijOn (φ p) (U.spin p) (U'.spin p))
-    (hdiag : ∀ (x : spinGroup Q) (p : Nat.Primes),
-      φ p (CliffordAlgebra.spinGroupBaseChange (A := ℚ_[p]) Q x) =
-        CliffordAlgebra.spinGroupBaseChange (A := ℚ_[p]) Q x) :
+    (hdiag : U.finiteAdelicSpinDiagonal.range.map
+      (restrictedProductCongrRight U.spin U'.spin φ (.of_forall hφ) :
+        U.finiteAdelicSpin →* U'.finiteAdelicSpin) = U'.finiteAdelicSpinDiagonal.range) :
     U.finiteAdelicSpinDoubleCoset ≃ U'.finiteAdelicSpinDoubleCoset := by
-  let e := restrictedProductCongrRight U.spin U'.spin φ (.of_forall hφ)
   apply DoubleCoset.quotientCongr U.finiteAdelicSpinDiagonal.range
-    (integralSubgroup U.spin) e
-  · rw [MonoidHom.map_range]
-    congr 1
-    ext x p : 2
-    change (e (U.finiteAdelicSpinDiagonal x)) p = U'.finiteAdelicSpinDiagonal x p
-    rw [show (e (U.finiteAdelicSpinDiagonal x)) p =
-      φ p (U.finiteAdelicSpinDiagonal x p) from
-        restrictedProductCongrRight_apply U.spin U'.spin φ (.of_forall hφ) _ p]
-    simpa only [finiteAdelicSpinDiagonal_apply] using hdiag x p
-  · exact map_integralSubgroup_restrictedProductCongrRight U.spin U'.spin φ hφ
+    (integralSubgroup U.spin)
+    (restrictedProductCongrRight U.spin U'.spin φ (.of_forall hφ)) hdiag
+    (map_integralSubgroup_restrictedProductCongrRight U.spin U'.spin φ hφ)
+
+omit [FiniteDimensional ℚ V] in
+/-- Change of Spin tuple applies the componentwise equivalence to representatives. -/
+@[simp]
+theorem finiteAdelicSpinDoubleCosetCongr_apply_mk (U' : OrthogonalCompactOpens Q)
+    (φ : ∀ p : Nat.Primes,
+      spinGroup (Q.baseChange ℚ_[p]) ≃* spinGroup (Q.baseChange ℚ_[p]))
+    (hφ : ∀ p, Set.BijOn (φ p) (U.spin p) (U'.spin p))
+    (hdiag : U.finiteAdelicSpinDiagonal.range.map
+      (restrictedProductCongrRight U.spin U'.spin φ (.of_forall hφ) :
+        U.finiteAdelicSpin →* U'.finiteAdelicSpin) = U'.finiteAdelicSpinDiagonal.range)
+    (x : U.finiteAdelicSpin) :
+    U.finiteAdelicSpinDoubleCosetCongr U' φ hφ hdiag
+        (DoubleCoset.mk U.finiteAdelicSpinDiagonal.range (integralSubgroup U.spin) x) =
+      DoubleCoset.mk U'.finiteAdelicSpinDiagonal.range (integralSubgroup U'.spin)
+        (restrictedProductCongrRight U.spin U'.spin φ (.of_forall hφ) x) :=
+  DoubleCoset.quotientCongr_apply_mk U.finiteAdelicSpinDiagonal.range
+    (integralSubgroup U.spin)
+    (restrictedProductCongrRight U.spin U'.spin φ (.of_forall hφ)) hdiag
+    (map_integralSubgroup_restrictedProductCongrRight U.spin U'.spin φ hφ) x
+
+omit [FiniteDimensional ℚ V] in
+/-- The inverse change of Spin tuple applies the inverse componentwise equivalence to
+representatives. -/
+@[simp]
+theorem finiteAdelicSpinDoubleCosetCongr_symm_apply_mk (U' : OrthogonalCompactOpens Q)
+    (φ : ∀ p : Nat.Primes,
+      spinGroup (Q.baseChange ℚ_[p]) ≃* spinGroup (Q.baseChange ℚ_[p]))
+    (hφ : ∀ p, Set.BijOn (φ p) (U.spin p) (U'.spin p))
+    (hdiag : U.finiteAdelicSpinDiagonal.range.map
+      (restrictedProductCongrRight U.spin U'.spin φ (.of_forall hφ) :
+        U.finiteAdelicSpin →* U'.finiteAdelicSpin) = U'.finiteAdelicSpinDiagonal.range)
+    (y : U'.finiteAdelicSpin) :
+    (U.finiteAdelicSpinDoubleCosetCongr U' φ hφ hdiag).symm
+        (DoubleCoset.mk U'.finiteAdelicSpinDiagonal.range (integralSubgroup U'.spin) y) =
+      DoubleCoset.mk U.finiteAdelicSpinDiagonal.range (integralSubgroup U.spin)
+        ((restrictedProductCongrRight U.spin U'.spin φ (.of_forall hφ)).symm y) :=
+  DoubleCoset.quotientCongr_symm_apply_mk U.finiteAdelicSpinDiagonal.range
+    (integralSubgroup U.spin)
+    (restrictedProductCongrRight U.spin U'.spin φ (.of_forall hφ)) hdiag
+    (map_integralSubgroup_restrictedProductCongrRight U.spin U'.spin φ hφ) y
 
 /-- Componentwise equivalences which preserve every special-orthogonal reference subgroup and
-every rational diagonal point identify the actual finite adelic special-orthogonal class sets. -/
+carry the rational diagonal subgroup onto the target diagonal subgroup identify the finite adelic
+class sets. -/
 def finiteAdelicSpecialOrthogonalDoubleCosetCongr (U' : OrthogonalCompactOpens Q)
     (φ : ∀ p : Nat.Primes,
       specialOrthogonalGroup (Q.baseChange ℚ_[p]) ≃*
         specialOrthogonalGroup (Q.baseChange ℚ_[p]))
     (hφ : ∀ p, Set.BijOn (φ p) (U.specialOrthogonal p) (U'.specialOrthogonal p))
-    (hdiag : ∀ (g : specialOrthogonalGroup Q) (p : Nat.Primes),
-      φ p (specialOrthogonalGroupBaseChange (A := ℚ_[p]) Q g) =
-        specialOrthogonalGroupBaseChange (A := ℚ_[p]) Q g) :
+    (hdiag : U.finiteAdelicSpecialOrthogonalDiagonal.range.map
+      (restrictedProductCongrRight U.specialOrthogonal U'.specialOrthogonal φ (.of_forall hφ) :
+        U.finiteAdelicSpecialOrthogonal →* U'.finiteAdelicSpecialOrthogonal) =
+      U'.finiteAdelicSpecialOrthogonalDiagonal.range) :
     U.finiteAdelicSpecialOrthogonalDoubleCoset ≃
       U'.finiteAdelicSpecialOrthogonalDoubleCoset := by
-  let e := restrictedProductCongrRight U.specialOrthogonal U'.specialOrthogonal φ
-    (.of_forall hφ)
   apply DoubleCoset.quotientCongr U.finiteAdelicSpecialOrthogonalDiagonal.range
-    (integralSubgroup U.specialOrthogonal) e
-  · rw [MonoidHom.map_range]
-    congr 1
-    ext g p : 2
-    change (e (U.finiteAdelicSpecialOrthogonalDiagonal g)) p =
-      U'.finiteAdelicSpecialOrthogonalDiagonal g p
-    rw [show (e (U.finiteAdelicSpecialOrthogonalDiagonal g)) p =
-      φ p (U.finiteAdelicSpecialOrthogonalDiagonal g p) from
-        restrictedProductCongrRight_apply U.specialOrthogonal U'.specialOrthogonal φ
-          (.of_forall hφ) _ p]
-    simpa only [finiteAdelicSpecialOrthogonalDiagonal_apply] using hdiag g p
-  · exact map_integralSubgroup_restrictedProductCongrRight U.specialOrthogonal
-      U'.specialOrthogonal φ hφ
+    (integralSubgroup U.specialOrthogonal)
+    (restrictedProductCongrRight U.specialOrthogonal U'.specialOrthogonal φ (.of_forall hφ))
+    hdiag (map_integralSubgroup_restrictedProductCongrRight U.specialOrthogonal
+      U'.specialOrthogonal φ hφ)
+
+/-- Change of special-orthogonal tuple applies the componentwise equivalence to
+representatives. -/
+@[simp]
+theorem finiteAdelicSpecialOrthogonalDoubleCosetCongr_apply_mk
+    (U' : OrthogonalCompactOpens Q)
+    (φ : ∀ p : Nat.Primes,
+      specialOrthogonalGroup (Q.baseChange ℚ_[p]) ≃*
+        specialOrthogonalGroup (Q.baseChange ℚ_[p]))
+    (hφ : ∀ p, Set.BijOn (φ p) (U.specialOrthogonal p) (U'.specialOrthogonal p))
+    (hdiag : U.finiteAdelicSpecialOrthogonalDiagonal.range.map
+      (restrictedProductCongrRight U.specialOrthogonal U'.specialOrthogonal φ (.of_forall hφ) :
+        U.finiteAdelicSpecialOrthogonal →* U'.finiteAdelicSpecialOrthogonal) =
+      U'.finiteAdelicSpecialOrthogonalDiagonal.range)
+    (x : U.finiteAdelicSpecialOrthogonal) :
+    U.finiteAdelicSpecialOrthogonalDoubleCosetCongr U' φ hφ hdiag
+        (DoubleCoset.mk U.finiteAdelicSpecialOrthogonalDiagonal.range
+          (integralSubgroup U.specialOrthogonal) x) =
+      DoubleCoset.mk U'.finiteAdelicSpecialOrthogonalDiagonal.range
+        (integralSubgroup U'.specialOrthogonal)
+        (restrictedProductCongrRight U.specialOrthogonal U'.specialOrthogonal φ
+          (.of_forall hφ) x) :=
+  DoubleCoset.quotientCongr_apply_mk U.finiteAdelicSpecialOrthogonalDiagonal.range
+    (integralSubgroup U.specialOrthogonal)
+    (restrictedProductCongrRight U.specialOrthogonal U'.specialOrthogonal φ (.of_forall hφ))
+    hdiag (map_integralSubgroup_restrictedProductCongrRight U.specialOrthogonal
+      U'.specialOrthogonal φ hφ) x
+
+/-- The inverse change of special-orthogonal tuple applies the inverse componentwise equivalence
+to representatives. -/
+@[simp]
+theorem finiteAdelicSpecialOrthogonalDoubleCosetCongr_symm_apply_mk
+    (U' : OrthogonalCompactOpens Q)
+    (φ : ∀ p : Nat.Primes,
+      specialOrthogonalGroup (Q.baseChange ℚ_[p]) ≃*
+        specialOrthogonalGroup (Q.baseChange ℚ_[p]))
+    (hφ : ∀ p, Set.BijOn (φ p) (U.specialOrthogonal p) (U'.specialOrthogonal p))
+    (hdiag : U.finiteAdelicSpecialOrthogonalDiagonal.range.map
+      (restrictedProductCongrRight U.specialOrthogonal U'.specialOrthogonal φ (.of_forall hφ) :
+        U.finiteAdelicSpecialOrthogonal →* U'.finiteAdelicSpecialOrthogonal) =
+      U'.finiteAdelicSpecialOrthogonalDiagonal.range)
+    (y : U'.finiteAdelicSpecialOrthogonal) :
+    (U.finiteAdelicSpecialOrthogonalDoubleCosetCongr U' φ hφ hdiag).symm
+        (DoubleCoset.mk U'.finiteAdelicSpecialOrthogonalDiagonal.range
+          (integralSubgroup U'.specialOrthogonal) y) =
+      DoubleCoset.mk U.finiteAdelicSpecialOrthogonalDiagonal.range
+        (integralSubgroup U.specialOrthogonal)
+        ((restrictedProductCongrRight U.specialOrthogonal U'.specialOrthogonal φ
+          (.of_forall hφ)).symm y) :=
+  DoubleCoset.quotientCongr_symm_apply_mk U.finiteAdelicSpecialOrthogonalDiagonal.range
+    (integralSubgroup U.specialOrthogonal)
+    (restrictedProductCongrRight U.specialOrthogonal U'.specialOrthogonal φ (.of_forall hφ))
+    hdiag (map_integralSubgroup_restrictedProductCongrRight U.specialOrthogonal
+      U'.specialOrthogonal φ hφ) y
 
 end
 

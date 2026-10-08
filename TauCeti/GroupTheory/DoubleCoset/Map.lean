@@ -132,10 +132,12 @@ def quotientConjRight (H K : Subgroup G) (g : G) :
       obtain ⟨c, hc, rfl⟩ := Subgroup.mem_map.mp hb
       refine ⟨a, ha, c, hc, ?_⟩
       simp only [Equiv.coe_mulRight] at hxy
-      change y * g = a * (x * g) * (g⁻¹ * c * g) at hxy
+      have hconj : ((MulAut.conj g).symm : G →* G) c = g⁻¹ * c * g :=
+        MulAut.conj_symm_apply g c
       calc
         y = (y * g) * g⁻¹ := by group
-        _ = (a * (x * g) * (g⁻¹ * c * g)) * g⁻¹ := by rw [hxy]
+        _ = (a * (x * g) * ((MulAut.conj g).symm : G →* G) c) * g⁻¹ := by rw [hxy]
+        _ = (a * (x * g) * (g⁻¹ * c * g)) * g⁻¹ := by rw [hconj]
         _ = a * x * c := by group
 
 /-- Right translation sends the double coset of `x` to the double coset of `x * g`.
