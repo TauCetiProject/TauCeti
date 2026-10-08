@@ -21,9 +21,10 @@ the coordinates, the nonsingularity certificate and the identifying equation in 
 separate generalisation to arrange. The accessor form is useful when the coordinates must occur in
 a definition, such as evaluation at a translated generic point.
 
-The junk value `0` is harmless: every result that uses coordinates geometrically assumes the point
-is nonzero. Nothing here needs ellipticity. The two map lemmas need field hypotheses only because
-Mathlib's `Point.map` does.
+Most coordinate reconstruction results assume the point is nonzero. The descent criterion
+`exists_map_eq_iff` handles infinity separately: both accessors are `0` there, and infinity
+descends along every field embedding. Nothing here needs ellipticity. The map lemmas need field
+hypotheses only because Mathlib's `Point.map` does.
 
 ## Main definitions
 
@@ -39,6 +40,8 @@ Mathlib's `Point.map` does.
 * `WeierstrassCurve.Affine.Point.eq_of_coords`: nonzero points with equal coordinates are equal.
 * `WeierstrassCurve.Affine.Point.xCoord_map` and
   `WeierstrassCurve.Affine.Point.yCoord_map`: the accessors commute with `Point.map`.
+* `WeierstrassCurve.Affine.Point.exists_map_eq_iff`: a point descends along a field embedding
+  exactly when both coordinates do.
 * `WeierstrassCurve.Affine.Point.cast_zero` and `WeierstrassCurve.Affine.Point.cast_some`:
   transport along an equality of curves, as in `AddEquiv.cast` and `Equiv.cast`, fixes the
   point at infinity and keeps the coordinates of a point.
@@ -146,6 +149,25 @@ theorem yCoord_map (f : F →ₐ[S] K) (P : (W⁄F).toAffine.Point) :
   cases P with
   | zero => exact f.toRingHom.map_zero.symm
   | some x y h => (rfl)
+
+/-- A point descends along a field embedding exactly when both coordinates lie in its image.
+The point at infinity also satisfies the criterion, since its coordinate accessors are zero. -/
+@[simp]
+theorem exists_map_eq_iff (P : (W⁄K).toAffine.Point) (f : F →ₐ[S] K) :
+    (∃ Q : (W⁄F).toAffine.Point, Point.map f Q = P) ↔
+      xCoord P ∈ Set.range f ∧ yCoord P ∈ Set.range f := by
+  constructor
+  · rintro ⟨Q, rfl⟩
+    exact ⟨⟨xCoord Q, (xCoord_map f Q).symm⟩, ⟨yCoord Q, (yCoord_map f Q).symm⟩⟩
+  · rintro ⟨⟨x, hx⟩, ⟨y, hy⟩⟩
+    by_cases hP : P = 0
+    · exact ⟨0, (Point.map_zero f).trans hP.symm⟩
+    have hns : (W⁄F).toAffine.Nonsingular x y :=
+      (W.baseChange_nonsingular f.injective x y).mp
+        (by simpa only [hx, hy] using nonsingular_coords hP)
+    refine ⟨some x y hns, ?_⟩
+    rw [Point.map_some]
+    exact eq_of_coords (by simp) hP hx hy
 
 section Cast
 

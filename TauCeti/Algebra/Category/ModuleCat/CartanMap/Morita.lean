@@ -172,32 +172,28 @@ conflation-exact. -/
 theorem isConflationExact_finiteModulesEquivalence_functor :
     (finiteModulesExactStructure A).IsConflationExact (finiteModulesExactStructure B)
       e.finiteModulesEquivalence.functor :=
-  isConflationExact_finiteModules_congrFullSubcategory_functor _
-    (ExactStructure.isConflationExact_abelian _) _
+  isConflationExact_finiteModules_congrFullSubcategory_functor _ _
 
 /-- The inverse of the restriction of an equivalence of module categories to the finitely
 generated modules is conflation-exact. -/
 theorem isConflationExact_finiteModulesEquivalence_inverse :
     (finiteModulesExactStructure B).IsConflationExact (finiteModulesExactStructure A)
       e.finiteModulesEquivalence.inverse :=
-  isConflationExact_finiteModules_congrFullSubcategory_inverse _
-    (ExactStructure.isConflationExact_abelian _) _
+  isConflationExact_finiteModules_congrFullSubcategory_inverse _ _
 
 /-- The restriction of an equivalence of module categories to the finitely generated projective
 modules is conflation-exact. -/
 theorem isConflationExact_finiteProjectiveModulesEquivalence_functor :
     (finiteProjectiveModulesExactStructure A).IsConflationExact
       (finiteProjectiveModulesExactStructure B) e.finiteProjectiveModulesEquivalence.functor :=
-  isConflationExact_finiteProjectiveModules_congrFullSubcategory_functor _
-    (ExactStructure.isConflationExact_abelian _) _
+  isConflationExact_finiteProjectiveModules_congrFullSubcategory_functor _ _
 
 /-- The inverse of the restriction of an equivalence of module categories to the finitely
 generated projective modules is conflation-exact. -/
 theorem isConflationExact_finiteProjectiveModulesEquivalence_inverse :
     (finiteProjectiveModulesExactStructure B).IsConflationExact
       (finiteProjectiveModulesExactStructure A) e.finiteProjectiveModulesEquivalence.inverse :=
-  isConflationExact_finiteProjectiveModules_congrFullSubcategory_inverse _
-    (ExactStructure.isConflationExact_abelian _) _
+  isConflationExact_finiteProjectiveModules_congrFullSubcategory_inverse _ _
 
 /-! ### The induced isomorphisms of Grothendieck groups -/
 

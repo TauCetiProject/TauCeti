@@ -41,6 +41,8 @@ how Lazard's lifting theorem passes valuation-invariance from the base to the cy
   at `α`, followed by the root multiplicity of `β` in the Lazard evaluation of `g` at `α`.
 * `MvPolynomial.lazardEval_snoc`: the Lazard evaluation of `f` at `(α, β)` is the trailing
   coefficient of the Taylor expansion at `β` of the Lazard evaluation of `g` at `α`.
+* `MvPolynomial.coeff_lazardEval_optionEquivRight_rename_finSuccEquivLast`: the coefficients of
+  the Lazard evaluation of `g` at `α` are Taylor coefficients of `f` at `(α, 0)`.
 
 ## References
 
@@ -126,5 +128,60 @@ theorem lazardEval_snoc (f : MvPolynomial (Fin (n + 1)) R) (α : Fin n → R) (�
   rw [Polynomial.trailingCoeff_taylor, ← Polynomial.coeff_taylor_rootMultiplicity,
     ← coeff_taylor_lazardExponent, lazardExponent_snoc, coeff_taylor_snoc,
     coeff_taylor_lazardExponent]
+
+/-- The coefficient of `Xₙ ^ k` in the Lazard evaluation of `f` over the base point `α`, after
+moving the last variable into the coefficients, is the Taylor coefficient of `f` at
+`Fin.snoc α 0` whose exponent is the vector of base exponents removed over `α` followed by `k`.
+So over a set of base points where the removed exponents are constant, the coefficients of the
+Lazard evaluations are polynomial functions of the base point. -/
+theorem coeff_lazardEval_optionEquivRight_rename_finSuccEquivLast
+    (f : MvPolynomial (Fin (n + 1)) R) (α : Fin n → R) (k : ℕ) :
+    ((optionEquivRight R (Fin n) (rename finSuccEquivLast f)).lazardEval
+        (Polynomial.C ∘ α)).coeff k =
+      (taylor (Fin.snoc α 0) f).coeff
+        (snoc ((optionEquivRight R (Fin n) (rename finSuccEquivLast f)).lazardExponent
+          (Polynomial.C ∘ α)) k) := by
+  rw [coeff_taylor_snoc, Polynomial.taylor_zero, coeff_taylor_lazardExponent]
+
+/-- On a stratum with fixed removed base exponents, Lazard evaluation in the last variable
+is specialization of a single polynomial family. Its coefficients are polynomial in the base
+point, including where the ordinary fiber is nullified. The coefficient ring need not be a
+domain. -/
+theorem exists_polynomial_map_eq_lazardEval (f : MvPolynomial (Fin (n + 1)) R)
+    (e : Fin n →₀ ℕ) :
+    ∃ P : Polynomial (MvPolynomial (Fin n) R), ∀ α : Fin n → R,
+      (optionEquivRight R (Fin n) (rename finSuccEquivLast f)).lazardExponent
+        (Polynomial.C ∘ α) = e →
+      P.map (eval α) =
+        (optionEquivRight R (Fin n) (rename finSuccEquivLast f)).lazardEval
+          (Polynomial.C ∘ α) := by
+  classical
+  let T := taylor (X : Fin (n + 1) → MvPolynomial (Fin (n + 1)) R) (map C f)
+  let c (j : ℕ) : MvPolynomial (Fin n) R :=
+    eval₂ C (Fin.snoc (α := fun _ ↦ MvPolynomial (Fin n) R) X 0) (T.coeff (snoc e j))
+  have hc (α : Fin n → R) (j : ℕ) :
+      eval α (c j) = (taylor (Fin.snoc α 0) f).coeff (snoc e j) := by
+    have hcoords :
+        (fun i ↦ eval α (Fin.snoc (α := fun _ ↦ MvPolynomial (Fin n) R) X 0 i)) =
+          Fin.snoc α 0 := by
+      ext i
+      cases i using Fin.lastCases <;> simp
+    have hC : (eval α).comp (C : R →+* MvPolynomial (Fin n) R) = RingHom.id R := by
+      ext r
+      simp
+    simp only [c, eval_eval₂, hC, hcoords, eval₂_id, T,
+      eval_coeff_taylor_map_C]
+  refine ⟨∑ j ∈ Finset.range (f.degreeOf (Fin.last n) + 1), Polynomial.monomial j (c j),
+    fun α hα ↦ Polynomial.ext fun j ↦ ?_⟩
+  rw [Polynomial.coeff_map, Polynomial.finsetSum_coeff]
+  simp only [Polynomial.coeff_monomial, Finset.sum_ite_eq', Finset.mem_range]
+  rw [coeff_lazardEval_optionEquivRight_rename_finSuccEquivLast, hα]
+  split_ifs with hj
+  · exact hc α j
+  · symm
+    apply notMem_support_iff.1
+    apply notMem_support_of_degreeOf_lt (Fin.last n)
+    rw [degreeOf_taylor, snoc_last]
+    omega
 
 end MvPolynomial

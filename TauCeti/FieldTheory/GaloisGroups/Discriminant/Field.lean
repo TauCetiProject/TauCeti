@@ -266,8 +266,9 @@ open scoped Classical in
 @[simp]
 theorem mem_evenAutSubgroup {ϕ : E ≃ₐ[F] E} :
     ϕ ∈ evenAutSubgroup f E ↔
-      Equiv.Perm.sign (Gal.galActionHom f E (Gal.restrict f E ϕ)) = 1 :=
-  Equiv.Perm.mem_alternatingGroup
+      Gal.sign f (Gal.restrict f E ϕ) = 1 := by
+  simp only [evenAutSubgroup, Subgroup.mem_comap, Equiv.Perm.mem_alternatingGroup,
+    Gal.sign_galActionHom]
 
 open scoped Classical in
 /-- The even part of the Galois group is the subgroup fixing the root-difference product.
@@ -285,13 +286,13 @@ theorem evenAutSubgroup_eq_fixingSubgroup (hchar : ringChar F ≠ 2)
     intro ϕ hϕ
     rw [mem_evenAutSubgroup] at hϕ
     rw [AlgEquiv.map_discrSqrt, hϕ, one_smul]
-  · have hfix : Equiv.Perm.sign (Gal.galActionHom f E (Gal.restrict f E ϕ)) •
+  · have hfix : Gal.sign f (Gal.restrict f E ϕ) •
         discrSqrt (f := f) e = discrSqrt (f := f) e := by
       rw [← AlgEquiv.map_discrSqrt]
       exact (IntermediateField.mem_fixingSubgroup_iff _ ϕ).mp hϕ _
         (IntermediateField.mem_adjoin_simple_self F _)
     rw [mem_evenAutSubgroup]
-    rcases Int.units_eq_one_or (Equiv.Perm.sign (Gal.galActionHom f E (Gal.restrict f E ϕ)))
+    rcases Int.units_eq_one_or (Gal.sign f (Gal.restrict f E ϕ))
       with h1 | h1
     · exact h1
     -- An odd automorphism would negate the nonzero product and fix it, forcing `2 = 0`.

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.Newforms.Descent.Sum
+import TauCeti.Data.Nat.ExactDivisor
 
 /-!
 # The descent slash sum does not see the level away from `p`
@@ -68,9 +69,7 @@ private theorem descendExtraGamma_mul_inv_mem_Gamma (hp : p.Prime) (hpN : p ∣ 
     descendExtraGamma p (l * N) * (descendExtraGamma p N)⁻¹ ∈ Gamma N := by
   have hpN' : p ∣ l * N := Dvd.dvd.mul_left hpN l
   have hpsq' : ¬ p ^ 2 ∣ l * N := mt (Nat.Coprime.pow_left 2 hpl).dvd_mul_left.mp hpsq
-  have hcop : Nat.Coprime p (N / p) := hp.coprime_iff_not_dvd.mpr fun h ↦ hpsq <| by
-    rw [sq, ← Nat.mul_div_cancel' hpN]
-    exact Nat.mul_dvd_mul_left p h
+  have hcop : Nat.Coprime p (N / p) := (Nat.IsExactDivisor.of_not_sq_dvd hp hpN hpsq).coprime
   have hδp : descendExtraGamma p (l * N) * (descendExtraGamma p N)⁻¹ ∈ Gamma p := by
     rw [Gamma_mem', map_mul, map_inv, descendExtraGamma_map_intCast_zmod_eq_S hp hpN' hpsq',
       descendExtraGamma_map_intCast_zmod_eq_S hp hpN hpsq, mul_inv_cancel]

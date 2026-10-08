@@ -127,26 +127,26 @@ Mackey subgroup `H ⊓ sHs⁻¹` admit no nonzero intertwiner.  The conjugation 
 This is the condition the Mackey irreducibility criterion imposes on every double coset other than
 `H` itself. -/
 def MackeyDisjoint (A : FDRep k H) (s : G) : Prop :=
-  Subsingleton (resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
+  Subsingleton (Subgroup.resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
     (Action.res (FGModuleCat k) (mackeyToH s H H)).obj A)
 
 /-- **Mackey disjointness unfolded.**  The body of `TauCeti.MackeyDisjoint` is not exposed, so
 this is how a consumer reads the definition. -/
 theorem mackeyDisjoint_iff_subsingleton (A : FDRep k H) (s : G) :
     MackeyDisjoint A s ↔
-      Subsingleton (resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
+      Subsingleton (Subgroup.resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
         (Action.res (FGModuleCat k) (mackeyToH s H H)).obj A) :=
   Iff.rfl
 
 /-- An intertwiner between the two restrictions of a Mackey disjoint pair is zero. -/
 theorem MackeyDisjoint.eq_zero {A : FDRep k H} {s : G} (h : MackeyDisjoint A s)
-    (φ : resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
+    (φ : Subgroup.resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
       (Action.res (FGModuleCat k) (mackeyToH s H H)).obj A) : φ = 0 :=
   @Subsingleton.elim _ h φ 0
 
 /-- Mackey disjointness holds as soon as every intertwiner between the two restrictions is zero. -/
 theorem mackeyDisjoint_of_forall_eq_zero {A : FDRep k H} {s : G}
-    (h : ∀ φ : resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
+    (h : ∀ φ : Subgroup.resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
       (Action.res (FGModuleCat k) (mackeyToH s H H)).obj A, φ = 0) : MackeyDisjoint A s :=
   ⟨fun φ ψ => (h φ).trans (h ψ).symm⟩
 
@@ -154,7 +154,7 @@ theorem mackeyDisjoint_of_forall_eq_zero {A : FDRep k H} {s : G}
 intertwining-number formula produces it. -/
 theorem mackeyDisjoint_iff_finrank_eq_zero (A : FDRep k H) (s : G) :
     MackeyDisjoint A s ↔
-      Module.finrank k (resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
+      Module.finrank k (Subgroup.resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
         (Action.res (FGModuleCat k) (mackeyToH s H H)).obj A) = 0 :=
   Module.finrank_zero_iff.symm
 

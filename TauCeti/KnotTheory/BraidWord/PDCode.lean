@@ -133,6 +133,16 @@ theorem crossingsAt_cons (x : Fin (n - 1) × ℤˣ) (v : BraidWord n) (p : Fin n
     · rw [mem_crossingsAt (w := x :: v) (j := k.succ)]
       simp [Fin.succ_ne_zero]
 
+/-- Two letters on the same positions come first on either position, followed by the old
+crossings shifted by two. Positions outside the pair see only the shifted old crossings. -/
+theorem crossingsAt_cons_cons_same_index (v : BraidWord n) (i : Fin (n - 1)) (ε η : ℤˣ)
+    (p : Fin n) :
+    crossingsAt ((i, ε) :: (i, η) :: v) p =
+      (if p = strand i ∨ p = strandSucc i then [0, 1] else []) ++
+        (v.crossingsAt p).map (fun j => j.succ.succ) := by
+  rw [crossingsAt_cons, crossingsAt_cons]
+  split_ifs <;> simp
+
 /-- The crossing met next along the strand position `p` after the crossing `j`: the next
 crossing above `j` involving `p`, or, through the closure, the lowest one. Crossings not
 involving `p` are fixed. -/

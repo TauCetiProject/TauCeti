@@ -60,6 +60,10 @@ injectivity of `g` on `(R ⧸ I) ⊗ B` shows that `w` comes from `I ⊗ B`, so 
 times an element of `I ⊗ B` and dies in `I ⊗ (B ⧸ (g))`. Flatness of `B` enters twice: as
 exactness of `I ⊗ B → R ⊗ B → (R ⧸ I) ⊗ B`, and as injectivity of `I ⊗ B → R ⊗ B`.
 
+The product criterion `TauCeti.flat_quotient_span_singleton_mul` applies this to sums of
+relative effective Cartier divisors: multiplying two regular equations with flat quotients again
+gives a flat quotient.
+
 ## References
 
 * [Wedhorn, *Adic Spaces*][wedhorn_adic], Lemma 8.31.
@@ -205,3 +209,27 @@ theorem quotient_span_singleton_iff_forall_isSMulRegular_one_tmul [Flat R B] (g 
     rwa [← hmap] at hinjective
 
 end Module.Flat
+
+namespace TauCeti
+
+open Module.Flat
+
+variable {R B : Type*} [CommRing R] [CommRing B] [Algebra R B]
+
+/-- In a flat algebra, the product of two regular equations with flat quotients again has a
+flat quotient. Geometrically, this is closure of relative effective Cartier divisors under sums. -/
+theorem flat_quotient_span_singleton_mul [Module.Flat R B] {a b : B}
+    (ha : IsSMulRegular B a) (hb : IsSMulRegular B b)
+    [Module.Flat R (B ⧸ Ideal.span {a})] [Module.Flat R (B ⧸ Ideal.span {b})] :
+    Module.Flat R (B ⧸ Ideal.span {a * b}) := by
+  apply quotient_span_singleton_of_lTensor_mulLeft_injective
+  intro I _
+  have hmul : LinearMap.mulLeft R (a * b) =
+      (LinearMap.mulLeft R a).comp (LinearMap.mulLeft R b) := by
+    ext x
+    simp
+  rw [hmul, LinearMap.lTensor_comp]
+  exact (lTensor_mulLeft_injective_of_quotient_span_singleton ha (R ⧸ I)).comp
+    (lTensor_mulLeft_injective_of_quotient_span_singleton hb (R ⧸ I))
+
+end TauCeti

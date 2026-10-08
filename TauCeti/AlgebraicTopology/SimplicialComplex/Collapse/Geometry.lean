@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.LinkStar
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Precomplex
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Coordinates
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
 public import TauCeti.Geometry.Convex.ConvexSpace.SimplexHorn
 import Mathlib.Data.Finset.Grade
@@ -56,7 +56,9 @@ theorem mem_deletion_space_iff_mem_horn (K : PreAbstractSimplicialComplex ι)
     (Finsupp.support_nonempty_iff.mpr fun hz => by
       have hsum := StandardSimplex.sum_eq_one x
       simp [hz] at hsum)
-  rw [mem_onFinsupp_space_iff, mem_deletion, Convexity.StdSimplex.mem_horn_iff]
+  rw [Geometry.SimplicialComplex.mem_space_onFinsupp_iff,
+    and_iff_right (StandardSimplex.nonneg x), and_iff_right (StandardSimplex.sum_eq_one x),
+    mem_deletion, Convexity.StdSimplex.mem_horn_iff]
   simp only [hx, true_and, Finset.subset_iff, not_forall, exists_prop,
     Finsupp.mem_support_iff, not_not, Finset.standardSimplexHomeomorph_weights]
   constructor

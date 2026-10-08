@@ -54,6 +54,8 @@ is killed by two.
 * `TauCeti.RegularFormClass.discr_mk_rankOne_mul` and
   `TauCeti.RegularFormClass.signedDiscr_mk_rankOne_mul`: scaling by `a` adds
   `m • squareClass a` to the (signed) discriminant of a class of rank `m`.
+* `TauCeti.RegularFormClass.discr_mk_rankOne_mul_of_even`: scaling a class of even rank leaves its
+  discriminant unchanged.
 * `TauCeti.RegularFormClass.discr_mk_rankOne_add`: adjoining the line `⟨a⟩` adds
   `squareClass a` to the discriminant.
 * `TauCeti.RegularFormClass.eq_one_of_rank_eq_one_of_discr_eq_zero`: a rank-one class of trivial
@@ -173,6 +175,15 @@ theorem discr_mk_rankOne_mul (a : Kˣ) (x : RegularFormClass K) :
     discr (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ * x) =
       rank x • squareClass a + discr x := by
   rw [discr_mul, rank_mk, one_nsmul, discr_mk, Fin.prod_univ_one]
+
+/-- **Scaling a class of even rank** by a unit does not change its discriminant. -/
+theorem discr_mk_rankOne_mul_of_even (a : Kˣ) {x : RegularFormClass K}
+    (hx : Even x.rank) :
+    discr (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ * x) = discr x := by
+  obtain ⟨k, hk⟩ := hx
+  rw [discr_mk_rankOne_mul, hk, ← two_mul, mul_nsmul',
+    ZModModule.char_nsmul_eq_zero 2 (k • squareClass a)]
+  exact zero_add (discr x)
 
 /-- **Adjoining a line**: `d(⟨a⟩ ⊥ q) = squareClass a + d(q)`. -/
 theorem discr_mk_rankOne_add (a : Kˣ) (x : RegularFormClass K) :

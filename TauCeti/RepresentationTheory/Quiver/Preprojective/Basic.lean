@@ -45,6 +45,7 @@ may be built by checking either.
 * `TauCeti.doubledVertexIdempotent`: the vertex idempotent of the doubled path algebra.
 * `TauCeti.headBacktrackElem` and `TauCeti.tailBacktrackElem`: the two length-two loops `a a*` and
   `a* a` attached to an arrow `a` of `Q`.
+* `TauCeti.doubledArrowSign`: the sign of an arrow of the doubled quiver in a local relator.
 * `TauCeti.gaugedPreprojectiveRelator`: the relator with scalar-labelled arrow contributions.
 * `TauCeti.gaugedPreprojectiveIdeal` and `TauCeti.gaugedPreprojectiveAlgebra`: the relation ideal
   and quotient algebra for a gauged relator.
@@ -61,6 +62,8 @@ may be built by checking either.
 ## Main results
 
 * `TauCeti.sum_localPreprojectiveRelator`: the global relator is the sum of the local ones.
+* `TauCeti.localPreprojectiveRelator_eq_sum_ofArrow_mul`: the local relator decomposed along the
+  last arrow of its paths.
 * `TauCeti.linearIndependent_backtrackElem`: the head backtracks into a vertex and the tail
   backtracks out of it are linearly independent.
 * `TauCeti.gaugedPreprojectiveRelator_vertexCorner_eq_sum_sub_sum`: the corner of the gauged
@@ -251,6 +254,53 @@ theorem ofPath_tailBacktrack_eq_tailBacktrackElem {i j : Q} (a : i ⟶ j) :
 
 end BacktrackProducts
 
+/-! ### Signs of arrows in the doubled quiver -/
+
+section Sign
+
+variable (k : Type w) {Q : Type u} [One k] [Neg k] [Quiver.{v} Q]
+
+/-- The sign `ε_b` of an arrow `b` of the doubled quiver in the preprojective relator: `1` on an
+arrow of `Q` and `-1` on the formal reverse of one. The arrows `i ⟶ j` of `Quiver.Symmetrify Q`
+are by definition `(i ⟶ j) ⊕ (j ⟶ i)`. -/
+def doubledArrowSign {i j : Symmetrify Q} (b : i ⟶ j) : k :=
+  Sum.elim (fun _ => 1) (fun _ => -1) b
+
+/-- An arrow of `Q` has sign `1`. This is the `simp`-normal form, `Symmetrify.of.map a` being
+`Sum.inl a` by `Quiver.Symmetrify.of_map`. -/
+@[simp]
+theorem doubledArrowSign_inl {i j : Q} (a : i ⟶ j) :
+    doubledArrowSign k (Sum.inl a : Symmetrify.of.obj i ⟶ Symmetrify.of.obj j) = 1 := (rfl)
+
+/-- The formal reverse of an arrow of `Q` has sign `-1`. This is the `simp`-normal form,
+`Quiver.reverse (Sum.inl a)` being `Sum.inr a` by `Quiver.symmetrify_reverse`. -/
+@[simp]
+theorem doubledArrowSign_inr {i j : Q} (a : j ⟶ i) :
+    doubledArrowSign k (Sum.inr a : Symmetrify.of.obj i ⟶ Symmetrify.of.obj j) = -1 := (rfl)
+
+end Sign
+
+section SignReverse
+
+variable (k : Type w) {Q : Type u} [One k] [InvolutiveNeg k] [Quiver.{v} Q]
+
+/-- Swapping the two summands of an arrow of the doubled quiver negates its sign. This is the
+`simp`-normal form of `TauCeti.doubledArrowSign_reverse`, `Quiver.reverse b` being `Sum.swap b` by
+`Quiver.symmetrify_reverse`. -/
+@[simp]
+theorem doubledArrowSign_swap {i j : Symmetrify Q} (b : i ⟶ j) :
+    doubledArrowSign k (i := j) (j := i) (Sum.swap b) = -doubledArrowSign k b := by
+  rcases b with a | a
+  · rfl
+  · exact (neg_neg (1 : k)).symm
+
+/-- **Reversing an arrow of the doubled quiver negates its sign**: `ε_{b*} = -ε_b`. -/
+theorem doubledArrowSign_reverse {i j : Symmetrify Q} (b : i ⟶ j) :
+    doubledArrowSign k (Quiver.reverse b) = -doubledArrowSign k b :=
+  doubledArrowSign_swap k b
+
+end SignReverse
+
 section BacktrackIndependence
 
 variable (k : Type w) {Q : Type u} [Semiring k] [Quiver.{v} Q]
@@ -433,6 +483,34 @@ theorem preprojectiveRelator_vertexCorner_eq_localPreprojectiveRelator (v : Q) :
     exact absurd (Finset.mem_univ v) h
 
 end Relator
+
+section SignedRelator
+
+variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v} Q] [Fintype Q]
+  [∀ i j : Q, Fintype (i ⟶ j)]
+
+/-- **The local relator along the last arrow of its paths**: in the later-factor-first convention
+`ρ_v = ∑_{b : i ⟶ v} ε_b b b*`, the sum over the arrows of the doubled quiver into `v`. An arrow `a`
+of `Q` into `v` contributes its head backtrack `a a*`, and the reverse `a*` of an arrow `a` of `Q`
+out of `v` contributes `-a* a`, minus its tail backtrack. -/
+theorem localPreprojectiveRelator_eq_sum_ofArrow_mul (v : Q) :
+    localPreprojectiveRelator k v = ∑ i : Symmetrify Q, ∑ b : i ⟶ Symmetrify.of.obj v,
+      ofArrow b * (doubledArrowSign k b • ofArrow (Quiver.reverse b)) := by
+  rw [localPreprojectiveRelator_def, ← Finset.sum_sub_distrib]
+  -- The vertices of the doubled quiver are those of `Q`; at each of them, the arrows into `v` are
+  -- the arrows of `Q` into `v` and the reverses of the arrows of `Q` out of `v`.
+  refine Fintype.sum_equiv (Equiv.ofBijective _ symmetrify_of_obj_bijective) _ _ fun i => ?_
+  rw [Equiv.ofBijective_apply, sub_eq_add_neg, ← Finset.sum_neg_distrib]
+  refine Eq.trans ?_ (Fintype.sum_sum_type (α₁ := i ⟶ v) (α₂ := v ⟶ i) _).symm
+  congr 1
+  · refine Finset.sum_congr rfl fun a _ => ?_
+    exact (ofArrow_mul_ofArrow_reverse_eq_headBacktrackElem k a).symm.trans
+      (congrArg (_ * ·) (one_smul k _).symm)
+  · refine Finset.sum_congr rfl fun a _ => ?_
+    exact (congrArg Neg.neg (ofArrow_reverse_mul_ofArrow_eq_tailBacktrackElem k a)).symm.trans
+      ((neg_one_smul k _).symm.trans (mul_smul_comm _ _ _).symm)
+
+end SignedRelator
 
 section GaugedRelatorCorner
 

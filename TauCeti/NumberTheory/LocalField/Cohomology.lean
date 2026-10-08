@@ -14,7 +14,8 @@ public import TauCeti.NumberTheory.LocalField.Padic
 
 For a nonarchimedean local field `K` and a prime `p` invertible in `K`, the continuous
 cohomology `H¹(G_K, 𝔽_p)` is finite and hence finite-dimensional. If `K` contains a primitive
-`p`th root of unity, Kummer theory shows that it is nontrivial. If `K` is a finite compatible
+`p`th root of unity, Kummer theory shows that it is nontrivial, and of dimension two when `p` is
+moreover invertible in the valuation ring `𝒪[K]`. If `K` is a finite compatible
 extension of `ℚ_[p]` containing a primitive `p`th root of unity, its dimension is
 `[K : ℚ_[p]] + 2`: Kummer theory identifies it with `Kˣ/(Kˣ)^p`, which for every finite
 compatible extension of `ℚ_[p]` has `p · #μ_p(K) · p ^ [K : ℚ_[p]]` elements.
@@ -83,6 +84,23 @@ theorem natCard_powerClassQuotient_eq_mul_pow_finrank
     card_powerClasses (NeZero.ne (p : K)), hvaluation, natCard_residueField ℚ_[p] K,
     Padic.natCard_residueField, ← ramificationIndex_mul_inertiaDegree ℚ_[p] K]
   ring
+
+/-- **Away from the residue characteristic, `H¹(G_K, 𝔽_p)` has dimension two when
+`μ_p ⊆ K`.** This follows from Kummer theory: `H¹(G_K, 𝔽_p)` has as many elements
+as `Kˣ/(Kˣ)^p`, whose order is `p · #μ_p(K) = p²`. -/
+theorem finrank_cohomFp_one_absoluteGaloisGroup_of_isUnit_of_exists_isPrimitiveRoot
+    (hpK : IsUnit ((p : ℕ) : 𝒪[K])) (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
+    Module.finrank (ZMod p) (cohomFp p (Field.absoluteGaloisGroup K) 1) = 2 := by
+  have : NeZero (p : K) := ⟨natCast_ne_zero_of_isUnit hpK⟩
+  obtain ⟨ζ, hζ⟩ := hmu
+  have hcard := natCard_cohomFp_one_absoluteGaloisGroup_of_isPrimitiveRoot p K hζ
+  rw [powerClassQuotient, powerSubgroup_eq_range_powMonoidHom,
+    card_powerClasses_of_isUnit hpK, hζ.card_rootsOfUnity] at hcard
+  have hfin := Module.natCard_eq_pow_finrank (K := ZMod p)
+    (V := cohomFp p (Field.absoluteGaloisGroup K) 1)
+  rw [Nat.card_zmod, hcard] at hfin
+  refine Nat.pow_right_injective (Fact.out : p.Prime).two_le ?_
+  simpa [pow_two] using hfin.symm
 
 /-- If a finite compatible extension of `ℚ_[p]` contains `μ_p`, then
 `dim H¹(G_K, 𝔽_p) = [K : ℚ_[p]] + 2`. -/
