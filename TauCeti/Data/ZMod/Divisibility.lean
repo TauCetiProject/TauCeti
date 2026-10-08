@@ -44,6 +44,8 @@ proof uses, and the name places the divisibility in Mathlib's operand order.
   congruent absolute values.
 * `ZMod.eq_of_forall_cast_eq_of_prime_pow_dvd`: a residue modulo `n` is determined by its
   reductions modulo the prime powers dividing `n`.
+* `ZMod.units_eq_of_forall_unitsMap_eq_of_prime_pow_dvd`: the same for units, through
+  `ZMod.unitsMap`.
 * `ZMod.equivPi_apply`: the components of Mathlib's Chinese remainder isomorphism `ZMod.equivPi`
   are the reductions modulo the prime powers exactly dividing `n`.
 * `ZMod.dvd_of_forall_mul_eq_zero`: divisibility inside `ZMod n` from annihilators: if every `r`
@@ -118,6 +120,14 @@ theorem eq_of_forall_cast_eq_of_prime_pow_dvd {n : ℕ} [NeZero n] {x y : ZMod n
   rcases eq_or_ne k 0 with rfl | hk
   · simp
   rw [← natCast_eq_zero_iff, natCast_val, cast_sub hpk, h p k hp hk hpk, sub_self]
+
+/-- **A unit is determined by its reductions modulo prime powers.** Two units modulo `n` whose
+images under `ZMod.unitsMap` agree for every prime power `p ^ k` dividing `n` are equal. -/
+theorem units_eq_of_forall_unitsMap_eq_of_prime_pow_dvd {n : ℕ} [NeZero n] {u v : (ZMod n)ˣ}
+    (h : ∀ p k : ℕ, p.Prime → k ≠ 0 → (hpk : p ^ k ∣ n) → unitsMap hpk u = unitsMap hpk v) :
+    u = v :=
+  Units.ext <| eq_of_forall_cast_eq_of_prime_pow_dvd fun p k hp hk hpk ↦
+    congr_arg Units.val (h p k hp hk hpk)
 
 /-- The component at `p` of the Chinese remainder isomorphism `ZMod.equivPi` is reduction modulo
 `p ^ n.factorization p`. -/

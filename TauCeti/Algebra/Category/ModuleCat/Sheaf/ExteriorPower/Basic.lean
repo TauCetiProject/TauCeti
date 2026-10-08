@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Presheaf.ExteriorPower
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Basic
 
 /-!
-# Exterior powers of sheaves of modules
+# Basic exterior powers of sheaves of modules
 
 Given a site `(C, J)` carrying a sheaf of commutative rings `R` and `n : ℕ`, the `n`-th exterior
 power of a sheaf of `R`-modules `M` is obtained by taking sectionwise exterior powers

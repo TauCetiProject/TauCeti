@@ -36,6 +36,8 @@ generators, and the one-dimensional additive group `𝔾ₐ`.
 * `TauCeti.AdditiveGroup.gaScalarTensorBialgEquiv_tmul_one`: its formula on scalar copies.
 * `TauCeti.AdditiveGroup.gaScalarTensorBialgEquiv_symm_ι`: the inverse formula for the additive
   coordinate.
+* `TauCeti.AdditiveGroup.gaScalarTensorBialgEquiv_one_tmul_gaScalarTensorBialgEquiv_one_tmul`: the
+  equivalence is compatible with a scalar tower `R → k → K`.
 * `TauCeti.AdditiveGroup.baseChangePointsMulEquiv`: base-changed vector-group points are
   `k`-linear maps `M →ₗ[k] A`.
 * `TauCeti.AdditiveGroup.toAdd_baseChangePointsMulEquiv_apply`: the equivalence reads a
@@ -200,6 +202,34 @@ theorem gaScalarTensorBialgEquiv_symm_ι (s : K) :
         (gaScalarTensorBialgEquiv (k := k) (K := K)
           (s ⊗ₜ[k] SymmetricAlgebra.ι k k 1)) := congrArg _ h.symm
     _ = _ := BialgEquiv.symm_apply_apply _ _
+
+/-- **Base change of the `𝔾ₐ` coordinate bialgebra composes in stages.** For a scalar tower
+`R → k → K`, extending a coordinate function of `𝔾ₐ` over `R` to `k` and then to `K` agrees with
+extending it to `K` directly. -/
+theorem gaScalarTensorBialgEquiv_one_tmul_gaScalarTensorBialgEquiv_one_tmul {R : Type*}
+    [CommSemiring R] [Algebra R k] [Algebra R K] [IsScalarTower R k K]
+    (y : SymmetricAlgebra R R) :
+    gaScalarTensorBialgEquiv (k := k) (K := K)
+        (1 ⊗ₜ[k] gaScalarTensorBialgEquiv (k := R) (K := k) (1 ⊗ₜ[R] y)) =
+      gaScalarTensorBialgEquiv (k := R) (K := K) (1 ⊗ₜ[R] y) := by
+  -- Both sides are multiplicative and additive in `y`, so it suffices to compare them on
+  -- scalars and on the generators `ι r`.
+  induction y using SymmetricAlgebra.induction with
+  | algebraMap r =>
+    rw [← Algebra.TensorProduct.tmul_one_eq_one_tmul, gaScalarTensorBialgEquiv_tmul_one,
+      ← Algebra.TensorProduct.tmul_one_eq_one_tmul, gaScalarTensorBialgEquiv_tmul_one,
+      ← Algebra.TensorProduct.tmul_one_eq_one_tmul, gaScalarTensorBialgEquiv_tmul_one,
+      IsScalarTower.algebraMap_apply R k K, ← IsScalarTower.algebraMap_apply k K]
+  | ι r => simp [IsScalarTower.algebraMap_apply R k K]
+  | mul a b ha hb =>
+    have hk : (1 : k) ⊗ₜ[R] (a * b) = (1 ⊗ₜ a) * (1 ⊗ₜ b) := by
+      rw [Algebra.TensorProduct.tmul_mul_tmul, one_mul]
+    have hK : (1 : K) ⊗ₜ[R] (a * b) = (1 ⊗ₜ a) * (1 ⊗ₜ b) := by
+      rw [Algebra.TensorProduct.tmul_mul_tmul, one_mul]
+    have hkK (x z : SymmetricAlgebra k k) : (1 : K) ⊗ₜ[k] (x * z) = (1 ⊗ₜ x) * (1 ⊗ₜ z) := by
+      rw [Algebra.TensorProduct.tmul_mul_tmul, one_mul]
+    rw [hk, map_mul, hkK, map_mul, ha, hb, hK, map_mul]
+  | add a b ha hb => simp only [TensorProduct.tmul_add, map_add, ha, hb]
 
 end GaCoordinateBialgebra
 
