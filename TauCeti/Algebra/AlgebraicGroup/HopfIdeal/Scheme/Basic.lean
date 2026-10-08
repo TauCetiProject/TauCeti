@@ -42,6 +42,9 @@ in the same universe, which is reflected in all scheme-level declarations in thi
   `I ≤ J`.
 * `TauCeti.FiniteTypeCommHopfAlgCat.locallyOfFiniteType_quotientSpec`: a finite-type Hopf
   algebra has quotient group schemes locally of finite type over `Spec R`.
+* `TauCeti.CommHopfAlgCat.locallyOfFiniteType_quotientSpec`: the same statement for a
+  commutative Hopf algebra with an `Algebra.FiniteType` instance, which is the form instance
+  search uses.
 
 ## References
 
@@ -193,5 +196,23 @@ instance locallyOfFiniteType_quotientSpec (H : FiniteTypeCommHopfAlgCat.{u, u} R
   infer_instance
 
 end FiniteTypeCommHopfAlgCat
+
+namespace CommHopfAlgCat
+
+open AlgebraicGeometry
+
+variable {R : Type u} [CommRing R]
+
+/-- If the commutative Hopf algebra `H` is of finite type, then the group scheme represented by
+`H ⧸ I` is locally of finite type over `Spec R`. This is
+`FiniteTypeCommHopfAlgCat.locallyOfFiniteType_quotientSpec` for an unbundled `H`, the form
+instance search finds. -/
+instance locallyOfFiniteType_quotientSpec (H : _root_.CommHopfAlgCat.{u} R)
+    [hH : Algebra.FiniteType R H] (I : HopfIdeal R H) :
+    LocallyOfFiniteType (quotientSpec H I).X.hom :=
+  FiniteTypeCommHopfAlgCat.locallyOfFiniteType_quotientSpec
+    (⟨H, hH⟩ : FiniteTypeCommHopfAlgCat R) I
+
+end CommHopfAlgCat
 
 end TauCeti

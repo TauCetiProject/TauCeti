@@ -125,17 +125,6 @@ instance isClosedImmersion_hopfIdealInclusion
     CommHopfAlgCat.isClosedImmersion_hopfSpec_map_comp_eqToHom_iff (groupScheme_def R n)]
   exact CommHopfAlgCat.mkQuotient_surjective _ I
 
-/-- A subgroup of `GL_n` cut out by a Hopf ideal is locally of finite type over the base. -/
-instance locallyOfFiniteType_hopfIdealQuotientSpec
-    (I : HopfIdeal R (coordinateHopfAlgebra R n)) :
-    LocallyOfFiniteType
-      (CommHopfAlgCat.quotientSpec (coordinateHopfAlgebra R n) I).X.hom :=
-  FiniteTypeCommHopfAlgCat.locallyOfFiniteType_quotientSpec
-    (⟨coordinateHopfAlgebra R n,
-      inferInstanceAs (Algebra.FiniteType R (coordinateHopfAlgebra R n))⟩ :
-      FiniteTypeCommHopfAlgCat R)
-    I
-
 /-- The scheme underlying the general linear group scheme is the spectrum of its bundled
 coordinate Hopf algebra. -/
 lemma groupScheme_X_left :
