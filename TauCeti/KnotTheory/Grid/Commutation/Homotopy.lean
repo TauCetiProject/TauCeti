@@ -112,6 +112,7 @@ theorem reverse_commutationMap_commutationMap_single_apply (x z : GridState n) :
 /-- The round trip `Ψ ∘ Φ` through the commuted diagram is linear over the polynomial ring: the
 commutation map and its reverse are semilinear over the same renaming of the variables by the
 swap of the two commuted columns, and that renaming is an involution. -/
+@[simp]
 theorem reverse_commutationMap_commutationMap_smul (p : MvPolynomial (Fin n) R)
     (c : GridChainMinus R n) :
     (G.swapColumns C.column b).commutationMap R C.reverse (G.commutationMap R C (p • c)) =
