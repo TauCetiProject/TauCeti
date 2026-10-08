@@ -12,6 +12,10 @@ public import TauCeti.AlgebraicGeometry.Modules.FittingIdeal.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.PureRelativeDimension
 public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Smooth
+import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
+import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
+import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
+import TauCeti.RingTheory.FittingIdeal.BaseChange
 
 /-!
 # The relative singular locus
@@ -44,6 +48,16 @@ families of nodal curves.
 * `AlgebraicGeometry.Scheme.singularLocus_eq_top`: a smooth relative curve, smooth of relative
   dimension one over `Spec R`, has empty singular locus: there `Ω_{X/R}` is locally free of rank
   one, so its first Fitting ideal sheaf is the unit ideal sheaf.
+* `AlgebraicGeometry.Scheme.singularLocus_eq_comap_of_isPullback`: the formation of the singular
+  locus commutes with base change along `Spec R' → Spec R`: if `X'` is the base change of `X`,
+  then `Sing(X'/R')` is the inverse image of `Sing(X/R)`.
+* `AlgebraicGeometry.Scheme.isPullback_singularLocus_subschemeι`: the same for the closed
+  subschemes, `Sing(X'/R') = Sing(X/R) ×_X X'`.
+
+The base change theorem is proved on affine charts. Over an affine open `U` of `X`, the functions
+on the preimage of `U` in `X'` form the tensor product `R' ⊗[R] Γ(X, U)`, so the Kähler
+differentials there are the base change of `Ω[Γ(X, U)⁄R]`, and Fitting ideals commute with base
+change.
 
 ## References
 
@@ -187,5 +201,117 @@ theorem _root_.AlgebraicGeometry.Scheme.singularLocus_eq_top
   exact notMem_support_singularLocus_of_isStandardSmooth hxW hW hx
 
 end Smooth
+
+section BaseChange
+
+variable {R R' : Type u} [CommRing R] [CommRing R'] [Algebra R R']
+  {X X' : Scheme.{u}} [X.Over (Spec (.of R))] [X'.Over (Spec (.of R'))] {g : X' ⟶ X}
+
+/-- Let `X'` be the base change of `X` along `Spec R' → Spec R`, with projection `g : X' ⟶ X`. Over
+an affine open `U` of `X`, the first Fitting ideal of `Ω[Γ(X', g⁻¹ U)⁄R']` is the extension of
+that of `Ω[Γ(X, U)⁄R]`. -/
+private theorem fittingIdeal_sections_preimage_eq_map
+    (H : IsPullback g (X' ↘ Spec (.of R')) (X ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R R')))) {U : X.Opens} (hU : IsAffineOpen U)
+    [LocallyOfFiniteType (X ↘ Spec (.of R))] [LocallyOfFiniteType (X' ↘ Spec (.of R'))]
+    [IsAffineHom g] :
+    letI : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
+    letI : Algebra R' Γ(X', g ⁻¹ᵁ U) :=
+      ((X'.baseRingToStructurePresheaf R').app (op (g ⁻¹ᵁ U))).hom.toAlgebra
+    haveI := finiteType_sections_of_locallyOfFiniteType R X ⟨U, hU⟩
+    haveI := finiteType_sections_of_locallyOfFiniteType R' X' ⟨g ⁻¹ᵁ U, hU.preimage g⟩
+    fittingIdeal Γ(X', g ⁻¹ᵁ U) Ω[Γ(X', g ⁻¹ᵁ U)⁄R'] 1 =
+      (fittingIdeal Γ(X, U) Ω[Γ(X, U)⁄R] 1).map (g.appLE U (g ⁻¹ᵁ U) le_rfl).hom := by
+  let : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
+  let : Algebra R' Γ(X', g ⁻¹ᵁ U) :=
+    ((X'.baseRingToStructurePresheaf R').app (op (g ⁻¹ᵁ U))).hom.toAlgebra
+  let : Algebra Γ(X, U) Γ(X', g ⁻¹ᵁ U) := (g.appLE U (g ⁻¹ᵁ U) le_rfl).hom.toAlgebra
+  have := finiteType_sections_of_locallyOfFiniteType R X ⟨U, hU⟩
+  have := finiteType_sections_of_locallyOfFiniteType R' X' ⟨g ⁻¹ᵁ U, hU.preimage g⟩
+  -- Sections over affine opens of a fibre product of schemes form the pushout of rings; replace
+  -- `Γ(Spec R, ⊤)` and `Γ(Spec R', ⊤)` by `R` and `R'`.
+  have hpush : IsPushout (CommRingCat.ofHom (algebraMap R R'))
+      (CommRingCat.ofHom (algebraMap R Γ(X, U))) (CommRingCat.ofHom (algebraMap R' Γ(X', g ⁻¹ᵁ U)))
+      (CommRingCat.ofHom (algebraMap Γ(X, U) Γ(X', g ⁻¹ᵁ U))) := by
+    have := isIso_pushoutSection_of_isAffineOpen H (US := ⊤) (UT := ⊤) (UX := U)
+      (UY := g ⁻¹ᵁ U) le_top le_top (by simp) (isAffineOpen_top _) (isAffineOpen_top _) hU
+    refine ((isIso_pushoutSection_iff ..).mp this).flip.of_iso (Scheme.ΓSpecIso (.of R))
+      (Scheme.ΓSpecIso (.of R')) (Iso.refl _) (Iso.refl _) ?_ ?_ ?_ ?_
+    · -- The preimage of `⊤` is `⊤`, so `appLE ⊤ ⊤` is `appTop`.
+      rw [← Scheme.ΓSpecIso_naturality]
+      exact congrArg (· ≫ _) (Scheme.Hom.appLE_eq_app _)
+    · rw [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom,
+        Scheme.baseRingToStructurePresheaf_app_eq_appLE, Iso.hom_inv_id_assoc, Iso.refl_hom,
+        Category.comp_id]
+    · rw [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom,
+        Scheme.baseRingToStructurePresheaf_app_eq_appLE, Iso.hom_inv_id_assoc, Iso.refl_hom,
+        Category.comp_id]
+    · rw [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom, Iso.refl_hom, Iso.refl_hom,
+        Category.comp_id, Category.id_comp]
+  let : Algebra R Γ(X', g ⁻¹ᵁ U) :=
+    ((algebraMap R' Γ(X', g ⁻¹ᵁ U)).comp (algebraMap R R')).toAlgebra
+  have : IsScalarTower R R' Γ(X', g ⁻¹ᵁ U) := .of_algebraMap_eq' rfl
+  have hw := congrArg CommRingCat.Hom.hom hpush.w
+  simp only [CommRingCat.hom_comp, CommRingCat.hom_ofHom] at hw
+  have : IsScalarTower R Γ(X, U) Γ(X', g ⁻¹ᵁ U) := .of_algebraMap_eq' hw
+  have : Algebra.IsPushout R R' Γ(X, U) Γ(X', g ⁻¹ᵁ U) :=
+    CommRingCat.isPushout_iff_isPushout.mp hpush
+  exact fittingIdeal_kaehlerDifferential_eq_map R R' Γ(X, U) Γ(X', g ⁻¹ᵁ U) 1
+
+variable [Flat (X ↘ Spec (.of R))] [LocallyOfFinitePresentation (X ↘ Spec (.of R))]
+  [PureRelativeDimension 1 (X ↘ Spec (.of R))]
+  [Flat (X' ↘ Spec (.of R'))] [LocallyOfFinitePresentation (X' ↘ Spec (.of R'))]
+  [PureRelativeDimension 1 (X' ↘ Spec (.of R'))]
+
+/-- **The singular locus commutes with base change.** If `X'` is the base change of `X` along
+`Spec R' → Spec R`, with projection `g : X' ⟶ X`, then the singular locus of `X'` over `R'` is the
+inverse image under `g` of the singular locus of `X` over `R`. For the closed subschemes, see
+`AlgebraicGeometry.Scheme.isPullback_singularLocus_subschemeι`. -/
+theorem _root_.AlgebraicGeometry.Scheme.singularLocus_eq_comap_of_isPullback
+    (H : IsPullback g (X' ↘ Spec (.of R')) (X ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R R')))) :
+    X'.singularLocus R' = (X.singularLocus R).comap g := by
+  have : IsAffineHom g := MorphismProperty.of_isPullback (P := @IsAffineHom) H.flip inferInstance
+  -- Compare both ideal sheaves on the cover of `X'` by the preimages of affine opens of `X`.
+  have charts (x : X') : ∃ U : X.Opens, IsAffineOpen U ∧ g x ∈ U := by
+    obtain ⟨U, hU, hx, -⟩ := TopologicalSpace.Opens.isBasis_iff_nbhd.mp X.isBasis_affineOpens
+      (U := ⊤) (x := g x) (by simp)
+    exact ⟨U, hU, hx⟩
+  choose U hU hx using charts
+  let 𝒰 : X'.OpenCover := Scheme.Cover.mkOfCovers X' (fun x ↦ Spec Γ(X', g ⁻¹ᵁ U x))
+    (fun x ↦ ((hU x).preimage g).fromSpec) (fun x ↦ ⟨x, by
+      have hmem : x ∈ Set.range ((hU x).preimage g).fromSpec :=
+        ((hU x).preimage g).range_fromSpec.symm ▸ hx x
+      simpa only [Set.mem_range] using hmem⟩)
+  refine Scheme.IdealSheafData.ext_of_comap_openCover 𝒰 fun x ↦ ?_
+  -- `rw` cannot reduce the cover's dependent index and object projections together, so restate
+  -- the goal using the chosen chart maps.
+  change (X'.singularLocus R').comap ((hU x).preimage g).fromSpec =
+    ((X.singularLocus R).comap g).comap ((hU x).preimage g).fromSpec
+  rw [← Scheme.IdealSheafData.comap_comp,
+    ← IsAffineOpen.SpecMap_appLE_fromSpec g (hU x) ((hU x).preimage g) le_rfl,
+    Scheme.IdealSheafData.comap_comp, Scheme.IdealSheafData.comap_fromSpec_eq_ofIdealTop,
+    Scheme.IdealSheafData.comap_fromSpec_eq_ofIdealTop, Scheme.IdealSheafData.comap_ofIdealTop,
+    Scheme.singularLocus_ideal, Scheme.singularLocus_ideal, Ideal.map_map,
+    ← CommRingCat.hom_comp, ← Scheme.ΓSpecIso_inv_naturality, CommRingCat.hom_comp,
+    ← Ideal.map_map, ← fittingIdeal_sections_preimage_eq_map H (hU x)]
+
+/-- **The singular subscheme commutes with base change.** If `X'` is the base change of `X` along
+`Spec R' → Spec R`, with projection `g : X' ⟶ X`, then `Sing(X'/R')` is the base change
+`Sing(X/R) ×_X X'` of the closed subscheme `Sing(X/R)`, and hence the base change of `Sing(X/R)`
+along `Spec R' → Spec R`. -/
+theorem _root_.AlgebraicGeometry.Scheme.isPullback_singularLocus_subschemeι
+    (H : IsPullback g (X' ↘ Spec (.of R')) (X ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R R')))) :
+    IsPullback (X'.singularLocus R').subschemeι
+      ((X'.singularLocus R').subschemeMap (X.singularLocus R) g
+        (Scheme.IdealSheafData.le_map_iff_comap_le.mpr
+          (Scheme.singularLocus_eq_comap_of_isPullback H).ge))
+      g (X.singularLocus R).subschemeι :=
+  isPullback_of_isClosedImmersion _ _ _ _ (by simp) (by
+    rw [Scheme.IdealSheafData.ker_subschemeι, Scheme.IdealSheafData.ker_subschemeι,
+      Scheme.singularLocus_eq_comap_of_isPullback H])
+
+end BaseChange
 
 end TauCeti
