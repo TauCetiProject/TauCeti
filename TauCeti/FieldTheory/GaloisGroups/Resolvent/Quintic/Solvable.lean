@@ -32,9 +32,6 @@ the exact-stabilizer criterion used here.
 
 ## Main results
 
-* `TauCeti.isSolvable_gal_iff_exists_le_map_conj_referenceSubgroup_five_two`: the Galois group of
-  an irreducible quintic is solvable exactly when its permutation image lies in a conjugate of
-  `F₂₀`.
 * `TauCeti.exists_isRoot_specialize_quinticF20Spec_of_isSolvable`: a solvable Galois group gives
   the `F₂₀` resolvent a root in the base field, with no hypothesis on the resolvent.
 * `TauCeti.isSolvable_gal_iff_exists_isRoot_specialize_quinticF20Spec`: the Galois group of an
@@ -58,11 +55,10 @@ universe u
 
 variable {F : Type u} [Field F] {f : F[X]}
 
-/-- **The group-side quintic criterion.** The Galois group of an irreducible quintic is solvable
-exactly when its permutation image, read on `Fin 5` through any numbering `e` of the roots, lies
-in a conjugate of the Frobenius group `F₂₀`, the reference subgroup of `5T3`. No resolvent and no
-separability of a resolvent is involved. -/
-theorem isSolvable_gal_iff_exists_le_map_conj_referenceSubgroup_five_two
+-- The permutation image of the Galois group of an irreducible quintic is a transitive subgroup of
+-- `Equiv.Perm (Fin 5)`, and such a subgroup is solvable exactly when it lies in a conjugate of the
+-- Frobenius group `5T3`.
+private theorem isSolvable_gal_iff_exists_le_map_conj
     [Fact ((f.map (algebraMap F f.SplittingField)).Splits)] (hirr : Irreducible f)
     (e : f.rootSet f.SplittingField ≃ Fin 5) :
     Group.IsSolvable f.Gal ↔
@@ -97,8 +93,7 @@ theorem exists_isRoot_specialize_quinticF20Spec_of_isSolvable (hf : f.Monic) (hs
   let _ : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field hsep
   obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f hsep
   obtain ⟨τ, hτ⟩ :=
-    (isSolvable_gal_iff_exists_le_map_conj_referenceSubgroup_five_two hirr
-      (e.trans (finCongr hdeg))).mp hsol
+    (isSolvable_gal_iff_exists_le_map_conj hirr (e.trans (finCongr hdeg))).mp hsol
   exact quinticF20Spec.exists_isRoot_specialize_of_le_map_conj hf hsep hdeg _ τ
     (by rwa [quinticF20Spec_H])
 
@@ -118,7 +113,7 @@ theorem isSolvable_gal_iff_exists_isRoot_specialize_quinticF20Spec (hf : f.Monic
   obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f hsep
   obtain ⟨τ, hτ⟩ := quinticF20Spec.exists_le_map_conj_of_isRoot_specialize hf hsep hdeg
     (e.trans (finCongr hdeg)) hres ha
-  exact (isSolvable_gal_iff_exists_le_map_conj_referenceSubgroup_five_two hirr
-    (e.trans (finCongr hdeg))).mpr ⟨τ, by rwa [quinticF20Spec_H] at hτ⟩
+  exact (isSolvable_gal_iff_exists_le_map_conj hirr (e.trans (finCongr hdeg))).mpr
+    ⟨τ, by rwa [quinticF20Spec_H] at hτ⟩
 
 end TauCeti

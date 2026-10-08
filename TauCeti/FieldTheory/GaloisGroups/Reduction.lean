@@ -10,13 +10,11 @@ public import Mathlib.GroupTheory.GroupAction.Jordan
 public import TauCeti.NumberTheory.NumberField.Frobenius.CycleType
 import Mathlib.Algebra.Polynomial.Eval.Irreducible
 import Mathlib.Tactic.ComputeDegree
-import Mathlib.Tactic.LinearCombination
 import TauCeti.FieldTheory.GaloisGroups.Degree
 import TauCeti.FieldTheory.GaloisGroups.FactorDegrees
 import TauCeti.FieldTheory.GaloisGroups.Orbits
 import TauCeti.GroupTheory.Perm.MultipleTransitivity
 import TauCeti.GroupTheory.Perm.Recognition
-import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
 # Galois groups over `ℚ` from factorizations modulo primes
@@ -308,42 +306,6 @@ theorem not_two_dvd_discr_X_pow_five_sub_X_sub_one :
   rw [← hf.separable_map_zmod_iff_not_dvd_discr, PerfectField.separable_iff_squarefree]
   exact squarefree_map_of_nodup_factorDegrees (hf.map _).ne_zero
     (by rw [factorDegrees_X_pow_five_sub_X_sub_one_two]; decide)
-
-/-- The discriminant of `X ^ 5 - X - 1` is `2869 = 19 · 151`. -/
-theorem discr_X_pow_five_sub_X_sub_one : (X ^ 5 - X - 1 : ℤ[X]).discr = 2869 := by
-  have hQ : (X ^ 5 - X - 1 : ℚ[X]).discr = 2869 := by
-    let f : ℚ[X] := X ^ 5 - X - 1
-    let g : ℚ[X] := X ^ 4 - C (1 / 5)
-    have hf : f.Monic := by dsimp [f]; monicity!
-    have hdeg : f.natDegree = 5 := by dsimp [f]; compute_degree!
-    have hgdeg : g.natDegree ≤ 4 := by dsimp [g]; compute_degree
-    have hC : (C 5 * C 5⁻¹ : ℚ[X]) = 1 := by rw [← C_mul]; norm_num
-    have hC45 : (C 4 + 1 : ℚ[X]) = C 5 := by rw [← C_1, ← C_add]; norm_num
-    have hder : f.derivative = C 5 * g := by
-      simp [f, g]
-      linear_combination X ^ 4 * hC45 + hC
-    have hres := resultant_deriv (f := f) (natDegree_pos_iff_degree_pos.mp (by omega))
-    rw [hdeg, hf.leadingCoeff, hder] at hres
-    norm_num at hres
-    -- Removing a multiple of the quartic leaves a linear polynomial in the resultant.
-    have h1 : (C (-4 / 5) * C (-5 / 4) : ℚ[X]) = 1 := by rw [← C_mul]; norm_num
-    have h2 : (C (-4 / 5) - C (1 / 5) + 1 : ℚ[X]) = 0 := by
-      rw [← C_sub, ← C_1, ← C_add]; norm_num
-    have hred : f = C (-4 / 5) * (X - C (-5 / 4)) + g * X := by
-      simp only [f, g]
-      linear_combination (-X) * h2 + h1
-    have hresult : f.resultant g 5 4 = (-4 / 5) ^ 4 * ((-5 / 4) ^ 4 - 1 / 5) := by
-      rw [hred, resultant_add_mul_left _ _ _ 5 4 (by simp) hgdeg]
-      rw [resultant_add_left_deg _ _ 1 4 4 (by compute_degree!)]
-      rw [resultant_C_mul_left, resultant_X_sub_C_left _ _ _ hgdeg]
-      norm_num [g]
-    rw [resultant_C_mul_right, hresult] at hres
-    norm_num at hres
-    linarith
-  have hmap := monic_X_pow_five_sub_X_sub_one.discr_map (Int.castRingHom ℚ)
-  have hX : (X ^ 5 - X - 1 : ℤ[X]).map (Int.castRingHom ℚ) = X ^ 5 - X - 1 := by simp
-  rw [hX, hQ, eq_intCast] at hmap
-  exact_mod_cast hmap.symm
 
 /-- **The Galois group of `X ^ 5 - X - 1` over `ℚ` is `S₅`.** -/
 theorem surjective_galActionHom_X_pow_five_sub_X_sub_one :
