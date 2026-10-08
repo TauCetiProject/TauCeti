@@ -16,8 +16,7 @@ Let `K` be a knot in a three-manifold and `B` a smoothly embedded closed three-b
 sphere meets `K` in four points, through which `K` crosses from the inside of `B` to its outside.
 Such a sphere is a *Conway sphere* for `K`. A *Conway mutant* of `K` is obtained by cutting out the
 two-string tangle `K ∩ B` and gluing it back after one of the three half-turns of `B` that preserve
-the four boundary points, oriented so that it runs along the part of `K` outside `B` in the
-direction of `K`.
+the four boundary points. Its orientation is fixed by local agreement with `K` on an outside arc.
 
 The construction is stated on the geometric presentation of a knot, a smooth circle embedding
 `K : S¹ → M` (`TauCeti.SmoothCircleEmbedding`), with the ball given by a smooth embedding
@@ -35,8 +34,8 @@ mutant (`TauCeti.IsConwayMutant K K'`) is a relation between parametrized knots,
 operation, because the mutated set must be reparametrized as a circle: `K'` is a mutant of `K` when
 its image is the mutated set of `K` along some Conway sphere and half-turn, and when it agrees with
 `K` near some point outside the ball up to an orientation-preserving change of parameter. For a
-knot, the orientation of the mutant is determined by this agreement at a single point, since the
-mutated tangle connects the two outer arcs in the same pattern as before.
+knot, this local agreement fixes the orientation of the mutant; the definition imposes agreement
+only near the chosen point on its outside arc.
 
 Mutation is symmetric (`TauCeti.IsConwayMutant.symm`): rotating the mutated tangle back recovers
 `K` along the same Conway sphere. It is compatible with ambient diffeomorphisms, and a knot whose
@@ -125,6 +124,7 @@ def conwayPoints : Set (EuclideanSpace ℝ (Fin 3)) :=
 
 /-- A point is a Conway point when its first two coordinates square to `1 / 2` and its last
 vanishes. -/
+@[simp]
 theorem mem_conwayPoints {x : EuclideanSpace ℝ (Fin 3)} :
     x ∈ conwayPoints ↔ x 0 ^ 2 = 1 / 2 ∧ x 1 ^ 2 = 1 / 2 ∧ x 2 = 0 :=
   Iff.rfl
@@ -195,6 +195,7 @@ theorem mem_conwayMutation_iff {y : M} :
     exact ⟨x, ⟨_, ⟨hxS, (conwayHalfTurn_mem_closedBall_iff i).2 hx⟩, by simp⟩, rfl⟩
 
 /-- Outside the ball, a Conway mutation agrees with the original set. -/
+@[simp]
 theorem mem_conwayMutation_of_notMem_image {y : M} (hy : y ∉ e '' closedBall 0 1) :
     y ∈ conwayMutation e i S ↔ y ∈ S := by
   rw [mem_conwayMutation_iff]
@@ -209,6 +210,7 @@ include he
 
 /-- At a point of the ball, a Conway mutation contains the point exactly when the original set
 contains its image under the half-turn. -/
+@[simp]
 theorem apply_mem_conwayMutation_of_mem_closedBall {x : EuclideanSpace ℝ (Fin 3)}
     (hx : x ∈ closedBall 0 1) :
     e x ∈ conwayMutation e i S ↔ e (conwayHalfTurn i x) ∈ S := by
@@ -220,6 +222,7 @@ theorem apply_mem_conwayMutation_of_mem_closedBall {x : EuclideanSpace ℝ (Fin 
   · exact fun hS ↦ Or.inr ⟨x, hx, rfl, hS⟩
 
 /-- Outside the unit ball, a Conway mutation agrees with the original set, read through `e`. -/
+@[simp]
 theorem apply_mem_conwayMutation_of_one_lt_norm {x : EuclideanSpace ℝ (Fin 3)} (hx : 1 < ‖x‖) :
     e x ∈ conwayMutation e i S ↔ e x ∈ S := by
   refine mem_conwayMutation_of_notMem_image ?_
@@ -239,6 +242,7 @@ theorem conwayMutation_conwayMutation : conwayMutation e i (conwayMutation e i S
 
 /-- Near the sphere `e (S²)`, a Conway mutation of a set which is invariant there under the
 half-turn agrees with the set. -/
+@[simp]
 theorem apply_mem_conwayMutation_iff_of_invariant {ε : ℝ}
     (hS : ∀ x : EuclideanSpace ℝ (Fin 3), 1 - ε < ‖x‖ → ‖x‖ < 1 + ε →
       (e (conwayHalfTurn i x) ∈ S ↔ e x ∈ S))
@@ -261,9 +265,7 @@ end Mutation
 
 /-! ### Conway spheres -/
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M]
 
 /-- The ball `e (D³)` meets the knot `K` in a **Conway sphere in standard position** for the
 half-turn `conwayHalfTurn i`:
@@ -272,8 +274,8 @@ half-turn `conwayHalfTurn i`:
 * `K` crosses the sphere at each of them, accumulating there both from inside and from outside
   the ball;
 * on a neighbourhood of the sphere, `K` is invariant under the half-turn. -/
-structure IsConwaySphere (K : SmoothCircleEmbedding I M)
-    (e : SmoothEmbedding (𝓡 3) I ∞ (EuclideanSpace ℝ (Fin 3)) M) (i : Fin 3) : Prop where
+structure IsConwaySphere (K : SmoothCircleEmbedding (𝓡 3) M)
+    (e : SmoothEmbedding (𝓡 3) (𝓡 3) ∞ (EuclideanSpace ℝ (Fin 3)) M) (i : Fin 3) : Prop where
   /-- The sphere meets the knot exactly in the four Conway points. -/
   preimage_range_inter_sphere : e ⁻¹' range K ∩ sphere 0 1 = conwayPoints
   /-- The knot crosses the sphere at each Conway point. -/
@@ -287,11 +289,11 @@ structure IsConwaySphere (K : SmoothCircleEmbedding I M)
     (e (conwayHalfTurn i x) ∈ range K ↔ e x ∈ range K)
 
 
-variable {e : SmoothEmbedding (𝓡 3) I ∞ (EuclideanSpace ℝ (Fin 3)) M} {i : Fin 3}
+variable {e : SmoothEmbedding (𝓡 3) (𝓡 3) ∞ (EuclideanSpace ℝ (Fin 3)) M} {i : Fin 3}
 
 /-- A Conway sphere of `K` in standard position for a half-turn is also one for every knot whose
 image is the mutation of `K` along it: near the sphere the mutation does not change the knot. -/
-theorem IsConwaySphere.of_range_eq_conwayMutation {K K' : SmoothCircleEmbedding I M}
+theorem IsConwaySphere.of_range_eq_conwayMutation {K K' : SmoothCircleEmbedding (𝓡 3) M}
     (hK : IsConwaySphere K e i) (hK' : range K' = conwayMutation e i (range K)) :
     IsConwaySphere K' e i := by
   obtain ⟨ε, hε, hinv⟩ := hK.exists_invariant
@@ -331,25 +333,16 @@ position for a half-turn `conwayHalfTurn i` such that
 
 * the image of `K'` is the mutation of the image of `K` along it, and
 * at some parameter `θ` where `K` lies outside the ball, `K'` agrees with `K` up to an
-  orientation-preserving change of parameter, so that `K'` carries the orientation of `K` along
-  its arcs outside the ball.
+  orientation-preserving change of parameter locally on the outside arc containing `θ`.
 
 Here `t ↦ K (Circle.exp t)` reads `K` as a `2π`-periodic curve. -/
-def IsConwayMutant (K K' : SmoothCircleEmbedding I M) : Prop :=
-  ∃ (e : SmoothEmbedding (𝓡 3) I ∞ (EuclideanSpace ℝ (Fin 3)) M) (i : Fin 3),
+def IsConwayMutant (K K' : SmoothCircleEmbedding (𝓡 3) M) : Prop :=
+  ∃ (e : SmoothEmbedding (𝓡 3) (𝓡 3) ∞ (EuclideanSpace ℝ (Fin 3)) M) (i : Fin 3),
     IsConwaySphere K e i ∧ range K' = conwayMutation e i (range K) ∧
       ∃ θ : ℝ, K (Circle.exp θ) ∉ e '' closedBall 0 1 ∧
         ∃ h : ℝ ≃o ℝ, ∀ᶠ t in 𝓝 θ, K' (Circle.exp (h t)) = K (Circle.exp t)
 
-variable {K K' : SmoothCircleEmbedding I M}
-
-theorem isConwayMutant_iff :
-    IsConwayMutant K K' ↔
-      ∃ (e : SmoothEmbedding (𝓡 3) I ∞ (EuclideanSpace ℝ (Fin 3)) M) (i : Fin 3),
-        IsConwaySphere K e i ∧ range K' = conwayMutation e i (range K) ∧
-          ∃ θ : ℝ, K (Circle.exp θ) ∉ e '' closedBall 0 1 ∧
-            ∃ h : ℝ ≃o ℝ, ∀ᶠ t in 𝓝 θ, K' (Circle.exp (h t)) = K (Circle.exp t) :=
-  Iff.rfl
+variable {K K' : SmoothCircleEmbedding (𝓡 3) M}
 
 /-- **Mutation is symmetric**: rotating the tangle of a mutant back along the same Conway sphere
 recovers the original knot. -/
@@ -390,11 +383,13 @@ theorem IsConwaySphere.isConwayMutant_self (hK : IsConwaySphere K e i)
 
 section Diffeomorph
 
-variable {N : Type*} [TopologicalSpace N] [ChartedSpace H N] [IsManifold I ∞ N]
+variable {N : Type*} [TopologicalSpace N] [ChartedSpace (EuclideanSpace ℝ (Fin 3)) N]
+  [IsManifold (𝓡 3) ∞ N]
 
 /-- An ambient diffeomorphism carries a Conway sphere of a knot to a Conway sphere of the
 transported knot. -/
-theorem IsConwaySphere.transDiffeomorph (hK : IsConwaySphere K e i) (Φ : M ≃ₘ⟮I, I⟯ N) :
+theorem IsConwaySphere.transDiffeomorph (hK : IsConwaySphere K e i)
+    (Φ : M ≃ₘ⟮𝓡 3, 𝓡 3⟯ N) :
     IsConwaySphere (K.transDiffeomorph Φ) (e.transDiffeomorph Φ) i := by
   have h : e.transDiffeomorph Φ ⁻¹' range (K.transDiffeomorph Φ) = e ⁻¹' range K := by
     rw [SmoothEmbedding.coe_transDiffeomorph, preimage_comp,
@@ -410,7 +405,8 @@ theorem IsConwaySphere.transDiffeomorph (hK : IsConwaySphere K e i) (Φ : M ≃�
     exact hinv x h₁ h₂
 
 /-- **Mutation is preserved by ambient diffeomorphisms.** -/
-theorem IsConwayMutant.transDiffeomorph (h : IsConwayMutant K K') (Φ : M ≃ₘ⟮I, I⟯ N) :
+theorem IsConwayMutant.transDiffeomorph (h : IsConwayMutant K K')
+    (Φ : M ≃ₘ⟮𝓡 3, 𝓡 3⟯ N) :
     IsConwayMutant (K.transDiffeomorph Φ) (K'.transDiffeomorph Φ) := by
   obtain ⟨e, i, hK, hK', θ, hθ, h, hh⟩ := h
   refine ⟨e.transDiffeomorph Φ, i, hK.transDiffeomorph Φ, ?_, θ, ?_, h, ?_⟩
@@ -521,10 +517,12 @@ private theorem unknotConwayBall_mem_range_unknot_iff (w : EuclideanSpace ℝ (F
     rw [hw2] at hq
     exact ⟨hw2, by linarith⟩
   · rintro ⟨h2, hq⟩
+    have hnorm_sq : 2 * w 0 ^ 2 / 2 ^ 2 + 6 * w 1 ^ 2 / 2 ^ 2 = 1 := by
+      linarith
     have hz : ‖((√2 * w 0 / 2 : ℝ) + (√6 * w 1 / 2 : ℝ) * Complex.I : ℂ)‖ = 1 := by
       rw [Complex.norm_add_mul_I, div_pow, div_pow, mul_pow, mul_pow,
         Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 6)]
-      rw [show 2 * w 0 ^ 2 / 2 ^ 2 + 6 * w 1 ^ 2 / 2 ^ 2 = 1 by linarith, Real.sqrt_one]
+      rw [hnorm_sq, Real.sqrt_one]
     obtain ⟨z, hz⟩ : ∃ z : Circle,
         (z : ℂ) = (√2 * w 0 / 2 : ℝ) + (√6 * w 1 / 2 : ℝ) * Complex.I :=
       ⟨⟨_, mem_sphere_zero_iff_norm.2 hz⟩, rfl⟩
@@ -657,14 +655,6 @@ and not proved. -/
 def KirkLivingstonMutationTheorem : Prop :=
   ∃ K K' : SmoothCircleEmbedding (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1),
     IsConwayMutant K K' ∧ ¬ SmoothEmbedding.Concordant K K'
-
-/-- The Kirk–Livingston theorem spelled out: some knot in `S³` has a Conway mutant to which it is
-not smoothly concordant. -/
-theorem kirkLivingstonMutationTheorem_iff :
-    KirkLivingstonMutationTheorem ↔
-      ∃ K K' : SmoothCircleEmbedding (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1),
-        IsConwayMutant K K' ∧ ¬ SmoothEmbedding.Concordant K K' :=
-  Iff.rfl
 
 /-- By the Kirk–Livingston theorem, smooth concordance of knots in `S³` is not invariant under
 Conway mutation. -/
