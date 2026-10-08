@@ -84,7 +84,6 @@ def mapOrientation (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B} (hb 
 
 variable {ι}
 
-@[simp]
 theorem mapOrientation_apply (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B}
     (hb : b ∈ e.baseSet) (o : Orientation ℝ (E b) ι) :
     e.mapOrientation ι hb o = Orientation.map ι (e.linearEquivAt ℝ b hb) o :=
