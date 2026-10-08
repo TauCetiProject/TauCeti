@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Nilpotent
 public import Mathlib.GroupTheory.PGroup
+import TauCeti.GroupTheory.PGroup
 
 /-!
 # The lower `p`-central series of a subgroup
@@ -240,20 +241,12 @@ private theorem exists_pLowerCentralSeries_top_eq_bot_aux (m : ℕ) :
   rcases subsingleton_or_nontrivial G with _ | _
   · exact ⟨0, (Subgroup.eq_bot_iff_forall _).2 fun x _ ↦ Subsingleton.elim x 1⟩
   -- A nontrivial finite `p`-group has a central element `z` of order `p`.
-  have := hG.center_nontrivial
-  obtain ⟨z, hz⟩ : ∃ z : Subgroup.center G, orderOf z = p := by
-    refine exists_prime_orderOf_dvd_card' p ?_
-    rcases (hG.to_subgroup (Subgroup.center G)).card_eq_or_dvd with h | h
-    · exact absurd h Finite.one_lt_card.ne'
-    · exact h
-  set Z : Subgroup G := Subgroup.zpowers (z : G) with hZ
-  have hZc : Z ≤ Subgroup.center G := Subgroup.zpowers_le.2 z.2
+  obtain ⟨z, hzc, hz⟩ := hG.exists_mem_center_orderOf_eq_prime
+  set Z : Subgroup G := Subgroup.zpowers z with hZ
+  have hZc : Z ≤ Subgroup.center G := Subgroup.zpowers_le.2 hzc
   have : Z.Normal := Subgroup.normal_of_le_center hZc
-  have hz1 : (z : G) ≠ 1 := by
-    intro h
-    have := Subgroup.orderOf_coe z
-    rw [h, orderOf_one, hz] at this
-    exact hp.out.one_lt.ne this
+  have hz1 : z ≠ 1 := fun h ↦
+    hp.out.one_lt.ne (by rw [← hz, h, orderOf_one])
   -- The quotient `G ⧸ Z` is a smaller `p`-group, so its series vanishes at some stage `n`.
   have hlt : Nat.card (G ⧸ Z) < m := by
     rw [← hm, ← Z.index_eq_card, ← Z.card_mul_index]
@@ -267,7 +260,7 @@ private theorem exists_pLowerCentralSeries_top_eq_bot_aux (m : ℕ) :
   refine ⟨n + 1, le_bot_iff.1 (Subgroup.pLowerCentralSeries_succ_le_iff.2 ⟨?_, ?_⟩)⟩
   · intro x hx
     rw [Subgroup.mem_bot, ← orderOf_dvd_iff_pow_eq_one]
-    exact (orderOf_dvd_of_mem_zpowers (hle hx)).trans (by rw [Subgroup.orderOf_coe, hz])
+    exact (orderOf_dvd_of_mem_zpowers (hle hx)).trans hz.dvd
   · intro x hx y _
     rw [Subgroup.mem_bot, commutatorElement_eq_one_iff_commute]
     exact (Subgroup.mem_center_iff.1 (hZc (hle hx)) y).symm

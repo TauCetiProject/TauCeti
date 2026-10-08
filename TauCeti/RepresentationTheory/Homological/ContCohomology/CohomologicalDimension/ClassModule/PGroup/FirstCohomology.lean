@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.PGroup
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Basic
-import Mathlib.GroupTheory.Perm.Cycle.Type
+import TauCeti.GroupTheory.PGroup
 import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClosedSubgroup
 import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Cyclic.FirstCohomology
 import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Inflation
@@ -20,7 +20,8 @@ Let `G` be a profinite group with `scd_p G ≤ 2` and let `V` be an open normal 
 that `G ⧸ V` is a finite `p`-group. Then `H¹(G ⧸ V, V^ab(p)) = 0`.
 
 This is the degree-one half of the class-module axioms for `V^ab(p)` in the `p`-group case of
-NSW (3.6.4), (ii) ⇒ (iii), extending the prime-order case. It is the input for the corresponding
+NSW (3.6.4), (ii) ⇒ (iii), extending the prime-order case by the reduction of NSW (3.6.3)
+through a central subgroup of order `p`. It is the input for the corresponding
 statement about the class `u_{G/V}(p)` in `H²` for `p`-group quotients, and then for the Sylow
 reduction to arbitrary finite quotients `G ⧸ V`.
 
@@ -32,7 +33,7 @@ reduction to arbitrary finite quotients `G ⧸ V`.
 ## References
 
 * J. Neukirch, A. Schmidt and K. Wingberg, *Cohomology of Number Fields*, 2nd ed.,
-  the proof of (3.6.4), (ii) ⇒ (iii).
+  (3.6.3) and the proof of (3.6.4), (ii) ⇒ (iii).
 -/
 
 public section
@@ -59,14 +60,9 @@ private theorem subsingleton_h1_abelianizationProP_of_isPGroup_aux (p m : ℕ)
         infer_instance
       · let _ := hnontrivial
         let _ : Fact p.Prime := ⟨hp⟩
-        have hcenter : Nontrivial (Subgroup.center (G ⧸ V)) := hpV.center_nontrivial
-        obtain ⟨z, hz⟩ : ∃ z : Subgroup.center (G ⧸ V), orderOf z = p := by
-          refine exists_prime_orderOf_dvd_card' p ?_
-          rcases (hpV.to_subgroup (Subgroup.center (G ⧸ V))).card_eq_or_dvd with h | h
-          · exact absurd h Finite.one_lt_card.ne'
-          · exact h
-        let Z : Subgroup (G ⧸ V) := Subgroup.zpowers (z : G ⧸ V)
-        have hZcenter : Z ≤ Subgroup.center (G ⧸ V) := Subgroup.zpowers_le.2 z.2
+        obtain ⟨z, hzc, hz⟩ := hpV.exists_mem_center_orderOf_eq_prime
+        let Z : Subgroup (G ⧸ V) := Subgroup.zpowers z
+        have hZcenter : Z ≤ Subgroup.center (G ⧸ V) := Subgroup.zpowers_le.2 hzc
         let _ : Z.Normal := Subgroup.normal_of_le_center hZcenter
         set W : Subgroup G := Z.comap (QuotientGroup.mk' V) with hWdef
         let _ : W.Normal := inferInstance
@@ -77,16 +73,13 @@ private theorem subsingleton_h1_abelianizationProP_of_isPGroup_aux (p m : ℕ)
           exact Subgroup.map_comap_eq_self_of_surjective (QuotientGroup.mk'_surjective V) Z
         have hW : IsOpen (W : Set G) := Subgroup.isOpen_mono hVW hV
         have : V.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
-        have hz1 : (z : G ⧸ V) ≠ 1 := by
-          intro h
-          have horder := Subgroup.orderOf_coe z
-          rw [h, orderOf_one, hz] at horder
-          exact hp.one_lt.ne horder
+        have hz1 : z ≠ 1 := fun h ↦
+          hp.one_lt.ne (by rw [← hz, h, orderOf_one])
         have hVWne : V ≠ W := by
           intro heq
-          have hzmem : (z : G ⧸ V) ∈ W.map (QuotientGroup.mk' V) := by
+          have hzmem : z ∈ W.map (QuotientGroup.mk' V) := by
             rw [hWmap]
-            exact Subgroup.mem_zpowers (z : G ⧸ V)
+            exact Subgroup.mem_zpowers z
           rw [← heq] at hzmem
           rcases hzmem with ⟨g, hg, hgz⟩
           exact hz1 (hgz ▸ ((QuotientGroup.eq_one_iff g).2 hg))
@@ -109,7 +102,7 @@ private theorem subsingleton_h1_abelianizationProP_of_isPGroup_aux (p m : ℕ)
                 Nat.card (W.map (QuotientGroup.mk' V)) :=
               Nat.card_congr (quotientSubgroupOfEquivMap V W hV).toEquiv
             _ = Nat.card Z := by rw [hWmap]
-            _ = p := by rw [Nat.card_zpowers, Subgroup.orderOf_coe, hz]
+            _ = p := by rw [Nat.card_zpowers, hz]
         have hrestricted : Subsingleton
             (H1 (W ⧸ V.subgroupOf W)
               (Additive (abelianizationProP p W (V.subgroupOf W)))) :=
@@ -133,7 +126,8 @@ private theorem subsingleton_h1_abelianizationProP_of_isPGroup_aux (p m : ℕ)
 
 /-- **The class module of a finite `p`-group quotient has trivial `H¹`.** For a profinite group
 `G` with `scd_p G ≤ 2` and an open normal subgroup `V` whose quotient is a `p`-group,
-`H¹(G ⧸ V, V^ab(p)) = 0`. This is the degree-one part of NSW (3.6.4), (ii) ⇒ (iii). -/
+`H¹(G ⧸ V, V^ab(p)) = 0`. This is the degree-one part of NSW (3.6.4), (ii) ⇒ (iii), in the
+`p`-group case reduced to prime order as in NSW (3.6.3). -/
 theorem subsingleton_h1_abelianizationProP_of_isPGroup {p : ℕ} {G : Type u} [Group G]
     [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
     {V : Subgroup G} [V.Normal] (hp : p.Prime)
