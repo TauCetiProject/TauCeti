@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Basic
-public import TauCeti.Topology.Algebra.Module.Quotient
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 
 /-!
@@ -14,9 +13,10 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 
 A commuting square of differentiable maps between two smooth embeddings induces a continuous
 linear map between their normal spaces. The ambient differential carries tangent vectors to
-tangent vectors, so it descends to the quotient. The induced map is an equivalence when both
-horizontal maps are local diffeomorphisms. In particular, these equivalences identify intrinsic
-normal fibres in different submanifold coordinates, without choosing a metric or a complement.
+tangent vectors, so it descends to the quotient. The induced map is an equivalence when the base
+differential is surjective and the ambient map is a local diffeomorphism. In particular, these
+equivalences identify intrinsic normal fibres in different submanifold coordinates, without
+choosing a metric or a complement.
 
 The square need only commute near the chosen base point. This local formulation allows the
 construction to be applied to coordinate maps and to their restrictions.
@@ -25,8 +25,8 @@ construction to be applied to coordinate maps and to their restrictions.
 
 * M. Hirsch, *Differential Topology*, Springer GTM 33 (1976), Chapter 4, §§5–6, for the
   normal-bundle and tubular-neighbourhood setting.
-* The quotient equivalence uses Mathlib's `Submodule.Quotient.equiv` and its topological
-  bundling `ContinuousLinearEquiv.quotientEquiv`.
+* Tau Ceti's `ContinuousLinearEquiv.quotientEquiv` topologically bundles Mathlib's
+  `Submodule.Quotient.equiv`.
 -/
 
 public section
@@ -194,72 +194,79 @@ theorem map_tangentRange_mfderiv (hn : n ≠ 0) (hm : m ≠ 0)
     refine ⟨mfderiv I J f x z, (f.mem_tangentRange_iff x hn _).mpr ⟨z, rfl⟩, ?_⟩
     exact congrArg (fun L => L z) (f.mfderiv_comp_eq_of_eventuallyEq g hn hm hu hv h)
 
-/-- Local coordinate changes in a commuting square identify the intrinsic normal fibres.
-Only the germs of the square and the local diffeomorphisms at the chosen points matter. -/
-def normalSpaceEquiv {k l : ℕ∞ω} (hn : n ≠ 0) (hm : m ≠ 0)
-    (hu : IsLocalDiffeomorphAt I I' k u x) (hv : IsLocalDiffeomorphAt J J' l v (f x))
-    (hk : k ≠ 0) (hl : l ≠ 0) (h : v ∘ f =ᶠ[𝓝 x] g ∘ u) :
+/-- The ambient tangent equivalence has the cast-composed differential as its linear map. -/
+private theorem mfderivEquiv_trans_tangentSpaceCast_toLinearMap {l : ℕ∞ω}
+    (hv : IsLocalDiffeomorphAt J J' l v (f x)) (hl : l ≠ 0) :
+    ((hv.mfderivToContinuousLinearEquiv hl).trans
+      (tangentSpaceCast J' (v (f x)) (g (u x)))).toLinearMap =
+      ((tangentSpaceCast J' (v (f x)) (g (u x))).toContinuousLinearMap.comp
+        (mfderiv J J' v (f x))).toLinearMap := by
+  ext w
+  simpa only [LinearEquiv.coe_toLinearMap, ContinuousLinearEquiv.coe_toLinearEquiv,
+    ContinuousLinearMap.coe_coe, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.trans_apply, ContinuousLinearMap.comp_apply] using
+    congrArg (fun L : TangentSpace J (f x) →L[𝕜] TangentSpace J' (v (f x)) =>
+      tangentSpaceCast J' (v (f x)) (g (u x)) (L w))
+      (hv.mfderivToContinuousLinearEquiv_coe hl)
+
+/-- A commuting square identifies the intrinsic normal fibres when the base differential is
+surjective and the ambient map is a local diffeomorphism at the chosen point. -/
+def normalSpaceEquiv {l : ℕ∞ω} (hn : n ≠ 0) (hm : m ≠ 0)
+    (hu : MDifferentiableAt I I' u x) (hv : IsLocalDiffeomorphAt J J' l v (f x))
+    (hsurj : Surjective (mfderiv I I' u x)) (hl : l ≠ 0) (h : v ∘ f =ᶠ[𝓝 x] g ∘ u) :
     f.NormalSpace x hn ≃L[𝕜] g.NormalSpace (u x) hm :=
-  ((hv.mfderivToContinuousLinearEquiv hl).trans
-      (tangentSpaceCast J' (v (f x)) (g (u x)))).quotientEquiv
-    (f.tangentRange x hn) (g.tangentRange (u x) hm)
+  f.normalSpaceEquivOfMapTangentRange g x (u x) hn hm
+    ((hv.mfderivToContinuousLinearEquiv hl).trans
+      (tangentSpaceCast J' (v (f x)) (g (u x))))
     (by
-      convert f.map_tangentRange_mfderiv g hn hm
-        (hu.mdifferentiableAt hk) (hv.mdifferentiableAt hl) h
-        (hu.mfderivToContinuousLinearEquiv hk).surjective using 1
-      ext w
-      rfl)
+      rw [f.mfderivEquiv_trans_tangentSpaceCast_toLinearMap g (u := u) hv hl]
+      exact f.map_tangentRange_mfderiv g hn hm hu (hv.mdifferentiableAt hl) h hsurj)
 
 /-- The normal-fibre equivalence has the normal map as its underlying continuous linear map. -/
 @[simp]
-theorem normalSpaceEquiv_toContinuousLinearMap {k l : ℕ∞ω} (hn : n ≠ 0) (hm : m ≠ 0)
-    (hu : IsLocalDiffeomorphAt I I' k u x) (hv : IsLocalDiffeomorphAt J J' l v (f x))
-    (hk : k ≠ 0) (hl : l ≠ 0) (h : v ∘ f =ᶠ[𝓝 x] g ∘ u) :
-    (f.normalSpaceEquiv g hn hm hu hv hk hl h).toContinuousLinearMap =
-      f.normalMap g hn hm (hu.mdifferentiableAt hk) (hv.mdifferentiableAt hl) h := by
+theorem normalSpaceEquiv_toContinuousLinearMap {l : ℕ∞ω} (hn : n ≠ 0) (hm : m ≠ 0)
+    (hu : MDifferentiableAt I I' u x) (hv : IsLocalDiffeomorphAt J J' l v (f x))
+    (hsurj : Surjective (mfderiv I I' u x)) (hl : l ≠ 0) (h : v ∘ f =ᶠ[𝓝 x] g ∘ u) :
+    (f.normalSpaceEquiv g hn hm hu hv hsurj hl h).toContinuousLinearMap =
+      f.normalMap g hn hm hu (hv.mdifferentiableAt hl) h := by
   ext z
   obtain ⟨w, rfl⟩ := f.normalClass_surjective x hn z
-  rw [normalMap_normalClass]
-  simp only [normalSpaceEquiv, normalClass_eq_mkQ]
-  convert ContinuousLinearEquiv.quotientEquiv_mk
-    ((hv.mfderivToContinuousLinearEquiv hl).trans
-      (tangentSpaceCast J' (v (f x)) (g (u x))))
-    (f.tangentRange x hn) (g.tangentRange (u x) hm)
-    (by
-      convert f.map_tangentRange_mfderiv g hn hm
-        (hu.mdifferentiableAt hk) (hv.mdifferentiableAt hl) h
-        (hu.mfderivToContinuousLinearEquiv hk).surjective using 1
-      ext z
-      rfl) w using 1 <;> rfl
+  simp only [ContinuousLinearEquiv.coe_apply, normalSpaceEquiv,
+    normalSpaceEquivOfMapTangentRange_normalClass, normalMap_normalClass]
+  exact congrArg (g.normalClass (u x) hm)
+    (congrArg (fun L => L w) (f.mfderivEquiv_trans_tangentSpaceCast_toLinearMap g (u := u) hv hl))
 
 /-- On representatives, the normal-fibre equivalence applies the ambient differential. -/
 @[simp]
-theorem normalSpaceEquiv_normalClass {k l : ℕ∞ω} (hn : n ≠ 0) (hm : m ≠ 0)
-    (hu : IsLocalDiffeomorphAt I I' k u x) (hv : IsLocalDiffeomorphAt J J' l v (f x))
-    (hk : k ≠ 0) (hl : l ≠ 0) (h : v ∘ f =ᶠ[𝓝 x] g ∘ u)
+theorem normalSpaceEquiv_normalClass {l : ℕ∞ω} (hn : n ≠ 0) (hm : m ≠ 0)
+    (hu : MDifferentiableAt I I' u x) (hv : IsLocalDiffeomorphAt J J' l v (f x))
+    (hsurj : Surjective (mfderiv I I' u x)) (hl : l ≠ 0) (h : v ∘ f =ᶠ[𝓝 x] g ∘ u)
     (w : TangentSpace J (f x)) :
-    f.normalSpaceEquiv g hn hm hu hv hk hl h (f.normalClass x hn w) =
+    f.normalSpaceEquiv g hn hm hu hv hsurj hl h (f.normalClass x hn w) =
       g.normalClass (u x) hm
         (tangentSpaceCast J' (v (f x)) (g (u x)) (mfderiv J J' v (f x) w)) := by
   simpa only [ContinuousLinearEquiv.coe_apply, normalMap_normalClass] using
     congrArg (fun L => L (f.normalClass x hn w))
-      (f.normalSpaceEquiv_toContinuousLinearMap g hn hm hu hv hk hl h)
+      (f.normalSpaceEquiv_toContinuousLinearMap g hn hm hu hv hsurj hl h)
 
 /-- On representatives, the inverse normal-fibre equivalence applies the inverse ambient
 differential, after identifying the equal ambient base points. -/
 @[simp]
-theorem normalSpaceEquiv_symm_normalClass {k l : ℕ∞ω} (hn : n ≠ 0) (hm : m ≠ 0)
-    (hu : IsLocalDiffeomorphAt I I' k u x) (hv : IsLocalDiffeomorphAt J J' l v (f x))
-    (hk : k ≠ 0) (hl : l ≠ 0) (h : v ∘ f =ᶠ[𝓝 x] g ∘ u)
+theorem normalSpaceEquiv_symm_normalClass {l : ℕ∞ω} (hn : n ≠ 0) (hm : m ≠ 0)
+    (hu : MDifferentiableAt I I' u x) (hv : IsLocalDiffeomorphAt J J' l v (f x))
+    (hsurj : Surjective (mfderiv I I' u x)) (hl : l ≠ 0) (h : v ∘ f =ᶠ[𝓝 x] g ∘ u)
     (w : TangentSpace J' (g (u x))) :
-    (f.normalSpaceEquiv g hn hm hu hv hk hl h).symm (g.normalClass (u x) hm w) =
+    (f.normalSpaceEquiv g hn hm hu hv hsurj hl h).symm (g.normalClass (u x) hm w) =
       f.normalClass x hn
         (((hv.mfderivToContinuousLinearEquiv hl).trans
           (tangentSpaceCast J' (v (f x)) (g (u x)))).symm w) := by
-  apply (f.normalSpaceEquiv g hn hm hu hv hk hl h).injective
+  apply (f.normalSpaceEquiv g hn hm hu hv hsurj hl h).injective
   rw [ContinuousLinearEquiv.apply_symm_apply, normalSpaceEquiv_normalClass]
   congr 1
-  exact (((hv.mfderivToContinuousLinearEquiv hl).trans
-    (tangentSpaceCast J' (v (f x)) (g (u x)))).apply_symm_apply w).symm
+  let e := (hv.mfderivToContinuousLinearEquiv hl).trans
+    (tangentSpaceCast J' (v (f x)) (g (u x)))
+  exact ((congrArg (fun L => L (e.symm w))
+    (f.mfderivEquiv_trans_tangentSpaceCast_toLinearMap g (u := u) hv hl)).symm.trans
+      (e.apply_symm_apply w)).symm
 
 end TauCeti.SmoothEmbedding

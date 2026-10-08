@@ -97,6 +97,8 @@ theorem quotientEquiv_trans {O : Type*} [AddCommGroup O] [Module R O] [Topologic
     (P : Submodule R M) (Q : Submodule R N) (S : Submodule R O)
     (he : P.map e.toLinearMap = Q) (he' : Q.map e'.toLinearMap = S) :
     (e.trans e').quotientEquiv P S (by
+      -- Mathlib has no `trans_toLinearMap` lemma; this exposes the composite linear map
+      -- underlying `trans` so `Submodule.map_comp` can rewrite the submodule image.
       change P.map (e'.toLinearMap.comp e.toLinearMap) = S
       rw [Submodule.map_comp, he, he']) =
       (e.quotientEquiv P Q he).trans (e'.quotientEquiv Q S he') := by
