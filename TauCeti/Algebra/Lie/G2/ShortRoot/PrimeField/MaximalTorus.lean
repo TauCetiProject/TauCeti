@@ -244,15 +244,19 @@ private theorem weightTorusCharacterEquiv_ofAdd_single (i : Fin 2) :
   rw [weightTorusCharacterEquiv, AddEquiv.toMultiplicative_apply_apply, toAdd_ofAdd,
     Finsupp.domCongr_apply, Finsupp.equivMapDomain_single, Equiv.ulift_symm_apply]
 
+/-- The coordinate reindexing is `MonoidAlgebra.domCongr` along `weightTorusCharacterEquiv`. -/
+private theorem weightTorusCoordinateIso_hom_apply
+    (x : (generatorCodomain (.inr ()) : Type)) :
+    weightTorusCoordinateIso.hom.hom x =
+      MonoidAlgebra.domCongr (ZMod 3) (ZMod 3) weightTorusCharacterEquiv x :=
+  rfl
+
 /-- The coordinate reindexing acts on monomials through `weightTorusCharacterEquiv`. -/
 private theorem weightTorusCoordinateIso_hom_single
     (c : Multiplicative (Fin 2 →₀ ℤ)) (r : ZMod 3) :
     weightTorusCoordinateIso.hom.hom (MonoidAlgebra.single c r) =
       MonoidAlgebra.single (weightTorusCharacterEquiv c) r := by
-  simp only [weightTorusCoordinateIso, CommHopfAlgCat.isoMk_hom, ConcreteCategory.hom_ofHom,
-    BialgHom.coe_coe, MonoidAlgebra.domCongrBialgEquiv, BialgEquiv.ofAlgEquiv_apply,
-    AlgEquiv.toEquiv_eq_coe, Equiv.toFun_as_coe, EquivLike.coe_coe]
-  exact MonoidAlgebra.domCongr_single _ _ _
+  rw [weightTorusCoordinateIso_hom_apply, MonoidAlgebra.domCongr_single]
 
 /-- Restriction from the short-root type-`G₂` carrier to its weight torus, reindexed in the
 standard rank-two coordinates used by `SplitMaximalTorus`. -/
