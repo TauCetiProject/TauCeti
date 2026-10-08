@@ -25,6 +25,10 @@ scalars and their action. Balls and closed balls require `0 < ‖c‖`; spheres 
 The range formula identifies a positive real scaling of the unit sphere with the sphere
 of that radius in a seminormed real vector space. Two points on a sphere of nonzero radius
 centered at zero lie on the same line exactly when they are equal or antipodal.
+
+The normalization lemmas characterize the unit norm conditions for `R⁻¹ • z` when `R > 0`.
+They need only a norm homogeneous under real scalar multiplication; no additive structure
+or metric on the vector type is required.
 -/
 
 public section
@@ -107,19 +111,21 @@ end Sphere
 
 section Normalization
 
-variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type*} [Norm E] [SMul ℝ E] [NormSMulClass ℝ E]
 
-/-- A point inside a ball of positive radius has normalized coordinate in the unit ball. -/
-theorem norm_inv_smul_sub_lt_one {c z : E} {R : ℝ} (hR : 0 < R)
-    (hz : ‖z - c‖ < R) : ‖R⁻¹ • (z - c)‖ < 1 := by
-  rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR]
-  exact (inv_mul_lt_iff₀ hR).2 (by simpa using hz)
+/-- Scaling a vector by the inverse of a positive radius puts it inside the unit norm bound
+exactly when its original norm is less than that radius. -/
+@[simp]
+theorem norm_inv_smul_lt_one_iff {z : E} {R : ℝ} (hR : 0 < R) :
+    ‖R⁻¹ • z‖ < 1 ↔ ‖z‖ < R := by
+  simp [norm_smul, Real.norm_of_nonneg hR.le, inv_mul_lt_iff₀ hR]
 
-/-- A boundary point of a ball of positive radius has unit norm in normalized coordinates. -/
-theorem norm_inv_smul_sub_eq_one_of_norm_sub_eq {c z : E} {R : ℝ}
-    (hR : 0 < R) (hz : ‖z - c‖ = R) : ‖R⁻¹ • (z - c)‖ = 1 := by
-  rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR, hz]
-  exact inv_mul_cancel₀ hR.ne'
+/-- Scaling a vector by the inverse of a positive radius gives unit norm exactly when its
+original norm equals that radius. -/
+@[simp]
+theorem norm_inv_smul_eq_one_iff {z : E} {R : ℝ} (hR : 0 < R) :
+    ‖R⁻¹ • z‖ = 1 ↔ ‖z‖ = R := by
+  simp [norm_smul, Real.norm_of_nonneg hR.le, inv_mul_eq_iff_eq_mul₀ hR.ne']
 
 end Normalization
 
