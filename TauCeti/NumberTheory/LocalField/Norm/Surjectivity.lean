@@ -213,7 +213,7 @@ private theorem normSurj_of_finrank_le (d : ℕ) :
       [IsGalois F L], finrank F L ≤ d → NormSurj F L :=
   finiteGaloisLocalField_induction_on_finrank_le L
     (fun F _ _ _ _ _ _ _ _ ↦ NormSurj F L)
-    (fun F _ _ _ _ _ _ _ _ ↦ normSurj_of_forall_finrank_lt) d
+    (fun F _ _ _ _ _ _ _ _ ↦ normSurj_of_forall_finrank_lt (K := F)) d
 
 /-- **The norm is surjective above every upper break.** For a finite Galois extension `L/K` of
 nonarchimedean local fields whose upper ramification group `G^v` is trivial at a natural number
