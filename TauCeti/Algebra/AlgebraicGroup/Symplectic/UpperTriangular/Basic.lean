@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.ClosedImmersion
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.Base
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup.Basic
