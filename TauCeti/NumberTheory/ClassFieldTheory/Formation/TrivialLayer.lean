@@ -125,10 +125,7 @@ variable {F : Formation G}
 is trivial, its positive-degree cohomology vanishes, and its invariant map is consequently zero. -/
 def ofSubsingleton (F : Formation G) [Subsingleton G] : ClassFormation F where
   subsingleton_h1 L := by
-    let _ : Subsingleton L.Gal :=
-      L.subsingleton_gal_of_top_eq_ground L.top_eq_ground_of_subsingleton
-    exact ModuleCat.subsingleton_of_isZero
-      (isZero_groupCohomology_succ_of_subsingleton (L.rep F) 0)
+    simpa using L.subsingleton_H_succ_of_top_eq_ground F L.top_eq_ground_of_subsingleton 0
   inv _ := 0
   inv_injective L := by
     let _ := L.subsingleton_H_succ_of_top_eq_ground F L.top_eq_ground_of_subsingleton 1
