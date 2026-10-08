@@ -301,7 +301,8 @@ noncomputable def asModuleEquiv : asModule k Q M ≃ₗ[k] DirectSum Q (vertexSp
 
 /-- The defining action on `TauCeti.QuiverRep.asModule`: read through
 `TauCeti.QuiverRep.asModuleEquiv`, an element of the path algebra acts through
-`TauCeti.QuiverRep.toEnd`. -/
+`TauCeti.QuiverRep.toEnd`. The statement and its name follow Mathlib's
+`Representation.asModuleEquiv_map_smul` for the group algebra. -/
 @[simp]
 theorem asModuleEquiv_map_smul (f : pathAlgebra k Q) (x : asModule k Q M) :
     asModuleEquiv k Q M (f • x) = toEnd k Q M f (asModuleEquiv k Q M x) := (rfl)
