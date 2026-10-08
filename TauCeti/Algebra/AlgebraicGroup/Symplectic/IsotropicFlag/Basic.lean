@@ -43,6 +43,7 @@ points arguments follow
 public section
 
 open AlgebraicGeometry CategoryTheory WithConv Matrix
+open scoped CategoryTheory.MonObj
 
 namespace TauCeti.Symplectic.IsotropicFlag
 
