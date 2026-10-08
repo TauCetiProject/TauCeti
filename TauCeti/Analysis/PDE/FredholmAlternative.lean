@@ -62,7 +62,7 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.Is
   {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
   {c : EuclideanSpace ℝ ι → ℝ}
 
-attribute [local instance] instNormedAddCommGroupH1Zero instInnerProductSpaceH1Zero
+attribute [local instance] W1p0.instNormedAddCommGroup W1p0.instInnerProductSpace
 
 /-- The Lax--Milgram operator representing the `L²` mass form on `H¹₀(Ω)`.  It is characterized
 by `TauCeti.PDE.energyFormH1_dirichletMassOperator`. -/

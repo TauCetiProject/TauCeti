@@ -128,7 +128,7 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.Is
   {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
   {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ} {C : ℝ}
 
-attribute [local instance] instNormedAddCommGroupH1Zero instInnerProductSpaceH1Zero
+attribute [local instance] W1p0.instNormedAddCommGroup W1p0.instInnerProductSpace
 
 /-! ### The solution operator on `L²(Ω)` -/
 
