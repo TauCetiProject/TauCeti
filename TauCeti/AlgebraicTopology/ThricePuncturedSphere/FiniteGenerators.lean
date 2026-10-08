@@ -223,23 +223,29 @@ theorem transport_δZero_eq_periph0 :
     γ0_trans_αZero_homotopic
 
 /-- The point `3/4` inside the standard neighborhood of `1`. -/
-abbrev oneBasePt : puncturedNeighborhoodOne :=
+def oneBasePt : puncturedNeighborhoodOne :=
   puncturedNeighborhoodOneHomeomorphZero.symm zeroBasePt
 
+/-- The local basepoint at `1` is the image of the local basepoint at `0` under `z ↦ 1 - z`. -/
+theorem oneBasePt_def :
+    oneBasePt = puncturedNeighborhoodOneHomeomorphZero.symm zeroBasePt := (rfl)
+
+@[simp]
 theorem coe_oneBasePt : ((oneBasePt : ThricePuncturedSphere) : ℂ) = 3 / 4 := by
-  rw [oneBasePt, puncturedNeighborhoodOneHomeomorphZero_symm_apply, coe_mob01,
+  rw [oneBasePt_def, puncturedNeighborhoodOneHomeomorphZero_symm_apply, coe_mob01,
     coe_zeroBasePt]
   norm_num
 
 /-- The counterclockwise small circle about `1`, obtained from `δZero` by `z ↦ 1 - z`. -/
 def δOne : Path oneBasePt oneBasePt :=
-  δZero.map puncturedNeighborhoodOneHomeomorphZero.symm.continuous
+  (δZero.map puncturedNeighborhoodOneHomeomorphZero.symm.continuous).cast
+    oneBasePt_def oneBasePt_def
 
 @[simp]
 theorem coe_δOne (t : unitInterval) :
     (((δOne t : puncturedNeighborhoodOne) : ThricePuncturedSphere) : ℂ) =
       1 - circleMap 0 (1 / 4) (2 * Real.pi * t) := by
-  simp only [δOne, Path.map_coe, Function.comp_apply]
+  simp only [δOne, Path.cast_coe, Path.map_coe, Function.comp_apply]
   rw [puncturedNeighborhoodOneHomeomorphZero_symm_apply, coe_mob01, coe_δZero]
 
 /-- Winding number in the coordinate `1 - z` identifies the local group at `1` with `ℤ`.
@@ -270,7 +276,8 @@ theorem oneFundamentalGroupMulEquivInt_δOne :
   congr 1
   apply Circle.degree_eq_of_sub_eq _ (θ := fun t => 2 * Real.pi * t) (by fun_prop) ?_ (by simp)
   intro t
-  simp only [δOne, Path.map_coe, Function.comp_apply, Homeomorph.apply_symm_apply]
+  simp only [δOne, Path.cast_coe, Path.map_coe, Function.comp_apply,
+    Homeomorph.apply_symm_apply]
   exact (zeroDirection_δZero t).symm
 
 /-- The counterclockwise small circle generates the local fundamental group at `1`. -/
@@ -282,7 +289,8 @@ theorem zpowers_δOne : Subgroup.zpowers (FundamentalGroup.fromPath (.mk δOne))
 /-- The radial segment from the global basepoint `1/2` to the local basepoint `3/4`. -/
 def αOne : Path basePt (oneBasePt : ThricePuncturedSphere) :=
   (αZero.map mob01.continuous).cast mob01_basePt.symm
-    (puncturedNeighborhoodOneHomeomorphZero_symm_apply zeroBasePt)
+    ((congrArg Subtype.val oneBasePt_def).trans
+      (puncturedNeighborhoodOneHomeomorphZero_symm_apply zeroBasePt))
 
 @[simp]
 theorem coe_αOne (t : unitInterval) : (αOne t : ℂ) = 1 / 2 + (t : ℝ) / 4 := by
@@ -293,7 +301,8 @@ private theorem γ1_trans_αOne_homotopic :
     (γ1.trans αOne).Homotopic
       (αOne.trans (δOne.map continuous_subtype_val)) := by
   have h := (γ0_trans_αZero_homotopic.map (⟨mob01, mob01.continuous⟩ : C(_, _))).pathCast
-    mob01_basePt.symm (puncturedNeighborhoodOneHomeomorphZero_symm_apply zeroBasePt)
+    mob01_basePt.symm ((congrArg Subtype.val oneBasePt_def).trans
+      (puncturedNeighborhoodOneHomeomorphZero_symm_apply zeroBasePt))
   convert h using 1 <;> ext t <;>
     simp only [Path.cast_coe, Path.map_coe, Path.trans_apply, Function.comp_apply] <;>
     split_ifs
@@ -302,7 +311,7 @@ private theorem γ1_trans_αOne_homotopic :
     rfl
   · rw [αOne, Path.cast_coe, Path.map_coe, Function.comp_apply]
     rfl
-  · simp only [δOne, Path.map_coe, Function.comp_apply]
+  · simp only [δOne, Path.cast_coe, Path.map_coe, Function.comp_apply]
     exact congrArg Subtype.val (puncturedNeighborhoodOneHomeomorphZero_symm_apply (δZero _))
 
 /-- Include the local generator at `1` and transport back along the radial segment:
