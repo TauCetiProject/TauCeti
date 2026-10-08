@@ -74,6 +74,7 @@ theorem map_powRingHom {R : Type*} [CommRing R] (hn : e.Coprime n)
   · exact map_pow _ _ _
 
 /-- Reduction after power substitution is reduction at the powered primitive root. -/
+@[simp]
 theorem reduce_powRingHom {p : ℕ} [Fact p.Prime] (hn : e.Coprime n)
     {α : ZMod p} (hα : IsPrimitiveRoot α e) (x : Cyclotomic e) :
     reduce p α (powRingHom hn x) = reduce p (α ^ n) x := by
