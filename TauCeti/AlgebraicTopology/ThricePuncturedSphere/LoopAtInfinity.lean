@@ -339,7 +339,8 @@ private theorem range_αPlus : range αPlus ⊆ {z | 0 ≤ (z : ℂ).im} := by
 /-- A subpath of a path whose imaginary part is `r * sin (a + 2 * π * u)` stays in the region
 where the imaginary part satisfies `P`, as soon as `r * sin θ` does on the corresponding interval
 of angles. -/
-private theorem range_subpath_subset_of_im {x y : ThricePuncturedSphere} (p : Path x y) {r a : ℝ}
+private theorem _root_.Path.range_subpath_subset_of_im {x y : ThricePuncturedSphere}
+    (p : Path x y) {r a : ℝ}
     (hp : ∀ u : unitInterval, (p u : ℂ).im = r * Real.sin (a + 2 * π * u))
     {s t : unitInterval} (hst : s ≤ t) {P : ℝ → Prop}
     (h : ∀ θ, a + 2 * π * s ≤ θ → θ ≤ a + 2 * π * t → P (r * Real.sin θ)) :
@@ -350,41 +351,41 @@ private theorem range_subpath_subset_of_im {x y : ThricePuncturedSphere} (p : Pa
   exact h _ (by gcongr) (by gcongr)
 
 private theorem range_δ₁ : range δ₁ ⊆ {z | 0 ≤ (z : ℂ).im} :=
-  range_subpath_subset_of_im δ im_coe_δ unitInterval.nonneg' (P := (0 ≤ ·)) fun _ h₁ h₂ ↦
+  δ.range_subpath_subset_of_im im_coe_δ unitInterval.nonneg' (P := (0 ≤ ·)) fun _ h₁ h₂ ↦
     mul_nonneg (by norm_num) (sin_nonneg_of_nonneg_of_le_pi (by simp at h₁; linarith [θ₀_pos])
       (by linarith [θ₀_add_two_pi_mul_tNeg]))
 
 private theorem range_δ₂ : range δ₂ ⊆ {z | (z : ℂ).im ≤ 0} :=
-  range_subpath_subset_of_im δ im_coe_δ tNeg_le_tPos (P := (· ≤ 0)) fun _ h₁ h₂ ↦
+  δ.range_subpath_subset_of_im im_coe_δ tNeg_le_tPos (P := (· ≤ 0)) fun _ h₁ h₂ ↦
     mul_nonpos_of_nonneg_of_nonpos (by norm_num) (sin_nonpos_of_pi_le
       (by linarith [θ₀_add_two_pi_mul_tNeg]) (by linarith [θ₀_add_two_pi_mul_tPos]))
 
 private theorem range_δ₃ : range δ₃ ⊆ {z | 0 ≤ (z : ℂ).im} :=
-  range_subpath_subset_of_im δ im_coe_δ unitInterval.le_one' (P := (0 ≤ ·)) fun _ h₁ h₂ ↦ by
+  δ.range_subpath_subset_of_im im_coe_δ unitInterval.le_one' (P := (0 ≤ ·)) fun _ h₁ h₂ ↦ by
     rw [← Real.sin_sub_two_pi]
     exact mul_nonneg (by norm_num) (sin_nonneg_of_nonneg_of_le_pi
       (by linarith [θ₀_add_two_pi_mul_tPos]) (by simp at h₂; linarith [θ₀_lt_pi]))
 
 private theorem range_γ0₁ : range γ0₁ ⊆ {z | 0 ≤ (z : ℂ).im} :=
-  range_subpath_subset_of_im γ0 (a := 0) (fun u ↦ by rw [im_coe_γ0, zero_add])
+  γ0.range_subpath_subset_of_im (a := 0) (fun u ↦ by rw [im_coe_γ0, zero_add])
     unitInterval.nonneg' (P := (0 ≤ ·)) fun _ h₁ h₂ ↦
     mul_nonneg (by norm_num) (sin_nonneg_of_nonneg_of_le_pi
       (by simpa using h₁) (by linarith [two_pi_mul_tHalf]))
 
 private theorem range_γ0₂ : range γ0₂ ⊆ {z | (z : ℂ).im ≤ 0} :=
-  range_subpath_subset_of_im γ0 (a := 0) (fun u ↦ by rw [im_coe_γ0, zero_add])
+  γ0.range_subpath_subset_of_im (a := 0) (fun u ↦ by rw [im_coe_γ0, zero_add])
     unitInterval.le_one' (P := (· ≤ 0)) fun _ h₁ h₂ ↦
     mul_nonpos_of_nonneg_of_nonpos (by norm_num) (sin_nonpos_of_pi_le
       (by linarith [two_pi_mul_tHalf]) (by simpa using h₂))
 
 private theorem range_γ1₁ : range γ1₁ ⊆ {z | (z : ℂ).im ≤ 0} :=
-  range_subpath_subset_of_im γ1 (a := 0) (fun u ↦ by rw [im_coe_γ1, zero_add])
+  γ1.range_subpath_subset_of_im (a := 0) (fun u ↦ by rw [im_coe_γ1, zero_add])
     unitInterval.nonneg' (P := (· ≤ 0)) fun _ h₁ h₂ ↦
     mul_nonpos_of_nonpos_of_nonneg (by norm_num) (sin_nonneg_of_nonneg_of_le_pi
       (by simpa using h₁) (by linarith [two_pi_mul_tHalf]))
 
 private theorem range_γ1₂ : range γ1₂ ⊆ {z | 0 ≤ (z : ℂ).im} :=
-  range_subpath_subset_of_im γ1 (a := 0) (fun u ↦ by rw [im_coe_γ1, zero_add])
+  γ1.range_subpath_subset_of_im (a := 0) (fun u ↦ by rw [im_coe_γ1, zero_add])
     unitInterval.le_one' (P := (0 ≤ ·)) fun _ h₁ h₂ ↦
     mul_nonneg_of_nonpos_of_nonpos (by norm_num) (sin_nonpos_of_pi_le
       (by linarith [two_pi_mul_tHalf]) (by simpa using h₂))
