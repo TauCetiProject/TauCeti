@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Strict
+public import TauCeti.Algebra.Homology.AInfinity.Algebra
 
 /-!
 # Transport of A-infinity algebras along linear maps
@@ -31,7 +31,6 @@ subcategory of an `A∞` category form a sub-`A∞` algebra of the total algebra
 * `TauCeti.AInfinityAlgebra.map`: the transport of an `A∞` algebra along a linear equivalence.
 * `TauCeti.AInfinityAlgebra.comap`: the pullback of an `A∞` algebra along an injective linear map
   whose image is closed under the operations.
-* `TauCeti.AInfinityAlgebra.comapStrictHom`: that injective map, as a strict `A∞` morphism.
 
 ## Main results
 
@@ -154,16 +153,6 @@ theorem eq_comap {ℬ' : AInfinityAlgebra R A} (hG' : ℬ'.grading = G)
   · rw [ℬ'.m_zero, AInfinityAlgebra.m_zero]
   · exact MultilinearMap.ext fun x ↦ hf (by rw [hm' n hn, map_m_comap])
 
-/-- The injective map along which an `A∞` algebra is pulled back, as a strict `A∞` morphism. -/
-noncomputable def comapStrictHom : AInfinityStrictHom (ℬ.comap G f hf hG hm) ℬ where
-  toLinearMap := f
-  map_mem' ha := (hG _ _).2 (by rwa [comap_grading] at ha)
-  map_m' n := MultilinearMap.ext fun x ↦ by simp
-
-/-- The strict `A∞` morphism `comapStrictHom` is the injective map along which the algebra is
-pulled back. -/
-@[simp]
-theorem coe_comapStrictHom : ⇑(ℬ.comapStrictHom G f hf hG hm) = f := (rfl)
 
 end Comap
 

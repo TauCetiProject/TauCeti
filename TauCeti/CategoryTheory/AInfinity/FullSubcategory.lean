@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.AInfinity.Algebra.Map
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Comap
 public import TauCeti.CategoryTheory.AInfinity.HomotopyCategory
 public import TauCeti.CategoryTheory.Graded.FullSubquiver
 
@@ -179,11 +179,19 @@ noncomputable def fullSubcategoryInclusion :
     AInfinityStrictHom (𝒞.fullSubcategory P).toAInfinityAlgebra 𝒞.toAInfinityAlgebra :=
   AInfinityAlgebra.comapStrictHom _ _ _ _ _ _
 
+/-- The underlying linear map of the full-subcategory inclusion is the inclusion of total
+modules. -/
+@[simp]
+theorem fullSubcategoryInclusion_toLinearMap :
+    (𝒞.fullSubcategoryInclusion P).toLinearMap = totalHomInclusion R P :=
+  AInfinityAlgebra.comapStrictHom_toLinearMap _ _ _ _ _ _
+
 /-- The inclusion of total algebras of a full subcategory is the inclusion of total modules. -/
 @[simp]
 theorem coe_fullSubcategoryInclusion :
     ⇑(𝒞.fullSubcategoryInclusion P) = totalHomInclusion R P :=
-  AInfinityAlgebra.coe_comapStrictHom _ _ _ _ _ _
+  congrArg (fun g : TotalHom R (FullSubquiver P) →ₗ[R] TotalHom R C ↦ ⇑g)
+    (𝒞.fullSubcategoryInclusion_toLinearMap P)
 
 /-- The closed degree-zero morphisms of the full subcategory are those of `𝒞`. -/
 @[simp]
