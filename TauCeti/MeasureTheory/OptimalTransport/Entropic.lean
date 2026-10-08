@@ -580,15 +580,6 @@ section GibbsPotentials
 
 variable {φ : X → ℝ} {ψ : Y → ℝ}
 
-/-- The Gibbs weight `e^{-c/ε}` of a nonnegative cost is bounded by `1`, hence integrable against
-a finite measure. -/
-private theorem integrable_exp_neg_toReal_div {ρ : Measure (X × Y)} [IsFiniteMeasure ρ]
-    (hc : AEMeasurable c ρ) : Integrable (fun z ↦ Real.exp (-((c z).toReal / ε))) ρ :=
-  (integrable_const 1).mono' (hc.ennreal_toReal.div_const _).neg.exp.aestronglyMeasurable <|
-    ae_of_all _ fun z ↦ by
-      simp only [Real.norm_eq_abs, Real.abs_exp, Real.exp_le_one_iff, Left.neg_nonpos_iff]
-      positivity
-
 /-- A plan with density `exp ((φ(x) + ψ(y) - c(x, y)) / ε)` against `μ.prod ν` has density
 `exp (φ(x) / ε + log Z + ψ(y) / ε)` against the Gibbs measure
 `R = Z⁻¹ e^{-c/ε} (μ ⊗ ν)`, where `Z = ∫ e^{-c/ε} d(μ ⊗ ν)`. -/
@@ -601,7 +592,8 @@ private theorem eq_withDensity_tilted_of_eq_withDensity [IsProbabilityMeasure μ
       ENNReal.ofReal (Real.exp ((φ z.1 / ε + Real.log (∫ z, Real.exp (-((c z).toReal / ε))
         ∂μ.prod ν)) + ψ z.2 / ε)) := by
   have hexp : Integrable (fun z ↦ Real.exp (-((c z).toReal / ε))) (μ.prod ν) :=
-    integrable_exp_neg_toReal_div hc
+    MeasureTheory.integrable_exp_neg_of_ae_nonneg (hc.ennreal_toReal.div_const _) <|
+      ae_of_all _ fun z ↦ by positivity
   have hZ : 0 < ∫ z, Real.exp (-((c z).toReal / ε)) ∂μ.prod ν := integral_exp_pos hexp
   rw [Measure.tilted, ← withDensity_mul₀ (by fun_prop) (by fun_prop), hπc]
   congr 1
@@ -609,9 +601,10 @@ private theorem eq_withDensity_tilted_of_eq_withDensity [IsProbabilityMeasure μ
   rw [Pi.mul_apply, ← ENNReal.ofReal_mul (by positivity)]
   congr 1
   set Z := ∫ z, Real.exp (-((c z).toReal / ε)) ∂μ.prod ν
-  rw [show (φ z.1 + ψ z.2 - (c z).toReal) / ε =
-      -((c z).toReal / ε) + ((φ z.1 / ε + Real.log Z) + ψ z.2 / ε) - Real.log Z by ring,
-    Real.exp_sub, Real.exp_add, Real.exp_log hZ, div_mul_eq_mul_div]
+  have hexponent : (φ z.1 + ψ z.2 - (c z).toReal) / ε =
+      -((c z).toReal / ε) + ((φ z.1 / ε + Real.log Z) + ψ z.2 / ε) - Real.log Z := by
+    ring
+  rw [hexponent, Real.exp_sub, Real.exp_add, Real.exp_log hZ, div_mul_eq_mul_div]
 
 /-- **A Gibbs density certifies the entropic optimal plan.** For probability measures `μ` and
 `ν`, a cost `c` finite `μ.prod ν`-almost everywhere, and a positive temperature `ε`, a coupling
@@ -625,7 +618,8 @@ theorem IsCoupling.lintegral_add_mul_klDiv_eq_entropicTransportCost_of_eq_withDe
     (hφ : Measurable φ) (hψ : Measurable ψ) (hφi : Integrable φ μ) (hψi : Integrable ψ ν) :
     ∫⁻ z, c z ∂π + ε * klDiv π (μ.prod ν) = entropicTransportCost c ε μ ν := by
   have hexp : Integrable (fun z ↦ Real.exp (-((c z).toReal / ε))) (μ.prod ν) :=
-    integrable_exp_neg_toReal_div hc
+    MeasureTheory.integrable_exp_neg_of_ae_nonneg (hc.ennreal_toReal.div_const _) <|
+      ae_of_all _ fun z ↦ by positivity
   have := isProbabilityMeasure_tilted hexp
   refine (lintegral_add_mul_klDiv_eq_entropicTransportCost_iff hπ hc hc_top hε).2 ?_
   exact hπ.klDiv_eq_schroedingerValue_of_eq_withDensity
@@ -647,7 +641,8 @@ theorem entropicTransportCost_eq_ofReal_of_eq_withDensity [IsProbabilityMeasure 
     (hφ : Measurable φ) (hψ : Measurable ψ) (hφi : Integrable φ μ) (hψi : Integrable ψ ν) :
     entropicTransportCost c ε μ ν = ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) := by
   have hexp : Integrable (fun z ↦ Real.exp (-((c z).toReal / ε))) (μ.prod ν) :=
-    integrable_exp_neg_toReal_div hc
+    MeasureTheory.integrable_exp_neg_of_ae_nonneg (hc.ennreal_toReal.div_const _) <|
+      ae_of_all _ fun z ↦ by positivity
   have := isProbabilityMeasure_tilted hexp
   have hπR := eq_withDensity_tilted_of_eq_withDensity hc hπc hφ hψ
   obtain ⟨Z, hZ_def⟩ : ∃ Z, ∫ z, Real.exp (-((c z).toReal / ε)) ∂μ.prod ν = Z := ⟨_, rfl⟩
