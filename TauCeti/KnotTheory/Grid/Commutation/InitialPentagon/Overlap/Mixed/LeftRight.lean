@@ -80,8 +80,7 @@ noncomputable def leftRightRecut
   D.recut (D.hasOneCommonSide_of_left_eq_right hcommon hother)
     (D.underlying_first_isEmpty hfirst) (D.underlying_second_isEmpty hsecond)
 
-/-- The generic construction is the unique empty-rectangle recut of the original composite
-domain. -/
+/-- The generic construction is an empty-rectangle recut of the original composite domain. -/
 theorem isRecut_leftRightRecut
     (D : GridRectangleInitialPentagonDecomposition a s x z)
     (hcommon : D.first.left = D.second.right)
@@ -105,7 +104,9 @@ private theorem second_top_eq_first_top
   rw [GridRectangleBetween.top_def, hcommon.symm, GridRectangleBetween.top_def]
   exact D.first.map_left
 
-private theorem leftRightRecut_first_left
+/-- The first rectangle in the generic recut starts on the replaced grid line. -/
+@[simp]
+theorem leftRightRecut_first_left
     (D : GridRectangleInitialPentagonDecomposition a s x z)
     (hcommon : D.first.left = D.second.right)
     (hother : D.first.right ≠ D.second.left)
@@ -120,9 +121,8 @@ private theorem leftRightRecut_first_left
   apply x.toPerm.injective
   rw [← GridRectangleBetween.bottom_def, hbottom, D.second_bottom_eq hcommon hother]
 
-/-- In a mixed `left = right` overlap, the first recut rectangle starts on the replaced line.
-If it does not contain the turn row, the second recut rectangle also starts on that line and
-does contain the turn row. -/
+/-- In a mixed `left = right` overlap, either the first recut rectangle contains the turn row,
+or the second recut rectangle starts on the replaced line and contains the turn row. -/
 theorem recutLeftEqRight_turn
     (D : GridRectangleInitialPentagonDecomposition a s x z)
     (hcommon : D.first.left = D.second.right)
@@ -234,33 +234,5 @@ theorem recutLeftEqRightSecond_toGridRectangleDecomposition
     (D.recutLeftEqRightSecond hcommon hother hfirst hsecond hturn).toGridRectangleDecomposition =
       D.leftRightRecut hcommon hother hfirst hsecond :=
   (rfl)
-
-/-- The first promotion recuts the original two-step domain. -/
-theorem isRecut_recutLeftEqRightFirst
-    (D : GridRectangleInitialPentagonDecomposition a s x z)
-    (hcommon : D.first.left = D.second.right)
-    (hother : D.first.right ≠ D.second.left)
-    (hfirst : D.first.IsEmpty) (hsecond : D.pentagon.IsEmpty)
-    (hturn : s ∈ Grid.cIco
-      (D.leftRightRecut hcommon hother hfirst hsecond).first.bottom
-      (D.leftRightRecut hcommon hother hfirst hsecond).first.top) :
-    D.IsRecut
-      (D.recutLeftEqRightFirst hcommon hother hfirst hsecond
-        hturn).toGridRectangleDecomposition := by
-  exact D.isRecut_leftRightRecut hcommon hother hfirst hsecond
-
-/-- The second promotion recuts the original two-step domain. -/
-theorem isRecut_recutLeftEqRightSecond
-    (D : GridRectangleInitialPentagonDecomposition a s x z)
-    (hcommon : D.first.left = D.second.right)
-    (hother : D.first.right ≠ D.second.left)
-    (hfirst : D.first.IsEmpty) (hsecond : D.pentagon.IsEmpty)
-    (hturn : s ∉ Grid.cIco
-      (D.leftRightRecut hcommon hother hfirst hsecond).first.bottom
-      (D.leftRightRecut hcommon hother hfirst hsecond).first.top) :
-    D.IsRecut
-      (D.recutLeftEqRightSecond hcommon hother hfirst hsecond
-        hturn).toGridRectangleDecomposition := by
-  exact D.isRecut_leftRightRecut hcommon hother hfirst hsecond
 
 end TauCeti.GridRectangleInitialPentagonDecomposition
