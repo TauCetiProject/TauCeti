@@ -20,11 +20,11 @@ disjoint tubular neighbourhoods of the link.
 ## Main declarations
 
 * `TauCeti.IsSolidTorusLinkNeighborhood` records solid-torus neighbourhoods of every component
-  together with pairwise disjoint open solid-torus images.
+  together with pairwise disjoint closed solid-torus images.
 * `TauCeti.exists_isSolidTorusLinkNeighborhood` constructs these neighbourhoods for a finite
   family of pairwise disjoint `C²` embedded circles in `ℝ³`.
 
-The resulting disjoint open images provide the componentwise neighborhoods used when forming a
+The resulting disjoint closed images provide the componentwise neighborhoods used when forming a
 link exterior. The canonical `SmoothLinkEmbedding` presentation has the same
 existence result via `SmoothLinkEmbedding.exists_isSolidTorusLinkNeighborhood`.
 -/
@@ -38,18 +38,23 @@ namespace TauCeti
 
 variable {ι X : Type*} [TopologicalSpace X]
 
-/-- A family of solid-torus neighbourhoods whose open images are pairwise disjoint. -/
+/-- A family of solid-torus neighbourhoods whose closed images are pairwise disjoint. -/
 structure IsSolidTorusLinkNeighborhood (f : ι → Circle → X)
     (Φ : ι → SolidTorus → X) : Prop where
   /-- Each component has a solid-torus neighbourhood. -/
   neighborhood : ∀ i, IsSolidTorusNeighborhood (f i) (Φ i)
-  /-- The open solid torus images of distinct components are disjoint. -/
-  pairwiseDisjoint : Pairwise (Disjoint on fun i =>
-    Φ i '' {p : SolidTorus | ‖(p.1 : ℂ)‖ < 1})
+  /-- The closed solid torus images of distinct components are disjoint. -/
+  pairwiseDisjoint : Pairwise (Disjoint on fun i => range (Φ i))
 
 namespace IsSolidTorusLinkNeighborhood
 
 variable {f : ι → Circle → X} {Φ : ι → SolidTorus → X}
+
+/-- The open solid torus images of distinct components are disjoint. -/
+theorem pairwiseDisjoint_image (h : IsSolidTorusLinkNeighborhood f Φ) :
+    Pairwise (Disjoint on fun i => Φ i '' {p : SolidTorus | ‖(p.1 : ℂ)‖ < 1}) := by
+  intro i j hij
+  exact (h.pairwiseDisjoint hij).mono (image_subset_range _ _) (image_subset_range _ _)
 
 /-- The `i`-th component lies in the open image of its solid torus. -/
 theorem range_subset_image (h : IsSolidTorusLinkNeighborhood f Φ) (i : ι) :
@@ -94,11 +99,7 @@ theorem exists_isSolidTorusLinkNeighborhood
         exists_isSolidTorusNeighborhood (hf i) (himm i) (hinj i) (hV_mem i)
       refine ⟨Φ, ⟨hΦ, ?_⟩⟩
       intro i j hij
-      apply (hV_disj hij).mono
-      · rintro _ ⟨p, hp, rfl⟩
-        exact hΦsub i ⟨p, rfl⟩
-      · rintro _ ⟨p, hp, rfl⟩
-        exact hΦsub j ⟨p, rfl⟩
+      exact (hV_disj hij).mono (hΦsub i) (hΦsub j)
 
 namespace SmoothLinkEmbedding
 

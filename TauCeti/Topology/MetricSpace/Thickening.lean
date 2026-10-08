@@ -11,7 +11,8 @@ public import Mathlib.Topology.MetricSpace.Thickening
 # Pairwise disjoint thickenings
 
 Compact pairwise disjoint sets in a finite family admit pairwise disjoint thickenings of one
-common positive radius.
+common positive radius. This supplies uniformly separated neighborhoods, for example the
+component neighborhoods used to construct disjoint solid-torus neighborhoods of a link.
 -/
 
 public section
@@ -21,7 +22,7 @@ open Set Metric Function
 namespace TauCeti
 
 /-- A finite family of pairwise disjoint compact sets admits pairwise disjoint thickenings of one
-common positive radius. -/
+common positive radius. This extends Mathlib's two-set result `Disjoint.exists_thickenings`. -/
 theorem exists_thickenings_pairwiseDisjoint
     {X ι : Type*} [MetricSpace X] [Finite ι]
     (K : ι → Set X) (hK : ∀ i, IsCompact (K i))
