@@ -16,25 +16,27 @@ Let `K` be a field in which `2 ≠ 0`, let `L/K` be a quadratic extension with a
 from the Kummer character of `a` on `G_L` (`TauCeti.kummerInd`). Through the signed-permutation
 representation `C₂ ≀ C₂ ⊂ O₂`, it is the action of `G_K` on the roots of `X² − σ a` and of its
 conjugate. For a square root `r2` of `2` in `Kˢ`, composing `ρ_a` with the lift
-`TauCeti.pinLift : C₂ ≀ C₂ → D̃₁₆ ⊂ M₂(Kˢ)` gives a lift `ρ̃_a` of `ρ_a` to `Pin⁺`
+`TauCeti.pinLift : C₂ ≀ C₂ → D₁₆ ⊂ M₂(Kˢ)` gives a lift `\tilde{ρ}_a` of `ρ_a` to `Pin⁺`
 (`TauCeti.kummerIndLift`).
 
-The matrix `ρ̃_a(g)` has entries in `Kˢ`, on which `G_K` acts, so `ρ̃_a` has a **twisted
-boundary** `δ(ρ̃_a)(g, h) = ρ̃_a(g) · g(ρ̃_a(h)) · ρ̃_a(g h)⁻¹` (`TauCeti.twistedBoundary`). Two
-signs enter it. The factor set of `pinLift` is the `D₁₆` extension cocycle `c_{D₁₆}`; and `g`
-fixes `e₁` and `e₂` but sends `t = (e₁ − e₂)/√2` to `±t` according to the sign `rootSign r2 g` of
-`√2`, so it multiplies `pinLift w` by `(−1)^{rootSign r2 g · c(w)}`, where `c(w)` is the swap
-coordinate of `w` (`TauCeti.pinLift_map_galois`). The swap coordinate of `ρ_a(h)` is the
-character of `G_K` with kernel `G_L`, which is `rootSign (σ x) h` for any `x ∈ L ∖ K`
-(`TauCeti.coordC_kummerInd`). Hence, as an identity of matrices,
+The matrix `\tilde{ρ}_a(g)` has entries in `Kˢ`, on which `G_K` acts, so `\tilde{ρ}_a` has
+a **twisted boundary**
+`δ(\tilde{ρ}_a)(g, h) = \tilde{ρ}_a(g) · g(\tilde{ρ}_a(h)) · \tilde{ρ}_a(g h)⁻¹`
+(`TauCeti.twistedBoundary`). Two signs enter it. The factor set of `pinLift` is the `D₁₆`
+extension cocycle `c_{D₁₆}`; and `g` fixes `e₁` and `e₂` but sends `t = (e₁ − e₂)/√2` to `±t`
+according to the sign `rootSign r2 g` of `√2`, so it multiplies `pinLift w` by
+`(−1)^{rootSign r2 g · c(w)}`, where `c(w)` is the swap coordinate of `w`
+(`TauCeti.pinLift_map_galois`). The swap coordinate of `ρ_a(h)` is the character of `G_K` with
+kernel `G_L`, which is `rootSign (σ x) h` for any `x ∈ L ∖ K` (`TauCeti.coordC_kummerInd`).
+Hence, as an identity of matrices,
 
 ```text
-δ(ρ̃_a)(g, h) = (−1)^{c_{D₁₆}(ρ_a g, ρ_a h) + rootSign √2 g · rootSign x h}
+δ(\tilde{ρ}_a)(g, h) = (−1)^{c_{D₁₆}(ρ_a g, ρ_a h) + rootSign √2 g · rootSign x h}
 ```
 
 (`TauCeti.twistedBoundary_kummerIndLift`): for `x` a square root of the discriminant `d` of
-`L/K`, this is `δ(ρ̃_a) = ρ_a^* c_{D₁₆} + (2) ∪ (d)` at cochain level. The `𝔽₂`-reading of the
-twisted boundary (`TauCeti.twistedBoundaryF2`) records its exponent
+`L/K`, this is `δ(\tilde{ρ}_a) = ρ_a^* c_{D₁₆} + (2) ∪ (d)` at cochain level. The `𝔽₂`-reading of
+the twisted boundary (`TauCeti.twistedBoundaryF2`) records its exponent
 (`TauCeti.twistedBoundaryF2_kummerIndLift`).
 
 This is the cochain identity by which Serre's second proof of his Théorème 1′ compares the
@@ -46,14 +48,14 @@ that of `Tr_*⟨a⟩`.
 
 * `TauCeti.twistedBoundary`: the twisted boundary of a `GL₂(Kˢ)`-valued `1`-cochain of `G_K`.
 * `TauCeti.twistedBoundaryF2`: the twisted boundary read in `𝔽₂`.
-* `TauCeti.kummerIndLift`: the lift `ρ̃_a = pinLift ∘ ρ_a`.
+* `TauCeti.kummerIndLift`: the lift `\tilde{ρ}_a = pinLift ∘ ρ_a`.
 
 ## Main results
 
 * `TauCeti.pinLift_map_galois`: `g(pinLift w) = (−1)^{rootSign √2 g · c(w)} pinLift w`.
 * `TauCeti.coordC_kummerInd`: the swap coordinate of `ρ_a(h)` is `rootSign x h`.
 * `TauCeti.twistedBoundary_kummerIndLift`, `TauCeti.twistedBoundaryF2_kummerIndLift`:
-  `δ(ρ̃_a) = ρ_a^* c_{D₁₆} + (2) ∪ (x²)` at cochain level.
+  `δ(\tilde{ρ}_a) = ρ_a^* c_{D₁₆} + (2) ∪ (x²)` at cochain level.
 
 ## References
 
@@ -164,15 +166,15 @@ theorem coordC_kummerInd (σ : L →ₐ[K] SeparableClosure K) (hdeg : Module.fi
 
 variable [NeZero (2 : K)]
 
-/-- **The lift `ρ̃_a = pinLift ∘ ρ_a`** of the representation `ρ_a = kummerInd σ hdeg a r hr s hs`
-into `D̃₁₆ ⊂ M₂(Kˢ)`, for a square root `r2` of `2` in `Kˢ`. -/
+/-- **The lift `\tilde{ρ}_a = pinLift ∘ ρ_a`** of the representation
+`ρ_a = kummerInd σ hdeg a r hr s hs` into `D₁₆ ⊂ M₂(Kˢ)`, for a square root `r2` of `2` in `Kˢ`. -/
 def kummerIndLift (σ : L →ₐ[K] SeparableClosure K) (hdeg : Module.finrank K L = 2) (a : Lˣ)
     (r : SeparableClosure K) (hr : r ^ 2 = σ (a : L)) (s : AbsoluteGaloisGroup K)
     (hs : s ∉ galoisSubgroup K L σ) {r2 : SeparableClosure K} (hr2 : r2 ^ 2 = 2)
     (g : AbsoluteGaloisGroup K) : Matrix (Fin 2) (Fin 2) (SeparableClosure K) :=
   pinLift hr2 (kummerInd σ hdeg a r hr s hs g)
 
-/-- `ρ̃_a(g)` is the `pinLift` of `ρ_a(g)`. -/
+/-- `\tilde{ρ}_a(g)` is the `pinLift` of `ρ_a(g)`. -/
 theorem kummerIndLift_def (σ : L →ₐ[K] SeparableClosure K) (hdeg : Module.finrank K L = 2)
     (a : Lˣ) (r : SeparableClosure K) (hr : r ^ 2 = σ (a : L)) (s : AbsoluteGaloisGroup K)
     (hs : s ∉ galoisSubgroup K L σ) {r2 : SeparableClosure K} (hr2 : r2 ^ 2 = 2)
@@ -180,8 +182,8 @@ theorem kummerIndLift_def (σ : L →ₐ[K] SeparableClosure K) (hdeg : Module.f
     kummerIndLift σ hdeg a r hr s hs hr2 g = pinLift hr2 (kummerInd σ hdeg a r hr s hs g) :=
   (rfl)
 
-/-- **`δ(ρ̃_a) = ρ_a^* c_{D₁₆} + (2) ∪ (d)` at cochain level,** as an identity of matrices:
-`δ(ρ̃_a)(g, h) = (−1)^{c_{D₁₆}(ρ_a g, ρ_a h) + rootSign √2 g · rootSign x h}` for a generator
+/-- **`δ(\tilde{ρ}_a) = ρ_a^* c_{D₁₆} + (2) ∪ (d)` at cochain level,** as an identity of matrices:
+`δ(\tilde{ρ}_a)(g, h) = (−1)^{c_{D₁₆}(ρ_a g, ρ_a h) + rootSign √2 g · rootSign x h}` for a generator
 `x` of `L = K(x)`, such as a square root of the discriminant `d`. The factor set of `pinLift` is
 `c_{D₁₆}` (`TauCeti.pinLift_mul_mul_inv`), `g` twists `pinLift w` by the sign
 `(−1)^{rootSign √2 g · c(w)}` (`TauCeti.pinLift_map_galois`), and the top coordinate of `ρ_a h` is
@@ -203,8 +205,8 @@ theorem twistedBoundary_kummerIndLift (σ : L →ₐ[K] SeparableClosure K)
     ((Commute.neg_one_right _).pow_right _).eq, mul_assoc _ _ (pinLift hr2 _), mul_assoc,
     pinLift_mul_mul_inv, pow_val_add h1, ← pow_add, ← pow_add, add_comm]
 
-/-- **`δ(ρ̃_a) = ρ_a^* c_{D₁₆} + (2) ∪ (d)` at cochain level, in `𝔽₂`:** the twisted boundary of
-`ρ̃_a`, read in `𝔽₂`, is `c_{D₁₆}(ρ_a g, ρ_a h) + rootSign √2 g · rootSign x h`. -/
+/-- **`δ(\tilde{ρ}_a) = ρ_a^* c_{D₁₆} + (2) ∪ (d)` at cochain level, in `𝔽₂`:** the twisted boundary
+of `\tilde{ρ}_a`, read in `𝔽₂`, is `c_{D₁₆}(ρ_a g, ρ_a h) + rootSign √2 g · rootSign x h`. -/
 theorem twistedBoundaryF2_kummerIndLift (σ : L →ₐ[K] SeparableClosure K)
     (hdeg : Module.finrank K L = 2) {x : L} (hx : x ∉ Set.range (algebraMap K L)) (a : Lˣ)
     (r : SeparableClosure K) (hr : r ^ 2 = σ (a : L)) (s : AbsoluteGaloisGroup K)
