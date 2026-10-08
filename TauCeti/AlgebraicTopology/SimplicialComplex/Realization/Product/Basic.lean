@@ -30,10 +30,14 @@ def orderedProdRealizationMap (K : AbstractSimplicialComplex α)
     C(Realization (K.orderedProd L), Realization K × Realization L) :=
   let fst' : PreAbstractSimplicialComplex.SimplicialMap
       (K.orderedProd L).toPreAbstractSimplicialComplex K.toPreAbstractSimplicialComplex :=
-    ⟨Prod.fst, fun _ h ↦ image_fst_mem_of_mem_orderedProd h⟩
+    (PreAbstractSimplicialComplex.SimplicialMap.orderedProdFst
+      K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex).domainRestrict
+        (by rw [orderedProd_toPreAbstractSimplicialComplex])
   let snd' : PreAbstractSimplicialComplex.SimplicialMap
       (K.orderedProd L).toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex :=
-    ⟨Prod.snd, fun _ h ↦ image_snd_mem_of_mem_orderedProd h⟩
+    (PreAbstractSimplicialComplex.SimplicialMap.orderedProdSnd
+      K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex).domainRestrict
+        (by rw [orderedProd_toPreAbstractSimplicialComplex])
   fst'.realizationMap.prodMk snd'.realizationMap
 
 /-- The first marginal of the barycentric coordinates. -/
