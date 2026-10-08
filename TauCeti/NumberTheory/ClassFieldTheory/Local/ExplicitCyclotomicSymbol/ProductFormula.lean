@@ -94,6 +94,8 @@ private theorem symbolProd_of_eq_prime (hm : m.primeFactors ⊆ T) {q : ℕ} (hq
   let unit (ℓ : ℕ) [Fact ℓ.Prime] (hℓ : ℓ ≠ q) : ℤ_[ℓ]ˣ :=
     (PadicInt.isUnit_iff.2 (PadicInt.norm_natCast_eq_one_iff.2
       ((Nat.coprime_primes Fact.out hq).2 hℓ))).unit
+  have hunit (ℓ : ℕ) [Fact ℓ.Prime] (hℓ : ℓ ≠ q) : (unit ℓ hℓ : ℤ_[ℓ]) = q :=
+    IsUnit.unit_spec _
   rw [symbolProd_apply]
   refine units_eq_of_forall_unitsMap_eq_of_prime_pow_dvd fun p k hp hk hpk ↦ ?_
   have : Fact p.Prime := ⟨hp⟩
@@ -110,19 +112,19 @@ private theorem symbolProd_of_eq_prime (hm : m.primeFactors ⊆ T) {q : ℕ} (hq
     · subst hℓq hpq
       exact unitsMap_cyclotomicSymbol_self_primePow m p hpk (by simp [hu])
     · exact unitsMap_cyclotomicSymbol_of_coprime_of_eq_unit m ℓ hpk
-        (hcop (hT ℓ hℓ) (hpq ▸ hℓq)) (w := unit ℓ hℓq) (by simp [hu, unit])
+        (hcop (hT ℓ hℓ) (hpq ▸ hℓq)) (w := unit ℓ hℓq) (by simp [hu, hunit])
   rw [Finset.prod_eq_mul ⟨p, hpT⟩ ⟨q, hqT⟩ (by simpa using hpq) (fun ⟨ℓ, hℓ⟩ _ hne ↦ ?_)
     (fun h ↦ absurd (Finset.mem_attach _ _) h) (fun h ↦ absurd (Finset.mem_attach _ _) h)]
   · rw [unitsMap_cyclotomicSymbol_primePow_of_eq_unit m p hpk (w := unit p hpq)
-        (by simp [hu, unit]),
+        (by simp [hu, hunit]),
       unitsMap_cyclotomicSymbol_self_of_coprime m q hpk (hcop hq hpq.symm) (by simp [hu]),
       inv_mul_eq_one]
     ext
-    simp [unit]
+    simp [hunit]
   · have : Fact ℓ.Prime := ⟨hT ℓ hℓ⟩
     have hℓq : ℓ ≠ q := fun h ↦ hne.2 (Subtype.ext h)
     exact unitsMap_cyclotomicSymbol_of_coprime_of_eq_unit m ℓ hpk
-      (hcop (hT ℓ hℓ) fun h ↦ hne.1 (Subtype.ext h)) (w := unit ℓ hℓq) (by simp [hu, unit])
+      (hcop (hT ℓ hℓ) fun h ↦ hne.1 (Subtype.ext h)) (w := unit ℓ hℓq) (by simp [hu, hunit])
 
 /-- At a positive integer whose primes lie in `T`, by multiplicativity from the primes. -/
 private theorem symbolProd_of_eq_natCast (hm : m.primeFactors ⊆ T) (n : ℕ) :
