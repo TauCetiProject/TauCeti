@@ -49,10 +49,8 @@ namespace TauCeti
 
 variable {N Q : ℕ} [NeZero N] {W : Matrix (Fin 2) (Fin 2) ℤ} {k : ℤ}
 
-/-- **An Atkin–Lehner operator on `S_k(Γ₁(N))` preserves the new subspace.** The square
-of the operator is a nonzero scalar times a diamond operator. Thus every old form can be
-written, up to that scalar, as the square of the operator applied to another old form; the
-Petersson scaling identity transfers orthogonality. -/
+/-- **An Atkin–Lehner operator on `S_k(Γ₁(N))` preserves the new subspace.** This holds in
+every integral weight `k` and for every Atkin–Lehner matrix `W` of every exact divisor `Q ∥ N`. -/
 theorem atkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew
     (hQ : 0 < Q) (hQN : Q ∣ N) (hW : IsAtkinLehnerMatrix N Q W)
     {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormsNew N k) :
@@ -64,8 +62,10 @@ theorem atkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew
     simpa [u] using hW.unitsMap_toHomUnits_gamma0Map_of_mul_self_eq hQ.ne' hQN hγ hsq
   have hu' : (Q : ZMod N) * u = ((W 1 1 : ℤ) : ZMod N) ^ 2 := by
     simpa [u] using hW.natCast_mul_toHomUnits_gamma0Map_of_mul_self_eq hγ hsq
+  -- `W_Q² = Q ^ (k - 2) • ⟨u⟩`, so each old `g` is, up to that nonzero scalar, `W_Q² g'` for
+  -- the old form `g' = ⟨u⁻¹⟩ g`; the Petersson scaling law moves one `W_Q` onto `f`.
   intro g hg
-  let g' := diamondOpCusp k u⁻¹ g
+  set g' := diamondOpCusp k u⁻¹ g with hg'_def
   have hg' : g' ∈ cuspFormsOld N k := diamondOpCusp_mem_cuspFormsOld u⁻¹ hg
   have hWg' : atkinLehnerOperatorGamma1Cusp hQ hQN hW k g' ∈ cuspFormsOld N k :=
     atkinLehnerOperatorGamma1Cusp_mem_cuspFormsOld hQ hQN hW hg'
@@ -77,7 +77,7 @@ theorem atkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew
     atkinLehnerOperatorGamma1Cusp_atkinLehnerOperatorGamma1Cusp hQ hQN hW hu hu' g',
     CuspForm.peterssonInnerCosets_smul_left] at hpair
   have hug : diamondOpCusp k u g' = g := by
-    rw [show g' = diamondOpCusp k u⁻¹ g by rfl, ← LinearMap.comp_apply,
+    rw [hg'_def, ← LinearMap.comp_apply,
       ← diamondOpCusp_mul, mul_inv_cancel, diamondOpCusp_one, LinearMap.id_apply]
   rw [hug] at hpair
   have hscalar : conj ((Q : ℂ) ^ (k - 2)) ≠ 0 := by

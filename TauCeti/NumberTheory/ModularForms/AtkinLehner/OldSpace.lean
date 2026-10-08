@@ -228,9 +228,8 @@ private lemma atkinLehnerOperatorGamma1Cusp_levelRaise_mem_cuspFormsOld [NeZero 
     congr 1
     simp only [Units.val_mk0, Complex.ofReal_natCast]
     push_cast
-    rw [mul_zpow, mul_zpow, show k - 2 = -(1 - k) + -1 by ring, zpow_add₀ hd₁C,
-      show k - 1 = -(1 - k) by ring]
-    simp only [_root_.zpow_neg, zpow_one]
+    rw [mul_zpow, mul_zpow, zpow_sub₀ hd₁C, zpow_sub₀ hd₁C, zpow_sub₀ he₁C, zpow_sub₀ he₁C,
+      zpow_sub₀ hd₂C]
     field_simp
   rw [hop]
   exact Submodule.smul_mem _ _ (levelRaise_mem_cuspFormsOld heM hMN k _)
@@ -259,7 +258,6 @@ theorem atkinLehnerOperatorGamma1Cusp_mem_cuspFormsOld [NeZero N]
     rcases hd with rfl | rfl
     exacts [⟨p, by rw [← hpM]; ring⟩, ⟨1, by rw [← hpM, mul_one]⟩]
   have : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd hdvd)
-  change CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd hdvd) g ∈ _
   rw [Submodule.mem_comap]
   by_cases hpQ : p ∣ Q
   · obtain ⟨Q₁, hQ₁⟩ := hpQ
