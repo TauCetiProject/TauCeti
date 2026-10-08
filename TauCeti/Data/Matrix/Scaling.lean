@@ -160,6 +160,15 @@ theorem IsDiagonalScaling.pos {P K : Matrix ι κ ℝ} {u : ι → ℝ} {v : κ 
   rw [h i j]
   exact mul_pos (mul_pos (hu i) (hK i j)) (hv j)
 
+omit [Fintype ι] [Fintype κ] in
+/-- Transposing a diagonal scaling exchanges the roles of the row and the column factors: if `P` is
+the diagonal scaling of `K` by `u` and `v`, then `Pᵀ` is the diagonal scaling of `Kᵀ` by `v` and
+`u`. -/
+theorem IsDiagonalScaling.transpose {P K : Matrix ι κ ℝ} {u : ι → ℝ} {v : κ → ℝ}
+    (h : IsDiagonalScaling P K u v) : IsDiagonalScaling Pᵀ Kᵀ v u := fun j i => by
+  rw [transpose_apply, transpose_apply, h i j]
+  ring
+
 /-! ### The relative entropy of a matrix against a kernel -/
 
 /-- `Matrix.relEntropy P K` is the real number
