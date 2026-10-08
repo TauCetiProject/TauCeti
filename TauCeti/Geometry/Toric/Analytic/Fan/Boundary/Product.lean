@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Toric.Algebraic.Fan.Product.Ray
 public import TauCeti.Geometry.Toric.Analytic.Fan.Boundary.Naturality
-public import TauCeti.Geometry.Toric.Analytic.Fan.Product.Manifold
 
 /-!
 # Boundary components of product toric realizations
@@ -19,8 +18,8 @@ distinguished points and torus orbits are in `TauCeti.Geometry.Toric.Analytic.Fa
 This homeomorphism is the underlying map of the canonical complex-manifold equivalence
 `TauCeti.Toric.Fan.analyticProdDiffeomorph`, established in `Product.Manifold`.
 The lemma `TauCeti.Toric.Fan.coe_analyticProdDiffeomorph` identifies the maps definitionally,
-so the canonical product-ray formulas below are stated directly through the biholomorphism.
-The auxiliary cone-identification formulas retain the underlying homeomorphism as their API.
+so rewriting with it applies the formulas below to the biholomorphism as well.
+For canonical product rays, supply the cone identifications from `Product.Ray` directly.
 
 A ray of the product fan is a ray of one factor times the zero cone of the other, by
 `TauCeti.Toric.Fan.prodRayEquiv`. Its boundary component is the product of the component of
@@ -47,7 +46,6 @@ given by `TauCeti.Toric.Fan.prodRayEquiv`.
 public section
 
 open Set
-open scoped ContDiff
 
 namespace TauCeti.Toric.Fan
 
@@ -105,51 +103,5 @@ theorem image_analyticProdHomeomorph_analyticBoundaryComponent_of_eq_bot_prod {�
       univ ×ˢ Ψ.analyticBoundaryComponent hΨ ρ := by
   rw [← Φ.preimage_analyticProdHomeomorph_analyticBoundaryComponent_univ_prod Ψ hΦ hΨ h,
     Homeomorph.image_preimage]
-
-/-- The preimage formula for the canonical first factor product ray under the product
-biholomorphism at every differentiability order. -/
-theorem preimage_analyticProdDiffeomorph_analyticBoundaryComponent_prodRayEquiv_symm_inl
-    (n : ℕ∞ω) (hΨ0 : Nonempty Ψ.cones) (ρ : Φ.Ray) :
-    Φ.analyticProdDiffeomorph Ψ hΦ hΨ n ⁻¹' (Φ.analyticBoundaryComponent hΦ ρ ×ˢ univ) =
-      (Φ.prod Ψ).analyticBoundaryComponent (Fan.IsRegular.prod Φ Ψ hΦ hΨ)
-        ((Φ.prodRayEquiv Ψ ⟨ρ.toCone⟩ hΨ0).symm (.inl ρ)) := by
-  simpa only [coe_analyticProdDiffeomorph] using
-    Φ.preimage_analyticProdHomeomorph_analyticBoundaryComponent_prod_univ Ψ hΦ hΨ
-      (Φ.toCone_prodRayEquiv_symm_inl Ψ ⟨ρ.toCone⟩ hΨ0 ρ)
-
-/-- The image formula for the canonical first factor product ray under the product
-biholomorphism at every differentiability order. -/
-theorem image_analyticProdDiffeomorph_analyticBoundaryComponent_prodRayEquiv_symm_inl
-    (n : ℕ∞ω) (hΨ0 : Nonempty Ψ.cones) (ρ : Φ.Ray) :
-    Φ.analyticProdDiffeomorph Ψ hΦ hΨ n ''
-      (Φ.prod Ψ).analyticBoundaryComponent (Fan.IsRegular.prod Φ Ψ hΦ hΨ)
-        ((Φ.prodRayEquiv Ψ ⟨ρ.toCone⟩ hΨ0).symm (.inl ρ)) =
-      Φ.analyticBoundaryComponent hΦ ρ ×ˢ univ := by
-  simpa only [coe_analyticProdDiffeomorph] using
-    Φ.image_analyticProdHomeomorph_analyticBoundaryComponent_of_eq_prod_bot Ψ hΦ hΨ
-      (Φ.toCone_prodRayEquiv_symm_inl Ψ ⟨ρ.toCone⟩ hΨ0 ρ)
-
-/-- The preimage formula for the canonical second factor product ray under the product
-biholomorphism at every differentiability order. -/
-theorem preimage_analyticProdDiffeomorph_analyticBoundaryComponent_prodRayEquiv_symm_inr
-    (n : ℕ∞ω) (hΦ0 : Nonempty Φ.cones) (ρ : Ψ.Ray) :
-    Φ.analyticProdDiffeomorph Ψ hΦ hΨ n ⁻¹' (univ ×ˢ Ψ.analyticBoundaryComponent hΨ ρ) =
-      (Φ.prod Ψ).analyticBoundaryComponent (Fan.IsRegular.prod Φ Ψ hΦ hΨ)
-        ((Φ.prodRayEquiv Ψ hΦ0 ⟨ρ.toCone⟩).symm (.inr ρ)) := by
-  simpa only [coe_analyticProdDiffeomorph] using
-    Φ.preimage_analyticProdHomeomorph_analyticBoundaryComponent_univ_prod Ψ hΦ hΨ
-      (Φ.toCone_prodRayEquiv_symm_inr Ψ hΦ0 ⟨ρ.toCone⟩ ρ)
-
-/-- The image formula for the canonical second factor product ray under the product
-biholomorphism at every differentiability order. -/
-theorem image_analyticProdDiffeomorph_analyticBoundaryComponent_prodRayEquiv_symm_inr
-    (n : ℕ∞ω) (hΦ0 : Nonempty Φ.cones) (ρ : Ψ.Ray) :
-    Φ.analyticProdDiffeomorph Ψ hΦ hΨ n ''
-      (Φ.prod Ψ).analyticBoundaryComponent (Fan.IsRegular.prod Φ Ψ hΦ hΨ)
-        ((Φ.prodRayEquiv Ψ hΦ0 ⟨ρ.toCone⟩).symm (.inr ρ)) =
-      univ ×ˢ Ψ.analyticBoundaryComponent hΨ ρ := by
-  simpa only [coe_analyticProdDiffeomorph] using
-    Φ.image_analyticProdHomeomorph_analyticBoundaryComponent_of_eq_bot_prod Ψ hΦ hΨ
-      (Φ.toCone_prodRayEquiv_symm_inr Ψ hΦ0 ⟨ρ.toCone⟩ ρ)
 
 end TauCeti.Toric.Fan
