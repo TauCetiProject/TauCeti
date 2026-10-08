@@ -101,13 +101,16 @@ theorem sUnitLog_eq_zero_iff (u : S.unit K) :
       (f := (Units.coeHom K).comp (S.unit K).subtype)
       (Units.val_injective.comp (S.unit K).subtype_injective)).mp huK
   · intro hu
-    exact (isOfFinAddOrder_iff_eq_zero _).mp ((sUnitLog S).isOfFinAddOrder hu)
+    exact (isOfFinAddOrder_iff_eq_zero _).mp
+      ((sUnitLog S).isOfFinAddOrder (isOfFinAddOrder_ofMul_iff.mpr hu))
 
 /-- The kernel of the logarithmic map is the additive torsion subgroup of the S-units. -/
 theorem sUnitLog_ker :
     (sUnitLog S).ker = AddCommGroup.torsion (Additive (S.unit K)) := by
   ext u
-  exact (sUnitLog_eq_zero_iff S u.toMul)
+  rw [AddMonoidHom.mem_ker, AddCommGroup.mem_torsion, ← ofMul_toMul u,
+    isOfFinAddOrder_ofMul_iff]
+  exact sUnitLog_eq_zero_iff S u.toMul
 
 /-- The S-unit logarithmic map has finite kernel, even if the set of allowed primes is infinite. -/
 instance finite_ker_sUnitLog : Finite (sUnitLog S).ker := by
