@@ -40,8 +40,6 @@ product with `μ_ℓ^{-1}`, the form in which `dim H¹` is also computed.
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.exists_fdGalRepOfQuotient_iso_muNRep`: `μₙ` is inflated from
-  `G_F ⧸ V` when `V` acts trivially on it.
 * `TauCeti.ClassFieldTheory.natCard_continuousCohomology_two_fdGalRepOfQuotient`:
   `#H²(F, A) = #Hom_G(A, M)`, for every `n` invertible in `F`.
 * `TauCeti.ClassFieldTheory.finrank_continuousCohomology_two_fdGalRepOfQuotient`:
@@ -60,21 +58,6 @@ namespace TauCeti.ClassFieldTheory
 open CategoryTheory Module
 
 variable {n : ℕ} {F : Type} [Field F] {V : OpenNormalSubgroup (Field.absoluteGaloisGroup F)}
-
-/-- **`μₙ` is inflated from the quotient** by an open normal subgroup `V` acting trivially on it:
-some finite-dimensional representation of `G_F ⧸ V` inflates to `μₙ`
-(`exists_galRepOfQuotient_iso_of_trivial`). -/
-theorem exists_fdGalRepOfQuotient_iso_muNRep (hn : IsUnit (n : F))
-    (hV : ∀ g ∈ V, ∀ x : (muNRep n F).V, (muNRep n F).ρ g x = x) :
-    ∃ M : FDRep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup),
-      Nonempty ((fdGalRepOfQuotient n F V).obj M ≅ muNRep n F) := by
-  have : NeZero n := NeZero.of_neZero_natCast F (h := ⟨hn.ne_zero⟩)
-  obtain ⟨M, ⟨e⟩⟩ := exists_galRepOfQuotient_iso_of_trivial n F V (muNRep n F) hV
-  have : Finite (muNRep n F).V :=
-    Finite.of_equiv (KummerCoeff F n) (kummerCoeffEquivMuNRep n F).toEquiv
-  have : Finite M.V := Finite.of_equiv _ ((forget (GalRep n F)).mapIso e).toEquiv.symm
-  have : Module.Finite (ZMod n) M.V := Module.Finite.of_finite
-  exact ⟨FDRep.of M.ρ, ⟨eqToIso (fdGalRepOfQuotient_obj_of n F V M) ≪≫ e⟩⟩
 
 variable [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocalField F]
 
