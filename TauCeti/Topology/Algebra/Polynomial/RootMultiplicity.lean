@@ -68,7 +68,8 @@ theorem eventually_rootMultiplicity_le [T1Space R]
   have hcenter : (hasseDeriv ((F x₀).rootMultiplicity (r x₀)) (F x₀)).eval (r x₀) ≠ 0 := by
     rw [← taylor_coeff, rootMultiplicity_eq_natTrailingDegree, ← taylor_apply]
     exact coeff_natTrailingDegree_ne_zero.2 ((taylor_eq_zero _ _).not.2 hne)
-  filter_upwards [(continuousAt_hasseDeriv_eval _ (fun i _ hi ↦ hF i hi) hdeg hr).eventually_ne hcenter] with x hx
+  filter_upwards [(continuousAt_hasseDeriv_eval _ (fun i _ hi ↦ hF i hi) hdeg hr).eventually_ne
+    hcenter] with x hx
   rw [rootMultiplicity_eq_natTrailingDegree, ← taylor_apply]
   exact natTrailingDegree_le_of_ne_zero (by rwa [taylor_coeff])
 
