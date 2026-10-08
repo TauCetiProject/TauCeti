@@ -25,8 +25,6 @@ used for initial velocities and velocity lifts of curves.
   the differential of the inverse isometry.
 * `TauCeti.RiemannianIsometry.toDiffeomorph_tangent_apply`: the tangent-bundle lift has this
   fibrewise linear-isometry equivalence as its fibre map.
-* `TauCeti.RiemannianIsometry.mfderiv_apply_mpullback`: the differential undoes pullback of a vector
-  field.
 * `TauCeti.RiemannianIsometry.inner_mpullback`: pulling back vector fields along a Riemannian
   isometry preserves their pointwise inner products.
 -/
@@ -116,20 +114,16 @@ theorem toDiffeomorph_tangent_apply [IsManifold I 1 M] [IsManifold J 1 N]
   rw [Diffeomorph.coe_tangent, mfderivToLinearIsometryEquiv_apply]
   rfl
 
-/-- The differential of a Riemannian isometry carries the pullback of a vector field at `x` to the
-value of the field at `Φ x`. -/
-@[simp]
-theorem mfderiv_apply_mpullback (Φ : RiemannianIsometry I J M N) (V : Π y : N, TangentSpace J y)
-    (x : M) : mfderiv I J Φ x (mpullback I J Φ V x) = V (Φ x) :=
-  Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp) V x
-
 /-- Pulling back vector fields along a Riemannian isometry preserves their pointwise inner
 products. -/
 @[simp]
 theorem inner_mpullback (Φ : RiemannianIsometry I J M N) (Y Z : Π y : N, TangentSpace J y)
     (x : M) :
     inner ℝ (mpullback I J Φ Y x) (mpullback I J Φ Z x) = inner ℝ (Y (Φ x)) (Z (Φ x)) := by
-  rw [← Φ.inner_mfderiv x, mfderiv_apply_mpullback, mfderiv_apply_mpullback]
+  rw [← Φ.inner_mfderiv x]
+  -- `⇑Φ.toDiffeomorph` is `⇑Φ` by definition (`coe_toDiffeomorph` is `rfl`).
+  exact congrArg₂ (inner ℝ) (Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp) Y x)
+    (Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp) Z x)
 
 end TauCeti.RiemannianIsometry
 

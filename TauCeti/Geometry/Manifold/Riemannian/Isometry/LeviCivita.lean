@@ -154,8 +154,9 @@ theorem leviCivitaConnection_mpullback_apply_mpullback (Φ : RiemannianIsometry 
     leviCivitaConnection I M (mpullback I J Φ Z) x (mpullback I J Φ Y x) =
       mpullback I J Φ (fun y ↦ leviCivitaConnection J N Z y (Y y)) x := by
   apply Φ.mfderiv_injective x
-  rw [Φ.mfderiv_leviCivitaConnection_mpullback hZ, Φ.mfderiv_apply_mpullback,
-    Φ.mfderiv_apply_mpullback]
+  rw [Φ.mfderiv_leviCivitaConnection_mpullback hZ, ← coe_toDiffeomorph Φ,
+    Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp),
+    Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp)]
 
 end TauCeti.RiemannianIsometry
 

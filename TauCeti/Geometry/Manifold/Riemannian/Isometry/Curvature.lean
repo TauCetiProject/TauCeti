@@ -111,7 +111,10 @@ theorem mfderiv_curvatureOperator_mpullback (Φ : RiemannianIsometry I J M N)
     Φ.mfderiv_leviCivitaConnection_mpullback (hsmooth hY (Φ x)),
     Φ.mfderiv_leviCivitaConnection_mpullback (hsmooth hX (Φ x)),
     Φ.mfderiv_leviCivitaConnection_mpullback (hZd (Φ x)),
-    Φ.mfderiv_apply_mpullback, Φ.mfderiv_apply_mpullback, Φ.mfderiv_apply_mpullback]
+    ← coe_toDiffeomorph Φ,
+    Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp),
+    Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp),
+    Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp)]
 
 variable [T2Space M] [T2Space N]
 
@@ -129,7 +132,8 @@ theorem mfderiv_curvatureTensor (Φ : RiemannianIsometry I J M N) (x : M)
     obtain ⟨X, hX, hXu⟩ := exists_contMDiff_section_eq J F (mfderiv I J Φ x u)
     refine ⟨X, hX, ?_, hXu⟩
     apply Φ.mfderiv_injective x
-    rw [Φ.mfderiv_apply_mpullback, hXu]
+    rw [← coe_toDiffeomorph Φ, Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp)]
+    simpa only [coe_toDiffeomorph] using hXu
   have hpull : ∀ {X : Π y : N, TangentSpace J y}, CMDiff ∞ (T% X) →
       CMDiff ∞ (T% (mpullback I J Φ X)) := fun hX ↦
     hX.mpullback_vectorField Φ.toDiffeomorph.contMDiff
