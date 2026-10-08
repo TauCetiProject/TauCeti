@@ -33,8 +33,8 @@ feasible pair.
 * `TauCeti.isCyclicallyMonotone_setOf_tendsto` — the asymptotic contact set of a family of dual
   feasible pairs is `c`-cyclically monotone;
 * `TauCeti.IsCoupling.exists_seq_tendsto_ae_of_tendsto_kantorovichDualValue` — if the dual values
-  of feasible pairs tend to the cost of a plan, then along a subsequence the pairs converge to the
-  cost almost everywhere for that plan;
+  of feasible pairs tend to the cost of a plan, then along a subsequence their split sums converge
+  to the cost almost everywhere for that plan;
 * `TauCeti.exists_seq_tendsto_kantorovichDualValue_of_lowerSemicontinuous` — on Polish spaces a
   finite optimal cost of a lower semicontinuous cost is the limit of real integrable dual values;
 * `TauCeti.IsOptimalCoupling.exists_isCyclicallyMonotone_of_lowerSemicontinuous` — an optimal plan
