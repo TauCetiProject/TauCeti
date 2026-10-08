@@ -196,7 +196,7 @@ theorem exists_mem_image_schwarzChristoffelPrimitive_iff_of_sum_eq_neg_one
     isOpen_image_schwarzChristoffelPrimitive a e z₀ isOpen_upperHalfPlaneSet subset_rfl
   have hfrontier : frontier U = range (schwarzChristoffelBoundary a e z₀) :=
     frontier_image_schwarzChristoffelPrimitive_eq_range_of_neg_one_le_sum
-      a e z₀ hfinite hsum.ge (by rw [hsum]; norm_num) hinj
+      a e z₀ hfinite hsum.ge (Or.inl (by rw [hsum]; norm_num)) hinj
   -- Each of the three regions to the right of `R` avoids the frontier, so connectedness
   -- makes membership in the open image constant on that region.
   have dichotomy (s : Set ℂ) (hs : IsPreconnected s)

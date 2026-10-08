@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Subcomplex
 import Mathlib.Data.Fintype.Powerset
 
 /-!
@@ -53,12 +53,7 @@ theorem isCompact_setOf_support_mem {L : PreAbstractSimplicialComplex ι}
           Subtype.ext (faceInclusion_val _ _ _)⟩⟩
     · intro hx
       obtain ⟨σ, y, rfl⟩ := mem_iUnion.mp hx
-      have hne := K.isRelLowerSet_faces.prop_of_mem
-        (support_mem K (faceInclusion K ⟨σ.1, hL σ.2⟩ y))
-      simp only [faceInclusion_val] at hne
-      have hyL : y.1.support ∈ L :=
-        L.isRelLowerSet_faces.mem_of_le σ.2 (StandardSimplex.support_subset y) hne
-      simpa only [mem_ofPred_eq, faceInclusion_val] using hyL
+      exact support_faceInclusion_mem hL σ.2 y
   rw [heq]
   exact isCompact_iUnion fun σ => isCompact_range (continuous_faceInclusion K ⟨σ.1, hL σ.2⟩)
 

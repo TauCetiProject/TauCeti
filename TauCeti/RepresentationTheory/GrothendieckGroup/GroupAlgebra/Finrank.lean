@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.GrothendieckGroup.Finrank
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Induction
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Ring
+public import TauCeti.GroupTheory.Index.PrimePart
 import TauCeti.RepresentationTheory.AsModule
 
 /-!
@@ -83,3 +84,20 @@ theorem index_dvd_finrankK0_of_mem_range_indK0 (S : Subgroup G)
   exact ⟨finrankK0 k k[S] y, finrankK0_indK0 S y⟩
 
 end TauCeti
+
+namespace Subgroup
+
+open TauCeti
+open scoped MonoidAlgebra
+
+/-- A class induced from a subgroup of order prime to `p` has dimension divisible by
+the `p`-part of the group order, in every characteristic. -/
+theorem ordProj_dvd_finrankK0_indK0 {k G : Type u} [Field k] [Group G] [Finite G]
+    (S : Subgroup G) {p : ℕ} (hp : p.Prime) (hS : ¬ p ∣ Nat.card S)
+    (y : ExactK0 (finiteModulesExactStructure k[S])) :
+    (ordProj[p] (Nat.card G) : ℤ) ∣ finrankK0 k k[G] (indK0 k S y) := by
+  rw [finrankK0_indK0]
+  exact dvd_mul_of_dvd_left (Int.natCast_dvd_natCast.mpr
+    (S.ordProj_natCard_dvd_index hp hS)) _
+
+end Subgroup

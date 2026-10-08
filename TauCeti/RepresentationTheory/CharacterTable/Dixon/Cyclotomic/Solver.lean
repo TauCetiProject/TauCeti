@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.FinEnum
+-- Lean requires this public import to compile the executable solver through its private helpers.
+public import TauCeti.Data.FinEnum.Perm
 import Mathlib.Data.List.NodupEquivFin
 import TauCeti.Data.Array.OfFn
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.CentralCharacterCount
@@ -23,8 +24,9 @@ character is again a central character, so every one of those residue rows belon
 modular search.
 
 This file performs the missing assembly.  For `q : TauCeti.DixonPrimeData G`, it enumerates the
-possible alignments of the modular rows at all conjugate roots.  It numbers the searched rows once
-and represents each conjugate slice by a permutation of that numbering.  It applies
+possible alignments of the modular rows at all conjugate roots. It numbers the searched rows once,
+fixes the first conjugate slice, and directly enumerates permutations of that numbering for each
+remaining conjugate.  It applies
 `TauCeti.Cyclotomic.lift` entrywise to obtain
 candidate exact central-character rows, enumerates the possible positive degree vectors, and
 computes the candidate ordinary table by coefficientwise exact division.  The executable
@@ -204,6 +206,39 @@ private theorem table_eq_cyclotomicQuotient (e : ℕ)
   exact cyclotomicQuotient_natCast_mul e (table i k)
     (Finset.card_pos.mpr ⟨d.rep k, d.rep_mem_classFinset k⟩)
 
+omit [Fintype G] [DecidableEq G] in
+/-- Enumerate only bijective row alignments, with the first conjugate fixed before searching.
+The remaining conjugates independently choose a permutation of the canonical modular rows. -/
+private def residuePermutations (e : ℕ) (first : Fin e.totient) :
+    List (Fin e.totient → Fin d.numClasses → Fin d.numClasses) :=
+  (List.Pi.enum fun _ : {j : Fin e.totient // j ≠ first} ↦
+    Equiv.Perm (Fin d.numClasses)).map
+    fun perms j i ↦ if hj : j = first then i else perms ⟨j, hj⟩ i
+
+omit [Fintype G] [DecidableEq G] in
+/-- An alignment is enumerated exactly when it fixes the distinguished conjugate and is
+injective at every conjugate. -/
+@[simp]
+private theorem mem_residuePermutations (e : ℕ) (first : Fin e.totient)
+    {perms : Fin e.totient → Fin d.numClasses → Fin d.numClasses} :
+    perms ∈ d.residuePermutations e first ↔
+      (∀ i, perms first i = i) ∧ ∀ j, Function.Injective (perms j) := by
+  simp only [residuePermutations, List.mem_map, List.Pi.mem_enum, true_and]
+  constructor
+  · rintro ⟨ps, rfl⟩
+    exact ⟨fun i ↦ by simp, fun j ↦ by
+      by_cases hj : j = first
+      · intro a b hab
+        simpa only [dite_eq_left hj] using hab
+      · simpa [hj] using (ps ⟨j, hj⟩).injective⟩
+  · rintro ⟨hfirst, hinj⟩
+    refine ⟨fun j ↦ Equiv.ofBijective (perms j)
+      ((Fintype.bijective_iff_injective_and_card _).mpr ⟨hinj j, rfl⟩), ?_⟩
+    funext j i
+    by_cases hj : j = first
+    · simp [hj, hfirst]
+    · simp [hj, Equiv.ofBijective_apply]
+
 /-- Enumerate the exact-cyclotomic candidates inspected by the solver.
 
 For every Galois-conjugate root, a permutation chooses how its modular rows align with the
@@ -216,16 +251,13 @@ private def dixonCyclotomicCharacterTableCandidates (e : ℕ)
     ⟨0, Nat.totient_pos.mpr (Nat.pos_of_ne_zero (he ▸ Monoid.exponent_ne_zero_of_finite))⟩
   let modularRows := d.modularCentralRowsList q
   let canonicalRows := Array.ofFn fun i : Fin d.numClasses ↦ modularRows.getD i 0
-  let residuePermutations :=
-    (FinEnum.toList (Fin e.totient → Fin d.numClasses → Fin d.numClasses)).filter fun perms ↦
-      decide ((∀ i, perms firstConjugate i = i) ∧
-        ∀ j, Function.Injective (perms j))
+  let alignments := d.residuePermutations e firstConjugate
   let Degree :=
     {n : Fin (Fintype.card G + 1) // n ≠ 0 ∧ (n : ℕ) ∣ Fintype.card G}
   let degreeAssignments :=
     (FinEnum.toList (Fin d.numClasses → Degree)).filter fun degree ↦
       decide (∑ i, (degree i : ℕ) ^ 2 = Fintype.card G)
-  residuePermutations.flatMap fun perms ↦
+  alignments.flatMap fun perms ↦
     let omegaEntries := Array.ofFn fun i ↦ Array.ofFn fun k ↦
       Cyclotomic.lift e q.root fun j ↦
         (canonicalRows[(perms j i).val]'(by simp [canonicalRows])) k
@@ -253,7 +285,8 @@ private theorem conjugateResidueRow_mem_of_mem_candidates (e : ℕ) (he : e = Mo
   let _ : FinEnum (ZMod q.p) :=
     FinEnum.ofEquiv (Fin q.p) (ZMod.finEquiv q.p).symm.toEquiv
   simp only [dixonCyclotomicCharacterTableCandidates, List.mem_flatMap, List.mem_map,
-    List.mem_filter, FinEnum.mem_toList, true_and, decide_eq_true_eq] at houtput
+    List.mem_filter, FinEnum.mem_toList, true_and, decide_eq_true_eq,
+    mem_residuePermutations] at houtput
   obtain ⟨perms, _, degrees, _, rfl⟩ := houtput
   have hrow :
       (fun k ↦ Cyclotomic.conjugateResidues q.root
@@ -345,7 +378,8 @@ private theorem mem_dixonCyclotomicCharacterTableCandidates (e : ℕ) (he : e = 
     Cyclotomic.lift_eq_of_conjugateResidues_eq (he ▸ q.isPrimitiveRoot_root) (hcoeff i k) <|
       funext fun j ↦ (congrFun (hrows j i) k).symm
   simp only [dixonCyclotomicCharacterTableCandidates, List.mem_flatMap, List.mem_map,
-    List.mem_filter, FinEnum.mem_toList, true_and, decide_eq_true_eq]
+    List.mem_filter, FinEnum.mem_toList, true_and, decide_eq_true_eq,
+    mem_residuePermutations]
   -- The searched degree `⟨degree i, _⟩` has value `degree i` by `rfl`, which gives its
   -- nonvanishing and discharges the sum-of-squares condition and the `degree` field below.
   refine ⟨perms, ⟨hfirst _, hinjective⟩, fun i ↦ ⟨⟨degree i, Nat.lt_succ_of_le

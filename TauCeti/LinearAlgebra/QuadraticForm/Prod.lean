@@ -309,8 +309,8 @@ def specialOrthogonalGroupProd :
     mem_specialOrthogonalGroup_iff.mpr
       ⟨prodCongr_mem_orthogonalGroup (specialOrthogonalGroup_le_orthogonalGroup Q₁ f.1.2)
         (specialOrthogonalGroup_le_orthogonalGroup Q₂ f.2.2), by
-        rw [LinearEquiv.det_prodCongr, (mem_specialOrthogonalGroup_iff.mp f.1.2).2,
-          (mem_specialOrthogonalGroup_iff.mp f.2.2).2, mul_one]⟩⟩
+        rw [LinearEquiv.det_prodCongr, det_coe_specialOrthogonalGroup,
+          det_coe_specialOrthogonalGroup, mul_one]⟩⟩
   map_one' := by ext x <;> simp
   map_mul' f g := by ext x <;> simp
 
@@ -362,8 +362,7 @@ theorem mem_range_specialOrthogonalGroupProd_iff {g : specialOrthogonalGroup (Q�
   constructor
   · rintro ⟨f, rfl⟩
     rw [coe_specialOrthogonalGroupProd, (key _ _).1, (key _ _).2, ← LinearEquiv.coe_det,
-      ← LinearEquiv.coe_det, (mem_specialOrthogonalGroup_iff.mp f.1.2).2,
-      (mem_specialOrthogonalGroup_iff.mp f.2.2).2]
+      ← LinearEquiv.coe_det, det_coe_specialOrthogonalGroup, det_coe_specialOrthogonalGroup]
     exact ⟨fun _ ↦ by simp, fun _ ↦ by simp, rfl, rfl⟩
   rintro ⟨h₁, h₂, d₁, d₂⟩
   obtain ⟨f, hf⟩ := (mem_range_orthogonalGroupProd_iff Q₁ Q₂

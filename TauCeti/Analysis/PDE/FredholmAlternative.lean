@@ -87,8 +87,9 @@ theorem energyFormH1_dirichletMassOperator
     energyFormH1 a b c (dirichletMassOperator hcoeff hcoercive u : W1p mu Omega 2)
         (v : W1p mu Omega 2) =
       ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
-  rw [← energyFormH1L0_apply hcoeff, dirichletMassOperator,
-    hcoercive.apply_formPerturbationOperator, W1p0.valueL_apply, W1p0.valueL_apply]
+  unfold dirichletMassOperator
+  rw [← energyFormH1L0_apply hcoeff, hcoercive.apply_formPerturbationOperator, W1p0.valueL_apply,
+    W1p0.valueL_apply]
 
 /-- On a bounded domain, the Dirichlet mass operator is compact by Rellich--Kondrachov. -/
 theorem isCompactOperator_dirichletMassOperator
@@ -157,8 +158,8 @@ theorem isWeakSolutionDirichletMassShift_iff_operator_eq
         (1 - kappa • dirichletMassOperator hcoeff hcoercive :
             W1p0 mu Omega 2 →L[ℝ] W1p0 mu Omega 2) u =
           hcoercive.solutionOfFunctional (dirichletForcing f) := by
-    simpa only [dirichletMassOperator, IsWeakSolutionDirichletMassShift,
-      energyFormH1L0_apply, W1p0.valueL_apply] using
+    unfold dirichletMassOperator
+    simpa only [IsWeakSolutionDirichletMassShift, energyFormH1L0_apply, W1p0.valueL_apply] using
       (hcoercive.one_sub_smul_formPerturbationOperator_apply_eq_iff_functional
         (W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)) kappa (dirichletForcing f) u).symm
   have hsolution :
