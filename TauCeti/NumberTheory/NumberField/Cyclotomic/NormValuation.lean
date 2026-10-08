@@ -48,9 +48,9 @@ namespace TauCeti.NumberField
 variable {n : ℕ} [NeZero n] {F : Type*} [Field F] [NumberField F]
   [IsCyclotomicExtension {n} ℚ F] {p : ℕ} [Fact p.Prime]
 
-/-- **The residue degree of a subfield is an order of `p` modulo its subgroup.** Let `K` be a
-subfield of the `n`-th cyclotomic field `F` and `P` a prime of `K` above `p ∤ n`. Raising roots of
-unity to the power `p ^ f(P/p)` fixes `K`. -/
+/-- **A residue-degree power of `p` fixes the subfield.** Let `K` be a subfield of the `n`-th
+cyclotomic field `F` and `P` a prime of `K` above `p ∤ n`. Raising roots of unity to the power
+`p ^ f(P/p)` fixes `K`. -/
 theorem galEquivZMod_symm_pow_inertiaDeg_mem_fixingSubgroup (hp : p.Coprime n)
     (K : IntermediateField ℚ F) (P : Ideal (𝓞 K)) [P.IsPrime]
     [P.LiesOver (span {(p : ℤ)})] :
