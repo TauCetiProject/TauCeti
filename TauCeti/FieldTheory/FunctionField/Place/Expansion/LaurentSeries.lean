@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Completion
-public import Mathlib.RingTheory.LaurentSeries
+public import TauCeti.RingTheory.LaurentSeries
 
 /-!
 # Laurent-series expansions at rational places
@@ -40,15 +40,6 @@ namespace TauCeti.Place
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 variable (P : Place k F) {t : F} (hP : P.degree = 1) (ht : P.ord t = 1)
-
-/-- The constant scalars on `k((X))` factor through `k[[X]]`. The scalar actions are stated through
-the algebra structures, since the `k`-algebra structure on `k((X))` is the one inherited from
-`k[[X]]` rather than the coefficientwise action. -/
-@[local instance]
-private theorem isScalarTower_powerSeries_laurentSeries :
-    @IsScalarTower k (PowerSeries k) (LaurentSeries k) Algebra.toSMul Algebra.toSMul
-      Algebra.toSMul :=
-  .of_algebraMap_eq' rfl
 
 /-- **Laurent-series expansion at a rational place.**  A chosen uniformizer identifies the
 completion of the local function field with the Laurent-series field over the constants.  This is
