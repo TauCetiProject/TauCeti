@@ -137,8 +137,9 @@ noncomputable def shapiroFieldEmbedding [IsGalois F (AlgebraicClosure F)] :
 @[simp]
 theorem coe_shapiroFieldEmbedding_apply [IsGalois F (AlgebraicClosure F)]
     (x : shapiroField F V C) :
-    (shapiroFieldEmbedding F V C x : AlgebraicClosure F) = x :=
-  (rfl)
+    (shapiroFieldEmbedding F V C x : AlgebraicClosure F) = x := by
+  unfold shapiroFieldEmbedding
+  exact IntermediateField.coe_inclusion _ x
 
 /-- **The absolute Galois group of the Shapiro fixed field is the preimage of `C`.** Along the
 inclusion `shapiroFieldEmbedding`, the image of `G_{K_C}` in `G_F` is the preimage of `C` in

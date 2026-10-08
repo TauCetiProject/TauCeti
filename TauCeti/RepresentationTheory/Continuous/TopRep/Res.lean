@@ -30,18 +30,23 @@ namespace TopRep
 variable {k G H K : Type*} [Ring k] [TopologicalSpace k] [Group G] [Group H] [Monoid K]
 
 /-- Restricting along `φ` and then along `ψ` is restricting along the composite `φ.comp ψ`. -/
+@[simp]
 theorem res_res (φ : H →* G) (ψ : K →* H) (X : TopRep k G) :
     res ψ (res φ X) = res (φ.comp ψ) X :=
   rfl
 
 /-- Restricting along the identity gives back the representation. -/
+@[simp]
 theorem res_id (X : TopRep k G) : res (MonoidHom.id G) X = X :=
   rfl
 
+-- Not `@[simp]`: `res_res` already rewrites the left-hand side to a single restriction along
+-- `(e : H →* G).comp e.symm`, so the simpNF linter rejects this lemma as a simp lemma.
 /-- Restricting along `e : H ≃ₜ* G` and then along `e⁻¹` gives back the representation. -/
 theorem res_symm_res [TopologicalSpace G] [TopologicalSpace H] (e : H ≃ₜ* G) (X : TopRep k G) :
     res ((e.symm : G →ₜ* H) : G →* H) (res ((e : H →ₜ* G) : H →* G) X) = X := by
-  rw [res_res, show ((e : H →ₜ* G) : H →* G).comp ((e.symm : G →ₜ* H) : G →* H) = .id G from
-    MonoidHom.ext e.apply_symm_apply, res_id]
+  have hcomp : ((e : H →ₜ* G) : H →* G).comp ((e.symm : G →ₜ* H) : G →* H) = .id G :=
+    MonoidHom.ext e.apply_symm_apply
+  rw [res_res, hcomp, res_id]
 
 end TopRep
