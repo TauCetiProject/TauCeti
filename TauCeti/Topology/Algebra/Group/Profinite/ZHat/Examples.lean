@@ -54,6 +54,8 @@ theorem zpowHat_idem_two_eq_cube_zmod_six (x : Multiplicative (ZMod 6)) :
   rw [zpowHat_eq_pow_val_toZMod_six]
   congr 1
   let y : ZMod 6 := zHat.toZMod (⟨6, by norm_num⟩ : ℕ+) (zHat.idem.{u} 2)
+  -- The goal is `(zHat.toZMod 6 (zHat.idem 2)).val = 3`; folding it into the local definition `y`
+  -- (a definitional restatement) lets the final `omega` see the same atom `y.val` as `h2`, `h3`.
   change y.val = 3
   have h2 : (ZMod.cast y : ZMod 2) = 1 := by
     convert
