@@ -213,11 +213,12 @@ private theorem signlessPreprojectiveAFrobeniusFunctional_valley_mul_valley
   rcases lt_or_ge m' m with hlt | hle
   · rw [signlessPreprojectiveAValley_mul_eq_zero k a b a.rev (by omega), map_zero,
       ite_eq_right (by omega)]
+  have hbm : b.val - (b.val - m) = m := by omega
+  -- The sign is the image of a scalar, so the functional can pull it out.
+  have hsign : (-1 : Π) ^ (m * (b.val - m')) = algebraMap k Π ((-1) ^ (m * (b.val - m'))) := by
+    rw [map_pow, map_neg, map_one]
   -- The product is, up to sign, the valley from `a` to `n - 1 - a` of bottom `m' - m`.
-  rw [signlessPreprojectiveAValley_mul k a b a.rev (by omega) (by omega) (by omega),
-    show ((-1 : Π) ^ ((b.val - (b.val - m)) * (b.val - m'))) =
-      algebraMap k Π ((-1) ^ (m * (b.val - m'))) by
-        rw [map_pow, map_neg, map_one, show b.val - (b.val - m) = m by omega],
+  rw [signlessPreprojectiveAValley_mul k a b a.rev (by omega) (by omega) (by omega), hbm, hsign,
     ← Algebra.smul_def, map_smul, signlessPreprojectiveAFrobeniusFunctional_valley k a a.rev
       (Finset.mem_Icc.mpr ⟨by omega, by omega⟩), smul_eq_mul]
   by_cases hmm : m' = m
