@@ -32,7 +32,7 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 
 /-- Reduction between ideal quotients of a Dedekind domain is surjective on units when the source
 ideal is nonzero. No finiteness assumption on the residue fields is needed. -/
-theorem surjective_units_map_quotient_factor {I J : Ideal R} (h : J ≤ I) (hJ : J ≠ ⊥) :
+theorem units_map_quotient_factor_surjective {I J : Ideal R} (h : J ≤ I) (hJ : J ≠ ⊥) :
     Function.Surjective (Units.map (factor h).toMonoidHom) := by
   classical
   intro u

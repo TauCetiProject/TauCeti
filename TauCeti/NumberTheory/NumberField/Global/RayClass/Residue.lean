@@ -356,7 +356,7 @@ theorem coe_finiteUnitsMap {𝔪 𝔫 : Modulus K} (h : 𝔪.finitePart ∣ 𝔫
 finite part. The lift need not be the reduction of a global integer unit. -/
 theorem finiteUnitsMap_surjective {𝔪 𝔫 : Modulus K} (h : 𝔪.finitePart ∣ 𝔫.finitePart) :
     Function.Surjective (finiteUnitsMap h) :=
-  surjective_units_map_quotient_factor (Ideal.le_of_dvd h) 𝔫.finitePart_ne_bot
+  units_map_quotient_factor_surjective (Ideal.le_of_dvd h) 𝔫.finitePart_ne_bot
 
 /-- Changing the finite part along reflexivity gives the identity map. -/
 @[simp]
