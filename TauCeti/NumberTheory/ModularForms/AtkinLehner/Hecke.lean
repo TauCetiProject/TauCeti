@@ -392,9 +392,9 @@ private lemma exists_unit_charSpace_eq (hQN : Q ∥ N) (hn : n.Coprime N) :
 
 /-- **On a nebentypus space, `W_Q` moves a good `Tₙ` past it at the cost of `ψ(n)`**: if
 `f ∈ M_k(N, χ)` with `χ = ψ · φ` split along `N = Q · (N / Q)`, then
-`W_Q (Tₙ f) = ψ(n) Tₙ (W_Q f)` for `n` coprime to `N`. So `W_Q f ∈ M_k(N, ψ⁻¹ φ)` has the good
-eigenvalues of `f` multiplied by `ψ(n)⁻¹`, as Atkin and Li compute. At `Q = N` the scalar is
-`χ(n)`, the Fricke case. -/
+`W_Q (Tₙ f) = ψ(n) Tₙ (W_Q f)` for `n` coprime to `N`. So if `f` is an eigenform of a good `Tₙ`,
+then so is `W_Q f ∈ M_k(N, ψ⁻¹ φ)`, with eigenvalue multiplied by `ψ(n)⁻¹`, as Atkin and Li
+compute. At `Q = N` the scalar is `χ(n)`, the Fricke case. -/
 theorem atkinLehnerOperatorGamma1_heckeTNat_of_mem_modFormCharSpace (hQ : 0 < Q) (hQN : Q ∣ N)
     (h : IsAtkinLehnerMatrix N Q M) (hn : n.Coprime N)
     {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k}
@@ -432,8 +432,8 @@ theorem atkinLehnerOperatorGamma1Cusp_heckeTCuspNat_of_mem_cuspFormCharSpace (hQ
 
 /-- **`W_Q` transports a good Hecke eigenvalue `c` of `f ∈ S_k(N, ψ φ)` to `ψ(n)⁻¹ c`.** The
 equivalence includes the zero form and needs no normalization of coefficients. This is the
-Hecke-theoretic input to Atkin and Li's pseudo-eigenvalues: `W_Q f` is an eigenform for the good
-Hecke operators of `S_k(N, ψ⁻¹ φ)` with the twisted eigenvalues. -/
+Hecke-theoretic input to Atkin and Li's pseudo-eigenvalues: if `f` is a simultaneous eigenform
+of the good Hecke operators, then so is `W_Q f ∈ S_k(N, ψ⁻¹ φ)`, with the twisted eigenvalues. -/
 theorem heckeTCuspNat_atkinLehnerOperatorGamma1Cusp_eq_smul_iff_heckeTCuspNat_eq_smul
    (hQ : 0 < Q) (hQN : Q ∣ N)
     (h : IsAtkinLehnerMatrix N Q M) (hn : n.Coprime N)
