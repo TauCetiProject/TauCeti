@@ -84,8 +84,8 @@ variable (k G : Type u) [Field k] [CharZero k] [Group G] [Finite G]
 characteristic-zero field. -/
 theorem permK0_artinPositiveSet_eq_artinNegativeSet :
     permK0 k G (ArtinPositiveSet G) = permK0 k G (ArtinNegativeSet G) :=
-  permK0_eq_of_forall_natCard_fixedBy_eq k
-    card_fixedBy_artinPositiveSet_eq_card_fixedBy_artinNegativeSet
+  permK0_eq_of_nonempty_equiv_ofMulAction k
+    (nonempty_equiv_artinPermutationRepresentations G k)
 
 /-- **Artin's signed permutation identity in the exact Grothendieck group in characteristic
 zero.** -/
