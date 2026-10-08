@@ -30,6 +30,7 @@ the formal template in
 public section
 
 open CategoryTheory WithConv
+open scoped CategoryTheory.MonObj
 
 namespace TauCeti.Symplectic.IsotropicFlag
 
@@ -206,15 +207,16 @@ private theorem groupSchemePointMulEquiv_comp_rootSubgroup
       groupSchemePointMulEquiv R m A
         (toConv (f.ofConv.comp (rootSubgroupCoordinateMap R m root hroot).hom)) := by
   rw [rootSubgroup_def]
-  simpa only [eqToHom_refl, Category.comp_id,
-    CommHopfAlgCat.mapPointsFunctor_app_apply] using
-    CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
-      (R := R) A rfl (AdditiveGroup.groupScheme_def R)
-      (groupSchemePointMulEquiv R m A) (AdditiveGroup.groupSchemePointMulEquiv A)
-      (fun f => by simpa only [AlgHom.toRingHom_eq_coe] using
-        groupSchemePointMulEquiv_apply_left R m A f)
-      (AdditiveGroup.groupSchemePointMulEquiv_apply_left A)
-      (rootSubgroupCoordinateMap R m root hroot) f
+  have h := CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
+    (R := R) A (G := groupScheme R m) (H' := AdditiveGroup.groupScheme R)
+    rfl (AdditiveGroup.groupScheme_def R)
+    (groupSchemePointMulEquiv R m A) (AdditiveGroup.groupSchemePointMulEquiv A)
+    (fun f => by simpa only [AlgHom.toRingHom_eq_coe] using
+      groupSchemePointMulEquiv_apply_left R m A f)
+    (AdditiveGroup.groupSchemePointMulEquiv_apply_left A)
+    (rootSubgroupCoordinateMap R m root hroot) f
+  erw [CommHopfAlgCat.mapPointsFunctor_app_apply] at h
+  simpa only [eqToHom_refl, Category.comp_id] using h
 
 /-- A positive root subgroup on scheme-valued points is its standard symplectic root matrix. -/
 theorem schemePointsMulEquiv_rootSubgroup (root : GLSymplecticFin.RootSubgroupIndex m)
