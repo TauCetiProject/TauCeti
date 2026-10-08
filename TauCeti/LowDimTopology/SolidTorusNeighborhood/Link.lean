@@ -56,6 +56,16 @@ theorem pairwiseDisjoint_image (h : IsSolidTorusLinkNeighborhood f Φ) :
   intro i j hij
   exact (h.pairwiseDisjoint hij).mono (image_subset_range _ _) (image_subset_range _ _)
 
+/-- Transport a family of disjoint solid-torus neighborhoods along an open embedding. -/
+theorem comp {Y : Type*} [TopologicalSpace Y] {e : X → Y} (he : IsOpenEmbedding e)
+    (h : IsSolidTorusLinkNeighborhood f Φ) :
+    IsSolidTorusLinkNeighborhood (fun i => e ∘ f i) (fun i => e ∘ Φ i) where
+  neighborhood i := (h.neighborhood i).comp he
+  pairwiseDisjoint := by
+    intro i j hij
+    simp only [range_comp]
+    exact disjoint_image_of_injective he.injective (h.pairwiseDisjoint hij)
+
 /-- The `i`-th component lies in the open image of its solid torus. -/
 theorem range_subset_image (h : IsSolidTorusLinkNeighborhood f Φ) (i : ι) :
     range (f i) ⊆ Φ i '' {p : SolidTorus | ‖(p.1 : ℂ)‖ < 1} :=

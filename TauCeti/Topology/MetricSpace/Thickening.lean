@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Topology.MetricSpace.Thickening
 
+import Mathlib.Data.Fintype.Lattice
+
 /-!
 # Pairwise disjoint thickenings
 
@@ -33,7 +35,7 @@ theorem exists_thickenings_pairwiseDisjoint
   | inl hι =>
       exact ⟨1, zero_lt_one, fun i j hij => False.elim (hι.false i)⟩
   | inr hι =>
-      let _ := Fintype.ofFinite ι
+      letI : Nonempty ι := hι
       have hex : ∀ i j, i ≠ j → ∃ δ : ℝ, 0 < δ ∧
           Disjoint (thickening δ (K i)) (thickening δ (K j)) := by
         intro i j hij
@@ -49,28 +51,10 @@ theorem exists_thickenings_pairwiseDisjoint
           Disjoint (thickening (r i j) (K i)) (thickening (r i j) (K j)) := by
         intro i j hij
         simpa [r, hij] using (Classical.choose_spec (hex i j hij)).2
-      let P : Finset (ι × ι) := Finset.univ.product Finset.univ
-      have hP : P.Nonempty := by
-        rcases hι with ⟨i⟩
-        exact ⟨(i, i), by simp [P]⟩
-      let Q : Finset ℝ := P.image (fun p => r p.1 p.2)
-      have hQ : Q.Nonempty := hP.image _
-      let δ : ℝ := Q.min' hQ
-      have hδ_pos : 0 < δ := by
-        have hqpos : ∀ q ∈ Q, 0 < q := by
-          intro q hq
-          rcases Finset.mem_image.1 hq with ⟨p, hp, rfl⟩
-          exact hr_pos p.1 p.2
-        exact hqpos _ (Finset.min'_mem Q hQ)
-      have hδ_le (i j : ι) : δ ≤ r i j := by
-        apply Finset.min'_le Q (r i j)
-        exact Finset.mem_image.2 ⟨(i, j), by simp [P], rfl⟩
-      have hV_disj : ∀ i j, i ≠ j →
-          Disjoint (thickening δ (K i)) (thickening δ (K j)) := by
-        intro i j hij
-        apply (hr_disj i j hij).mono
-        · exact thickening_mono (hδ_le i j) _
-        · exact thickening_mono (hδ_le i j) _
-      exact ⟨δ, hδ_pos, hV_disj⟩
+      obtain ⟨ij, hij⟩ := Finite.exists_min (fun p : ι × ι => r p.1 p.2)
+      refine ⟨r ij.1 ij.2, hr_pos ij.1 ij.2, ?_⟩
+      intro i j hne
+      exact (hr_disj i j hne).mono
+        (thickening_mono (hij (i, j)) _) (thickening_mono (hij (i, j)) _)
 
 end TauCeti
