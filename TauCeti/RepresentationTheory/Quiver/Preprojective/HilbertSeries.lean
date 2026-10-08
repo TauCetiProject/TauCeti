@@ -345,11 +345,7 @@ private theorem ker_koszulSum_succ (m : ℕ) (i : Symmetrify Q) (v : Q) :
     refine ⟨⟨_, decompose_mul_mem_preprojectiveCorner k hyv m i⟩, funext fun w => funext fun b =>
       Subtype.ext ?_⟩
     have h1 := (mem_preprojectiveCorner_iff.1 (z w b).2).1
-    rw [koszulDiff_apply]
-    change doubledArrowSign k b • (preprojectiveMk k Q (ofArrow (Quiver.reverse b)) *
-      ((DirectSum.decompose (preprojectiveGrade k Q) y m : preprojectiveAlgebra k Q) *
-        preprojectiveMk k Q (vertexIdempotent k i))) = z w b
-    rw [smul_ofArrow_mul_decompose_mul, ← hy w b,
+    rw [koszulDiff_apply, Submodule.coe_mk, smul_ofArrow_mul_decompose_mul, ← hy w b,
       DirectSum.decompose_of_mem_same _ h1,
       mul_preprojectiveMk_vertexIdempotent_of_mem_preprojectiveCorner (z w b).2]
   · rintro _ ⟨y, rfl⟩
@@ -459,7 +455,8 @@ theorem finrank_preprojectiveCorner_add_two_add_finrank_preprojectiveCorner (m :
       exact ⟨⟨x, hx⟩, (mem_ker_koszulDiff_iff m i v _).2 fun w b => LinearMap.mem_ker.1 (hy w b),
         rfl⟩
   rw [← hK, Submodule.finrank_map_subtype_eq]
-  rw [show m + 1 + 1 = m + 2 from rfl] at hΦ
+  -- `simp` cannot reach the degree `m + 1 + 1`, which sits inside the type of a `finrank`.
+  rw [Nat.add_assoc, one_add_one_eq_two] at hΦ
   omega
 
 /-- **The dimension recursion in degree `m + 2` is Koszul exactness in degree `m`.** The equality
