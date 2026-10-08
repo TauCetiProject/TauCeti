@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.UnitCompatibility
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Away
-public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Weight
 
 import Mathlib.FieldTheory.AlgebraicClosure
 
@@ -27,12 +26,6 @@ character and a totally positive generator this is the inverse of the embedding 
 inverse follows from the convention that a prime ideal is represented by a local uniformizer.
 Finiteness of the narrow ray class group then shows that an algebraic Hecke character has
 algebraic values on all fractional ideals prime to its conductor.
-
-When `χ` comes from a ray class character of a modulus `𝔪`, the ideal character on fractional
-ideals prime to `𝔪` is that ray class character evaluated at their ray classes
-(`TauCeti.GlobalNumberFields.HeckeCharacter.idealCharacter_idealsAwayInclusion`). So on integral
-ideals prime to `𝔪` it computes the unitary ideal weight of `χ` at `𝔪`
-(`TauCeti.GlobalNumberFields.HeckeCharacter.toUnitaryIdealWeightAt_apply_of_isPrimeTo`).
 
 ## References
 
@@ -331,102 +324,6 @@ theorem IsAlgebraic.isAlgebraic_idealCharacter {χ : HeckeCharacter K} (hχ : χ
   have halg : _root_.IsAlgebraic ℚ ((n.embeddingCharacter x : ℂ)⁻¹) :=
     mem_algebraicClosure_iff.mp (inv_mem hmono)
   exact _root_.IsAlgebraic.of_pow hN (hpower.symm ▸ halg)
-
-/-! ### Agreement with the ray class presentations -/
-
-/-- If `χ` comes from a ray class character of `𝔪`, every prime dividing the finite conductor of
-`χ` divides the finite part of `𝔪`. -/
-theorem support_finiteConductor_subset {χ : HeckeCharacter K} {𝔪 : Modulus K}
-    (hχ : χ ∈ (ofRayClassCharacter 𝔪).range) :
-    (⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩ : Modulus K).support ⊆ 𝔪.support := by
-  intro v hv
-  rw [Modulus.mem_support_iff_exponent_ne_zero, Modulus.exponent_def,
-    count_finiteConductor] at hv
-  rw [Modulus.mem_support_iff_exponent_ne_zero]
-  exact fun h ↦ hv (Nat.le_zero.mp (h ▸ conductorExponent_le_exponent_of_mem_range hχ v))
-
-/-- **The ideal character agrees with every ray class presentation.** If `χ` comes from a ray
-class character of `𝔪`, then on every fractional ideal prime to `𝔪` the ideal character of `χ` is
-the value of the representing ray class character at the ray class of that ideal. -/
-theorem idealCharacter_idealsAwayInclusion {χ : HeckeCharacter K} {𝔪 : Modulus K}
-    (hχ : χ ∈ (ofRayClassCharacter 𝔪).range) (J : idealsPrimeTo 𝔪) :
-    χ.idealCharacter
-        (NumberFieldArithmetic.idealsAwayInclusion (support_finiteConductor_subset hχ) J) =
-      χ.rayClassCharacterAt 𝔪 hχ (rayClassMk 𝔪 J) := by
-  classical
-  obtain ⟨⟨a, ha⟩, rfl⟩ := toIdealsAway_surjective 𝔪.support J
-  -- Correct a representative of `J` to have coordinate `1` at every prime of `𝔪`.
-  set x := IdeleGroup.ofFiniteIdele (𝓞 K) K a with hx_def
-  set z : IdeleGroup (𝓞 K) K :=
-    ∏ v ∈ 𝔪.support, IdeleGroup.ofAdicCompletion (𝓞 K) K v (v.ideleFiniteCoord x)⁻¹ with hz_def
-  have hzf (v : HeightOneSpectrum (𝓞 K)) :
-      v.ideleFiniteCoord z = if v ∈ 𝔪.support then (v.ideleFiniteCoord x)⁻¹ else 1 :=
-    v.ideleFiniteCoord_prod_ofAdicCompletion 𝔪.support _
-  have hzi (w : InfinitePlace K) : w.ideleInfiniteCoord z = 1 := by
-    simp [hz_def, map_prod]
-  have hyf (v : HeightOneSpectrum (𝓞 K)) (hv : v ∈ 𝔪.support) :
-      v.ideleFiniteCoord (x * z) = 1 := by
-    rw [map_mul, hzf, ite_eq_left hv, mul_inv_cancel]
-  have hmem : x * z ∈ ideleCongrOneSubgroup 𝔪 := by
-    refine mem_ideleCongrOneSubgroup_iff.mpr ⟨fun v hv ↦ ?_, fun w _ ↦ ?_⟩
-    · rw [hyf v ((Modulus.mem_support_iff 𝔪 v).mpr hv)]
-      simp
-    · simp [hx_def, hzi]
-  have hz : toFractionalIdeal (IdeleGroup.toFiniteIdele (𝓞 K) K z) = 1 := by
-    refine toFractionalIdeal_toFiniteIdele_eq_one_iff.mpr fun v ↦ ?_
-    rw [hzf]
-    split_ifs with hv
-    · rw [Units.val_inv_eq_inv_val, map_inv₀, inv_eq_one, HeightOneSpectrum.coe_ideleFiniteCoord,
-        ← IdeleGroup.coe_toFiniteIdele, hx_def, IdeleGroup.toFiniteIdele_ofFiniteIdele]
-      exact adicOrd_eq_zero_iff.mp ((mem_adicOrdAway_iff _ a).mp ha v hv)
-    · simp
-  have hideal : toFractionalIdeal (IdeleGroup.toFiniteIdele (𝓞 K) K (x * z)) =
-      toFractionalIdeal a := by
-    rw [map_mul, map_mul, hz, mul_one, hx_def, IdeleGroup.toFiniteIdele_ofFiniteIdele]
-  -- The corrected representative computes the ray class side.
-  have hray : rayClassMk 𝔪 (toIdealsAway 𝔪.support ⟨a, ha⟩) = rayClassQuotient 𝔪 (x * z) :=
-    ((rayClassQuotient_mk_of_mem hmem).trans
-      (congrArg _ (Subtype.ext (by rw [toIdealsAway_apply]; exact hideal)))).symm
-  rw [hray, ← ofRayClassCharacter_apply, ofRayClassCharacter_rayClassCharacterAt]
-  -- It also computes the ideal character, since its conductor coordinates are `1`.
-  have hxz : IdeleGroup.ofFiniteIdele (𝓞 K) K (IdeleGroup.toFiniteIdele (𝓞 K) K (x * z)) =
-      x * z := by
-    apply IdeleGroup.ext
-    · intro w
-      simp [hx_def, hzi]
-    · intro v
-      apply Units.ext
-      simp only [HeightOneSpectrum.coe_ideleFiniteCoord, IdeleGroup.coe_ofFiniteIdele,
-        IdeleGroup.coe_toFiniteIdele]
-  let b : adicOrdAway (⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩ : Modulus K).support :=
-    ⟨IdeleGroup.toFiniteIdele (𝓞 K) K (x * z), by
-      rw [mem_adicOrdAway_iff, ← toFractionalIdeal_mem_idealsAway_iff, hideal]
-      exact NumberFieldArithmetic.idealsAway_antitone (support_finiteConductor_subset hχ)
-        ((toFractionalIdeal_mem_idealsAway_iff _ a).mpr ((mem_adicOrdAway_iff _ a).mp ha))⟩
-  have hb : toIdealsAway _ b = NumberFieldArithmetic.idealsAwayInclusion
-      (support_finiteConductor_subset hχ) (toIdealsAway 𝔪.support ⟨a, ha⟩) :=
-    Subtype.ext (by
-      rw [toIdealsAway_apply, NumberFieldArithmetic.coe_idealsAwayInclusion, toIdealsAway_apply]
-      exact hideal)
-  rw [← hb, idealCharacter_apply_toIdealsAway_of_eq_one χ b fun v hv ↦ by
-    rw [hxz]
-    exact hyf v (support_finiteConductor_subset hχ hv), hxz]
-  rfl
-
-/-- **The ideal character computes the unitary ideal weight.** If `χ` comes from a ray class
-character of `𝔪`, then on every integral ideal prime to `𝔪` the unitary ideal weight of `χ` at
-`𝔪` is the value of the ideal character. -/
-theorem toUnitaryIdealWeightAt_apply_of_isPrimeTo {χ : HeckeCharacter K} {𝔪 : Modulus K}
-    (hχ : χ ∈ (ofRayClassCharacter 𝔪).range) {I : Ideal (𝓞 K)}
-    (hI : Ideal.IsPrimeTo I 𝔪.support) :
-    (χ.toUnitaryIdealWeightAt 𝔪 hχ).1 I =
-      (χ.idealCharacter (NumberFieldArithmetic.idealsAwayInclusion
-        (support_finiteConductor_subset hχ) (NumberFieldArithmetic.integralIdealsAwayHom
-          𝔪.support ⟨I, NumberFieldArithmetic.mem_integralIdealsAway_iff.mpr
-            (Ideal.isPrimeTo_iff.mp hI)⟩)) : ℂ) := by
-  rw [val_toUnitaryIdealWeightAt,
-    RayClassCharacter.toMultiplicativeIdealWeight_apply_of_isPrimeTo _ hI,
-    RayClassCharacter.onIdeals_apply, idealClass_apply, idealCharacter_idealsAwayInclusion]
 
 end HeckeCharacter
 end TauCeti.GlobalNumberFields

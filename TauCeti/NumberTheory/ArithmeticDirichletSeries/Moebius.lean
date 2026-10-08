@@ -41,8 +41,6 @@ the ideal Möbius inversion formula, stated here as an equivalence between the t
   `TauCeti.IdealArithmeticFunction.moebius_apply_prime_pow`, and
   `TauCeti.IdealArithmeticFunction.moebius_mul_of_isRelPrime`: the prime-power values and
   multiplicativity on coprime ideals.
-* `TauCeti.IdealArithmeticFunction.moebius_not_completelyMultiplicative`: multiplicativity does not
-  extend to all pairs of ideals, since `μ (𝔭 ^ 2) = 0`.
 * `TauCeti.IdealArithmeticFunction.not_exists_multiplicativeIdealWeight_eq_moebius` and
   `TauCeti.IdealArithmeticFunction.not_exists_unitaryIdealWeight_eq_moebius`: the **rejection
   tests**. The ideal Möbius function underlies neither ideal-weight carrier, because those carriers
@@ -161,21 +159,6 @@ theorem moebius_mul_of_isRelPrime {A B : (Ideal (𝓞 K))⁰}
 /-- The ideal Möbius function is multiplicative on relatively prime ideals. -/
 theorem isMultiplicative_moebius : (moebius : IdealArithmeticFunction K).IsMultiplicative :=
   ⟨moebius_one, moebius_mul_of_isRelPrime⟩
-
-/-- **Rejection test.** The ideal Möbius function is not completely multiplicative: at a nonzero
-prime ideal `𝔭` it takes the value `-1`, but `μ (𝔭 ^ 2) = 0 ≠ (-1) * (-1)`. -/
-theorem moebius_not_completelyMultiplicative :
-    ¬ ∀ A B : (Ideal (𝓞 K))⁰,
-      (moebius : IdealArithmeticFunction K) (A * B) = moebius A * moebius B := by
-  intro h
-  obtain ⟨P, hPbot, hPmax⟩ :=
-    Ring.exists_maximal_of_not_isField (NumberField.RingOfIntegers.not_isField K)
-  set 𝔭 : (Ideal (𝓞 K))⁰ := ⟨P, mem_nonZeroDivisors_of_ne_zero hPbot⟩
-  have hprime : Prime ((𝔭 : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) :=
-    _root_.Ideal.prime_of_isPrime hPbot hPmax.isPrime
-  have h2 := h 𝔭 𝔭
-  rw [← pow_two, moebius_apply_prime_pow hprime le_rfl, moebius_apply_prime hprime] at h2
-  norm_num at h2
 
 end IdealArithmeticFunction
 
