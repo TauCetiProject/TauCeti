@@ -87,6 +87,13 @@ theorem galRepOfQuotient_ρ_apply (V : OpenNormalSubgroup (Field.absoluteGaloisG
     ((galRepOfQuotient n F V).obj A).ρ g a = A.ρ (QuotientGroup.mk g) a :=
   (rfl)
 
+/-- The open normal subgroup `V` acts trivially on every inflated representation. -/
+theorem galRepOfQuotient_ρ_eq_self (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F))
+    (A : Rep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup))
+    {g : Field.absoluteGaloisGroup F} (hg : g ∈ V) (a : A.V) :
+    ((galRepOfQuotient n F V).obj A).ρ g a = a := by
+  rw [galRepOfQuotient_ρ_apply, (QuotientGroup.eq_one_iff g).2 hg, map_one, Module.End.one_apply]
+
 /-- The functor leaves the underlying coefficient map unchanged. -/
 @[simp]
 theorem galRepOfQuotient_map_apply (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F))
