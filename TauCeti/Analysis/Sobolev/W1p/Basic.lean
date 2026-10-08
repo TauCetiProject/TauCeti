@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.TestFunctionLp
+import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.MeasureTheory.Function.Lp.Norm
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.L2Space
@@ -208,6 +209,18 @@ private theorem norm_gradient_le_ambient (J : Sobolev1JetLp mu Omega p) :
   Lp.norm_le_norm_of_ae_le <| (Sobolev1JetLp.gradient_apply_ae J).mono fun x hx ↦ by
     rw [hx]
     exact WithLp.norm_snd_le ℝ (J x)
+
+/-- The norm of a Sobolev jet is at most the sum of the norms of its value and gradient
+components. -/
+theorem Sobolev1JetLp.norm_le_norm_value_add_norm_gradient (J : Sobolev1JetLp mu Omega p) :
+    ‖J‖ ≤ ‖Sobolev1JetLp.value J‖ + ‖Sobolev1JetLp.gradient J‖ := by
+  have hle : ∀ᵐ x ∂mu.restrict Omega,
+      ‖J x‖ ≤ 1 * ‖Sobolev1JetLp.value J x‖ + 1 * ‖Sobolev1JetLp.gradient J x‖ := by
+    filter_upwards [Sobolev1JetLp.value_apply_ae J, Sobolev1JetLp.gradient_apply_ae J]
+      with x hv hg
+    rw [one_mul, one_mul, hv, hg]
+    exact WithLp.prod_norm_le_norm_fst_add_norm_snd (J x)
+  simpa using Lp.norm_le_add_of_ae_norm_le zero_le_one zero_le_one hle
 
 /-- At exponent two, the Sobolev jet norm is the Hilbert graph norm of its components. -/
 private theorem norm_sq_eq_norm_value_sq_add_norm_gradient_sq_ambient
@@ -434,16 +447,8 @@ theorem W1p.norm_gradient_le (u : W1p mu Omega p) : ‖W1p.gradient u‖ ≤ ‖
 /-- The norm of a Sobolev function is at most the sum of the norms of its value and its weak
 gradient. -/
 theorem W1p.norm_le_norm_value_add_norm_gradient (u : W1p mu Omega p) :
-    ‖u‖ ≤ ‖W1p.value u‖ + ‖W1p.gradient u‖ := by
-  have hle : ∀ᵐ x ∂mu.restrict Omega, ‖(u : Sobolev1JetLp mu Omega p) x‖ ≤
-      1 * ‖W1p.value u x‖ + 1 * ‖W1p.gradient u x‖ := by
-    filter_upwards [W1p.value_apply_ae u, W1p.gradient_apply_ae u] with x hv hg
-    have hsq := WithLp.prod_norm_sq_eq_of_L2 ((u : Sobolev1JetLp mu Omega p) x)
-    rw [one_mul, one_mul, hv, hg]
-    nlinarith [norm_nonneg ((u : Sobolev1JetLp mu Omega p) x),
-      norm_nonneg ((u : Sobolev1JetLp mu Omega p) x).fst,
-      norm_nonneg ((u : Sobolev1JetLp mu Omega p) x).snd]
-  simpa using Lp.norm_le_add_of_ae_norm_le zero_le_one zero_le_one hle
+    ‖u‖ ≤ ‖W1p.value u‖ + ‖W1p.gradient u‖ :=
+  Sobolev1JetLp.norm_le_norm_value_add_norm_gradient u.1
 
 /-- At exponent two, the norm on `W1p` is the Hilbert graph norm. -/
 theorem W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq (u : W1p mu Omega 2) :
