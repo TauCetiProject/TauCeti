@@ -72,8 +72,8 @@ theorem exists_analyticOnNhd_monicOfCoeff_eq_prod_X_sub_C_conj
     c r hU hs hc hr hfac
   refine ⟨g, hg, hgf, ?_⟩
   let κ : V × ℂ → V × ℂ := fun p => (τ p.1, conj p.2)
-  have hκ : ContinuousOn κ (U ×ˢ s) := TauCeti.continuousOn_prod_conj hτ s
-  have hκT : MapsTo κ (U ×ˢ s) (U ×ˢ s) := TauCeti.mapsTo_prod_conj hτU hconj
+  have hκ : ContinuousOn κ (U ×ˢ s) := hτ.prodMap Complex.continuous_conj.continuousOn
+  have hκT : MapsTo κ (U ×ˢ s) (U ×ˢ s) := hτU.prodMap hconj
   have hκS : MapsTo κ (U ×ˢ (s \ {0})) (U ×ˢ (s \ {0})) :=
     TauCeti.mapsTo_prod_conj_diff_zero hτU hconj
   have hκκ : ∀ p ∈ U ×ˢ (s \ {0}), κ (κ p) = p :=

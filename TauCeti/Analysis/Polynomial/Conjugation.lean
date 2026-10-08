@@ -133,19 +133,6 @@ end TauCeti
 
 namespace TauCeti
 
-/-- Applying a continuous parameter map and complex conjugation is continuous on a product. -/
-theorem continuousOn_prod_conj {X : Type*} [TopologicalSpace X] {τ : X → X}
-    {U : Set X} (hτ : ContinuousOn τ U) (s : Set ℂ) :
-    ContinuousOn (fun p : X × ℂ ↦ (τ p.1, conj p.2)) (U ×ˢ s) :=
-  (hτ.comp continuousOn_fst fun _ hp ↦ hp.1).prodMk
-    (Complex.continuous_conj.comp_continuousOn continuousOn_snd)
-
-/-- A parameter map preserving `U` and conjugation preserving `s` preserve their product. -/
-theorem mapsTo_prod_conj {X : Type*} {τ : X → X} {U : Set X} {s : Set ℂ}
-    (hτU : MapsTo τ U U) (hs : MapsTo conj s s) :
-    MapsTo (fun p : X × ℂ ↦ (τ p.1, conj p.2)) (U ×ˢ s) (U ×ˢ s) :=
-  fun _ hp ↦ ⟨hτU hp.1, hs hp.2⟩
-
 /-- Conjugation also preserves the product after the zero section is removed. -/
 theorem mapsTo_prod_conj_diff_zero {X : Type*} {τ : X → X} {U : Set X} {s : Set ℂ}
     (hτU : MapsTo τ U U) (hs : MapsTo conj s s) :
