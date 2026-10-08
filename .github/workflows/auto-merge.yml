@@ -81,7 +81,7 @@ jobs:
     # Re-pin together with the other two callers and .github/actions/checkout-merge-policy
     # (scripts/test_workflow_pins.py checks they agree). The called workflow checks out its own
     # commit, so no review_ref is passed.
-    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-only.yml@39ce0d916f9e9f580d8fc8983429d6af5d5a00fa
+    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-only.yml@d15ae176039a6e7c7e865e5cac0d1dee471d1370
     with:
       pr: ${{ needs.resolve.outputs.pr }}
       merge_backend: ${{ vars.MERGE_BACKEND || 'queue' }}
