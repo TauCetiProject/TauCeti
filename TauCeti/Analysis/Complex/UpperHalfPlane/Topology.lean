@@ -54,8 +54,8 @@ many points, such as the vertices of a tessellation, therefore keeps `ℍ` conne
 * `TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff`.
 * `TauCeti.UpperHalfPlane.closure_preimage_re`, `closure_setOfPred_lt_re`,
   `closure_setOfPred_re_lt`.
-* `TauCeti.UpperHalfPlane.isPathConnected_compl_of_countable`,
-  `TauCeti.UpperHalfPlane.dense_compl_of_countable`: complements of countable sets.
+* `Set.Countable.isPathConnected_compl_upperHalfPlane`,
+  `Set.Countable.dense_compl_upperHalfPlane`: complements of countable sets.
 
 ## References
 
@@ -279,22 +279,26 @@ theorem exists_continuous_bijective_complex :
   · simpa [-Complex.ofReal_exp] using congrArg Complex.re h'
   · simpa [-Complex.ofReal_exp] using congrArg Complex.im h'
 
+end TauCeti.UpperHalfPlane
+
+namespace Set.Countable
+
 /-- The complement of a countable subset of the upper half-plane is path connected, the analogue
 for `ℍ` of `Set.Countable.isPathConnected_compl_of_one_lt_rank`. -/
-theorem isPathConnected_compl_of_countable {s : Set ℍ} (hs : s.Countable) :
+theorem isPathConnected_compl_upperHalfPlane {s : Set ℍ} (hs : s.Countable) :
     IsPathConnected sᶜ := by
-  obtain ⟨f, hf, hinj, hsurj⟩ := exists_continuous_bijective_complex
+  obtain ⟨f, hf, hinj, hsurj⟩ := TauCeti.UpperHalfPlane.exists_continuous_bijective_complex
   have := ((hs.preimage hinj).isPathConnected_compl_of_one_lt_rank
     (by rw [Complex.rank_real_complex]; exact Nat.one_lt_ofNat)).image hf
   rwa [← preimage_compl, image_preimage_eq _ hsurj] at this
 
 /-- The complement of a countable subset of the upper half-plane is dense, the analogue for `ℍ`
 of `Set.Countable.dense_compl`. -/
-theorem dense_compl_of_countable {s : Set ℍ} (hs : s.Countable) : Dense sᶜ := by
-  obtain ⟨f, hf, hinj, hsurj⟩ := exists_continuous_bijective_complex
+theorem dense_compl_upperHalfPlane {s : Set ℍ} (hs : s.Countable) : Dense sᶜ := by
+  obtain ⟨f, hf, hinj, hsurj⟩ := TauCeti.UpperHalfPlane.exists_continuous_bijective_complex
   have := hsurj.denseRange.dense_image hf ((hs.preimage hinj).dense_compl ℝ)
   rwa [← preimage_compl, image_preimage_eq _ hsurj] at this
 
-end TauCeti.UpperHalfPlane
+end Set.Countable
 
 end

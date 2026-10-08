@@ -201,6 +201,7 @@ theorem carrier_inter_range_sideGeodesic (k : Fin n) :
     exact mem_range_self u
 
 /-- The boundary of a convex polygon is the union of its sides. -/
+@[simp]
 theorem frontier_carrier : frontier P.carrier = ⋃ i, P.side i := by
   refine Subset.antisymm (fun z hz ↦ ?_) (iUnion_subset P.side_subset_frontier_carrier)
   rw [P.isClosed_carrier.frontier_eq] at hz

@@ -108,18 +108,18 @@ theorem iUnion_smul_carrier_eq_univ {Γ : Subgroup PSL(2, ℝ)} (hmap : ∀ i, �
     rw [← interior_smul] at h
     exact interior_mono (hsub γ) h
   -- hence `U` contains the connected dense set `Vᶜ`, and so everything
-  obtain ⟨q, hq, hqV⟩ := (dense_compl_of_countable hV).inter_open_nonempty _ isOpen_interior
+  obtain ⟨q, hq, hqV⟩ := hV.dense_compl_upperHalfPlane.inter_open_nonempty _ isOpen_interior
     P.nonempty_interior_carrier
   have hqU : q ∈ U := mem_iUnion.2 ⟨1, by simpa using interior_subset hq⟩
   have hVU : Vᶜ ⊆ interior U :=
-    (isPathConnected_compl_of_countable hV).isConnected.isPreconnected.subset_left_of_subset_union
+    hV.isPathConnected_compl_upperHalfPlane.isConnected.isPreconnected.subset_left_of_subset_union
       isOpen_interior hUc.isOpen_compl (disjoint_compl_right.mono_left interior_subset)
       (fun y hy ↦ by
         by_cases hyU : y ∈ U
         · exact Or.inl (hint y hyU hy)
         · exact Or.inr hyU)
       ⟨q, hqV, hint q hqU hqV⟩
-  exact eq_univ_of_univ_subset ((dense_compl_of_countable hV).closure_eq ▸
+  exact eq_univ_of_univ_subset (hV.dense_compl_upperHalfPlane.closure_eq ▸
     closure_minimal (hVU.trans interior_subset) hUc)
 
 /-- **The side pairings generate the group of a locally finite fundamental polygon.** Let a
