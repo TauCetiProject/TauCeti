@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Orthogonal.TypeB.RootGenerators
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.Generators
 
 /-!
 # The center of the split odd orthogonal Lie algebra
