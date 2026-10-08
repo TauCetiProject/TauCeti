@@ -137,7 +137,6 @@ theorem conwayPoints_subset_sphere : conwayPoints ⊆ sphere (0 : EuclideanSpace
   norm_num
 
 /-- A half-turn permutes the four Conway points. -/
-@[simp]
 theorem conwayHalfTurn_mem_conwayPoints_iff (i : Fin 3) {x : EuclideanSpace ℝ (Fin 3)} :
     conwayHalfTurn i x ∈ conwayPoints ↔ x ∈ conwayPoints := by
   simp only [mem_conwayPoints, conwayHalfTurn_apply]
@@ -242,7 +241,6 @@ theorem conwayMutation_conwayMutation : conwayMutation e i (conwayMutation e i S
 
 /-- Near the sphere `e (S²)`, a Conway mutation of a set which is invariant there under the
 half-turn agrees with the set. -/
-@[simp]
 theorem apply_mem_conwayMutation_iff_of_invariant {ε : ℝ}
     (hS : ∀ x : EuclideanSpace ℝ (Fin 3), 1 - ε < ‖x‖ → ‖x‖ < 1 + ε →
       (e (conwayHalfTurn i x) ∈ S ↔ e x ∈ S))
