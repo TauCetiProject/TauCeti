@@ -137,6 +137,8 @@ private theorem orientedAngle_rayToward_inv_partialCycleMap_smul_vertex {j : Fin
     have h := ((σ.partialCycleMap j m)⁻¹ • P).orientedAngle_rayToward_vertex_eq_interiorAngle
       (σ.inv_partialCycleMap_smul_vertex hz m)
     rw [interiorAngle_smul] at h
+    -- The `show` supplies the transformed-polygon vertex equality expected by `rw`, before
+    -- `vertex_smul` normalizes it to the canonical pointwise side-pairing formula.
     rw [(show (((σ.partialCycleMap j (m + 1))⁻¹ • P).vertex (σ.next^[m + 1] j - 1)) =
         (((σ.partialCycleMap j m)⁻¹ • P).vertex (σ.next^[m] j + 1)) from
       by simpa only [vertex_smul] using σ.inv_partialCycleMap_succ_smul_vertex_sub_one j m),
@@ -153,6 +155,7 @@ private theorem orientedAngle_rayToward_inv_partialCycleMap_smul_vertex_add_one 
         (geodesicLine (rayToward z
           (((σ.partialCycleMap j m)⁻¹ • P).vertex (σ.next^[m] j + 1))) 1) =
       ((-∑ l ∈ Finset.range (m + 1), P.interiorAngle (σ.next^[l] j) : ℝ) : Real.Angle) := by
+  -- Again fix the transformed-polygon vertex type before normalization by `vertex_smul`.
   rw [← (show (((σ.partialCycleMap j (m + 1))⁻¹ • P).vertex (σ.next^[m + 1] j - 1)) =
         (((σ.partialCycleMap j m)⁻¹ • P).vertex (σ.next^[m] j + 1)) from
       by simpa only [vertex_smul] using σ.inv_partialCycleMap_succ_smul_vertex_sub_one j m)]
