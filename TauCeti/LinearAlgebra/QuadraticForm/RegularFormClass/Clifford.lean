@@ -55,7 +55,9 @@ give **Lam's comparison** (Lam V.3.20) in every rank: for a class of rank `n` an
 `2`-torsion, only the parities of the binomial exponents matter. On a class of rank `2m` with
 trivial signed discriminant, which is a class whose Witt class lies in the square of the
 fundamental ideal, the formula becomes `c(q) = s(q) · [(-1,-1)]^C(m,2)`. Lam (p. 120) cautions
-that the version of this formula published by C. T. C. Wall is incorrect.
+that the version of this formula published by C. T. C. Wall is incorrect. Combined with the
+orthogonal-sum formula for the Hasse invariant, it shows that `c(q ⊥ r) = c(q) · c(r)` when both
+summands have even rank and trivial signed discriminant.
 
 ## Main definitions
 
@@ -91,6 +93,8 @@ that the version of this formula published by C. T. C. Wall is incorrect.
   Clifford and Hasse invariants in every rank.
 * `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero`: its
   form `c = s · [(-1,-1)]^C(m,2)` in rank `2m` with trivial signed discriminant.
+* `TauCeti.RegularFormClass.cliffordInvariant_add_of_signedDiscr_eq_zero`: the invariant is
+  additive on classes of even rank with trivial signed discriminant.
 
 ## References
 
@@ -574,10 +578,8 @@ whose Witt class lies in the square of the fundamental ideal
 theorem cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero {x : RegularFormClass K}
     {m : ℕ} (hx : x.rank = 2 * m) (hd : signedDiscr x = 0) :
     cliffordInvariant x = hasseInvariant x * quaternionClass (-1) (-1) ^ m.choose 2 := by
-  have hdx : discr x = (2 * m).choose 2 • squareClass (-1 : Kˣ) := by
-    rw [signedDiscr_eq_sign_add_discr, hx] at hd
-    rw [← ZModModule.neg_eq_self ((2 * m).choose 2 • squareClass (-1 : Kˣ))]
-    exact eq_neg_of_add_eq_zero_right hd
+  have hdx : discr x = (2 * m).choose 2 • squareClass (-1 : Kˣ) :=
+    hx ▸ signedDiscr_eq_zero_iff.mp hd
   have hpow (N : ℕ) : quaternionClass (-1 : Kˣ) ((-1) ^ N) = quaternionClass (-1) (-1) ^ N := by
     induction N with
     | zero => rw [pow_zero, pow_zero, quaternionClass_one_right]
@@ -599,6 +601,42 @@ theorem cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero {x : Regu
   rw [mul_comm, ht]
   unfold Nat.ModEq
   omega
+
+/-- **The Clifford invariant is additive on the square of the fundamental ideal**: for classes
+`x` and `y` of even rank with trivial signed discriminant, `c(x ⊥ y) = c(x) · c(y)`. These are
+the classes whose Witt classes lie in the square of the fundamental ideal
+(`TauCeti.wittClass_mem_fundamentalIdeal_sq_iff`). There the correction terms of Lam's comparison
+and of the orthogonal-sum formula for the Hasse invariant cancel; for a general pair of classes
+the Clifford invariant is not additive. -/
+theorem cliffordInvariant_add_of_signedDiscr_eq_zero {x y : RegularFormClass K}
+    (hx : Even x.rank) (hxd : signedDiscr x = 0) (hy : Even y.rank) (hyd : signedDiscr y = 0) :
+    cliffordInvariant (x + y) = cliffordInvariant x * cliffordInvariant y := by
+  obtain ⟨m, hm⟩ := hx
+  obtain ⟨n, hn⟩ := hy
+  have hxm : x.rank = 2 * m := by omega
+  have hyn : y.rank = 2 * n := by omega
+  have hsd : signedDiscr (x + y) = 0 := by
+    rw [signedDiscr_add, hxd, hyd, hxm, mul_assoc, mul_comm 2, mul_nsmul,
+      ZModModule.char_nsmul_eq_zero 2 ((m * y.rank) • squareClass (-1 : Kˣ) : SquareClassGroup K)]
+    abel
+  rw [cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero
+      (by rw [rank_add, hxm, hyn, mul_add]) hsd,
+    cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero hxm hxd,
+    cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero hyn hyd, hasseInvariant_add,
+    signedDiscr_eq_zero_iff.mp hxd, signedDiscr_eq_zero_iff.mp hyd,
+    quaternionClassOnSquareClasses_nsmul_left, quaternionClassOnSquareClasses_nsmul_right,
+    quaternionClassOnSquareClasses_squareClass, ← pow_mul, hxm, hyn, mul_assoc, ← pow_add,
+    pow_eq_pow_of_modEq (n := 2) (b := m.choose 2 + n.choose 2) ?_ (quaternionClass_sq _ _),
+    pow_add]
+  · ac_rfl
+  -- The exponents agree modulo two: expand each binomial coefficient of a sum.
+  rw [← ZMod.natCast_eq_natCast_iff, two_mul, two_mul, Nat.add_choose_two, Nat.add_choose_two,
+    Nat.add_choose_two]
+  push_cast
+  generalize (m : ZMod 2) = a, (n : ZMod 2) = b, ((m.choose 2 : ℕ) : ZMod 2) = c,
+    ((n.choose 2 : ℕ) : ZMod 2) = d
+  revert a b c d
+  decide
 
 end Lam
 

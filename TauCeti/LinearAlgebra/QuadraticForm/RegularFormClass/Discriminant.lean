@@ -265,6 +265,12 @@ theorem signedDiscr_mk (p : RegularFormPresentation K) :
       p.1.choose 2 • squareClass (-1 : Kˣ) + squareClass (∏ i, p.2 i) := by
   rw [signedDiscr_eq_sign_add_discr, rank_mk, discr_mk]
 
+/-- A class has trivial signed discriminant exactly when its discriminant is the sign
+`(rank x).choose 2 • squareClass (-1)` attached to its rank. -/
+theorem signedDiscr_eq_zero_iff {x : RegularFormClass K} :
+    signedDiscr x = 0 ↔ discr x = (rank x).choose 2 • squareClass (-1 : Kˣ) := by
+  rw [signedDiscr_eq_sign_add_discr, add_comm, add_eq_zero_iff_eq_neg, ZModModule.neg_eq_self]
+
 /-- In rank at most one the signed discriminant is the discriminant. -/
 theorem signedDiscr_eq_discr_of_rank_le_one {x : RegularFormClass K} (hx : rank x ≤ 1) :
     signedDiscr x = discr x := by

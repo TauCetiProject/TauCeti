@@ -364,6 +364,21 @@ theorem quaternionClassOnSquareClasses_zero_right (x : SquareClassGroup K) :
     quaternionClassOnSquareClasses x 0 = 1 := by
   rw [quaternionClassOnSquareClasses_comm, quaternionClassOnSquareClasses_zero_left]
 
+/-- The square-class pairing turns natural multiples in its first argument into powers. -/
+@[simp]
+theorem quaternionClassOnSquareClasses_nsmul_left (n : ℕ) (x y : SquareClassGroup K) :
+    quaternionClassOnSquareClasses (n • x) y = quaternionClassOnSquareClasses x y ^ n := by
+  induction n with
+  | zero => rw [zero_nsmul, quaternionClassOnSquareClasses_zero_left, pow_zero]
+  | succ n ih => rw [succ_nsmul, quaternionClassOnSquareClasses_add_left, ih, pow_succ]
+
+/-- The square-class pairing turns natural multiples in its second argument into powers. -/
+@[simp]
+theorem quaternionClassOnSquareClasses_nsmul_right (n : ℕ) (x y : SquareClassGroup K) :
+    quaternionClassOnSquareClasses x (n • y) = quaternionClassOnSquareClasses x y ^ n := by
+  rw [quaternionClassOnSquareClasses_comm, quaternionClassOnSquareClasses_nsmul_left,
+    quaternionClassOnSquareClasses_comm]
+
 /-! ### Invariance under isometry of binary forms -/
 
 /-- **The quaternion symbol is an invariant of the binary form `⟨a,b⟩`**: isometric binary forms
