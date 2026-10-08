@@ -18,10 +18,16 @@ group, so for `m` prime to `p` its `m`-th power map is a homeomorphism
 (`TauCeti.IsProP.powHomeomorph`). Hence multiplication by `m` is bijective on
 `Hⁱ(G ⧸ V, V^ab(p))` for `i = 1, 2`. For a subgroup `S` of `G ⧸ V` of index prime to `p`,
 `cor ∘ res` is multiplication by `[G ⧸ V : S]`, so restriction to `S` is injective in degrees one
-and two.
+and two (`TauCeti.ContCohomology.explicitRes1_injective_of_nsmul_homeomorph` and its degree-two
+analogue).
 
 This is the step of NSW (3.6.3) and (3.6.4), (i) ⇒ (iii), that reduces the class module of a
 finite quotient to that of a Sylow `p`-subgroup.
+
+## Main definitions
+
+* `TauCeti.abelianizationProPRes1`, `TauCeti.abelianizationProPRes2`: restriction of
+  `Hⁱ(G ⧸ V, V^ab(p))` to a subgroup `S` of `G ⧸ V`, for `i = 1, 2`.
 
 ## Main results
 
@@ -67,36 +73,46 @@ private theorem abelianizationProPNsmulHomeomorph_apply (hp : p.Prime) (V : Subg
     abelianizationProPNsmulHomeomorph hp V hV hm a = m • a := by
   simp [abelianizationProPNsmulHomeomorph]
 
+/-- Restriction `H¹(G ⧸ V, V^ab(p)) → H¹(S, V^ab(p))` of the first cohomology of the class module
+to a subgroup `S` of `G ⧸ V`. -/
+noncomputable abbrev abelianizationProPRes1 (p : ℕ) (V : Subgroup G) [V.Normal]
+    (S : Subgroup (G ⧸ V)) :
+    H1 (G ⧸ V) (Additive (abelianizationProP p G V)) →+
+      H1 S (Additive (abelianizationProP p G V)) :=
+  explicitRes1 (G ⧸ V) (Additive (abelianizationProP p G V)) S
+
+/-- Restriction `H²(G ⧸ V, V^ab(p)) → H²(S, V^ab(p))` of the second cohomology of the class module
+to a subgroup `S` of `G ⧸ V`. -/
+noncomputable abbrev abelianizationProPRes2 (p : ℕ) (V : Subgroup G) [V.Normal]
+    (S : Subgroup (G ⧸ V)) :
+    H2 (G ⧸ V) (Additive (abelianizationProP p G V)) →+
+      H2 S (Additive (abelianizationProP p G V)) :=
+  explicitRes2 (G ⧸ V) (Additive (abelianizationProP p G V)) S
+
 /-- **Restriction to a subgroup of index prime to `p` is injective on `H¹(G ⧸ V, V^ab(p))`**, for
 an open normal subgroup `V` of a compact group `G`. -/
 theorem abelianizationProPRes1_injective (hp : p.Prime) (V : Subgroup G) [V.Normal]
     (hV : IsOpen (V : Set G)) (S : Subgroup (G ⧸ V)) (hS : ¬p ∣ S.index) :
-    Function.Injective (explicitRes1 (G ⧸ V) (Additive (abelianizationProP p G V)) S) := by
+    Function.Injective (abelianizationProPRes1 p V S) := by
   let _ : Finite (G ⧸ V) := V.quotient_finite_of_isOpen hV
   let _ : DiscreteTopology (G ⧸ V) := QuotientGroup.discreteTopology hV
   let _ : S.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
   have hm : p.Coprime S.index := hp.coprime_iff_not_dvd.mpr hS
-  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
-  refine (nsmul_right_bijective_H1_of_homeomorph (G ⧸ V) _
+  exact explicitRes1_injective_of_nsmul_homeomorph _ _ S (isOpen_discrete (S : Set (G ⧸ V)))
     (abelianizationProPNsmulHomeomorph hp V hV hm)
-    (abelianizationProPNsmulHomeomorph_apply hp V hV hm)).injective ?_
-  simp only [← explicitCor1_comp_res1 _ _ S (isOpen_discrete (S : Set (G ⧸ V))) x, hx, map_zero,
-    nsmul_zero]
+    (abelianizationProPNsmulHomeomorph_apply hp V hV hm)
 
 /-- **Restriction to a subgroup of index prime to `p` is injective on `H²(G ⧸ V, V^ab(p))`**, for
 an open normal subgroup `V` of a compact group `G`. -/
 theorem abelianizationProPRes2_injective (hp : p.Prime) (V : Subgroup G) [V.Normal]
     (hV : IsOpen (V : Set G)) (S : Subgroup (G ⧸ V)) (hS : ¬p ∣ S.index) :
-    Function.Injective (explicitRes2 (G ⧸ V) (Additive (abelianizationProP p G V)) S) := by
+    Function.Injective (abelianizationProPRes2 p V S) := by
   let _ : Finite (G ⧸ V) := V.quotient_finite_of_isOpen hV
   let _ : DiscreteTopology (G ⧸ V) := QuotientGroup.discreteTopology hV
   let _ : S.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
   have hm : p.Coprime S.index := hp.coprime_iff_not_dvd.mpr hS
-  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
-  refine (nsmul_right_bijective_H2_of_homeomorph (G ⧸ V) _
+  exact explicitRes2_injective_of_nsmul_homeomorph _ _ S (isOpen_discrete (S : Set (G ⧸ V)))
     (abelianizationProPNsmulHomeomorph hp V hV hm)
-    (abelianizationProPNsmulHomeomorph_apply hp V hV hm)).injective ?_
-  simp only [← explicitCor2_comp_res2 _ _ S (isOpen_discrete (S : Set (G ⧸ V))) x, hx, map_zero,
-    nsmul_zero]
+    (abelianizationProPNsmulHomeomorph_apply hp V hV hm)
 
 end TauCeti
