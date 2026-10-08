@@ -220,6 +220,29 @@ noncomputable def h1TensorInvariantsEquiv
   map_add' x y := Subtype.ext (map_add (h1TensorEquiv (p := p) hN) x.1 y.1)
   map_smul' c x := Subtype.ext (map_smul (h1TensorEquiv (p := p) hN) c x.1)
 
+/-- The forward map of `h1TensorInvariantsEquiv` is `h1TensorEquiv` on underlying elements. -/
+@[simp]
+theorem h1TensorInvariantsEquiv_apply
+    (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Fact p.Prime]
+    [Module.Finite (ZMod p) A]
+    (z : h1TensorConjInvariants (p := p) (G := G) (N := N) (A := A)) :
+    (h1TensorInvariantsEquiv hN z : H1 N A) =
+      h1TensorEquiv hN (z : H1 N (ZMod p) ⊗[ZMod p] A) := by
+  unfold h1TensorInvariantsEquiv
+  rfl
+
+/-- The inverse of `h1TensorInvariantsEquiv` is the inverse of `h1TensorEquiv` on underlying
+elements. -/
+@[simp]
+theorem h1TensorInvariantsEquiv_symm_apply
+    (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Fact p.Prime]
+    [Module.Finite (ZMod p) A]
+    (x : AddSubgroup.toZModSubmodule p (H1ConjInvariants G A N)) :
+    ((h1TensorInvariantsEquiv hN).symm x : H1 N (ZMod p) ⊗[ZMod p] A) =
+      (h1TensorEquiv hN).symm x := by
+  unfold h1TensorInvariantsEquiv
+  rfl
+
 /-- **Coprime descent followed by the tensor comparison.** -/
 noncomputable def h1CoprimeTensorInvariantsEquiv
     (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Fact p.Prime]
@@ -228,6 +251,18 @@ noncomputable def h1CoprimeTensorInvariantsEquiv
     H1 G A ≃ₗ[ZMod p]
       h1TensorConjInvariants (p := p) (G := G) (N := N) (A := A) :=
   h1CoprimeDescentEquiv hopen hcop ≪≫ₗ (h1TensorInvariantsEquiv hN).symm
+
+/-- The forward map of `h1CoprimeTensorInvariantsEquiv` is restriction to `N` followed by the
+inverse tensor comparison. -/
+@[simp]
+theorem h1CoprimeTensorInvariantsEquiv_apply
+    (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Fact p.Prime]
+    [Module.Finite (ZMod p) A] [N.FiniteIndex] (hopen : IsOpen (N : Set G))
+    (hcop : N.index.Coprime p) (x : H1 G A) :
+    (h1CoprimeTensorInvariantsEquiv hN hopen hcop x : H1 N (ZMod p) ⊗[ZMod p] A) =
+      (h1TensorEquiv hN).symm (explicitResConj1 G A N x : H1 N A) := by
+  rw [h1CoprimeTensorInvariantsEquiv, LinearEquiv.trans_apply,
+    h1TensorInvariantsEquiv_symm_apply, h1CoprimeDescentEquiv_apply]
 
 /-- **The first-cohomology tensor-invariant dimension formula.** For an open normal subgroup of
 index prime to `p` acting trivially on `A`, the dimension of `H¹(G, A)` is the dimension of the
