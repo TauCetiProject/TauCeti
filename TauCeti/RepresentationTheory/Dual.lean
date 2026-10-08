@@ -181,8 +181,7 @@ by evaluating the two dual factors. -/
 theorem dualTprodEquivDualDualTprod_tmul_apply (ρ : Representation k G V)
     (σ : Representation k G W) (η : Module.Dual k W) (v : V) (ξ : Module.Dual k V) (w : W) :
     dualTprodEquivDualDualTprod ρ σ (η ⊗ₜ[k] v) (ξ ⊗ₜ[k] w) = ξ v * η w := by
-  change η w * ξ v = ξ v * η w
-  exact mul_comm _ _
+  simp [dualTprodEquivDualDualTprod, _root_.TensorProduct.dualDistribEquiv, mul_comm]
 
 end Representation
 
