@@ -120,13 +120,32 @@ theorem twistedBoundaryF2_eq_one_iff
   classical
   simp [twistedBoundaryF2]
 
-/-- The mod-two twisted boundary vanishes exactly when the cochain satisfies the multiplicative
-one-cocycle equation at `(g, h)`. -/
-theorem twistedBoundaryF2_eq_zero_iff_mul
+/-- For a sign boundary, the mod-two twisted boundary recovers its exponent. -/
+theorem twistedBoundaryF2_eq_of_eq_sign
+    [Nonempty n] [NeZero (2 : K)]
     (x : AbsoluteGaloisGroup K → Matrix n n (SeparableClosure K))
-    (g h : AbsoluteGaloisGroup K) (hx : IsUnit (x (g * h)).det) :
-    twistedBoundaryF2 x (g, h) = 0 ↔ x g * (x h).map g = x (g * h) :=
-  (twistedBoundaryF2_eq_zero_iff x (g, h)).trans (twistedBoundary_eq_one_iff x g h hx)
+    (q : AbsoluteGaloisGroup K × AbsoluteGaloisGroup K) (e : ZMod 2)
+    (hx : twistedBoundary x q =
+      (-1 : SeparableClosure K) ^ e.val • (1 : Matrix n n (SeparableClosure K))) :
+    twistedBoundaryF2 x q = e := by
+  rcases (by decide : ∀ y : ZMod 2, y = 0 ∨ y = 1) e with rfl | rfl
+  · exact (twistedBoundaryF2_eq_zero_iff x q).2 (by simpa using hx)
+  · apply (twistedBoundaryF2_eq_one_iff x q).2
+    intro hδ
+    have hmatrix :
+        (-1 : SeparableClosure K) ^ (1 : ZMod 2).val •
+            (1 : Matrix n n (SeparableClosure K)) = 1 :=
+      hx.symm.trans hδ
+    let i : n := Classical.choice inferInstance
+    have hi := congrFun (congrFun hmatrix i) i
+    have hneg : (-1 : SeparableClosure K) = 1 := by
+      simpa only [ZMod.val_one, pow_one, Matrix.smul_apply, Matrix.one_apply_eq,
+        smul_eq_mul, mul_one] using hi
+    have htwo : (2 : SeparableClosure K) ≠ 0 :=
+      (map_ne_zero (algebraMap K (SeparableClosure K))).2 two_ne_zero
+    apply htwo
+    have hadd := congrArg (· + (1 : SeparableClosure K)) hneg
+    simpa only [neg_add_cancel, one_add_one_eq_two] using hadd.symm
 
 /-- Twisted conjugation of a cochain conjugates its boundary by the constant matrix. -/
 theorem twistedBoundary_conj
