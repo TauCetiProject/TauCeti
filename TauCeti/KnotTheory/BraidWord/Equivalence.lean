@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.BraidWord.ArtinEquivalence
-public import TauCeti.KnotTheory.BraidWord.FreeCancellation
+public import TauCeti.KnotTheory.BraidWord.FreeCancellation.Basic
 
 /-!
 # Completeness of braid-word moves
