@@ -203,13 +203,9 @@ theorem eq_one_of_mem_quotientPointsSubgroup_augmentation (H : _root_.CommHopfAl
     (A : CommAlgCat.{w} R) {g : HopfAlgebra.points (R := R) (H := H) A}
     (hg : g ∈ quotientPointsSubgroup H (HopfIdeal.augmentation R ↥H) A) : g = 1 := by
   refine WithConv.ofConv_injective (AlgHom.ext fun x ↦ ?_)
-  have hx : x - algebraMap R ↥H (Coalgebra.counit (R := R) x) ∈
-      HopfIdeal.augmentation R ↥H := by
-    rw [HopfIdeal.mem_augmentation]
-    simp
-  have hzero := (mem_quotientPointsSubgroup_iff H _ A g).mp hg _ hx
-  rw [map_sub, sub_eq_zero] at hzero
-  rw [hzero, AlgHom.commutes]
+  rw [AlgHom.apply_eq_counit_of_augmentation_le_ker g.ofConv
+    (fun y hy ↦ RingHom.mem_ker.mpr
+      ((mem_quotientPointsSubgroup_iff H _ A g).mp hg y (HopfIdeal.mem_toIdeal.mp hy))) x]
   exact (AlgHom.convOne_apply x).symm
 
 /-- The subgroup of points cut out by the augmentation ideal consists exactly of the identity

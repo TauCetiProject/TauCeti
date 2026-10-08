@@ -310,11 +310,6 @@ instance isClosedImmersion_weightUnipotentInclusion (w : Fin N → ℤ) :
   rw [weightUnipotentInclusion]
   infer_instance
 
-/-- The weight-unipotent group scheme is locally of finite type over the base. -/
-instance locallyOfFiniteType_weightUnipotentGroupScheme (w : Fin N → ℤ) :
-    LocallyOfFiniteType (weightUnipotentGroupScheme R w).X.hom := by
-  infer_instance
-
 /-- The subgroup cut out by the weight-unipotent ideal consists exactly of matrices whose
 `(i,j)` entry agrees with the identity matrix whenever `w i ≤ w j`. -/
 @[simp]

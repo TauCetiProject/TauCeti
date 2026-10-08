@@ -88,8 +88,7 @@ The ambient `TauCeti` names this file consumes, such as `TauCeti.haarProb` and
 `TauCeti.integrable_continuousMap`, are brought in by `open`. The character and its formulas are
 methods in `ContRepresentation`.
 
-The scalars are `ℂ`: the
-symmetric- and exterior-power representations of
+The scalars are `ℂ`: the symmetric- and exterior-power representations of
 `TauCeti/RepresentationTheory/SymmetricPower.lean` and
 `TauCeti/RepresentationTheory/ExteriorPower.lean`, whose characters the square identities below
 speak of, are built over a base ring in `Type`, so a general `RCLike` field in an arbitrary universe
@@ -101,9 +100,11 @@ Bröcker-tom Dieck, *Representations of Compact Lie Groups*, Chapter II.
 
 public section
 
+open _root_.ContRepresentation
+
 open MeasureTheory
 
-open TauCeti TauCeti.ContRepresentation
+open TauCeti
 
 namespace ContRepresentation
 

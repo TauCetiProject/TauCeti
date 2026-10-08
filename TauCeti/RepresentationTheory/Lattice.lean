@@ -24,20 +24,20 @@ takes values with denominators in `S`, and because `V` is finitely generated a s
 clears all of them (`Module.Finite.exists_lift_of_isLocalizedModule_of_injective`), so that
 `s • e` maps `V` into `W`. Intertwining is inherited from `e`, since `W` embeds in `A ⊗[R] W`.
 
-For `G`-modules over `ℤ` (abelian groups with a distributive `G`-action), with `S` the nonzero
-integers and `A = ℚ`, this says that two finitely generated torsion-free `G`-modules with
-isomorphic rationalizations are related by an injective `G`-equivariant map with finite
-cokernel. This is the lattice input to the comparison of the reductions modulo a prime `ℓ` of two
-`ℤ[G]`-lattices with isomorphic rationalizations: the reductions need not be isomorphic, but the
-finite-index embedding forces their classes in the Grothendieck group of `𝔽_ℓ[G]` to agree.
+For representations over `ℤ`, with `S` the nonzero integers and `A = ℚ`, this says that two
+representations on finitely generated torsion-free `ℤ`-modules with equivalent
+rationalizations are related by an injective intertwining map with finite cokernel. This is the
+lattice input to the comparison of the reductions modulo a prime `ℓ` of two `ℤ[G]`-lattices
+with isomorphic rationalizations: the reductions need not be isomorphic, but the finite-index
+embedding forces their classes in the Grothendieck group of `𝔽_ℓ[G]` to agree.
 
 ## Main results
 
 * `Representation.Equiv.exists_intertwiningMap_comp_eq_smul`: representations on `S`-torsion-free
   finitely generated modules with equivalent localizations are equivalent up to a scalar of `S`.
-* `TauCeti.exists_injective_finite_quotient_range_of_nonempty_equiv`: two finitely generated
-  torsion-free `G`-modules over `ℤ` with equivalent rationalizations admit an injective
-  equivariant map from one to the other with finite cokernel.
+* `Representation.Equiv.exists_injective_finite_quotient_range`: two representations on finitely
+  generated torsion-free `ℤ`-modules with equivalent rationalizations admit an injective
+  intertwining map from one to the other with finite cokernel.
 
 ## References
 
@@ -114,38 +114,28 @@ end Localization
 
 section Int
 
-variable {G : Type*} [Monoid G]
-  {V : Type*} [AddCommGroup V] [DistribMulAction G V] [Module.Finite ℤ V] [Module.IsTorsionFree ℤ V]
-  {W : Type*} [AddCommGroup W] [DistribMulAction G W] [Module.Finite ℤ W] [Module.IsTorsionFree ℤ W]
-
-/-- Two finitely generated torsion-free `G`-modules over `ℤ` whose rationalizations `ℚ ⊗[ℤ] V`
-and `ℚ ⊗[ℤ] W` are equivalent representations admit an injective `G`-equivariant additive map
+/-- Two representations of `G` on finitely generated torsion-free `ℤ`-modules whose
+rationalizations `ℚ ⊗[ℤ] V` and `ℚ ⊗[ℤ] W` are equivalent admit an injective intertwining map
 `V → W` with finite cokernel. -/
-theorem exists_injective_finite_quotient_range_of_nonempty_equiv
-    (h : Nonempty ((Representation.baseChange ℚ (Representation.ofDistribMulAction ℤ G V)).Equiv
-      (Representation.baseChange ℚ (Representation.ofDistribMulAction ℤ G W)))) :
-    ∃ f : V →+[G] W, Function.Injective f ∧ Finite (W ⧸ (f : V →+ W).range) := by
-  obtain ⟨e⟩ := h
+theorem _root_.Representation.Equiv.exists_injective_finite_quotient_range {G : Type*} [Monoid G]
+    {V W : Type*} [AddCommGroup V] [Module ℤ V] [Module.Finite ℤ V] [Module.IsTorsionFree ℤ V]
+    [AddCommGroup W] [Module ℤ W] [Module.Finite ℤ W] [Module.IsTorsionFree ℤ W]
+    {ρ : Representation ℤ G V} {σ : Representation ℤ G W}
+    (e : (Representation.baseChange ℚ ρ).Equiv (Representation.baseChange ℚ σ)) :
+    ∃ f : ρ.IntertwiningMap σ, Function.Injective f ∧
+      Finite (W ⧸ LinearMap.range f.toLinearMap) := by
   obtain ⟨f, f', s, hf'f, hff'⟩ := e.exists_intertwiningMap_comp_eq_smul (nonZeroDivisors ℤ)
     (fun s ↦ .of_ne_zero (nonZeroDivisors.coe_ne_zero s))
     fun s ↦ .of_ne_zero (nonZeroDivisors.coe_ne_zero s)
-  let φ : V →+[G] W :=
-    { toFun := f
-      map_smul' g v := by simpa using Representation.IntertwiningMap.isIntertwining _ _ f g v
-      map_zero' := map_zero f
-      map_add' := map_add f }
-  have hf : Function.Injective f := fun a b hab ↦
-    IsSMulRegular.of_ne_zero (nonZeroDivisors.coe_ne_zero s)
-      (by simpa only [hf'f] using congrArg f' hab)
-  -- `φ` is `f` with its equivariance recorded, so it has the same underlying function.
-  refine ⟨φ, hf, ?_⟩
-  have : AddGroup.FG W := Module.Finite.iff_addGroup_fg.mp inferInstance
-  refine AddCommGroup.finite_of_fg_isAddTorsion _ fun q ↦ ?_
-  induction q using QuotientAddGroup.induction_on with | H w => ?_
+  refine ⟨f, fun a b hab ↦ IsSMulRegular.of_ne_zero (nonZeroDivisors.coe_ne_zero s)
+    (by simpa only [hf'f] using congrArg f' hab), ?_⟩
+  -- `Module.finite_of_fg_torsion` is stated for the canonical `ℤ`-module structure
+  obtain rfl := Subsingleton.elim ‹Module ℤ W› (AddCommGroup.toIntModule W)
+  refine Module.finite_of_fg_torsion _ fun q ↦ ?_
+  obtain ⟨w, rfl⟩ := Submodule.mkQ_surjective _ q
   -- `s • w = f (f' w)` lies in the range of `f`.
-  refine isOfFinAddOrder_iff_zsmul_eq_zero.mpr
-    ⟨s, mem_nonZeroDivisors_iff_ne_zero.mp s.2, ?_⟩
-  rw [← QuotientAddGroup.mk_zsmul, QuotientAddGroup.eq_zero_iff, ← hff']
+  refine ⟨s, ?_⟩
+  rw [Submonoid.smul_def, ← map_smul, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, ← hff']
   exact ⟨f' w, rfl⟩
 
 end Int

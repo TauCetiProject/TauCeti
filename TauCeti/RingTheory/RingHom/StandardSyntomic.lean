@@ -116,14 +116,16 @@ theorem isStandardSyntomicOfRelativeDimension_stableUnderCompositionWithLocaliza
     let := f.toAlgebra
     let := (f.comp (algebraMap R S)).toAlgebra
     have : IsScalarTower R S T := IsScalarTower.of_algebraMap_eq' rfl
-    exact Algebra.IsStandardSyntomicOfRelativeDimension.localization_away_trans r
-      (h := (isStandardSyntomicOfRelativeDimension_iff n f).mp hf)
+    have : Algebra.IsStandardSyntomicOfRelativeDimension n S T :=
+      (isStandardSyntomicOfRelativeDimension_iff n f).mp hf
+    exact Algebra.IsStandardSyntomicOfRelativeDimension.localization_away_trans (S := S) r
   right R S T _ _ _ _ s _ f hf := by
     let := f.toAlgebra
     let := ((algebraMap S T).comp f).toAlgebra
     have : IsScalarTower R S T := IsScalarTower.of_algebraMap_eq' rfl
+    have : Algebra.IsStandardSyntomicOfRelativeDimension n R S :=
+      (isStandardSyntomicOfRelativeDimension_iff n f).mp hf
     exact Algebra.IsStandardSyntomicOfRelativeDimension.trans_localization_away s
-      (h := (isStandardSyntomicOfRelativeDimension_iff n f).mp hf)
 
 /-- Standard syntomic ring maps are invariant under isomorphisms on either side. -/
 theorem isStandardSyntomicOfRelativeDimension_respectsIso (n : ℕ) :

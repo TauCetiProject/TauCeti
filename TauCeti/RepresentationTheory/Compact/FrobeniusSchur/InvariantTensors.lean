@@ -30,7 +30,7 @@ space is one, whereas `Sym[ℂ]^2 V` and `⋀[ℂ]^2 V` — a quotient and a sub
 exterior squares, so nothing is lost.
 
 With the squares realized that way the proof is short. The tensor square of `π` is
-`TauCeti.ContRepresentation.tprod π π`, the flip commutes with it, so each eigenspace is a
+`ContRepresentation.tprod π π`, the flip commutes with it, so each eigenspace is a
 subrepresentation, and their characters differ by `χ_π(g²)`: this is
 `ContRepresentation.character_symmetricSquare_sub_character_exteriorSquare`, whose linear-algebra
 content is that composing `f ⊗ f` with the flip has trace `tr (f ∘ f)`. Integrating that pointwise
