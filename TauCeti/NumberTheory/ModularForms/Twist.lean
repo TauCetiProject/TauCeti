@@ -120,20 +120,6 @@ theorem exists_upperRightHom_mul_mapGL_eq_mapGL_mul_upperRightHom [NeZero M] (γ
   · linear_combination heR
   · ring
 
-/-- A matrix of `Γ₀(L)`, for `N * M ∣ L` and `M * M ∣ L`, has lower-left entry `M * M * c` with
-`N ∣ M * c`. -/
-private lemma exists_eq_mul_mul_of_mem_Gamma0 [NeZero M] (hNL : N * M ∣ L) (hML : M * M ∣ L)
-    {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 L) : ∃ c : ℤ, γ 1 0 = M * M * c ∧ (N : ℤ) ∣ M * c := by
-  obtain ⟨x, hx⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (Gamma0_mem.mp hγ)
-  obtain ⟨y, rfl⟩ := hML
-  refine ⟨y * x, by rw [hx]; push_cast; ring, ?_⟩
-  have hNy : N ∣ M * y := by
-    have : M * N ∣ M * (M * y) := by simpa [mul_comm N M, mul_assoc] using hNL
-    exact (Nat.mul_dvd_mul_iff_left (Nat.pos_of_ne_zero (NeZero.ne M))).mp this
-  have := (Int.natCast_dvd_natCast.mpr hNy).mul_right x
-  push_cast at this
-  simpa [mul_assoc] using this
-
 /-- **The level of a translate by `a / M`.** For `N * M ∣ L` and `M * M ∣ L`, `Γ₁(L)` is contained
 in the conjugate `[1, a/M; 0, 1]⁻¹ Γ₁(N) [1, a/M; 0, 1]`, so the translate `τ ↦ f(τ + a/M)` of a
 form for `Γ₁(N)` is a form for `Γ₁(L)`. -/
@@ -143,7 +129,8 @@ theorem Gamma1_map_le_conjAct_upperRightHom [NeZero M] (hNL : N * M ∣ L) (hML 
   rintro _ ⟨γ, hγ, rfl⟩
   rw [map_inv, Subgroup.mem_inv_pointwise_smul_iff, ConjAct.toConjAct_smul]
   obtain ⟨hA, hD, hC⟩ := (Gamma1_mem L γ).mp hγ
-  obtain ⟨c, hc, hNc⟩ := exists_eq_mul_mul_of_mem_Gamma0 hNL hML (Gamma1_in_Gamma0 L hγ)
+  obtain ⟨c, hc, hNc⟩ := CongruenceSubgroup.exists_eq_mul_mul_of_mem_Gamma0 hNL hML
+    (Gamma1_in_Gamma0 L hγ)
   have hDM : ((γ 1 1 : ℤ) : ZMod M) = 1 := by
     simpa [map_one] using congrArg (ZMod.castHom (dvd_of_mul_left_dvd hML) (ZMod M)) hD
   obtain ⟨γ', hA', hC', hD', heq⟩ :=
@@ -331,7 +318,7 @@ private lemma slash_upperRightHom_slash_mapGL [NeZero M] (hNL : N * M ∣ L) (hM
       (χ (unitsMap (dvd_of_mul_right_dvd hNL) ((Gamma0Map L).toHomUnits g)) : ℂ) •
         (f ∣[k] upperRightHom (((a * ((g : SL(2, ℤ)) 1 1 : ZMod M) ^ 2).val : ℝ) / M)) := by
   have hNL' : N ∣ L := dvd_of_mul_right_dvd hNL
-  obtain ⟨c, hc, hNc⟩ := exists_eq_mul_mul_of_mem_Gamma0 hNL hML g.2
+  obtain ⟨c, hc, hNc⟩ := CongruenceSubgroup.exists_eq_mul_mul_of_mem_Gamma0 hNL hML g.2
   obtain ⟨γ', -, hC', hD', heq⟩ := exists_upperRightHom_mul_mapGL_eq_mapGL_mul_upperRightHom
     (g : SL(2, ℤ)) (a := a.val) (a' := (a * ((g : SL(2, ℤ)) 1 1 : ZMod M) ^ 2).val) hc
     (by simp)
