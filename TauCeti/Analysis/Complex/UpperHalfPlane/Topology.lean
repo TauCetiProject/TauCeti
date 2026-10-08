@@ -267,8 +267,8 @@ theorem closure_setOfPred_re_lt (a : ℝ) : closure {z : ℍ | z.re < a} = {z : 
   -- `re ⁻¹' Set.Iic a` unfolds to `{z | z.re ≤ a}` for the same reason, in the other direction.
   rfl
 
-/-- The map `w ↦ re w + exp (im w) i` is a continuous bijection from `ℂ` onto `ℍ`. -/
-private theorem exists_continuous_bijective_complex :
+/-- There is a continuous bijection from `ℂ` onto `ℍ`, namely `w ↦ re w + exp (im w) i`. -/
+theorem exists_continuous_bijective_complex :
     ∃ f : ℂ → ℍ, Continuous f ∧ Function.Bijective f := by
   refine ⟨fun w ↦ ⟨w.re + Real.exp w.im * Complex.I,
     by simp [-Complex.ofReal_exp, Real.exp_pos]⟩, by fun_prop, fun w w' h ↦ ?_, fun z ↦

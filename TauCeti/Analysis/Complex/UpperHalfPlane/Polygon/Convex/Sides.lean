@@ -86,7 +86,7 @@ theorem mem_leftHalfPlane_of_mem_side {i j : Fin n} {z : ℍ} (hz : z ∈ P.side
     (P.range_sideGeodesic_ne hji.symm) hz hzp hzq
 
 /-- Every side has a point other than its finite endpoints. -/
-theorem exists_mem_side_ne (k : Fin n) :
+theorem exists_mem_side_ne_endpoints (k : Fin n) :
     ∃ z ∈ P.side k, P.vertex k ≠ .inl z ∧ P.vertex (k + 1) ≠ .inl z := by
   have hg := P.isGeodesicFromTo_sideGeodesic k
   rw [side_def]
@@ -133,6 +133,7 @@ private theorem geodesicLine_notMem_range_sideGeodesic {k j : Fin n} (hjk : j �
 
 /-- The points of the polygon on the supporting geodesic of a side are exactly the points of
 that side. -/
+@[simp]
 theorem carrier_inter_range_sideGeodesic (k : Fin n) :
     P.carrier ∩ range (geodesicLine (P.sideGeodesic k)) = P.side k := by
   refine Subset.antisymm ?_
@@ -212,7 +213,7 @@ theorem frontier_carrier : frontier P.carrier = ⋃ i, P.side i := by
 
 /-- A convex polygon has nonempty interior. -/
 theorem nonempty_interior_carrier : (interior P.carrier).Nonempty := by
-  obtain ⟨z, hz, hzp, hzq⟩ := P.exists_mem_side_ne 0
+  obtain ⟨z, hz, hzp, hzq⟩ := P.exists_mem_side_ne_endpoints 0
   -- near the regular side point `z` every other side inequality stays strict
   have hO : IsOpen (⋂ j : {j : Fin n // j ≠ 0}, leftHalfPlane (P.sideGeodesic j)) :=
     isOpen_iInter_of_finite fun _ ↦ isOpen_leftHalfPlane _
@@ -226,6 +227,7 @@ theorem nonempty_interior_carrier : (interior P.carrier).Nonempty := by
   · exact mem_iInter.1 hwO ⟨j, hj⟩
 
 /-- A convex polygon is the closure of its interior. -/
+@[simp]
 theorem closure_interior_carrier : closure (interior P.carrier) = P.carrier := by
   refine Subset.antisymm (closure_minimal interior_subset P.isClosed_carrier) fun x hx ↦ ?_
   obtain ⟨p, hp⟩ := P.nonempty_interior_carrier
