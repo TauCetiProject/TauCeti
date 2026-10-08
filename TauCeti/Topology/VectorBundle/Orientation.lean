@@ -84,6 +84,7 @@ def mapOrientation (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B} (hb 
 
 variable {ι}
 
+@[simp]
 theorem mapOrientation_apply (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B}
     (hb : b ∈ e.baseSet) (o : Orientation ℝ (E b) ι) :
     e.mapOrientation ι hb o = Orientation.map ι (e.linearEquivAt ℝ b hb) o :=
@@ -102,9 +103,14 @@ theorem mapOrientation_eq_map_coordChangeL (e e' : Trivialization F (π F E)) [e
     (o : Orientation ℝ (E b) ι) :
     e'.mapOrientation ι hb' o =
       Orientation.map ι (e.coordChangeL ℝ e' b).toLinearEquiv (e.mapOrientation ι hb o) := by
-  rw [mapOrientation_apply, mapOrientation_apply, coe_coordChangeL' e e' ⟨hb, hb'⟩,
-    ← Orientation.map_trans, ← LinearEquiv.trans_assoc, LinearEquiv.self_trans_symm,
-    LinearEquiv.refl_trans]
+  have hcomp : (e.linearEquivAt ℝ b hb).trans (e.coordChangeL ℝ e' b).toLinearEquiv =
+      e'.linearEquivAt ℝ b hb' := by
+    rw [coe_coordChangeL' e e' ⟨hb, hb'⟩]
+    calc
+      _ = ((e.linearEquivAt ℝ b hb).trans (e.linearEquivAt ℝ b hb).symm).trans
+          (e'.linearEquivAt ℝ b hb') := (LinearEquiv.trans_assoc _ _ _).symm
+      _ = _ := by rw [LinearEquiv.self_trans_symm, LinearEquiv.refl_trans]
+  simp only [mapOrientation_apply, ← Orientation.map_trans, hcomp]
 
 variable [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E] [Fintype ι]
   [FiniteDimensional ℝ F]
@@ -219,6 +225,21 @@ theorem trivial_apply (o : Orientation ℝ F ι) (b : B) : trivial B o b = o :=
 theorem neg_trivial (o : Orientation ℝ F ι) : -trivial B o = trivial B (-o) :=
   ext fun _ ↦ (rfl)
 
+/-- The set of points where two orientations agree is open. -/
+theorem isOpen_setOf_eq (o o' : VectorBundleOrientation F E ι) :
+    IsOpen {b | o b = o' b} := by
+  refine isOpen_iff_mem_nhds.2 fun b hb ↦ ?_
+  have hmem := (trivializationAt F E b).open_baseSet.mem_nhds
+    (FiberBundle.mem_baseSet_trivializationAt' b)
+  filter_upwards [o.eventually_mapOrientation_eq' b, o'.eventually_mapOrientation_eq' b, hmem]
+    with x hx hx' hxs
+  exact (Trivialization.mapOrientation ι _ hxs).injective <| by
+    calc
+      _ = _ := hx hxs
+      _ = _ := congrArg ((trivializationAt F E b).mapOrientation ι
+        (FiberBundle.mem_baseSet_trivializationAt' b)) hb
+      _ = _ := (hx' hxs).symm
+
 variable [Fintype ι] [FiniteDimensional ℝ F]
 
 /-- An orientation is locally constant when read in any trivialization of the atlas. -/
@@ -248,18 +269,6 @@ theorem coe_ofEventually (hι : Fintype.card ι = finrank ℝ F) (o : ∀ b, Ori
     (he : ∀ b, b ∈ (e b).baseSet) (ho) : ⇑(ofEventually hι o e he ho) = o :=
   (rfl)
 
-/-- The set of points where two orientations agree is open. -/
-theorem isOpen_setOf_eq (hι : Fintype.card ι = finrank ℝ F)
-    (o o' : VectorBundleOrientation F E ι) : IsOpen {b | o b = o' b} := by
-  refine isOpen_iff_mem_nhds.2 fun b hb ↦ ?_
-  have hmem := (trivializationAt F E b).open_baseSet.mem_nhds
-    (FiberBundle.mem_baseSet_trivializationAt' b)
-  filter_upwards [o.eventually_mapOrientation_eq hι _ (FiberBundle.mem_baseSet_trivializationAt' b),
-    o'.eventually_mapOrientation_eq hι _ (FiberBundle.mem_baseSet_trivializationAt' b), hmem]
-    with x hx hx' hxs
-  exact (Trivialization.mapOrientation ι _ hxs).injective <| by
-    rw [hx hxs, hx' hxs, show o b = o' b from hb]
-
 /-- Over a preconnected base, two orientations of a bundle of rank `card ι` either agree or are
 opposite. -/
 theorem eq_or_eq_neg [PreconnectedSpace B] (hι : Fintype.card ι = finrank ℝ F)
@@ -278,8 +287,8 @@ theorem eq_or_eq_neg [PreconnectedSpace B] (hι : Fintype.card ι = finrank ℝ 
     simp only [mem_compl_iff, mem_ofPred_eq, neg_apply]
     exact ⟨(hfib b).resolve_left, fun h h' ↦ Module.Ray.ne_neg_self (o' b) (h'.symm.trans h)⟩
   have hclopen : IsClopen {b | o b = o' b} :=
-    ⟨isOpen_compl_iff.1 (hcompl ▸ isOpen_setOf_eq hι o (-o')),
-      isOpen_setOf_eq hι o o'⟩
+    ⟨isOpen_compl_iff.1 (hcompl ▸ isOpen_setOf_eq o (-o')),
+      isOpen_setOf_eq o o'⟩
   rcases isClopen_iff.1 hclopen with h | h
   · right
     ext b

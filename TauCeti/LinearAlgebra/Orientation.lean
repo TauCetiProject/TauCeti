@@ -35,6 +35,7 @@ variable {R : Type*} [CommSemiring R] [PartialOrder R] [IsStrictOrderedRing R]
 
 /-- Transporting an orientation along a composite of linear equivalences is the same as
 transporting it along each in turn. -/
+@[simp]
 theorem Orientation.map_trans (e : M ≃ₗ[R] N) (f : N ≃ₗ[R] P) (x : Orientation R M ι) :
     Orientation.map ι (e.trans f) x = Orientation.map ι f (Orientation.map ι e x) := by
   induction x using Module.Ray.ind with | h v hv => rfl
@@ -53,10 +54,14 @@ theorem Orientation.map_eq_map_iff_det_mul_pos [FiniteDimensional R M] (x : Orie
     (f g : M ≃ₗ[R] M) (h : Fintype.card ι = finrank R M) :
     Orientation.map ι f x = Orientation.map ι g x ↔
       0 < LinearMap.det (f : M →ₗ[R] M) * LinearMap.det (g : M →ₗ[R] M) := by
-  rw [map_eq_det_inv_smul _ _ h, map_eq_det_inv_smul _ _ h,
-    ← smul_left_cancel_iff (LinearEquiv.det g), smul_inv_smul, smul_smul, units_smul_eq_self_iff,
-    Units.val_mul, Units.val_inv_eq_inv_val, ← div_eq_mul_inv, div_pos_iff, mul_pos_iff,
-    LinearEquiv.coe_det, LinearEquiv.coe_det]
-  tauto
+  have htransport : Orientation.map ι f x = Orientation.map ι g x ↔
+      Orientation.map ι (f.trans g.symm) x = x := by
+    rw [map_trans, ← map_symm, Equiv.symm_apply_eq]
+  have hdet : LinearMap.det (f.trans g.symm : M →ₗ[R] M) =
+      LinearMap.det (f : M →ₗ[R] M) / LinearMap.det (g : M →ₗ[R] M) := by
+    simp [← LinearEquiv.coe_det, LinearEquiv.det_trans, LinearEquiv.det_symm,
+      div_eq_mul_inv, mul_comm]
+  rw [htransport, map_eq_iff_det_pos _ _ h, hdet]
+  exact div_pos_iff.trans mul_pos_iff.symm
 
 end Field
