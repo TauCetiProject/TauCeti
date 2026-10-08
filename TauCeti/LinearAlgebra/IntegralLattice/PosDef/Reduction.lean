@@ -33,7 +33,8 @@ reduced Gram matrix of a positive definite lattice in terms of its rank and dete
 
 ## Main declarations
 
-* `TauCeti.IntegralLattice.IsMinkowskiReduced`: Minkowski-reduced bases.
+* `TauCeti.IntegralLattice.IsMinkowskiReduced`: Minkowski-reduced bases, unfolded by
+  `TauCeti.IntegralLattice.isMinkowskiReduced_def`.
 * `TauCeti.IntegralLattice.IsPosSemidef.exists_isMinkowskiReduced`: existence.
 * `TauCeti.IntegralLattice.IsMinkowskiReduced.integralNorm_le_integralNorm_add`: the norm of `b j`
   does not decrease when a vector in the span of the other basis vectors is added to it.
@@ -66,6 +67,12 @@ to a basis. -/
 def IsMinkowskiReduced (L : IntegralLattice V) {n : ℕ} (b : Basis (Fin n) ℤ L) : Prop :=
   ∀ (i : Fin n) (e : Basis (Fin n) ℤ L), (∀ j < i, e j = b j) →
     L.integralNorm (b i) ≤ L.integralNorm (e i)
+
+/-- Unfolding `IsMinkowskiReduced` into its defining condition. -/
+theorem isMinkowskiReduced_def {n : ℕ} {b : Basis (Fin n) ℤ L} :
+    L.IsMinkowskiReduced b ↔ ∀ (i : Fin n) (e : Basis (Fin n) ℤ L), (∀ j < i, e j = b j) →
+      L.integralNorm (b i) ≤ L.integralNorm (e i) :=
+  Iff.rfl
 
 namespace IsMinkowskiReduced
 
@@ -148,7 +155,7 @@ namespace IsMinkowskiReduced
 
 /-- The first vector of a Minkowski-reduced basis of a positive semidefinite lattice is a minimal
 vector. -/
-theorem integralNorm_zero_eq_minimum (hL : L.IsPosSemidef) {n : ℕ} [NeZero n]
+@[simp] theorem integralNorm_zero_eq_minimum (hL : L.IsPosSemidef) {n : ℕ} [NeZero n]
     {b : Basis (Fin n) ℤ L} (hb : L.IsMinkowskiReduced b) :
     L.integralNorm (b 0) = L.minimum := by
   have : Nontrivial L := ⟨⟨b 0, 0, b.ne_zero 0⟩⟩
@@ -169,17 +176,17 @@ theorem integralNorm_zero_eq_minimum (hL : L.IsPosSemidef) {n : ℕ} [NeZero n]
     _ ≤ c ^ 2 * L.integralNorm (e k) :=
         le_mul_of_one_le_left (hL.integralNorm_nonneg (e k)) hc2
 
-/-- The `i`-th vector of a Minkowski-reduced basis of a positive semidefinite lattice has norm
-at least the `i`-th successive minimum. -/
-theorem successiveMinimum_le_integralNorm (hL : L.IsPosSemidef)
-    {b : Basis (Fin (finrank ℤ L)) ℤ L} (hb : L.IsMinkowskiReduced b) (i : Fin (finrank ℤ L)) :
+/-- The `i`-th vector of a Minkowski-reduced basis has norm at least the `i`-th successive minimum,
+provided this norm is nonnegative (as it is when the lattice is positive semidefinite). -/
+theorem successiveMinimum_le_integralNorm {b : Basis (Fin (finrank ℤ L)) ℤ L}
+    (hb : L.IsMinkowskiReduced b) {i : Fin (finrank ℤ L)} (hi : 0 ≤ L.integralNorm (b i)) :
     (L.successiveMinimum i : ℤ) ≤ L.integralNorm (b i) := by
   let f : Fin (i.val + 1) → Fin (finrank ℤ L) := Fin.castLE (Nat.succ_le_of_lt i.isLt)
   have hle := L.successiveMinimum_le_of_linearIndependent i (c := (L.integralNorm (b i)).toNat)
     (b.linearIndependent.comp f (Fin.castLE_injective _)) fun j ↦
       (hb.monotone_integralNorm (Fin.le_iff_val_le_val.mpr (Nat.lt_succ_iff.mp j.isLt))).trans
         (Int.self_le_toNat _)
-  rw [← Int.toNat_of_nonneg (hL.integralNorm_nonneg (b i))]
+  rw [← Int.toNat_of_nonneg hi]
   exact_mod_cast hle
 
 end IsMinkowskiReduced
