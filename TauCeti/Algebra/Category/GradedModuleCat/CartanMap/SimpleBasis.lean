@@ -151,7 +151,7 @@ private theorem laurentK0_of_mem_span (hS : IsExhaustiveGradedSimpleFamily S)
   have : Nontrivial M.obj := Module.nontrivial_of_finrank_pos (by rw [hn]; omega)
   -- A simple module is a shift `Sᵢ{d}`, with class `qᵈ [Sᵢ]`.
   by_cases hs : Simple M.obj
-  · obtain ⟨i, d, ⟨e⟩⟩ := hS M hs
+  · obtain ⟨i, d, ⟨e⟩⟩ := (isExhaustiveGradedSimpleFamily_iff S).mp hS M hs
     rw [LaurentK0.of_congr.{uA} _ (ObjectProperty.isoMk _ e :
         M ≅ ⟨(S i).obj.shiftObj d, gradedFiniteModules_shiftObj (S i).property d⟩),
       laurentK0_of_shiftObj]
