@@ -13,7 +13,7 @@ import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicPow
 /-!
 # Prime-to-`p` restriction for the pro-`p` class module
 
-Let `V` be an open normal subgroup of a compact group `G`. The class module `V^ab(p)` is a pro-`p`
+Let `V` be an open normal subgroup of a profinite group `G`. The class module `V^ab(p)` is a pro-`p`
 group, so for `m` prime to `p` its `m`-th power map is a homeomorphism
 (`TauCeti.IsProP.powHomeomorph`). Hence multiplication by `m` is bijective on
 `Hⁱ(G ⧸ V, V^ab(p))` for `i = 1, 2`. For a subgroup `S` of `G ⧸ V` of index prime to `p`,
@@ -92,7 +92,7 @@ noncomputable abbrev abelianizationProPRes2 (p : ℕ) (V : Subgroup G) [V.Normal
   explicitRes2 (G ⧸ V) (Additive (abelianizationProP p G V)) S
 
 /-- **Restriction to a subgroup of index prime to `p` is injective on `H¹(G ⧸ V, V^ab(p))`**, for
-an open normal subgroup `V` of a compact group `G`. -/
+an open normal subgroup `V` of a profinite group `G`. -/
 -- Adapted, with `abelianizationProPRes2_injective`, from the Tau Ceti lookahead branch
 -- `lookahead/ProfiniteCohomology/abelianization-pro-p-class-generates`.
 theorem abelianizationProPRes1_injective (hp : p.Prime) (V : Subgroup G) [V.Normal]
@@ -107,7 +107,7 @@ theorem abelianizationProPRes1_injective (hp : p.Prime) (V : Subgroup G) [V.Norm
     (abelianizationProPNsmulHomeomorph_apply hp V hV hm)
 
 /-- **Restriction to a subgroup of index prime to `p` is injective on `H²(G ⧸ V, V^ab(p))`**, for
-an open normal subgroup `V` of a compact group `G`. -/
+an open normal subgroup `V` of a profinite group `G`. -/
 theorem abelianizationProPRes2_injective (hp : p.Prime) (V : Subgroup G) [V.Normal]
     (hV : IsOpen (V : Set G)) (S : Subgroup (G ⧸ V)) (hS : ¬p ∣ S.index) :
     Function.Injective (abelianizationProPRes2 p V S) := by
