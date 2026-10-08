@@ -53,7 +53,9 @@ def restriction : (κ → R) →L[R] (ι → R) :=
 
 /-- Coordinate restriction is precomposition with the index map. -/
 @[simp]
-theorem restriction_apply (x : κ → R) : restriction R e x = x ∘ e := rfl
+theorem restriction_apply (x : κ → R) : restriction R e x = x ∘ e := by
+  ext i
+  simp [restriction]
 
 /-- Restriction recovers every function extended along an injective index map. -/
 theorem restriction_leftInverse (he : Function.Injective e) :
