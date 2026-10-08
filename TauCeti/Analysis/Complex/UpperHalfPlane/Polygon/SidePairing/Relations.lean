@@ -26,7 +26,12 @@ presentation part of the Poincaré polygon theorem.
 * `SidePairing.pairingHom`: evaluation of free side words by the side-pairing maps.
 * `SidePairing.sideRelator`: the inverse-pair relation for a side.
 * `SidePairing.partialCycleWord` and `SidePairing.cycleWord`: the words read along a vertex cycle.
-* `SidePairing.cycleWordPow`: an arbitrary power of a cycle word.
+
+## Main results
+
+* `SidePairing.cycleWord_next`: the cycle words at the vertices of one cycle are conjugate.
+* `SidePairing.cycleWord_pow_mem_ker_iff`: the `t`-th power of a cycle word is a relation exactly
+  when the order of the cycle transformation divides `t`.
 
 ## References
 
@@ -120,20 +125,19 @@ theorem pairingHom_cycleWord (j : Fin n) :
     sigma.pairingHom (sigma.cycleWord j) = sigma.cycleMap j := by
   rw [cycleWord_def, pairingHom_partialCycleWord, cycleMap_def]
 
-/-- The `t`-th power of the cycle word. When the cycle transformation has finite prescribed
-order, taking `t` to be that order gives a relator. -/
-def cycleWordPow (j : Fin n) (t : ℕ) : FreeGroup (Fin n) :=
-  sigma.cycleWord j ^ t
+/-- **The cycle words along a cycle are conjugate**: the one at the successor of `j` is the
+conjugate of the one at `j` by the generator of the side leaving `j`. -/
+theorem cycleWord_next (j : Fin n) :
+    sigma.cycleWord (sigma.next j) =
+      FreeGroup.of j * sigma.cycleWord j * (FreeGroup.of j)⁻¹ := by
+  refine eq_mul_inv_of_mul_eq ?_
+  rw [cycleWord_def, cycleWord_def, cycleLength_next, ← partialCycleWord_succ',
+    partialCycleWord_succ, next_iterate_cycleLength]
 
-/-- A powered cycle word is the corresponding power of the cycle word. -/
-theorem cycleWordPow_def (j : Fin n) (t : ℕ) :
-    sigma.cycleWordPow j t = sigma.cycleWord j ^ t :=
-  (rfl)
-
-/-- A powered cycle word evaluates to the corresponding power of the cycle transformation. -/
-@[simp]
-theorem pairingHom_cycleWordPow (j : Fin n) (t : ℕ) :
-    sigma.pairingHom (sigma.cycleWordPow j t) = sigma.cycleMap j ^ t := by
-  simp [cycleWordPow]
+/-- The `t`-th power of a cycle word is a relation exactly when the order of the cycle
+transformation divides `t`. -/
+theorem cycleWord_pow_mem_ker_iff (j : Fin n) (t : ℕ) :
+    sigma.cycleWord j ^ t ∈ sigma.pairingHom.ker ↔ orderOf (sigma.cycleMap j) ∣ t := by
+  rw [orderOf_dvd_iff_pow_eq_one, MonoidHom.mem_ker, map_pow, pairingHom_cycleWord]
 
 end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing
