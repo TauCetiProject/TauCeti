@@ -114,7 +114,7 @@ def pullbackSheafHom : (Scheme.Modules.pullback g).obj I.sheaf ⟶ (I.comap g).s
 
 /-- The morphism `pullbackSheafHom` followed by the inclusion `I.comap g ⟶ 𝒪_X` is the pullback
 of the inclusion `I ⟶ 𝒪_Y`. -/
-@[reassoc]
+@[reassoc, simp]
 lemma pullbackSheafHom_sheafι :
     I.pullbackSheafHom g ≫ (I.comap g).sheafι =
       (Scheme.Modules.pullback g).map I.sheafι ≫ (Scheme.Modules.pullbackObjUnitIso g).hom :=

@@ -11,6 +11,8 @@ public import TauCeti.AlgebraicGeometry.IdealSheaf.Pullback
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
 public import TauCeti.AlgebraicGeometry.LineBundle.LocalBasis
 
+import TauCeti.RingTheory.Ideal.Operations
+
 /-!
 # Pullback of the ideal sheaf of an effective Cartier divisor
 
@@ -76,14 +78,7 @@ theorem isIso_pullbackSheafHom (hI : I.IsEffectiveCartier)
   have hc : IsSMulRegular Γ(X, V) c := by
     have hb' := V₀.2.isSMulRegular_map hVV₀ hb
     rw [hIc] at hIb'
-    obtain ⟨u, hu⟩ := Ideal.mem_span_singleton'.mp (hIb' ▸ Ideal.mem_span_singleton_self c)
-    obtain ⟨v, hv⟩ := Ideal.mem_span_singleton'.mp (hIb' ▸ Ideal.mem_span_singleton_self
-      (X.presheaf.map (homOfLE hVV₀).op b))
-    have huv : IsUnit u := .of_mul_eq_one v <| hb' <| by
-      simp only [smul_eq_mul, mul_one]
-      rw [← mul_assoc, mul_comm _ u, hu, mul_comm, hv]
-    rw [← hu]
-    exact (huv.isSMulRegular Γ(X, V)).mul hb'
+    exact TauCeti.IsSMulRegular.of_span_singleton_le hb' hIb'.ge
   refine ⟨V, hxV, ((Scheme.Modules.pullback g).obj I.sheaf).presheaf.map (homOfLE hVU).op
     (((Scheme.Modules.pullbackPushforwardAdjunction g).unit.app I.sheaf).app U.1
       (I.sectionMk a (I.mem_sections_of_ideal_eq_span hIa))), fun W i ↦ ?_⟩
