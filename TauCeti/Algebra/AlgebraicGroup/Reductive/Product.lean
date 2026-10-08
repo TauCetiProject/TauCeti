@@ -124,12 +124,11 @@ private theorem restriction_eq_counit
   intro x
   have h := congrArg (fun φ : H ⟶ M ↦ FiniteTypeCommHopfAlgCat.toBialgHom φ x) hcomp
   rw [FiniteTypeCommHopfAlgCat.toBialgHom_comp, BialgHom.comp_apply] at h
-  exact h.trans (_root_.AlgHom.apply_eq_counit_of_ker_eq_augmentation
+  exact h.trans (_root_.AlgHom.apply_eq_counit_of_augmentation_le_ker
     (FiniteTypeCommHopfAlgCat.toBialgHom f).toAlgHom
-      (by
-        ext y
-        rw [RingHom.mem_ker, HopfIdeal.mem_toIdeal, ← hf, HopfIdeal.mem_ker]
-        exact Iff.rfl)
+      (fun y hy ↦ by
+        rw [HopfIdeal.mem_toIdeal, ← hf, HopfIdeal.mem_ker] at hy
+        exact RingHom.mem_ker.mpr hy)
       x)
 
 /-- **A direct product of reductive finite-type affine groups is reductive.** -/

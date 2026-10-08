@@ -10,7 +10,7 @@ public import TauCeti.Algebra.GroupAction.QuotientAddGroup
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 public import TauCeti.Topology.Algebra.Group.Quotient.Basic
-public import TauCeti.Topology.Algebra.GroupAction.InternalHom.DoubleDual
+public import TauCeti.Topology.Algebra.GroupAction.InternalHom.Basic
 import TauCeti.Topology.Discrete
 
 /-!
@@ -439,28 +439,6 @@ theorem dual_projDistribMulActionHom :
     (S.dual N hsurj).projDistribMulActionHom = InternalHom.precomp G S.inclDistribMulActionHom :=
   DistribMulActionHom.ext fun _ => rfl
 
-/-- **Evaluation is a morphism from a sequence to its double dual, on the inclusions.** The
-inclusion of the double dual sequence `0 → A^{∨∨} → B^{∨∨} → C^{∨∨} → 0` carries the evaluation
-class of `a : A` to the evaluation class of `S.incl a`. -/
-theorem dual_dual_incl_eval
-    (hsurj' : Function.Surjective
-      (InternalHom.precomp G (S.dual N hsurj).inclDistribMulActionHom (N := N))) (a : A) :
-    ((S.dual N hsurj).dual N hsurj').incl (InternalHom.eval G A N a) =
-      InternalHom.eval G B N (S.incl a) := by
-  rw [dual_incl, dual_projDistribMulActionHom]
-  exact InternalHom.precomp_precomp_eval S.inclDistribMulActionHom a
-
-/-- **Evaluation is a morphism from a sequence to its double dual, on the projections.** The
-projection of the double dual sequence `0 → A^{∨∨} → B^{∨∨} → C^{∨∨} → 0` carries the evaluation
-class of `b : B` to the evaluation class of `S.proj b`. -/
-theorem dual_dual_proj_eval
-    (hsurj' : Function.Surjective
-      (InternalHom.precomp G (S.dual N hsurj).inclDistribMulActionHom (N := N))) (b : B) :
-    ((S.dual N hsurj).dual N hsurj').proj (InternalHom.eval G B N b) =
-      InternalHom.eval G C N (S.proj b) := by
-  rw [dual_proj, dual_inclDistribMulActionHom]
-  exact InternalHom.precomp_precomp_eval S.projDistribMulActionHom b
-
 end Dual
 
 section Retract
@@ -806,8 +784,9 @@ private theorem continuous_liftCochain_coe (f : Z1 G C) :
     Continuous (liftCochain S.proj_surjective (f : G → C)) :=
   continuous_liftCochain S.proj_surjective (mem_Z1_iff.1 f.2).1
 
-/-- The canonical lift of a continuous `1`-cocycle on `C` lies over that cocycle. -/
-private theorem isCocycle₁_liftCochain (f : Z1 G C) :
+/-- The projection of the canonical lift of a continuous `1`-cocycle on `C` is a `1`-cocycle: by
+`apply_liftCochain` it is the cocycle itself. -/
+private theorem isCocycle₁_proj_liftCochain (f : Z1 G C) :
     groupCohomology.IsCocycle₁ fun g =>
       S.proj (liftCochain S.proj_surjective (f : G → C) g) := by
   simpa only [apply_liftCochain S.proj_surjective] using (mem_Z1_iff.1 f.2).2
@@ -905,22 +884,22 @@ variable (S) in
 `1`-cocycle on `C`, through its canonical lift. -/
 private noncomputable def delta1Hom : Z1 G C →+ H2 G A :=
   AddMonoidHom.mk'
-    (fun f => S.delta1Class (S.continuous_liftCochain_coe f) (S.isCocycle₁_liftCochain f))
+    (fun f => S.delta1Class (S.continuous_liftCochain_coe f) (S.isCocycle₁_proj_liftCochain f))
     fun f f' => by
       refine (delta1Class_congr _ ((S.continuous_liftCochain_coe f).add
-        (S.continuous_liftCochain_coe f')) (S.isCocycle₁_liftCochain (f + f'))
-        (isCocycle₁_proj_add (S.isCocycle₁_liftCochain f) (S.isCocycle₁_liftCochain f'))
+        (S.continuous_liftCochain_coe f')) (S.isCocycle₁_proj_liftCochain (f + f'))
+        (isCocycle₁_proj_add (S.isCocycle₁_proj_liftCochain f) (S.isCocycle₁_proj_liftCochain f'))
         (funext fun g => by
           rw [apply_liftCochain S.proj_surjective, Pi.add_apply, map_add,
             apply_liftCochain S.proj_surjective, apply_liftCochain S.proj_surjective,
             AddSubgroup.coe_add, Pi.add_apply])).trans ?_
-      exact delta1Class_add _ _ (S.isCocycle₁_liftCochain f) (S.isCocycle₁_liftCochain f')
+      exact delta1Class_add _ _ (S.isCocycle₁_proj_liftCochain f) (S.isCocycle₁_proj_liftCochain f')
 
 /-- Before descent to `H¹`, `δ¹` is the class of the cochain obtained from the canonical lift. -/
 @[simp]
 private theorem delta1Hom_apply (f : Z1 G C) :
     S.delta1Hom f =
-      S.delta1Class (S.continuous_liftCochain_coe f) (S.isCocycle₁_liftCochain f) := (rfl)
+      S.delta1Class (S.continuous_liftCochain_coe f) (S.isCocycle₁_proj_liftCochain f) := (rfl)
 
 /-- `δ¹` before descent to cohomology kills the `1`-coboundaries. -/
 private theorem delta1Hom_eq_zero_of_mem_B1 (f : Z1 G C) (hf : (f : G → C) ∈ B1 G C) :
@@ -944,7 +923,7 @@ private theorem delta1Hom_eq_zero_of_mem_B1 (f : Z1 G C) (hf : (f : G → C) ∈
       fun g => S.proj (d0 G B b g) := funext fun g => by
     rw [apply_liftCochain S.proj_surjective, he]
   rw [delta1Hom_apply, delta1Class_congr _ (continuous_d0_apply (G := G) b)
-      (S.isCocycle₁_liftCochain f) hd0 hproj, delta1Class_def, hsubtype]
+      (S.isCocycle₁_proj_liftCochain f) hd0 hproj, delta1Class_def, hsubtype]
   exact map_zero _
 
 variable [ContinuousSMul G C]
@@ -958,7 +937,7 @@ noncomputable def explicitDelta1 : H1 G C →+ H2 G A :=
 
 /-- The quotient lift defining `explicitDelta1` computes to `delta1Hom` on a representative. -/
 private theorem explicitDelta1_H1pi (f : Z1 G C) :
-    S.explicitDelta1 (f : H1 G C) = S.delta1Hom f := by
+    S.explicitDelta1 (H1pi G C f) = S.delta1Hom f := by
   rw [explicitDelta1]
   exact QuotientAddGroup.lift_mk' _ _ f
 
@@ -981,8 +960,8 @@ theorem explicitDelta1_apply (f : Z1 G C) {e : G → B} (hc : Continuous e)
   have hproj : (fun g => S.proj (liftCochain S.proj_surjective (f : G → C) g)) =
       fun g => S.proj (e g) := funext fun g => by
     rw [apply_liftCochain S.proj_surjective, he]
-  rw [QuotientAddGroup.mk'_apply, explicitDelta1_H1pi, delta1Hom_apply,
-    delta1Class_congr _ hc (S.isCocycle₁_liftCochain f) he' hproj, delta1Class_def]
+  rw [explicitDelta1_H1pi, delta1Hom_apply,
+    delta1Class_congr _ hc (S.isCocycle₁_proj_liftCochain f) he' hproj, delta1Class_def]
   exact congrArg (H2pi G A) (Subtype.ext hcochain.symm)
 
 end Delta1

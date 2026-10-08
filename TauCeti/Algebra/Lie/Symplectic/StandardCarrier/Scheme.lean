@@ -21,10 +21,25 @@ weights into the Kostant toral-closure construction. It defines the carrier, its
 subgroups and weight torus, their bundled matrix-valued points, and the scheme-level pinning
 relation.
 
-Nothing here asserts that the carrier is reductive, that its weight torus is maximal, or that the
-carrier is the separately constructed symplectic group scheme. Those statements remain part of
-Layer 9 of the reductive-groups roadmap; see the scope disclaimer in
-`TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Basic`.
+The file does not prove that the carrier is reductive, that its weight torus is maximal, or that
+it is the separately constructed symplectic group scheme.
+
+## Main definitions
+
+* `TauCeti.SpStd.groupScheme`: the carrier, cut out of the general linear group by
+  `TauCeti.SpStd.definingIdeal`, with its closed immersion `TauCeti.SpStd.carrierι`.
+* `TauCeti.SpStd.rootSubgroup` and `TauCeti.SpStd.weightTorus`: the numbered root subgroups and
+  the split weight torus, each a closed immersion into the carrier.
+* `TauCeti.SpStd.points`, `TauCeti.SpStd.rootSubgroupPoints` and
+  `TauCeti.SpStd.weightTorusPoints`: the corresponding groups of matrix-valued points.
+
+## Main results
+
+* `TauCeti.SpStd.groupScheme_hom_ext`: a morphism from the carrier to the affine group scheme of
+  a commutative Hopf algebra is determined by its restrictions to the numbered root subgroups and
+  the weight torus.
+* `TauCeti.SpStd.weightTorus_conj_rootSubgroup`: the pinning equation, conjugation by the weight
+  torus rescales each numbered root subgroup by its root character.
 -/
 
 public section
@@ -191,8 +206,9 @@ the standard-module weights. -/
     (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv) (isNilpotent_rep_rootGenerator n)
     (latticeBasis n) (basisWeight n)
 
-/-- Two morphisms out of the type-`C_(n+1)` carrier agree when they agree on every numbered root
-subgroup and on the split weight torus. -/
+/-- Two morphisms from the type-`C_(n+1)` carrier to the affine group scheme of a commutative Hopf
+`ℤ`-algebra `Y` agree when they agree on every numbered root subgroup and on the split weight
+torus. -/
 @[ext]
 theorem groupScheme_hom_ext {Y : _root_.CommHopfAlgCat.{0} ℤ}
     (φ ψ : groupScheme n ⟶

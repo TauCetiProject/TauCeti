@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 public import TauCeti.RingTheory.Polynomial.IrreducibleBasis
+public import TauCeti.RingTheory.MvPolynomial.Discriminant
 import TauCeti.Algebra.Polynomial.Degree.Map
 
 /-!
@@ -48,6 +49,12 @@ nullified members of both the basis and the family: if the same elements of the 
 vanish under `φ` and `ψ`, then every member of the basis, and every member of the family, has the
 same degree after either specialization, and is nullified by `φ` exactly when it is nullified by
 `ψ`.
+
+The discriminant of the product of any subfamily of an irreducible basis has constant
+ambient order wherever the projection does
+(`Finset.IsIrreducibleBasis.orderAt_discr_prod_eq_of_mcCallumProjection`). Together with
+`Finset.IsIrreducibleBasis.discr_prod_ne_zero`, this supplies the discriminant hypotheses
+for applying a single-polynomial delineability theorem to the active basis product.
 
 ## Main definitions and results
 
@@ -234,5 +241,27 @@ theorem natDegree_map_eq_of_mcCallumProjection (hB : F.IsIrreducibleBasis B)
 end IsIrreducibleBasis
 
 end Specialization
+
+end Finset
+
+namespace Finset
+
+variable {σ R : Type*} [CommRing R] [IsDomain R]
+  [NormalizedGCDMonoid (MvPolynomial σ R)]
+  {F B A : Finset (Polynomial (MvPolynomial σ R))}
+
+/-- The McCallum projection determines the ambient order of the discriminant of the
+product of any subfamily of the basis. In particular, order-invariance of the projection
+supplies the constant-order hypothesis of the discriminant theorem for this product.
+The formal discriminant may vanish at both base points; no nonvanishing of its values or
+of specialized leading coefficients is assumed. -/
+theorem IsIrreducibleBasis.orderAt_discr_prod_eq_of_mcCallumProjection
+    (hB : F.IsIrreducibleBasis B) (hA : A ⊆ B) (a b : σ → R)
+    (h : ∀ p ∈ F.mcCallumProjection B, p.orderAt a = p.orderAt b) :
+    (∏ p ∈ A, p).discr.orderAt a = (∏ p ∈ A, p).discr.orderAt b := by
+  exact Finset.orderAt_discr_prod_eq A id
+    (fun p hp ↦ hB.natDegree_pos p (hA hp)) a b
+    (fun p hp ↦ h _ (discr_mem_mcCallumProjection (hA hp)))
+    (fun p hp q hq hne ↦ h _ (resultant_mem_mcCallumProjection (hA hp) (hA hq) hne))
 
 end Finset

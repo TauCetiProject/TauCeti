@@ -30,9 +30,9 @@ Smoothness is the rank-two case of smoothness of the upper-triangular subgroup o
 follows from the infinitesimal lifting property for upper-triangular determinant-one matrices
 across nilpotent quotients.
 
-The subgroup here is the rank-two upper-triangular subgroup of `SLₙ`
-(`TauCeti.SpecialLinear.Borel.definingHopfIdeal_eq_upperTriangular_definingHopfIdeal`). That it is
-a Borel subgroup, and that the Borel subgroups are its conjugates, is proved in every rank in
+The subgroup here is, by definition, the case `n = 2` of the upper-triangular subgroup of `SLₙ`
+(`TauCeti.SpecialLinear.Borel.definingHopfIdeal`). That it is a Borel subgroup, and that the Borel
+subgroups are its conjugates, is proved in every rank in
 `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.Borel`.
 
 ## Main declarations
@@ -359,14 +359,6 @@ theorem geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra
   intro K _ _
   exact (PrimeSpectrum.homeomorphOfRingEquiv
     (coordinateRingBaseChangeEquiv k K)).connectedSpace_iff.mpr inferInstance
-
-/-- The coordinate algebra of the upper-triangular determinant-one subgroup of `SL₂` is smooth
-over every commutative base ring, as the rank-two case of the upper-triangular subgroup of
-`SLₙ`. -/
-instance instSmoothCoordinateHopfAlgebra : Algebra.Smooth R (coordinateHopfAlgebra R) := by
-  unfold coordinateHopfAlgebra
-  rw [definingHopfIdeal_eq_upperTriangular_definingHopfIdeal]
-  infer_instance
 
 /-- The standard Borel coordinate algebra is smooth over a field. -/
 theorem smoothCommHopfAlgProperty_coordinateHopfAlgebra

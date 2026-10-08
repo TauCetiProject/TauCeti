@@ -254,11 +254,11 @@ private theorem realCliffordTwoOneScaleIsometry_apply (v : Fin (2 + 1) → ℝ) 
   funext i
   fin_cases i
   · simpa [realCliffordTwoOneScaleIsometry, ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv] using
-      realCliffordFormNegIsometry_pos_of_neg 2 1 v (0 : Fin 1)
+      realCliffordFormNegIsometry_apply_castAdd 2 1 v (0 : Fin 1)
   · simpa [realCliffordTwoOneScaleIsometry, ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv] using
-      realCliffordFormNegIsometry_neg_of_pos 2 1 v (0 : Fin 2)
+      realCliffordFormNegIsometry_apply_natAdd 2 1 v (0 : Fin 2)
   · simpa [realCliffordTwoOneScaleIsometry, ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv] using
-      realCliffordFormNegIsometry_neg_of_pos 2 1 v (1 : Fin 2)
+      realCliffordFormNegIsometry_apply_natAdd 2 1 v (1 : Fin 2)
 
 private noncomputable def realCliffordThreeOneEvenEquivOneTwo :
     CliffordAlgebra.even (realCliffordForm 3 1) ≃ₐ[ℝ]
