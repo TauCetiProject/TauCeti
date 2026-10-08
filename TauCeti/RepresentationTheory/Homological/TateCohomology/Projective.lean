@@ -168,11 +168,12 @@ theorem projective_of_isZero_res_sylow [Finite G]
   · -- When `|P|` is a unit, the norm maps onto the invariant endomorphisms.
     have hunitCard : IsUnit (Fintype.card P : k) := by
       simpa only [hcard, Nat.cast_pow] using hunit.pow m
-    letI := hunitCard.invertible
+    let := hunitCard.invertible
     rw [Representation.range_norm_eq_invariants]
     intro g
     ext x
-    simp only [Representation.linHom_apply, LinearMap.id_apply, Representation.self_inv_apply]
+    simp only [Representation.linHom_apply, LinearMap.comp_apply, LinearMap.id_apply]
+    exact Representation.self_inv_apply _ g x
   · -- `k/pk` is a field of characteristic `p`.
     let := Ideal.Quotient.field (Ideal.span {(p : k)})
     have : CharP (k ⧸ Ideal.span {(p : k)}) p :=
