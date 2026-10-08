@@ -34,6 +34,8 @@ group by a closed normal subgroup.
 
 * `TauCeti.ContinuousAut.exists_mapQuotient_eq`: every compatible family of automorphisms of the
   characteristic open quotients is induced by a continuous automorphism.
+* `TauCeti.ContinuousAut.exists_mapQuotient_eq_of_forall_exists_le`: the same along any cofinal
+  family of characteristic open normal subgroups.
 * `TauCeti.ContinuousAut.range_pi_mapQuotient`,
   `TauCeti.ContinuousAut.isClosedEmbedding_pi_mapQuotient`: the characteristic quotient
   coordinates are a closed embedding onto the compatible families.
@@ -60,43 +62,87 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Comp
 
 namespace ContinuousAut
 
-/-- A family of automorphisms of the characteristic open quotients compatible with the quotient
-maps, composed with the quotient maps, is a compatible family of homomorphisms `G →* G ⧸ N`, so it
-is induced by a unique endomorphism of `G`. -/
-private theorem existsUnique_monoidHom_mk'_comp_eq_toMonoidHom_comp_mk'
-    (hG : IsTopologicallyFinitelyGenerated G)
-    (τ : ∀ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-      MulAut (G ⧸ (N.1 : Subgroup G)))
-    (hτ : ∀ ⦃N M : {N : OpenNormalSubgroup G // IsTopCharacteristic G N}⦄ (hle : N.1 ≤ M.1)
-      (q : G ⧸ (N.1 : Subgroup G)),
-      QuotientGroup.mapOfLE hle (τ N q) = τ M (QuotientGroup.mapOfLE hle q)) :
-    ∃! f : G →* G, ∀ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-      (QuotientGroup.mk' (N.1 : Subgroup G)).comp f =
-        (τ N).toMonoidHom.comp (QuotientGroup.mk' (N.1 : Subgroup G)) :=
-  existsUnique_monoidHom_mk'_comp_eq_of_forall_exists_le
-    (fun U ↦
-      let ⟨N, hN, hle⟩ := hG.exists_isTopCharacteristic_le U.toOpenSubgroup
-      ⟨⟨N, hN⟩, hle⟩)
-    _ fun N M hle ↦ MonoidHom.ext fun g ↦ by simp [hτ hle]
+/-- A family of automorphisms of the quotients by a cofinal family of characteristic open normal
+subgroups, compatible with the quotient maps and composed with the quotient maps, is a compatible
+family of homomorphisms `G →* G ⧸ N i`, so it is induced by a unique endomorphism of `G`. -/
+private theorem existsUnique_monoidHom_mk'_comp_eq_toMonoidHom_comp_mk' {ι : Type*}
+    {N : ι → OpenNormalSubgroup G} (hcof : ∀ U : OpenNormalSubgroup G, ∃ i, N i ≤ U)
+    (τ : ∀ i, MulAut (G ⧸ (N i : Subgroup G)))
+    (hτ : ∀ ⦃i j : ι⦄ (hle : N i ≤ N j) (q : G ⧸ (N i : Subgroup G)),
+      QuotientGroup.mapOfLE hle (τ i q) = τ j (QuotientGroup.mapOfLE hle q)) :
+    ∃! f : G →* G, ∀ i, (QuotientGroup.mk' (N i : Subgroup G)).comp f =
+      (τ i).toMonoidHom.comp (QuotientGroup.mk' (N i : Subgroup G)) :=
+  existsUnique_monoidHom_mk'_comp_eq_of_forall_exists_le hcof _
+    fun i j hle ↦ MonoidHom.ext fun g ↦ by simp [hτ hle]
 
-/-- An endomorphism of `G` whose composite with each characteristic quotient map factors through
-that quotient map is continuous, because the characteristic open quotients are discrete and
-cofinal. -/
-private theorem continuous_of_forall_mk'_comp_eq (hG : IsTopologicallyFinitelyGenerated G)
-    (τ : ∀ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-      MulAut (G ⧸ (N.1 : Subgroup G))) (f : G →* G)
-    (hf : ∀ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-      (QuotientGroup.mk' (N.1 : Subgroup G)).comp f =
-        (τ N).toMonoidHom.comp (QuotientGroup.mk' (N.1 : Subgroup G))) :
+/-- An endomorphism of `G` whose composite with the quotient map by each member of a cofinal
+family of open normal subgroups factors through that quotient map is continuous, because the
+open quotients are discrete. -/
+private theorem continuous_of_forall_mk'_comp_eq {ι : Type*} {N : ι → OpenNormalSubgroup G}
+    (hcof : ∀ U : OpenNormalSubgroup G, ∃ i, N i ≤ U)
+    (τ : ∀ i, MulAut (G ⧸ (N i : Subgroup G))) (f : G →* G)
+    (hf : ∀ i, (QuotientGroup.mk' (N i : Subgroup G)).comp f =
+      (τ i).toMonoidHom.comp (QuotientGroup.mk' (N i : Subgroup G))) :
     Continuous f := by
-  refine (continuous_iff_forall_continuous_mk_of_iInf_eq_bot
-    (fun N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N} ↦ N.1.isClosed)
-    hG.iInf_isTopCharacteristic_eq_bot).mpr fun N ↦ ?_
-  have := QuotientGroup.discreteTopology N.1.isOpen
-  have : (fun a : G ↦ (f a : G ⧸ (N.1 : Subgroup G))) = τ N ∘ QuotientGroup.mk :=
-    funext fun a ↦ DFunLike.congr_fun (hf N) a
+  refine continuous_iff_forall_continuous_mk.mpr fun U ↦ ?_
+  obtain ⟨i, hle⟩ := hcof U
+  have := QuotientGroup.discreteTopology (N i).isOpen
+  have : (fun a : G ↦ (f a : G ⧸ U.toSubgroup)) =
+      (QuotientGroup.mapOfLE hle ∘ τ i) ∘ QuotientGroup.mk := funext fun a ↦ by
+    have h : (f a : G ⧸ (N i : Subgroup G)) = τ i a := DFunLike.congr_fun (hf i) a
+    simp [← h]
   rw [this]
   exact continuous_of_discreteTopology.comp QuotientGroup.continuous_mk
+
+/-- Let `N i` be a family of topologically characteristic open normal subgroups of a profinite
+group `G`, cofinal among the open normal subgroups. A family of automorphisms of the quotients
+`G ⧸ N i` that is compatible with the quotient maps `G ⧸ N i → G ⧸ N j` for `N i ≤ N j` is induced
+by a continuous automorphism of `G`. -/
+theorem exists_mapQuotient_eq_of_forall_exists_le {ι : Type*} {N : ι → OpenNormalSubgroup G}
+    (hN : ∀ i, IsTopCharacteristic G (N i)) (hcof : ∀ U : OpenNormalSubgroup G, ∃ i, N i ≤ U)
+    (σ : ∀ i, MulAut (G ⧸ (N i : Subgroup G)))
+    (hσ : ∀ ⦃i j : ι⦄ (hle : N i ≤ N j) (q : G ⧸ (N i : Subgroup G)),
+      QuotientGroup.mapOfLE hle (σ i q) = σ j (QuotientGroup.mapOfLE hle q)) :
+    ∃ φ : ContinuousAut G, ∀ i, mapQuotient (hN i) φ = σ i := by
+  -- The family and its inverse are realized by endomorphisms `f` and `g` of `G`.
+  obtain ⟨f, hf, -⟩ := existsUnique_monoidHom_mk'_comp_eq_toMonoidHom_comp_mk' hcof σ hσ
+  obtain ⟨g, hg, -⟩ := existsUnique_monoidHom_mk'_comp_eq_toMonoidHom_comp_mk' hcof
+    (fun i ↦ (σ i).symm) fun i j hle q ↦ (σ j).injective (by
+      rw [← hσ hle, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply])
+  -- Both composites induce the identity on every quotient of the family, so they are the
+  -- identity by the uniqueness clause of the limit description.
+  have hid : ∀ h : G →* G, (∀ i, (QuotientGroup.mk' (N i : Subgroup G)).comp h =
+      QuotientGroup.mk' (N i : Subgroup G)) → h = MonoidHom.id G := fun h hh ↦ by
+    obtain ⟨f₀, -, huniq⟩ := existsUnique_monoidHom_mk'_comp_eq_toMonoidHom_comp_mk' hcof
+      (fun i ↦ MulEquiv.refl _) fun i j hle q ↦ by simp
+    exact (huniq h fun i ↦ by simpa using hh i).trans
+      (huniq (MonoidHom.id G) fun i ↦ by simp).symm
+  have hcomp : ∀ i (a : G),
+      (f (g a) : G ⧸ (N i : Subgroup G)) = a ∧ (g (f a) : G ⧸ (N i : Subgroup G)) = a := by
+    intro i a
+    have h1 := DFunLike.congr_fun (hf i) (g a)
+    have h2 := DFunLike.congr_fun (hg i) a
+    have h3 := DFunLike.congr_fun (hf i) a
+    have h4 := DFunLike.congr_fun (hg i) (f a)
+    simp only [MonoidHom.comp_apply, QuotientGroup.mk'_apply, MulEquiv.coe_toMonoidHom]
+      at h1 h2 h3 h4
+    rw [h1, h2, MulEquiv.apply_symm_apply, h4, h3, MulEquiv.symm_apply_apply]
+    exact ⟨rfl, rfl⟩
+  have hfg : f.comp g = MonoidHom.id G :=
+    hid _ fun i ↦ MonoidHom.ext fun a ↦ (hcomp i a).1
+  have hgf : g.comp f = MonoidHom.id G :=
+    hid _ fun i ↦ MonoidHom.ext fun a ↦ (hcomp i a).2
+  let φ : ContinuousAut G :=
+    { toFun := f
+      invFun := g
+      left_inv := fun a ↦ DFunLike.congr_fun hgf a
+      right_inv := fun a ↦ DFunLike.congr_fun hfg a
+      map_mul' := map_mul f
+      continuous_toFun := continuous_of_forall_mk'_comp_eq hcof σ f hf
+      continuous_invFun := continuous_of_forall_mk'_comp_eq hcof _ g hg }
+  refine ⟨φ, fun i ↦ MulEquiv.ext fun q ↦ ?_⟩
+  induction q using QuotientGroup.induction_on with
+  | H a => exact (mapQuotient_mk (hN i) φ a).trans (DFunLike.congr_fun (hf i) a)
 
 /-- For a topologically finitely generated profinite group `G`, a family of automorphisms of the
 characteristic open quotients `G ⧸ N` that is compatible with the quotient maps `G ⧸ N → G ⧸ M`
@@ -107,47 +153,12 @@ theorem exists_mapQuotient_eq (hG : IsTopologicallyFinitelyGenerated G)
     (hσ : ∀ ⦃N M : {N : OpenNormalSubgroup G // IsTopCharacteristic G N}⦄ (hle : N.1 ≤ M.1)
       (q : G ⧸ (N.1 : Subgroup G)),
       QuotientGroup.mapOfLE hle (σ N q) = σ M (QuotientGroup.mapOfLE hle q)) :
-    ∃ φ : ContinuousAut G, ∀ N, mapQuotient N.2 φ = σ N := by
-  -- The family and its inverse are realized by endomorphisms `f` and `g` of `G`.
-  obtain ⟨f, hf, -⟩ := existsUnique_monoidHom_mk'_comp_eq_toMonoidHom_comp_mk' hG σ hσ
-  obtain ⟨g, hg, -⟩ := existsUnique_monoidHom_mk'_comp_eq_toMonoidHom_comp_mk' hG
-    (fun N ↦ (σ N).symm) fun N M hle q ↦ (σ M).injective (by
-      rw [← hσ hle, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply])
-  -- Both composites induce the identity on every characteristic quotient, so they are the
-  -- identity by the uniqueness clause of the limit description.
-  have hid : ∀ h : G →* G, (∀ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-      (QuotientGroup.mk' (N.1 : Subgroup G)).comp h = QuotientGroup.mk' (N.1 : Subgroup G)) →
-      h = MonoidHom.id G := fun h hh ↦ by
-    obtain ⟨f₀, -, huniq⟩ := existsUnique_monoidHom_mk'_comp_eq_toMonoidHom_comp_mk' hG
-      (fun N ↦ MulEquiv.refl _) fun N M hle q ↦ by simp
-    exact (huniq h fun N ↦ by simpa using hh N).trans
-      (huniq (MonoidHom.id G) fun N ↦ by simp).symm
-  have hcomp : ∀ (N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N}) (a : G),
-      (f (g a) : G ⧸ (N.1 : Subgroup G)) = a ∧ (g (f a) : G ⧸ (N.1 : Subgroup G)) = a := by
-    intro N a
-    have h1 := DFunLike.congr_fun (hf N) (g a)
-    have h2 := DFunLike.congr_fun (hg N) a
-    have h3 := DFunLike.congr_fun (hf N) a
-    have h4 := DFunLike.congr_fun (hg N) (f a)
-    simp only [MonoidHom.comp_apply, QuotientGroup.mk'_apply, MulEquiv.coe_toMonoidHom]
-      at h1 h2 h3 h4
-    rw [h1, h2, MulEquiv.apply_symm_apply, h4, h3, MulEquiv.symm_apply_apply]
-    exact ⟨rfl, rfl⟩
-  have hfg : f.comp g = MonoidHom.id G :=
-    hid _ fun N ↦ MonoidHom.ext fun a ↦ (hcomp N a).1
-  have hgf : g.comp f = MonoidHom.id G :=
-    hid _ fun N ↦ MonoidHom.ext fun a ↦ (hcomp N a).2
-  let φ : ContinuousAut G :=
-    { toFun := f
-      invFun := g
-      left_inv := fun a ↦ DFunLike.congr_fun hgf a
-      right_inv := fun a ↦ DFunLike.congr_fun hfg a
-      map_mul' := map_mul f
-      continuous_toFun := continuous_of_forall_mk'_comp_eq hG σ f hf
-      continuous_invFun := continuous_of_forall_mk'_comp_eq hG _ g hg }
-  refine ⟨φ, fun N ↦ MulEquiv.ext fun q ↦ ?_⟩
-  induction q using QuotientGroup.induction_on with
-  | H a => exact (mapQuotient_mk N.2 φ a).trans (DFunLike.congr_fun (hf N) a)
+    ∃ φ : ContinuousAut G, ∀ N, mapQuotient N.2 φ = σ N :=
+  exists_mapQuotient_eq_of_forall_exists_le (N := Subtype.val) Subtype.property
+    (fun U ↦
+      let ⟨N, hN, hle⟩ := hG.exists_isTopCharacteristic_le U.toOpenSubgroup
+      ⟨⟨N, hN⟩, hle⟩)
+    σ hσ
 
 /-- For a topologically finitely generated profinite group, the range of the joint characteristic
 quotient coordinate map consists exactly of the families of automorphisms compatible with the
