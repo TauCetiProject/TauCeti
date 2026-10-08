@@ -16,12 +16,13 @@ Here it is bundled as a continuous linear map, so it can transport regularity of
 of multilinear maps. Its restriction to alternating maps is multiplication by the factorial
 of the number of arguments. No division or characteristic assumption is needed.
 
-For a multilinear map `f`, use `TauCeti.norm_alternatization_le f` for the norm bound and
-`TauCeti.alternatizationCLM_apply f` to rewrite the bundled operator as Mathlib's signed sum.
-For an alternating map `a`, `TauCeti.alternatization_toContinuousMultilinearMap a` computes
-the signed sum of its underlying multilinear map.
-Use `TauCeti.alternatizationCLM (𝕜 := 𝕜) (ι := ι) (E := E) (F := F)` for the bundled
-operator itself.
+For a multilinear map `f`, use `TauCeti.ContinuousMultilinearMap.norm_alternatization_le f`
+for the norm bound and `TauCeti.ContinuousMultilinearMap.alternatizationCLM_apply f` to rewrite
+the bundled operator as Mathlib's signed sum. For an alternating map `a`,
+`TauCeti.ContinuousAlternatingMap.alternatization_toContinuousMultilinearMap a` computes
+the signed sum of its underlying multilinear map. Use
+`TauCeti.ContinuousMultilinearMap.alternatizationCLM (𝕜 := 𝕜) (ι := ι) (E := E) (F := F)`
+for the bundled operator itself.
 
 The construction uses Mathlib's alternatization, developed by Yury Kudryashov.
 -/
@@ -33,6 +34,8 @@ namespace TauCeti
 variable {𝕜 ι E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [Fintype ι]
+
+namespace ContinuousMultilinearMap
 
 open Classical in
 /-- The signed permutation sum has operator norm at most the factorial of its degree. -/
@@ -68,6 +71,10 @@ open Classical in
 theorem alternatizationCLM_apply (f : ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ E) F) :
     alternatizationCLM f = ContinuousMultilinearMap.alternatization f := (rfl)
 
+end ContinuousMultilinearMap
+
+namespace ContinuousAlternatingMap
+
 open Classical in
 /-- Alternatization multiplies an already alternating map by its degree factorial. -/
 @[simp]
@@ -78,5 +85,7 @@ theorem alternatization_toContinuousMultilinearMap (f : E [⋀^ι]→L[𝕜] F) 
   simp only [ContinuousMultilinearMap.alternatization_apply_toAlternatingMap,
     ContinuousAlternatingMap.toAlternatingMap_smul]
   exact AlternatingMap.coe_alternatization f.toAlternatingMap
+
+end ContinuousAlternatingMap
 
 end TauCeti
