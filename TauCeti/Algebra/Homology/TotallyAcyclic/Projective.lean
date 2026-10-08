@@ -77,10 +77,9 @@ theorem exact_hom_projective (i j k : ℤ) (hij : i + 1 = j) (hjk : j + 1 = k) :
     simp [hz]
 
 /-- Every map from the cycles of a totally acyclic complex to a finite projective module
-extends to the containing term. -/
-theorem exists_extend_iCycles (n : ℤ) (Q : ModuleCat.{v} A)
-    [Module.Finite A Q] [Module.Projective A Q] (f : P.cycles n ⟶ Q) :
-    ∃ g : P.X n ⟶ Q, P.iCycles n ≫ g = f := by
+extends to the containing term, with independent term and coefficient universes. -/
+theorem exists_extend_iCycles (n : ℤ) (f : P.cycles n →ₗ[A] Q) :
+    ∃ g : P.X n →ₗ[A] Q, g.comp (P.iCycles n).hom = f := by
   let m := (ComplexShape.up ℤ).prev n
   have ht : P.toCycles m n = (P.sc n).toCycles := by
     apply (cancel_mono (P.iCycles n)).mp
@@ -89,36 +88,34 @@ theorem exists_extend_iCycles (n : ℤ) (Q : ModuleCat.{v} A)
   have hepi : Epi (P.toCycles m n) := by
     rw [ht]
     exact (hP.acyclic n).epi_toCycles
-  have hz : (P.toCycles m n ≫ f).hom.comp (P.d (m - 1) m).hom = 0 := by
-    simpa only [ModuleCat.hom_comp, ModuleCat.hom_zero] using
-      congrArg ModuleCat.Hom.hom
-        (by simp : P.d (m - 1) m ≫ (P.toCycles m n ≫ f) = 0)
+  have hz : (f.comp (P.toCycles m n).hom).comp (P.d (m - 1) m).hom = 0 := by
+    rw [LinearMap.comp_assoc, ← ModuleCat.hom_comp]
+    simp
   obtain ⟨g, hg⟩ := (hP.exact_hom_projective (m - 1) m n (by simp) (by simp [m])
-    (P.toCycles m n ≫ f).hom).mp hz
-  refine ⟨ModuleCat.ofHom g, ?_⟩
-  rw [← cancel_epi (P.toCycles m n), ← Category.assoc, P.toCycles_i]
-  exact ModuleCat.hom_ext hg
+    (f.comp (P.toCycles m n).hom)).mp hz
+  refine ⟨g, ?_⟩
+  apply (LinearMap.cancel_right (g := (P.toCycles m n).hom)
+    ((ModuleCat.epi_iff_surjective _).mp hepi)).mp
+  rw [LinearMap.comp_assoc, ← ModuleCat.hom_comp, P.toCycles_i]
+  exact hg
 
 /-- Two maps to a finite projective module have the same restriction to cycles exactly when
 their difference factors through the next differential. Thus cycle extensions are unique
 modulo coboundaries in the coefficient Hom complex. -/
-theorem iCycles_comp_eq_iff (n : ℤ) (Q : ModuleCat.{v} A)
-    [Module.Finite A Q] [Module.Projective A Q] (f g : P.X n ⟶ Q) :
-    P.iCycles n ≫ f = P.iCycles n ≫ g ↔
-      ∃ h : P.X (n + 1) ⟶ Q, P.d n (n + 1) ≫ h = f - g := by
+theorem iCycles_comp_eq_iff (n : ℤ) (f g : P.X n →ₗ[A] Q) :
+    f.comp (P.iCycles n).hom = g.comp (P.iCycles n).hom ↔
+      ∃ h : P.X (n + 1) →ₗ[A] Q, h.comp (P.d n (n + 1)).hom = f - g := by
   constructor
   · intro hfg
     let m := (ComplexShape.up ℤ).prev n
-    have hz : (f - g).hom.comp (P.d m n).hom = 0 := by
-      have hk : P.d m n ≫ (f - g) = 0 := by
-        rw [← P.toCycles_i m n, Category.assoc, Preadditive.comp_sub, hfg, sub_self,
-          comp_zero]
-      exact congrArg ModuleCat.Hom.hom hk
+    have hz : (f - g).comp (P.d m n).hom = 0 := by
+      rw [← P.toCycles_i m n, ModuleCat.hom_comp, ← LinearMap.comp_assoc,
+        LinearMap.sub_comp, hfg, sub_self, LinearMap.zero_comp]
     obtain ⟨h, hh⟩ := (hP.exact_hom_projective m n (n + 1) (by simp [m]) rfl
-      (f - g).hom).mp hz
-    exact ⟨ModuleCat.ofHom h, ModuleCat.hom_ext hh⟩
+      (f - g)).mp hz
+    exact ⟨h, hh⟩
   · rintro ⟨h, hh⟩
-    rw [← sub_eq_zero, ← Preadditive.comp_sub, ← hh, ← Category.assoc, P.iCycles_d,
-      zero_comp]
+    rw [← sub_eq_zero, ← LinearMap.sub_comp, ← hh, LinearMap.comp_assoc,
+      ← ModuleCat.hom_comp, P.iCycles_d, ModuleCat.hom_zero, LinearMap.comp_zero]
 
 end CochainComplex.IsTotallyAcyclic
