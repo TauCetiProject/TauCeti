@@ -49,7 +49,7 @@ of the adjoint carrier. This makes the rank-`n + 1` split torus a closed subgrou
 
 This file does not prove that the carrier is reductive or that its weight torus is maximal. Two
 related statements are proved in sibling files: the comparison with the symplectic group scheme
-over a field is `TauCeti.SpStd.baseChangeSymplecticIso`, and generation by the numbered root
+over a commutative ring is `TauCeti.SpStd.baseChangeSymplecticIso`. Generation by the numbered root
 subgroups is `TauCeti.SpStd.groupScheme_eq_kostantGeneratedGroupScheme`. No finite or simple group
 is asserted here.
 
