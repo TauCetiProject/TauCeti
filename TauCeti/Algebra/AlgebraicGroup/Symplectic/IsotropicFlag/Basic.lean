@@ -258,6 +258,12 @@ end Points
 
 section SchemePoints
 
+/-- The flag subgroup's underlying scheme is the spectrum of its coordinate Hopf algebra. -/
+theorem groupScheme_X_left :
+    (groupScheme R m).X.left =
+      AlgebraicGeometry.Spec (CommRingCat.of (coordinateHopfAlgebra R m)) :=
+  AlgebraicGeometry.hopfSpec_obj_X_left R (coordinateHopfAlgebra R m)
+
 variable (A : Type u) [CommRing A] [Algebra R A]
 
 /-- Spectrum identifies algebra points of the flag subgroup with its scheme-valued points. -/
@@ -271,11 +277,12 @@ noncomputable def groupSchemePointMulEquiv :
 theorem groupSchemePointMulEquiv_apply_left
     (f : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) :
     (groupSchemePointMulEquiv R m A f).left =
-      AlgebraicGeometry.Spec.map (CommRingCat.ofHom f.ofConv.toRingHom) := by
-  simpa only [groupSchemePointMulEquiv, eqToHom_refl, Category.comp_id,
-    AlgHom.toRingHom_eq_coe] using
+      AlgebraicGeometry.Spec.map (CommRingCat.ofHom f.ofConv.toRingHom) ≫
+        eqToHom (groupScheme_X_left R m).symm := by
+  simpa only [groupSchemePointMulEquiv, AlgHom.toRingHom_eq_coe] using
     CommHopfAlgCat.mapMulEquivOfPresentation_apply_left
-      (coordinateHopfAlgebra R m) A (G := groupScheme R m) rfl rfl f
+      (coordinateHopfAlgebra R m) A (G := groupScheme R m) rfl
+        (groupScheme_X_left R m) f
 
 /-- Scheme-valued points of the flag subgroup are the flag-preserving symplectic matrices. -/
 noncomputable def schemePointsMulEquiv :

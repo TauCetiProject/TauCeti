@@ -211,7 +211,7 @@ private theorem groupSchemePointMulEquiv_comp_rootSubgroup
     CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
       (R := R) A rfl (AdditiveGroup.groupScheme_def R)
       (groupSchemePointMulEquiv R m A) (AdditiveGroup.groupSchemePointMulEquiv A)
-      (fun f => by simpa only [eqToHom_refl, Category.comp_id] using
+      (fun f => by simpa only [AlgHom.toRingHom_eq_coe] using
         groupSchemePointMulEquiv_apply_left R m A f)
       (AdditiveGroup.groupSchemePointMulEquiv_apply_left A)
       (rootSubgroupCoordinateMap R m root hroot) f
