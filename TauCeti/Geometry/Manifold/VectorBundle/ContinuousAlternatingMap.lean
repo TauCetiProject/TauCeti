@@ -24,6 +24,10 @@ Floris van Doorn, and the topological alternating-map bundle by Yury Kudryashov,
 and Floris van Doorn.
 
 The coordinate regularity criteria hold over any nontrivially normed field.
+
+For trivializations `e₁`, `e₁'`, `e₂`, and `e₂'` of the source and target bundles, use
+`TauCeti.contMDiffOn_continuousAlternatingMapCoordChange e₁ e₁' e₂ e₂'`
+for smoothness of the induced coordinate change on their common chart overlap.
 -/
 
 public noncomputable section
