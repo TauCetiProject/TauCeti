@@ -235,31 +235,24 @@ private lemma typeCCoroot_typeCMk {x y : Signed n} (h : y ≠ signedNeg x) :
 
 /-! ## Injectivity of the roots and of the coroots -/
 
-private lemma typeCRoot_injective : Injective (typeCRoot (n := n)) := by
-  intro i j hij
-  have hi := typeCSnd_ne_signedNeg_typeCFst i
-  have hj := typeCSnd_ne_signedNeg_typeCFst j
-  have hmem : ∀ z, (z = typeCFst i ∨ z = typeCSnd i) ↔ (z = typeCFst j ∨ z = typeCSnd j) := by
-    intro z
-    rw [← one_le_pairRoot_dotProduct_iff hi z, ← one_le_pairRoot_dotProduct_iff hj z]
-    exact Iff.of_eq (congrArg _ (congrArg (· ⬝ᵥ signedCoweight z) hij))
-  rcases Set.pair_eq_pair_iff.mp (Set.ext fun z => by simpa using hmem z) with
-    ⟨h1, h2⟩ | ⟨h1, h2⟩
+/-- A root index is determined by the unordered pair of its signed basis vectors. -/
+private lemma typeCIndex_eq_of_pair_mem_iff {i j : TypeCIndex n}
+    (h : ∀ z, (z = typeCFst i ∨ z = typeCSnd i) ↔ (z = typeCFst j ∨ z = typeCSnd j)) : i = j := by
+  rcases Set.pair_eq_pair_iff.mp (Set.ext fun z => by simpa using h z) with ⟨h1, h2⟩ | ⟨h1, h2⟩
   · exact typeCPair_injective (Prod.ext h1 h2)
   · exact typeCPair_swap_eq h1 h2
 
-private lemma typeCCoroot_injective : Injective (typeCCoroot (n := n)) := by
-  intro i j hij
-  have hi := typeCSnd_ne_signedNeg_typeCFst i
-  have hj := typeCSnd_ne_signedNeg_typeCFst j
-  have hmem : ∀ z, (z = typeCFst i ∨ z = typeCSnd i) ↔ (z = typeCFst j ∨ z = typeCSnd j) := by
-    intro z
-    rw [← one_le_dotProduct_pairCoroot_iff hi z, ← one_le_dotProduct_pairCoroot_iff hj z]
+private lemma typeCRoot_injective : Injective (typeCRoot (n := n)) := fun i j hij =>
+  typeCIndex_eq_of_pair_mem_iff fun z => by
+    rw [← one_le_pairRoot_dotProduct_iff (typeCSnd_ne_signedNeg_typeCFst i) z,
+      ← one_le_pairRoot_dotProduct_iff (typeCSnd_ne_signedNeg_typeCFst j) z]
+    exact Iff.of_eq (congrArg _ (congrArg (· ⬝ᵥ signedCoweight z) hij))
+
+private lemma typeCCoroot_injective : Injective (typeCCoroot (n := n)) := fun i j hij =>
+  typeCIndex_eq_of_pair_mem_iff fun z => by
+    rw [← one_le_dotProduct_pairCoroot_iff (typeCSnd_ne_signedNeg_typeCFst i) z,
+      ← one_le_dotProduct_pairCoroot_iff (typeCSnd_ne_signedNeg_typeCFst j) z]
     exact Iff.of_eq (congrArg _ (congrArg (signedWeight z ⬝ᵥ ·) hij))
-  rcases Set.pair_eq_pair_iff.mp (Set.ext fun z => by simpa using hmem z) with
-    ⟨h1, h2⟩ | ⟨h1, h2⟩
-  · exact typeCPair_injective (Prod.ext h1 h2)
-  · exact typeCPair_swap_eq h1 h2
 
 /-! ## The reflection on root indices -/
 
@@ -458,40 +451,26 @@ private lemma coroot_typeCSimpleIndex_eq (i : Fin n) :
   rw [coroot_typeCSimplyConnectedRootDatum, typeCIndexEquiv_symm_typeCSimpleIndex]
   rfl
 
-private lemma typeCFst_simple (i : Fin n) :
-    typeCFst ((i, Order.succ i, false) : TypeCIndex n) = (i, false) := rfl
-
-private lemma typeCSnd_simple_of_lt {i : Fin n} (h : (i : ℕ) + 1 < n) :
-    typeCSnd ((i, Order.succ i, false) : TypeCIndex n) = (Order.succ i, true) := by
-  have hlt : i < Order.succ i := by rw [Fin.lt_def, Fin.val_orderSucc_of_lt h]; omega
-  rw [typeCSnd_mk_of_lt hlt]
-  simp
-
-private lemma typeCSnd_simple_of_last {i : Fin n} (h : (i : ℕ) + 1 = n) :
-    typeCSnd ((i, Order.succ i, false) : TypeCIndex n) = (i, false) := by
-  rw [Fin.orderSucc_eq_self_of_not_lt (i := i) (by omega), typeCSnd_mk_of_not_lt (lt_irrefl i)]
-
 private lemma typeCSimpleRoot_of_lt {i : Fin n} (h : (i : ℕ) + 1 < n) :
     typeCSimpleRoot i = weight n (i : ℕ) - weight n ((i : ℕ) + 1) := by
-  rw [typeCSimpleRoot, typeCRoot, typeCFst_simple, typeCSnd_simple_of_lt h, pairRoot_def,
-    signedWeight_false, signedWeight_true, Fin.val_orderSucc_of_lt h]
-  exact (sub_eq_add_neg _ _).symm
+  have hlt : i < Order.succ i := by rw [Fin.lt_def, Fin.val_orderSucc_of_lt h]; omega
+  rw [typeCSimpleRoot, typeCRoot_mk_of_lt hlt, signedWeight_false, signedWeight_false,
+    Fin.val_orderSucc_of_lt h]
 
 private lemma typeCSimpleRoot_of_last {i : Fin n} (h : (i : ℕ) + 1 = n) :
     typeCSimpleRoot i = weight n (i : ℕ) + weight n (i : ℕ) := by
-  rw [typeCSimpleRoot, typeCRoot, typeCFst_simple, typeCSnd_simple_of_last h, pairRoot_def,
-    signedWeight_false]
+  rw [typeCSimpleRoot, Fin.orderSucc_eq_self_of_not_lt (i := i) (by omega),
+    typeCRoot_mk_of_not_lt (lt_irrefl i), signedWeight_false]
 
 private lemma typeCSimpleCoroot_eq (i : Fin n) :
     typeCSimpleCoroot i = coweight n (i : ℕ) - coweight n ((i : ℕ) + 1) := by
   rcases eq_or_lt_of_le (Nat.succ_le_of_lt i.isLt) with h | h
-  · rw [typeCSimpleCoroot, typeCCoroot, typeCFst_simple, typeCSnd_simple_of_last h,
-      pairCoroot_self, signedCoweight_false, coweight_eq_zero_of_le (a := (i : ℕ) + 1) (by omega),
-      sub_zero]
-  · have hne : ((i : Fin n), false) ≠ ((Order.succ i : Fin n), true) := by simp
-    rw [typeCSimpleCoroot, typeCCoroot, typeCFst_simple, typeCSnd_simple_of_lt h,
-      pairCoroot_of_ne hne, signedCoweight_false, signedCoweight_true, Fin.val_orderSucc_of_lt h]
-    exact (sub_eq_add_neg _ _).symm
+  · rw [typeCSimpleCoroot, Fin.orderSucc_eq_self_of_not_lt (i := i) (by omega),
+      typeCCoroot_mk_diag, signedCoweight_false,
+      coweight_eq_zero_of_le (a := (i : ℕ) + 1) (by omega), sub_zero]
+  · have hlt : i < Order.succ i := by rw [Fin.lt_def, Fin.val_orderSucc_of_lt h]; omega
+    rw [typeCSimpleCoroot, typeCCoroot_mk_of_lt hlt, signedCoweight_false,
+      signedCoweight_false, Fin.val_orderSucc_of_lt h]
 
 private lemma typeCSimpleCoroot_eq_single (i : Fin n) : typeCSimpleCoroot i = Pi.single i 1 := by
   rw [typeCSimpleCoroot_eq]

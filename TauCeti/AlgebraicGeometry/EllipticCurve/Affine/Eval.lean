@@ -168,6 +168,14 @@ theorem equation_of_algHom (f : W.CoordinateRing →ₐ[R] A) :
   rw [Affine.Equation, Affine.map_polynomial,
     ← algHom_mk_eq_evalEval f W.polynomial, AdjoinRoot.mk_self, map_zero]
 
+variable (W) in
+/-- The pair `(x, y)` of coordinate functions of the coordinate ring `R[W]` satisfies the
+Weierstrass equation of the base change of `W` to `R[W]`. -/
+theorem equation_X_root :
+    (W⁄W.CoordinateRing).toAffine.Equation (AdjoinRoot.of W.polynomial X)
+      (AdjoinRoot.root W.polynomial) := by
+  simpa only [AlgHom.id_apply] using equation_of_algHom (AlgHom.id R W.CoordinateRing)
+
 /-- **Evaluation of the coordinate ring at a point of the base-changed curve.** A solution
 `(x, y)` of the Weierstrass equation of `W⁄A` is a point of `W` with coordinates in `A`, and
 substituting it into a polynomial function factors through the coordinate ring. -/

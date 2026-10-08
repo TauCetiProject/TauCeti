@@ -196,11 +196,8 @@ theorem exists_complexification_dense_open_directions_eval_add_smul_eq_pow_mul [
               z.2 ^ m * u z := by
   obtain ⟨ρ, hρ, Φ, hΦ, hreal, hstar⟩ := hφ.exists_complexification_pi
   let H := homogeneousComponent m (taylor (φ a) p)
-  have hH : H ≠ 0 := by
-    obtain ⟨⟨d, hd, hdm⟩, -⟩ := orderAt_eq_coe_iff.1 hm.self_of_nhds
-    intro hzero
-    have h := congrArg (fun q : MvPolynomial σ ℝ ↦ q.coeff d) hzero
-    simp [H, coeff_homogeneousComponent, hdm, hd] at h
+  have hH : H ≠ 0 :=
+    p.homogeneousComponent_ne_zero_of_orderAt_eq (φ a) hm.self_of_nhds
   let V := {v : σ → ℝ | eval v H ≠ 0}
   have hV : IsOpen V := isOpen_ne.preimage H.continuous_eval
   refine ⟨ρ, hρ, Φ, V, hV, H.dense_setOf_eval_ne_zero hH, hΦ, hreal, hstar, ?_⟩

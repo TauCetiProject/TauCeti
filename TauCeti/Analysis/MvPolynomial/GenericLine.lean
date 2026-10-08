@@ -34,13 +34,7 @@ theorem exists_analyticOrderAt_eval_finTwo_eq (p : MvPolynomial (Fin 2) 𝕜)
   obtain ⟨m, hm⟩ := ENat.ne_top_iff_exists.1 ((orderAt_eq_top_iff (p := p) (a := a)).not.2 hp)
   -- Exclude bad slopes while choosing a direction detecting the first Taylor term.
   let H := homogeneousComponent m (taylor a p)
-  have hH : H ≠ 0 := by
-    obtain ⟨⟨d, hd, hdm⟩, -⟩ := orderAt_eq_coe_iff.1 hm.symm
-    intro hzero
-    have := congrArg (fun q : MvPolynomial (Fin 2) 𝕜 ↦ q.coeff d) hzero
-    simp only [H, coeff_homogeneousComponent, hdm, ite_true,
-      AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply] at this
-    exact hd this
+  have hH : H ≠ 0 := p.homogeneousComponent_ne_zero_of_orderAt_eq a hm.symm
   have hlinear (b : 𝕜) : (X 1 - C b * X 0 : MvPolynomial (Fin 2) 𝕜) ≠ 0 := by
     intro hzero
     have := congrArg (fun q : MvPolynomial (Fin 2) 𝕜 ↦ q.coeff (Finsupp.single 1 1)) hzero

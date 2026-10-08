@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Realization
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Equivalence
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel
 import all TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Equivalence
 import Mathlib.Topology.Algebra.Ring.Real
 
@@ -26,7 +27,8 @@ both precomplexes. The sequence theorem uses the full complex as a common ambien
 Finiteness means finitely many faces, with no restriction on the ambient vertex type.
 
 The construction uses the bijective barycentric map of `Stellar.Realization` and the compact
-subpolyhedron and coordinate-embedding theorems of `Realization.Finite`.
+subpolyhedron and coordinate-embedding theorems of `Realization.Finite`. Intrinsic stellar
+equivalences are transported through the relabeling homeomorphisms from `Realization.Relabel`.
 
 ## References
 
@@ -137,5 +139,56 @@ theorem StellarEquivalent.nonempty_homeomorph (h : StellarEquivalent K L)
     obtain ⟨e⟩ := ihPQ hfin
     obtain ⟨e'⟩ := ihQR ((StellarEquivalent.finite_faces_iff hPQ).mp hfin)
     exact ⟨e.trans e'⟩
+
+private noncomputable def topRelabelingHomeomorph {κ : Type*} [DecidableEq κ]
+    (P : PreAbstractSimplicialComplex ι) (f : ι ↪ κ) :
+    {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ P} ≃ₜ
+      {y : Realization (⊤ : AbstractSimplicialComplex κ) // y.1.support ∈ P.map f} :=
+  P.relabelingHomeomorph f
+    (fun _ hτ => TauCeti.AbstractSimplicialComplex.mem_top_iff.mpr
+      (P.isRelLowerSet_faces.prop_of_mem hτ))
+    (fun _ hτ => TauCeti.AbstractSimplicialComplex.mem_top_iff.mpr
+      (P.map f |>.isRelLowerSet_faces.prop_of_mem hτ))
+
+/-- Intrinsic stellar equivalence gives homeomorphic weak polyhedra even when the two complexes
+use different vertex labels. The two relabelings in the definition are removed by the canonical
+homeomorphisms of `Realization.Relabel`. -/
+theorem StellarEquivalentUpToRelabeling.nonempty_homeomorph
+    (h : StellarEquivalentUpToRelabeling K L) (hfin : K.faces.Finite) :
+    Nonempty ({x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ K} ≃ₜ
+      {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ L}) := by
+  have aux : ∀ A B : PreAbstractSimplicialComplex ι,
+      StellarEquivalentUpToRelabeling A B →
+        (A.faces.Finite ↔ B.faces.Finite) ∧
+          (A.faces.Finite →
+            Nonempty ({x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ A} ≃ₜ
+              {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ B})) := by
+    intro A B hAB
+    apply StellarEquivalentUpToRelabeling.induction_on hAB
+    · intro P Q f g he
+      have hPmap : (P.map f).faces.Finite ↔ P.faces.Finite :=
+        finite_faces_map_iff_of_injective f f.injective
+      have hQmap : (Q.map g).faces.Finite ↔ Q.faces.Finite :=
+        finite_faces_map_iff_of_injective g g.injective
+      refine ⟨hPmap.symm.trans (he.finite_faces_iff.trans hQmap), ?_⟩
+      intro hPfin
+      have hPmapfin : (P.map f).faces.Finite := hPmap.mpr hPfin
+      obtain ⟨e⟩ := he.nonempty_homeomorph hPmapfin
+      exact ⟨(topRelabelingHomeomorph P f).trans
+        (e.trans (topRelabelingHomeomorph Q g).symm)⟩
+    · intro P
+      exact ⟨Iff.rfl, fun _ => ⟨Homeomorph.refl _⟩⟩
+    · intro P Q ih
+      refine ⟨ih.1.symm, ?_⟩
+      intro hQfin
+      obtain ⟨e⟩ := ih.2 (ih.1.mpr hQfin)
+      exact ⟨e.symm⟩
+    · intro P Q R ihPQ ihQR
+      refine ⟨ihPQ.1.trans ihQR.1, ?_⟩
+      intro hPfin
+      obtain ⟨e⟩ := ihPQ.2 hPfin
+      obtain ⟨e'⟩ := ihQR.2 (ihPQ.1.mp hPfin)
+      exact ⟨e.trans e'⟩
+  exact (aux K L h).2 hfin
 
 end PreAbstractSimplicialComplex

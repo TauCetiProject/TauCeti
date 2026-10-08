@@ -58,6 +58,8 @@ theorem.
 * `ConvexPolygon.SidePairing.cycleAngleSum_next`,
   `ConvexPolygon.SidePairing.cycleAngleSum_nonneg`: the angle sum does not depend on the
   starting vertex of the cycle, and is nonnegative.
+* `ConvexPolygon.SidePairing.sum_range_mul_cycleLength_interiorAngle`: `t` circuits of a cycle
+  have total angle `t` times the angle sum.
 
 ## Source
 
@@ -200,6 +202,15 @@ theorem partialCycleMap_smul_vertex (j : Fin n) (m : ℕ) :
   | zero => simp
   | succ m ih =>
     rw [partialCycleMap_succ, mul_smul, ih, map_smul_vertex_eq_next, Function.iterate_succ_apply']
+
+/-- Consecutive tiles `(partialCycleMap j m)⁻¹ • P` along a vertex cycle share a side: pulled back
+to the initial vertex, the vertex before the cycle vertex in tile `m + 1` is the vertex after it
+in tile `m`. -/
+theorem inv_partialCycleMap_succ_smul_vertex_sub_one (j : Fin n) (m : ℕ) :
+    (σ.partialCycleMap j (m + 1))⁻¹ • P.vertex (σ.next^[m + 1] j - 1) =
+      (σ.partialCycleMap j m)⁻¹ • P.vertex (σ.next^[m] j + 1) := by
+  rw [partialCycleMap_succ, mul_inv_rev, mul_smul, Function.iterate_succ_apply', next_apply,
+    add_sub_cancel_right, ← σ.map_smul_vertex_add_one, inv_smul_smul]
 
 /-- The length of the vertex cycle through `j`: the minimal period of `j` under the successor. -/
 def cycleLength (j : Fin n) : ℕ :=
@@ -354,6 +365,23 @@ theorem cycleAngleSum_eq_sum_range (j : Fin n) :
       ∑ m ∈ Finset.range (σ.cycleLength j), P.interiorAngle (σ.next^[m] j) := by
   rw [cycleAngleSum, cycle_eq_image, Finset.sum_image (Finset.coe_range _ ▸
     Function.iterate_injOn_Iio_minimalPeriod)]
+
+/-- Summing the interior angles over `t` circuits of the cycle through `j` gives `t` times its
+angle sum. -/
+theorem sum_range_mul_cycleLength_interiorAngle (j : Fin n) (t : ℕ) :
+    ∑ m ∈ Finset.range (t * σ.cycleLength j), P.interiorAngle (σ.next^[m] j) =
+      t * σ.cycleAngleSum j := by
+  induction t with
+  | zero => simp
+  | succ t ih =>
+    have hper : σ.next^[t * σ.cycleLength j] j = j := by
+      rw [cycleLength_def]
+      exact ((Function.isPeriodicPt_minimalPeriod σ.next j).const_mul t).eq
+    rw [Nat.succ_mul, Finset.sum_range_add, ih, Nat.cast_succ, add_mul, one_mul,
+      σ.cycleAngleSum_eq_sum_range]
+    congr 1
+    refine Finset.sum_congr rfl fun l _ ↦ ?_
+    rw [add_comm, Function.iterate_add_apply, hper]
 
 end SidePairing
 

@@ -19,6 +19,8 @@ as an equality of subalgebras, and that are needed whenever a structure theorem 
 up to an algebra equivalence, together with the criterion for a commutative algebra to be central
 and the ring of scalars a central subalgebra provides.
 
+* `Subalgebra.map_center_val` identifies the center of a subalgebra with its intersection
+  with its centralizer in the ambient algebra.
 * `TauCeti.centerCongr` transports the center along an algebra equivalence. It is the
   `Subalgebra` counterpart of Mathlib's `Subring.centerCongr`, which sees only the ring
   structure and therefore cannot record `R`-linearity.
@@ -53,6 +55,22 @@ public section
 namespace Subalgebra
 
 variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+
+/-- The center of a subalgebra, included in the ambient algebra, consists of its elements
+which centralize the whole subalgebra. -/
+@[simp]
+theorem map_center_val (B : Subalgebra R A) :
+    (center R B).map B.val = B ⊓ centralizer R (B : Set A) := by
+  ext x
+  constructor
+  · rintro ⟨z, hz, rfl⟩
+    refine ⟨z.property, (mem_centralizer_iff R).mpr ?_⟩
+    intro b hb
+    exact congrArg Subtype.val ((mem_center_iff.mp hz) ⟨b, hb⟩)
+  · rintro ⟨hx, hcomm⟩
+    refine mem_map.mpr ⟨⟨x, hx⟩, mem_center_iff.mpr ?_, rfl⟩
+    intro b
+    exact Subtype.ext ((mem_centralizer_iff R).mp hcomm b b.property)
 
 /-- The center of an algebra acts on the algebra by its inclusion. -/
 instance centerAlgebra : Algebra (center R A) A :=
@@ -205,30 +223,10 @@ namespace TauCeti
 
 variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
 
-/-- An algebra equivalence carries the center onto the center. -/
-theorem map_center_eq_center (e : A ≃ₐ[R] B) :
-    (Subalgebra.center R A).map (e : A →ₐ[R] B) = Subalgebra.center R B := by
-  refine le_antisymm ?_ ?_
-  · rintro _ hx
-    obtain ⟨a, ha, rfl⟩ := Subalgebra.mem_map.mp hx
-    rw [Subalgebra.mem_center_iff] at ha ⊢
-    intro b'
-    obtain ⟨a', rfl⟩ := e.surjective b'
-    simp only [AlgEquiv.coe_toAlgHom]
-    rw [← map_mul, ← map_mul, ha a']
-  · intro b hb
-    rw [Subalgebra.mem_center_iff] at hb
-    refine Subalgebra.mem_map.mpr ⟨e.symm b, ?_, e.apply_symm_apply b⟩
-    rw [Subalgebra.mem_center_iff]
-    intro a
-    apply e.injective
-    rw [map_mul, map_mul, e.apply_symm_apply]
-    exact hb (e a)
-
 /-- The center of an algebra, transported along an algebra equivalence. -/
 def centerCongr (e : A ≃ₐ[R] B) :
     Subalgebra.center R A ≃ₐ[R] Subalgebra.center R B :=
-  (e.subalgebraMap _).trans (Subalgebra.equivOfEq _ _ (map_center_eq_center e))
+  (e.subalgebraMap _).trans (Subalgebra.equivOfEq _ _ (Subalgebra.map_center_eq e))
 
 @[simp]
 theorem centerCongr_apply_coe (e : A ≃ₐ[R] B) (x : Subalgebra.center R A) :

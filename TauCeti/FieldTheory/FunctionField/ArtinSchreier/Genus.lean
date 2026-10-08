@@ -227,10 +227,9 @@ theorem isIntegrallyClosedIn_of_exists_reduced_artinSchreier_pole
     simpa only [hP'] using hpole
   have he := Place.ramificationIdx_eq_of_exists_reduced_artinSchreier_pole
     k F p hgen hy hpole'
-  refine isIntegrallyClosedIn_of_finrank_prime_of_ramificationIdx_ne_one hex ?_
-    (P' := P') (he.trans_ne (Fact.out : p.Prime).ne_one)
-  rw [Place.finrank_eq_of_exists_reduced_artinSchreier_pole k F p hgen hy hpole']
-  exact Fact.out
+  refine isIntegrallyClosedIn_of_isTotallyRamified (F := F) (F' := F') hex (P' := P') ?_
+  rw [Place.isTotallyRamified_iff, he,
+    Place.finrank_eq_of_exists_reduced_artinSchreier_pole k F p hgen hy hpole']
 
 /-- An Artin--Schreier extension of a function field with exact constants and a finite
 nonempty set of supplied reduced poles has no new constants. Its genus is determined by
