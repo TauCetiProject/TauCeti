@@ -35,6 +35,8 @@ series only; here the substituted series may have any number of variables.
 * `MvPowerSeries.le_order_pderiv`: if `n + 1 ≤ f.order` then `n ≤ (pderiv i f).order`.
 * `MvPowerSeries.succ_le_order_iff`: `n + 1 ≤ f.order` if and only if the constant coefficient of
   `f` vanishes and `n ≤ (pderiv i f).order` for every `i`.
+* `MvPowerSeries.eq_zero_of_pderiv_eq_zero_of_subst_eq_zero`: over a ring without additive
+  torsion, a series vanishes if its partial derivative in `X i` and its value at `X i = 0` do.
 * `MvPowerSeries.WithPiTopology.continuous_pderiv`: a partial derivative is continuous for the
   coefficientwise topology.
 * `MvPowerSeries.pderiv_subst`: the chain rule for substitution into a multivariate power series.
@@ -81,6 +83,31 @@ theorem succ_le_order_iff {f : MvPowerSeries σ R} {n : ℕ} :
   have := coeff_of_lt_order (lt_of_lt_of_le he (h i))
   rw [coeff_pderiv, mul_comm, ← Nat.cast_succ, ← nsmul_eq_mul] at this
   exact (nsmul_eq_zero_iff.mp this).resolve_right (Nat.succ_ne_zero _)
+
+/-- Over a ring without additive torsion, a power series vanishes if its partial derivative in
+`X i` vanishes and it vanishes at `X i = 0`. -/
+theorem eq_zero_of_pderiv_eq_zero_of_subst_eq_zero [DecidableEq σ] {i : σ}
+    {f : MvPowerSeries σ R} (h₀ : pderiv i f = 0)
+    (h₁ : subst (Function.update (X : σ → MvPowerSeries σ R) i 0) f = 0) : f = 0 := by
+  -- the coefficients of `f` without `X i` are those of `f` at `X i = 0`
+  have hr : rescale (Function.update (1 : σ → R) i 0) f = 0 := by
+    rw [rescale_eq_subst, ← h₁]
+    congr 1
+    funext s
+    by_cases hs : s = i <;> simp [Function.update, hs]
+  ext n
+  by_cases hn : n i = 0
+  · have := congrArg (coeff n) hr
+    rw [coeff_rescale, Finsupp.prod, Finset.prod_eq_one fun s hs ↦ ?_, one_mul] at this
+    · simpa using this
+    · rw [Function.update_of_ne (by rintro rfl; simp_all), Pi.one_apply, one_pow]
+  -- the others are read off the vanishing derivative, since `n i` is nonzero
+  · have hle : single i 1 ≤ n := by
+      rw [single_le_iff]; omega
+    have := congrArg (coeff (n - single i 1)) h₀
+    rw [coeff_pderiv, tsub_add_cancel_of_le hle, map_zero, mul_comm, ← Nat.cast_succ,
+      ← nsmul_eq_mul] at this
+    exact (nsmul_eq_zero_iff.mp this).resolve_right (Nat.succ_ne_zero _)
 
 end MvPowerSeries
 

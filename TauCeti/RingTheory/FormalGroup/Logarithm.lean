@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.FormalGroup.Basic
 public import Mathlib.RingTheory.PowerSeries.Inverse
 public import TauCeti.RingTheory.MvPowerSeries.Derivative
+public import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
 # The invariant differential and the logarithm of a formal group law
@@ -75,11 +76,12 @@ private theorem constantCoeff_derivZeroX : PowerSeries.constantCoeff F.derivZero
   have hD : constantCoeff (pderiv 0 F.toPowerSeries) = 1 := by
     rw [← coeff_zero_eq_constantCoeff_apply, coeff_pderiv, _root_.zero_add, F.lin_coeff_X]
     simp
-  rw [derivZeroX, PowerSeries.constantCoeff, ← add_sub_cancel
-    (C (constantCoeff (pderiv 0 F.toPowerSeries))) (pderiv 0 F.toPowerSeries),
-    subst_add hasSubst_zero_X, subst_C, map_add, constantCoeff_C,
-    constantCoeff_subst_eq_zero hasSubst_zero_X (fun s ↦ by fin_cases s <;> simp [PowerSeries.X])
-      (by simp), hD, _root_.add_zero]
+  have ha := hasSubst_zero_X (R := R)
+  -- `F_X - 1` has zero constant coefficient, and so does its substitution
+  have := constantCoeff_subst_eq_zero ha (fun s ↦ by fin_cases s <;> simp [PowerSeries.X])
+    (f := pderiv 0 F.toPowerSeries - 1) (by simp [hD])
+  rwa [← coe_substAlgHom ha, map_sub, map_one, map_sub, map_one, sub_eq_zero,
+    coe_substAlgHom] at this
 
 /-- Substituting `g` into `F_X(0, T)` is substituting `(0, g)` into `F_X`. -/
 private theorem subst_derivZeroX {σ : Type*} {g : MvPowerSeries σ R}
@@ -170,39 +172,7 @@ theorem subst_invariantDifferential_mul_pderiv :
 
 /-! ### The logarithm -/
 
-/-- Substituting into `g ∘ f` is substituting into `g`. -/
-private theorem subst_powerSeriesSubst {σ τ : Type*} {b : σ → MvPowerSeries τ R} (hb : HasSubst b)
-    {g : MvPowerSeries σ R} (hg : PowerSeries.HasSubst g) (f : PowerSeries R) :
-    subst b (PowerSeries.subst g f) = PowerSeries.subst (subst b g) f := by
-  rw [PowerSeries.subst_def, PowerSeries.subst_def, subst_comp_subst_apply hg.const hb]
-
 variable [Algebra ℚ R]
-
-/-- A series in two variables vanishes if its derivative in the first variable vanishes and it
-vanishes at `X = 0`. -/
-private theorem eq_zero_of_pderiv_eq_zero_of_subst_eq_zero {h : MvPowerSeries (Fin 2) R}
-    (h₀ : pderiv 0 h = 0) (h₁ : subst (![0, X 1] : Fin 2 → MvPowerSeries (Fin 2) R) h = 0) :
-    h = 0 := by
-  -- the coefficients of `h` without `X 0` are those of `h` at `X = 0`
-  have hr : rescale ![0, 1] h = 0 := by
-    rw [rescale_eq_subst, ← h₁]
-    congr 1
-    funext s
-    fin_cases s <;> simp
-  ext n
-  by_cases hn : n 0 = 0
-  · have := congrArg (coeff n) hr
-    rw [coeff_rescale, Finsupp.prod_fintype _ _ (by simp)] at this
-    simpa [Fin.prod_univ_two, hn] using this
-  -- the others are read off the vanishing derivative, since `n 0` is invertible
-  · have hle : Finsupp.single 0 1 ≤ n := by
-      rw [Finsupp.single_le_iff]; omega
-    set m : Fin 2 →₀ ℕ := n - Finsupp.single 0 1
-    have := congrArg (coeff m) h₀
-    rw [coeff_pderiv, tsub_add_cancel_of_le hle, (coeff m).map_zero] at this
-    have hu : IsUnit ((m 0 : R) + 1) := by
-      simpa using (Ne.isUnit (by positivity : (m 0 : ℚ) + 1 ≠ 0)).map (algebraMap ℚ R)
-    simpa using (hu.mul_left_eq_zero).mp this
 
 /-- **The formal logarithm** `log_F(T) = ∫ P(T) dT` of a formal group law `F` over a `ℚ`-algebra:
 the power series with zero constant coefficient whose derivative is the invariant differential
@@ -231,9 +201,12 @@ theorem coeff_one_log : PowerSeries.coeff 1 F.log = 1 := by
 @[simp]
 theorem derivative_log : PowerSeries.derivative F.log = F.invariantDifferential := by
   ext n
-  rw [PowerSeries.coeff_derivative, coeff_log, Nat.add_sub_cancel, smul_mul_assoc,
-    ← Nat.cast_succ, mul_comm, ← nsmul_eq_mul, ← Nat.cast_smul_eq_nsmul ℚ, smul_smul,
-    inv_mul_cancel₀ (by positivity), one_smul]
+  -- the factor `n + 1` of `coeff_derivative` is the rational scalar cancelling the `(n + 1)⁻¹` of
+  -- `coeff_log`
+  have hn (x : R) : x * (n + 1) = ((n + 1 : ℕ) : ℚ) • x := by
+    rw [Nat.cast_smul_eq_nsmul, nsmul_eq_mul, mul_comm, Nat.cast_succ]
+  rw [PowerSeries.coeff_derivative, coeff_log, hn, smul_smul]
+  simp [mul_inv_cancel₀ (Nat.cast_add_one_ne_zero (R := ℚ) n)]
 
 /-- **The logarithm is additive along `F`** (Silverman IV.5.2):
 `log_F(F(X, Y)) = log_F(X) + log_F(Y)`. -/
@@ -244,15 +217,19 @@ theorem subst_toPowerSeries_log :
   have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
   have hb : HasSubst (![0, X 1] : Fin 2 → MvPowerSeries (Fin 2) R) :=
     hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp
+  have : IsAddTorsionFree R := .of_isTorsionFree ℚ R
   rw [← sub_eq_zero]
-  apply eq_zero_of_pderiv_eq_zero_of_subst_eq_zero
+  apply eq_zero_of_pderiv_eq_zero_of_subst_eq_zero (i := 0)
   -- the derivative in `X` is `P(F(X, Y)) · F_X(X, Y) - P(X) = 0`
   · rw [map_sub, map_add, PowerSeries.pderiv_subst hF, PowerSeries.pderiv_subst (hX 0),
       PowerSeries.pderiv_subst (hX 1), derivative_log, subst_invariantDifferential_mul_pderiv,
       pderiv_X_self, pderiv_X_of_ne (by decide), mul_one, mul_zero, _root_.add_zero, sub_self]
   -- at `X = 0` it is `log_F(Y) - log_F(0) - log_F(Y) = 0`
-  · rw [subst_sub hb, subst_add hb, subst_powerSeriesSubst hb hF, subst_powerSeriesSubst hb (hX 0),
-      subst_powerSeriesSubst hb (hX 1), F.zero_add (hX 1), subst_X hb, subst_X hb]
+  · have hX₀ : Function.update X 0 0 = (![0, X 1] : Fin 2 → MvPowerSeries (Fin 2) R) := by
+      funext s; fin_cases s <;> simp
+    rw [hX₀, subst_sub hb, subst_add hb, subst_powerSeriesSubst hb hF,
+      subst_powerSeriesSubst hb (hX 0), subst_powerSeriesSubst hb (hX 1), F.zero_add (hX 1),
+      subst_X hb, subst_X hb]
     simp
 
 /-- **The logarithm is additive along `F`** at any pair of power series `f₀, f₁` that can be
@@ -330,10 +307,12 @@ theorem coeff_one_exp : PowerSeries.coeff 1 F.exp = 1 := by
   simp [exp]
 
 /-- `log_F(exp_F(T)) = T`. -/
+@[simp]
 theorem subst_exp_log : PowerSeries.subst F.exp F.log = PowerSeries.X :=
   PowerSeries.subst_substInvOfIsUnit_right _ F.constantCoeff_log _
 
 /-- `exp_F(log_F(T)) = T`. -/
+@[simp]
 theorem subst_log_exp : PowerSeries.subst F.log F.exp = PowerSeries.X :=
   PowerSeries.subst_substInvOfIsUnit_left _ F.constantCoeff_log _
 
