@@ -164,24 +164,6 @@ private theorem leftHalfPlane_sideGeodesic_sub_one_eq_rayToward {j : Fin n} {z :
   rw [← leftHalfPlane_mul_pslS,
     (isGeodesicFromTo_mul_pslS_iff.2 (isGeodesicFromTo_rayToward hne)).leftHalfPlane_eq hg]
 
-/-- For `z ≠ w`, `w` lies in the closed left half-plane of a ray from `z` exactly when its oriented
-angle at `z` from the ray is not negative. -/
-private theorem mem_closure_leftHalfPlane_rayToward_iff {z w : ℍ} (p : ℍ ⊕ OnePoint ℝ)
-    (hw : z ≠ w) :
-    w ∈ closure (leftHalfPlane (rayToward z p)) ↔
-      (orientedAngle z (geodesicLine (rayToward z p) 1) w).sign ≠ -1 := by
-  conv_lhs => rw [rayToward_eq_geodesicBetween z p]
-  exact mem_closure_leftHalfPlane_geodesicBetween_iff hw
-
-/-- For `z ≠ w`, `w` lies in the closed right half-plane of a ray from `z` exactly when its
-oriented angle at `z` from the ray is not positive. -/
-private theorem mem_closure_rightHalfPlane_rayToward_iff {z w : ℍ} (p : ℍ ⊕ OnePoint ℝ)
-    (hw : z ≠ w) :
-    w ∈ closure (rightHalfPlane (rayToward z p)) ↔
-      (orientedAngle z (geodesicLine (rayToward z p) 1) w).sign ≠ 1 := by
-  conv_lhs => rw [rayToward_eq_geodesicBetween z p]
-  exact mem_closure_rightHalfPlane_geodesicBetween_iff hw
-
 /-- At a finite vertex `z`, a point `w ≠ z` lies in the sector exactly when it is weakly
 counterclockwise of the ray towards the next vertex and weakly clockwise of the ray towards the
 previous vertex. -/
