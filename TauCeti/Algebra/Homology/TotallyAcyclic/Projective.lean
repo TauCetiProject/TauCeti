@@ -102,7 +102,7 @@ theorem exists_extend_iCycles (n : ℤ) (f : P.cycles n →ₗ[A] Q) :
 /-- Two maps to a finite projective module have the same restriction to cycles exactly when
 their difference factors through the next differential. Thus cycle extensions are unique
 modulo coboundaries in the coefficient Hom complex. -/
-theorem iCycles_comp_eq_iff (n : ℤ) (f g : P.X n →ₗ[A] Q) :
+theorem comp_iCycles_eq_iff (n : ℤ) (f g : P.X n →ₗ[A] Q) :
     f.comp (P.iCycles n).hom = g.comp (P.iCycles n).hom ↔
       ∃ h : P.X (n + 1) →ₗ[A] Q, h.comp (P.d n (n + 1)).hom = f - g := by
   constructor
