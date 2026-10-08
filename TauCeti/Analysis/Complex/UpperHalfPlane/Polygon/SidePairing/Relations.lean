@@ -26,7 +26,7 @@ presentation part of the Poincaré polygon theorem.
 * `SidePairing.pairingHom`: evaluation of free side words by the side-pairing maps.
 * `SidePairing.sideRelator`: the inverse-pair relation for a side.
 * `SidePairing.partialCycleWord` and `SidePairing.cycleWord`: the words read along a vertex cycle.
-* `SidePairing.cycleRelator`: a prescribed power of a cycle word.
+* `SidePairing.cycleWordPow`: an arbitrary power of a cycle word.
 
 ## References
 
@@ -59,14 +59,15 @@ generator is trivial. -/
 def sideRelator (i : Fin n) : FreeGroup (Fin n) :=
   FreeGroup.of (sigma.pair i) * FreeGroup.of i
 
+/-- The side relator is the paired-side generator followed by the original generator. -/
+theorem sideRelator_def (i : Fin n) :
+    sigma.sideRelator i = FreeGroup.of (sigma.pair i) * FreeGroup.of i :=
+  (rfl)
+
 /-- Every side relator evaluates to the identity. -/
 @[simp]
 theorem pairingHom_sideRelator (i : Fin n) : sigma.pairingHom (sigma.sideRelator i) = 1 := by
   simp [sideRelator]
-
-/-- Every side relator belongs to the kernel of the side-pairing evaluation. -/
-theorem sideRelator_mem_ker (i : Fin n) : sigma.sideRelator i ∈ sigma.pairingHom.ker := by
-  rw [MonoidHom.mem_ker, pairingHom_sideRelator]
 
 /-- The word in side generators encountered during the first `m` steps of the vertex cycle
 starting at `j`. Its multiplication order matches `partialCycleMap`. -/
@@ -108,27 +109,31 @@ cycle. -/
 def cycleWord (j : Fin n) : FreeGroup (Fin n) :=
   sigma.partialCycleWord j (sigma.cycleLength j)
 
+/-- The cycle word is the partial cycle word of minimal cycle length. -/
+theorem cycleWord_def (j : Fin n) :
+    sigma.cycleWord j = sigma.partialCycleWord j (sigma.cycleLength j) :=
+  (rfl)
+
 /-- Evaluating the cycle word gives the cycle transformation. -/
 @[simp]
 theorem pairingHom_cycleWord (j : Fin n) :
     sigma.pairingHom (sigma.cycleWord j) = sigma.cycleMap j := by
-  rw [cycleWord, pairingHom_partialCycleWord, cycleMap_def]
+  rw [cycleWord_def, pairingHom_partialCycleWord, cycleMap_def]
 
-/-- The cycle relator with exponent `t` is the `t`-th power of the cycle word. For a finite
-vertex cycle, `t` is the prescribed order of its elliptic cycle transformation. -/
-def cycleRelator (j : Fin n) (t : ℕ) : FreeGroup (Fin n) :=
+/-- The `t`-th power of the cycle word. When the cycle transformation has finite prescribed
+order, taking `t` to be that order gives a relator. -/
+def cycleWordPow (j : Fin n) (t : ℕ) : FreeGroup (Fin n) :=
   sigma.cycleWord j ^ t
 
-/-- A cycle relator evaluates to the corresponding power of the cycle transformation. -/
-@[simp]
-theorem pairingHom_cycleRelator (j : Fin n) (t : ℕ) :
-    sigma.pairingHom (sigma.cycleRelator j t) = sigma.cycleMap j ^ t := by
-  simp [cycleRelator]
+/-- A powered cycle word is the corresponding power of the cycle word. -/
+theorem cycleWordPow_def (j : Fin n) (t : ℕ) :
+    sigma.cycleWordPow j t = sigma.cycleWord j ^ t :=
+  (rfl)
 
-/-- A cycle relator belongs to the evaluation kernel exactly when the corresponding cycle
-transformation has order dividing its exponent. -/
-theorem cycleRelator_mem_ker_iff (j : Fin n) (t : ℕ) :
-    sigma.cycleRelator j t ∈ sigma.pairingHom.ker ↔ sigma.cycleMap j ^ t = 1 := by
-  rw [MonoidHom.mem_ker, pairingHom_cycleRelator]
+/-- A powered cycle word evaluates to the corresponding power of the cycle transformation. -/
+@[simp]
+theorem pairingHom_cycleWordPow (j : Fin n) (t : ℕ) :
+    sigma.pairingHom (sigma.cycleWordPow j t) = sigma.cycleMap j ^ t := by
+  simp [cycleWordPow]
 
 end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing
