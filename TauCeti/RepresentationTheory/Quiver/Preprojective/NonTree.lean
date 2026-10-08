@@ -27,8 +27,8 @@ isomorphism (`TauCeti.reorientPreprojectiveAlgebraEquiv`), it is enough that *so
 of `Q` has no sinks; the isomorphism carries every doubled arrow to a doubled arrow up to sign, so
 it carries the left-hand map of the Koszul complex of `Q` to that of the reorientation.
 
-A connected simple graph which is not a tree has an orientation without sinks
-(`SimpleGraph.Connected.exists_forall_adj_and_apply_apply_ne_of_not_isAcyclic`). Hence for every
+A preconnected simple graph which is not acyclic has an orientation without sinks
+(`SimpleGraph.Preconnected.exists_forall_adj_and_apply_apply_ne_of_not_isAcyclic`). Hence for every
 orientation of such a graph, over every commutative ring, the Koszul complex of every vertex module
 is exact at its left end, so it is a projective resolution of the vertex module. This covers the
 cycles `A~ₙ` (`n ≥ 2`) and every connected graph with more edges than a spanning tree, all of which
@@ -40,7 +40,7 @@ are non-Dynkin; the non-Dynkin trees, such as `D~ₙ` and `E₆~`, `E₇~`, `E�
   of `Π_k(Q)` is exact at its left end if some reorientation of `Q` has no sinks.
 * `TauCeti.forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_not_isAcyclic`: **the Koszul
   complex of the preprojective algebra of any orientation of a connected graph which is not a tree
-  is exact at its left end.**
+  (more generally, of a preconnected graph which is not acyclic) is exact at its left end.**
 
 ## References
 
@@ -133,12 +133,12 @@ private theorem exists_forall_exists_nonempty_reorient_hom (o : Orientation G) {
 variable (k : Type w) [CommRing k] [Finite V]
 
 /-- **Exactness of the Koszul complex at its left end, for a graph which is not a tree.** Let `G` be
-a finite connected simple graph which is not acyclic, and `o` any orientation of `G`. If `y = e_v y`
-in the preprojective algebra of `o` over a commutative ring `k`, then `b* y = 0` for every arrow `b`
-of the doubled quiver into `v` exactly when `y = 0`: the left-hand map of the Koszul complex of
-`TauCeti.sum_preprojectiveMk_ofArrow_mul_eq_zero_iff` is injective. -/
+a finite preconnected simple graph which is not acyclic, and `o` any orientation of `G`. If
+`y = e_v y` in the preprojective algebra of `o` over a commutative ring `k`, then `b* y = 0` for
+every arrow `b` of the doubled quiver into `v` exactly when `y = 0`: the left-hand map of the
+Koszul complex of `TauCeti.sum_preprojectiveMk_ofArrow_mul_eq_zero_iff` is injective. -/
 theorem forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_not_isAcyclic
-    (hG : G.Connected) (hc : ¬G.IsAcyclic) (o : Orientation G) (v : OrientedQuiver G o)
+    (hG : G.Preconnected) (hc : ¬G.IsAcyclic) (o : Orientation G) (v : OrientedQuiver G o)
     {y : preprojectiveAlgebra k (OrientedQuiver G o)}
     (hy : preprojectiveMk k (OrientedQuiver G o) (doubledVertexIdempotent k v) * y = y) :
     (∀ (i : Symmetrify (OrientedQuiver G o)) (b : i ⟶ Symmetrify.of.obj v),

@@ -15,9 +15,9 @@ neighbour at every vertex so that no two vertices choose each other. Orienting e
 `{u, f u}` away from `u` is then consistent, and every vertex is the tail of an edge: such a
 choice is the same as an orientation of `G` in which no vertex is a sink.
 
-A connected graph with a cycle admits such a choice: go once around the cycle, and send every other
-vertex to a neighbour strictly closer to the cycle. In a finite tree there is no such choice, since
-the choice would give the tree as many edges as vertices.
+A preconnected graph with a cycle admits such a choice: go once around the cycle, and send every
+other vertex to a neighbour strictly closer to the cycle. In a finite tree there is no such choice,
+since the choice would give the tree as many edges as vertices.
 
 ## Main results
 
@@ -26,8 +26,8 @@ the choice would give the tree as many edges as vertices.
   the choice extends to all vertices.
 * `SimpleGraph.Walk.IsCycle.exists_forall_adj_and_apply_apply_ne`: the vertices of a cycle choose
   their successors along it without mutual choices.
-* `SimpleGraph.Connected.exists_forall_adj_and_apply_apply_ne_of_not_isAcyclic`: **a connected
-  graph which is not acyclic has a choice of neighbours without mutual choices.**
+* `SimpleGraph.Preconnected.exists_forall_adj_and_apply_apply_ne_of_not_isAcyclic`: **a
+  preconnected graph which is not acyclic has a choice of neighbours without mutual choices.**
 -/
 
 public section
@@ -40,10 +40,10 @@ variable {V : Type*} {G : SimpleGraph V}
 vertex of a set `S`, a neighbour in `S`, and that no two vertices of `S` choose each other. If every
 vertex can reach `S`, then some `f` chooses a neighbour at every vertex, still without mutual
 choices: it agrees with `g` on `S` and moves every other vertex strictly closer to `S`. -/
-theorem exists_forall_adj_and_apply_apply_ne_of_forall_reachable {S : Set V} (g : V → V)
-    (hg : ∀ s ∈ S, G.Adj s (g s) ∧ g s ∈ S ∧ g (g s) ≠ s)
+theorem exists_forall_adj_and_apply_apply_ne_of_forall_reachable (G : SimpleGraph V) {S : Set V}
+    (g : V → V) (hg : ∀ s ∈ S, G.Adj s (g s) ∧ g s ∈ S ∧ g (g s) ≠ s)
     (hS : ∀ u, ∃ s ∈ S, G.Reachable u s) :
-    ∃ f : V → V, ∀ u, G.Adj u (f u) ∧ f (f u) ≠ u := by
+    ∃ f : V → V, (∀ s ∈ S, f s = g s) ∧ ∀ u, G.Adj u (f u) ∧ f (f u) ≠ u := by
   classical
   -- `d u` is the length of a shortest walk from `u` to `S`.
   have hP : ∀ u, ∃ n, ∃ s ∈ S, ∃ p : G.Walk u s, p.length = n := fun u => by
@@ -63,7 +63,7 @@ theorem exists_forall_adj_and_apply_apply_ne_of_forall_reachable {S : Set V} (g 
   have hfn : ∀ u (hu : u ∉ S), G.Adj u (f u) ∧ d (f u) < d u := fun u hu => by
     simp only [f, hu, ↓reduceDIte]
     exact (hstep u hu).choose_spec
-  refine ⟨f, fun u => ?_⟩
+  refine ⟨f, hfS, fun u => ?_⟩
   by_cases hu : u ∈ S
   · obtain ⟨hadj, hgS, hne⟩ := hg u hu
     rw [hfS u hu, hfS _ hgS]
@@ -126,15 +126,16 @@ theorem IsCycle.exists_forall_adj_and_apply_apply_ne {u : V} {p : G.Walk u u} (h
 
 end Walk
 
-/-- **A connected graph which is not acyclic has a choice of neighbours without mutual choices**:
-some `f` sends every vertex `u` to a neighbour `f u` with `f (f u) ≠ u`. Equivalently, `G` has an
-orientation without sinks. -/
-theorem Connected.exists_forall_adj_and_apply_apply_ne_of_not_isAcyclic (hG : G.Connected)
+/-- **A preconnected graph which is not acyclic has a choice of neighbours without mutual
+choices**: some `f` sends every vertex `u` to a neighbour `f u` with `f (f u) ≠ u`. Equivalently,
+`G` has an orientation without sinks. -/
+theorem Preconnected.exists_forall_adj_and_apply_apply_ne_of_not_isAcyclic (hG : G.Preconnected)
     (hc : ¬G.IsAcyclic) : ∃ f : V → V, ∀ u, G.Adj u (f u) ∧ f (f u) ≠ u := by
   simp only [IsAcyclic, not_forall, not_not] at hc
   obtain ⟨w, p, hp⟩ := hc
   obtain ⟨g, hg⟩ := hp.exists_forall_adj_and_apply_apply_ne
-  exact exists_forall_adj_and_apply_apply_ne_of_forall_reachable (S := {s | s ∈ p.support}) g hg
-    fun u => ⟨w, p.start_mem_support, hG.preconnected u w⟩
+  obtain ⟨f, -, hf⟩ := G.exists_forall_adj_and_apply_apply_ne_of_forall_reachable
+    (S := {s | s ∈ p.support}) g hg fun u => ⟨w, p.start_mem_support, hG u w⟩
+  exact ⟨f, hf⟩
 
 end SimpleGraph
