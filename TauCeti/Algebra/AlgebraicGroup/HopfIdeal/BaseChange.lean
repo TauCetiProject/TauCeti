@@ -707,9 +707,7 @@ noncomputable def quotientBaseChangeIsoOfMapEq
     (hJ : (baseChangeHopfIdeal (K := K) J).map e.hom.hom = J') :
     baseChange (K := K) (quotient H J) ≅ quotient H' J' :=
   (quotientBaseChangeIso (K := K) J).symm ≪≫
-    eqToIso (congrArg (quotient (baseChange (K := K) H))
-      (comapOfSurjective_eq_baseChangeHopfIdeal_of_map_eq J J' e hJ).symm) ≪≫
-    quotientIsoOfIso e J'
+    quotientIsoOfComapEq e J' (comapOfSurjective_eq_baseChangeHopfIdeal_of_map_eq J J' e hJ)
 
 /-- The transported quotient base-change isomorphism commutes with the quotient morphisms. -/
 @[simp]
@@ -720,17 +718,14 @@ theorem baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom
     baseChangeMap (K := K) (mkQuotient H J) ≫
         (quotientBaseChangeIsoOfMapEq J J' e hJ).hom =
       e.hom ≫ mkQuotient H' J' := by
-  let hcomap := comapOfSurjective_eq_baseChangeHopfIdeal_of_map_eq J J' e hJ
   have hbase :
       baseChangeMap (K := K) (mkQuotient H J) ≫
           (quotientBaseChangeIso (K := K) J).symm.hom =
         mkQuotient (baseChange (K := K) H) (baseChangeHopfIdeal (K := K) J) := by
     rw [← cancel_mono (quotientBaseChangeIso (K := K) J).hom]
     simp
-  rw [quotientBaseChangeIsoOfMapEq, Iso.trans_hom, Iso.trans_hom,
-    ← Category.assoc, hbase, eqToIso.hom, ← Category.assoc,
-    mkQuotient_comp_eqToHom, mkQuotient_comp_quotientIsoOfIso_hom]
-  exact hcomap
+  rw [quotientBaseChangeIsoOfMapEq, Iso.trans_hom, ← Category.assoc, hbase,
+    mkQuotient_comp_quotientIsoOfComapEq_hom]
 
 variable (A : CommAlgCat.{x} K)
 

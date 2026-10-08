@@ -584,7 +584,7 @@ theorem topologicalClosure_closure_insert_insert_image_freeProPGen_eq_top (j k :
   exact Or.inr (Or.inr ⟨i, ⟨hij, hik⟩, rfl⟩)
 
 /-- The value of a homomorphism on the `ℕ`-indexed generators. -/
-theorem map_freeProPGen {K F : Type*} [Group K] [FunLike F (freeProP p (Fin n)) K]
+theorem map_freeProPGen {K F : Type*} [MulOneClass K] [FunLike F (freeProP p (Fin n)) K]
     [MonoidHomClass F (freeProP p (Fin n)) K] (φ : F) (i : ℕ) :
     φ (freeProPGen p n i) = if h : i < n then φ (freeProP.of ⟨i, h⟩) else 1 := by
   split_ifs with h

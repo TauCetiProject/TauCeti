@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupExtension.DihedralSixteen
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Cochain
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.IndexTwoNorm
 public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.IndexTwo
 
@@ -42,7 +42,15 @@ back to `U` and the tautological character back to `α`, and it sends `s` to an 
 ```
 
 (`TauCeti.ContCohomology.evensGraphCochain_eq_indexTwoInd_pullback`). When `U` is open and `α`
-is continuous, `Ind α` is locally constant, so both pulled-back functions are continuous.
+is continuous, `Ind α` is locally constant, so both pulled-back functions are continuous. On
+classes, the coboundary disappears: the index-two Evens norm of the class of `α` is the class of
+the pulled-back `D₁₆` factor set,
+
+```text
+N^{Ev}(α) = (Ind α)^* c_{D₁₆}
+```
+
+(`TauCeti.ContCohomology.evensNormIndexTwo_eq_ind_pullback`).
 
 Read through the signed-permutation representation `C₂ ≀ C₂ ⊂ O₂`, `Ind α` is the representation
 induced from `α`. By Kahn and Serre, the class of `c_{D₁₆}` is the second Stiefel–Whitney class of
@@ -70,6 +78,8 @@ reading is not formalised here.
   `TauCeti.ContCohomology.continuous_wreathD16Cocycle_indexTwoInd` and
   `TauCeti.ContCohomology.continuous_wreathWitness_indexTwoInd`: continuity of the pulled-back
   cocycle and witness.
+* `TauCeti.ContCohomology.evensNormIndexTwo_eq_ind_pullback`: the index-two Evens norm of the
+  class of `α` is the class of `c_{D₁₆} ∘ (Ind α × Ind α)`.
 
 ## References
 
@@ -322,5 +332,35 @@ theorem continuous_wreathWitness_indexTwoInd [TopologicalSpace G] [SeparatelyCon
   ((isLocallyConstant_indexTwoInd U hU s hs α hopen hα).comp wreathWitness).continuous
 
 end IndexTwoInd
+
+section NormPullback
+
+/-! ### The index-two norm as the pullback of the `D₁₆` class -/
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [LocallyCompactSpace G]
+
+/-- **The index-two Evens norm is the pullback of the `D₁₆` extension class:**
+`N^{Ev}(α) = (Ind α)^* c_{D₁₆}`, the class of `c_{D₁₆} ∘ (Ind α × Ind α)`, at every `s ∉ U`.
+The norm of the class of `α` is the class of the graph cochain at `s`, which differs from the
+pulled-back factor set by the coboundary of `w ∘ Ind α`
+(`TauCeti.ContCohomology.evensGraphCochain_eq_indexTwoInd_pullback`). -/
+theorem evensNormIndexTwo_eq_ind_pullback (U : OpenSubgroup G) (hU : U.toSubgroup.index = 2)
+    (s : G) (hs : s ∉ U) (α : U.toSubgroup →* Multiplicative (ZMod 2)) (hα : Continuous α) :
+    evensNormIndexTwo U hU (homClass U.toSubgroup α hα) =
+      (trivialF2 G).cochainClass 2
+        (inhomogeneousCochain2
+          (fun q => wreathD16Cocycle
+            (indexTwoInd U.toSubgroup hU s hs α q.1, indexTwoInd U.toSubgroup hU s hs α q.2))
+          (continuous_wreathD16Cocycle_indexTwoInd U.toSubgroup hU s hs α U.isOpen' hα))
+        (inhomogeneousCochain2_d_eq_zero _ _ fun g h j => by
+          simp only [map_mul]
+          exact wreathD16Cocycle_isCocycle _ _ _) := by
+  rw [evensNormIndexTwo_homClass, graphClass_eq_cochainClass U hU s hs]
+  exact cochainClass_inhomogeneousCochain2_eq_of_coboundary _ _ _ _ _
+    (continuous_wreathWitness_indexTwoInd U.toSubgroup hU s hs α U.isOpen' hα)
+    (evensGraphCochain_eq_indexTwoInd_pullback U.toSubgroup hU s hs α) _ _
+
+end NormPullback
 
 end TauCeti.ContCohomology

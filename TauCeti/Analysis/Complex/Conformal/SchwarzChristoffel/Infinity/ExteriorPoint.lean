@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
+public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Quadratic
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Image
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Power
 
@@ -22,6 +23,16 @@ The uniform power asymptotic confines the image at infinity to a slightly wider 
 continuity up to the real axis bounds the remaining compact part. At total exponent `-1`,
 the real part tends to positive infinity, so the image has a global lower bound on its real part.
 For total exponent less than `-1`, the image is bounded and its closure is compact.
+
+At total exponent `1` the leading term `z ^ 2 / 2` maps the upper half-plane onto a slit plane,
+whose closure contains a full neighbourhood of infinity, and the logarithmic coefficient
+`C = ((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2` decides what is left out. When `C < 0`,
+for each `δ > 0` the closure of the image misses the points of height strictly between
+`im c + π * C + δ` and `im c - δ` that lie sufficiently far to the right, where `c` is the
+quadratic constant at infinity and how far to the right depends on `δ`. The heights
+`im c + π * C` and `im c` carry the outer sides of an end of opening `2π`, so each such open
+sub-band supplies exterior points. Without the sign condition there need not be an exterior
+point, as for the slit plane `z ↦ z ^ 2`.
 
 ## References
 
@@ -199,5 +210,88 @@ theorem exists_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_lt_one
   simp only [C, mem_ofPred_eq, heq, hnorm, neg_re, ofReal_re] at h
   have hTmul : T * (1 - k) = M + 1 := div_mul_cancel₀ _ (by linarith)
   nlinarith
+
+/-- **The far-right band missed by an image with an end of opening `2π`.** Suppose the finite
+prevertices are integrable, the total exponent is `1`, and the logarithmic coefficient
+`C = ((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2` is negative. Then for each `δ > 0`,
+sufficiently far to the right, no point whose height lies strictly between `im c + π * C + δ`
+and `im c - δ` is in the closure of the image, where `c` is the quadratic constant at infinity.
+No simplicity or ordering assumption on the finite data is imposed. -/
+theorem exists_forall_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_eq_one
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane)
+    (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) (hsum : ∑ i, e i = 1)
+    (hC : (∑ i, e i * a i) ^ 2 < ∑ i, e i * a i ^ 2) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ R : ℝ, ∀ w : ℂ, R < w.re →
+      (schwarzChristoffelQuadraticConstantAtInfinity a e z₀).im +
+          Real.pi * (((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2) + δ < w.im →
+        w.im < (schwarzChristoffelQuadraticConstantAtInfinity a e z₀).im - δ →
+          w ∉ closure (schwarzChristoffelPrimitive a e z₀ '' upperHalfPlaneSet) := by
+  set M : ℝ := ∑ i, e i * a i
+  set C : ℝ := (M ^ 2 - ∑ i, e i * a i ^ 2) / 2
+  set c := schwarzChristoffelQuadraticConstantAtInfinity a e z₀
+  set F := schwarzChristoffelPrimitive a e z₀
+  have hCneg : C < 0 := by simp only [C]; linarith
+  have hQ (z : ℂ) : z ^ 2 / 2 - (∑ i, (e i : ℂ) * (a i : ℂ)) * z +
+      ((∑ i, (e i : ℂ) * (a i : ℂ)) ^ 2 - ∑ i, (e i : ℂ) * (a i : ℂ) ^ 2) / 2 * log z =
+      z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z := by
+    simp only [M, C]
+    push_cast
+    rfl
+  have htail : ∀ᶠ z in cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet,
+      ‖F z - (z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z) - c‖ < δ / 2 := by
+    have h := (tendsto_schwarzChristoffelPrimitive_sub_quadratic_atInfinity_of_sum_eq_one
+      a e z₀ hsum).eventually (ball_mem_nhds c (half_pos hδ))
+    simp only [hQ] at h
+    exact h.mono fun z hz => mem_ball_iff_norm.mp hz
+  rw [eventually_inf_principal, hasBasis_cobounded_norm.eventually_iff] at htail
+  obtain ⟨A, _, htail⟩ := htail
+  obtain ⟨R₁, hR₁⟩ := exists_forall_im_quadratic_log_notMem_Ioo (M := M) hCneg (half_pos hδ)
+  obtain ⟨B, _, hB⟩ :=
+    exists_norm_bound_schwarzChristoffelPrimitive_on_bounded_part a e z₀ hfinite (max A R₁)
+  set R := max B (c.re + δ / 2 + 1 / 2)
+  refine ⟨R, fun w hwR hwlo hwhi hw => ?_⟩
+  -- The image lies in a closed set that misses the far-right band.
+  let S : Set ℂ := {w | w.re ≤ R} ∪ ({w | c.im - δ ≤ w.im} ∪ {w | w.im ≤ c.im + Real.pi * C + δ})
+  have hS : IsClosed S :=
+    (isClosed_le Complex.continuous_re continuous_const).union
+      ((isClosed_le continuous_const Complex.continuous_im).union
+        (isClosed_le Complex.continuous_im continuous_const))
+  have hsub : F '' upperHalfPlaneSet ⊆ S := by
+    rintro _ ⟨z, hz, rfl⟩
+    by_contra hnot
+    simp only [S, mem_union, mem_ofPred_eq, not_or, not_le] at hnot
+    obtain ⟨hre, hhi, hlo⟩ := hnot
+    have hzR : max A R₁ < ‖z‖ := by
+      by_contra h
+      linarith [re_le_norm (F z), hB z hz (not_lt.mp h), le_max_left B (c.re + δ / 2 + 1 / 2)]
+    have herr := htail ((le_max_left _ _).trans hzR.le) hz
+    have hreErr := (abs_le.mp ((abs_re_le_norm _).trans herr.le)).2
+    have himErr := abs_lt.mp ((abs_im_le_norm _).trans_lt herr)
+    simp only [sub_re, sub_im] at hreErr himErr
+    exact hR₁ z hz ((le_max_right _ _).trans hzR.le)
+      (by linarith [le_max_right B (c.re + δ / 2 + 1 / 2)])
+      ⟨by linarith [himErr.2], by linarith [himErr.1]⟩
+  exact (closure_minimal hsub hS hw).elim (fun h => not_le.mpr hwR h)
+    (fun h => h.elim (fun h => not_le.mpr hwhi h) (fun h => not_le.mpr hwlo h))
+
+/-- **A Schwarz--Christoffel image with an end of opening `2π` has an exterior point** if the
+finite prevertices are integrable, the total exponent is `1`, and the logarithmic coefficient
+`((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2` is negative. The point lies outside the closure
+of the image. No simplicity or ordering assumption on the finite data is imposed. -/
+theorem exists_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_eq_one
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane)
+    (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) (hsum : ∑ i, e i = 1)
+    (hC : (∑ i, e i * a i) ^ 2 < ∑ i, e i * a i ^ 2) :
+    ∃ q : ℂ, q ∉ closure (schwarzChristoffelPrimitive a e z₀ '' upperHalfPlaneSet) := by
+  have hCneg : ((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2 < 0 := by linarith
+  obtain ⟨R, hR⟩ :=
+    exists_forall_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_eq_one a e z₀
+      hfinite hsum hC (δ := -(Real.pi * (((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2)) / 4)
+      (by nlinarith [Real.pi_pos])
+  set C : ℝ := ((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2
+  -- Take a far-right point halfway between the two outer heights.
+  exact ⟨⟨R + 1, (schwarzChristoffelQuadraticConstantAtInfinity a e z₀).im + Real.pi * C / 2⟩,
+    hR _ (by simp) (by dsimp only; nlinarith [Real.pi_pos])
+      (by dsimp only; nlinarith [Real.pi_pos])⟩
 
 end TauCeti

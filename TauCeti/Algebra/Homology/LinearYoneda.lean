@@ -18,7 +18,8 @@ of `X`.  This file makes the construction a contravariant functor of `X`, shows 
 chain homotopy to a cochain homotopy, and shows that it takes a short exact sequence of chain
 complexes which is split in each degree to a short exact sequence of cochain complexes.  It also
 records elementwise descriptions of the differential, cocycles, coboundaries and cohomology classes
-of `Hom(X, Y)`, and of the maps between them induced by chain maps.
+of `Hom(X, Y)`, and of the maps between them induced by chain maps. Postcomposition
+with coefficient morphisms is provided by `ChainComplex.linearYonedaObjMap`.
 
 The functor `Hom(-, Y)` is only left exact, so the splitting hypothesis cannot be dropped.  It
 holds for the singular chains of a pair of spaces, which is how the long exact sequence in
@@ -136,6 +137,63 @@ lemma shortExact_map_linearYonedaFunctor {S : ShortComplex (ChainComplex C α)}
   have hi := hS.map_of_exact (HomologicalComplex.eval C _ i)
   exact ((ShortComplex.Splitting.ofExactOfRetraction _ hi.exact (retraction (S.f.f i))
     (IsSplitMono.id (S.f.f i)) hi.epi_g).op.map ((linearYoneda k C).obj Y)).shortExact
+
+/-- Postcomposition with a coefficient morphism induces a map of cochain complexes
+`Hom(X, Y) ⟶ Hom(X, Z)`. -/
+noncomputable def _root_.ChainComplex.linearYonedaObjMap (X : ChainComplex C α)
+    {Y Z : C} (g : Y ⟶ Z) : X.linearYonedaObj k Y ⟶ X.linearYonedaObj k Z :=
+  (HomologicalComplex.unopFunctor _ _).map
+    ((((linearYoneda k C).map g).rightOp.mapHomologicalComplex _).app X).op
+
+/-- The coefficient map on cochains is postcomposition. -/
+@[simp↓]
+lemma _root_.ChainComplex.linearYonedaObjMap_f_hom_apply (X : ChainComplex C α)
+    {Y Z : C} (g : Y ⟶ Z) (i : α) (a : X.X i ⟶ Y) :
+    (X.linearYonedaObjMap k g).f i a = a ≫ g := (rfl)
+
+/-- Identity coefficient maps induce identity maps of cochain complexes. -/
+@[simp]
+lemma _root_.ChainComplex.linearYonedaObjMap_id (X : ChainComplex C α) (Y : C) :
+    X.linearYonedaObjMap k (𝟙 Y) = 𝟙 (X.linearYonedaObj k Y) := by
+  ext i (a : X.X i ⟶ Y)
+  simp only [ChainComplex.linearYonedaObjMap_f_hom_apply, Category.comp_id]
+  rfl
+
+/-- Coefficient maps on cochain complexes preserve composition. -/
+@[simp]
+lemma _root_.ChainComplex.linearYonedaObjMap_comp (X : ChainComplex C α)
+    {Y Z T : C} (g : Y ⟶ Z) (h : Z ⟶ T) :
+    X.linearYonedaObjMap k (g ≫ h) = X.linearYonedaObjMap k g ≫ X.linearYonedaObjMap k h := by
+  ext i (a : X.X i ⟶ Y)
+  -- Elementwise composition unfolds the cochain module; giving every morphism its
+  -- type avoids relying on simp to unfold `linearYonedaObj` while matching.
+  exact (X.linearYonedaObjMap_f_hom_apply k (g ≫ h) i a).trans
+    ((Category.assoc _ _ _).symm.trans
+      ((X.linearYonedaObjMap_f_hom_apply k h i (a ≫ g)).symm.trans
+        (congrArg (fun b ↦ (X.linearYonedaObjMap k h).f i b)
+          (X.linearYonedaObjMap_f_hom_apply k g i a).symm)))
+
+/-- The coefficient map sends the class of a cocycle to the class of its image. -/
+@[simp]
+lemma _root_.ChainComplex.homologyMap_linearYonedaObjMap_homologyπ_apply
+    (X : ChainComplex C α) {Y Z : C} (g : Y ⟶ Z) (i : α)
+    (a : (X.linearYonedaObj k Y).cycles i) :
+    HomologicalComplex.homologyMap (X.linearYonedaObjMap k g) i
+        ((X.linearYonedaObj k Y).homologyπ i a) =
+      (X.linearYonedaObj k Z).homologyπ i
+        (HomologicalComplex.cyclesMap (X.linearYonedaObjMap k g) i a) :=
+  ConcreteCategory.congr_hom (HomologicalComplex.homologyπ_naturality _ i) a
+
+/-- The coefficient map on cocycles is postcomposition. -/
+@[simp↓]
+lemma _root_.ChainComplex.iCycles_cyclesMap_linearYonedaObjMap_apply
+    (X : ChainComplex C α) {Y Z : C} (g : Y ⟶ Z) (i : α)
+    (a : (X.linearYonedaObj k Y).cycles i) :
+    (X.linearYonedaObj k Z).iCycles i
+        (HomologicalComplex.cyclesMap (X.linearYonedaObjMap k g) i a) =
+      (X.linearYonedaObj k Y).iCycles i a ≫ g := by
+  exact (ConcreteCategory.congr_hom (HomologicalComplex.cyclesMap_i _ i) a).trans
+    (X.linearYonedaObjMap_f_hom_apply k g i _)
 
 section Elementwise
 

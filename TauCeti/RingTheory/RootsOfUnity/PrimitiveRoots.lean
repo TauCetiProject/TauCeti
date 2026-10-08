@@ -25,14 +25,21 @@ Over a normal extension of `ℚ`, every coprime power of a primitive root is att
 automorphism. Indeed the two primitive roots have the same cyclotomic minimal polynomial, and
 normality extends that conjugacy to the ambient field.
 
+Multiplying one `n`-th root of a nonzero `a` by the powers of a primitive `n`-th root of unity gives
+`n` distinct `n`-th roots of `a`, and these are all of them.
+
 ## Main results
 
 * `IsPrimitiveRoot.map_eq_pow`: a ring endomorphism sending a primitive `n`-th root of
   unity `ζ` to `ζ ^ j` sends every `n`-th root of unity `μ` to `μ ^ j`.
 * `IsPrimitiveRoot.autToPow_eq_one_iff`: the cyclotomic character kills an automorphism exactly
   when it fixes the chosen primitive root.
+* `IsPrimitiveRoot.coe_autToPow_eq_natCast`: an automorphism raising the primitive root to the
+  `k`-th power has cyclotomic character `k`.
 * `IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime`: every coprime power of a primitive
   root in a normal extension of `ℚ` is realized by an automorphism.
+* `IsPrimitiveRoot.card_nthRootsFinset_of_pow_eq`: in the presence of a primitive `n`-th root of
+  unity, a nonzero element with one `n`-th root has exactly `n` of them.
 
 ## References
 
@@ -72,6 +79,16 @@ theorem _root_.IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime
         (Polynomial.cyclotomic.irreducible_rat (NeZero.pos n))).symm]
   exact hconj.exists_algEquiv
 
+open Polynomial in
+/-- If `R` has a primitive `n`-th root of unity, then a nonzero `a` with one `n`-th root `α` has
+exactly `n` distinct `n`-th roots, namely `α` times the `n`-th roots of unity. This generalizes
+Mathlib's `IsPrimitiveRoot.card_nthRootsFinset` from `a = 1`. -/
+theorem _root_.IsPrimitiveRoot.card_nthRootsFinset_of_pow_eq {n : ℕ} {ζ α a : R}
+    (hζ : IsPrimitiveRoot ζ n) (hα : α ^ n = a) (ha : a ≠ 0) : (nthRootsFinset n a).card = n := by
+  classical
+  rw [nthRootsFinset_def, Multiset.toFinset_card_of_nodup (hζ.nthRoots_nodup ha),
+    hζ.card_nthRoots, ite_eq_left ⟨α, hα⟩]
+
 end TauCeti
 
 /-- **The cyclotomic character detects fixing `ζ`.** `autToPow` sends `x` to `1` exactly when `x`
@@ -95,3 +112,13 @@ theorem _root_.IsPrimitiveRoot.autToPow_eq_one_iff {K M : Type*} [CommRing K] [C
       have hval : (hζ.autToPow K x : ZMod m).val = 1 :=
         hζ.pow_inj (ZMod.val_lt _) hm (by rw [hspec, pow_one])
       exact Units.ext (ZMod.val_injective m (by rw [hval, Units.val_one, ZMod.val_one]))
+
+/-- **The cyclotomic character from the action on `ζ`.** An automorphism raising the primitive
+`m`-th root of unity `ζ` to the `k`-th power has cyclotomic character `k` modulo `m`. -/
+theorem _root_.IsPrimitiveRoot.coe_autToPow_eq_natCast {K M : Type*} [CommRing K] [CommRing M]
+    [IsDomain M] [Algebra K M] {m : ℕ} [NeZero m] {ζ : M} (hζ : IsPrimitiveRoot ζ m)
+    {x : M ≃ₐ[K] M} {k : ℕ} (hx : x ζ = ζ ^ k) : (hζ.autToPow K x : ZMod m) = k := by
+  rw [← ZMod.natCast_zmod_val (hζ.autToPow K x : ZMod m), ZMod.natCast_eq_natCast_iff]
+  have hmod := (hζ.isOfFinOrder (NeZero.ne _)).pow_eq_pow_iff_modEq.mp
+    ((hζ.autToPow_spec K x).trans hx)
+  simpa only [hζ.eq_orderOf] using hmod
