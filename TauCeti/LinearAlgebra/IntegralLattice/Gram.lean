@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
-import Mathlib.LinearAlgebra.Determinant
+import TauCeti.LinearAlgebra.BilinearMap.GramCongruence
 
 /-!
 # Gram determinants of integral lattices
@@ -148,37 +148,17 @@ theorem gramDet_reindex {ι : Type v} {κ : Type w} [Fintype ι] [Fintype κ]
     L.gramDet (e.reindex σ) = L.gramDet e := by
   rw [gramDet_def, gramMatrix_reindex, Matrix.det_submatrix_equiv_self, ← gramDet_def]
 
-/-- Two carrier bases with the same index type give the same signed Gram determinant. -/
-private theorem gramDet_eq_gramDet_sameIndex {ι : Type v} [Fintype ι] [DecidableEq ι]
-    (e f : Basis ι ℤ L) : L.gramDet e = L.gramDet f := by
-  have hchange : IsUnit (f.toMatrix e).det := f.isUnit_det e
-  rw [Int.isUnit_iff, ← sq_eq_one_iff] at hchange
-  have hmatrix :
-      (f.toMatrix e).transpose * LinearMap.BilinForm.toMatrix f L.integralForm * f.toMatrix e =
-        LinearMap.BilinForm.toMatrix e L.integralForm :=
-    LinearMap.BilinForm.toMatrix_mul_basis_toMatrix (b := f) e L.integralForm
-  rw [gramDet_def, gramDet_def, gramMatrix_eq_toMatrix, gramMatrix_eq_toMatrix]
-  calc
-    Matrix.det (LinearMap.BilinForm.toMatrix e L.integralForm) =
-        Matrix.det ((f.toMatrix e).transpose *
-          LinearMap.BilinForm.toMatrix f L.integralForm * f.toMatrix e) :=
-      congrArg Matrix.det hmatrix.symm
-    _ = (f.toMatrix e).det ^ 2 *
-        Matrix.det (LinearMap.BilinForm.toMatrix f L.integralForm) := by
-      rw [Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose]
-      ring
-    _ = Matrix.det (LinearMap.BilinForm.toMatrix f L.integralForm) := by
-      rw [hchange, one_mul]
-
 /-- **The signed Gram determinant is independent of the carrier basis.** This permits both the
 index type and the basis to change. -/
 theorem gramDet_eq_gramDet {ι : Type v} {κ : Type w} [Fintype ι] [Fintype κ]
     [DecidableEq ι] [DecidableEq κ] (e : Basis ι ℤ L) (f : Basis κ ℤ L) :
     L.gramDet e = L.gramDet f := by
-  let σ : ι ≃ κ := e.indexEquiv f
-  calc
-    L.gramDet e = L.gramDet (e.reindex σ) := (gramDet_reindex L e σ).symm
-    _ = L.gramDet f := gramDet_eq_gramDet_sameIndex L _ _
+  have he : L.gramMatrix e = LinearMap.toMatrix₂Aux ℤ (e : ι → L) (e : ι → L) L.integralForm :=
+    Matrix.ext fun i j ↦ by rw [gramMatrix_apply, LinearMap.toMatrix₂Aux_apply]
+  have hf : L.gramMatrix f = LinearMap.toMatrix₂Aux ℤ (f : κ → L) (f : κ → L) L.integralForm :=
+    Matrix.ext fun i j ↦ by rw [gramMatrix_apply, LinearMap.toMatrix₂Aux_apply]
+  rw [gramDet_def, gramDet_def, he, hf]
+  exact (LinearMap.det_toMatrix₂Aux_eq_det_toMatrix₂Aux L.integralForm e f).symm
 
 /-- A Gram determinant is nonzero exactly when the ambient rational form is nondegenerate. -/
 @[simp]

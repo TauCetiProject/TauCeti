@@ -74,40 +74,8 @@ private theorem exists_smul_of_SpecMap_chartι_eq {A : CommRingCat.{u}} {i i' : 
     {β : CommRingCat.of (W.toProjective.ChartRing i') ⟶ A}
     (h : Spec.map α ≫ W.chartι i = Spec.map β ≫ W.chartι i') :
     ∃ u : Aˣ, α.hom ∘ W.toProjective.chartPoint i = u • (β.hom ∘ W.toProjective.chartPoint i') := by
-  rw [W.chartι_eq_projModelPoint i, W.chartι_eq_projModelPoint i', ← CommRingCat.ofHom_hom α,
-    ← CommRingCat.ofHom_hom β, SpecMap_projModelPoint, SpecMap_projModelPoint,
-    projModelPoint_eq_projModelPoint_iff] at h
+  rw [W.SpecMap_chartι, W.SpecMap_chartι, projModelPoint_eq_projModelPoint_iff] at h
   exact h.2
-
--- Pushed along `φ`, from the product `ChartRing i ⊗[R] ChartRing j` of two charts, the six law
--- coordinates are the two laws at the images of the universal points.
-private theorem comp_chartPairLaw {A : CommRingCat.{u}} {i j : Fin 3}
-    (φ : CommRingCat.of (W.toProjective.ChartRing i ⊗[R] W.toProjective.ChartRing j) ⟶ A) :
-    φ.hom ∘ W.chartPairLaw i j = Sum.elim
-      ((W.toProjective.map (CommRingCat.ofHom (algebraMap R _) ≫
-          CommRingCat.ofHom includeLeftRingHom ≫ φ).hom).addXYZ
-        ((CommRingCat.ofHom includeLeftRingHom ≫ φ).hom ∘ W.toProjective.chartPoint i)
-        ((CommRingCat.ofHom (includeRight : _ →ₐ[R] _).toRingHom ≫ φ).hom ∘
-          W.toProjective.chartPoint j))
-      ((W.toProjective.map (CommRingCat.ofHom (algebraMap R _) ≫
-          CommRingCat.ofHom includeLeftRingHom ≫ φ).hom).dblAddXYZ
-        ((CommRingCat.ofHom includeLeftRingHom ≫ φ).hom ∘ W.toProjective.chartPoint i)
-        ((CommRingCat.ofHom (includeRight : _ →ₐ[R] _).toRingHom ≫ φ).hom ∘
-          W.toProjective.chartPoint j)) := by
-  have hW : (W.toProjective.baseChange
-      (W.toProjective.ChartRing i ⊗[R] W.toProjective.ChartRing j)).map φ.hom =
-        W.toProjective.map (CommRingCat.ofHom (algebraMap R _) ≫
-          CommRingCat.ofHom includeLeftRingHom ≫ φ).hom := by
-    rw [Projective.map, Projective.baseChange, WeierstrassCurve.baseChange,
-      WeierstrassCurve.map_map]
-    congr 1
-  -- both laws commute with `φ`, applied to the curve and to the points
-  rw [← hW]
-  ext (k | k)
-  · exact (congrArg φ.hom (W.chartPairLaw_inl i j k)).trans
-      (congrFun (Projective.map_addXYZ φ.hom _ _) k).symm
-  · exact (congrArg φ.hom (W.chartPairLaw_inr i j k)).trans
-      (congrFun (Projective.map_dblAddXYZ φ.hom _ _) k).symm
 
 -- Pushed along `φ`, the two laws selected by `s` and `s'` have vanishing cross product.
 private theorem cross_comp_chartPairLaw {A : CommRingCat.{u}} {i j : Fin 3}
@@ -156,26 +124,6 @@ private theorem comp_chartPairLaw_eq_smul {A : CommRingCat.{u}} {i j i' j' : Fin
   rw [comp_chartPairLaw, comp_chartPairLaw, hg, hu, hv, Units.smul_def, Units.smul_def,
     Projective.addXYZ_smul, Projective.dblAddXYZ_smul]
   ext (m | m) <;> rfl
-
--- Along `φ`, the addition morphism on the piece indexed by `k` is the point whose homogeneous
--- coordinates are the image of the law selected by `k`.
-private theorem exists_SpecMap_additionOnPiece {A : CommRingCat.{u}} {i j : Fin 3}
-    (k : Fin 3 ⊕ Fin 3) (φ : CommRingCat.of (Localization.Away (W.chartPairLaw i j k)) ⟶ A) :
-    ∃ hP hm, Spec.map φ ≫ W.additionOnPiece i j k =
-      W.projModelPoint (CommRingCat.ofHom (algebraMap R _) ≫ φ).hom (i := k.elim id id)
-        (P := fun m ↦ (CommRingCat.ofHom (algebraMap
-          (W.toProjective.ChartRing i ⊗[R] W.toProjective.ChartRing j) _) ≫ φ).hom
-            (W.chartPairLaw i j (k.map (fun _ ↦ m) (fun _ ↦ m)))) hP hm := by
-  -- along `φ`, a point of `projModel W` over the localization is the point of the images
-  have key {P : Fin 3 → Localization.Away (W.chartPairLaw i j k)} {hP} {m : Fin 3}
-      (hm : IsUnit (P m)) : ∃ hP' hm', Spec.map φ ≫ W.projModelPoint (algebraMap R _) hP hm =
-        W.projModelPoint (CommRingCat.ofHom (algebraMap R _) ≫ φ).hom (P := φ.hom ∘ P) hP' hm' :=
-    ⟨_, _, SpecMap_projModelPoint φ.hom hm⟩
-  cases k
-  · rw [additionOnPiece_inl]
-    exact key _
-  · rw [additionOnPiece_inr]
-    exact key _
 
 -- The localization of the product of the charts `D₊(Xᵢ)` and `D₊(Xⱼ)` away from a law coordinate
 -- lies over `Spec R`, along its structure map.

@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Dual
+public import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Basic
 public import TauCeti.AlgebraicGeometry.VectorBundle.Rank
 
 /-!

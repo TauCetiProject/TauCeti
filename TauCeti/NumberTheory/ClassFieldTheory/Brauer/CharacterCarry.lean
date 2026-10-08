@@ -40,7 +40,7 @@ the character (`TauCeti.ContCohomology.characterCarryCocycle_zsmul_character`).
 
 This is the local computation behind the global classes with prescribed local invariants: the
 carry cocycle of a global character and an idele localizes, by naturality along the decomposition
-maps (`TauCeti.ContCohomology.cocyclesMap2_characterCarryCocycle`), to the carry cocycles of the
+maps (`TauCeti.ContCohomology.explicitMap2_characterCarryCocycle`), to the carry classes of the
 local characters and the components of the idele.
 
 ## Main results
