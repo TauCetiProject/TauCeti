@@ -46,6 +46,8 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
   symmetric operator, every vector of that basis has a nonzero eigenvalue.
 * `ContinuousLinearMap.hasSum_smul_repr_of_apply_eq_smul`: an operator diagonal in a Hilbert
   basis is the sum of its eigencomponents, the spectral expansion such a basis is for.
+* `LinearMap.IsSymmetric.inner_sub_apply_of_apply_eq_smul`: the cross term of the difference of
+  two operators on eigenvectors is the eigenvalue difference times their inner product.
 * `LinearMap.IsSymmetric.eigenvectorSpan`: the span of the eigenvectors of the ordered
   eigenbasis whose indices lie in a specified set.
 * `LinearMap.IsSymmetric.negativeSpectralSubspace` and
@@ -165,6 +167,19 @@ theorem hasSum_smul_repr_of_apply_eq_smul (T : E →L[𝕜] E) {iota : Type*}
 end ContinuousLinearMap
 
 namespace LinearMap.IsSymmetric
+
+/-! ### Eigenvector identities -/
+
+/-- The cross term of an operator difference on eigenvectors is the eigenvalue difference times
+their inner product.
+
+Only the operator acting on the first eigenvector needs to be symmetric. In particular, this
+applies when both operators are symmetric, as in eigenvalue perturbation arguments. -/
+theorem inner_sub_apply_of_apply_eq_smul {T S : E →ₗ[𝕜] E} (hT : T.IsSymmetric)
+    {x y : E} {lam mu : ℝ} (hx : T x = (lam : 𝕜) • x) (hy : S y = (mu : 𝕜) • y) :
+    ⟪x, (S - T) y⟫_𝕜 = ((mu - lam : ℝ) : 𝕜) * ⟪x, y⟫_𝕜 := by
+  rw [LinearMap.sub_apply, inner_sub_right, hy, ← hT x y, hx, inner_smul_right,
+    inner_smul_left, RCLike.conj_ofReal, RCLike.ofReal_sub, sub_mul]
 
 variable {n : ℕ} [FiniteDimensional 𝕜 E] {T : E →ₗ[𝕜] E}
 
