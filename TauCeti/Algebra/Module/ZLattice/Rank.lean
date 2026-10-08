@@ -23,6 +23,9 @@ discrete from their rank and real span, without a separate compactness argument.
 
 - `TauCeti.discreteTopology_iff_finrank_eq_finrank_span`: discreteness of a finitely generated
   integer submodule is equivalent to equality of its integer rank and its real span's dimension.
+
+Apply `(TauCeti.discreteTopology_iff_finrank_eq_finrank_span L).mpr hr` to obtain
+discreteness from a rank equality `hr`.
 -/
 
 public section
