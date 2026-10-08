@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.StronglyNoetherian
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Basic
+public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Huber.Restricted.Noetherian
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 
@@ -17,6 +18,11 @@ Over a complete nonarchimedean normed field `K`, the spectrum `Spa(K, K°)` and 
 polydisc are affinoid adic spaces. The polydisc is presented by the ordinary restricted-series
 ring over `K`; completeness identifies that ring with the completed Tate algebra, so its strong
 noetherianness follows from the strong noetherianness of `K`.
+
+For a complete nontrivially normed field with an ultrametric norm — a complete rank-one
+nonarchimedean field — the Tate-ring hypothesis is supplied by
+`TauCeti.Huber.IsTateRing.of_nontriviallyNormedField`, and the `example`s at the end of the file
+record that both results then apply with no further hypotheses.
 
 The construction keeps a pair of definition explicit. This is the same presentation dependence
 as `TauCeti.ValuationSpectrum.presentationLimitPreAdicSpace`; the underlying adic spectrum and
@@ -125,6 +131,23 @@ theorem isAdic_closedPolydiscPreAdicSpace :
     Q.le_powerBoundedSubring (fun _ ha ↦ mem_powerBoundedSubring.mp ha)
 
 end Polydisc
+
+/-! ### Complete rank-one nonarchimedean fields
+
+A complete nontrivially normed field with an ultrametric norm is a Tate ring, hence
+nonarchimedean, by instances, so both results apply to it. -/
+
+example {K : Type u} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+    (P : PairOfDefinition K) :
+    PreAdicSpace.isAdic
+      (presentationLimitPreAdicSpace P (powerBoundedSubring K)
+        (fun _ ha ↦ mem_powerBoundedSubring.mp ha) P.le_powerBoundedSubring) :=
+  isAdic_spa_powerBounded_of_normedField P
+
+example (k : ℕ) {K : Type u} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+    (P : PairOfDefinition K) :
+    PreAdicSpace.isAdic (closedPolydiscPreAdicSpace k P) :=
+  isAdic_closedPolydiscPreAdicSpace k P
 
 end TauCeti.ValuationSpectrum
 

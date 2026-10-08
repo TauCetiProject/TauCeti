@@ -9,56 +9,22 @@ public import TauCeti.LinearAlgebra.Matrix.EigenvalueSearch
 public import TauCeti.LinearAlgebra.Matrix.Echelon.KernelBasis
 
 /-!
-# Searching for common eigenvectors over a finite field
+# Computable common eigenspaces
 
-For finitely many square matrices over a finite field, common eigenvectors can be found by an
-exhaustive but executable search. First choose one eigenvalue of each matrix using
-`TauCeti.eigenvalueSearch`. For a tuple `a`, stack the systems
-`(a i • 1 - A i) v = 0` into one rectangular matrix and compute its kernel with
-`TauCeti.kernelBasis`. The tuple is retained exactly when that kernel basis is nonempty.
+Stacking the eigenvector equations for a finite family of matrices gives a rectangular
+system. Its kernel basis, computed by Gauss–Jordan elimination, spans the common eigenspace.
+The basis is nonempty precisely when a nonzero common eigenvector exists, and its length
+is the dimension of that eigenspace. Transposing the family gives the corresponding
+left-eigenvector statements.
 
-This file implements that search and proves that its output is precisely the tuples admitting a
-nonzero common eigenvector. It deliberately returns the full kernel basis as a separate
-definition: the Dixon--Schneider algorithm needs those bases to refine common eigenspaces until
-they are one-dimensional, rather than merely deciding whether a tuple occurs.
-
-## Main definitions
-
-* `TauCeti.jointEigenspaceMatrix`: the matrix obtained by stacking all the eigenvector equations.
-* `TauCeti.jointEigenspaceBasis`: a computable basis of the corresponding common eigenspace.
-* `TauCeti.jointEigenvalueSearch`: the tuples with nonzero common eigenspace.
-
-Applying these definitions to the transposed family gives the common eigenrows used by
-Dixon--Schneider; the final section records their `ᵥ*` characterizations.
-
-## Main results
-
-* `TauCeti.jointEigenspaceMatrix_mulVec_eq_zero_iff`: the stacked system expresses exactly the
-  common eigenvector equations.
-* `TauCeti.mem_span_jointEigenspaceBasis`: that basis spans the common eigenspace.
-* `TauCeti.length_jointEigenspaceBasis`: its length is the nullity of the stacked system, which
-  is the executable test for a one-dimensional common eigenspace.
-* `TauCeti.jointEigenspaceBasis_ne_nil_iff`: its computed basis is nonempty exactly when a
-  nonzero common eigenvector exists.
-* `TauCeti.mem_jointEigenvalueSearch`: correctness of the executable tuple search.
-* `TauCeti.mem_jointEigenvalueSearch_transpose`: the corresponding common-eigenrow
-  characterization.
+These bases provide the intersection test for successive common-eigenspace refinement.
 
 ## References
 
-Layer 6 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md)
-requires an eigenvector search over `ZMod p` which combines `eigenvalueSearch` with
-`kernelBasis`. This is the common-eigenspace search at the core of that refinement.
-
 * J. D. Dixon, *High speed computation of group characters*, Numerische Mathematik 10 (1967),
-  446--450: the modular class-matrix method, in which the central characters are recovered as
-  the common eigenrows of the class matrices. This is the source of the `ᵥ*` orientation
-  recorded in the final section.
-* G. Schneider, *Dixon's character table algorithm revisited*, J. Symbolic Comput. 9 (1990),
-  601--606: the successive splitting of a common eigenspace by further class matrices until it
-  is one-dimensional. This is why the full kernel basis, and its length, are exposed here
-  rather than only the decision whether a tuple occurs.
+  446–450.
+* G. J. A. Schneider, *Dixon's character table algorithm revisited*, J. Symbolic Comput. 9 (1990),
+  601–606.
 -/
 
 public section
@@ -172,43 +138,6 @@ theorem jointEigenspaceBasis_ne_nil_iff
       Submodule.mem_bot] at hmem
     exact hv hmem
 
-/-- Search the finite product of the individual spectra and retain the tuples whose computed
-common-eigenspace basis is nonempty. -/
-@[expose] def jointEigenvalueSearch (A : Fin m → Matrix (Fin n) (Fin n) F) :
-    Finset (Fin m → F) :=
-  (Fintype.piFinset fun i => eigenvalueSearch (A i)).filter fun a =>
-    jointEigenspaceBasis A a ≠ []
-
-/-- **Correctness of the common-eigenvalue search**: it returns exactly the tuples admitting a
-nonzero common eigenvector. -/
-@[simp]
-theorem mem_jointEigenvalueSearch {A : Fin m → Matrix (Fin n) (Fin n) F} {a : Fin m → F} :
-    a ∈ jointEigenvalueSearch A ↔ ∃ v ≠ 0, ∀ i, A i *ᵥ v = a i • v := by
-  rw [jointEigenvalueSearch, Finset.mem_filter, jointEigenspaceBasis_ne_nil_iff]
-  constructor
-  · exact fun h => h.2
-  · intro h
-    obtain ⟨v, hv, heig⟩ := h
-    refine ⟨?_, ⟨v, hv, heig⟩⟩
-    rw [Fintype.mem_piFinset]
-    intro i
-    rw [mem_eigenvalueSearch_iff_exists_mulVec]
-    exact ⟨v, hv, heig i⟩
-
-/-- Each component of a tuple returned by the common search is found by the corresponding
-single-matrix eigenvalue search. -/
-theorem apply_mem_eigenvalueSearch_of_mem_jointEigenvalueSearch
-    {A : Fin m → Matrix (Fin n) (Fin n) F} {a : Fin m → F}
-    (ha : a ∈ jointEigenvalueSearch A) (i : Fin m) :
-    a i ∈ eigenvalueSearch (A i) := by
-  exact Fintype.mem_piFinset.mp (Finset.mem_filter.mp ha).1 i
-
-/-- The basis associated to a returned tuple is nonempty. -/
-theorem jointEigenspaceBasis_ne_nil_of_mem_jointEigenvalueSearch
-    {A : Fin m → Matrix (Fin n) (Fin n) F} {a : Fin m → F}
-    (ha : a ∈ jointEigenvalueSearch A) : jointEigenspaceBasis A a ≠ [] :=
-  (Finset.mem_filter.mp ha).2
-
 /-! ## Left-eigenvector characterizations -/
 
 omit [Fintype F] in
@@ -230,22 +159,5 @@ theorem jointEigenspaceBasis_transpose_ne_nil_iff
       ∃ v ≠ 0, ∀ i, v ᵥ* A i = a i • v := by
   simpa [Matrix.mulVec_transpose] using
     jointEigenspaceBasis_ne_nil_iff (fun i => (A i)ᵀ) a
-
-/-- **Correctness of the common eigenrow search**: searching the transposed family returns exactly
-the tuples admitting a nonzero common left eigenvector. -/
-theorem mem_jointEigenvalueSearch_transpose
-    {A : Fin m → Matrix (Fin n) (Fin n) F} {a : Fin m → F} :
-    a ∈ jointEigenvalueSearch (fun i => (A i)ᵀ) ↔
-      ∃ v ≠ 0, ∀ i, v ᵥ* A i = a i • v := by
-  simp [Matrix.mulVec_transpose]
-
-/-- Every component of a tuple returned by searching the transposed family is an eigenvalue of
-the corresponding original matrix. -/
-theorem apply_mem_eigenvalueSearch_of_mem_jointEigenvalueSearch_transpose
-    {A : Fin m → Matrix (Fin n) (Fin n) F} {a : Fin m → F}
-    (ha : a ∈ jointEigenvalueSearch (fun i => (A i)ᵀ)) (i : Fin m) :
-    a i ∈ eigenvalueSearch (A i) := by
-  rw [← eigenvalueSearch_transpose]
-  exact apply_mem_eigenvalueSearch_of_mem_jointEigenvalueSearch ha i
 
 end TauCeti

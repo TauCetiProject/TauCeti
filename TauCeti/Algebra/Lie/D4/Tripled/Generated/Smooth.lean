@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.D4.Tripled.GeneratedConnected
+public import TauCeti.Algebra.Lie.D4.Tripled.Generated.Connected
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel.Reduced
 
 /-!
