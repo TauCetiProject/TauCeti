@@ -66,6 +66,9 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
 * `TauCeti.absoluteGaloisGroupExtend K L σ`: the injective continuous homomorphism
   `Field.absoluteGaloisGroup L →* Field.absoluteGaloisGroup K` between Mathlib's absolute Galois
   groups, `galoisSubgroupEquiv K L σ` followed by the inclusion of `galoisSubgroup K L σ`.
+* `TauCeti.absoluteGaloisGroupExtendEquiv K L σ hU`: for a subgroup `U` of
+  `Field.absoluteGaloisGroup K` that is the image of `absoluteGaloisGroupExtend K L σ`, the
+  isomorphism of topological groups `Field.absoluteGaloisGroup L ≃ₜ* U`.
 
 ## Main results
 
@@ -276,6 +279,35 @@ theorem index_range_absoluteGaloisGroupExtend :
     Subgroup.ext fun _ ↦ mem_range_absoluteGaloisGroupExtend_iff K L σ
   rw [h, Subgroup.index_comap_of_surjective _ (absoluteGaloisGroupRestrictEquiv K).surjective,
     galoisSubgroup_index]
+
+/-- **`G_L` as a subgroup of `G_K`.** The embedding `absoluteGaloisGroupExtend K L σ` is an
+isomorphism of topological groups onto any subgroup `U` of `G_K` that is its image: it is a
+continuous injection from a compact group to a Hausdorff one. -/
+def absoluteGaloisGroupExtendEquiv {U : Subgroup (Field.absoluteGaloisGroup K)}
+    (hU : (absoluteGaloisGroupExtend K L σ).range = U) : Field.absoluteGaloisGroup L ≃ₜ* U :=
+  haveI : T2Space (Field.absoluteGaloisGroup K) := krullTopology_t2
+  let f : Field.absoluteGaloisGroup L →* U :=
+    (absoluteGaloisGroupExtend K L σ).codRestrict U fun g ↦ hU ▸ ⟨g, rfl⟩
+  have hf : Function.Bijective f := by
+    refine ⟨fun a b h ↦ injective_absoluteGaloisGroupExtend K L σ (congrArg Subtype.val h), ?_⟩
+    rintro ⟨x, hx⟩
+    rw [← hU] at hx
+    obtain ⟨g, rfl⟩ := hx
+    exact ⟨g, rfl⟩
+  have hc : Continuous f := (continuous_absoluteGaloisGroupExtend K L σ).subtype_mk _
+  { MulEquiv.ofBijective f hf with
+    continuous_toFun := hc
+    continuous_invFun :=
+      (hc.homeoOfEquivCompactToT2 (f := Equiv.ofBijective f hf)).symm.continuous }
+
+/-- `absoluteGaloisGroupExtendEquiv` is `absoluteGaloisGroupExtend` with its codomain restricted
+to the image. -/
+@[simp]
+theorem coe_absoluteGaloisGroupExtendEquiv_apply {U : Subgroup (Field.absoluteGaloisGroup K)}
+    (hU : (absoluteGaloisGroupExtend K L σ).range = U) (g : Field.absoluteGaloisGroup L) :
+    (absoluteGaloisGroupExtendEquiv K L σ hU g : Field.absoluteGaloisGroup K) =
+      absoluteGaloisGroupExtend K L σ g :=
+  (rfl)
 
 /-! ### Normal extensions: the quotient by the open subgroup -/
 
