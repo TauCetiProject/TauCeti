@@ -172,13 +172,17 @@ theorem map_apply (f : X ⟶ Y) (p : RelGenLoop N X) (y : I × (I^N)) :
   (rfl)
 
 @[simp]
-theorem map_id (p : RelGenLoop N X) : map (𝟙 X) p = p :=
-  (rfl)
+theorem map_id (p : RelGenLoop N X) : map (𝟙 X) p = p := by
+  ext y
+  simp only [map_apply, TopPair.Hom.fst, BasedTopPair.id_toTopPairHom,
+    MorphismProperty.Comma.id_hom, Comma.id_right, TopCat.hom_id, ContinuousMap.id_apply]
 
 @[simp]
 theorem map_map (f : X ⟶ Y) (g : Y ⟶ Z) (p : RelGenLoop N X) :
-    map g (map f p) = map (f ≫ g) p :=
-  (rfl)
+    map g (map f p) = map (f ≫ g) p := by
+  ext y
+  simp only [map_apply, TopPair.Hom.fst, BasedTopPair.comp_toTopPairHom,
+    MorphismProperty.Comma.comp_hom, Comma.comp_right, TopCat.hom_comp, ContinuousMap.comp_apply]
 
 @[simp]
 theorem map_const (f : X ⟶ Y) : map f (const : RelGenLoop N X) = const := by
@@ -288,6 +292,35 @@ theorem mk_surjective : Function.Surjective (mk : RelGenLoop N X → RelHomotopy
 theorem mk_eq_mk {p q : RelGenLoop N X} : mk p = mk q ↔ RelGenLoop.Homotopic p q :=
   Quotient.eq
 
+/-- Lift a function on relative cubes that is invariant under homotopy through relative cubes to
+the relative homotopy set. -/
+def lift {β : Sort*} (f : RelGenLoop N X → β)
+    (hf : ∀ p q, RelGenLoop.Homotopic p q → f p = f q) : RelHomotopyGroup N X → β :=
+  Quotient.lift f hf
+
+@[simp]
+theorem lift_mk {β : Sort*} (f : RelGenLoop N X → β)
+    (hf : ∀ p q, RelGenLoop.Homotopic p q → f p = f q) (p : RelGenLoop N X) :
+    lift f hf (mk p) = f p :=
+  (rfl)
+
+/-- Lift a function of two relative cubes that is invariant under homotopy through relative cubes
+in each argument to a function of two relative homotopy classes. -/
+def lift₂ {N' : Type*} {X' : BasedTopPair.{u}} {β : Sort*}
+    (f : RelGenLoop N X → RelGenLoop N' X' → β)
+    (hf : ∀ p₁ q₁ p₂ q₂, RelGenLoop.Homotopic p₁ p₂ → RelGenLoop.Homotopic q₁ q₂ →
+      f p₁ q₁ = f p₂ q₂) :
+    RelHomotopyGroup N X → RelHomotopyGroup N' X' → β :=
+  Quotient.lift₂ f hf
+
+@[simp]
+theorem lift₂_mk {N' : Type*} {X' : BasedTopPair.{u}} {β : Sort*}
+    (f : RelGenLoop N X → RelGenLoop N' X' → β)
+    (hf : ∀ p₁ q₁ p₂ q₂, RelGenLoop.Homotopic p₁ p₂ → RelGenLoop.Homotopic q₁ q₂ →
+      f p₁ q₁ = f p₂ q₂) (p : RelGenLoop N X) (q : RelGenLoop N' X') :
+    lift₂ f hf (mk p) (mk q) = f p q :=
+  (rfl)
+
 /-- The relative homotopy set is pointed by the class of the constant cube. -/
 instance : Inhabited (RelHomotopyGroup N X) :=
   ⟨mk RelGenLoop.const⟩
@@ -307,13 +340,13 @@ theorem map_mk (f : X ⟶ Y) (p : RelGenLoop N X) : map f (mk p) = mk (RelGenLoo
 theorem map_id : map (𝟙 X) = (id : RelHomotopyGroup N X → RelHomotopyGroup N X) := by
   funext a
   obtain ⟨p, rfl⟩ := mk_surjective a
-  rfl
+  rw [map_mk, RelGenLoop.map_id, id_eq]
 
 theorem map_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
     map (f ≫ g) = (map g ∘ map f : RelHomotopyGroup N X → RelHomotopyGroup N Z) := by
   funext a
   obtain ⟨p, rfl⟩ := mk_surjective a
-  rfl
+  rw [Function.comp_apply, map_mk, map_mk, map_mk, RelGenLoop.map_map]
 
 @[simp]
 theorem map_map (f : X ⟶ Y) (g : Y ⟶ Z) (a : RelHomotopyGroup N X) :

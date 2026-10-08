@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Category.TopPair
-public import Mathlib.Topology.Homeomorph.Lemmas
+public import TauCeti.Topology.Category.TopPair
 
 /-!
 # Based topological pairs
@@ -21,13 +20,8 @@ morphism of based pairs is a morphism of pairs whose subspace component preserve
 In particular the pair `(X, ∅)` admits no based structure, and no declaration chooses a point
 from a bare pair.
 
-The file also provides `TopPair.liftSnd`, which views a continuous map into the ambient space
-with values in the subspace as a continuous map into the subspace; this is how faces of
-relative cubes are read as maps into `A`.
-
 ## Main declarations
 
-* `TopPair.liftSnd`: corestriction of a continuous map along the embedding of a pair.
 * `TauCeti.BasedTopPair`: a topological pair with a basepoint in its subspace.
 * `TauCeti.BasedTopPair.Hom`: basepoint-preserving maps of pairs, forming the category
   `TauCeti.BasedTopPair` with faithful forgetful functor `TauCeti.BasedTopPair.forget` to
@@ -39,29 +33,6 @@ public section
 universe u
 
 open CategoryTheory
-
-namespace TopPair
-
-variable (X : TopPair.{u}) {Z : Type*} [TopologicalSpace Z]
-
-/-- A continuous map into the ambient space of a pair that takes values in the subspace, viewed
-as a continuous map into the subspace. It is continuous because `X.map` is an embedding. -/
-noncomputable def liftSnd (g : C(Z, X.fst)) (hg : ∀ z, g z ∈ Set.range X.map) : C(Z, X.snd) :=
-  (X.isEmbedding_map.toHomeomorph.symm : C(Set.range X.map, X.snd)).comp
-    ⟨fun z => ⟨g z, hg z⟩, by fun_prop⟩
-
-variable {X}
-
-@[simp]
-theorem map_liftSnd (g : C(Z, X.fst)) (hg : ∀ z, g z ∈ Set.range X.map) (z : Z) :
-    X.map (X.liftSnd g hg z) = g z :=
-  congrArg Subtype.val (X.isEmbedding_map.toHomeomorph.apply_symm_apply ⟨g z, hg z⟩)
-
-theorem liftSnd_apply_eq_iff (g : C(Z, X.fst)) (hg : ∀ z, g z ∈ Set.range X.map) (z : Z)
-    (a : X.snd) : X.liftSnd g hg z = a ↔ g z = X.map a := by
-  rw [← X.isEmbedding_map.injective.eq_iff, map_liftSnd]
-
-end TopPair
 
 namespace TauCeti
 
