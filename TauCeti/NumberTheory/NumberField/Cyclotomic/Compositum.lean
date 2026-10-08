@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.NumberTheory.Cyclotomic.Gal
+import TauCeti.FieldTheory.Galois.FiberProduct
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Finrank
 import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
@@ -34,6 +35,10 @@ character — are *jointly* bijective:
   `IsCyclotomicExtension.autToPow_galEquivProd_symm` eliminating its inverse. Those three
   `simp` lemmas are the whole interface: no consumer needs the `MulEquiv.ofBijective` that
   packages the equivalence, in either direction.
+* `IsCyclotomicExtension.bijective_restrictNormalHom_prod_restrictNormalHom`: when the `m`-th
+  cyclotomic polynomial is irreducible over `K`, restriction to `L` and to `K(ζ)` gives
+  `Gal(M/K) ≃ Gal(L/K) × Gal(K(ζ)/K)`, and
+  `IsCyclotomicExtension.linearDisjoint_fieldRange_adjoin`: `L` and `K(ζ)` are linearly disjoint.
 * `IsCyclotomicExtension.ker_autToPow_eq_comap_galEquivProd` and
   `IsCyclotomicExtension.ker_restrictNormalHom_eq_comap_galEquivProd`: the same interface one
   level up, on subgroups rather than elements — each component's kernel is what `galEquivProd`
@@ -313,6 +318,64 @@ theorem ker_restrictNormalHom_eq_comap_galEquivProd
   -- `restrictNormal`, so its equation lemma plus `MonoidHom.mk'_apply` gets there without
   -- depending on how the wrapper is packaged.
   rw [AlgEquiv.restrictNormalHom, MonoidHom.mk'_apply]
+
+variable [NumberField M] in
+open IntermediateField in
+/-- **The restriction isomorphism onto `Gal(L/K) × Gal(K(ζ)/K)`.** If `m` is coprime to the
+discriminant of `L` and the `m`-th cyclotomic polynomial is irreducible over `K`, then restriction
+to `L` and to `K(ζ)` is jointly bijective on `Gal(M/K)`. Injectivity comes from `galEquivProd`,
+since an automorphism fixing `K(ζ)` has trivial cyclotomic character; the cardinalities agree
+because `[K(ζ) : K] = φ m` by irreducibility. Over a number field `K` the irreducibility holds
+for every prime `m` unramified in `K` (`irreducible_cyclotomic_of_unramified`). -/
+theorem bijective_restrictNormalHom_prod_restrictNormalHom
+    (hcop : ((NumberField.discr L).natAbs).Coprime m) {ζ : M} (hζ : IsPrimitiveRoot ζ m)
+    (hirr : Irreducible (Polynomial.cyclotomic m K)) :
+    haveI := (hζ.intermediateField_adjoin_isCyclotomicExtension K).isGalois
+    Function.Bijective ((AlgEquiv.restrictNormalHom (F := K) (K₁ := M) L).prod
+      (AlgEquiv.restrictNormalHom (F := K) (K₁ := M) K⟮ζ⟯)) := by
+  have := hζ.intermediateField_adjoin_isCyclotomicExtension K
+  have := (hζ.intermediateField_adjoin_isCyclotomicExtension K).isGalois
+  have hinj : Function.Injective ((AlgEquiv.restrictNormalHom (F := K) (K₁ := M) L).prod
+      (AlgEquiv.restrictNormalHom (F := K) (K₁ := M) K⟮ζ⟯)) := by
+    rw [injective_iff_map_eq_one]
+    intro σ hσ
+    rw [MonoidHom.prod_apply, Prod.mk_eq_one] at hσ
+    apply (galEquivProd K L M m hcop hζ).injective
+    rw [map_one, galEquivProd_apply, Prod.mk_eq_one]
+    refine ⟨hσ.1, (hζ.autToPow_eq_one_iff σ).mpr ?_⟩
+    have h :=
+      AlgEquiv.restrictNormal_commutes σ K⟮ζ⟯ ⟨ζ, mem_adjoin_simple_self K ζ⟩
+    have h1 : σ.restrictNormal K⟮ζ⟯ = 1 := hσ.2
+    rw [h1] at h
+    exact h.symm
+  refine (Nat.bijective_iff_injective_and_card _).mpr ⟨hinj, ?_⟩
+  rw [Nat.card_prod, Nat.card_congr (galEquivProd K L M m hcop hζ).toEquiv,
+    Nat.card_prod, IsGalois.card_aut_eq_finrank K K⟮ζ⟯,
+    IsCyclotomicExtension.finrank K⟮ζ⟯ hirr,
+    Nat.card_eq_fintype_card (α := (ZMod m)ˣ), ZMod.card_units_eq_totient]
+
+variable [NumberField M] in
+open IntermediateField in
+/-- **`L` and `K(ζ)` are linearly disjoint over `K`.** Under the hypotheses of
+`bijective_restrictNormalHom_prod_restrictNormalHom`, the image of `L` in `M` and `K(ζ)` are
+linearly disjoint over `K`: joint surjectivity of the two restrictions says their intersection is
+`K`, and both are Galois over `K`. -/
+theorem linearDisjoint_fieldRange_adjoin
+    (hcop : ((NumberField.discr L).natAbs).Coprime m) {ζ : M} (hζ : IsPrimitiveRoot ζ m)
+    (hirr : Irreducible (Polynomial.cyclotomic m K)) :
+    (IsScalarTower.toAlgHom K L M).fieldRange.LinearDisjoint K⟮ζ⟯ := by
+  have := (hζ.intermediateField_adjoin_isCyclotomicExtension K).isGalois
+  have : IsGalois K M := isGalois_of_isGalois_of_isCyclotomicExtension K L M m
+  have : IsGalois K (IsScalarTower.toAlgHom K L M).fieldRange :=
+    IsGalois.of_algEquiv (AlgEquiv.ofInjectiveField (IsScalarTower.toAlgHom K L M))
+  have hinf := (AlgEquiv.restrictNormalHom_prod_restrictNormalHom_surjective_iff
+    (F := K) (E := M) (K₁ := L) (K₂ := K⟮ζ⟯)).mp
+      (bijective_restrictNormalHom_prod_restrictNormalHom K L M m hcop hζ hirr).2
+  have hval : (IsScalarTower.toAlgHom K K⟮ζ⟯ M).fieldRange = K⟮ζ⟯ := by
+    ext x
+    exact ⟨fun ⟨y, hy⟩ ↦ hy ▸ y.2, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
+  rw [hval] at hinf
+  exact LinearDisjoint.of_inf_eq_bot hinf
 
 end Compositum
 

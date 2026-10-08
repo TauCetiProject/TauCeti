@@ -44,6 +44,8 @@ So the Frobenius von Mangoldt series of `σ` minus `(1 / #G) / (s - 1)` extends 
 
 ## Main results
 
+* `NumberField.Chebotarev.exists_continuousOn_eq_LSeries_frobeniusVonMangoldtCoeff_sub`: the
+  Dirichlet series of `Λ_σ` minus `(1 / #Gal(F/K)) / (s - 1)` extends continuously to `Re s ≥ 1`.
 * `NumberField.Chebotarev.frobeniusPsi_asymptotic_of_isCyclotomicExtension`: for `F = K(μ_m)`,
   `ψ_σ(x) = x / #Gal(F/K) + o(x)`.
 
@@ -72,12 +74,18 @@ variable {K F : Type*} [Field K] [NumberField K] [Field F] [NumberField F] [Alge
   [IsGalois K F]
 
 variable (K F) in
-/-- **Weighted Chebotarev for cyclotomic extensions.** For `F = K(μ_m)` and `σ ∈ Gal(F/K)`, the
-Frobenius `ψ` function of `σ` satisfies `ψ_σ(x) = x / #Gal(F/K) + o(x)`. -/
-theorem frobeniusPsi_asymptotic_of_isCyclotomicExtension (m : ℕ) [NeZero m]
+/-- **The boundary data of the cyclotomic weighted theorem.** For `F = K(μ_m)` and
+`σ ∈ Gal(F/K)`, the Dirichlet series `F_σ(s) = ∑ Λ_σ(n) n ^ (-s)` of the Frobenius von Mangoldt
+coefficients of `σ`, minus `(1 / #Gal(F/K)) / (s - 1)`, extends continuously to `Re s ≥ 1`.
+
+By the character expansion, `F_σ = (1 / #G) ∑_χ χ(σ)⁻¹ (-L_χ'/L_χ)`. For `χ ≠ 1` the term is
+continuous on `Re s ≥ 1`, and for `χ = 1` it is `1 / (s - 1)` plus the regularized boundary
+function of the Dedekind zeta function with the ramified Euler factors deleted. -/
+theorem exists_continuousOn_eq_LSeries_frobeniusVonMangoldtCoeff_sub (m : ℕ) [NeZero m]
     [IsCyclotomicExtension {m} K F] (σ : F ≃ₐ[K] F) :
-    (fun x : ℝ ↦ frobeniusPsi K F (ConjClasses.mk σ) x -
-      (1 / Nat.card (F ≃ₐ[K] F) : ℝ) * x) =o[atTop] fun x : ℝ ↦ x := by
+    ∃ G : ℂ → ℂ, ContinuousOn G {s | 1 ≤ s.re} ∧ ∀ s : ℂ, 1 < s.re →
+      G s = LSeries (fun n ↦ (frobeniusVonMangoldtCoeff K F (ConjClasses.mk σ) n : ℂ)) s -
+        ((1 / Nat.card (F ≃ₐ[K] F) : ℝ) : ℂ) / (s - 1) := by
   classical
   have := IsCyclotomicExtension.isMulCommutative {m} K F
   obtain ⟨G₁, hG₁, hG₁L⟩ := exists_continuousOn_eq_neg_logDeriv_galoisCharacterWeight_one_sub K F
@@ -97,19 +105,27 @@ theorem frobeniusPsi_asymptotic_of_isCyclotomicExtension (m : ℕ) [NeZero m]
     · subst hχ
       simp [Φ, hG₁L s hs]
     · simp [Φ, hχ, logDeriv_cyclotomicCharacterSeriesC K F χ hs]
+  refine ⟨fun s ↦ (Nat.card (F ≃ₐ[K] F) : ℂ)⁻¹ * ∑ χ, (((χ σ)⁻¹ : ℂˣ) : ℂ) * Φ χ s,
+    continuousOn_const.mul (continuousOn_finsetSum _ fun χ _ ↦ continuousOn_const.mul (hΦ χ)),
+    fun s hs ↦ ?_⟩
+  -- Only the trivial character contributes to the pole, with coefficient `1 / #G`.
+  simp only [LSeries_frobeniusVonMangoldtCoeff_eq_sum_logDeriv σ hs, hΦL _ hs, mul_sub,
+    Finset.sum_sub_distrib, mul_ite, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte,
+    MonoidHom.one_apply, inv_one, Units.val_one, one_mul]
+  push_cast
+  ring
+
+variable (K F) in
+/-- **Weighted Chebotarev for cyclotomic extensions.** For `F = K(μ_m)` and `σ ∈ Gal(F/K)`, the
+Frobenius `ψ` function of `σ` satisfies `ψ_σ(x) = x / #Gal(F/K) + o(x)`. -/
+theorem frobeniusPsi_asymptotic_of_isCyclotomicExtension (m : ℕ) [NeZero m]
+    [IsCyclotomicExtension {m} K F] (σ : F ≃ₐ[K] F) :
+    (fun x : ℝ ↦ frobeniusPsi K F (ConjClasses.mk σ) x -
+      (1 / Nat.card (F ≃ₐ[K] F) : ℝ) * x) =o[atTop] fun x : ℝ ↦ x := by
+  obtain ⟨G, hG, hGF⟩ := exists_continuousOn_eq_LSeries_frobeniusVonMangoldtCoeff_sub K F m σ
   have hmain := LSeries.wienerIkehara (a := frobeniusVonMangoldtCoeff K F (ConjClasses.mk σ))
-    (κ := 1 / Nat.card (F ≃ₐ[K] F))
-    (G := fun s ↦ (Nat.card (F ≃ₐ[K] F) : ℂ)⁻¹ * ∑ χ, (((χ σ)⁻¹ : ℂˣ) : ℂ) * Φ χ s)
-    (frobeniusVonMangoldtCoeff_nonneg _)
-    (fun s hs ↦ (LSeriesSummable_frobeniusVonMangoldtCoeff _ hs).LSeriesHasSum)
-    (continuousOn_const.mul (continuousOn_finsetSum _ fun χ _ ↦ continuousOn_const.mul (hΦ χ)))
-    fun s hs ↦ by
-      -- Only the trivial character contributes to the pole, with coefficient `1 / #G`.
-      simp only [LSeries_frobeniusVonMangoldtCoeff_eq_sum_logDeriv σ hs, hΦL _ hs, mul_sub,
-        Finset.sum_sub_distrib, mul_ite, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte,
-        MonoidHom.one_apply, inv_one, Units.val_one, one_mul]
-      push_cast
-      ring
+    (κ := 1 / Nat.card (F ≃ₐ[K] F)) (G := G) (frobeniusVonMangoldtCoeff_nonneg _)
+    (fun s hs ↦ (LSeriesSummable_frobeniusVonMangoldtCoeff _ hs).LSeriesHasSum) hG hGF
   refine (isLittleO_iff_tendsto' ((eventually_ne_atTop (0 : ℝ)).mono fun _ hx hzero ↦
     (hx hzero).elim)).2 ?_
   have h := hmain.sub_const (1 / Nat.card (F ≃ₐ[K] F) : ℝ)

@@ -36,6 +36,10 @@ restricted to the primes of residue degree one.
 * `NumberField.Set.hasDirichletDensity_iff_of_symmDiff`: sets whose symmetric difference has
   density zero have the same densities; `NumberField.Set.hasDirichletDensity_iff_of_finite_symmDiff`
   is the case of a finite symmetric difference.
+* `NumberField.Set.isLowerDirichletDensityBound_iff_of_symmDiff` and
+  `NumberField.Set.isUpperDirichletDensityBound_iff_of_symmDiff`: the same for one-sided bounds,
+  with the finite cases `NumberField.Set.isLowerDirichletDensityBound_iff_of_finite_symmDiff` and
+  `NumberField.Set.isUpperDirichletDensityBound_iff_of_finite_symmDiff`.
 * `TauCeti.hasDirichletDensity_higherDegreePrimes`: the primes of residue degree greater than one
   have Dirichlet density zero, and
   `TauCeti.hasDirichletDensity_inter_compl_higherDegreePrimes_iff` lets a density be computed on
@@ -154,6 +158,62 @@ theorem HasDirichletDensity.of_finite_symmDiff (hT : T.HasDirichletDensity δ)
 theorem hasDirichletDensity_iff_of_finite_symmDiff (hST : (S ∆ T).Finite) :
     S.HasDirichletDensity δ ↔ T.HasDirichletDensity δ :=
   hasDirichletDensity_iff_of_symmDiff (hasDirichletDensity_of_finite hST)
+
+/-- **Sets of density zero are negligible for lower bounds.** If `δ` is a lower Dirichlet-density
+bound for `T` and `S ∆ T` has Dirichlet density zero, then `δ` is a lower bound for `S`. -/
+theorem IsLowerDirichletDensityBound.of_symmDiff (hT : IsLowerDirichletDensityBound T δ)
+    (h : (S ∆ T).HasDirichletDensity 0) : IsLowerDirichletDensityBound S δ := by
+  refine isLowerDirichletDensityBound_iff.2 fun ε hε ↦ ?_
+  filter_upwards [isLowerDirichletDensityBound_iff.1 hT (ε / 2) (half_pos hε),
+    (tendsto_order.1 (hasDirichletDensity_iff.1 h)).2 (ε / 2) (half_pos hε),
+    self_mem_nhdsWithin] with s hT hST (hs : 1 < s)
+  -- `P_T ≤ P_S + P_{S ∆ T}`, since `T ∆ S = S ∆ T`.
+  have hle := primeIdealZetaSum_le_add_symmDiff (S := T) (T := S)
+    (summable_absNorm_rpow_subtype_of_one_lt S hs)
+    (summable_absNorm_rpow_subtype_of_one_lt _ hs)
+  rw [symmDiff_comm] at hle
+  have := div_le_div_of_nonneg_right hle
+    ((Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum_nonneg s)
+  rw [add_div] at this
+  linarith
+
+/-- **Sets of density zero are negligible for upper bounds.** If `δ` is an upper
+Dirichlet-density bound for `T` and `S ∆ T` has Dirichlet density zero, then `δ` is an upper bound
+for `S`. -/
+theorem IsUpperDirichletDensityBound.of_symmDiff (hT : IsUpperDirichletDensityBound T δ)
+    (h : (S ∆ T).HasDirichletDensity 0) : IsUpperDirichletDensityBound S δ := by
+  refine isUpperDirichletDensityBound_iff.2 fun ε hε ↦ ?_
+  filter_upwards [isUpperDirichletDensityBound_iff.1 hT (ε / 2) (half_pos hε),
+    (tendsto_order.1 (hasDirichletDensity_iff.1 h)).2 (ε / 2) (half_pos hε),
+    self_mem_nhdsWithin] with s hT hST (hs : 1 < s)
+  have := div_le_div_of_nonneg_right (primeIdealZetaSum_le_add_symmDiff (S := S)
+    (summable_absNorm_rpow_subtype_of_one_lt T hs)
+    (summable_absNorm_rpow_subtype_of_one_lt _ hs))
+    ((Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum_nonneg s)
+  rw [add_div] at this
+  linarith
+
+/-- Two sets of primes whose symmetric difference has Dirichlet density zero have the same lower
+Dirichlet-density bounds. -/
+theorem isLowerDirichletDensityBound_iff_of_symmDiff (h : (S ∆ T).HasDirichletDensity 0) :
+    IsLowerDirichletDensityBound S δ ↔ IsLowerDirichletDensityBound T δ :=
+  ⟨fun hS ↦ hS.of_symmDiff (symmDiff_comm S T ▸ h), fun hT ↦ hT.of_symmDiff h⟩
+
+/-- Two sets of primes whose symmetric difference has Dirichlet density zero have the same upper
+Dirichlet-density bounds. -/
+theorem isUpperDirichletDensityBound_iff_of_symmDiff (h : (S ∆ T).HasDirichletDensity 0) :
+    IsUpperDirichletDensityBound S δ ↔ IsUpperDirichletDensityBound T δ :=
+  ⟨fun hS ↦ hS.of_symmDiff (symmDiff_comm S T ▸ h), fun hT ↦ hT.of_symmDiff h⟩
+
+/-- **Finite changes do not affect lower Dirichlet-density bounds.** -/
+theorem isLowerDirichletDensityBound_iff_of_finite_symmDiff (hST : (S ∆ T).Finite) :
+    IsLowerDirichletDensityBound S δ ↔ IsLowerDirichletDensityBound T δ :=
+  isLowerDirichletDensityBound_iff_of_symmDiff (hasDirichletDensity_of_finite hST)
+
+/-- **Finite changes do not affect upper Dirichlet-density bounds.** -/
+theorem isUpperDirichletDensityBound_iff_of_finite_symmDiff (hST : (S ∆ T).Finite) :
+    IsUpperDirichletDensityBound S δ ↔ IsUpperDirichletDensityBound T δ :=
+  isUpperDirichletDensityBound_iff_of_symmDiff (hasDirichletDensity_of_finite hST)
 
 end NumberField.Set
 

@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.DirichletDensity
+public import TauCeti.NumberTheory.Chebotarev.Crossing.CrossingConstant
+public import TauCeti.NumberTheory.Chebotarev.Crossing.TaggedFibres
 public import TauCeti.NumberTheory.Chebotarev.FrobeniusPrimeSet
+public import TauCeti.NumberTheory.NumberField.DirichletDensityBounds
 import TauCeti.NumberTheory.Chebotarev.AuxiliaryPrime
-import TauCeti.NumberTheory.Chebotarev.Crossing.CrossingConstant
-import TauCeti.NumberTheory.Chebotarev.Crossing.TaggedFibres
 import TauCeti.NumberTheory.Chebotarev.Density.Cyclotomic
 import TauCeti.NumberTheory.Chebotarev.Density.FixedField
 import TauCeti.NumberTheory.Chebotarev.TaggedFixedField
@@ -22,6 +23,13 @@ Let `L / K` be a finite Galois extension of number fields with abelian group `G`
 
 ## Main results
 
+* `NumberField.Chebotarev.hasDirichletDensity_taggedFrobeniusPrimeSet`: over `M = L(μ_m)`, the
+  fibre of a tagged element `(σ, τ)` has Dirichlet density `1 / (#G * #(ZMod m)ˣ)`.
+* `NumberField.Chebotarev.isLowerDirichletDensityBound_crossingConstant`: the crossing constant
+  of `m` is a lower Dirichlet-density bound for the fibre of `σ`.
+* `NumberField.Chebotarev.isLowerDirichletDensityBound_abelianFrobenius` and
+  `NumberField.Chebotarev.isLowerDirichletDensityBound_one_div_card_abelianFrobenius`: the lower
+  bounds `(1 - 2 ^ (-r)) ^ #(orderOf σ).primeFactors / #G` and `1 / #G`.
 * `NumberField.Chebotarev.hasDirichletDensity_abelianFrobenius`: the Frobenius fibre of any
   element of an abelian Galois group `G` has Dirichlet density `1 / #G`.
 
@@ -44,17 +52,75 @@ namespace NumberField.Chebotarev
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
   [IsGalois K L]
 
--- **One auxiliary prime.** In an abelian extension, the Frobenius fibre of `σ` has lower
--- Dirichlet density at least `(1 - 2 ^ (-r)) ^ #(orderOf σ).primeFactors / #G`, for every
--- `r ≥ 1`.
-private theorem isLowerDirichletDensityBound_abelianFrobenius
+public section
+
+section Tagged
+
+variable {M : Type*} [Field M] [NumberField M] [Algebra K M] [Algebra L M]
+  [IsScalarTower K L M] [IsGalois K M] {m : ℕ} [NeZero m] [IsCyclotomicExtension {m} L M]
+
+/-- **The tagged fibre density.** Let `Gal(L/K)` be abelian and let `M = L(μ_m)` with `m` coprime
+to the discriminant of `L`, so that `Gal(M/K) ≃ Gal(L/K) × (ZMod m)ˣ`. For `σ ∈ Gal(L/K)` and a
+tag `τ` with `orderOf σ ∣ orderOf τ`, the primes of `K` whose Frobenius in `M` is `(σ, τ)` have
+Dirichlet density `1 / (#Gal(L/K) * #(ZMod m)ˣ)`.
+
+The field fixed by `(σ, τ)` has `M` as an `m`-th cyclotomic extension, so the cyclotomic density
+over it and the contraction across the cyclic fixed field apply; `(σ, τ)` is central, so its class
+is a singleton. -/
+theorem hasDirichletDensity_taggedFrobeniusPrimeSet (hab : ∀ σ τ : L ≃ₐ[K] L, σ * τ = τ * σ)
+    (hcop : (discr L).natAbs.Coprime m) {ζ : M} (hζ : IsPrimitiveRoot ζ m) (σ : L ≃ₐ[K] L)
+    {τ : (ZMod m)ˣ} (hστ : orderOf σ ∣ orderOf τ) :
+    (taggedFrobeniusPrimeSet K L M m hcop hζ σ τ).HasDirichletDensity
+      (1 / ((Nat.card (L ≃ₐ[K] L) : ℝ) * Nat.card (ZMod m)ˣ)) := by
+  set e := IsCyclotomicExtension.galEquivProd K L M m hcop hζ
+  have hcard : Nat.card (M ≃ₐ[K] M) = Nat.card (L ≃ₐ[K] L) * Nat.card (ZMod m)ˣ := by
+    rw [Nat.card_congr e.toEquiv, Nat.card_prod]
+  have hcomm (ρ ρ' : M ≃ₐ[K] M) : ρ * ρ' = ρ' * ρ :=
+    e.injective (by rw [map_mul, map_mul, Prod.mul_def, Prod.mul_def, hab, mul_comm (e ρ).2])
+  have := TauCeti.fixedField_zpowers_isCyclotomicExtension K L M m hcop hζ σ τ hστ
+  have h := hasDirichletDensity_frobeniusPrimeSet_of_fixedField _ _ ConjClasses.mem_carrier_mk <|
+    AlgEquiv.card_algEquiv_fixedField_zpowers (e.symm (σ, τ)) ▸
+      hasDirichletDensity_cyclotomicFrobenius _ M m (e.symm (σ, τ)).toFixedFieldAlgEquiv
+  rwa [Nat.card_coe_set_eq, ConjClasses.ncard_carrier_mk_of_mem_center
+    (Subgroup.mem_center_iff.mpr fun ρ ↦ hcomm ρ _), hcard, Nat.cast_one, Nat.cast_mul,
+    ← taggedFrobeniusPrimeSet_def] at h
+
+/-- **The crossing lower bound.** Let `Gal(L/K)` be abelian and let `M = L(μ_m)` with `m` coprime
+to the discriminant of `L`. For every `σ ∈ Gal(L/K)`, the crossing constant
+`c = #{τ ∈ (ZMod m)ˣ | orderOf σ ∣ orderOf τ} / (#Gal(L/K) * #(ZMod m)ˣ)` is a lower
+Dirichlet-density bound for the Frobenius fibre of `σ`: the tagged fibres are disjoint, each has
+density `1 / (#Gal(L/K) * #(ZMod m)ˣ)` by `hasDirichletDensity_taggedFrobeniusPrimeSet`, and each
+restricts to the fibre of `σ`. -/
+theorem isLowerDirichletDensityBound_crossingConstant (hab : ∀ σ τ : L ≃ₐ[K] L, σ * τ = τ * σ)
+    (hcop : (discr L).natAbs.Coprime m) {ζ : M} (hζ : IsPrimitiveRoot ζ m) (σ : L ≃ₐ[K] L) :
+    IsLowerDirichletDensityBound (frobeniusPrimeSet K L (ConjClasses.mk σ))
+      (crossingConstant K L (H := (ZMod m)ˣ) (orderOf σ)) := by
+  -- Distinct tags give disjoint fibres, so the tagged fibres' densities add.
+  have hunion := hasDirichletDensity_biUnion_finset
+    (fun τ hτ ↦ hasDirichletDensity_taggedFrobeniusPrimeSet hab hcop hζ σ
+      (mem_taggedElements_iff.mp hτ))
+    fun τ _ υ _ hτυ ↦ disjoint_taggedFrobeniusPrimeSet K L M m hcop hζ σ σ hτυ
+  refine (hunion.isLowerDirichletDensityBound.mono_set ?_).mono ?_
+  · -- A tagged fibre restricts to the fibre of `σ`.
+    refine Set.iUnion₂_subset fun τ _ ↦ ?_
+    have h := frobeniusPrimeSet_subset_map_restrictNormalHom (M := L)
+      (ConjClasses.mk ((IsCyclotomicExtension.galEquivProd K L M m hcop hζ).symm (σ, τ)))
+    rwa [ConjClasses.map_mk, AlgEquiv.restrictNormalHom, MonoidHom.mk'_apply,
+      IsCyclotomicExtension.restrictNormal_galEquivProd_symm, ← taggedFrobeniusPrimeSet_def] at h
+  · rw [crossingConstant_def, Finset.sum_const, nsmul_eq_mul, mul_one_div]
+
+end Tagged
+
+/-- **One auxiliary prime.** In an abelian extension, the Frobenius fibre of `σ` has lower
+Dirichlet density at least `(1 - 2 ^ (-r)) ^ #(orderOf σ).primeFactors / #G`, for every `r ≥ 1`:
+the crossing constant of an auxiliary prime `q` with `orderOf σ ^ r ∣ q - 1` is at least this. -/
+theorem isLowerDirichletDensityBound_abelianFrobenius
     (hab : ∀ σ τ : L ≃ₐ[K] L, σ * τ = τ * σ) (σ : L ≃ₐ[K] L) {r : ℕ} (hr : 0 < r) :
     IsLowerDirichletDensityBound (frobeniusPrimeSet K L (ConjClasses.mk σ))
       ((1 - (2 : ℝ) ^ (-(r : ℤ))) ^ (orderOf σ).primeFactors.card /
         (Nat.card (L ≃ₐ[K] L) : ℝ)) := by
   set f := orderOf σ
-  -- Cross with `M = L(μ_q)` for a prime `q` with `f ^ r ∣ q - 1` and `|disc L| < q`; then
-  -- `Gal(M/K) ≃ Gal(L/K) × (ZMod q)ˣ`.
+  -- Cross with `M = L(μ_q)` for a prime `q` with `f ^ r ∣ q - 1` and `|disc L| < q`.
   obtain ⟨q, hq, hqN, -, hfq, -, -, -⟩ := exists_auxiliaryPrime K L (f ^ r) (discr L).natAbs
     (pow_ne_zero _ (orderOf_pos σ).ne')
   have : Fact q.Prime := ⟨hq⟩
@@ -62,45 +128,14 @@ private theorem isLowerDirichletDensityBound_abelianFrobenius
   have hcop : (discr L).natAbs.Coprime q :=
     (Nat.coprime_of_lt_prime (Int.natAbs_ne_zero.mpr (discr_ne_zero L)) hqN hq).symm
   let M := CyclotomicField q L
-  have hζ := IsCyclotomicExtension.zeta_spec q L M
   have : IsGalois K M := IsCyclotomicExtension.isGalois_of_isGalois_of_isCyclotomicExtension K L M q
-  set e := IsCyclotomicExtension.galEquivProd K L M q hcop hζ
-  have hcard : Nat.card (M ≃ₐ[K] M) = Nat.card (L ≃ₐ[K] L) * Nat.card (ZMod q)ˣ := by
-    rw [Nat.card_congr e.toEquiv, Nat.card_prod]
-  have hcomm (ρ ρ' : M ≃ₐ[K] M) : ρ * ρ' = ρ' * ρ :=
-    e.injective (by rw [map_mul, map_mul, Prod.mul_def, Prod.mul_def, hab, mul_comm (e ρ).2])
-  -- Each tagged fibre has the density of one element of `Gal(M/K)`: for a tag `τ`, the field
-  -- fixed by `(σ, τ)` has `M` as a `q`-th cyclotomic extension, so the cyclotomic density and
-  -- the fixed-field contraction apply, and `(σ, τ)` is central, so its class is a singleton.
-  have hdens (τ : (ZMod q)ˣ) (hτ : τ ∈ taggedElements f) :
-      (frobeniusPrimeSet K M (ConjClasses.mk (e.symm (σ, τ)))).HasDirichletDensity
-        (1 / ((Nat.card (L ≃ₐ[K] L) : ℝ) * Nat.card (ZMod q)ˣ)) := by
-    have := TauCeti.fixedField_zpowers_isCyclotomicExtension K L M q hcop hζ σ τ
-      (mem_taggedElements_iff.mp hτ)
-    have h := hasDirichletDensity_frobeniusPrimeSet_of_fixedField _ _ ConjClasses.mem_carrier_mk <|
-      AlgEquiv.card_algEquiv_fixedField_zpowers (e.symm (σ, τ)) ▸
-        hasDirichletDensity_cyclotomicFrobenius _ M q (e.symm (σ, τ)).toFixedFieldAlgEquiv
-    rwa [Nat.card_coe_set_eq, ConjClasses.ncard_carrier_mk_of_mem_center
-      (Subgroup.mem_center_iff.mpr fun ρ ↦ hcomm ρ _), hcard, Nat.cast_one, Nat.cast_mul] at h
-  -- Distinct tags give disjoint fibres, so the tagged fibres' densities add.
-  have hunion := hasDirichletDensity_biUnion_finset hdens fun τ _ υ _ hτυ ↦ by
-    simpa using disjoint_taggedFrobeniusPrimeSet K L M q hcop hζ σ σ hτυ
-  refine (hunion.isLowerDirichletDensityBound.mono_set ?_).mono ?_
-  · -- A tagged fibre restricts to the fibre of `σ`.
-    refine Set.iUnion₂_subset fun τ _ ↦ ?_
-    have h := frobeniusPrimeSet_subset_map_restrictNormalHom (M := L)
-      (ConjClasses.mk (e.symm (σ, τ)))
-    rwa [ConjClasses.map_mk, AlgEquiv.restrictNormalHom, MonoidHom.mk'_apply,
-      IsCyclotomicExtension.restrictNormal_galEquivProd_symm] at h
-  · -- Their total density is the crossing constant, bounded below uniformly in `q`.
-    have hf : f ^ r ∣ Nat.card (ZMod q)ˣ := by
-      rwa [Nat.card_eq_fintype_card, ZMod.card_units_eq_totient, Nat.totient_prime hq]
-    refine (le_crossingConstant K L f r hr hf).trans_eq ?_
-    rw [crossingConstant_def, Finset.sum_const, nsmul_eq_mul, mul_one_div]
+  refine (isLowerDirichletDensityBound_crossingConstant hab hcop
+    (IsCyclotomicExtension.zeta_spec q L M) σ).mono (le_crossingConstant K L f r hr ?_)
+  rwa [Nat.card_eq_fintype_card, ZMod.card_units_eq_totient, Nat.totient_prime hq]
 
--- Letting the level of the auxiliary prime grow, the Frobenius fibre of every element of an
--- abelian Galois group has lower Dirichlet density at least `1 / #G`.
-private theorem isLowerDirichletDensityBound_one_div_card_abelianFrobenius
+/-- **Abelian lower bound.** Letting the level of the auxiliary prime grow, the Frobenius fibre of
+every element of an abelian Galois group `G` has lower Dirichlet density at least `1 / #G`. -/
+theorem isLowerDirichletDensityBound_one_div_card_abelianFrobenius
     (hab : ∀ σ τ : L ≃ₐ[K] L, σ * τ = τ * σ) (σ : L ≃ₐ[K] L) : IsLowerDirichletDensityBound
       (frobeniusPrimeSet K L (ConjClasses.mk σ)) (1 / (Nat.card (L ≃ₐ[K] L) : ℝ)) := by
   -- The bound of one auxiliary prime tends to `1 / #G` as its level grows.
@@ -113,8 +148,6 @@ private theorem isLowerDirichletDensityBound_one_div_card_abelianFrobenius
   refine isLowerDirichletDensityBound_of_forall_lt fun δ hδ ↦ ?_
   obtain ⟨r, hr, hδr⟩ := ((eventually_gt_atTop 0).and (hlim.eventually (lt_mem_nhds hδ))).exists
   exact (isLowerDirichletDensityBound_abelianFrobenius hab σ hr).mono hδr.le
-
-public section
 
 variable (K L) in
 /-- **Chebotarev density for abelian extensions.** If `Gal(L/K)` is abelian, then for every
