@@ -94,7 +94,6 @@ universe u v
 namespace CommHopfAlgCat
 
 open CategoryTheory
-open _root_.CommHopfAlgCat
 
 variable {R : Type u} [CommRing R]
 
@@ -325,7 +324,6 @@ end HopfIdeal
 namespace CommHopfAlgCat
 
 open CategoryTheory
-open _root_.CommHopfAlgCat
 
 variable {R : Type u} [CommRing R]
 variable {H K : _root_.CommHopfAlgCat.{v} R}
@@ -411,14 +409,14 @@ noncomputable def quotientBotIso (H : _root_.CommHopfAlgCat.{v} R) :
 @[simp]
 lemma quotientBotIso_hom (H : _root_.CommHopfAlgCat.{v} R) :
     (quotientBotIso H).hom =
-      liftQuotient (⊥ : HopfIdeal R H) (𝟙 H) bot_le :=
-  by rw [quotientBotIso]
+      liftQuotient (⊥ : HopfIdeal R H) (𝟙 H) bot_le := by
+  rw [quotientBotIso]
 
 /-- The inverse map of the quotient-by-zero isomorphism is the quotient morphism. -/
 @[simp]
 lemma quotientBotIso_inv (H : _root_.CommHopfAlgCat.{v} R) :
-    (quotientBotIso H).inv = mkQuotient H (⊥ : HopfIdeal R H) :=
-  by rw [quotientBotIso]
+    (quotientBotIso H).inv = mkQuotient H (⊥ : HopfIdeal R H) := by
+  rw [quotientBotIso]
 
 /-- A surjective morphism of commutative Hopf algebras identifies the quotient by its Hopf-ideal
 kernel with its target. -/
@@ -647,11 +645,10 @@ theorem mkQuotient_hom_ext {H X : FiniteTypeCommHopfAlgCat.{u, v} R}
 /-- The inverse map of the finite-type quotient-by-zero isomorphism is the quotient morphism. -/
 @[simp]
 lemma quotientBotIso_inv (H : FiniteTypeCommHopfAlgCat.{u, v} R) :
-    (quotientBotIso H).inv = mkQuotient H (⊥ : HopfIdeal R H) :=
-  by
-    rw [quotientBotIso]
-    apply ObjectProperty.hom_ext
-    exact CommHopfAlgCat.quotientBotIso_inv H.obj
+    (quotientBotIso H).inv = mkQuotient H (⊥ : HopfIdeal R H) := by
+  rw [quotientBotIso]
+  apply ObjectProperty.hom_ext
+  exact CommHopfAlgCat.quotientBotIso_inv H.obj
 
 /-- The kernel of the finite-type quotient morphism is the Hopf ideal being quotiented by. -/
 lemma mkQuotient_ker (H : FiniteTypeCommHopfAlgCat.{u, v} R) (I : HopfIdeal R H) :
@@ -752,11 +749,10 @@ noncomputable abbrev liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
 @[simp]
 lemma quotientBotIso_hom (H : FiniteTypeCommHopfAlgCat.{u, v} R) :
     (quotientBotIso H).hom =
-      liftQuotient (⊥ : HopfIdeal R H) (𝟙 H) bot_le :=
-  by
-    rw [quotientBotIso]
-    apply ObjectProperty.hom_ext
-    exact CommHopfAlgCat.quotientBotIso_hom H.obj
+      liftQuotient (⊥ : HopfIdeal R H) (𝟙 H) bot_le := by
+  rw [quotientBotIso]
+  apply ObjectProperty.hom_ext
+  exact CommHopfAlgCat.quotientBotIso_hom H.obj
 
 /-- The quotient lift composed with the quotient morphism is the original morphism. -/
 @[simp]

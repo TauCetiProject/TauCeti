@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.PGroup
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Characteristic
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
+import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Extension
 
 /-!
@@ -68,6 +69,8 @@ hold there. Compactness of `G` is assumed exactly where it is used.
   with `TauCeti.proPKernel_maximalProPQuotient_eq_bot` this is idempotence of `G ↦ G(p)`.
 * `TauCeti.map_proPKernel_eq`: continuous multiplicative equivalences preserve the pro-`p`
   kernel.
+* `TauCeti.maximalProPQuotient.congr`: hence they induce isomorphisms of maximal pro-`p`
+  quotients.
 * `TauCeti.isTopCharacteristic_proPKernel`: the pro-`p` kernel is topologically characteristic.
 * `TauCeti.proPKernel_proPKernel_eq_top`: the pro-`p` kernel of a profinite group has no
   nontrivial continuous `p`-group quotient, so every continuous homomorphism from it to a
@@ -242,6 +245,27 @@ theorem maximalProPQuotient.map_comp {K : Type w} [Group K] [TopologicalSpace K]
       (maximalProPQuotient.map g hg).comp (maximalProPQuotient.map f hf) := by
   ext x
   rfl
+
+/-- The isomorphism of maximal pro-`p` quotients induced by an isomorphism of topological groups,
+which carries the pro-`p` kernel onto the pro-`p` kernel (`map_proPKernel_eq`). -/
+noncomputable def maximalProPQuotient.congr (e : G ≃ₜ* H) :
+    maximalProPQuotient p G ≃ₜ* maximalProPQuotient p H :=
+  e.quotientCongr _ _ (map_proPKernel_eq e)
+
+/-- The induced isomorphism of maximal pro-`p` quotients is computed on classes by `e`. -/
+@[simp]
+theorem maximalProPQuotient.congr_mk (e : G ≃ₜ* H) (x : G) :
+    maximalProPQuotient.congr (p := p) e (x : maximalProPQuotient p G) =
+      maximalProPQuotient.mk p H (e x) :=
+  e.quotientCongr_mk _ _ _ x
+
+/-- The inverse of the induced isomorphism of maximal pro-`p` quotients is computed on classes by
+`e.symm`. -/
+@[simp]
+theorem maximalProPQuotient.congr_symm_mk (e : G ≃ₜ* H) (y : H) :
+    (maximalProPQuotient.congr (p := p) e).symm (y : maximalProPQuotient p H) =
+      maximalProPQuotient.mk p G (e.symm y) :=
+  e.quotientCongr_symm_mk _ _ _ y
 
 /-! ### The compactness step -/
 
