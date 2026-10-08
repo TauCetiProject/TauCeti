@@ -14,8 +14,8 @@ public import Mathlib.NumberTheory.Ostrowski
 Mathlib's `AbsoluteValue.denseRange_algebraMap_pi` approximates finitely many targets for a family
 of nontrivial, pairwise inequivalent absolute values. This file states it for a finite set of
 absolute values in which equivalent ones are equal, and supplies that hypothesis for absolute values
-on a field of characteristic zero which restrict on `ℚ` to the real or to a `q`-adic absolute
-value: two such that are equivalent are equal.
+on a field which restrict on `ℚ` to the real or to a `q`-adic absolute value: two such that are
+equivalent are equal.
 
 ## Main definitions
 
@@ -105,7 +105,7 @@ theorem _root_.Rat.AbsoluteValue.IsStandard.exists_ne_one {a : AbsoluteValue ℚ
     exact (inv_lt_one_of_one_lt₀ this).ne
 
 /-- **Equivalent absolute values restricting to standard ones on `ℚ` are equal.** -/
-theorem _root_.AbsoluteValue.IsEquiv.eq_of_isStandard {F : Type*} [Field F] [CharZero F]
+theorem _root_.AbsoluteValue.IsEquiv.eq_of_isStandard {F : Type*} [Field F]
     {v w : AbsoluteValue F ℝ} (h : v.IsEquiv w) {a b : AbsoluteValue ℚ ℝ}
     (ha : Rat.AbsoluteValue.IsStandard a) (hb : Rat.AbsoluteValue.IsStandard b)
     (hva : ∀ r : ℚ, v r = a r) (hwb : ∀ r : ℚ, w r = b r) : v = w := by
@@ -113,14 +113,22 @@ theorem _root_.AbsoluteValue.IsEquiv.eq_of_isStandard {F : Type*} [Field F] [Cha
     rw [← hva, ← hwb]
     exact h.lt_one_iff
   obtain ⟨r₀, hr₀, hr₀'⟩ := ha.exists_ne_one
-  exact h.eq_of_apply_eq (x := (r₀ : F)) (by exact_mod_cast hr₀) (by rwa [hva])
+  exact h.eq_of_apply_eq (x := (r₀ : F))
+    (v.ne_zero_iff.mp (by rw [hva]; exact a.ne_zero hr₀)) (by rwa [hva])
     (by rw [hva, hwb, hab])
 
+/-- An absolute value agreeing on rational casts with a nontrivial absolute value on `ℚ` is
+nontrivial. -/
+theorem _root_.AbsoluteValue.isNontrivial_of_forall_ratCast_eq {F : Type*} [Field F]
+    {v : AbsoluteValue F ℝ} {a : AbsoluteValue ℚ ℝ} (ha : a.IsNontrivial)
+    (hva : ∀ r : ℚ, v r = a r) : v.IsNontrivial := by
+  obtain ⟨r₀, hr₀, hr₀'⟩ := ha
+  exact ⟨r₀, v.ne_zero_iff.mp (by rw [hva]; exact a.ne_zero hr₀), by rwa [hva]⟩
+
 /-- An absolute value restricting to a standard one on `ℚ` is nontrivial. -/
-theorem _root_.AbsoluteValue.isNontrivial_of_isStandard {F : Type*} [Field F] [CharZero F]
+theorem _root_.AbsoluteValue.isNontrivial_of_isStandard {F : Type*} [Field F]
     {v : AbsoluteValue F ℝ} {a : AbsoluteValue ℚ ℝ} (ha : Rat.AbsoluteValue.IsStandard a)
     (hva : ∀ r : ℚ, v r = a r) : v.IsNontrivial := by
-  obtain ⟨r₀, hr₀, hr₀'⟩ := ha.exists_ne_one
-  exact ⟨r₀, by exact_mod_cast hr₀, by rwa [hva]⟩
+  exact AbsoluteValue.isNontrivial_of_forall_ratCast_eq ha.exists_ne_one hva
 
 end TauCeti
