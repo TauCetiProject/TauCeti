@@ -326,12 +326,9 @@ theorem gradedPieceInclusion_gradedMk {k : ℕ} (x : pLowerCentralSeries p G k) 
 
 theorem gradedPieceInclusion_injective (k : ℕ) :
     Function.Injective (gradedPieceInclusion p G k) := by
-  intro x y h
-  obtain ⟨x, rfl⟩ := gradedMk_surjective k x
-  obtain ⟨y, rfl⟩ := gradedMk_surjective k y
-  rw [gradedPieceInclusion_gradedMk, gradedPieceInclusion_gradedMk,
-    Additive.ofMul.apply_eq_iff_eq] at h
-  exact gradedMk_eq_gradedMk_iff.mpr h
+  rw [gradedPieceInclusion, MonoidHom.coe_toAdditive]
+  exact (Additive.ofMul.injective.comp (TauCeti.QuotientGroup.map_injective_of_eq_comap _ _
+    (comap_subtype _ _).symm)).comp Additive.toMul.injective
 
 theorem gradedPieceInclusion_zero_surjective :
     Function.Surjective (gradedPieceInclusion p G 0) := by

@@ -18,10 +18,13 @@ import TauCeti.Analysis.Sobolev.GraphStep
 # First-order weak Sobolev spaces
 
 This file constructs the first-order, real-valued Sobolev space `W^{1,p}(Ω)` on an open subset
-of a real inner product space `E`. An element is an `Lᵖ` value-gradient jet `(u, ∇u)` satisfying
-the distributional integration-by-parts pairing against test functions. When `E` is
-finite-dimensional, this closed-subspace definition is identified with the weak Fréchet
-derivative predicate `TauCeti.HasWeakFDerivOn`.
+of a finite-dimensional real inner product space `E`. An element is an `Lᵖ` value-gradient jet
+`(u, ∇u)` satisfying the distributional integration-by-parts pairing against test functions, and
+this closed-subspace definition is identified with the weak Fréchet derivative predicate
+`TauCeti.HasWeakFDerivOn`. The definitions do not assume finite dimension, but on an
+infinite-dimensional `E` every compactly supported continuous function vanishes
+(`HasCompactSupport.eq_zero_or_finiteDimensional`), so every test function is zero and every jet
+is a member.
 
 The quotient issue is handled at the definition boundary.  Both components of a jet are `Lp`
 classes for `μ.restrict Ω`, and the weak relation is the one of the generic closed
@@ -39,7 +42,7 @@ distributional condition by a merely formal closedness assumption.
 The pointwise jet uses the Euclidean product norm on `ℝ × E`.  Thus at `p = 2` the inherited norm
 is the usual Hilbert norm
 
-`(∥u∥²₂ + ‖∇u∥²₂)¹⁄²`,
+`(‖u‖²₂ + ‖∇u‖²₂)¹⁄²`,
 
 which is the space needed for energy methods in PDE.  No boundedness or
 boundary regularity of `Ω` is used.
@@ -147,6 +150,8 @@ theorem Sobolev1JetLp.gradientL_eq_compLpL :
     Sobolev1JetLp.gradientL (mu := mu) (Omega := Omega) (p := p) =
       (WithLp.sndL 2 ℝ ℝ E).compLpL p (mu.restrict Omega) := (rfl)
 
+/-- The value component of a Sobolev jet is, almost everywhere on `Ω`, the first coordinate of the
+jet. -/
 @[simp]
 theorem Sobolev1JetLp.value_apply_ae (J : Sobolev1JetLp mu Omega p) :
     ∀ᵐ x ∂mu.restrict Omega,
@@ -157,6 +162,8 @@ theorem Sobolev1JetLp.value_apply_ae (J : Sobolev1JetLp mu Omega p) :
     (WithLp.fstL 2 ℝ ℝ E).compLp J x = (WithLp.fstL 2 ℝ ℝ E) (J x)
   exact (WithLp.fstL 2 ℝ ℝ E).coeFn_compLp J
 
+/-- The gradient component of a Sobolev jet is, almost everywhere on `Ω`, the second coordinate of
+the jet. -/
 @[simp]
 theorem Sobolev1JetLp.gradient_apply_ae (J : Sobolev1JetLp mu Omega p) :
     ∀ᵐ x ∂mu.restrict Omega,
@@ -190,33 +197,17 @@ theorem Sobolev1JetLp.ext {J K : Sobolev1JetLp mu Omega p}
 
 /-- The norm of the value component is bounded by the norm of the ambient Sobolev jet. -/
 private theorem norm_value_le_ambient (J : Sobolev1JetLp mu Omega p) :
-    ‖Sobolev1JetLp.value J‖ ≤ ‖J‖ := by
-  have hfst : ‖WithLp.fstL 2 ℝ ℝ E‖ ≤ 1 := by
-    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x => ?_
-    simpa only [WithLp.fstL_apply, one_mul] using WithLp.norm_fst_le ℝ x
-  have hvalueL : ‖Sobolev1JetLp.valueL (mu := mu) (Omega := Omega) (p := p)‖ ≤ 1 :=
-    (ContinuousLinearMap.norm_compLpL_le (WithLp.fstL 2 ℝ ℝ E)).trans hfst
-  calc
-    ‖Sobolev1JetLp.value J‖ ≤
-        ‖Sobolev1JetLp.valueL (mu := mu) (Omega := Omega) (p := p)‖ * ‖J‖ :=
-      (Sobolev1JetLp.valueL (mu := mu) (Omega := Omega) (p := p)).le_opNorm J
-    _ ≤ 1 * ‖J‖ := mul_le_mul_of_nonneg_right hvalueL (norm_nonneg J)
-    _ = ‖J‖ := one_mul _
+    ‖Sobolev1JetLp.value J‖ ≤ ‖J‖ :=
+  Lp.norm_le_norm_of_ae_le <| (Sobolev1JetLp.value_apply_ae J).mono fun x hx ↦ by
+    rw [hx]
+    exact WithLp.norm_fst_le ℝ (J x)
 
 /-- The norm of the gradient component is bounded by the norm of the ambient Sobolev jet. -/
 private theorem norm_gradient_le_ambient (J : Sobolev1JetLp mu Omega p) :
-    ‖Sobolev1JetLp.gradient J‖ ≤ ‖J‖ := by
-  have hsnd : ‖WithLp.sndL 2 ℝ ℝ E‖ ≤ 1 := by
-    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x => ?_
-    simpa only [WithLp.sndL_apply, one_mul] using WithLp.norm_snd_le ℝ x
-  have hgradientL : ‖Sobolev1JetLp.gradientL (mu := mu) (Omega := Omega) (p := p)‖ ≤ 1 :=
-    (ContinuousLinearMap.norm_compLpL_le (WithLp.sndL 2 ℝ ℝ E)).trans hsnd
-  calc
-    ‖Sobolev1JetLp.gradient J‖ ≤
-        ‖Sobolev1JetLp.gradientL (mu := mu) (Omega := Omega) (p := p)‖ * ‖J‖ :=
-      (Sobolev1JetLp.gradientL (mu := mu) (Omega := Omega) (p := p)).le_opNorm J
-    _ ≤ 1 * ‖J‖ := mul_le_mul_of_nonneg_right hgradientL (norm_nonneg J)
-    _ = ‖J‖ := one_mul _
+    ‖Sobolev1JetLp.gradient J‖ ≤ ‖J‖ :=
+  Lp.norm_le_norm_of_ae_le <| (Sobolev1JetLp.gradient_apply_ae J).mono fun x hx ↦ by
+    rw [hx]
+    exact WithLp.norm_snd_le ℝ (J x)
 
 /-- At exponent two, the Sobolev jet norm is the Hilbert graph norm of its components. -/
 private theorem norm_sq_eq_norm_value_sq_add_norm_gradient_sq_ambient
@@ -559,12 +550,14 @@ def W1p.mk (u : Lp ℝ p (mu.restrict Omega)) (g : Lp E p (mu.restrict Omega))
     funext x
     rw [Sobolev1JetLp.candidateWeakFDeriv, gradient_assembleSobolev1JetLp])⟩
 
+/-- The value component of `W1p.mk u g h` is `u`. -/
 @[simp]
 theorem W1p.value_mk (u : Lp ℝ p (mu.restrict Omega)) (g : Lp E p (mu.restrict Omega))
     (h : HasWeakFDerivOn mu Omega u (fun x => innerSL ℝ (g x))) :
     W1p.value (W1p.mk u g h) = u :=
   value_assembleSobolev1JetLp u g
 
+/-- The gradient component of `W1p.mk u g h` is `g`. -/
 @[simp]
 theorem W1p.gradient_mk (u : Lp ℝ p (mu.restrict Omega)) (g : Lp E p (mu.restrict Omega))
     (h : HasWeakFDerivOn mu Omega u (fun x => innerSL ℝ (g x))) :

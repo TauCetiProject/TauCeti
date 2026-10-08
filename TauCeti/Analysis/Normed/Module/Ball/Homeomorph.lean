@@ -37,6 +37,7 @@ valued in the closed unit ball.
   `ContinuousLinearEquiv.image_unitBallHomeomorph_sphere`: it matches the closed unit balls, the
   open unit balls and the unit spheres.
 * `TauCeti.isOpenEmbedding_inclusion_comp_unitBall`: `E` embeds openly in its closed unit ball.
+* `Homeomorph.unitBall_symm_apply_coe`: the inverse radial map in explicit coordinates.
 * `TauCeti.nonempty_homeomorph_cube_closedBall`: the closed unit ball of a real normed space of
   finite dimension `k` is homeomorphic to the cube `Iᵏ`.
 * `TauCeti.sphereHomeomorphOfFinrankEq`: the unit spheres of two finite-dimensional real normed
@@ -48,6 +49,17 @@ public section
 noncomputable section
 
 open Metric Set Topology
+
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
+
+/-- The inverse of `unitBall` in explicit radial coordinates. -/
+theorem _root_.Homeomorph.unitBall_symm_apply_coe (y : ball (0 : W) 1) :
+    (Homeomorph.unitBall.symm y : W) =
+      (Real.sqrt (1 - ‖y.1‖ ^ 2))⁻¹ • y.1 := by
+  exact (Homeomorph.unitBall_symm_apply y).trans
+    ((OpenPartialHomeomorph.toHomeomorphSourceTarget_symm_apply_coe
+      (OpenPartialHomeomorph.univUnitBall (E := W)) y).trans
+      (OpenPartialHomeomorph.univUnitBall_symm_apply y.1))
 
 namespace ContinuousLinearEquiv
 

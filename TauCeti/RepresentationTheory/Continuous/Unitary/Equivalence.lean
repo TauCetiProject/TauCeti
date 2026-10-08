@@ -16,7 +16,7 @@ need not respect the inner products. For irreducible *unitary* representations i
 rescaled to one that does, so the two notions of equivalence coincide and nothing is lost by
 asking for equivalences that are isometries -- which is what the matrix coefficients need, since
 they are only invariant under isometric transport
-(`TauCeti.ContRepresentation.matrixCoeff_congr`).
+(`LinearIsometryEquiv.matrixCoeff_congr`).
 
 The argument is Schur's lemma applied to `T† ∘ T`. If `T` intertwines `π` with `ρ` then, both
 representations being unitary, the adjoint `T†` intertwines `ρ` with `π`; hence `T† ∘ T` is a
@@ -26,7 +26,7 @@ wanted.
 
 ## Main statements
 
-* `TauCeti.ContRepresentation.exists_linearIsometryEquiv_congr_eq`: an equivalence between
+* `ContRepresentation.exists_linearIsometryEquiv_congr_eq`: an equivalence between
   finite-dimensional irreducible unitary continuous representations can be replaced by a linear
   isometry equivalence transporting one onto the other.
 
@@ -36,8 +36,6 @@ The mathematical argument follows Daniel Bump, *Lie Groups*, second edition, Cha
 public section
 
 open scoped InnerProductSpace
-
-namespace TauCeti
 
 namespace ContRepresentation
 
@@ -54,11 +52,11 @@ local instance instCompleteSpaceUnitaryEquivalenceCodomain : CompleteSpace W :=
 /-- **Equivalent irreducible unitary representations are unitarily equivalent.** An equivalence
 `φ` of continuous representations is only a linear equivalence; rescaling it by the square root of
 the scalar Schur's lemma extracts from `φ† ∘ φ` makes it an isometry, which then transports `π`
-onto `ρ` in the sense of `TauCeti.ContRepresentation.congr`. -/
+onto `ρ` in the sense of `ContinuousLinearEquiv.congr`. -/
 theorem exists_linearIsometryEquiv_congr_eq {π : ContRepresentation 𝕜 G V}
     {ρ : ContRepresentation 𝕜 G W} (hπu : IsUnitary π) (hρu : IsUnitary ρ)
     (hirr : π.toRepresentation.IsIrreducible) (φ : _root_.ContRepresentation.Equiv π ρ) :
-    ∃ e : V ≃ₗᵢ[𝕜] W, congr e.toContinuousLinearEquiv π = ρ := by
+    ∃ e : V ≃ₗᵢ[𝕜] W, ContinuousLinearEquiv.congr e.toContinuousLinearEquiv π = ρ := by
   set T : V →L[𝕜] W := φ.toContinuousLinearEquiv.toContinuousLinearMap
   have hT : ∀ g : G, T ∘L π g = ρ g ∘L T := fun g ↦ φ.isIntertwining g
   have hTapp : ∀ (g : G) (v : V), T (π g v) = ρ g (T v) := fun g v ↦ by
@@ -125,9 +123,7 @@ theorem exists_linearIsometryEquiv_congr_eq {π : ContRepresentation 𝕜 G V}
   have key : ∀ (g : G) (v : V), e (π g v) = ρ g (e v) := fun g v ↦ by
     rw [he, he, hTapp, map_smul]
   refine ⟨e, DFunLike.ext _ _ fun g ↦ ContinuousLinearMap.ext fun x ↦ ?_⟩
-  rw [congr_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+  rw [ContinuousLinearEquiv.congr_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
     LinearIsometryEquiv.coe_symm_toContinuousLinearEquiv, key g (e.symm x), e.apply_symm_apply]
 
 end ContRepresentation
-
-end TauCeti

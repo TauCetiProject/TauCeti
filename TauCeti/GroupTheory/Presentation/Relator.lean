@@ -33,7 +33,8 @@ from Mathlib.
 * `TauCeti.Relator.toWord`: compilation of an expression to a signed word.
 * `TauCeti.Relator.length`: the length of that word, computed from the expression without
   expanding powers.
-* `TauCeti.Relator.toFreeGroup`: direct structural interpretation of an expression.
+* `TauCeti.Relator.eval`: structural evaluation under a generator assignment in any group.
+* `TauCeti.Relator.toFreeGroup`: evaluation at the canonical free-group generators.
 * `TauCeti.Relator.conj` and `TauCeti.Relator.div`: the conjugate `s⁻¹ r s` and the relator `r s⁻¹`
   by which a source states an equation between two words.
 * `TauCeti.Relator.commInvInv`: the commutator `r⁻¹ s⁻¹ r s` of the presentation literature.
@@ -253,44 +254,99 @@ theorem length_toWord {α : Type*} (r : Relator α) : r.toWord.length = r.length
   | pow r n ih => simp [List.length_flatten, List.sum_replicate, ih]
   | comm r s ihr ihs => simp [FreeGroup.invRev, ihr, ihs, Nat.add_assoc]
 
-/-- Interpret a relator expression directly in the free group. This is deliberately independent of
-`Relator.toWord`: the comparison theorem below checks that compilation preserves meaning. As for
-`Relator.toWord`, the five equation lemmas below are the public interface. -/
-def toFreeGroup {α : Type*} : Relator α → FreeGroup α
-  | .gen x => FreeGroup.of x
-  | .inv r => r.toFreeGroup⁻¹
-  | .mul r s => r.toFreeGroup * s.toFreeGroup
-  | .pow r n => r.toFreeGroup ^ n
-  | .comm r s => ⁅r.toFreeGroup, s.toFreeGroup⁆
+/-- Evaluate a relator expression under an assignment of its generators to a group.
+This structural interpretation is independent of compilation to a signed word. -/
+def eval {α G : Type*} [Group G] (f : α → G) : Relator α → G
+  | .gen x => f x
+  | .inv r => (eval f r)⁻¹
+  | .mul r s => eval f r * eval f s
+  | .pow r n => eval f r ^ n
+  | .comm r s => ⁅eval f r, eval f s⁆
+
+/-- Evaluation of a generator is its assigned value. -/
+@[simp]
+theorem eval_gen {α G : Type*} [Group G] (f : α → G) (x : α) :
+    eval f (.gen x) = f x := by
+  rfl
+
+/-- Evaluation preserves inversion. -/
+@[simp]
+theorem eval_inv {α G : Type*} [Group G] (f : α → G) (r : Relator α) :
+    eval f (.inv r) = (eval f r)⁻¹ := by
+  rfl
+
+/-- Evaluation preserves products. -/
+@[simp]
+theorem eval_mul {α G : Type*} [Group G] (f : α → G) (r s : Relator α) :
+    eval f (.mul r s) = eval f r * eval f s := by
+  rfl
+
+/-- Evaluation preserves natural powers. -/
+@[simp]
+theorem eval_pow {α G : Type*} [Group G] (f : α → G) (r : Relator α) (n : ℕ) :
+    eval f (.pow r n) = eval f r ^ n := by
+  rfl
+
+/-- Evaluation preserves Mathlib's commutator convention. -/
+@[simp]
+theorem eval_comm {α G : Type*} [Group G] (f : α → G) (r s : Relator α) :
+    eval f (.comm r s) = ⁅eval f r, eval f s⁆ := by
+  rfl
+
+/-- Evaluating after renaming generators is evaluation at the composed assignment.
+The renaming function need not be injective. -/
+@[simp]
+theorem eval_map {α β G : Type*} [Group G] (f : β → G) (g : α → β) (r : Relator α) :
+    eval f (r.map g) = eval (f ∘ g) r := by
+  induction r <;> simp_all
+
+/-- Evaluate an expression at the canonical free-group generators. This remains independent of
+`Relator.toWord`: the comparison theorem below checks that compilation preserves meaning. The
+five equation lemmas below are the public interface. -/
+def toFreeGroup {α : Type*} : Relator α → FreeGroup α :=
+  eval FreeGroup.of
 
 /-- Interpretation of a generator. -/
 @[simp]
 theorem toFreeGroup_gen {α : Type*} (x : α) : (Relator.gen x).toFreeGroup = FreeGroup.of x := by
-  rw [toFreeGroup]
+  rfl
 
 /-- Interpretation of an inverse. -/
 @[simp]
 theorem toFreeGroup_inv {α : Type*} (r : Relator α) :
     (Relator.inv r).toFreeGroup = r.toFreeGroup⁻¹ := by
-  rw [toFreeGroup]
+  rfl
 
 /-- Interpretation of a product. -/
 @[simp]
 theorem toFreeGroup_mul {α : Type*} (r s : Relator α) :
     (Relator.mul r s).toFreeGroup = r.toFreeGroup * s.toFreeGroup := by
-  rw [toFreeGroup]
+  rfl
 
 /-- Interpretation of a natural power. -/
 @[simp]
 theorem toFreeGroup_pow {α : Type*} (r : Relator α) (n : ℕ) :
     (Relator.pow r n).toFreeGroup = r.toFreeGroup ^ n := by
-  rw [toFreeGroup]
+  rfl
 
 /-- Interpretation of a commutator. -/
 @[simp]
 theorem toFreeGroup_comm {α : Type*} (r s : Relator α) :
     (Relator.comm r s).toFreeGroup = ⁅r.toFreeGroup, s.toFreeGroup⁆ := by
-  rw [toFreeGroup]
+  rfl
+
+/-- Group homomorphisms commute with evaluation of relator expressions. -/
+@[simp]
+theorem map_eval {α G H : Type*} [Group G] [Group H] (φ : G →* H)
+    (f : α → G) (r : Relator α) : φ (eval f r) = eval (φ ∘ f) r := by
+  induction r <;> simp_all [commutatorElement_def]
+
+/-- The free-group universal map evaluates the expression at the assigned generators. -/
+@[simp]
+theorem lift_toFreeGroup {α G : Type*} [Group G] (f : α → G) (r : Relator α) :
+    FreeGroup.lift f r.toFreeGroup = eval f r := by
+  simpa only [toFreeGroup, Function.comp_def, FreeGroup.lift_apply_of] using
+    map_eval (FreeGroup.lift f) FreeGroup.of r
 
 /-- The conjugate `s⁻¹ * r * s`, written `r ^ s` by most of the presentation literature.
 
@@ -323,6 +379,24 @@ abbreviates; `Relator.toFreeGroup_commInvInv` computes what it denotes.
 The body is exposed for the same reason as that of `TauCeti.Relator.conj`. -/
 @[expose]
 def commInvInv {α : Type*} (r s : Relator α) : Relator α := .comm (.inv r) (.inv s)
+
+/-- Evaluation of a conjugate uses the convention `s⁻¹ * r * s`. -/
+@[simp]
+theorem eval_conj {α G : Type*} [Group G] (f : α → G) (r s : Relator α) :
+    eval f (r.conj s) = (eval f s)⁻¹ * eval f r * eval f s := by
+  simp [conj, mul_assoc]
+
+/-- Evaluation of an equation expression is the quotient of the assigned values. -/
+@[simp]
+theorem eval_div {α G : Type*} [Group G] (f : α → G) (r s : Relator α) :
+    eval f (r.div s) = eval f r / eval f s := by
+  simp [div, div_eq_mul_inv]
+
+/-- Evaluation of the presentation-literature commutator gives `r⁻¹ * s⁻¹ * r * s`. -/
+@[simp]
+theorem eval_commInvInv {α G : Type*} [Group G] (f : α → G) (r s : Relator α) :
+    eval f (r.commInvInv s) = (eval f r)⁻¹ * (eval f s)⁻¹ * eval f r * eval f s := by
+  simp [commInvInv, commutatorElement_def]
 
 /-- The conjugate expression denotes the conjugate free-group element. -/
 @[simp]

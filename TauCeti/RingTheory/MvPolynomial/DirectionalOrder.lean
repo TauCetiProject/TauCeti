@@ -125,21 +125,19 @@ theorem homogeneousComponent_ne_zero_of_orderAt_eq (p : MvPolynomial σ R)
   have := congrArg (fun q : MvPolynomial σ R ↦ q.coeff d) hzero
   simp [coeff_homogeneousComponent, hdm, hd] at this
 
-/-- Restriction to any affine line cannot decrease ambient order, including when the
-restriction is the zero polynomial. -/
+/-- Restriction to an affine line cannot decrease the ambient order, including the zero
+polynomial and lines on which the restriction vanishes identically. -/
 theorem orderAt_le_trailingDegree_aeval_C_add_C_mul_X (p : MvPolynomial σ R)
     (a v : σ → R) :
     p.orderAt a ≤
       (aeval (fun i ↦ Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X)
         p).trailingDegree := by
-  let q := aeval (fun i ↦ Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X) p
-  by_cases hq : q = 0
-  · simp only [q] at hq
-    simp [hq]
-  rw [Polynomial.trailingDegree_eq_natTrailingDegree hq]
-  by_contra! h
-  exact (Polynomial.coeff_natTrailingDegree_ne_zero.2 hq)
-    (p.coeff_aeval_C_add_C_mul_X_eq_zero a v h)
+  rw [Polynomial.trailingDegree]
+  apply Finset.le_min
+  intro k hk
+  by_contra h
+  exact (Polynomial.mem_support_iff.1 hk)
+    (p.coeff_aeval_C_add_C_mul_X_eq_zero a v (lt_of_not_ge h))
 
 /-- A line detects finite ambient order exactly when the first homogeneous Taylor
 component does not vanish at its direction. -/

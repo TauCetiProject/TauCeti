@@ -40,6 +40,8 @@ weights.
   when its component maps have different source and target modules.
 * `LinearMap.det_piMap`: the determinant of a coordinatewise endomorphism `LinearMap.piMap f` of a
   finite dependent product is the product of the determinants of its components.
+* `TauCeti.finrank_linearMap_pi_eq_sum`: the dimension of maps between finite dependent products
+  is the sum of the dimensions of the component hom spaces.
 * `TauCeti.exists_isRegular_single_sub_single_sub`: an ordered difference of standard coordinate
   vectors on two different coordinates and any other ordered difference differ regularly at some
   coordinate.
@@ -164,6 +166,24 @@ public theorem det_piMap {R ι : Type*} [CommRing R] [Fintype ι] {M : ι → Ty
 end LinearMap
 
 namespace TauCeti
+
+/-- The dimension of maps between two finite dependent products is the sum of the dimensions
+of the component hom spaces, provided those hom spaces are finite-dimensional. -/
+public theorem finrank_linearMap_pi_eq_sum {k A ι κ : Type*} [Field k] [Semiring A]
+    [Algebra k A] [Fintype ι] [Fintype κ] (S : ι → Type*) (T : κ → Type*)
+    [∀ i, AddCommMonoid (S i)] [∀ i, Module A (S i)]
+    [∀ j, AddCommMonoid (T j)] [∀ j, Module k (T j)] [∀ j, Module A (T j)]
+    [∀ j, IsScalarTower k A (T j)] [∀ i j, Module.Finite k (S i →ₗ[A] T j)] :
+    Module.finrank k (((i : ι) → S i) →ₗ[A] ((j : κ) → T j)) =
+      ∑ i, ∑ j, Module.finrank k (S i →ₗ[A] T j) := by
+  classical
+  let _ (j : κ) : AddCommGroup (T j) := Module.addCommMonoidToAddCommGroup k
+  let _ (i : ι) : Module.Finite k (S i →ₗ[A] ((j : κ) → T j)) :=
+    Module.Finite.equiv (LinearEquiv.linearMapPi (R := A) (M₂ := S i) (φ := T) k)
+  rw [← (LinearMap.lsum A S k).finrank_eq, Module.finrank_pi_fintype]
+  exact Finset.sum_congr rfl fun i _ ↦ by
+    rw [← (LinearEquiv.linearMapPi (R := A) (M₂ := S i) (φ := T) k).finrank_eq,
+      Module.finrank_pi_fintype]
 
 variable {K ι : Type*} [Ring K] [DecidableEq ι]
 

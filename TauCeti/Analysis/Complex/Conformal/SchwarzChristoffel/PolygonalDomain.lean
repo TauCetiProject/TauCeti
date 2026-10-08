@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Formula
 
 import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import TauCeti.Analysis.Complex.Conformal.LocalFrontier
-import TauCeti.Analysis.Complex.Conformal.Reflection.Infinity
+import TauCeti.Analysis.Complex.Conformal.Reflection.HalfStripExterior
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 
 /-!
@@ -34,17 +34,19 @@ such a domain the map `f` is instead required to tend to infinity at infinity, s
 at infinity of the half-plane is the prevertex of the vertex at infinity.  The vertex at infinity
 may also have opening `0`: far from `c` the domain coincides with the open half-strip
 `{0 < re ((z - c) / b), 0 < im ((z - c) / b) < π}`, whose two unbounded sides are parallel rays.
-The opening `β = 2`, with two parallel sides pointing in opposite directions, is not treated.
+It may also have opening `2`: far from `c` the domain coincides with the exterior of the closed
+half-strip `{0 ≤ re ((z - c) / b), 0 ≤ im ((z - c) / b) ≤ π}`, so that its two parallel
+unbounded sides point the same way and the domain surrounds the half-strip between them.
 That a Riemann map of such a domain has these properties is not established here.
 
 This file derives from these global conditions the local side and corner conditions of
 `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary`, together with the
 limit of `z * f''(z) / f'(z)` at infinity, which is `-2` in the bounded case, `β - 1` for a sector
-at infinity, and `-1` for a half-strip, and so proves that such an `f` is an affine image of the
-normalized Schwarz--Christoffel primitive for the prevertices `a i` and the turning exponents
-`e i`.  The only geometric input is local: a boundary value of `f` lies on the frontier of `U`,
-and near a side or a vertex, or far out along an unbounded side, that frontier lies on the
-bounding line or on the two bounding rays.
+at infinity, `-1` for a half-strip, and `1` for the exterior of a half-strip, and so proves that
+such an `f` is an affine image of the normalized Schwarz--Christoffel primitive for the
+prevertices `a i` and the turning exponents `e i`.  The only geometric input is local: a boundary
+value of `f` lies on the frontier of `U`, and near a side or a vertex, or far out along an
+unbounded side, that frontier lies on the bounding line or on the two bounding rays.
 
 ## Main results
 
@@ -63,6 +65,10 @@ bounding line or on the two bounding rays.
 * `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_halfStrip_polygonal_domain` and
   `TauCeti.exponent_sum_eq_neg_one_of_halfStrip_polygonal_domain` -- the same for a polygonal
   domain with a half-strip end, whose finite turning exponents sum to `-1`.
+* `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_halfStripExterior_polygonal_domain`
+  and `TauCeti.exponent_sum_eq_one_of_halfStripExterior_polygonal_domain` -- the same for a
+  polygonal domain whose end is the exterior of a half-strip, whose finite turning exponents sum
+  to `1`.
 
 ## References
 
@@ -643,6 +649,64 @@ theorem exponent_sum_eq_neg_one_of_halfStrip_polygonal_domain
   obtain ⟨ρ, c, b, hb, hU⟩ := hinfty
   exact_mod_cast exponent_sum_eq_of_polygonal_domain_of_tendsto a e ha he hf hfc hfi hfU hfv hside
     hcorner (tendsto_mul_logDeriv_deriv_of_tendsto_cobounded_of_halfStrip hb hf hfc hfi hfU hp hU)
+
+/-- **The Schwarz--Christoffel formula for a conformal map onto a polygonal domain whose end is
+the exterior of a half-strip.**  Let `U` coincide near each boundary point that is not a vertex
+with an open half-plane, near the vertex `v i` with the open sector of opening `(e i + 1) * π` at
+`v i`, and far from a point `c` with the exterior of the closed half-strip
+`{0 ≤ re ((z - c) / b), 0 ≤ im ((z - c) / b) ≤ π}`: so `U` has, besides the finite vertices, a
+vertex at infinity of opening `2 * π` between two parallel unbounded sides pointing the same
+way.  Let `f` be holomorphic on the upper half-plane, map it onto `U`, and extend to a continuous
+injection of the closed upper half-plane with `f (a i) = v i`; suppose also that `f z` tends to
+infinity at infinity.  Then throughout the upper half-plane
+
+`f z = (f'(z₀) / integrand(z₀)) * F z + f z₀`,
+
+where `F` is the normalized Schwarz--Christoffel primitive for the prevertices `a` and the turning
+exponents `e`. -/
+theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_halfStripExterior_polygonal_domain
+    {ι : Type*} [Fintype ι] (a e : ι → ℝ) (ha : Function.Injective a)
+    (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1) (z₀ : UpperHalfPlane) {v : ι → ℂ}
+    (hf : DifferentiableOn ℂ f upperHalfPlaneSet) (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
+    (hfi : InjOn f {z : ℂ | 0 ≤ z.im}) (hfU : f '' upperHalfPlaneSet = U)
+    (hfv : ∀ i, f (a i) = v i)
+    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ))
+    (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
+      ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im))
+    (hcorner : ∀ i, ∃ ρ > 0, ∃ b : ℂ, b ≠ 0 ∧ ∀ z ∈ ball (v i) ρ, z ≠ v i →
+      (z ∈ U ↔ |((z - v i) / b).arg| < (e i + 1) * Real.pi / 2))
+    (hinfty : ∃ ρ : ℝ, ∃ c b : ℂ, b ≠ 0 ∧ ∀ z : ℂ, ρ < ‖z - c‖ →
+      (z ∈ U ↔ ((z - c) / b).re < 0 ∨ ((z - c) / b).im ∉ Icc 0 Real.pi)) :
+    EqOn f (fun z => deriv f z₀ / schwarzChristoffelIntegrand a e z₀ *
+      schwarzChristoffelPrimitive a e z₀ z + f z₀) upperHalfPlaneSet := by
+  obtain ⟨ρ, c, b, hb, hU⟩ := hinfty
+  exact eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain_of_tendsto a e ha he z₀
+    hf hfc hfi hfU hfv hside hcorner
+    (tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_halfStripExterior hb hf hfc hfi hfU hp hU)
+
+/-- **The angle sum of a polygonal domain whose end is the exterior of a half-strip.**  Under the
+hypotheses of
+`TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_halfStripExterior_polygonal_domain`,
+the turning exponents of the finite vertices sum to `1`: this is the opening `β = 2` case of
+`TauCeti.exponent_sum_eq_sub_one_of_unbounded_polygonal_domain`. -/
+theorem exponent_sum_eq_one_of_halfStripExterior_polygonal_domain
+    {ι : Type*} [Fintype ι] (a e : ι → ℝ) (ha : Function.Injective a)
+    (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1) {v : ι → ℂ}
+    (hf : DifferentiableOn ℂ f upperHalfPlaneSet) (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
+    (hfi : InjOn f {z : ℂ | 0 ≤ z.im}) (hfU : f '' upperHalfPlaneSet = U)
+    (hfv : ∀ i, f (a i) = v i)
+    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ))
+    (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
+      ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im))
+    (hcorner : ∀ i, ∃ ρ > 0, ∃ b : ℂ, b ≠ 0 ∧ ∀ z ∈ ball (v i) ρ, z ≠ v i →
+      (z ∈ U ↔ |((z - v i) / b).arg| < (e i + 1) * Real.pi / 2))
+    (hinfty : ∃ ρ : ℝ, ∃ c b : ℂ, b ≠ 0 ∧ ∀ z : ℂ, ρ < ‖z - c‖ →
+      (z ∈ U ↔ ((z - c) / b).re < 0 ∨ ((z - c) / b).im ∉ Icc 0 Real.pi)) :
+    ∑ i, e i = 1 := by
+  obtain ⟨ρ, c, b, hb, hU⟩ := hinfty
+  exact_mod_cast exponent_sum_eq_of_polygonal_domain_of_tendsto a e ha he hf hfc hfi hfU hfv hside
+    hcorner
+    (tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_halfStripExterior hb hf hfc hfi hfU hp hU)
 
 end TauCeti
 

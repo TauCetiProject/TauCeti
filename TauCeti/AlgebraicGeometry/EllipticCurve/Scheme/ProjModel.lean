@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Proper
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.VariableChange
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
@@ -42,6 +43,9 @@ homogeneous coordinate rings `WeierstrassCurve.Projective.variableChangeEquiv W 
 
 * `WeierstrassCurve.isProper_projModelOver`: the projective Weierstrass model is proper over the
   base.
+* `WeierstrassCurve.compactSpace_projModel`: the projective Weierstrass model is quasi-compact.
+* `WeierstrassCurve.isNoetherian_projModel`: over a Noetherian ring, the projective Weierstrass
+  model is a Noetherian scheme.
 * `WeierstrassCurve.projModelZero_projModelOver`: the zero section is a section of the structure
   morphism.
 * `WeierstrassCurve.awayι_projModelOver`: on a standard affine chart, the structure morphism is
@@ -60,6 +64,17 @@ homogeneous coordinate rings `WeierstrassCurve.Projective.variableChangeEquiv W 
 
 * N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, 2.2.
 * P. Deligne and M. Rapoport, *Les schémas de modules de courbes elliptiques*, II.1.
+
+## Provenance
+
+`isNoetherian_projModel` is adapted from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at
+commit `c3415f32a313e19ace43e05479aeaa0d56ca287a`, directory
+`projects/ModularCurves/ModularCurves/EllipticCurve/`: the unnamed instance
+`IsLocallyNoetherian universalCurve` in `PointsDictionary.lean` and its universe-polymorphic
+counterpart `IsLocallyNoetherian (projModel universalWeierstrassLocU)` in `GroupLawAxioms.lean`.
+The source proves that the universal Weierstrass curve over `ℤ[a₁, a₂, a₃, a₄, a₆][Δ⁻¹]` is
+locally Noetherian. Here every Weierstrass curve over every Noetherian ring is treated, and the
+model is shown to be a Noetherian scheme: it is also quasi-compact, by `compactSpace_projModel`.
 -/
 
 public section
@@ -88,6 +103,15 @@ noncomputable def projModelOver : W.projModel ⟶ Spec (.of R) :=
 instance isProper_projModelOver : IsProper W.projModelOver := by
   unfold projModelOver
   infer_instance
+
+/-- The projective Weierstrass model is quasi-compact. -/
+instance compactSpace_projModel : CompactSpace W.projModel :=
+  QuasiCompact.compactSpace_of_compactSpace W.projModelOver
+
+/-- Over a Noetherian ring, the projective Weierstrass model is a Noetherian scheme. -/
+instance isNoetherian_projModel [IsNoetherianRing R] : IsNoetherian W.projModel where
+  toIsLocallyNoetherian := LocallyOfFiniteType.isLocallyNoetherian W.projModelOver
+  toCompactSpace := inferInstance
 
 /-- On a standard affine chart `D₊(f)`, the structure morphism of the projective model is `Spec` of
 the structure map `R → A_(f)`, through the degree-zero part of the homogeneous coordinate ring. -/

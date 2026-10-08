@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ProjModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Chart.BaseChange
+-- Proof-only: the body of `projModelVariableChangeIso` is not exposed.
+import all TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ProjModel
 
 /-!
 # Base change of the projective Weierstrass model
@@ -21,6 +23,8 @@ zero section to the zero section. No ellipticity or flatness hypothesis is neede
 
 Base change along the identity is the identity, and base change along a composite is the composite
 of the base changes, up to `W.map (RingHom.id R) = W` and `W.map (g.comp f) = (W.map f).map g`.
+Base change carries the isomorphism `projModel (C • W) ≅ projModel W` induced by a change of
+variables `C` to the one induced by `C.map f`.
 Along a ring isomorphism `φ : R ≃+* R'` the base change morphism is an isomorphism
 `projModel (W.map φ) ≅ projModel W`, since `Spec φ` is one.
 
@@ -41,6 +45,8 @@ Along a ring isomorphism `φ : R ≃+* R'` the base change morphism is an isomor
   section to the zero section.
 * `WeierstrassCurve.projModelBaseChange_id` and `WeierstrassCurve.projModelBaseChange_comp`: base
   change is compatible with the identity and with composition of ring homomorphisms.
+* `WeierstrassCurve.projModelVariableChangeIso_hom_projModelBaseChange`: base change is compatible
+  with the isomorphisms induced by changes of variables.
 * `WeierstrassCurve.isIso_projModelBaseChange`: base change along a ring isomorphism is an
   isomorphism.
 * `WeierstrassCurve.inv_projModelBaseChange_projModelOver` and
@@ -263,6 +269,25 @@ theorem projModelBaseChange_comp {R'' : Type u} [CommRing R''] (g : R' →+* R''
     (W.baseChangeGradedHom_mk _)
     (fun p ↦ by rw [GradedRingHom.comp_apply, baseChangeGradedHom_mk, baseChangeGradedHom_mk,
       MvPolynomial.map_map]) _ _
+
+/-! ### Changes of variables -/
+
+/-- Base change carries the isomorphism induced by the change of variables `C` to the one induced
+by `C.map f`: the square formed by the two isomorphisms and the base change morphisms of `W` and
+`C • W` commutes, up to `C.map f • W.map f = (C • W).map f`. -/
+@[reassoc]
+theorem projModelVariableChangeIso_hom_projModelBaseChange (C : VariableChange R) :
+    ((W.map f).projModelVariableChangeIso (C.map f)).hom ≫ W.projModelBaseChange f =
+      eqToHom (congrArg projModel (map_variableChange W C f)) ≫ (C • W).projModelBaseChange f ≫
+        (W.projModelVariableChangeIso C).hom := by
+  rw [projModelVariableChangeIso, projModelVariableChangeIso, Proj.mapIso_hom, Proj.mapIso_hom,
+    projModelBaseChange, projModelBaseChange, ← Proj.map_comp, ← Proj.map_comp]
+  -- both send the class of `p` to the class of `p` with coefficients mapped along `f` and
+  -- substituted along `(C.map f).toMatrix`
+  exact ProjMap_eq_eqToHom_comp_ProjMap W (map_variableChange W C f) _ _
+    (fun p ↦ linearSubst (C.map f).toMatrix (MvPolynomial.map f p))
+    (fun p ↦ by simp [variableChangeGradedHom_apply, baseChangeGradedHom_mk])
+    (fun p ↦ by simp [variableChangeGradedHom_apply, baseChangeGradedHom_mk, map_linearSubst]) _ _
 
 /-! ### Base change along a ring isomorphism -/
 

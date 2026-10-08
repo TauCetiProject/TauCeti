@@ -247,7 +247,7 @@ theorem isUnitarizable :
 /-- Averaging a form that is already invariant changes nothing: the Gram operator of a unitary
 representation is the identity. -/
 @[simp]
-theorem gramOperator_eq_one (hunitary : TauCeti.ContRepresentation.IsUnitary π) :
+theorem gramOperator_eq_one (hunitary : ContRepresentation.IsUnitary π) :
     gramOperator π hπ = 1 := by
   let := NormedSpace.restrictScalars ℝ 𝕜 V
   let := IsScalarTower.restrictScalars ℝ 𝕜 V

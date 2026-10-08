@@ -7,10 +7,12 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.BaseChange
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Coefficients
+public import TauCeti.NumberTheory.ClassFieldTheory.Global.InvariantSum
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.FiniteAdele
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.InfiniteAdele
 import Mathlib.RingTheory.DedekindDomain.Different
+import TauCeti.Data.DFinsupp.Basic
 import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Unramified
 import TauCeti.NumberTheory.NumberField.LocalGlobal.DecompositionGroup
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.RamificationIndex
@@ -18,7 +20,7 @@ import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
 /-!
-# The localization of idele cohomology at a place
+# The localization of idele cohomology at the places of `K`
 
 Let `K` be a number field, `v` a finite place of `K` with completion `K_v`, and `G_K`, `G_{K_v}`
 the absolute Galois groups. A `K`-embedding `τ : Kˢ → K_vˢ` of separable closures picks out, for
@@ -49,7 +51,10 @@ automorphism of `h`, which acts trivially on cohomology. On the image of
 global Brauer classes (`ideleBrLocalization_principalIdele`). As for a global Brauer class, only
 finitely many of the localizations of a class of `H²(G_K, I_{Kˢ})` are nonzero
 (`finite_setOfPred_ideleBrLocalization_ne_zero`), so the local invariants of an idele class have
-a finite sum.
+a finite sum. Together, the localizations at all places form the localization map
+`ideleLocalization K : H²(G_K, I_{Kˢ}) → ⨁_v Br K_v`, which on principal idele classes is the
+localization map `brLocalization K` of global Brauer classes
+(`ideleLocalization_principalIdele`).
 
 The same construction works at an infinite place `w` of `K`, with completion `K_w = ℝ` or `ℂ`:
 the components above `w` of an idele of `E` form a unit of `K_w ⊗[K] E`
@@ -73,6 +78,8 @@ of adeles, which only uses that these components are natural in `E` and send `x 
 * `TauCeti.ClassFieldTheory.ideleCoeffInfiniteComponent τ`,
   `TauCeti.ClassFieldTheory.ideleInfiniteBrLocalization w`: the coordinate and the localization at
   an infinite place `w`.
+* `TauCeti.ClassFieldTheory.ideleLocalization K`: the localization map
+  `H²(G_K, I_{Kˢ}) → ⨁_v Br K_v` at all places.
 
 ## Main results
 
@@ -94,6 +101,8 @@ of adeles, which only uses that these components are natural in `E` and send `x 
   `E` is its component at `w`.
 * `TauCeti.ClassFieldTheory.finite_setOfPred_ideleBrLocalization_ne_zero`: a class has nonzero
   localization at only finitely many finite places.
+* `TauCeti.ClassFieldTheory.ideleLocalization_principalIdele`: on principal idele classes the
+  localization map is `brLocalization K`.
 
 ## References
 
@@ -688,5 +697,54 @@ theorem finite_setOfPred_ideleBrLocalization_ne_zero
     fun x ↦ congrArg (fun φ : E →ₐ[K] _ ↦ φ x) hτ)
 
 end FiniteSupport
+
+/-! ### The localization map at all places -/
+
+section Localization
+
+variable (K) in
+/-- **The localization of idele cohomology at all places**, `H²(G_K, I_{Kˢ}) → ⨁_v Br K_v`: the
+localizations `ideleBrLocalization v` at the finite places, a finitely supported family by
+`finite_setOfPred_ideleBrLocalization_ne_zero`, together with the localizations
+`ideleInfiniteBrLocalization w` at the infinite places. Its target is the target of the
+localization map `brLocalization K` of global Brauer classes, which it extends along the principal
+ideles (`ideleLocalization_principalIdele`). -/
+def ideleLocalization : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K) →+
+    (Π₀ v : HeightOneSpectrum (𝓞 K), Br (v.adicCompletion K)) ×
+      ((w : InfinitePlace K) → Br w.Completion) where
+  toFun x :=
+    (dfinsuppOfFiniteSupport (fun v ↦ ideleBrLocalization v x)
+      (finite_setOfPred_ideleBrLocalization_ne_zero x), fun w ↦ ideleInfiniteBrLocalization w x)
+  map_zero' := Prod.ext (DFinsupp.ext fun _ ↦ by simp) (funext fun _ ↦ map_zero _)
+  map_add' x y := Prod.ext (DFinsupp.ext fun _ ↦ by simp) (funext fun _ ↦ map_add _ x y)
+
+/-- The component of the localization map at a finite place `v` is `ideleBrLocalization v`. -/
+@[simp]
+theorem ideleLocalization_fst_apply (x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))
+    (v : HeightOneSpectrum (𝓞 K)) : (ideleLocalization K x).1 v = ideleBrLocalization v x :=
+  dfinsuppOfFiniteSupport_apply _ _ v
+
+/-- The component of the localization map at an infinite place `w` is
+`ideleInfiniteBrLocalization w`. -/
+@[simp]
+theorem ideleLocalization_snd_apply (x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))
+    (w : InfinitePlace K) : (ideleLocalization K x).2 w = ideleInfiniteBrLocalization w x :=
+  (rfl)
+
+/-- **On principal idele classes, the localization map is that of Brauer classes**: the class in
+`H²(G_K, I_{Kˢ})` of a Brauer class `x ∈ Br K`, along the principal ideles, localizes to the
+family `brLocalization K x` of its base changes to all completions. -/
+theorem ideleLocalization_principalIdele (x : H2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) :
+    ideleLocalization K (explicitCoeff2 (AbsoluteGaloisGroup K) (UnitsCoeff K)
+        (principalIdele K) continuous_of_discreteTopology x) =
+      brLocalization K (unitsRepH2Equiv K x) :=
+  Prod.ext (DFinsupp.ext fun v ↦ by
+      rw [ideleLocalization_fst_apply, ideleBrLocalization_principalIdele,
+        brLocalization_fst_apply])
+    (funext fun w ↦ by
+      rw [ideleLocalization_snd_apply, ideleInfiniteBrLocalization_principalIdele,
+        brLocalization_snd_apply])
+
+end Localization
 
 end TauCeti.ClassFieldTheory

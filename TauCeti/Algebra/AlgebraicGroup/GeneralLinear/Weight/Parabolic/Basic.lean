@@ -129,14 +129,10 @@ private theorem antipode_X_mem (w : Fin N → ℤ) {i j : Fin N} (hij : w i < w 
   let _ : Invertible Xq := Matrix.invertibleOfIsUnitDet Xq hdetXq
   have hXqInv : Xq⁻¹.BlockTriangular (OrderDual.toDual ∘ w) :=
     Matrix.blockTriangular_inv_of_blockTriangular hXq
-  have hmapInv : Xq⁻¹ = ((genericMatrix R N)⁻¹).map q := by
-    apply Matrix.inv_eq_left_inv
-    rw [← Matrix.map_mul, Matrix.nonsing_inv_mul _ (isUnit_det_genericMatrix R N)]
-    simp
   rw [coordinateHopfAlgebra_antipode_X]
   apply (Ideal.Quotient.eq_zero_iff_mem).mp
   have hzero := hXqInv (OrderDual.toDual_lt_toDual.mpr hij)
-  rw [hmapInv, Matrix.map_apply, genericMatrix_inv_apply] at hzero
+  rw [← map_inv_genericMatrix R N q, Matrix.map_apply, genericMatrix_inv_apply] at hzero
   exact hzero
 
 /-- The Hopf ideal cutting out matrices block triangular for the decreasing weight filtration. -/
