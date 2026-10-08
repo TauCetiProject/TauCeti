@@ -20,7 +20,7 @@ is a cycle, `HomologicalComplex.moduleCatCyclesMk`.  This constructor directly r
 an element of `K.cycles n` for modules over a ring in any universe, whereas Mathlib's
 `HomologicalComplex.cyclesMk` returns an element of `(forget₂ C Ab).obj (K.cycles n)`.
 
-For a cochain complex `K`, `TauCeti.cyclesShortComplex K n` is the sequence
+For a cochain complex `K`, `K.cyclesShortComplex n` is the sequence
 `Zⁿ(K) ⟶ Kⁿ ⟶ Zⁿ⁺¹(K)`. It is short exact whenever `K` is exact in degree `n + 1`.
 -/
 
@@ -60,15 +60,12 @@ lemma iCycles_moduleCatCyclesMk (x : K.X n) (m : ι) (hm : c.next n = m)
 
 end HomologicalComplex
 
-namespace TauCeti
+namespace HomologicalComplex
 
 variable {R : Type*} [Ring R]
 
 /-- The short complex `Zⁿ(K) ⟶ Kⁿ ⟶ Zⁿ⁺¹(K)` cut out of a cochain complex of modules. Its
-second map is the differential with codomain restricted to the cycles in the next degree.
-The definition is exposed so the dependent types of the two structure maps reduce to the
-displayed objects. -/
-@[expose]
+second map is the differential with codomain restricted to the cycles in the next degree. -/
 noncomputable def cyclesShortComplex
     (K : CochainComplex (ModuleCat.{u} R) ℤ) (n : ℤ) :
     ShortComplex (ModuleCat.{u} R) :=
@@ -78,38 +75,48 @@ noncomputable def cyclesShortComplex
 
 @[simp]
 theorem cyclesShortComplex_X₁ (K : CochainComplex (ModuleCat.{u} R) ℤ) (n : ℤ) :
-    (cyclesShortComplex K n).X₁ = K.cycles n :=
-  (rfl)
+    (K.cyclesShortComplex n).X₁ = K.cycles n := by
+  rw [cyclesShortComplex]
 
 @[simp]
 theorem cyclesShortComplex_X₂ (K : CochainComplex (ModuleCat.{u} R) ℤ) (n : ℤ) :
-    (cyclesShortComplex K n).X₂ = K.X n :=
-  (rfl)
+    (K.cyclesShortComplex n).X₂ = K.X n := by
+  rw [cyclesShortComplex]
 
 @[simp]
 theorem cyclesShortComplex_X₃ (K : CochainComplex (ModuleCat.{u} R) ℤ) (n : ℤ) :
-    (cyclesShortComplex K n).X₃ = K.cycles (n + 1) :=
-  (rfl)
+    (K.cyclesShortComplex n).X₃ = K.cycles (n + 1) := by
+  rw [cyclesShortComplex]
 
+/-- The first map of `K.cyclesShortComplex n` is the inclusion of the cycles, transported along
+the object equalities `cyclesShortComplex_X₁` and `cyclesShortComplex_X₂`. -/
 @[simp]
 theorem cyclesShortComplex_f (K : CochainComplex (ModuleCat.{u} R) ℤ) (n : ℤ) :
-    (cyclesShortComplex K n).f = K.iCycles n :=
-  (rfl)
+    (K.cyclesShortComplex n).f = eqToHom (K.cyclesShortComplex_X₁ n) ≫ K.iCycles n ≫
+      eqToHom (K.cyclesShortComplex_X₂ n).symm := by
+  simp [cyclesShortComplex]
+  -- The remaining `eqToHom` is along an equation whose two sides agree after unfolding.
+  rfl
 
+/-- The second map of `K.cyclesShortComplex n` is the differential corestricted to the cycles,
+transported along the object equalities `cyclesShortComplex_X₂` and `cyclesShortComplex_X₃`. -/
 @[simp]
 theorem cyclesShortComplex_g (K : CochainComplex (ModuleCat.{u} R) ℤ) (n : ℤ) :
-    (cyclesShortComplex K n).g = K.toCycles n (n + 1) :=
-  (rfl)
+    (K.cyclesShortComplex n).g = eqToHom (K.cyclesShortComplex_X₂ n) ≫ K.toCycles n (n + 1) ≫
+      eqToHom (K.cyclesShortComplex_X₃ n).symm := by
+  simp [cyclesShortComplex]
+  -- The remaining `eqToHom` is along an equation whose two sides agree after unfolding.
+  rfl
 
 /-- The cycle sequence `Zⁿ(K) ⟶ Kⁿ ⟶ Zⁿ⁺¹(K)` is short exact when `K` is exact in degree
 `n + 1`. -/
 theorem cyclesShortComplex_shortExact {K : CochainComplex (ModuleCat.{u} R) ℤ}
-    (n : ℤ) (hK : K.ExactAt (n + 1)) : (cyclesShortComplex K n).ShortExact := by
+    (n : ℤ) (hK : K.ExactAt (n + 1)) : (K.cyclesShortComplex n).ShortExact := by
   -- Expose the structure maps so typeclass search sees their canonical forms.
-  have hf : Mono (cyclesShortComplex K n).f := by
+  have hf : Mono (K.cyclesShortComplex n).f := by
     change Mono (K.iCycles n)
     infer_instance
-  have hg : Epi (cyclesShortComplex K n).g := by
+  have hg : Epi (K.cyclesShortComplex n).g := by
     change Epi (K.toCycles n (n + 1))
     have h := (ShortComplex.exact_iff_epi_toCycles (K.sc (n + 1))).mp hK
     -- Mathlib's exactness API indexes the source by `prev`; normalize it to `n`.
@@ -131,4 +138,4 @@ theorem cyclesShortComplex_shortExact {K : CochainComplex (ModuleCat.{u} R) ℤ}
   exact ⟨K.moduleCatCyclesMk (n := n) x (n + 1) (by simp) hdx,
     K.iCycles_moduleCatCyclesMk n x (n + 1) (by simp) hdx⟩
 
-end TauCeti
+end HomologicalComplex
