@@ -46,7 +46,10 @@ local-endomorphism-ring theorem. Both are supplied here.
   that a local endomorphism ring forces the module to be nonzero.
 * `TauCeti.isIndecomposableModule_iff_isLocalRing_end`: for a module of finite length the converse
   holds too, so indecomposability is *equivalent* to having a local endomorphism ring.
-* `TauCeti.isIndecomposableModule_self`: a local ring is indecomposable over itself.
+* `TauCeti.isIndecomposableModule_self`: a local ring is indecomposable over itself, and
+  `TauCeti.isLocalRing_of_isIndecomposableModule_self` the converse for a ring of finite length
+  over itself; `TauCeti.isIndecomposableModule_self_iff` reads indecomposability of a ring over
+  itself off its idempotents.
 * `TauCeti.IsIndecomposableModule.nonempty_linearEquiv_of_free`: an indecomposable free module is
   isomorphic to the scalar semiring.
 
@@ -310,6 +313,41 @@ theorem isIndecomposableModule_self [IsLocalRing A] : IsIndecomposableModule A A
   have : IsLocalRing (Module.End A A) :=
     .of_surjective' (RingEquiv.moduleEndSelf A).toRingHom (RingEquiv.moduleEndSelf A).surjective
   exact isIndecomposableModule_of_isLocalRing_end
+
+variable (A) in
+/-- **A ring is indecomposable as a left module over itself exactly when it is nontrivial and `0`
+and `1` are its only idempotents.** An endomorphism of the left module `A` is right multiplication
+by an element, and it is idempotent exactly when that element is. -/
+theorem isIndecomposableModule_self_iff :
+    IsIndecomposableModule A A ↔ Nontrivial A ∧ ∀ e : A, IsIdempotentElem e → e = 0 ∨ e = 1 := by
+  rw [isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem]
+  refine and_congr_right fun _ ↦ ⟨fun h e he ↦ ?_, fun h f hf ↦ ?_⟩
+  · have hop : IsIdempotentElem (MulOpposite.op e) := by
+      rw [IsIdempotentElem, ← MulOpposite.op_mul, he.eq]
+    have hf := h (RingEquiv.moduleEndSelf A (MulOpposite.op e))
+      (hop.map (RingEquiv.moduleEndSelf A))
+    rw [map_eq_zero_iff _ (RingEquiv.moduleEndSelf A).injective,
+      map_eq_one_iff _ (RingEquiv.moduleEndSelf A).injective, MulOpposite.op_eq_zero_iff,
+      MulOpposite.op_eq_one_iff] at hf
+    exact hf
+  · obtain ⟨e, rfl⟩ := (RingEquiv.moduleEndSelf A).surjective f
+    have he : IsIdempotentElem e.unop := by
+      have hee : e * e = e := (RingEquiv.moduleEndSelf A).injective (by rw [map_mul, hf.eq])
+      rw [IsIdempotentElem, ← MulOpposite.unop_mul, hee]
+    rcases h e.unop he with h0 | h1
+    · exact Or.inl (by rw [← MulOpposite.op_unop e, h0, MulOpposite.op_zero, map_zero])
+    · exact Or.inr (by rw [← MulOpposite.op_unop e, h1, MulOpposite.op_one, map_one])
+
+/-- **A ring of finite length over itself which is indecomposable over itself is local**, the
+converse of `TauCeti.isIndecomposableModule_self` under finite length: by Fitting's lemma the
+endomorphism ring of the left module `A`, which is the opposite ring, is local. -/
+theorem isLocalRing_of_isIndecomposableModule_self (hA : IsFiniteLength A A)
+    (h : IsIndecomposableModule A A) : IsLocalRing A := by
+  have := h.nontrivial
+  have := isLocalRing_end_of_isIndecomposable hA h
+  have : IsLocalRing Aᵐᵒᵖ := .of_surjective' (RingEquiv.moduleEndSelf A).symm.toRingHom
+    (RingEquiv.moduleEndSelf A).symm.surjective
+  exact .of_surjective' (RingEquiv.opOp A).symm.toRingHom (RingEquiv.opOp A).symm.surjective
 
 end Ring
 
