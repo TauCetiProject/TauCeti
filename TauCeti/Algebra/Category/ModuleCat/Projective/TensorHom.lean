@@ -48,6 +48,7 @@ local notation "St" =>
   ExactStructure.projectiveStableFunctor (ExactStructure.abelian (ModuleCat A))
 
 /-- Tensor evaluation always becomes zero modulo maps through projective modules. -/
+@[simp]
 theorem projectiveStableFunctor_map_balancedDualTensorHom_eq_zero
     (z : BalancedTensorProduct k A (Module.Dual A M) N) :
     (St).map (ofHom (balancedDualTensorHom k A M N z)) = 0 := by
