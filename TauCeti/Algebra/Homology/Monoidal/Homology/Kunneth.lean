@@ -18,9 +18,9 @@ Let `K` and `L` be homological complexes in a preadditive monoidal category `C`,
 `⨁_{p + q = n} Hₚ(K) ⊗ H_q(L) ⟶ Hₙ(K ⊗ L)`,
 
 whose source is the degree `n` part of the tensor product of the graded objects `H(K)` and `H(L)`.
-It is natural in both complexes.  The Künneth theorem over a field asserts that it is an
-isomorphism.  This file proves the two formal steps of that theorem which hold in any such
-category:
+It is natural in both complexes.  The Künneth theorem for chain complexes of vector spaces over a
+field asserts that it is an isomorphism.  This file proves the two formal steps of that theorem
+which hold in any such category:
 
 * when `K` and `L` have zero differentials, the Künneth map is an isomorphism, since then each
   homology object is the corresponding term of the complex and `Hₙ(K ⊗ L)` is the coproduct of
@@ -30,7 +30,8 @@ category:
   their tensor product is again a homotopy equivalence (`HomotopyEquiv.mapBifunctor`).
 
 Combining the two, the Künneth map is an isomorphism whenever `K` and `L` are homotopy equivalent
-to complexes with zero differential, which over a field is the case for every complex.
+to complexes with zero differential.  A separate splitting result shows that every chain complex
+of vector spaces over a field is of this kind.
 
 ## Main definitions and results
 
@@ -121,7 +122,9 @@ theorem isIso_homologyKunneth_iff_of_homotopyEquiv (eK : HomotopyEquiv K K')
       (GradedObject.isoMk _ _ fun q ↦ eL.toHomologyIso q)).isIso_hom
   have h : homologyMap (tensorHom eK.hom eL.hom) n =
       ((HomotopyEquiv.mapBifunctor (curriedTensor C) c eK eL).toHomologyIso n).hom := by
-    simp [HomotopyEquiv.toHomologyIso]
+    change homologyMap (mapBifunctorMap eK.hom eL.hom (curriedTensor C) c) n =
+      homologyMap (HomotopyEquiv.mapBifunctor (curriedTensor C) c eK eL).hom n
+    rw [HomotopyEquiv.mapBifunctor_hom]
   have : IsIso (homologyMap (tensorHom eK.hom eL.hom) n) := h ▸ inferInstance
   rw [← isIso_comp_right_iff (homologyKunneth K L n) (homologyMap (tensorHom eK.hom eL.hom) n),
     ← e, isIso_comp_left_iff]
@@ -206,7 +209,8 @@ variable {K L K' L' : HomologicalComplex C c} [HasTensor K L] [HasTensor K' L'] 
   [GradedObject.HasTensor (fun p ↦ K'.homology p) (fun q ↦ L'.homology q)]
 
 /-- **The Künneth map is an isomorphism for complexes homotopy equivalent to complexes with zero
-differentials.**  Over a field every complex is of this kind. -/
+differentials.**  A separate splitting result shows that every chain complex of vector spaces over
+a field is of this kind. -/
 theorem isIso_homologyKunneth_of_homotopyEquiv_of_d_eq_zero (eK : HomotopyEquiv K K')
     (eL : HomotopyEquiv L L') (hK' : ∀ i j, K'.d i j = 0) (hL' : ∀ i j, L'.d i j = 0) :
     IsIso (homologyKunneth K L n) :=
