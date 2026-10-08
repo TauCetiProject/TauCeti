@@ -41,6 +41,8 @@ at `((p, q), (i, j))` is `gₚᵢ (g⁻¹)ⱼq`. Over the coordinate algebra of 
 * `TauCeti.ProjectiveGeneralLinear.conjugationMatrix`: the matrix of `x ↦ X x Y` in the
   matrix-unit basis.
 * `TauCeti.ProjectiveGeneralLinear.conjugationMap`: the coordinate morphism of `GLₙ → PGLₙ`.
+* `TauCeti.ProjectiveGeneralLinear.map_genericMatrix_conjugationMap`: in coordinates, it sends the
+  generic matrix of `GL_{n²}` to the conjugation matrix of the generic matrix of `GLₙ`.
 * `TauCeti.ProjectiveGeneralLinear.pointsMulEquiv_conjugationMap`: on points, it is
   `Matrix.GeneralLinearGroup.innerAut`.
 * `TauCeti.ProjectiveGeneralLinear.mem_quotientPointsSubgroup_kernelHopfIdeal_conjugationMap_iff`
@@ -200,6 +202,16 @@ def conjugationMap : coordinateHopfAlgebra n R ⟶ GeneralLinear.coordinateHopfA
   CommHopfAlgCat.liftQuotient (definingHopfIdeal n R)
     (_root_.CommHopfAlgCat.ofHom (conjugationBialgHom n R))
     (definingHopfIdeal_le_ker_conjugationBialgHom n R)
+
+/-- **`GLₙ → PGLₙ` in coordinates**: the conjugation homomorphism sends the generic matrix of
+`GL_{n²}`, read in `O(PGLₙ)`, to the conjugation matrix of the generic matrix `X` of `GLₙ`, whose
+entry at `((p, q), (i, j))` is `Xₚᵢ (X⁻¹)ⱼq`. -/
+theorem map_genericMatrix_conjugationMap :
+    (GeneralLinear.genericMatrix R (n * n)).map
+        (CommHopfAlgCat.mkQuotient _ (definingHopfIdeal n R) ≫ conjugationMap n R).hom =
+      conjugationMatrix (GeneralLinear.genericMatrix R n) (GeneralLinear.genericMatrix R n)⁻¹ := by
+  rw [conjugationMap, CommHopfAlgCat.mkQuotient_comp_liftQuotient, CommHopfAlgCat.hom_ofHom]
+  exact map_genericMatrix_conjugationBialgHom n R
 
 /-- **On points, `GLₙ → PGLₙ` is conjugation**: a point `g` of `GLₙ` goes to the inner
 automorphism of `Mₙ(A)` by its invertible matrix. -/

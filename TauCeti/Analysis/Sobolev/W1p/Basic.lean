@@ -197,33 +197,17 @@ theorem Sobolev1JetLp.ext {J K : Sobolev1JetLp mu Omega p}
 
 /-- The norm of the value component is bounded by the norm of the ambient Sobolev jet. -/
 private theorem norm_value_le_ambient (J : Sobolev1JetLp mu Omega p) :
-    ‖Sobolev1JetLp.value J‖ ≤ ‖J‖ := by
-  have hfst : ‖WithLp.fstL 2 ℝ ℝ E‖ ≤ 1 := by
-    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x => ?_
-    simpa only [WithLp.fstL_apply, one_mul] using WithLp.norm_fst_le ℝ x
-  have hvalueL : ‖Sobolev1JetLp.valueL (mu := mu) (Omega := Omega) (p := p)‖ ≤ 1 :=
-    (ContinuousLinearMap.norm_compLpL_le (WithLp.fstL 2 ℝ ℝ E)).trans hfst
-  calc
-    ‖Sobolev1JetLp.value J‖ ≤
-        ‖Sobolev1JetLp.valueL (mu := mu) (Omega := Omega) (p := p)‖ * ‖J‖ :=
-      (Sobolev1JetLp.valueL (mu := mu) (Omega := Omega) (p := p)).le_opNorm J
-    _ ≤ 1 * ‖J‖ := mul_le_mul_of_nonneg_right hvalueL (norm_nonneg J)
-    _ = ‖J‖ := one_mul _
+    ‖Sobolev1JetLp.value J‖ ≤ ‖J‖ :=
+  Lp.norm_le_norm_of_ae_le <| (Sobolev1JetLp.value_apply_ae J).mono fun x hx ↦ by
+    rw [hx]
+    exact WithLp.norm_fst_le ℝ (J x)
 
 /-- The norm of the gradient component is bounded by the norm of the ambient Sobolev jet. -/
 private theorem norm_gradient_le_ambient (J : Sobolev1JetLp mu Omega p) :
-    ‖Sobolev1JetLp.gradient J‖ ≤ ‖J‖ := by
-  have hsnd : ‖WithLp.sndL 2 ℝ ℝ E‖ ≤ 1 := by
-    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x => ?_
-    simpa only [WithLp.sndL_apply, one_mul] using WithLp.norm_snd_le ℝ x
-  have hgradientL : ‖Sobolev1JetLp.gradientL (mu := mu) (Omega := Omega) (p := p)‖ ≤ 1 :=
-    (ContinuousLinearMap.norm_compLpL_le (WithLp.sndL 2 ℝ ℝ E)).trans hsnd
-  calc
-    ‖Sobolev1JetLp.gradient J‖ ≤
-        ‖Sobolev1JetLp.gradientL (mu := mu) (Omega := Omega) (p := p)‖ * ‖J‖ :=
-      (Sobolev1JetLp.gradientL (mu := mu) (Omega := Omega) (p := p)).le_opNorm J
-    _ ≤ 1 * ‖J‖ := mul_le_mul_of_nonneg_right hgradientL (norm_nonneg J)
-    _ = ‖J‖ := one_mul _
+    ‖Sobolev1JetLp.gradient J‖ ≤ ‖J‖ :=
+  Lp.norm_le_norm_of_ae_le <| (Sobolev1JetLp.gradient_apply_ae J).mono fun x hx ↦ by
+    rw [hx]
+    exact WithLp.norm_snd_le ℝ (J x)
 
 /-- At exponent two, the Sobolev jet norm is the Hilbert graph norm of its components. -/
 private theorem norm_sq_eq_norm_value_sq_add_norm_gradient_sq_ambient

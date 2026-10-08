@@ -18,7 +18,8 @@ Let `W` be a Weierstrass curve over a commutative ring `R`, let `g : R →+* S` 
 homomorphism and let `P` be a solution of the projective Weierstrass equation of `W.map g` with a
 unit coordinate `Pᵢ`. Then `P` gives an `S`-point of the projective Weierstrass model
 `projModel W`, through the standard affine chart `D₊(Xᵢ)` at which `Xₖ / Xᵢ = Pₖ / Pᵢ`, lying over
-`Spec g`.
+`Spec g`. When `S` is a local ring, every `S`-point of `projModel W` lying over `Spec g` arises in
+this way.
 
 Over a local ring `R`, this file identifies the sections of the structure morphism
 `projModel W ⟶ Spec R` of the projective Weierstrass model with the projective point classes
@@ -69,6 +70,11 @@ zero section corresponding to the point at infinity.
 * `WeierstrassCurve.projModelPointsEquivUnimodular_symm_mk_some`: the class of `(x, y, 1)`
   corresponds to `Spec` of `chartRingEval` at `(x, y)`, followed by the inclusion of the chart
   `D₊(Z)`.
+* `WeierstrassCurve.SpecMap_chartι`: a point `Spec α` of the chart `D₊(Xᵢ)` is the point with
+  homogeneous coordinates the image under `α` of the universal point of the chart ring.
+* `WeierstrassCurve.exists_eq_projModelPoint`: a point of the projective model with values in a
+  local ring `S`, lying over `Spec g`, is the point with homogeneous coordinates `P`, for some
+  solution `P` of the projective Weierstrass equation of `W.map g` with a unit coordinate.
 * `WeierstrassCurve.projModelPointsEquiv_projModelZero`: the zero section corresponds to `0`.
 * `WeierstrassCurve.projModelPointsEquiv_symm_some`: the affine point `(x, y)` corresponds to
   `Spec` of `chartRingEval` at `(x, y)`, followed by the inclusion of the chart `D₊(Z)`.
@@ -81,6 +87,20 @@ zero section corresponding to the point at infinity.
 * N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, 2.2.
 
 ## Provenance
+
+`SpecMap_chartι` is adapted from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at commit
+`c3415f32a313e19ace43e05479aeaa0d56ca287a`, file
+`projects/ModularCurves/ModularCurves/EllipticCurve/AdditionSpecPoints.lean`: it corresponds to
+`chartPointTriple` with `ChartPointTriple.equation`, `ChartPointTriple.self_eq_one` and
+`ChartPointTriple.eq_chartHom` (stated with `chartAwayHomOfTriple`, file `AdditionChartHom.lean`).
+There a ring homomorphism out of the chart ring `A_(Xₖ)`, compatible with the `R`-algebra
+structures, is the chart homomorphism `chartAwayHomOfTriple` of its own coordinate triple; here the
+statement is an equality of points of the projective model, for any ring homomorphism out of
+`ChartRing i`. `exists_eq_projModelPoint` is not stated in the source, which factors a point with
+values in a field through a chart (`specPoint_factors_through_chart`, file
+`WeierstrassModel.lean`) and reads off that the chart homomorphism is compatible with the
+`R`-algebra structures (`chartHom_compat_of_specPoint`, file `AdditionSpecPoints.lean`); here the
+point has values in any local ring `S`, over any ring homomorphism `g : R →+* S`.
 
 Adapted from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at commit
 `c3415f32a313e19ace43e05479aeaa0d56ca287a`, file
@@ -367,23 +387,60 @@ private theorem sectionOfClass_injective [IsLocalRing R] : Function.Injective W.
   obtain ⟨-, u, hu⟩ := h
   exact Subtype.ext <| Quotient.sound ⟨u, hu.symm⟩
 
--- Over a local ring, a morphism `Spec R ⟶ projModel W` factors through one of the standard charts
--- `D₊(Xᵢ)`: the chart containing the image of the closed point contains the whole image.
-private theorem exists_spec_map_comp_awayι [IsLocalRing R]
-    (g : Spec (CommRingCat.of R) ⟶ W.projModel) :
+-- Over a local ring `S`, a morphism `Spec S ⟶ projModel W` factors through one of the standard
+-- charts `D₊(Xᵢ)`: the chart containing the image of the closed point contains the whole image.
+private theorem exists_spec_map_comp_awayι {S : Type u} [CommRing S] [IsLocalRing S]
+    (x : Spec (CommRingCat.of S) ⟶ W.projModel) :
     ∃ (i : Fin 3) (α : CommRingCat.of (Away W.toProjective.grading (W.toProjective.coord i)) ⟶
-      CommRingCat.of R), Spec.map α ≫ Proj.awayι W.toProjective.grading (W.toProjective.coord i)
-        (W.toProjective.coord_mem_grading i) one_pos = g := by
+      CommRingCat.of S), Spec.map α ≫ Proj.awayι W.toProjective.grading (W.toProjective.coord i)
+        (W.toProjective.coord_mem_grading i) one_pos = x := by
   let 𝒰 := Proj.affineOpenCoverOfIrrelevantLESpan _ _ W.toProjective.coord_mem_grading
     (fun _ ↦ one_pos) W.toProjective.irrelevant_le_span_range_coord
-  have h : Set.range g ⊆ Set.range (𝒰.f (𝒰.idx (g (closedPoint R)))) := by
-    have htop := Scheme.preimage_eq_top_of_closedPoint_mem g
-      (U := (𝒰.f (𝒰.idx (g (closedPoint R)))).opensRange) (𝒰.covers _)
+  have h : Set.range x ⊆ Set.range (𝒰.f (𝒰.idx (x (closedPoint S)))) := by
+    have htop := Scheme.preimage_eq_top_of_closedPoint_mem x
+      (U := (𝒰.f (𝒰.idx (x (closedPoint S)))).opensRange) (𝒰.covers _)
     rintro _ ⟨y, rfl⟩
-    exact (htop.ge trivial : y ∈ g ⁻¹ᵁ _)
-  obtain ⟨α, hα⟩ := Spec.map_surjective (IsOpenImmersion.lift _ g h)
-  exact ⟨𝒰.idx (g (closedPoint R)), α, hα ▸ IsOpenImmersion.lift_fac _ _ h⟩
+    exact (htop.ge trivial : y ∈ x ⁻¹ᵁ _)
+  obtain ⟨α, hα⟩ := Spec.map_surjective (IsOpenImmersion.lift _ x h)
+  exact ⟨𝒰.idx (x (closedPoint S)), α, hα ▸ IsOpenImmersion.lift_fac _ _ h⟩
 
+/-- A point `Spec α` of the standard affine chart `D₊(Xᵢ)` of the projective model is the point
+with homogeneous coordinates the image under `α` of the universal point `chartPoint i` of the chart
+ring, along the composite `R → ChartRing i → A`. The case `α = 𝟙` gives
+`chartι_eq_projModelPoint`. -/
+theorem SpecMap_chartι {A : CommRingCat.{u}} {i : Fin 3}
+    (α : CommRingCat.of (W.toProjective.ChartRing i) ⟶ A) :
+    Spec.map α ≫ W.chartι i =
+      W.projModelPoint (α.hom.comp (algebraMap R _)) (P := α.hom ∘ W.toProjective.chartPoint i)
+        (by simpa only [Projective.baseChange, WeierstrassCurve.baseChange,
+          WeierstrassCurve.map_map] using (W.toProjective.equation_chartPoint i).map α.hom) (i := i)
+        (by simpa only [Function.comp_apply, W.toProjective.chartPoint_self i, map_one] using
+          isUnit_one) := by
+  rw [W.chartι_eq_projModelPoint i]
+  exact SpecMap_projModelPoint α.hom _
+
+/-- A point of the projective Weierstrass model with values in a local ring is given by
+homogeneous coordinates: for a local ring `S`, a ring homomorphism `g : R →+* S` and
+`x : Spec S ⟶ projModel W` over `Spec g`, `x` is the point with homogeneous coordinates `P` for
+some solution `P` of the projective Weierstrass equation of `W.map g` with a unit coordinate.
+Such a `P` is unique up to a unit (`projModelPoint_eq_projModelPoint_iff`). For a ring `S` that is
+not local, a point through the chart `D₊(Xᵢ)` is described by `SpecMap_chartι`. -/
+theorem exists_eq_projModelPoint {S : Type u} [CommRing S] [IsLocalRing S] {g : R →+* S}
+    {x : Spec (.of S) ⟶ W.projModel} (hx : x ≫ W.projModelOver = Spec.map (CommRingCat.ofHom g)) :
+    ∃ (P : Fin 3 → S) (hP : (W.toProjective.map g).Equation P) (i : Fin 3) (hi : IsUnit (P i)),
+      x = W.projModelPoint g hP hi := by
+  obtain ⟨i, α, rfl⟩ := W.exists_spec_map_comp_awayι x
+  -- through the isomorphism `awayEquivChartRing`, `α` is a homomorphism `β` out of the chart ring
+  obtain ⟨β, rfl⟩ : ∃ β : CommRingCat.of (W.toProjective.ChartRing i) ⟶ CommRingCat.of S,
+      α = CommRingCat.ofHom (W.toProjective.awayEquivChartRing i : _ →+* _) ≫ β :=
+    ⟨_, ((W.toProjective.awayEquivChartRing i).toCommRingCatIso.hom_inv_id_assoc α).symm⟩
+  -- so the point is `Spec β` followed by the chart `D₊(Xᵢ)`
+  rw [Spec.map_comp_assoc, ← chartι_def, W.SpecMap_chartι] at hx ⊢
+  -- the point lies over `Spec g` and over `Spec` of the composite `R → ChartRing i → S`
+  obtain rfl : β.hom.comp (algebraMap R _) = g := by
+    simpa only [projModelPoint_projModelOver, Spec.map_inj, CommRingCat.hom_ext_iff,
+      CommRingCat.hom_ofHom] using hx
+  exact ⟨_, _, i, _, rfl⟩
 
 private theorem sectionOfClass_surjective [IsLocalRing R] :
     Function.Surjective W.sectionOfClass := by

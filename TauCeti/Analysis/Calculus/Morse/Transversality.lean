@@ -30,10 +30,9 @@ This file proves the two basic consequences of transversality at a point `y` of
   intersection of the two tangent spaces, which is its own tangent space at `y`, of dimension `d`
   with `d + morseIndex f q = morseIndex f p`. This is the set of points on connecting
   trajectories, each trajectory counted once for every one of its points (the parametrized
-  trajectory locus). The space of unparametrized trajectories, the quotient by the flow whose
-  points the Morse differential counts, is not constructed here. For nonconstant trajectories
-  with `p ≠ q`, after constructing the free flow quotient, its expected dimension is one fewer:
-  `morseIndex f p - morseIndex f q - 1`.
+  trajectory locus). The space of unparametrized trajectories, whose points the Morse
+  differential counts, is modelled by a level slice of this locus, of dimension one fewer:
+  see `TauCeti.Analysis.Calculus.Morse.TrajectorySpace`.
 * If `p ≠ q`, the Morse index drops strictly: `morseIndex f q < morseIndex f p`. The velocity
   `-∇f y` of the trajectory through `y` is tangent to both invariant sets and is nonzero, so the
   intersection has positive dimension.
@@ -43,6 +42,8 @@ of `p`, and the complementary dimension for the stable set of `q`.
 
 ## Main results
 
+* `TauCeti.neg_gradient_mem_tangentConeAt_unstableSet_inter_stableSet`: the velocity of a
+  connecting trajectory is tangent to `W^u(p) ∩ W^s(q)`.
 * `TauCeti.IsNondegenerateCriticalPoint.finrank_span_tangentConeAt_unstableSet` and
   `TauCeti.IsNondegenerateCriticalPoint.finrank_span_tangentConeAt_stableSet_add_morseIndex`: the
   dimensions of the tangent spaces of the unstable and stable sets.
@@ -70,10 +71,27 @@ open scoped Gradient NNReal
 
 namespace TauCeti
 
-namespace IsNondegenerateCriticalPoint
-
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {f : E → ℝ} {p q y : E} {K : ℝ≥0}
+
+/-- The velocity `-∇f y` of the negative-gradient trajectory through a point `y` of
+`W^u(p) ∩ W^s(q)` is tangent to `W^u(p) ∩ W^s(q)`, since the trajectory stays in this invariant
+set. -/
+theorem neg_gradient_mem_tangentConeAt_unstableSet_inter_stableSet (hf : LipschitzWith K (∇ f))
+    (hyu : y ∈ Flow.unstableSet (negativeGradientFlow f hf) p)
+    (hys : y ∈ Flow.stableSet (negativeGradientFlow f hf) q) :
+    -∇ f y ∈ tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p ∩
+      Flow.stableSet (negativeGradientFlow f hf) q) y := by
+  set φ := negativeGradientFlow f hf
+  have hvel : HasDerivAt (fun t ↦ φ t y) (-∇ f y) 0 := by
+    simpa only [φ, _root_.Flow.map_zero_apply] using
+      (isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y 0
+  simpa only [φ, _root_.Flow.map_zero_apply] using
+    hvel.mem_tangentConeAt (S := Flow.unstableSet φ p ∩ Flow.stableSet φ q)
+      (Filter.Eventually.of_forall fun t ↦
+        ⟨Flow.isInvariant_unstableSet φ p t hyu, Flow.isInvariant_stableSet φ q t hys⟩)
+
+namespace IsNondegenerateCriticalPoint
 
 /-- The tangent space of the unstable set of a Morse critical point `p`, at any of its points, has
 dimension the Morse index of `p`. -/
@@ -194,16 +212,9 @@ theorem morseIndex_lt_of_mem_unstableSet_inter_stableSet (hp : IsNondegenerateCr
   set φ := negativeGradientFlow f hf
   -- The velocity `-∇f y` of the trajectory through `y` is tangent to the invariant set
   -- `W^u(p) ∩ W^s(q)`.
-  have hvel : HasDerivAt (fun t ↦ φ t y) (-∇ f y) 0 := by
-    simpa only [φ, _root_.Flow.map_zero_apply] using
-      (isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y 0
   have hmem : -∇ f y ∈
-      Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet φ p ∩ Flow.stableSet φ q) y) := by
-    refine Submodule.subset_span ?_
-    simpa only [φ, _root_.Flow.map_zero_apply] using
-      hvel.mem_tangentConeAt (S := Flow.unstableSet φ p ∩ Flow.stableSet φ q)
-        (Filter.Eventually.of_forall fun t ↦
-          ⟨Flow.isInvariant_unstableSet φ p t hyu, Flow.isInvariant_stableSet φ q t hys⟩)
+      Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet φ p ∩ Flow.stableSet φ q) y) :=
+    Submodule.subset_span (neg_gradient_mem_tangentConeAt_unstableSet_inter_stableSet hf hyu hys)
   -- It is nonzero, since `y` lies on a nonconstant trajectory.
   have hgrad : ∇ f y ≠ 0 := Flow.gradient_ne_zero_of_mem_unstableSet_inter_stableSet
     (fun z ↦ (forall_negativeGradientFlow_eq_self_iff f hf z).2) hpq ⟨hyu, hys⟩

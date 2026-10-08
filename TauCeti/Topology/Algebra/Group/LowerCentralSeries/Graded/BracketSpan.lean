@@ -268,14 +268,6 @@ theorem gradedBracketSpan_sup_span_range_gradedPowIter_eq_top {k : ℕ}
     obtain ⟨c, hc, t, ht, rfl⟩ := mem_sup.mp hv
     rw [gradedPow_add_of_one_le (Nat.le_add_left 1 k)]
     refine add_mem (mem_sup_left (gradedPow_mem_gradedBracketSpan hc)) (mem_sup_right ?_)
-    -- `π` carries the iterated `p`-powers `π^{k+1} z` to `π^{k+2} z`, linearly above degree zero.
-    have hmap : (span (ZMod p) (Set.range (gradedPowIter p G (k + 1)))).map
-        ((gradedPowAddMonoidHom p G (Nat.le_add_left 1 k)).toZModLinearMap p) ≤
-          span (ZMod p) (Set.range (gradedPowIter p G (k + 1 + 1))) := by
-      rw [map_span, span_le]
-      rintro _ ⟨_, ⟨z, rfl⟩, rfl⟩
-      exact subset_span ⟨z, by
-        rw [AddMonoidHom.coe_toZModLinearMap, gradedPowAddMonoidHom_apply, gradedPowIter_succ]⟩
-    exact hmap ⟨t, ht, by rw [AddMonoidHom.coe_toZModLinearMap, gradedPowAddMonoidHom_apply]⟩
+    exact gradedPow_mem_span_range_gradedPowIter_succ id (Nat.le_add_left 1 k) ht
 
 end TauCeti

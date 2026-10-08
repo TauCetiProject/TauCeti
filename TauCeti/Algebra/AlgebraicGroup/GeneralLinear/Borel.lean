@@ -67,7 +67,7 @@ abbrev weights : Fin 2 → ℤ :=
 
 /-- For the weights `(1, 0)`, the weight-parabolic relation set is the singleton containing the
 lower-left coordinate. -/
-theorem weightParabolicRelationSet_borelWeights :
+theorem weightParabolicRelationSet_weights :
     GeneralLinear.weightParabolicRelationSet R weights = {lowerLeftCoordinate R} := by
   ext x
   rw [GeneralLinear.mem_weightParabolicRelationSet_iff, Set.mem_singleton_iff]
@@ -90,7 +90,7 @@ noncomputable abbrev definingHopfIdeal :
 theorem definingHopfIdeal_toIdeal :
     (definingHopfIdeal R).toIdeal = Ideal.span {lowerLeftCoordinate R} :=
   by rw [definingHopfIdeal, GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal,
-    weightParabolicRelationSet_borelWeights]
+    weightParabolicRelationSet_weights]
 
 /-- The coordinate Hopf algebra of the upper-triangular Borel subgroup scheme of `GL₂`. -/
 noncomputable abbrev coordinateHopfAlgebra : _root_.CommHopfAlgCat.{u} R :=

@@ -240,20 +240,20 @@ variable {K : Type u} [Field K] (W : WeierstrassCurve K) [W.IsElliptic]
 -- Every section of the structure morphism of `projModel W` is the point with homogeneous
 -- coordinates a nonsingular representative `P` with a unit coordinate, and corresponds to the point
 -- `toAffine W P` of `W`.
-private theorem exists_eq_projModelPoint
+private theorem exists_nonsingular_eq_projModelPoint
     (x : {g : Spec (.of K) ⟶ W.projModel // g ≫ W.projModelOver = 𝟙 _}) :
     ∃ (P : Fin 3 → K) (hP : W.toProjective.Nonsingular P) (i : Fin 3) (hi : IsUnit (P i)),
       x.1 = W.projModelPoint (RingHom.id K) hP.1 hi ∧
         W.projModelPointsEquiv x = Projective.Point.toAffine W.toProjective P := by
-  -- the point at infinity and the affine points have such representatives
-  obtain ⟨P, hP, i, hi, h⟩ : ∃ (P : Fin 3 → K) (hP : W.toProjective.Nonsingular P) (i : Fin 3)
-      (hi : IsUnit (P i)), Projective.Point.toAffine W.toProjective P = W.projModelPointsEquiv x :=
-    match W.projModelPointsEquiv x with
-    | .zero => ⟨![0, 1, 0], Projective.nonsingular_zero, 1, by simp, Projective.Point.toAffine_zero⟩
-    | .some a b h => ⟨![a, b, 1], (Projective.nonsingular_some a b).mpr h, 2, by simp,
-        Projective.Point.toAffine_some ((Projective.nonsingular_some a b).mpr h)⟩
-  exact ⟨P, hP, i, hi, congrArg Subtype.val (W.projModelPointsEquiv.injective
-    ((W.projModelPointsEquiv_projModelPoint hP.1 hi).trans h)).symm, h.symm⟩
+  -- the section `x` lies over the identity of `K`, so it has homogeneous coordinates `P`
+  obtain ⟨P, hP, i, hi, hx⟩ := W.exists_eq_projModelPoint (g := RingHom.id K) (x := x.1)
+    (by simpa only [CommRingCat.ofHom_id, Spec.map_id] using x.2)
+  -- a solution with a nonzero coordinate on an elliptic curve over a field is nonsingular
+  have hP' : W.toProjective.Nonsingular P :=
+    (Projective.equation_iff_nonsingular_of_ne_zero (Function.ne_iff.mpr ⟨i, hi.ne_zero⟩)).mp
+      (by simpa only [WeierstrassCurve.map_id] using hP)
+  exact ⟨P, hP', i, hi, hx, (congrArg W.projModelPointsEquiv (Subtype.ext hx)).trans
+    (W.projModelPointsEquiv_projModelPoint hP'.1 hi)⟩
 
 /-- **The addition morphism on field points.** Let `W` be an elliptic Weierstrass curve over a
 field `K` and let `E = projModel W`. Through the identification `projModelPointsEquiv` of the
@@ -268,8 +268,8 @@ theorem projModelPointsEquiv_lift_additionMorphism [DecidableEq K]
     W.projModelPointsEquiv ⟨pullback.lift x.1 y.1 (x.2.trans y.2.symm) ≫ W.additionMorphism,
       by rw [Category.assoc, additionMorphism_projModelOver, pullback.lift_fst_assoc, x.2]⟩ =
       W.projModelPointsEquiv x + W.projModelPointsEquiv y := by
-  obtain ⟨P, hP, i, hi, hx, hxP⟩ := W.exists_eq_projModelPoint x
-  obtain ⟨Q, hQ, j, hj, hy, hyQ⟩ := W.exists_eq_projModelPoint y
+  obtain ⟨P, hP, i, hi, hx, hxP⟩ := W.exists_nonsingular_eq_projModelPoint x
+  obtain ⟨Q, hQ, j, hj, hy, hyQ⟩ := W.exists_nonsingular_eq_projModelPoint y
   -- their sum `add P Q` is nonsingular, so it has a unit coordinate
   have hPQ := Projective.nonsingular_add hP hQ
   have hne : W.toProjective.add P Q ≠ 0 := fun h ↦ by

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import TauCeti.Combinatorics.Quiver.BoundedPaths
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Corner
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Grading
 
 /-!
@@ -22,6 +23,10 @@ results apply to path algebras independently of any relations.
 
 * `TauCeti.PathAlgebra.pathsInto`: the span of paths of length `n` ending at `j`.
 * `TauCeti.PathAlgebra.mem_pathsInto_iff`: the span is the degree-`n` part of the corner at `j`.
+* `TauCeti.PathAlgebra.pathsBetween`: the degree-`n` part of the corner cut out by two vertices.
+* `TauCeti.PathAlgebra.mem_pathsBetween_iff`: membership in that degree-`n` corner.
+* `TauCeti.PathAlgebra.finrank_pathsBetween`: the dimension of that corner is the number of
+  paths of the prescribed length between the vertices.
 * `TauCeti.PathAlgebra.mul_mem_pathsInto`: multiplication adds path lengths.
 * `TauCeti.PathAlgebra.exists_eq_sum_ofArrow_mul` and
   `TauCeti.PathAlgebra.sum_ofArrow_mul_eq_zero_iff`: existence and uniqueness of the last-arrow
@@ -45,6 +50,10 @@ variable {R : Type u} [Quiver.{v} R]
 abbrev PathInto (R : Type u) [Quiver.{v} R] (n : ℕ) (j : R) : Type _ :=
   {p : Σ s : R, Path s j // p.2.length = n}
 
+/-- The paths of length `n` from `i` to `j`. -/
+abbrev PathBetween (R : Type u) [Quiver.{v} R] (n : ℕ) (i j : R) : Type _ :=
+  {p : Path i j // p.length = n}
+
 private theorem pathInto_injective (n : ℕ) (j : R) :
     Function.Injective fun p : PathInto R n j => (⟨p.1.1, j, p.1.2⟩ : Quiver.TotalPath R) := by
   rintro ⟨⟨s, p⟩, hp⟩ ⟨⟨s', p'⟩, hp'⟩ h
@@ -63,6 +72,16 @@ instance finite_pathInto [Finite R] [∀ a b : R, Finite (a ⟶ b)] (n : ℕ) (j
       (⟨⟨p.1.1, j, p.1.2⟩, p.2.le⟩ : {x : Σ a b : R, Path a b | x.2.2.length ≤ n})) ?_
   intro p q h
   exact pathInto_injective n j (congrArg Subtype.val h)
+
+/-- For a finite quiver, the paths of a fixed length between two vertices form a finite type. -/
+instance finite_pathBetween [Finite R] [∀ a b : R, Finite (a ⟶ b)]
+    (n : ℕ) (i j : R) : Finite (PathBetween R n i j) :=
+  Finite.of_injective
+    (fun p : PathBetween R n i j =>
+      (⟨(⟨i, p.1⟩ : Σ s : R, Path s j), p.2⟩ : PathInto R n j))
+    fun ⟨p, hp⟩ ⟨q, hq⟩ h => by
+      simp only [Subtype.mk.injEq, Sigma.mk.injEq, heq_eq_eq, true_and] at h
+      exact Subtype.ext h
 
 /-- Every path of length `n + 1` into `j` has a unique last arrow and a length-`n` prefix. -/
 theorem card_arrow_mul_card_pathInto_eq [Fintype R] [∀ a b : R, Fintype (a ⟶ b)]
@@ -104,6 +123,12 @@ variable [CommSemiring k]
 noncomputable def pathsInto (n : ℕ) (j : R) : Submodule k (pathAlgebra k R) :=
   Submodule.span k
     (Set.range fun p : PathInto R n j => (ofPath ⟨p.1.1, j, p.1.2⟩ : pathAlgebra k R))
+
+/-- The span of paths of length `n` from `i` to `j`. For a finite vertex type this is the
+degree-`n` part of the corner `e_j kR e_i`. -/
+noncomputable def pathsBetween (n : ℕ) (i j : R) : Submodule k (pathAlgebra k R) :=
+  Submodule.span k
+    (Set.range fun p : PathBetween R n i j => (ofPath ⟨i, j, p.1⟩ : pathAlgebra k R))
 
 variable {k}
 
@@ -163,6 +188,56 @@ theorem mem_pathsInto_iff {n : ℕ} {j : R} {x : pathAlgebra k R} :
     x ∈ pathsInto k n j ↔ x ∈ grade k R n ∧ vertexIdempotent k j * x = x :=
   ⟨fun hx => ⟨pathsInto_le_grade n j hx, vertexIdempotent_mul_of_mem_pathsInto hx⟩,
     fun ⟨hx, hjx⟩ => hjx ▸ vertexIdempotent_mul_mem_pathsInto j hx⟩
+
+/-- **The paths of length `n` from `i` to `j` span the degree-`n` part of the corner
+`e_j kR e_i`.** -/
+@[simp]
+theorem mem_pathsBetween_iff {n : ℕ} {i j : R} {x : pathAlgebra k R} :
+    x ∈ pathsBetween k n i j ↔
+      x ∈ grade k R n ∧ vertexIdempotent k j * x * vertexIdempotent k i = x := by
+  constructor
+  · intro hx
+    induction hx using Submodule.span_induction with
+    | mem y hy =>
+        obtain ⟨p, rfl⟩ := hy
+        exact ⟨ofPath_mem_grade_of_length p.2,
+          by rw [vertexIdempotent_mul_ofPath, ofPath_mul_vertexIdempotent]⟩
+    | zero => simp
+    | add y z _ _ hy hz =>
+        exact ⟨add_mem hy.1 hz.1, by rw [mul_add, add_mul, hy.2, hz.2]⟩
+    | smul c y _ hy =>
+        exact ⟨Submodule.smul_mem _ c hy.1, by rw [mul_smul_comm, smul_mul_assoc, hy.2]⟩
+  · rintro ⟨hgrade, hcorner⟩
+    rw [← hcorner]
+    clear hcorner
+    rw [grade_eq_span_range] at hgrade
+    induction hgrade using Submodule.span_induction with
+    | mem x hx =>
+        obtain ⟨⟨⟨a, b, p⟩, hp⟩, rfl⟩ := hx
+        dsimp only
+        by_cases ha : a = i
+        · subst a
+          by_cases hb : b = j
+          · subst b
+            rw [vertexIdempotent_mul_ofPath, ofPath_mul_vertexIdempotent, pathsBetween]
+            exact Submodule.subset_span
+              (Set.mem_range_self (⟨p, hp⟩ : PathBetween R n i j))
+          · rw [vertexIdempotent_mul_ofPath_of_ne _ (Ne.symm hb), zero_mul]
+            exact Submodule.zero_mem _
+        · rw [mul_assoc, ofPath_mul_vertexIdempotent_of_ne _ (Ne.symm ha), mul_zero]
+          exact Submodule.zero_mem _
+    | zero => simp
+    | add x y _ _ hx hy => simpa only [mul_add, add_mul] using add_mem hx hy
+    | smul r x _ hx =>
+        simpa only [mul_smul_comm, smul_mul_assoc] using Submodule.smul_mem _ r hx
+
+/-- **The paths of fixed length between two vertices form the corresponding graded corner.** -/
+theorem pathsBetween_eq_cornerSubmodule_inf_grade [Finite R] (n : ℕ) (i j : R) :
+    pathsBetween k n i j =
+      cornerSubmodule k (vertexIdempotent k j) (vertexIdempotent k i) ⊓ grade k R n := by
+  ext x
+  rw [mem_pathsBetween_iff, Submodule.mem_inf, mem_cornerSubmodule_iff k
+    (vertexIdempotent_mul_self j) (vertexIdempotent_mul_self i), and_comm]
 
 /-- The product of an element of `pathsInto k a i` and one of `pathsInto k c j` lies in
 `pathsInto k (c + a) i`: the paths of the right factor are followed by those of the left one. -/
@@ -289,6 +364,25 @@ theorem finrank_pathsInto [Finite R] [∀ a b : R, Finite (a ⟶ b)] (n : ℕ) (
     have h := (pathAlgebraBasis k R).linearIndependent.comp _ (pathInto_injective n j)
     simpa only [coe_pathAlgebraBasis, Function.comp_def] using h
   rw [pathsInto, finrank_span_eq_card hli, Nat.card_eq_fintype_card]
+
+instance finiteDimensional_pathsBetween (n : ℕ) (i j : R) [Finite (PathBetween R n i j)] :
+    FiniteDimensional k (pathsBetween k n i j) :=
+  FiniteDimensional.span_of_finite k (Set.finite_range _)
+
+/-- The dimension of the length-`n` corner from `i` to `j` is the number of length-`n` paths
+from `i` to `j`. -/
+theorem finrank_pathsBetween (n : ℕ) (i j : R) [Finite (PathBetween R n i j)] :
+    Module.finrank k (pathsBetween k n i j) = Nat.card (PathBetween R n i j) := by
+  have := Fintype.ofFinite (PathBetween R n i j)
+  have hli : LinearIndependent k
+      fun p : PathBetween R n i j => (ofPath ⟨i, j, p.1⟩ : pathAlgebra k R) := by
+    have h := (pathAlgebraBasis k R).linearIndependent.comp
+      (fun p : PathBetween R n i j => (⟨i, j, p.1⟩ : Quiver.TotalPath R))
+      (fun ⟨p, hp⟩ ⟨q, hq⟩ h => by
+        simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at h
+        exact Subtype.ext h)
+    simpa only [coe_pathAlgebraBasis, Function.comp_def] using h
+  rw [pathsBetween, finrank_span_eq_card hli, Nat.card_eq_fintype_card]
 
 end Field
 

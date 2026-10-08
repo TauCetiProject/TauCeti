@@ -780,7 +780,7 @@ group is compact and every representation of it is continuous by `continuous_of_
 and the caller is left with a bare finite group. The form being averaged is the explicit
 `|G|⁻¹ ∑ g, ⟪π g ·, π g ·⟫` of `ContRepresentation.inner_gramOperator_eq_inv_mul_sum`. -/
 theorem exists_isUnitary_congr_of_finite (π : ContRepresentation 𝕜 G V) :
-    ∃ e : V ≃L[𝕜] V, IsUnitary (congr e π) := by
+    ∃ e : V ≃L[𝕜] V, IsUnitary (ContinuousLinearEquiv.congr e π) := by
   let _ : TopologicalSpace G := ⊥
   have _ : DiscreteTopology G := ⟨rfl⟩
   let _ : MeasurableSpace G := borel G
@@ -796,7 +796,7 @@ automorphism `e` of the carrier.
 This is the finite shadow of complete reducibility, and all that is finite about it is the
 production of `e`: unitarity is not assumed but produced, by the finite unitarian trick
 `ContRepresentation.exists_isUnitary_congr_of_finite`, and the decomposition of `π` itself is then
-`TauCeti.ContRepresentation.IsUnitary.exists_orthogonal_irreducible_decomposition_of_congr`, which
+`ContRepresentation.IsUnitary.exists_orthogonal_irreducible_decomposition_of_congr`, which
 decomposes the unitary model and carries every block back along the equivalence of representations
 `ContRepresentation.congrEquiv : π.Equiv (congr e π)` for an arbitrary group. The blocks are
 therefore subrepresentations of `π` itself.
@@ -811,7 +811,7 @@ which produces complements but no inner product; the plain semisimplicity is not
 being already a Mathlib instance for every field in which `|G|` is invertible. -/
 theorem exists_orthogonal_irreducible_decomposition_of_finite (π : ContRepresentation 𝕜 G V) :
     ∃ (e : V ≃L[𝕜] V) (n : ℕ) (U : Fin n → Subrepresentation π.toRepresentation),
-      IsUnitary (congr e π) ∧
+      IsUnitary (ContinuousLinearEquiv.congr e π) ∧
       (∀ i, (U i).toRepresentation.IsIrreducible) ∧
       (Pairwise fun i j ↦ ∀ v ∈ (U i).toSubmodule, ∀ w ∈ (U j).toSubmodule, ⟪e v, e w⟫_𝕜 = 0) ∧
       DirectSum.IsInternal (fun i ↦ (U i).toSubmodule) ∧
