@@ -70,15 +70,14 @@ lattices are trivial and the index is `1`), so the datum is a `RootDatum` carryi
 
 The coordinates and the node numbering follow Bourbaki, *Lie Groups and Lie Algebras, Chapters
 4--6*, Plate III, and Humphreys, *Introduction to Lie Algebras and Representation Theory*, section
-12.1. This is the `Cₙ` branch of the target "a named datum per valid type" in Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`.
+12.1.
 -/
 
 public section
 
 namespace TauCeti
 
-open Function Set Submodule
+open Function Set
 
 namespace DynkinType
 
@@ -332,7 +331,7 @@ def typeCIndexEquiv (n : ℕ) : TypeCIndex n ≃ Fin (2 * n ^ 2) :=
 
 Both lattices are `Fin n → ℤ`: the character lattice in the fundamental-weight basis and the
 cocharacter lattice in the simple-coroot basis. The `2 * n ^ 2` roots are the classical
-`± e_a ± e_b` and `± 2 e_a`, enumerated with the simple roots first; see
+`± e_a ± e_b` with `a ≠ b` and `± 2 e_a`, enumerated with the simple roots first; see
 `TauCeti.DynkinType.root_typeCSimpleIndex`. -/
 def typeCSimplyConnectedRootDatum (n : ℕ) :
     RootDatum (Fin (2 * n ^ 2)) (Fin n → ℤ) (Fin n → ℤ) where

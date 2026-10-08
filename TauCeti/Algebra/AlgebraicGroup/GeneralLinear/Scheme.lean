@@ -439,20 +439,9 @@ theorem schemePointsMulEquiv_mapValue (φ : A →ₐ[R] B)
         ((Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver
             (Spec (CommRingCat.of R)) ≫ p) =
       Matrix.GeneralLinearGroup.map φ.toRingHom (schemePointsMulEquiv n A p) := by
-  let q : WithConv (coordinateHopfAlgebra R n →ₐ[R] A) :=
-    (groupSchemePointMulEquiv n A).symm p
-  have hpre :
-      (groupSchemePointMulEquiv n B).symm
-          ((Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver
-            (Spec (CommRingCat.of R)) ≫ p) =
-        HopfAlgebra.mapPoints (H := coordinateHopfAlgebra R n)
-          (CommAlgCat.ofHom φ) q := by
-    simpa only [q, groupSchemePointMulEquiv] using
-      CommHopfAlgCat.mapMulEquivOfPresentation_mapValue
-        (coordinateHopfAlgebra R n) φ (groupScheme_def R n) p
-  simp only [schemePointsMulEquiv, MulEquiv.trans_apply]
-  rw [hpre, HopfAlgebra.mapPoints_apply, ← AlgHom.mapValue_apply]
-  exact pointsMulEquiv_mapValue n φ q
+  unfold schemePointsMulEquiv groupSchemePointMulEquiv
+  exact CommHopfAlgCat.mapMulEquivOfPresentation_symm_trans_mapValue
+    (coordinateHopfAlgebra R n) φ (groupScheme_def R n) _ _ _ (pointsMulEquiv_mapValue n φ) p
 
 end SchemePoints
 
