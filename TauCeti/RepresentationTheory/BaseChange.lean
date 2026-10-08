@@ -353,7 +353,7 @@ theorem _root_.Representation.IntertwiningMap.baseChange_apply_baseChange_apply_
 
 /-- An intertwining map with two scalar inverse composites becomes bijective after base
 change whenever both scalars become units in the new coefficient semiring. -/
-theorem _root_.Representation.IntertwiningMap.bijective_baseChange_of_comp_eq_smul
+theorem _root_.Representation.IntertwiningMap.baseChange_bijective_of_comp_eq_smul
     {f : _root_.Representation.IntertwiningMap ρ σ} {g : _root_.Representation.IntertwiningMap σ ρ}
     {r s : R} (hgf : ∀ v, g (f v) = r • v) (hfg : ∀ w, f (g w) = s • w)
     (A : Type*) [Semiring A] [Algebra R A] (hr : IsUnit (algebraMap R A r))
