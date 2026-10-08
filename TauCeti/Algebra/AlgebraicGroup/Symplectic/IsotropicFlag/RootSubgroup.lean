@@ -50,7 +50,8 @@ private theorem tangentMatrix_blockTriangular_flagOrder
   cases root with
   | positiveLong i =>
     rw [GLSymplecticFin.RootSubgroupIndex.tangentMatrix_positiveLong]
-    exact Matrix.blockTriangular_single (hpos i i) c
+    exact Matrix.blockTriangular_single
+      (b := fun i : Fin m ⊕ Fin m ↦ flagOrder m (finSumFinEquiv i)) (hpos i i) c
   | negativeLong i => exact (not_diagonalRootBase_isPos_negativeLong i hroot).elim
   | difference i j hij =>
     have hij' := (diagonalRootBase_isPos_difference_iff hij).mp hroot
@@ -64,8 +65,10 @@ private theorem tangentMatrix_blockTriangular_flagOrder
       omega
   | positiveSum i j hij =>
     rw [GLSymplecticFin.RootSubgroupIndex.tangentMatrix_positiveSum]
-    exact (Matrix.blockTriangular_single (hpos i j) c).add
-      (Matrix.blockTriangular_single (hpos j i) c)
+    exact (Matrix.blockTriangular_single
+      (b := fun i : Fin m ⊕ Fin m ↦ flagOrder m (finSumFinEquiv i)) (hpos i j) c).add
+      (Matrix.blockTriangular_single
+        (b := fun i : Fin m ⊕ Fin m ↦ flagOrder m (finSumFinEquiv i)) (hpos j i) c)
   | negativeSum i j hij => exact (not_diagonalRootBase_isPos_negativeSum hij hroot).elim
 
 /-- Every positive root subgroup factors through the standard symplectic flag stabilizer:
