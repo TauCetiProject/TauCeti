@@ -284,7 +284,8 @@ theorem zigzagGradedSimple_def (i : V) :
     zigzagGradedSimple k G i =
       let _ := zigzagIntegerGradedAlgebra k G
       gradedIdempotentHead (zigzagIntegerGrade k G)
-        (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G i) := rfl
+        (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G i) := by
+  rw [zigzagGradedSimple]
 
 /-- A graded vertex simple is a finite graded module. -/
 theorem gradedFiniteModules_zigzagGradedSimple (i : V) :
