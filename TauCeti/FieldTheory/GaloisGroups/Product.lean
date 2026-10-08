@@ -10,6 +10,7 @@ public import Mathlib.FieldTheory.LinearDisjoint
 public import Mathlib.FieldTheory.PolynomialGaloisGroup
 public import Mathlib.FieldTheory.SeparableClosure
 public import TauCeti.GroupTheory.Perm.Partition
+public import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
 # The Galois group of a product of polynomials
@@ -42,9 +43,6 @@ Separability is what makes `L/F` Galois, which the description of the image uses
   equivalent to linear disjointness.
 * `Polynomial.Gal.restrictProdMulEquiv`: linearly disjoint splitting fields give an isomorphism
   from the Galois group of the product to the product of the two Galois groups.
-* `Polynomial.Separable.pairwiseDisjoint_rootSet`: the factors of a separable product have
-  pairwise disjoint root sets, so by `Polynomial.rootSet_prod` the root set of the product is
-  their disjoint union.
 * `Polynomial.Gal.fullCycleType_galActionHom_restrict_prod`: an automorphism of a field in which
   a separable product of polynomials splits permutes the roots of each factor, and the full cycle
   type of its action on the roots of the product is the sum of those on the roots of the factors.
@@ -229,36 +227,29 @@ section CycleType
 
 variable {E : Type*} [Field E] [Algebra F E] {ι : Type*}
 
-/-- The factors of a separable product have pairwise disjoint root sets: a common root of two
-factors would be a repeated root of the product. Together with `Polynomial.rootSet_prod`, the
-root set of the product is the disjoint union of the root sets of the factors. -/
-theorem _root_.Polynomial.Separable.pairwiseDisjoint_rootSet {s : Finset ι}
-    {g : ι → F[X]} (hsep : (∏ i ∈ s, g i).Separable) :
-    (s : Set ι).PairwiseDisjoint fun i => (g i).rootSet E := by
-  classical
-  intro i hi j hj hij
-  refine Set.disjoint_left.mpr fun y hyi hyj => ?_
-  have hdvd : g i * g j ∣ ∏ k ∈ s, g k := by
-    rw [← Finset.prod_pair hij]
-    exact Finset.prod_dvd_prod_of_subset _ _ _ (Finset.insert_subset hi (by simpa using hj))
-  obtain ⟨a, b, hab⟩ := (hsep.of_dvd hdvd).isCoprime
-  have := congrArg (aeval y) hab
-  simp [(mem_rootSet.mp hyi).2, (mem_rootSet.mp hyj).2] at this
-
 variable [Fintype ι]
 
 open scoped Classical in
 /-- **The full cycle type is additive along the factors of a separable product.** Let
-`f = ∏ i, g i` be separable, and let `ϕ` be an automorphism of a field `E` in which `f` and every
-`g i` split. The root set of `f` in `E` is the disjoint union of those of the `g i`, `ϕ` permutes
-each of them, and the full cycle type of `ϕ` on the roots of `f` is the sum of its full cycle
-types on the roots of the `g i`. -/
+`f = ∏ i, g i` be separable, and let `ϕ` be an automorphism of a field `E` in which `f`
+splits (hence each `g i` splits). The root set of `f` in `E` is the disjoint union of those of the
+`g i`, `ϕ` permutes each of them, and the full cycle type of `ϕ` on the roots of `f` is the sum
+of its full cycle types on the roots of the `g i`. -/
 theorem _root_.Polynomial.Gal.fullCycleType_galActionHom_restrict_prod (g : ι → F[X])
     (hsep : (∏ i, g i).Separable) [Fact (((∏ i, g i).map (algebraMap F E)).Splits)]
-    [∀ i, Fact (((g i).map (algebraMap F E)).Splits)] (ϕ : Gal(E/F)) :
+    (ϕ : Gal(E/F)) :
+    let : ∀ i, Fact (((g i).map (algebraMap F E)).Splits) := fun i => ⟨by
+      have hs : ((∏ i, g i).map (algebraMap F E)).Splits := Fact.out
+      exact hs.of_dvd hsep.map.ne_zero
+        (Polynomial.map_dvd _ (Finset.dvd_prod_of_mem g (Finset.mem_univ i)))⟩
     (Gal.galActionHom (∏ i, g i) E (Gal.restrict (∏ i, g i) E ϕ)).fullCycleType =
       ∑ i, (Gal.galActionHom (g i) E (Gal.restrict (g i) E ϕ)).fullCycleType := by
   classical
+  -- Splitting of the nonzero product supplies the factor actions.
+  let : ∀ i, Fact (((g i).map (algebraMap F E)).Splits) := fun i => ⟨by
+    have hs : ((∏ i, g i).map (algebraMap F E)).Splits := Fact.out
+    exact hs.of_dvd hsep.map.ne_zero
+      (Polynomial.map_dvd _ (Finset.dvd_prod_of_mem g (Finset.mem_univ i)))⟩
   have hf0 : ∏ i, g i ≠ 0 := hsep.ne_zero
   have hg0 : ∀ i, g i ≠ 0 := fun i h => hf0 (Finset.prod_eq_zero (Finset.mem_univ i) h)
   have hmem : ∀ i, ∀ y ∈ (g i).rootSet E, y ∈ (∏ i, g i).rootSet E := fun i y hy =>

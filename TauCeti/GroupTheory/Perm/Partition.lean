@@ -491,10 +491,11 @@ theorem fullCycleType_eq_map_card_filter {γ : Type*}
   rw [fullCycleType, ← hcycle, ← hfixed, ← Multiset.map_add, Finset.filter_val,
     Finset.filter_val, Multiset.filter_add_not]
 
+open scoped Classical in
 /-- **The full cycle type is additive along an invariant decomposition.** If `σ` preserves the
 fibres of `π : α → ι`, then the full cycle type of `σ` is the sum, over the fibres, of the full
 cycle types of the restrictions of `σ` to them. -/
-theorem fullCycleType_eq_sum_subtypePerm {ι : Type*} [Fintype ι] [DecidableEq ι]
+theorem fullCycleType_eq_sum_subtypePerm {ι : Type*} [Fintype ι]
     (σ : Equiv.Perm α) (π : α → ι) (hπ : ∀ x, π (σ x) = π x) :
     σ.fullCycleType =
       ∑ i, (σ.subtypePerm (p := fun x => π x = i) fun x => by rw [hπ]).fullCycleType := by
