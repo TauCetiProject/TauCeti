@@ -174,7 +174,8 @@ end EulerCharacteristic
 
 section CardNorm
 
-variable (p : ℕ) [Fact p.Prime] [Algebra ℚ_[p] F]
+variable [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocalField F]
+  (p : ℕ) [Fact p.Prime] [FinitePadicExtension F p]
 
 variable (n) in
 /-- **The normalized absolute value of the order on `G₀` of a finite Galois quotient.** The
@@ -205,7 +206,7 @@ end CardNorm
 section Comparison
 
 variable [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocalField F]
-  (p : ℕ) [Fact p.Prime] [Algebra ℚ_[p] F]
+  (p : ℕ) [Fact p.Prime] [FinitePadicExtension F p]
 
 /-- If the two descended homomorphisms for `V` agree, then `χ_F = φ_F` on every Galois
 representation isomorphic to the inflation of a finite representation of `G_F ⧸ V`. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Ring.Subring.Units
 public import TauCeti.NumberTheory.ClassFieldTheory.FiniteCohomology.DegreeTwo
+public import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 
 /-!
 # The local Euler characteristic
@@ -18,8 +19,8 @@ file defines the three-term local Euler characteristic
 χ_F(A) = |H⁰(F, A)| |H²(F, A)| / |H¹(F, A)|.
 ```
 
-Over a field `F` with a `ℚ_p`-algebra structure it also defines the normalized absolute value of
-the order of `A`,
+Over a finite compatible extension `F` of `ℚ_p` (`TauCeti.FinitePadicExtension`) it also defines
+the normalized absolute value of the order of `A`,
 
 ```text
 φ_F(A) = ‖#A‖_F = |#A|_p ^ [F : ℚ_p] = p ^ (-[F : ℚ_p] v_p(#A)),
@@ -101,13 +102,13 @@ end EulerCharacteristic
 
 section CardNorm
 
-variable {F : Type} [Field F] (p : ℕ) [Fact p.Prime] [Algebra ℚ_[p] F]
+variable {F : Type} [Field F] [ValuativeRel F] [TopologicalSpace F]
+  [IsNonarchimedeanLocalField F] (p : ℕ) [Fact p.Prime] [FinitePadicExtension F p]
 
-/-- **The normalized absolute value of the order** of a finite Galois representation over a field
-`F` with a `ℚ_p`-algebra structure, as a positive rational number:
-`φ_F(A) = ‖#A‖_F = |#A|_p ^ [F : ℚ_p]`. For `F/ℚ_p` finite this is
-`p ^ (-[F : ℚ_p] v_p(#A))`, the right-hand side of Tate's local Euler characteristic formula
-`χ_F(A) = φ_F(A)`. -/
+/-- **The normalized absolute value of the order** of a finite Galois representation over a
+finite compatible extension `F` of `ℚ_p`, as a positive rational number:
+`φ_F(A) = ‖#A‖_F = |#A|_p ^ [F : ℚ_p] = p ^ (-[F : ℚ_p] v_p(#A))`, the right-hand side of Tate's
+local Euler characteristic formula `χ_F(A) = φ_F(A)`. -/
 def localCardNorm (A : GalRep n F) [Finite A.V] : Units.posSubgroup ℚ :=
   have hq : 0 < padicNorm p (Nat.card A.V) ^ Module.finrank ℚ_[p] F :=
     pow_pos ((padicNorm.nonneg _).lt_of_ne
