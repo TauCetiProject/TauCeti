@@ -217,7 +217,7 @@ end CommRing
 section Field
 
 variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
-  {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜] {I : Type uI} [Fintype I] {e : I → A}
+  {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜] {I : Type uI} [Finite I] {e : I → A}
   (hneg : ∀ p < 0, 𝒜 p = ⊥) (he : OrthogonalIdempotents e) (he₀ : ∀ i, e i ∈ 𝒜 0)
   (hspan : 𝒜 0 ≤ Submodule.span k (Set.range e)) (hne : ∀ i, e i ≠ 0)
 
@@ -269,6 +269,7 @@ include he hspan in
 private theorem exists_eq_smul_of_mem_zero {i : I} {x : A} (hx : x ∈ 𝒜 0)
     (hxi : x ∈ (Ideal.span {e i} : Ideal A)) : ∃ c : k, x = c • e i := by
   classical
+  let _ := Fintype.ofFinite I
   obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun k).1 (hspan hx)
   refine ⟨c i, ?_⟩
   rw [mem_span_singleton_iff_mul_eq_self (he.idem i)] at hxi
@@ -299,7 +300,7 @@ private theorem exists_eq_smul_headGenerator (i : I) (y : gradedIdempotentHead �
     DirectSum.sub_apply, DirectSum.smul_apply, Submodule.coe_sub, Submodule.coe_smul_of_tower,
     decompose_of_mem_same 𝒜 (he₀ i), hc, sub_self]
 
-omit [Fintype I] in
+omit [Finite I] in
 include hneg in
 /-- The class of `eᵢ` in the head of `A eᵢ` is nonzero. -/
 private theorem headGenerator_ne_zero (i : I) (hne : e i ≠ 0) : headGenerator e he₀ i ≠ 0 := by
@@ -309,6 +310,7 @@ private theorem headGenerator_ne_zero (i : I) (hne : e i ≠ 0) : headGenerator 
   rw [decompose_of_mem_same 𝒜 (he₀ i)] at h₀
   exact hne h₀
 
+omit [Finite I] in
 include he in
 /-- The idempotent `eⱼ` acts on the class of `eᵢ` by `δᵢⱼ`. -/
 private theorem smul_headGenerator [DecidableEq I] (j i : I) :
@@ -338,6 +340,7 @@ private theorem head_piece_zero (i : I) :
     exact ⟨c • ⟨e i, Ideal.subset_span rfl⟩, Submodule.smul_mem _ c (he₀ i), by
       rw [LinearMap.map_smul_of_tower, headGenerator]⟩
 
+omit [Finite I] in
 include hneg he in
 /-- The head of `A eᵢ` vanishes outside degree zero. -/
 private theorem head_piece_eq_bot (i : I) {p : ℤ} (hp : p ≠ 0) :
@@ -407,9 +410,9 @@ theorem simple_gradedIdempotentHead (i : I) (hne : e i ≠ 0) :
     have : Epi f := (GradedModuleCat.epi_iff_surjective f).2 hsurj
     exact isIso_of_mono_of_epi f
 
-variable (he : CompleteOrthogonalIdempotents e)
+variable [Fintype I] (hcomplete : CompleteOrthogonalIdempotents e)
 
-include hneg he hspan in
+include hneg hcomplete hspan in
 /-- **Every simple finite graded module is a shift of a graded head `Sᵢ`.** If `p` is the top
 degree of `M` and `m ∈ Mₚ` satisfies `eᵢ m ≠ 0`, then `x eᵢ ↦ x eᵢ m` is an isomorphism
 `Sᵢ{p} ≅ M`. -/
@@ -441,7 +444,7 @@ theorem isExhaustiveGradedSimpleFamily_gradedIdempotentHead [Module.Finite k A] 
   obtain ⟨i, hi⟩ : ∃ i, e i • m ≠ 0 := by
     by_contra! h
     apply hm₀
-    rw [← one_smul A m, ← he.complete, Finset.sum_smul]
+    rw [← one_smul A m, ← hcomplete.complete, Finset.sum_smul]
     exact Finset.sum_eq_zero fun i _ => h i
   have hm' : e i • m ∈ M.obj.grading.piece p := by
     simpa using SetLike.GradedSMul.smul_mem (B := M.obj.grading.piece) (he₀ i) hm
@@ -469,11 +472,11 @@ theorem isExhaustiveGradedSimpleFamily_gradedIdempotentHead [Module.Finite k A] 
         rwa [gradedIdempotentHeadLift_gradedIdempotentHeadMk, add_zero]
   have hφg : φ.hom (headGenerator e he₀ i) = e i • m := by
     rw [GradedModuleCat.hom_ofHom, headGenerator, gradedIdempotentHeadLift_gradedIdempotentHeadMk,
-      ← mul_smul, (he.idem i).eq]
+      ← mul_smul, (hcomplete.idem i).eq]
   have hinj : Function.Injective φ.hom := by
     rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
     intro y hy
-    obtain ⟨c, rfl⟩ := exists_eq_smul_headGenerator hneg he.toOrthogonalIdempotents he₀ hspan i y
+    obtain ⟨c, rfl⟩ := exists_eq_smul_headGenerator hneg hcomplete.toOrthogonalIdempotents he₀ hspan i y
     rw [LinearMap.mem_ker, LinearMap.map_smul_of_tower, hφg, smul_eq_zero] at hy
     rw [hy.resolve_right hi, zero_smul]
   have : Mono φ := (GradedModuleCat.mono_iff_injective φ).2 hinj
