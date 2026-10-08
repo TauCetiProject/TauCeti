@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Place.Expansion.LaurentSeries
-public import Mathlib.RingTheory.LaurentSeries
+public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Laurent.Series
 
 /-!
 # Laurent expansions and residues at rational places
@@ -148,11 +147,8 @@ theorem coeff_laurentSeriesExpansion_sub_natCast (n : ℕ) {z : F}
 /-- The residue `res_{P,t}` of a function at a rational place with respect to a chosen
 uniformizer: the coefficient of `t⁻¹` in its Laurent expansion (Stichtenoth,
 Definition 4.2.8). It is `k`-linear. -/
-noncomputable def residue : F →ₗ[k] k where
-  toFun z := (P.laurentSeriesExpansion hP ht z).coeff (-1)
-  map_add' z w := by simp
-  map_smul' c z := by
-    simp [Algebra.smul_def, HahnSeries.algebraMap_apply']
+noncomputable def residue : F →ₗ[k] k :=
+  (HahnSeries.coeff.linearMap (-1)).comp (P.laurentSeriesExpansion hP ht).toLinearMap
 
 /-- The residue is the coefficient of `T⁻¹` in the Laurent expansion. -/
 theorem residue_apply (z : F) :
