@@ -39,9 +39,7 @@ variable {k G V : Type*} [CommRing k] [Group G] [Fintype G] [AddCommGroup V] [Mo
 
 /-- **Lifting a norm decomposition of the identity from `k/pk`.** Let `G` have order `p ^ m` and
 act on a free `k`-module `V` on which multiplication by `p` is injective. If the identity of
-`(k/pk) ⊗ V` is a norm for the conjugation action of `G`, then so is the identity of `V`: lifting
-through a basis, the identity of `V` is a norm plus `p ^ j` times an equivariant endomorphism for
-every `j`, and `p ^ m` times an equivariant endomorphism is its own norm. -/
+`(k/pk) ⊗ V` is a norm for the conjugation action of `G`, then so is the identity of `V`. -/
 theorem id_mem_range_norm_linHom_of_baseChange [Module.Free k V] (ρ : Representation k G V)
     {p m : ℕ} (hcard : Fintype.card G = p ^ m) (hp : ∀ v : V, (p : k) • v = 0 → v = 0)
     (h : LinearMap.id ∈ LinearMap.range

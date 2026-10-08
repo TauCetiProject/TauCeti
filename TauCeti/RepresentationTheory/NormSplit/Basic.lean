@@ -85,8 +85,7 @@ theorem index_nsmul_id_mem_range_norm_linHom (H : Subgroup G) [Fintype H]
 
 /-- **The identity is a norm if it is one at every prime.** If for every prime `p` the identity of
 `V` is a norm for the conjugation action of a subgroup of index prime to `p`, then it is a norm
-for the conjugation action of `G`: the integers `n` for which `n` times the identity is a
-`G`-norm form an ideal of `ℤ` containing an integer prime to each prime. -/
+for the conjugation action of `G`. -/
 theorem id_mem_range_norm_linHom_of_forall_prime
     (h : ∀ p : ℕ, p.Prime → ∃ (H : Subgroup G) (_ : Fintype H), ¬ p ∣ H.index ∧
       LinearMap.id ∈ LinearMap.range (Representation.norm ((linHom ρ ρ).comp H.subtype))) :
@@ -120,8 +119,7 @@ namespace Rep
 open CategoryTheory
 
 /-- **A free representation whose identity is a norm is projective.** If `A` is free over `k` and
-`id_A = ∑ g, A.ρ g ∘ φ ∘ A.ρ g⁻¹` for a `k`-linear `φ`, then `A` is a retract of the free
-representation on a `k`-basis of `A`. -/
+`id_A = ∑ g, A.ρ g ∘ φ ∘ A.ρ g⁻¹` for a `k`-linear `φ`, then `A` is projective. -/
 theorem projective_of_id_mem_range_norm_linHom {k G : Type u} [CommRing k] [Group G] [Fintype G]
     (A : Rep.{u} k G) [Module.Free k A.V]
     (h : LinearMap.id ∈ LinearMap.range (Representation.linHom A.ρ A.ρ).norm) : Projective A := by
@@ -129,6 +127,7 @@ theorem projective_of_id_mem_range_norm_linHom {k G : Type u} [CommRing k] [Grou
   obtain ⟨φ, hφ⟩ := h
   have hφ' (x : A.V) : x = ∑ g : G, A.ρ g (φ (A.ρ g⁻¹ x)) := by
     rw [← Representation.norm_linHom_apply, hφ, LinearMap.id_apply]
+  -- `A` is a retract of the free representation on a `k`-basis of `A`.
   let b := Module.Free.chooseBasis k A.V
   let ι := Module.Free.ChooseBasisIndex k A.V
   let r : free k G ι ⟶ A := freeLift (k := k) (G := G) (A := A) (fun i ↦ b i)
