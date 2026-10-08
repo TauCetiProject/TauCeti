@@ -20,6 +20,8 @@ For a multilinear map `f`, use `TauCeti.norm_alternatization_le f` for the norm 
 `TauCeti.alternatizationCLM_apply f` to rewrite the bundled operator as Mathlib's signed sum.
 For an alternating map `a`, `TauCeti.alternatization_toContinuousMultilinearMap a` computes
 the signed sum of its underlying multilinear map.
+Use `TauCeti.alternatizationCLM (𝕜 := 𝕜) (ι := ι) (E := E) (F := F)` for the bundled
+operator itself.
 
 The construction uses Mathlib's alternatization, developed by Yury Kudryashov.
 -/

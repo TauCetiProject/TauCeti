@@ -20,6 +20,9 @@ We use Mathlib's polynomial description of multilinear pullback and recover the 
 map by normalized alternatization over `ℝ`. No completeness or finite-dimensionality
 assumption is needed.
 The regularity parameter ranges over `ℕ∞ω`, including analytic regularity `ω`.
+
+Use `TauCeti.contDiff_compContinuousLinearMapCLM (ι := ι) (E := E) (F := F) (G := G)`
+to obtain smoothness of the pullback operator; the regularity `n` is inferred from the goal.
 -/
 
 public noncomputable section
