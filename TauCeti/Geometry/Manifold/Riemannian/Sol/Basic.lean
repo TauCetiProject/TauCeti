@@ -26,8 +26,8 @@ homomorphism from `Sol` into its isometry group, and already its image acts tran
 
 ## Main definitions
 
-* `TauCeti.Sol`: the model geometry Sol, with the coordinate equivalence `Sol.toProd` to `ℝ³`
-  and the coordinates `Sol.x`, `Sol.y`, `Sol.z`.
+* `TauCeti.Sol`: the model geometry Sol, with the coordinate equivalence `Sol.toProd` to `ℝ³`,
+  its smooth version `Sol.toProdDiffeomorph`, and the coordinates `Sol.x`, `Sol.y`, `Sol.z`.
 * `TauCeti.Sol.instGroup`: the group structure of `Sol`.
 * `TauCeti.Sol.riemannianMetric`: the analytic metric `e^{2z} dx² + e^{-2z} dy² + dz²`, which is
   the `RiemannianBundle` instance of `Sol`.
@@ -121,6 +121,32 @@ theorem ext {p q : Sol} (hx : p.x = q.x) (hy : p.y = q.y) (hz : p.z = q.z) : p =
 
 @[simp]
 theorem mk_x_y_z (p : Sol) : mk p.x p.y p.z = p := (rfl)
+
+/-- The global coordinate diffeomorphism of Sol with real three-space. -/
+def toProdDiffeomorph : Sol ≃ₘ⟮𝓘(ℝ, ℝ × ℝ × ℝ), 𝓘(ℝ, ℝ × ℝ × ℝ)⟯
+    (ℝ × ℝ × ℝ) where
+  toEquiv := toProd
+  contMDiff_toFun := contMDiff_id
+  contMDiff_invFun := contMDiff_id
+
+@[simp] theorem coe_toProdDiffeomorph : ⇑toProdDiffeomorph = toProd := (rfl)
+
+@[simp] theorem coe_toProdDiffeomorph_symm : ⇑toProdDiffeomorph.symm = toProd.symm := (rfl)
+
+/-- The differential of the global coordinates reads a tangent vector in the model of Sol. -/
+@[simp] theorem mfderiv_toProd_apply (p : Sol) (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
+    mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd p v =
+      tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p v := by
+  exact congrArg (fun L => L v)
+    (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).hasFDerivAt.hasMFDerivAt.mfderiv
+
+/-- The differential of the inverse global coordinates retains the model vector. -/
+@[simp] theorem tangentSpaceCastModel_mfderiv_toProd_symm (p : ℝ × ℝ × ℝ)
+    (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
+    tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (toProd.symm p)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd.symm p v) = v := by
+  exact congrArg (fun L => L v)
+    (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).hasFDerivAt.hasMFDerivAt.mfderiv
 
 /-! ### The group structure -/
 

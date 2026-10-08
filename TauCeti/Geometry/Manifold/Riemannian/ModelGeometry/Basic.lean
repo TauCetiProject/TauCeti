@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Prod
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Sphere.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Nil
 public import TauCeti.Geometry.Manifold.Riemannian.SL2Tilde
-public import TauCeti.Geometry.Manifold.Riemannian.Sol
+public import TauCeti.Geometry.Manifold.Riemannian.Sol.Basic
 
 /-!
 # The eight Thurston model geometries
