@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Basic
 import TauCeti.Analysis.Convex.Exhaustion
 import TauCeti.Analysis.Sobolev.Wkp.LocalApproximation
 import TauCeti.MeasureTheory.Function.Lp.Const
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 
@@ -51,6 +52,8 @@ on a subdomain `U` whose closure is a compact subset of `Ω`.  Two limits are th
 * `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex`: the inequality on `W^{1,p}(Ω)`.
 * `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball`: the constant on a ball of radius `R`
   is `2 ^ (n + 1) * R`.
+* `TauCeti.W1p.integral_value_sub_setAverage_sq_le_of_eq_ball`: the same inequality on a ball for
+  `p = 2`, squared and written with integrals.
 
 ## References
 
@@ -331,5 +334,35 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball {c : E} {R : ℝ}
     (hOmega ▸ Metric.isBounded_ball (x := c) (r := R))
     Omega.isOpen.measurableSet.nullMeasurableSet subset_rfl hpos u).trans
     (mul_le_mul' (ENNReal.ofReal_le_ofReal hconst) le_rfl)
+
+/-- **The Poincaré–Wirtinger inequality on a ball, in squared integral form.**  For
+`u ∈ W^{1,2}(B(c, R))`,
+
+`∫_{B(c, R)} (u - ⨍_{B(c, R)} u)² ≤ (2 ^ (n + 1) * R)² ∫_{B(c, R)} ‖∇u‖²`.
+
+This is `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball` at `p = 2`. -/
+theorem W1p.integral_value_sub_setAverage_sq_le_of_eq_ball {c : E} {R : ℝ} (hR : 0 < R)
+    (hOmega : (Omega : Set E) = ball c R) (u : W1p mu Omega 2) :
+    ∫ x in Omega, (W1p.value u x - ⨍ y in (Omega : Set E), W1p.value u y ∂mu) ^ 2 ∂mu ≤
+      (2 ^ (finrank ℝ E + 1) * R) ^ 2 * ∫ x in Omega, ‖W1p.gradient u x‖ ^ 2 ∂mu := by
+  have : IsFiniteMeasure (mu.restrict (Omega : Set E)) :=
+    isFiniteMeasure_restrict.2 (hOmega ▸ measure_ball_lt_top.ne)
+  set A := ⨍ y in (Omega : Set E), W1p.value u y ∂mu
+  have hf : MemLp (fun x ↦ W1p.value u x - A) 2 (mu.restrict Omega) :=
+    (Lp.memLp (W1p.value u)).sub (memLp_const A)
+  have hK : 0 ≤ 2 ^ (finrank ℝ E + 1) * R := by positivity
+  have hP : (eLpNorm (fun x ↦ W1p.value u x - A) 2 (mu.restrict Omega)).toReal ≤
+      2 ^ (finrank ℝ E + 1) * R * ‖W1p.gradient u‖ := by
+    refine ENNReal.toReal_le_of_le_ofReal (by positivity) ?_
+    rw [ENNReal.ofReal_mul hK, ofReal_norm]
+    exact W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball (by norm_num) hR hOmega u
+  have hL2 : ∫ x in Omega, (W1p.value u x - A) ^ 2 ∂mu =
+      (eLpNorm (fun x ↦ W1p.value u x - A) 2 (mu.restrict Omega)).toReal ^ 2 := by
+    rw [← Lp.norm_toLp _ hf, ← Lp.integral_norm_sq_eq_norm_sq]
+    refine integral_congr_ae ?_
+    filter_upwards [hf.coeFn_toLp] with x hx
+    rw [hx, Real.norm_eq_abs, sq_abs]
+  rw [hL2, W1p.integral_norm_gradient_sq_eq_norm_gradient_sq, ← mul_pow]
+  exact pow_le_pow_left₀ ENNReal.toReal_nonneg hP 2
 
 end TauCeti
