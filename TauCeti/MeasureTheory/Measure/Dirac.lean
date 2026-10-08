@@ -29,8 +29,8 @@ by positive measures.
 * `Measure.dirac_eq_dirac_of_inseparable` — inseparable points have equal Borel Dirac measures.
 * `MeasureTheory.Measure.eq_smul_dirac_of_forall_notMem` — a measure vanishing on measurable sets
   avoiding a point is a multiple of its Dirac measure.
-* `TauCeti.measure_eq_smul_dirac_of_add_eq_dirac` — summands of a Dirac measure are supported at
-  the same point.
+* `TauCeti.eq_smul_dirac_and_eq_smul_dirac_of_add_eq_dirac` — summands of a Dirac measure are
+  supported at the same point.
 -/
 
 public section
@@ -85,7 +85,7 @@ end MeasureTheory.Measure
 namespace TauCeti
 
 /-- If a sum of measures is a Dirac mass, both summands are multiples of that Dirac mass. -/
-theorem measure_eq_smul_dirac_of_add_eq_dirac {X : Type*} [MeasurableSpace X]
+theorem eq_smul_dirac_and_eq_smul_dirac_of_add_eq_dirac {X : Type*} [MeasurableSpace X]
     {μ ν : Measure X} {x : X}
     (h : μ + ν = Measure.dirac x) :
     μ = μ Set.univ • Measure.dirac x ∧ ν = ν Set.univ • Measure.dirac x := by
