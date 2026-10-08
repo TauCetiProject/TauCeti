@@ -191,17 +191,9 @@ theorem isIntegrallyClosedIn_of_isTotallyRamified [FiniteDimensional F F']
   let : IsScalarTower K E F' := .of_algebraMap_eq fun a ↦
     (RingHom.codRestrict_apply (algebraMap K F') E
       (algebraMap_mem_constantCompositum F K F') a).symm
-  have hrange : E.val '' Set.range (algebraMap K E) = Set.range (algebraMap K F') := by
-    rw [← Set.range_comp]
-    congr 1
-  have hE : constantCompositum F K E = ⊤ := by
-    apply IntermediateField.map_injective E.val
-    rw [constantCompositum_def, IntermediateField.adjoin_map,
-      hrange, ← constantCompositum_def, ← AlgHom.fieldRange_eq_map,
-      IntermediateField.fieldRange_val]
   let Q : Place K E := Place.constantsEquiv k K E (P'.restrict k E)
-  have hQ : Q.ramificationIdx F = 1 :=
-    Place.ramificationIdx_eq_one_of_constantCompositum_eq_top (k := k) hE Q
+  have hQ : Q.ramificationIdx F = 1 := Place.ramificationIdx_eq_one_of_constantCompositum_eq_top
+    (k := k) ((constantCompositum_eq_top_iff F K F' E).2 rfl) Q
   have hQ' : (P'.restrict k E).ramificationIdx F = 1 := by
     simpa only [Q, Place.ramificationIdx_def, Place.valuation_constantsEquiv] using hQ
   have htower := Place.ramificationIdx_restrict_mul (k₁ := k) (F₀ := F)
