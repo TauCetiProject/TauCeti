@@ -272,9 +272,10 @@ theorem groupSchemePointMulEquiv_apply_left
     (f : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) :
     (groupSchemePointMulEquiv R m A f).left =
       AlgebraicGeometry.Spec.map (CommRingCat.ofHom f.ofConv.toRingHom) := by
-  simpa only [groupSchemePointMulEquiv, eqToHom_refl, Category.comp_id] using
+  simpa only [groupSchemePointMulEquiv, eqToHom_refl, Category.comp_id,
+    AlgHom.toRingHom_eq_coe] using
     CommHopfAlgCat.mapMulEquivOfPresentation_apply_left
-      (coordinateHopfAlgebra R m) A rfl rfl f
+      (coordinateHopfAlgebra R m) A (G := groupScheme R m) rfl rfl f
 
 /-- Scheme-valued points of the flag subgroup are the flag-preserving symplectic matrices. -/
 noncomputable def schemePointsMulEquiv :
