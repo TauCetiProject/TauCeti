@@ -108,8 +108,9 @@ private theorem contMDiff_productChart (σ : Φ.cones) (τ : Ψ.cones) {k l k' l
   have hinv := AffineSemigroupComplexPoint.contMDiff_prodEquiv_symm Φ.lattice Ψ.lattice
     hσ.toIsToricCone hτ.toIsToricCone hB hC hD κ κ' κ''
     (Φ.analyticChartGenerators σ).2 (Ψ.analyticChartGenerators τ).2 g'' n
-  exact (((Φ.prod Ψ).contMDiff_analyticAffineChartι (IsRegular.prod Φ Ψ hΦ hΨ)
-    (Φ.prodCone Ψ σ τ) hD κ'' g'' n).comp hinv).congr fun _ ↦ rfl
+  simpa only [Function.comp_def] using
+    ((Φ.prod Ψ).contMDiff_analyticAffineChartι (IsRegular.prod Φ Ψ hΦ hΨ)
+      (Φ.prodCone Ψ σ τ) hD κ'' g'' n).comp hinv
 
 /-- The inverse product homeomorphism is holomorphic: on a product of cone opens it is the
 inverse affine product comparison conjugated by the two chart inclusions. -/
