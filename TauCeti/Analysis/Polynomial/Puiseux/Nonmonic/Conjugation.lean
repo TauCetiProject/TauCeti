@@ -82,17 +82,14 @@ theorem exists_analyticOnNhd_nonmonic_powerSubstitution_conj
     refine ⟨hb.1, ?_, pow_ne_zero n hb.2.2⟩
     rw [mem_ball_zero_iff, norm_pow]
     exact (pow_lt_pow_left₀ (mem_ball_zero_iff.1 hb.2.1) (norm_nonneg _) hn).trans_le hR
-  have hκ : ContinuousOn κ T :=
-    (hτ.comp continuousOn_fst fun _ hb ↦ hb.1).prodMk
-      (Complex.continuous_conj.comp_continuousOn continuousOn_snd)
-  have hκT : MapsTo κ T T := by
-    intro b hb
-    refine ⟨hτU hb.1, ?_⟩
-    simpa only [κ, mem_ball_zero_iff, Complex.norm_conj] using hb.2
-  have hκS : MapsTo κ S S := fun b hb ↦
-    ⟨(hκT (hST hb)).1, (hκT (hST hb)).2, by simpa [κ] using hb.2.2⟩
-  have hκκ : ∀ b ∈ S, κ (κ b) = b := fun b hb ↦
-    Prod.ext (hττ b.1 hb.1) (Complex.conj_conj b.2)
+  have hconjBall : MapsTo conj (ball (0 : ℂ) R') (ball 0 R') := by
+    intro z hz
+    simpa only [mem_ball_zero_iff, Complex.norm_conj] using hz
+  have hκ : ContinuousOn κ T := TauCeti.continuousOn_prod_conj hτ _
+  have hκT : MapsTo κ T T := TauCeti.mapsTo_prod_conj hτU hconjBall
+  have hκS : MapsTo κ S S := TauCeti.mapsTo_prod_conj_diff_zero hτU hconjBall
+  have hκκ : ∀ b ∈ S, κ (κ b) = b :=
+    fun b hb ↦ TauCeti.prod_conj_apply_prod_conj hττ b hb.1
   have hroot (b : E × ℂ) (hb : b ∈ S) (z : ℂ) :
       (F (q b)).IsRoot z ↔ ∃ i, r i b = z := by
     have hl : (F (q b)).coeff d ≠ 0 := by
@@ -121,13 +118,10 @@ theorem exists_analyticOnNhd_nonmonic_powerSubstitution_conj
     intro b hb
     simp only [(hga (σ i)).2 hb, (hga i).2 (hκS hb), hσ i b hb,
       κ, map_mul, map_pow, Complex.conj_conj]
-  have hTS : T ⊆ closure S := by
-    rw [closure_prod_eq, Set.sdiff_eq]
-    exact prod_mono subset_closure
-      ((dense_compl_singleton (0 : ℂ)).open_subset_closure_inter isOpen_ball)
   have hgfull (i : Fin d) : EqOn (g (σ i)) (fun b ↦ conj (g i (κ b))) T :=
-    (hgconj i).of_subset_closure (hga (σ i)).1.continuousOn
-      (Complex.continuous_conj.comp_continuousOn ((hga i).1.continuousOn.comp hκ hκT)) hST hTS
+    TauCeti.eqOn_prod_of_eqOn_prod_diff_singleton isOpen_ball (hga (σ i)).1.continuousOn
+      (Complex.continuous_conj.comp_continuousOn ((hga i).1.continuousOn.comp hκ hκT))
+      (hgconj i)
   refine ⟨r, g, hra, hga, hfac, σ, ⟨hσσ, hσ, hgfull⟩, ?_⟩
   intro σ' hσ'
   exact huniq σ' ⟨hσ'.1, hσ'.2.1⟩
