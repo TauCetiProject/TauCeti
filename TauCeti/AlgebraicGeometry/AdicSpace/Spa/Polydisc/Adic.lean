@@ -27,6 +27,8 @@ the sheafiness conclusion do not choose a global pair of definition.
 * `TauCeti.ValuationSpectrum.closedPolydiscPreAdicSpace`: the presentation-limit pre-adic space
   whose underlying topological space is the closed polydisc, with
   `closedPolydiscPreAdicSpace_def` as its characteristic equation.
+* `TauCeti.ValuationSpectrum.closedPolydiscBasicOpen`: a rational open of the closed-polydisc
+  pre-adic space.
 
 ## Main results
 
@@ -34,6 +36,8 @@ the sheafiness conclusion do not choose a global pair of definition.
   presentation-limit structure sheaf is an adic space.
 * `TauCeti.ValuationSpectrum.isAdic_closedPolydiscPreAdicSpace`: every closed unit polydisc over
   `K` is an affinoid adic space.
+* `TauCeti.ValuationSpectrum.closedPolydiscBasicOpen_mem_affinoidOpens`: admissible rational
+  opens are open affinoid subspaces.
 
 ## References
 
@@ -101,6 +105,42 @@ lemma closedPolydiscPreAdicSpace_def :
         (P.weighted (T := fun _ : Fin k ↦ ({1} : Set K))
           isWeightFamily_one_weight).le_powerBoundedSubring :=
   (rfl)
+
+/-- A basic rational open of the closed-polydisc pre-adic space. -/
+noncomputable def closedPolydiscBasicOpen
+    (T : Finset (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K))
+      isWeightFamily_one_weight))
+    (s : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K))
+      isWeightFamily_one_weight) : Opens (closedPolydiscPreAdicSpace k P) := by
+  rw [closedPolydiscPreAdicSpace_def]
+  change Opens (spa (powerBoundedSubring _))
+  exact spaBasicOpen (powerBoundedSubring _) T s
+
+omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
+/-- A rational open of the closed polydisc whose numerators span an open ideal is an open
+affinoid subspace. -/
+theorem closedPolydiscBasicOpen_mem_affinoidOpens
+    {T : Finset (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K))
+      isWeightFamily_one_weight)}
+    {s : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K))
+      isWeightFamily_one_weight}
+    (hT : IsOpen
+      (Ideal.span (T : Set (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K))
+        isWeightFamily_one_weight)) :
+        Set (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K))
+          isWeightFamily_one_weight))) :
+    closedPolydiscBasicOpen k P T s ∈ (closedPolydiscPreAdicSpace k P).affinoidOpens := by
+  change PreAdicSpace.isAffinoid
+    ((closedPolydiscPreAdicSpace k P).restrict
+      (closedPolydiscBasicOpen k P T s).isOpenEmbedding)
+  change PreAdicSpace.isAffinoid
+    ((presentationLimitPreAdicSpace
+      (P.weighted (T := fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight)
+      (powerBoundedSubring _) (fun _ ha ↦ mem_powerBoundedSubring.mp ha)
+      (P.weighted (T := fun _ : Fin k ↦ ({1} : Set K))
+        isWeightFamily_one_weight).le_powerBoundedSubring).restrict
+      (spaBasicOpen (powerBoundedSubring _) T s).isOpenEmbedding)
+  exact spaBasicOpen_mem_affinoidOpens _ _ _ _ hT
 
 omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
 /-- The topological space underlying `closedPolydiscPreAdicSpace` is the closed polydisc
