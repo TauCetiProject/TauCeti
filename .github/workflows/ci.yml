@@ -130,6 +130,7 @@ jobs:
           python3 scripts/test_queue_release.py
           python3 scripts/test_bwrap_pin.py
           PYTHONPATH=scripts python3 scripts/test_bump_manifest.py
+          python3 scripts/test_bump_report.py
           python3 scripts/test_lint_scope.py
           python3 scripts/test_build_lint_driver.py
           python3 scripts/test_elan_pin.py

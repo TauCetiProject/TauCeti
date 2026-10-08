@@ -160,7 +160,7 @@ ABANDONED_CANCEL_HOURS = 24
 FKB_STALE_DAYS = 3
 SCHEDULERS = {
     # workflow file            (human name,               max age hours)
-    "update.yml":            ("daily mathlib bump",       30),
+    "update.yml":            ("hourly mathlib bump",       4),
     "lint-full.yml":         ("daily full lint",          30),
     "pages.yml":             ("pages / doc-gen publish",  30),
     # Hourly, but a run after a pin bump re-analyzes all of TauCeti and holds the
