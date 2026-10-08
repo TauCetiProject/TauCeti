@@ -10,9 +10,7 @@ module
 public import TauCeti.Probability.Exchangeability.PathSpace.Exchangeable.Ergodic
 public import TauCeti.Probability.Exchangeability.PathSpace.Law.ZeroOne
 public import TauCeti.MeasureTheory.Group.ErgodicExtreme
--- Non-public: shift-invariant events are exchangeable events; exchangeable path laws are
--- shift-preserving.
-import TauCeti.Probability.Exchangeability.PathSpace.Invariant.Tail
+-- Non-public: exchangeable path laws are shift-preserving.
 import TauCeti.Probability.Exchangeability.PathSpace.Exchangeable.ToContractable
 
 /-!
