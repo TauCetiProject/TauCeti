@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Coinduced
 public import TauCeti.RepresentationTheory.NormSplit.BaseChange
 import Mathlib.Algebra.CharP.Quotient
 import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.RepresentationTheory.Coinvariants
 import TauCeti.RepresentationTheory.NormSplit.PGroup
 import TauCeti.RepresentationTheory.Homological.TateCohomology.HomologySequence
 
@@ -131,7 +132,8 @@ theorem ker_norm_baseChange_le_coinvariantsKer [Fintype G] (A : Rep k G) (p : k)
   have hcoinv : Representation.Coinvariants.ker A.ρ ≤
       ((Representation.Coinvariants.ker ρQ).restrictScalars k).comap red :=
     Submodule.map_le_iff_le_comap.mp
-      (A.ρ.coinvariantsKer_map_le (ρ' := ρQ) id red fun g v ↦ (hredρ g v).symm)
+      (Representation.coinvariantsKer_map_le A.ρ (ρ' := ρQ) id red
+        fun g v ↦ (hredρ g v).symm)
   have := hcoinv hmem
   rwa [Submodule.mem_comap, map_sub, (hred_eq_zero _).2 ⟨w, rfl⟩, sub_zero] at this
 
