@@ -29,7 +29,7 @@ the weight-two cusp–Eisenstein decomposition.
 
 ## Main results
 
-The residue relation is in `TauCeti.ModularForm`; the cusp-form test is in `TauCeti`.
+The residue relation and cusp-form test are in `TauCeti.ModularForm`.
 
 * `weight_two_sum_cuspTranslationOrbitWidth_mul_constantTermAtCuspTranslationOrbit_eq_zero`:
   width-weighted residue relation in weight two.
@@ -113,16 +113,16 @@ theorem weight_two_constantTermAtCuspTranslationOrbit_eq_zero_of_forall_ne (f : 
 
 end TauCeti.ModularForm
 
-namespace TauCeti
+namespace TauCeti.ModularForm
 
-open TauCeti.ModularForm _root_.ModularForm _root_.Matrix.SpecialLinearGroup
+open _root_.ModularForm _root_.Matrix.SpecialLinearGroup
 
 variable {𝒢 : Subgroup (GL (Fin 2) ℝ)} [𝒢.IsArithmetic] [𝒢.HasDetOne] {k : ℤ}
 
 /-- **A weight-two cusp-form test with one cusp omitted.** Vanishing at any one cusp
 translation orbit follows from vanishing at all the others. -/
 theorem weight_two_mem_cuspFormSubmodule_iff_forall_ne_constantTermAtCuspTranslationOrbit_eq_zero
-    (f : ModularForm 𝒢 2)
+    {f : ModularForm 𝒢 2}
     (c : CuspTranslationOrbit 𝒢) :
     f ∈ cuspFormSubmodule 𝒢 2 ↔
       ∀ c' ≠ c, TauCeti.ModularForm.constantTermAtCuspTranslationOrbit f c' = 0 := by
@@ -133,4 +133,4 @@ theorem weight_two_mem_cuspFormSubmodule_iff_forall_ne_constantTermAtCuspTransla
     exact weight_two_constantTermAtCuspTranslationOrbit_eq_zero_of_forall_ne f c h
   · exact h c' hc'
 
-end TauCeti
+end TauCeti.ModularForm

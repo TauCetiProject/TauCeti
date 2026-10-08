@@ -56,9 +56,9 @@ Eisenstein series through their constant terms.
 * `ModularForm.mem_cuspFormSubmodule_iff_constantTermAt_eq_zero`: a modular form is cuspidal if
   and only if every translated constant term vanishes.
 * `ModularForm.ker_constantTerms`: the kernel of `constantTerms` is the cusp-form submodule.
-* `TauCeti.constantTermAtCuspTranslationOrbit_mk_mapGL`: identifies an integral
+* `TauCeti.ModularForm.constantTermAtCuspTranslationOrbit_mk_mapGL`: identifies an integral
   coset's orbit constant term with the constant term at the cusp represented by the inverse matrix.
-* `TauCeti.mem_cuspFormSubmodule_iff_constantTermAtCuspTranslationOrbit_eq_zero`:
+* `TauCeti.ModularForm.mem_cuspFormSubmodule_iff_constantTermAtCuspTranslationOrbit_eq_zero`:
   a modular form is cuspidal if and only if all its cusp translation orbit constant terms vanish.
 * `TauCeti.mem_range_cuspToModFormCharSpace_iff_constantTermAt_eq_zero`: the same
   characterization inside a nebentypus space.
@@ -344,9 +344,9 @@ theorem range_cuspToModFormCharSpace_eq_ker_constantTerms :
 
 end TauCeti
 
-namespace TauCeti
+namespace TauCeti.ModularForm
 
-open TauCeti.ModularForm _root_.ModularForm _root_.Matrix.SpecialLinearGroup
+open _root_.ModularForm _root_.Matrix.SpecialLinearGroup
 open UpperHalfPlane _root_.SlashInvariantForm
 open scoped MatrixGroups ModularForm
 
@@ -355,7 +355,7 @@ variable {𝒢 : Subgroup (GL (Fin 2) ℝ)} [𝒢.IsArithmetic] [𝒢.HasDetOne]
 /-- The constant term at the orbit of an integral matrix coset is the constant term at the
 cusp represented by its inverse. -/
 @[simp high]
-theorem constantTermAtCuspTranslationOrbit_mk_mapGL (f : ModularForm 𝒢 k) (γ : SL(2, ℤ)) :
+theorem constantTermAtCuspTranslationOrbit_mk_mapGL {f : ModularForm 𝒢 k} {γ : SL(2, ℤ)} :
     TauCeti.ModularForm.constantTermAtCuspTranslationOrbit f
         (⟦(QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ) :
           𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit 𝒢) = constantTermAt γ⁻¹ f := by
@@ -366,7 +366,7 @@ theorem constantTermAtCuspTranslationOrbit_mk_mapGL (f : ModularForm 𝒢 k) (γ
 /-- A modular form is cuspidal exactly when its constant terms at all cusp translation
 orbits vanish. -/
 theorem mem_cuspFormSubmodule_iff_constantTermAtCuspTranslationOrbit_eq_zero
-    (f : ModularForm 𝒢 k) :
+    {f : ModularForm 𝒢 k} :
     f ∈ cuspFormSubmodule 𝒢 k ↔
       ∀ c : CuspTranslationOrbit 𝒢,
         TauCeti.ModularForm.constantTermAtCuspTranslationOrbit f c = 0 := by
@@ -386,4 +386,4 @@ theorem mem_cuspFormSubmodule_iff_constantTermAtCuspTranslationOrbit_eq_zero
       hf (⟦(QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ⁻¹) :
         𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit 𝒢)
 
-end TauCeti
+end TauCeti.ModularForm
