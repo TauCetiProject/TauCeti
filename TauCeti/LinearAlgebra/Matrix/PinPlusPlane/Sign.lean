@@ -111,14 +111,9 @@ variable [NeZero (2 : R)]
 
 private theorem matrix_eq_zero_of_eq_neg_self {x : Matrix (Fin 2) (Fin 2) R}
     (h : x = -x) : x = 0 := by
-  ext i j
-  have hij := congrFun (congrFun h i) j
-  have htwo : (2 : R) * x i j = 0 := by
-    calc
-      (2 : R) * x i j = x i j + x i j := two_mul (x i j)
-      _ = -x i j + x i j := congrArg (fun z => z + x i j) hij
-      _ = 0 := neg_add_cancel (x i j)
-  exact (mul_eq_zero.mp htwo).resolve_left (NeZero.ne 2)
+  have htwo : (2 : R) • x = 0 := by
+    simpa [two_smul] using eq_neg_iff_add_eq_zero.mp h
+  exact (smul_eq_zero.mp htwo).resolve_left (NeZero.ne 2)
 
 /-- **The selected sign relates two lifts of the same matrix.** -/
 theorem IsPinLift.eq_negOnePow_pinLiftSign_smul {x x' w : Matrix (Fin 2) (Fin 2) R}
@@ -140,12 +135,15 @@ theorem IsPinLift.pinLiftSign_eq_iff {x x' w : Matrix (Fin 2) (Fin 2) R}
   · rintro rfl
     exact hx.eq_negOnePow_pinLiftSign_smul hx'
   · intro hε
-    obtain rfl | rfl := (by decide : ∀ z : ZMod 2, z = 0 ∨ z = 1) ε
-    · simpa using (pinLiftSign_eq_zero_iff x x').2 (hε.trans (by simp))
-    · simpa using (pinLiftSign_eq_one_iff x x').2 fun heq => by
-        rw [heq] at hε
-        rw [ZMod.val_one, pow_one, neg_one_smul] at hε
-        exact hx.ne_zero (matrix_eq_zero_of_eq_neg_self hε)
+    generalize ε = z at hε ⊢
+    fin_cases z
+    · apply (pinLiftSign_eq_zero_iff x x').2
+      simpa [ZMod.val] using hε
+    · apply (pinLiftSign_eq_one_iff x x').2
+      intro heq
+      rw [heq] at hε
+      have hself : x = -x := by simpa [ZMod.val] using hε
+      exact hx.ne_zero (matrix_eq_zero_of_eq_neg_self hself)
 
 end Lifts
 
