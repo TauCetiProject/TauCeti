@@ -277,9 +277,11 @@ theorem initialPentagonRectangleOppositeSideOrder_eq_empty_of_X_column_ne_turnRo
   intro D hD
   exact hX (G.X_column_eq_turnRow_of_mem_initialPentagonRectangleOppositeSideOrder C x D hD)
 
+namespace rectangleInitialPentagonOppositeSideOrder
+
 /-- At least one horizontal initial-side family in the diagonal commutation chain-map equation is
 empty. The two commuted columns cannot have their X-markings in the same turn row. -/
-theorem one_horizontalInitialPentagonFamily_eq_empty
+theorem eq_empty_or_initialPentagonRectangleOppositeSideOrder_eq_empty
     (x : GridState n) :
     G.rectangleInitialPentagonOppositeSideOrder C x = ∅ ∨
       G.initialPentagonRectangleOppositeSideOrder C x = ∅ := by
@@ -291,6 +293,8 @@ theorem one_horizontalInitialPentagonFamily_eq_empty
       (G.X.toPerm.injective (hX.trans hX'.symm)))
   · exact Or.inr
       (G.initialPentagonRectangleOppositeSideOrder_eq_empty_of_X_column_ne_turnRow C x hX)
+
+end rectangleInitialPentagonOppositeSideOrder
 
 end GridDiagram
 
