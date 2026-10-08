@@ -59,6 +59,8 @@ the image of `TauCeti.ofDiscreteModule`, as Layer 3 of the roadmap requires: a g
   two named instances, carrying the explicit restriction and coefficient maps of degree zero to
   the canonical ones. The restriction square is typed by `TauCeti.res_ofDiscreteModule`, which
   identifies the restriction of a canonical object with the canonical object of the restriction.
+* `TauCeti.coeffMap_zero_injective`: the coefficient map of an injective equivariant map is
+  injective on `H⁰`.
 
 ## Roadmap
 
@@ -341,6 +343,24 @@ theorem exists_coeffMap_ker_nsmul_eq (M : Type u) [AddCommGroup M] [TopologicalS
   rw [explicitH0Iso_coeffMap G K M ι mK, hmK]
   simpa only [m, e] using
     (Iso.inv_hom_id_apply (explicitH0IsoContinuousCohomology G M) x)
+
+/-- **Degree-zero cohomology is left exact**: the coefficient map of an injective equivariant map
+is injective on `H⁰`, which is the invariants (`TauCeti.ContCohomology.explicitH0Iso_coeffMap`). -/
+theorem coeffMap_zero_injective {M N : Type u} [AddCommGroup M] [TopologicalSpace M]
+    [DiscreteTopology M] [DistribMulAction G M] [AddCommGroup N] [TopologicalSpace N]
+    [DiscreteTopology N] [DistribMulAction G N] (f : M →+[G] N) (hf : Function.Injective f) :
+    Function.Injective (coeffMap
+      (ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap fun g m ↦ map_smul f g m) 0) := by
+  intro x y hxy
+  set e := explicitH0IsoContinuousCohomology G M
+  rw [← e.inv_hom_id_apply x, ← e.inv_hom_id_apply y, explicitH0Iso_coeffMap G M N f,
+    explicitH0Iso_coeffMap G M N f] at hxy
+  -- the explicit coefficient map applies `f` to the underlying invariant elements
+  have h₀ := congrArg (explicitH0IsoContinuousCohomology G N).inv hxy
+  rw [Iso.hom_inv_id_apply, Iso.hom_inv_id_apply] at h₀
+  have h := congrArg Subtype.val h₀
+  rw [coe_explicitCoeff0, coe_explicitCoeff0] at h
+  rw [← e.inv_hom_id_apply x, ← e.inv_hom_id_apply y, Subtype.ext (hf h)]
 
 end CoefficientLifting
 

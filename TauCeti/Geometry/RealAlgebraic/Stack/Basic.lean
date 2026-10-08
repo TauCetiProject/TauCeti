@@ -254,6 +254,16 @@ section Topology
 
 variable [TopologicalSpace X] {θ : Fin k → X → α}
 
+/-- A sector bounded by finitely many continuous functions is open in the cylinder.
+The functions need not be ordered. -/
+theorem isOpen_sectorSet [TopologicalSpace α] [LinearOrder α] [OrderClosedTopology α]
+    (hc : ∀ i, Continuous (θ i)) (j : Fin (k + 1)) : IsOpen (sectorSet θ j) := by
+  simp only [sectorSet, ofPred_and, ofPred_forall]
+  refine (isOpen_iInter_of_finite fun i ↦ isOpen_iInter_of_finite fun _ ↦ ?_).inter
+    (isOpen_iInter_of_finite fun i ↦ isOpen_iInter_of_finite fun _ ↦ ?_)
+  · exact isOpen_lt ((hc i).comp continuous_fst) continuous_snd
+  · exact isOpen_lt continuous_snd ((hc i).comp continuous_fst)
+
 /-- Over a preconnected base, the section of a continuous function is preconnected. -/
 theorem isPreconnected_sectionSet [TopologicalSpace α] [PreconnectedSpace X] {i : Fin k}
     (hθ : Continuous (θ i)) : IsPreconnected (sectionSet θ i) := by

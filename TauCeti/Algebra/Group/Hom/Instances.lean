@@ -40,6 +40,9 @@ variables and of the target preserve bijectivity of its curried homomorphism.
   homomorphism is bijective on homomorphisms out of any monoid.
 * `AddMonoidHom.bijective_of_bijective_pairing`: a perfect biadditive pairing remains perfect
   after bijective changes of variables and target.
+* `TauCeti.forall_eq_zero_and_exists_eq_of_bijective_of_addEquiv`: a pairing that reads, through
+  additive equivalences, as a bijective curried homomorphism separates the points of its second
+  argument, and every homomorphism out of its first argument is pairing with some point.
 -/
 
 public section
@@ -98,6 +101,25 @@ theorem _root_.AddMonoidHom.bijective_of_bijective_pairing
         eZ'.apply_symm_apply (q y)
     rw [hcomm, heX, hx]
     simpa only [q₀, AddMonoidHom.comp_apply, heY] using heZ
+
+/-- A pairing `pair : X → Y → Z` that reads, through additive equivalences `eX` and `eY`, as a
+bijective curried homomorphism `α : Y₀ → (X₀ →+ Z)` separates the points of its second argument,
+and every homomorphism `X →+ Z` is pairing with some point of `Y`. -/
+theorem forall_eq_zero_and_exists_eq_of_bijective_of_addEquiv {X Y X₀ Y₀ Z : Type*}
+    [AddZeroClass X] [AddZeroClass Y] [AddZeroClass X₀] [AddZeroClass Y₀] [AddCommMonoid Z]
+    (pair : X → Y → Z) (eX : X₀ ≃+ X) (eY : Y₀ ≃+ Y) (α : Y₀ →+ X₀ →+ Z)
+    (hα : Function.Bijective α) (h : ∀ x y, pair (eX x) (eY y) = α y x) :
+    (∀ y : Y, (∀ x : X, pair x y = 0) → y = 0) ∧
+      ∀ ψ : X →+ Z, ∃ y : Y, ∀ x : X, pair x y = ψ x := by
+  refine ⟨fun y hy => ?_, fun ψ => ?_⟩
+  · have hα0 : α (eY.symm y) = α 0 := by
+      ext x
+      rw [← h, eY.apply_symm_apply, map_zero, AddMonoidHom.zero_apply]
+      exact hy _
+    rw [← eY.apply_symm_apply y, hα.1 hα0, map_zero]
+  · obtain ⟨y, hy⟩ := hα.2 (ψ.comp eX.toAddMonoidHom)
+    refine ⟨eY y, fun x => ?_⟩
+    rw [← eX.apply_symm_apply x, h, hy, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom]
 
 /-- Postcomposition with an injective homomorphism `f : N →* P` is bijective on homomorphisms out
 of a monoid `M` all of whose elements satisfy `a ^ n = 1`, provided the range of `f` contains every

@@ -29,6 +29,8 @@ torus.
   commutes with taking the common kernel of a family.
 * `TauCeti.CommHopfAlgCat.map_commonKernelHopfIdeal`: an ambient isomorphism transports a
   common kernel to the common kernel of the transported family.
+* `TauCeti.CommHopfAlgCat.commonKernelHopfIdeal_comp_of_injective`: postcomposing the members of
+  a family with injective morphisms does not change its common kernel.
 * `TauCeti.CommHopfAlgCat.commonKernelHopfIdeal_eq_of_toIdeal_le_ker`: members of the family
   that kill the common kernel of the others may be dropped.
 * `TauCeti.CommHopfAlgCat.comapOfSurjective_commonKernelHopfIdeal_le_of_comp_eq`: an
@@ -124,6 +126,19 @@ theorem map_commonKernelHopfIdeal {H' : _root_.CommHopfAlgCat.{v} R}
   rintro ⟨x, hx, rfl⟩
   exact (congrArg (· ∈ commonKernelHopfIdeal f)
     (_root_.CommHopfAlgCat.inv_hom_apply e x)).mpr hx
+
+/-- Postcomposing every member of a family with an injective morphism does not change the common
+kernel. In particular the generated closed subgroup is unchanged when the codomains of the
+generators are replaced by isomorphic Hopf algebras. -/
+theorem commonKernelHopfIdeal_comp_of_injective {K' : ι → _root_.CommHopfAlgCat.{v} R}
+    (f : ∀ i, H ⟶ K i) (m : ∀ i, K i ⟶ K' i) (hm : ∀ i, Function.Injective (m i).hom) :
+    commonKernelHopfIdeal (fun i ↦ f i ≫ m i) = commonKernelHopfIdeal f := by
+  have hker (i : ι) : RingHom.ker (f i ≫ m i).hom.toAlgHom.toRingHom =
+      RingHom.ker (f i).hom.toAlgHom.toRingHom := by
+    ext x
+    simp only [RingHom.mem_ker, _root_.CommHopfAlgCat.hom_comp]
+    exact (hm i).eq_iff' (map_zero _)
+  simp only [commonKernelHopfIdeal, hker]
 
 /-- **Dropping redundant members of a family.** If every member indexed by `κ` kills the
 common-kernel ideal of the members indexed by `ι`, then adjoining them does not change the
@@ -236,7 +251,7 @@ theorem commonKernelHopfIdeal_eq_map_mkQuotient_of_comp (f : ∀ i, H ⟶ K i)
       ((commonKernelHopfIdeal f).map q.hom).comapOfSurjective q.hom hq =
         commonKernelHopfIdeal f := by
     simpa only [q, hom_mkQuotient] using
-      HopfIdeal.comapOfSurjective_map_mkQuotient hI
+      HopfIdeal.comapOfSurjective_map_mkBialgHom hI
   rw [hcomap_map]
   apply le_antisymm
   · rw [le_commonKernelHopfIdeal_iff]

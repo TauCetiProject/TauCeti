@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.LaurentC
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.StableUniform
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.LaurentCover.Uniform
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.LaurentCover.Topology
 
 /-!
 # The Laurent sheaf condition on rational subsets of a stably uniform affinoid
@@ -27,6 +28,9 @@ This is the local input for the induction proving that stably uniform affinoids 
 
 ## Main results
 
+* `isClosedEmbedding_presentationLimitMap_inf_laurentCoverOpen_of_isStablyUniform`:
+  sections on a rational subset carry the topology induced by restriction to its two Laurent
+  pieces.
 * `injective_presentationLimitMap_inf_laurentCoverOpen_of_isStablyUniform`:
   sections on a rational subset are determined on its two Laurent pieces.
 * `exists_presentationLimitMap_eq_of_inf_laurentCoverOpen_of_isStablyUniform`:
@@ -41,7 +45,7 @@ This is the local input for the induction proving that stably uniform affinoids 
 
 public section
 
-open CategoryTheory TopologicalSpace TauCeti.Huber TauCeti.Huber.PairOfDefinition
+open CategoryTheory TopologicalSpace Topology TauCeti.Huber TauCeti.Huber.PairOfDefinition
 
 universe v
 
@@ -49,6 +53,35 @@ namespace TauCeti.ValuationSpectrum
 
 variable {A : Type v} [CommRing A] [UniformSpace A] [IsTopologicalRing A] [IsTateRing A]
   [IsStablyUniform A] (P : PairOfDefinition A) {Aplus : Subring A}
+
+/-- **Topological Laurent gluing on a rational subset of a stably uniform affinoid.** Sections
+on `R(T/s)` carry the subspace topology induced by restriction to
+`R(T/s) ∩ {|f| ≤ 1}` and `R(T/s) ∩ {|f| ≥ 1}`. -/
+theorem isClosedEmbedding_presentationLimitMap_inf_laurentCoverOpen_of_isStablyUniform
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) {W : Opens ↥(spa Aplus)}
+    (hW : W ∈ spaRationalOpens Aplus) (f : A) :
+    IsClosedEmbedding fun x : presentationLimit (P := P) Aplus W ↦
+      ((presentationLimitMap (P := P)
+          (inf_le_left : W ⊓ laurentCoverOpen Aplus f true ≤ W)).hom.1 x,
+        (presentationLimitMap (P := P)
+          (inf_le_left : W ⊓ laurentCoverOpen Aplus f false ≤ W)).hom.1 x) := by
+  -- The coordinate ring `A⟨T/s⟩` is stably uniform, hence uniform because it is complete and
+  -- Hausdorff.  Transport its Laurent closed embedding back through rational localization.
+  obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hW
+  have hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT
+  let _ := locUniformSpace P T s _ hden
+  have _ := isUniformAddGroup_locUniformSpace P T s _ hden
+  have _ := isTopologicalRing_locUniformSpace P T s _ hden
+  have _ := isTateRing_completion_locTopology_of_isTateRing P T s _ hden
+  have _ := PairOfDefinition.isStablyUniform_completion_locTopology P T s _ hden hT
+  have _ := Huber.IsStablyUniform.isUniform
+    (A := UniformSpace.Completion (Localization.Away s))
+  exact isClosedEmbedding_presentationLimitMap_inf_laurentCoverOpen_of_locOpensComap
+    P Aplus T s _ hden hAplus hT f
+      (isClosedEmbedding_presentationLimitMap_laurentCoverOpen_of_isUniform
+        (completionLocalization P T s _ hden)
+        (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus T s _ hden)
+        (toCompletionLoc P T s _ hden f))
 
 /-- **Laurent injectivity on a rational subset of a stably uniform affinoid.** A section over
 `R(T/s)` is determined by its restrictions to the intersections with `{|f| ≤ 1}` and

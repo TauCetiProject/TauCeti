@@ -79,9 +79,6 @@ The regularity threshold is inherited unchanged from the finite-dimensional theo
 * `TauCeti.dense_compl_image_criticalPoints_of_isFredholm`: the regular values of a Fredholm map
   are dense, the form transversality arguments consume.
 
-This is Lane F0 of the analytic Heegaard Floer roadmap, where Sard--Smale is the gateway to every
-transversality argument downstream.
-
 ## References
 
 * S. Smale, *An infinite dimensional version of Sard's theorem*, Amer. J. Math. 87 (1965),
@@ -160,20 +157,6 @@ section Local
 variable [CompleteSpace E] [CompleteSpace F] {T : E →L[ℝ] F} {f : E → F} {a : E}
 
 omit [CompleteSpace F] in
-/-- Fixing the essential coordinate differentiates the obstruction along the inclusion of the
-inessential domain summand as the second normal-form factor: the derivative of
-`ContinuousLinearMap.FredholmPackage.obstructionSlice` is the derivative of the obstruction map
-precomposed with `ContinuousLinearMap.inr`. -/
-private theorem hasFDerivAt_obstructionSlice (pkg : ContinuousLinearMap.FredholmPackage T)
-    (hT : HasStrictFDerivAt f T a) {y : pkg.decCodom.X₁ × pkg.decDom.X₀}
-    (hq : DifferentiableAt ℝ (pkg.obstructionMap hT) y) :
-    HasFDerivAt (pkg.obstructionSlice hT y.1)
-      ((fderiv ℝ (pkg.obstructionMap hT) y).comp
-        (ContinuousLinearMap.inr ℝ pkg.decCodom.X₁ pkg.decDom.X₀)) y.2 := by
-  rw [funext (pkg.obstructionSlice_apply hT y.1)]
-  exact hq.hasFDerivAt.comp y.2 ((hasFDerivAt_const y.1 y.2).prodMk (hasFDerivAt_id y.2))
-
-omit [CompleteSpace F] in
 /-- **Lyapunov--Schmidt reduction of regularity.** At a point of the normal-form chart where the
 chart, the obstruction and the map itself are all differentiable and the chart has invertible
 derivative, the derivative of `f` is surjective exactly when the derivative of the
@@ -228,7 +211,7 @@ private theorem surjective_fderiv_iff_slice (pkg : ContinuousLinearMap.FredholmP
   have hslice : HasFDerivAt (pkg.obstructionSlice hT y.1)
       ((fderiv ℝ q y).comp (ContinuousLinearMap.inr ℝ pkg.decCodom.X₁ pkg.decDom.X₀)) y.2 := by
     rw [hqdef]
-    exact hasFDerivAt_obstructionSlice pkg hT hq
+    exact pkg.hasFDerivAt_obstructionSlice hT hq
   rw [hstep₁, hufun, surjective_add_coe_iff pkg.decCodom.isTopCompl, hslice.fderiv]
   simp [ContinuousLinearMap.coe_comp, Function.comp_def]
 
@@ -327,7 +310,7 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
       fderiv ℝ (pkg.obstructionSlice hT y.1) y.2 = (fderiv ℝ q y).comp ι := by
     intro y hy
     rw [hqdef, hιdef]
-    exact (hasFDerivAt_obstructionSlice pkg hT ((hVP y hy).2.1.differentiableAt hk0)).fderiv
+    exact (pkg.hasFDerivAt_obstructionSlice hT ((hVP y hy).2.1.differentiableAt hk0)).fderiv
   -- Regularity of `f` on `N` is regularity of the finite-dimensional obstruction slice.
   have hcrit : ∀ x ∈ N, (Surjective (fderiv ℝ f x) ↔
       Surjective (fderiv ℝ (pkg.obstructionSlice hT (Φ x).1) (Φ x).2)) := by

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Components
-public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon
+public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Basic
 public import TauCeti.KnotTheory.Grid.Grading.MarkingCount
 public import TauCeti.KnotTheory.Grid.Grading.UnblockedChain
 public import TauCeti.KnotTheory.Grid.Rectangle.Swap

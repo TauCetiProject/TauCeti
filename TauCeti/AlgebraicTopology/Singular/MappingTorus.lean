@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.MappingTorus
+public import TauCeti.Topology.MappingTorus.Basic
 public import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
 
 /-!

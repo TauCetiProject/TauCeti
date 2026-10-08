@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeA.Basic
-public import TauCeti.RingTheory.Idempotents.Corner
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Corner
 
 /-!
 # Corner normal forms for the type-`A` preprojective algebra
@@ -110,35 +110,6 @@ theorem signlessPreprojectiveMk_A_ofPath_eq_zero_or_valley {a b : Fin (DynkinTyp
     rw [← map_mul, vertexIdempotent_mul_ofPath]
   rw [← hcorner, h, mul_smul_comm, signlessPreprojectiveAValley_def, hs', hr', mul_assoc]
 
-/-- Cutting a path class to `e_b Π e_a` gives a linear combination of the bounded valleys. -/
-private theorem corner_ofPath_mem_span (a b : Fin (DynkinType.A n).rank)
-    (x : Quiver.TotalPath (DoubledQuiver AG)) :
-    e b * π (ofPath x) * e a ∈ Submodule.span k
-      (signlessPreprojectiveAValley k a b ''
-        (Finset.Icc (a.val + b.val + 1 - n) (min a.val b.val) : Set ℕ)) := by
-  obtain ⟨c, d, p⟩ := x
-  obtain ⟨c, rfl⟩ := exists_eq_vertex AG c
-  obtain ⟨d, rfl⟩ := exists_eq_vertex AG d
-  by_cases hc : c = a
-  swap
-  · rw [mul_assoc, ← map_mul, ofPath_mul_vertexIdempotent_of_ne _
-      (fun h => hc (vertex_injective AG h.symm)), map_zero, mul_zero]
-    exact Submodule.zero_mem _
-  subst c
-  by_cases hd : d = b
-  swap
-  · rw [← map_mul, vertexIdempotent_mul_ofPath_of_ne _
-      (fun h => hd (vertex_injective AG h.symm)), map_zero, zero_mul]
-    exact Submodule.zero_mem _
-  subst d
-  rw [← map_mul, vertexIdempotent_mul_ofPath, ← map_mul, ofPath_mul_vertexIdempotent]
-  rcases signlessPreprojectiveMk_A_ofPath_eq_zero_or_valley k p with h | ⟨m, hm, ε, -, h⟩
-  · rw [h]
-    exact Submodule.zero_mem _
-  · rw [h]
-    rw [← Int.cast_smul_eq_zsmul k]
-    exact Submodule.smul_mem _ (ε : k) (Submodule.subset_span ⟨m, hm, rfl⟩)
-
 /-- The bounded valley classes span the entire corner `e_b Π e_a` of the signless type-`A`
 preprojective algebra. This is a spanning statement, not a claim of linear independence. -/
 theorem cornerSubmodule_signlessPreprojective_A_eq_span_valley
@@ -147,22 +118,18 @@ theorem cornerSubmodule_signlessPreprojective_A_eq_span_valley
       (signlessPreprojectiveAValley k a b ''
         (Finset.Icc (a.val + b.val + 1 - n) (min a.val b.val) : Set ℕ)) := by
   apply le_antisymm
-  · intro x hx
-    have hid (i : Fin (DynkinType.A n).rank) : IsIdempotentElem (e i) :=
-      IsIdempotentElem.map (vertexIdempotent_mul_self (k := k) (vertex AG i)) π
-    rw [mem_cornerSubmodule_iff k (hid b) (hid a)] at hx
-    rw [← hx]
-    obtain ⟨f, rfl⟩ := signlessPreprojectiveMk_surjective k (DoubledQuiver AG) x
-    clear hx
-    induction f using PathAlgebra.induction_linear with
-    | zero =>
-      simp only [map_zero, mul_zero, zero_mul]
+  · apply PathAlgebra.cornerSubmodule_le_of_ofPath_mem (π).toNonUnitalAlgHom
+      (signlessPreprojectiveMk_surjective k (DoubledQuiver AG))
+    intro p
+    -- Forgetting the unit law preserves the underlying function of the quotient map.
+    suffices π (ofPath ⟨_, _, p⟩) ∈ Submodule.span k
+        (signlessPreprojectiveAValley k a b ''
+          (Finset.Icc (a.val + b.val + 1 - n) (min a.val b.val) : Set ℕ)) by exact this
+    rcases signlessPreprojectiveMk_A_ofPath_eq_zero_or_valley k p with h | ⟨m, hm, ε, -, h⟩
+    · rw [h]
       exact Submodule.zero_mem _
-    | add f g hf hg =>
-      simpa only [map_add, mul_add, add_mul] using Submodule.add_mem _ hf hg
-    | single x c =>
-      simpa only [single_eq_smul_ofPath, map_smul, mul_smul_comm, smul_mul_assoc] using
-        Submodule.smul_mem _ c (corner_ofPath_mem_span k a b x)
+    · rw [h, ← Int.cast_smul_eq_zsmul k]
+      exact Submodule.smul_mem _ (ε : k) (Submodule.subset_span ⟨m, hm, rfl⟩)
   · apply Submodule.span_le.mpr
     rintro _ ⟨m, -, rfl⟩
     exact signlessPreprojectiveAValley_mem_cornerSubmodule k a b m

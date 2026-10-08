@@ -54,6 +54,7 @@ depressed specialization of that formula is used to compare a quartic with its c
 * `Polynomial.Monic.discr_mul`: the product formula for discriminants, with the square of the
   resultant as its cross term.
 * `Polynomial.discr_X_pow_sub_C`: the discriminant of a binomial `X ^ n - C a`.
+* `TauCeti.discr_X_pow_five_add_C_mul_X_add_C`: the discriminant of `X⁵ + aX + b`.
 * `TauCeti.not_isSquare_discr_X_pow_five_sub_C`: the discriminant `3125a⁴` of a pure quintic
   `X ^ 5 - C a` over `ℚ` with `a ≠ 0` is not a square.
 * `TauCeti.discr_C_mul`, `TauCeti.isSquare_discr_iff_mem_range`: the scaling law and
@@ -67,7 +68,7 @@ depressed specialization of that formula is used to compare a quartic with its c
   correct statement passes to the fraction field.
 * `Polynomial.discr_ne_zero_iff`: over a field, a nonzero polynomial that need not be monic is
   separable exactly when its discriminant is nonzero.
-* `Polynomial.Monic.separable_map_iff_map_discr_ne_zero`,
+* `Polynomial.separable_map_iff_map_discr_ne_zero`,
   `Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr`: the same criterion read along a ring
   homomorphism into a field, and its specialization to reduction of an integral polynomial modulo
   a prime.
@@ -686,16 +687,18 @@ theorem discr_ne_zero_iff {K : Type*} [Field K] {f : K[X]} (hf : f ≠ 0) :
     hmonic.discr_ne_zero_iff]
   exact ⟨fun h ↦ h.of_mul_right, Separable.unit_mul (isUnit_C.mpr hc.isUnit)⟩
 
-namespace Monic
-
-/-- A monic polynomial becomes separable along a ring homomorphism into a field exactly when its
-discriminant does not become zero. No injectivity is needed: the discriminant commutes with base
-change because monicity preserves the degree. -/
+/-- A degree-preserving specialization into a field is separable exactly when the formal
+discriminant specializes to a nonzero value. The leading coefficient may be any nonzero value. -/
 @[simp]
 theorem separable_map_iff_map_discr_ne_zero {K : Type*} [Field K]
-    {f : R[X]}
-    (hf : f.Monic) (φ : R →+* K) : (f.map φ).Separable ↔ φ f.discr ≠ 0 := by
-  rw [← (hf.map φ).discr_ne_zero_iff, hf.discr_map]
+    (f : R[X]) (φ : R →+* K) (hlc : φ f.leadingCoeff ≠ 0) :
+    (f.map φ).Separable ↔ φ f.discr ≠ 0 := by
+  have hn : f.map φ ≠ 0 := leadingCoeff_ne_zero.mp <| by
+    rwa [leadingCoeff_map_of_leadingCoeff_ne_zero φ hlc]
+  rw [← discr_ne_zero_iff hn,
+    discr_map_of_natDegree_eq φ (natDegree_map_of_leadingCoeff_ne_zero φ hlc)]
+
+namespace Monic
 
 /-- Over a domain, the discriminant of a monic polynomial is nonzero exactly when the polynomial
 becomes separable over the fraction field: over a domain the separability criterion is the one
@@ -704,19 +707,20 @@ formulated after passage to a fraction field. -/
 theorem discr_ne_zero_iff_separable_map (K : Type*) [Field K]
     [Algebra R K] [IsFractionRing R K] {f : R[X]} (hf : f.Monic) :
     f.discr ≠ 0 ↔ (f.map (algebraMap R K)).Separable := by
-  rw [hf.separable_map_iff_map_discr_ne_zero, map_ne_zero_iff _
+  rw [f.separable_map_iff_map_discr_ne_zero _ (by simp [hf.leadingCoeff]), map_ne_zero_iff _
     (FaithfulSMul.algebraMap_injective R K)]
 
 /-- A monic integral polynomial has separable reduction modulo a prime exactly when that prime
 does not divide its discriminant. -/
 -- Tagged `@[simp high]` rather than `@[simp]`: at the default priority the general
--- `Monic.separable_map_iff_map_discr_ne_zero` rewrites this left-hand side first, so the prime
+-- The general specialization criterion rewrites this left-hand side first, so the prime
 -- divisibility form would not be the simp normal form.
 @[simp high]
 theorem separable_map_zmod_iff_not_dvd_discr {f : ℤ[X]} (hf : f.Monic)
     (p : ℕ) [Fact p.Prime] :
     (f.map (Int.castRingHom (ZMod p))).Separable ↔ ¬ (p : ℤ) ∣ f.discr := by
-  rw [hf.separable_map_iff_map_discr_ne_zero, Int.coe_castRingHom, ne_eq,
+  rw [f.separable_map_iff_map_discr_ne_zero _ (by simp [hf.leadingCoeff]),
+    Int.coe_castRingHom, ne_eq,
     ZMod.intCast_zmod_eq_zero_iff_dvd]
 
 /-- The discriminant of a monic integral polynomial is a square in `ℚ` exactly when it is a square
@@ -934,5 +938,47 @@ theorem discr_depressedQuartic (p q r : R) :
     simpa only [add_assoc] using monic_X_pow_add hdeg
   rw [hmonic.discr_of_natDegree_eq_four hf]
   simp [f]
+
+/-- The discriminant of the quintic trinomial `X⁵ + aX + b`, over any commutative ring. -/
+@[simp] theorem discr_X_pow_five_add_C_mul_X_add_C (a b : R) :
+    (X ^ 5 + C a * X + C b).discr = 256 * a ^ 5 + 3125 * b ^ 4 := by
+  nontriviality R
+  let f : R[X] := X ^ 5 + C a * X + C b
+  have hf : f.natDegree = 5 := by dsimp [f]; compute_degree!
+  let e : Fin (f.natDegree - 1 + f.natDegree) ≃ Fin 9 := finCongr (by omega)
+  have hmat : f.sylvesterDeriv.reindex e e =
+      !![b, 0, 0, 0, a, 0, 0, 0, 0;
+         a, b, 0, 0, 0, a, 0, 0, 0;
+         0, a, b, 0, 0, 0, a, 0, 0;
+         0, 0, a, b, 0, 0, 0, a, 0;
+         0, 0, 0, a, 5, 0, 0, 0, a;
+         1, 0, 0, 0, 0, 5, 0, 0, 0;
+         0, 1, 0, 0, 0, 0, 5, 0, 0;
+         0, 0, 1, 0, 0, 0, 0, 5, 0;
+         0, 0, 0, 1, 0, 0, 0, 0, 5] := by
+    ext ⟨i, hi⟩ ⟨j, hj⟩
+    simp only [sylvesterDeriv, hf, OfNat.ofNat_ne_zero, ↓reduceDIte, sylvester, Fin.addCases,
+      Nat.add_one_sub_one, Fin.val_castLT, Fin.val_subNat, Fin.val_cast, coeff_derivative,
+      eq_rec_constant, dite_eq_ite, Nat.reduceMul, Nat.reduceSub, Nat.cast_ofNat,
+      Matrix.reindex_apply, Matrix.submatrix_apply, Matrix.updateRow_apply, Matrix.of_apply,
+      e, finCongr_symm, finCongr_apply, Fin.cast_mk, Fin.mk.injEq,
+      Matrix.cons_val', Matrix.cons_val_fin_one]
+    have hi' : i ∈ Finset.range 9 := Finset.mem_range.mpr hi
+    have hj' : j ∈ Finset.range 9 := Finset.mem_range.mpr hj
+    fin_cases hi' <;>
+    · simp only [Fin.isValue, Fin.mk_one, Fin.reduceFinMk, Fin.zero_eta,
+        Matrix.cons_val_one, Matrix.cons_val_zero, Matrix.cons_val,
+        Nat.reduceEqDiff, OfNat.one_ne_ofNat, ↓reduceIte]
+      fin_cases hj' <;>
+      · simp only [f, coeff_add, coeff_C_mul, coeff_X_pow, coeff_X, coeff_C,
+          Nat.reduceAdd, Nat.reduceSub, Nat.reduceEqDiff, ↓reduceIte,
+          zero_add, add_zero, zero_mul, mul_zero, mul_one, one_mul]
+        norm_num [Set.mem_Icc, Matrix.cons_val]
+  -- Fold the local polynomial abbreviation to use the matrix identity.
+  change f.discr = _
+  rw [discr, ← Matrix.det_reindex_self e, hmat, hf]
+  norm_num
+  eval_det
+  ring
 
 end TauCeti

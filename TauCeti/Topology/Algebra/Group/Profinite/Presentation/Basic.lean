@@ -152,7 +152,7 @@ theorem dense_closure_range_of :
 
 /-- A continuous homomorphism from the free profinite group that kills the relators factors through
 the presented profinite group. -/
-noncomputable def lift {G : Type v} [Group G] [TopologicalSpace G] [T1Space G]
+noncomputable def lift {G : Type v} [Monoid G] [TopologicalSpace G] [T1Space G]
     (ψ : freeProfiniteGroup X →ₜ* G) (hψ : ∀ r ∈ rels, ψ r = 1) :
     presentedProfiniteGroup X rels →ₜ* G := by
   let R : Subgroup (freeProfiniteGroup X) := (Subgroup.normalClosure rels).topologicalClosure
@@ -162,7 +162,7 @@ noncomputable def lift {G : Type v} [Group G] [TopologicalSpace G] [T1Space G]
 /-- The factorisation through a presented profinite group recovers the original map after the
 canonical quotient projection. -/
 @[simp]
-theorem lift_comp_mk {G : Type v} [Group G] [TopologicalSpace G] [T1Space G]
+theorem lift_comp_mk {G : Type v} [Monoid G] [TopologicalSpace G] [T1Space G]
     (ψ : freeProfiniteGroup X →ₜ* G) (hψ : ∀ r ∈ rels, ψ r = 1) :
     (lift ψ hψ).comp (mk rels) = ψ := by
   -- Unfold the presentation's lift and map only far enough to apply Mathlib's quotient
@@ -175,7 +175,7 @@ theorem lift_comp_mk {G : Type v} [Group G] [TopologicalSpace G] [T1Space G]
 /-- The factorisation through a presented profinite group computes on classes as the original
 map. -/
 @[simp]
-theorem lift_mk {G : Type v} [Group G] [TopologicalSpace G] [T1Space G]
+theorem lift_mk {G : Type v} [Monoid G] [TopologicalSpace G] [T1Space G]
     (ψ : freeProfiniteGroup X →ₜ* G) (hψ : ∀ r ∈ rels, ψ r = 1) (x : freeProfiniteGroup X) :
     lift ψ hψ (mk rels x) = ψ x :=
   DFunLike.congr_fun (lift_comp_mk ψ hψ) x
@@ -183,7 +183,7 @@ theorem lift_mk {G : Type v} [Group G] [TopologicalSpace G] [T1Space G]
 /-- The factorisation from a presented profinite group evaluates on its generators as the original
 map does on the free generators. -/
 @[simp]
-theorem lift_of {G : Type v} [Group G] [TopologicalSpace G] [T1Space G]
+theorem lift_of {G : Type v} [Monoid G] [TopologicalSpace G] [T1Space G]
     (ψ : freeProfiniteGroup X →ₜ* G) (hψ : ∀ r ∈ rels, ψ r = 1) (x : X) :
     lift ψ hψ (of rels x) = ψ (freeProfiniteGroup.of x) := by
   -- Reduce the named generator and lift to the quotient-map composite characterized by
@@ -193,7 +193,7 @@ theorem lift_of {G : Type v} [Group G] [TopologicalSpace G] [T1Space G]
 
 /-- Two continuous homomorphisms out of a presented profinite group are equal if they agree after
 precomposition with its quotient map. -/
-theorem hom_ext {G : Type v} [Group G] [TopologicalSpace G]
+theorem hom_ext {G : Type v} [Monoid G] [TopologicalSpace G]
     {φ ψ : presentedProfiniteGroup X rels →ₜ* G}
     (h : φ.comp (mk rels) = ψ.comp (mk rels)) : φ = ψ := by
   let R : Subgroup (freeProfiniteGroup X) :=
@@ -217,7 +217,7 @@ theorem hom_ext_of {G : Type v} [Group G] [TopologicalSpace G] [T2Space G]
 
 /-- A continuous homomorphism out of the free profinite group that kills the relators factors
 uniquely through the presented profinite group. -/
-theorem existsUnique_lift {G : Type v} [Group G] [TopologicalSpace G] [T1Space G]
+theorem existsUnique_lift {G : Type v} [Monoid G] [TopologicalSpace G] [T1Space G]
     (ψ : freeProfiniteGroup X →ₜ* G) (hψ : ∀ r ∈ rels, ψ r = 1) :
     ∃! φ : presentedProfiniteGroup X rels →ₜ* G, φ.comp (mk rels) = ψ := by
   refine ⟨lift ψ hψ, lift_comp_mk ψ hψ, ?_⟩
@@ -226,7 +226,7 @@ theorem existsUnique_lift {G : Type v} [Group G] [TopologicalSpace G] [T1Space G
 
 /-- The factorisation through a presented profinite group is natural in the target. -/
 @[simp]
-theorem comp_lift {G : Type v} [Group G] [TopologicalSpace G] [T1Space G] {H : Type w} [Group H]
+theorem comp_lift {G : Type v} [Monoid G] [TopologicalSpace G] [T1Space G] {H : Type w} [Monoid H]
     [TopologicalSpace H] [T1Space H] (g : G →ₜ* H) (ψ : freeProfiniteGroup X →ₜ* G)
     (hψ : ∀ r ∈ rels, ψ r = 1) :
     g.comp (lift ψ hψ) = lift (g.comp ψ) fun r hr ↦ by
@@ -235,7 +235,7 @@ theorem comp_lift {G : Type v} [Group G] [TopologicalSpace G] [T1Space G] {H : T
     simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply, lift_mk]
 
 /-- The factorisation through a presented profinite group of a surjection is surjective. -/
-theorem lift_surjective {G : Type v} [Group G] [TopologicalSpace G] [T1Space G]
+theorem lift_surjective {G : Type v} [Monoid G] [TopologicalSpace G] [T1Space G]
     {ψ : freeProfiniteGroup X →ₜ* G} (hψ : ∀ r ∈ rels, ψ r = 1) (hs : Function.Surjective ψ) :
     Function.Surjective (lift ψ hψ) := by
   have hcomp : ⇑ψ = lift ψ hψ ∘ mk rels := funext fun x ↦ (lift_mk ψ hψ x).symm
@@ -307,11 +307,12 @@ theorem map_comp {Z : Type w} {rels'' : Set (freeProfiniteGroup Z)}
     simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply, map_mk]
     exact (map_mk (ψ.comp φ) _ x).symm
 
-/-- A surjection of free profinite groups induces a surjection of presented profinite groups. -/
+/-- A map of free profinite groups that is surjective onto the target presentation induces a
+surjection of presented profinite groups. -/
 theorem map_surjective {φ : freeProfiniteGroup X →ₜ* freeProfiniteGroup Y}
-    (hφ : ∀ r ∈ rels, mk rels' (φ r) = 1) (hs : Function.Surjective φ) :
+    (hφ : ∀ r ∈ rels, mk rels' (φ r) = 1) (hs : Function.Surjective ((mk rels').comp φ)) :
     Function.Surjective (map φ hφ) :=
-  lift_surjective hφ ((mk_surjective rels').comp hs)
+  lift_surjective hφ hs
 
 /-- The relator-wise hypotheses of `congr` say that `e` carries the closed normal closure of the
 relators onto that of the other relators. -/
@@ -548,7 +549,7 @@ theorem isTopologicallyFinitelyGenerated [Finite X] :
 
 /-- A continuous homomorphism from the free pro-`p` group that kills the relators factors through
 the presented pro-`p` group. -/
-noncomputable def lift {P : Type v} [Group P] [TopologicalSpace P] [T1Space P]
+noncomputable def lift {P : Type v} [Monoid P] [TopologicalSpace P] [T1Space P]
     (ψ : freeProP p X →ₜ* P) (hψ : ∀ r ∈ rels, ψ r = 1) :
     presentedProP p X rels →ₜ* P := by
   let R : Subgroup (freeProP p X) := (Subgroup.normalClosure rels).topologicalClosure
@@ -558,7 +559,7 @@ noncomputable def lift {P : Type v} [Group P] [TopologicalSpace P] [T1Space P]
 /-- The factorisation through a presented pro-`p` group recovers the original map after the
 canonical quotient projection. -/
 @[simp]
-theorem lift_comp_mk {P : Type v} [Group P] [TopologicalSpace P] [T1Space P]
+theorem lift_comp_mk {P : Type v} [Monoid P] [TopologicalSpace P] [T1Space P]
     (ψ : freeProP p X →ₜ* P) (hψ : ∀ r ∈ rels, ψ r = 1) :
     (lift ψ hψ).comp (mk p rels) = ψ := by
   -- Unfold the presentation's lift and map only far enough to apply Mathlib's quotient
@@ -571,7 +572,7 @@ theorem lift_comp_mk {P : Type v} [Group P] [TopologicalSpace P] [T1Space P]
 /-- The factorisation through a presented pro-`p` group computes on classes as the original
 map. -/
 @[simp]
-theorem lift_mk {P : Type v} [Group P] [TopologicalSpace P] [T1Space P]
+theorem lift_mk {P : Type v} [Monoid P] [TopologicalSpace P] [T1Space P]
     (ψ : freeProP p X →ₜ* P) (hψ : ∀ r ∈ rels, ψ r = 1) (x : freeProP p X) :
     lift ψ hψ (mk p rels x) = ψ x :=
   DFunLike.congr_fun (lift_comp_mk ψ hψ) x
@@ -579,7 +580,7 @@ theorem lift_mk {P : Type v} [Group P] [TopologicalSpace P] [T1Space P]
 /-- The factorisation from a presented pro-`p` group evaluates on its generators as the original
 map does on the free generators. -/
 @[simp]
-theorem lift_of {P : Type v} [Group P] [TopologicalSpace P] [T1Space P]
+theorem lift_of {P : Type v} [Monoid P] [TopologicalSpace P] [T1Space P]
     (ψ : freeProP p X →ₜ* P) (hψ : ∀ r ∈ rels, ψ r = 1) (x : X) :
     lift ψ hψ (of p rels x) = ψ (freeProP.of x) := by
   -- Reduce the named generator and lift to the quotient-map composite characterized by
@@ -589,7 +590,7 @@ theorem lift_of {P : Type v} [Group P] [TopologicalSpace P] [T1Space P]
 
 /-- Two continuous homomorphisms out of a presented pro-`p` group are equal if they agree after
 precomposition with its quotient map. -/
-theorem hom_ext {P : Type v} [Group P] [TopologicalSpace P]
+theorem hom_ext {P : Type v} [Monoid P] [TopologicalSpace P]
     {φ ψ : presentedProP p X rels →ₜ* P}
     (h : φ.comp (mk p rels) = ψ.comp (mk p rels)) : φ = ψ := by
   let R : Subgroup (freeProP p X) := (Subgroup.normalClosure rels).topologicalClosure
@@ -612,7 +613,7 @@ theorem hom_ext_of {P : Type v} [Group P] [TopologicalSpace P] [T2Space P]
 
 /-- A continuous homomorphism out of the free pro-`p` group that kills the relators factors
 uniquely through the presented pro-`p` group. -/
-theorem existsUnique_lift {P : Type v} [Group P] [TopologicalSpace P] [T1Space P]
+theorem existsUnique_lift {P : Type v} [Monoid P] [TopologicalSpace P] [T1Space P]
     (ψ : freeProP p X →ₜ* P) (hψ : ∀ r ∈ rels, ψ r = 1) :
     ∃! φ : presentedProP p X rels →ₜ* P, φ.comp (mk p rels) = ψ := by
   refine ⟨lift ψ hψ, lift_comp_mk ψ hψ, ?_⟩
@@ -621,7 +622,7 @@ theorem existsUnique_lift {P : Type v} [Group P] [TopologicalSpace P] [T1Space P
 
 /-- The factorisation through a presented pro-`p` group is natural in the target. -/
 @[simp]
-theorem comp_lift {P : Type v} [Group P] [TopologicalSpace P] [T1Space P] {Q : Type w} [Group Q]
+theorem comp_lift {P : Type v} [Monoid P] [TopologicalSpace P] [T1Space P] {Q : Type w} [Monoid Q]
     [TopologicalSpace Q] [T1Space Q] (g : P →ₜ* Q) (ψ : freeProP p X →ₜ* P)
     (hψ : ∀ r ∈ rels, ψ r = 1) :
     g.comp (lift ψ hψ) = lift (g.comp ψ) fun r hr ↦ by
@@ -630,7 +631,7 @@ theorem comp_lift {P : Type v} [Group P] [TopologicalSpace P] [T1Space P] {Q : T
     simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply, lift_mk]
 
 /-- The factorisation through a presented pro-`p` group of a surjection is surjective. -/
-theorem lift_surjective {P : Type v} [Group P] [TopologicalSpace P] [T1Space P]
+theorem lift_surjective {P : Type v} [Monoid P] [TopologicalSpace P] [T1Space P]
     {ψ : freeProP p X →ₜ* P} (hψ : ∀ r ∈ rels, ψ r = 1) (hs : Function.Surjective ψ) :
     Function.Surjective (lift ψ hψ) := by
   have hcomp : ⇑ψ = lift ψ hψ ∘ mk p rels := funext fun x ↦ (lift_mk ψ hψ x).symm
@@ -693,11 +694,12 @@ theorem map_comp {Z : Type w} {rels'' : Set (freeProP p Z)} (φ : freeProP p X �
     simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply, map_mk]
     exact (map_mk (ψ.comp φ) _ x).symm
 
-/-- A surjection of free pro-`p` groups induces a surjection of presented pro-`p` groups. -/
+/-- A map of free pro-`p` groups that is surjective onto the target presentation induces a
+surjection of presented pro-`p` groups. -/
 theorem map_surjective {φ : freeProP p X →ₜ* freeProP p Y}
-    (hφ : ∀ r ∈ rels, mk p rels' (φ r) = 1) (hs : Function.Surjective φ) :
+    (hφ : ∀ r ∈ rels, mk p rels' (φ r) = 1) (hs : Function.Surjective ((mk p rels').comp φ)) :
     Function.Surjective (map φ hφ) :=
-  lift_surjective hφ ((mk_surjective p rels').comp hs)
+  lift_surjective hφ hs
 
 /-- The relator-wise hypotheses of `congr` say that `e` carries the closed normal closure of the
 relators onto that of the other relators. -/
@@ -964,7 +966,8 @@ theorem presentedProPGen_val (i : Fin n) :
   rw [← presentedProP.mk_freeProPGen, freeProPGen_val, presentedProP.mk_of]
 
 /-- The value of a homomorphism on the `ℕ`-indexed generators of a presented group. -/
-theorem map_presentedProPGen {K F : Type*} [Group K] [FunLike F (presentedProP p (Fin n) rels) K]
+theorem map_presentedProPGen {K F : Type*} [MulOneClass K]
+    [FunLike F (presentedProP p (Fin n) rels) K]
     [MonoidHomClass F (presentedProP p (Fin n) rels) K] (φ : F) (i : ℕ) :
     φ (presentedProPGen p n rels i) =
       if h : i < n then φ (presentedProP.of p rels ⟨i, h⟩) else 1 := by

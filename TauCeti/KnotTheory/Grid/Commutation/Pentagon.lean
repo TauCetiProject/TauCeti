@@ -58,8 +58,8 @@ other intersection point as its turn row.
 
 The pentagons here lie to the left of `β ∪ γ`. The commutation map `Φ` also counts the pentagons
 lying to its right, whose initial side turns at the same point; those, and `Φ` itself
-(`GridDiagram.commutationMap`), are in `Commutation/InitialPentagon.lean`. The map defined here
-is only one part of `Φ` and is not a chain map on its own.
+(`GridDiagram.commutationMap`), are in `Commutation/InitialPentagon/Basic.lean`. The map defined
+here is only one part of `Φ` and is not a chain map on its own.
 
 This file sets up the pentagons and the map. That `Φ` is a chain map, and that together with the
 reverse map it is a chain homotopy equivalence via the hexagon-counting homotopies, is not proved
@@ -334,6 +334,25 @@ theorem mem_coveredSquares (P : GridPentagonBetween a s x y) (p : Fin n × Fin n
   simp only [coveredSquares, Finset.mem_union, Finset.mem_product, Finset.mem_erase,
     Finset.mem_singleton, and_assoc]
 
+/-- Every square covered by a pentagon lies in the row arc of its underlying rectangle. -/
+theorem mem_cIco_of_mem_coveredSquares (P : GridPentagonBetween a s x y)
+    {p : Fin n × Fin n} (hp : p ∈ P.coveredSquares) :
+    p.2 ∈ Grid.cIco P.bottom P.top := by
+  have hsplit := Grid.ite_mem_cIco_eq_add_add P.turn_mem_cIco_bottom_top p.2
+  rcases (P.mem_coveredSquares p).1 hp with h | h | h
+  · exact h.2.2
+  · split_ifs at hsplit <;> grind
+  · split_ifs at hsplit <;> grind
+
+/-- A pentagon covers no square in a set supported on the complementary row arc. -/
+theorem disjoint_coveredSquares_of_forall_mem_cIco (P : GridPentagonBetween a s x y)
+    {S : Finset (Fin n × Fin n)}
+    (hS : ∀ p ∈ S, p.2 ∈ Grid.cIco P.top P.bottom) :
+    Disjoint P.coveredSquares S := by
+  refine Finset.disjoint_left.2 fun p hp h => ?_
+  exact Finset.disjoint_left.mp (Grid.disjoint_cIco_swap P.bottom P.top)
+    (P.mem_cIco_of_mem_coveredSquares hp) (hS p h)
+
 /-- A pentagon spanning one cyclic row has its turn in that row and covers only the
 columns of its underlying rectangle other than the first commuted column. -/
 theorem coveredSquares_eq_product_singleton_of_top_eq_finRotate_bottom
@@ -499,12 +518,9 @@ theorem pentagonWeight_eq_prod_coveredSquares {x y : GridState n}
       ∏ p ∈ P.coveredSquares,
         if p ∈ G.OSet then MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) p.1)
         else (1 : MvPolynomial (Fin n) R) := by
-  classical
-  rw [pentagonWeight, Finset.prod_ite_mem, Finset.inter_comm,
-    G.OSet_inter_eq_image_OColumnsOfSquares P.coveredSquares]
-  simp only [pentagonOColumns]
-  rw [
-    Finset.prod_image fun _ _ _ _ hab => congrArg Prod.fst hab]
+  rw [pentagonWeight, pentagonOColumns, G.prod_ite_OSet_eq_prod_OColumnsOfSquares
+    (fun c => (MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) c) :
+      MvPolynomial (Fin n) R))]
 
 /-- The weight of a pentagon is the product of the variables of the columns of the commuted
 diagram whose `O`-marking the pentagon carries. -/
@@ -531,6 +547,32 @@ theorem pentagonWeight_eq_monomial {x y : GridState n}
   classical
   rw [pentagonWeight, MvPolynomial.monomial_sum_one]
   simp only [← MvPolynomial.X_pow_eq_monomial, pow_one]
+
+/-- Renamed back by the column swap, the weight of a pentagon is the product, over the squares it
+covers, of the variable of the square's column in `G` at the `O`-marked squares and of `1`
+elsewhere: the weight a rectangle covering the same squares would have in `G`. -/
+theorem rename_pentagonWeight {x y : GridState n} (C : ColumnCommutationData G)
+    (P : GridPentagonBetween C.column C.turnRow x y) :
+    MvPolynomial.rename (Equiv.swap C.column (finRotate n C.column)) (G.pentagonWeight R C P) =
+      ∏ p ∈ P.coveredSquares,
+        if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R) := by
+  rw [pentagonWeight_eq_prod_coveredSquares, map_prod]
+  refine Finset.prod_congr rfl fun p _ => ?_
+  split_ifs <;> simp
+
+/-- The weight of a pentagon of the reverse commutation, which turns at the opposite intersection
+and is counted in the commuted diagram, is the product, over the squares it covers read in `G` by
+exchanging the two commuted columns, of the variable of the square's column at the `O`-marked
+squares of `G` and of `1` elsewhere. -/
+theorem pentagonWeight_reverse {y z : GridState n} (C : ColumnCommutationData G)
+    (Q : GridPentagonBetween C.reverse.column C.reverse.turnRow y z) :
+    (G.swapColumns C.column (finRotate n C.column)).pentagonWeight R C.reverse Q =
+      ∏ p ∈ Q.coveredSquares.map
+          ((Equiv.swap C.column (finRotate n C.column)).prodCongr (Equiv.refl (Fin n))).toEmbedding,
+        if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R) := by
+  rw [pentagonWeight_eq_prod_coveredSquares, Finset.prod_map]
+  refine Finset.prod_congr rfl fun p _ => ?_
+  simp [ColumnCommutationData.reverse_column]
 
 /-! ### The pentagon map -/
 

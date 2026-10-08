@@ -172,7 +172,6 @@ theorem exists_apply_mem_commutator_basisModificationDelta_eq_of_mem_range (hm :
       (ω x₀ : freeProP p X) ∈ commutator (freeProP p X) ∧
         basisModificationDelta p X hm ρ (fun i ↦ gradedMk p (freeProP p X) m (ω i)) = y := by
   classical
-  have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hm
   obtain ⟨ω, hω, rfl⟩ := exists_apply_mem_gradedBracketSpan_basisModificationDelta_eq hρ hc x₀ hy
   obtain ⟨z, hz, hzω⟩ := exists_mem_commutator_gradedMk_eq_of_mem_gradedBracketSpan hω
