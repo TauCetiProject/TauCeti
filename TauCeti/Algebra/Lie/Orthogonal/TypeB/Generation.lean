@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SumRootGenerators
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.SumGenerators
 
 /-!
 # Generation of the split odd orthogonal Lie algebra

@@ -168,7 +168,8 @@ theorem dirichletSolutionOperator_apply
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) (f : Lp ℝ 2 (mu.restrict Omega)) :
     dirichletSolutionOperator hcoeff hcoercive f =
       W1p.value (weakSolutionDirichlet hcoeff hcoercive f : W1p mu Omega 2) := by
-  rw [dirichletSolutionOperator, IsCoercive.formSolutionOperator_apply,
+  unfold dirichletSolutionOperator
+  rw [IsCoercive.formSolutionOperator_apply,
     formSolutionMap_valueL_eq_weakSolutionDirichlet hcoeff hcoercive f, W1p0.valueL_apply]
 
 /-- **The solution operator is compact on a bounded domain**, by Rellich--Kondrachov. -/
@@ -191,7 +192,7 @@ theorem isSymmetric_dirichletSolutionOperator
         energyFormH1 a b c (v : W1p mu Omega 2) (u : W1p mu Omega 2)) :
     LinearMap.IsSymmetric (dirichletSolutionOperator hcoeff hcoercive :
       Lp ℝ 2 (mu.restrict Omega) →ₗ[ℝ] Lp ℝ 2 (mu.restrict Omega)) := by
-  rw [dirichletSolutionOperator]
+  unfold dirichletSolutionOperator
   exact hcoercive.isSymmetric_formSolutionOperator
     (W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)) (energyFormH1L0_comm hcoeff hsymm)
 
@@ -333,8 +334,8 @@ theorem isDirichletEigenvalue_iff_hasEigenvalue
     IsDirichletEigenvalue mu Omega a b c kappa ↔
       HasEigenvalue (dirichletSolutionOperator hcoeff hcoercive :
         Lp ℝ 2 (mu.restrict Omega) →ₗ[ℝ] Lp ℝ 2 (mu.restrict Omega)) kappa⁻¹ := by
-  rw [dirichletSolutionOperator,
-    hcoercive.hasEigenvalue_formSolutionOperator_iff W1p0.valueL hkappa]
+  unfold dirichletSolutionOperator
+  rw [hcoercive.hasEigenvalue_formSolutionOperator_iff W1p0.valueL hkappa]
   refine exists_congr fun u ↦ and_congr_right fun _ ↦ forall_congr' fun v ↦ ?_
   rw [energyFormH1L0_apply, W1p0.valueL_apply, W1p0.valueL_apply]
 
@@ -350,7 +351,8 @@ theorem isDirichletEigenvalue_first
     (hOmega_nonempty : (Omega : Set (EuclideanSpace ℝ ι)).Nonempty) :
     IsDirichletEigenvalue mu Omega a b c
       (firstDirichletEigenvalue hcoeff hcoercive) := by
-  rw [firstDirichletEigenvalue_def, dirichletSolutionOperator]
+  rw [firstDirichletEigenvalue_def]
+  unfold dirichletSolutionOperator
   obtain ⟨u, hu, heq⟩ := hcoercive.exists_ne_zero_forall_apply_eq_inv_norm_smul_inner
     (W1p0.isCompactOperator_valueL (by simp) hOmega) (energyFormH1L0_comm hcoeff hsymm)
     (W1p0.valueL_ne_zero hOmega_nonempty)
@@ -431,7 +433,8 @@ theorem firstDirichletEigenvalue_mul_norm_value_sq_le
     (u : W1p0 mu Omega 2) :
     firstDirichletEigenvalue hcoeff hcoercive * ‖W1p.value (u : W1p mu Omega 2)‖ ^ 2 ≤
       energyFormH1 a b c (u : W1p mu Omega 2) (u : W1p mu Omega 2) := by
-  rw [firstDirichletEigenvalue_def, dirichletSolutionOperator]
+  rw [firstDirichletEigenvalue_def]
+  unfold dirichletSolutionOperator
   have h := hcoercive.inv_norm_formSolutionOperator_mul_norm_apply_sq_le
     (W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)) (energyFormH1L0_comm hcoeff hsymm) u
   rwa [energyFormH1L0_apply, W1p0.valueL_apply] at h
@@ -462,7 +465,8 @@ theorem isLeast_rayleighQuotient_firstDirichletEigenvalue
       {r : ℝ | ∃ u : W1p0 mu Omega 2, W1p0.valueL u ≠ 0 ∧
         energyFormH1L0 hcoeff u u / ‖W1p0.valueL u‖ ^ 2 = r} := by
     simp only [W1p0.valueL_apply, energyFormH1L0_apply]
-  rw [hset, firstDirichletEigenvalue_def, dirichletSolutionOperator]
+  rw [hset, firstDirichletEigenvalue_def]
+  unfold dirichletSolutionOperator
   exact hcoercive.isLeast_rayleighQuotient (W1p0.isCompactOperator_valueL (by simp) hOmega)
     (energyFormH1L0_comm hcoeff hsymm) (W1p0.valueL_ne_zero hOmega_nonempty)
 
@@ -488,7 +492,8 @@ theorem isGreatest_firstDirichletEigenvalue
       {C : ℝ | ∀ u : W1p0 mu Omega 2,
         C * ‖W1p0.valueL u‖ ^ 2 ≤ energyFormH1L0 hcoeff u u} := by
     simp only [W1p0.valueL_apply, energyFormH1L0_apply]
-  rw [hset, firstDirichletEigenvalue_def, dirichletSolutionOperator]
+  rw [hset, firstDirichletEigenvalue_def]
+  unfold dirichletSolutionOperator
   exact hcoercive.isGreatest_inv_norm_formSolutionOperator
     (energyFormH1L0_comm hcoeff hsymm) (W1p0.valueL_ne_zero hOmega_nonempty)
 
@@ -499,7 +504,7 @@ theorem finiteDimensional_eigenspace_dirichletSolutionOperator
     (hOmega : IsBounded (Omega : Set (EuclideanSpace ℝ ι))) {nu : ℝ} (hnu : nu ≠ 0) :
     FiniteDimensional ℝ (eigenspace (dirichletSolutionOperator hcoeff hcoercive :
       Lp ℝ 2 (mu.restrict Omega) →ₗ[ℝ] Lp ℝ 2 (mu.restrict Omega)) nu) := by
-  rw [dirichletSolutionOperator]
+  unfold dirichletSolutionOperator
   exact hcoercive.finiteDimensional_eigenspace_formSolutionOperator
     (W1p0.isCompactOperator_valueL (by simp) hOmega) hnu
 
@@ -514,7 +519,7 @@ theorem orthogonalComplement_iSup_eigenspaces_dirichletSolutionOperator_eq_bot
         energyFormH1 a b c (v : W1p mu Omega 2) (u : W1p mu Omega 2)) :
     (⨆ nu : ℝ, eigenspace (dirichletSolutionOperator hcoeff hcoercive :
       Lp ℝ 2 (mu.restrict Omega) →ₗ[ℝ] Lp ℝ 2 (mu.restrict Omega)) nu)ᗮ = ⊥ := by
-  rw [dirichletSolutionOperator]
+  unfold dirichletSolutionOperator
   exact hcoercive.orthogonalComplement_iSup_eigenspaces_formSolutionOperator_eq_bot
     (W1p0.isCompactOperator_valueL (by simp) hOmega) (energyFormH1L0_comm hcoeff hsymm)
 
@@ -530,7 +535,7 @@ theorem orthogonalComplement_iSup_eigenspaces_ne_zero_dirichletSolutionOperator_
         energyFormH1 a b c (v : W1p mu Omega 2) (u : W1p mu Omega 2)) :
     (⨆ nu : ℝ, ⨆ _ : nu ≠ 0, eigenspace (dirichletSolutionOperator hcoeff hcoercive :
       Lp ℝ 2 (mu.restrict Omega) →ₗ[ℝ] Lp ℝ 2 (mu.restrict Omega)) nu)ᗮ = ⊥ := by
-  rw [dirichletSolutionOperator]
+  unfold dirichletSolutionOperator
   exact hcoercive.orthogonalComplement_iSup_eigenspaces_ne_zero_formSolutionOperator_eq_bot
     (W1p0.isCompactOperator_valueL (by simp) hOmega) W1p0.denseRange_valueL_two
     (energyFormH1L0_comm hcoeff hsymm)
@@ -572,7 +577,7 @@ theorem exists_hilbertBasis_forall_isDirichletEigenvalue
   refine ⟨s, basis, kappa, u, hbasis, hpos, fun f ↦ ⟨u f, hune f, heq' f⟩,
     fun f ↦ ?_, heq', ?_⟩
   · simpa only [W1p0.valueL_apply] using hvalue f
-  · rw [dirichletSolutionOperator]
+  · unfold dirichletSolutionOperator
     exact hsum
 
 /-- **The Fredholm alternative in eigenvalue language.**  On a bounded domain, if `κ` is not a
