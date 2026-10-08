@@ -113,6 +113,11 @@ theorem homInclusion_injective (X Y : C) :
     Function.Injective (homInclusion (R := R) X Y) :=
   Function.LeftInverse.injective (homProjection_homInclusion X Y)
 
+/-- The projection onto the morphisms `X ⟶ Y` evaluates an element of the direct sum at
+`(X, Y)`. -/
+theorem homProjection_apply (X Y : C) (x : TotalHom R C) : homProjection X Y x = x (X, Y) :=
+  (rfl)
+
 /-- Two elements of the total module of morphisms are equal when all of their components are. -/
 theorem totalHom_ext {x y : TotalHom R C}
     (h : ∀ X Y : C, homProjection X Y x = homProjection X Y y) : x = y :=
