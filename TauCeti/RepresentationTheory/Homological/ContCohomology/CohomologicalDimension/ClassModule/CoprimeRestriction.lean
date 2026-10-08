@@ -64,8 +64,7 @@ private theorem abelianizationProP_nsmul_bijective (hp : p.Prime) (V : Subgroup 
   · intro a
     obtain ⟨b, hb⟩ := hpow.surjective a.toMul
     refine ⟨Additive.ofMul b, Additive.toMul.injective ?_⟩
-    change b ^ m = a.toMul
-    exact hb
+    simpa only [toMul_nsmul, toMul_ofMul] using hb
 
 private noncomputable def abelianizationProPNsmulEquiv (hp : p.Prime) (V : Subgroup G)
     (hV : IsOpen (V : Set G)) (m : ℕ) (hm : Nat.Coprime m p) :
