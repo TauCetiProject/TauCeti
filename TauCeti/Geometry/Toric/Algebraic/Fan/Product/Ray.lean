@@ -44,20 +44,22 @@ variable {N N' V V' : Type*} [AddCommGroup N] [AddCommGroup N'] [AddCommGroup V]
 the other. -/
 private def prodRayOfSum (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.cones) :
     Φ.Ray ⊕ Ψ.Ray → (Φ.prod Ψ).Ray
-  | .inl ρ => ⟨Φ.prodCone Ψ ρ.toCone ⟨⊥, Ψ.bot_mem hΨ0.some.2⟩,
-      (PointedCone.finrank_span_coe_prod_bot ρ.toCone.1).trans ρ.2⟩
-  | .inr ρ => ⟨Φ.prodCone Ψ ⟨⊥, Φ.bot_mem hΦ0.some.2⟩ ρ.toCone,
-      (PointedCone.finrank_span_coe_bot_prod ρ.toCone.1).trans ρ.2⟩
+  | .inl ρ => Ray.ofToricRay (Φ.prod Ψ) (Φ.prodCone Ψ ρ.toCone ⟨⊥, Ψ.bot_mem hΨ0.some.2⟩)
+      (ToricRay.prodInl (Ψ.isToricCone (Ψ.bot_mem hΨ0.some.2)).salient
+        (ρ.toToricRay Φ ρ.toCone le_rfl))
+  | .inr ρ => Ray.ofToricRay (Φ.prod Ψ) (Φ.prodCone Ψ ⟨⊥, Φ.bot_mem hΦ0.some.2⟩ ρ.toCone)
+      (ToricRay.prodInr (Φ.isToricCone (Φ.bot_mem hΦ0.some.2)).salient
+        (ρ.toToricRay Ψ ρ.toCone le_rfl))
 
 private theorem coe_toCone_prodRayOfSum_inl (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.cones)
     (ρ : Φ.Ray) :
-    (prodRayOfSum Φ Ψ hΦ0 hΨ0 (.inl ρ)).toCone.1 = ρ.toCone.1.prod ⊥ :=
-  rfl
+    (prodRayOfSum Φ Ψ hΦ0 hΨ0 (.inl ρ)).toCone.1 = ρ.toCone.1.prod ⊥ := by
+  simp [prodRayOfSum]
 
 private theorem coe_toCone_prodRayOfSum_inr (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.cones)
     (ρ : Ψ.Ray) :
-    (prodRayOfSum Φ Ψ hΦ0 hΨ0 (.inr ρ)).toCone.1 = (⊥ : PointedCone ℝ V).prod ρ.toCone.1 :=
-  rfl
+    (prodRayOfSum Φ Ψ hΦ0 hΨ0 (.inr ρ)).toCone.1 = (⊥ : PointedCone ℝ V).prod ρ.toCone.1 := by
+  simp [prodRayOfSum]
 
 private theorem prodRayOfSum_injective (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.cones) :
     Function.Injective (prodRayOfSum Φ Ψ hΦ0 hΨ0) := by
@@ -80,32 +82,21 @@ private theorem prodRayOfSum_surjective (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonem
     Function.Surjective (prodRayOfSum Φ Ψ hΦ0 hΨ0) := by
   intro ξ
   obtain ⟨σ, τ, hξ⟩ := Φ.exists_prodCone_eq Ψ ξ.toCone
-  have hξ' : (ξ.1.1 : PointedCone ℝ (V × V')) = σ.1.prod τ.1 := congrArg Subtype.val hξ.symm
-  -- View `ξ` as a ray of the cone `σ × τ`, whose projections are `σ` and `τ`.
-  let G : ToricRay (σ.1.prod τ.1) :=
-    ⟨⟨ξ.1.1, hξ' ▸ PointedCone.IsFaceOf.refl _⟩, ξ.2⟩
-  have hG : (G.toPointedCone : ConvexCone ℝ (V × V')).Salient :=
-    ((Φ.prod Ψ).isToricCone ξ.toCone.2).salient
-  -- By construction, the cone of `G` is `ξ.1.1`.
-  have hGfst : PointedCone.map (LinearMap.fst ℝ V V') G.toPointedCone = σ.1 := by
-    change PointedCone.map _ ξ.1.1 = _
-    rw [hξ']
-    exact Submodule.prod_map_fst ..
-  have hGsnd : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone = τ.1 := by
-    change PointedCone.map _ ξ.1.1 = _
-    rw [hξ']
-    exact Submodule.prod_map_snd ..
-  by_cases hτ : τ.1 = ⊥
-  · have hσ := ToricRay.finrank_span_map_fst_eq_one G hG (hGsnd.trans hτ)
-    rw [hGfst] at hσ
-    refine ⟨.inl ⟨σ, hσ⟩, Subtype.ext (Subtype.ext ?_)⟩
-    rw [coe_toCone_prodRayOfSum_inl, hξ', hτ]
-  · have hσ : σ.1 = ⊥ := hGfst.symm.trans
-      (ToricRay.map_fst_eq_bot_of_map_snd_ne_bot G hG (hGsnd.trans_ne hτ))
-    have hτ' := ToricRay.finrank_span_map_snd_eq_one G hG (hGsnd.trans_ne hτ)
-    rw [hGsnd] at hτ'
-    refine ⟨.inr ⟨τ, hτ'⟩, Subtype.ext (Subtype.ext ?_)⟩
-    rw [coe_toCone_prodRayOfSum_inr, hξ', hσ]
+  -- View `ξ` as a ray of the cone `σ × τ` and split it into a ray of one factor.
+  let G := ξ.toToricRay (Φ.prod Ψ) (Φ.prodCone Ψ σ τ) hξ.ge
+  have hσ := (Φ.isToricCone σ.2).salient
+  have hτ := (Ψ.isToricCone τ.2).salient
+  have hG : (ToricRay.prodSplit hσ hτ).symm (ToricRay.prodSplit hσ hτ G) = G :=
+    (ToricRay.prodSplit hσ hτ).symm_apply_apply G
+  rcases hsplit : ToricRay.prodSplit hσ hτ G with ρ | ρ
+  · refine ⟨.inl (Ray.ofToricRay Φ σ ρ), Subtype.ext (Subtype.ext ?_)⟩
+    rw [hsplit, ToricRay.prodSplit_symm_inl] at hG
+    rw [coe_toCone_prodRayOfSum_inl, Ray.toCone_ofToricRay, ← ToricRay.toPointedCone_prodInl hτ,
+      hG, Ray.toPointedCone_toToricRay]
+  · refine ⟨.inr (Ray.ofToricRay Ψ τ ρ), Subtype.ext (Subtype.ext ?_)⟩
+    rw [hsplit, ToricRay.prodSplit_symm_inr] at hG
+    rw [coe_toCone_prodRayOfSum_inr, Ray.toCone_ofToricRay, ← ToricRay.toPointedCone_prodInr hσ,
+      hG, Ray.toPointedCone_toToricRay]
 
 /-- The rays of a product of nonempty fans are exactly the rays of the two factors. A ray of the
 product projects to a ray of one factor and to the zero cone of the other; conversely, a ray of

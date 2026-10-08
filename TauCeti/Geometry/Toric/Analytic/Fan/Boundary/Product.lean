@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Algebraic.Fan.Product.Ray
 public import TauCeti.Geometry.Toric.Analytic.Fan.Boundary.Naturality
 public import TauCeti.Geometry.Toric.Analytic.Fan.Product
 public import TauCeti.LinearAlgebra.Submodule.Prod
