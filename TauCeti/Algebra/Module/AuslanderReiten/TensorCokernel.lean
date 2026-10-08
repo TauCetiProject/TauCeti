@@ -22,8 +22,9 @@ its transpose, a comparison used in Auslander–Reiten duality. For a general pr
 presentation, this cokernel is not asserted to be `Ext¹`: the presenting arrow need
 not be injective. No minimality, exactness, or finite-dimensionality is needed here.
 
-The construction uses `balancedDualTensorHomEquiv` and Mathlib's
-`LinearMap.liftOfSurjective` to descend evaluation through the transpose quotient.
+For finite projectives, `balancedDualTensorHomEquiv` identifies dual tensors with Hom spaces.
+Evaluation carries the relations defining the transpose to the image of precomposition,
+so it descends to the Hom cokernel.
 
 ## References
 
@@ -189,6 +190,7 @@ variable {N' : Type*} [AddCommGroup N'] [Module A N'] [Module k N']
   [IsScalarTower k A N']
 
 /-- The tensor–cokernel comparison commutes with postcomposition in the coefficient module. -/
+@[simp]
 theorem auslanderReitenTransposeTensorEquivCokernel_map (f : P₁ →ₗ[A] P₀)
     (g : N →ₗ[A] N') (z : BalancedTensorProduct k A (AuslanderReitenTranspose f) N) :
     auslanderReitenTransposeTensorEquivCokernel f
