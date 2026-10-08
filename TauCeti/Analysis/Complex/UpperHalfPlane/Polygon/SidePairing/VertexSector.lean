@@ -119,14 +119,6 @@ theorem mem_interior_iUnion_inv_partialCycleMap_smul_carrier_iff {j : Fin n} {z 
 
 /-! ### Coverage of a neighbourhood of a finite vertex -/
 
-/-- Following a side pairing, the incoming side of the next tile at the vertex is the outgoing
-side of the current one. -/
-private theorem inv_partialCycleMap_succ_smul_vertex_sub_one (j : Fin n) (m : ℕ) :
-    ((σ.partialCycleMap j (m + 1))⁻¹ • P).vertex (σ.next^[m + 1] j - 1) =
-      ((σ.partialCycleMap j m)⁻¹ • P).vertex (σ.next^[m] j + 1) := by
-  rw [vertex_smul, vertex_smul, Function.iterate_succ_apply', next_apply, add_sub_cancel_right,
-    partialCycleMap_succ, mul_inv_rev, mul_smul, ← σ.map_smul_vertex_add_one, inv_smul_smul]
-
 /-- The tile at step `m` of a cycle through a finite vertex `z` has `z` as its vertex. -/
 private theorem inv_partialCycleMap_smul_vertex {j : Fin n} {z : ℍ} (hz : P.vertex j = .inl z)
     (m : ℕ) : ((σ.partialCycleMap j m)⁻¹ • P).vertex (σ.next^[m] j) = .inl z := by
@@ -146,7 +138,10 @@ private theorem orientedAngle_rayToward_inv_partialCycleMap_smul_vertex {j : Fin
     have h := ((σ.partialCycleMap j m)⁻¹ • P).orientedAngle_rayToward_vertex_eq_interiorAngle
       (σ.inv_partialCycleMap_smul_vertex hz m)
     rw [interiorAngle_smul] at h
-    rw [σ.inv_partialCycleMap_succ_smul_vertex_sub_one, ← orientedAngle_add _ _ (geodesicLine
+    have hvertex := σ.inv_partialCycleMap_succ_smul_vertex_sub_one j m
+    rw [show (((σ.partialCycleMap j (m + 1))⁻¹ • P).vertex (σ.next^[m + 1] j - 1)) =
+        (((σ.partialCycleMap j m)⁻¹ • P).vertex (σ.next^[m] j + 1)) from
+      by simpa only [vertex_smul] using hvertex, ← orientedAngle_add _ _ (geodesicLine
       (rayToward z (((σ.partialCycleMap j m)⁻¹ • P).vertex (σ.next^[m] j - 1))) 1), ih,
       orientedAngle_rev, h, Finset.sum_range_succ]
     simp only [neg_add, Real.Angle.coe_add, Real.Angle.coe_neg]
@@ -159,7 +154,10 @@ private theorem orientedAngle_rayToward_inv_partialCycleMap_smul_vertex_add_one 
         (geodesicLine (rayToward z
           (((σ.partialCycleMap j m)⁻¹ • P).vertex (σ.next^[m] j + 1))) 1) =
       ((-∑ l ∈ Finset.range (m + 1), P.interiorAngle (σ.next^[l] j) : ℝ) : Real.Angle) := by
-  rw [← σ.inv_partialCycleMap_succ_smul_vertex_sub_one]
+  have hvertex := σ.inv_partialCycleMap_succ_smul_vertex_sub_one j m
+  rw [← show (((σ.partialCycleMap j (m + 1))⁻¹ • P).vertex (σ.next^[m + 1] j - 1)) =
+      (((σ.partialCycleMap j m)⁻¹ • P).vertex (σ.next^[m] j + 1)) from
+    by simpa only [vertex_smul] using hvertex]
   exact σ.orientedAngle_rayToward_inv_partialCycleMap_smul_vertex hz (m + 1)
 
 /-- In the common coordinate at a finite vertex, the angle of `w` measured from the outgoing ray of
