@@ -102,9 +102,9 @@ end Group
 
 /-! ### Counting the invariants of a dual -/
 
-section Finite
+section Averaging
 
-variable {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
+variable {k G V : Type*} [CommRing k] [Group G] [AddCommGroup V] [Module k V]
 
 /-- **An invariant functional factors through the averaging projection**: averaging `u` over the
 group does not change its value under a functional the action leaves unchanged. -/
@@ -116,6 +116,11 @@ theorem apply_averageMap_of_mem_invariants_dual [Fintype G] [Invertible (Fintype
   simp only [apply_of_mem_invariants_dual hψ, Finset.sum_const, Finset.card_univ, smul_eq_mul,
     nsmul_eq_mul, ← mul_assoc, invOf_mul_self, one_mul]
 
+end Averaging
+
+section Finite
+
+variable {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
 variable [Finite G] [Invertible (Nat.card G : k)]
 
 /-- **The dual of a representation has as many invariants as the representation**, whenever `|G|`
@@ -169,6 +174,15 @@ noncomputable def dualTprodEquivDualDualTprod (ρ : Representation k G V)
         (_root_.TensorProduct.dualDistribEquiv k (Module.Dual k V) W))) fun g => by
     refine _root_.TensorProduct.ext' fun η v => _root_.TensorProduct.ext' fun ξ w => ?_
     simp [dual_apply, Module.Dual.transpose_apply, _root_.TensorProduct.dualDistribEquiv, mul_comm]
+
+/-- The equivalence `dualTprodEquivDualDualTprod` sends a pure tensor to the functional obtained
+by evaluating the two dual factors. -/
+@[simp]
+theorem dualTprodEquivDualDualTprod_tmul_apply (ρ : Representation k G V)
+    (σ : Representation k G W) (η : Module.Dual k W) (v : V) (ξ : Module.Dual k V) (w : W) :
+    dualTprodEquivDualDualTprod ρ σ (η ⊗ₜ[k] v) (ξ ⊗ₜ[k] w) = ξ v * η w := by
+  change η w * ξ v = ξ v * η w
+  exact mul_comm _ _
 
 end Representation
 
