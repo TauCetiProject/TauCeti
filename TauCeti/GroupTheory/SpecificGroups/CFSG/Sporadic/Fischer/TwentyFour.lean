@@ -336,12 +336,8 @@ theorem even_length_of_mem_fi24AutomorphismRelators :
   simp only [fi24AutomorphismRelators, List.mem_append] at hr
   rcases hr with hr | hr
   · obtain ⟨i, j, rfl⟩ := mem_coxeterRelators_iff.mp hr
-    have hlen :
-        (coxeterRelator fi24AutomorphismCoxeterMatrix s(i, j).inf s(i, j).sup).toWord.length =
-          fi24AutomorphismCoxeterMatrix s(i, j).inf s(i, j).sup * 2 := by
-      simp
-    rw [hlen]
-    exact even_iff_two_dvd.mpr ⟨_, Nat.mul_comm _ 2⟩
+    rw [length_toWord_coxeterRelator]
+    exact even_two_mul _
   · simp only [fi24AutomorphismAdditionalRelators, List.mem_cons, List.not_mem_nil,
       or_false] at hr
     rcases hr with rfl | rfl
