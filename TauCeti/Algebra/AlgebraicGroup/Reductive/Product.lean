@@ -250,8 +250,6 @@ theorem tensorProduct (H K : FiniteTypeCommHopfAlgCat.{u, u} k)
   apply SetLike.ext
   intro x
   rw [HopfIdeal.mem_augmentation]
-  -- Expose membership in the underlying ideal, as required by `mkQuotient_eq_zero_iff`.
-  change x ∈ I.toIdeal ↔ _
   rw [← FiniteTypeCommHopfAlgCat.mkQuotient_eq_zero_iff P₀ I]
   rw [hq]
   constructor
