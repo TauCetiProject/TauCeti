@@ -59,6 +59,7 @@ theorem smulDeriv_upperRightHom (x : ℝ) (z : ℍ) : smulDeriv (upperRightHom x
     Matrix.SpecialLinearGroup.transvection_coe]
 
 /-- A translation moves every point of `ℍ ∪ ∂ℍ` other than `∞` by its parameter. -/
+@[simp]
 theorem toComplex_upperRightHom_smul (x : ℝ) {p : ℍ ⊕ OnePoint ℝ} (hp : p ≠ .inr ∞) :
     toComplex (upperRightHom x • p) = x + toComplex p := by
   rcases p with z | ξ

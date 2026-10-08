@@ -100,7 +100,9 @@ theorem exists_setOf_lt_im_smul_subset_iUnion_smul_carrier {j : Fin n} {ξ : One
   -- translate `g • z` by a multiple of `x` into the period filled by the strips of one cycle
   set k := toIocDiv hx0 (v (σ.cycleLength j)) (g • z).re
   have hk := sub_toIocDiv_zsmul_mem_Ioc hx0 (v (σ.cycleLength j)) (g • z).re
-  rw [show v (σ.cycleLength j) + x = v 0 by rw [hvr]; ring] at hk
+  -- one full cycle of strips spans exactly one period
+  have hperiod : v (σ.cycleLength j) + x = v 0 := by rw [hvr]; ring
+  rw [hperiod] at hk
   set w : ℍ := g • (σ.cycleMap j ^ (-k) • z)
   have hw : w = (((-k : ℤ) : ℝ) * x) +ᵥ (g • z) := smul_zpow_smul hx (-k) z
   have hwre : w.re ∈ Ioc (v (σ.cycleLength j)) (v 0) := by
