@@ -21,7 +21,7 @@ map by normalized alternatization over `ℝ`. No completeness or finite-dimensio
 assumption is needed.
 The regularity parameter ranges over `ℕ∞ω`, including analytic regularity `ω`.
 
-Use `TauCeti.ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM
+Use `TauCeti.contDiff_continuousAlternatingMap_compContinuousLinearMapCLM
   (ι := ι) (E := E) (F := F) (G := G)`
 to obtain smoothness of the pullback operator; the regularity `n` is inferred from the goal.
 -/
@@ -40,7 +40,7 @@ variable {ι E F G : Type*}
 
 /-- Pullback over `ℝ` depends smoothly on the linear map, in the operator norm on
 alternating maps. -/
-theorem ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM :
+theorem contDiff_continuousAlternatingMap_compContinuousLinearMapCLM :
     ContDiff ℝ n
       (compContinuousLinearMapCLM : (E →L[ℝ] F) →
         (F [⋀^ι]→L[ℝ] G) →L[ℝ] E [⋀^ι]→L[ℝ] G) := by
@@ -48,7 +48,7 @@ theorem ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM :
   -- Alternatization restricts to factorial multiplication on alternating maps, so its
   -- normalization is a left inverse of their inclusion into multilinear maps.
   let P : ContinuousMultilinearMap ℝ (fun _ : ι ↦ E) G →L[ℝ] E [⋀^ι]→L[ℝ] G :=
-    ((Fintype.card ι).factorial : ℝ)⁻¹ • ContinuousMultilinearMap.alternatizationCLM
+    ((Fintype.card ι).factorial : ℝ)⁻¹ • continuousMultilinearMapAlternatizationCLM
   let Q := ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear
     ℝ (fun _ : ι ↦ E) (fun _ ↦ F) G
   have hQ : ContDiff ℝ n (fun g : E →L[ℝ] F ↦ Q (fun _ ↦ g)) :=
@@ -68,8 +68,8 @@ theorem ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM :
   funext g
   ext1 f
   simp only [ContinuousLinearMap.comp_apply, P, _root_.smul_apply,
-    hQ_apply, ContinuousMultilinearMap.alternatizationCLM_apply,
-    ContinuousAlternatingMap.alternatization_toContinuousMultilinearMap,
+    hQ_apply, continuousMultilinearMapAlternatizationCLM_apply,
+    continuousAlternatingMap_alternatization_toContinuousMultilinearMap,
     compContinuousLinearMapCLM_apply]
   rw [← Nat.cast_smul_eq_nsmul ℝ, inv_smul_smul₀ (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _) :
     ((Fintype.card ι).factorial : ℝ) ≠ 0)]

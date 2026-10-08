@@ -68,7 +68,7 @@ theorem contMDiffOn_continuousAlternatingMapCoordChange
       (F := (F₁ [⋀^ι]→L[ℝ] F₂) →L[ℝ] F₁ [⋀^ι]→L[ℝ] F₂) L).contMDiff.comp_contMDiffOn
       ((contMDiffOn_coordChangeL (IB := IB) e₂ e₂' (n := n)).mono ?_)
     mfld_set_tac
-  · refine ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM.contMDiff.comp_contMDiffOn
+  · refine contDiff_continuousAlternatingMap_compContinuousLinearMapCLM.contMDiff.comp_contMDiffOn
       ((contMDiffOn_coordChangeL (IB := IB) e₁' e₁ (n := n)).mono ?_)
     mfld_set_tac
 
