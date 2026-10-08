@@ -17,7 +17,7 @@ distinguished points, and its torus orbit is the product of the factor orbits.
 
 ## Main declarations
 
-* `TauCeti.Toric.Fan.analyticProdHomeomorph_analyticDistinguishedPoint`: distinguished points of
+* `TauCeti.Toric.Fan.analyticProdHomeomorph_analyticDistinguishedPoint_prodCone`: distinguished points of
   product cones are pairs of distinguished points.
 * `TauCeti.Toric.Fan.image_analyticProdHomeomorph_analyticConeOrbit_prodCone`: the orbit of a
   product cone is the product of the factor orbits.
@@ -44,7 +44,7 @@ variable {N N' V V' : Type u} [AddCommGroup N] [AddCommGroup N']
 /-- The distinguished point of a product cone corresponds to the pair of distinguished points of
 its factors. -/
 @[simp]
-theorem analyticProdHomeomorph_analyticDistinguishedPoint (σ : Φ.cones) (τ : Ψ.cones) :
+theorem analyticProdHomeomorph_analyticDistinguishedPoint_prodCone (σ : Φ.cones) (τ : Ψ.cones) :
     Φ.analyticProdHomeomorph Ψ hΦ hΨ
         ((Φ.prod Ψ).analyticDistinguishedPoint (Fan.IsRegular.prod Φ Ψ hΦ hΨ)
           (Φ.prodCone Ψ σ τ)) =
@@ -55,6 +55,7 @@ theorem analyticProdHomeomorph_analyticDistinguishedPoint (σ : Φ.cones) (τ : 
 
 /-- A point of the product realization lies in the orbit of a product cone exactly when its two
 components lie in the orbits of the factor cones. -/
+@[simp]
 theorem analyticProdHomeomorph_mem_prod_analyticConeOrbit_iff {σ : Φ.cones} {τ : Ψ.cones}
     {x : (Φ.prod Ψ).analyticRealization (Fan.IsRegular.prod Φ Ψ hΦ hΨ)} :
     Φ.analyticProdHomeomorph Ψ hΦ hΨ x ∈
@@ -78,6 +79,7 @@ theorem analyticProdHomeomorph_mem_prod_analyticConeOrbit_iff {σ : Φ.cones} {�
     Ψ.eq_of_mem_analyticConeOrbit hΨ h.2 (hmem hx).2]
 
 /-- The orbit of a product cone is the preimage of the product of the factor orbits. -/
+@[simp]
 theorem preimage_analyticProdHomeomorph_prod_analyticConeOrbit (σ : Φ.cones) (τ : Ψ.cones) :
     Φ.analyticProdHomeomorph Ψ hΦ hΨ ⁻¹'
         (Φ.analyticConeOrbit hΦ σ ×ˢ Ψ.analyticConeOrbit hΨ τ) =
