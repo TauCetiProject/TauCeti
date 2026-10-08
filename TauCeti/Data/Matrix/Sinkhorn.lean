@@ -348,8 +348,8 @@ theorem sinkhornPlan_iterate_apply_le_exp_mul {K : Matrix ι κ ℝ} (hK : ∀ i
   have : Nonempty ι := ⟨i⟩
   have : Nonempty κ := ⟨j⟩
   have hun := sinkhornStep_iterate_pos hK ha hb hu₀ n
-  refine ((isDiagonalScaling_sinkhornPlan K a b _).apply_le_exp_hilbertProjectiveDist_mul hP hK
-    (fun i ↦ (sinkhornStep_pos hK ha hb hun i).le)
+  refine ((isDiagonalScaling_sinkhornPlan K a b _).apply_le_exp_hilbertProjectiveDist_mul hP (hK i)
+    (sinkhornStep_pos hK ha hb hun i).le
     (sinkhornUpdate_pos (fun j i ↦ by simpa using hK i j) hb hun) hv
     ((sum_sinkhornPlan_apply hK a hb hun i).trans (((hasMarginals_def P a b).1 hPm).1 i).symm)
     j).trans ?_
@@ -373,8 +373,8 @@ theorem le_exp_mul_sinkhornPlan_iterate_apply {K : Matrix ι κ ℝ} (hK : ∀ i
   have : Nonempty κ := ⟨j⟩
   have hun := sinkhornStep_iterate_pos hK ha hb hu₀ n
   have hw := sinkhornUpdate_pos (fun j i ↦ by simpa using hK i j) hb hun
-  refine (hP.apply_le_exp_hilbertProjectiveDist_mul (isDiagonalScaling_sinkhornPlan K a b _) hK
-    (fun i ↦ (hu i).le) hv hw ((((hasMarginals_def P a b).1 hPm).1 i).trans
+  refine (hP.apply_le_exp_hilbertProjectiveDist_mul (isDiagonalScaling_sinkhornPlan K a b _) (hK i)
+    (hu i).le hv hw ((((hasMarginals_def P a b).1 hPm).1 i).trans
       (sum_sinkhornPlan_apply hK a hb hun i).symm)
     j).trans ?_
   rw [hilbertProjectiveDist_comm]

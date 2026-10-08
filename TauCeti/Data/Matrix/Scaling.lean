@@ -1046,14 +1046,15 @@ theorem IsDiagonalScaling.exists_eq_rescale_factors [Nonempty ι] [Nonempty κ]
 
 omit [Fintype ι] in
 open Real TauCeti in
-/-- Two diagonal scalings of a strictly positive kernel with the same `i`-th row sum agree on that
-row up to the factor `exp d`, where `d` is the Hilbert projective distance between their column
-factors: if `P` is the diagonal scaling of `K` by `u ≥ 0` and `v > 0`, and `Q` that by `u'` and
-`v' > 0`, then `P i j ≤ exp (hilbertProjectiveDist v v') * Q i j`. -/
+/-- Two diagonal scalings whose kernel is strictly positive in row `i`, with the same `i`-th row
+sum, agree on that row up to the factor `exp d`, where `d` is the Hilbert projective distance
+between their column factors: if `P` is the diagonal scaling of `K` by `u` and `v > 0`, with
+`u i ≥ 0`, and `Q` that by `u'` and `v' > 0`, then
+`P i j ≤ exp (hilbertProjectiveDist v v') * Q i j`. -/
 theorem IsDiagonalScaling.apply_le_exp_hilbertProjectiveDist_mul {P Q K : Matrix ι κ ℝ}
     {u u' : ι → ℝ} {v v' : κ → ℝ} (hP : IsDiagonalScaling P K u v)
-    (hQ : IsDiagonalScaling Q K u' v') (hK : ∀ i j, 0 < K i j) (hu : ∀ i, 0 ≤ u i)
-    (hv : ∀ j, 0 < v j) (hv' : ∀ j, 0 < v' j) {i : ι} (hrow : ∑ j, P i j = ∑ j, Q i j)
+    (hQ : IsDiagonalScaling Q K u' v') {i : ι} (hK : ∀ j, 0 < K i j) (hu : 0 ≤ u i)
+    (hv : ∀ j, 0 < v j) (hv' : ∀ j, 0 < v' j) (hrow : ∑ j, P i j = ∑ j, Q i j)
     (j : κ) : P i j ≤ exp (hilbertProjectiveDist v v') * Q i j := by
   rw [isDiagonalScaling_def] at hP hQ
   have : Nonempty κ := ⟨j⟩
@@ -1073,28 +1074,28 @@ theorem IsDiagonalScaling.apply_le_exp_hilbertProjectiveDist_mul {P Q K : Matrix
     simpa only [hP i, hQ i, mul_assoc, ← Finset.mul_sum] using hrow
   have hum : u i * (v j₂ / v' j₂) ≤ u' i := by
     refine le_of_mul_le_mul_right ?_
-      (Finset.sum_pos (fun j _ ↦ mul_pos (hK i j) (hv' j)) Finset.univ_nonempty)
+      (Finset.sum_pos (fun j _ ↦ mul_pos (hK j) (hv' j)) Finset.univ_nonempty)
     calc u i * (v j₂ / v' j₂) * ∑ j, K i j * v' j
         = u i * ∑ j, K i j * (v j₂ / v' j₂ * v' j) := by
           rw [mul_assoc, Finset.mul_sum]
           exact congrArg (u i * ·) (Finset.sum_congr rfl fun j _ ↦ by ring)
       _ ≤ u i * ∑ j, K i j * v j :=
           mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun j _ ↦
-            mul_le_mul_of_nonneg_left (hlower j) (hK i j).le) (hu i)
+            mul_le_mul_of_nonneg_left (hlower j) (hK j).le) hu
       _ = u' i * ∑ j, K i j * v' j := hrow'
   have hQ0 : 0 ≤ Q i j := by
     rw [hQ i j]
-    exact mul_nonneg (mul_nonneg ((mul_nonneg (hu i) hm.le).trans hum) (hK i j).le) (hv' j).le
+    exact mul_nonneg (mul_nonneg ((mul_nonneg hu hm.le).trans hum) (hK j).le) (hv' j).le
   calc P i j = u i * K i j * v j := hP i j
     _ ≤ u i * K i j * (v j₁ / v' j₁ * v' j) :=
-        mul_le_mul_of_nonneg_left (hupper j) (mul_nonneg (hu i) (hK i j).le)
+        mul_le_mul_of_nonneg_left (hupper j) (mul_nonneg hu (hK j).le)
     _ = u i * (v j₂ / v' j₂) * K i j * v' j * (v j₁ / v' j₁ / (v j₂ / v' j₂)) := by
         have := (hv j₂).ne'
         have := (hv' j₂).ne'
         field_simp
     _ ≤ u' i * K i j * v' j * (v j₁ / v' j₁ / (v j₂ / v' j₂)) :=
         mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right
-          (mul_le_mul_of_nonneg_right hum (hK i j).le) (hv' j).le) (div_pos hM hm).le
+          (mul_le_mul_of_nonneg_right hum (hK j).le) (hv' j).le) (div_pos hM hm).le
     _ = v j₁ / v' j₁ / (v j₂ / v' j₂) * Q i j := by rw [hQ i j]; ring
     _ ≤ exp (hilbertProjectiveDist v v') * Q i j := mul_le_mul_of_nonneg_right hMm hQ0
 
