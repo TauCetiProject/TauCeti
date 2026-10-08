@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Basis.Cartan
+public import TauCeti.Algebra.Lie.Basis.Root
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.CartanBasis
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Generation
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SerreRelations
