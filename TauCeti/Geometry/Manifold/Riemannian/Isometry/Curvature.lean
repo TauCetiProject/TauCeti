@@ -169,6 +169,7 @@ theorem sectionalCurvature_mfderiv (Φ : RiemannianIsometry I J M N) (x : M)
 
 /-- A Riemannian isometry `Φ` preserves pointwise sectional curvature: `N` has sectional
 curvature `k` at `Φ x` exactly when `M` has sectional curvature `k` at `x`. -/
+@[simp]
 theorem hasSectionalCurvatureAt_map_iff (Φ : RiemannianIsometry I J M N) (x : M) (k : ℝ) :
     (leviCivitaConnection J N).HasSectionalCurvatureAt
         (isMetricCompatible_leviCivitaConnection J) (Φ x) k ↔
@@ -178,7 +179,10 @@ theorem hasSectionalCurvatureAt_map_iff (Φ : RiemannianIsometry I J M N) (x : M
   have he : ∀ u, e u = mfderiv I J Φ x u := Φ.mfderivToLinearIsometryEquiv_apply x
   have hli : ∀ u v : TangentSpace I x,
       LinearIndependent ℝ ![e u, e v] ↔ LinearIndependent ℝ ![u, v] := fun u v ↦ by
-    rw [show ![e u, e v] = e ∘ ![u, v] by ext i; fin_cases i <;> rfl]
+    -- `LinearMap.linearIndependent_iff` is stated for a composite `e ∘ f`, so rewrite the
+    -- pair of images as the image of the pair.
+    have hcomp : e ∘ ![u, v] = ![e u, e v] := by ext i; fin_cases i <;> simp
+    rw [← hcomp]
     exact e.toLinearMap.linearIndependent_iff (LinearEquiv.ker e)
   rw [CovariantDerivative.hasSectionalCurvatureAt_iff,
     CovariantDerivative.hasSectionalCurvatureAt_iff]
