@@ -249,7 +249,7 @@ theorem isPathCompatible_of_homogeneous {n : ℕ}
       (fun d x hx ↦ mem_range X x d hx) x
   eq_zero_of_ne s t x i j hij hne :=
     (Submodule.mem_bot R).1 <| InternalGrading.multilinearMap_apply_mem
-      (fun k ↦ grading (R := R) (s k) (t k)) 
+      (fun k ↦ grading (R := R) (s k) (t k))
       (f := f.compLinearMap fun k ↦ homInclusion (s k) (t k))
       (fun d x hx ↦ (Submodule.mem_bot R).2 (eq_zero s t x d hx i j hij hne)) x
 
