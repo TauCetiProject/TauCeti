@@ -111,7 +111,6 @@ theorem preimage_analyticProdHomeomorph_analyticBoundaryComponent_prodRayEquiv_s
 
 /-- The image of the boundary component of the canonical first factor product ray is the
 product of that factor boundary component and the other realization. -/
-@[simp]
 theorem image_analyticProdHomeomorph_analyticBoundaryComponent_prodRayEquiv_symm_inl
     (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.cones) (ρ : Φ.Ray) :
     Φ.analyticProdHomeomorph Ψ hΦ hΨ ''
@@ -133,7 +132,6 @@ theorem preimage_analyticProdHomeomorph_analyticBoundaryComponent_prodRayEquiv_s
 
 /-- The image of the boundary component of the canonical second factor product ray is the
 product of that factor boundary component and the other realization. -/
-@[simp]
 theorem image_analyticProdHomeomorph_analyticBoundaryComponent_prodRayEquiv_symm_inr
     (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.cones) (ρ : Ψ.Ray) :
     Φ.analyticProdHomeomorph Ψ hΦ hΨ ''
