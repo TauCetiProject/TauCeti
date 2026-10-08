@@ -80,6 +80,28 @@ theorem latticeDefect_eq_reductionK0 [CharP k ℓ] (V : Type u) [AddCommGroup V]
   rw [latticeDefect_def, reductionK0_eq_zero_of_subsingleton k (ρ.torsionBy ℓ), sub_zero,
     reductionK0_quotSMulTop k ℓ]
 
+/-- **Lattices with equivalent rationalizations have the same reduction class** in
+characteristic `ℓ`: for finitely generated torsion-free `G`-modules `V` and `W` with
+`ℚ ⊗_ℤ V ≅ ℚ ⊗_ℤ W`, the classes `[k ⊗_ℤ V]` and `[k ⊗_ℤ W]` agree. The reductions themselves need
+not be isomorphic. -/
+theorem reductionK0_eq_of_nonempty_equiv_baseChange_rat_of_charP
+    [Fact ℓ.Prime] [CharP k ℓ] (V W : Type u)
+    [AddCommGroup V] [DistribMulAction G V] [Module.Finite ℤ V] [IsAddTorsionFree V]
+    [AddCommGroup W] [DistribMulAction G W] [Module.Finite ℤ W] [IsAddTorsionFree W]
+    (h : Nonempty ((Representation.baseChange ℚ (Representation.ofDistribMulAction ℤ G V)).Equiv
+      (Representation.baseChange ℚ (Representation.ofDistribMulAction ℤ G W)))) :
+    reductionK0 k (Representation.ofDistribMulAction ℤ G V) =
+      reductionK0 k (Representation.ofDistribMulAction ℤ G W) := by
+  have : NeZero ℓ := ⟨(Fact.out : ℓ.Prime).ne_zero⟩
+  obtain ⟨f, hf, hfin⟩ := h.some.exists_injective_finite_quotient_range
+  let g : V →+[G] W :=
+    { f.toLinearMap.toAddMonoidHom with
+      map_smul' := fun a v ↦ Representation.IntertwiningMap.isIntertwining _ _ f a v }
+  have : Finite (W ⧸ (g : V →+ W).range) := hfin
+  have : (g : V →+ W).range.FiniteIndex := AddSubgroup.finiteIndex_of_finite_quotient
+  rw [← latticeDefect_eq_reductionK0 k G ℓ V, ← latticeDefect_eq_reductionK0 k G ℓ W]
+  exact latticeDefect_eq_of_finiteIndex k G ℓ g hf
+
 section Permutation
 
 attribute [local instance] Finsupp.comapSMul Finsupp.comapMulAction Finsupp.comapDistribMulAction
