@@ -15,7 +15,7 @@ public import TauCeti.RepresentationTheory.Intertwining
 # The reduction of a `G`-module as a finitely generated representation
 
 Let `G` be a monoid, `V` a `G`-module (an abelian group with a distributive `G`-action) and `k` a
-commutative ring. The **reduction** of `V` is the representation `k ⊗_ℤ V` of `G`, with `G` acting
+ring. The **reduction** of `V` is the representation `k ⊗_ℤ V` of `G`, with `G` acting
 on the second factor (`Representation.baseChange`). When `k ⊗_ℤ V` is finitely generated over `k`
 it is an object `TauCeti.reduction k G V` of `FDRep k G`, and an equivariant additive map
 `f : V →+[G] W` induces the morphism `TauCeti.reductionMap k f : k ⊗_ℤ V ⟶ k ⊗_ℤ W`, functorially.
@@ -23,7 +23,7 @@ it is an object `TauCeti.reduction k G V` of `FDRep k G`, and an equivariant add
 Reduction is **right exact**: a surjective equivariant map reduces to an epimorphism
 (`TauCeti.epi_reductionMap`), and for `k` Noetherian, where `FDRep k G` is abelian, an exact
 sequence `U → V → W → 0` of `G`-modules reduces to an exact sequence of representations
-(`TauCeti.exact_reductionMap`), because tensoring over `ℤ` is right exact. It is not left exact,
+(`TauCeti.exact_reductionMap`), because tensoring over `ℤ` is right exact. It need not be left exact,
 since `k` need not be flat over `ℤ`.
 
 In characteristic `ℓ`, `k ⊗_ℤ V` is finitely generated as soon as `V ⧸ ℓV` is finite
@@ -55,7 +55,7 @@ open _root_.Representation (IntertwiningMap)
 
 universe u v
 
-variable (k : Type u) [CommRing k] (G : Type v) [Monoid G]
+variable (k : Type u) [Ring k] (G : Type v) [Monoid G]
 
 /-- **The reduction** `k ⊗_ℤ V` of a `G`-module `V`, with `G` acting on the second factor, as a
 finitely generated representation of `G` over `k`; it is defined when `k ⊗_ℤ V` is finitely
@@ -64,7 +64,10 @@ characteristic `ℓ`, when `V ⧸ ℓV` is finite (`TauCeti.finite_baseChange_of
 @[expose]
 noncomputable def reduction (V : Type u) [AddCommGroup V] [DistribMulAction G V]
     [Module.Finite k (k ⊗[ℤ] V)] : FDRep k G :=
-  FDRep.of (Representation.baseChange k (Representation.ofDistribMulAction ℤ G V))
+  ⟨FGModuleCat.of k (k ⊗[ℤ] V),
+    (MulEquiv.toMonoidHom (MulEquiv.symm InducedCategory.endEquiv)).comp
+      ((ModuleCat.endRingEquiv (ModuleCat.of k (k ⊗[ℤ] V))).symm.toMonoidHom.comp
+        (Representation.baseChange k (Representation.ofDistribMulAction ℤ G V)))⟩
 
 variable {k G} {U V W : Type u} [AddCommGroup U] [DistribMulAction G U]
   [Module.Finite k (k ⊗[ℤ] U)] [AddCommGroup V] [DistribMulAction G V]
@@ -73,21 +76,26 @@ variable {k G} {U V W : Type u} [AddCommGroup U] [DistribMulAction G U]
 
 /-- The action on the reduction is the base change of the action on `V`. -/
 @[simp]
-theorem reduction_ρ :
-    (reduction k G V).ρ = Representation.baseChange k (Representation.ofDistribMulAction ℤ G V) :=
+theorem reduction_ρ_hom_hom (g : G) :
+    (Action.ρ (reduction k G V) g).hom.hom =
+      Representation.baseChange k (Representation.ofDistribMulAction ℤ G V) g :=
   (rfl)
 
 variable (k) in
 /-- **The reduction of an equivariant additive map** `f : V →+[G] W`: the morphism
 `k ⊗_ℤ V ⟶ k ⊗_ℤ W` of representations given by `a ⊗ v ↦ a ⊗ f v`. -/
 noncomputable def reductionMap (f : V →+[G] W) : reduction k G V ⟶ reduction k G W :=
-  FDRep.forget₂HomLinearEquiv _ _ <| Rep.ofHom <|
-    f.toIntertwiningMap.baseChange k
+  { hom := ⟨ModuleCat.ofHom (f.toIntertwiningMap.baseChange k).toLinearMap⟩
+    comm := by
+      intro g
+      apply InducedCategory.hom_ext
+      apply ModuleCat.hom_ext
+      exact (f.toIntertwiningMap.baseChange k).isIntertwining' g }
 
 /-- The linear map underlying the reduction of `f` is the base change of `f`. -/
 theorem reductionMap_hom_hom_hom (f : V →+[G] W) :
     (reductionMap k f).hom.hom.hom = f.toAddMonoidHom.toIntLinearMap.baseChange k := by
-  -- `FDRep.forget₂HomLinearEquiv` and `Rep.ofHom` keep the underlying linear map
+  -- The action morphism keeps the underlying base-changed linear map.
   change (f.toIntertwiningMap.baseChange k).toLinearMap = _
   rw [IntertwiningMap.toLinearMap_baseChange, DistribMulActionHom.toLinearMap_toIntertwiningMap]
 
