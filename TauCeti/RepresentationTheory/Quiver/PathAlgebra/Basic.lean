@@ -656,6 +656,35 @@ theorem pathAlgebraBasis_repr_single (x : Quiver.TotalPath Q) (c : k) :
   simp [PathAlgebra.single_eq_smul_ofPath, ← coe_pathAlgebraBasis]
 
 open PathAlgebra in
+/-- **The coordinates of `eᵥ f`**: left multiplication by the vertex idempotent at `v` keeps the
+coordinates of `f` on the paths ending at `v` and kills the others. -/
+@[simp]
+theorem pathAlgebraBasis_repr_vertexIdempotent_mul [DecidableEq Q] (v : Q) (f : pathAlgebra k Q)
+    (x : Quiver.TotalPath Q) :
+    (pathAlgebraBasis k Q).repr (vertexIdempotent k v * f) x =
+      if x.2.1 = v then (pathAlgebraBasis k Q).repr f x else 0 := by
+  induction f using induction_linear with
+  | zero => simp
+  | add f g hf hg => simp only [mul_add, map_add, Finsupp.add_apply, hf, hg]; split_ifs <;> simp
+  | single y c =>
+    obtain ⟨s, t, p⟩ := y
+    by_cases h : t = v
+    · subst h
+      rw [vertexIdempotent_mul_single (x := ⟨s, t, p⟩)]
+      split_ifs with hx
+      · rfl
+      · rw [pathAlgebraBasis_repr_single, Finsupp.single_eq_of_ne]
+        rintro rfl
+        exact hx rfl
+    · rw [vertexIdempotent_eq_single, single_mul_single_of_not_composable h,
+        map_zero, Finsupp.coe_zero, Pi.zero_apply]
+      split_ifs with hx
+      · rw [pathAlgebraBasis_repr_single, Finsupp.single_eq_of_ne]
+        rintro rfl
+        exact h hx
+      · rfl
+
+open PathAlgebra in
 /-- **Multiplying on both sides by a vertex idempotent reads off a coordinate.** When the trivial
 path is the only path from `v` to itself, `eᵥ f eᵥ` is the coordinate of `f` on that path, times
 `eᵥ`, so that the corner `eᵥ kQ eᵥ` is a copy of `k`. An acyclic quiver supplies the hypothesis
@@ -963,6 +992,88 @@ theorem ofArrow_homOfEq {a b a' b' : Q} (f : a ⟶ b) (ha : a = a') (hb : b = b'
   rfl
 
 end Arrow
+
+section ArrowCoordinates
+
+variable {k : Type w} {Q : Type u} [CommSemiring k] [Quiver.{v} Q]
+
+/-- The coordinates of an arrow times a basis path: the basis path extended by the arrow. This is
+not a `simp` lemma, since `TauCeti.PathAlgebra.ofArrow_eq_ofPath` rewrites its left-hand side. -/
+theorem pathAlgebraBasis_repr_ofArrow_mul_single {i j s : Q} (b : i ⟶ j)
+    (p : _root_.Quiver.Path s i) (c : k) (x : Quiver.TotalPath Q) :
+    (pathAlgebraBasis k Q).repr (ofArrow b * single ⟨s, i, p⟩ c) x =
+      Finsupp.single (⟨s, j, p.cons b⟩ : Quiver.TotalPath Q) c x := by
+  rw [single_eq_smul_ofPath, mul_smul_comm, ofArrow_mul_ofPath, ← single_eq_smul_ofPath,
+    pathAlgebraBasis_repr_single]
+
+/-- The simp-normal form of `TauCeti.PathAlgebra.pathAlgebraBasis_repr_ofArrow_mul_single`, in
+which `TauCeti.PathAlgebra.ofArrow_eq_ofPath` has written the arrow as its length-one path. -/
+@[simp]
+theorem pathAlgebraBasis_repr_ofPath_toPath_mul_single {i j s : Q} (b : i ⟶ j)
+    (p : _root_.Quiver.Path s i) (c : k) (x : Quiver.TotalPath Q) :
+    (pathAlgebraBasis k Q).repr (ofPath ⟨i, j, b.toPath⟩ * single ⟨s, i, p⟩ c) x =
+      Finsupp.single (⟨s, j, p.cons b⟩ : Quiver.TotalPath Q) c x :=
+  pathAlgebraBasis_repr_ofArrow_mul_single b p c x
+
+/-- **Reading off a coordinate through the last arrow**: the coordinate of `b f` on the path `q`
+followed by `b` is the coordinate of `f` on `q`. -/
+theorem pathAlgebraBasis_repr_ofArrow_mul_cons {i j s : Q} (b : i ⟶ j)
+    (q : _root_.Quiver.Path s i) (f : pathAlgebra k Q) :
+    (pathAlgebraBasis k Q).repr (ofArrow b * f) ⟨s, j, q.cons b⟩ =
+      (pathAlgebraBasis k Q).repr f ⟨s, i, q⟩ := by
+  classical
+  induction f using induction_linear with
+  | zero => simp
+  | add f g hf hg => simp only [mul_add, map_add, Finsupp.add_apply, hf, hg]
+  | single y c =>
+    obtain ⟨s', t', p'⟩ := y
+    by_cases h : t' = i
+    · subst h
+      rw [pathAlgebraBasis_repr_ofArrow_mul_single, pathAlgebraBasis_repr_single]
+      simp only [Finsupp.single_apply, Quiver.TotalPath.mk_cons_eq_mk_cons_iff, and_true]
+    · rw [ofArrow_eq_ofPath, ofPath_eq_single, single_mul_single_of_not_composable h,
+        map_zero, Finsupp.coe_zero, Pi.zero_apply, pathAlgebraBasis_repr_single,
+        Finsupp.single_eq_of_ne]
+      intro he
+      exact h (congrArg (fun x : Quiver.TotalPath Q => x.2.1) he).symm
+
+/-- The simp-normal form of `TauCeti.PathAlgebra.pathAlgebraBasis_repr_ofArrow_mul_cons`, in which
+`TauCeti.PathAlgebra.ofArrow_eq_ofPath` has written the arrow as its length-one path. -/
+@[simp]
+theorem pathAlgebraBasis_repr_ofPath_toPath_mul_cons {i j s : Q} (b : i ⟶ j)
+    (q : _root_.Quiver.Path s i) (f : pathAlgebra k Q) :
+    (pathAlgebraBasis k Q).repr (ofPath ⟨i, j, b.toPath⟩ * f) ⟨s, j, q.cons b⟩ =
+      (pathAlgebraBasis k Q).repr f ⟨s, i, q⟩ :=
+  pathAlgebraBasis_repr_ofArrow_mul_cons b q f
+
+/-- A path ending in the arrow `b` has coordinate zero in `b' f` for every other arrow `b'` with
+the same target. -/
+theorem pathAlgebraBasis_repr_ofArrow_mul_cons_of_ne {i i' j s : Q} (b : i ⟶ j) (b' : i' ⟶ j)
+    (hb : (⟨i', b'⟩ : Σ a, a ⟶ j) ≠ ⟨i, b⟩) (q : _root_.Quiver.Path s i) (f : pathAlgebra k Q) :
+    (pathAlgebraBasis k Q).repr (ofArrow b' * f) ⟨s, j, q.cons b⟩ = 0 := by
+  induction f using induction_linear with
+  | zero => simp
+  | add f g hf hg => simp only [mul_add, map_add, Finsupp.add_apply, hf, hg, add_zero]
+  | single y c =>
+    obtain ⟨s', t', p'⟩ := y
+    by_cases h : t' = i'
+    · subst h
+      rw [pathAlgebraBasis_repr_ofArrow_mul_single, Finsupp.single_eq_of_ne]
+      intro he
+      exact hb (Quiver.TotalPath.mk_cons_eq_mk_cons_iff.1 he).2.symm
+    · rw [ofArrow_eq_ofPath, ofPath_eq_single, single_mul_single_of_not_composable h,
+        map_zero, Finsupp.coe_zero, Pi.zero_apply]
+
+/-- The simp-normal form of `TauCeti.PathAlgebra.pathAlgebraBasis_repr_ofArrow_mul_cons_of_ne`, in
+which `TauCeti.PathAlgebra.ofArrow_eq_ofPath` has written the arrow `b'` as its length-one path. -/
+@[simp]
+theorem pathAlgebraBasis_repr_ofPath_toPath_mul_cons_of_ne {i i' j s : Q} (b : i ⟶ j)
+    (b' : i' ⟶ j) (hb : (⟨i', b'⟩ : Σ a, a ⟶ j) ≠ ⟨i, b⟩) (q : _root_.Quiver.Path s i)
+    (f : pathAlgebra k Q) :
+    (pathAlgebraBasis k Q).repr (ofPath ⟨i', j, b'.toPath⟩ * f) ⟨s, j, q.cons b⟩ = 0 :=
+  pathAlgebraBasis_repr_ofArrow_mul_cons_of_ne b b' hb q f
+
+end ArrowCoordinates
 
 section Generate
 

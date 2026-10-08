@@ -19,6 +19,8 @@ For a relative CW complex `(X, A)` and a coefficient module `M` over a ring `k`,
 chain group `Hₙ(Xⁿ, Xⁿ⁻¹; M)` is the direct sum of one copy of `M` for each `n`-cell
 (`TauCeti.cellularChainGroupIso`).  This file draws the numerical and finiteness consequences.
 
+* The Euler characteristic of a relative CW complex is the alternating count of its cells
+  (`TauCeti.cwEulerChar`).
 * The cellular chain group is free when `M` is, finitely generated when `M` is and there are
   finitely many `n`-cells, and then has rank `#(n-cells) · rank M`
   (`TauCeti.finrank_cellularChainGroup`).
@@ -30,7 +32,8 @@ chain group `Hₙ(Xⁿ, Xⁿ⁻¹; M)` is the direct sum of one copy of `M` for 
   the alternating count of the cells of dimension at most `n`
   (`TauCeti.sum_range_finrank_cellularHomology`).  For a finite complex this is the equality of
   the homology Euler characteristic of the cellular chain complex with `dim M` times the
-  alternating count of all cells (`TauCeti.homologyEulerChar_cellularChainComplex`).
+  alternating count of all cells, `dim M · cwEulerChar C`
+  (`TauCeti.homologyEulerChar_cellularChainComplex`).
 
 The statements concern the cellular chain complex itself; its identification with singular
 homology is what turns them into statements about the space.  The coefficient ring lives in the
@@ -53,7 +56,18 @@ universe w
 
 namespace TauCeti
 
-variable {X : Type w} [TopologicalSpace X] [T2Space X] {D : Set X} (C : Set X) [RelCWComplex C D]
+variable {X : Type w} [TopologicalSpace X] {D : Set X} (C : Set X) [RelCWComplex C D]
+
+/-- The **Euler characteristic** of a relative CW complex `(C, D)`: the alternating count
+`∑ₙ (-1)ⁿ · #(n-cells)` of its relative cells.  It is meant for finite complexes, where the sum has
+finite support; for an absolute CW complex it is the Euler characteristic of `C`. -/
+def cwEulerChar : ℤ :=
+  ∑ᶠ n : ℕ, (-1 : ℤ) ^ n * Nat.card (cell C n)
+
+theorem cwEulerChar_def : cwEulerChar C = ∑ᶠ n : ℕ, (-1 : ℤ) ^ n * Nat.card (cell C n) :=
+  (rfl)
+
+variable [T2Space X]
 
 section Ring
 
@@ -140,7 +154,7 @@ theorem sum_range_finrank_cellularHomology {n : ℕ}
 `dim M` times the alternating count of its cells. -/
 theorem eulerChar_cellularChainComplex [RelCWComplex.Finite C] :
     (cellularChainComplex C M).eulerChar =
-      finrank k M * ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * Nat.card (cell C i) := by
+      finrank k M * cwEulerChar C := by
   obtain ⟨n, hn⟩ :=
     Filter.eventually_atTop.1 (FiniteDimensional.eventually_isEmpty_cell (C := C) (D := D))
   have hcell : ∀ i ∉ Finset.range n, IsEmpty (cell C i) := fun i hi ↦
@@ -150,7 +164,7 @@ theorem eulerChar_cellularChainComplex [RelCWComplex.Finite C] :
         have := hcell i hi
         ModuleCat.finrank_eq_zero_of_isZero
           (by rw [cellularChainComplex_X]; exact isZero_cellularChainGroup C i M)),
-    finsum_eq_sum_of_support_subset (s := Finset.range n) _ fun i hi ↦ by
+    cwEulerChar_def, finsum_eq_sum_of_support_subset (s := Finset.range n) _ fun i hi ↦ by
       by_contra h
       have := hcell i h
       simp at hi,
@@ -168,7 +182,7 @@ of the cellular homology groups of a finite relative CW complex, with coefficien
 finite-dimensional module `M`, is `dim M` times the alternating count of its cells. -/
 theorem homologyEulerChar_cellularChainComplex [RelCWComplex.Finite C] :
     (cellularChainComplex C M).homologyEulerChar =
-      finrank k M * ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * Nat.card (cell C i) := by
+      finrank k M * cwEulerChar C := by
   have := finite_cellularChainComplex_X C M
   rw [← ChainComplex.eulerChar_eq_homologyEulerChar _
       (by simpa only [cellularChainComplex_X] using eventually_isZero_cellularChainGroup C M),

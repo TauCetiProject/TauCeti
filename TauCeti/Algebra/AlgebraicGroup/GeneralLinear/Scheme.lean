@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Basic
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
-import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # The general linear group scheme
@@ -122,24 +121,9 @@ theorem hopfIdealInclusion_def (I : HopfIdeal R (coordinateHopfAlgebra R n)) :
 instance isClosedImmersion_hopfIdealInclusion
     (I : HopfIdeal R (coordinateHopfAlgebra R n)) :
     IsClosedImmersion (hopfIdealInclusion R n I).hom.hom.left := by
-  let c := (CommHopfAlgCat.quotientSpecι (coordinateHopfAlgebra R n) I).hom.hom.left
-  let e := ((eqToIso (groupScheme_def R n).symm).hom).hom.hom.left
-  have hc : IsClosedImmersion c := by infer_instance
-  have hce : IsClosedImmersion (c ≫ e) :=
-    (MorphismProperty.cancel_right_of_respectsIso _ c e).2 hc
-  rw [hopfIdealInclusion_def]
-  simpa only [Grp.comp', Mon.comp_hom', Over.comp_left] using hce
-
-/-- A subgroup of `GL_n` cut out by a Hopf ideal is locally of finite type over the base. -/
-instance locallyOfFiniteType_hopfIdealQuotientSpec
-    (I : HopfIdeal R (coordinateHopfAlgebra R n)) :
-    LocallyOfFiniteType
-      (CommHopfAlgCat.quotientSpec (coordinateHopfAlgebra R n) I).X.hom :=
-  FiniteTypeCommHopfAlgCat.locallyOfFiniteType_quotientSpec
-    (⟨coordinateHopfAlgebra R n,
-      inferInstanceAs (Algebra.FiniteType R (coordinateHopfAlgebra R n))⟩ :
-      FiniteTypeCommHopfAlgCat R)
-    I
+  rw [hopfIdealInclusion_def, eqToIso.hom, CommHopfAlgCat.quotientSpecι_def,
+    CommHopfAlgCat.isClosedImmersion_hopfSpec_map_comp_eqToHom_iff (groupScheme_def R n)]
+  exact CommHopfAlgCat.mkQuotient_surjective _ I
 
 /-- The scheme underlying the general linear group scheme is the spectrum of its bundled
 coordinate Hopf algebra. -/
@@ -167,7 +151,6 @@ private lemma groupScheme_X_hom_bundled :
 
 /-- The structural morphism of the general linear group scheme is induced by the algebra
 structure map on the determinant localization. -/
-@[simp]
 lemma groupScheme_X_hom :
     (groupScheme R n).X.hom =
       (groupSchemeSpecIso R n).hom ≫
@@ -427,7 +410,6 @@ theorem schemePointsMulEquiv_groupSchemePointMulEquiv
 
 /-- The inverse scheme-points equivalence sends an invertible matrix to the spectrum map induced
 by its canonical coordinate-algebra point. -/
-@[simp]
 lemma schemePointsMulEquiv_symm_apply (g : Matrix.GeneralLinearGroup (Fin n) A) :
     (schemePointsMulEquiv n A).symm g =
       groupSchemePointMulEquiv n A
@@ -446,20 +428,9 @@ theorem schemePointsMulEquiv_mapValue (φ : A →ₐ[R] B)
         ((Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver
             (Spec (CommRingCat.of R)) ≫ p) =
       Matrix.GeneralLinearGroup.map φ.toRingHom (schemePointsMulEquiv n A p) := by
-  let q : WithConv (coordinateHopfAlgebra R n →ₐ[R] A) :=
-    (groupSchemePointMulEquiv n A).symm p
-  have hpre :
-      (groupSchemePointMulEquiv n B).symm
-          ((Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver
-            (Spec (CommRingCat.of R)) ≫ p) =
-        HopfAlgebra.mapPoints (H := coordinateHopfAlgebra R n)
-          (CommAlgCat.ofHom φ) q := by
-    simpa only [q, groupSchemePointMulEquiv] using
-      CommHopfAlgCat.mapMulEquivOfPresentation_mapValue
-        (coordinateHopfAlgebra R n) φ (groupScheme_def R n) p
-  simp only [schemePointsMulEquiv, MulEquiv.trans_apply]
-  rw [hpre, HopfAlgebra.mapPoints_apply, ← AlgHom.mapValue_apply]
-  exact pointsMulEquiv_mapValue n φ q
+  unfold schemePointsMulEquiv groupSchemePointMulEquiv
+  exact CommHopfAlgCat.mapMulEquivOfPresentation_symm_trans_mapValue
+    (coordinateHopfAlgebra R n) φ (groupScheme_def R n) _ _ _ (pointsMulEquiv_mapValue n φ) p
 
 end SchemePoints
 

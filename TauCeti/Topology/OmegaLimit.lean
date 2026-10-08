@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Dynamics.Flow
 public import Mathlib.Topology.ClusterPt
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.Order.IntermediateValue
 public import TauCeti.Topology.Continuum
+import Mathlib.Dynamics.OmegaLimit
 
 /-!
 # The ω-limit set of a curve
@@ -45,6 +47,8 @@ locus, to be a single point.
   the closures of its tails.
 * `TauCeti.isPreconnected_setOf_mapClusterPt_atTop` — the ω-limit set of such a curve, continuous
   on the half-line carrying that tail, is preconnected.
+* `Flow.mapClusterPt_atTop_flow` — the ω-limit set of an orbit of a flow of `ℝ` is invariant
+  under the flow.
 
 ## References
 
@@ -95,3 +99,19 @@ theorem isPreconnected_setOf_mapClusterPt_atTop [T2Space X] (hK : IsCompact K)
       (hu.mono (Ici_subset_Ici.mpr (mem_Ici.mp T.2)))).closure
 
 end TauCeti
+
+namespace Flow
+
+open Filter Topology
+
+/-- **The ω-limit set of an orbit of a flow is invariant.** If `z` is a cluster point at `+∞` of
+the orbit `t ↦ φ t y` of a flow of `ℝ`, so is `φ s z` for every time `s`. This is Mathlib's
+`Flow.isInvariant_omegaLimit` for the ω-limit set of the single point `y`. -/
+theorem mapClusterPt_atTop_flow {α : Type*} [TopologicalSpace α] {φ : Flow ℝ α} {y z : α}
+    (hz : MapClusterPt z atTop fun t ↦ φ t y) (s : ℝ) :
+    MapClusterPt (φ s z) atTop fun t ↦ φ t y := by
+  have hω := (mem_omegaLimit_singleton_iff_mapClusterPt (f := atTop) (ϕ := φ) y z).2 hz
+  exact (mem_omegaLimit_singleton_iff_mapClusterPt (f := atTop) (ϕ := φ) y _).1
+    (isInvariant_omegaLimit atTop φ {y} (fun t ↦ tendsto_atTop_add_const_left _ t tendsto_id) s hω)
+
+end Flow

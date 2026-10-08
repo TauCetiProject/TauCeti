@@ -10,7 +10,7 @@ public import TauCeti.Algebra.GroupAction.QuotientAddGroup
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 public import TauCeti.Topology.Algebra.Group.Quotient.Basic
-public import TauCeti.Topology.Algebra.GroupAction.InternalHom.DoubleDual
+public import TauCeti.Topology.Algebra.GroupAction.InternalHom.Basic
 import TauCeti.Topology.Discrete
 
 /-!
@@ -438,28 +438,6 @@ of the original sequence. -/
 theorem dual_projDistribMulActionHom :
     (S.dual N hsurj).projDistribMulActionHom = InternalHom.precomp G S.inclDistribMulActionHom :=
   DistribMulActionHom.ext fun _ => rfl
-
-/-- **Evaluation is a morphism from a sequence to its double dual, on the inclusions.** The
-inclusion of the double dual sequence `0 → A^{∨∨} → B^{∨∨} → C^{∨∨} → 0` carries the evaluation
-class of `a : A` to the evaluation class of `S.incl a`. -/
-theorem dual_dual_incl_eval
-    (hsurj' : Function.Surjective
-      (InternalHom.precomp G (S.dual N hsurj).inclDistribMulActionHom (N := N))) (a : A) :
-    ((S.dual N hsurj).dual N hsurj').incl (InternalHom.eval G A N a) =
-      InternalHom.eval G B N (S.incl a) := by
-  rw [dual_incl, dual_projDistribMulActionHom]
-  exact InternalHom.precomp_precomp_eval S.inclDistribMulActionHom a
-
-/-- **Evaluation is a morphism from a sequence to its double dual, on the projections.** The
-projection of the double dual sequence `0 → A^{∨∨} → B^{∨∨} → C^{∨∨} → 0` carries the evaluation
-class of `b : B` to the evaluation class of `S.proj b`. -/
-theorem dual_dual_proj_eval
-    (hsurj' : Function.Surjective
-      (InternalHom.precomp G (S.dual N hsurj).inclDistribMulActionHom (N := N))) (b : B) :
-    ((S.dual N hsurj).dual N hsurj').proj (InternalHom.eval G B N b) =
-      InternalHom.eval G C N (S.proj b) := by
-  rw [dual_proj, dual_inclDistribMulActionHom]
-  exact InternalHom.precomp_precomp_eval S.projDistribMulActionHom b
 
 end Dual
 

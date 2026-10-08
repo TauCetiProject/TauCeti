@@ -110,9 +110,11 @@ end Finset
 
 namespace AbstractSimplicialComplex
 
-variable {ι : Type*} [Fintype ι] [Nonempty ι]
+variable {ι : Type*}
 
 attribute [local instance] Classical.decEq
+
+variable [Fintype ι] [Nonempty ι]
 
 private theorem univ_mem_top : (Finset.univ : Finset ι) ∈ (⊤ : AbstractSimplicialComplex ι) :=
   Finset.univ_nonempty
