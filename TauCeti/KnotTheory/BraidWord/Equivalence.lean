@@ -146,12 +146,15 @@ private def letterPerm (a : Fin (n - 1) × ℤˣ) : Equiv.Perm (WordClasses n) w
     exact h.cons a
   invFun := Quotient.map' (s₁ := wordSetoid n) (s₂ := wordSetoid n)
     (List.cons (a.1, -a.2)) fun _ _ h => by
+    -- The standard equivalence-closure setoid uses the same relation as `WordEquiv`.
     change WordEquiv _ _ at h ⊢
     exact h.cons (a.1, -a.2)
   left_inv x := Quotient.inductionOn x fun u => Quotient.sound (by
+    -- Expose the equivalence closure so adjacent inverse-letter cancellation applies.
     change WordEquiv _ _
     simpa only [neg_neg, Prod.mk.eta] using cons_cons_inv a.1 (-a.2) u)
   right_inv x := Quotient.inductionOn x fun u => Quotient.sound (by
+    -- Expose the same equivalence closure for cancellation in the opposite order.
     change WordEquiv _ _
     simpa only [Prod.mk.eta] using cons_cons_inv a.1 a.2 u)
 

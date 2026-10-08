@@ -134,6 +134,11 @@ theorem append_right {w w' : BraidWord n} (h : FreeCancelEquiv w w') (suf : Brai
     (fun h ↦ of_step (h.append_right suf)) (fun _ ↦ refl _)
     (fun _ ih ↦ ih.symm) (fun _ _ ih ih' ↦ ih.trans ih') h
 
+/-- Concatenating freely equivalent words preserves free-cancellation equivalence. -/
+theorem append {u u' v v' : BraidWord n} (hu : FreeCancelEquiv u u')
+    (hv : FreeCancelEquiv v v') : FreeCancelEquiv (u ++ v) (u' ++ v') :=
+  (hu.append_right v).trans (hv.append_left u')
+
 end FreeCancelEquiv
 
 private theorem toBraid_insert (u v : BraidWord n) (i : Fin (n - 1)) (ε : ℤˣ) :
