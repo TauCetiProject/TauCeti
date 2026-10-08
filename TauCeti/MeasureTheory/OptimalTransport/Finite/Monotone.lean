@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finset.Sort
-public import TauCeti.Data.Finsupp.OrderedCoupling
+public import TauCeti.Data.Finsupp.OrderedCoupling.Uniqueness
 public import TauCeti.MeasureTheory.OptimalTransport.Finite.Duality
 public import TauCeti.MeasureTheory.OptimalTransport.Finite.Uncrossing.Basic
 
@@ -110,7 +110,7 @@ theorem IsMonotone.sum_le_le_eq_min {A : TransportMatrix μ ν} (hA : A.IsMonoto
     Finsupp.sum_fintype _ _ (by intro p; simp),
     Finsupp.sum_fintype _ _ (by intro p; simp)] at h
   simpa only [Fintype.sum_prod_type, Finsupp.coe_equivFunOnFinite_symm,
-    Set.indicator, Set.mem_prod, Set.mem_Iic, ite_and, Finset.sum_ite_irrel,
+    Set.indicator_apply, Set.mem_prod, Set.mem_Iic, ite_and, Finset.sum_ite_irrel,
     Finset.sum_const_zero, Finset.sum_filter, toRealFun_apply] using h
 
 /-- Two monotone transportation matrices with the same marginals are equal. -/

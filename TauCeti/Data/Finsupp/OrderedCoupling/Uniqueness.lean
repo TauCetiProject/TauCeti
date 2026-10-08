@@ -33,6 +33,28 @@ open Set
 
 variable {α β G : Type*}
 
+/-- Support domination makes a rectangle mass equal the second-coordinate mass, which is
+bounded by the first-coordinate mass. No order or chain hypothesis on the coordinates is needed. -/
+theorem sum_indicator_prod_eq_right_and_le_of_support_imp {δ : Type*} [AddCommMonoid G]
+    [Preorder G] [IsOrderedAddMonoid G] (w : δ →₀ G) (hw : ∀ p, 0 ≤ w p)
+    (f : δ → α) (g : δ → β) {s : Set α} {t : Set β}
+    (hsub : ∀ p ∈ w.support, g p ∈ t → f p ∈ s) :
+    (w.sum (fun p r => (s ×ˢ t).indicator (fun _ => r) (f p, g p)) =
+      w.sum (fun p r => t.indicator (fun _ => r) (g p))) ∧
+    w.sum (fun p r => t.indicator (fun _ => r) (g p)) ≤
+      w.sum (fun p r => s.indicator (fun _ => r) (f p)) := by
+  classical
+  constructor
+  · apply Finsupp.sum_congr
+    intro p hp
+    by_cases hpt : g p ∈ t <;> simp [Set.indicator_apply, hpt, hsub p hp]
+  · simp only [Finsupp.sum]
+    apply Finset.sum_le_sum
+    intro p hp
+    by_cases hpt : g p ∈ t
+    · simp [Set.indicator_apply, hpt, hsub p hp hpt]
+    · by_cases hps : f p ∈ s <;> simp [Set.indicator_apply, hpt, hps, hw p]
+
 /-- The mass of a lower rectangle in a nonnegative chain-supported coupling equals one
 coordinate lower-set mass, and that mass is at most the other. -/
 theorem sum_indicator_prod_eq_left_or_right [Preorder α] [Preorder β] [AddCommMonoid G]
@@ -58,36 +80,15 @@ theorem sum_indicator_prod_eq_left_or_right [Preorder α] [Preorder β] [AddComm
       · rcases hc hp hq hpq with hpq | hqp
         · exact (hpt (ht hpq.2 hqt)).elim
         · exact hs hqp.1 hps
-    have heq : w.sum (fun p r => (s ×ˢ t).indicator (fun _ => r) p) =
-        w.sum (fun p r => t.indicator (fun _ => r) p.2) := by
-      apply Finset.sum_congr rfl
-      intro q hq
-      by_cases hqt : q.2 ∈ t <;> simp [hqt, hsub q hq]
-    have hle : w.sum (fun p r => t.indicator (fun _ => r) p.2) ≤
-        w.sum (fun p r => s.indicator (fun _ => r) p.1) := by
-      apply Finset.sum_le_sum
-      intro q hq
-      by_cases hqt : q.2 ∈ t
-      · simp [hqt, hsub q hq hqt]
-      · by_cases hqs : q.1 ∈ s <;> simp [hqt, hqs, hw q]
-    exact Or.inr ⟨heq, hle⟩
+    exact Or.inr (sum_indicator_prod_eq_right_and_le_of_support_imp w hw
+      Prod.fst Prod.snd hsub)
   · have hsub : ∀ p ∈ w.support, p.1 ∈ s → p.2 ∈ t := by
       intro p hp hps
       by_contra hpt
       exact h ⟨p, hp, hps, hpt⟩
-    have heq : w.sum (fun p r => (s ×ˢ t).indicator (fun _ => r) p) =
-        w.sum (fun p r => s.indicator (fun _ => r) p.1) := by
-      apply Finset.sum_congr rfl
-      intro p hp
-      by_cases hps : p.1 ∈ s <;> simp [hps, hsub p hp]
-    have hle : w.sum (fun p r => s.indicator (fun _ => r) p.1) ≤
-        w.sum (fun p r => t.indicator (fun _ => r) p.2) := by
-      apply Finset.sum_le_sum
-      intro p hp
-      by_cases hps : p.1 ∈ s
-      · simp [hps, hsub p hp hps]
-      · by_cases hpt : p.2 ∈ t <;> simp [hps, hpt, hw p]
-    exact Or.inl ⟨heq, hle⟩
+    refine Or.inl ?_
+    simpa only [Set.indicator_apply, Set.mem_prod, and_comm] using
+      sum_indicator_prod_eq_right_and_le_of_support_imp w hw Prod.snd Prod.fst hsub
 
 /-- The mass of a lower rectangle in a nonnegative chain-supported coupling is the infimum
 of the masses of its two coordinate lower sets. -/
@@ -115,16 +116,16 @@ theorem sum_indicator_Iic_prod_add_sum_indicator_Iio_prod [PartialOrder α] [Par
   calc
     _ = u.sum (fun p r => (Iio a ×ˢ Iic b).indicator (fun _ => r) p +
         (Iic a ×ˢ Iio b).indicator (fun _ => r) p + if p = (a, b) then r else 0) := by
-      simp only [Finsupp.sum, ← Finset.sum_add_distrib]
-      apply Finset.sum_congr rfl
+      rw [← Finsupp.sum_add]
+      apply Finsupp.sum_congr
       intro p _
-      simp only [Set.indicator, mem_prod, mem_Iic, mem_Iio]
-      by_cases ha : p.1 ≤ a <;> by_cases hb : p.2 ≤ b <;>
-        by_cases ha' : p.1 < a <;> by_cases hb' : p.2 < b <;>
-        simp_all [Prod.ext_iff, lt_iff_le_and_ne] <;> grind
+      -- Equal coordinates account for the boundary terms; off the corner the strict and
+      -- non-strict inequalities agree after excluding coordinate equality.
+      by_cases ha : p.1 = a <;> by_cases hb : p.2 = b <;>
+        simp [Set.indicator_apply, mem_prod, mem_Iic, mem_Iio, ha, hb,
+          Prod.ext_iff, lt_iff_le_and_ne]
     _ = _ := by
-      simp [Finsupp.sum, Finset.sum_add_distrib, Finsupp.mem_support_iff, eq_comm]
-      split_ifs <;> simp_all
+      rw [Finsupp.sum_add, Finsupp.sum_add, Finsupp.sum_ite_self_eq']
 
 /-- Two nonnegative chain-supported couplings with equal marginals coincide. -/
 theorem eq_of_mapDomain_eq_of_isChain_support [PartialOrder α] [PartialOrder β]

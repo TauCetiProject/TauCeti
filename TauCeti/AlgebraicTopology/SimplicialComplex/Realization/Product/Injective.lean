@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Product
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
-public import TauCeti.Data.Finsupp.OrderedCoupling
+public import TauCeti.Data.Finsupp.OrderedCoupling.Uniqueness
 
 /-!
 # Coordinate projections of a realized ordered product
@@ -40,19 +40,12 @@ Each coordinate adds barycentric weights over a fibre of the corresponding verte
 def orderedProdRealizationMap (K : AbstractSimplicialComplex α)
     (L : AbstractSimplicialComplex β) :
     C(Realization (K.orderedProd L), Realization K × Realization L) :=
-  let fst := PreAbstractSimplicialComplex.SimplicialMap.orderedProdFst
-    K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex
-  let snd := PreAbstractSimplicialComplex.SimplicialMap.orderedProdSnd
-    K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex
-  -- Transport only the face proofs so that the vertex functions retain their computation rules.
   let fst' : PreAbstractSimplicialComplex.SimplicialMap
       (K.orderedProd L).toPreAbstractSimplicialComplex K.toPreAbstractSimplicialComplex :=
-    ⟨fst, fun _ h ↦ fst.map_face
-      (by simpa only [orderedProd_toPreAbstractSimplicialComplex] using h)⟩
+    ⟨Prod.fst, fun _ h ↦ image_fst_mem_of_mem_orderedProd h⟩
   let snd' : PreAbstractSimplicialComplex.SimplicialMap
       (K.orderedProd L).toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex :=
-    ⟨snd, fun _ h ↦ snd.map_face
-      (by simpa only [orderedProd_toPreAbstractSimplicialComplex] using h)⟩
+    ⟨Prod.snd, fun _ h ↦ image_snd_mem_of_mem_orderedProd h⟩
   fst'.realizationMap.prodMk snd'.realizationMap
 
 /-- The first marginal of the barycentric coordinates. -/
@@ -89,11 +82,14 @@ theorem orderedProdRealizationMap_injective (K : AbstractSimplicialComplex α)
   · simpa only [orderedProdRealizationMap_fst_val] using congrArg (fun p => p.1.1) h
   · simpa only [orderedProdRealizationMap_snd_val] using congrArg (fun p => p.2.1) h
 
-/-- With finite vertex types the projection identifies the realized staircase triangulation
+/-- With finitely many faces the projection identifies the realized staircase triangulation
 with a closed subspace of the product of realizations. -/
-theorem isClosedEmbedding_orderedProdRealizationMap [Finite α] [Finite β]
-    (K : AbstractSimplicialComplex α) (L : AbstractSimplicialComplex β) :
+theorem isClosedEmbedding_orderedProdRealizationMap
+    (K : AbstractSimplicialComplex α) (L : AbstractSimplicialComplex β)
+    (hK : K.faces.Finite) (hL : L.faces.Finite) :
     Topology.IsClosedEmbedding (K.orderedProdRealizationMap L) := by
+  have : CompactSpace (Realization (K.orderedProd L)) :=
+    (K.orderedProd L).compactSpace_realization_of_finite_faces (finite_faces_orderedProd hK hL)
   exact (K.orderedProdRealizationMap L).continuous.isClosedEmbedding
     (K.orderedProdRealizationMap_injective L)
 
