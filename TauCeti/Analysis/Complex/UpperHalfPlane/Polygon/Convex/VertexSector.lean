@@ -224,9 +224,14 @@ private theorem mem_vertexSector_iff_sign_orientedAngle {j : Fin n} {z w : ℍ}
     w ∈ P.vertexSector j ↔
       (orientedAngle z (geodesicLine (rayToward z (P.vertex (j - 1))) 1) w).sign ≠ 1 ∧
         (orientedAngle z (geodesicLine (rayToward z (P.vertex (j + 1))) 1) w).sign ≠ -1 := by
+  have hright := mem_closure_rightHalfPlane_geodesicBetween_iff
+    (B := geodesicLine (rayToward z (P.vertex (j - 1))) 1) hw
+  have hleft := mem_closure_leftHalfPlane_geodesicBetween_iff
+    (B := geodesicLine (rayToward z (P.vertex (j + 1))) 1) hw
+  rw [← rayToward_eq_geodesicBetween z (P.vertex (j - 1))] at hright
+  rw [← rayToward_eq_geodesicBetween z (P.vertex (j + 1))] at hleft
   rw [mem_vertexSector_iff, leftHalfPlane_sideGeodesic_sub_one_eq_rayToward hz,
-    leftHalfPlane_sideGeodesic_eq_rayToward hz, mem_closure_rightHalfPlane_rayToward_iff _ hw,
-    mem_closure_leftHalfPlane_rayToward_iff _ hw]
+    leftHalfPlane_sideGeodesic_eq_rayToward hz, hright, hleft]
 
 /-- At a finite vertex, the ray towards the previous vertex contains a point strictly to the left
 of the outgoing side. -/
@@ -274,16 +279,6 @@ theorem orientedAngle_rayToward_vertex_eq_interiorAngle {j : Fin n} {z : ℍ}
     interiorAngle_eq_abs_toReal_orientedAngle]
   exact (Real.Angle.coe_abs_toReal_of_sign_nonneg
     (by rw [P.sign_orientedAngle_rayToward_vertex hz]; decide)).symm
-
-/-- The interior angle at a finite vertex is less than `π`. -/
-theorem interiorAngle_lt_pi_of_isLeft_vertex {j : Fin n} (hj : (P.vertex j).isLeft) :
-    P.interiorAngle j < π := by
-  obtain ⟨z, hz⟩ := Sum.isLeft_iff.mp hj
-  have h := Real.Angle.toReal_mem_Ioo_iff_sign_pos.2 (P.sign_orientedAngle_rayToward_vertex hz)
-  rw [P.orientedAngle_rayToward_vertex_eq_interiorAngle hz,
-    Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith [P.interiorAngle_nonneg j, Real.pi_pos],
-      P.interiorAngle_le_pi j⟩] at h
-  exact h.2
 
 /-- **The vertex sector in angular coordinates.** At a finite vertex `z`, a point `w ≠ z` lies in
 the sector exactly when the oriented angle at `z` from the ray towards the next vertex to `w`

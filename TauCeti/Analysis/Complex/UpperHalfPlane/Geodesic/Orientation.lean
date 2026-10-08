@@ -22,8 +22,8 @@ additive (`UpperHalfPlane.orientedAngle_add`). For `A ≠ C`, its sign is the si
 through `A` and `B` on which `C` lies: `+1` on the left, `-1` on the right, `0` on the line
 (`orientedAngle_sign_eq_one_iff` and companions); in particular the angles of a nondegenerate
 triangle lie strictly between `0` and `π` (`interiorAngle_pos`, `interiorAngle_lt_pi`). The same
-sign reads off the closed half-planes of a ray `UpperHalfPlane.rayToward`
-(`mem_closure_leftHalfPlane_rayToward_iff`, `mem_closure_rightHalfPlane_rayToward_iff`).
+sign reads off the closed half-planes via `mem_closure_leftHalfPlane_geodesicBetween_iff` and
+`mem_closure_rightHalfPlane_geodesicBetween_iff`.
 Three consequences used for polygons: orientation is cyclically invariant
 (`mem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane`: if `C` is left of `A → B` then `A` is
 left of `B → C`), unoriented angles add when the middle geodesic lies between the outer two
@@ -223,24 +223,6 @@ theorem mem_closure_rightHalfPlane_geodesicBetween_iff {A B C : ℍ} (hAC : A �
     C ∈ closure (rightHalfPlane (geodesicBetween A B)) ↔ (orientedAngle A B C).sign ≠ 1 := by
   rw [mem_closure_rightHalfPlane_iff, Ne, orientedAngle_sign_eq_one_iff hAC,
     mem_leftHalfPlane_iff, not_lt]
-
-/-- For `z ≠ w`, `w` lies in the closed left half-plane of a ray from `z` exactly when its oriented
-angle at `z` from the ray is not negative. -/
-theorem mem_closure_leftHalfPlane_rayToward_iff {z w : ℍ} (p : ℍ ⊕ OnePoint ℝ)
-    (hw : z ≠ w) :
-    w ∈ closure (leftHalfPlane (rayToward z p)) ↔
-      (orientedAngle z (geodesicLine (rayToward z p) 1) w).sign ≠ -1 := by
-  conv_lhs => rw [rayToward_eq_geodesicBetween z p]
-  exact mem_closure_leftHalfPlane_geodesicBetween_iff hw
-
-/-- For `z ≠ w`, `w` lies in the closed right half-plane of a ray from `z` exactly when its
-oriented angle at `z` from the ray is not positive. -/
-theorem mem_closure_rightHalfPlane_rayToward_iff {z w : ℍ} (p : ℍ ⊕ OnePoint ℝ)
-    (hw : z ≠ w) :
-    w ∈ closure (rightHalfPlane (rayToward z p)) ↔
-      (orientedAngle z (geodesicLine (rayToward z p) 1) w).sign ≠ 1 := by
-  conv_lhs => rw [rayToward_eq_geodesicBetween z p]
-  exact mem_closure_rightHalfPlane_geodesicBetween_iff hw
 
 /-- The oriented angle of a nondegenerate triangle is neither `0` nor `π`. -/
 private theorem orientedAngle_ne_zero_and_ne_pi {A B C : ℍ}
