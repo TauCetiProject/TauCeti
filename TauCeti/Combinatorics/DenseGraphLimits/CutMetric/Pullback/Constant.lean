@@ -34,12 +34,10 @@ carrier has none — would be the junk value `0` there and would contradict them
 
 ## Main results
 
-* `cutDistPullback_congr_ae_left`, `cutDistPullback_congr_ae_right` — the map form only sees the
-  almost-everywhere class of each graphon, on arbitrary probability carriers;
 * `cutDistPullback_const_right`, `cutDistPullback_const_left`, `cutDistPullback_const_const` — the
   map form to a constant graphon is the cut norm of the difference with that constant;
 * `cutDistPullback_dirac_right`, `cutDistPullback_dirac_left`, `cutDistPullback_dirac_dirac` — the
-  corresponding values for graphons on point masses;
+  corresponding values for graphons on point masses, with no hypothesis on a point-mass carrier;
 * `cutDistPullback_finiteGraphGraphonOnFin_top_two_const_half` — the complete graph on the uniform
   two-point carrier is at map-form distance `1/8` from the constant `1/2` on any standard Borel
   probability carrier.
@@ -66,56 +64,17 @@ namespace DenseGraphLimits
 variable {Ω₁ Ω₂ : Type*} [MeasurableSpace Ω₁] [MeasurableSpace Ω₂]
 variable {μ₁ : Measure Ω₁} {μ₂ : Measure Ω₂} [IsProbabilityMeasure μ₁] [IsProbabilityMeasure μ₂]
 
-/-! ### Almost-everywhere invariance -/
-
-/-- **The map form of the cut distance only sees the a.e. class of its left argument**, on
-arbitrary probability carriers.
-
-Every pair of measure-preserving maps contributes the same cut norm for `U` as for `U'`, so the two
-infima are taken over the same set of reals. -/
-theorem cutDistPullback_congr_ae_left {U U' : Graphon Ω₁ μ₁} {W : Graphon Ω₂ μ₂}
-    (h : ∀ᵐ p ∂(μ₁.prod μ₁), U p.1 p.2 = U' p.1 p.2) :
-    cutDistPullback U W = cutDistPullback U' W := by
-  -- Along `f × f`, the a.e. equality on `μ₁ ⊗ μ₁` pulls back to one on `I × I`.
-  have hcut (f : I → Ω₁) (g : I → Ω₂) (hf : MeasurePreserving f volume μ₁)
-      (hg : MeasurePreserving g volume μ₂) :
-      cutNorm volume (U.toSymmKernel.comap f hf.measurable volume
-        - W.toSymmKernel.comap g hg.measurable volume) =
-      cutNorm volume (U'.toSymmKernel.comap f hf.measurable volume
-        - W.toSymmKernel.comap g hg.measurable volume) := by
-    refine cutNorm_congr_ae ?_
-    filter_upwards [(hf.prod hf).quasiMeasurePreserving.ae h] with q hq
-    rw [Prod.map_fst, Prod.map_snd] at hq
-    simp only [SymmKernel.coe_sub, Pi.sub_apply, SymmKernel.comap_apply,
-      Graphon.coe_toSymmKernel, hq]
-  rw [cutDistPullback_def, cutDistPullback_def]
-  congr 1
-  ext r
-  constructor <;> rintro ⟨f, g, hf, hg, rfl⟩
-  · exact ⟨f, g, hf, hg, (hcut f g hf hg).symm⟩
-  · exact ⟨f, g, hf, hg, hcut f g hf hg⟩
-
-/-- **The map form of the cut distance only sees the a.e. class of its right argument**, by
-symmetry (`cutDistPullback_comm`). -/
-theorem cutDistPullback_congr_ae_right {U : Graphon Ω₁ μ₁} {W W' : Graphon Ω₂ μ₂}
-    (h : ∀ᵐ p ∂(μ₂.prod μ₂), W p.1 p.2 = W' p.1 p.2) :
-    cutDistPullback U W = cutDistPullback U W' := by
-  rw [cutDistPullback_comm U W, cutDistPullback_comm U W', cutDistPullback_congr_ae_left h]
-
 /-! ### Constant graphons -/
 
-variable [StandardBorelSpace Ω₁] [StandardBorelSpace Ω₂]
-
-/-- **The map form of the cut distance to a constant graphon is a cut norm.** For a graphon `U` on
-a standard Borel `(Ω₁, μ₁)` and the constant graphon `p` on a standard Borel `(Ω₂, μ₂)`, the map
-form is `‖U - p‖□`, the cut norm being taken on `(Ω₁, μ₁)`.
-
-Every pair of measure-preserving maps `f, g` out of `(I, volume)` contributes this same value: the
-difference of the two pullbacks is the pullback of `U - p` along `f` alone. The standard Borel
-hypotheses provide at least one such pair. -/
-theorem cutDistPullback_const_right (U : Graphon Ω₁ μ₁) (p : I) :
+/-- Along any one pair of measure-preserving maps out of `(I, volume)`, the map form of the cut
+distance to a constant graphon `p` is `‖U - p‖□`, the cut norm being taken on `(Ω₁, μ₁)`. -/
+private theorem cutDistPullback_const_right_of_measurePreserving (U : Graphon Ω₁ μ₁) (p : I)
+    {f₀ : I → Ω₁} {g₀ : I → Ω₂} (hf₀ : MeasurePreserving f₀ volume μ₁)
+    (hg₀ : MeasurePreserving g₀ volume μ₂) :
     cutDistPullback U (Graphon.const μ₂ p) =
       cutNorm μ₁ (U.toSymmKernel - (Graphon.const μ₁ p).toSymmKernel) := by
+  -- Every pair of maps `f, g` contributes this same value: the difference of the two pullbacks is
+  -- the pullback of `U - p` along `f` alone. The pair `f₀, g₀` makes the infimum a genuine one.
   have hval (f : I → Ω₁) (g : I → Ω₂) (hf : MeasurePreserving f volume μ₁)
       (hg : MeasurePreserving g volume μ₂) :
       cutNorm volume (U.toSymmKernel.comap f hf.measurable volume
@@ -125,23 +84,41 @@ theorem cutDistPullback_const_right (U : Graphon Ω₁ μ₁) (p : I) :
     congr 1
     ext x y
     simp
+  refine le_antisymm ((cutDistPullback_le U _ hf₀ hg₀).trans_eq (hval f₀ g₀ hf₀ hg₀)) ?_
+  rw [cutDistPullback_def]
+  exact le_csInf ⟨_, f₀, g₀, hf₀, hg₀, rfl⟩ fun r ⟨f, g, hf, hg, hr⟩ => hr ▸ (hval f g hf hg).ge
+
+/-- A constant map out of `(I, volume)` onto a point `b` is measure preserving onto `δ_b`, with no
+hypothesis on the carrier. -/
+private theorem measurePreserving_const_dirac {Ω : Type*} [MeasurableSpace Ω] (b : Ω) :
+    MeasurePreserving (fun _ : I => b) volume (Measure.dirac b) :=
+  ⟨measurable_const, by rw [Measure.map_const, measure_univ, one_smul]⟩
+
+/-- **The map form of the cut distance to a constant graphon is a cut norm.** For a graphon `U` on
+a standard Borel `(Ω₁, μ₁)` and the constant graphon `p` on a standard Borel `(Ω₂, μ₂)`, the map
+form is `‖U - p‖□`, the cut norm being taken on `(Ω₁, μ₁)`. -/
+theorem cutDistPullback_const_right [StandardBorelSpace Ω₁] [StandardBorelSpace Ω₂]
+    (U : Graphon Ω₁ μ₁) (p : I) :
+    cutDistPullback U (Graphon.const μ₂ p) =
+      cutNorm μ₁ (U.toSymmKernel - (Graphon.const μ₁ p).toSymmKernel) := by
+  -- The standard Borel hypotheses provide one pair of maps (Thm A.9, on each carrier separately).
   obtain ⟨f, hf⟩ := Measure.exists_measurePreserving_from_unitInterval μ₁
   obtain ⟨g, hg⟩ := Measure.exists_measurePreserving_from_unitInterval μ₂
-  exact le_antisymm ((cutDistPullback_le U _ hf hg).trans_eq (hval f g hf hg))
-    (le_cutDistPullback U _ fun f g hf hg => (hval f g hf hg).ge)
+  exact cutDistPullback_const_right_of_measurePreserving U p hf hg
 
 /-- **The map form of the cut distance from a constant graphon is a cut norm**: it is `‖p - W‖□`,
-the cut norm being taken on the carrier of `W`. This is `cutDistPullback_const_right` by
-symmetry. -/
-theorem cutDistPullback_const_left (p : I) (W : Graphon Ω₂ μ₂) :
+the cut norm being taken on the carrier of `W`. -/
+theorem cutDistPullback_const_left [StandardBorelSpace Ω₁] [StandardBorelSpace Ω₂] (p : I)
+    (W : Graphon Ω₂ μ₂) :
     cutDistPullback (Graphon.const μ₁ p) W =
       cutNorm μ₂ ((Graphon.const μ₂ p).toSymmKernel - W.toSymmKernel) := by
+  -- By symmetry, from `cutDistPullback_const_right`.
   rw [cutDistPullback_comm, cutDistPullback_const_right, cutNorm_sub_rev]
 
 /-- **Two constant graphons are at map-form cut distance `|p - q|`**, on standard Borel
 probability carriers. -/
 @[simp]
-theorem cutDistPullback_const_const (p q : I) :
+theorem cutDistPullback_const_const [StandardBorelSpace Ω₁] [StandardBorelSpace Ω₂] (p q : I) :
     cutDistPullback (Graphon.const μ₁ p) (Graphon.const μ₂ q) = |(p : ℝ) - q| := by
   rw [cutDistPullback_const_right]
   exact cutNorm_eq_abs_of_forall_eq μ₁ fun x y => by simp
@@ -149,29 +126,35 @@ theorem cutDistPullback_const_const (p q : I) :
 /-! ### Graphons on point masses -/
 
 /-- **The map form of the cut distance to a graphon on a point mass** `(Ω₂, δ_b)` is the cut norm
-of the difference with the constant `W b b`, taken on the carrier of the other graphon. -/
-theorem cutDistPullback_dirac_right {b : Ω₂} (U : Graphon Ω₁ μ₁)
+of the difference with the constant `W b b`, taken on the carrier of the other graphon. Only that
+other carrier needs to be standard Borel. -/
+theorem cutDistPullback_dirac_right [StandardBorelSpace Ω₁] {b : Ω₂} (U : Graphon Ω₁ μ₁)
     (W : Graphon Ω₂ (Measure.dirac b)) :
     cutDistPullback U W =
       cutNorm μ₁ (U.toSymmKernel - (Graphon.const μ₁ ⟨W b b, W.mem_Icc b b⟩).toSymmKernel) := by
-  rw [cutDistPullback_congr_ae_right W.ae_eq_const_of_dirac, cutDistPullback_const_right]
+  obtain ⟨f, hf⟩ := Measure.exists_measurePreserving_from_unitInterval μ₁
+  rw [cutDistPullback_congr_ae_right W.ae_eq_const_of_dirac,
+    cutDistPullback_const_right_of_measurePreserving U _ hf (measurePreserving_const_dirac b)]
 
 /-- **The map form of the cut distance from a graphon on a point mass** `(Ω₁, δ_a)` is the cut norm
 of the difference of the constant `U a a` with the other graphon, taken on the carrier of that
-graphon. -/
-theorem cutDistPullback_dirac_left {a : Ω₁} (U : Graphon Ω₁ (Measure.dirac a))
-    (W : Graphon Ω₂ μ₂) :
+graphon. Only that other carrier needs to be standard Borel. -/
+theorem cutDistPullback_dirac_left [StandardBorelSpace Ω₂] {a : Ω₁}
+    (U : Graphon Ω₁ (Measure.dirac a)) (W : Graphon Ω₂ μ₂) :
     cutDistPullback U W =
       cutNorm μ₂ ((Graphon.const μ₂ ⟨U a a, U.mem_Icc a a⟩).toSymmKernel - W.toSymmKernel) := by
-  rw [cutDistPullback_congr_ae_left U.ae_eq_const_of_dirac, cutDistPullback_const_left]
+  rw [cutDistPullback_comm, cutDistPullback_dirac_right, cutNorm_sub_rev]
 
-/-- **Two graphons on point masses are at map-form cut distance `|U a a - W b b|`**, although no
-measure-preserving bijection relates either carrier to `(I, volume)`. -/
+/-- **Two graphons on point masses are at map-form cut distance `|U a a - W b b|`**, on arbitrary
+carriers, although no measure-preserving bijection relates either carrier to `(I, volume)`. -/
 @[simp]
 theorem cutDistPullback_dirac_dirac {a : Ω₁} {b : Ω₂} (U : Graphon Ω₁ (Measure.dirac a))
     (W : Graphon Ω₂ (Measure.dirac b)) : cutDistPullback U W = |U a a - W b b| := by
   rw [cutDistPullback_congr_ae_left U.ae_eq_const_of_dirac,
-    cutDistPullback_congr_ae_right W.ae_eq_const_of_dirac, cutDistPullback_const_const]
+    cutDistPullback_congr_ae_right W.ae_eq_const_of_dirac,
+    cutDistPullback_const_right_of_measurePreserving _ _ (measurePreserving_const_dirac a)
+      (measurePreserving_const_dirac b)]
+  exact cutNorm_eq_abs_of_forall_eq _ fun x y => by simp
 
 /-! ### The complete graph on two points -/
 
