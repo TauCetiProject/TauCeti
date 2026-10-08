@@ -277,13 +277,6 @@ def αOne : Path basePt (oneBasePt : ThricePuncturedSphere) where
 theorem coe_αOne (t : unitInterval) : (αOne t : ℂ) = ((1 / 2 + t / 4 : ℝ) : ℂ) :=
   (rfl)
 
-/-- A circle about `1` with negative radius `-r` is the circle of radius `r` rotated by `π`. -/
-private theorem circleMap_one_neg (r θ : ℝ) :
-    circleMap 1 (-r) θ = 1 + r * exp ((π + θ : ℝ) * I) := by
-  rw [circleMap, ofReal_add, add_mul, Complex.exp_add, exp_pi_mul_I]
-  push_cast
-  ring
-
 private theorem mem_puncturedNeighborhoodOne_iff_mem_ball (z : ThricePuncturedSphere) :
     z ∈ puncturedNeighborhoodOne ↔ (z : ℂ) ∈ ball (1 : ℂ) (1 / 2) \ {1} := by
   simp [mem_puncturedNeighborhoodOne, dist_eq_norm, z.ne_one]
@@ -303,7 +296,7 @@ theorem zpowers_δOne : Subgroup.zpowers (FundamentalGroup.fromPath (.mk δOne))
     (map_direction_bijective (by norm_num) mem_puncturedNeighborhoodOne_iff_mem_ball
       (ball_diff_subset_range (.inr rfl) (by norm_num)) oneBasePt).injective
     (degree_map_direction _ _ δOne (r := 1 / 4) (φ := π) (by norm_num) fun t => by
-      rw [coe_δOne, circleMap_one_neg])
+      rw [coe_δOne, circleMap_neg_radius, circleMap, add_comm (2 * π * (t : ℝ)) π])
 
 /-- Include the local generator at `1` and transport it along `αOne.symm`: the result is
 `periph1`. -/
@@ -331,10 +324,11 @@ theorem transport_δOne_eq_periph1 :
     (δ := (δOne.map continuous_subtype_val).codRestrict (x := ⟨_, hy⟩) (y := ⟨_, hy⟩) hδ)
     (by
       rw [degree_map_direction _ _ _ (r := 1 / 2) (φ := π) (by norm_num) fun t => by
-          rw [Path.codRestrict_coe, coe_γ1, circleMap_one_neg],
+          rw [Path.codRestrict_coe, coe_γ1, circleMap_neg_radius, circleMap,
+            add_comm (2 * π * (t : ℝ)) π],
         degree_map_direction _ _ _ (r := 1 / 4) (φ := π) (by norm_num) fun t => by
           rw [Path.codRestrict_coe, Path.map_coe, Function.comp_apply, coe_δOne,
-            circleMap_one_neg]])
+            circleMap_neg_radius, circleMap, add_comm (2 * π * (t : ℝ)) π]])
     (αOne.codRestrict (x := ⟨basePt, hb⟩) (y := ⟨_, hy⟩) hα)).map
     ⟨Subtype.val, continuous_subtype_val⟩
   simp only [Path.map_trans, ← Path.map_symm, Path.map_codRestrict] at h
