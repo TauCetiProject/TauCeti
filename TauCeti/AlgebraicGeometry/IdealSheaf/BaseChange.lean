@@ -16,7 +16,8 @@ This file identifies the closed subscheme of an ideal sheaf pulled back along a 
 projection with the corresponding base change. It also records the resulting preservation of
 flatness for the closed subscheme, and the affine-local form of that flatness: over affine opens
 `W ⊆ S` and `U ⊆ f⁻¹ W`, the quotient `Γ(X, U) ⧸ I(U)` is flat over `Γ(S, W)`
-(`flat_appLE_comp_ofHom_quotient_mk`).
+(`flat_appLE_comp_ofHom_quotient_mk`). Conversely, flatness of that quotient is exactly flatness
+of the restricted subscheme morphism (`TauCeti.flat_resLE_subschemeι_iff`).
 -/
 
 public section
@@ -85,3 +86,27 @@ theorem flat_appLE_comp_ofHom_quotient_mk (I : X.IdealSheafData) (f : X ⟶ S)
   exact (RingHom.Flat.respectsIso.cancel_right_isIso _ _).mp h
 
 end AlgebraicGeometry.Scheme.IdealSheafData
+
+namespace TauCeti
+
+open AlgebraicGeometry AlgebraicGeometry.Scheme.IdealSheafData
+
+variable {S X : Scheme.{u}}
+
+/-- Flatness of the closed subscheme cut out by `I` over a pair of affine opens is equivalent
+to flatness of its quotient algebra of sections over the base. -/
+theorem flat_resLE_subschemeι_iff {I : X.IdealSheafData} {f : X ⟶ S}
+    {W : S.Opens} (hW : IsAffineOpen W) (U : X.affineOpens)
+    (hUW : U.1 ≤ f ⁻¹ᵁ W) :
+    Flat ((I.subschemeι ≫ f).resLE W (I.subschemeι ⁻¹ᵁ U.1)
+      ((Scheme.Hom.preimage_mono I.subschemeι hUW).trans_eq rfl)) ↔
+      (f.appLE W U hUW ≫ CommRingCat.ofHom (Ideal.Quotient.mk (I.ideal U))).hom.Flat := by
+  have : IsAffine W.toScheme := hW
+  have : IsAffine (I.subschemeι ⁻¹ᵁ U.1).toScheme := U.2.preimage I.subschemeι
+  rw [HasRingHomProperty.iff_of_isAffine (P := @Flat),
+    RingHom.Flat.respectsIso.arrow_mk_iso_iff (arrowResLEAppIso _ _ _ _),
+    ← Scheme.Hom.appLE_comp_appLE I.subschemeι f W U.1 _ hUW le_rfl,
+    ← Scheme.Hom.app_eq_appLE, subschemeι_app, ← Category.assoc]
+  exact RingHom.Flat.respectsIso.cancel_right_isIso _ _
+
+end TauCeti

@@ -201,6 +201,15 @@ theorem partialCycleMap_smul_vertex (j : Fin n) (m : ℕ) :
   | succ m ih =>
     rw [partialCycleMap_succ, mul_smul, ih, map_smul_vertex_eq_next, Function.iterate_succ_apply']
 
+/-- Consecutive tiles `(partialCycleMap j m)⁻¹ • P` along a vertex cycle share a side: pulled back
+to the initial vertex, the vertex before the cycle vertex in tile `m + 1` is the vertex after it
+in tile `m`. -/
+theorem inv_partialCycleMap_succ_smul_vertex_sub_one (j : Fin n) (m : ℕ) :
+    (σ.partialCycleMap j (m + 1))⁻¹ • P.vertex (σ.next^[m + 1] j - 1) =
+      (σ.partialCycleMap j m)⁻¹ • P.vertex (σ.next^[m] j + 1) := by
+  rw [partialCycleMap_succ, mul_inv_rev, mul_smul, Function.iterate_succ_apply', next_apply,
+    add_sub_cancel_right, ← σ.map_smul_vertex_add_one, inv_smul_smul]
+
 /-- The length of the vertex cycle through `j`: the minimal period of `j` under the successor. -/
 def cycleLength (j : Fin n) : ℕ :=
   Function.minimalPeriod σ.next j

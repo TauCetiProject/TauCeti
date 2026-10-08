@@ -41,6 +41,9 @@ no irreducibility of the dual representation is needed as an input.
   when the `i`-th row is inversion-invariant and `0` otherwise.
 * `TauCeti.sum_characterTable_sq`: the column quantity `∑_i χᵢ(C)²` is `|G| / |C|` when `C` is
   real and `0` otherwise.
+* `TauCeti.forall_characterTable_inv_iff`: a row of the table is inversion-invariant exactly when
+  the irreducible character it records is, the two being the same condition indexed once by
+  conjugacy classes and once by group elements.
 * `TauCeti.card_inversionInvariant_eq_card_realClasses`: the two counts agree over any
   algebraically closed field of characteristic zero.
 * `TauCeti.card_realValued_eq_card_realClasses`: over `ℂ`, the rows of the character table fixed
@@ -173,7 +176,7 @@ omit [CharZero k] in
 /-- A row of the character table is inversion-invariant exactly when the irreducible character it
 records is: the two say the same thing, one indexed by conjugacy classes and one by group
 elements. -/
-private theorem forall_characterTable_inv_iff (i : Fin (Nat.card (ConjClasses G))) :
+theorem forall_characterTable_inv_iff (i : Fin (Nat.card (ConjClasses G))) :
     (∀ C : ConjClasses G, characterTable k G i C⁻¹ = characterTable k G i C) ↔
       ∀ g : G, irreducibleCharacter k i g⁻¹ = irreducibleCharacter k i g := by
   refine ⟨fun h g => by simpa using h (ConjClasses.mk g), fun h C => ?_⟩

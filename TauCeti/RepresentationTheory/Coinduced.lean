@@ -28,6 +28,9 @@ monoid elements (`Representation.coextendScalarsEquivCoind`). This transports st
 coextension of scalars on module categories, such as its action on Grothendieck groups of group
 algebras, to coinduced and induced representations.
 
+Mathlib's coinduced action is evaluated by `Representation.coind_apply_coe_apply`:
+`(h • f) h₁ = f (h₁ * h)`.
+
 ## References
 
 * K. S. Brown, *Cohomology of Groups*, Chapter III, §6 and §9.
@@ -63,6 +66,19 @@ instance (H : Subgroup G) :
 end Rep
 
 namespace Representation
+
+section Apply
+
+variable {k G H V : Type*} [Semiring k] [Monoid G] [Monoid H] [AddCommMonoid V] [Module k V]
+
+-- Not `@[simp]`: simp first unfolds the action `coind φ ρ h` through `Representation.coind_apply`,
+-- so the left-hand side is not in simp-normal form (`simpNF`).
+/-- The coinduced action translates the argument of a function: `(h • f) h₁ = f (h₁ * h)`. -/
+theorem coind_apply_coe_apply (φ : G →* H) (ρ : Representation k G V) (f : coindV φ ρ)
+    (h h₁ : H) : ((coind φ ρ h) f).1 h₁ = f.1 (h₁ * h) :=
+  rfl
+
+end Apply
 
 open scoped MonoidAlgebra
 

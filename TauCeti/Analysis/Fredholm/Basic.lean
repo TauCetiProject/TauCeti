@@ -34,7 +34,8 @@ intended throughout.
   either side preserves Fredholmness. Mathlib provides stronger `↔` versions over complete scalar
   fields; these implications hold over any `NontriviallyNormedField`.
 
-The Fredholm index and its elementary API live in `TauCeti.Analysis.Fredholm.Index`.
+The Fredholm index and its elementary API live in
+`TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index`.
 -/
 
 public section

@@ -6,12 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.CoveringMap
+public import Mathlib.RingTheory.RootsOfUnity.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroup.PuncturedStarConvex
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Cyclic
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Quotient.ActingGroup
 
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
+import TauCeti.RingTheory.RootsOfUnity.PowFiber
 import TauCeti.Topology.IsLocalHomeomorph
 
 /-!
@@ -36,7 +39,11 @@ unique, but only unique up to the rotations of `𝔻*` by `e`-th roots of unity.
 * `TauCeti.puncturedDiscPow`: the map `z ↦ z ^ e` from `𝔻*` to itself, for `e ≠ 0`.
 * `TauCeti.puncturedDiscPow_mul`: the power maps compose, `z ^ (e * f) = (z ^ f) ^ e`.
 * `TauCeti.isCoveringMap_puncturedDiscPow`: it is a covering map.
+* `TauCeti.isQuotientCoveringMap_puncturedDiscPow`: it is the quotient covering by the rotations
+  through the `e`-th roots of unity.
 * `TauCeti.card_puncturedDiscPow_preimage_singleton`: each of its fibres has `e` points.
+* `TauCeti.puncturedDiscPowDeckMulEquiv`: **its deck group is the group of `e`-th roots of
+  unity**, acting by rotations.
 * `IsCoveringMap.exists_homeomorph_puncturedDiscPow_comp_eq`: **a connected cover of `𝔻*`
   with `e ≠ 0` sheets is isomorphic over `𝔻*` to `z ↦ z ^ e`**, by an isomorphism matching any
   given points of the two fibres over a point.
@@ -60,6 +67,46 @@ open Metric Set
 namespace TauCeti
 
 variable {e : ℕ}
+
+/-- The scalar action of the `e`-th roots of unity on the punctured disc is rotation. -/
+noncomputable instance puncturedDiscSMul [NeZero e] :
+    SMul (rootsOfUnity e ℂ) ↥(ball (0 : ℂ) 1 \ {0}) where
+  smul ζ z := ⟨ζ • (z : ℂ), by
+    rcases z.2 with ⟨hz, hz0⟩
+    refine ⟨?_, ?_⟩
+    · rw [mem_ball_zero_iff] at hz ⊢
+      rwa [rootsOfUnity.smul_eq_mul, norm_mul,
+        Complex.norm_eq_one_of_mem_rootsOfUnity ζ.2, one_mul]
+    · rw [mem_singleton_iff, rootsOfUnity.smul_eq_mul]
+      exact mul_ne_zero (ζ : ℂˣ).ne_zero hz0⟩
+
+/-- The action of the `e`-th roots of unity on the punctured disc is rotation. -/
+noncomputable instance puncturedDiscMulAction [NeZero e] :
+    MulAction (rootsOfUnity e ℂ) ↥(ball (0 : ℂ) 1 \ {0}) where
+  one_smul z := Subtype.ext (one_smul _ (z : ℂ))
+  mul_smul ζ η z := Subtype.ext (mul_smul ζ η (z : ℂ))
+
+@[simp]
+theorem coe_rootsOfUnity_smul_puncturedDisc [NeZero e] (ζ : rootsOfUnity e ℂ)
+    (z : ↥(ball (0 : ℂ) 1 \ {0})) :
+    ((ζ • z : ↥(ball (0 : ℂ) 1 \ {0})) : ℂ) = ζ • (z : ℂ) :=
+  (rfl)
+
+/-- Rotation by a root of unity is continuous on the punctured disc. -/
+noncomputable instance puncturedDiscContinuousConstSMul [NeZero e] :
+    ContinuousConstSMul (rootsOfUnity e ℂ) ↥(ball (0 : ℂ) 1 \ {0}) where
+  continuous_const_smul ζ :=
+    Continuous.subtype_mk ((continuous_const_smul ζ).comp continuous_subtype_val) _
+
+/-- Rotation by a root of unity acts cancellatively on the punctured disc. -/
+noncomputable instance puncturedDiscIsCancelSMul [NeZero e] :
+    IsCancelSMul (rootsOfUnity e ℂ) ↥(ball (0 : ℂ) 1 \ {0}) where
+  right_cancel' ζ η z h := by
+    apply Subtype.ext
+    apply Units.ext
+    exact mul_right_cancel₀ z.2.2 <| by
+      simpa only [coe_rootsOfUnity_smul_puncturedDisc, rootsOfUnity.smul_eq_mul] using
+        congrArg Subtype.val h
 
 /-- For `e ≠ 0`, `z ^ e` lies in the punctured unit ball exactly when `z` does. -/
 theorem pow_mem_ball_zero_one_diff_singleton_iff {𝕜 : Type*} [NormedDivisionRing 𝕜] (he : e ≠ 0)
@@ -100,6 +147,71 @@ theorem isCoveringMap_puncturedDiscPow (he : e ≠ 0) : IsCoveringMap (punctured
   -- map, so the composite below is `puncturedDiscPow he` by definition.
   exact (((isCoveringMapOn_npow (𝕜 := ℂ) e (Nat.cast_ne_zero.2 he)).mono
     fun _ hz => hz.2).isCoveringMap_restrictPreimage).comp_homeomorph (.setCongr hs.symm)
+
+/-- **The power map is the quotient covering by rotations through the `e`-th roots of unity.**
+Its fibres are exactly the rotation orbits. -/
+theorem isQuotientCoveringMap_puncturedDiscPow [NeZero e] :
+    IsQuotientCoveringMap (puncturedDiscPow (NeZero.ne e)) (rootsOfUnity e ℂ) := by
+  let he := NeZero.ne e
+  rw [isQuotientCoveringMap_iff_isCoveringMap_and]
+  refine ⟨isCoveringMap_puncturedDiscPow he, ?_, inferInstance, inferInstance, ?_⟩
+  · intro w
+    obtain ⟨z, hz⟩ := IsAlgClosed.exists_pow_nat_eq (w : ℂ) (Nat.pos_of_ne_zero he)
+    have hzmem : z ∈ ball (0 : ℂ) 1 \ {0} :=
+      (pow_mem_ball_zero_one_diff_singleton_iff he).1 (hz ▸ w.2)
+    exact ⟨⟨z, hzmem⟩, Subtype.ext hz⟩
+  · intro z w
+    rw [MulAction.mem_orbit_iff]
+    constructor
+    · intro h
+      obtain ⟨ζ, hζ⟩ := (pow_eq_pow_iff_exists_rootsOfUnity_smul he).mp
+        (congrArg Subtype.val h).symm
+      exact ⟨ζ, Subtype.ext hζ⟩
+    · rintro ⟨ζ, hζ⟩
+      apply Subtype.ext
+      exact (congrArg (fun u : ℂ ↦ u ^ e) (congrArg Subtype.val hζ)).symm.trans
+        (rootsOfUnity.smul_pow ζ (w : ℂ))
+
+/-- **The deck group of the punctured-disc power map is the group of `e`-th roots of unity.**
+Under this isomorphism a root of unity acts by rotation
+(`puncturedDiscPowDeckMulEquiv_apply`). -/
+noncomputable def puncturedDiscPowDeckMulEquiv (he : e ≠ 0) :
+    rootsOfUnity e ℂ ≃* deck (puncturedDiscPow he) :=
+  letI : NeZero e := ⟨he⟩
+  letI := pathConnectedSpace_ball_diff_singleton (0 : ℂ) one_pos
+  have : Nonempty ↥(ball (0 : ℂ) 1 \ {0}) :=
+    ⟨⟨(1 / 2 : ℂ), by norm_num [mem_ball_zero_iff]⟩⟩
+  Deck.IsQuotientCoveringMap.deckMulEquiv
+    (isQuotientCoveringMap_puncturedDiscPow (e := e))
+
+/-- A root of unity acts through `puncturedDiscPowDeckMulEquiv` by multiplying points of the
+punctured disc. -/
+@[simp]
+theorem puncturedDiscPowDeckMulEquiv_apply (he : e ≠ 0) (ζ : rootsOfUnity e ℂ)
+    (z : ↥(ball (0 : ℂ) 1 \ {0})) :
+    ((puncturedDiscPowDeckMulEquiv he ζ).1 z : ℂ) = ζ • (z : ℂ) := by
+  let _ : NeZero e := ⟨he⟩
+  rw [puncturedDiscPowDeckMulEquiv,
+    Deck.IsQuotientCoveringMap.deckMulEquiv_apply,
+    coe_rootsOfUnity_smul_puncturedDisc]
+
+/-- Every deck transformation of the punctured-disc power map is rotation by the corresponding
+root of unity under `puncturedDiscPowDeckMulEquiv`. -/
+@[simp]
+theorem puncturedDiscPowDeckMulEquiv_symm_apply (he : e ≠ 0)
+    (φ : deck (puncturedDiscPow he)) (z : ↥(ball (0 : ℂ) 1 \ {0})) :
+    (((puncturedDiscPowDeckMulEquiv he).symm φ : ℂˣ) : ℂ) * (z : ℂ) = (φ.1 z : ℂ) := by
+  let _ : NeZero e := ⟨he⟩
+  simpa only [puncturedDiscPowDeckMulEquiv_apply, rootsOfUnity.smul_eq_mul] using
+    congrArg (fun ψ : deck (puncturedDiscPow he) => (ψ.1 z : ℂ))
+      ((puncturedDiscPowDeckMulEquiv he).apply_symm_apply φ)
+
+/-- The deck group of `z ↦ z ^ e` has order `e`. -/
+theorem card_deck_puncturedDiscPow (he : e ≠ 0) :
+    Nat.card (deck (puncturedDiscPow he)) = e := by
+  rw [← Nat.card_congr (puncturedDiscPowDeckMulEquiv he).toEquiv]
+  let _ : NeZero e := ⟨he⟩
+  exact Complex.card_rootsOfUnity e
 
 /-- **The power map of the punctured disc has `e` sheets:** the fibre over any point `w` consists
 of the `e` distinct `e`-th roots of `w`. -/
