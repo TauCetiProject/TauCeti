@@ -39,12 +39,13 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 /-- The Riemannian distance of the upper-half-space metric is complete in finite dimension.
 
 The explicit uniform-space argument in the conclusion matches the metric used by
-`TauCeti.HyperbolicMetric.complete`. Completeness follows from transitivity of the full
-Riemannian-isometry group and the finite-dimensional homogeneous-manifold theorem. -/
+`TauCeti.HyperbolicMetric.complete`. -/
 theorem completeSpace_of_riemannianMetric [FiniteDimensional ℝ E] :
     @CompleteSpace (UpperHalfSpace E)
       ((MetricSpace.ofRiemannianMetric 𝓘(ℝ, WithLp 2 (E × ℝ))
           (UpperHalfSpace E)).toPseudoMetricSpace.toUniformSpace) := by
+  -- Completeness follows from transitivity of the full Riemannian-isometry group and the
+  -- finite-dimensional homogeneous-manifold theorem.
   exact @completeSpace_of_isPretransitive_isom_of_finiteDimensional (WithLp 2 (E × ℝ)) _ _ _ _
     (𝓘(ℝ, WithLp 2 (E × ℝ))) (UpperHalfSpace E)
     (EMetricSpace.ofRiemannianMetric 𝓘(ℝ, WithLp 2 (E × ℝ)) (UpperHalfSpace E)).toPseudoEMetricSpace
