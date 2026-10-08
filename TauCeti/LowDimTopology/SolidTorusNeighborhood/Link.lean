@@ -44,7 +44,7 @@ structure IsSolidTorusLinkNeighborhood (f : ι → Circle → X)
   /-- Each component has a solid-torus neighbourhood. -/
   neighborhood : ∀ i, IsSolidTorusNeighborhood (f i) (Φ i)
   /-- The closed solid torus images of distinct components are disjoint. -/
-  pairwiseDisjoint : Pairwise (Disjoint on fun i => range (Φ i))
+  pairwiseDisjoint_range : Pairwise (Disjoint on fun i => range (Φ i))
 
 namespace IsSolidTorusLinkNeighborhood
 
@@ -54,17 +54,17 @@ variable {f : ι → Circle → X} {Φ : ι → SolidTorus → X}
 theorem pairwiseDisjoint_image (h : IsSolidTorusLinkNeighborhood f Φ) :
     Pairwise (Disjoint on fun i => Φ i '' {p : SolidTorus | ‖(p.1 : ℂ)‖ < 1}) := by
   intro i j hij
-  exact (h.pairwiseDisjoint hij).mono (image_subset_range _ _) (image_subset_range _ _)
+  exact (h.pairwiseDisjoint_range hij).mono (image_subset_range _ _) (image_subset_range _ _)
 
 /-- Transport a family of disjoint solid-torus neighborhoods along an open embedding. -/
 theorem comp {Y : Type*} [TopologicalSpace Y] {e : X → Y} (he : IsOpenEmbedding e)
     (h : IsSolidTorusLinkNeighborhood f Φ) :
     IsSolidTorusLinkNeighborhood (fun i => e ∘ f i) (fun i => e ∘ Φ i) where
   neighborhood i := (h.neighborhood i).comp he
-  pairwiseDisjoint := by
+  pairwiseDisjoint_range := by
     intro i j hij
     simp only [range_comp]
-    exact disjoint_image_of_injective he.injective (h.pairwiseDisjoint hij)
+    exact disjoint_image_of_injective he.injective (h.pairwiseDisjoint_range hij)
 
 /-- The `i`-th component lies in the open image of its solid torus. -/
 theorem range_subset_image (h : IsSolidTorusLinkNeighborhood f Φ) (i : ι) :
