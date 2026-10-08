@@ -36,7 +36,7 @@ permutation with functions on its cycle quotient (`TauCeti.invariantColouringEqu
 right multiplication by `a` is a single cycle on the whole group exactly when `a` generates it
 (`Equiv.isCycleOn_mulRight_univ_iff`). Alternating a signed sum over permutations a second
 time, along a sign-preserving map of permutation groups, multiplies it by the number of
-permutations alternated over (`TauCeti.sum_sign_smul_sum_sign_smul_mul`).
+permutations alternated over (`TauCeti.sum_sign_smul_sum_sign_smul_eq_card_nsmul`).
 -/
 
 public section
@@ -426,7 +426,7 @@ sign-preserving map `ext` from the permutations of `β`, only multiplies it by t
 permutations of `β`. With `ext` the
 extension of permutations of a block of indices by the identity, this is the statement that the
 alternatization of a partially alternatized multilinear map is a multiple of the alternatization. -/
-theorem sum_sign_smul_sum_sign_smul_mul {β M : Type*} [Fintype β] [DecidableEq β]
+theorem sum_sign_smul_sum_sign_smul_eq_card_nsmul {β M : Type*} [Fintype β] [DecidableEq β]
     [AddCommGroup M] (ext : Perm β → Perm α) (hext : ∀ τ, sign (ext τ) = sign τ)
     (T : Perm α → M) :
     ∑ σ : Perm α, sign σ • ∑ τ : Perm β, sign τ • T (σ * ext τ) =

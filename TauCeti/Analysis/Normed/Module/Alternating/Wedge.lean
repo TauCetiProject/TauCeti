@@ -44,7 +44,7 @@ The paired construction follows the design of Yury Kudryashov's
 Associativity and graded commutativity are not identities of the paired wedge in general: in degree
 zero they reduce to associativity and commutativity of the pairing. They are proved here under
 exactly those hypotheses on the pairings, which hold for the multiplication of a normed algebra
-(graded commutativity only when it is commutative) and fail for a Lie bracket.
+(graded commutativity only when it is commutative) but not for a Lie bracket in general.
 -/
 
 public section
@@ -445,7 +445,7 @@ theorem wedgeWith_wedgeWith_left_apply (mu₁₂ : F₁ →L[ℝ] F₂ →L[ℝ]
           mu₁₂₃ (mu₁₂ (phi fun i => v (sigma (Fin.castAdd m (Fin.castAdd l i))))
               (psi fun j => v (sigma (Fin.castAdd m (Fin.natAdd k j)))))
             (chi fun r => v (sigma (Fin.natAdd (k + l) r))) := by
-  have key := sum_sign_smul_sum_sign_smul_mul
+  have key := sum_sign_smul_sum_sign_smul_eq_card_nsmul
     (fun tau => finSumFinEquiv.permCongr (Perm.sumCongr tau (1 : Perm (Fin m))))
     (fun tau => by simp [Perm.sign_sumCongr])
     (fun sigma : Perm (Fin (k + l + m)) =>
@@ -475,7 +475,7 @@ theorem wedgeWith_wedgeWith_right_apply (mu₂₃ : F₂ →L[ℝ] F₃ →L[ℝ
           mu₁₂₃' (phi fun i => v (sigma (Fin.castAdd (l + m) i)))
             (mu₂₃ (psi fun j => v (sigma (Fin.natAdd k (Fin.castAdd m j))))
               (chi fun r => v (sigma (Fin.natAdd k (Fin.natAdd l r))))) := by
-  have key := sum_sign_smul_sum_sign_smul_mul
+  have key := sum_sign_smul_sum_sign_smul_eq_card_nsmul
     (fun tau => finSumFinEquiv.permCongr (Perm.sumCongr (1 : Perm (Fin k)) tau))
     (fun tau => by simp [Perm.sign_sumCongr])
     (fun sigma : Perm (Fin (k + (l + m))) =>
@@ -495,7 +495,7 @@ theorem wedgeWith_wedgeWith_right_apply (mu₂₃ : F₂ →L[ℝ] F₃ →L[ℝ
 
 /-- Associativity of the paired wedge, for pairings whose two composites agree:
 `mu₁₂₃ (mu₁₂ a b) c = mu₁₂₃' a (mu₂₃ b c)`. For the multiplication of a normed algebra this
-hypothesis is `mul_assoc`; for a Lie bracket it fails. -/
+hypothesis is `mul_assoc`; for a Lie bracket it does not hold in general. -/
 theorem wedgeWith_assoc (mu₁₂ : F₁ →L[ℝ] F₂ →L[ℝ] F₁₂) (mu₁₂₃ : F₁₂ →L[ℝ] F₃ →L[ℝ] G)
     (mu₂₃ : F₂ →L[ℝ] F₃ →L[ℝ] F₂₃) (mu₁₂₃' : F₁ →L[ℝ] F₂₃ →L[ℝ] G)
     (h : ∀ a b c, mu₁₂₃ (mu₁₂ a b) c = mu₁₂₃' a (mu₂₃ b c))
