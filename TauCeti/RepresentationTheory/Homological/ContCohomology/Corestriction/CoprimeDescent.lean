@@ -241,22 +241,16 @@ noncomputable def h1CoprimeDescentEquiv [N.FiniteIndex] (hopen : IsOpen (N : Set
       have hx' := congrArg Subtype.val hx
       rw [coe_explicitResConj1] at hx'
       simpa only [f, LinearMap.codRestrict_apply, AddMonoidHom.coe_toZModLinearMap, z] using hx'
-  { toFun := f
-    map_add' := f.map_add
-    map_smul' := f.map_smul
-    invFun := fun y ↦ Classical.choose (hf.surjective y)
-    left_inv := fun x ↦ hf.injective (Classical.choose_spec (hf.surjective (f x)))
-    right_inv := fun y ↦ Classical.choose_spec (hf.surjective y) }
+  LinearEquiv.ofBijective f hf
 
 /-- The forward map of `h1CoprimeDescentEquiv` is restriction to the conjugation invariants. -/
 @[simp]
 theorem h1CoprimeDescentEquiv_apply [N.FiniteIndex] (hopen : IsOpen (N : Set G))
     (hcop : N.index.Coprime n) (x : H1 G A) :
     (h1CoprimeDescentEquiv hopen hcop x : H1 N A) =
-      (explicitResConj1 G A N x : H1 N A) :=
-  by
-    rw [h1CoprimeDescentEquiv]
-    change explicitRes1 G A N x = (explicitResConj1 G A N x : H1 N A)
-    exact (coe_explicitResConj1 G A N x).symm
+      (explicitResConj1 G A N x : H1 N A) := by
+  rw [h1CoprimeDescentEquiv]
+  refine (congrArg Subtype.val (LinearEquiv.ofBijective_apply _ x)).trans ?_
+  rw [LinearMap.codRestrict_apply, AddMonoidHom.coe_toZModLinearMap, coe_explicitResConj1]
 
 end TauCeti

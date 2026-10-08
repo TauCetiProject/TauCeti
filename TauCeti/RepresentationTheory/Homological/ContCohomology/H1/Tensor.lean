@@ -15,7 +15,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestrict
 
 Let `N` be an open normal subgroup of `G`, let `p` be prime to `[G : N]`, and let `A` be a
 finite `ZMod p`-module on which `N` acts trivially. This file constructs the canonical
-equivariant comparison
+comparison (available for any topological group acting trivially on `A`)
 
 ```text
 H¹(N, ZMod p) ⊗ A ≃ H¹(N, A).
@@ -67,6 +67,42 @@ attribute [local instance] trivialZModAction
 local instance continuousSMulTrivialZMod {n : ℕ} {H : Type*} [Monoid H]
     [TopologicalSpace H] : ContinuousSMul H (ZMod n) := ⟨continuous_snd⟩
 
+section TrivialAction
+
+variable {p : ℕ} {H : Type uG} [Group H] [TopologicalSpace H]
+  {A : Type uA} [AddCommGroup A] [Module (ZMod p) A] [TopologicalSpace A]
+  [IsTopologicalAddGroup A] [DistribMulAction H A] [ContinuousSMul H A]
+  [DiscreteTopology A]
+
+/-- **The first-cohomology tensor comparison.** If `H` acts trivially on a finite
+`ZMod p`-module `A`, evaluation identifies `H¹(H, ZMod p) ⊗ A` with `H¹(H, A)`.
+The map is canonical even though a basis is used to prove its bijectivity. -/
+noncomputable def h1TensorEquiv
+    (htriv : ∀ (h : H) (a : A), h • a = a) [Fact p.Prime]
+    [Module.Finite (ZMod p) A] :
+    H1 H (ZMod p) ⊗[ZMod p] A ≃ₗ[ZMod p] H1 H A :=
+  TensorProduct.congr
+      (h1EquivContinuousZModDual (fun (_ : H) (_ : ZMod p) ↦ rfl))
+      (LinearEquiv.refl _ A) ≪≫ₗ
+    continuousZModDualTensorEquiv ≪≫ₗ
+      (h1EquivContinuousZModHom htriv).symm
+
+/-- On a pure tensor, `h1TensorEquiv` is pointwise evaluation followed by scalar multiplication. -/
+@[simp]
+theorem h1TensorEquiv_tmul_apply
+    (htriv : ∀ (h : H) (a : A), h • a = a) [Fact p.Prime]
+    [Module.Finite (ZMod p) A] (x : H1 H (ZMod p)) (a : A) (h : H) :
+    Additive.toMul (H1EquivOfSmulEqSelf htriv (h1TensorEquiv htriv (x ⊗ₜ a))) h =
+      Multiplicative.ofAdd
+        (Multiplicative.toAdd (Additive.toMul (h1EquivContinuousZModDual
+          (fun (_ : H) (_ : ZMod p) ↦ rfl) x) h) • a) := by
+  simp only [h1TensorEquiv, LinearEquiv.trans_apply, TensorProduct.congr_tmul,
+    LinearEquiv.refl_apply, continuousZModDualTensorEquiv_apply,
+    H1EquivOfSmulEqSelf_h1EquivContinuousZModHom_symm_apply,
+    continuousZModDualTensorMap_tmul_apply]
+
+end TrivialAction
+
 section TensorComparison
 
 variable {p : ℕ} {G : Type uG} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
@@ -74,34 +110,6 @@ variable {p : ℕ} {G : Type uG} [Group G] [TopologicalSpace G] [IsTopologicalGr
   {A : Type uA} [AddCommGroup A] [Module (ZMod p) A] [TopologicalSpace A]
   [IsTopologicalAddGroup A] [DistribMulAction G A] [ContinuousSMul G A]
   [DiscreteTopology A]
-
-/-- **The first-cohomology tensor comparison.** If `N` acts trivially on a finite
-`ZMod p`-module `A`, evaluation identifies `H¹(N, ZMod p) ⊗ A` with `H¹(N, A)`.
-The map is canonical even though a basis is used to prove its bijectivity. -/
-noncomputable def h1TensorEquiv
-    (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Fact p.Prime]
-    [Module.Finite (ZMod p) A] :
-    H1 N (ZMod p) ⊗[ZMod p] A ≃ₗ[ZMod p] H1 N A :=
-  TensorProduct.congr
-      (h1EquivContinuousZModDual (fun (_ : N) (_ : ZMod p) ↦ rfl))
-      (LinearEquiv.refl _ A) ≪≫ₗ
-    continuousZModDualTensorEquiv ≪≫ₗ
-      (h1EquivContinuousZModHom hN).symm
-
-omit [IsTopologicalGroup G] [N.Normal] in
-/-- On a pure tensor, `h1TensorEquiv` is pointwise evaluation followed by scalar multiplication. -/
-@[simp]
-theorem h1TensorEquiv_tmul_apply
-    (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Fact p.Prime]
-    [Module.Finite (ZMod p) A] (x : H1 N (ZMod p)) (a : A) (n : N) :
-    Additive.toMul (H1EquivOfSmulEqSelf hN (h1TensorEquiv hN (x ⊗ₜ a))) n =
-      Multiplicative.ofAdd
-        (Multiplicative.toAdd (Additive.toMul (h1EquivContinuousZModDual
-          (fun (_ : N) (_ : ZMod p) ↦ rfl) x) n) • a) := by
-  simp only [h1TensorEquiv, LinearEquiv.trans_apply, TensorProduct.congr_tmul,
-    LinearEquiv.refl_apply, continuousZModDualTensorEquiv_apply,
-    H1EquivOfSmulEqSelf_h1EquivContinuousZModHom_symm_apply,
-    continuousZModDualTensorMap_tmul_apply]
 
 omit [DiscreteTopology A] in
 /-- Under the continuous-homomorphism description of `H¹`, conjugation sends a character `c`

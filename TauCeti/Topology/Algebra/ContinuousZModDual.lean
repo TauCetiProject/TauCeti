@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.LinearAlgebra.Dual.Defs
-public import Mathlib.LinearAlgebra.TensorProduct.Pi
+public import Mathlib.LinearAlgebra.TensorProduct.Basic
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Basic
 public import Mathlib.Topology.Instances.ZMod
