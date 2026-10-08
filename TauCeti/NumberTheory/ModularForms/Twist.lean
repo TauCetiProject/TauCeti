@@ -191,7 +191,7 @@ lemma _root_.ModularForm.twistₗ_apply [NeZero M] (Φ : ZMod M → ℂ) (hNL : 
 
 /-- The twist as a combination of slashes by the translation matrices `[1, a/M; 0, 1]`. This is
 the form in which the transformation law of the twist is computed. -/
-lemma _root_.ModularForm.coe_twist_eq_sum_slash [NeZero M] (Φ : ZMod M → ℂ)
+private lemma _root_.ModularForm.coe_twist_eq_sum_slash [NeZero M] (Φ : ZMod M → ℂ)
     (hNL : N * M ∣ L) (hML : M * M ∣ L)
     (f : _root_.ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
     ⇑(ModularForm.twist Φ hNL hML f) =
@@ -244,6 +244,7 @@ lemma _root_.CuspForm.twistₗ_apply [NeZero M] (Φ : ZMod M → ℂ) (hNL : N *
 
 /-- The twist of a cusp form has the same underlying function as the twist of `f` regarded as a
 modular form. -/
+@[simp]
 lemma _root_.CuspForm.coe_twist [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M ∣ L)
     (hML : M * M ∣ L)
     (f : _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
@@ -255,6 +256,7 @@ lemma _root_.CuspForm.coe_twist [NeZero M] (Φ : ZMod M → ℂ) (hNL : N * M �
 section QExpansion
 
 /-- **The `q`-expansion of a twist.** `aₙ(f ⊗ Φ) = Φ(n) aₙ(f)` for every `n`. -/
+@[simp]
 theorem _root_.ModularForm.qExpansion_twist_coeff [NeZero M] (Φ : ZMod M → ℂ)
     (hNL : N * M ∣ L)
     (hML : M * M ∣ L) (f : _root_.ModularForm ((Gamma1 N).map (mapGL ℝ)) k) (n : ℕ) :
