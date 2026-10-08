@@ -19,13 +19,13 @@ of the semi-local multiplicative groups by Shapiro's lemma.
 
 ## References
 
-The completion transport and decomposition-group API adapt the formal pattern of
-`completionCongr`, `decompositionHom`, and `decompositionEquiv` in
-`TauCeti/NumberTheory/NumberField/LocalGlobal/DecompositionGroup.lean`.
-
 * J. S. Milne, *Class Field Theory*, Chapter VII, §2 and Proposition 2.7.
 * J. Neukirch, *Algebraic Number Theory*, Chapter II, §8.
 -/
+
+/- The completion transport and decomposition-group API adapt the formal pattern of
+`completionCongr`, `decompositionHom`, and `decompositionEquiv` in
+`TauCeti/NumberTheory/NumberField/LocalGlobal/DecompositionGroup.lean`. -/
 
 public noncomputable section
 
