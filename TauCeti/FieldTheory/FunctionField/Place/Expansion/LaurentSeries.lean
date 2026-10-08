@@ -52,7 +52,7 @@ noncomputable def completionEquivLaurentSeries : P.Completion ≃ₐ[k] LaurentS
 /-- On the completed valuation ring, Laurent expansion is the coercion of power-series
 expansion. -/
 @[simp]
-theorem completionEquivLaurentSeries_apply (x : P.completionPlace.integers) :
+theorem completionEquivLaurentSeries_apply_coe (x : P.completionPlace.integers) :
     P.completionEquivLaurentSeries hP ht (x : P.Completion) =
       HahnSeries.ofPowerSeries ℤ k (P.completionIntegersEquivPowerSeries hP ht x) := by
   rw [completionEquivLaurentSeries]
@@ -61,36 +61,33 @@ theorem completionEquivLaurentSeries_apply (x : P.completionPlace.integers) :
 /-- The inverse Laurent expansion sends an embedded power series to the corresponding element of
 the completed valuation ring. -/
 @[simp]
-theorem completionEquivLaurentSeries_symm_apply (f : PowerSeries k) :
+theorem completionEquivLaurentSeries_symm_apply_ofPowerSeries (f : PowerSeries k) :
     (P.completionEquivLaurentSeries hP ht).symm
         (HahnSeries.ofPowerSeries ℤ k f) =
       ((P.completionIntegersEquivPowerSeries hP ht).symm f : P.Completion) := by
   apply (P.completionEquivLaurentSeries hP ht).injective
-  rw [AlgEquiv.apply_symm_apply, P.completionEquivLaurentSeries_apply hP ht,
+  rw [AlgEquiv.apply_symm_apply, P.completionEquivLaurentSeries_apply_coe hP ht,
     AlgEquiv.apply_symm_apply]
 
 /-- A completed function is integral exactly when its Laurent expansion comes from a power
 series. -/
+@[simp]
 theorem exists_powerSeries_eq_completionEquivLaurentSeries_iff_mem_integers
     (z : P.Completion) :
-    (∃ f : PowerSeries k, algebraMap (PowerSeries k) (LaurentSeries k) f =
+    (∃ f : PowerSeries k, HahnSeries.ofPowerSeries ℤ k f =
       P.completionEquivLaurentSeries hP ht z) ↔ z ∈ P.completionPlace.integers := by
   constructor
   · rintro ⟨f, hf⟩
-    have hf' : HahnSeries.ofPowerSeries ℤ k f =
-        P.completionEquivLaurentSeries hP ht z := by
-      simpa only [LaurentSeries.coe_algebraMap] using hf
     have hz : z =
         ((P.completionIntegersEquivPowerSeries hP ht).symm f : P.Completion) := by
       apply (P.completionEquivLaurentSeries hP ht).injective
-      rw [hf'.symm, P.completionEquivLaurentSeries_apply hP ht,
+      rw [hf.symm, P.completionEquivLaurentSeries_apply_coe hP ht,
         AlgEquiv.apply_symm_apply]
     rw [hz]
     exact Subtype.property _
   · intro hz
     refine ⟨P.completionIntegersEquivPowerSeries hP ht ⟨z, hz⟩, ?_⟩
-    simpa only [LaurentSeries.coe_algebraMap] using
-      (P.completionEquivLaurentSeries_apply hP ht ⟨z, hz⟩).symm
+    exact (P.completionEquivLaurentSeries_apply_coe hP ht ⟨z, hz⟩).symm
 
 /-- The chosen uniformizer maps to the Laurent-series variable. -/
 @[simp]
@@ -105,7 +102,7 @@ theorem completionEquivLaurentSeries_uniformizer :
   have htExpansion :
       P.completionIntegersEquivPowerSeries hP ht tInt = PowerSeries.X :=
     P.completionIntegersEquivPowerSeries_uniformizer hP ht
-  rw [← htInt, P.completionEquivLaurentSeries_apply hP ht, htExpansion,
+  rw [← htInt, P.completionEquivLaurentSeries_apply_coe hP ht, htExpansion,
     HahnSeries.ofPowerSeries_X]
 
 end TauCeti.Place
