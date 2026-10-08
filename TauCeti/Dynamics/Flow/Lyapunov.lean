@@ -34,6 +34,8 @@ point with trivial stable set, and a strict minimum is a fixed point with trivia
   point of `C`.
 * `Flow.le_of_mem_stableSet_of_antitone` and `Flow.le_of_mem_unstableSet_of_antitone`: the value
   at the limit bounds the values along the orbit.
+* `Flow.fixed_of_antitone_of_strictMax` and `Flow.fixed_of_antitone_of_strictMin`: a strict
+  maximum or minimum of a function antitone along orbits is a fixed point.
 * `Flow.stableSet_eq_singleton_of_antitone` and `Flow.unstableSet_eq_singleton_of_antitone`:
   the stable set of a strict maximum, and the unstable set of a strict minimum, is a point.
 
@@ -67,11 +69,12 @@ theorem le_of_mem_unstableSet_of_antitone (hy : y ∈ φ.unstableSet x) (hg : Co
     (hanti : Antitone fun t ↦ g (φ t y)) : g y ≤ g x := by
   simpa only [map_zero_apply] using hanti.ge_of_tendsto (hg.tendsto.comp (mem_unstableSet.1 hy)) 0
 
-/-- A strict global maximum of a function antitone along every orbit is a fixed point: in
-backward time the orbit cannot go below the maximum, and in forward time it is the inverse
-of a backward orbit. -/
-private theorem fixed_of_antitone_of_strictMax (hanti : ∀ y, Antitone fun t ↦ g (φ t y))
+/-- **A strict maximum is a fixed point.** A strict global maximum of a function antitone along
+every orbit is fixed by the flow. -/
+theorem fixed_of_antitone_of_strictMax (hanti : ∀ y, Antitone fun t ↦ g (φ t y))
     (hmax : ∀ y, y ≠ x → g y < g x) (t : ℝ) : φ t x = x := by
+  -- In backward time the orbit cannot go below the maximum, and in forward time it is the inverse
+  -- of a backward orbit.
   have hneg : ∀ s ≤ 0, φ s x = x := fun s hs ↦ by
     by_contra hne
     have h : g x ≤ g (φ s x) := by simpa only [map_zero_apply] using hanti x hs
@@ -80,6 +83,20 @@ private theorem fixed_of_antitone_of_strictMax (hanti : ∀ y, Antitone fun t �
   · exact hneg t ht
   · calc φ t x = φ t (φ (-t) x) := by rw [hneg (-t) (neg_nonpos.2 ht)]
       _ = x := by rw [← map_add, add_neg_cancel, map_zero_apply]
+
+/-- Reversing the flow and negating the function preserves antitonicity along orbits. -/
+private theorem antitone_reverse_neg (hanti : ∀ y, Antitone fun t ↦ g (φ t y)) (y : α) :
+    Antitone fun t ↦ (-g) (φ.reverse t y) := fun s t hst ↦ by
+  simp only [reverse_apply, Pi.neg_apply]
+  exact neg_le_neg (hanti y (neg_le_neg hst))
+
+/-- **A strict minimum is a fixed point.** A strict global minimum of a function antitone along
+every orbit is fixed by the flow. -/
+theorem fixed_of_antitone_of_strictMin (hanti : ∀ y, Antitone fun t ↦ g (φ t y))
+    (hmin : ∀ y, y ≠ x → g x < g y) (t : ℝ) : φ t x = x := by
+  have h := fixed_of_antitone_of_strictMax (antitone_reverse_neg hanti)
+    (fun y hy ↦ neg_lt_neg (hmin y hy)) (-t)
+  rwa [reverse_apply, neg_neg] at h
 
 /-- **The stable set of a strict maximum is a point.** Let `g` be antitone along every orbit and
 continuous at a point `x` at which it has a strict global maximum. Then no other orbit converges
@@ -100,10 +117,8 @@ theorem unstableSet_eq_singleton_of_antitone (hg : ContinuousAt g x)
     (hanti : ∀ y, Antitone fun t ↦ g (φ t y)) (hmin : ∀ y, y ≠ x → g x < g y) :
     φ.unstableSet x = {x} := by
   rw [← stableSet_reverse]
-  refine stableSet_eq_singleton_of_antitone hg.neg (fun y s t hst ↦ ?_)
+  exact stableSet_eq_singleton_of_antitone hg.neg (antitone_reverse_neg hanti)
     fun y hy ↦ neg_lt_neg (hmin y hy)
-  simp only [reverse_apply, Pi.neg_apply]
-  exact neg_le_neg (hanti y (neg_le_neg hst))
 
 end Limit
 
