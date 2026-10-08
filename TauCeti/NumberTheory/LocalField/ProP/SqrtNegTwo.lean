@@ -202,8 +202,12 @@ theorem range_localCyclotomicCharacter_ratPadicSqrtNegTwo :
     refine (hk.eq_or_lt.resolve_right fun h3 ↦ ?_).symm
     obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le (Nat.succ_le_of_lt h3)
     have h8 := toZModPow_three_eq_one_or_eq_three_of_mem_range hmem
-    rw [hu, map_add, map_neg, map_one, map_pow, map_ofNat, pow_add,
-      show (2 : ZMod (2 ^ 3)) ^ 3 = 0 by decide, zero_mul, add_zero] at h8
+    rw [hu] at h8
+    have hpow : PadicInt.toZModPow 3 (2 : ℤ_[2]) ^ 3 = 0 := by
+      rw [map_ofNat]
+      decide
+    simp only [Nat.reducePow, Nat.succ_eq_add_one, Nat.reduceAdd, pow_add, map_add, map_neg,
+      map_one, map_mul, map_pow, hpow, zero_mul, add_zero] at h8
     rcases h8 with h8 | h8 <;> exact absurd h8 (by decide)
   rw [hrange, show u = -negThreeUnit from Units.ext (by rw [hu, negThreeUnit_neg_coe])]
 
