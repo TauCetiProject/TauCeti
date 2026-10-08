@@ -143,6 +143,11 @@ private def toHarm (i : ι) : K.X i →ₗ[R] harm K i :=
 private def ofHarm (i : ι) : harm K i →ₗ[R] K.X i :=
   (cyc K i).subtype ∘ₗ (harm K i).subtype
 
+omit [∀ i, IsSemisimpleModule R (K.X i)] in
+private lemma mem_bdryCyc {i : ι} {x : K.X i} (hx : x ∈ bdry K i) :
+    (⟨x, bdry_le_cyc K i hx⟩ : cyc K i) ∈ bdryCyc K i :=
+  hx
+
 private lemma toCyc_apply_of_mem {i : ι} {x : K.X i} (hx : x ∈ cyc K i) :
     toCyc K i x = ⟨x, hx⟩ :=
   Submodule.projectionOnto_apply_of_mem_left _ hx
@@ -150,12 +155,12 @@ private lemma toCyc_apply_of_mem {i : ι} {x : K.X i} (hx : x ∈ cyc K i) :
 private lemma toBdry_apply_of_mem {i : ι} {x : K.X i} (hx : x ∈ bdry K i) :
     toBdry K i x = ⟨⟨x, bdry_le_cyc K i hx⟩, hx⟩ := by
   rw [toBdry, LinearMap.comp_apply, toCyc_apply_of_mem K (bdry_le_cyc K i hx)]
-  exact Submodule.projectionOnto_apply_of_mem_left _ (show _ ∈ bdryCyc K i from hx)
+  exact Submodule.projectionOnto_apply_of_mem_left _ (mem_bdryCyc K hx)
 
 private lemma toHarm_apply_of_mem {i : ι} {x : K.X i} (hx : x ∈ bdry K i) :
     toHarm K i x = 0 := by
   rw [toHarm, LinearMap.comp_apply, toCyc_apply_of_mem K (bdry_le_cyc K i hx)]
-  exact Submodule.projectionOnto_apply_of_mem_right _ (show _ ∈ bdryCyc K i from hx)
+  exact Submodule.projectionOnto_apply_of_mem_right _ (mem_bdryCyc K hx)
 
 private lemma toHarm_ofHarm (i : ι) (x : harm K i) : toHarm K i (ofHarm K i x) = x := by
   rw [toHarm, LinearMap.comp_apply, ofHarm, LinearMap.comp_apply, Submodule.subtype_apply,
