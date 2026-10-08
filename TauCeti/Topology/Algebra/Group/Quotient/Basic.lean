@@ -28,6 +28,8 @@ Generic facts about quotients by subgroups of topological groups. Most results u
 * `TauCeti.quotientOpenSubgroupMap`: the quotient homomorphism restricted to an open subgroup.
 * `TauCeti.quotientSubgroupOfEquivMap`: for an open normal subgroup `V`, the quotient
   `W ⧸ V.subgroupOf W` is isomorphic, as a topological group, to the image of `W` in `G ⧸ V`.
+* `TauCeti.quotientQuotientContinuousMulEquiv`: for an open normal subgroup `V` contained in a
+  normal subgroup `W`, the third isomorphism theorem `(G ⧸ V) ⧸ W.map (mk' V) ≃ₜ* G ⧸ W`.
 
 ## Main results
 
@@ -265,6 +267,28 @@ theorem coe_quotientSubgroupOfEquivMap_mk (V W : Subgroup G) [V.Normal]
     ((quotientSubgroupOfEquivMap V W hV (w : W ⧸ V.subgroupOf W) : W.map (QuotientGroup.mk' V)) :
       G ⧸ V) = ((w : G) : G ⧸ V) :=
   (rfl)
+
+/-- For an open normal subgroup `V` contained in a normal subgroup `W`, the third isomorphism
+theorem `(G ⧸ V) ⧸ W.map (mk' V) ≃* G ⧸ W` is an isomorphism of topological groups, both groups
+being discrete. -/
+noncomputable def quotientQuotientContinuousMulEquiv (V W : Subgroup G) [V.Normal] [W.Normal]
+    (hVW : V ≤ W) (hV : IsOpen (V : Set G)) :
+    (G ⧸ V) ⧸ W.map (QuotientGroup.mk' V) ≃ₜ* G ⧸ W :=
+  haveI : DiscreteTopology (G ⧸ V) := QuotientGroup.discreteTopology hV
+  haveI : DiscreteTopology (G ⧸ W) :=
+    QuotientGroup.discreteTopology (Subgroup.isOpen_mono hVW hV)
+  { QuotientGroup.quotientQuotientEquivQuotient V W hVW with
+    continuous_toFun := continuous_of_discreteTopology
+    continuous_invFun := continuous_of_discreteTopology }
+
+/-- `quotientQuotientContinuousMulEquiv` sends the class of the class of `g` to the class of
+`g`. -/
+@[simp]
+theorem quotientQuotientContinuousMulEquiv_mk (V W : Subgroup G) [V.Normal] [W.Normal]
+    (hVW : V ≤ W) (hV : IsOpen (V : Set G)) (g : G) :
+    quotientQuotientContinuousMulEquiv V W hVW hV
+        ((g : G ⧸ V) : (G ⧸ V) ⧸ W.map (QuotientGroup.mk' V)) = (g : G ⧸ W) :=
+  QuotientGroup.quotientQuotientEquivQuotient_apply_mk V W hVW g
 
 end SubgroupOf
 

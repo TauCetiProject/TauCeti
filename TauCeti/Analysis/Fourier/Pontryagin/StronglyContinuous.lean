@@ -283,7 +283,7 @@ Fourier–Stieltjes transform of a finite inner regular measure on the Pontryagi
 theorem ContRepresentation.exists_pontryaginMeasureTransform_eq_inner
     (π : ContRepresentation ℂ (Multiplicative G) H)
     (hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v)
-    (hπ : TauCeti.ContRepresentation.IsUnitary π) (ξ : H) :
+    (hπ : ContRepresentation.IsUnitary π) (ξ : H) :
     ∃ μ : FiniteMeasure (PontryaginDual (Multiplicative G)),
       μ.toMeasure.InnerRegular ∧ ∀ g, μ.pontryaginMeasureTransform g = ⟪ξ, π (.ofAdd g) ξ⟫_ℂ := by
   borelize G

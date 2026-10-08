@@ -12,13 +12,15 @@ public import Mathlib.Topology.Constructions
 public import Mathlib.GroupTheory.GroupAction.Defs
 public import TauCeti.Topology.Instances.AddCircle.Defs
 import TauCeti.Topology.Homeomorph.Semiconj
+import Mathlib.Topology.Algebra.ConstMulAction
 
 /-!
 # Mapping tori and fibering over the circle
 
 For a homeomorphism `φ : F ≃ₜ F`, the mapping torus identifies `(φ x, t + 1)` with
-`(x, t)`. The quotient model below is deliberately topological: manifold charts and
-the local-triviality theorem are separate geometric input. `MappingTorusPresentation`
+`(x, t)`. The quotient model below is deliberately topological: manifold charts are separate
+geometric input. Local product charts for the circle projection are constructed in
+`TauCeti.Topology.MappingTorus.LocalProduct`. `MappingTorusPresentation`
 stores the fibre and monodromy, while `FibersOverCircle` asserts that such a presentation
 exists.
 
@@ -73,6 +75,11 @@ def action (φ : F ≃ₜ F) : AddAction ℤ (F × ℝ) where
     · push_cast
       ring_nf
 
+/-- The defining integer action applies monodromy and translates the height. -/
+@[simp] theorem action_vadd (φ : F ≃ₜ F) (n : ℤ) (p : F × ℝ) :
+    letI := action φ
+    n +ᵥ p = ((φ ^ n) p.1, p.2 + n) := (rfl)
+
 end MappingTorus
 
 /-- The topological mapping torus of a self-homeomorphism. -/
@@ -117,6 +124,19 @@ theorem mk_surjective (φ : F ≃ₜ F) : Function.Surjective fun p : F × ℝ �
 /-- The quotient map from the cylinder to the mapping torus is continuous. -/
 theorem continuous_mk (φ : F ≃ₜ F) : Continuous fun p : F × ℝ ↦ mk φ p.1 p.2 :=
   continuous_quotient_mk'
+
+/-- The cylinder quotient defining a mapping torus is an open map. -/
+theorem isOpenMap_mk (φ : F ≃ₜ F) :
+    IsOpenMap (fun p : F × ℝ => mk φ p.1 p.2) := by
+  let _ := action φ
+  have : ContinuousConstVAdd ℤ (F × ℝ) := ⟨fun n => by
+    simp only [action_vadd]
+    exact ((φ ^ n).continuous.comp continuous_fst).prodMk
+      (continuous_snd.add continuous_const)⟩
+  -- The cylinder map wraps the orbit quotient's `mk'` with a pair of projections.
+  convert (isOpenMap_quotient_mk'_add (Γ := ℤ) (T := F × ℝ)) using 1
+  funext p
+  rfl
 
 /-- The canonical inclusion of the fibre at height zero into its mapping torus. -/
 def incl (φ : F ≃ₜ F) : C(F, MappingTorus φ) :=

@@ -96,9 +96,8 @@ theorem unimodularLift_iff_nonsingularLift [W.IsElliptic] {P : PointClass F} :
   induction P using Quotient.inductionOn with | _ P => ?_
   rw [unimodularLift_iff, nonsingularLift_iff, TauCeti.Module.isUnimodular_iff_exists_isUnit]
   simp_rw [isUnit_iff_ne_zero, ← Function.ne_iff]
-  refine ⟨fun h ↦ (equation_iff_nonsingular_of_ne_zero h.2).mp h.1, fun h ↦ ⟨h.1, fun hP ↦ ?_⟩⟩
-  -- the zero representative is singular
-  exact Y_ne_zero_of_Z_eq_zero h (by simp [hP]) (by simp [hP])
+  exact ⟨fun h ↦ (equation_iff_nonsingular_of_ne_zero h.2).mp h.1,
+    fun h ↦ ⟨h.1, ne_zero_of_nonsingular h⟩⟩
 
 variable (W) [W.IsElliptic]
 
