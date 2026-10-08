@@ -163,9 +163,10 @@ theorem coeff_trunc_log_comp_trunc_exp_sub_one {M N k : ℕ} (hM : k < M) (hN : 
 theorem derivative_mk_inv_smul (s : ℕ → A) :
     d⁄dX (mk fun n ↦ (n : ℚ)⁻¹ • s n) = mk fun n ↦ s (n + 1) := by
   ext n
-  have hn : ((n + 1 : ℕ) : ℚ) ≠ 0 := by positivity
-  rw [coeff_derivative, coeff_mk, coeff_mk, smul_mul_assoc, ← Nat.cast_succ, mul_comm,
-    ← nsmul_eq_mul, ← Nat.cast_smul_eq_nsmul ℚ, smul_smul, inv_mul_cancel₀ hn, one_smul]
+  simp only [coeff_derivative, coeff_mk]
+  -- Move the factor `n + 1` into the rational scalar, where it cancels against `(n + 1)⁻¹`.
+  rw [mul_comm, ← Nat.cast_succ, ← map_natCast (algebraMap ℚ A), ← Algebra.smul_def, smul_smul]
+  simp [Nat.cast_add_one_ne_zero]
 
 /-- A power series with constant coefficient one has logarithm `∑ sₙ Xⁿ / n` exactly when
 `∑ sₙ₊₁ Xⁿ` is its logarithmic derivative, that is, when `(∑ sₙ₊₁ Xⁿ) * f = f'`. -/
@@ -188,6 +189,7 @@ theorem constantCoeff_subst_exp {g : A⟦X⟧} (hg : constantCoeff g = 0) :
 
 /-- The formal exponential undoes the formal logarithm: `exp (log f) = f` when `f` has constant
 coefficient one. -/
+@[simp]
 theorem subst_exp_logOf {f : A⟦X⟧} (hf : constantCoeff f = 1) :
     (exp A).subst (logOf f) = f := by
   have hsub : HasSubst (f - 1) := HasSubst.of_constantCoeff_zero' (by simp [hf])
@@ -197,6 +199,7 @@ theorem subst_exp_logOf {f : A⟦X⟧} (hf : constantCoeff f = 1) :
 
 /-- The formal logarithm undoes the formal exponential: `log (exp g) = g` when `g` has no constant
 term. -/
+@[simp]
 theorem logOf_subst_exp {g : A⟦X⟧} (hg : constantCoeff g = 0) :
     logOf ((exp A).subst g) = g := by
   have hsub : HasSubst g := HasSubst.of_constantCoeff_zero' hg
@@ -237,8 +240,7 @@ theorem logOf_one : logOf (1 : A⟦X⟧) = 0 := by
 /-- The logarithm of `1 - c X` is `-∑ cⁿ Xⁿ / n`. -/
 theorem logOf_one_sub_C_mul_X (c : A) :
     logOf (1 - C c * X) = mk fun n ↦ (n : ℚ)⁻¹ • -c ^ n := by
-  rw [logOf_eq_mk_iff (by simp)]
-  rw [mul_sub, mul_one, show ∀ g : A⟦X⟧, g * (C c * X) = C c * (X * g) from fun g ↦ by ring]
+  rw [logOf_eq_mk_iff (by simp), mul_sub, mul_one, mul_comm _ (C c * X), mul_assoc]
   ext (_ | n) <;> simp [coeff_succ_X_mul, pow_succ, mul_comm]
 
 /-- The logarithm of `1 - a X + q X²` is `-∑ tₙ Xⁿ / n`, where `t` is the sequence with `t₀ = 2`,
@@ -247,14 +249,12 @@ theorem logOf_one_sub_C_mul_X (c : A) :
 theorem logOf_one_sub_C_mul_X_add_C_mul_X_sq (a q : A) {t : ℕ → A} (h₀ : t 0 = 2) (h₁ : t 1 = a)
     (h : ∀ n, t (n + 2) = a * t (n + 1) - q * t n) :
     logOf (1 - C a * X + C q * X ^ 2) = mk fun n ↦ (n : ℚ)⁻¹ • -t n := by
-  rw [logOf_eq_mk_iff (by simp)]
-  rw [mul_add, mul_sub, mul_one,
-    show ∀ g : A⟦X⟧, g * (C a * X) = C a * (X * g) from fun g ↦ by ring,
-    show ∀ g : A⟦X⟧, g * (C q * X ^ 2) = C q * (X * (X * g)) from fun g ↦ by ring]
+  rw [logOf_eq_mk_iff (by simp), mul_add, mul_sub, mul_one, mul_comm _ (C a * X),
+    mul_comm _ (C q * X ^ 2), mul_assoc, mul_assoc]
   ext (_ | _ | n)
   · simp [h₁]
-  · simp [coeff_succ_X_mul, coeff_X, h, h₀, h₁]
-  · simp [coeff_succ_X_mul, coeff_X, h (n + 1)]
+  · simp [coeff_succ_X_mul, coeff_X_pow_mul', coeff_X, h, h₀, h₁]
+  · simp [coeff_succ_X_mul, coeff_X_pow_mul', coeff_X, h (n + 1)]
 
 /-! ## Exponentials of power sums -/
 
