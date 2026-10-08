@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.ProP.Rank
-import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
-import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 
 /-!
 # The lower bound for the generator rank of a local absolute Galois group
