@@ -21,7 +21,7 @@ kernel, `TauCeti.levelSetChart` parametrizes the universal level set near `(x, l
 map `TauCeti.levelSetParameterMap`.
 
 This file calculates that map's derivative at the chart origin. It is exactly
-`TauCeti.parameterProj D₁ D₂`, the linear parameter projection developed in
+`D₁.parameterProj D₂`, the linear parameter projection developed in
 `TauCeti.Analysis.Fredholm.Parametric`. Every statement about that linear map therefore transfers
 to the derivative at the origin: it is surjective exactly when `D₁` is, by
 `TauCeti.surjective_fderiv_levelSetParameterMap_iff`; it has the same index as `D₁`, by
@@ -171,11 +171,11 @@ theorem hasStrictFDerivAt_levelSetParameterMap
     (hker : (D₁.coprod D₂).ker.ClosedComplemented)
     (hxl : f (x, l) = c) :
     HasStrictFDerivAt (levelSetParameterMap hf hD hker hxl)
-      (parameterProj D₁ D₂) 0 := by
+      (D₁.parameterProj D₂) 0 := by
   have hchart := hasStrictFDerivAt_coe_levelSetChart_symm hf
     (LinearMap.range_eq_top.mpr hD) hker hxl
   have hcomp := hchart.snd
-  have hproj : parameterProj D₁ D₂ =
+  have hproj : D₁.parameterProj D₂ =
       (ContinuousLinearMap.snd K E Λ).comp (D₁.coprod D₂).ker.subtypeL := by
     ext v
     simp
@@ -190,7 +190,7 @@ theorem fderiv_levelSetParameterMap
     (hD : Surjective (D₁.coprod D₂))
     (hker : (D₁.coprod D₂).ker.ClosedComplemented)
     (hxl : f (x, l) = c) :
-    fderiv K (levelSetParameterMap hf hD hker hxl) 0 = parameterProj D₁ D₂ :=
+    fderiv K (levelSetParameterMap hf hD hker hxl) 0 = D₁.parameterProj D₂ :=
   (hasStrictFDerivAt_levelSetParameterMap hf hD hker hxl).hasFDerivAt.fderiv
 
 /-- **Regularity at the chart origin.** The derivative of the local parameter map at the chart
@@ -204,7 +204,7 @@ theorem surjective_fderiv_levelSetParameterMap_iff
     (hxl : f (x, l) = c) :
     Surjective (fderiv K (levelSetParameterMap hf hD hker hxl) 0) ↔ Surjective D₁ := by
   rw [fderiv_levelSetParameterMap]
-  exact parameterProj_surjective_iff D₁ D₂ hD
+  exact D₁.parameterProj_surjective_iff D₂ hD
 
 /-- The derivative of the local parameter map at the chart origin has the same index as the
 fixed-parameter linearization. Neither map is assumed Fredholm: both indices are differences of
@@ -225,7 +225,7 @@ theorem index_fderiv_levelSetParameterMap
 the parameter component of the kernel section of the derivative of `f` there.
 
 `TauCeti.hasStrictFDerivAt_levelSetParameterMap` is the case `k = 0`, where the kernel section is
-the inclusion of `ker (D₁.coprod D₂)` and the composite is `TauCeti.parameterProj D₁ D₂`. -/
+the inclusion of `ker (D₁.coprod D₂)` and the composite is `D₁.parameterProj D₂`. -/
 theorem hasFDerivAt_levelSetParameterMap_of_mem
     (hf : HasStrictFDerivAt f (D₁.coprod D₂) (x, l))
     (hD : Surjective (D₁.coprod D₂))
@@ -276,10 +276,10 @@ theorem surjective_fderiv_levelSetParameterMap_iff_of_mem
   have hsurj : Surjective (A₁.coprod A₂) :=
     hf.surjective_of_mem_implicitCoordSource (LinearMap.range_eq_top.mpr hD) hker hmem hA
   rw [(hasFDerivAt_levelSetParameterMap_of_mem hf hD hker hxl hk hmem hA).fderiv]
-  rw [← parameterProj_surjective_iff A₁ A₂ hsurj]
+  rw [← A₁.parameterProj_surjective_iff A₂ hsurj]
   have hfactor : ⇑((ContinuousLinearMap.snd K E Λ).comp
       ((A₁.coprod A₂).kerSection (Classical.choose hker))) =
-      parameterProj A₁ A₂ ∘ (A₁.coprod A₂).kerEquivOfProd (Classical.choose hker) hinv :=
+      A₁.parameterProj A₂ ∘ (A₁.coprod A₂).kerEquivOfProd (Classical.choose hker) hinv :=
     funext fun v ↦ by simp
   rw [hfactor]
   exact ⟨fun h ↦ h.of_comp,
@@ -299,7 +299,7 @@ theorem isFredholm_fderiv_levelSetParameterMap
     ContinuousLinearMap.IsFredholm
       (fderiv K (levelSetParameterMap hf hD (hD₁.closedComplemented_ker_coprod hD) hxl) 0) := by
   rw [fderiv_levelSetParameterMap]
-  exact isFredholm_parameterProj D₁ D₂ hD₁
+  exact D₁.isFredholm_parameterProj D₂ hD₁
 
 end CompleteScalar
 
@@ -329,7 +329,7 @@ rewrites it as failure of regularity of the original equation.
 
 The differentiability threshold is the one currently supplied by
 `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints`, rewritten using the fact
-that the kernel of `parameterProj D₁ D₂` has the same dimension as `ker D₁`. -/
+that the kernel of `D₁.parameterProj D₂` has the same dimension as `ker D₁`. -/
 theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_levelSetParameterMap
     {n : ℕ∞ω} {U : Set (D₁.coprod D₂).ker}
     (hf : HasStrictFDerivAt f (D₁.coprod D₂) (x, l))
@@ -351,12 +351,12 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_levelSetPar
   let g := levelSetParameterMap hf hD (hD₁.closedComplemented_ker_coprod hD) hxl
   have hg : ContDiffAt ℝ n g 0 :=
     contDiffAt_levelSetParameterMap hf hcont hD (hD₁.closedComplemented_ker_coprod hD) hxl
-  have hg' : fderiv ℝ g 0 = parameterProj D₁ D₂ :=
+  have hg' : fderiv ℝ g 0 = D₁.parameterProj D₂ :=
     fderiv_levelSetParameterMap hf hD (hD₁.closedComplemented_ker_coprod hD) hxl
   have hn' :
-      ((finrank ℝ (parameterProj D₁ D₂).ker * finrank ℝ (parameterProj D₁ D₂).ker + 1 : ℕ) :
+      ((finrank ℝ (D₁.parameterProj D₂).ker * finrank ℝ (D₁.parameterProj D₂).ker + 1 : ℕ) :
         ℕ∞ω) ≤ n := by
-    simpa only [finrank_ker_parameterProj] using hn
+    simpa only [ContinuousLinearMap.finrank_ker_parameterProj] using hn
   have hFred := isFredholm_fderiv_levelSetParameterMap hf hD hxl hD₁
   have hn'' :
       ((finrank ℝ (fderiv ℝ g 0).ker * finrank ℝ (fderiv ℝ g 0).ker + 1 : ℕ) : ℕ∞ω) ≤ n := by

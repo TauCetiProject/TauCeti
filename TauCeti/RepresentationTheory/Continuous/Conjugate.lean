@@ -25,31 +25,28 @@ need one conjugate to exist.
 
 ## Main definitions
 
-* `TauCeti.ContRepresentation.conjugate`: the conjugate representation.
+* `OrthonormalBasis.conjugate`: the conjugate representation.
 
 ## Main statements
 
-* `TauCeti.ContRepresentation.continuous_conjugate` and
-  `TauCeti.ContRepresentation.IsUnitary.conjugate`: the conjugate of a continuous representation is
+* `OrthonormalBasis.continuous_conjugate` and
+  `OrthonormalBasis.isUnitary_conjugate`: the conjugate of a continuous representation is
   continuous, and of a unitary one is unitary.
-* `TauCeti.ContRepresentation.conjugate_conjugate`: conjugating twice returns the original
+* `OrthonormalBasis.conjugate_conjugate`: conjugating twice returns the original
   representation.
-* `TauCeti.ContRepresentation.star_matrixCoeff_eq_matrixCoeff_conjugate`: the conjugate of a matrix
+* `OrthonormalBasis.star_matrixCoeff_eq_matrixCoeff_conjugate`: the conjugate of a matrix
   coefficient of `π` is a matrix coefficient of the conjugate of `π`.
 
-This supplies the conjugation half of the representative-ring item of Layer 3 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-whose statement of it is "closed under conjugation (via the contragredient)". The mathematical
-development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
+The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
 -/
 
 public section
 
+open TauCeti ContRepresentation
+
 open scoped InnerProductSpace
 
-namespace TauCeti
-
-namespace ContRepresentation
+namespace OrthonormalBasis
 
 variable {𝕜 ι G V : Type*} [RCLike 𝕜] [Fintype ι] [Monoid G] [TopologicalSpace G]
   [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] (e : OrthonormalBasis ι 𝕜 V)
@@ -83,8 +80,8 @@ theorem continuous_conjugate (hπ : Continuous π) : Continuous (conjugate e π)
 
 omit [TopologicalSpace G] in
 /-- The conjugate of a unitary representation is unitary. -/
-theorem IsUnitary.conjugate {π : ContRepresentation 𝕜 G V} (hπ : IsUnitary π) :
-    IsUnitary (ContRepresentation.conjugate e π) :=
+theorem isUnitary_conjugate {π : ContRepresentation 𝕜 G V} (hπ : IsUnitary π) :
+    IsUnitary (OrthonormalBasis.conjugate e π) :=
   (isUnitary_iff_norm_map _).mpr fun g x ↦ by simp [hπ.norm_map]
 
 /-- **The conjugate of a matrix coefficient is a matrix coefficient of the conjugate
@@ -97,6 +94,4 @@ theorem star_matrixCoeff_eq_matrixCoeff_conjugate (hπ : Continuous π) (v w : V
   ext g
   simp [inner_conjugation_conjugation, RCLike.star_def]
 
-end ContRepresentation
-
-end TauCeti
+end OrthonormalBasis

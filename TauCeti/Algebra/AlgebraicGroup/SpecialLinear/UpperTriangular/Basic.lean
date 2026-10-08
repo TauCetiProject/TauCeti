@@ -123,10 +123,7 @@ theorem mem_definingPointsSubgroup_iff
       Matrix.SpecialLinearGroup.toGL (SpecialLinear.pointsMulEquiv (R := R) (A := A) n g) ∈
         upperTriangularGroup (Fin n) A := by
   rw [definingHopfIdeal_def,
-    CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff_of_surjective
-      (SpecialLinear.coordinateMap R n)
-      (CommHopfAlgCat.mkQuotient_surjective
-        (GeneralLinear.coordinateHopfAlgebra R n) (SpecialLinear.definingHopfIdeal R n)),
+    CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff (SpecialLinear.coordinateMap R n),
     GeneralLinear.UpperTriangular.mem_definingPointsSubgroup_iff,
     CommHopfAlgCat.mapPointsFunctor_app_apply,
     ← CommHopfAlgCat.quotientPointsHom_apply
