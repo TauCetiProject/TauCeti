@@ -276,14 +276,14 @@ private theorem zigzagIntegerGrade_zero_le_span :
 noncomputable def zigzagGradedSimple (i : V) :
     GradedModuleCat.{max u w} (zigzagIntegerGrade k G) :=
   let _ := zigzagIntegerGradedAlgebra k G
-  gradedIdempotentHead (zigzagIntegerGrade k G)
+  gradedPositiveMulQuotient (zigzagIntegerGrade k G)
     (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G i)
 
 /-- A graded vertex simple is the generic graded head of its vertex idempotent. -/
 theorem zigzagGradedSimple_def (i : V) :
     zigzagGradedSimple k G i =
       let _ := zigzagIntegerGradedAlgebra k G
-      gradedIdempotentHead (zigzagIntegerGrade k G)
+      gradedPositiveMulQuotient (zigzagIntegerGrade k G)
         (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G i) := by
   rw [zigzagGradedSimple]
 
@@ -291,7 +291,7 @@ theorem zigzagGradedSimple_def (i : V) :
 theorem gradedFiniteModules_zigzagGradedSimple (i : V) :
     gradedFiniteModules (zigzagIntegerGrade k G) (zigzagGradedSimple k G i) :=
   let _ := zigzagIntegerGradedAlgebra k G
-  gradedFiniteModules_gradedIdempotentHead _ _
+  gradedFiniteModules_gradedPositiveMulQuotient _ _
 
 /-- **The graded vertex simples are simple graded modules.** -/
 theorem simple_zigzagGradedSimple (i : V) : Simple (zigzagGradedSimple k G i) :=

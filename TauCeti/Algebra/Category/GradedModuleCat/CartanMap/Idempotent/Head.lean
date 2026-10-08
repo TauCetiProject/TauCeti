@@ -36,7 +36,7 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
 
 /-- The heads `Sᵢ` of the `A eᵢ`, as finite graded modules. -/
 private abbrev headFamily (i : I) : (gradedFiniteModules 𝒜).FullSubcategory :=
-  ⟨gradedIdempotentHead 𝒜 (he₀ i), gradedFiniteModules_gradedIdempotentHead 𝒜 (he₀ i)⟩
+  ⟨gradedPositiveMulQuotient 𝒜 (he₀ i), gradedFiniteModules_gradedPositiveMulQuotient 𝒜 (he₀ i)⟩
 
 /-! ### The simple-class basis -/
 
@@ -65,7 +65,8 @@ graded head of `A eᵢ`. -/
 theorem gradedIdempotentHeadBasis_apply (i : I) :
     gradedIdempotentHeadBasis hneg he he₀ hspan hne i =
       LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜)
-        ⟨gradedIdempotentHead 𝒜 (he₀ i), gradedFiniteModules_gradedIdempotentHead 𝒜 (he₀ i)⟩ := by
+        ⟨gradedPositiveMulQuotient 𝒜 (he₀ i),
+          gradedFiniteModules_gradedPositiveMulQuotient 𝒜 (he₀ i)⟩ := by
   exact gradedSimpleClassBasis_apply _ _ _ _ _ _ i
 
 /-- **The coordinates in the basis `[Sᵢ]` are the idempotent coordinates**: the `i`th coordinate
