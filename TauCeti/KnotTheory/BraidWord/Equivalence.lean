@@ -95,13 +95,7 @@ theorem append_left (pre : BraidWord n) (h : WordEquiv w w') :
   · intro u v h
     exact of_artinEquiv ((ArtinEquiv.of_step h).append_left pre)
   · intro u v h
-    cases h with
-    | insert u v i ε =>
-      exact of_freeCancelStep (by
-        simpa only [List.append_assoc] using FreeCancelStep.insert (pre ++ u) v i ε)
-    | delete u v i ε =>
-      exact of_freeCancelStep (by
-        simpa only [List.append_assoc] using FreeCancelStep.delete (pre ++ u) v i ε)
+    exact of_freeCancelEquiv ((FreeCancelEquiv.of_step h).append_left pre)
 
 /-- A common suffix preserves braid-word equivalence. -/
 theorem append_right (h : WordEquiv w w') (suf : BraidWord n) :
@@ -111,13 +105,7 @@ theorem append_right (h : WordEquiv w w') (suf : BraidWord n) :
   · intro u v h
     exact of_artinEquiv ((ArtinEquiv.of_step h).append_right suf)
   · intro u v h
-    cases h with
-    | insert u v i ε =>
-      exact of_freeCancelStep (by
-        simpa only [List.append_assoc] using FreeCancelStep.insert u (v ++ suf) i ε)
-    | delete u v i ε =>
-      exact of_freeCancelStep (by
-        simpa only [List.append_assoc] using FreeCancelStep.delete u (v ++ suf) i ε)
+    exact of_freeCancelEquiv ((FreeCancelEquiv.of_step h).append_right suf)
 
 /-- Concatenating equivalent braid words preserves equivalence. -/
 theorem append {u u' : BraidWord n} (hu : WordEquiv u u') (h : WordEquiv w w') :
