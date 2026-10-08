@@ -55,7 +55,6 @@ theorem analyticProdHomeomorph_analyticDistinguishedPoint_prodCone (σ : Φ.cone
 
 /-- A point of the product realization lies in the orbit of a product cone exactly when its two
 components lie in the orbits of the factor cones. -/
-@[simp]
 theorem analyticProdHomeomorph_mem_prod_analyticConeOrbit_iff {σ : Φ.cones} {τ : Ψ.cones}
     {x : (Φ.prod Ψ).analyticRealization (Fan.IsRegular.prod Φ Ψ hΦ hΨ)} :
     Φ.analyticProdHomeomorph Ψ hΦ hΨ x ∈
@@ -79,7 +78,6 @@ theorem analyticProdHomeomorph_mem_prod_analyticConeOrbit_iff {σ : Φ.cones} {�
     Ψ.eq_of_mem_analyticConeOrbit hΨ h.2 (hmem hx).2]
 
 /-- The orbit of a product cone is the preimage of the product of the factor orbits. -/
-@[simp]
 theorem preimage_analyticProdHomeomorph_prod_analyticConeOrbit (σ : Φ.cones) (τ : Ψ.cones) :
     Φ.analyticProdHomeomorph Ψ hΦ hΨ ⁻¹'
         (Φ.analyticConeOrbit hΦ σ ×ˢ Ψ.analyticConeOrbit hΨ τ) =
