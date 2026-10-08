@@ -196,15 +196,15 @@ theorem Sobolev1JetLp.ext {J K : Sobolev1JetLp mu Omega p}
   · simpa only [WithLp.prodContinuousLinearEquiv_apply, WithLp.snd, hJgradient, hKgradient]
       using hgradient
 
-/-- The norm of the value component is bounded by the norm of the ambient Sobolev jet. -/
-private theorem norm_value_le_ambient (J : Sobolev1JetLp mu Omega p) :
+/-- The norm of the value component of a Sobolev jet is at most the norm of the jet. -/
+theorem Sobolev1JetLp.norm_value_le (J : Sobolev1JetLp mu Omega p) :
     ‖Sobolev1JetLp.value J‖ ≤ ‖J‖ :=
   Lp.norm_le_norm_of_ae_le <| (Sobolev1JetLp.value_apply_ae J).mono fun x hx ↦ by
     rw [hx]
     exact WithLp.norm_fst_le ℝ (J x)
 
-/-- The norm of the gradient component is bounded by the norm of the ambient Sobolev jet. -/
-private theorem norm_gradient_le_ambient (J : Sobolev1JetLp mu Omega p) :
+/-- The norm of the gradient component of a Sobolev jet is at most the norm of the jet. -/
+theorem Sobolev1JetLp.norm_gradient_le (J : Sobolev1JetLp mu Omega p) :
     ‖Sobolev1JetLp.gradient J‖ ≤ ‖J‖ :=
   Lp.norm_le_norm_of_ae_le <| (Sobolev1JetLp.gradient_apply_ae J).mono fun x hx ↦ by
     rw [hx]
@@ -223,7 +223,7 @@ theorem Sobolev1JetLp.norm_le_norm_value_add_norm_gradient (J : Sobolev1JetLp mu
   simpa using Lp.norm_le_add_of_ae_norm_le zero_le_one zero_le_one hle
 
 /-- At exponent two, the Sobolev jet norm is the Hilbert graph norm of its components. -/
-private theorem norm_sq_eq_norm_value_sq_add_norm_gradient_sq_ambient
+theorem Sobolev1JetLp.norm_sq_eq_norm_value_sq_add_norm_gradient_sq
     (J : Sobolev1JetLp mu Omega 2) :
     ‖J‖ ^ 2 = ‖Sobolev1JetLp.value J‖ ^ 2 + ‖Sobolev1JetLp.gradient J‖ ^ 2 := by
   rw [← real_inner_self_eq_norm_sq J,
@@ -438,11 +438,11 @@ theorem W1p.ext {u v : W1p mu Omega p}
 
 /-- The norm of a Sobolev function controls the norm of its value component. -/
 theorem W1p.norm_value_le (u : W1p mu Omega p) : ‖W1p.value u‖ ≤ ‖u‖ :=
-  norm_value_le_ambient u.1
+  Sobolev1JetLp.norm_value_le u.1
 
 /-- The norm of a Sobolev function controls the norm of its weak gradient. -/
 theorem W1p.norm_gradient_le (u : W1p mu Omega p) : ‖W1p.gradient u‖ ≤ ‖u‖ :=
-  norm_gradient_le_ambient u.1
+  Sobolev1JetLp.norm_gradient_le u.1
 
 /-- The norm of a Sobolev function is at most the sum of the norms of its value and its weak
 gradient. -/
@@ -453,7 +453,7 @@ theorem W1p.norm_le_norm_value_add_norm_gradient (u : W1p mu Omega p) :
 /-- At exponent two, the norm on `W1p` is the Hilbert graph norm. -/
 theorem W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq (u : W1p mu Omega 2) :
     ‖u‖ ^ 2 = ‖W1p.value u‖ ^ 2 + ‖W1p.gradient u‖ ^ 2 :=
-  norm_sq_eq_norm_value_sq_add_norm_gradient_sq_ambient u.1
+  Sobolev1JetLp.norm_sq_eq_norm_value_sq_add_norm_gradient_sq u.1
 
 /-- The squared pointwise norm of a Sobolev gradient is integrable. -/
 theorem W1p.integrable_norm_gradient_sq (u : W1p mu Omega 2) :
