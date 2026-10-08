@@ -39,7 +39,7 @@ The result is deliberately an `Option`.  `none` records that no degree vector pa
 the exact checker; no unverified coefficient bound is used to claim success.  Soundness is
 unconditional: every returned table satisfies `TauCeti.IsCharacterTableSpec` after the distinguished
 embedding into `ℂ`.  Completeness of the search at a sufficiently large Dixon prime additionally
-needs the coefficient bound discussed in the cyclotomic-lift module.
+requires `e = Monoid.exponent G` and the coefficient bound discussed in the cyclotomic-lift module.
 
 ## Main definitions
 
@@ -51,7 +51,8 @@ needs the coefficient bound discussed in the cyclotomic-lift module.
 ## Main results
 
 * `TauCeti.ClassData.isSome_dixonCyclotomicCharacterTable_of_spec`: a certified exact table whose
-  coefficients lie in the balanced residue window is found by the solver.
+  coefficients lie in the balanced residue window is found by the solver when
+  `e = Monoid.exponent G`.
 * `conjugateResidueRow_mem_centralCharacterSearch_of_dixonCyclotomicCharacterTable?_eq_some`:
   every conjugate residue row of a returned central table comes from the modular search.
 * `TauCeti.ClassData.isCyclotomicCharacterTableSpec_of_dixonCyclotomicCharacterTable?_eq_some`:
@@ -285,7 +286,8 @@ private theorem mem_dixonCyclotomicCharacterTableCandidates (e : ℕ) (he : e = 
     funext j
     -- The list lookup is the defining value of `canonicalModularRow`.
     rw [← canonicalModularRow, hrows]
-    exact hspec.conjugateResidues_omega he hroot i k j
+    exact hspec.conjugateResidues_omega hroot i k j
+      (he ▸ Monoid.pow_exponent_eq_one (d.rep k))
   simp only [dixonCyclotomicCharacterTableCandidates, List.mem_map,
     List.mem_filter, FinEnum.mem_toList, true_and, decide_eq_true_eq]
   refine ⟨fun i ↦ ⟨⟨degree i, Nat.lt_succ_of_le
@@ -295,8 +297,9 @@ private theorem mem_dixonCyclotomicCharacterTableCandidates (e : ℕ) (he : e = 
     simp only [Array.getElem_ofFn, Fin.eta, homega, d.table_eq_cyclotomicQuotient e hspec]
 
 /-- **Completeness criterion for the exact-cyclotomic solver.** An exact certified table whose
-central coefficients lie within the balanced residue window is found by the solver. Distinctness
-of every Galois-conjugate reduction follows from the certificate and the good-prime hypotheses.
+central coefficients lie within the balanced residue window is found by the solver when
+`e = Monoid.exponent G`. Distinctness of every Galois-conjugate reduction follows from the
+certificate and the good-prime hypotheses.
 
 The theorem hides the solver's arbitrary canonical ordering of modular rows. Reduction at the
 chosen primitive root aligns the supplied rows with that ordering, and powering class
