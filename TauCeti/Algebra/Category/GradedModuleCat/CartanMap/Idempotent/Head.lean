@@ -57,7 +57,7 @@ def gradedIdempotentHeadBasis :
       classical
       simpa using smulGradedDimension_gradedIdempotentHead
         hneg he.toOrthogonalIdempotents he₀ hspan i i (hne i))
-    (isExhaustiveGradedSimpleFamily_gradedIdempotentHead hneg he he₀ hspan)
+    (isExhaustiveGradedSimpleFamily_gradedIdempotentHead (hcomplete := he) hneg he₀ hspan)
 
 /-- The basis vector of `TauCeti.gradedIdempotentHeadBasis` at `i` is the class `[Sᵢ]` of the
 graded head of `A eᵢ`. -/

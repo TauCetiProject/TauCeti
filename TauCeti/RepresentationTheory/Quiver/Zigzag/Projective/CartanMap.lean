@@ -300,8 +300,8 @@ theorem isExhaustiveGradedSimpleFamily_zigzagGradedSimple :
   let _ := zigzagIntegerGradedAlgebra k G
   let _ := Fintype.ofFinite V
   isExhaustiveGradedSimpleFamily_gradedIdempotentHead
+    (hcomplete := completeOrthogonalIdempotents_zigzagVertexIdempotent k G)
     (fun _ => zigzagIntegerGrade_eq_bot_of_neg k G)
-    (completeOrthogonalIdempotents_zigzagVertexIdempotent k G)
     (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G)
     (zigzagIntegerGrade_zero_le_span k G)
 
