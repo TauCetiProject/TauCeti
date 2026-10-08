@@ -37,8 +37,6 @@ invariances under translating the generator by an integer and negating it.
 * `TauCeti.NumberField.IntegralPrimitiveElement.index_pos`: the index is positive.
 * `TauCeti.NumberField.IntegralPrimitiveElement.index_eq_one_iff`: the index is `1` exactly when
   `ℤ[θ]` is all of `𝓞 K`.
-* `TauCeti.NumberField.IntegralPrimitiveElement.index_eq_one_of_rat`: over `ℚ` every integral
-  primitive element has index `1`.
 * `TauCeti.NumberField.adjoin_rat_eq_top_of_adjoin_int_eq_top`: an element generating `𝓞 K` over
   `ℤ` generates `K` over `ℚ`.
 * `TauCeti.NumberField.IntegralPrimitiveElement.index_addIntCast`: integer translation preserves
@@ -158,14 +156,6 @@ theorem index_pos (θ : IntegralPrimitiveElement K) : 0 < θ.index := by
 @[simp]
 theorem index_eq_one_iff (θ : IntegralPrimitiveElement K) : θ.index = 1 ↔ θ.adjoin = ⊤ := by
   rw [index, Submodule.cardQuot_eq_one_iff, Algebra.toSubmodule_eq_top]
-
-/-- Over `ℚ` every integral primitive element has index `1`: `𝓞 ℚ = ℤ` already lies in `ℤ[θ]`. -/
-@[simp]
-theorem index_eq_one_of_rat (θ : IntegralPrimitiveElement ℚ) : θ.index = 1 := by
-  refine θ.index_eq_one_iff.mpr (eq_top_iff.mpr fun x _ ↦ ?_)
-  obtain ⟨n, rfl⟩ := Rat.ringOfIntegersEquiv.symm.surjective x
-  rw [eq_intCast]
-  exact intCast_mem _ n
 
 /-- An element generating `𝓞 K` as a `ℤ`-algebra, as an integral primitive element. -/
 def ofAdjoinEqTop {θ : 𝓞 K} (h : Algebra.adjoin ℤ {θ} = (⊤ : Subalgebra ℤ (𝓞 K))) :
