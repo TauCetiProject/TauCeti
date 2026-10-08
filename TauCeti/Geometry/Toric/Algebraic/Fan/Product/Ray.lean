@@ -78,9 +78,7 @@ theorem prodRayInl_toCone_le_prodCone_iff (hPsi : Nonempty Psi.cones) (rho : Phi
     (sigma : Phi.cones) (tau : Psi.cones) :
     (Phi.prodRayInl Psi hPsi rho).toCone ≤ Phi.prodCone Psi sigma tau ↔
       rho.toCone ≤ sigma := by
-  rw [← Subtype.coe_le_coe, ← Subtype.coe_le_coe]
-  change rho.toCone.1.prod (⊥ : PointedCone ℝ V') ≤ sigma.1.prod tau.1 ↔
-    rho.toCone.1 ≤ sigma.1
+  rw [← Subtype.coe_le_coe, ← Subtype.coe_le_coe, coe_prodCone, toCone_prodRayInl]
   constructor
   · intro h x hx
     have hp : (x, (0 : V')) ∈ rho.toCone.1.prod (⊥ : PointedCone ℝ V') :=
@@ -131,9 +129,7 @@ theorem prodRayInr_toCone_le_prodCone_iff (hPhi : Nonempty Phi.cones) (rho : Psi
     (sigma : Phi.cones) (tau : Psi.cones) :
     (Phi.prodRayInr Psi hPhi rho).toCone ≤ Phi.prodCone Psi sigma tau ↔
       rho.toCone ≤ tau := by
-  rw [← Subtype.coe_le_coe, ← Subtype.coe_le_coe]
-  change (⊥ : PointedCone ℝ V).prod rho.toCone.1 ≤ sigma.1.prod tau.1 ↔
-    rho.toCone.1 ≤ tau.1
+  rw [← Subtype.coe_le_coe, ← Subtype.coe_le_coe, coe_prodCone, toCone_prodRayInr]
   constructor
   · intro h x hx
     have hp : ((0 : V), x) ∈ (⊥ : PointedCone ℝ V).prod rho.toCone.1 :=
