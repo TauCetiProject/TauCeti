@@ -118,9 +118,10 @@ theorem sphereTopCellMap_mem_sphere (x : Fin n → ℝ) :
   (sphereOnePointEquiv h _).2
 
 /-- The characteristic map of the top cell collapses the boundary of the cube to the pole. -/
-theorem sphereTopCellMap_apply_of_mem_sphere {x : Fin n → ℝ} (hx : x ∈ sphere 0 1) :
+@[simp]
+theorem sphereTopCellMap_apply_of_norm_eq_one {x : Fin n → ℝ} (hx : ‖x‖ = 1) :
     sphereTopCellMap h x = spherePole h := by
-  rw [sphereTopCellMap_apply, mapsTo_unitBallToOnePoint_sphere hx, spherePole]
+  rw [sphereTopCellMap_apply, unitBallToOnePoint_apply_of_one_le_norm hx.ge, spherePole]
 
 theorem continuousOn_sphereTopCellMap : ContinuousOn (sphereTopCellMap h) (closedBall 0 1) :=
   (continuous_subtype_val.comp (sphereOnePointEquiv h).continuous).comp_continuousOn
@@ -177,7 +178,7 @@ private theorem mapsTo_sphereCellMap (m : ℕ) (i : SphereCell.{u} n m) :
   obtain _ | k := m
   · exact ((sphere_eq_empty_of_subsingleton one_ne_zero).subset hx).elim
   refine mem_iUnion₂.2 ⟨0, k.succ_pos, mem_iUnion.2 ⟨⟨.inl ⟨rfl⟩⟩, 0, by simp, ?_⟩⟩
-  exact (sphereTopCellMap_apply_of_mem_sphere h hx).symm
+  exact (sphereTopCellMap_apply_of_norm_eq_one h (mem_sphere_zero_iff_norm.1 hx)).symm
 
 /-- The closed cells of `Sⁿ` cover it. -/
 private theorem iUnion_sphereCellMap :

@@ -76,10 +76,12 @@ theorem unitBallToOnePoint_source : (unitBallToOnePoint (E := E)).source = ball 
 theorem unitBallToOnePoint_target : (unitBallToOnePoint (E := E)).target = {∞}ᶜ :=
   (rfl)
 
+@[simp]
 theorem unitBallToOnePoint_apply_of_norm_lt {x : E} (hx : ‖x‖ < 1) :
     unitBallToOnePoint x = ↑(OpenPartialHomeomorph.univUnitBall.symm x) :=
   ite_eq_left hx
 
+@[simp]
 theorem unitBallToOnePoint_apply_of_one_le_norm {x : E} (hx : 1 ≤ ‖x‖) :
     unitBallToOnePoint x = ∞ :=
   ite_eq_right hx.not_gt
