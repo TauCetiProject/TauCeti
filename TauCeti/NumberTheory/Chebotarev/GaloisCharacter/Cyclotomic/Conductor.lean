@@ -8,9 +8,8 @@ module
 public import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Cyclotomic.Basic
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.SubgroupConductor.Rat
 
-import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
 import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Cyclotomic.Surjective
-import TauCeti.NumberTheory.NumberField.Global.RayClass.Exact
+import TauCeti.NumberTheory.NumberField.Global.Cyclotomic.RayClass
 
 /-!
 # The conductor of a cyclotomic extension
@@ -121,7 +120,7 @@ section Rat
 variable (m : ℕ) [NeZero m]
 
 /-- Over `ℚ`, the cyclotomic modulus of level `m` is `(m)·∞`. -/
-theorem cyclotomicModulus_rat : cyclotomicModulus ℚ m = ratModulus m (NeZero.ne m) :=
+@[simp] theorem cyclotomicModulus_rat : cyclotomicModulus ℚ m = ratModulus m (NeZero.ne m) :=
   Modulus.ext (by rw [cyclotomicModulus_finitePart, ratModulus_finitePart]) <| Finset.ext fun w ↦
     ⟨fun _ ↦ by
       rw [ratModulus_infinitePart, Finset.mem_singleton]
@@ -133,11 +132,24 @@ variable (F : Type*) [Field F] [NumberField F] [IsCyclotomicExtension {m} ℚ F]
 
 /-- The cyclotomic Artin map over `ℚ` is injective. -/
 theorem cyclotomicArtin_rat_injective : Function.Injective (cyclotomicArtin ℚ F m) := by
-  have hcard : Nat.card (RayClassGroup (cyclotomicModulus ℚ m)) ≤ Nat.card (F ≃ₐ[ℚ] F) := by
-    rw [cyclotomicModulus_rat, card_rayClassGroup_ratModulus,
-      Nat.card_congr (IsCyclotomicExtension.Rat.galEquivZMod m F).toEquiv,
-      Nat.card_eq_fintype_card, ZMod.card_units_eq_totient]
-  exact ((cyclotomicArtin_surjective ℚ F m).bijective_of_nat_card_le hcard).1
+  -- Abstract the modulus so its equality transports both the map and its unramifiedness input.
+  have key (𝔪 : Modulus ℚ) (h𝔪 : 𝔪 = ratModulus m (NeZero.ne m))
+      (φ : RayClassGroup 𝔪 →* (F ≃ₐ[ℚ] F))
+      (hunram : ∀ (v : HeightOneSpectrum (𝓞 ℚ)), v ∉ 𝔪.support →
+        ∀ (Q : Ideal (𝓞 F)) [Q.IsPrime] [Q.LiesOver v.asIdeal],
+          Algebra.IsUnramifiedAt (𝓞 ℚ) Q)
+      (hcomp : φ.comp (rayClassMk 𝔪) = TauCeti.NumberFieldArithmetic.artinHomAway
+        (IsCyclotomicExtension.isMulCommutative {m} ℚ F).is_comm.comm 𝔪.support hunram) :
+      Function.Injective φ := by
+    subst 𝔪
+    have heq : φ = (ratModulusEquivGal m F).toMonoidHom := by
+      apply MonoidHom.ext
+      intro c
+      obtain ⟨I, rfl⟩ := rayClassMk_surjective (ratModulus m (NeZero.ne m)) c
+      exact DFunLike.congr_fun (hcomp.trans (ratModulusEquivGal_comp_rayClassMk m F).symm) I
+    rw [heq]
+    exact (ratModulusEquivGal m F).injective
+  exact key _ (cyclotomicModulus_rat m) _ _ (cyclotomicArtin_comp_rayClassMk (K := ℚ) F m)
 
 -- Over `ℚ` the conductor is that of the trivial subgroup of the ray class group of `(m)·∞`.
 private theorem cyclotomicConductor_rat_eq :

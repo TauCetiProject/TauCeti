@@ -48,7 +48,7 @@ namespace TauCeti.GlobalNumberFields
 variable {n : ℕ} (hn : n ≠ 0)
 
 /-- The ray class group of `ℚ` modulo `(n)·∞` has `φ n` elements. -/
-theorem card_rayClassGroup_ratModulus :
+@[simp] theorem card_rayClassGroup_ratModulus :
     Nat.card (RayClassGroup (ratModulus n hn)) = n.totient := by
   have : NeZero n := ⟨hn⟩
   rw [Nat.card_congr (ratModulusEquivZMod n hn).toEquiv, Nat.card_eq_fintype_card,

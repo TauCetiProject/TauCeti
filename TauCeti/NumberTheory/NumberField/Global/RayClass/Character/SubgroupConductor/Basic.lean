@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.NumberField.Global.RayClass.Finite
 
 import Mathlib.GroupTheory.FiniteAbelian.Duality
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
-import TauCeti.NumberTheory.NumberField.Global.RayClass.Exact
 import TauCeti.NumberTheory.NumberField.Global.RayClass.Lattice
 
 /-!
