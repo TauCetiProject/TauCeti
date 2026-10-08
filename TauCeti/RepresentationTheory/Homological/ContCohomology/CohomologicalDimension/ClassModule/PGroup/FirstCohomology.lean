@@ -19,10 +19,10 @@ import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDime
 Let `G` be a profinite group with `scd_p G ≤ 2` and let `V` be an open normal subgroup such
 that `G ⧸ V` is a finite `p`-group. Then `H¹(G ⧸ V, V^ab(p)) = 0`.
 
-The proof is the induction in NSW (3.6.4). For a nontrivial quotient, choose a central subgroup
-of order `p` and let `W` be its inverse image in `G`. Restriction to `W ⧸ V` vanishes by the
-prime-order case, while the induction hypothesis applies to `G ⧸ W`. Exactness of
-inflation-restriction then gives the result.
+This is the degree-one half of the class-module axioms for `V^ab(p)` in the `p`-group case of
+NSW (3.6.4), (ii) ⇒ (iii), extending the prime-order case. It is the input for the corresponding
+statement about the class `u_{G/V}(p)` in `H²` for `p`-group quotients, and then for the Sylow
+reduction to arbitrary finite quotients `G ⧸ V`.
 
 ## Main result
 
@@ -68,14 +68,13 @@ private theorem subsingleton_h1_abelianizationProP_of_isPGroup_aux (p m : ℕ)
         let Z : Subgroup (G ⧸ V) := Subgroup.zpowers (z : G ⧸ V)
         have hZcenter : Z ≤ Subgroup.center (G ⧸ V) := Subgroup.zpowers_le.2 z.2
         let _ : Z.Normal := Subgroup.normal_of_le_center hZcenter
-        let W : Subgroup G := Z.comap (QuotientGroup.mk' V)
+        set W : Subgroup G := Z.comap (QuotientGroup.mk' V) with hWdef
         let _ : W.Normal := inferInstance
-        have hVW : V ≤ W := by
-          intro g hg
-          rw [show W = Z.comap (QuotientGroup.mk' V) from rfl, Subgroup.mem_comap]
-          change (g : G ⧸ V) ∈ Z
-          rw [(QuotientGroup.eq_one_iff g).2 hg]
-          exact Z.one_mem
+        have hVW : V ≤ W :=
+          (QuotientGroup.ker_mk' V).ge.trans (MonoidHom.ker_le_comap _ Z)
+        have hWmap : W.map (QuotientGroup.mk' V) = Z := by
+          rw [hWdef]
+          exact Subgroup.map_comap_eq_self_of_surjective (QuotientGroup.mk'_surjective V) Z
         have hW : IsOpen (W : Set G) := Subgroup.isOpen_mono hVW hV
         have : V.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
         have hz1 : (z : G ⧸ V) ≠ 1 := by
@@ -86,9 +85,7 @@ private theorem subsingleton_h1_abelianizationProP_of_isPGroup_aux (p m : ℕ)
         have hVWne : V ≠ W := by
           intro heq
           have hzmem : (z : G ⧸ V) ∈ W.map (QuotientGroup.mk' V) := by
-            refine ⟨(z : G ⧸ V).out, ?_, QuotientGroup.out_eq' (z : G ⧸ V)⟩
-            change ((z : G ⧸ V).out : G ⧸ V) ∈ Z
-            rw [QuotientGroup.out_eq']
+            rw [hWmap]
             exact Subgroup.mem_zpowers (z : G ⧸ V)
           rw [← heq] at hzmem
           rcases hzmem with ⟨g, hg, hgz⟩
@@ -111,9 +108,7 @@ private theorem subsingleton_h1_abelianizationProP_of_isPGroup_aux (p m : ℕ)
             Nat.card (W ⧸ V.subgroupOf W) =
                 Nat.card (W.map (QuotientGroup.mk' V)) :=
               Nat.card_congr (quotientSubgroupOfEquivMap V W hV).toEquiv
-            _ = Nat.card Z := by
-              rw [show W = Z.comap (QuotientGroup.mk' V) from rfl,
-                Subgroup.map_comap_eq_self_of_surjective (QuotientGroup.mk'_surjective V)]
+            _ = Nat.card Z := by rw [hWmap]
             _ = p := by rw [Nat.card_zpowers, Subgroup.orderOf_coe, hz]
         have hrestricted : Subsingleton
             (H1 (W ⧸ V.subgroupOf W)
