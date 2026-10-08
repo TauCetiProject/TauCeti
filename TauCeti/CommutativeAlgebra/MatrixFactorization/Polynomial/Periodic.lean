@@ -71,10 +71,8 @@ theorem rootPowHom_eq_smul_id (n j : ℕ) :
 @[simp]
 theorem rootPowHom_comp (n a b : ℕ) :
     rootPowHom R n a ≫ rootPowHom R n b = rootPowHom R n (a + b) := by
-  apply ModuleCat.hom_ext
-  apply LinearMap.ext
-  intro c
-  simp [rootPowHom, pow_add, mul_left_comm]
+  rw [rootPowHom, rootPowHom, rootPowHom, ← ModuleCat.ofHom_comp, ← LinearMap.mulLeft_mul,
+    ← pow_add, add_comm]
 
 /-- Multiplication by `x ^ n` vanishes on `R[X]/(X ^ n)`. -/
 @[simp]
