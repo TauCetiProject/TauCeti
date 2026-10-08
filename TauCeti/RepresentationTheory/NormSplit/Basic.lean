@@ -20,9 +20,7 @@ the induced module `k[G] ⊗_k V`; if moreover `V` is free over `k`, then `V` is
 Nakayama and Rim produces projective modules (Serre, *Local Fields*, IX §§3–5).
 
 Whether the identity is a norm can be decided one prime at a time: if for every prime `p` some
-subgroup of index prime to `p` has the identity as a norm, then so does `G`. Indeed if the identity
-is the `H`-norm of `φ`, then the `G`-norm of `φ` is `[G : H]` times the identity, and the indices
-of such subgroups generate the unit ideal of `ℤ`.
+subgroup of index prime to `p` has the identity as a norm, then so does `G`.
 
 ## Main statements
 

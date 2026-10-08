@@ -20,16 +20,8 @@ if the degree `-1` Tate cohomology of `G` with coefficients in `V` vanishes — 
 `V` is a norm
 `x ↦ ∑ g, ρ g (φ (ρ g⁻¹ x))` for the conjugation action of `G` on `End(V)`
 (Serre, *Local Fields*, IX §3, Theorem 4; Brown, *Cohomology of Groups*, VI 8.5). No finiteness is
-assumed on `V`.
-
-Choose a complement `W` of the augmentation submodule. The map `f : (G → W) → V`,
-`w ↦ ∑ g, ρ g (w g)`, is equivariant for the coinduced action on `G → W`. It is injective:
-otherwise its kernel has a nonzero fixed vector, a constant function whose value is a vector of `W`
-of norm zero, hence lies in the augmentation submodule. It is surjective: otherwise the dual of the
-cokernel has a nonzero fixed functional, which kills the augmentation submodule and `W`, hence
-everything. Both steps are the fixed-point theorem
-`Representation.exists_ne_zero_apply_eq_self_of_forall_pow_eq_one`. The identity of `V` is then
-the norm of the projection onto the summand of `G → W` at `1`.
+assumed on `V`. In the theorem of Nakayama and Rim, this provides the identity-norm condition
+in characteristic `p`, which `Representation.id_mem_range_norm_linHom_of_baseChange` then lifts.
 
 ## Main statements
 

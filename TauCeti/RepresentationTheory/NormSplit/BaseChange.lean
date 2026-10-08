@@ -15,10 +15,8 @@ public import TauCeti.RepresentationTheory.NormSplit.Basic
 Let `G` be a finite group of order `p ^ m` acting on a free `k`-module `V` on which multiplication
 by `p` is injective. If the identity of the reduction `(k/pk) ⊗ V` is a norm
 `y ↦ ∑ g, ρ g (π (ρ g⁻¹ y))` for the conjugation action of `G`, then so is the identity of `V`
-(Serre, *Local Fields*, IX §5). Lift `π` through a `k`-basis of `V`; its norm is the identity plus
-`p` times an equivariant endomorphism `θ`. Composing with an equivariant endomorphism `ψ`, the
-identity is, for every `j`, a norm plus `p ^ j` times an equivariant endomorphism, and at
-`j = m` the remainder `p ^ m • ψ = |G| • ψ` is the norm of `ψ`.
+(Serre, *Local Fields*, IX §5). This reduces the identity-norm condition for `p`-groups over `k`
+to the same condition over `k/pk`.
 
 ## Main statements
 
