@@ -110,7 +110,7 @@ lemma closedPolydiscPreAdicSpace_def :
           isWeightFamily_one_weight).le_powerBoundedSubring :=
   (rfl)
 
-/-! The declarations below are stated for `closedPolydiscPreAdicSpace k P` but built from the
+/- The declarations below are stated for `closedPolydiscPreAdicSpace k P` but built from the
 presentation-limit API, elaborating against the unfolding recorded by the definitional equation
 `closedPolydiscPreAdicSpace_def`. That equation cannot be used with `rw` here: the opens, their
 restrictions, and `affinoidOpens` all have types depending on `closedPolydiscPreAdicSpace k P`,
@@ -144,8 +144,7 @@ open PairOfDefinition in
 /-- **The coordinate ring of an admissible rational open of the closed polydisc.** Restricting
 the closed polydisc to `R(T/s)`, for numerators spanning an open ideal, gives the
 presentation-limit pre-adic space of the completed rational localisation `A⟨T/s⟩`, where `A` is
-the restricted-series ring. This is `presentationLimitPreAdicSpaceLocIso` transported through
-`closedPolydiscPreAdicSpace_def`. -/
+the restricted-series ring. -/
 noncomputable def closedPolydiscBasicOpenIso
     {T : Finset (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K))
       isWeightFamily_one_weight)}
@@ -173,6 +172,7 @@ noncomputable def closedPolydiscBasicOpenIso
   letI := locUniformSpace Q T s (Localization.Away s) hden
   letI := isUniformAddGroup_locUniformSpace Q T s (Localization.Away s) hden
   letI := isTopologicalRing_locUniformSpace Q T s (Localization.Away s) hden
+  -- Transport `presentationLimitPreAdicSpaceLocIso` through `closedPolydiscPreAdicSpace_def`.
   have hrange : Set.range (Opens.inclusion' (spaBasicOpen (powerBoundedSubring _) T s)) =
       Set.range (spaComapLocHom Q (powerBoundedSubring _) T s _ hden) := by
     rw [Opens.set_range_inclusion', coe_spaComapLocHom,
