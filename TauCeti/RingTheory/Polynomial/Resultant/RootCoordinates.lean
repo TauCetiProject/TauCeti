@@ -245,9 +245,9 @@ theorem leadingCoeff_reverse_comp_X_add_C (f : R[X]) {a : R} (h : f.eval a ≠ 0
 
 /-- Normalized reciprocal coordinates centered at a nonroot `a` multiply the discriminant of a
 degree `n` polynomial by the `(n - 1) * (n - 2)` power of `f.eval a`. In a polynomial family,
-`f.eval a` can remain nonzero under a specialization that kills the leading coefficient of `f`,
-so this monic polynomial over the same ring carries the discriminant of `f` up to a unit factor
-after such a specialization. -/
+`f.eval a` can remain nonzero under a specialization that kills the leading coefficient of `f`;
+when that specialization lands in a field, such as `ℝ`, the factor becomes a unit, so this monic
+polynomial over the same ring carries the discriminant of `f` up to a unit factor there. -/
 theorem discr_integralNormalization_reverse_comp_X_add_C (f : R[X]) {a : R}
     (h : f.eval a ≠ 0) :
     (f.comp (X + C a)).reverse.integralNormalization.discr =

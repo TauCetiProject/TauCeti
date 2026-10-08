@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.RealAlgebraic.Stack.Delineation
 public import TauCeti.Analysis.Polynomial.Puiseux.RealRoots
-import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
 # Local delineations from prepared complex splittings
@@ -26,8 +25,7 @@ This is the local passage from a prepared Puiseux splitting to a real stack. The
 splitting and its discriminant identity are inputs; ambient order on sections is a separate
 conclusion requiring additional information. The final step, from a local ordered enumeration of
 the real roots with constant multiplicities to a delineation on a ball, is
-`TauCeti.exists_delineation_ball_of_isRoot_iff`; it needs only continuity of the coefficients and
-also serves families that are not monic.
+`TauCeti.exists_delineation_ball_of_isRoot_iff`.
 
 ## References
 
@@ -43,36 +41,6 @@ namespace TauCeti
 
 variable {E B : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [NormedAddCommGroup B] [NormedSpace ℝ B]
-
-/-- **Local delineation from local root data.** Let `F b` be real polynomials over a real
-normed space, nonzero and of constant degree near `b₀`, whose coefficients are continuous near
-`b₀`. Suppose that on a neighborhood `U` of `b₀`, continuous and pointwise strictly increasing
-functions `s i` enumerate the real roots of `F b`, with multiplicities independent of `b`. Then
-on some ball around `b₀` inside `U` the restrictions of the `s i` are the root functions of a
-delineation of `F`. -/
-theorem exists_delineation_ball_of_isRoot_iff {F : B → ℝ[X]} {b₀ : B} {d k : ℕ}
-    {s : Fin k → B → ℝ} {U : Set B}
-    (hcoeff : ∀ᶠ b in 𝓝 b₀, ∀ j, ContinuousAt (fun b ↦ (F b).coeff j) b)
-    (hF : ∀ᶠ b in 𝓝 b₀, F b ≠ 0) (hdeg : ∀ᶠ b in 𝓝 b₀, (F b).natDegree = d)
-    (hU : U ∈ 𝓝 b₀) (hs : ∀ i, ContinuousOn (s i) U)
-    (hmono : ∀ b ∈ U, StrictMono fun i ↦ s i b)
-    (hroots : ∀ b ∈ U, ∀ t, (F b).IsRoot t ↔ ∃ i, s i b = t)
-    (hmult : ∀ b ∈ U, ∀ i, (F b).rootMultiplicity (s i b) = (F b₀).rootMultiplicity (s i b₀)) :
-    ∃ ε > 0, ball b₀ ε ⊆ U ∧ ∃ D : Delineation (fun (_ : Unit) (b : ball b₀ ε) ↦ F b),
-      ∀ i, ∃ j, ∀ b : ball b₀ ε, D.root i b = s j b := by
-  obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff.1
-    (Filter.Eventually.and hU (hcoeff.and (hF.and hdeg)))
-  have hVU : ball b₀ ε ⊆ U := fun b hb ↦ (hball hb).1
-  have : PreconnectedSpace (ball b₀ ε) :=
-    isPreconnected_iff_preconnectedSpace.1 (convex_ball b₀ ε).isPreconnected
-  obtain ⟨D, hD⟩ := exists_delineation_of_isRoot_iff (θ := fun i (b : ball b₀ ε) ↦ s i b)
-    (fun j ↦ continuous_iff_continuousAt.2 fun b ↦
-      ((hball b.2).2.1 j).comp continuous_subtype_val.continuousAt)
-    (fun b ↦ (hball b.2).2.2.1) (fun b c ↦ (hball b.2).2.2.2.trans (hball c.2).2.2.2.symm)
-    (fun i ↦ ((hs i).mono hVU).domRestrict) (fun b ↦ hmono b (hVU b.2))
-    (fun b ↦ hroots b (hVU b.2))
-    fun i b c ↦ (hmult b (hVU b.2) i).trans (hmult c (hVU c.2) i).symm
-  exact ⟨ε, hε, hVU, D, fun i ↦ (hD i).imp fun _ hj b ↦ congrFun hj b⟩
 
 /-- A prepared monic complex splitting restricts to an analytic real delineation on a ball in
 its distinguished hyperplane. The radius, root count, constant multiplicities, and signs

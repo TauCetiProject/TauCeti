@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Polynomial.Puiseux.Discriminant
-public import TauCeti.Geometry.RealAlgebraic.Stack.Puiseux
+public import TauCeti.Geometry.RealAlgebraic.Stack.Delineation
 
 /-!
 # Local delineability from constant discriminant order
@@ -18,12 +18,11 @@ positive root multiplicities, and account for all real roots; signs are constant
 and sector.
 
 The formal leading coefficient may vanish along the parametrization, so the fiber degree may be
-smaller than the formal degree at which the discriminant is taken; monic polynomials are the
-special case `Polynomial.exists_delineation_of_monic_of_orderAt_discr_eq`. The construction starts
-with the real discriminant-order condition, not a supplied complex splitting or a hypothesis of
-constant root multiplicities. Multiple roots at the center, constant polynomials and families
-without real roots are included. This is the local analytic delineability conclusion, not a
-theorem about ambient order on the root sections.
+smaller than the formal degree at which the discriminant is taken; monic polynomials are a
+special case. The construction starts with the real discriminant-order condition, not a supplied
+complex splitting or a hypothesis of constant root multiplicities. Multiple roots at the center,
+constant polynomials and families without real roots are included. This is the local analytic
+delineability conclusion, not a theorem about ambient order on the root sections.
 
 ## References
 
@@ -76,20 +75,5 @@ theorem _root_.Polynomial.exists_delineation_of_orderAt_discr_eq
   refine ⟨ε, hε, D, fun i ↦ ?_⟩
   obtain ⟨j, hj⟩ := hD i
   exact ⟨s j, (hs j).mono hεU, hj⟩
-
-/-- A monic polynomial family along a real analytic parametrization has a delineation on
-some positive-radius ball if the formal discriminant has constant finite ambient order.
-All root sections admit analytic extensions to that ball. No distinct-root-count or
-multiplicity-invariance hypothesis is required. -/
-theorem _root_.Polynomial.exists_delineation_of_monic_of_orderAt_discr_eq
-    (p : Polynomial (MvPolynomial σ ℝ)) (hp : p.Monic)
-    {φ : (ι → ℝ) → σ → ℝ} {a : ι → ℝ} {m : ℕ}
-    (hφ : AnalyticAt ℝ φ a) (hm : ∀ᶠ x in 𝓝 a, p.discr.orderAt (φ x) = m) :
-    ∃ ε > 0, ∃ D : Delineation (fun (_ : Unit) (x : ball a ε) ↦
-      p.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) (φ x))),
-      ∀ i, ∃ s : (ι → ℝ) → ℝ, AnalyticOnNhd ℝ s (ball a ε) ∧
-        ∀ x : ball a ε, D.root i x = s x :=
-  p.exists_delineation_of_orderAt_discr_eq hφ (hp.map _).ne_zero
-    (.of_forall fun _ ↦ hp.natDegree_map _) hm
 
 end TauCeti
