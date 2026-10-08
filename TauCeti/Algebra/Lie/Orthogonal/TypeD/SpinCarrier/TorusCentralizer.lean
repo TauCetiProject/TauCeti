@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.StandardComodule
+public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
+import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.StandardComodule
 import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
@@ -28,6 +29,9 @@ identification is needed before this calculation yields a maximal torus.
   pointwise torus-centralizer calculation over an infinite field.
 * `TauCeti.TypeDSpinCarrier.eq_diagonalPoints_of_le_of_isMulCommutative`: maximality of the
   diagonal carrier points among commutative point subgroups.
+
+Each infinite-field result is a corollary of an `_of_weightChar_basisWeight_injective` form over a
+commutative ring without zero divisors on which the spin weight characters are distinct.
 
 ## References
 
@@ -118,20 +122,27 @@ theorem centralizer_range_weightTorusPoints_eq_diagonalPoints_of_weightChar_basi
         (Subgroup.le_centralizer (diagonalTorus K (dimension n)) hdDiag) g hg |>.symm
     exact (Commute.of_map (points n hn K).subtype_injective hcomm).eq
 
+/-- Over an infinite field, distinct spin-basis indices have distinct weight characters. -/
+theorem weightChar_comp_basisWeight_injective (K : Type u) [Field K] [Infinite K] :
+    Function.Injective (weightChar K ∘ basisWeight n) :=
+  weightChar_injective.comp fun i j hij ↦ by
+    apply basisCharacter_injective n
+    simp only [basisCharacter, hij]
+
 /-- Over an infinite field, the centralizer of the spin weight torus in the type-`Dₙ` carrier
 is exactly the subgroup of diagonal carrier points. -/
 theorem centralizer_range_weightTorusPoints_eq_diagonalPoints
     (K : Type u) [Field K] [Infinite K] :
     Subgroup.centralizer
-        ((weightTorusPoints n hn K).range : Set (points n hn K)) = diagonalPoints n hn K := by
-  apply centralizer_range_weightTorusPoints_eq_diagonalPoints_of_weightChar_basisWeight_injective
-  exact weightChar_injective.comp fun i j hij ↦ by
-    apply basisCharacter_injective n
-    simp only [basisCharacter, hij]
+        ((weightTorusPoints n hn K).range : Set (points n hn K)) = diagonalPoints n hn K :=
+  centralizer_range_weightTorusPoints_eq_diagonalPoints_of_weightChar_basisWeight_injective n hn K
+    (weightChar_comp_basisWeight_injective n K)
 
-/-- Over an infinite field, the diagonal spin-carrier points are self-centralizing. -/
-theorem centralizer_diagonalPoints_eq_diagonalPoints
-    (K : Type u) [Field K] [Infinite K] :
+/-- If the spin weight characters remain distinct over a ring without zero divisors, the diagonal
+spin-carrier points are self-centralizing. -/
+theorem centralizer_diagonalPoints_eq_diagonalPoints_of_weightChar_basisWeight_injective
+    (K : Type u) [CommRing K] [IsCancelMulZero K]
+    (hchar : Function.Injective (weightChar K ∘ basisWeight n)) :
     Subgroup.centralizer (diagonalPoints n hn K : Set (points n hn K)) =
       diagonalPoints n hn K := by
   apply le_antisymm
@@ -142,8 +153,29 @@ theorem centralizer_diagonalPoints_eq_diagonalPoints
         Subgroup.centralizer_le
           (SetLike.coe_subset_coe.mpr (range_weightTorusPoints_le_diagonalPoints n hn K))
       _ = diagonalPoints n hn K :=
-        centralizer_range_weightTorusPoints_eq_diagonalPoints n hn K
+        centralizer_range_weightTorusPoints_eq_diagonalPoints_of_weightChar_basisWeight_injective
+          n hn K hchar
   · exact Subgroup.le_centralizer _
+
+/-- Over an infinite field, the diagonal spin-carrier points are self-centralizing. -/
+theorem centralizer_diagonalPoints_eq_diagonalPoints
+    (K : Type u) [Field K] [Infinite K] :
+    Subgroup.centralizer (diagonalPoints n hn K : Set (points n hn K)) =
+      diagonalPoints n hn K :=
+  centralizer_diagonalPoints_eq_diagonalPoints_of_weightChar_basisWeight_injective n hn K
+    (weightChar_comp_basisWeight_injective n K)
+
+/-- If the spin weight characters remain distinct over a ring without zero divisors, no
+commutative subgroup of the spin carrier properly contains all diagonal carrier points. -/
+theorem eq_diagonalPoints_of_weightChar_basisWeight_injective_of_le_of_isMulCommutative
+    (K : Type u) [CommRing K] [IsCancelMulZero K]
+    (hchar : Function.Injective (weightChar K ∘ basisWeight n))
+    (H : Subgroup (points n hn K)) [IsMulCommutative H]
+    (hH : diagonalPoints n hn K ≤ H) :
+    H = diagonalPoints n hn K :=
+  Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative
+    (centralizer_diagonalPoints_eq_diagonalPoints_of_weightChar_basisWeight_injective n hn K hchar)
+    hH
 
 /-- Over an infinite field, no commutative subgroup of the spin carrier properly contains all
 diagonal carrier points. -/
@@ -152,8 +184,8 @@ theorem eq_diagonalPoints_of_le_of_isMulCommutative
     (H : Subgroup (points n hn K)) [IsMulCommutative H]
     (hH : diagonalPoints n hn K ≤ H) :
     H = diagonalPoints n hn K :=
-  Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative
-    (centralizer_diagonalPoints_eq_diagonalPoints n hn K) hH
+  eq_diagonalPoints_of_weightChar_basisWeight_injective_of_le_of_isMulCommutative n hn K
+    (weightChar_comp_basisWeight_injective n K) H hH
 
 end
 
