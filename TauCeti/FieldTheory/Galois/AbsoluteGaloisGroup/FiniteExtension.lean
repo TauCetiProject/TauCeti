@@ -60,7 +60,8 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
 * `TauCeti.quotientFixingSubgroupFieldRangeEquiv K L σ`: for a normal `L/K`, the isomorphism
   `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)` induced by restriction `σ.restrictNormalHom`.
 * `TauCeti.galoisOpenNormalSubgroup K L σ`: for a finite normal `L/K`, the subgroup fixing
-  `σ(L)` as an open normal subgroup of `G_K`.
+  `σ(L)` as an open normal subgroup of `G_K`; for such `L/K`, `galoisSubgroup K L σ` is normal
+  (`TauCeti.normal_galoisSubgroup`).
 * `TauCeti.fixingOpenNormalSubgroup K L`: for a finite `L/K`, the open normal subgroup of `G_K`
   fixing the normal closure of `L` in `Kˢ`, with no embedding chosen.
 * `TauCeti.absoluteGaloisGroupExtend K L σ`: the injective continuous homomorphism
@@ -352,6 +353,11 @@ the domain of `quotientFixingSubgroupFieldRangeEquiv K L σ`. -/
 theorem galoisOpenNormalSubgroup_toSubgroup :
     (galoisOpenNormalSubgroup K L σ).toSubgroup = σ.fieldRange.fixingSubgroup :=
   (rfl)
+
+/-- **For a finite normal extension `L/K`, `galoisSubgroup K L σ` is normal in `G_K`**: its
+underlying subgroup is the fixing subgroup of the normal intermediate field `σ(L)`. -/
+instance normal_galoisSubgroup : (galoisSubgroup K L σ).toSubgroup.Normal :=
+  inferInstanceAs (σ.fieldRange.fixingSubgroup : Subgroup (AbsoluteGaloisGroup K)).Normal
 
 end OpenNormal
 
