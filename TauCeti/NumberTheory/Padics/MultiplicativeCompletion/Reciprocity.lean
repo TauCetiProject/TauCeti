@@ -137,11 +137,7 @@ theorem padicCompletionUnitsEquivAbsoluteGaloisGroupAbelianizationProP_of (x : L
     padicCompletionUnitsEquivAbsoluteGaloisGroupAbelianizationProP p L
         (padicCompletionUnitsOf p L x) =
       (artinMap L x : maximalProPQuotient p (Field.absoluteGaloisGroupAbelianization L)) := by
-  rw [padicCompletionUnitsEquivAbsoluteGaloisGroupAbelianizationProP,
-    ContinuousMulEquiv.trans_apply,
-    maximalProPQuotientProfiniteCompletionEquivPadicCompletionUnits_symm_apply,
-    maximalProPQuotient.congr_mk, profiniteCompletionArtinEquiv_apply,
-    profiniteCompletionArtinMap_etaFn, maximalProPQuotient.mk_apply]
+  simp [padicCompletionUnitsEquivAbsoluteGaloisGroupAbelianizationProP]
 
 /-- The identification `G_L^ab ≃ₜ* V^ab` of topological abelianizations, where `V ≤ G_K` is the
 subgroup fixing `ι(L)`, induced by `absoluteGaloisGroupRestrictEquiv L` and
@@ -172,10 +168,8 @@ theorem padicCompletionUnitsEquivAbelianizationProP_of (ι : L →ₐ[K] Separab
       abelianizationProPMk p (AbsoluteGaloisGroup K) (galoisSubgroup K L ι).toSubgroup
         (galoisSubgroupEquiv K L ι (absoluteGaloisGroupRestrictEquiv L σ)) := by
   rw [padicCompletionUnitsEquivAbelianizationProP, ContinuousMulEquiv.trans_apply,
-    padicCompletionUnitsEquivAbsoluteGaloisGroupAbelianizationProP_of, ← hσ,
-    maximalProPQuotient.congr_mk, absoluteGaloisGroupAbelianizationEquiv,
-    ContinuousMulEquiv.topologicalAbelianizationCongr_mk, ContinuousMulEquiv.trans_apply,
-    abelianizationProPMk_apply]
+    padicCompletionUnitsEquivAbsoluteGaloisGroupAbelianizationProP_of, ← hσ]
+  simp [absoluteGaloisGroupAbelianizationEquiv, abelianizationProPMk_apply]
 
 /-! ### Equivariance -/
 
