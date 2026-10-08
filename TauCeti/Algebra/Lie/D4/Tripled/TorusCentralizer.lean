@@ -30,6 +30,9 @@ not the statement that the weight torus is its own centralizer, nor its maximali
 ## References
 
 * J. E. Humphreys, *Linear Algebraic Groups*, §§16 and 26.
+* `TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.TorusCentralizer`, whose character-separation
+  argument for the short-root `F₄` weight torus is the source of the general criterion
+  `TauCeti.mem_centralizer_range_iff_isDiag_of_coe_eq_diagGL` applied here.
 -/
 
 public section
