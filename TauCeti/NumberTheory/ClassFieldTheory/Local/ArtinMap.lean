@@ -236,9 +236,8 @@ theorem exists_openSubgroup_artinMap_mem_iff (V : OpenNormalSubgroup (AbsoluteGa
       map_one]
   refine ⟨(⟨ρ.ker, hρ⟩ : OpenSubgroup _).comap (e.symm : _ →* _) (map_continuous e.symm),
     fun x ↦ ?_⟩
-  -- membership in the open subgroup built from `ρ.ker` is membership in `ρ.ker`
-  change e.symm (artinMap K x) ∈ ρ.ker ↔ _
-  rw [artinMap_apply, ContinuousMulEquiv.symm_apply_apply, hmem, ofMul_toMul,
+  rw [OpenSubgroup.mem_comap, ← OpenSubgroup.mem_toSubgroup, MonoidHom.coe_ofClass,
+    artinMap_apply, ContinuousMulEquiv.symm_apply_apply, hmem, ofMul_toMul,
     (localClassFormation K).abelianizationRestrict_absoluteArtinMap_eq_zero_iff,
     groundEquivOfOpenNormal_unitsLevelEquiv, localGroundEquiv_mem_normSubgroup_iff]
 

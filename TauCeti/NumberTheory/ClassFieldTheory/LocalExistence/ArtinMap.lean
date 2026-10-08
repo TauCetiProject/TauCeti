@@ -97,54 +97,22 @@ theorem profiniteCompletionArtinMap_etaFn (x : Kˣ) :
 /-- The extension of the absolute local Artin map to the profinite completion of `Kˣ` is
 surjective: its image is compact, hence closed, and contains the dense image of `artinMap K`. -/
 theorem surjective_profiniteCompletionArtinMap :
-    Function.Surjective (profiniteCompletionArtinMap K) := by
-  have hc : IsClosed (Set.range (profiniteCompletionArtinMap K)) :=
-    (map_continuous _).isClosedMap.isClosed_range
-  rw [← Set.range_eq_univ, ← hc.closure_eq]
-  refine Dense.closure_eq ((denseRange_artinMap K).mono ?_)
-  rintro _ ⟨x, rfl⟩
-  exact ⟨_, profiniteCompletionArtinMap_etaFn K x⟩
+    Function.Surjective (profiniteCompletionArtinMap K) :=
+  ProfiniteCompletion.surjective_continuousMonoidHom_of_denseRange _ _ <| by
+    simpa using denseRange_artinMap K
 
 /-- In characteristic zero the extension of the absolute local Artin map to the profinite
-completion of `Kˣ` is injective: every subgroup of finite index of `Kˣ` is the preimage of an open
-subgroup of `G_K^ab`. -/
+completion of `Kˣ` is injective: every subgroup of finite index of `Kˣ` is a norm subgroup
+(`localExistence`), hence the preimage of an open subgroup of `G_K^ab`
+(`exists_openSubgroup_artinMap_mem_iff`). -/
 theorem injective_profiniteCompletionArtinMap [CharZero K] :
     Function.Injective (profiniteCompletionArtinMap K) := by
-  rw [injective_iff_map_eq_one]
-  intro c hc
-  refine ProfiniteGrp.limit_ext _ _ _ fun H ↦ ?_
-  rw [← ProfiniteCompletion.coordinateHom_apply Kˣ H c,
-    ← ProfiniteCompletion.coordinateHom_apply Kˣ H 1, map_one]
-  -- `H` is the preimage of an open subgroup `U` of `G_K^ab`
+  refine ProfiniteCompletion.injective_continuousMonoidHom_of_forall _ _ fun H ↦ ?_
   obtain ⟨V, hV⟩ := localExistence H.toSubgroup
   obtain ⟨U, hU⟩ := exists_openSubgroup_artinMap_mem_iff K V
-  -- so the Artin map induces an injection `Kˣ ⧸ H → G_K^ab ⧸ U`
-  let φ : Kˣ ⧸ H.toSubgroup →* Field.absoluteGaloisGroupAbelianization K ⧸ U.toSubgroup :=
-    QuotientGroup.map _ _ (artinMap K) fun x hx ↦ (hU x).2 (hV ▸ hx)
-  have hφmk (x : Kˣ) : φ x = artinMap K x := QuotientGroup.map_mk _ _ _ _ x
-  have hφ : Function.Injective φ := by
-    rw [injective_iff_map_eq_one]
-    intro q hq
-    induction q using QuotientGroup.induction_on with
-    | H x =>
-      rw [hφmk, QuotientGroup.eq_one_iff] at hq
-      rw [QuotientGroup.eq_one_iff, ← hV]
-      exact (hU x).1 hq
-  -- which carries the `H`-coordinate of an element of `(Kˣ)^` to its image in `G_K^ab ⧸ U`
-  have heq : (fun c ↦ (profiniteCompletionArtinMap K c :
-        Field.absoluteGaloisGroupAbelianization K ⧸ U.toSubgroup)) =
-      fun c ↦ φ (ProfiniteCompletion.coordinateHom Kˣ H c) := by
-    let _ : TopologicalSpace (Kˣ ⧸ H.toSubgroup) := ⊥
-    have _ : DiscreteTopology (Kˣ ⧸ H.toSubgroup) := ⟨rfl⟩
-    refine (ProfiniteGrp.ProfiniteCompletion.denseRange (G := GrpCat.of Kˣ)).equalizer
-      (QuotientGroup.continuous_mk.comp (map_continuous _))
-      (continuous_of_discreteTopology.comp
-        (ProfiniteCompletion.continuous_coordinateHom Kˣ H)) (funext fun x ↦ ?_)
-    simp only [Function.comp_apply, profiniteCompletionArtinMap_etaFn,
-      ProfiniteCompletion.coordinateHom_etaFn, hφmk]
-  have hcH := congrFun heq c
-  rw [hc, QuotientGroup.mk_one] at hcH
-  exact hφ (hcH.symm.trans (map_one φ).symm)
+  refine ⟨U, U.mem_nhds_one, fun x hx ↦ ?_⟩
+  rw [SetLike.mem_coe, profiniteCompletionArtinMap_etaFn, hU, hV] at hx
+  exact hx
 
 /-- **The profinite completion of `Kˣ` is `G_K^ab`.** In characteristic zero, in particular for a
 finite extension of `ℚ_p`, the absolute local Artin map extends to an isomorphism of topological
