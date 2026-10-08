@@ -32,9 +32,8 @@ freeness of the maximal pro-`p` quotient of `G_K` and to its generator rank.
   when `μₙ(K)` is trivial.
 * `TauCeti.ClassFieldTheory.natCard_cohomFp_one_absoluteGaloisGroup`: `H¹(G_K, ℤ/n)` has as many
   elements as `Kˣ/(Kˣ)ⁿ`.
-* `TauCeti.finrank_cohomFp_one_absoluteGaloisGroup_of_isUnit_of_exists_isPrimitiveRoot` and
-  `TauCeti.finrank_cohomFp_one_absoluteGaloisGroup_of_isUnit_of_not_mu`: away from the residue
-  characteristic, `H¹(G_K, 𝔽_p)` has dimension two or one according as `K` contains `μ_p`.
+* `TauCeti.finrank_cohomFp_one_absoluteGaloisGroup_of_isUnit_of_not_mu`: away from the residue
+  characteristic, `H¹(G_K, 𝔽_p)` has dimension one when `K` does not contain `μ_p`.
 * `TauCeti.finrank_cohomFp_one_absoluteGaloisGroup_le_two_of_coprime_ringChar`: away from the
   residue characteristic, `H¹(G_K, 𝔽_p)` has dimension at most two.
 * `TauCeti.subsingleton_cohomFp_two_absoluteGaloisGroup_of_not_mu`: `H²(G_K, 𝔽_p) = 0` for a prime
@@ -164,24 +163,6 @@ theorem subsingleton_cohomFp_two_absoluteGaloisGroup_of_not_mu [NeZero (p : K)]
     Subsingleton (cohomFp p (Field.absoluteGaloisGroup K) 2) :=
   ClassFieldTheory.subsingleton_cohomFp_two_absoluteGaloisGroup (NeZero.ne (p : K)).isUnit
     (rootsOfUnity_eq_bot_iff.2 hmu)
-
-/-- **Away from the residue characteristic, `H¹(G_K, 𝔽_p)` has dimension two when
-`μ_p ⊆ K`.** This follows from local duality and Kummer theory: `H¹(G_K, 𝔽_p)` has as many
-elements as `Kˣ/(Kˣ)^p`, whose order is `p · #μ_p(K) = p²`. -/
-theorem finrank_cohomFp_one_absoluteGaloisGroup_of_isUnit_of_exists_isPrimitiveRoot
-    (hpK : IsUnit ((p : ℕ) : 𝒪[K])) (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
-    Module.finrank (ZMod p) (cohomFp p (Field.absoluteGaloisGroup K) 1) = 2 := by
-  have : NeZero (p : K) := ⟨natCast_ne_zero_of_isUnit hpK⟩
-  obtain ⟨ζ, hζ⟩ := hmu
-  have hcard :=
-    ClassFieldTheory.natCard_cohomFp_one_absoluteGaloisGroup_of_isPrimitiveRoot p K hζ
-  rw [powerClassQuotient, powerSubgroup_eq_range_powMonoidHom,
-    card_powerClasses_of_isUnit hpK, hζ.card_rootsOfUnity] at hcard
-  have hfin := Module.natCard_eq_pow_finrank (K := ZMod p)
-    (V := cohomFp p (Field.absoluteGaloisGroup K) 1)
-  rw [Nat.card_zmod, hcard] at hfin
-  refine Nat.pow_right_injective (Fact.out : p.Prime).two_le ?_
-  simpa [pow_two] using hfin.symm
 
 /-- **Away from the residue characteristic, `H¹(G_K, 𝔽_p)` has dimension one when
 `μ_p ⊄ K`.** This follows from local duality and Kummer theory: `H¹(G_K, 𝔽_p)` has as many
