@@ -210,8 +210,8 @@ theorem MemFinite.prod {K : Type u} [Group K] (hH : C.MemFinite H) (hK : C.MemFi
       (QuotientGroup.quotientKerEquivOfSurjective (MonoidHom.snd H K)
         fun k ↦ ⟨(1, k), rfl⟩)).mpr hK
 
-/-- **A class of finite groups is closed under finite products.** Induction on the number of
-factors, splitting off the first factor with `Fin.consEquiv` and applying `MemFinite.prod`. -/
+/-- A dependent product indexed by a finite type belongs to `C` whenever every factor belongs
+to `C`. -/
 theorem MemFinite.pi {ι : Type*} [Finite ι] {K : ι → Type v} [∀ i, Group (K i)]
     (hK : ∀ i, C.MemFinite (K i)) : C.MemFinite (∀ i, K i) := by
   have key : ∀ (n : ℕ) (L : Fin n → Type v) [∀ i, Group (L i)],
