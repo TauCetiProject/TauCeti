@@ -133,7 +133,8 @@ variable {S : Type*} [CommSemiring S] {N : Type*} [AddCommMonoid N] [Module S N]
 
 /-- A semilinear map carrying one basis to another acts on their symmetric algebras by applying
 the scalar homomorphism to polynomial coefficients. -/
-theorem equivMvPolynomial_mapₛₗ {ι : Type w} (b : Basis ι R M) (c : Basis ι S N)
+theorem _root_.SymmetricAlgebra.equivMvPolynomial_mapₛₗ {ι : Type w}
+    (b : Basis ι R M) (c : Basis ι S N)
     (f : M →ₛₗ[φ] N) (h : ∀ i, f (b i) = c i) (x : SymmetricAlgebra R M) :
     SymmetricAlgebra.equivMvPolynomial c (SymmetricAlgebra.mapₛₗ f x) =
       MvPolynomial.map φ (SymmetricAlgebra.equivMvPolynomial b x) := by
@@ -170,7 +171,7 @@ theorem homogeneousSubmoduleMapₛₗ_symmetricAlgebraHomogeneous {ι : Type w}
   apply Subtype.ext
   apply (SymmetricAlgebra.equivMvPolynomial c).injective
   rw [coe_homogeneousSubmoduleMapₛₗ_apply,
-    equivMvPolynomial_mapₛₗ (R := R) (M := M) b c f h,
+    SymmetricAlgebra.equivMvPolynomial_mapₛₗ (R := R) (M := M) b c f h,
     equivMvPolynomial_symmetricAlgebraHomogeneous_apply,
     equivMvPolynomial_symmetricAlgebraHomogeneous_apply]
   simp
