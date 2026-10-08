@@ -19,26 +19,24 @@ identifies, as groups, the units of the restricted product `Πʳ i, [R i, B i]` 
 product `Πʳ i, [(R i)ˣ, (B i)ˣ]` of the unit groups. The two sides carry natural topologies: the
 units of a topological monoid have the topology induced by `x ↦ (x, x⁻¹)`, while the restricted
 product of the unit groups has its restricted-product topology, built from the units topologies of
-the factors. This file shows that these topologies agree when every `B i` is open, so that
-`RestrictedProduct.unitsEquiv` is an isomorphism of topological groups.
+the factors. This file shows that these topologies agree for the cofinite filter of indices when
+every `B i` is open, so that `RestrictedProduct.unitsEquiv` is then an isomorphism of topological
+groups. The inverse comparison map is continuous for every filter of indices, with no openness
+assumption.
 
 For the finite adele ring of a Dedekind domain this is the statement that the topology of the
 finite ideles, as units of the finite adeles, is the restricted-product topology of the local unit
 groups `K_vˣ` with respect to the local integral units `𝒪_vˣ`.
 
-The inverse map is continuous for every filter of indices, since its two coordinates `x` and
-`x⁻¹` are restricted-product maps of continuous maps. For the forward map, an element `x` is an
-integral unit at a cofinite set `T` of indices, and the units that are integral at `T` form an
-open set (because the `B i` are open) on which the forward map takes values in the principal
-stage of the restricted product at `T`, whose topology is the product topology.
-
 ## Main results
 
-* `RestrictedProduct.continuous_unitsEquiv`: the comparison map from the units of the restricted
-  product to the restricted product of the units is continuous when every `B i` is open.
-* `RestrictedProduct.continuous_unitsEquiv_symm`: its inverse is continuous, for every filter.
+* `RestrictedProduct.continuous_unitsEquiv`: for the cofinite filter of indices, the comparison
+  map from the units of the restricted product to the restricted product of the units is
+  continuous when every `B i` is open.
+* `RestrictedProduct.continuous_unitsEquiv_symm`: its inverse is continuous, for every filter of
+  indices and arbitrary submonoids `B i`.
 * `ContinuousMulEquiv.restrictedProductUnits`: the resulting isomorphism of topological groups
-  `(Πʳ i, [R i, B i])ˣ ≃ₜ* Πʳ i, [(R i)ˣ, (B i)ˣ]`.
+  `(Πʳ i, [R i, B i])ˣ ≃ₜ* Πʳ i, [(R i)ˣ, (B i)ˣ]` (cofinite filter, every `B i` open).
 
 ## References
 
@@ -61,6 +59,8 @@ variable {B : ∀ i, S i}
 groups has a continuous inverse, for every filter of indices. -/
 theorem continuous_unitsEquiv_symm {𝓕 : Filter ι} :
     Continuous (unitsEquiv R (B := B) (𝓕 := 𝓕)).symm := by
+  -- The two coordinates `x` and `x⁻¹` of the inverse are restricted-product maps of the
+  -- continuous maps `u ↦ u` and `u ↦ u⁻¹` from `(R i)ˣ` to `R i`.
   have hval : ∀ᶠ i in 𝓕, MapsTo (fun u : (R i)ˣ ↦ (u : R i))
       (Submonoid.ofClass (B i)).units (B i) := .of_forall fun _ _ hu ↦ hu.1
   have hinv : ∀ᶠ i in 𝓕, MapsTo (fun u : (R i)ˣ ↦ ((u⁻¹ : (R i)ˣ) : R i))
@@ -75,6 +75,8 @@ groups**, when every `B i` is open: the comparison map `RestrictedProduct.unitsE
 units of `Πʳ i, [R i, B i]` to `Πʳ i, [(R i)ˣ, (B i)ˣ]` is continuous. -/
 theorem continuous_unitsEquiv (hB : ∀ i, IsOpen (B i : Set (R i))) :
     Continuous (unitsEquiv R (B := B) (𝓕 := cofinite)) := by
+  -- We check continuity at each `x`, by restricting to an open neighbourhood of `x` on which the
+  -- map lands in a single principal stage, whose topology is the product topology.
   refine continuous_iff_continuousAt.mpr fun x ↦ ?_
   -- The indices at which `x` is an integral unit form a cofinite set `T`.
   let T : Set ι := {i | (x : Πʳ i, [R i, B i]) i ∈ B i ∧
