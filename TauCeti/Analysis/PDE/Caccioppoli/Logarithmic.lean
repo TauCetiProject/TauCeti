@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Caccioppoli.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
 import TauCeti.Analysis.Sobolev.W1p.ChainRule
 
@@ -71,78 +71,6 @@ open scoped ContDiff ENNReal Gradient InnerProductSpace NNReal Topology
 namespace TauCeti
 
 namespace PDE
-
-/-! ### Cutting a function off near zero -/
-
-/-- The function `t ↦ s((4t - m)/m) g(t)`, where `s` is `Real.smoothTransition`. It vanishes for
-`t ≤ m/4` and agrees with `g` for `t ≥ m/2`, so it is a globally defined replacement for a
-function `g` that is only well behaved on `(0, ∞)`. -/
-private def positiveCutoff (m : ℝ) (g : ℝ → ℝ) (t : ℝ) : ℝ :=
-  Real.smoothTransition ((4 * t - m) / m) * g t
-
-private theorem positiveCutoff_of_le {m : ℝ} (hm : 0 < m) (g : ℝ → ℝ) {t : ℝ}
-    (ht : t ≤ m / 4) : positiveCutoff m g t = 0 := by
-  rw [positiveCutoff, Real.smoothTransition.zero_of_nonpos
-    (div_nonpos_of_nonpos_of_nonneg (by linarith) hm.le), zero_mul]
-
-private theorem positiveCutoff_of_ge {m : ℝ} (hm : 0 < m) (g : ℝ → ℝ) {t : ℝ}
-    (ht : m / 2 ≤ t) : positiveCutoff m g t = g t := by
-  rw [positiveCutoff, Real.smoothTransition.one_of_one_le
-    (by rw [le_div_iff₀ hm]; linarith), one_mul]
-
-private theorem positiveCutoff_eventuallyEq {m : ℝ} (hm : 0 < m) (g : ℝ → ℝ) {t : ℝ}
-    (ht : m / 2 < t) : positiveCutoff m g =ᶠ[𝓝 t] g := by
-  filter_upwards [Ioi_mem_nhds ht] with s hs
-  exact positiveCutoff_of_ge hm g (le_of_lt hs)
-
-private theorem deriv_positiveCutoff {m : ℝ} (hm : 0 < m) (g : ℝ → ℝ) {t : ℝ}
-    (ht : m / 2 < t) : deriv (positiveCutoff m g) t = deriv g t :=
-  (positiveCutoff_eventuallyEq hm g ht).deriv_eq
-
-private theorem positiveCutoff_nonneg {m : ℝ} (hm : 0 < m) {g : ℝ → ℝ}
-    (hg : ∀ t, 0 < t → 0 ≤ g t) (t : ℝ) : 0 ≤ positiveCutoff m g t := by
-  rcases le_or_gt t (m / 4) with ht | ht
-  · rw [positiveCutoff_of_le hm g ht]
-  · exact mul_nonneg (Real.smoothTransition.nonneg _) (hg t (by linarith))
-
-private theorem contDiff_positiveCutoff {m : ℝ} (hm : 0 < m) {g : ℝ → ℝ}
-    (hg : ∀ t, 0 < t → ContDiffAt ℝ 1 g t) : ContDiff ℝ 1 (positiveCutoff m g) := by
-  rw [contDiff_iff_contDiffAt]
-  intro t
-  rcases lt_or_ge t (m / 4) with ht | ht
-  · -- Below `m/4` the function vanishes identically.
-    have hev : positiveCutoff m g =ᶠ[𝓝 t] fun _ => 0 := by
-      filter_upwards [Iio_mem_nhds ht] with s hs
-      exact positiveCutoff_of_le hm g (le_of_lt hs)
-    exact contDiffAt_const.congr_of_eventuallyEq hev
-  · have hs : ContDiffAt ℝ 1 (fun s : ℝ => Real.smoothTransition ((4 * s - m) / m)) t :=
-      Real.smoothTransition.contDiffAt.comp t
-        (((contDiffAt_id.const_smul (4 : ℝ)).sub contDiffAt_const).div_const m)
-    exact hs.mul (hg t (by linarith))
-
-/-- A cut-off function with continuous derivative, bounded by `K` beyond `m`, has bounded
-derivative on the whole line. -/
-private theorem exists_nnnorm_deriv_positiveCutoff_le {m : ℝ} (hm : 0 < m) {g : ℝ → ℝ}
-    (hg : ∀ t, 0 < t → ContDiffAt ℝ 1 g t) {K : ℝ} (hK : ∀ t, m ≤ t → |deriv g t| ≤ K) :
-    ∃ M : ℝ≥0, ∀ t, ‖deriv (positiveCutoff m g) t‖₊ ≤ M := by
-  have hcont : Continuous (deriv (positiveCutoff m g)) :=
-    (contDiff_positiveCutoff hm hg).continuous_deriv le_rfl
-  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
-    (hcont.continuousOn (s := Icc (m / 4) m))
-  refine ⟨Real.toNNReal (max C K), fun t => ?_⟩
-  rw [← NNReal.coe_le_coe, coe_nnnorm]
-  refine le_trans ?_ (Real.le_coe_toNNReal _)
-  rcases lt_or_ge t (m / 4) with ht | ht
-  · -- Below `m/4` the derivative vanishes.
-    have hev : positiveCutoff m g =ᶠ[𝓝 t] fun _ => 0 := by
-      filter_upwards [Iio_mem_nhds ht] with s hs
-      exact positiveCutoff_of_le hm g (le_of_lt hs)
-    rw [hev.deriv_eq, deriv_const, norm_zero]
-    exact le_trans (norm_nonneg _) ((hC (m / 4) ⟨le_rfl, by linarith⟩).trans (le_max_left _ _))
-  rcases le_or_gt t m with htm | htm
-  · exact (hC t ⟨ht, htm⟩).trans (le_max_left _ _)
-  · rw [deriv_positiveCutoff hm g (by linarith), Real.norm_eq_abs]
-    exact (hK t htm.le).trans (le_max_right _ _)
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
