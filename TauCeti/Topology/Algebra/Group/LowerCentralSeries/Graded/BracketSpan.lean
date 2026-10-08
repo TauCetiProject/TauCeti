@@ -24,19 +24,21 @@ operator `π` carries `C_{k+1}(G)` into `C_{k+2}(G)` (`TauCeti.gradedPow_mem_gra
 
 One identity on the iterated `p`-powers `π^j x` of degree-zero classes accompanies it: the
 symmetrised bracket `[π^{k+1} x, y] + [π^{k+1} y, x]` lies in the span of the brackets `[c, z]` with
-`c ∈ C_{k+1}(G)` and `z ∈ gr_0(G)` (`TauCeti.gradedBracket_gradedPowIter_add_swap_mem_map₂`); for
-odd `p` that sum is zero, and for `p = 2` it need not be, which is why the statement is a
-membership rather than a vanishing. The vanishing `[π^j x, x] = 0` that it rests on is
-`TauCeti.gradedBracket_gradedPowIter_self` in `Graded/Pow.lean`.
+`c ∈ C_{k+1}(G)` and `z ∈ gr_0(G)` (`TauCeti.gradedBracket_gradedPowIter_add_swap_mem_map₂`). In
+degree `k = 0`, expanding `[π (x + y), x + y] = 0` with the additivity defect
+`π (x + y) = π x + π y + (p choose 2) • [y, x]` (`TauCeti.gradedPow_add_zero`) gives the sum as
+`-(p choose 2) • ([[y, x], x] + [[y, x], y])`, brackets with the class `[y, x] ∈ C_1(G)`; this is
+why the statement is a membership rather than a vanishing. The vanishing `[π^j x, x] = 0` that it
+rests on is `TauCeti.gradedBracket_gradedPowIter_self` in `Graded/Pow.lean`.
 
 Finally, when `λ_{k+2}` is open, `gr_{k+1}(G)` is the sum of `C_{k+1}(G)` and the span of the
 iterated `p`-powers `π^{k+1} x` of the degree-zero classes
 (`TauCeti.gradedBracketSpan_sup_span_range_gradedPowIter_eq_top`): this is the graded form of
 `λ_{k+1} = closure (λ_kᵖ ⬝ [λ_k, G])`, iterated down to degree zero.
 
-For the free pro-`p` group `F` of finite rank, the bracket span `C_{k+1}(F)` is the image of the
-basis-modification map `δ_ρ` of every relator class `ρ ∈ gr_1(F)` without `p`-power part whose
-partial derivatives span `gr_0(F)`
+For the free pro-`p` group `F` of finite rank and `k ≥ 1`, the bracket span `C_{k+1}(F)` is the
+image of the basis-modification map `δ_ρ` of every relator class `ρ ∈ gr_1(F)` without `p`-power
+part whose partial derivatives span `gr_0(F)`
 (`TauCeti.freeProP.range_basisModificationDelta_eq_span_of_repr_inl_eq_zero`); the statements here
 are what the pivot-constrained span statement of the classification of Demushkin groups uses.
 
@@ -138,8 +140,9 @@ theorem gradedBracketSpan_le_iff {k : ℕ} {W : Submodule (ZMod p) (gradedPiece 
   simp only [gradedBracketSpan, Submodule.map₂_le, Submodule.mem_top, true_implies,
     gradedBracketLinear_apply]
 
-/-- **Elements of the bracket span are classes of commutators**: every element of `C_{k+1}(G)` is
-the class of an element of `λ_{k+1}(G)` lying in the commutator subgroup of `G`. -/
+/-- **Elements of the bracket span have representatives in the commutator subgroup**: every
+element of `C_{k+1}(G)` is the class of an element of `λ_{k+1}(G)` lying in the commutator subgroup
+of `G`. -/
 theorem exists_mem_commutator_gradedMk_eq_of_mem_gradedBracketSpan {k : ℕ}
     {y : gradedPiece p G (k + 1)} (hy : y ∈ gradedBracketSpan p G k) :
     ∃ z : pLowerCentralSeries p G (k + 1), (z : G) ∈ commutator G ∧ gradedMk p G (k + 1) z = y := by
@@ -206,8 +209,7 @@ theorem gradedPow_mem_map₂_gradedBracketLinear_gradedBracketSpan {k : ℕ}
 
 /-- **The symmetrised bracket of iterated `p`-powers**: for `x, y ∈ gr_0(G)`,
 `[π^{k+1} x, y] + [π^{k+1} y, x]` is a sum of brackets `[c, z]` with `c ∈ C_{k+1}(G)` and
-`z ∈ gr_0(G)`. For odd `p` the sum is zero, and for `p = 2` it is the trace of the degree-zero
-defect of `π` against the bracket. -/
+`z ∈ gr_0(G)`. -/
 theorem gradedBracket_gradedPowIter_add_swap_mem_map₂ (k : ℕ) (x y : gradedPiece p G 0) :
     gradedBracket p G (k + 1) 0 (gradedPowIter p G (k + 1) x) y +
         gradedBracket p G (k + 1) 0 (gradedPowIter p G (k + 1) y) x ∈

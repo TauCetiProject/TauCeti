@@ -12,7 +12,6 @@ public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Borel
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Separation
-import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
 
 /-!
 # The upper-triangular closed subgroup scheme of `SL₂`
@@ -206,35 +205,30 @@ theorem definingHopfIdeal_le_of_le_of_isReduced_of_geometricallySolvable
     definingHopfIdeal k ≤ I := by
   let K := AlgebraicClosure k
   let H := SpecialLinear.coordinateHopfAlgebra k 2
-  let Q := CommHopfAlgCat.quotientPointsSubgroup H I (CommAlgCat.of k K)
   let e := SpecialLinear.pointsMulEquiv (R := k) (A := K) 2
-  let P : Subgroup SL(2, K) := Q.map e.toMonoidHom
-  have hBP : SL2Borel K ≤ P := by
-    intro g hg
-    rw [Subgroup.mem_map_equiv]
-    apply CommHopfAlgCat.quotientPointsSubgroup_le_of_le H hIB (CommAlgCat.of k K)
-    apply (mem_definingPointsSubgroup_iff k _).mpr
-    simpa only [e, MulEquiv.apply_symm_apply] using hg
-  rw [geometricallySolvablePointsCommHopfAlgProperty_iff] at hIsolvable
+  -- The image in `SL₂(K)` of the geometric points of the subgroup cut out by `I`.
+  let φ : HopfAlgebra.points (R := k) (H := CommHopfAlgCat.quotient H I) (CommAlgCat.of k K) →*
+      SL(2, K) :=
+    e.toMonoidHom.comp (CommHopfAlgCat.quotientPointsHom H I (CommAlgCat.of k K)).hom
   let _ : Group.IsSolvable
-      (HopfAlgebra.points (R := k) (H := CommHopfAlgCat.quotient H I)
-        (CommAlgCat.of k K)) := hIsolvable
-  let qEquiv :
-      HopfAlgebra.points (R := k) (H := CommHopfAlgCat.quotient H I)
-          (CommAlgCat.of k K) ≃* Q :=
-    ((CommHopfAlgCat.quotientPointsSubgroupNatIso H I).app
-      (CommAlgCat.of k K)).groupIsoToMulEquiv
-  let _ : Group.IsSolvable Q :=
-    Group.isSolvable_of_isSolvable_injective qEquiv.symm.injective
-  let qToP : Q ≃* P := e.subgroupMap Q
-  let _ : Group.IsSolvable P :=
-    Group.isSolvable_of_surjective (f := qToP.toMonoidHom) qToP.surjective
-  have hPB : P ≤ SL2Borel K := SL2Borel.le_of_isSolvable_of_infinite P hBP
+      (HopfAlgebra.points (R := k) (H := CommHopfAlgCat.quotient H I) (CommAlgCat.of k K)) :=
+    (geometricallySolvablePointsCommHopfAlgProperty_iff k _).mp hIsolvable
+  let _ : Group.IsSolvable φ.range :=
+    Group.isSolvable_of_surjective φ.rangeRestrict_surjective
+  -- A point killing `I` is the image of its lift to the quotient, so `φ.range` contains it.
+  have hφ : ∀ q ∈ CommHopfAlgCat.quotientPointsSubgroup H I (CommAlgCat.of k K),
+      e q ∈ φ.range := fun q hq ↦
+    have hq' := (CommHopfAlgCat.mem_quotientPointsSubgroup_iff H I (CommAlgCat.of k K) q).mp hq
+    MonoidHom.mem_range.mpr ⟨CommHopfAlgCat.liftQuotientPoint H I (CommAlgCat.of k K) q hq',
+      congrArg e (CommHopfAlgCat.quotientPointsHom_liftQuotientPoint H I (CommAlgCat.of k K) q hq')⟩
+  have hBP : SL2Borel K ≤ φ.range := fun g hg ↦ by
+    simpa only [MulEquiv.apply_symm_apply] using hφ (e.symm g)
+      (CommHopfAlgCat.quotientPointsSubgroup_le_of_le H hIB (CommAlgCat.of k K)
+        ((mem_definingPointsSubgroup_iff k (e.symm g)).mpr (by rwa [MulEquiv.apply_symm_apply])))
   apply HopfIdeal.le_of_quotientPointsSubgroup_le (K := K)
   intro q hq
-  apply (mem_definingPointsSubgroup_iff k q).mpr
-  apply hPB
-  exact ⟨q, hq, rfl⟩
+  exact (mem_definingPointsSubgroup_iff k q).mpr
+    (SL2Borel.le_of_isSolvable_of_infinite φ.range hBP (hφ q hq))
 
 /-- The standard upper-triangular Hopf ideal in `O(SL₂)` is maximal, in the reverse ideal
 order corresponding to inclusion of closed subgroups, among smooth closed subgroups with
@@ -247,10 +241,12 @@ theorem definingHopfIdeal_le_of_le_of_smooth_of_geometricallySolvable
     (hIsolvable : geometricallySolvablePointsCommHopfAlgProperty k
       (CommHopfAlgCat.quotient (SpecialLinear.coordinateHopfAlgebra k 2) I)) :
     definingHopfIdeal k ≤ I := by
+  let _ : Algebra.Smooth k
+      (CommHopfAlgCat.quotient (SpecialLinear.coordinateHopfAlgebra k 2) I) :=
+    (smoothCommHopfAlgProperty_iff _).mp hIsmooth
   let _ : IsReduced
       (CommHopfAlgCat.quotient (SpecialLinear.coordinateHopfAlgebra k 2) I) :=
-    ((smoothCommHopfAlgProperty_iff_geometricallyReduced k
-      (CommHopfAlgCat.quotient (SpecialLinear.coordinateHopfAlgebra k 2) I)).mp hIsmooth).isReduced
+    isReduced_of_smooth k _
   exact definingHopfIdeal_le_of_le_of_isReduced_of_geometricallySolvable I hIB hIsolvable
 
 end Field

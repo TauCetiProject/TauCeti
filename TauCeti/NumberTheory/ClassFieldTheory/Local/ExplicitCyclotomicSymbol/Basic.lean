@@ -37,6 +37,11 @@ The normalization follows J. S. Milne, *Class Field Theory*, VII, Example 8.2.
   symbol is the inverse of the unit part.
 * `TauCeti.unitsMap_cyclotomicSymbol_of_coprime`: on every divisor of the modulus coprime to
   `p`, the symbol is the valuation part `p ^ k`.
+* `TauCeti.unitsMap_cyclotomicSymbol_primePow_of_eq_unit`,
+  `TauCeti.unitsMap_cyclotomicSymbol_of_coprime_of_eq_unit`,
+  `TauCeti.unitsMap_cyclotomicSymbol_self_primePow` and
+  `TauCeti.unitsMap_cyclotomicSymbol_self_of_coprime`: the two reductions at a `p`-adic unit and
+  at `p` itself.
 * `TauCeti.realCyclotomicSymbol_of_pos` and `TauCeti.realCyclotomicSymbol_of_neg`: the two values
   of the real symbol.
 -/
@@ -187,6 +192,35 @@ theorem unitsMap_cyclotomicSymbol_of_coprime (m : ℕ) [NeZero m] (p : ℕ) [Fac
   apply Units.ext
   rw [ZMod.unitsMap_val, ZMod.coe_unitOfCoprime, ZMod.coe_unitOfCoprime,
     ZMod.cast_natCast hdcomp]
+
+
+/-- Modulo a power of `p` dividing `m`, the symbol at `p` of a `p`-adic unit `w` is `w⁻¹`. -/
+theorem unitsMap_cyclotomicSymbol_primePow_of_eq_unit (m : ℕ) [NeZero m] (p : ℕ) [Fact p.Prime]
+    {j : ℕ} (hj : p ^ j ∣ m) {x : ℚ_[p]ˣ} {w : ℤ_[p]ˣ}
+    (hx : (x : ℚ_[p]) = ((w : ℤ_[p]) : ℚ_[p])) :
+    ZMod.unitsMap hj (cyclotomicSymbol m p x) =
+      (Units.map (PadicInt.toZModPow j : ℤ_[p] →+* ZMod (p ^ j)).toMonoidHom w)⁻¹ :=
+  unitsMap_cyclotomicSymbol_primePow m p hj x 0 w (by rw [hx, zpow_zero, one_mul])
+
+/-- Modulo a divisor of `m` prime to `p`, the symbol at `p` of a `p`-adic unit is trivial. -/
+theorem unitsMap_cyclotomicSymbol_of_coprime_of_eq_unit (m : ℕ) [NeZero m] (p : ℕ)
+    [Fact p.Prime] {d : ℕ} (hd : d ∣ m) (hcop : Nat.Coprime p d) {x : ℚ_[p]ˣ} {w : ℤ_[p]ˣ}
+    (hx : (x : ℚ_[p]) = ((w : ℤ_[p]) : ℚ_[p])) :
+    ZMod.unitsMap hd (cyclotomicSymbol m p x) = 1 := by
+  rw [unitsMap_cyclotomicSymbol_of_coprime m p hd hcop x 0 w (by rw [hx, zpow_zero, one_mul]),
+    zpow_zero]
+
+/-- Modulo a power of `p` dividing `m`, the symbol of `p` at `p` is trivial. -/
+theorem unitsMap_cyclotomicSymbol_self_primePow (m : ℕ) [NeZero m] (p : ℕ) [Fact p.Prime]
+    {j : ℕ} (hj : p ^ j ∣ m) {x : ℚ_[p]ˣ} (hx : (x : ℚ_[p]) = p) :
+    ZMod.unitsMap hj (cyclotomicSymbol m p x) = 1 := by
+  rw [unitsMap_cyclotomicSymbol_primePow m p hj x 1 1 (by simp [hx]), map_one, inv_one]
+
+/-- Modulo a divisor of `m` prime to `p`, the symbol of `p` at `p` is the class of `p`. -/
+theorem unitsMap_cyclotomicSymbol_self_of_coprime (m : ℕ) [NeZero m] (p : ℕ) [Fact p.Prime]
+    {d : ℕ} (hd : d ∣ m) (hcop : Nat.Coprime p d) {x : ℚ_[p]ˣ} (hx : (x : ℚ_[p]) = p) :
+    ZMod.unitsMap hd (cyclotomicSymbol m p x) = ZMod.unitOfCoprime p hcop := by
+  rw [unitsMap_cyclotomicSymbol_of_coprime m p hd hcop x 1 1 (by simp [hx]), zpow_one]
 
 /-- **The explicit symbol of `ℚ(μ_m)/ℚ` at the real place.** It is the sign of a real unit,
 viewed as the unit `1` or `-1` modulo `m`. -/
