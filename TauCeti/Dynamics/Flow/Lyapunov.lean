@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Dynamics.Flow
 public import Mathlib.Order.Filter.AtTopBot.Basic
 public import Mathlib.Topology.Separation.Hausdorff
 public import Mathlib.Topology.Compactness.Compact
-public import Mathlib.Topology.Instances.Real.Lemmas
 public import TauCeti.Dynamics.Flow.Stable
 import Mathlib.Topology.Order.MonotoneConvergence
 import TauCeti.Topology.Connected.TotallyDisconnected
@@ -95,29 +93,17 @@ theorem stableSet_eq_singleton_of_antitone (hg : ContinuousAt g x)
   · by_contra hyx
     exact (hmax y hyx).not_ge (le_of_mem_stableSet_of_antitone hy hg (hanti y))
 
-/-- A strict global minimum of a function antitone along every orbit is a fixed point. -/
-private theorem fixed_of_antitone_of_strictMin (hanti : ∀ y, Antitone fun t ↦ g (φ t y))
-    (hmin : ∀ y, y ≠ x → g x < g y) (t : ℝ) : φ t x = x := by
-  have hpos : ∀ s, 0 ≤ s → φ s x = x := fun s hs ↦ by
-    by_contra hne
-    have h : g (φ s x) ≤ g x := by simpa only [map_zero_apply] using hanti x hs
-    exact (hmin _ hne).not_ge h
-  rcases le_total 0 t with ht | ht
-  · exact hpos t ht
-  · calc φ t x = φ t (φ (-t) x) := by rw [hpos (-t) (neg_nonneg.2 ht)]
-      _ = x := by rw [← map_add, add_neg_cancel, map_zero_apply]
-
 /-- **The unstable set of a strict minimum is a point.** Let `g` be antitone along every orbit and
 continuous at a point `x` at which it has a strict global minimum. Then no other orbit converges
 to `x` in backward time. -/
 theorem unstableSet_eq_singleton_of_antitone (hg : ContinuousAt g x)
     (hanti : ∀ y, Antitone fun t ↦ g (φ t y)) (hmin : ∀ y, y ≠ x → g x < g y) :
     φ.unstableSet x = {x} := by
-  have hx := fixed_of_antitone_of_strictMin hanti hmin
-  refine eq_singleton_iff_unique_mem.2 ⟨mem_unstableSet.2 ?_, fun y hy ↦ ?_⟩
-  · simpa only [hx] using tendsto_const_nhds
-  · by_contra hyx
-    exact (hmin y hyx).not_ge (le_of_mem_unstableSet_of_antitone hy hg (hanti y))
+  rw [← stableSet_reverse]
+  refine stableSet_eq_singleton_of_antitone hg.neg (fun y s t hst ↦ ?_)
+    fun y hy ↦ neg_lt_neg (hmin y hy)
+  simp only [reverse_apply, Pi.neg_apply]
+  exact neg_le_neg (hanti y (neg_le_neg hst))
 
 end Limit
 
