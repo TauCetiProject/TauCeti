@@ -305,8 +305,9 @@ instance residuallyFinite_units : Group.ResiduallyFinite Kˣ := by
   have hv : normalizedValuation K x = 1 := by
     set k := (normalizedValuation K x).toAdd
     let f : Kˣ →* Multiplicative (ZMod (k.natAbs + 1)) :=
-      (Int.castAddHom _).toMultiplicative.comp (normalizedValuation K)
-    have hk : (k : ZMod (k.natAbs + 1)) = 0 := congrArg Multiplicative.toAdd (hx f.ker)
+      (normalizedValuationMod K (k.natAbs + 1)).toMultiplicativeRight
+    have hk : (k : ZMod (k.natAbs + 1)) = 0 := by
+      simpa [f] using congrArg Multiplicative.toAdd (hx f.ker)
     rw [ZMod.intCast_zmod_eq_zero_iff_dvd] at hk
     rw [← toAdd_eq_zero]
     exact Int.eq_zero_of_dvd_of_natAbs_lt_natAbs hk (by omega)
