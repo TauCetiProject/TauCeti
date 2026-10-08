@@ -56,6 +56,10 @@ unique, but only unique up to the rotations of `𝔻*` by `e`-th roots of unity.
   given points of the two fibres over a point.
 * `IsCoveringMap.exists_homeomorph_puncturedDiscPow_comp_eq_iff`: a connected cover of `𝔻*` is
   isomorphic over `𝔻*` to `z ↦ z ^ e` exactly when it has `e` sheets.
+* `TauCeti.existsUnique_rootsOfUnity_smul_homeomorph`: any two such isomorphisms differ by
+  rotation through a unique `e`-th root of unity.
+* `IsCoveringMap.existsUnique_homeomorph_puncturedDiscPow_comp_eq`: prescribing the image of
+  one point makes the isomorphism with the power-map model unique.
 
 ## References
 
@@ -351,5 +355,58 @@ theorem _root_.IsCoveringMap.exists_homeomorph_puncturedDiscPow_comp_eq_iff (hp 
       ((card_puncturedDiscPow_preimage_singleton he w).symm ▸ Nat.pos_of_ne_zero he)).1
     exact (hp.exists_homeomorph_puncturedDiscPow_comp_eq he hcard (Classical.arbitrary _)
       (Classical.arbitrary _)).imp fun _ h => h.2
+
+omit [ConnectedSpace E] in
+/-- **Two identifications of a cover with the punctured-disc power map differ by a unique
+rotation.** More precisely, if `h` and `k` are homeomorphisms from the same space to the
+punctured disc and both identify a map `p` with `z ↦ z ^ e`, then there is a unique `e`-th root
+of unity `ζ` such that, after coercion to `ℂ`, `k y = ζ · h y` for every `y`.
+
+No covering or connectedness hypothesis is needed: the difference `k ∘ h⁻¹` is a deck
+transformation of the power map, whose deck group is the group of `e`-th roots of unity. -/
+theorem existsUnique_rootsOfUnity_smul_homeomorph (he : e ≠ 0)
+    (h k : E ≃ₜ ↥(ball (0 : ℂ) 1 \ {0}))
+    (hh : puncturedDiscPow he ∘ h = p) (hk : puncturedDiscPow he ∘ k = p) :
+    ∃! ζ : rootsOfUnity e ℂ, ∀ y, (k y : ℂ) = ((ζ : ℂˣ) : ℂ) * (h y : ℂ) := by
+  let _ : NeZero e := ⟨he⟩
+  let φ : deck (puncturedDiscPow he) := ⟨h.symm.trans k, by
+    ext z
+    have hhk := congrArg Subtype.val (congr_fun hk (h.symm z))
+    have hhh := congrArg Subtype.val (congr_fun hh (h.symm z))
+    simpa only [Function.comp_apply, Homeomorph.trans_apply, h.apply_symm_apply] using
+      hhk.trans hhh.symm⟩
+  let ζ := (puncturedDiscPowDeckMulEquiv he).symm φ
+  refine ⟨ζ, ?_, ?_⟩
+  · intro y
+    simpa only [ζ, φ, Homeomorph.trans_apply, h.symm_apply_apply] using
+      (puncturedDiscPowDeckMulEquiv_symm_apply he φ (h y)).symm
+  · intro η hη
+    let z : ↥(ball (0 : ℂ) 1 \ {0}) := ⟨(1 / 2 : ℂ), by
+      norm_num [mem_ball_zero_iff]⟩
+    apply Subtype.ext
+    apply Units.ext
+    apply mul_right_cancel₀ z.2.2
+    have hζ : (k (h.symm z) : ℂ) = ((ζ : ℂˣ) : ℂ) * (h (h.symm z) : ℂ) := by
+      simpa only [ζ, φ, Homeomorph.trans_apply, h.apply_symm_apply] using
+        (puncturedDiscPowDeckMulEquiv_symm_apply he φ z).symm
+    simpa only [h.apply_symm_apply] using (hη (h.symm z)).symm.trans hζ
+
+/-- **A point-rigidified finite connected cover of the punctured disc has a unique power-map
+model.** Given points `y₀` and `z₀` in corresponding fibres, there is exactly one
+homeomorphism over the punctured disc carrying `y₀` to `z₀`. Without the point condition,
+the homeomorphism is unique only up to the rotations described by
+`existsUnique_rootsOfUnity_smul_homeomorph`. -/
+theorem _root_.IsCoveringMap.existsUnique_homeomorph_puncturedDiscPow_comp_eq
+    (hp : IsCoveringMap p) (he : e ≠ 0) {w : ↥(ball (0 : ℂ) 1 \ {0})}
+    (hcard : Nat.card (p ⁻¹' {w}) = e) (y₀ : p ⁻¹' {w})
+    (z₀ : puncturedDiscPow he ⁻¹' {w}) :
+    ∃! h : E ≃ₜ ↥(ball (0 : ℂ) 1 \ {0}),
+      h y₀ = z₀ ∧ puncturedDiscPow he ∘ h = p := by
+  obtain ⟨h, hy, hcomp⟩ := hp.exists_homeomorph_puncturedDiscPow_comp_eq he hcard y₀ z₀
+  refine ⟨h, ⟨hy, hcomp⟩, ?_⟩
+  rintro k ⟨ky, kcomp⟩
+  apply Homeomorph.ext
+  exact fun x => congr_fun ((isCoveringMap_puncturedDiscPow he).eq_of_comp_eq h.continuous
+    k.continuous (hcomp.trans kcomp.symm) y₀ (by rw [hy, ky])) x |>.symm
 
 end TauCeti

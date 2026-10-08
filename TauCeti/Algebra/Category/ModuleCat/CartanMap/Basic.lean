@@ -117,7 +117,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits
 
-universe u
+universe u v
 
 variable (R : Type u) [Ring R]
 
@@ -299,7 +299,7 @@ and `N` finitely generated, then `[N]` is the sum of the classes of the images o
 `G₀(mod R)`: `0 → range f → N → range g → 0` is a short exact sequence of finitely generated
 modules. Telescoping this along a longer exact sequence with zero ends makes its alternating sum of
 classes vanish. -/
-theorem exactK0_of_eq_range_add_range {M N P : Type u} [AddCommGroup M] [Module R M]
+theorem exactK0_of_eq_range_add_range {M : Type v} {N P : Type u} [AddCommGroup M] [Module R M]
     [Module.Finite R M] [AddCommGroup N] [Module R N] [Module.Finite R N] [AddCommGroup P]
     [Module R P] {f : M →ₗ[R] N} {g : N →ₗ[R] P} (hfg : Function.Exact f g) :
     (ExactK0.of (FGModuleCat.of R N) : ExactK0 (finiteModulesExactStructure R)) =
@@ -331,7 +331,7 @@ theorem exactK0_of_range_of_injective {M N : Type u} [AddCommGroup M] [Module R 
 
 /-- The image of a surjective linear map onto a finitely generated module has the class of its
 target in `G₀(mod R)`. -/
-theorem exactK0_of_range_of_surjective {M N : Type u} [AddCommGroup M] [Module R M]
+theorem exactK0_of_range_of_surjective {M : Type v} {N : Type u} [AddCommGroup M] [Module R M]
     [AddCommGroup N] [Module R N] [Module.Finite R N] {f : M →ₗ[R] N}
     (hf : Function.Surjective f) :
     letI := Module.Finite.equiv (LinearEquiv.ofTop _ (LinearMap.range_eq_top.mpr hf)).symm
