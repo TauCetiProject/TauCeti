@@ -175,3 +175,33 @@ theorem realizationTopHomeomorphClosedBall_norm_eq_one_iff (n : ℕ)
     realizationTopHomeomorphCoordinateSimplex_mem_frontier_iff n x
 
 end AbstractSimplicialComplex
+
+namespace PreAbstractSimplicialComplex
+
+open AbstractSimplicialComplex
+
+/-- The polyhedron of any `n`-simplex is homeomorphic to the Euclidean closed `n`-ball,
+inside any ambient weak realization containing it. Unused ambient vertices add no points. -/
+theorem nonempty_homeomorph_simplex_closedBall {ι : Type*}
+    {K : AbstractSimplicialComplex ι} {V : Finset ι} {n : ℕ}
+    (hV : V.card = n + 1) (hK : simplex V ≤ K.toPreAbstractSimplicialComplex) :
+    Nonempty ({x : Realization K // x.1.support ∈ simplex V} ≃ₜ
+      closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) := by
+  classical
+  let e := V.equivFinOfCardEq hV
+  let h : Convexity.StdSimplex ℝ V ≃ₜ Convexity.StdSimplex ℝ (Fin (n + 1)) := {
+    toFun := Convexity.StdSimplex.map e
+    invFun := Convexity.StdSimplex.map e.symm
+    left_inv x := by
+      rw [← Convexity.StdSimplex.map_comp, Equiv.symm_comp_self, Convexity.StdSimplex.map_id]
+    right_inv x := by
+      rw [← Convexity.StdSimplex.map_comp, Equiv.self_comp_symm, Convexity.StdSimplex.map_id]
+    continuous_toFun := Convexity.StdSimplex.continuous_map ℝ e
+    continuous_invFun := Convexity.StdSimplex.continuous_map ℝ e.symm }
+  have hface : V ∈ K := hK (self_mem_simplex.mpr (Finset.card_pos.mp (by omega)))
+  exact ⟨(K.simplexRealizationHomeomorph V hface).symm.trans
+    ((Finset.standardSimplexHomeomorph V).trans
+      (h.trans ((realizationTopHomeomorphStdSimplex (ι := Fin (n + 1))).symm.trans
+        (realizationTopHomeomorphClosedBall n))))⟩
+
+end PreAbstractSimplicialComplex
