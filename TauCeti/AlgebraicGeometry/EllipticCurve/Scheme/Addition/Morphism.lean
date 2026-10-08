@@ -74,9 +74,7 @@ private theorem exists_smul_of_SpecMap_chartι_eq {A : CommRingCat.{u}} {i i' : 
     {β : CommRingCat.of (W.toProjective.ChartRing i') ⟶ A}
     (h : Spec.map α ≫ W.chartι i = Spec.map β ≫ W.chartι i') :
     ∃ u : Aˣ, α.hom ∘ W.toProjective.chartPoint i = u • (β.hom ∘ W.toProjective.chartPoint i') := by
-  rw [W.chartι_eq_projModelPoint i, W.chartι_eq_projModelPoint i', ← CommRingCat.ofHom_hom α,
-    ← CommRingCat.ofHom_hom β, SpecMap_projModelPoint, SpecMap_projModelPoint,
-    projModelPoint_eq_projModelPoint_iff] at h
+  rw [W.SpecMap_chartι, W.SpecMap_chartι, projModelPoint_eq_projModelPoint_iff] at h
   exact h.2
 
 -- Pushed along `φ`, the two laws selected by `s` and `s'` have vanishing cross product.

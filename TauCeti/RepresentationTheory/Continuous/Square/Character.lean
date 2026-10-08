@@ -71,7 +71,7 @@ this file consumes are brought in by `open`.
 
 public section
 
-open TauCeti TauCeti.ContRepresentation
+open TauCeti
 
 namespace ContRepresentation
 

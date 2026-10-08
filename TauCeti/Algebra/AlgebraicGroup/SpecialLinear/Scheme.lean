@@ -175,7 +175,6 @@ theorem schemePointsMulEquiv_groupSchemePointMulEquiv
 
 /-- The inverse scheme-points equivalence sends a determinant-one matrix to the spectrum point
 induced by its canonical coordinate-algebra point. -/
-@[simp]
 lemma schemePointsMulEquiv_symm_apply (g : Matrix.SpecialLinearGroup (Fin n) A) :
     (schemePointsMulEquiv n A).symm g =
       groupSchemePointMulEquiv n A

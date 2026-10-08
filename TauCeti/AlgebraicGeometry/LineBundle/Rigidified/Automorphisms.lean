@@ -53,7 +53,10 @@ and its image consists of the classes of the line bundles whose pullback along `
 * `RigidifiedLineBundleClass.toLineBundleClass_injective_of_comp_eq_id`: forgetting the
   rigidification is injective when `s` is a section of a morphism `Y ⟶ T`, and
   `RigidifiedLineBundleClass.range_toLineBundleClass` describes its image as the line-bundle classes
-  whose pullback along `s` is trivial.
+  whose pullback along `s` is trivial;
+* `RigidifiedLineBundleClass.mk_toLineBundleClass_bijective`: for a section `s` of `p : Y ⟶ T`,
+  forgetting the rigidification identifies the classes of line bundles rigidified along `s` with
+  `Pic(Y) / p^* Pic(T)`.
 
 ## References
 
@@ -355,6 +358,38 @@ lemma range_toLineBundleClass :
   obtain ⟨L, rfl⟩ := LineBundleClass.mk_surjective a
   rw [mem_range_toLineBundleClass_iff, Set.mem_ofPred_eq, LineBundleClass.pullback_mk,
     LineBundleClass.mk_eq_one_iff, InvertibleSheaf.pullback_obj_obj]
+
+/-- If `s` is a section of `p : Y ⟶ T`, then forgetting the rigidification and passing to the
+quotient by the line-bundle classes pulled back along `p` is a bijection from the classes of
+line bundles rigidified along `s` onto `Pic(Y) / p^* Pic(T)`. -/
+theorem mk_toLineBundleClass_bijective {p : Y ⟶ T} (h : s ≫ p = 𝟙 T) :
+    Function.Bijective fun a : RigidifiedLineBundleClass s ↦
+      (QuotientGroup.mk (toLineBundleClass a) :
+        LineBundleClass Y ⧸ (LineBundleClass.pullbackHom p).range) := by
+  have hsp (c : LineBundleClass T) :
+      LineBundleClass.pullbackHom s (LineBundleClass.pullbackHom p c) = c := by
+    rw [← MonoidHom.comp_apply, LineBundleClass.pullbackHom_comp, h,
+      LineBundleClass.pullbackHom_id, MonoidHom.id_apply]
+  have hrange (a : RigidifiedLineBundleClass s) :
+      LineBundleClass.pullbackHom s (toLineBundleClass a) = 1 := by
+    have ha := Set.mem_range_self (f := toLineBundleClass) a
+    rwa [range_toLineBundleClass, Set.mem_ofPred_eq, ← LineBundleClass.pullbackHom_apply] at ha
+  refine ⟨fun a b hab ↦ toLineBundleClass_injective_of_comp_eq_id h ?_, fun q ↦ ?_⟩
+  · obtain ⟨c, hc⟩ := QuotientGroup.eq.mp hab
+    -- Pulling `c` back along `p` and then along `s` recovers `c`, while both classes pull back
+    -- to the trivial class along `s`; so `c = 1`.
+    have hc1 : c = 1 := by
+      rw [← hsp c, hc, map_mul, map_inv, hrange, hrange, inv_one, one_mul]
+    rw [hc1, map_one, eq_comm, inv_mul_eq_one] at hc
+    exact hc
+  · obtain ⟨a, rfl⟩ := QuotientGroup.mk_surjective q
+    -- Correct `a` by the pullback of its restriction along `s` to land in the kernel of `s^*`.
+    obtain ⟨r, hr⟩ : a * (LineBundleClass.pullbackHom p (LineBundleClass.pullbackHom s a))⁻¹ ∈
+        Set.range (toLineBundleClass : RigidifiedLineBundleClass s → _) := by
+      rw [range_toLineBundleClass, Set.mem_ofPred_eq, ← LineBundleClass.pullbackHom_apply,
+        map_mul, map_inv, hsp, mul_inv_cancel]
+    refine ⟨r, QuotientGroup.eq.mpr ⟨LineBundleClass.pullbackHom s a, ?_⟩⟩
+    rw [hr, mul_inv_rev, inv_inv, inv_mul_cancel_right]
 
 end RigidifiedLineBundleClass
 

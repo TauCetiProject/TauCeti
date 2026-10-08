@@ -74,24 +74,13 @@ normal spheres. -/
     mem_normalSphereBundleOfRadius]
   grind
 
-/-- Restricting an embedded normal tube to a smaller continuous radius preserves its
-open embedding. -/
-theorem isOpenEmbedding_normalTubeOfRadius_of_le {f : M → V} {r s : M → ℝ}
-    (hr : Continuous r) (hrs : ∀ x, r x ≤ s x)
-    (h : IsOpenEmbedding ((normalTubeOfRadius I f s).domRestrict
-      fun p : M × V => f p.1 + p.2)) :
-    IsOpenEmbedding ((normalTubeOfRadius I f r).domRestrict
-      fun p : M × V => f p.1 + p.2) := by
-  have hsub : normalTubeOfRadius I f r ⊆ normalTubeOfRadius I f s := fun p hp =>
-    mem_normalTubeOfRadius.mpr
-      ⟨(mem_normalTubeOfRadius.mp hp).1, (mem_normalTubeOfRadius.mp hp).2.trans_le (hrs p.1)⟩
-  apply h.comp (IsOpenEmbedding.inclusion hsub ?_)
-  convert isOpen_lt ((continuous_norm.comp continuous_snd).comp
-    (continuous_subtype_val : Continuous (Subtype.val : normalTubeOfRadius I f s → M × V)))
-    (hr.comp (continuous_fst.comp continuous_subtype_val)) using 1
-  ext p
-  simp only [mem_preimage, mem_normalTubeOfRadius, mem_ofPred_eq, Function.comp_apply]
-  exact and_iff_right (mem_normalTubeOfRadius.mp p.2).1
+/-- Restricting an embedded normal tube to a smaller radius preserves its open embedding. -/
+theorem isOpenEmbedding_normalTube_of_le {f : M → V} {ε R : ℝ} (hεR : ε ≤ R)
+    (h : IsOpenEmbedding ((normalTube I f R).domRestrict fun p : M × V => f p.1 + p.2)) :
+    IsOpenEmbedding ((normalTube I f ε).domRestrict fun p : M × V => f p.1 + p.2) := by
+  rw [← normalTubeOfRadius_const f R] at h
+  rw [← normalTubeOfRadius_const f ε]
+  exact isOpenEmbedding_normalTubeOfRadius_of_le continuous_const (fun _ => hεR) h
 
 section Regularity
 
@@ -224,7 +213,7 @@ theorem frontier_image_normalTube (hf : ContMDiff I 𝓘(ℝ, V) 1 f) {ε R : �
   let Φ : M × V → V := fun p => f p.1 + p.2
   have hopen : IsOpen (Φ '' normalTube I f ε) := by
     simpa only [range_domRestrict, normalTubeOfRadius_const] using
-      (isOpenEmbedding_normalTubeOfRadius_of_le (r := fun _ => ε) (s := fun _ => R)
+      (isOpenEmbedding_normalTubeOfRadius_of_le (r := fun _ => ε) (R := fun _ => R)
         continuous_const (fun _ => hεR.le)
         (by rw [normalTubeOfRadius_const]; exact h)).isOpen_range
   have hinj : InjOn Φ (normalDiscBundleOfRadius I f (fun _ => ε)) := by

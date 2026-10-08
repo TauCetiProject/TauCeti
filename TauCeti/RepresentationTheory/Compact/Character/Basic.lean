@@ -71,7 +71,7 @@ public section
 open MeasureTheory
 open scoped InnerProductSpace
 
-open TauCeti TauCeti.ContRepresentation
+open TauCeti
 
 namespace ContRepresentation
 

@@ -67,7 +67,7 @@ public section
 
 open scoped InnerProductSpace
 
-open TauCeti TauCeti.ContRepresentation
+open TauCeti
 
 namespace ContRepresentation
 

@@ -156,11 +156,6 @@ theorem groupScheme_def :
 noncomputable abbrev inclusion : groupScheme R n ⟶ GeneralLinear.groupScheme R n :=
   GeneralLinear.weightParabolicInclusion R (weights n)
 
-/-- The upper-triangular inclusion into `GL_n` is a closed immersion. -/
-instance isClosedImmersion_inclusion :
-    AlgebraicGeometry.IsClosedImmersion (inclusion R n).hom.hom.left := by
-  infer_instance
-
 /-- The upper-triangular coordinate Hopf algebra, bundled with its finite-type property. -/
 noncomputable def finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat R :=
   GeneralLinear.weightParabolicFiniteTypeCoordinateHopfAlgebra R (weights n)
@@ -171,11 +166,6 @@ theorem finiteTypeCoordinateHopfAlgebra_obj :
     (finiteTypeCoordinateHopfAlgebra R n).obj = coordinateHopfAlgebra R n := by
   rw [finiteTypeCoordinateHopfAlgebra,
     GeneralLinear.weightParabolicFiniteTypeCoordinateHopfAlgebra_obj]
-
-/-- The structural morphism of the upper-triangular group scheme is locally of finite type. -/
-instance locallyOfFiniteType_groupScheme :
-    AlgebraicGeometry.LocallyOfFiniteType (groupScheme R n).X.hom := by
-  infer_instance
 
 section Points
 
