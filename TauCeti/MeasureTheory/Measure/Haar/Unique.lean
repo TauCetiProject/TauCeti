@@ -8,35 +8,40 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
-# Nonsingularity of topological additive equivalences
+# Nonsingularity of topological group isomorphisms
 
-A continuous additive equivalence into a second-countable locally compact group is nonsingular
-for any additive Haar measures chosen on its source and target. Thus null sets can be transported
-between the groups independently of the normalizations of their measures.
+A continuous group isomorphism into a second-countable locally compact group is nonsingular for
+any Haar measures chosen on its source and target. Thus null sets can be transported between the
+groups independently of the normalizations of their measures. Both multiplicative and additive
+versions are provided.
 
-This uses `MeasureTheory.Measure.absolutelyContinuous_isAddHaarMeasure` for the pushforward,
-which is again an additive Haar measure.
+This uses `MeasureTheory.Measure.absolutelyContinuous_isHaarMeasure` for the pushforward,
+which is again a Haar measure.
 
 ## Main results
 
-* `ContinuousAddEquiv.quasiMeasurePreserving_addHaar`: a continuous additive equivalence
-  is quasi measure preserving for additive Haar measures on its source and target.
+* `ContinuousMulEquiv.quasiMeasurePreserving_haar`: a continuous group isomorphism
+  is quasi measure preserving for Haar measures on its source and target.
+* `ContinuousAddEquiv.quasiMeasurePreserving_addHaar`: the additive version.
 -/
 
 public section
 
 open MeasureTheory MeasureTheory.Measure
 
+/-- A continuous group isomorphism into a second-countable locally compact group is nonsingular
+for any Haar measures on its source and target. -/
+@[to_additive
 /-- A continuous additive equivalence into a second-countable locally compact group is nonsingular
-for any additive Haar measures on its source and target. -/
-theorem ContinuousAddEquiv.quasiMeasurePreserving_addHaar {G H : Type*}
-    [AddGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
+for any additive Haar measures on its source and target. -/]
+theorem ContinuousMulEquiv.quasiMeasurePreserving_haar {G H : Type*}
+    [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
     [MeasurableSpace G] [BorelSpace G]
-    [AddGroup H] [TopologicalSpace H] [IsTopologicalAddGroup H]
+    [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
     [LocallyCompactSpace H] [SecondCountableTopology H]
     [MeasurableSpace H] [BorelSpace H]
-    (e : G ≃ₜ+ H) (μ : Measure G) (ν : Measure H)
-    [IsAddHaarMeasure μ] [IsAddHaarMeasure ν] : QuasiMeasurePreserving e μ ν :=
-  ⟨e.continuous.measurable, absolutelyContinuous_isAddHaarMeasure (μ.map e) ν⟩
+    (e : G ≃ₜ* H) (μ : Measure G) (ν : Measure H)
+    [IsHaarMeasure μ] [IsHaarMeasure ν] : QuasiMeasurePreserving e μ ν :=
+  ⟨e.continuous.measurable, absolutelyContinuous_isHaarMeasure (μ.map e) ν⟩
 
 end
