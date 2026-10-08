@@ -89,15 +89,18 @@ theorem pullbackInternalHomComparison_app_eq_curry (F : Y.Modules) :
   exact (curry_uncurry _).symm.trans
     (congrArg curry (pullbackInternalHomComparison_ev E f F))
 
+/-- The internal-Hom dual of `E` forms an exact pairing with `E` in sheaves of modules. -/
 local instance : ExactPairing (dual E).obj E.obj :=
   exactPairingOfIsIsoDualTensorIhom (Y := E.obj)
 
+/-- Restrict the dual pairing of `E` to quasicoherent sheaves. -/
 local instance : ExactPairing ((toQuasicoherent Y).obj (dual E))
     ((toQuasicoherent Y).obj E) :=
   @ObjectProperty.exactPairingFullSubcategory Y.Modules _ _ _
     (Scheme.Modules.isMonoidal_isQuasicoherent Y) _ _
     (inferInstanceAs (ExactPairing (dual E).obj E.obj))
 
+/-- Pullback transports the quasicoherent dual pairing to sheaves of modules on `X`. -/
 local instance : ExactPairing ((Scheme.Modules.pullback f).obj (dual E).obj)
     ((Scheme.Modules.pullback f).obj E.obj) :=
   (((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙
