@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Analytic.Fan.Map.Orbit
-public import TauCeti.Geometry.Toric.Analytic.Fan.Product
+public import TauCeti.Geometry.Toric.Analytic.Fan.Product.Basic
 
 /-!
 # Orbits of product toric realizations
