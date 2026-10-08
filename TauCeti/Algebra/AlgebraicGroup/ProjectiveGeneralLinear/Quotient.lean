@@ -37,6 +37,8 @@ the center of `GLₙ` (`TauCeti.ProjectiveGeneralLinear.kernelHopfIdeal_conjugat
 
 * `TauCeti.ProjectiveGeneralLinear.exists_span_eq_top_forall_mapPoints_mem_range`: every point
   of `PGLₙ` lifts to `GLₙ` Zariski-locally.
+* `TauCeti.ProjectiveGeneralLinear.exists_lift_conjugationMap`: hence every point of `PGLₙ` lifts
+  to `GLₙ` after a faithfully flat, finitely presented extension of its value algebra.
 * `TauCeti.ProjectiveGeneralLinear.kernelFppfQuotientIso`: `PGLₙ` is the fppf quotient of `GLₙ`
   by the kernel of the conjugation homomorphism, over any commutative ring.
 * `TauCeti.ProjectiveGeneralLinear.centerQuotientFppfIso`: over a field, `PGLₙ` is the fppf
@@ -90,7 +92,7 @@ theorem exists_span_eq_top_forall_mapPoints_mem_range (A : CommAlgCat.{u} R)
 
 /-- Every point of `PGLₙ` lifts to `GLₙ` after a faithfully flat, finitely presented extension of
 its value algebra, namely the product of the localizations of a finite Zariski cover. -/
-private theorem exists_lift_conjugationMap (A : CommAlgCat.{u} R)
+theorem exists_lift_conjugationMap (A : CommAlgCat.{u} R)
     (y : coordinateHopfAlgebra n R →ₐ[R] A) :
     ∃ (B : CommAlgCat.{u} R) (φ : A ⟶ B)
       (z : GeneralLinear.coordinateHopfAlgebra R n →ₐ[R] B),

@@ -36,6 +36,22 @@ open Filter Topology
 
 namespace Polynomial
 
+/-- Evaluation along a point continuous at `x₀` is continuous at `x₀` if the coefficients of
+index at most `d` are continuous there and the family has degree bounded by `d` nearby. -/
+theorem continuousAt_eval {X R : Type*} [TopologicalSpace X] [TopologicalSpace R]
+    [Semiring R] [IsTopologicalSemiring R] {f : X → R[X]} {r : X → R} {x₀ : X} {d : ℕ}
+    (hf : ∀ i ≤ d, ContinuousAt (fun x ↦ (f x).coeff i) x₀)
+    (hd : ∀ᶠ x in 𝓝 x₀, (f x).natDegree ≤ d) (hr : ContinuousAt r x₀) :
+    ContinuousAt (fun x ↦ (f x).eval (r x)) x₀ := by
+  have heq : (fun x ↦ (f x).eval (r x)) =ᶠ[𝓝 x₀]
+      fun x ↦ ∑ i ∈ Finset.range (d + 1), (f x).coeff i * r x ^ i := by
+    filter_upwards [hd] with x hx
+    exact eval_eq_sum_range' (Nat.lt_succ_of_le hx) _
+  have hc : ContinuousAt (fun x ↦ ∑ i ∈ Finset.range (d + 1),
+      (f x).coeff i * r x ^ i) x₀ :=
+    tendsto_finsetSum _ fun i hi ↦ (hf i (Finset.mem_range_succ_iff.1 hi)).mul (hr.pow i)
+  exact hc.congr_of_eventuallyEq heq
+
 variable {X R ι : Type*} [TopologicalSpace X] [CommSemiring R] [TopologicalSpace R]
   [IsTopologicalSemiring R] {x₀ : X}
 
@@ -68,8 +84,8 @@ continuous, then its evaluation is jointly continuous in the parameter and the p
 theorem continuous_eval_of_continuous_coeff {f : X → R[X]} {d : ℕ}
     (hf : ∀ i ≤ d, Continuous fun x => (f x).coeff i) (hd : ∀ x, (f x).natDegree ≤ d) :
     Continuous fun z : X × R => (f z.1).eval z.2 := by
-  simp_rw [fun z : X × R => eval_eq_sum_range' (Nat.lt_succ_of_le (hd z.1)) z.2]
-  exact continuous_finsetSum _ fun i hi =>
-    ((hf i (Finset.mem_range_succ_iff.1 hi)).comp continuous_fst).mul (continuous_snd.pow i)
+  refine continuous_iff_continuousAt.2 fun z ↦ ?_
+  exact continuousAt_eval (fun i hi ↦ ((hf i hi).comp continuous_fst).continuousAt)
+    (.of_forall fun y ↦ hd y.1) continuous_snd.continuousAt
 
 end Polynomial

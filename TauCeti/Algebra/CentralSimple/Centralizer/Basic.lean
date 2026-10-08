@@ -80,7 +80,8 @@ is simple, and `finrank K (End_R A) * finrank K R = (finrank K A)²`. Since
 
 * `TauCeti.centralizerAlgEquivEnd`: the identification `C_A(B) ≃ₐ[K] End_{B ⊗[K] Aᵐᵒᵖ} A`, by left
   multiplication. It needs no hypothesis beyond `B` being a subalgebra.
-* `TauCeti.centralizer_isSimpleRing`: **the centralizer of a central simple subalgebra is simple.**
+* `Subalgebra.isSimpleRing_centralizer_of_isSimpleRing_tensorProduct`: the centralizer is simple
+  when the bimodule algebra is simple.
 * `TauCeti.finrank_mul_finrank_centralizer`: **the centralizer theorem**,
   `finrank K B * finrank K C_A(B) = finrank K A`.
 * `TauCeti.finrank_mul_finrank_centralizer_of_isField`: the same dimension formula for a
@@ -90,7 +91,6 @@ is simple, and `finrank K (End_R A) * finrank K R = (finrank K A)²`. Since
   multiplication.
 * `TauCeti.centralizer_isCentral`: **the centralizer of a central simple subalgebra of a central
   simple algebra is central**, so that `C_A(B)` is central simple again.
-* `TauCeti.centralizer_centralizer`: **the double centralizer theorem**, `C_A(C_A(B)) = B`.
 * `TauCeti.deg_mul_deg_centralizer`: the degree form of the dimension formula,
   `deg K B * deg K C_A(B) = deg K A`.
 
@@ -119,16 +119,11 @@ once and separately, in
 central simple and `A` simple, and `TauCeti.finrank_mul_finrank_centralizer_of_isField` the case
 where it comes instead from `B` a subfield of a central simple `A`.
 
-That last statement asks for `IsField ↥L` and not for the weaker `IsSimpleRing ↥L`, which is all
-its proof uses. The restriction is a scope boundary and not a mathematical one: stated for a merely
-simple subalgebra it is the centralizer theorem for a non-central simple subalgebra, which the
-Layer 5 bullet of the roadmap referenced below defers — "the general form for a merely simple
-subalgebra `B` (center `Z(B) ⊋ K`) ... is a **later** target, not this one" — to be taken up
-together with the description of the centralizer's centre. Nothing is lost in generality by it:
-the count itself is stated at the level its proof works at, and a caller with a merely simple `L`
-can use it directly.
+The double-centralizer theorem and the description of the centralizer's center for an arbitrary
+simple subalgebra of a central simple ambient algebra are in
+`TauCeti/Algebra/CentralSimple/Centralizer/Simple.lean`.
 
-Centrality of `A`, on the other hand, is asked only of the last three statements, and there it
+Centrality of `A`, on the other hand, is asked of the centrality and degree statements, and there it
 cannot be dropped either: for `K = ℝ`, `A = ℂ` and `B = ⊥`, which is central simple, the centralizer
 of `B` is all of `ℂ` and so is its centralizer in turn, which is not `⊥`. The second worked example
 records this.
@@ -140,9 +135,6 @@ machinery: it is a statement about a centralizer, whose only degree input is
 
 ## References
 
-This implements the Layer 5 targets `centralizer_isSimpleRing`, `finrank_mul_finrank_centralizer`
-and `centralizer_centralizer` of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
 See R. S. Pierce, *Associative Algebras*, GTM 88, Chapter 12, and P. Gille, T. Szamuely, *Central
 Simple Algebras and Galois Cohomology*, Chapter 2.
 -/
@@ -331,6 +323,18 @@ theorem finrank_mul_finrank_centralizer_of_isSimpleRing_tensorProduct_mulOpposit
   rw [mul_comm (finrank K B), mul_assoc]
   exact key
 
+/-- The centralizer of a subalgebra is simple when its tensor product with the opposite
+ambient algebra is simple. No centrality hypothesis on the subalgebra is needed. -/
+theorem _root_.Subalgebra.isSimpleRing_centralizer_of_isSimpleRing_tensorProduct :
+    IsSimpleRing (Subalgebra.centralizer K (B : Set A)) := by
+  have : FiniteDimensional K ↥B :=
+    FiniteDimensional.of_injective B.val.toLinearMap Subtype.val_injective
+  have : IsArtinianRing (↥B ⊗[K] Aᵐᵒᵖ) := IsArtinianRing.of_finite K _
+  have : Module.Finite (↥B ⊗[K] Aᵐᵒᵖ) (Bimodule B.val) :=
+    Module.Finite.of_restrictScalars_finite K _ _
+  exact _root_.IsSimpleRing.of_ringEquiv (centralizerAlgEquivEnd B).symm.toRingEquiv
+    (IsSimpleRing.moduleEnd (R := ↥B ⊗[K] Aᵐᵒᵖ) (M := Bimodule B.val))
+
 end DimensionCount
 
 section Subfield
@@ -367,19 +371,6 @@ section Centralizer
 variable {K A : Type*} [Field K] [Ring A] [Algebra K A] [IsSimpleRing A] [FiniteDimensional K A]
   (B : Subalgebra K A) [Algebra.IsCentral K B] [IsSimpleRing B]
 
-/-- **The centralizer of a central simple subalgebra of a simple algebra is a simple ring.** It is
-the endomorphism algebra of `A` as a module over the simple Artinian algebra `B ⊗[K] Aᵐᵒᵖ`. -/
-theorem centralizer_isSimpleRing :
-    IsSimpleRing (Subalgebra.centralizer K (B : Set A)) := by
-  have : FiniteDimensional K ↥B :=
-    FiniteDimensional.of_injective B.val.toLinearMap Subtype.val_injective
-  -- `B ⊗[K] Aᵐᵒᵖ` is simple Artinian, and `A` is finite over it because it is finite over `K`.
-  have : IsArtinianRing (↥B ⊗[K] Aᵐᵒᵖ) := IsArtinianRing.of_finite K _
-  have : Module.Finite (↥B ⊗[K] Aᵐᵒᵖ) (Bimodule B.val) :=
-    Module.Finite.of_restrictScalars_finite K _ _
-  exact _root_.IsSimpleRing.of_ringEquiv (centralizerAlgEquivEnd B).symm.toRingEquiv
-    (IsSimpleRing.moduleEnd (R := ↥B ⊗[K] Aᵐᵒᵖ) (M := Bimodule B.val))
-
 /-- **The centralizer theorem.** For a central simple `K`-subalgebra `B` of a finite-dimensional
 simple `K`-algebra `A`, the dimensions of `B` and of its centralizer are complementary:
 
@@ -403,7 +394,7 @@ sides have the same dimension over `K`, so it is surjective as well.
 Only the isomorphism `TauCeti.tensorCentralizerAlgEquiv` assembled from this is exported. -/
 private theorem tensorCentralizerAlgHom_bijective :
     Function.Bijective (tensorCentralizerAlgHom B) := by
-  have := centralizer_isSimpleRing B
+  have := B.isSimpleRing_centralizer_of_isSimpleRing_tensorProduct
   have hinj : Function.Injective (tensorCentralizerAlgHom B) :=
     (tensorCentralizerAlgHom B : _ →ₐ[K] A).toRingHom.injective
   refine ⟨hinj, ?_⟩
@@ -447,7 +438,7 @@ variable {K A : Type*} [Field K] [Ring A] [Algebra K A] [Algebra.IsCentral K A] 
   [FiniteDimensional K A] (B : Subalgebra K A) [Algebra.IsCentral K B] [IsSimpleRing B]
 
 /-- **The centralizer of a central simple subalgebra of a central simple algebra is central.**
-Together with `TauCeti.centralizer_isSimpleRing` this says that `C_A(B)` is again central simple, so
+Together with simplicity of the centralizer, this says that `C_A(B)` is again central simple, so
 that the centralizer theorem may be applied to it in turn.
 
 The proof is the tensor decomposition `B ⊗[K] C_A(B) ≃ₐ[K] A` transported: the tensor product is
@@ -460,35 +451,6 @@ theorem centralizer_isCentral :
     Algebra.IsCentral.of_algEquiv K A _ (tensorCentralizerAlgEquiv B).symm
   Algebra.IsCentral.right_of_tensor_of_field K ↥B _
 
-/-- **The double centralizer theorem for a central simple subalgebra.** For a central simple
-`K`-subalgebra `B` of a finite-dimensional central simple `K`-algebra `A`,
-
-  `C_A(C_A(B)) = B`.
-
-One inclusion is formal. For the other, `C = C_A(B)` is itself central simple
-(`TauCeti.centralizer_isSimpleRing` and `TauCeti.centralizer_isCentral`), so the centralizer theorem
-applies to `C` as well and gives `finrank K C * finrank K C_A(C) = finrank K A`, while for `B` it
-gives `finrank K B * finrank K C = finrank K A`. Cancelling `finrank K C`, which is positive, leaves
-`finrank K C_A(C) = finrank K B`, and a subalgebra containing `B` with the dimension of `B` is `B`.
-
-The inner centralizer is written as the `Set.centralizer` of `↑B`, which is what
-`Subalgebra.coe_centralizer` (a `simp` lemma) turns the coerced subalgebra into, so that the
-left-hand side is in simp normal form; `Subalgebra.centralizer_centralizer_centralizer` is stated
-the same way. -/
-@[simp]
-theorem centralizer_centralizer :
-    Subalgebra.centralizer K (Set.centralizer (B : Set A)) = B := by
-  have := centralizer_isSimpleRing B
-  have := centralizer_isCentral B
-  have hC : 0 < finrank K ↥(Subalgebra.centralizer K (B : Set A)) := Module.finrank_pos
-  have hdim : finrank K B
-      = finrank K ↥(Subalgebra.centralizer K
-        (Subalgebra.centralizer K (B : Set A) : Set A)) := by
-    refine Nat.eq_of_mul_eq_mul_left hC ?_
-    rw [finrank_mul_finrank_centralizer (Subalgebra.centralizer K (B : Set A)),
-      ← finrank_mul_finrank_centralizer B, mul_comm]
-  exact (Subalgebra.eq_of_le_of_finrank_eq (Subalgebra.le_centralizer_centralizer K) hdim).symm
-
 /-- **The degree is multiplicative along a central simple subalgebra**:
 `deg K B * deg K C_A(B) = deg K A`.
 
@@ -496,11 +458,11 @@ This is the dimension formula with square roots taken, the degree being the squa
 dimension (`TauCeti.Algebra.deg_sq`), and it is the shape in which the centralizer theorem is
 usually quoted. It is a statement about the degree of `C_A(B)`, so it needs `C_A(B)` to be
 central simple, which is `TauCeti.centralizer_isCentral` together with
-`TauCeti.centralizer_isSimpleRing`; given that, it is the tensor decomposition read through
+the simplicity theorem for centralizers; given that, it is the tensor decomposition read through
 `TauCeti.Algebra.deg_tensorProduct`. -/
 theorem deg_mul_deg_centralizer :
     Algebra.deg K B * Algebra.deg K ↥(Subalgebra.centralizer K (B : Set A)) = Algebra.deg K A := by
-  have := centralizer_isSimpleRing B
+  have := B.isSimpleRing_centralizer_of_isSimpleRing_tensorProduct
   have := centralizer_isCentral B
   have h := Algebra.deg_eq_of_algEquiv (K := K) (tensorCentralizerAlgEquiv B)
   rwa [Algebra.deg_tensorProduct (K := K) (A := ↥B)
@@ -530,7 +492,7 @@ example :
   rw [centralizer_top_complex, htop, Complex.finrank_real_complex]
   norm_num
 
-/-- The negative control for `TauCeti.centralizer_centralizer`: centrality of the **ambient**
+/-- The negative control for the double-centralizer theorem: centrality of the **ambient**
 algebra cannot be dropped. Take `K = ℝ` and `A = ℂ` again, and `B = ⊥`, which is central simple,
 being `ℝ` itself. Its centralizer is all of `ℂ`, and so is the centralizer of that, not `⊥`. -/
 example :

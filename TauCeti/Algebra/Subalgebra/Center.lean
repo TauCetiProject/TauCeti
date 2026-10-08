@@ -19,6 +19,8 @@ as an equality of subalgebras, and that are needed whenever a structure theorem 
 up to an algebra equivalence, together with the criterion for a commutative algebra to be central
 and the ring of scalars a central subalgebra provides.
 
+* `Subalgebra.map_center_val` identifies the center of a subalgebra with its intersection
+  with its centralizer in the ambient algebra.
 * `TauCeti.centerCongr` transports the center along an algebra equivalence. It is the
   `Subalgebra` counterpart of Mathlib's `Subring.centerCongr`, which sees only the ring
   structure and therefore cannot record `R`-linearity.
@@ -53,6 +55,22 @@ public section
 namespace Subalgebra
 
 variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+
+/-- The center of a subalgebra, included in the ambient algebra, consists of its elements
+which centralize the whole subalgebra. -/
+@[simp]
+theorem map_center_val (B : Subalgebra R A) :
+    (center R B).map B.val = B ⊓ centralizer R (B : Set A) := by
+  ext x
+  constructor
+  · rintro ⟨z, hz, rfl⟩
+    refine ⟨z.property, (mem_centralizer_iff R).mpr ?_⟩
+    intro b hb
+    exact congrArg Subtype.val ((mem_center_iff.mp hz) ⟨b, hb⟩)
+  · rintro ⟨hx, hcomm⟩
+    refine mem_map.mpr ⟨⟨x, hx⟩, mem_center_iff.mpr ?_, rfl⟩
+    intro b
+    exact Subtype.ext ((mem_centralizer_iff R).mp hcomm b b.property)
 
 /-- The center of an algebra acts on the algebra by its inclusion. -/
 instance centerAlgebra : Algebra (center R A) A :=

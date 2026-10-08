@@ -218,15 +218,11 @@ theorem gradedBracket_gradedPowIter_add_swap_mem_map₂ (k : ℕ) (x y : gradedP
   | zero =>
     -- Expand `[π (x + y), x + y] = 0` with the degree-zero formula for `π (x + y)`: the sum is
     -- `-(p choose 2) • ([[y, x], x] + [[y, x], y])`, brackets with the class `[y, x] ∈ C_1(G)`.
-    have hself : ∀ z : gradedPiece p G 0, gradedBracket p G 1 0 (gradedPow p G 0 z) z = 0 :=
-      fun z ↦ by
-        simpa only [gradedPowIter_succ, gradedPowIter_zero] using
-          gradedBracket_gradedPowIter_self 1 z
-    have h := gradedBracket_gradedPowIter_self 1 (x + y)
-    simp only [gradedPowIter_succ, gradedPowIter_zero] at h ⊢
+    have h := gradedBracket_gradedPow_self (x + y)
+    simp only [gradedPowIter_succ, gradedPowIter_zero]
     rw [gradedPow_add_zero, ← gradedBracketLinear_apply] at h
     simp only [map_add, LinearMap.add_apply, map_nsmul, LinearMap.smul_apply,
-      gradedBracketLinear_apply, hself, zero_add, add_zero] at h
+      gradedBracketLinear_apply, gradedBracket_gradedPow_self, zero_add, add_zero] at h
     have hsum : gradedBracket p G 1 0 (gradedPow p G 0 x) y +
         gradedBracket p G 1 0 (gradedPow p G 0 y) x =
           -(p.choose 2 • gradedBracket p G 1 0 (gradedBracket p G 0 0 y x) x +
