@@ -156,8 +156,7 @@ theorem conjugate_inv_le_of_mem_quotientPointsSubgroup_mkQuotient
     (by
       intro x hx
       rw [BialgHom.coe_toAlgHom] at hx
-      exact HopfIdeal.mem_toIdeal.mp
-        ((CommHopfAlgCat.mkQuotient_eq_zero_iff (CommHopfAlgCat.of R H) I x).mp hx)) hmem
+      exact (CommHopfAlgCat.mkQuotient_eq_zero_iff (CommHopfAlgCat.of R H) I x).mp hx) hmem
 
 /-- Conjugation preserves and reflects containment of Hopf ideals. -/
 @[simp]

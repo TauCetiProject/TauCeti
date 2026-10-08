@@ -390,15 +390,9 @@ theorem pointsNatIso_inv_app_apply (A : CommAlgCat.{w} R)
 
 end Functor
 
-end TauCeti.GeneralLinear.UpperTriangular
+section RootSubgroup
 
-namespace TauCeti.GeneralLinear.UpperTriangular
-
-universe u w
-
-noncomputable section
-
-variable (R : Type u) [CommRing R] {n : ℕ} {i j : Fin n}
+variable {n} {i j : Fin n}
 
 /-- A root subgroup indexed by `i < j` consists of upper-triangular matrices, so its points lie
 in the standard upper-triangular closed subgroup. -/
@@ -517,6 +511,6 @@ theorem rootSubgroup_comp_inclusion (hij : i < j) :
     GeneralLinear.weightParabolicInclusion_def, ← hcomp]
   simp only [Category.assoc, eqToHom_refl, Category.id_comp, eqToIso.hom]
 
-end
+end RootSubgroup
 
 end TauCeti.GeneralLinear.UpperTriangular
