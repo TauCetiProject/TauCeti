@@ -194,8 +194,7 @@ theorem mem_level_iff {a : HeisenbergGroup ℤ_[p]} :
 @[simp]
 theorem level_zero : level p 0 = openNormalSubgroupTop (HeisenbergGroup ℤ_[p]) :=
   OpenNormalSubgroup.toSubgroup_injective <| by
-    change (level p 0).toSubgroup = (openNormalSubgroupTop _).toSubgroup
-    rw [openNormalSubgroupTop_toSubgroup, Subgroup.eq_top_iff']
+    simp only [openNormalSubgroupTop_toSubgroup, Subgroup.eq_top_iff']
     exact fun a ↦ (mem_level_iff p 0).mpr (by simp)
 
 /-- The levels decrease as the exponent grows. -/
