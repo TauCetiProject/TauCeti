@@ -17,6 +17,7 @@ finite locally free sources, without flatness of `f` or finiteness of the target
 
 The comparison is the mate of the inverse tensor comparison with left factor `M`.
 It is characterized by evaluation and is natural in every target sheaf of modules.
+Use `TauCeti.AlgebraicGeometry.pullbackInternalHomComparison M f` for the comparison.
 Invertibility follows by identifying internal Hom with tensoring by the dual, and using the
 tensor comparison with that quasicoherent dual as left factor. The proof uses
 `TauCeti.ihomIsoTensorLeft` and `CategoryTheory.Functor.mapExactPairing` to transport
