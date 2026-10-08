@@ -41,7 +41,7 @@ variable (n : ℕ) {A : Type u} [CommRing A] [IsLeftCancelMulZero A]
 
 /-- If the spin weights define distinct characters on torus points, a carrier point
 centralizes the weight torus exactly when its spin matrix is diagonal. -/
-theorem mem_centralizer_range_weightTorusPoints_iff_isDiag_of_injective
+theorem mem_centralizer_range_weightTorusPoints_iff_isDiag_of_weightChar_basisWeight_injective
     (hchar : Function.Injective fun i : Fin (dimension n) ↦ weightChar A (basisWeight n i))
     (g : points n A) :
     g ∈ Subgroup.centralizer (Set.range (weightTorusPoints n A)) ↔
@@ -67,6 +67,17 @@ theorem mem_centralizer_range_weightTorusPoints_iff_isDiag_of_injective
     rw [← hg.diagonal_diag]
     exact (Matrix.commute_diagonal _ _).eq
 
+/-- If the spin weights define distinct characters on torus points, the weight-torus
+centralizer is the inverse image of the ambient diagonal torus under the carrier inclusion. -/
+theorem
+    centralizer_range_weightTorusPoints_eq_comap_diagonalTorus_of_weightChar_basisWeight_injective
+    (hchar : Function.Injective fun i : Fin (dimension n) ↦ weightChar A (basisWeight n i)) :
+    Subgroup.centralizer (Set.range (weightTorusPoints n A)) =
+      (diagonalTorus A (dimension n)).comap (points n A).subtype := by
+  ext g
+  simp only [mem_centralizer_range_weightTorusPoints_iff_isDiag_of_weightChar_basisWeight_injective
+    n hchar, Subgroup.mem_comap, Subgroup.subtype_apply, mem_diagonalTorus_iff]
+
 variable {k : Type u} [Field k] [Infinite k]
 
 /-- Over an infinite field in any characteristic, the spin weight-torus centralizer consists
@@ -76,7 +87,7 @@ theorem mem_centralizer_range_weightTorusPoints_iff_isDiag (g : points n k) :
     g ∈ Subgroup.centralizer (Set.range (weightTorusPoints n k)) ↔
       ((g : GL (Fin (dimension n)) k) :
         Matrix (Fin (dimension n)) (Fin (dimension n)) k).IsDiag := by
-  apply mem_centralizer_range_weightTorusPoints_iff_isDiag_of_injective
+  apply mem_centralizer_range_weightTorusPoints_iff_isDiag_of_weightChar_basisWeight_injective
   intro i j h
   exact (Fintype.equivFin (Finset (Fin (n + 1)))).symm.injective
     (DynkinType.typeBSpinWeight_injective (weightChar_injective h))
@@ -87,8 +98,10 @@ that the weight torus is its own centralizer. -/
 theorem centralizer_range_weightTorusPoints_eq_comap_diagonalTorus :
     Subgroup.centralizer (Set.range (weightTorusPoints n k)) =
       (diagonalTorus k (dimension n)).comap (points n k).subtype := by
-  ext g
-  simp only [mem_centralizer_range_weightTorusPoints_iff_isDiag, Subgroup.mem_comap,
-    Subgroup.subtype_apply, mem_diagonalTorus_iff]
+  apply
+    centralizer_range_weightTorusPoints_eq_comap_diagonalTorus_of_weightChar_basisWeight_injective
+  intro i j h
+  exact (Fintype.equivFin (Finset (Fin (n + 1)))).symm.injective
+    (DynkinType.typeBSpinWeight_injective (weightChar_injective h))
 
 end TauCeti.TypeBSpinCarrier
