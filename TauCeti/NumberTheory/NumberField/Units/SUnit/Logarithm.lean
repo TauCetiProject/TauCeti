@@ -126,7 +126,7 @@ instance finite_ker_sUnitLog : Finite (sUnitLog S).ker := by
 
 /-- For finite S, the coordinates of the S-unit logarithmic vector sum to zero. -/
 -- This is an explicit rewrite lemma: `simp` first splits sums over a disjoint union.
-theorem sum_sUnitLog [Fintype S] (u : S.unit K) :
+theorem sum_sUnitLog_eq_zero [Fintype S] (u : S.unit K) :
     ∑ p : S ⊕ InfinitePlace K, sUnitLog S (.ofMul u) p = 0 := by
   classical
   have hprod : (∏ v : S, normalizedAbsValue (.inl v.val) (u : Kˣ)) *
