@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.D4.Tripled.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Generated
+import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.CoordinateBaseChange
 import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.SmoothConnected
 import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 
@@ -15,7 +16,7 @@ import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 
 Over a commutative ring, the eight numbered root subgroups and the rank-four weight torus of the
 tripled type-`D₄` carrier define a closed subgroup of `GL₂₄` by a common-kernel quotient of its
-coordinate Hopf algebra. Over an algebraically closed field, this subgroup is connected. The
+coordinate Hopf algebra. Over every field, this subgroup is geometrically connected. The
 base-changed integral carrier contains it; equality of the two closed subgroups is a separate
 question.
 
@@ -98,23 +99,30 @@ theorem existsUnique_generatorCoordinateMap_factor (j : Sum (Fin 4 ⊕ Fin 4) Un
 
 end Construction
 
+open TauCeti.CommHopfAlgCat
+
 variable (k : Type u) [Field k]
 
-private theorem connectedSpace_generatorCoordinateAlgebra :
-    ∀ j, ConnectedSpace (PrimeSpectrum (generatorCoordinateAlgebra k j)) := by
+private theorem geometricallyConnected_generatorCoordinateAlgebra :
+    ∀ j, geometricallyConnectedCommHopfAlgProperty k (generatorCoordinateAlgebra k j) := by
   intro j
   cases j with
-  | inl _ => exact AdditiveGroup.connectedSpace_primeSpectrum_coordinateHopfAlgebra k
+  | inl _ =>
+    rw [geometricallyConnectedCommHopfAlgProperty_iff]
+    intro L _ _
+    have := AdditiveGroup.connectedSpace_primeSpectrum_baseChange_coordinateHopfAlgebra k L
+    exact connectedSpace_primeSpectrum_of_injective
+      (Algebra.TensorProduct.comm k (AdditiveGroup.coordinateHopfAlgebra k) L).toRingHom
+      (Algebra.TensorProduct.comm k (AdditiveGroup.coordinateHopfAlgebra k) L).injective
   | inr _ =>
-    exact DiagonalizableGroup.connectedSpace_primeSpectrum_coordinateRing k
+    exact DiagonalizableGroup.geometricallyConnected_coordinateRing k
       (SplitTorus.characterGroup (Fin 4))
 
-/-- The generated closed subgroup is geometrically connected over an algebraically closed field. -/
-theorem geometricallyConnectedCommHopfAlgProperty_generatedCoordinateHopfAlgebra
-    [IsAlgClosed k] :
+/-- The generated closed subgroup is geometrically connected over every field. -/
+theorem geometricallyConnectedCommHopfAlgProperty_generatedCoordinateHopfAlgebra :
     geometricallyConnectedCommHopfAlgProperty k (generatedCoordinateHopfAlgebra k) := by
   rw [generatedCoordinateHopfAlgebra_def, generatedDefiningIdeal_def]
-  exact CommHopfAlgCat.geometricallyConnectedCommHopfAlgProperty_commonKernelQuotient
-    (generatorCoordinateMap k) (connectedSpace_generatorCoordinateAlgebra k)
+  exact geometricallyConnectedCommHopfAlgProperty_commonKernelQuotient_of_geometricallyConnected
+    (generatorCoordinateMap k) (geometricallyConnected_generatorCoordinateAlgebra k)
 
 end TauCeti.D4Tripled
