@@ -33,9 +33,9 @@ the same multiplicities, once the rectangle of the commuted diagram is read with
 columns exchanged
 (`GridPentagonBetween.coveredSquares_val_add_val_turnCut` and
 `GridInitialPentagonBetween.coveredSquares_val_add_val_turnCut`). Hence a counted decomposition
-read the other way is counted and has the same monomial weight, and in each order the two
-readings cancel between the two sides of the chain-map equation, over any commutative semiring
-(`GridDiagram.
+read the other way is counted and has the same monomial weight over any commutative semiring.
+Thus in each order the two readings have equal total weight; when addition is cancellative, these
+matched totals can be removed from the two sides of the chain-map equation (`GridDiagram.
 sum_rectanglePentagonWeight_add_sum_rectangleInitialPentagonWeight_eq_iff_sdiff_turnCuts`).
 
 ## Main definitions
