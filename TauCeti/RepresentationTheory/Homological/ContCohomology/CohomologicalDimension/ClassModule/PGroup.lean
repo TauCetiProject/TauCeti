@@ -23,16 +23,6 @@ Let `G` be a profinite group with `scd_p G ≤ 2` and let `V` be an open normal 
 NSW (3.6.4), (ii) ⇒ (iii), for `p`-group quotients; the Sylow argument of (3.6.3) passes from
 these to arbitrary finite quotients.
 
-The proof inducts on `#(G ⧸ V)`. A nontrivial finite `p`-group has a normal subgroup of index
-`p`; its preimage `W` in `G` is open and normal with `V ≤ W` and `#(G ⧸ W) = p`. The prime-order
-case (`TauCeti.subsingleton_h1_abelianizationProP_of_card_eq_prime`,
-`TauCeti.abelianizationProPClass_generates_of_card_eq_prime`) applies to `W ◁ G`, and the
-induction hypothesis to `V.subgroupOf W ◁ W`, which `TauCeti.abelianizationProPSubgroupOfH1Equiv`
-and `TauCeti.abelianizationProPSubgroupOfH2Equiv` identify with the restriction to the image of
-`W` in `G ⧸ V`. The map `i` of NSW (3.6.1)(ii) then fits into inflation–restriction sequences
-(`TauCeti.abelianizationProPInfl1_exact`, `TauCeti.abelianizationProPInfl2_exact`) and carries
-`u_{G/W}(p)` to `(W : V) • u_{G/V}(p)` (`TauCeti.abelianizationProPInfl2_class`).
-
 ## Main results
 
 * `TauCeti.subsingleton_h1_abelianizationProP_of_isPGroup`: `H¹(G ⧸ V, V^ab(p)) = 0` for a
@@ -61,15 +51,16 @@ section Step
 
 variable {V W : Subgroup G} [V.Normal] [W.Normal]
 
-/-- The degree-one induction step: for open normal subgroups `V ≤ W`, if `H¹(G ⧸ W, W^ab(p))` and
-`H¹(W ⧸ V, V^ab(p))` vanish, then so does `H¹(G ⧸ V, V^ab(p))`, since the map `i` from the first
-is onto the kernel of restriction to the image of `W`, the restriction landing in the second. -/
+/-- For open normal subgroups `V ≤ W` of `G` with `scd_p G ≤ 2`, if `H¹(G ⧸ W, W^ab(p))` and
+`H¹(W ⧸ V, V^ab(p))` vanish, then so does `H¹(G ⧸ V, V^ab(p))`. -/
 private theorem subsingleton_h1_abelianizationProP_of_le (hp : p.Prime)
     (h : strictCohomologicalDimensionAt.{u} p G ≤ 2) (hVW : V ≤ W) (hV : IsOpen (V : Set G))
     [Subsingleton (H1 (G ⧸ W) (Additive (abelianizationProP p G W)))]
     [Subsingleton
       (H1 (W ⧸ V.subgroupOf W) (Additive (abelianizationProP p W (V.subgroupOf W))))] :
     Subsingleton (H1 (G ⧸ V) (Additive (abelianizationProP p G V))) := by
+  -- The map `i` from `H¹(G ⧸ W, W^ab(p))` is onto the kernel of restriction to the image of `W`
+  -- in `G ⧸ V`, and that restriction lands in `H¹(W ⧸ V, V^ab(p))`.
   have : Finite (G ⧸ V) := V.quotient_finite_of_isOpen hV
   have : V.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
   have : Subsingleton (H1 (W.map (QuotientGroup.mk' V)) (Additive (abelianizationProP p G V))) :=
@@ -81,7 +72,7 @@ private theorem subsingleton_h1_abelianizationProP_of_le (hp : p.Prime)
     exact Subsingleton.elim _ _
   exact hsurj.subsingleton
 
-/-- The degree-two induction step: for open normal subgroups `V ≤ W` with `H¹(W ⧸ V, V^ab(p))`
+/-- For open normal subgroups `V ≤ W` of `G` with `scd_p G ≤ 2` and `H¹(W ⧸ V, V^ab(p))`
 trivial, if `u_{G/W}(p)` generates `H²(G ⧸ W, W^ab(p))` and `u_{W/V}(p)` generates
 `H²(W ⧸ V, V^ab(p))`, then `u_{G/V}(p)` generates `H²(G ⧸ V, V^ab(p))`, and the order of the
 latter is the product of the orders of the former two. -/
@@ -133,14 +124,20 @@ end Step
 
 variable {V : Subgroup G} [V.Normal]
 
-/-- Both conclusions for a `p`-group quotient, proved together by induction on `#(G ⧸ V)`: each
-induction step needs the vanishing of `H¹` for a smaller quotient to compute `H²`. -/
+/-- For a profinite group `G` with `scd_p G ≤ 2` and an open normal subgroup `V` whose quotient
+`G ⧸ V` is a `p`-group, `H¹(G ⧸ V, V^ab(p)) = 0`, and `u_{G/V}(p)` generates
+`H²(G ⧸ V, V^ab(p))`, a group of order `#(G ⧸ V)`. -/
 private theorem abelianizationProPClass_of_isPGroup (hp : p.Prime)
     (h : strictCohomologicalDimensionAt.{u} p G ≤ 2) (hV : IsOpen (V : Set G))
     (hpV : IsPGroup p (G ⧸ V)) :
     Subsingleton (H1 (G ⧸ V) (Additive (abelianizationProP p G V))) ∧
       AddSubgroup.zmultiples (abelianizationProPClass p G V hV) = ⊤ ∧
         Nat.card (H2 (G ⧸ V) (Additive (abelianizationProP p G V))) = Nat.card (G ⧸ V) := by
+  -- Both conclusions are proved together by induction on `#(G ⧸ V)`, since the step in degree two
+  -- needs the vanishing of `H¹` for a smaller quotient. A nontrivial `p`-group `G ⧸ V` has a
+  -- normal subgroup of index `p`, whose preimage `W` satisfies `#(G ⧸ W) = p`: the prime-order
+  -- case applies to `W ◁ G`, the induction hypothesis to `V.subgroupOf W ◁ W`, and the step
+  -- lemmas combine them.
   induction hn : Nat.card (G ⧸ V) using Nat.strong_induction_on generalizing G V with
   | h n ih =>
   have : Finite (G ⧸ V) := V.quotient_finite_of_isOpen hV
