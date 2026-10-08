@@ -130,8 +130,8 @@ theorem ker_norm_baseChange_le_coinvariantsKer [Fintype G] (A : Rep k G) (p : k)
   -- Reduction carries the augmentation submodule of `A` into that of `(k/pk) ⊗ A`.
   have hcoinv : Representation.Coinvariants.ker A.ρ ≤
       ((Representation.Coinvariants.ker ρQ).restrictScalars k).comap red :=
-    Submodule.span_le.2 fun _ ⟨⟨g, v⟩, hv⟩ ↦ by
-      simpa [← hv, ← hredρ] using Representation.Coinvariants.sub_mem_ker (ρ := ρQ) g (red v)
+    Submodule.map_le_iff_le_comap.mp
+      (A.ρ.coinvariantsKer_map_le (ρ' := ρQ) id red fun g v ↦ (hredρ g v).symm)
   have := hcoinv hmem
   rwa [Submodule.mem_comap, map_sub, (hred_eq_zero _).2 ⟨w, rfl⟩, sub_zero] at this
 
