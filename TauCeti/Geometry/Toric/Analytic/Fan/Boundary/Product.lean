@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Toric.Algebraic.Fan.Product.Ray
 public import TauCeti.Geometry.Toric.Analytic.Fan.Boundary.Naturality
 public import TauCeti.Geometry.Toric.Analytic.Fan.Orbit.Product
+public import TauCeti.Geometry.Toric.Analytic.Fan.Product.Manifold
 
 /-!
 # Boundary components of product toric realizations
@@ -15,6 +16,12 @@ public import TauCeti.Geometry.Toric.Analytic.Fan.Orbit.Product
 Under the canonical homeomorphism between the realization of a product of regular fans and the
 product of their realizations, boundary components are products. The corresponding formulas for
 distinguished points and torus orbits are in `TauCeti.Geometry.Toric.Analytic.Fan.Orbit.Product`.
+
+This homeomorphism is the underlying map of the canonical complex-manifold equivalence
+`TauCeti.Toric.Fan.analyticProdDiffeomorph`, established in `Product.Manifold`.
+The lemma `TauCeti.Toric.Fan.coe_analyticProdDiffeomorph` identifies the maps definitionally,
+so all image and preimage formulas below also apply to the biholomorphism at every order.
+Rewriting by that lemma avoids duplicating the boundary API for the same function.
 
 A ray of the product fan is a ray of one factor times the zero cone of the other, by
 `TauCeti.Toric.Fan.prodRayEquiv`. Its boundary component is the product of the component of
