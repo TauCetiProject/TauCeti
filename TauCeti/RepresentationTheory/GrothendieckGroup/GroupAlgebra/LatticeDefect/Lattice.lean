@@ -99,9 +99,8 @@ theorem latticeDefect_eq_reductionK0 [CharP k ℓ] (V : Type u) [AddCommGroup V]
         zsmul_eq_mul, Int.cast_natCast, CharP.cast_eq_zero, zero_mul, zero_tmul]
     | add y z hy hz => rw [map_add, hy, hz, add_zero]
   let e := ((q.baseChange k).ofBijective hq).symm
-  rw [latticeDefect_def, reductionK0_eq_zero_of_subsingleton k (ρ.torsionBy ℓ), sub_zero,
-    reductionK0_def, reductionK0_def]
-  exact ExactK0.of_congr (Representation.asModuleLinearEquivOfEquiv e).toFGModuleCatIso
+  rw [latticeDefect_def, reductionK0_eq_zero_of_subsingleton k (ρ.torsionBy ℓ), sub_zero]
+  exact reductionK0_congr_baseChange k e
 
 /-- **Lattices with equivalent rationalizations have the same reduction class** in
 characteristic `ℓ`: for finitely generated torsion-free `G`-modules `V` and `W` with
@@ -168,19 +167,8 @@ theorem reductionK0_eq_of_nonempty_equiv_baseChange_rat (V W : Type u)
   -- After base change to `k`, multiplication by `s` is invertible, so `f` becomes bijective.
   have hs : IsUnit ((s : ℤ) : k) :=
     (Int.cast_ne_zero.mpr (nonZeroDivisors.coe_ne_zero s)).isUnit
-  have hcomp {X Y : Type u} [AddCommGroup X] [AddCommGroup Y]
-      {ρ : Representation ℤ G X} {σ : Representation ℤ G Y}
-      {a : ρ.IntertwiningMap σ} {b : σ.IntertwiningMap ρ} (hab : ∀ x, b (a x) = (s : ℤ) • x)
-      (x : k ⊗[ℤ] X) : b.baseChange k (a.baseChange k x) = ((s : ℤ) : k) • x := by
-    rw [Representation.IntertwiningMap.baseChange_apply_baseChange_apply_of_comp_eq_smul hab,
-      Int.cast_smul_eq_zsmul]
-  have hbij : Function.Bijective (f.baseChange k) := by
-    refine ⟨fun x y hxy ↦ hs.smul_left_cancel.mp ?_, fun y ↦ ⟨f'.baseChange k (hs.unit⁻¹ • y), ?_⟩⟩
-    · rw [← hcomp hf'f, ← hcomp hf'f, hxy]
-    · rw [hcomp hff']
-      exact smul_inv_smul hs.unit y
-  rw [reductionK0_def, reductionK0_def]
-  exact ExactK0.of_congr
-    (Representation.asModuleLinearEquivOfEquiv ((f.baseChange k).ofBijective hbij)).toFGModuleCatIso
+  have hbij := Representation.IntertwiningMap.bijective_baseChange_of_comp_eq_smul
+    hf'f hff' k hs
+  exact reductionK0_congr_baseChange k ((f.baseChange k).ofBijective hbij)
 
 end TauCeti
