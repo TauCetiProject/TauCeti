@@ -55,11 +55,12 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
   spectral map; `TauCeti.IsProConstructible.prod` and `.pi` — and under products when the ambient
   factors complementary to each projection are quasi-compact.
 * `TauCeti.IsProConstructible.isCompact` — a pro-constructible subset of a compact, quasi-sober,
-  quasi-separated prespectral space is quasi-compact. The subspace is also prespectral,
-  quasi-separated and quasi-sober; none of these results needs T₀.
-* `TauCeti.IsProConstructible.mem_of_isGenericPoint` — the generic point of the closure of a
-  pro-constructible subset of such a space lies in that subset. This is the whole content of
-  the sobriety half of the main theorem.
+  quasi-separated prespectral space is quasi-compact. The subspace is also prespectral
+  and quasi-separated; none of these results needs T₀.
+* `TauCeti.IsProConstructible.mem_of_isGenericPoint` — in any topological space, every generic
+  point of the closure of a pro-constructible subset belongs to that subset.
+* `TauCeti.IsProConstructible.quasiSober` — a pro-constructible subspace of a quasi-sober
+  space is quasi-sober.
 * `TauCeti.IsProConstructible.spectralSpace` — **a pro-constructible subspace of a spectral space
   is spectral**, together with `TauCeti.IsProConstructible.isSpectralMap_subtypeVal`: its
   inclusion is a spectral map. `IsClosed.spectralSpace` is the closed special case, the
@@ -183,7 +184,17 @@ theorem IsProConstructible.pi {ι : Type*} {Z : ι → Type*} [∀ i, Topologica
   exact IsProConstructible.iInter fun i ↦
     (hs i).preimage (isSpectralMap_eval i (hZ i))
 
-/-! ### Compactness and quasi-sobriety of pro-constructible subspaces -/
+/-! ### Generic points of pro-constructible subsets -/
+
+/-- Every generic point of the closure of a pro-constructible subset belongs to that subset.
+This is the generic-point membership needed to transport quasi-sobriety to pro-constructible
+subspaces. -/
+theorem IsProConstructible.mem_of_isGenericPoint {s : Set X} (hs : IsProConstructible s) {η : X}
+    (hη : IsGenericPoint η (closure s)) : η ∈ s :=
+  (@IsClosed.closure_subset X (constructibleTopology X) s
+    (isProConstructible_iff_isClosed.1 hs)) hη.mem_closure_constructibleTopology
+
+/-! ### Compactness and bases of pro-constructible subspaces -/
 
 section
 
@@ -197,57 +208,6 @@ theorem IsProConstructible.isCompact (hs : IsProConstructible s) : IsCompact s :
     IsClosed.isCompact hs
   have h' := h.image (continuous_ofTopology_withConstructibleTopology X)
   rwa [Set.image_preimage_eq _ (WithTopology.ofTopology_surjective _)] at h'
-
-/-- If `s` is pro-constructible in a compact, quasi-sober, quasi-separated prespectral space
-and `η` is a generic point of the closure of `s`, then `η ∈ s`. No T₀ hypothesis is needed.
-
-The quasi-compact open neighbourhoods of `η` form a filtered family — this is quasi-separatedness
-— and each meets `s` because `η` adheres to `s`. The traces `s ∩ U` are closed for the
-constructible topology, so patch compactness produces a common point `ζ ∈ s` of all of them. Then
-`ζ` lies in every quasi-compact open neighbourhood of `η`, that is `η ∈ closure {ζ}`, while
-`ζ ∈ s` gives `closure {ζ} ⊆ closure s = closure {η}`. The two points are therefore topologically
-indistinguishable, also for the constructible topology, so `η ∈ s`. -/
-theorem IsProConstructible.mem_of_isGenericPoint (hs : IsProConstructible s) {η : X}
-    (hη : IsGenericPoint η (closure s)) : η ∈ s := by
-  have hmem : η ∈ closure s := hη ▸ subset_closure (mem_singleton η)
-  have hne : Nonempty {U : Set X // IsOpen U ∧ IsCompact U ∧ η ∈ U} :=
-    ⟨⟨univ, isOpen_univ, isCompact_univ, mem_univ η⟩⟩
-  have hcl : ∀ U : {U : Set X // IsOpen U ∧ IsCompact U ∧ η ∈ U},
-      IsClosed (WithTopology.ofTopology ⁻¹' (s ∩ U.1) : Set (WithConstructibleTopology X)) :=
-    fun U ↦ hs.inter (U.2.2.1.isProConstructible U.2.1)
-  have hnonempty : ∀ U : {U : Set X // IsOpen U ∧ IsCompact U ∧ η ∈ U},
-      (WithTopology.ofTopology ⁻¹' (s ∩ U.1) : Set (WithConstructibleTopology X)).Nonempty :=
-    fun U ↦ by
-      obtain ⟨x, hxU, hxs⟩ := mem_closure_iff.1 hmem U.1 U.2.1 U.2.2.2
-      exact ⟨WithTopology.toTopology _ x, hxs, hxU⟩
-  have hdir : Directed (· ⊇ ·)
-      fun U : {U : Set X // IsOpen U ∧ IsCompact U ∧ η ∈ U} ↦
-        (WithTopology.ofTopology ⁻¹' (s ∩ U.1) : Set (WithConstructibleTopology X)) := by
-    rintro ⟨U, hUo, hUc, hUη⟩ ⟨V, hVo, hVc, hVη⟩
-    refine ⟨⟨U ∩ V, hUo.inter hVo,
-      QuasiSeparatedSpace.inter_isCompact U V hUo hUc hVo hVc, hUη, hVη⟩, ?_, ?_⟩
-    · exact fun x hx ↦ ⟨hx.1, hx.2.1⟩
-    · exact fun x hx ↦ ⟨hx.1, hx.2.2⟩
-  obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed
-    (fun U : {U : Set X // IsOpen U ∧ IsCompact U ∧ η ∈ U} ↦
-      (WithTopology.ofTopology ⁻¹' (s ∩ U.1) : Set (WithConstructibleTopology X)))
-    hdir hnonempty (fun U ↦ (hcl U).isCompact) hcl
-  rw [Set.mem_iInter] at hx
-  have hζs : WithTopology.ofTopology x ∈ s := (hx ⟨univ, isOpen_univ, isCompact_univ, mem_univ η⟩).1
-  -- `ζ` lies in every quasi-compact open neighbourhood of `η`, hence `η ∈ closure {ζ}`.
-  have hηζ : η ∈ closure ({WithTopology.ofTopology x} : Set X) := by
-    rw [mem_closure_iff]
-    intro o ho hηo
-    obtain ⟨U, ⟨hUo, hUc⟩, hηU, hUo'⟩ :=
-      PrespectralSpace.isTopologicalBasis.exists_subset_of_mem_open hηo ho
-    exact ⟨_, hUo' (hx ⟨U, hUo, hUc, hηU⟩).2, rfl⟩
-  -- Conversely `ζ ∈ s ⊆ closure s = closure {η}`.
-  have hζη : WithTopology.ofTopology x ∈ closure ({η} : Set X) := by
-    rw [hη]; exact subset_closure hζs
-  have hζη' := ((specializes_iff_mem_closure.2 hηζ).antisymm
-    (specializes_iff_mem_closure.2 hζη)).constructibleTopology
-  exact (@Inseparable.mem_closed_iff X (constructibleTopology X) _ _ s hζη'
-    (isProConstructible_iff_isClosed.1 hs)).1 hζs
 
 /-- The inclusion of a pro-constructible subset of a compact, quasi-sober, quasi-separated
 prespectral space is a spectral map. -/
@@ -284,28 +244,33 @@ theorem IsProConstructible.quasiSeparatedSpace (hs : IsProConstructible s) :
     exact hs.isSpectralMap_subtypeVal.isCompact_preimage_of_isOpen (hUo.inter hVo)
       (QuasiSeparatedSpace.inter_isCompact U V hUo hUc hVo hVc)
 
-/-- A pro-constructible subspace of a compact, quasi-sober, quasi-separated prespectral space
-is quasi-sober. An irreducible closed subset `Z` of it has irreducible image in the ambient
-space, whose closure has a generic point `η`; the
-image of `Z` is pro-constructible, so `η` lies in it by
-`TauCeti.IsProConstructible.mem_of_isGenericPoint`, and its preimage generates `Z`. -/
-theorem IsProConstructible.quasiSober (hs : IsProConstructible s) : QuasiSober s where
+end
+
+/-! ### Quasi-sobriety of pro-constructible subspaces -/
+
+/-- A pro-constructible subspace of a quasi-sober space is quasi-sober.
+This transports existence of generic points for irreducible closed subsets, as used in spectral
+subspace and adic-spectrum constructions. -/
+theorem IsProConstructible.quasiSober [QuasiSober X] {s : Set X}
+    (hs : IsProConstructible s) : QuasiSober s where
   sober := by
     intro Z hZirr hZcl
-    have hZ' : IsProConstructible (((↑) : s → X) '' Z) := by
-      obtain ⟨C, hC, rfl⟩ := IsEmbedding.subtypeVal.isInducing.isClosed_iff.1 hZcl
-      rw [Subtype.image_preimage_coe]
-      exact hs.inter (IsClosed.isProConstructible hC)
+    -- An ambient generic point of `closure (Subtype.val '' Z)` lies in the constructible
+    -- closure of the image, hence in the pro-constructible ambient subset `s`.
     obtain ⟨η, hη⟩ := QuasiSober.sober
       (hZirr.image _ continuous_subtype_val.continuousOn).closure isClosed_closure
-    obtain ⟨ζ, hζZ, rfl⟩ := hZ'.mem_of_isGenericPoint hη
+    have hηs : η ∈ s :=
+      (@IsClosed.closure_subset X (constructibleTopology X) s
+        (isProConstructible_iff_isClosed.1 hs)) <|
+        (@closure_mono X (constructibleTopology X) _ _ (Subtype.coe_image_subset s Z))
+          hη.mem_closure_constructibleTopology
+    let ζ : s := ⟨η, hηs⟩
     refine ⟨ζ, ?_⟩
+    -- Pull the ambient generic-point equality back along the subspace inclusion.
     have h₁ := IsEmbedding.subtypeVal.isInducing.closure_eq_preimage_closure_image
       ({ζ} : Set s)
     have h₂ := IsEmbedding.subtypeVal.isInducing.closure_eq_preimage_closure_image (Z : Set s)
     rw [isGenericPoint_def, h₁, Set.image_singleton, hη, ← h₂, hZcl.closure_eq]
-
-end
 
 /-! ### Spectrality of pro-constructible subspaces -/
 

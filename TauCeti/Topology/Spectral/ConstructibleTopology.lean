@@ -10,12 +10,12 @@ public import Mathlib.Topology.Spectral.Prespectral
 import Mathlib.Topology.WithTopology
 
 /-!
-# Maps and inseparable points for the constructible topology
+# Maps and generic points for the constructible topology
 
 The constructible topology refines the given topology on a prespectral space. Spectral maps
-are continuous for the constructible topologies, and topologically indistinguishable points
-remain indistinguishable in the constructible topology. These facts let pro-constructible
-subspaces inherit compactness and quasi-sobriety without a separation hypothesis.
+are continuous for the constructible topologies, and every generic point of the closure of a
+subset lies in its constructible closure. These facts let pro-constructible subspaces inherit
+compactness and quasi-sobriety under their respective ambient hypotheses.
 
 ## Main results
 
@@ -25,8 +25,8 @@ subspaces inherit compactness and quasi-sobriety without a separation hypothesis
   topology to the given topology of a prespectral space is continuous.
 * `IsSpectralMap.continuous_constructibleTopology`: a spectral map is continuous for the
   constructible topologies.
-* `Inseparable.constructibleTopology`: indistinguishable points remain indistinguishable
-  for the constructible topology.
+* `IsGenericPoint.mem_closure_constructibleTopology`: a generic point of the closure of a
+  subset lies in its constructible closure, in any topological space.
 
 ## References
 
@@ -70,16 +70,23 @@ theorem IsSpectralMap.continuous_constructibleTopology {f : X → Y} (hf : IsSpe
     rw [← Set.preimage_compl]
     exact hUcc.preimage_of_isOpen hf hUcl.isOpen_compl
 
-/-- Topologically indistinguishable points remain indistinguishable for the constructible
-topology: every subbasic set is an open set or the complement of an open set. -/
-theorem Inseparable.constructibleTopology {x y : X} (h : Inseparable x y) :
-    @Inseparable X (constructibleTopology X) x y := by
-  have hi : {s : Set X | x ∈ s ∧ s ∈ constructibleTopologySubbasis X} =
-      {s : Set X | y ∈ s ∧ s ∈ constructibleTopologySubbasis X} := by
-    ext s
-    apply and_congr_left
-    rintro (⟨ho, _⟩ | ⟨hc, _⟩)
-    · exact h.mem_open_iff ho
-    · exact h.mem_closed_iff hc
-  exact (@inseparable_def X (_root_.constructibleTopology X) x y).2 <| by
-    simp only [nhds_generateFrom, hi]
+/-- Every generic point of the closure of a subset lies in its closure for the constructible
+topology. -/
+theorem IsGenericPoint.mem_closure_constructibleTopology {s : Set X} {η : X}
+    (hη : IsGenericPoint η (closure s)) : η ∈ closure[constructibleTopology X] s := by
+  -- A constructible basic neighborhood is a finite intersection of subbasic sets. The closed
+  -- factors contain all of `closure s`; the intersection of the open factors must meet `s`.
+  have hb := @isTopologicalBasis_of_subbasis X (constructibleTopology X)
+    (constructibleTopologySubbasis X) rfl
+  refine (@IsTopologicalBasis.mem_closure_iff X (constructibleTopology X) _ hb s η).2 ?_
+  rintro _ ⟨F, ⟨hFfin, hFsub⟩, rfl⟩ hηF
+  let O := {U ∈ F | IsOpen U}
+  have hOfin : O.Finite := hFfin.subset fun _ hU ↦ hU.1
+  have hOopen : IsOpen (⋂₀ O) := hOfin.isOpen_sInter fun _ hU ↦ hU.2
+  have hηO : η ∈ ⋂₀ O := mem_sInter.2 fun U hU ↦ mem_sInter.1 hηF U hU.1
+  obtain ⟨x, hxO, hxs⟩ := mem_closure_iff.1 hη.mem _ hOopen hηO
+  refine ⟨x, mem_sInter.2 fun U hUF ↦ ?_, hxs⟩
+  obtain ⟨hUopen, _⟩ | ⟨hUclosed, _⟩ := hFsub hUF
+  · exact mem_sInter.1 hxO U ⟨hUF, hUopen⟩
+  · exact (hη.mem_closed_set_iff hUclosed).1 (mem_sInter.1 hηF U hUF)
+      (subset_closure hxs)
