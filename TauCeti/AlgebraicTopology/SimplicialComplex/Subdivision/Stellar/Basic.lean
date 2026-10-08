@@ -292,10 +292,11 @@ theorem link_stellarSubdivision_insert {ρ : Finset ι} (hv : ({v} : Finset ι) 
     _ = link (closedStar K σ ⊓ deletion K σ) ρ := by
       rw [link_stellarSubdivision_singleton hv]
 
-/-- Every face in the link of a stellar face containing the new vertex belongs to the boundary
-of the original closed star. This containment does not require freshness of the vertex. -/
-theorem link_stellarSubdivision_insert_le_closedStar_inf_deletion {ρ : Finset ι} :
-    link (stellarSubdivision K σ v) (insert v ρ) ≤ closedStar K σ ⊓ deletion K σ := by
+/-- The link of a stellar face containing the new vertex lies in the corresponding link of
+the original closed-star boundary. This containment does not require freshness of the vertex. -/
+theorem link_stellarSubdivision_insert_le_link_closedStar_inf_deletion {ρ : Finset ι} :
+    link (stellarSubdivision K σ v) (insert v ρ) ≤
+      link (closedStar K σ ⊓ deletion K σ) (ρ.erase v) := by
   intro τ hτ
   obtain ⟨hne, hdis, hface⟩ := mem_link_nonempty.mp hτ
   have hvτ : v ∉ τ := (Finset.disjoint_insert_right.mp hdis).1
@@ -305,14 +306,11 @@ theorem link_stellarSubdivision_insert_le_closedStar_inf_deletion {ρ : Finset �
     rw [← Finset.union_insert, hρ]
     exact hface
   obtain ⟨hσ, hK⟩ := (insert_mem_stellarSubdivision_iff hvτρ).mp hface'
-  refine mem_inf.mpr ⟨mem_closedStar_nonempty.mpr ⟨hne, ?_⟩, mem_deletion.mpr ⟨?_, ?_⟩⟩
-  · exact (K.isRelLowerSet_faces hK).2
-      (Finset.union_subset_union Finset.subset_union_left Subset.rfl)
-      (hne.mono Finset.subset_union_left)
-  · exact (K.isRelLowerSet_faces hK).2
-      (Finset.subset_union_left.trans Finset.subset_union_left) hne
-  · intro hστ
-    exact hσ (hστ.trans Finset.subset_union_left)
+  refine mem_link_nonempty.mpr ⟨hne,
+    (Finset.disjoint_insert_right.mp hdis).2.mono_right (Finset.erase_subset _ _), ?_⟩
+  have hne' := hne.mono (Finset.subset_union_left : τ ⊆ τ ∪ ρ.erase v)
+  exact mem_inf.mpr ⟨mem_closedStar_nonempty.mpr ⟨hne', hK⟩,
+    mem_deletion.mpr ⟨(K.isRelLowerSet_faces hK).2 Finset.subset_union_left hne', hσ⟩⟩
 
 /-! ### Relabeling -/
 
