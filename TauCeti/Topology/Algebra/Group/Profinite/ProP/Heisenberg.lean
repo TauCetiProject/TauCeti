@@ -171,6 +171,7 @@ noncomputable def level : OpenNormalSubgroup (HeisenbergGroup ℤ_[p]) :=
     (map (PadicInt.toZModPow (p := p) n)) (continuous_map_toZModPow p n)
 
 /-- The underlying subgroup of the level `p ^ n` is the kernel of reduction modulo `p ^ n`. -/
+@[simp]
 theorem level_toSubgroup :
     (level p n).toSubgroup = (map (PadicInt.toZModPow (p := p) n)).ker := by
   rw [level, OpenNormalSubgroup.toSubgroup_comap, openNormalSubgroupBot_toSubgroup,
@@ -191,8 +192,11 @@ theorem mem_level_iff {a : HeisenbergGroup ℤ_[p]} :
 
 /-- The level `p ^ 0` is the whole group. -/
 @[simp]
-theorem level_zero : (level p 0).toSubgroup = ⊤ :=
-  Subgroup.eq_top_iff' _ |>.mpr fun a ↦ (mem_level_iff p 0).mpr (by simp)
+theorem level_zero : level p 0 = openNormalSubgroupTop (HeisenbergGroup ℤ_[p]) :=
+  OpenNormalSubgroup.toSubgroup_injective <| by
+    change (level p 0).toSubgroup = (openNormalSubgroupTop _).toSubgroup
+    rw [openNormalSubgroupTop_toSubgroup, Subgroup.eq_top_iff']
+    exact fun a ↦ (mem_level_iff p 0).mpr (by simp)
 
 /-- The levels decrease as the exponent grows. -/
 theorem level_antitone : Antitone (level p) := fun m n hmn a ha ↦ by
@@ -200,13 +204,18 @@ theorem level_antitone : Antitone (level p) := fun m n hmn a ha ↦ by
   have h := pow_dvd_pow (p : ℤ_[p]) hmn
   exact (mem_level_iff p m).mpr ⟨h.trans hx, h.trans hy, h.trans hz⟩
 
-/-- **The level `p ^ n` has index `p ^ (3 n)`.** -/
+/-- The kernel of reduction modulo `p ^ n` on the Heisenberg group over `ℤ_[p]` has index
+`p ^ (3 n)`. -/
 @[simp]
-theorem index_level : (level p n).toSubgroup.index = p ^ (3 * n) := by
-  rw [level, OpenNormalSubgroup.toSubgroup_comap, openNormalSubgroupBot_toSubgroup,
-    Subgroup.index_comap_of_surjective ⊥
+theorem index_ker_map_toZModPow :
+    (map (PadicInt.toZModPow (p := p) n)).ker.index = p ^ (3 * n) := by
+  rw [← MonoidHom.comap_bot, Subgroup.index_comap_of_surjective ⊥
       (map_surjective (ZMod.ringHom_surjective (PadicInt.toZModPow (p := p) n))),
     Subgroup.index_bot, card_eq, Nat.card_zmod, ← pow_mul, mul_comm]
+
+/-- **The level `p ^ n` has index `p ^ (3 n)`.** -/
+theorem index_level : (level p n).toSubgroup.index = p ^ (3 * n) := by
+  rw [level_toSubgroup, index_ker_map_toZModPow]
 
 /-- **The levels form a basis of neighbourhoods of `1`.** -/
 theorem hasBasis_nhds_one_level :
