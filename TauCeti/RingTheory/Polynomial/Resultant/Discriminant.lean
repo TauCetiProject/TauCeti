@@ -54,6 +54,7 @@ depressed specialization of that formula is used to compare a quartic with its c
 * `Polynomial.Monic.discr_mul`: the product formula for discriminants, with the square of the
   resultant as its cross term.
 * `Polynomial.discr_X_pow_sub_C`: the discriminant of a binomial `X ^ n - C a`.
+* `TauCeti.discr_X_pow_five_add_C_mul_X_add_C`: the discriminant of `X⁵ + aX + b`.
 * `TauCeti.not_isSquare_discr_X_pow_five_sub_C`: the discriminant `3125a⁴` of a pure quintic
   `X ^ 5 - C a` over `ℚ` with `a ≠ 0` is not a square.
 * `TauCeti.discr_C_mul`, `TauCeti.isSquare_discr_iff_mem_range`: the scaling law and
@@ -934,5 +935,47 @@ theorem discr_depressedQuartic (p q r : R) :
     simpa only [add_assoc] using monic_X_pow_add hdeg
   rw [hmonic.discr_of_natDegree_eq_four hf]
   simp [f]
+
+/-- The discriminant of the quintic trinomial `X⁵ + aX + b`, over any commutative ring. -/
+@[simp] theorem discr_X_pow_five_add_C_mul_X_add_C (a b : R) :
+    (X ^ 5 + C a * X + C b).discr = 256 * a ^ 5 + 3125 * b ^ 4 := by
+  nontriviality R
+  let f : R[X] := X ^ 5 + C a * X + C b
+  have hf : f.natDegree = 5 := by dsimp [f]; compute_degree!
+  let e : Fin (f.natDegree - 1 + f.natDegree) ≃ Fin 9 := finCongr (by omega)
+  have hmat : f.sylvesterDeriv.reindex e e =
+      !![b, 0, 0, 0, a, 0, 0, 0, 0;
+         a, b, 0, 0, 0, a, 0, 0, 0;
+         0, a, b, 0, 0, 0, a, 0, 0;
+         0, 0, a, b, 0, 0, 0, a, 0;
+         0, 0, 0, a, 5, 0, 0, 0, a;
+         1, 0, 0, 0, 0, 5, 0, 0, 0;
+         0, 1, 0, 0, 0, 0, 5, 0, 0;
+         0, 0, 1, 0, 0, 0, 0, 5, 0;
+         0, 0, 0, 1, 0, 0, 0, 0, 5] := by
+    ext ⟨i, hi⟩ ⟨j, hj⟩
+    simp only [sylvesterDeriv, hf, OfNat.ofNat_ne_zero, ↓reduceDIte, sylvester, Fin.addCases,
+      Nat.add_one_sub_one, Fin.val_castLT, Fin.val_subNat, Fin.val_cast, coeff_derivative,
+      eq_rec_constant, dite_eq_ite, Nat.reduceMul, Nat.reduceSub, Nat.cast_ofNat,
+      Matrix.reindex_apply, Matrix.submatrix_apply, Matrix.updateRow_apply, Matrix.of_apply,
+      e, finCongr_symm, finCongr_apply, Fin.cast_mk, Fin.mk.injEq,
+      Matrix.cons_val', Matrix.cons_val_fin_one]
+    have hi' : i ∈ Finset.range 9 := Finset.mem_range.mpr hi
+    have hj' : j ∈ Finset.range 9 := Finset.mem_range.mpr hj
+    fin_cases hi' <;>
+    · simp only [Fin.isValue, Fin.mk_one, Fin.reduceFinMk, Fin.zero_eta,
+        Matrix.cons_val_one, Matrix.cons_val_zero, Matrix.cons_val,
+        Nat.reduceEqDiff, OfNat.one_ne_ofNat, ↓reduceIte]
+      fin_cases hj' <;>
+      · simp only [f, coeff_add, coeff_C_mul, coeff_X_pow, coeff_X, coeff_C,
+          Nat.reduceAdd, Nat.reduceSub, Nat.reduceEqDiff, ↓reduceIte,
+          zero_add, add_zero, zero_mul, mul_zero, mul_one, one_mul]
+        norm_num [Set.mem_Icc, Matrix.cons_val]
+  -- Fold the local polynomial abbreviation to use the matrix identity.
+  change f.discr = _
+  rw [discr, ← Matrix.det_reindex_self e, hmat, hf]
+  norm_num
+  eval_det
+  ring
 
 end TauCeti
