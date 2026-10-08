@@ -34,6 +34,8 @@ generators, and the one-dimensional additive group `𝔾ₐ`.
 * `TauCeti.AdditiveGroup.gaScalarTensorBialgEquiv`: the rank-one specialization for `𝔾ₐ`.
 * `TauCeti.AdditiveGroup.gaScalarTensorBialgEquiv_tmul_ι`: its forward coordinate formula.
 * `TauCeti.AdditiveGroup.gaScalarTensorBialgEquiv_tmul_one`: its formula on scalar copies.
+* `TauCeti.AdditiveGroup.gaScalarTensorBialgEquiv_tower`: the equivalences compose in a scalar
+  tower.
 * `TauCeti.AdditiveGroup.gaScalarTensorBialgEquiv_symm_ι`: the inverse formula for the additive
   coordinate.
 * `TauCeti.AdditiveGroup.baseChangePointsMulEquiv`: base-changed vector-group points are
@@ -181,6 +183,34 @@ theorem gaScalarTensorBialgEquiv_tmul_one (s : K) :
       (symmetricAlgebraBialgEquiv (K := K)
         (Algebra.TensorProduct.rid k K K).toLinearEquiv :
           SymmetricAlgebra K (K ⊗[k] k) ≃ₐ[K] SymmetricAlgebra K K) s
+
+/-- Applying the additive-coordinate scalar-extension equivalence in two stages agrees with
+applying it directly. -/
+@[simp]
+theorem gaScalarTensorBialgEquiv_tower {L : Type*} [CommSemiring L]
+    [Algebra k L] [Algebra L K] [IsScalarTower k L K]
+    (p : SymmetricAlgebra k k) :
+    gaScalarTensorBialgEquiv (k := L) (K := K)
+        (1 ⊗ₜ[L] gaScalarTensorBialgEquiv (k := k) (K := L) (1 ⊗ₜ[k] p)) =
+      gaScalarTensorBialgEquiv (k := k) (K := K) (1 ⊗ₜ[k] p) := by
+  let eRL : SymmetricAlgebra k k →ₐ[k] SymmetricAlgebra L L :=
+    ((gaScalarTensorBialgEquiv (k := k) (K := L)).toAlgEquiv.toAlgHom.restrictScalars k).comp
+      (Algebra.TensorProduct.includeRight :
+        SymmetricAlgebra k k →ₐ[k] L ⊗[k] SymmetricAlgebra k k)
+  let eLS : SymmetricAlgebra L L →ₐ[k] SymmetricAlgebra K K :=
+    (((gaScalarTensorBialgEquiv (k := L) (K := K)).toAlgEquiv.toAlgHom.restrictScalars L).comp
+      (Algebra.TensorProduct.includeRight :
+        SymmetricAlgebra L L →ₐ[L] K ⊗[L] SymmetricAlgebra L L)).restrictScalars k
+  let eRS : SymmetricAlgebra k k →ₐ[k] SymmetricAlgebra K K :=
+    ((gaScalarTensorBialgEquiv (k := k) (K := K)).toAlgEquiv.toAlgHom.restrictScalars k).comp
+      (Algebra.TensorProduct.includeRight :
+        SymmetricAlgebra k k →ₐ[k] K ⊗[k] SymmetricAlgebra k k)
+  have he : eLS.comp eRL = eRS := by
+    apply SymmetricAlgebra.algHom_ext
+    apply LinearMap.ext
+    intro r
+    simp [eLS, eRL, eRS, IsScalarTower.algebraMap_apply k L K]
+  exact DFunLike.congr_fun he p
 
 /-- The inverse `𝔾ₐ` coordinate equivalence sends `ι(s)` to the pure tensor
 `s ⊗ ι(1)`. -/

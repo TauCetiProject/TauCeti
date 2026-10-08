@@ -33,6 +33,7 @@ coordinate Hopf algebra remains the group algebra of the same character group.
 
 * `TauCeti.MonoidAlgebra.scalarTensorBialgEquiv`: base change of a monoid bialgebra is the monoid
   bialgebra over the extended scalars.
+* `TauCeti.MonoidAlgebra.scalarTensorBialgEquiv_tower`: the equivalences compose in a scalar tower.
 * `TauCeti.MonoidAlgebra.mapDomainBialgHom_comp_scalarTensorBialgEquiv`: the equivalence is natural
   in the indexing monoid.
 
@@ -79,6 +80,24 @@ theorem scalarTensorBialgEquiv_tmul (s : K) (p : _root_.MonoidAlgebra k G) :
       s • _root_.MonoidAlgebra.mapAlgHom G (Algebra.ofId k K) p := by
   rw [scalarTensorBialgEquiv, _root_.BialgEquiv.ofAlgEquiv_apply]
   exact _root_.MonoidAlgebra.scalarTensorEquiv_tmul s p
+
+/-- Applying the monoid-algebra scalar-extension equivalence in two stages agrees with applying
+it directly. -/
+theorem scalarTensorBialgEquiv_tower {L : Type*} [CommSemiring L]
+    [Algebra k L] [Algebra L K] [IsScalarTower k L K]
+    (p : _root_.MonoidAlgebra k G) :
+    scalarTensorBialgEquiv L K
+        (1 ⊗ₜ[L] scalarTensorBialgEquiv k L (1 ⊗ₜ[k] p)) =
+      scalarTensorBialgEquiv k K (1 ⊗ₜ[k] p) := by
+  rw [scalarTensorBialgEquiv_tmul, one_smul, scalarTensorBialgEquiv_tmul, one_smul,
+    scalarTensorBialgEquiv_tmul, one_smul]
+  have hmap :
+      ((_root_.MonoidAlgebra.mapAlgHom G (Algebra.ofId L K)).restrictScalars k).comp
+          (_root_.MonoidAlgebra.mapAlgHom G (Algebra.ofId k L)) =
+        _root_.MonoidAlgebra.mapAlgHom G (Algebra.ofId k K) := by
+    ext g
+    simp [IsScalarTower.algebraMap_apply k L K]
+  exact DFunLike.congr_fun hmap p
 
 /-- The inverse base-change equivalence sends a monomial over `K` to the corresponding pure
 tensor. -/

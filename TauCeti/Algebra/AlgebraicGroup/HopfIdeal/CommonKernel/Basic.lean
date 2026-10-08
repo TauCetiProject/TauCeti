@@ -125,6 +125,24 @@ theorem map_commonKernelHopfIdeal {H' : _root_.CommHopfAlgCat.{v} R}
   exact (congrArg (· ∈ commonKernelHopfIdeal f)
     (_root_.CommHopfAlgCat.inv_hom_apply e x)).mpr hx
 
+/-- Postcomposing every member of a family with an isomorphism does not change its common-kernel
+Hopf ideal. -/
+theorem commonKernelHopfIdeal_comp_iso {L : ι → _root_.CommHopfAlgCat.{v} R}
+    (f : ∀ i, H ⟶ K i) (e : ∀ i, K i ≅ L i) :
+    commonKernelHopfIdeal (fun i ↦ f i ≫ (e i).hom) = commonKernelHopfIdeal f := by
+  apply le_antisymm
+  · rw [le_commonKernelHopfIdeal_iff]
+    intro i x hx
+    apply (ConcreteCategory.bijective_of_isIso (e i).hom).1
+    rw [map_zero]
+    exact RingHom.mem_ker.mp (commonKernelHopfIdeal_toIdeal_le_ker _ i hx)
+  · rw [le_commonKernelHopfIdeal_iff]
+    intro i x hx
+    change (e i).hom.hom ((f i).hom x) = 0
+    have hzero : (f i).hom x = 0 :=
+      RingHom.mem_ker.mp (commonKernelHopfIdeal_toIdeal_le_ker f i hx)
+    simp only [hzero, map_zero]
+
 /-- **Dropping redundant members of a family.** If every member indexed by `κ` kills the
 common-kernel ideal of the members indexed by `ι`, then adjoining them does not change the
 common-kernel ideal.
