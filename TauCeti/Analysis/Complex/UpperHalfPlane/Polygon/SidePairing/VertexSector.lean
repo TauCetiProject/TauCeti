@@ -162,6 +162,19 @@ private theorem orientedAngle_rayToward_inv_partialCycleMap_smul_vertex_add_one 
   rw [← σ.inv_partialCycleMap_succ_smul_vertex_sub_one]
   exact σ.orientedAngle_rayToward_inv_partialCycleMap_smul_vertex hz (m + 1)
 
+/-- In the common coordinate at a finite vertex, the angle of `w` measured from the outgoing ray of
+the `m`-th tile is its angle measured from the incoming ray of the first tile, plus the first
+`m + 1` angles. -/
+private theorem orientedAngle_rayToward_inv_partialCycleMap_smul_vertex_add_one_left {j : Fin n}
+    {z : ℍ} (hz : P.vertex j = .inl z) (m : ℕ) (w : ℍ) :
+    orientedAngle z (geodesicLine (rayToward z
+        (((σ.partialCycleMap j m)⁻¹ • P).vertex (σ.next^[m] j + 1))) 1) w =
+      orientedAngle z (geodesicLine (rayToward z (P.vertex (j - 1))) 1) w +
+        ((∑ l ∈ Finset.range (m + 1), P.interiorAngle (σ.next^[l] j) : ℝ) : Real.Angle) := by
+  rw [← orientedAngle_add _ _ (geodesicLine (rayToward z (P.vertex (j - 1))) 1), orientedAngle_rev,
+    σ.orientedAngle_rayToward_inv_partialCycleMap_smul_vertex_add_one hz m, Real.Angle.coe_neg,
+    neg_neg, add_comm]
+
 /-- **The vertex sectors along a cycle cover the plane once their angles reach `2π`.** Pull back
 the sectors of the vertices `next^[m] j`, `m < r`, to the finite vertex `z = vertex j` by the
 inverse partial cycle maps. If their interior angles sum to at least `2π`, these sectors turn
@@ -198,16 +211,18 @@ theorem iUnion_inv_partialCycleMap_smul_vertexSector_eq_univ {j : Fin n} {z : �
   obtain ⟨m, hmr, hm', hm⟩ := Set.mem_iUnion₂.1 (Ico_subset_biUnion_Ico r B hxB)
   rw [Finset.mem_range] at hmr
   refine ⟨m, hmr, ?_⟩
-  -- in the coordinate of the `m`-th tile, `w` is at angle `B (m + 1) + x ∈ [0, α m]`
-  rw [← vertexSector_smul,
-    ((σ.partialCycleMap j m)⁻¹ • P).mem_vertexSector_iff_toReal_orientedAngle_mem_Icc
-      (σ.inv_partialCycleMap_smul_vertex hz m) hw,
-    interiorAngle_smul, ← orientedAngle_add _ _ E, orientedAngle_rev,
-    σ.orientedAngle_rayToward_inv_partialCycleMap_smul_vertex_add_one hz m, ← hxw,
-    ← Real.Angle.coe_neg, neg_neg, ← Real.Angle.coe_add]
+  -- in the coordinate of the `m`-th tile, `w` is at angle `x + B (m + 1) ∈ [0, α m]`
   have hsucc : B (m + 1) = B m + P.interiorAngle (σ.next^[m] j) := Finset.sum_range_succ _ _
   have hle := P.interiorAngle_le_pi (σ.next^[m] j)
-  rw [Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith [Real.pi_pos], by linarith⟩]
+  have hangle : (orientedAngle z (geodesicLine (rayToward z
+      (((σ.partialCycleMap j m)⁻¹ • P).vertex (σ.next^[m] j + 1))) 1) w).toReal =
+        x + B (m + 1) := by
+    rw [σ.orientedAngle_rayToward_inv_partialCycleMap_smul_vertex_add_one_left hz m w, ← hxw,
+      ← Real.Angle.coe_add, Real.Angle.toReal_coe_eq_self_iff]
+    exact ⟨by linarith [Real.pi_pos], by linarith⟩
+  rw [← vertexSector_smul,
+    ((σ.partialCycleMap j m)⁻¹ • P).mem_vertexSector_iff_toReal_orientedAngle_mem_Icc
+      (σ.inv_partialCycleMap_smul_vertex hz m) hw, interiorAngle_smul, hangle]
   exact ⟨by linarith, by linarith⟩
 
 /-- **Local coverage at a finite vertex.** If the interior angles at the first `r` vertices of
