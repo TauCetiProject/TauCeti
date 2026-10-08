@@ -38,11 +38,12 @@ interval must be open.
 ## Main results
 
 * `TauCeti.NumberField.Cubic23.unitCandidates_eq_cubicCandidates`: the candidate list
-  `unitCandidates K (w u)` of Layer 7.4 is `cubicCandidates`.
+  `unitCandidates K (w u)` is `cubicCandidates`.
 * `TauCeti.NumberField.Cubic23.card_cubicCandidates`: there are `98` candidates.
 * `TauCeti.NumberField.Cubic23.filter_cubicCandidates_exists_root_Ioo` and
   `TauCeti.NumberField.Cubic23.card_filter_cubicCandidates_exists_root_Ioo`: the two survivors of
   the open-interval root test.
+* `TauCeti.NumberField.Cubic23.exists_root_Icc_iff`: the closed-interval characterization.
 * `TauCeti.NumberField.Cubic23.card_filter_cubicCandidates_exists_root_Icc`: `15` candidates have
   a root in the closed interval, twelve of them at `1`
   (`TauCeti.NumberField.Cubic23.card_filter_cubicCandidates_aeval_one_eq_zero`).
@@ -78,6 +79,7 @@ monic cubics `X³ + aX² + bX + c` with `a, b ∈ {-3, …, 3}` and `c = ±1`. -
 noncomputable def cubicCandidates : Finset ℤ[X] :=
   cubicCandidateCoeffs.image cubicCandidate
 
+@[simp]
 theorem mem_cubicCandidateCoeffs_iff (t : ℤ × ℤ × ℤ) :
     t ∈ cubicCandidateCoeffs ↔
       (-3 ≤ t.1 ∧ t.1 ≤ 3) ∧ (-3 ≤ t.2.1 ∧ t.2.1 ≤ 3) ∧ (t.2.2 = -1 ∨ t.2.2 = 1) := by
@@ -88,6 +90,7 @@ theorem natDegree_cubicCandidate (t : ℤ × ℤ × ℤ) : (cubicCandidate t).na
   unfold cubicCandidate
   compute_degree!
 
+@[simp]
 theorem monic_cubicCandidate (t : ℤ × ℤ × ℤ) : (cubicCandidate t).Monic := by
   unfold cubicCandidate
   monicity!
@@ -106,6 +109,7 @@ theorem coeff_one_cubicCandidate (t : ℤ × ℤ × ℤ) : (cubicCandidate t).co
 theorem coeff_zero_cubicCandidate (t : ℤ × ℤ × ℤ) : (cubicCandidate t).coeff 0 = t.2.2 := by
   simp [cubicCandidate]
 
+@[simp]
 theorem aeval_cubicCandidate (t : ℤ × ℤ × ℤ) (x : ℝ) :
     aeval x (cubicCandidate t) = x ^ 3 + t.1 * x ^ 2 + t.2.1 * x + t.2.2 := by
   simp [cubicCandidate]
@@ -144,6 +148,9 @@ theorem card_cubicCandidates : cubicCandidates.card = 98 := by
   rw [cubicCandidates, Finset.card_image_of_injective _ cubicCandidate_injective]
   rfl
 
+/-- Membership in `cubicCandidates` is equivalent to being a monic cubic with constant
+coefficient `±1` and quadratic and linear coefficients of absolute value at most `3`. -/
+@[simp]
 theorem mem_cubicCandidates_iff (f : ℤ[X]) :
     f ∈ cubicCandidates ↔ f.Monic ∧ f.natDegree = 3 ∧ (f.coeff 0 = 1 ∨ f.coeff 0 = -1) ∧
       |f.coeff 2| ≤ 3 ∧ |f.coeff 1| ≤ 3 := by
@@ -161,7 +168,7 @@ theorem mem_cubicCandidates_iff (f : ℤ[X]) :
     dsimp only
     omega
 
-/-- In a cubic field, the candidate list `unitCandidates K B` of Layer 7.4 is `cubicCandidates`
+/-- In a cubic field, the candidate list `unitCandidates K B` is `cubicCandidates`
 whenever `1 ≤ B < 4 / 3`. -/
 theorem unitCandidates_eq_cubicCandidates_of_finrank_eq_three {K : Type*} [Field K]
     [NumberField K] (hK : Module.finrank ℚ K = 3) {B : ℝ} (hB₁ : 1 ≤ B) (hB : B < 4 / 3) :
@@ -215,10 +222,6 @@ include hB hB₁
 private theorem five_fourths_lt : 5 / 4 < B := by
   by_contra h
   nlinarith [mul_nonneg (sub_nonneg.mpr hB₁.le) (sub_nonneg.mpr hB₁.le)]
-
-private theorem lt_four_thirds : B < 4 / 3 := by
-  by_contra h
-  nlinarith [mul_nonneg (sub_nonneg.mpr (le_of_not_gt h)) (sub_nonneg.mpr hB₁.le)]
 
 omit hB₁ in
 /-- The only candidate with a root at the real root `B` of `X³ - X - 1` is `X³ - X - 1`. -/
@@ -275,7 +278,7 @@ private theorem exists_root_Ioo_iff {t : ℤ × ℤ × ℤ} (ht : t ∈ cubicCan
     rw [mem_cubicCandidateCoeffs_iff] at ht
     rw [aeval_cubicCandidate] at hx
     rcases cubic_candidate_coefficients_of_root t.1 t.2.1 t.2.2 (by omega) (by omega)
-      (by omega) (by omega) (by omega) hB (lt_four_thirds hB hB₁) hx1 hxB hx with h | h
+      (by omega) (by omega) (by omega) hB hx1 hxB hx with h | h
     · exact Or.inl (Prod.ext h.1 (Prod.ext h.2.1 h.2.2))
     · exact Or.inr (Prod.ext h.1 (Prod.ext h.2.1 h.2.2))
   · rintro (rfl | rfl)
@@ -286,7 +289,7 @@ private theorem exists_root_Ioo_iff {t : ℤ × ℤ × ℤ} (ht : t ∈ cubicCan
 
 /-- A candidate coefficient triple has a root in `[1, B]` exactly when it has a root at `1`, is
 one of the two survivors of the open-interval test, or is `X³ - X - 1`. -/
-private theorem exists_root_Icc_iff {t : ℤ × ℤ × ℤ} (ht : t ∈ cubicCandidateCoeffs) :
+theorem exists_root_Icc_iff {t : ℤ × ℤ × ℤ} (ht : t ∈ cubicCandidateCoeffs) :
     (∃ x ∈ Set.Icc 1 B, aeval x (cubicCandidate t) = 0) ↔
       1 + t.1 + t.2.1 + t.2.2 = 0 ∨ t = (1, -2, -1) ∨ t = (2, -3, -1) ∨ t = (0, -1, -1) := by
   constructor
@@ -408,7 +411,7 @@ theorem discr_ne_of_mem_cubicCandidates {f : ℤ[X]} (hf : f ∈ cubicCandidates
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
 
 /-- **The candidate list of `3.1.23.1`.** With `u = θ² - θ` and `w` the real place, the candidate
-list `unitCandidates K (w u)` of Layer 7.4 is `cubicCandidates`. -/
+list `unitCandidates K (w u)` is `cubicCandidates`. -/
 theorem unitCandidates_eq_cubicCandidates (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 + 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {w : InfinitePlace K} (hw : w.IsReal)
     {u : (𝓞 K)ˣ} (hu : (u : 𝓞 K) = θ ^ 2 - θ) :

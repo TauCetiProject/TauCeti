@@ -313,9 +313,13 @@ cubic `X³ + aX² + bX + c` with `|a|, |b| ≤ 3` and `c = ±1` that has a real 
 theorem cubic_candidate_coefficients_of_root (a b c : ℤ)
     (haL : -4 < a) (haU : a < 4) (hbL : -4 < b) (hbU : b < 4)
     (hc : c = 1 ∨ c = -1) {B x : ℝ} (hBcubic : B ^ 3 - B - 1 = 0)
-    (hB : B < 4 / 3) (hx1 : 1 < x) (hxB : x < B)
+    (hx1 : 1 < x) (hxB : x < B)
     (hroot : x ^ 3 + a * x ^ 2 + b * x + c = 0) :
     (a = 1 ∧ b = -2 ∧ c = -1) ∨ (a = 2 ∧ b = -3 ∧ c = -1) := by
+  have hB : B < 4 / 3 := by
+    by_contra h
+    nlinarith [mul_nonneg (sub_nonneg.mpr (le_of_not_gt h))
+      (sub_nonneg.mpr (hx1.trans hxB).le)]
   rcases hc with rfl | rfl
   · norm_num at hroot
     exact (no_cubic_candidate_const_one_root a b haL haU hbL hbU hB hx1 hxB
@@ -374,7 +378,12 @@ theorem cubicUnitEliminationCertificate (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 +
     simp only [Finset.sum_range_succ, Finset.sum_range_zero, zsmul_eq_mul, h3, Int.cast_one,
       pow_zero, pow_one, zero_add]
     ring
-  have hdegree : g.degree = 3 := (degree_eq_iff_natDegree_eq hmonic.ne_zero).mpr hdeg
+  have hpoly : g = X ^ 3 + C (g.coeff 2) * X ^ 2 + C (g.coeff 1) * X +
+      C (g.coeff 0) := by
+    conv_lhs => rw [hmonic.as_sum, hdeg]
+    simp only [Finset.sum_range_succ, Finset.sum_range_zero, pow_zero, pow_one,
+      mul_one, zero_add]
+    ring
   obtain ⟨haL, haU⟩ := ha4
   obtain ⟨hbL, hbU⟩ := hb4
   by_cases hroot : ∃ x ∈ Set.Ioo (1 : ℝ) (w u), aeval x g = 0
@@ -383,16 +392,24 @@ theorem cubicUnitEliminationCertificate (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 +
     rw [heval] at hxroot
     rcases cubic_candidate_coefficients_of_root (g.coeff 2) (g.coeff 1) (g.coeff 0)
       haL haU hbL hbU h0
-      (unit_value_pow_three_sub_self_sub_one hmin hw hu) hB.2 hx1 hxB hxroot with
+      (unit_value_pow_three_sub_self_sub_one hmin hw hu) hx1 hxB hxroot with
       hc | hc
     · intro n hn
-      rw [Polynomial.discr_of_degree_eq_three hdegree, h3, hc.1, hc.2.1, hc.2.2]
+      have hg : g = X ^ 3 + X ^ 2 - 2 * X - 1 := by
+        rw [hpoly, hc.1, hc.2.1, hc.2.2]
+        norm_num
+        ring
+      rw [hg, discr_X_pow_three_add_X_sq_sub_two_mul_X_sub_one]
       norm_num
       intro heq
       rw [discr_eq_neg_twenty_three hmin hgen] at heq
       nlinarith [sq_nonneg (n : ℤ)]
     · intro n hn
-      rw [Polynomial.discr_of_degree_eq_three hdegree, h3, hc.1, hc.2.1, hc.2.2]
+      have hg : g = X ^ 3 + 2 * X ^ 2 - 3 * X - 1 := by
+        rw [hpoly, hc.1, hc.2.1, hc.2.2]
+        norm_num
+        ring
+      rw [hg, discr_X_pow_three_add_two_mul_X_sq_sub_three_mul_X_sub_one]
       norm_num
       intro heq
       rw [discr_eq_neg_twenty_three hmin hgen] at heq
