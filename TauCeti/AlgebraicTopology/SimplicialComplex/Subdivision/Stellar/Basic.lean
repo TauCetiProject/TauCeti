@@ -307,7 +307,8 @@ theorem link_stellarSubdivision_insert_le_closedStar_inf_deletion {ρ : Finset �
   obtain ⟨hσ, hK⟩ := (insert_mem_stellarSubdivision_iff hvτρ).mp hface'
   refine mem_inf.mpr ⟨mem_closedStar_nonempty.mpr ⟨hne, ?_⟩, mem_deletion.mpr ⟨?_, ?_⟩⟩
   · exact (K.isRelLowerSet_faces hK).2
-      (Finset.union_subset_union Finset.subset_union_left Subset.rfl) hne
+      (Finset.union_subset_union Finset.subset_union_left Subset.rfl)
+      (hne.mono Finset.subset_union_left)
   · exact (K.isRelLowerSet_faces hK).2
       (Finset.subset_union_left.trans Finset.subset_union_left) hne
   · intro hστ
