@@ -28,6 +28,8 @@ product `D₊(Xᵢ) ×_S D₊(Xⱼ)` of two charts as an open immersion from the
 
 ## Main results
 
+* `WeierstrassCurve.opensRange_chartι`: the image of the chart `chartι W i` is the standard affine
+  open `D₊(Xᵢ)`.
 * `WeierstrassCurve.exists_mem_range_chartι`: the three charts cover the projective model.
 * `WeierstrassCurve.chartι_projModelOver`: on the chart `D₊(Xᵢ)`, the structure morphism of the
   projective model is `Spec` of the structure map `R → ChartRing i`.
@@ -86,11 +88,22 @@ theorem chartι_def (i : Fin 3) : W.chartι i =
 instance isOpenImmersion_chartι (i : Fin 3) : IsOpenImmersion (W.chartι i) :=
   IsOpenImmersion.comp _ _
 
+/-- The image of the chart `chartι W i` is the standard affine open `D₊(Xᵢ)` of the projective
+model. -/
+@[simp]
+theorem opensRange_chartι (i : Fin 3) :
+    (W.chartι i).opensRange = Proj.basicOpen W.toProjective.grading (W.toProjective.coord i) :=
+  (Scheme.Hom.opensRange_comp_of_isIso _ _).trans (Proj.opensRange_awayι _ _ _ _)
+
 /-- The charts `D₊(X₀)`, `D₊(X₁)` and `D₊(X₂)` cover the projective model. -/
-theorem exists_mem_range_chartι (y : W.projModel) : ∃ i, y ∈ Set.range (W.chartι i) :=
-  let 𝒰 := Proj.affineOpenCoverOfIrrelevantLESpan _ _ W.toProjective.coord_mem_grading
-    (fun _ ↦ one_pos) W.toProjective.irrelevant_le_span_range_coord
-  ⟨𝒰.idx y, (Scheme.Hom.opensRange_comp_of_isIso _ _).ge (𝒰.covers y)⟩
+theorem exists_mem_range_chartι (y : W.projModel) : ∃ i, y ∈ Set.range (W.chartι i) := by
+  -- the opens `D₊(Xᵢ)` cover the projective model, and `D₊(Xᵢ)` is the image of the chart `i`
+  have hy : y ∈ ⨆ i, (W.chartι i).opensRange := by
+    rw [iSup_congr W.opensRange_chartι,
+      Proj.iSup_basicOpen_eq_top _ _ W.toProjective.irrelevant_le_span_range_coord]
+    exact TopologicalSpace.Opens.mem_top y
+  obtain ⟨i, hi⟩ := TopologicalSpace.Opens.mem_iSup.mp hy
+  exact ⟨i, Set.mem_range.mpr (Scheme.Hom.mem_opensRange.mp hi)⟩
 
 /-- On the chart `D₊(Xᵢ)`, the structure morphism of the projective model is `Spec` of the
 structure map `R → ChartRing i`. -/
