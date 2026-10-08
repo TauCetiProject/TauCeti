@@ -236,6 +236,24 @@ private def weightTorusCoordinateIso :
   _root_.CommHopfAlgCat.isoMk (MonoidAlgebra.domCongrBialgEquiv (ZMod 3) (ZMod 3)
     weightTorusCharacterEquiv)
 
+/-- The character reindexing sends the standard character of index `i` to that of index
+`ULift.up i`. -/
+private theorem weightTorusCharacterEquiv_ofAdd_single (i : Fin 2) :
+    weightTorusCharacterEquiv (.ofAdd (Finsupp.single i 1)) =
+      .ofAdd (Finsupp.single (ULift.up i) 1) := by
+  rw [weightTorusCharacterEquiv, AddEquiv.toMultiplicative_apply_apply, toAdd_ofAdd,
+    Finsupp.domCongr_apply, Finsupp.equivMapDomain_single, Equiv.ulift_symm_apply]
+
+/-- The coordinate reindexing acts on monomials through `weightTorusCharacterEquiv`. -/
+private theorem weightTorusCoordinateIso_hom_single
+    (c : Multiplicative (Fin 2 →₀ ℤ)) (r : ZMod 3) :
+    weightTorusCoordinateIso.hom.hom (MonoidAlgebra.single c r) =
+      MonoidAlgebra.single (weightTorusCharacterEquiv c) r := by
+  simp only [weightTorusCoordinateIso, CommHopfAlgCat.isoMk_hom, ConcreteCategory.hom_ofHom,
+    BialgHom.coe_coe, MonoidAlgebra.domCongrBialgEquiv, BialgEquiv.ofAlgEquiv_apply,
+    AlgEquiv.toEquiv_eq_coe, Equiv.toFun_as_coe, EquivLike.coe_coe]
+  exact MonoidAlgebra.domCongr_single _ _ _
+
 /-- Restriction from the short-root type-`G₂` carrier to its weight torus, reindexed in the
 standard rank-two coordinates used by `SplitMaximalTorus`. -/
 def splitMaximalTorusCoordinateMap : carrierAlgebra ⟶
@@ -267,14 +285,9 @@ theorem pointsMulEquiv_mapDomain_splitMaximalTorusCoordinateMap
   congr 1
   funext i
   ext
-  simp only [weightTorusCoordinateIso, MonoidAlgebra.domCongrBialgEquiv,
-    weightTorusCharacterEquiv, CommHopfAlgCat.isoMk_hom, ConcreteCategory.hom_ofHom,
-    AlgHom.mapDomain_apply, SplitTorus.pointsMulEquiv_apply_coe, AlgHom.coe_comp,
-    BialgHom.coe_toAlgHom, BialgHom.coe_coe, Function.comp_apply, BialgEquiv.ofAlgEquiv_apply,
-    AlgEquiv.toEquiv_eq_coe, Equiv.toFun_as_coe, EquivLike.coe_coe,
-    MonoidAlgebra.domCongr_single]
-  rw [AddEquiv.toMultiplicative_apply_apply, toAdd_ofAdd, Finsupp.domCongr_apply,
-    Finsupp.equivMapDomain_single, Equiv.ulift_symm_apply]
+  rw [SplitTorus.pointsMulEquiv_apply_coe, SplitTorus.pointsMulEquiv_apply_coe,
+    AlgHom.mapDomain_apply, WithConv.ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom,
+    weightTorusCoordinateIso_hom_single, weightTorusCharacterEquiv_ofAdd_single]
 
 private theorem ker_splitMaximalTorusCoordinateMap :
     HopfIdeal.kerOfSurjective splitMaximalTorusCoordinateMap.hom
