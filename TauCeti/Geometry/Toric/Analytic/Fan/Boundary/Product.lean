@@ -22,8 +22,8 @@ that factor ray with the whole realization of the other factor, so the boundary 
 product are exactly the pullbacks of the boundary components of its two factors.
 
 The boundary statements take the product ray together with the identification of its cone, so
-they need no nonemptiness hypothesis; `TauCeti.Toric.Fan.coe_toCone_prodRayEquiv_symm_inl` and
-`TauCeti.Toric.Fan.coe_toCone_prodRayEquiv_symm_inr` supply that identification for the rays
+they need no nonemptiness hypothesis; `TauCeti.Toric.Fan.toCone_prodRayEquiv_symm_inl` and
+`TauCeti.Toric.Fan.toCone_prodRayEquiv_symm_inr` supply that identification for the rays
 given by `TauCeti.Toric.Fan.prodRayEquiv`.
 
 ## Main declarations
@@ -98,5 +98,49 @@ theorem image_analyticProdHomeomorph_analyticBoundaryComponent_of_eq_bot_prod {�
       univ ×ˢ Ψ.analyticBoundaryComponent hΨ ρ := by
   rw [← Φ.preimage_analyticProdHomeomorph_analyticBoundaryComponent_univ_prod Ψ hΦ hΨ h,
     Homeomorph.image_preimage]
+
+/-- The preimage of the first factor boundary component is the component of its canonical
+product ray. -/
+theorem preimage_analyticProdHomeomorph_analyticBoundaryComponent_prodRayEquiv_symm_inl
+    (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.cones) (ρ : Φ.Ray) :
+    Φ.analyticProdHomeomorph Ψ hΦ hΨ ⁻¹' (Φ.analyticBoundaryComponent hΦ ρ ×ˢ univ) =
+      (Φ.prod Ψ).analyticBoundaryComponent (Fan.IsRegular.prod Φ Ψ hΦ hΨ)
+        ((Φ.prodRayEquiv Ψ hΦ0 hΨ0).symm (.inl ρ)) :=
+  Φ.preimage_analyticProdHomeomorph_analyticBoundaryComponent_prod_univ Ψ hΦ hΨ
+    (Φ.toCone_prodRayEquiv_symm_inl Ψ hΦ0 hΨ0 ρ)
+
+/-- The image of the boundary component of the canonical first factor product ray is the
+product of that factor boundary component and the other realization. -/
+@[simp]
+theorem image_analyticProdHomeomorph_analyticBoundaryComponent_prodRayEquiv_symm_inl
+    (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.cones) (ρ : Φ.Ray) :
+    Φ.analyticProdHomeomorph Ψ hΦ hΨ ''
+        (Φ.prod Ψ).analyticBoundaryComponent (Fan.IsRegular.prod Φ Ψ hΦ hΨ)
+          ((Φ.prodRayEquiv Ψ hΦ0 hΨ0).symm (.inl ρ)) =
+      Φ.analyticBoundaryComponent hΦ ρ ×ˢ univ := by
+  rw [← Φ.preimage_analyticProdHomeomorph_analyticBoundaryComponent_prodRayEquiv_symm_inl
+    Ψ hΦ hΨ hΦ0 hΨ0 ρ, Homeomorph.image_preimage]
+
+/-- The preimage of the second factor boundary component is the component of its canonical
+product ray. -/
+theorem preimage_analyticProdHomeomorph_analyticBoundaryComponent_prodRayEquiv_symm_inr
+    (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.cones) (ρ : Ψ.Ray) :
+    Φ.analyticProdHomeomorph Ψ hΦ hΨ ⁻¹' (univ ×ˢ Ψ.analyticBoundaryComponent hΨ ρ) =
+      (Φ.prod Ψ).analyticBoundaryComponent (Fan.IsRegular.prod Φ Ψ hΦ hΨ)
+        ((Φ.prodRayEquiv Ψ hΦ0 hΨ0).symm (.inr ρ)) :=
+  Φ.preimage_analyticProdHomeomorph_analyticBoundaryComponent_univ_prod Ψ hΦ hΨ
+    (Φ.toCone_prodRayEquiv_symm_inr Ψ hΦ0 hΨ0 ρ)
+
+/-- The image of the boundary component of the canonical second factor product ray is the
+product of that factor boundary component and the other realization. -/
+@[simp]
+theorem image_analyticProdHomeomorph_analyticBoundaryComponent_prodRayEquiv_symm_inr
+    (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.cones) (ρ : Ψ.Ray) :
+    Φ.analyticProdHomeomorph Ψ hΦ hΨ ''
+        (Φ.prod Ψ).analyticBoundaryComponent (Fan.IsRegular.prod Φ Ψ hΦ hΨ)
+          ((Φ.prodRayEquiv Ψ hΦ0 hΨ0).symm (.inr ρ)) =
+      univ ×ˢ Ψ.analyticBoundaryComponent hΨ ρ := by
+  rw [← Φ.preimage_analyticProdHomeomorph_analyticBoundaryComponent_prodRayEquiv_symm_inr
+    Ψ hΦ hΨ hΦ0 hΨ0 ρ, Homeomorph.image_preimage]
 
 end TauCeti.Toric.Fan

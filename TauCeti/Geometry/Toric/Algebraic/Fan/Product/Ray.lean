@@ -22,8 +22,8 @@ components of a product of toric varieties by the boundary components of the two
 
 * `TauCeti.Toric.Fan.prodRayEquiv`: the rays of a product of nonempty fans are the rays of the
   two factors.
-* `TauCeti.Toric.Fan.coe_toCone_prodRayEquiv_symm_inl` and
-  `TauCeti.Toric.Fan.coe_toCone_prodRayEquiv_symm_inr`: the cones of the corresponding product
+* `TauCeti.Toric.Fan.toCone_prodRayEquiv_symm_inl` and
+  `TauCeti.Toric.Fan.toCone_prodRayEquiv_symm_inr`: the cones of the corresponding product
   rays.
 
 ## References
@@ -106,7 +106,7 @@ noncomputable def prodRayEquiv (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.co
 
 /-- The product ray of a ray of the first factor is its product with the zero cone. -/
 @[simp]
-theorem coe_toCone_prodRayEquiv_symm_inl (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.cones)
+theorem toCone_prodRayEquiv_symm_inl (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.cones)
     (ρ : Φ.Ray) :
     ((Φ.prodRayEquiv Ψ hΦ0 hΨ0).symm (.inl ρ)).toCone.1 = ρ.toCone.1.prod ⊥ := by
   rw [prodRayEquiv, Equiv.symm_symm]
@@ -114,7 +114,7 @@ theorem coe_toCone_prodRayEquiv_symm_inl (hΦ0 : Nonempty Φ.cones) (hΨ0 : None
 
 /-- The product ray of a ray of the second factor is the product of the zero cone with it. -/
 @[simp]
-theorem coe_toCone_prodRayEquiv_symm_inr (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.cones)
+theorem toCone_prodRayEquiv_symm_inr (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.cones)
     (ρ : Ψ.Ray) :
     ((Φ.prodRayEquiv Ψ hΦ0 hΨ0).symm (.inr ρ)).toCone.1 =
       (⊥ : PointedCone ℝ V).prod ρ.toCone.1 := by
@@ -123,29 +123,29 @@ theorem coe_toCone_prodRayEquiv_symm_inr (hΦ0 : Nonempty Φ.cones) (hΨ0 : None
 
 /-- A product ray projects to the first factor exactly when its other cone is zero. -/
 @[simp]
-theorem prodRayEquiv_eq_inl_iff (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.cones)
+theorem prodRayEquiv_apply_eq_inl_iff (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.cones)
     {ξ : (Φ.prod Ψ).Ray} {ρ : Φ.Ray} :
     Φ.prodRayEquiv Ψ hΦ0 hΨ0 ξ = .inl ρ ↔ ξ.toCone.1 = ρ.toCone.1.prod ⊥ := by
   rw [← Equiv.eq_symm_apply]
   constructor
   · rintro rfl
-    exact coe_toCone_prodRayEquiv_symm_inl Φ Ψ hΦ0 hΨ0 ρ
+    exact toCone_prodRayEquiv_symm_inl Φ Ψ hΦ0 hΨ0 ρ
   · intro h
     exact Subtype.ext (Subtype.ext
-      (h.trans (coe_toCone_prodRayEquiv_symm_inl Φ Ψ hΦ0 hΨ0 ρ).symm))
+      (h.trans (toCone_prodRayEquiv_symm_inl Φ Ψ hΦ0 hΨ0 ρ).symm))
 
 /-- A product ray projects to the second factor exactly when its first cone is zero. -/
 @[simp]
-theorem prodRayEquiv_eq_inr_iff (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.cones)
+theorem prodRayEquiv_apply_eq_inr_iff (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.cones)
     {ξ : (Φ.prod Ψ).Ray} {ρ : Ψ.Ray} :
     Φ.prodRayEquiv Ψ hΦ0 hΨ0 ξ = .inr ρ ↔
       ξ.toCone.1 = (⊥ : PointedCone ℝ V).prod ρ.toCone.1 := by
   rw [← Equiv.eq_symm_apply]
   constructor
   · rintro rfl
-    exact coe_toCone_prodRayEquiv_symm_inr Φ Ψ hΦ0 hΨ0 ρ
+    exact toCone_prodRayEquiv_symm_inr Φ Ψ hΦ0 hΨ0 ρ
   · intro h
     exact Subtype.ext (Subtype.ext
-      (h.trans (coe_toCone_prodRayEquiv_symm_inr Φ Ψ hΦ0 hΨ0 ρ).symm))
+      (h.trans (toCone_prodRayEquiv_symm_inr Φ Ψ hΦ0 hΨ0 ρ).symm))
 
 end TauCeti.Toric.Fan
