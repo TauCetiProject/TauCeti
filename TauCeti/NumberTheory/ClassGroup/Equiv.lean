@@ -75,8 +75,13 @@ arbitrary fraction fields. -/
     ← FractionalIdeal.val_eq_coe, FractionalIdeal.ringEquivOfRingEquiv_apply_val]
   simp only [FractionalIdeal.val_eq_coe]
   rw [← Submodule.span_eq (I : Submodule R (FractionRing R)), Submodule.map_span]
-  -- The semilinear equivalence uses this same localization map as its underlying function.
-  rfl
+  apply congrArg (Submodule.span S)
+  apply congrArg (fun g : FractionRing R → FractionRing S ↦ g '' (I : Set (FractionRing R)))
+  funext x
+  -- `erw` aligns the inverse-map instances for `f.symm.symm` with those for `f`.
+  erw [LinearEquiv.coe_toLinearMap]
+  rw [IsFractionRing.semilinearEquivOfRingEquiv_apply,
+    IsFractionRing.ringEquivOfRingEquiv_apply]
 
 /-- `ClassGroup.mulEquiv f` sends the class of a unit fractional ideal `I` to the class of its
 image under `FractionalIdeal.ringEquivOfRingEquiv f`. This is independent of the chosen fraction
