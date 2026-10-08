@@ -63,6 +63,8 @@ For a family obtained from polynomials `f` in `n + 1` variables by singling out 
 * `TauCeti.Delineation.comp`: restriction of a delineation along a continuous map of bases.
 * `TauCeti.nonempty_delineation`: existence of a delineation over a preconnected base from
   constant degrees, numbers of distinct complex roots and pairwise gcd degrees.
+* `TauCeti.exists_delineation_of_isRoot_iff`: an ordered continuous enumeration of the real roots
+  of a single nowhere-zero family, with constant multiplicities, is a delineation.
 * `TauCeti.Delineation.root_notMem_uIcc_of_sign_eval_eq`,
   `TauCeti.Delineation.mk_mem_sectionSet_iff_of_sign_eval_eq`,
   `TauCeti.Delineation.mk_mem_sectorSet_iff_of_sign_eval_eq`: when the derivative of every
@@ -297,6 +299,50 @@ theorem nonempty_delineation [Finite ι] [PreconnectedSpace X]
         (isRoot_iff_of_rootMultiplicity (fun i ↦ hm k i x) (hsub k x hk) hk t).trans <| by
           simp only [mem_ofPred_eq, and_comm]
   · exact signInvariant_eval_sectorSet (hP k) hrc hrm (hnull k) fun x hk ↦ hsub k x hk
+
+/-- **Delineation from an ordered root enumeration.** Let `F x` be nowhere-zero real polynomials
+of constant degree whose coefficients depend continuously on a parameter `x` in a preconnected
+space. If continuous, pointwise strictly increasing functions `θ i` enumerate the real roots of
+every `F x`, each with a multiplicity independent of `x`, then the `θ i` are the root functions
+of a delineation of `F`. -/
+theorem exists_delineation_of_isRoot_iff [PreconnectedSpace X] {F : X → ℝ[X]} {k : ℕ}
+    {θ : Fin k → X → ℝ} (hcoeff : ∀ j, Continuous fun x ↦ (F x).coeff j) (hF : ∀ x, F x ≠ 0)
+    (hdeg : ∀ x y, (F x).natDegree = (F y).natDegree) (hθ : ∀ i, Continuous (θ i))
+    (hmono : ∀ x, StrictMono fun i ↦ θ i x) (hroots : ∀ x t, (F x).IsRoot t ↔ ∃ i, θ i x = t)
+    (hmult : ∀ i x y, (F x).rootMultiplicity (θ i x) = (F y).rootMultiplicity (θ i y)) :
+    ∃ D : Delineation fun (_ : Unit) x ↦ F x, ∀ i, ∃ j, D.root i = θ j := by
+  classical
+  -- over an empty base the multiplicities are unconstrained, and `1` is a valid choice
+  let m (i : Fin k) : ℕ := if h : Nonempty X then (F h.some).rootMultiplicity (θ i h.some) else 1
+  have hm (i : Fin k) (x : X) : (F x).rootMultiplicity (θ i x) = m i := by
+    simp only [m, show Nonempty X from ⟨x⟩, ↓reduceDIte]
+    exact hmult i _ _
+  have hpos (i : Fin k) : 0 < m i := by
+    by_cases h : Nonempty X
+    · obtain ⟨x⟩ := h
+      exact hm i x ▸ (rootMultiplicity_pos (hF x)).2 ((hroots x _).2 ⟨i, rfl⟩)
+    · simp [m, h]
+  have hP : Continuous fun z : X × ℝ ↦ (F z.1).eval z.2 := by
+    rcases isEmpty_or_nonempty X with hX | hX
+    · exact continuous_of_const fun z ↦ isEmptyElim z.1
+    · obtain ⟨x₀⟩ := hX
+      exact continuous_eval_of_continuous_coeff (fun j _ ↦ hcoeff j) fun x ↦ (hdeg x x₀).le
+  exact ⟨{
+    count := k
+    root := θ
+    continuous_root := hθ
+    strictMono_root := hmono
+    multiplicity := fun _ ↦ m
+    rootMultiplicity_root := fun _ i x ↦ hm i x
+    exists_root_eq := fun _ x _ t ht ↦ (hroots x t).1 ht
+    exists_multiplicity_pos := fun i ↦ ⟨(), hpos i⟩
+    eq_zero_or_ne_zero := fun _ ↦ .inr hF
+    natDegree_eq := fun _ ↦ hdeg
+    signInvariant_sectionSet := fun _ i ↦ signInvariant_eval_sectionSet (I := univ) hP (hθ i)
+      (fun x ↦ (hmono x).injective) (.inr hF) fun x _ t ↦ by
+        simpa only [mem_univ, true_and, IsRoot.def] using hroots x t
+    signInvariant_sectorSet := fun _ _ ↦ signInvariant_eval_sectorSet hP hθ hmono (.inr hF)
+      fun x _ t ht ↦ (hroots x t).1 ht }, fun i ↦ ⟨i, rfl⟩⟩
 
 /-! ### Families closed under differentiation up to zero -/
 
