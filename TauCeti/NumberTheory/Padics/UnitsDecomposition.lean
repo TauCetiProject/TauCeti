@@ -52,6 +52,8 @@ open IsLocalRing
 
 namespace TauCeti
 
+attribute [local instance] IsAdicComplete.henselianLocalRing
+
 variable {p : ℕ} [hp : Fact p.Prime]
 
 variable (p) in

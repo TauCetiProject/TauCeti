@@ -82,7 +82,7 @@ theorem singleton_mem_simplex {v : ι} : {v} ∈ simplex V ↔ v ∈ V := by
   simp
 
 /-- A zero-simplex has exactly its singleton vertex as a face. -/
-@[simp]
+-- Keep this formula available before importing the collapse theory and its singleton normal form.
 theorem faces_simplex_singleton (v : ι) : (simplex {v}).faces = {{v}} := by
   ext σ
   constructor
