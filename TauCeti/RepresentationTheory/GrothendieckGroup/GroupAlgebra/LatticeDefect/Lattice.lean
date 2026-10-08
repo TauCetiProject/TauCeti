@@ -23,8 +23,9 @@ permutation representation `k[X]` (`TauCeti.baseChangeComapEquiv`), this gives
 `latticeDefect ℤ[X] = [k[X]]` (`TauCeti.latticeDefect_finsupp_int`).
 
 Two lattices `V` and `W` with equivalent rationalizations `ℚ ⊗_ℤ V ≅ ℚ ⊗_ℤ W` have the same
-reduction class over every field `k` (`TauCeti.reductionK0_eq_of_nonempty_equiv`), although their
-reductions need not be isomorphic: for `G` of order `2`, the permutation lattice `ℤ[G]` and the
+reduction class over every field `k`
+(`TauCeti.reductionK0_eq_of_nonempty_equiv_baseChange_rat`), although their reductions need not
+be isomorphic: for `G` of order `2`, the permutation lattice `ℤ[G]` and the
 lattice `ℤ ⊕ ℤ(-1)` have isomorphic rationalizations, but modulo `2` the first reduces to the
 indecomposable `𝔽₂[G]` and the second to two trivial lines. Clearing denominators in a rational
 equivalence gives equivariant maps `f : V → W` and `f' : W → V` whose composites are
@@ -39,9 +40,10 @@ finite cokernel, so the two lattices have the same lattice defect
 * `TauCeti.latticeDefect_eq_reductionK0`: the defect of a lattice is its reduction class.
 * `TauCeti.latticeDefect_finsupp_int`: the defect of the permutation lattice `ℤ[X]` is the
   permutation class `[k[X]]`.
-* `TauCeti.reductionK0_eq_of_nonempty_equiv_of_charP` and
-  `TauCeti.reductionK0_eq_of_nonempty_equiv`: lattices with equivalent rationalizations have the
-  same reduction class, in characteristic `ℓ` over any commutative ring, and over every field.
+* `TauCeti.reductionK0_eq_of_nonempty_equiv_baseChange_rat_of_charP` and
+  `TauCeti.reductionK0_eq_of_nonempty_equiv_baseChange_rat`: lattices with equivalent
+  rationalizations have the same reduction class, in characteristic `ℓ` over any commutative ring,
+  and over every field.
 
 ## References
 
@@ -105,7 +107,8 @@ theorem latticeDefect_eq_reductionK0 [CharP k ℓ] (V : Type u) [AddCommGroup V]
 characteristic `ℓ`: for finitely generated torsion-free `G`-modules `V` and `W` with
 `ℚ ⊗_ℤ V ≅ ℚ ⊗_ℤ W`, the classes `[k ⊗_ℤ V]` and `[k ⊗_ℤ W]` agree. The reductions themselves need
 not be isomorphic. -/
-theorem reductionK0_eq_of_nonempty_equiv_of_charP [Fact ℓ.Prime] [CharP k ℓ] (V W : Type u)
+theorem reductionK0_eq_of_nonempty_equiv_baseChange_rat_of_charP
+    [Fact ℓ.Prime] [CharP k ℓ] (V W : Type u)
     [AddCommGroup V] [DistribMulAction G V] [Module.Finite ℤ V] [IsAddTorsionFree V]
     [AddCommGroup W] [DistribMulAction G W] [Module.Finite ℤ W] [IsAddTorsionFree W]
     (h : Nonempty ((Representation.baseChange ℚ (Representation.ofDistribMulAction ℤ G V)).Equiv
@@ -145,7 +148,7 @@ variable (k G : Type u) [Field k] [Monoid G]
 `k`: for finitely generated torsion-free `G`-modules `V` and `W` with `ℚ ⊗_ℤ V ≅ ℚ ⊗_ℤ W`, the
 classes `[k ⊗_ℤ V]` and `[k ⊗_ℤ W]` in `G₀(k[G])` agree. In characteristic zero the reductions are
 isomorphic; in characteristic `ℓ` they need not be. -/
-theorem reductionK0_eq_of_nonempty_equiv (V W : Type u)
+theorem reductionK0_eq_of_nonempty_equiv_baseChange_rat (V W : Type u)
     [AddCommGroup V] [DistribMulAction G V] [Module.Finite ℤ V] [IsAddTorsionFree V]
     [AddCommGroup W] [DistribMulAction G W] [Module.Finite ℤ W] [IsAddTorsionFree W]
     (h : Nonempty ((Representation.baseChange ℚ (Representation.ofDistribMulAction ℤ G V)).Equiv
@@ -155,7 +158,7 @@ theorem reductionK0_eq_of_nonempty_equiv (V W : Type u)
   obtain ⟨ℓ, hℓ⟩ := CharP.exists k
   rcases CharP.char_is_prime_or_zero k ℓ with hp | rfl
   · have := Fact.mk hp
-    exact reductionK0_eq_of_nonempty_equiv_of_charP k G ℓ V W h
+    exact reductionK0_eq_of_nonempty_equiv_baseChange_rat_of_charP k G ℓ V W h
   have := (CharP.charP_zero_iff_charZero k).mp hℓ
   -- Clear denominators: `f' ∘ f` and `f ∘ f'` are multiplication by a nonzero integer `s`.
   obtain ⟨e⟩ := h
@@ -169,7 +172,7 @@ theorem reductionK0_eq_of_nonempty_equiv (V W : Type u)
       {ρ : Representation ℤ G X} {σ : Representation ℤ G Y}
       {a : ρ.IntertwiningMap σ} {b : σ.IntertwiningMap ρ} (hab : ∀ x, b (a x) = (s : ℤ) • x)
       (x : k ⊗[ℤ] X) : b.baseChange k (a.baseChange k x) = ((s : ℤ) : k) • x := by
-    rw [Representation.IntertwiningMap.baseChange_baseChange_apply_of_apply_eq_smul hab,
+    rw [Representation.IntertwiningMap.baseChange_apply_baseChange_apply_of_comp_eq_smul hab,
       Int.cast_smul_eq_zsmul]
   have hbij : Function.Bijective (f.baseChange k) := by
     refine ⟨fun x y hxy ↦ hs.smul_left_cancel.mp ?_, fun y ↦ ⟨f'.baseChange k (hs.unit⁻¹ • y), ?_⟩⟩

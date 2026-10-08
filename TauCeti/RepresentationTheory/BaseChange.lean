@@ -338,7 +338,7 @@ theorem _root_.Representation.IntertwiningMap.baseChange_comp {U : Type*} [AddCo
 
 /-- **Base change preserves a scalar composite**: if `g ∘ f` is multiplication by `r : R`, then so
 is the composite of the base changes `A ⊗ g ∘ A ⊗ f`. -/
-theorem _root_.Representation.IntertwiningMap.baseChange_baseChange_apply_of_apply_eq_smul
+theorem _root_.Representation.IntertwiningMap.baseChange_apply_baseChange_apply_of_comp_eq_smul
     {f : _root_.Representation.IntertwiningMap ρ σ} {g : _root_.Representation.IntertwiningMap σ ρ}
     {r : R} (hgf : ∀ v, g (f v) = r • v) (A : Type*) [Semiring A] [Algebra R A]
     (x : A ⊗[R] V) : g.baseChange A (f.baseChange A x) = r • x := by
