@@ -147,12 +147,10 @@ theorem laurentCoeff_uniformizer (n : ℤ) :
 /-- A function regular at `P` has no negative Laurent coefficients. -/
 theorem laurentCoeff_eq_zero_of_mem_integers {z : F} (hz : z ∈ P.integers)
     {n : ℤ} (hn : n < 0) : P.laurentCoeff hP ht n z = 0 := by
-  let z₀ : P.integers := ⟨z, hz⟩
-  let zᵢ : P.completionPlace.integers := P.completionIntegersEmbedding z₀
-  change P.completionLaurentCoeff hP ht n (P.completionEmbedding z) = 0
-  rw [← show (zᵢ : P.Completion) = P.completionEmbedding z by
-    exact P.completionIntegersEmbedding_apply z₀]
-  exact P.completionLaurentCoeff_coe_integer_eq_zero hP ht zᵢ hn
+  have h := P.completionLaurentCoeff_coe_integer_eq_zero hP ht
+    (P.completionIntegersEmbedding ⟨z, hz⟩) hn
+  rwa [completionIntegersEmbedding_apply, completionLaurentCoeff_apply,
+    ← laurentCoeff_apply] at h
 
 /-- The residue `res_{P,t}(z)` of a local function with respect to the uniformizer `t`: the
 coefficient of `t⁻¹` in its Laurent expansion (Stichtenoth, Definition 4.2.8). -/
