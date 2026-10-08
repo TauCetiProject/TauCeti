@@ -284,6 +284,7 @@ theorem comap_absoluteGaloisGroupExtend_inertiaSubgroup :
 
 /-- **Inertia along a finite extension, as an image.** The image of the inertia subgroup of `L` in
 `G_K` is the part of the inertia subgroup of `K` lying in the image of `G_L`. -/
+@[simp]
 theorem map_absoluteGaloisGroupExtend_inertiaSubgroup :
     (inertiaSubgroup L).map (absoluteGaloisGroupExtend K L ι) =
       inertiaSubgroup K ⊓ (absoluteGaloisGroupExtend K L ι).range := by
