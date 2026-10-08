@@ -19,10 +19,14 @@ homogeneous fractions of degree zero are invariant under right multiplication by
 These are the local coordinate identities needed to descend projective orbit morphisms to
 homogeneous quotients. They apply to nonreduced subgroups and value algebras.
 
-The character of an exterior stabilizer line is supplied by
-`HopfIdeal.exists_finite_subcomodule_exteriorPower_line_stabilizer`. The calculations use
-`Comodule.comul_matrixCoefficient` and `HomogeneousLocalization.Away.lift_eq_of_forall_mem`.
-The quotient-point evaluation follows `HopfIdeal.ofConv_mul_apply_of_mem_coinvariants`.
+## Main results
+
+* `HopfIdeal.ofConv_mul_orbitCoordinates_of_mem_weightSpace`: homogeneous orbit coordinates
+  transform by the corresponding power of the subgroup character.
+* `HopfIdeal.isUnit_ofConv_mul_orbitCoordinates_iff`: right subgroup translation preserves
+  membership in a standard projective chart.
+* `HopfIdeal.awayLift_ofConv_mul_orbitCoordinates_eq`: the two translated points give the same
+  map on the chart, including its nilpotent functions.
 
 ## References
 
@@ -113,7 +117,7 @@ variable {A : Type x} [CommRing A] [Algebra R A]
 
 /-- The maps on a homogeneous affine chart defined by a group point and its right subgroup
 translate agree. This is equality of ring maps, including on nilpotent functions. -/
-theorem awayLift_orbitCoordinates_mul_eq
+theorem awayLift_ofConv_mul_orbitCoordinates_eq
     (I : HopfIdeal R H) (χ : GroupLike R (H ⧸ I.toIdeal))
     {m : M} (hm : m ∈ I.weightSpace M χ)
     (g : WithConv (H →ₐ[R] A)) (h : WithConv ((H ⧸ I.toIdeal) →ₐ[R] A))
