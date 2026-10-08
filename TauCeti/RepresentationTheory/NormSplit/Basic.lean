@@ -19,16 +19,16 @@ the induced module `k[G] ⊗_k V`; if moreover `V` is projective over `k`, then 
 projective `k[G]`-module. This is the easy direction of Higman's criterion, and the way the
 theorem of Nakayama and Rim produces projective modules (Serre, *Local Fields*, IX §§3–5).
 
-Whether the identity is a norm can be decided one prime at a time: if for every prime `p` some
-subgroup of index prime to `p` has the identity as a norm, then so does `G`.
+Whether the identity is a norm can be decided one prime divisor of `|G|` at a time: if for every
+such prime `p` some subgroup of index prime to `p` has the identity as a norm, then so does `G`.
 
 ## Main statements
 
 * `Representation.norm_linHom_apply`: the norm of the conjugation action on `End_k(V)`.
 * `Representation.index_nsmul_id_mem_range_norm_linHom`: if the identity is an `H`-norm, then
   `[G : H]` times the identity is a `G`-norm.
-* `Representation.id_mem_range_norm_linHom_of_forall_prime`: if for every prime `p` the identity
-  is a norm for a subgroup of index prime to `p`, then it is a `G`-norm.
+* `Representation.id_mem_range_norm_linHom_of_forall_prime`: if for every prime divisor `p` of
+  `|G|` the identity is a norm for a subgroup of index prime to `p`, then it is a `G`-norm.
 * `Rep.projective_of_id_mem_range_norm_linHom`,
   `Rep.moduleProjective_of_id_mem_range_norm_linHom`: a representation that is projective over
   `k` and whose identity is a norm is projective, in `Rep k G` and as a `k[G]`-module.
@@ -71,11 +71,12 @@ theorem index_nsmul_id_mem_range_norm_linHom (H : Subgroup G) [Fintype H]
     ← relNorm_apply_of_forall_apply_eq (ρ := linHom ρ ρ) (H := H) hfix, ← hφ]
   congr!
 
-/-- **The identity is a norm if it is one at every prime.** If for every prime `p` the identity of
-`V` is a norm for the conjugation action of a subgroup of index prime to `p`, then it is a norm
-for the conjugation action of `G`. -/
+/-- **The identity is a norm if it is one at every relevant prime.** If for every prime divisor `p`
+of `|G|` the identity of `V` is a norm for the conjugation action of a subgroup of index prime to
+`p`, then it is a norm for the conjugation action of `G`. -/
 theorem id_mem_range_norm_linHom_of_forall_prime
-    (h : ∀ p : ℕ, p.Prime → ∃ (H : Subgroup G) (_ : Fintype H), ¬ p ∣ H.index ∧
+    (h : ∀ p : ℕ, p.Prime → p ∣ Fintype.card G →
+      ∃ (H : Subgroup G) (_ : Fintype H), ¬ p ∣ H.index ∧
       LinearMap.id ∈ LinearMap.range (Representation.norm ((linHom ρ ρ).comp H.subtype))) :
     LinearMap.id ∈ LinearMap.range (linHom ρ ρ).norm := by
   -- The ideal of integers `n` with `n • id` a norm.
@@ -85,11 +86,19 @@ theorem id_mem_range_norm_linHom_of_forall_prime
       LinearMap.range (linHom ρ ρ).norm := fun n ↦ by
     simp [J]
   obtain ⟨n, hn⟩ := (Submodule.IsPrincipal.principal J)
+  have hcard : (Fintype.card G : ℤ) ∈ J := by
+    rw [hJ, natCast_zsmul]
+    simpa [Subgroup.index_bot, Nat.card_eq_fintype_card] using
+      index_nsmul_id_mem_range_norm_linHom ρ ⊥
+        ⟨LinearMap.id, by ext x; simp [Representation.norm]⟩
+  rw [hn, Ideal.submodule_span_eq, Ideal.mem_span_singleton] at hcard
   have hunit : IsUnit n := by
     rw [Int.isUnit_iff_natAbs_eq]
     by_contra hne
     obtain ⟨p, hp, hpn⟩ := Nat.exists_prime_and_dvd hne
-    obtain ⟨H, _, hpH, hH⟩ := h p hp
+    have hpG : p ∣ Fintype.card G :=
+      Int.natCast_dvd_natCast.1 ((Int.ofNat_dvd_left.2 hpn).trans hcard)
+    obtain ⟨H, _, hpH, hH⟩ := h p hp hpG
     have hmem : (H.index : ℤ) ∈ J := by
       rw [hJ, natCast_zsmul]
       exact index_nsmul_id_mem_range_norm_linHom ρ H hH
