@@ -10,10 +10,10 @@ public import Mathlib.GroupTheory.Frattini
 public import TauCeti.GroupTheory.QuotientGroup.MulAut
 public import TauCeti.Topology.Algebra.Group.Generation
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.FiniteGeneration
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Basic
 import TauCeti.GroupTheory.Frattini
 import TauCeti.Topology.Algebra.Group.ContinuousAut.Profinite
-import TauCeti.Topology.Algebra.Group.Profinite.ProP.FiniteGeneration
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.MaximalSubgroup
 
 /-!
@@ -148,17 +148,6 @@ theorem IsProP.isProP_ker_mapQuotient_proPFrattini {p : ℕ} [Fact p.Prime] (hG 
   exact (mapQuotient_eq_iff hN).mp h1 x
 
 section Limit
-
-/-- In a topologically finitely generated compact group, the topologically characteristic open
-normal subgroups contained in the pro-`p` Frattini subgroup are cofinal among the open subgroups:
-the pro-`p` Frattini subgroup is itself open. -/
-theorem IsTopologicallyFinitelyGenerated.exists_isTopCharacteristic_le_proPFrattini
-    (hG : IsTopologicallyFinitelyGenerated G) (p : ℕ) (U : OpenSubgroup G) :
-    ∃ N : OpenNormalSubgroup G, IsTopCharacteristic G N ∧ (N : Subgroup G) ≤ proPFrattini p G ∧
-      (N : Subgroup G) ≤ U := by
-  obtain ⟨N, hN, hle⟩ :=
-    hG.exists_isTopCharacteristic_le (U ⊓ ⟨proPFrattini p G, hG.isOpen_proPFrattini p⟩)
-  exact ⟨N, hN, fun x hx ↦ (hle hx).2, fun x hx ↦ (hle hx).1⟩
 
 open ContinuousAut in
 /-- For a compact pro-`p` group `G` and a topologically characteristic open normal subgroup
