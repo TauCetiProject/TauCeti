@@ -136,7 +136,7 @@ theorem norm_sub_exitCapWindow_lower_eq {γ : ℝ → ℂ} {s : ℂ} {t₀ δ ε
     (hγ : ContinuousOn γ (Icc (t₀ - δ) t₀)) (hεL : ε ≤ ‖γ (t₀ - δ) - s‖) :
     ‖γ (exitCapWindow γ s t₀ δ ε L_R L_L).lower - s‖ = ε := by
   rw [exitCapWindow_lower]
-  exact norm_at_firstExitTimeLeft_eq hδ hγ h_at hε hεL
+  exact norm_at_firstExitTimeLeft_eq hδ hγ h_at hε.le hεL
 
 /-- **The right endpoint chord has the prescribed norm.**  The mirror image of
 `norm_sub_exitCapWindow_lower_eq`; together they put both endpoints on one circle about `s`. -/
@@ -145,7 +145,7 @@ theorem norm_sub_exitCapWindow_upper_eq {γ : ℝ → ℂ} {s : ℂ} {t₀ δ ε
     (hγ : ContinuousOn γ (Icc t₀ (t₀ + δ))) (hεR : ε ≤ ‖γ (t₀ + δ) - s‖) :
     ‖γ (exitCapWindow γ s t₀ δ ε L_R L_L).upper - s‖ = ε := by
   rw [exitCapWindow_upper]
-  exact norm_at_firstExitTimeRight_eq hδ hγ h_at hε hεR
+  exact norm_at_firstExitTimeRight_eq hδ hγ h_at hε.le hεR
 
 /-- The bundled cap of an exit-time window, spelled through the window's own endpoints: once the
 left endpoint chord has norm `ε`, it is the circular cap of that chord's radius sweeping from the
