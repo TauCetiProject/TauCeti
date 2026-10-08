@@ -275,9 +275,8 @@ coordinate: the standard weights come in the pairs `ε_a` and `-ε_a`. -/
 private theorem basisWeight_inr_eq_neg (x : Fin (n + 1)) :
     basisWeight n (finSumFinEquiv (Sum.inr x)) =
       -basisWeight n (finSumFinEquiv (Sum.inl x)) := by
-  funext j
   rw [basisWeight_apply, basisWeight_apply, Equiv.symm_apply_apply, Equiv.symm_apply_apply,
-    weight_inr, Pi.neg_apply, weight_inl]
+    weight_inr, weight_inl]
 
 /-- The weight-torus characters at a coordinate and at its symplectic partner are inverse to
 each other, because their weights sum to zero. -/
