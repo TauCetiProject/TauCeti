@@ -72,8 +72,8 @@ The counts are additive over a finite pairwise disjoint family of prime sets, as
 `TauCeti.primeTheta_biUnion_finset` and `TauCeti.primeCount_biUnion_finset`. Modifying a weight on a
 finite set, or a prime set on a finite symmetric difference, changes a summatory function by a
 quantity that is eventually the *constant* total discrepancy; this is
-`TauCeti.eventually_summatory_sub_eq` and its two prime specializations. Layer 7 uses these to show
-that finite changes do not affect a density. In the same spirit,
+`TauCeti.eventually_summatory_sub_eq` and its two prime specializations. These results show that
+finite changes do not affect a density. In the same spirit,
 `TauCeti.primeTheta_isLittleO_of_finite` records that a finite set of primes contributes an
 eventually constant amount to `ϑ_K`, hence `o(x)`: an exceptional set can be discarded from a
 counting argument outright, not merely from a density. Its `ψ` companion is
