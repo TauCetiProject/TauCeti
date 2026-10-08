@@ -23,8 +23,8 @@ over `Spec K` are the pairs of `K`-points of the factors.
 
 ## Main declarations
 
-* `CategoryTheory.IsPullback.homIsOver_snd`: the second projection is a morphism over `S` once
-  the first one is.
+* `CategoryTheory.homIsOver_snd_of_comm`: in a commuting square of two structure morphisms over
+  `S`, the second projection is a morphism over `S` once the first one is.
 * `CategoryTheory.IsPullback.homIsOverEquiv`: morphisms over `S` into the fibre product are pairs
   of morphisms over `S` into the factors.
 -/
@@ -33,15 +33,22 @@ public section
 
 universe v u
 
-namespace CategoryTheory.IsPullback
+namespace CategoryTheory
 
 variable {C : Type u} [Category.{v} C] {S P X Y : C} [OverClass P S] [OverClass X S]
   [OverClass Y S] {fst : P ⟶ X} {snd : P ⟶ Y} [HomIsOver fst S]
 
+/-- In a commuting square of two structure morphisms over `S`, the second projection is a
+morphism over `S` once the first one is. -/
+theorem homIsOver_snd_of_comm (h : fst ≫ (X ↘ S) = snd ≫ (Y ↘ S)) : HomIsOver snd S :=
+  ⟨by rw [← h, comp_over]⟩
+
+namespace IsPullback
+
 /-- In a pullback square of two structure morphisms over `S`, the second projection is a
 morphism over `S` once the first one is. -/
 theorem homIsOver_snd (h : IsPullback fst snd (X ↘ S) (Y ↘ S)) : HomIsOver snd S :=
-  ⟨by rw [← h.w, comp_over]⟩
+  homIsOver_snd_of_comm h.w
 
 variable (T : C) [OverClass T S]
 
@@ -83,4 +90,6 @@ theorem coe_homIsOverEquiv_symm_apply
       h.lift ab.1.1 ab.2.1 (by have := ab.1.2; have := ab.2.2; rw [comp_over, comp_over]) :=
   (rfl)
 
-end CategoryTheory.IsPullback
+end IsPullback
+
+end CategoryTheory
