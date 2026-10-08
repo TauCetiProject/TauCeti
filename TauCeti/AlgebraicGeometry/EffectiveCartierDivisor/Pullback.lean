@@ -78,7 +78,7 @@ theorem isIso_pullbackSheafHom (hI : I.IsEffectiveCartier)
   have hc : IsSMulRegular Γ(X, V) c := by
     have hb' := V₀.2.isSMulRegular_map hVV₀ hb
     rw [hIc] at hIb'
-    exact TauCeti.IsSMulRegular.of_span_singleton_le hb' hIb'.ge
+    exact IsSMulRegular.of_span_singleton_le hb' hIb'.ge
   refine ⟨V, hxV, ((Scheme.Modules.pullback g).obj I.sheaf).presheaf.map (homOfLE hVU).op
     (((Scheme.Modules.pullbackPushforwardAdjunction g).unit.app I.sheaf).app U.1
       (I.sectionMk a (I.mem_sections_of_ideal_eq_span hIa))), fun W i ↦ ?_⟩
