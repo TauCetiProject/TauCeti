@@ -12,9 +12,10 @@ public import Mathlib.Topology.Compactification.OnePoint.Basic
 # The closed unit ball with its boundary collapsed
 
 In a real normed space `E`, the open unit ball is homeomorphic to `E` itself
-(`OpenPartialHomeomorph.univUnitBall`), so collapsing the boundary sphere of the closed unit ball
-to a point gives the one-point compactification `OnePoint E`.  This file records that collapse as
-a partial equivalence `TauCeti.unitBallToOnePoint : PartialEquiv E (OnePoint E)`:
+(`OpenPartialHomeomorph.univUnitBall`).  This file sends the open unit ball onto `E ⊆ OnePoint E`
+along that homeomorphism and every other point, in particular the boundary sphere of the closed
+unit ball, to `∞`, as a partial equivalence
+`TauCeti.unitBallToOnePoint : PartialEquiv E (OnePoint E)`:
 
 * on the open ball it is `univUnitBall.symm` followed by the inclusion `E → OnePoint E`, a
   bijection onto the complement of `∞`;

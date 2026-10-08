@@ -136,11 +136,6 @@ theorem continuousOn_sphereTopCellMap_symm :
     fun y ↦ sphereOnePointEquiv_symm_mem_target h y.2).congr fun y ↦ ?_
   exact (sphereTopCellMap_symm_apply h y.2.1).symm
 
-/-- The cube `Fin 0 → ℝ` is a point, so its boundary sphere is empty. -/
-private theorem notMem_sphere_fin_zero (x : Fin 0 → ℝ) : x ∉ sphere 0 1 := by
-  rw [mem_sphere_zero_iff_norm, Subsingleton.elim x 0, norm_zero]
-  exact zero_ne_one
-
 /-- The cells of dimension `m` of the CW structure on `Sⁿ`: one if `m = 0` and one if `m = n`. -/
 private abbrev SphereCell (n m : ℕ) : Type u := ULift.{u} (PLift (m = 0) ⊕ PLift (m = n))
 
@@ -176,11 +171,11 @@ private theorem mapsTo_sphereCellMap (m : ℕ) (i : SphereCell.{u} n m) :
     MapsTo (sphereCellMap h m i) (sphere 0 1)
       (⋃ (k < m) (j : SphereCell.{u} n k), sphereCellMap h k j '' closedBall 0 1) := by
   rcases i with ⟨⟨⟨rfl⟩⟩ | ⟨⟨rfl⟩⟩⟩
-  · exact fun x hx ↦ absurd hx (notMem_sphere_fin_zero x)
+  · exact fun x hx ↦ ((sphere_eq_empty_of_subsingleton one_ne_zero).subset hx).elim
   -- The boundary of the top cell goes to the pole, the `0`-cell.
   intro x hx
   obtain _ | k := m
-  · exact absurd hx (notMem_sphere_fin_zero x)
+  · exact ((sphere_eq_empty_of_subsingleton one_ne_zero).subset hx).elim
   refine mem_iUnion₂.2 ⟨0, k.succ_pos, mem_iUnion.2 ⟨⟨.inl ⟨rfl⟩⟩, 0, by simp, ?_⟩⟩
   exact (sphereTopCellMap_apply_of_mem_sphere h hx).symm
 
@@ -236,6 +231,9 @@ theorem nat_card_cell_sphereCWComplex (m : ℕ) :
     letI := sphereCWComplex h
     Nat.card (cell (sphere (0 : EuclideanSpace ℝ ι) 1) m) =
       (if m = 0 then 1 else 0) + if m = n then 1 else 0 := by
+  -- `CWComplex.mkFinite` takes the supplied family as its `cell` field
+  -- (`CWComplex.mkFinite_cell`), so the cells of `sphereCWComplex h` in dimension `m` are
+  -- `SphereCell n m` by definition.
   change Nat.card (SphereCell.{u} n m) = _
   rw [Nat.card_ulift, Nat.card_sum]
   congr 1 <;> split_ifs with h' <;> simp [h']
