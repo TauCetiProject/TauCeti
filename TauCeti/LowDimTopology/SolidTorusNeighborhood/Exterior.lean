@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.Ball.RadialEquiv
 public import Mathlib.Analysis.SpecialFunctions.Sigmoid
 public import TauCeti.Geometry.Manifold.Boundary.BicollarSide
+public import TauCeti.Geometry.Manifold.Instances.Torus
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Basic
 
 /-!
@@ -26,8 +27,8 @@ torus: the annuli `{w | 0 < ‖w‖ < 1}` of `Φ` give it a bicollar
 radius `‖w‖ = σ(t)` read through the logistic sigmoid `σ`. The exterior of the shrunken
 neighbourhood is the outer side of this bicollar, so `TauCeti.IsBicollar.sideChartedSpace` charts
 it on the half-space `EuclideanHalfSpace 3`, with manifold boundary the torus
-(`TauCeti.IsSolidTorusNeighborhood.boundary_exteriorChartedSpace`). The smooth structure is a
-later construction.
+(`TauCeti.IsSolidTorusNeighborhood.boundary_exteriorChartedSpace`). This file constructs the
+topological charted-space structure.
 
 ## Main definitions
 
@@ -270,16 +271,6 @@ private theorem isOpen_knotExterior_halve_sdiff_range [T2Space X]
       range (Φ ∘ SolidTorus.halve ∘ SolidTorus.boundaryInclusion)) := by
   rw [← Function.comp_assoc, knotExterior_sdiff_range]
   exact (isCompact_range (h.comp_halve.isEmbedding.continuous)).isClosed.isOpen_compl
-
-/-- The boundary torus `S¹ × S¹`, charted on `ℝ²` through the product of the circle charts. -/
-@[instance_reducible]
-private noncomputable def torusChartedSpace :
-    ChartedSpace (EuclideanSpace ℝ (Fin 2)) (Circle × Circle) :=
-  letI : ChartedSpace (EuclideanSpace ℝ (Fin 2))
-      (ModelProd (EuclideanSpace ℝ (Fin 1)) (EuclideanSpace ℝ (Fin 1))) :=
-    (EuclideanSpace.finAddEquivProd (𝕜 := ℝ) (n := 1) (m := 1)).symm.toHomeomorph
-      |>.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
-  ChartedSpace.comp _ (ModelProd (EuclideanSpace ℝ (Fin 1)) (EuclideanSpace ℝ (Fin 1))) _
 
 variable [T2Space X] [ChartedSpace (EuclideanSpace ℝ (Fin 3)) X]
 
