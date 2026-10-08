@@ -94,8 +94,6 @@ with a closed subspace of the product of realizations. -/
 theorem isClosedEmbedding_orderedProdRealizationMap [Finite α] [Finite β]
     (K : AbstractSimplicialComplex α) (L : AbstractSimplicialComplex β) :
     Topology.IsClosedEmbedding (K.orderedProdRealizationMap L) := by
-  have : T2Space (Realization K) := (isClosedEmbedding_realization_coe K).isEmbedding.t2Space
-  have : T2Space (Realization L) := (isClosedEmbedding_realization_coe L).isEmbedding.t2Space
   exact (K.orderedProdRealizationMap L).continuous.isClosedEmbedding
     (K.orderedProdRealizationMap_injective L)
 
