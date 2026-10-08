@@ -39,9 +39,9 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
   cover the manifold, and so do their unstable sets. Together with
   `Flow.disjoint_stableSet` and `Flow.disjoint_unstableSet`, these are the
   partitions `M = ⊔ₓ W^s(x) = ⊔ₓ W^u(x)` over the critical points.
-* `TauCeti.IsAdaptedPseudoGradient.stableSet_eq_compl_of_critical_eq` and
-  `TauCeti.IsAdaptedPseudoGradient.unstableSet_eq_compl_of_critical_eq`: with at most two critical
-  points, one of which has a trivial stable (respectively unstable) set, the stable
+* `TauCeti.IsAdaptedPseudoGradient.stableSet_eq_compl_of_critical_eq_or_eq` and
+  `TauCeti.IsAdaptedPseudoGradient.unstableSet_eq_compl_of_critical_eq_or_eq`: with at most two
+  critical points, one of which has a trivial stable (respectively unstable) set, the stable
   (respectively unstable) set of the other is the rest of the manifold.
 
 ## References
@@ -182,7 +182,7 @@ theorem iUnion_unstableSet (hf : IsMorse 𝓘(ℝ, E) f) :
 /-- **Two critical points.** If every critical point of a Morse function is one of two distinct
 points `a` and `b`, and the stable set of `a` is `{a}`, then the stable set of `b` is everything
 else. -/
-theorem stableSet_eq_compl_of_critical_eq (hf : IsMorse 𝓘(ℝ, E) f) {a b : M}
+theorem stableSet_eq_compl_of_critical_eq_or_eq (hf : IsMorse 𝓘(ℝ, E) f) {a b : M}
     (hcrit : ∀ y, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 → y = a ∨ y = b) (hab : a ≠ b)
     (ha : hX.flow.stableSet a = {a}) : hX.flow.stableSet b = {a}ᶜ := by
   ext p
@@ -199,7 +199,7 @@ theorem stableSet_eq_compl_of_critical_eq (hf : IsMorse 𝓘(ℝ, E) f) {a b : M
 /-- **Two critical points.** If every critical point of a Morse function is one of two distinct
 points `a` and `b`, and the unstable set of `b` is `{b}`, then the unstable set of `a` is everything
 else. -/
-theorem unstableSet_eq_compl_of_critical_eq (hf : IsMorse 𝓘(ℝ, E) f) {a b : M}
+theorem unstableSet_eq_compl_of_critical_eq_or_eq (hf : IsMorse 𝓘(ℝ, E) f) {a b : M}
     (hcrit : ∀ y, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 → y = a ∨ y = b) (hab : a ≠ b)
     (hb : hX.flow.unstableSet b = {b}) : hX.flow.unstableSet a = {b}ᶜ := by
   ext p
