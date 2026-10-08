@@ -365,7 +365,7 @@ theorem exists_setIntegral_ball_norm_gradient_sq_div_sq_le :
   obtain ⟨c, hc0, hc⟩ := exists_forall_contDiff_cutoff_closedBall (E := EuclideanSpace ℝ ι)
   refine ⟨2 * (c + 1), by positivity, ?_⟩
   intro mu _ Omega a lam Lam u x₀ r R m h ha hu hr hrR hball hm hum
-  -- A cutoff equal to one on `B(x₀, r)`, supported in `B̄(x₀, (r + R)/2) ⊆ B(x₀, R)`.
+  -- A cutoff equal to one on `B(x₀, r)`, supported in `closedBall x₀ ((r + R)/2) ⊆ B(x₀, R)`.
   obtain ⟨ψ, hψ, hrange, hone, hts, hgrad⟩ := hc x₀ hr (by linarith : r < (r + R) / 2)
   have hsubR : closedBall x₀ ((r + R) / 2) ⊆ ball x₀ R := closedBall_subset_ball (by linarith)
   have htsR : tsupport ψ ⊆ ball x₀ R := hts.trans hsubR
@@ -392,7 +392,7 @@ theorem exists_setIntegral_ball_norm_gradient_sq_div_sq_le :
             rw [hone (ball_subset_closedBall hx), Pi.one_apply, one_pow, one_mul]
       _ ≤ _ := setIntegral_mono_set hXint (Eventually.of_forall fun x => by positivity)
           (Eventually.of_forall ((ball_subset_ball hrR.le).trans hball))
-  -- `∇ψ` vanishes off `B̄(x₀, (r + R)/2)`, where it is bounded by `G`.
+  -- `∇ψ` vanishes off `closedBall x₀ ((r + R)/2)`, where it is bounded by `G`.
   have hright : ∫ x in Omega, ‖∇ ψ x‖ ^ 2 ∂mu ≤ G ^ 2 * mu.real (ball x₀ R) := by
     rw [setIntegral_eq_of_subset_of_forall_sdiff_eq_zero Omega.isOpen.measurableSet
       (hsubR.trans hball) fun x hx => by
