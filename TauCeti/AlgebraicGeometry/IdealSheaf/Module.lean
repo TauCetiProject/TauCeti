@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Subscheme
+public import Mathlib.AlgebraicGeometry.Limits
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Submodule
 
@@ -28,7 +29,9 @@ kernel is the ideal `I(U)` (Mathlib's `Scheme.IdealSheafData.ker_subschemeι_app
 * `Scheme.IdealSheafData.sheaf I`: the ideal sheaf as an `𝒪_X`-module, with its inclusion
   `Scheme.IdealSheafData.sheafι I : I ⟶ 𝒪_X`, which is injective on sections
   (`sheafι_app_injective`) with image `sections I U` over `U` (`range_sheafι_app`), and
-  `Scheme.IdealSheafData.sectionMk` building a section of `I` from an element of `sections I U`.
+  `Scheme.IdealSheafData.sectionMk` building a section of `I` from an element of `sections I U`;
+* `Scheme.IdealSheafData.isIso_sheafι_top`: the unit ideal sheaf, which cuts out the empty closed
+  subscheme, is the whole structure sheaf.
 
 ## References
 
@@ -143,6 +146,21 @@ lemma range_sheafι_app (U : X.Opens) :
     Set.range (Scheme.Modules.Hom.app I.sheafι U) = (I.sections U : Set Γ(X, U)) := by
   ext s
   exact ⟨fun ⟨t, ht⟩ ↦ ht ▸ I.sheafι_app_mem U t, fun hs ↦ ⟨I.sectionMk s hs, rfl⟩⟩
+
+/-- Every regular function is a section of the unit ideal sheaf, which cuts out the empty closed
+subscheme. -/
+@[simp]
+lemma sections_top (U : X.Opens) : (⊤ : X.IdealSheafData).sections U = ⊤ :=
+  -- The closed subscheme cut out by `⊤` is empty, so its rings of sections are zero.
+  eq_top_iff.mpr fun _ _ ↦ (mem_sections_iff _).mpr (Subsingleton.elim _ _)
+
+/-- The inclusion of the unit ideal sheaf into `𝒪_X` is an isomorphism. -/
+instance isIso_sheafι_top : IsIso (⊤ : X.IdealSheafData).sheafι := by
+  refine Scheme.Modules.Hom.isIso_iff_isIso_app.mpr fun U ↦ ?_
+  rw [ConcreteCategory.isIso_iff_bijective]
+  refine ⟨sheafι_app_injective _ U, fun s ↦ ⟨sectionMk _ s ?_, rfl⟩⟩
+  rw [sections_top]
+  exact Submodule.mem_top
 
 end
 
