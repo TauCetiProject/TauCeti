@@ -27,7 +27,7 @@ by positive measures.
 * `Measure.map_dirac_of_aemeasurable` — the Dirac pushforward formula for a map that is
   only a.e. measurable.
 * `Measure.dirac_eq_dirac_of_inseparable` — inseparable points have equal Borel Dirac measures.
-* `TauCeti.measure_eq_smul_dirac_of_zero_of_not_mem` — a measure vanishing on measurable sets
+* `MeasureTheory.Measure.eq_smul_dirac_of_forall_notMem` — a measure vanishing on measurable sets
   avoiding a point is a multiple of its Dirac measure.
 * `TauCeti.measure_eq_smul_dirac_of_add_eq_dirac` — summands of a Dirac measure are supported at
   the same point.
@@ -62,11 +62,11 @@ theorem dirac_eq_dirac_of_inseparable [TopologicalSpace X] [BorelSpace X]
 
 end Measure
 
-namespace TauCeti
+namespace MeasureTheory.Measure
 
 /-- A measure vanishing on every measurable set avoiding `x` is its total mass times the
 Dirac measure at `x`. No measurability assumption on `{x}` is needed. -/
-theorem measure_eq_smul_dirac_of_zero_of_not_mem {X : Type*} [MeasurableSpace X]
+theorem eq_smul_dirac_of_forall_notMem {X : Type*} [MeasurableSpace X]
     (κ : Measure X) (x : X)
     (hk : ∀ s, MeasurableSet s → x ∉ s → κ s = 0) :
     κ = κ Set.univ • Measure.dirac x := by
@@ -80,6 +80,10 @@ theorem measure_eq_smul_dirac_of_zero_of_not_mem {X : Type*} [MeasurableSpace X]
       Set.indicator_of_notMem hx, smul_eq_mul, mul_zero]
     exact hk s hs hx
 
+end MeasureTheory.Measure
+
+namespace TauCeti
+
 /-- If a sum of measures is a Dirac mass, both summands are multiples of that Dirac mass. -/
 theorem measure_eq_smul_dirac_of_add_eq_dirac {X : Type*} [MeasurableSpace X]
     {μ ν : Measure X} {x : X}
@@ -91,9 +95,7 @@ theorem measure_eq_smul_dirac_of_add_eq_dirac {X : Type*} [MeasurableSpace X]
     rw [Measure.add_apply, Measure.dirac_apply' _ hs,
       Set.indicator_of_notMem hx] at h'
     exact add_eq_zero.mp h'
-  exact ⟨measure_eq_smul_dirac_of_zero_of_not_mem μ x
-      (fun s hs hx => (hzero s hs hx).1),
-    measure_eq_smul_dirac_of_zero_of_not_mem ν x
-      (fun s hs hx => (hzero s hs hx).2)⟩
+  exact ⟨μ.eq_smul_dirac_of_forall_notMem x (fun s hs hx => (hzero s hs hx).1),
+    ν.eq_smul_dirac_of_forall_notMem x (fun s hs hx => (hzero s hs hx).2)⟩
 
 end TauCeti

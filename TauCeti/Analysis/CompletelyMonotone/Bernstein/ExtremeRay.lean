@@ -30,7 +30,9 @@ public section
 open MeasureTheory Set
 open scoped ENNReal NNReal
 
-namespace TauCeti
+namespace NNReal
+
+open TauCeti
 
 /-- The exponential of rate `p` spans an extreme ray of the cone of completely monotone
 functions on `[0, ∞)`: every positive decomposition splits only its coefficient. -/
@@ -71,4 +73,4 @@ theorem exp_neg_mul_extreme_ray {f g : ℝ → ℝ} (p : ℝ≥0)
   · intro t ht
     exact (hν.eq_laplaceTransform ht).trans (hgb.eq_laplaceTransform ht).symm
 
-end TauCeti
+end NNReal
