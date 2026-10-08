@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
+import TauCeti.NumberTheory.ModularForms.JacobiTheta.OneVariable
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
@@ -30,7 +31,9 @@ the functional equation `jacobiTheta₂_functional_equation` to each class expre
 the Gauss sum; splitting `n` by parity and applying the functional equation to
 `θ(-1/τ) = θ(iY - N/2)` expresses it through `θ(iY)` and `θ(4iY)`. The square roots of the two
 functional equations combine to the constant `(1 + i)√N` exactly, so the two expansions give an
-identity for every `Y > 0`, and letting `Y → 0⁺` with `θ(τ) → 1` as `im τ → ∞` yields the
+identity for every `Y > 0`. As `Y → 0⁺` the theta arguments in this identity, `i/Y`, `i/(4Y)` and
+the transformed arguments `1/(2N) + i/(4Y)` of the residue-class series, all tend to `i∞`, so
+their theta values tend to `1` (`θ(τ) → 1` as `im τ → ∞`), and the identity becomes the
 evaluation. This is the classical theta-function route of Landsberg and Schaar.
 
 ## Main results
@@ -137,55 +140,6 @@ private theorem jacobiTheta_two_div_add (N : ℕ) [NeZero N] {δ : ℂ} (hδ : 0
     ring
   linear_combination (1 / (-I * T) ^ (1 / 2 : ℂ) * cexp (2 * π * I * (r : ℕ) ^ 2 / N) *
     jacobiTheta₂ a (-1 / T)) * hcancel
-
-/-- Splitting `θ(τ - N/2)` by the parity of `n`: the shift multiplies the even terms by `1` and
-the odd terms by `e^{-πiN/2}`, and the even terms alone form `θ(4τ)`. -/
-private theorem jacobiTheta_sub_natCast_div_two (N : ℕ) {τ : ℂ} (hτ : 0 < τ.im) :
-    jacobiTheta (τ - N / 2) = cexp (-π * I * N / 2) * jacobiTheta τ +
-      (1 - cexp (-π * I * N / 2)) * jacobiTheta (4 * τ) := by
-  have hτ' : 0 < (τ - N / 2).im := by
-    rw [sub_im, ← ofReal_natCast, ← ofReal_ofNat, ← ofReal_div, ofReal_im, sub_zero]
-    exact hτ
-  have hsplit (σ : ℂ) (hσ : 0 < σ.im) : jacobiTheta σ =
-      ∑' q : ℤ, jacobiTheta₂_term (2 * q) 0 σ + ∑' q : ℤ, jacobiTheta₂_term (2 * q + 1) 0 σ := by
-    rw [jacobiTheta_eq_jacobiTheta₂, jacobiTheta₂,
-      tsum_int_eq_sum_fin_tsum ((summable_jacobiTheta₂_term_iff _ _).2 hσ) 2, Fin.sum_univ_two]
-    simp [mul_comm]
-  -- Even terms see the shift by `-N/2` as a multiple of `2πi`, odd terms as `-πiN/2`.
-  have heven (q : ℤ) : jacobiTheta₂_term (2 * q) 0 (τ - N / 2) = jacobiTheta₂_term q 0 (4 * τ) := by
-    rw [jacobiTheta₂_term, jacobiTheta₂_term, ← cexp_add_int_mul_two_pi_I _ (q ^ 2 * N)]
-    congr 1
-    push_cast
-    ring
-  have hodd (q : ℤ) : jacobiTheta₂_term (2 * q + 1) 0 (τ - N / 2) =
-      cexp (-π * I * N / 2) * jacobiTheta₂_term (2 * q + 1) 0 τ := by
-    rw [jacobiTheta₂_term, jacobiTheta₂_term, ← Complex.exp_add,
-      ← cexp_add_int_mul_two_pi_I _ ((q ^ 2 + q) * N)]
-    congr 1
-    push_cast
-    ring
-  have h4 : ∑' q : ℤ, jacobiTheta₂_term q 0 (4 * τ) = ∑' q : ℤ, jacobiTheta₂_term (2 * q) 0 τ := by
-    refine tsum_congr fun q ↦ ?_
-    rw [jacobiTheta₂_term, jacobiTheta₂_term]
-    congr 1
-    push_cast
-    ring
-  rw [hsplit _ hτ', hsplit _ hτ, tsum_congr heven, tsum_congr hodd, tsum_mul_left, h4,
-    jacobiTheta_eq_jacobiTheta₂ (4 * τ), jacobiTheta₂, h4]
-  ring
-
-/-- The functional equation on the imaginary axis: `θ(iy) = θ(i/y) / √y`. -/
-private theorem jacobiTheta_I_mul {y : ℝ} (hy : 0 < y) :
-    jacobiTheta (I * y) = jacobiTheta (I / y) / √y := by
-  have hy0 : (y : ℂ) ≠ 0 := ofReal_ne_zero.2 hy.ne'
-  rw [jacobiTheta_eq_jacobiTheta₂, jacobiTheta₂_functional_equation, jacobiTheta_eq_jacobiTheta₂]
-  have h1 : -I * (I * y) = y := by rw [← mul_assoc, neg_mul, I_mul_I, neg_neg, one_mul]
-  have h2 : -1 / (I * y) = I / y := by field_simp; rw [I_sq]
-  have h3 : (y : ℂ) ^ (1 / 2 : ℂ) = (√y : ℝ) := by
-    rw [Real.sqrt_eq_rpow, ofReal_cpow hy.le]
-    norm_num
-  rw [h1, h2, h3]
-  simp [div_eq_inv_mul]
 
 /-- The principal square root of `w ^ 2` is `w` when `w` lies in the right half-plane. -/
 private theorem cpow_one_div_two_eq_of_sq {w z : ℂ} (h : w ^ 2 = z) (hw : 0 < w.re) :

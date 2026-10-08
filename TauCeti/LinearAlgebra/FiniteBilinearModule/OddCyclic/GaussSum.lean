@@ -127,15 +127,6 @@ private theorem expCircle_toRatAddCircle_eight_two_mul (j : ℕ) :
     ZMod.toRatAddCircle_natCast, show ((2 : ℕ) : ℚ) / (8 : ℕ) = 1 / 4 by norm_num,
     expCircle_one_div_four]
 
-/-- An integer prime to the prime `p` is a nonzero residue modulo `p`. -/
-private theorem intCast_ne_zero_of_isCoprime {p : ℕ} [Fact p.Prime] {θ : ℤ}
-    (hθ : IsCoprime (p : ℤ) θ) : (θ : ZMod p) ≠ 0 := by
-  rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]
-  intro hdvd
-  have hu := hθ.isUnit_of_dvd' dvd_rfl hdvd
-  rw [Int.isUnit_iff_natAbs_eq, Int.natAbs_natCast] at hu
-  exact (Fact.out : p.Prime).one_lt.ne' hu
-
 /-- The Gauss sum of `q_θ^{(p)}(p)` is `(θ/p)(2/p) G_p`, where
 `G_p = ∑_{r < p} e^{2πi r²/p}` is the classical quadratic Gauss sum: the form is
 `x ↦ θ x² / (2p)` with division by `2` modulo `p`, and the factor `(θ · 2⁻¹ / p) = (θ/p)(2/p)`
@@ -159,7 +150,8 @@ private theorem gaussSum_oddCyclic_prime {p : ℕ} [Fact p.Prime] (hp : Odd p) {
   have h2 : (2 : ZMod p) * h = 1 := by
     rw [hh, ← Nat.cast_ofNat, ← Nat.cast_mul, Nat.mul_div_cancel' (hp.add_one).two_dvd,
       Nat.cast_add, ZMod.natCast_self, zero_add, Nat.cast_one]
-  have hθ0 : (θ : ZMod p) ≠ 0 := intCast_ne_zero_of_isCoprime hθ
+  have hθ0 : (θ : ZMod p) ≠ 0 :=
+    (isCoprime_zero_left.1 (by simpa using hθ.intCast (R := ZMod p))).ne_zero
   have hc : (θ : ZMod p) * h ≠ 0 := mul_ne_zero hθ0 (left_ne_zero_of_mul_eq_one (b := 2)
     (by rw [mul_comm, h2]))
   -- `χ(2⁻¹) = χ(2) = χ₈(p)` because `χ(2)² = 1`.
@@ -238,7 +230,8 @@ private theorem legendreSym_eq_expCircle {p : ℕ} [Fact p.Prime] {θ : ℤ} (h�
 private theorem gaussSign_oddCyclic_prime {p : ℕ} [Fact p.Prime] (hp : Odd p) {θ : ℤ}
     (hθ : IsCoprime (p : ℤ) θ) :
     (oddCyclic p hp θ).gaussSign = ((1 - p + 2 * (1 - legendreSym p θ) : ℤ) : ZMod 8) := by
-  have hθ0 : (θ : ZMod p) ≠ 0 := intCast_ne_zero_of_isCoprime hθ
+  have hθ0 : (θ : ZMod p) ≠ 0 :=
+    (isCoprime_zero_left.1 (by simpa using hθ.intCast (R := ZMod p))).ne_zero
   -- The carrier of `oddCyclic p hp θ` is `ℤ/p` by definition.
   have hcard : Nat.card (oddCyclic p hp θ) = p := Nat.card_zmod p
   refine gaussSign_eq_of_gaussSum_eq _ ?_
@@ -272,7 +265,9 @@ theorem gaussSign_oddCyclic {p : ℕ} [Fact p.Prime] (hp : Odd p) (k : ℕ) {θ 
     -- The difference `4(k + 1)(1 - p) + 4(1 - (θ/p))` is divisible by `8`.
     obtain ⟨t, ht⟩ := hp
     have h8 : (8 : ZMod 8) = 0 := by decide
-    rcases legendreSym.eq_one_or_neg_one p (intCast_ne_zero_of_isCoprime hθ) with h | h <;>
+    have hθ0 : (θ : ZMod p) ≠ 0 :=
+      (isCoprime_zero_left.1 (by simpa using hθ.intCast (R := ZMod p))).ne_zero
+    rcases legendreSym.eq_one_or_neg_one p hθ0 with h | h <;>
       rw [h, ht] <;> push_cast
     · linear_combination (t * (k + 1) : ZMod 8) * h8
     · linear_combination (t * (k + 1) - 1 : ZMod 8) * h8
