@@ -13,21 +13,21 @@ import Mathlib.FieldTheory.Galois.Infinite
 import TauCeti.Analysis.Normed.Ring.Ultra
 
 /-!
-# Subfields of `ℚ̄_p` and their norms
+# Subfields of `AlgebraicClosure ℚ_[p]` and their norms
 
-The algebraic closure `ℚ̄_p` carries the spectral norm (Mathlib's `PadicAlgCl`), which extends the
-norm of `ℚ_p` and is preserved by `G_{ℚ_p}`. This file compares a number field `K ⊆ ℚ̄_p` with the
-`p`-adic field it generates.
+The algebraic closure `AlgebraicClosure ℚ_[p]` carries the spectral norm (Mathlib's
+`PadicAlgCl`), which extends the norm of `ℚ_p` and is preserved by `G_{ℚ_p}`. This file compares a
+number field `K ⊆ AlgebraicClosure ℚ_[p]` with the `p`-adic field it generates.
 
 * A `ℚ`-subfield `K` is dense in its `ℚ_p`-span.
-* For `K / ℚ` finite Galois, a `ℚ`-embedding of `K` into `ℚ̄_p` preserving the norm agrees on `K`
-  with an element of `G_{ℚ_p}`: the embeddings of `K` inducing the given absolute value are the
-  conjugates under `G_{ℚ_p}`. The fixed field in `K` of the image of `G_{ℚ_p}` lies in `ℚ_p`, and
-  `ℚ` is dense in `ℚ_p`, so a norm-preserving embedding fixes it.
+* For `K / ℚ` finite Galois, a `ℚ`-embedding of `K` into `AlgebraicClosure ℚ_[p]` preserving the
+  norm agrees on `K` with an element of `G_{ℚ_p}`: the embeddings of `K` inducing the given
+  absolute value are the conjugates under `G_{ℚ_p}`. The fixed field in `K` of the image of
+  `G_{ℚ_p}` lies in `ℚ_p`, and `ℚ` is dense in `ℚ_p`, so a norm-preserving embedding fixes it.
 * The norm `N_{K/ℚ}(Y)` is close to `N_{M/ℚ_p}(y)`, for `M` the field `K` generates over `ℚ_p`,
   when `Y` is close to `y` and every embedding of `K` not coming from `G_{ℚ_p}` sends `Y` close to
-  `1`; and `N_{K/ℚ}(Y)` is close to `1` in `ℚ_q` when every embedding into `ℚ̄_q` sends `Y` close to
-  `1`.
+  `1`; and `N_{K/ℚ}(Y)` is close to `1` in `ℚ_q` when every embedding into
+  `AlgebraicClosure ℚ_[q]` sends `Y` close to `1`.
 
 ## Main results
 
@@ -35,8 +35,8 @@ norm of `ℚ_p` and is preserved by `G_{ℚ_p}`. This file compares a number fie
 * `TauCeti.exists_algEquiv_apply_eq_of_norm_apply_eq`
 * `TauCeti.norm_algebraNorm_sub_one_lt`
 * `TauCeti.norm_algebraNorm_sub_algebraNorm_lt`
-* `TauCeti.place_ratCast_padicAlgCl`: an embedding into `ℚ̄_q` restricts to the `q`-adic absolute
-  value on `ℚ`.
+* `TauCeti.place_ratCast_padicAlgCl`: an embedding into `AlgebraicClosure ℚ_[q]` restricts to the
+  `q`-adic absolute value on `ℚ`.
 -/
 
 public section
@@ -45,10 +45,11 @@ open NumberField
 
 namespace TauCeti
 
-/-- Let `K ⊆ ℚ̄_p` be a number field and `M` a finite extension of `ℚ_p` with `K ⊆ M ⊆ ℚ_p K`.
-The global norm `N_{K/ℚ}(Y)` is within relative distance `ε ≤ 1` of the local norm `N_{M/ℚ_p}(y)`
-when `Y` is within relative distance `ε` of `y ≠ 0` and every embedding of `K` that does not extend
-to a `ℚ_[p]`-automorphism of `ℚ̄_p` sends `Y` within `ε` of `1`. -/
+/-- Let `K ⊆ AlgebraicClosure ℚ_[p]` be a number field and `M` a finite extension of `ℚ_p` with
+`K ⊆ M ⊆ ℚ_p K`. The global norm `N_{K/ℚ}(Y)` is within relative distance `ε ≤ 1` of the local
+norm `N_{M/ℚ_p}(y)` when `Y` is within relative distance `ε` of `y ≠ 0` and every embedding of `K`
+that does not extend to a `ℚ_[p]`-automorphism of `AlgebraicClosure ℚ_[p]` sends `Y` within `ε`
+of `1`. -/
 theorem norm_algebraNorm_sub_algebraNorm_lt (p : ℕ) [Fact p.Prime]
     (K : IntermediateField ℚ (AlgebraicClosure ℚ_[p])) [FiniteDimensional ℚ K]
     (M : IntermediateField ℚ_[p] (AlgebraicClosure ℚ_[p])) [FiniteDimensional ℚ_[p] M]
@@ -115,7 +116,7 @@ theorem norm_algebraNorm_sub_algebraNorm_lt (p : ℕ) [Fact p.Prime]
     refine norm_mul_sub_one_lt hε (norm_prod_sub_one_lt _ _ hε0 hε fun ψ _ ↦ ?_)
       (norm_prod_sub_one_lt _ _ hε0 hε fun φ hφ' ↦ (hφ φ).resolve_left (Finset.mem_filter.1 hφ').2)
     obtain ⟨h, hh⟩ := hext ψ
-    -- `ℚ_[p]`-automorphisms preserve the spectral norm of `ℚ̄_p`.
+    -- `ℚ_[p]`-automorphisms preserve the spectral norm of `AlgebraicClosure ℚ_[p]`.
     rw [hh, hh, ← map_div₀, ← map_one h, ← map_sub, ← PadicAlgCl.spectralNorm_eq,
       ← spectralNorm_eq_of_equiv h, PadicAlgCl.spectralNorm_eq, div_sub_one hy', norm_div]
     exact (div_lt_iff₀ (norm_pos_iff.2 hy')).2 hYy
@@ -129,8 +130,8 @@ theorem norm_algebraNorm_sub_algebraNorm_lt (p : ℕ) [Fact p.Prime]
   have e2 : ‖b‖ = ‖Algebra.norm ℚ_[p] y‖ := PadicAlgCl.norm_extends p _
   rwa [e1, e2] at hlt
 
-/-- If every embedding of `K` into `ℚ̄_q` sends `Y` within `ε ≤ 1` of `1`, then the norm of `Y`
-down to `ℚ` is within `ε` of `1` in `ℚ_[q]`. -/
+/-- If every embedding of `K` into `AlgebraicClosure ℚ_[q]` sends `Y` within `ε ≤ 1` of `1`, then
+the norm of `Y` down to `ℚ` is within `ε` of `1` in `ℚ_[q]`. -/
 theorem norm_algebraNorm_sub_one_lt {K : Type*} [Field K] [Algebra ℚ K] [FiniteDimensional ℚ K]
     (q : ℕ) [Fact q.Prime] (Y : K) {ε : ℝ} (hε : ε ≤ 1)
     (hY : ∀ φ : K →ₐ[ℚ] AlgebraicClosure ℚ_[q], ‖φ Y - 1‖ < ε) :
@@ -147,8 +148,9 @@ theorem norm_algebraNorm_sub_one_lt {K : Type*} [Field K] [Algebra ℚ K] [Finit
   rw [PadicAlgCl.norm_extends] at key
   simpa using key
 
-/-- An element of a `ℚ`-subfield `K` of `ℚ̄_p` lying in `ℚ_p` is fixed by every `ℚ`-embedding of `K`
-into `ℚ̄_p` that preserves the norm: `ℚ` is dense in `ℚ_p`. -/
+/-- An element of a `ℚ`-subfield `K` of `AlgebraicClosure ℚ_[p]` lying in `ℚ_p` is fixed by every
+`ℚ`-embedding of `K` into `AlgebraicClosure ℚ_[p]` that preserves the norm: `ℚ` is dense in
+`ℚ_p`. -/
 theorem algHom_apply_eq_of_norm_apply_eq_of_mem_bot (p : ℕ) [Fact p.Prime]
     {K : IntermediateField ℚ (AlgebraicClosure ℚ_[p])} (φ : K →ₐ[ℚ] AlgebraicClosure ℚ_[p])
     (hφ : ∀ x : K, ‖φ x‖ = ‖(x : AlgebraicClosure ℚ_[p])‖) {y : K}
@@ -171,9 +173,9 @@ theorem algHom_apply_eq_of_norm_apply_eq_of_mem_bot (p : ℕ) [Fact p.Prime]
       rw [dist_eq_norm, dist_comm, dist_eq_norm, h, hnorm]
       linarith
 
-/-- **Embeddings with the same absolute value are conjugate under `G_{ℚ_p}`.** Let `K ⊆ ℚ̄_p` be
-finite Galois over `ℚ`. A `ℚ`-embedding of `K` into `ℚ̄_p` preserving the norm agrees on `K` with an
-element of `G_{ℚ_p}`.
+/-- **Embeddings with the same absolute value are conjugate under `G_{ℚ_p}`.** Let
+`K ⊆ AlgebraicClosure ℚ_[p]` be finite Galois over `ℚ`. A `ℚ`-embedding of `K` into
+`AlgebraicClosure ℚ_[p]` preserving the norm agrees on `K` with an element of `G_{ℚ_p}`.
 
 The embedding is an automorphism of `K`. It fixes the field cut out in `K` by the restrictions of
 `G_{ℚ_p}`, which lies in `ℚ_p`, so by Galois theory in `K / ℚ` it is such a restriction. -/
@@ -209,7 +211,7 @@ theorem exists_algEquiv_apply_eq_of_norm_apply_eq (p : ℕ) [Fact p.Prime]
   refine ⟨h, fun x ↦ ?_⟩
   rw [← hr, hh, hφ']
 
-/-- **A `ℚ`-subfield of `ℚ̄_p` is dense in the field it generates over `ℚ_p`.** -/
+/-- **A `ℚ`-subfield of `AlgebraicClosure ℚ_[p]` is dense in the field it generates over `ℚ_p`.** -/
 theorem exists_mem_norm_sub_lt_of_mem_adjoin (p : ℕ) [Fact p.Prime]
     (K : IntermediateField ℚ (AlgebraicClosure ℚ_[p])) {y : AlgebraicClosure ℚ_[p]}
     (hy : y ∈ IntermediateField.adjoin ℚ_[p] (K : Set (AlgebraicClosure ℚ_[p])))
@@ -230,7 +232,7 @@ theorem exists_mem_norm_sub_lt_of_mem_adjoin (p : ℕ) [Fact p.Prime]
   obtain ⟨y₀, hy₀, h⟩ := Metric.mem_closure_iff.1 (hle hy') ε hε
   exact ⟨y₀, hy₀, by rwa [← dist_eq_norm]⟩
 
-/-- An embedding into `ℚ̄_q` restricts on `ℚ` to the `q`-adic absolute value. -/
+/-- An embedding into `AlgebraicClosure ℚ_[q]` restricts on `ℚ` to the `q`-adic absolute value. -/
 theorem place_ratCast_padicAlgCl {K : Type*} [Field K] [Algebra ℚ K] (q : ℕ) [Fact q.Prime]
     (φ : K →ₐ[ℚ] AlgebraicClosure ℚ_[q]) (r : ℚ) :
     place φ.toRingHom (r : K) = Rat.AbsoluteValue.padic q r := by

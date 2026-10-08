@@ -12,7 +12,8 @@ public import Mathlib.Analysis.Normed.Ring.Ultra
 
 In an ultrametric seminormed ring with `‖1‖ = 1`, a finite product of elements each within
 `ε ≤ 1` of `1` is again within `ε` of `1`. This is how one compares a product of conjugates
-with the product of their approximations, for instance a norm `N_{K/ℚ}(Y) = ∏ φ(Y)` in `ℚ̄_p`.
+with the product of their approximations, for instance a norm `N_{K/ℚ}(Y) = ∏ φ(Y)` in
+`AlgebraicClosure ℚ_[p]`.
 
 ## Main results
 
