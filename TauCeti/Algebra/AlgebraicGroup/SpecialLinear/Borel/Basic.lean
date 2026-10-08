@@ -215,15 +215,20 @@ theorem definingHopfIdeal_le_of_le_of_isReduced_of_geometricallySolvable
     (geometricallySolvablePointsCommHopfAlgProperty_iff k _).mp hIsolvable
   let _ : Group.IsSolvable φ.range :=
     Group.isSolvable_of_surjective φ.rangeRestrict_surjective
-  have hBP : SL2Borel K ≤ φ.range := by
-    intro g hg
-    obtain ⟨f, hf⟩ := CommHopfAlgCat.quotientPointsSubgroup_le_of_le H hIB (CommAlgCat.of k K)
-      ((mem_definingPointsSubgroup_iff k (e.symm g)).mpr (by rwa [MulEquiv.apply_symm_apply]))
-    exact ⟨f, (congrArg e hf).trans (e.apply_symm_apply g)⟩
+  -- A point killing `I` is the image of its lift to the quotient, so `φ.range` contains it.
+  have hφ : ∀ q ∈ CommHopfAlgCat.quotientPointsSubgroup H I (CommAlgCat.of k K),
+      e q ∈ φ.range := fun q hq ↦
+    have hq' := (CommHopfAlgCat.mem_quotientPointsSubgroup_iff H I (CommAlgCat.of k K) q).mp hq
+    MonoidHom.mem_range.mpr ⟨CommHopfAlgCat.liftQuotientPoint H I (CommAlgCat.of k K) q hq',
+      congrArg e (CommHopfAlgCat.quotientPointsHom_liftQuotientPoint H I (CommAlgCat.of k K) q hq')⟩
+  have hBP : SL2Borel K ≤ φ.range := fun g hg ↦ by
+    simpa only [MulEquiv.apply_symm_apply] using hφ (e.symm g)
+      (CommHopfAlgCat.quotientPointsSubgroup_le_of_le H hIB (CommAlgCat.of k K)
+        ((mem_definingPointsSubgroup_iff k (e.symm g)).mpr (by rwa [MulEquiv.apply_symm_apply])))
   apply HopfIdeal.le_of_quotientPointsSubgroup_le (K := K)
-  rintro _ ⟨f, rfl⟩
-  exact (mem_definingPointsSubgroup_iff k _).mpr
-    (SL2Borel.le_of_isSolvable_of_infinite φ.range hBP ⟨f, rfl⟩)
+  intro q hq
+  exact (mem_definingPointsSubgroup_iff k q).mpr
+    (SL2Borel.le_of_isSolvable_of_infinite φ.range hBP (hφ q hq))
 
 /-- The standard upper-triangular Hopf ideal in `O(SL₂)` is maximal, in the reverse ideal
 order corresponding to inclusion of closed subgroups, among smooth closed subgroups with
