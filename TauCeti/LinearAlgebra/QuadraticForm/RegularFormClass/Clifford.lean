@@ -587,24 +587,6 @@ private theorem quaternionClassOnSquareClasses_discr_of_signedDiscr_eq_zero (u :
   rw [discr_eq_sign_add_signedDiscr, hd, add_zero (M := SquareClassGroup K), ← squareClass_pow,
     quaternionClassOnSquareClasses_squareClass, quaternionClass_pow_right]
 
-/-- The parity of the exponent of `[(-1,-1)]` in Lam's comparison in rank `2m` with trivial signed
-discriminant: `C(2m,2) C(2m-1,2) + C(2m+1,4) ≡ C(m,2) (mod 2)`. -/
-private theorem choose_mul_choose_add_choose_modEq (m : ℕ) :
-    (2 * m).choose 2 * (2 * m - 1).choose 2 + (2 * m + 1).choose 4 ≡ m.choose 2 [MOD 2] := by
-  rcases m with _ | k
-  · rfl
-  have hN := Choose.choose_mul_mul_modEq_choose_nat (p := 2) (a := k + 1) (b := 1)
-  have hC := Choose.choose_mul_add_mul_modEq_choose_nat (p := 2) (a := k) (b := 1) one_lt_two
-  have hD := Choose.choose_mul_add_mul_modEq_choose_nat (p := 2) (a := k + 1) (b := 2) one_lt_two
-  simp only [mul_one, Nat.reduceMul, Nat.choose_one_right] at hN hC hD
-  have hk : 2 * (k + 1) - 1 = 2 * k + 1 := by omega
-  rw [hk]
-  refine (Nat.ModEq.add (Nat.ModEq.mul hN hC) hD).trans ?_
-  obtain ⟨t, ht⟩ := Nat.even_mul_succ_self k
-  rw [mul_comm, ht]
-  unfold Nat.ModEq
-  omega
-
 /-- **Lam's comparison on the square of the fundamental ideal.** For a class of rank `2m` with
 trivial signed discriminant, `c(q) = s(q) · [(-1,-1)]^C(m,2)`: the discriminant correction in
 `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul` cancels. These are the classes
@@ -620,7 +602,8 @@ theorem cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero {x : Regu
           quaternionClassOnSquareClasses_discr_of_signedDiscr_eq_zero _ hd, hx, ← pow_mul, pow_add,
           mul_assoc]
     _ = hasseInvariant x * quaternionClass (-1) (-1) ^ m.choose 2 := by
-        rw [pow_eq_pow_of_modEq (choose_mul_choose_add_choose_modEq m) (quaternionClass_sq _ _)]
+        rw [pow_eq_pow_of_modEq (Choose.choose_mul_choose_add_choose_modEq m)
+          (quaternionClass_sq _ _)]
 
 end Lam
 
