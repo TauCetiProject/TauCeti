@@ -42,15 +42,11 @@ public section
 
 namespace TauCeti.FiniteQuadraticModule
 
-/-- Multiplication by a natural number commutes with reducing an integer modulo `m`. -/
-private theorem nat_zsmul_intCast {m : ℕ} (n : ℕ) (j : ℤ) :
-    (n : ℤ) • (j : ZMod m) = ((n * j : ℤ) : ZMod m) := by
-  rw [zsmul_eq_mul, Int.cast_mul]
-
 /-- **The Gauss-sum invariant of an odd-base cyclic form is periodic with period two in the
 exponent.** The `p`-torsion in `ℤ/p^{k+2}` is quadratic-isotropic, and multiplication by `p`
 followed by reduction modulo `p^k` carries its quadratic form to that of `ℤ/p^k`. In particular,
 this applies to Nikulin's odd-prime cyclic generators. -/
+@[simp]
 theorem gaussSign_oddCyclic_pow_add_two {p : ℕ} (hp : Odd p) (k : ℕ) {θ : ℤ}
     (hθ : IsCoprime (p : ℤ) θ) :
     (oddCyclic (p ^ (k + 2)) hp.pow θ).gaussSign =
@@ -95,7 +91,7 @@ theorem gaussSign_oddCyclic_pow_add_two {p : ℕ} (hp : Odd p) (k : ℕ) {θ : �
     obtain ⟨s, hs⟩ := hp
     obtain ⟨j, rfl⟩ := ZMod.intCast_surjective y
     simp only [r, RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass, map_intCast,
-      nat_zsmul_intCast, oddCyclic_quadratic_intCast]
+      zsmul_eq_mul, ← Int.cast_mul, oddCyclic_quadratic_intCast]
     push_cast
     rw [← AddCircle.coe_add_intCast
       (θ * (p ^ k + 1) * j ^ 2 / (2 * p ^ k) : ℚ) (2 * θ * (s + 1) * s * j ^ 2)]
