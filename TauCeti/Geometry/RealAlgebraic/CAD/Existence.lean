@@ -31,10 +31,10 @@ Nullified members, repeated roots, the empty family and stacks without sections 
 * `TauCeti.exists_isCAD_signInvariant`: every finite set of polynomials has an adapted CAD.
 * `TauCeti.HasSemialgebraicProjections ℝ`: **projection closure**, the Tarski–Seidenberg theorem.
   Forgetting the coordinate `0` maps semialgebraic subsets of `ℝ ^ (n + 1)` to semialgebraic
-  subsets of `ℝ ^ n` (`TauCeti.IsSemialgebraic.image_tail`). A semialgebraic set is a sign
-  condition on finitely many polynomials, so it is a union of cells of an adapted CAD, and its
-  projection is a union of cells of the projected CAD. With this instance the results of
-  `TauCeti.Geometry.RealAlgebraic.Semialgebraic.QuantifierElimination` and
+  subsets of `ℝ ^ n` (`TauCeti.HasSemialgebraicProjections.isSemialgebraic_image_tail`). A
+  semialgebraic set is a sign condition on finitely many polynomials, so it is a union of cells
+  of an adapted CAD, and its projection is a union of cells of the projected CAD. With this
+  instance the results of `TauCeti.Geometry.RealAlgebraic.Semialgebraic.QuantifierElimination` and
   `TauCeti.Geometry.RealAlgebraic.Semialgebraic.Image` apply to `ℝ`.
 * `TauCeti.exists_finite_image_sign_eval_eq`: finitely many sample points realize every sign
   vector of a finite family of polynomials.

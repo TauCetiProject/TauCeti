@@ -92,7 +92,8 @@ theorem IsSemialgebraic.image_comp_some
     | some i =>
       have hi : i ∈ F := Finset.mem_eraseNone.2 ho
       simpa [g, hi] using hF ⟨i, hi⟩
-  convert (hs.preimage_eval g).image_tail.preimage_comp fun j => (e.symm j : σ) using 1
+  convert (HasSemialgebraicProjections.isSemialgebraic_image_tail
+    (hs.preimage_eval g)).preimage_comp fun j => (e.symm j : σ) using 1
   ext x
   simp only [mem_image, mem_preimage]
   constructor

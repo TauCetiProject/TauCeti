@@ -45,9 +45,9 @@ polynomials (`TauCeti.IsSemialgebraic.exists_eq_setOf_sign_eval`), and so member
 on only finitely many coordinates (`TauCeti.IsSemialgebraic.exists_finset_mem_iff_of_eqOn`).
 
 Closure under projection is recorded as the property `TauCeti.HasSemialgebraicProjections R` of the
-ordered ring `R`, with accessor `TauCeti.IsSemialgebraic.image_tail`. Its consequences, such as
-quantifier elimination and the image and composition laws of semialgebraic functions, are stated
-under this assumption.
+ordered ring `R`, with field `TauCeti.HasSemialgebraicProjections.isSemialgebraic_image_tail`.
+Its consequences, such as quantifier elimination and the image and composition laws of
+semialgebraic functions, are stated under this assumption.
 
 ## References
 
@@ -428,11 +428,5 @@ class HasSemialgebraicProjections : Prop where
   /-- Forgetting the coordinate `0` maps semialgebraic sets to semialgebraic sets. -/
   isSemialgebraic_image_tail {n : ℕ} {s : Set (Fin (n + 1) → R)} :
     IsSemialgebraic s → IsSemialgebraic (Fin.tail '' s)
-
-/-- **Projection closure.** If `R` has semialgebraic projections, forgetting the coordinate `0`
-maps a semialgebraic subset of `Fin (n + 1) → R` to a semialgebraic subset of `Fin n → R`. -/
-theorem IsSemialgebraic.image_tail [HasSemialgebraicProjections R] {n : ℕ}
-    {s : Set (Fin (n + 1) → R)} (hs : IsSemialgebraic s) : IsSemialgebraic (Fin.tail '' s) :=
-  HasSemialgebraicProjections.isSemialgebraic_image_tail hs
 
 end TauCeti
