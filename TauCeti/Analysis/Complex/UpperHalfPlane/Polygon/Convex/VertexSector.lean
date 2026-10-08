@@ -289,7 +289,7 @@ theorem mem_vertexSector_iff_toReal_orientedAngle_mem_Icc {j : Fin n} {z w : ℍ
       (orientedAngle z (geodesicLine (rayToward z (P.vertex (j + 1))) 1) w).toReal ∈
         Set.Icc 0 (P.interiorAngle j) := by
   have hj : (P.vertex j).isLeft := by simp [hz]
-  have hα := P.interiorAngle_lt_pi_of_isLeft_vertex hj
+  have hα := P.interiorAngle_lt_pi j
   have hα₀ := P.interiorAngle_pos_of_isLeft_vertex hj
   -- with `D` and `E` the points on the outgoing and incoming rays, the oriented angle from `E` is
   -- `φ - α`, a real number in `(-π, π)` once `0 ≤ φ`

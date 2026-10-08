@@ -313,19 +313,20 @@ theorem interiorAngle_pos_of_isLeft_vertex {i : Fin n} (hi : (P.vertex i).isLeft
   rw [interiorAngle_def, hA, vertexAngle_comm]
   exact vertexAngle_pos_of_mem_extLeftHalfPlane hleft
 
-/-- The interior angle at a finite vertex is less than `π`. -/
-theorem interiorAngle_lt_pi_of_isLeft_vertex {i : Fin n} (hi : (P.vertex i).isLeft) :
-    P.interiorAngle i < π := by
-  obtain ⟨A, hA⟩ := Sum.isLeft_iff.mp hi
-  have hleft := P.vertex_mem_extLeftHalfPlane i (i - 1)
-    (sub_one_ne_self (Nat.le_of_succ_le P.three_le) i)
-    (fun h ↦ add_one_add_one_ne_self P.three_le i (by rw [← h, sub_add_cancel]))
-  rw [hA] at hleft
-  have hg := isGeodesicFromTo_geodesicFromTo (hA ▸ P.vertex_ne_vertex_add_one i)
-  have hray := isGeodesicFromTo_rayToward (hA ▸ P.vertex_ne_vertex_add_one i)
-  rw [hray.extLeftHalfPlane_eq hg] at hleft
-  rw [interiorAngle_def, hA, vertexAngle_comm]
-  exact vertexAngle_lt_pi_of_mem_extLeftHalfPlane hleft
+/-- Every interior angle of a convex polygon is less than `π`, including ideal vertices. -/
+theorem interiorAngle_lt_pi (i : Fin n) : P.interiorAngle i < π := by
+  rcases hA : P.vertex i with A | ξ
+  · have hleft := P.vertex_mem_extLeftHalfPlane i (i - 1)
+      (sub_one_ne_self (Nat.le_of_succ_le P.three_le) i)
+      (fun h ↦ add_one_add_one_ne_self P.three_le i (by rw [← h, sub_add_cancel]))
+    rw [hA] at hleft
+    have hg := isGeodesicFromTo_geodesicFromTo (hA ▸ P.vertex_ne_vertex_add_one i)
+    have hray := isGeodesicFromTo_rayToward (hA ▸ P.vertex_ne_vertex_add_one i)
+    rw [hray.extLeftHalfPlane_eq hg] at hleft
+    rw [interiorAngle_def, hA, vertexAngle_comm]
+    exact vertexAngle_lt_pi_of_mem_extLeftHalfPlane hleft
+  · rw [P.interiorAngle_eq_zero_of_vertex_eq_inr hA]
+    exact Real.pi_pos
 
 /-- The interior angles are at most `π`. -/
 theorem interiorAngle_le_pi (i : Fin n) : P.interiorAngle i ≤ π := by
