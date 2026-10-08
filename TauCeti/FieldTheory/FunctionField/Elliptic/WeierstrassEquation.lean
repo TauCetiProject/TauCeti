@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 public import TauCeti.FieldTheory.FunctionField.Elliptic.Basic
+public import TauCeti.FieldTheory.FunctionField.Place.Map
 
 /-!
 # The Weierstrass equation of an elliptic function field
@@ -40,6 +41,8 @@ changes, the discriminant) applies to it.
   `TauCeti.Place.IsWeierstrassCoordinates.finrank_adjoin_y_eq_three` and
   `TauCeti.Place.IsWeierstrassCoordinates.adjoin_eq_top`: `[F : k(x)] = 2`, `[F : k(y)] = 3` and
   `F = k(x, y)`.
+* `TauCeti.Place.IsWeierstrassCoordinates.map`: Weierstrass coordinates are transported along
+  isomorphisms of function fields.
 * `TauCeti.Place.exists_isWeierstrassCoordinates_of_genus_eq_one`: **a genus-one function field
   with exact constants has Weierstrass coordinates at every place of degree one**
   (Stichtenoth, Proposition 6.1.2).
@@ -137,6 +140,23 @@ theorem adjoin_eq_top (hF : IsFunctionField k F) (hP : P.degree = 1) : k⟮x, y�
   rw [h.finrank_adjoin_y_eq_three hF hP] at h3
   exact IntermediateField.finrank_eq_one_iff_eq_top.mp
     (Nat.eq_one_of_dvd_coprimes (by decide) h2 h3)
+
+/-- **Weierstrass coordinates are transported along isomorphisms**: if `x` and `y` are
+Weierstrass coordinates at `P`, then their images under `e : F ≃ₐ[k] F'` are Weierstrass
+coordinates for the same curve at the transported place `P.map e`. -/
+theorem map {F' : Type*} [Field F'] [Algebra k F'] (e : F ≃ₐ[k] F') :
+    (P.map e).IsWeierstrassCoordinates W (e x) (e y) where
+  ord_x := by rw [ord_map_apply, h.ord_x]
+  ord_x_nonneg Q hQ := by
+    obtain ⟨R, rfl⟩ := (mapEquiv e).surjective Q
+    rw [mapEquiv_apply, ord_map_apply]
+    exact h.ord_x_nonneg R fun hR ↦ hQ (by rw [mapEquiv_apply, hR])
+  ord_y := by rw [ord_map_apply, h.ord_y]
+  ord_y_nonneg Q hQ := by
+    obtain ⟨R, rfl⟩ := (mapEquiv e).surjective Q
+    rw [mapEquiv_apply, ord_map_apply]
+    exact h.ord_y_nonneg R fun hR ↦ hQ (by rw [mapEquiv_apply, hR])
+  equation := h.equation.baseChange e.toAlgHom
 
 end IsWeierstrassCoordinates
 
