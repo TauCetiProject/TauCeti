@@ -9,8 +9,6 @@ public import TauCeti.LinearAlgebra.BilinearForm.Isometry
 public import Mathlib.LinearAlgebra.ExteriorPower.WedgePairing
 public import TauCeti.RepresentationTheory.ClassicalGroups.Volume
 
-import TauCeti.LinearAlgebra.ExteriorPower.Basis
-
 /-!
 # The exterior-square action of the four-dimensional special linear group
 
@@ -20,14 +18,18 @@ exterior vector. The standard volume map therefore gives a symmetric perfect bil
 bivectors is the same as acting on their wedge, while `SL₄(K)` acts trivially in top degree.
 
 This file bundles that action as a homomorphism from `SL₄(K)` to the isometry group of the wedge
-form. It is the six-dimensional orthogonal representation underlying the exceptional comparison
-between the four-dimensional special linear group and the six-dimensional spin group.
+form. Over `ℂ`, it is the six-dimensional orthogonal representation underlying the exceptional
+comparison between the four-dimensional special linear group and the six-dimensional spin group.
 
 ## Main definitions
 
 * `TauCeti.spinSixWedgeForm`: the symmetric perfect wedge form on `⋀²(K⁴)`.
 * `TauCeti.spinSixSpecialLinearToIsometryGroup`: the induced homomorphism from `SL₄(K)` to the
   isometry group.
+
+## Main results
+
+* `TauCeti.spinSixWedgeForm_ιMulti`: the wedge form evaluates to a determinant on pure wedges.
 
 ## References
 
@@ -42,7 +44,7 @@ namespace TauCeti
 
 universe u
 
-variable (K : Type u) [Field K]
+variable (K : Type u) [CommRing K] [Nontrivial K]
 
 /-- The symmetric wedge-product form on the second exterior power of `K⁴`. The top-degree
 trivialisation is the determinant with respect to the standard ordered basis. -/
@@ -54,6 +56,43 @@ noncomputable def spinSixWedgeForm :
       (⋀[K]^4 (Fin 4 → K)) (by simp)).trans
         (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv)
     (by simp)
+
+omit [Nontrivial K] in
+private theorem spinSixWedgePairing_eq (n : ℕ)
+    (hfin : Module.finrank K (Fin 4 → K) = n) (hdeg : 2 + 2 = n)
+    (vol : (⋀[K]^n (Fin 4 → K)) ≃ₗ[K] K) :
+    exteriorPower.wedgePairing
+        ((LinearEquiv.ofEq
+          (⋀[K]^(Module.finrank K (Fin 4 → K)) (Fin 4 → K))
+          (⋀[K]^n (Fin 4 → K)) (congrArg (fun d ↦ ⋀[K]^d (Fin 4 → K)) hfin)).trans vol)
+        (hdeg.trans hfin.symm) =
+      (exteriorPower.wedge K (Fin 4 → K) 2 2).compr₂ (hdeg ▸ vol) := by
+  subst n
+  rfl
+
+/-- On pure wedges, the wedge form is the determinant of the concatenated vectors. -/
+@[simp]
+theorem spinSixWedgeForm_ιMulti (u v : Fin 2 → (Fin 4 → K)) :
+    spinSixWedgeForm K (exteriorPower.ιMulti K 2 u)
+      (exteriorPower.ιMulti K 2 v) =
+      (Matrix.of (Fin.append u v)).det := by
+  rw [show spinSixWedgeForm K =
+      (exteriorPower.wedge K (Fin 4 → K) 2 2).compr₂
+        (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv by
+    unfold spinSixWedgeForm
+    simpa only using spinSixWedgePairing_eq K 4 (by simp) rfl
+      (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv]
+  simp only [LinearMap.compr₂_apply]
+  rw [show exteriorPower.wedge K (Fin 4 → K) 2 2
+      (exteriorPower.ιMulti K 2 u) (exteriorPower.ιMulti K 2 v) =
+      exteriorPower.ιMulti K 4 (Fin.append u v) by
+    apply Subtype.ext
+    simp only [SetLike.coe_gMul, exteriorPower.wedge, DirectSum.gMulLHom_apply_apply,
+      exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_mul_ιMulti]]
+  change (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv
+      (exteriorPower.ιMulti K 4 (Fin.append u v)) =
+    (Matrix.of (Fin.append u v)).det
+  rw [Module.Basis.exteriorPowerTopEquiv_apply_ιMulti, Pi.basisFun_det_apply]
 
 /-- The wedge-product form on `⋀²(K⁴)` is a perfect pairing. -/
 theorem spinSixWedgeForm_isPerfPair : (spinSixWedgeForm K).IsPerfPair := by
@@ -114,41 +153,27 @@ theorem spinSixWedgeForm_invariant (g : Matrix.SpecialLinearGroup (Fin 4) K) :
   simpa only [SetLike.coe_gMul, exteriorPower.ιMulti_apply_coe,
     ExteriorAlgebra.ιMulti_mul_ιMulti, happ] using congrArg Subtype.val htop
 
-private noncomputable def spinSixExteriorSquareLinearEquiv
-    (g : Matrix.SpecialLinearGroup (Fin 4) K) :
-    (⋀[K]^2 (Fin 4 → K)) ≃ₗ[K] (⋀[K]^2 (Fin 4 → K)) :=
-  LinearEquiv.ofBijective ((stdSLRep K 4).exteriorPower 2 g)
-    (Representation.apply_bijective ((stdSLRep K 4).exteriorPower 2) g)
-
-@[simp]
-private theorem spinSixExteriorSquareLinearEquiv_apply
-    (g : Matrix.SpecialLinearGroup (Fin 4) K) (x : ⋀[K]^2 (Fin 4 → K)) :
-    spinSixExteriorSquareLinearEquiv K g x = (stdSLRep K 4).exteriorPower 2 g x :=
-  rfl
-
 /-- The exterior-square action of `SL₄(K)` lands in the isometry group of the wedge form. -/
 noncomputable def spinSixSpecialLinearToIsometryGroup :
     Matrix.SpecialLinearGroup (Fin 4) K →*
-      BilinForm.isometryGroup (spinSixWedgeForm K) where
-  toFun g := ⟨spinSixExteriorSquareLinearEquiv K g,
-    BilinForm.mem_isometryGroup.mpr (spinSixWedgeForm_invariant K g)⟩
-  map_one' := by
-    apply Subtype.ext
-    apply LinearEquiv.ext
-    intro x
-    simp
-  map_mul' g h := by
-    apply Subtype.ext
-    apply LinearEquiv.ext
-    intro x
-    simp only [spinSixExteriorSquareLinearEquiv_apply, Subgroup.coe_mul,
-      LinearEquiv.mul_apply, map_mul, Module.End.mul_apply]
+      BilinForm.isometryGroup (spinSixWedgeForm K) :=
+  ((LinearMap.GeneralLinearGroup.generalLinearEquiv K
+      (⋀[K]^2 (Fin 4 → K))).toMonoidHom.comp
+        ((stdSLRep K 4).exteriorPower 2).asGroupHom).codRestrict
+    (BilinForm.isometryGroup (spinSixWedgeForm K))
+    (fun g ↦ by
+      rw [BilinForm.mem_isometryGroup, BilinForm.isIsometry_iff]
+      intro x y
+      change spinSixWedgeForm K (((stdSLRep K 4).exteriorPower 2 g) x)
+          (((stdSLRep K 4).exteriorPower 2 g) y) = spinSixWedgeForm K x y
+      exact (spinSixWedgeForm_invariant K g).apply x y)
 
 /-- The isometry-group homomorphism acts through the exterior-square representation. -/
 @[simp]
 theorem spinSixSpecialLinearToIsometryGroup_apply
     (g : Matrix.SpecialLinearGroup (Fin 4) K) (x : ⋀[K]^2 (Fin 4 → K)) :
-    (spinSixSpecialLinearToIsometryGroup K g).1 x = (stdSLRep K 4).exteriorPower 2 g x :=
-  spinSixExteriorSquareLinearEquiv_apply K g x
+    (spinSixSpecialLinearToIsometryGroup K g).1 x = (stdSLRep K 4).exteriorPower 2 g x := by
+  simp [spinSixSpecialLinearToIsometryGroup,
+    LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv, Representation.asGroupHom_apply]
 
 end TauCeti
