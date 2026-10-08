@@ -466,7 +466,8 @@ variable [CommRing R] [IsAddTorsionFree R] {p : MvPolynomial σ R} {a : σ → R
 theorem succ_le_orderAt_iff {n : ℕ} :
     ((n + 1 : ℕ) : ℕ∞) ≤ p.orderAt a ↔
       eval a p = 0 ∧ ∀ i, (n : ℕ∞) ≤ (pderiv i p).orderAt a := by
-  rw [orderAt_def, MvPowerSeries.succ_le_order_iff, constantCoeff_coe, constantCoeff_taylor]
+  rw [orderAt_def, Nat.cast_add, Nat.cast_one, MvPowerSeries.succ_le_order_iff,
+    constantCoeff_coe, constantCoeff_taylor]
   simp only [orderAt_def, MvPowerSeries.pderiv_coe, pderiv_taylor]
 
 /-- A zero at which some partial derivative is nonzero has ambient order one. -/
