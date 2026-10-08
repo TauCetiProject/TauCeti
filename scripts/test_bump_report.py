@@ -2,7 +2,9 @@
 """Regression cases for stale downstream boundary reports; no network calls."""
 
 import json
+import os
 from pathlib import Path
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -11,6 +13,7 @@ import bump_report as br
 
 
 FKB, PIN, TESTED, GREEN = (c * 40 for c in "abcd")
+OLD_PIN = "e" * 40
 REPORTED = "2026-10-07T05:36:24Z"
 
 
@@ -22,12 +25,13 @@ class ReportTests(unittest.TestCase):
                         updated_at="2026-10-07T12:00:00Z")
         self.parents = {(TESTED, GREEN), (GREEN, "HEAD")}
 
-    def decide(self, fkb=FKB, current_pin=PIN, relation="ahead", runs=None, green_pin=PIN):
+    def decide(self, fkb=FKB, current_pin=PIN, relation="ahead", runs=None,
+               green_pin=PIN, tested_pin=OLD_PIN):
         return br.decision(fkb, current_pin, self.report,
                            lambda: [self.run] if runs is None else runs,
                            compare=lambda *_: relation,
                            ancestor=lambda base, head: (base, head) in self.parents,
-                           pin_at=lambda _: green_pin)
+                           pin_at=lambda commit: tested_pin if commit == TESTED else green_pin)
 
     def test_closed_boundary_on_green_main_waits(self):
         waiting, reason = self.decide()
@@ -67,9 +71,10 @@ class ReportTests(unittest.TestCase):
         self.run["updated_at"] = "2026-10-07T01:00:00Z"
         self.assertFalse(self.decide()[0])
 
-    def test_failure_on_same_source_is_not_dismissed(self):
+    def test_success_on_reported_source_does_not_disprove_failure(self):
         self.run["head_sha"] = TESTED
-        self.assertFalse(self.decide()[0])
+        self.parents.update({(TESTED, "HEAD"), (TESTED, TESTED)})
+        self.assertFalse(self.decide(tested_pin=PIN)[0])
 
     def test_old_success_cannot_hide_later_main_failure(self):
         failure = dict(self.run, conclusion="failure")
@@ -82,6 +87,30 @@ class ReportTests(unittest.TestCase):
     def test_partial_snapshot_publication_waits(self):
         self.report["first_known_bad_commit"] = PIN
         self.assertTrue(self.decide()[0])
+
+    def test_incomplete_reports_do_not_suppress_a_forward_incompatibility(self):
+        for report in [{}, dict(self.report, first_known_bad_commit=PIN),
+                       dict(self.report, reported_at=None), dict(self.report, downstream_commit=None)]:
+            with self.subTest(report=report):
+                self.report = report
+                self.assertFalse(self.decide(relation="behind")[0])
+                self.assertFalse(self.decide(relation="diverged")[0])
+
+    def test_revalidation_on_current_pin_remains_actionable(self):
+        self.assertFalse(self.decide(tested_pin=PIN)[0])
+
+    def test_missing_reported_source_is_not_evidence_of_a_fix(self):
+        self.assertFalse(self.decide(tested_pin=None)[0])
+
+    def test_old_pin_ci_does_not_hide_a_later_failure_with_current_pin(self):
+        old = "f" * 40
+        self.parents.add((old, "HEAD"))
+        failure = dict(self.run, conclusion="failure")
+        self.assertFalse(br.decision(FKB, PIN, self.report,
+                                     lambda: [dict(self.run, head_sha=old), failure, self.run],
+                                     compare=lambda *_: "ahead",
+                                     ancestor=lambda base, head: (base, head) in self.parents,
+                                     pin_at=lambda commit: PIN if commit == GREEN else OLD_PIN)[0])
 
     def test_missing_validation_metadata_waits(self):
         for key in ["reported_at", "downstream_commit"]:
@@ -120,13 +149,42 @@ class ReportTests(unittest.TestCase):
                     patch.object(br, "gh_api", side_effect=[{"status": "ahead"},
                                                             {"workflow_runs": [self.run]}]), \
                     patch.object(br, "git_ancestor", return_value=True), \
-                    patch.object(br, "git_pin", return_value=PIN), \
+                    patch.object(br, "git_pin", side_effect=lambda commit: OLD_PIN if commit == TESTED else PIN), \
                     patch.dict(br.os.environ, {"GITHUB_OUTPUT": str(output),
                                                "GITHUB_STEP_SUMMARY": str(summary)}), \
                     patch("sys.argv", ["bump_report.py"]):
                 br.main()
             self.assertEqual(output.read_text(), f"commit={FKB}\nawaiting_revalidation=true\n")
             self.assertIn("creates no incompatibility issue or fix PR", summary.read_text())
+
+    def test_forward_boundary_does_not_fetch_run_metadata(self):
+        boundary = {"downstreams": {"TauCeti": {
+            "repo": "TauCetiProject/TauCeti", "first_known_bad_commit": FKB}}}
+        manifest = json.dumps({"packages": [{"name": "mathlib", "rev": PIN}]})
+        with patch.object(br, "fetch_snapshot", return_value=boundary) as fetch, \
+                patch.object(br.Path, "read_text", return_value=manifest), \
+                patch.object(br, "gh_api", return_value={"status": "behind"}), \
+                patch.dict(br.os.environ, {"GITHUB_OUTPUT": "", "GITHUB_STEP_SUMMARY": ""}), \
+                patch("sys.argv", ["bump_report.py"]):
+            br.main()
+        fetch.assert_called_once_with("lkg")
+
+
+class GitHistoryTests(unittest.TestCase):
+    def test_missing_api_commits_are_no_evidence_not_a_crash(self):
+        previous = Path.cwd()
+        with tempfile.TemporaryDirectory() as directory:
+            try:
+                os.chdir(directory)
+                subprocess.run(["git", "init", "-q"], check=True)
+                subprocess.run(["git", "-c", "user.name=Test", "-c", "user.email=test@example.com",
+                                "commit", "--allow-empty", "-qm", "initial"], check=True)
+                self.assertFalse(br.git_ancestor(TESTED, "HEAD"))
+                self.assertFalse(br.git_ancestor("HEAD", GREEN))
+                self.assertIsNone(br.git_pin(TESTED))
+                self.assertTrue(br.git_ancestor("HEAD", "HEAD"))
+            finally:
+                os.chdir(previous)
 
 
 if __name__ == "__main__":

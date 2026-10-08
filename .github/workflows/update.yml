@@ -45,6 +45,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           token: ${{ steps.app-token.outputs.token }}
+          ref: main
           fetch-depth: 0
 
       # Suppress the LKG bump while a regression is active: the only open PR
@@ -61,6 +62,7 @@ jobs:
         uses: leanprover-community/downstream-reports/.github/actions/bump-to-latest@62750c6a09e73013f9c23c7ee007c612793fe9a2
         with:
           preserve-lakefile: true
+          branch: ${{ env.LKG_BRANCH }}
 
       - name: Open or update PR
         if: steps.fkb.outputs.commit == '' && steps.bump.outputs.updated == 'true'
@@ -96,6 +98,7 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
 
       # Recheck here: main or the published report may have advanced during the bump job.

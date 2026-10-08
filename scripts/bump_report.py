@@ -2,7 +2,7 @@
 """Reconcile downstream-reports with the pin already validated on main.
 
 The snapshot export time is not the validation time. A successful main CI run
-with the current pin, on a descendant of the reported source revision, can
+with the current pin, on a descendant of a source revision with an older pin, can
 supersede an incompatibility report without claiming compatibility with newer
 Mathlib. In that case the manifest watcher must revalidate before another bump.
 """
@@ -48,6 +48,11 @@ def decision(fkb, current_pin, report, ci_runs, *, compare, ancestor, pin_at):
         return False, "No active incompatibility reported."
     sha(fkb)
     sha(current_pin)
+    relation = "identical" if fkb == current_pin else compare(fkb, current_pin)
+    if relation not in {"identical", "ahead", "behind", "diverged"}:
+        raise ValueError("Could not establish the pin's relation to the reported boundary")
+    if relation in {"behind", "diverged"}:
+        return False, f"Active incompatibility: {fkb}; current pin is {relation} of the boundary."
     if report.get("first_known_bad_commit") != fkb:
         return True, "The boundary and validation snapshots disagree; awaiting revalidation."
     reported_at = report.get("reported_at")
@@ -56,9 +61,11 @@ def decision(fkb, current_pin, report, ci_runs, *, compare, ancestor, pin_at):
         return True, "The report has no validation timestamp or source revision; awaiting revalidation."
     tested = sha(tested)
     validated = timestamp(reported_at)
-    relation = "identical" if fkb == current_pin else compare(fkb, current_pin)
-    if relation not in {"identical", "ahead", "behind", "diverged"}:
-        raise ValueError("Could not establish the pin's relation to the reported boundary")
+    # A report that already tested this pin is fresh evidence of a real
+    # disagreement, even if unrelated later source revisions pass main CI.
+    tested_pin = pin_at(tested)
+    if tested_pin is None or tested_pin == current_pin:
+        return False, f"Active incompatibility: {fkb}, tested on {tested} at {reported_at}."
     if relation in {"identical", "ahead"}:
         for run in ci_runs():
             green = sha(run["head_sha"])
@@ -85,6 +92,9 @@ def gh_api(path):
 
 
 def git_ancestor(base, head):
+    for commit in (base, head):
+        if not git_has_commit(commit):
+            return False
     result = subprocess.run(["git", "merge-base", "--is-ancestor", base, head],
                             capture_output=True, text=True, timeout=30)
     if result.returncode not in {0, 1}:
@@ -92,7 +102,15 @@ def git_ancestor(base, head):
     return result.returncode == 0
 
 
+def git_has_commit(commit):
+    return subprocess.run(["git", "cat-file", "-e", f"{commit}^{{commit}}"],
+                          capture_output=True, timeout=30).returncode == 0
+
+
 def git_pin(commit):
+    sha(commit)
+    if not git_has_commit(commit):
+        return None
     payload = subprocess.check_output(["git", "show", f"{sha(commit)}:lake-manifest.json"],
                                       text=True, timeout=30)
     return pin(json.loads(payload))
@@ -110,13 +128,17 @@ def main():
     boundary = entry(fetch_snapshot("lkg"), args.repo)
     fkb = boundary.get("first_known_bad_commit") or ""
     current_pin = pin(json.loads(Path("lake-manifest.json").read_text()))
-    report = entry(fetch_snapshot("runs"), args.repo) if fkb else {}
+    relation = None
+    if fkb:
+        sha(fkb)
+        relation = "identical" if fkb == current_pin else gh_api(
+            f"repos/leanprover-community/mathlib4/compare/{fkb}...{current_pin}")["status"]
+    report = entry(fetch_snapshot("runs"), args.repo) if relation in {"identical", "ahead"} else {}
     waiting, message = decision(
         fkb, current_pin, report,
         lambda: gh_api(f"repos/{args.repo}/actions/workflows/ci.yml/runs"
                        "?branch=main&event=push&per_page=20")["workflow_runs"],
-        compare=lambda base, head: gh_api(
-            f"repos/leanprover-community/mathlib4/compare/{base}...{head}")["status"],
+        compare=lambda base, head: relation,
         ancestor=git_ancestor, pin_at=git_pin,
     )
     print(message)
