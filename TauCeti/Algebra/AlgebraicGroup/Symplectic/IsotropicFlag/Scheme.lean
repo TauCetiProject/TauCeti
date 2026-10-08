@@ -24,6 +24,8 @@ open scoped CategoryTheory.MonObj
 
 namespace TauCeti.Symplectic.IsotropicFlag
 
+open GLSymplecticFin.IsotropicFlag
+
 universe u
 
 variable (R : Type u) [CommRing R] (m : ℕ)
@@ -75,12 +77,14 @@ theorem schemePointsMulEquiv_groupSchemePointMulEquiv
 theorem schemePointsMulEquiv_apply
     (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of R)) ⟶ (groupScheme R m).X) :
     schemePointsMulEquiv R m A p =
-      pointsMulEquiv R m (A := A) ((groupSchemePointMulEquiv R m A).symm p) := rfl
+      pointsMulEquiv R m (A := A) ((groupSchemePointMulEquiv R m A).symm p) := by
+  rfl
 
 /-- The inverse sends a flag-preserving matrix to its spectrum-valued point. -/
 theorem schemePointsMulEquiv_symm_apply (g : matrixSubgroup m (A := A)) :
     (schemePointsMulEquiv R m A).symm g =
-      groupSchemePointMulEquiv R m A ((pointsMulEquiv R m (A := A)).symm g) := rfl
+      groupSchemePointMulEquiv R m A ((pointsMulEquiv R m (A := A)).symm g) := by
+  rfl
 
 variable {B : Type u} [CommRing B] [Algebra R B]
 
@@ -107,10 +111,13 @@ private theorem groupSchemePointMulEquiv_comp_inclusion
       (Symplectic.groupSchemePointMulEquiv_apply_left m A)
       (fun f => by simpa only [AlgHom.toRingHom_eq_coe] using
         groupSchemePointMulEquiv_apply_left R m A f) (coordinateMap R m) f
-  rw [inclusion, CommHopfAlgCat.quotientSpecι_def]
   erw [CommHopfAlgCat.mapPointsFunctor_app_apply] at h
-  simpa only [eqToHom_refl, Category.id_comp, Category.comp_id,
-    CommHopfAlgCat.quotientPointsHom_apply] using h
+  have he := congrArg
+    (fun p => p ≫ (eqToHom (Symplectic.groupScheme_def R m)).hom.hom) h
+  erw [CommHopfAlgCat.quotientPointsHom_apply]
+  simpa only [eqToHom_refl, Category.id_comp, inclusion,
+    CommHopfAlgCat.quotientSpecι_def, Category.assoc, Grp.hom_comp,
+    Over.comp_left, eqToHom_trans, Category.comp_id] using he
 
 /-- Composing with the flag-subgroup inclusion gives the underlying symplectic matrix. -/
 theorem schemePointsMulEquiv_comp_inclusion
