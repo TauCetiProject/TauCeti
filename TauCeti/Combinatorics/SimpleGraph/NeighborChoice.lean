@@ -81,7 +81,7 @@ theorem exists_forall_adj_and_apply_apply_ne_of_forall_reachable (G : SimpleGrap
 namespace Walk
 
 /-- Every vertex of a cycle is `p.getVert i` for some index `i` before the end of the cycle. -/
-private theorem IsCycle.exists_getVert_eq {u s : V} {p : G.Walk u u} (hp : p.IsCycle)
+theorem IsCycle.exists_getVert_eq {u s : V} {p : G.Walk u u} (hp : p.IsCycle)
     (hs : s ∈ p.support) : ∃ i < p.length, p.getVert i = s := by
   obtain ⟨n, rfl, hn⟩ := mem_support_iff_exists_getVert.1 hs
   rcases hn.lt_or_eq with hn | rfl
