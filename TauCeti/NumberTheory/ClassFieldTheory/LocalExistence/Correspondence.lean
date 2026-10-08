@@ -164,6 +164,21 @@ def localClassFieldCorrespondence [CharZero K] :
       (localClassField_normSubgroup (localNormOpenSubgroup K V.1))
   map_rel_iff' := fun {N₁ N₂} ↦ (localClassField_le_iff N₁ N₂).symm
 
+/-- The characteristic-zero correspondence sends `N` to its local class field. -/
+@[simp]
+theorem localClassFieldCorrespondence_apply [CharZero K] (N : LocalNormSubgroups K) :
+    localClassFieldCorrespondence N = localClassField N := by
+  unfold localClassFieldCorrespondence
+  rfl
+
+/-- The inverse of the characteristic-zero correspondence sends a layer to its norm subgroup. -/
+@[simp]
+theorem localClassFieldCorrespondence_symm_apply [CharZero K]
+    (V : AbelianLayer (AbsoluteGaloisGroup K)) :
+    localClassFieldCorrespondence.symm V = localNormOpenSubgroup K V.1 := by
+  unfold localClassFieldCorrespondence
+  rfl
+
 /-- The Galois group of the class field attached to `N` is canonically `Kˣ/N`. -/
 def localClassFieldGaloisEquiv [CharZero K] (N : LocalNormSubgroups K) :
     Kˣ ⧸ N.1.toSubgroup ≃* (ofOpenNormal (localClassField N).1).Gal :=
@@ -260,6 +275,25 @@ def localClassFieldCorrespondencePrimeToResidueCharacteristic
       (localClassFieldPrimeToResidueCharacteristic_normSubgroup p _)
   map_rel_iff' := fun {N₁ N₂} ↦
     (localClassFieldPrimeToResidueCharacteristic_le_iff p N₁ N₂).symm
+
+/-- The prime-to-residue-characteristic correspondence sends `N` to its local class field. -/
+@[simp]
+theorem localClassFieldCorrespondencePrimeToResidueCharacteristic_apply
+    (p : ℕ) [Fact p.Prime] [CharP 𝓀[K] p] (N : LocalNormSubgroupsPrimeTo K p) :
+    localClassFieldCorrespondencePrimeToResidueCharacteristic p N =
+      localClassFieldPrimeToResidueCharacteristic p N := by
+  unfold localClassFieldCorrespondencePrimeToResidueCharacteristic
+  rfl
+
+/-- The inverse of the prime-to-residue-characteristic correspondence sends a layer to its norm
+subgroup. -/
+@[simp]
+theorem localClassFieldCorrespondencePrimeToResidueCharacteristic_symm_apply_coe
+    (p : ℕ) [Fact p.Prime] [CharP 𝓀[K] p] (V : AbelianLayerPrimeTo K p) :
+    ((localClassFieldCorrespondencePrimeToResidueCharacteristic (K := K) p).symm V).1 =
+      localNormOpenSubgroup K V.1.1 := by
+  unfold localClassFieldCorrespondencePrimeToResidueCharacteristic
+  rfl
 
 /-- On fixed fields, the prime-to-residue-characteristic correspondence reverses inclusions. -/
 theorem localClassFieldPrimeToResidueCharacteristic_orderReversing
