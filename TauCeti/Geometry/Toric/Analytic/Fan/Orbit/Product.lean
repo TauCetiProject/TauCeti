@@ -17,8 +17,8 @@ distinguished points, and its torus orbit is the product of the factor orbits.
 
 ## Main declarations
 
-* `TauCeti.Toric.Fan.analyticProdHomeomorph_analyticDistinguishedPoint_prodCone`: distinguished points of
-  product cones are pairs of distinguished points.
+* `TauCeti.Toric.Fan.analyticProdHomeomorph_analyticDistinguishedPoint_prodCone`:
+  distinguished points of product cones are pairs of distinguished points.
 * `TauCeti.Toric.Fan.image_analyticProdHomeomorph_analyticConeOrbit_prodCone`: the orbit of a
   product cone is the product of the factor orbits.
 

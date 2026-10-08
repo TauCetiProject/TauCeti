@@ -126,7 +126,7 @@ theorem coe_toCone_prodRayEquiv_symm_inr (hΦ0 : Nonempty Φ.cones) (hΨ0 : None
 theorem prodRayEquiv_eq_inl_iff (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.cones)
     {ξ : (Φ.prod Ψ).Ray} {ρ : Φ.Ray} :
     Φ.prodRayEquiv Ψ hΦ0 hΨ0 ξ = .inl ρ ↔ ξ.toCone.1 = ρ.toCone.1.prod ⊥ := by
-  rw [Equiv.apply_eq_iff_eq_symm_apply]
+  rw [← Equiv.eq_symm_apply]
   constructor
   · rintro rfl
     exact coe_toCone_prodRayEquiv_symm_inl Φ Ψ hΦ0 hΨ0 ρ
@@ -140,7 +140,7 @@ theorem prodRayEquiv_eq_inr_iff (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.c
     {ξ : (Φ.prod Ψ).Ray} {ρ : Ψ.Ray} :
     Φ.prodRayEquiv Ψ hΦ0 hΨ0 ξ = .inr ρ ↔
       ξ.toCone.1 = (⊥ : PointedCone ℝ V).prod ρ.toCone.1 := by
-  rw [Equiv.apply_eq_iff_eq_symm_apply]
+  rw [← Equiv.eq_symm_apply]
   constructor
   · rintro rfl
     exact coe_toCone_prodRayEquiv_symm_inr Φ Ψ hΦ0 hΨ0 ρ
