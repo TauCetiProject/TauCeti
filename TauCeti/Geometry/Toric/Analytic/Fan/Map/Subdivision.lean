@@ -16,8 +16,8 @@ the original fan. When both fans are regular, the corresponding analytic map is 
 the real-linear map is the identity and each cone of the original fan is covered by the cones of
 the subdivision which it contains, so the cone-by-cone properness criterion applies.
 
-This statement applies in particular to regular star subdivisions once they have been constructed
-as fan subdivisions.
+In particular, regular star subdivisions satisfying `Fan.IsSubdivision` induce proper analytic
+maps.
 
 ## Main declaration
 
