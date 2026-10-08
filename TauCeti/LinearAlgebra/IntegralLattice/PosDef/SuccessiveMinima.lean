@@ -24,7 +24,9 @@ successive minimum is represented by a nonzero vector, the first is the ordinary
 and an independent family attains all values simultaneously. The sequence is nondecreasing.
 For positive definite lattices the values are positive. The characterization by independent bounded
 vectors is intended for estimates and reduction theory;
-it does not assert that those vectors form an integral basis.
+it does not assert that those vectors form an integral basis. A vector independent of `i` vectors
+whose norms are bounded by the first `i` successive minima has norm at least the next one; this is
+the lattice-theoretic input to Minkowski's second theorem.
 
 ## References
 
@@ -136,6 +138,47 @@ theorem exists_integralNorm_le_successiveMinimum_not_mem_span (L : IntegralLatti
     simpa only [S, Set.finrank, Fintype.card_fin] using
       finrank_range_le_card (R := ℚ) (fun j ↦ (x j : V))
   simp only [Fintype.card_fin] at hlo
+  omega
+
+/-- In a positive semidefinite lattice, let `x₀, …, x_{i-1}` be lattice vectors of norms at most
+the corresponding successive minima. Every vector `z` for which `x₀, …, x_{i-1}, z` are linearly
+independent has norm at least the next successive minimum `λᵢ`. For a family attaining the
+successive minima, this bounds below every vector outside the span of its first `i` members. -/
+theorem IsPosSemidef.successiveMinimum_le_integralNorm_of_linearIndependent (hL : L.IsPosSemidef)
+    (i : Fin (Module.finrank ℤ L)) {x : Fin i.val → L}
+    (hx : ∀ j, L.integralNorm (x j) ≤ L.successiveMinimum (Fin.castLE i.isLt.le j)) {z : L}
+    (hz : LinearIndependent ℤ (Fin.snoc x z : Fin (i.val + 1) → L)) :
+    (L.successiveMinimum i : ℤ) ≤ L.integralNorm z := by
+  classical
+  by_contra! hlt
+  -- The least index `m ≤ i` whose successive minimum exceeds the norm of `z`.
+  have hex : ∃ m, ∃ hm : m ≤ i.val, L.integralNorm z <
+      L.successiveMinimum ⟨m, hm.trans_lt i.isLt⟩ := ⟨i.val, le_rfl, hlt⟩
+  set m := Nat.find hex
+  obtain ⟨hmi, hm⟩ : ∃ hm : m ≤ i.val, L.integralNorm z <
+      L.successiveMinimum ⟨m, hm.trans_lt i.isLt⟩ := Nat.find_spec hex
+  have hbelow (j : Fin m) : L.integralNorm (x (Fin.castLE hmi j)) ≤ L.integralNorm z := by
+    have h := Nat.find_min hex j.isLt
+    push Not at h
+    exact (hx _).trans (h (j.isLt.le.trans hmi))
+  -- The vectors `x₀, …, x_{m-1}, z` are independent and of norm at most `B(z, z)`.
+  let f : Fin (m + 1) → Fin (i.val + 1) :=
+    Fin.snoc (fun j : Fin m ↦ (Fin.castLE hmi j).castSucc) (Fin.last i.val)
+  have hf : Function.Injective f := by
+    intro a b hab
+    induction a using Fin.lastCases <;> induction b using Fin.lastCases <;>
+      simp_all [f, Fin.ext_iff] <;> omega
+  have hcomp : (Fin.snoc x z : Fin (i.val + 1) → L) ∘ f =
+      Fin.snoc (fun j : Fin m ↦ x (Fin.castLE hmi j)) z := by
+    ext j
+    induction j using Fin.lastCases <;>
+      simp only [Function.comp_apply, f, Fin.snoc_castSucc, Fin.snoc_last]
+  have hle := L.successiveMinimum_le_of_linearIndependent ⟨m, hmi.trans_lt i.isLt⟩
+    (c := (L.integralNorm z).toNat) (hcomp ▸ hz.comp f hf) fun j ↦ by
+      induction j using Fin.lastCases with
+      | last => simp
+      | cast j => simpa using (hbelow j).trans (Int.self_le_toNat _)
+  have := Int.toNat_of_nonneg (hL.integralNorm_nonneg z)
   omega
 
 /-- A positive semidefinite lattice admits independent vectors attaining all successive minima
