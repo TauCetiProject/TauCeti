@@ -16,6 +16,11 @@ Here it is bundled as a continuous linear map, so it can transport regularity of
 of multilinear maps. Its restriction to alternating maps is multiplication by the factorial
 of the number of arguments. No division or characteristic assumption is needed.
 
+For a multilinear map `f`, use `TauCeti.norm_alternatization_le f` for the norm bound and
+`TauCeti.alternatizationCLM_apply f` to rewrite the bundled operator as Mathlib's signed sum.
+For an alternating map `a`, `TauCeti.alternatization_toContinuousMultilinearMap a` computes
+the signed sum of its underlying multilinear map.
+
 The construction uses Mathlib's alternatization, developed by Yury Kudryashov.
 -/
 
