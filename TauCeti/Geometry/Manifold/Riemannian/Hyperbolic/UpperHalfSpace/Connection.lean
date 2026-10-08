@@ -146,8 +146,7 @@ The tangent-space identifications read the result in the Euclidean model. -/
       (leviCivitaConnection J (UpperHalfSpace E) (constantField v) x
         ((tangentSpaceCastModel J x).symm u)) =
       (height x)⁻¹ • (inner ℝ u v • WithLp.toLp 2 (0, 1) - u.snd • v - v.snd • u) := by
-  change tangentSpaceCastModel J x
-    (leviCivitaConnection J (UpperHalfSpace E) (constantField v) x (constantField u x)) = _
+  rw [← constantField_apply u x]
   apply ext_inner_right ℝ
   intro w
   have h := two_inner_leviCivitaConnection_eq_koszul (I := J) (M := UpperHalfSpace E)

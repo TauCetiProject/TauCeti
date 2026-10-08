@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Curvature
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.Completeness
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic
-import all TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Basic
 
 /-!
 # The complete hyperbolic metric on upper half-space
