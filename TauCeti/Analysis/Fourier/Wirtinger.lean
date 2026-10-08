@@ -59,15 +59,6 @@ namespace TauCeti
 
 variable {a b : ℝ}
 
-/-- A function continuous on `[a, b]` is square integrable on `(a, b]`. -/
-private lemma memLp_two_of_continuousOn {E : Type*} [NormedAddCommGroup E] {g : ℝ → E}
-    (hg : ContinuousOn g [[a, b]]) (hab : a ≤ b) : MemLp g 2 (volume.restrict (Ioc a b)) := by
-  rw [uIcc_of_le hab] at hg
-  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn hg
-  refine MemLp.of_bound ((hg.aestronglyMeasurable measurableSet_Icc).mono_measure
-    (Measure.restrict_mono Ioc_subset_Icc_self le_rfl)) C ?_
-  exact ae_restrict_of_forall_mem measurableSet_Ioc fun x hx => hC x (Ioc_subset_Icc_self hx)
-
 /-- Wirtinger's inequality for complex-valued functions; the vector-valued
 `TauCeti.integral_norm_sub_average_sq_le` reduces to it coordinatewise. -/
 private theorem integral_norm_sub_average_sq_le_complex (hab : a < b) {f f' : ℝ → ℂ}
@@ -80,37 +71,39 @@ private theorem integral_norm_sub_average_sq_le_complex (hab : a < b) {f f' : �
   have hba : 0 < b - a := sub_pos.2 hab
   have hfc : ContinuousOn f [[a, b]] := fun x hx => (hf x hx).continuousAt.continuousWithinAt
   have hg : ∀ x ∈ [[a, b]], HasDerivAt g (f' x) x := fun x hx => (hf x hx).sub_const m
-  have hgL2 : MemLp g 2 (volume.restrict (Ioc a b)) :=
-    memLp_two_of_continuousOn (hfc.sub continuousOn_const) hab.le
+  -- `g` is continuous on the compact interval, hence bounded, hence square integrable.
+  have hgL2 : MemLp g 2 (volume.restrict (Ioc a b)) := by
+    have hgc : ContinuousOn g (Icc a b) := by
+      rw [← uIcc_of_le hab.le]
+      exact hfc.sub continuousOn_const
+    obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn hgc
+    exact MemLp.of_bound ((hgc.aestronglyMeasurable measurableSet_Icc).mono_set
+      Ioc_subset_Icc_self) C
+      (ae_restrict_of_forall_mem measurableSet_Ioc fun x hx => hC x (Ioc_subset_Icc_self hx))
   have hf'int : IntervalIntegrable f' volume a b :=
     (intervalIntegrable_iff_integrableOn_Ioc_of_le hab.le).2 (hf'.integrable one_le_two)
   -- Coefficientwise comparison of the Fourier coefficients of `g = f - m` and `f'`.
   have hcoeff (n : ℤ) : ‖fourierCoeffOn hab g n‖ ^ 2 ≤
       ((b - a) / (2 * π)) ^ 2 * ‖fourierCoeffOn hab f' n‖ ^ 2 := by
     rcases eq_or_ne n 0 with rfl | hn
-    · have hzero : fourierCoeffOn hab g 0 = 0 := by
+    · -- The zeroth coefficient of `g` is its mean, which vanishes.
+      have hzero : fourierCoeffOn hab g 0 = 0 := by
         have hfi : IntervalIntegrable f volume a b := hfc.intervalIntegrable
-        rw [fourierCoeffOn_eq_integral]
-        simp only [neg_zero, fourier_zero, one_smul, g]
-        rw [intervalIntegral.integral_sub hfi intervalIntegrable_const,
-          intervalIntegral.integral_const,
-          show m = ((b - a)⁻¹ : ℝ) • ∫ x in a..b, f x from interval_average_eq f a b, smul_smul,
-          mul_inv_cancel₀ hba.ne', one_smul, sub_self, smul_zero]
-      rw [hzero, norm_zero, zero_pow two_ne_zero]
-      positivity
-    · rw [fourierCoeffOn_of_hasDerivAt hab hn hg hf'int, show g b - g a = 0 by simp [g, hfab],
-        mul_zero, zero_sub, norm_mul, norm_neg, norm_mul, ← mul_assoc, mul_pow, mul_pow]
-      gcongr
-      have hn' : (1 : ℝ) ≤ |(n : ℝ)| := by
-        rw [← Int.cast_abs]
-        exact_mod_cast Int.one_le_abs hn
-      have hnorm : ‖(1 : ℂ) / (-2 * π * I * n)‖ * ‖((b : ℂ) - a)‖ =
-          (b - a) / (2 * π) / |(n : ℝ)| := by
-        rw [← ofReal_sub, norm_real, Real.norm_of_nonneg hba.le]
-        simp [abs_of_pos Real.pi_pos]
-        ring
-      rw [← mul_pow, hnorm]
-      exact pow_le_pow_left₀ (by positivity) (div_le_self (by positivity) hn') 2
+        have hba' : (b : ℂ) - a ≠ 0 := by exact_mod_cast hba.ne'
+        simp [fourierCoeffOn_eq_integral, g, m, interval_average_eq,
+          intervalIntegral.integral_sub hfi intervalIntegrable_const, hba']
+      simpa [hzero] using (by positivity :
+        0 ≤ ((b - a) / (2 * π)) ^ 2 * ‖fourierCoeffOn hab f' 0‖ ^ 2)
+    · -- Integration by parts: the coefficient of `g` is that of `f'` over `-2πin / (b - a)`.
+      have hn' : (1 : ℝ) ≤ |(n : ℝ)| := by exact_mod_cast Int.one_le_abs hn
+      have hnorm : ‖fourierCoeffOn hab g n‖ =
+          (b - a) / (2 * π) / |(n : ℝ)| * ‖fourierCoeffOn hab f' n‖ := by
+        rw [fourierCoeffOn_of_hasDerivAt hab hn hg hf'int]
+        simp [g, hfab, ← ofReal_sub, abs_of_pos hba, abs_of_pos Real.pi_pos]
+        field_simp
+      rw [hnorm, mul_pow]
+      gcongr ?_ ^ 2 * _
+      exact div_le_self (by positivity) hn'
   have hsum := hasSum_le hcoeff (hasSum_sq_fourierCoeffOn hab hgL2)
     ((hasSum_sq_fourierCoeffOn hab hf').mul_left (((b - a) / (2 * π)) ^ 2))
   rw [smul_eq_mul, smul_eq_mul, mul_left_comm] at hsum

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fourier.Wirtinger
-public import TauCeti.Geometry.Symplectic.AlmostComplex
+public import TauCeti.Geometry.Symplectic.CompatibleMetric
 
 /-!
 # The isoperimetric inequality in a symplectic vector space
@@ -29,12 +29,11 @@ boundary loop `θ ↦ u(r e^{iθ})`, so it is bounded by the energy of that loop
 
 The inequality comes from Wirtinger's inequality
 (`ContinuousLinearMap.norm_integral_apply_apply_le`) and the Cauchy--Schwarz bound
-`|ω(v, w)| ≤ ‖v‖ ‖w‖` of a compatible triple (`TauCeti.SymplecticForm.abs_apply_le_norm_mul_norm`).
+`|ω(v, w)| ≤ ‖v‖ ‖w‖` of a compatible triple (`TauCeti.SymplecticForm.abs_apply_le_norm_mul_norm`,
+in `CompatibleMetric.lean`).
 
 ## Main results
 
-* `TauCeti.SymplecticForm.abs_apply_le_norm_mul_norm`: `|ω(v, w)| ≤ ‖v‖ ‖w‖` when the inner
-  product is `ω(·, J ·)`.
 * `TauCeti.SymplecticForm.abs_integral_apply_le`: the isoperimetric inequality.
 
 ## References
@@ -52,27 +51,8 @@ namespace TauCeti
 
 namespace SymplecticForm
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-  {ω : SymplecticForm V} {J : AlmostComplexStructure V}
-
-/-- If the inner product of `V` is the metric `ω(·, J ·)` of a symplectic form and an almost
-complex structure, then `ω` is bounded by the inner product norm: `|ω(v, w)| ≤ ‖v‖ ‖w‖`. -/
-theorem abs_apply_le_norm_mul_norm (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (v w : V) :
-    |ω v w| ≤ ‖v‖ * ‖w‖ := by
-  -- `ω(v, w) = -⟪v, J w⟫`, and `J` is an isometry.
-  have hω : ω v w = -⟪v, J w⟫ := by
-    rw [← hg, J.apply_apply]
-    simp
-  have hJ : ‖J w‖ = ‖w‖ := by
-    have hskew := ω.neg_eq (J w) w
-    rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), ← real_inner_self_eq_norm_sq,
-      ← real_inner_self_eq_norm_sq, ← hg, ← hg, J.apply_apply]
-    simp only [map_neg] at hskew ⊢
-    linarith
-  rw [hω, abs_neg, ← hJ]
-  exact abs_real_inner_le_norm v (J w)
-
-variable [FiniteDimensional ℝ V] {a b : ℝ}
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SymplecticForm V} {J : AlmostComplexStructure V} {a b : ℝ}
 
 /-- **The isoperimetric inequality.** If the inner product of `V` is the metric `ω(·, J ·)`, then
 for a loop `γ` on `[a, b]` with square-integrable derivative, twice the symplectic area
