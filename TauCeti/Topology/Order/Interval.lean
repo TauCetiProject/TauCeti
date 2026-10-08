@@ -11,6 +11,8 @@ public import Mathlib.Topology.Order.IntermediateValue
 # Intervals in order topologies
 
 An unordered closed interval is a neighbourhood of each of its points other than its endpoints.
+Every nonempty closed unbounded order-connected set in a conditionally complete linear order is
+a left half-line, a right half-line, or the whole space.
 
 The image of a half-infinite real interval under a continuous strictly monotone map is determined
 by its value at the finite endpoint and its limit at infinity.  The endpoint at infinity is omitted
@@ -20,6 +22,8 @@ when the limit is finite.
 
 * `TauCeti.uIcc_mem_nhds_of_ne` — `uIcc a b` is a neighbourhood of each of its points other than
   `a` and `b`.
+* `Set.OrdConnected.eq_Ici_or_eq_Iic_or_eq_univ` — classification of nonempty closed unbounded
+  order-connected sets.
 * `ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto` — a continuous strictly
   increasing map
   on `Ici p` with a finite limit at `+∞` maps that interval to the half-open interval between its
@@ -42,6 +46,39 @@ theorem uIcc_mem_nhds_of_ne {α : Type*} [TopologicalSpace α] [LinearOrder α]
     exact Icc_mem_nhds (lt_of_le_of_ne ht.1 ha.symm) (lt_of_le_of_ne ht.2 hb)
   · rw [uIcc_of_ge hab] at ht ⊢
     exact Icc_mem_nhds (lt_of_le_of_ne ht.1 hb.symm) (lt_of_le_of_ne ht.2 ha)
+
+/-- A nonempty closed order-connected set which is not bounded on both sides is a right
+half-line, a left half-line, or the whole space. -/
+theorem _root_.Set.OrdConnected.eq_Ici_or_eq_Iic_or_eq_univ
+    {α : Type*} [ConditionallyCompleteLinearOrder α] [TopologicalSpace α] [OrderTopology α]
+    {s : Set α} (hs : s.OrdConnected) (hne : s.Nonempty) (hclosed : IsClosed s)
+    (hunbounded : ¬(BddBelow s ∧ BddAbove s)) :
+    (∃ a, s = Ici a) ∨ (∃ b, s = Iic b) ∨ s = univ := by
+  have exists_gt (x : α) (h : ¬BddAbove s) : ∃ y ∈ s, x < y := by
+    by_contra! h'
+    exact h ⟨x, h'⟩
+  have exists_lt (x : α) (h : ¬BddBelow s) : ∃ y ∈ s, y < x := by
+    by_contra! h'
+    exact h ⟨x, h'⟩
+  by_cases hbelow : BddBelow s
+  · have habove : ¬BddAbove s := fun h ↦ hunbounded ⟨hbelow, h⟩
+    refine Or.inl ⟨sInf s, ?_⟩
+    rw [← upperClosure_eq_Ici_csInf hne hbelow hclosed]
+    apply Subset.antisymm subset_upperClosure
+    rintro x ⟨y, hy, hyx⟩
+    obtain ⟨z, hz, hxz⟩ := exists_gt x habove
+    exact hs.out hy hz ⟨hyx, hxz.le⟩
+  · by_cases habove : BddAbove s
+    · refine Or.inr <| Or.inl ⟨sSup s, ?_⟩
+      rw [← lowerClosure_eq_Iic_csSup hne habove hclosed]
+      apply Subset.antisymm subset_lowerClosure
+      rintro x ⟨y, hy, hxy⟩
+      obtain ⟨z, hz, hzx⟩ := exists_lt x hbelow
+      exact hs.out hz hy ⟨hzx.le, hxy⟩
+    · refine Or.inr <| Or.inr <| eq_univ_of_forall fun x ↦ ?_
+      obtain ⟨y, hy, hyx⟩ := exists_lt x hbelow
+      obtain ⟨z, hz, hxz⟩ := exists_gt x habove
+      exact hs.out hy hz ⟨hyx.le, hxz.le⟩
 
 /-- **A continuous strictly increasing map sends a half-line to a half-open interval.** The finite
 limit at `+∞` is approached but is not attained. -/
