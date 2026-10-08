@@ -24,7 +24,7 @@ discrete from their rank and real span, without a separate compactness argument.
 - `TauCeti.discreteTopology_iff_finrank_eq_finrank_span`: discreteness of a finitely generated
   integer submodule is equivalent to equality of its integer rank and its real span's dimension.
 
-Apply `(TauCeti.discreteTopology_iff_finrank_eq_finrank_span L).mpr hr` to obtain
+Apply `(TauCeti.discreteTopology_iff_finrank_eq_finrank_span (L := L)).mpr hr` to obtain
 discreteness from a rank equality `hr`.
 -/
 
@@ -68,7 +68,7 @@ private theorem discreteTopology_of_span_eq_top_of_finrank_eq
 /-- A finitely generated integer submodule is discrete exactly when its integer rank is
 the dimension of its real span. The ambient space need not be finite-dimensional. -/
 theorem discreteTopology_iff_finrank_eq_finrank_span
-    (L : Submodule ℤ E) [Module.Finite ℤ L] :
+    {L : Submodule ℤ E} [Module.Finite ℤ L] :
     DiscreteTopology L ↔
       Module.finrank ℤ L = Module.finrank ℝ (Submodule.span ℝ (L : Set E)) := by
   -- Work inside the real span; the original submodule need not have full ambient rank.
