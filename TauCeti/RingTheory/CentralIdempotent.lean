@@ -36,7 +36,7 @@ idempotent of `Subring.center R`, which for simple `R` is a field by
 
 The last section applies that dichotomy in the other direction: a surjection of algebras
 `A × A ↠ B` onto a *simple* `B` sends `(1, 0)` to a central idempotent, so one of the two blocks
-already maps onto `B` (`TauCeti.exists_algHom_surjective_of_prod`).
+already maps onto `B` (`AlgHom.exists_algHom_surjective_of_prod`).
 
 ## Main definitions
 
@@ -53,7 +53,7 @@ already maps onto `B` (`TauCeti.exists_algHom_surjective_of_prod`).
 * `TauCeti.card_centralIdempotents_pi`: the count is multiplicative over a finite product, whence
   `TauCeti.card_centralIdempotents_pi_of_isSimpleRing`: a finite product of simple rings has
   `2 ^ (number of factors)` central idempotents.
-* `TauCeti.exists_algHom_surjective_of_prod`: a surjection of algebras `A × A ↠ B` onto a simple
+* `AlgHom.exists_algHom_surjective_of_prod`: a surjection of algebras `A × A ↠ B` onto a simple
   ring restricts to a surjection along one of the two coordinates.
 
 ## Implementation notes
@@ -209,6 +209,12 @@ theorem card_centralIdempotents_pi_of_isSimpleRing {ι : Type*} [Finite ι] (A :
 
 end IsSimpleRing
 
+end TauCeti
+
+namespace AlgHom
+
+open TauCeti
+
 /-! ### A surjection onto a simple ring from a product of two copies of an algebra -/
 
 section ProdSurjection
@@ -255,4 +261,4 @@ theorem exists_algHom_surjective_of_prod [IsSimpleRing B] (φ : (A × A) →ₐ[
 
 end ProdSurjection
 
-end TauCeti
+end AlgHom

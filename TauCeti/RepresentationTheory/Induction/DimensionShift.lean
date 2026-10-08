@@ -22,11 +22,13 @@ representation give short exact sequences
 `0 ⟶ A ⟶ Coind_⊥^G A ⟶ dimensionShiftUp A ⟶ 0` and
 `0 ⟶ dimensionShiftDown A ⟶ Ind_⊥^G A ⟶ A ⟶ 0`,
 
-which stay short exact after restriction along any monoid homomorphism `H →* G`. The middle terms
-have vanishing positive-degree cohomology, respectively homology, and for a finite group vanishing
-Tate cohomology in every degree, so the connecting homomorphisms of these sequences shift degrees.
-This is the *dimension shifting* of Milne, *Class Field Theory*, II 1.13 and 1.28; this file
-provides the sequences themselves.
+which stay short exact after restriction along any monoid homomorphism `H →* G`. As
+representations of `G` itself, the middle terms have vanishing positive-degree cohomology
+(`groupCohomology.isZero_coindBot_succ`), respectively homology
+(`groupHomology.isZero_indBot_succ`), and for a finite group vanishing Tate cohomology in every
+degree (`TauCeti.TateCohomology.isZero_coindBot`, `TauCeti.TateCohomology.isZero_indBot`), so the
+connecting homomorphisms of these sequences shift degrees. This is the *dimension shifting* of
+Milne, *Class Field Theory*, II 1.13 and 1.28; this file provides the sequences themselves.
 
 The constructions follow `ClassFieldTheory/Cohomology/Functors/UpDown.lean` in
 `kbuzzard/ClassFieldTheory`, commit `ccc3323c6750abca25b49b35106f54eb3a398509`.
@@ -39,6 +41,13 @@ The constructions follow `ClassFieldTheory/Cohomology/Functors/UpDown.lean` in
   `Ind_⊥^G A ⟶ A` and its short complex.
 * `Rep.dimensionShiftUpπIsCokernel`, `Rep.dimensionShiftDownιIsKernel`: their universal
   properties. The definitions are opaque, so consumers construct maps through these properties.
+* `Rep.dimensionShiftUpMap`, `Rep.dimensionShiftDownMap`: the maps a morphism of coefficients
+  induces on the two shifts, and `Rep.dimensionShiftUpSESMap`, `Rep.dimensionShiftDownSESMap`: the
+  morphisms it induces between the short complexes.
+* `Rep.dimensionShiftUpFunctor`, `Rep.dimensionShiftDownFunctor`: the two shifts as endofunctors
+  of `Rep k G`, with the natural transformations `Rep.dimensionShiftUpπNatTrans` and
+  `Rep.dimensionShiftDownιNatTrans`, and `Rep.dimensionShiftUpSESFunctor`,
+  `Rep.dimensionShiftDownSESFunctor`: the two sequences as functors to short complexes.
 
 ## Main statements
 
@@ -49,10 +58,8 @@ The constructions follow `ClassFieldTheory/Cohomology/Functors/UpDown.lean` in
   restriction and after tensoring on the left with any representation.
 * `Rep.dimensionShiftDownSES_shortExact`, `Rep.dimensionShiftDownSES_res_shortExact`,
   `Rep.dimensionShiftDownSES_tensorLeft_shortExact`: the same for the downward sequence.
-* `Rep.dimensionShiftUpMap`, `Rep.dimensionShiftDownMap`: coefficient maps on both shifts,
-  characterized by commutation with the quotient projection and kernel inclusion.
-* `Rep.coindBotUnit_naturality`, `Rep.indBotCounit_naturality`: naturality of the maps defining
-  the two sequences.
+* `Rep.dimensionShiftUpπ_naturality`, `Rep.dimensionShiftDownι_naturality`: the coefficient maps
+  commute with the quotient projection and with the kernel inclusion.
 
 ## References
 

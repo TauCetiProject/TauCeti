@@ -36,12 +36,24 @@ some `∂W/∂Xⱼ` with `j ≠ i` is nonzero there.
   derivatives generate the unit ideal of the chart.
 * `WeierstrassCurve.smoothOfRelativeDimension_one_projModelOver`: the projective model of an
   elliptic Weierstrass curve is smooth of relative dimension one over the base.
+* `WeierstrassCurve.smooth_projModelOver`: the projective model of an elliptic Weierstrass curve
+  is smooth over the base.
 
 ## References
 
 * N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, 2.2.
 * P. Deligne and M. Rapoport, *Les schémas de modules de courbes elliptiques*, II.1.
 * Stacks Project, Tag 00T7.
+
+## Provenance
+
+`smooth_projModelOver` is adapted from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at
+commit `c3415f32a313e19ace43e05479aeaa0d56ca287a`, directory
+`projects/ModularCurves/ModularCurves/EllipticCurve/`: the unnamed instance
+`Smooth universalCurveπ` in `PointsDictionary.lean` and its universe-polymorphic counterpart
+`Smooth (projModelπ universalWeierstrassLocU)` in `GroupLawAxioms.lean`, which treat only the
+universal Weierstrass curve over `ℤ[a₁, a₂, a₃, a₄, a₆][Δ⁻¹]`. Here the instance is stated for
+every elliptic Weierstrass curve over every commutative ring.
 -/
 
 public section
@@ -183,5 +195,11 @@ instance smoothOfRelativeDimension_one_projModelOver [W.IsElliptic] :
   exact HasRingHomProperty.of_source_openCover (P := @SmoothOfRelativeDimension 1) 𝒰
     fun i ↦ (HasRingHomProperty.iff_of_isAffine (P := @SmoothOfRelativeDimension 1)).mp
       (W.smoothOfRelativeDimension_awayι_projModelOver i)
+
+/-- If the discriminant is a unit, the projective Weierstrass model is smooth over the base. -/
+instance smooth_projModelOver [W.IsElliptic] : Smooth W.projModelOver :=
+  -- Mathlib's `SmoothOfRelativeDimension.smooth` is a lemma, not an instance: the goal `Smooth f`
+  -- does not determine the relative dimension
+  SmoothOfRelativeDimension.smooth 1 W.projModelOver
 
 end WeierstrassCurve

@@ -389,6 +389,31 @@ noncomputable def gradedFiniteProjectiveModulesExactStructure (𝒜 : ℤ → Su
   (gradedModuleExactStructure 𝒜).fullSubcategory _
     isExtensionClosed_gradedFiniteProjectiveModules' gradedFiniteProjectiveModules_shift'
 
+/-- The graded exact structure on finite graded modules is the one induced from the canonical
+graded exact structure on all graded modules, for any proofs of the side conditions. -/
+theorem gradedFiniteModulesExactStructure_eq_fullSubcategory
+    (hP : (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).toExactStructure
+      |>.IsExtensionClosed (gradedFiniteModules 𝒜))
+    (hshift : (gradedFiniteModules 𝒜).inverseImage
+        (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).shift.functor =
+      gradedFiniteModules 𝒜) :
+    gradedFiniteModulesExactStructure 𝒜 =
+      (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).fullSubcategory _ hP hshift := by
+  rw [gradedFiniteModulesExactStructure]
+
+/-- The graded exact structure on finite graded modules with projective underlying module is the
+one induced from the canonical graded exact structure on all graded modules, for any proofs of
+the side conditions. -/
+theorem gradedFiniteProjectiveModulesExactStructure_eq_fullSubcategory
+    (hP : (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).toExactStructure
+      |>.IsExtensionClosed (gradedFiniteProjectiveModules 𝒜))
+    (hshift : (gradedFiniteProjectiveModules 𝒜).inverseImage
+        (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).shift.functor =
+      gradedFiniteProjectiveModules 𝒜) :
+    gradedFiniteProjectiveModulesExactStructure 𝒜 =
+      (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).fullSubcategory _ hP hshift := by
+  rw [gradedFiniteProjectiveModulesExactStructure]
+
 /-- The shift on finite graded modules agrees with the ambient grading shift after applying the
 full-subcategory inclusion. -/
 noncomputable def gradedFiniteModulesExactStructureShiftFunctorCompιIso :

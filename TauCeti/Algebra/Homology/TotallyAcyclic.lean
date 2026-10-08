@@ -5,13 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.HomologicalComplex
 public import TauCeti.Algebra.Homology.HomotopyCategory.ShiftSequence
+public import TauCeti.LinearAlgebra.Exact
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Homology.Double
+public import Mathlib.Algebra.Homology.HomologicalComplexBiprod
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.BilinearMap
 public import Mathlib.RingTheory.Finiteness.Basic
+public import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
 # Totally acyclic complexes and Gorenstein-projective modules
@@ -48,6 +53,7 @@ and `Z⁰(P)`.
 
 * `CochainComplex.IsTotallyAcyclic.of_iso` and `CochainComplex.IsTotallyAcyclic.shift`: total
   acyclicity is invariant under isomorphisms and shifts of complexes.
+* `CochainComplex.IsTotallyAcyclic.biprod`: binary biproducts preserve total acyclicity.
 * `CochainComplex.IsTotallyAcyclic.isGorensteinProjective_cycles`: the cycles of a totally
   acyclic complex in *every* degree are Gorenstein-projective, so the syzygies and cosyzygies of a
   Gorenstein-projective module in a complete resolution are Gorenstein-projective.
@@ -135,6 +141,90 @@ theorem shift (hP : P.IsTotallyAcyclic) (m : ℤ) : (P⟦m⟧).IsTotallyAcyclic 
       rw [hm, e, e]
       exact Function.Exact.of_ladder_linearEquiv_of_exact (e₁ := .refl _ _) (e₂ := .neg _)
         (e₃ := .refl _ _) (by ext; simp) (by ext; simp) h
+
+variable {Q : CochainComplex (ModuleCat.{v} A) ℤ}
+
+/-- The canonical identification of the sum of the duals with the dual of a biproduct term. -/
+private noncomputable def dualBiprodEquiv (n : ℤ) :
+    ((P.X n →ₗ[A] A) × (Q.X n →ₗ[A] A)) ≃ₗ[Aᵐᵒᵖ]
+      ((P ⊞ Q).X n →ₗ[A] A) where
+  toFun φ := φ.1.comp ((biprod.fst : P ⊞ Q ⟶ P).f n).hom +
+    φ.2.comp ((biprod.snd : P ⊞ Q ⟶ Q).f n).hom
+  invFun φ :=
+    (φ.comp ((biprod.inl : P ⟶ P ⊞ Q).f n).hom,
+      φ.comp ((biprod.inr : Q ⟶ P ⊞ Q).f n).hom)
+  left_inv φ := by
+    apply Prod.ext <;> apply LinearMap.ext <;> intro x <;>
+      simp [← ModuleCat.comp_apply]
+  right_inv φ := by
+    apply LinearMap.ext
+    intro x
+    simp only [LinearMap.add_apply, LinearMap.comp_apply]
+    rw [← map_add]
+    congr 1
+    simpa only [ModuleCat.hom_add, ModuleCat.hom_comp, ModuleCat.hom_id,
+      LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply] using
+      congrArg (fun f ↦ f x) (congrArg ModuleCat.Hom.hom
+        (HomologicalComplex.biprod_total_f P Q n))
+  map_add' φ ψ := by
+    apply LinearMap.ext
+    intro x
+    simp
+    abel
+  map_smul' r φ := by
+    apply LinearMap.ext
+    intro x
+    simp [smul_add]
+
+/-- A binary biproduct of totally acyclic complexes is totally acyclic. -/
+theorem biprod (hP : P.IsTotallyAcyclic) (hQ : Q.IsTotallyAcyclic) :
+    (P ⊞ Q).IsTotallyAcyclic where
+  finite n := by
+    have := hP.finite n
+    have := hQ.finite n
+    exact Module.Finite.equiv
+      (HomologicalComplex.biprodXIso P Q n ≪≫ ModuleCat.biprodIsoProd _ _).symm.toLinearEquiv
+  projective n := by
+    have := hP.projective n
+    have := hQ.projective n
+    exact Projective.of_iso (HomologicalComplex.biprodXIso P Q n).symm inferInstance
+  acyclic n := by
+    rw [HomologicalComplex.exactAt_iff_isZero_homology]
+    let F := HomologicalComplex.homologyFunctor
+      (ModuleCat.{v} A) (ComplexShape.up ℤ) n
+    let _ : PreservesFiniteBiproducts F := Functor.preservesFiniteBiproductsOfAdditive F
+    let _ : PreservesBiproductsOfShape WalkingPair F := inferInstance
+    let _ : PreservesBinaryBiproducts F :=
+      preservesBinaryBiproducts_of_preservesBiproducts F
+    refine IsZero.of_iso ?_ (F.mapBiprod P Q)
+    rw [biprod_isZero_iff]
+    exact ⟨(hP.acyclic n).isZero_homology, (hQ.acyclic n).isZero_homology⟩
+  exact_dual i j k hij hjk := by
+    let δP (p q : ℤ) := LinearMap.lcomp Aᵐᵒᵖ A (P.d p q).hom
+    let δQ (p q : ℤ) := LinearMap.lcomp Aᵐᵒᵖ A (Q.d p q).hom
+    let δ (p q : ℤ) := LinearMap.lcomp Aᵐᵒᵖ A ((P ⊞ Q).d p q).hom
+    have comm (p q : ℤ) :
+        δ p q ∘ₗ (dualBiprodEquiv (P := P) (Q := Q) q).toLinearMap =
+          (dualBiprodEquiv (P := P) (Q := Q) p).toLinearMap ∘ₗ
+            ((δP p q).prodMap (δQ p q)) := by
+      apply LinearMap.ext
+      rintro ⟨φ, ψ⟩
+      apply LinearMap.ext
+      intro x
+      dsimp [δ, δP, δQ, dualBiprodEquiv]
+      have hfst : ((biprod.fst : P ⊞ Q ⟶ P).f q).hom (((P ⊞ Q).d p q).hom x) =
+          (P.d p q).hom (((biprod.fst : P ⊞ Q ⟶ P).f p).hom x) := by
+        simpa only [ModuleCat.hom_comp, LinearMap.comp_apply] using
+          congrArg (fun f ↦ f x) (congrArg ModuleCat.Hom.hom
+            ((biprod.fst : P ⊞ Q ⟶ P).comm p q).symm)
+      have hsnd : ((biprod.snd : P ⊞ Q ⟶ Q).f q).hom (((P ⊞ Q).d p q).hom x) =
+          (Q.d p q).hom (((biprod.snd : P ⊞ Q ⟶ Q).f p).hom x) := by
+        simpa only [ModuleCat.hom_comp, LinearMap.comp_apply] using
+          congrArg (fun f ↦ f x) (congrArg ModuleCat.Hom.hom
+            ((biprod.snd : P ⊞ Q ⟶ Q).comm p q).symm)
+      rw [hfst, hsnd]
+    exact Function.Exact.of_ladder_linearEquiv_of_exact (comm j k) (comm i j)
+      ((hP.exact_dual i j k hij hjk).prodMap (hQ.exact_dual i j k hij hjk))
 
 end IsTotallyAcyclic
 
