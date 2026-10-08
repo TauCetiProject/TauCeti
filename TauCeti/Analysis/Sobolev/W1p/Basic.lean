@@ -431,6 +431,20 @@ theorem W1p.norm_value_le (u : W1p mu Omega p) : ‖W1p.value u‖ ≤ ‖u‖ :
 theorem W1p.norm_gradient_le (u : W1p mu Omega p) : ‖W1p.gradient u‖ ≤ ‖u‖ :=
   norm_gradient_le_ambient u.1
 
+/-- The norm of a Sobolev function is at most the sum of the norms of its value and its weak
+gradient. -/
+theorem W1p.norm_le_norm_value_add_norm_gradient (u : W1p mu Omega p) :
+    ‖u‖ ≤ ‖W1p.value u‖ + ‖W1p.gradient u‖ := by
+  have hle : ∀ᵐ x ∂mu.restrict Omega, ‖(u : Sobolev1JetLp mu Omega p) x‖ ≤
+      1 * ‖W1p.value u x‖ + 1 * ‖W1p.gradient u x‖ := by
+    filter_upwards [W1p.value_apply_ae u, W1p.gradient_apply_ae u] with x hv hg
+    have hsq := WithLp.prod_norm_sq_eq_of_L2 ((u : Sobolev1JetLp mu Omega p) x)
+    rw [one_mul, one_mul, hv, hg]
+    nlinarith [norm_nonneg ((u : Sobolev1JetLp mu Omega p) x),
+      norm_nonneg ((u : Sobolev1JetLp mu Omega p) x).fst,
+      norm_nonneg ((u : Sobolev1JetLp mu Omega p) x).snd]
+  simpa using Lp.norm_le_add_of_ae_norm_le zero_le_one zero_le_one hle
+
 /-- At exponent two, the norm on `W1p` is the Hilbert graph norm. -/
 theorem W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq (u : W1p mu Omega 2) :
     ‖u‖ ^ 2 = ‖W1p.value u‖ ^ 2 + ‖W1p.gradient u‖ ^ 2 :=
@@ -473,36 +487,12 @@ theorem W1p.tendsto_iff_value_gradient {I : Type*} {l : Filter I}
     Filter.Tendsto v l (nhds u) ↔
       Filter.Tendsto (fun i => W1p.value (v i)) l (nhds (W1p.value u)) ∧
       Filter.Tendsto (fun i => W1p.gradient (v i)) l (nhds (W1p.gradient u)) := by
-  constructor
-  · intro h
-    exact ⟨(W1p.valueL.continuous.tendsto u).comp h,
-      (W1p.gradientL.continuous.tendsto u).comp h⟩
-  · rintro ⟨hv, hg⟩
-    let a : ℝ →L[ℝ] Sobolev1Jet E :=
-      (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.toContinuousLinearMap.comp
-        (ContinuousLinearMap.inl ℝ ℝ E)
-    let b : E →L[ℝ] Sobolev1Jet E :=
-      (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.toContinuousLinearMap.comp
-        (ContinuousLinearMap.inr ℝ ℝ E)
-    have heq (w : W1p mu Omega p) :
-        w.1 = a.compLpL p (mu.restrict Omega) (W1p.value w) +
-          b.compLpL p (mu.restrict Omega) (W1p.gradient w) := by
-      apply Lp.ext
-      filter_upwards [a.coeFn_compLpL (W1p.value w), b.coeFn_compLpL (W1p.gradient w),
-        Lp.coeFn_add (a.compLpL p (mu.restrict Omega) (W1p.value w))
-          (b.compLpL p (mu.restrict Omega) (W1p.gradient w)),
-        W1p.value_apply_ae w, W1p.gradient_apply_ae w] with x ha hb hab hval hgrad
-      rw [hab, Pi.add_apply, ha, hb]
-      apply (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).injective
-      simp only [WithLp.prodContinuousLinearEquiv_apply, ContinuousLinearMap.comp_apply,
-        ContinuousLinearMap.inl_apply, ContinuousLinearEquiv.coe_coe,
-        WithLp.prodContinuousLinearEquiv_symm_apply, ContinuousLinearMap.inr_apply,
-        WithLp.ofLp_add, Prod.mk_add_mk, add_zero, zero_add, a, b]
-      exact Prod.ext hval.symm hgrad.symm
-    rw [tendsto_subtype_rng]
-    simp_rw [heq]
-    exact ((a.compLpL p (mu.restrict Omega)).continuous.tendsto _ |>.comp hv).add
-      ((b.compLpL p (mu.restrict Omega)).continuous.tendsto _ |>.comp hg)
+  refine ⟨fun h => ⟨(W1p.valueL.continuous.tendsto u).comp h,
+    (W1p.gradientL.continuous.tendsto u).comp h⟩, fun ⟨hv, hg⟩ => ?_⟩
+  rw [tendsto_iff_norm_sub_tendsto_zero] at hv hg ⊢
+  refine squeeze_zero (fun _ => norm_nonneg _) (fun i => ?_) (by simpa using hv.add hg)
+  simpa only [← W1p.valueL_apply, ← W1p.gradientL_apply, map_sub] using
+    W1p.norm_le_norm_value_add_norm_gradient (v i - u)
 
 /-! ### Identification with weak Fréchet derivatives -/
 
