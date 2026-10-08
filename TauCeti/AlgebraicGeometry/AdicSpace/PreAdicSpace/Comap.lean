@@ -180,11 +180,32 @@ private noncomputable def presentationLimitRingPresheafedSpaceComap
        presheaf := presentationLimitPresheafInCommRingCat P Aplus } :
       PresheafedSpace CommRingCat.{v}) where
   base := spaComapTopHom φ hφ hplus
-  c := Functor.whiskerRight (presentationLimitPresheafComap φ hφ hopen hplus hBplus hsheaf)
-    (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat)
+  c := eqToHom (presentationLimitPresheafInCommRingCat_def P Aplus) ≫
+    Functor.whiskerRight
+      (presentationLimitPresheafComap φ hφ hopen hplus hBplus hsheaf)
+      (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat) ≫
+    eqToHom (by
+      rw [presentationLimitPresheafInCommRingCat_def]
+      rfl)
 
-set_option backward.defeqAttrib.useBackward true in
-set_option backward.isDefEq.respectTransparency false in
+private theorem presentationLimitRingPresheafedSpaceComap_c_app
+    (φ : A →+* B) (hφ : Continuous φ)
+    (hopen : ∀ ⦃J : Ideal A⦄, IsOpen (J : Set A) → IsOpen (J.map φ : Set B))
+    (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+    (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b)
+    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
+      (presentationLimitPresheaf P' Bplus)) (U : (Opens ↥(spa Aplus))ᵒᵖ) :
+    (presentationLimitRingPresheafedSpaceComap φ hφ hopen hplus hBplus hsheaf).c.app U =
+      eqToHom (presentationLimitPresheafInCommRingCat_obj P Aplus U) ≫
+        (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
+          (presentationLimitComap φ hφ hopen hplus hBplus hsheaf U.unop) ≫
+        eqToHom (presentationLimitPresheafInCommRingCat_obj P' Bplus _).symm := by
+  dsimp only [presentationLimitRingPresheafedSpaceComap]
+  rw [NatTrans.comp_app, NatTrans.comp_app, eqToHom_app, eqToHom_app,
+    Functor.whiskerRight_app, presentationLimitPresheafComap_app]
+  simp only [Functor.map_comp, eqToHom_map, Category.assoc]
+  cat_disch
+
 /-- The underlying morphism of presheafed spaces preserves the canonical stalk valuations. -/
 theorem presentationLimitPresheafedSpaceComap_stalkValuation
     (φ : A →+* B) (hφ : Continuous φ)
@@ -226,6 +247,10 @@ theorem presentationLimitPresheafedSpaceComap_stalkValuation
         (spaBasicOpen Aplus p.num p.den) by
       exact PresentationIndex.spaBasicOpen_map_pres φ hφ hopen hplus _ i]
     exact Opens.mem_map.mpr hy
+  have hq : spaBasicOpen Bplus q.num q.den ≤
+      (Opens.map f.base).obj (spaBasicOpen Aplus p.num p.den) := by
+    dsimp only [f, presentationLimitRingPresheafedSpaceComap]
+    exact (i.comap (P' := P') φ hφ hopen hplus).le_open
   have hgerm :
       presentationLimitRationalGerm hAplus p hp
           (f.base x) hy ≫ f.stalkMap x =
@@ -238,10 +263,8 @@ theorem presentationLimitPresheafedSpaceComap_stalkValuation
           presentationLimitRationalGerm hBplus q
             (i.comap (P' := P') φ hφ hopen hplus).isOpen_span x hx := by
     rw [presentationLimitRationalGerm_def, presentationLimitRationalGerm_def]
-    dsimp only [f, presentationLimitRingPresheafedSpaceComap]
     rw [Category.assoc]
     have hsm := PresheafedSpace.stalkMap_germ f (spaBasicOpen Aplus p.num p.den) x hy
-    dsimp only [f, presentationLimitRingPresheafedSpaceComap] at hsm
     rw [hsm]
     have hcTop :
         (presentationLimitRationalIso Aplus hAplus p hp).inv ≫
@@ -264,13 +287,9 @@ theorem presentationLimitPresheafedSpaceComap_stalkValuation
       rfl
     have hc :
         (presentationLimitRationalIsoInCommRingCat hAplus p hp).inv ≫
-            (Functor.whiskerRight
-              (presentationLimitPresheafComap φ hφ hopen hplus hBplus hsheaf)
-              (TopCommRingCat.isCompleteSeparated.ι ⋙
-                forget₂ TopCommRingCat CommRingCat)).app
-              (Opposite.op (spaBasicOpen Aplus p.num p.den)) ≫
+            f.c.app (Opposite.op (spaBasicOpen Aplus p.num p.den)) ≫
             (presentationLimitPresheafInCommRingCat P' Bplus).map
-              (homOfLE (i.comap (P' := P') φ hφ hopen hplus).le_open).op =
+              (homOfLE hq).op =
           (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
             (p.mapHom φ hφ q
               (PresentationIndex.map_pres_den φ hφ hopen hplus _ i) (fun t ht ↦ by
@@ -279,12 +298,18 @@ theorem presentationLimitPresheafedSpaceComap_stalkValuation
                 exact Finset.mem_image_of_mem φ ht)) ≫
             (presentationLimitRationalIsoInCommRingCat hBplus q
               (i.comap (P' := P') φ hφ hopen hplus).isOpen_span).inv := by
+      rw [show f.c.app (Opposite.op (spaBasicOpen Aplus p.num p.den)) = _ from by
+        simpa only [f] using
+          presentationLimitRingPresheafedSpaceComap_c_app
+            φ hφ hopen hplus hBplus hsheaf
+              (Opposite.op (spaBasicOpen Aplus p.num p.den))]
+      dsimp only [f, presentationLimitRingPresheafedSpaceComap] at hq ⊢
       rw [← cancel_mono (presentationLimitRationalIsoInCommRingCat hBplus q
         (i.comap (P' := P') φ hφ hopen hplus).isOpen_span).hom]
       simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
       rw [presentationLimitRationalIsoInCommRingCat_hom]
       rw [reassoc_of% presentationLimitPresheafInCommRingCat_map P' Bplus
-        (homOfLE (i.comap (P' := P') φ hφ hopen hplus).le_open).op]
+        (homOfLE hq).op]
       have hcTop' :
           (presentationLimitRationalIso Aplus hAplus p hp).inv ≫
               presentationLimitComap φ hφ hopen hplus hBplus hsheaf
@@ -301,15 +326,12 @@ theorem presentationLimitPresheafedSpaceComap_stalkValuation
           (fun k ↦ k ≫ (presentationLimitRationalIso Bplus hBplus q
             (i.comap (P' := P') φ hφ hopen hplus).isOpen_span).hom) hcTop
       simpa only [presentationLimitRationalIsoInCommRingCat_inv,
-        Functor.whiskerRight_app,
-        presentationLimitPresheafComap_app, Functor.comp_obj,
-        Functor.comp_map, Functor.map_comp, eqToHom_map, Category.assoc,
-        eqToHom_trans_assoc, eqToHom_trans, eqToHom_refl,
-        Category.id_comp, Category.comp_id] using congrArg
+        Functor.comp_map, Functor.map_comp, Category.assoc, eqToHom_trans_assoc,
+        eqToHom_trans, eqToHom_refl, Category.id_comp, Category.comp_id] using congrArg
           (fun k ↦ (TopCommRingCat.isCompleteSeparated.ι ⋙
             forget₂ TopCommRingCat CommRingCat).map k) hcTop'
     rw [← (presentationLimitPresheafInCommRingCat P' Bplus).germ_res
-      (homOfLE (i.comap (P' := P') φ hφ hopen hplus).le_open) x hx]
+      (homOfLE hq) x hx]
     with_unfolding_all rw [reassoc_of% hc]
     rfl
   rw [comap_hom_comap_hom, hgerm, ← comap_hom_comap_hom,
