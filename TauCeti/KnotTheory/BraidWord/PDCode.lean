@@ -133,6 +133,27 @@ theorem crossingsAt_cons (x : Fin (n - 1) × ℤˣ) (v : BraidWord n) (p : Fin n
     · rw [mem_crossingsAt (w := x :: v) (j := k.succ)]
       simp [Fin.succ_ne_zero]
 
+/-- A position remains crossing-free after adding a letter exactly when it was crossing-free
+and is outside the two positions of that letter. -/
+@[simp]
+theorem crossingsAt_cons_eq_nil_iff (x : Fin (n - 1) × ℤˣ) (v : BraidWord n) (p : Fin n) :
+    crossingsAt (x :: v) p = [] ↔
+      v.crossingsAt p = [] ∧ p ≠ strand x.1 ∧ p ≠ strandSucc x.1 := by
+  rw [crossingsAt_cons]
+  split_ifs with h
+  · simp only [List.cons_append, List.cons_ne_nil, false_iff]
+    tauto
+  · simp [not_or.mp h]
+
+/-- A position is crossing-free in a concatenation exactly when it is crossing-free in
+both words. -/
+@[simp]
+theorem crossingsAt_append_eq_nil_iff (u v : BraidWord n) (p : Fin n) :
+    crossingsAt (u ++ v) p = [] ↔ u.crossingsAt p = [] ∧ v.crossingsAt p = [] := by
+  induction u with
+  | nil => simp [crossingsAt_def]
+  | cons x u ih => simp only [List.cons_append, crossingsAt_cons_eq_nil_iff, ih]; tauto
+
 /-- Two letters on the same positions come first on either position, followed by the old
 crossings shifted by two. Positions outside the pair see only the shifted old crossings. -/
 theorem crossingsAt_cons_cons_same_index (v : BraidWord n) (i : Fin (n - 1)) (ε η : ℤˣ)
