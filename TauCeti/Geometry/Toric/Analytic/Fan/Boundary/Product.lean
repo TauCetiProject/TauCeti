@@ -47,6 +47,7 @@ given by `TauCeti.Toric.Fan.prodRayEquiv`.
 public section
 
 open Set
+open scoped ContDiff
 
 namespace TauCeti.Toric.Fan
 
