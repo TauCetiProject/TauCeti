@@ -88,7 +88,7 @@ theorem id_mem_range_norm_linHom_of_baseChange [Module.Free k V] (ρ : Represent
     rw [smul_sub, ← hψ, ← map_smul, ← hψ, hδ, sub_self]
   have hθρ (g : G) (x : V) : θ (ρ g x) = ρ g (θ x) :=
     hcancel (δ := (linHom ρ ρ).norm π - LinearMap.id)
-      (fun g x ↦ by simp [norm_linHom_apply_apply]) hθ g x
+      (fun g x ↦ by simp) hθ g x
   -- For every `j`, the identity is a norm plus `p ^ j` times an equivariant endomorphism.
   have key (j : ℕ) : ∃ φ ψ : V →ₗ[k] V, (∀ g x, ψ (ρ g x) = ρ g (ψ x)) ∧
       ∀ x, x = (linHom ρ ρ).norm φ x + ((p : k) ^ j) • ψ x := by

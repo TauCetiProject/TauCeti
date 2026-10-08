@@ -54,6 +54,7 @@ theorem exists_one_tmul_eq (I : Ideal R) (y : (R ⧸ I) ⊗[R] M) : ∃ x : M, 1
   exact ⟨x, by rw [← quotTensorEquivQuotSMul_symm_mk, hx, LinearEquiv.symm_apply_apply]⟩
 
 /-- In `(R ⧸ (r)) ⊗[R] M`, the element `1 ⊗ x` vanishes exactly when `x` is a multiple of `r`. -/
+@[simp]
 theorem one_tmul_eq_zero_iff_exists_smul_eq (r : R) (x : M) :
     (1 : R ⧸ Ideal.span {r}) ⊗ₜ[R] x = 0 ↔ ∃ y : M, r • y = x := by
   rw [← quotTensorEquivQuotSMul_symm_mk, LinearEquiv.map_eq_zero_iff,

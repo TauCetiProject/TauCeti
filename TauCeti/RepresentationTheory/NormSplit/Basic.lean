@@ -27,7 +27,7 @@ of such subgroups generate the unit ideal of `ℤ`.
 ## Main statements
 
 * `Representation.norm_linHom_apply`: the norm of the conjugation action on `End_k(V)`.
-* `Representation.norm_linHom_apply_apply`: such a norm is a `G`-equivariant endomorphism.
+* `Representation.norm_linHom_apply_equivariant`: such a norm is a `G`-equivariant endomorphism.
 * `Representation.index_nsmul_id_mem_range_norm_linHom`: if the identity is an `H`-norm, then
   `[G : H]` times the identity is a `G`-norm.
 * `Representation.id_mem_range_norm_linHom_of_forall_prime`: if for every prime `p` the identity
@@ -58,7 +58,8 @@ theorem norm_linHom_apply (φ : V →ₗ[k] V) (x : V) :
   simp [Representation.norm, linHom_apply]
 
 /-- The norm of the conjugation action on `End_k(V)` is a `G`-equivariant endomorphism. -/
-theorem norm_linHom_apply_apply (φ : V →ₗ[k] V) (h : G)
+@[simp]
+theorem norm_linHom_apply_equivariant (φ : V →ₗ[k] V) (h : G)
     (x : V) : (linHom ρ ρ).norm φ (ρ h x) = ρ h ((linHom ρ ρ).norm φ x) := by
   rw [norm_linHom_apply, norm_linHom_apply, map_sum]
   refine Fintype.sum_equiv (Equiv.mulLeft h⁻¹) _ _ fun g ↦ ?_
