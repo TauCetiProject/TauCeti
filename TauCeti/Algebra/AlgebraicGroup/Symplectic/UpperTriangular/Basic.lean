@@ -312,11 +312,7 @@ matrix lies in the standard triangular symplectic subgroup. -/
       ← CommHopfAlgCat.quotientPointsHom_apply]
     exact Symplectic.pointsMulEquiv_coe R m g
   rw [definingHopfIdeal_def,
-    CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff_of_surjective
-      (Symplectic.coordinateMap R m)
-      (by
-        rw [Symplectic.coordinateMap_def]
-        exact CommHopfAlgCat.mkQuotient_surjective _ _),
+    CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff (Symplectic.coordinateMap R m),
     GeneralLinear.mem_weightParabolicDefiningPointsSubgroup_iff_blockTriangular,
     hmatrix, GLSymplecticFin.mem_upperTriangular_iff]
   simp only [Matrix.BlockTriangular, Function.comp_apply, OrderDual.toDual_lt_toDual,
