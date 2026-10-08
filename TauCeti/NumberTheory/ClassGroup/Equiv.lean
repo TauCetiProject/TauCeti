@@ -62,17 +62,21 @@ arbitrary fraction fields. -/
           (FractionRing R) (FractionRing S) f).toMulEquiv I) := by
   erw [← ClassGroup.Quot_mk_eq_mk, ← ClassGroup.Quot_mk_eq_mk,
     ClassGroup.mulEquiv_apply, ClassGroup.map_quotientMk]
+  -- Compare the unit representatives of the quotient classes.
   congr 1
   apply Units.ext
   simp only [Units.coe_map, Units.coe_mapEquiv, MonoidHom.coe_ofClass,
     RingHom.toMonoidHom_eq_coe, RingEquiv.toMulEquiv_eq_coe, RingEquiv.coe_toMulEquiv]
   apply FractionalIdeal.coeToSubmodule_injective
+  -- The injectivity lemma leaves the coercions applied as anonymous functions.
+  -- Reduce these applications to expose the underlying submodules for the named rewrites.
   dsimp only
   rw [FractionalIdeal.extendedHom'_apply, FractionalIdeal.coe_extended_eq_span,
     ← FractionalIdeal.val_eq_coe, FractionalIdeal.ringEquivOfRingEquiv_apply_val]
   simp only [FractionalIdeal.val_eq_coe]
   rw [← Submodule.span_eq (I : Submodule R (FractionRing R)), Submodule.map_span]
-  congr 1
+  -- The semilinear equivalence uses this same localization map as its underlying function.
+  rfl
 
 /-- `ClassGroup.mulEquiv f` sends the class of a unit fractional ideal `I` to the class of its
 image under `FractionalIdeal.ringEquivOfRingEquiv f`. This is independent of the chosen fraction
