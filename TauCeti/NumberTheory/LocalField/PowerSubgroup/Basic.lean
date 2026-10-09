@@ -55,6 +55,8 @@ The openness results are stated in `PowerSubgroup.Open`, including the general c
 * `TauCeti.finiteIndex_range_powMonoidHom`: `(Kˣ)ⁿ` has finite index in `Kˣ` for `(n : K) ≠ 0`.
 * `TauCeti.map_powMonoidHom_unitFiltration_succ_of_isUnit`: the `n`-th power map carries
   `U(K,i+1)` onto itself.
+* `TauCeti.exists_mem_unitFiltration_pow_notMem_of_isUnit`: some `n`-th power of a unit of
+  `U(K,i+1)` lies outside `U(K,i+2)`.
 * `TauCeti.unitFiltration_one_le_range_powMonoidHom_of_isUnit`: every principal unit is an
   `n`-th power, `U(K,1) ≤ (Kˣ)ⁿ`.
 * `TauCeti.unitsMap_subtype_mem_range_powMonoidHom_iff` and
@@ -109,6 +111,19 @@ theorem map_powMonoidHom_unitFiltration_succ_of_isUnit {n : ℕ} (hn : IsUnit (n
   have hv := natCastValuation_eq_zero_of_isUnit K hnK hn
   simpa [hv] using map_powMonoidHom_unitFiltration hnK (i := i + 1) fun p hp hpK hpn ↦
     natCastValuation_lt_sub_one_mul_of_lt_of_dvd hnK (hv ▸ i.succ_pos) hp hpK hpn
+
+/-- For `n` invertible in `𝒪[K]`, the `n`-th power of some unit of `U(K,i+1)` lies outside
+`U(K,i+2)`: the `n`-th power map carries `U(K,i+1)` onto itself
+(`map_powMonoidHom_unitFiltration_succ_of_isUnit`), and `U(K,i+1)` is not contained in
+`U(K,i+2)`. -/
+theorem exists_mem_unitFiltration_pow_notMem_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K]))
+    (i : ℕ) : ∃ x ∈ unitFiltration K (i + 1), x ^ n ∉ unitFiltration K (i + 2) := by
+  obtain ⟨y, hy, hy'⟩ := IsConcreteLE.not_le_iff_exists.1
+    ((unitFiltration_le_unitFiltration_iff (K := K) (i := i + 2) (j := i + 1)
+      (Or.inl (by omega))).not.2 (by omega))
+  rw [← map_powMonoidHom_unitFiltration_succ_of_isUnit hn i] at hy
+  obtain ⟨x, hx, rfl⟩ := hy
+  exact ⟨x, hx, hy'⟩
 
 /-- For `n` invertible in `𝒪[K]`, every principal unit of `K` is an `n`-th power. -/
 theorem unitFiltration_one_le_range_powMonoidHom_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :

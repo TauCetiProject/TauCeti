@@ -8,9 +8,8 @@ module
 public import TauCeti.NumberTheory.LocalField.Norm.Herbrand
 public import TauCeti.NumberTheory.LocalField.Unramified.Basic
 import TauCeti.Algebra.CharP.LocalRing
-import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
+import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Map
-import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow
 
 /-!
 # The norm on the unit filtration without the Herbrand shift
@@ -82,23 +81,6 @@ theorem map_normUnits_unitFiltration_le_floor_herbrand (i : ℕ) :
 
 end Galois
 
-/-- If `p ∤ n` and `i ≥ 1`, the `n`-th power of some unit of `U(K, i)` lies outside
-`U(K, i + 1)`: the `n`-th power map carries `U(K, i)` onto itself, and `U(K, i)` is not contained
-in `U(K, i + 1)`. -/
-private theorem exists_mem_unitFiltration_pow_notMem {n : ℕ} (hn : ¬ ringChar 𝓀[K] ∣ n) {i : ℕ}
-    (hi : 1 ≤ i) : ∃ x ∈ unitFiltration K i, x ^ n ∉ unitFiltration K (i + 1) := by
-  have hnK : (n : K) ≠ 0 := natCast_ne_zero_of_isUnit (IsLocalRing.isUnit_natCast_iff_not_dvd.2 hn)
-  have hv : natCastValuation K n hnK = 0 := (natCastValuation_eq_zero_iff_not_dvd K n hnK).2 hn
-  have hsurj := map_powMonoidHom_unitFiltration hnK (i := i) fun p hp hpK hpn ↦
-    natCastValuation_lt_sub_one_mul_of_lt_of_dvd hnK (by rw [hv]; omega) hp hpK hpn
-  rw [hv, add_zero] at hsurj
-  obtain ⟨y, hy, hy'⟩ := IsConcreteLE.not_le_iff_exists.1
-    ((unitFiltration_le_unitFiltration_iff (K := K) (i := i + 1) (j := i) (Or.inl (by omega))).not.2
-      (by omega))
-  rw [← hsurj] at hy
-  obtain ⟨x, hx, rfl⟩ := hy
-  exact ⟨x, hx, hy'⟩
-
 /-- **The norm without the Herbrand shift characterizes unramified extensions.** Let `L/K` be an
 extension of nonarchimedean local fields whose degree is prime to the residue characteristic `p`
 of `K`. At every depth `i ≥ 2`, the norm carries `U(L, i)` into `U(K, i)` exactly when `L/K` is
@@ -114,8 +96,10 @@ theorem map_normUnits_unitFiltration_le_iff_isUnramified (hp : ¬ ringChar 𝓀[
   have he : 2 ≤ ramificationIndex K L := by
     have := ramificationIndex_pos (K := K) (L := L)
     omega
-  obtain ⟨x, hx, hxn⟩ := exists_mem_unitFiltration_pow_notMem (K := K) hp (i := i - 1) (by omega)
-  rw [Nat.sub_add_cancel (by omega)] at hxn
+  obtain ⟨x, hx, hxn⟩ := exists_mem_unitFiltration_pow_notMem_of_isUnit (K := K)
+    (IsLocalRing.isUnit_natCast_iff_not_dvd.2 hp) (i - 2)
+  rw [show i - 2 + 1 = i - 1 by omega] at hx
+  rw [show i - 2 + 2 = i by omega] at hxn
   -- The image of `x` in `L` lies in `U(L, e (i - 1)) ⊆ U(L, i)`, and its norm is `x ^ [L : K]`.
   have hxL : Units.map (algebraMap K L : K →* L) x ∈ unitFiltration L i :=
     unitFiltration_antitone (by have := Nat.mul_le_mul_right (i - 1) he; omega)
