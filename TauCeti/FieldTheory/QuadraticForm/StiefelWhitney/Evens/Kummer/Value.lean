@@ -25,7 +25,7 @@ N^{Ev}((a)) = (2) ∪ (d)                             if Tr a = 0
 
 The proof is Serre's second proof at `n = 2`. The Evens norm is the class of the pullback
 `c_{D₁₆} ∘ (ρ_a × ρ_a)` of the `D₁₆` extension cocycle
-(`TauCeti.galoisEvens2_kummerClass_eq_pullback`). The twisted boundary of the `Pin⁺` lift `ρ̃_a`
+(`TauCeti.galoisEvens2_kummerClass_eq_pullback`). The twisted boundary of the `Pin⁺` lift `ρ'_a`
 of `ρ_a` is that pullback plus the product cochain of the Kummer characters of `2` and `d`
 (`TauCeti.twistedBoundaryF2_kummerIndLift`), and it is cohomologous to the product cochain of the
 Kummer characters of the values `w₁, w₀` of any orthogonal basis of the twisted trace form
@@ -132,8 +132,8 @@ theorem galoisEvens2_kummerClass_eq_cup_add_cup (σ : L →ₐ[K] SeparableClosu
     kummerClass_eq_homClass (w 1) (c 1) (hc 1), kummerClass_eq_homClass (w 0) (c 0) (hc 0),
     kummerClass_eq_homClass _ r2 hr2', kummerClass_eq_homClass d (σ x) hσx, cup11_homClass,
     cup11_homClass]
-  -- In `𝔽₂`, `c_{D₁₆}(ρ_a g, ρ_a h) = δ(ρ̃_a)(g, h) + rootSign √2 g · rootSign √d h`, and
-  -- `δ(ρ̃_a)(g, h) = rootSign c₁ g · rootSign c₀ h + ∂ψ(g, h)`.
+  -- In `𝔽₂`, `c_{D₁₆}(ρ_a g, ρ_a h) = δ(ρ'_a)(g, h) + rootSign √2 g · rootSign √d h`, and
+  -- `δ(ρ'_a)(g, h) = rootSign c₁ g · rootSign c₀ h + ∂ψ(g, h)`.
   refine f2CocycleClass_eq_add _ _ _ _ _ _ _ _ _ ψ hψ fun g h => ?_
   have hδgh := twistedBoundaryF2_kummerIndLift σ hdeg hx a r hr s hs hr2 g h
   rw [hδ] at hδgh
