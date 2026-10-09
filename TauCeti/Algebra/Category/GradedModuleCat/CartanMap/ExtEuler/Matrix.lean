@@ -84,6 +84,7 @@ variable {I : Type uI} {J : Type uJ} {J' : Type uJ'} [Fintype I] [Fintype J]
 omit [Fintype I] in
 /-- An entry of the projective/module q-Euler matrix is the projective/module q-Euler form of the
 corresponding basis vectors. -/
+@[simp]
 theorem gradedExtEulerMatrix_apply_eq_gradedProjectiveExtEuler
     (bP : Module.Basis I (LaurentPolynomial ℤ)
       (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)))
