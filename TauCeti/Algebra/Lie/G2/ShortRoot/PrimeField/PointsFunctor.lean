@@ -621,7 +621,7 @@ theorem weightTorusPoints_conj_rootSubgroupPoints (k : Fin 2 ⊕ Fin 2) (A : Typ
 /-- **The torus-conjugation equation on scheme-valued points of the carrier**: conjugation by a
 point of the weight torus rescales the parameter of each numbered simple root subgroup by the
 corresponding type-`G₂` root character. -/
-@[simp]
+-- Not `@[simp]`: `simp` does not match its left-hand side, even with the lemma alone; use `rw`.
 theorem weightTorus_conj_rootSubgroup (k : Fin 2 ⊕ Fin 2)
     (A : Type) [CommRing A] [Algebra (ZMod 3) A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of (ZMod 3))) ⟶

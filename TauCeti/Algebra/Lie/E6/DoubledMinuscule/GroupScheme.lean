@@ -385,7 +385,7 @@ theorem coe_weightTorusPoints (A : Type v) [CommRing A] (s : Fin 6 → Aˣ) :
 its positive or negative pinned simple-root character.** The character is
 `TauCeti.E6.rootGeneratorWeight`, which reads a row of the type-`E₆` Cartan matrix and
 mentions no representation, so it is the same one the `27`-dimensional carrier is pinned by. -/
-@[simp]
+-- Not `@[simp]`: `simp` does not match its left-hand side, even with the lemma alone; use `rw`.
 theorem weightTorus_conj_rootSubgroup (k : Fin 6 ⊕ Fin 6) (A : Type) [CommRing A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (SplitTorus.groupScheme ℤ (Fin 6)).X)

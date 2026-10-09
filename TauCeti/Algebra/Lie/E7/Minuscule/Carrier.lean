@@ -462,7 +462,7 @@ instance isClosedImmersion_weightTorus : IsClosedImmersion weightTorus.hom.hom.l
 
 /-- The scheme-level pinning equation: conjugation by the weight torus acts on each numbered
 simple root subgroup through the corresponding type-`E₇` root character. -/
-@[simp]
+-- Not `@[simp]`: `simp` does not match its left-hand side, even with the lemma alone; use `rw`.
 theorem weightTorus_conj_rootSubgroup (k : Fin 7 ⊕ Fin 7)
     (A : Type) [CommRing A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶

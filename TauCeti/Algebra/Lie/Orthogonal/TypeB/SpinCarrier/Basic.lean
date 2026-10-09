@@ -641,7 +641,7 @@ theorem weightTorusPoints_conj_rootSubgroupPoints
     (lie_coroot_rootGenerator n k) A s u
 
 /-- Conjugation by the spin weight torus rescales each root subgroup by its root character. -/
-@[simp]
+-- Not `@[simp]`: `simp` does not match its left-hand side, even with the lemma alone; use `rw`.
 theorem weightTorus_conj_rootSubgroup (k : Fin (n + 1) ⊕ Fin (n + 1))
     (A : Type) [CommRing A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
