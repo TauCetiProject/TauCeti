@@ -7,7 +7,9 @@ module
 
 public import Mathlib.NumberTheory.NumberField.AdeleRing
 
+import Mathlib.Topology.Algebra.Group.Units
 import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
+import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Units
 
 /-!
 # Basic API for ideles
@@ -28,8 +30,21 @@ constructor `TauCeti.GlobalNumberFields.ideleOfUnits` assembles local units that
 at almost every finite place; `TauCeti.GlobalNumberFields.ideleFiniteCoord_ideleOfUnits` and
 `TauCeti.GlobalNumberFields.ideleInfiniteCoord_ideleOfUnits` recover those units.
 
-Finally, the embeddings of the units of the completions, at the infinite and at the finite places,
-into the idele group and the idele class group are continuous.
+The embeddings of the units of the completions, at the infinite and at the finite places, into
+the idele group and the idele class group are continuous.
+
+Finally, `NumberField.IdeleGroup.localUnitsEquiv` identifies the idele group, with its units
+topology, with the product of the unit groups `K_wˣ` at the infinite places and the restricted
+product of the unit groups `K_vˣ` at the finite places with respect to the local integral units
+`𝒪_vˣ`, as topological groups. Its coordinates are the coordinate maps above, and its inverse is
+`TauCeti.GlobalNumberFields.ideleOfUnits`. This is the classical description of the idele group as
+a restricted product over all places, and it shows that the units topology of the adele ring is
+the restricted-product topology of the local unit groups.
+
+## References
+
+* J. W. S. Cassels and A. Fröhlich, eds., *Algebraic Number Theory*, Chapter II, §16.
+* A. Weil, *Basic Number Theory*, Chapter IV, §3.
 -/
 
 public section
@@ -42,14 +57,6 @@ namespace NumberField.IdeleGroup
 variable (R : Type*) [CommRing R] [IsDedekindDomain R]
 variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
 
-/-- The underlying adele of a principal idele is the diagonal adele of the underlying field
-element. -/
-@[simp]
-theorem coe_unitEmbedding (x : Kˣ) :
-    ((unitEmbedding R K x : IdeleGroup R K) : AdeleRing R K) =
-      algebraMap K (AdeleRing R K) x :=
-  rfl
-
 /-- An idele is principal exactly when its underlying adele lies in the diagonal copy of the
 fraction field. -/
 -- This is intentionally not a simp lemma: Mathlib's `MonoidHom.mem_range` is already `simp`, so it
@@ -61,7 +68,7 @@ theorem mem_principalSubgroup_iff (x : IdeleGroup R K) :
   rw [MonoidHom.mem_range]
   constructor
   · rintro ⟨y, rfl⟩
-    exact ⟨y, coe_unitEmbedding R K y⟩
+    exact ⟨y, (val_unitEmbedding_apply R K y).symm⟩
   · rintro ⟨y, hy⟩
     by_cases hA : Nontrivial (AdeleRing R K)
     · let _ := hA
@@ -70,7 +77,7 @@ theorem mem_principalSubgroup_iff (x : IdeleGroup R K) :
         subst y
         exact x.ne_zero (by simpa using hy.symm)
       refine ⟨Units.mk0 y hy0, Units.ext ?_⟩
-      simpa only [coe_unitEmbedding, Units.val_mk0] using hy
+      simpa only [val_unitEmbedding_apply, Units.val_mk0] using hy
     · have _ : Subsingleton (AdeleRing R K) := not_nontrivial_iff_subsingleton.mp hA
       exact ⟨1, Units.ext (Subsingleton.elim _ _)⟩
 
@@ -224,3 +231,61 @@ theorem ideleInfiniteCoord_ideleOfUnits (zi : ∀ w : InfinitePlace K, w.Complet
 end TauCeti.GlobalNumberFields
 
 end Coordinates
+
+/-! ### The idele group as a restricted product of local unit groups -/
+
+namespace NumberField.IdeleGroup
+
+open scoped RestrictedProduct
+
+variable (R : Type*) [CommRing R] [IsDedekindDomain R]
+variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
+
+/-- **The idele group is the restricted product of the local unit groups**: the idele group, with
+its units topology, is isomorphic as a topological group to the product of the unit groups `K_wˣ`
+of the completions at the infinite places with the restricted product of the unit groups `K_vˣ`
+at the finite places with respect to the local integral units `𝒪_vˣ`. -/
+noncomputable def localUnitsEquiv :
+    IdeleGroup R K ≃ₜ* (∀ w : InfinitePlace K, w.Completionˣ) ×
+      Πʳ v : HeightOneSpectrum R,
+        [(v.adicCompletion K)ˣ, (Submonoid.ofClass (v.adicCompletionIntegers K)).units] where
+  toMulEquiv := MulEquiv.prodUnits.trans
+    (MulEquiv.prodCongr MulEquiv.piUnits (FiniteAdeleRing.unitsContinuousMulEquiv R K))
+  continuous_toFun := (ContinuousMulEquiv.piUnits.continuous.prodMap
+    (FiniteAdeleRing.unitsContinuousMulEquiv R K).continuous).comp Homeomorph.prodUnits.continuous
+  continuous_invFun := Homeomorph.prodUnits.symm.continuous.comp
+    (ContinuousMulEquiv.piUnits.symm.continuous.prodMap
+      (FiniteAdeleRing.unitsContinuousMulEquiv R K).symm.continuous)
+
+variable {R K}
+
+/-- The infinite part of `NumberField.IdeleGroup.localUnitsEquiv` consists of the coordinates of
+an idele at the infinite places. -/
+@[simp]
+theorem localUnitsEquiv_apply_fst (x : IdeleGroup R K) (w : InfinitePlace K) :
+    (localUnitsEquiv R K x).1 w = w.ideleInfiniteCoord x :=
+  Units.ext (rfl)
+
+/-- The finite part of `NumberField.IdeleGroup.localUnitsEquiv` consists of the coordinates of an
+idele at the finite places. -/
+@[simp]
+theorem localUnitsEquiv_apply_snd (x : IdeleGroup R K) (v : HeightOneSpectrum R) :
+    (localUnitsEquiv R K x).2 v = v.ideleFiniteCoord x :=
+  Units.ext (FiniteAdeleRing.coe_unitsContinuousMulEquiv_apply _ v)
+
+/-- The inverse of `NumberField.IdeleGroup.localUnitsEquiv` assembles an idele from its local
+units, as `TauCeti.GlobalNumberFields.ideleOfUnits` does. -/
+theorem localUnitsEquiv_symm_apply (zi : ∀ w : InfinitePlace K, w.Completionˣ)
+    (z : ∀ v : HeightOneSpectrum R, (v.adicCompletion K)ˣ)
+    (hz : ∀ᶠ v in Filter.cofinite, z v ∈ (v.adicCompletionIntegers K).units) :
+    (localUnitsEquiv R K).symm (zi, .mk z hz) = TauCeti.GlobalNumberFields.ideleOfUnits zi z hz :=
+  NumberField.IdeleGroup.ext
+    (fun w ↦ by
+      rw [← localUnitsEquiv_apply_fst, ContinuousMulEquiv.apply_symm_apply,
+        TauCeti.GlobalNumberFields.ideleInfiniteCoord_ideleOfUnits])
+    (fun v ↦ by
+      rw [← localUnitsEquiv_apply_snd, ContinuousMulEquiv.apply_symm_apply,
+        TauCeti.GlobalNumberFields.ideleFiniteCoord_ideleOfUnits]
+      exact RestrictedProduct.mk_apply _ _ z hz v)
+
+end NumberField.IdeleGroup

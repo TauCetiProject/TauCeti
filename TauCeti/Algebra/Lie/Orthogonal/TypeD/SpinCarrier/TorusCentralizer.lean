@@ -24,6 +24,10 @@ identification is needed before this calculation yields a maximal torus.
 
 ## Main declarations
 
+* `TauCeti.TypeDSpinCarrier.mem_centralizer_range_weightTorusPoints_iff_isDiag`: the
+  pointwise diagonal characterization.
+* `TauCeti.TypeDSpinCarrier.centralizer_range_weightTorusPoints_eq_comap_diagonalTorus`: the
+  centralizer as the inverse image of the ambient diagonal torus.
 * `TauCeti.TypeDSpinCarrier.diagonalPoints`: the diagonal points of the spin carrier.
 * `TauCeti.TypeDSpinCarrier.centralizer_range_weightTorusPoints_eq_diagonalPoints`: the
   pointwise torus-centralizer calculation over an infinite field.
@@ -37,6 +41,8 @@ commutative ring without zero divisors on which the spin weight characters are d
 
 * J. E. Humphreys, *Linear Algebraic Groups*, §§16 and 26.
 * C. Chevalley, *The Algebraic Theory of Spinors*, Chapter II.
+* `TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.TorusCentralizer`, whose character-separation
+  argument supplies the general pointwise criterion used below.
 
 The point-group argument follows
 `TauCeti.SlStd.centralizer_range_weightTorusPoints_eq_diagonalPoints`.
@@ -188,5 +194,32 @@ theorem eq_diagonalPoints_of_le_of_isMulCommutative
     (weightChar_comp_basisWeight_injective n K) H hH
 
 end
+
+/-! ## Pointwise diagonal characterization -/
+
+
+variable (n : ℕ) (hn : 4 ≤ n) {k : Type*} [Field k] [Infinite k]
+
+/-- Over an infinite field, a point of the type-`Dₙ` spin carrier centralizes the weight torus
+exactly when its matrix is diagonal. -/
+@[simp]
+theorem mem_centralizer_range_weightTorusPoints_iff_isDiag (g : points n hn k) :
+    g ∈ Subgroup.centralizer (Set.range (weightTorusPoints n hn k)) ↔
+      ((g : GL (Fin (dimension n)) k) : Matrix (Fin (dimension n)) (Fin (dimension n)) k).IsDiag :=
+  mem_centralizer_range_iff_isDiag_of_coe_eq_diagGL
+    (fun s ↦ (coe_weightTorusPoints n hn k s).trans
+      (UniversalEnvelopingAlgebra.kostantTorusMatrix_apply _ _ _ s))
+    (fun _ _ hij ↦ exists_torusCharacter_ne fun h ↦
+      hij ((Fintype.equivFin (Finset (Fin n))).symm.injective
+        (DynkinType.typeDSpinWeight_injective h))) g
+
+/-- Over an infinite field, the centralizer of the type-`Dₙ` spin weight torus is the inverse
+image of the diagonal torus of `GL_(2^n)`. -/
+theorem centralizer_range_weightTorusPoints_eq_comap_diagonalTorus :
+    Subgroup.centralizer (Set.range (weightTorusPoints n hn k)) =
+      (diagonalTorus k (dimension n)).comap (points n hn k).subtype := by
+  ext g
+  simp only [mem_centralizer_range_weightTorusPoints_iff_isDiag, Subgroup.mem_comap,
+    Subgroup.subtype_apply, mem_diagonalTorus_iff]
 
 end TauCeti.TypeDSpinCarrier

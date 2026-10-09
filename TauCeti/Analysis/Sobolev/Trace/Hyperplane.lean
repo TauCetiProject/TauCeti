@@ -235,13 +235,14 @@ theorem W1p.hyperplaneTraceOne_unique (a : ℝ)
   filter_upwards [hT φ, (hyperplane_memLp 1 a φ).coeFn_toLp] with y ht hf
   exact ht.trans hf.symm
 
-/-- The squared `L²` norm on a hyperplane is bounded by the whole-space `H¹` energy of a
-compactly supported `C¹` function. -/
-theorem integral_hyperplane_sq_le_integral_sq_add_norm_fderiv_sq
+/-- The squared `L²` norm on a hyperplane is bounded by the `H¹` energy on its right-hand
+half-space for a compactly supported `C¹` function. -/
+theorem integral_hyperplane_sq_le_integral_halfSpace_sq_add_norm_fderiv_sq
     {u : WithLp 2 (ℝ × E) → ℝ} (hu : ContDiff ℝ 1 u) (hsupp : HasCompactSupport u)
     (a : ℝ) :
     (∫ y : E, u (WithLp.toLp 2 (a, y)) ^ 2) ≤
-      ∫ x : WithLp 2 (ℝ × E), u x ^ 2 + ‖fderiv ℝ u x‖ ^ 2 := by
+      ∫ x : WithLp 2 (ℝ × E) in {x | a < (WithLp.ofLp x).1},
+        u x ^ 2 + ‖fderiv ℝ u x‖ ^ 2 := by
   have hc := hu.continuous_fderiv one_ne_zero
   have hs : HasCompactSupport (fun x ↦ u x ^ 2 + ‖fderiv ℝ u x‖ ^ 2) :=
     (hsupp.mono (fun x hx hz ↦ hx (by simp [hz]))).add
@@ -256,9 +257,15 @@ theorem integral_hyperplane_sq_le_integral_sq_add_norm_fderiv_sq
       (fun z : ℝ × E ↦ u (WithLp.toLp 2 z) ^ 2 + ‖fderiv ℝ u (WithLp.toLp 2 z)‖ ^ 2)
       (volume.prod volume) := by
     exact (WithLp.volume_preserving_toLp ℝ E).integrable_comp hint.aestronglyMeasurable |>.mpr hint
+  have hprodR : Integrable
+      (fun z : ℝ × E ↦ u (WithLp.toLp 2 z) ^ 2 + ‖fderiv ℝ u (WithLp.toLp 2 z)‖ ^ 2)
+      ((volume.restrict (Ioi a)).prod volume) := by
+    rw [Measure.restrict_prod_eq_prod_univ]
+    exact hprod.integrableOn
   -- Apply the one-dimensional estimate on each normal line.
   have hline (y : E) : u (WithLp.toLp 2 (a, y)) ^ 2 ≤
-      ∫ t : ℝ, u (WithLp.toLp 2 (t, y)) ^ 2 + ‖fderiv ℝ u (WithLp.toLp 2 (t, y))‖ ^ 2 := by
+      ∫ t : ℝ in Ioi a,
+        u (WithLp.toLp 2 (t, y)) ^ 2 + ‖fderiv ℝ u (WithLp.toLp 2 (t, y))‖ ^ 2 := by
     have he : IsClosedEmbedding (fun t : ℝ ↦ WithLp.toLp 2 (t, y)) :=
       (WithLp.homeomorphProd 2 ℝ E).symm.isClosedEmbedding.comp
         (.of_isEmbedding_isClosedMap (isEmbedding_prodMkLeft y) (isClosedMap_prodMk_right y))
@@ -274,16 +281,16 @@ theorem integral_hyperplane_sq_le_integral_sq_add_norm_fderiv_sq
         ((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.hasFDerivAt).comp_hasDerivAt t
           ((hasDerivAt_id t).prodMk (hasDerivAt_const t y))
       exact ((hu.differentiable one_ne_zero _).hasFDerivAt.comp_hasDerivAt t hp).deriv
-    refine (sq_le_integral_sq_add_deriv_sq hg hgs a).trans ?_
+    refine (sq_le_integral_Ioi_sq_add_deriv_sq hg hgs a).trans ?_
     have hgc2 := (hg.continuous.pow 2).add ((hg.continuous_deriv le_rfl).pow 2)
     apply integral_mono
       (hgc2.integrable_of_hasCompactSupport
           ((hgs.mono (fun t ht hz ↦ ht (by
             simp only [Pi.pow_apply, hz, zero_pow (by norm_num : (2 : ℕ) ≠ 0)]))).add
-            (hgs.deriv.mono (fun t ht hz ↦ ht (by simp [hz])))))
+            (hgs.deriv.mono (fun t ht hz ↦ ht (by simp [hz]))))).integrableOn
       (((hu.continuous.comp he.continuous).pow 2).add
         ((hc.comp he.continuous).norm.pow 2) |>.integrable_of_hasCompactSupport
-          (hs.comp_isClosedEmbedding he))
+          (hs.comp_isClosedEmbedding he)).integrableOn
     intro t
     dsimp only [Pi.add_apply, Pi.pow_apply, Function.comp_apply]
     rw [hd]
@@ -297,7 +304,7 @@ theorem integral_hyperplane_sq_le_integral_sq_add_norm_fderiv_sq
     exact add_le_add le_rfl hsq
   -- Integrate the slice estimates and use the volume-preserving product coordinates.
   calc
-    _ ≤ ∫ y : E, ∫ t : ℝ,
+    _ ≤ ∫ y : E, ∫ t : ℝ in Ioi a,
         u (WithLp.toLp 2 (t, y)) ^ 2 + ‖fderiv ℝ u (WithLp.toLp 2 (t, y))‖ ^ 2 :=
       integral_mono
         (by
@@ -309,13 +316,34 @@ theorem integral_hyperplane_sq_le_integral_sq_add_norm_fderiv_sq
             ((hsupp.comp_isClosedEmbedding he).mono
               (fun y hy hz ↦ hy (by
                 simp only [Pi.pow_apply, hz, zero_pow (by norm_num : (2 : ℕ) ≠ 0)]))))
-        hprod.integral_prod_right hline
+        hprodR.integral_prod_right hline
     _ = _ := by
-      rw [← integral_prod_symm _ hprod]
-      simpa only [Measure.volume_eq_prod] using
-        (WithLp.volume_preserving_toLp ℝ E).integral_comp
+      rw [← integral_prod_symm _ hprodR]
+      rw [Measure.restrict_prod_eq_prod_univ, Set.prod_univ]
+      simpa only [Measure.volume_eq_prod, Set.preimage_ofPred_eq, WithLp.ofLp_toLp,
+        Set.Ioi] using
+        (WithLp.volume_preserving_toLp ℝ E).setIntegral_preimage_emb
           (MeasurableEquiv.toLp 2 (ℝ × E)).measurableEmbedding
           (fun x ↦ u x ^ 2 + ‖fderiv ℝ u x‖ ^ 2)
+          {x | a < (WithLp.ofLp x).1}
+
+/-- The squared `L²` norm on a hyperplane is bounded by the whole-space `H¹` energy of a
+compactly supported `C¹` function. -/
+theorem integral_hyperplane_sq_le_integral_sq_add_norm_fderiv_sq
+    {u : WithLp 2 (ℝ × E) → ℝ} (hu : ContDiff ℝ 1 u) (hsupp : HasCompactSupport u)
+    (a : ℝ) :
+    (∫ y : E, u (WithLp.toLp 2 (a, y)) ^ 2) ≤
+      ∫ x : WithLp 2 (ℝ × E), u x ^ 2 + ‖fderiv ℝ u x‖ ^ 2 := by
+  refine (integral_hyperplane_sq_le_integral_halfSpace_sq_add_norm_fderiv_sq hu hsupp a).trans ?_
+  have hs : HasCompactSupport (fun x ↦ u x ^ 2 + ‖fderiv ℝ u x‖ ^ 2) :=
+    (hsupp.mono (fun x hx hz ↦ hx (by simp [hz]))).add
+      ((hsupp.fderiv ℝ).mono (fun x hx hz ↦ hx (by
+        simp only [hz, norm_zero (E := WithLp 2 (ℝ × E) →L[ℝ] ℝ),
+          zero_pow (by decide : (2 : ℕ) ≠ 0)])))
+  exact setIntegral_le_integral
+    (((hu.continuous.pow 2).add ((hu.continuous_fderiv one_ne_zero).norm.pow 2))
+      |>.integrable_of_hasCompactSupport hs)
+    (Filter.Eventually.of_forall fun x ↦ add_nonneg (sq_nonneg _) (sq_nonneg _))
 
 private theorem norm_hyperplaneTestFunction_le (a : ℝ)
     (φ : 𝓓((⊤ : Opens (WithLp 2 (ℝ × E))), ℝ)) :

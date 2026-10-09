@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Open
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
-import TauCeti.Topology.Algebra.Field.Squares
+import TauCeti.Topology.Algebra.GroupWithZero.Squares
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.Algebra.Group.Even
 
@@ -53,12 +53,12 @@ theorem exists_fieldUnit_isSquare_div_at_places
       charZero_of_injective_algebraMap (algebraMap K (v.1.adicCompletion K)).injective
     have hcont : Continuous (fun y : (∀ v : S, v.1.adicCompletion K) × (T → ℝ) => y.1 v) :=
       (continuous_apply v).comp continuous_fst
-    have hopen : IsOpen ((powMonoidHom 2 : (v.1.adicCompletion K)ˣ →*
-        (v.1.adicCompletion K)ˣ).range : Set (v.1.adicCompletion K)ˣ) :=
-      isOpen_range_powMonoidHom (two_ne_zero' (v.1.adicCompletion K))
-    exact ContinuousAt.eventually_isSquare_div_of_isOpen_squares
+    have hopen : IsOpen {u : (v.1.adicCompletion K)ˣ | IsSquare u} := by
+      simpa only [← square_eq_range_powMonoidHom, Subgroup.coe_square]
+        using isOpen_range_powMonoidHom (two_ne_zero' (v.1.adicCompletion K))
+    exact Filter.Tendsto.eventually_isSquare_div_of_isOpen_squares
       (f := fun y : (∀ v : S, v.1.adicCompletion K) × (T → ℝ) => y.1 v)
-      (x := target) hcont.continuousAt hopen (a v).ne_zero
+      hcont.continuousAt hopen (a v).ne_zero
   have hr (w : T) : ∀ᶠ y in 𝓝 target, y.2 w ≠ 0 ∧ IsSquare (y.2 w / (b w : ℝ)) := by
     have hcont : Continuous (fun y : (∀ v : S, v.1.adicCompletion K) × (T → ℝ) =>
         y.2 w / (b w : ℝ)) :=

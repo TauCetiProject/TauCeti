@@ -197,7 +197,7 @@ theorem exists_isBigO_rat_slash_exp {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.IsArith
     simpa [hg', Subsingleton.elim (Rat.castHom ℝ) (algebraMap ℚ ℝ), map_inv]
       using Subgroup.IsArithmetic.conj Γ g⁻¹
   obtain ⟨c, hc, hO⟩ := CuspFormClass.exp_decay_atImInfty' (CuspForm.translate f g')
-  rw [CuspForm.coe_translate_gl] at hO
+  rw [CuspForm.coe_translate] at hO
   exact ⟨c, hc, hO⟩
 
 open Asymptotics Filter in

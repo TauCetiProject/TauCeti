@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
-public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.RingTheory.Localization.BaseChange
 
 /-!
@@ -25,8 +24,8 @@ If `f : M →ₗ[R] N` exhibits `N` as the base change of `M` along `R → S`, t
 `S ⊗[R] M →ₗ[S] N` it induces, Mathlib's `LinearMap.liftBaseChange`, is injective: it is the
 equivalence `IsBaseChange.equiv`.
 
-Over a fraction ring, extension also preserves injectivity of any linear map from an arbitrary
-module, without requiring its image to span the target.
+For any localization, extension also preserves injectivity of a linear map into a module over
+the localized semiring, without requiring its image to span the target.
 
 ## Main results
 
@@ -34,8 +33,8 @@ module, without requiring its image to span the target.
   product.
 * `IsBaseChange.liftBaseChange_injective`: the map `S ⊗[R] M →ₗ[S] N` induced by a base change is
   injective.
-* `LinearMap.liftBaseChange_injective`: extension to a fraction ring preserves injectivity of a
-  map from an arbitrary module, without a full-span hypothesis.
+* `LinearMap.liftBaseChange_injective`: extension to a localization preserves injectivity of a
+  map into a module over the localized semiring, without a full-span hypothesis.
 -/
 
 public section
@@ -70,24 +69,19 @@ theorem IsBaseChange.liftBaseChange_injective {f : M →ₗ[R] N} (hf : IsBaseCh
   rw [this]
   exact hf.equiv.injective
 
-namespace TauCeti
-
 section
 
-variable {R K M V : Type*} [CommRing R] [CommRing K] [Algebra R K] [IsFractionRing R K]
-variable [AddCommGroup M] [Module R M]
-variable [AddCommGroup V] [Module R V] [Module K V] [IsScalarTower R K V]
+variable {R K M V : Type*} [CommSemiring R] [CommSemiring K] [Algebra R K]
+variable [AddCommMonoid M] [Module R M]
+variable [AddCommMonoid V] [Module R V] [Module K V] [IsScalarTower R K V]
 
-/-- Extension to a fraction ring preserves injectivity of a linear map from an arbitrary module.
-Neither freeness, finite generation nor a full-span hypothesis is needed. -/
-theorem _root_.LinearMap.liftBaseChange_injective (f : M →ₗ[R] V)
-    (hf : Function.Injective f) : Function.Injective (f.liftBaseChange K) := by
-  refine IsLocalizedModule.injective_of_map_zero (nonZeroDivisors R)
-    (TensorProduct.mk R K M 1) (g := (f.liftBaseChange K).restrictScalars R) ?_
-  intro m hm
-  have hm' : m = 0 := hf (by simpa using hm)
-  rw [hm', map_zero]
+/-- For a localization `K = S⁻¹R`, extension of an injective `R`-linear map into a `K`-module
+remains injective. Neither freeness, finite generation nor a full-span hypothesis is needed. -/
+theorem LinearMap.liftBaseChange_injective (f : M →ₗ[R] V) (S : Submonoid R)
+    [IsLocalization S K] (hf : Function.Injective f) : Function.Injective (f.liftBaseChange K) := by
+  refine IsLocalizedModule.injective_of_map_eq S (TensorProduct.mk R K M 1)
+    (g := (f.liftBaseChange K).restrictScalars R) ?_
+  intro x y h
+  exact congrArg (fun m ↦ 1 ⊗ₜ[R] m) (hf (by simpa using h))
 
 end
-
-end TauCeti

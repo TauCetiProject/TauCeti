@@ -12,16 +12,16 @@ public import Mathlib.Data.Fintype.Sum
 /-!
 # Symmetrified quivers
 
-This file supplies general infrastructure for Mathlib's `Quiver.Symmetrify` construction.
+Mathlib's `Quiver.Symmetrify` doubles a quiver by adjoining a formal reverse to every arrow,
+with the same vertices as the original quiver. This file transfers finiteness and decidable
+equality to the doubled vertex type, supplies finite arrow types from those of the original
+quiver, and records that the inclusion is bijective on vertices. These facts let path-algebra
+constructions on the doubled quiver reuse the original finite vertex and arrow data.
 
 ## Main results
 
 * `TauCeti.symmetrify_of_obj`: the doubling inclusion is the identity on vertices.
-
-## References
-
-This file supplies a prerequisite for Layer 4 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`.
+* `TauCeti.symmetrify_of_obj_bijective`: the doubling inclusion is bijective on vertices.
 -/
 
 public section

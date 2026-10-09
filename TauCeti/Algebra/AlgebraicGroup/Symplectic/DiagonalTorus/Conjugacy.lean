@@ -100,8 +100,7 @@ theorem exists_conjugate_diagonalTorusDefiningIdeal_le
   refine ⟨g⁻¹, ?_⟩
   have hle : diagonalTorusDefiningIdeal k m ≤ I.conjugate g := by
     intro x hx
-    rw [HopfIdeal.mem_conjugate, ← HopfIdeal.mem_toIdeal,
-      ← CommHopfAlgCat.mkQuotient_eq_zero_iff]
+    rw [HopfIdeal.mem_conjugate, ← CommHopfAlgCat.mkQuotient_eq_zero_iff]
     rw [mem_diagonalTorusDefiningIdeal] at hx
     refine (congrArg (fun f ↦ f.ofConv x) hkey).trans ?_
     rw [← mapPointsFunctor_diagonalTorusCoordinateMap_app (A := CommAlgCat.of k Q),

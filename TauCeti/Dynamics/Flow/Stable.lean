@@ -30,6 +30,8 @@ its limiting point is fixed by the flow.  Time reversal exchanges the two constr
   under time translation.
 * `Flow.fixed_of_mem_stableSet` and `Flow.fixed_of_mem_unstableSet`: a limiting
   point of a trajectory is fixed.
+* `Flow.disjoint_stableSet` and `Flow.disjoint_unstableSet`: stable (respectively unstable) sets
+  of distinct points are disjoint.
 * `Flow.stableSet_reverse` and `Flow.unstableSet_reverse`: time reversal exchanges
   stable and unstable sets.
 * `Homeomorph.image_stableSet_eq` and `Homeomorph.image_unstableSet_eq`: a topological conjugacy
@@ -130,6 +132,17 @@ theorem self_mem_unstableSet_iff [T2Space α] {φ : _root_.Flow ℝ α} {x : α}
   refine ⟨fun hx t ↦ fixed_of_mem_unstableSet hx t, fun hx ↦ ?_⟩
   rw [mem_unstableSet]
   simpa only [hx] using (tendsto_const_nhds : Tendsto (fun _ : ℝ ↦ x) atBot (𝓝 x))
+
+/-- Stable sets of distinct points are disjoint: a trajectory has at most one forward limit. -/
+theorem disjoint_stableSet [T2Space α] {φ : _root_.Flow ℝ α} {x y : α} (hxy : x ≠ y) :
+    Disjoint (stableSet φ x) (stableSet φ y) :=
+  disjoint_left.2 fun _ hx hy ↦ hxy (tendsto_nhds_unique (mem_stableSet.1 hx) (mem_stableSet.1 hy))
+
+/-- Unstable sets of distinct points are disjoint: a trajectory has at most one backward limit. -/
+theorem disjoint_unstableSet [T2Space α] {φ : _root_.Flow ℝ α} {x y : α} (hxy : x ≠ y) :
+    Disjoint (unstableSet φ x) (unstableSet φ y) :=
+  disjoint_left.2 fun _ hx hy ↦
+    hxy (tendsto_nhds_unique (mem_unstableSet.1 hx) (mem_unstableSet.1 hy))
 
 /-- Time reversal is an involution. -/
 @[simp]

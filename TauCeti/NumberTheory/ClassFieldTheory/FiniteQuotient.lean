@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RepresentationTheory.FDRep
 public import TauCeti.GroupTheory.SpecificGroups.Cyclic.ActionKernel
 public import TauCeti.NumberTheory.ClassFieldTheory.MuNRep
 public import TauCeti.RepresentationTheory.Continuous.TopRep.Discrete
 public import TauCeti.Topology.Algebra.GroupAction.Discrete
+
+import TauCeti.RepresentationTheory.Continuous.Restriction
 
 /-!
 # Finite-quotient Galois coefficient representations
@@ -28,7 +31,9 @@ every `V` contains an open normal subgroup acting trivially on `μₙ`, of index
 (`exists_openNormalSubgroup_le_muNRep_ρ_eq_self`). On fixed fields this replaces a finite Galois
 extension `L` by `L(μₙ)`; for a prime `n = ℓ` it keeps the index prime to `ℓ`
 (`exists_openNormalSubgroup_le_muNRep_ρ_eq_self_of_coprime`), which is what descent of
-cohomology along the quotient requires.
+cohomology along the quotient requires. A subgroup acting trivially on `μₙ` makes `μₙ` the
+inflation of a finite-dimensional representation of the quotient
+(`exists_fdGalRepOfQuotient_iso_muNRep`).
 
 The functor uses `discreteTopRepFunctor` and Mathlib's `TopRep.resFunctor`. The converse uses the
 existing finite-set open-stabilizer theorem, not a second finite-quotient or Galois carrier.
@@ -87,12 +92,33 @@ theorem galRepOfQuotient_ρ_apply (V : OpenNormalSubgroup (Field.absoluteGaloisG
     ((galRepOfQuotient n F V).obj A).ρ g a = A.ρ (QuotientGroup.mk g) a :=
   (rfl)
 
+/-- The open normal subgroup `V` acts trivially on every inflated representation. -/
+theorem galRepOfQuotient_ρ_eq_self (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F))
+    (A : Rep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup))
+    {g : Field.absoluteGaloisGroup F} (hg : g ∈ V) (a : A.V) :
+    ((galRepOfQuotient n F V).obj A).ρ g a = a := by
+  rw [galRepOfQuotient_ρ_apply, (QuotientGroup.eq_one_iff g).2 hg, map_one, Module.End.one_apply]
+
 /-- The functor leaves the underlying coefficient map unchanged. -/
 @[simp]
 theorem galRepOfQuotient_map_apply (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F))
     {A B : Rep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup)} (f : A ⟶ B) (a : A.V) :
     ((galRepOfQuotient n F V).map f).hom a = f.hom a :=
   (rfl)
+
+/-- Inflation is faithful: it leaves the underlying coefficient maps unchanged. -/
+instance (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F)) :
+    (galRepOfQuotient n F V).Faithful :=
+  inferInstanceAs (discreteTopRepFunctor (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup) ⋙
+    TopRep.resFunctor (QuotientGroup.mk' V.toSubgroup)).Faithful
+
+/-- Inflation is full: a map of inflated representations commuting with `G_F` commutes with its
+quotient `G_F ⧸ V`, every class of which lifts to `G_F`. -/
+instance (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F)) :
+    (galRepOfQuotient n F V).Full :=
+  have := TopRep.full_res (k := ZMod n) (QuotientGroup.mk'_surjective V.toSubgroup)
+  inferInstanceAs (discreteTopRepFunctor (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup) ⋙
+    TopRep.resFunctor (QuotientGroup.mk' V.toSubgroup)).Full
 
 /-- The inflated coefficient object carries the discrete topology. -/
 instance (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F))
@@ -119,6 +145,107 @@ instance (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F))
     (A : Rep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup)) :
     Fact (IsSmoothDiscrete (ZMod n) ((galRepOfQuotient n F V).obj A)) :=
   ⟨isSmoothDiscrete_galRepOfQuotient n F V A⟩
+
+/-- **Inflation of finite-dimensional representations** of a finite Galois quotient: the
+restriction of `galRepOfQuotient` along Mathlib's forgetful functor `FDRep → Rep`. Its values are
+finite for `n ≠ 0`. -/
+noncomputable def fdGalRepOfQuotient
+    (m : ℕ) (K : Type) [Field K]
+    (V : OpenNormalSubgroup (Field.absoluteGaloisGroup K)) :
+    FDRep (ZMod m) (Field.absoluteGaloisGroup K ⧸ V.toSubgroup) ⥤ GalRep m K :=
+  forget₂ (FDRep (ZMod m) (Field.absoluteGaloisGroup K ⧸ V.toSubgroup))
+    (Rep (ZMod m) (Field.absoluteGaloisGroup K ⧸ V.toSubgroup)) ⋙ galRepOfQuotient m K V
+
+/-- The inflation of a finite-dimensional representation is `galRepOfQuotient` of its underlying
+representation. -/
+theorem fdGalRepOfQuotient_obj (m : ℕ) (K : Type) [Field K]
+    (V : OpenNormalSubgroup (Field.absoluteGaloisGroup K))
+    (A : FDRep (ZMod m) (Field.absoluteGaloisGroup K ⧸ V.toSubgroup)) :
+    (fdGalRepOfQuotient m K V).obj A =
+      (galRepOfQuotient m K V).obj
+        ((forget₂ (FDRep (ZMod m) (Field.absoluteGaloisGroup K ⧸ V.toSubgroup))
+          (Rep (ZMod m) (Field.absoluteGaloisGroup K ⧸ V.toSubgroup))).obj A) :=
+  (rfl)
+
+/-- The inflation of `FDRep.of A.ρ` is `galRepOfQuotient` of `A`. -/
+theorem fdGalRepOfQuotient_obj_of (m : ℕ) (K : Type) [Field K]
+    (V : OpenNormalSubgroup (Field.absoluteGaloisGroup K))
+    (A : Rep (ZMod m) (Field.absoluteGaloisGroup K ⧸ V.toSubgroup))
+    [Module.Finite (ZMod m) A.V] :
+    (fdGalRepOfQuotient m K V).obj (FDRep.of A.ρ) = (galRepOfQuotient m K V).obj A :=
+  (rfl)
+
+/-- The inflated action is the quotient action evaluated on the class of the automorphism. -/
+@[simp]
+theorem fdGalRepOfQuotient_ρ_apply (m : ℕ) (K : Type) [Field K]
+    (V : OpenNormalSubgroup (Field.absoluteGaloisGroup K))
+    (A : FDRep (ZMod m) (Field.absoluteGaloisGroup K ⧸ V.toSubgroup))
+    (g : Field.absoluteGaloisGroup K) (a : (fdGalRepOfQuotient m K V).obj A) :
+    cast (congrArg (fun X : GalRep m K ↦ X.V) (fdGalRepOfQuotient_obj m K V A))
+        (((fdGalRepOfQuotient m K V).obj A).ρ g a) =
+      A.ρ (QuotientGroup.mk g)
+        (cast (congrArg (fun X : GalRep m K ↦ X.V) (fdGalRepOfQuotient_obj m K V A)) a) := by
+  unfold fdGalRepOfQuotient
+  rfl
+
+/-- The inflation leaves the underlying coefficient map unchanged. -/
+@[simp]
+theorem fdGalRepOfQuotient_map_apply (m : ℕ) (K : Type) [Field K]
+    (V : OpenNormalSubgroup (Field.absoluteGaloisGroup K))
+    {A B : FDRep (ZMod m) (Field.absoluteGaloisGroup K ⧸ V.toSubgroup)} (f : A ⟶ B)
+    (a : (fdGalRepOfQuotient m K V).obj A) :
+    cast (congrArg (fun X : GalRep m K ↦ X.V) (fdGalRepOfQuotient_obj m K V B))
+        (((fdGalRepOfQuotient m K V).map f).hom a) =
+      f.hom.hom
+        (cast (congrArg (fun X : GalRep m K ↦ X.V) (fdGalRepOfQuotient_obj m K V A)) a) := by
+  unfold fdGalRepOfQuotient
+  rfl
+
+/-- The inflated coefficient object carries the discrete topology. -/
+instance (m : ℕ) (K : Type) [Field K]
+    (V : OpenNormalSubgroup (Field.absoluteGaloisGroup K))
+    (A : FDRep (ZMod m) (Field.absoluteGaloisGroup K ⧸ V.toSubgroup)) :
+    DiscreteTopology ((fdGalRepOfQuotient m K V).obj A).V :=
+  inferInstanceAs (DiscreteTopology ((galRepOfQuotient m K V).obj _).V)
+
+/-- The inflation of a finite-dimensional representation is smooth. -/
+instance (m : ℕ) (K : Type) [Field K]
+    (V : OpenNormalSubgroup (Field.absoluteGaloisGroup K))
+    (A : FDRep (ZMod m) (Field.absoluteGaloisGroup K ⧸ V.toSubgroup)) :
+    Fact (IsSmoothDiscrete (ZMod m) ((fdGalRepOfQuotient m K V).obj A)) :=
+  inferInstanceAs (Fact (IsSmoothDiscrete (ZMod m) ((galRepOfQuotient m K V).obj _)))
+
+/-- For `n ≠ 0`, the inflation of a finite-dimensional representation has finite coefficients. -/
+instance (m : ℕ) [NeZero m] (K : Type) [Field K]
+    (V : OpenNormalSubgroup (Field.absoluteGaloisGroup K))
+    (A : FDRep (ZMod m) (Field.absoluteGaloisGroup K ⧸ V.toSubgroup)) :
+    Finite ((fdGalRepOfQuotient m K V).obj A).V :=
+  Module.finite_of_finite (ZMod m) (M := A)
+
+/-- The open normal subgroup acts trivially on an inflated finite-dimensional representation. -/
+theorem fdGalRepOfQuotient_ρ_eq_self (m : ℕ) (K : Type) [Field K]
+    (V : OpenNormalSubgroup (Field.absoluteGaloisGroup K))
+    (A : FDRep (ZMod m) (Field.absoluteGaloisGroup K ⧸ V.toSubgroup))
+    {g : Field.absoluteGaloisGroup K} (hg : g ∈ V)
+    (a : (fdGalRepOfQuotient m K V).obj A) :
+    ((fdGalRepOfQuotient m K V).obj A).ρ g a = a := by
+  unfold fdGalRepOfQuotient
+  exact galRepOfQuotient_ρ_eq_self m K V _ hg a
+
+/-- Inflation preserves and reflects injectivity, exactness and surjectivity of a composable pair
+of morphisms of finite-dimensional representations. -/
+theorem fdGalRepOfQuotient_injective_exact_surjective_iff (m : ℕ) (K : Type) [Field K]
+    (V : OpenNormalSubgroup (Field.absoluteGaloisGroup K))
+    {A B C : FDRep (ZMod m) (Field.absoluteGaloisGroup K ⧸ V.toSubgroup)}
+    (f : A ⟶ B) (g : B ⟶ C) :
+    (Function.Injective ((fdGalRepOfQuotient m K V).map f).hom ∧
+        Function.Exact ((fdGalRepOfQuotient m K V).map f).hom
+          ((fdGalRepOfQuotient m K V).map g).hom ∧
+        Function.Surjective ((fdGalRepOfQuotient m K V).map g).hom) ↔
+      Function.Injective f.hom.hom ∧ Function.Exact f.hom.hom g.hom.hom ∧
+        Function.Surjective g.hom.hom := by
+  unfold fdGalRepOfQuotient
+  rfl
 
 /-- A discrete Galois representation killed by `V` is isomorphic to an inflated representation
 of the quotient by that particular subgroup. -/
@@ -202,5 +329,21 @@ theorem exists_openNormalSubgroup_le_muNRep_ρ_eq_self_of_coprime [Fact n.Prime]
     Nat.Coprime.coprime_dvd_left hdvd (Nat.coprime_mul_iff_left.2 ⟨hV, ?_⟩), hcomm⟩
   rw [Nat.totient_prime Fact.out]
   exact (Nat.coprime_self_sub_left (Fact.out : n.Prime).one_le).2 (Nat.coprime_one_left n)
+
+/-- **`μₙ` is inflated from the quotient** by an open normal subgroup `V` acting trivially on it:
+some finite-dimensional representation of `G_F ⧸ V` inflates to `μₙ`
+(`exists_galRepOfQuotient_iso_of_trivial`). -/
+theorem exists_fdGalRepOfQuotient_iso_muNRep {n : ℕ} {F : Type} [Field F]
+    {V : OpenNormalSubgroup (Field.absoluteGaloisGroup F)} (hn : IsUnit (n : F))
+    (hV : ∀ g ∈ V, ∀ x : (muNRep n F).V, (muNRep n F).ρ g x = x) :
+    ∃ M : FDRep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup),
+      Nonempty ((fdGalRepOfQuotient n F V).obj M ≅ muNRep n F) := by
+  have : NeZero n := NeZero.of_neZero_natCast F (h := ⟨hn.ne_zero⟩)
+  obtain ⟨M, ⟨e⟩⟩ := exists_galRepOfQuotient_iso_of_trivial n F V (muNRep n F) hV
+  have : Finite (muNRep n F).V :=
+    Finite.of_equiv (KummerCoeff F n) (kummerCoeffEquivMuNRep n F).toEquiv
+  have : Finite M.V := Finite.of_equiv _ ((forget (GalRep n F)).mapIso e).toEquiv.symm
+  have : Module.Finite (ZMod n) M.V := Module.Finite.of_finite
+  exact ⟨FDRep.of M.ρ, ⟨eqToIso (fdGalRepOfQuotient_obj_of n F V M) ≪≫ e⟩⟩
 
 end TauCeti.ClassFieldTheory
