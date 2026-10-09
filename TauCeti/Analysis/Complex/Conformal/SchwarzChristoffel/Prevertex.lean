@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Converse
--- Non-public: the corner asymptotic, the corner power coordinate and its accompanying
--- conjugation-symmetric limit transfer, the branch facts for a power with a real base point,
--- and partial fractions are used only in proofs.
+-- Non-public: the corner and logarithm asymptotics, the corner power coordinate, Schwarz
+-- reflection and the accompanying conjugation-symmetric limit transfer, the branch facts for a
+-- power with a real base point, and partial fractions are used only in proofs.
 import TauCeti.Analysis.Complex.Conformal.PreSchwarzian
 import TauCeti.Analysis.Complex.Conformal.Reflection.Corner
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
@@ -29,17 +29,27 @@ upper half-plane, for a holomorphic `h` with a simple zero there, where `β` is 
 divided by `π`.  The pre-Schwarzian derivative of such an `f` has residue asymptotic
 `(z - x) * f''(z) / f'(z) → β - 1` from above, and conjugation symmetry propagates that
 asymptotic to the punctured neighbourhood, so `β - 1` is the residue of `φ` at the prevertex.
+A prevertex may instead be carried to a vertex at infinity.  If that vertex has opening `β * π`
+with `0 < β < 2`, then `f` is a negative power `h ^ (-β)` up to an affine map and the residue is
+`-β - 1`; if it lies between two parallel sides, then `f` is a logarithm of a holomorphic function
+with a simple zero, up to an affine map, and the residue is `-1`.
 Once each prevertex contributes its residue and `φ` decays at infinity, partial fractions identify
 `φ` with `∑ i, e i / (z - a i)` and the integration theorem identifies `f` itself with an affine
 image of the Schwarz--Christoffel primitive.
 
 ## Main results
 
+* `TauCeti.tendsto_sub_mul_nhdsNE_of_tendsto_nhdsWithin_im_pos` -- for a conjugation-symmetric
+  `φ`, a residue asymptotic from the upper half-plane holds on the punctured neighbourhood.
 * `TauCeti.tendsto_sub_mul_nhdsNE_of_eqOn_add_cpow` -- the continuation of the pre-Schwarzian
   derivative of a map with a corner power form has residue asymptotic `β - 1` at the
   corner.
 * `TauCeti.tendsto_sub_mul_nhdsNE_of_sector` -- the same residue, derived from the geometric
   sector and boundary-ray conditions at a polygonal corner.
+* `TauCeti.tendsto_sub_mul_nhdsNE_of_eqOn_div` -- the residue `-β - 1` at a prevertex carried to
+  a vertex at infinity of opening `β * π`.
+* `TauCeti.tendsto_sub_mul_nhdsNE_of_eqOn_exp` -- the residue `-1` at a prevertex carried to an
+  end between two parallel sides.
 * `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_tendsto` -- a map of the upper
   half-plane whose pre-Schwarzian derivative continues with at most simple poles of residues
   `e i` at the prevertices `a i` and decays at infinity is an affine image of the
@@ -57,7 +67,28 @@ open Bornology Complex Filter Set Topology UpperHalfPlane
 
 namespace TauCeti
 
-/-! ### The residue at a single corner -/
+/-! ### The residue at a single prevertex -/
+
+/-- **A residue asymptotic from above extends to a punctured disc.**  Let `φ` be holomorphic on a
+punctured disc about a real point `x` and symmetric under conjugation.  If `(z - x) * φ z` tends to
+`L` as `z` tends to `x` through the upper half-plane, then it tends to `L` from any direction. -/
+theorem tendsto_sub_mul_nhdsNE_of_tendsto_nhdsWithin_im_pos {φ : ℂ → ℂ} {x r : ℝ} {L : ℂ}
+    (hr : 0 < r) (hφ : DifferentiableOn ℂ φ (Metric.ball (x : ℂ) r \ {(x : ℂ)}))
+    (hφconj : ∀ z ∈ Metric.ball (x : ℂ) r \ {(x : ℂ)},
+      φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
+    (hlim : Tendsto (fun z => (z - (x : ℂ)) * φ z) (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 L)) :
+    Tendsto (fun z => (z - (x : ℂ)) * φ z) (𝓝[≠] (x : ℂ)) (𝓝 L) := by
+  have hmul : DifferentiableOn ℂ (fun z => (z - (x : ℂ)) * φ z)
+      (Metric.ball (x : ℂ) r \ {(x : ℂ)}) :=
+    (by fun_prop : Differentiable ℂ fun z : ℂ => z - (x : ℂ)).differentiableOn.mul hφ
+  have hconj : ∀ z ∈ Metric.ball (x : ℂ) r \ {(x : ℂ)},
+      ((starRingEnd ℂ) z - (x : ℂ)) * φ ((starRingEnd ℂ) z) =
+        (starRingEnd ℂ) ((z - (x : ℂ)) * φ z) := fun z hz =>
+    calc ((starRingEnd ℂ) z - (x : ℂ)) * φ ((starRingEnd ℂ) z)
+        = ((starRingEnd ℂ) z - (starRingEnd ℂ) ((x : ℝ) : ℂ)) * (starRingEnd ℂ) (φ z) := by
+          rw [Complex.conj_ofReal x, hφconj z hz]
+      _ = (starRingEnd ℂ) ((z - (x : ℂ)) * φ z) := by rw [← map_sub, ← map_mul]
+  exact tendsto_nhdsNE_of_tendsto_nhdsWithin_im_pos hr hmul hconj hlim
 
 /-- **The pre-Schwarzian derivative has residue asymptotic `β - 1` at a corner.**  Let `φ`
 be holomorphic on a punctured disc about a real point `x`, symmetric under conjugation, and agree
@@ -88,17 +119,7 @@ theorem tendsto_sub_mul_nhdsNE_of_eqOn_add_cpow {φ f h : ℂ → ℂ} {x r : �
     filter_upwards [self_mem_nhdsWithin] with z hz
     rw [hφf hz])
   rw [hfilter] at hcornerφ
-  have hmul : DifferentiableOn ℂ (fun z => (z - (x : ℂ)) * φ z)
-      (Metric.ball (x : ℂ) r \ {(x : ℂ)}) :=
-    (by fun_prop : Differentiable ℂ fun z : ℂ => z - (x : ℂ)).differentiableOn.mul hφ
-  have hconj : ∀ z ∈ Metric.ball (x : ℂ) r \ {(x : ℂ)},
-      ((starRingEnd ℂ) z - (x : ℂ)) * φ ((starRingEnd ℂ) z) =
-        (starRingEnd ℂ) ((z - (x : ℂ)) * φ z) := fun z hz =>
-    calc ((starRingEnd ℂ) z - (x : ℂ)) * φ ((starRingEnd ℂ) z)
-        = ((starRingEnd ℂ) z - (starRingEnd ℂ) ((x : ℝ) : ℂ)) * (starRingEnd ℂ) (φ z) := by
-          rw [Complex.conj_ofReal x, hφconj z hz]
-      _ = (starRingEnd ℂ) ((z - (x : ℂ)) * φ z) := by rw [← map_sub, ← map_mul]
-  exact tendsto_nhdsNE_of_tendsto_nhdsWithin_im_pos hr hmul hconj hcornerφ
+  exact tendsto_sub_mul_nhdsNE_of_tendsto_nhdsWithin_im_pos hr hφ hφconj hcornerφ
 
 /-- **The pre-Schwarzian residue at a polygonal corner is its normalized angle minus one.**
 After translating the vertex `f x` and rotating and scaling by `b`, suppose a holomorphic
@@ -146,6 +167,121 @@ theorem tendsto_sub_mul_nhdsNE_of_sector {φ f : ℂ → ℂ} {x r β : ℝ} {Ω
   · intro z hz
     have hz0 : 0 < z.im := hz.1
     simpa only [zero_add] using (hpow ⟨hz.2, hz0.le⟩).symm
+
+/-- **The pre-Schwarzian residue at a sector end at infinity is `-β - 1`.**  Let `φ` be
+holomorphic on a punctured disc about a real point `x`, symmetric under conjugation, and agree with
+the pre-Schwarzian derivative of `f` above the axis near `x`.  Invert the target about `c` and
+rotate and scale it, by `w ↦ b / (w - c)`.  Suppose the result extends to a function `g` with
+`g x = 0` which is continuous and injective on the closed upper part of a conjugation-symmetric
+open neighbourhood `Ω` of `x`, takes the open upper part into the sector `|arg w| < β * π / 2`,
+where `0 < β < 2`, and has its other boundary values on the two bounding rays.  Then
+`(z - x) * φ z → -β - 1` as `z` tends to `x` from any direction.
+
+In terms of `f`, the hypotheses say that `f` tends to infinity at `x` and near `x` fills a sector
+of opening `β * π` at infinity, between two unbounded sides on lines through `c`, with the real
+points on either side of `x` carried to those sides.  So the prevertex `x` represents a vertex at
+infinity of opening `β * π`, and its turning exponent is `-β - 1`.  This is the finite-prevertex
+counterpart of `TauCeti.tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_div_neg_inv`. -/
+theorem tendsto_sub_mul_nhdsNE_of_eqOn_div {φ f g : ℂ → ℂ} {x r β : ℝ} {Ω : Set ℂ} {c b : ℂ}
+    (hr : 0 < r) (hφ : DifferentiableOn ℂ φ (Metric.ball (x : ℂ) r \ {(x : ℂ)}))
+    (hφconj : ∀ z ∈ Metric.ball (x : ℂ) r \ {(x : ℂ)},
+      φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
+    (hφf : EqOn φ (logDeriv (deriv f)) (upperHalfPlaneSet ∩ Ω))
+    (hβ : β ∈ Ioo (0 : ℝ) 2) (hb : b ≠ 0) (hΩopen : IsOpen Ω)
+    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hx : (x : ℂ) ∈ Ω)
+    (hholo : DifferentiableOn ℂ f (Ω ∩ {z : ℂ | 0 < z.im}))
+    (hgf : EqOn g (fun z => b / (f z - c)) (Ω ∩ {z : ℂ | 0 < z.im}))
+    (hgx : g x = 0) (hcont : ContinuousOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}))
+    (hinj : InjOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}))
+    (hsector : ∀ z ∈ Ω, 0 < z.im → |(g z).arg| < β * Real.pi / 2)
+    (hrays : ∀ z ∈ Ω, z.im = 0 → g z ≠ 0 → |(g z).arg| = β * Real.pi / 2) :
+    Tendsto (fun z => (z - (x : ℂ)) * φ z) (𝓝[≠] (x : ℂ)) (𝓝 (-(β : ℂ) - 1)) := by
+  -- Above the axis `g` omits its value `0` at `x`, so `f` omits `c` there.
+  have hden : ∀ z ∈ Ω ∩ {z : ℂ | 0 < z.im}, f z - c ≠ 0 := fun z hz h0 => by
+    have him : 0 < z.im := hz.2
+    have hzx := hinj ⟨hz.1, him.le⟩ ⟨hx, by simp⟩ ((hgf hz).trans (by simp [h0, hgx]))
+    simp [hzx] at him
+  have hgd : DifferentiableOn ℂ g (Ω ∩ {z : ℂ | 0 < z.im}) :=
+    ((differentiableOn_const b).div (hholo.sub_const c) hden).congr fun z hz => hgf hz
+  -- The power coordinate at the corner `x` of `g`: `g = h ^ β` with `h` having a simple zero.
+  obtain ⟨h, hh, -, hhx, hdh, hpow, hright, -, -⟩ :=
+    exists_differentiableOn_injOn_cpow_eq_of_sector hβ hΩopen hΩ hx hgx hcont hgd hinj hsector
+      hrays
+  -- So the normalized map `(f - c) / b = g⁻¹` is the corner power `h ^ (-β)`, ...
+  have hpowF : EqOn (fun z => (f z - c) / b) (fun z => 0 + h z ^ (-(β : ℂ)))
+      (upperHalfPlaneSet ∩ Ω) := fun z hz => by
+    have him : 0 < z.im := hz.1
+    have hgz : h z ^ (β : ℂ) = g z := hpow ⟨hz.2, him.le⟩
+    simp only [zero_add, cpow_neg]
+    rw [hgz, hgf ⟨hz.2, hz.1⟩, inv_div]
+  -- ... and its pre-Schwarzian derivative is that of `f`.
+  have hderiv : deriv (fun z => (f z - c) / b) = fun z => deriv f z / b := by
+    ext z
+    simp only [deriv_div_const, deriv_sub_const]
+  have hφF : EqOn φ (logDeriv (deriv fun z => (f z - c) / b)) (upperHalfPlaneSet ∩ Ω) := by
+    intro z hz
+    rw [hderiv, hφf hz]
+    simp only [div_eq_mul_inv, logDeriv_mul_const z b⁻¹ (inv_ne_zero hb)]
+  exact tendsto_sub_mul_nhdsNE_of_eqOn_add_cpow hr hφ hφconj hφF hΩopen hx hh hhx hdh
+    (fun z hz => mem_slitPlane_iff.mpr (Or.inl (hright z hz.2 hz.1)))
+    (neg_ne_zero.mpr (ofReal_ne_zero.mpr hβ.1.ne')) hpowF
+
+/-- **The pre-Schwarzian residue at a parallel-sided end is `-1`.**  Let `φ` be holomorphic on a
+punctured disc about a real point `x`, symmetric under conjugation, and agree with the
+pre-Schwarzian derivative of `f` above the axis near `x`.  Normalize the target by
+`w ↦ (w - c) / b` and exponentiate.  Suppose the result extends to a function `g` with `g x = 0`
+which is continuous and injective on the closed upper part of a conjugation-symmetric open
+neighbourhood `Ω` of `x`, upper half-plane valued above the axis and real on it.  Then
+`(z - x) * φ z → -1` as `z` tends to `x` from any direction.
+
+The typical source of such a `g` is a map `f` which tends to infinity at `x` and near `x` fills a
+half-strip between two parallel rays, with the real points on either side of `x` carried to those
+rays.  Then `c` and `b` are chosen so that `w ↦ (w - c) / b` carries the half-strip to
+`{w | w.re < 0 ∧ 0 < w.im ∧ w.im < π}`, which the exponential maps onto the upper half of the unit
+disc.  So the prevertex `x` represents a vertex at infinity of opening `0`, and its turning
+exponent is `-1`.  This is the opening-`0` counterpart of
+`TauCeti.tendsto_sub_mul_nhdsNE_of_sector`, and the finite-prevertex counterpart of
+`TauCeti.tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_exp_neg_inv`. -/
+theorem tendsto_sub_mul_nhdsNE_of_eqOn_exp {φ f g : ℂ → ℂ} {x r : ℝ} {Ω : Set ℂ} {c b : ℂ}
+    (hr : 0 < r) (hφ : DifferentiableOn ℂ φ (Metric.ball (x : ℂ) r \ {(x : ℂ)}))
+    (hφconj : ∀ z ∈ Metric.ball (x : ℂ) r \ {(x : ℂ)},
+      φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
+    (hφf : EqOn φ (logDeriv (deriv f)) (upperHalfPlaneSet ∩ Ω))
+    (hb : b ≠ 0) (hΩopen : IsOpen Ω) (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hx : (x : ℂ) ∈ Ω)
+    (hholo : DifferentiableOn ℂ f (Ω ∩ {z : ℂ | 0 < z.im}))
+    (hgf : EqOn g (fun z => exp ((f z - c) / b)) (Ω ∩ {z : ℂ | 0 < z.im}))
+    (hgx : g x = 0) (hcont : ContinuousOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}))
+    (hreal : ∀ z ∈ Ω, z.im = 0 → (g z).im = 0)
+    (hupper : MapsTo g (Ω ∩ {z : ℂ | 0 < z.im}) {z : ℂ | 0 < z.im})
+    (hinj : InjOn g (Ω ∩ {z : ℂ | 0 ≤ z.im})) :
+    Tendsto (fun z => (z - (x : ℂ)) * φ z) (𝓝[≠] (x : ℂ)) (𝓝 (-1)) := by
+  have hF : DifferentiableOn ℂ (fun z => (f z - c) / b) (Ω ∩ {z : ℂ | 0 < z.im}) :=
+    (hholo.sub_const c).div_const b
+  have hgd : DifferentiableOn ℂ g (Ω ∩ {z : ℂ | 0 < z.im}) := hF.cexp.congr fun z hz => hgf hz
+  -- Schwarz reflection continues `g` across the axis with a simple zero at `x`.
+  have hG := differentiableOn_schwarzReflection_of_symmetric hΩopen hΩ hcont hgd hreal
+  have hGx : schwarzReflection g x = 0 := by
+    rw [schwarzReflection_of_im_nonneg (by simp), hgx]
+  have hdG := deriv_schwarzReflection_ne_zero hΩopen hΩ hcont hgd hreal hupper hinj hx
+  -- So `(f - c) / b` is a logarithm of a function with a simple zero at `x`, ...
+  have hs : IsOpen (upperHalfPlaneSet ∩ Ω) := isOpen_upperHalfPlaneSet.inter hΩopen
+  have hexp : EqOn (fun z => exp ((f z - c) / b)) (schwarzReflection g)
+      (upperHalfPlaneSet ∩ Ω) := fun z hz => by
+    rw [schwarzReflection_of_im_nonneg (le_of_lt hz.1), hgf ⟨hz.2, hz.1⟩]
+  have hlog := tendsto_sub_mul_logDeriv_deriv_of_eqOn_exp (hG.analyticAt (hΩopen.mem_nhds hx))
+    hGx hdG hs (hF.mono fun z hz => ⟨hz.2, hz.1⟩) hexp
+  -- ... and its pre-Schwarzian derivative is that of `f`.
+  have hderiv : deriv (fun z => (f z - c) / b) = fun z => deriv f z / b := by
+    ext z
+    simp only [deriv_div_const, deriv_sub_const]
+  have hlim : Tendsto (fun z => (z - (x : ℂ)) * φ z) (𝓝[upperHalfPlaneSet ∩ Ω] (x : ℂ))
+      (𝓝 (-1)) := hlog.congr' (by
+    filter_upwards [self_mem_nhdsWithin] with z hz
+    rw [hderiv, hφf hz]
+    simp only [div_eq_mul_inv, logDeriv_mul_const z b⁻¹ (inv_ne_zero hb)])
+  rw [inter_comm, nhdsWithin_inter_of_mem (mem_nhdsWithin_of_mem_nhds (hΩopen.mem_nhds hx))]
+    at hlim
+  exact tendsto_sub_mul_nhdsNE_of_tendsto_nhdsWithin_im_pos hr hφ hφconj hlim
 
 /-! ### Assembling the Schwarz--Christoffel formula -/
 

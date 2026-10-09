@@ -15,6 +15,9 @@ For a finite extension of function fields, the functions in `L(D)` are exactly t
 functions from the smaller field whose images belong to `L(Con D)`. This gives the
 intersection of `L(Con D)` with the smaller field as a submodule equality.
 
+Multiplying a basis of `L(A)` by an `F`-linearly independent family of `r` functions in `L(C)`
+gives `r ℓ(A) ≤ ℓ(Con A + C)` (`TauCeti.Divisor.card_mul_dim_le_dim_conorm_add`).
+
 ## Reference
 
 H. Stichtenoth, *Algebraic Function Fields and Codes*, second edition, Section III.6,
@@ -74,5 +77,33 @@ theorem riemannRochSpace_conorm_comap (hF' : IsFunctionField k' F')
         riemannRochSpace D := by
   ext f
   exact mem_riemannRochSpace_conorm_iff hF' D f
+
+/-- An `F`-linearly independent family of `r` functions in `L(C)` multiplies the dimension of
+the Riemann–Roch space of any divisor `A` of `F`: `r ℓ(A) ≤ ℓ(Con A + C)`.  The products of a
+`k`-basis of `L(A)` with the family are `k`-linearly independent and lie in `L(Con A + C)`. -/
+theorem Divisor.card_mul_dim_le_dim_conorm_add (hF' : IsFunctionField k F') {ι : Type*}
+    [Fintype ι] {z : ι → F'} (hz : LinearIndependent F z) {C : Divisor k F'}
+    (hzC : ∀ i, z i ∈ riemannRochSpace C) (A : Divisor k F) :
+    Fintype.card ι * Divisor.dim A ≤ Divisor.dim (Divisor.conorm k F' A + C) := by
+  have : Algebra.IsAlgebraic F F' := Algebra.IsAlgebraic.of_finite F F'
+  have hF : IsFunctionField k F := hF'.of_isAlgebraic_top
+  have := finiteDimensional_riemannRochSpace hF A
+  have := finiteDimensional_riemannRochSpace hF' (Divisor.conorm k F' A + C)
+  let u := Module.finBasis k (riemannRochSpace A)
+  have hu : LinearIndependent k fun j ↦ (u j : F) :=
+    u.linearIndependent.map' _ (Submodule.ker_subtype _)
+  have hmem : ∀ p : Fin (Module.finrank k (riemannRochSpace A)) × ι,
+      (u p.1 : F) • z p.2 ∈ riemannRochSpace (Divisor.conorm k F' A + C) := fun p ↦ by
+    rw [Algebra.smul_def]
+    exact mul_mem_riemannRochSpace_add
+      ((mem_riemannRochSpace_conorm_iff hF' A _).mpr (u p.1).2) (hzC p.2)
+  have hv : LinearIndependent k fun p : Fin (Module.finrank k (riemannRochSpace A)) × ι ↦
+      (⟨(u p.1 : F) • z p.2, hmem p⟩ : riemannRochSpace (Divisor.conorm k F' A + C)) := by
+    refine LinearIndependent.of_comp (riemannRochSpace (Divisor.conorm k F' A + C)).subtype ?_
+    simpa [Function.comp_def] using linearIndependent_smul hu hz
+  have hcard := hv.fintype_card_le_finrank
+  rw [Fintype.card_prod, Fintype.card_fin] at hcard
+  rw [Divisor.dim_def, Divisor.dim_def, mul_comm]
+  exact hcard
 
 end TauCeti

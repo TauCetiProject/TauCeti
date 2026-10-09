@@ -73,9 +73,10 @@ depressed specialization of that formula is used to compare a quartic with its c
 * `Polynomial.discr_ne_zero_iff`: over a field, a nonzero polynomial that need not be monic is
   separable exactly when its discriminant is nonzero.
 * `Polynomial.separable_map_iff_map_discr_ne_zero`,
+  `Polynomial.separable_map_zmod_iff_not_dvd_discr`,
   `Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr`: the same criterion read along a ring
   homomorphism into a field, and its specialization to reduction of an integral polynomial modulo
-  a prime.
+  a prime not dividing the leading coefficient, in particular of a monic one.
 * `Cubic.toPoly_discr`: the two discriminants of a cubic with nonzero leading coefficient agree,
   so that `Cubic.discr` and `Polynomial.discr` may be used interchangeably in degree three.
 * `Polynomial.Monic.discr_of_natDegree_eq_four`, `TauCeti.discr_depressedQuartic`: the
@@ -737,6 +738,14 @@ theorem separable_map_iff_map_discr_ne_zero {K : Type*} [Field K]
   rw [← discr_ne_zero_iff hn,
     discr_map_of_natDegree_eq φ (natDegree_map_of_leadingCoeff_ne_zero φ hlc)]
 
+/-- An integral polynomial whose leading coefficient is not divisible by a prime `p` has separable
+reduction modulo `p` exactly when `p` does not divide its discriminant. -/
+theorem separable_map_zmod_iff_not_dvd_discr (f : ℤ[X]) (p : ℕ) [Fact p.Prime]
+    (hlc : ¬ (p : ℤ) ∣ f.leadingCoeff) :
+    (f.map (Int.castRingHom (ZMod p))).Separable ↔ ¬ (p : ℤ) ∣ f.discr := by
+  rw [f.separable_map_iff_map_discr_ne_zero _ (by simpa [ZMod.intCast_zmod_eq_zero_iff_dvd]),
+    Int.coe_castRingHom, ne_eq, ZMod.intCast_zmod_eq_zero_iff_dvd]
+
 namespace Monic
 
 /-- Over a domain, the discriminant of a monic polynomial is nonzero exactly when the polynomial
@@ -777,10 +786,9 @@ does not divide its discriminant. -/
 @[simp high]
 theorem separable_map_zmod_iff_not_dvd_discr {f : ℤ[X]} (hf : f.Monic)
     (p : ℕ) [Fact p.Prime] :
-    (f.map (Int.castRingHom (ZMod p))).Separable ↔ ¬ (p : ℤ) ∣ f.discr := by
-  rw [f.separable_map_iff_map_discr_ne_zero _ (by simp [hf.leadingCoeff]),
-    Int.coe_castRingHom, ne_eq,
-    ZMod.intCast_zmod_eq_zero_iff_dvd]
+    (f.map (Int.castRingHom (ZMod p))).Separable ↔ ¬ (p : ℤ) ∣ f.discr :=
+  f.separable_map_zmod_iff_not_dvd_discr p <| by
+    rw [hf.leadingCoeff]; exact_mod_cast (Fact.out : p.Prime).not_dvd_one
 
 /-- The discriminant of a monic integral polynomial is a square in `ℚ` exactly when it is a square
 in `ℤ`. -/

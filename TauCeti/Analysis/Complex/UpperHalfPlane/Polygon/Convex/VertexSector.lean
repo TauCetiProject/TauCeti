@@ -29,8 +29,9 @@ same local description to be used for translated polygon tiles.
 At a finite vertex `z` the sector is an angular sector: measuring oriented angles at `z` from the
 ray towards the next vertex, the ray towards the previous vertex sits at the interior angle, and a
 point `w ≠ z` lies in the sector exactly when its oriented angle lies between `0` and the interior
-angle. The interior angle at a finite vertex is therefore strictly between `0` and `π`. This
-angular description is what lets sectors around a vertex be added up in Poincaré's polygon
+angle, and in its interior exactly when the oriented angle lies strictly between them. The
+interior angle at a finite vertex is therefore strictly between `0` and `π`. This angular
+description is what lets sectors around a vertex be added up in Poincaré's polygon
 theorem.
 
 ## Main results
@@ -39,8 +40,9 @@ theorem.
   with its vertex sector.
 * `ConvexPolygon.orientedAngle_rayToward_vertex_eq_interiorAngle`: the oriented angle at a finite
   vertex from the outgoing to the incoming ray is the interior angle.
-* `ConvexPolygon.mem_vertexSector_iff_toReal_orientedAngle_mem_Icc`: the sector at a finite
-  vertex in angular coordinates.
+* `ConvexPolygon.mem_vertexSector_iff_toReal_orientedAngle_mem_Icc`,
+  `ConvexPolygon.mem_interior_vertexSector_iff_toReal_orientedAngle_mem_Ioo`: the sector at a
+  finite vertex and its interior in angular coordinates.
 * `ConvexPolygon.mem_vertexSector_iff_of_vertex_eq_inr_infty`: the sector at a vertex at `∞` is
   a vertical strip.
 * `ConvexPolygon.eventuallyEq_carrier_vertexSector_atImInfty`: near a vertex at `∞`, the polygon
@@ -233,6 +235,23 @@ private theorem mem_vertexSector_iff_sign_orientedAngle {j : Fin n} {z w : ℍ}
   rw [mem_vertexSector_iff, leftHalfPlane_sideGeodesic_sub_one_eq_rayToward hz,
     leftHalfPlane_sideGeodesic_eq_rayToward hz, hright, hleft]
 
+/-- At a finite vertex `z`, a point `w ≠ z` lies in the interior of the sector exactly when it is
+strictly counterclockwise of the ray towards the next vertex and strictly clockwise of the ray
+towards the previous vertex. -/
+private theorem mem_interior_vertexSector_iff_sign_orientedAngle {j : Fin n} {z w : ℍ}
+    (hz : P.vertex j = .inl z) (hw : z ≠ w) :
+    w ∈ interior (P.vertexSector j) ↔
+      (orientedAngle z (geodesicLine (rayToward z (P.vertex (j - 1))) 1) w).sign = -1 ∧
+        (orientedAngle z (geodesicLine (rayToward z (P.vertex (j + 1))) 1) w).sign = 1 := by
+  have hright := orientedAngle_sign_eq_neg_one_iff
+    (B := geodesicLine (rayToward z (P.vertex (j - 1))) 1) hw
+  have hleft := orientedAngle_sign_eq_one_iff
+    (B := geodesicLine (rayToward z (P.vertex (j + 1))) 1) hw
+  rw [← rayToward_eq_geodesicBetween z (P.vertex (j - 1))] at hright
+  rw [← rayToward_eq_geodesicBetween z (P.vertex (j + 1))] at hleft
+  rw [mem_interior_vertexSector_iff, leftHalfPlane_sideGeodesic_sub_one_eq_rayToward hz,
+    leftHalfPlane_sideGeodesic_eq_rayToward hz, hright, hleft]
+
 /-- At a finite vertex, the ray towards the previous vertex contains a point strictly to the left
 of the outgoing side. -/
 private theorem exists_geodesicBetween_eq_rayToward_vertex_sub_one {j : Fin n} {z : ℍ}
@@ -311,5 +330,35 @@ theorem mem_vertexSector_iff_toReal_orientedAngle_mem_Icc {j : Fin n} {z w : ℍ
     exact h₁ ⟨by linarith, by linarith⟩
   · rw [Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith, by linarith⟩]
     exact fun h ↦ h.1.not_ge (by linarith)
+
+/-- **The interior of the vertex sector in angular coordinates.** At a finite vertex `z`, a point
+`w ≠ z` lies in the interior of the sector exactly when the oriented angle at `z` from the ray
+towards the next vertex to `w` lies strictly between `0` and the interior angle. The ray is
+represented by its point at parameter `1`. -/
+theorem mem_interior_vertexSector_iff_toReal_orientedAngle_mem_Ioo {j : Fin n} {z w : ℍ}
+    (hz : P.vertex j = .inl z) (hw : z ≠ w) :
+    w ∈ interior (P.vertexSector j) ↔
+      (orientedAngle z (geodesicLine (rayToward z (P.vertex (j + 1))) 1) w).toReal ∈
+        Set.Ioo 0 (P.interiorAngle j) := by
+  have hα := P.interiorAngle_lt_pi j
+  have hα₀ := P.interiorAngle_nonneg j
+  -- as for the closed sector, the oriented angle from the incoming ray `E` is `φ - α`
+  obtain ⟨D, hD⟩ : ∃ D, D = geodesicLine (rayToward z (P.vertex (j + 1))) 1 := ⟨_, rfl⟩
+  obtain ⟨E, hE⟩ : ∃ E, E = geodesicLine (rayToward z (P.vertex (j - 1))) 1 := ⟨_, rfl⟩
+  have hφ := Real.Angle.neg_pi_lt_toReal (orientedAngle z D w)
+  have hφ' := Real.Angle.toReal_le_pi (orientedAngle z D w)
+  have hEw : orientedAngle z E w =
+      (((orientedAngle z D w).toReal - P.interiorAngle j : ℝ) : Real.Angle) := by
+    rw [← orientedAngle_add z E D w, orientedAngle_rev, hD, hE,
+      P.orientedAngle_rayToward_vertex_eq_interiorAngle hz, Real.Angle.coe_sub,
+      Real.Angle.coe_toReal, neg_add_eq_sub]
+  rw [mem_interior_vertexSector_iff_sign_orientedAngle hz hw, ← hD, ← hE, hEw,
+    ← Real.Angle.toReal_neg_iff_sign_neg, ← Real.Angle.toReal_mem_Ioo_iff_sign_pos, Set.mem_Ioo,
+    Set.mem_Ioo]
+  refine ⟨fun ⟨h₁, h₀, _⟩ ↦ ⟨h₀, ?_⟩, fun ⟨h₀, h₁⟩ ↦ ⟨?_, h₀, by linarith⟩⟩
+  · rw [Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith, by linarith⟩] at h₁
+    linarith
+  · rw [Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith, by linarith⟩]
+    linarith
 
 end TauCeti.UpperHalfPlane.ConvexPolygon
