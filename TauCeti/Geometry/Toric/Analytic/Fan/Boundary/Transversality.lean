@@ -72,7 +72,7 @@ theorem exists_contMDiffOn_analyticBoundaryComponent_eq_zero_mvfderiv_surjective
   refine ⟨e.source, L ∘ e, e.open_source, hx,
     L.contMDiff.comp_contMDiffOn e.contMDiffOn, ?_, ?_⟩
   · intro y hy
-    exact mvfderiv_comp_surjective_of_isLocalDiffeomorphAt
+    exact mvfderiv_comp_surjective_of_isLocalDiffeomorphAt y
       (_root_.PartialDiffeomorph.isLocalDiffeomorphAt _ _ ∞ e hy) (by simp) L hL
   · intro y hy ρ
     rw [he y hy ρ]
