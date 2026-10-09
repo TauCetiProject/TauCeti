@@ -6,15 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Separability
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.PointMap
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Commute
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PointHom.Kernel
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Degree
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Separability
--- Proof-only: base change preserves the degree and separability of an isogeny, and `[n]`.
+-- Proof-only: base change preserves the degree of an isogeny, and `[n]`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Separability
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.BaseChange
 -- Proof-only: Galois descent of isogenies from a separable closure, and faithful base change.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.BaseChange
@@ -89,8 +89,7 @@ variable {F : Type*} [Field F] {W₁ W₂ : WeierstrassCurve.Affine F}
   (φ : Isogeny W₁ W₂) [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField]
 
 /-- **`[deg φ]` factors uniquely through a separable isogeny `φ`**, over any field
-(Silverman III.6.1). Over a separably closed field this is the kernel count; in general the factor
-over a separable closure is Galois-fixed and descends. -/
+(Silverman III.6.1). -/
 theorem existsUnique_comp_eq_mulByIntIsogenyOfNeZero_degree_of_isSeparable :
     ∃! χ : Isogeny W₂ W₁,
       χ.comp φ = mulByIntIsogenyOfNeZero W₁ (n := φ.degree) (mod_cast φ.degree_ne_zero) := by
@@ -227,12 +226,14 @@ theorem dual_mulByIntIsogeny {n : ℤ} (hn : psiFunctionField W n ≠ 0)
 
 variable {K : Type*} [Field K]
 
+-- `(φ.map f).dual` needs the base change to be separable; it follows from separability of `φ` by
+-- `isSeparable_map`, which is activated locally for the statement below.
+attribute [local instance] isSeparable_map
+
 /-- **The dual commutes with base change**: along any homomorphism of fields `f`, the base change
 of `φ̂` is the dual of the base change of `φ`. -/
 @[simp]
-theorem dual_map (f : F →+* K)
-    [Algebra.IsSeparable (φ.map f).fieldPullback.fieldRange (W₁.map f).FunctionField] :
-    φ.dual.map f = (φ.map f).dual :=
+theorem dual_map (f : F →+* K) : φ.dual.map f = (φ.map f).dual :=
   (eq_dual_iff_comp_eq _).mpr <| by
     rw [← comp_map, dual_comp, mulByIntIsogeny_map, mulByIntIsogeny_inj, degree_map]
 
