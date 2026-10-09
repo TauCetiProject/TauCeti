@@ -51,37 +51,22 @@ theorem map_baseChangeHopfIdeal_definingHopfIdeal :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (definingHopfIdeal R m)).map
         (Symplectic.coordinateHopfAlgebraBaseChangeIso R K m).hom.hom =
       definingHopfIdeal K m := by
-  have hcoord (x : GeneralLinear.coordinateHopfAlgebra R (m + m)) :
-      (Symplectic.coordinateHopfAlgebraBaseChangeIso R K m).hom.hom
-          (1 ⊗ₜ[R] (Symplectic.coordinateMap R m).hom x) =
-        (Symplectic.coordinateMap K m).hom
-          ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K (m + m)).hom.hom
-            (1 ⊗ₜ[R] x)) := by
-    have h := congrArg (fun f ↦ f.hom (1 ⊗ₜ[R] x))
-      (Symplectic.baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom
-        R K m)
-    rwa [_root_.CommHopfAlgCat.comp_apply, _root_.CommHopfAlgCat.comp_apply,
-      CommHopfAlgCat.baseChangeMap_apply_tmul] at h
-  have hentry (i j : Fin (m + m)) :
-      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K (m + m)).hom.hom
-          (1 ⊗ₜ[R] GeneralLinear.coordinateHopfAlgebraAlgEquiv R (m + m)
-            (GeneralLinear.coordinateRingMap R (m + m) (MvPolynomial.X (i, j)))) =
-        GeneralLinear.coordinateHopfAlgebraAlgEquiv K (m + m)
-          (GeneralLinear.coordinateRingMap K (m + m) (MvPolynomial.X (i, j))) := by
-    simpa using GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_apply.{u, v}
-      R K (m + m) 1 (MvPolynomial.X (i, j))
   refine CommHopfAlgCat.map_baseChangeHopfIdeal_of_toIdeal_eq_span
     (definingHopfIdeal R m) (definingHopfIdeal K m)
     (Symplectic.coordinateHopfAlgebraBaseChangeIso R K m)
     (definingHopfIdeal_toIdeal R m) (definingHopfIdeal_toIdeal K m) ?_
   rw [Set.image_image]
   ext x
-  simp only [Set.mem_image, hcoord, GeneralLinear.mem_weightParabolicRelationSet_iff]
+  simp only [Set.mem_image,
+    Symplectic.coordinateHopfAlgebraBaseChangeIso_hom_tmul_coordinateMap R K m,
+    GeneralLinear.mem_weightParabolicRelationSet_iff]
   constructor
   · rintro ⟨y, ⟨i, j, hij, rfl⟩, rfl⟩
-    exact ⟨_, ⟨i, j, hij, rfl⟩, by rw [hentry]⟩
+    exact ⟨_, ⟨i, j, hij, rfl⟩,
+      by rw [GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_one_tmul_X]⟩
   · rintro ⟨y, ⟨i, j, hij, rfl⟩, rfl⟩
-    exact ⟨_, ⟨i, j, hij, rfl⟩, by rw [hentry]⟩
+    exact ⟨_, ⟨i, j, hij, rfl⟩,
+      by rw [GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_one_tmul_X]⟩
 
 /-- Scalar extension of the flag subgroup's coordinate Hopf algebra is the flag coordinate
 Hopf algebra over the new base. No flatness, field, or characteristic hypothesis is needed. -/
@@ -141,30 +126,9 @@ theorem pointsMulEquiv_baseChangeIsoPointsMulEquiv
   simp only [AlgHom.comp_apply, BialgHom.coe_toAlgHom]
   rw [CommHopfAlgCat.baseChangeIsoPointsMulEquiv_apply_apply]
   simp only [Iso.symm_inv]
-  have hcomp :
-      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K (m + m)).inv ≫
-          CommHopfAlgCat.baseChangeMap (Symplectic.coordinateMap R m ≫ coordinateMap R m) ≫
-          (coordinateHopfAlgebraBaseChangeIso R K m).hom =
-        Symplectic.coordinateMap K m ≫ coordinateMap K m := by
-    have hmap := (CommHopfAlgCat.baseChangeFunctor (K := K)).map_comp
-      (Symplectic.coordinateMap R m) (coordinateMap R m)
-    rw [CommHopfAlgCat.baseChangeFunctor_map, CommHopfAlgCat.baseChangeFunctor_map,
-      CommHopfAlgCat.baseChangeFunctor_map] at hmap
-    rw [hmap, Category.assoc,
-      baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom,
-      ← Category.assoc (CommHopfAlgCat.baseChangeMap (K := K) (Symplectic.coordinateMap R m))
-        (Symplectic.coordinateHopfAlgebraBaseChangeIso R K m).hom (coordinateMap K m),
-      Symplectic.baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom,
-      Category.assoc (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K (m + m)).hom
-        (Symplectic.coordinateMap K m) (coordinateMap K m),
-      Iso.inv_hom_id_assoc]
-  have hentry := GeneralLinear.coordinateHopfAlgebraBaseChangeMap_X R K (m + m)
-    (coordinateHopfAlgebra R m) (coordinateHopfAlgebra K m)
-    (Symplectic.coordinateMap R m ≫ coordinateMap R m)
-    (coordinateHopfAlgebraBaseChangeIso R K m) i j
-  rw [hcomp] at hentry
-  simpa only [_root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply, coordinateMap,
-    Symplectic.coordinateMap_def] using
-    congrArg q.ofConv hentry.symm
+  rw [← Symplectic.coordinateMap_def R m, ← Symplectic.coordinateMap_def K m,
+    coordinateHopfAlgebraBaseChangeIso_hom_tmul_coordinateMap,
+    Symplectic.coordinateHopfAlgebraBaseChangeIso_hom_tmul_coordinateMap,
+    GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_one_tmul_X]
 
 end TauCeti.Symplectic.IsotropicFlag
