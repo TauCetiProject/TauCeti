@@ -5,28 +5,46 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.PointMap
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Commute
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PointHom.Kernel
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Degree
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Separability
+-- Proof-only: base change preserves the degree and separability of an isogeny, and `[n]`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Separability
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.BaseChange
+-- Proof-only: Galois descent of isogenies from a separable closure, and faithful base change.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.BaseChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Descent
 
 /-!
-# The dual of a separable isogeny over a separably closed field
+# The dual of a separable isogeny
 
-Over a separably closed field the kernel of a separable isogeny `φ : W₁ → W₂` has exactly `deg φ`
-points (`TauCeti.Isogeny.card_ker_eq_degree`). So `[deg φ]` factors through `φ` by a unique
-isogeny (`TauCeti.Isogeny.existsUnique_comp_eq_mulByIntIsogenyOfNeZero_degree`). This factor is
-the **dual isogeny** `φ̂ : W₂ → W₁` (Silverman III.6.1), and this file names it and proves its
-basic properties (Silverman III.6.2(a), (c), (d), (e), (f)):
+Let `φ : W₁ → W₂` be a separable isogeny of elliptic curves over a field `F`. Then `[deg φ]`
+factors through `φ` by a unique isogeny. This factor is the **dual isogeny** `φ̂ : W₂ → W₁`
+(Silverman III.6.1), and this file names it and proves its basic properties
+(Silverman III.6.2(a), (c), (d), (e), (f)):
 
 * `φ̂ ∘ φ = [deg φ]` on `W₁`, and `φ̂` is the only isogeny with this property;
 * `φ ∘ φ̂ = [deg φ]` on `W₂`;
 * `deg φ̂ = deg φ`;
 * `(ψ ∘ φ)^ = φ̂ ∘ ψ̂` for separable `φ`, `ψ`;
 * `φ̂̂ = φ` whenever `φ̂` is itself separable;
-* `[n]̂ = [n]` whenever `n` is nonzero in the base field.
+* `[n]̂ = [n]` whenever `n` is nonzero in the base field;
+* `φ̂` commutes with base change along any homomorphism of fields.
+
+Over a separably closed field the kernel of `φ` has exactly `deg φ` points
+(`TauCeti.Isogeny.card_ker_eq_degree`), so `[deg φ]` kills it and factors through `φ`
+(`TauCeti.Isogeny.existsUnique_comp_eq_mulByIntIsogenyOfNeZero_degree`). Over an arbitrary field
+`F`, the factor `χ` of the base change of `[deg φ]` through the base change of `φ` to a separable
+closure `L` is fixed by `Gal(L/F)`: conjugating `χ` gives another factor, since `φ` and `[deg φ]`
+are defined over `F`, and the factor is unique. So `χ` descends to `F`
+(`TauCeti.Isogeny.existsUnique_map_eq_iff_galoisFixed`), and the descent is a factor of `[deg φ]`
+through `φ` because base change is faithful. This is the descent step of Silverman III.6.1; the
+extension attached to `φ` need not be Galois over `F` itself.
 
 The identity `φ ∘ φ̂ = [deg φ]` needs `φ ∘ [n] = [n] ∘ φ`
 (`TauCeti.Isogeny.comp_mulByIntIsogenyOfNeZero`). Precomposing with `φ` is injective, so it cancels
@@ -34,10 +52,12 @@ from `φ ∘ φ̂ ∘ φ = φ ∘ [deg φ] = [deg φ] ∘ φ`.
 
 ## Main definitions
 
-* `TauCeti.Isogeny.dual`: the dual `φ̂` of a separable isogeny `φ` over a separably closed field.
+* `TauCeti.Isogeny.dual`: the dual `φ̂` of a separable isogeny `φ`.
 
 ## Main results
 
+* `TauCeti.Isogeny.existsUnique_comp_eq_mulByIntIsogenyOfNeZero_degree_of_isSeparable`: `[deg φ]`
+  factors uniquely through a separable isogeny `φ`, over any field.
 * `TauCeti.Isogeny.dual_comp` and `TauCeti.Isogeny.eq_dual_iff_comp_eq`: `φ̂ ∘ φ = [deg φ]`, and
   this characterises `φ̂`.
 * `TauCeti.Isogeny.comp_dual`: `φ ∘ φ̂ = [deg φ]`.
@@ -50,6 +70,7 @@ from `φ ∘ φ̂ ∘ φ = φ ∘ [deg φ] = [deg φ] ∘ φ`.
 * `TauCeti.Isogeny.dual_comp_dual`: `(ψ ∘ φ)^ = φ̂ ∘ ψ̂`.
 * `TauCeti.Isogeny.dual_dual`: `φ̂̂ = φ` when `φ̂` is separable.
 * `TauCeti.Isogeny.dual_mulByIntIsogeny`: `[n]` is self-dual when it is separable.
+* `TauCeti.Isogeny.dual_map`: the dual of the base change is the base change of the dual.
 
 ## References
 
@@ -63,24 +84,60 @@ namespace TauCeti.Isogeny
 
 open WeierstrassCurve.Affine
 
-variable {F : Type*} [Field F] [IsSepClosed F] {W₁ W₂ : WeierstrassCurve.Affine F}
+variable {F : Type*} [Field F] {W₁ W₂ : WeierstrassCurve.Affine F}
   [W₁.IsElliptic] [W₂.IsElliptic]
   (φ : Isogeny W₁ W₂) [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField]
 
-/-- **The dual isogeny** `φ̂ : W₂ → W₁` of a separable isogeny `φ : W₁ → W₂` over a separably
-closed field: the unique isogeny with `φ̂ ∘ φ = [deg φ]` (Silverman III.6.1). -/
-noncomputable def dual : Isogeny W₂ W₁ := by
+/-- **`[deg φ]` factors uniquely through a separable isogeny `φ`**, over any field
+(Silverman III.6.1). Over a separably closed field this is the kernel count; in general the factor
+over a separable closure is Galois-fixed and descends. -/
+theorem existsUnique_comp_eq_mulByIntIsogenyOfNeZero_degree_of_isSeparable :
+    ∃! χ : Isogeny W₂ W₁,
+      χ.comp φ = mulByIntIsogenyOfNeZero W₁ (n := φ.degree) (mod_cast φ.degree_ne_zero) := by
   classical
-  exact (existsUnique_comp_eq_mulByIntIsogenyOfNeZero_degree φ.card_ker_eq_degree).exists.choose
+  refine existsUnique_of_exists_of_unique ?_ fun χ χ' h h' ↦
+    comp_right_injective φ (h.trans h'.symm)
+  let L := SeparableClosure F
+  let ι := algebraMap F L
+  -- `φ` and `[deg φ]` base-change to the separable closure, where the factor exists
+  let φL : Isogeny (W₁⁄L).toAffine (W₂⁄L).toAffine := φ.map ι
+  let nL : Isogeny (W₁⁄L).toAffine (W₁⁄L).toAffine :=
+    (mulByIntIsogenyOfNeZero W₁ (n := φ.degree) (mod_cast φ.degree_ne_zero)).map ι
+  have : Algebra.IsSeparable φL.fieldPullback.fieldRange (W₁⁄L).toAffine.FunctionField :=
+    isSeparable_map φ ι
+  have hn : mulByIntIsogenyOfNeZero (W₁⁄L).toAffine (n := φL.degree)
+      (mod_cast φL.degree_ne_zero) = nL :=
+    ((mulByIntIsogeny_map W₁ ι _).trans <| (mulByIntIsogeny_inj (W₁.map ι)
+      (m := φ.degree) (n := (φ.map ι).degree) _ _).2 (by rw [degree_map])).symm
+  obtain ⟨χ, hχ, -⟩ :=
+    existsUnique_comp_eq_mulByIntIsogenyOfNeZero_degree (card_ker_eq_degree φL)
+  rw [hn] at hχ
+  -- conjugating the factor gives a factor, since `φ` and `[deg φ]` are defined over `F`
+  have hfix (σ : L ≃ₐ[F] L) : χ.galoisConj W₂ W₁ σ = χ := by
+    have hφ : φL.galoisConj W₁ W₂ σ = φL := galoisConj_map_algebraMap W₁ W₂ φ σ
+    refine comp_right_injective φL ?_
+    calc (χ.galoisConj W₂ W₁ σ).comp φL
+        = (χ.galoisConj W₂ W₁ σ).comp (φL.galoisConj W₁ W₂ σ) := by rw [hφ]
+      _ = nL.galoisConj W₁ W₁ σ := by rw [← galoisConj_comp, hχ]
+      _ = χ.comp φL := (galoisConj_map_algebraMap W₁ W₁ _ σ).trans hχ.symm
+  -- so it descends, and the descent is a factor because base change is faithful
+  obtain ⟨χ₀, hχ₀, -⟩ := (existsUnique_map_eq_iff_galoisFixed W₂ W₁ χ).2 hfix
+  refine ⟨χ₀, Hom.ofIsogeny_injective (Hom.map_injective ι ?_)⟩
+  have h : (χ₀.comp φ).map ι = nL := (comp_map χ₀ φ ι).trans <| hχ₀ ▸ hχ
+  exact (Hom.ofIsogeny_map _ ι).trans
+    ((congrArg Hom.ofIsogeny h).trans (Hom.ofIsogeny_map _ ι).symm)
+
+/-- **The dual isogeny** `φ̂ : W₂ → W₁` of a separable isogeny `φ : W₁ → W₂`: the unique isogeny
+with `φ̂ ∘ φ = [deg φ]` (Silverman III.6.1). -/
+noncomputable def dual : Isogeny W₂ W₁ :=
+  (existsUnique_comp_eq_mulByIntIsogenyOfNeZero_degree_of_isSeparable φ).exists.choose
 
 /-- **The dual of `φ` composed with `φ` is multiplication by `deg φ`** on `W₁`
 (Silverman III.6.1, III.6.2(a)). -/
 @[simp]
 theorem dual_comp :
-    φ.dual.comp φ = mulByIntIsogenyOfNeZero W₁ (n := φ.degree) (mod_cast φ.degree_ne_zero) := by
-  classical
-  exact
-    (existsUnique_comp_eq_mulByIntIsogenyOfNeZero_degree φ.card_ker_eq_degree).exists.choose_spec
+    φ.dual.comp φ = mulByIntIsogenyOfNeZero W₁ (n := φ.degree) (mod_cast φ.degree_ne_zero) :=
+  (existsUnique_comp_eq_mulByIntIsogenyOfNeZero_degree_of_isSeparable φ).exists.choose_spec
 
 /-- **`φ̂` is the only isogeny `χ` with `χ ∘ φ = [deg φ]`.** -/
 theorem eq_dual_iff_comp_eq {χ : Isogeny W₂ W₁} :
@@ -167,6 +224,17 @@ theorem dual_mulByIntIsogeny {n : ℤ} (hn : psiFunctionField W n ≠ 0)
     rw [mulByIntIsogeny_comp_mulByIntIsogeny W hn hn
         (psiFunctionField_ne_zero W (by push_cast; exact mul_ne_zero hchar hchar)),
       mulByIntIsogeny_inj, degree_mulByIntIsogeny, Nat.cast_pow, Int.natAbs_sq, sq]).symm
+
+variable {K : Type*} [Field K]
+
+/-- **The dual commutes with base change**: along any homomorphism of fields `f`, the base change
+of `φ̂` is the dual of the base change of `φ`. -/
+@[simp]
+theorem dual_map (f : F →+* K)
+    [Algebra.IsSeparable (φ.map f).fieldPullback.fieldRange (W₁.map f).FunctionField] :
+    φ.dual.map f = (φ.map f).dual :=
+  (eq_dual_iff_comp_eq _).mpr <| by
+    rw [← comp_map, dual_comp, mulByIntIsogeny_map, mulByIntIsogeny_inj, degree_map]
 
 end TauCeti.Isogeny
 

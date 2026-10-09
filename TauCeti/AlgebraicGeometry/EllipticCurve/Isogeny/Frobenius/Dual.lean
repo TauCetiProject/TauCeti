@@ -30,10 +30,9 @@ the unique isogeny with `π̂ ∘ π = [q]` (Silverman III.6.1), and proves its 
 Classically `π̂` is the `q`-power Verschiebung of `W`.
 
 The Frobenius isogeny is purely inseparable, so this is the inseparable case of the dual-isogeny
-construction, the one not covered by `TauCeti.Isogeny.dual`, which takes a separable isogeny over
-a separably closed field. The construction goes through the factorisation theorem on function
-fields: `[q]` factors through `π` because `[q]^* F(W)` lies in the field `π^* F(W)` of `q`-th
-powers (Silverman II.2.12).
+construction, the one not covered by `TauCeti.Isogeny.dual`, which takes a separable isogeny. The
+construction goes through the factorisation theorem on function fields: `[q]` factors through
+`π` because `[q]^* F(W)` lies in the field `π^* F(W)` of `q`-th powers (Silverman II.2.12).
 
 The Frobenius identities `π ∘ π̂ = [q]`, proved here, and `π + π̂ = [a_q]`, with `a_q` the trace
 of Frobenius, are the relations from which the degree form on the endomorphisms `ℤ[π]` of `W`,
