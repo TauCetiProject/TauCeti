@@ -399,7 +399,7 @@ theorem exists_setIntegral_ball_log_sub_setAverage_sq_le :
     ring
   -- The Poincaré–Wirtinger inequality for `w` on `B(x₀, R)`, then the logarithmic Caccioppoli
   -- inequality on the balls `B(x₀, R) ⊆ B(x₀, 2R)`, whose volume is `2ⁿ |B(x₀, R)|`.
-  have hP := W1p.integral_value_sub_setAverage_sq_le_of_eq_ball (Omega := U) hR rfl w
+  have hP := W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset (Omega := U) hR subset_rfl w
   have hcacc := hc h ha hu hR (by linarith : R < 2 * R) hball hm hum
   have hvol : mu.real (ball x₀ (2 * R)) = 2 ^ n * mu.real (ball x₀ R) := by
     have hb : ∀ ρ : ℝ, 0 < ρ → mu.real (ball x₀ ρ) = ρ ^ n * mu.real (ball 0 1) := fun ρ hρ => by

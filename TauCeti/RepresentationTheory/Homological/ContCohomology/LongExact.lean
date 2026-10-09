@@ -188,8 +188,7 @@ private theorem range_coeff0_le_ker_delta0 :
   have hb : S.proj (b : B) =
       ((explicitCoeff0 G B S.projDistribMulActionHom b : H0 G C) : C) := by
     simp only [coe_explicitCoeff0, projDistribMulActionHom_apply]
-  have hzero : (0 : G → A) ∈ Z1 G A := zero_mem _
-  rw [S.explicitDelta0_apply (explicitCoeff0 G B S.projDistribMulActionHom b) hb hzero]
+  rw [S.explicitDelta0_apply (explicitCoeff0 G B S.projDistribMulActionHom b) hb (a := 0)]
   · exact map_zero (H1pi G A)
   · intro g
     rw [Pi.zero_apply, map_zero, (FixedPoints.mem_addSubgroup G B (b : B)).1 b.2 g,
@@ -209,7 +208,7 @@ private theorem ker_delta0_le_range_coeff0 :
   have ha_cocycle : a ∈ Z1 G A := S.mem_Z1_of_incl_comp_eq_d0 fun g => by
     simpa only [d0_apply] using ha_incl g
   have ha_class : H1pi G A ⟨a, ha_cocycle⟩ = 0 := by
-    rw [← S.explicitDelta0_apply c hb ha_cocycle (fun g => by
+    rw [← S.explicitDelta0_apply c hb (a := a) (fun g => by
       simpa only [d0_apply] using ha_incl g)]
     exact AddMonoidHom.mem_ker.1 hc
   obtain ⟨a₀, ha₀⟩ := mem_B1_iff.1 (H1pi_eq_zero_iff.1 ha_class)
@@ -264,7 +263,7 @@ private theorem range_delta0_le_ker_coeff1 :
   have hab : ∀ g : G, S.incl (a g) = g • b - b := fun g => (haincl g).trans (d0_apply b g)
   have hd0 : d0 G B b ∈ B1 G B := mem_B1_iff.2 ⟨b, fun g => (d0_apply b g).symm⟩
   refine AddMonoidHom.mem_ker.2 ?_
-  rw [S.explicitDelta0_apply c hb (S.mem_Z1_of_incl_comp_eq_d0 hab) hab,
+  rw [S.explicitDelta0_apply c hb hab,
     QuotientAddGroup.mk'_apply,
     explicitCoeff1_eq_of_apply G S.inclDistribMulActionHom continuous_of_discreteTopology
       ⟨a, S.mem_Z1_of_incl_comp_eq_d0 hab⟩ ⟨d0 G B b, B1_le_Z1 G B hd0⟩
@@ -292,7 +291,7 @@ private theorem ker_coeff1_le_range_delta0 :
       rw [S.proj_incl, map_sub, S.proj_equivariant] at h
       exact sub_eq_zero.1 h.symm
     exact ⟨⟨S.proj b, hbinv⟩, by
-      rw [S.explicitDelta0_apply ⟨S.proj b, hbinv⟩ rfl a.2 hab, QuotientAddGroup.mk'_apply]⟩
+      rw [S.explicitDelta0_apply ⟨S.proj b, hbinv⟩ rfl hab, QuotientAddGroup.mk'_apply]⟩
 
 omit [ContinuousSMul G C] in
 /-- **Exactness at `H¹(G, A)`**, the node where `δ⁰` lands. -/
@@ -385,8 +384,7 @@ private theorem range_coeff1_le_ker_delta1 :
         simp only [(mem_Z1_iff.1 e.2).2 g h, map_add, S.proj_equivariant]⟩
     have hdelta : S.explicitDelta1 ((⟨_, hmem⟩ : Z1 G C) : H1 G C) =
         H2pi G A ⟨0, zero_mem (Z2 G A)⟩ :=
-      S.explicitDelta1_apply ⟨_, hmem⟩ (mem_Z1_iff.1 e.2).1 (fun _ => rfl) (zero_mem (Z2 G A))
-        fun g h => by
+      S.explicitDelta1_apply ⟨_, hmem⟩ (mem_Z1_iff.1 e.2).1 (fun _ => rfl) fun g h => by
           rw [Pi.zero_apply, map_zero, (mem_Z1_iff.1 e.2).2 g h]
           abel
     refine AddMonoidHom.mem_ker.2 ?_
@@ -411,7 +409,7 @@ private theorem ker_delta1_le_range_coeff1 :
       (haincl (g, h)).trans (d1_apply e g h)
     have hdelta : S.explicitDelta1 (f : H1 G C) =
         H2pi G A ⟨a, S.mem_Z2_of_incl_comp_eq_d1 hecont hae⟩ :=
-      S.explicitDelta1_apply f hecont hef (S.mem_Z2_of_incl_comp_eq_d1 hecont hae) hae
+      S.explicitDelta1_apply f hecont hef hae
     have hzero : ((⟨a, S.mem_Z2_of_incl_comp_eq_d1 hecont hae⟩ : Z2 G A) : H2 G A) = 0 :=
       hdelta.symm.trans (AddMonoidHom.mem_ker.1 hx)
     have hcob : a ∈ B2 G A := H2pi_eq_zero_iff.1 hzero
@@ -457,7 +455,7 @@ private theorem range_delta1_le_ker_coeff2 :
     have hd1 : d1 G B e ∈ B2 G B := mem_B2_iff.2 ⟨e, hecont, rfl⟩
     have hdelta : S.explicitDelta1 (f : H1 G C) =
         H2pi G A ⟨a, S.mem_Z2_of_incl_comp_eq_d1 hecont hae⟩ :=
-      S.explicitDelta1_apply f hecont hef (S.mem_Z2_of_incl_comp_eq_d1 hecont hae) hae
+      S.explicitDelta1_apply f hecont hef hae
     refine AddMonoidHom.mem_ker.2 ?_
     rw [hdelta, QuotientAddGroup.mk'_apply,
       explicitCoeff2_eq_of_apply G S.inclDistribMulActionHom continuous_of_discreteTopology
@@ -490,7 +488,7 @@ private theorem ker_coeff2_le_range_delta1 :
           abel
         exact (sub_eq_zero.1 h₁).symm⟩
     exact ⟨((⟨_, hmem⟩ : Z1 G C) : H1 G C),
-      S.explicitDelta1_apply ⟨_, hmem⟩ hecont (fun _ => rfl) a.2 hae'⟩
+      S.explicitDelta1_apply ⟨_, hmem⟩ hecont (fun _ => rfl) hae'⟩
 
 /-- **Exactness at `H²(G, A)`**, the node where `δ¹` lands. -/
 theorem explicitLongExact_H2A :

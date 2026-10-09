@@ -12,6 +12,7 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
 public import TauCeti.FieldTheory.GaloisCohomology.Kummer
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Conjugation
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.H1.ZMod
+public import TauCeti.RepresentationTheory.RankOneTwist
 public import TauCeti.RingTheory.RootsOfUnity.ZMod
 
 /-!
@@ -56,7 +57,15 @@ power classes, the quotient of the action on `μₙ` when `N` acts trivially, an
 conjugation action on `H¹(N, ℤ/n)`. These constructions do not require `L/K` to be finite. The
 latter two actions are evaluated on restrictions of absolute Galois elements by
 `kummerCoeffFiniteRepresentation_restrictNormalHom` and
-`kummerH1FiniteRepresentation_restrictNormalHom`.
+`kummerH1FiniteRepresentation_restrictNormalHom`. Removing the cyclotomic twist then gives
+**equivariant Kummer theory**: when `σ(L)` contains the `n`th roots of unity,
+
+```text
+kummerH1FiniteRepresentationEquiv σ n hn hN : H¹(N, ℤ/n) ≃ Hom(μₙ, ℤ/n) ⊗ Lˣ ⧸ (Lˣ)ⁿ
+```
+
+is an isomorphism of `ZMod n`-representations of `Gal(L/K)`, so natural in the `K`-automorphisms
+of `L`.
 
 ## Main definitions
 
@@ -67,6 +76,8 @@ latter two actions are evaluated on restrictions of absolute Galois elements by
 * `TauCeti.powerClassFiniteRep`: the natural representation of `Gal(L/K)` on `Lˣ ⧸ (Lˣ)ⁿ`.
 * `TauCeti.kummerCoeffFiniteRep`: the roots-of-unity representation of `Gal(L/K)`.
 * `TauCeti.kummerH1FiniteRep`: the conjugation representation of `Gal(L/K)` on `H¹(N, ℤ/n)`.
+* `TauCeti.kummerH1FiniteRepresentationEquiv`: equivariant Kummer theory,
+  `H¹(N, ℤ/n) ≃ Hom(μₙ, ℤ/n) ⊗ Lˣ ⧸ (Lˣ)ⁿ` as representations of `Gal(L/K)`.
 
 ## Main results
 
@@ -76,6 +87,8 @@ latter two actions are evaluated on restrictions of absolute Galois elements by
   `g ∈ G_K` with the action of the automorphism of `L` that `g` induces.
 * `TauCeti.nsmul_smul_fixingSubgroupKummerEquivOfTrivial`: with trivial coefficients the same
   holds up to the cyclotomic twist.
+* `TauCeti.dualTensorHom_kummerH1FiniteRepresentationEquiv`: equivariant Kummer theory sends the
+  Kummer class of `x` to `ξ ↦ log ξ • x`.
 
 ## References
 
@@ -506,6 +519,88 @@ theorem kummerH1FiniteRepresentation_restrictNormalHom (g : AbsoluteGaloisGroup 
     (quotientFixingSubgroupFieldRangeEquiv K L sigma).symm_apply_apply _
   rw [hq, Representation.ofQuotient_coe_apply]
   rfl
+
+/-! ### Equivariant Kummer theory -/
+
+/-- The Kummer isomorphism with coefficients `ℤ/n` intertwines the actions of `Gal(L/K)` up to
+the character of the roots-of-unity representation: the hypothesis of
+`Representation.rankOneTwistEquiv` for `kummerH1FiniteRepresentationEquiv`. -/
+private theorem rankOneCharacter_smul_kummerH1FiniteRepresentation (hn : IsUnit (n : K))
+    (hN : ∀ g : AbsoluteGaloisGroup K, g ∈ sigma.fieldRange.fixingSubgroup →
+      ∀ xi : KummerCoeff K n, g • xi = xi)
+    (tau : Gal(L/K)) (x : Additive (powerClassQuotient Lˣ n)) :
+    Representation.rankOneCharacter (kummerCoeffFiniteRepresentation sigma n hN)
+        ((kummerCoeffAddEquivZMod hn).toLinearEquiv (ZMod.map_smul _)) tau •
+        kummerH1FiniteRepresentation sigma n tau
+          (fixingSubgroupKummerEquivOfTrivial sigma hn (kummerCoeffAddEquivZMod hn)
+            (fun _ _ ↦ rfl) hN x) =
+      fixingSubgroupKummerEquivOfTrivial sigma hn (kummerCoeffAddEquivZMod hn) (fun _ _ ↦ rfl) hN
+        (powerClassRepresentation n tau x) := by
+  have : NeZero n := ⟨by rintro rfl; simp at hn⟩
+  obtain ⟨g, rfl⟩ := sigma.restrictNormalHom_surjective tau
+  -- `g` acts on `μₙ` as the `c`th power map, for `c` the value of the character at `g`.
+  generalize hc : Representation.rankOneCharacter (kummerCoeffFiniteRepresentation sigma n hN)
+    ((kummerCoeffAddEquivZMod hn).toLinearEquiv (ZMod.map_smul _)) (sigma.restrictNormalHom g) = c
+  have hk (xi : KummerCoeff K n) : g • xi = c.val • xi := by
+    rw [← kummerCoeffFiniteRepresentation_restrictNormalHom sigma n hN g xi,
+      Representation.rankOneCharacter_smul _
+        ((kummerCoeffAddEquivZMod hn).toLinearEquiv (ZMod.map_smul _)), hc,
+      ← Nat.cast_smul_eq_nsmul (ZMod n), ZMod.natCast_zmod_val]
+  rw [kummerH1FiniteRepresentation_restrictNormalHom, powerClassRepresentation_apply,
+    ← ZMod.natCast_zmod_val c, Nat.cast_smul_eq_nsmul]
+  -- The twisted equivariance reads the automorphism of `L` through `L →ₐ[K] L`.
+  have hmap : ((sigma.restrictNormalHom g : L →ₐ[K] L) : L →* L) = sigma.restrictNormalHom g :=
+    MonoidHom.ext fun _ ↦ rfl
+  refine (nsmul_smul_fixingSubgroupKummerEquivOfTrivial sigma hn (kummerCoeffAddEquivZMod hn)
+    (fun _ _ ↦ rfl) hN g (sigma.restrictNormalHom g : L →ₐ[K] L)
+    (sigma.restrictNormalHom_commutes g) c.val hk x).trans ?_
+  exact congrArg _ (congrArg (fun f ↦ MonoidHom.toAdditive (powerClassMap n (Units.map f)) x) hmap)
+
+-- Adapted from the Tau Ceti lookahead branch
+-- `lookahead/ClassFieldTheory/kummer-equiv-mixed-equivariant` (split 3).
+/-- **Equivariant Kummer theory with constant coefficients.** Let `L/K` be normal, `n` invertible
+in `K`, and let the subgroup `N` of `G_K` fixing `sigma(L)` act trivially on `μₙ`, that is,
+`sigma(L)` contains the `n`th roots of unity. Then `H¹(N, ℤ/n)` is isomorphic to
+`Hom(μₙ, ℤ/n) ⊗ Lˣ ⧸ (Lˣ)ⁿ` as a `ZMod n`-representation of `Gal(L/K)`, where `Gal(L/K)` acts on
+`H¹(N, ℤ/n)` by conjugation, on `μₙ` through `G_K`, and on power classes through its action on
+`Lˣ`. Being an isomorphism of representations, it is natural in the `K`-automorphisms of `L`.
+
+The underlying isomorphism is the Kummer isomorphism with trivial coefficients
+`fixingSubgroupKummerEquivOfTrivial`, along `μₙ ≃ ℤ/n` (`kummerCoeffAddEquivZMod`), with its
+cyclotomic twist removed by `Representation.rankOneTwistEquiv`; it sends the class of `x` to
+`ξ ↦ log ξ • x` (`dualTensorHom_kummerH1FiniteRepresentationEquiv`). -/
+def kummerH1FiniteRepresentationEquiv (hn : IsUnit (n : K))
+    (hN : ∀ g : AbsoluteGaloisGroup K, g ∈ sigma.fieldRange.fixingSubgroup →
+      ∀ xi : KummerCoeff K n, g • xi = xi) :
+    (kummerH1FiniteRepresentation sigma n).Equiv
+      ((kummerCoeffFiniteRepresentation sigma n hN).dual.tprod
+        (powerClassRepresentation (K := K) (L := L) n)) :=
+  Representation.rankOneTwistEquiv (kummerCoeffFiniteRepresentation sigma n hN)
+    (powerClassRepresentation n) (kummerH1FiniteRepresentation sigma n)
+    ((kummerCoeffAddEquivZMod hn).toLinearEquiv (ZMod.map_smul _))
+    ((fixingSubgroupKummerEquivOfTrivial sigma hn (kummerCoeffAddEquivZMod hn) (fun _ _ ↦ rfl)
+      hN).toLinearEquiv (ZMod.map_smul _))
+    fun tau x ↦ by
+      rw [AddEquiv.coe_toLinearEquiv]
+      exact rankOneCharacter_smul_kummerH1FiniteRepresentation sigma n hn hN tau x
+
+/-- **The equivariant Kummer isomorphism on Kummer classes.** Under
+`kummerH1FiniteRepresentationEquiv`, the Kummer class of a power class `x` corresponds to the
+homomorphism `μₙ → Lˣ ⧸ (Lˣ)ⁿ` sending `ξ` to `log ξ • x`, with `log : μₙ ≃ ℤ/n` the
+identification `kummerCoeffAddEquivZMod`. -/
+@[simp]
+theorem dualTensorHom_kummerH1FiniteRepresentationEquiv (hn : IsUnit (n : K))
+    (hN : ∀ g : AbsoluteGaloisGroup K, g ∈ sigma.fieldRange.fixingSubgroup →
+      ∀ xi : KummerCoeff K n, g • xi = xi)
+    (x : Additive (powerClassQuotient Lˣ n)) (xi : KummerCoeff K n) :
+    dualTensorHom (ZMod n) (KummerCoeff K n) (Additive (powerClassQuotient Lˣ n))
+        (kummerH1FiniteRepresentationEquiv sigma n hn hN
+          (fixingSubgroupKummerEquivOfTrivial sigma hn (kummerCoeffAddEquivZMod hn)
+            (fun _ _ ↦ rfl) hN x)) xi =
+      kummerCoeffAddEquivZMod hn xi • x := by
+  rw [kummerH1FiniteRepresentationEquiv, Representation.dualTensorHom_rankOneTwistEquiv,
+    LinearEquiv.rankOneHomEquiv_apply_apply]
+  simp
 
 end FiniteGalois
 
