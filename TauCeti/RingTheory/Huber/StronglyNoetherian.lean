@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
+public import TauCeti.Topology.Algebra.Nonarchimedean.Quotient
 public import TauCeti.Topology.UniformSpace.DiscreteUniformity
 public import Mathlib.RingTheory.Polynomial.Basic
 
@@ -14,6 +15,7 @@ import TauCeti.RingTheory.Huber.ClosedSubmodule
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Surjective
+import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
 # Strong noetherianness of a nonarchimedean ring
@@ -84,6 +86,11 @@ discrete case below is proved through it.
   `A⟨X₁,…,Xₖ⟩`, so once that ring is known to be strongly noetherian the quotient is too. The
   unqualified `TauCeti.Huber.IsTopologicallyFiniteType` is weaker — it allows an arbitrary finite
   weight family — and is not what this serves.
+
+* `TauCeti.Huber.IsStronglyNoetherian.quotient`: for the same `A`, the quotient `A ⧸ J` by a
+  closed ideal, with the quotient topology, is strongly noetherian. In particular
+  `A⟨X₁, …, Xₖ⟩ ⧸ (Xᵢ²)` is strongly noetherian over a complete Hausdorff strongly noetherian
+  Tate ring (`TauCeti.Huber.isStronglyNoetherian_quotient_span_weightedX_sq`).
 
 * `TauCeti.Huber.isStronglyNoetherian_congr`: strong noetherianness is invariant under a
   bicontinuous ring isomorphism. Layer 4.1 takes `IsStronglyNoetherian A` as a hypothesis while
@@ -347,6 +354,35 @@ theorem _root_.IsOpenQuotientMap.isStronglyNoetherian [IsStronglyNoetherian A] {
   IsStronglyNoetherian.of_surjective hπ.continuous hπ.surjective
     (map_zero π ▸ hπ.isOpenMap.nhds_le 0)
 
+/-- **Strong noetherianness passes to the quotient by a closed ideal.** If `A` is complete,
+Hausdorff, strongly noetherian and has countably generated `𝓝 0`, then `A ⧸ J` with the quotient
+topology is strongly noetherian for every closed ideal `J`.
+
+The quotient is complete because `A` is complete and first countable, and Hausdorff because `J`
+is closed; `IsOpenQuotientMap.isStronglyNoetherian` then applies to the quotient map. -/
+theorem IsStronglyNoetherian.quotient [IsStronglyNoetherian A] (J : Ideal A)
+    (hJ : IsClosed (J : Set A)) : IsStronglyNoetherian (A ⧸ J) := by
+  let _ : UniformSpace (A ⧸ J) := IsTopologicalAddGroup.rightUniformSpace _
+  have _ : IsUniformAddGroup (A ⧸ J) := isUniformAddGroup_of_addCommGroup
+  have _ : CompleteSpace (A ⧸ J) := QuotientAddGroup.completeSpace_right _ J.toAddSubgroup
+  have _ : T1Space (A ⧸ J) := (Ideal.Quotient.t1Space_iff J).mpr hJ
+  exact (QuotientRing.isOpenQuotientMap_mk J).isStronglyNoetherian
+
 end Quotient
+
+section QuotientRestricted
+
+variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+  [IsTateRing A] [IsStronglyNoetherian A] [CompleteSpace A] [T0Space A] {k : ℕ}
+
+/-- **`A⟨X₁, …, Xₖ⟩ ⧸ (Xᵢ²)` is strongly noetherian** over a complete Hausdorff strongly
+noetherian Tate ring `A`, since every ideal of `A⟨X₁, …, Xₖ⟩` is closed. -/
+theorem isStronglyNoetherian_quotient_span_weightedX_sq (i : Fin k) :
+    IsStronglyNoetherian (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight ⧸
+        Ideal.span {weightedX (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight i ^ 2}) :=
+  IsStronglyNoetherian.quotient _ (Ideal.isClosed_weightedRestrictedSubring_one_weight _)
+
+end QuotientRestricted
 
 end TauCeti.Huber

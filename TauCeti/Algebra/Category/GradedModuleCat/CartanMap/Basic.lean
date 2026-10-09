@@ -152,6 +152,17 @@ instance : (gradedFiniteProjectiveModules 𝒜).IsClosedUnderIsomorphisms where
     let e' := ((GradedModuleCat.toModuleCat (𝒜 := 𝒜)).mapIso e).toLinearEquiv
     exact ⟨Module.Finite.equiv e', Module.Projective.of_equiv e'⟩
 
+/-- A retract of a finite graded projective is a finite graded projective: its underlying module is
+a direct summand of a finitely generated projective module. -/
+instance : (gradedFiniteProjectiveModules 𝒜).IsStableUnderRetracts where
+  of_retract {M N} h hN := by
+    let _ : Module.Finite A N := hN.1
+    let _ : Module.Projective A N := hN.2
+    have hri : h.r.hom ∘ₗ h.i.hom = LinearMap.id := by
+      rw [← GradedModuleCat.hom_comp, h.retract, GradedModuleCat.hom_id]
+    exact ⟨Module.Finite.of_surjective h.r.hom fun x ↦ ⟨h.i.hom x, LinearMap.congr_fun hri x⟩,
+      Module.Projective.of_split h.i.hom h.r.hom hri⟩
+
 /-! ### A small model -/
 
 namespace GradedFGModuleRepr

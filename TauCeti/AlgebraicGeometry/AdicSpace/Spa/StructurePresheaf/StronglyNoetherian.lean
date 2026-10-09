@@ -9,6 +9,8 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.KanExtension
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SheafyRing
 
+import TauCeti.Topology.Algebra.Ring.Ideal
+
 /-!
 # Sheafiness of strongly noetherian Tate pairs
 
@@ -36,6 +38,8 @@ is the limit of its values on that basis.
   `TauCeti.Huber.IsSheafyForEveryPresentation`.
 * `TauCeti.Huber.isSheafyRing_of_isStronglyNoetherian` : a complete Hausdorff strongly noetherian
   Tate ring is sheafy.
+* `TauCeti.Huber.isSheafyRing_quotient_of_isStronglyNoetherian` : so is its quotient by a closed
+  ideal.
 * `TauCeti.Huber.isStablySheafyRing_of_isStronglyNoetherian` : a complete Hausdorff strongly
   noetherian Tate ring is stably sheafy.
 
@@ -112,6 +116,23 @@ theorem isSheafyRing_of_isStronglyNoetherian {A : Type v} [CommRing A] [UniformS
     [CompleteSpace A] [T0Space A] : IsSheafyRing A :=
   isSheafyRing_iff_forall_isSheafyForEveryPresentation.mpr fun _ ↦
     isSheafyForEveryPresentation_of_isStronglyNoetherian
+
+/-- **The quotient of a complete Hausdorff strongly noetherian Tate ring by a closed ideal is
+sheafy.** The quotient `A ⧸ J` carries the quotient topology and the uniformity of that additive
+topological group. It is again a complete Hausdorff strongly noetherian Tate ring
+(`TauCeti.Huber.IsStronglyNoetherian.quotient`), so Wedhorn's Theorem 8.28(b) applies to it. -/
+theorem isSheafyRing_quotient_of_isStronglyNoetherian {A : Type v} [CommRing A] [UniformSpace A]
+    [IsUniformAddGroup A] [IsTopologicalRing A] [IsTateRing A] [IsStronglyNoetherian A]
+    [CompleteSpace A] [T0Space A] (J : Ideal A) (hJ : IsClosed (J : Set A)) :
+    letI := IsTopologicalAddGroup.rightUniformSpace (A ⧸ J)
+    haveI : IsUniformAddGroup (A ⧸ J) := isUniformAddGroup_of_addCommGroup
+    IsSheafyRing (A ⧸ J) := by
+  let _ : UniformSpace (A ⧸ J) := IsTopologicalAddGroup.rightUniformSpace _
+  have _ : IsUniformAddGroup (A ⧸ J) := isUniformAddGroup_of_addCommGroup
+  have _ : CompleteSpace (A ⧸ J) := QuotientAddGroup.completeSpace_right _ J.toAddSubgroup
+  have _ : T1Space (A ⧸ J) := (Ideal.Quotient.t1Space_iff J).mpr hJ
+  have _ := IsStronglyNoetherian.quotient J hJ
+  exact isSheafyRing_of_isStronglyNoetherian
 
 /-- **A complete Hausdorff strongly noetherian Tate ring is stably sheafy** (Wedhorn's
 Corollary 8.35): every complete Hausdorff Huber ring `B` topologically of finite type over `A`, in
