@@ -29,8 +29,9 @@ identification is needed before this calculation yields a maximal torus.
 * `TauCeti.TypeDSpinCarrier.centralizer_range_weightTorusPoints_eq_comap_diagonalTorus`: the
   centralizer as the inverse image of the ambient diagonal torus.
 * `TauCeti.TypeDSpinCarrier.diagonalPoints`: the diagonal points of the spin carrier.
-* `TauCeti.TypeDSpinCarrier.centralizer_range_weightTorusPoints_eq_diagonalPoints`: the
-  pointwise torus-centralizer calculation over an infinite field.
+* `TauCeti.TypeDSpinCarrier.
+  centralizer_range_weightTorusPoints_eq_diagonalPoints_of_weightChar_basisWeight_injective`:
+  the torus-centralizer calculation when the spin weight characters are distinct.
 * `TauCeti.TypeDSpinCarrier.eq_diagonalPoints_of_le_of_isMulCommutative`: maximality of the
   diagonal carrier points among commutative point subgroups.
 
@@ -103,30 +104,16 @@ theorem centralizer_range_weightTorusPoints_eq_diagonalPoints_of_weightChar_basi
     (hchar : Function.Injective (weightChar K ∘ basisWeight n)) :
     Subgroup.centralizer
         ((weightTorusPoints n hn K).range : Set (points n hn K)) = diagonalPoints n hn K := by
-  apply le_antisymm
-  · intro g hg
-    rw [mem_diagonalPoints_iff]
-    intro i j hij
-    have hchar_ne : weightChar K (basisWeight n i) ≠ weightChar K (basisWeight n j) :=
-      fun h ↦ hij (hchar h)
-    obtain ⟨s, hs⟩ := DFunLike.ne_iff.mp hchar_ne
-    simp only [weightChar_apply] at hs
-    have hcomm := Subgroup.mem_centralizer_iff.mp hg (weightTorusPoints n hn K s) ⟨s, rfl⟩
-    have hmatrix := congrArg (fun x : points n hn K ↦
-      ((x : GL (Fin (dimension n)) K) : Matrix (Fin (dimension n)) (Fin (dimension n)) K)) hcomm
-    simp only [Subgroup.coe_mul, Units.val_mul, coe_weightTorusPoints,
-      UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe] at hmatrix
-    exact apply_eq_zero_of_commute_diagonal hmatrix (fun h ↦ hs (Units.ext h))
-  · intro g hg
-    rw [Subgroup.mem_centralizer_iff]
-    intro d hd
-    obtain ⟨s, rfl⟩ := hd
-    have hdDiag := coe_weightTorusPoints_mem_diagonalTorus n hn K s
-    have hcomm : Commute
-        (weightTorusPoints n hn K s : GL (Fin (dimension n)) K) g :=
-      Subgroup.mem_centralizer_iff.mp
-        (Subgroup.le_centralizer (diagonalTorus K (dimension n)) hdDiag) g hg |>.symm
-    exact (Commute.of_map (points n hn K).subtype_injective hcomm).eq
+  ext g
+  rw [mem_diagonalPoints_iff]
+  exact mem_centralizer_range_iff_isDiag_of_coe_eq_diagGL
+    (fun s ↦ (coe_weightTorusPoints n hn K s).trans
+      (UniversalEnvelopingAlgebra.kostantTorusMatrix_apply _ _ _ s))
+    (fun i j hij ↦ by
+      have hchar_ne : weightChar K (basisWeight n i) ≠ weightChar K (basisWeight n j) :=
+        fun h ↦ hij (hchar h)
+      obtain ⟨s, hs⟩ := DFunLike.ne_iff.mp hchar_ne
+      exact ⟨s, by simpa only [weightChar_apply] using hs⟩) g
 
 /-- Over an infinite field, distinct spin-basis indices have distinct weight characters. -/
 theorem weightChar_comp_basisWeight_injective (K : Type u) [Field K] [Infinite K] :
@@ -134,15 +121,6 @@ theorem weightChar_comp_basisWeight_injective (K : Type u) [Field K] [Infinite K
   weightChar_injective.comp fun i j hij ↦ by
     apply basisCharacter_injective n
     simp only [basisCharacter, hij]
-
-/-- Over an infinite field, the centralizer of the spin weight torus in the type-`Dₙ` carrier
-is exactly the subgroup of diagonal carrier points. -/
-theorem centralizer_range_weightTorusPoints_eq_diagonalPoints
-    (K : Type u) [Field K] [Infinite K] :
-    Subgroup.centralizer
-        ((weightTorusPoints n hn K).range : Set (points n hn K)) = diagonalPoints n hn K :=
-  centralizer_range_weightTorusPoints_eq_diagonalPoints_of_weightChar_basisWeight_injective n hn K
-    (weightChar_comp_basisWeight_injective n K)
 
 /-- If the spin weight characters remain distinct over a ring without zero divisors, the diagonal
 spin-carrier points are self-centralizing. -/
