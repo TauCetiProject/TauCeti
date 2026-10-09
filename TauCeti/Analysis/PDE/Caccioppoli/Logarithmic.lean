@@ -28,7 +28,8 @@ constant on the support of a smooth cutoff `ψ` compactly supported in `Ω`, the
 This is the **logarithmic Caccioppoli inequality**: `‖∇u‖ / u = ‖∇ log u‖`, so the gradient of
 `log u` is controlled by the cutoff alone, independently of the size of `u`. Combined with the
 Poincaré–Wirtinger inequality on balls it shows that `log u` has bounded mean oscillation: on
-every ball `B(x₀, R)` with `B(x₀, 2R) ⊆ Ω` on which `u` is bounded below by a positive constant,
+every ball `B(x₀, R)` with `B(x₀, 2R) ⊆ Ω`, if `u ≥ m` almost everywhere on the doubled ball
+`B(x₀, 2R)` for some constant `m > 0`, then
 
 `∫_{B(x₀, R)} (log u - (log u)_{B(x₀, R)})² ≤ C (Λ/λ)² |B(x₀, R)|`,
 
