@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Basic
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Topology
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.NormalFrame
 
 /-!
@@ -93,42 +93,6 @@ def normalSpaceOrthogonalEquiv (f : SmoothEmbedding I 𝓘(ℝ, V) n M V)
   simpa only [Submodule.starProjection_orthogonal_val, sub_sub_cancel]
     using K.starProjection_apply_mem v
 
-omit [CompleteSpace V] in
-/-- Take normal classes fibrewise in the ambient product. The model fibre `F` is only the
-phantom parameter used by `Bundle.TotalSpace`. -/
-def normalClassTotal (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
-    (p : M × V) : TotalSpace F (fun x => f.NormalSpace x hn) :=
-  ⟨p.1, f.normalClass p.1 hn ((NormedSpace.fromTangentSpace (f p.1)).symm p.2)⟩
-
-omit [CompleteSpace V] in
-/-- The total-space quotient map takes the ambient normal class and preserves its base. -/
-@[simp] theorem normalClassTotal_apply (f : SmoothEmbedding I 𝓘(ℝ, V) n M V)
-    (hn : n ≠ 0) (p : M × V) :
-    f.normalClassTotal (F := F) hn p =
-      ⟨p.1, f.normalClass p.1 hn ((NormedSpace.fromTangentSpace (f p.1)).symm p.2)⟩ := (rfl)
-
-omit [CompleteSpace V] in
-/-- Every point of the quotient normal bundle has an ambient representative. -/
-theorem normalClassTotal_surjective (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0) :
-    Surjective (f.normalClassTotal (F := F) hn) := by
-  rintro ⟨x, w⟩
-  obtain ⟨v, rfl⟩ := f.normalClass_surjective x hn w
-  refine ⟨(x, NormedSpace.fromTangentSpace (f x) v), ?_⟩
-  simp only [normalClassTotal_apply, ContinuousLinearEquiv.symm_apply_apply]
-
-/-- The total intrinsic normal space carries the quotient topology from the ambient product:
-a set is open precisely when its preimage under fibrewise normal classes is open. -/
-instance instTopologicalSpaceNormalBundle (f : SmoothEmbedding I 𝓘(ℝ, V) n M V)
-    (hn : n ≠ 0) : TopologicalSpace (TotalSpace F (fun x => f.NormalSpace x hn)) :=
-  TopologicalSpace.coinduced (f.normalClassTotal hn) inferInstance
-
-omit [CompleteSpace V] in
-/-- Fibrewise normal classes give a quotient map onto the total intrinsic normal space. -/
-theorem isQuotientMap_normalClassTotal (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0) :
-    IsQuotientMap (f.normalClassTotal (F := F) hn) where
-  eq_coinduced := rfl
-  surjective := f.normalClassTotal_surjective hn
-
 variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I 1 M]
 
 /-- The quotient normal bundle and the orthogonal normal bundle have the same topology.
@@ -150,23 +114,37 @@ def normalBundleHomeomorphOrthogonal (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) 
   continuous_toFun := by
     have : IsManifold I ((0 : ℕ∞ω) + 1) M := by simpa using
       (inferInstance : IsManifold I 1 M)
-    apply (f.isQuotientMap_normalClassTotal hn).continuous_iff.mpr
+    apply (f.isQuotientMap_normalQuotientMap hn).continuous_iff.mpr
     apply (isEmbedding_totalSpace_normalSubspace (F := F) f).isInducing.continuous_iff.mpr
     have hproj := (contMDiff_normalSubspace_starProjection (n := 0)
       (f.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn))
       (f.isImmersion.mfderiv_injective hn)).continuous
-    convert continuous_fst.prodMk ((hproj.comp continuous_fst).clm_apply continuous_snd) using 1
+    have hb := Pullback.continuous_proj V (TangentSpace 𝓘(ℝ, V)) (f : M → V)
+    have hv := ((tangentBundleModelSpaceHomeomorph 𝓘(ℝ, V)).continuous.comp
+      (Pullback.continuous_lift V (TangentSpace 𝓘(ℝ, V)) (f : M → V))).snd
+    convert hb.prodMk ((hproj.comp hb).clm_apply hv) using 1
     funext p
-    -- Unpack the fibrewise map at an ambient representative; its fibre formula is
-    -- the normal projection, expressed as an ambient star projection on the right.
-    change (p.1, (f.normalSpaceOrthogonalEquiv p.1 hn
-      (f.normalClass p.1 hn
-        ((NormedSpace.fromTangentSpace (f p.1)).symm p.2)) : V)) =
-      (p.1, (normalSubspace I f p.1).starProjection p.2)
-    rw [normalSpaceOrthogonalEquiv_normalClass, Submodule.starProjection_apply]
+    simp only [Function.comp_apply]
+    rw [normalQuotientMap_apply]
+    simp only [tangentBundleModelSpaceHomeomorph_coe, Equiv.coe_fn_mk,
+      TotalSpace.toProd, Pullback.lift]
+    -- In a Euclidean target the model-space tangent identification is the identity.
+    convert congrArg (fun w : normalSubspace I f p.proj => (p.proj, (w : V)))
+      (f.normalSpaceOrthogonalEquiv_normalClass p.proj hn (p.2 : V)) using 1 <;> rfl
   continuous_invFun := by
-    exact (f.isQuotientMap_normalClassTotal hn).continuous.comp
-      (isEmbedding_totalSpace_normalSubspace (F := F) f).continuous
+    let L : TotalSpace F (fun x => normalSubspace I f x) →
+        TotalSpace V ((f : M → V) *ᵖ (TangentSpace 𝓘(ℝ, V))) := fun p =>
+      ⟨p.proj, (NormedSpace.fromTangentSpace (f p.proj)).symm p.2⟩
+    have hL : Continuous L := by
+      apply (inducing_pullbackTotalSpaceEmbedding V (TangentSpace 𝓘(ℝ, V)) f).continuous_iff.mpr
+      have hp := (isEmbedding_totalSpace_normalSubspace (I := I) (F := F) f).continuous
+      convert hp.fst.prodMk ((tangentBundleModelSpaceHomeomorph 𝓘(ℝ, V)).symm.continuous.comp
+        ((f.contMDiff.continuous.comp hp.fst).prodMk hp.snd)) using 1
+      -- The pullback lift has the standard model-space tangent coordinates.
+      rfl
+    convert (f.isQuotientMap_normalQuotientMap (K := F) hn).continuous.comp hL using 1
+    funext p
+    simp only [Function.comp_apply, normalQuotientMap_apply, L]
 
 /-- The normal-bundle identification takes orthogonal representatives and preserves bases. -/
 @[simp] theorem normalBundleHomeomorphOrthogonal_apply
@@ -185,12 +163,14 @@ def normalBundleHomeomorphOrthogonal (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) 
 
 /-- Taking an ambient normal class and then its orthogonal representative is the normal
 projection, with the base point fixed. -/
-theorem normalBundleHomeomorphOrthogonal_normalClassTotal
-    (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0) (p : M × V) :
-    f.normalBundleHomeomorphOrthogonal hn (f.normalClassTotal (F := F) hn p) =
+theorem normalBundleHomeomorphOrthogonal_normalQuotientMap
+    (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
+    (p : TotalSpace V ((f : M → V) *ᵖ (TangentSpace 𝓘(ℝ, V)))) :
+    f.normalBundleHomeomorphOrthogonal hn (f.normalQuotientMap (K := F) hn p) =
       ⟨p.1, (normalSubspace I f p.1).orthogonalProjectionOnto p.2⟩ := by
-  simp only [normalClassTotal_apply, normalBundleHomeomorphOrthogonal_apply,
-    normalSpaceOrthogonalEquiv_normalClass]
+  simp only [normalQuotientMap_apply, normalBundleHomeomorphOrthogonal_apply]
+  exact congrArg (TotalSpace.mk p.proj)
+    (f.normalSpaceOrthogonalEquiv_normalClass p.proj hn (p.2 : V))
 
 /-- The identification sends the intrinsic zero section to the orthogonal zero section. -/
 theorem normalBundleHomeomorphOrthogonal_zeroSection
