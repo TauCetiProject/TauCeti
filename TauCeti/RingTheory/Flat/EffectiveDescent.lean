@@ -139,7 +139,7 @@ structure DescentDatum where
   /-- The coaction `B → S ⊗[R] B`, linear over `S` acting on the left factor. -/
   coaction : B →ₐ[S] S ⊗[R] B
   /-- The coaction is a section of the multiplication map `S ⊗[R] B → B`. -/
-  counit_coaction (b : B) : TensorProduct.mulLeft (coaction b) = b
+  counit_coaction (b : B) : Algebra.TensorProduct.mulLeft (coaction b) = b
   /-- The cocycle condition: `(id ⊗ θ) ∘ θ = (id ⊗ (1 ⊗ ·)) ∘ θ`. -/
   coassoc (b : B) :
     Algebra.TensorProduct.map (AlgHom.id R S) (coaction.restrictScalars R) (coaction b) =
@@ -688,7 +688,7 @@ namespace DescentDatum
 
 variable {R S B}
 
-open TauCeti.Algebra.TensorProduct
+open Algebra.TensorProduct
 
 variable (D : DescentDatum R S B)
 
@@ -823,7 +823,7 @@ namespace IsoDescentDatum
 
 variable {R S B}
 
-open TauCeti.Algebra.TensorProduct
+open Algebra.TensorProduct
 
 variable (E : IsoDescentDatum R S B)
 

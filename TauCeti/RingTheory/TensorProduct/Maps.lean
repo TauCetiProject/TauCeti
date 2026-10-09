@@ -24,9 +24,9 @@ require a commutative target.
 
 * `AlgHom.lTensor_toLinearMap_apply`: `f.toLinearMap.lTensor S` is
   `Algebra.TensorProduct.map (AlgHom.id R S) f`.
-* `TauCeti.Algebra.TensorProduct.mulLeft`, `TauCeti.Algebra.TensorProduct.mulRight`: the
+* `Algebra.TensorProduct.mulLeft`, `Algebra.TensorProduct.mulRight`: the
   multiplication maps `s ⊗ b ↦ s • b` and `b ⊗ t ↦ b * t`.
-* `TauCeti.Algebra.TensorProduct.map_assoc_tmul_one`: applying `f : B ⊗[R] C → D` after
+* `Algebra.TensorProduct.map_assoc_tmul_one`: applying `f : B ⊗[R] C → D` after
   reassociating `y ⊗ 1` is the base change of `b ↦ f (b ⊗ 1)`.
 -/
 
@@ -44,9 +44,7 @@ theorem AlgHom.lTensor_toLinearMap_apply {R B C : Type*} (S : Type*) [CommRing R
   | tmul s b => simp
   | add x y hx hy => simp [hx, hy]
 
-open Algebra.TensorProduct
-
-namespace TauCeti.Algebra.TensorProduct
+namespace Algebra.TensorProduct
 
 variable {R S A B : Type*} [CommSemiring R] [CommSemiring S] [Semiring A] [Algebra R A]
   [Semiring B] [Algebra R B]
@@ -94,4 +92,4 @@ theorem mulRight_tmul (b : B) (t : S) :
     (mulRight (b ⊗ₜ[R] t) : B) = b * algebraMap S B t := by
   simp [mulRight]
 
-end TauCeti.Algebra.TensorProduct
+end Algebra.TensorProduct
