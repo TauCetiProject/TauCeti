@@ -52,7 +52,7 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-universe u v
+universe u v w
 
 noncomputable section
 
@@ -96,16 +96,20 @@ theorem geometricallyReducedCommHopfAlgProperty.isReduced
 
 /-- Geometric reducedness descends along an injective algebra homomorphism of coordinate rings.
 Contravariantly, the target of a schematically dominant homomorphism from a geometrically reduced
-affine group is geometrically reduced. -/
+affine group is geometrically reduced. The coordinate ring of `H'` may live in any universe at
+least that of `H`: a test field for `H` is lifted along `ULift` to one for `H'`. -/
 theorem geometricallyReducedCommHopfAlgProperty.of_injective
-    {k : Type u} [Field k] {H H' : CommHopfAlgCat.{v} k}
-    (f : (H : Type v) →ₐ[k] (H' : Type v)) (hf : Function.Injective f)
+    {k : Type u} [Field k] {H : CommHopfAlgCat.{v} k} {H' : CommHopfAlgCat.{max v w} k}
+    (f : (H : Type v) →ₐ[k] (H' : Type (max v w))) (hf : Function.Injective f)
     (h : geometricallyReducedCommHopfAlgProperty k H') :
     geometricallyReducedCommHopfAlgProperty k H := by
   intro K _ _
-  let _ := h K
-  exact isReduced_of_injective (Algebra.TensorProduct.map f (AlgHom.id k K)).toRingHom
-    (Module.Flat.rTensor_preserves_injective_linearMap f.toLinearMap hf)
+  let _ := h (ULift.{w} K)
+  let e := Algebra.TensorProduct.congr (AlgEquiv.refl : H' ≃ₐ[k] H')
+    (ULift.algEquiv : ULift.{w} K ≃ₐ[k] K).symm
+  exact isReduced_of_injective
+    (e.toAlgHom.comp (Algebra.TensorProduct.map f (AlgHom.id k K))).toRingHom
+    (e.injective.comp (Module.Flat.rTensor_preserves_injective_linearMap f.toLinearMap hf))
 
 /-- Geometric reducedness is invariant under isomorphisms of commutative Hopf algebras. -/
 instance (k : Type u) [Field k] :
