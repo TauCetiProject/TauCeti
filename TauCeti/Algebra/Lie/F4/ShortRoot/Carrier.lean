@@ -340,7 +340,7 @@ theorem points_def (A : Type v) [CommRing A] :
 
 /-- A matrix is a point of the short-root carrier exactly when its associated convolution point
 kills the carrier's defining Hopf ideal. -/
-@[simp]
+-- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.
 theorem mem_points_iff (A : Type v) [CommRing A]
     (g : _root_.Matrix.GeneralLinearGroup (Fin 26) A) :
     g ∈ points A ↔ ∀ x ∈ definingIdeal,
