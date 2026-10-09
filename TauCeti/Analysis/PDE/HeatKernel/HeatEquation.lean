@@ -14,8 +14,10 @@ public import TauCeti.Analysis.PDE.HeatKernel.Bounds
 Let `g` be a measurable, essentially bounded function on a finite-dimensional real inner product
 space `E`, with values in a real normed space (a Banach space, for the two derivative formulas).
 The candidate solution of the Cauchy problem `∂ₜu = Δu`, `u(0, ·) = g`, is
-`u(t, x) = (K_t ⋆ g)(x)`, where `K_t` is the heat kernel. Its initial condition is
-`TauCeti.tendsto_heatKernel_convolution`. This file proves the equation:
+`u(t, x) = (K_t ⋆ g)(x)`, where `K_t` is the heat kernel. The initial condition holds pointwise
+at every point `x₀` where `g` is continuous (for `F` a Banach space): `u(t, x) → g(x₀)` as
+`(t, x) → (0⁺, x₀)`, which is `TauCeti.tendsto_heatKernel_convolution`. At points where `g` is
+discontinuous no such limit is asserted. This file proves the equation:
 
 * `u(t, ·)` is smooth for every `t > 0`, however rough `g` is;
 * `Δu(t, ·) = ΔK_t ⋆ g`, and `∂ₜu(t, x) = (ΔK_t ⋆ g)(x)`, so `∂ₜu = Δu` for `t > 0`.
