@@ -125,9 +125,15 @@ theorem toChart_symm_coord_symm_coord {y : M} (hy : y ∈ φ.toChart.source) :
   rw [LinearEquiv.symm_apply_apply, φ.toChart.left_inv hy]
 
 omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- The chart sends `0` back to the critical point. -/
+@[simp]
+theorem toChart_symm_zero : φ.toChart.symm 0 = x := by
+  rw [← φ.apply_self, φ.toChart.left_inv φ.mem_source]
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- The critical point is the point with coordinates `0`. -/
 theorem toChart_symm_coord_symm_zero : φ.toChart.symm (φ.coord.symm 0) = x := by
-  rw [map_zero, ← φ.apply_self, φ.toChart.left_inv φ.mem_source]
+  rw [map_zero, toChart_symm_zero]
 
 end MorseChart
 
