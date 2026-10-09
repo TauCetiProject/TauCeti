@@ -7,10 +7,9 @@ module
 
 public import Mathlib.Topology.MetricSpace.Bounded
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
-import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Sqrt
-import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.Analysis.Calculus.FDeriv.CircleMap
 
 /-!
 # Finite-energy `J`-holomorphic curves near a puncture
@@ -30,7 +29,8 @@ it gives `π |z - z₀|² ‖∂ₛu(z)‖² ≤ 32 ∫_{B_{2|z - z₀|}(z₀)} 
 equation bounds the full derivative by `∂ₛu`.
 
 Consequently the loops `θ ↦ u(z₀ + ρ e^{iθ})` have derivative `o(1)`, so the images of the
-circles `|z - z₀| = ρ` shrink: their diameter tends to `0` as `ρ → 0`. This is the first step of
+circles `|z - z₀| = ρ` shrink: their diameter tends to `0` as `ρ → 0`
+(`TauCeti.tendsto_diam_image_sphere_nhdsGT_zero_of_tendsto`). This is the first step of
 the removal of singularities for finite-energy `J`-holomorphic curves: combined with the
 isoperimetric inequality (`TauCeti.SymplecticForm.abs_integral_apply_le`) it yields the decay of
 the energy near the puncture, and then the extension of `u` across it.
@@ -175,46 +175,10 @@ theorem tendsto_diam_image_sphere_nhdsGT_zero
     (huK : MapsTo u (ball z₀ R \ {z₀}) K)
     (hE : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (ball z₀ R)) :
     Tendsto (fun ρ ↦ diam (u '' sphere z₀ ρ)) (𝓝[>] 0) (𝓝 0) := by
-  have hd := tendsto_norm_sub_mul_norm_fderiv_nhdsNE hW hJ hK hKW hJsq hR hu hCR huK hE
-  rw [Metric.tendsto_nhds]
-  intro η hη
-  obtain ⟨r₀, hr₀, hr₀d⟩ := Metric.tendsto_nhdsWithin_nhds.1 hd (η / 16) (by positivity)
-  filter_upwards [Ioo_mem_nhdsGT (lt_min hr₀ hR)] with ρ hρ
-  obtain ⟨hρ₀, hρ₁⟩ := hρ
-  have hcmem (θ : ℝ) : circleMap z₀ ρ θ ∈ ball z₀ R \ {z₀} := by
-    refine ⟨?_, circleMap_ne_center hρ₀.ne'⟩
-    rw [mem_ball, dist_eq_norm, circleMap_sub_center, norm_circleMap_zero, abs_of_pos hρ₀]
-    exact hρ₁.trans_le (min_le_right _ _)
-  -- The loop `θ ↦ u (circleMap z₀ ρ θ)` has speed `≤ |z - z₀| ‖du(z)‖ ≤ η / 16`.
-  have hspeed (θ : ℝ) : ‖fderiv ℝ u (circleMap z₀ ρ θ) (circleMap 0 ρ θ * I)‖ ≤ η / 16 := by
-    refine ((fderiv ℝ u _).le_opNorm _).trans ?_
-    have hz : ‖circleMap z₀ ρ θ - z₀‖ = ρ := by
-      rw [circleMap_sub_center, norm_circleMap_zero, abs_of_pos hρ₀]
-    have h := hr₀d (hcmem θ).2 (by
-      rw [dist_eq_norm, hz]
-      exact hρ₁.trans_le (min_le_left _ _))
-    rw [Real.dist_eq, sub_zero, hz] at h
-    rw [norm_mul, Complex.norm_I, mul_one, norm_circleMap_zero, abs_of_pos hρ₀, mul_comm]
-    exact (le_abs_self _).trans h.le
-  have hlip (θ φ : ℝ) :
-      ‖u (circleMap z₀ ρ φ) - u (circleMap z₀ ρ θ)‖ ≤ η / 16 * ‖φ - θ‖ := by
-    refine convex_univ.norm_image_sub_le_of_norm_hasDerivWithin_le (f := u ∘ circleMap z₀ ρ)
-      (fun x _ ↦ ?_) (fun x _ ↦ hspeed x) (mem_univ θ) (mem_univ φ)
-    have hu' : DifferentiableAt ℝ u (circleMap z₀ ρ x) :=
-      (hu.contDiffAt ((isOpen_ball.sdiff isClosed_singleton).mem_nhds (hcmem x))).differentiableAt
-        (by norm_num)
-    exact (hu'.hasFDerivAt.comp_hasDerivAt x (hasDerivAt_circleMap z₀ ρ x)).hasDerivWithinAt
-  have hdiam : diam (u '' sphere z₀ ρ) ≤ η / 16 * (2 * π) := by
-    refine diam_le_of_forall_dist_le (by positivity) ?_
-    rw [← abs_of_pos hρ₀, ← image_circleMap_Ioc, ← image_comp]
-    rintro _ ⟨θ, hθ, rfl⟩ _ ⟨φ, hφ, rfl⟩
-    rw [dist_eq_norm]
-    refine (hlip φ θ).trans ?_
-    rw [Real.norm_eq_abs]
-    gcongr
-    rw [abs_sub_le_iff]
-    constructor <;> linarith [hθ.1, hθ.2, hφ.1, hφ.2]
-  rw [Real.dist_eq, sub_zero, abs_of_nonneg diam_nonneg]
-  nlinarith [Real.pi_le_four]
+  refine tendsto_diam_image_sphere_nhdsGT_zero_of_tendsto ?_
+    (tendsto_norm_sub_mul_norm_fderiv_nhdsNE hW hJ hK hKW hJsq hR hu hCR huK hE)
+  filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (ball_mem_nhds z₀ hR)] with z hz hzR
+  exact (hu.contDiffAt ((isOpen_ball.sdiff isClosed_singleton).mem_nhds ⟨hzR, hz⟩)).differentiableAt
+    (by norm_num)
 
 end TauCeti
