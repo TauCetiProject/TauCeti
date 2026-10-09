@@ -42,7 +42,7 @@ namespace TauCeti.TateCohomology
 
 variable {G X : Type} [Group G] [Fintype G] [MulAction G X]
 
-/-- Degree-minus-one Tate cohomology of the integral sum-zero permutation lattice is finite.
+/-- Degree-minus-one Tate cohomology of the integral sum-zero permutation module is finite.
 No nonemptiness or finiteness of the permutation set or cyclicity of the group is required. -/
 instance finite_tateCohomology_negOne_augmentationSubrepresentation :
     Finite (tateCohomology
@@ -63,8 +63,8 @@ instance finite_tateCohomology_negOne_augmentationSubrepresentation :
     exact Finite.of_surjective (_root_.TateCohomology.δ hS (-2))
       ((ModuleCat.epi_iff_surjective _).1 hepi)
 
-/-- For a finite cyclic group acting on a nonempty set, the sum-zero lattice's Herbrand quotient
-is that of the permutation lattice divided by the order of the group. -/
+/-- For a finite cyclic group acting on a nonempty set, the integral sum-zero permutation module's
+Herbrand quotient is that of the integral permutation module divided by the order of the group. -/
 theorem herbrandQuotient_augmentationSubrepresentation_eq_div [Nonempty X] [IsCyclic G] :
     herbrandQuotient (Rep.of (augmentationSubrepresentation ℤ G X).toRepresentation) =
       herbrandQuotient (Rep.ofMulAction ℤ G X) / Nat.card G := by
