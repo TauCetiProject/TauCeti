@@ -78,6 +78,8 @@ finite-dimensional representations.
   invariants.
 * `Rep.invariantsFunctor_map_surjective_of_surjective_of_projective`: taking invariants preserves
   a surjective morphism of representations whose target is projective over the group algebra.
+* `Rep.trivialHomEquivInvariants`: the intertwiners out of the trivial line are the invariant
+  vectors.
 * `Rep.FiniteCyclicGroup.invariants_eq_ker_apply_sub`: for a cyclic group, the invariants are the
   kernel of the action of a generator minus the identity.
 * `Representation.IsIrreducible.invariants_eq_bot`: a nontrivial irreducible representation has no
@@ -309,6 +311,24 @@ theorem invariantsFunctor_map_surjective_of_surjective_of_projective {A B : Rep 
   have : Epi f := (epi_iff_surjective f).2 hf
   have : IsSplitEpi f := ⟨⟨Projective.factorThru (𝟙 B) f, Projective.factorThru_comp _ _⟩⟩
   exact (ModuleCat.epi_iff_surjective _).1 inferInstance
+
+/-- **Intertwiners out of the trivial line are the invariant vectors.** A morphism
+`Rep.trivial k G k ⟶ A` is determined by the image of `1`, which is invariant, and an invariant
+vector `x` is the image of `1` under `r ↦ r • x`. -/
+noncomputable def trivialHomEquivInvariants (A : Rep k G) :
+    (Rep.trivial k G k ⟶ A) ≃ₗ[k] A.ρ.invariants where
+  toFun f := ⟨f.hom 1, fun g ↦ by simpa using (hom_comm_apply f g 1).symm⟩
+  invFun x := ConcreteCategory.ofHom
+    ⟨LinearMap.toSpanSingleton k A x, fun g ↦ LinearMap.ext fun r ↦ by simp [x.2 g]⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv f := hom_ext <| Representation.IntertwiningMap.ext <| LinearMap.ext_ring <| one_smul k _
+  right_inv x := Subtype.ext (one_smul k (x : A))
+
+@[simp]
+theorem coe_trivialHomEquivInvariants_apply (A : Rep k G) (f : Rep.trivial k G k ⟶ A) :
+    (trivialHomEquivInvariants A f : A) = f.hom 1 :=
+  (rfl)
 
 end Rep
 
