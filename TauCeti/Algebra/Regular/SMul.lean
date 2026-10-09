@@ -26,6 +26,7 @@ variable {R S F : Type*} [Mul R] [Mul S] [EquivLike F R S] [MulEquivClass F R S]
 
 /-- A multiplicative isomorphism preserves and reflects nonzerodivisors: `e a` is a nonzerodivisor
 of `S` if and only if `a` is one of `R`. -/
+@[simp]
 theorem isSMulRegular_map_iff (e : F) (a : R) : IsSMulRegular S (e a) ↔ IsSMulRegular R a :=
   (Equiv.isSMulRegular_congr (e := EquivLike.toEquiv e) fun b ↦ map_mul e a b).symm
 
