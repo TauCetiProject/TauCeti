@@ -49,8 +49,9 @@ namespace TauCeti.DynkinType
 
 /-- The unique entry of the tripled type-`D₄` table carrying the weight of a spin sign set.
 
-Existence comes from `range_typeDSpinWeight_four_subset_range_d4TripledWeight`; uniqueness is
-recorded separately in `d4SpinIndex_injective`. -/
+Existence comes from `range_typeDSpinWeight_four_subset_range_d4TripledWeight`; uniqueness follows
+from `d4TripledWeight_injective`. The map from sign sets is itself injective by
+`d4SpinIndex_injective`. -/
 noncomputable def d4SpinIndex (s : Finset (Fin 4)) : Fin 24 :=
   Classical.choose
     (range_typeDSpinWeight_four_subset_range_d4TripledWeight ⟨s, rfl⟩)
