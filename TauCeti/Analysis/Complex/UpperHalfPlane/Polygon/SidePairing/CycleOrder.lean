@@ -17,7 +17,8 @@ The derivative of a side-pairing cycle transformation at its finite vertex is
 order `t`, including `t = 1`. This supplies the finite-cycle relations used in polygon
 presentations. Neither discreteness nor a fundamental-domain assumption is needed: the angle
 condition alone determines this order. The converse angle condition for a fundamental polygon
-requires no-overlap and is a separate statement.
+requires no-overlap and is proved in
+`TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.VertexStabilizer`.
 
 ## References
 
