@@ -14,6 +14,7 @@ For a symmetric endomorphism of a finite-dimensional real or complex inner-produ
 `finiteFunctionalCalculus` applies an arbitrary real-valued function to the eigenvalues.
 It is the spectral sum of the rank-one projections onto an orthonormal eigenbasis.
 Its action on every eigenspace characterizes it independently of the chosen eigenbasis.
+Given `hT : T.IsSymmetric` and `f : ℝ → ℝ`, use `TauCeti.finiteFunctionalCalculus hT f`.
 
 The product law and preservation of the commutant allow scalar identities to be transferred
 to operators. In particular this calculus can be applied to the scalar square-root function
