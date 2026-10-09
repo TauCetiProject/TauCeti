@@ -61,6 +61,15 @@ noncomputable def affineToricSchemeAction (hi : IsIntegralLattice i)
       (affineCoordinateRing hi σ)).hom ≫
     Spec.map (CommRingCat.ofHom (affineCoordinateRingCoaction hi σ).toRingHom)
 
+/-- The affine toric action is `Spec` of the coordinate-ring coaction after the canonical
+comparison of the fibre product with the spectrum of the tensor product. -/
+theorem affineToricSchemeAction_def (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
+    affineToricSchemeAction hi σ =
+      (pullbackSpecIso ℂ (affineCoordinateRing hi (⊥ : PointedCone ℝ V))
+          (affineCoordinateRing hi σ)).hom ≫
+        Spec.map (CommRingCat.ofHom (affineCoordinateRingCoaction hi σ).toRingHom) :=
+  (rfl)
+
 /-- The affine toric action, packaged as a morphism of schemes over `Spec ℂ`. -/
 noncomputable def affineToricSchemeActionOver (hi : IsIntegralLattice i)
     (σ : PointedCone ℝ V) :
@@ -78,7 +87,7 @@ noncomputable def affineToricSchemeActionOver (hi : IsIntegralLattice i)
         (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing hi σ)))) ≫
       Spec.map (CommRingCat.ofHom
         (algebraMap ℂ (affineCoordinateRing hi (⊥ : PointedCone ℝ V))))
-  rw [affineToricSchemeAction, Category.assoc]
+  rw [affineToricSchemeAction_def, Category.assoc]
   rw [← Spec.map_comp, ← CommRingCat.ofHom_comp]
   have h : (affineCoordinateRingCoaction hi σ).toRingHom.comp
       (algebraMap ℂ (affineCoordinateRing hi σ)) =
@@ -104,7 +113,7 @@ theorem affineToricSchemeActionOver_left (hi : IsIntegralLattice i)
 theorem affineToricSchemeAction_bot (hi : IsIntegralLattice i) :
     affineToricSchemeAction hi (⊥ : PointedCone ℝ V) =
       μ[((denseTorusScheme hi).asOver (Spec (.of ℂ)))].left := by
-  rw [affineToricSchemeAction, mul_spec_asOver_spec_left]
+  rw [affineToricSchemeAction_def, mul_spec_asOver_spec_left]
   congr 1
   exact congrArg Spec.map <| congrArg CommRingCat.ofHom <|
     congrArg AlgHom.toRingHom <| affineCoordinateRingCoaction_bot hi
@@ -177,7 +186,7 @@ theorem affineToricSchemeActionOver_comp_map
     CommAlgCat.coe_tensorObj, ConcreteCategory.hom_ofHom, AlgHom.toRingHom_eq_coe,
     Under.homMk_right, Over.tensorHom_left, denseTorusScheme, affineToricScheme,
     Scheme.Hom.asOver, affineToricSchemeMap_def, Over.comp_left,
-    affineToricSchemeActionOver_left, affineToricSchemeAction, OverClass.asOverHom_left,
+    affineToricSchemeActionOver_left, affineToricSchemeAction_def, OverClass.asOverHom_left,
     R, a, m, t, b] at hl ⊢
   convert hl using 1 <;> rfl
 
