@@ -101,6 +101,7 @@ noncomputable def wangEndomorphism :
   𝟙 _ - monodromyChainMap φ R
 
 /-- On homology, the Wang endomorphism is the identity minus the map induced by monodromy. -/
+@[simp]
 lemma homologyMap_wangEndomorphism [CategoryWithHomology C] (n : ℕ) :
     HomologicalComplex.homologyMap (wangEndomorphism φ R) n =
       𝟙 _ - HomologicalComplex.homologyMap (monodromyChainMap φ R) n := by
@@ -112,20 +113,15 @@ endomorphism on the fibre is literally `id - φ_*`, rather than its negative. -/
 noncomputable def wangNullHomotopy :
     _root_.Homotopy
       (wangEndomorphism φ R ≫ fibreInclusionChainMap φ R) 0 where
-  hom i j := -(singularChainHomotopy φ R).hom i j
-  zero i j hij := by rw [(singularChainHomotopy φ R).zero i j hij, neg_zero]
+  hom := -(singularChainHomotopy φ R).hom
+  zero i j hij := by
+    rw [Pi.neg_apply, Pi.neg_apply, (singularChainHomotopy φ R).zero i j hij, neg_zero]
   comm i := by
-    simp only [HomologicalComplex.comp_f, wangEndomorphism,
-      HomologicalComplex.sub_f_apply, Preadditive.sub_comp, Category.id_comp,
-      HomologicalComplex.zero_f, add_zero]
-    have h := (singularChainHomotopy φ R).symm.comm i
+    have h := (singularChainHomotopy φ R).comm i
     simp only [HomologicalComplex.comp_f] at h
-    change (fibreInclusionChainMap φ R).f i -
-        (monodromyChainMap φ R).f i ≫ (fibreInclusionChainMap φ R).f i =
-      dNext i (singularChainHomotopy φ R).symm.hom +
-        prevD i (singularChainHomotopy φ R).symm.hom
-    rw [sub_eq_iff_eq_add]
-    exact h
+    simp only [HomologicalComplex.comp_f, wangEndomorphism, HomologicalComplex.sub_f_apply,
+      Preadditive.sub_comp, Category.id_comp, HomologicalComplex.zero_f, add_zero, map_neg, h]
+    abel
 
 /-- The null-homotopy used in the Wang mapping-cone map is the negative of the canonical
 monodromy homotopy. -/
