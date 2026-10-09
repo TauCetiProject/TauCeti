@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 public import TauCeti.Analysis.Distribution.Sobolev
-import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 
 /-!
 # Agreement of first-order weak and Bessel Sobolev regularity
@@ -22,7 +21,7 @@ Weak directional derivatives agree with the distributional derivatives of the as
 tempered distribution, connecting the weak-gradient and Bessel-potential descriptions.
 
 Use `TauCeti.memSobolev_one_of_hasWeakFDerivOn u g h` for the weak-to-Bessel inclusion and
-`TauCeti.memSobolev_one_iff_exists_w1p_value_eq u` for the whole-space equivalence.
+`MeasureTheory.Lp.memSobolev_one_iff_exists_w1p_value_eq u` for the whole-space equivalence.
 
 ## References
 
@@ -60,21 +59,5 @@ theorem memSobolev_one_of_hasWeakFDerivOn
     simpa only [innerSL_apply_apply, real_inner_comm] using hx.symm
   rw [(hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_ofReal_eq u d v).mp hd]
   exact memSobolev_zero_iff.mpr ⟨_, rfl⟩
-
-/-- Whole-space first-order Bessel regularity of a real `L²` function is equivalent to
-membership in the weak-derivative Sobolev space `W^{1,2}`. -/
-theorem memSobolev_one_iff_exists_w1p_value_eq
-    (u : Lp ℝ 2 (volume : Measure E)) :
-    MemSobolev 1 2 (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u)) ↔
-      ∃ w : W1p volume ⊤ 2, (W1p.value w : E → ℝ) =ᵐ[volume] u := by
-  refine ⟨Lp.exists_w1p_value_eq_of_memSobolev_one u, ?_⟩
-  rintro ⟨w, hw⟩
-  have hvolume : volume.restrict ((⊤ : Opens E) : Set E) = (volume : Measure E) := by simp
-  let g : Lp E 2 (volume : Measure E) := castLpₗᵢ (𝕜 := ℝ) hvolume (W1p.gradient w)
-  apply memSobolev_one_of_hasWeakFDerivOn u g
-  refine ((W1p.hasWeakFDerivOn w).congr_ae ?_).congr_ae_deriv ?_
-  · simpa only [Opens.coe_top, Measure.restrict_univ] using hw
-  · exact Filter.Eventually.of_forall fun x => by
-      simp only [g, coeFn_castLpₗᵢ]
 
 end TauCeti
