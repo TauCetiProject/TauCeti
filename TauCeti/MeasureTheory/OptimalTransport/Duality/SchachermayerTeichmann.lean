@@ -19,9 +19,11 @@ checked on finite families of points, without solving the dual problem.
 
 The cost must be finite everywhere. Ambrosio and Pratelli's example shows why: on the circle
 `ℝ / ℤ` with Lebesgue measure as both marginals, fix an irrational `α` and let `c (x, x) = 1`,
-`c (x, x + α) = 0`, and `c = ∞` elsewhere. Every rearrangement of finitely many diagonal points
-has infinite cost, so the diagonal is `c`-cyclically monotone. Yet the identity plan costs `1`,
-while the plan induced by the translation by `α` costs `0`.
+`c (x, x + α) = 0`, and `c = ∞` elsewhere. Every nonidentity permutation of finitely many
+distinct diagonal points has infinite cost: a finite-cost permutation could only move a point by
+the translation `x ↦ x + α`, and a cycle of `k` such moves would give `k • α ∈ ℤ`, contradicting
+irrationality. So the diagonal is `c`-cyclically monotone. Yet the identity plan costs `1`, while
+the plan induced by the translation by `α` costs `0`.
 
 The proof has two halves. First, Rüschendorf's potential of the cyclically monotone set gives real
 potentials `φ`, `ψ`, feasible on a product of sets of full measure, on whose contact set the plan
