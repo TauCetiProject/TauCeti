@@ -13,10 +13,11 @@ import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 # Dual attainment for costs with an integrable split upper bound
 
 Let `c : X × Y → ℝ≥0∞` be a lower semicontinuous cost on a product of Polish spaces, and suppose
-it has an integrable split upper bound: `c (x, y) ≤ cX x + cY y` with `cX ∈ L¹(μ)` and
-`cY ∈ L¹(ν)`. Then the Kantorovich dual problem between the probability measures `μ` and `ν` is
-attained by integrable potentials, and every optimal plan is concentrated on their contact set.
-In particular the cost is finite everywhere and the optimal cost is finite.
+it has an integrable split upper bound: `c (x, y) ≤ ENNReal.ofReal (cX x + cY y)` (the positive
+part of `cX x + cY y`) with `cX ∈ L¹(μ)` and `cY ∈ L¹(ν)`. Then the Kantorovich dual problem
+between the probability measures `μ` and `ν` is attained by integrable potentials, and every
+optimal plan is concentrated on their contact set. In particular the cost is finite everywhere and
+the optimal cost is finite.
 
 The potentials are feasible on a product `A ×ˢ B` of sets of full measure, not on all of
 `X × Y`. Nothing stronger holds in general: take `X = {0, 1}`, `μ = δ₀`, `Y = ℕ` with a law `ν`
@@ -29,17 +30,20 @@ The proof follows Villani's. Fix an optimal plan `π`. By
 `TauCeti.IsOptimalCoupling.exists_isCyclicallyMonotone_of_lowerSemicontinuous` it is concentrated
 on a Borel `c`-cyclically monotone set `S`. Rüschendorf's potential `φ₀` of `S` puts `S` inside
 its `c`-superdifferential, and `TauCeti.nullMeasurable_rockafellarPotential` makes it
-universally measurable. A Borel modification of `φ₀` on a full-measure set `A` and its
-`c`-transform restricted to `A` give the two potentials. The one-point chain bounds the first
-potential above by `c (x, p.2) - c p`, and the second is bounded above by `c (x₁, y) - φ x₁` for a
-fixed `x₁ ∈ A`. Along `π` the two potentials add up to the cost, so each is also bounded below
-by minus the upper bound of the other. The split upper bound turns these two-sided estimates into
-integrability.
+universally measurable. A Borel modification of `φ₀` on a full-measure set `A` and the
+`c`-transform of its restriction to `A` give the two potentials
+(`TauCeti.IsCoupling.exists_ae_add_eq_of_isCyclicallyMonotone`). Feasibility at fixed points
+`x₁ ∈ A` and `y₁ ∈ B` bounds them above by `c (x, y₁) - ψ y₁` and `c (x₁, y) - φ x₁`. Along `π` the
+two potentials add up to the cost, so each is also bounded below by minus the upper bound of the
+other. The split upper bound turns these two-sided estimates into integrability.
 
 ## Main statements
 
 * `TauCeti.ofReal_kantorovichDualValue_le_transportCost_of_null_compl` — weak duality for
   potentials feasible on a product of full-measure sets;
+* `TauCeti.IsCoupling.exists_ae_add_eq_of_isCyclicallyMonotone` — a coupling concentrated on a
+  Borel cyclically monotone set is certified by real potentials feasible on a product of
+  full-measure sets;
 * `TauCeti.IsOptimalCoupling.exists_ae_mem_dualContactSet_of_le_add` — every optimal plan is
   concentrated on the contact set of an integrable pair of potentials feasible on a product of
   full-measure sets;
@@ -89,43 +93,22 @@ theorem ofReal_kantorovichDualValue_le_transportCost_of_null_compl {φ : X → �
 variable [TopologicalSpace X] [PolishSpace X] [BorelSpace X] [TopologicalSpace Y] [PolishSpace Y]
   [BorelSpace Y] [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] {π : Measure (X × Y)}
 
-/-- **Optimal plans are certified by integrable potentials.** Let `c` be a lower semicontinuous
-cost on a product of Polish spaces with an integrable split upper bound
-`c (x, y) ≤ cX x + cY y`, and let `π` be an optimal coupling of two probability measures. Then
-there are integrable potentials `φ`, `ψ` and sets `A`, `B` of full measure such that the dual
-constraint `φ x + ψ y ≤ c (x, y)` holds on `A ×ˢ B` and `π` is concentrated on the contact set
-of `(φ, ψ)`. Feasibility cannot be required on all of `X × Y`; see the module docstring. -/
-theorem IsOptimalCoupling.exists_ae_mem_dualContactSet_of_le_add (h : IsOptimalCoupling c π μ ν)
-    (hc : LowerSemicontinuous c) {cX : X → ℝ} {cY : Y → ℝ} (hcX : Integrable cX μ)
-    (hcY : Integrable cY ν) (hle : ∀ x y, c (x, y) ≤ ENNReal.ofReal (cX x + cY y)) :
+/-- **Real contact potentials of a cyclically monotone set.** Let `r` be a measurable real cost
+on a product of Polish spaces, and let a coupling `π` of two probability measures be concentrated
+on a Borel `r`-cyclically monotone set `S`. Then there are potentials `φ` (Borel) and `ψ`
+(a.e.-measurable) and measurable sets `A`, `B` of full measure such that `φ x + ψ y ≤ r (x, y)`
+on `A ×ˢ B` and `φ x + ψ y = r (x, y)` for `π`-a.e. `(x, y)`. The potential `φ` is a Borel
+modification of Rüschendorf's potential `TauCeti.rockafellarPotential r S p`, and `ψ` is the
+`r`-transform of its restriction to `A`. -/
+theorem IsCoupling.exists_ae_add_eq_of_isCyclicallyMonotone (hπ : IsCoupling π μ ν)
+    {r : X × Y → ℝ} (hr : Measurable r) {S : Set (X × Y)} (hSmeas : MeasurableSet S)
+    (hS : IsCyclicallyMonotone r S) (haeS : ∀ᵐ z ∂π, z ∈ S) :
     ∃ (φ : X → ℝ) (ψ : Y → ℝ) (A : Set X) (B : Set Y), MeasurableSet A ∧ MeasurableSet B ∧
-      μ Aᶜ = 0 ∧ ν Bᶜ = 0 ∧ Integrable φ μ ∧ Integrable ψ ν ∧
-      (∀ x ∈ A, ∀ y ∈ B, ENNReal.ofReal (φ x + ψ y) ≤ c (x, y)) ∧
-      ∀ᵐ z ∂π, z ∈ dualContactSet c φ ψ := by
+      μ Aᶜ = 0 ∧ ν Bᶜ = 0 ∧ Measurable φ ∧ AEMeasurable ψ ν ∧
+      (∀ x ∈ A, ∀ y ∈ B, φ x + ψ y ≤ r (x, y)) ∧ ∀ᵐ z ∂π, φ z.1 + ψ z.2 = r z := by
   classical
-  have hπ := h.toIsCoupling
   have hfst := hπ.measurePreserving_fst.quasiMeasurePreserving
   have hsnd := hπ.measurePreserving_snd
-  -- The real cost `r`, dominated by the nonnegative split bound `|cX| + |cY|`.
-  set r : X × Y → ℝ := fun z ↦ (c z).toReal
-  have hctop z : c z ≠ ∞ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top (hle z.1 z.2)
-  have hcr : (fun z ↦ ENNReal.ofReal (r z)) = c := funext fun z ↦ ENNReal.ofReal_toReal (hctop z)
-  have hrmeas : Measurable r := hc.measurable.ennreal_toReal
-  have hrle x y : r (x, y) ≤ |cX x| + |cY y| :=
-    ENNReal.toReal_le_of_le_ofReal (by positivity) ((hle x y).trans
-      (ENNReal.ofReal_le_ofReal ((le_abs_self _).trans (abs_add_le _ _))))
-  have hrnn z : 0 ≤ r z := ENNReal.toReal_nonneg
-  -- The optimal cost is finite, so `π` is concentrated on a cyclically monotone Borel set `S`.
-  have hfinπ : ∫⁻ z, c z ∂π ≠ ∞ := by
-    refine ne_top_of_le_ne_top (hπ.integrable_add_split hcX.abs hcY.abs).lintegral_lt_top.ne
-      (lintegral_mono fun z ↦ ?_)
-    rw [← hcr]
-    exact ENNReal.ofReal_le_ofReal (hrle z.1 z.2)
-  obtain ⟨S, hSmeas, hSmono, hπS⟩ :=
-    h.exists_isCyclicallyMonotone_of_lowerSemicontinuous hc (h.lintegral_eq ▸ hfinπ)
-  rw [← hcr, isCyclicallyMonotone_ofReal_iff hrnn] at hSmono
-  have haeS : ∀ᵐ z ∂π, z ∈ S := measure_eq_zero_iff_ae_notMem.1 hπS |>.mono fun _ h ↦ by
-    simpa using h
   have hπ0 : π ≠ 0 := by
     rintro rfl
     exact IsProbabilityMeasure.ne_zero μ (by simpa using hπ.measurePreserving_fst.map_eq.symm)
@@ -134,9 +117,9 @@ theorem IsOptimalCoupling.exists_ae_mem_dualContactSet_of_le_add (h : IsOptimalC
   -- Rüschendorf's potential `φ₀` of `S`, and a Borel function `g` equal to it `μ`-a.e.
   set φ₀ := rockafellarPotential r S p
   have hsub : S ⊆ cSuperdifferential r φ₀ :=
-    hSmono.subset_cSuperdifferential_rockafellarPotential hp
+    hS.subset_cSuperdifferential_rockafellarPotential hp
   have hφ₀meas : AEMeasurable φ₀ μ :=
-    (nullMeasurable_rockafellarPotential μ hrmeas hSmeas p).aemeasurable
+    (nullMeasurable_rockafellarPotential μ hr hSmeas p).aemeasurable
   set g := hφ₀meas.mk φ₀
   have hg : Measurable g := hφ₀meas.measurable_mk
   have hφ₀g : ∀ᵐ z ∂π, φ₀ z.1 = g z.1 := hfst.ae hφ₀meas.ae_eq_mk
@@ -176,7 +159,7 @@ theorem IsOptimalCoupling.exists_ae_mem_dualContactSet_of_le_add (h : IsOptimalC
       by_cases hz : z.1 ∈ A <;> simp [hg', hz, EReal.coe_sub]
     rw [heq]
     exact Measurable.ite (hAmeas.preimage measurable_fst)
-      (measurable_coe_real_ereal.comp (hrmeas.sub (hg.ereal_toReal.comp measurable_fst)))
+      (measurable_coe_real_ereal.comp (hr.sub (hg.ereal_toReal.comp measurable_fst)))
       measurable_const
   have hψ₀meas : NullMeasurable ψ₀ ν := nullMeasurable_cTransform ν hint
   have hψ₀le y : ψ₀ y ≤ ((r (x₁, y) - φ x₁ : ℝ) : EReal) := by
@@ -214,33 +197,74 @@ theorem IsOptimalCoupling.exists_ae_mem_dualContactSet_of_le_add (h : IsOptimalC
     filter_upwards [haeS, haeAπ] with z hzS hzA
     simp only [hψ, hcontact z hzS hzA, EReal.toReal_coe]
     ring
-  -- Integrability: `φ ≤ c (·, p.2) - c p` on `A` and `ψ ≤ c (x₁, ·) - φ x₁` on `B`.
+  refine ⟨φ, ψ, A, B, hAmeas, hBmeas, hμA, hνB, hg.ereal_toReal,
+    hψ₀meas.aemeasurable.ereal_toReal, fun x hx y hy ↦ ?_, hsum⟩
+  -- Feasibility on `A ×ˢ B` is the `r`-transform inequality.
+  have hle := add_cTransform_le r g' x y
+  rwa [← hψ₀, hψB y hy, show g' x = φ x by simp [hg', hx], ← EReal.coe_add,
+    EReal.coe_le_coe_iff] at hle
+
+/-- **Optimal plans are certified by integrable potentials.** Let `c` be a lower semicontinuous
+cost on a product of Polish spaces with an integrable split upper bound
+`c (x, y) ≤ ENNReal.ofReal (cX x + cY y)`, and let `π` be an optimal coupling of two probability
+measures. Then there are integrable potentials `φ`, `ψ` and sets `A`, `B` of full measure such
+that the dual constraint `φ x + ψ y ≤ c (x, y)` holds on `A ×ˢ B` and `π` is concentrated on the
+contact set of `(φ, ψ)`. Feasibility cannot be required on all of `X × Y`; see the module
+docstring. -/
+theorem IsOptimalCoupling.exists_ae_mem_dualContactSet_of_le_add (h : IsOptimalCoupling c π μ ν)
+    (hc : LowerSemicontinuous c) {cX : X → ℝ} {cY : Y → ℝ} (hcX : Integrable cX μ)
+    (hcY : Integrable cY ν) (hle : ∀ x y, c (x, y) ≤ ENNReal.ofReal (cX x + cY y)) :
+    ∃ (φ : X → ℝ) (ψ : Y → ℝ) (A : Set X) (B : Set Y), MeasurableSet A ∧ MeasurableSet B ∧
+      μ Aᶜ = 0 ∧ ν Bᶜ = 0 ∧ Integrable φ μ ∧ Integrable ψ ν ∧
+      (∀ x ∈ A, ∀ y ∈ B, ENNReal.ofReal (φ x + ψ y) ≤ c (x, y)) ∧
+      ∀ᵐ z ∂π, z ∈ dualContactSet c φ ψ := by
+  have hπ := h.toIsCoupling
+  -- The real cost `r`, dominated by the nonnegative split bound `|cX| + |cY|`.
+  set r : X × Y → ℝ := fun z ↦ (c z).toReal
+  have hctop z : c z ≠ ∞ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top (hle z.1 z.2)
+  have hcr : (fun z ↦ ENNReal.ofReal (r z)) = c := funext fun z ↦ ENNReal.ofReal_toReal (hctop z)
+  have hrmeas : Measurable r := hc.measurable.ennreal_toReal
+  have hrle x y : r (x, y) ≤ |cX x| + |cY y| :=
+    ENNReal.toReal_le_of_le_ofReal (by positivity) ((hle x y).trans
+      (ENNReal.ofReal_le_ofReal ((le_abs_self _).trans (abs_add_le _ _))))
+  have hrnn z : 0 ≤ r z := ENNReal.toReal_nonneg
+  -- The optimal cost is finite, so `π` is concentrated on a cyclically monotone Borel set `S`.
+  have hfinπ : ∫⁻ z, c z ∂π ≠ ∞ := by
+    refine ne_top_of_le_ne_top (hπ.integrable_add_split hcX.abs hcY.abs).lintegral_lt_top.ne
+      (lintegral_mono fun z ↦ ?_)
+    rw [← hcr]
+    exact ENNReal.ofReal_le_ofReal (hrle z.1 z.2)
+  obtain ⟨S, hSmeas, hSmono, hπS⟩ :=
+    h.exists_isCyclicallyMonotone_of_lowerSemicontinuous hc (h.lintegral_eq ▸ hfinπ)
+  rw [← hcr, isCyclicallyMonotone_ofReal_iff hrnn] at hSmono
+  have haeS : ∀ᵐ z ∂π, z ∈ S := measure_eq_zero_iff_ae_notMem.1 hπS |>.mono fun _ h ↦ by
+    simpa using h
+  -- Real potentials feasible on `A ×ˢ B` that add up to the cost along `π`.
+  obtain ⟨φ, ψ, A, B, hAmeas, hBmeas, hμA, hνB, hφmeas, hψmeas, hfeas, hsum⟩ :=
+    hπ.exists_ae_add_eq_of_isCyclicallyMonotone hrmeas hSmeas hSmono haeS
+  obtain ⟨x₁, hx₁⟩ := (measure_eq_zero_iff_ae_notMem.1 hμA).exists
+  obtain ⟨y₁, hy₁⟩ := (measure_eq_zero_iff_ae_notMem.1 hνB).exists
+  rw [notMem_compl_iff] at hx₁ hy₁
+  -- Integrability: `φ ≤ c (·, y₁) - ψ y₁` on `A` and `ψ ≤ c (x₁, ·) - φ x₁` on `B`.
   obtain ⟨hφint, hψint⟩ := hπ.integrable_and_integrable_of_ae_add_nonneg (f := φ) (g := ψ)
-    (U := fun x ↦ |cX x| + (|cY p.2| - r p)) (V := fun y ↦ |cY y| + (|cX x₁| - φ x₁))
-    hg.ereal_toReal.aestronglyMeasurable hψ₀meas.aemeasurable.ereal_toReal.aestronglyMeasurable
-    (hcX.abs.add (integrable_const _)) (hcY.abs.add (integrable_const _)) (haeA.mono fun x hx ↦ by
-      have hle : φ₀ x ≤ ((r (x, p.2) - r p : ℝ) : EReal) := rockafellarPotential_le_sub hp x
-      rw [hφA x hx, EReal.coe_le_coe_iff] at hle
-      linarith [hrle x p.2])
-    (haeB.mono fun y hy ↦ by
-      have hle := hψ₀le y
-      rw [hψB y hy, EReal.coe_le_coe_iff] at hle
-      linarith [hrle x₁ y])
+    (U := fun x ↦ |cX x| + (|cY y₁| - ψ y₁)) (V := fun y ↦ |cY y| + (|cX x₁| - φ x₁))
+    hφmeas.aestronglyMeasurable hψmeas.aestronglyMeasurable
+    (hcX.abs.add (integrable_const _)) (hcY.abs.add (integrable_const _))
+    ((measure_eq_zero_iff_ae_notMem.1 hμA).mono fun x hx ↦ by
+      linarith [hfeas x (notMem_compl_iff.1 hx) y₁ hy₁, hrle x y₁])
+    ((measure_eq_zero_iff_ae_notMem.1 hνB).mono fun y hy ↦ by
+      linarith [hfeas x₁ hx₁ y (notMem_compl_iff.1 hy), hrle x₁ y])
     (hsum.mono fun z hz ↦ hz ▸ hrnn z)
   refine ⟨φ, ψ, A, B, hAmeas, hBmeas, hμA, hνB, hφint, hψint, fun x hx y hy ↦ ?_,
     hsum.mono fun z hz ↦ mem_dualContactSet_of_toReal_eq (hctop z) hz.symm⟩
-  -- Feasibility on `A ×ˢ B` is the `c`-transform inequality.
-  have hle := add_cTransform_le r g' x y
-  rw [← hψ₀, hψB y hy, show g' x = φ x by simp [hg', hx], ← EReal.coe_add,
-    EReal.coe_le_coe_iff] at hle
-  exact (ENNReal.ofReal_le_ofReal hle).trans_eq (ENNReal.ofReal_toReal (hctop _))
+  exact (ENNReal.ofReal_le_ofReal (hfeas x hx y hy)).trans_eq (ENNReal.ofReal_toReal (hctop _))
 
 /-- **Kantorovich dual attainment for costs with an integrable split upper bound.** Let `c` be a
-lower semicontinuous cost on a product of Polish spaces with `c (x, y) ≤ cX x + cY y` for
-integrable `cX` and `cY`. Then there are integrable potentials `φ`, `ψ`, feasible on a product
-`A ×ˢ B` of sets of full measure, whose dual value is the optimal transport cost. By
-`TauCeti.ofReal_kantorovichDualValue_le_transportCost_of_null_compl` no such pair has a larger
-value, so the dual problem over this class is attained. -/
+lower semicontinuous cost on a product of Polish spaces with
+`c (x, y) ≤ ENNReal.ofReal (cX x + cY y)` for integrable `cX` and `cY`. Then there are integrable
+potentials `φ`, `ψ`, feasible on a product `A ×ˢ B` of sets of full measure, whose dual value is
+the optimal transport cost. By `TauCeti.ofReal_kantorovichDualValue_le_transportCost_of_null_compl`
+no such pair has a larger value, so the dual problem over this class is attained. -/
 theorem exists_kantorovichDualValue_eq_of_le_add (hc : LowerSemicontinuous c) {cX : X → ℝ}
     {cY : Y → ℝ} (hcX : Integrable cX μ) (hcY : Integrable cY ν)
     (hle : ∀ x y, c (x, y) ≤ ENNReal.ofReal (cX x + cY y)) :

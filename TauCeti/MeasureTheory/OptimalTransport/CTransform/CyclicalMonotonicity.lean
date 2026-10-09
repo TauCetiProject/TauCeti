@@ -216,6 +216,7 @@ theorem rockafellarPotential_le_sub {p : X × Y} (hp : p ∈ S) (x : X) :
 
 /-- The potential vanishes at the source coordinate of its base point; this is where cyclical
 monotonicity is used, and it is what keeps the potential from being identically `⊥`. -/
+@[simp]
 theorem rockafellarPotential_self (hS : IsCyclicallyMonotone c S) {p : X × Y}
     (hp : p ∈ S) : rockafellarPotential c S p p.1 = 0 := by
   refine le_antisymm ?_ (le_rockafellarPotential fun n w hw0 hw => ?_)
