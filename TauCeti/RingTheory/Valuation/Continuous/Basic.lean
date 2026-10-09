@@ -80,8 +80,8 @@ sets are *literally equal* for equivalent valuations, which is
   a discrete ring is continuous.
 * `Valuation.IsContinuous.comap` : **Remark 7.9**, continuity is inherited along a
   continuous ring homomorphism.
-* `Valuation.IsContinuous.of_lt_imp_lt` : a valuation strictly dominated by a continuous one is
-  continuous.
+* `Valuation.IsContinuous.of_lt_imp_lt` : a valuation that preserves the strict comparisons and
+  the zeros of a continuous valuation is continuous.
 * `TauCeti.isClosed_supp_of_isContinuous`: the support of a continuous valuation is closed.
 
 ## References
@@ -167,11 +167,11 @@ theorem IsContinuous.sub_lt_mem_nhds [SeparatelyContinuousAdd A] {v : Valuation 
   refine ((hv b).preimage hcont).mem_nhds ?_
   simpa using zero_lt_iff.mpr hb
 
-/-- **A valuation strictly dominated by a continuous one is continuous.** If `w` is continuous,
-vanishes only where `v` does, and `w a < w b` forces `v a < v b`, then `v` is continuous: around
-each `x` with `v x < v b`, the `w`-ball `{y | w (y - x) < w b}` stays inside `{y | v y < v b}`.
-This is how valuations refining a continuous one, such as the rank-two points of a disc beside
-its Gauss points, inherit continuity. -/
+/-- **Continuity under refinement.** If `w` is continuous, vanishes only where `v` does, and
+`w a < w b` forces `v a < v b`, then `v` is continuous: around each `x` with `v x < v b`, the
+`w`-ball `{y | w (y - x) < w b}` stays inside `{y | v y < v b}`. This is how valuations refining a
+continuous one, such as the refined points of a disc beside its Gauss points, inherit
+continuity. -/
 theorem IsContinuous.of_lt_imp_lt [SeparatelyContinuousAdd A] {v : Valuation A Γ₀}
     {w : Valuation A Γ₀'} (hw : w.IsContinuous) (h0 : ∀ b, w b = 0 → v b = 0)
     (h : ∀ a b, w a < w b → v a < v b) : v.IsContinuous := by

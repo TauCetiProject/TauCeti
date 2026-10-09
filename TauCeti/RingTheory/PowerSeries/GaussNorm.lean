@@ -49,7 +49,7 @@ dominant degree* (`IsLowestDominant`); both are additive on products. Recording 
 the Gauss norm refines `gaussValuation` to a valuation with values in the lexicographically ordered
 group `ℝ≥0ˣ ×ₗ ℤ`: `gaussValuationAbove` records the distinguished degree and `gaussValuationBelow`
 the negated lowest dominant degree. They are the Gauss norms at a radius infinitesimally above and
-infinitesimally below `c`, and pulled back to the Tate algebra they give the rank-two points of the
+infinitesimally below `c`, and pulled back to the Tate algebra they give refined points of the
 closed unit disc next to its Gauss points.
 
 ## Main definitions

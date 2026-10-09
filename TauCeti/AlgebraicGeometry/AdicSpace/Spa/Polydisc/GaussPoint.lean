@@ -38,7 +38,7 @@ classical point at `a` kills `T - a`. Distinct radii give distinct points by com
 powers of `T` with constants. The file does not treat Wedhorn's classification of all points of
 the disc; the Gauss points of discs about other centres are `TauCeti.ValuationSpectrum.discPoint`.
 
-Next to each Gauss point `η_r` sit the rank-two points `η_{r⁻}` and `η_{r⁺}`, the Gauss norms at a
+Next to each Gauss point `η_r` sit the refined points `η_{r⁻}` and `η_{r⁺}`, the Gauss norms at a
 radius infinitesimally below and above `r`. They are defined by the valuations
 `f ↦ (|f|_r, -s)` and `f ↦ (|f|_r, s)` with values in `ℝ≥0ˣ ×ₗ ℤ`, where `s` is the first,
 respectively the last, degree in which `f` attains `|f|_r`
