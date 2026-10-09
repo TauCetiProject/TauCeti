@@ -187,7 +187,6 @@ section BaseChange
 variable {K : Type*} [Field K]
 
 /-- Base change preserves the identity endomorphism, the `1` of the endomorphism ring. -/
-@[simp]
 theorem map_one (f : F →+* K) : (1 : Hom W₁ W₁).map f = 1 :=
   id_map W₁ f
 
