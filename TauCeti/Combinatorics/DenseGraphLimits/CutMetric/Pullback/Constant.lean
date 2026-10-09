@@ -29,9 +29,9 @@ corresponding value of `cutDist` independently of the equivalence. That agreemen
 independent check of `cutDist_eq_cutDistPullback` on carriers with atoms: a point mass, the
 two-point carrier, and couplings mixing an atomic and a continuous direction.
 
-The values are in general nonzero. A map form indexed by an empty family on atomic carriers — for
-instance one ranging over measure-preserving *bijections* with `(I, volume)`, of which an atomic
-carrier has none — would be the junk value `0` there and would contradict them.
+The values are in general nonzero. On standard Borel carriers with atoms, there are no
+measure-preserving *bijections* with `(I, volume)`. A map form indexed by that empty family
+would be the junk value `0` there and would contradict these values.
 
 ## Main results
 
@@ -141,7 +141,7 @@ theorem cutDistPullback_dirac_left [StandardBorelSpace Ω₂] {a : Ω₁}
   rw [cutDistPullback_comm, cutDistPullback_dirac_right, cutNorm_sub_rev]
 
 /-- **Two graphons on point masses are at map-form cut distance `|U a a - W b b|`**, on arbitrary
-carriers, although no measure-preserving bijection relates either carrier to `(I, volume)`. -/
+measurable carriers. -/
 @[simp]
 theorem cutDistPullback_dirac_dirac {a : Ω₁} {b : Ω₂} (U : Graphon Ω₁ (Measure.dirac a))
     (W : Graphon Ω₂ (Measure.dirac b)) : cutDistPullback U W = |U a a - W b b| := by
