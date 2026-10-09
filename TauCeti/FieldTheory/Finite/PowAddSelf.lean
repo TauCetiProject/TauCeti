@@ -62,8 +62,6 @@ theorem natCard_pow_add_self_eq [Finite K] (hK : Nat.card K = (p ^ n) ^ 2) {c : 
   -- Kernel and image of `T` lie in the root sets of `X ^ q + X` and `X ^ q - X`.
   have hX1 : (X ^ q + X : K[X]).natDegree = q := by
     rw [natDegree_add_eq_left_of_degree_lt] <;> simp [hq]
-  have hX2 : (X ^ q - X : K[X]).natDegree = q := by
-    rw [natDegree_sub_eq_left_of_natDegree_lt] <;> simp [hq]
   have hker : #({b | T b = 0} : Finset K) ≤ q := by
     refine (card_le_degree_of_subset_roots fun b hb ↦ ?_).trans hX1.le
     have hb : T b = 0 := (Finset.mem_filter.mp hb).2
@@ -75,9 +73,10 @@ theorem natCard_pow_add_self_eq [Finite K] (hK : Nat.card K = (p ^ n) ^ 2) {c : 
     simp only [Finset.mem_filter, Finset.mem_univ, true_and, hT, hqdef, add_pow_expChar_pow]
     rw [← pow_mul, ← sq, hpow, add_comm]
   have hfix : #({c | c ^ q = c} : Finset K) ≤ q := by
-    refine (card_le_degree_of_subset_roots fun c hc ↦ ?_).trans hX2.le
+    refine (card_le_degree_of_subset_roots fun c hc ↦ ?_).trans
+      (FiniteField.X_pow_card_sub_X_natDegree_eq K hq).le
     have hc : c ^ q = c := (Finset.mem_filter.mp hc).2
-    rw [mem_roots (ne_zero_of_natDegree_gt (hX2 ▸ hq))]
+    rw [mem_roots (FiniteField.X_pow_card_sub_X_ne_zero K hq)]
     simp [hc]
   -- `|ker T| · |im T| = q²`, so both have exactly `q` elements.
   have hmul : Nat.card T.ker * Nat.card T.range = q ^ 2 := by
