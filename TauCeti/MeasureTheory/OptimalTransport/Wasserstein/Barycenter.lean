@@ -24,10 +24,10 @@ weighted quadratic Wasserstein cost `ν ↦ ∑ i, w i * W₂(ν, μ i) ^ 2` is 
 More precisely, the weighted variance decomposition applied pointwise to quantile functions gives,
 for every probability law `ν` on `ℝ`,
 
-`∑ i, w i * W₂(ν, μ i) ^ 2 = W₂(ν, ν̄) ^ 2 + ∑ i, w i * W₂(ν̄, μ i) ^ 2`
+`∑ i, w i * W₂(ν, μ i) ^ 2 = W₂(ν, β) ^ 2 + ∑ i, w i * W₂(β, μ i) ^ 2`
 
-with `ν̄ = quantileBarycenter w μ`, as an identity in `[0, ∞]` with no moment hypotheses. Hence
-`ν̄` minimizes the weighted cost, and when that minimum is finite it is the only minimizer. In the
+with `β = quantileBarycenter w μ`, as an identity in `[0, ∞]` with no moment hypotheses. Hence
+`β` minimizes the weighted cost, and when that minimum is finite it is the only minimizer. In the
 quadratic Wasserstein space `P₂ (ℝ)` this identifies the Fréchet barycenter of the finitely
 supported law `∑ i, w i • δ_{μ i}`: it exists, is unique, and its quantile function is
 `∑ i, w i * (μ i).quantile` almost everywhere.
