@@ -32,7 +32,8 @@ the points of the curve `W.map f` over `S`, with no fields and no tower involved
   statement for `f`.
 * `WeierstrassCurve.Affine.Point.mapAlong_iterateFrobenius_some`: iterated Frobenius
   sends `(x, y)` to `(x ^ (p ^ n), y ^ (p ^ n))`.
-* `WeierstrassCurve.Affine.Point.mapAlong_add`: over fields the transport is additive.
+* `WeierstrassCurve.Affine.Point.mapAlong_add` and `mapAlong_zsmul`: over fields the transport is
+  additive and commutes with integer multiples.
 
 `Affine.Point.map` is already an `AddMonoidHom`, so installing `f.toAlgebra` locally and rewriting
 with `mapAlong_eq_map` gives `map_add`, `map_zero` and `map_zsmul` from Mathlib directly, including
@@ -184,6 +185,14 @@ theorem _root_.WeierstrassCurve.Affine.Point.mapAlong_add (P Q : W.toAffine.Poin
   rw [hmap, hmap, hmap]
   simpa only using!
     (Affine.Point.map (W' := W) (Algebra.ofId F K)).map_add P Q
+
+/-- **Over fields the point map commutes with integer multiples.** -/
+@[simp]
+theorem _root_.WeierstrassCurve.Affine.Point.mapAlong_zsmul (n : ℤ) (P : W.toAffine.Point) :
+    WeierstrassCurve.Affine.Point.mapAlong f hf (n • P) =
+      n • WeierstrassCurve.Affine.Point.mapAlong f hf P :=
+  map_zsmul (AddMonoidHom.mk' (WeierstrassCurve.Affine.Point.mapAlong f hf)
+    (WeierstrassCurve.Affine.Point.mapAlong_add f hf)) n P
 
 end FieldHom
 
