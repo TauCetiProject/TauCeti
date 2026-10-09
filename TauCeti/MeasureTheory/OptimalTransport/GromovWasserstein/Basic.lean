@@ -25,9 +25,12 @@ cannot be compared pointwise; the Gromov–Wasserstein distance compares them th
 `dis_p (π) = ‖(x, y), (x', y') ↦ edist (ωX (x, x')) (ωY (y, y'))‖_{L^p (π ⊗ π)}`,
 
 and the **`p`-Gromov–Wasserstein distance** is its infimum over the couplings of `μ` and `ν`.
-This file defines both, with no factor `1 / 2`, and proves that the Gromov–Wasserstein distance
-is an extended pseudodistance on measured kernels: it vanishes from a kernel to itself, it is
-symmetric, and for `1 ≤ p` it satisfies the triangle inequality.
+This file defines both, with no factor `1 / 2`, and proves the axioms of an extended
+pseudodistance under finiteness and measurability hypotheses: the distance vanishes from an
+almost-everywhere strongly measurable kernel on an s-finite measure to itself, it is symmetric
+for a finite measure on one side, and for `1 ≤ p` and a finite middle measure it satisfies the
+triangle inequality whenever the two couplings glue along the middle carrier, in particular when
+the third carrier is standard Borel.
 
 As for `TauCeti.wassersteinEDist`, the objective is an `eLpNorm`, so the exponent `p = ∞` is a case
 of the definition: there the distortion is the `π ⊗ π`-essential supremum of the kernel
@@ -75,10 +78,11 @@ The distance is an iterated `⨅` over plans and over proofs of `TauCeti.IsCoupl
 `TauCeti.wassersteinEDist`: two measures with no coupling, for instance finite measures of
 different total mass, are at distance `∞`.
 
-The distance is not a metric on measured kernels, only an extended pseudometric: a kernel and its
-pullback along a measure-preserving map are at distance `0`
+The distance is not a metric on measured kernels: a kernel and its pullback along a
+measure-preserving map are at distance `0`
 (`TauCeti.gromovWassersteinEDist_comp_prodMap_eq_zero`), and so are two kernels agreeing almost
-everywhere.
+everywhere. Under the hypotheses above (finite measures, almost-everywhere strongly measurable
+kernels, `1 ≤ p` and gluing carriers) it behaves as an extended pseudometric.
 
 Some sources, among them Bauer, Mémoli, Needham and Nishino, put a factor `1 / 2` in front of the
 infimum; the distance here is twice theirs.
@@ -274,6 +278,7 @@ theorem gromovWassersteinEDist_congr_ae [IsFiniteMeasure μ] (hX : ωX =ᵐ[μ.p
 /-- A measured kernel `(Y, ν, ωY)` and its pullback `(X, μ, ωY ∘ (f × f))` along a
 measure-preserving map `f` are at Gromov–Wasserstein distance `0`. In particular the
 Gromov–Wasserstein distance is only an extended pseudodistance on measured kernels. -/
+@[simp]
 theorem gromovWassersteinEDist_comp_prodMap_eq_zero [SFinite μ] {f : X → Y}
     (hf : MeasurePreserving f μ ν) (hωY : AEStronglyMeasurable ωY (ν.prod ν)) (p : ℝ≥0∞) :
     gromovWassersteinEDist p μ (ωY ∘ Prod.map f f) ν ωY = 0 := by
@@ -282,6 +287,7 @@ theorem gromovWassersteinEDist_comp_prodMap_eq_zero [SFinite μ] {f : X → Y}
   simp [Prod.map_def]
 
 /-- A measured kernel is at Gromov–Wasserstein distance `0` from itself. -/
+@[simp]
 theorem gromovWassersteinEDist_self [SFinite μ] (hωX : AEStronglyMeasurable ωX (μ.prod μ))
     (p : ℝ≥0∞) : gromovWassersteinEDist p μ ωX μ ωX = 0 := by
   simpa using gromovWassersteinEDist_comp_prodMap_eq_zero (MeasurePreserving.id μ) hωX p
