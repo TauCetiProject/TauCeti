@@ -39,7 +39,7 @@ variable {C ι : Type*} [Category* C] [Abelian C] {c : ComplexShape ι}
   {X A B Z : HomologicalComplex C c} {f₁ : X ⟶ A} {f₂ : X ⟶ B} {g₁ : A ⟶ Z} {g₂ : B ⟶ Z}
 
 /-- The maps induced on homology by the components of `X ⟶ A ⊞ B ⟶ Z` compose to zero. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 lemma biprod_lift_homologyMap_comp_desc_homologyMap
     (w : biprod.lift f₁ f₂ ≫ biprod.desc g₁ g₂ = 0) (i : ι) :
     biprod.lift (homologyMap f₁ i) (homologyMap f₂ i) ≫
