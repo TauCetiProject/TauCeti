@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
+public import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
 # Effective faithfully flat descent for algebras
@@ -17,8 +18,10 @@ multiplication map `S ⊗[R] B → B` and satisfies the coassociativity conditio
 isomorphism-plus-cocycle formulation in another guise: an isomorphism of
 `S ⊗[R] S`-algebras `φ : B ⊗[R] S ≅ S ⊗[R] B` corresponds to `θ b = φ (b ⊗ 1)`, the
 normalisation of `φ` on the diagonal to the counit equation, and the cocycle condition on
-`S ⊗[R] S ⊗[R] S` to coassociativity. Equivalently, descent data are the coalgebras for the
-comonad `S ⊗[R] -` on `S`-modules; Mathlib's `comonadicExtendScalars` is the module form.
+`S ⊗[R] S ⊗[R] S` to coassociativity. Forgetting the multiplication, a descent datum is in
+particular a coalgebra for the comonad `S ⊗[R] -` on `S`-modules (the module form of descent,
+behind Mathlib's `comonadicExtendScalars`); the algebra structure adds the requirement that the
+coaction be an `S`-algebra map.
 
 Since `Spec` is an anti-equivalence between commutative `R`-algebras and affine schemes over
 `Spec R`, the results below are effective descent for affine schemes along a faithfully flat
@@ -57,17 +60,6 @@ section Amitsur
 variable {R : Type*} (S : Type*) (M : Type*) [CommRing R] [Ring S] [Algebra R S]
   [AddCommGroup M] [Module R M]
 
-/-- The multiplication of the first two factors, `S ⊗ (S ⊗ N) → S ⊗ N`. It is a contracting
-homotopy for the Amitsur complex after base change to `S`. -/
-private noncomputable def mulLeftTensor (R S N : Type*) [CommRing R] [Ring S] [Algebra R S]
-    [AddCommGroup N] [Module R N] :
-    S ⊗[R] (S ⊗[R] N) →ₗ[R] S ⊗[R] N :=
-  (LinearMap.mul' R S).rTensor N ∘ₗ (TensorProduct.assoc R S S N).symm.toLinearMap
-
-private theorem mulLeftTensor_tmul (N : Type*) [AddCommGroup N] [Module R N] (s t : S) (n : N) :
-    mulLeftTensor R S N (s ⊗ₜ (t ⊗ₜ n)) = (s * t) ⊗ₜ n := by
-  simp [mulLeftTensor]
-
 /-- **Amitsur exactness.** If `S` is a faithfully flat `R`-algebra, then for every `R`-module
 `M` the sequence `M → S ⊗[R] M → S ⊗[R] (S ⊗[R] M)`, with maps `m ↦ 1 ⊗ m` and
 `s ⊗ m ↦ s ⊗ (1 ⊗ m) - 1 ⊗ (s ⊗ m)`, is exact. -/
@@ -78,13 +70,15 @@ theorem Module.FaithfullyFlat.exact_mk_one_lTensor_sub_mk_one [Module.Faithfully
   have hd : d ∘ₗ TensorProduct.mk R S M 1 = 0 := by
     ext m
     simp [d]
-  -- After base change to `S`, `mulLeftTensor` is a contracting homotopy.
-  have key : mulLeftTensor R S (S ⊗[R] M) ∘ₗ d.lTensor S =
-      (TensorProduct.mk R S M 1).lTensor S ∘ₗ mulLeftTensor R S M - LinearMap.id := by
+  -- After base change to `S`, the action `s ⊗ x ↦ s • x` of `S` on the left factor (multiplying
+  -- the first two factors) is a contracting homotopy.
+  let h := TensorProduct.lift (Algebra.lsmul R R (A := S) (S ⊗[R] M)).toLinearMap
+  let h' := TensorProduct.lift (Algebra.lsmul R R (A := S) (S ⊗[R] (S ⊗[R] M))).toLinearMap
+  have key : h' ∘ₗ d.lTensor S = (TensorProduct.mk R S M 1).lTensor S ∘ₗ h - LinearMap.id := by
     ext s t m
-    simp [d, mulLeftTensor_tmul]
+    simp [d, h, h', smul_tmul']
   refine Module.FaithfullyFlat.lTensor_reflects_exact R S _ _ fun y ↦ ⟨fun hy ↦ ?_, ?_⟩
-  · refine ⟨mulLeftTensor R S M y, ?_⟩
+  · refine ⟨h y, ?_⟩
     have := congr($key y)
     simp only [LinearMap.comp_apply, hy, map_zero, LinearMap.sub_apply, LinearMap.id_apply] at this
     exact (sub_eq_zero.mp this.symm)
@@ -93,16 +87,6 @@ theorem Module.FaithfullyFlat.exact_mk_one_lTensor_sub_mk_one [Module.Faithfully
       LinearMap.zero_apply]
 
 end Amitsur
-
-/-- Base change of the underlying linear map of an algebra map is the base change of the
-algebra map. -/
-theorem AlgHom.lTensor_toLinearMap_apply {R B C : Type*} (S : Type*) [CommRing R] [Ring S]
-    [Algebra R S] [Ring B] [Algebra R B] [Ring C] [Algebra R C] (f : B →ₐ[R] C)
-    (x : S ⊗[R] B) :
-    f.toLinearMap.lTensor S x = Algebra.TensorProduct.map (AlgHom.id R S) f x := by
-  induction x using TensorProduct.inductionOn with
-  | tmul s b => simp
-  | add x y hx hy => simp [hx, hy]
 
 namespace TauCeti
 
