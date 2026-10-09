@@ -232,16 +232,19 @@ theorem map_cellProdEquiv_symm_appendIsometryOfEq (x : Fin c.1.1.1 → ℝ) (y :
     IsometryEquiv.symm_apply_apply, Prod.map_apply]
 
 /-- The open product cell is the product of the open cells of its factors. -/
+@[simp]
 theorem openCell_cellProdEquiv_symm :
     openCell n ((cellProdEquiv n).symm c) = openCell _ c.2.1 ×ˢ openCell _ c.2.2 :=
   image_ball_prodCellMap c
 
 /-- The closed product cell is the product of the closed cells of its factors. -/
+@[simp]
 theorem closedCell_cellProdEquiv_symm :
     closedCell n ((cellProdEquiv n).symm c) = closedCell _ c.2.1 ×ˢ closedCell _ c.2.2 :=
   image_closedBall_prodCellMap c
 
 /-- The boundary of a product cell `e × e'` is `∂e × e' ∪ e × ∂e'`. -/
+@[simp]
 theorem cellFrontier_cellProdEquiv_symm :
     cellFrontier n ((cellProdEquiv n).symm c) =
       cellFrontier _ c.2.1 ×ˢ closedCell _ c.2.2 ∪ closedCell _ c.2.1 ×ˢ cellFrontier _ c.2.2 := by
