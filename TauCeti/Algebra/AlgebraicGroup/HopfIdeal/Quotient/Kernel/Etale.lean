@@ -92,7 +92,7 @@ theorem algebraEtale_quotient_kernelHopfIdeal_iff [Algebra.FiniteType k K] (f : 
 /-- A faithfully flat affine group homomorphism with finite-type source over a field
 is étale exactly when its differential at the identity is injective. Smoothness of
 the source and target is not assumed. -/
-theorem etale_iff_injective_derivationCompLieHom [Algebra.FiniteType k K] (f : H ⟶ K)
+theorem etale_iff_derivationCompLieHom_injective [Algebra.FiniteType k K] (f : H ⟶ K)
     (hf : f.hom.toAlgHom.toRingHom.FaithfullyFlat) :
     f.hom.toAlgHom.toRingHom.Etale ↔
       Function.Injective (derivationCompLieHom (B := k) f.hom) :=
