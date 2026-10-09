@@ -75,7 +75,7 @@ theorem standardParabolic_le_iff (J : Set T.simple) (P : Subgroup G) :
   rfl
 
 /-- Enlarging the selected set of simple reflections enlarges the standard parabolic. -/
-theorem standardParabolic_mono : Monotone T.standardParabolic := by
+theorem standardParabolic_monotone : Monotone T.standardParabolic := by
   intro J K hJK
   apply (T.standardParabolic_le_iff J _).mpr
   exact ⟨T.subgroupB_le_standardParabolic K,
