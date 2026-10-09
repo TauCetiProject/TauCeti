@@ -35,8 +35,7 @@ variable {F : Type*} [Field F] {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsE
   (φ : Isogeny W₁ W₂)
 
 /-- **An isogeny commutes with multiplication by `n`**: `φ ∘ [n] = [n] ∘ φ` (Silverman III.4.8). -/
--- Use this permutation explicitly: on two multiplication isogenies it swaps the factors
--- indefinitely, competing with the product rule's canonical normal form.
+@[simp]
 theorem comp_mulByIntIsogenyOfNeZero {n : ℤ} (hn : n ≠ 0) :
     φ.comp (mulByIntIsogenyOfNeZero W₁ hn) = (mulByIntIsogenyOfNeZero W₂ hn).comp φ :=
   Hom.ofIsogeny_injective <| by
