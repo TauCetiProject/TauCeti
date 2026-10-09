@@ -62,13 +62,12 @@ theorem aeval_C_X_aeval_finCons_C_add_C_mul_X [CommSemiring R]
         (aeval (Fin.cons (X 1) (fun j ↦ C (a j) + C (v j) * X 0) :
           Fin (n + 1) → MvPolynomial (Fin 2) R) p) =
       (finSuccEquiv R n p).map (eval (a + s • v)) := by
-  induction p using MvPolynomial.induction_on with
-  | C r => simp [finSuccEquiv_apply]
-  | add p q hp hq => simp only [map_add, Polynomial.map_add, hp, hq]
-  | mul_X p i hp =>
-    simp only [map_mul, Polynomial.map_mul, hp]
-    congr 1
-    cases i using Fin.cases <;> simp [finSuccEquiv_X_zero, finSuccEquiv_X_succ, mul_comm]
+  rw [comp_aeval_apply, aeval_eq_eval₂Hom, finSuccEquiv_apply, ← Polynomial.coe_mapRingHom,
+    map_eval₂Hom, coe_eval₂Hom, coe_eval₂Hom]
+  congr 1
+  · ext r; simp
+  · ext i : 1
+    cases i using Fin.cases <;> simp [mul_comm]
 
 /-- Transverse plane slices commute with coefficient maps, with the base point and direction
 mapped along the same homomorphism. -/
@@ -78,13 +77,10 @@ theorem map_aeval_finCons_C_add_C_mul_X [CommSemiring R] {S : Type*} [CommSemiri
         Fin (n + 1) → MvPolynomial (Fin 2) R) p) =
       aeval (Fin.cons (X 1) (fun j ↦ C (φ (a j)) + C (φ (v j)) * X 0) :
         Fin (n + 1) → MvPolynomial (Fin 2) S) (map φ p) := by
-  induction p using MvPolynomial.induction_on with
-  | C r => simp
-  | add p q hp hq => simp only [map_add, hp, hq]
-  | mul_X p i hp =>
-    simp only [map_mul, hp, map_X, aeval_X]
-    congr 1
-    cases i using Fin.cases <;> simp
+  rw [map_aeval, coe_eval₂Hom, algebraMap_eq, eval₂_map_comp_C, aeval_def, algebraMap_eq]
+  congr 1
+  ext i : 1
+  cases i using Fin.cases <;> simp
 
 /-- Centering a transverse plane slice at the root coordinate `t` turns its order at `![0, t]`
 into the order at the origin of the slice with `X 1` shifted by `t`. -/
