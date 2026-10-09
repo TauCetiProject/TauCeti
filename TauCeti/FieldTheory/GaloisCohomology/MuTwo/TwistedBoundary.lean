@@ -54,6 +54,12 @@ that of `Tr_*⟨a⟩`.
 ## Main results
 
 * `TauCeti.twistedBoundary_conj`: changing frame by `Q` conjugates the twisted boundary by `Q`.
+* `TauCeti.twistedBoundary_conj_eq_neg_one_pow_iff`: a change of frame leaves a scalar twisted
+  boundary `±1` unchanged.
+* `TauCeti.twistedBoundary_neg_one_pow_mul`: twisting a cochain by signs `(−1)^ψ` multiplies its
+  twisted boundary by `(−1)^{∂ψ}`.
+* `TauCeti.twistedBoundary_pinDiagonalLift_rootSign`: the twisted boundary of the diagonal lift
+  of two Kummer characters is the sign of their cup product.
 * `TauCeti.map_pinLift_galois`: `g(pinLift w) = (−1)^{rootSign √2 g · c(w)} pinLift w`.
 * `TauCeti.twistedBoundary_kummerIndLift`, `TauCeti.twistedBoundaryF2_kummerIndLift`:
   `δ(\tilde{ρ}_a)(g, h) = (−1)^{c_{D₁₆}(ρ_a g, ρ_a h) + rootSign √2 g · rootSign (σ x) h}` for
@@ -150,6 +156,26 @@ theorem twistedBoundary_conj
   rw [← Matrix.mul_assoc (Q.map g), hmap, Matrix.one_mul,
     Matrix.mul_nonsing_inv_cancel_left _ _ hdet]
 
+/-- **A change of frame does not change a scalar twisted boundary:** for an invertible matrix `Q`,
+the twisted boundary of `g ↦ Q⁻¹ · x(g) · g(Q)` is the sign `(−1)^n` exactly where that of `x`
+is. -/
+theorem twistedBoundary_conj_eq_neg_one_pow_iff
+    (x : AbsoluteGaloisGroup K → Matrix (Fin 2) (Fin 2) (SeparableClosure K))
+    {Q : Matrix (Fin 2) (Fin 2) (SeparableClosure K)} (hQ : IsUnit Q.det)
+    (q : AbsoluteGaloisGroup K × AbsoluteGaloisGroup K) (n : ℕ) :
+    twistedBoundary (fun g => Q⁻¹ * x g * Q.map g) q = (-1) ^ n ↔
+      twistedBoundary x q = (-1) ^ n := by
+  have hc := ((Commute.neg_one_left Q).pow_left n).eq
+  rw [twistedBoundary_conj x hQ q]
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · calc twistedBoundary x q
+        _ = Q * (Q⁻¹ * twistedBoundary x q * Q) * Q⁻¹ := by
+          simp only [Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hQ, Matrix.mul_one,
+            Matrix.mul_nonsing_inv_cancel_left _ _ hQ]
+        _ = (-1) ^ n := by
+          rw [h, ← hc, Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hQ, Matrix.mul_one]
+  · rw [h, Matrix.mul_assoc, hc, ← Matrix.mul_assoc, Matrix.nonsing_inv_mul _ hQ, Matrix.one_mul]
+
 open Classical in
 /-- **The twisted boundary read in `𝔽₂`:** `0` where the twisted boundary is `1` and `1`
 elsewhere. Where the twisted boundary is a sign `±1`, this is its exponent
@@ -170,6 +196,52 @@ theorem twistedBoundaryF2_eq_of_twistedBoundary_eq [NeZero (2 : SeparableClosure
       two_ne_zero (α := SeparableClosure K)
         (by simpa [neg_eq_iff_add_eq_zero, one_add_one_eq_two] using congrFun (congrFun h' 0) 0)
     simp [twistedBoundaryF2, h, ZMod.val_one, hne]
+
+/-- **A sign twist changes the twisted boundary by a coboundary:** multiplying a cochain `x` by
+the signs `(−1)^{ψ(g)}` multiplies its twisted boundary by `(−1)^{∂ψ}`, where
+`∂ψ(g, h) = ψ(h) − ψ(g h) + ψ(g)` is the coboundary of `ψ : G_K → 𝔽₂`. -/
+theorem twistedBoundary_neg_one_pow_mul
+    (x : AbsoluteGaloisGroup K → Matrix (Fin 2) (Fin 2) (SeparableClosure K))
+    (ψ : AbsoluteGaloisGroup K → ZMod 2) (g h : AbsoluteGaloisGroup K) :
+    twistedBoundary (fun g => (-1) ^ (ψ g).val * x g) (g, h) =
+      (-1) ^ (ψ h - ψ (g * h) + ψ g).val * twistedBoundary x (g, h) := by
+  have hsq : (-1 : Matrix (Fin 2) (Fin 2) (SeparableClosure K)) ^ 2 = 1 := by simp
+  -- The signs are central, are their own inverses, and are scalars.
+  have hc (n : ℕ) (M : Matrix (Fin 2) (Fin 2) (SeparableClosure K)) : Commute ((-1) ^ n) M :=
+    (Commute.neg_one_left M).pow_left n
+  have hinv (n : ℕ) : ((-1 : Matrix (Fin 2) (Fin 2) (SeparableClosure K)) ^ n)⁻¹ = (-1) ^ n :=
+    inv_eq_left_inv (by rw [← pow_add, ← two_mul, pow_mul, hsq, one_pow])
+  have hs (n : ℕ) (M : Matrix (Fin 2) (Fin 2) (SeparableClosure K)) :
+      (-1) ^ n * M = ((-1 : SeparableClosure K) ^ n) • M := by
+    rw [Algebra.smul_def, map_pow, map_neg, map_one]
+  have hsq' : (-1 : SeparableClosure K) ^ 2 = 1 := by simp
+  rw [twistedBoundary_apply, twistedBoundary_apply, ← AlgEquiv.mapMatrix_apply, map_mul, map_pow,
+    map_neg, map_one, AlgEquiv.mapMatrix_apply, Matrix.mul_inv_rev, hinv,
+    ← (hc _ (x (g * h))⁻¹).eq, sub_eq_add_neg, ZMod.neg_eq_self_mod_two]
+  simp only [hs, Matrix.mul_smul, Matrix.smul_mul, smul_smul, Matrix.mul_assoc, pow_val_add hsq']
+  congr 1
+  ring
+
+/-- **The twisted boundary of a diagonal lift of Kummer characters is a cup product:** if
+`c₀², c₁² ∈ K`, the twisted boundary of `g ↦ e₁^{rootSign c₀ g} e₂^{rootSign c₁ g}` is
+`(g, h) ↦ (−1)^{rootSign c₁ g · rootSign c₀ h}`, the sign of the cup product of the Kummer
+characters of `c₁²` and `c₀²`. -/
+theorem twistedBoundary_pinDiagonalLift_rootSign {c : Fin 2 → SeparableClosure K}
+    {w : Fin 2 → K} (hc : ∀ i, c i ^ 2 = algebraMap K (SeparableClosure K) (w i))
+    (g h : AbsoluteGaloisGroup K) :
+    twistedBoundary (fun g => pinDiagonalLift fun i => rootSign (c i) g) (g, h) =
+      (-1) ^ (rootSign (c 1) g * rootSign (c 0) h).val := by
+  have hmul : (fun i => rootSign (c i) (g * h)) =
+      (fun i => rootSign (c i) g) + fun i => rootSign (c i) h := funext fun i =>
+    rootSign_mul (g.apply_eq_or_eq_neg_of_sq_eq (hc i)) (h.apply_eq_or_eq_neg_of_sq_eq (hc i))
+  have hD := (isPinLift_pinDiagonalLift (R := SeparableClosure K)
+    fun i => rootSign (c i) (g * h)).mem_orthogonalGroup
+  have hmap : (pinDiagonalLift fun i => rootSign (c i) h).map g =
+      (pinDiagonalLift fun i => rootSign (c i) h : Matrix (Fin 2) (Fin 2) (SeparableClosure K)) :=
+    map_pinDiagonalLift (g : SeparableClosure K →+* SeparableClosure K) _
+  rw [twistedBoundary_apply, hmap, pinDiagonalLift_mul, ← hmul, Matrix.mul_assoc,
+    Matrix.mul_nonsing_inv _ (isUnit_det_of_right_inverse ((mem_orthogonalGroup_iff _ _).1 hD)),
+    Matrix.mul_one]
 
 /-! ### The lift of the Kummer representation -/
 
