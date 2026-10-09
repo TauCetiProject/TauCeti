@@ -185,12 +185,12 @@ namespace AlgebraicGeometry.Scheme.IdealSheafData
 
 variable {X S T : Scheme.{u}} {f : X ⟶ S}
 
-/-- **Sums of sections of a relative curve commute with base change.** Let `f : X ⟶ S` be flat,
-and let finitely many sections of `f`, each a closed immersion, pass through an open subscheme
+/-- **Sums of sections of a relative curve commute with base change.** Let finitely many sections
+of `f : X ⟶ S`, each a closed immersion, pass through an open subscheme
 `U ⊆ X` on which `f` is smooth of relative dimension one. For every `g : T ⟶ S`, the divisor
 `s₁ + ⋯ + sₙ` of the base-changed sections `T ⟶ X ×_S T` is a relative effective Cartier
 divisor over `T`. The sections need not be disjoint. -/
-theorem isRelativeEffectiveCartier_prod_ker_pullback_section [Flat f] {ι : Type*}
+theorem isRelativeEffectiveCartier_prod_ker_pullback_section {ι : Type*}
     (t : Finset ι) (h : ι → SplitEpi f) [∀ i, IsClosedImmersion (h i).section_] (U : X.Opens)
     (hU : ∀ i ∈ t, Set.range (h i).section_ ⊆ U) [SmoothOfRelativeDimension 1 (U.ι ≫ f)]
     (g : T ⟶ S) :
