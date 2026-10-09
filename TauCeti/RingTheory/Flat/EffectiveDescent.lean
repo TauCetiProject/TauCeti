@@ -305,9 +305,9 @@ variable (D) in
 /-- The identity morphism of a descent datum. -/
 def id : Hom D D where
   toAlgHom := AlgHom.id S B
-  coaction_toAlgHom b := by
-    rw [show (AlgHom.id S B).restrictScalars R = AlgHom.id R B from AlgHom.ext fun _ ↦ rfl,
-      Algebra.TensorProduct.map_id, AlgHom.id_apply, AlgHom.id_apply]
+  -- `(AlgHom.id S B).restrictScalars R` is definitionally `AlgHom.id R B`; Mathlib has no
+  -- `AlgHom.restrictScalars_id` simp lemma, so `simp` cannot see this and we unify directly.
+  coaction_toAlgHom b := (DFunLike.congr_fun Algebra.TensorProduct.map_id (D.coaction b)).symm
 
 variable (D) in
 @[simp]
