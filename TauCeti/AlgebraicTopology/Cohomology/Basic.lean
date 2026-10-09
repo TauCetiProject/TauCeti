@@ -114,13 +114,13 @@ lemma singularCochainComplexMap_f_apply {X Y : TopCat.{w}} (f : X ⟶ Y) (n : �
 @[simp]
 lemma singularCochainComplexMap_id (X : TopCat.{w}) :
     singularCochainComplexMap (R := R) (k := k) (M := M) (𝟙 X) = 𝟙 _ := by
-  rw [singularCochainComplexMap, CategoryTheory.Functor.map_id, SSet.cochainComplexMap_id]
+  simp [singularCochainComplexMap]
 
 @[reassoc]
 lemma singularCochainComplexMap_comp {X Y Z : TopCat.{w}} (f : X ⟶ Y) (g : Y ⟶ Z) :
     singularCochainComplexMap (R := R) (k := k) (M := M) (f ≫ g) =
       singularCochainComplexMap g ≫ singularCochainComplexMap f := by
-  rw [singularCochainComplexMap, CategoryTheory.Functor.map_comp, SSet.cochainComplexMap_comp]
+  simp [singularCochainComplexMap, SSet.cochainComplexMap_comp]
 
 variable (R k M)
 
