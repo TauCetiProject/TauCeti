@@ -113,30 +113,40 @@ noncomputable def commutationHexagons (x y : GridState n) :
     Finset (GridCommutationHexagonBetween C.column C.turnRow C.oppositeTurnRow x y) :=
   (G.hexagons C x y).disjSum (G.initialHexagons C x y)
 
-/-- A commutation hexagon is counted exactly when the corresponding hexagon of its kind is
-counted. -/
+/-- A terminal-side commutation hexagon is counted exactly when it is a counted hexagon. -/
 @[simp]
-theorem mem_commutationHexagons {x y : GridState n}
-    (P : GridCommutationHexagonBetween C.column C.turnRow C.oppositeTurnRow x y) :
-    P ∈ G.commutationHexagons C x y ↔
-      P.elim (fun Q => Q ∈ G.hexagons C x y) (fun Q => Q ∈ G.initialHexagons C x y) := by
-  classical
-  rcases P with P | P <;> simp [commutationHexagons]
+theorem inl_mem_commutationHexagons {x y : GridState n}
+    (P : GridHexagonBetween C.column C.oppositeTurnRow C.turnRow x y) :
+    Sum.inl P ∈ G.commutationHexagons C x y ↔ P ∈ G.hexagons C x y :=
+  Finset.inl_mem_disjSum
+
+/-- An initial-side commutation hexagon is counted exactly when it is a counted initial-side
+hexagon. -/
+@[simp]
+theorem inr_mem_commutationHexagons {x y : GridState n}
+    (P : GridInitialHexagonBetween C.column C.turnRow C.oppositeTurnRow x y) :
+    Sum.inr P ∈ G.commutationHexagons C x y ↔ P ∈ G.initialHexagons C x y :=
+  Finset.inr_mem_disjSum
 
 /-- The counted commutation pentagons of either turn-side kind. -/
 noncomputable def commutationPentagons (x y : GridState n) :
     Finset (GridCommutationPentagonBetween C.column C.turnRow x y) :=
   (G.pentagons C x y).disjSum (G.initialPentagons C x y)
 
-/-- A commutation pentagon is counted exactly when the corresponding pentagon of its kind is
-counted. -/
+/-- A terminal-side commutation pentagon is counted exactly when it is a counted pentagon. -/
 @[simp]
-theorem mem_commutationPentagons {x y : GridState n}
-    (P : GridCommutationPentagonBetween C.column C.turnRow x y) :
-    P ∈ G.commutationPentagons C x y ↔
-      P.elim (fun Q => Q ∈ G.pentagons C x y) (fun Q => Q ∈ G.initialPentagons C x y) := by
-  classical
-  rcases P with P | P <;> simp [commutationPentagons]
+theorem inl_mem_commutationPentagons {x y : GridState n}
+    (P : GridPentagonBetween C.column C.turnRow x y) :
+    Sum.inl P ∈ G.commutationPentagons C x y ↔ P ∈ G.pentagons C x y :=
+  Finset.inl_mem_disjSum
+
+/-- An initial-side commutation pentagon is counted exactly when it is a counted initial-side
+pentagon. -/
+@[simp]
+theorem inr_mem_commutationPentagons {x y : GridState n}
+    (P : GridInitialPentagonBetween C.column C.turnRow x y) :
+    Sum.inr P ∈ G.commutationPentagons C x y ↔ P ∈ G.initialPentagons C x y :=
+  Finset.inr_mem_disjSum
 
 variable (R : Type*) [CommSemiring R]
 
@@ -273,39 +283,19 @@ theorem pentagonPairWeight_def {x z : GridState n}
       MvPolynomial.rename (Equiv.swap C.column b) (G.commutationPentagonWeight C R D.first) *
         (G.swapColumns C.column b).commutationPentagonWeight C.reverse R D.second := (rfl)
 
-/-- The coefficient that counts commutation hexagons of either turn-side kind. -/
-noncomputable def commutationHexagonCoefficient (x y : GridState n) :
-    MvPolynomial (Fin n) R :=
-  G.hexagonCoefficient R C x y + G.initialHexagonCoefficient R C x y
-
-/-- The commutation hexagon coefficient is the sum of the two turn-side coefficients. -/
-theorem commutationHexagonCoefficient_def (x y : GridState n) :
-    G.commutationHexagonCoefficient C R x y =
-      G.hexagonCoefficient R C x y + G.initialHexagonCoefficient R C x y := (rfl)
-
-/-- The coefficient that counts commutation pentagons of either turn-side kind. -/
-noncomputable def commutationPentagonCoefficient (x y : GridState n) :
-    MvPolynomial (Fin n) R :=
-  G.pentagonCoefficient R C x y + G.initialPentagonCoefficient R C x y
-
-/-- The commutation pentagon coefficient is the sum of the two turn-side coefficients. -/
-theorem commutationPentagonCoefficient_def (x y : GridState n) :
-    G.commutationPentagonCoefficient C R x y =
-      G.pentagonCoefficient R C x y + G.initialPentagonCoefficient R C x y := (rfl)
-
 /-- The sum of the two kinds of hexagon coefficients is the sum of their combined weights. -/
 theorem commutationHexagonCoefficient_eq_sum_weight (x y : GridState n) :
-    G.commutationHexagonCoefficient C R x y =
+    G.commutationHexagonCoefficient R C x y =
       ∑ P ∈ G.commutationHexagons C x y, G.commutationHexagonWeight C R P := by
-  rw [G.commutationHexagonCoefficient_def C R, G.hexagonCoefficient_def R C x y,
+  rw [G.commutationHexagonCoefficient_def R C, G.hexagonCoefficient_def R C x y,
     G.initialHexagonCoefficient_def R C x y, commutationHexagons, Finset.sum_disjSum]
   simp only [commutationHexagonWeight_inl, commutationHexagonWeight_inr]
 
 /-- The sum of the two kinds of pentagon coefficients is the sum of their combined weights. -/
 theorem commutationPentagonCoefficient_eq_sum_weight (x y : GridState n) :
-    G.commutationPentagonCoefficient C R x y =
+    G.commutationPentagonCoefficient R C x y =
       ∑ P ∈ G.commutationPentagons C x y, G.commutationPentagonWeight C R P := by
-  rw [G.commutationPentagonCoefficient_def C R, G.pentagonCoefficient_def R C x y,
+  rw [G.commutationPentagonCoefficient_def R C, G.pentagonCoefficient_def R C x y,
     G.initialPentagonCoefficient_def R C x y, commutationPentagons, Finset.sum_disjSum]
   simp only [commutationPentagonWeight_inl, commutationPentagonWeight_inr]
 
@@ -313,7 +303,7 @@ theorem commutationPentagonCoefficient_eq_sum_weight (x y : GridState n) :
 domains. -/
 theorem sum_commutationHexagonCoefficient_mul_unblockedCoefficient (x z : GridState n) :
     ∑ y : GridState n,
-        G.commutationHexagonCoefficient C R x y * G.unblockedCoefficient R y z =
+        G.commutationHexagonCoefficient R C x y * G.unblockedCoefficient R y z =
       ∑ D ∈ G.hexagonRectangleDecompositions C x z, G.hexagonRectangleWeight C R D := by
   simp_rw [G.commutationHexagonCoefficient_eq_sum_weight C R,
     G.unblockedCoefficient_def R, Finset.sum_mul_sum]
@@ -325,7 +315,7 @@ theorem sum_commutationHexagonCoefficient_mul_unblockedCoefficient (x z : GridSt
 domains. -/
 theorem sum_unblockedCoefficient_mul_commutationHexagonCoefficient (x z : GridState n) :
     ∑ y : GridState n, G.unblockedCoefficient R x y *
-        G.commutationHexagonCoefficient C R y z =
+        G.commutationHexagonCoefficient R C y z =
       ∑ D ∈ G.rectangleHexagonDecompositions C x z, G.rectangleHexagonWeight C R D := by
   simp_rw [G.unblockedCoefficient_def R, G.commutationHexagonCoefficient_eq_sum_weight C R,
     Finset.sum_mul_sum]
@@ -339,8 +329,8 @@ theorem sum_rename_commutationPentagonCoefficient_mul_commutationPentagonCoeffic
     (x z : GridState n) :
     ∑ y : GridState n,
         MvPolynomial.rename (Equiv.swap C.column b)
-            (G.commutationPentagonCoefficient C R x y) *
-          (G.swapColumns C.column b).commutationPentagonCoefficient C.reverse R y z =
+            (G.commutationPentagonCoefficient R C x y) *
+          (G.swapColumns C.column b).commutationPentagonCoefficient R C.reverse y z =
       ∑ D ∈ G.pentagonPairDecompositions C x z, G.pentagonPairWeight C R D := by
   simp_rw [G.commutationPentagonCoefficient_eq_sum_weight C R,
     (G.swapColumns C.column b).commutationPentagonCoefficient_eq_sum_weight C.reverse R,
@@ -365,10 +355,7 @@ theorem unblockedDifferential_commutationHomotopy_add_eq_iff_decompositions :
           (if x = z then 1 else 0) +
             ∑ D ∈ G.pentagonPairDecompositions C x z, G.pentagonPairWeight C R D := by
   rw [G.unblockedDifferential_commutationHomotopy_add_eq_iff C R]
-  simp_rw [← G.commutationHexagonCoefficient_def C R,
-    ← G.commutationPentagonCoefficient_def C R,
-    ← (G.swapColumns C.column b).commutationPentagonCoefficient_def C.reverse R,
-    Finset.sum_add_distrib,
+  simp_rw [Finset.sum_add_distrib,
     G.sum_commutationHexagonCoefficient_mul_unblockedCoefficient C R,
     G.sum_unblockedCoefficient_mul_commutationHexagonCoefficient C R,
     G.sum_rename_commutationPentagonCoefficient_mul_commutationPentagonCoefficient C R]

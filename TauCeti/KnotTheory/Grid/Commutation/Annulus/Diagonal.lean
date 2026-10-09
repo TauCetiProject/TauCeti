@@ -115,9 +115,11 @@ private theorem sum_rectanglePentagonSameSideOrder_eq (x : GridState n) :
           (GridRectangleBetween.ofSwapColumns_right ..) (by simpa using hs)⟩
     have hD₀ : D₀ ∈ G.rectanglePentagonSameSideOrder C x := by
       refine (G.mem_rectanglePentagonSameSideOrder_iff_markings C x D₀).2 ⟨?_, ?_, ?_⟩
-      · simp [D₀]
-      · simp [D₀]
-      · simpa [D₀] using hX
+      · simp [D₀, GridRectanglePentagonDecomposition.rectangle,
+          GridRectanglePentagonDecomposition.pentagon]
+      · simp [D₀, GridRectanglePentagonDecomposition.pentagon]
+      · simpa [D₀, GridRectanglePentagonDecomposition.rectangle,
+          GridRectanglePentagonDecomposition.pentagon] using hX
     have huniq : ∀ D ∈ G.rectanglePentagonSameSideOrder C x, D = D₀ := by
       intro D hD
       obtain ⟨h₁, h₂, h₃, h₄, -⟩ := hgeom D hD
@@ -171,8 +173,9 @@ private theorem sum_pentagonRectangleSameSideOrder_eq (x : GridState n) :
           (GridState.swapColumns_swapColumns _ _ x).symm⟩
     have hD₀ : D₀ ∈ G.pentagonRectangleSameSideOrder C x := by
       refine (G.mem_pentagonRectangleSameSideOrder_iff_markings C x D₀).2 ⟨?_, ?_, ?_⟩
-      · simp [D₀]
-      · simp [D₀]
+      · simp [D₀, GridPentagonRectangleDecomposition.rectangle,
+          GridPentagonRectangleDecomposition.pentagon]
+      · simp [D₀, GridPentagonRectangleDecomposition.pentagon]
       · have htop : D₀.pentagon.top = x (finRotate n C.column) := by
           rw [GridRectangleBetween.top_def, D₀.pentagon.right_eq]
         rwa [htop]
@@ -380,8 +383,10 @@ private theorem sum_rectanglePentagonOppositeSideOrder_eq (x : GridState n) :
             exact Grid.left_mem_cIco (Grid.finRotate_ne_self hn _).symm)⟩
     have hD₀ : D₀ ∈ G.rectanglePentagonOppositeSideOrder C x := by
       refine (G.mem_rectanglePentagonOppositeSideOrder_iff_markings C x D₀).2 ⟨?_, ?_, hX⟩
-      · simp [D₀]
-      · simp only [D₀, GridRectangleBetween.ofSwapColumns_top,
+      · simp [D₀, GridRectanglePentagonDecomposition.rectangle,
+          GridRectanglePentagonDecomposition.pentagon]
+      · simp only [D₀, GridRectanglePentagonDecomposition.rectangle,
+          GridRectangleBetween.ofSwapColumns_top,
           GridRectangleBetween.ofSwapColumns_bottom, hd, hs]
     have huniq : ∀ D ∈ G.rectanglePentagonOppositeSideOrder C x, D = D₀ := by
       intro D hD
@@ -576,9 +581,10 @@ private theorem sum_pentagonRectangleOppositeSideOrder_eq (x : GridState n) :
     have hD₀ : D₀ ∈ G.pentagonRectangleOppositeSideOrder C x := by
       refine (G.mem_pentagonRectangleOppositeSideOrder_iff_markings C x D₀).2 ⟨?_, ?_, hX⟩
       · rw [D₀.pentagon.right_eq]
-        simp [D₀]
+        simp [D₀, GridPentagonRectangleDecomposition.rectangle]
       · rw [GridRectangleBetween.top_def, GridRectangleBetween.bottom_def, D₀.pentagon.right_eq]
-        simp only [D₀, GridPentagonBetween.ofSwapColumns_left, hc, hs]
+        simp only [D₀, GridPentagonRectangleDecomposition.pentagon,
+          GridPentagonBetween.ofSwapColumns_left, hc, hs]
     have huniq : ∀ D ∈ G.pentagonRectangleOppositeSideOrder C x, D = D₀ := by
       intro D hD
       obtain ⟨h₁, h₂, h₃, h₄, -⟩ := hgeom D hD

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import TauCeti.KnotTheory.Grid.Commutation.Pentagon
 public import TauCeti.KnotTheory.Grid.Differential.Square.Decomposition
 
@@ -78,141 +77,35 @@ namespace TauCeti
 
 /-- A two-step domain consisting of a rectangle from `x` to an intermediate grid state, followed
 by a pentagon from that state to `z`. -/
-structure GridRectanglePentagonDecomposition {n : ℕ} (a s : Fin n)
-    (x z : GridState n) where
-  /-- The grid state at which the rectangle and pentagon meet. -/
-  middle : GridState n
-  /-- The first domain, an oriented rectangle from the source to the intermediate state. -/
-  rectangle : GridRectangleBetween x middle
-  /-- The second domain, a pentagon from the intermediate state to the target. -/
-  pentagon : GridPentagonBetween a s middle z
-
-/-- A two-step domain consisting of a pentagon from `x` to an intermediate grid state, followed
-by a rectangle from that state to `z`. -/
-structure GridPentagonRectangleDecomposition {n : ℕ} (a s : Fin n)
-    (x z : GridState n) where
-  /-- The grid state at which the pentagon and rectangle meet. -/
-  middle : GridState n
-  /-- The first domain, a pentagon from the source to the intermediate state. -/
-  pentagon : GridPentagonBetween a s x middle
-  /-- The second domain, an oriented rectangle from the intermediate state to the target. -/
-  rectangle : GridRectangleBetween middle z
+abbrev GridRectanglePentagonDecomposition {n : ℕ} (a s : Fin n) (x z : GridState n) :=
+  GridTwoStepDecomposition GridRectangleBetween (GridPentagonBetween a s) x z
 
 namespace GridRectanglePentagonDecomposition
 
-variable {n : ℕ} {a s : Fin n} {x z : GridState n}
+/-- The rectangle in a rectangle--pentagon decomposition. -/
+abbrev rectangle {n : ℕ} {a s : Fin n} {x z : GridState n}
+    (D : GridRectanglePentagonDecomposition a s x z) := D.first
 
-/-- Two rectangle--pentagon decompositions are equal when their intermediate states and their two
-constituent domains agree. -/
-@[ext]
-theorem ext {D E : GridRectanglePentagonDecomposition a s x z}
-    (hmiddle : D.middle = E.middle) (hrectangle : HEq D.rectangle E.rectangle)
-    (hpentagon : HEq D.pentagon E.pentagon) : D = E := by
-  cases D
-  cases E
-  simp_all
-
-private def sigmaEquiv :
-    GridRectanglePentagonDecomposition a s x z ≃
-      (Σ y : GridState n,
-        Σ _rectangle : GridRectangleBetween x y, GridPentagonBetween a s y z) where
-  toFun D := ⟨D.middle, D.rectangle, D.pentagon⟩
-  invFun D := ⟨D.1, D.2.1, D.2.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-/-- The finite set of rectangle--pentagon decompositions selected by prescribed finite families
-of rectangles and pentagons. -/
-noncomputable def decompositionsOf
-    (rectangles : ∀ u v : GridState n, Finset (GridRectangleBetween u v))
-    (pentagons : ∀ u v : GridState n, Finset (GridPentagonBetween a s u v))
-    (x z : GridState n) : Finset (GridRectanglePentagonDecomposition a s x z) := by
-  classical
-  exact ((Finset.univ.sigma fun y => (rectangles x y).sigma fun _ => pentagons y z).map
-    (sigmaEquiv (a := a) (s := s) (x := x) (z := z)).symm.toEmbedding)
-
-/-- A rectangle--pentagon decomposition belongs to `decompositionsOf` exactly when its two
-constituent domains belong to the prescribed families. -/
-@[simp]
-theorem mem_decompositionsOf
-    (rectangles : ∀ u v : GridState n, Finset (GridRectangleBetween u v))
-    (pentagons : ∀ u v : GridState n, Finset (GridPentagonBetween a s u v))
-    (x z : GridState n) (D : GridRectanglePentagonDecomposition a s x z) :
-    D ∈ decompositionsOf rectangles pentagons x z ↔
-      D.rectangle ∈ rectangles x D.middle ∧ D.pentagon ∈ pentagons D.middle z := by
-  classical
-  simp [decompositionsOf, sigmaEquiv]
-
-/-- Summing over rectangle--pentagon decompositions is the iterated sum over the intermediate
-state and the two constituent domains. -/
-theorem sum_decompositionsOf {M : Type*} [AddCommMonoid M]
-    (rectangles : ∀ u v : GridState n, Finset (GridRectangleBetween u v))
-    (pentagons : ∀ u v : GridState n, Finset (GridPentagonBetween a s u v))
-    (x z : GridState n)
-    (w : ∀ y, GridRectangleBetween x y → GridPentagonBetween a s y z → M) :
-    ∑ D ∈ decompositionsOf rectangles pentagons x z, w D.middle D.rectangle D.pentagon =
-      ∑ y, ∑ r ∈ rectangles x y, ∑ P ∈ pentagons y z, w y r P := by
-  classical
-  simp [decompositionsOf, sigmaEquiv, Finset.sum_sigma']
+/-- The pentagon in a rectangle--pentagon decomposition. -/
+abbrev pentagon {n : ℕ} {a s : Fin n} {x z : GridState n}
+    (D : GridRectanglePentagonDecomposition a s x z) := D.second
 
 end GridRectanglePentagonDecomposition
 
+/-- A two-step domain consisting of a pentagon from `x` to an intermediate grid state, followed
+by a rectangle from that state to `z`. -/
+abbrev GridPentagonRectangleDecomposition {n : ℕ} (a s : Fin n) (x z : GridState n) :=
+  GridTwoStepDecomposition (GridPentagonBetween a s) GridRectangleBetween x z
+
 namespace GridPentagonRectangleDecomposition
 
-variable {n : ℕ} {a s : Fin n} {x z : GridState n}
+/-- The pentagon in a pentagon--rectangle decomposition. -/
+abbrev pentagon {n : ℕ} {a s : Fin n} {x z : GridState n}
+    (D : GridPentagonRectangleDecomposition a s x z) := D.first
 
-/-- Two pentagon--rectangle decompositions are equal when their intermediate states and their two
-constituent domains agree. -/
-@[ext]
-theorem ext {D E : GridPentagonRectangleDecomposition a s x z}
-    (hmiddle : D.middle = E.middle) (hpentagon : HEq D.pentagon E.pentagon)
-    (hrectangle : HEq D.rectangle E.rectangle) : D = E := by
-  cases D
-  cases E
-  simp_all
-
-private def sigmaEquiv :
-    GridPentagonRectangleDecomposition a s x z ≃
-      (Σ y : GridState n,
-        Σ _pentagon : GridPentagonBetween a s x y, GridRectangleBetween y z) where
-  toFun D := ⟨D.middle, D.pentagon, D.rectangle⟩
-  invFun D := ⟨D.1, D.2.1, D.2.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-/-- The finite set of pentagon--rectangle decompositions selected by prescribed finite families
-of pentagons and rectangles. -/
-noncomputable def decompositionsOf
-    (pentagons : ∀ u v : GridState n, Finset (GridPentagonBetween a s u v))
-    (rectangles : ∀ u v : GridState n, Finset (GridRectangleBetween u v))
-    (x z : GridState n) : Finset (GridPentagonRectangleDecomposition a s x z) := by
-  classical
-  exact ((Finset.univ.sigma fun y => (pentagons x y).sigma fun _ => rectangles y z).map
-    (sigmaEquiv (a := a) (s := s) (x := x) (z := z)).symm.toEmbedding)
-
-/-- A pentagon--rectangle decomposition belongs to `decompositionsOf` exactly when its two
-constituent domains belong to the prescribed families. -/
-@[simp]
-theorem mem_decompositionsOf
-    (pentagons : ∀ u v : GridState n, Finset (GridPentagonBetween a s u v))
-    (rectangles : ∀ u v : GridState n, Finset (GridRectangleBetween u v))
-    (x z : GridState n) (D : GridPentagonRectangleDecomposition a s x z) :
-    D ∈ decompositionsOf pentagons rectangles x z ↔
-      D.pentagon ∈ pentagons x D.middle ∧ D.rectangle ∈ rectangles D.middle z := by
-  classical
-  simp [decompositionsOf, sigmaEquiv]
-
-/-- Summing over pentagon--rectangle decompositions is the iterated sum over the intermediate
-state and the two constituent domains. -/
-theorem sum_decompositionsOf {M : Type*} [AddCommMonoid M]
-    (pentagons : ∀ u v : GridState n, Finset (GridPentagonBetween a s u v))
-    (rectangles : ∀ u v : GridState n, Finset (GridRectangleBetween u v))
-    (x z : GridState n)
-    (w : ∀ y, GridPentagonBetween a s x y → GridRectangleBetween y z → M) :
-    ∑ D ∈ decompositionsOf pentagons rectangles x z, w D.middle D.pentagon D.rectangle =
-      ∑ y, ∑ P ∈ pentagons x y, ∑ r ∈ rectangles y z, w y P r := by
-  classical
-  simp [decompositionsOf, sigmaEquiv, Finset.sum_sigma']
+/-- The rectangle in a pentagon--rectangle decomposition. -/
+abbrev rectangle {n : ℕ} {a s : Fin n} {x z : GridState n}
+    (D : GridPentagonRectangleDecomposition a s x z) := D.second
 
 end GridPentagonRectangleDecomposition
 
@@ -290,13 +183,13 @@ theorem toRectangleDecomposition_injective :
     Function.Injective
       (toRectangleDecomposition : GridPentagonRectangleDecomposition a s x z → _) := by
   intro D E h
-  have hmiddle := congrArg GridRectangleDecomposition.middle h
+  have hmiddle := congrArg GridTwoStepDecomposition.middle h
   have hrectangle : HEq D.rectangle E.rectangle :=
     (rectangleDecomposition_fields_heq h).2
   have hpentagon : HEq D.pentagon E.pentagon :=
     Subsingleton.helim
       (congrArg (fun y => GridPentagonBetween a s x y) hmiddle) D.pentagon E.pentagon
-  exact GridPentagonRectangleDecomposition.ext hmiddle hpentagon hrectangle
+  exact GridTwoStepDecomposition.ext hmiddle hpentagon hrectangle
 
 end GridPentagonRectangleDecomposition
 
@@ -368,13 +261,13 @@ theorem toRectangleDecomposition_injective :
     Function.Injective
       (toRectangleDecomposition : GridRectanglePentagonDecomposition a s x z → _) := by
   intro D E h
-  have hmiddle := congrArg GridRectangleDecomposition.middle h
+  have hmiddle := congrArg GridTwoStepDecomposition.middle h
   have hrectangle : HEq D.rectangle E.rectangle :=
     (rectangleDecomposition_fields_heq h).1
   have hpentagon : HEq D.pentagon E.pentagon :=
     Subsingleton.helim
       (congrArg (fun y => GridPentagonBetween a s y z) hmiddle) D.pentagon E.pentagon
-  exact GridRectanglePentagonDecomposition.ext hmiddle hrectangle hpentagon
+  exact GridTwoStepDecomposition.ext hmiddle hrectangle hpentagon
 
 end GridRectanglePentagonDecomposition
 
@@ -388,7 +281,7 @@ local notation "b" => finRotate n C.column
 the original differential. -/
 noncomputable def rectanglePentagonDecompositions (x z : GridState n) :
     Finset (GridRectanglePentagonDecomposition C.column C.turnRow x z) :=
-  GridRectanglePentagonDecomposition.decompositionsOf G.unblockedRectangles
+  GridTwoStepDecomposition.decompositionsOf G.unblockedRectangles
     (fun u v => G.pentagons C u v) x z
 
 /-- Membership in the counted rectangle--pentagon decompositions is membership of the rectangle
@@ -406,7 +299,7 @@ theorem mem_rectanglePentagonDecompositions {x z : GridState n}
 differential after the pentagon map. -/
 noncomputable def pentagonRectangleDecompositions (x z : GridState n) :
     Finset (GridPentagonRectangleDecomposition C.column C.turnRow x z) :=
-  GridPentagonRectangleDecomposition.decompositionsOf (fun u v => G.pentagons C u v)
+  GridTwoStepDecomposition.decompositionsOf (fun u v => G.pentagons C u v)
     (G.swapColumns C.column b).unblockedRectangles x z
 
 /-- Membership in the counted pentagon--rectangle decompositions is membership of the pentagon
@@ -600,8 +493,8 @@ theorem sum_rename_unblockedCoefficient_mul_pentagonCoefficient (x z : GridState
     rw [G.unblockedCoefficient_def R x y, map_sum, G.pentagonCoefficient_def R C y z,
       Finset.sum_mul_sum]
   rw [Finset.sum_congr rfl fun y (_ : y ∈ Finset.univ) => hstep y]
-  exact (GridRectanglePentagonDecomposition.sum_decompositionsOf
-    G.unblockedRectangles (fun u v => G.pentagons C u v) x z
+  exact (GridTwoStepDecomposition.sum_decompositionsOf
+    G.unblockedRectangles (fun u v => G.pentagons C u v)
     (fun _ r P => MvPolynomial.rename (Equiv.swap C.column b)
       (G.OMonomial R r.toGridRectangle) * G.pentagonWeight R C P)).symm
 
@@ -622,9 +515,9 @@ theorem sum_pentagonCoefficient_mul_unblockedCoefficient_swapColumns (x z : Grid
     rw [G.pentagonCoefficient_def R C x y,
       (G.swapColumns C.column b).unblockedCoefficient_def R y z, Finset.sum_mul_sum]
   rw [Finset.sum_congr rfl fun y (_ : y ∈ Finset.univ) => hstep y]
-  exact (GridPentagonRectangleDecomposition.sum_decompositionsOf
+  exact (GridTwoStepDecomposition.sum_decompositionsOf
     (fun u v => G.pentagons C u v)
-    (G.swapColumns C.column b).unblockedRectangles x z
+    (G.swapColumns C.column b).unblockedRectangles
     (fun _ P r => G.pentagonWeight R C P *
       (G.swapColumns C.column b).OMonomial R r.toGridRectangle)).symm
 

@@ -14,7 +14,9 @@ public import TauCeti.KnotTheory.Grid.Diagram.Basic
 Many identities in grid homology compare sums over composite domains: a domain of one kind from a
 grid state `x` to an intermediate grid state, followed by a domain of another kind from there to a
 grid state `z`. This file packages such a pair, for arbitrary families of domains indexed by their
-source and target states, as `TauCeti.GridTwoStepDecomposition`.
+source and target states, as `TauCeti.GridTwoStepDecomposition`. The two-step rectangle
+decompositions of the square of the grid differential and the rectangle--pentagon,
+hexagon--rectangle and pentagon--pentagon decompositions of grid commutation all specialize it.
 
 ## Main definitions
 
@@ -27,6 +29,7 @@ source and target states, as `TauCeti.GridTwoStepDecomposition`.
 
 * `TauCeti.GridTwoStepDecomposition.mem_decompositionsOf` characterizes membership in
   `decompositionsOf`.
+* `TauCeti.GridTwoStepDecomposition.card_decompositionsOf` counts `decompositionsOf`.
 * `TauCeti.GridTwoStepDecomposition.sum_decompositionsOf` rewrites a sum over `decompositionsOf`
   as the iterated sum over the intermediate state and the two constituent domains.
 -/
@@ -84,6 +87,15 @@ theorem mem_decompositionsOf
       D.first ∈ first x D.middle ∧ D.second ∈ second D.middle z := by
   classical
   simp [decompositionsOf, sigmaEquiv]
+
+/-- The number of selected two-step decompositions is the sum, over intermediate states, of the
+products of the numbers of selected constituent domains. -/
+theorem card_decompositionsOf
+    (first : ∀ u v : GridState n, Finset (A u v))
+    (second : ∀ u v : GridState n, Finset (B u v)) (x z : GridState n) :
+    (decompositionsOf first second x z).card = ∑ y, (first x y).card * (second y z).card := by
+  classical
+  simp [decompositionsOf, Finset.card_sigma]
 
 /-- A sum over selected two-step decompositions is the corresponding iterated sum. -/
 theorem sum_decompositionsOf {M : Type*} [AddCommMonoid M]

@@ -687,7 +687,7 @@ intermediate grid states. -/
 theorem recut_ne (D : GridRectangleDecomposition x z) (hone : D.HasOneCommonSide)
     (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
     D.recut hone hfirst hsecond ≠ D := fun h =>
-  (D.isRecut_recut hone hfirst hsecond).middle_ne (congrArg GridRectangleDecomposition.middle h)
+  (D.isRecut_recut hone hfirst hsecond).middle_ne (congrArg GridTwoStepDecomposition.middle h)
 
 /-- Recutting is an involution on the two-step decompositions by two empty rectangles sharing
 exactly one side column. -/

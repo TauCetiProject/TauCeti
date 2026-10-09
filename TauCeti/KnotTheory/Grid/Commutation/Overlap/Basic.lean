@@ -341,10 +341,10 @@ noncomputable def recutLeftEqLeft
   let E := D.toRectangleDecomposition.recut hone hempty.1 hempty.2
   exact {
     middle := E.middle
-    pentagon := GridPentagonBetween.ofRightEq E.first
+    first := GridPentagonBetween.ofRightEq E.first
       (D.recut_first_right_of_left_eq_left hcommon hone hrectangle hpentagon)
       (D.turn_mem_recut_first_of_left_eq_left hcommon hone hrectangle hpentagon)
-    rectangle := E.second }
+    second := E.second }
 
 /-- Forgetting the turn point after the common-initial-side overlap construction recovers the
 generic one-common-side rectangle recut. -/

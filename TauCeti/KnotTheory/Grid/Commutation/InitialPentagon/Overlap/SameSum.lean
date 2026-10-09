@@ -60,8 +60,8 @@ interval shares exactly one side column. -/
 theorem hasOneCommonSide_of_initial_self (D : GridRectangleInitialPentagonDecomposition a s x z)
     (hcommon : D.first.left = D.second.left)
     (hcol : D.first.right ∈ Grid.cIoo D.second.left D.second.right) :
-    D.HasOneCommonSide := by
-  apply D.hasOneCommonSide_iff_existsUnique.mpr
+    D.toGridRectangleDecomposition.HasOneCommonSide := by
+  apply D.toGridRectangleDecomposition.hasOneCommonSide_iff_existsUnique.mpr
   refine ⟨D.first.left, ?_, ?_⟩
   · simp [GridRectangleBetween.mem_sideColumns, hcommon]
   · intro c hc
@@ -173,7 +173,7 @@ noncomputable def recutInitialSelf
     (hcol : D.first.right ∈ Grid.cIoo D.second.left D.second.right)
     (hfirst : D.first.IsEmpty) (hsecond : D.pentagon.IsEmpty) :
     GridRectangleInitialPentagonDecomposition a s x z where
-  toGridRectangleDecomposition := D.initialSelfRecut hcommon hcol hfirst hsecond
+  toGridTwoStepDecomposition := D.initialSelfRecut hcommon hcol hfirst hsecond
   second_left_eq := (D.initialSelfRecut_data hcommon hcol hfirst hsecond).2.2.2.1.trans
     (hcommon.trans D.second_left_eq)
   second_turn_mem := D.initialSelfRecut_turn_mem hcommon hcol hfirst hsecond
@@ -375,7 +375,7 @@ private theorem initialPentagonInitialSelfSource_data
     (hD : D ∈ G.initialPentagonInitialSelfSources C x z) :
     D.first.left = D.second.left ∧
       D.first.right ∈ Grid.cIoo D.second.left D.second.right ∧
-        D.HasOneCommonSide ∧ D.first.IsEmpty ∧ D.pentagon.IsEmpty := by
+        D.toGridRectangleDecomposition.HasOneCommonSide ∧ D.first.IsEmpty ∧ D.pentagon.IsEmpty := by
   obtain ⟨hcounted, hcommon, hcol⟩ := (G.mem_initialPentagonInitialSelfSources C D).1 hD
   obtain ⟨hR, hP⟩ := (G.mem_rectangleInitialPentagonDecompositions C D).1 hcounted
   exact ⟨hcommon, hcol, D.hasOneCommonSide_of_initial_self hcommon hcol,

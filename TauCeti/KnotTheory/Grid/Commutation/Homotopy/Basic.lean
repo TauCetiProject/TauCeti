@@ -71,43 +71,38 @@ variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
 local notation "b" => finRotate n C.column
 
 /-- On a grid-state generator, the coefficient of the unblocked differential after the
-commutation homotopy is the sum over intermediate states of the hexagon coefficient times the
-rectangle coefficient, with hexagons turning on either side. -/
+commutation homotopy is the sum over intermediate states of the commutation hexagon coefficient
+times the rectangle coefficient. -/
 theorem unblockedDifferential_commutationHomotopy_single_apply (x z : GridState n) :
     G.unblockedDifferential R (G.commutationHomotopy R C (Finsupp.single x 1)) z =
       ∑ y : GridState n,
-        (G.hexagonCoefficient R C x y + G.initialHexagonCoefficient R C x y) *
-          G.unblockedCoefficient R y z := by
+        G.commutationHexagonCoefficient R C x y * G.unblockedCoefficient R y z := by
   rw [unblockedDifferential_apply_apply, Finsupp.sum_fintype _ _ fun _ => zero_mul _]
-  simp
+  simp_rw [commutationHomotopy_single_apply]
 
 /-- On a grid-state generator, the coefficient of the commutation homotopy after the unblocked
-differential is the sum over intermediate states of the rectangle coefficient times the hexagon
-coefficient, with hexagons turning on either side. -/
+differential is the sum over intermediate states of the rectangle coefficient times the
+commutation hexagon coefficient. -/
 theorem commutationHomotopy_unblockedDifferential_single_apply (x z : GridState n) :
     G.commutationHomotopy R C (G.unblockedDifferential R (Finsupp.single x 1)) z =
       ∑ y : GridState n,
-        G.unblockedCoefficient R x y *
-          (G.hexagonCoefficient R C y z + G.initialHexagonCoefficient R C y z) := by
+        G.unblockedCoefficient R x y * G.commutationHexagonCoefficient R C y z := by
   rw [commutationHomotopy_apply_apply, Finsupp.sum_fintype _ _ fun _ => zero_mul _]
-  simp
+  simp [commutationHexagonCoefficient_def]
 
 /-- On a grid-state generator, the coefficient of the round trip `Ψ ∘ Φ` through the commuted
-diagram is the sum over intermediate states of the coefficient of `Φ`, renamed by the column
-swap, times the coefficient of the reverse commutation map `Ψ`, with pentagons turning on either
-side in both steps. -/
+diagram is the sum over intermediate states of the commutation pentagon coefficient of `Φ`,
+renamed by the column swap, times that of the reverse commutation map `Ψ`. -/
 theorem reverse_commutationMap_commutationMap_single_apply (x z : GridState n) :
     (G.swapColumns C.column b).commutationMap R C.reverse
         (G.commutationMap R C (Finsupp.single x 1)) z =
       ∑ y : GridState n,
-        rename (Equiv.swap C.column b)
-            (G.pentagonCoefficient R C x y + G.initialPentagonCoefficient R C x y) *
-          ((G.swapColumns C.column b).pentagonCoefficient R C.reverse y z +
-            (G.swapColumns C.column b).initialPentagonCoefficient R C.reverse y z) := by
+        rename (Equiv.swap C.column b) (G.commutationPentagonCoefficient R C x y) *
+          (G.swapColumns C.column b).commutationPentagonCoefficient R C.reverse y z := by
   rw [commutationMap_apply_apply, Finsupp.sum_fintype _ _ fun _ => by simp]
   refine Finset.sum_congr rfl fun y _ => ?_
-  rw [commutationMap_apply_apply, Finsupp.sum_single_index (by simp), map_one, one_mul,
-    ColumnCommutationData.reverse_column]
+  rw [commutationMap_single_apply, ColumnCommutationData.reverse_column,
+    commutationPentagonCoefficient_def (G.swapColumns C.column b)]
 
 /-- The round trip `Ψ ∘ Φ` through the commuted diagram is linear over the polynomial ring: the
 commutation map and its reverse are semilinear over the same renaming of the variables by the
@@ -135,16 +130,12 @@ theorem unblockedDifferential_commutationHomotopy_add_eq_iff :
         c + (G.swapColumns C.column b).commutationMap R C.reverse (G.commutationMap R C c)) ↔
       ∀ x z : GridState n,
         ∑ y : GridState n,
-            ((G.hexagonCoefficient R C x y + G.initialHexagonCoefficient R C x y) *
-                G.unblockedCoefficient R y z +
-              G.unblockedCoefficient R x y *
-                (G.hexagonCoefficient R C y z + G.initialHexagonCoefficient R C y z)) =
+            (G.commutationHexagonCoefficient R C x y * G.unblockedCoefficient R y z +
+              G.unblockedCoefficient R x y * G.commutationHexagonCoefficient R C y z) =
           (if x = z then 1 else 0) +
             ∑ y : GridState n,
-              rename (Equiv.swap C.column b)
-                  (G.pentagonCoefficient R C x y + G.initialPentagonCoefficient R C x y) *
-                ((G.swapColumns C.column b).pentagonCoefficient R C.reverse y z +
-                  (G.swapColumns C.column b).initialPentagonCoefficient R C.reverse y z) := by
+              rename (Equiv.swap C.column b) (G.commutationPentagonCoefficient R C x y) *
+                (G.swapColumns C.column b).commutationPentagonCoefficient R C.reverse y z := by
   simp_rw [Finset.sum_add_distrib, ← unblockedDifferential_commutationHomotopy_single_apply,
     ← commutationHomotopy_unblockedDifferential_single_apply,
     ← reverse_commutationMap_commutationMap_single_apply, ← Finsupp.single_apply,
