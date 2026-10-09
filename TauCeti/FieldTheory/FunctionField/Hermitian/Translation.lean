@@ -9,6 +9,8 @@ public import TauCeti.FieldTheory.FunctionField.Hermitian.Basic
 public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.RingTheory.AdjoinRoot
 import Mathlib.FieldTheory.Finite.Basic
+import TauCeti.Algebra.CharP.Lemmas
+import TauCeti.Algebra.Group.Pow
 import TauCeti.FieldTheory.Finite.PowAddSelf
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Transcendental
@@ -92,30 +94,24 @@ section Parameters
 
 variable {R : Type*} [CommRing R] {p n : ℕ} [ExpChar R p] {a b a' b' : R}
 
-/-- `(a ^ q) ^ q = a` when `a ^ (q ^ 2) = a`. -/
-private theorem pow_pow_of_pow_sq {q : ℕ} (ha : a ^ q ^ 2 = a) : (a ^ q) ^ q = a := by
-  rw [← pow_mul, ← sq, ha]
-
-/-- Raising to the power `q = p ^ n` commutes with negation. -/
-private theorem neg_pow_expChar_pow (u : R) : (-u) ^ p ^ n = -u ^ p ^ n :=
-  map_neg (iterateFrobenius R p n) u
-
 /-- The solutions of `a ^ (q ^ 2) = a`, `q = p ^ n`, are closed under addition. -/
 theorem add_pow_pow_sq_eq_add (ha : a ^ (p ^ n) ^ 2 = a) (ha' : a' ^ (p ^ n) ^ 2 = a') :
     (a + a') ^ (p ^ n) ^ 2 = a + a' := by
-  rw [sq, pow_mul, add_pow_expChar_pow, add_pow_expChar_pow, pow_pow_of_pow_sq ha,
-    pow_pow_of_pow_sq ha']
+  rw [sq, pow_mul, add_pow_expChar_pow, add_pow_expChar_pow,
+    pow_pow_eq_self_of_pow_sq_eq_self ha, pow_pow_eq_self_of_pow_sq_eq_self ha']
 
 /-- The solutions of `a ^ (q ^ 2) = a`, `q = p ^ n`, are closed under negation. -/
 theorem neg_pow_pow_sq_eq_neg (ha : a ^ (p ^ n) ^ 2 = a) : (-a) ^ (p ^ n) ^ 2 = -a := by
-  rw [sq, pow_mul, neg_pow_expChar_pow, neg_pow_expChar_pow, pow_pow_of_pow_sq ha]
+  rw [sq, pow_mul, neg_pow_expChar_pow, neg_pow_expChar_pow,
+    pow_pow_eq_self_of_pow_sq_eq_self ha]
 
 /-- The parameters of the composite translation `σ_{a,b} ∘ σ_{a',b'} = σ_{a + a', b + b' + a a'^q}`
 satisfy the Hermitian equation `b ^ q + b = a ^ (q + 1)`. -/
 theorem pow_add_self_add_add_mul_pow_eq_add_pow_succ (ha' : a' ^ (p ^ n) ^ 2 = a')
     (hb : b ^ p ^ n + b = a ^ (p ^ n + 1)) (hb' : b' ^ p ^ n + b' = a' ^ (p ^ n + 1)) :
     (b + b' + a * a' ^ p ^ n) ^ p ^ n + (b + b' + a * a' ^ p ^ n) = (a + a') ^ (p ^ n + 1) := by
-  simp only [add_pow_expChar_pow, mul_pow, pow_pow_of_pow_sq ha', pow_succ] at hb hb' ⊢
+  simp only [add_pow_expChar_pow, mul_pow, pow_pow_eq_self_of_pow_sq_eq_self ha', pow_succ]
+    at hb hb' ⊢
   linear_combination hb + hb'
 
 /-- The parameters of the inverse translation `σ_{a,b}⁻¹ = σ_{-a, b^q}` satisfy the Hermitian
@@ -123,8 +119,8 @@ equation `b ^ q + b = a ^ (q + 1)`. -/
 theorem pow_pow_add_pow_eq_neg_pow_succ (ha : a ^ (p ^ n) ^ 2 = a)
     (hb : b ^ p ^ n + b = a ^ (p ^ n + 1)) :
     (b ^ p ^ n) ^ p ^ n + b ^ p ^ n = (-a) ^ (p ^ n + 1) := by
-  rw [← add_pow_expChar_pow, hb, pow_succ, mul_pow, pow_pow_of_pow_sq ha, pow_succ,
-    neg_pow_expChar_pow]
+  rw [← add_pow_expChar_pow, hb, pow_succ, mul_pow, pow_pow_eq_self_of_pow_sq_eq_self ha,
+    pow_succ, neg_pow_expChar_pow]
   ring
 
 end Parameters
@@ -207,7 +203,7 @@ private theorem pow_add_self_eq {a b : K} (ha : a ^ (p ^ n) ^ 2 = a)
         (y + algebraMap K F (a ^ p ^ n) * x + algebraMap K F b) =
       (x + algebraMap K F a) ^ (p ^ n + 1) := by
   have : ExpChar F p := expChar_of_injective_algebraMap (algebraMap K F).injective p
-  have ha' := pow_pow_of_pow_sq (a := algebraMap K F a) (by rw [← map_pow, ha])
+  have ha' := pow_pow_eq_self_of_pow_sq_eq_self (a := algebraMap K F a) (by rw [← map_pow, ha])
   have hb' := congrArg (algebraMap K F) hb
   simp only [map_add, map_mul, map_pow, add_pow_expChar_pow, mul_pow, ha', pow_succ] at hb' ⊢
   linear_combination h.equation + hb'
@@ -293,6 +289,7 @@ theorem translation_mem_hermitianTranslations {a b : K} (ha : a ^ (p ^ n) ^ 2 = 
   ⟨a, b, ha, hb, h.translation_apply_x hq ha hb, h.translation_apply_y hq ha hb⟩
 
 /-- **Faithfulness**: `σ_{a,b} = σ_{a',b'}` exactly when `a = a'` and `b = b'`. -/
+@[simp]
 theorem translation_inj {a b a' b' : K} (ha : a ^ (p ^ n) ^ 2 = a)
     (hb : b ^ p ^ n + b = a ^ (p ^ n + 1)) (ha' : a' ^ (p ^ n) ^ 2 = a')
     (hb' : b' ^ p ^ n + b' = a' ^ (p ^ n + 1)) :
