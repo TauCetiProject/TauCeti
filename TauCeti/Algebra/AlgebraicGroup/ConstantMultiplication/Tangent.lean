@@ -113,7 +113,7 @@ variable {S T : Type*} [CommRing S] [Algebra R S]
   [SMulCommClass S T T]
 
 /-- In a basis with the given structure matrices, the linearized multiplication equations
-are equivalent to the associative Leibniz rule. The multiplication need not be associative
+are equivalent to the Leibniz rule. The multiplication need not be associative
 or unital. -/
 theorem toMatrix_leibniz_iff (b : Module.Basis (Fin n) S T)
     (hC : ∀ k, LinearMap.toMatrix b b (LinearMap.mulLeft S (b k)) =

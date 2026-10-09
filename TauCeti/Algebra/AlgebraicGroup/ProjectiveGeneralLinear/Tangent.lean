@@ -20,6 +20,8 @@ commutative algebra over the base ring.
 
 The construction uses the closed-subgroup tangent equivalence and the tangent-matrix
 identification for `GL`. The linearized multiplication relations characterize its image.
+`tangentLieEquivInnerDerivations` identifies it with the range of the adjoint action on
+the matrix algebra, bundled as a Lie subalgebra of its endomorphisms.
 
 ## References
 
@@ -111,12 +113,32 @@ theorem mem_range_tangentEnd_iff
     f ∈ Set.range (tangentEnd (R := R) n) ↔
       ∃ X : Matrix (Fin n) (Fin n) B,
         f = LinearMap.mulLeft B X - LinearMap.mulRight B X := by
-  rw [mem_range_tangentEnd_iff_leibniz]
-  constructor
-  · exact LinearMap.exists_matrix_eq_mulLeft_sub_mulRight_of_leibniz f
-  · rintro ⟨X, rfl⟩ x y
-    simp only [LinearMap.sub_apply, LinearMap.mulLeft_apply, LinearMap.mulRight_apply]
-    noncomm_ring
+  rw [mem_range_tangentEnd_iff_leibniz,
+    LinearMap.leibniz_iff_exists_matrix_eq_mulLeft_sub_mulRight]
+
+/-- The tangent Lie algebra of `PGLₙ` is the Lie subalgebra of inner derivations of its
+matrix algebra, bundled as the range of `LieAlgebra.ad`. This holds over every commutative
+coefficient algebra, in all ranks and characteristics. -/
+def tangentLieEquivInnerDerivations :
+    Derivation R (coordinateHopfAlgebra n R)
+        (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra n R) B) ≃ₗ⁅B⁆
+      (LieAlgebra.ad B (Matrix (Fin n) (Fin n) B)).range :=
+  (LieEquiv.ofInjective (tangentEnd (R := R) (B := B) n) (tangentEnd_injective n)).trans
+    (LieEquiv.ofEq _ _ (by
+      ext f
+      rw [LieHom.coe_range, LieHom.coe_range, mem_range_tangentEnd_iff]
+      simp only [Set.mem_range,
+        LieAlgebra.ad_eq_lmul_left_sub_lmul_right, Pi.sub_apply]
+      exact exists_congr fun X => eq_comm))
+
+/-- The Lie equivalence acts by the tangent endomorphism of the matrix algebra. -/
+@[simp]
+theorem tangentLieEquivInnerDerivations_apply
+    (d : Derivation R (coordinateHopfAlgebra n R)
+      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra n R) B)) :
+    (tangentLieEquivInnerDerivations n d : Module.End B (Matrix (Fin n) (Fin n) B)) =
+      tangentEnd n d := by
+  simp [tangentLieEquivInnerDerivations]
 
 end
 
