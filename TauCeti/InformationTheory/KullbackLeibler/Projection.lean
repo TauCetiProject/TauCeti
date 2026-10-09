@@ -91,6 +91,7 @@ theorem map_fitLaw (hf : Measurable f) :
     (by simp) (by simp)
 
 /-- If `μ ≪ π.map f`, then `f` has law `μ` under `π.fitLaw f μ`. -/
+@[simp]
 theorem map_fitLaw_of_absolutelyContinuous [SigmaFinite μ] [SigmaFinite (π.map f)]
     (hf : Measurable f) (hμ : μ ≪ π.map f) : (π.fitLaw f μ).map f = μ := by
   rw [map_fitLaw hf, withDensity_rnDeriv_eq _ _ hμ]

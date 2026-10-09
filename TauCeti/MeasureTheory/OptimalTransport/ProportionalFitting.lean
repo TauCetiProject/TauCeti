@@ -33,9 +33,10 @@ exactly. Nothing beyond the measurable structure of `X` and `Y` is used.
 
 ## Main definitions
 
-* `TauCeti.proportionalFittingStep μ ν π`: one sweep, fitting the first marginal to `μ` and then
-  the second marginal to `ν`.
-* `TauCeti.proportionalFitting R μ ν n`: the `n`-th iterate of the sweep, started at `R`.
+* `MeasureTheory.Measure.proportionalFittingStep π μ ν`: one sweep, fitting the first marginal
+  to `μ` and then the second marginal to `ν`.
+* `MeasureTheory.Measure.proportionalFitting R μ ν n`: the `n`-th iterate of the sweep, started
+  at `R`.
 
 ## Main statements
 
@@ -66,9 +67,9 @@ noncomputable section
 open MeasureTheory InformationTheory Filter Topology
 open scoped ENNReal
 
-namespace TauCeti
+namespace MeasureTheory.Measure
 
-variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {R π σ : Measure (X × Y)}
+variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {R π : Measure (X × Y)}
   {μ : Measure X} {ν : Measure Y}
 
 /-- One sweep of iterative proportional fitting: the measure `π` is reweighted along the first
@@ -78,50 +79,60 @@ absolutely continuous with respect to the current marginal
 (`MeasureTheory.Measure.map_fitLaw_of_absolutelyContinuous`); under finite-entropy feasibility this
 holds along the whole iteration (`TauCeti.fst_fitLaw_proportionalFitting`,
 `TauCeti.snd_proportionalFitting_succ`). -/
-def proportionalFittingStep (μ : Measure X) (ν : Measure Y) (π : Measure (X × Y)) :
+def proportionalFittingStep (π : Measure (X × Y)) (μ : Measure X) (ν : Measure Y) :
     Measure (X × Y) :=
   (π.fitLaw Prod.fst μ).fitLaw Prod.snd ν
 
-theorem proportionalFittingStep_def (μ : Measure X) (ν : Measure Y) (π : Measure (X × Y)) :
-    proportionalFittingStep μ ν π = (π.fitLaw Prod.fst μ).fitLaw Prod.snd ν :=
+theorem proportionalFittingStep_def (π : Measure (X × Y)) (μ : Measure X) (ν : Measure Y) :
+    π.proportionalFittingStep μ ν = (π.fitLaw Prod.fst μ).fitLaw Prod.snd ν :=
   (rfl)
 
 /-- The iterates of iterative proportional fitting started at the reference measure `R`: the
-`n`-th one is obtained from `R` by `n` sweeps of `TauCeti.proportionalFittingStep μ ν`. -/
+`n`-th one is obtained from `R` by `n` sweeps `MeasureTheory.Measure.proportionalFittingStep`
+towards `μ` and `ν`. -/
 def proportionalFitting (R : Measure (X × Y)) (μ : Measure X) (ν : Measure Y) (n : ℕ) :
     Measure (X × Y) :=
-  (proportionalFittingStep μ ν)^[n] R
+  (fun π ↦ π.proportionalFittingStep μ ν)^[n] R
 
 @[simp]
-theorem proportionalFitting_zero : proportionalFitting R μ ν 0 = R :=
+theorem proportionalFitting_zero : R.proportionalFitting μ ν 0 = R :=
   (rfl)
 
 @[simp]
 theorem proportionalFitting_succ (n : ℕ) :
-    proportionalFitting R μ ν (n + 1) = proportionalFittingStep μ ν (proportionalFitting R μ ν n) :=
+    R.proportionalFitting μ ν (n + 1) = (R.proportionalFitting μ ν n).proportionalFittingStep μ ν :=
   Function.iterate_succ_apply' _ _ _
 
 /-- A sweep is finite as soon as `ν` is: it ends by fitting the second marginal to `ν`, and the
 total mass after that fit is at most the mass of `ν`, whatever measure it is applied to. -/
-instance [IsFiniteMeasure ν] : IsFiniteMeasure (proportionalFittingStep μ ν π) :=
-  Measure.isFiniteMeasure_fitLaw measurable_snd
+instance [IsFiniteMeasure ν] : IsFiniteMeasure (π.proportionalFittingStep μ ν) :=
+  isFiniteMeasure_fitLaw measurable_snd
 
 /-- Every iterate is finite when `R` and `ν` are: the zeroth iterate is `R`, and every later one is
 a sweep, which is finite because `ν` is. -/
 instance [IsFiniteMeasure R] [IsFiniteMeasure ν] (n : ℕ) :
-    IsFiniteMeasure (proportionalFitting R μ ν n) := by
+    IsFiniteMeasure (R.proportionalFitting μ ν n) := by
   cases n with
   | zero => rwa [proportionalFitting_zero]
   | succ n => rw [proportionalFitting_succ]; infer_instance
 
+end MeasureTheory.Measure
+
+namespace TauCeti
+
+open Measure
+
+variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {R π σ : Measure (X × Y)}
+  {μ : Measure X} {ν : Measure Y}
+
 /-- **Pythagorean identity of one sweep.** For a coupling `σ` of `μ` and `ν`, the relative entropy
 of `σ` against `π` splits into the relative-entropy errors of the first marginal of `π` and of the
 second marginal of the half-step `π.fitLaw Prod.fst μ`, plus the relative entropy of `σ` against
-the sweep `proportionalFittingStep μ ν π`. -/
+the sweep `π.proportionalFittingStep μ ν`. -/
 theorem klDiv_eq_add_klDiv_proportionalFittingStep [IsFiniteMeasure π] [IsFiniteMeasure σ]
     (hσ : IsCoupling σ μ ν) :
     klDiv σ π = klDiv μ π.fst + klDiv ν (π.fitLaw Prod.fst μ).snd +
-      klDiv σ (proportionalFittingStep μ ν π) := by
+      klDiv σ (π.proportionalFittingStep μ ν) := by
   have : IsFiniteMeasure μ := hσ.fst_eq ▸ inferInstance
   have := Measure.isFiniteMeasure_fitLaw (π := π) (μ := μ) measurable_fst
   rw [klDiv_eq_klDiv_map_add_klDiv_fitLaw measurable_fst hσ.measurePreserving_fst.map_eq,
@@ -203,6 +214,7 @@ private theorem klDiv_ne_top_proportionalFitting [IsFiniteMeasure R] [IsFiniteMe
 
 /-- Under finite-entropy feasibility, the first half of every sweep of iterative proportional
 fitting gives first marginal exactly `μ`. -/
+@[simp]
 theorem fst_fitLaw_proportionalFitting [IsFiniteMeasure R] [IsFiniteMeasure μ]
     (h : schroedingerValue R μ ν ≠ ∞) (n : ℕ) :
     ((proportionalFitting R μ ν n).fitLaw Prod.fst μ).fst = μ := by
