@@ -114,7 +114,11 @@ private theorem det_splitEnd_eq {F' : Type*} [AddCommGroup F'] [Module R F'] [Mo
 
 end Split
 
-variable [Module.Finite R M] [Module.Projective R M]
+variable [Module.Finite R M]
+
+section Projective
+
+variable [Module.Projective R M]
 
 /-- The **determinant** of an endomorphism `f` of a finite projective module `M`: for a free module
 `F` of finite rank with `π : F →ₗ[R] M` and `σ : M →ₗ[R] F` such that `π ∘ₗ σ = id`, it is the
@@ -146,13 +150,6 @@ theorem projectiveDet_comp (f g : Module.End R M) :
 @[simp]
 theorem projectiveDet_id : projectiveDet (id : Module.End R M) = 1 :=
   projectiveDet.map_one
-
-/-- On a free module of finite rank, `projectiveDet` is the determinant `LinearMap.det`. -/
-@[simp]
-theorem projectiveDet_eq_det [Module.Free R M] (f : Module.End R M) :
-    projectiveDet f = LinearMap.det f := by
-  rw [projectiveDet_eq_det_of_comp_eq_id id id (id_comp _)]
-  simp [Module.End.one_eq_id]
 
 /-- The determinant of an endomorphism of a finite projective module commutes with base change:
 the determinant of `f.baseChange A` is the image of the determinant of `f`. -/
@@ -204,5 +201,14 @@ theorem isUnit_iff_isUnit_projectiveDet (f : Module.End R M) :
     rw [← hπ, hgg'x, hx]
   · simp only [Module.End.mul_apply, comp_apply, Module.End.one_apply]
     rw [← hσ, hg'gx, hx]
+
+end Projective
+
+/-- On a free module of finite rank, `projectiveDet` is the determinant `LinearMap.det`. -/
+@[simp]
+theorem projectiveDet_eq_det [Module.Free R M] (f : Module.End R M) :
+    projectiveDet f = LinearMap.det f := by
+  rw [projectiveDet_eq_det_of_comp_eq_id id id (id_comp _)]
+  simp [Module.End.one_eq_id]
 
 end LinearMap

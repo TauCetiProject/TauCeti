@@ -53,7 +53,10 @@ open Module TensorProduct
 namespace Algebra
 
 variable (R : Type*) {S : Type*} [CommRing R] [Ring S] [Algebra R S] [Module.Finite R S]
-  [Module.Projective R S]
+
+section Projective
+
+variable [Module.Projective R S]
 
 /-- The **norm** of an element `x` of an `R`-algebra `S` which is finite projective as an
 `R`-module: the determinant `LinearMap.projectiveDet` of multiplication by `x`. It is
@@ -65,11 +68,6 @@ noncomputable def projectiveNorm : S →* R :=
 theorem projectiveNorm_apply (x : S) :
     projectiveNorm R x = LinearMap.projectiveDet (lmul R S x) :=
   (rfl)
-
-/-- For an algebra which is free of finite rank, `projectiveNorm` is the norm `Algebra.norm`. -/
-@[simp]
-theorem projectiveNorm_eq_norm [Module.Free R S] (x : S) : projectiveNorm R x = norm R x := by
-  rw [projectiveNorm_apply, LinearMap.projectiveDet_eq_det, norm_apply]
 
 variable {R}
 
@@ -95,5 +93,12 @@ theorem projectiveNorm_eq_of_algEquiv {T : Type*} [Ring T] [Algebra R T] [Module
 @[simp]
 theorem isUnit_projectiveNorm_iff {x : S} : IsUnit (projectiveNorm R x) ↔ IsUnit x := by
   rw [projectiveNorm_apply, ← LinearMap.isUnit_iff_isUnit_projectiveDet, lmul_isUnit_iff]
+
+end Projective
+
+/-- For an algebra which is free of finite rank, `projectiveNorm` is the norm `Algebra.norm`. -/
+@[simp]
+theorem projectiveNorm_eq_norm [Module.Free R S] (x : S) : projectiveNorm R x = norm R x := by
+  rw [projectiveNorm_apply, LinearMap.projectiveDet_eq_det, norm_apply]
 
 end Algebra
