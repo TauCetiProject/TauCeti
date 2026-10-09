@@ -975,7 +975,23 @@ theorem equivIsoDescentDatum_symm_apply (E : IsoDescentDatum R S B) :
     (equivIsoDescentDatum R S B).symm E = E.toDescentDatum :=
   (rfl)
 
+@[simp]
+theorem toIsoDescentDatum_toDescentDatum (D : DescentDatum R S B) :
+    D.toIsoDescentDatum.toDescentDatum = D :=
+  (equivIsoDescentDatum R S B).left_inv D
+
 end DescentDatum
+
+namespace IsoDescentDatum
+
+variable {R S B}
+
+@[simp]
+theorem toDescentDatum_toIsoDescentDatum (E : IsoDescentDatum R S B) :
+    E.toDescentDatum.toIsoDescentDatum = E :=
+  (DescentDatum.equivIsoDescentDatum R S B).right_inv E
+
+end IsoDescentDatum
 
 end Algebra
 
