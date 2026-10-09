@@ -8,7 +8,8 @@ module
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 
--- Access the constructor body only to supply its missing public computation rule.
+-- Access the constructor body to supply its missing public computation rule, and the body of
+-- `IsLocalDiffeomorphAt` to supply its introduction rule.
 import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 
 /-!
@@ -188,21 +189,7 @@ variable {I : ModelWithCorners 𝕂 E H} {J : ModelWithCorners 𝕂 F G} {n : Wi
 every point of that source. -/
 theorem isLocalDiffeomorphAt_of_eqOn {Φ : PartialDiffeomorph I J M N n} {f : M → N} {x : M}
     (hx : x ∈ Φ.source) (hf : EqOn f Φ Φ.source) : IsLocalDiffeomorphAt I J n f x :=
-  PartialDiffeomorph.isLocalDiffeomorphAt I J n
-    ({ toPartialEquiv :=
-        { toFun := f
-          invFun := Φ.toPartialEquiv.symm
-          source := Φ.source
-          target := Φ.target
-          map_source' := fun _ hy => hf hy ▸ Φ.toPartialEquiv.map_source hy
-          map_target' := fun _ hw => Φ.toPartialEquiv.map_target hw
-          left_inv' := fun _ hy => hf hy ▸ Φ.toPartialEquiv.left_inv hy
-          right_inv' := fun _ hw =>
-            (hf (Φ.toPartialEquiv.map_target hw)).trans (Φ.toPartialEquiv.right_inv hw) }
-       open_source := Φ.open_source
-       open_target := Φ.open_target
-       contMDiffOn_toFun := Φ.contMDiffOn_toFun.congr fun _ hy => hf hy
-       contMDiffOn_invFun := Φ.contMDiffOn_invFun } : PartialDiffeomorph I J M N n) hx
+  ⟨Φ, hx, hf⟩
 
 /-- A chart in the `C^n` maximal atlas is a local diffeomorphism at every point of its source. -/
 theorem _root_.OpenPartialHomeomorph.isLocalDiffeomorphAt_of_mem_maximalAtlas
@@ -223,41 +210,10 @@ at `x` is a `C^n` local diffeomorphism at every nearby point. -/
 theorem _root_.IsLocalDiffeomorphAt.eventually {f : M → N} {x : M}
     (hf : IsLocalDiffeomorphAt I J n f x) :
     ∀ᶠ y in 𝓝 x, IsLocalDiffeomorphAt I J n f y := by
-  set ψ := hf.localInverse
-  set s := interior (ψ.target ∩ f ⁻¹' ψ.source)
-  have hsub : s ⊆ ψ.target ∩ f ⁻¹' ψ.source := interior_subset
-  -- On `s` the map `f` is the inverse branch of `ψ`: both `f z` and `ψ.symm z` lie in `ψ.source`
-  -- and are sent to `z` by `ψ`.
-  have heq : EqOn f ψ.toPartialEquiv.symm s := fun z hz =>
-    ψ.toPartialEquiv.injOn (hsub hz).2 (ψ.toPartialEquiv.map_target (hsub hz).1)
-      ((hf.localInverse_left_inv (hsub hz).1).trans
-        (ψ.toPartialEquiv.right_inv (hsub hz).1).symm)
-  have hnhds : s ∈ 𝓝 x :=
-    interior_mem_nhds.2 (Filter.inter_mem (ψ.open_target.mem_nhds hf.localInverse_mem_target)
-      (hf.contMDiffAt.continuousAt.preimage_mem_nhds
-        (ψ.open_source.mem_nhds hf.localInverse_mem_source)))
-  filter_upwards [hnhds] with y hy
-  -- `f` restricted to `s` is a partial diffeomorphism onto the corresponding part of `ψ.source`.
-  exact PartialDiffeomorph.isLocalDiffeomorphAt I J n
-    ({ toPartialEquiv :=
-        { toFun := f
-          invFun := ψ
-          source := s
-          target := ψ.source ∩ ψ ⁻¹' s
-          map_source' := fun z hz =>
-            ⟨(hsub hz).2, by
-              have h : ψ.toPartialEquiv (f z) = z := hf.localInverse_left_inv (hsub hz).1
-              simpa only [mem_preimage, h] using hz⟩
-          map_target' := fun _ hw => hw.2
-          left_inv' := fun z hz => hf.localInverse_left_inv (hsub hz).1
-          right_inv' := fun _ hw => hf.localInverse_right_inv hw.1 }
-       open_source := isOpen_interior
-       open_target := ψ.contMDiffOn_toFun.continuousOn.isOpen_inter_preimage ψ.open_source
-         isOpen_interior
-       contMDiffOn_toFun :=
-         (ψ.contMDiffOn_invFun.mono fun z hz => (hsub hz).1).congr fun z hz => heq hz
-       contMDiffOn_invFun :=
-         ψ.contMDiffOn_toFun.mono inter_subset_left } : PartialDiffeomorph I J M N n) hy
+  -- The partial diffeomorphism witnessing the property at `x` witnesses it on its open source.
+  obtain ⟨Φ, hxΦ, hfΦ⟩ := hf
+  filter_upwards [Φ.open_source.mem_nhds hxΦ] with y hy
+  exact isLocalDiffeomorphAt_of_eqOn hy hfΦ
 
 end EqOn
 
@@ -336,58 +292,14 @@ theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : Is
       (extChartPartialDiffeomorph J n (f x)).symm with hΨ
   set Φ : PartialDiffeomorph I J M N n :=
     (extChartPartialDiffeomorph I n x).trans Ψ with hΦ
-  -- Compute both composite sources through the semantic partial-diffeomorphism API.
-  have hΨsource : Ψ.source = Θ.source ∩ Θ ⁻¹' interior ψ.target := by
-    have htransSource :
-        ((PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm).trans
-          (extChartPartialDiffeomorph J n (f x)).symm).source =
-            (PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm).source ∩
-              (PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm) ⁻¹'
-                (extChartPartialDiffeomorph J n (f x)).symm.source := by
-      exact OpenPartialHomeomorph.trans_source
-        (PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm).toOpenPartialHomeomorph
-        (extChartPartialDiffeomorph J n (f x)).symm.toOpenPartialHomeomorph
-    have hchartSymmSource :
-        (extChartPartialDiffeomorph J n (f x)).symm.source =
-          (extChartPartialDiffeomorph J n (f x)).target := by
-      exact OpenPartialHomeomorph.symm_source
-        (extChartPartialDiffeomorph J n (f x)).toOpenPartialHomeomorph
-    rw [hΨ, htransSource, hchartSymmSource]
-    simp only [extChartPartialDiffeomorph_target, hψ,
-      PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv,
-      PartialHomeomorph.toFun_eq_coe, OpenPartialHomeomorph.coe_toPartialHomeomorph]
+  -- Compute the composite source and the composite map through Mathlib's `trans` and `symm`
+  -- simp lemmas for partial diffeomorphisms.
   have hsource : Φ.source =
       (φ.source ∩ φ ⁻¹' interior φ.target) ∩
         φ ⁻¹' (Θ.source ∩ Θ ⁻¹' interior ψ.target) := by
-    have htransSource :
-        ((extChartPartialDiffeomorph I n x).trans Ψ).source =
-          (extChartPartialDiffeomorph I n x).source ∩
-          (extChartPartialDiffeomorph I n x) ⁻¹' Ψ.source := by
-      exact OpenPartialHomeomorph.trans_source
-        (extChartPartialDiffeomorph I n x).toOpenPartialHomeomorph Ψ.toOpenPartialHomeomorph
-    rw [hΦ, htransSource]
-    simp only [hΨsource, extChartPartialDiffeomorph_source, hφ,
-      coe_extChartPartialDiffeomorph]
-  -- By construction the composite acts as `ψ.symm ∘ Θ ∘ φ`.
+    simp [hΦ, hΨ, extChartPartialDiffeomorph_source, hφ, hψ, preimage_inter]
   have hcoe (y : M) : Φ y = ψ.symm (Θ (φ y)) := by
-    calc
-      Φ y = Ψ ((extChartPartialDiffeomorph I n x) y) := by
-        rw [hΦ]
-        exact OpenPartialHomeomorph.trans_apply
-          (extChartPartialDiffeomorph I n x).toOpenPartialHomeomorph Ψ.toOpenPartialHomeomorph
-      _ = (extChartPartialDiffeomorph J n (f x)).symm
-          ((PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm)
-            ((extChartPartialDiffeomorph I n x) y)) := by
-        rw [hΨ]
-        exact OpenPartialHomeomorph.trans_apply
-          (PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm).toOpenPartialHomeomorph
-          (extChartPartialDiffeomorph J n (f x)).symm.toOpenPartialHomeomorph
-      _ = ψ.symm (Θ (φ y)) := by
-        simp only [coe_extChartPartialDiffeomorph,
-          PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv,
-          PartialHomeomorph.toFun_eq_coe, OpenPartialHomeomorph.coe_toPartialHomeomorph,
-          hφ, hψ]
-        exact extChartPartialDiffeomorph_symm_apply J n (f x) _
+    simp [hΦ, hΨ, hφ, hψ]
   have hinvx : φ.symm (φ x) = x := by rw [hφ]; exact extChartAt_to_inv x
   have hgx : Θ (φ x) = ψ (f x) := by rw [hΘcoe]; simp only [hg, Function.comp_apply, hinvx]
   have hxφ : φ x ∈ interior φ.target := by
