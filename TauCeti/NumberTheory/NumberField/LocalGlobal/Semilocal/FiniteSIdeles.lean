@@ -232,7 +232,11 @@ instance finiteSIdelesMulDistribMulAction :
   letI : SMul (L ≃ₐ[K] L) (finiteSIdeles L S) :=
     ⟨fun σ a ↦ ⟨Units.map (GlobalNumberFields.finiteAdeleGaloisAction K L σ : _ →* _) a.1,
       map_finiteAdeleGaloisAction_mem_finiteSIdeles σ a.2⟩⟩
-  exact Subtype.coe_injective.mulDistribMulAction (finiteSIdeles L S).subtype fun _ _ ↦ rfl
+  -- Unfold the transported action on units; `Units.coe_map` then matches the `SMul` above.
+  exact Subtype.coe_injective.mulDistribMulAction (finiteSIdeles L S).subtype fun σ a ↦
+    Units.ext <| by
+      rw [Units.coe_smul, MulAction.compHom_smul_def, RingAut.smul_def]
+      exact Units.coe_map _ _
 
 /-- The Galois action on a finite `S`-idele is the Galois action on the underlying finite idele. -/
 @[simp]
