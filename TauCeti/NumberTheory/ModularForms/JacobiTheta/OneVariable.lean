@@ -9,10 +9,11 @@ public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
-# Transformation identities of the one-variable Jacobi theta function
+# Transformation identities and estimates for the one-variable Jacobi theta function
 
-Two identities for Mathlib's `jacobiTheta`, `θ(τ) = ∑_n e^{πi n² τ}`, complementing the
-transformation laws in `Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable`.
+Two identities and two estimates for Mathlib's `jacobiTheta`, `θ(τ) = ∑_n e^{πi n² τ}`,
+complementing the transformation laws in
+`Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable`.
 
 ## Main results
 
@@ -20,11 +21,13 @@ transformation laws in `Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariabl
   `θ(τ - N/2) = e^{-πiN/2} θ(τ) + (1 - e^{-πiN/2}) θ(4τ)` for every natural number `N`.
 * `TauCeti.jacobiTheta_I_mul`: the functional equation on the imaginary axis,
   `θ(iy) = θ(i/y) / √y` for `y > 0`.
+* `TauCeti.norm_jacobiTheta₂_sub_one_le`: for real `z`, `‖θ₂(z, τ) - 1‖ ≤ ‖θ(i im τ) - 1‖`.
+* `TauCeti.tendsto_jacobiTheta_comap_im_atTop`: `θ(τ) → 1` as `im τ → ∞`.
 -/
 
 public section
 
-open Complex
+open Complex Filter Topology
 open scoped Real
 
 namespace TauCeti
@@ -80,5 +83,53 @@ theorem jacobiTheta_I_mul {y : ℝ} (hy : 0 < y) :
     norm_num
   rw [h1, h2, h3]
   simp [div_eq_inv_mul]
+
+/-- For real `z`, the two-variable theta function `θ₂(z, τ)` is at least as close to `1` as
+`θ(i im τ)`: its terms have the absolute values `e^{-π n² im τ}` of the terms of `θ(i im τ)`. -/
+theorem norm_jacobiTheta₂_sub_one_le {z τ : ℂ} (hz : z.im = 0) (hτ : 0 < τ.im) :
+    ‖jacobiTheta₂ z τ - 1‖ ≤ ‖jacobiTheta (I * τ.im) - 1‖ := by
+  -- The common absolute values of the terms, kept opaque so that `simp` does not unfold them.
+  obtain ⟨b, hb⟩ : ∃ b : ℤ → ℝ, b = fun n : ℤ ↦ Real.exp (-π * (n : ℝ) ^ 2 * τ.im) := ⟨_, rfl⟩
+  have hterm (n : ℤ) : jacobiTheta₂_term n 0 (I * τ.im) = b n := by
+    rw [hb, jacobiTheta₂_term, ofReal_exp]
+    congr 1
+    push_cast
+    ring_nf
+    rw [I_sq]
+    ring
+  have hnorm (n : ℤ) : ‖jacobiTheta₂_term n z τ‖ = b n := by
+    rw [norm_jacobiTheta₂_term, hz, hb]
+    ring_nf
+  have hsa := (summable_jacobiTheta₂_term_iff z τ).2 hτ
+  have hsb : Summable b := by simpa only [hnorm] using hsa.norm
+  have hb0 (n : ℤ) : 0 ≤ if n = 0 then 0 else b n := by
+    split_ifs
+    · exact le_rfl
+    · rw [hb]
+      exact (Real.exp_pos _).le
+  have ha : jacobiTheta₂ z τ - 1 = ∑' n, if n = 0 then 0 else jacobiTheta₂_term n z τ := by
+    rw [jacobiTheta₂, hsa.tsum_eq_add_tsum_ite 0, jacobiTheta₂_term]
+    simp
+  have hb' : jacobiTheta (I * τ.im) - 1 = ((∑' n, if n = 0 then 0 else b n : ℝ) : ℂ) := by
+    rw [jacobiTheta_eq_jacobiTheta₂, jacobiTheta₂]
+    simp_rw [hterm]
+    rw [← ofReal_tsum, hsb.tsum_eq_add_tsum_ite 0, ofReal_add]
+    simp [hb]
+  have hupd (n : ℤ) :
+      ‖if n = 0 then 0 else jacobiTheta₂_term n z τ‖ = if n = 0 then 0 else b n := by
+    split_ifs
+    · exact norm_zero
+    · exact hnorm n
+  rw [ha, hb', norm_real, Real.norm_of_nonneg (tsum_nonneg hb0)]
+  refine (norm_tsum_le_tsum_norm ?_).trans_eq (tsum_congr hupd)
+  simp only [hupd]
+  exact (hasSum_ite_sub_hasSum hsb.hasSum 0).summable
+
+/-- The theta function tends to `1` as `im τ → ∞`. -/
+theorem tendsto_jacobiTheta_comap_im_atTop :
+    Tendsto jacobiTheta (comap im atTop) (𝓝 1) := by
+  have h : Tendsto (fun τ : ℂ ↦ rexp (-π * τ.im)) (comap im atTop) (𝓝 0) :=
+    Real.tendsto_exp_atBot.comp (tendsto_comap.const_mul_atTop_of_neg (neg_neg_of_pos Real.pi_pos))
+  simpa using (isBigO_at_im_infty_jacobiTheta_sub_one.trans_tendsto h).add_const 1
 
 end TauCeti
