@@ -178,9 +178,12 @@ theorem adjointCliffordHom_cartan_eq_sum_posRoots
           c ((-a : H.root) : Weight K H L)) =
           (2 : K) • ((a : Weight K H L) h • c a) := by
       intro a
-      have hneg_apply : ((-a : H.root) : Weight K H L) h = -((a : Weight K H L) h) :=
-        rfl
-      have hneg_coe : ((-a : H.root) : Weight K H L) = -(a : Weight K H L) := rfl
+      -- `val_neg_root` is the named interface exposing the definitional compatibility between
+      -- root-subtype negation and weight negation; evaluation compatibility follows from it.
+      have hneg_coe : ((-a : H.root) : Weight K H L) = -(a : Weight K H L) :=
+        LieAlgebra.IsKilling.val_neg_root
+      have hneg_apply : ((-a : H.root) : Weight K H L) h = -((a : Weight K H L) h) := by
+        exact congrArg (fun chi : Weight K H L ↦ chi h) hneg_coe
       rw [hneg_apply, hneg_coe, hcneg]
       simp only [smul_neg]
       module
