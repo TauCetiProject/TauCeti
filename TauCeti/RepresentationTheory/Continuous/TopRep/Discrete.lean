@@ -12,9 +12,9 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDisc
 # Algebraic representations with the discrete topology
 
 `discreteTopRepFunctor` equips an algebraic representation with the discrete topology, without
-changing its module, action, or morphisms. Over a discrete group its values are smooth. Restricting
-these objects along continuous maps to discrete quotients supplies smooth coefficient objects for
-continuous cohomology.
+changing its module, action, or morphisms, so it is fully faithful. Over a discrete group its
+values are smooth. Restricting these objects along continuous maps to discrete quotients supplies
+smooth coefficient objects for continuous cohomology.
 
 The construction retains Mathlib's `Rep` and `TopRep` carriers; it only supplies the topology
 and continuity proofs. Ring coefficients are required by Mathlib's `TopRep`.
@@ -85,6 +85,20 @@ theorem discreteTopRepFunctor_obj (A : Rep.{w} R G) :
 theorem discreteTopRepFunctor_map_apply {A B : Rep.{w} R G} (f : A ⟶ B) (a : A.V) :
     ((discreteTopRepFunctor R G).map f).hom a = f.hom a :=
   (rfl)
+
+/-- Equipping representations with the discrete topology is faithful: it leaves the underlying
+linear maps unchanged. -/
+instance : (discreteTopRepFunctor R G).Faithful where
+  map_injective {_ _} f g h := by
+    ext a
+    exact congr(($h).hom a)
+
+/-- Equipping representations with the discrete topology is full: every intertwining map between
+discrete modules is continuous. -/
+instance : (discreteTopRepFunctor R G).Full where
+  map_surjective {A B} f :=
+    ⟨ConcreteCategory.ofHom (C := Rep R G) (f.hom.toContinuousLinearMap.toLinearMap
+      |>.intertwiningMap_of_isIntertwiningMap A.ρ B.ρ (TopRep.hom_comm_apply f)), by ext a; rfl⟩
 
 /-- A representation of a discrete monoid on a discrete module is smooth. -/
 theorem isSmoothDiscrete_discreteTopRep [TopologicalSpace G] [DiscreteTopology G]

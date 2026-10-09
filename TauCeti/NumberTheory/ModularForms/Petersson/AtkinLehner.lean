@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.AtkinLehner.Normalized
 public import TauCeti.NumberTheory.ModularForms.AtkinLehner.Gamma1
+public import TauCeti.NumberTheory.ModularForms.AtkinLehner.Normalized
 public import TauCeti.NumberTheory.ModularForms.Fricke.Normalized
 public import TauCeti.NumberTheory.ModularForms.Petersson.Unitary
 
@@ -14,10 +14,10 @@ public import TauCeti.NumberTheory.ModularForms.Petersson.Unitary
 # The Fricke and Atkin–Lehner operators are Petersson-unitary
 
 The Fricke matrix `W_N = !![0, -1; N, 0]` normalises `Γ₁(N)`, and an Atkin–Lehner matrix `W_Q`
-for an exact divisor `Q ∥ N` normalises both `Γ₀(N)` and `Γ₁(N)`. Their determinants are `N`
-and `Q`,
-so for `N ≠ 1`, respectively `Q ≠ 1`, they do not lie in `SL₂(ℤ)`. Slashing both arguments of
-the Petersson product by such a matrix of determinant `D` multiplies the product by `D ^ (k - 2)`
+for an exact divisor `Q ∥ N` normalises both `Γ₀(N)` and `Γ₁(N)`. Their determinants are `N`,
+respectively `Q`, so for `N ≠ 1`, respectively `Q ≠ 1`, they do not lie in `SL₂(ℤ)`. Slashing both
+arguments of the Petersson product by such a matrix of determinant `D` multiplies the product by
+`D ^ (k - 2)`
 (`TauCeti.CuspForm.peterssonInnerCosets_slash_of_inv_conjAct_eq`), and the arithmetic
 normalization `𝒲_Q = (√Q) ^ (2 - k) • (· ∣[k] W_Q)` is exactly the one that cancels this factor:
 the normalizer is real and its square is `Q ^ (2 - k)`. So the normalized operators are
@@ -45,10 +45,12 @@ Atkin–Lehner sign.
   `(-1) ^ k • 𝒲_N`.
 * `TauCeti.normalizedFrickeOperatorCusp_mem_peterssonOrthogonal`: the orthogonal
   complement of a `𝒲_N`-stable subspace is `𝒲_N`-stable.
-* `TauCeti.peterssonInnerCosets_normalizedAtkinLehnerOperatorGamma1Cusp`: every chosen
-  normalized Atkin–Lehner operator is unitary on `S_k(Γ₁(N))`.
 * `TauCeti.Nat.IsExactDivisor.peterssonInnerCosets_atkinLehnerOperatorCusp`: the raw
   Atkin–Lehner operator scales the Petersson product by `Q ^ (k - 2)`.
+* `TauCeti.peterssonInnerCosets_atkinLehnerOperatorGamma1Cusp`: the same scaling law for an
+  arbitrary choice of Atkin–Lehner matrix acting on `S_k(Γ₁(N))`.
+* `TauCeti.peterssonInnerCosets_normalizedAtkinLehnerOperatorGamma1Cusp`: every normalized
+  choice is unitary on `S_k(Γ₁(N))`.
 * `TauCeti.Nat.IsExactDivisor.peterssonInnerCosets_normalizedAtkinLehnerOperatorCusp`: `𝒲_Q` is
   unitary.
 * `TauCeti.Nat.IsExactDivisor.peterssonInnerCosets_normalizedAtkinLehnerOperatorCusp_left`:
@@ -135,20 +137,18 @@ theorem normalizedFrickeOperatorCusp_mem_peterssonOrthogonal {k : ℤ}
 
 end Fricke
 
-/-! ### Chosen Atkin–Lehner operators on `Γ₁` -/
-
-section Gamma1
+/-! ### The Atkin–Lehner operators -/
 
 variable {N Q : ℕ} [NeZero N] {W : Matrix (Fin 2) (Fin 2) ℤ}
 
-/-- **A chosen raw Atkin–Lehner operator scales the Petersson product by `Q ^ (k - 2)`** on
-`S_k(Γ₁(N))`. -/
-theorem peterssonInnerCosets_atkinLehnerOperatorGamma1Cusp (hQ : 0 < Q) (hQN : Q ∣ N)
-    (hW : IsAtkinLehnerMatrix N Q W) (k : ℤ)
+/-- **An Atkin–Lehner operator on `S_k(Γ₁(N))` scales the Petersson product by
+`Q ^ (k - 2)`.** -/
+theorem peterssonInnerCosets_atkinLehnerOperatorGamma1Cusp
+    (hQ : 0 < Q) (hQN : Q ∣ N) (hW : IsAtkinLehnerMatrix N Q W)
     (f g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
-    peterssonInnerCosets (atkinLehnerOperatorGamma1Cusp hQ hQN hW k f)
+    CuspForm.peterssonInnerCosets (atkinLehnerOperatorGamma1Cusp hQ hQN hW k f)
         (atkinLehnerOperatorGamma1Cusp hQ hQN hW k g) =
-      (Q : ℂ) ^ (k - 2) * peterssonInnerCosets f g := by
+      (Q : ℂ) ^ (k - 2) * CuspForm.peterssonInnerCosets f g := by
   rw [CuspForm.peterssonInnerCosets_slash_of_inv_conjAct_eq
       (val_det_atkinLehnerGL_pos hQ hW)
       (Gamma1_map_inv_conjAct_atkinLehnerGL_eq hQ hQN hW)
@@ -156,28 +156,23 @@ theorem peterssonInnerCosets_atkinLehnerOperatorGamma1Cusp (hQ : 0 < Q) (hQN : Q
       (coe_atkinLehnerOperatorGamma1Cusp hQ hQN hW g),
     ← Matrix.GeneralLinearGroup.val_det_apply, val_det_atkinLehnerGL, Complex.ofReal_natCast]
 
-/-- **Every chosen normalized Atkin–Lehner operator is Petersson-unitary on `S_k(Γ₁(N))`.**
-The statement does not require the chosen matrix to define an involution on the full `Γ₁`
-carrier. -/
+/-- **Every normalized Atkin–Lehner operator is Petersson-unitary on `S_k(Γ₁(N))`.** -/
 @[simp]
-theorem peterssonInnerCosets_normalizedAtkinLehnerOperatorGamma1Cusp (hQ : 0 < Q)
-    (hQN : Q ∣ N) (hW : IsAtkinLehnerMatrix N Q W) (k : ℤ)
+theorem peterssonInnerCosets_normalizedAtkinLehnerOperatorGamma1Cusp
+    (hQ : 0 < Q) (hQN : Q ∣ N) (hW : IsAtkinLehnerMatrix N Q W)
     (f g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
-    peterssonInnerCosets (normalizedAtkinLehnerOperatorGamma1Cusp hQ hQN hW k f)
+    CuspForm.peterssonInnerCosets
+        (normalizedAtkinLehnerOperatorGamma1Cusp hQ hQN hW k f)
         (normalizedAtkinLehnerOperatorGamma1Cusp hQ hQN hW k g) =
-      peterssonInnerCosets f g := by
+      CuspForm.peterssonInnerCosets f g := by
   rw [normalizedAtkinLehnerOperatorGamma1Cusp_def, LinearMap.smul_apply,
-    LinearMap.smul_apply, peterssonInnerCosets_smul_left, peterssonInnerCosets_smul_right,
-    peterssonInnerCosets_atkinLehnerOperatorGamma1Cusp hQ hQN hW, conj_atkinLehnerNormalizer,
-    ← mul_assoc, ← mul_assoc, ← pow_two, atkinLehnerNormalizer_sq_mul hQ.ne', one_mul]
-
-end Gamma1
-
-/-! ### The Atkin–Lehner operators -/
+    LinearMap.smul_apply, CuspForm.peterssonInnerCosets_smul_left,
+    CuspForm.peterssonInnerCosets_smul_right,
+    peterssonInnerCosets_atkinLehnerOperatorGamma1Cusp hQ hQN hW,
+    conj_atkinLehnerNormalizer, ← mul_assoc, ← mul_assoc, ← pow_two,
+    atkinLehnerNormalizer_sq_mul hQ.ne', one_mul]
 
 namespace Nat.IsExactDivisor
-
-variable {N Q : ℕ} [NeZero N]
 
 /-- **The raw Atkin–Lehner operator scales the Petersson product by `Q ^ (k - 2)`**:
 `⟪f ∣[k] W_Q, g ∣[k] W_Q⟫ = Q ^ (k - 2) · ⟪f, g⟫` on `S_k(Γ₀(N))`, the determinant of an

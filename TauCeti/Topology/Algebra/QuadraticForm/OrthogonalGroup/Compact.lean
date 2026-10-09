@@ -86,7 +86,8 @@ special orthogonal group is not a compact subset of the linear automorphism grou
 theorem not_isCompact_specialOrthogonalGroup [FiniteDimensional K V] (hQ : Q.Nondegenerate)
     (hiso : ¬Q.Anisotropic) :
     ¬IsCompact (specialOrthogonalGroup Q : Set (V ≃ₗ[K] V)) := by
-  obtain ⟨u, v, -, hu, hv, huv⟩ := hQ.exists_isotropic_pair hiso
+  obtain ⟨u, v, -, hu, hv, huv⟩ :=
+    _root_.QuadraticMap.exists_isotropic_pair_of_radical_eq_bot hQ.radical_eq_bot hiso
   exact not_isCompact_of_hyperbolicPairTorus_sq_mem Q hu hv huv fun t =>
     hyperbolicPairTorus_mem_specialOrthogonalGroup hu hv huv (t ^ 2)
 
@@ -95,7 +96,8 @@ quadratic form over a nontrivially normed field, the orthogonal group is not a c
 the linear automorphism group. -/
 theorem not_isCompact_orthogonalGroup (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) :
     ¬IsCompact (orthogonalGroup Q : Set (V ≃ₗ[K] V)) := by
-  obtain ⟨u, v, -, hu, hv, huv⟩ := hQ.exists_isotropic_pair hiso
+  obtain ⟨u, v, -, hu, hv, huv⟩ :=
+    _root_.QuadraticMap.exists_isotropic_pair_of_radical_eq_bot hQ.radical_eq_bot hiso
   exact not_isCompact_of_hyperbolicPairTorus_sq_mem Q hu hv huv fun t =>
     (hyperbolicPairTorus Q hu hv huv (t ^ 2)).2
 

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.AtkinLehner.Normalized
-public import TauCeti.NumberTheory.ModularForms.AtkinLehner.Gamma1
 public import TauCeti.NumberTheory.ModularForms.Degeneracy
 
 /-!
@@ -43,9 +42,8 @@ that `V_d` commutes with the identity.
 
 * `TauCeti.IsAtkinLehnerMatrix.exists_scaleGL_mul_atkinLehnerGL`: the matrix identity
   `diag(d, 1) · W_Q = d₁ · (W_{Q₁} · diag(e, 1))`.
-* `TauCeti.Nat.IsExactDivisor.exists_atkinLehnerOperatorGamma1Cusp_levelRaise`: the same
-  identity on cusp forms of level `Γ₁`, retaining the lower-level matrix supplied by the
-  factorization.
+* `TauCeti.IsAtkinLehnerMatrix.smul_slash_scaleGL_slash_atkinLehnerGL`: its consequence for
+  slashing a normalized level-raise of an arbitrary function by `W_Q`.
 * `TauCeti.Nat.IsExactDivisor.atkinLehnerOperator_levelRaise`,
   `TauCeti.Nat.IsExactDivisor.atkinLehnerOperatorCusp_levelRaise`,
   `TauCeti.Nat.IsExactDivisor.normalizedAtkinLehnerOperator_levelRaise`,
@@ -99,6 +97,38 @@ theorem IsAtkinLehnerMatrix.exists_scaleGL_mul_atkinLehnerGL [NeZero d₁] [NeZe
     simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.GeneralLinearGroup.coe_scalar,
       Matrix.natCast_apply] <;> ring
 
+/-- **An Atkin–Lehner matrix moves past a level-raise**, on functions: under the matrix identity
+`diag(d₁ * d₂, 1) · W = d₁ · (W' · diag(e₁ * d₂, 1))` of `exists_scaleGL_mul_atkinLehnerGL`, the
+normalized level-raise `d ^ (1 - k) • (F ∣[k] diag(d, 1))` of any `F : ℍ → ℂ`, slashed by `W`,
+is `d₁⁻¹ · e₁ ^ (k - 1)` times the normalized level-raise of `F ∣[k] W'`. -/
+theorem IsAtkinLehnerMatrix.smul_slash_scaleGL_slash_atkinLehnerGL [NeZero d₁] [NeZero d₂]
+    [NeZero e₁] {W' : Matrix (Fin 2) (Fin 2) ℤ} {N₁ : ℕ} (hQ : 0 < Q) (hQ₁ : 0 < Q₁)
+    (h : IsAtkinLehnerMatrix N Q W) (hW' : IsAtkinLehnerMatrix N₁ Q₁ W')
+    (hmul : scaleGL (d₁ * d₂) * atkinLehnerGL hQ h =
+      Matrix.GeneralLinearGroup.scalar (Fin 2)
+          (Units.mk0 (d₁ : ℝ) (Nat.cast_ne_zero.mpr (NeZero.ne d₁))) *
+        (atkinLehnerGL hQ₁ hW' * scaleGL (e₁ * d₂)))
+    (F : ℍ → ℂ) :
+    (((d₁ * d₂ : ℕ) : ℂ) ^ (1 - k) • (F ∣[k] scaleGL (d₁ * d₂))) ∣[k] atkinLehnerGL hQ h =
+      ((d₁ : ℂ)⁻¹ * (e₁ : ℂ) ^ (k - 1)) •
+        (((e₁ * d₂ : ℕ) : ℂ) ^ (1 - k) •
+          ((F ∣[k] atkinLehnerGL hQ₁ hW') ∣[k] scaleGL (e₁ * d₂))) := by
+  -- the scalar matrix `d₁` slashes as `d₁ ^ (k - 2)`; the rest is bookkeeping of powers
+  have hscalar : ((d₁ * d₂ : ℕ) : ℂ) ^ (1 - k) * (d₁ : ℂ) ^ (k - 2) =
+      (d₁ : ℂ)⁻¹ * (e₁ : ℂ) ^ (k - 1) * ((e₁ * d₂ : ℕ) : ℂ) ^ (1 - k) := by
+    have hd₁ : (d₁ : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne d₁)
+    have he₁ : (e₁ : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne e₁)
+    push_cast
+    rw [mul_zpow, mul_zpow, show k - 2 = -(1 - k) + -1 by ring, zpow_add₀ hd₁,
+      show k - 1 = -(1 - k) by ring]
+    simp only [zpow_neg, zpow_one]
+    field_simp
+  rw [ModularForm.smul_slash_of_det_pos k (val_det_atkinLehnerGL_pos _ _), ← SlashAction.slash_mul,
+    hmul, SlashAction.slash_mul, ModularForm.slash_scalar, SlashAction.slash_mul,
+    ModularForm.smul_slash_of_det_pos k (val_det_atkinLehnerGL_pos _ _),
+    ModularForm.smul_slash_of_det_pos k val_det_scaleGL_pos, smul_smul, smul_smul, Units.val_mk0,
+    Complex.ofReal_natCast, hscalar]
+
 /-! ### The Atkin–Lehner operator on a level-raise -/
 
 /-- The Atkin–Lehner level-raise factorizations make `d * M` divide `N`. -/
@@ -138,23 +168,11 @@ theorem atkinLehnerOperator_levelRaise [NeZero d] [NeZero e] (h : Q ∥ N) (h₁
   have : NeZero d₂ := ⟨fun h0 ↦ NeZero.ne (e₁ * d₂) (by rw [h0, mul_zero])⟩
   obtain ⟨W', hW', hmul⟩ :=
     (isAtkinLehnerMatrix_atkinLehnerMatrix h).exists_scaleGL_mul_atkinLehnerGL h.pos h₁.pos hQ hN
-  have hd₁ : (d₁ : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne d₁)
-  have he₁ : (e₁ : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne e₁)
-  have hd₂ : (d₂ : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne d₂)
   refine DFunLike.coe_injective ?_
   rw [h₁.atkinLehnerOperator_eq hW', coe_atkinLehnerOperator, ModularForm.coe_levelRaise,
-    FunLike.coe_smul, ModularForm.coe_levelRaise, _root_.TauCeti.coe_atkinLehnerOperator,
-    ModularForm.smul_slash_of_det_pos k (val_det_atkinLehnerGL_pos _ _), ← SlashAction.slash_mul,
-    hmul, SlashAction.slash_mul, ModularForm.slash_scalar, SlashAction.slash_mul,
-    ModularForm.smul_slash_of_det_pos k (val_det_atkinLehnerGL_pos _ _),
-    ModularForm.smul_slash_of_det_pos k val_det_scaleGL_pos, smul_smul, smul_smul]
-  congr 1
-  simp only [Units.val_mk0, Complex.ofReal_natCast]
-  push_cast
-  rw [mul_zpow, mul_zpow, show k - 2 = -(1 - k) + -1 by ring, zpow_add₀ hd₁,
-    show k - 1 = -(1 - k) by ring]
-  simp only [zpow_neg, zpow_one]
-  field_simp
+    FunLike.coe_smul, ModularForm.coe_levelRaise, _root_.TauCeti.coe_atkinLehnerOperator]
+  exact (isAtkinLehnerMatrix_atkinLehnerMatrix h).smul_slash_scaleGL_slash_atkinLehnerGL
+    h.pos h₁.pos hW' hmul _
 
 /-- **The Atkin–Lehner operator intertwines the level-raises on cusp forms**: under the
 factorizations of `atkinLehnerOperator_levelRaise`,
@@ -177,51 +195,6 @@ theorem atkinLehnerOperatorCusp_levelRaise [NeZero d] [NeZero e] (h : Q ∥ N) (
     ModularForm.coe_levelRaise, coe_atkinLehnerOperator, ModularFormClass.coe_modularForm] at this
   rwa [coe_atkinLehnerOperatorCusp, CuspForm.coe_levelRaise, FunLike.coe_smul,
     CuspForm.coe_levelRaise, coe_atkinLehnerOperatorCusp]
-
-/-- **An Atkin–Lehner operator intertwines level-raises on cusp forms of level `Γ₁`.** Under
-the factorizations of `atkinLehnerOperator_levelRaise`, there is an Atkin–Lehner matrix `W'`
-of level `M` for `Q₁` such that
-`W_Q (V_d f) = d₁⁻¹ · e₁ ^ (k - 1) · V_e (W'_{Q₁} f)`.
-
-Unlike at level `Γ₀`, the lower-level matrix is part of the conclusion: an Atkin–Lehner
-operator on `Γ₁` depends on that choice. -/
-theorem exists_atkinLehnerOperatorGamma1Cusp_levelRaise [NeZero d]
-    [NeZero e] (h : Q ∥ N) (hW : IsAtkinLehnerMatrix N Q W)
-    (h₁ : Q₁ ∥ M) (hQ : Q = d₁ * e₁ * Q₁) (hN : N = Q * (d₂ * e₂ * M'))
-    (hM : M = Q₁ * M') (hd : d = d₁ * d₂) (he : e = e₁ * d₂)
-    (f : CuspForm ((Gamma1 M).map (mapGL ℝ)) k) :
-    ∃ (W' : Matrix (Fin 2) (Fin 2) ℤ) (hW' : IsAtkinLehnerMatrix M Q₁ W'),
-      atkinLehnerOperatorGamma1Cusp h.pos h.dvd hW k
-          (CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd
-            (levelRaise_d_mul_M_dvd hQ hN hM hd)) f) =
-        ((d₁ : ℂ)⁻¹ * (e₁ : ℂ) ^ (k - 1)) •
-          CuspForm.levelRaise e (Gamma1_map_le_conjAct_scaleGL_of_dvd
-            (levelRaise_e_mul_M_dvd hQ hN hM he))
-            (atkinLehnerOperatorGamma1Cusp h₁.pos h₁.dvd hW' k f) := by
-  subst hd he hM
-  have : NeZero d₁ := ⟨fun h0 ↦ h.ne_zero (by rw [hQ, h0]; ring)⟩
-  have : NeZero e₁ := ⟨fun h0 ↦ h.ne_zero (by rw [hQ, h0]; ring)⟩
-  have : NeZero d₂ := ⟨fun h0 ↦ NeZero.ne (e₁ * d₂) (by rw [h0, mul_zero])⟩
-  obtain ⟨W', hW', hmul⟩ :=
-    hW.exists_scaleGL_mul_atkinLehnerGL h.pos h₁.pos hQ hN
-  refine ⟨W', hW', DFunLike.coe_injective ?_⟩
-  rw [coe_atkinLehnerOperatorGamma1Cusp, CuspForm.coe_levelRaise, FunLike.coe_smul,
-    CuspForm.coe_levelRaise, coe_atkinLehnerOperatorGamma1Cusp,
-    ModularForm.smul_slash_of_det_pos k (val_det_atkinLehnerGL_pos _ _),
-    ← SlashAction.slash_mul, hmul, SlashAction.slash_mul, ModularForm.slash_scalar,
-    SlashAction.slash_mul,
-    ModularForm.smul_slash_of_det_pos k (val_det_atkinLehnerGL_pos _ _),
-    ModularForm.smul_slash_of_det_pos k val_det_scaleGL_pos, smul_smul, smul_smul]
-  congr 1
-  simp only [Units.val_mk0, Complex.ofReal_natCast]
-  push_cast
-  have hd₁ : (d₁ : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne d₁)
-  have he₁ : (e₁ : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne e₁)
-  have hd₂ : (d₂ : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne d₂)
-  rw [mul_zpow, mul_zpow, show k - 2 = -(1 - k) + -1 by ring, zpow_add₀ hd₁,
-    show k - 1 = -(1 - k) by ring]
-  simp only [zpow_neg, zpow_one]
-  field_simp
 
 /-- **The normalized Atkin–Lehner operator intertwines the level-raises on modular forms**:
 under the factorizations of `atkinLehnerOperator_levelRaise`,

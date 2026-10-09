@@ -6,29 +6,32 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.AtkinLehner.OldSpace
+public import TauCeti.NumberTheory.ModularForms.Newforms.Nebentypus
 public import TauCeti.NumberTheory.ModularForms.Petersson.AtkinLehner
-import TauCeti.NumberTheory.ModularForms.SturmBound
 
 /-!
-# The Atkin–Lehner operators preserve the full new subspace
+# Atkin–Lehner operators preserve the new subspace
 
-For an exact divisor `Q ∥ N` and a chosen Atkin–Lehner matrix `W`, the normalized operator
-`𝒲_Q` on `S_k(Γ₁(N))` preserves the full new subspace. This is the carrier statement needed
-before restricting the operator to a nebentypus space: `𝒲_Q` generally changes that character,
-but it does not change newness.
+Let `Q ∥ N` be an exact divisor and let `W` be an Atkin–Lehner matrix for `Q`. The slash
+operator by `W` on `S_k(Γ₁(N))` preserves the old subspace and scales the Petersson product
+by `Q ^ (k - 2)`. Its square is that nonzero scalar times a diamond operator, and diamond
+operators also preserve the old subspace. These facts show that `W_Q` preserves the
+Petersson-orthogonal complement, hence the new subspace.
 
-The proof combines two facts. The operator preserves the oldspace
-(`TauCeti.normalizedAtkinLehnerOperatorGamma1Cusp_mem_cuspFormsOld`) and is Petersson-unitary
-(`TauCeti.peterssonInnerCosets_normalizedAtkinLehnerOperatorGamma1Cusp`). Its restriction to the
-finite-dimensional oldspace is injective, hence surjective. Thus every old form is the image of
-an old form, and unitarity transports orthogonality to the oldspace.
+Together with the character transport from
+`TauCeti/NumberTheory/ModularForms/AtkinLehner/Gamma1.lean`, this gives the general-nebentypus
+stability needed for Atkin and Li's pseudo-eigenvalues: `W_Q` carries the new part of
+`S_k(N, χ)` into the new part of `S_k(N, χ ∘ ι_Q)`.
 
-## Main result
+## Main results
 
-* `TauCeti.normalizedAtkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew`: every chosen normalized
-  Atkin–Lehner operator preserves `S_k(Γ₁(N))ⁿᵉʷ`.
-* `TauCeti.normalizedAtkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew_inf_cuspFormCharSpace`:
-  on newforms, the same operator transports the nebentypus by `χ ↦ χ ∘ ι_Q`.
+* `TauCeti.atkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew`: an Atkin–Lehner operator on
+  `S_k(Γ₁(N))` preserves the new subspace.
+* `TauCeti.atkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew_inf_cuspFormCharSpace`: on a
+  nebentypus component it preserves newness and transports the character by `ι_Q`.
+* `TauCeti.normalizedAtkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew` and
+  `TauCeti.normalizedAtkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew_inf_cuspFormCharSpace`:
+  the corresponding statements for the normalized operator.
 
 ## References
 
@@ -41,43 +44,72 @@ public section
 
 noncomputable section
 
-open Matrix Matrix.SpecialLinearGroup CongruenceSubgroup
+open Matrix.SpecialLinearGroup CongruenceSubgroup
 
-open scoped MatrixGroups ModularForm TauCeti.ExactDivisor
+open scoped MatrixGroups ModularForm ComplexConjugate TauCeti.ExactDivisor
 
 namespace TauCeti
 
-open _root_.CuspForm TauCeti.CuspForm
+variable {N Q : ℕ} [NeZero N] {W : Matrix (Fin 2) (Fin 2) ℤ} {k : ℤ}
 
-variable {N Q : ℕ} [NeZero N] {k : ℤ} {W : Matrix (Fin 2) (Fin 2) ℤ}
-
-/-- **Every chosen normalized Atkin–Lehner operator preserves the full newspace at level
-`Γ₁(N)`.** No nebentypus hypothesis is imposed: on character spaces this operator transports
-the character, while this theorem says that it preserves newness on the ambient carrier. -/
-theorem normalizedAtkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew (h : Q ∥ N)
-    (hW : IsAtkinLehnerMatrix N Q W) {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
-    (hf : f ∈ cuspFormsNew N k) :
-    normalizedAtkinLehnerOperatorGamma1Cusp h.pos h.dvd hW k f ∈ cuspFormsNew N k := by
-  rw [cuspFormsNew_def] at hf ⊢
-  rw [mem_peterssonOrthogonal_iff] at hf ⊢
+/-- **An Atkin–Lehner operator on `S_k(Γ₁(N))` preserves the new subspace.** This holds in
+every integral weight `k` and for every Atkin–Lehner matrix `W` of every exact divisor `Q ∥ N`. -/
+theorem atkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew
+    (hQ : 0 < Q) (hQN : Q ∣ N) (hW : IsAtkinLehnerMatrix N Q W)
+    {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormsNew N k) :
+    atkinLehnerOperatorGamma1Cusp hQ hQN hW k f ∈ cuspFormsNew N k := by
+  rw [cuspFormsNew_def, CuspForm.mem_peterssonOrthogonal_iff] at hf ⊢
+  obtain ⟨γ, hγ, hsq⟩ := hW.exists_mem_Gamma0_mul_self hQ.ne' hQN
+  let u : (ZMod N)ˣ := (Gamma0Map N).toHomUnits ⟨γ, hγ⟩
+  have hu : ZMod.unitsMap hQN u = -1 := by
+    simpa [u] using hW.unitsMap_toHomUnits_gamma0Map_of_mul_self_eq hQ.ne' hQN hγ hsq
+  have hu' : (Q : ZMod N) * u = ((W 1 1 : ℤ) : ZMod N) ^ 2 := by
+    simpa [u] using hW.natCast_mul_toHomUnits_gamma0Map_of_mul_self_eq hγ hsq
+  -- `W_Q² = Q ^ (k - 2) • ⟨u⟩`, so each old `g` is, up to that nonzero scalar, `W_Q² g'` for
+  -- the old form `g' = ⟨u⁻¹⟩ g`; the Petersson scaling law moves one `W_Q` onto `f`.
   intro g hg
-  let T := normalizedAtkinLehnerOperatorGamma1Cusp h.pos h.dvd hW k
-  let T_old : Module.End ℂ (cuspFormsOld N k) :=
-    (T.domRestrict (cuspFormsOld N k)).codRestrict (cuspFormsOld N k) fun x ↦
-      normalizedAtkinLehnerOperatorGamma1Cusp_mem_cuspFormsOld h hW x.property
-  have hT_old_injective : Function.Injective T_old := by
-    intro x y hxy
-    apply Subtype.ext
-    apply normalizedAtkinLehnerOperatorGamma1Cusp_injective h.pos h.dvd hW k
-    exact congrArg Subtype.val hxy
-  obtain ⟨x, hx⟩ := LinearMap.surjective_of_injective hT_old_injective ⟨g, hg⟩
-  have hxval : T x = g := congrArg Subtype.val hx
-  rw [← hxval, peterssonInnerCosets_normalizedAtkinLehnerOperatorGamma1Cusp]
-  exact hf x x.property
+  set g' := diamondOpCusp k u⁻¹ g with hg'_def
+  have hg' : g' ∈ cuspFormsOld N k := diamondOpCusp_mem_cuspFormsOld u⁻¹ hg
+  have hWg' : atkinLehnerOperatorGamma1Cusp hQ hQN hW k g' ∈ cuspFormsOld N k :=
+    atkinLehnerOperatorGamma1Cusp_mem_cuspFormsOld hQ hQN hW hg'
+  have hzero : CuspForm.peterssonInnerCosets
+      (atkinLehnerOperatorGamma1Cusp hQ hQN hW k g') f = 0 := hf _ hWg'
+  have hpair := peterssonInnerCosets_atkinLehnerOperatorGamma1Cusp hQ hQN hW
+    (atkinLehnerOperatorGamma1Cusp hQ hQN hW k g') f
+  rw [hzero, mul_zero,
+    atkinLehnerOperatorGamma1Cusp_atkinLehnerOperatorGamma1Cusp hQ hQN hW hu hu' g',
+    CuspForm.peterssonInnerCosets_smul_left] at hpair
+  have hug : diamondOpCusp k u g' = g := by
+    rw [hg'_def, ← LinearMap.comp_apply,
+      ← diamondOpCusp_mul, mul_inv_cancel, diamondOpCusp_one, LinearMap.id_apply]
+  rw [hug] at hpair
+  have hscalar : conj ((Q : ℂ) ^ (k - 2)) ≠ 0 := by
+    exact (map_ne_zero conj).2 (zpow_ne_zero _ (Nat.cast_ne_zero.mpr hQ.ne'))
+  exact (mul_eq_zero.mp hpair).resolve_left hscalar
 
-/-- **The normalized Atkin–Lehner operator transports new nebentypus spaces.** It carries
-`S_k(N, χ)ⁿᵉʷ` into `S_k(N, χ ∘ ι_Q)ⁿᵉʷ`, where `ι_Q` inverts the residue modulo `Q` and fixes
-the residue modulo `N / Q`. -/
+/-- **Atkin–Lehner stability with the nebentypus transport.** The operator `W_Q` carries the
+new part of `S_k(N, χ)` into the new part of `S_k(N, χ ∘ ι_Q)`, where `ι_Q` inverts the
+residue modulo `Q` and fixes it modulo `N / Q`. -/
+theorem atkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew_inf_cuspFormCharSpace
+    (hQ : 0 < Q) (hQN : Q ∣ N) (hW : IsAtkinLehnerMatrix N Q W)
+    {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} {χ : (ZMod N)ˣ →* ℂˣ}
+    (hf : f ∈ cuspFormsNew N k ⊓ cuspFormCharSpace k χ) :
+    atkinLehnerOperatorGamma1Cusp hQ hQN hW k f ∈
+      cuspFormsNew N k ⊓ cuspFormCharSpace k
+        (χ.comp ((hW.isExactDivisor hQ.ne' hQN).unitsInvPart : (ZMod N)ˣ →* (ZMod N)ˣ)) :=
+  ⟨atkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew hQ hQN hW hf.1,
+    atkinLehnerOperatorGamma1Cusp_mem_cuspFormCharSpace hQ hQN hW hf.2⟩
+
+/-- **A normalized Atkin–Lehner operator preserves the new subspace of `S_k(Γ₁(N))`.** -/
+theorem normalizedAtkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew
+    (h : Q ∥ N) (hW : IsAtkinLehnerMatrix N Q W)
+    {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormsNew N k) :
+    normalizedAtkinLehnerOperatorGamma1Cusp h.pos h.dvd hW k f ∈ cuspFormsNew N k := by
+  rw [normalizedAtkinLehnerOperatorGamma1Cusp_def, LinearMap.smul_apply]
+  exact Submodule.smul_mem _ _
+    (atkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew h.pos h.dvd hW hf)
+
+/-- **A normalized Atkin–Lehner operator transports new nebentypus spaces.** -/
 theorem normalizedAtkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew_inf_cuspFormCharSpace
     (h : Q ∥ N) (hW : IsAtkinLehnerMatrix N Q W) {χ : (ZMod N)ˣ →* ℂˣ}
     {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
@@ -85,9 +117,9 @@ theorem normalizedAtkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew_inf_cuspFormCha
     normalizedAtkinLehnerOperatorGamma1Cusp h.pos h.dvd hW k f ∈
       cuspFormsNew N k ⊓ cuspFormCharSpace k
         (χ.comp ((hW.isExactDivisor h.ne_zero h.dvd).unitsInvPart : (ZMod N)ˣ →* (ZMod N)ˣ)) := by
-  refine ⟨normalizedAtkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew h hW hf.1, ?_⟩
   rw [normalizedAtkinLehnerOperatorGamma1Cusp_def, LinearMap.smul_apply]
   exact Submodule.smul_mem _ _
-    (atkinLehnerOperatorGamma1Cusp_mem_cuspFormCharSpace h.pos h.dvd hW hf.2)
+    (atkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew_inf_cuspFormCharSpace
+      h.pos h.dvd hW hf)
 
 end TauCeti
