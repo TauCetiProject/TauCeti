@@ -23,7 +23,10 @@ Mathlib's `TopologicalAbelianization G`. This file adds two pieces of API to it.
 **Functoriality.** A continuous homomorphism `f : G →* H` carries the topological closure of the
 commutator subgroup of `G` into that of `H`, so it induces a continuous homomorphism
 `TopologicalAbelianization.map f hf : G^{ab} →* H^{ab}`, compatible with identities and
-composition.
+composition. When `f` has dense range and is inducing on a subgroup containing both the
+commutators of `G` and everything `f` sends into the closed commutators of `H`, the induced map
+is injective; this is how the abelianized Weil group of a local field embeds into the abelianized
+absolute Galois group.
 
 **The conjugation action.** Let `N` be a normal subgroup of `G`. Conjugation by `G` preserves
 `N`, hence its commutator subgroup, hence the topological closure of the latter, so it descends
@@ -64,6 +67,8 @@ and Labute's action is recovered by precomposing with the inversion of the actin
   a continuous surjection `f : G →* H` of a compact group onto a Hausdorff group induces a
   surjection `G^{ab} →* H^{ab}` whose kernel is the image of `ker f`, so that `H^{ab}` is the
   quotient of `G^{ab}` by the image of `ker f`.
+* `TopologicalAbelianization.map_injective_of_isInducing`: a criterion for `map f hf` to be
+  injective when `f` has dense range.
 * `TopologicalAbelianization.mk_smul_mk`: the class of `g : G` acts on the class of `n : N` by
   the class of `g * n * g⁻¹`; `TopologicalAbelianization.mk_inv_smul_mk` is Labute's form of
   the same action, the inverse of the class of `g` acting by the class of `g⁻¹ * n * g`.
@@ -143,6 +148,39 @@ theorem map_surjective (f : G →* H) (hf : Continuous f) (hsurj : Function.Surj
     Function.Surjective (map f hf) :=
   QuotientGroup.map_surjective_of_surjective _ _ f
     ((QuotientGroup.mk'_surjective (commutator H).topologicalClosure).comp hsurj) _
+
+/-- **A criterion for injectivity on topological abelianizations.** Let `f : G →* H` be a
+continuous homomorphism with dense range, and let `i : J →* G` be a continuous homomorphism such
+that `f ∘ i` is inducing. Suppose that the range of `i` contains the commutator subgroup of `G`,
+and also every element that `f` sends into the closed commutator subgroup of `H`. Then the map
+`G^{ab} → H^{ab}` induced by `f` is injective.
+
+For example, `G` can be a group carrying a topology finer than the one induced from a dense
+embedding into `H`, where `i` is the inclusion of a subgroup on which the two topologies agree. -/
+theorem map_injective_of_isInducing {J : Type*} [Group J] [TopologicalSpace J] (f : G →* H)
+    (hf : Continuous f) (hd : DenseRange f) (i : J →* G) (hi : Continuous i)
+    (hfi : Topology.IsInducing (f ∘ i)) (hcomm : commutator G ≤ i.range)
+    (hrange : (commutator H).topologicalClosure.comap f ≤ i.range) :
+    Function.Injective (map f hf) := by
+  refine (injective_iff_map_eq_one _).2 fun x hx ↦ ?_
+  induction x using QuotientGroup.induction_on with | H g => ?_
+  rw [map_mk, QuotientGroup.eq_one_iff] at hx
+  rw [QuotientGroup.eq_one_iff]
+  obtain ⟨j, rfl⟩ := hrange hx
+  -- The image of the commutator subgroup is dense in the closed commutator subgroup of `H`, and
+  -- it is the image under `f ∘ i` of the preimage of the commutator subgroup under `i`.
+  have himage : f '' (commutator G : Set G) = (f ∘ i) '' (i ⁻¹' (commutator G : Set G)) := by
+    rw [Set.image_comp,
+      Set.image_preimage_eq_of_subset fun _ hx ↦ MonoidHom.mem_range.1 (hcomm hx)]
+  rw [← hd.topologicalClosure_map_commutator, ← SetLike.mem_coe,
+    Subgroup.topologicalClosure_coe, Subgroup.coe_map, himage] at hx
+  -- Since `f ∘ i` is inducing, `j` lies in the closure of that preimage, so `i j` lies in the
+  -- closure of the commutator subgroup of `G`.
+  have hj : j ∈ closure (i ⁻¹' (commutator G : Set G)) := by
+    rw [hfi.closure_eq_preimage_closure_image]
+    exact hx
+  rw [← SetLike.mem_coe, Subgroup.topologicalClosure_coe]
+  exact map_mem_closure hi hj fun _ hy ↦ hy
 
 /-- A topological group isomorphism `G ≃ₜ* H` carries the closed commutator subgroup of `G` onto
 the closed commutator subgroup of `H`. -/

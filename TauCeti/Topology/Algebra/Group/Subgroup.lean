@@ -72,6 +72,8 @@ series of a profinite group.
   carries the closed normal closure of a set onto the closed normal closure of its image.
 * `Subgroup.commutator_topologicalClosure_right_le`: a closed subgroup containing `⁅A, B⁆`
   contains `⁅A, B.topologicalClosure⁆`.
+* `DenseRange.topologicalClosure_map_commutator`: a homomorphism with dense range maps the
+  commutator subgroup onto a dense subgroup of the closed commutator subgroup.
 * `Subgroup.topologicalClosure_commutator_le_of_forall_commutatorElement_mem`: a closed normal
   subgroup containing the commutators of a topological generating set contains the closure of
   the commutator subgroup.
@@ -316,6 +318,27 @@ theorem commutator_topologicalClosure_right_le {A B N : Subgroup G} (hN : IsClos
     fun_prop
   rw [← SetLike.mem_coe, topologicalClosure_coe] at hb
   exact closure_minimal (fun y hy ↦ h a ha y hy) (hN.preimage hcont) hb
+
+/-- **Commutators of a dense image are dense in the commutators.** If `f : M →* H` has dense
+range, the image of the commutator subgroup of `M` is dense in the closed commutator subgroup of
+`H`. No topology on `M` is involved. -/
+theorem _root_.DenseRange.topologicalClosure_map_commutator {M : Type*} [Group M] {f : M →* H}
+    (hd : DenseRange f) :
+    ((_root_.commutator M).map f).topologicalClosure =
+      (_root_.commutator H).topologicalClosure := by
+  refine le_antisymm (topologicalClosure_mono ?_) (topologicalClosure_minimal _ ?_ ?_)
+  · rw [map_commutator_eq]
+    exact commutator_mono le_top le_top
+  · -- `⁅f.range, f.range⁆` is the image of the commutator subgroup, and the closure of `f.range`
+    -- is everything, so closing up one side at a time gives all commutators of `H`.
+    have hr : f.range.topologicalClosure = ⊤ := dense_iff_topologicalClosure_eq_top.1 hd
+    rw [_root_.commutator_def H, ← hr]
+    refine commutator_topologicalClosure_right_le (isClosed_topologicalClosure _) ?_
+    rw [commutator_comm]
+    refine commutator_topologicalClosure_right_le (isClosed_topologicalClosure _) ?_
+    rw [← map_commutator_eq]
+    exact le_topologicalClosure _
+  · exact isClosed_topologicalClosure _
 
 open scoped commutatorElement in
 /-- **Commutators of topological generators generate the commutators.** If `s` topologically
