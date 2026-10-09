@@ -52,8 +52,9 @@ the group.
   cover a connected space generate the group.
 * `TauCeti.macbeathHom_injective`: if moreover the space is simply connected and the set is
   path-connected, the Macbeath relations are a complete set of relations.
-* `TauCeti.ker_lift_macbeathGenerators`: the same statement as an equality of subgroups of the
-  free group: the kernel of evaluation is the normal closure of the Macbeath relations.
+* `TauCeti.ker_lift_eq_normalClosure_macbeathRels`: the same statement as an equality of
+  subgroups of the free group: the kernel of evaluation is the normal closure of the Macbeath
+  relations.
 
 ## References
 
@@ -97,6 +98,13 @@ theorem mem_macbeathGenerators {U : Set X} {g : G} :
   Iff.rfl
 
 @[simp]
+theorem mem_macbeathRels {U : Set X} {r : FreeGroup (macbeathGenerators G U)} :
+    r ∈ macbeathRels G U ↔ ∃ s t u : macbeathGenerators G U, (u : G) = s * t ∧
+      (U ∩ (s : G) • U ∩ (u : G) • U).Nonempty ∧
+      r = FreeGroup.of s * FreeGroup.of t * (FreeGroup.of u)⁻¹ :=
+  Iff.rfl
+
+@[simp]
 theorem macbeathHom_of (U : Set X) (s : macbeathGenerators G U) :
     macbeathHom G U (PresentedGroup.of s) = s :=
   PresentedGroup.toGroup.of _
@@ -130,6 +138,7 @@ theorem macbeath_of_eq_one {s : macbeathGenerators G U} (hs : (s : G) = 1) :
   simpa using h
 
 /-- The Macbeath generator `s⁻¹` is the inverse of the generator `s` in the presented group. -/
+@[simp]
 theorem macbeath_of_inv (s : macbeathGenerators G U) :
     (PresentedGroup.of ⟨(s : G)⁻¹, inv_mem_macbeathGenerators s.2⟩ :
       PresentedGroup (macbeathRels G U)) = (PresentedGroup.of s)⁻¹ := by
