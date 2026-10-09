@@ -17,8 +17,10 @@ to the geodesic towards `C`, the oriented angle (`Orientation.oangle` for the st
 orientation of `ℂ`) between the two velocities at `A`. Its absolute value is the unoriented
 `UpperHalfPlane.interiorAngle A B C` (`UpperHalfPlane.interiorAngle_eq_abs_toReal_orientedAngle`),
 it is invariant under `PSL(2, ℝ)` when `A ≠ B` and `A ≠ C` (`orientedAngle_smul`), and it is
-additive (`UpperHalfPlane.orientedAngle_add`). For `A ≠ C`, its sign is the side of the line
-through `A` and `B` on which `C` lies: `+1` on the left, `-1` on the right, `0` on the line
+additive (`UpperHalfPlane.orientedAngle_add`). For a transformation fixing `A`, its angle of
+rotation is the argument of its derivative (`orientedAngle_smul_right_of_smul_eq_self`). For
+`A ≠ C`, its sign is the side of the line through `A` and `B` on which `C` lies: `+1` on the left,
+`-1` on the right, `0` on the line
 (`orientedAngle_sign_eq_one_iff` and companions); in particular the angles of a nondegenerate
 triangle lie strictly between `0` and `π` (`interiorAngle_pos`, `interiorAngle_lt_pi`). The same
 sign reads off the closed half-planes via `mem_closure_leftHalfPlane_geodesicBetween_iff` and
@@ -126,6 +128,19 @@ theorem orientedAngle_smul (h : PSL(2, ℝ)) {A B C : ℍ} (hAB : A ≠ B) (hAC 
     Complex.arg_real_mul _ (by positivity [smulDeriv_ne_zero h A])]
 
 /-! ### The normal form: rotations of the imaginary axis -/
+
+/-- A transformation fixing `A` turns every geodesic from `A` through the argument of its
+derivative at `A`. The angle is read counterclockwise, in `Real.Angle`. -/
+theorem orientedAngle_smul_right_of_smul_eq_self {q : PSL(2, ℝ)} {A B : ℍ}
+    (hA : q • A = A) (hAB : A ≠ B) :
+    orientedAngle A B (q • B) = (smulDeriv q A).arg := by
+  have hg : geodesicBetween A (q • B) = q * geodesicBetween A B := by
+    simpa only [hA] using geodesicBetween_smul q hAB
+  rw [orientedAngle_def, hg, velocity_mul, geodesicLine_geodesicBetween_zero]
+  -- Compare both velocities to the unit vector, so multiplication adds arguments.
+  rw [← Complex.orientation.oangle_sub_left (one_ne_zero : (1 : ℂ) ≠ 0)
+    (velocity_ne_zero _ _) (mul_ne_zero (smulDeriv_ne_zero q A) (velocity_ne_zero _ _))]
+  simp [Complex.arg_mul_coe_angle (smulDeriv_ne_zero q A) (velocity_ne_zero _ _)]
 
 /-- The geodesic line from `I` to a point at positive parameter on the imaginary axis rotated by
 `θ` is that rotated axis (compare `geodesicBetween_I_geodesicLine_one`). -/

@@ -35,6 +35,8 @@ with angle sum `2π / t`.
 
 * `SidePairing.mem_interior_iUnion_inv_partialCycleMap_smul_carrier_iff`: the tiles cover a
   neighbourhood of a finite vertex exactly when their pulled-back sectors do.
+* `SidePairing.arg_smulDeriv_cycleMap`: the rotation angle of a finite vertex cycle is its
+  angle sum modulo `2π`.
 * `SidePairing.iUnion_inv_partialCycleMap_smul_vertexSector_eq_univ`: sectors with total angle at
   least `2π` cover `ℍ`.
 * `SidePairing.mem_interior_iUnion_inv_partialCycleMap_smul_carrier_of_le_mul_cycleAngleSum`:
@@ -173,6 +175,35 @@ private theorem orientedAngle_rayToward_inv_partialCycleMap_smul_vertex_add_one_
   rw [← orientedAngle_add _ _ (geodesicLine (rayToward z (P.vertex (j - 1))) 1), orientedAngle_rev,
     σ.orientedAngle_rayToward_inv_partialCycleMap_smul_vertex_add_one hz m, Real.Angle.coe_neg,
     neg_neg, add_comm]
+
+/-- The cycle transformation at a finite vertex rotates its tangent space counterclockwise
+through the cycle angle sum, modulo `2π`. This does not require discreteness or no-overlap. -/
+theorem arg_smulDeriv_cycleMap {j : Fin n} {z : ℍ} (hz : P.vertex j = .inl z) :
+    ((Matrix.ProjectiveSpecialLinearGroup.smulDeriv (σ.cycleMap j) z).arg : Real.Angle) =
+      (σ.cycleAngleSum j : Real.Angle) := by
+  have hfix : σ.cycleMap j • z = z := by
+    simpa only [hz, Sum.smul_inl, Sum.inl.injEq] using σ.cycleMap_smul_vertex j
+  have hinv : (σ.cycleMap j)⁻¹ • z = z := by simp [inv_smul_eq_iff, hfix]
+  have hne : Sum.inl z ≠ P.vertex (j - 1) := by
+    rw [← hz]
+    exact P.vertex_ne_vertex_sub_one j
+  have hray : rayToward z ((σ.cycleMap j)⁻¹ • P.vertex (j - 1)) =
+      (σ.cycleMap j)⁻¹ * rayToward z (P.vertex (j - 1)) := by
+    simpa only [hinv] using rayToward_smul (σ.cycleMap j)⁻¹ hne
+  have hangle := σ.orientedAngle_rayToward_inv_partialCycleMap_smul_vertex hz
+    (σ.cycleLength j)
+  rw [vertex_smul, σ.next_iterate_cycleLength, ← σ.cycleMap_def, hray,
+    ← smul_geodesicLine] at hangle
+  have hE : z ≠ geodesicLine (rayToward z (P.vertex (j - 1))) 1 := by
+    intro h
+    exact zero_ne_one (geodesicLine_injective _ ((geodesicLine_rayToward_zero _ _).trans h))
+  have hderiv : Matrix.ProjectiveSpecialLinearGroup.smulDeriv (σ.cycleMap j)⁻¹ z =
+      (Matrix.ProjectiveSpecialLinearGroup.smulDeriv (σ.cycleMap j) z)⁻¹ := by
+    simpa only [hfix] using
+      Matrix.ProjectiveSpecialLinearGroup.smulDeriv_inv (σ.cycleMap j) z
+  rw [orientedAngle_smul_right_of_smul_eq_self hinv hE, hderiv, Complex.arg_inv_coe_angle,
+    ← σ.cycleAngleSum_eq_sum_range, Real.Angle.coe_neg] at hangle
+  exact neg_injective hangle
 
 /-- **The vertex sectors along a cycle cover the plane once their angles reach `2π`.** Pull back
 the sectors of the vertices `next^[m] j`, `m < r`, to the finite vertex `z = vertex j` by the
