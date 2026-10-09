@@ -29,6 +29,10 @@ square. Over `ℚ` this fails, since `2 = 1² + 1² + 0²` is not a square: the 
 `SO(x² + y² + z²)` are **not** the quotient of the norm-one rational Hamilton quaternions by `±1`,
 although the kernel of the map is exactly `{±1}`.
 
+The pure-quaternion coordinates and central-volume action calculation generalize the earlier
+compact-real construction in `Spin/Real/Three.lean`; that specialization now consumes the
+general-field comparison proved here.
+
 ## Main results
 
 * `CliffordAlgebra.evenHamiltonEquivWeightedSumSquaresOne` is the canonical Hamilton-quaternion
@@ -41,8 +45,6 @@ although the kernel of the map is exactly `{±1}`.
   from the norm-one quaternions of a model of `C₀` to `SO(Q)`, with kernel `{±1}`
   (`CliffordAlgebra.mem_ker_quaternionUnitaryToSpecialOrthogonal_iff`) and image the spinor kernel
   (`CliffordAlgebra.range_quaternionUnitaryToSpecialOrthogonal`).
-* `CliffordAlgebra.exists_evenQuaternionEquiv_weightedSumSquares_one`: the even Clifford algebra of
-  `x² + y² + z²` is `ℍ[R]`, with reversal as conjugation, over any commutative ring.
 * `CliffordAlgebra.spinToSpecialOrthogonal_weightedSumSquares_one_surjective_iff`: the Spin action
   on `SO(x² + y² + z²)` is surjective exactly when every nonzero sum of three squares is a square.
 * `CliffordAlgebra.exists_quaternionUnitaryHom_range_ne_top_rat`: over `ℚ`, the image of the
@@ -118,8 +120,7 @@ private theorem hamiltonOneSymbolEquivHamilton_star
   rfl
 
 /-- The even Clifford algebra of the sum of three squares is canonically the Hamilton quaternion
-algebra. This is the explicit model underlying
-`exists_evenQuaternionEquiv_weightedSumSquares_one`. -/
+algebra. -/
 noncomputable def evenHamiltonEquivWeightedSumSquaresOne :
     even (weightedSumSquares R ![(1 : R), 1, 1]) ≃ₐ[R] ℍ[R] :=
   (evenWeightedSumSquaresThreeQuaternionEquiv (1 : R) 1 (1 : Rˣ)).trans
@@ -140,6 +141,22 @@ theorem evenHamiltonEquivWeightedSumSquaresOne_ι (x y : Fin 3 → R) :
   change evenWeightedSumSquaresThreeQuaternionEquiv (1 : R) 1 (1 : Rˣ)
       ((even.ι (weightedSumSquares R ![(1 : R), 1, 1])).bilin x y) = _ at h
   rw [h, hamiltonOneSymbolEquivHamilton_apply]
+  ext <;> simp [QuaternionAlgebra.mk_mul_mk]
+
+/-- The inverse Hamilton model writes a quaternion in the scalar and standard bivector basis. -/
+@[simp]
+theorem evenHamiltonEquivWeightedSumSquaresOne_symm_mk (r i j k : R) :
+    evenHamiltonEquivWeightedSumSquaresOne.symm (⟨r, i, j, k⟩ : ℍ[R]) =
+      algebraMap R _ r +
+        (-i) • (even.ι (weightedSumSquares R ![(1 : R), 1, 1])).bilin
+          (Pi.single 2 1) (Pi.single 0 1) +
+        (-j) • (even.ι (weightedSumSquares R ![(1 : R), 1, 1])).bilin
+          (Pi.single 2 1) (Pi.single 1 1) +
+        (-k) • (even.ι (weightedSumSquares R ![(1 : R), 1, 1])).bilin
+          (Pi.single 0 1) (Pi.single 1 1) := by
+  apply evenHamiltonEquivWeightedSumSquaresOne.injective
+  simp only [AlgEquiv.apply_symm_apply, map_add, map_smul, AlgEquiv.commutes,
+    evenHamiltonEquivWeightedSumSquaresOne_ι]
   ext <;> simp [QuaternionAlgebra.mk_mul_mk]
 
 /-- The canonical Hamilton model carries Clifford reversal to quaternion conjugation. -/
@@ -166,7 +183,7 @@ theorem evenHamiltonEquivWeightedSumSquaresOne_reverseEven_mul_self
 
 /-- The sum-of-three-squares quadratic space in the coordinates compatible with the canonical
 Hamilton even-Clifford model. Its image is the pure Hamilton quaternions. -/
-@[expose] noncomputable def pureHamiltonEquivWeightedSumSquaresOne :
+noncomputable def pureHamiltonEquivWeightedSumSquaresOne :
     (weightedSumSquares R ![(1 : R), 1, 1]).IsometryEquiv
       (QuaternionAlgebra.pureNormForm (-1 : R) (-1 : R)) where
   toFun v := ⟨⟨0, -v 1, v 0, -v 2⟩, by simp⟩
@@ -183,27 +200,29 @@ Hamilton even-Clifford model. Its image is the pure Hamilton quaternions. -/
     simp [weightedSumSquares_apply, Fin.sum_univ_three]
     ring
 
+private theorem coe_pureHamiltonEquivWeightedSumSquaresOne_apply_private (v : Fin 3 → R) :
+    (pureHamiltonEquivWeightedSumSquaresOne v : ℍ[R]) =
+      ⟨0, -v 1, v 0, -v 2⟩ := rfl
+
+private theorem pureHamiltonEquivWeightedSumSquaresOne_symm_apply_private
+    (q : LinearMap.ker (QuaternionAlgebra.reₗ (-1 : R) (0 : R) (-1 : R))) :
+    pureHamiltonEquivWeightedSumSquaresOne.symm q =
+      ![(q : ℍ[R]).imJ, -(q : ℍ[R]).imI, -(q : ℍ[R]).imK] := rfl
+
 /-- The pure Hamilton quaternion corresponding to a vector in the sum-of-three-squares model. -/
 @[simp]
 theorem coe_pureHamiltonEquivWeightedSumSquaresOne_apply (v : Fin 3 → R) :
     (pureHamiltonEquivWeightedSumSquaresOne v : ℍ[R]) =
-      ⟨0, -v 1, v 0, -v 2⟩ := rfl
+      ⟨0, -v 1, v 0, -v 2⟩ :=
+  coe_pureHamiltonEquivWeightedSumSquaresOne_apply_private v
 
 /-- The vector coordinates recovered from a pure Hamilton quaternion. -/
 @[simp]
 theorem pureHamiltonEquivWeightedSumSquaresOne_symm_apply
     (q : LinearMap.ker (QuaternionAlgebra.reₗ (-1 : R) (0 : R) (-1 : R))) :
     pureHamiltonEquivWeightedSumSquaresOne.symm q =
-      ![(q : ℍ[R]).imJ, -(q : ℍ[R]).imI, -(q : ℍ[R]).imK] := rfl
-
-/-- **The even Clifford algebra of a sum of three squares is the Hamilton quaternions.** There is
-an algebra isomorphism from the even Clifford algebra of `x² + y² + z²` to `ℍ[R]` carrying Clifford
-reversal to quaternion conjugation. -/
-theorem exists_evenQuaternionEquiv_weightedSumSquares_one :
-    ∃ e : even (weightedSumSquares R ![(1 : R), 1, 1]) ≃ₐ[R] ℍ[R],
-      ∀ x, e (reverseEven _ x) = star (e x) := by
-  exact ⟨evenHamiltonEquivWeightedSumSquaresOne,
-    evenHamiltonEquivWeightedSumSquaresOne_reverseEven⟩
+      ![(q : ℍ[R]).imJ, -(q : ℍ[R]).imI, -(q : ℍ[R]).imK] :=
+  pureHamiltonEquivWeightedSumSquaresOne_symm_apply_private q
 
 end CommRing
 
@@ -283,11 +302,14 @@ theorem coe_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne_symm_apply
   exact coe_spinGroupEquivQuaternionUnitary_symm_apply _ _ _ _ _ q
 
 /-- The Hamilton quaternion corresponding to a Spin element has norm-square one. -/
+@[simp]
 theorem normSq_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne
     (s : spinGroup (weightedSumSquares K ![(1 : K), 1, 1])) :
     Quaternion.normSq
-        (spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne s : ℍ[K]) = 1 :=
-  Quaternion.normSq_coe_unitary_eq_one _
+        (evenHamiltonEquivWeightedSumSquaresOne
+          (evenUnitaryGroupEvenPart _ (spinGroupToEvenUnitary _ s))) = 1 := by
+  rw [← coe_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne_apply]
+  exact Quaternion.normSq_coe_unitary_eq_one _
 
 private noncomputable abbrev hamiltonBasisVector (i : Fin 3) : Fin 3 → K :=
   Pi.basisFun K (Fin 3) i
@@ -562,10 +584,11 @@ theorem exists_quaternionUnitaryHom_range_ne_top_rat :
       (∀ q, q ∈ f.ker ↔ q = 1 ∨ q = -1) ∧
         (∀ hQ, f.range = (spinorNorm (weightedSumSquares ℚ ![(1 : ℚ), 1, 1]) hQ).ker) ∧
           f.range ≠ ⊤ := by
-  obtain ⟨e, he⟩ := exists_evenQuaternionEquiv_weightedSumSquares_one (R := ℚ)
   have hQ : (weightedSumSquares ℚ ![(1 : ℚ), 1, 1]).Nondegenerate :=
     nondegenerate_weightedSumSquares fun i ↦ by fin_cases i <;> exact isRegular_one
-  let f := quaternionUnitaryToSpecialOrthogonal _ hQ (Module.finrank_fin_fun ℚ) e he
+  let f := quaternionUnitaryToSpecialOrthogonal _ hQ (Module.finrank_fin_fun ℚ)
+    evenHamiltonEquivWeightedSumSquaresOne
+    evenHamiltonEquivWeightedSumSquaresOne_reverseEven
   have hrange : f.range = (spinorNorm _ hQ).ker := range_quaternionUnitaryToSpecialOrthogonal ..
   refine ⟨f, fun q ↦ mem_ker_quaternionUnitaryToSpecialOrthogonal_iff .., fun _ ↦ hrange, fun htop ↦
     not_surjective_spinToSpecialOrthogonal_weightedSumSquares_one_rat ?_⟩

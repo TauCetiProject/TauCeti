@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Quaternion.ComplexMatrix
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Three
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.ReflectionPair
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Hamilton
 
 /-!
 # The compact three-dimensional Spin group
@@ -24,7 +24,9 @@ exceptional isomorphism `Spin₃ ≅ SL₂`, namely `Spin(3) ≅ SU(2)`.
 
 The general unitary transport mechanism lives in
 `CliffordAlgebra.evenUnitaryGroupEquivUnitaryOfAlgEquiv`; this file records its compact
-three-dimensional specialization and closes the remaining Lipschitz condition.
+three-dimensional specialization and closes the remaining Lipschitz condition. The action
+comparison specializes the general sum-of-three-squares Hamilton calculation in
+`CliffordAlgebra.spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne_action`.
 
 ## Main definitions and results
 
@@ -47,6 +49,7 @@ three-dimensional specialization and closes the remaining Lipschitz condition.
 public section
 
 open scoped Quaternion
+open QuadraticMap
 
 namespace TauCeti
 
@@ -249,205 +252,69 @@ theorem coe_realSpinThreeEquivQuaternionUnitary_symm_apply (q : unitary ℍ[ℝ]
       simpa only [CliffordAlgebra.coe_evenUnitaryGroupEvenPart,
         CliffordAlgebra.coe_spinGroupToEvenUnitary_apply] using h
 
-private abbrev Q3 := realCliffordForm 3 0
+private noncomputable def realThreeToWeightedSumSquaresOne :
+    (realCliffordForm 3 0).IsometryEquiv (weightedSumSquares ℝ ![(1 : ℝ), 1, 1]) where
+  __ := LinearEquiv.refl ℝ (Fin 3 → ℝ)
+  map_app' v := congrArg (fun Q : QuadraticForm ℝ (Fin 3 → ℝ) => Q v)
+    (realCliffordForm_zero_eq_weightedSumSquares_one 3).symm
 
-private noncomputable abbrev e3 (i : Fin 3) : Fin 3 → ℝ :=
-  Pi.basisFun ℝ (Fin 3) i
+@[simp]
+private theorem realThreeToWeightedSumSquaresOne_apply (v : Fin 3 → ℝ) :
+    realThreeToWeightedSumSquaresOne v = v := rfl
 
-private noncomputable def basisList3 : List (Fin 3 → ℝ) :=
-  [e3 0, e3 1, e3 2]
+private noncomputable def realThreeTransportedEvenEquiv :
+    CliffordAlgebra.even (realCliffordForm 3 0) ≃ₐ[ℝ] ℍ[ℝ] :=
+  (CliffordAlgebra.evenEquivOfIsometry realThreeToWeightedSumSquaresOne).trans
+    CliffordAlgebra.evenHamiltonEquivWeightedSumSquaresOne
 
-private theorem basisList3_pairwise : basisList3.Pairwise Q3.IsOrtho := by
-  simp [basisList3, e3, QuadraticMap.isOrtho_def,
-    realCliffordForm_three_zero_apply, Pi.basisFun_apply]
+private theorem realThreeTransportedEvenEquiv_eq :
+    realThreeTransportedEvenEquiv = realCliffordThreeZeroEvenEquivQuaternion := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  apply CliffordAlgebra.even.algHom_ext
+  apply CliffordAlgebra.EvenHom.ext
+  apply LinearMap.ext₂
+  intro x y
+  change realThreeTransportedEvenEquiv
+      ((CliffordAlgebra.even.ι (realCliffordForm 3 0)).bilin x y) =
+    realCliffordThreeZeroEvenEquivQuaternion
+      ((CliffordAlgebra.even.ι (realCliffordForm 3 0)).bilin x y)
+  rw [realThreeTransportedEvenEquiv, AlgEquiv.trans_apply,
+    CliffordAlgebra.evenEquivOfIsometry_ι, realThreeToWeightedSumSquaresOne_apply]
+  rw [CliffordAlgebra.evenHamiltonEquivWeightedSumSquaresOne_ι,
+    realCliffordThreeZeroEvenEquivQuaternion_ι]
+  ext <;> simp [QuaternionAlgebra.mk_mul_mk] <;> ring
 
-private theorem basisList3_span :
-    Submodule.span ℝ {x | x ∈ basisList3} = ⊤ := by
-  apply top_unique
-  rw [← (Pi.basisFun ℝ (Fin 3)).span_eq]
-  apply Submodule.span_mono
-  rintro _ ⟨i, rfl⟩
-  fin_cases i <;> simp [basisList3, e3]
+private noncomputable def realThreeTransportedSpinEquiv :
+    spinGroup (realCliffordForm 3 0) ≃* unitary ℍ[ℝ] :=
+  realThreeToWeightedSumSquaresOne.spinGroupEquiv.trans
+    CliffordAlgebra.spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne
 
-private noncomputable def volume3 : CliffordAlgebra Q3 :=
-  (basisList3.map (CliffordAlgebra.ι Q3)).prod
-
-private theorem volume3_mem_center :
-    volume3 ∈ Subalgebra.center ℝ (CliffordAlgebra Q3) := by
-  apply CliffordAlgebra.prod_map_ι_mem_center_of_odd_length basisList3_pairwise
-    (by decide) basisList3_span
-
-private noncomputable def vectorEven3 :
-    (Fin 3 → ℝ) →ₗ[ℝ] CliffordAlgebra.even Q3 where
-  toFun v :=
-    v 0 • (CliffordAlgebra.even.ι Q3).bilin (e3 1) (e3 2) +
-      v 1 • (CliffordAlgebra.even.ι Q3).bilin (e3 2) (e3 0) +
-        v 2 • (CliffordAlgebra.even.ι Q3).bilin (e3 0) (e3 1)
-  map_add' v w := by
-    simp only [Pi.add_apply, add_smul]
-    abel
-  map_smul' r v := by
-    simp only [Pi.smul_apply, smul_eq_mul, mul_smul, smul_add]
-    abel
-
-private theorem map_vectorEven3 (v : Fin 3 → ℝ) :
-    realCliffordThreeZeroEvenEquivQuaternion (vectorEven3 v) =
-      (realCliffordThreeZeroPureQuaternionEquiv v : ℍ[ℝ]) := by
-  simp only [vectorEven3, coe_realCliffordThreeZeroPureQuaternionEquiv_apply]
-  ext <;> simp [e3, Pi.basisFun_apply]
-
-private theorem e3_isOrtho {i j : Fin 3} (hij : i ≠ j) :
-    Q3.IsOrtho (e3 i) (e3 j) := by
-  fin_cases i <;> fin_cases j <;>
-    simp_all [QuadraticMap.isOrtho_def, realCliffordForm_three_zero_apply,
-      e3, Pi.basisFun_apply]
-
-private theorem iota_e3_sq (i : Fin 3) :
-    CliffordAlgebra.ι Q3 (e3 i) * CliffordAlgebra.ι Q3 (e3 i) = 1 := by
-  rw [CliffordAlgebra.ι_sq_scalar]
-  fin_cases i <;> simp [Q3, e3, Pi.basisFun_apply]
-
-private theorem vectorEven3_e3 (i : Fin 3) :
-    vectorEven3 (e3 i) =
-      ![(CliffordAlgebra.even.ι Q3).bilin (e3 1) (e3 2),
-        (CliffordAlgebra.even.ι Q3).bilin (e3 2) (e3 0),
-        (CliffordAlgebra.even.ι Q3).bilin (e3 0) (e3 1)] i := by
-  fin_cases i <;> apply Subtype.ext <;>
-    simp [vectorEven3, CliffordAlgebra.even.ι, e3, Pi.basisFun_apply]
-
-private theorem volume3_eq :
-    volume3 =
-      CliffordAlgebra.ι Q3 (e3 0) *
-        (CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 2)) := by
-  simp [volume3, basisList3]
-
-private theorem coe_vectorEven3_e3 (i : Fin 3) :
-    (vectorEven3 (e3 i) : CliffordAlgebra Q3) =
-      CliffordAlgebra.ι Q3 (e3 i) * volume3 := by
-  have h10 := CliffordAlgebra.ι_mul_ι_comm_of_isOrtho
-    (e3_isOrtho (i := 0) (j := 1) (by decide)).symm
-  have h20 := CliffordAlgebra.ι_mul_ι_comm_of_isOrtho
-    (e3_isOrtho (i := 0) (j := 2) (by decide)).symm
-  have h21 := CliffordAlgebra.ι_mul_ι_comm_of_isOrtho
-    (e3_isOrtho (i := 1) (j := 2) (by decide)).symm
-  rw [vectorEven3_e3, volume3_eq]
-  -- Expanding the indexed basis value leaves the three standard Clifford calculations below.
-  fin_cases i
-  · change CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 2) =
-      CliffordAlgebra.ι Q3 (e3 0) *
-        (CliffordAlgebra.ι Q3 (e3 0) *
-          (CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 2)))
-    rw [← mul_assoc, iota_e3_sq, one_mul]
-  · change CliffordAlgebra.ι Q3 (e3 2) * CliffordAlgebra.ι Q3 (e3 0) =
-      CliffordAlgebra.ι Q3 (e3 1) *
-        (CliffordAlgebra.ι Q3 (e3 0) *
-          (CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 2)))
-    calc
-      CliffordAlgebra.ι Q3 (e3 2) * CliffordAlgebra.ι Q3 (e3 0) =
-          -(CliffordAlgebra.ι Q3 (e3 0) * CliffordAlgebra.ι Q3 (e3 2)) := h20
-      _ = -((CliffordAlgebra.ι Q3 (e3 0) * CliffordAlgebra.ι Q3 (e3 1)) *
-          (CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 2))) := by
-        congr 1
-        calc
-          CliffordAlgebra.ι Q3 (e3 0) * CliffordAlgebra.ι Q3 (e3 2) =
-              CliffordAlgebra.ι Q3 (e3 0) *
-                (1 * CliffordAlgebra.ι Q3 (e3 2)) := by rw [one_mul]
-          _ = CliffordAlgebra.ι Q3 (e3 0) *
-                ((CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 1)) *
-                  CliffordAlgebra.ι Q3 (e3 2)) := by rw [iota_e3_sq]
-          _ = (CliffordAlgebra.ι Q3 (e3 0) * CliffordAlgebra.ι Q3 (e3 1)) *
-                (CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 2)) := by
-            noncomm_ring
-      _ = (CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 0)) *
-          (CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 2)) := by
-        rw [h10, neg_mul]
-      _ = CliffordAlgebra.ι Q3 (e3 1) *
-          (CliffordAlgebra.ι Q3 (e3 0) *
-            (CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 2))) := by
-        noncomm_ring
-  · change CliffordAlgebra.ι Q3 (e3 0) * CliffordAlgebra.ι Q3 (e3 1) =
-      CliffordAlgebra.ι Q3 (e3 2) *
-        (CliffordAlgebra.ι Q3 (e3 0) *
-          (CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 2)))
-    symm
-    calc
-      CliffordAlgebra.ι Q3 (e3 2) *
-          (CliffordAlgebra.ι Q3 (e3 0) *
-            (CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 2))) =
-          (CliffordAlgebra.ι Q3 (e3 2) * CliffordAlgebra.ι Q3 (e3 0)) *
-            (CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 2)) := by
-        noncomm_ring
-      _ = -(CliffordAlgebra.ι Q3 (e3 0) * CliffordAlgebra.ι Q3 (e3 2)) *
-          (CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 2)) := by
-        rw [h20]
-      _ = -(CliffordAlgebra.ι Q3 (e3 0) *
-          ((CliffordAlgebra.ι Q3 (e3 2) * CliffordAlgebra.ι Q3 (e3 1)) *
-            CliffordAlgebra.ι Q3 (e3 2))) := by
-        noncomm_ring
-      _ = -(CliffordAlgebra.ι Q3 (e3 0) *
-          (-(CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 2)) *
-            CliffordAlgebra.ι Q3 (e3 2))) := by
-        rw [h21]
-      _ = CliffordAlgebra.ι Q3 (e3 0) *
-          (CliffordAlgebra.ι Q3 (e3 1) *
-            (CliffordAlgebra.ι Q3 (e3 2) * CliffordAlgebra.ι Q3 (e3 2))) := by
-        noncomm_ring
-      _ = CliffordAlgebra.ι Q3 (e3 0) * CliffordAlgebra.ι Q3 (e3 1) := by
-        rw [iota_e3_sq, mul_one]
-
-private theorem coe_vectorEven3 (v : Fin 3 → ℝ) :
-    (vectorEven3 v : CliffordAlgebra Q3) =
-      CliffordAlgebra.ι Q3 v * volume3 := by
-  -- Both sides are linear in `v`; the indexed basis lemma packages all coordinate calculations.
-  suffices h :
-      (CliffordAlgebra.even Q3).toSubmodule.subtype.comp vectorEven3 =
-        (LinearMap.mulRight ℝ volume3).comp (CliffordAlgebra.ι Q3) by
-    exact LinearMap.congr_fun h v
-  apply (Pi.basisFun ℝ (Fin 3)).ext
-  intro i
-  simp only [LinearMap.comp_apply]
-  change (vectorEven3 (e3 i) : CliffordAlgebra Q3) =
-    CliffordAlgebra.ι Q3 (e3 i) * volume3
-  exact coe_vectorEven3_e3 i
-
-private theorem vectorEven3_spin_action (s : spinGroup Q3) (v : Fin 3 → ℝ) :
-    vectorEven3 (s • v) =
-      CliffordAlgebra.evenUnitaryGroupEvenPart Q3
-          (CliffordAlgebra.spinGroupToEvenUnitary Q3 s) *
-        vectorEven3 v *
-          CliffordAlgebra.reverseEven Q3
-            (CliffordAlgebra.evenUnitaryGroupEvenPart Q3
-              (CliffordAlgebra.spinGroupToEvenUnitary Q3 s)) := by
+private theorem realThreeTransportedSpinEquiv_eq :
+    realThreeTransportedSpinEquiv = realSpinThreeEquivQuaternionUnitary := by
+  apply MulEquiv.ext
+  intro s
   apply Subtype.ext
-  rw [coe_vectorEven3, CliffordAlgebra.spinGroup_smul_apply,
-    CliffordAlgebra.ι_spinVectorAction_apply]
-  simp only [Subalgebra.coe_mul, coe_vectorEven3]
-  rw [CliffordAlgebra.coe_evenUnitaryGroupEvenPart,
-    CliffordAlgebra.coe_reverseEven_apply,
-    CliffordAlgebra.coe_evenUnitaryGroupEvenPart]
-  rw [CliffordAlgebra.coe_spinGroupToEvenUnitary_apply]
-  -- Normalize subtype and unit coercions to an equality in the ambient Clifford algebra.
-  change (s : CliffordAlgebra Q3) * CliffordAlgebra.ι Q3 v *
-      star (s : CliffordAlgebra Q3) * volume3 =
-    (s : CliffordAlgebra Q3) * (CliffordAlgebra.ι Q3 v * volume3) *
-      CliffordAlgebra.reverse (s : CliffordAlgebra Q3)
-  rw [CliffordAlgebra.reverse_eq_star_of_mem_even
-    ⟨(s : CliffordAlgebra Q3), spinGroup.mem_even s.2⟩]
-  have hcomm : volume3 * star (s : CliffordAlgebra Q3) =
-      star (s : CliffordAlgebra Q3) * volume3 :=
-    (Subalgebra.mem_center_iff.mp volume3_mem_center _).symm
-  calc
-    (s : CliffordAlgebra Q3) * CliffordAlgebra.ι Q3 v *
-          star (s : CliffordAlgebra Q3) * volume3 =
-        (s : CliffordAlgebra Q3) *
-          (CliffordAlgebra.ι Q3 v * (star (s : CliffordAlgebra Q3) * volume3)) := by
-      noncomm_ring
-    _ = (s : CliffordAlgebra Q3) *
-          (CliffordAlgebra.ι Q3 v * (volume3 * star (s : CliffordAlgebra Q3))) := by
-      rw [hcomm]
-    _ = (s : CliffordAlgebra Q3) * (CliffordAlgebra.ι Q3 v * volume3) *
-          star (s : CliffordAlgebra Q3) := by
-      noncomm_ring
+  rw [realThreeTransportedSpinEquiv, MulEquiv.trans_apply,
+    CliffordAlgebra.coe_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne_apply,
+    coe_realSpinThreeEquivQuaternionUnitary_apply]
+  rw [← realThreeTransportedEvenEquiv_eq]
+  rw [show CliffordAlgebra.evenUnitaryGroupEvenPart _
+        (CliffordAlgebra.spinGroupToEvenUnitary _
+          (realThreeToWeightedSumSquaresOne.spinGroupEquiv s)) =
+      CliffordAlgebra.evenEquivOfIsometry realThreeToWeightedSumSquaresOne
+        (CliffordAlgebra.evenUnitaryGroupEvenPart _
+          (CliffordAlgebra.spinGroupToEvenUnitary _ s)) by
+    apply Subtype.ext
+    simp only [CliffordAlgebra.coe_evenUnitaryGroupEvenPart,
+      CliffordAlgebra.coe_spinGroupToEvenUnitary_apply,
+      CliffordAlgebra.coe_evenEquivOfIsometry_apply]
+    change (realThreeToWeightedSumSquaresOne.spinGroupEquiv s : CliffordAlgebra _) =
+      CliffordAlgebra.equivOfIsometry realThreeToWeightedSumSquaresOne
+        (s : CliffordAlgebra _)
+    rw [QuadraticMap.IsometryEquiv.spinGroupEquiv_apply,
+      QuadraticMap.Isometry.coe_spinGroupMap_apply,
+      CliffordAlgebra.equivOfIsometry_apply]]
+  rfl
 
 /-- Under the compact real three-dimensional Spin equivalence and the oriented pure-quaternion
 isometry, the Spin action is conjugation by the corresponding unit quaternion. -/
@@ -457,9 +324,21 @@ theorem realSpinThreeEquivQuaternionUnitary_action
       (realSpinThreeEquivQuaternionUnitary s : ℍ[ℝ]) *
         (realCliffordThreeZeroPureQuaternionEquiv v : ℍ[ℝ]) *
           star (realSpinThreeEquivQuaternionUnitary s : ℍ[ℝ]) := by
-  rw [← map_vectorEven3, vectorEven3_spin_action, map_mul, map_mul,
-    map_vectorEven3, realCliffordThreeZeroEvenEquivQuaternion_reverseEven,
-    coe_realSpinThreeEquivQuaternionUnitary_apply]
+  have h := CliffordAlgebra.spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne_action
+    (s := realThreeToWeightedSumSquaresOne.spinGroupEquiv s) v
+  have ha : realThreeToWeightedSumSquaresOne.spinGroupEquiv s • v = s • v := by
+    rw [CliffordAlgebra.spinGroup_smul_apply, CliffordAlgebra.spinGroup_smul_apply]
+    have hmap := QuadraticMap.Isometry.spinGroupMap_spinVectorAction
+      realThreeToWeightedSumSquaresOne.toIsometry s v
+    change CliffordAlgebra.spinVectorAction _
+        (realThreeToWeightedSumSquaresOne.toIsometry.spinGroupMap s) v =
+      CliffordAlgebra.spinVectorAction _ s v at hmap
+    simpa only [QuadraticMap.IsometryEquiv.spinGroupEquiv_apply] using hmap
+  rw [ha] at h
+  rw [← realThreeTransportedSpinEquiv_eq]
+  simpa only [realThreeTransportedSpinEquiv, MulEquiv.trans_apply,
+    coe_realCliffordThreeZeroPureQuaternionEquiv_apply,
+    CliffordAlgebra.coe_pureHamiltonEquivWeightedSumSquaresOne_apply] using h
 
 /-! ### `Spin(3) ≅ SU(2)` -/
 
