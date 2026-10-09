@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.ContinuousMap.Basic
 public import Mathlib.Topology.UnitInterval
-public import Mathlib.Data.Fin.Tuple.Basic
+public import TauCeti.Data.Fin.Basic
 
 /-!
 # Singular cubes, their faces and degeneracies
@@ -29,8 +29,8 @@ every other coordinate are degenerate (`isDegenerate_face_of_ne`).  Together the
 exactly what makes the degenerate chains a subcomplex of the cubical chains, which is where this
 file is used.
 
-The one piece of `Fin` combinatorics that is not in Mathlib is `Fin.insertNth_insertNth`, the
-commutation of two insertions, dual to `Fin.removeNth_removeNth_eq_swap`.
+The cubical identity rests on `Fin.insertNth_insertNth` (`TauCeti.Data.Fin.Basic`), the
+commutation of two insertions, dual to Mathlib's `Fin.removeNth_removeNth_eq_swap`.
 
 ## Main definitions
 
@@ -41,9 +41,9 @@ commutation of two insertions, dual to `Fin.removeNth_removeNth_eq_swap`.
 
 ## Main results
 
-* `Fin.insertNth_insertNth`: two insertions commute, up to reindexing by `succAbove` and
-  `predAbove`.
 * `TauCeti.SingularCube.face_face`: the cubical identity.
+* `TauCeti.SingularCube.isDegenerateAt_iff`, `TauCeti.SingularCube.isDegenerate_iff`,
+  `TauCeti.SingularCube.IsDegenerateAt.apply_update`: the characterizations of degeneracy.
 * `TauCeti.SingularCube.face_eq_of_isDegenerateAt`, `TauCeti.SingularCube.isDegenerate_face_of_ne`:
   the behaviour of faces on a degenerate cube.
 
@@ -57,22 +57,6 @@ commutation of two insertions, dual to `Fin.removeNth_removeNth_eq_swap`.
 public section
 
 open unitInterval
-
-/-- Two insertions commute, up to reindexing: inserting `a` at `i` after inserting `b` at `j` is
-inserting `b` at `i.succAbove j` after inserting `a` at `j.predAbove i`.  This is the dual of
-`Fin.removeNth_removeNth_eq_swap`. -/
-theorem Fin.insertNth_insertNth {n : ℕ} {β : Sort*} (i : Fin (n + 2)) (j : Fin (n + 1)) (a b : β)
-    (x : Fin n → β) :
-    @Fin.insertNth _ (fun _ ↦ β) i a (@Fin.insertNth _ (fun _ ↦ β) j b x) =
-      @Fin.insertNth _ (fun _ ↦ β) (i.succAbove j) b
-        (@Fin.insertNth _ (fun _ ↦ β) (j.predAbove i) a x) := by
-  rw [Fin.eq_insertNth_iff]
-  refine ⟨by simp, ?_⟩
-  funext k
-  rcases Fin.eq_self_or_eq_succAbove (j.predAbove i) k with rfl | ⟨k, rfl⟩
-  · simp only [Fin.removeNth, Fin.succAbove_succAbove_predAbove, Fin.insertNth_apply_same]
-  · simp only [Fin.removeNth, Fin.succAbove_succAbove_succAbove_predAbove,
-      Fin.insertNth_apply_succAbove]
 
 namespace TauCeti
 
@@ -117,6 +101,19 @@ convention). -/
 def IsDegenerate {n : ℕ} (c : SingularCube X n) : Prop :=
   ∃ i, IsDegenerateAt c i
 
+theorem isDegenerateAt_iff {n : ℕ} {c : SingularCube X n} {i : Fin n} :
+    IsDegenerateAt c i ↔ ∀ (x : Fin n → I) (t : I), c (Function.update x i t) = c x :=
+  Iff.rfl
+
+theorem isDegenerate_iff {n : ℕ} {c : SingularCube X n} :
+    IsDegenerate c ↔ ∃ i, IsDegenerateAt c i :=
+  Iff.rfl
+
+@[simp]
+theorem IsDegenerateAt.apply_update {n : ℕ} {c : SingularCube X n} {i : Fin n}
+    (h : IsDegenerateAt c i) (x : Fin n → I) (t : I) : c (Function.update x i t) = c x :=
+  h x t
+
 theorem IsDegenerateAt.isDegenerate {n : ℕ} {c : SingularCube X n} {i : Fin n}
     (h : IsDegenerateAt c i) : IsDegenerate c :=
   ⟨i, h⟩
@@ -141,8 +138,8 @@ theorem face_eq_of_isDegenerateAt {n : ℕ} {c : SingularCube X (n + 1)} {i : Fi
   have := h (i.insertNth t' x) t
   rwa [Fin.update_insertNth, ← face_apply, ← face_apply] at this
 
-/-- The faces of a cube in a coordinate it depends on, taken in a coordinate it does not depend
-on, are degenerate. -/
+/-- If a cube does not depend on its `i`-th coordinate, then its faces in any other coordinate
+`j ≠ i` are degenerate. -/
 theorem isDegenerate_face_of_ne {n : ℕ} {c : SingularCube X (n + 1)} {i j : Fin (n + 1)}
     (h : IsDegenerateAt c i) (hij : i ≠ j) (t : I) : IsDegenerate (face j t c) := by
   obtain ⟨k, hk⟩ := Fin.exists_succAbove_eq hij
