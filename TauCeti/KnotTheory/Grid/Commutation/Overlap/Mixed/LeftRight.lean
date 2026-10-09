@@ -151,9 +151,7 @@ private theorem leftRightRecut_geometry (D : GridRectanglePentagonDecomposition 
     (D.rectangle_right_ne_pentagon_left_of_left_eq_right hcommon hturn)
   obtain ⟨hfb, hft, hsb⟩ := D.toRectangleDecomposition_rows
   have hdata : D.toRectangleDecomposition.IsRecutOfLeftEqRight E := by
-    -- `E` is by definition the shared recut `recutOfIsEmpty`, which has a characterization.
-    change D.toRectangleDecomposition.IsRecutOfLeftEqRight
-      (D.recutOfIsEmpty hone hrectangle hpentagon)
+    simp only [E, leftRightRecut]
     rw [D.recutOfIsEmpty_eq_recut]
     exact D.toRectangleDecomposition.isRecutOfLeftEqRight_recut
       (by simpa only [toRectangleDecomposition_first_left, toRectangleDecomposition_second_right]
