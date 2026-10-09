@@ -6,15 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Set.Card
+import Mathlib.Data.Set.Finite.Lattice
 
 /-!
-# Finite subsets of a set as finsets of the subtype
+# Finite sets and fibres
 
 A finite set `s ⊆ S` is the image under `Subtype.val` of a finset of the subtype `↥S` with the same
 number of elements (`Set.Finite.exists_finset_subtype_image_val_eq`). This is the reading of a
 finite set of elements of a subgroup, a submodule or any other set-like structure as a `Finset` of
 that structure, which is the form the generation and rank statements over a `Finset` of a subgroup
 take.
+
+The composite of two maps with finite fibres also has finite fibres
+(`TauCeti.finite_preimage_singleton_comp`).
 -/
 
 public section
@@ -36,3 +40,19 @@ theorem exists_finset_subtype_image_val_eq (hs : s.Finite) (hsub : s ⊆ S) :
   · rw [hpre.coe_toFinset, Subtype.image_preimage_coe, Set.inter_eq_right.2 hsub]
 
 end Set.Finite
+
+universe u v w
+
+namespace TauCeti
+
+/-- The composite of two maps with finite fibres has finite fibres. -/
+theorem finite_preimage_singleton_comp {α : Type u} {β : Type v} {γ : Type w}
+    {p : α → β} {q : β → γ}
+    (hfinq : ∀ c, Finite ↥(q ⁻¹' {c})) (hfinp : ∀ b, Finite ↥(p ⁻¹' {b}))
+    (c : γ) : Finite ↥((q ∘ p) ⁻¹' {c}) := by
+  apply Set.finite_coe_iff.mpr
+  rw [Set.preimage_comp]
+  exact (Set.finite_coe_iff.mp (hfinq c)).preimage'
+    (fun b _ ↦ Set.finite_coe_iff.mp (hfinp b))
+
+end TauCeti

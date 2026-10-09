@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Set.Finite
 public import TauCeti.Topology.Covering.Comp
 public import TauCeti.Topology.Covering.Homeomorph
 
@@ -71,10 +72,7 @@ theorem comp {q : M → M'} (hq : IsFiniteCover q) (hp : IsFiniteCover p) :
   isCoveringMap := hq.isCoveringMap.comp hp.isCoveringMap fun x ↦
     Set.finite_coe_iff.mp (hq.finite_fiber x)
   surjective := hq.surjective.comp hp.surjective
-  finite_fiber x := by
-    rw [Set.preimage_comp]
-    exact (Set.finite_coe_iff.mp (hq.finite_fiber x) |>.preimage' fun y _ ↦
-      Set.finite_coe_iff.mp (hp.finite_fiber y)).to_subtype
+  finite_fiber := finite_preimage_singleton_comp hq.finite_fiber hp.finite_fiber
 
 /-- A finite cover followed by a homeomorphism of the base is a finite cover. -/
 theorem homeomorph_comp (hp : IsFiniteCover p) (e : M ≃ₜ M') : IsFiniteCover (e ∘ p) :=
