@@ -65,6 +65,11 @@ the asymmetric, out-of-range values `4` and `-6`. -/
 def corrupted (W : Graphon I (volume : Measure I)) (x y : I) : ℝ :=
   if x = 0 then 4 else if y = 0 then -6 else W x y
 
+/-- The corrupted representative has the exceptional row and column values, and agrees with
+`W` elsewhere. -/
+@[simp] theorem corrupted_apply (W : Graphon I (volume : Measure I)) (x y : I) :
+    corrupted W x y = if x = 0 then 4 else if y = 0 then -6 else W x y := (rfl)
+
 /-- The corrupted representative is jointly measurable. -/
 theorem measurable_corrupted (W : Graphon I (volume : Measure I)) :
     Measurable (Function.uncurry (corrupted W)) := by
@@ -107,9 +112,20 @@ example (W : Graphon I (volume : Measure I)) :
     corrupted W 0 1 = 4 ∧ corrupted W 1 0 = -6 := by
   norm_num [corrupted]
 
-example (W : Graphon I (volume : Measure I)) :
-    repaired W 0 0 = 1 ∧ repaired W 0 1 = 0 ∧ repaired W 1 0 = 0 := by
-  norm_num [repaired, Graphon.clampSymm_apply, corrupted]
+/-- Repairing clamps the value at the origin to `1`. -/
+@[simp] theorem repaired_apply_zero_zero (W : Graphon I (volume : Measure I)) :
+    repaired W 0 0 = 1 := by
+  norm_num [repaired, Graphon.clampSymm_apply]
+
+/-- Repairing clamps the value at `(0, 1)` to `0`. -/
+@[simp] theorem repaired_apply_zero_one (W : Graphon I (volume : Measure I)) :
+    repaired W 0 1 = 0 := by
+  norm_num [repaired, Graphon.clampSymm_apply]
+
+/-- Repairing clamps the value at `(1, 0)` to `0`. -/
+@[simp] theorem repaired_apply_one_zero (W : Graphon I (volume : Measure I)) :
+    repaired W 1 0 = 0 := by
+  norm_num [repaired, Graphon.clampSymm_apply]
 
 /-- **The corrupted-representative round trip.** The almost-everywhere class of the invalid
 representative `corrupted W` (neither symmetric nor range-bounded everywhere) is represented by a
@@ -132,12 +148,12 @@ theorem exists_graphon_toAEEqFun_eq_mk_corrupted (W : Graphon I (volume : Measur
   exact cutDist_eq_zero_of_aeEq (Graphon.toAEEqFun_eq_iff.1 (hV.trans hclass.symm))
 
 /-- Repairing preserves the almost-everywhere class. -/
-theorem toAEEqFun_repaired (W : Graphon I (volume : Measure I)) :
+@[simp] theorem toAEEqFun_repaired (W : Graphon I (volume : Measure I)) :
     Graphon.toAEEqFun (repaired W) = Graphon.toAEEqFun W :=
   Graphon.toAEEqFun_eq_iff.2 (repaired_ae W)
 
 /-- Repairing preserves the graphon-space point. -/
-theorem graphonSpace_mk_repaired (W : Graphon I (volume : Measure I)) :
+@[simp] theorem graphonSpace_mk_repaired (W : Graphon I (volume : Measure I)) :
     (⟦repaired W⟧ : GraphonSpaceI) = ⟦W⟧ := by
   exact (graphonSpace_mk_eq_mk_iff _ _).2 (cutDist_eq_zero_of_aeEq (repaired_ae W))
 

@@ -77,6 +77,10 @@ namespace TauCeti.DenseGraphLimits
 /-- The edge-power parameter `F ↦ c ^ e(F)`. -/
 def edgePow (c : ℝ) : GraphParam := fun _ F ↦ c ^ Nat.card F.edgeSet
 
+/-- The edge-power parameter evaluates to `c` raised to the number of edges. -/
+@[simp] theorem edgePow_apply (c : ℝ) (n : ℕ) (F : SimpleGraph (Fin n)) :
+    edgePow c n F = c ^ Nat.card F.edgeSet := (rfl)
+
 /-- The edge-power parameter is isomorphism invariant. -/
 theorem isIsoInvariant_edgePow (c : ℝ) : IsIsoInvariant (edgePow c) :=
   isIsoInvariant_iff.2 fun _ _ _ _ ⟨e⟩ ↦ by simp only [edgePow, Nat.card_congr e.mapEdgeSet]
@@ -203,7 +207,8 @@ theorem exists_not_isReflectionPositive :
 def coinMeasure (k : ℕ) : Measure (SimpleGraph (Fin k)) :=
   (2⁻¹ : ℝ≥0∞) • Measure.dirac ⊥ + (2⁻¹ : ℝ≥0∞) • Measure.dirac ⊤
 
-/-- `coinMeasure k` gives each of `⊥` and `⊤` mass `1 / 2`. -/
+/-- The sum of the weighted membership indicators of `⊥` and `⊤` on `s`.
+For `2 ≤ k`, their singleton masses are `1 / 2`; for `k ≤ 1`, they coincide and have mass `1`. -/
 theorem coinMeasure_apply (k : ℕ) (s : Set (SimpleGraph (Fin k))) :
     coinMeasure k s = 2⁻¹ * s.indicator 1 ⊥ + 2⁻¹ * s.indicator 1 ⊤ := by
   simp [coinMeasure, Measure.dirac_apply' _ (MeasurableSet.of_discrete (s := s))]
@@ -222,7 +227,7 @@ def coinLaw : ExchangeableGraphLaw where
     all_goals exact hf.aemeasurable
 
 /-- The level-`k` law of `coinLaw` is `coinMeasure k`. -/
-theorem coinLaw_law (k : ℕ) : coinLaw.law k = coinMeasure k := (rfl)
+@[simp] theorem coinLaw_law (k : ℕ) : coinLaw.law k = coinMeasure k := (rfl)
 
 /-- Every pattern other than the edgeless one has upper mass `1 / 2` under `coinLaw`: it is
 contained in the complete graph but not in the edgeless one. -/

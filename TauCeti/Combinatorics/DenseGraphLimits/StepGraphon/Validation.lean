@@ -77,7 +77,7 @@ def adjacency : Graphon (Fin 3) weights :=
     simp [eq_comm])
 
 /-- `adjacency` is `0` on the diagonal and `1` off it. -/
-theorem adjacency_apply (i j : Fin 3) :
+@[simp] theorem adjacency_apply (i j : Fin 3) :
     adjacency i j = if i = j then 0 else 1 := by
   rw [adjacency, Graphon.ofMatrix_apply]
   split <;> simp
@@ -137,7 +137,7 @@ private theorem stepGraphonAvg_adjacency_apply
 
 /-- The coarse block average is `1/2` on the positive cell and `0` on every entry incident to
 the null atom. -/
-theorem coarseAvg_apply (i j : Fin 3) :
+@[simp] theorem coarseAvg_apply (i j : Fin 3) :
     coarseAvg i j = if i = 2 ∨ j = 2 then 0 else 1 / 2 := by
   classical
   let p : coarse.parts := ⟨if i = 2 then {2} else {2}ᶜ, by split <;> simp [coarse_parts]⟩
@@ -151,7 +151,7 @@ theorem coarseAvg_apply (i j : Fin 3) :
 
 /-- The fine block average agrees with `adjacency` away from the null atom and is `0` on every
 entry incident to it. -/
-theorem fineAvg_apply (i j : Fin 3) :
+@[simp] theorem fineAvg_apply (i j : Fin 3) :
     fineAvg i j = if i = 2 ∨ j = 2 then 0 else if i = j then 0 else 1 := by
   classical
   let p : fine.parts := ⟨{i}, by fin_cases i <;> simp [fine_parts]⟩
