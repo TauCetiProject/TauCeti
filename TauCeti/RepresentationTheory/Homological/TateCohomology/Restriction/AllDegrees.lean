@@ -193,11 +193,12 @@ theorem res_comp_cor (M : Rep.{u} R G) (H : Subgroup G) (r : ℤ) :
     | zero => exact HNegOneRes_comp_HNegOneCor M H
     | succ n => exact negSuccRes_comp_negSuccCor M H (n + 1)
 
-/-- **Tate cohomology of a finite group is killed by the order of the group**, in every degree:
-restriction to the trivial subgroup followed by corestriction is multiplication by `|G|`, and the
-Tate cohomology of the trivial group vanishes. -/
+/-- **Tate cohomology of a finite group is killed by the order of the group**: every class in
+every degree is annihilated by `Nat.card G`. -/
 theorem natCard_nsmul_eq_zero {A : Rep.{u} R G} {n : ℤ} (x : tateCohomology A n) :
     Nat.card G • x = 0 := by
+  -- Restriction to the trivial subgroup followed by corestriction is multiplication by `|G|`, and
+  -- the Tate cohomology of the trivial group vanishes.
   -- The identity of the restriction of `A` to the trivial subgroup is its own norm. The explicit
   -- instance `Subgroup.fintypeOfFinite` is the one `res` and `cor` are stated with.
   have hbot := @isZero_of_forall_eq_sum R (⊥ : Subgroup G) _ _ (Subgroup.fintypeOfFinite ⊥)

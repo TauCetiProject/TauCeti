@@ -33,7 +33,7 @@ which use that all the groups involved are killed by `|G|`
 
 ## Main statements
 
-* `TauCeti.TateCohomology.bijective_nsmul_tateCohomology`: multiplication by `p` is bijective on
+* `TauCeti.TateCohomology.nsmul_tateCohomology_bijective`: multiplication by `p` is bijective on
   Tate cohomology when it is bijective on the representation.
 * `TauCeti.TateCohomology.pPowerTorsion_tateCohomology_eq_bot`: the `p`-primary component of the
   Tate cohomology of such a representation is trivial.
@@ -59,10 +59,11 @@ namespace TauCeti.TateCohomology
 variable {k G : Type u} [CommRing k] [Group G] [Fintype G]
 
 /-- If multiplication by a natural number `p` is bijective on `A`, then it is bijective on every
-Tate cohomology group of `A`: it is the map induced by the automorphism `p • 𝟙 A`. -/
-theorem bijective_nsmul_tateCohomology {A : Rep k G} {p : ℕ}
+Tate cohomology group of `A`. -/
+theorem nsmul_tateCohomology_bijective {A : Rep k G} {p : ℕ}
     (hp : Function.Bijective fun a : A.V ↦ p • a) (n : ℤ) :
     Function.Bijective fun x : tateCohomology A n ↦ p • x := by
+  -- Multiplication by `p` on `Ĥⁿ(G, A)` is the map induced by the automorphism `p • 𝟙 A`.
   have : IsIso ((forget (Rep k G)).map (p • 𝟙 A)) := (isIso_iff_bijective _).mpr hp
   have : IsIso (p • 𝟙 A) := isIso_of_reflects_iso _ (forget (Rep k G))
   convert ConcreteCategory.bijective_of_isIso ((tateCohomologyFunctor n).map (p • 𝟙 A)) using 1
@@ -75,7 +76,7 @@ Applied to `Rep.res S.subtype A`, this holds for the Tate cohomology of every su
 theorem pPowerTorsion_tateCohomology_eq_bot {A : Rep k G} {p : ℕ}
     (hp : Function.Bijective fun a : A.V ↦ p • a) (n : ℤ) :
     pPowerTorsion p k (tateCohomology A n) = ⊥ := by
-  have hinj := (bijective_nsmul_tateCohomology hp n).injective
+  have hinj := (nsmul_tateCohomology_bijective hp n).injective
   refine (Submodule.eq_bot_iff _).mpr fun x hx ↦ ?_
   obtain ⟨j, hj⟩ := mem_pPowerTorsion_iff.mp hx
   clear hx

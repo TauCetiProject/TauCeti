@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Module.Submodule.Defs
 public import Mathlib.Algebra.Module.Torsion.PrimaryComponent
 public import Mathlib.GroupTheory.Torsion
+import TauCeti.GroupTheory.Torsion
 
 /-!
 # Primary components of modules
@@ -27,13 +28,9 @@ Galois extension of `p`-adic fields — have a `p`-power torsion that must be co
 the `p`-power torsion.
 
 For a prime `p`, let `Z → M → N → P` be exact, with `Z` and `P` free of `p`-power torsion and
-`Z` and `M` killed by a nonzero natural number `n`. Then `M → N` is a bijection of `p`-power
-torsion. Write `n = p ^ a * m` with `m` prime to `p`. The first term is then killed by `m`, so the
-middle map is injective on `p`-power torsion; and a `p`-power torsion element of `N`, which lifts
-to `M` because `P` has no `p`-power torsion, lifts to the `p`-power torsion after multiplying the
-lift by an inverse of `m` modulo the power of `p` that kills it. This is how the `p`-primary
-components of the cohomology of a finite group, which is killed by the order of the group, are
-compared along long exact sequences.
+`Z` and `M` killed by a nonzero natural number. Then `M → N` is a bijection of `p`-power torsion.
+This compares the `p`-primary components of the cohomology of a finite group, which is killed by
+the order of the group, along long exact sequences.
 
 ## The primary component of an ideal
 
@@ -111,7 +108,7 @@ theorem map_pPowerTorsion_of_exact {N P : Type*} [AddCommMonoid N] [Module A N]
 
 section Exact
 
-variable {p : ℕ} {A : Type*} [Ring A] {Z M N P : Type*} [AddCommGroup Z] [Module A Z]
+variable {p : ℕ} {A : Type*} [Semiring A] {Z M N P : Type*} [AddCommGroup Z] [Module A Z]
   [AddCommGroup M] [Module A M] [AddCommGroup N] [Module A N] [AddCommGroup P] [Module A P]
 
 /-- **The `p`-power torsion is injective along an exact sequence** `Z → M → N` whose first term has
@@ -127,7 +124,7 @@ theorem injOn_pPowerTorsion_of_exact [Fact p.Prime] {n : ℕ} (hn : n ≠ 0) {ψ
     have hz : m • z ∈ pPowerTorsion p A Z := ⟨a, by rw [smul_smul, hZn]⟩
     rwa [hZ, Submodule.mem_bot] at hz
   intro x hx y hy hxy
-  obtain ⟨k, hk⟩ := sub_mem hx hy
+  obtain ⟨k, hk⟩ := (AddCommGroup.primaryComponent M p).sub_mem hx hy
   obtain ⟨z, hz⟩ := (hψφ (x - y)).mp (by rw [map_sub, hxy, sub_self])
   have hm : m • (x - y) = 0 := by rw [← hz, ← map_nsmul, hZm, map_zero]
   -- `x - y` is killed by the coprime numbers `m` and `p ^ k`, so its order is one.
@@ -142,24 +139,12 @@ theorem surjOn_pPowerTorsion_of_exact [Fact p.Prime] {n : ℕ} (hn : n ≠ 0) {�
     {χ : N →ₗ[A] P} (hφχ : Function.Exact φ χ) (hMn : ∀ x : M, n • x = 0)
     (hP : pPowerTorsion p A P = ⊥) :
     Set.SurjOn φ (pPowerTorsion p A M) (pPowerTorsion p A N) := by
-  have hp : p.Prime := Fact.out
-  obtain ⟨a, m, hpm, rfl⟩ := Nat.exists_eq_pow_mul_and_not_dvd hn p hp.one_lt.ne'
   rintro y ⟨k, hk⟩
   have hχ : χ y ∈ pPowerTorsion p A P := ⟨k, by rw [← map_nsmul, hk, map_zero]⟩
   rw [hP, Submodule.mem_bot] at hχ
   obtain ⟨x, rfl⟩ := (hφχ y).mp hχ
-  -- Bézout for the coprime numbers `m` and `p ^ k`: `m * u + p ^ k * v = 1`. The lift `(m * u) • x`
-  -- is killed by `p ^ a`, and it still maps to `y` because `p ^ k` kills `y`.
-  have hgcd : ((m.gcd (p ^ k) : ℕ) : ℤ) = m * m.gcdA (p ^ k) + p ^ k * m.gcdB (p ^ k) :=
-    Nat.gcd_eq_gcd_ab m (p ^ k)
-  rw [(((hp.coprime_iff_not_dvd).mpr hpm).symm.pow_right k).gcd_eq_one, Nat.cast_one] at hgcd
-  refine ⟨((m : ℤ) * m.gcdA (p ^ k)) • x, ⟨a, ?_⟩, ?_⟩
-  · rw [← natCast_zsmul, smul_smul, show ((p ^ a : ℕ) : ℤ) * (m * m.gcdA (p ^ k)) =
-      m.gcdA (p ^ k) * ((p ^ a * m : ℕ) : ℤ) by push_cast; ring, ← smul_smul, natCast_zsmul,
-      hMn, smul_zero]
-  · rw [map_zsmul, show (m : ℤ) * m.gcdA (p ^ k) = 1 - m.gcdB (p ^ k) * ((p ^ k : ℕ) : ℤ) by
-      push_cast; linear_combination -hgcd, sub_smul, one_smul, ← smul_smul, natCast_zsmul, hk,
-      smul_zero, sub_zero]
+  exact exists_mem_primaryComponent_apply_eq φ Fact.out
+    (isOfFinAddOrder_iff_nsmul_eq_zero.mpr ⟨n, Nat.pos_of_ne_zero hn, hMn x⟩) ⟨k, hk⟩
 
 end Exact
 
