@@ -209,6 +209,18 @@ theorem mem_weightedPBWIdeal_iff (N : ℕ) (a : U) :
     a ∈ b.weightedPBWIdeal w hbracket N ↔ a ∈ b.weightedPBWFiltration w N :=
   Iff.rfl
 
+/-- Increasing the cutoff decreases the weighted PBW truncation ideal. -/
+theorem weightedPBWIdeal_antitone : Antitone (b.weightedPBWIdeal w hbracket) := by
+  intro m n hmn a ha
+  rw [mem_weightedPBWIdeal_iff] at ha ⊢
+  exact b.weightedPBWFiltration_antitone w hmn ha
+
+/-- At cutoff zero the weighted PBW truncation ideal is the whole enveloping algebra. -/
+@[simp]
+theorem weightedPBWIdeal_zero : b.weightedPBWIdeal w hbracket 0 = ⊤ := by
+  ext a
+  simp
+
 /-- The weighted PBW truncation ideal is two-sided: multiplication on the right also
 preserves the lower weight bound. -/
 instance weightedPBWIdeal_isTwoSided (N : ℕ) : (b.weightedPBWIdeal w hbracket N).IsTwoSided where
@@ -252,17 +264,24 @@ theorem moduleFinite_quotient_weightedPBWIdeal [Finite ι] (hpos : ∀ i, 0 < w 
 
 /-- If the cutoff exceeds every basis weight, the quotient remains injective on the
 canonical copy of the Lie algebra. -/
-theorem injective_quotient_weightedPBWIdeal_ι (N : ℕ) (hN : ∀ i, w i < N) :
+theorem quotient_weightedPBWIdeal_ι_injective (N : ℕ) (hN : ∀ i, w i < N) :
     Function.Injective (fun x : L ↦
       Ideal.Quotient.mk (b.weightedPBWIdeal w hbracket N) (ιL x)) := by
   let f := (Ideal.Quotient.mkₐ R (b.weightedPBWIdeal w hbracket N)).toLinearMap.comp
     (ιL).toLinearMap
-  suffices Function.Injective f from this
+  have hf (x : L) : f x = Ideal.Quotient.mk (b.weightedPBWIdeal w hbracket N) (ιL x) := by
+    simp only [f, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
+      LieHom.coe_toLinearMap, Ideal.Quotient.mkₐ_eq_mk]
+  suffices hf_inj : Function.Injective f by
+    intro x y hxy
+    apply hf_inj
+    simpa only [hf] using hxy
   apply (LinearMap.ker_eq_bot).mp
   rw [LinearMap.ker_eq_bot']
   intro x hx
   have hxmem : ιL x ∈ b.weightedPBWFiltration w N :=
-    (b.mem_weightedPBWIdeal_iff w hbracket N _).mp (Ideal.Quotient.eq_zero_iff_mem.mp hx)
+    (b.mem_weightedPBWIdeal_iff w hbracket N _).mp
+      (Ideal.Quotient.eq_zero_iff_mem.mp (by simpa only [hf] using hx))
   apply b.repr.injective
   ext i
   have hcoord : (b.pbwBasis.coord (Finsupp.single i 1)).comp (ιL).toLinearMap = b.coord i := by
@@ -336,7 +355,7 @@ theorem exists_weightedPBWIdeal_of_isNilpotent :
   have hN : ∀ i, w i < N + 1 := fun i ↦ Nat.lt_succ_of_le (hweight i).2
   exact ⟨N + 1, b, w, hbracket, fun i ↦ ⟨hpos i, hN i⟩,
     b.moduleFinite_quotient_weightedPBWIdeal w hbracket hpos _,
-    b.injective_quotient_weightedPBWIdeal_ι w hbracket _ hN,
+    b.quotient_weightedPBWIdeal_ι_injective w hbracket _ hN,
     b.quotient_weightedPBWIdeal_ι_pow_eq_zero w hbracket hpos _⟩
 
 end TauCeti.UniversalEnvelopingAlgebra
