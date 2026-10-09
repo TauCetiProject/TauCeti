@@ -15,15 +15,15 @@ Pullback along the inclusion of a measurable conull set preserves the measure. W
 topological support is conull, its pullback measure is positive on every nonempty open set
 of the support subtype. Supports also commute with pushforward by homeomorphisms.
 
-For a measure `μ` and a homeomorphism `e`, use `TauCeti.support_map_homeomorph μ e he`,
-where `he : Measurable e`, to identify the support of the pushforward.
+With `open TauCeti`, use `μ.support_map_homeomorph e he` for a measure `μ` and a
+homeomorphism `e`, where `he : Measurable e`, to identify the support of the pushforward.
 -/
 
 public section
 
 open MeasureTheory Set Topology
 
-namespace TauCeti
+namespace TauCeti.MeasureTheory.Measure
 
 /-- Pullback to a measurable conull set preserves the original measure under inclusion. -/
 theorem measurePreserving_subtype_coe_of_ae_mem {X : Type*} [MeasurableSpace X]
@@ -69,4 +69,4 @@ theorem support_map_homeomorph
     rw [Measure.map_apply he hU.measurableSet]
     exact hx (e ⁻¹' U) hxU (hU.preimage e.continuous)
 
-end TauCeti
+end TauCeti.MeasureTheory.Measure
