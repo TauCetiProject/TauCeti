@@ -22,8 +22,13 @@ replaces edge `i` by the two segments through `c`.
 * `Polygon.rotate`: the cyclic relabelling of the vertices of a polygon.
 * `Polygon.insertVertex`: the polygon with a new vertex inserted after vertex `i`.
 
+The file also records the elementary description of the boundary of a polygon as the union of
+the paths of its edges, and the fact that the vertices lie on the boundary.
+
 ## Main results
 
+* `Polygon.mem_boundary_iff`: a point lies on the boundary exactly when it lies on some edge.
+* `Polygon.apply_mem_boundary`: every vertex lies on the boundary.
 * `Polygon.boundary_rotate`: the cyclic relabelling has the same boundary.
 * `Polygon.boundary_insertVertex`: inserting a vertex `c` after vertex `i` replaces edge `i` by the
   segments from vertex `i` to `c` and from `c` to the next vertex.
@@ -79,6 +84,38 @@ theorem insertVertex_apply_castSucc_self : poly.insertVertex i c i.castSucc = po
 theorem insertVertex_apply_finRotate_succ_self :
     poly.insertVertex i c (finRotate (n + 1) i.succ) = poly (finRotate n i) := by
   rw [Fin.finRotate_succ_eq_succ_succAbove, insertVertex_apply_succAbove]
+
+/-! ### Points of the boundary -/
+
+section Boundary
+
+variable [Ring R] [PartialOrder R] [AddCommGroup V] [Module R V] [AddTorsor V P]
+  {poly : Polygon P n} {x : P}
+
+/-- A point lies on the boundary of a polygon exactly when it lies on the path of some edge, at
+a parameter in `[0, 1]`. -/
+theorem mem_boundary_iff :
+    x ∈ poly.boundary R ↔ ∃ i, ∃ t ∈ Icc (0 : R) 1, poly.edgePath R i t = x := by
+  simp only [boundary, mem_iUnion, edgeSet_eq_image_edgePath, mem_image]
+
+variable [IsOrderedRing R] (poly : Polygon P n) (i : Fin n)
+
+variable (R) in
+/-- Vertex `i` is the starting point of edge `i`. -/
+theorem apply_mem_edgeSet_self : poly i ∈ poly.edgeSet R i :=
+  left_mem_affineSegment R _ _
+
+variable (R) in
+/-- The vertex after vertex `i` is the end point of edge `i`. -/
+theorem apply_finRotate_mem_edgeSet : poly (finRotate n i) ∈ poly.edgeSet R i :=
+  right_mem_affineSegment R _ _
+
+variable (R) in
+/-- Every vertex of a polygon lies on its boundary. -/
+theorem apply_mem_boundary : poly i ∈ poly.boundary R :=
+  mem_iUnion.2 ⟨i, poly.apply_mem_edgeSet_self R i⟩
+
+end Boundary
 
 /-! ### Edges after relabelling and inserting vertices -/
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Polygon.Basic
 public import Mathlib.LinearAlgebra.Quotient.Defs
 public import Mathlib.Topology.MetricSpace.HausdorffDimension
+import TauCeti.Geometry.Polygon.Basic
 import TauCeti.LinearAlgebra.CrossProduct
 
 /-!
@@ -100,14 +101,12 @@ variable [IsOrderedRing R] {poly : Polygon P n}
 theorem isRegularProjection_congr {π : P → Q} {π' : P → Q'}
     (h : ∀ x ∈ poly.boundary R, ∀ y ∈ poly.boundary R, π x = π y ↔ π' x = π' y) :
     poly.IsRegularProjection R π ↔ poly.IsRegularProjection R π' := by
-  have hv (i : Fin n) : poly i ∈ poly.boundary R :=
-    mem_iUnion.2 ⟨i, left_mem_affineSegment R _ _⟩
   refine ⟨fun hπ ↦ ⟨fun x y z hx hy hz hxy hxz ↦ ?_, fun i x hx hxi ↦ ?_⟩,
     fun hπ ↦ ⟨fun x y z hx hy hz hxy hxz ↦ ?_, fun i x hx hxi ↦ ?_⟩⟩
   · exact hπ.eq_or_eq_or_eq_of_apply_eq hx hy hz ((h x hx y hy).2 hxy) ((h x hx z hz).2 hxz)
-  · exact hπ.eq_vertex_of_apply_eq i hx ((h x hx _ (hv i)).2 hxi)
+  · exact hπ.eq_vertex_of_apply_eq i hx ((h x hx _ (poly.apply_mem_boundary R i)).2 hxi)
   · exact hπ.eq_or_eq_or_eq_of_apply_eq hx hy hz ((h x hx y hy).1 hxy) ((h x hx z hz).1 hxz)
-  · exact hπ.eq_vertex_of_apply_eq i hx ((h x hx _ (hv i)).1 hxi)
+  · exact hπ.eq_vertex_of_apply_eq i hx ((h x hx _ (poly.apply_mem_boundary R i)).1 hxi)
 
 /-- Projecting along a nondegenerate edge of a polygon is not a regular projection: both endpoints
 of the edge have the same image. -/
@@ -115,7 +114,8 @@ theorem not_isRegularProjection_edge (p₀ : P) {i : Fin n} (hi : poly i ≠ pol
     ¬poly.IsRegularProjection R fun p ↦
       (Submodule.Quotient.mk (p -ᵥ p₀) : V ⧸ R ∙ (poly (finRotate n i) -ᵥ poly i)) := by
   intro h
-  refine hi (h.eq_vertex_of_apply_eq i (mem_iUnion.2 ⟨i, right_mem_affineSegment R _ _⟩) ?_).symm
+  refine hi (h.eq_vertex_of_apply_eq i
+    (mem_iUnion.2 ⟨i, poly.apply_finRotate_mem_edgeSet R i⟩) ?_).symm
   rw [Submodule.Quotient.eq, vsub_sub_vsub_cancel_right]
   exact Submodule.mem_span_singleton_self _
 
@@ -131,8 +131,14 @@ private def edgeVector (poly : Polygon P n) (i : Fin n) : V :=
 
 private theorem exists_eq_smul_edgeVector_vadd {poly : Polygon P n} {x : P}
     (hx : x ∈ poly.boundary ℝ) : ∃ i : Fin n, ∃ t : ℝ, x = t • poly.edgeVector i +ᵥ poly i := by
-  obtain ⟨i, t, -, rfl⟩ := mem_iUnion.1 hx
+  obtain ⟨i, t, -, rfl⟩ := mem_boundary_iff.1 hx
   exact ⟨i, t, AffineMap.lineMap_apply _ _ _⟩
+
+/-- A nonzero vector between two points of a line parallel to `d` is a nonzero multiple of `d`. -/
+private theorem ne_zero_of_smul_eq_vsub {a : ℝ} {d : V} {x y : P} (h : a • d = x -ᵥ y)
+    (hxy : x ≠ y) : a ≠ 0 := by
+  rintro rfl
+  exact hxy (eq_of_vsub_eq_zero (by simpa using h.symm))
 
 /-- The `(i, j, k)` term of `irregularCover`: the directions of irregular projections coming from
 a vertex `poly i` and a point of edge `j`, or from three points of the edges `i`, `j`, `k`. -/
@@ -178,9 +184,7 @@ private theorem mem_irregularCover_of_vertex {poly : Polygon P n} (e : V ≃L[�
     {d : V} {i : Fin n} {x : P} {a : ℝ} (hx : x ∈ poly.boundary ℝ)
     (ha : a • d = x -ᵥ poly i) (hne : x ≠ poly i) : d ∈ irregularCover poly e := by
   obtain ⟨j, t, rfl⟩ := exists_eq_smul_edgeVector_vadd hx
-  have ha0 : a ≠ 0 := by
-    rintro rfl
-    exact hne (eq_of_vsub_eq_zero (by simpa using ha.symm))
+  have ha0 := ne_zero_of_smul_eq_vsub ha hne
   refine mem_iUnion.2 ⟨(i, j, j), Or.inl (Or.inl (Or.inl ⟨(a⁻¹, t), ?_⟩))⟩
   rw [vadd_vsub_assoc] at ha
   simp only
@@ -201,7 +205,7 @@ private theorem mem_irregularCover_of_linearIndependent {poly : Polygon P n}
     have hind' : LinearIndependent ℝ ![e (poly.edgeVector i), e (poly.edgeVector k)] := by
       convert hind.map' (e : V →ₗ[ℝ] Fin 3 → ℝ) e.toLinearEquiv.ker using 1
       ext m : 1
-      fin_cases m <;> rfl
+      fin_cases m <;> simp
     rw [← triple_product_permutation, TauCeti.triple_product_eq_zero_iff_mem_span_pair hind',
       Submodule.mem_span_pair] at ht
     obtain ⟨s, t, hst⟩ := ht
@@ -234,27 +238,23 @@ private theorem mem_irregularCover_of_triple {poly : Polygon P n} (e : V ≃L[�
   obtain ⟨i, a, rfl⟩ := exists_eq_smul_edgeVector_vadd hx
   obtain ⟨j, b, rfl⟩ := exists_eq_smul_edgeVector_vadd hy
   obtain ⟨k, c, rfl⟩ := exists_eq_smul_edgeVector_vadd hz
-  have hα0 : α ≠ 0 := by
-    rintro rfl
-    exact hxy (eq_of_vsub_eq_zero (by simpa using hα.symm))
-  have hγ0 : γ ≠ 0 := by
-    rintro rfl
-    exact hxz (eq_of_vsub_eq_zero (by simpa using hγ.symm))
+  have hα0 := ne_zero_of_smul_eq_vsub hα hxy
+  have hγ0 := ne_zero_of_smul_eq_vsub hγ hxz
+  -- relations between the vectors joining the vertices `poly i`, `poly j` and `poly k`
+  have hij := neg_vsub_eq_vsub_rev (poly i) (poly j)
+  have hik := neg_vsub_eq_vsub_rev (poly i) (poly k)
+  have hjk := vsub_sub_vsub_cancel_left (poly j) (poly k) (poly i)
+  rw [vadd_vsub_vadd_comm] at hα hγ
   have hγα : γ - α ≠ 0 := by
     intro h
     apply hyz
-    rw [← vsub_eq_zero_iff_eq, ← vsub_sub_vsub_cancel_left _ _ (a • poly.edgeVector i +ᵥ poly i),
-      ← hα, ← hγ, ← sub_smul, sub_eq_zero.1 h, sub_self, zero_smul]
+    rw [← vsub_eq_zero_iff_eq, vadd_vsub_vadd_comm]
+    linear_combination (norm := module) hα - hγ + h • d - hjk
   -- the point `y` of edge `j`, seen from the vertices `poly i` and `poly k`
   have hyi : (poly j -ᵥ poly i) + b • poly.edgeVector j = a • poly.edgeVector i - α • d := by
-    rw [add_comm, ← vadd_vsub_assoc, ← vsub_add_vsub_cancel _ (a • poly.edgeVector i +ᵥ poly i),
-      ← neg_vsub_eq_vsub_rev _ (b • poly.edgeVector j +ᵥ poly j), ← hα, vadd_vsub]
-    abel
+    linear_combination (norm := module) hα - hij
   have hyk : (poly j -ᵥ poly k) + b • poly.edgeVector j = c • poly.edgeVector k + (γ - α) • d := by
-    rw [add_comm, ← vadd_vsub_assoc, ← vsub_add_vsub_cancel _ (c • poly.edgeVector k +ᵥ poly k),
-      ← vsub_sub_vsub_cancel_left _ _ (a • poly.edgeVector i +ᵥ poly i), ← hα, ← hγ, vadd_vsub,
-      sub_smul]
-    abel
+    linear_combination (norm := module) hα - hγ - hjk
   by_cases hwi : poly.edgeVector i = 0
   · -- the point of edge `i` is the vertex `poly i`
     rw [hwi, smul_zero, zero_vadd] at hxy
@@ -266,7 +266,7 @@ private theorem mem_irregularCover_of_triple {poly : Polygon P n} (e : V ≃L[�
   obtain ⟨s, hs⟩ : ∃ s : ℝ, s • poly.edgeVector i = poly.edgeVector k := by
     simpa [LinearIndependent.pair_iff' hwi] using hind
   have hzx : -γ • d = (c * s - a) • poly.edgeVector i + (poly k -ᵥ poly i) := by
-    rw [neg_smul, hγ, neg_vsub_eq_vsub_rev, vadd_vsub_vadd_comm, ← hs, smul_smul, sub_smul]
+    linear_combination (norm := module) -hγ - c • hs + hik
   refine mem_iUnion.2 ⟨(i, j, k), Or.inl (Or.inr ⟨((-γ)⁻¹ * (c * s - a), (-γ)⁻¹), ?_⟩)⟩
   simp only
   rw [mul_smul, ← smul_add, ← hzx, smul_smul, inv_mul_cancel₀ (neg_ne_zero.2 hγ0), one_smul]
