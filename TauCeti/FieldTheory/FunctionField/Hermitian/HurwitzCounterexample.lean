@@ -11,6 +11,8 @@ public import TauCeti.FieldTheory.FunctionField.Hermitian.Existence
 public import Mathlib.FieldTheory.Finite.GaloisField
 public import TauCeti.FieldTheory.FunctionField.Automorphism.HurwitzBound
 
+import TauCeti.Algebra.CharP.Lemmas
+
 /-!
 # Hermitian counterexamples to the Hurwitz automorphism bound
 
@@ -39,12 +41,6 @@ namespace IsHermitianCoordinates
 variable {K F : Type*} [Field K] [Field F] [Algebra K F]
 variable {p n : ℕ} [ExpChar K p] {x y : F}
 
-private theorem cast_pow_eq_zero (hq : 1 < p ^ n) : ((p ^ n : ℕ) : K) = 0 := by
-  have hn : n ≠ 0 := by rintro rfl; simp at hq
-  rcases ‹ExpChar K p› with _ | hp
-  · simp at hq
-  · rw [Nat.cast_pow, CharP.cast_eq_zero K p, zero_pow hn]
-
 /-- For `q = pⁿ ≥ 41` over a field with `q²` elements, the translation subgroup of the
 Hermitian function field exceeds the Hurwitz bound `84(g - 1)`. -/
 theorem eighty_four_mul_genus_sub_one_lt_natCard_hermitianTranslations
@@ -52,7 +48,7 @@ theorem eighty_four_mul_genus_sub_one_lt_natCard_hermitianTranslations
     (hK : Nat.card K = (p ^ n) ^ 2) (hq : 41 ≤ p ^ n) :
     84 * (genus K F - 1) < Nat.card (hermitianTranslations K p n x y) := by
   have hq' : 1 < p ^ n := by omega
-  have hchar : ((p ^ n : ℕ) : K) = 0 := cast_pow_eq_zero hq'
+  have hchar : ((p ^ n : ℕ) : K) = 0 := natCast_pow_expChar_eq_zero hq'
   let : Finite K := Nat.finite_of_card_ne_zero (by
     rw [hK]
     exact pow_ne_zero 2 (by omega))
@@ -82,7 +78,7 @@ theorem exists_not_isTame_hermitianTranslations
     rw [hK]
     exact pow_ne_zero 2 (by omega))
   let := h.finite_hermitianTranslations
-  have hchar : ((p ^ n : ℕ) : K) = 0 := cast_pow_eq_zero (by omega)
+  have hchar : ((p ^ n : ℕ) : K) = 0 := natCast_pow_expChar_eq_zero (by omega)
   by_contra htame
   have hle := natCard_le_eighty_four_mul_genus_sub_one
     (h.isFunctionField (by omega)) (h.isIntegrallyClosedIn (by omega) hchar)
