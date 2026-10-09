@@ -113,7 +113,7 @@ lemma ι_singularHomologyKunneth (p q : ℕ) (h : p + q = n) :
 
 /-- **The Künneth map under Eilenberg–Zilber**: following the Künneth map by the map induced by
 the Alexander–Whitney map gives the algebraic Künneth map of the singular chain complexes. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 lemma singularHomologyKunneth_comp_homologyMap_alexanderWhitney :
     singularHomologyKunneth X Y R S n ≫ homologyMap (alexanderWhitney X Y R S) n =
       homologyKunneth ((toSSet.obj X).chainComplex R) ((toSSet.obj Y).chainComplex S) n :=
