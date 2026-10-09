@@ -36,7 +36,7 @@ proof of Theorem 3.11). On a subgroup `S` of prime-power order, the long exact s
 
 The connecting map is onto, because `u` restricts to a generator of `H²(S, A)` and dies in
 `H²(S, A(u))` (`Rep.map_splittingModuleIncl_res_eq_zero`); its source `H¹(S, I_G)` is, by the
-augmentation dimension shift, `Ĥ⁰(S, k) = k ⧸ |S|k`
+augmentation dimension shift, `H-hat^0(S, k) = k ⧸ |S|k`
 (`TauCeti.TateCohomology.H0LinearEquivTrivial`), of the same finite order as its target, so it
 is a bijection. With `H¹(S, A) = 0` and `H²(S, I_G) = 0` this makes
 `H¹(S, A(u))` and `H²(S, A(u))` vanish, and Tate's cohomological triviality criterion
@@ -85,7 +85,7 @@ private theorem isZero_groupCohomology_res_splittingModule (S : Subgroup G) [Fin
   let X := (ShortComplex.mk (splittingModuleIncl A u) (splittingModuleProj A u)
     (splittingModuleIncl_comp_splittingModuleProj A u)).map (resFunctor S.subtype)
   let δ := groupCohomology.δ hX 1 2 rfl
-  -- `H¹(S, I_G)` is `Ĥ⁰(S, k) = k ⧸ |S|k`, by the augmentation dimension shift.
+  -- `H¹(S, I_G)` is `H-hat^0(S, k) = k ⧸ |S|k`, by the augmentation dimension shift.
   have hcardI : Nat.card (groupCohomology X.X₃ 1) =
       Nat.card (k ⧸ Ideal.span {(Nat.card S : k)}) := by
     refine (Nat.card_congr
