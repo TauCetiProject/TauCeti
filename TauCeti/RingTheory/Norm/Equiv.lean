@@ -15,7 +15,9 @@ import Mathlib.RingTheory.Norm.Basic
 
 An isomorphism of extensions preserves the norm subgroup of the ground field's units.
 This permits norm-index calculations in a model extension to be used for any isomorphic
-extension. The proof uses Mathlib's `Algebra.norm_eq_of_algEquiv`.
+extension. The proof uses Mathlib's `Algebra.norm_eq_of_algEquiv`. More generally, ring
+isomorphisms of the ground fields and of the extensions that intertwine the algebra maps identify
+the two norm groups (`normGroup_eq_comap_of_equiv_equiv`), by `Algebra.norm_eq_of_equiv_equiv`.
 The identity extension has the full norm group, as does every finite extension of an
 algebraically closed field, since its algebra map is an isomorphism.
 
@@ -46,6 +48,25 @@ theorem _root_.AlgEquiv.normGroup_eq {K L M : Type*} [Field K] [Field L] [Field 
     exact ⟨Units.map e.toMonoidHom x, (Algebra.norm_eq_of_algEquiv e _).trans hx⟩
   · rintro ⟨x, hx⟩
     exact ⟨Units.map e.symm.toMonoidHom x, (Algebra.norm_eq_of_algEquiv e.symm _).trans hx⟩
+
+/-- **Norm groups under compatible ring isomorphisms.** If ring isomorphisms `e₁ : K₁ ≃+* K₂` and
+`e₂ : L₁ ≃+* L₂` intertwine the algebra maps, then `a ∈ K₁ˣ` is a norm from `L₁` exactly when
+`e₁ a` is a norm from `L₂`. This transports a norm-group computation in a model extension, such
+as `ℂ/ℝ`, to an extension of a field that is only isomorphic to the model's ground field. -/
+theorem normGroup_eq_comap_of_equiv_equiv {K₁ L₁ K₂ L₂ : Type*} [Field K₁] [Field L₁]
+    [Field K₂] [Field L₂] [Algebra K₁ L₁] [Algebra K₂ L₂] [Module.Finite K₁ L₁]
+    [Module.Finite K₂ L₂] (e₁ : K₁ ≃+* K₂) (e₂ : L₁ ≃+* L₂)
+    (he : (algebraMap K₂ L₂).comp (e₁ : K₁ →+* K₂) = (e₂ : L₁ →+* L₂).comp (algebraMap K₁ L₁)) :
+    normGroup K₁ L₁ = (normGroup K₂ L₂).comap (Units.map (e₁ : K₁ →* K₂)) := by
+  ext a
+  rw [Subgroup.mem_comap, mem_normGroup_iff, mem_normGroup_iff]
+  constructor
+  · rintro ⟨x, hx⟩
+    refine ⟨Units.map (e₂ : L₁ →* L₂) x, ?_⟩
+    simpa [Algebra.norm_eq_of_equiv_equiv e₁ e₂ he] using congr(e₁ $hx)
+  · rintro ⟨y, hy⟩
+    refine ⟨Units.map (e₂.symm : L₂ →* L₁) y, ?_⟩
+    simp [Algebra.norm_eq_of_equiv_equiv e₁ e₂ he, hy]
 
 /-- Every unit is a norm in a finite extension of an algebraically closed field. -/
 @[simp]
