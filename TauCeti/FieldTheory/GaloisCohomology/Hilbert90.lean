@@ -181,8 +181,8 @@ vanishes, the units of `L` being written additively and carrying the discrete to
 `TauCeti.isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints`.
 
 The continuity of the action is automatic for the discrete topology
-(`TauCeti.stabilizer_isOpen_units`) and is an instance argument only because `H¹` is formed under
-it. -/
+(`Units.stabilizer_isOpen_of_isIntegral`) and is an instance argument only because `H¹` is formed
+under it. -/
 theorem subsingleton_H1_additive_units {K L : Type*} [Field K] [Field L] [Algebra K L]
     [IsGalois K L] [TopologicalSpace (Additive Lˣ)] [DiscreteTopology (Additive Lˣ)]
     [ContinuousSMul Gal(L/K) (Additive Lˣ)] :

@@ -428,6 +428,13 @@ def smallSingularChainHomotopyEquiv :
   homotopyInvHomId := (Homotopy.ofEq (smallSingularRetraction_comp_ι R U hU hcov)).trans
     (singularSmallApproxHomotopy R U).symm
 
+/-- The forward map of the small-chain homotopy equivalence is the inclusion of the chains
+subordinate to the cover. -/
+@[simp]
+lemma smallSingularChainHomotopyEquiv_hom :
+    (smallSingularChainHomotopyEquiv R U hU hcov).hom =
+      SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R := (rfl)
+
 /-- The isomorphism on homology induced by the inclusion of the chains subordinate to an open
 cover.  Since the inclusion is natural in the covered space, so is this isomorphism, whereas the
 homotopy inverse underlying it is not. -/

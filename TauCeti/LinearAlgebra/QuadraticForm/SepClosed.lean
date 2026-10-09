@@ -43,11 +43,11 @@ private noncomputable def isometryEquivSumSquaresUnits [NeZero (2 : K)] (w : ι 
       (weightedSumSquares K (1 : ι → K)) := by
   classical
   refine isometryEquivWeightedSumSquaresWeightedSumSquares
-    (fun i ↦ Units.mk0 (IsSepClosed.exists_eq_mul_self (w i : K)).choose ?_) ?_
-  · rw [← mul_self_eq_zero.ne, ← (IsSepClosed.exists_eq_mul_self (w i : K)).choose_spec]
+    (fun i ↦ Units.mk0 (IsSepClosed.isSquare (w i : K)).choose ?_) ?_
+  · rw [← mul_self_eq_zero.ne, ← (IsSepClosed.isSquare (w i : K)).choose_spec]
     exact (w i).ne_zero
   · intro i
-    simp [pow_two, ← (IsSepClosed.exists_eq_mul_self (w i : K)).choose_spec]
+    simp [pow_two, ← (IsSepClosed.isSquare (w i : K)).choose_spec]
 
 /-- A finite-dimensional nondegenerate quadratic form over a separably closed field of
 characteristic different from two is equivalent to the standard sum of squares. -/

@@ -260,6 +260,55 @@ theorem X_column_eq_turnRow_of_mem_initialPentagonRectangleOppositeSideOrder (x 
       ⟨((G.mem_initialPentagons _).1 hP).2,
         (((G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles _).1 hr).2⟩
 
+/-- An exact characterization of the counted horizontal rectangle--initial-side pentagon terms.
+Thinness implies emptiness of both domains, leaving the test that the `X`-marking in the turn row
+lies in the second commuted column. -/
+theorem mem_rectangleInitialPentagonOppositeSideOrder_iff_markings (x : GridState n)
+    (D : GridRectangleInitialPentagonDecomposition C.column C.turnRow x x) :
+    D ∈ G.rectangleInitialPentagonOppositeSideOrder C x ↔
+      D.first.left = D.second.right ∧ D.first.top = finRotate n D.first.bottom ∧
+        G.X (finRotate n C.column) = C.turnRow := by
+  refine ⟨fun hD => ⟨((G.mem_rectangleInitialPentagonOppositeSideOrder C x D).1 hD).2.1,
+    G.rectangle_top_eq_finRotate_bottom_of_mem_rectangleInitialPentagonOppositeSideOrder C x D hD,
+    G.X_next_eq_turnRow_of_mem_rectangleInitialPentagonOppositeSideOrder C x D hD⟩, ?_⟩
+  rintro ⟨hleft, hthin, hX⟩
+  have hright := D.second.right_eq_left_of_left_eq_right D.first hleft
+  have hempty := (D.first.isEmpty_and_isEmpty_iff_top_eq_finRotate_of_left_eq_right D.second
+    hright.symm).2 hthin
+  have havoid := (D.disjoint_XSet_iff_X_next_eq_turnRow_of_opposite_side_order G
+    (by rwa [GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween]) hthin).2 hX
+  exact (G.mem_rectangleInitialPentagonOppositeSideOrder C x D).2
+    ⟨(G.mem_rectangleInitialPentagonDecompositions C D).2
+      ⟨(G.mem_unblockedRectangles _).2 ⟨hempty.1, havoid.1⟩,
+        (G.mem_initialPentagons _).2 ⟨by
+          simpa only [GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween]
+            using hempty.2, havoid.2⟩⟩, hleft, hright⟩
+
+/-- An exact characterization of the counted horizontal initial-side pentagon--rectangle terms,
+with the rectangle's `X`-markings read in the commuted diagram. -/
+theorem mem_initialPentagonRectangleOppositeSideOrder_iff_markings (x : GridState n)
+    (D : GridInitialPentagonRectangleDecomposition C.column C.turnRow x x) :
+    D ∈ G.initialPentagonRectangleOppositeSideOrder C x ↔
+      D.second.left = D.first.right ∧ D.first.top = finRotate n D.first.bottom ∧
+        G.X C.column = C.turnRow := by
+  refine ⟨fun hD => ⟨((G.mem_initialPentagonRectangleOppositeSideOrder C x D).1 hD).2.1,
+    G.pentagon_top_eq_finRotate_bottom_of_mem_initialPentagonRectangleOppositeSideOrder C x D hD,
+    G.X_column_eq_turnRow_of_mem_initialPentagonRectangleOppositeSideOrder C x D hD⟩, ?_⟩
+  rintro ⟨hleft, hthin, hX⟩
+  have hright := D.first.right_eq_left_of_left_eq_right D.second hleft
+  have hempty := (D.first.isEmpty_and_isEmpty_iff_top_eq_finRotate_of_left_eq_right D.second
+    hleft).2 hthin
+  have havoid := (D.disjoint_XSet_swapColumns_iff_X_column_eq_turnRow_of_opposite_side_order G
+    (by rwa [GridInitialPentagonRectangleDecomposition.pentagon_toGridRectangleBetween])
+    (by rwa [GridInitialPentagonRectangleDecomposition.pentagon_toGridRectangleBetween])).2 hX
+  exact (G.mem_initialPentagonRectangleOppositeSideOrder C x D).2
+    ⟨(G.mem_initialPentagonRectangleDecompositions C D).2
+      ⟨(G.mem_initialPentagons _).2 ⟨by
+          simpa only [GridInitialPentagonRectangleDecomposition.pentagon_toGridRectangleBetween]
+            using hempty.1, havoid.1⟩,
+        ((G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles _).2
+          ⟨hempty.2, havoid.2⟩⟩, hleft, hright⟩
+
 /-- The horizontal rectangle--initial-side pentagon family is empty unless the second commuted
 column's `X`-marking lies in the turn row. -/
 @[simp]

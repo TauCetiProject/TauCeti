@@ -8,12 +8,10 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Cyclic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
-public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.Level
 public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Minimum
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import TauCeti.LinearAlgebra.IntegralLattice.StandardCoordinates
-public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
 import Mathlib.Algebra.BigOperators.Field
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Dynkin
 
@@ -50,8 +48,8 @@ of `ϖ₁` has additive order exactly `3` because the first simple-root coordina
 and the discriminant group has that same order, so `ϖ₁` generates; the same argument with the
 second coordinate `3/2` of `ϖ₇` and the order `2` settles type `E₇`.
 
-The half-norm convention is the one fixed by the integral-lattices roadmap: `q_L(x) = ⟨x,x⟩ / 2`
-in `ℚ/ℤ`.  Nikulin's full-norm values for these rows are `4/3` and `3/2`.
+The half-norm convention is `q_L(x) = ⟨x,x⟩ / 2` in `ℚ/ℤ`.  Nikulin's full-norm values for these
+rows are `4/3` and `3/2`.
 
 Both cyclic discriminant forms are presented through
 `TauCeti.FiniteQuadraticModule.cyclic`, which builds the form on `ℤ/m` whose generator carries a
@@ -92,8 +90,6 @@ the branch node of the diagram is `α₄`, and `α₂` is the short arm.
 * J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, Chapter 4, §8.
 * W. Ebeling, *Lattices and Codes*, Chapters 1 and 3.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, plates V, VI, VII.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 5, the `E₆`, `E₇` and `E₈` rows of the ADE
-  table.
 -/
 
 public section
@@ -689,6 +685,12 @@ noncomputable def typeE₈SimpleRoot (i : Fin 8) : Fin 8 → ℚ := Pi.basisFun 
 theorem typeE₈SimpleRoot_apply (i j : Fin 8) :
     typeE₈SimpleRoot i j = if j = i then 1 else 0 := by
   simp [typeE₈SimpleRoot, Pi.basisFun_apply, Pi.single_apply]
+
+/-- The `i`-th simple root of type `E₈` is the `i`-th standard basis vector. -/
+-- Not a `simp` lemma: the definition is sealed so that `simp` keeps `typeE₈SimpleRoot i` intact.
+theorem typeE₈SimpleRoot_eq_basisFun (i : Fin 8) :
+    typeE₈SimpleRoot i = Pi.basisFun ℚ (Fin 8) i := by
+  rw [typeE₈SimpleRoot]
 
 /-- **The Gram matrix of the type `E₈` root lattice in its simple-root basis is the Cartan matrix
 `CartanMatrix.E 8`.** -/

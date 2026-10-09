@@ -175,8 +175,10 @@ theorem Sobolev1JetLp.gradient_apply_ae (J : Sobolev1JetLp mu Omega p) :
     (WithLp.sndL 2 ℝ ℝ E).compLp J x = (WithLp.sndL 2 ℝ ℝ E) (J x)
   exact (WithLp.sndL 2 ℝ ℝ E).coeFn_compLp J
 
+-- `Sobolev1JetLp` abbreviates an `Lp` space, and Mathlib's `MeasureTheory.Lp.ext` is `@[ext high]`;
+-- the priority puts this lemma before it.
 /-- Two Sobolev jets are equal when their value and gradient components are equal. -/
-@[ext]
+@[ext high + 1]
 theorem Sobolev1JetLp.ext {J K : Sobolev1JetLp mu Omega p}
     (hvalue : Sobolev1JetLp.value J = Sobolev1JetLp.value K)
     (hgradient : Sobolev1JetLp.gradient J = Sobolev1JetLp.gradient K) : J = K := by
@@ -449,6 +451,15 @@ gradient. -/
 theorem W1p.norm_le_norm_value_add_norm_gradient (u : W1p mu Omega p) :
     ‖u‖ ≤ ‖W1p.value u‖ + ‖W1p.gradient u‖ :=
   Sobolev1JetLp.norm_le_norm_value_add_norm_gradient u.1
+
+/-- Almost everywhere on `Ω`, the squared norm of the jet of a Sobolev function is the sum of the
+squared norms of its value and its weak gradient. -/
+theorem W1p.norm_apply_sq_ae (u : W1p mu Omega p) :
+    ∀ᵐ x ∂mu.restrict Omega,
+      ‖(u : Sobolev1JetLp mu Omega p) x‖ ^ 2 = ‖W1p.value u x‖ ^ 2 + ‖W1p.gradient u x‖ ^ 2 := by
+  filter_upwards [W1p.value_apply_ae u, W1p.gradient_apply_ae u] with x hv hg
+  rw [hv, hg]
+  exact WithLp.prod_norm_sq_eq_of_L2 _
 
 /-- At exponent two, the norm on `W1p` is the Hilbert graph norm. -/
 theorem W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq (u : W1p mu Omega 2) :

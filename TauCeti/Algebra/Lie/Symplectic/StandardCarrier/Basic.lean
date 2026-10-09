@@ -49,7 +49,7 @@ of the adjoint carrier. This makes the rank-`n + 1` split torus a closed subgrou
 
 This file does not prove that the carrier is reductive or that its weight torus is maximal. Two
 related statements are proved in sibling files: the comparison with the symplectic group scheme
-over a field is `TauCeti.SpStd.baseChangeSymplecticIso`, and generation by the numbered root
+over a commutative ring is `TauCeti.SpStd.baseChangeSymplecticIso`. Generation by the numbered root
 subgroups is `TauCeti.SpStd.groupScheme_eq_kostantGeneratedGroupScheme`. No finite or simple group
 is asserted here.
 
@@ -104,13 +104,10 @@ public section
 open Matrix
 open scoped TensorProduct
 
-universe v
-
 namespace TauCeti.SpStd
 
 open LieAlgebra.Symplectic
 
-attribute [local instance] TauCeti.moduleNNRat
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable (n : ℕ)
@@ -473,35 +470,6 @@ theorem lie_cartanGenerator_rootGenerator (k : Fin (n + 1) ⊕ Fin (n + 1))
 
 /-! ## The `sl₂` triples of the numbered generators -/
 
-private theorem positiveRootMatrix_ne_zero (i : Fin (n + 1)) : positiveRootMatrix n i ≠ 0 := by
-  by_cases hi : i = Fin.last n
-  · subst hi
-    rw [positiveRootMatrix_last]
-    intro hzero
-    have h := congrFun (congrFun hzero (.inl (Fin.last n))) (.inr (Fin.last n))
-    simp at h
-  · rw [positiveRootMatrix_of_ne_last n i hi]
-    intro hzero
-    have h := congrFun (congrFun hzero (.inl i)) (.inl (Order.succ i))
-    simp at h
-
-private theorem negativeRootMatrix_ne_zero (i : Fin (n + 1)) : negativeRootMatrix n i ≠ 0 := by
-  rw [negativeRootMatrix_eq_transpose, Ne, transpose_eq_zero]
-  exact positiveRootMatrix_ne_zero n i
-
-private theorem rootGenerator_ne_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
-    rootGenerator n k ≠ 0 := by
-  intro hzero
-  cases k with
-  | inl i =>
-      apply positiveRootMatrix_ne_zero n i
-      rw [← val_rootGenerator_inl n i, hzero]
-      rfl
-  | inr i =>
-      apply negativeRootMatrix_ne_zero n i
-      rw [← val_rootGenerator_inr n i, hzero]
-      rfl
-
 private theorem lie_rootGenerator_inl_inr_of_ne (i j : Fin (n + 1)) (hij : i ≠ j) :
     ⁅rootGenerator n (.inl i), rootGenerator n (.inr j)⁆ = 0 := by
   apply Subtype.ext
@@ -515,11 +483,10 @@ private theorem lie_cartanGenerator_rootGenerator_inl_self (i : Fin (n + 1)) :
 
 private theorem cartanGenerator_ne_zero (i : Fin (n + 1)) : cartanGenerator n i ≠ 0 := by
   intro hzero
-  have h2 : (2 : ℚ) • rootGenerator n (.inl i) = 0 := by
-    rw [← lie_cartanGenerator_rootGenerator_inl_self, hzero, zero_lie]
-  rcases smul_eq_zero.1 h2 with h | h
-  · norm_num at h
-  · exact rootGenerator_ne_zero n (.inl i) h
+  have h := congrArg (fun x : sp (Fin (n + 1)) ℚ =>
+    (x : Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) ℚ)
+      (.inl i) (.inl i)) hzero
+  simp at h
 
 /-- The numbered raising and lowering generators at a common index, together with the Cartan
 generator at that index, form an `sl₂` triple. -/

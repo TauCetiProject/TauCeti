@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
+import Mathlib.RingTheory.RingHom.Injective
 
 /-!
 # Schematic density and separated targets
@@ -19,6 +20,14 @@ applies to flat models with a possibly nonreduced generic fibre.
 The equalizer argument extends Mathlib's
 `AlgebraicGeometry.ext_of_isDominant_of_isSeparated`, by Christian Merten and Andrew Yang:
 schematic density makes the closed equalizer the entire source as a scheme, not just as a space.
+
+The file also gives criteria for scheme-theoretic dominance. A morphism to an affine scheme is
+scheme-theoretically dominant exactly when it is injective on global sections
+(`AlgebraicGeometry.isSchemeTheoreticallyDominant_iff_appTop_injective`); in particular, `Spec` of
+a ring homomorphism is scheme-theoretically dominant exactly when the homomorphism is injective
+(`AlgebraicGeometry.isSchemeTheoreticallyDominant_SpecMap_iff`). A morphism is scheme-theoretically
+dominant if its base change to each member of an open cover of the target is
+(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_openCover`).
 -/
 
 public section
@@ -66,3 +75,45 @@ theorem ext_of_isSchemeTheoreticallyDominant
     congrArg Over.Hom.left (equalizer.condition f' g')
 
 end TauCeti
+
+namespace AlgebraicGeometry
+
+universe u
+
+variable {X Y : Scheme.{u}}
+
+/-- A morphism `f : X ⟶ Y` to an affine scheme is scheme-theoretically dominant exactly when it
+is injective on global sections. -/
+theorem isSchemeTheoreticallyDominant_iff_appTop_injective (f : X ⟶ Y) [IsAffine Y] :
+    IsSchemeTheoreticallyDominant f ↔ Function.Injective f.appTop := by
+  -- an ideal sheaf on an affine scheme is trivial exactly when its ideal of global sections is
+  rw [isSchemeTheoreticallyDominant_iff, Scheme.ker_of_isAffine,
+    ← Scheme.IdealSheafData.equivOfIsAffine_symm_apply, map_eq_bot_iff,
+    RingHom.injective_iff_ker_eq_bot]
+
+/-- `Spec` of a ring homomorphism `φ` is scheme-theoretically dominant exactly when `φ` is
+injective. -/
+@[simp]
+theorem isSchemeTheoreticallyDominant_SpecMap_iff {R S : CommRingCat.{u}} (φ : R ⟶ S) :
+    IsSchemeTheoreticallyDominant (Spec.map φ) ↔ Function.Injective φ.hom := by
+  -- on global sections, `Spec.map φ` is `φ`, up to the isomorphisms `Scheme.ΓSpecIso`
+  rw [isSchemeTheoreticallyDominant_iff_appTop_injective,
+    RingHom.injective_respectsIso.arrow_mk_iso_iff (arrowIsoΓSpecOfIsAffine φ)]
+
+/-- A morphism `f : X ⟶ Y` is scheme-theoretically dominant if its base change to each member of
+an open cover of `Y` is scheme-theoretically dominant. -/
+theorem IsSchemeTheoreticallyDominant.of_openCover {f : X ⟶ Y} (𝒰 : Y.OpenCover)
+    (h : ∀ i, IsSchemeTheoreticallyDominant (𝒰.pullbackHom f i)) :
+    IsSchemeTheoreticallyDominant f := by
+  -- the kernels of the members of an open cover of `Y` have trivial intersection, so it suffices
+  -- that each of them contains the kernel of `f`
+  rw [isSchemeTheoreticallyDominant_iff, eq_bot_iff, ← Scheme.Hom.ker_eq_bot_of_isIso (𝟙 Y),
+    ← Scheme.Hom.iInf_ker_openCover_map_comp (𝟙 Y) 𝒰]
+  refine le_iInf fun i ↦ ?_
+  -- the base change of `f` to a member of the cover has trivial kernel, so following it by the
+  -- member gives a morphism with the kernel of the member, and this morphism factors through `f`
+  rw [Category.comp_id, ← Scheme.IdealSheafData.map_bot (𝒰.f i), ← (h i).ker_eq_bot,
+    Scheme.IdealSheafData.map_ker, 𝒰.pullbackHom_map]
+  exact Scheme.Hom.le_ker_comp _ _
+
+end AlgebraicGeometry

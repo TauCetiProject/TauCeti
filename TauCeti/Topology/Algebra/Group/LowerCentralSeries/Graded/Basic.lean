@@ -154,37 +154,22 @@ theorem commutatorElement_jacobi_mem_pLowerCentralSeries {i j k : ℕ} {a b c : 
     (ha : a ∈ pLowerCentralSeries p G i) (hb : b ∈ pLowerCentralSeries p G j)
     (hc : c ∈ pLowerCentralSeries p G k) :
     ⁅⁅a, b⁆, c⁆ * ⁅⁅b, c⁆, a⁆ * ⁅⁅c, a⁆, b⁆ ∈ pLowerCentralSeries p G (i + j + k + 2 + 1) := by
-  -- Work in `Q = G ⧸ λ_{m+1}` with `m = i + j + k + 2`.
-  set N := pLowerCentralSeries p G (i + j + k + 2 + 1) with hN
-  -- `⁅u, v * w⁆ ≡ ⁅u, w⁆` when `⁅u, v⁆ ∈ λ_{m+1}` and `⁅u, w⁆ ∈ λ_m`.
-  have key : ∀ {u v w : G}, ⁅u, v⁆ ∈ N → ⁅u, w⁆ ∈ pLowerCentralSeries p G (i + j + k + 2) →
-      ((⁅u, v * w⁆ : G) : G ⧸ N) = ((⁅u, w⁆ : G) : G ⧸ N) := by
-    intro u v w huv huw
-    have h : ⁅u, v * w⁆ = ⁅u, v⁆ * (v * ⁅u, w⁆ * v⁻¹) := by
-      rw [commutatorElement_mul_right_eq_mul_conj]; group
-    rw [h, QuotientGroup.mk_mul, (QuotientGroup.eq_one_iff _).mpr huv, one_mul,
-      mk_conj_of_mem_pLowerCentralSeries huw]
-  have hab := commutator_mem_pLowerCentralSeries ha hb
-  have hbc := commutator_mem_pLowerCentralSeries hb hc
-  have hca := commutator_mem_pLowerCentralSeries hc ha
-  have e₁ : ((⁅⁅a, b⁆, b * c * b⁻¹⁆ : G) : G ⧸ N) = ((⁅⁅a, b⁆, c⁆ : G) : G ⧸ N) := by
-    have h : b * c * b⁻¹ = ⁅b, c⁆ * c := by group
-    rw [h]
-    exact key (pLowerCentralSeries_antitone (by omega) (commutator_mem_pLowerCentralSeries hab hbc))
-      (pLowerCentralSeries_antitone (by omega) (commutator_mem_pLowerCentralSeries hab hc))
-  have e₂ : ((⁅⁅b, c⁆, c * a * c⁻¹⁆ : G) : G ⧸ N) = ((⁅⁅b, c⁆, a⁆ : G) : G ⧸ N) := by
-    have h : c * a * c⁻¹ = ⁅c, a⁆ * a := by group
-    rw [h]
-    exact key (pLowerCentralSeries_antitone (by omega) (commutator_mem_pLowerCentralSeries hbc hca))
-      (pLowerCentralSeries_antitone (by omega) (commutator_mem_pLowerCentralSeries hbc ha))
-  have e₃ : ((⁅⁅c, a⁆, a * b * a⁻¹⁆ : G) : G ⧸ N) = ((⁅⁅c, a⁆, b⁆ : G) : G ⧸ N) := by
-    have h : a * b * a⁻¹ = ⁅a, b⁆ * b := by group
-    rw [h]
-    exact key (pLowerCentralSeries_antitone (by omega) (commutator_mem_pLowerCentralSeries hca hab))
-      (pLowerCentralSeries_antitone (by omega) (commutator_mem_pLowerCentralSeries hca hb))
-  rw [← QuotientGroup.eq_one_iff (N := N), QuotientGroup.mk_mul, QuotientGroup.mk_mul, ← e₁, ← e₂,
-    ← e₃, ← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul,
-    commutatorElement_commutatorElement_conj_mul, QuotientGroup.mk_one]
+  -- `⁅⁅u, v⁆, v * w * v⁻¹⁆ ≡ ⁅⁅u, v⁆, w⁆` modulo `λ_{i+j+k+3}`, for each cyclic permutation.
+  have e {i' j' k' : ℕ} {u v w : G} (hs : i' + j' + k' = i + j + k)
+      (hu : u ∈ pLowerCentralSeries p G i') (hv : v ∈ pLowerCentralSeries p G j')
+      (hw : w ∈ pLowerCentralSeries p G k') :
+      ((⁅⁅u, v⁆, v * w * v⁻¹⁆ : G) : G ⧸ pLowerCentralSeries p G (i + j + k + 2 + 1)) =
+        ⁅⁅u, v⁆, w⁆ := by
+    have huv := commutator_mem_pLowerCentralSeries hu hv
+    rw [show v * w * v⁻¹ = ⁅v, w⁆ * w by group, mk_eq_mk_mul_mk_of_le (i + j + k + 2 + 1)
+      (by omega) (mk_commutatorElement_mul_right huv hw _),
+      mk_eq_one_of_mem_pLowerCentralSeries_of_le (i + j + k + 2 + 1)
+        (commutator_mem_pLowerCentralSeries huv (commutator_mem_pLowerCentralSeries hv hw))
+        (by omega), one_mul]
+  rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_mul, QuotientGroup.mk_mul,
+    ← e (by omega) ha hb hc, ← e (by omega) hb hc ha, ← e (by omega) hc ha hb,
+    ← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul, commutatorElement_commutatorElement_conj_mul,
+    QuotientGroup.mk_one]
 
 /-! ### The graded pieces -/
 
@@ -1063,11 +1048,9 @@ variable (p G) in
 /-- **The iterated `p`-power of the bracket of two degree-zero classes**: `π^m [ξ_g, ξ_h]`, the
 class in `gr_{m+1}(G)` of `⁅g, h⁆ ^ (p ^ m)`. For `m = 0` it is the bracket of the classes of `g`
 and `h` (`TauCeti.gradedPowIterBracket_zero`), and `π` raises `m` by one
-(`TauCeti.gradedPow_gradedPowIterBracket`). At `p = 2` these classes are not brackets of iterated
-`p`-powers: `π [ξ_g, ξ_h]` differs from `[π ξ_g, ξ_h]` by the correction `[[ξ_g, ξ_h], ξ_g]`,
-the bracket in `gr_2(G)` of the degree-one class `[ξ_g, ξ_h]` with `ξ_g`
-(`TauCeti.gradedPow_gradedBracket_zero_zero`), which is why they occur as spanning vectors of
-their own in the span statements of the dyadic classification. -/
+(`TauCeti.gradedPow_gradedPowIterBracket`). At `p = 2`, `π [ξ_g, ξ_h]` differs from
+`[π ξ_g, ξ_h]` by the correction `[[ξ_g, ξ_h], ξ_g]`, the bracket in `gr_2(G)` of the degree-one
+class `[ξ_g, ξ_h]` with `ξ_g` (`TauCeti.gradedPow_gradedBracket_zero_zero`). -/
 def gradedPowIterBracket (m : ℕ) (g h : G) : gradedPiece p G (m + 1) :=
   gradedMk p G (m + 1) ⟨⁅g, h⁆ ^ p ^ m, commutatorElement_pow_pow_mem_pLowerCentralSeries p g h m⟩
 

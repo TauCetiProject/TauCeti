@@ -64,6 +64,7 @@ finite-dimensional representations.
 
 * `Representation.averageMap_eq_invOf_card_smul_norm`: the averaging projection is the group sum
   `Representation.norm` scaled by the inverse of the group order.
+* `Representation.averageMap_comp_ρ`: the averaging projection does not see the action.
 * `Representation.range_norm_eq_invariants`: the group sum `Representation.norm ρ` has the
   invariants as its range.
 * `Representation.range_norm_eq_invariants_of_projective`: the same conclusion without
@@ -77,6 +78,8 @@ finite-dimensional representations.
   invariants.
 * `Rep.invariantsFunctor_map_surjective_of_surjective_of_projective`: taking invariants preserves
   a surjective morphism of representations whose target is projective over the group algebra.
+* `Rep.trivialHomEquivInvariants`: the intertwiners out of the trivial line are the invariant
+  vectors.
 * `Rep.FiniteCyclicGroup.invariants_eq_ker_apply_sub`: for a cyclic group, the invariants are the
   kernel of the action of a generator minus the identity.
 * `Representation.IsIrreducible.invariants_eq_bot`: a nontrivial irreducible representation has no
@@ -107,6 +110,12 @@ theorem averageMap_eq_invOf_card_smul_norm :
     ρ.averageMap = ⅟(Fintype.card G : k) • ρ.norm := by
   simp only [averageMap, GroupAlgebra.average, map_smul, map_sum, MonoidAlgebra.of_apply,
     asAlgebraHom_single_one, norm]
+
+/-- **Averaging does not see the action**: `avg ∘ ρ g = avg`, as `average k G * g = average k G`
+in the group algebra (`GroupAlgebra.mul_average_right`). -/
+theorem averageMap_comp_ρ (g : G) : ρ.averageMap ∘ₗ ρ g = ρ.averageMap := by
+  rw [averageMap, ← asAlgebraHom_single_one, ← Module.End.mul_eq_comp, ← map_mul,
+    GroupAlgebra.mul_average_right]
 
 /-- **The group sum has the invariants as its range.** When `#G` is invertible in `k`, the operator
 `Representation.norm ρ = ∑ g, ρ g` maps onto the invariants of `ρ`: it agrees with the averaging
@@ -302,6 +311,29 @@ theorem invariantsFunctor_map_surjective_of_surjective_of_projective {A B : Rep 
   have : Epi f := (epi_iff_surjective f).2 hf
   have : IsSplitEpi f := ⟨⟨Projective.factorThru (𝟙 B) f, Projective.factorThru_comp _ _⟩⟩
   exact (ModuleCat.epi_iff_surjective _).1 inferInstance
+
+/-- **Intertwiners out of the trivial line are the invariant vectors.** A morphism
+`Rep.trivial k G k ⟶ A` is determined by the image of `1`, which is invariant, and an invariant
+vector `x` is the image of `1` under `r ↦ r • x`. -/
+noncomputable def trivialHomEquivInvariants (A : Rep k G) :
+    (Rep.trivial k G k ⟶ A) ≃ₗ[k] A.ρ.invariants where
+  toFun f := ⟨f.hom 1, fun g ↦ by simpa using (hom_comm_apply f g 1).symm⟩
+  invFun x := ConcreteCategory.ofHom
+    ⟨LinearMap.toSpanSingleton k A x, fun g ↦ LinearMap.ext fun r ↦ by simp [x.2 g]⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv f := hom_ext <| Representation.IntertwiningMap.ext <| LinearMap.ext_ring <| one_smul k _
+  right_inv x := Subtype.ext (one_smul k (x : A))
+
+@[simp]
+theorem coe_trivialHomEquivInvariants_apply (A : Rep k G) (f : Rep.trivial k G k ⟶ A) :
+    (trivialHomEquivInvariants A f : A) = f.hom 1 :=
+  (rfl)
+
+@[simp]
+theorem trivialHomEquivInvariants_symm_apply_hom (A : Rep k G) (x : A.ρ.invariants) (r : k) :
+    ((trivialHomEquivInvariants A).symm x).hom r = r • (x : A) :=
+  (rfl)
 
 end Rep
 

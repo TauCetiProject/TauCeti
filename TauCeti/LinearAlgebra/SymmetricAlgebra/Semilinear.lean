@@ -81,22 +81,22 @@ theorem mapₛₗ_smul (f : M →ₛₗ[φ] N) (r : R) (x : SymmetricAlgebra R M
 
 /-- For a linear map, the induced ring homomorphism underlies `SymmetricAlgebra.map`. -/
 theorem mapₛₗ_eq_map {N' : Type*} [AddCommMonoid N'] [Module R N'] (f : M →ₗ[R] N') :
-    mapₛₗ f = (map R f : SymmetricAlgebra R M →+* SymmetricAlgebra R N') :=
-  ringHom_ext (fun r ↦ by simp) (fun m ↦ by simp)
+    mapₛₗ f = (map R f : SymmetricAlgebra R M →+* SymmetricAlgebra R N') := by
+  ext x <;> simp
 
 /-- The map induced by a semilinear map which is the identity on elements, over a ring
 homomorphism which is the identity, is the identity. -/
 theorem mapₛₗ_eq_id {φ : R →+* R} (hφ : ∀ r, φ r = r) {f : M →ₛₗ[φ] M} (hf : ∀ m, f m = m) :
-    mapₛₗ f = RingHom.id _ :=
-  ringHom_ext (fun r ↦ by simp [hφ]) (fun m ↦ by simp [hf])
+    mapₛₗ f = RingHom.id _ := by
+  ext x <;> simp [hφ, hf]
 
 /-- Composition of semilinear maps becomes composition of the induced ring homomorphisms. The
 composites are related by pointwise equations, so that this applies to composites which only
 agree propositionally. -/
 theorem mapₛₗ_comp_mapₛₗ (f : M →ₛₗ[φ] N) (g : N →ₛₗ[ψ] P) (h : M →ₛₗ[χ] P)
     (hχ : ∀ r, ψ (φ r) = χ r) (hh : ∀ m, g (f m) = h m) :
-    (mapₛₗ g).comp (mapₛₗ f) = mapₛₗ h :=
-  ringHom_ext (fun r ↦ by simp [hχ]) (fun m ↦ by simp [hh])
+    (mapₛₗ g).comp (mapₛₗ f) = mapₛₗ h := by
+  ext x <;> simp [hχ, hh]
 
 end SymmetricAlgebra
 

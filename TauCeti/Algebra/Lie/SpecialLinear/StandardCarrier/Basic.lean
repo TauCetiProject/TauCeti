@@ -625,7 +625,7 @@ theorem coe_weightTorusPoints (A : Type v) [CommRing A] (s : Fin r → Aˣ) :
 
 /-- A matrix is a point of the type `A_r` carrier exactly when the associated convolution point
 kills its toral defining Hopf ideal. -/
-@[simp]
+-- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.
 theorem mem_points_iff (A : Type v) [CommRing A]
     (g : Matrix.GeneralLinearGroup (Fin (r + 1)) A) :
     g ∈ points r A ↔

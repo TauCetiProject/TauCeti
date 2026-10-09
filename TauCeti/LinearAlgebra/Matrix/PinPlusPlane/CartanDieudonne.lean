@@ -115,6 +115,6 @@ theorem exists_isPinLift_of_forall_isSquare [NeZero (2 : F)]
 characteristic not two. The lift is unique up to sign (`TauCeti.IsPinLift.eq_or_eq_neg`). -/
 theorem exists_isPinLift [IsSepClosed F] [NeZero (2 : F)] {P : Matrix (Fin 2) (Fin 2) F}
     (hP : P ∈ orthogonalGroup (Fin 2) F) : ∃ x, IsPinLift x P :=
-  exists_isPinLift_of_forall_isSquare (fun _ _ => IsSepClosed.exists_eq_mul_self _) hP
+  exists_isPinLift_of_forall_isSquare (fun _ _ => IsSepClosed.isSquare _) hP
 
 end TauCeti
