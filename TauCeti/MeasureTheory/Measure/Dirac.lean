@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Dynamics.Ergodic.MeasurePreserving
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 
@@ -27,6 +28,8 @@ by positive measures.
 * `Measure.map_dirac_of_aemeasurable` — the Dirac pushforward formula for a map that is
   only a.e. measurable.
 * `Measure.dirac_eq_dirac_of_inseparable` — inseparable points have equal Borel Dirac measures.
+* `TauCeti.MeasureTheory.measurePreserving_const_dirac` — a constant map out of a probability
+  space onto a point `b` is measure preserving onto `Measure.dirac b`.
 * `MeasureTheory.Measure.eq_smul_dirac_of_forall_notMem` — a measure vanishing on measurable sets
   avoiding a point is a multiple of its Dirac measure.
 * `TauCeti.eq_smul_dirac_and_eq_smul_dirac_of_add_eq_dirac` — summands of a Dirac measure are
@@ -97,5 +100,21 @@ theorem eq_smul_dirac_and_eq_smul_dirac_of_add_eq_dirac {X : Type*} [MeasurableS
     exact add_eq_zero.mp h'
   exact ⟨μ.eq_smul_dirac_of_forall_notMem x (fun s hs hx => (hzero s hs hx).1),
     ν.eq_smul_dirac_of_forall_notMem x (fun s hs hx => (hzero s hs hx).2)⟩
+
+end TauCeti
+
+namespace TauCeti
+
+namespace MeasureTheory
+
+variable {X : Type*} {Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
+
+/-- A constant map out of a probability space onto a point `b` is measure preserving onto
+`Measure.dirac b`, with no hypothesis on either measurable space. -/
+theorem measurePreserving_const_dirac {μ : Measure X} [IsProbabilityMeasure μ] (b : Y) :
+    MeasurePreserving (fun _ : X => b) μ (Measure.dirac b) :=
+  ⟨measurable_const, by rw [Measure.map_const, measure_univ, one_smul]⟩
+
+end MeasureTheory
 
 end TauCeti
