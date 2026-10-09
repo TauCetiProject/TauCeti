@@ -22,18 +22,6 @@ Weierstrass gaps at a rational place `P` of `F` are decided by whether `P` ramif
 * if `P` is ramified, its gaps are the odd numbers `1, 3, …, 2g - 1`;
 * if `P` is unramified, its gaps are `1, 2, …, g`.
 
-For the ramified case, the restriction `P₀` of `P` to `k(x)` is a rational place with `P` the only
-place above it, so `Con(P₀) = 2P`. Since `k(x)` has genus zero, `ℓ(P₀) = 2`, and the functions in
-`L(P₀)` lie in `L(2P)`; so `2` is a pole number at `P`, hence so is every even number, and the `g`
-gaps are the `g` odd numbers below `2g`.
-
-For the unramified case, suppose `z` has pole divisor `mP` with `1 ≤ m ≤ g`. Then
-`[F : k(z)] = m ≤ g`, so `z ∈ k(x)` by Stichtenoth's Proposition 6.2.4(a)
-(`TauCeti.mem_adjoin_of_finrank_adjoin_le_genus`). The pole divisor of `z` is then the conorm of
-its pole divisor `D₀` in `k(x)`, which has degree `2 deg D₀`, while its coefficient at `P` is
-`e(P ∣ P₀) D₀(P₀) ≤ deg D₀`. Comparing degrees forces `e(P ∣ P₀) f(P ∣ P₀) = 2`, which an
-unramified rational place does not satisfy.
-
 For `g ≥ 2` the two gap sequences differ, so a rational place has `2` as a pole number exactly when
 it ramifies over `k(x)`: the rational places whose gap sequence is not `1, …, g` are exactly the
 ramified ones.
@@ -77,8 +65,7 @@ include hF hex hx hdeg
 
 omit hF hex in
 /-- If the conorm of an effective divisor `D₀` of `k(x)` is a positive multiple `m P` of a single
-place, then `e(P ∣ P₀) f(P ∣ P₀) = 2` for the restriction `P₀` of `P`: the conorm has degree
-`2 deg D₀`, while its coefficient `m` at `P` is `e(P ∣ P₀) D₀(P₀)` and `D₀(P₀) deg P₀ ≤ deg D₀`. -/
+place, then `e(P ∣ P₀) f(P ∣ P₀) = 2` for the restriction `P₀` of `P`. -/
 private theorem ramificationIdx_mul_relativeDegree_eq_two_of_conorm_eq {P : Place k F} {m : ℕ}
     (hm : 0 < m) {D₀ : Divisor k k⟮x⟯} (hD₀ : 0 ≤ D₀)
     (hcon : Divisor.conorm k F D₀ = (m : ℤ) • WeilDivisor.ofPoint P) :
@@ -130,16 +117,16 @@ private theorem ramificationIdx_mul_relativeDegree_eq_two_of_conorm_eq {P : Plac
   omega
 
 /-- **A positive pole number `m` with `m · deg P ≤ g` forces `e f = 2` over `k(x)`.** If
-`[F : k(x)] = 2`, then `e(P ∣ P₀) f(P ∣ P₀) = 2` for the restriction `P₀` of `P` to `k(x)`: the
-function with pole divisor `m P` has `[F : k(z)] = m deg P ≤ g`, so it lies in `k(x)`
-(Stichtenoth, Proposition 6.2.4(a)), and its pole divisor is a conorm from `k(x)`. -/
+`[F : k(x)] = 2`, then `e(P ∣ P₀) f(P ∣ P₀) = 2` for the restriction `P₀` of `P` to `k(x)`.
+This uses Stichtenoth, Proposition 6.2.4(a). -/
 theorem ramificationIdx_mul_relativeDegree_eq_two_of_isPoleNumber {P : Place k F} {m : ℕ}
     (hP : P.IsPoleNumber m) (hm : 0 < m) (hmg : m * P.degree ≤ genus k F) :
     ramificationIdx k⟮x⟯ P * relativeDegree k k⟮x⟯ P = 2 := by
   obtain ⟨z, hz0, hzP, hzQ⟩ := (P.isPoleNumber_iff m).mp hP
   obtain ⟨u, rfl⟩ : ∃ u : Fˣ, (u : F) = z := ⟨Units.mk0 z hz0, rfl⟩
   have hK : IsFunctionField k k⟮x⟯ := hx.isFunctionField_adjoin
-  -- The pole divisor of `u` is `m P`, of degree `[F : k(u)] = m deg P ≤ g`, so `u ∈ k(x)`.
+  -- The pole divisor of `u` is `m P`, of degree `[F : k(u)] = m deg P ≤ g`, so `u ∈ k(x)` by
+  -- Stichtenoth, Proposition 6.2.4(a) (`mem_adjoin_of_finrank_adjoin_le_genus`).
   have hpoles : Divisor.poles hF u = (m : ℤ) • WeilDivisor.ofPoint P := by
     refine WeilDivisor.ext fun Q ↦ ?_
     rw [Divisor.coeff_poles, WeilDivisor.coeff_zsmul]
@@ -196,15 +183,14 @@ private theorem conorm_ofPoint_restrict_of_one_lt_ramificationIdx {P : Place k F
     norm_num
   exact sub_eq_zero.mp ((Divisor.degree_eq_zero_iff hF hE).mp hEdeg)
 
-/-- **`2` is a pole number at a rational place ramified over `k(x)`.** The functions of
-`L(P₀)` for the rational restriction `P₀` lie in `L(2P)`, and `ℓ(P₀) = 2` because `k(x)` has genus
-zero. -/
+/-- **`2` is a pole number at a rational place ramified over `k(x)`.** -/
 theorem isPoleNumber_two_of_one_lt_ramificationIdx {P : Place k F} (hP : P.degree = 1)
     (hram : 1 < ramificationIdx k⟮x⟯ P) : P.IsPoleNumber 2 := by
   have hK : IsFunctionField k k⟮x⟯ := hx.isFunctionField_adjoin
   obtain ⟨hP₀, hcon⟩ :=
     conorm_ofPoint_restrict_of_one_lt_ramificationIdx hF hx hdeg hP hram
   set P₀ := P.restrict k k⟮x⟯
+  -- The restriction `P₀` is rational with `Con(P₀) = 2P`, so `L(P₀)` lies in `L(2P)`, and
   -- `ℓ(P₀) ≥ 2` by Riemann's theorem on `k(x)`, of genus zero.
   have hdim₀ : 2 ≤ Divisor.dim (WeilDivisor.ofPoint P₀) := by
     have h := Divisor.degree_add_one_sub_genus_le_dim hK (WeilDivisor.ofPoint P₀)
@@ -233,11 +219,11 @@ theorem isPoleNumber_two_of_one_lt_ramificationIdx {P : Place k F} (hP : P.degre
       omega)
     exact h1.add h1
 
-/-- **The Weierstrass gaps at a ramified rational place are `1, 3, …, 2g - 1`.** Every even
-number is a pole number there, and the gap theorem leaves exactly `g` gaps below `2g`. -/
+/-- **The Weierstrass gaps at a ramified rational place are `1, 3, …, 2g - 1`.** -/
 theorem weierstrassGaps_eq_image_range_of_one_lt_ramificationIdx {P : Place k F}
     (hP : P.degree = 1) (hram : 1 < ramificationIdx k⟮x⟯ P) :
     P.weierstrassGaps = (Finset.range (genus k F)).image fun i ↦ 2 * i + 1 := by
+  -- Every even number is a pole number, and the gap theorem leaves exactly `g` gaps below `2g`.
   have h2 := isPoleNumber_two_of_one_lt_ramificationIdx hF hex hx hdeg hP hram
   have heven : ∀ j : ℕ, P.IsPoleNumber (2 * j) := by
     intro j
@@ -254,12 +240,12 @@ theorem weierstrassGaps_eq_image_range_of_one_lt_ramificationIdx {P : Place k F}
   · rw [card_weierstrassGaps hF hex hP, Finset.card_image_of_injective _
       (fun a b h ↦ by simpa using h), Finset.card_range]
 
-/-- **No number up to the genus is a pole number at an unramified rational place.** A pole
-number `m` with `1 ≤ m ≤ g` would force `e(P ∣ P₀) f(P ∣ P₀) = 2`, while an unramified rational
-place has `e = f = 1`. -/
+/-- **No number up to the genus is a pole number at an unramified rational place.** -/
 theorem isGap_of_ramificationIdx_eq_one {P : Place k F} (hP : P.degree = 1)
     (hram : ramificationIdx k⟮x⟯ P = 1) {m : ℕ} (hm : 0 < m) (hmg : m ≤ genus k F) :
     P.IsGap m := by
+  -- A pole number `m` with `1 ≤ m ≤ g` would force `e(P ∣ P₀) f(P ∣ P₀) = 2`, while an
+  -- unramified rational place has `e = f = 1`.
   rw [isGap_iff_not_isPoleNumber]
   intro hpole
   have h := ramificationIdx_mul_relativeDegree_eq_two_of_isPoleNumber hF hex hx hdeg hpole hm
