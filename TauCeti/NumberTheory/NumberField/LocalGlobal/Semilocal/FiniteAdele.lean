@@ -278,6 +278,7 @@ def finiteIdeleOfSemilocalUnits (y : ∀ v : HeightOneSpectrum (𝒪 K), (v.adic
 
 /-- The component of `finiteIdeleOfSemilocalUnits y hy` at a place `w` of `L` is the component
 at `w` of the prescribed unit `y v`, for `v` the place of `K` below `w`. -/
+@[simp]
 theorem coe_finiteIdeleOfSemilocalUnits_apply
     (y : ∀ v : HeightOneSpectrum (𝒪 K), (v.adicCompletion K ⊗[K] L)ˣ)
     (hy : ∀ᶠ v in Filter.cofinite, y v ∈ semilocalIntegralUnits L v)
