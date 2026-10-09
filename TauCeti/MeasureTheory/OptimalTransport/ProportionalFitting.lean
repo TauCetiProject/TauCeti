@@ -47,8 +47,9 @@ exactly. Nothing beyond the measurable structure of `X` and `Y` is used.
 * `TauCeti.tendsto_klDiv_fst_proportionalFitting` and
   `TauCeti.tendsto_klDiv_snd_fitLaw_proportionalFitting`: under finite-entropy feasibility, the
   marginal errors tend to `0`.
-* `TauCeti.fst_fitLaw_proportionalFitting` and `TauCeti.snd_proportionalFitting_succ`: under
-  finite-entropy feasibility, each half-step enforces its marginal exactly.
+* `TauCeti.fst_fitLaw_proportionalFitting` and
+  `TauCeti.snd_proportionalFittingStep_proportionalFitting`: under finite-entropy feasibility, each
+  half-step enforces its marginal exactly.
 
 ## References
 
@@ -78,7 +79,7 @@ marginal `ν`. Each reweighting makes its marginal equal to the target when the 
 absolutely continuous with respect to the current marginal
 (`MeasureTheory.Measure.map_fitLaw_of_absolutelyContinuous`); under finite-entropy feasibility this
 holds along the whole iteration (`TauCeti.fst_fitLaw_proportionalFitting`,
-`TauCeti.snd_proportionalFitting_succ`). -/
+`TauCeti.snd_proportionalFittingStep_proportionalFitting`). -/
 def proportionalFittingStep (π : Measure (X × Y)) (μ : Measure X) (ν : Measure Y) :
     Measure (X × Y) :=
   (π.fitLaw Prod.fst μ).fitLaw Prod.snd ν
@@ -230,8 +231,10 @@ theorem fst_fitLaw_proportionalFitting [IsFiniteMeasure R] [IsFiniteMeasure μ]
 
 /-- Under finite-entropy feasibility, every sweep of iterative proportional fitting ends with second
 marginal exactly `ν`. -/
-theorem snd_proportionalFitting_succ [IsFiniteMeasure R] [IsFiniteMeasure μ]
-    (h : schroedingerValue R μ ν ≠ ∞) (n : ℕ) : (proportionalFitting R μ ν (n + 1)).snd = ν := by
+@[simp]
+theorem snd_proportionalFittingStep_proportionalFitting [IsFiniteMeasure R] [IsFiniteMeasure μ]
+    (h : schroedingerValue R μ ν ≠ ∞) (n : ℕ) :
+    ((proportionalFitting R μ ν n).proportionalFittingStep μ ν).snd = ν := by
   obtain ⟨σ, hσ, hσR⟩ := schroedingerValue_lt_iff.1 h.lt_top
   have := hσ.isFiniteMeasure
   have : IsFiniteMeasure ν := hσ.snd_eq ▸ inferInstance
@@ -239,7 +242,7 @@ theorem snd_proportionalFitting_succ [IsFiniteMeasure R] [IsFiniteMeasure μ]
     measurable_fst
   have hac : σ ≪ (proportionalFitting R μ ν n).fitLaw Prod.fst μ :=
     (klDiv_ne_top_iff.1 (klDiv_ne_top_proportionalFitting hσ hσR.ne n).2).1
-  rw [proportionalFitting_succ, proportionalFittingStep_def, Measure.snd]
+  rw [proportionalFittingStep_def, Measure.snd]
   refine Measure.map_fitLaw_of_absolutelyContinuous measurable_snd ?_
   have := hac.map measurable_snd
   rwa [hσ.measurePreserving_snd.map_eq] at this
