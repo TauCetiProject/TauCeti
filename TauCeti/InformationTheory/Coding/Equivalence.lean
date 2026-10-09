@@ -369,7 +369,7 @@ theorem IsPermutationEquivalent.hammingMinDist_eq [Fintype ι] [Fintype κ] [Dec
     (C : Set (ι → R)).hammingMinDist = (D : Set (κ → R)).hammingMinDist := by
   obtain ⟨e, rfl⟩ := h
   rw [Submodule.map_coe]
-  exact (Set.hammingMinDist_image _ fun x _ y _ _ ↦ e.symm.hammingDist_comp x y).symm
+  exact (Set.hammingMinDist_image _ fun x _ y _ _ ↦ Equiv.hammingDist_funLeft e.symm x y).symm
 
 end PermutationEquivalence
 
