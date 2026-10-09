@@ -64,6 +64,13 @@ namespace TauCeti.GridPentagonRectangleDecomposition
 
 variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 
+/-- The rectangle's rows end at the pentagon's bottom row when the two pieces share their terminal
+side. -/
+private theorem rectangle_top_eq_pentagon_bottom (D : GridPentagonRectangleDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right) : D.rectangle.top = D.pentagon.bottom := by
+  rw [GridRectangleBetween.top_def, hcommon, D.pentagon.map_right,
+    GridRectangleBetween.bottom_def]
+
 /-- In a pentagon--rectangle domain whose two pieces share their terminal side, the rectangle
 starting strictly inside the pentagon's column interval, the turn row lies outside the
 rectangle's rows. -/
@@ -73,10 +80,6 @@ theorem turn_notMem_cIco_rectangle_of_right_eq_right
     (hcol : D.rectangle.left ∈ Grid.cIoo D.pentagon.left D.pentagon.right)
     (hpentagon : D.pentagon.IsEmpty) :
     s ∉ Grid.cIco D.rectangle.bottom D.rectangle.top := by
-  -- The rectangle's rows end at the pentagon's bottom row.
-  have htop : D.rectangle.top = D.pentagon.bottom := by
-    rw [GridRectangleBetween.top_def, hcommon, D.pentagon.map_right,
-      GridRectangleBetween.bottom_def]
   -- The rectangle's bottom row is the row of the source state in a column covered by the
   -- pentagon; emptiness keeps that row out of the pentagon's rows.
   have hbottom : D.rectangle.bottom = x D.rectangle.left := by
@@ -92,7 +95,7 @@ theorem turn_notMem_cIco_rectangle_of_right_eq_right
     exact fun h => Grid.ne_right_of_mem_cIoo hcol (x.toPerm.injective h)
   have hturn := D.pentagon.turn_mem_cIco_bottom_top
   have hne₃ := D.pentagon.bottom_ne_top
-  rw [htop]
+  rw [D.rectangle_top_eq_pentagon_bottom hcommon]
   intro hs
   simp only [Grid.mem_cIco, Grid.mem_cIoo, ne_eq, ← Fin.val_inj] at hturn hs hempty hne₁ hne₂ hne₃
   split_ifs at hturn hs hempty <;> omega
@@ -255,14 +258,11 @@ theorem mem_pentagonTerminalSelfPairs_of_right_eq_left
     (hturn : C.turnRow ∉ Grid.cIco E.pentagon.bottom E.rectangle.bottom) :
     E ∈ G.pentagonTerminalSelfPairs C x z := by
   obtain ⟨hP, hR⟩ := (G.mem_pentagonRectangleDecompositions C E).1 hE
-  have hfirst : E.toRectangleDecomposition.first.IsEmpty := by
-    simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-      E.toRectangleDecomposition_first_toGridRectangle] using ((G.mem_pentagons _).1 hP).1
-  have hsecond : E.toRectangleDecomposition.second.IsEmpty := by
-    simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-      E.toRectangleDecomposition_middle, E.toRectangleDecomposition_second_toGridRectangle] using
-      (((G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles _).1 hR).1
-  have hone := E.hasOneCommonSide_of_right_eq_left hcommon hother
+  have hfirst := E.underlying_first_isEmpty ((G.mem_pentagons _).1 hP).1
+  have hsecond := E.underlying_second_isEmpty
+    (((G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles _).1 hR).1
+  have hone := E.toRectangleDecomposition.hasOneCommonSide_of_left_eq_right
+    (by simpa using hcommon.symm) (by simpa using hother.symm)
   set D := E.rightLeftSelfRecut hcommon hone hfirst hsecond hturn
   have hrecut := E.isRecut_rightLeftSelfRecut hcommon hone hfirst hsecond hturn
   have hback := hrecut.symm hone hfirst hsecond
@@ -319,9 +319,7 @@ theorem mem_pentagonTerminalSelfPairs_iff_sides
     · rw [hrleft, E.pentagon.right_eq, ← D.pentagon.right_eq]
       exact D.pentagon.left_ne_right
     · have hturn := D.turn_notMem_cIco_rectangle_of_right_eq_right hcommon hcol hpentagon
-      rw [hPbottom, hrbottom]
-      rwa [GridRectangleBetween.top_def, hcommon, D.pentagon.map_right,
-        ← GridRectangleBetween.bottom_def] at hturn
+      rwa [hPbottom, hrbottom, ← D.rectangle_top_eq_pentagon_bottom hcommon]
   · rintro ⟨hE, hsource | ⟨hcommon, hother, hturn⟩⟩
     · exact (G.mem_pentagonTerminalSelfPairs C E).2 (Or.inl
         ((G.mem_pentagonTerminalSelfPairSources C E).2 ⟨hE, hsource⟩))

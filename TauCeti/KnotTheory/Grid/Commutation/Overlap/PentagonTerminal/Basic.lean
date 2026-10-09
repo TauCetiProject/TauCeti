@@ -45,29 +45,14 @@ theorem hasOneCommonSide_of_terminal_overlap (D : GridPentagonRectangleDecomposi
     have hne := Grid.ne_left_of_mem_cIoo hcol
     grind
 
-/-- A pentagon followed by a rectangle ending on the pentagon's initial side has exactly one
-common side column when its two other sides differ. -/
-theorem hasOneCommonSide_of_right_eq_left (E : GridPentagonRectangleDecomposition a s x z)
-    (hcommon : E.rectangle.right = E.pentagon.left)
-    (hother : E.rectangle.left ≠ E.pentagon.right) :
-    E.toRectangleDecomposition.HasOneCommonSide := by
-  apply E.toRectangleDecomposition.hasOneCommonSide_iff_existsUnique.mpr
-  refine ⟨E.pentagon.left, ?_, ?_⟩
-  · simp [GridRectangleBetween.mem_sideColumns, hcommon]
-  · intro c hc
-    simp only [GridRectangleBetween.mem_sideColumns, toRectangleDecomposition_first_left,
-      toRectangleDecomposition_first_right, toRectangleDecomposition_second_left,
-      toRectangleDecomposition_second_right] at hc
-    have hfirst := E.pentagon.left_ne_right
-    have hsecond := E.rectangle.left_ne_right
-    grind
-
-private theorem underlying_first_isEmpty (D : GridPentagonRectangleDecomposition a s x z)
+/-- An empty pentagon is an empty first rectangle of the underlying two-step domain. -/
+theorem underlying_first_isEmpty (D : GridPentagonRectangleDecomposition a s x z)
     (hp : D.pentagon.IsEmpty) : D.toRectangleDecomposition.first.IsEmpty := by
   simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
     toRectangleDecomposition_first_toGridRectangle] using hp
 
-private theorem underlying_second_isEmpty (D : GridPentagonRectangleDecomposition a s x z)
+/-- An empty rectangle is an empty second rectangle of the underlying two-step domain. -/
+theorem underlying_second_isEmpty (D : GridPentagonRectangleDecomposition a s x z)
     (hr : D.rectangle.IsEmpty) : D.toRectangleDecomposition.second.IsEmpty := by
   simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
     toRectangleDecomposition_middle, toRectangleDecomposition_second_toGridRectangle] using hr

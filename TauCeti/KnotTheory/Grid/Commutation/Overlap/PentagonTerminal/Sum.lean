@@ -84,13 +84,8 @@ private theorem pentagonTerminalSource_underlying
       D.val.toRectangleDecomposition.first.IsEmpty ∧
         D.val.toRectangleDecomposition.second.IsEmpty := by
   obtain ⟨hcommon, hcol, hp, hr⟩ := G.pentagonTerminalSource_data C D.val D.property
-  refine ⟨?_, ?_, ?_⟩
-  · exact D.val.hasOneCommonSide_of_terminal_overlap hcommon hcol
-  · simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-      GridPentagonRectangleDecomposition.toRectangleDecomposition_first_toGridRectangle] using hp
-  · simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-      GridPentagonRectangleDecomposition.toRectangleDecomposition_middle,
-      GridPentagonRectangleDecomposition.toRectangleDecomposition_second_toGridRectangle] using hr
+  exact ⟨D.val.hasOneCommonSide_of_terminal_overlap hcommon hcol,
+    D.val.underlying_first_isEmpty hp, D.val.underlying_second_isEmpty hr⟩
 
 private theorem pentagonTerminalPartner_injective :
     Function.Injective (G.pentagonTerminalPartner C (x := x) (z := z)) := by
