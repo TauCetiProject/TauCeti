@@ -14,8 +14,11 @@ public import TauCeti.MeasureTheory.Measure.WithDensity
 Let `π` be a finite measure on `Ω`, let `f : Ω → X` be measurable and let `μ` be a finite measure
 on `X`. Among the measures `σ` on `Ω` under which `f` has law `μ`, that is `σ.map f = μ`, the one
 closest to `π` in relative entropy is obtained by reweighting `π` along the fibres of `f`:
-`π.fitLaw f μ = π.withDensity (fun ω ↦ dμ/d(f₊π) (f ω))`. This is the relative-entropy
-projection (Csiszár's I-projection) onto the linear family `{σ | σ.map f = μ}`. With `f` a
+`π.fitLaw f μ = π.withDensity (fun ω ↦ dμ/d(f₊π) (f ω))`. When `μ ≪ π.map f`, this is the
+relative-entropy projection (Csiszár's I-projection) onto the linear family `{σ | σ.map f = μ}`.
+Without that hypothesis the law of `f` under `π.fitLaw f μ` is only the part of `μ` absolutely
+continuous with respect to `π.map f`, and the family contains no measure of finite relative
+entropy with respect to `π`. With `f` a
 coordinate projection of a product it fits one marginal of a measure on a product, which is the
 half-step of iterative proportional fitting.
 
@@ -102,6 +105,7 @@ theorem isFiniteMeasure_fitLaw [IsFiniteMeasure μ] (hf : Measurable f) :
     exact lintegral_rnDeriv_le.trans_lt (measure_lt_top μ univ)
 
 /-- A measure under which `f` already has law `μ` is its own projection. -/
+@[simp]
 theorem fitLaw_eq_self [SigmaFinite μ] (hf : Measurable f) (h : π.map f = μ) :
     π.fitLaw f μ = π := by
   subst h

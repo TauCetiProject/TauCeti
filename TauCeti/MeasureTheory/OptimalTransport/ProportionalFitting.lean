@@ -14,10 +14,11 @@ public import TauCeti.MeasureTheory.OptimalTransport.Entropic
 Iterative proportional fitting (IPF), the measure-theoretic form of the Sinkhorn iteration,
 approaches the static Schrödinger problem `inf {klDiv π R | π couples μ and ν}` by alternately
 enforcing the two marginal constraints. Starting from the reference measure `R` on `X × Y`, each
-sweep first reweights the current measure along the first coordinate so that its first marginal
-becomes `μ`, and then along the second coordinate so that its second marginal becomes `ν`. Each
-half-step is the relative-entropy projection `MeasureTheory.Measure.fitLaw` onto the measures
-with one prescribed marginal.
+sweep first reweights the current measure along the first coordinate towards first marginal `μ`,
+and then along the second coordinate towards second marginal `ν`. Each half-step is
+`MeasureTheory.Measure.fitLaw`; it makes the corresponding marginal equal to its target exactly
+when that target is absolutely continuous with respect to the current marginal, and is then the
+relative-entropy projection onto the measures with that prescribed marginal.
 
 For every coupling `σ` of `μ` and `ν`, the Pythagorean identity of these projections telescopes:
 after `n` sweeps,
@@ -25,8 +26,10 @@ after `n` sweeps,
 where `π_k` is the `k`-th iterate and `π_k'` the measure halfway through the next sweep. The terms
 of the sum are the marginal errors of the iteration, measured in relative entropy. Minimising over
 `σ`, their total is at most the Schrödinger value. So, as soon as some coupling has finite relative
-entropy with respect to `R`, the marginal errors are summable and tend to `0`, and every half-step
-enforces its marginal exactly. Nothing beyond the measurable structure of `X` and `Y` is used.
+entropy with respect to `R`, the marginal errors are summable and tend to `0`. Such a coupling also
+has finite relative entropy against every iterate and every half-step, so each target marginal is
+absolutely continuous with respect to the current one, and every half-step enforces its marginal
+exactly. Nothing beyond the measurable structure of `X` and `Y` is used.
 
 ## Main definitions
 
@@ -69,8 +72,12 @@ variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {R π σ : Measur
   {μ : Measure X} {ν : Measure Y}
 
 /-- One sweep of iterative proportional fitting: the measure `π` is reweighted along the first
-coordinate so that its first marginal becomes `μ`, and then along the second coordinate so that
-its second marginal becomes `ν`. -/
+coordinate towards first marginal `μ`, and then along the second coordinate towards second
+marginal `ν`. Each reweighting makes its marginal equal to the target when the target is
+absolutely continuous with respect to the current marginal
+(`MeasureTheory.Measure.map_fitLaw_of_absolutelyContinuous`); under finite-entropy feasibility this
+holds along the whole iteration (`TauCeti.fst_fitLaw_proportionalFitting`,
+`TauCeti.snd_proportionalFitting_succ`). -/
 def proportionalFittingStep (μ : Measure X) (ν : Measure Y) (π : Measure (X × Y)) :
     Measure (X × Y) :=
   (π.fitLaw Prod.fst μ).fitLaw Prod.snd ν
@@ -89,13 +96,18 @@ def proportionalFitting (R : Measure (X × Y)) (μ : Measure X) (ν : Measure Y)
 theorem proportionalFitting_zero : proportionalFitting R μ ν 0 = R :=
   (rfl)
 
+@[simp]
 theorem proportionalFitting_succ (n : ℕ) :
     proportionalFitting R μ ν (n + 1) = proportionalFittingStep μ ν (proportionalFitting R μ ν n) :=
   Function.iterate_succ_apply' _ _ _
 
+/-- A sweep is finite as soon as `ν` is: it ends by fitting the second marginal to `ν`, and the
+total mass after that fit is at most the mass of `ν`, whatever measure it is applied to. -/
 instance [IsFiniteMeasure ν] : IsFiniteMeasure (proportionalFittingStep μ ν π) :=
   Measure.isFiniteMeasure_fitLaw measurable_snd
 
+/-- Every iterate is finite when `R` and `ν` are: the zeroth iterate is `R`, and every later one is
+a sweep, which is finite because `ν` is. -/
 instance [IsFiniteMeasure R] [IsFiniteMeasure ν] (n : ℕ) :
     IsFiniteMeasure (proportionalFitting R μ ν n) := by
   cases n with
@@ -136,7 +148,7 @@ theorem klDiv_eq_sum_add_klDiv_proportionalFitting [IsFiniteMeasure R] [IsFinite
 
 /-- Along the iteration, the relative entropy of every coupling of `μ` and `ν` to the iterates
 decreases. -/
-theorem antitone_klDiv_proportionalFitting [IsFiniteMeasure R] [IsFiniteMeasure σ]
+theorem klDiv_proportionalFitting_antitone [IsFiniteMeasure R] [IsFiniteMeasure σ]
     (hσ : IsCoupling σ μ ν) : Antitone fun n ↦ klDiv σ (proportionalFitting R μ ν n) := by
   have : IsFiniteMeasure ν := hσ.snd_eq ▸ inferInstance
   refine antitone_nat_of_succ_le fun n ↦ ?_
