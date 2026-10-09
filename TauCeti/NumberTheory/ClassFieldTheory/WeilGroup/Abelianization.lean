@@ -218,38 +218,19 @@ theorem isEmbedding_weilToAbsoluteAbelianization_prod_weilDegreeAbelianization :
   set Φ := (weilToAbsoluteAbelianization K).prod (weilDegreeAbelianization K)
   have hinj : Function.Injective Φ := fun _ _ h ↦
     injective_weilToAbsoluteAbelianization K (congrArg Prod.fst h)
-  refine ⟨IsTopologicalGroup.isInducing_iff_nhds_one.2 (le_antisymm ?_ ?_), hinj⟩
-  · exact (Φ.continuous.tendsto' 1 1 (map_one Φ)).le_comap
-  -- The classes of degree zero form a subgroup `A`, the preimage of `G_K^{ab} × {0}`, which is
-  -- compact as the image of the compact group `I_K`. On `A` the map is a continuous injection
-  -- from a compact space to a Hausdorff one, hence inducing; and a neighbourhood of `1` in
-  -- `G_K^{ab} × ℤ` can be shrunk into `G_K^{ab} × {0}`, whose preimage is `A`.
-  set A := (weilDegreeAbelianization K).toMonoidHom.ker with hAdef
-  have hA : (A : Set (TopologicalAbelianization (WeilGroup K))) =
-      Φ ⁻¹' (Set.univ ×ˢ {1}) := by
+  refine Φ.toMonoidHom.isEmbedding_of_isCompact_preimage Φ.continuous hinj
+    (prod_mem_nhds Filter.univ_mem ((isOpen_discrete {1}).mem_nhds rfl)) ?_
+  -- The preimage of `G_K^{ab} × {0}` is the subgroup of classes of degree zero, which is compact
+  -- as the image of the compact group `I_K`.
+  have hA : Φ.toMonoidHom ⁻¹' (Set.univ ×ˢ {1}) =
+      ((weilDegreeAbelianization K).toMonoidHom.ker : Set _) := by
     ext x
-    simp [A, Φ]
+    simp [Φ]
   have : CompactSpace (inertiaSubgroup K) :=
     isCompact_iff_compactSpace.1 (isClosed_inertiaSubgroup K).isCompact
-  have : CompactSpace A := isCompact_iff_compactSpace.1 <| by
-    rw [hAdef, ker_weilDegreeAbelianization, MonoidHom.coe_range]
-    exact isCompact_range (QuotientGroup.continuous_mk.comp
-      (isOpenEmbedding_inertiaToWeil K).continuous)
-  have hind : IsInducing (Φ ∘ (Subtype.val : A → TopologicalAbelianization (WeilGroup K))) :=
-    ((Φ.continuous.comp continuous_subtype_val).isClosedEmbedding
-      (hinj.comp Subtype.val_injective)).isInducing
-  intro s hs
-  have hs' : (Subtype.val : A → TopologicalAbelianization (WeilGroup K)) ⁻¹' s ∈ 𝓝 (1 : A) :=
-    continuous_subtype_val.continuousAt.preimage_mem_nhds hs
-  rw [hind.nhds_eq_comap, Filter.mem_comap] at hs'
-  obtain ⟨t, ht, hts⟩ := hs'
-  refine Filter.mem_comap.2 ⟨t ∩ Set.univ ×ˢ {1}, Filter.inter_mem (by simpa using ht)
-    (prod_mem_nhds Filter.univ_mem ((isOpen_discrete _).mem_nhds rfl)), ?_⟩
-  rintro x ⟨hxt, hx1⟩
-  have hxA : x ∈ A := by
-    rw [← SetLike.mem_coe, hA]
-    exact hx1
-  exact @hts ⟨x, hxA⟩ hxt
+  rw [hA, ker_weilDegreeAbelianization, MonoidHom.coe_range]
+  exact isCompact_range (QuotientGroup.continuous_mk.comp
+    (isOpenEmbedding_inertiaToWeil K).continuous)
 
 /-- The abelianized Weil group is isomorphic, as an abstract group, to the subgroup of `G_K^{ab}`
 of classes with integral unramified coordinate, through the map induced by `W_K → G_K`. -/

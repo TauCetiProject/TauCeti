@@ -95,6 +95,9 @@ series of a profinite group.
   subgroup `H` is discrete.
 * `MonoidHom.discreteTopology_range_of_finite_preimage`: a homomorphism into a `T1` topological
   group has discrete range when some neighbourhood of the identity has finite preimage.
+* `MonoidHom.isEmbedding_of_isCompact_preimage`: a continuous injective homomorphism into a
+  Hausdorff topological group is an embedding when some neighbourhood of the identity has compact
+  preimage.
 -/
 
 public section
@@ -562,5 +565,33 @@ theorem _root_.MonoidHom.discreteTopology_range_of_finite_preimage {G H : Type*}
   refine (hfin.image f.rangeRestrict).subset ?_
   rintro ⟨_, g, rfl⟩ hg
   exact ⟨g, hg, Subtype.ext rfl⟩
+
+open scoped Topology in
+/-- A continuous injective homomorphism into a Hausdorff topological group is a topological
+embedding as soon as some neighbourhood of the identity has compact preimage. -/
+@[to_additive /-- A continuous injective homomorphism into a Hausdorff additive topological group
+is a topological embedding as soon as some neighbourhood of zero has compact preimage. -/]
+theorem _root_.MonoidHom.isEmbedding_of_isCompact_preimage {G H : Type*} [Group G]
+    [TopologicalSpace G] [IsTopologicalGroup G] [Group H] [TopologicalSpace H]
+    [IsTopologicalGroup H] [T2Space H] (f : G →* H) (hf : Continuous f)
+    (hinj : Function.Injective f) {W : Set H} (hW : W ∈ 𝓝 1) (hc : IsCompact (f ⁻¹' W)) :
+    Topology.IsEmbedding f := by
+  refine ⟨IsTopologicalGroup.isInducing_iff_nhds_one.2 (le_antisymm ?_ ?_), hinj⟩
+  · exact (hf.tendsto' 1 1 (map_one f)).le_comap
+  -- On the compact set `f ⁻¹' W` the map is a continuous injection into a Hausdorff space, hence
+  -- inducing; and a neighbourhood of `1` in `H` can be shrunk into `W`.
+  have : CompactSpace (f ⁻¹' W) := isCompact_iff_compactSpace.1 hc
+  have hind : Topology.IsInducing (f ∘ Subtype.val : f ⁻¹' W → H) :=
+    ((hf.comp continuous_subtype_val).isClosedEmbedding
+      (hinj.comp Subtype.val_injective)).isInducing
+  intro s hs
+  have h1 : (1 : G) ∈ f ⁻¹' W := by simpa using mem_of_mem_nhds hW
+  have hs' : (Subtype.val : f ⁻¹' W → G) ⁻¹' s ∈ 𝓝 ⟨1, h1⟩ :=
+    continuous_subtype_val.continuousAt.preimage_mem_nhds hs
+  rw [hind.nhds_eq_comap, Filter.mem_comap] at hs'
+  obtain ⟨t, ht, hts⟩ := hs'
+  refine Filter.mem_comap.2 ⟨t ∩ W, Filter.inter_mem (by simpa using ht) hW, ?_⟩
+  rintro x ⟨hxt, hxW⟩
+  exact @hts ⟨x, hxW⟩ hxt
 
 end TauCeti
