@@ -72,24 +72,19 @@ namespace TauCeti
 section RootsOfUnity
 
 variable {K : Type*} [Field K] {n : ℕ} [NeZero n] [HasEnoughRootsOfUnity K n]
-
-/-- If `K` contains the `n`-th roots of unity, then every `n`-th root of unity of a domain
-containing `K` lies in `K`. -/
-theorem exists_algebraMap_eq_of_pow_eq_one {A : Type*} [CommRing A] [IsDomain A] [Algebra K A]
-    {ξ : A} (h : ξ ^ n = 1) : ∃ z : K, algebraMap K A z = ξ := by
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot K n
-  obtain ⟨i, -, hi⟩ := (hζ.map_of_injective (algebraMap K A).injective).eq_pow_of_pow_eq_one h
-  exact ⟨ζ ^ i, by rw [map_pow, hi]⟩
-
-variable {F : Type*} [Field F] [Algebra K F]
+  {F : Type*} [Field F] [Algebra K F]
 
 /-- If `K` contains the `n`-th roots of unity, then two elements of an extension field of `K`
 with the same `n`-th power differ by a factor from `K`. -/
 theorem exists_eq_algebraMap_mul_of_pow_eq {x y : F} (hy : y ≠ 0) (h : x ^ n = y ^ n) :
     ∃ z : K, x = algebraMap K F z * y := by
-  obtain ⟨z, hz⟩ := exists_algebraMap_eq_of_pow_eq_one (K := K) (n := n) (ξ := x / y)
-    (by rw [div_pow, h, div_self (pow_ne_zero _ hy)])
-  exact ⟨z, by rw [hz, div_mul_cancel₀ _ hy]⟩
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot K n
+  have hK : (primitiveRoots n K).Nonempty := ⟨ζ, (mem_primitiveRoots (NeZero.pos n)).2 hζ⟩
+  have hxy : (x / y) ^ n = 1 := by rw [div_pow, h, div_self (pow_ne_zero _ hy)]
+  refine ⟨(((rootsOfUnityEquivOfPrimitiveRoots (algebraMap K F).injective hK).symm
+    (rootsOfUnity.mkOfPowEq _ hxy) : Kˣ) : K), ?_⟩
+  rw [rootsOfUnityEquivOfPrimitiveRoots_symm_apply, rootsOfUnity.coe_mkOfPowEq,
+    div_mul_cancel₀ _ hy]
 
 end RootsOfUnity
 
