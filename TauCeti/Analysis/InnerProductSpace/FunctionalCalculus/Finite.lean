@@ -108,6 +108,7 @@ theorem finiteFunctionalCalculus_const (hT : T.IsSymmetric) (c : ℝ) :
   simp
 
 /-- The calculus preserves addition of symbols. -/
+@[simp]
 theorem finiteFunctionalCalculus_add (hT : T.IsSymmetric) (f g : ℝ → ℝ) :
     finiteFunctionalCalculus hT (f + g) =
       finiteFunctionalCalculus hT f + finiteFunctionalCalculus hT g := by
@@ -116,6 +117,7 @@ theorem finiteFunctionalCalculus_add (hT : T.IsSymmetric) (f g : ℝ → ℝ) :
   simp [add_smul]
 
 /-- The calculus preserves multiplication of a symbol by a real scalar. -/
+@[simp]
 theorem finiteFunctionalCalculus_smul (hT : T.IsSymmetric) (c : ℝ) (f : ℝ → ℝ) :
     finiteFunctionalCalculus hT (c • f) = (c : 𝕜) • finiteFunctionalCalculus hT f := by
   apply (hT.eigenvectorBasis rfl).toBasis.ext
@@ -124,6 +126,7 @@ theorem finiteFunctionalCalculus_smul (hT : T.IsSymmetric) (c : ℝ) (f : ℝ �
 
 /-- The calculus preserves multiplication of symbols, with multiplication of endomorphisms
 meaning composition. -/
+@[simp]
 theorem finiteFunctionalCalculus_mul (hT : T.IsSymmetric) (f g : ℝ → ℝ) :
     finiteFunctionalCalculus hT (f * g) =
       finiteFunctionalCalculus hT f * finiteFunctionalCalculus hT g := by
