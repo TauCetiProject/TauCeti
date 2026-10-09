@@ -74,14 +74,6 @@ normal spheres. -/
     mem_normalSphereBundleOfRadius]
   grind
 
-/-- Restricting an embedded normal tube to a smaller radius preserves its open embedding. -/
-theorem isOpenEmbedding_normalTube_of_le {f : M → V} {ε R : ℝ} (hεR : ε ≤ R)
-    (h : IsOpenEmbedding ((normalTube I f R).domRestrict fun p : M × V => f p.1 + p.2)) :
-    IsOpenEmbedding ((normalTube I f ε).domRestrict fun p : M × V => f p.1 + p.2) := by
-  rw [← normalTubeOfRadius_const f R] at h
-  rw [← normalTubeOfRadius_const f ε]
-  exact isOpenEmbedding_normalTubeOfRadius_of_le continuous_const (fun _ => hεR) h
-
 section Regularity
 
 variable [I.Boundaryless] [IsManifold I 1 M] {f : M → V} {r : M → ℝ}
