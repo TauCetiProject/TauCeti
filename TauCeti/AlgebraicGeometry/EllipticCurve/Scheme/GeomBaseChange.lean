@@ -25,11 +25,16 @@ Smoothness of relative dimension one, properness and the local-model condition
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.baseChangeIso E f`: the identification of the total
   space of `E.baseChange f` with the pullback of `E.structureMap` along `f`, compatible with the
   structure morphisms (`baseChangeIso_hom_snd`) and the zero sections (`zero_baseChangeIso_hom`).
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.baseChangeMap E k hk`: the canonical morphism
+  between base changes induced by a morphism `k` of bases over `S`.
 
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.IsLocallyWeierstrass.baseChange`: the local-model condition for a
   morphism with a section is stable under base change.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.baseChangeMap_id` and
+  `TauCeti.AlgebraicGeometry.EllipticCurveGeom.baseChangeMap_comp`: the canonical morphisms between
+  base changes preserve identities and composition.
 
 ## Provenance
 
@@ -140,6 +145,56 @@ induced by `f ≫ E.zero`. -/
 theorem zero_baseChangeIso_hom : (E.baseChange f).zero ≫ (E.baseChangeIso f).hom =
     pullbackSection E.structureMap f (f ≫ E.zero) (by simp) := by
   simp [baseChangeIso, baseChange]
+
+variable {T' T'' : Scheme.{u}} {f : T ⟶ S} {f' : T' ⟶ S} {f'' : T'' ⟶ S}
+
+/-- The canonical morphism between base changes of `E` induced by a morphism `k : T' ⟶ T`
+over `S`. On the pullback models it is the identity on `E.carrier` and `k` on the bases. -/
+noncomputable def baseChangeMap (k : T' ⟶ T) (hk : k ≫ f = f') :
+    (E.baseChange f').carrier ⟶ (E.baseChange f).carrier :=
+  (E.baseChangeIso f').hom ≫ pullback.mapSnd E.structureMap f f' k hk ≫
+    (E.baseChangeIso f).inv
+
+/-- On the pullback models, `baseChangeMap` is `pullback.mapSnd`: it is the identity on the
+elliptic curve and the given morphism on the bases. -/
+@[reassoc (attr := simp)]
+theorem baseChangeMap_baseChangeIso_hom (k : T' ⟶ T) (hk : k ≫ f = f') :
+    E.baseChangeMap k hk ≫ (E.baseChangeIso f).hom =
+      (E.baseChangeIso f').hom ≫ pullback.mapSnd E.structureMap f f' k hk := by
+  simp [baseChangeMap]
+
+/-- The canonical morphism between base changes lies over the given morphism of bases. -/
+@[reassoc (attr := simp)]
+theorem baseChangeMap_structureMap (k : T' ⟶ T) (hk : k ≫ f = f') :
+    E.baseChangeMap k hk ≫ (E.baseChange f).structureMap =
+      (E.baseChange f').structureMap ≫ k := by
+  rw [← E.baseChangeIso_hom_snd f, E.baseChangeMap_baseChangeIso_hom_assoc]
+  simp
+
+/-- The canonical morphism between base changes carries the pulled-back zero section to the
+pulled-back zero section. -/
+@[reassoc (attr := simp)]
+theorem zero_baseChangeMap (k : T' ⟶ T) (hk : k ≫ f = f') :
+    (E.baseChange f').zero ≫ E.baseChangeMap k hk = k ≫ (E.baseChange f).zero := by
+  rw [← cancel_mono (E.baseChangeIso f).hom]
+  subst f'
+  simp only [Category.assoc, E.baseChangeMap_baseChangeIso_hom, E.zero_baseChangeIso_hom]
+  exact pullbackSection_comp_mapSnd E.structureMap f (k ≫ f) k rfl (f ≫ E.zero) (by simp)
+
+/-- Base change along the identity morphism induces the identity morphism of the base-changed
+elliptic curve. -/
+@[simp]
+theorem baseChangeMap_id : E.baseChangeMap (f := f) (𝟙 T) (by simp) = 𝟙 _ := by
+  simp [baseChangeMap]
+
+/-- The canonical morphisms between base changes are compatible with composition of morphisms of
+bases. -/
+@[reassoc (attr := simp)]
+theorem baseChangeMap_comp (k : T' ⟶ T) (hk : k ≫ f = f') (l : T'' ⟶ T')
+    (hl : l ≫ f' = f'') :
+    E.baseChangeMap l hl ≫ E.baseChangeMap k hk =
+      E.baseChangeMap (l ≫ k) (by rw [Category.assoc, hk, hl]) := by
+  simp [baseChangeMap]
 
 end EllipticCurveGeom
 

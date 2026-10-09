@@ -55,9 +55,7 @@ correspond to the `R`-points of the projective Weierstrass model. -/
 def UnimodularLift (P : PointClass R) : Prop :=
   P.lift (fun Q ↦ W'.Equation Q ∧ Module.IsUnimodular R Q) fun _ Q h ↦ by
     obtain ⟨u, rfl⟩ := h
-    refine propext <| and_congr (W'.equation_of_equiv ⟨u, rfl⟩)
-      ⟨fun hu ↦ ?_, TauCeti.Module.isUnimodular_units_smul u⟩
-    simpa using TauCeti.Module.isUnimodular_units_smul u⁻¹ hu
+    exact propext <| and_congr (W'.equation_of_equiv ⟨u, rfl⟩) u.isUnimodular_smul_iff
 
 variable {W'}
 
@@ -73,7 +71,7 @@ variable (W')
 @[simp]
 theorem unimodularLift_zero : W'.UnimodularLift ⟦![0, 1, 0]⟧ :=
   (unimodularLift_iff _).mpr
-    ⟨W'.equation_zero, TauCeti.Module.isUnimodular_of_isUnit_apply (i := 1) (by simp)⟩
+    ⟨W'.equation_zero, IsUnit.isUnimodular_pi (i := 1) (by simp)⟩
 
 /-- The class of `(a, b, 1)` is unimodular if and only if `(a, b)` solves the affine Weierstrass
 equation: the coordinate `1` makes the coordinates unimodular. -/
@@ -81,7 +79,7 @@ equation: the coordinate `1` makes the coordinates unimodular. -/
 theorem unimodularLift_some (a b : R) :
     W'.UnimodularLift ⟦![a, b, 1]⟧ ↔ W'.toAffine.Equation a b := by
   rw [unimodularLift_iff, equation_some, and_iff_left_iff_imp]
-  exact fun _ ↦ TauCeti.Module.isUnimodular_of_isUnit_apply (i := 2) (by simp)
+  exact fun _ ↦ IsUnit.isUnimodular_pi (i := 2) (by simp)
 
 end CommRing
 
@@ -96,9 +94,8 @@ theorem unimodularLift_iff_nonsingularLift [W.IsElliptic] {P : PointClass F} :
   induction P using Quotient.inductionOn with | _ P => ?_
   rw [unimodularLift_iff, nonsingularLift_iff, TauCeti.Module.isUnimodular_iff_exists_isUnit]
   simp_rw [isUnit_iff_ne_zero, ← Function.ne_iff]
-  refine ⟨fun h ↦ (equation_iff_nonsingular_of_ne_zero h.2).mp h.1, fun h ↦ ⟨h.1, fun hP ↦ ?_⟩⟩
-  -- the zero representative is singular
-  exact Y_ne_zero_of_Z_eq_zero h (by simp [hP]) (by simp [hP])
+  exact ⟨fun h ↦ (equation_iff_nonsingular_of_ne_zero h.2).mp h.1,
+    fun h ↦ ⟨h.1, ne_zero_of_nonsingular h⟩⟩
 
 variable (W) [W.IsElliptic]
 

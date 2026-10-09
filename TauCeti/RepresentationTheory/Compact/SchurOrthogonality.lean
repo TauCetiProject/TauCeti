@@ -48,7 +48,7 @@ open MeasureTheory
 open scoped InnerProductSpace
 open scoped MonoidAlgebra
 
-open TauCeti TauCeti.ContRepresentation
+open TauCeti
 
 namespace ContRepresentation
 

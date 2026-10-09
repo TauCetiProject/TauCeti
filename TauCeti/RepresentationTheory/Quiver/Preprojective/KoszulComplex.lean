@@ -50,14 +50,8 @@ in the Anick-type inequality `TauCeti.PathAlgebra.sum_card_mul_finrank_map_paths
 It fails whenever `Π` is finite-dimensional and nonzero, as for a Dynkin quiver: a nonzero element
 of `e_v Π` of top degree is killed by every arrow.
 
-## Main definitions
-
-* `TauCeti.doubledArrowSign`: the sign `ε_b` of an arrow of the doubled quiver.
-
 ## Main results
 
-* `TauCeti.localPreprojectiveRelator_eq_sum_ofArrow_mul`: the local relator decomposed along the
-  last arrow of its paths.
 * `TauCeti.sum_preprojectiveMk_ofArrow_mul_doubledArrowSign_smul_eq_zero`: the two maps compose
   to zero.
 * `TauCeti.sum_preprojectiveMk_ofArrow_mul_eq_zero_iff`: **exactness at the middle term.**
@@ -80,74 +74,8 @@ open _root_.Quiver PathAlgebra
 
 universe u v w
 
-section Sign
-
-variable (k : Type w) {Q : Type u} [One k] [Neg k] [Quiver.{v} Q]
-
-/-- The sign `ε_b` of an arrow `b` of the doubled quiver in the preprojective relator: `1` on an
-arrow of `Q` and `-1` on the formal reverse of one. The arrows `i ⟶ j` of `Quiver.Symmetrify Q`
-are by definition `(i ⟶ j) ⊕ (j ⟶ i)`. -/
-def doubledArrowSign {i j : Symmetrify Q} (b : i ⟶ j) : k :=
-  Sum.elim (fun _ => 1) (fun _ => -1) b
-
-/-- An arrow of `Q` has sign `1`. This is the `simp`-normal form, `Symmetrify.of.map a` being
-`Sum.inl a` by `Quiver.Symmetrify.of_map`. -/
-@[simp]
-theorem doubledArrowSign_inl {i j : Q} (a : i ⟶ j) :
-    doubledArrowSign k (Sum.inl a : Symmetrify.of.obj i ⟶ Symmetrify.of.obj j) = 1 := (rfl)
-
-/-- The formal reverse of an arrow of `Q` has sign `-1`. This is the `simp`-normal form,
-`Quiver.reverse (Sum.inl a)` being `Sum.inr a` by `Quiver.symmetrify_reverse`. -/
-@[simp]
-theorem doubledArrowSign_inr {i j : Q} (a : j ⟶ i) :
-    doubledArrowSign k (Sum.inr a : Symmetrify.of.obj i ⟶ Symmetrify.of.obj j) = -1 := (rfl)
-
-end Sign
-
-section SignReverse
-
-variable (k : Type w) {Q : Type u} [One k] [InvolutiveNeg k] [Quiver.{v} Q]
-
-/-- Swapping the two summands of an arrow of the doubled quiver negates its sign. This is the
-`simp`-normal form of `TauCeti.doubledArrowSign_reverse`, `Quiver.reverse b` being `Sum.swap b` by
-`Quiver.symmetrify_reverse`. -/
-@[simp]
-theorem doubledArrowSign_swap {i j : Symmetrify Q} (b : i ⟶ j) :
-    doubledArrowSign k (i := j) (j := i) (Sum.swap b) = -doubledArrowSign k b := by
-  rcases b with a | a
-  · rfl
-  · exact (neg_neg (1 : k)).symm
-
-/-- **Reversing an arrow of the doubled quiver negates its sign**: `ε_{b*} = -ε_b`. -/
-theorem doubledArrowSign_reverse {i j : Symmetrify Q} (b : i ⟶ j) :
-    doubledArrowSign k (Quiver.reverse b) = -doubledArrowSign k b :=
-  doubledArrowSign_swap k b
-
-end SignReverse
-
 variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
-
-/-- **The local relator along the last arrow of its paths**: in the later-factor-first convention
-`ρ_v = ∑_{b : i ⟶ v} ε_b b b*`, the sum over the arrows of the doubled quiver into `v`. An arrow `a`
-of `Q` into `v` contributes its head backtrack `a a*`, and the reverse `a*` of an arrow `a` of `Q`
-out of `v` contributes `-a* a`, minus its tail backtrack. -/
-theorem localPreprojectiveRelator_eq_sum_ofArrow_mul (v : Q) :
-    localPreprojectiveRelator k v = ∑ i : Symmetrify Q, ∑ b : i ⟶ Symmetrify.of.obj v,
-      ofArrow b * (doubledArrowSign k b • ofArrow (Quiver.reverse b)) := by
-  rw [localPreprojectiveRelator_def, ← Finset.sum_sub_distrib]
-  -- The vertices of the doubled quiver are those of `Q`; at each of them, the arrows into `v` are
-  -- the arrows of `Q` into `v` and the reverses of the arrows of `Q` out of `v`.
-  refine Fintype.sum_equiv (Equiv.ofBijective _ symmetrify_of_obj_bijective) _ _ fun i => ?_
-  rw [Equiv.ofBijective_apply, sub_eq_add_neg, ← Finset.sum_neg_distrib]
-  refine Eq.trans ?_ (Fintype.sum_sum_type (α₁ := i ⟶ v) (α₂ := v ⟶ i) _).symm
-  congr 1
-  · refine Finset.sum_congr rfl fun a _ => ?_
-    exact (ofArrow_mul_ofArrow_reverse_eq_headBacktrackElem k a).symm.trans
-      (congrArg (_ * ·) (one_smul k _).symm)
-  · refine Finset.sum_congr rfl fun a _ => ?_
-    exact (congrArg Neg.neg (ofArrow_reverse_mul_ofArrow_eq_tailBacktrackElem k a)).symm.trans
-      ((neg_one_smul k _).symm.trans (mul_smul_comm _ _ _).symm)
 
 /-- **The Koszul complex is a complex**: the composite `y ↦ ∑_b b (ε_b b* y)` is left
 multiplication by the local relator `ρ_v`, which vanishes in the preprojective algebra. -/

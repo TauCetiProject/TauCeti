@@ -28,7 +28,7 @@ The second section reads the *difference* of the two square characters on the sq
 `TauCeti/RepresentationTheory/Continuous/Square/Basic.lean` does assemble as continuous
 representations, the eigenspaces of the flip inside `V ⊗[𝕜] V`: there
 `χ_{Sym²}(g) - χ_{Λ²}(g) = χ(g²)`, which is the linear-algebra identity
-`TauCeti.trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict` applied to `π g`.
+`LinearMap.trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict` applied to `π g`.
 Subtracting the two closed formulas above gives the same identity on the powers, so the two
 sections agree wherever both apply.
 
@@ -71,7 +71,7 @@ this file consumes are brought in by `open`.
 
 public section
 
-open TauCeti TauCeti.ContRepresentation
+open TauCeti
 
 namespace ContRepresentation
 
@@ -121,7 +121,7 @@ variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
 /-- **The two square characters differ by the character at the square**,
 `χ_{Sym²π}(g) - χ_{Λ²π}(g) = χ_π(g²)`.
 
-This is `TauCeti.trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict` applied to
+This is `LinearMap.trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict` applied to
 the operator `π g`, whose square is `π (g * g)`. -/
 theorem character_symmetricSquare_sub_character_exteriorSquare (g : G) :
     character (𝕜 := 𝕜) (V := symmetricTensors 𝕜 V) (symmetricSquare π)
@@ -131,7 +131,7 @@ theorem character_symmetricSquare_sub_character_exteriorSquare (g : G) :
       = character π hπ (g * g) := by
   rw [character_apply, character_apply, character_apply, symmetricSquare_apply π g,
     exteriorSquare_apply π g,
-    trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict (π g : V →ₗ[𝕜] V)]
+    (π g : V →ₗ[𝕜] V).trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict]
   congr 1
   rw [map_mul, ContinuousLinearMap.toLinearMap_mul, Module.End.mul_eq_comp]
 

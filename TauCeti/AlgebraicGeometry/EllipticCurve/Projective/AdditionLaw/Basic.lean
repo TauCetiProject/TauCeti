@@ -565,9 +565,6 @@ theorem addXYZ_cross_dblAddXYZ {P Q : Fin 3 → R} (hP : W'.Equation P) (hQ : W'
   rw [cross_apply, addXYZ, dblAddXYZ]
   simp [addY_mul_dblAddZ hP hQ, addX_mul_dblAddZ hP hQ, addX_mul_dblAddY hP hQ]
 
-private theorem ne_zero_of_nonsingular {P : Fin 3 → R} (hP : W'.Nonsingular P) : P ≠ 0 :=
-  fun h ↦ by simp [h, nonsingular_iff] at hP
-
 private theorem dblAddXYZ_units_smul_self {P : Fin 3 → R} (hP : W'.Equation P) (u : Rˣ) :
     W'.dblAddXYZ (u • P) P = (u : R) ^ 2 • W'.dblXYZ P := by
   simpa [Units.smul_def, dblAddXYZ_self hP] using W'.dblAddXYZ_smul P P u 1

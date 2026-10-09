@@ -16,7 +16,6 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Schem
 public import TauCeti.Algebra.Lie.UniversalEnveloping.MatrixRepresentation
 import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.RootInToral
-import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # The full-weight Chevalley carrier of type `A`
@@ -47,10 +46,15 @@ The whole ambient Lie algebra used is Mathlib's `LieAlgebra.SpecialLinear.sl`, a
 depends only on the numbered generators above, so every carrier below traces back to explicit
 matrices; no existence or classification theorem is invoked anywhere.
 
-Three things are deliberately not asserted. The carrier is not proved reductive, its torus is not
-proved maximal, and it is not identified with the special linear group scheme; each needs the
-generation and root-datum statements that Layer 9 of the reductive-groups roadmap still owes. Nor
-is any group here claimed to be finite or simple.
+This file works over `ℤ` and proves neither reductivity, maximality of the torus, nor an
+identification with the special linear group scheme. Those are proved over fields in the modules
+built on it: `TauCeti.SlStd.reductiveCommHopfAlgProperty_finiteTypeSpecialization` (reductive over
+every algebraically closed field),
+`TauCeti.SlStd.eq_range_weightTorusPoints_of_le_of_isMulCommutative` (the weight torus is maximal
+among commutative subgroups of the points over an infinite field) and
+`TauCeti.SlStd.baseChangeDefiningIdeal_eq_specialLinearDefiningHopfIdeal` (the carrier is
+scheme-theoretically `SL_{r+1}` over an algebraically closed field). No group here is claimed to be
+finite or simple.
 
 ## Main definitions
 
@@ -77,6 +81,8 @@ is any group here claimed to be finite or simple.
   numbered root generators through the type `A_r` Cartan matrix.
 * `TauCeti.SlStd.isSl2Triple_rootGenerator`: the numbered generators at a Bourbaki node form an
   `sl₂` triple, from the identification of them with matrix units of `sl_{r+1}`.
+* `TauCeti.SlStd.isSl2Triple_rep_rootGenerator`: the numbered generators at a Bourbaki node form
+  an `sl₂` triple in the standard representation.
 * `TauCeti.SlStd.rep_kostantForm_mem_lattice`: the Kostant `ℤ`-form preserves the standard lattice,
   so the lattice is admissible.
 * `TauCeti.SlStd.span_range_weight_eq_top`: the weights of the standard module generate the full
@@ -86,8 +92,8 @@ is any group here claimed to be finite or simple.
   subgroups of the carrier.
 * `TauCeti.SlStd.torusPoints_conj_rootSubgroupParam` and
   `TauCeti.SlStd.weightTorus_conj_rootSubgroup`: the pinning equation
-  `t(s) x_k(u) t(s)⁻¹ = x_k(α_k(s) u)`, on matrix points and on `A`-valued scheme points
-  after corestriction to the carrier.
+  `t(s) x_k(u) t(s)⁻¹ = x_k(α_k(s) u)`, in the linear automorphisms of the base-changed lattice
+  `A ⊗[ℤ] lattice r` and on `A`-valued scheme points after corestriction to the carrier.
 
 ## References
 
@@ -98,14 +104,6 @@ is any group here claimed to be finite or simple.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate I, for the numbering of the type
   `A` diagram and the index `r + 1` of the root lattice in the weight lattice.
-
-This advances "The Chevalley--Demazure construction", "Pinnings" and "Root subgroup maps" in
-Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, which asks for an explicitly constructed
-split reductive group scheme over `ℤ` realizing a root datum, with a torus and root subgroups as
-data. Its consumer is milestone L0, "pinned ambient groups", of
-`TauCetiRoadmap/CFSGStatement/README.md`, whose recipe is computed in the simply connected form and
-therefore cannot use the adjoint Geck carrier of
-`TauCeti/LinearAlgebra/RootSystem/SimplyConnectedRootDatum/GeckLattice/GroupScheme.lean`.
 -/
 
 public section
@@ -117,8 +115,6 @@ universe v
 open LieAlgebra.SpecialLinear
 open scoped Matrix TensorProduct
 open scoped CategoryTheory.MonObj
-
-attribute [local instance] TauCeti.moduleNNRat
 
 variable (r : ℕ)
 
@@ -260,7 +256,6 @@ theorem weight_eq_ite_single_sub_ite_single (k : Fin (r + 1)) :
     weight r k =
       (if hk : (k : ℕ) < r then Pi.single ⟨k, hk⟩ 1 else 0) -
         (if hk : 0 < (k : ℕ) then Pi.single ⟨k - 1, by omega⟩ 1 else 0) := by
-  classical
   funext i
   simp only [weight_def, Pi.sub_apply]
   split_ifs
@@ -316,8 +311,8 @@ theorem isCartanWeightVector_single (k : Fin (r + 1)) :
     ← Pi.single_sub, ← Pi.single_smul']
   simp [weight, Pi.single_apply]
 
-/-- The Kronecker coefficient produced by conjugating a numbered root generator by a numbered
-Cartan generator is the corresponding entry of the type `A` Cartan matrix, with a sign for the
+/-- The Kronecker coefficient produced by bracketing a numbered Cartan generator with a numbered
+root generator is the corresponding entry of the type `A` Cartan matrix, with a sign for the
 lowering generators. -/
 private theorem cartanCoeff (k : Fin r ⊕ Fin r) (j : Fin r) :
     ((if j.castSucc = rootTarget r k then (1 : ℤ) else 0) -
@@ -436,6 +431,20 @@ open AlgebraicGeometry CategoryTheory
 -- Match tensor products to the `ℤ`-algebra structure used by scalar extension.
 attribute [local instance high] Algebra.toModule
 
+attribute [local instance 100] LieRing.ofAssociativeRing in
+/-- The standard representation carries the numbered `sl₂` triple at node `i` to an `sl₂` triple
+of endomorphisms of the standard module. -/
+theorem isSl2Triple_rep_rootGenerator (i : Fin r) :
+    _root_.IsSl2Triple (rep r (_root_.UniversalEnvelopingAlgebra.ι ℚ (cartanGenerator r i)))
+      (rep r (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator r (.inl i))))
+      (rep r (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator r (.inr i)))) := by
+  refine (isSl2Triple_rootGenerator r i).map
+    ((rep r).toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)) fun hzero => ?_
+  have h := congrFun (DFunLike.congr_fun hzero (Pi.single i.castSucc 1)) i.castSucc
+  simp only [LieHom.comp_apply, AlgHom.toLieHom_apply, rep_ι_apply, val_cartanGenerator,
+    LinearMap.zero_apply, Pi.zero_apply] at h
+  simp [(Fin.castSucc_lt_succ (i := i)).ne'] at h
+
 /-- Every coordinate basis vector of the standard lattice is a Cartan weight vector. -/
 theorem isCartanWeightVector_latticeBasis (k : Fin (r + 1)) :
     TauCeti.UniversalEnvelopingAlgebra.IsCartanWeightVector (cartanGenerator r) (rep r)
@@ -520,8 +529,8 @@ theorem rootSubgroup_def (k : Fin r ⊕ Fin r) :
         (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) k := by
   rw [rootSubgroup]
 
-/-- The rank-`r` split weight torus `T → G` of the type `A_r` carrier. Maximality is not
-asserted here; see the scope disclaimer in the module documentation. -/
+/-- The rank-`r` split weight torus `T → G` of the type `A_r` carrier. Its maximality over an
+infinite field is `TauCeti.SlStd.eq_range_weightTorusPoints_of_le_of_isMulCommutative`. -/
 noncomputable def weightTorus : SplitTorus.groupScheme ℤ (Fin r) ⟶ groupScheme r :=
   TauCeti.UniversalEnvelopingAlgebra.kostantWeightTorusToToral (rootGenerator r)
     (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
@@ -616,7 +625,7 @@ theorem coe_weightTorusPoints (A : Type v) [CommRing A] (s : Fin r → Aˣ) :
 
 /-- A matrix is a point of the type `A_r` carrier exactly when the associated convolution point
 kills its toral defining Hopf ideal. -/
-@[simp]
+-- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.
 theorem mem_points_iff (A : Type v) [CommRing A]
     (g : Matrix.GeneralLinearGroup (Fin (r + 1)) A) :
     g ∈ points r A ↔
@@ -648,7 +657,7 @@ theorem rep_rootGenerator_latticeBasis_apply (k : Fin r ⊕ Fin r) (s : Fin (r +
 
 /-- A numbered root generator carries the coordinate basis vector at its source to the one at its
 target. This is the root step that makes the root subgroup a closed copy of `𝔾ₐ`. -/
-theorem rep_rootGenerator_latticeBasis (k : Fin r ⊕ Fin r) :
+private theorem rep_rootGenerator_latticeBasis (k : Fin r ⊕ Fin r) :
     rep r (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator r k))
         ((latticeBasis r (rootSource r k) : (lattice r).toAddSubgroup) : Fin (r + 1) → ℚ) =
       (1 : ℤ) • ((latticeBasis r (rootTarget r k) : (lattice r).toAddSubgroup) :
@@ -697,10 +706,10 @@ noncomputable def torusPoints (A : CommAlgCat ℤ) :
   TauCeti.UniversalEnvelopingAlgebra.kostantTorusPoints (lattice r).toAddSubgroup
     (latticeBasis r) (weight r) A
 
-/-- **The pinning equation of the type `A_r` carrier.** A torus point `s` conjugates the
-root-subgroup element of parameter `u` into the one of parameter `α_k(s) u`, where `α_k` is the
-`k`-th row of the type `A_r` Cartan matrix on a raising generator and its negative on a lowering
-one. -/
+/-- **The pinning equation on the base-changed lattice.** In the linear automorphisms of
+`A ⊗[ℤ] lattice r`, a torus point `s` conjugates the root-subgroup element of parameter `u` into the
+one of parameter `α_k(s) u`, where `α_k` is the `k`-th row of the type `A_r` Cartan matrix on a
+raising generator and its negative on a lowering one. -/
 theorem torusPoints_conj_rootSubgroupParam (k : Fin r ⊕ Fin r) (A : CommAlgCat ℤ)
     (s : Fin r → Aˣ) (u : Multiplicative A) :
     torusPoints r A s * rootSubgroupParam r k A u * (torusPoints r A s)⁻¹ =

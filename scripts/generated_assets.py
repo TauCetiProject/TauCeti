@@ -9,17 +9,17 @@ wrong: `merges-by-roadmap-and-contributor.svg` and `reviews-by-roadmap-and-contr
 were generated into `web/static_files` and then not carried, so the site referenced two images
 that never arrived. Nothing failed -- the artifact was simply missing them.
 
-Deriving the pull-request statistics half from `ASSET_NAMES` means that half can never drift
-again. The rest is named here because those generators take their output path from the
-workflow rather than declaring it, so there is nothing to import.
+Derive the pull-request, daily CI, and roadmap completion assets from each generator's
+`ASSET_NAMES`. The rest is named here because those generators take their output path
+from the workflow rather than declaring it, so there is nothing to import.
 """
 
 import ci_daily_graphs
 import pr_stats_graphs
+import roadmap_completion
 
 OTHER_ASSETS = [
     "loc-tauceti.svg",        # scripts/loc_graph.py, TauCeti
-    "loc-roadmap.svg",        # scripts/loc_graph.py, the roadmap repository
     "loc-per-roadmap.svg",    # scripts/loc_roadmap_graph.py
     "participation.svg",      # scripts/participant_graph.py
     "progress.json",          # scripts/roadmap_progress.py
@@ -29,7 +29,8 @@ OTHER_ASSETS = [
     "ci-stats.json",          # scripts/ci_stats_graphs.py
 ]
 
-GENERATED_ASSETS = list(pr_stats_graphs.ASSET_NAMES) + list(ci_daily_graphs.ASSET_NAMES) + OTHER_ASSETS
+GENERATED_ASSETS = (list(pr_stats_graphs.ASSET_NAMES) + list(ci_daily_graphs.ASSET_NAMES)
+                    + list(roadmap_completion.ASSET_NAMES) + OTHER_ASSETS)
 
 
 if __name__ == "__main__":

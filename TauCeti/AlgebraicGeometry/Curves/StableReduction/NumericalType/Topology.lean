@@ -121,6 +121,15 @@ theorem topologicalGenus_eq_zero_iff :
     rw [topologicalGenus_def]
     omega
 
+/-- If three components pairwise meet, the intersection graph contains a triangle, so it is not a
+tree and its topological genus is positive. -/
+theorem topologicalGenus_pos_of_adj_of_adj_of_adj {a b c : T.Component} (hab : T.Adj a b)
+    (hac : T.Adj a c) (hbc : T.Adj b c) : 0 < T.topologicalGenus := by
+  refine T.topologicalGenus_nonneg.lt_of_ne fun h ↦ ?_
+  exact (T.topologicalGenus_eq_zero_iff.mp h.symm).isAcyclic.cliqueFree le_rfl {a, b, c}
+    (SimpleGraph.is3Clique_triple_iff.mpr ⟨(T.intersectionGraph_adj_iff).mpr hab,
+      (T.intersectionGraph_adj_iff).mpr hac, (T.intersectionGraph_adj_iff).mpr hbc⟩)
+
 end NumericalType
 
 end TauCeti

@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.MayerVietoris
 public import TauCeti.AlgebraicTopology.Singular.Subspace
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Equiv
 public import TauCeti.Topology.Category.TopCat.Subspace
+public import TauCeti.Topology.Sets.FinTwo
 
 /-!
 # The Mayer–Vietoris sequence in singular homology
@@ -121,20 +122,25 @@ theorem isPushout_toSSet_inter_smallSingularSubcomplex :
       ((Matrix.cons_val_one U ![V]).trans (Matrix.cons_val_zero V ![])).superset ≫ D.ι
     exact (toSmallSingularSubcomplex_ι _ _).symm
 
+/-- Restricting `f` to a set `A` lying in a member of the family `S` and then passing to the small
+singular subcomplex of `T` agrees with passing to the small singular subcomplex of `S` first and
+then mapping by `f`. -/
+@[reassoc]
+lemma toSmallSingularSubcomplex_comp_smallSingularSubcomplexMap {Y : TopCat.{w}} {ι κ : Type*}
+    (S : ι → Set X) (T : κ → Set Y) (f : X ⟶ Y) (r : ι → κ)
+    (hf : ∀ i, Set.MapsTo f (S i) (T (r i))) {A : Set X} {B : Set Y} {i : ι} {j : κ}
+    (hA : A ⊆ S i) (hB : B ⊆ T j) (hAB : Set.MapsTo f A B) :
+    toSmallSingularSubcomplex S hA ≫ X.smallSingularSubcomplexMap S T f r hf =
+      toSSet.map (ofHom ⟨hAB.restrict, f.hom.continuous.restrict hAB⟩) ≫
+        toSmallSingularSubcomplex T hB := by
+  rw [← cancel_mono (Y.smallSingularSubcomplex T).ι, Category.assoc, Category.assoc,
+    smallSingularSubcomplexMap_ι, toSmallSingularSubcomplex_ι_assoc, toSmallSingularSubcomplex_ι,
+    ← Functor.map_comp, ← Functor.map_comp, ofHom_subtypeVal_comp f hAB]
+
 /-! ### The Mayer–Vietoris sequence of an open cover by two sets -/
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
   {U V} (hU : IsOpen U) (hV : IsOpen V) (hUV : U ∪ V = Set.univ)
-
-include hU hV in
-private lemma isOpen_vecCons : ∀ i, IsOpen (![U, V] i) := by
-  simp [Fin.forall_fin_two, hU, hV]
-
-include hUV in
-private lemma iUnion_vecCons : ⋃ i, ![U, V] i = Set.univ := by
-  rw [← hUV]
-  ext
-  simp [Fin.exists_fin_two]
 
 /-- The Mayer–Vietoris connecting morphism `Hₙ(X) ⟶ Hₘ(U ∩ V)`, where `m + 1 = n`, for an open
 cover of `X` by `U` and `V`. It is the connecting morphism of the Mayer–Vietoris sequence of the
@@ -142,7 +148,8 @@ singular simplicial sets of `U ∩ V`, `U` and `V`, precomposed with the inverse
 isomorphism. -/
 def mayerVietorisδ (n m : ℕ) (h : m + 1 = n := by lia) :
     (toSSet.obj X).homology R n ⟶ (toSSet.obj (of ↥(U ∩ V))).homology R m :=
-  (TauCeti.smallSingularHomologyIso R ![U, V] (isOpen_vecCons hU hV) (iUnion_vecCons hUV) n).inv ≫
+  (TauCeti.smallSingularHomologyIso R ![U, V] (TauCeti.isOpen_vecCons hU hV)
+    ((TauCeti.iUnion_vecCons U V).trans hUV) n).inv ≫
     SSet.mayerVietorisδ R (isPushout_toSSet_inter_smallSingularSubcomplex U V) n m h
 
 /-- The Mayer–Vietoris connecting morphism of the open cover restricts, on the homology of the
@@ -153,7 +160,8 @@ lemma homologyMap_ι_comp_mayerVietorisδ (n m : ℕ) (h : m + 1 = n := by lia) 
     SSet.homologyMap (X.smallSingularSubcomplex ![U, V]).ι R n ≫ mayerVietorisδ R hU hV hUV n m h =
       SSet.mayerVietorisδ R (isPushout_toSSet_inter_smallSingularSubcomplex U V) n m h := by
   rw [mayerVietorisδ, SSet.homologyMap, ← TauCeti.smallSingularHomologyIso_hom R ![U, V]
-    (isOpen_vecCons hU hV) (iUnion_vecCons hUV), Iso.hom_inv_id_assoc]
+    (TauCeti.isOpen_vecCons hU hV) ((TauCeti.iUnion_vecCons U V).trans hUV),
+    Iso.hom_inv_id_assoc]
 
 private lemma mayerVietorisFromBiprod_comp_homologyMap_ι (n : ℕ) :
     SSet.mayerVietorisFromBiprod R
@@ -187,7 +195,8 @@ lemma mayerVietoris_exact₁ (n m : ℕ) (h : m + 1 = n := by lia) :
   refine (ShortComplex.exact_iff_of_iso ?_).1
     (SSet.mayerVietoris_exact₁ R (isPushout_toSSet_inter_smallSingularSubcomplex U V) n m h)
   refine ShortComplex.isoMk
-    (TauCeti.smallSingularHomologyIso R _ (isOpen_vecCons hU hV) (iUnion_vecCons hUV) n)
+    (TauCeti.smallSingularHomologyIso R _ (TauCeti.isOpen_vecCons hU hV)
+      ((TauCeti.iUnion_vecCons U V).trans hUV) n)
     (Iso.refl _) (Iso.refl _) ?_ (by simp only [Iso.refl_hom, Category.id_comp, Category.comp_id])
   dsimp only
   rw [Iso.refl_hom, Category.comp_id, TauCeti.smallSingularHomologyIso_hom,
@@ -201,7 +210,8 @@ lemma mayerVietoris_exact₂ (n : ℕ) :
   refine (ShortComplex.exact_iff_of_iso ?_).1
     (SSet.mayerVietoris_exact₂ R (isPushout_toSSet_inter_smallSingularSubcomplex U V) n)
   refine ShortComplex.isoMk (Iso.refl _) (Iso.refl _)
-    (TauCeti.smallSingularHomologyIso R _ (isOpen_vecCons hU hV) (iUnion_vecCons hUV) n)
+    (TauCeti.smallSingularHomologyIso R _ (TauCeti.isOpen_vecCons hU hV)
+      ((TauCeti.iUnion_vecCons U V).trans hUV) n)
     (by simp only [Iso.refl_hom, Category.id_comp, Category.comp_id]) ?_
   dsimp only
   rw [TauCeti.smallSingularHomologyIso_hom, Iso.refl_hom, Category.id_comp,
@@ -213,7 +223,8 @@ lemma mayerVietoris_exact₃ (n m : ℕ) (h : m + 1 = n := by lia) :
   refine (ShortComplex.exact_iff_of_iso ?_).1
     (SSet.mayerVietoris_exact₃ R (isPushout_toSSet_inter_smallSingularSubcomplex U V) n m h)
   refine ShortComplex.isoMk (Iso.refl _)
-    (TauCeti.smallSingularHomologyIso R _ (isOpen_vecCons hU hV) (iUnion_vecCons hUV) n)
+    (TauCeti.smallSingularHomologyIso R _ (TauCeti.isOpen_vecCons hU hV)
+      ((TauCeti.iUnion_vecCons U V).trans hUV) n)
     (Iso.refl _) ?_ ?_
   · dsimp only
     rw [TauCeti.smallSingularHomologyIso_hom, Iso.refl_hom, Category.id_comp,
@@ -238,7 +249,7 @@ lemma epi_mayerVietorisFromBiprod_zero :
       change Epi (HomologicalComplex.homologyMap
         (SSet.chainComplexMap (X.smallSingularSubcomplex ![U, V]).ι R) 0)
       rw [← TauCeti.smallSingularHomologyIso_hom R ![U, V]
-        (isOpen_vecCons hU hV) (iUnion_vecCons hUV)]
+        (TauCeti.isOpen_vecCons hU hV) ((TauCeti.iUnion_vecCons U V).trans hUV)]
       infer_instance
     have := SSet.epi_mayerVietorisFromBiprod_zero R
       (isPushout_toSSet_inter_smallSingularSubcomplex U V)
@@ -260,8 +271,9 @@ lemma mayerVietorisδ_naturality (n m : ℕ) (h : m + 1 = n := by lia) :
       SSet.homologyMap (toSSet.map f) R n ≫ mayerVietorisδ R hU' hV' hUV' n m h := by
   have hf : ∀ i, Set.MapsTo f (![U, V] i) (![U', V'] (id i)) := by
     simp [Fin.forall_fin_two, hfU, hfV]
-  have hsmall := TauCeti.smallSingularHomologyIso_naturality R ![U, V] (isOpen_vecCons hU hV)
-    (iUnion_vecCons hUV) ![U', V'] f id hf (isOpen_vecCons hU' hV') (iUnion_vecCons hUV') n
+  have hsmall := TauCeti.smallSingularHomologyIso_naturality R ![U, V]
+    (TauCeti.isOpen_vecCons hU hV) ((TauCeti.iUnion_vecCons U V).trans hUV) ![U', V'] f id hf
+    (TauCeti.isOpen_vecCons hU' hV') ((TauCeti.iUnion_vecCons U' V').trans hUV') n
   have hnat := SSet.mayerVietorisδ_naturality R
     (toSSet.map (ofHom ⟨(hfU.inter_inter hfV).restrict,
       f.hom.continuous.restrict (hfU.inter_inter hfV)⟩))
@@ -276,18 +288,10 @@ lemma mayerVietorisδ_naturality (n m : ℕ) (h : m + 1 = n := by lia) :
     rw [Iso.inv_comp_eq, ← Category.assoc, hsmall, Category.assoc, Iso.hom_inv_id,
       Category.comp_id]
   -- The four squares of singular simplicial sets commute because the underlying squares of
-  -- continuous maps do, pointwise by definition.
-  · rw [← Functor.map_comp, ← Functor.map_comp]
-    rfl
-  · rw [← Functor.map_comp, ← Functor.map_comp]
-    rfl
-  · rw [← cancel_mono (Y.smallSingularSubcomplex ![U', V']).ι, Category.assoc, Category.assoc,
-      smallSingularSubcomplexMap_ι, toSmallSingularSubcomplex_ι_assoc, toSmallSingularSubcomplex_ι,
-      ← Functor.map_comp, ← Functor.map_comp]
-    rfl
-  · rw [← cancel_mono (Y.smallSingularSubcomplex ![U', V']).ι, Category.assoc, Category.assoc,
-      smallSingularSubcomplexMap_ι, toSmallSingularSubcomplex_ι_assoc, toSmallSingularSubcomplex_ι,
-      ← Functor.map_comp, ← Functor.map_comp]
-    rfl
+  -- continuous maps do.
+  · rw [← Functor.map_comp, ← Functor.map_comp, ofHom_inclusion_comp]
+  · rw [← Functor.map_comp, ← Functor.map_comp, ofHom_inclusion_comp]
+  · exact toSmallSingularSubcomplex_comp_smallSingularSubcomplexMap _ _ f id hf _ _ hfU
+  · exact toSmallSingularSubcomplex_comp_smallSingularSubcomplexMap _ _ f id hf _ _ hfV
 
 end TopCat

@@ -44,29 +44,19 @@ it is the separately constructed symplectic group scheme.
 
 public section
 
-open scoped Matrix
-
 universe v
 
 namespace TauCeti.SpStd
 
-open LieAlgebra.Symplectic
-open scoped TensorProduct
 open scoped CategoryTheory.MonObj
 
-attribute [local instance] TauCeti.moduleNNRat
-attribute [local instance 100] LieRing.ofAssociativeRing
-
 variable (n : ℕ)
-
 
 /-! ## The pinned carrier -/
 
 section Carrier
 
 open AlgebraicGeometry CategoryTheory
-
-attribute [local instance high] Algebra.toModule
 
 /-- The Hopf ideal cutting out the full-weight type-`C_(n+1)` carrier inside the standard
 general linear group. -/
@@ -126,16 +116,9 @@ theorem carrierι_eq_eqToHom_comp_hopfIdealInclusion :
     carrierι n =
       eqToHom (groupScheme_def n) ≫
         GeneralLinear.hopfIdealInclusion ℤ ((n + 1) + (n + 1)) (definingIdeal n) := by
-  have hgroup : groupScheme_def n =
-      congrArg (CommHopfAlgCat.quotientSpec
-        (GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1))))
-          (definingIdeal_def n).symm :=
-    Subsingleton.elim _ _
   rw [carrierι_def, TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupSchemeι_def,
-    GeneralLinear.hopfIdealInclusion_def]
-  rw [hgroup, ← Category.assoc, CommHopfAlgCat.eqToHom_comp_quotientSpecι]
-  · rw [eqToIso.hom]
-  · exact (definingIdeal_def n).symm
+    GeneralLinear.hopfIdealInclusion_def, ← Category.assoc,
+    CommHopfAlgCat.eqToHom_comp_quotientSpecι _ (definingIdeal_def n).symm, eqToIso.hom]
 
 /-- The type-`C_(n+1)` carrier is a closed subgroup scheme of its ambient general linear group. -/
 instance isClosedImmersion_carrierι : IsClosedImmersion (carrierι n).hom.hom.left := by
@@ -239,7 +222,8 @@ theorem points_def (A : Type v) [CommRing A] :
 
 /-- A matrix is a point of the type-`C_(n+1)` carrier exactly when its associated convolution
 point kills the carrier's defining Hopf ideal. -/
-@[simp] theorem mem_points_iff (A : Type v) [CommRing A]
+-- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.
+theorem mem_points_iff (A : Type v) [CommRing A]
     (g : _root_.Matrix.GeneralLinearGroup (Fin ((n + 1) + (n + 1))) A) :
     g ∈ points n A ↔
       ∀ x ∈ definingIdeal n,
@@ -316,7 +300,8 @@ instance isClosedImmersion_weightTorus : IsClosedImmersion (weightTorus n).hom.h
 /-- The scheme-level pinning equation: conjugation by the weight torus acts on each numbered root
 subgroup through the corresponding row of the type-`C` Cartan matrix, with negative rows on
 lowering generators. -/
-@[simp] theorem weightTorus_conj_rootSubgroup (k : Fin (n + 1) ⊕ Fin (n + 1))
+-- Not `@[simp]`: `simp` does not match its left-hand side, even with the lemma alone; use `rw`.
+theorem weightTorus_conj_rootSubgroup (k : Fin (n + 1) ⊕ Fin (n + 1))
     (A : Type) [CommRing A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (SplitTorus.groupScheme ℤ (Fin (n + 1))).X)

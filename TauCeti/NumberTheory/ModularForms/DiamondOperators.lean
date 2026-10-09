@@ -105,7 +105,7 @@ private lemma cusp_mcast_translate_apply (k : ℤ) (g : ↥(Gamma0 N))
     (CuspForm.mcast rfl (CuspForm.translate f (mapGL ℝ (g : SL(2, ℤ))))
       (Gamma1_map_inv_conjAct_eq g).symm) z = (⇑f ∣[k] mapGL ℝ (g : SL(2, ℤ))) z :=
   (CuspForm.mcast_apply rfl (CuspForm.translate f (mapGL ℝ (g : SL(2, ℤ))))
-    (Gamma1_map_inv_conjAct_eq g).symm z).trans (congr_fun (CuspForm.coe_translate_gl f _) z)
+    (Gamma1_map_inv_conjAct_eq g).symm z).trans (congr_fun (CuspForm.coe_translate f _) z)
 
 -- The diamond operator at a chosen representative: for `g ∈ Gamma0 N`, translation by
 -- `mapGL ℝ g` lands at the conjugated level, which `Gamma1_map_inv_conjAct_eq` identifies

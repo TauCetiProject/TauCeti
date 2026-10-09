@@ -56,6 +56,11 @@ the inequalities being given by continuous affine functionals. -/
 def IsConvexPolyhedron (s : Set E) : Prop :=
   ∃ (n : ℕ) (g : Fin n → (E →ᴬ[ℝ] ℝ)), s = {x | ∀ i, g i x ≤ 0}
 
+/-- The finite affine inequalities characterizing a convex polyhedron. -/
+theorem isConvexPolyhedron_iff :
+    IsConvexPolyhedron s ↔
+      ∃ (n : ℕ) (g : Fin n → (E →ᴬ[ℝ] ℝ)), s = {x | ∀ i, g i x ≤ 0} := Iff.rfl
+
 /-- The solution set of a finite family of non-strict affine inequalities, indexed by an arbitrary
 finite type, is a convex polyhedron. This is the form in which the definition is used: the
 constructions below produce their inequalities indexed by sums and products of index types. -/

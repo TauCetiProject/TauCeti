@@ -132,6 +132,21 @@ theorem turn_mem_cIco_bottom_top (P : GridInitialPentagonBetween a s x y) :
   rw [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def]
   exact P.turn_mem
 
+/-- An initial-side pentagon spanning one cyclic row turns at its bottom row. -/
+theorem turn_eq_bottom_of_top_eq_finRotate_bottom (P : GridInitialPentagonBetween a s x y)
+    (hthin : P.top = finRotate n P.bottom) : s = P.bottom := by
+  have hrows := Grid.cIco_eq_singleton_iff.2 ⟨rfl, hthin, P.bottom_ne_top⟩
+  have ht := P.turn_mem_cIco_bottom_top
+  rw [hrows] at ht
+  exact Finset.mem_singleton.mp ht
+
+/-- The row interval of a thin initial-side pentagon consists exactly of its turn row. -/
+theorem cIco_bottom_top_eq_singleton_of_top_eq_finRotate_bottom
+    (P : GridInitialPentagonBetween a s x y) (hthin : P.top = finRotate n P.bottom) :
+    Grid.cIco P.bottom P.top = {s} := by
+  simpa only [P.turn_eq_bottom_of_top_eq_finRotate_bottom hthin] using
+    Grid.cIco_eq_singleton_iff.2 ⟨rfl, hthin, P.bottom_ne_top⟩
+
 /-- A pentagon turning on its initial side is determined by its underlying rectangle. -/
 theorem toGridRectangleBetween_injective :
     Function.Injective
@@ -241,6 +256,19 @@ theorem mk_mem_coveredSquares_right_column (P : GridInitialPentagonBetween a s x
   simp only [P.mem_coveredSquares, P.ne_finRotate.symm, ne_eq, not_true_eq_false, false_and,
     true_and, false_or]
 
+/-- A thin initial-side pentagon covers its turn row in every column of its underlying
+rectangle except the column immediately after the first commuted column. -/
+theorem coveredSquares_eq_product_singleton_of_top_eq_finRotate_bottom
+    (P : GridInitialPentagonBetween a s x y) (hthin : P.top = finRotate n P.bottom) :
+    P.coveredSquares =
+      (Grid.cIco (finRotate n a) P.right).erase (finRotate n a) ×ˢ {s} := by
+  have hs := P.turn_eq_bottom_of_top_eq_finRotate_bottom hthin
+  ext p
+  simp only [mem_coveredSquares, Finset.mem_product, Finset.mem_erase,
+    hs, Grid.cIco_eq_singleton_iff.2 ⟨rfl, hthin, P.bottom_ne_top⟩, Finset.mem_singleton]
+  simp only [hthin, Grid.cIoo_finRotate_eq_empty, Grid.cIco_self,
+    Finset.notMem_empty, and_false, or_false, and_assoc]
+
 /-- A pentagon turning on its initial side carries no `X`-marking exactly when the underlying
 rectangle carries none away from columns `a` and `finRotate n a`, the `X`-marking of column `a` is
 not above the turn row, and the `X`-marking of column `finRotate n a` is not below it. -/
@@ -338,6 +366,32 @@ theorem initialPentagonWeight_eq_prod_coveredSquares {x y : GridState n}
   rw [initialPentagonWeight, G.prod_ite_OSet_eq_prod_OColumnsOfSquares
     (fun c => (MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) c) :
       MvPolynomial (Fin n) R))]
+
+/-- Renamed back by the column swap, the weight of a pentagon turning on its initial side is the
+product, over the squares it covers, of the variable of the square's column in `G` at the
+`O`-marked squares and of `1` elsewhere. -/
+theorem rename_initialPentagonWeight {x y : GridState n} (C : ColumnCommutationData G)
+    (P : GridInitialPentagonBetween C.column C.turnRow x y) :
+    rename (Equiv.swap C.column (finRotate n C.column)) (G.initialPentagonWeight R C P) =
+      ∏ p ∈ P.coveredSquares,
+        if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R) := by
+  rw [initialPentagonWeight_eq_prod_coveredSquares, map_prod]
+  refine Finset.prod_congr rfl fun p _ => ?_
+  split_ifs <;> simp
+
+/-- The weight of a pentagon of the reverse commutation turning on its initial side, counted in the
+commuted diagram, is the product, over the squares it covers read in `G` by exchanging the two
+commuted columns, of the variable of the square's column at the `O`-marked squares of `G` and of
+`1` elsewhere. -/
+theorem initialPentagonWeight_reverse {y z : GridState n} (C : ColumnCommutationData G)
+    (Q : GridInitialPentagonBetween C.reverse.column C.reverse.turnRow y z) :
+    (G.swapColumns C.column (finRotate n C.column)).initialPentagonWeight R C.reverse Q =
+      ∏ p ∈ Q.coveredSquares.map
+          ((Equiv.swap C.column (finRotate n C.column)).prodCongr (Equiv.refl (Fin n))).toEmbedding,
+        if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R) := by
+  rw [initialPentagonWeight_eq_prod_coveredSquares, Finset.prod_map]
+  refine Finset.prod_congr rfl fun p _ => ?_
+  simp [ColumnCommutationData.reverse_column]
 
 /-- The matrix coefficient from `x` to `y` of the map counting pentagons turning on their initial
 side: the sum of the weights of the counted ones. -/

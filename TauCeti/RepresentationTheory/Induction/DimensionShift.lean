@@ -8,7 +8,6 @@ module
 import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 import TauCeti.RepresentationTheory.Rep.TensorShortExact
 
-public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.Algebra.Homology.ShortComplex.FunctorEquivalence
 public import TauCeti.RepresentationTheory.Induction.TrivialSubgroup
 
@@ -236,8 +235,8 @@ def dimensionShiftUpMap {A B : Rep k G} (f : A ⟶ B) :
 @[reassoc (attr := simp)]
 theorem dimensionShiftUpπ_naturality {A B : Rep k G} (f : A ⟶ B) :
     dimensionShiftUpπ A ≫ dimensionShiftUpMap f =
-      coindBotMap f ≫ dimensionShiftUpπ B := by
-  exact cokernel.π_desc _ _ _
+      coindBotMap f ≫ dimensionShiftUpπ B :=
+  cokernel.π_desc _ _ _
 
 /-- The upward shift map preserves identity morphisms. -/
 @[simp]
@@ -290,8 +289,8 @@ def dimensionShiftDownMap {A B : Rep k G} (f : A ⟶ B) :
 @[reassoc (attr := simp)]
 theorem dimensionShiftDownι_naturality {A B : Rep k G} (f : A ⟶ B) :
     dimensionShiftDownMap f ≫ dimensionShiftDownι B =
-      dimensionShiftDownι A ≫ indBotMap f := by
-  exact kernel.lift_ι _ _ _
+      dimensionShiftDownι A ≫ indBotMap f :=
+  kernel.lift_ι _ _ _
 
 /-- The downward shift map preserves identity morphisms. -/
 @[simp]

@@ -29,6 +29,8 @@ a quadratic order.
   `ℤ`-basis of a nonzero fractional ideal span the number field over `ℚ`.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.finrank_int_eq_finrank_rat`: a nonzero
   fractional ideal has `ℤ`-rank `[K : ℚ]`.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.exists_basis_restrictScalars_eq_span`: a nonzero
+  fractional ideal of an order is the `ℤ`-span of a `ℚ`-basis of the number field.
 
 ## Implementation notes
 
@@ -114,6 +116,26 @@ theorem finrank_int_eq_finrank_rat {I : FractionalIdeal (nonZeroDivisors O.toSub
         (Submodule.ker_subtype _))
   rw [Module.finrank_eq_card_chooseBasisIndex,
     Module.finrank_eq_card_basis (Module.Basis.mk hli (span_rat_range_basis hI b).ge)]
+
+variable (O) in
+/-- **A nonzero fractional ideal of an order is the `ℤ`-span of a `ℚ`-basis of the number
+field.** A `ℤ`-basis of the ideal is linearly independent over `ℚ` and spans `K`. -/
+theorem exists_basis_restrictScalars_eq_span
+    {I : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K} (hI : I ≠ 0) :
+    ∃ b : Module.Basis (Fin (Module.finrank ℚ K)) ℚ K,
+      (I : Submodule O.toSubalgebra K).restrictScalars ℤ =
+        Submodule.span ℤ (Set.range b) := by
+  let c := Module.Free.chooseBasis ℤ I
+  have hli : LinearIndependent ℚ fun i ↦ (c i : K) :=
+    (LinearIndependent.iff_fractionRing ℤ ℚ).mp
+      (c.linearIndependent.map' (((I : Submodule O.toSubalgebra K).restrictScalars ℤ).subtype)
+        (Submodule.ker_subtype _))
+  let b := Module.Basis.mk hli (span_rat_range_basis hI c).ge
+  refine ⟨b.reindex (b.indexEquiv (Module.finBasis ℚ K)), ?_⟩
+  rw [Module.Basis.range_reindex, Module.Basis.coe_mk]
+  apply SetLike.coe_injective
+  rw [span_int_range_basis c, Submodule.coe_restrictScalars,
+    FractionalIdeal.coeToSet_coeToSubmodule]
 
 end NumberFieldOrder
 

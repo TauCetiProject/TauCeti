@@ -120,6 +120,13 @@ noncomputable def pointsMulEquiv (A : CommAlgCat.{v} (ZMod 3)) :
     (MulEquiv.subgroupCongr (by
       simpa only [definingIdeal_def] using points_eq_hopfIdealPointsSubgroup A)).symm
 
+/-- The extended carrier's points identified with its matrix-valued prime-field points. -/
+noncomputable abbrev baseChangePointsEquiv (k : Type) [CommRing k] [Algebra (ZMod 3) k] :
+    HopfAlgebra.points (R := k) (H := CommHopfAlgCat.baseChange (K := k) carrierAlgebra)
+      (CommAlgCat.of k k) ≃* points k :=
+  (AlgHom.baseChangePointsMulEquiv (k := ZMod 3) (K := k) (A := carrierAlgebra)
+    (R := k)).symm.trans (pointsMulEquiv (CommAlgCat.of (ZMod 3) k))
+
 /-- A common-kernel quotient point is its underlying general-linear point read as a matrix. -/
 private theorem coe_pointsMulEquiv_apply (A : CommAlgCat.{v} (ZMod 3))
     (q : HopfAlgebra.points
@@ -332,7 +339,7 @@ private lemma groupSchemePointMulEquiv_comp_weightTorus
 
 /-- A matrix is a point of the carrier exactly when its associated convolution point kills the
 carrier's defining Hopf ideal. -/
-@[simp]
+-- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.
 theorem mem_points_iff (A : Type v) [CommRing A] [Algebra (ZMod 3) A]
     (g : _root_.Matrix.GeneralLinearGroup (Fin 7) A) :
     g ∈ points A ↔ ∀ x ∈ definingIdeal,
@@ -473,7 +480,9 @@ private theorem pointsMulEquiv_commonKernelLift_root (k : Fin 2 ⊕ Fin 2)
         (CommAlgCat.of (ZMod 3) A) q).symm
     _ = _ := (coe_rootSubgroupPoints_gaPointsMulEquiv k A q).symm
 
-private theorem pointsMulEquiv_commonKernelLift_weightTorus
+/-- The coordinate lift of the weight-torus generator induces the named weight-torus map
+under the carrier and split-torus point equivalences. -/
+theorem pointsMulEquiv_commonKernelLift_weightTorus
     (A : Type) [CommRing A] [Algebra (ZMod 3) A]
     (q : HopfAlgebra.points (R := ZMod 3)
       (H := (DiagonalizableGroup.coordinateRing (ZMod 3)
@@ -612,7 +621,7 @@ theorem weightTorusPoints_conj_rootSubgroupPoints (k : Fin 2 ⊕ Fin 2) (A : Typ
 /-- **The torus-conjugation equation on scheme-valued points of the carrier**: conjugation by a
 point of the weight torus rescales the parameter of each numbered simple root subgroup by the
 corresponding type-`G₂` root character. -/
-@[simp]
+-- Not `@[simp]`: `simp` does not match its left-hand side, even with the lemma alone; use `rw`.
 theorem weightTorus_conj_rootSubgroup (k : Fin 2 ⊕ Fin 2)
     (A : Type) [CommRing A] [Algebra (ZMod 3) A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of (ZMod 3))) ⟶

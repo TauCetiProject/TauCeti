@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
-public import TauCeti.Analysis.InnerProductSpace.RangeProjection
+public import TauCeti.Geometry.Manifold.TubularNeighborhood.LocalCoordinates
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Basic
 
@@ -63,65 +62,6 @@ section Local
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
-/-- With `W₀` the normal space of `g` at `u₀` and `Q u` the orthogonal projection onto the normal
-space at `u`, the map `(u, w) ↦ g u + Q u w` on `E × W₀` is a local homeomorphism at `(u₀, 0)`. Its
-derivative there is the isomorphism `(du, dw) ↦ Dg du + dw` from `E × W₀` to `V`. -/
-private theorem exists_openPartialHomeomorph_normal {g : E → V} {u₀ : E}
-    (hg : ContDiffAt ℝ 2 g u₀) (hinj : Injective (fderiv ℝ g u₀)) :
-    ∃ h : OpenPartialHomeomorph (E × (fderiv ℝ g u₀).rangeᗮ) V, (u₀, 0) ∈ h.source ∧
-      ∀ q, h q = g q.1 + (fderiv ℝ g q.1).rangeᗮ.starProjection q.2 := by
-  let A : E → E →L[ℝ] V := fderiv ℝ g
-  set W₀ := (A u₀).rangeᗮ
-  let Q : E → V →L[ℝ] V := fun u => (A u).rangeᗮ.starProjection
-  have hQ₀ : ContDiffAt ℝ 1 Q u₀ :=
-    (hg.fderiv_right (m := 1) (by norm_num)).starProjection_orthogonal_range hinj
-  have hQW : ∀ w : W₀, Q u₀ w = w := fun w => Submodule.starProjection_eq_self_iff.mpr w.2
-  let Ψ : E × W₀ → V := fun q => g q.1 + Q q.1 q.2
-  have hΨ : ContDiffAt ℝ 1 Ψ (u₀, 0) :=
-    ((hg.of_le (by norm_num)).comp (u₀, (0 : W₀)) contDiffAt_fst).add
-      ((hQ₀.comp (u₀, (0 : W₀)) contDiffAt_fst).clm_apply
-        (W₀.subtypeL.contDiff.contDiffAt.comp _ contDiffAt_snd))
-  let D : E × W₀ →L[ℝ] V :=
-    (A u₀).comp (ContinuousLinearMap.fst ℝ E W₀) + W₀.subtypeL.comp (ContinuousLinearMap.snd ℝ E W₀)
-  -- `D` is injective since the range of `A u₀` meets `W₀` only in zero, and bijective by counting
-  -- dimensions.
-  have hDinj : Injective D := by
-    rw [injective_iff_map_eq_zero]
-    rintro ⟨x, w⟩ h
-    simp only [D, add_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst',
-      ContinuousLinearMap.coe_snd', Submodule.subtypeL_apply] at h
-    have hx : A u₀ x ∈ (A u₀).range ⊓ W₀ := by
-      refine ⟨LinearMap.mem_range_self _ x, ?_⟩
-      rw [eq_neg_of_add_eq_zero_left h]
-      exact W₀.neg_mem w.2
-    rw [Submodule.inf_orthogonal_eq_bot, Submodule.mem_bot] at hx
-    obtain rfl : x = 0 := hinj (by simpa [A] using hx)
-    simp only [map_zero, zero_add, ZeroMemClass.coe_eq_zero] at h
-    simp [h]
-  have hDsurj : Surjective D := by
-    refine (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).mp hDinj
-    rw [Module.finrank_prod, ContinuousLinearMap.finrank_orthogonal_range_of_injective hinj]
-    have := Submodule.finrank_le (A u₀).range
-    rw [LinearMap.finrank_range_of_inj hinj] at this
-    omega
-  let Deq : (E × W₀) ≃L[ℝ] V :=
-    (LinearEquiv.ofBijective (D : E × W₀ →ₗ[ℝ] V) ⟨hDinj, hDsurj⟩).toContinuousLinearEquiv
-  have hΨD : HasFDerivAt Ψ (Deq : E × W₀ →L[ℝ] V) (u₀, 0) := by
-    have h1 : HasFDerivAt (fun q : E × W₀ => g q.1)
-        ((A u₀).comp (ContinuousLinearMap.fst ℝ E W₀)) (u₀, 0) :=
-      (hg.differentiableAt (by norm_num)).hasFDerivAt.comp (u₀, (0 : W₀)) hasFDerivAt_fst
-    have hc : HasFDerivAt (fun q : E × W₀ => Q q.1)
-        ((fderiv ℝ Q u₀).comp (ContinuousLinearMap.fst ℝ E W₀)) (u₀, 0) :=
-      HasFDerivAt.comp (g := Q) (f := Prod.fst) (u₀, (0 : W₀))
-        (hQ₀.differentiableAt one_ne_zero).hasFDerivAt hasFDerivAt_fst
-    have hu : HasFDerivAt (fun q : E × W₀ => (q.2 : V))
-        (W₀.subtypeL.comp (ContinuousLinearMap.snd ℝ E W₀)) (u₀, 0) :=
-      W₀.subtypeL.hasFDerivAt.comp (u₀, (0 : W₀)) hasFDerivAt_snd
-    convert h1.add (hc.clm_apply hu) using 1
-    ext p <;> simp [Deq, D, hQW]
-  exact ⟨hΨ.toOpenPartialHomeomorph Ψ hΨD one_ne_zero,
-    hΨ.mem_toOpenPartialHomeomorph_source hΨD one_ne_zero, fun _ => rfl⟩
-
 /-- **Local tubular neighbourhood theorem.** For a map `g : E → V` which is `C²` at `u₀` with
 injective derivative there, the normal map `(u, v) ↦ g u + v`, restricted to the normal vectors
 of length less than `δ` at points of a neighbourhood `s` of `u₀`, is injective and sends relatively
@@ -156,7 +96,17 @@ private theorem exists_injOn_isOpen_image_normal {g : E → V} {u₀ : E}
       hRc.preimage_mem_nhds ((Units.isOpen (R := W₀ →L[ℝ] W₀)).mem_nhds hRu₀)
     exact (hg.eventually (by simp)).and (h2.and h3)
   -- The normal map, with fibres parametrized by `W₀`, is a local homeomorphism `h`.
-  obtain ⟨h, hsrc, hΨh⟩ := exists_openPartialHomeomorph_normal hg hinj
+  let O := interior {u | ContDiffAt ℝ 2 g u}
+  have hu₀ : u₀ ∈ O := mem_interior_iff_mem_nhds.mpr (hg.eventually (by norm_num))
+  have hgO : ContDiffOn ℝ (1 + 1) g O := by
+    intro u hu
+    have hgu : ContDiffAt ℝ 2 g u := interior_subset (s := {u | ContDiffAt ℝ 2 g u}) hu
+    exact hgu.contDiffWithinAt
+  obtain ⟨Φ, hΦ, hsrc, -⟩ := exists_partialDiffeomorph_normalParametrization
+    hgO isOpen_interior hu₀ hinj le_rfl
+  let h := Φ.toOpenPartialHomeomorph
+  have hΨh : ∀ q, h q = g q.1 + (fderiv ℝ g q.1).rangeᗮ.starProjection q.2 :=
+    fun q => (congrFun hΦ q).trans (normalParametrization_apply g u₀ q)
   -- `ρ` inverts `(u, w) ↦ (u, Q u w)` on normal vectors, and is continuous at `(u₀, 0)`.
   let ρ : E × V → E × W₀ := fun p => (p.1, Ring.inverse (R p.1) (W₀.orthogonalProjectionOnto p.2))
   have hρc : ContinuousAt ρ (u₀, 0) := by
@@ -183,8 +133,8 @@ private theorem exists_injOn_isOpen_image_normal {g : E → V} {u₀ : E}
     obtain ⟨hu₁, -, hAu, hRu⟩ := hss hu
     refine ⟨hst ⟨hu₁, hδt (mem_ball_zero_iff.mpr hvδ)⟩, ?_⟩
     refine Submodule.starProjection_inverse_apply ?_ hRu hv
-    rw [ContinuousLinearMap.finrank_orthogonal_range_of_injective hinj,
-      ContinuousLinearMap.finrank_orthogonal_range_of_injective hAu]
+    rw [LinearMap.finrank_orthogonal_range_of_injective hinj,
+      LinearMap.finrank_orthogonal_range_of_injective hAu]
   have hΨρ : ∀ p : E × V, Q p.1 (ρ p).2 = p.2 → h (ρ p) = g p.1 + p.2 := by
     intro p hp
     rw [hΨh]
@@ -241,7 +191,7 @@ variable (I) in
 /-- The normal space of a map `f : M → V` into a real inner product space at `x`: the orthogonal
 complement in `V` of the range of the differential of `f` at `x`. It realizes the quotient normal
 space `TauCeti.SmoothEmbedding.NormalSpace` as a subspace of `V`, using the inner product. -/
-noncomputable def normalSubspace (f : M → V) (x : M) : Submodule ℝ V :=
+@[expose] noncomputable def normalSubspace (f : M → V) (x : M) : Submodule ℝ V :=
   (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V).rangeᗮ
 
 omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
@@ -258,8 +208,8 @@ theorem finrank_normalSubspace {f : M → V} {x : M}
     (himm : Injective (mfderiv I 𝓘(ℝ, V) f x)) :
     Module.finrank ℝ (normalSubspace I f x) = Module.finrank ℝ V - Module.finrank ℝ E := by
   unfold normalSubspace
-  exact ContinuousLinearMap.finrank_orthogonal_range_of_injective (E := E) (V := V)
-    (A := (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V)) himm
+  exact LinearMap.finrank_orthogonal_range_of_injective (V := V)
+    (A := (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V).toLinearMap) himm
 
 omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
 /-- A vector is normal to `f` at `x` exactly when it is orthogonal to every value of the
@@ -299,6 +249,27 @@ theorem normalTubeOfRadius_const (f : M → V) (ε : ℝ) :
     normalTubeOfRadius I f (fun _ => ε) = normalTube I f ε := by
   ext p
   simp
+
+omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
+/-- Shrinking a variable normal tube to a smaller continuous radius preserves the open
+embedding of normal addition. No regularity of the original radius is needed. -/
+theorem isOpenEmbedding_normalTubeOfRadius_of_le {f : M → V} {r R : M → ℝ}
+    (hr : Continuous r) (hrR : ∀ x, r x ≤ R x)
+    (h : IsOpenEmbedding ((normalTubeOfRadius I f R).domRestrict
+      fun p : M × V => f p.1 + p.2)) :
+    IsOpenEmbedding ((normalTubeOfRadius I f r).domRestrict
+      fun p : M × V => f p.1 + p.2) := by
+  have hsub : normalTubeOfRadius I f r ⊆ normalTubeOfRadius I f R := fun p hp =>
+    mem_normalTubeOfRadius.mpr ⟨(mem_normalTubeOfRadius.mp hp).1,
+      (mem_normalTubeOfRadius.mp hp).2.trans_le (hrR p.1)⟩
+  apply h.comp (IsOpenEmbedding.inclusion hsub ?_)
+  convert isOpen_lt ((continuous_norm.comp continuous_snd).comp
+    (continuous_subtype_val : Continuous
+      (Subtype.val : normalTubeOfRadius I f R → M × V)))
+    ((hr.comp continuous_fst).comp continuous_subtype_val) using 1
+  ext p
+  simp only [mem_preimage, mem_normalTubeOfRadius, mem_ofPred_eq, Function.comp_apply]
+  exact and_iff_right (mem_normalTubeOfRadius.mp p.2).1
 
 omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
 /-- At a point `y` of the source of a chart, the normal space of `f` is the orthogonal complement

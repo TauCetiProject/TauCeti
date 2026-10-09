@@ -72,8 +72,8 @@ comparisons are what let a statement proved there be read as a statement about `
 * `SymmetricPower.toTensorSquare_comp_mk` and
   `exteriorPower.toTensorSquare_comp_lift_ιMulti`: the two embeddings compose with their
   projections to the symmetrizer `⅟2 • (1 + swap)` and the antisymmetrizer `⅟2 • (1 - swap)`.
-* `TauCeti.symmetricTensorsEquivSymmetricPower_symmetricTensorsRestrict` and
-  `TauCeti.antisymmetricTensorsEquivExteriorPower_antisymmetricTensorsRestrict`: both
+* `LinearMap.symmetricTensorsEquivSymmetricPower_symmetricTensorsRestrict` and
+  `LinearMap.antisymmetricTensorsEquivExteriorPower_antisymmetricTensorsRestrict`: both
   comparisons turn the restriction of `f ⊗ f` into `SymmetricPower.map f` and
   `exteriorPower.map 2 f`.
 
@@ -985,15 +985,21 @@ theorem lift_ιMulti_comp_piTensorProduct_map {N : Type w} [AddCommGroup N] [Mod
 
 end exteriorPower
 
-namespace TauCeti
+namespace LinearMap
+
+open TauCeti
+
+variable {R M}
 
 /-- **The symmetric comparison is equivariant**: the restriction of `f ⊗ f` to the symmetric
 tensors is `SymmetricPower.map f`. With `TauCeti.symmetricTensorsEquivSymmetricPower` this is
 what makes the symmetric tensors a *symmetric square* of representations, not only of
 modules. -/
+-- Prefer these naturality rules to expanding the comparison maps.
+@[simp high]
 theorem symmetricTensorsEquivSymmetricPower_symmetricTensorsRestrict (f : M →ₗ[R] M)
     (z : symmetricTensors R M) :
-    symmetricTensorsEquivSymmetricPower R M (symmetricTensorsRestrict f z) =
+    symmetricTensorsEquivSymmetricPower R M (f.symmetricTensorsRestrict z) =
       SymmetricPower.map f (symmetricTensorsEquivSymmetricPower R M z) := by
   have h : tensorProductEquivTensorSquare R M (TensorProduct.map f f (z : M ⊗[R] M)) =
       PiTensorProduct.map (fun _ : Fin 2 ↦ f)
@@ -1001,13 +1007,14 @@ theorem symmetricTensorsEquivSymmetricPower_symmetricTensorsRestrict (f : M →�
     simpa using
       DFunLike.congr_fun (tensorProductEquivTensorSquare_comp_map R M f) (z : M ⊗[R] M)
   rw [symmetricTensorsEquivSymmetricPower_apply, symmetricTensorsEquivSymmetricPower_apply,
-    coe_symmetricTensorsRestrict_apply, SymmetricPower.map_mk, h]
+    LinearMap.coe_symmetricTensorsRestrict_apply, SymmetricPower.map_mk, h]
 
 /-- **The exterior comparison is equivariant**: the restriction of `f ⊗ f` to the antisymmetric
 tensors is `exteriorPower.map 2 f`. -/
+@[simp high]
 theorem antisymmetricTensorsEquivExteriorPower_antisymmetricTensorsRestrict (f : M →ₗ[R] M)
     (z : antisymmetricTensors R M) :
-    antisymmetricTensorsEquivExteriorPower R M (antisymmetricTensorsRestrict f z) =
+    antisymmetricTensorsEquivExteriorPower R M (f.antisymmetricTensorsRestrict z) =
       exteriorPower.map 2 f (antisymmetricTensorsEquivExteriorPower R M z) := by
   have h : tensorProductEquivTensorSquare R M (TensorProduct.map f f (z : M ⊗[R] M)) =
       PiTensorProduct.map (fun _ : Fin 2 ↦ f)
@@ -1017,7 +1024,8 @@ theorem antisymmetricTensorsEquivExteriorPower_antisymmetricTensorsRestrict (f :
   have hnat := DFunLike.congr_fun (exteriorPower.lift_ιMulti_comp_piTensorProduct_map R M f)
     (tensorProductEquivTensorSquare R M (z : M ⊗[R] M))
   rw [antisymmetricTensorsEquivExteriorPower_apply,
-    antisymmetricTensorsEquivExteriorPower_apply, coe_antisymmetricTensorsRestrict_apply, h]
+    antisymmetricTensorsEquivExteriorPower_apply,
+    LinearMap.coe_antisymmetricTensorsRestrict_apply, h]
   simpa using hnat
 
-end TauCeti
+end LinearMap

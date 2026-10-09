@@ -111,8 +111,8 @@ theorem isConflationExact_gradedFiniteModulesForget :
     gradedFiniteModulesForget] using GradedExactStructure.isConflationExact_lift
     (F := GradedModuleCat.toModuleCat (𝒜 := 𝒜))
     (gradedModuleExactStructure 𝒜) (gradedFiniteModules 𝒜)
-    (isExtensionClosed_gradedFiniteModules' (𝒜 := 𝒜))
-    (gradedFiniteModules_shift' (𝒜 := 𝒜))
+    (isExtensionClosed_gradedFiniteModules_gradedAbelian (𝒜 := 𝒜))
+    (gradedFiniteModules_gradedAbelian_shift (𝒜 := 𝒜))
     (fun M => (ModuleCat.isFG_iff _).2 (inferInstanceAs (Module.Finite A M.obj)))
     (isExtensionClosed_finiteModules A)
     (by simpa only [gradedModuleExactStructure, GradedExactStructure.abelian_toExactStructure]
@@ -129,8 +129,8 @@ theorem isConflationExact_gradedFiniteProjectiveModulesForget :
     (F := GradedModuleCat.toModuleCat (𝒜 := 𝒜))
     (gradedModuleExactStructure 𝒜)
     (gradedFiniteProjectiveModules 𝒜)
-    (isExtensionClosed_gradedFiniteProjectiveModules' (𝒜 := 𝒜))
-    (gradedFiniteProjectiveModules_shift' (𝒜 := 𝒜))
+    (isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian (𝒜 := 𝒜))
+    (gradedFiniteProjectiveModules_gradedAbelian_shift (𝒜 := 𝒜))
     (fun M => finiteProjectiveModules_iff.2
       ⟨inferInstanceAs (Module.Finite A M.obj), inferInstanceAs (Module.Projective A M.obj)⟩)
     (ExactStructure.isExtensionClosed_of_le_isProjective
@@ -149,8 +149,8 @@ def gradedFiniteModulesForgetShiftIso :
     GradedExactStructure.liftCommShift
     (F := GradedModuleCat.toModuleCat (𝒜 := 𝒜))
     (gradedModuleExactStructure 𝒜) (gradedFiniteModules 𝒜)
-    (isExtensionClosed_gradedFiniteModules' (𝒜 := 𝒜))
-    (gradedFiniteModules_shift' (𝒜 := 𝒜))
+    (isExtensionClosed_gradedFiniteModules_gradedAbelian (𝒜 := 𝒜))
+    (gradedFiniteModules_gradedAbelian_shift (𝒜 := 𝒜))
     (fun M => (ModuleCat.isFG_iff _).2 (inferInstanceAs (Module.Finite A M.obj)))
     (by simpa only [gradedModuleExactStructure, GradedExactStructure.abelian_shift,
       GradedModuleCat.shift] using GradedModuleCat.shiftFunctorCompToModuleCatIso (𝒜 := 𝒜) 1)
@@ -165,8 +165,8 @@ def gradedFiniteProjectiveModulesForgetShiftIso :
     (F := GradedModuleCat.toModuleCat (𝒜 := 𝒜))
     (gradedModuleExactStructure 𝒜)
     (gradedFiniteProjectiveModules 𝒜)
-    (isExtensionClosed_gradedFiniteProjectiveModules' (𝒜 := 𝒜))
-    (gradedFiniteProjectiveModules_shift' (𝒜 := 𝒜))
+    (isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian (𝒜 := 𝒜))
+    (gradedFiniteProjectiveModules_gradedAbelian_shift (𝒜 := 𝒜))
     (fun M => finiteProjectiveModules_iff.2
       ⟨inferInstanceAs (Module.Finite A M.obj), inferInstanceAs (Module.Projective A M.obj)⟩)
     (by simpa only [gradedModuleExactStructure, GradedExactStructure.abelian_shift,

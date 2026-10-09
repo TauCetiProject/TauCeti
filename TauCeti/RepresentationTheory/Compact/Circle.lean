@@ -97,7 +97,7 @@ The two exhaustion statements are deliberately different in kind. On the carrier
 representation is recovered on the nose, as an equality of representations
 (`ContRepresentation.exists_fourierRep_eq`); on an arbitrary carrier no equality is available, and
 `ContRepresentation.exists_nonempty_equiv_fourierRep` produces a `ContRepresentation.Equiv`
-instead. The passage between them is `TauCeti.ContRepresentation.congr`, the transport of a
+instead. The passage between them is `ContinuousLinearEquiv.congr`, the transport of a
 representation along a continuous linear equivalence of carriers. What is *not* done here is the
 full Peter-Weyl identification of `peterWeylBasis` with `AddCircle.fourierBasis` under the indexing
 equivalence `Σ π, Fin 1 × Fin 1 ≃ ℤ`.
@@ -370,8 +370,8 @@ theorem exists_nonempty_equiv_fourierRep
     Representation.IsIrreducible.finrank_eq_one_of_isMulCommutative π.toRepresentation
   obtain ⟨e⟩ : Nonempty (V ≃L[ℂ] ℂ) :=
     FiniteDimensional.nonempty_continuousLinearEquiv_of_finrank_eq (by simp [h1])
-  obtain ⟨n, hn⟩ := exists_fourierRep_eq (TauCeti.ContRepresentation.congr e π)
-    (TauCeti.ContRepresentation.continuous_congr e hπ)
+  obtain ⟨n, hn⟩ := exists_fourierRep_eq (ContinuousLinearEquiv.congr e π)
+    (ContinuousLinearEquiv.continuous_congr e hπ)
   refine ⟨n, ⟨?_⟩⟩
   rw [hn]
   exact π.congrEquiv e

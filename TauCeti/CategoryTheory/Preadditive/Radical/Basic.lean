@@ -298,6 +298,26 @@ theorem id_eq_zero_of_isIso_of_mem_jacobsonRadical {X Y : C} {f : X ⟶ Y}
   rw [IsIso.hom_inv_id, sub_self] at h
   exact Limits.isIsoZeroSelfEquiv X h
 
+/-- A split monomorphism in the radical has a zero source: composing with its retraction
+puts the identity in the radical. -/
+theorem isZero_of_isSplitMono_of_mem_jacobsonRadical {X Y : C} {f : X ⟶ Y}
+    (hf : f ∈ jacobsonRadical X Y) [IsSplitMono f] : Limits.IsZero X := by
+  have hmem : 𝟙 X ∈ jacobsonRadical X X := by
+    rw [← IsSplitMono.id f]
+    exact comp_mem_jacobsonRadical_right hf (retraction f)
+  exact (Limits.IsZero.iff_id_eq_zero X).mpr
+    (id_eq_zero_of_isIso_of_mem_jacobsonRadical hmem)
+
+/-- A split epimorphism in the radical has a zero target: composing with its section
+puts the identity in the radical. -/
+theorem isZero_of_isSplitEpi_of_mem_jacobsonRadical {X Y : C} {f : X ⟶ Y}
+    (hf : f ∈ jacobsonRadical X Y) [IsSplitEpi f] : Limits.IsZero Y := by
+  have hmem : 𝟙 Y ∈ jacobsonRadical Y Y := by
+    rw [← IsSplitEpi.id f]
+    exact comp_mem_jacobsonRadical_left (section_ f) hf
+  exact (Limits.IsZero.iff_id_eq_zero Y).mpr
+    (id_eq_zero_of_isIso_of_mem_jacobsonRadical hmem)
+
 /-- **A radical morphism out of an object with a nonzero identity is not an isomorphism.** -/
 theorem not_isIso_of_mem_jacobsonRadical {X Y : C} {f : X ⟶ Y} (hX : 𝟙 X ≠ 0)
     (hf : f ∈ jacobsonRadical X Y) : ¬ IsIso f :=
@@ -328,10 +348,8 @@ retraction of a radical `f` exhibits `𝟙 X` itself as radical, which forces `�
 theorem mem_jacobsonRadical_iff_not_isSplitMono {f : X ⟶ Y} :
     f ∈ jacobsonRadical X Y ↔ ¬ IsSplitMono f := by
   refine ⟨fun hf hsm => ?_, fun hf g => ?_⟩
-  · have hmem : 𝟙 X ∈ jacobsonRadical X X := by
-      rw [← IsSplitMono.id f]
-      exact comp_mem_jacobsonRadical_right hf (retraction f)
-    exact id_ne_zero X (id_eq_zero_of_isIso_of_mem_jacobsonRadical hmem)
+  · exact id_ne_zero X ((Limits.IsZero.iff_id_eq_zero X).mp
+      (isZero_of_isSplitMono_of_mem_jacobsonRadical hf))
   · obtain ⟨e, he⟩ : ∃ e : End X, e = f ≫ g := ⟨f ≫ g, rfl⟩
     have hnu : ¬ IsUnit e := fun hu => by
       have : IsIso (f ≫ g) := he ▸ (isUnit_iff_isIso e).1 hu
@@ -349,10 +367,8 @@ the target is constrained, and the defining condition is read in its left-hand f
 theorem mem_jacobsonRadical_iff_not_isSplitEpi {f : X ⟶ Y} :
     f ∈ jacobsonRadical X Y ↔ ¬ IsSplitEpi f := by
   refine ⟨fun hf hse => ?_, fun hf => mem_jacobsonRadical_iff_isIso_id_sub_comp_left.2 fun g => ?_⟩
-  · have hmem : 𝟙 Y ∈ jacobsonRadical Y Y := by
-      rw [← IsSplitEpi.id f]
-      exact comp_mem_jacobsonRadical_left (section_ f) hf
-    exact id_ne_zero Y (id_eq_zero_of_isIso_of_mem_jacobsonRadical hmem)
+  · exact id_ne_zero Y ((Limits.IsZero.iff_id_eq_zero Y).mp
+      (isZero_of_isSplitEpi_of_mem_jacobsonRadical hf))
   · obtain ⟨e, he⟩ : ∃ e : End Y, e = g ≫ f := ⟨g ≫ f, rfl⟩
     have hnu : ¬ IsUnit e := fun hu => by
       have : IsIso (g ≫ f) := he ▸ (isUnit_iff_isIso e).1 hu

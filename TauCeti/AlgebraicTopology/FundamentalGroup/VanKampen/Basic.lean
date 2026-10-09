@@ -64,6 +64,8 @@ and `fB` to `π₁(A ∩ B, x)`, so they glue. Uniqueness is the generation half
   is simply connected.
 * `TauCeti.vanKampenLift_surjective`: the canonical homomorphism is surjective when `A ∩ B`
   is path connected.
+* `TauCeti.simplyConnectedSpace_of_interior_union`: two simply connected sets whose interiors
+  cover and whose intersection is path connected have simply connected union.
 * `TauCeti.vanKampenWideDesc`, `TauCeti.vanKampenWideDesc_map`: the universal property of
   `π₁(X, x)` for a family whose pairwise intersections are all `C`.
 * `TauCeti.vanKampenWide_hom_ext`: homomorphisms out of `π₁(X, x)` are determined by their
@@ -71,6 +73,8 @@ and `fB` to `π₁(A ∩ B, x)`, so they glue. Uniqueness is the generation half
   cover `X` and whose pairwise intersections are path connected.
 * `TauCeti.isColimitFundamentalGroupWideCocone`: **the Seifert--van Kampen theorem for such a
   family**, as a wide pushout in the category of groups.
+* `TauCeti.vanKampenWideLift_surjective`: the canonical map from the indexed free product is
+  surjective when all pairwise intersections are path connected.
 * `TauCeti.vanKampenWideLift`, `TauCeti.vanKampenWideEquiv`: the canonical homomorphism from the
   free product of the groups `π₁(U i, x)`, and the resulting isomorphism when `C` is simply
   connected.
@@ -410,6 +414,43 @@ theorem vanKampenLift_surjective (hxA : x ∈ A) (hxB : x ∈ B)
   exact (Monoid.Coprod.range_lift _ _).trans
     (FundamentalGroup.range_map_subtypeVal_sup_eq_top hCover hA hB hAB hxA hxB)
 
+/-- **Two-set van Kampen criterion for simple connectedness.** A space covered by the interiors of
+two simply connected sets with path-connected intersection is simply connected. -/
+theorem simplyConnectedSpace_of_interior_union
+    (hCover : interior A ∪ interior B = univ) (hAB : IsPathConnected (A ∩ B))
+    [SimplyConnectedSpace A] [SimplyConnectedSpace B] :
+    SimplyConnectedSpace X := by
+  obtain ⟨z, hzA, hzB⟩ := hAB.nonempty
+  have hAsimple : IsSimplyConnected A := (inferInstance : SimplyConnectedSpace A)
+  have hBsimple : IsSimplyConnected B := (inferInstance : SimplyConnectedSpace B)
+  have hCover' : A ∪ B = univ := by
+    apply univ_subset_iff.mp
+    rw [← hCover]
+    exact union_subset_union interior_subset interior_subset
+  let _ : PathConnectedSpace X := pathConnectedSpace_iff_univ.mpr <| hCover' ▸
+    hAsimple.isPathConnected.union hBsimple.isPathConnected hAB.nonempty
+  have hsurj := vanKampenLift_surjective hzA hzB hCover
+    hAsimple.isPathConnected hBsimple.isPathConnected hAB
+  have hzsub : Subsingleton (FundamentalGroup X z) := by
+    have himage_one (g : Monoid.Coprod (FundamentalGroup A ⟨z, hzA⟩)
+        (FundamentalGroup B ⟨z, hzB⟩)) : vanKampenLift A B z hzA hzB g = 1 := by
+      induction g using Monoid.Coprod.induction_on with
+      | inl g => rw [Subsingleton.elim g 1, map_one, map_one]
+      | inr g => rw [Subsingleton.elim g 1, map_one, map_one]
+      | mul g h hg hh => rw [map_mul, hg, hh, mul_one]
+    constructor
+    intro g h
+    obtain ⟨g', rfl⟩ := hsurj g
+    obtain ⟨h', rfl⟩ := hsurj h
+    rw [himage_one, himage_one]
+  refine simply_connected_iff_loops_nullhomotopic.mpr ⟨inferInstance, fun x γ ↦ ?_⟩
+  let e := FundamentalGroup.fundamentalGroupMulEquivOfPath
+    (PathConnectedSpace.somePath z x)
+  have hxsub : Subsingleton (FundamentalGroup X x) :=
+    ⟨fun a b ↦ e.symm.injective (hzsub.elim (e.symm a) (e.symm b))⟩
+  exact Quotient.eq.mp (hxsub.elim (Path.Homotopic.Quotient.mk γ)
+    (Path.Homotopic.Quotient.mk (Path.refl x)))
+
 /-- **The based Seifert--van Kampen theorem for a simply connected overlap.**
 
 If the interiors of two path-connected sets cover `X`, their intersection is simply connected,
@@ -659,6 +700,27 @@ theorem vanKampenWideLift_of (U : ι → Set X) (x : X) (hx : ∀ i, x ∈ U i) 
         (Monoid.CoprodI.of (M := fun i ↦ FundamentalGroup (U i) ⟨x, hx i⟩) g) =
       FundamentalGroup.map (ContinuousMap.subtypeVal (U i)) ⟨x, hx i⟩ g :=
   Monoid.CoprodI.lift_of (M := fun i ↦ FundamentalGroup (U i) ⟨x, hx i⟩) _ g
+
+/-- **The generation half of van Kampen's theorem for a family.** Every loop class is the image
+of an element of the indexed free product when all pairwise intersections of the cover members
+are path connected. -/
+theorem vanKampenWideLift_surjective (hU : ∀ y, ∃ i, U i ∈ 𝓝 y) (hxU : ∀ i, x ∈ U i)
+    (hpc : ∀ i j, IsPathConnected (U i ∩ U j)) :
+    Function.Surjective (vanKampenWideLift U x hxU) := by
+  let f (i : ι) : FundamentalGroup (U i) ⟨x, hxU i⟩ →* FundamentalGroup X x :=
+    FundamentalGroup.map (ContinuousMap.subtypeVal (U i)) ⟨x, hxU i⟩
+  have htop : (⨆ i, (f i).range : Subgroup (FundamentalGroup X x)) = ⊤ := by
+    convert FundamentalGroup.iSup_range_map_subtypeVal_eq_top (U := U) (x := x) hU hxU hpc
+      using 1
+    congr 1
+  intro y
+  have hy : y ∈ (⨆ i, (f i).range : Subgroup (FundamentalGroup X x)) := by
+    rw [htop]
+    trivial
+  rw [← Monoid.CoprodI.range_eq_iSup (fun i ↦ FundamentalGroup (U i) ⟨x, hxU i⟩) f] at hy
+  obtain ⟨z, hz⟩ := hy
+  refine ⟨z, ?_⟩
+  simpa only [vanKampenWideLift, f] using hz
 
 /-- **The Seifert--van Kampen theorem for a family with a simply connected common pairwise
 intersection.** If the interiors of the path-connected sets `U i` cover `X`, all of them contain
