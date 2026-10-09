@@ -35,11 +35,12 @@ def homeomorphSphere : Circle ≃ₜ sphere (0 : ℂ) 1 :=
   Homeomorph.refl _
 
 @[simp]
-theorem coe_homeomorphSphere (z : Circle) : (homeomorphSphere z : ℂ) = z :=
+theorem coe_homeomorphSphere_apply (z : Circle) : (homeomorphSphere z : ℂ) = z :=
   (rfl)
 
 @[simp]
-theorem coe_homeomorphSphere_symm (z : sphere (0 : ℂ) 1) : (homeomorphSphere.symm z : ℂ) = z :=
+theorem coe_homeomorphSphere_symm_apply (z : sphere (0 : ℂ) 1) :
+    (homeomorphSphere.symm z : ℂ) = z :=
   (rfl)
 
 end Circle
