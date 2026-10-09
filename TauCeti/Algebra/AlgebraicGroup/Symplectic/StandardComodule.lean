@@ -161,15 +161,8 @@ theorem scalar_sq_eq_one_of_basePointsRepresentation_eq_smul (hm : m ≠ 0)
     rw [basePointsRepresentation_eq_mulVec] at hv
     simpa only [Matrix.toLin'_apply, Matrix.smul_mulVec, Matrix.one_mulVec,
       LinearMap.smul_apply, Module.End.one_apply] using hv
-  -- The symplectic relation for `c • 1` reads `(c ^ 2) • J = J`; multiplying by `J` and reading
-  -- off a diagonal entry gives `c ^ 2 = 1`.
-  have hJ := GLSymplecticFin.mem_iff.mp (pointsMulEquiv (R := R) (A := R) m g).2
-  rw [hmat, Matrix.transpose_smul, Matrix.transpose_one, Matrix.smul_mul, Matrix.one_mul,
-    Matrix.mul_smul, Matrix.mul_one, smul_smul, ← sq] at hJ
-  have hJJ := congrArg (fun M ↦ M * JFin m R) hJ
-  simp only [Matrix.smul_mul, JFin_mul_self] at hJJ
-  have hentry := congrFun (congrFun hJJ ⟨0, by omega⟩) ⟨0, by omega⟩
-  simpa using hentry
+  exact sq_eq_one_of_smul_one_mul_JFin_mul_transpose_eq hm
+    (hmat ▸ GLSymplecticFin.mem_iff.mp (pointsMulEquiv (R := R) (A := R) m g).2)
 
 /-- **A subcomodule of the standard symplectic comodule is stable under every symplectic
 matrix.** -/
