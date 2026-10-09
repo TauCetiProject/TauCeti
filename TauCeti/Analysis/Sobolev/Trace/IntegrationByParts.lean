@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Trace.Extension
+import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
@@ -20,16 +21,16 @@ term: for `u ∈ H¹(H)`, a compactly supported `C¹` function `χ` on `ℝ × E
 
 `∫_H (∂_v χ · u + χ · ⟪v, ∇u⟫) = -v.fst ∫_E (Tr u)(y) χ(a, y) dy`.
 
-For `u` the restriction of a test function this is the classical divergence theorem on `H`,
-proved by Fubini's theorem: the fundamental theorem of calculus on each normal line produces the
-boundary term, and the tangential derivatives integrate to zero on each slice `{t} × E`. Both
-sides are continuous in `u ∈ H¹(H)`, because the trace is, and restrictions of test functions are
-dense in `H¹(H)` by the reflection extension, so the formula holds on all of `H¹(H)`.
+For `u` the restriction of a test function this is the classical divergence theorem on `H`, and
+the trace is the boundary value that makes the formula persist on all of `H¹(H)`.
 
-As a consequence, the boundary term is exactly what obstructs extending `u` by zero: the extension
-by zero of `u` lies in `H¹(ℝ × E)` if and only if `Tr u = 0`. This is the analytic half of the
-identification of the kernel of the trace with `H¹₀(H)`: membership of the zero extension in
-`H¹(ℝ × E)` is the characterisation of `H¹₀` used for domains with regular boundary.
+The boundary term is exactly what obstructs extending `u` by zero. Extending `u` and `∇u` by zero
+to `ℝ × E`, the left-hand side is the pairing that tests whether the extended gradient is the weak
+gradient of the extended function; the right-hand side is the defect, a distribution supported on
+the boundary `{a} × E`. So the extension by zero of `u` lies in `H¹(ℝ × E)` if and only if
+`Tr u = 0`. This is the analytic half of the identification of the kernel of the trace with
+`H¹₀(H)`: membership of the zero extension in `H¹(ℝ × E)` is the characterisation of `H¹₀` used
+for domains with regular boundary.
 
 ## Main declarations
 
@@ -61,34 +62,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E]
 
 /-! ### The smooth divergence theorem on a half-space -/
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- Along the normal line through `(t, y)`, the derivative of a differentiable function is its
-derivative in the normal direction `e₁`. -/
-private theorem hasDerivAt_comp_toLp_fst {g : WithLp 2 (ℝ × E) → ℝ} (hg : Differentiable ℝ g)
-    (t : ℝ) (y : E) :
-    HasDerivAt (fun s : ℝ ↦ g (WithLp.toLp 2 (s, y)))
-      (fderiv ℝ g (WithLp.toLp 2 (t, y)) (WithLp.toLp 2 (1, (0 : E)))) t := by
-  have hp : HasDerivAt (fun s : ℝ ↦ WithLp.toLp 2 (s, y)) (WithLp.toLp 2 (1, (0 : E))) t :=
-    ((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.hasFDerivAt).comp_hasDerivAt t
-      ((hasDerivAt_id t).prodMk (hasDerivAt_const t y))
-  exact (hg _).hasFDerivAt.comp_hasDerivAt t hp
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- On the slice `{t} × E`, the derivative of a differentiable function in a direction `w` of `E`
-is its derivative in the tangential direction `(0, w)`. -/
-private theorem fderiv_comp_toLp_snd {g : WithLp 2 (ℝ × E) → ℝ} (hg : Differentiable ℝ g)
-    (t : ℝ) (y w : E) :
-    fderiv ℝ (fun z : E ↦ g (WithLp.toLp 2 (t, z))) y w =
-      fderiv ℝ g (WithLp.toLp 2 (t, y)) (WithLp.toLp 2 (0, w)) := by
-  have hp : HasFDerivAt (fun z : E ↦ WithLp.toLp 2 (t, z))
-      ((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.toContinuousLinearMap.comp
-        ((0 : E →L[ℝ] ℝ).prod (ContinuousLinearMap.id ℝ E))) y :=
-    ((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.hasFDerivAt).comp y
-      ((hasFDerivAt_const t y).prodMk (hasFDerivAt_id y))
-  have h : HasFDerivAt (fun z : E ↦ g (WithLp.toLp 2 (t, z))) _ y := (hg _).hasFDerivAt.comp y hp
-  rw [h.fderiv]
-  simp
 
 /-- **The divergence theorem on a half-space.** For a compactly supported `C¹` function `g` on
 `ℝ × E` and a direction `v`, the integral of the directional derivative `∂_v g` over the half-space
@@ -143,7 +116,7 @@ theorem setIntegral_normalHalfSpace_fderiv_apply {g : WithLp 2 (ℝ × E) → �
         (contDiff_id.prodMk contDiff_const))
     rw [← (hgc.comp_isClosedEmbedding he).integral_Ioi_deriv_eq hline a]
     exact integral_congr_ae (Eventually.of_forall fun t ↦
-      ((hasDerivAt_comp_toLp_fst hgd t y).deriv).symm)
+      ((hasDerivAt_comp_toLp_fst (hgd _)).deriv).symm)
   -- The tangential part: on each slice `{t} × E` it integrates to zero.
   have htangent : ∫ z, fderiv ℝ g (WithLp.toLp 2 z) (WithLp.toLp 2 (0, v.snd))
       ∂((volume.restrict (Ioi a)).prod volume) = 0 := by
@@ -165,7 +138,7 @@ theorem setIntegral_normalHalfSpace_fderiv_apply {g : WithLp 2 (ℝ × E) → �
       (fun _ _ ↦ differentiableAt_const _)
       (fun y _ ↦ hslice.differentiable one_ne_zero y)
     simp only [one_mul] at hibp
-    simp only [← fderiv_comp_toLp_snd hgd]
+    simp only [← fderiv_comp_toLp_snd (hgd _)]
     simpa using hibp
   rw [hcoord, integral_congr_ae (Eventually.of_forall hsplit),
     integral_add ((hint _).const_mul _) (hint _), integral_const_mul, hnormal, htangent]
@@ -246,7 +219,9 @@ theorem W1p.setIntegral_fderiv_mul_value_add_mul_inner_gradient (a : ℝ)
     filter_upwards [hT.coeFn_toLp] with y hy
     simp [hy, RCLike.inner_apply]
   rw [hL, hR]
-  -- Restrictions of whole-space test functions are dense in `H¹(H)`.
+  -- Restrictions of whole-space test functions are dense in `H¹(H)`, by the reflection
+  -- extension, and both sides are continuous in `u` because the trace is; so it suffices to
+  -- prove the formula for test functions.
   have hsurj : Function.Surjective (W1p.restrictL hle (mu := volume) (p := 2)) := fun w ↦
     ⟨W1p.extendByReflectionL a w, W1p.restrictL_extendByReflectionL a w⟩
   have hdense := hsurj.denseRange.comp
