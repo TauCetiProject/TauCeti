@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.LogarithmicEnd.Basic
-import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Analytic
+import TauCeti.Analysis.Complex.Conformal.LocalDegree
 
 /-!
 # Exponential coordinates at logarithmic Schwarz--Christoffel ends
@@ -61,15 +61,14 @@ theorem exists_analyticOnNhd_injOn_exp_schwarzChristoffelPrimitive_of_sum_eq_neg
     have hHd := (hH _ (mem_ball_self hR)).differentiableAt.hasDerivAt
     simpa [G] using ((hasDerivAt_id (p : ℂ)).sub_const (p : ℂ)).fun_mul
       ((hHd.sub_const (H p)).div_const C).cexp
-  -- The inverse function theorem supplies a left inverse on a neighbourhood of p.
-  -- Restricting to a disc makes both the coordinate and its inverse usable locally.
-  have hstrict := (hGan _ (mem_ball_self hR)).hasStrictDerivAt
-  have hleft := hstrict.eventually_left_inverse (by rw [hGderiv.deriv]; exact one_ne_zero)
-  obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff.mp
-    (hleft.and (ball_mem_nhds (p : ℂ) hR))
+  -- The local injectivity criterion supplies a neighbourhood that we restrict to a disc.
+  obtain ⟨V, hV, hVinj⟩ :=
+    (exists_injOn_nhds_iff_deriv_ne_zero (hGan _ (mem_ball_self hR))).mpr
+      (by rw [hGderiv.deriv]; exact one_ne_zero)
+  obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.mp
+    (inter_mem hV (ball_mem_nhds (p : ℂ) hR))
   refine ⟨H p, G, r, hr, hGan.mono (fun z hz => (hball hz).2), ?_, ?_, hGderiv, ?_⟩
-  · exact LeftInvOn.injOn (f₁' := hstrict.localInverse G (deriv G (p : ℂ)) (p : ℂ)
-      (by rw [hGderiv.deriv]; exact one_ne_zero)) fun z hz => (hball hz).1
+  · exact hVinj.mono (fun z hz => (hball hz).1)
   · simp [G]
   · intro z hz
     have hC : C ≠ 0 := schwarzChristoffelPrevertexCoefficient_ne_zero a e p
