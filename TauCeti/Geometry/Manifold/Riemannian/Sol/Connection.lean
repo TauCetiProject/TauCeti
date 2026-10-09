@@ -47,29 +47,39 @@ namespace TauCeti.Sol
 local notation "P" => ℝ × ℝ × ℝ
 local notation "J" => 𝓘(ℝ, P)
 
-private def C (v : P) (p : Sol) : TangentSpace J p :=
+/-- The vector field with constant value `v` in the global coordinates of Sol. -/
+def constantField (v : P) (p : Sol) : TangentSpace J p :=
   (tangentSpaceCastModel J p).symm v
 
-private theorem mdifferentiableAt_C (v : P) (p : Sol) :
-    MDifferentiableAt J ((J).prod J)
-      (fun q => (⟨q, C v q⟩ : TangentBundle J Sol)) p := by
-  -- Sol inherits the model-space charts, and the tangent-space casts are identities.
-  exact ((contMDiffAt_vectorSpace_iff_contDiffAt (n := (1 : ℕ∞ω))
-    (V := fun _ : P => v)).2 contDiffAt_const).mdifferentiableAt one_ne_zero
+/-- The value of a constant coordinate vector field. -/
+@[simp] theorem constantField_apply (v : P) (p : Sol) :
+    constantField v p = (tangentSpaceCastModel J p).symm v := (rfl)
 
-private theorem mvfderiv_inner_C (u v w : P) (p : Sol) :
-    mvfderiv J (fun q => inner ℝ (C u q) (C v q)) p (C w p) =
+/-- Constant coordinate fields are smooth as sections of the tangent bundle. -/
+theorem contMDiff_constantField (v : P) : ContMDiff J ((J).prod J) ∞
+    (fun q => (⟨q, constantField v q⟩ : TangentBundle J Sol)) := by
+  -- Sol inherits the model-space charts, and the tangent-space casts are identities.
+  exact (contMDiff_vectorSpace_iff_contDiff (n := ∞)
+    (V := fun _ : P => v)).2 contDiff_const
+
+private theorem mdifferentiableAt_constantField (v : P) (p : Sol) :
+    MDifferentiableAt J ((J).prod J)
+      (fun q => (⟨q, constantField v q⟩ : TangentBundle J Sol)) p :=
+  (contMDiff_constantField v p).mdifferentiableAt (by simp)
+
+private theorem mvfderiv_inner_constantField (u v w : P) (p : Sol) :
+    mvfderiv J (fun q => inner ℝ (constantField u q) (constantField v q)) p (constantField w p) =
       2 * exp (2 * p.z) * w.2.2 * u.1 * v.1 -
         2 * exp (-2 * p.z) * w.2.2 * u.2.1 * v.2.1 := by
-  have heq : (fun q => inner ℝ (C u q) (C v q)) =
-      fun q : P => exp (2 * q.2.2) * u.1 * v.1 +
-        exp (-2 * q.2.2) * u.2.1 * v.2.1 + u.2.2 * v.2.2 := by
+  have heq : (fun q => inner ℝ (constantField u q) (constantField v q)) =
+      fun q : Sol => exp (2 * q.z) * u.1 * v.1 +
+        exp (-2 * q.z) * u.2.1 * v.2.1 + u.2.2 * v.2.2 := by
     funext q
-    simp only [inner_def, C, ContinuousLinearEquiv.apply_symm_apply]
-    rfl
+    simp only [inner_def, constantField, ContinuousLinearEquiv.apply_symm_apply]
   rw [heq]
   -- Replace the inherited Sol charts by the identical model-space charts to use
-  -- the model-space derivative formula; the constant tangent vector is unchanged.
+  -- the model-space derivative formula. Sol is a type synonym for P, `q.z` is
+  -- `(toProd q).2.2`, and the constant tangent vector is unchanged.
   change (mvfderiv J (fun q : P => exp (2 * q.2.2) * u.1 * v.1 +
     exp (-2 * q.2.2) * u.2.1 * v.2.1 + u.2.2 * v.2.2) (toProd p)) w = _
   rw [mvfderiv_eq_fderiv]
@@ -96,7 +106,7 @@ coefficients couple the horizontal and vertical directions; the vertical coeffic
 @[simp] theorem leviCivitaConnection_const_apply (p : Sol) (u v : P) :
     tangentSpaceCastModel J p
       (leviCivitaConnection J Sol
-        (fun q => (tangentSpaceCastModel J q).symm v) p
+        (constantField v) p
         ((tangentSpaceCastModel J p).symm u)) =
       (u.2.2 * v.1 + v.2.2 * u.1,
         -(u.2.2 * v.2.1 + v.2.2 * u.2.1),
@@ -104,17 +114,19 @@ coefficients couple the horizontal and vertical directions; the vertical coeffic
   let a : P := (u.2.2 * v.1 + v.2.2 * u.1,
     -(u.2.2 * v.2.1 + v.2.2 * u.2.1),
     -exp (2 * p.z) * u.1 * v.1 + exp (-2 * p.z) * u.2.1 * v.2.1)
-  have heq : leviCivitaConnection J Sol (C v) p (C u p) = C a p := by
+  have heq : leviCivitaConnection J Sol (constantField v) p (constantField u p) =
+      constantField a p := by
     apply ext_inner_right ℝ
     intro w
     obtain ⟨w, rfl⟩ := (tangentSpaceCastModel J p).symm.surjective w
     have h := two_inner_leviCivitaConnection_eq_koszul (I := J) (M := Sol)
-      (mdifferentiableAt_C u p) (mdifferentiableAt_C v p) (mdifferentiableAt_C w p)
+      (mdifferentiableAt_constantField u p) (mdifferentiableAt_constantField v p)
+      (mdifferentiableAt_constantField w p)
     rw [TauCeti.Manifold.koszul_apply] at h
-    have hb (b c : P) : mlieBracket J (C b) (C c) p = 0 :=
+    have hb (b c : P) : mlieBracket J (constantField b) (constantField c) p = 0 :=
       TauCeti.mlieBracket_const_model_space b c (toProd p)
-    simp only [hb, inner_zero_left, mvfderiv_inner_C] at h
-    simp only [inner_def, C, ContinuousLinearEquiv.apply_symm_apply] at h ⊢
+    simp only [hb, inner_zero_left, mvfderiv_inner_constantField] at h
+    simp only [inner_def, constantField, ContinuousLinearEquiv.apply_symm_apply] at h ⊢
     dsimp only [a]
     linear_combination h / 2
   exact congrArg (tangentSpaceCastModel J p) heq
@@ -133,12 +145,17 @@ private theorem Γ_apply (p : Sol) (v u : P) :
     xL, yL, zL, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst',
     ContinuousLinearMap.coe_snd']
   apply Prod.ext
-  · simp; ring
-  · apply Prod.ext <;> simp <;> ring
+  · simp only [Prod.smul_mk, Prod.fst_add, Prod.fst_sub, smul_eq_mul,
+      mul_zero, mul_one, sub_zero, add_zero]
+    ring
+  · apply Prod.ext <;>
+      simp only [Prod.smul_mk, Prod.snd_add, Prod.snd_sub, Prod.fst_add,
+        Prod.fst_sub, smul_eq_mul, mul_zero, mul_one, sub_zero, add_zero,
+        zero_sub] <;> ring
 
-private theorem localFrame_eq_C {ι : Type*} (b : Module.Basis ι ℝ P)
+private theorem localFrame_eq_constantField {ι : Type*} (b : Module.Basis ι ℝ P)
     (p : Sol) (i : ι) :
-    (trivializationAt P (TangentSpace J) p).localFrame b i = C (b i) := by
+    (trivializationAt P (TangentSpace J) p).localFrame b i = constantField (b i) := by
   funext q
   have hq : q ∈ (trivializationAt P (TangentSpace J) p).baseSet := by
     -- Sol's inherited global chart has the whole model space as its source.
@@ -146,8 +163,11 @@ private theorem localFrame_eq_C {ι : Type*} (b : Module.Basis ι ℝ P)
     simp [TangentBundle.trivializationAt_baseSet, chartAt_self_eq]
   rw [← TauCeti.Manifold.symmL_basis_eq_localFrame b hq i]
   -- In the model-space atlas the inverse fibre trivialization is the identity.
-  change (trivializationAt P (TangentSpace J) (toProd p)).symmL ℝ (toProd q) (b i) = C (b i) q
+  change (trivializationAt P (TangentSpace J) (toProd p)).symmL ℝ (toProd q) (b i) =
+    constantField (b i) q
   rw [TangentBundle.symmL_model_space]
+  -- Unfold `constantField` and its tangent-space cast: Sol inherits P's model-space
+  -- atlas, so this cast and its inverse are definitionally the identity.
   rfl
 
 /-- The Christoffel map of Sol in its global coordinate chart. The formula is independent
@@ -172,7 +192,7 @@ of the finite basis used to define the map, and applies at every height. -/
     have hs := TauCeti.Manifold.covariantDerivative_localFrame_eq_sum_christoffelSymbol
       b (cov := leviCivitaConnection J Sol) hx i j
     have hread := congrArg (tangentSpaceCastModel J p) hs
-    simp only [e, localFrame_eq_C, C, map_sum, map_smul,
+    simp only [e, localFrame_eq_constantField, constantField, map_sum, map_smul,
       ContinuousLinearEquiv.apply_symm_apply] at hread
     rw [TauCeti.Manifold.christoffelMap_apply_basis b hc hx i j, ← hread, Γ_apply]
     exact leviCivitaConnection_const_apply p (b i) (b j)
