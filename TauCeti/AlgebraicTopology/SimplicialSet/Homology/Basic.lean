@@ -63,9 +63,13 @@ lemma chainComplexMap_f_chainComplexFunctor_map_app_f {X Y : _root_.SSet.{w}} (f
         (_root_.SSet.chainComplexMap f R').f n := by
   rw [← HomologicalComplex.comp_f, ← HomologicalComplex.comp_f, NatTrans.naturality]
 
+end TauCeti.SSet
+
+namespace SSet
+
 /-- The simplicial chain modules `Cₙ(X; M) = ⨁ M` with semisimple coefficients `M` are
 semisimple. -/
-instance isSemisimpleModule_chainComplex_X {k : Type w} [Ring k] (X : _root_.SSet.{w})
+instance isSemisimpleModule_chainComplex_X {k : Type w} [Ring k] (X : SSet.{w})
     (M : ModuleCat.{w} k) [IsSemisimpleModule k M] (n : ℕ) :
     IsSemisimpleModule k ((X.chainComplex M).X n) := by
   classical
@@ -73,4 +77,4 @@ instance isSemisimpleModule_chainComplex_X {k : Type w} [Ring k] (X : _root_.SSe
   exact .congr ((ModuleCat.coprodIsoDirectSum fun _ : X _⦋n⦌ ↦ M).toLinearEquiv.trans
     (finsuppLequivDFinsupp k).symm)
 
-end TauCeti.SSet
+end SSet
