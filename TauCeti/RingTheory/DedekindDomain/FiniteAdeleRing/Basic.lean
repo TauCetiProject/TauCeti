@@ -376,7 +376,7 @@ variable (R K) in
 theorem denseRange_algebraMap_integralAdeles :
     DenseRange (algebraMap R (integralAdeles R K)) := by
   rw [DenseRange, Subtype.dense_iff, ← Set.range_comp]
-  exact (closure_range_algebraMap R K).ge
+  simpa only [Function.comp_def, Subalgebra.coe_algebraMap] using (closure_range_algebraMap R K).ge
 
 variable (R K) in
 /-- **`K / R` is the quotient of the finite adeles by the integral finite adeles.** The diagonal
@@ -395,10 +395,7 @@ noncomputable def quotientEquivQuotientIntegralAdeles :
     exact ⟨x, (Submodule.Quotient.eq _).mpr hx⟩
   have hker : LinearMap.ker f = 1 := by
     ext x
-    simp only [f, LinearMap.mem_ker, LinearMap.coe_comp, Function.comp_apply,
-      LinearMap.coe_restrictScalars, Algebra.linearMap_apply, Submodule.mkQ_apply,
-      Submodule.Quotient.mk_eq_zero, Subalgebra.mem_toSubmodule,
-      algebraMap_mem_integralAdeles_iff, Submodule.mem_one, RingHom.mem_range]
+    simp [f, -mem_integralAdeles, algebraMap_mem_integralAdeles_iff, Submodule.mem_one]
   (Submodule.quotEquivOfEq _ _ hker.symm).trans (f.quotKerEquivOfSurjective hf)
 
 /-- The isomorphism `K / R ≃ 𝔸ᶠ / ∏_v 𝒪_v` sends the class of `x` to the class of its diagonal
