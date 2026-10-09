@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Minimal
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Topology
 import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.IntersectionForm
+import TauCeti.Data.Int.MulAddMulEqFour
 import Mathlib.Combinatorics.SimpleGraph.Connectivity.Subgraph
 import Mathlib.Combinatorics.SimpleGraph.DegreeSum
 import Mathlib.Tactic.IntervalCases
@@ -534,18 +535,6 @@ private lemma fiber_relation_of_univ_eq_triple {i j k : T.Component} (hij : i �
   have h := T.fiber_relation l
   rwa [hu, sum_insert (by simp [hij, hik]), sum_pair hjk, ← add_assoc] at h
 
-/-- The positive integer solutions of `αβ + γδ = 4`. -/
-private lemma cases_of_mul_add_mul_eq_four {α β γ δ : ℤ} (hα : 0 < α) (hβ : 0 < β) (hγ : 0 < γ)
-    (hδ : 0 < δ) (hsum : α * β + γ * δ = 4) :
-    α = 1 ∧ β = 1 ∧ (γ = 1 ∧ δ = 3 ∨ γ = 3 ∧ δ = 1) ∨
-      (α = 1 ∧ β = 3 ∨ α = 3 ∧ β = 1) ∧ γ = 1 ∧ δ = 1 ∨
-      (α = 1 ∧ β = 2 ∨ α = 2 ∧ β = 1) ∧ (γ = 1 ∧ δ = 2 ∨ γ = 2 ∧ δ = 1) := by
-  have hα₃ : α ≤ 3 := by nlinarith
-  have hβ₃ : β ≤ 3 := by nlinarith
-  have hγ₃ : γ ≤ 3 := by nlinarith
-  have hδ₃ : δ ≤ 3 := by nlinarith
-  interval_cases α <;> interval_cases β <;> interval_cases γ <;> interval_cases δ <;> omega
-
 /-- If a numerical type has exactly three components `i`, `j` and `k`, each of self-intersection
 `-2w`, and `i` and `k` do not meet, then the components form a chain `x - j - z`, where `x` and
 `z` are `i` and `k` in a suitable order, of one of the five shapes of
@@ -590,7 +579,7 @@ theorem exists_weight_multiplicity_intersection_eq_of_card_eq_three
   clear ri rj rk hu
   simp only [isGenusOneChainShape_iff]
   -- In each case, read off the shape; for the last four the chain runs from `k` to `i`.
-  rcases cases_of_mul_add_mul_eq_four hα₀ hβ₀ hγ₀ hδ₀ hsum with
+  rcases Int.cases_of_mul_add_mul_eq_four hα₀ hβ₀ hγ₀ hδ₀ hsum with
     ⟨rfl, rfl, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ | ⟨⟨rfl, rfl⟩ | ⟨rfl, rfl⟩, rfl, rfl⟩ |
       ⟨⟨rfl, rfl⟩ | ⟨rfl, rfl⟩, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩
   · exact ⟨i, k, .inl ⟨rfl, rfl⟩, .inr <| .inl <| by
