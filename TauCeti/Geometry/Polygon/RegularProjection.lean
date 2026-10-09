@@ -88,13 +88,13 @@ variable [Ring R] [AddCommGroup V] [Module R V] [AddTorsor V P]
 variable (R) in
 /-- The **projection along `d`** with origin `p₀`: the map `P → V ⧸ R ∙ d` sending `p` to the
 class of `p -ᵥ p₀`. Its fibres are the lines parallel to `d` (`projAlong_eq_projAlong_iff`). -/
-@[expose] def projAlong (p₀ : P) (d : V) (p : P) : V ⧸ R ∙ d :=
+def projAlong (p₀ : P) (d : V) (p : P) : V ⧸ R ∙ d :=
   Submodule.Quotient.mk (p -ᵥ p₀)
 
 /-- The projection along `d` sends `p` to the class of `p -ᵥ p₀`. -/
 theorem projAlong_apply (p₀ : P) (d : V) (p : P) :
     projAlong R p₀ d p = Submodule.Quotient.mk (p -ᵥ p₀) :=
-  rfl
+  (rfl)
 
 /-- Two points have the same projection along `d` exactly when they lie on a line parallel
 to `d`. -/
@@ -159,12 +159,6 @@ private theorem exists_eq_smul_edgeVector_vadd {poly : Polygon P n} {x : P}
   obtain ⟨i, t, -, rfl⟩ := mem_boundary_iff.1 hx
   exact ⟨i, t, AffineMap.lineMap_apply _ _ _⟩
 
-/-- A nonzero vector between two points of a line parallel to `d` is a nonzero multiple of `d`. -/
-private theorem ne_zero_of_smul_eq_vsub {a : ℝ} {d : V} {x y : P} (h : a • d = x -ᵥ y)
-    (hxy : x ≠ y) : a ≠ 0 := by
-  rintro rfl
-  exact hxy (eq_of_vsub_eq_zero (by simpa using h.symm))
-
 /-- The `(i, j, k)` term of `irregularCover`: the directions of irregular projections coming from
 a vertex `poly i` and a point of edge `j`, or from three points of the edges `i`, `j`, `k`. -/
 private def irregularCoverTerm (poly : Polygon P n) (e : V ≃L[ℝ] (Fin 3 → ℝ)) (i j k : Fin n) :
@@ -209,7 +203,7 @@ private theorem mem_irregularCover_of_vertex {poly : Polygon P n} (e : V ≃L[�
     {d : V} {i : Fin n} {x : P} {a : ℝ} (hx : x ∈ poly.boundary ℝ)
     (ha : a • d = x -ᵥ poly i) (hne : x ≠ poly i) : d ∈ irregularCover poly e := by
   obtain ⟨j, t, rfl⟩ := exists_eq_smul_edgeVector_vadd hx
-  have ha0 := ne_zero_of_smul_eq_vsub ha hne
+  have ha0 := left_ne_zero_of_smul (ha ▸ vsub_ne_zero.2 hne)
   refine mem_iUnion.2 ⟨(i, j, j), Or.inl (Or.inl (Or.inl ⟨(a⁻¹, t), ?_⟩))⟩
   rw [vadd_vsub_assoc] at ha
   simp only
@@ -263,8 +257,8 @@ private theorem mem_irregularCover_of_triple {poly : Polygon P n} (e : V ≃L[�
   obtain ⟨i, a, rfl⟩ := exists_eq_smul_edgeVector_vadd hx
   obtain ⟨j, b, rfl⟩ := exists_eq_smul_edgeVector_vadd hy
   obtain ⟨k, c, rfl⟩ := exists_eq_smul_edgeVector_vadd hz
-  have hα0 := ne_zero_of_smul_eq_vsub hα hxy
-  have hγ0 := ne_zero_of_smul_eq_vsub hγ hxz
+  have hα0 := left_ne_zero_of_smul (hα ▸ vsub_ne_zero.2 hxy)
+  have hγ0 := left_ne_zero_of_smul (hγ ▸ vsub_ne_zero.2 hxz)
   -- relations between the vectors joining the vertices `poly i`, `poly j` and `poly k`
   have hij := neg_vsub_eq_vsub_rev (poly i) (poly j)
   have hik := neg_vsub_eq_vsub_rev (poly i) (poly k)
