@@ -109,6 +109,25 @@ lemma singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfCh
           (TopPair.excisionMap (X := TopCat.of E) φ.target {φ x}ᶜ) R k := by
   simp [singularHomologyComplSingletonIsoOfChart]
 
+/-- The inverse of `TauCeti.singularHomologyComplSingletonIsoOfChart` commutes with the excision
+maps from the target and source of `φ` and the inverse homeomorphism between them. -/
+@[reassoc]
+lemma singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfChart_inv
+    (k : ℕ) :
+    TopPair.singularHomologyMap (TopPair.excisionMap (X := TopCat.of E) φ.target {φ x}ᶜ) R k ≫
+        (singularHomologyComplSingletonIsoOfChart R φ hx k).inv =
+      TopPair.singularHomologyMap (TopPair.ofSubsetIso
+          (X := TopCat.of φ.source) (Y := TopCat.of φ.target) φ.toHomeomorphSourceTarget
+          (B := Subtype.val ⁻¹' {x}ᶜ) (B' := Subtype.val ⁻¹' {φ x}ᶜ)
+          fun z ↦ (φ.injOn.eq_iff z.2 hx).not.symm).inv R k ≫
+        TopPair.singularHomologyMap
+          (TopPair.excisionMap (X := TopCat.of M) φ.source {x}ᶜ) R k := by
+  rw [← cancel_mono (singularHomologyComplSingletonIsoOfChart R φ hx k).hom, Category.assoc,
+    Iso.inv_hom_id, Category.comp_id, Category.assoc,
+    singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfChart_hom,
+    ← Category.assoc, ← TopPair.singularHomologyMap_comp, Iso.inv_hom_id,
+    TopPair.singularHomologyMap_id, Category.id_comp]
+
 end Chart
 
 variable {M : Type w} [TopologicalSpace M] [T1Space M] {E : Type w} [NormedAddCommGroup E]
@@ -147,6 +166,30 @@ lemma singularHomologyComplSingletonIso_hom (k : ℕ) :
   rw [singularHomologyComplSingletonIso, Iso.trans_hom]
   exact congrArg (_ ≫ ·) ((Iso.trans_hom _ _).trans (congrArg₂ (· ≫ ·) (asIso_hom _)
     (ContinuousMap.HomotopyEquiv.reducedSingularHomologyIso_hom R _ k)))
+
+/-- The inverse of `TauCeti.singularHomologyComplSingletonIso` is the map induced by the homotopy
+inverse of `TauCeti.complSingletonHomotopyEquivSphere`, followed by the inverse of the reduced
+connecting morphism of `(E, E ∖ {φ x})` and the inverse of the chart isomorphism. -/
+@[simp]
+lemma singularHomologyComplSingletonIso_inv (k : ℕ) :
+    (singularHomologyComplSingletonIso R φ hx k).inv =
+      (reducedSingularHomologyFunctor R k).map
+          (TopCat.ofHom (complSingletonHomotopyEquivSphere (φ x)).invFun) ≫
+        -- The ambient space of `(E, E ∖ {φ x})` is `E` only up to unfolding `TopPair.ofSubset`,
+        -- so the instance making the reduced connecting morphism invertible is supplied by hand.
+        inv ((TopPair.ofSubset ({φ x}ᶜ : Set (TopCat.of E))).reducedSingularHomologyδ R k)
+            (I := @TopPair.isIso_reducedSingularHomologyδ_of_contractibleSpace _ _ _ _ _ R
+              (inferInstanceAs (ContractibleSpace E)) k) ≫
+          (singularHomologyComplSingletonIsoOfChart R φ hx (k + 1)).inv := by
+  have : ContractibleSpace (TopPair.ofSubset ({φ x}ᶜ : Set (TopCat.of E))).fst :=
+    inferInstanceAs (ContractibleSpace E)
+  rw [singularHomologyComplSingletonIso, Iso.trans_inv]
+  exact (congrArg (· ≫ _) ((Iso.trans_inv _ _).trans (congrArg₂ (· ≫ ·)
+    (ContinuousMap.HomotopyEquiv.reducedSingularHomologyIso_inv R
+      (complSingletonHomotopyEquivSphere (φ x)) k)
+    (asIso_inv
+      ((TopPair.ofSubset ({φ x}ᶜ : Set (TopCat.of E))).reducedSingularHomologyδ R k))))).trans
+    (Category.assoc _ _ _)
 
 include hx in
 /-- **Local homology vanishes in degree zero** at a point with a chart to a nonzero real normed
@@ -218,5 +261,24 @@ lemma singularHomologyComplSingletonIsoOfFinrankEq_hom {n : ℕ} (h : finrank �
             C(sphere (0 : E) 1, TopCat.sphere.{w} n))) ≫
           (reducedSingularHomologyTopCatSphereIso R n).hom :=
   (rfl)
+
+/-- The inverse of `TauCeti.singularHomologyComplSingletonIsoOfFinrankEq` is the inverse of
+`TauCeti.reducedSingularHomologyTopCatSphereIso`, followed by the map on reduced homology induced
+by the homeomorphism of `TopCat.sphere n` with the unit sphere of `E`, and by the inverse of
+`TauCeti.singularHomologyComplSingletonIso`. -/
+@[simp]
+lemma singularHomologyComplSingletonIsoOfFinrankEq_inv {n : ℕ} (h : finrank ℝ E = n + 1) :
+    haveI := Module.finite_of_finrank_eq_succ h
+    (singularHomologyComplSingletonIsoOfFinrankEq R φ hx h).inv =
+      (reducedSingularHomologyTopCatSphereIso R n).inv ≫
+        (reducedSingularHomologyFunctor R n).map (TopCat.ofHom
+          (((sphereHomeomorphOfFinrankEq
+              (h.trans (finrank_euclideanSpace_ulift_fin.{w} (n + 1)).symm)).trans
+            (diskBoundaryHomeomorph (n + 1)).symm : sphere (0 : E) 1 ≃ₜ TopCat.sphere.{w} n).symm :
+            C(TopCat.sphere.{w} n, sphere (0 : E) 1))) ≫
+          (singularHomologyComplSingletonIso R φ hx n).inv := by
+  simp [singularHomologyComplSingletonIsoOfFinrankEq]
+  -- `simp` leaves two coercions of the inverse homeomorphism to a continuous map.
+  rfl
 
 end TauCeti
