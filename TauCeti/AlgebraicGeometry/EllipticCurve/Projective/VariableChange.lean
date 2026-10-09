@@ -134,6 +134,38 @@ theorem toMatrix_injective :
 theorem toMatrix_inj {C C' : VariableChange R} : C.toMatrix = C'.toMatrix ↔ C = C' :=
   toMatrix_injective.eq_iff
 
+open Matrix in
+/-- A change of variables fixes the third homogeneous coordinate. -/
+@[simp]
+theorem toMatrix_mulVec_two (C : VariableChange R) (P : Fin 3 → R) :
+    (C.toMatrix *ᵥ P) 2 = P 2 := by
+  simp [toMatrix_def, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+
+section Field
+
+variable {F : Type*} [Field F] (C : VariableChange F) {P : Fin 3 → F}
+
+open Matrix
+
+/-- On the affine chart `Z ≠ 0`, the change of variables acts on the first affine coordinate
+`x = X / Z` as `x ↦ u²x + r`. -/
+theorem toMatrix_mulVec_zero_div (hP : P 2 ≠ 0) :
+    (C.toMatrix *ᵥ P) 0 / P 2 = (C.u : F) ^ 2 * (P 0 / P 2) + C.r := by
+  field_simp
+  simp [toMatrix_def, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+  ring
+
+/-- On the affine chart `Z ≠ 0`, the change of variables acts on the second affine coordinate
+`y = Y / Z` as `y ↦ u³y + u²sx + t`, where `x = X / Z`. -/
+theorem toMatrix_mulVec_one_div (hP : P 2 ≠ 0) :
+    (C.toMatrix *ᵥ P) 1 / P 2 =
+      (C.u : F) ^ 3 * (P 1 / P 2) + (C.u : F) ^ 2 * C.s * (P 0 / P 2) + C.t := by
+  field_simp
+  simp [toMatrix_def, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+  ring
+
+end Field
+
 end VariableChange
 
 namespace Projective
@@ -285,21 +317,10 @@ private theorem nonsingular_toMatrix_mulVec {W : WeierstrassCurve F} {C : Variab
     exact nonsingular_zero
   · -- otherwise both are read on the affine chart `Z ≠ 0`, where the change of variables is
     -- `(x, y) ↦ (u²x + r, u³y + u²sx + t)`
-    have hz : (C.toMatrix *ᵥ P) 2 = P 2 := by
-      simp [VariableChange.toMatrix_def, mulVec, dotProduct, Fin.sum_univ_three]
-    have h₀ : (C.toMatrix *ᵥ P) 0 / (C.toMatrix *ᵥ P) 2 = (C.u : F) ^ 2 * (P 0 / P 2) + C.r := by
-      simp only [hz]
-      field_simp
-      simp [VariableChange.toMatrix_def, mulVec, dotProduct, Fin.sum_univ_three]
-      ring
-    have h₁ : (C.toMatrix *ᵥ P) 1 / (C.toMatrix *ᵥ P) 2 =
-        (C.u : F) ^ 3 * (P 1 / P 2) + (C.u : F) ^ 2 * C.s * (P 0 / P 2) + C.t := by
-      simp only [hz]
-      field_simp
-      simp [VariableChange.toMatrix_def, mulVec, dotProduct, Fin.sum_univ_three]
-      ring
     rw [nonsingular_of_Z_ne_zero hPz] at hP
-    rw [nonsingular_of_Z_ne_zero (hz ▸ hPz), h₀, h₁]
+    rw [nonsingular_of_Z_ne_zero (by rwa [VariableChange.toMatrix_mulVec_two]),
+      VariableChange.toMatrix_mulVec_two, VariableChange.toMatrix_mulVec_zero_div C hPz,
+      VariableChange.toMatrix_mulVec_one_div C hPz]
     exact (Affine.variableChange_nonsingular W C _ _).mpr hP
 
 /-- Over a field, a point representative `P` is nonsingular on `C • W` exactly when its image

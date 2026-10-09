@@ -128,8 +128,7 @@ open Matrix
 theorem Point.toAffine_toMatrix_mulVec (P : Fin 3 → F) :
     Point.toAffine W.toProjective (C.toMatrix *ᵥ P) =
       Affine.Point.equivVariableChange W C (Point.toAffine (C • W).toProjective P) := by
-  have hz : (C.toMatrix *ᵥ P) 2 = P 2 := by
-    simp [VariableChange.toMatrix_def, mulVec, dotProduct, Fin.sum_univ_three]
+  have hz := VariableChange.toMatrix_mulVec_two C P
   by_cases hP : (C • W).toProjective.Nonsingular P
   · by_cases hPz : P 2 = 0
     · rw [Point.toAffine_of_Z_eq_zero hPz, Point.toAffine_of_Z_eq_zero (hz.trans hPz),
@@ -137,8 +136,8 @@ theorem Point.toAffine_toMatrix_mulVec (P : Fin 3 → F) :
     · rw [Point.toAffine_of_Z_ne_zero hP hPz,
         Point.toAffine_of_Z_ne_zero ((nonsingular_variableChange W C P).mp hP) (hz ▸ hPz),
         Affine.Point.equivVariableChange_some, Affine.Point.some.injEq, hz]
-      constructor <;> field_simp <;>
-        simp [VariableChange.toMatrix_def, mulVec, dotProduct, Fin.sum_univ_three] <;> ring
+      exact ⟨VariableChange.toMatrix_mulVec_zero_div C hPz,
+        VariableChange.toMatrix_mulVec_one_div C hPz⟩
   · rw [Point.toAffine_of_singular hP,
       Point.toAffine_of_singular (mt (nonsingular_variableChange W C P).mpr hP),
       Affine.Point.equivVariableChange_zero]
