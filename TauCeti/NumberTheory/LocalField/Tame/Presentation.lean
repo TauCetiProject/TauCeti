@@ -147,7 +147,8 @@ theorem IwasawaGroup.topologicalClosure_closure_eq_top :
     · rintro (rfl | rfl)
       exacts [⟨_, rfl⟩, ⟨_, rfl⟩]
   rw [← hrange]
-  exact presentedProfiniteGroup.topologicalClosure_closure_range_of_eq_top
+  exact Subgroup.dense_iff_topologicalClosure_eq_top.mp
+    presentedProfiniteGroup.dense_closure_range_of
 
 /-! ### The coordinate to `ℤ̂` -/
 
