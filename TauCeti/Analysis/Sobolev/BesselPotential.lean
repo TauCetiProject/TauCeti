@@ -9,19 +9,22 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 public import Mathlib.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
+import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 
 /-!
-# From Bessel-potential regularity to first-order weak derivatives
+# First-order Bessel-potential and weak-derivative Sobolev spaces agree
 
-This file proves one direction of the agreement between the Fourier-theoretic and
-weak-derivative definitions of first-order Sobolev regularity on the whole space. If the tempered
-distribution associated to a real `L²` function belongs to Mathlib's Bessel-potential space
-`H^{1,2}`, then the function is the value component of an element of `W^{1,2}`.
+This file proves that the Fourier-theoretic and weak-derivative definitions of first-order
+`L²` Sobolev regularity on the whole space agree. A real `L²` function lies in Mathlib's
+Bessel-potential space `H^{1,2}` exactly when it is the value component of an element of
+`W^{1,2}`.
 
 Real representatives of the directional distributional derivatives connect Mathlib's complex
 Bessel-potential interface to the real weak-gradient interface. Their values along a finite basis
-determine an `E`-valued weak gradient.
+determine an `E`-valued weak gradient. Conversely, the components of a weak gradient are `L²`
+distributional derivatives, so `TemperedDistribution.memSobolev_add_one_iff` places the function
+in `H^{1,2}`.
 
 ## Main declarations
 
@@ -31,6 +34,9 @@ determine an `E`-valued weak gradient.
   real `H^{1,2}` function has a real `L²` representative.
 * `MeasureTheory.Lp.exists_w1p_value_eq_of_memSobolev_one`: a real `L²` function whose associated
   tempered distribution lies in `H^{1,2}` belongs to weak-derivative `W^{1,2}`.
+* `MeasureTheory.Lp.memSobolev_one_of_w1p_value_eq`: conversely, the value component of an element
+  of `W^{1,2}` lies in `H^{1,2}`.
+* `MeasureTheory.Lp.memSobolev_one_iff_exists_w1p_value_eq`: the two spaces agree.
 
 ## References
 
@@ -178,5 +184,31 @@ theorem exists_w1p_value_eq_of_memSobolev_one
   refine ⟨W1p.mk uTop gTop hweak, ?_⟩
   rw [W1p.value_mk]
   exact .of_forall fun x => coeFn_castLpₗᵢ hvolume u x
+
+/-- If a real `L²` function is the value component of a weak-derivative Sobolev function in
+`W^{1,2}(ℝⁿ)`, then its associated tempered distribution belongs to the Bessel-potential space
+`H^{1,2}`. -/
+theorem memSobolev_one_of_w1p_value_eq (u : Lp ℝ 2 (volume : Measure E))
+    (w : W1p volume ⊤ 2) (hw : (W1p.value w : E → ℝ) =ᵐ[volume] u) :
+    MemSobolev 1 2 (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u)) := by
+  have hvolume : (volume : Measure E).restrict ((⊤ : Opens E) : Set E) = volume := by simp
+  rw [show (1 : ℝ) = 0 + 1 by norm_num, memSobolev_add_one_iff]
+  refine ⟨memSobolev_zero_iff.mpr ⟨_, rfl⟩, fun v => ?_⟩
+  let g : Lp ℝ 2 (volume : Measure E) :=
+    castLpₗᵢ (𝕜 := ℝ) hvolume ((innerSL ℝ v).compLp (W1p.gradient w))
+  have hline : HasWeakLineDerivOn volume ⊤ u g v := by
+    refine (((W1p.hasWeakFDerivOn w).hasWeakLineDerivOn v).congr_ae ?_).congr_ae_deriv ?_
+    · simpa using hw
+    · filter_upwards [(innerSL ℝ v).coeFn_compLp (W1p.gradient w)] with x hx
+      rw [coeFn_castLpₗᵢ hvolume, hx, innerSL_apply_apply, innerSL_apply_apply, real_inner_comm]
+  rw [(hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_ofReal_eq u g v).mp hline]
+  exact memSobolev_zero_iff.mpr ⟨_, rfl⟩
+
+/-- A real `L²` function lies in the Bessel-potential space `H^{1,2}` exactly when it is the
+value component of a weak-derivative Sobolev function in `W^{1,2}(ℝⁿ)`. -/
+theorem memSobolev_one_iff_exists_w1p_value_eq (u : Lp ℝ 2 (volume : Measure E)) :
+    MemSobolev 1 2 (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u)) ↔
+      ∃ w : W1p volume ⊤ 2, (W1p.value w : E → ℝ) =ᵐ[volume] u :=
+  ⟨exists_w1p_value_eq_of_memSobolev_one u, fun ⟨w, hw⟩ => memSobolev_one_of_w1p_value_eq u w hw⟩
 
 end MeasureTheory.Lp
