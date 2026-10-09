@@ -148,7 +148,7 @@ variable (hv : v.Integers O) (hϖ : ϖ ≠ 0) {ρ₁ ρ₂ : ℝ≥0} (hρ₁ : 
 is the interval ring `B^I`. -/
 -- The body is exposed because the ring structures below are transferred from
 -- `Localization.Away` along it.
-@[expose, nolint unusedArguments]
+@[expose]
 def IntervalLocalization (_hv : v.Integers O) (_hϖ : ϖ ≠ 0) (_hρ₁ : ρ₁ ∈ Set.Ioo 0 1)
     (_hρ₂ : ρ₂ ∈ Set.Ioo 0 1) : Type _ :=
   Localization.Away ((p : 𝕎 O) * teichmuller p ϖ)
