@@ -139,7 +139,7 @@ theorem projModelOver_mul_left : μ[Over.mk W.projModelOver].left = W.additionMo
   (rfl)
 
 /-- The monoid object `Over.mk W.projModelOver` is commutative, because the addition morphism is
-(`additionMorphism_comm`). -/
+invariant under swapping its two factors (`additionMorphism_comm`). -/
 instance isCommMonObj_projModelOver : IsCommMonObj (Over.mk W.projModelOver) where
   mul_comm := by
     ext1
