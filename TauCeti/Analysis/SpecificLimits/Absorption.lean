@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Algebra.Order.Field.GeomSum
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # The absorption lemma for estimates between nested radii
@@ -43,20 +44,6 @@ namespace TauCeti
 
 open Filter Set Topology
 
-/-- For `θ < 1` and any exponent `β`, some ratio `τ ∈ (0, 1)` has `θ < τ ^ β`. -/
-private lemma exists_pos_lt_one_lt_rpow {θ : ℝ} (hθ : θ < 1) (β : ℝ) :
-    ∃ τ : ℝ, 0 < τ ∧ τ < 1 ∧ θ < τ ^ β := by
-  rcases le_or_gt β 0 with hβ | hβ
-  · exact ⟨1 / 2, by norm_num, by norm_num,
-      hθ.trans_le (Real.one_le_rpow_of_pos_of_le_one_of_nonpos (by norm_num) (by norm_num) hβ)⟩
-  · set c := max ((1 + θ) / 2) (1 / 2)
-    have hc0 : 0 < c := lt_max_of_lt_right (by norm_num)
-    have hc1 : c < 1 := max_lt (by linarith) (by norm_num)
-    refine ⟨c ^ β⁻¹, Real.rpow_pos_of_pos hc0 _,
-      Real.rpow_lt_one hc0.le hc1 (inv_pos.2 hβ), ?_⟩
-    rw [← Real.rpow_mul hc0.le, inv_mul_cancel₀ hβ.ne', Real.rpow_one]
-    exact lt_max_of_lt_left (by linarith)
-
 /-- **The absorption lemma.** Fix `0 ≤ θ < 1` and an exponent `β`. There is `C > 0`, depending
 only on `θ` and `β`, such that the following holds. Let `f` be bounded above on `[r₀, r₁]`,
 with `r₀ < r₁`, and suppose that
@@ -69,7 +56,7 @@ theorem exists_le_mul_mul_rpow_add_of_le_mul_add {θ : ℝ} (hθ0 : 0 ≤ θ) (h
       BddAbove (f '' Icc r₀ r₁) →
       (∀ s t, r₀ ≤ s → s < t → t ≤ r₁ → f s ≤ θ * f t + A * (t - s) ^ (-β) + B) →
       f r₀ ≤ C * (A * (r₁ - r₀) ^ (-β) + B) := by
-  obtain ⟨τ, hτ0, hτ1, hθτ⟩ := exists_pos_lt_one_lt_rpow hθ1 β
+  obtain ⟨τ, hτ0, hτ1, hθτ⟩ := Real.exists_pos_lt_one_lt_rpow hθ1 β
   -- The ratio of the geometric series produced by the `A`-terms.
   set q := θ * τ ^ (-β)
   have hq0 : 0 ≤ q := mul_nonneg hθ0 (Real.rpow_nonneg hτ0.le _)
