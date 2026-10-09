@@ -362,6 +362,15 @@ def IsGenusOnePairShape (x y : T.Component) : Prop :=
     ((T.weight y : ℤ) = 4 * T.weight x ∧ (T.multiplicity x : ℤ) = 2 * T.multiplicity y ∧
       T.intersection x y = 4 * T.weight x)
 
+/-- The two explicit alternatives defining a genus-one pair shape. -/
+lemma isGenusOnePairShape_iff {x y : T.Component} :
+    T.IsGenusOnePairShape x y ↔
+      ((T.weight y : ℤ) = T.weight x ∧ (T.multiplicity y : ℤ) = T.multiplicity x ∧
+        T.intersection x y = 2 * T.weight x) ∨
+      ((T.weight y : ℤ) = 4 * T.weight x ∧ (T.multiplicity x : ℤ) = 2 * T.multiplicity y ∧
+        T.intersection x y = 4 * T.weight x) :=
+  Iff.rfl
+
 /-- The fibre relation at a component `l` of a numerical type whose components are `i` and
 `j`. -/
 private lemma fiber_relation_of_univ_eq_pair {i j : T.Component} (hij : i ≠ j)
@@ -401,7 +410,7 @@ theorem exists_weight_multiplicity_intersection_eq_of_card_eq_two
     exact sub_eq_zero.mp ((mul_eq_zero.mp h).resolve_right (mul_pos hmi hmj).ne')
   have hα₄ : α ≤ 4 := by nlinarith
   have hβ₄ : β ≤ 4 := by nlinarith
-  simp only [IsGenusOnePairShape]
+  simp only [isGenusOnePairShape_iff]
   interval_cases α <;> interval_cases β <;>
     first
     | omega
@@ -420,7 +429,7 @@ private lemma intersection_self_eq_of_card_eq_two {x y : T.Component} (hxy : x �
   rw [T.intersection_comm y x] at ry
   have hm (l : T.Component) : (T.multiplicity l : ℤ) ≠ 0 :=
     (Int.natCast_pos.mpr (T.multiplicity l).pos).ne'
-  unfold IsGenusOnePairShape at hpat
+  rw [isGenusOnePairShape_iff] at hpat
   -- Rewrite every datum in terms of `w_x` and one multiplicity, then cancel the multiplicity.
   constructor <;> [apply mul_left_cancel₀ (hm x); apply mul_left_cancel₀ (hm y)] <;>
     rcases hpat with ⟨h₁, h₂, h₃⟩ | ⟨h₁, h₂, h₃⟩ <;> simp only [h₁, h₂, h₃] at rx ry ⊢
@@ -491,6 +500,31 @@ def IsGenusOneChainShape (x j z : T.Component) : Prop :=
       (T.multiplicity z : ℤ) = T.multiplicity x ∧
       T.intersection x j = 2 * T.weight j ∧ T.intersection j z = 2 * T.weight j)
 
+/-- The five explicit alternatives defining a genus-one chain shape. -/
+lemma isGenusOneChainShape_iff {x j z : T.Component} :
+    T.IsGenusOneChainShape x j z ↔
+      ((T.weight j : ℤ) = T.weight x ∧ (T.weight z : ℤ) = 3 * T.weight x ∧
+        (T.multiplicity j : ℤ) = 2 * T.multiplicity x ∧
+        (T.multiplicity z : ℤ) = T.multiplicity x ∧
+        T.intersection x j = T.weight x ∧ T.intersection j z = 3 * T.weight x) ∨
+      ((T.weight x : ℤ) = 3 * T.weight z ∧ (T.weight j : ℤ) = 3 * T.weight z ∧
+        (T.multiplicity j : ℤ) = 2 * T.multiplicity x ∧
+        (T.multiplicity z : ℤ) = 3 * T.multiplicity x ∧
+        T.intersection x j = 3 * T.weight z ∧ T.intersection j z = 3 * T.weight z) ∨
+      ((T.weight j : ℤ) = 2 * T.weight x ∧ (T.weight z : ℤ) = 4 * T.weight x ∧
+        (T.multiplicity j : ℤ) = T.multiplicity x ∧
+        (T.multiplicity x : ℤ) = 2 * T.multiplicity z ∧
+        T.intersection x j = 2 * T.weight x ∧ T.intersection j z = 4 * T.weight x) ∨
+      ((T.weight j : ℤ) = 2 * T.weight x ∧ (T.weight z : ℤ) = T.weight x ∧
+        (T.multiplicity j : ℤ) = T.multiplicity x ∧
+        (T.multiplicity z : ℤ) = T.multiplicity x ∧
+        T.intersection x j = 2 * T.weight x ∧ T.intersection j z = 2 * T.weight x) ∨
+      ((T.weight x : ℤ) = 2 * T.weight j ∧ (T.weight z : ℤ) = 2 * T.weight j ∧
+        (T.multiplicity j : ℤ) = 2 * T.multiplicity x ∧
+        (T.multiplicity z : ℤ) = T.multiplicity x ∧
+        T.intersection x j = 2 * T.weight j ∧ T.intersection j z = 2 * T.weight j) :=
+  Iff.rfl
+
 /-- The fibre relation at a component `l` of a numerical type whose components are `i`, `j` and
 `k`. -/
 private lemma fiber_relation_of_univ_eq_triple {i j k : T.Component} (hij : i ≠ j) (hik : i ≠ k)
@@ -554,7 +588,7 @@ theorem exists_weight_multiplicity_intersection_eq_of_card_eq_three
       linear_combination β * e₁ + γ * e₃ + 2 * e₂
     exact sub_eq_zero.mp ((mul_eq_zero.mp h).resolve_right hmj.ne')
   clear ri rj rk hu
-  unfold IsGenusOneChainShape
+  simp only [isGenusOneChainShape_iff]
   -- In each case, read off the shape; for the last four the chain runs from `k` to `i`.
   rcases cases_of_mul_add_mul_eq_four hα₀ hβ₀ hγ₀ hδ₀ hsum with
     ⟨rfl, rfl, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ | ⟨⟨rfl, rfl⟩ | ⟨rfl, rfl⟩, rfl, rfl⟩ |
@@ -593,7 +627,7 @@ private lemma intersection_self_eq_of_card_eq_three {x j z : T.Component} (hxj :
   rw [T.intersection_comm z x, hxz₀, T.intersection_comm z j] at rz
   have hm (l : T.Component) : (T.multiplicity l : ℤ) ≠ 0 :=
     (Int.natCast_pos.mpr (T.multiplicity l).pos).ne'
-  unfold IsGenusOneChainShape at hpat
+  rw [isGenusOneChainShape_iff] at hpat
   intro l
   rcases (by simpa [hu] using mem_univ l : l = x ∨ l = j ∨ l = z) with rfl | rfl | rfl <;>
     apply mul_left_cancel₀ (hm l) <;>
