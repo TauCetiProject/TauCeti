@@ -99,7 +99,7 @@ variable {R ι : Type*} [CommSemiring R]
 
 /-- If a coordinate family generates the unit ideal and a second family has vanishing `2 × 2`
 minors against it, then the second family is a multiple of the first. -/
-private theorem exists_forall_eq_mul_of_mul_eq_mul {a b : ι → R}
+theorem exists_forall_eq_mul_of_mul_eq_mul {a b : ι → R}
     (ha : Ideal.span (Set.range a) = ⊤) (hab : ∀ i j, b i * a j = b j * a i) :
     ∃ u : R, ∀ j, b j = u * a j := by
   obtain ⟨s, hs⟩ := Finsupp.mem_span_range_iff_exists_finsupp.mp

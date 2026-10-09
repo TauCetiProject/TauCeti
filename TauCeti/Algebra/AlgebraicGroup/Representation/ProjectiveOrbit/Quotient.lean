@@ -62,7 +62,7 @@ variable {k : Type u} [Field k] [IsAlgClosed k] {H : _root_.CommHopfAlgCat.{u} k
 /-- The fppf sheaf of points of the projective orbit scheme of a line: an affine `k`-scheme
 `Spec A` is sent to the morphisms `Spec A ⟶ X` over `Spec k`, lifted to `Type (u + 1)` to sit
 beside the fppf homogeneous quotient. -/
-@[expose] noncomputable def projectiveOrbitPointsSheaf (m : M) (hm : Module.IsUnimodular k m) :
+noncomputable def projectiveOrbitPointsSheaf (m : M) (hm : Module.IsUnimodular k m) :
     Sheaf (CommAlgCat.fppfTopology k) (Type (u + 1)) :=
   ⟨((algSpec (CommRingCat.of k)).op ⋙
       yoneda.obj (Over.mk (projectiveOrbitToSpec (H := H) m hm))) ⋙ uliftFunctor.{u + 1, u},
@@ -73,6 +73,7 @@ beside the fppf homogeneous quotient. -/
 
 /-- The points of the projective orbit scheme over `Spec A` are its morphisms from `Spec A`
 over the base field. -/
+@[simp]
 theorem projectiveOrbitPointsSheaf_obj (m : M) (hm : Module.IsUnimodular k m) :
     (projectiveOrbitPointsSheaf (H := H) m hm).obj =
       ((algSpec (CommRingCat.of k)).op ⋙
@@ -106,26 +107,29 @@ private theorem SpecMap_toProjectiveOrbit_naturality (m : M) (hm : Module.IsUnim
 `Spec A ⟶ Spec H ⟶ X` of the projective orbit scheme. -/
 noncomputable def toProjectiveOrbitPoints (m : M) (hm : Module.IsUnimodular k m) :
     HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶
-      (projectiveOrbitPointsSheaf (H := H) m hm).obj where
-  app A := ↾fun g ↦ ULift.up <| Over.homMk
-    (Spec.map (CommRingCat.ofHom g.down.ofConv.toRingHom) ≫ toProjectiveOrbit (H := H) m hm)
-    (SpecMap_toProjectiveOrbit_projectiveOrbitToSpec m hm g.down.ofConv)
-  naturality A B χ := by
-    ext ⟨g⟩
-    have h := SpecMap_toProjectiveOrbit_naturality m hm χ.unop.unop.hom g.ofConv
-    rw [← WithConv.ofConv_toConv (χ.unop.unop.hom.comp g.ofConv),
-      ← HopfAlgebra.mapPoints_apply (H := H) χ.unop.unop g] at h
-    -- Both sides are `Spec` of the composite value-algebra map followed by the orbit map.
-    exact congrArg ULift.up (Over.OverMorphism.ext h)
+      (projectiveOrbitPointsSheaf (H := H) m hm).obj := by
+  rw [projectiveOrbitPointsSheaf_obj]
+  exact
+    { app A := ↾fun g ↦ ULift.up <| Over.homMk
+        (Spec.map (CommRingCat.ofHom g.down.ofConv.toRingHom) ≫ toProjectiveOrbit (H := H) m hm)
+        (SpecMap_toProjectiveOrbit_projectiveOrbitToSpec m hm g.down.ofConv)
+      naturality A B χ := by
+        ext ⟨g⟩
+        have h := SpecMap_toProjectiveOrbit_naturality m hm χ.unop.unop.hom g.ofConv
+        rw [← WithConv.ofConv_toConv (χ.unop.unop.hom.comp g.ofConv),
+          ← HopfAlgebra.mapPoints_apply (H := H) χ.unop.unop g] at h
+        -- Both sides are `Spec` of the composite value-algebra map followed by the orbit map.
+        exact congrArg ULift.up (Over.OverMorphism.ext h) }
 
 /-- The orbit point of `g` is `Spec g` followed by the orbit map. -/
 @[simp]
 theorem toProjectiveOrbitPoints_app_apply (m : M) (hm : Module.IsUnimodular k m)
     (A : ((CommAlgCat.{u} k)ᵒᵖ)ᵒᵖ) (g : HopfAlgebra.points (R := k) (H := H) A.unop.unop) :
     dsimp% (toProjectiveOrbitPoints (H := H) m hm).app A (ULift.up g) =
-      ULift.up (Over.homMk
-        (Spec.map (CommRingCat.ofHom g.ofConv.toRingHom) ≫ toProjectiveOrbit (H := H) m hm)
-        (SpecMap_toProjectiveOrbit_projectiveOrbitToSpec m hm g.ofConv)) :=
+      (projectiveOrbitPointsSheaf_obj (H := H) m hm).symm ▸
+        ULift.up (Over.homMk
+          (Spec.map (CommRingCat.ofHom g.ofConv.toRingHom) ≫ toProjectiveOrbit (H := H) m hm)
+          (SpecMap_toProjectiveOrbit_projectiveOrbitToSpec m hm g.ofConv)) :=
   (rfl)
 
 /-- Two algebra-valued group points have the same orbit point exactly when their matrix
