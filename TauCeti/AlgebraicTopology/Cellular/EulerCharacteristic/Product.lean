@@ -17,12 +17,14 @@ The `n`-cells of the product `C ×ˢ D` of two finite CW complexes are the pairs
 `(-1)ⁿ = (-1)ᵖ (-1)^q`, the alternating cell count of the product is the product of the
 alternating cell counts (`TauCeti.cwEulerChar_prod`).  A product of spaces of finite CW type is
 homotopy equivalent to the product of finite CW models of the factors, so the Euler
-characteristic is multiplicative on spaces of finite CW type (`TauCeti.eulerChar_prod`).
+characteristic is multiplicative on spaces of finite CW type (`TauCeti.eulerChar_prod`), and by
+induction on the number of factors on finite products (`TauCeti.eulerChar_pi`).
 
 ## Main results
 
 * `TauCeti.cwEulerChar_prod`: `χ(C ×ˢ D) = χ(C) · χ(D)` for finite CW complexes.
 * `TauCeti.eulerChar_prod`: `χ(X × Y) = χ(X) · χ(Y)` for spaces of finite CW type.
+* `TauCeti.eulerChar_pi`: `χ(∏ᵢ Xᵢ) = ∏ᵢ χ(Xᵢ)` for finitely many spaces of finite CW type.
 
 ## References
 
@@ -82,5 +84,22 @@ theorem eulerChar_prod [hX : FiniteCWType X] [hY : FiniteCWType Y] :
   rw [eulerChar_eq_cwEulerChar e, eulerChar_eq_cwEulerChar f,
     eulerChar_eq_cwEulerChar ((e.prodCongr f).trans (Homeomorph.Set.prod C D).symm.toHomotopyEquiv),
     cwEulerChar_prod]
+
+/-- **Multiplicativity of the Euler characteristic** for finite products of spaces of finite CW
+type: `χ(∏ᵢ Xᵢ) = ∏ᵢ χ(Xᵢ)`.  The empty product is a point, of Euler characteristic one. -/
+theorem eulerChar_pi {ι : Type w} [Fintype ι] (X : ι → Type w) [∀ i, TopologicalSpace (X i)]
+    [∀ i, FiniteCWType (X i)] : eulerChar (∀ i, X i) = ∏ i, eulerChar (X i) := by
+  revert X
+  refine Fintype.induction_empty_option (P := fun ι _ ↦ ∀ (X : ι → Type w)
+    [∀ i, TopologicalSpace (X i)] [∀ i, FiniteCWType (X i)],
+    eulerChar (∀ i, X i) = ∏ i, eulerChar (X i)) ?_ ?_ ?_ ι
+  · intro α β _ e ih X _ _
+    let _ : Fintype α := .ofEquiv β e.symm
+    rw [← (Homeomorph.piCongrLeft (Y := X) e).eulerChar_eq, ih]
+    exact Fintype.prod_equiv e _ _ fun _ ↦ rfl
+  · intro X _ _
+    simp [eulerChar_of_contractibleSpace]
+  · intro α _ ih X _ _
+    rw [(piOptionEquivProdHomeomorph X).eulerChar_eq, eulerChar_prod, ih, Fintype.prod_option]
 
 end TauCeti
