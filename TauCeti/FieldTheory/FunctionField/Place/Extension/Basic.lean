@@ -70,6 +70,8 @@ to the canonical fraction fields used by Mathlib's different API.
   `TauCeti.Place.ramificationIdx_dvd_ord_sum_of_linearIndependent_residue` — and the
   ultrametric estimate `TauCeti.Place.sum_ne_zero_of_ord_eq_mul_add_natCast` with
   `TauCeti.Place.ord_sum_le_of_ord_eq_mul_add_natCast` that combines them.
+* `TauCeti.Place.ord_smul_of_restrict_eq`: `ord_P (c • z) = e(P ∣ P₁) · ord_{P₁} c + ord_P z`
+  for `c` in the subfield `F₁` and `P` over the place `P₁` of `F₁`.
 * `TauCeti.Place.linearIndependent_of_ord_neg_of_restrict_eq`: functions of `F` with a pole at
   one place over `P₁` each, and regular at the others, are linearly independent over `F₁`.
 * `TauCeti.Place.ramificationIdx_mul_relativeDegree_le_finrank`: `e(P' ∣ P) · f(P' ∣ P) ≤
@@ -741,8 +743,9 @@ variable {k F₁ F : Type*} [Field k] [Field F₁] [Field F]
 variable [Algebra k F₁] [Algebra k F] [Algebra F₁ F] [IsScalarTower k F₁ F]
 variable [Algebra.IsIntegral F₁ F]
 
-/-- The order of `c • z` at a place `P` of `F` over the place `P₁` of `F₁`, for `c ∈ F₁`. -/
-private theorem ord_smul_of_restrict_eq {P₁ : Place k F₁} {P : Place k F}
+/-- The order of `c • z` at a place `P` of `F` over the place `P₁` of `F₁`, for `c ∈ F₁`:
+`ord_P (c • z) = e(P ∣ P₁) · ord_{P₁} c + ord_P z`. -/
+theorem ord_smul_of_restrict_eq {P₁ : Place k F₁} {P : Place k F}
     (hP : P.restrict k F₁ = P₁) {c : F₁} (hc : c ≠ 0) {z : F} (hz : z ≠ 0) :
     P.ord (c • z) = ramificationIdx F₁ P * P₁.ord c + P.ord z := by
   rw [Algebra.smul_def, P.ord_mul ((map_ne_zero _).mpr hc) hz, ord_algebraMap_restrict k F₁ P c,

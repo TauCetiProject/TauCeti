@@ -93,12 +93,7 @@ theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add_of_isSplitCompletel
   classical
   have : Algebra.IsAlgebraic F₂ F := Algebra.IsAlgebraic.of_finite F₂ F
   have hF₂ : IsFunctionField k F₂ := hF.of_isAlgebraic_top
-  have hex₂ : IsIntegrallyClosedIn k F₂ :=
-    isIntegrallyClosedIn_iff.mpr ⟨(algebraMap k F₂).injective, fun {z} hz ↦ by
-      obtain ⟨c, hc⟩ := (isIntegrallyClosedIn_iff.mp hex).2
-        (hz.map (IsScalarTower.toAlgHom k F₂ F))
-      exact ⟨c, (algebraMap F₂ F).injective (by
-        rw [← IsScalarTower.algebraMap_apply]; exact hc)⟩⟩
+  have hex₂ : IsIntegrallyClosedIn k F₂ := isIntegrallyClosedIn_of_isScalarTower hex F₂
   -- A nonspecial effective divisor `B` of degree `g(F₂)` supported on `T`.
   obtain ⟨B, hB0, hBT, hBdeg, hBdim, -⟩ :=
     Divisor.exists_degree_eq_genus_dim_eq_one hF₂ hex₂ hT hcard
@@ -147,18 +142,16 @@ theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add_of_isSplitCompletel
       positivity
   -- All of it lies in `L(A)` for `A = B + ∑_{P ≠ P₀} P|_{F₂}`, of degree `g(F₂) + [F : F₁] - 1`.
   set A : Divisor k F₂ := B + ∑ P ∈ S.erase P₀, WeilDivisor.ofPoint (P.restrict k F₂) with hAdef
-  have hofPoint : ∀ Q : Place k F₂, 0 ≤ WeilDivisor.ofPoint Q := fun Q ↦ by
-    simpa using WeilDivisor.le_add_ofPoint (0 : Divisor k F₂) Q
   have hu : ∀ P, u P ∈ riemannRochSpace A := by
     intro P
     by_cases hP : (P : Place k F) = P₀
     · simp only [u, hP, ↓reduceIte]
       exact one_mem_riemannRochSpace_iff.mpr
-        (add_nonneg hB0 (Finset.sum_nonneg fun Q _ ↦ hofPoint _))
+        (add_nonneg hB0 (Finset.sum_nonneg fun Q _ ↦ WeilDivisor.zero_le_ofPoint _))
     · simp only [u, hP, ↓reduceIte]
       refine riemannRochSpace_mono (add_le_add le_rfl ?_) (hwL _ (hdeg P ((hS P).mp P.2)))
       exact Finset.single_le_sum (f := fun P : Place k F ↦ WeilDivisor.ofPoint (P.restrict k F₂))
-        (fun _ _ ↦ hofPoint _) (Finset.mem_erase.mpr ⟨hP, P.2⟩)
+        (fun _ _ ↦ WeilDivisor.zero_le_ofPoint _) (Finset.mem_erase.mpr ⟨hP, P.2⟩)
   have hdegA : Divisor.degree A = genus k F₂ + (Module.finrank F₁ F - 1 : ℕ) := by
     rw [hAdef, Divisor.degree_add, hBdeg, map_sum, Finset.sum_congr rfl fun P hP ↦ by
       rw [Divisor.degree_ofPoint, hdeg P ((hS P).mp (Finset.mem_of_mem_erase hP))],
@@ -195,9 +188,6 @@ theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add_of_isAlgClosed [IsA
   have : Algebra.IsAlgebraic F₂ F := Algebra.IsAlgebraic.of_finite F₂ F
   have hF₁ : IsFunctionField k F₁ := hF.of_isAlgebraic_top
   have hF₂ : IsFunctionField k F₂ := hF.of_isAlgebraic_top
-  have hex : IsIntegrallyClosedIn k F := isIntegrallyClosedIn_iff.mpr
-    ⟨(algebraMap k F).injective, fun {z} hz ↦ minpoly.mem_range_of_degree_eq_one k z
-      (IsAlgClosed.degree_eq_one_of_irreducible k (minpoly.irreducible hz))⟩
   -- A primitive element `y` of `F / F₁` taken in `F₂`.
   obtain ⟨_, ⟨y₂, rfl⟩, hy⟩ := Field.exists_mem_adjoin_simple_eq_top k
     (V := LinearMap.range (IsScalarTower.toAlgHom k F₂ F).toLinearMap) (by
@@ -261,7 +251,8 @@ theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add_of_isAlgClosed [IsA
     rw [hdist a ha a' ha' h]
   -- Every place is rational, and the restrictions of `S` leave infinitely many places of `F₂`.
   have := Place.infinite hF₂
-  refine genus_le_finrank_mul_genus_add_finrank_mul_genus_add_of_isSplitCompletely hF hex hsplit
+  refine genus_le_finrank_mul_genus_add_finrank_mul_genus_add_of_isSplitCompletely hF
+    isIntegrallyClosedIn_of_isAlgClosed hsplit
     hinj (fun P _ ↦ (P.restrict k F₂).degree_eq_one_of_isAlgClosed_of_isFunctionField hF₂)
     (T := ((fun P : Place k F ↦ P.restrict k F₂) '' S)ᶜ)
     (fun Q _ ↦ Q.degree_eq_one_of_isAlgClosed_of_isFunctionField hF₂) ?_
