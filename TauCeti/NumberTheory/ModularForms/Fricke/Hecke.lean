@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ModularForms.AtkinLehner.Hecke
 public import TauCeti.NumberTheory.ModularForms.Fricke.Normalized
-public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Diamond
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 
 /-!
 # Fricke transport of the good Hecke operators
@@ -29,64 +28,24 @@ the Hecke-theoretic input to the Fricke pseudo-eigenvalue theorem for primitive 
 public section
 
 open Matrix Matrix.SpecialLinearGroup CongruenceSubgroup UpperHalfPlane HeckeRing.GL2
-open HeckeRing.GLn
-open scoped MatrixGroups ModularForm Pointwise
+open scoped MatrixGroups ModularForm
 
 namespace TauCeti
 
 variable {N n : ℕ} [NeZero N] [NeZero n] {k : ℤ}
 
-local notation "φ" => Matrix.GeneralLinearGroup.map (n := Fin 2) (algebraMap ℚ ℝ)
-
-/-- At a good index, Fricke carries `Tₙ` to its inverse-diamond multiple on modular forms. -/
+/-- At a good index, Fricke carries `Tₙ` to its inverse-diamond multiple on modular forms. This
+is the `Q = N` case of `atkinLehnerOperatorGamma1_heckeTNat`, where the twisting unit is `n⁻¹`. -/
 theorem frickeOperator_heckeTNat (hn : n.Coprime N)
     (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
     frickeOperator k (heckeTNat k n f) =
       diamondOp k (ZMod.unitOfCoprime n hn)⁻¹ (heckeTNat k n (frickeOperator k f)) := by
-  -- The proof uses Mathlib's trace construction: `diag(1,n) W = W diag(n,1)` moves Fricke
-  -- through the trace, and the existing adjugate-coset identity identifies `diag(n,1)` with
-  -- `⟨n⟩⁻¹ Tₙ`. No additional determinant factor is introduced.
-  let x := φ (natDiagGL 2 ![1, n])
-  let W := frickeGL ℝ N
-  -- Fricke exchanges the two diagonal entries, giving the main involution of `x`.
-  have hx : (x : Matrix (Fin 2) (Fin 2) ℝ) = !![1, 0; 0, (n : ℝ)] := by
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [x, GeneralLinearGroup.map_apply, coe_natDiagGL_one (NeZero.pos n)]
-  have hmat : x * W = W * adjugateGL x := by
-    apply Units.ext
-    simp only [GeneralLinearGroup.coe_mul, adjugateGL_val, hx, W, coe_frickeGL]
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Matrix.adjugate_fin_two, mul_comm]
-  -- The source levels agree because Fricke normalizes `Γ₁(N)`.
-  have hlevel : ConjAct.toConjAct (x * W)⁻¹ • (Gamma1 N).map (mapGL ℝ) =
-      ConjAct.toConjAct (adjugateGL x)⁻¹ • (Gamma1 N).map (mapGL ℝ) := by
-    rw [hmat, _root_.mul_inv_rev, map_mul, mul_smul]
-    rw [Gamma1_map_inv_conjAct_frickeGL_eq]
-  have := isFiniteRelIndex_adjugateGL_natDiagGL (N := N) hn
-  have : (ConjAct.toConjAct (x * W)⁻¹ • (Gamma1 N).map (mapGL ℝ)).IsFiniteRelIndex
-      ((Gamma1 N).map (mapGL ℝ)) := hlevel ▸ ‹_›
-  have hW : W ∈ Subgroup.normalizer ((Gamma1 N).map (mapGL ℝ) : Set (GL (Fin 2) ℝ)) :=
-    (Subgroup.normalizer _).inv_mem_iff.mp
-      (Subgroup.conjAct_pointwise_smul_iff.mp Gamma1_map_inv_conjAct_frickeGL_eq)
-  -- Move `W` through the trace and compare the two translates at their common level.
-  have htrace := SlashInvariantForm.coe_trace_translate_mul_of_mem_normalizer f x hW
-  have heq := SlashInvariantForm.trace_eq_of_eq_of_coe_eq hlevel
-    (ℋ := (Gamma1 N).map (mapGL ℝ))
-    (f₁ := _root_.SlashInvariantForm.translate f (x * W))
-    (f₂ := ModularForm.translate (frickeOperator k f) (adjugateGL x)) (by
-      rw [_root_.SlashInvariantForm.coe_translate, ModularForm.coe_translate,
-        coe_frickeOperator, ← SlashAction.slash_mul, hmat])
-  apply DFunLike.coe_injective
-  rw [coe_frickeOperator, coe_heckeTNat,
-    heckeSlashSum_eq_coe_trace_translate k (diagCosetGamma1 N n)
-      (by rw [doubleCoset_out_diagCosetGamma1_eq_doubleCoset_natDiagGL]
-          exact DoubleCoset.mem_doubleCoset_self _ _ _)
-      (Subgroup.map_mapGL (Gamma1 N)) (Subgroup.map_mapGL (Gamma1 N)), ← htrace, heq]
-  have h := congrArg DFunLike.coe
-    (trace_translate_adjugateGL_natDiagGL_eq_diamondOp_heckeTNat k hn (frickeOperator k f))
-  -- The trace coercion lemmas give the same sum for modular and slash-invariant forms.
-  simpa only [ModularForm.coe_trace, _root_.SlashInvariantForm.coe_trace] using h
+  have : Subsingleton (ZMod (N / N))ˣ := by
+    rw [Nat.div_self (NeZero.pos N)]
+    infer_instance
+  rw [← atkinLehnerOperatorGamma1_fricke]
+  exact atkinLehnerOperatorGamma1_heckeTNat (NeZero.pos N) dvd_rfl isAtkinLehnerMatrix_fricke hn
+    (by rw [ZMod.unitsMap_self, MonoidHom.id_apply]) (Subsingleton.elim _ _) f
 
 /-- At a good index, Fricke carries `Tₙ` to its inverse-diamond multiple on cusp forms. -/
 theorem frickeOperatorCusp_heckeTCuspNat (hn : n.Coprime N)
@@ -124,7 +83,7 @@ theorem frickeOperator_heckeTNat_of_mem_modFormCharSpace (hn : n.Coprime N)
     (hf : f ∈ modFormCharSpace k χ) :
     frickeOperator k (heckeTNat k n f) =
       (χ (ZMod.unitOfCoprime n hn) : ℂ) • heckeTNat k n (frickeOperator k f) := by
-  have hcomm := DFunLike.congr_fun (commute_heckeTNat_diamondOp_inv k hn).eq
+  have hcomm := DFunLike.congr_fun (commute_heckeTNat_diamondOp k hn (ZMod.unitOfCoprime n hn)⁻¹).eq
     (frickeOperator k f)
   simp only [Module.End.mul_apply] at hcomm
   rw [frickeOperator_heckeTNat hn, ← hcomm,

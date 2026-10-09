@@ -19,7 +19,7 @@ public import TauCeti.Algebra.CentralSimple.Subfield
 import Mathlib.Basic.Real.Basic
 import TauCeti.Algebra.Algebra.Subalgebra.MaximalCommutative
 import TauCeti.Algebra.Central.Quaternion
-import TauCeti.Algebra.CentralSimple.Centralizer
+import TauCeti.Algebra.CentralSimple.Centralizer.Basic
 
 /-!
 # Maximal subfields of a central division algebra
@@ -53,7 +53,7 @@ Being a commutative domain, finite-dimensional over `K`, `L` is then a field
   `finrank K L * finrank K C_A(L) = finrank K A`
 
 (`TauCeti.finrank_mul_finrank_centralizer_of_isField`, in
-`TauCeti/Algebra/CentralSimple/Centralizer.lean`). Applied to `C_D(L) = L` this reads
+`TauCeti/Algebra/CentralSimple/Centralizer/Basic.lean`). Applied to `C_D(L) = L` this reads
 `(finrank K L)² = finrank K D = (deg K D)²`, so `finrank K L = deg K D`.
 
 ## Main results
@@ -74,7 +74,7 @@ The two ingredients that use nothing of the central simple theory are stated whe
 consumed here: the existence of a commutative subalgebra of maximal dimension and its being its own
 centralizer in `TauCeti/Algebra/Algebra/Subalgebra/MaximalCommutative.lean`, the dimension of the
 centralizer of a subfield beside the centralizer theorem it specializes in
-`TauCeti/Algebra/CentralSimple/Centralizer.lean`.
+`TauCeti/Algebra/CentralSimple/Centralizer/Basic.lean`.
 
 The existence statements are stated for a **division** algebra. The passage from there to an
 arbitrary central simple algebra `A ≃ₐ[K] Mₙ(D)`, and with it the index `ind A`, needs the

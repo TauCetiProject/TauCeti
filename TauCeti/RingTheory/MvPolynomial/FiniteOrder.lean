@@ -52,11 +52,8 @@ theorem exists_finset_orderAt_eq_iInf_trailingDegree (D : ℕ)
     · simp
     obtain ⟨m, hm : (m : ℕ∞) = p.orderAt a⟩ :=
       ENat.ne_top_iff_exists.1 (orderAt_eq_top_iff.not.2 hp0)
-    obtain ⟨⟨d, hd, hdm⟩, -⟩ := orderAt_eq_coe_iff.1 hm.symm
-    have hH : homogeneousComponent m (taylor a p) ≠ 0 := by
-      intro hzero
-      have hcoeff := congrArg (fun q : MvPolynomial σ K ↦ q.coeff d) hzero
-      simp [coeff_homogeneousComponent, hdm, hd] at hcoeff
+    have hH : homogeneousComponent m (taylor a p) ≠ 0 :=
+      p.homogeneousComponent_ne_zero_of_orderAt_eq a hm.symm
     have hdegree : (homogeneousComponent m (taylor a p)).totalDegree ≤ D := by
       apply (totalDegree_le_of_support_subset ?_).trans
         ((totalDegree_taylor a p).trans_le hp)

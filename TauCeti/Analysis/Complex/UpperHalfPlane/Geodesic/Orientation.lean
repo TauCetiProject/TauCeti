@@ -17,10 +17,14 @@ to the geodesic towards `C`, the oriented angle (`Orientation.oangle` for the st
 orientation of `ℂ`) between the two velocities at `A`. Its absolute value is the unoriented
 `UpperHalfPlane.interiorAngle A B C` (`UpperHalfPlane.interiorAngle_eq_abs_toReal_orientedAngle`),
 it is invariant under `PSL(2, ℝ)` when `A ≠ B` and `A ≠ C` (`orientedAngle_smul`), and it is
-additive (`UpperHalfPlane.orientedAngle_add`). For `A ≠ C`, its sign is the side of the line
-through `A` and `B` on which `C` lies: `+1` on the left, `-1` on the right, `0` on the line
+additive (`UpperHalfPlane.orientedAngle_add`). For a transformation fixing `A`, its angle of
+rotation is the argument of its derivative (`orientedAngle_smul_right_of_smul_eq_self`). For
+`A ≠ C`, its sign is the side of the line through `A` and `B` on which `C` lies: `+1` on the left,
+`-1` on the right, `0` on the line
 (`orientedAngle_sign_eq_one_iff` and companions); in particular the angles of a nondegenerate
-triangle lie strictly between `0` and `π` (`interiorAngle_pos`, `interiorAngle_lt_pi`).
+triangle lie strictly between `0` and `π` (`interiorAngle_pos`, `interiorAngle_lt_pi`). The same
+sign reads off the closed half-planes via `mem_closure_leftHalfPlane_geodesicBetween_iff` and
+`mem_closure_rightHalfPlane_geodesicBetween_iff`.
 Three consequences used for polygons: orientation is cyclically invariant
 (`mem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane`: if `C` is left of `A → B` then `A` is
 left of `B → C`), unoriented angles add when the middle geodesic lies between the outer two
@@ -125,6 +129,19 @@ theorem orientedAngle_smul (h : PSL(2, ℝ)) {A B C : ℍ} (hAB : A ≠ B) (hAC 
 
 /-! ### The normal form: rotations of the imaginary axis -/
 
+/-- A transformation fixing `A` turns every geodesic from `A` through the argument of its
+derivative at `A`. The angle is read counterclockwise, in `Real.Angle`. -/
+theorem orientedAngle_smul_right_of_smul_eq_self {q : PSL(2, ℝ)} {A B : ℍ}
+    (hA : q • A = A) (hAB : A ≠ B) :
+    orientedAngle A B (q • B) = (smulDeriv q A).arg := by
+  have hg : geodesicBetween A (q • B) = q * geodesicBetween A B := by
+    simpa only [hA] using geodesicBetween_smul q hAB
+  rw [orientedAngle_def, hg, velocity_mul, geodesicLine_geodesicBetween_zero]
+  -- Compare both velocities to the unit vector, so multiplication adds arguments.
+  rw [← Complex.orientation.oangle_sub_left (one_ne_zero : (1 : ℂ) ≠ 0)
+    (velocity_ne_zero _ _) (mul_ne_zero (smulDeriv_ne_zero q A) (velocity_ne_zero _ _))]
+  simp [Complex.arg_mul_coe_angle (smulDeriv_ne_zero q A) (velocity_ne_zero _ _)]
+
 /-- The geodesic line from `I` to a point at positive parameter on the imaginary axis rotated by
 `θ` is that rotated axis (compare `geodesicBetween_I_geodesicLine_one`). -/
 theorem geodesicBetween_I_geodesicLine_rotation {t : ℝ} (ht : 0 < t) (θ : ℝ) :
@@ -206,6 +223,20 @@ through `A` and `B`. -/
 theorem orientedAngle_sign_eq_zero_iff {A B C : ℍ} (hAC : A ≠ C) :
     (orientedAngle A B C).sign = 0 ↔ C ∈ Set.range (geodesicLine (geodesicBetween A B)) := by
   rw [sign_orientedAngle_eq hAC, sign_eq_zero_iff, mem_range_geodesicLine_iff, neg_eq_zero]
+
+/-- For `A ≠ C`, `C` lies in the closed left half-plane of the geodesic from `A` to `B` exactly
+when the oriented angle is not negative. -/
+theorem mem_closure_leftHalfPlane_geodesicBetween_iff {A B C : ℍ} (hAC : A ≠ C) :
+    C ∈ closure (leftHalfPlane (geodesicBetween A B)) ↔ (orientedAngle A B C).sign ≠ -1 := by
+  rw [mem_closure_leftHalfPlane_iff, Ne, orientedAngle_sign_eq_neg_one_iff hAC,
+    mem_rightHalfPlane_iff, not_lt]
+
+/-- For `A ≠ C`, `C` lies in the closed right half-plane of the geodesic from `A` to `B` exactly
+when the oriented angle is not positive. -/
+theorem mem_closure_rightHalfPlane_geodesicBetween_iff {A B C : ℍ} (hAC : A ≠ C) :
+    C ∈ closure (rightHalfPlane (geodesicBetween A B)) ↔ (orientedAngle A B C).sign ≠ 1 := by
+  rw [mem_closure_rightHalfPlane_iff, Ne, orientedAngle_sign_eq_one_iff hAC,
+    mem_leftHalfPlane_iff, not_lt]
 
 /-- The oriented angle of a nondegenerate triangle is neither `0` nor `π`. -/
 private theorem orientedAngle_ne_zero_and_ne_pi {A B C : ℍ}

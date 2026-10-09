@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 public import Mathlib.LinearAlgebra.Alternating.DomCoprod
 public import TauCeti.Data.Fin.Basic
+import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.GroupTheory.Perm.Inversion
 
 /-!
 # Wedge products of continuous alternating maps
@@ -33,6 +35,16 @@ The paired construction follows the design of Yury Kudryashov's
 * `TauCeti.norm_wedgeWith_le`: the sharp binomial norm bound.
 * `TauCeti.wedgeWith_compContinuousLinearMap`: compatibility with pullback by a continuous linear
   map.
+* `TauCeti.wedgeWith_flip`: swapping the two forms flips the pairing and costs the sign
+  `(-1) ^ (k * l)`; `TauCeti.wedgeWith_comm` is graded commutativity for a symmetric pairing.
+* `TauCeti.wedgeWith_wedgeWith_left_apply`, `TauCeti.wedgeWith_wedgeWith_right_apply`: an iterated
+  paired wedge as a single signed sum over all permutations, divided by `k! l! m!`.
+* `TauCeti.wedgeWith_assoc`: associativity, for pairings whose two composites agree.
+
+Associativity and graded commutativity are not identities of the paired wedge in general: in degree
+zero they reduce to associativity and commutativity of the pairing. They are proved here under
+exactly those hypotheses on the pairings, which hold for the multiplication of a normed algebra
+(graded commutativity only when it is commutative) but not for a Lie bracket in general.
 -/
 
 public section
@@ -360,7 +372,149 @@ theorem wedgeWith_compContinuousLinearMap {E' : Type*} [NormedAddCommGroup E']
   simp only [wedgeWith_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
     Function.comp_def]
 
+/-- The flip identity: swapping the two forms of a paired wedge flips the pairing and costs the
+graded sign `(-1) ^ (k * l)`. This holds for every pairing. -/
+theorem wedgeWith_flip {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) (v : Fin (k + l) → E) :
+    wedgeWith mu phi psi v =
+      (-1 : ℝ) ^ (k * l) • wedgeWith mu.flip psi phi (v ∘ Fin.cast (Nat.add_comm l k)) := by
+  -- Reindex the permutation sum on the right by composing with the block swap `B`, which
+  -- exchanges the first `k` and the last `l` indices and has sign `(-1) ^ (k * l)`.
+  set c : Fin (l + k) ≃ Fin (k + l) := finCongr (Nat.add_comm l k)
+  set B : Equiv.Perm (Fin (k + l)) := finAddFlip.trans c
+  have hsum : ∑ tau : Equiv.Perm (Fin (l + k)), Equiv.Perm.sign tau •
+        mu.flip (psi (fun i => (v ∘ Fin.cast (Nat.add_comm l k)) (tau (Fin.castAdd k i))))
+          (phi (fun j => (v ∘ Fin.cast (Nat.add_comm l k)) (tau (Fin.natAdd l j)))) =
+      Equiv.Perm.sign B • ∑ sigma : Equiv.Perm (Fin (k + l)), Equiv.Perm.sign sigma •
+        mu (phi (fun i => v (sigma (Fin.castAdd l i))))
+          (psi (fun j => v (sigma (Fin.natAdd k j)))) := by
+    rw [Finset.smul_sum]
+    refine Fintype.sum_equiv (c.permCongr.trans (Equiv.mulRight B)) _ _ fun tau => ?_
+    have hsign : Equiv.Perm.sign tau =
+        Equiv.Perm.sign B * Equiv.Perm.sign (c.permCongr tau * B) := by
+      rw [Equiv.Perm.sign_mul, Equiv.Perm.sign_permCongr, mul_comm, mul_assoc, ← sq]
+      simp [Int.units_sq]
+    have hleft : (fun i => v ((c.permCongr tau * B) (Fin.castAdd l i))) =
+        fun j => v (Fin.cast (Nat.add_comm l k) (tau (Fin.natAdd l j))) := by
+      funext i
+      simp [B, c, finAddFlip_apply_castAdd]
+    have hright : (fun j => v ((c.permCongr tau * B) (Fin.natAdd k j))) =
+        fun i => v (Fin.cast (Nat.add_comm l k) (tau (Fin.castAdd k i))) := by
+      funext j
+      simp [B, c, finAddFlip_apply_natAdd]
+    simp only [Equiv.trans_apply, Equiv.coe_mulRight, Function.comp_apply, hsign, mul_smul,
+      ContinuousLinearMap.flip_apply]
+    rw [hleft, hright]
+  rw [wedgeWith_apply, wedgeWith_apply, hsum, sign_finAddFlip_trans_finCongr]
+  generalize (∑ sigma : Equiv.Perm (Fin (k + l)), (_ : F₃)) = S
+  rw [Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ]
+  match_scalars
+  ring_nf
+  simp
+
+/-- Graded commutativity of the paired wedge along a symmetric pairing. -/
+theorem wedgeWith_comm {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃} (hmu : ∀ a b, mu a b = mu b a)
+    (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₁) (v : Fin (k + l) → E) :
+    wedgeWith mu phi psi v =
+      (-1 : ℝ) ^ (k * l) • wedgeWith mu psi phi (v ∘ Fin.cast (Nat.add_comm l k)) := by
+  have hflip : mu.flip = mu := by
+    ext a b
+    exact hmu b a
+  rw [wedgeWith_flip, hflip]
+
 end
+
+section Assoc
+
+open Equiv
+
+variable {E F₁ F₂ F₃ F₁₂ F₂₃ G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+  [NormedAddCommGroup F₃] [NormedSpace ℝ F₃] [NormedAddCommGroup F₁₂] [NormedSpace ℝ F₁₂]
+  [NormedAddCommGroup F₂₃] [NormedSpace ℝ F₂₃] [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {k l m : ℕ}
+
+/-- A paired wedge whose left factor is itself a paired wedge is the signed sum over all
+permutations of `k + l + m` slots, divided by `k! l! m!`. -/
+theorem wedgeWith_wedgeWith_left_apply (mu₁₂ : F₁ →L[ℝ] F₂ →L[ℝ] F₁₂)
+    (mu₁₂₃ : F₁₂ →L[ℝ] F₃ →L[ℝ] G) (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂)
+    (chi : E [⋀^Fin m]→L[ℝ] F₃) (v : Fin (k + l + m) → E) :
+    wedgeWith mu₁₂₃ (wedgeWith mu₁₂ phi psi) chi v =
+      ((k.factorial : ℝ) * l.factorial * m.factorial)⁻¹ •
+        ∑ sigma : Perm (Fin (k + l + m)), Perm.sign sigma •
+          mu₁₂₃ (mu₁₂ (phi fun i => v (sigma (Fin.castAdd m (Fin.castAdd l i))))
+              (psi fun j => v (sigma (Fin.castAdd m (Fin.natAdd k j)))))
+            (chi fun r => v (sigma (Fin.natAdd (k + l) r))) := by
+  have key := sum_sign_smul_sum_sign_smul_eq_card_nsmul
+    (fun tau => finSumFinEquiv.permCongr (Perm.sumCongr tau (1 : Perm (Fin m))))
+    (fun tau => by simp [Perm.sign_sumCongr])
+    (fun sigma : Perm (Fin (k + l + m)) =>
+      mu₁₂₃ (mu₁₂ (phi fun i => v (sigma (Fin.castAdd m (Fin.castAdd l i))))
+          (psi fun j => v (sigma (Fin.castAdd m (Fin.natAdd k j)))))
+        (chi fun r => v (sigma (Fin.natAdd (k + l) r))))
+  simp only [Perm.mul_apply, permCongr_apply, finSumFinEquiv_symm_apply_castAdd,
+    finSumFinEquiv_symm_apply_natAdd, Perm.sumCongr_apply, Sum.map_inl, Sum.map_inr,
+    finSumFinEquiv_apply_left, finSumFinEquiv_apply_right, Perm.coe_one, id,
+    Fintype.card_perm, Fintype.card_fin] at key
+  simp only [wedgeWith_apply, map_smul, map_sum, smul_apply, FunLike.coe_sum, Finset.sum_apply,
+    Units.smul_def, map_zsmul] at key ⊢
+  simp_rw [smul_comm _ ((k.factorial : ℝ) * l.factorial)⁻¹, ← Finset.smul_sum, key, smul_smul,
+    ← Nat.cast_smul_eq_nsmul ℝ, smul_smul]
+  congr 1
+  have : ((k + l).factorial : ℝ) ≠ 0 := by positivity
+  field_simp
+
+/-- A paired wedge whose right factor is itself a paired wedge is the signed sum over all
+permutations of `k + (l + m)` slots, divided by `k! l! m!`. -/
+theorem wedgeWith_wedgeWith_right_apply (mu₂₃ : F₂ →L[ℝ] F₃ →L[ℝ] F₂₃)
+    (mu₁₂₃' : F₁ →L[ℝ] F₂₃ →L[ℝ] G) (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂)
+    (chi : E [⋀^Fin m]→L[ℝ] F₃) (v : Fin (k + (l + m)) → E) :
+    wedgeWith mu₁₂₃' phi (wedgeWith mu₂₃ psi chi) v =
+      ((k.factorial : ℝ) * l.factorial * m.factorial)⁻¹ •
+        ∑ sigma : Perm (Fin (k + (l + m))), Perm.sign sigma •
+          mu₁₂₃' (phi fun i => v (sigma (Fin.castAdd (l + m) i)))
+            (mu₂₃ (psi fun j => v (sigma (Fin.natAdd k (Fin.castAdd m j))))
+              (chi fun r => v (sigma (Fin.natAdd k (Fin.natAdd l r))))) := by
+  have key := sum_sign_smul_sum_sign_smul_eq_card_nsmul
+    (fun tau => finSumFinEquiv.permCongr (Perm.sumCongr (1 : Perm (Fin k)) tau))
+    (fun tau => by simp [Perm.sign_sumCongr])
+    (fun sigma : Perm (Fin (k + (l + m))) =>
+      mu₁₂₃' (phi fun i => v (sigma (Fin.castAdd (l + m) i)))
+        (mu₂₃ (psi fun j => v (sigma (Fin.natAdd k (Fin.castAdd m j))))
+          (chi fun r => v (sigma (Fin.natAdd k (Fin.natAdd l r))))))
+  simp only [Perm.mul_apply, permCongr_apply, finSumFinEquiv_symm_apply_castAdd,
+    finSumFinEquiv_symm_apply_natAdd, Perm.sumCongr_apply, Sum.map_inl, Sum.map_inr,
+    finSumFinEquiv_apply_left, finSumFinEquiv_apply_right, Perm.coe_one, id,
+    Fintype.card_perm, Fintype.card_fin] at key
+  simp only [wedgeWith_apply, map_smul, map_sum, Units.smul_def, map_zsmul] at key ⊢
+  simp_rw [smul_comm _ ((l.factorial : ℝ) * m.factorial)⁻¹, ← Finset.smul_sum, key, smul_smul,
+    ← Nat.cast_smul_eq_nsmul ℝ, smul_smul]
+  congr 1
+  have : ((l + m).factorial : ℝ) ≠ 0 := by positivity
+  field_simp
+
+/-- Associativity of the paired wedge, for pairings whose two composites agree:
+`mu₁₂₃ (mu₁₂ a b) c = mu₁₂₃' a (mu₂₃ b c)`. For the multiplication of a normed algebra this
+hypothesis is `mul_assoc`; for a Lie bracket it does not hold in general. -/
+theorem wedgeWith_assoc (mu₁₂ : F₁ →L[ℝ] F₂ →L[ℝ] F₁₂) (mu₁₂₃ : F₁₂ →L[ℝ] F₃ →L[ℝ] G)
+    (mu₂₃ : F₂ →L[ℝ] F₃ →L[ℝ] F₂₃) (mu₁₂₃' : F₁ →L[ℝ] F₂₃ →L[ℝ] G)
+    (h : ∀ a b c, mu₁₂₃ (mu₁₂ a b) c = mu₁₂₃' a (mu₂₃ b c))
+    (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) (chi : E [⋀^Fin m]→L[ℝ] F₃)
+    (v : Fin (k + l + m) → E) :
+    wedgeWith mu₁₂₃ (wedgeWith mu₁₂ phi psi) chi v =
+      wedgeWith mu₁₂₃' phi (wedgeWith mu₂₃ psi chi) (v ∘ Fin.cast (Nat.add_assoc k l m).symm) := by
+  rw [wedgeWith_wedgeWith_left_apply, wedgeWith_wedgeWith_right_apply]
+  congr 1
+  refine Fintype.sum_equiv (finCongr (Nat.add_assoc k l m)).permCongr _ _ fun sigma => ?_
+  have h₁ (i : Fin k) : Fin.cast (Nat.add_assoc k l m).symm (Fin.castAdd (l + m) i) =
+      Fin.castAdd m (Fin.castAdd l i) := Fin.ext rfl
+  have h₂ (j : Fin l) : Fin.cast (Nat.add_assoc k l m).symm (Fin.natAdd k (Fin.castAdd m j)) =
+      Fin.castAdd m (Fin.natAdd k j) := Fin.ext rfl
+  have h₃ (r : Fin m) : Fin.cast (Nat.add_assoc k l m).symm (Fin.natAdd k (Fin.natAdd l r)) =
+      Fin.natAdd (k + l) r := Fin.ext (Nat.add_assoc k l r).symm
+  simp [h, h₁, h₂, h₃, Perm.sign_permCongr]
+
+end Assoc
 
 end TauCeti
 

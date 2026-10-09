@@ -45,6 +45,8 @@ makes the monotone rearrangement of two real laws a transport plan between them.
 * `MeasureTheory.Measure.map_quantile_volume_Ioo` — inverse transform sampling: the quantile
   function pushes the uniform law on `Ioo 0 1` forward to the original law, packaged as
   `MeasureTheory.Measure.measurePreserving_quantile`;
+* `MeasureTheory.Measure.quantile_map_volume_Ioo_ae` — conversely, the law of a monotone function
+  of a uniform variable has that function as its quantile function, almost everywhere;
 * `MeasureTheory.Measure.cdf_map_eq_volume_restrict` — the probability integral transform for an
   atomless real law;
 * `MeasureTheory.Measure.cdf_quantile_ae` and
@@ -245,6 +247,39 @@ interval. -/
 theorem measurePreserving_quantile (μ : Measure ℝ) [IsProbabilityMeasure μ] :
     MeasurePreserving μ.quantile (volume.restrict (Ioo (0 : ℝ) 1)) μ :=
   ⟨measurable_quantile μ, map_quantile_volume_Ioo μ⟩
+
+/-- **The quantile of a monotone rearrangement.** The law of `f (U)`, for `U` uniform on the open
+unit interval and `f` monotone there, has quantile function `f` at almost every level: they can
+differ only at the countably many levels where `f` jumps. -/
+theorem quantile_map_volume_Ioo_ae {f : ℝ → ℝ} (hf : MonotoneOn f (Ioo 0 1)) :
+    ((volume.restrict (Ioo (0 : ℝ) 1)).map f).quantile =ᵐ[volume.restrict (Ioo (0 : ℝ) 1)] f := by
+  set U := volume.restrict (Ioo (0 : ℝ) 1)
+  have : IsProbabilityMeasure U := ⟨by simp [U]⟩
+  have hfm : AEMeasurable f U := aemeasurable_restrict_of_monotoneOn measurableSet_Ioo hf
+  set ν := U.map f
+  -- The cumulative mass of `ν` below `x` is the length of the levels sent at most to `x`.
+  have hcdf (x : ℝ) : ENNReal.ofReal (cdf ν x) = volume (f ⁻¹' Iic x ∩ Ioo 0 1) := by
+    rw [ofReal_cdf, map_apply_of_aemeasurable hfm measurableSet_Iic,
+      restrict_apply' measurableSet_Ioo]
+  refine (ae_restrict_iff' measurableSet_Ioo).2 ?_
+  filter_upwards [hf.countable_not_continuousWithinAt.ae_notMem volume] with t hct ht
+  have hc : ContinuousAt f t := by
+    by_contra h
+    exact hct ⟨ht, fun h' ↦ h (h'.continuousAt (Ioo_mem_nhds ht.1 ht.2))⟩
+  refine le_antisymm ((quantile_le_iff ν ht.1 ht.2).2 ?_) (le_of_forall_lt fun x hx ↦ ?_)
+  · -- Every level in `(0, t]` is sent at most to `f t`.
+    rw [← ENNReal.ofReal_le_ofReal_iff (cdf_nonneg ν _), hcdf]
+    calc ENNReal.ofReal t = volume (Ioc 0 t) := by simp
+      _ ≤ volume (f ⁻¹' Iic (f t) ∩ Ioo 0 1) := measure_mono fun s hs ↦
+          ⟨hf ⟨hs.1, hs.2.trans_lt ht.2⟩ ht hs.2, hs.1, hs.2.trans_lt ht.2⟩
+  · -- Below `f t`, continuity at `t` produces a level `s₀ < t` already sent above `x`.
+    obtain ⟨s₀, ⟨hs₀x, hs₀⟩, hs₀t⟩ : ∃ s₀, (x < f s₀ ∧ s₀ ∈ Ioo 0 1) ∧ s₀ < t :=
+      (((hc.eventually (eventually_gt_nhds hx)).and (Ioo_mem_nhds ht.1 ht.2)).filter_mono
+        nhdsWithin_le_nhds |>.and self_mem_nhdsWithin).exists (f := 𝓝[<] t)
+    rw [lt_quantile_iff ν ht.1 ht.2, ← ENNReal.ofReal_lt_ofReal_iff ht.1, hcdf]
+    calc volume (f ⁻¹' Iic x ∩ Ioo 0 1) ≤ volume (Ioo 0 s₀) := measure_mono fun s hs ↦
+          ⟨hs.2.1, lt_of_not_ge fun h ↦ (hs₀x.trans_le (hf hs₀ hs.2 h)).not_ge hs.1⟩
+      _ < ENNReal.ofReal t := by simpa using (ENNReal.ofReal_lt_ofReal_iff ht.1).2 hs₀t
 
 /-- **The probability integral transform.** The CDF of an atomless probability measure on
 `ℝ` pushes the measure forward to Lebesgue measure restricted to `[0, 1]`. -/

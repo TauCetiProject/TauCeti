@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.AffineSpace
+public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import Mathlib.RingTheory.Smooth.Basic
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.FiniteType
 
 /-!
 # The additive group scheme
@@ -23,8 +23,9 @@ Hopf algebra
 The generator is primitive, its counit is zero, and its antipode is `-x`. Applying relative
 spectrum packages this Hopf algebra as a group object over `Spec R`. This file exposes the
 underlying spectrum, structural morphism, multiplication source, and the three group operations
-through Tau Ceti's generic Hopf-spectrum projection interface, which is otherwise out of reach:
-the resulting group scheme is a `def` whose body is not exposed outside this module.
+through Tau Ceti's generic Hopf-spectrum projection interface. Downstream that interface does not
+apply to the group scheme directly, because the group scheme is a `def` whose body is not exposed
+outside this module; it applies only after rewriting with `TauCeti.AdditiveGroup.groupScheme_def`.
 
 The singleton basis of `R` identifies the coordinate algebra with a polynomial algebra on the
 same-universe singleton `ULift (Fin 1)`. Contravariant spectrum and Mathlib's affine-space
@@ -80,13 +81,12 @@ the Lean Zulip discussion
 public section
 
 open CategoryTheory
-open scoped CategoryTheory.MonObj
 
 namespace TauCeti
 
 namespace AdditiveGroup
 
-open AlgebraicGeometry Module MonObj MonoidalCategory WithConv
+open AlgebraicGeometry Module MonObj MonoidalCategory
 
 universe u
 
@@ -151,7 +151,7 @@ noncomputable def groupScheme : Grp (Over (Spec (CommRingCat.of R))) :=
     (Opposite.op (coordinateHopfAlgebra R))
 
 /-- The additive group scheme is the relative spectrum of its coordinate Hopf algebra. -/
-public lemma groupScheme_def :
+lemma groupScheme_def :
     groupScheme R =
       (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj
         (Opposite.op (coordinateHopfAlgebra R)) := by
@@ -160,10 +160,10 @@ public lemma groupScheme_def :
 
 -- The generic `hopfSpec_obj_*` lemmas are stated for the literal functor object, whereas
 -- `groupScheme` is a `def` whose body is not exposed outside this module. Downstream the generic
--- lemmas therefore cannot be applied to `(groupScheme R).X` at all, and `simp` cannot see through
--- the wrapper. The specializations below are the projection interface across it: each unfolds the
--- wrapper once and then defers to the corresponding generic lemma, so no spectrum or
--- group-operation computation is redone here.
+-- lemmas therefore apply to `(groupScheme R).X` only after rewriting with `groupScheme_def`, and
+-- `simp` cannot see through the wrapper. The specializations below are the projection interface
+-- across it: each unfolds the wrapper once and then defers to the corresponding generic lemma, so
+-- no spectrum or group-operation computation is redone here.
 
 /-- The scheme underlying the additive group scheme is the spectrum of its symmetric coordinate
 algebra. -/
@@ -175,7 +175,6 @@ lemma groupScheme_X_left :
 
 /-- The structural morphism of the additive group scheme is induced by the symmetric algebra's
 `R`-algebra structure map. -/
-@[simp]
 lemma groupScheme_X_hom :
     (groupScheme R).X.hom =
       eqToHom (groupScheme_X_left R) ≫
@@ -371,7 +370,8 @@ lemma toAdd_schemePointsMulEquiv
   exact toAdd_gaPointsMulEquiv _
 
 /-- Evaluating the scheme-points equivalence on a point presented by `groupSchemePointMulEquiv`
-recovers the canonical algebra point. -/
+gives the value of the algebra-points equivalence `gaPointsMulEquiv` at the underlying algebra
+point. -/
 @[simp]
 theorem schemePointsMulEquiv_groupSchemePointMulEquiv
     (q : WithConv (coordinateHopfAlgebra R →ₐ[R] A)) :

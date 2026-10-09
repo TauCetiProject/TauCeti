@@ -49,7 +49,7 @@ of the adjoint carrier. This makes the rank-`n + 1` split torus a closed subgrou
 
 This file does not prove that the carrier is reductive or that its weight torus is maximal. Two
 related statements are proved in sibling files: the comparison with the symplectic group scheme
-over a field is `TauCeti.SpStd.baseChangeSymplecticIso`, and generation by the numbered root
+over a commutative ring is `TauCeti.SpStd.baseChangeSymplecticIso`. Generation by the numbered root
 subgroups is `TauCeti.SpStd.groupScheme_eq_kostantGeneratedGroupScheme`. No finite or simple group
 is asserted here.
 
@@ -115,20 +115,6 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable (n : ℕ)
 
-private theorem fromBlocks_mem_sp (P Q S R : Matrix (Fin (n + 1)) (Fin (n + 1)) ℚ)
-    (hQ : Qᵀ = Q) (hS : Sᵀ = S) (hR : R = -Pᵀ) :
-    fromBlocks P Q S R ∈ sp (Fin (n + 1)) ℚ := by
-  subst R
-  rw [mem_sp]
-  simp only [J,
-    fromBlocks_transpose, transpose_neg,
-    transpose_transpose, fromBlocks_multiply,
-    mul_zero, mul_one, zero_mul,
-    one_mul, add_zero, zero_add, neg_mul, mul_neg]
-  rw [hQ, hS]
-  ext i j
-  cases i <;> cases j <;> simp [fromBlocks]
-
 /-- The upper-left matrix unit for a nonfinal raising generator. -/
 private def shortPositiveBlock (i : Fin (n + 1)) :
     Matrix (Fin (n + 1)) (Fin (n + 1)) ℚ :=
@@ -157,17 +143,13 @@ def negativeRootMatrix (i : Fin (n + 1)) :
 
 theorem positiveRootMatrix_mem_sp (i : Fin (n + 1)) :
     positiveRootMatrix n i ∈ sp (Fin (n + 1)) ℚ := by
-  rw [positiveRootMatrix]
-  split_ifs with hi
-  · apply fromBlocks_mem_sp <;> simp
-  · apply fromBlocks_mem_sp <;> simp
+  rw [positiveRootMatrix, mem_symplecticLieAlgebra_iff]
+  split_ifs <;> simp [single_apply, and_comm]
 
 theorem negativeRootMatrix_mem_sp (i : Fin (n + 1)) :
     negativeRootMatrix n i ∈ sp (Fin (n + 1)) ℚ := by
-  rw [negativeRootMatrix]
-  split_ifs with hi
-  · apply fromBlocks_mem_sp <;> simp
-  · apply fromBlocks_mem_sp <;> simp
+  rw [negativeRootMatrix, mem_symplecticLieAlgebra_iff]
+  split_ifs <;> simp [single_apply, and_comm]
 
 /-! ## Weights and Cartan generators -/
 
@@ -200,17 +182,11 @@ def cartanGeneratorMatrix (i : Fin (n + 1)) :
 
 theorem cartanGeneratorMatrix_mem_sp (i : Fin (n + 1)) :
     cartanGeneratorMatrix n i ∈ sp (Fin (n + 1)) ℚ := by
-  have hblocks : cartanGeneratorMatrix n i =
-      fromBlocks
-        (diagonal fun a : Fin (n + 1) =>
-          (DynkinType.TypeC.weight (n + 1) a i : ℚ)) 0 0
-        (-diagonal fun a : Fin (n + 1) =>
-          (DynkinType.TypeC.weight (n + 1) a i : ℚ)) := by
-    ext a b
-    cases a <;> cases b <;>
-      simp [cartanGeneratorMatrix, fromBlocks, diagonal_apply]
-  rw [hblocks]
-  exact fromBlocks_mem_sp n _ 0 0 _ (by simp) (by simp) (by simp)
+  rw [mem_symplecticLieAlgebra_iff]
+  refine ⟨by simp, by simp, fun a b => ?_⟩
+  obtain rfl | hab := eq_or_ne a b
+  · simp
+  · simp [hab, hab.symm]
 
 /-- The Bourbaki-numbered raising and lowering generators of `sp₂ₙ₊₂`. -/
 def rootGenerator : Fin (n + 1) ⊕ Fin (n + 1) → sp (Fin (n + 1)) ℚ
@@ -238,11 +214,8 @@ def cartanGenerator (i : Fin (n + 1)) : sp (Fin (n + 1)) ℚ :=
 
 private theorem lie_cartanGeneratorMatrix_cartanGeneratorMatrix (i j : Fin (n + 1)) :
     ⁅cartanGeneratorMatrix n i, cartanGeneratorMatrix n j⁆ = 0 := by
-  rw [cartanGeneratorMatrix, cartanGeneratorMatrix, LieRing.of_associative_ring_bracket]
-  ext a b
-  simp only [diagonal_mul_diagonal, Matrix.sub_apply,
-    diagonal_apply, Matrix.zero_apply]
-  split_ifs <;> ring
+  rw [cartanGeneratorMatrix, cartanGeneratorMatrix]
+  exact lie_eq_zero_of_isDiag (isDiag_diagonal _) (isDiag_diagonal _)
 
 /-- The standard representation of the symplectic Lie algebra, extended to its enveloping
 algebra. -/

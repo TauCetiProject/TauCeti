@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Contractible
+public import Mathlib.GroupTheory.SemidirectProduct
+public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.GroupTheory.SpecificGroups.Heisenberg
 public import TauCeti.Geometry.Manifold.Riemannian.Coercive
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
@@ -26,6 +28,16 @@ left-invariant and left multiplication by any element is a Riemannian isometry. 
 injective group homomorphism from `Nil` into its isometry group, and already its image acts
 transitively, so `Nil` is a homogeneous Riemannian manifold.
 
+The orthogonal group `O(2)` acts on `Nil` by group automorphisms fixing the identity. In the
+coordinates `(x, y, z - x y / 2)`, in which the product is
+`(a, b, c) * (x, y, z) = (a + x, b + y, c + z + (a y - b x) / 2)`, an orthogonal matrix `g` acts
+by `g` on the first two coordinates and by multiplication by `det g = ± 1` on the third. These
+automorphisms preserve `dx² + dy²` and multiply the form `dz - x dy` by `det g`, so they are
+isometries.
+Together with left translations they give an injective homomorphism from the semidirect product
+`Nil ⋊ O(2)` into the isometry group of `Nil`. This is the whole isometry group of `Nil` (Scott,
+Section 4), but that every isometry is of this form is not proved here.
+
 ## Main definitions
 
 * `TauCeti.Nil`: the model geometry Nil, with the coordinate equivalence `Nil.toProd` to `ℝ³`
@@ -35,6 +47,11 @@ transitively, so `Nil` is a homogeneous Riemannian manifold.
 * `TauCeti.Nil.riemannianMetric`: the analytic metric `dx² + dy² + (dz - x dy)²`, which is the
   `RiemannianBundle` instance of `Nil`.
 * `TauCeti.Nil.toIsom`: left multiplication, as a homomorphism from `Nil` to its isometry group.
+* `TauCeti.Nil.orthogonalMulAut`: the action of `O(2)` on `Nil` by group automorphisms.
+* `TauCeti.Nil.orthogonalToIsom`: the same action, as a homomorphism from `O(2)` to the isometry
+  group of `Nil`.
+* `TauCeti.Nil.semidirectProductToIsom`: the homomorphism from `Nil ⋊ O(2)` to the isometry
+  group of `Nil`, in which `(n, g)` acts by `p ↦ n * g p`.
 
 ## Main results
 
@@ -42,6 +59,9 @@ transitively, so `Nil` is a homogeneous Riemannian manifold.
   coordinate `x` is `v₁ w₁ + v₂ w₂ + (v₃ - x v₂) (w₃ - x w₂)`.
 * `TauCeti.Nil.toIsom_injective`: distinct elements of `Nil` give distinct isometries.
 * `TauCeti.Nil.isPretransitive_isom`: the isometry group of `Nil` acts transitively on it.
+* `TauCeti.Nil.range_orthogonalToIsom_le_stabilizer`: the orthogonal isometries fix the identity.
+* `TauCeti.Nil.semidirectProductToIsom_injective`: distinct elements of `Nil ⋊ O(2)` act by
+  distinct isometries.
 
 ## Implementation notes
 
@@ -53,8 +73,8 @@ is a field of bilinear forms on that space (`TauCeti.coerciveRiemannianMetric`).
 
 * W. P. Thurston, *Three-Dimensional Geometry and Topology, Vol. 1*, Princeton (1997), §3.8
   (the eight model geometries).
-* P. Scott, *The geometries of 3-manifolds*, Bull. London Math. Soc. 15 (1983) 401–487
-  (the geometry Nil and its metric).
+* P. Scott, *The geometries of 3-manifolds*, Bull. London Math. Soc. 15 (1983) 401–487,
+  Section 4 (the geometry Nil, its metric and its isometry group).
 -/
 
 public section
@@ -360,6 +380,219 @@ This is transferred along `toIsom` from the transitive action of `Nil` on itself
 multiplication. -/
 instance isPretransitive_isom : MulAction.IsPretransitive (Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Nil) Nil :=
   .of_smul_eq toIsom fun {_ _} ↦ by rw [RiemannianIsometry.smul_def, toIsom_apply, smul_eq_mul]
+
+/-! ### The orthogonal group fixing the identity -/
+
+/-- A `2 × 2` real matrix `A` acts on `Nil` by the group endomorphism
+`(x, y, z) ↦ (x', y', det A * (z - x y / 2) + x' y' / 2)`, where `(x', y') = A (x, y)`. -/
+private def matrixHom (A : Matrix (Fin 2) (Fin 2) ℝ) : Nil →* Nil where
+  toFun p := mk (A 0 0 * p.x + A 0 1 * p.y) (A 1 0 * p.x + A 1 1 * p.y)
+    (A.det * (p.z - p.x * p.y / 2) +
+      (A 0 0 * p.x + A 0 1 * p.y) * (A 1 0 * p.x + A 1 1 * p.y) / 2)
+  map_one' := by ext <;> simp
+  map_mul' p q := by ext <;> simp [Matrix.det_fin_two] <;> ring
+
+private theorem matrixHom_apply (A : Matrix (Fin 2) (Fin 2) ℝ) (p : Nil) :
+    matrixHom A p = mk (A 0 0 * p.x + A 0 1 * p.y) (A 1 0 * p.x + A 1 1 * p.y)
+      (A.det * (p.z - p.x * p.y / 2) +
+        (A 0 0 * p.x + A 0 1 * p.y) * (A 1 0 * p.x + A 1 1 * p.y) / 2) := (rfl)
+
+private theorem matrixHom_one (p : Nil) : matrixHom 1 p = p := by
+  ext <;> simp [matrixHom_apply]
+
+private theorem matrixHom_mul (A B : Matrix (Fin 2) (Fin 2) ℝ) (p : Nil) :
+    matrixHom (A * B) p = matrixHom A (matrixHom B p) := by
+  ext <;> simp [matrixHom_apply, Matrix.mul_apply, Matrix.det_mul] <;> ring
+
+/-- The coordinate functional `(v₁, v₂, v₃) ↦ A₀₀ v₁ + A₀₁ v₂`. -/
+private def firstL (A : Matrix (Fin 2) (Fin 2) ℝ) : (ℝ × ℝ × ℝ) →L[ℝ] ℝ :=
+  A 0 0 • xL + A 0 1 • yL
+
+/-- The coordinate functional `(v₁, v₂, v₃) ↦ A₁₀ v₁ + A₁₁ v₂`. -/
+private def secondL (A : Matrix (Fin 2) (Fin 2) ℝ) : (ℝ × ℝ × ℝ) →L[ℝ] ℝ :=
+  A 1 0 • xL + A 1 1 • yL
+
+/-- `matrixHom A`, read in the model space `ℝ³`. -/
+private def matrixMap (A : Matrix (Fin 2) (Fin 2) ℝ) (r : ℝ × ℝ × ℝ) : ℝ × ℝ × ℝ :=
+  (firstL A r, secondL A r,
+    A.det * (zL r - 2⁻¹ * (xL r * yL r)) + 2⁻¹ * (firstL A r * secondL A r))
+
+private theorem coe_matrixHom (A : Matrix (Fin 2) (Fin 2) ℝ) :
+    ⇑(matrixHom A) = toProd.symm ∘ matrixMap A ∘ toProd := by
+  funext p
+  ext <;> simp [matrixHom_apply, matrixMap, firstL, secondL, xL, yL, zL]
+  ring
+
+/-- The differential of `matrixMap A` at `r`. -/
+private def matrixDeriv (A : Matrix (Fin 2) (Fin 2) ℝ) (r : ℝ × ℝ × ℝ) :
+    (ℝ × ℝ × ℝ) →L[ℝ] ℝ × ℝ × ℝ :=
+  (firstL A).prod ((secondL A).prod
+    (A.det • (zL - (2⁻¹ : ℝ) • (xL r • yL + yL r • xL)) +
+      (2⁻¹ : ℝ) • (firstL A r • secondL A + secondL A r • firstL A)))
+
+private theorem hasFDerivAt_matrixMap (A : Matrix (Fin 2) (Fin 2) ℝ) (r : ℝ × ℝ × ℝ) :
+    HasFDerivAt (matrixMap A) (matrixDeriv A r) r :=
+  (firstL A).hasFDerivAt.prodMk ((secondL A).hasFDerivAt.prodMk
+    (((zL.hasFDerivAt.sub ((xL.hasFDerivAt.fun_mul yL.hasFDerivAt).const_mul (2⁻¹ : ℝ))).const_mul
+      A.det).add (((firstL A).hasFDerivAt.fun_mul (secondL A).hasFDerivAt).const_mul (2⁻¹ : ℝ))))
+
+private theorem contMDiff_matrixHom {n : ℕ∞ω} (A : Matrix (Fin 2) (Fin 2) ℝ) :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) n (matrixHom A) := by
+  have h : ContDiff ℝ n (matrixMap A) := by
+    unfold matrixMap
+    fun_prop
+  rw [coe_matrixHom]
+  exact h.contMDiff
+
+/-- The differential of `matrixHom A`, read in the model space, is `matrixDeriv A`. -/
+private theorem tangentSpaceCastModel_mfderiv_matrixHom (A : Matrix (Fin 2) (Fin 2) ℝ) (q : Nil)
+    (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) q) :
+    tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (matrixHom A q)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (matrixHom A) q v) =
+      matrixDeriv A (toProd q) (tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) q v) := by
+  have h : HasMFDerivAt 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (matrixHom A) q
+      (matrixDeriv A (toProd q)) := by
+    rw [coe_matrixHom]
+    exact (hasFDerivAt_matrixMap A (toProd q)).hasMFDerivAt
+  exact congrArg (fun L : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) q →L[ℝ]
+      TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) (matrixHom A q) ↦
+    tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (matrixHom A q) (L v)) h.mfderiv
+
+/-- An orthogonal matrix acts on `Nil` preserving the inner product of tangent vectors. -/
+private theorem inner_mfderiv_matrixHom {A : Matrix (Fin 2) (Fin 2) ℝ}
+    (hA : A ∈ Matrix.orthogonalGroup (Fin 2) ℝ) (q : Nil) (v w : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) q) :
+    inner ℝ (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (matrixHom A) q v)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (matrixHom A) q w) =
+      inner ℝ v w := by
+  have hA' : A.transpose * A = 1 := by rwa [Matrix.mem_orthogonalGroup_iff'] at hA
+  have h₁ : A 0 0 * A 0 0 + A 1 0 * A 1 0 = 1 := by
+    simpa [Matrix.mul_apply] using congrFun (congrFun hA' 0) 0
+  have h₂ : A 0 1 * A 0 1 + A 1 1 * A 1 1 = 1 := by
+    simpa [Matrix.mul_apply] using congrFun (congrFun hA' 1) 1
+  have h₃ : A 0 0 * A 0 1 + A 1 0 * A 1 1 = 0 := by
+    simpa [Matrix.mul_apply] using congrFun (congrFun hA' 0) 1
+  -- The determinant of an orthogonal matrix is `± 1`.
+  have hdet : (A 0 0 * A 1 1 - A 0 1 * A 1 0) * (A 0 0 * A 1 1 - A 0 1 * A 1 0) = 1 := by
+    linear_combination (A 0 1 * A 0 1 + A 1 1 * A 1 1) * h₁ + h₂ -
+      (A 0 0 * A 0 1 + A 1 0 * A 1 1) * h₃
+  rw [inner_def, inner_def, tangentSpaceCastModel_mfderiv_matrixHom,
+    tangentSpaceCastModel_mfderiv_matrixHom]
+  set V := tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) q v
+  set W := tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) q w
+  simp only [matrixDeriv, firstL, secondL, xL, yL, zL, matrixHom_apply, x_mk, Matrix.det_fin_two,
+    ContinuousLinearMap.prod_apply, add_apply, sub_apply, smul_apply,
+    ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', ContinuousLinearMap.coe_comp,
+    Function.comp_apply, fst_toProd, fst_snd_toProd, smul_eq_mul]
+  linear_combination (V.1 * W.1) * h₁ + (V.2.1 * W.2.1) * h₂ + (V.1 * W.2.1 + V.2.1 * W.1) * h₃ +
+    ((V.2.2 - q.x * V.2.1) * (W.2.2 - q.x * W.2.1)) * hdet
+
+/-- The orthogonal group `O(2)` acts on `Nil` by group automorphisms: `g` sends `(x, y, z)` to
+`(x', y', det g * (z - x y / 2) + x' y' / 2)`, where `(x', y') = g (x, y)`.
+
+In the coordinates `(x, y, z - x y / 2)`, in which the product of `Nil` is
+`(a, b, c) * (x, y, z) = (a + x, b + y, c + z + (a y - b x) / 2)`, the automorphism
+`orthogonalMulAut g` is `g` on the first two coordinates and multiplication by `det g = ± 1` on
+the third. -/
+def orthogonalMulAut : Matrix.orthogonalGroup (Fin 2) ℝ →* MulAut Nil where
+  toFun g :=
+    { matrixHom g with
+      invFun := matrixHom ↑g⁻¹
+      left_inv p := (matrixHom_mul _ _ p).symm.trans <| by
+        rw [← Matrix.UnitaryGroup.mul_val, inv_mul_cancel, Matrix.UnitaryGroup.one_val,
+          matrixHom_one]
+      right_inv p := (matrixHom_mul _ _ p).symm.trans <| by
+        rw [← Matrix.UnitaryGroup.mul_val, mul_inv_cancel, Matrix.UnitaryGroup.one_val,
+          matrixHom_one] }
+  map_one' := MulEquiv.ext matrixHom_one
+  map_mul' g h := MulEquiv.ext (matrixHom_mul g h)
+
+@[simp]
+theorem x_orthogonalMulAut (g : Matrix.orthogonalGroup (Fin 2) ℝ) (p : Nil) :
+    (orthogonalMulAut g p).x = g.1 0 0 * p.x + g.1 0 1 * p.y := (rfl)
+
+@[simp]
+theorem y_orthogonalMulAut (g : Matrix.orthogonalGroup (Fin 2) ℝ) (p : Nil) :
+    (orthogonalMulAut g p).y = g.1 1 0 * p.x + g.1 1 1 * p.y := (rfl)
+
+@[simp]
+theorem z_orthogonalMulAut (g : Matrix.orthogonalGroup (Fin 2) ℝ) (p : Nil) :
+    (orthogonalMulAut g p).z = g.1.det * (p.z - p.x * p.y / 2) +
+      (g.1 0 0 * p.x + g.1 0 1 * p.y) * (g.1 1 0 * p.x + g.1 1 1 * p.y) / 2 := (rfl)
+
+/-- Distinct orthogonal matrices act by distinct automorphisms of `Nil`. -/
+theorem orthogonalMulAut_injective : Function.Injective orthogonalMulAut := fun g h hgh ↦ by
+  have h₁ := DFunLike.congr_fun hgh (mk 1 0 0)
+  have h₂ := DFunLike.congr_fun hgh (mk 0 1 0)
+  ext i j
+  fin_cases i <;> fin_cases j
+  · simpa using congrArg x h₁
+  · simpa using congrArg x h₂
+  · simpa using congrArg y h₁
+  · simpa using congrArg y h₂
+
+/-- The orthogonal group `O(2)` acts on `Nil` by isometries fixing the identity
+(`TauCeti.Nil.range_orthogonalToIsom_le_stabilizer`): the automorphisms `orthogonalMulAut g`,
+which rotate or reflect the `(x, y)`-plane and preserve the form `dz - x dy` up to the sign
+`det g`. -/
+def orthogonalToIsom : Matrix.orthogonalGroup (Fin 2) ℝ →* Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Nil where
+  -- The forward and inverse maps of `orthogonalMulAut g` are `matrixHom g` and `matrixHom g⁻¹` by
+  -- definition, so the smoothness and inner-product facts about `matrixHom` apply to them.
+  toFun g :=
+    { toEquiv := (orthogonalMulAut g).toEquiv
+      contMDiff_toFun := contMDiff_matrixHom _
+      contMDiff_invFun := contMDiff_matrixHom _
+      inner_mfderiv' := inner_mfderiv_matrixHom g.2 }
+  map_one' := RiemannianIsometry.ext fun p ↦ by
+    rw [RiemannianIsometry.one_apply]
+    exact DFunLike.congr_fun (map_one orthogonalMulAut) p
+  map_mul' g h := RiemannianIsometry.ext fun p ↦ by
+    rw [RiemannianIsometry.mul_apply]
+    exact DFunLike.congr_fun (map_mul orthogonalMulAut g h) p
+
+/-- The isometry `orthogonalToIsom g` is the automorphism `orthogonalMulAut g`. -/
+@[simp]
+theorem orthogonalToIsom_apply (g : Matrix.orthogonalGroup (Fin 2) ℝ) (p : Nil) :
+    orthogonalToIsom g p = orthogonalMulAut g p := (rfl)
+
+/-- Distinct orthogonal matrices act by distinct isometries of `Nil`. -/
+theorem orthogonalToIsom_injective : Function.Injective orthogonalToIsom := fun _ _ h ↦
+  orthogonalMulAut_injective <| MulEquiv.ext fun p ↦ DFunLike.congr_fun h p
+
+/-- The orthogonal isometries of `Nil` fix its identity element. -/
+theorem range_orthogonalToIsom_le_stabilizer :
+    orthogonalToIsom.range ≤ MulAction.stabilizer (Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Nil) (1 : Nil) := by
+  rintro _ ⟨g, rfl⟩
+  rw [MulAction.mem_stabilizer_iff, RiemannianIsometry.smul_def, orthogonalToIsom_apply, map_one]
+
+/-! ### The semidirect product `Nil ⋊ O(2)` -/
+
+/-- Left translations and the orthogonal isometries together give an action of the semidirect
+product `Nil ⋊ O(2)` on `Nil` by isometries, in which `(n, g)` acts by `p ↦ n * g p`. -/
+def semidirectProductToIsom :
+    Nil ⋊[orthogonalMulAut] Matrix.orthogonalGroup (Fin 2) ℝ →* Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Nil :=
+  SemidirectProduct.lift toIsom orthogonalToIsom fun g ↦ MonoidHom.ext fun n ↦
+    RiemannianIsometry.ext fun p ↦ by
+      simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulAut.conj_apply,
+        RiemannianIsometry.mul_apply, toIsom_apply, orthogonalToIsom_apply, map_mul]
+      rw [← orthogonalToIsom_apply g ((orthogonalToIsom g)⁻¹ p), ← RiemannianIsometry.mul_apply,
+        mul_inv_cancel, RiemannianIsometry.one_apply]
+
+/-- The element `(n, g)` of `Nil ⋊ O(2)` acts on `Nil` by `p ↦ n * g p`. -/
+@[simp]
+theorem semidirectProductToIsom_apply
+    (a : Nil ⋊[orthogonalMulAut] Matrix.orthogonalGroup (Fin 2) ℝ) (p : Nil) :
+    semidirectProductToIsom a p = a.left * orthogonalMulAut a.right p := by
+  conv_lhs => rw [← SemidirectProduct.inl_left_mul_inr_right a]
+  rw [map_mul, RiemannianIsometry.mul_apply, semidirectProductToIsom, SemidirectProduct.lift_inl,
+    SemidirectProduct.lift_inr, toIsom_apply, orthogonalToIsom_apply]
+
+/-- Distinct elements of `Nil ⋊ O(2)` act by distinct isometries of `Nil`. -/
+theorem semidirectProductToIsom_injective : Function.Injective semidirectProductToIsom := by
+  intro a b h
+  have hl : a.left = b.left := by
+    simpa using DFunLike.congr_fun h 1
+  refine SemidirectProduct.ext hl (orthogonalToIsom_injective (RiemannianIsometry.ext fun p ↦ ?_))
+  simpa [hl] using DFunLike.congr_fun h p
 
 end Nil
 

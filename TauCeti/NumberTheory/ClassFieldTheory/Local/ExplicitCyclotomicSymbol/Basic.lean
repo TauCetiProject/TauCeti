@@ -10,6 +10,8 @@ public import TauCeti.Data.ZMod.ExactDivisor
 public import TauCeti.NumberTheory.LocalField.Padic
 public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 public import TauCeti.NumberTheory.Padics.RingHoms
+import Mathlib.Analysis.Normed.Ring.Ultra
+import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # Explicit local symbols for cyclotomic extensions of the rationals
@@ -42,6 +44,11 @@ The normalization follows J. S. Milne, *Class Field Theory*, VII, Example 8.2.
   `TauCeti.unitsMap_cyclotomicSymbol_self_primePow` and
   `TauCeti.unitsMap_cyclotomicSymbol_self_of_coprime`: the two reductions at a `p`-adic unit and
   at `p` itself.
+* `TauCeti.cyclotomicSymbol_of_coprime`: at a prime not dividing the modulus, the symbol is `p`
+  raised to the valuation.
+* `TauCeti.cyclotomicSymbol_eq_one_of_norm_sub_one_lt` and
+  `TauCeti.cyclotomicSymbol_eq_of_norm_sub_lt`: the symbol is trivial near `1`, hence locally
+  constant.
 * `TauCeti.realCyclotomicSymbol_of_pos` and `TauCeti.realCyclotomicSymbol_of_neg`: the two values
   of the real symbol.
 -/
@@ -221,6 +228,65 @@ theorem unitsMap_cyclotomicSymbol_self_of_coprime (m : ℕ) [NeZero m] (p : ℕ)
     {d : ℕ} (hd : d ∣ m) (hcop : Nat.Coprime p d) {x : ℚ_[p]ˣ} (hx : (x : ℚ_[p]) = p) :
     ZMod.unitsMap hd (cyclotomicSymbol m p x) = ZMod.unitOfCoprime p hcop := by
   rw [unitsMap_cyclotomicSymbol_of_coprime m p hd hcop x 1 1 (by simp [hx]), zpow_one]
+
+/-- At a prime `p` not dividing the modulus, the explicit local cyclotomic symbol is `p` raised to
+the `p`-adic valuation. -/
+theorem cyclotomicSymbol_of_coprime (m : ℕ) [NeZero m] (p : ℕ) [Fact p.Prime]
+    (hcop : Nat.Coprime p m) (x : ℚ_[p]ˣ) :
+    cyclotomicSymbol m p x = ZMod.unitOfCoprime p hcop ^ (x : ℚ_[p]).valuation := by
+  obtain ⟨w, hw⟩ := Padic.exists_eq_zpow_valuation_mul x.ne_zero
+  simpa [ZMod.unitsMap_self] using
+    unitsMap_cyclotomicSymbol_of_coprime m p dvd_rfl hcop x _ w hw
+
+/-- **The explicit local cyclotomic symbol is trivial near `1`**: it kills every unit `x` with
+`‖x - 1‖ < ‖m‖`, that is, every unit congruent to `1` modulo a higher power of `p` than the one
+dividing `m`. -/
+theorem cyclotomicSymbol_eq_one_of_norm_sub_one_lt (m : ℕ) [NeZero m] (p : ℕ) [Fact p.Prime]
+    (x : ℚ_[p]ˣ) (hx : ‖(x : ℚ_[p]) - 1‖ < ‖(m : ℚ_[p])‖) :
+    cyclotomicSymbol m p x = 1 := by
+  have hm : ‖(m : ℚ_[p])‖ = (p : ℝ) ^ (-(padicValNat p m : ℤ)) := by
+    rw [Padic.norm_eq_zpow_neg_valuation (Nat.cast_ne_zero.mpr (NeZero.ne m)),
+      Padic.valuation_natCast]
+  have hx1 : ‖(x : ℚ_[p])‖ = 1 := by
+    have := Padic.norm_eq_of_norm_sub_lt_right (z1 := (x : ℚ_[p])) (z2 := 1)
+      (hx.trans_le ((IsUltrametricDist.norm_natCast_le_one ℚ_[p] m).trans_eq norm_one.symm))
+    simpa using this
+  have hw : (x : ℚ_[p]) = (p : ℚ_[p]) ^ (0 : ℤ) * ((PadicInt.mkUnits hx1 : ℤ_[p]) : ℚ_[p]) := by
+    rw [zpow_zero, one_mul, PadicInt.mkUnits_eq]
+  have hprimary : p ^ padicValNat p m ∥ m := by
+    simpa [Nat.factorization_def m (Fact.out : p.Prime)] using
+      (Nat.isExactDivisor_primePow (N := m) (p := p))
+  have hcop : Nat.Coprime p (m / p ^ padicValNat p m) := by
+    simpa [Nat.factorization_def m (Fact.out : p.Prime)] using
+      Nat.coprime_ordCompl (Fact.out : p.Prime) (NeZero.ne m)
+  apply hprimary.unitsEquivProd.injective
+  rw [map_one]
+  refine Prod.ext ?_ ?_
+  · rw [Nat.IsExactDivisor.unitsEquivProd_apply_fst,
+      unitsMap_cyclotomicSymbol_primePow m p hprimary.dvd x 0 _ hw, Prod.fst_one, inv_eq_one]
+    apply Units.ext
+    simp only [Units.coe_map, Units.val_one, RingHom.toMonoidHom_eq_coe,
+      MonoidHom.coe_ofClass]
+    apply PadicInt.toZModPow_eq_one_of_norm_sub_one_le
+    rw [PadicInt.norm_def, PadicInt.coe_sub, PadicInt.mkUnits_eq, PadicInt.coe_one, ← hm]
+    exact hx.le
+  · rw [Nat.IsExactDivisor.unitsEquivProd_apply_snd,
+      unitsMap_cyclotomicSymbol_of_coprime m p _ hcop x 0 _ hw, zpow_zero, Prod.snd_one]
+
+/-- **Local constancy of the explicit local cyclotomic symbol**: two units `x` and `x'` with
+`‖x - x'‖ < ‖m‖ * ‖x'‖` have the same symbol. -/
+theorem cyclotomicSymbol_eq_of_norm_sub_lt (m : ℕ) [NeZero m] (p : ℕ) [Fact p.Prime]
+    {x x' : ℚ_[p]ˣ} (hx : ‖(x : ℚ_[p]) - x'‖ < ‖(m : ℚ_[p])‖ * ‖(x' : ℚ_[p])‖) :
+    cyclotomicSymbol m p x = cyclotomicSymbol m p x' := by
+  have hx' : 0 < ‖(x' : ℚ_[p])‖ := norm_pos_iff.mpr x'.ne_zero
+  have hsub : (x : ℚ_[p]) * ((x'⁻¹ : ℚ_[p]ˣ) : ℚ_[p]) - 1 =
+      ((x : ℚ_[p]) - x') * (x' : ℚ_[p])⁻¹ := by
+    rw [Units.val_inv_eq_inv_val, sub_mul, mul_inv_cancel₀ x'.ne_zero]
+  have h := cyclotomicSymbol_eq_one_of_norm_sub_one_lt m p (x * x'⁻¹) (by
+    rw [Units.val_mul, hsub, norm_mul, norm_inv, ← div_eq_mul_inv, div_lt_iff₀ hx']
+    exact hx)
+  rw [map_mul, map_inv, mul_inv_eq_one] at h
+  exact h
 
 /-- **The explicit symbol of `ℚ(μ_m)/ℚ` at the real place.** It is the sign of a real unit,
 viewed as the unit `1` or `-1` modulo `m`. -/
