@@ -193,6 +193,8 @@ private theorem denseTorus_one_eq_algSpec (hi : IsIntegralLattice i) :
   dsimp only
   apply Over.OverMorphism.ext
   simp only [one_spec_asOver_spec_left, Over.comp_left, algSpec_map_left]
+  -- `braidedAlgSpec` chooses the identity for its unit comparison, and the
+  -- algebra-to-`Under` packaging retains the same counit ring map.
   rfl
 
 private theorem denseTorus_mul_eq_algSpec (hi : IsIntegralLattice i) :
@@ -208,6 +210,8 @@ private theorem denseTorus_mul_eq_algSpec (hi : IsIntegralLattice i) :
   dsimp only
   apply Over.OverMorphism.ext
   simp only [mul_spec_asOver_spec_left, Over.comp_left, algSpec_map_left]
+  -- `braidedAlgSpec` chooses `pullbackSpecIso.hom` for its tensor comparison, and the
+  -- algebra-to-`Under` packaging retains the same comultiplication ring map.
   rfl
 
 /-- Each affine toric chart is a module object for its dense torus over `Spec ℂ`. -/
@@ -244,8 +248,7 @@ noncomputable instance affineToricSchemeModObj (hi : IsIntegralLattice i)
           affineCoordinateRingCoaction_op_mul, F.map_comp, F.map_comp,
           Functor.LaxMonoidal.associativity_assoc,
           ← Functor.LaxMonoidal.μ_natural_right_assoc]
-        simp only [MonoidalCategory.whiskerLeft_comp, Category.assoc]
-        rfl
+        simp only [MonoidalCategory.whiskerLeft_comp, Category.assoc, a, X]
       simp only [MonoidalCategory.selfLeftAction_actionHomLeft,
         MonoidalCategory.selfLeftAction_actionHomRight,
         MonoidalCategory.selfLeftAction_actionAssocIso]
@@ -293,6 +296,7 @@ private theorem affineToricSchemeMap_asOver_eq_algSpec
   apply Over.OverMorphism.ext
   simp only [Scheme.Hom.asOver, OverClass.asOverHom_left, affineToricSchemeMap_def,
     algSpec_map_left]
+  -- The algebra-to-`Under` packaging retains the same coordinate-ring map.
   rfl
 
 /-- A map of lattice cones intertwines the affine torus actions, with its induced map on
@@ -335,11 +339,12 @@ instance faceAffineToricSchemeMap_isModHom (hi : IsIntegralLattice i)
     IsModHom ((denseTorusScheme hi).asOver (Spec (.of ℂ)))
       ((faceAffineToricSchemeMap hi hτσ).asOver (Spec (.of ℂ))) where
   smul_hom := by
-    simpa only [affineToricSchemeActionOver_eq_smul, MonoidalCategory.selfLeftAction_actionHomRight,
-      MonoidalCategory.id_tensorHom,
-      faceAffineToricSchemeMap_eq_affineToricSchemeMap,
-      affineToricSchemeMap_id, Scheme.Hom.asOver, OverClass.asOverHom_id] using
-        affineToricSchemeActionOver_comp_map hi hi (AddMonoidHom.id N) LinearMap.id
-          (fun _ ↦ rfl) (fun _ hx ↦ hτσ.le hx)
+    simp only [faceAffineToricSchemeMap_eq_affineToricSchemeMap]
+    have h := affineToricSchemeActionOver_comp_map hi hi (AddMonoidHom.id N) LinearMap.id
+      (fun _ ↦ rfl) (fun _ hx ↦ hτσ.le hx)
+    simp only [affineToricSchemeMap_id, OverClass.asOverHom_id,
+      MonoidalCategory.id_tensorHom] at h
+    simpa only [affineToricSchemeActionOver_eq_smul,
+      MonoidalCategory.selfLeftAction_actionHomRight] using h
 
 end TauCeti.Toric
