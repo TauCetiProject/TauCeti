@@ -23,7 +23,8 @@ NSW (3.6.4) computes the low-degree cohomology of the class module, and this fil
 
 * for every subgroup `S` of `G`, `H¹(S, A(L)) = 0` and `H²(S, A(L))` is cyclic of order the
   `p`-part of `#S`; in particular `H²(S, A(L))` has order `#S` when `S` is a `p`-group;
-* `H²(G, A(L))` is cyclic of order the `p`-part of `#G`.
+* `H²(G, A(L))` is cyclic of order the `p`-part of `#G`, and one class generates after
+  restriction to every subgroup.
 
 These are the inputs of Tate's theorem for `A(L)` on the `p`-subgroups of `G`.
 
@@ -32,6 +33,8 @@ These are the inputs of Tate's theorem for `A(L)` on the `p`-subgroups of `G`.
 * `TauCeti.isZero_groupCohomology_one_res_padicCompletionUnits`: `H¹(S, A(L)) = 0`.
 * `TauCeti.exists_zmultiples_eq_top_groupCohomology_two_res_padicCompletionUnits`: `H²(S, A(L))`
   is cyclic of order `p ^ v_p(#S)`.
+* `TauCeti.exists_zmultiples_eq_top_restriction_groupCohomology_two_padicCompletionUnits`:
+  one class restricts to a generator on every subgroup.
 * `TauCeti.natCard_groupCohomology_two_res_padicCompletionUnits`: `#H²(S, A(L)) = #S` for a
   `p`-subgroup `S`.
 * `TauCeti.exists_zmultiples_eq_top_groupCohomology_two_padicCompletionUnits`: `H²(G, A(L))` is
@@ -133,6 +136,43 @@ private theorem groupCohomology_of_le {V W : Subgroup (AbsoluteGaloisGroup K)} [
     exact this.symm
   · rw [← Nat.card_congr E.toEquiv, hcard, Nat.card_congr φ.toEquiv]
 
+omit [Algebra ℚ_[p] K] in
+/-- Transport the class-module generator once, retaining its compatibility with restriction. -/
+private theorem exists_restriction_generator {V : Subgroup (AbsoluteGaloisGroup K)} [V.Normal]
+    (hV : IsOpen (V : Set (AbsoluteGaloisGroup K))) {H : Type} [Group H]
+    {B : Rep ℤ_[p] H} (e : AbsoluteGaloisGroup K ⧸ V ≃* H)
+    (ψ : Additive (abelianizationProP p (AbsoluteGaloisGroup K) V) ≃+ B)
+    (hψ : ∀ t m, ψ (t • m) = B.ρ (e t) (ψ m)) :
+    ∃ u : groupCohomology B 2, ∀ S : Subgroup H,
+      AddSubgroup.zmultiples
+        (groupCohomology.map S.subtype (𝟙 (Rep.res S.subtype B)) 2 u) = ⊤ := by
+  have : DiscreteTopology (AbsoluteGaloisGroup K ⧸ V) := QuotientGroup.discreteTopology hV
+  let E := explicitH2AddEquivGroupCohomology e ψ hψ
+  let c := abelianizationProPClass p (AbsoluteGaloisGroup K) V hV
+  refine ⟨E c, fun S ↦ ?_⟩
+  let T := S.comap e.toMonoidHom
+  let W := T.comap (QuotientGroup.mk' V)
+  have hmap : W.map (QuotientGroup.mk' V) = T :=
+    Subgroup.map_comap_eq_self_of_surjective (QuotientGroup.mk'_surjective V) T
+  have hTS : T.map e.toMonoidHom = S := Subgroup.map_comap_eq_self_of_surjective e.surjective S
+  let eS := (e.subgroupMap T).trans (MulEquiv.subgroupCongr hTS)
+  have heS (t : T) : (eS t : H) = e t := rfl
+  let ES := explicitH2AddEquivGroupCohomology (B := Rep.res S.subtype B) eS ψ
+    (fun t m ↦ hψ t m)
+  have hdim := (ClassFieldTheory.strictCohomologicalDimensionAt_galSeparableClosure_eq_two
+    (K := K) p).le
+  have hgen := (explicitRes2_abelianizationProPClass_generates
+    (Fact.out : p.Prime) hdim hV (QuotientGroup.le_comap_mk' V T)).1
+  rw [hmap] at hgen
+  have h : AddSubgroup.zmultiples (ES (explicitRes2 _ _ T c)) = ⊤ := by
+    calc
+      _ = (AddSubgroup.zmultiples (explicitRes2 _ _ T c)).map ES.toAddMonoidHom :=
+        (AddMonoidHom.map_zmultiples ES.toAddMonoidHom _).symm
+      _ = (⊤ : AddSubgroup (H2 T _)).map ES.toAddMonoidHom := congrArg _ hgen
+      _ = ⊤ := AddSubgroup.map_top_of_surjective _ ES.surjective
+  exact (congrArg AddSubgroup.zmultiples
+    (explicitH2AddEquivGroupCohomology_explicitRes2 e ψ hψ T S eS heS c)).symm.trans h
+
 /-- Both statements on a subgroup `S`, through the pair `V ◁ W` with `W` the preimage of `S` in
 `G_K`. -/
 private theorem groupCohomology_res_padicCompletionUnits (S : Subgroup (L ≃ₐ[K] L)) :
@@ -178,6 +218,22 @@ theorem exists_zmultiples_eq_top_groupCohomology_two_res_padicCompletionUnits
           (Rep.res S.subtype (Rep.of (padicCompletionUnitsRepresentation p L K))) 2) =
           p ^ padicValNat p (Nat.card S) :=
   (groupCohomology_res_padicCompletionUnits p K L S).2
+
+/-- **One class of `A(L)` generates after every restriction** (NSW (3.6.4)). Unlike choosing
+separate generators for the subgroups, this supplies the compatible class required by the
+Tate splitting-module construction. The class is transported from the class module through
+local reciprocity. -/
+theorem exists_zmultiples_eq_top_restriction_groupCohomology_two_padicCompletionUnits :
+    ∃ u : groupCohomology (Rep.of (padicCompletionUnitsRepresentation p L K)) 2,
+      ∀ S : Subgroup (L ≃ₐ[K] L),
+        AddSubgroup.zmultiples
+          (groupCohomology.map S.subtype
+            (𝟙 (Rep.res S.subtype (Rep.of (padicCompletionUnitsRepresentation p L K))))
+            2 u) = ⊤ := by
+  let ι : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
+  exact exists_restriction_generator p K (galoisSubgroup K L ι).isOpen
+    (quotientGaloisSubgroupEquiv K L ι) (classModuleAddEquiv p K L ι)
+    (classModuleAddEquiv_smul p K L ι)
 
 /-- **`H²` of `A(L)` on a `p`-subgroup has the order of the subgroup** (NSW (3.6.4), read through
 local reciprocity): `#H²(S, A(L)) = #S` for every `p`-subgroup `S` of `Gal(L/K)`. -/
