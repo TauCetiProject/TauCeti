@@ -40,6 +40,8 @@ Multiplying one `n`-th root of a nonzero `a` by the powers of a primitive `n`-th
   root in a normal extension of `ℚ` is realized by an automorphism.
 * `IsPrimitiveRoot.card_nthRootsFinset_of_pow_eq`: in the presence of a primitive `n`-th root of
   unity, a nonzero element with one `n`-th root has exactly `n` of them.
+* `IsPrimitiveRoot.modEq_of_pow_pow_eq_pow_pow`: the class of `p` modulo `p ^ f - 1` has order
+  `f`, read on a primitive `(p ^ f - 1)`-st root of unity.
 
 ## References
 
@@ -88,6 +90,32 @@ theorem _root_.IsPrimitiveRoot.card_nthRootsFinset_of_pow_eq {n : ℕ} {ζ α a 
   classical
   rw [nthRootsFinset_def, Multiset.toFinset_card_of_nodup (hζ.nthRoots_nodup ha),
     hζ.card_nthRoots, ite_eq_left ⟨α, hα⟩]
+
+/-- The class of `p` modulo `p ^ f - 1` has order `f`, read on a primitive `(p ^ f - 1)`-st root of
+unity `ζ`: if `ζ ^ p ^ j = ζ ^ p ^ k`, then `j ≡ k [MOD f]`. -/
+theorem _root_.IsPrimitiveRoot.modEq_of_pow_pow_eq_pow_pow {M : Type*} [CommMonoid M]
+    {p f j k : ℕ} (hp : 1 < p) (hf : f ≠ 0) {ζ : M} (hζ : IsPrimitiveRoot ζ (p ^ f - 1))
+    (h : ζ ^ p ^ j = ζ ^ p ^ k) : j ≡ k [MOD f] := by
+  -- `p ^ f ≡ 1`, so `ζ ^ p ^ i` only depends on `i % f`.
+  have hmod (i : ℕ) : p ^ i ≡ p ^ (i % f) [MOD p ^ f - 1] := by
+    conv_lhs => rw [← Nat.div_add_mod i f, pow_add, pow_mul]
+    simpa using ((Nat.modEq_sub (Nat.one_le_pow f p (by omega))).pow (i / f)).mul_right
+      (p ^ (i % f))
+  have h' : ζ ^ p ^ (j % f) = ζ ^ p ^ (k % f) := by
+    rwa [pow_eq_pow_mod _ hζ.pow_eq_one, hmod j, ← pow_eq_pow_mod _ hζ.pow_eq_one,
+      pow_eq_pow_mod (p ^ k) hζ.pow_eq_one, hmod k, ← pow_eq_pow_mod _ hζ.pow_eq_one] at h
+  rcases (show f = 1 ∨ 2 ≤ f by omega) with rfl | h2
+  · exact Nat.modEq_one
+  -- For `f ≥ 2` the exponents `p ^ (i % f)` are below the order `p ^ f - 1`.
+  have hlt (i : ℕ) : p ^ (i % f) < p ^ f - 1 := by
+    have h1 : p ^ (i % f) ≤ p ^ (f - 1) :=
+      Nat.pow_le_pow_right (by omega) (by have := Nat.mod_lt i (by omega : 0 < f); omega)
+    have h2 : 2 * p ^ (f - 1) ≤ p ^ f := by
+      rw [← Nat.sub_add_cancel (by omega : 1 ≤ f), pow_succ, Nat.add_sub_cancel, mul_comm]
+      exact Nat.mul_le_mul_left _ hp
+    have h3 : p ≤ p ^ (f - 1) := Nat.le_self_pow (by omega) p
+    omega
+  exact Nat.pow_right_injective hp (hζ.pow_inj (hlt j) (hlt k) h')
 
 end TauCeti
 

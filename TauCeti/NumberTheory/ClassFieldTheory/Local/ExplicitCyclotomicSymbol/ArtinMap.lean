@@ -15,6 +15,7 @@ import TauCeti.NumberTheory.ClassFieldTheory.Local.Unramified
 import TauCeti.NumberTheory.Cyclotomic.CyclotomicCharacter
 import TauCeti.RingTheory.Norm.Units
 import TauCeti.RingTheory.RootsOfUnity.Coprime
+import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
 # The cyclotomic character of the local Artin symbols of `ℚ_p`
@@ -56,92 +57,6 @@ namespace TauCeti.ClassFieldTheory
 open _root_.ValuativeRel
 
 variable (p : ℕ) [Fact p.Prime]
-
-/-! `Field.absoluteGaloisGroup ℚ_[p]` is a plain definition, so its elements act on
-`AlgebraicClosure ℚ_[p]` only through an explicit coercion via
-`Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])`, whose group laws it carries by definition. The next lemmas
-record the facts about this action that the comparison uses. -/
-
-private theorem absoluteGaloisGroup_mul_apply (a b : Field.absoluteGaloisGroup ℚ_[p])
-    (w : AlgebraicClosure ℚ_[p]) :
-    DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) (a * b) w =
-      DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) a
-        (DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) b w) :=
-  AlgEquiv.mul_apply (A₁ := AlgebraicClosure ℚ_[p]) a b w
-
-private theorem absoluteGaloisGroup_one_apply (w : AlgebraicClosure ℚ_[p]) :
-    DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) (1 : Field.absoluteGaloisGroup ℚ_[p]) w =
-      w :=
-  AlgEquiv.one_apply (A₁ := AlgebraicClosure ℚ_[p]) w
-
-private theorem absoluteGaloisGroup_apply_one (a : Field.absoluteGaloisGroup ℚ_[p]) :
-    DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) a 1 = 1 :=
-  map_one (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) a
-
-private theorem absoluteGaloisGroup_apply_pow (a : Field.absoluteGaloisGroup ℚ_[p])
-    (w : AlgebraicClosure ℚ_[p]) (j : ℕ) :
-    DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) a (w ^ j) =
-      DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) a w ^ j :=
-  map_pow (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) a w j
-
-/-- The class of `p` modulo `p ^ f - 1` has order `f`, read on a primitive `(p ^ f - 1)`-st root of
-unity `ζ`: if `ζ ^ p = ζ ^ p ^ r` with `r < f`, then `r ≡ 1 [MOD f]`. -/
-private theorem eq_one_mod_of_pow_eq_pow_pow {M : Type*} [CommMonoid M] {f r : ℕ} (hr : r < f)
-    {ζ : M} (hζ : IsPrimitiveRoot ζ (p ^ f - 1)) (h : ζ ^ p = ζ ^ p ^ r) : r = 1 % f := by
-  have hp := (Fact.out : p.Prime).two_le
-  rcases (show f = 1 ∨ 2 ≤ f by omega) with rfl | h2
-  · omega
-  have hsucc : p ^ f = p * p ^ (f - 1) := by rw [← pow_succ']; congr 1; omega
-  have h2' : p ≤ p ^ (f - 1) := Nat.le_self_pow (by omega) p
-  have hlt : p ^ (f - 1) < p ^ f - 1 := by
-    have : 2 * p ^ (f - 1) ≤ p * p ^ (f - 1) := Nat.mul_le_mul_right _ hp
-    omega
-  have hpr : p ^ r < p ^ f - 1 :=
-    lt_of_le_of_lt (Nat.pow_le_pow_right (by omega) (by omega)) hlt
-  have : r = 1 := Nat.pow_right_injective hp
-    (by simpa using (hζ.pow_inj (h2'.trans_lt hlt) hpr h).symm)
-  rw [this, Nat.mod_eq_of_lt (by omega)]
-
-/-- Two elements of `G_{ℚ_p}` whose cyclotomic characters agree modulo `p ^ n` agree on the
-`p ^ n`-th roots of unity. -/
-private theorem apply_eq_apply_of_toZModPow_eq {σ₁ σ₂ : Field.absoluteGaloisGroup ℚ_[p]} {n : ℕ}
-    (h : PadicInt.toZModPow n (localCyclotomicCharacter p ℚ_[p] σ₁ : ℤ_[p]) =
-      PadicInt.toZModPow n (localCyclotomicCharacter p ℚ_[p] σ₂ : ℤ_[p]))
-    {z : AlgebraicClosure ℚ_[p]} (hz : z ^ p ^ n = 1) :
-    DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) σ₁ z =
-      DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) σ₂ z := by
-  rw [localCyclotomicCharacter_apply, localCyclotomicCharacter_apply] at h
-  exact (cyclotomicCharacter.spec p σ₁.toRingEquiv z hz).trans
-    (h ▸ (cyclotomicCharacter.spec p σ₂.toRingEquiv z hz).symm)
-
-/-- `p u` is a uniformizer of `ℚ_[p]` for every `u ∈ ℤ_pˣ`. -/
-private theorem isUniformizer_mul_unit (u : ℤ_[p]ˣ) :
-    IsUniformizer ℚ_[p] (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero) *
-      Units.map (algebraMap ℤ_[p] ℚ_[p]).toMonoidHom u) := by
-  rw [isUniformizer_def, map_mul, (isUniformizer_def _).1 (Padic.isUniformizer_natCast_self p),
-    mul_eq_left]
-  apply Multiplicative.toAdd.injective
-  have h := PadicInt.valuation_mul u.ne_zero u⁻¹.ne_zero
-  rw [Units.mul_inv, PadicInt.valuation_one] at h
-  rw [Padic.toAdd_normalizedValuation_eq_valuation, Units.coe_map, RingHom.toMonoidHom_eq_coe,
-    MonoidHom.coe_ofClass, toAdd_one, PadicInt.algebraMap_apply, PadicInt.valuation_coe]
-  omega
-
-/-- Every `φ(p ^ n)`-th power in `G_{ℚ_p}` fixes the `p ^ n`-th roots of unity, because `(ℤ/p^n)ˣ`
-has order `φ(p ^ n)`. -/
-private theorem pow_totient_mul_apply_eq_self (g : Field.absoluteGaloisGroup ℚ_[p]) {n : ℕ}
-    (q : ℕ) {w : AlgebraicClosure ℚ_[p]} (hw : w ^ p ^ n = 1) :
-    DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) (g ^ ((p ^ n).totient * q)) w = w := by
-  refine (apply_eq_apply_of_toZModPow_eq p (σ₂ := 1) ?_ hw).trans
-    (absoluteGaloisGroup_one_apply p w)
-  have h := ZMod.pow_totient (Units.map (PadicInt.toZModPow n).toMonoidHom
-    (localCyclotomicCharacter p ℚ_[p] g))
-  have h1 : PadicInt.toZModPow n (localCyclotomicCharacter p ℚ_[p] g : ℤ_[p]) ^
-      (p ^ n).totient = 1 := by
-    have := congrArg Units.val h
-    rwa [Units.val_pow_eq_pow_val, Units.coe_map, Units.val_one] at this
-  rw [map_pow, map_one, pow_mul, Units.val_pow_eq_pow_val, map_pow, Units.val_pow_eq_pow_val,
-    map_pow, h1, one_pow, Units.val_one, map_one]
 
 /-- An element `ρ ∈ G_{ℚ_p}` with `χ_cyc(ρ) = u⁻¹` that acts on the `N`-th roots of unity by
 `ζ ↦ ζ ^ p`, for `N` prime to `p`, acts on the `p ^ n N`-th roots of unity through the explicit
@@ -216,17 +131,9 @@ private theorem exists_localCyclotomicCharacter_eq_inv_and_apply_eq (u : ℤ_[p]
   have hgN (w : AlgebraicClosure ℚ_[p]) (hw : w ^ N = 1) :
       DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) g w = w ^ p := by
     simpa using isArithFrobeniusLift_iff.1
-      (isArithFrobeniusLift_of_mk_eq_artinMap_uniformizer ℚ_[p] (isUniformizer_mul_unit p u) g
-        hg) w f hf
+      (isArithFrobeniusLift_of_mk_eq_artinMap_uniformizer ℚ_[p]
+        (Padic.isUniformizer_natCast_self_mul_unit p u) g hg) w f hf
       (by simpa using hpow w hw)
-  -- `g ^ i` acts on `μ_N` by `w ↦ w ^ p ^ i`.
-  have hgNpow (i : ℕ) (w : AlgebraicClosure ℚ_[p]) (hw : w ^ N = 1) :
-      DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) (g ^ i) w = w ^ p ^ i := by
-    induction i generalizing w with
-    | zero => rw [pow_zero, pow_zero, pow_one, absoluteGaloisGroup_one_apply]
-    | succ i ih =>
-      rw [pow_succ, absoluteGaloisGroup_mul_apply, hgN w hw,
-        ih _ (by rw [← pow_mul, mul_comm, pow_mul, hw, one_pow]), ← pow_mul, pow_succ, mul_comm]
   -- The field `L = ℚ_p(μ_m)` and the fixed field `M` of `g` in it.
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (AlgebraicClosure ℚ_[p]) m
   set L := IntermediateField.adjoin ℚ_[p] {ζ}
@@ -267,53 +174,36 @@ private theorem exists_localCyclotomicCharacter_eq_inv_and_apply_eq (u : ℤ_[p]
     exact apply_eq_pow_cyclotomicSymbol p u hcopN hρχ hρN hw
   have hρM := cyclotomicSymbol_norm_fixes p m M hM y ρ hρm
   -- So `ρ` restricts to a power `g ^ k` on `L`.
-  have hρH : rL ρ ∈ H := by
-    rw [← IntermediateField.fixingSubgroup_fixedField H]
-    refine (IntermediateField.mem_fixingSubgroup_iff _ _).2 fun x hx ↦ Subtype.ext ?_
-    exact (hrL ρ x).trans (hρM ⟨(x : AlgebraicClosure ℚ_[p]), (IntermediateField.mem_lift x).2 hx⟩)
-  obtain ⟨k, hk⟩ := (mem_powers_iff_mem_zpowers.2 hρH)
-  replace hk : rL g ^ k = rL ρ := hk
+  have hρH : rL ρ ∈ H := AlgEquiv.restrictNormalHom_mem_of_forall_mem_fixedField L fun x hx ↦
+    hρM ⟨(x : AlgebraicClosure ℚ_[p]), (IntermediateField.mem_lift x).2 hx⟩
+  obtain ⟨k, hk⟩ := (Submonoid.mem_powers_iff _ _).1 (mem_powers_iff_mem_zpowers.2 hρH)
   have hρg (w : AlgebraicClosure ℚ_[p]) (hw : w ^ m = 1) :
       DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) ρ w =
         DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) (g ^ k) w := by
     rw [← hrL ρ ⟨w, hmemL w hw⟩, ← hk, ← map_pow, hrL]
-  -- Comparing `ρ` and `g ^ k` on a primitive `N`-th root of unity gives `k ≡ 1 [MOD f]`.
-  have hpowq (v : AlgebraicClosure ℚ_[p]) (hv : v ^ N = 1) (q : ℕ) : v ^ p ^ (f * q) = v := by
-    induction q with
-    | zero => simp
-    | succ q ih => rw [mul_add, mul_one, pow_add, pow_mul, ih, hpow v hv]
-  set r := k % f
-  have hk' : g ^ k = g ^ (f * (k / f)) * g ^ r := by rw [← pow_add, Nat.div_add_mod]
-  have hgr (w : AlgebraicClosure ℚ_[p]) (hw : w ^ N = 1) :
-      DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) (g ^ k) w = w ^ p ^ r := by
-    rw [hk', absoluteGaloisGroup_mul_apply, hgNpow r w hw,
-      hgNpow _ _ (by rw [← pow_mul, mul_comm, pow_mul, hw, one_pow]), ← pow_mul, mul_comm, pow_mul,
-      hpowq w hw]
+  -- Comparing `ρ` and `g ^ k` on a primitive `N`-th root of unity gives `1 ≡ k [MOD f]`.
   have hζN : IsPrimitiveRoot (ζ ^ p ^ n) N := hζ.pow hm0 hm_def
-  have hζNeq : (ζ ^ p ^ n) ^ p = (ζ ^ p ^ n) ^ p ^ r :=
-    (hρN _ hζN.pow_eq_one).symm.trans
-      ((hρg _ (by rw [← pow_mul, mul_comm, pow_mul, hζ.pow_eq_one, one_pow])).trans
-      (hgr _ hζN.pow_eq_one))
-  have hr1 : r = 1 % f := eq_one_mod_of_pow_eq_pow_pow p (Nat.mod_lt _ (by omega)) hζN hζNeq
-  -- Hence `g` acts on `μ_{p^n}` as `ρ`, and so does `σ`, because `τ` fixes `μ_{p^n}`.
-  have hgz' (w : AlgebraicClosure ℚ_[p]) (hw : w ^ p ^ n = 1) (i : ℕ) :
-      DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) (g ^ i) w ^ p ^ n = 1 := by
-    rw [← absoluteGaloisGroup_apply_pow, hw, absoluteGaloisGroup_apply_one]
+  have hk1 : 1 ≡ k [MOD f] := hζN.modEq_of_pow_pow_eq_pow_pow hp.one_lt hf <| by
+    rw [pow_one, ← hρN _ hζN.pow_eq_one,
+      hρg _ (by rw [← pow_mul, mul_comm, pow_mul, hζ.pow_eq_one, one_pow]),
+      absoluteGaloisGroup_pow_apply_eq_pow_pow hgN k hζN.pow_eq_one]
+  -- Hence `g = g ^ 1` acts on `μ_{p^n}` as `g ^ k`, that is as `ρ`; so does `σ`, because `τ` fixes
+  -- `μ_{p^n}`.
   have hgz : DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) g z =
       DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) ρ z := by
-    calc _ = DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p]))
-          (g ^ (f * (1 / f)) * g ^ (1 % f)) z := by rw [← pow_add, Nat.div_add_mod, pow_one]
-      _ = DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) (g ^ r) z := by
-          rw [absoluteGaloisGroup_mul_apply, pow_totient_mul_apply_eq_self p g _ (hgz' z hz _), hr1]
-      _ = DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) (g ^ k) z := by
-          rw [hk', absoluteGaloisGroup_mul_apply, pow_totient_mul_apply_eq_self p g _ (hgz' z hz _)]
+    calc _ = DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) (g ^ 1) z :=
+          congrArg (fun a : Field.absoluteGaloisGroup ℚ_[p] ↦
+            DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) a z) (pow_one g).symm
+      _ = DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) (g ^ k) z :=
+          apply_pow_eq_apply_pow_of_modEq_totient g hk1 hz
       _ = _ := (hρg z (by rw [hm_def, pow_mul, hz, one_pow])).symm
   have hτz : DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) τ
       (DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) σ z) =
         DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) σ z :=
-    (apply_eq_apply_of_toZModPow_eq p (σ₂ := 1) (by rw [hτχ, map_one])
-      (by rw [← absoluteGaloisGroup_apply_pow, hz, absoluteGaloisGroup_apply_one])).trans
-        (absoluteGaloisGroup_one_apply p _)
+    (apply_eq_apply_of_toZModPow_localCyclotomicCharacter_eq (σ₂ := 1) (n := n)
+      (by rw [hτχ, map_one]) ((map_pow (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) σ z _).symm.trans
+        (by rw [hz]; exact map_one (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) σ))).trans
+        (absoluteGaloisGroup_one_apply ℚ_[p] _)
   exact hτz.symm.trans hgz
 
 /-- **The cyclotomic normalization at `ℚ_p`**: `χ_cyc(Art_{ℚ_p}(u)) = u⁻¹` for `u ∈ ℤ_pˣ`. If `σ`
@@ -328,6 +218,7 @@ theorem localCyclotomicCharacter_artinMap_padic (u : ℤ_[p]ˣ)
   rw [← hρ₀, localCyclotomicCharacter_apply, localCyclotomicCharacter_apply]
   refine cyclotomicCharacter_eq_of_forall_pow_eq_one p fun n t ht ↦ ?_
   obtain ⟨ρ, hρ, hσρ⟩ := exists_localCyclotomicCharacter_eq_inv_and_apply_eq p u σ hσ n
-  exact (hσρ t ht).trans (apply_eq_apply_of_toZModPow_eq p (by rw [hρ, hρ₀]) ht)
+  exact (hσρ t ht).trans
+    (apply_eq_apply_of_toZModPow_localCyclotomicCharacter_eq (by rw [hρ, hρ₀]) ht)
 
 end TauCeti.ClassFieldTheory
