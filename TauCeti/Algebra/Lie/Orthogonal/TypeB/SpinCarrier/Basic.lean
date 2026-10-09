@@ -315,7 +315,6 @@ theorem isCartanWeightVector_latticeBasis (i : Fin (dimension n)) :
   have h := (polarization n).isCartanWeightVector_typeBSpinRep_exteriorBasis
     (polarizationBasis n) (remainderOne n) (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
     (signSet n i)
-  rw [SpinPolarizationData.typeBSpinCorootWeight_eq_typeBSpinWeight] at h
   rwa [coe_latticeBasis]
 
 /-- The full spin weights span the simply connected type-`B` character lattice. -/
@@ -336,8 +335,8 @@ private theorem rep_coroot_ne_zero (i : Fin (n + 1)) :
     ((polarization n).isCartanWeightVector_typeBSpinRep_exteriorBasis
       (polarizationBasis n) (remainderOne n) (TauCeti.splitOddForm_remainderOne ℚ (n + 1)) {i}) i
   rw [hzero, LinearMap.zero_apply] at h
-  have hone : SpinPolarizationData.typeBSpinCorootWeight ({i} : Finset (Fin (n + 1))) i = 1 := by
-    induction i using Fin.lastCases <;> simp [Fin.castSucc_lt_succ.ne']
+  have hone : DynkinType.typeBSpinWeight ({i} : Finset (Fin (n + 1))) i = 1 := by
+    induction i using Fin.lastCases <;> simp [Fin.orderSucc_castSucc, Fin.castSucc_lt_succ.ne']
   rw [hone, Int.cast_one, one_smul] at h
   exact (polarizationBasis n).ExteriorAlgebra.ne_zero {i} h.symm
 
