@@ -8,6 +8,8 @@ module
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 import Mathlib.Analysis.Convex.Integral
+import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -30,16 +32,16 @@ solutions of a constant-coefficient problem in the same integral norms.
 
 The proof is a telescoping argument. Comparing the averages over `closedBall x r` and
 `closedBall x (r / 2)` costs at most `2ⁿ M r^α`, the factor `2ⁿ` being the ratio of the two
-measures. Summing over dyadic radii shows that the averages `f_{x,r}` converge as `r → 0`, with
-`‖f_{x,r} - f*(x)‖ ≤ 2ⁿ / (1 - 2^(-α)) · M r^α`, and comparing the averages over
-`closedBall y d ⊆ closedBall x (2 d)`, `d = dist x y`, then gives the Hölder bound.
+measures (by `TauCeti.MeasureTheory.norm_setAverage_sub_le_of_subset` and
+`MeasureTheory.Measure.addHaar_real_closedBall_div_le`). Summing over dyadic radii shows that
+the averages `f_{x,r}` converge as `r → 0`, with `‖f_{x,r} - f*(x)‖ ≤ 2ⁿ / (1 - 2^(-α)) · M r^α`,
+and comparing the averages over `closedBall y d ⊆ closedBall x (2 d)`, `d = dist x y`, then gives
+the Hölder bound.
 
 ## Main declarations
 
 All declarations are in the `TauCeti.MeasureTheory` namespace.
 
-* `norm_setAverage_sub_le_of_subset`: the average over a subset `s ⊆ t` differs from a constant
-  `c` by at most `μ t / μ s` times the average of `‖f - c‖` over `t`.
 * `setAverage_norm_sub_setAverage_le_of_holderOnWith`: the mean oscillation of an `α`-Hölder
   function on a ball of radius `r` is at most a multiple of `r^α`.
 * `tendsto_setAverage_closedBall_preciseRepresentative_of_setAverage_norm_sub_le`: mean
@@ -73,34 +75,11 @@ namespace TauCeti
 
 namespace MeasureTheory
 
-section General
-
-variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F]
-  [NormedSpace ℝ F] {f : X → F} {s t : Set X}
-
-/-- The average of `f` over a subset `s` of `t` differs from a constant `c` by at most
-`μ t / μ s` times the average of `‖f - c‖` over `t`. -/
-theorem norm_setAverage_sub_le_of_subset [CompleteSpace F] (hst : s ⊆ t) (hs : μ s ≠ 0)
-    (ht : μ t ≠ ⊤) (hf : IntegrableOn f t μ) (c : F) :
-    ‖(⨍ x in s, f x ∂μ) - c‖ ≤ μ.real t / μ.real s * ⨍ x in t, ‖f x - c‖ ∂μ := by
-  have hs' : μ s ≠ ⊤ := ne_top_of_le_ne_top ht (measure_mono hst)
-  have hsr : 0 < μ.real s := ENNReal.toReal_pos hs hs'
-  have htr : 0 < μ.real t := hsr.trans_le (measureReal_mono hst ht)
-  have hfs : IntegrableOn f s μ := hf.mono_set hst
-  have heq : (⨍ x in s, f x ∂μ) - c = ⨍ x in s, (f x - c) ∂μ := by
-    rw [setAverage_fun_sub hfs (integrableOn_const hs'), setAverage_const hs hs']
-  rw [heq, setAverage_eq, setAverage_eq, norm_smul, smul_eq_mul,
-    Real.norm_of_nonneg (inv_nonneg.2 hsr.le), div_mul_eq_mul_div, mul_inv_cancel_left₀ htr.ne',
-    div_eq_inv_mul]
-  gcongr
-  refine (norm_integral_le_integral_norm _).trans (setIntegral_mono_set ?_ ?_ hst.eventuallyLE)
-  · exact (hf.sub (integrableOn_const ht)).norm
-  · exact ae_of_all _ fun _ ↦ norm_nonneg _
-
 section Holder
 
-variable [CompleteSpace F] [MetricSpace X] [ProperSpace X] [OpensMeasurableSpace X]
-  [IsFiniteMeasureOnCompacts μ] {x : X}
+variable {X F : Type*} [MetricSpace X] [MeasurableSpace X] [ProperSpace X]
+  [OpensMeasurableSpace X] {μ : Measure X} [IsFiniteMeasureOnCompacts μ] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] [CompleteSpace F] {f : X → F} {x : X}
 
 /-- **The mean oscillation of a Hölder function.** If `f` is `α`-Hölder continuous on
 `closedBall x r` with constant `K`, `α > 0`, and this ball has positive measure, then the mean
@@ -134,33 +113,26 @@ theorem setAverage_norm_sub_setAverage_le_of_holderOnWith {K α : ℝ≥0} {r : 
 
 end Holder
 
-end General
-
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {f : E → F} {x : E} {M α ρ : ℝ}
 
-/-- For Haar measure, a closed ball of radius `R ≤ 2 r` has at most `2ⁿ` times the measure of a
-closed ball of radius `r`. -/
-private lemma measureReal_closedBall_div_le {y : E} {r R : ℝ} (hr : 0 < r) (hR : 0 ≤ R)
-    (hRr : R ≤ 2 * r) :
-    μ.real (closedBall x R) / μ.real (closedBall y r) ≤ 2 ^ finrank ℝ E := by
-  have hball : 0 < μ.real (ball (0 : E) 1) :=
-    ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
-  rw [Measure.addHaar_real_closedBall μ x hR, Measure.addHaar_real_closedBall μ y hr.le,
-    mul_div_mul_right _ _ hball.ne', div_le_iff₀ (by positivity), ← mul_pow]
-  exact pow_le_pow_left₀ hR hRr _
+/-- For `α > 0`, `1 - 2^(-α)` is positive: the dyadic series of ratio `2^(-α)` converges. -/
+private lemma one_sub_two_rpow_neg_pos (hα : 0 < α) : 0 < 1 - (2 : ℝ) ^ (-α) :=
+  sub_pos.2 (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 hα))
 
-/-- Comparing the averages over `closedBall x ε ⊆ closedBall x r` for `r ≤ 2 ε` costs at most
+/-- Comparing the averages over `closedBall y ε ⊆ closedBall x r` for `r ≤ 2 ε` costs at most
 `2ⁿ` times the mean oscillation on `closedBall x r`. -/
-private lemma norm_setAverage_closedBall_sub_le_of_le_two_mul {ε r : ℝ} (hε : 0 < ε)
-    (hεr : ε ≤ r) (hrε : r ≤ 2 * ε) (hf : IntegrableOn f (closedBall x r) μ)
-    (hosc : ⨍ y in closedBall x r, ‖f y - ⨍ z in closedBall x r, f z ∂μ‖ ∂μ ≤ M * r ^ α) :
-    ‖(⨍ y in closedBall x ε, f y ∂μ) - ⨍ y in closedBall x r, f y ∂μ‖ ≤
-      2 ^ finrank ℝ E * (M * r ^ α) :=
-  (norm_setAverage_sub_le_of_subset (closedBall_subset_closedBall hεr)
-    (measure_closedBall_pos μ x hε).ne' measure_closedBall_lt_top.ne hf _).trans <|
-    mul_le_mul (measureReal_closedBall_div_le hε (hε.le.trans hεr) hrε) hosc
+private lemma norm_setAverage_closedBall_sub_le_of_le_two_mul {y : E} {ε r : ℝ} (hε : 0 < ε)
+    (hsub : closedBall y ε ⊆ closedBall x r) (hrε : r ≤ 2 * ε)
+    (hf : IntegrableOn f (closedBall x r) μ)
+    (hosc : ⨍ z in closedBall x r, ‖f z - ⨍ w in closedBall x r, f w ∂μ‖ ∂μ ≤ M * r ^ α) :
+    ‖(⨍ z in closedBall y ε, f z ∂μ) - ⨍ z in closedBall x r, f z ∂μ‖ ≤
+      2 ^ finrank ℝ E * (M * r ^ α) := by
+  have hr : 0 ≤ r := dist_nonneg.trans (mem_closedBall.1 (hsub (mem_closedBall_self hε.le)))
+  exact (norm_setAverage_sub_le_of_subset hsub (measure_closedBall_pos μ y hε).ne'
+    measure_closedBall_lt_top.ne hf _).trans <|
+    mul_le_mul (μ.addHaar_real_closedBall_div_le x y hε hr hrε) hosc
       (average_nonneg fun _ ↦ norm_nonneg _) (by positivity)
 
 /-- **Telescoping over dyadic radii.** If the mean oscillation of `f` on `closedBall x r` is at
@@ -174,12 +146,12 @@ private lemma norm_setAverage_closedBall_sub_le (hα : 0 < α)
     ‖(⨍ y in closedBall x ε, f y ∂μ) - ⨍ y in closedBall x r, f y ∂μ‖ ≤
       2 ^ finrank ℝ E / (1 - 2 ^ (-α)) * (M * r ^ α) := by
   set C : ℝ := 2 ^ finrank ℝ E / (1 - 2 ^ (-α))
-  have hq : (2 : ℝ) ^ (-α) < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 hα)
-  have hq0 : 0 < (2 : ℝ) ^ (-α) := Real.rpow_pos_of_pos two_pos _
-  have hC : 2 ^ finrank ℝ E ≤ C := le_div_self (by positivity) (sub_pos.2 hq) (by linarith)
+  have hq := one_sub_two_rpow_neg_pos hα
+  have hC : 2 ^ finrank ℝ E ≤ C :=
+    le_div_self (by positivity) hq (sub_le_self _ (Real.rpow_pos_of_pos two_pos _).le)
   have hCq : C * 2 ^ (-α) + 2 ^ finrank ℝ E = C := by
     simp only [C]
-    field_simp [(sub_pos.2 hq).ne']
+    field_simp [hq.ne']
     ring
   have hM : ∀ r, 0 < r → r ≤ ρ → 0 ≤ M * r ^ α := fun r hr hrρ ↦
     (average_nonneg fun _ ↦ norm_nonneg _).trans (hosc r hr hrρ)
@@ -201,12 +173,14 @@ private lemma norm_setAverage_closedBall_sub_le (hα : 0 < α)
       intro r hr hrρ ε h₁ h₂
       have hε : 0 < ε := (by positivity : 0 < r / 2 ^ (k + 1)).trans_le h₁
       rcases le_or_gt (r / 2) ε with h | h
-      · exact (norm_setAverage_closedBall_sub_le_of_le_two_mul hε h₂ (by linarith) (hint r hrρ)
-          (hosc r hr hrρ)).trans (mul_le_mul_of_nonneg_right hC (hM r hr hrρ))
+      · exact (norm_setAverage_closedBall_sub_le_of_le_two_mul hε
+          (closedBall_subset_closedBall h₂) (by linarith) (hint r hrρ) (hosc r hr hrρ)).trans
+          (mul_le_mul_of_nonneg_right hC (hM r hr hrρ))
       have h₃ := ih (r / 2) (by positivity) (by linarith) ε
         (by rwa [div_div, ← pow_succ']) h.le
-      have h₄ := norm_setAverage_closedBall_sub_le_of_le_two_mul (x := x) (half_pos hr)
-        (half_le_self hr.le) (by linarith) (hint r hrρ) (hosc r hr hrρ)
+      have h₄ := norm_setAverage_closedBall_sub_le_of_le_two_mul (half_pos hr)
+        (closedBall_subset_closedBall (half_le_self hr.le)) (by linarith) (hint r hrρ)
+        (hosc r hr hrρ)
       calc ‖(⨍ y in closedBall x ε, f y ∂μ) - ⨍ y in closedBall x r, f y ∂μ‖
           ≤ ‖(⨍ y in closedBall x ε, f y ∂μ) - ⨍ y in closedBall x (r / 2), f y ∂μ‖ +
             ‖(⨍ y in closedBall x (r / 2), f y ∂μ) - ⨍ y in closedBall x r, f y ∂μ‖ :=
@@ -293,7 +267,6 @@ theorem dist_preciseRepresentative_le_of_setAverage_norm_sub_le {y : E}
   set d := dist x y
   set C : ℝ := 2 ^ finrank ℝ E / (1 - 2 ^ (-α))
   have hd : 0 < d := dist_pos.2 hxy
-  have hq : (2 : ℝ) ^ (-α) < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 hα)
   -- Pass from `x` to `y` through the averages over `closedBall x (2 d) ⊇ closedBall y d`.
   have hsub : closedBall y d ⊆ closedBall x (2 * d) :=
     closedBall_subset_closedBall' (by rw [dist_comm]; linarith)
@@ -303,13 +276,11 @@ theorem dist_preciseRepresentative_le_of_setAverage_norm_sub_le {y : E}
     hd le_rfl
   have h₃ : ‖(⨍ z in closedBall y d, f z ∂μ) - ⨍ z in closedBall x (2 * d), f z ∂μ‖ ≤
       2 ^ finrank ℝ E * (M * (2 * d) ^ α) :=
-    (norm_setAverage_sub_le_of_subset hsub (measure_closedBall_pos μ y hd).ne'
-      measure_closedBall_lt_top.ne hf _).trans <|
-      mul_le_mul (measureReal_closedBall_div_le hd (by positivity) le_rfl) (hoscx _ (by positivity)
-        le_rfl) (average_nonneg fun _ ↦ norm_nonneg _) (by positivity)
+    norm_setAverage_closedBall_sub_le_of_le_two_mul hd hsub le_rfl hf
+      (hoscx _ (by positivity) le_rfl)
   have hCq : 2 ^ α * 2 ^ finrank ℝ E = C * (2 ^ α - 1) := by
     simp only [C]
-    field_simp [(sub_pos.2 hq).ne']
+    field_simp [(one_sub_two_rpow_neg_pos hα).ne']
     rw [Real.rpow_neg zero_le_two]
     field_simp
   rw [dist_eq_norm]
@@ -341,10 +312,8 @@ theorem holderWith_preciseRepresentative_of_setAverage_norm_sub_le
     HolderWith (Real.toNNReal (2 * 2 ^ (α : ℝ) *
       (2 ^ finrank ℝ E / (1 - 2 ^ (-(α : ℝ))))) * M) α (preciseRepresentative μ f) := by
   have hα' : (0 : ℝ) < α := hα
-  have hq : (2 : ℝ) ^ (-(α : ℝ)) < 1 :=
-    Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 hα')
   have hC : (0 : ℝ) ≤ 2 * 2 ^ (α : ℝ) * (2 ^ finrank ℝ E / (1 - 2 ^ (-(α : ℝ)))) :=
-    mul_nonneg (by positivity) (div_nonneg (by positivity) (sub_pos.2 hq).le)
+    mul_nonneg (by positivity) (div_nonneg (by positivity) (one_sub_two_rpow_neg_pos hα').le)
   refine holderOnWith_univ.1 <| HolderOnWith.of_dist_le fun x _ y _ ↦ ?_
   rw [NNReal.coe_mul, Real.coe_toNNReal _ hC, mul_assoc]
   exact dist_preciseRepresentative_le_of_setAverage_norm_sub_le hα'
