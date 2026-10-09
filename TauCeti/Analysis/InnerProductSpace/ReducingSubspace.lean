@@ -141,6 +141,7 @@ theorem ContinuousLinearMap.isReducing_iff_mem_invtSubmodule_adjoint [CompleteSp
 
 /-- A subspace with an orthogonal projection reduces the adjoint of a bounded operator `A` on a
 Hilbert space exactly when it reduces `A`. -/
+@[simp]
 theorem ContinuousLinearMap.isReducing_adjoint_iff [CompleteSpace E] [U.HasOrthogonalProjection]
     {A : E →L[𝕜] E} : U.IsReducing A.adjoint ↔ U.IsReducing A := by
   rw [isReducing_iff_mem_invtSubmodule_adjoint, isReducing_iff_mem_invtSubmodule_adjoint,
@@ -154,6 +155,7 @@ theorem Module.End.isReducing_iff_mem_invtSubmodule_adjoint [FiniteDimensional �
 
 /-- On a finite-dimensional space, a subspace reduces the adjoint of an endomorphism `A` exactly
 when it reduces `A`. -/
+@[simp]
 theorem Module.End.isReducing_adjoint_iff [FiniteDimensional 𝕜 E] {A : End 𝕜 E} :
     U.IsReducing A.adjoint ↔ U.IsReducing A := by
   rw [isReducing_iff_mem_invtSubmodule_adjoint, isReducing_iff_mem_invtSubmodule_adjoint,
