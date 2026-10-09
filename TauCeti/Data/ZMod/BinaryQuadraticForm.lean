@@ -25,6 +25,8 @@ quotient is `2c(s + t) + u`, which is a unit because `2` is nilpotent in `ℤ/2^
 ## Main results
 
 * `ZMod.two_mul_sq_add_bijective`: `s ↦ 2cs² + us` is bijective when `u` is a unit.
+* `ZMod.BinaryQuadraticForm.exists_hyperbolic_of_two_mul`: the hyperbolic normal form
+  when a diagonal coefficient is even.
 * `ZMod.BinaryQuadraticForm.exists_basis`: a binary form with unit middle coefficient
   has one of the two standard normal forms in a basis of `(ℤ/2^{k+1})²`.
 -/
@@ -47,7 +49,7 @@ namespace BinaryQuadraticForm
 
 /-- **The hyperbolic normal form.** For a unit `u`, the binary form `2a'm² + umn + bn²` over
 `ℤ/2^{k+1}` becomes `mn` in a suitable basis. -/
-private theorem exists_hyperbolic_of_two_mul (a' b : ZMod (2 ^ (k + 1)))
+theorem exists_hyperbolic_of_two_mul (a' b : ZMod (2 ^ (k + 1)))
     {u : ZMod (2 ^ (k + 1))} (hu : IsUnit u) :
     ∃ e₁ e₂ f₁ f₂ : ZMod (2 ^ (k + 1)), ∀ m n,
       2 * a' * (m * e₁ + n * f₁) ^ 2 + u * (m * e₁ + n * f₁) * (m * e₂ + n * f₂) +
