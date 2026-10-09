@@ -93,9 +93,8 @@ private theorem classModuleAddEquiv_smul (ι : L →ₐ[K] SeparableClosure K)
     rw [quotientGaloisSubgroupEquiv, MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
       quotientFixingSubgroupFieldRangeEquiv_mk, classModuleAddEquiv_apply,
       classModuleAddEquiv_apply, Additive.toMul_smul, toMul_ofMul,
-      ← padicCompletionUnitsEquivAbelianizationProP_smul, ContinuousMulEquiv.symm_apply_apply,
-      ContinuousMulEquiv.symm_apply_apply, Rep.of_ρ, padicCompletionUnitsRepresentation_apply,
-      padicCompletionUnitsLinearMap_apply, toMul_ofMul]
+      ← padicCompletionUnitsEquivAbelianizationProP_smul]
+    simp [e, padicCompletionUnitsRepresentation_apply, padicCompletionUnitsLinearMap_apply]
 
 variable [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] [CharZero K]
 
