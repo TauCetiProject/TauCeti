@@ -7,6 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
+import Mathlib.GroupTheory.Perm.Fin
+import Mathlib.Order.Fin.Tuple
 
 /-!
 # Coordinate projections on an exterior algebra
@@ -100,6 +102,124 @@ def basisEraseSign {I : Type w} [LinearOrder I] (i : I) (s : Finset I) : ℤˣ :
   let u : Set.powersetCard I 1 := ⟨{i}, Finset.card_singleton i⟩
   let t : Set.powersetCard I (s.erase i).card := ⟨s.erase i, rfl⟩
   (Set.powersetCard.permOfDisjoint (s := u) (t := t) (by simp [u, t])).sign
+
+/-- The shuffle sign which moves `i` to the front of an ordered exterior monomial is `-1`
+raised to the number of indices before `i`. -/
+theorem basisEraseSign_eq_neg_one_pow_card_filter_lt {I : Type w} [LinearOrder I]
+    (i : I) (s : Finset I) (hi : i ∈ s) :
+    basisEraseSign i s = (-1 : ℤˣ) ^ (s.filter (fun j ↦ j < i)).card := by
+  classical
+  let n := (s.erase i).card
+  have hsCard : s.card = n + 1 := by
+    simpa [n] using (Finset.card_erase_add_one hi).symm
+  let e : Fin (n + 1) ↪o I := s.orderEmbOfFin hsCard
+  let k : Fin (n + 1) := (s.orderIsoOfFin hsCard).symm ⟨i, hi⟩
+  have hek : e k = i := by
+    exact congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨i, hi⟩)
+  have hremove : k.removeNth (fun j ↦ e j) =
+      (s.erase i).orderEmbOfFin (show (s.erase i).card = n from rfl) := by
+    apply Finset.orderEmbOfFin_unique
+    · intro j
+      exact Finset.mem_erase.mpr ⟨fun h ↦ k.succAbove_ne j (e.injective (h.trans hek.symm)),
+        Finset.orderEmbOfFin_mem s hsCard _⟩
+    · exact e.strictMono.comp (Fin.strictMono_succAbove k)
+  let u : Set.powersetCard I 1 := ⟨{i}, Finset.card_singleton i⟩
+  let t : Set.powersetCard I n := ⟨s.erase i, rfl⟩
+  have hdisj : Disjoint u.val t.val := by simp [u, t]
+  have hsCard' : s.card = 1 + n := hsCard.trans (Nat.add_comm n 1)
+  have hunion : Set.powersetCard.disjUnion hdisj =
+      (Set.powersetCard.ofCard (s := s) hsCard' : Set.powersetCard I (1 + n)) := by
+    apply Subtype.ext
+    simp [u, t, hi]
+  let p : Equiv.Perm (Fin (1 + n)) := Set.powersetCard.permOfDisjoint hdisj
+  let c : Fin (1 + n) ≃ Fin (n + 1) := finCongr (Nat.add_comm 1 n)
+  let p' : Equiv.Perm (Fin (n + 1)) := c.symm.trans (p.trans c)
+  have hec : (fun q ↦ e (c q)) =
+      (Set.powersetCard.disjUnion hdisj).val.orderEmbOfFin
+        (Set.powersetCard.disjUnion hdisj).prop := by
+    apply Finset.orderEmbOfFin_unique
+    · intro q
+      have hdval : (Set.powersetCard.disjUnion hdisj).val = s :=
+        congrArg Subtype.val hunion
+      rw [hdval]
+      exact Finset.orderEmbOfFin_mem s hsCard (c q)
+    · intro a b hab
+      apply e.strictMono
+      simpa [c, Fin.ext_iff] using hab
+  have hp : p' = k.cycleRange.symm := by
+    apply Equiv.ext
+    intro j
+    apply e.injective
+    change e (c (p (c.symm j))) = e (k.cycleRange.symm j)
+    have hrhs : e (k.cycleRange.symm j) =
+        (Fin.cons (e k) (k.removeNth (fun q ↦ e q)) : Fin (n + 1) → I) j := by
+      simpa only [Function.comp_apply] using
+        congrFun (Fin.cons_removeNth_eq_comp_cycleRange_symm e k) j |>.symm
+    rw [hrhs, hek]
+    change e (c (p (c.symm j))) =
+      (Fin.cons i (k.removeNth (fun q ↦ e q)) : Fin (n + 1) → I) j
+    rw [hremove]
+    change (fun q ↦ e (c q)) (p (c.symm j)) = _
+    rw [hec]
+    let x : (Set.powersetCard.disjUnion hdisj).val :=
+      Equiv.Finset.disjUnionEquiv u.val t.val hdisj
+        (((Set.powersetCard.orderIsoOfFin u).sumCongr
+          (Set.powersetCard.orderIsoOfFin t)) (finSumFinEquiv.symm (c.symm j)))
+    have hx : (Set.powersetCard.disjUnion hdisj).val.orderEmbOfFin
+        (Set.powersetCard.disjUnion hdisj).prop (p (c.symm j)) = x := by
+      have hpApply : p (c.symm j) =
+          (Set.powersetCard.orderIsoOfFin (Set.powersetCard.disjUnion hdisj)).symm x := rfl
+      rw [hpApply]
+      exact congrArg Subtype.val
+        ((Set.powersetCard.orderIsoOfFin (Set.powersetCard.disjUnion hdisj)).apply_symm_apply x)
+    rw [hx]
+    cases j using Fin.cases with
+    | zero =>
+        have hzero : finSumFinEquiv.symm (c.symm 0) = Sum.inl (0 : Fin 1) := by
+          apply finSumFinEquiv.injective
+          apply Fin.ext
+          rfl
+        simp only [x, hzero, Fin.cons_zero]
+        change ↑(Equiv.Finset.disjUnionEquiv u.val t.val hdisj
+          (Sum.inl ((Set.powersetCard.orderIsoOfFin u) 0))) = i
+        rw [Equiv.Finset.disjUnionEquiv_inl]
+        dsimp only [Set.powersetCard.orderIsoOfFin, u]
+        change Finset.orderEmbOfFin {i} (Finset.card_singleton i) 0 = i
+        exact Finset.orderEmbOfFin_singleton i 0
+    | succ q =>
+        have hsucc : finSumFinEquiv.symm (c.symm q.succ) = Sum.inr q := by
+          apply finSumFinEquiv.injective
+          rw [finSumFinEquiv.apply_symm_apply]
+          apply Fin.ext
+          simp [c]
+          omega
+        simp only [x, hsucc, Fin.cons_succ]
+        change ↑(Equiv.Finset.disjUnionEquiv u.val t.val hdisj
+          (Sum.inr ((Set.powersetCard.orderIsoOfFin t) q))) =
+            (s.erase i).orderEmbOfFin (show (s.erase i).card = n from rfl) q
+        rw [Equiv.Finset.disjUnionEquiv_inr]
+        dsimp only [Set.powersetCard.orderIsoOfFin, t]
+        change (s.erase i).orderEmbOfFin (show (s.erase i).card = n from rfl) q =
+          (s.erase i).orderEmbOfFin (show (s.erase i).card = n from rfl) q
+        rfl
+  have hsign : Equiv.Perm.sign p' = Equiv.Perm.sign p := by
+    simp [p']
+  rw [basisEraseSign]
+  change Equiv.Perm.sign p = _
+  rw [← hsign, hp, Equiv.Perm.sign_symm, Fin.sign_cycleRange]
+  congr 1
+  have himage : Finset.image e (Finset.Iio k) = s.filter (fun j ↦ j < i) := by
+    ext x
+    simp only [Finset.mem_image, Finset.mem_Iio, Finset.mem_filter]
+    constructor
+    · rintro ⟨j, hj, rfl⟩
+      exact ⟨Finset.orderEmbOfFin_mem s hsCard j, hek ▸ e.strictMono hj⟩
+    · rintro ⟨hxs, hxi⟩
+      let j : Fin (n + 1) := (s.orderIsoOfFin hsCard).symm ⟨x, hxs⟩
+      refine ⟨j, ?_, ?_⟩
+      · exact e.lt_iff_lt.mp (by simpa [e, j, k] using hxi)
+      · exact congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨x, hxs⟩)
+  rw [← Fin.card_Iio k, ← himage, Finset.card_image_of_injective _ e.injective]
 
 /-- The exterior-basis vector indexed by a singleton is the image of the corresponding basis
 vector under the exterior-algebra generator. -/
