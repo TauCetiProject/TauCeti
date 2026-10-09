@@ -69,7 +69,7 @@ theorem SeparatelyExchangeable.exists_directing_arrayRow_codedCoordinateMarginal
     (h : SeparatelyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ) :
     ∃ ν : Ω → ProbabilityMeasure (ℕ → α),
       ConditionallyIIDWith μ (arrayRow X) ν ∧
-        ConditionallyIID (μ.map ν) fun i P => codedCoordinateMarginals P i := by
+        ConditionallyIID (μ.map ν) fun i P => P.codedCoordinateMarginals i := by
   obtain ⟨ν, hν, hinv⟩ := h.exists_directing_arrayRow_mixingLaw_invariant hX
   have hinv' := map_map_permReindex_eq_of_map_eq hν.measurable_directing hinv
   exact ⟨ν, hν, conditionallyIID_codedCoordinateMarginals_of_invariant (μ.map ν) hinv'⟩
