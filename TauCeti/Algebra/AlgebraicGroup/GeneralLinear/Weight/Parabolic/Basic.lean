@@ -169,13 +169,21 @@ noncomputable def weightParabolicCoordinateMap (w : Fin N → ℤ) :
   CommHopfAlgCat.mkQuotient (coordinateHopfAlgebra R N)
     (weightParabolicDefiningHopfIdeal R w)
 
+/-- The weight-parabolic coordinate morphism is the canonical quotient morphism by the defining
+Hopf ideal. -/
+theorem weightParabolicCoordinateMap_def (w : Fin N → ℤ) :
+    weightParabolicCoordinateMap R w =
+      CommHopfAlgCat.mkQuotient (coordinateHopfAlgebra R N)
+        (weightParabolicDefiningHopfIdeal R w) := by
+  rw [weightParabolicCoordinateMap]
+
 /-- The weight-parabolic coordinate morphism sends an ambient coordinate to its quotient
 class. -/
 theorem weightParabolicCoordinateMap_apply (w : Fin N → ℤ)
     (h : coordinateHopfAlgebra R N) :
     (weightParabolicCoordinateMap R w).hom h =
       Ideal.Quotient.mkₐ R (weightParabolicDefiningHopfIdeal R w).toIdeal h := by
-  rw [weightParabolicCoordinateMap]
+  rw [weightParabolicCoordinateMap_def]
   exact CommHopfAlgCat.mkQuotient_apply
     (coordinateHopfAlgebra R N) (weightParabolicDefiningHopfIdeal R w) h
 
@@ -228,7 +236,7 @@ theorem weightParabolicInclusion_coordinateMap (w : Fin N → ℤ) :
     (AlgebraicGeometry.hopfSpec.fullyFaithful (R := CommRingCat.of R)).map_preimage]
   rw [weightParabolicInclusion_def]
   rw [CommHopfAlgCat.quotientSpecι_def]
-  rw [weightParabolicCoordinateMap]
+  rw [weightParabolicCoordinateMap_def]
   simp
 
 /-- The weight-parabolic inclusion into `GL_N` is a closed immersion. -/
