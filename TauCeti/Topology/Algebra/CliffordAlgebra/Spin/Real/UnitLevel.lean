@@ -40,7 +40,7 @@ open Metric TauCeti
 noncomputable section
 
 /-- The antipode of a point in the compact real Clifford unit level. -/
-@[expose] def realCliffordUnitLevelAntipode {n : ℕ} (x : realCliffordUnitLevel n) :
+def realCliffordUnitLevelAntipode {n : ℕ} (x : realCliffordUnitLevel n) :
     realCliffordUnitLevel n :=
   ⟨-x, by
     apply (mem_realCliffordUnitLevel n _).2
@@ -51,7 +51,7 @@ noncomputable section
 @[simp]
 theorem coe_realCliffordUnitLevelAntipode {n : ℕ} (x : realCliffordUnitLevel n) :
     (realCliffordUnitLevelAntipode x : Fin n → ℝ) = -x :=
-  rfl
+  (rfl)
 
 /-- The compact real Clifford unit-level antipode is an involution. -/
 @[simp]

@@ -203,7 +203,8 @@ private theorem pathConnectedSpace_realCliffordUnitLevel_compl_antipodal {n : �
         ({q}ᶜ ∩ {-q}ᶜ : Set (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)))
       fun x ↦ by
       simp only [Set.mem_inter_iff, Set.mem_compl_iff, Set.mem_singleton_iff]
-      rw [show q = e p from rfl, ← hneg]
+      dsimp only [q]
+      rw [← hneg]
       exact and_congr (not_congr e.injective.eq_iff.symm)
         (not_congr e.injective.eq_iff.symm)
   let K := (ℝ ∙ (q : EuclideanSpace ℝ (Fin (n + 1))))ᗮ
@@ -290,7 +291,9 @@ theorem simplyConnectedSpace_realCliffordSpinGroupZero_succ (n : ℕ) (hn : 2 �
     · exact Or.inl hx
   let _ : SimplyConnectedSpace e.source := hsimple
   let _ : SimplyConnectedSpace e'.source := hsimple'
-  exact simplyConnectedSpace_of_isOpen_union e.open_source e'.open_source hCover hInter
+  apply simplyConnectedSpace_of_interior_union (A := e.source) (B := e'.source)
+  · simpa only [e.open_source.interior_eq, e'.open_source.interior_eq] using hCover
+  · exact hInter
 
 /-- The compact real Spin group is simply connected in every dimension at least three. -/
 theorem simplyConnectedSpace_realCliffordSpinGroupZero (n : ℕ) (hn : 3 ≤ n) :

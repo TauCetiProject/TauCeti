@@ -64,8 +64,8 @@ and `fB` to `π₁(A ∩ B, x)`, so they glue. Uniqueness is the generation half
   is simply connected.
 * `TauCeti.vanKampenLift_surjective`: the canonical homomorphism is surjective when `A ∩ B`
   is path connected.
-* `TauCeti.simplyConnectedSpace_of_isOpen_union`: two open simply connected sets with
-  path-connected intersection have simply connected union.
+* `TauCeti.simplyConnectedSpace_of_interior_union`: two simply connected sets whose interiors
+  cover and whose intersection is path connected have simply connected union.
 * `TauCeti.vanKampenWideDesc`, `TauCeti.vanKampenWideDesc_map`: the universal property of
   `π₁(X, x)` for a family whose pairwise intersections are all `C`.
 * `TauCeti.vanKampenWide_hom_ext`: homomorphisms out of `π₁(X, x)` are determined by their
@@ -414,19 +414,22 @@ theorem vanKampenLift_surjective (hxA : x ∈ A) (hxB : x ∈ B)
   exact (Monoid.Coprod.range_lift _ _).trans
     (FundamentalGroup.range_map_subtypeVal_sup_eq_top hCover hA hB hAB hxA hxB)
 
-/-- **Two-set van Kampen criterion for simple connectedness.** A space covered by two open simply
-connected sets with path-connected intersection is simply connected. -/
-theorem simplyConnectedSpace_of_isOpen_union (hAopen : IsOpen A) (hBopen : IsOpen B)
-    (hCover : A ∪ B = univ) (hAB : IsPathConnected (A ∩ B))
+/-- **Two-set van Kampen criterion for simple connectedness.** A space covered by the interiors of
+two simply connected sets with path-connected intersection is simply connected. -/
+theorem simplyConnectedSpace_of_interior_union
+    (hCover : interior A ∪ interior B = univ) (hAB : IsPathConnected (A ∩ B))
     [SimplyConnectedSpace A] [SimplyConnectedSpace B] :
     SimplyConnectedSpace X := by
   obtain ⟨z, hzA, hzB⟩ := hAB.nonempty
   have hAsimple : IsSimplyConnected A := (inferInstance : SimplyConnectedSpace A)
   have hBsimple : IsSimplyConnected B := (inferInstance : SimplyConnectedSpace B)
-  let _ : PathConnectedSpace X := pathConnectedSpace_iff_univ.mpr <| hCover ▸
+  have hCover' : A ∪ B = univ := by
+    apply univ_subset_iff.mp
+    rw [← hCover]
+    exact union_subset_union interior_subset interior_subset
+  let _ : PathConnectedSpace X := pathConnectedSpace_iff_univ.mpr <| hCover' ▸
     hAsimple.isPathConnected.union hBsimple.isPathConnected hAB.nonempty
-  have hsurj := vanKampenLift_surjective hzA hzB
-    (by simpa [hAopen.interior_eq, hBopen.interior_eq] using hCover)
+  have hsurj := vanKampenLift_surjective hzA hzB hCover
     hAsimple.isPathConnected hBsimple.isPathConnected hAB
   have hzsub : Subsingleton (FundamentalGroup X z) := by
     have himage_one (g : Monoid.Coprod (FundamentalGroup A ⟨z, hzA⟩)
