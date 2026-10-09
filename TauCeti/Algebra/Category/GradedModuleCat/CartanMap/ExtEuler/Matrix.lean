@@ -47,8 +47,8 @@ modules is not graded Euler-admissible.
 * `TauCeti.gradedCartanMatrix_map_invert_transpose_mul_gradedExtEulerMatrix_eq_one`: `Cᴴ * E = 1`.
 * `TauCeti.gradedExtEulerMatrix_eq_inv_gradedCartanMatrix_map_invert_transpose`:
   `E = (Cᴴ)⁻¹`.
-* `TauCeti.gradedExtEuler_eq_inv_gradedCartanMatrix`: `χ_q(Sᵢ, Sⱼ)` is the `(i, j)` entry of
-  `(Cᴴ)⁻¹`.
+* `TauCeti.gradedExtEuler_eq_inv_gradedCartanMatrix_map_invert_transpose`: `χ_q(Sᵢ, Sⱼ)` is the
+  `(i, j)` entry of `(Cᴴ)⁻¹`.
 * `TauCeti.isUnit_det_gradedCartanMatrix`: the graded Cartan matrix has unit determinant.
 
 ## References
@@ -226,7 +226,7 @@ include hbP in
 conjugate-transposed graded Cartan matrix**: `χ_q(Sᵢ, Sⱼ)` is the `(i, j)` entry of
 `((C.map invert)ᵀ)⁻¹`, in the bases of
 `TauCeti.gradedCartanMatrix_map_invert_transpose_mul_gradedExtEulerMatrix_eq_one`. -/
-theorem gradedExtEuler_eq_inv_gradedCartanMatrix
+theorem gradedExtEuler_eq_inv_gradedCartanMatrix_map_invert_transpose
     (h : IsGradedEulerAdmissibleOn.{uA} (k := k) (e := GradedModuleCat.shift 𝒜)
       (gradedFiniteModules 𝒜) (gradedFiniteModules 𝒜)) (i j : I) :
     gradedExtEuler k (GradedModuleCat.shift 𝒜)
