@@ -19,7 +19,7 @@ ideal of `a ∈ Γ(Y, U)` with `a • Γ(X, f⁻¹ U) ⊆ Γ(Y, U)`, the annihil
 `𝒪_Y → f_* 𝒪_X` over `U`. Because the conductor of a finite algebra commutes with localization,
 these ideals glue to the **conductor ideal sheaf** `f.conductor` of `Y`.
 
-For the normalization `ν : X̃ ⟶ X` of a reduced curve, `ν.conductor` is the classical conductor,
+For the normalization `ν : X' ⟶ X` of a reduced curve, `ν.conductor` is the classical conductor,
 whose zero locus is the set of non-normal points; for a nodal curve these are the nodes. In
 general the conductor measures the failure of `f` to be a closed
 immersion: `f.conductor = ⊤` exactly when `f` is a closed immersion
