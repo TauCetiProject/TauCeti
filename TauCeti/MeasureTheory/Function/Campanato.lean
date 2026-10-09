@@ -32,7 +32,7 @@ solutions of a constant-coefficient problem in the same integral norms.
 
 The proof is a telescoping argument. Comparing the averages over `closedBall x r` and
 `closedBall x (r / 2)` costs at most `2ⁿ M r^α`, the factor `2ⁿ` being the ratio of the two
-measures (by `TauCeti.MeasureTheory.norm_setAverage_sub_le_of_subset` and
+measures (by `TauCeti.norm_setAverage_sub_le_of_subset` and
 `MeasureTheory.Measure.addHaar_real_closedBall_div_le`). Summing over dyadic radii shows that
 the averages `f_{x,r}` converge as `r → 0`, with `‖f_{x,r} - f*(x)‖ ≤ 2ⁿ / (1 - 2^(-α)) · M r^α`,
 and comparing the averages over `closedBall y d ⊆ closedBall x (2 d)`, `d = dist x y`, then gives
