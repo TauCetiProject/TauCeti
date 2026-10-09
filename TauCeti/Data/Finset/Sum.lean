@@ -67,6 +67,7 @@ omit [DecidableEq α] [DecidableEq β] in
 
 omit [DecidableEq α] [DecidableEq β] in
 /-- Disjointness from a disjoint sum is equivalent to disjointness from its two projections. -/
+@[simp]
 theorem disjoint_disjSum_iff {ρ : Finset (α ⊕ β)} {s : Finset α} {t : Finset β} :
     Disjoint ρ (s.disjSum t) ↔ Disjoint ρ.toLeft s ∧ Disjoint ρ.toRight t := by
   classical
