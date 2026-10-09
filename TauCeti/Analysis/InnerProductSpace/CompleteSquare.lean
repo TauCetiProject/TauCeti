@@ -21,8 +21,9 @@ whenever `a + b ≠ 0`. This is the identity behind products of Gaussians being 
 ## Main declarations
 
 * `TauCeti.mul_norm_sq_add_mul_norm_sub_sq`: the completed-square identity above.
-* `TauCeti.norm_sq_div_two_add_norm_sub_sq_div`: its case `a = 1 / 2`, `b = 1 / (2τ)`, the
-  objective whose minimizer `x / (1 + τ)` is the proximal point of `‖·‖² / 2` at `x`.
+* `TauCeti.norm_sq_div_two_add_norm_sub_sq_div`: its case `a = 1 / 2`, `b = 1 / (2τ)`. For
+  `τ > 0` this objective is minimized exactly at `x / (1 + τ)`, the proximal point of
+  `‖·‖² / 2` at `x`.
 -/
 
 public section
