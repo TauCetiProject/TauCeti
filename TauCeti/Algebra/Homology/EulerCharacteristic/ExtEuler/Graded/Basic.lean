@@ -198,6 +198,31 @@ theorem IsGradedExtInternallyFinite.of_shortExact₂' (hS : S.ShortExact) {Y : C
     (fun j ↦ Ext.precompOfLinear (Ext.mk₀ S.f) k ((e ^ j).functor.obj Y) (zero_add n))
     (fun j ↦ exact_precompOfLinear k hS ((e ^ j).functor.obj Y) n)⟩
 
+/-- Finite internal support passes to the quotient term of a short exact sequence in the
+first variable. In positive degrees the connecting map supplies the preceding internal family;
+in degree zero, precomposition with the epimorphism embeds into the middle family. -/
+theorem IsGradedExtInternallyFinite.of_shortExact₃' (hS : S.ShortExact) {Y : C}
+    (h₁ : IsGradedExtInternallyFinite.{w} k e S.X₁ Y)
+    (h₂ : IsGradedExtInternallyFinite.{w} k e S.X₂ Y) :
+    IsGradedExtInternallyFinite.{w} k e S.X₃ Y := by
+  refine ⟨fun n ↦ ?_⟩
+  match n with
+  | 0 =>
+      have := hS.epi_g
+      refine (h₂.finiteLaurentSupport 0).of_injective
+        (fun j ↦ Ext.precompOfLinear (Ext.mk₀ S.g) k ((e ^ j).functor.obj Y)
+          (zero_add 0)) ?_
+      intro j
+      simpa only [coe_precompOfLinear] using
+        Ext.precomp_mk₀_injective_of_epi ((e ^ j).functor.obj Y) S.g
+  | n + 1 =>
+      exact (h₁.finiteLaurentSupport n).of_exact (h₂.finiteLaurentSupport (n + 1))
+        (fun j ↦ Ext.precompOfLinear hS.extClass k ((e ^ j).functor.obj Y) (Nat.one_add n))
+        (fun j ↦ Ext.precompOfLinear (Ext.mk₀ S.g) k ((e ^ j).functor.obj Y)
+          (zero_add (n + 1)))
+        (fun j ↦ exact_precompOfLinear₃ k hS ((e ^ j).functor.obj Y) n (n + 1)
+          (Nat.one_add n))
+
 /-- A uniform graded Ext bound is closed under extensions in the second variable. -/
 theorem IsGradedExtBoundedBy.of_shortExact₂ (hS : S.ShortExact) {X : C} {N₁ N₃ : ℕ}
     (h₁ : IsGradedExtBoundedBy.{w} e X S.X₁ N₁)
