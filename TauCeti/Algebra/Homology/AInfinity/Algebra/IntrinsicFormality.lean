@@ -46,9 +46,6 @@ ordinary associative algebra in degree zero is formal.
 
 ## Main results
 
-* `TauCeti.AInfinityAlgebra.IsMinimal.isFormal_iff_exists_isIso`: a minimal `A∞` structure with
-  the grading and binary operation of a graded algebra is formal exactly when it is `A∞` isomorphic
-  to that graded algebra.
 * `TauCeti.AInfinityAlgebra.isIntrinsicallyFormal_of_forall_isFormal`,
   `TauCeti.AInfinityAlgebra.isIntrinsicallyFormal_iff` and
   `TauCeti.AInfinityAlgebra.isIntrinsicallyFormal_iff_forall_exists_isIso`: over a field,
@@ -112,21 +109,6 @@ theorem IsIntrinsicallyFormal.isFormal (h : ℋ.IsIntrinsicallyFormal) {A : Type
     𝒜.IsFormal :=
   h.2.2 𝒜 f hf
 
-/-- A minimal `A∞` structure `ℬ` with the grading and the binary operation of a minimal `ℋ`
-without operations above arity two is formal exactly when it is `A∞` isomorphic to `ℋ`. -/
-theorem IsMinimal.isFormal_iff_exists_isIso (hℬ : ℬ.IsMinimal) (hℋ : ℋ.IsMinimal)
-    (hm : ∀ n, 3 ≤ n → ℋ.m n = 0) (hG : ℬ.grading = ℋ.grading) (h₂ : ℬ.m 2 = ℋ.m 2) :
-    ℬ.IsFormal ↔ ∃ f : AInfinityHom ℬ ℋ, f.IsIso := by
-  refine ⟨fun hℬf ↦ ?_, fun ⟨f, hf⟩ ↦ (hℋ.isFormal hm).of_isQuasiIso hf.isQuasiIso⟩
-  obtain ⟨g, hg⟩ := (isFormal_def ℬ).1 hℬf
-  -- Follow `g : ℬ ⟶ H(ℬ)` by the inverse of the identification `ℋ ≅ H(ℬ)`.
-  let s := (hℬ.toCohomology hℋ hm hG h₂).toAInfinityHom
-  have hs : Function.Bijective s.linearPart := by
-    rw [AInfinityStrictHom.linearPart_toAInfinityHom, AInfinityStrictHom.coe_toLinearMap]
-    exact hℬ.bijective_toCohomology hℋ hm hG h₂
-  exact ⟨(s.inverse hs).comp g, (AInfinityHom.isIso_inverse s hs).comp
-    (hg.isIso hℬ ℬ.isMinimal_cohomologyAInfinityAlgebra)⟩
-
 /-- Every minimal `A∞` structure with the grading and the binary operation of an intrinsically
 formal graded algebra is formal. -/
 theorem IsIntrinsicallyFormal.isFormal_of_isMinimal (h : ℋ.IsIntrinsicallyFormal)
@@ -163,9 +145,9 @@ theorem isIntrinsicallyFormal_of_forall_isFormal (hℋ : ℋ.IsMinimal)
   have hℬ : ℬ.IsMinimal := (isMinimal_iff_m_one_eq_zero ℬ).2 fun x ↦ hf.1 <| by
     rw [hfm, 𝒜.isMinimal_minimalModel.m_one, map_zero]
   have h₂ : ℬ.m 2 = ℋ.m 2 := MultilinearMap.ext fun x ↦ hf.1 <| by
-    rw [hfm, f.map_m, cohomologyAInfinityAlgebra_m_two_apply,
-      show (fun i ↦ f (x i)) = ![f (x 0), f (x 1)] from funext fun i ↦ by fin_cases i <;> rfl,
-      minimalModel_m_two]
+    -- `minimalModel_m_two` is stated on a pair `![a, b]`, so write the image tuple as one.
+    have hx : (fun i ↦ f (x i)) = ![f (x 0), f (x 1)] := funext fun i ↦ by fin_cases i <;> rfl
+    rw [hfm, f.map_m, cohomologyAInfinityAlgebra_m_two_apply, hx, minimalModel_m_two]
   -- The pullback is isomorphic to the minimal model, which is quasi-isomorphic to `𝒜`.
   let s := (𝒜.minimalModel.comapStrictHom ℋ.grading f.toLinearMap hf.1 hdeg hrange).toAInfinityHom
   have hs : Function.Bijective s.linearPart := by
