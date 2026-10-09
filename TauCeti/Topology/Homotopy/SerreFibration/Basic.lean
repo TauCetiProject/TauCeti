@@ -11,6 +11,7 @@ public import Mathlib.Topology.Category.TopCat.Monoidal
 public import Mathlib.Topology.Category.TopCat.Sphere
 public import Mathlib.Topology.Homotopy.Lifting
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
+public import TauCeti.Topology.Category.TopCat.Pullback
 
 /-!
 # Serre fibrations
@@ -35,9 +36,10 @@ homotopy lifting property with respect to every cube
 subdivision arguments.
 
 A map of fibrations is a commutative square, and it induces maps between the fibres
-(`CategoryTheory.CommSq.fiberMap`).  The base change of a fibration along a map `g : B' ⟶ B` is
-again a fibration (`TauCeti.TopCat.mem_serreFibrations_pullbackFst`), with the same fibres
-(`TopCat.Hom.fiberPullbackFstIso`).
+(`CategoryTheory.CommSq.fiberMap`, in `TauCeti.Topology.Category.TopCat.Fiber`).  The base change
+of a fibration along a map `g : B' ⟶ B` is again a fibration
+(`TauCeti.TopCat.mem_serreFibrations_pullbackFst`), with the same fibres
+(`TopCat.Hom.fiberPullbackFstIso`, in `TauCeti.Topology.Category.TopCat.Pullback`).
 
 ## Main declarations
 
@@ -50,16 +52,16 @@ again a fibration (`TauCeti.TopCat.mem_serreFibrations_pullbackFst`), with the s
   for every cube.
 * `IsCoveringMap.mem_serreFibrations` and `TauCeti.TopCat.mem_serreFibrations_fst`: covering
   maps and product projections are Serre fibrations.
-* `TopCat.Hom.fiber` and `CategoryTheory.CommSq.fiberMap`: the fibre of a map over a point, and
-  the map between fibres induced by a commutative square.
-* `TauCeti.TopCat.mem_serreFibrations_pullbackFst` and `TopCat.Hom.fiberPullbackFstIso`: the base
-  change of a Serre fibration is a Serre fibration with the same fibres.
+* `TauCeti.TopCat.mem_serreFibrations_pullbackFst`: the base change of a Serre fibration is a
+  Serre fibration.
 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Section 4.2, the homotopy lifting property and the definition of a fibration.
 * J.-P. Serre, *Homologie singulière des espaces fibrés. Applications*, Ann. of Math. 54 (1951).
+* The definition of `TauCeti.TopCat.serreFibrations` as the right lifting property with respect
+  to a family of morphisms follows Mathlib's `SSet.innerFibrations`.
 -/
 
 public section
@@ -268,86 +270,3 @@ theorem IsCoveringMap.mem_serreFibrations {E B : TopCat.{u}} {p : E ⟶ B} (hp :
     TauCeti.TopCat.serreFibrations p :=
   TauCeti.TopCat.mem_serreFibrations_of_hasHomotopyLiftingProperty fun A _ ↦
     hp.hasHomotopyLiftingProperty A
-
-namespace TopCat.Hom
-
-variable {E B B' : TopCat.{u}}
-
-/-- The fibre `p ⁻¹' {b}` of a morphism `p : E ⟶ B` over a point `b`, with the subspace
-topology. -/
-abbrev fiber (p : E ⟶ B) (b : B) : TopCat.{u} := TopCat.of (p ⁻¹' {b})
-
-/-- The inclusion of the fibre of `p` over `b` into `E`. -/
-def fiberι (p : E ⟶ B) (b : B) : p.fiber b ⟶ E := TopCat.ofHom ⟨Subtype.val, by fun_prop⟩
-
-@[simp]
-lemma fiberι_apply (p : E ⟶ B) (b : B) (x : p.fiber b) : p.fiberι b x = x.1 := (rfl)
-
-@[reassoc (attr := simp)]
-lemma fiberι_comp (p : E ⟶ B) (b : B) : p.fiberι b ≫ p = TopCat.const b := by
-  ext x
-  exact x.2
-
-/-- The fibre of the base change of `p` along `g : B' ⟶ B` over `b'` is the fibre of `p` over
-`g b'`. -/
-def fiberPullbackFstIso (p : E ⟶ B) (g : B' ⟶ B) (b' : B') :
-    (TopCat.pullbackFst g p).fiber b' ≅ p.fiber (g b') :=
-  TopCat.isoOfHomeo
-    { toFun x := ⟨x.1.1.2, by
-        rw [Set.mem_preimage, Set.mem_singleton_iff, ← x.1.2]
-        exact congrArg g x.2⟩
-      invFun e := ⟨⟨(b', e.1), e.2.symm⟩, rfl⟩
-      left_inv x := Subtype.ext (Subtype.ext (Prod.ext x.2.symm rfl))
-      right_inv _ := rfl
-      continuous_toFun := by fun_prop
-      continuous_invFun := by fun_prop }
-
-@[reassoc (attr := simp)]
-lemma fiberPullbackFstIso_hom_comp_fiberι (p : E ⟶ B) (g : B' ⟶ B) (b' : B') :
-    (p.fiberPullbackFstIso g b').hom ≫ p.fiberι (g b') =
-      (TopCat.pullbackFst g p).fiberι b' ≫ TopCat.pullbackSnd g p := (rfl)
-
--- Not `@[simp]`: the reducible `TopCat.pullbackFst` in the fibre's type is unfolded when
--- indexing, so `simp` never matches the left-hand sides of these two lemmas; use `rw` instead.
-lemma fiberPullbackFstIso_hom_apply_coe (p : E ⟶ B) (g : B' ⟶ B) (b' : B')
-    (x : (TopCat.pullbackFst g p).fiber b') :
-    ((p.fiberPullbackFstIso g b').hom x : E) = x.1.1.2 := (rfl)
-
-lemma fiberPullbackFstIso_inv_apply_coe (p : E ⟶ B) (g : B' ⟶ B) (b' : B') (x : p.fiber (g b')) :
-    ((p.fiberPullbackFstIso g b').inv x : ↑(TopCat.of { q : B' × E // g q.1 = p q.2 })) =
-      ⟨(b', x.1), x.2.symm⟩ := (rfl)
-
-end TopCat.Hom
-
-namespace CategoryTheory.CommSq
-
-variable {E B E' B' E'' B'' : TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B'} {p'' : E'' ⟶ B''}
-  {f : E ⟶ E'} {g : B ⟶ B'} {f' : E' ⟶ E''} {g' : B' ⟶ B''}
-
-/-- A map of fibrations, that is, a commutative square from `p` to `p'`, maps the fibre of `p`
-over `b` to the fibre of `p'` over `g b`. -/
-def fiberMap (sq : CommSq f p p' g) (b : B) : p.fiber b ⟶ p'.fiber (g b) :=
-  TopCat.ofHom
-    { toFun x := ⟨f x.1, by
-        rw [Set.mem_preimage, Set.mem_singleton_iff, ← ConcreteCategory.comp_apply, sq.w,
-          ConcreteCategory.comp_apply, x.2]⟩
-      continuous_toFun := by fun_prop }
-
-@[simp]
-lemma fiberMap_apply_coe (sq : CommSq f p p' g) (b : B) (x : p.fiber b) :
-    (sq.fiberMap b x : E') = f x.1 := (rfl)
-
-@[reassoc (attr := simp)]
-lemma fiberMap_comp_fiberι (sq : CommSq f p p' g) (b : B) :
-    sq.fiberMap b ≫ p'.fiberι (g b) = p.fiberι b ≫ f := (rfl)
-
-/-- The identity square induces the identity on fibres. -/
-@[simp]
-lemma fiberMap_id (sq : CommSq (𝟙 E) p p (𝟙 B)) (b : B) : sq.fiberMap b = 𝟙 _ := (rfl)
-
-/-- The map on fibres induced by the horizontal composite of two squares is the composite of the
-maps on fibres. -/
-lemma fiberMap_horiz_comp (sq : CommSq f p p' g) (sq' : CommSq f' p' p'' g') (b : B) :
-    (sq.horiz_comp sq').fiberMap b = sq.fiberMap b ≫ sq'.fiberMap (g b) := (rfl)
-
-end CategoryTheory.CommSq
