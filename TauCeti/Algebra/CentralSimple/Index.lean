@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.CentralSimple.MaximalSubfield
+public import TauCeti.Algebra.CentralSimple.MaximalSubfield.Basic
 public import Mathlib.Algebra.Central.Matrix
 public import Mathlib.RingTheory.SimpleRing.Matrix
 import Mathlib.Data.Matrix.Composition

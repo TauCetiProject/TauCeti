@@ -19,7 +19,7 @@ public import Mathlib.Basic.Real.Basic
 -- (`TauCeti.Algebra.exists_subalgebra_isField_finrank_eq_deg`), the quaternion basis that builds
 -- the isomorphism (`QuaternionAlgebra.Basis`), and the classification of the algebraic extensions
 -- of `ℝ` are all used only inside proofs.
-import TauCeti.Algebra.CentralSimple.MaximalSubfield
+import TauCeti.Algebra.CentralSimple.MaximalSubfield.Basic
 import Mathlib.Algebra.QuaternionBasis
 import Mathlib.Analysis.Complex.Polynomial.Basic
 

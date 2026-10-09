@@ -26,7 +26,7 @@ together with it, a commutative subalgebra, which maximal dimension forces to be
 Neither statement needs anything of `A` beyond finite-dimensionality. They become interesting in a
 division algebra, where a commutative subalgebra of maximal dimension is a maximal subfield
 (`TauCeti.Algebra.exists_subalgebra_isField_finrank_eq_deg` in
-`TauCeti/Algebra/CentralSimple/MaximalSubfield.lean`).
+`TauCeti/Algebra/CentralSimple/MaximalSubfield/Basic.lean`).
 
 ## Main results
 
