@@ -279,30 +279,6 @@ section Ite
 
 variable {Ω : Set E} [DecidablePred (· ∈ Ω)] {u : E → ℝ}
 
-omit [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
-  [BorelSpace E] in
-/-- The effective domain of `u` extended by `⊤` off `Ω` is `Ω`. -/
-private theorem setOf_ite_ne_top :
-    {x | (if x ∈ Ω then (u x : EReal) else ⊤) ≠ ⊤} = Ω := by
-  ext x
-  by_cases hx : x ∈ Ω <;> simp [hx]
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- A function convex on `Ω` and extended by `⊤` off `Ω` has convex real epigraph. -/
-private theorem convex_epigraph_ite (hu : ConvexOn ℝ Ω u) :
-    Convex ℝ {p : E × ℝ | (if p.1 ∈ Ω then (u p.1 : EReal) else ⊤) ≤ p.2} := by
-  have hepi : {p : E × ℝ | (if p.1 ∈ Ω then (u p.1 : EReal) else ⊤) ≤ p.2} =
-      {p : E × ℝ | p.1 ∈ Ω ∧ u p.1 ≤ p.2} := by
-    ext p
-    by_cases hp : p.1 ∈ Ω <;> simp [hp]
-  exact hepi ▸ hu.convex_epigraph
-
-omit [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
-  [BorelSpace E] in
-/-- A real function extended by `⊤` never takes the value `⊥`. -/
-private theorem ite_ne_bot (x : E) : (if x ∈ Ω then (u x : EReal) else ⊤) ≠ ⊥ := by
-  by_cases hx : x ∈ Ω <;> simp [hx]
-
 /-- **The Aleksandrov Monge–Ampère measure of a finite convex function on an open set.** Let `u`
 be convex on an open set `Ω`, extended by `⊤` off `Ω`. On a measurable set `s`, its Monge–Ampère
 measure is the measure of the set of `y` that are subgradients of `u` relative to `Ω` at some
