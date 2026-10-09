@@ -16,7 +16,9 @@ public import Mathlib.RingTheory.SimpleRing.Defs
 -- Non-public: used only inside proofs. The matrix presentation of the endomorphism algebra of a
 -- power, the dimension of a matrix algebra, the simplicity of the endomorphism ring of an isotypic
 -- module, and the isotypic decomposition over a simple Artinian algebra are all internal to the
--- arguments below, and no exported statement mentions a matrix algebra.
+-- arguments below. The matrix algebras and opposites in the statement of
+-- `TauCeti.IsSimpleRing.nonempty_algEquiv_matrix_mulOpposite_end` are already in scope through the
+-- public imports above.
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import TauCeti.RingTheory.Semisimple.IsotypicEnd
@@ -37,8 +39,12 @@ are recorded here: `End_R M` is again a simple ring when `M ≠ 0`, and its dime
 
   `finrank K (End_R M) * finrank K R = (finrank K M)²`.
 
-Only the dimension identity needs the field: simplicity of `End_R M` is stated with no `K` in sight,
-for a nonzero module `M` finite over a simple Artinian ring `R`.
+A third compares `R` with `End_R M` itself: `Mₐ(R) ≃ₐ[K] M_b((End_R M)ᵐᵒᵖ)` for
+`a = finrank K M` and `b = finrank K R`, because `Mᵇ` and `Rᵃ` are isomorphic `R`-modules. So when
+`M ≠ 0` and both algebras are central over `K`, `R` and `(End_R M)ᵐᵒᵖ` have the same Brauer class.
+
+Only the dimension identity and the matrix comparison need the field: simplicity of `End_R M` is
+stated with no `K` in sight, for a nonzero module `M` finite over a simple Artinian ring `R`.
 
 The dimension identity is what makes `End_R M` computable without naming `S`, `k` or the division
 algebra: writing `finrank K S = s`, `finrank K M = k * s` and `finrank K R = m * s`, the matrix
@@ -57,6 +63,8 @@ theorem in `TauCeti/Algebra/CentralSimple/Centralizer/Basic.lean`.
   `finrank K (End_R M) * finrank K R = (finrank K M)²`.
 * `TauCeti.IsSimpleRing.moduleEnd`: `End_R M` is a simple ring, for `M` a nonzero module finite
   over a simple Artinian ring `R`.
+* `TauCeti.IsSimpleRing.nonempty_algEquiv_matrix_mulOpposite_end`: the matrix comparison
+  `Mₐ(R) ≃ₐ[K] M_b((End_R M)ᵐᵒᵖ)`.
 
 ## Implementation notes
 
@@ -169,6 +177,25 @@ theorem finrank_end_mul_finrank_eq_sq :
     exact Nat.eq_of_mul_eq_mul_left hmpos h
   rw [hEM, hm, hk, hsmd]
   ring
+
+/-- **Matrices over a simple algebra are matrices over the opposite of an endomorphism algebra.**
+For a finite-dimensional simple `K`-algebra `R` and an `R`-module `M` finite-dimensional over `K`,
+
+  `Mₐ(R) ≃ₐ[K] M_b((End_R M)ᵐᵒᵖ)`  with  `a = finrank K M`, `b = finrank K R`.
+
+Both sides are the opposites of the endomorphism algebras of `Rᵃ` and `Mᵇ`, which are isomorphic
+`R`-modules because both have `K`-dimension `a * b`. When `M` is nonzero both sizes are nonzero,
+so if `R` and `(End_R M)ᵐᵒᵖ` are central over `K` they have the same Brauer class. -/
+theorem nonempty_algEquiv_matrix_mulOpposite_end :
+    Nonempty (Matrix (Fin (finrank K M)) (Fin (finrank K M)) R ≃ₐ[K]
+      Matrix (Fin (finrank K R)) (Fin (finrank K R)) (Module.End R M)ᵐᵒᵖ) := by
+  have hdim : finrank K (Fin (finrank K R) → M) = finrank K (Fin (finrank K M) → R) := by
+    simp only [Module.finrank_pi_fintype, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+      smul_eq_mul, mul_comm]
+  obtain ⟨e⟩ := nonempty_linearEquiv_of_finrank_eq (R := R) K hdim
+  exact ⟨(matrixAlgEquivEndVecMulOpposite K).trans <|
+    (AlgEquiv.op (e.symm.conjAlgEquiv K)).trans <|
+      (AlgEquiv.op (endVecAlgEquivMatrixEnd _ K R M)).trans AlgEquiv.mopMatrix.symm⟩
 
 end IsSimpleRing
 
