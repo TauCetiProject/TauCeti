@@ -55,8 +55,9 @@ of profinite relators is a quotient of the profinite group they present.
 
 * `TauCeti.presentedProfiniteGroup.existsUnique_lift`, `TauCeti.presentedProP.existsUnique_lift`:
   the universal properties.
-* `TauCeti.presentedProfiniteGroup.dense_closure_range_of`,
-  `TauCeti.presentedProP.dense_closure_range_of`: the generators generate topologically.
+* `TauCeti.presentedProfiniteGroup.topologicalClosure_closure_range_of_eq_top`,
+  `TauCeti.presentedProP.topologicalClosure_closure_range_of_eq_top`, and the `Dense` forms
+  `dense_closure_range_of`: the generators generate topologically.
 * `TauCeti.presentedProfiniteGroup.isTopologicallyFinitelyGenerated`,
   `TauCeti.presentedProP.isTopologicallyFinitelyGenerated`: a group presented on a finite type is
   topologically finitely generated.
@@ -144,22 +145,22 @@ theorem mk_eq_one_iff (r : freeProfiniteGroup X) :
   change (r : freeProfiniteGroup X ⧸ (Subgroup.normalClosure rels).topologicalClosure) = 1 ↔ _
   exact QuotientGroup.eq_one_iff r
 
+/-- The generators generate the presented profinite group topologically, as an equation of
+subgroups. -/
+theorem topologicalClosure_closure_range_of_eq_top :
+    (Subgroup.closure (Set.range (of rels))).topologicalClosure = ⊤ := by
+  -- The generators are the image of the free generators under the continuous surjection `mk`.
+  have h := topologicalClosure_closure_image_eq_top
+    (Subgroup.dense_iff_topologicalClosure_eq_top.mp (freeProfiniteGroup.dense_closure_range_of X))
+    (f := (mk rels : freeProfiniteGroup X →* presentedProfiniteGroup X rels))
+    (map_continuous (mk rels)) (mk_surjective rels).denseRange
+  rwa [← Set.range_comp] at h
+
 /-- The generators generate the presented profinite group topologically. -/
 theorem dense_closure_range_of :
     Dense ((Subgroup.closure (Set.range (of rels)) : Subgroup (presentedProfiniteGroup X rels)) :
-      Set (presentedProfiniteGroup X rels)) := by
-  -- The generators are the image of the free generators under the continuous surjection `mk`.
-  have hfree : (Subgroup.closure
-      (Set.range (freeProfiniteGroup.of : X → freeProfiniteGroup X))).topologicalClosure = ⊤ := by
-    rw [← SetLike.coe_set_eq, Subgroup.topologicalClosure_coe, Subgroup.coe_top,
-      ← dense_iff_closure_eq]
-    exact freeProfiniteGroup.dense_closure_range_of X
-  have h := topologicalClosure_closure_image_eq_top hfree
-    (f := (mk rels : freeProfiniteGroup X →* presentedProfiniteGroup X rels))
-    (map_continuous (mk rels)) (mk_surjective rels).denseRange
-  rw [← Set.range_comp, ← SetLike.coe_set_eq, Subgroup.topologicalClosure_coe, Subgroup.coe_top,
-    ← dense_iff_closure_eq] at h
-  exact h
+      Set (presentedProfiniteGroup X rels)) :=
+  Subgroup.dense_iff_topologicalClosure_eq_top.mpr topologicalClosure_closure_range_of_eq_top
 
 /-- A continuous homomorphism from the free profinite group that kills the relators factors through
 the presented profinite group. -/
@@ -247,9 +248,8 @@ theorem lift_surjective {G : Type v} [Monoid G] [TopologicalSpace G] [T1Space G]
 /-- A profinite group presented on a finite type is topologically finitely generated. -/
 theorem isTopologicallyFinitelyGenerated [Finite X] :
     IsTopologicallyFinitelyGenerated (presentedProfiniteGroup X rels) :=
-  (Set.finite_range (of rels)).isTopologicallyFinitelyGenerated <|
-    SetLike.coe_injective <| by
-      rw [Subgroup.topologicalClosure_coe, dense_closure_range_of.closure_eq, Subgroup.coe_top]
+  (Set.finite_range (of rels)).isTopologicallyFinitelyGenerated
+    topologicalClosure_closure_range_of_eq_top
 
 /-! ## Functoriality in the generators and the relators
 
@@ -524,25 +524,22 @@ the relators. -/
       (Subgroup.normalClosure rels).topologicalClosure := by
   rw [mk, ContinuousMonoidHom.coe_quotientMk, QuotientGroup.ker_mk']
 
-/-- The generators generate the presented pro-`p` group topologically. -/
-theorem dense_closure_range_of :
-    Dense ((Subgroup.closure (Set.range (of p rels)) : Subgroup (presentedProP p X rels)) :
-      Set (presentedProP p X rels)) := by
+/-- The generators generate the presented pro-`p` group topologically, as an equation of
+subgroups. -/
+theorem topologicalClosure_closure_range_of_eq_top :
+    (Subgroup.closure (Set.range (of p rels))).topologicalClosure = ⊤ := by
   -- The generators are the image of the free generators under the continuous surjection `mk`.
   have h := topologicalClosure_closure_image_eq_top
     (freeProP.topologicalClosure_closure_range_of_eq_top p X)
     (f := (mk p rels : freeProP p X →* presentedProP p X rels))
     (map_continuous (mk p rels)) (mk_surjective p rels).denseRange
-  rw [← Set.range_comp, ← SetLike.coe_set_eq, Subgroup.topologicalClosure_coe, Subgroup.coe_top,
-    ← dense_iff_closure_eq] at h
-  exact h
+  rwa [← Set.range_comp] at h
 
-/-- The generators generate the presented pro-`p` group topologically, as an equation of
-subgroups. -/
-theorem topologicalClosure_closure_range_of_eq_top :
-    (Subgroup.closure (Set.range (of p rels))).topologicalClosure = ⊤ :=
-  SetLike.coe_injective <| by
-    rw [Subgroup.topologicalClosure_coe, dense_closure_range_of.closure_eq, Subgroup.coe_top]
+/-- The generators generate the presented pro-`p` group topologically. -/
+theorem dense_closure_range_of :
+    Dense ((Subgroup.closure (Set.range (of p rels)) : Subgroup (presentedProP p X rels)) :
+      Set (presentedProP p X rels)) :=
+  Subgroup.dense_iff_topologicalClosure_eq_top.mpr topologicalClosure_closure_range_of_eq_top
 
 /-- A pro-`p` group presented on a finite type is topologically finitely generated. -/
 theorem isTopologicallyFinitelyGenerated [Finite X] :
