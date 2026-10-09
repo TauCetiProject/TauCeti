@@ -167,15 +167,15 @@ namespace SidePairing
 variable {P} (σ : P.SidePairing)
 
 /-- **Ideal vertices of a locally finite side-paired polygon are cusp points.** If a subgroup `Γ`
-of `PSL(2, ℝ)` contains every side-pairing map and its translates of `P` form a locally finite
-family, then every ideal vertex of `P` is fixed by a parabolic element of `Γ`, namely its cycle
-transformation. -/
-theorem isCuspPoint_of_vertex_eq_inr (hmap : ∀ i, σ.map i ∈ Γ)
-    (hlf : LocallyFinite fun γ : Γ ↦ (γ : PSL(2, ℝ)) • P.carrier) {j : Fin n} {ξ : OnePoint ℝ}
-    (hj : P.vertex j = .inr ξ) : Γ.IsCuspPoint ξ :=
+of `PSL(2, ℝ)` contains the cycle transformation at the ideal vertex `vertex j` and its translates
+of `P` form a locally finite family, then `vertex j` is fixed by a parabolic element of `Γ`, namely
+this cycle transformation. -/
+theorem isCuspPoint_of_vertex_eq_inr {j : Fin n} {ξ : OnePoint ℝ} (hj : P.vertex j = .inr ξ)
+    (hcycle : σ.cycleMap j ∈ Γ) (hlf : LocallyFinite fun γ : Γ ↦ (γ : PSL(2, ℝ)) • P.carrier) :
+    Γ.IsCuspPoint ξ :=
   Subgroup.isCuspPoint_iff_exists_mem_stabilizer_isParabolic.mpr
-    ⟨⟨σ.cycleMap j, σ.cycleMap_mem hmap j⟩, σ.cycleMap_smul_eq_self_of_vertex_eq_inr hj,
-      σ.isParabolic_cycleMap_of_locallyFinite hj (σ.cycleMap_mem hmap j) hlf⟩
+    ⟨⟨σ.cycleMap j, hcycle⟩, σ.cycleMap_smul_eq_self_of_vertex_eq_inr hj,
+      σ.isParabolic_cycleMap_of_locallyFinite hj hcycle hlf⟩
 
 /-- **Every cusp of a locally finite side-paired polygon is equivalent to an ideal vertex.** If a
 subgroup `Γ` of `PSL(2, ℝ)` contains every side-pairing map and its translates of `P` form a
@@ -191,7 +191,7 @@ theorem exists_vertex_eq_inr_smul_of_isCuspPoint (hmap : ∀ i, σ.map i ∈ Γ)
   simp only [not_exists] at hne
   obtain ⟨D, rfl⟩ := hc.exists_cuspDatum_cusp_eq
   obtain ⟨E, hE, hK⟩ := P.exists_cuspDatum_isCompact_carrier_diff_iUnion_horodisc
-    fun i ξ hi ↦ σ.isCuspPoint_of_vertex_eq_inr hmap hlf hi
+    fun i ξ hi ↦ σ.isCuspPoint_of_vertex_eq_inr hi (σ.cycleMap_mem hmap _) hlf
   -- no cusp at an ideal vertex is equivalent to `D.cusp`, so their horodiscs stay apart
   have hdisj (i : {i : Fin n // (P.vertex i).isRight}) :
       Disjoint (Quotient.mk (orbitRel Γ ℍ) '' horodisc D D.width)
@@ -253,7 +253,7 @@ theorem compactSpace_compactifiedQuotient [DiscreteTopology Γ] (hmap : ∀ i, �
     CompactSpace Γ.CompactifiedQuotient := by
   have := σ.finite_cuspOrbit hmap hlf
   refine P.compactSpace_compactifiedQuotient (fun q ↦ ?_)
-    (fun i c hi ↦ σ.isCuspPoint_of_vertex_eq_inr hmap hlf hi)
+    (fun i c hi ↦ σ.isCuspPoint_of_vertex_eq_inr hi (σ.cycleMap_mem hmap _) hlf)
   obtain ⟨z, rfl⟩ := Quotient.mk_surjective q
   obtain ⟨γ, hγ⟩ := mem_iUnion.mp (σ.iUnion_smul_carrier_eq_univ hmap hlf ▸ mem_univ z)
   exact ⟨γ⁻¹ • z, mem_smul_set_iff_inv_smul_mem.mp hγ, Quotient.sound ⟨γ⁻¹, rfl⟩⟩
