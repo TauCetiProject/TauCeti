@@ -92,11 +92,10 @@ theorem isPrimitiveRoot_teichmullerLift_padic_five_two :
   have h : (teichmullerLift ℚ_[5] 2 : ℚ_[5]) ^ 2 = -1 := by
     rw [← Subring.coe_pow, teichmullerLift_padic_five_two_sq]
     simp
-  rw [IsPrimitiveRoot.iff_orderOf, show 4 = 2 ^ (1 + 1) by norm_num]
-  refine orderOf_eq_prime_pow (n := 1) ?_ ?_
+  rw [IsPrimitiveRoot.iff_orderOf]
+  refine orderOf_eq_prime_pow (p := 2) (n := 1) ?_ ?_
   · rw [pow_one, h]
     norm_num
-  · rw [show 2 ^ (1 + 1) = 2 * 2 by norm_num, pow_mul, h]
-    norm_num
+  · linear_combination ((teichmullerLift ℚ_[5] 2 : ℚ_[5]) ^ 2 - 1) * h
 
 end TauCeti.Padic

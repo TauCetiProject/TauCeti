@@ -40,7 +40,7 @@ fields.
 * `TauCeti.teichmuller_eq_iff`: the characterization of its values.
 * `TauCeti.eq_teichmuller`: it is the only multiplicative section of reduction.
 * `TauCeti.range_teichmuller`: its image is exactly `μ_{q-1}(R)`.
-* `TauCeti.unitsMap_algebraMap_teichmuller`: it is natural along local homomorphisms.
+* `TauCeti.unitsMap_teichmuller`: it is natural along local homomorphisms.
 * `TauCeti.rootsOfUnityMulEquivUnitsResidueField`: reduction is an isomorphism `μ_{q-1}(R) ≃* kˣ`.
 * `TauCeti.isComplement'_rootsOfUnity_ker_unitsMap_residue`,
   `TauCeti.unitsMulEquivRootsOfUnityProdKerResidue`: the Teichmüller splitting
@@ -173,25 +173,23 @@ theorem card_rootsOfUnity :
 
 section Naturality
 
-variable {R} (S : Type*) [CommRing S] [HenselianLocalRing S] [Finite (ResidueField S)]
-  [Algebra R S] [IsLocalHom (algebraMap R S)]
+variable {R} {S : Type*} [CommRing S] [HenselianLocalRing S] [Finite (ResidueField S)]
 
-/-- **Naturality of the Teichmüller lift.** For a local homomorphism `R → S` of Henselian local
-rings with finite residue fields, the Teichmüller lift in `R` of `x` maps to the Teichmüller lift
-in `S` of the image of `x` in the residue field of `S`. -/
-@[simp] theorem unitsMap_algebraMap_teichmuller (x : (ResidueField R)ˣ) :
-    Units.map (algebraMap R S : R →* S) (teichmuller R x) =
-      teichmuller S (Units.map (algebraMap (ResidueField R) (ResidueField S) :
-        ResidueField R →* ResidueField S) x) := by
+/-- **Naturality of the Teichmüller lift.** For a local homomorphism `f : R → S` of Henselian local
+rings with finite residue fields, `f` carries the Teichmüller lift in `R` of `x` to the
+Teichmüller lift in `S` of the image of `x` under the induced map of residue fields. -/
+@[simp] theorem unitsMap_teichmuller (f : R →+* S) [IsLocalHom f] (x : (ResidueField R)ˣ) :
+    Units.map (f : R →* S) (teichmuller R x) =
+      teichmuller S (Units.map (ResidueField.map f : ResidueField R →* ResidueField S) x) := by
   refine ((teichmuller_eq_iff S).2 ⟨?_, ?_⟩).symm
   -- The residue field of `S` is a finite extension of that of `R`, so `q_R - 1 ∣ q_S - 1`.
   · obtain ⟨k, hk⟩ : Nat.card (ResidueField R) - 1 ∣ Nat.card (ResidueField S) - 1 := by
+      let := (ResidueField.map f).toAlgebra
       have : Module.Finite (ResidueField R) (ResidueField S) := .of_finite
       rw [Module.natCard_eq_pow_finrank (K := ResidueField R) (V := ResidueField S)]
       exact Nat.sub_one_dvd_pow_sub_one _ _
     rw [hk, pow_mul, ← map_pow, teichmuller_pow_card_sub_one, map_one, one_pow]
-  · rw [Units.coe_map, MonoidHom.coe_ofClass, ← ResidueField.algebraMap_residue,
-      residue_teichmuller, Units.coe_map, MonoidHom.coe_ofClass]
+  · simp [← ResidueField.map_residue]
 
 end Naturality
 
