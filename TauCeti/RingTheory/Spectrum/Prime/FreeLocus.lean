@@ -19,7 +19,10 @@ module, Mathlib's openness of the free locus therefore gives an open neighbourho
 minimal primes where it is locally free.
 
 A module with an exhaustive increasing filtration is free at every prime where all the
-subquotients of the filtration are free. No finiteness is assumed, so this applies to modules
+subquotients of the filtration are free.
+
+The rank of `R^k` at every prime is `k`, with no nontriviality hypothesis on `R`: a ring with a
+prime ideal is nontrivial. No finiteness is assumed, so this applies to modules
 that are not finitely generated over the base, as in the proof of generic freeness in
 `TauCeti.RingTheory.Spectrum.Prime.GenericFreeness`.
 
@@ -29,6 +32,7 @@ that are not finitely generated over the base, as in the proof of generic freene
   minimal primes.
 * `Module.iInter_freeLocus_subquotient_subset_freeLocus`: a filtered module is free wherever all
   subquotients of the filtration are.
+* `Module.rankAtStalk_fin_fun`: the free module `R^k` has rank `k` at every prime.
 
 ## References
 
@@ -104,6 +108,12 @@ theorem iInter_freeLocus_subquotient_subset_freeLocus (N : ℕ → Submodule R M
   exact Module.Free.of_equiv (Submodule.quotEquivOfEq _ _ heq)
 
 end Filtration
+
+/-- The free module `R^k` has rank `k` at every prime of `R`. -/
+theorem rankAtStalk_fin_fun {R : Type*} [CommRing R] (k : ℕ) (p : PrimeSpectrum R) :
+    rankAtStalk (R := R) (Fin k → R) p = k := by
+  have : Nontrivial R := PrimeSpectrum.nonempty_iff_nontrivial.mp ⟨p⟩
+  simp
 
 end Module
 
