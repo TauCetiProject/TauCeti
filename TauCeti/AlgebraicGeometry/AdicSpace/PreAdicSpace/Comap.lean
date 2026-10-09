@@ -684,10 +684,12 @@ private theorem isIso_presentationLimitPreAdicSpaceComapIsoHom_toHom :
         hP').toHom := by
   let f := (presentationLimitPreAdicSpaceComapIsoHom φ hφ hplus ψ hψ hψφ hφψ hplus' hAplus hBplus
     hP hP').toHom
+  -- the map of spaces is `spaComapTopHom φ hφ hplus` by construction of
+  -- `presentationLimitPreAdicSpaceComapIsoHom`, and that is the forward map of `spaComapTopIso`
+  have hbase : f.base = spaComapTopHom φ hφ hplus := rfl
   have : IsIso f.base := by
-    change IsIso (spaComapTopHom φ hφ hplus)
-    rw [← spaComapTopIso_hom φ hφ hplus ψ hψ hψφ hφψ hplus']
-    infer_instance
+    rw [hbase, ← spaComapTopIso_hom φ hφ hplus ψ hψ hψφ hφψ hplus']
+    exact (spaComapTopIso φ hφ hplus ψ hψ hψφ hφψ hplus').isIso_hom
   have : IsIso f.c := Iso.isIso_hom (presentationLimitPresheafIsoPushforward (P := P) (P' := P') φ
     hφ hplus ψ hψ hψφ hφψ hplus')
   exact PresheafedSpace.isIso_of_components f
