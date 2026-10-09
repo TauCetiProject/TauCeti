@@ -114,13 +114,11 @@ private theorem finrank_tangentSpace_eq_model (y : N) :
   rfl
 
 /-- The model dimension of an integral manifold equals the rank of the distribution at any source
-point.
-
-Injectivity of the differential identifies the dimension of its range with the source dimension,
-while integrality identifies that range with the corresponding fiber of `D`. -/
+point. -/
 theorem IsIntegralManifold.finrank_model_eq
     (hf : IsIntegralManifold J n D f) (hn : n ≠ 0) (y : N)
     (hD : Module.finrank ℝ (D (f y)) = k) : Module.finrank ℝ E' = k := by
+  -- Integrality identifies the fiber of `D` with the range of the injective differential.
   rw [← hD, ← hf.range_mfderiv y,
     LinearMap.finrank_range_of_inj (hf.isImmersion.mfderiv_injective hn y)]
   exact finrank_tangentSpace_eq_model (J := J) (E' := E') y
