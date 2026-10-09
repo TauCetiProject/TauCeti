@@ -177,7 +177,7 @@ theorem mextDerivWithin_congr_of_eventuallyEq (h : ∀ᶠ y in 𝓝[s] x, φ y =
       h (by simp)] with z hz
     ext v
     simp only [RoughForm.inChartAt_apply]
-    rw [show φ ((extChartAt I x).symm z) = η ((extChartAt I x).symm z) from hz]
+    rw [hz]
   -- at the chart point, `(extChartAt I x).symm (extChartAt I x x) = x`
   · ext v
     simp only [RoughForm.inChartAt_apply]
@@ -221,6 +221,8 @@ theorem mextDerivWithin_add (hs : UniqueMDiffWithinAt I s x)
   rw [mextDerivWithin_def, RoughForm.inChartAt_add]
   exact extDerivWithin_add hs hφ hη
 
+/-- The exterior derivative is additive on forms whose coordinate expressions in the chart at the
+point are differentiable within `range I` there. -/
 theorem mextDeriv_add
     (hφ : DifferentiableWithinAt ℝ (φ.inChartAt x) (range I) (extChartAt I x x))
     (hη : DifferentiableWithinAt ℝ (η.inChartAt x) (range I) (extChartAt I x x)) :
@@ -230,21 +232,28 @@ theorem mextDeriv_add
 
 /-- The exterior derivative commutes with real scalars wherever derivatives within the set are
 unique; no differentiability of the form is needed. -/
+@[simp]
 theorem mextDerivWithin_smul (c : ℝ) (hs : UniqueMDiffWithinAt I s x) :
     mextDerivWithin (c • φ) s x = c • mextDerivWithin φ s x := by
   rw [mextDerivWithin_def, RoughForm.inChartAt_smul]
   exact extDerivWithin_smul c _ hs
 
+@[simp]
 theorem mextDeriv_smul (c : ℝ) (φ : RoughForm I M F k) : mextDeriv (c • φ) = c • mextDeriv φ :=
   funext fun _ ↦ mextDerivWithin_smul c (uniqueMDiffWithinAt_univ I)
 
+@[simp]
 theorem mextDerivWithin_neg (hs : UniqueMDiffWithinAt I s x) :
     mextDerivWithin (-φ) s x = -mextDerivWithin φ s x := by
   rw [← neg_one_smul ℝ φ, mextDerivWithin_smul _ hs, neg_one_smul]
 
+@[simp]
 theorem mextDeriv_neg (φ : RoughForm I M F k) : mextDeriv (-φ) = -mextDeriv φ := by
   rw [← neg_one_smul ℝ φ, mextDeriv_smul, neg_one_smul]
 
+/-- The exterior derivative within a set is subtractive on forms whose coordinate expressions in
+the chart at the point are differentiable there, wherever derivatives within the set are
+unique. -/
 theorem mextDerivWithin_sub (hs : UniqueMDiffWithinAt I s x)
     (hφ : DifferentiableWithinAt ℝ (φ.inChartAt x) ((extChartAt I x).symm ⁻¹' s ∩ range I)
       (extChartAt I x x))

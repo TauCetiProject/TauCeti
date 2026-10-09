@@ -26,6 +26,8 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {n : ℕ} {ω : E → E [⋀^Fin n]→L[𝕜] F} {s t : Set E} {x : E}
 
+namespace TauCeti
+
 /-- The exterior derivative within a set does not change when the set is modified away from a
 point `y`, as long as it is unchanged near the base point (punctured at `y`). -/
 theorem extDerivWithin_congr_set' (y : E) (h : s =ᶠ[𝓝[{y}ᶜ] x] t) :
@@ -37,5 +39,7 @@ point. -/
 theorem extDerivWithin_congr_set (h : s =ᶠ[𝓝 x] t) :
     extDerivWithin ω s x = extDerivWithin ω t x :=
   extDerivWithin_congr_set' x <| h.filter_mono inf_le_left
+
+end TauCeti
 
 end
