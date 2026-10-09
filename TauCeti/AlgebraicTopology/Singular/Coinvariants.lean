@@ -30,8 +30,9 @@ complex with any coefficients, of `B` are the coinvariants of those of `E`:
 Neither statement needs `G` to be finite. Taking coinvariants is not exact, so the corresponding
 statement for homology fails in general. It holds when `G` is finite and multiplication by `|G|` is
 invertible on `R`: the transfer `t` of the finite covering `p` satisfies `t ≫ p_* = |G| • 𝟙` and
-`p_* ≫ t = ∑_{g ∈ G} g_*`, which makes the colimit absolute
-(`CategoryTheory.Limits.SingleObj.isColimitMapCoconeOfTransfer`), so it survives homology:
+`p_* ≫ t = ∑_{g ∈ G} g_*`, so the colimit is preserved by every additive functor
+(`CategoryTheory.Limits.SingleObj.isColimitMapCoconeOfTransfer`) and in particular survives
+homology:
 
 * `IsQuotientCoveringMap.isColimitMapCoconeSingularHomology`: `Hₙ(B; R) ≅ Hₙ(E; R)_G` through
   `p_*` when `|G|` is invertible on `R`.

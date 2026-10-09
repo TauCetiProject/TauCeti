@@ -11,16 +11,16 @@ public import TauCeti.CategoryTheory.Preadditive.NSMul
 /-!
 # Recognising colimits of shape `SingleObj G`
 
-A functor `J : SingleObj G ⥤ C` is an object of `C` with an action of the group `G`, and its
+A functor `J : SingleObj G ⥤ C` is an object of `C` with an action of the monoid `G`, and its
 colimit, when it exists, is the object of coinvariants of that action. This file gives two
 criteria for a given cocone to be that colimit.
 
-In types, Mathlib computes the colimit as the quotient by the action
+In types, for a group `G`, Mathlib computes the colimit as the quotient by the action
 (`CategoryTheory.Limits.SingleObj.Types.colimitEquivQuotient`). Correspondingly, a cocone over
 `J : SingleObj G ⥤ Type u` is a colimit exactly when its leg is surjective and its fibres are the
 orbits of the action (`CategoryTheory.Limits.SingleObj.Types.nonempty_isColimit_iff`).
 
-In a preadditive category, for a finite group `G`, suppose a cocone `π : J.obj * ⟶ c.pt` has a
+In a preadditive category, for a finite monoid `G`, suppose a cocone `π : J.obj * ⟶ c.pt` has a
 *transfer*: a morphism `t : c.pt ⟶ J.obj *` back, with `t ≫ π = |G| • 𝟙` and
 `π ≫ t = ∑_{g ∈ G} J.map g`. If multiplication by `|G|` is invertible on both objects, then `c` is
 a colimit (`CategoryTheory.Limits.SingleObj.isColimitOfTransfer`): the averaged transfer
@@ -89,10 +89,10 @@ end Types
 
 section Preadditive
 
-variable {C : Type*} [Category C] [Preadditive C] {G : Type*} [Group G] [Fintype G]
+variable {C : Type*} [Category C] [Preadditive C] {G : Type*} [Monoid G] [Fintype G]
   {J : SingleObj G ⥤ C} (c : Cocone J) (t : c.pt ⟶ J.obj (SingleObj.star G))
 
-/-- Let `G` be a finite group acting on an object of a preadditive category, and let `c` be a
+/-- Let `G` be a finite monoid acting on an object of a preadditive category, and let `c` be a
 cocone over the action whose leg `π` has a *transfer* `t`: `t ≫ π = |G| • 𝟙` and
 `π ≫ t = ∑_{g ∈ G} J.map g`. If multiplication by `|G|` is invertible on the acted-on object and on
 the cocone point, then `c` is a colimit cocone: the cocone point is the object of coinvariants. -/
@@ -113,8 +113,9 @@ noncomputable def isColimitOfTransfer
     conv_rhs => rw [← hm (SingleObj.star G), reassoc_of% key, reassoc_of% ht,
       IsIso.hom_inv_id_assoc]
 
-/-- The colimit of `CategoryTheory.Limits.SingleObj.isColimitOfTransfer` is absolute: under the
-same hypotheses, every additive functor sends `c` to a colimit cocone. -/
+/-- The colimit of `CategoryTheory.Limits.SingleObj.isColimitOfTransfer` is preserved by every
+additive functor: under the same hypotheses, every additive functor sends `c` to a colimit
+cocone. -/
 noncomputable def isColimitMapCoconeOfTransfer {D : Type*} [Category D] [Preadditive D]
     (F : C ⥤ D) [F.Additive]
     (ht : t ≫ c.ι.app (SingleObj.star G) = Fintype.card G • 𝟙 c.pt)
