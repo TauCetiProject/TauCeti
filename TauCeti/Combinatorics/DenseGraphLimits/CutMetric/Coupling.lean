@@ -15,7 +15,9 @@ Given a coupling of two probability spaces, two graphons living on *different* c
 compared: read `U` through the first coordinate, read `W` through the second, and subtract. The
 result is the **overlaid difference kernel** `overlayDiff U W π`, a symmetric kernel on the coupled
 space `(Ω₁ × Ω₂, π)`. The carrier-independent coupling relation `TauCeti.IsCoupling π μ₁ μ₂` and
-its API live in `TauCeti.MeasureTheory.OptimalTransport.Coupling`.
+its API live in `TauCeti.MeasureTheory.OptimalTransport.Coupling`. That relation is a `Prop`
+rather than a class: a coupling of two given marginals is not canonical, and the cut distance
+takes an infimum over all of them.
 
 These two objects are what makes the cut distance of the dense graph limit theory cross-carrier.
 `cutDist U W` is the infimum, over all couplings `π`, of the cut norm of `overlayDiff U W π`; the
@@ -49,12 +51,6 @@ hypotheses at all.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 1 — `IsCoupling`, `isCoupling_prod`,
-  `overlayDiff` and `overlayDiff_apply`, the ingredients of the coupling-primary cross-carrier
-  `cutDist`. The cut norm, `cutDist` itself, its triangle inequality, and the `GraphonSpace`
-  quotient are separate targets and are not built here. The signatures follow
-  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`, which pins `IsCoupling` as a `Prop` rather
-  than a class, since a coupling of two given marginals is not canonical.
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013), §6 — cut distance via couplings.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §8.2.

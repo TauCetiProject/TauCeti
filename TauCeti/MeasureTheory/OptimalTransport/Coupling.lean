@@ -86,8 +86,6 @@ forced by the lint rule and matches `TauCeti.MultiCoupling`.
 and consumers such as transport costs and cut distances minimise over all of them, so instance
 resolution must never pick one.
 
-This is Layer 0, item 1 of the optimal-transport roadmap.
-
 ## References
 
 * C. Villani, *Optimal Transport: Old and New*, Grundlehren 338, 2009, Chapter 1
