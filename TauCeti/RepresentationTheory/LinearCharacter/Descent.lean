@@ -7,17 +7,20 @@ module
 
 public import Mathlib.GroupTheory.Exponent
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+public import TauCeti.Algebra.Group.Hom.Lift
 
 /-!
 # Descent of linear characters
 
 A linear character of a monoid of exponent dividing `n` takes values in the `n`-th roots of unity.
-If a field `K` contains a primitive `n`-th root, every linear character over an extension `L / K`
-therefore comes from a unique linear character over `K`. This supplies the coefficient descent
-used to realize monomial representations over cyclotomic fields.
+If a commutative semiring `K` contains a primitive `n`-th root and embeds into an integral domain
+`L`, every linear character over `L` therefore comes from a unique linear character over `K`.
+The embedding is supplied by a faithful `K`-algebra structure on `L`. This gives the coefficient
+descent used to realize monomial representations over cyclotomic fields.
 
 The result requires neither characteristic zero nor finiteness of the monoid: a nonzero exponent
-bound and a primitive root suffice.
+bound and a primitive root suffice when the coefficient algebra is an integral domain and the
+scalar action is faithful.
 
 ## References
 
@@ -30,43 +33,23 @@ universe u v w
 
 namespace TauCeti
 
-variable {K : Type u} {L : Type v} [Field K] [Field L] [Algebra K L]
+variable {K : Type u} {L : Type v} [CommSemiring K] [CommRing L] [IsDomain L]
+  [Algebra K L] [FaithfulSMul K L]
 variable {G : Type w} [Monoid G]
 
-/-- A linear character descends uniquely along a field extension if its values lie in the image
-of the units of the base field. -/
-theorem _root_.MonoidHom.existsUnique_unitsMap_comp_eq (χ : G →* Lˣ)
-    (hχ : ∀ g, χ g ∈ (Units.map (algebraMap K L : K →* L)).range) :
-    ∃! ψ : G →* Kˣ, (Units.map (algebraMap K L : K →* L)).comp ψ = χ := by
-  let f := Units.map (algebraMap K L : K →* L)
-  have hf : Function.Injective f := Units.map_injective (algebraMap K L).injective
-  let e := MonoidHom.ofInjective hf
-  let ψ := e.symm.toMonoidHom.comp (χ.codRestrict f.range hχ)
-  have hψ : f.comp ψ = χ := by
-    apply MonoidHom.ext
-    intro g
-    exact MonoidHom.apply_ofInjective_symm hf ⟨χ g, hχ g⟩
-  refine ⟨ψ, hψ, fun ψ' hψ' => ?_⟩
-  apply MonoidHom.ext
-  intro g
-  apply hf
-  exact (DFunLike.congr_fun hψ' g).trans (DFunLike.congr_fun hψ g).symm
-
-/-- A primitive `n`-th root in the base field descends every linear character of a monoid whose
-exponent divides the nonzero integer `n`. -/
+/-- A primitive `n`-th root in a base semiring descends every linear character of a monoid whose
+exponent divides the nonzero integer `n`, along a faithful algebra into an integral domain. -/
 theorem _root_.MonoidHom.existsUnique_unitsMap_comp_eq_of_isPrimitiveRoot (χ : G →* Lˣ)
     {n : ℕ} [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n) (hG : Monoid.exponent G ∣ n) :
     ∃! ψ : G →* Kˣ, (Units.map (algebraMap K L : K →* L)).comp ψ = χ := by
-  apply χ.existsUnique_unitsMap_comp_eq
+  have hf := FaithfulSMul.algebraMap_injective K L
+  have hζL := (hζ.isUnit_unit (NeZero.ne n)).map_of_injective (Units.map_injective hf)
+  apply χ.existsUnique_comp_eq_of_injective _ (Units.map_injective hf)
   intro g
-  have hpow : (χ g : L) ^ n = 1 := by
-    have hg := Monoid.exponent_dvd_iff_forall_pow_eq_one.mp hG g
-    simpa only [map_pow, map_one, Units.val_pow_eq_pow_val, Units.val_one] using
-      congrArg (fun x : G => (χ x : L)) hg
-  obtain ⟨i, -, hi⟩ :=
-    (hζ.map_of_injective (algebraMap K L).injective).eq_pow_of_pow_eq_one hpow
+  have hpow : χ g ^ n = 1 := by
+    rw [← map_pow, Monoid.exponent_dvd_iff_forall_pow_eq_one.mp hG g, map_one]
+  obtain ⟨i, -, hi⟩ := hζL.eq_pow_of_mem_rootsOfUnity ((mem_rootsOfUnity n (χ g)).mpr hpow)
   refine ⟨(hζ.isUnit (NeZero.ne n)).unit ^ i, ?_⟩
-  apply Units.ext
   simpa using hi
 
 end TauCeti
