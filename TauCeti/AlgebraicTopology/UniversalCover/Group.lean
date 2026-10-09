@@ -352,6 +352,8 @@ noncomputable def continuousMulEquivUniversalCover (hp : IsCoveringMap p) :
     have hfg : f = g := UniversalCover.isCoveringMap_projHom.eq_of_comp_eq
       (g₁ := f) (g₂ := g) (by fun_prop) (by fun_prop) (by
         funext z
+        -- The lift-uniqueness goal is phrased using `projHom`; expose its endpoint function so
+        -- the projection law for the chosen homeomorphism and `proj_mul` can be applied.
         change (hp.universalCoverHomeomorph (z.1 * z.2)).proj =
           (hp.universalCoverHomeomorph z.1 * hp.universalCoverHomeomorph z.2).proj
         rw [UniversalCover.proj_mul]
@@ -370,12 +372,21 @@ theorem projHom_comp_continuousMulEquivUniversalCover (hp : IsCoveringMap p) :
   ext e
   exact congrFun hp.universalCoverHomeomorph_proj e
 
+/-- Applying the universal-cover projection to the canonical comparison agrees with the original
+covering homomorphism. -/
+@[simp]
+theorem continuousMulEquivUniversalCover_apply_proj (hp : IsCoveringMap p) (e : E) :
+    UniversalCover.projHom (hp.continuousMulEquivUniversalCover e) = p e :=
+  DFunLike.congr_fun hp.projHom_comp_continuousMulEquivUniversalCover e
+
 /-- Projecting the inverse image under the canonical comparison agrees with the universal-cover
 projection. -/
 @[simp]
 theorem continuousMulEquivUniversalCover_symm_apply_proj (hp : IsCoveringMap p)
     (x : UniversalCover (1 : G)) :
     p (hp.continuousMulEquivUniversalCover.symm x) = UniversalCover.projHom x := by
+  -- `ContinuousMulEquiv.mk'` reuses the private homeomorphism definitionally; expose that
+  -- underlying map so its inverse and projection equations apply.
   change p (hp.universalCoverHomeomorph.symm x) = UniversalCover.projHom x
   symm
   calc

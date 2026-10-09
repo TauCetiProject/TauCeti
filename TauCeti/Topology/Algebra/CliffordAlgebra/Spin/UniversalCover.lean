@@ -100,16 +100,32 @@ theorem projHom_comp_realCliffordSpinUniversalCoverEquivZero
     (p := realCliffordSpinProjectionZero n)
     (isCoveringMap_realCliffordSpinProjectionZero n)
 
+/-- Applying the universal-cover projection after the compact Spin comparison gives the concrete
+Spin action on the positive-definite quadratic space. -/
+@[simp]
+theorem realCliffordSpinUniversalCoverEquivZero_apply_proj
+    (n : ℕ) (hn : 3 ≤ n) (s : realCliffordSpinGroupZero n) :
+    UniversalCover.projHom (realCliffordSpinUniversalCoverEquivZero n hn s) =
+      spinToSpecialOrthogonal (realCliffordForm n 0) s := by
+  let _ : NeZero n := ⟨by omega⟩
+  calc
+    UniversalCover.projHom (realCliffordSpinUniversalCoverEquivZero n hn s) =
+        realCliffordSpinProjectionZero n s :=
+      DFunLike.congr_fun (projHom_comp_realCliffordSpinUniversalCoverEquivZero n hn) s
+    _ = spinToSpecialOrthogonal (realCliffordForm n 0) s := by
+      rw [realCliffordSpinProjectionZero_apply, realCliffordSpinDoubleCoverZero_rightHom]
+
 /-- Projecting the inverse image of a universal-cover point under the compact Spin comparison
 recovers its endpoint in `SO(n)`. -/
 @[simp]
 theorem spinToSpecialOrthogonal_realCliffordSpinUniversalCoverEquivZero_symm_apply
-    (n : ℕ) [NeZero n] (hn : 3 ≤ n)
+    (n : ℕ) (hn : 3 ≤ n)
     (x : UniversalCover
       (1 : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0))) :
     spinToSpecialOrthogonal (realCliffordForm n 0)
         ((realCliffordSpinUniversalCoverEquivZero n hn).symm x) =
       UniversalCover.projHom x := by
+  let _ : NeZero n := ⟨by omega⟩
   let _ : SimplyConnectedSpace (realCliffordSpinGroupZero n) :=
     simplyConnectedSpace_realCliffordSpinGroupZero n hn
   rw [realCliffordSpinUniversalCoverEquivZero]
