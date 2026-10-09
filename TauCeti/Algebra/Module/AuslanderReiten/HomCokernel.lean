@@ -151,6 +151,7 @@ variable {N' : Type*} [AddCommGroup N'] [Module A N'] [Module k N']
 
 /-- Dual postcomposition on the Hom cokernel corresponds to precomposition on Hom
 into the translate. Thus the comparison is contravariantly natural in `N`. -/
+@[simp]
 theorem auslanderReitenHomCokernelDualEquiv_map (f : P₁ →ₗ[A] P₀) (g : N →ₗ[A] N')
     (u : Module.Dual k ((P₁ →ₗ[A] N') ⧸ range (f.lcomp k N'))) :
     auslanderReitenHomCokernelDualEquiv f
