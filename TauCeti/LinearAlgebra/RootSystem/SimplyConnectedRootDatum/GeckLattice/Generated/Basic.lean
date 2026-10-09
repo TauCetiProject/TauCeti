@@ -18,9 +18,15 @@ that is by the common kernel of their coordinate maps.
 This file names the ideal that family cuts out and the resulting coordinate Hopf algebra, and
 records what a consumer needs about them: a coordinate morphism killing the defining ideal, and
 in particular each single generator, factors uniquely through the quotient coordinate map; the
-quotient is of finite type; and it lies inside the base change of the integral Geck carrier. The
-factorizations are recorded as unique-existence statements about the named quotient coordinate map,
-so no Geck-specific restatement of `TauCeti.CommHopfAlgCat.liftQuotient` is needed.
+quotient is of finite type; and it lies inside the base change of the integral Geck carrier. Each
+generator's factorization is also named, `TauCeti.DynkinType.geckGeneratedCoordinateLift`, so that
+the root subgroups and weight torus of the generated subgroup can be used as maps out of it.
+
+Since every generator is transported from `ℤ`, the generators over a ring `K` are the scalar
+extensions of those over `k`. When `K` is free over `k`, scalar extension also commutes with common
+kernels, so the subgroup generated over `k` base-changes to the subgroup generated over `K`. This
+lets geometric properties of the generated subgroup over a field be checked on the subgroup
+generated over an algebraic closure.
 
 Equality of the generated subgroup with the base change of the integral carrier is not asserted:
 extra equations can appear after specialization to a non-flat base. Nor is the generated subgroup
@@ -34,6 +40,10 @@ identified with a pinned simply connected group scheme of type `t`.
   generated closed subgroup.
 * `TauCeti.DynkinType.geckGeneratedCoordinateMap`: its quotient coordinate map, representing the
   closed immersion into `GLₙ`.
+* `TauCeti.DynkinType.geckGeneratedCoordinateLift`: each generator factored through the generated
+  subgroup.
+* `TauCeti.DynkinType.geckGeneratedCoordinateHopfAlgebraBaseChangeIso`: for `K` free over `k`,
+  scalar extension of the subgroup generated over `k` is the subgroup generated over `K`.
 
 ## Main results
 
@@ -45,6 +55,8 @@ identified with a pinned simply connected group scheme of type `t`.
   the generated subgroup, as a unique factorization through its quotient coordinate map.
 * `TauCeti.DynkinType.existsUnique_geckGeneratedCoordinateMap_comp_eq_geckGeneratorCoordinateMap`:
   each generator coordinate map factors uniquely through the generated subgroup.
+* `TauCeti.DynkinType.map_baseChangeHopfIdeal_geckGeneratedDefiningIdeal`: free base change
+  carries the defining ideal of the subgroup generated over `k` to the one over `K`.
 
 ## References
 
@@ -52,10 +64,12 @@ identified with a pinned simply connected group scheme of type `t`.
   Proc. Amer. Math. Soc. **145** (2017), 3233--3247.
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * R. W. Carter, *Simple Groups of Lie Type*, §4.4.
+* B. Conrad, *Reductive Group Schemes*, §1.
 
 The quotient presentation of the generated subgroup follows the parallel minuscule constructions
 in `TauCeti.Algebra.Lie.E6.Minuscule.Generated.Basic` and
-`TauCeti.Algebra.Lie.E7.Minuscule.Generated.Basic`.
+`TauCeti.Algebra.Lie.E7.Minuscule.Generated.Basic`, and the free base change follows the generated
+type-`Bₙ₊₁` spin subgroup in `TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.Basic`.
 -/
 
 public section
@@ -65,7 +79,7 @@ namespace TauCeti.DynkinType
 open CategoryTheory
 open TauCeti.UniversalEnvelopingAlgebra
 
-universe v
+universe v w
 
 noncomputable section
 
@@ -150,16 +164,35 @@ theorem existsUnique_geckGeneratedCoordinateMap_comp_eq {B : CommHopfAlgCat A}
     CommHopfAlgCat.mkQuotient_comp_liftQuotient (t.geckGeneratedDefiningIdeal ht A) f hf,
     fun g hg => CommHopfAlgCat.liftQuotient_unique (t.geckGeneratedDefiningIdeal ht A) f hf g hg⟩
 
+/-- Every generator coordinate map kills the generated subgroup's defining ideal. -/
+theorem geckGeneratedDefiningIdeal_toIdeal_le_ker (j : Sum (Fin t.rank ⊕ Fin t.rank) Unit) :
+    (t.geckGeneratedDefiningIdeal ht A).toIdeal ≤
+      RingHom.ker (t.geckGeneratorCoordinateMap ht A j).hom.toAlgHom.toRingHom := by
+  rw [geckGeneratedDefiningIdeal_def]
+  exact CommHopfAlgCat.commonKernelHopfIdeal_toIdeal_le_ker (t.geckGeneratorCoordinateMap ht A) j
+
 /-- Each generator coordinate map factors through the generated subgroup's quotient coordinate map,
 and does so in exactly one way. -/
 theorem existsUnique_geckGeneratedCoordinateMap_comp_eq_geckGeneratorCoordinateMap
     (j : Sum (Fin t.rank ⊕ Fin t.rank) Unit) :
     ∃! g : t.geckGeneratedCoordinateHopfAlgebra ht A ⟶ t.geckGeneratorCoordinateAlgebra A j,
       t.geckGeneratedCoordinateMap ht A ≫ g = t.geckGeneratorCoordinateMap ht A j :=
-  t.existsUnique_geckGeneratedCoordinateMap_comp_eq ht A (t.geckGeneratorCoordinateMap ht A j) <| by
-    rw [geckGeneratedDefiningIdeal_def]
-    exact CommHopfAlgCat.commonKernelHopfIdeal_toIdeal_le_ker
-      (t.geckGeneratorCoordinateMap ht A) j
+  t.existsUnique_geckGeneratedCoordinateMap_comp_eq ht A (t.geckGeneratorCoordinateMap ht A j)
+    (t.geckGeneratedDefiningIdeal_toIdeal_le_ker ht A j)
+
+/-- The `j`th Geck generator coordinate map factored through the generated subgroup. -/
+noncomputable def geckGeneratedCoordinateLift (j : Sum (Fin t.rank ⊕ Fin t.rank) Unit) :
+    t.geckGeneratedCoordinateHopfAlgebra ht A ⟶ t.geckGeneratorCoordinateAlgebra A j :=
+  CommHopfAlgCat.liftQuotient (t.geckGeneratedDefiningIdeal ht A)
+    (t.geckGeneratorCoordinateMap ht A j) (t.geckGeneratedDefiningIdeal_toIdeal_le_ker ht A j)
+
+/-- Composing the quotient coordinate map with the `j`th lift recovers the `j`th generator. -/
+@[reassoc (attr := simp)]
+theorem geckGeneratedCoordinateMap_comp_geckGeneratedCoordinateLift
+    (j : Sum (Fin t.rank ⊕ Fin t.rank) Unit) :
+    t.geckGeneratedCoordinateMap ht A ≫ t.geckGeneratedCoordinateLift ht A j =
+      t.geckGeneratorCoordinateMap ht A j :=
+  CommHopfAlgCat.mkQuotient_comp_liftQuotient _ _ _
 
 /-- The coordinate Hopf algebra of the generated subgroup is a finite-type `A`-algebra. -/
 instance : Algebra.FiniteType A (t.geckGeneratedCoordinateHopfAlgebra ht A) := by
@@ -167,5 +200,56 @@ instance : Algebra.FiniteType A (t.geckGeneratedCoordinateHopfAlgebra ht A) := b
   infer_instance
 
 end
+
+/-! ## Free base change -/
+
+section BaseChange
+
+variable (t : DynkinType) (ht : t.Valid)
+variable (k : Type v) (K : Type max v w) [CommRing k] [CommRing K] [Algebra k K]
+
+/-- **Generation commutes with free base change.** For `K` free over `k`, for instance a field
+extension, the base change of the defining ideal of the Geck subgroup generated over `k`,
+transported into the coordinate Hopf algebra of `GLₙ` over `K`, is the defining ideal of the Geck
+subgroup generated over `K`. -/
+theorem map_baseChangeHopfIdeal_geckGeneratedDefiningIdeal [Module.Free k K] :
+    (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (t.geckGeneratedDefiningIdeal ht k)).map
+        (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (t.geckDim ht)).hom.hom =
+      t.geckGeneratedDefiningIdeal ht K := by
+  rw [geckGeneratedDefiningIdeal_def, geckGeneratedDefiningIdeal_def,
+    CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal,
+    CommHopfAlgCat.map_commonKernelHopfIdeal,
+    ← funext (t.geckGeneratorCoordinateMap_baseChange ht k K),
+    ← CommHopfAlgCat.commonKernelHopfIdeal_comp_of_injective _ _ fun j ↦
+      (ConcreteCategory.bijective_of_isIso
+        (t.geckGeneratorCoordinateAlgebraBaseChangeIso k K j).hom).1]
+  simp only [Category.assoc]
+
+-- Within this module `geckGeneratedCoordinateHopfAlgebra` and `geckGeneratedCoordinateMap`
+-- unfold to the quotient by `geckGeneratedDefiningIdeal` and its quotient map, so the generic
+-- quotient base-change isomorphism and its compatibility lemma apply to them directly.
+/-- **The generated Geck subgroup commutes with free base change.** For `K` free over `k`, scalar
+extension of the subgroup generated over `k` by the numbered Geck root subgroups and weight torus
+is the subgroup generated over `K`. -/
+noncomputable def geckGeneratedCoordinateHopfAlgebraBaseChangeIso [Module.Free k K] :
+    CommHopfAlgCat.baseChange (K := K) (t.geckGeneratedCoordinateHopfAlgebra ht k) ≅
+      t.geckGeneratedCoordinateHopfAlgebra ht K :=
+  CommHopfAlgCat.quotientBaseChangeIsoOfMapEq (t.geckGeneratedDefiningIdeal ht k)
+    (t.geckGeneratedDefiningIdeal ht K)
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (t.geckDim ht))
+    (t.map_baseChangeHopfIdeal_geckGeneratedDefiningIdeal ht k K)
+
+/-- The base-change identification of the generated Geck subgroups is compatible with their
+closed immersions into `GLₙ`. -/
+@[reassoc (attr := simp)]
+theorem baseChangeMap_geckGeneratedCoordinateMap_comp_baseChangeIso_hom [Module.Free k K] :
+    CommHopfAlgCat.baseChangeMap (K := K) (t.geckGeneratedCoordinateMap ht k) ≫
+        (t.geckGeneratedCoordinateHopfAlgebraBaseChangeIso ht k K).hom =
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (t.geckDim ht)).hom ≫
+        t.geckGeneratedCoordinateMap ht K :=
+  CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom _ _ _
+    (t.map_baseChangeHopfIdeal_geckGeneratedDefiningIdeal ht k K)
+
+end BaseChange
 
 end TauCeti.DynkinType
