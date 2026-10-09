@@ -18,14 +18,14 @@ import Mathlib.Analysis.Convex.Continuous
 Let `E` be a finite-dimensional real inner product space and let `f : E → EReal` be convex
 (convex real epigraph, never `⊥`), with `D` the interior of its effective domain `{x | f x ≠ ⊤}`.
 Since `f` is continuous on `D`, its subgradients for the inner product are bounded over every
-compact `K ⊆ D`, and the graph of the subdifferential over `K` is closed. Hence the subgradient
-image `∂f(K) = ⋃ x ∈ K, ∂f(x)` of a compact subset of `D` is compact.
+compact `K ⊆ D`, and the graph of the subdifferential over a closed `K ⊆ D` is closed. Hence
+the subgradient image `∂f(K) = ⋃ x ∈ K, ∂f(x)` of a compact subset of `D` is compact.
 
 ## Main statements
 
 * `TauCeti.exists_norm_le_of_mem_subdifferential` — the subgradients of `f` are bounded over
   compact subsets of `D`;
-* `TauCeti.isClosed_setOf_mem_subdifferential` — the graph of the subdifferential over a compact
+* `TauCeti.isClosed_setOf_mem_subdifferential` — the graph of the subdifferential over a closed
   subset of `D` is closed;
 * `TauCeti.isCompact_subgradientImage` — the subgradient image of a compact subset of `D` is
   compact.
@@ -80,9 +80,9 @@ theorem exists_norm_le_of_mem_subdifferential {K : Set E} (hK : IsCompact K)
   rw [le_div_iff₀ hδ]
   linarith
 
-/-- The graph of the subdifferential of a convex `f : E → EReal` over a compact subset `K` of the
+/-- The graph of the subdifferential of a convex `f : E → EReal` over a closed subset `K` of the
 interior of the effective domain is closed. -/
-theorem isClosed_setOf_mem_subdifferential {K : Set E} (hK : IsCompact K)
+theorem isClosed_setOf_mem_subdifferential {K : Set E} (hK : IsClosed K)
     (hKD : K ⊆ interior {x | f x ≠ ⊤}) :
     IsClosed {z : E × E | z.1 ∈ K ∧ z.2 ∈ subdifferential (innerₗ E) f z.1} := by
   -- The graph is cut out of `K × E` by the subgradient inequalities, which are closed conditions
@@ -98,8 +98,8 @@ theorem isClosed_setOf_mem_subdifferential {K : Set E} (hK : IsCompact K)
     rw [mem_subdifferential_iff_forall_toReal_add_le _ hbot (interior_subset (hKD hx))]
     exact forall₂_congr fun x' _ => (and_iff_right hx).symm
   rw [hG]
-  refine (hK.isClosed.prod isClosed_univ).inter (isClosed_biInter fun x' _ => ?_)
-  refine ContinuousOn.preimage_isClosed_of_isClosed ?_ (hK.isClosed.prod isClosed_univ)
+  refine (hK.prod isClosed_univ).inter (isClosed_biInter fun x' _ => ?_)
+  refine ContinuousOn.preimage_isClosed_of_isClosed ?_ (hK.prod isClosed_univ)
     isClosed_Iic
   refine ContinuousOn.add (((convexOn_toReal hf hbot).continuousOn_interior.mono hKD).comp
     continuousOn_fst fun z hz => hz.1) ?_
@@ -115,7 +115,7 @@ theorem isCompact_subgradientImage {K : Set E} (hK : IsCompact K)
   obtain ⟨R, hR⟩ := exists_norm_le_of_mem_subdifferential hf hbot hK hKD
   have hG : IsCompact {z : E × E | z.1 ∈ K ∧ z.2 ∈ subdifferential (innerₗ E) f z.1} :=
     (hK.prod (isCompact_closedBall (0 : E) R)).of_isClosed_subset
-      (isClosed_setOf_mem_subdifferential hf hbot hK hKD)
+      (isClosed_setOf_mem_subdifferential hf hbot hK.isClosed hKD)
       fun z hz => ⟨hz.1, mem_closedBall_zero_iff.2 (hR z.1 hz.1 z.2 hz.2)⟩
   convert hG.image continuous_snd using 1
   ext y

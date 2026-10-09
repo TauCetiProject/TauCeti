@@ -31,7 +31,7 @@ That `s ↦ μ(∂f(s ∩ D))` is a measure rests on two facts.
 * A point `y` that is a subgradient at two distinct points `x₁ ≠ x₂` is a point where the
   conjugate `f⋆` has the two subgradients `x₁` and `x₂`, so `f⋆` is not differentiable there.
   By Rademacher's theorem for the convex function `f⋆`, such points form a `μ`-null set
-  (`TauCeti.measure_setOf_mem_subdifferential_of_ne_eq_zero`); this needs no convexity of `f`.
+  (`TauCeti.measure_setOf_exists_ne_mem_subdifferential_eq_zero`); this needs no convexity of `f`.
   Hence the subgradient images of disjoint sets are almost disjoint.
 * The subgradient image of a compact subset of `D` is compact
   (`TauCeti.isCompact_subgradientImage`). Open subsets of `D` are σ-compact, so their
@@ -50,6 +50,9 @@ then `D = Ω` and the subdifferential is the set of `y` with `u x + ⟪x' - x, y
 
 ## Main statements
 
+* `TauCeti.measure_setOf_exists_ne_mem_subdifferential_eq_zero` and
+  `TauCeti.aedisjoint_subgradientImage` — almost no point is a subgradient at two distinct points,
+  so subgradient images of disjoint sets are almost disjoint;
 * `TauCeti.mongeAmpereMeasure_apply` — `MA_f(s) = μ(∂f(s ∩ D))` for measurable `s`;
 * `TauCeti.mongeAmpereMeasure_compl_interior` — `MA_f` is concentrated on `D`;
 * `TauCeti.mongeAmpereMeasure_lt_top` and `TauCeti.isLocallyFiniteMeasure_comap_mongeAmpereMeasure`
@@ -87,7 +90,7 @@ variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (μ : Meas
 /-- **Almost no point is a subgradient at two distinct points.** For any `f : E → EReal` on a
 finite-dimensional real inner product space, the set of `y` lying in the subdifferentials of `f`
 at two distinct points is null for every additive Haar measure. -/
-theorem measure_setOf_mem_subdifferential_of_ne_eq_zero (f : E → EReal) :
+theorem measure_setOf_exists_ne_mem_subdifferential_eq_zero (f : E → EReal) :
     μ {y | ∃ x₁ x₂, x₁ ≠ x₂ ∧ y ∈ subdifferential (innerₗ E) f x₁ ∧
       y ∈ subdifferential (innerₗ E) f x₂} = 0 := by
   by_cases hdom : ∃ x, f x ≠ ⊤
@@ -107,10 +110,12 @@ theorem measure_setOf_mem_subdifferential_of_ne_eq_zero (f : E → EReal) :
     rintro y ⟨x₁, -, -, h₁, -⟩
     exact ne_top_of_mem_subdifferential _ h₁ (hdom x₁)
 
-/-- The subgradient images of disjoint sets are almost disjoint. -/
-private lemma aedisjoint_subgradientImage {s t : Set E} (hst : Disjoint s t) :
+/-- **Subgradient images of disjoint sets are almost disjoint.** For any `f : E → EReal` on a
+finite-dimensional real inner product space, the subgradient images of disjoint sets meet in a
+null set for every additive Haar measure. -/
+theorem aedisjoint_subgradientImage (f : E → EReal) {s t : Set E} (hst : Disjoint s t) :
     AEDisjoint μ (subgradientImage (innerₗ E) f s) (subgradientImage (innerₗ E) f t) := by
-  refine measure_mono_null ?_ (measure_setOf_mem_subdifferential_of_ne_eq_zero μ f)
+  refine measure_mono_null ?_ (measure_setOf_exists_ne_mem_subdifferential_eq_zero μ f)
   rintro y ⟨h₁, h₂⟩
   obtain ⟨x₁, hx₁, h₁⟩ := (mem_subgradientImage_iff _).1 h₁
   obtain ⟨x₂, hx₂, h₂⟩ := (mem_subgradientImage_iff _).1 h₂
@@ -156,7 +161,7 @@ theorem nullMeasurableSet_subgradientImage {s : Set E} (hs : MeasurableSet s) :
       by_cases hxt : x ∈ t
       · exact hyt ((mem_subgradientImage_iff _).2 ⟨x, ⟨hxt, hx⟩, hyx⟩)
       · exact hytc ((mem_subgradientImage_iff _).2 ⟨x, ⟨hxt, hx⟩, hyx⟩)
-    · refine measure_mono_null (fun y hy => ?_) (aedisjoint_subgradientImage μ (f := f)
+    · refine measure_mono_null (fun y hy => ?_) (aedisjoint_subgradientImage μ f
         (disjoint_compl_left.mono inter_subset_left inter_subset_left :
           Disjoint (tᶜ ∩ D) (t ∩ D)))
       obtain ⟨hytc, hy'⟩ := hy
@@ -190,7 +195,7 @@ def mongeAmpereMeasure (μ : Measure E) (f : E → EReal) : Measure E :=
         obtain ⟨hf, hbot, ν, _, hμ⟩ := h
         simp only [iUnion_inter, subgradientImage_iUnion]
         exact measure_iUnion₀
-          (fun i j hij => hμ (aedisjoint_subgradientImage ν
+          (fun i j hij => hμ (aedisjoint_subgradientImage ν f
             ((hd hij).mono inter_subset_left inter_subset_left)))
           fun i => (nullMeasurableSet_subgradientImage hf hbot ν (hg i)).mono_ac hμ
   else 0

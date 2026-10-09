@@ -126,17 +126,16 @@ effective domain. -/
 theorem mem_subdifferential_iff_forall_toReal_add_le (hbot : ∀ x', f x' ≠ ⊥) (hx : f x ≠ ⊤) :
     y ∈ subdifferential B f x ↔
       ∀ x', f x' ≠ ⊤ → (f x).toReal + B (x' - x) y ≤ (f x').toReal := by
+  have key : ∀ x', f x' ≠ ⊤ →
+      (f x + B (x' - x) y ≤ f x' ↔ (f x).toReal + B (x' - x) y ≤ (f x').toReal) := fun x' hx' => by
+    conv_lhs => rw [← EReal.coe_toReal hx (hbot x), ← EReal.coe_toReal hx' (hbot x')]
+    rw [← EReal.coe_add, EReal.coe_le_coe_iff]
   rw [mem_subdifferential_iff]
-  refine ⟨fun h x' hx' => ?_, fun h => ⟨hbot x, hx, fun x' => ?_⟩⟩
-  · have h := h.2.2 x'
-    rwa [← EReal.coe_toReal hx (hbot x), ← EReal.coe_toReal hx' (hbot x'), ← EReal.coe_add,
-      EReal.coe_le_coe_iff] at h
+  refine ⟨fun h x' hx' => (key x' hx').1 (h.2.2 x'), fun h => ⟨hbot x, hx, fun x' => ?_⟩⟩
   rcases eq_or_ne (f x') ⊤ with hx' | hx'
   · rw [hx']
     exact le_top
-  rw [← EReal.coe_toReal hx (hbot x), ← EReal.coe_toReal hx' (hbot x'), ← EReal.coe_add,
-    EReal.coe_le_coe_iff]
-  exact h x' hx'
+  exact (key x' hx').2 (h x' hx')
 
 /-! ### Subgradient images -/
 
@@ -152,6 +151,7 @@ theorem mem_subgradientImage_iff {s : Set E} :
   simp only [subgradientImage, Set.mem_iUnion, exists_prop]
 
 /-- The subgradient image is monotone in the set. -/
+@[gcongr]
 theorem subgradientImage_mono {s t : Set E} (h : s ⊆ t) :
     subgradientImage B f s ⊆ subgradientImage B f t :=
   Set.biUnion_subset_biUnion_left h
@@ -160,6 +160,11 @@ theorem subgradientImage_mono {s t : Set E} (h : s ⊆ t) :
 @[simp]
 theorem subgradientImage_empty : subgradientImage B f ∅ = ∅ :=
   Set.biUnion_empty _
+
+/-- The subgradient image of a singleton is the subdifferential at that point. -/
+@[simp]
+theorem subgradientImage_singleton (x : E) : subgradientImage B f {x} = subdifferential B f x :=
+  Set.biUnion_singleton _ _
 
 /-- The subgradient image of a union is the union of the subgradient images. -/
 @[simp]
