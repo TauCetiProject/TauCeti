@@ -53,6 +53,8 @@ norm of a finite extension (`infiniteArtinAt_norm`), the archimedean analogue of
 
 ## Main results
 
+* `TauCeti.ClassFieldTheory.infiniteArtinAt_apply`: the archimedean Artin map is the absolute
+  Artin map of `infiniteClassFormation w`.
 * `TauCeti.ClassFieldTheory.infiniteArtinAt_layer`: on every layer `V ◁ G_{K_w}`, the archimedean
   Artin map is the Artin map of `infiniteClassFormation w`.
 * `TauCeti.ClassFieldTheory.character_infiniteArtinAt`: the archimedean character formula.
@@ -92,6 +94,17 @@ that class formation (`infiniteArtinAt_layer`); it is trivial at a complex place
 def infiniteArtinAt (w : InfinitePlace K) :
     w.Completionˣ →* Field.absoluteGaloisGroupAbelianization w.Completion :=
   (infiniteClassFormation w).fieldArtinMap
+
+/-- **The archimedean Artin map is the absolute Artin map of `infiniteClassFormation w`**: the
+absolute Artin symbol of `x ∈ K_wˣ`, regarded as an element of the ground level
+`((K_wˢ)ˣ)^{G_{K_w}}`, carried from `Gal(K_wˢ/K_w)^ab` to `Gal(AlgebraicClosure K_w/K_w)^ab`. -/
+theorem infiniteArtinAt_apply (w : InfinitePlace K) (x : w.Completionˣ) :
+    infiniteArtinAt w x =
+      (absoluteGaloisGroupRestrictEquiv w.Completion).symm.topologicalAbelianizationCongr
+        ((infiniteClassFormation w).absoluteArtinMap
+          (unitsLevelEquiv (Algebra.ofId w.Completion (SeparableClosure w.Completion))
+            (fixedField_toSubgroup_top w.Completion) (Additive.ofMul x))).toMul :=
+  (infiniteClassFormation w).fieldArtinMap_apply x
 
 /-- **The archimedean Artin map on a layer.** If `σ ∈ Gal(AlgebraicClosure K_w/K_w)` represents
 `Art_w(x)`, then for every open normal subgroup `V` of `G_{K_w}` the Artin map of
@@ -196,7 +209,7 @@ theorem infiniteArtinAt_eq_one_iff_of_isReal (x : w.Completionˣ) :
     have hsq : Units.mk0 r hr0 ^ 2 = y := Units.ext <|
       (Completion.extensionEmbeddingOfIsReal hw).injective <| by
         rw [Units.val_pow_eq_pow_val, Units.val_mk0, map_pow, hr, Real.sq_sqrt hy.le]
-    rw [← hsq, map_pow, sq_eq_one_of_isReal w hw]
+    rw [← hsq, map_pow, sq_eq_one_fieldAbsoluteGaloisGroupAbelianization_of_isReal w hw]
   refine ⟨fun hx ↦ ?_, hpos x⟩
   by_contra hneg
   -- If a negative element were killed, so would be every element: each is either positive or
@@ -233,7 +246,7 @@ theorem infiniteArtinAt_rootsOfUnity_of_isReal (m : ℕ) [NeZero m] (x : w.Compl
       ZMod.val_neg_one]
     -- `Field.absoluteGaloisGroup w.Completion` is by definition
     -- `Gal(AlgebraicClosure w.Completion/w.Completion)`, and `σ.toRingEquiv` applies `σ`.
-    exact (apply_eq_inv_of_isReal w hw hσ1 n.succ_ne_zero hz).trans
+    exact (fieldAbsoluteGaloisGroup_apply_eq_inv_of_isReal w hw hσ1 n.succ_ne_zero hz).trans
       (eq_inv_of_mul_eq_one_left (by rw [← pow_succ, hz])).symm
   · have hσ1 : σ = 1 := eq_one_of_mk_eq_one_of_isReal w hw
       (hσ.trans ((infiniteArtinAt_eq_one_iff_of_isReal w hw x).mpr hpos))
@@ -284,7 +297,8 @@ theorem infiniteArtinAt_norm (w : InfinitePlace L) (v : InfinitePlace K) [w.Lies
           Units.coe_map, Completion.extensionEmbeddingOfIsReal_norm_of_isReal hv hw]
       by_cases h1 : infiniteArtinAt w x = 1
       · rw [hLHS.mpr h1, hRHS.mpr h1]
-      · exact eq_of_ne_one_of_isReal v hv (fun h ↦ h1 (hLHS.mp h)) (fun h ↦ h1 (hRHS.mp h))
+      · exact eq_of_ne_one_fieldAbsoluteGaloisGroupAbelianization_of_isReal v hv
+          (fun h ↦ h1 (hLHS.mp h)) (fun h ↦ h1 (hRHS.mp h))
     · -- `ℂ/ℝ`: `G_{K_w}` is trivial, and the norm `|x|²` is positive.
       have := subsingleton_fieldAbsoluteGaloisGroup_of_isComplex w hw
       have hram : w.IsRamified K := isRamified_iff.mpr ⟨hw, (LiesOver.comap_eq w v).symm ▸ hv⟩

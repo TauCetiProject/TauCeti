@@ -44,11 +44,12 @@ invariants, rather than merely providing abstract class formations on the same c
   `TauCeti.ClassFieldTheory.natCard_fieldAbsoluteGaloisGroup_of_isReal`: Mathlib's absolute Galois
   group `Gal(AlgebraicClosure K_w/K_w)` is trivial at a complex place and of order two at a real
   place.
-* `TauCeti.ClassFieldTheory.sq_eq_one_of_isReal`,
-  `TauCeti.ClassFieldTheory.eq_of_ne_one_of_isReal`: at a real place every element of
-  `G_{K_w}^ab` squares to `1`, and any two nontrivial elements of it are equal.
-* `TauCeti.ClassFieldTheory.apply_eq_inv_of_isReal`: at a real place the nontrivial automorphism of
-  `AlgebraicClosure K_w` inverts every root of unity.
+* `TauCeti.ClassFieldTheory.sq_eq_one_fieldAbsoluteGaloisGroupAbelianization_of_isReal`,
+  `TauCeti.ClassFieldTheory.eq_of_ne_one_fieldAbsoluteGaloisGroupAbelianization_of_isReal`: at a
+  real place every element of `G_{K_w}^ab` squares to `1`, and any two nontrivial elements of it
+  are equal.
+* `TauCeti.ClassFieldTheory.fieldAbsoluteGaloisGroup_apply_eq_inv_of_isReal`: at a real place the
+  nontrivial automorphism of `AlgebraicClosure K_w` inverts every root of unity.
 
 ## References
 
@@ -454,15 +455,15 @@ theorem eq_one_of_mk_eq_one_of_isReal {σ : Field.absoluteGaloisGroup w.Completi
   rwa [hclosure, Subgroup.mem_bot] at hmem
 
 /-- At a real place every element of `G_{K_w}^ab` squares to `1`, since `G_{K_w}` has order two. -/
-theorem sq_eq_one_of_isReal (y : Field.absoluteGaloisGroupAbelianization w.Completion) :
-    y ^ 2 = 1 := by
+theorem sq_eq_one_fieldAbsoluteGaloisGroupAbelianization_of_isReal
+    (y : Field.absoluteGaloisGroupAbelianization w.Completion) : y ^ 2 = 1 := by
   obtain ⟨σ, rfl⟩ := QuotientGroup.mk_surjective y
   rw [← QuotientGroup.mk_pow, ← natCard_fieldAbsoluteGaloisGroup_of_isReal w hw,
     pow_card_eq_one', QuotientGroup.mk_one]
 
 /-- At a real place any two nontrivial elements of `G_{K_w}^ab` are equal, since `G_{K_w}` has
 order two. -/
-theorem eq_of_ne_one_of_isReal
+theorem eq_of_ne_one_fieldAbsoluteGaloisGroupAbelianization_of_isReal
     {a b : Field.absoluteGaloisGroupAbelianization w.Completion} (ha : a ≠ 1) (hb : b ≠ 1) :
     a = b := by
   obtain ⟨σ, rfl⟩ := QuotientGroup.mk_surjective a
@@ -477,8 +478,9 @@ theorem eq_of_ne_one_of_isReal
 
 /-- At a real place an element of `AlgebraicClosure K_w` fixed by a nontrivial automorphism lies in
 `K_w`: that automorphism and the identity are all of `G_{K_w}`, which has order two. -/
-theorem mem_range_algebraMap_of_isReal {σ : Gal(AlgebraicClosure w.Completion/w.Completion)}
-    (hσ : σ ≠ 1) {y : AlgebraicClosure w.Completion} (hy : σ y = y) :
+theorem mem_range_algebraMap_of_fieldAbsoluteGaloisGroup_apply_eq_of_isReal
+    {σ : Gal(AlgebraicClosure w.Completion/w.Completion)} (hσ : σ ≠ 1)
+    {y : AlgebraicClosure w.Completion} (hy : σ y = y) :
     y ∈ Set.range (algebraMap w.Completion (AlgebraicClosure w.Completion)) := by
   have := (Completion.extensionEmbedding w).charZero
   refine IntermediateField.mem_bot.mp ((InfiniteGalois.mem_bot_iff_fixed y).mpr fun τ ↦ ?_)
@@ -492,9 +494,9 @@ theorem mem_range_algebraMap_of_isReal {σ : Gal(AlgebraicClosure w.Completion/w
 /-- At a real place a nontrivial automorphism of `AlgebraicClosure K_w` inverts every root of
 unity: writing `z = a + b i` with `a, b ∈ K_w`, the product `z σ(z) = a² + b²` is a nonnegative root
 of unity in `K_w ≅ ℝ`, hence `1`. -/
-theorem apply_eq_inv_of_isReal {σ : Gal(AlgebraicClosure w.Completion/w.Completion)}
-    (hσ : σ ≠ 1) {m : ℕ} (hm : m ≠ 0) {z : AlgebraicClosure w.Completion} (hz : z ^ m = 1) :
-    σ z = z⁻¹ := by
+theorem fieldAbsoluteGaloisGroup_apply_eq_inv_of_isReal
+    {σ : Gal(AlgebraicClosure w.Completion/w.Completion)} (hσ : σ ≠ 1) {m : ℕ} (hm : m ≠ 0)
+    {z : AlgebraicClosure w.Completion} (hz : z ^ m = 1) : σ z = z⁻¹ := by
   let ι := algebraMap w.Completion (AlgebraicClosure w.Completion)
   have := (Completion.extensionEmbedding w).charZero
   -- `Field.absoluteGaloisGroup w.Completion` is by definition
@@ -512,15 +514,17 @@ theorem apply_eq_inv_of_isReal {σ : Gal(AlgebraicClosure w.Completion/w.Complet
   have hσi : σ i = -i := by
     have h2 : σ i ^ 2 = i ^ 2 := by rw [← map_pow, hi, map_neg, map_one]
     refine (sq_eq_sq_iff_eq_or_eq_neg.mp h2).resolve_left fun h ↦ ?_
-    obtain ⟨c, hc⟩ := mem_range_algebraMap_of_isReal w hw hσ h
+    obtain ⟨c, hc⟩ := mem_range_algebraMap_of_fieldAbsoluteGaloisGroup_apply_eq_of_isReal w hw hσ h
     exact hnsq c (ι.injective (by rw [map_pow, hc, hi, map_neg, map_one]))
   have hi0 : i ≠ 0 := by
     rintro rfl
     norm_num at hi
   -- The real and imaginary parts of `z` are fixed by `σ`, so they lie in `K_w`.
-  obtain ⟨a, ha⟩ := mem_range_algebraMap_of_isReal w hw hσ (y := (z + σ z) / 2) (by
+  obtain ⟨a, ha⟩ := mem_range_algebraMap_of_fieldAbsoluteGaloisGroup_apply_eq_of_isReal w hw hσ
+    (y := (z + σ z) / 2) (by
     rw [map_div₀, map_add, hσσ, map_ofNat, add_comm])
-  obtain ⟨b, hb⟩ := mem_range_algebraMap_of_isReal w hw hσ (y := (z - σ z) / (2 * i)) (by
+  obtain ⟨b, hb⟩ := mem_range_algebraMap_of_fieldAbsoluteGaloisGroup_apply_eq_of_isReal w hw hσ
+    (y := (z - σ z) / (2 * i)) (by
     rw [map_div₀, map_sub, map_mul, hσσ, map_ofNat, hσi, mul_neg, div_neg, ← neg_div, neg_sub])
   have hzz : z * σ z = ι (a ^ 2 + b ^ 2) := by
     rw [map_add, map_pow, map_pow, ha, hb, div_pow, div_pow, mul_pow, hi]
