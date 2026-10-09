@@ -41,9 +41,11 @@ public section
 open CategoryTheory
 open scoped TensorProduct
 
-namespace TauCeti.CommHopfAlgCat
-
 universe u v
+
+namespace CommHopfAlgCat
+
+open TauCeti.CommHopfAlgCat
 
 section CommRing
 
@@ -78,6 +80,10 @@ theorem etale_iff_algebraEtale_quotient_kernelHopfIdeal (f : H ⟶ K)
 
 end CommRing
 
+end CommHopfAlgCat
+
+namespace TauCeti.CommHopfAlgCat
+
 variable {k : Type u} [Field k] {H K : _root_.CommHopfAlgCat.{u} k}
 
 /-- The kernel of an affine group morphism is étale exactly when its differential is injective.
@@ -89,14 +95,20 @@ theorem algebraEtale_quotient_kernelHopfIdeal_iff [Algebra.FiniteType k K] (f : 
   rw [← finrank_toSubmodule, Submodule.finrank_eq_zero, LieSubmodule.toSubmodule_eq_bot,
     LieHom.ker_eq_bot]
 
+end TauCeti.CommHopfAlgCat
+
+namespace CommHopfAlgCat
+
+variable {k : Type u} [Field k] {H K : CommHopfAlgCat.{u} k}
+
 /-- A faithfully flat affine group homomorphism with finite-type source over a field
 is étale exactly when its differential at the identity is injective. Smoothness of
 the source and target is not assumed. -/
 theorem etale_iff_derivationCompLieHom_injective [Algebra.FiniteType k K] (f : H ⟶ K)
     (hf : f.hom.toAlgHom.toRingHom.FaithfullyFlat) :
     f.hom.toAlgHom.toRingHom.Etale ↔
-      Function.Injective (derivationCompLieHom (B := k) f.hom) :=
+      Function.Injective (TauCeti.derivationCompLieHom (B := k) f.hom) :=
   (etale_iff_algebraEtale_quotient_kernelHopfIdeal f hf).trans
-    (algebraEtale_quotient_kernelHopfIdeal_iff f)
+    (TauCeti.CommHopfAlgCat.algebraEtale_quotient_kernelHopfIdeal_iff f)
 
-end TauCeti.CommHopfAlgCat
+end CommHopfAlgCat

@@ -35,7 +35,9 @@ public section
 open CategoryTheory
 open scoped TensorProduct
 
-namespace TauCeti.CommHopfAlgCat
+namespace CommHopfAlgCat
+
+open TauCeti.CommHopfAlgCat
 
 universe u v
 
@@ -68,4 +70,4 @@ theorem smooth_iff_algebraSmooth_quotient_kernelHopfIdeal (f : H ⟶ K)
     Algebra.Smooth.of_equiv (kernelPairTensorEquiv f).symm
   exact Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat K
 
-end TauCeti.CommHopfAlgCat
+end CommHopfAlgCat
