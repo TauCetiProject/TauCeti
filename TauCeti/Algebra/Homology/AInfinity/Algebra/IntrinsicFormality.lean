@@ -15,9 +15,10 @@ public import TauCeti.Algebra.Homology.AInfinity.Algebra.Transfer.Cohomology
 A graded algebra `H` is **intrinsically formal** when every `A∞` algebra whose cohomology algebra
 is isomorphic to `H` is formal: the cohomology algebra alone then determines every such `A∞`
 algebra up to quasi-isomorphism.
-Here `H` is presented as an `A∞` algebra `ℋ`, normally minimal with no operations above arity two,
-and an isomorphism of cohomology algebras is a bijective strict morphism from `ℋ` to the
-cohomology `A∞` algebra `TauCeti.AInfinityAlgebra.cohomologyAInfinityAlgebra`.
+Here `H` is presented as an `A∞` algebra `ℋ`, which the predicate requires to be minimal with no
+operations above arity two, and an isomorphism of cohomology algebras is a bijective strict
+morphism from `ℋ` to the cohomology `A∞` algebra
+`TauCeti.AInfinityAlgebra.cohomologyAInfinityAlgebra`.
 
 Minimality, formality and intrinsic formality are distinct predicates.  Minimality (`m₁ = 0`) is
 a property of one `A∞` structure; formality asks for a quasi-isomorphism from one `A∞` algebra to
@@ -39,8 +40,9 @@ ordinary associative algebra in degree zero is formal.
 
 ## Main definitions
 
-* `TauCeti.AInfinityAlgebra.IsIntrinsicallyFormal`: every `A∞` algebra whose cohomology algebra
-  is isomorphic to the given graded algebra is formal.
+* `TauCeti.AInfinityAlgebra.IsIntrinsicallyFormal`: the given `A∞` algebra is a graded algebra
+  (minimal, with no operations above arity two), and every `A∞` algebra whose cohomology algebra
+  is isomorphic to it is formal.
 
 ## Main results
 
@@ -73,22 +75,34 @@ section CommRing
 
 variable {R : Type uR} {H : Type uH} [CommRing R] [AddCommGroup H] [Module R H]
 
-/-- A graded algebra, presented as an `A∞` algebra `ℋ`, is **intrinsically formal** when every
-`A∞` algebra whose cohomology algebra is isomorphic to `ℋ`, through a bijective strict morphism
-from `ℋ` to its cohomology `A∞` algebra, is formal.  The `A∞` algebras quantified over have
-carriers in the universe of `H`. -/
+/-- A graded algebra, presented as an `A∞` algebra `ℋ`, is **intrinsically formal** when `ℋ` is
+minimal with no operations above arity two, so that it is a graded algebra, and every `A∞` algebra
+whose cohomology algebra is isomorphic to `ℋ`, through a bijective strict morphism from `ℋ` to its
+cohomology `A∞` algebra, is formal.  The `A∞` algebras quantified over have carriers in the
+universe of `H`. -/
 def IsIntrinsicallyFormal (ℋ : AInfinityAlgebra R H) : Prop :=
-  ∀ ⦃A : Type uH⦄ [AddCommGroup A] [Module R A] (𝒜 : AInfinityAlgebra R A)
-    (f : AInfinityStrictHom ℋ 𝒜.cohomologyAInfinityAlgebra), Function.Bijective f → 𝒜.IsFormal
+  ℋ.IsMinimal ∧ (∀ n, 3 ≤ n → ℋ.m n = 0) ∧
+    ∀ ⦃A : Type uH⦄ [AddCommGroup A] [Module R A] (𝒜 : AInfinityAlgebra R A)
+      (f : AInfinityStrictHom ℋ 𝒜.cohomologyAInfinityAlgebra), Function.Bijective f → 𝒜.IsFormal
 
-/-- Unfold intrinsic formality: every `A∞` algebra with a cohomology algebra isomorphic to `ℋ` is
-formal. -/
+/-- Unfold intrinsic formality: `ℋ` is minimal with no operations above arity two, and every `A∞`
+algebra with a cohomology algebra isomorphic to `ℋ` is formal. -/
 theorem isIntrinsicallyFormal_def (ℋ : AInfinityAlgebra R H) :
-    ℋ.IsIntrinsicallyFormal ↔ ∀ ⦃A : Type uH⦄ [AddCommGroup A] [Module R A]
-      (𝒜 : AInfinityAlgebra R A) (f : AInfinityStrictHom ℋ 𝒜.cohomologyAInfinityAlgebra),
-      Function.Bijective f → 𝒜.IsFormal := Iff.rfl
+    ℋ.IsIntrinsicallyFormal ↔ ℋ.IsMinimal ∧ (∀ n, 3 ≤ n → ℋ.m n = 0) ∧
+      ∀ ⦃A : Type uH⦄ [AddCommGroup A] [Module R A]
+        (𝒜 : AInfinityAlgebra R A) (f : AInfinityStrictHom ℋ 𝒜.cohomologyAInfinityAlgebra),
+        Function.Bijective f → 𝒜.IsFormal := Iff.rfl
 
 variable {ℋ ℬ : AInfinityAlgebra R H}
+
+/-- An intrinsically formal graded algebra is minimal. -/
+theorem IsIntrinsicallyFormal.isMinimal (h : ℋ.IsIntrinsicallyFormal) : ℋ.IsMinimal :=
+  h.1
+
+/-- An intrinsically formal graded algebra has no operations above arity two. -/
+theorem IsIntrinsicallyFormal.m_eq_zero (h : ℋ.IsIntrinsicallyFormal) {n : ℕ} (hn : 3 ≤ n) :
+    ℋ.m n = 0 :=
+  h.2.1 n hn
 
 /-- An `A∞` algebra whose cohomology algebra is isomorphic to an intrinsically formal graded
 algebra is formal. -/
@@ -96,7 +110,7 @@ theorem IsIntrinsicallyFormal.isFormal (h : ℋ.IsIntrinsicallyFormal) {A : Type
     [AddCommGroup A] [Module R A] (𝒜 : AInfinityAlgebra R A)
     (f : AInfinityStrictHom ℋ 𝒜.cohomologyAInfinityAlgebra) (hf : Function.Bijective f) :
     𝒜.IsFormal :=
-  h 𝒜 f hf
+  h.2.2 𝒜 f hf
 
 /-- A minimal `A∞` structure `ℬ` with the grading and the binary operation of a minimal `ℋ`
 without operations above arity two is formal exactly when it is `A∞` isomorphic to `ℋ`. -/
@@ -116,9 +130,8 @@ theorem IsMinimal.isFormal_iff_exists_isIso (hℬ : ℬ.IsMinimal) (hℋ : ℋ.I
 /-- Every minimal `A∞` structure with the grading and the binary operation of an intrinsically
 formal graded algebra is formal. -/
 theorem IsIntrinsicallyFormal.isFormal_of_isMinimal (h : ℋ.IsIntrinsicallyFormal)
-    (hℋ : ℋ.IsMinimal) (hm : ∀ n, 3 ≤ n → ℋ.m n = 0) (hG : ℬ.grading = ℋ.grading)
-    (hℬ : ℬ.IsMinimal) (h₂ : ℬ.m 2 = ℋ.m 2) : ℬ.IsFormal :=
-  h ℬ (hℬ.toCohomology hℋ hm hG h₂) (hℬ.bijective_toCohomology hℋ hm hG h₂)
+    (hG : ℬ.grading = ℋ.grading) (hℬ : ℬ.IsMinimal) (h₂ : ℬ.m 2 = ℋ.m 2) : ℬ.IsFormal :=
+  h.isFormal ℬ (hℬ.toCohomology h.1 h.2.1 hG h₂) (hℬ.bijective_toCohomology h.1 h.2.1 hG h₂)
 
 end CommRing
 
@@ -127,12 +140,14 @@ section Field
 variable {K : Type uK} {H : Type uH} [Field K] [AddCommGroup H] [Module K H]
   {ℋ : AInfinityAlgebra K H}
 
-/-- Over a field, a graded algebra `ℋ` is intrinsically formal as soon as every minimal `A∞`
-structure on the same graded module with the same binary operation is formal. -/
-theorem isIntrinsicallyFormal_of_forall_isFormal (h : ∀ ℬ : AInfinityAlgebra K H,
-    ℬ.grading = ℋ.grading → ℬ.IsMinimal → ℬ.m 2 = ℋ.m 2 → ℬ.IsFormal) :
+/-- Over a field, a minimal graded algebra `ℋ` without operations above arity two is
+intrinsically formal as soon as every minimal `A∞` structure on the same graded module with the
+same binary operation is formal. -/
+theorem isIntrinsicallyFormal_of_forall_isFormal (hℋ : ℋ.IsMinimal)
+    (hm : ∀ n, 3 ≤ n → ℋ.m n = 0) (h : ∀ ℬ : AInfinityAlgebra K H,
+      ℬ.grading = ℋ.grading → ℬ.IsMinimal → ℬ.m 2 = ℋ.m 2 → ℬ.IsFormal) :
     ℋ.IsIntrinsicallyFormal := by
-  intro A _ _ 𝒜 f hf
+  refine ⟨hℋ, hm, fun A _ _ 𝒜 f hf ↦ ?_⟩
   -- Pull the minimal model of `𝒜` back to `H` along the isomorphism `f` of cohomology algebras.
   have hdeg (p : ℤ) (x : H) :
       f.toLinearMap x ∈ 𝒜.minimalModel.grading.piece p ↔ x ∈ ℋ.grading.piece p := by
@@ -166,8 +181,8 @@ the same binary operation is formal. -/
 theorem isIntrinsicallyFormal_iff (hℋ : ℋ.IsMinimal) (hm : ∀ n, 3 ≤ n → ℋ.m n = 0) :
     ℋ.IsIntrinsicallyFormal ↔ ∀ ℬ : AInfinityAlgebra K H,
       ℬ.grading = ℋ.grading → ℬ.IsMinimal → ℬ.m 2 = ℋ.m 2 → ℬ.IsFormal :=
-  ⟨fun h _ hG hℬ h₂ ↦ h.isFormal_of_isMinimal hℋ hm hG hℬ h₂,
-    isIntrinsicallyFormal_of_forall_isFormal⟩
+  ⟨fun h _ hG hℬ h₂ ↦ h.isFormal_of_isMinimal hG hℬ h₂,
+    isIntrinsicallyFormal_of_forall_isFormal hℋ hm⟩
 
 /-- Over a field, a minimal graded algebra `ℋ` without operations above arity two is
 intrinsically formal exactly when every minimal `A∞` structure on the same graded module with the
@@ -185,8 +200,12 @@ theorem isIntrinsicallyFormal_iff_forall_exists_isIso (hℋ : ℋ.IsMinimal)
 theorem isIntrinsicallyFormal_of_forall_mem_piece_zero (h : ∀ x, x ∈ ℋ.grading.piece 0) :
     ℋ.IsIntrinsicallyFormal :=
   -- A structure with the grading of `ℋ` is concentrated in degree zero, so it has only `m₂`.
-  isIntrinsicallyFormal_of_forall_isFormal fun ℬ hG hℬ _ ↦ hℬ.isFormal fun _ hn ↦
-    ℬ.m_eq_zero_of_forall_mem_piece_zero (by rwa [hG]) (by omega)
+  isIntrinsicallyFormal_of_forall_isFormal
+    ((isMinimal_iff_m_one_eq_zero ℋ).2 fun _ ↦ by
+      rw [ℋ.m_eq_zero_of_forall_mem_piece_zero h (by omega), zero_apply])
+    (fun _ hn ↦ ℋ.m_eq_zero_of_forall_mem_piece_zero h (by omega))
+    fun ℬ hG hℬ _ ↦ hℬ.isFormal fun _ hn ↦
+      ℬ.m_eq_zero_of_forall_mem_piece_zero (by rwa [hG]) (by omega)
 
 end Field
 
