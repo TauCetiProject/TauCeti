@@ -20,6 +20,9 @@ function modulo the same filtration, and successive truncations agree. Constants
 a constant coefficient, the chosen uniformizer has only a degree-one coefficient, and
 multiplication of integral functions gives coefficient convolution.
 
+Peeling off leading terms one at a time also shows that a `k`-linear map on `F` is determined
+by its values on a step of the order filtration and on the powers of the uniformizer below it.
+
 These are finite truncations: no completeness assumption or infinite series is used. They
 provide the finite approximation and uniqueness statements for the power-series construction
 in a completed valuation ring. In particular, the statements also apply to the place on a
@@ -410,5 +413,45 @@ theorem truncatedExpansion_eq_iff_sub_mem_filtration (hP : P.degree = 1)
     apply (P.truncatedExpansion_eq_iff hP ht n x _).mpr
     convert (P.filtration n).add_mem h hy using 1
     ring
+
+/-! ### Linear maps determined on powers of a uniformizer -/
+
+/-- At a rational place, two `k`-linear maps on `F` that agree on the step `𝔪_P^m` of the order
+filtration and on every power `t ^ j`, `j < m`, of a uniformizer `t` are equal: subtracting
+the leading term `c * t ^ j` of a function of order `j < m` raises its order. -/
+theorem linearMap_ext_zpow {M : Type*} [AddCommGroup M] [Module k M] (hP : P.degree = 1)
+    (ht : P.ord t = 1) {m : ℤ} {f g : F →ₗ[k] M}
+    (hfg : ∀ z ∈ P.filtration m, f z = g z) (h : ∀ j < m, f (t ^ j) = g (t ^ j)) : f = g := by
+  have ht0 : t ≠ 0 := by
+    rintro rfl
+    simp at ht
+  have htj (j : ℤ) : t ^ j ∈ P.filtration j := by
+    simpa [P.ord_zpow, ht] using P.mem_filtration_ord (t ^ j)
+  -- Induction on how far below `m` the order of the function may lie.
+  have key (d : ℕ) : ∀ z ∈ P.filtration (m - d), f z = g z := by
+    induction d with
+    | zero =>
+      intro z hz
+      rw [Nat.cast_zero, sub_zero] at hz
+      exact hfg z hz
+    | succ d ih =>
+      intro z hz
+      generalize hj' : m - ((d + 1 : ℕ) : ℤ) = j at hz
+      have hj : j < m := by omega
+      have hint := P.mul_mem_filtration (htj (-j)) hz
+      rw [neg_add_cancel, mem_filtration_zero_iff] at hint
+      obtain ⟨c, hc, -⟩ := P.existsUnique_sub_sum_mem_filtration hP ht 1 _ hint
+      -- `z - c 0 • t ^ j = t ^ j * (t ^ (-j) * z - c 0)` has order at least `j + 1`.
+      have hrem := P.mul_mem_filtration (htj j) hc
+      rw [Fin.sum_univ_one, Fin.val_zero, pow_zero, mul_one, mul_sub, ← mul_assoc,
+        ← zpow_add₀ ht0, add_neg_cancel, zpow_zero, one_mul, mul_comm, ← Algebra.smul_def,
+        show j + ((1 : ℕ) : ℤ) = m - d by omega] at hrem
+      calc f z = f (z - c 0 • t ^ j) + c 0 • f (t ^ j) := by
+            rw [← map_smul, ← map_add, sub_add_cancel]
+        _ = g z := by
+            rw [ih _ hrem, h _ hj, ← map_smul, ← map_add, sub_add_cancel]
+  ext z
+  exact key _ z (P.filtration_antitone (show m - ((m - P.ord z).toNat : ℕ) ≤ P.ord z by omega)
+    (P.mem_filtration_ord z))
 
 end TauCeti.Place
