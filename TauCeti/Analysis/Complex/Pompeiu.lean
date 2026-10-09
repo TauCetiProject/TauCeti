@@ -10,10 +10,10 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Analysis.SpecialFunctions.PolarCoord
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
+import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.MeasureTheory.Integral.NormRpow
 
 /-!
@@ -145,24 +145,6 @@ private lemma integrableOn_polarCoord_target_fderiv (hc : HasCompactSupport u)
 
 variable [CompleteSpace F]
 
-/-- Integrating the derivative of a compactly supported `C¹` map along a ray from `w` in a nonzero
-direction `e` recovers `-u w`. This is `HasCompactSupport.integral_Ioi_deriv_eq` applied to the
-restriction `r ↦ u (w + r • e)` of `u` to the line through `w` in direction `e`. -/
-private lemma integral_Ioi_fderiv_apply_ray (hc : HasCompactSupport u) (hu : ContDiff ℝ 1 u)
-    (w : ℂ) {e : ℂ} (he : e ≠ 0) :
-    ∫ r in Ioi (0 : ℝ), fderiv ℝ u (w + r • e) e = -u w := by
-  have hline : HasCompactSupport fun r : ℝ => u (w + r • e) :=
-    hc.comp_isClosedEmbedding
-      ((Homeomorph.addLeft w).isClosedEmbedding.comp (isClosedEmbedding_smul_left he))
-  have hderiv : ∀ r : ℝ, deriv (fun r : ℝ => u (w + r • e)) r = fderiv ℝ u (w + r • e) e :=
-    fun r => by
-      have h : HasDerivAt (fun r : ℝ => w + r • e) e r := by
-        simpa using ((hasDerivAt_id r).smul_const e).const_add w
-      exact (((hu.differentiable one_ne_zero) _).hasFDerivAt.comp_hasDerivAt r h).deriv
-  have h := hline.integral_Ioi_deriv_eq (f := fun r : ℝ => u (w + r • e))
-    (hu.comp (by fun_prop : ContDiff ℝ 1 fun r : ℝ => w + r • e)) 0
-  simpa only [hderiv, zero_smul, add_zero] using h
-
 /-- Integrating the angular derivative of a `C¹` map around a circle about `w` gives zero. -/
 private lemma integral_Ioo_fderiv_apply_circle (hu : ContDiff ℝ 1 u) (w : ℂ) {r : ℝ}
     (hr : r ≠ 0) :
@@ -230,7 +212,7 @@ theorem
     rw [hprod, integral_prod_symm _ (by rw [← hprod]; exact hAi)]
     simp only [hA]
     rw [setIntegral_congr_fun measurableSet_Ioo fun θ _ => by
-      simpa only [real_smul] using integral_Ioi_fderiv_apply_ray hc hu w
+      simpa only [real_smul] using hc.integral_Ioi_fderiv_apply_ray hu w
         (e := expI θ) (norm_ne_zero_iff.1 (by rw [norm_expI]; exact one_ne_zero))]
     rw [setIntegral_const, Real.volume_real_Ioo_of_le (by linarith [Real.pi_pos]), smul_neg]
     ring_nf
@@ -246,17 +228,13 @@ theorem
   field_simp [Real.pi_ne_zero]
   simp
 
-namespace Complex
-
 /-- The kernel `z ↦ (w - z)⁻¹` of the Cauchy transform is locally integrable on `ℂ`. -/
-lemma locallyIntegrable_sub_inv (w : ℂ) :
+lemma _root_.Complex.locallyIntegrable_sub_inv (w : ℂ) :
     LocallyIntegrable (fun z : ℂ => (w - z)⁻¹) volume := by
   refine (locallyIntegrable_norm_sub_rpow (mu := volume) (s := -1) (by simp) w).mono
     (measurable_const.sub measurable_id).inv.aestronglyMeasurable (ae_of_all _ fun z => ?_)
   rw [norm_inv, Real.norm_eq_abs, abs_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _),
     Real.rpow_neg_one]
-
-end Complex
 
 /-- Recentring the Cauchy transform at the evaluation point turns it into a convolution with the
 kernel `t ↦ t⁻¹`. -/
