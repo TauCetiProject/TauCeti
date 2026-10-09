@@ -14,15 +14,12 @@ public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Lattic
 
 The unit calculation used in the local Euler characteristic is phrased in terms of the additive
 reduction `Lˣ / nLˣ`, while Kummer theory is phrased in terms of the multiplicative quotient
-`Lˣ / (Lˣ)ⁿ`. This file identifies the two quotients and checks that the identification respects
-the natural Galois actions. It is the bridge through which the power-class Grothendieck-group
-calculation enters equivariant Kummer theory.
+`Lˣ / (Lˣ)ⁿ`. Through the equivariant identification of the two quotients,
+`TauCeti.quotSMulTopUnitsPowerClassRepresentationEquiv`, this file transports the power-class
+Grothendieck-group calculation to the representation of equivariant Kummer theory.
 
 ## Main results
 
-* `TauCeti.quotSMulTopUnitsPowerClassRepresentationEquiv`: the identification
-  `Lˣ ⧸ nLˣ ≃ Lˣ ⧸ (Lˣ)ⁿ` of `TauCeti.quotSMulTopPowerClassEquiv` respects the action of
-  `Gal(L/K)`.
 * `TauCeti.exactK0_powerClassRepresentation_of_isUnit` and
   `TauCeti.exactK0_powerClassRepresentation_eq_add_finrank_smul`: the class of the power-class
   representation of a finite extension of local fields in `G₀(𝔽_ℓ[Gal(L/K)])` is
@@ -35,40 +32,6 @@ open ValuativeRel
 open scoped MonoidAlgebra
 
 namespace TauCeti
-
-/-- The natural identification of additive reduction with power classes is equivariant for the
-action of `Gal(L/K)`. -/
-def quotSMulTopUnitsPowerClassRepresentationEquiv
-    {K L : Type*} [Field K] [Field L] [Algebra K L] (n : ℕ) :
-    ((Representation.ofDistribMulAction ℤ Gal(L/K) (Additive Lˣ)).quotSMulTop
-      (n : ℤ)).Equiv
-        (powerClassRepresentation (K := K) (L := L) n).restrictScalarsInt where
-  toLinearEquiv := (quotSMulTopPowerClassEquiv n).toIntLinearEquiv
-  isIntertwining' tau := by
-    ext x
-    simp
-
-/-- `TauCeti.quotSMulTopUnitsPowerClassRepresentationEquiv` sends the class of `x` modulo `n` to
-the `n`th power class of `x`. -/
-@[simp]
-theorem quotSMulTopUnitsPowerClassRepresentationEquiv_apply_mk
-    {K L : Type*} [Field K] [Field L] [Algebra K L] (n : ℕ) (x : Additive Lˣ) :
-    quotSMulTopUnitsPowerClassRepresentationEquiv (K := K) n (Submodule.Quotient.mk x) =
-      Additive.ofMul (powerClassHom Lˣ n x.toMul) :=
-  quotSMulTopPowerClassEquiv_mk n x
-
-/-- The inverse of `TauCeti.quotSMulTopUnitsPowerClassRepresentationEquiv` sends the `n`th power
-class of `x` to the class of `x` modulo `n`. -/
-@[simp]
-theorem quotSMulTopUnitsPowerClassRepresentationEquiv_symm_ofMul_mk
-    {K L : Type*} [Field K] [Field L] [Algebra K L] (n : ℕ) (x : Lˣ) :
-    (quotSMulTopUnitsPowerClassRepresentationEquiv (K := K) n).symm
-        (Additive.ofMul (QuotientGroup.mk x : powerClassQuotient Lˣ n)) =
-      Submodule.Quotient.mk (Additive.ofMul x) := by
-  rw [← Representation.Equiv.symm_apply_apply
-      (quotSMulTopUnitsPowerClassRepresentationEquiv (K := K) n)
-      (Submodule.Quotient.mk (Additive.ofMul x)),
-    quotSMulTopUnitsPowerClassRepresentationEquiv_apply_mk, toMul_ofMul, powerClassHom_apply]
 
 /-! ### The class of the power-class representation -/
 

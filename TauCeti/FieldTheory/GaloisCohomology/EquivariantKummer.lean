@@ -12,7 +12,9 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
 public import TauCeti.FieldTheory.GaloisCohomology.Kummer
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Conjugation
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.H1.ZMod
+public import TauCeti.RepresentationTheory.QuotSMulTop
 public import TauCeti.RepresentationTheory.RankOneTwist
+public import TauCeti.RepresentationTheory.RestrictScalars
 public import TauCeti.RingTheory.RootsOfUnity.ZMod
 
 /-!
@@ -74,6 +76,9 @@ of `L`.
 * `TauCeti.fixingSubgroupKummerEquivOfTrivial`: the Kummer isomorphism `Lˣ ⧸ (Lˣ)ⁿ ≃ H¹(N, M)`
   with trivial coefficients `M ≃ μₙ`, when `σ(L)` contains the `n`th roots of unity.
 * `TauCeti.powerClassFiniteRep`: the natural representation of `Gal(L/K)` on `Lˣ ⧸ (Lˣ)ⁿ`.
+* `TauCeti.quotSMulTopUnitsPowerClassRepresentationEquiv`: the identification
+  `Lˣ ⧸ nLˣ ≃ Lˣ ⧸ (Lˣ)ⁿ` of `TauCeti.quotSMulTopPowerClassEquiv` respects the action of
+  `Gal(L/K)`.
 * `TauCeti.kummerCoeffFiniteRep`: the roots-of-unity representation of `Gal(L/K)`.
 * `TauCeti.kummerH1FiniteRep`: the conjugation representation of `Gal(L/K)` on `H¹(N, ℤ/n)`.
 * `TauCeti.kummerH1FiniteRepresentationEquiv`: equivariant Kummer theory,
@@ -404,6 +409,37 @@ theorem powerClassRepresentation_apply (n : ℕ) (tau : Gal(L/K))
       MonoidHom.toAdditive (powerClassMap n (Units.map (tau : L →* L))) x := by
   rw [powerClassRepresentation]
   rfl
+
+/-- The natural identification of additive reduction with power classes is equivariant for the
+action of `Gal(L/K)`. -/
+def quotSMulTopUnitsPowerClassRepresentationEquiv (n : ℕ) :
+    ((Representation.ofDistribMulAction ℤ Gal(L/K) (Additive Lˣ)).quotSMulTop
+      (n : ℤ)).Equiv
+        (powerClassRepresentation (K := K) (L := L) n).restrictScalarsInt where
+  toLinearEquiv := (quotSMulTopPowerClassEquiv n).toIntLinearEquiv
+  isIntertwining' tau := by
+    ext x
+    simp
+
+/-- `TauCeti.quotSMulTopUnitsPowerClassRepresentationEquiv` sends the class of `x` modulo `n` to
+the `n`th power class of `x`. -/
+@[simp]
+theorem quotSMulTopUnitsPowerClassRepresentationEquiv_apply_mk (n : ℕ) (x : Additive Lˣ) :
+    quotSMulTopUnitsPowerClassRepresentationEquiv (K := K) n (Submodule.Quotient.mk x) =
+      Additive.ofMul (powerClassHom Lˣ n x.toMul) :=
+  quotSMulTopPowerClassEquiv_mk n x
+
+/-- The inverse of `TauCeti.quotSMulTopUnitsPowerClassRepresentationEquiv` sends the `n`th power
+class of `x` to the class of `x` modulo `n`. -/
+@[simp]
+theorem quotSMulTopUnitsPowerClassRepresentationEquiv_symm_ofMul_mk (n : ℕ) (x : Lˣ) :
+    (quotSMulTopUnitsPowerClassRepresentationEquiv (K := K) n).symm
+        (Additive.ofMul (QuotientGroup.mk x : powerClassQuotient Lˣ n)) =
+      Submodule.Quotient.mk (Additive.ofMul x) := by
+  rw [← Representation.Equiv.symm_apply_apply
+      (quotSMulTopUnitsPowerClassRepresentationEquiv (K := K) n)
+      (Submodule.Quotient.mk (Additive.ofMul x)),
+    quotSMulTopUnitsPowerClassRepresentationEquiv_apply_mk, toMul_ofMul, powerClassHom_apply]
 
 /-! ### Quotients of the absolute Galois action -/
 
