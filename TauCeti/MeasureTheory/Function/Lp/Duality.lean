@@ -19,7 +19,7 @@ file proves the half of that duality which is used to bound a norm: if
 `‖∫ h g‖ ≤ C ‖g‖_{q'}` for every simple `g ∈ L^{q'}`, then `‖h‖_q ≤ C`.
 
 For `q < ∞` this holds for every `h ∈ L^q`, on any measure space. The test function is the
-extremal one `ḡ |g| ^ (q - 2)` of a simple approximation `g` of `h`. For `q = ∞` it needs the
+extremal one `conj g * |g| ^ (q - 2)` of a simple approximation `g` of `h`. For `q = ∞` it needs the
 measure to be σ-finite (on a measure with an atom of infinite measure every integrable `g`
 vanishes on the atom), and it reduces to the case `q = 1` on a set of finite positive measure
 where `‖h‖` is close to its essential supremum.
