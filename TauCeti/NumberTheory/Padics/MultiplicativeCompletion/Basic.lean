@@ -449,16 +449,6 @@ private theorem congrRangePowMonoidHom_transition (e : L ≃+* L') (m : ℕ)
     rw [congrRangePowMonoidHom_units_mk, padicCompletionTransition_mk, padicCompletionTransition_mk,
       congrRangePowMonoidHom_units_mk]
 
-private theorem congrRangePowMonoidHom_symm_apply (e : L ≃+* L') (m : ℕ)
-    (x : L'ˣ ⧸ (powMonoidHom (p ^ m) : L'ˣ →* L'ˣ).range) :
-    QuotientGroup.congrRangePowMonoidHom (Units.mapEquiv (e : L ≃* L').symm) (p ^ m) x =
-      (QuotientGroup.congrRangePowMonoidHom (Units.mapEquiv (e : L ≃* L')) (p ^ m)).symm x := by
-  rw [MulEquiv.eq_symm_apply]
-  induction x using QuotientGroup.induction_on with
-  | H x =>
-    rw [QuotientGroup.congrRangePowMonoidHom_mk, QuotientGroup.congrRangePowMonoidHom_mk]
-    exact congrArg _ (Units.ext (by simp))
-
 /-- **`A(L)` is functorial in field isomorphisms**: a ring isomorphism `L ≃+* L'` induces
 `A(L) ≃* A(L')`, coordinatewise on the power-class groups. -/
 def padicCompletionUnitsCongr (e : L ≃+* L') :
@@ -472,12 +462,13 @@ def padicCompletionUnitsCongr (e : L ≃+* L') :
       (QuotientGroup.congrRangePowMonoidHom (Units.mapEquiv e.symm.toMulEquiv) (p ^ m)).toMonoidHom)
     (congrRangePowMonoidHom_transition p e.symm)
   left_inv x := Subtype.ext <| funext fun m ↦ by
-    simp [congrRangePowMonoidHom_symm_apply]
+    simp [← Units.mapEquiv_symm, ← QuotientGroup.congrRangePowMonoidHom_symm]
   right_inv x := Subtype.ext <| funext fun m ↦ by
-    simp [congrRangePowMonoidHom_symm_apply]
+    simp [← Units.mapEquiv_symm, ← QuotientGroup.congrRangePowMonoidHom_symm]
   map_mul' := map_mul _
 
 /-- `padicCompletionUnitsCongr` is computed coordinatewise. -/
+@[simp]
 theorem padicCompletionUnitsCongr_apply (e : L ≃+* L') (x : ↑(padicCompletionUnits p L)) (m : ℕ) :
     (padicCompletionUnitsCongr p e x).1 m =
       QuotientGroup.congrRangePowMonoidHom (Units.mapEquiv e.toMulEquiv) (p ^ m) (x.1 m) :=

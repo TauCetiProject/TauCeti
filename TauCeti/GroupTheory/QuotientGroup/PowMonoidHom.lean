@@ -65,6 +65,15 @@ lemma congrRangePowMonoidHom_mk {G H : Type*} [CommGroup G] [CommGroup H] (e : G
     congrRangePowMonoidHom e n (QuotientGroup.mk g) = QuotientGroup.mk (e g) :=
   (rfl)
 
+/-- The inverse of `congrRangePowMonoidHom e n` is induced by the inverse of `e`. -/
+@[simp]
+lemma congrRangePowMonoidHom_symm {G H : Type*} [CommGroup G] [CommGroup H] (e : G ≃* H)
+    (n : ℕ) :
+    (congrRangePowMonoidHom e n).symm = congrRangePowMonoidHom e.symm n := by
+  ext x
+  induction x using QuotientGroup.induction_on with
+  | H x => rfl
+
 /-- Every class modulo the subgroup of `n`-th powers is killed by `n`. -/
 @[simp]
 theorem pow_eq_one_quotient_range_powMonoidHom {G : Type*} [CommGroup G] (n : ℕ)
