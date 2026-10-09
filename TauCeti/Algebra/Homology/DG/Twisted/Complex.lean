@@ -19,7 +19,8 @@ copy of `M` for each generator, and differential
 `D (α ⊗ x) = dM α ⊗ x + (-1) ^ |α| Σ_y (α · m x y) ⊗ y`
 
 on a homogeneous elementary tensor `α ⊗ x`, written `Pi.single x α`.  The Koszul sign is carried by
-the **grading involution** `α ↦ (-1) ^ |α| α` of `M`.  The total degree of `α ⊗ x` is `|α| - ind x`,
+the Koszul twist of parameter one, `(InternalGrading.ofDecomposition ℳ).koszulTwist 1`, which is
+`α ↦ (-1) ^ |α| α` on `M`.  The total degree of `α ⊗ x` is `|α| - ind x`,
 so a generator of index `k` sits in cohomological degree `-k`, and `D` raises the total degree by
 one.
 
@@ -31,12 +32,13 @@ equation.  Right modules are represented as left modules over `Aᵐᵒᵖ`, so `
 
 ## Main definitions
 
-* `TauCeti.gradingInvolution`: `α ↦ (-1) ^ |α| α` on an internally graded module.
 * `TauCeti.TwistingCocycle.totalGrading`: the grading of `P → M` by total degree.
 * `TauCeti.TwistingCocycle.twistedDifferential`: the differential `D` of the twisted complex.
 
 ## Main results
 
+* `TauCeti.InternalGrading.koszulTwist_one_ofDecomposition_apply_of_mem`: the Koszul twist of
+  parameter one, as the `ℤˣ`-scalar `negOnePow` used by `TauCeti.IsDGRightModule`.
 * `TauCeti.TwistingCocycle.twistedDifferential_single`: the formula on a homogeneous elementary
   tensor.
 * `TauCeti.TwistingCocycle.twistedDifferential_mem_totalGrading`: `D` raises the total degree by
@@ -63,37 +65,14 @@ variable {R : Type uR} {A : Type uA} {M : Type uM}
   [CommRing R] [Ring A] [Algebra R A]
   [AddCommGroup M] [Module R M]
 
-section GradingInvolution
-
-variable (ℳ : ℤ → Submodule R M) [DirectSum.Decomposition ℳ]
-
-/-- The **grading involution** `α ↦ (-1) ^ |α| α` of an internally graded module: the sign
-`(-1) ^ q` on the homogeneous component of degree `q`.  It carries the Koszul sign of the twisted
-differential. -/
-def gradingInvolution : M →ₗ[R] M :=
-  (decomposeLinearEquiv ℳ).symm.toLinearMap ∘ₗ
-    DirectSum.lmap (fun q : ℤ ↦ (q.negOnePow : ℤˣ) • (LinearMap.id : ℳ q →ₗ[R] ℳ q)) ∘ₗ
-    (decomposeLinearEquiv ℳ).toLinearMap
-
-theorem gradingInvolution_of_mem {q : ℤ} {α : M} (hα : α ∈ ℳ q) :
-    gradingInvolution ℳ α = q.negOnePow • α := by
-  simp only [gradingInvolution, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    decomposeLinearEquiv_apply, decomposeLinearEquiv_symm_apply]
-  rw [decompose_of_mem ℳ hα, ← lof_eq_of R, lmap_lof, lof_eq_of, decompose_symm_of]
-  simp
-
-/-- The grading involution is an involution. -/
-theorem gradingInvolution_gradingInvolution (α : M) :
-    gradingInvolution ℳ (gradingInvolution ℳ α) = α := by
-  induction α using DirectSum.Decomposition.inductionOn ℳ with
-  | zero => simp
-  | @homogeneous i x =>
-    rw [gradingInvolution_of_mem ℳ x.2,
-      gradingInvolution_of_mem ℳ (Submodule.smul_of_tower_mem _ _ x.2), smul_smul]
-    simp
-  | add x y hx hy => rw [map_add, map_add, hx, hy]
-
-end GradingInvolution
+/-- The Koszul twist of parameter one on an internally graded module, in the `ℤˣ`-scalar form
+`(-1) ^ q • α` of `TauCeti.IsDGRightModule`: on a homogeneous element of degree `q` it is
+`q.negOnePow • α`. -/
+theorem InternalGrading.koszulTwist_one_ofDecomposition_apply_of_mem (ℳ : ℤ → Submodule R M)
+    [DirectSum.Decomposition ℳ] {q : ℤ} {α : M} (hα : α ∈ ℳ q) :
+    (InternalGrading.ofDecomposition ℳ).koszulTwist 1 α = q.negOnePow • α := by
+  rw [InternalGrading.koszulTwist_one_apply_of_mem _
+    (by rwa [InternalGrading.ofDecomposition_piece]), Int.cast_smul_eq_zsmul, Units.smul_def]
 
 namespace TwistingCocycle
 
@@ -117,14 +96,15 @@ theorem mem_totalGrading {ℳ : ℤ → Submodule R M} {n : ℤ} {f : P → M} :
 variable [SMulCommClass R Aᵐᵒᵖ M]
 
 /-- The twisted differential on `ℳ ⊗ ⟨P⟩`, identified with `P → M`.  Its `y`-component is
-`(D f) y = dM (f y) + Σ_x op (m x y) • ε (f x)`, where `ε = gradingInvolution ℳ` carries the Koszul
-sign; on a homogeneous elementary tensor this is
+`(D f) y = dM (f y) + Σ_x op (m x y) • ε (f x)`, where `ε` is the Koszul twist of parameter
+one; on a homogeneous elementary tensor this is
 `D (α ⊗ x) = dM α ⊗ x + (-1) ^ |α| Σ_y (α · m x y) ⊗ y` (`twistedDifferential_single`).  The right
 `A`-action on `M` and its commutation with the `R`-scalars are parameters of the definition: the
 map depends on the action, and `R`-linearity needs the commutation. -/
-def twistedDifferential (m : TwistingCocycle 𝒜 d P ind) (ℳ : ℤ → Submodule R M)
+noncomputable def twistedDifferential (m : TwistingCocycle 𝒜 d P ind) (ℳ : ℤ → Submodule R M)
     [DirectSum.Decomposition ℳ] (dM : M →ₗ[R] M) : (P → M) →ₗ[R] (P → M) where
-  toFun f y := dM (f y) + ∑ x, op (m.m x y) • gradingInvolution ℳ (f x)
+  toFun f y :=
+    dM (f y) + ∑ x, op (m.m x y) • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (f x)
   map_add' f g := by
     funext y
     simp only [Pi.add_apply, map_add, smul_add, Finset.sum_add_distrib]
@@ -138,7 +118,8 @@ variable (m : TwistingCocycle 𝒜 d P ind) {ℳ : ℤ → Submodule R M} [Direc
 
 omit [IsScalarTower R Aᵐᵒᵖ M] [GradedAlgebra 𝒜] in
 theorem twistedDifferential_apply (f : P → M) (y : P) :
-    twistedDifferential m ℳ dM f y = dM (f y) + ∑ x, op (m.m x y) • gradingInvolution ℳ (f x) := by
+    twistedDifferential m ℳ dM f y =
+      dM (f y) + ∑ x, op (m.m x y) • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (f x) := by
   rw [twistedDifferential]
   rfl
 
@@ -150,7 +131,8 @@ theorem twistedDifferential_single [DecidableEq P] (x : P) {q : ℤ} {α : M} (h
   funext y'
   simp only [twistedDifferential_apply, Pi.add_apply, Finset.sum_apply, Pi.single_apply]
   rw [Finset.sum_eq_single x (fun x' _ hx' ↦ by simp [hx']) (by simp)]
-  simp only [ite_true, gradingInvolution_of_mem ℳ hα, smul_comm (op (m.m x y')) q.negOnePow]
+  simp only [ite_true, InternalGrading.koszulTwist_one_ofDecomposition_apply_of_mem ℳ hα,
+    smul_comm (op (m.m x y')) q.negOnePow]
   split_ifs with hxy <;> simp [hxy]
 
 omit [IsScalarTower R Aᵐᵒᵖ M] [GradedAlgebra 𝒜] in
@@ -176,8 +158,8 @@ theorem twistedDifferential_mem_totalGrading (hM : IsDGRightModule h ℳ dM)
   · have := hM.isHomogeneous.map_mem (hf y)
     convert this using 2
     ring
-  · have hα : gradingInvolution ℳ (f x) ∈ ℳ (n + ind x) := by
-      rw [gradingInvolution_of_mem ℳ (hf x)]
+  · have hα : (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (f x) ∈ ℳ (n + ind x) := by
+      rw [InternalGrading.koszulTwist_one_ofDecomposition_apply_of_mem ℳ (hf x)]
       exact Submodule.smul_of_tower_mem _ _ (hf x)
     have hm : op (m.m x y) ∈
         (InternalGrading.ofDecomposition 𝒜).opposite.piece (ind y - ind x + 1) := by
