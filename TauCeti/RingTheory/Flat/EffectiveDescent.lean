@@ -677,6 +677,14 @@ namespace IsoDescentDatum
 
 variable {R S B}
 
+attribute [simp] iso_one_tmul
+
+/-- The gluing isomorphism is determined by its values on `B ⊗ 1`: by linearity for the right
+copy of `S`, `iso (b ⊗ t) = iso (b ⊗ 1) * (1 ⊗ t)`. -/
+theorem iso_tmul (E : IsoDescentDatum R S B) (b : B) (t : S) :
+    E.iso (b ⊗ₜ t) = E.iso (b ⊗ₜ 1) * 1 ⊗ₜ algebraMap S B t := by
+  rw [← E.iso_one_tmul, ← map_mul, Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
+
 omit [Algebra S B] [IsScalarTower R S B] in
 /-- Reassociating `y ⊗ 1` and swapping the last two factors inserts `1` in the middle. -/
 private theorem map_comm_assoc_tmul_one (y : S ⊗[R] B) :
@@ -914,7 +922,7 @@ private theorem mulLeft_iso_tmul_one (b : B) : mulLeft (E.iso (b ⊗ₜ 1)) = b 
   have hmul : mulLeft.comp (E.iso : B ⊗[R] S →ₐ[S] S ⊗[R] B) = c.comp mulRight := by
     refine Algebra.TensorProduct.ext (AlgHom.ext fun b ↦ ?_) (AlgHom.ext fun t ↦ ?_)
     · simp [hc, mulRight]
-    · simp [mulRight, E.iso_one_tmul, mulLeft_tmul]
+    · simp [mulRight, mulLeft_tmul]
   have hsurj : Function.Surjective c := fun b ↦
     ⟨mulRight (E.iso.symm (1 ⊗ₜ b)), by
       simpa [mulLeft_tmul] using congr($hmul.symm (E.iso.symm (1 ⊗ₜ b)))⟩
@@ -955,8 +963,7 @@ noncomputable def equivIsoDescentDatum : DescentDatum R S B ≃ IsoDescentDatum 
   right_inv E := IsoDescentDatum.ext <| AlgEquiv.coe_toAlgHom_injective <|
     Algebra.TensorProduct.ext' fun b t ↦ by
       simp only [AlgEquiv.coe_toAlgHom, toIsoDescentDatum_iso_tmul,
-        IsoDescentDatum.toDescentDatum_coaction, ← E.iso_one_tmul, ← map_mul,
-        Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
+        IsoDescentDatum.toDescentDatum_coaction, E.iso_tmul b t]
 
 @[simp]
 theorem equivIsoDescentDatum_apply (D : DescentDatum R S B) :
