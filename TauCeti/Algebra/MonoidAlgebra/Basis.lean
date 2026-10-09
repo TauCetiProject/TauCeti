@@ -55,7 +55,7 @@ theorem funMultiplicativeIntLinearEquiv_coeff {X : Type*} [Finite X]
 
 /-- The inverse reads coefficients in multiplicative notation. -/
 @[simp]
-theorem funMultiplicativeIntLinearEquiv_symm_apply {X : Type*} [Finite X]
+theorem funMultiplicativeIntLinearEquiv_symm_apply_apply {X : Type*} [Finite X]
     (u : MonoidAlgebra ℤ X) (x : X) :
     ((funMultiplicativeIntLinearEquiv X).symm u).toMul x =
       Multiplicative.ofAdd (u.coeff x) :=
