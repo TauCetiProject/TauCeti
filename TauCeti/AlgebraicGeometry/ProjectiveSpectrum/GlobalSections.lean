@@ -5,20 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Proper
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SchemeTheoreticallyDominant
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
+import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Proper
 
 /-!
-# Global sections of `Proj` from a regular sequence of two homogeneous elements
+# Global sections of `Proj` from a weakly regular sequence of two homogeneous elements
 
 Let `A` be an `ℕ`-graded ring and let `f` and `g` be homogeneous elements of positive degree that
-form a regular sequence `[f, g]` in `A`. Then every global section of the structure sheaf of
+form a weakly regular sequence `[f, g]` in `A`. Then every global section of the structure sheaf of
 `Proj A` comes from the degree-zero part `A₀`: the structure morphism `Proj A ⟶ Spec A₀` induces
 an isomorphism `A₀ ≅ Γ(Proj A, 𝒪)` on global sections.
 
 A global section restricts to `a / fⁿ` on the standard chart `D₊(f)` and to `b / gᵏ` on `D₊(g)`.
-The two restrictions agree on `D₊(fg)`, which forces `fⁿ ∣ a` by the regularity of `[f, g]`
+The two restrictions agree on `D₊(fg)`, which forces `fⁿ ∣ a` by the weak regularity of `[f, g]`
 (`HomogeneousLocalization.Away.mem_range_fromZeroRingHom_of_awayMap_eq`), so the restriction to
 `D₊(f)` comes from `A₀`. As `f` is a nonzerodivisor, `D₊(f)` is scheme-theoretically dense in
 `Proj A` (`AlgebraicGeometry.Proj.isSchemeTheoreticallyDominant_awayι`), and a global section is
@@ -30,7 +30,7 @@ For instance, the projective Weierstrass cubic over a ring `R` satisfies the hyp
 
 ## Main results
 
-* `AlgebraicGeometry.Proj.isIso_appTop_toSpecZero`: if `[f, g]` is a regular sequence of
+* `AlgebraicGeometry.Proj.isIso_appTop_toSpecZero`: if `[f, g]` is a weakly regular sequence of
   homogeneous elements of positive degree, then `Proj.toSpecZero` induces an isomorphism on global
   sections.
 -/
@@ -61,7 +61,7 @@ theorem awayMap_ΓSpecIso_hom_awayι_appTop {f g x : A} {d e : ℕ} (hf : f ∈ 
   exact congr($(Scheme.ΓSpecIso_naturality (CommRingCat.ofHom (awayMap 𝒜 hg hx)))
     ((awayι 𝒜 f hf hd).appTop s)).symm
 
-/-- **The global sections of `Proj A` are `A₀`** when `A` has a regular sequence `[f, g]` of
+/-- **The global sections of `Proj A` are `A₀`** when `A` has a weakly regular sequence `[f, g]` of
 homogeneous elements of positive degree: the structure morphism `Proj A ⟶ Spec A₀` induces an
 isomorphism `A₀ ≅ Γ(Proj A, 𝒪)` on global sections. -/
 theorem isIso_appTop_toSpecZero {f g : A} {d e : ℕ} (hf : f ∈ 𝒜 d) (hg : g ∈ 𝒜 e) (hd : 0 < d)

@@ -24,7 +24,7 @@ Since the projective model commutes with base change
 `Spec R' ⟶ Spec R`: for the base change `π_T : E_T ⟶ T = Spec R'` of the structure morphism, the
 unit `𝒪_T ⟶ (π_T)_* 𝒪_{E_T}` is an isomorphism on global sections.
 
-The classes of `Z` and `Y` form a regular sequence in the homogeneous coordinate ring
+The classes of `Z` and `Y` form a weakly regular sequence in the homogeneous coordinate ring
 (`WeierstrassCurve.Projective.isWeaklyRegular_coord_two_coord_one`), so this is an instance of
 `AlgebraicGeometry.Proj.isIso_appTop_toSpecZero`.
 

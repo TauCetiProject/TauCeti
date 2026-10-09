@@ -24,7 +24,7 @@ linearly on their numerator. This permits scalar extension of the homogeneous af
 
 The file also records that the restriction map `A_{(f)} →+* A_{(fg)}` is injective when `g` is a
 nonzerodivisor of `A`, that an element of `A_{(f)}` whose restriction to `A_{(fg)}` extends to
-`A_{(g)}` lies in the degree-zero part `𝒜 0` when `[f, g]` is a regular sequence, and that a
+`A_{(g)}` lies in the degree-zero part `𝒜 0` when `[f, g]` is a weakly regular sequence, and that a
 homogeneous localization is reduced whenever the corresponding localization is.
 
 ## Main definitions
@@ -47,9 +47,9 @@ homogeneous localization is reduced whenever the corresponding localization is.
   `A_{(fg)}` is injective when `g` is a nonzerodivisor of `A`.
 * `HomogeneousLocalization.fromZeroRingHom_injective`: the degree-zero part `𝒜 0` embeds in a
   homogeneous localization at nonzerodivisors.
-* `HomogeneousLocalization.Away.mem_range_fromZeroRingHom_of_awayMap_eq`: for a regular sequence
-  `[f, g]` of homogeneous elements, elements of `A_{(f)}` and `A_{(g)}` with the same image in
-  `A_{(fg)}` come from `𝒜 0`.
+* `HomogeneousLocalization.Away.mem_range_fromZeroRingHom_of_awayMap_eq`: for a weakly regular
+  sequence `[f, g]` of homogeneous elements, elements of `A_{(f)}` and `A_{(g)}` with the same image
+  in `A_{(fg)}` come from `𝒜 0`.
 * `HomogeneousLocalization.isReduced`: a homogeneous localization is reduced whenever the
   corresponding localization is, in particular for any reduced graded ring.
 
@@ -271,7 +271,7 @@ namespace HomogeneousLocalization
 variable {ι A σ : Type*} [CommRing A] [SetLike σ A] [AddSubgroupClass σ A]
   [AddCancelCommMonoid ι] [DecidableEq ι] (𝒜 : ι → σ) [GradedRing 𝒜]
 
-/-- Let `f` and `g` be homogeneous elements forming a regular sequence `[f, g]` in `A`. If
+/-- Let `f` and `g` be homogeneous elements forming a weakly regular sequence `[f, g]` in `A`. If
 `z ∈ A_{(f)}` and `w ∈ A_{(g)}` have the same image in `A_{(fg)}`, then `z` lies in the degree-zero
 part `𝒜 0`.
 

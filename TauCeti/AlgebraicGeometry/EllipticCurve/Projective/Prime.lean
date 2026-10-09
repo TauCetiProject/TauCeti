@@ -25,7 +25,7 @@ is needed.
 
 Over any commutative ring `R`, the Weierstrass polynomial is, up to sign, a monic cubic in `X`
 over `R[Y, Z]`. Hence the class of `Z` is a nonzerodivisor of the homogeneous coordinate ring, and
-the classes of `Z` and `Y` form a regular sequence in it.
+the classes of `Z` and `Y` form a weakly regular sequence in it.
 
 ## Main results
 
@@ -36,7 +36,7 @@ the classes of `Z` and `Y` form a regular sequence in it.
 * `WeierstrassCurve.Projective.coord_two_mem_nonZeroDivisors`: over any commutative ring, the
   class of `Z` is a nonzerodivisor of the homogeneous coordinate ring.
 * `WeierstrassCurve.Projective.isWeaklyRegular_coord_two_coord_one`: over any commutative ring,
-  the classes of `Z` and `Y` form a regular sequence in the homogeneous coordinate ring.
+  the classes of `Z` and `Y` form a weakly regular sequence in the homogeneous coordinate ring.
 
 ## References
 
@@ -120,7 +120,7 @@ private theorem X_one_dvd_of_X_one_dvd_X_zero_mul {u : MvPolynomial (Fin 2) R}
   intro i
   simpa using h (i + 1)
 
-/-- The classes of the homogeneous coordinates `Z` and `Y` form a regular sequence in the
+/-- The classes of the homogeneous coordinates `Z` and `Y` form a weakly regular sequence in the
 homogeneous coordinate ring `A = R[X, Y, Z] ⧸ (W'(X, Y, Z))` of a Weierstrass curve: `Z` is a
 nonzerodivisor of `A`, and `Y` is a nonzerodivisor of `A ⧸ (Z) = R[X, Y] ⧸ (X³)`. -/
 theorem isWeaklyRegular_coord_two_coord_one :
