@@ -594,7 +594,7 @@ theorem hasOneCommonSide_of_isRecut {D E : GridRectangleDecomposition x z} (h : 
 
 /-- Two decompositions by empty rectangles with exactly one common side column that admit the
 same recut are equal. -/
-theorem IsRecut.eq_of_target_eq {D E F : GridRectangleDecomposition x z}
+theorem IsRecut.eq_of_isRecut {D E F : GridRectangleDecomposition x z}
     (hD : D.IsRecut F) (hE : E.IsRecut F)
     (honeD : D.HasOneCommonSide) (honeE : E.HasOneCommonSide)
     (hfD : D.first.IsEmpty) (hsD : D.second.IsEmpty)

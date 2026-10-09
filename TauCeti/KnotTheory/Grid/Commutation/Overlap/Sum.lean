@@ -158,7 +158,7 @@ open scoped Classical in
 /-- Off the diagonal, the six overlap families of rectangle--pentagon domains are pairwise
 disjoint: each is disjoint from the union of those listed before it in
 `filter_not_hasDisjointSides_rectanglePentagonDecompositions_eq_union`. -/
-private theorem disjoint_overlap_families (hzx : z ≠ x) :
+theorem disjoint_overlap_families (hzx : z ≠ x) :
     Disjoint (G.initialOverlapSources C x z ∪ G.terminalCrossOverlapSources C x z ∪
         G.leftRightOverlapSources C x z ∪ G.rightLeftOverlapSources C x z ∪
           G.rectanglePentagonTurnCuts C x z) (G.terminalSelfPairs C x z) ∧
