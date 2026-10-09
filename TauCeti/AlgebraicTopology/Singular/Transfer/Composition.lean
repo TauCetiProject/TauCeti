@@ -37,14 +37,24 @@ variable {E B A : TopCat.{w}} {p : E ⟶ B} {q : B ⟶ A}
   {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
 
 /-- The transfer of a composite of finite-fibre coverings is the composite of their transfers,
-in the reverse order. The composite fibre proof `hfinpq` follows from `hfinp` and `hfinq` using
-`Set.Finite.preimage'`; it records finiteness without imposing an additional restriction. -/
+in the reverse order. Composite fibre finiteness is derived from `hfinp` and `hfinq` using
+`Set.Finite.preimage'`. -/
 theorem singularTransfer_comp (hq : IsCoveringMap q) (hp : IsCoveringMap p)
     (hfinq : ∀ a, Finite ↥(q ⁻¹' {a})) (hfinp : ∀ b, Finite ↥(p ⁻¹' {b}))
-    (hfinpq : ∀ a, Finite ↥((p ≫ q) ⁻¹' {a})) (R : C) :
-    (hq.comp hp (fun a ↦ Set.finite_coe_iff.mp (hfinq a))).singularTransfer hfinpq R =
+    (R : C) :
+    (hq.comp hp (fun a ↦ Set.finite_coe_iff.mp (hfinq a))).singularTransfer
+        (fun a ↦ (Set.finite_coe_iff (s := (p ≫ q) ⁻¹' {a})).mpr (by
+          change ((q ∘ p) ⁻¹' {a}).Finite
+          rw [Set.preimage_comp]
+          exact (Set.finite_coe_iff.mp (hfinq a)).preimage'
+            (fun b _ ↦ Set.finite_coe_iff.mp (hfinp b)))) R =
       hq.singularTransfer hfinq R ≫ hp.singularTransfer hfinp R := by
   classical
+  have hfinpq : ∀ a, Finite ↥((p ≫ q) ⁻¹' {a}) := fun a ↦ Set.finite_coe_iff.mpr (by
+    change ((q ∘ p) ⁻¹' {a}).Finite
+    rw [Set.preimage_comp]
+    exact (Set.finite_coe_iff.mp (hfinq a)).preimage'
+      (fun b _ ↦ Set.finite_coe_iff.mp (hfinp b)))
   let hpq : IsCoveringMap (p ≫ q) :=
     hq.comp hp (fun a ↦ Set.finite_coe_iff.mp (hfinq a))
   ext n σ
@@ -72,9 +82,14 @@ coverings. -/
 theorem homologyMap_singularTransfer_comp [CategoryWithHomology C]
     (hq : IsCoveringMap q) (hp : IsCoveringMap p)
     (hfinq : ∀ a, Finite ↥(q ⁻¹' {a})) (hfinp : ∀ b, Finite ↥(p ⁻¹' {b}))
-    (hfinpq : ∀ a, Finite ↥((p ≫ q) ⁻¹' {a})) (R : C) (n : ℕ) :
+    (R : C) (n : ℕ) :
     HomologicalComplex.homologyMap
-        ((hq.comp hp (fun a ↦ Set.finite_coe_iff.mp (hfinq a))).singularTransfer hfinpq R) n =
+        ((hq.comp hp (fun a ↦ Set.finite_coe_iff.mp (hfinq a))).singularTransfer
+          (fun a ↦ (Set.finite_coe_iff (s := (p ≫ q) ⁻¹' {a})).mpr (by
+            change ((q ∘ p) ⁻¹' {a}).Finite
+            rw [Set.preimage_comp]
+            exact (Set.finite_coe_iff.mp (hfinq a)).preimage'
+              (fun b _ ↦ Set.finite_coe_iff.mp (hfinp b)))) R) n =
       HomologicalComplex.homologyMap (hq.singularTransfer hfinq R) n ≫
         HomologicalComplex.homologyMap (hp.singularTransfer hfinp R) n := by
   rw [singularTransfer_comp, HomologicalComplex.homologyMap_comp]
