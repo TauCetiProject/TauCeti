@@ -9,7 +9,6 @@ public import TauCeti.RepresentationTheory.Induction.Clifford.Alternating.Standa
 public import TauCeti.RepresentationTheory.Symmetric.SignCharacter
 public import TauCeti.RepresentationTheory.CharacterTwist
 public import TauCeti.RepresentationTheory.Induction.LiesOver
-import TauCeti.RepresentationTheory.AsModule
 import TauCeti.RepresentationTheory.Induction.Permutation
 import TauCeti.RepresentationTheory.Induction.Character
 import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
@@ -83,18 +82,32 @@ theorem nonempty_iso_ind_res_alternatingGroup (B : FDRep k (Equiv.Perm α)) :
   exact character_ind_res_alternatingGroup B g
 
 omit [Nontrivial α] [CharZero k] in
-/-- Restricting a sign twist to the alternating group gives the original restriction. -/
-theorem nonempty_iso_res_signTwist_alternatingGroup (B : FDRep k (Equiv.Perm α)) :
-    Nonempty ((alternatingGroup α).resFDRep
+/-- Restricting a sign twist to the alternating group gives the original restriction,
+by the identity on carriers. -/
+noncomputable def resSignTwistAlternatingGroupIso (B : FDRep k (Equiv.Perm α)) :
+    (alternatingGroup α).resFDRep
         (FDRep.of (Representation.charTwist (signLinearCharacter k α) B.ρ)) ≅
-      (alternatingGroup α).resFDRep B) := by
-  apply nonempty_fdRepIso_iff.mpr
-  refine ⟨Representation.Equiv.mk (LinearEquiv.refl k B) fun g => ?_⟩
+      (alternatingGroup α).resFDRep B := by
+  refine Action.mkIso (Iso.refl _) fun g => ?_
   ext x
   -- Restriction preserves the carrier and precomposes the action; `FDRep` has no action
   -- evaluation lemma for restriction, so expose only that defining computation here.
   change Representation.charTwist (signLinearCharacter k α) B.ρ g.val x = B.ρ g.val x
   simp [Equiv.Perm.mem_alternatingGroup.mp g.property]
+
+omit [Nontrivial α] [CharZero k] in
+/-- The restriction isomorphism for a sign twist is the identity on elements. -/
+@[simp]
+theorem resSignTwistAlternatingGroupIso_hom_apply (B : FDRep k (Equiv.Perm α)) (x : B) :
+    ((resSignTwistAlternatingGroupIso B).hom x : B) = x :=
+  (rfl)
+
+omit [Nontrivial α] [CharZero k] in
+/-- The inverse restriction isomorphism for a sign twist is the identity on elements. -/
+@[simp]
+theorem resSignTwistAlternatingGroupIso_inv_apply (B : FDRep k (Equiv.Perm α)) (x : B) :
+    ((resSignTwistAlternatingGroupIso B).inv x : B) = x :=
+  (rfl)
 
 end FDRep
 
@@ -117,12 +130,8 @@ theorem liesOver_res_alternatingGroup_iff (W B : FDRep k (Equiv.Perm α)) [Simpl
     simpa only [T, of_ρ'] using
       (Representation.isIrreducible_charTwist_iff (signLinearCharacter k α) B.ρ).mpr
         (FDRep.isIrreducible_of_simple B)
-  have hself : B.LiesOver (alternatingGroup α).subtype ((alternatingGroup α).resFDRep B) := by
-    have hB : Nontrivial B := (FDRep.isIrreducible_of_simple B).nontrivial
-    obtain ⟨x, hx⟩ := exists_ne (0 : B)
-    apply liesOver_iff.mpr
-    refine ⟨𝟙 _, fun h => hx ?_⟩
-    exact ConcreteCategory.congr_hom h x
+  have hB : Nontrivial B := (FDRep.isIrreducible_of_simple B).nontrivial
+  have hself := liesOver_res_self B (alternatingGroup α).subtype
   constructor
   · intro h
     have hpos := (Module.finrank_pos_iff_exists_ne_zero (R := k)).mpr (liesOver_iff.mp h)
@@ -142,14 +151,7 @@ theorem liesOver_res_alternatingGroup_iff (W B : FDRep k (Equiv.Perm α)) [Simpl
     · obtain ⟨e⟩ := h
       exact hself.of_iso_left e
     · obtain ⟨e⟩ := h
-      have hres := nonempty_iso_res_signTwist_alternatingGroup B
-      have ht : T.LiesOver (alternatingGroup α).subtype ((alternatingGroup α).resFDRep B) :=
-        liesOver_iff.mpr ⟨hres.some.inv, fun h => by
-          obtain ⟨f, hf⟩ := liesOver_iff.mp hself
-          have hfzero : f = 0 := by
-            rw [← Category.comp_id f, ← hres.some.inv_hom_id, h]
-            simp
-          exact hf hfzero⟩
+      have ht := hself.of_res_iso (resSignTwistAlternatingGroupIso B).symm
       exact ht.of_iso_left e
 
 end FDRep
