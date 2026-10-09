@@ -10,7 +10,6 @@ import TauCeti.Algebra.Algebra.Subalgebra.Separable
 import TauCeti.Algebra.CentralSimple.Centralizer.Simple
 import TauCeti.FieldTheory.Separable.Tower
 import Mathlib.FieldTheory.JacobsonNoether
-import Mathlib.RingTheory.Artinian.Module
 
 /-!
 # Separable maximal subfields of central division algebras
@@ -52,12 +51,7 @@ theorem centralizer_eq_self_of_isSeparable_forall_finrank_le (L : Subalgebra K D
     centralizer K (L : Set D) = L := by
   let : Field L := (IsField.of_isDomain_of_finite K L).toField
   let C := centralizer K (L : Set D)
-  let : IsArtinianRing C := isArtinian_of_tower K inferInstance
-  let : DivisionRing C := DivisionRing.ofIsUnitOrEqZero fun x ↦ by
-    by_cases hx : x = 0
-    · exact Or.inr hx
-    · exact Or.inl (IsArtinianRing.isUnit_of_mem_nonZeroDivisors
-        (mem_nonZeroDivisors_of_ne_zero hx))
+  let : DivisionRing C := divisionRingOfFiniteDimensional K C
   let : Algebra.IsCentral L C := L.isCentral_centralizer
   let : Module.Finite L C := Module.Finite.of_restrictScalars_finite K L C
   have hbot : (⊥ : Subalgebra L C) = ⊤ := by

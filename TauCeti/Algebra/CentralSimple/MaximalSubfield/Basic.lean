@@ -12,14 +12,11 @@ module
 -- as well as `Subalgebra` and `IsField.of_isDomain_of_finite`, which turns a commutative subalgebra
 -- into a subfield.
 public import TauCeti.Algebra.CentralSimple.Subfield
--- Non-public: none of these appears in the type of an exported declaration. A commutative
--- subalgebra of maximal dimension and the fact that it is its own centralizer come from the
--- subalgebra file, the dimension of the centralizer of a subfield from the centralizer file, and
--- the real quaternions and their centrality appear only in the worked examples.
+-- Non-public: the stronger separable existence results are used only in proofs, and the
+-- real quaternions and their centrality appear only in the worked examples.
 import Mathlib.Basic.Real.Basic
-import TauCeti.Algebra.Algebra.Subalgebra.MaximalCommutative
 import TauCeti.Algebra.Central.Quaternion
-import TauCeti.Algebra.CentralSimple.Centralizer.Basic
+import TauCeti.Algebra.CentralSimple.MaximalSubfield.Separable
 
 /-!
 # Maximal subfields of a central division algebra
@@ -31,30 +28,11 @@ open, in as many words, is whether the bound is attained at all. This file settl
 a subfield of degree exactly `deg K D`**, so the splitting field produced there is never vacuous
 and every central division algebra is split by a finite extension of its centre sitting inside it.
 
-The subfield is produced by maximality, in three steps.
-
-*A commutative subalgebra of maximal dimension exists.* Dimensions of subalgebras of `D` are
-bounded by `finrank K D`, so among the commutative ones there is a subalgebra `L` of largest
-dimension (`TauCeti.exists_isMulCommutative_forall_finrank_le`, in
-`TauCeti/Algebra/Algebra/Subalgebra/MaximalCommutative.lean`). Nothing about `D` is used here
-beyond finite-dimensionality.
-
-*It is its own centralizer.* If `x` centralizes `L` then `L` and `x` together generate a
-commutative subalgebra `Algebra.adjoin K (insert x L)`, which contains `L`; maximal dimension makes
-the containment an equality, so `x ∈ L`. This is
-`TauCeti.centralizer_eq_self_of_forall_finrank_le`, in the same file, and it is also what makes `L`
-a *maximal* subfield rather than merely a large one.
-
-Being a commutative domain, finite-dimensional over `K`, `L` is then a field
-(`IsField.of_isDomain_of_finite`).
-
-*Its dimension is forced.* For any subfield `L` of a finite-dimensional central simple algebra `A`,
-
-  `finrank K L * finrank K C_A(L) = finrank K A`
-
-(`TauCeti.finrank_mul_finrank_centralizer_of_isField`, in
-`TauCeti/Algebra/CentralSimple/Centralizer/Basic.lean`). Applied to `C_D(L) = L` this reads
-`(finrank K L)² = finrank K D = (deg K D)²`, so `finrank K L = deg K D`.
+The existence results are consequences of the stronger separable results in
+`TauCeti/Algebra/CentralSimple/MaximalSubfield/Separable.lean`, obtained by dropping the
+separability conclusion. That file constructs a separable commutative subalgebra of maximal
+dimension, proves that it is its own centralizer, and uses the centralizer dimension formula
+to determine its degree.
 
 ## Main results
 
@@ -64,17 +42,6 @@ Being a commutative domain, finite-dimensional over `K`, `L` is then a field
   by a subfield of degree `deg K D`.**
 
 ## Implementation notes
-
-Commutativity of a subalgebra is Mathlib's `IsMulCommutative` on its coercion to a type, which is
-what `Algebra.isMulCommutative_adjoin` produces and what the scoped instances of the
-`IsMulCommutative` namespace turn into a `CommRing` structure; the file therefore opens that scope,
-which is what lets `IsField.of_isDomain_of_finite` apply to a commutative subalgebra of `D`.
-
-The two ingredients that use nothing of the central simple theory are stated where they belong and
-consumed here: the existence of a commutative subalgebra of maximal dimension and its being its own
-centralizer in `TauCeti/Algebra/Algebra/Subalgebra/MaximalCommutative.lean`, the dimension of the
-centralizer of a subfield beside the centralizer theorem it specializes in
-`TauCeti/Algebra/CentralSimple/Centralizer/Basic.lean`.
 
 The existence statements are stated for a **division** algebra. The passage from there to an
 arbitrary central simple algebra `A ≃ₐ[K] Mₙ(D)`, and with it the index `ind A`, needs the
@@ -96,8 +63,6 @@ namespace TauCeti
 
 open Module
 
-open scoped IsMulCommutative
-
 universe u
 
 /-! ### A maximal subfield of a central division algebra -/
@@ -117,15 +82,8 @@ Together with `TauCeti.Algebra.finrank_le_deg`, which bounds the degree of *ever
 `deg K D`, this says `L` is a maximal subfield in the literal sense as well. -/
 theorem exists_subalgebra_isField_finrank_eq_deg :
     ∃ L : Subalgebra K D, IsField ↥L ∧ finrank K ↥L = deg K D := by
-  obtain ⟨L, hL, hmax⟩ := exists_isMulCommutative_forall_finrank_le K D
-  -- A commutative subalgebra of `D` is a domain, and one finite over `K` is therefore a field.
-  have hfield : IsField ↥L := IsField.of_isDomain_of_finite K ↥L
-  refine ⟨L, hfield, ?_⟩
-  -- The centralizer of `L` is `L` itself, so the dimension count becomes a square identity.
-  have hcent := finrank_mul_finrank_centralizer_of_isField L hfield
-  rw [centralizer_eq_self_of_forall_finrank_le hmax] at hcent
-  have hsq : finrank K ↥L ^ 2 = deg K D ^ 2 := by rw [sq, hcent, deg_sq]
-  exact Nat.pow_left_injective (by norm_num) hsq
+  obtain ⟨L, hfield, _, hdeg⟩ := exists_subalgebra_isField_isSeparable_finrank_eq_deg K D
+  exact ⟨L, hfield, hdeg⟩
 
 /-- **A central division algebra is split by a subfield of degree `deg K D`.**
 
@@ -135,11 +93,9 @@ a *finite* extension of `K`, and one realized inside `D` by the accompanying hom
 theorem exists_isSplittingField_finrank_eq_deg :
     ∃ (L : Type u) (_ : Field L) (_ : Algebra K L) (_ : L →ₐ[K] D),
       FiniteDimensional K L ∧ finrank K L = deg K D ∧ IsSplittingField K D L := by
-  obtain ⟨L, hL, hdeg⟩ := exists_subalgebra_isField_finrank_eq_deg K D
-  let _ : Field ↥L := hL.toField
-  exact ⟨↥L, inferInstance, inferInstance, L.val,
-    FiniteDimensional.of_injective L.val.toLinearMap Subtype.val_injective, hdeg,
-    isSplittingField_of_finrank_eq_deg L.val hdeg⟩
+  obtain ⟨L, hfield, halg, f, hfinite, _, hdeg, hsplit⟩ :=
+    exists_isSplittingField_isSeparable_finrank_eq_deg K D
+  exact ⟨L, hfield, halg, f, hfinite, hdeg, hsplit⟩
 
 end Algebra
 
