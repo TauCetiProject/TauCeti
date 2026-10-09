@@ -35,6 +35,10 @@ punctures: their pairwise disjointness lets the three fillings be performed inde
   `puncturedNeighborhoodInfHomeomorphPuncturedDiscOneHalf`: their standard local coordinates.
 * `puncturedDiscOneHalfHomeomorphPuncturedDisc`: multiplication by `2`, from the disc of radius
   `1 / 2` to the punctured unit disc `ball 0 1 \ {0}` that carries the power-map covers.
+* `Puncture`: the three punctures, with `Puncture.neighborhood` and `Puncture.coord` the standard
+  neighborhood of each and its coordinate `z ↦ 2 * z`, `z ↦ 2 * (1 - z)` or `z ↦ 2 / z`, valued in
+  the punctured unit disc. These index the three neighborhoods uniformly, so that a construction
+  over all three punctures is made once.
 -/
 
 public section
@@ -315,6 +319,81 @@ theorem coe_puncturedDiscOneHalfHomeomorphPuncturedDisc_symm_apply
   rw [coe_puncturedDiscOneHalfHomeomorphPuncturedDisc] at h
   rw [← h]
   ring
+
+/-! ### The three punctures -/
+
+/-- The three punctures `0`, `1` and `∞` of the thrice-punctured sphere, indexing its standard
+punctured neighborhoods. -/
+inductive Puncture : Type
+  | zero
+  | one
+  | inf
+
+namespace Puncture
+
+/-- The standard punctured neighborhood of a puncture: `puncturedNeighborhoodZero`,
+`puncturedNeighborhoodOne` or `puncturedNeighborhoodInf`. The body is exposed so that types over
+`p ⁻¹' zero.neighborhood` are those over `p ⁻¹' puncturedNeighborhoodZero`, and likewise at `1` and
+`∞`. -/
+@[expose] def neighborhood : Puncture → Set ThricePuncturedSphere
+  | zero => puncturedNeighborhoodZero
+  | one => puncturedNeighborhoodOne
+  | inf => puncturedNeighborhoodInf
+
+@[simp]
+theorem neighborhood_zero : zero.neighborhood = puncturedNeighborhoodZero :=
+  (rfl)
+
+@[simp]
+theorem neighborhood_one : one.neighborhood = puncturedNeighborhoodOne :=
+  (rfl)
+
+@[simp]
+theorem neighborhood_inf : inf.neighborhood = puncturedNeighborhoodInf :=
+  (rfl)
+
+/-- The standard punctured neighborhoods are open. -/
+theorem isOpen_neighborhood (q : Puncture) : IsOpen q.neighborhood := by
+  cases q
+  exacts [isOpen_puncturedNeighborhoodZero, isOpen_puncturedNeighborhoodOne,
+    isOpen_puncturedNeighborhoodInf]
+
+open Function in
+/-- The standard punctured neighborhoods of distinct punctures are disjoint. -/
+theorem pairwise_disjoint_neighborhood : Pairwise (Disjoint on neighborhood) := by
+  have h01 := disjoint_puncturedNeighborhoodZero_puncturedNeighborhoodOne
+  have h0i := disjoint_puncturedNeighborhoodZero_puncturedNeighborhoodInf
+  have h1i := disjoint_puncturedNeighborhoodOne_puncturedNeighborhoodInf
+  rintro (_ | _ | _) (_ | _ | _) h <;> first | exact absurd rfl h | skip
+  exacts [h01, h0i, h01.symm, h1i, h0i.symm, h1i.symm]
+
+/-- The standard coordinate of the punctured neighborhood of a puncture, identifying it with the
+punctured unit disc: `z ↦ 2 * z` at `0`, `z ↦ 2 * (1 - z)` at `1` and `z ↦ 2 / z` at `∞`. -/
+noncomputable def coord : (q : Puncture) → q.neighborhood ≃ₜ ↥(Metric.ball (0 : ℂ) 1 \ {0})
+  | zero => puncturedNeighborhoodZeroHomeomorphPuncturedDiscOneHalf.trans
+      puncturedDiscOneHalfHomeomorphPuncturedDisc
+  | one => puncturedNeighborhoodOneHomeomorphPuncturedDiscOneHalf.trans
+      puncturedDiscOneHalfHomeomorphPuncturedDisc
+  | inf => puncturedNeighborhoodInfHomeomorphPuncturedDiscOneHalf.trans
+      puncturedDiscOneHalfHomeomorphPuncturedDisc
+
+@[simp]
+theorem coe_coord_zero (z : zero.neighborhood) :
+    (zero.coord z : ℂ) = 2 * (z : ThricePuncturedSphere) :=
+  congrArg (2 * ·) (coe_puncturedNeighborhoodZeroHomeomorphPuncturedDiscOneHalf z)
+
+@[simp]
+theorem coe_coord_one (z : one.neighborhood) :
+    (one.coord z : ℂ) = 2 * (1 - (z : ThricePuncturedSphere)) :=
+  congrArg (2 * ·) (coe_puncturedNeighborhoodOneHomeomorphPuncturedDiscOneHalf z)
+
+@[simp]
+theorem coe_coord_inf (z : inf.neighborhood) :
+    (inf.coord z : ℂ) = 2 / (z : ThricePuncturedSphere) :=
+  (congrArg (2 * ·) (coe_puncturedNeighborhoodInfHomeomorphPuncturedDiscOneHalf z)).trans
+    (mul_one_div _ _)
+
+end Puncture
 
 end ThricePuncturedSphere
 
