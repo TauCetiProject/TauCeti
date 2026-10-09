@@ -41,7 +41,7 @@ variable {R S : Type*} [CommSemiring R] [CommSemiring S]
 
 /-- The derivative of power series commutes with change of coefficients. -/
 @[simp]
-theorem derivative_map (f : R →+* S) (φ : R⟦X⟧) : d⁄dX (map f φ) = map f (d⁄dX φ) := by
+theorem derivative_map (φ : R⟦X⟧) (f : R →+* S) : d⁄dX (map f φ) = map f (d⁄dX φ) := by
   ext n
   simp [coeff_derivative]
 
