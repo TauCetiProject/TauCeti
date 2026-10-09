@@ -26,6 +26,10 @@ decreases along orbits, so the orbit cannot converge to `x`.
 
 * `TauCeti.MorseChart.linearFlow`: the linear flow in the coordinates of a Morse chart, with its
   flow law `TauCeti.MorseChart.linearFlow_add`.
+* `TauCeti.MorseChart.isMIntegralCurveOn_toChart_symm_linearFlow`: when `X` is linear in the chart,
+  the linear orbit read on the manifold is an integral curve of `X`.
+* `TauCeti.MorseChart.sum_weight_mul_linearFlow_sq_le`: the quadratic normal form along the linear
+  flow, once a coordinate of negative weight has grown.
 * `TauCeti.IsAdaptedPseudoGradient.flow_toChart_symm`: the flow of an adapted pseudo-gradient is
   the linear flow while the linear orbit stays in the chart.
 * `TauCeti.IsAdaptedPseudoGradient.flow_toChart_symm_of_forall_coord_eq_zero`: on the coordinate
@@ -66,6 +70,7 @@ noncomputable def linearFlow (t : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ) 
 
 omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- The coordinates of the linear flow. -/
+@[simp]
 theorem linearFlow_apply (t : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ) (i : Fin (Module.finrank ℝ E)) :
     φ.linearFlow t z i = Real.exp (-(φ.weight i * t)) * z i := by
   rw [linearFlow]
@@ -107,17 +112,6 @@ theorem linearFlow_of_weight_eq_neg_one {i : Fin (Module.finrank ℝ E)} (hi : �
     (t : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ) : φ.linearFlow t z i = Real.exp t * z i := by
   rw [linearFlow_apply, hi, neg_one_mul, neg_neg]
 
-omit [IsManifold 𝓘(ℝ, E) ∞ M] in
-/-- Coordinates of small sup norm are coordinates of points of the chart. -/
-theorem exists_pos_forall_norm_lt_mem_target :
-    ∃ r > 0, ∀ z : Fin (Module.finrank ℝ E) → ℝ, ‖z‖ < r → φ.coord.symm z ∈ φ.toChart.target := by
-  have h0 : (0 : Fin (Module.finrank ℝ E) → ℝ) ∈ φ.coordL.symm ⁻¹' φ.toChart.target := by
-    rw [mem_preimage, map_zero, ← φ.apply_self]
-    exact φ.toChart.map_source φ.mem_source
-  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1
-    (φ.toChart.open_target.preimage φ.coordL.symm.continuous) 0 h0
-  exact ⟨r, hr, fun z hz ↦ by simpa using hball (mem_ball_zero_iff.2 hz)⟩
-
 omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- For times `t > -log 2`, a coordinate of positive weight grows at most by a factor `2`. -/
 theorem norm_linearFlow_lt_of_weight_eq_one {r : ℝ} {z : Fin (Module.finrank ℝ E) → ℝ}
@@ -133,15 +127,97 @@ theorem norm_linearFlow_lt_of_weight_eq_one {r : ℝ} {z : Fin (Module.finrank �
     _ < r := by linarith
 
 omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
-/-- A point of the chart is the point with its own coordinates. -/
-theorem toChart_symm_coord_symm_coord {y : M} (hy : y ∈ φ.toChart.source) :
-    φ.toChart.symm (φ.coord.symm (φ.coord (φ.toChart y))) = y := by
-  rw [LinearEquiv.symm_apply_apply, φ.toChart.left_inv hy]
+/-- **The linear orbit stays in the `r`-cube.** If `‖z‖ < r / 2`, then at a time `t > -log 2` at
+which every coordinate of negative weight still has size less than `r`, the linear flow of `z` lies
+in the open `r`-cube. -/
+theorem norm_linearFlow_lt {r : ℝ} {z : Fin (Module.finrank ℝ E) → ℝ} (hz : ‖z‖ < r / 2) {t : ℝ}
+    (ht : -Real.log 2 < t) (hneg : ∀ i, φ.weight i < 0 → Real.exp t * |z i| < r) :
+    ‖φ.linearFlow t z‖ < r := by
+  refine (pi_norm_lt_iff (by linarith [norm_nonneg z])).2 fun i ↦ ?_
+  rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
+  · rw [φ.linearFlow_of_weight_eq_neg_one hi, norm_mul, Real.norm_eq_abs, Real.norm_eq_abs,
+      abs_of_pos (Real.exp_pos _)]
+    exact hneg i (by rw [hi]; norm_num)
+  · exact φ.norm_linearFlow_lt_of_weight_eq_one hz hi ht
 
 omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
-/-- The critical point is the point with coordinates `0`. -/
-theorem toChart_symm_coord_symm_zero : φ.toChart.symm (φ.coord.symm 0) = x := by
-  rw [map_zero, ← φ.apply_self, φ.toChart.left_inv φ.mem_source]
+/-- **The quadratic normal form at the exit time.** If every coordinate of `z` has size at most
+`ε` and, at a time `T ≥ 0`, the linear flow has grown a coordinate `j` of negative weight to size
+`c`, then `Σᵢ wᵢ (e^{-wᵢ T} zᵢ)² ≤ n ε² - c²`, where `n` is the dimension. -/
+theorem sum_weight_mul_linearFlow_sq_le {z : Fin (Module.finrank ℝ E) → ℝ} {ε c T : ℝ}
+    (hz : ∀ i, |z i| ≤ ε) {j : Fin (Module.finrank ℝ E)} (hj : φ.weight j = -1) (hT : 0 ≤ T)
+    (hc : Real.exp T * |z j| = c) :
+    ∑ i, φ.weight i * φ.linearFlow T z i ^ 2 ≤ Module.finrank ℝ E * ε ^ 2 - c ^ 2 := by
+  -- Every coordinate contributes at most `ε²`, except `j`, which contributes `-c²`.
+  have hsum : ∑ i, φ.weight i * φ.linearFlow T z i ^ 2 ≤
+      ∑ i, (ε ^ 2 + if i = j then -c ^ 2 - ε ^ 2 else 0) := by
+    refine Finset.sum_le_sum fun i _ ↦ ?_
+    split_ifs with hij
+    · subst hij
+      have hci : φ.linearFlow T z i ^ 2 = c ^ 2 := by
+        rw [φ.linearFlow_of_weight_eq_neg_one hj, ← hc, ← sq_abs, abs_mul,
+          abs_of_pos (Real.exp_pos T)]
+      rw [hj, hci]
+      linarith
+    · rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
+      · rw [hi]
+        nlinarith [sq_nonneg (φ.linearFlow T z i), sq_nonneg ε]
+      · rw [hi, one_mul, φ.linearFlow_of_weight_eq_one hi, mul_pow, add_zero]
+        have hexp1 : Real.exp (-T) ^ 2 ≤ 1 := by
+          rw [← Real.exp_nat_mul, Real.exp_le_one_iff]; push_cast; linarith
+        have hzi2 : z i ^ 2 ≤ ε ^ 2 := by
+          rw [← sq_abs]; exact pow_le_pow_left₀ (abs_nonneg _) (hz i) 2
+        nlinarith [sq_nonneg (z i), sq_nonneg (Real.exp (-T))]
+  simp only [Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, nsmul_eq_mul] at hsum
+  linarith [sq_nonneg ε]
+
+omit [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- **The linear orbit is an integral curve.** If `X` is the linear field `z ↦ (-wᵢ zᵢ)ᵢ` in the
+Morse chart `φ` and the linear orbit of `z` stays in the chart for times in `s`, then the linear
+orbit, read on the manifold, is an integral curve of `X` on `s`. -/
+theorem isMIntegralCurveOn_toChart_symm_linearFlow
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    {z : Fin (Module.finrank ℝ E) → ℝ} {s : Set ℝ}
+    (hz : ∀ t ∈ s, φ.coord.symm (φ.linearFlow t z) ∈ φ.toChart.target) :
+    IsMIntegralCurveOn (fun t ↦ φ.toChart.symm (φ.coord.symm (φ.linearFlow t z))) X s := by
+  set ℓ : ℝ → E := fun t ↦ φ.coord.symm (φ.linearFlow t z) with hℓ
+  have hℓd (t : ℝ) :
+      HasDerivAt ℓ (φ.coord.symm fun i ↦ -(φ.weight i * φ.linearFlow t z i)) t := by
+    simpa [ℓ, Function.comp_def] using
+      φ.coordL.symm.hasFDerivAt.comp_hasDerivAt t (φ.hasDerivAt_linearFlow z t)
+  have hψ1 : φ.toChart ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M :=
+    IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas
+  have hmd : φ.toChart.MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ, E) :=
+    ⟨fun y hy ↦ (mdifferentiableAt_of_mem_maximalAtlas hψ1 hy).mdifferentiableWithinAt,
+      fun w hw ↦ (mdifferentiableAt_symm_of_mem_maximalAtlas hψ1 hw).mdifferentiableWithinAt⟩
+  intro t ht
+  have htT : ℓ t ∈ φ.toChart.target := hz t ht
+  have hy : φ.toChart.symm (ℓ t) ∈ φ.toChart.source := φ.toChart.map_target htT
+  have hψy : φ.toChart (φ.toChart.symm (ℓ t)) = ℓ t := φ.toChart.right_inv htT
+  have h1 : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ, E) ℓ t ((1 : ℝ →L[ℝ] ℝ).smulRight
+      (φ.coord.symm fun i ↦ -(φ.weight i * φ.linearFlow t z i))) :=
+    hasMFDerivAt_iff_hasFDerivAt.2 (hℓd t).hasFDerivAt
+  have h2 := (hmd.mdifferentiableAt_symm htT).hasMFDerivAt
+  refine ((h2.comp t h1).hasMFDerivWithinAt).congr_mfderiv ?_
+  refine ContinuousLinearMap.ext_ring ?_
+  have hXy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart (φ.toChart.symm (ℓ t))
+      (X (φ.toChart.symm (ℓ t))) = φ.coord.symm fun i ↦ -(φ.weight i * φ.linearFlow t z i) := by
+    apply φ.coord.injective
+    rw [hφ _ hy, hψy, LinearEquiv.apply_symm_apply]
+    simp
+  have hinv := congr($(hmd.symm_comp_deriv hy) (X (φ.toChart.symm (ℓ t))))
+  rw [ContinuousLinearMap.comp_apply, hXy, hψy, ContinuousLinearMap.id_apply] at hinv
+  -- Both sides are `smulRight 1 v` applied to `1`. The domain of these maps is
+  -- `TangentSpace 𝓘(ℝ) t`, whose topology is not syntactically that of `ℝ`, so
+  -- `ContinuousLinearMap.comp_apply` and `ContinuousLinearMap.smulRight_apply` do not rewrite
+  -- here; both sides are `1 • v` by definition.
+  change mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart.symm (ℓ t)
+      ((1 : ℝ) • φ.coord.symm fun i ↦ -(φ.weight i * φ.linearFlow t z i)) =
+    (1 : ℝ) • X (φ.toChart.symm (ℓ t))
+  rw [one_smul, one_smul]
+  exact hinv
 
 end MorseChart
 
@@ -161,42 +237,9 @@ theorem flow_toChart_symm (hX : IsAdaptedPseudoGradient f X) (φ : MorseChart E 
     {t : ℝ} (ht : t ∈ Ioo a b) :
     hX.flow t (φ.toChart.symm (φ.coord.symm z)) =
       φ.toChart.symm (φ.coord.symm (φ.linearFlow t z)) := by
-  set ℓ : ℝ → E := fun t ↦ φ.coord.symm (φ.linearFlow t z) with hℓ
-  have hℓd (s : ℝ) :
-      HasDerivAt ℓ (φ.coord.symm fun i ↦ -(φ.weight i * φ.linearFlow s z i)) s := by
-    simpa [ℓ, Function.comp_def] using
-      φ.coordL.symm.hasFDerivAt.comp_hasDerivAt s (φ.hasDerivAt_linearFlow z s)
-  have hψ1 : φ.toChart ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M :=
-    IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas
-  have hmd : φ.toChart.MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ, E) :=
-    ⟨fun y hy ↦ (mdifferentiableAt_of_mem_maximalAtlas hψ1 hy).mdifferentiableWithinAt,
-      fun w hw ↦ (mdifferentiableAt_symm_of_mem_maximalAtlas hψ1 hw).mdifferentiableWithinAt⟩
-  have hcurve : IsMIntegralCurveOn (φ.toChart.symm ∘ ℓ) X (Ioo a b) := by
-    intro s hs
-    have hsT : ℓ s ∈ φ.toChart.target := hz s hs
-    have hy : φ.toChart.symm (ℓ s) ∈ φ.toChart.source := φ.toChart.map_target hsT
-    have hψy : φ.toChart (φ.toChart.symm (ℓ s)) = ℓ s := φ.toChart.right_inv hsT
-    have h1 : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ, E) ℓ s ((1 : ℝ →L[ℝ] ℝ).smulRight
-        (φ.coord.symm fun i ↦ -(φ.weight i * φ.linearFlow s z i))) :=
-      hasMFDerivAt_iff_hasFDerivAt.2 (hℓd s).hasFDerivAt
-    have h2 := (hmd.mdifferentiableAt_symm hsT).hasMFDerivAt
-    refine ((h2.comp s h1).hasMFDerivWithinAt).congr_mfderiv ?_
-    refine ContinuousLinearMap.ext_ring ?_
-    have hXy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart (φ.toChart.symm (ℓ s))
-        (X (φ.toChart.symm (ℓ s))) = φ.coord.symm fun i ↦ -(φ.weight i * φ.linearFlow s z i) := by
-      apply φ.coord.injective
-      rw [hφ _ hy, hψy, LinearEquiv.apply_symm_apply]
-      simp
-    have hinv := congr($(hmd.symm_comp_deriv hy) (X (φ.toChart.symm (ℓ s))))
-    rw [ContinuousLinearMap.comp_apply, hXy, hψy, ContinuousLinearMap.id_apply] at hinv
-    -- Both sides are `smulRight 1` applied to `1`.
-    change mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart.symm (ℓ s)
-        ((1 : ℝ) • φ.coord.symm fun i ↦ -(φ.weight i * φ.linearFlow s z i)) =
-      (1 : ℝ) • X (φ.toChart.symm (ℓ s))
-    rw [one_smul, one_smul]
-    exact hinv
-  have heq := hcurve.eqOn_maximalIntegralCurve (hX.contMDiff.of_le (by simp)) h0
-    (by simp [ℓ] : (φ.toChart.symm ∘ ℓ) 0 = φ.toChart.symm (φ.coord.symm z))
+  have heq := (φ.isMIntegralCurveOn_toChart_symm_linearFlow hφ hz).eqOn_maximalIntegralCurve
+    (hX.contMDiff.of_le (by simp)) h0 (by simp :
+      φ.toChart.symm (φ.coord.symm (φ.linearFlow 0 z)) = φ.toChart.symm (φ.coord.symm z))
   rw [hX.flow_apply]
   exact heq ht
 
@@ -219,12 +262,7 @@ theorem flow_toChart_symm_of_forall_coord_eq_zero {z : Fin (Module.finrank ℝ E
   have hr : 0 < r := by linarith [norm_nonneg z]
   have hstay : ∀ s ∈ Ioo (-Real.log 2) (t + 1),
       φ.coord.symm (φ.linearFlow s z) ∈ φ.toChart.target := fun s hs ↦
-    hrT _ ((pi_norm_lt_iff hr).2 fun i ↦ by
-      rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
-      · rw [φ.linearFlow_of_weight_eq_neg_one hi, hu i (by rw [hi]; norm_num), mul_zero,
-          norm_zero]
-        exact hr
-      · exact φ.norm_linearFlow_lt_of_weight_eq_one hz hi hs.1)
+    hrT _ (φ.norm_linearFlow_lt hz hs.1 fun i hi ↦ by rw [hu i hi, abs_zero, mul_zero]; exact hr)
   have hlin : φ.linearFlow t z = Real.exp (-t) • z := by
     ext i
     rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
@@ -298,17 +336,11 @@ theorem exists_flow_lt_of_coord_ne_zero
   have hTb : T < Real.log (r / m) := Real.log_lt_log (by positivity) (by gcongr; linarith)
   have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
   have hstay : ∀ t ∈ Ioo (-Real.log 2) (Real.log (r / m)),
-      φ.coord.symm (φ.linearFlow t z) ∈ φ.toChart.target := by
-    intro t ht
-    refine hrT _ ((pi_norm_lt_iff hr).2 fun i ↦ ?_)
-    rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
-    · rw [φ.linearFlow_of_weight_eq_neg_one hi, norm_mul, Real.norm_eq_abs, Real.norm_eq_abs,
-        abs_of_pos (Real.exp_pos _)]
-      have hzm : |z i| ≤ m := hmax i (by rw [hi]; norm_num)
-      calc Real.exp t * |z i| ≤ Real.exp t * m := by gcongr
+      φ.coord.symm (φ.linearFlow t z) ∈ φ.toChart.target := fun t ht ↦
+    hrT _ (φ.norm_linearFlow_lt hz2 ht.1 fun i hi ↦
+      calc Real.exp t * |z i| ≤ Real.exp t * m := by gcongr; exact hmax i hi
         _ < Real.exp (Real.log (r / m)) * m := by gcongr; exact ht.2
-        _ = r := by rw [Real.exp_log (by positivity)]; field_simp
-    · exact φ.norm_linearFlow_lt_of_weight_eq_one hz2 hi ht.1
+        _ = r := by rw [Real.exp_log (by positivity)]; field_simp)
   have hTmem : T ∈ Ioo (-Real.log 2) (Real.log (r / m)) := ⟨by linarith, hTb⟩
   have hflow := hX.flow_toChart_symm φ hφ ⟨by linarith, by linarith⟩ hstay hTmem
   rw [φ.toChart_symm_coord_symm_coord hy] at hflow
@@ -316,27 +348,9 @@ theorem exists_flow_lt_of_coord_ne_zero
   have hT' := hstay T hTmem
   rw [hflow, φ.eq_quadratic _ (φ.toChart.map_target hT'), φ.toChart.right_inv hT',
     LinearEquiv.apply_symm_apply]
-  have hsum : ∑ i, φ.weight i * φ.linearFlow T z i ^ 2 ≤
-      ∑ i, (ε ^ 2 + if i = j₀ then -(r / 2) ^ 2 - ε ^ 2 else 0) := by
-    refine Finset.sum_le_sum fun i _ ↦ ?_
-    split_ifs with hij
-    · subst hij
-      have hzm : z i ^ 2 = m ^ 2 := (sq_abs _).symm
-      rw [hwj₀, φ.linearFlow_of_weight_eq_neg_one hwj₀, mul_pow, hexpT, hzm]
-      field_simp
-      ring_nf
-      rfl
-    · rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
-      · rw [hi]; nlinarith [sq_nonneg (φ.linearFlow T z i)]
-      · rw [hi, one_mul, φ.linearFlow_of_weight_eq_one hi, mul_pow, add_zero]
-        have hexp1 : Real.exp (-T) ^ 2 ≤ 1 := by
-          rw [← Real.exp_nat_mul, Real.exp_le_one_iff]; push_cast; linarith
-        have hzi2 : z i ^ 2 ≤ ε ^ 2 := by
-          rw [← sq_abs]; exact pow_le_pow_left₀ (abs_nonneg _) (hzi i).le 2
-        nlinarith [sq_nonneg (z i), sq_nonneg (Real.exp (-T))]
-  simp only [Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
-    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, nsmul_eq_mul] at hsum
-  nlinarith
+  have hsum := φ.sum_weight_mul_linearFlow_sq_le (fun i ↦ (hzi i).le) hwj₀ hT0 (c := r / 2)
+    (by rw [hexpT]; exact div_mul_cancel₀ _ hm0.ne')
+  linarith
 
 omit hrT hy
 

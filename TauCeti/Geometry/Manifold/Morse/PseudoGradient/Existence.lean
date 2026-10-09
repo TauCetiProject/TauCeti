@@ -97,6 +97,17 @@ theorem coordL_symm_apply (z : Fin (Module.finrank ℝ E) → ℝ) :
   simp [coordL]
 
 omit [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- Coordinates of small sup norm are coordinates of points of the chart. -/
+theorem exists_pos_forall_norm_lt_mem_target :
+    ∃ r > 0, ∀ z : Fin (Module.finrank ℝ E) → ℝ, ‖z‖ < r → φ.coord.symm z ∈ φ.toChart.target := by
+  have h0 : (0 : Fin (Module.finrank ℝ E) → ℝ) ∈ φ.coordL.symm ⁻¹' φ.toChart.target := by
+    rw [mem_preimage, map_zero, ← φ.apply_self]
+    exact φ.toChart.map_source φ.mem_source
+  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1
+    (φ.toChart.open_target.preimage φ.coordL.symm.continuous) 0 h0
+  exact ⟨r, hr, fun z hz ↦ by simpa using hball (mem_ball_zero_iff.2 hz)⟩
+
+omit [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- The derivative of the quadratic normal form. -/
 theorem hasFDerivAt_quadratic (z : E) :
     HasFDerivAt φ.quadratic
