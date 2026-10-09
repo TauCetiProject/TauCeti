@@ -472,11 +472,6 @@ private theorem setLAverage_comp_cubeEquiv_le (hr : 0 < r)
   rw [← e.surjective.preimage_subset_preimage_iff, hpre, preimage_cubeEquiv_closedBall_self hr]
   exact closure_mono hq
 
-/-- A closed ball of nonpositive radius is Lebesgue-null. -/
-private theorem volume_closedBall_eq_zero_of_nonpos [Nonempty ι] (hr : r ≤ 0) :
-    volume (closedBall c r) = 0 :=
-  measure_mono_null (closedBall_subset_closedBall hr) (by rw [closedBall_zero]; simp)
-
 /-- **The John–Nirenberg inequality** on a cube. Let `f` be integrable on the closed sup-norm ball
 `closedBall c r ⊆ ℝⁿ`, `n ≥ 1`, that is, on the cube `∏ᵢ [cᵢ - r, cᵢ + r]`, with mean oscillation
 `⨍_B ‖f - f_B‖ ≤ M` on every closed ball `B ⊆ closedBall c r`. Then for every `s`,
@@ -492,9 +487,9 @@ theorem volume_lt_norm_sub_setAverage_closedBall_le [Nonempty ι] [CompleteSpace
       ENNReal.ofReal (2 * Real.exp (-(Real.log 2 * s / (2 ^ (Fintype.card ι + 1) * M)))) *
         volume (closedBall c r) := by
   rcases le_or_gt r 0 with hr | hr
-  · rw [volume_closedBall_eq_zero_of_nonpos hr, mul_zero]
+  · rw [volume_closedBall_eq_zero_of_nonpos c hr, mul_zero]
     exact (measure_mono_null (sep_subset _ _)
-      (volume_closedBall_eq_zero_of_nonpos (c := c) hr)).le
+      (volume_closedBall_eq_zero_of_nonpos c hr)).le
   set e := cubeEquiv c hr
   set B := closedBall c r
   have hmap := map_cubeEquiv (c := c) hr
@@ -533,7 +528,7 @@ theorem setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le [Nonempty ι] [Co
       ENNReal.ofReal (1 + 2 * Real.exp (σ * (2 ^ (Fintype.card ι + 1) * M)) /
         (2 - Real.exp (σ * (2 ^ (Fintype.card ι + 1) * M)))) * volume (closedBall c r) := by
   rcases le_or_gt r 0 with hr | hr
-  · rw [setLIntegral_measure_zero _ _ (volume_closedBall_eq_zero_of_nonpos hr)]
+  · rw [setLIntegral_measure_zero _ _ (volume_closedBall_eq_zero_of_nonpos c hr)]
     exact zero_le
   set e := cubeEquiv c hr
   set B := closedBall c r
