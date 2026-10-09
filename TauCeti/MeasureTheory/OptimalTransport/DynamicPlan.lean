@@ -128,6 +128,13 @@ theorem timeMarginal_apply (η : Measure C(I, X)) (t : I) {s : Set X} (hs : Meas
     timeMarginal η t s = η {γ | γ t ∈ s} :=
   Measure.map_apply (ContinuousMap.measurable_eval t) hs
 
+/-- The value of the endpoint law on a measurable set `s` is the `η`-measure of the paths whose
+pair of endpoints lies in `s`. -/
+theorem endpointLaw_apply (η : Measure C(I, X)) {s : Set (X × X)} (hs : MeasurableSet s) :
+    endpointLaw η s = η {γ | (γ 0, γ 1) ∈ s} :=
+  Measure.map_apply
+    ((ContinuousMap.measurable_eval 0).prodMk (ContinuousMap.measurable_eval 1)) hs
+
 /-- The first marginal of the endpoint law is the law at time `0`. -/
 @[simp]
 theorem fst_endpointLaw (η : Measure C(I, X)) : (endpointLaw η).fst = timeMarginal η 0 :=
