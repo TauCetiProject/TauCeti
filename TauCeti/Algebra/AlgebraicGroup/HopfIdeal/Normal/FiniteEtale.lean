@@ -158,7 +158,7 @@ theorem IsNormal.isCentral_of_finite_of_isGeometricallyReduced (hI : I.IsNormal)
     (ConcreteCategory.bijective_of_isIso e.hom).1
   have hcentral : I'.IsCentral :=
     (CommHopfAlgCat.isNormal_baseChangeHopfIdeal hI).isCentral_of_finite_of_isReduced
-  exact CommHopfAlgCat.isCentral_of_isCentral_baseChangeHopfIdeal hcentral
+  exact (CommHopfAlgCat.isCentral_baseChangeHopfIdeal_iff (K := K) I).mp hcentral
 
 end Field
 

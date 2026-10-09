@@ -86,7 +86,7 @@ theorem isCentralIsogeny_baseChangeMap_iff (f : H ⟶ K) :
     refine ⟨hi.finite, hi.faithfullyFlat, ?_⟩
     have hcentral := hf.isCentral_kernelHopfIdeal
     rw [← baseChangeHopfIdeal_kernelHopfIdeal] at hcentral
-    exact isCentral_of_isCentral_baseChangeHopfIdeal hcentral
+    exact (isCentral_baseChangeHopfIdeal_iff (K := L) _).mp hcentral
   · exact IsCentralIsogeny.baseChange
 
 end Field

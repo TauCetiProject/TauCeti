@@ -81,7 +81,7 @@ theorem IsNormal.isCentral_of_multiplicativeType
     apply BialgHom.isCentral_kerOfSurjective_of_isNormal
     rw [hker]
     exact CommHopfAlgCat.isNormal_baseChangeHopfIdeal hI
-  exact CommHopfAlgCat.isCentral_of_isCentral_baseChangeHopfIdeal hcentral
+  exact (CommHopfAlgCat.isCentral_baseChangeHopfIdeal_iff (K := K) I).mp hcentral
 
 end
 
