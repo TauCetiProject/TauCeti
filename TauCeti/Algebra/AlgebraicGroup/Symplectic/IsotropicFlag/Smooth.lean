@@ -67,4 +67,11 @@ instance instSmoothCoordinateHopfAlgebra :
     Algebra.FinitePresentation.quotient (definingHopfIdeal_toIdeal_fg R m)
   exact ⟨inferInstance, inferInstance⟩
 
+/-- The commutative Hopf algebra representing the standard complete isotropic flag stabilizer
+in `Sp₂ₘ` satisfies the smoothness object property over every commutative base ring. -/
+theorem smoothCommHopfAlgProperty_coordinateHopfAlgebra :
+    smoothCommHopfAlgProperty R (coordinateHopfAlgebra R m) := by
+  rw [smoothCommHopfAlgProperty_iff]
+  infer_instance
+
 end TauCeti.Symplectic.IsotropicFlag
