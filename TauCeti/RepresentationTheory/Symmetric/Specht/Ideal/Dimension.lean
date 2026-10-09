@@ -79,9 +79,12 @@ variable {μ : YoungDiagram}
 
 /-! ### The dimension of the ideal -/
 
--- Not a `simp` lemma: `TauCeti.YoungTableau.finrank_spechtIdeal_eq_spechtSubrepresentation` and
+-- Not a `simp` lemma, and cannot be one:
+-- `TauCeti.YoungTableau.finrank_spechtIdeal_eq_spechtSubrepresentation` and
 -- `TauCeti.finrank_spechtSubrepresentation` are both `simp` lemmas, so `simp` already rewrites
--- this left-hand side to `standardCount μ` in two steps.
+-- this left-hand side to `standardCount μ` in two steps, and `simpNF` rejects the tag as a
+-- duplicate ("simp can prove this"). A consumer that imports this module without also importing
+-- the comparison and the standard basis rewrites with `finrank_spechtIdeal` by name.
 /-- **The dimension of the Young-symmetrizer ideal is the number of standard Young tableaux**,
 `dim_ℚ ℚ[Sₙ] c_t = f^μ`. The ideal and the polytabloid Specht module `S^μ` are equivalent
 representations, and the standard polytabloids are a basis of the latter. -/
