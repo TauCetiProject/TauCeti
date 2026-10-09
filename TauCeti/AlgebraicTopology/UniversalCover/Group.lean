@@ -337,14 +337,13 @@ variable [IsTopologicalGroup E]
 
 /-- A simply connected, locally path-connected covering group is continuously isomorphic to the
 universal covering group of its base. The isomorphism sends the identity to the identity and
-commutes with the covering projections.
-
-The underlying pointed homeomorphism is supplied by uniqueness of the universal cover. Its
-multiplicativity follows by comparing two lifts on `E × E`: multiplication before and after the
-homeomorphism gives continuous lifts of the same map and both send `(1, 1)` to `1`. -/
+commutes with the covering projections. -/
 noncomputable def continuousMulEquivUniversalCover (hp : IsCoveringMap p) :
     E ≃ₜ* UniversalCover (1 : G) :=
   ContinuousMulEquiv.mk' hp.universalCoverHomeomorph fun a b ↦ by
+    -- The underlying pointed homeomorphism is supplied by uniqueness of the universal cover.
+    -- For multiplicativity, compare multiplication before and after this homeomorphism as lifts
+    -- on `E × E`; both lift the same map and send `(1, 1)` to `1`.
     let f : E × E → UniversalCover (1 : G) :=
       fun z ↦ hp.universalCoverHomeomorph (z.1 * z.2)
     let g : E × E → UniversalCover (1 : G) :=
