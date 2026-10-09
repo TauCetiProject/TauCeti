@@ -234,15 +234,14 @@ theorem HasWeakLineDerivOn.integral_eq_sub
   rw [heq ht, heq hs, hw_def, add_sub_add_left_eq_sub,
     integral_interval_sub_left (hsub t ht) (hsub s hs)]
 
-/-- **The `W^{1,1}` bound.** Let `u` and its weak derivative `u'` on `Ioo a b`, `a < b`, be
+/-- **The `W^{1,1}` bound.** Let the weak derivative `u'` of `u` on `Ioo a b`, `a < b`, be
 integrable on `Ioo a b`, and let `v` be continuous on `Icc a b` and equal to `u` almost everywhere
 on `Ioo a b`. Then at every `t ∈ Icc a b`,
 `‖v t‖ ≤ ⨍ s in Ioo a b, ‖u s‖ + ∫ s in Ioo a b, ‖u' s‖`. -/
 theorem HasWeakLineDerivOn.norm_le_setAverage_add_integral
     (h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ u u' 1) (hab : a < b)
-    (hu : IntegrableOn u (Ioo a b)) (hu' : IntegrableOn u' (Ioo a b))
-    (hv : ContinuousOn v (Icc a b)) (hae : u =ᵐ[volume.restrict (Ioo a b)] v) {t : ℝ}
-    (ht : t ∈ Icc a b) :
+    (hu' : IntegrableOn u' (Ioo a b)) (hv : ContinuousOn v (Icc a b))
+    (hae : u =ᵐ[volume.restrict (Ioo a b)] v) {t : ℝ} (ht : t ∈ Icc a b) :
     ‖v t‖ ≤ (⨍ s in Ioo a b, ‖u s‖) + ∫ s in Ioo a b, ‖u' s‖ := by
   set M := ∫ s in Ioo a b, ‖u' s‖
   -- `‖v t‖ ≤ ‖v s‖ + M` for every `s ∈ Icc a b`, by the fundamental theorem of calculus.
@@ -262,7 +261,8 @@ theorem HasWeakLineDerivOn.norm_le_setAverage_add_integral
   have hpos : 0 < b - a := sub_pos.2 hab
   have hnorm : (fun s ↦ ‖u s‖) =ᵐ[volume.restrict (Ioo a b)] fun s ↦ ‖v s‖ :=
     hae.fun_comp norm
-  have hvi : IntegrableOn (fun s ↦ ‖v s‖) (Ioo a b) := hu.norm.congr hnorm
+  have hvi : IntegrableOn (fun s ↦ ‖v s‖) (Ioo a b) :=
+    (hv.norm.integrableOn_compact isCompact_Icc).mono_set Ioo_subset_Icc_self
   have key : (b - a) * ‖v t‖ ≤ (∫ s in Ioo a b, ‖u s‖) + (b - a) * M := by
     calc (b - a) * ‖v t‖ = ∫ _ in Ioo a b, ‖v t‖ := by
           rw [setIntegral_const, hlen, smul_eq_mul]
