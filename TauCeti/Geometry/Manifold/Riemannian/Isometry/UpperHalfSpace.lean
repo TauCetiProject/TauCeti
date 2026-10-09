@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Reflection
+public import TauCeti.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Geometry.Euclidean.Inversion
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Ext
@@ -19,9 +21,10 @@ For `R ≠ 0` and a point `(a, 0)` of the boundary hyperplane `E × {0}`, the Eu
 
 Together with the similarities `(x, t) ↦ (c • A x + b, c • t)` of
 `TauCeti.UpperHalfSpace.similarity`, these inversions exhaust the isometry group of the upper
-half-space model: every isometry is a similarity, or a similarity followed by one inversion. This
-is the classical description of the isometries of hyperbolic space in the upper half-space model
-as the Möbius transformations preserving the upper half-space, written in an explicit normal form.
+half-space model when `E` is finite-dimensional: every isometry is a similarity, or a similarity
+followed by one inversion. This is the classical description of the isometries of hyperbolic space
+in the upper half-space model as the Möbius transformations preserving the upper half-space,
+written in an explicit normal form.
 With `E = EuclideanSpace ℝ (Fin 2)` it describes the full isometry group of the hyperbolic model
 geometry `ℍ³`.
 
@@ -35,7 +38,7 @@ exchanges the vertical vector with its image.
 
 ## Main definitions
 
-* `TauCeti.UpperHalfSpace.inversion`: the inversion in the sphere of radius `R` centred at the
+* `TauCeti.UpperHalfSpace.inversion`: the inversion in the sphere of radius `|R|` centred at the
   boundary point `(a, 0)`, as an isometry of the upper half-space model.
 
 ## Main results
@@ -44,8 +47,8 @@ exchanges the vertical vector with its image.
   inversion is a positive multiple of a reflection.
 * `TauCeti.UpperHalfSpace.inversion_mul_self`: inversions are involutions.
 * `TauCeti.UpperHalfSpace.exists_eq_similarity_or_exists_eq_inversion_mul_similarity`: every
-  isometry of the upper half-space model is a similarity or an inversion composed with a
-  similarity.
+  isometry of the upper half-space model with finite-dimensional `E` is a similarity or an
+  inversion composed with a similarity.
 
 ## References
 
@@ -75,19 +78,13 @@ private theorem coe_ne_toLp (x : UpperHalfSpace E) (a : E) :
   (height_pos x).ne' (by simpa [← snd_coe] using congrArg WithLp.snd h)
 
 omit [InnerProductSpace ℝ E] in
-/-- The scale factor `(R / ‖x - (a, 0)‖) ^ 2` of the inversion in the sphere of radius `R` about
+/-- The scale factor `(R / ‖x - (a, 0)‖) ^ 2` of the inversion in the sphere of radius `|R|` about
 `(a, 0)` at the point `x` is positive. -/
 private theorem inversion_factor_pos (a : E) {R : ℝ} (hR : R ≠ 0) (x : UpperHalfSpace E) :
     0 < (R / dist (x : WithLp 2 (E × ℝ)) (WithLp.toLp 2 (a, 0))) ^ 2 := by
   have hd : dist (x : WithLp 2 (E × ℝ)) (WithLp.toLp 2 (a, 0)) ≠ 0 :=
     dist_ne_zero.2 (coe_ne_toLp x a)
   positivity
-
-/-- The last coordinate of the inversion in a sphere centred on the boundary hyperplane. -/
-private theorem snd_inversion (a : E) (R : ℝ) (p : WithLp 2 (E × ℝ)) :
-    (EuclideanGeometry.inversion (WithLp.toLp 2 (a, 0)) R p).snd =
-      (R / dist p (WithLp.toLp 2 (a, 0))) ^ 2 * p.snd := by
-  simp [EuclideanGeometry.inversion]
 
 /-- The underlying map of `inversion a R hR`. -/
 private def inversionMap (a : E) (R : ℝ) (hR : R ≠ 0) (x : UpperHalfSpace E) :
@@ -134,7 +131,7 @@ private theorem tangentSpaceCastModel_mfderiv_inversionMap (a : E) (R : ℝ) (hR
     (coe_comp_inversionMap a R hR) v
 
 /-- The inversion `x ↦ (a, 0) + (R / ‖x - (a, 0)‖) ^ 2 • (x - (a, 0))` in the sphere of radius
-`R` centred at the boundary point `(a, 0)`, as an isometry of the upper half-space model: it
+`|R|` centred at the boundary point `(a, 0)`, as an isometry of the upper half-space model: it
 scales tangent vectors and the height by the same factor `(R / ‖x - (a, 0)‖) ^ 2`.
 Geometrically, it is the hyperbolic reflection in the hemisphere `‖x - (a, 0)‖ = |R|`. -/
 def inversion (a : E) (R : ℝ) (hR : R ≠ 0) : Isom 𝓘(ℝ, WithLp 2 (E × ℝ)) (UpperHalfSpace E) where
@@ -166,7 +163,7 @@ private theorem coe_inversion (a : E) (R : ℝ) (hR : R ≠ 0) :
     ⇑(inversion a R hR) = inversionMap a R hR :=
   (rfl)
 
-/-- The isometry `inversion a R hR` is the Euclidean inversion in the sphere of radius `R` about
+/-- The isometry `inversion a R hR` is the Euclidean inversion in the sphere of radius `|R|` about
 `(a, 0)`. -/
 @[simp]
 theorem coe_inversion_apply (a : E) (R : ℝ) (hR : R ≠ 0) (x : UpperHalfSpace E) :
@@ -235,6 +232,14 @@ private def mfderivBase (Φ : Isom 𝓘(ℝ, WithLp 2 (E × ℝ)) (UpperHalfSpac
     ((mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) Φ basePoint).comp
       (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) basePoint).symm.toContinuousLinearMap)
 
+/-- Evaluate the model differential by transporting the input and output tangent vectors. -/
+private theorem mfderivBase_apply
+    (Φ : Isom 𝓘(ℝ, WithLp 2 (E × ℝ)) (UpperHalfSpace E)) (p : WithLp 2 (E × ℝ)) :
+    mfderivBase Φ p = tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (Φ basePoint)
+      (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) Φ basePoint
+        ((tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) basePoint).symm p)) := by
+  simp only [mfderivBase, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
+
 /-- An isometry fixing `(0, 1)` has a Euclidean linear isometry as differential there, since the
 hyperbolic metric at height `1` is the Euclidean one. -/
 private theorem inner_mfderivBase {Φ : Isom 𝓘(ℝ, WithLp 2 (E × ℝ)) (UpperHalfSpace E)}
@@ -245,35 +250,10 @@ private theorem inner_mfderivBase {Φ : Isom 𝓘(ℝ, WithLp 2 (E × ℝ)) (Upp
     ((tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) basePoint).symm q)
   have hΦ : height (Φ basePoint) = 1 := by rw [he, height_basePoint]
   rw [inner_def, inner_def, hΦ, height_basePoint] at h
-  simpa [mfderivBase] using h
-
-omit [InnerProductSpace ℝ E] in
-/-- A unit vector of `E × ℝ` other than the vertical one `(0, 1)` has height less than `1`. -/
-private theorem snd_lt_one {u : WithLp 2 (E × ℝ)} (hnorm : ‖u‖ = 1)
-    (hu : u ≠ WithLp.toLp 2 (0, 1)) : u.snd < 1 := by
-  have hle : u.snd ≤ 1 := (le_abs_self _).trans ((WithLp.norm_snd_le (x := u)).trans hnorm.le)
-  refine hle.lt_of_ne fun h ↦ hu ((WithLp.ext_iff 2).2 (Prod.ext ?_ (by simpa using h)))
-  have hsq := WithLp.prod_norm_sq_eq_of_L2 u
-  rw [hnorm, h] at hsq
-  simpa using hsq
-
-/-- For a unit vector `u` of height less than `1`, the reflection in the hyperplane orthogonal to
-`(0, 1) - (a, 0)`, with `a = (1 - u.snd)⁻¹ • u.fst`, sends `u` to the vertical vector `(0, 1)`:
-the vector `(0, 1) - (a, 0)` is parallel to `(0, 1) - u`. -/
-private theorem reflection_apply_eq_toLp_zero_one {u : WithLp 2 (E × ℝ)} (hnorm : ‖u‖ = 1)
-    (hs : u.snd < 1) :
-    (ℝ ∙ (WithLp.toLp 2 ((0 : E), (1 : ℝ)) -
-      WithLp.toLp 2 ((1 - u.snd)⁻¹ • u.fst, 0)))ᗮ.reflection u = WithLp.toLp 2 (0, 1) := by
-  have hs1 : u.snd - 1 ≠ 0 := sub_ne_zero.2 hs.ne
-  have hdir : WithLp.toLp 2 ((0 : E), (1 : ℝ)) - WithLp.toLp 2 ((1 - u.snd)⁻¹ • u.fst, 0) =
-      (u.snd - 1)⁻¹ • (u - WithLp.toLp 2 (0, 1)) :=
-    (WithLp.ext_iff 2).2 (Prod.ext (by simp [← neg_smul, ← inv_neg])
-      (by simp [inv_mul_cancel₀ hs1]))
-  have hspan : (ℝ ∙ (WithLp.toLp 2 ((0 : E), (1 : ℝ)) -
-      WithLp.toLp 2 ((1 - u.snd)⁻¹ • u.fst, 0))) = ℝ ∙ (u - WithLp.toLp 2 (0, 1)) := by
-    rw [hdir, Submodule.span_singleton_smul_eq (IsUnit.mk0 _ (inv_ne_zero hs1))]
-  simp only [hspan]
-  exact Submodule.reflection_sub (by simp [hnorm])
+  rw [ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply,
+    one_pow, div_one, div_one] at h
+  rw [mfderivBase_apply, mfderivBase_apply]
+  exact h
 
 variable [FiniteDimensional ℝ E]
 
@@ -370,9 +350,10 @@ private theorem eq_similarity_or_eq_inversion_mul_similarity_of_apply_basePoint
   obtain ⟨A, hA⟩ := exists_eq_similarity_of_mfderivBase hfix hv
   exact ⟨a, _, hR, A, by rw [← hA, ← mul_assoc, inversion_mul_self, one_mul]⟩
 
-/-- **Isometries of the upper half-space model.** Every isometry of the upper half-space model of
-hyperbolic space is either a similarity `(x, t) ↦ (c • A x + b, c • t)` or such a similarity
-followed by the inversion in a sphere centred on the boundary hyperplane `t = 0`. -/
+/-- **Isometries of the upper half-space model.** When `E` is finite-dimensional, every isometry
+of the upper half-space model of hyperbolic space is either a similarity
+`(x, t) ↦ (c • A x + b, c • t)` or such a similarity followed by the inversion in a sphere centred
+on the boundary hyperplane `t = 0`. -/
 theorem exists_eq_similarity_or_exists_eq_inversion_mul_similarity
     (Φ : Isom 𝓘(ℝ, WithLp 2 (E × ℝ)) (UpperHalfSpace E)) :
     (∃ (c : ℝ) (hc : 0 < c) (A : E ≃ₗᵢ[ℝ] E) (b : E), Φ = similarity c hc A b) ∨

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 
@@ -13,6 +14,9 @@ import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 
 These lemmas describe reflection across the hyperplane perpendicular to a vector in a real
 inner product space. They supply the reflection identities used by the half-space Green kernel.
+
+`TauCeti.reflection_apply_eq_toLp_zero_one` describes the reflection sending a unit vector of
+`E × ℝ` to `(0, 1)`, using Mathlib's `Submodule.reflection_sub` and the product coordinates.
 
 In dimension at least two, composing the reflections in the hyperplanes orthogonal to a nonzero
 vector `v` and to a nonzero vector orthogonal to `v` gives a linear isometry of determinant `1`
@@ -121,6 +125,30 @@ theorem exists_det_eq_one_apply_eq_neg [FiniteDimensional ℝ F] (hF : 2 ≤ Mod
       map_neg, reflection_orthogonal_singleton_eq_self_of_inner_eq_zero]
     rw [Submodule.mem_orthogonal_singleton_iff_inner_right] at hw
     rwa [real_inner_comm]
+
+section ProdL2
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- For a unit vector `u` of height less than `1`, the reflection in the hyperplane orthogonal to
+`(0, 1) - (a, 0)`, with `a = (1 - u.snd)⁻¹ • u.fst`, sends `u` to the vertical vector `(0, 1)`:
+the vector `(0, 1) - (a, 0)` is parallel to `(0, 1) - u`. -/
+theorem reflection_apply_eq_toLp_zero_one {u : WithLp 2 (E × ℝ)} (hnorm : ‖u‖ = 1)
+    (hs : u.snd < 1) :
+    (ℝ ∙ (WithLp.toLp 2 ((0 : E), (1 : ℝ)) -
+      WithLp.toLp 2 ((1 - u.snd)⁻¹ • u.fst, 0)))ᗮ.reflection u = WithLp.toLp 2 (0, 1) := by
+  have hs1 : u.snd - 1 ≠ 0 := sub_ne_zero.2 hs.ne
+  have hdir : WithLp.toLp 2 ((0 : E), (1 : ℝ)) - WithLp.toLp 2 ((1 - u.snd)⁻¹ • u.fst, 0) =
+      (u.snd - 1)⁻¹ • (u - WithLp.toLp 2 (0, 1)) :=
+    (WithLp.ext_iff 2).2 (Prod.ext (by simp [← neg_smul, ← inv_neg])
+      (by simp [inv_mul_cancel₀ hs1]))
+  have hspan : (ℝ ∙ (WithLp.toLp 2 ((0 : E), (1 : ℝ)) -
+      WithLp.toLp 2 ((1 - u.snd)⁻¹ • u.fst, 0))) = ℝ ∙ (u - WithLp.toLp 2 (0, 1)) := by
+    rw [hdir, Submodule.span_singleton_smul_eq (IsUnit.mk0 _ (inv_ne_zero hs1))]
+  simp only [hspan]
+  exact Submodule.reflection_sub (by simp [hnorm])
+
+end ProdL2
 
 end TauCeti
 
