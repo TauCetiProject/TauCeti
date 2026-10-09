@@ -7,15 +7,17 @@ module
 
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
+import Mathlib.Algebra.Polynomial.Roots
 
 /-!
-# Automorphisms of an elliptic curve with `j ∉ {0, 1728}`
+# Automorphisms of an elliptic curve
 
 Let `E` be an elliptic curve over a field `K`. Over a field, isomorphisms of Weierstrass curves
 are exactly the admissible changes of variables `WeierstrassCurve.VariableChange K`, acting via
 `•`; the automorphisms of `E` are therefore the `C : VariableChange K` with `C • E = E`. This file
 proves the classical fact (Silverman, *The Arithmetic of Elliptic Curves*, III.10) that if
-`j(E) ∉ {0, 1728}` then the only automorphisms of `E` are `±1`, uniformly in the characteristic.
+`j(E) ∉ {0, 1728}` then the only automorphisms of `E` are `±1`, uniformly in the characteristic,
+and that in general the automorphism group is finite, over any integral domain.
 
 ## Main definitions and statements
 
@@ -29,6 +31,8 @@ proves the classical fact (Silverman, *The Arithmetic of Elliptic Curves*, III.1
 * `WeierstrassCurve.autGroupMulEquiv`: for `j(E) ∉ {0, 1728}`, the isomorphism
   `autGroup E ≃* Multiplicative (ZMod 2)`, obtained from Mathlib's `zmodMulEquivOfGenerator`
   with `negVariableChange E` as the generator.
+* `WeierstrassCurve.finite_autGroup`: the automorphism group of an elliptic curve over an integral
+  domain is finite, in every characteristic.
 
 ## Implementation notes
 
@@ -40,12 +44,17 @@ then `s`, `t` are read off from those of `a₁`, `a₂`, `a₃`, `a₄`
 (`eq_one_or_eq_negVariableChange_of_u_eq_one`, where the `negVariableChange` value can occur only
 in characteristic `2`).
 
+Finiteness in general does not classify the automorphisms. The discriminant forces `u¹² = 1`. The
+transformation laws of `b₈` and `b₆` are a quartic and a cubic equation for `r`, with leading
+coefficients `3` and `4`, which do not both vanish; those of `a₂` and `a₆` are monic quadratic
+equations for `s` and `t`. So each coordinate of `C` ranges over a finite set.
+
 This is the `Aut (E, O)` milestone of `TauCetiRoadmap/EllipticCurves/README.md` §Layer 1 (in its
 equation-level form over the ground field), which §Layer 5's twist classification quantifies
 over: for `j ∉ {0, 1728}` the pointed twists are exactly the quadratic twists because this group
 is `{±1}`.
 
-Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
+The `j ∉ {0, 1728}` classification is adapted from the FLT project (`ImperialCollegeLondon/FLT`,
 `FLT/Mathlib/AlgebraicGeometry/EllipticCurve/Aut.lean` at the roadmap's pin `bc2fe8ff7396`,
 FLT PR #1088, Apache 2.0). That file's own header reads `Authors: Michael Stoll, Claude`, and it
 has not been touched in FLT since `bc2fe8ff7396`, so the pin and the working clone
@@ -212,6 +221,80 @@ membership normal form `C ∈ W.autGroup ↔ C • W = W`. -/
 abbrev autGroup : Subgroup (VariableChange R) := stabilizer (VariableChange R) W
 
 end AutGroup
+
+/-! ### Finiteness of the automorphism group -/
+
+open Polynomial in
+/-- The values of `r` in a change of variables fixing a curve with invariants `b₂`, `b₄`, `b₆`,
+`b₈` lie in a finite set: they solve both the `b₈`-equation, a quartic with leading coefficient
+`3`, and the `b₆`-equation, a cubic with leading coefficient `4`, and `3` and `4` cannot both
+vanish. -/
+private theorem finite_setOf_r (b₂ b₄ b₆ c d : A) :
+    {r : A | 3 * r ^ 4 + b₂ * r ^ 3 + 3 * b₄ * r ^ 2 + 3 * b₆ * r + c = 0 ∧
+      4 * r ^ 3 + b₂ * r ^ 2 + 2 * b₄ * r + d = 0}.Finite := by
+  by_cases h3 : (3 : A) = 0
+  · have h4 : (4 : A) ≠ 0 := fun h4 ↦ one_ne_zero (α := A) (by linear_combination h4 - h3)
+    have hp : (C 4 * X ^ 3 + C b₂ * X ^ 2 + C (2 * b₄) * X ^ 1 + C d : A[X]) ≠ 0 := fun h ↦
+      h4 (by simpa [coeff_C_mul_X_pow, coeff_C, -map_mul] using congrArg (coeff · 3) h)
+    exact (finite_setOfPred_isRoot hp).subset fun r hr ↦ by simpa using hr.2
+  · have hp : (C 3 * X ^ 4 + C b₂ * X ^ 3 + C (3 * b₄) * X ^ 2 + C (3 * b₆) * X ^ 1 + C c :
+        A[X]) ≠ 0 := fun h ↦
+      h3 (by simpa [coeff_C_mul_X_pow, coeff_C, -map_mul] using congrArg (coeff · 4) h)
+    exact (finite_setOfPred_isRoot hp).subset fun r hr ↦ by simpa using hr.1
+
+/-- **The automorphism group of an elliptic curve is finite**, over any integral domain and in
+every characteristic. -/
+instance finite_autGroup [E.IsElliptic] : Finite E.autGroup := by
+  set V : Set A := {v | v ^ 12 = 1}
+  set R : Set A := ⋃ v ∈ V, {r | 3 * r ^ 4 + E.b₂ * r ^ 3 + 3 * E.b₄ * r ^ 2 + 3 * E.b₆ * r +
+    (E.b₈ - v ^ 4 * E.b₈) = 0 ∧ 4 * r ^ 3 + E.b₂ * r ^ 2 + 2 * E.b₄ * r + (E.b₆ - v ^ 6 * E.b₆) = 0}
+  set S : Set A := ⋃ v ∈ V, ⋃ r ∈ R, {s | s ^ 2 + E.a₁ * s + (v ^ 10 * E.a₂ - E.a₂ - 3 * r) = 0}
+  set T : Set A := ⋃ v ∈ V, ⋃ r ∈ R, {t | t ^ 2 + (E.a₃ + r * E.a₁) * t +
+    (v ^ 6 * E.a₆ - E.a₆ - r * E.a₄ - r ^ 2 * E.a₂ - r ^ 3) = 0}
+  -- a monic quadratic has finitely many roots
+  have quad (a b : A) : {x : A | x ^ 2 + a * x + b = 0}.Finite := by
+    have hp : (Polynomial.X ^ 2 + Polynomial.C a * Polynomial.X + Polynomial.C b :
+        Polynomial A) ≠ 0 := fun h ↦ by simpa using congrArg (Polynomial.coeff · 2) h
+    exact (Polynomial.finite_setOfPred_isRoot hp).subset fun x hx ↦ by simpa using hx
+  have hV : V.Finite := (Polynomial.finite_setOfPred_isRoot
+    (Polynomial.X_pow_sub_C_ne_zero (by norm_num : 0 < 12) (1 : A))).subset
+      fun v (hv : v ^ 12 = 1) ↦ by simpa [sub_eq_zero] using hv
+  have hR : R.Finite := hV.biUnion fun v _ ↦ finite_setOf_r _ _ _ _ _
+  have hS : S.Finite := hV.biUnion fun v _ ↦ hR.biUnion fun r _ ↦ quad _ _
+  have hT : T.Finite := hV.biUnion fun v _ ↦ hR.biUnion fun r _ ↦ quad _ _
+  let f : E.autGroup → A × A × A × A := fun C ↦ ((C.1.u⁻¹ : Aˣ), C.1.r, C.1.s, C.1.t)
+  have hf : Function.Injective f := fun C D h ↦ by
+    simp only [f, Prod.mk.injEq] at h
+    exact Subtype.ext (VariableChange.ext (inv_injective (Units.ext h.1)) h.2.1 h.2.2.1 h.2.2.2)
+  suffices hrange : Set.range f ⊆ V ×ˢ R ×ˢ S ×ˢ T by
+    have := ((hV.prod (hR.prod (hS.prod hT))).subset hrange).to_subtype
+    exact Finite.of_injective_finite_range hf
+  -- read the coordinates of `C • E = E` off the transformation laws
+  rintro _ ⟨⟨C, hC⟩, rfl⟩
+  rw [MulAction.mem_stabilizer_iff] at hC
+  set v : A := ((C.u⁻¹ : Aˣ) : A)
+  have hΔ := congrArg WeierstrassCurve.Δ hC
+  have h₂ := congrArg WeierstrassCurve.a₂ hC
+  have h₆ := congrArg WeierstrassCurve.a₆ hC
+  have hb₆ := congrArg WeierstrassCurve.b₆ hC
+  have hb₈ := congrArg WeierstrassCurve.b₈ hC
+  simp only [variableChange_Δ, variableChange_a₂, variableChange_a₆, variableChange_b₆,
+    variableChange_b₈] at hΔ h₂ h₆ hb₆ hb₈
+  have hv : v ^ 12 = 1 :=
+    (mul_left_eq_self₀.mp hΔ).resolve_right E.isUnit_Δ.ne_zero
+  have hr : C.r ∈ R := Set.mem_biUnion hv
+    ⟨by linear_combination v ^ 4 * hb₈ - (E.b₈ + 3 * C.r * E.b₆ + 3 * C.r ^ 2 * E.b₄ +
+        C.r ^ 3 * E.b₂ + 3 * C.r ^ 4) * hv,
+      by linear_combination v ^ 6 * hb₆ - (E.b₆ + 2 * C.r * E.b₄ + C.r ^ 2 * E.b₂ +
+        4 * C.r ^ 3) * hv⟩
+  have hs : C.s ^ 2 + E.a₁ * C.s + (v ^ 10 * E.a₂ - E.a₂ - 3 * C.r) = 0 := by
+    linear_combination (-v ^ 10) * h₂ + (E.a₂ - C.s * E.a₁ + 3 * C.r - C.s ^ 2) * hv
+  have ht : C.t ^ 2 + (E.a₃ + C.r * E.a₁) * C.t +
+      (v ^ 6 * E.a₆ - E.a₆ - C.r * E.a₄ - C.r ^ 2 * E.a₂ - C.r ^ 3) = 0 := by
+    linear_combination (-v ^ 6) * h₆ + (E.a₆ + C.r * E.a₄ + C.r ^ 2 * E.a₂ + C.r ^ 3 - C.t * E.a₃ -
+      C.t ^ 2 - C.r * C.t * E.a₁) * hv
+  exact ⟨hv, hr, Set.mem_biUnion hv (Set.mem_biUnion hr hs),
+    Set.mem_biUnion hv (Set.mem_biUnion hr ht)⟩
 
 /-- **`Aut(E) ≅ ℤ/2` for `j(E) ∉ {0, 1728}`.** The automorphism group of `E` is `{±1}`, so it is
 isomorphic to `Multiplicative (ZMod 2)`: it has exactly two elements — `1` and

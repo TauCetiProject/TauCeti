@@ -36,6 +36,9 @@ so this applies to the nonsingular points of singular Weierstrass curves as well
   field `L` over `R`, the group isomorphism between the points over `L` of `C • W` and of `W`, that
   is `((C • W).baseChange L).toAffine.Point ≃+ (W.baseChange L).toAffine.Point`, with its coordinate
   lemmas `pointEquivVariableChange_some` and `pointEquivVariableChange_symm_some`.
+* `WeierstrassCurve.map_pointEquivVariableChange` and
+  `WeierstrassCurve.map_pointEquivVariableChange_symm`: this group isomorphism is natural in `L`,
+  commuting with `WeierstrassCurve.Affine.Point.map` along `R`-algebra homomorphisms.
 
 These maps identify the point groups of different Weierstrass models and, in particular, a
 quadratic twist with its original curve over a splitting field.
@@ -262,6 +265,25 @@ theorem pointEquivVariableChange_symm_some {x y : L}
     Affine.Point.coe_addEquivVariableChange_symm,
     Affine.Point.equivVariableChange_symm_some, AddEquiv.symm_apply_eq, AddEquiv.cast_apply,
     Affine.Point.cast_some (baseChange_smul_baseChange L C W).symm]
+
+/-- **The identification `pointEquivVariableChange` is natural in the field of coordinates**: it
+commutes with moving points along an `R`-algebra homomorphism `f : K → L`, since the change of
+variables has its coefficients in `R`. -/
+theorem map_pointEquivVariableChange {K : Type*} [Field K] [DecidableEq K] [Algebra R K]
+    (f : K →ₐ[R] L) (P : ((C • W).baseChange K).toAffine.Point) :
+    Affine.Point.map f (W.pointEquivVariableChange K C P) =
+      W.pointEquivVariableChange L C (Affine.Point.map f P) := by
+  rcases P with _ | ⟨x, y, h⟩
+  · simp only [← Affine.Point.zero_def, map_zero]
+  · simp [Affine.Point.map_some, VariableChange.baseChange]
+
+/-- The inverse of `pointEquivVariableChange` commutes with moving points along an `R`-algebra
+homomorphism of the fields of coordinates. -/
+theorem map_pointEquivVariableChange_symm {K : Type*} [Field K] [DecidableEq K] [Algebra R K]
+    (f : K →ₐ[R] L) (P : (W.baseChange K).toAffine.Point) :
+    Affine.Point.map f ((W.pointEquivVariableChange K C).symm P) =
+      (W.pointEquivVariableChange L C).symm (Affine.Point.map f P) := by
+  rw [AddEquiv.eq_symm_apply, ← map_pointEquivVariableChange, AddEquiv.apply_symm_apply]
 
 end BaseChange
 
