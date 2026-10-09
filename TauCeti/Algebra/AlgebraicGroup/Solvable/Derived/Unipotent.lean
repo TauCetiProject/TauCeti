@@ -39,6 +39,7 @@ open WithConv
 
 namespace TauCeti
 
+-- Closed-subgroup unipotence detection uses the same-universe Jordan decomposition API.
 universe u
 
 namespace CommHopfAlgCat
