@@ -77,12 +77,12 @@ theorem rootPowHomCokernelIso_π_hom (n i : ℕ) :
 
 /-- The reduction of `powerXOfLE` has cokernel `A/(x ^ i)`. -/
 def powerXOfLECokernelQuotientIso (hi : i ≤ n) :
-    ((cokernelFunctor (AdjoinRoot.mk (X ^ n : R[X])) AdjoinRoot.mk_self).obj
+    ((cokernelFunctor (AdjoinRoot.mk (X ^ n : R[X]))).obj
       (powerXOfLE R hi)).obj ≅
         ModuleCat.of (AdjoinRoot (X ^ n : R[X]))
           (AdjoinRoot (X ^ n : R[X]) ⧸
             Ideal.span {AdjoinRoot.root (X ^ n : R[X]) ^ i}) :=
-  cokernelFunctorObjIso _ _ _ ≪≫
+  cokernelFunctorObjIso _ _ ≪≫
     cokernel.mapIso _ _
       ((CurvedDuplex.eval₀ _ _).mapIso (powerXOfLEBaseChangeDuplexIso R hi))
       ((CurvedDuplex.eval₁ _ _).mapIso (powerXOfLEBaseChangeDuplexIso R hi))
@@ -93,7 +93,7 @@ def powerXOfLECokernelQuotientIso (hi : i ≤ n) :
 followed by the ordinary cyclic quotient projection. -/
 @[reassoc]
 theorem powerXOfLECokernelQuotientIso_π_hom (hi : i ≤ n) :
-    cokernelπ (AdjoinRoot.mk (X ^ n : R[X])) AdjoinRoot.mk_self (powerXOfLE R hi) ≫
+    cokernelπ (AdjoinRoot.mk (X ^ n : R[X])) (powerXOfLE R hi) ≫
       (powerXOfLECokernelQuotientIso R hi).hom =
         Functor.OplaxMonoidal.η (ModuleCat.extendScalars (AdjoinRoot.mk (X ^ n : R[X]))) ≫
           ModuleCat.ofHom (Ideal.span {AdjoinRoot.root (X ^ n : R[X]) ^ i}).mkQ := by
@@ -119,7 +119,7 @@ theorem powerXOfLECokernelQuotientIso_π_hom (hi : i ≤ n) :
 /-- The reduced polynomial factorization has the cyclic right-module cokernel `A/(x ^ i)`,
 viewed as a left module through the commutativity isomorphism `A ≃ Aᵐᵒᵖ`. -/
 def powerXOfLECokernelIso (hi : i ≤ n) :
-    ((cokernelFunctor (AdjoinRoot.mk (X ^ n : R[X])) AdjoinRoot.mk_self).obj
+    ((cokernelFunctor (AdjoinRoot.mk (X ^ n : R[X]))).obj
       (powerXOfLE R hi)).obj ≅
         (ModuleCat.restrictScalars (RingEquiv.toOpposite (AdjoinRoot (X ^ n : R[X]))).toRingHom).obj
           (FGModuleCat.cyclicModule (AdjoinRoot.root (X ^ n : R[X]) ^ i)).obj := by
@@ -148,10 +148,10 @@ def powerXOfLECokernelIso (hi : i ≤ n) :
 /-- The right cyclic-module comparison sends an odd-module representative to the class of
 its scalar-extension counit image. -/
 theorem powerXOfLECokernelIso_hom_cokernelπ (hi : i ≤ n)
-    (a : ((baseChangeToCurvedDuplex (AdjoinRoot.mk (X ^ n : R[X]))
-      AdjoinRoot.mk_self).obj (powerXOfLE R hi)).X₁) :
+    (a : ((baseChangeFunctor (AdjoinRoot.mk (X ^ n : R[X]))).obj
+      (powerXOfLE R hi)).obj.X₁.obj) :
     (powerXOfLECokernelIso R hi).hom
-      (cokernelπ (AdjoinRoot.mk (X ^ n : R[X])) AdjoinRoot.mk_self (powerXOfLE R hi) a) =
+      (cokernelπ (AdjoinRoot.mk (X ^ n : R[X])) (powerXOfLE R hi) a) =
         Submodule.Quotient.mk (op (Functor.OplaxMonoidal.η
           (ModuleCat.extendScalars (AdjoinRoot.mk (X ^ n : R[X]))) a)) := by
   let e := Ideal.quotientEquivAlg
@@ -164,7 +164,7 @@ theorem powerXOfLECokernelIso_hom_cokernelπ (hi : i ≤ n)
   -- The final isomorphism reuses this quotient equivalence, with the target action transported
   -- to the explicitly restricted right-module carrier.
   change e ((powerXOfLECokernelQuotientIso R hi).hom
-    (cokernelπ (AdjoinRoot.mk (X ^ n : R[X])) AdjoinRoot.mk_self (powerXOfLE R hi) a)) = _
+    (cokernelπ (AdjoinRoot.mk (X ^ n : R[X])) (powerXOfLE R hi) a)) = _
   rw [h]
   rfl
 
