@@ -181,6 +181,7 @@ protected def symm (e : Equiv X Y) : Equiv Y X where
   toIsometryEquiv := e.toIsometryEquiv.symm
   measurePreserving' := e.measurePreserving.symm e.toIsometryEquiv.toHomeomorph.toMeasurableEquiv
 
+/-- Coercion to an isometric equivalence commutes with inversion. -/
 @[simp]
 theorem coe_symm (e : Equiv X Y) :
     (e.symm : Y ≃ᵢ X) = (e : X ≃ᵢ Y).symm := by
