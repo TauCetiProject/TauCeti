@@ -44,6 +44,9 @@ not homotopy equivalent to a circle.
   (`StarConvex.coe_sphereHomotopyEquiv_apply`, `StarConvex.coe_sphereHomotopyEquiv_symm_apply`).
 * `StarConvex.radialHomotopy`: the straight-line deformation from the radial projection to the
   identity, fixing the included sphere pointwise throughout.
+* `TauCeti.complSingletonHomotopyEquivSphere`: the complement of a point `y` of a real normed
+  space is homotopy equivalent to the unit sphere, by radial projection about `y` followed by
+  translation by `-y`.
 * `Complex.directionFrom`: the direction map `z ↦ (z - p) / ‖z - p‖` from `V \ {p}` to the unit
   circle, for `V ⊆ ℂ`.
 * `StarConvex.pathConnectedSpace_diff_singleton`: for `V ⊆ ℂ`, `V \ {p}` is path connected; in
@@ -219,6 +222,24 @@ theorem _root_.StarConvex.coe_sphereHomotopyEquiv_symm_apply (hV : StarConvex �
     (hr : 0 < r) (hS : sphere p r ⊆ V) (z : ↥(V \ {p})) :
     ((hV.sphereHomotopyEquiv hr hS).symm z : E) = p + (r / ‖(z : E) - p‖) • ((z : E) - p) :=
   (rfl)
+
+/-- The complement of a point `y` of a real normed space is homotopy equivalent to the unit
+sphere: the inclusion of `sphere y 1` into `E ∖ {y}` is a homotopy equivalence, and translation
+by `-y` carries `sphere y 1` onto the unit sphere. -/
+def complSingletonHomotopyEquivSphere (y : E) :
+    ContinuousMap.HomotopyEquiv ({y}ᶜ : Set E) (sphere (0 : E) 1) :=
+  ((Homeomorph.setCongr (compl_eq_univ_sdiff {y})).toHomotopyEquiv.trans
+    ((starConvex_univ y).sphereHomotopyEquiv one_pos (subset_univ _)).symm).trans
+    ((Homeomorph.subRight y).subtype fun z ↦ by simp [mem_sphere_iff_norm]).toHomotopyEquiv
+
+/-- The homotopy equivalence `TauCeti.complSingletonHomotopyEquivSphere` is radial projection
+about `y` onto `sphere y 1`, followed by translation by `-y`. -/
+@[simp]
+theorem coe_complSingletonHomotopyEquivSphere_apply (y : E) (z : ({y}ᶜ : Set E)) :
+    (complSingletonHomotopyEquivSphere y z : E) = ‖(z : E) - y‖⁻¹ • ((z : E) - y) := by
+  simp [complSingletonHomotopyEquivSphere]
+  -- `Homeomorph.setCongr` has no evaluation lemma; it does not move points.
+  rfl
 
 end NormedSpace
 
