@@ -207,6 +207,21 @@ end FDRep
 
 namespace TauCeti
 
+/-- The trivial and sign representations of a nontrivial symmetric group are nonisomorphic
+when `2 ≠ 0`. These give distinct extensions of the trivial alternating-group representation. -/
+theorem not_nonempty_iso_trivial_sign (k : Type*) [CommRing k] [NeZero (2 : k)]
+    (α : Type*) [Fintype α] [DecidableEq α] [Nontrivial α] :
+    ¬ Nonempty (FDRep.ofLinearCharacter (1 : Equiv.Perm α →* kˣ) ≅
+      FDRep.ofLinearCharacter (signLinearCharacter k α)) := by
+  rw [FDRep.nonempty_iso_ofLinearCharacter_iff]
+  intro h
+  obtain ⟨i, j, hij⟩ := exists_pair_ne α
+  have hswap := congrArg (fun χ : Equiv.Perm α →* kˣ => (χ (Equiv.swap i j) : k)) h
+  simp only [MonoidHom.one_apply, Units.val_one, signLinearCharacter_swap hij,
+    Units.val_neg] at hswap
+  have htwo : (2 : k) = 0 := by linear_combination hswap
+  exact NeZero.ne (2 : k) htwo
+
 variable (k : Type*) [Field k] [NeZero (2 : k)]
 
 /-- The standard representation of `S₄` and its sign twist are nonisomorphic when `2 ≠ 0`.
