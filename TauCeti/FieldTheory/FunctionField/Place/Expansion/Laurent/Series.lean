@@ -152,7 +152,14 @@ theorem ord_completionEquivLaurentSeries (x : P.Completion) :
 /-- The `n`-th Laurent coefficient on the completed local field, with respect to the uniformizer
 `t`. -/
 noncomputable def completionLaurentCoeff (n : ℤ) : P.Completion →ₗ[k] k :=
-  (HahnSeries.coeff.linearMap n).comp (P.completionEquivLaurentSeries hP ht).toLinearMap
+  -- Use the coefficientwise Hahn-series module structure expected by `coeff.linearMap`.
+  (HahnSeries.coeff.linearMap n).comp
+    ({ toFun := (P.completionEquivLaurentSeries hP ht).toAlgHom
+       map_add' := (P.completionEquivLaurentSeries hP ht).toAlgHom.map_add
+       map_smul' := fun c z => by
+         rw [Algebra.smul_def, map_mul, AlgHom.commutes, HahnSeries.algebraMap_apply',
+           PowerSeries.algebraMap_eq, HahnSeries.ofPowerSeries_C, HahnSeries.C_mul_eq_smul,
+           RingHom.id_apply] } : P.Completion →ₗ[k] LaurentSeries k)
 
 /-- The completed Laurent coefficient is the corresponding coefficient of the Laurent-series
 expansion. -/
@@ -189,7 +196,7 @@ theorem completionLaurentCoeff_coe_integer_eq_zero (z : P.completionPlace.intege
     {n : ℤ} (hn : n < 0) :
     P.completionLaurentCoeff hP ht n (z : P.Completion) = 0 := by
   rw [completionLaurentCoeff_apply]
-  apply LaurentSeries.coeff_zero_of_lt_valuation k _ hn
+  apply LaurentSeries.coeff_zero_of_lt_valuation k (D := 0) _ hn
   rw [valuation_completionEquivLaurentSeries]
   simpa using P.completionPlace.mem_integers_iff.mp z.2
 
