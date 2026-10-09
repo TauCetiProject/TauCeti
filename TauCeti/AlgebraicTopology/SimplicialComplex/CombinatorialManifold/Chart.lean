@@ -19,9 +19,9 @@ cover every point of the polyhedron, not just its vertices.
 The chart at a vertex sends that vertex to the origin; the radius of any point in the
 chart is one minus its coordinate at that vertex. The source, target, and atlas formulas
 are exposed so that compatibility of these charts with a structure groupoid can be
-checked separately. Apply `AbstractSimplicialComplex.starChartedSpace` to the charts and
-their source formulas to obtain the atlas. This gives a topological atlas, without asserting
-smooth or piecewise-linear compatibility. It needs no finiteness or countability of the
+checked separately. `AbstractSimplicialComplex.sphereLinkChartedSpace` assembles these charts
+using `AbstractSimplicialComplex.starChartedSpace`. This gives a topological atlas, without
+asserting smooth or piecewise-linear compatibility. It needs no finiteness or countability of the
 ambient vertex type or complex. In particular, two-point links give one-dimensional
 charts.
 
@@ -108,5 +108,32 @@ theorem sphereLinkChart_symm_apply_apex {y : EuclideanSpace ℝ (Fin (n + 1))}
   have hr := K.norm_sphereLinkChart v h ⟨(K.sphereLinkChart v h).symm y, hxs⟩
   rw [(K.sphereLinkChart v h).right_inv hyt] at hr
   linarith
+
+variable (hs : ∀ v, PreAbstractSimplicialComplex.IsCombinatorialSphere
+  (PreAbstractSimplicialComplex.link K.toPreAbstractSimplicialComplex {v}) n)
+
+/-- Spherical links at every vertex give a Euclidean charted space on the existing
+weak realization topology, with the open vertex stars as chart sources. -/
+@[instance_reducible]
+def sphereLinkChartedSpace :
+    ChartedSpace (EuclideanSpace ℝ (Fin (n + 1))) (Realization K) :=
+  K.starChartedSpace (fun v ↦ K.sphereLinkChart v (hs v))
+    (fun v ↦ K.sphereLinkChart_source v (hs v))
+
+/-- The spherical-link atlas consists exactly of the vertex-star charts. -/
+@[simp]
+theorem sphereLinkChartedSpace_atlas :
+    @atlas (EuclideanSpace ℝ (Fin (n + 1))) _ (Realization K) _
+      (K.sphereLinkChartedSpace hs) = range (fun v ↦ K.sphereLinkChart v (hs v)) := by
+  unfold sphereLinkChartedSpace
+  exact K.starChartedSpace_atlas _ _
+
+/-- At a vertex, the preferred spherical-link chart is that vertex's own chart. -/
+@[simp]
+theorem sphereLinkChartedSpace_chartAt_vertex :
+    @chartAt (EuclideanSpace ℝ (Fin (n + 1))) _ (Realization K) _
+      (K.sphereLinkChartedSpace hs) (vertex K v) = K.sphereLinkChart v (hs v) := by
+  unfold sphereLinkChartedSpace
+  exact K.starChartedSpace_chartAt_vertex _ _ v
 
 end AbstractSimplicialComplex
