@@ -24,20 +24,21 @@ at most the *dissipation*
 
 since `g` controls the rate of change of `φ ∘ u` by `g (u r) |u'|(r)`, and Young's inequality
 bounds this product by the integrand above. A *`p`-curve of maximal slope* is a curve along which
-the energy is finite and drops by at least the dissipation: the energy-dissipation inequality
+the energy is finite and which, for all times `s ≤ t`, is absolutely continuous on `[s, t]` and
+drops in energy by at least the dissipation: the energy-dissipation inequality
 
 `φ (u t) + (1/p) ∫_s^t |u'| ^ p + (1/q) ∫_s^t g (u r) ^ q ≤ φ (u s)`
 
-holds for all `s ≤ t`. These curves are the metric replacement for the solutions of the gradient
+holds. These curves are the metric replacement for the solutions of the gradient
 flow `u' = -∇φ(u)` of a smooth energy on a Hilbert space, which are curves of maximal slope for the
 descending slope (`TauCeti.isCurveOfMaximalSlope_of_hasGradientAt`).
 
 When `g` is a strong upper gradient the two bounds meet. Along a curve of maximal slope the
-energy identity holds: the energy drops by exactly the dissipation. The metric speed and the upper
-gradient are moreover related by `|u'| ^ p = g (u) ^ q` almost everywhere, and the energy drop is
-the `p`-action. Conversely, the energy-dissipation inequality between the endpoints of a compact
-interval, with the energy finite there, already makes a curve of maximal slope on the whole
-interval.
+energy identity holds: the energy drops by exactly the dissipation. When moreover `g ∘ u` is
+almost everywhere measurable, the metric speed and the upper gradient are related by
+`|u'| ^ p = g (u) ^ q` almost everywhere, and the energy drop is the `p`-action. Conversely, a curve
+absolutely continuous on a compact interval satisfying the energy-dissipation inequality between
+its endpoints, with the energy finite there, is a curve of maximal slope on the whole interval.
 
 ## Main definitions
 
@@ -52,11 +53,12 @@ interval.
   energy drops by at most the dissipation.
 * `TauCeti.IsCurveOfMaximalSlope.apply_eq_add_dissipation`: the **energy identity**
   `φ (u s) = φ (u t) + dissipation p q g u s t` for `s ≤ t`.
-* `TauCeti.IsCurveOfMaximalSlope.ae_metricDerivative_rpow_eq`: `|u'| ^ p = g (u) ^ q` almost
-  everywhere, and `TauCeti.IsCurveOfMaximalSlope.apply_eq_add_curveAction`: the energy drop is the
-  `p`-action.
-* `TauCeti.isCurveOfMaximalSlope_Icc_iff`: on `[a, b]` it suffices to check finiteness of the
-  energy at `a` and `b` and the energy-dissipation inequality between `a` and `b`.
+* `TauCeti.IsCurveOfMaximalSlope.ae_metricDerivative_rpow_eq`: if `g ∘ u` is a.e.-measurable,
+  `|u'| ^ p = g (u) ^ q` almost everywhere, and
+  `TauCeti.IsCurveOfMaximalSlope.apply_eq_add_curveAction`: the energy drop is then the `p`-action.
+* `TauCeti.isCurveOfMaximalSlope_Icc_iff`: for a curve absolutely continuous on `[a, b]` it
+  suffices to check finiteness of the energy at `a` and `b` and the energy-dissipation inequality
+  between `a` and `b`.
 * `TauCeti.isCurveOfMaximalSlope_of_hasGradientAt`: on a Hilbert space, a `C¹` solution of
   `u' = -∇f(u)` is a `2`-curve of maximal slope for the descending slope of `f`;
   `TauCeti.isCurveOfMaximalSlope_exp_neg_smul` is the flow `t ↦ e⁻ᵗ x` of `‖x‖² / 2`.
@@ -87,6 +89,11 @@ noncomputable section
 
 open Filter MeasureTheory Set
 open scoped ENNReal NNReal Interval
+
+/-- For conjugate exponents `p, q`, splitting `a ∈ [0, ∞]` as `a / p + a / q` recovers `a`. -/
+theorem Real.HolderConjugate.div_add_div_ennreal {p q : ℝ} (hpq : p.HolderConjugate q)
+    (a : ℝ≥0∞) : a / ENNReal.ofReal p + a / ENNReal.ofReal q = a := by
+  rw [div_eq_mul_inv, div_eq_mul_inv, ← mul_add, hpq.inv_add_inv_ennreal, mul_one]
 
 namespace TauCeti
 
@@ -226,8 +233,9 @@ theorem apply_eq_add_dissipation (h : IsCurveOfMaximalSlope p q φ g u I)
     (hst : s ≤ t) : φ (u s) = φ (u t) + dissipation p q g u s t :=
   le_antisymm (hg.le_add_dissipation hpq (h.2 hs ht hst).1) (h.apply_add_dissipation_le hs ht hst)
 
-/-- Along a curve of maximal slope for a strong upper gradient `g`, the metric speed and the upper
-gradient satisfy `|u'| ^ p = g (u) ^ q` almost everywhere between `s` and `t`. -/
+/-- Along a curve of maximal slope for a strong upper gradient `g`, if `g ∘ u` is a.e.-measurable
+between `s` and `t`, the metric speed and the upper gradient satisfy `|u'| ^ p = g (u) ^ q` almost
+everywhere there. -/
 theorem ae_metricDerivative_rpow_eq (h : IsCurveOfMaximalSlope p q φ g u I)
     (hg : IsStrongUpperGradient φ g) (hpq : p.HolderConjugate q) (hs : s ∈ I) (ht : t ∈ I)
     (hst : s ≤ t) (hgu : AEMeasurable (fun r ↦ g (u r)) (volume.restrict (Ι s t))) :
@@ -272,7 +280,8 @@ theorem ae_metricDerivative_rpow_eq (h : IsCurveOfMaximalSlope p q φ g u I)
   · exact h'
 
 /-- The **energy identity** in terms of the action: along a curve of maximal slope for a strong
-upper gradient, the energy drops by exactly the `p`-action, `φ (u s) = φ (u t) + A_p(u)`. -/
+upper gradient `g`, if `g ∘ u` is a.e.-measurable between `s` and `t`, the energy drops by exactly
+the `p`-action, `φ (u s) = φ (u t) + A_p(u)`. -/
 theorem apply_eq_add_curveAction (h : IsCurveOfMaximalSlope p q φ g u I)
     (hg : IsStrongUpperGradient φ g) (hpq : p.HolderConjugate q) (hs : s ∈ I) (ht : t ∈ I)
     (hst : s ≤ t) (hgu : AEMeasurable (fun r ↦ g (u r)) (volume.restrict (Ι s t))) :
@@ -280,11 +289,12 @@ theorem apply_eq_add_curveAction (h : IsCurveOfMaximalSlope p q φ g u I)
   have hA : curveAction p u s t = ∫⁻ r in Ι s t, g (u r) ^ q :=
     (curveAction_def p u s t).trans <|
       lintegral_congr_ae (h.ae_metricDerivative_rpow_eq hg hpq hs ht hst hgu)
-  rw [h.apply_eq_add_dissipation hg hpq hs ht hst, dissipation_def, ← hA, div_eq_mul_inv,
-    div_eq_mul_inv, ← mul_add, hpq.inv_add_inv_ennreal, mul_one]
+  rw [h.apply_eq_add_dissipation hg hpq hs ht hst, dissipation_def, ← hA,
+    hpq.div_add_div_ennreal]
 
 /-- The **energy identity** in terms of the upper gradient: along a curve of maximal slope for a
-strong upper gradient, `φ (u s) = φ (u t) + ∫_s^t g (u r) ^ q dr`. -/
+strong upper gradient `g`, if `g ∘ u` is a.e.-measurable between `s` and `t`, then
+`φ (u s) = φ (u t) + ∫_s^t g (u r) ^ q dr`. -/
 theorem apply_eq_add_lintegral_rpow (h : IsCurveOfMaximalSlope p q φ g u I)
     (hg : IsStrongUpperGradient φ g) (hpq : p.HolderConjugate q) (hs : s ∈ I) (ht : t ∈ I)
     (hst : s ≤ t) (hgu : AEMeasurable (fun r ↦ g (u r)) (volume.restrict (Ι s t))) :
@@ -398,8 +408,8 @@ theorem isCurveOfMaximalSlope_of_hasGradientAt {f : E → ℝ} {u G : ℝ → E}
     refine setLIntegral_congr_fun measurableSet_uIoc fun r hr ↦ ?_
     have hr' := hsub (uIoc_subset_uIcc hr)
     rw [(hu r hr').metricDerivative_eq, (hf r hr').hasFDerivAt.descendingSlope_eq,
-      LinearIsometryEquiv.enorm_map, enorm_neg, div_eq_mul_inv, ← mul_add,
-      Real.HolderConjugate.two_two.inv_add_inv_ennreal, mul_one, ← ofReal_norm,
+      LinearIsometryEquiv.enorm_map, enorm_neg, Real.HolderConjugate.two_two.div_add_div_ennreal,
+      ← ofReal_norm,
       ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) zero_le_two]
     norm_cast
   have hnonneg : 0 ≤ ∫ r in s..t, ‖G r‖ ^ 2 :=
