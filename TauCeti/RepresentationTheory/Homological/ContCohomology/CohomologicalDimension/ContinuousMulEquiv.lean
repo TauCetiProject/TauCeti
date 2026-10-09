@@ -95,11 +95,12 @@ theorem StrictCohomologicalDimensionLE.of_continuousMulEquiv (e : G ≃ₜ* H) {
     (fun g m => by
       rw [LinearEquiv.refl_apply, LinearEquiv.refl_apply]
       simp [MulAction.compHom_smul_def]) i
-  refine (AddSubgroup.eq_bot_iff_forall _).2 fun x ⟨k, hk⟩ => ?_
+  refine (AddSubgroup.eq_bot_iff_forall _).2 fun x hx => ?_
+  obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.1 hx
   obtain ⟨y, rfl⟩ := hF.2 x
   have hy : y ∈ AddCommGroup.primaryComponent
       (continuousCohomology i (ofDiscreteModule ℤ H M)) p :=
-    ⟨k, hF.1 (by rw [_root_.map_nsmul, hk, _root_.map_zero])⟩
+    AddCommGroup.mem_primaryComponent.2 ⟨k, hF.1 (by rw [_root_.map_nsmul, hk, _root_.map_zero])⟩
   rw [h M i hi, AddSubgroup.mem_bot] at hy
   rw [hy, _root_.map_zero]
 
