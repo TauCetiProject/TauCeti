@@ -108,6 +108,7 @@ variable {P N} {Q N' : Type*}
 
 /-- Nakayama Hom duality is covariantly natural in the projective module: dualizing
 precomposition by `f` corresponds to postcomposition by `ν(f)`. -/
+@[simp]
 theorem nakayamaHomEquiv_dualMap_lcomp (f : P →ₗ[A] Q)
     (χ : Module.Dual k (P →ₗ[A] N)) :
     nakayamaHomEquiv k A Q N ((f.lcomp k N).dualMap χ) =
@@ -121,6 +122,7 @@ theorem nakayamaHomEquiv_dualMap_lcomp (f : P →ₗ[A] Q)
 
 /-- Nakayama Hom duality is contravariantly natural in the coefficient module: dualizing
 postcomposition by `g` corresponds to precomposition by `g`. -/
+@[simp]
 theorem nakayamaHomEquiv_dualMap_compRight (g : N' →ₗ[A] N)
     (χ : Module.Dual k (P →ₗ[A] N)) :
     nakayamaHomEquiv k A P N' ((g.compRight k).dualMap χ) =
