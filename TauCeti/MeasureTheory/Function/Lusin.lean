@@ -44,7 +44,10 @@ maps produced by `ProbabilityTheory.HasLaw` are only almost-everywhere measurabl
   `MeasureTheory.AEStronglyMeasurable.exists_isClosed_measure_sdiff_lt_continuousOn` — the same for
   a strongly measurable, respectively almost-everywhere strongly measurable, map into a
   pseudometrizable space, with no measurable structure and no countability assumption on the
-  target.
+  target;
+* `TauCeti.exists_isClosed_measure_sdiff_lt_continuousOn_of_ae_eq` — Lusin's conclusion transfers
+  to an almost-everywhere equal map, which reduces each almost-everywhere version to its
+  everywhere counterpart.
 
 ## References
 
@@ -63,8 +66,8 @@ namespace TauCeti
 
 /-- Lusin's conclusion passes to a map almost everywhere equal to one for which it holds on every
 measurable subset of `s`: shrink `s` by a measurable null set containing the set where the two
-maps differ. -/
-private theorem exists_isClosed_measure_sdiff_lt_continuousOn_of_ae_eq {X Y : Type*}
+maps differ. No topological or measurable assumption on the target is needed. -/
+theorem exists_isClosed_measure_sdiff_lt_continuousOn_of_ae_eq {X Y : Type*}
     [TopologicalSpace X] [MeasurableSpace X] [TopologicalSpace Y] {μ : Measure X} {f g : X → Y}
     {s : Set X} {ε : ℝ≥0∞} (hfg : f =ᵐ[μ] g) (hs : MeasurableSet s)
     (hg : ∀ t ⊆ s, MeasurableSet t → ∃ F ⊆ t, IsClosed F ∧ μ (t \ F) < ε ∧ ContinuousOn g F) :
