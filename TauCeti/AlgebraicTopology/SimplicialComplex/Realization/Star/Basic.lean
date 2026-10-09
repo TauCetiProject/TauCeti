@@ -123,6 +123,17 @@ def geometricLink : Set (Realization K) :=
 theorem mem_geometricLink (x : Realization K) :
     x ∈ geometricLink K v ↔ x.1 v = 0 ∧ x ∈ closedStarRealization K {v} := (Iff.rfl)
 
+/-- The geometric link is compact whenever its closed star is compact. -/
+theorem isCompact_geometricLink (hc : IsCompact (closedStarRealization K {v})) :
+    IsCompact (geometricLink K v) := by
+  have heq : geometricLink K v = {x : Realization K | x.1 v = 0} ∩
+      closedStarRealization K {v} := by
+    ext x
+    simp
+  rw [heq]
+  exact hc.inter_left
+    (isClosed_eq ((continuous_apply v).comp (continuous_realization_coe K)) continuous_const)
+
 /-- The apex coordinate of a geometric link point is zero. -/
 @[simp]
 theorem geometricLink_apex (x : geometricLink K v) : x.1.1 v = 0 :=
