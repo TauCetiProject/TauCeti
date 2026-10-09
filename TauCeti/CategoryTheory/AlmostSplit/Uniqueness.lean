@@ -17,7 +17,8 @@ right-hand ends are isomorphic as short complexes, so in particular their left-h
 middle terms are isomorphic.  This file proves that, the uniqueness half of the Auslander-Reiten
 theorem, and proves it in the sharper form that *every* morphism between two such almost-split
 sequences that is invertible at the right-hand end is invertible.  Concretely, every uniqueness
-statement below carries `[IsLocalRing (End S.X₁)]` together with `[IsLocalRing (End S'.X₁)]` for
+statement comparing two sequences carries `[IsLocalRing (End S.X₁)]` together with
+`[IsLocalRing (End S'.X₁)]` for
 the second sequence, in a preadditive and balanced ambient category; none of these conclusions is
 claimed for an arbitrary almost-split sequence in an arbitrary preadditive category.  Only the
 comparison morphism `CategoryTheory.ShortComplex.IsAlmostSplit.exists_hom_τ₃_eq`, which produces a
@@ -40,11 +41,15 @@ finite-dimensional module over a finite-dimensional algebra — which is Fitting
 here for objects of `ModuleCat A` as `TauCeti.indecomposable_iff_isLocalRing_end`; that is how a use
 site over such an algebra discharges the hypothesis.
 
-The three lemmas the argument runs on need only one half of the almost-split condition —
-exactness, monicity of the first map, and `TauCeti.IsLeftAlmostSplit` or
-`TauCeti.IsRightAlmostSplit` — so they are stated in those namespaces; the results about an
-almost-split sequence are their corollaries.  Only `TauCeti.IsLeftAlmostSplit.isIso_of_τ₃_eq_id`,
-whose five-lemma step needs the second map to be an epimorphism, asks for full short exactness.
+The rigidity and comparison lemmas need only one half of the almost-split condition, so they
+are stated in `TauCeti.IsLeftAlmostSplit` or `TauCeti.IsRightAlmostSplit`; the results about an
+almost-split sequence are their corollaries. The rigidity lemmas fixing the right-hand end assume
+exactness, monicity of the first map, and locality of the left-hand endomorphism ring. Their duals
+fixing the left-hand end assume exactness, epicity of the second map, and
+`[IsLocalRing (End S.X₃)]`. Both `TauCeti.IsLeftAlmostSplit.isIso_of_τ₃_eq_id` and
+`TauCeti.IsRightAlmostSplit.isIso_of_τ₁_eq_id` ask for full short exactness for their five-lemma
+steps. These rigidity results also feed the minimality results in
+`TauCeti.CategoryTheory.AlmostSplit.Minimal`.
 
 ## Main results
 
@@ -52,6 +57,10 @@ whose five-lemma step needs the second map to be an epimorphism, asks for full s
   with monic, left almost split first map that is the identity on the right-hand end is an
   isomorphism on the left-hand end**, and `TauCeti.IsLeftAlmostSplit.isIso_of_τ₃_eq_id`: it is then
   an isomorphism of short complexes.  This is the engine of the file.
+* `TauCeti.IsRightAlmostSplit.isIso_τ₃_of_τ₁_eq_id`: an endomorphism of an exact short complex
+  with epic, right almost split second map and local right-hand endomorphism ring that fixes the
+  left-hand end is invertible on the right-hand end. Its short exact version,
+  `TauCeti.IsRightAlmostSplit.isIso_of_τ₁_eq_id`, is an isomorphism of short complexes.
 * `TauCeti.IsRightAlmostSplit.exists_hom_τ₃_eq_of_not_isSplitEpi`: **the comparison morphism.** A
   map into the right-hand end of an exact short complex with monic first map and right almost split
   second map, whose composite with the first sequence's `g` is not a split epimorphism, is the third

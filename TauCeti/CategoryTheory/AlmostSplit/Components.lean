@@ -50,10 +50,7 @@ theorem isIrreducibleMorphism_comp_g (hS : S.IsAlmostSplit)
   have hrad := comp_mem_jacobsonRadical_left i
     (mem_jacobsonRadical_iff_not_isSplitEpi.mpr hS.isRightAlmostSplit_g.not_isSplitEpi)
   intro hi
-  have hradId : 𝟙 X ∈ jacobsonRadical X X := by
-    simpa only [IsSplitMono.id] using comp_mem_jacobsonRadical_right hrad (retraction (i ≫ S.g))
-  exact hX ((Limits.IsZero.iff_id_eq_zero X).mpr
-    (id_eq_zero_of_isIso_of_mem_jacobsonRadical hradId))
+  exact hX (isZero_of_isSplitMono_of_mem_jacobsonRadical hrad)
 
 /-- Projecting the initial map of an almost-split sequence onto a retract of its middle term
 gives an irreducible morphism when the retract is nonzero. -/
@@ -64,10 +61,7 @@ theorem isIrreducibleMorphism_f_comp (hS : S.IsAlmostSplit)
   have hrad := comp_mem_jacobsonRadical_right
     (mem_jacobsonRadical_iff_not_isSplitMono.mpr hS.isLeftAlmostSplit_f.not_isSplitMono) p
   intro hp
-  have hradId : 𝟙 X ∈ jacobsonRadical X X := by
-    simpa only [IsSplitEpi.id] using comp_mem_jacobsonRadical_left (section_ (S.f ≫ p)) hrad
-  exact hX ((Limits.IsZero.iff_id_eq_zero X).mpr
-    (id_eq_zero_of_isIso_of_mem_jacobsonRadical hradId))
+  exact hX (isZero_of_isSplitEpi_of_mem_jacobsonRadical hrad)
 
 /-- A morphism into the right-hand end is irreducible exactly when it is the restriction of
 the final map to a retract of the middle term. -/
