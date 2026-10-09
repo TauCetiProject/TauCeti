@@ -270,9 +270,9 @@ noncomputable abbrev primesAboveRingOfIntegersSubMulAction
     rw [IsDedekindDomain.HeightOneSpectrum.mem_primesAbove_iff] at hw ⊢
     convert hw using 1
     apply IsDedekindDomain.HeightOneSpectrum.asIdeal_injective
-    -- Contraction of a height-one prime is contraction of its underlying ideal.
-    change (σ • w).asIdeal.under (𝓞 K) = w.asIdeal.under (𝓞 K)
-    rw [heightOneSpectrum_asIdeal_smul, Ideal.under_smul]
+    rw [IsDedekindDomain.HeightOneSpectrum.under_asIdeal,
+      IsDedekindDomain.HeightOneSpectrum.under_asIdeal,
+      heightOneSpectrum_asIdeal_smul, Ideal.under_smul]
 
 omit [NumberField K] [NumberField L] in
 /-- The stable subset of primes above a set has the canonical primes-above carrier. -/
@@ -299,8 +299,7 @@ theorem sigmaPrimesOverEquivPrimesAbove_smul
       σ • sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) S p := by
   apply Subtype.ext
   apply IsDedekindDomain.HeightOneSpectrum.asIdeal_injective
-  -- The subtype action restricts the ambient action; compare the underlying ideals.
-  change _ = (σ • (sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) S p).1).asIdeal
+  rw [SubMulAction.val_smul (p := primesAboveRingOfIntegersSubMulAction K L S)]
   rcases p with ⟨v, P⟩
   simp only [sigmaPrimesOverEquivPrimesAbove_apply_asIdeal, Sigma.smul_mk,
     coe_smul_primesOver_ringOfIntegers, heightOneSpectrum_asIdeal_smul]

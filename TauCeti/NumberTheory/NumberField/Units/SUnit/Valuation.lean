@@ -105,10 +105,8 @@ private theorem valuationVector_coeff
       Multiplicative.toAdd (v.val.valuationOfNeZero u.toMul.val) := by
   rw [valuationVector, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
     TauCeti.funMultiplicativeIntLinearEquiv_coeff]
-  -- The additive homomorphism is the type-tagged valuation tuple.
-  change Multiplicative.toAdd
-    (Set.unitValuation (S : Set (HeightOneSpectrum (𝓞 L))) L u.toMul v) = _
-  rw [Set.unitValuation_apply]
+  simp only [AddMonoidHom.coe_toIntLinearMap, MonoidHom.coe_toAdditive,
+    Function.comp_apply, toMul_ofMul, Set.unitValuation_apply]
 
 /-- The S-unit valuation homomorphism into the finite-prime permutation module. -/
 def sUnitValuation : sUnitRep S ⟶ Rep.ofMulAction ℤ (L ≃ₐ[K] L) S :=
@@ -196,7 +194,9 @@ theorem range_sUnitInclusion_eq_ker_sUnitValuation :
   simp only [Representation.IntertwiningMap.toLinearMap_apply]
   have hzero : (sUnitValuation S).hom u = 0 ↔
       u.toMul ∈ (Set.unitValuation (S : Set (HeightOneSpectrum (𝓞 L))) L).ker := by
-    -- The coordinate equivalence is injective; only the valuation tuple can vanish.
+    -- The coefficient lemma identifies individual coordinates, not the whole valuation tuple.
+    -- `Rep.hom_ofHom` cannot rewrite through the unexposed `sUnitRep` carrier at rewrite
+    -- transparency; expose the defining composite to apply the equivalence's zero criterion.
     change TauCeti.funMultiplicativeIntLinearEquiv S
       ((Set.unitValuation (S : Set (HeightOneSpectrum (𝓞 L))) L).toAdditive u) = 0 ↔ _
     rw [LinearEquiv.map_eq_zero_iff]

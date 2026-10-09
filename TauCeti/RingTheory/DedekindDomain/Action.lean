@@ -28,23 +28,19 @@ variable {G R : Type*} [Group G] [CommRing R] [MulSemiringAction G R]
 noncomputable instance instSMulHeightOneSpectrum : SMul G (HeightOneSpectrum R) where
   smul g v := HeightOneSpectrum.equivOfRingEquiv (MulSemiringAction.toRingEquiv G R g) v
 
-/-- Ring automorphisms act on height-one primes by transport of ideals. -/
-noncomputable instance instMulActionHeightOneSpectrum : MulAction G (HeightOneSpectrum R) where
-  one_smul v := by
-    ext x
-    -- Transport is comap along the inverse ring automorphism.
-    change (1 : G)⁻¹ • x ∈ v.asIdeal ↔ x ∈ v.asIdeal
-    simp
-  mul_smul g h v := by
-    ext x
-    -- The inverse of a product acts in the opposite order.
-    change (g * h)⁻¹ • x ∈ v.asIdeal ↔ h⁻¹ • (g⁻¹ • x) ∈ v.asIdeal
-    simp [mul_smul]
-
 /-- The action on height-one primes agrees with the pointwise action on ideals. -/
 @[simp]
 theorem heightOneSpectrum_asIdeal_smul (g : G) (v : HeightOneSpectrum R) :
     (g • v).asIdeal = g • v.asIdeal :=
   HeightOneSpectrum.asIdeal_equivOfRingEquiv (MulSemiringAction.toRingEquiv G R g) v
+
+/-- Ring automorphisms act on height-one primes by transport of ideals. -/
+noncomputable instance instMulActionHeightOneSpectrum : MulAction G (HeightOneSpectrum R) where
+  one_smul v := by
+    apply HeightOneSpectrum.asIdeal_injective
+    simp only [heightOneSpectrum_asIdeal_smul, one_smul]
+  mul_smul g h v := by
+    apply HeightOneSpectrum.asIdeal_injective
+    simp only [heightOneSpectrum_asIdeal_smul, mul_smul]
 
 end TauCeti
