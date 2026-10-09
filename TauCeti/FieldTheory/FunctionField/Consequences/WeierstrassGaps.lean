@@ -25,6 +25,12 @@ At a rational place each step changes the dimension by at most one, and it chang
 exactly when the index is a pole number.  Riemann--Roch computes `ℓ((2g - 1)P) = g`, so precisely
 `g` of the first `2g - 1` steps do not change the dimension.
 
+Pole numbers are closed under addition, so subtracting a pole number from a gap leaves a gap. Below
+a gap `n` there are therefore at least as many gaps as positive pole numbers, and the `j`-th gap is
+at most `2j - 1`. The **Weierstrass weight** `∑ⱼ (lⱼ - j)` of the gaps `l₁ < ⋯ < l_g` at a rational
+place thus lies between `0` and `g (g - 1) / 2`. It is `0` exactly when the gaps are `1, …, g`, and
+`g (g - 1) / 2` exactly when `2` is a pole number, in which case the gaps are `1, 3, …, 2g - 1`.
+
 ## Main definitions
 
 * `TauCeti.Place.IsPoleNumber`: a natural number `n` witnessed by a nonzero function of order
@@ -32,6 +38,7 @@ exactly when the index is a pole number.  Riemann--Roch computes `ℓ((2g - 1)P)
 * `TauCeti.Place.IsGap`: an integer which is not a pole number.
 * `TauCeti.Place.gapNumbersUpTo`: the gaps in a prescribed finite interval.
 * `TauCeti.Place.weierstrassGaps`: the finite set of gaps at a place.
+* `TauCeti.Place.weierstrassWeight`: the Weierstrass weight `∑ⱼ (lⱼ - j)` of the gaps at a place.
 
 ## Main results
 
@@ -42,11 +49,21 @@ exactly when the index is a pole number.  Riemann--Roch computes `ℓ((2g - 1)P)
 * `TauCeti.Place.card_weierstrassGaps`: the Weierstrass gap theorem: a rational place of a
   function field with integrally closed constants and genus `g` has exactly `g` gaps.
 * `TauCeti.Place.one_mem_weierstrassGaps`: the first gap is `1`.
+* `TauCeti.Place.IsGap.sub_one_le_two_mul_card_gapNumbersUpTo`: below a gap `n` at least
+  `(n - 1) / 2` numbers are gaps, so the `j`-th gap is at most `2j - 1`.
+* `TauCeti.Place.weierstrassWeight_le_genus_choose_two`: the weight of a rational place is at most
+  `g (g - 1) / 2`.
+* `TauCeti.Place.weierstrassWeight_eq_zero_iff`: the weight of a rational place vanishes exactly
+  when its gaps are `1, …, g`.
+* `TauCeti.Place.weierstrassWeight_eq_genus_choose_two_iff`: the weight of a rational place is
+  maximal exactly when `2` is a pole number there.
 
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
   Theorem 1.6.8.
+* H. M. Farkas and I. Kra, *Riemann Surfaces*, 2nd ed., GTM 71, Springer, 1992, Section III.5,
+  for the Weierstrass weight and its bound `g (g - 1) / 2`.
 * G. Li, `vaca22/riemann-roch-function-fields`, a separate Lean formalization of Weierstrass
   gaps along the same function-field route.
 -/
@@ -313,6 +330,268 @@ theorem one_mem_weierstrassGaps (hF : IsFunctionField k F)
   have hcard := P.card_weierstrassGaps hF hex hP
   rw [hempty, Finset.card_empty] at hcard
   omega
+
+/-! ### Gaps below a gap -/
+
+/-- **Subtracting a pole number from a gap leaves a gap**: if `n` is a gap at `P` and `m ≤ n` is a
+pole number, then `n - m` is a gap, for otherwise `n = m + (n - m)` would be a pole number. -/
+theorem IsGap.isGap_sub {P : Place k F} {m n : ℕ} (hn : P.IsGap n) (hm : P.IsPoleNumber m)
+    (hmn : m ≤ n) : P.IsGap (n - m) := fun h ↦
+  hn (Nat.add_sub_of_le hmn ▸ hm.add h)
+
+/-- **Below a gap there are at least as many gaps as positive pole numbers**, since `m ↦ n - m`
+sends the positive pole numbers below the gap `n` injectively to gaps below `n`. Hence
+`n - 1 ≤ 2 · #{gaps in 1, …, n - 1}`: the `j`-th gap is at most `2j - 1`. -/
+theorem IsGap.sub_one_le_two_mul_card_gapNumbersUpTo {P : Place k F} {n : ℕ} (hn : P.IsGap n) :
+    n - 1 ≤ 2 * (P.gapNumbersUpTo (n - 1)).card := by
+  classical
+  have hsplit := Finset.card_filter_add_card_filter_not (s := Finset.Icc 1 (n - 1)) P.IsGap
+  have hpoles : ((Finset.Icc 1 (n - 1)).filter fun m ↦ ¬ P.IsGap m).card ≤
+      (P.gapNumbersUpTo (n - 1)).card := by
+    refine Finset.card_le_card_of_injOn (n - ·) (fun m hm ↦ ?_) fun a ha b hb hab ↦ ?_
+    · simp only [Finset.coe_filter, Finset.mem_Icc, Set.mem_ofPred_eq, isGap_iff_not_isPoleNumber,
+        not_not] at hm
+      simp only [Finset.mem_coe, mem_gapNumbersUpTo_iff]
+      exact ⟨by omega, by omega, hn.isGap_sub hm.2 (by omega)⟩
+    · simp only [Finset.coe_filter, Finset.mem_Icc, Set.mem_ofPred_eq] at ha hb
+      simp only at hab
+      omega
+  rw [Nat.card_Icc, Nat.add_sub_cancel] at hsplit
+  have hgaps : (P.gapNumbersUpTo (n - 1)).card = ((Finset.Icc 1 (n - 1)).filter P.IsGap).card := by
+    rw [gapNumbersUpTo]
+  omega
+
+/-! ### Weierstrass weights -/
+
+private theorem gapNumbersUpTo_zero (P : Place k F) : P.gapNumbersUpTo 0 = ∅ := by
+  ext m
+  simp only [mem_gapNumbersUpTo_iff, Finset.notMem_empty, iff_false]
+  omega
+
+private theorem gapNumbersUpTo_succ_of_isGap {P : Place k F} {N : ℕ} (h : P.IsGap (N + 1)) :
+    P.gapNumbersUpTo (N + 1) = insert (N + 1) (P.gapNumbersUpTo N) := by
+  ext m
+  simp only [Finset.mem_insert, mem_gapNumbersUpTo_iff]
+  constructor
+  · rintro ⟨h1, h2, h3⟩
+    rcases eq_or_lt_of_le h2 with rfl | hlt
+    · exact Or.inl rfl
+    · exact Or.inr ⟨h1, by omega, h3⟩
+  · rintro (rfl | ⟨h1, h2, h3⟩)
+    · exact ⟨by omega, le_rfl, h⟩
+    · exact ⟨h1, by omega, h3⟩
+
+private theorem gapNumbersUpTo_succ_of_not_isGap {P : Place k F} {N : ℕ}
+    (h : ¬ P.IsGap (N + 1)) : P.gapNumbersUpTo (N + 1) = P.gapNumbersUpTo N := by
+  ext m
+  simp only [mem_gapNumbersUpTo_iff]
+  constructor
+  · rintro ⟨h1, h2, h3⟩
+    rcases eq_or_lt_of_le h2 with rfl | hlt
+    · exact absurd h3 h
+    · exact ⟨h1, by omega, h3⟩
+  · rintro ⟨h1, h2, h3⟩
+    exact ⟨h1, by omega, h3⟩
+
+private theorem succ_notMem_gapNumbersUpTo (P : Place k F) (N : ℕ) :
+    N + 1 ∉ P.gapNumbersUpTo N := by
+  simp
+
+private theorem card_gapNumbersUpTo_le (P : Place k F) (N : ℕ) :
+    (P.gapNumbersUpTo N).card ≤ N := by
+  classical
+  simpa [gapNumbersUpTo] using Finset.card_filter_le (Finset.Icc 1 N) P.IsGap
+
+/-- The sum of the gaps up to `N`, minus `(c + 1).choose 2` for their number `c`, can only grow
+with `N`: a new gap `N + 1` raises the sum by `N + 1` and the binomial by `c + 1 ≤ N + 1`. -/
+private theorem choose_two_add_sum_gapNumbersUpTo_le (P : Place k F) {N M : ℕ} (hNM : N ≤ M) :
+    ((P.gapNumbersUpTo M).card + 1).choose 2 + ∑ n ∈ P.gapNumbersUpTo N, n ≤
+      ((P.gapNumbersUpTo N).card + 1).choose 2 + ∑ n ∈ P.gapNumbersUpTo M, n := by
+  induction M, hNM using Nat.le_induction with
+  | base => exact le_rfl
+  | succ M hNM ih =>
+    by_cases h : P.IsGap (M + 1)
+    · have hM := card_gapNumbersUpTo_le P M
+      rw [gapNumbersUpTo_succ_of_isGap h,
+        Finset.card_insert_of_notMem (succ_notMem_gapNumbersUpTo P M),
+        Finset.sum_insert (succ_notMem_gapNumbersUpTo P M),
+        Nat.choose_succ_succ' ((P.gapNumbersUpTo M).card + 1) 1, Nat.choose_one_right]
+      simp only [Nat.reduceAdd]
+      omega
+    · rwa [gapNumbersUpTo_succ_of_not_isGap h]
+
+/-- The square of the number `c` of gaps up to `N`, minus their sum, can only grow with `N`: a new
+gap `N + 1` raises the square by `2c + 1 ≥ N + 1`, by
+`TauCeti.Place.IsGap.sub_one_le_two_mul_card_gapNumbersUpTo`. -/
+private theorem sq_add_sum_gapNumbersUpTo_le (P : Place k F) {N M : ℕ} (hNM : N ≤ M) :
+    (P.gapNumbersUpTo N).card ^ 2 + ∑ n ∈ P.gapNumbersUpTo M, n ≤
+      (P.gapNumbersUpTo M).card ^ 2 + ∑ n ∈ P.gapNumbersUpTo N, n := by
+  induction M, hNM using Nat.le_induction with
+  | base => exact le_rfl
+  | succ M hNM ih =>
+    by_cases h : P.IsGap (M + 1)
+    · have hM := h.sub_one_le_two_mul_card_gapNumbersUpTo
+      rw [Nat.add_sub_cancel] at hM
+      rw [gapNumbersUpTo_succ_of_isGap h,
+        Finset.card_insert_of_notMem (succ_notMem_gapNumbersUpTo P M),
+        Finset.sum_insert (succ_notMem_gapNumbersUpTo P M), add_sq]
+      omega
+    · rwa [gapNumbersUpTo_succ_of_not_isGap h]
+
+/-- If the gaps up to `N` have the least possible sum, they are an initial segment `1, …, c`. -/
+private theorem gapNumbersUpTo_eq_Icc_of_sum_eq (P : Place k F) (N : ℕ)
+    (h : ∑ n ∈ P.gapNumbersUpTo N, n = ((P.gapNumbersUpTo N).card + 1).choose 2) :
+    P.gapNumbersUpTo N = Finset.Icc 1 (P.gapNumbersUpTo N).card := by
+  induction N with
+  | zero => simp [gapNumbersUpTo_zero]
+  | succ N ih =>
+    by_cases hN : P.IsGap (N + 1)
+    · have hlow := choose_two_add_sum_gapNumbersUpTo_le P (Nat.zero_le N)
+      have hle := card_gapNumbersUpTo_le P N
+      simp [gapNumbersUpTo_zero] at hlow
+      rw [gapNumbersUpTo_succ_of_isGap hN,
+        Finset.card_insert_of_notMem (succ_notMem_gapNumbersUpTo P N),
+        Finset.sum_insert (succ_notMem_gapNumbersUpTo P N),
+        Nat.choose_succ_succ' ((P.gapNumbersUpTo N).card + 1) 1, Nat.choose_one_right] at h
+      simp only [Nat.reduceAdd] at h
+      rw [gapNumbersUpTo_succ_of_isGap hN,
+        Finset.card_insert_of_notMem (succ_notMem_gapNumbersUpTo P N)]
+      have hc : (P.gapNumbersUpTo N).card = N := by omega
+      rw [ih (by omega), hc, Nat.card_Icc, Nat.add_sub_cancel]
+      ext m
+      simp only [Finset.mem_insert, Finset.mem_Icc]
+      omega
+    · rw [gapNumbersUpTo_succ_of_not_isGap hN] at h ⊢
+      exact ih h
+
+/-- The **Weierstrass weight** of a place `P`: if `l₁ < ⋯ < l_c` are the Weierstrass gaps at `P`,
+it is `∑ⱼ (lⱼ - j) = (l₁ + ⋯ + l_c) - c (c + 1) / 2`.
+
+It measures how far the gap sequence is from `1, …, c`: at a rational place of a function field
+with exact constants, `c` is the genus `g`, the weight vanishes exactly when the gaps are
+`1, …, g` (`TauCeti.Place.weierstrassWeight_eq_zero_iff`), and it is at most `g (g - 1) / 2`
+(`TauCeti.Place.weierstrassWeight_le_genus_choose_two`). -/
+def weierstrassWeight (P : Place k F) : ℕ :=
+  ∑ n ∈ P.weierstrassGaps, n - (P.weierstrassGaps.card + 1).choose 2
+
+/-- The Weierstrass weight and `(c + 1).choose 2`, for the number `c` of gaps, add up to the sum
+of the gaps; the subtraction defining the weight does not truncate. -/
+theorem weierstrassWeight_add_card_add_one_choose_two (P : Place k F) :
+    P.weierstrassWeight + (P.weierstrassGaps.card + 1).choose 2 = ∑ n ∈ P.weierstrassGaps, n := by
+  have h := choose_two_add_sum_gapNumbersUpTo_le P (Nat.zero_le (2 * genus k F - 1))
+  simp only [gapNumbersUpTo_zero, Finset.card_empty, Finset.sum_empty] at h
+  exact Nat.sub_add_cancel (by simpa [weierstrassGaps] using h)
+
+/-- The weight in terms of `c²` for the number `c` of gaps, using
+`(c + 1).choose 2 + c.choose 2 = c²`. -/
+private theorem weierstrassWeight_add_sq (P : Place k F) :
+    P.weierstrassWeight + P.weierstrassGaps.card ^ 2 =
+      P.weierstrassGaps.card.choose 2 + ∑ n ∈ P.weierstrassGaps, n := by
+  have hsq : ∀ c : ℕ, (c + 1).choose 2 + c.choose 2 = c ^ 2 := fun c ↦ by
+    induction c with
+    | zero => rfl
+    | succ c ih =>
+      rw [Nat.choose_succ_succ' (c + 1) 1, Nat.choose_succ_succ' c 1, Nat.choose_one_right,
+        Nat.choose_one_right] at *
+      nlinarith [ih]
+  rw [← P.weierstrassWeight_add_card_add_one_choose_two, ← hsq]
+  ring
+
+/-- The gaps at any place sum to at most `c²` for their number `c`: the `j`-th gap is at most
+`2j - 1` (`TauCeti.Place.IsGap.sub_one_le_two_mul_card_gapNumbersUpTo`). -/
+private theorem sum_weierstrassGaps_le_sq (P : Place k F) :
+    ∑ n ∈ P.weierstrassGaps, n ≤ P.weierstrassGaps.card ^ 2 := by
+  simpa [gapNumbersUpTo_zero, weierstrassGaps] using
+    sq_add_sum_gapNumbersUpTo_le P (Nat.zero_le (2 * genus k F - 1))
+
+/-- **The Weierstrass weight is at most `c (c - 1) / 2`** for the number `c` of gaps, at every
+place: the `j`-th gap is at most `2j - 1`
+(`TauCeti.Place.IsGap.sub_one_le_two_mul_card_gapNumbersUpTo`), so the gaps sum to at most
+`1 + 3 + ⋯ + (2c - 1) = c²`. -/
+theorem weierstrassWeight_le_card_choose_two (P : Place k F) :
+    P.weierstrassWeight ≤ P.weierstrassGaps.card.choose 2 := by
+  have := P.weierstrassWeight_add_sq
+  have := P.sum_weierstrassGaps_le_sq
+  omega
+
+/-- **The Weierstrass weight of a rational place is at most `g (g - 1) / 2`**, for a function field
+of genus `g` with exact constants. -/
+theorem weierstrassWeight_le_genus_choose_two (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {P : Place k F} (hP : P.degree = 1) :
+    P.weierstrassWeight ≤ (genus k F).choose 2 :=
+  P.card_weierstrassGaps hF hex hP ▸ P.weierstrassWeight_le_card_choose_two
+
+/-- **A rational place has Weierstrass weight zero exactly when its gaps are `1, …, g`**, for a
+function field of genus `g` with exact constants. -/
+theorem weierstrassWeight_eq_zero_iff (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {P : Place k F} (hP : P.degree = 1) :
+    P.weierstrassWeight = 0 ↔ P.weierstrassGaps = Finset.Icc 1 (genus k F) := by
+  have hadd := P.weierstrassWeight_add_card_add_one_choose_two
+  rw [P.card_weierstrassGaps hF hex hP] at hadd
+  constructor
+  · intro hw
+    have h := P.gapNumbersUpTo_eq_Icc_of_sum_eq (2 * genus k F - 1)
+    rw [← weierstrassGaps, P.card_weierstrassGaps hF hex hP] at h
+    exact h (by omega)
+  · intro hgaps
+    rw [hgaps] at hadd
+    have hsum := Nat.sum_Icc_choose (genus k F) 1
+    simp only [Nat.choose_one_right, Nat.reduceAdd] at hsum
+    omega
+
+/-- **The gaps at a rational place where `2` is a pole number are `1, 3, …, 2g - 1`**, for a
+function field of genus `g` with exact constants: every even number is then a pole number, and the
+gap theorem leaves exactly `g` gaps below `2g`. -/
+theorem weierstrassGaps_eq_image_range_of_isPoleNumber_two (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {P : Place k F} (hP : P.degree = 1)
+    (h2 : P.IsPoleNumber 2) :
+    P.weierstrassGaps = (Finset.range (genus k F)).image fun i ↦ 2 * i + 1 := by
+  have heven : ∀ j : ℕ, P.IsPoleNumber (2 * j) := by
+    intro j
+    induction j with
+    | zero => exact P.isPoleNumber_zero
+    | succ j ih => simpa [mul_add, add_comm] using h2.add ih
+  refine Finset.eq_of_subset_of_card_le (fun n hn ↦ ?_) ?_
+  · -- A gap lies in `1, …, 2g - 1` and is odd, since every even number is a pole number.
+    rw [P.mem_weierstrassGaps_iff] at hn
+    obtain ⟨hn1, hn2, hgap⟩ := hn
+    obtain ⟨i, rfl | rfl⟩ := Nat.even_or_odd' n
+    · exact absurd (heven i) ((P.isGap_iff_not_isPoleNumber _).mp hgap)
+    · exact Finset.mem_image.mpr ⟨i, Finset.mem_range.mpr (by omega), rfl⟩
+  · rw [card_weierstrassGaps hF hex hP, Finset.card_image_of_injective _
+      (fun a b h ↦ by simpa using h), Finset.card_range]
+
+/-- **A rational place has the maximal Weierstrass weight `g (g - 1) / 2` exactly when `2` is a
+pole number there**, for a function field of genus `g` with exact constants; the gaps are then
+`1, 3, …, 2g - 1`. For `g ≥ 2` such a place makes the function field hyperelliptic, see
+`TauCeti.isHyperellipticFunctionField_of_isPoleNumber_two`. -/
+theorem weierstrassWeight_eq_genus_choose_two_iff (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {P : Place k F} (hP : P.degree = 1) :
+    P.weierstrassWeight = (genus k F).choose 2 ↔ P.IsPoleNumber 2 := by
+  have hsq := P.weierstrassWeight_add_sq
+  rw [P.card_weierstrassGaps hF hex hP] at hsq
+  constructor
+  · -- If `2` is a gap, so is `1`, and the gaps `1, 2` up to `2` already sum to less than `2²`.
+    intro hw
+    by_contra h2
+    have h1 : P.IsGap 1 := fun h1 ↦ h2 (h1.add h1)
+    have hmem := (P.mem_weierstrassGaps_iff_isGap hF hex 2).mpr h2
+    have hle : 2 ≤ 2 * genus k F - 1 := ((P.mem_weierstrassGaps_iff 2).mp hmem).2.1
+    have hmono := sq_add_sum_gapNumbersUpTo_le P hle
+    rw [← weierstrassGaps, P.card_weierstrassGaps hF hex hP,
+      gapNumbersUpTo_succ_of_isGap (N := 1) h2, gapNumbersUpTo_succ_of_isGap (N := 0) h1,
+      gapNumbersUpTo_zero] at hmono
+    simp at hmono
+    omega
+  · intro h2
+    rw [weierstrassGaps_eq_image_range_of_isPoleNumber_two hF hex hP h2,
+      Finset.sum_image fun a _ b _ h ↦ by simpa using h] at hsq
+    have hodd : ∀ c : ℕ, ∑ i ∈ Finset.range c, (2 * i + 1) = c ^ 2 := fun c ↦ by
+      induction c with
+      | zero => rfl
+      | succ c ih => rw [Finset.sum_range_succ, ih]; ring
+    rw [hodd] at hsq
+    omega
 
 end Place
 
