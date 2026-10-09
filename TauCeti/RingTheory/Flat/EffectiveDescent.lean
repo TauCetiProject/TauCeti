@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
+public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 public import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
@@ -35,6 +35,19 @@ morphism `Spec S → Spec R` of affine schemes:
 * `TauCeti.Algebra.DescentDatum.equivDescended` (uniqueness): if `S` is faithfully flat over `R`,
   every `R`-algebra `A` with `S ⊗[R] A ≃ B` compatibly with the descent data is isomorphic to
   `D.descended`.
+
+Morphisms of descent data (`TauCeti.Algebra.DescentDatum.Hom`, `S`-algebra maps intertwining the
+coactions) descend as well. Together with effectivity, this says that `A ↦ baseChange R S A` from
+`R`-algebras to algebras with descent data is fully faithful and essentially surjective when `S`
+is faithfully flat over `R`:
+
+* `TauCeti.Algebra.DescentDatum.homEquiv` (descent of morphisms): if `S` is flat over `R`,
+  morphisms of descent data `D → D'` correspond to `R`-algebra maps
+  `D.descended → D'.descended`, compatibly with identities and composition (`Hom.descend_id`,
+  `Hom.descend_comp`) and with `baseChangeEquiv` (`Hom.toAlgHom_baseChangeEquiv`).
+* `TauCeti.Algebra.DescentDatum.baseChangeHomEquiv` (full faithfulness): if `S` is faithfully
+  flat over `R`, the `R`-algebra maps `A → A'` are exactly the morphisms between the canonical
+  descent data on `S ⊗[R] A` and `S ⊗[R] A'`.
 
 The faithfully flat input is the exactness of the Amitsur sequence
 `M → S ⊗[R] M ⇉ S ⊗[R] (S ⊗[R] M)` for an arbitrary `R`-module `M`
@@ -261,6 +274,205 @@ theorem coe_equivDescended_apply [Module.FaithfullyFlat R S] {A : Type*} [Ring A
     (e : S ⊗[R] A ≃ₐ[S] B) (he : ∀ a : A, e (1 ⊗ₜ a) ∈ D.descended) (a : A) :
     (D.equivDescended e he a : B) = e (1 ⊗ₜ a) :=
   (rfl)
+
+@[simp]
+theorem baseChangeEquiv_symm_coe [Module.Flat R S] (a : D.descended) :
+    D.baseChangeEquiv.symm a = 1 ⊗ₜ a := by
+  rw [AlgEquiv.symm_apply_eq, baseChangeEquiv_tmul, one_smul]
+
+/-! ### Morphisms of descent data -/
+
+section Hom
+
+variable {B' B'' : Type*} [Ring B'] [Algebra R B'] [Algebra S B'] [IsScalarTower R S B']
+  [Ring B''] [Algebra R B''] [Algebra S B''] [IsScalarTower R S B'']
+
+/-- A morphism of descent data from `D` on `B` to `D'` on `B'`: an `S`-algebra map `f : B → B'`
+intertwining the coactions, `θ' ∘ f = (id ⊗ f) ∘ θ`. -/
+@[ext]
+structure Hom (D : DescentDatum R S B) (D' : DescentDatum R S B') where
+  /-- The underlying `S`-algebra map. -/
+  toAlgHom : B →ₐ[S] B'
+  /-- The map intertwines the coactions. -/
+  coaction_toAlgHom (b : B) : D'.coaction (toAlgHom b) =
+    Algebra.TensorProduct.map (AlgHom.id R S) (toAlgHom.restrictScalars R) (D.coaction b)
+
+namespace Hom
+
+variable {D : DescentDatum R S B} {D' : DescentDatum R S B'} {D'' : DescentDatum R S B''}
+
+variable (D) in
+/-- The identity morphism of a descent datum. -/
+def id : Hom D D where
+  toAlgHom := AlgHom.id S B
+  coaction_toAlgHom b := by
+    rw [show (AlgHom.id S B).restrictScalars R = AlgHom.id R B from AlgHom.ext fun _ ↦ rfl,
+      Algebra.TensorProduct.map_id, AlgHom.id_apply, AlgHom.id_apply]
+
+variable (D) in
+@[simp]
+theorem id_toAlgHom : (Hom.id D).toAlgHom = AlgHom.id S B :=
+  (rfl)
+
+/-- The composition of morphisms of descent data. -/
+def comp (g : Hom D' D'') (f : Hom D D') : Hom D D'' where
+  toAlgHom := g.toAlgHom.comp f.toAlgHom
+  coaction_toAlgHom b := by
+    have hc : (g.toAlgHom.comp f.toAlgHom).restrictScalars R =
+        (g.toAlgHom.restrictScalars R).comp (f.toAlgHom.restrictScalars R) :=
+      AlgHom.ext fun _ ↦ rfl
+    rw [AlgHom.comp_apply, g.coaction_toAlgHom, f.coaction_toAlgHom, ← AlgHom.comp_apply,
+      ← Algebra.TensorProduct.map_comp, hc, AlgHom.comp_id]
+
+@[simp]
+theorem comp_toAlgHom (g : Hom D' D'') (f : Hom D D') :
+    (g.comp f).toAlgHom = g.toAlgHom.comp f.toAlgHom :=
+  (rfl)
+
+/-- A morphism of descent data maps the descended algebra into the descended algebra. -/
+theorem mem_descended (f : Hom D D') {b : B} (hb : b ∈ D.descended) :
+    f.toAlgHom b ∈ D'.descended := by
+  rw [mem_descended_iff] at hb ⊢
+  rw [f.coaction_toAlgHom, hb]
+  simp
+
+/-- The morphism of descended algebras induced by a morphism of descent data. -/
+def descend (f : Hom D D') : D.descended →ₐ[R] D'.descended :=
+  ((f.toAlgHom.restrictScalars R).comp D.descended.val).codRestrict _
+    fun a ↦ f.mem_descended a.2
+
+@[simp]
+theorem coe_descend_apply (f : Hom D D') (a : D.descended) :
+    (f.descend a : B') = f.toAlgHom a :=
+  (rfl)
+
+@[simp]
+theorem descend_id : (Hom.id D).descend = AlgHom.id R D.descended :=
+  (rfl)
+
+@[simp]
+theorem descend_comp (g : Hom D' D'') (f : Hom D D') :
+    (g.comp f).descend = g.descend.comp f.descend :=
+  (rfl)
+
+/-- Under the effectivity isomorphisms `baseChangeEquiv`, a morphism of descent data is the base
+change of the induced morphism of descended algebras. -/
+theorem toAlgHom_baseChangeEquiv [Module.Flat R S] (f : Hom D D') (x : S ⊗[R] D.descended) :
+    f.toAlgHom (D.baseChangeEquiv x) =
+      D'.baseChangeEquiv (Algebra.TensorProduct.map (AlgHom.id S S) f.descend x) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul s a => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+private theorem descend_injective [Module.Flat R S] :
+    Function.Injective (descend : Hom D D' → D.descended →ₐ[R] D'.descended) := by
+  intro f g h
+  ext b
+  obtain ⟨x, rfl⟩ := D.baseChangeEquiv.surjective b
+  rw [toAlgHom_baseChangeEquiv, toAlgHom_baseChangeEquiv, h]
+
+/-- The base change of a morphism of descended algebras, transported along `baseChangeEquiv`. -/
+private noncomputable def ofDescend [Module.Flat R S] (φ : D.descended →ₐ[R] D'.descended) :
+    Hom D D' where
+  toAlgHom := (D'.baseChangeEquiv.toAlgHom.comp (Algebra.TensorProduct.map (AlgHom.id S S) φ)).comp
+    D.baseChangeEquiv.symm.toAlgHom
+  coaction_toAlgHom b := by
+    obtain ⟨x, rfl⟩ := D.baseChangeEquiv.surjective b
+    induction x using TensorProduct.inductionOn with
+    | tmul s a =>
+      have ha : D.coaction a = 1 ⊗ₜ (a : B) := a.2
+      have hφa : D'.coaction (φ a) = 1 ⊗ₜ ((φ a : D'.descended) : B') := (φ a).2
+      simp [ha, hφa, Algebra.smul_def, Algebra.TensorProduct.algebraMap_apply,
+        Algebra.TensorProduct.tmul_mul_tmul]
+    | add x y hx hy => simp only [map_add] at hx hy ⊢; rw [hx, hy]
+
+private theorem descend_ofDescend [Module.Flat R S] (φ : D.descended →ₐ[R] D'.descended) :
+    (ofDescend φ).descend = φ := by
+  ext a
+  simp [ofDescend]
+
+end Hom
+
+/-- **Descent of morphisms.** If `S` is flat over `R`, morphisms of descent data correspond to
+morphisms of the descended algebras. -/
+noncomputable def homEquiv [Module.Flat R S] (D : DescentDatum R S B) (D' : DescentDatum R S B') :
+    Hom D D' ≃ (D.descended →ₐ[R] D'.descended) where
+  toFun := Hom.descend
+  invFun := Hom.ofDescend
+  left_inv f := Hom.descend_injective (Hom.descend_ofDescend f.descend)
+  right_inv := Hom.descend_ofDescend
+
+@[simp]
+theorem homEquiv_apply [Module.Flat R S] (D : DescentDatum R S B) (D' : DescentDatum R S B')
+    (f : Hom D D') : homEquiv D D' f = f.descend :=
+  (rfl)
+
+end Hom
+
+section BaseChange
+
+variable {A A' : Type*} [Ring A] [Algebra R A] [Ring A'] [Algebra R A']
+
+/-- The morphism of canonical descent data `S ⊗[R] A → S ⊗[R] A'` induced by an `R`-algebra map
+`A → A'`. -/
+noncomputable def Hom.baseChange (f : A →ₐ[R] A') :
+    Hom (DescentDatum.baseChange R S A) (DescentDatum.baseChange R S A') where
+  toAlgHom := Algebra.TensorProduct.map (AlgHom.id S S) f
+  coaction_toAlgHom x := by
+    induction x using TensorProduct.inductionOn with
+    | tmul s a => simp
+    | add x y hx hy => simp only [map_add, hx, hy]
+
+@[simp]
+theorem Hom.baseChange_toAlgHom (f : A →ₐ[R] A') :
+    (Hom.baseChange (S := S) f).toAlgHom = Algebra.TensorProduct.map (AlgHom.id S S) f :=
+  (rfl)
+
+/-- The isomorphism of `A` with the algebra descended from the canonical descent datum on
+`S ⊗[R] A`, for `S` faithfully flat over `R`. -/
+private noncomputable def equivDescendedBaseChange [Module.FaithfullyFlat R S] :
+    A ≃ₐ[R] (DescentDatum.baseChange R S A).descended :=
+  (DescentDatum.baseChange R S A).equivDescended AlgEquiv.refl fun a ↦ by simp
+
+private theorem coe_equivDescendedBaseChange_apply [Module.FaithfullyFlat R S] (a : A) :
+    (equivDescendedBaseChange (R := R) (S := S) a : S ⊗[R] A) = 1 ⊗ₜ a :=
+  (rfl)
+
+/-- **Descent of morphisms of affine schemes.** If `S` is faithfully flat over `R`, the
+`R`-algebra maps `A → A'` are exactly the morphisms between the canonical descent data on
+`S ⊗[R] A` and `S ⊗[R] A'`, via `f ↦ id ⊗ f`. -/
+noncomputable def baseChangeHomEquiv [Module.FaithfullyFlat R S] :
+    (A →ₐ[R] A') ≃ Hom (DescentDatum.baseChange R S A) (DescentDatum.baseChange R S A') :=
+  Equiv.ofBijective Hom.baseChange <| by
+    refine ⟨fun f g h ↦ AlgHom.ext fun a ↦ ?_, fun h ↦ ?_⟩
+    · refine Module.FaithfullyFlat.tensorProduct_mk_injective (A := R) (B := S) A' ?_
+      simpa using congr($(congrArg Hom.toAlgHom h) (1 ⊗ₜ a))
+    refine ⟨(equivDescendedBaseChange.symm.toAlgHom.comp h.descend).comp
+      equivDescendedBaseChange.toAlgHom, Hom.ext ?_⟩
+    refine Algebra.TensorProduct.ext' fun s a ↦ ?_
+    have h1 : h.toAlgHom (s ⊗ₜ a) = s • h.toAlgHom (1 ⊗ₜ a) := by
+      rw [← map_smul, smul_tmul', smul_eq_mul, mul_one]
+    have h2 : (1 : S) ⊗ₜ[R] equivDescendedBaseChange.symm (h.descend (equivDescendedBaseChange a)) =
+        h.toAlgHom (1 ⊗ₜ a) := by
+      rw [← coe_equivDescendedBaseChange_apply, AlgEquiv.apply_symm_apply, Hom.coe_descend_apply,
+        coe_equivDescendedBaseChange_apply]
+    simp [h1, ← h2, smul_tmul']
+
+@[simp]
+theorem baseChangeHomEquiv_apply [Module.FaithfullyFlat R S] (f : A →ₐ[R] A') :
+    baseChangeHomEquiv (S := S) f = Hom.baseChange f :=
+  (rfl)
+
+/-- The `R`-algebra map descended from a morphism `h` of canonical descent data is characterised
+by `1 ⊗ (baseChangeHomEquiv.symm h a) = h (1 ⊗ a)`. -/
+theorem tmul_baseChangeHomEquiv_symm_apply [Module.FaithfullyFlat R S]
+    (h : Hom (DescentDatum.baseChange R S A) (DescentDatum.baseChange R S A')) (a : A) :
+    (1 : S) ⊗ₜ[R] baseChangeHomEquiv.symm h a = h.toAlgHom (1 ⊗ₜ a) := by
+  obtain ⟨f, rfl⟩ := baseChangeHomEquiv.surjective h
+  rw [Equiv.symm_apply_apply]
+  simp
+
+end BaseChange
 
 end DescentDatum
 
