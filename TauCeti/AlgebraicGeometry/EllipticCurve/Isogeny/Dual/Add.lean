@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.WeilPairing
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.BaseChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.BaseChange
 -- Proof-only: a morphism acts additively on points.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Ring
 
@@ -43,7 +43,6 @@ the argument here replaces it with the Weil pairing, whose compatibility with th
 
 ## Main results
 
-* `TauCeti.Isogeny.Hom.dual_map`: the dual of a morphism commutes with base change.
 * `TauCeti.Isogeny.Hom.dual_add`: `(f + g)^ = f̂ + ĝ`.
 
 ## References
@@ -58,12 +57,6 @@ namespace TauCeti.Isogeny.Hom
 open WeierstrassCurve.Affine
 
 variable {F : Type*} [Field F] {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
-
-/-- **The dual commutes with base change** along any homomorphism of fields. -/
-@[simp]
-theorem dual_map {K : Type*} [Field K] (f : Hom W₁ W₂) (σ : F →+* K) :
-    f.dual.map σ = (f.map σ).dual := by
-  rcases eq_zero_or_exists_ofIsogeny f with rfl | ⟨φ, rfl⟩ <;> simp
 
 section IsSepClosed
 

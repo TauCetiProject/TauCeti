@@ -260,17 +260,20 @@ theorem degree_dual (f : Hom W₁ W₂) : f.dual.degree = f.degree := by
   rcases eq_zero_or_exists_ofIsogeny f with rfl | ⟨φ, rfl⟩ <;> simp
 
 /-- **`f̂ ∘ f = deg f • 1`** in the additive group of morphisms of `W₁`. -/
+@[simp]
 theorem dual_comp_self (f : Hom W₁ W₂) : f.dual.comp f = f.degree • id W₁ := by
   rcases eq_zero_or_exists_ofIsogeny f with rfl | ⟨φ, rfl⟩
   · simp
   · rw [dual_ofIsogeny, ofIsogeny_dual_comp_ofIsogeny, degree_ofIsogeny]
 
 /-- **`f ∘ f̂ = deg f • 1`** in the additive group of morphisms of `W₂`. -/
+@[simp]
 theorem comp_dual_self (f : Hom W₁ W₂) : f.comp f.dual = f.degree • id W₂ := by
-  simpa using f.dual.dual_comp_self
+  simpa only [dual_dual, degree_dual] using f.dual.dual_comp_self
 
 /-- **The dual of a composite is the composite of the duals in the opposite order**:
 `(g ∘ f)^ = f̂ ∘ ĝ`. -/
+@[simp]
 theorem dual_comp (g : Hom W₂ W₃) (f : Hom W₁ W₂) : (g.comp f).dual = f.dual.comp g.dual := by
   rcases eq_zero_or_exists_ofIsogeny f with rfl | ⟨φ, rfl⟩
   · simp

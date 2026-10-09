@@ -10,7 +10,9 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.WeilPairi
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PointHom.DivisorPullback
 -- Proof-only: every isogeny is a separable one after a Frobenius power, Frobenius acts on points
 -- by the `p ^ r`-power map of the field, `E[N]` does not grow under that map, the pairing is
--- functorial under change of field, and a morphism acts additively on points.
+-- functorial under change of field, a morphism acts additively on points, and the `p ^ r`-power
+-- map raises a unit to its `p ^ r`-th power.
+import TauCeti.Algebra.CharP.Frobenius.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Factorisation
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Point
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
@@ -239,8 +241,8 @@ private theorem isWeilAdjoint_iterateRelativeFrobeniusIsogeny (p : ℕ) [ExpChar
     rw [← hT, hmap, pointMap_dual_pointMap, degree_iterateRelativeFrobeniusIsogeny,
       Submodule.coe_smul_of_tower])
   rw [WeierstrassCurve.weilPairing_torsionMapAlong W _ N hN, map_nsmul]
-  refine Additive.toMul.injective (Subtype.ext (Units.ext ?_))
-  simp [restrictRootsOfUnity_coe_apply, iterateFrobenius_def]
+  refine Additive.toMul.injective (Subtype.ext ?_)
+  exact (TauCeti.map_iterateFrobenius_unit_eq_pow F p r _).trans (by simp)
 
 /-- Adjointness to the dual passes to composites, since `(ψ ∘ φ)^ = φ̂ ∘ ψ̂`. -/
 private theorem IsWeilAdjoint.comp {W₁ W₂ W₃ : WeierstrassCurve.Affine F} [W₁.IsElliptic]
