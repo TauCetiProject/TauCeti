@@ -123,8 +123,8 @@ theorem LinearMap.trace_mul_add_mul_trace_restrict_ker {c f : Module.End K M} {a
   rw [sub_mul, smul_mul_assoc, one_mul, map_sub, map_smul, smul_eq_mul] at h
   linear_combination -h
 
-/-- The trace on the negative eigenspace of an involution commuting with `f` is determined
-by `tr f` and `tr(σ f)`. -/
+/-- For an involution `σ` commuting with `f`, twice the trace of `f` on its negative eigenspace
+equals `tr f - tr(σ f)`. -/
 theorem LinearMap.two_mul_trace_restrict_ker_one_add {σ f : End K M} (hσ : σ ^ 2 = 1)
     (hσf : Commute σ f)
     (hf : ∀ x ∈ _root_.LinearMap.ker (1 + σ), f x ∈ _root_.LinearMap.ker (1 + σ) :=
@@ -141,8 +141,8 @@ theorem LinearMap.two_mul_trace_restrict_ker_one_add {σ f : End K M} (hσ : σ 
   rw [add_mul, one_mul, map_add] at h
   linear_combination h
 
-/-- The trace on the kernel of an order-three averaging operator commuting with `f` is
-determined by `tr f`, `tr(υ f)` and `tr(υ² f)`. -/
+/-- If the order-three averaging operator `1 + υ + υ²` commutes with `f`, three times the trace
+of `f` on its kernel equals `2 tr f - tr(υ f) - tr(υ² f)`. -/
 theorem LinearMap.three_mul_trace_restrict_ker_one_add_add_sq {υ f : End K M}
     (hυ : υ ^ 3 = 1) (hcf : Commute (1 + υ + υ ^ 2) f)
     (hf : ∀ x ∈ _root_.LinearMap.ker (1 + υ + υ ^ 2), f x ∈

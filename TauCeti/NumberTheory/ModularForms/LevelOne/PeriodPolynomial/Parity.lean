@@ -140,7 +140,7 @@ private lemma trace_swap_ker_U (hw : Even w) :
 private lemma trace_swap_periodPolynomials (hw : Even w) (hw₀ : w ≠ 0) :
     LinearMap.trace K (periodPolynomials K w)
       ((δ).restrict (swap_mem_periodPolynomials hw)) = -1 := by
-  have h := trace_restrict_inf_add_trace_restrict_sup δ
+  have h := LinearMap.trace_restrict_inf_add_trace_restrict_sup δ
     (swap_mem_ker ((Commute.one_left δ).add_left (swap_commute_S hw)))
     (swap_mem_ker (swap_commute_U_sum hw))
   rw [trace_swap_ker_S hw, trace_swap_ker_U hw] at h

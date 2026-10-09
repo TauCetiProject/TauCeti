@@ -25,7 +25,7 @@ variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensiona
 
 /-- **Inclusion–exclusion for traces.** If `f` preserves `A` and `B`, its traces on these
 subspaces sum to its traces on `A ⊓ B` and `A ⊔ B`. -/
-theorem trace_restrict_inf_add_trace_restrict_sup {A B : Submodule K V} (f : V →ₗ[K] V)
+theorem LinearMap.trace_restrict_inf_add_trace_restrict_sup {A B : Submodule K V} (f : V →ₗ[K] V)
     (hA : ∀ x ∈ A, f x ∈ A) (hB : ∀ x ∈ B, f x ∈ B) :
     trace K (A ⊓ B : Submodule K V) (f.restrict fun x hx ↦ ⟨hA x hx.1, hB x hx.2⟩) +
       trace K (A ⊔ B : Submodule K V)
