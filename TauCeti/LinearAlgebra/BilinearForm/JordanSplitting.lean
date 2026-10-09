@@ -20,8 +20,8 @@ import TauCeti.RingTheory.Valuation.FinsetDvd
 Let `R` be a discrete valuation ring with uniformizer `π`. A **Jordan splitting** of a bilinear
 form `B` on an `R`-module `M` is a decomposition `M = ⊕_i N_i` into pairwise orthogonal
 submodules such that the restriction of `B` to `N_i` is `π ^ i`-modular: `π ^ i` times a perfect
-pairing (`LinearMap.BilinForm.IsJordanSplitting`). Writing `N_i = π^i L_i` with `L_i` unimodular,
-this is the decomposition `M = ⊕_i π^i L_i` of O'Meara 91C.
+pairing (`LinearMap.BilinForm.IsJordanSplitting`). Thus each `N_i` carries the form `π ^ i • C_i`
+for a perfect pairing `C_i`; this is the Jordan decomposition of O'Meara 91C.
 
 The main result is that every nondegenerate symmetric bilinear form on a finite free module has
 a Jordan splitting (`LinearMap.BilinForm.IsSymm.exists_isJordanSplitting`). The proof splits off

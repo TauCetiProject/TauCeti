@@ -86,6 +86,7 @@ def IsModular (B : BilinForm R M) (a : R) : Prop :=
   ∃ C : BilinForm R M, a • C = B ∧ C.IsPerfPair
 
 /-- A form is `1`-modular exactly when it is a perfect pairing. -/
+@[simp]
 theorem isModular_one_iff : B.IsModular 1 ↔ B.IsPerfPair :=
   ⟨fun ⟨C, hC, h⟩ ↦ (one_smul R C).symm.trans hC ▸ h, fun h ↦ ⟨B, one_smul R B, h⟩⟩
 
@@ -133,6 +134,7 @@ theorem IsModular.congr {M' : Type*} [AddCommGroup M'] [Module R M'] (h : B.IsMo
   exact LinearMap.IsPerfPair.congr C e.symm e.symm _ (LinearMap.ext₂ fun x y ↦ by simp)
 
 /-- Modularity is invariant under a linear equivalence of the underlying modules. -/
+@[simp]
 theorem isModular_congr_iff {M' : Type*} [AddCommGroup M'] [Module R M'] (e : M ≃ₗ[R] M') :
     (congr e B).IsModular a ↔ B.IsModular a :=
   ⟨fun h ↦ by
@@ -141,6 +143,7 @@ theorem isModular_congr_iff {M' : Type*} [AddCommGroup M'] [Module R M'] (e : M 
 
 /-- Modularity of a restriction to a submodule of a submodule is modularity of the restriction to
 its image in the ambient module. -/
+@[simp]
 theorem isModular_restrict_map_subtype_iff {P : Submodule R M} {K : Submodule R P} :
     (B.restrict (K.map P.subtype)).IsModular a ↔ ((B.restrict P).restrict K).IsModular a := by
   let e := Submodule.equivMapOfInjective P.subtype P.injective_subtype K
