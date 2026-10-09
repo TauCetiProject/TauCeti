@@ -24,12 +24,12 @@ The two leftmost nodes need no topology on `G` at all; the remaining six carry e
 hypotheses their maps require, so the three nodes touching `H²` also ask for a continuous
 multiplication on `G`.
 
-The arguments are the ordinary diagram chases, run on continuous cochains. The topological input
-is entirely in `ShortExact.lean`: a continuous cochain into the discrete `C` lifts to a continuous
-cochain into `B`, and a continuous cochain into `B` killed by the projection retracts to a
-continuous cochain into `A`. Once a chase has produced a cochain, `mem_Z1_of_injective_comp_mem_Z1`
-and `mem_Z2_of_injective_comp_mem_Z2`, applied to the inclusion, are what put it back into the
-continuous cocycles.
+The arguments are the ordinary diagram chases, run on continuous cochains. The lifting and
+retraction input is in `ShortExact.lean`: a continuous cochain into the discrete `C` lifts to a
+continuous cochain into `B`, and a continuous cochain into `B` killed by the projection retracts
+to a continuous cochain into `A`. Once a chase has produced a cochain, the cocycle descent of
+`LowDegree.lean`, `mem_Z1_of_injective_comp_mem_Z1` and `mem_Z2_of_injective_comp_mem_Z2` applied
+to the inclusion, puts it back into the continuous cocycles.
 
 ## Main statements
 
