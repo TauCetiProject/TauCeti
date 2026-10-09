@@ -23,6 +23,9 @@ conclusion; preservation at other points is not asserted.
 
 The plane coordinates are `(line parameter, root coordinate)`, so that the slice is
 centered at `![0, a 0]` and evaluates to `p(z, Fin.tail a + y • v)` at `![y, z]`.
+Fixing the line parameter `y` recovers the fiber of `p` over `Fin.tail a + y • v` as a
+univariate polynomial in the root coordinate. Shifting the root coordinate by `a 0` moves the
+center of the slice to the origin.
 
 ## References
 
@@ -50,6 +53,51 @@ theorem eval_aeval_finCons_C_add_C_mul_X [CommSemiring R]
   congr 1
   ext i
   cases i using Fin.cases <;> simp [mul_comm]
+
+/-- Restricting a transverse plane slice to the root-coordinate line at line parameter `s` gives
+the fiber of the polynomial over the base point `a + s • v`. -/
+theorem aeval_C_X_aeval_finCons_C_add_C_mul_X [CommSemiring R]
+    (p : MvPolynomial (Fin (n + 1)) R) (a v : Fin n → R) (s : R) :
+    aeval ![Polynomial.C s, Polynomial.X]
+        (aeval (Fin.cons (X 1) (fun j ↦ C (a j) + C (v j) * X 0) :
+          Fin (n + 1) → MvPolynomial (Fin 2) R) p) =
+      (finSuccEquiv R n p).map (eval (a + s • v)) := by
+  induction p using MvPolynomial.induction_on with
+  | C r => simp [finSuccEquiv_apply]
+  | add p q hp hq => simp only [map_add, Polynomial.map_add, hp, hq]
+  | mul_X p i hp =>
+    simp only [map_mul, Polynomial.map_mul, hp]
+    congr 1
+    cases i using Fin.cases <;> simp [finSuccEquiv_X_zero, finSuccEquiv_X_succ, mul_comm]
+
+/-- Transverse plane slices commute with coefficient maps, with the base point and direction
+mapped along the same homomorphism. -/
+theorem map_aeval_finCons_C_add_C_mul_X [CommSemiring R] {S : Type*} [CommSemiring S]
+    (φ : R →+* S) (p : MvPolynomial (Fin (n + 1)) R) (a v : Fin n → R) :
+    map φ (aeval (Fin.cons (X 1) (fun j ↦ C (a j) + C (v j) * X 0) :
+        Fin (n + 1) → MvPolynomial (Fin 2) R) p) =
+      aeval (Fin.cons (X 1) (fun j ↦ C (φ (a j)) + C (φ (v j)) * X 0) :
+        Fin (n + 1) → MvPolynomial (Fin 2) S) (map φ p) := by
+  induction p using MvPolynomial.induction_on with
+  | C r => simp
+  | add p q hp hq => simp only [map_add, hp, hq]
+  | mul_X p i hp =>
+    simp only [map_mul, hp, map_X, aeval_X]
+    congr 1
+    cases i using Fin.cases <;> simp
+
+/-- Centering a transverse plane slice at the root coordinate `t` turns its order at `![0, t]`
+into the order at the origin of the slice with `X 1` shifted by `t`. -/
+theorem orderAt_aeval_finCons_C_add_X [CommSemiring R]
+    (p : MvPolynomial (Fin (n + 1)) R) (a v : Fin n → R) (t : R) :
+    (aeval (Fin.cons (C t + X 1) (fun j ↦ C (a j) + C (v j) * X 0) :
+        Fin (n + 1) → MvPolynomial (Fin 2) R) p).orderAt 0 =
+      (aeval (Fin.cons (X 1) (fun j ↦ C (a j) + C (v j) * X 0) :
+        Fin (n + 1) → MvPolynomial (Fin 2) R) p).orderAt ![0, t] := by
+  rw [← zero_add ![0, t], ← orderAt_taylor, taylor_apply, comp_aeval_apply]
+  congr 2
+  ext i : 1
+  cases i using Fin.cases <;> simp [add_comm]
 
 /-- If an affine line detects ambient order, the plane containing that line and the
 distinguished coordinate also detects it. This statement allows infinite order. -/
