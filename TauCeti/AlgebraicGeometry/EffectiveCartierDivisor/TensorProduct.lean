@@ -91,19 +91,25 @@ lemma sectionsMul_sectionMk {a b : Γ(X, U)} (ha : a ∈ I.sections U) (hb : b �
 
 variable {I J U}
 
-private lemma sectionsMul_add_left (s s' : Γ(I.sheaf, U)) (t : Γ(J.sheaf, U)) :
+/-- `sectionsMul` is additive in its first argument. -/
+@[simp]
+lemma sectionsMul_add_left (s s' : Γ(I.sheaf, U)) (t : Γ(J.sheaf, U)) :
     sectionsMul I J U (s + s') t = sectionsMul I J U s t + sectionsMul I J U s' t :=
   (I * J).sheafι_app_injective U <| by
     simp only [sectionsMul, map_add, sheafι_app_sectionMk]
     exact add_mul (R := Γ(X, U)) _ _ _
 
-private lemma sectionsMul_add_right (s : Γ(I.sheaf, U)) (t t' : Γ(J.sheaf, U)) :
+/-- `sectionsMul` is additive in its second argument. -/
+@[simp]
+lemma sectionsMul_add_right (s : Γ(I.sheaf, U)) (t t' : Γ(J.sheaf, U)) :
     sectionsMul I J U s (t + t') = sectionsMul I J U s t + sectionsMul I J U s t' :=
   (I * J).sheafι_app_injective U <| by
     simp only [sectionsMul, map_add, sheafι_app_sectionMk]
     exact mul_add (R := Γ(X, U)) _ _ _
 
-private lemma sectionsMul_smul_left (r : Γ(X, U)) (s : Γ(I.sheaf, U)) (t : Γ(J.sheaf, U)) :
+/-- `sectionsMul` is `Γ(X, U)`-linear in its first argument. -/
+@[simp]
+lemma sectionsMul_smul_left (r : Γ(X, U)) (s : Γ(I.sheaf, U)) (t : Γ(J.sheaf, U)) :
     sectionsMul I J U (r • s) t = r • sectionsMul I J U s t :=
   (I * J).sheafι_app_injective U <| by
     refine Eq.trans ?_ (Scheme.Modules.Hom.app_smul (I * J).sheafι r _).symm
@@ -112,7 +118,9 @@ private lemma sectionsMul_smul_left (r : Γ(X, U)) (s : Γ(I.sheaf, U)) (t : Γ(
       (Scheme.Modules.Hom.app_smul I.sheafι r s)).trans ?_
     exact mul_assoc (G := Γ(X, U)) _ _ _
 
-private lemma sectionsMul_smul_right (r : Γ(X, U)) (s : Γ(I.sheaf, U)) (t : Γ(J.sheaf, U)) :
+/-- `sectionsMul` is `Γ(X, U)`-linear in its second argument. -/
+@[simp]
+lemma sectionsMul_smul_right (r : Γ(X, U)) (s : Γ(I.sheaf, U)) (t : Γ(J.sheaf, U)) :
     sectionsMul I J U s (r • t) = r • sectionsMul I J U s t :=
   (I * J).sheafι_app_injective U <| by
     refine Eq.trans ?_ (Scheme.Modules.Hom.app_smul (I * J).sheafι r _).symm
