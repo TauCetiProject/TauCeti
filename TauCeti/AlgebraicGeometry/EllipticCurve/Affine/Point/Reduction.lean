@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Point
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.ValuationIntegrality
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Unimodular
 
 /-!
 # Reduction of points modulo a valuation
@@ -46,6 +47,8 @@ to `(0 : 1 : 0)`. That this agrees with reducing *any* primitive representative 
   when it is the point at infinity or its `x`-coordinate has a pole. This is the set `E₁(F)`, the
   kernel of reduction.
 * `WeierstrassCurve.Affine.Point.reduction_neg`: reduction commutes with negation.
+* `WeierstrassCurve.Affine.Point.unimodularLift_reduction`: the reduction of a point is represented
+  by a solution of the reduced Weierstrass equation with unimodular coordinates.
 
 ## References
 
@@ -214,6 +217,26 @@ theorem reduction_neg (P : W.Point) :
       fin_cases i <;> simp [Projective.neg, Projective.negY, c, M]
     · rw [reduction_some_of_one_lt v _ hx, reduction_some_of_one_lt v h hx,
         Projective.negMap_of_Z_eq_zero Projective.nonsingular_zero rfl]
+
+/-- The projective-coordinate reduction of a point is represented by a solution with unimodular
+coordinates. This holds without a good-reduction hypothesis: the reduced point may be singular,
+but its coordinates still define a point of the projective Weierstrass model. -/
+theorem unimodularLift_reduction (P : W.Point) :
+    ((integralModel v.valuationSubring W).map
+      (residue v.valuationSubring)).toProjective.UnimodularLift (reduction v P) := by
+  rcases P with _ | ⟨x, y, h⟩
+  · rw [← zero_def, reduction_zero]
+    exact ((integralModel v.valuationSubring W).map
+      (residue v.valuationSubring)).toProjective.unimodularLift_zero
+  · rcases le_or_gt (v x) 1 with hx | hx
+    · rw [reduction_some_of_valuation_le_one v h hx,
+        ((integralModel v.valuationSubring W).map
+          (residue v.valuationSubring)).toProjective.unimodularLift_some]
+      rw [← Projective.equation_some]
+      exact equation_of_reduction_eq v (reduction_some_of_valuation_le_one v h hx)
+    · rw [reduction_some_of_one_lt v h hx]
+      exact ((integralModel v.valuationSubring W).map
+        (residue v.valuationSubring)).toProjective.unimodularLift_zero
 
 end WeierstrassCurve.Affine.Point
 
