@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Trace.HalfSpace
 public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
 # Even reflection across a hyperplane preserves weak differentiability
@@ -209,13 +209,6 @@ private theorem eventually_cutoff_eq_one {a : ℝ} {x : WithLp 2 (ℝ × E)} (hx
     ∀ᶠ n : ℕ in atTop, cutoff a n x = 1 :=
   (eventually_lt_cutoffArg hx 1).mono fun _ hn => Real.smoothTransition.one_of_one_le hn.le
 
-private theorem deriv_smoothTransition_of_one_lt {s : ℝ} (hs : 1 < s) :
-    deriv Real.smoothTransition s = 0 := by
-  have h : Real.smoothTransition =ᶠ[𝓝 s] fun _ => 1 :=
-    Filter.eventually_of_mem (Ioi_mem_nhds hs) fun _ ht =>
-      Real.smoothTransition.one_of_one_le (le_of_lt ht)
-  rw [h.deriv_eq, deriv_const]
-
 private theorem cutoff_nonneg (a : ℝ) (n : ℕ) (x : WithLp 2 (ℝ × E)) : 0 ≤ cutoff a n x :=
   Real.smoothTransition.nonneg _
 
@@ -351,7 +344,7 @@ private theorem tendsto_integral_mul_deriv_cutoff {a : ℝ} {w : WithLp 2 (ℝ �
     swap
     · simpa [hw0 x hxa] using hb0
     by_cases hs : 1 < cutoffArg a n x
-    · simpa [deriv_smoothTransition_of_one_lt hs] using hb0
+    · simpa [Real.smoothTransition.deriv_of_one_lt hs] using hb0
     push Not at hs
     have hpos : (0 : ℝ) < (n : ℝ) + 1 := by positivity
     have hs' : -1 ≤ cutoffArg a n x := by
@@ -373,7 +366,7 @@ private theorem tendsto_integral_mul_deriv_cutoff {a : ℝ} {w : WithLp 2 (ℝ �
   -- derivative of `smoothTransition` vanishes; outside it `w` vanishes.
   · by_cases hxa : a < x.fst
     · exact tendsto_const_nhds.congr' <| (eventually_lt_cutoffArg hxa 1).mono fun n hn => by
-        simp [deriv_smoothTransition_of_one_lt hn]
+        simp [Real.smoothTransition.deriv_of_one_lt hn]
     · simp [hw0 x hxa]
 
 /-- **Integration by parts up to the boundary.** Let `w` have weak derivative `w'` in the
