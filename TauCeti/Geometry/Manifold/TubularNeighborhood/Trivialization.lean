@@ -149,10 +149,11 @@ theorem contMDiff_normalCompression
   contMDiff_const.clm_comp
     ((contMDiff_normalSubspace_starProjection hf himm).clm_comp contMDiff_const)
 
-/-- The ambient coordinate operator varies `C^n` where the compression is invertible. -/
-theorem contMDiffAt_normalCoordinateMap
-    (hf : ContMDiff I 𝓘(ℝ, V) (n + 1) f)
-    (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (x₀ : M) {x : M}
+/-- The ambient coordinate operator of a `C^(n+1)` map is `C^n` at an immersion point
+where the compression is invertible. -/
+theorem contMDiffAt_normalCoordinateMap {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ, V) (n + 1) f x)
+    (himm : Injective (mfderiv I 𝓘(ℝ, V) f x)) (x₀ : M)
     (hx : IsUnit (normalCompression I f x₀ x)) :
     ContMDiffAt I 𝓘(ℝ, V →L[ℝ] normalSubspace I f x₀) n
       (fun y => normalCoordinateMap I f x₀ y) x := by
@@ -160,7 +161,11 @@ theorem contMDiffAt_normalCoordinateMap
   have hinv := (contDiffAt_ringInverse ℝ
     (R := normalSubspace I f x₀ →L[ℝ] normalSubspace I f x₀) (n := n) hx.unit).contMDiffAt
   rw [hx.unit_spec] at hinv
-  exact (hinv.comp x (contMDiff_normalCompression hf himm x₀ x)).clm_comp
+  have hcompression :=
+    (contMDiffAt_const (c := (normalSubspace I f x₀).orthogonalProjectionOnto)).clm_comp
+    ((contMDiffAt_normalSubspace_starProjection hf himm).clm_comp
+      (contMDiffAt_const (c := (normalSubspace I f x₀).subtypeL)))
+  exact (hinv.comp x hcompression).clm_comp
     (contMDiffAt_const (c := (normalSubspace I f x₀).orthogonalProjectionOnto))
 
 /-- Changes between projected normal-fibre coordinates are `C^n` wherever the target
@@ -173,7 +178,7 @@ theorem contMDiffOn_normalCoordinateChange
       (fun x => normalCoordinateChange I f x₀ x₁ x)
       {x | IsUnit (normalCompression I f x₁ x)} := by
   intro x hx
-  exact ((contMDiffAt_normalCoordinateMap hf himm x₁ hx).clm_comp
+  exact ((contMDiffAt_normalCoordinateMap (hf x) (himm x) x₁ hx).clm_comp
     ((contMDiff_normalSubspace_starProjection hf himm x).clm_comp
       contMDiffAt_const)).contMDiffWithinAt
 
@@ -224,7 +229,7 @@ def normalTrivialization
     exact Prod.ext rfl (normalCoordinateMap_starProjection x₀ x hx.1 w)
   · intro p hp
     exact (hι.continuous.fst.continuousAt.prodMk
-      (((contMDiffAt_normalCoordinateMap hf himm x₀ hp).continuousAt.comp
+      (((contMDiffAt_normalCoordinateMap (hf p.proj) (himm p.proj) x₀ hp).continuousAt.comp
         hι.continuous.fst.continuousAt).clm_apply
           hι.continuous.snd.continuousAt)).continuousWithinAt
   · apply hι.isInducing.continuousOn_iff.mpr
@@ -290,8 +295,8 @@ theorem contMDiffOn_normalCoordinates
       (fun p : M × V => normalCoordinateMap I f x₀ p.1 p.2)
       ((normalTrivialization hf himm x₀).baseSet ×ˢ univ) := by
   intro p hp
-  exact (((contMDiffAt_normalCoordinateMap hf himm x₀ hp.1).comp p contMDiffAt_fst).clm_apply
-    contMDiffAt_snd).contMDiffWithinAt
+  exact (((contMDiffAt_normalCoordinateMap (hf p.1) (himm p.1) x₀ hp.1).comp p
+    contMDiffAt_fst).clm_apply contMDiffAt_snd).contMDiffWithinAt
 
 /-- The inverse normal coordinates, viewed in the ambient vector space, are `C^n`. -/
 theorem contMDiff_normalTrivialization_symm_snd
