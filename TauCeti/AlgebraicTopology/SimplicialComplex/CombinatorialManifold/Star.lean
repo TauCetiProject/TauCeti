@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Map
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Join.Combinatorial
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Join.Star
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Pure
 
 /-!
 # Vertex stars in combinatorial manifolds
@@ -33,31 +34,6 @@ namespace PreAbstractSimplicialComplex
 
 variable {ι : Type*} [DecidableEq ι] {K : PreAbstractSimplicialComplex ι} {n : ℕ}
 
-/-- In a complex of dimension at most zero, the closed star of a vertex is its singleton
-simplex. -/
-theorem closedStar_eq_simplex_of_dimension_le_zero
-    (hdim : dimension K ≤ (0 : WithBot ℕ∞)) {v : ι} (hv : ({v} : Finset ι) ∈ K) :
-    closedStar K {v} = simplex {v} := by
-  refine SetLike.ext fun σ => ?_
-  constructor
-  · intro hσ
-    obtain ⟨hσK, hσv⟩ := mem_closedStar.mp hσ
-    obtain ⟨w, rfl⟩ := dimension_le_zero_iff.mp hdim σ hσK
-    obtain ⟨u, hu⟩ := dimension_le_zero_iff.mp hdim _ hσv
-    have hwv : w = v := by
-      have hw : w = u := by
-        simpa only [hu, Finset.mem_singleton] using
-          Finset.mem_union_left {v} (Finset.mem_singleton_self w)
-      have hvu : v = u := by
-        simpa only [hu, Finset.mem_singleton] using
-          Finset.mem_union_right {w} (Finset.mem_singleton_self v)
-      exact hw.trans hvu.symm
-    simp [hwv]
-  · intro hσ
-    obtain ⟨hne, hsub⟩ := mem_simplex.mp hσ
-    exact mem_closedStar_nonempty.mpr
-      ⟨hne, by simpa only [Finset.union_eq_right.mpr hsub] using hv⟩
-
 /-- The closed vertex star of a combinatorial manifold is a combinatorial ball after the
 injective relabeling that tags the apex on the left and all other vertices on the right. -/
 theorem IsCombinatorialManifold.isCombinatorialBall_map_closedStar
@@ -66,8 +42,8 @@ theorem IsCombinatorialManifold.isCombinatorialBall_map_closedStar
       ((closedStar K {v}).map (TauCeti.partitionEmbedding (· ∈ ({v} : Finset ι)))) n := by
   cases n with
   | zero =>
-      have hdim : dimension K ≤ (0 : WithBot ℕ∞) := h.dimension_le
-      rw [closedStar_eq_simplex_of_dimension_le_zero hdim hv]
+      rw [closedStar_eq_simplex_of_link_eq_bot hv
+        (isCombinatorialManifold_zero_iff.mp h hv)]
       exact (isCombinatorialBall_simplex (by simp)).map _
         (TauCeti.partitionEmbedding (· ∈ ({v} : Finset ι))).injective
   | succ n =>

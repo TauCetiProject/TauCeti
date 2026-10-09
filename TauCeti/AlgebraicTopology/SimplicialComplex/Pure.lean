@@ -19,7 +19,8 @@ dimension; dimension equalities consequently require nonvoidness.
 
 Links of faces of a pure complex are pure in the complementary dimension. A top-dimensional
 face has void link, whose dimension is `⊥`, rather than a truncated natural-number dimension.
-These facts provide the dimension indices for sphere-or-ball link classifications.
+These facts provide the dimension indices for sphere-or-ball link classifications. The maximal-face
+closed-star calculation is recorded here as general infrastructure for local manifold arguments.
 
 Reference: Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapters 2--3.
 -/
@@ -29,6 +30,27 @@ public section
 open Finset
 
 namespace PreAbstractSimplicialComplex
+
+variable {ι : Type*} [DecidableEq ι] {K : PreAbstractSimplicialComplex ι} {σ : Finset ι}
+
+/-! ### Maximal closed stars -/
+
+/-- The closed star of a face with empty link is the simplex on that face. -/
+theorem closedStar_eq_simplex_of_link_eq_bot (hσ : σ ∈ K)
+    (hlink : link K σ = ⊥) : closedStar K σ = simplex σ := by
+  refine SetLike.ext fun ρ => ?_
+  rw [mem_closedStar_iff_sdiff hσ]
+  constructor
+  · rintro ⟨hne, hρ⟩
+    apply mem_simplex.mpr
+    refine ⟨hne, ?_⟩
+    rcases hρ with hρ | hρ
+    · exact sdiff_eq_empty_iff_subset.mp hρ
+    · rw [hlink] at hρ
+      exact hρ.elim
+  · intro hρ
+    obtain ⟨hne, hsub⟩ := mem_simplex.mp hρ
+    exact ⟨hne, Or.inl (sdiff_eq_empty_iff_subset.mpr hsub)⟩
 
 variable {ι κ : Type*} {K : PreAbstractSimplicialComplex ι} {n : ℕ} {σ : Finset ι}
 
