@@ -49,7 +49,7 @@ theorem torusCharacter_weight (K : Type u) [CommRing K]
     torusCharacter s (weight r k) =
       (if hk : (k : ℕ) < r then s ⟨k, hk⟩ else 1) *
         (if hk : 0 < (k : ℕ) then (s ⟨k - 1, by omega⟩)⁻¹ else 1) := by
-  rw [weight_eq_ite_single_sub_ite_single, torusCharacter_sub]
+  rw [weight_eq_dite_single_sub_dite_single, torusCharacter_sub]
   split_ifs <;>
     simp only [← weightChar_apply, weightChar_single, weightChar_zero, MonoidHom.one_apply,
       div_eq_mul_inv, inv_one]
