@@ -199,7 +199,8 @@ theorem coe_puncturedNeighborhoodOneHomeomorphZero
 
 /-- The inverse coordinate between the finite punctured neighborhoods is also `z ↦ 1 - z`. -/
 @[simp]
-theorem puncturedNeighborhoodOneHomeomorphZero_symm_apply (z : puncturedNeighborhoodZero) :
+theorem coe_puncturedNeighborhoodOneHomeomorphZero_symm_apply
+    (z : puncturedNeighborhoodZero) :
     (puncturedNeighborhoodOneHomeomorphZero.symm z : ThricePuncturedSphere) = mob01 z := by
   apply Subtype.ext
   have h := coe_puncturedNeighborhoodOneHomeomorphZero

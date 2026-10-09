@@ -231,7 +231,7 @@ theorem oneBasePt_def :
 
 @[simp]
 theorem coe_oneBasePt : ((oneBasePt : ThricePuncturedSphere) : ℂ) = 3 / 4 := by
-  rw [oneBasePt_def, puncturedNeighborhoodOneHomeomorphZero_symm_apply, coe_mob01,
+  rw [oneBasePt_def, coe_puncturedNeighborhoodOneHomeomorphZero_symm_apply, coe_mob01,
     coe_zeroBasePt]
   norm_num
 
@@ -245,7 +245,7 @@ theorem coe_δOne (t : unitInterval) :
     (((δOne t : puncturedNeighborhoodOne) : ThricePuncturedSphere) : ℂ) =
       1 - circleMap 0 (1 / 4) (2 * Real.pi * t) := by
   simp only [δOne, Path.cast_coe, Path.map_coe, Function.comp_apply]
-  rw [puncturedNeighborhoodOneHomeomorphZero_symm_apply, coe_mob01, coe_δZero]
+  rw [coe_puncturedNeighborhoodOneHomeomorphZero_symm_apply, coe_mob01, coe_δZero]
 
 /-- Winding number in the coordinate `1 - z` identifies the local group at `1` with `ℤ`.
 This holomorphic coordinate has the same orientation as `z - 1`. -/
@@ -289,7 +289,7 @@ theorem zpowers_δOne : Subgroup.zpowers (FundamentalGroup.fromPath (.mk δOne))
 def αOne : Path basePt (oneBasePt : ThricePuncturedSphere) :=
   (αZero.map mob01.continuous).cast mob01_basePt.symm
     ((congrArg Subtype.val oneBasePt_def).trans
-      (puncturedNeighborhoodOneHomeomorphZero_symm_apply zeroBasePt))
+      (coe_puncturedNeighborhoodOneHomeomorphZero_symm_apply zeroBasePt))
 
 @[simp]
 theorem coe_αOne (t : unitInterval) : (αOne t : ℂ) = 1 / 2 + (t : ℝ) / 4 := by
@@ -301,7 +301,7 @@ private theorem γ1_trans_αOne_homotopic :
       (αOne.trans (δOne.map continuous_subtype_val)) := by
   have h := (γ0_trans_αZero_homotopic.map (⟨mob01, mob01.continuous⟩ : C(_, _))).pathCast
     mob01_basePt.symm ((congrArg Subtype.val oneBasePt_def).trans
-      (puncturedNeighborhoodOneHomeomorphZero_symm_apply zeroBasePt))
+      (coe_puncturedNeighborhoodOneHomeomorphZero_symm_apply zeroBasePt))
   convert h using 1 <;> ext t <;>
     simp only [Path.cast_coe, Path.map_coe, Path.trans_apply, Function.comp_apply] <;>
     split_ifs
@@ -311,7 +311,8 @@ private theorem γ1_trans_αOne_homotopic :
   · rw [αOne, Path.cast_coe, Path.map_coe, Function.comp_apply]
     rfl
   · simp only [δOne, Path.cast_coe, Path.map_coe, Function.comp_apply]
-    exact congrArg Subtype.val (puncturedNeighborhoodOneHomeomorphZero_symm_apply (δZero _))
+    exact congrArg Subtype.val
+      (coe_puncturedNeighborhoodOneHomeomorphZero_symm_apply (δZero _))
 
 /-- Include the local generator at `1` and transport back along the radial segment:
 the result is exactly `periph1`. -/
