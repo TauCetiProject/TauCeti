@@ -40,23 +40,6 @@ namespace PreAbstractSimplicialComplex
 variable {ι : Type*} {P : PreAbstractSimplicialComplex ι}
   {A : AbstractSimplicialComplex ι} {n : ℕ}
 
-private theorem top_le (Q : PreAbstractSimplicialComplex ι) :
-    Q ≤ (⊤ : AbstractSimplicialComplex ι).toPreAbstractSimplicialComplex :=
-  fun _ hσ => TauCeti.AbstractSimplicialComplex.mem_top_iff.mpr
-    (Q.isRelLowerSet_faces.prop_of_mem hσ)
-
-private noncomputable def top_realization_homeomorph
-    (P : PreAbstractSimplicialComplex ι)
-    (hA : P ≤ A.toPreAbstractSimplicialComplex) :
-    {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ P} ≃ₜ
-      {x : Realization A // x.1.support ∈ P} := by
-  classical
-  have hid : P.map (Function.Embedding.refl ι) = P := by
-    simpa only [Function.Embedding.coe_refl] using (map_id (K := P))
-  exact (P.relabelingHomeomorph (Function.Embedding.refl ι) (top_le P)
-    (by rw [hid]; exact hA)).trans
-    (Homeomorph.setCongr (by rw [hid]))
-
 /-- A combinatorial `n`-ball has a weak polyhedron homeomorphic to the Euclidean closed `n`-ball.
 
 The ambient complex may contain unused vertices. They are removed by the weak-polyhedron subtype. -/
@@ -69,7 +52,7 @@ theorem IsCombinatorialBall.nonempty_homeomorph_closedBall
   obtain ⟨V, hV, he⟩ := isCombinatorialBall_iff.mp h
   obtain ⟨s⟩ := he.nonempty_homeomorph h.finite_faces
   obtain ⟨t⟩ := nonempty_homeomorph_simplex_closedBall hV (top_le _)
-  exact ⟨(top_realization_homeomorph P hA).symm.trans (s.trans t)⟩
+  exact ⟨(topRealizationHomeomorph P hA).symm.trans (s.trans t)⟩
 
 /-- A combinatorial `n`-sphere has a weak polyhedron homeomorphic to the unit `n`-sphere,
 inside any ambient realization containing it. This includes the two-point zero-sphere. -/
@@ -79,7 +62,7 @@ theorem IsCombinatorialSphere.nonempty_homeomorph_sphere [DecidableEq ι]
     Nonempty ({x : Realization A // x.1.support ∈ P} ≃ₜ
       sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) := by
   classical
-  let r := top_realization_homeomorph P hA
+  let r := topRealizationHomeomorph P hA
   obtain ⟨V, hV, he⟩ := isCombinatorialSphere_iff.mp h
   obtain ⟨s⟩ := he.nonempty_homeomorph h.finite_faces
   obtain ⟨t⟩ := nonempty_homeomorph_simplexBoundary_sphere hV (top_le _)

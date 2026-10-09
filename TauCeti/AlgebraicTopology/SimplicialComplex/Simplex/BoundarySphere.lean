@@ -353,8 +353,8 @@ theorem nonempty_homeomorph_simplexBoundary_sphere {ι : Type*}
   let P := simplexBoundary (Finset.univ : Finset (Fin (n + 2)))
   have hP : P = (standardSuccSimplexBoundary n).toPreAbstractSimplicialComplex :=
     (standardSuccSimplexBoundary_toPreAbstractSimplicialComplex n).symm
-  exact ⟨(finsetRelabelingHomeomorph hV (fun f himage => by
-      rw [map_simplexBoundary, himage]) hP hA).trans
-    (realizationStandardSuccSimplexBoundaryHomeomorphSphere n)⟩
+  obtain ⟨r⟩ := nonempty_finsetRelabelingHomeomorph hV (fun f himage => by
+      rw [map_simplexBoundary, himage]) hP hA
+  exact ⟨r.trans (realizationStandardSuccSimplexBoundaryHomeomorphSphere n)⟩
 
 end PreAbstractSimplicialComplex
