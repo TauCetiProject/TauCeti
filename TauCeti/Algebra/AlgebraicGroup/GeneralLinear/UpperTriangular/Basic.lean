@@ -125,9 +125,8 @@ noncomputable abbrev coordinateMap :
 theorem coordinateMap_def :
     coordinateMap R n =
       CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R n)
-        (definingHopfIdeal R n) := by
-  ext h
-  exact GeneralLinear.weightParabolicCoordinateMap_apply R (weights n) h
+        (definingHopfIdeal R n) :=
+  GeneralLinear.weightParabolicCoordinateMap_def R (weights n)
 
 /-- The upper-triangular coordinate morphism sends an ambient coordinate to its quotient
 class. -/
