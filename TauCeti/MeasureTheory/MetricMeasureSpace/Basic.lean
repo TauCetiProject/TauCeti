@@ -233,18 +233,18 @@ theorem image_support (e : Equiv X Y) : e '' X.referenceMeasure.support =
     e.measurePreserving.measurable).symm
 
 @[simp]
-theorem mem_support_iff (e : Equiv X Y) (x : X) :
+theorem apply_mem_support_iff (e : Equiv X Y) (x : X) :
     e x ∈ Y.referenceMeasure.support ↔ x ∈ X.referenceMeasure.support := by
   rw [← e.image_support]
   exact e.toIsometryEquiv.injective.mem_set_image
 
 /-- The isometric equivalence induced on the supports of the reference measures. -/
 private def supportIsometryEquiv (e : Equiv X Y) : X.supportSpace ≃ᵢ Y.supportSpace where
-  toEquiv := e.toIsometryEquiv.toEquiv.subtypeEquiv (fun x ↦ (e.mem_support_iff x).symm)
+  toEquiv := e.toIsometryEquiv.toEquiv.subtypeEquiv (fun x ↦ (e.apply_mem_support_iff x).symm)
   isometry_toFun := by
     -- Expose the support subtypes and their induced metrics for the distance rewrites.
     change Isometry (e.toIsometryEquiv.toEquiv.subtypeEquiv
-      (fun x ↦ (e.mem_support_iff x).symm))
+      (fun x ↦ (e.apply_mem_support_iff x).symm))
     intro x y
     rw [Subtype.edist_eq, Subtype.edist_eq]
     simp only [_root_.Equiv.subtypeEquiv_apply]
