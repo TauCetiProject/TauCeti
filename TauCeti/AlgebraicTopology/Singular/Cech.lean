@@ -34,8 +34,10 @@ The double complex is the ordered Čech complex `CategoryTheory.Functor.orderedC
 functor `s ↦ C(U_s; R)`. It is augmented to the singular chains of `X` by the maps induced by the
 inclusions `U i ⊆ X`, and this augmentation induces a chain map from the total complex to
 `C(X; R)`. When `C` is abelian, so that homology is defined, and the `U i` cover `X`, that chain
-map is a quasi-isomorphism, and the filtration by columns gives the Čech spectral sequence with
-`E¹_{p,q} = ⨁_{i₀ < ⋯ < iₚ} H_q(U_{i₀ ⋯ iₚ}; R)`; neither is proved in this file.
+map is a quasi-isomorphism, and the filtration by columns gives the Čech spectral sequence whose
+`E¹_{p,q}` is the `q`-th homology of column `p`. That homology is
+`⨁_{i₀ < ⋯ < iₚ} H_q(U_{i₀ ⋯ iₚ}; R)` when `ι` is finite or coproducts in `C` are exact, since then
+homology commutes with the coproduct defining the column. None of this is proved in this file.
 
 ## Main definitions
 
