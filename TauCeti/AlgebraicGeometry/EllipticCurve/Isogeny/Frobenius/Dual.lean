@@ -36,7 +36,8 @@ construction goes through the factorisation theorem on function fields: `[q]` fa
 
 The Frobenius identities `π ∘ π̂ = [q]`, proved here, and `π + π̂ = [a_q]`, with `a_q` the trace
 of Frobenius, are the relations from which the degree form on the endomorphisms `ℤ[π]` of `W`,
-and with it the Hasse bound, are computed. The second is not proved here.
+and with it the Hasse bound, are computed. The second is proved in
+`Isogeny/Frobenius/Charpoly.lean`.
 
 ## Main definitions
 
