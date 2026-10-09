@@ -200,6 +200,7 @@ theorem dgBimoduleHomComplex_d (hM : IsDGBimodule hA hB ℳ dM)
   apply CochainComplex.of_d
 
 /-- The Hom-complex differential evaluated on a cochain. -/
+@[simp↓]
 theorem dgBimoduleHomComplex_d_apply (hM : IsDGBimodule hA hB ℳ dM)
     (hN : IsDGBimodule hA hB 𝒩 dN) (p : ℤ) (f : (dgBimoduleHomComplex hM hN).X p) :
     ((dgBimoduleHomComplex hM hN).d p (p + 1)).hom f =
