@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Clopen
 public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.LinearAlgebra.Matrix.PinPlusPlane.Basic
@@ -98,22 +97,17 @@ end Algebra
 
 section Lifts
 
-variable {R : Type*} [CommRing R] [IsDomain R]
+variable {R : Type*} [CommRing R] [IsDomain R] [NeZero (2 : R)]
 
-private theorem IsPinLift.ne_zero {x w : Matrix (Fin 2) (Fin 2) R}
-    (hx : IsPinLift x w) : x ≠ 0 := by
-  intro hx0
+private theorem IsPinLift.ne_neg_self {x w : Matrix (Fin 2) (Fin 2) R}
+    (hx : IsPinLift x w) : x ≠ -x := by
+  intro h
+  have htwo : (2 : R) • x = 0 := by
+    simpa [two_smul] using eq_neg_iff_add_eq_zero.mp h
+  have hx0 : x = 0 := (smul_eq_zero.mp htwo).resolve_left (NeZero.ne 2)
   have hmem : (0 : Matrix (Fin 2) (Fin 2) R) ∈ orthogonalGroup (Fin 2) R :=
     hx0 ▸ hx.mem_orthogonalGroup
   simp [mem_orthogonalGroup_iff'] at hmem
-
-variable [NeZero (2 : R)]
-
-private theorem matrix_eq_zero_of_eq_neg_self {x : Matrix (Fin 2) (Fin 2) R}
-    (h : x = -x) : x = 0 := by
-  have htwo : (2 : R) • x = 0 := by
-    simpa [two_smul] using eq_neg_iff_add_eq_zero.mp h
-  exact (smul_eq_zero.mp htwo).resolve_left (NeZero.ne 2)
 
 /-- **The selected sign relates two lifts of the same matrix.** -/
 theorem IsPinLift.eq_negOnePow_pinLiftSign_smul {x x' w : Matrix (Fin 2) (Fin 2) R}
@@ -123,7 +117,7 @@ theorem IsPinLift.eq_negOnePow_pinLiftSign_smul {x x' w : Matrix (Fin 2) (Fin 2)
   · simp [h]
   · have hne : x' ≠ x := by
       intro heq
-      exact hx.ne_zero (matrix_eq_zero_of_eq_neg_self (heq.symm.trans h))
+      exact hx.ne_neg_self (heq.symm.trans h)
     rw [(pinLiftSign_eq_one_iff x x').2 hne, ZMod.val_one, pow_one, neg_one_smul]
     exact h
 
@@ -142,8 +136,7 @@ theorem IsPinLift.pinLiftSign_eq_iff {x x' w : Matrix (Fin 2) (Fin 2) R}
     · apply (pinLiftSign_eq_one_iff x x').2
       intro heq
       rw [heq] at hε
-      have hself : x = -x := by simpa [ZMod.val] using hε
-      exact hx.ne_zero (matrix_eq_zero_of_eq_neg_self hself)
+      exact hx.ne_neg_self (by simpa [ZMod.val] using hε)
 
 end Lifts
 
@@ -151,29 +144,14 @@ section Topology
 
 variable {X R : Type*} [TopologicalSpace X] [TopologicalSpace R] [DiscreteTopology R]
 
-/-- The equality locus of two continuous matrix-valued functions over a discrete ring is clopen. -/
-private theorem isClopen_matrix_eq {x x' : X → Matrix (Fin 2) (Fin 2) R}
-    (hx : Continuous x) (hx' : Continuous x') : IsClopen {g | x' g = x g} := by
-  constructor
-  · exact isClosed_eq hx' hx
-  · let e : X → Matrix (Fin 2) (Fin 2) R × Matrix (Fin 2) (Fin 2) R := fun g => (x' g, x g)
-    have he : Continuous e := hx'.prodMk hx
-    have hdiag : IsOpen {p : Matrix (Fin 2) (Fin 2) R × Matrix (Fin 2) (Fin 2) R | p.1 = p.2} :=
-      isOpen_discrete _
-    exact hdiag.preimage he
-
 /-- **The sign between continuous matrix-valued functions is continuous** when the coefficient
 ring has the discrete topology. -/
 theorem continuous_pinLiftSign {x x' : X → Matrix (Fin 2) (Fin 2) R}
     (hx : Continuous x) (hx' : Continuous x') :
-    Continuous fun g => pinLiftSign (x g) (x' g) := by
-  classical
-  have hclopen := isClopen_matrix_eq hx hx'
-  change Continuous fun g => if x' g = x g then (0 : ZMod 2) else 1
-  exact Continuous.if (fun g hg => by
-      rw [hclopen.frontier_eq] at hg
-      exact hg.elim)
-    continuous_const continuous_const
+    Continuous fun g => pinLiftSign (x g) (x' g) :=
+  (continuous_of_discreteTopology
+    (f := fun p : Matrix (Fin 2) (Fin 2) R × Matrix (Fin 2) (Fin 2) R => pinLiftSign p.1 p.2)).comp
+    (hx.prodMk hx')
 
 variable [CommRing R] [IsDomain R] [NeZero (2 : R)]
 
