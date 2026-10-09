@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.CentralSimple.MaximalSubfield.Basic
+public import TauCeti.Algebra.CentralSimple.MaximalSubfield.Separable
 public import Mathlib.Algebra.Central.Matrix
 public import Mathlib.RingTheory.SimpleRing.Matrix
 import Mathlib.Data.Matrix.Composition
@@ -261,8 +261,8 @@ theorem exists_isSplittingField_finrank_eq_index :
   let _ := W.isCentral
   let _ := W.finiteDimensional
   let _ := W.matrixSize_neZero
-  obtain ⟨L, hLfield, hLalg, -, hLfinite, hLdegree, hsplit⟩ :=
-    exists_isSplittingField_finrank_eq_deg K W.divisionAlgebra
+  obtain ⟨L, hLfield, hLalg, -, hLfinite, -, hLdegree, hsplit⟩ :=
+    exists_isSplittingField_isSeparable_finrank_eq_deg K W.divisionAlgebra
   let _ : Field L := hLfield
   let _ : Algebra K L := hLalg
   refine ⟨L, inferInstance, inferInstance, hLfinite, ?_, ?_⟩
