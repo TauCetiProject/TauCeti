@@ -65,15 +65,6 @@ private theorem underlying_second_isEmpty
   rw [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] at h ⊢
   simpa only [D.pentagon_toGridRectangleBetween] using h
 
-private noncomputable def rightLeftRecut
-    (D : GridRectangleInitialPentagonDecomposition a s x z)
-    (hcommon : D.first.right = D.second.left)
-    (hother : D.first.left ≠ D.second.right)
-    (hfirst : D.first.IsEmpty) (hsecond : D.pentagon.IsEmpty) :
-    GridRectangleDecomposition x z :=
-  D.recut (D.hasOneCommonSide_of_right_eq_left hcommon hother)
-    hfirst (D.underlying_second_isEmpty hsecond)
-
 private theorem second_bottom_eq_first_bottom
     (D : GridRectangleInitialPentagonDecomposition a s x z)
     (hcommon : D.first.right = D.second.left) :
@@ -81,21 +72,45 @@ private theorem second_bottom_eq_first_bottom
   rw [GridRectangleBetween.bottom_def, ← hcommon, D.first.map_right,
     GridRectangleBetween.bottom_def]
 
+/-- If the rectangle avoids the turn row, the noncommon sides of a mixed `right = left` overlap
+differ: otherwise the pentagon would span the rectangle's rows and contain the turn row. -/
+theorem first_left_ne_second_right_of_right_eq_left
+    (D : GridRectangleInitialPentagonDecomposition a s x z)
+    (hcommon : D.first.right = D.second.left)
+    (hturn : s ∉ Grid.cIco D.first.bottom D.first.top) :
+    D.first.left ≠ D.second.right := by
+  intro hother
+  have htop : D.second.top = D.first.top := by
+    rw [GridRectangleBetween.top_def, ← hother, D.first.map_left,
+      GridRectangleBetween.top_def]
+  exact hturn (by
+    simpa only [D.second_bottom_eq_first_bottom hcommon, htop] using D.second_turn_mem)
+
+private noncomputable def rightLeftRecut
+    (D : GridRectangleInitialPentagonDecomposition a s x z)
+    (hcommon : D.first.right = D.second.left)
+    (hfirst : D.first.IsEmpty) (hsecond : D.pentagon.IsEmpty)
+    (hturn : s ∉ Grid.cIco D.first.bottom D.first.top) :
+    GridRectangleDecomposition x z :=
+  D.recut (D.hasOneCommonSide_of_right_eq_left hcommon
+      (D.first_left_ne_second_right_of_right_eq_left hcommon hturn))
+    hfirst (D.underlying_second_isEmpty hsecond)
+
 private theorem rightLeftRecut_geometry
     (D : GridRectangleInitialPentagonDecomposition a s x z)
     (hcommon : D.first.right = D.second.left)
-    (hother : D.first.left ≠ D.second.right)
     (hfirst : D.first.IsEmpty) (hsecond : D.pentagon.IsEmpty)
     (hturn : s ∉ Grid.cIco D.first.bottom D.first.top) :
-    let E := D.rightLeftRecut hcommon hother hfirst hsecond
+    let E := D.rightLeftRecut hcommon hfirst hsecond hturn
     E.middle = x.swapRows D.first.top D.second.top ∧
       E.first.left = D.second.left ∧
         E.first.bottom = D.first.top ∧ E.first.top = D.second.top ∧
           E.second.bottom = D.first.bottom ∧ E.second.top = D.first.top ∧
             s ∈ Grid.cIco E.first.bottom E.first.top := by
-  let E := D.rightLeftRecut hcommon hother hfirst hsecond
+  let E := D.rightLeftRecut hcommon hfirst hsecond hturn
   have hdata := D.isRecutOfRightEqLeft_recut hcommon
-    (D.hasOneCommonSide_of_right_eq_left hcommon hother)
+    (D.hasOneCommonSide_of_right_eq_left hcommon
+      (D.first_left_ne_second_right_of_right_eq_left hcommon hturn))
     hfirst (D.underlying_second_isEmpty hsecond)
   have hturnWhole : s ∈ Grid.cIco D.first.bottom D.second.top := by
     simpa only [D.second_bottom_eq_first_bottom hcommon] using D.second_turn_mem
@@ -131,24 +146,22 @@ private theorem rightLeftRecut_geometry
 private theorem rightLeftRecut_first_left
     (D : GridRectangleInitialPentagonDecomposition a s x z)
     (hcommon : D.first.right = D.second.left)
-    (hother : D.first.left ≠ D.second.right)
     (hfirst : D.first.IsEmpty) (hsecond : D.pentagon.IsEmpty)
     (hturn : s ∉ Grid.cIco D.first.bottom D.first.top) :
-    (D.rightLeftRecut hcommon hother hfirst hsecond).first.left = D.second.left := by
+    (D.rightLeftRecut hcommon hfirst hsecond hturn).first.left = D.second.left := by
   obtain ⟨_, hleft, _⟩ :=
-    D.rightLeftRecut_geometry hcommon hother hfirst hsecond hturn
+    D.rightLeftRecut_geometry hcommon hfirst hsecond hturn
   exact hleft
 
 private theorem rightLeftRecut_first_turn_mem
     (D : GridRectangleInitialPentagonDecomposition a s x z)
     (hcommon : D.first.right = D.second.left)
-    (hother : D.first.left ≠ D.second.right)
     (hfirst : D.first.IsEmpty) (hsecond : D.pentagon.IsEmpty)
     (hturn : s ∉ Grid.cIco D.first.bottom D.first.top) :
-    s ∈ Grid.cIco (D.rightLeftRecut hcommon hother hfirst hsecond).first.bottom
-      (D.rightLeftRecut hcommon hother hfirst hsecond).first.top := by
+    s ∈ Grid.cIco (D.rightLeftRecut hcommon hfirst hsecond hturn).first.bottom
+      (D.rightLeftRecut hcommon hfirst hsecond hturn).first.top := by
   obtain ⟨_, _, _, _, _, _, hturn'⟩ :=
-    D.rightLeftRecut_geometry hcommon hother hfirst hsecond hturn
+    D.rightLeftRecut_geometry hcommon hfirst hsecond hturn
   exact hturn'
 
 /-- Promote the first generic recut rectangle to an initial-side pentagon. This is the recut of
@@ -156,25 +169,24 @@ a mixed `right = left` overlap outside the turn-point-cut family. -/
 noncomputable def recutRightEqLeft
     (D : GridRectangleInitialPentagonDecomposition a s x z)
     (hcommon : D.first.right = D.second.left)
-    (hother : D.first.left ≠ D.second.right)
     (hfirst : D.first.IsEmpty) (hsecond : D.pentagon.IsEmpty)
     (hturn : s ∉ Grid.cIco D.first.bottom D.first.top) :
     GridInitialPentagonRectangleDecomposition a s x z where
-  toGridRectangleDecomposition := D.rightLeftRecut hcommon hother hfirst hsecond
-  first_left_eq := (D.rightLeftRecut_first_left hcommon hother hfirst hsecond hturn).trans
+  toGridRectangleDecomposition := D.rightLeftRecut hcommon hfirst hsecond hturn
+  first_left_eq := (D.rightLeftRecut_first_left hcommon hfirst hsecond hturn).trans
     D.second_left_eq
-  first_turn_mem := D.rightLeftRecut_first_turn_mem hcommon hother hfirst hsecond hturn
+  first_turn_mem := D.rightLeftRecut_first_turn_mem hcommon hfirst hsecond hturn
 
 /-- Forgetting the turn row of the promoted decomposition recovers the generic recut. -/
 @[simp]
 theorem recutRightEqLeft_toGridRectangleDecomposition
     (D : GridRectangleInitialPentagonDecomposition a s x z)
     (hcommon : D.first.right = D.second.left)
-    (hother : D.first.left ≠ D.second.right)
     (hfirst : D.first.IsEmpty) (hsecond : D.pentagon.IsEmpty)
     (hturn : s ∉ Grid.cIco D.first.bottom D.first.top) :
-    (D.recutRightEqLeft hcommon hother hfirst hsecond hturn).toGridRectangleDecomposition =
-      D.recut (D.hasOneCommonSide_of_right_eq_left hcommon hother)
+    (D.recutRightEqLeft hcommon hfirst hsecond hturn).toGridRectangleDecomposition =
+      D.recut (D.hasOneCommonSide_of_right_eq_left hcommon
+          (D.first_left_ne_second_right_of_right_eq_left hcommon hturn))
         hfirst (by
           rw [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] at hsecond ⊢
           simpa only [D.pentagon_toGridRectangleBetween] using hsecond) :=
@@ -184,12 +196,12 @@ theorem recutRightEqLeft_toGridRectangleDecomposition
 theorem isRecut_recutRightEqLeft
     (D : GridRectangleInitialPentagonDecomposition a s x z)
     (hcommon : D.first.right = D.second.left)
-    (hother : D.first.left ≠ D.second.right)
     (hfirst : D.first.IsEmpty) (hsecond : D.pentagon.IsEmpty)
     (hturn : s ∉ Grid.cIco D.first.bottom D.first.top) :
     D.IsRecut
-      (D.recutRightEqLeft hcommon hother hfirst hsecond hturn).toGridRectangleDecomposition :=
-  D.isRecut_recut _ _ _
+      (D.recutRightEqLeft hcommon hfirst hsecond hturn).toGridRectangleDecomposition := by
+  rw [recutRightEqLeft_toGridRectangleDecomposition]
+  exact D.isRecut_recut _ _ _
 
 /-- The promoted recut of a mixed `right = left` overlap swaps the rows of the two original top
 sides. Its initial-side pentagon starts on the replaced grid line and spans the rows from the
@@ -198,16 +210,15 @@ original rectangle. -/
 theorem recutRightEqLeft_geometry
     (D : GridRectangleInitialPentagonDecomposition a s x z)
     (hcommon : D.first.right = D.second.left)
-    (hother : D.first.left ≠ D.second.right)
     (hfirst : D.first.IsEmpty) (hsecond : D.pentagon.IsEmpty)
     (hturn : s ∉ Grid.cIco D.first.bottom D.first.top) :
-    let E := D.recutRightEqLeft hcommon hother hfirst hsecond hturn
+    let E := D.recutRightEqLeft hcommon hfirst hsecond hturn
     E.middle = x.swapRows D.first.top D.second.top ∧
       E.first.left = D.second.left ∧
         E.first.bottom = D.first.top ∧ E.first.top = D.second.top ∧
           E.second.bottom = D.first.bottom ∧ E.second.top = D.first.top := by
   obtain ⟨hmiddle, hleft, hbottom, htop, hsecondBottom, hsecondTop, _⟩ :=
-    D.rightLeftRecut_geometry hcommon hother hfirst hsecond hturn
+    D.rightLeftRecut_geometry hcommon hfirst hsecond hturn
   exact ⟨hmiddle, hleft, hbottom, htop, hsecondBottom, hsecondTop⟩
 
 end TauCeti.GridRectangleInitialPentagonDecomposition
