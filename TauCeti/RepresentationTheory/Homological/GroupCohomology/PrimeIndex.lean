@@ -67,8 +67,8 @@ As in `TauCeti.RepresentationTheory.Homological.GroupCohomology.Solvable`, subgr
 through injective homomorphisms `H →* G`, so that a subgroup of a subgroup is again one, by
 composition. -/
 
-/-- The solvable case of `isZero_groupCohomology_one_of_prime_index`, by induction on the order
-`n` of a solvable group `H` mapping injectively to `G`. -/
+/-- The solvable case of `isZero_groupCohomology_one_of_prime_index`: `H¹(H, A)` vanishes for
+every solvable group `H` of order `n` mapping injectively to `G`. -/
 private theorem isZero_groupCohomology_one_res_of_isSolvable [Finite G] (A : Rep k G)
     (h1 : ∀ (H : Type u) [Group H] (f : H →* G), Function.Injective f →
       ∀ (N : Subgroup H) [N.Normal], N.index.Prime →
