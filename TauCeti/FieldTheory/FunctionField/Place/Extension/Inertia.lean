@@ -678,17 +678,24 @@ the same order. -/
 private theorem natCard_inertiaSubgroup_intermediateField :
     Nat.card (P.integers.inertiaSubgroup E) = Nat.card ↥(E.fixingSubgroup ⊓
       (P.integers.inertiaSubgroup F).map (P.integers.decompositionSubgroup F).subtype) := by
+  -- `σ ↦ σ.restrictScalars F` and `E.fixingSubgroupEquiv` both keep the underlying map of `F'`,
+  -- so the two round trips are the identity on underlying maps.
   refine Nat.card_congr
     { toFun g := ⟨((g : P.integers.decompositionSubgroup E) : F' ≃ₐ[E] F').restrictScalars F,
         (E.fixingSubgroupEquiv.symm ((g : P.integers.decompositionSubgroup E) : F' ≃ₐ[E] F')).2,
         Subgroup.mem_map_of_mem _ ((mk_restrictScalars_mem_inertiaSubgroup_iff F P E g).mpr g.2)⟩
       invFun h := ⟨⟨E.fixingSubgroupEquiv ⟨h, h.2.1⟩, ?_⟩, ?_⟩
-      left_inv g := rfl
-      right_inv h := rfl }
+      left_inv g := Subtype.ext <| Subtype.ext <| AlgEquiv.ext fun x ↦ by
+        simp only [IntermediateField.coe_fixingSubgroupEquiv_apply,
+          AlgEquiv.restrictScalars_apply]
+      right_inv h := Subtype.ext <| AlgEquiv.ext fun x ↦ by
+        simp only [AlgEquiv.restrictScalars_apply,
+          IntermediateField.coe_fixingSubgroupEquiv_apply] }
   · obtain ⟨-, ⟨g, -, hg⟩⟩ := h.2
-    rw [← restrictScalars_mem_decompositionSubgroup_iff F P E,
-      show (E.fixingSubgroupEquiv ⟨h, h.2.1⟩).restrictScalars F = h from AlgEquiv.ext fun _ ↦ rfl,
-      ← hg]
+    have hres : (E.fixingSubgroupEquiv ⟨h, h.2.1⟩).restrictScalars F = h :=
+      AlgEquiv.ext fun x ↦ by
+        rw [AlgEquiv.restrictScalars_apply, IntermediateField.coe_fixingSubgroupEquiv_apply]
+    rw [← restrictScalars_mem_decompositionSubgroup_iff F P E, hres, ← hg]
     exact g.2
   · obtain ⟨-, ⟨g, hgT, hg⟩⟩ := h.2
     rw [← mk_restrictScalars_mem_inertiaSubgroup_iff F P E]
@@ -706,12 +713,21 @@ theorem ramificationIdx_restrict_eq_relIndex :
     ramificationIdx F (P.restrict k E) = E.fixingSubgroup.relIndex
       ((P.integers.inertiaSubgroup F).map (P.integers.decompositionSubgroup F).subtype) := by
   have := isSeparable_residueField_restrict_top k F (k₁ := k) (F₁ := E) P
-  have htower := ramificationIdx_restrict_mul (k₁ := k) (F₀ := F) (F₁ := E) P
-  rw [← card_inertiaSubgroup F P, ← card_inertiaSubgroup E P,
-    ← Subgroup.card_map_of_injective (P.integers.decompositionSubgroup F).subtype_injective,
-    ← Subgroup.relIndex_mul_card E.fixingSubgroup, natCard_inertiaSubgroup_intermediateField,
-    mul_comm] at htower
-  exact (Nat.eq_of_mul_eq_mul_left Nat.card_pos htower).symm
+  set T := (P.integers.inertiaSubgroup F).map (P.integers.decompositionSubgroup F).subtype
+  -- `e(P ∣ P ∩ F) = |T|`, the inertia group over `F` viewed inside `Gal(F' / F)`.
+  have hF : ramificationIdx F P = Nat.card T := by
+    rw [← card_inertiaSubgroup F P,
+      Subgroup.card_map_of_injective (P.integers.decompositionSubgroup F).subtype_injective]
+  -- `e(P ∣ P ∩ E) = |Gal(F' / E) ⊓ T|`, the inertia group over `E`.
+  have hE : ramificationIdx E P = Nat.card ↥(E.fixingSubgroup ⊓ T) := by
+    rw [← card_inertiaSubgroup E P, natCard_inertiaSubgroup_intermediateField]
+  -- Compare `e(P ∣ P ∩ F) = e(P ∣ P ∩ E) * e(P ∩ E ∣ P ∩ F)` with
+  -- `|T| = [T : Gal(F' / E) ⊓ T] * |Gal(F' / E) ⊓ T|`.
+  have htower : E.fixingSubgroup.relIndex T * Nat.card ↥(E.fixingSubgroup ⊓ T) =
+      ramificationIdx F (P.restrict k E) * Nat.card ↥(E.fixingSubgroup ⊓ T) := by
+    rw [Subgroup.relIndex_mul_card, ← hF, ← hE,
+      ramificationIdx_restrict_mul (k₁ := k) (F₀ := F) (F₁ := E) P, mul_comm]
+  exact (Nat.eq_of_mul_eq_mul_right Nat.card_pos htower).symm
 
 end IntermediateField
 

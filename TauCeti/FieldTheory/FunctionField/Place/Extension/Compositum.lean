@@ -67,13 +67,16 @@ theorem ramificationIdx_restrict_sup_eq_lcm (E₁ E₂ : IntermediateField F F')
     ramificationIdx F (P.restrict k ↥(E₁ ⊔ E₂)) =
       (ramificationIdx F (P.restrict k E₁)).lcm (ramificationIdx F (P.restrict k E₂)) := by
   -- Read the ramification indices as indices in the inertia group `T = G₀(P)`.
-  set T := ramificationGroup F P 0
+  set T := ramificationGroup F P 0 with hT
   set V := (ramificationGroup F P 1).subgroupOf T
   set ψ : T →* (F' ≃ₐ[F] F') := (P.integers.decompositionSubgroup F).subtype.comp T.subtype
+  -- `ψ` embeds `T` into `Gal(F' / F)` as the inertia group.
+  have hψ : ψ.range =
+      (P.integers.inertiaSubgroup F).map (P.integers.decompositionSubgroup F).subtype := by
+    rw [MonoidHom.range_comp, Subgroup.range_subtype, hT, ramificationGroup_zero]
   have he (E : IntermediateField F F') :
       ramificationIdx F (P.restrict k E) = (E.fixingSubgroup.comap ψ).index := by
-    rw [ramificationIdx_restrict_eq_relIndex, Subgroup.index_comap, MonoidHom.range_comp,
-      Subgroup.range_subtype, show T = _ from ramificationGroup_zero F P]
+    rw [ramificationIdx_restrict_eq_relIndex, Subgroup.index_comap, hψ]
   rw [he, he, he, IntermediateField.fixingSubgroup_sup, Subgroup.comap_inf]
   -- A prime `p` such that `G₁(P)` is a `p`-group and `p` does not divide `e(P ∩ E₁ ∣ P ∩ F)`.
   obtain ⟨p, hp, hV, hA⟩ : ∃ p, p.Prime ∧ IsPGroup p V ∧
