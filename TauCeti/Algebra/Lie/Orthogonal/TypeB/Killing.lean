@@ -18,6 +18,9 @@ when each endomorphism in its standard action is triangularizable. In particular
 over every algebraically closed field of characteristic zero. The Killing certificate makes
 Mathlib's abstract root system available for the concrete diagonal Cartan.
 
+Triangularizability here concerns every element of the full Lie algebra in its standard action.
+Splitness of the diagonal Cartan alone does not supply this hypothesis.
+
 ## References
 
 * Mathlib's `LieAlgebra.hasCentralRadical_and_of_isIrreducible_of_isFaithful`
