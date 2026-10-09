@@ -35,10 +35,10 @@ Mathlib's `InformationTheory.klDiv_compProd_eq_add`.
 
 Disintegrating a finite measure on `α × Ω` with standard Borel `Ω` along its first marginal gives
 the form used for laws of pairs: the relative entropy of `ρ` against `σ` is that of their first
-marginals plus the averaged relative entropy of their conditional laws, and it equals the first
-term exactly when the conditional laws agree almost everywhere. In entropic optimal transport this
-is the step that reduces an entropy minimization over laws of paths, or of triples, to one over
-their endpoint couplings.
+marginals plus the averaged relative entropy of their conditional laws, and, when the first term
+is finite, it equals that term exactly when the conditional laws agree almost everywhere. In
+entropic optimal transport this is the step that reduces an entropy minimization over laws of
+paths, or of triples, to one over their endpoint couplings.
 
 Relative entropy also tensorizes: for finite `μ₁, ν₁` and probability measures `μ₂, ν₂`,
 `klDiv (μ₁.prod μ₂) (ν₁.prod ν₂) = klDiv μ₁ ν₁ + μ₁ univ * klDiv μ₂ ν₂`. This needs no hypothesis
