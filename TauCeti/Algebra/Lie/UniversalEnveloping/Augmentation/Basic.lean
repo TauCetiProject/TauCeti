@@ -227,11 +227,12 @@ end LowerCentralSeries
 
 /-- In the quotient by the augmentation square, any two canonical Lie generators have zero
 product. This holds even when the Lie algebra is nonabelian. -/
+@[simp]
 theorem quotient_ι_mul_ι (x y : L) :
     Ideal.Quotient.mk ((HopfIdeal.augmentation R U).toIdeal ^ 2)
-        (_root_.UniversalEnvelopingAlgebra.ι R x) *
+        (_root_.UniversalEnvelopingAlgebra.mkAlgHom R L (TensorAlgebra.ι R x)) *
       Ideal.Quotient.mk ((HopfIdeal.augmentation R U).toIdeal ^ 2)
-        (_root_.UniversalEnvelopingAlgebra.ι R y) = 0 := by
+        (_root_.UniversalEnvelopingAlgebra.mkAlgHom R L (TensorAlgebra.ι R y)) = 0 := by
   rw [← map_mul]
   apply Ideal.Quotient.eq_zero_iff_mem.mpr
   rw [Submodule.pow_succ, Submodule.pow_one]
