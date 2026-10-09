@@ -12,22 +12,23 @@ public import TauCeti.MeasureTheory.Measure.WithDensity
 # Relative-entropy projection onto a prescribed law
 
 Let `π` be a finite measure on `Ω`, let `f : Ω → X` be measurable and let `μ` be a finite measure
-on `X`. Among the measures `σ` on `Ω` under which `f` has law `μ`, that is `σ.map f = μ`, the one
-closest to `π` in relative entropy is obtained by reweighting `π` along the fibres of `f`:
-`π.fitLaw f μ = π.withDensity (fun ω ↦ dμ/d(f₊π) (f ω))`. When `μ ≪ π.map f`, this is the
-relative-entropy projection (Csiszár's I-projection) onto the linear family `{σ | σ.map f = μ}`.
-Without that hypothesis the law of `f` under `π.fitLaw f μ` is only the part of `μ` absolutely
-continuous with respect to `π.map f`, and the family contains no measure of finite relative
-entropy with respect to `π`. With `f` a
-coordinate projection of a product it fits one marginal of a measure on a product, which is the
-half-step of iterative proportional fitting.
+on `X`. Reweighting `π` along the fibres of `f` gives
+`π.fitLaw f μ = π.withDensity (fun ω ↦ dμ/d(f₊π) (f ω))`. When `μ ≪ π.map f`, `f` has law `μ`
+under this measure, and among the measures `σ` on `Ω` with `σ.map f = μ` it is the one closest to
+`π` in relative entropy: the relative-entropy projection (Csiszár's I-projection) onto the linear
+family `{σ | σ.map f = μ}`. Without that hypothesis the law of `f` under `π.fitLaw f μ` is only
+the part of `μ` absolutely continuous with respect to `π.map f`, and the family contains no
+measure of finite relative entropy with respect to `π`. With `f` a coordinate projection of a
+product it fits one marginal of a measure on a product, which is the half-step of iterative
+proportional fitting.
 
-The projection satisfies a Pythagorean identity: for every finite measure `σ` with
+The measure `π.fitLaw f μ` satisfies a Pythagorean identity: for every finite measure `σ` with
 `σ.map f = μ`,
 `klDiv σ π = klDiv μ (π.map f) + klDiv σ (π.fitLaw f μ)`.
-It holds in `ℝ≥0∞` with no absolute-continuity or integrability hypothesis, and contains both the
-minimality of the projection and its uniqueness as a minimiser. The first summand is the error of
-the law of `f` under `π`; the second measures how far `σ` still is from the projection.
+It holds in `ℝ≥0∞` with no absolute-continuity or integrability hypothesis, and, when
+`μ ≪ π.map f`, contains both the minimality of the projection and its uniqueness as a minimiser.
+The first summand is the error of the law of `f` under `π`; the second measures how far `σ` still
+is from `π.fitLaw f μ`.
 
 ## Main definitions
 
@@ -41,10 +42,14 @@ the law of `f` under `π`; the second measures how far `σ` still is from the pr
 * `MeasureTheory.Measure.fitLaw_eq_self`: a measure under which `f` already has law `μ` is its
   own projection.
 * `TauCeti.klDiv_eq_klDiv_map_add_klDiv_fitLaw`: the Pythagorean identity above.
-* `TauCeti.klDiv_fitLaw`: the projection lies at relative entropy `klDiv μ (π.map f)` from `π`.
-* `TauCeti.klDiv_fitLaw_le` and `TauCeti.eq_fitLaw_of_klDiv_le`: the projection minimises
-  `klDiv · π` over the measures under which `f` has law `μ`, and it is the only minimiser of
-  finite relative entropy.
+* `TauCeti.klDiv_fitLaw`: if `μ ≪ π.map f`, the projection lies at relative entropy
+  `klDiv μ (π.map f)` from `π`.
+* `TauCeti.klDiv_fitLaw_le`: `klDiv (π.fitLaw f μ) π ≤ klDiv σ π` whenever `σ.map f = μ`. When
+  `μ ≪ π.map f` the projection itself has law `μ`, so it minimises `klDiv · π` over the measures
+  under which `f` has law `μ`.
+* `TauCeti.eq_fitLaw_of_klDiv_le`: a measure under which `f` has law `μ`, of finite relative
+  entropy no larger than that of the projection, is the projection; so the projection is the only
+  minimiser of finite relative entropy.
 
 ## References
 
@@ -219,8 +224,10 @@ theorem klDiv_fitLaw [IsFiniteMeasure π] [IsFiniteMeasure μ] (hf : Measurable 
   rw [klDiv_eq_klDiv_map_add_klDiv_fitLaw hf (map_fitLaw_of_absolutelyContinuous hf hμ),
     klDiv_self, add_zero]
 
-/-- **Minimality of the relative-entropy projection.** Among the finite measures under which `f`
-has law `μ`, the projection `π.fitLaw f μ` has the least relative entropy to `π`. -/
+/-- **Minimality of the relative-entropy projection.** The relative entropy of `π.fitLaw f μ` to
+`π` is at most that of any finite measure under which `f` has law `μ`. When `μ ≪ π.map f` the
+reweighted measure has law `μ` itself (`map_fitLaw_of_absolutelyContinuous`), so it is a minimiser
+over that family; otherwise every such measure has infinite relative entropy to `π`. -/
 theorem klDiv_fitLaw_le [IsFiniteMeasure π] [IsFiniteMeasure σ] (hf : Measurable f)
     (hσ : σ.map f = μ) : klDiv (π.fitLaw f μ) π ≤ klDiv σ π := by
   have : IsFiniteMeasure μ := hσ ▸ isFiniteMeasure_map σ f
