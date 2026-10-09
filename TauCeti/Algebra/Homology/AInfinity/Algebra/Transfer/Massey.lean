@@ -18,7 +18,10 @@ minimal model.  If `x y = 0` and `y z = 0`, the cochains `u = h m₂ (i x, i y)`
 and `p` sends a cycle to its class.  So `(i x, i y, i z, u, v)` is a defining system for
 `⟨x, y, z⟩`, and the Kontsevich--Soibelman/Merkulov formula for `m₃^H` is exactly the projection of
 its Massey cycle.  Hence `m₃^H (x, y, z)` is an element of the triple Massey product, which is
-therefore the coset of `m₃^H (x, y, z)` by the indeterminacy `τx · H + H · z`.
+therefore the coset of `m₃^H (x, y, z)` by the indeterminacy `τx · H + H · z`.  For classes of
+degrees `p`, `q`, `r`, `m₃^H (x, y, z)` has degree `p + q + r - 1`, so it is the value of a
+homogeneous defining system, and May's triple Massey product is its coset by
+`x · H^{q + r - 1} + H^{p + q - 1} · z`.
 
 The element selected depends on the chosen contraction; only its coset is intrinsic.  The minimal
 model therefore refines, but does not replace, the multivalued Massey product.
@@ -29,6 +32,11 @@ model therefore refines, but does not replace, the multivalued Massey product.
   the minimal model lies in the triple Massey product.
 * `TauCeti.AInfinityAlgebra.mem_tripleMasseyProduct_iff_sub_minimalModel_m_three_mem`: the triple
   Massey product is the coset of the ternary operation of the minimal model by the indeterminacy.
+* `TauCeti.AInfinityAlgebra.exists_isHomogeneous_value_eq_minimalModel_m_three`: for homogeneous
+  classes, the ternary operation of the minimal model is the value of a homogeneous defining system.
+* `TauCeti.AInfinityAlgebra.exists_isHomogeneous_value_eq_iff_sub_minimalModel_m_three`: May's
+  triple Massey product is the coset of the ternary operation of the minimal model by the classical
+  indeterminacy.
 
 ## References
 
@@ -110,5 +118,32 @@ theorem mem_tripleMasseyProduct_iff_sub_minimalModel_m_three_mem {x y z w : 𝒜
     w ∈ 𝒜.tripleMasseyProduct x y z ↔
       w - 𝒜.minimalModel.m 3 ![x, y, z] ∈ 𝒜.tripleMasseyIndeterminacy x z :=
   mem_tripleMasseyProduct_iff_sub_mem (𝒜.minimalModel_m_three_mem_tripleMasseyProduct hxy hyz)
+
+/-- **For homogeneous classes, `m₃^H` selects an element of May's triple Massey product.**  If `x`,
+`y`, `z` have degrees `p`, `q`, `r`, with `x y = 0` and `y z = 0`, then `m₃^H (x, y, z)` is the
+value of a defining system homogeneous of degrees `p`, `q`, `r`. -/
+theorem exists_isHomogeneous_value_eq_minimalModel_m_three {x y z : 𝒜.Cohomology} {p q r : ℤ}
+    (hx : x ∈ 𝒜.cohomologyGrading.piece p) (hy : y ∈ 𝒜.cohomologyGrading.piece q)
+    (hz : z ∈ 𝒜.cohomologyGrading.piece r) (hxy : x * y = 0) (hyz : y * z = 0) :
+    ∃ S : 𝒜.TripleMasseyDefiningSystem x y z,
+      S.IsHomogeneous p q r ∧ S.value = 𝒜.minimalModel.m 3 ![x, y, z] := by
+  refine (exists_isHomogeneous_value_eq_iff hx hy hz).2
+    ⟨𝒜.minimalModel_m_three_mem_tripleMasseyProduct hxy hyz, ?_⟩
+  -- The ternary operation of the minimal model has degree `-1`.
+  rw [← minimalModel_grading] at hx hy hz ⊢
+  exact 𝒜.minimalModel.m_three_mem_piece hx hy hz
+
+/-- **May's triple Massey product is the coset of `m₃^H` by the classical indeterminacy**: for
+classes `x`, `y`, `z` of degrees `p`, `q`, `r` with `x y = 0` and `y z = 0`, `w` is the value of a
+defining system homogeneous of degrees `p`, `q`, `r` exactly when `w - m₃^H (x, y, z)` lies in
+`x · H^{q + r - 1} + H^{p + q - 1} · z`. -/
+theorem exists_isHomogeneous_value_eq_iff_sub_minimalModel_m_three {x y z w : 𝒜.Cohomology}
+    {p q r : ℤ} (hx : x ∈ 𝒜.cohomologyGrading.piece p) (hy : y ∈ 𝒜.cohomologyGrading.piece q)
+    (hz : z ∈ 𝒜.cohomologyGrading.piece r) (hxy : x * y = 0) (hyz : y * z = 0) :
+    (∃ S : 𝒜.TripleMasseyDefiningSystem x y z, S.IsHomogeneous p q r ∧ S.value = w) ↔
+      ∃ s ∈ 𝒜.cohomologyGrading.piece (q + r - 1), ∃ t ∈ 𝒜.cohomologyGrading.piece (p + q - 1),
+        x * s + t * z = w - 𝒜.minimalModel.m 3 ![x, y, z] :=
+  exists_isHomogeneous_value_eq_iff_sub_mem hx hy hz
+    (𝒜.exists_isHomogeneous_value_eq_minimalModel_m_three hx hy hz hxy hyz)
 
 end TauCeti.AInfinityAlgebra

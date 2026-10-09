@@ -439,6 +439,16 @@ theorem mul_mem_piece (𝒜 : AInfinityAlgebra R A) {p q : ℤ} {x y : A}
   have h := (𝒜.m_degree 2 two_pos).map_mem ![p, q] ![x, y] fun i ↦ by fin_cases i <;> simpa
   simpa using h
 
+/-- The ternary operation has degree `-1`. -/
+theorem m_three_mem_piece (𝒜 : AInfinityAlgebra R A) {p q r : ℤ} {x y z : A}
+    (hx : x ∈ 𝒜.grading.piece p) (hy : y ∈ 𝒜.grading.piece q) (hz : z ∈ 𝒜.grading.piece r) :
+    𝒜.m 3 ![x, y, z] ∈ 𝒜.grading.piece (p + q + r - 1) := by
+  have h := (𝒜.m_degree 3 three_pos).map_mem ![p, q, r] ![x, y, z] fun i ↦ by
+    fin_cases i <;> simpa
+  convert h using 2
+  simp [Fin.sum_univ_three]
+  ring
+
 /-- On a pure tensor word of length `n` the Taylor map evaluates the arity-`n` operation after
 twisting the `i`-th letter by the Koszul twist of parameter `n - 1 - i`; on homogeneous letters
 these twists multiply to the suspension sign `(-1) ^ suspExp n d`. -/

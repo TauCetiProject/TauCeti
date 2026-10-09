@@ -28,10 +28,16 @@ cycles.  Conversely, two defining systems are connected by changing the represen
 by cycles.  On a homogeneous class `x` the twist is a sign, so the indeterminacy is the classical
 `x · H + H · z`.
 
-For a DG algebra (`m₃ = 0`) and homogeneous classes this is May's triple Massey product up to the
-sign `(-1)^{|y|+1}`; the ternary operation corrects the cochain for the failure of `m₂` to be
-associative.  Over a field, the ternary operation of the minimal model on cohomology selects an
-element of `⟨x, y, z⟩`; that comparison lives in
+For classes of degrees `p`, `q`, `r`, May's triple Massey product only uses homogeneous defining
+systems, with `u`, `v` of degrees `p + q - 1`, `q + r - 1`.  Their values are exactly the elements
+of `⟨x, y, z⟩` of degree `p + q + r - 1`, and they form a coset of the classical indeterminacy
+`x · H^{q + r - 1} + H^{p + q - 1} · z`.  The other homogeneous components of elements of
+`⟨x, y, z⟩` come from changing `u` and `v` by cycles of other degrees, so they lie in the
+indeterminacy.  For a DG algebra (`m₃ = 0`) the values of homogeneous defining systems are May's
+triple Massey product up to the sign `(-1)^{|y|+1}`; the ternary operation corrects the cochain
+for the failure of `m₂` to be associative.  Over a field, the ternary operation of the minimal
+model on cohomology selects an element of `⟨x, y, z⟩`, on homogeneous classes the value of a
+homogeneous defining system; that comparison lives in
 `TauCeti.Algebra.Homology.AInfinity.Algebra.Transfer.Massey`.
 
 ## Main definitions
@@ -41,6 +47,8 @@ element of `⟨x, y, z⟩`; that comparison lives in
 * `TauCeti.AInfinityAlgebra.TripleMasseyDefiningSystem.value`: the class of its Massey cycle.
 * `TauCeti.AInfinityAlgebra.tripleMasseyProduct`: the triple Massey product `⟨x, y, z⟩`.
 * `TauCeti.AInfinityAlgebra.tripleMasseyIndeterminacy`: the indeterminacy `τx · H + H · z`.
+* `TauCeti.AInfinityAlgebra.TripleMasseyDefiningSystem.IsHomogeneous`: a defining system of May's
+  triple Massey product of classes of degrees `p`, `q`, `r`.
 
 ## Main results
 
@@ -54,6 +62,12 @@ element of `⟨x, y, z⟩`; that comparison lives in
   the indeterminacy.
 * `TauCeti.AInfinityAlgebra.tripleMasseyIndeterminacy_eq_of_mem_piece`: on a homogeneous class the
   indeterminacy is `x · H + H · z`.
+* `TauCeti.AInfinityAlgebra.exists_isHomogeneous_value_eq_iff`: for homogeneous classes, the values
+  of homogeneous defining systems are the elements of `⟨x, y, z⟩` of degree `p + q + r - 1`.
+* `TauCeti.AInfinityAlgebra.mem_tripleMasseyIndeterminacy_and_mem_piece_iff`: the degree-`n` part
+  of the indeterminacy is `x · H^{n - p} + H^{n - r} · z`.
+* `TauCeti.AInfinityAlgebra.exists_isHomogeneous_value_eq_iff_sub_mem`: May's triple Massey product
+  is a coset of `x · H^{q + r - 1} + H^{p + q - 1} · z`.
 
 ## References
 
@@ -444,5 +458,160 @@ theorem mem_tripleMasseyProduct_iff_sub_mem {w w' : 𝒜.Cohomology}
     w' ∈ 𝒜.tripleMasseyProduct x y z ↔ w' - w ∈ 𝒜.tripleMasseyIndeterminacy x z :=
   ⟨sub_mem_tripleMasseyIndeterminacy hw, fun h ↦ by
     simpa using add_mem_tripleMasseyProduct hw h⟩
+
+/-! ### Homogeneous defining systems
+
+For classes of degrees `p`, `q`, `r`, May's triple Massey product only uses homogeneous defining
+systems: `a`, `b`, `c` of degrees `p`, `q`, `r` and `u`, `v` of degrees `p + q - 1`, `q + r - 1`.
+Their values form the degree-`(p + q + r - 1)` part of `⟨x, y, z⟩`, which is a coset of the
+degree-`(p + q + r - 1)` part `x · H^{q + r - 1} + H^{p + q - 1} · z` of the indeterminacy.  The
+rest of `⟨x, y, z⟩` comes from changing `u` and `v` by cycles of other degrees. -/
+
+namespace TripleMasseyDefiningSystem
+
+/-- A defining system is **homogeneous of degrees `p`, `q`, `r`** when `a`, `b`, `c` have degrees
+`p`, `q`, `r` and the bounding cochains `u`, `v` have degrees `p + q - 1`, `q + r - 1`. -/
+structure IsHomogeneous (S : 𝒜.TripleMasseyDefiningSystem x y z) (p q r : ℤ) : Prop where
+  /-- The representative of `x` has degree `p`. -/
+  a_mem : S.a ∈ 𝒜.grading.piece p
+  /-- The representative of `y` has degree `q`. -/
+  b_mem : S.b ∈ 𝒜.grading.piece q
+  /-- The representative of `z` has degree `r`. -/
+  c_mem : S.c ∈ 𝒜.grading.piece r
+  /-- The cochain bounding `m₂ (a, b)` has degree `p + q - 1`. -/
+  u_mem : S.u ∈ 𝒜.grading.piece (p + q - 1)
+  /-- The cochain bounding `m₂ (b, c)` has degree `q + r - 1`. -/
+  v_mem : S.v ∈ 𝒜.grading.piece (q + r - 1)
+
+variable {S : 𝒜.TripleMasseyDefiningSystem x y z} {p q r : ℤ}
+
+/-- The Massey cycle of a defining system homogeneous of degrees `p`, `q`, `r` has degree
+`p + q + r - 1`. -/
+theorem IsHomogeneous.cycle_mem_piece (hS : S.IsHomogeneous p q r) :
+    S.cycle ∈ 𝒜.grading.piece (p + q + r - 1) := by
+  have h₁ := 𝒜.mul_mem_piece hS.u_mem hS.c_mem
+  have h₂ := 𝒜.mul_mem_piece (𝒜.grading.koszulTwist_mem_piece hS.a_mem 1) hS.v_mem
+  rw [mul_apply, show p + q - 1 + r = p + q + r - 1 by ring] at h₁
+  rw [mul_apply, show p + (q + r - 1) = p + q + r - 1 by ring] at h₂
+  exact add_mem (sub_mem h₁ h₂) (𝒜.m_three_mem_piece hS.a_mem hS.b_mem hS.c_mem)
+
+/-- The value of a defining system homogeneous of degrees `p`, `q`, `r` has degree
+`p + q + r - 1`. -/
+theorem IsHomogeneous.value_mem_piece (hS : S.IsHomogeneous p q r) :
+    S.value ∈ 𝒜.cohomologyGrading.piece (p + q + r - 1) :=
+  𝒜.cohomologyClass_mem_cohomologyGrading_piece _ hS.cycle_mem_piece
+
+end TripleMasseyDefiningSystem
+
+open _root_.DirectSum in
+/-- **May's triple Massey product is the homogeneous part of `⟨x, y, z⟩`**: for classes of degrees
+`p`, `q`, `r`, the values of the defining systems homogeneous of degrees `p`, `q`, `r` are exactly
+the elements of `⟨x, y, z⟩` of degree `p + q + r - 1`.  Given any defining system with value of
+that degree, choose homogeneous representatives and replace `u`, `v` by their components of degrees
+`p + q - 1`, `q + r - 1`; the new Massey cycle is the degree-`(p + q + r - 1)` component of the
+old one. -/
+theorem exists_isHomogeneous_value_eq_iff {p q r : ℤ} (hx : x ∈ 𝒜.cohomologyGrading.piece p)
+    (hy : y ∈ 𝒜.cohomologyGrading.piece q) (hz : z ∈ 𝒜.cohomologyGrading.piece r)
+    {w : 𝒜.Cohomology} :
+    (∃ S : 𝒜.TripleMasseyDefiningSystem x y z, S.IsHomogeneous p q r ∧ S.value = w) ↔
+      w ∈ 𝒜.tripleMasseyProduct x y z ∧ w ∈ 𝒜.cohomologyGrading.piece (p + q + r - 1) := by
+  refine ⟨fun ⟨S, hS, hw⟩ ↦ hw ▸ ⟨S.value_mem, hS.value_mem_piece⟩, ?_⟩
+  rintro ⟨⟨S, rfl⟩, hw⟩
+  -- First make the representatives homogeneous, without changing the value.
+  obtain ⟨a, ha, hap, hax⟩ := 𝒜.mem_cohomologyGrading_piece_iff.1 hx
+  obtain ⟨b, hb, hbq, hby⟩ := 𝒜.mem_cohomologyGrading_piece_iff.1 hy
+  obtain ⟨c, hc, hcr, hcz⟩ := 𝒜.mem_cohomologyGrading_piece_iff.1 hz
+  obtain ⟨T₁, ha₁, hb₁, hc₁, hv₁⟩ := S.exists_a_eq ha hax
+  obtain ⟨T₂, ha₂, hb₂, hc₂, hv₂⟩ := T₁.exists_b_eq hb hby
+  obtain ⟨T, haT, hbT, hcT, hvT⟩ := T₂.exists_c_eq hc hcz
+  rw [← hv₁, ← hv₂, ← hvT] at hw ⊢
+  replace ha₂ : T.a = a := by rw [haT, ha₂, ha₁]
+  replace hb₂ : T.b = b := by rw [hbT, hb₂]
+  -- Then keep only the components of `u` and `v` of the right degrees.
+  have hab := 𝒜.mul_mem_piece hap hbq
+  have hbc := 𝒜.mul_mem_piece hbq hcr
+  rw [mul_apply] at hab hbc
+  let T' : 𝒜.TripleMasseyDefiningSystem x y z :=
+    { T with
+      u := decompose 𝒜.grading.piece T.u (p + q - 1)
+      v := decompose 𝒜.grading.piece T.v (q + r - 1)
+      m_one_u := by
+        rw [← differential_apply, differential_decompose, sub_add_cancel, differential_apply,
+          T.m_one_u, ha₂, hb₂, decompose_of_mem_same _ hab]
+      m_one_v := by
+        rw [← differential_apply, differential_decompose, sub_add_cancel, differential_apply,
+          T.m_one_v, hb₂, hcT, decompose_of_mem_same _ hbc] }
+  have hT' : T'.IsHomogeneous p q r :=
+    ⟨ha₂ ▸ hap, hb₂ ▸ hbq, hcT ▸ hcr, SetLike.coe_mem _, SetLike.coe_mem _⟩
+  refine ⟨T', hT', ?_⟩
+  -- The new Massey cycle is the degree-`(p + q + r - 1)` component of the old one.
+  have hcycle : T'.cycle = decompose 𝒜.grading.piece T.cycle (p + q + r - 1) := by
+    have h₁ := DirectSum.map_decompose_shift 𝒜.grading.piece 𝒜.grading.piece
+      (𝒜.mul.flip T.c) (· + r) (add_left_injective r)
+      (fun _ _ h ↦ 𝒜.mul_mem_piece h (hcT ▸ hcr)) (p + q - 1) T.u
+    have h₂ := DirectSum.map_decompose_shift 𝒜.grading.piece 𝒜.grading.piece
+      (𝒜.mul (𝒜.grading.koszulTwist 1 T.a)) (p + ·) (add_right_injective p)
+      (fun _ _ h ↦ 𝒜.mul_mem_piece (𝒜.grading.koszulTwist_mem_piece (ha₂ ▸ hap) 1) h)
+      (q + r - 1) T.v
+    have h₃ := 𝒜.m_three_mem_piece (ha₂ ▸ hap) (hb₂ ▸ hbq) (hcT ▸ hcr)
+    rw [show p + q - 1 + r = p + q + r - 1 by ring] at h₁
+    rw [show p + (q + r - 1) = p + q + r - 1 by ring] at h₂
+    simp only [LinearMap.flip_apply, mul_apply] at h₁ h₂
+    rw [TripleMasseyDefiningSystem.cycle_def, TripleMasseyDefiningSystem.cycle_def,
+      decompose_add, decompose_sub, DirectSum.add_apply, DirectSum.sub_apply, Submodule.coe_add,
+      Submodule.coe_sub, ← h₁, ← h₂, decompose_of_mem_same _ h₃]
+  calc T'.value = decompose 𝒜.cohomologyGrading.piece T.value (p + q + r - 1) := by
+        rw [TripleMasseyDefiningSystem.value_def, TripleMasseyDefiningSystem.value_def,
+          decompose_cohomologyClass, cohomologyClass_eq_iff, hcycle, sub_self]
+        exact zero_mem _
+    _ = T.value := decompose_of_mem_same _ hw
+
+open _root_.DirectSum in
+/-- For classes `x`, `z` of degrees `p`, `r`, the degree-`n` part of the indeterminacy is the
+classical `x · H^{n - p} + H^{n - r} · z`. -/
+theorem mem_tripleMasseyIndeterminacy_and_mem_piece_iff {p r n : ℤ}
+    (hx : x ∈ 𝒜.cohomologyGrading.piece p) (hz : z ∈ 𝒜.cohomologyGrading.piece r)
+    {w : 𝒜.Cohomology} :
+    w ∈ 𝒜.tripleMasseyIndeterminacy x z ∧ w ∈ 𝒜.cohomologyGrading.piece n ↔
+      ∃ s ∈ 𝒜.cohomologyGrading.piece (n - p), ∃ t ∈ 𝒜.cohomologyGrading.piece (n - r),
+        x * s + t * z = w := by
+  simp only [tripleMasseyIndeterminacy_eq_of_mem_piece hx, Submodule.mem_sup,
+    LinearMap.mem_range, LinearMap.mulLeft_apply, LinearMap.mulRight_apply]
+  constructor
+  · rintro ⟨⟨_, ⟨s, rfl⟩, _, ⟨t, rfl⟩, rfl⟩, hw⟩
+    -- Take the components of `s` and `t` of degrees `n - p` and `n - r`.
+    have hs := DirectSum.map_decompose_shift 𝒜.cohomologyGrading.piece 𝒜.cohomologyGrading.piece
+      (LinearMap.mulLeft R x) (p + ·) (add_right_injective p)
+      (fun _ _ h ↦ SetLike.GradedMul.mul_mem hx h) (n - p) s
+    have ht := DirectSum.map_decompose_shift 𝒜.cohomologyGrading.piece 𝒜.cohomologyGrading.piece
+      (LinearMap.mulRight R z) (· + r) (add_left_injective r)
+      (fun _ _ h ↦ SetLike.GradedMul.mul_mem h hz) (n - r) t
+    rw [LinearMap.mulLeft_apply, LinearMap.mulLeft_apply, add_sub_cancel] at hs
+    rw [LinearMap.mulRight_apply, LinearMap.mulRight_apply, sub_add_cancel] at ht
+    refine ⟨_, (decompose 𝒜.cohomologyGrading.piece s (n - p)).2, _,
+      (decompose 𝒜.cohomologyGrading.piece t (n - r)).2, ?_⟩
+    rw [hs, ht, ← Submodule.coe_add, ← DirectSum.add_apply, ← decompose_add,
+      decompose_of_mem_same _ hw]
+  · rintro ⟨s, hs, t, ht, rfl⟩
+    refine ⟨⟨_, ⟨s, rfl⟩, _, ⟨t, rfl⟩, rfl⟩, add_mem ?_ ?_⟩
+    · simpa using SetLike.GradedMul.mul_mem hx hs
+    · simpa using SetLike.GradedMul.mul_mem ht hz
+
+/-- **May's triple Massey product is a coset of the classical indeterminacy**: for classes of
+degrees `p`, `q`, `r` and a value `w` of a homogeneous defining system, `w'` is the value of a
+homogeneous defining system exactly when `w' - w` lies in
+`x · H^{q + r - 1} + H^{p + q - 1} · z`. -/
+theorem exists_isHomogeneous_value_eq_iff_sub_mem {p q r : ℤ}
+    (hx : x ∈ 𝒜.cohomologyGrading.piece p) (hy : y ∈ 𝒜.cohomologyGrading.piece q)
+    (hz : z ∈ 𝒜.cohomologyGrading.piece r) {w w' : 𝒜.Cohomology}
+    (hw : ∃ S : 𝒜.TripleMasseyDefiningSystem x y z, S.IsHomogeneous p q r ∧ S.value = w) :
+    (∃ S : 𝒜.TripleMasseyDefiningSystem x y z, S.IsHomogeneous p q r ∧ S.value = w') ↔
+      ∃ s ∈ 𝒜.cohomologyGrading.piece (q + r - 1), ∃ t ∈ 𝒜.cohomologyGrading.piece (p + q - 1),
+        x * s + t * z = w' - w := by
+  obtain ⟨hwM, hwn⟩ := (exists_isHomogeneous_value_eq_iff hx hy hz).1 hw
+  rw [exists_isHomogeneous_value_eq_iff hx hy hz, mem_tripleMasseyProduct_iff_sub_mem hwM,
+    ← (𝒜.cohomologyGrading.piece _).sub_mem_iff_left hwn,
+    mem_tripleMasseyIndeterminacy_and_mem_piece_iff hx hz,
+    show p + q + r - 1 - p = q + r - 1 by ring, show p + q + r - 1 - r = p + q - 1 by ring]
 
 end TauCeti.AInfinityAlgebra
