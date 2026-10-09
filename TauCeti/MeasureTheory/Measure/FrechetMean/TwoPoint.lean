@@ -25,12 +25,14 @@ is `TauCeti.twoPointBarycenterTime p t`. For `0 < t < 1` this solution is unique
 endpoint weights `t = 0` and `t = 1` uniqueness needs the remaining triangle inequalities
 `a ≤ D + b` and `b ≤ D + a`, which the distances satisfy. Consequently a point at distance
 `τ D` from `x` and `(1 - τ) D` from `y` is a barycenter; once such a point exists, these
-distances characterize the barycenters; and in a geodesic space the barycenters are exactly the
-points dividing some geodesic from `x` to `y` at time `τ`. For `p = 2` the time is `t` itself,
-so the quadratic barycenter of `(1 - t) δ_x + t δ_y` sits at time `t` of a geodesic.
+distances characterize the barycenters. In a geodesic space such a point always exists, so the
+barycenters are exactly the points at distance `τ D` from `x` and `(1 - τ) D` from `y`; in
+particular the point at time `τ` of any geodesic from `x` to `y` is a barycenter. For `p = 2`
+the time is `t` itself, so the point at time `t` of any geodesic is a quadratic barycenter of
+`(1 - t) δ_x + t δ_y`.
 
-Applied to a Wasserstein space that is a geodesic space, such as `P_p(ℝ)`, this locates the
-barycenter of two laws on a Wasserstein geodesic between them.
+Applied to a Wasserstein space that is a geodesic space, such as `P_p(ℝ)`, this locates
+a barycenter of two laws on a Wasserstein geodesic between them.
 
 ## Main definitions
 
@@ -70,8 +72,8 @@ namespace TauCeti
 /-- The **barycentric time** of exponent `p` and weight `t`:
 `t ^ (1 / (p - 1)) / ((1 - t) ^ (1 / (p - 1)) + t ^ (1 / (p - 1)))`. For `1 < p` and
 `t ∈ [0, 1]`, the `p`-Fréchet barycenters of `(1 - t) δ_x + t δ_y` in a geodesic space are the
-points at this time on geodesics from `x` to `y`; see
-`TauCeti.isFrechetBarycenter_iff_dist_eq_twoPointBarycenterTime`. -/
+points at distance `τ d(x, y)` from `x` and `(1 - τ) d(x, y)` from `y`, where `τ` is this time;
+see `TauCeti.isFrechetBarycenter_iff_dist_eq_twoPointBarycenterTime`. -/
 def twoPointBarycenterTime (p t : ℝ) : ℝ :=
   t ^ (p - 1)⁻¹ / ((1 - t) ^ (p - 1)⁻¹ + t ^ (p - 1)⁻¹)
 
