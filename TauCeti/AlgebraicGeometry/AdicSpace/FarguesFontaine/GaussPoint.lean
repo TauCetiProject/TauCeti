@@ -132,6 +132,12 @@ theorem isRadiusUpperBound_gaussPoint_iff (hv : v.Integers O) (hρ : ρ < 1) (ϖ
   rw [isRadiusUpperBound_iff_of_eq_div q.den_ne_zero (NNRat.num_div_den q).symm]
   simp
 
+/-- Writing `q = a / b` in lowest terms, `x ^ (1 / q) = (x ^ b) ^ (1 / a)`: the conversion behind
+the reciprocal radius dictionary. -/
+private theorem rpow_inv_nnratCast (x : ℝ≥0) (q : ℚ≥0) :
+    x ^ ((q : ℝ)⁻¹) = (x ^ q.den) ^ ((q.num : ℝ)⁻¹) := by
+  rw [NNRat.cast_def, inv_div, div_eq_mul_inv, NNReal.rpow_mul, NNReal.rpow_natCast]
+
 /-- **The reciprocal radius dictionary, from below.** For `q ≠ 0`, the bound `q ≤ κ(η_ρ)` holds
 exactly when `v(ϖ) ^ (1 / q) ≤ ρ`. So the Gauss points with `q ≤ κ ≤ q'` are those of radius
 `ρ ∈ [v(ϖ) ^ (1 / q), v(ϖ) ^ (1 / q')]` (`isRadiusUpperBound_gaussPoint_iff_rpow`). -/
@@ -140,8 +146,8 @@ theorem isRadiusLowerBound_gaussPoint_iff_rpow (hv : v.Integers O) (hρ : ρ < 1
     IsRadiusLowerBound p ϖ q (gaussPoint p hv ρ hρ) ↔
       v (algebraMap O K ϖ) ^ ((q : ℝ)⁻¹) ≤ ρ := by
   have hnum : (0 : ℝ) < q.num := by exact_mod_cast NNRat.num_pos.mpr (pos_iff_ne_zero.mpr hq)
-  rw [isRadiusLowerBound_gaussPoint_iff, NNRat.cast_def, inv_div, div_eq_mul_inv,
-    NNReal.rpow_mul, NNReal.rpow_natCast, NNReal.rpow_inv_le_iff hnum, NNReal.rpow_natCast]
+  rw [isRadiusLowerBound_gaussPoint_iff, rpow_inv_nnratCast, NNReal.rpow_inv_le_iff hnum,
+    NNReal.rpow_natCast]
 
 /-- **The reciprocal radius dictionary, from above.** For `q ≠ 0`, the bound `κ(η_ρ) ≤ q` holds
 exactly when `ρ ≤ v(ϖ) ^ (1 / q)`. -/
@@ -150,7 +156,7 @@ theorem isRadiusUpperBound_gaussPoint_iff_rpow (hv : v.Integers O) (hρ : ρ < 1
     IsRadiusUpperBound p ϖ q (gaussPoint p hv ρ hρ) ↔
       ρ ≤ v (algebraMap O K ϖ) ^ ((q : ℝ)⁻¹) := by
   have hnum : (0 : ℝ) < q.num := by exact_mod_cast NNRat.num_pos.mpr (pos_iff_ne_zero.mpr hq)
-  rw [isRadiusUpperBound_gaussPoint_iff, NNRat.cast_def, inv_div, div_eq_mul_inv,
-    NNReal.rpow_mul, NNReal.rpow_natCast, NNReal.le_rpow_inv_iff hnum, NNReal.rpow_natCast]
+  rw [isRadiusUpperBound_gaussPoint_iff, rpow_inv_nnratCast, NNReal.le_rpow_inv_iff hnum,
+    NNReal.rpow_natCast]
 
 end TauCeti.FarguesFontaine

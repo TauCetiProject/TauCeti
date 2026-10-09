@@ -25,14 +25,15 @@ This file compares `B^I` with the Frobenius windows of `𝒴 ⊆ Spa(𝕎 O, �
 `η_{ρ₁}` and `η_{ρ₂}`: if `q ≤ κ(η_{ρᵢ})` for `i = 1, 2`, then `[ϖ] ^ b = z p ^ a` in `B^I` with
 `λ_I(z) ≤ 1`, where `q = a / b`, so every point `w` of `Spa(B^I, B^{I,+})` has
 `w([ϖ] ^ b) ≤ w(p ^ a)`, that is, `q ≤ κ(w)`; likewise for upper bounds. Hence if both Gauss
-points lie in a window `U_n` (or `V_n`), so does the whole image of `Spa(B^I, B^{I,+})`. By
+points lie in a radius band `{v ∈ 𝒴 : q ≤ κ(v) ≤ q'}`, such as a window `U_n` or `V_n`, so does
+the whole image of `Spa(B^I, B^{I,+})`. By
 `TauCeti.FarguesFontaine.isRadiusLowerBound_gaussPoint_iff_rpow` this happens exactly when
-both radii lie in `[v(ϖ) ^ (1 / q), v(ϖ) ^ (1 / q')]` for the window `q ≤ κ ≤ q'`.
+both radii lie in `[v(ϖ) ^ (1 / q), v(ϖ) ^ (1 / q')]`.
 
 Wedhorn's Lemma 8.1,
 `TauCeti.ValuationSpectrum.existsUnique_continuous_ringHom_of_forall_comap_mem_rationalSubset`,
 then turns this into the comparison map of rings: for every presentation `R(T/s)` of a rational
-subset containing the window, `𝕎 O → B^I` extends uniquely to a continuous ring homomorphism
+subset containing the band, `𝕎 O → B^I` extends uniquely to a continuous ring homomorphism
 `𝕎 O⟨T/s⟩ → B^I` out of the coordinate ring of the rational subset.
 
 ## Main results
@@ -42,11 +43,16 @@ subset containing the window, `𝕎 O → B^I` extends uniquely to a continuous 
 * `TauCeti.FarguesFontaine.isRadiusLowerBound_comap_algebraMap_intervalRing` and its upper
   analogue : a radius bound satisfied by both Gauss points `η_{ρ₁}`, `η_{ρ₂}` holds on the image of
   `Spa(B^I, B^{I,+})`.
-* `TauCeti.FarguesFontaine.comap_algebraMap_intervalRing_mem_windowU` and its `V` analogue : if
-  both Gauss points lie in a window, the image of `Spa(B^I, B^{I,+})` lies in it.
-* `TauCeti.FarguesFontaine.existsUnique_continuous_ringHom_intervalRing_of_windowU_subset` and its
-  `V` analogue : the structure map extends uniquely to a continuous ring homomorphism into `B^I`
-  from the coordinate ring `𝕎 O⟨T/s⟩` of any rational subset `R(T/s)` containing the window.
+* `TauCeti.FarguesFontaine.comap_algebraMap_intervalRing_mem_radiusBand` : if both Gauss points
+  lie in a radius band `q ≤ κ ≤ q'`, the image of `Spa(B^I, B^{I,+})` lies in it;
+  `TauCeti.FarguesFontaine.comap_algebraMap_intervalRing_mem_windowU` and its `V` analogue are
+  the cases of the windows.
+* `TauCeti.FarguesFontaine.existsUnique_continuous_ringHom_intervalRing_of_radiusBand_subset` :
+  the structure map extends uniquely to a continuous ring homomorphism into `B^I` from the
+  coordinate ring `𝕎 O⟨T/s⟩` of any rational subset `R(T/s)` containing such a band.
+* `TauCeti.FarguesFontaine.ringHomIntervalRing` : that comparison map `𝕎 O⟨T/s⟩ → B^I`, with
+  `continuous_ringHomIntervalRing`, `ringHomIntervalRing_comp_toCompletionLoc` and
+  `eq_ringHomIntervalRing`.
 
 ## References
 
@@ -141,17 +147,32 @@ variable [TopologicalSpace (WittVector p O)]
   (hI : IsAdic (Ideal.span {(p : WittVector p O), teichmuller p ϖ}))
 
 include hI in
+/-- **`Spa(B^I, B^{I,+})` lies over the radius band containing its Gauss points**: if
+`η_{ρ₁}, η_{ρ₂}` lie in the band `{v ∈ 𝒴 : q ≤ κ(v) ≤ q'}`, then pulling a point of
+`Spa(B^I, B^{I,+})` back along `𝕎 O → B^I` gives a point of that band. The windows `U_n` and `V_n`
+are such bands. -/
+theorem comap_algebraMap_intervalRing_mem_radiusBand {q q' : ℚ≥0}
+    (h₁ : gaussPoint p hv ρ₁ hρ₁.2 ∈
+      {v | v ∈ spaY p ϖ ∧ IsRadiusLowerBound p ϖ q v ∧ IsRadiusUpperBound p ϖ q' v})
+    (h₂ : gaussPoint p hv ρ₂ hρ₂.2 ∈
+      {v | v ∈ spaY p ϖ ∧ IsRadiusLowerBound p ϖ q v ∧ IsRadiusUpperBound p ϖ q' v})
+    {w : Spv B^I} (hw : w ∈ spa (powerBoundedSubring B^I)) :
+    comap (algebraMap (𝕎 O) B^I) w ∈
+      {v | v ∈ spaY p ϖ ∧ IsRadiusLowerBound p ϖ q v ∧ IsRadiusUpperBound p ϖ q' v} :=
+  ⟨comap_algebraMap_intervalRing_mem_spaY hv hϖ hϖ' hρ₁ hρ₂ hI hw,
+    isRadiusLowerBound_comap_algebraMap_intervalRing hv hϖ hϖ' hρ₁ hρ₂ h₁.2.1 h₂.2.1 hw,
+    isRadiusUpperBound_comap_algebraMap_intervalRing hv hϖ hϖ' hρ₁ hρ₂ h₁.2.2 h₂.2.2 hw⟩
+
+include hI in
 /-- **`Spa(B^I, B^{I,+})` lies over the window `U_n` containing its Gauss points**: if
 `η_{ρ₁}, η_{ρ₂} ∈ U_n`, then pulling a point of `Spa(B^I, B^{I,+})` back along `𝕎 O → B^I`
 gives a point of `U_n`. -/
 theorem comap_algebraMap_intervalRing_mem_windowU {n : ℤ}
     (h₁ : gaussPoint p hv ρ₁ hρ₁.2 ∈ windowU p ϖ n) (h₂ : gaussPoint p hv ρ₂ hρ₂.2 ∈ windowU p ϖ n)
     {w : Spv B^I} (hw : w ∈ spa (powerBoundedSubring B^I)) :
-    comap (algebraMap (𝕎 O) B^I) w ∈ windowU p ϖ n := by
-  rw [mem_windowU_iff] at h₁ h₂ ⊢
-  exact ⟨comap_algebraMap_intervalRing_mem_spaY hv hϖ hϖ' hρ₁ hρ₂ hI hw,
-    isRadiusLowerBound_comap_algebraMap_intervalRing hv hϖ hϖ' hρ₁ hρ₂ h₁.2.1 h₂.2.1 hw,
-    isRadiusUpperBound_comap_algebraMap_intervalRing hv hϖ hϖ' hρ₁ hρ₂ h₁.2.2 h₂.2.2 hw⟩
+    comap (algebraMap (𝕎 O) B^I) w ∈ windowU p ϖ n :=
+  (mem_windowU_iff _ _).mpr <| comap_algebraMap_intervalRing_mem_radiusBand hv hϖ hϖ' hρ₁ hρ₂ hI
+    ((mem_windowU_iff _ _).mp h₁) ((mem_windowU_iff _ _).mp h₂) hw
 
 include hI in
 /-- **`Spa(B^I, B^{I,+})` lies over the window `V_n` containing its Gauss points**: if
@@ -160,24 +181,27 @@ gives a point of `V_n`. -/
 theorem comap_algebraMap_intervalRing_mem_windowV {n : ℤ}
     (h₁ : gaussPoint p hv ρ₁ hρ₁.2 ∈ windowV p ϖ n) (h₂ : gaussPoint p hv ρ₂ hρ₂.2 ∈ windowV p ϖ n)
     {w : Spv B^I} (hw : w ∈ spa (powerBoundedSubring B^I)) :
-    comap (algebraMap (𝕎 O) B^I) w ∈ windowV p ϖ n := by
-  rw [mem_windowV_iff] at h₁ h₂ ⊢
-  exact ⟨comap_algebraMap_intervalRing_mem_spaY hv hϖ hϖ' hρ₁ hρ₂ hI hw,
-    isRadiusLowerBound_comap_algebraMap_intervalRing hv hϖ hϖ' hρ₁ hρ₂ h₁.2.1 h₂.2.1 hw,
-    isRadiusUpperBound_comap_algebraMap_intervalRing hv hϖ hϖ' hρ₁ hρ₂ h₁.2.2 h₂.2.2 hw⟩
+    comap (algebraMap (𝕎 O) B^I) w ∈ windowV p ϖ n :=
+  (mem_windowV_iff _ _).mpr <| comap_algebraMap_intervalRing_mem_radiusBand hv hϖ hϖ' hρ₁ hρ₂ hI
+    ((mem_windowV_iff _ _).mp h₁) ((mem_windowV_iff _ _).mp h₂) hw
 
 variable [IsTopologicalRing (WittVector p O)] (P : PairOfDefinition (WittVector p O))
   (T : Finset (WittVector p O)) (s : WittVector p O) (S : Type*) [CommRing S]
   [Algebra (WittVector p O) S] [IsLocalization.Away s S]
-  (hden : PairOfDefinition.HasDenominatorPower P T s S)
+  (hden : PairOfDefinition.HasDenominatorPower P T s S) {q q' : ℚ≥0}
+  (hW : {v | v ∈ spaY p ϖ ∧ IsRadiusLowerBound p ϖ q v ∧ IsRadiusUpperBound p ϖ q' v} ⊆
+    rationalSubset ⊤ T s)
+  (h₁ : gaussPoint p hv ρ₁ hρ₁.2 ∈
+    {v | v ∈ spaY p ϖ ∧ IsRadiusLowerBound p ϖ q v ∧ IsRadiusUpperBound p ϖ q' v})
+  (h₂ : gaussPoint p hv ρ₂ hρ₂.2 ∈
+    {v | v ∈ spaY p ϖ ∧ IsRadiusLowerBound p ϖ q v ∧ IsRadiusUpperBound p ϖ q' v})
 
-include hI in
-/-- **The coordinate ring of a rational subset containing `U_n` maps to `B^I`.** If the Gauss
-points `η_{ρ₁}, η_{ρ₂}` lie in the window `U_n` and `U_n ⊆ R(T/s)`, then `𝕎 O → B^I` extends in
-exactly one way to a continuous ring homomorphism `𝕎 O⟨T/s⟩ → B^I`. -/
-theorem existsUnique_continuous_ringHom_intervalRing_of_windowU_subset {n : ℤ}
-    (hU : windowU p ϖ n ⊆ rationalSubset ⊤ T s) (h₁ : gaussPoint p hv ρ₁ hρ₁.2 ∈ windowU p ϖ n)
-    (h₂ : gaussPoint p hv ρ₂ hρ₂.2 ∈ windowU p ϖ n) :
+include hI hW h₁ h₂ in
+/-- **The coordinate ring of a rational subset containing a radius band maps to `B^I`.** If the
+Gauss points `η_{ρ₁}, η_{ρ₂}` lie in the band `{v ∈ 𝒴 : q ≤ κ(v) ≤ q'}` and the band lies in
+`R(T/s)`, then `𝕎 O → B^I` extends in exactly one way to a continuous ring homomorphism
+`𝕎 O⟨T/s⟩ → B^I`. This applies in particular to the windows `U_n` and `V_n`. -/
+theorem existsUnique_continuous_ringHom_intervalRing_of_radiusBand_subset :
     letI := PairOfDefinition.locUniformSpace P T s S hden
     letI := PairOfDefinition.isUniformAddGroup_locUniformSpace P T s S hden
     letI := PairOfDefinition.isTopologicalRing_locUniformSpace P T s S hden
@@ -188,25 +212,56 @@ theorem existsUnique_continuous_ringHom_intervalRing_of_windowU_subset {n : ℤ}
     (powerBoundedSubring B^I)
     (Pair.powerBounded_plus (A := B^I) ▸ (Pair.powerBounded B^I).isRingOfIntegralElements)
     (continuous_algebraMap_intervalRing p hv hϖ hϖ' hρ₁ hρ₂ hI).continuousAt
-    fun _ hw ↦ hU (comap_algebraMap_intervalRing_mem_windowU hv hϖ hϖ' hρ₁ hρ₂ hI h₁ h₂ hw)
+    fun _ hw ↦ hW (comap_algebraMap_intervalRing_mem_radiusBand hv hϖ hϖ' hρ₁ hρ₂ hI h₁ h₂ hw)
 
-include hI in
-/-- **The coordinate ring of a rational subset containing `V_n` maps to `B^I`.** If the Gauss
-points `η_{ρ₁}, η_{ρ₂}` lie in the window `V_n` and `V_n ⊆ R(T/s)`, then `𝕎 O → B^I` extends in
-exactly one way to a continuous ring homomorphism `𝕎 O⟨T/s⟩ → B^I`. -/
-theorem existsUnique_continuous_ringHom_intervalRing_of_windowV_subset {n : ℤ}
-    (hV : windowV p ϖ n ⊆ rationalSubset ⊤ T s) (h₁ : gaussPoint p hv ρ₁ hρ₁.2 ∈ windowV p ϖ n)
-    (h₂ : gaussPoint p hv ρ₂ hρ₂.2 ∈ windowV p ϖ n) :
+include hI hW h₁ h₂ in
+/-- **The comparison map `𝕎 O⟨T/s⟩ → B^I`** for a rational subset `R(T/s)` containing a radius
+band `{v ∈ 𝒴 : q ≤ κ(v) ≤ q'}` (such as a window `U_n` or `V_n`) in which both Gauss points
+`η_{ρ₁}, η_{ρ₂}` lie: the continuous ring homomorphism extending `𝕎 O → B^I`, which is unique by
+`existsUnique_continuous_ringHom_intervalRing_of_radiusBand_subset`.
+
+The body is not exported: consumers use `continuous_ringHomIntervalRing`,
+`ringHomIntervalRing_comp_toCompletionLoc` and `eq_ringHomIntervalRing`. -/
+noncomputable def ringHomIntervalRing :
     letI := PairOfDefinition.locUniformSpace P T s S hden
     letI := PairOfDefinition.isUniformAddGroup_locUniformSpace P T s S hden
     letI := PairOfDefinition.isTopologicalRing_locUniformSpace P T s S hden
-    ∃! g : UniformSpace.Completion S →+* B^I,
-      Continuous g ∧ g.comp (PairOfDefinition.toCompletionLoc P T s S hden) =
-        algebraMap (𝕎 O) B^I :=
-  existsUnique_continuous_ringHom_of_forall_comap_mem_rationalSubset P ⊤ T s S hden
-    (powerBoundedSubring B^I)
-    (Pair.powerBounded_plus (A := B^I) ▸ (Pair.powerBounded B^I).isRingOfIntegralElements)
-    (continuous_algebraMap_intervalRing p hv hϖ hϖ' hρ₁ hρ₂ hI).continuousAt
-    fun _ hw ↦ hV (comap_algebraMap_intervalRing_mem_windowV hv hϖ hϖ' hρ₁ hρ₂ hI h₁ h₂ hw)
+    UniformSpace.Completion S →+* B^I :=
+  -- the map is data, so it is extracted with `Exists.choose`; `obtain` would be eliminating an
+  -- `ExistsUnique` (a `Prop`) into `Type`
+  (existsUnique_continuous_ringHom_intervalRing_of_radiusBand_subset hv hϖ hϖ' hρ₁ hρ₂ hI P T s S
+    hden hW h₁ h₂).choose
+
+/-- The comparison map `𝕎 O⟨T/s⟩ → B^I` is continuous. -/
+theorem continuous_ringHomIntervalRing :
+    letI := PairOfDefinition.locUniformSpace P T s S hden
+    letI := PairOfDefinition.isUniformAddGroup_locUniformSpace P T s S hden
+    letI := PairOfDefinition.isTopologicalRing_locUniformSpace P T s S hden
+    Continuous (ringHomIntervalRing hv hϖ hϖ' hρ₁ hρ₂ hI P T s S hden hW h₁ h₂) :=
+  (existsUnique_continuous_ringHom_intervalRing_of_radiusBand_subset hv hϖ hϖ' hρ₁ hρ₂ hI P T s S
+    hden hW h₁ h₂).choose_spec.1.1
+
+/-- The comparison map `𝕎 O⟨T/s⟩ → B^I` is compatible with the structure maps from `𝕎 O`. -/
+@[simp]
+theorem ringHomIntervalRing_comp_toCompletionLoc :
+    letI := PairOfDefinition.locUniformSpace P T s S hden
+    letI := PairOfDefinition.isUniformAddGroup_locUniformSpace P T s S hden
+    letI := PairOfDefinition.isTopologicalRing_locUniformSpace P T s S hden
+    (ringHomIntervalRing hv hϖ hϖ' hρ₁ hρ₂ hI P T s S hden hW h₁ h₂).comp
+      (PairOfDefinition.toCompletionLoc P T s S hden) = algebraMap (𝕎 O) B^I :=
+  (existsUnique_continuous_ringHom_intervalRing_of_radiusBand_subset hv hϖ hϖ' hρ₁ hρ₂ hI P T s S
+    hden hW h₁ h₂).choose_spec.1.2
+
+/-- **Uniqueness of the comparison map**: `ringHomIntervalRing` is the only continuous ring
+homomorphism `𝕎 O⟨T/s⟩ → B^I` compatible with the structure maps from `𝕎 O`. -/
+theorem eq_ringHomIntervalRing :
+    letI := PairOfDefinition.locUniformSpace P T s S hden
+    letI := PairOfDefinition.isUniformAddGroup_locUniformSpace P T s S hden
+    letI := PairOfDefinition.isTopologicalRing_locUniformSpace P T s S hden
+    ∀ g : UniformSpace.Completion S →+* B^I, Continuous g →
+      g.comp (PairOfDefinition.toCompletionLoc P T s S hden) = algebraMap (𝕎 O) B^I →
+      g = ringHomIntervalRing hv hϖ hϖ' hρ₁ hρ₂ hI P T s S hden hW h₁ h₂ :=
+  fun g hgc hge ↦ (existsUnique_continuous_ringHom_intervalRing_of_radiusBand_subset hv hϖ hϖ' hρ₁
+    hρ₂ hI P T s S hden hW h₁ h₂).choose_spec.2 g ⟨hgc, hge⟩
 
 end TauCeti.FarguesFontaine

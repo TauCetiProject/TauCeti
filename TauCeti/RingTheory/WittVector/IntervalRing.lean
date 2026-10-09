@@ -12,7 +12,6 @@ public import TauCeti.RingTheory.Huber.Completion
 public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Valuation.ExtendToLocalization
 public import TauCeti.RingTheory.WittVector.GaussValuation
-import TauCeti.RingTheory.Valuation.SpanPow
 
 /-!
 # The interval rings `B^I` of the Fargues–Fontaine curve
@@ -368,29 +367,29 @@ instance isUniform_intervalRing : IsUniform (IntervalRing p hv hϖ hϖ' hρ₁ h
     (isPowMul_norm_intervalRing p hv hϖ hϖ' hρ₁ hρ₂)
 
 /-- **The map `𝕎 O → B^I` is continuous** for the `(p, [ϖ])`-adic topology on `𝕎 O`: both Gauss
-valuations are at most `1` on `𝕎 O` and at most `c = max(ρ₁, ρ₂, v(ϖ)) < 1` at `p` and `[ϖ]`, so
-the interval norm is at most `c ^ n` on `(p, [ϖ]) ^ (n + 1)`. -/
+valuations are continuous (`isContinuous_gaussValuation`), so near `0` each `λ_{ρᵢ}` is below
+`λ_{ρᵢ}(p ^ n) = ρᵢ ^ n`, and hence the interval norm is below `max(ρ₁, ρ₂) ^ n`. -/
 theorem continuous_algebraMap_intervalRing [TopologicalSpace (𝕎 O)]
     (hI : IsAdic (Ideal.span {(p : 𝕎 O), teichmuller p ϖ})) :
     Continuous (algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)) := by
   have : IsTopologicalRing (𝕎 O) := hI ▸ (Ideal.span _).nonarchimedean.toIsTopologicalRing
-  set c : ℝ≥0 := max (max ρ₁ ρ₂) (v (algebraMap O K ϖ))
-  have hc : c < 1 := max_lt (max_lt hρ₁.2 hρ₂.2) hϖ'
-  have hle {ρ : ℝ≥0} (hρ : ρ < 1) (hρc : ρ ≤ c) {n : ℕ} {a : 𝕎 O}
-      (ha : a ∈ Ideal.span {(p : 𝕎 O), teichmuller p ϖ} ^ (n + 1)) :
-      gaussValuation p hv ρ hρ a ≤ c ^ n := by
-    refine (gaussValuation p hv ρ hρ).map_le_pow_of_mem_span_pow_succ (fun t ht ↦ ?_)
-      (fun a _ ↦ gaussValuation_le_one hv hρ a) ha
-    rcases ht with rfl | rfl
-    · simpa using hρc
-    · simp [c]
+  have hnhds {ρ : ℝ≥0} (hρ : ρ ∈ Set.Ioo 0 1) (n : ℕ) :
+      {a : 𝕎 O | gaussValuation p hv ρ hρ.2 a < ρ ^ n} ∈ nhds 0 := by
+    have h := Valuation.isContinuous_def.mp (isContinuous_gaussValuation hI hv hρ.2 hϖ')
+      ((p : 𝕎 O) ^ n)
+    rw [map_pow, gaussValuation_p] at h
+    exact h.mem_nhds (by simpa using pow_pos hρ.1 n)
   refine continuous_of_continuousAt_zero _ ?_
   rw [ContinuousAt, map_zero, Metric.nhds_basis_ball.tendsto_right_iff]
   intro ε hε
-  obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one hε (show (c : ℝ) < 1 by exact_mod_cast hc)
-  filter_upwards [(hI.isOpen_pow (n + 1)).mem_nhds (zero_mem _)] with a ha
-  rw [mem_ball_zero_iff, norm_algebraMap_intervalRing, max_lt_iff]
-  constructor <;> refine lt_of_le_of_lt ?_ hn <;> exact_mod_cast hle _ (by simp [c]) ha
+  have hc : max (ρ₁ : ℝ) ρ₂ < 1 := max_lt (mod_cast hρ₁.2) (mod_cast hρ₂.2)
+  obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one hε hc
+  filter_upwards [hnhds hρ₁ n, hnhds hρ₂ n] with a h₁ h₂
+  rw [mem_ball_zero_iff, norm_algebraMap_intervalRing]
+  have hlt {ρ x : ℝ≥0} (hρ : (ρ : ℝ) ≤ max (ρ₁ : ℝ) ρ₂) (hx : x < ρ ^ n) : (x : ℝ) < ε := by
+    have hx' : (x : ℝ) < ρ ^ n := mod_cast hx
+    exact hx'.trans_le ((pow_le_pow_left₀ ρ.2 hρ n).trans hn.le)
+  exact max_lt (hlt (le_max_left _ _) h₁) (hlt (le_max_right _ _) h₂)
 
 /-- **Division by a unit of `𝕎 O[1/(p [ϖ])]` within the unit ball.** If `y ∈ 𝕎 O` becomes a unit
 of `𝕎 O[1/(p [ϖ])]` and `λ_ρ(x) ≤ λ_ρ(y)` at both radii, then `x = z y` in `B^I` for some `z` in
