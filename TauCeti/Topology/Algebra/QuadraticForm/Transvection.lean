@@ -8,9 +8,10 @@ module
 public import TauCeti.LinearAlgebra.QuadraticForm.Transvection.Basic
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
 public import TauCeti.Topology.Algebra.QuadraticForm.Continuity
+import Mathlib.Topology.Bornology.BoundedOperation
 
 /-!
-# Continuity of Eichler transvections
+# Continuity and unboundedness of Eichler transvections
 
 For continuous families of an isotropic vector `u` and an orthogonal parameter `w`, the Eichler
 transvection `E_{u,w}` varies continuously in the canonical topology on linear automorphisms. The
@@ -21,10 +22,28 @@ For fixed `u`, this continuity descends through the quotient topology on `u⊥ /
 additive homomorphism `QuadraticMap.transvectionHom Q hu` is a continuous homomorphism into the
 special orthogonal group.
 
+Over a normed field, such as `ℝ` or `ℚ_p`, a nonzero parameter class `w` gives a one-parameter
+family `t ↦ E_{u,t w}` that leaves every compact set of linear automorphisms, since a suitable
+matrix coefficient of `E_{u,t w}` is an affine function of `t` with nonzero slope. Consequently,
+over a nontrivially normed field, the Eichler root subgroup of `u` is compact exactly when its
+parameter space `u^⊥ / K ∙ u` is trivial. For a nonzero isotropic vector of a nondegenerate form
+that parameter space has dimension `dim V - 2`, so the root subgroups are noncompact exactly in
+dimension at least three. In dimension two they are trivial, and noncompactness of an isotropic
+orthogonal group is witnessed by the split torus instead
+(`TauCeti.QuadraticMap.not_isCompact_orthogonalGroup`).
+
 ## Main results
 
 * `QuadraticMap.continuous_transvection` proves continuity for families in both parameters.
 * `QuadraticMap.continuous_transvectionHom` proves continuity of the quotient homomorphism.
+* `QuadraticMap.tendsto_transvection_smul_cocompact`: the family `t ↦ E_{u,t w}` leaves every
+  compact set of linear automorphisms when `w ∉ K ∙ u`.
+* `QuadraticMap.tendsto_transvectionHom_smul_cocompact`: the same for the root-subgroup
+  homomorphism along a nonzero parameter class.
+* `QuadraticMap.isCompact_range_transvectionHom_iff`: the root subgroup is compact exactly when its
+  parameter space is trivial.
+* `QuadraticMap.isCompact_range_transvectionHom_iff_finrank_le_two`: for a nonzero isotropic
+  vector of a nondegenerate form, the root subgroup is compact exactly when `dim V ≤ 2`.
 
 ## References
 
@@ -104,5 +123,105 @@ theorem continuous_transvectionHom {u : V} (hu : Q u = 0) :
     (fun w : LinearMap.ker (Q.polarBilin u) ↦ (w : V)) (fun _ ↦ hu) hw
     continuous_const continuous_subtype_val).congr fun w ↦
       (coe_transvectionHom_mk hu (hw w)).symm
+
+section Unbounded
+
+open Filter Bornology TauCeti.QuadraticMap
+
+section NormedField
+
+variable {K : Type u} [NormedField K] {V : Type v} [AddCommGroup V] [Module K V]
+  {Q : QuadraticForm K V} {u w : V}
+
+/-- **Eichler transvections are unbounded.** For an isotropic vector `u` outside the polar radical
+and a vector `w` orthogonal to `u` but not a multiple of it, the Eichler transvections `E_{u,t w}`
+eventually leave every compact set of linear automorphisms as `t` tends to infinity in `K`. -/
+theorem tendsto_transvection_smul_cocompact (hu : Q u = 0) (huw : polar Q u w = 0)
+    (hpolar : Q.polarBilin u ≠ 0) (hw : w ∉ K ∙ u) :
+    Tendsto (fun t : K ↦ transvection Q hu (w := t • w)
+        (by rw [polar_smul_right, huw, smul_zero]))
+      (cobounded K) (cocompact (V ≃ₗ[K] V)) := by
+  obtain ⟨x, hx⟩ : ∃ x, polar Q x u ≠ 0 := by
+    by_contra! H
+    exact hpolar (LinearMap.ext fun x ↦ by simpa [polar_comm Q u x] using H x)
+  obtain ⟨f, hfw, hfu⟩ := Submodule.exists_le_ker_of_notMem hw
+  have hfu' : f u = 0 := hfu (Submodule.mem_span_singleton_self u)
+  -- The coordinate `f (g x)` is continuous in `g` and grows linearly along the family.
+  let φ : Module.End K V →ₗ[K] K := f.comp (LinearMap.applyₗ x)
+  have hφ : Continuous fun g : V ≃ₗ[K] V ↦ φ g :=
+    (IsModuleTopology.continuous_of_linearMap φ).comp continuous_linearEquiv_toLinearMap
+  have hφE (t : K) : φ (transvection Q hu (w := t • w)
+      (by rw [polar_smul_right, huw, smul_zero]) : V ≃ₗ[K] V) =
+        f x + t * (polar Q x u * f w) := by
+    simp [φ, transvection_apply, hfu']
+    ring
+  refine (tendsto_comap_iff.mpr ?_).mono_right (comap_cocompact_le hφ)
+  refine (((tendsto_const_add_cobounded (f x)).comp
+    (tendsto_mul_right_cobounded (mul_ne_zero hx hfw))).mono_right
+    Metric.cobounded_le_cocompact).congr fun t ↦ ?_
+  simp [hφE]
+
+/-- **Eichler root subgroups are unbounded.** Along a nonzero class `q` in the parameter space
+`u^⊥ / K ∙ u` of an isotropic vector outside the polar radical, the Eichler transvections
+`t ↦ E_{u, t q}` eventually leave every compact subset of the special orthogonal group. -/
+theorem tendsto_transvectionHom_smul_cocompact (hu : Q u = 0) (hpolar : Q.polarBilin u ≠ 0)
+    {q : LinearMap.ker (Q.polarBilin u) ⧸
+      (K ∙ u).comap (LinearMap.ker (Q.polarBilin u)).subtype} (hq : q ≠ 0) :
+    Tendsto (fun t : K ↦ transvectionHom Q hu (t • q)) (cobounded K)
+      (cocompact (Additive (specialOrthogonalGroup Q))) := by
+  induction q using Submodule.Quotient.induction_on with | H w => ?_
+  obtain ⟨w, hw⟩ := w
+  have huw : polar Q u w = 0 := by simpa using hw
+  have hwu : w ∉ K ∙ u := by
+    rwa [ne_eq, Submodule.Quotient.mk_eq_zero, Submodule.mem_comap, Submodule.coe_subtype] at hq
+  let ι : Additive (specialOrthogonalGroup Q) → V ≃ₗ[K] V := fun g ↦
+    ((Additive.toMul g : specialOrthogonalGroup Q) : V ≃ₗ[K] V)
+  have hι : Continuous ι := continuous_subtype_val.comp continuous_toMul
+  refine (tendsto_comap_iff.mpr ?_).mono_right (comap_cocompact_le hι)
+  refine (tendsto_transvection_smul_cocompact hu huw hpolar hwu).congr fun t ↦ ?_
+  rw [Function.comp_apply, ← Submodule.Quotient.mk_smul]
+  exact (coe_transvectionHom_mk hu _).symm
+
+end NormedField
+
+section NontriviallyNormedField
+
+variable {K : Type u} [NontriviallyNormedField K] {V : Type v} [AddCommGroup V] [Module K V]
+  {Q : QuadraticForm K V} {u : V}
+
+/-- **Compactness of an Eichler root subgroup.** For an isotropic vector `u` outside the polar
+radical, the image of the root-subgroup homomorphism `u^⊥ / K ∙ u → SO(Q)` is compact exactly when
+the parameter space `u^⊥ / K ∙ u` is trivial. -/
+theorem isCompact_range_transvectionHom_iff (hu : Q u = 0) (hpolar : Q.polarBilin u ≠ 0) :
+    IsCompact (Set.range (transvectionHom Q hu)) ↔
+      Subsingleton (LinearMap.ker (Q.polarBilin u) ⧸
+        (K ∙ u).comap (LinearMap.ker (Q.polarBilin u)).subtype) := by
+  refine ⟨fun hcpt ↦ ?_, fun _ ↦ (Set.subsingleton_range _).isCompact⟩
+  by_contra hsub
+  have := not_subsingleton_iff_nontrivial.mp hsub
+  obtain ⟨q, hq⟩ := exists_ne (0 : LinearMap.ker (Q.polarBilin u) ⧸
+    (K ∙ u).comap (LinearMap.ker (Q.polarBilin u)).subtype)
+  obtain ⟨t, ht⟩ :=
+    ((tendsto_transvectionHom_smul_cocompact hu hpolar hq).eventually_mem
+      hcpt.compl_mem_cocompact).exists
+  exact ht ⟨t • q, rfl⟩
+
+/-- **Eichler root subgroups are noncompact from dimension three on.** For a nonzero isotropic
+vector `u` of a nondegenerate quadratic form on a finite-dimensional space, the Eichler root
+subgroup of `u` in `SO(Q)` is compact exactly when `dim V ≤ 2`, where it is trivial. -/
+theorem isCompact_range_transvectionHom_iff_finrank_le_two [FiniteDimensional K V]
+    (hQ : Q.Nondegenerate) (hu : Q u = 0) (hu₀ : u ≠ 0) :
+    IsCompact (Set.range (transvectionHom Q hu)) ↔ Module.finrank K V ≤ 2 := by
+  have hpolar : Q.polarBilin u ≠ 0 := fun h ↦ by
+    have hmem : u ∈ Q.radical := ⟨hu, h⟩
+    rw [hQ.radical_eq_bot, Submodule.mem_bot] at hmem
+    exact hu₀ hmem
+  rw [isCompact_range_transvectionHom_iff hu hpolar, ← Module.finrank_zero_iff (R := K),
+    finrank_transvectionParameter hu hpolar]
+  omega
+
+end NontriviallyNormedField
+
+end Unbounded
 
 end QuadraticMap
