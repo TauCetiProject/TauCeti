@@ -160,6 +160,14 @@ noncomputable def geckPositiveGeneratedCoordinateMap :
   CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht))
     (t.geckPositiveGeneratedDefiningIdeal ht A)
 
+/-- The positive generated coordinate map is the quotient map of its defining ideal. -/
+theorem geckPositiveGeneratedCoordinateMap_def :
+    t.geckPositiveGeneratedCoordinateMap ht A =
+      CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht))
+        (t.geckPositiveGeneratedDefiningIdeal ht A) ≫
+        eqToHom (t.geckPositiveGeneratedCoordinateHopfAlgebra_def ht A).symm := by
+  rfl
+
 /-- The positive generated quotient coordinate map is surjective. -/
 theorem geckPositiveGeneratedCoordinateMap_surjective :
     Function.Surjective (t.geckPositiveGeneratedCoordinateMap ht A).hom :=
