@@ -28,8 +28,9 @@ presentation to calculate Auslander–Reiten duality.
 * M. Auslander, I. Reiten, S. O. Smalø, *Representation Theory of Artin Algebras*,
   Cambridge University Press (1995), Section IV.2.
 
-The construction combines `homCokernelEquivExt` with the cokernel universal
-property, through `HomCokernel.equivKerRestrict`.
+For a short exact presentation, `homCokernelEquivExt` identifies the whole Hom
+cokernel with Ext¹. For a right exact presentation, `HomCokernel.equivKerRestrict`
+identifies the Hom cokernel on the syzygy with the classes satisfying the cocycle condition.
 -/
 
 public section

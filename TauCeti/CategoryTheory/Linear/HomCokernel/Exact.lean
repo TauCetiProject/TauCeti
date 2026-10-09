@@ -19,8 +19,8 @@ Thus passing from relations `X` to their image `K` imposes a cocycle condition o
 the Hom cokernel. This allows arbitrary projective presentations to compute Ext¹,
 including presentations whose relation map is not a monomorphism.
 
-The proof uses the cokernel universal property of an exact sequence, implemented
-by Mathlib's `ShortComplex.Exact.desc`.
+A morphism `X → Y` vanishing on `L` descends uniquely to `K`, as expressed by
+Mathlib's `ShortComplex.Exact.desc`.
 -/
 
 public section
