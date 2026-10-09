@@ -161,13 +161,13 @@ def coordinateSimplexBoundaryVertexHomeomorph :
       (fun y => coordinateSimplexBoundaryLift_mem_frontier y.2)).subtype_mk (fun y => y.2) }
 
 /-- The vertex homeomorphism has the ambient linear projection as its forward formula. -/
-@[simp] theorem coordinateSimplexBoundaryVertexHomeomorph_apply
+@[simp] theorem coe_coordinateSimplexBoundaryVertexHomeomorph_apply
     (x : {x : frontier (coordinateSimplex (Option ι)) | ∑ i, x.1 i < 1}) :
     (coordinateSimplexBoundaryVertexHomeomorph x : ι → ℝ) =
       coordinateSimplexBoundaryProjection x.1.1 := (rfl)
 
 /-- The inverse vertex homeomorphism has the ambient minimum-subtraction lift as its formula. -/
-@[simp] theorem coordinateSimplexBoundaryVertexHomeomorph_symm_apply
+@[simp] theorem coe_coordinateSimplexBoundaryVertexHomeomorph_symm_apply
     (y : {y : ι → ℝ | ∑ i, coordinateSimplexBoundaryLift y i < 1}) :
     ((coordinateSimplexBoundaryVertexHomeomorph.symm y).1 : Option ι → ℝ) =
       coordinateSimplexBoundaryLift y.1 := (rfl)
