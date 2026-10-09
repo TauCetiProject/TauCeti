@@ -686,7 +686,7 @@ private theorem setLAverage_preimage_closedBall_le [Nonempty ι] [CompleteSpace 
 /-- The Euclidean ball `B(x₀, r)` lies in the cube of half-side `r` centred at `x₀`, whose measure
 is at most `√nⁿ` times that of the ball. -/
 private theorem measure_preimage_closedBall_le [Nonempty ι] {μ : Measure (EuclideanSpace ℝ ι)}
-    [μ.IsAddHaarMeasure] {a : ℝ≥0∞} (he : μ.map (MeasurableEquiv.toLp 2 (ι → ℝ)).symm = a • volume)
+    {a : ℝ≥0∞} (he : μ.map (MeasurableEquiv.toLp 2 (ι → ℝ)).symm = a • volume)
     (x₀ : EuclideanSpace ℝ ι) {r : ℝ} (hr : 0 < r) :
     μ (ofLp ⁻¹' closedBall (ofLp x₀) r) ≤
       ENNReal.ofReal (√(Fintype.card ι) ^ Fintype.card ι) * μ (ball x₀ r) := by
