@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.UniversalCoefficient.Naturality
-public import TauCeti.Algebra.Homology.UniversalCoefficient.PID
+public import TauCeti.Algebra.Homology.Projective.PID
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 
@@ -31,7 +31,7 @@ modules over a principal ideal domain are projective, so the cycles of `C(X; R)`
 and split off (`HomologicalComplex.isSplitMono_iCycles`).
 
 The splitting `TopCat.singularUniversalCoefficientEquiv` of the sequence depends on a choice of
-retraction of the cycles onto the chains. It is not natural in `X`.
+retraction of the chains onto the cycles. It is not natural in `X`.
 
 ## Main declarations
 
@@ -123,11 +123,11 @@ lemma singularExtToCohomology_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (n : �
 
 variable (k) in
 /-- **The splitting of the universal coefficient sequence** of singular cohomology: a `k`-linear
-equivalence `Hⁿ⁺¹(X; R, M) ≃ₗ[k] Ext¹(Hₙ(X; R), M) × Hom(Hₙ₊₁(X; R), M)` whose first component
-restricts to `TopCat.singularExtToCohomology` (`TopCat.singularUniversalCoefficientEquiv_symm_inl`)
-and whose second component is the Kronecker map
-(`TopCat.singularUniversalCoefficientEquiv_apply_snd`). It is built from a chosen retraction of
-the cycles onto the chains, through `TauCeti.ChainComplex.kroneckerSection`, and is not natural
+equivalence `Hⁿ⁺¹(X; R, M) ≃ₗ[k] Ext¹(Hₙ(X; R), M) × Hom(Hₙ₊₁(X; R), M)` whose second
+component is the Kronecker map (`TopCat.singularUniversalCoefficientEquiv_apply_snd`) and whose
+inverse restricts to `TopCat.singularExtToCohomology` on the first factor
+(`TopCat.singularUniversalCoefficientEquiv_symm_inl`). It is built from a chosen retraction of
+the chains onto the cycles, through `TauCeti.ChainComplex.kroneckerSection`, and is not natural
 in `X`. -/
 def singularUniversalCoefficientEquiv (X : TopCat.{w}) (n : ℕ) :
     X.singularCohomology R k M (n + 1) ≃ₗ[k]
@@ -145,8 +145,8 @@ def singularUniversalCoefficientEquiv (X : TopCat.{w}) (n : ℕ) :
             (X := (toSSet.obj X).chainComplex R) (n + 1) g
         exact h⟩).1
 
-/-- The splitting `TopCat.singularUniversalCoefficientEquiv` restricts to the inclusion of the
-`Ext` term on the first factor. -/
+/-- The inverse of the splitting `TopCat.singularUniversalCoefficientEquiv` restricts to the
+inclusion `TopCat.singularExtToCohomology` of the `Ext` term on the first factor. -/
 @[simp]
 lemma singularUniversalCoefficientEquiv_symm_inl (X : TopCat.{w}) (n : ℕ)
     (e : Ext.{t} (((singularHomologyFunctor _ n).obj R).obj X) M 1) :
