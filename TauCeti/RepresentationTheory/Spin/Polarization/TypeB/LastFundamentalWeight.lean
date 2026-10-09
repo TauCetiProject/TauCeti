@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Basic
+public import TauCeti.Algebra.Lie.HighestWeight.Basis
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Basis
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Killing
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.CartanWeights
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.KostantLattice
 
@@ -27,9 +28,10 @@ facts that identify that vector:
   generate;
 * its coroot weight is `Pi.single (Fin.last n) 1`, that last fundamental weight.
 
-These are the generator-level inputs for a highest-weight identification, namely the
-identification `S ≅ L(ωₗ)` of the type-`B` spin module with the irreducible highest-weight module
-at the last fundamental weight.
+The standard type-`B` Lie basis identifies these conditions with the canonical highest-weight
+predicate for its compatible Borel. Thus the all-coordinate spinor is a highest-weight vector of
+weight `ωₗ`; the resulting identification `S ≅ L(ωₗ)` is packaged in
+`TauCeti/RepresentationTheory/Spin/Polarization/TypeB/Fundamental.lean`.
 
 The last section reads the weights against the standard Lie algebra basis
 `TauCeti.typeBLieBasis`, whose raising generators are the positive simple-root generators above.
@@ -37,9 +39,9 @@ In the basis of fundamental weights `ωᵢ`, dual to its simple coroots, the wei
 `s` has the integral coordinates `typeBSpinCorootWeight s`; in particular the all-coordinate weight
 is exactly the dual basis vector `ωₗ` at the terminal short node, the abstract last fundamental
 weight of the basis. These are the hypotheses of the Lie-basis characterization
-`LieAlgebra.Basis.isHighestWeightVector_iff_forall_e` of highest-weight vectors, which applies
-over a field of characteristic zero once the Killing form of the split type-`B` Lie algebra is
-known to be nondegenerate; that nondegeneracy is not proved here.
+`LieAlgebra.Basis.isHighestWeightVector_iff_forall_e` of highest-weight vectors. In characteristic
+zero, `TauCeti.isKilling_typeB` supplies the required nondegenerate Killing form whenever the
+standard module is triangularizable, in particular over an algebraically closed field.
 
 The annihilation is read off the two ways a simple-root generator acts on the exterior basis. The
 terminal short generator creates the last coordinate (after the grade involution, and scaled by
@@ -76,6 +78,9 @@ enveloping-algebra weight-vector statement is over `ℚ`, where
   `TauCeti.SpinPolarizationData.typeBWeightEquiv_spinWeight_univ` its all-coordinate case `ωₗ`.
 * `TauCeti.SpinPolarizationData.typeBSpinLieRep_apply_cartan_exteriorBasis_univ`: the diagonal
   Cartan acts on the all-coordinate vector through that fundamental weight.
+* `TauCeti.SpinPolarizationData.isHighestWeightVector_typeBSpinLieRep_exteriorBasis_univ`: the
+  all-coordinate vector is a highest-weight vector for the compatible Borel and abstract
+  type-`B` root datum.
 
 ## References
 
@@ -275,6 +280,55 @@ theorem typeBSpinLieRep_apply_cartan_exteriorBasis_univ (A : typeBDiagonalCartan
   rw [P.typeBSpinLieRep_apply_cartan_exteriorBasis, typeBWeightEquiv_spinWeight_univ]
 
 end Field
+
+/-! ## The highest-weight vector -/
+
+section HighestWeight
+
+variable {K : Type u} [Field K] [CharZero K]
+  {V : Type v} [AddCommGroup V] [Module K V]
+  {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
+  {n : ℕ} (b : Module.Basis (Fin (n + 1)) K P.W)
+  (z : P.line) (hz : Q (z : V) = 1) [Invertible (2 : K)]
+  [LieModule.IsTriangularizable K
+    (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K)
+    (Unit ⊕ Fin (n + 1) ⊕ Fin (n + 1) → K)]
+
+/-- **The all-coordinate spinor is a highest-weight vector of last fundamental weight.**
+The base and Borel are those of `typeBLieBasis`; its Cartan basis consists of the simple
+coroots, so the displayed dual basis vector is the abstract fundamental weight at the terminal
+short node. -/
+theorem isHighestWeightVector_typeBSpinLieRep_exteriorBasis_univ :
+    letI := isKilling_typeB (K := K) (ι := Fin (n + 1))
+    letI := (typeBLieBasis (K := K) n).isCartanSubalgebra
+    letI := (typeBLieBasis (K := K) n).isTriangularizable
+    letI : LieRingModule (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K)
+        (ExteriorAlgebra K P.W) :=
+      LieRingModule.compLieHom _ (P.typeBSpinLieRep b z hz)
+    letI : LieModule K (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K)
+        (ExteriorAlgebra K P.W) :=
+      LieModule.compLieHom _ (P.typeBSpinLieRep b z hz)
+    IsHighestWeightVector (typeBLieBasis (K := K) n).base
+      ((typeBLieBasis (K := K) n).cartanBasis.dualBasis (Fin.last n))
+      (b.ExteriorAlgebra (Finset.univ : Finset (Fin (n + 1)))) := by
+  let _ := isKilling_typeB (K := K) (ι := Fin (n + 1))
+  let _ := (typeBLieBasis (K := K) n).isCartanSubalgebra
+  let _ := (typeBLieBasis (K := K) n).isTriangularizable
+  let _ : LieRingModule (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K)
+      (ExteriorAlgebra K P.W) :=
+    LieRingModule.compLieHom _ (P.typeBSpinLieRep b z hz)
+  let _ : LieModule K (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K)
+      (ExteriorAlgebra K P.W) :=
+    LieModule.compLieHom _ (P.typeBSpinLieRep b z hz)
+  rw [(typeBLieBasis (K := K) n).isHighestWeightVector_iff_forall_e]
+  refine ⟨(b.ExteriorAlgebra).ne_zero _, ?_, ?_⟩
+  · exact P.typeBSpinLieRep_apply_cartan_exteriorBasis_univ b z hz
+  · intro i
+    simpa only [typeBLieBasis_e, LieRingModule.compLieHom_apply, Module.End.lie_apply] using
+      P.typeBSpinLieRep_simpleRootGenerator_exteriorBasis_eq_zero_of_mem b z hz
+        (Finset.mem_univ i)
+
+end HighestWeight
 
 end SpinPolarizationData
 
