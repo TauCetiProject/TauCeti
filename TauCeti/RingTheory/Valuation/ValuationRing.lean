@@ -29,8 +29,8 @@ the base descend to the base itself.
 
 * `TauCeti.ValuationRing.isSquare_one_add_four_mul_iff`: `1 + 4c` is a square if and only if
   `c = t ^ 2 + t` for some `t`.
-* `TauCeti.ValuationRing.isInteger_of_isInteger_algebraMap`: an element of `K` that becomes
-  integral over a ring dominating `R` is integral over `R`.
+* `TauCeti.ValuationRing.isInteger_of_isInteger_algebraMap`: an element of `K` whose image in `L`
+  lies in a ring `S` dominating `R` already lies in `R`.
 
 ## References
 
@@ -93,8 +93,7 @@ theorem isInteger_of_isInteger_algebraMap (hS : Function.Injective (algebraMap S
       rw [map_mul, map_one, hs, ← RingHom.comp_apply, h, RingHom.comp_apply, hr, ← map_mul,
         inv_mul_cancel₀ hx0, map_one]
   refine ⟨↑hr'.unit⁻¹, ?_⟩
-  rw [← inv_inv x, ← hr]
-  exact eq_inv_of_mul_eq_one_left (by rw [← map_mul, IsUnit.val_inv_mul, map_one])
+  rw [← inv_inv x, ← hr, map_units_inv, IsUnit.unit_spec]
 
 end Domination
 

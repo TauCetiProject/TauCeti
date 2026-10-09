@@ -61,13 +61,15 @@ never has potential good reduction.
 
 public section
 
-universe u
+universe u v
 
 namespace WeierstrassCurve
 
 open IsDiscreteValuationRing IsDedekindDomain.HeightOneSpectrum
 
-variable (R : Type u) [CommRing R] {K : Type u} [Field K] [Algebra R K]
+section
+
+variable (R : Type v) [CommRing R] {K : Type u} [Field K] [Algebra R K]
 
 /-- **Potential good reduction**: after some finite extension `L` of `K`, at some discrete
 valuation ring `S` with fraction field `L` dominating `R`, a minimal equation of `W` has good
@@ -123,13 +125,6 @@ theorem hasPotentialGoodReduction_smul (D : VariableChange K) (W : WeierstrassCu
 
 variable [IsDomain R] [IsDiscreteValuationRing R] [IsFractionRing R K]
 
-/-- **Good reduction is potentially good**, taking the trivial extension `L = K`, `S = R`. -/
-theorem HasGoodReduction.hasPotentialGoodReduction {W : WeierstrassCurve K}
-    (h : W.HasGoodReduction R) : W.HasPotentialGoodReduction R := by
-  refine .intro R K R (by ext; simp) ?_
-  rw [baseChange, Algebra.algebraMap_self, map_id]
-  exact h.hasGoodReduction_minimal R
-
 /-! ### The `j`-invariant -/
 
 /-- **A minimal equation with good reduction has integral `j`-invariant**: its `c₄` is integral
@@ -146,8 +141,7 @@ theorem HasGoodReduction.isInteger_j {W : WeierstrassCurve K} [W.IsElliptic]
       ((valuation_lt_one_iff_mem (K := K) (maximalIdeal R) _).mpr hmem).ne hv
   refine ⟨(W.integralModel R).c₄ ^ 3 * ↑hΔ.unit⁻¹, ?_⟩
   rw [j_eq, mul_comm, map_mul, map_pow, integralModel_c₄_eq, ← integralModel_Δ_eq R W]
-  congr 1
-  exact eq_inv_of_mul_eq_one_left (by rw [← map_mul, IsUnit.val_inv_mul, map_one])
+  rw [map_units_inv, IsUnit.unit_spec]
 
 /-- **A curve with potential good reduction has integral `j`-invariant** (Silverman VII.5.5,
 the necessary direction): `j` lies in the image of `R`. -/
@@ -158,7 +152,7 @@ theorem HasPotentialGoodReduction.isInteger_j {W : WeierstrassCurve K} [W.IsElli
     hRS ?_
   -- over `S`, the chosen minimal equation has good reduction and the same `j`-invariant
   obtain ⟨C, hC⟩ := (W.baseChange L).exists_smul_eq_minimal S
-  have : (W.baseChange L).IsElliptic := inferInstanceAs (W.map _).IsElliptic
+  have : (W.baseChange L).IsElliptic := by rw [baseChange]; infer_instance
   have : ((W.baseChange L).minimal S).IsElliptic := hC ▸ inferInstance
   have hj (W' : WeierstrassCurve L) [W'.IsElliptic] (hW' : C • W.baseChange L = W') :
       W'.j = algebraMap K L W.j := by
@@ -182,6 +176,19 @@ theorem HasMultiplicativeReduction.not_isInteger_j {W : WeierstrassCurve K} [W.I
 theorem HasMultiplicativeReduction.not_hasPotentialGoodReduction {W : WeierstrassCurve K}
     [W.IsElliptic] (h : W.HasMultiplicativeReduction R) : ¬ W.HasPotentialGoodReduction R :=
   fun hW ↦ h.not_isInteger_j R hW.isInteger_j
+
+end
+
+variable (R : Type u) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R] {K : Type u} [Field K]
+  [Algebra R K] [IsFractionRing R K]
+
+/-- **Good reduction is potentially good**, taking the trivial extension `L = K`, `S = R`. Here `R`
+lives in the universe of `K`, since `HasPotentialGoodReduction` takes `S` there. -/
+theorem HasGoodReduction.hasPotentialGoodReduction {W : WeierstrassCurve K}
+    (h : W.HasGoodReduction R) : W.HasPotentialGoodReduction R := by
+  refine .intro R K R (by ext; simp) ?_
+  rw [baseChange, Algebra.algebraMap_self, map_id]
+  exact h.hasGoodReduction_minimal R
 
 end WeierstrassCurve
 
