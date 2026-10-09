@@ -46,6 +46,9 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
   symmetric operator, every vector of that basis has a nonzero eigenvalue.
 * `ContinuousLinearMap.hasSum_smul_repr_of_apply_eq_smul`: an operator diagonal in a Hilbert
   basis is the sum of its eigencomponents, the spectral expansion such a basis is for.
+* `LinearMap.IsSymmetric.inner_sub_apply_of_apply_eq_smul_of_apply_eq_smul`: the cross term of
+  the difference of two operators on eigenvectors is the eigenvalue difference times their inner
+  product.
 * `LinearMap.IsSymmetric.eigenvectorSpan`: the span of the eigenvectors of the ordered
   eigenbasis whose indices lie in a specified set.
 * `LinearMap.IsSymmetric.negativeSpectralSubspace` and
@@ -57,6 +60,13 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
 H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*,
 Theorem 6.11 (the Hilbert--Schmidt spectral decomposition); L. C. Evans, *Partial Differential
 Equations*, Appendix D.6.
+
+The eigenvector cross-term identity
+`LinearMap.IsSymmetric.inner_sub_apply_of_apply_eq_smul_of_apply_eq_smul` is adapted from the
+corresponding eigenvector identity of the
+[AIQ-Kitware DKPS formalization](https://github.com/AIQ-Kitware/aiq-dkps-formalization)
+(Kitware, Inc.; Apache-2.0), generalized here to `RCLike` scalars and a non-symmetric second
+operator.
 -/
 
 public section
@@ -165,6 +175,27 @@ theorem hasSum_smul_repr_of_apply_eq_smul (T : E →L[𝕜] E) {iota : Type*}
 end ContinuousLinearMap
 
 namespace LinearMap.IsSymmetric
+
+/-! ### Eigenvector identities -/
+
+/-- The cross term of an operator difference on eigenvectors is the eigenvalue difference times
+their inner product.
+
+Only the operator acting on the first eigenvector needs to be symmetric, and the eigenvalues may
+be arbitrary scalars: the eigenvalue of a symmetric operator at a nonzero eigenvector is real.
+In particular, this applies when both operators are symmetric, as in eigenvalue perturbation
+arguments. -/
+theorem inner_sub_apply_of_apply_eq_smul_of_apply_eq_smul {T S : E →ₗ[𝕜] E}
+    (hT : T.IsSymmetric) {x y : E} {lam mu : 𝕜} (hx : T x = lam • x) (hy : S y = mu • y) :
+    ⟪x, (S - T) y⟫_𝕜 = (mu - lam) * ⟪x, y⟫_𝕜 := by
+  rcases eq_or_ne x 0 with rfl | hx0
+  · simp
+  have hlam : starRingEnd 𝕜 lam = lam :=
+    hT.conj_eigenvalue_eq_self (hasEigenvalue_of_hasEigenvector ⟨mem_eigenspace_iff.mpr hx, hx0⟩)
+  calc ⟪x, (S - T) y⟫_𝕜 = ⟪x, S y⟫_𝕜 - ⟪T x, y⟫_𝕜 := by
+        rw [LinearMap.sub_apply, inner_sub_right, hT x y]
+    _ = (mu - lam) * ⟪x, y⟫_𝕜 := by
+        rw [hx, hy, inner_smul_right, inner_smul_left, hlam, sub_mul]
 
 variable {n : ℕ} [FiniteDimensional 𝕜 E] {T : E →ₗ[𝕜] E}
 
