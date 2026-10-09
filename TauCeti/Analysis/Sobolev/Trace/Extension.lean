@@ -236,6 +236,25 @@ private theorem coe_extendByReflectionL (a : ℝ)
         (normalHalfSpace a) p) :=
   rfl
 
+/-- Functions that agree almost everywhere on the half-space have extensions by zero that agree
+almost everywhere, both directly and after precomposition with the reflection. -/
+private theorem ae_indicator_eq_and_comp_normalReflection (a : ℝ) {F : Type*} [Zero F]
+    {f g : WithLp 2 (ℝ × E) → F}
+    (h : f =ᵐ[volume.restrict (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E)))] g) :
+    ∀ᵐ x ∂volume,
+      (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator f x =
+          (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator g x ∧
+        (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator f
+            (normalReflection E a x) =
+          (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator g
+            (normalReflection E a x) := by
+  have hI := (ae_eq_restrict_iff_indicator_ae_eq
+    (normalHalfSpace (E := E) a).isOpen.measurableSet).1 h
+  filter_upwards [hI,
+    (measurePreserving_normalReflection (E := E) a).quasiMeasurePreserving.ae_eq_comp hI]
+    with x h1 h2
+  exact ⟨h1, h2⟩
+
 /-- The value of the reflection extension is `u` on the half-space and `u ∘ ρ` on the other side,
 almost everywhere. -/
 theorem W1p.value_extendByReflectionL_ae (a : ℝ)
@@ -244,24 +263,14 @@ theorem W1p.value_extendByReflectionL_ae (a : ℝ)
       (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator (W1p.value u) x +
         (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator (W1p.value u)
           (normalReflection E a x) := by
-  have hH : MeasurableSet (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) :=
-    (normalHalfSpace (E := E) a).isOpen.measurableSet
   have h1 := W1p.value_apply_ae (W1p.extendByReflectionL a u)
   rw [ae_restrict_top] at h1
-  have h3 := (ae_restrict_iff' hH).1 (W1p.value_apply_ae u)
   filter_upwards [h1, coeFn_extendJetL a (u : Sobolev1JetLp (volume : Measure
-    (WithLp 2 (ℝ × E))) (normalHalfSpace a) p), h3,
-    (measurePreserving_normalReflection (E := E) a).quasiMeasurePreserving.ae h3]
-    with x h1 h2 h3 h3ρ
+    (WithLp 2 (ℝ × E))) (normalHalfSpace a) p),
+    ae_indicator_eq_and_comp_normalReflection a (W1p.value_apply_ae u)]
+    with x h1 h2 ⟨h3, h3ρ⟩
   rw [h1, coe_extendByReflectionL, h2, WithLp.add_fst, jetFlip_fst, indicator_apply_fst,
-    indicator_apply_fst]
-  congr 1
-  · by_cases hx : x ∈ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E)))
-    · rw [indicator_of_mem hx, indicator_of_mem hx, h3 hx]
-    · rw [indicator_of_notMem hx, indicator_of_notMem hx]
-  · by_cases hx : normalReflection E a x ∈ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E)))
-    · rw [indicator_of_mem hx, indicator_of_mem hx, h3ρ hx]
-    · rw [indicator_of_notMem hx, indicator_of_notMem hx]
+    indicator_apply_fst, ← h3, ← h3ρ]
 
 /-- The weak gradient of the reflection extension is `∇u` on the half-space and the reflected
 gradient `R (∇u ∘ ρ)` on the other side, almost everywhere, where `R` negates the normal
@@ -272,24 +281,14 @@ theorem W1p.gradient_extendByReflectionL_ae (a : ℝ)
       (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator (W1p.gradient u) x +
         normalLinearReflection E ((normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator
           (W1p.gradient u) (normalReflection E a x)) := by
-  have hH : MeasurableSet (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) :=
-    (normalHalfSpace (E := E) a).isOpen.measurableSet
   have h1 := W1p.gradient_apply_ae (W1p.extendByReflectionL a u)
   rw [ae_restrict_top] at h1
-  have h3 := (ae_restrict_iff' hH).1 (W1p.gradient_apply_ae u)
   filter_upwards [h1, coeFn_extendJetL a (u : Sobolev1JetLp (volume : Measure
-    (WithLp 2 (ℝ × E))) (normalHalfSpace a) p), h3,
-    (measurePreserving_normalReflection (E := E) a).quasiMeasurePreserving.ae h3]
-    with x h1 h2 h3 h3ρ
+    (WithLp 2 (ℝ × E))) (normalHalfSpace a) p),
+    ae_indicator_eq_and_comp_normalReflection a (W1p.gradient_apply_ae u)]
+    with x h1 h2 ⟨h3, h3ρ⟩
   rw [h1, coe_extendByReflectionL, h2, WithLp.add_snd, jetFlip_snd, indicator_apply_snd,
-    indicator_apply_snd]
-  congr 1
-  · by_cases hx : x ∈ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E)))
-    · rw [indicator_of_mem hx, indicator_of_mem hx, h3 hx]
-    · rw [indicator_of_notMem hx, indicator_of_notMem hx]
-  · by_cases hx : normalReflection E a x ∈ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E)))
-    · rw [indicator_of_mem hx, indicator_of_mem hx, h3ρ hx]
-    · rw [indicator_of_notMem hx, indicator_of_notMem hx]
+    indicator_apply_snd, ← h3, ← h3ρ]
 
 /-- Restricting the reflection extension back to the half-space recovers the original function. -/
 theorem W1p.restrictL_extendByReflectionL (a : ℝ)

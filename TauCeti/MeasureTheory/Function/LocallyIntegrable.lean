@@ -36,9 +36,6 @@ compactness nor closedness of `K` carries any measurability with it. (Absent a s
   compact open subdomains.
 * `MeasureTheory.LocallyIntegrableOn.integrable_indicator_of_isCompact`: integrability of the
   extension by zero of a locally integrable function supported in a null-measurable compact subset.
-* `ContinuousLinearMap.locallyIntegrable_comp`: composing with a continuous (semi)linear map
-  preserves local integrability, the local form of Mathlib's
-  `ContinuousLinearMap.integrable_comp`.
 
 ## Attribution
 
@@ -137,21 +134,3 @@ theorem integrable_indicator_of_isCompact (hloc : LocallyIntegrableOn f s μ)
 end ExtendByZero
 
 end MeasureTheory.LocallyIntegrableOn
-
-section ContinuousLinearMap
-
-open MeasureTheory
-
-variable {X E H : Type*} [MeasurableSpace X] [TopologicalSpace X] {μ : Measure X}
-  [NormedAddCommGroup E] [NormedAddCommGroup H]
-  {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
-  [NormedSpace 𝕜' E] [NormedSpace 𝕜 H] {σ : 𝕜 →+* 𝕜'} [RingHomIsometric σ]
-
-/-- Composing a locally integrable function with a continuous (semi)linear map gives a locally
-integrable function. -/
-theorem ContinuousLinearMap.locallyIntegrable_comp (L : H →SL[σ] E) {φ : X → H}
-    (hφ : LocallyIntegrable φ μ) : LocallyIntegrable (fun x => L (φ x)) μ := fun x => by
-  obtain ⟨s, hs, h⟩ := hφ x
-  exact ⟨s, hs, L.integrable_comp h⟩
-
-end ContinuousLinearMap
