@@ -18,7 +18,7 @@ import TauCeti.FieldTheory.FunctionField.Divisor.RatFunc
 import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 -- Proof-only: every place of `k(x)` has a place of `F` above it.
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
--- Proof-only: a ramified extension of prime degree has no new constants.
+-- Proof-only: a totally ramified finite separable extension has no new constants.
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Unramified
 -- Proof-only: the degree of a radical extension from the order of the radicand.
 import TauCeti.FieldTheory.Kummer.Extension
@@ -49,9 +49,9 @@ index two, so `Con B = 2 · Diff(F / k(x))`, and the conorm multiplies degrees b
 Hence `deg Diff(F / k(x)) = deg B`, and `deg B = m + (m mod 2)` because the zeros of `f` have
 total degree `m` by the product formula.
 
-Exactness of the constants comes from the ramification as well: an extension of prime degree in
-which some place ramifies is not a constant field extension, so it acquires no new constants
-(`TauCeti.isIntegrallyClosedIn_of_finrank_prime_of_ramificationIdx_ne_one`).
+Exactness of the constants comes from the ramification as well: a finite separable extension with
+a totally ramified place acquires no new constants
+(`TauCeti.isIntegrallyClosedIn_of_isTotallyRamified`).
 
 ## Main results
 
@@ -246,10 +246,9 @@ theorem isIntegrallyClosedIn_of_sq_eq (h2 : (2 : k) ≠ 0) {f : k[X]} (hf : Squa
     IsIntegrallyClosedIn k F := by
   obtain ⟨_, _⟩ := finiteDimensional_and_isSeparable h2 hf hdeg hgen hy
   obtain ⟨P', hP'⟩ := exists_ramificationIdx_eq_two h2 hf hdeg hgen hy
-  refine isIntegrallyClosedIn_of_finrank_prime_of_ramificationIdx_ne_one inferInstance ?_
-    (P' := P') (hP'.trans_ne (by norm_num))
-  rw [finrank_ratFunc_eq_two_of_sq_eq hf hdeg hgen hy]
-  exact Nat.prime_two
+  refine isIntegrallyClosedIn_of_isTotallyRamified (F := RatFunc k) (F' := F) inferInstance
+    (P' := P') ?_
+  rw [Place.isTotallyRamified_iff, hP', finrank_ratFunc_eq_two_of_sq_eq hf hdeg hgen hy]
 
 /-- **The genus of `y ^ 2 = f(x)`** (Stichtenoth, Example 3.7.6 and Proposition 6.2.3): away from
 characteristic two, if `F = k(x, y)` with `y ^ 2 = f(x)` for a squarefree polynomial `f` of degree

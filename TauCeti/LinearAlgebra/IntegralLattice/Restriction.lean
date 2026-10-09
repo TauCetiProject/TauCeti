@@ -131,7 +131,7 @@ theorem restrictMap_tmul (L : IntegralLattice V) (S : Submodule ℤ L) (q : ℚ)
 form is needed. -/
 theorem restrictMap_injective (L : IntegralLattice V) (S : Submodule ℤ L) :
     Function.Injective (L.restrictMap S) :=
-  (L.carrier.subtype.comp S.subtype).liftBaseChange_injective (K := ℚ)
+  (L.carrier.subtype.comp S.subtype).liftBaseChange_injective (K := ℚ) (nonZeroDivisors ℤ)
     (L.carrier.injective_subtype.comp S.injective_subtype)
 
 /-- The range of the rational inclusion is exactly the rational span of the embedded submodule. -/

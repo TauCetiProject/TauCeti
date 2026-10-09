@@ -542,7 +542,7 @@ def principalIdele : UnitsCoeff K →+[AbsoluteGaloisGroup K] IdeleCoeff K where
       principalIdeleAt, smul_ideleCoeffOf]
     congr 2
     apply Units.ext
-    simp only [Units.coe_map, MonoidHom.coe_ofClass, IdeleGroup.coe_unitEmbedding,
+    simp only [Units.coe_map, MonoidHom.coe_ofClass, IdeleGroup.val_unitEmbedding_apply,
       GlobalNumberFields.adeleGaloisAction_algebraMap]
     congr 1
     exact Subtype.ext hgx
@@ -571,7 +571,7 @@ theorem principalIdele_injective : Function.Injective (principalIdele K) := by
   obtain ⟨E', hEE', h1⟩ := ideleCoeffOf_eq_zero_iff.1 hx
   rw [ideleTransition_unitEmbedding, ← map_one (IdeleGroup.unitEmbedding (𝓞 E') E')] at h1
   have h2 := congrArg (fun u : IdeleGroup (𝓞 E') E' ↦ (u : AdeleRing (𝓞 E') E')) h1
-  simp only [IdeleGroup.coe_unitEmbedding] at h2
+  simp only [IdeleGroup.val_unitEmbedding_apply] at h2
   exact Additive.toMul.injective (Units.ext
     (congrArg Subtype.val ((AdeleRing.algebraMap_injective (𝓞 E') E') h2)))
 

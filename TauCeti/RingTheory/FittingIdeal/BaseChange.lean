@@ -86,12 +86,15 @@ theorem minorsIdeal_span_image [Free R F] [Module.Finite R F] (hj : IsBaseChange
     -- The determinant is multilinear in the functionals `g k`, which are `S`-linear combinations
     -- of base changes of functionals on `F` since `Dual S W` is the base change of `Dual R F`.
     let μ : MultilinearMap S (fun _ : Fin p ↦ Dual S W) S :=
-      Matrix.detRowAlternating.toMultilinearMap.compLinearMap fun _ ↦
-        LinearMap.pi fun i ↦ LinearMap.applyₗ (j (v i))
+      (Matrix.detRowAlternating.compLinearMap
+        (LinearMap.pi fun i ↦ LinearMap.applyₗ (j (v i)))).toMultilinearMap
     have hμ (g : Fin p → Dual S W) : μ g = (Matrix.of fun i k ↦ g k (j (v i))).det := by
       rw [← Matrix.det_transpose]
-      simp only [μ, MultilinearMap.compLinearMap_apply, Matrix.det]
-      congr 1
+      simp only [μ, Matrix.detRowAlternating_compLinearMap_pi_apply,
+        LinearMap.applyₗ_apply_apply]
+      apply congrArg Matrix.det
+      ext i k
+      simp only [Matrix.transpose_apply, Matrix.of_apply]
     have hg (k : Fin p) : g k ∈ Submodule.span S (Set.range hj.toDual) :=
       hj.dual.inductionOn (g k) (fun f ↦ Submodule.subset_span ⟨f, rfl⟩)
         (fun s _ h ↦ Submodule.smul_mem _ s h) fun _ _ h₁ h₂ ↦ add_mem h₁ h₂

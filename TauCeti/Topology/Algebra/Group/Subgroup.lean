@@ -91,6 +91,8 @@ series of a profinite group.
   generate a dense subgroup.
 * `TauCeti.discreteTopology_of_conjAct_smul_eq`: a conjugate `g H g⁻¹` of a discrete
   subgroup `H` is discrete.
+* `MonoidHom.discreteTopology_range_of_finite_preimage`: a homomorphism into a `T1` topological
+  group has discrete range when some neighbourhood of the identity has finite preimage.
 -/
 
 public section
@@ -522,5 +524,20 @@ theorem discreteTopology_of_conjAct_smul_eq {G : Type*} [Group G] [TopologicalSp
   exact ((Topology.IsEmbedding.of_comp_iff Topology.IsEmbedding.subtypeVal).mp hφ).discreteTopology
 
 end Conj
+
+open scoped Topology in
+/-- A homomorphism into a `T1` topological group has discrete range as soon as some neighbourhood
+of the identity has finite preimage. -/
+@[to_additive /-- A homomorphism into a `T1` additive topological group has discrete range as soon
+as some neighbourhood of zero has finite preimage. -/]
+theorem _root_.MonoidHom.discreteTopology_range_of_finite_preimage {G H : Type*} [Group G]
+    [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [T1Space H] (f : G →* H) {W : Set H}
+    (hW : W ∈ 𝓝 1) (hfin : (f ⁻¹' W).Finite) : DiscreteTopology f.range := by
+  refine discreteTopology_of_isOpen_singleton_one
+    (isOpen_singleton_of_finite_mem_nhds _ (s := Subtype.val ⁻¹' W)
+      (continuous_subtype_val.continuousAt.preimage_mem_nhds hW) ?_)
+  refine (hfin.image f.rangeRestrict).subset ?_
+  rintro ⟨_, g, rfl⟩ hg
+  exact ⟨g, hg, Subtype.ext rfl⟩
 
 end TauCeti

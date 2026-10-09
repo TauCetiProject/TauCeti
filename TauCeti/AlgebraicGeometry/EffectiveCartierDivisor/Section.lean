@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
-public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Relative
+public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Sum
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
 public import TauCeti.RingTheory.Localization.Ideal
@@ -41,6 +41,11 @@ along the section.
   effective Cartier divisor over the base.
 * `AlgebraicGeometry.Scheme.Hom.isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension`:
   the case of a section of a separated smooth relative curve.
+* `AlgebraicGeometry.Scheme.IdealSheafData.isRelativeEffectiveCartier_prod_ker_pullback_section`:
+  for a flat `f` and finitely many sections through such an open, the divisor `s₁ + ⋯ + sₙ` of the
+  base-changed sections is a relative effective Cartier divisor on `X ×_S T` over `T`, for every
+  `T ⟶ S`. It is the inverse image of the divisor `s₁ + ⋯ + sₙ` on `X`
+  (`AlgebraicGeometry.Scheme.IdealSheafData.prod_ker_pullback_section`).
 
 ## References
 
@@ -51,7 +56,7 @@ along the section.
 
 public section
 
-open CategoryTheory TopologicalSpace
+open CategoryTheory Limits TopologicalSpace
 
 open scoped Pointwise
 
@@ -175,3 +180,23 @@ theorem isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension (hs : s ≫ 
   exact isRelativeEffectiveCartier_ker_of_comp_eq_id s hs ⊤ (Set.subset_univ _)
 
 end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry.Scheme.IdealSheafData
+
+variable {X S T : Scheme.{u}} {f : X ⟶ S}
+
+/-- **Sums of sections of a relative curve commute with base change.** Let `f : X ⟶ S` be flat,
+and let finitely many sections of `f`, each a closed immersion, pass through an open subscheme
+`U ⊆ X` on which `f` is smooth of relative dimension one. For every `g : T ⟶ S`, the divisor
+`s₁ + ⋯ + sₙ` of the base-changed sections `T ⟶ X ×_S T` is a relative effective Cartier
+divisor over `T`. The sections need not be disjoint. -/
+theorem isRelativeEffectiveCartier_prod_ker_pullback_section [Flat f] {ι : Type*}
+    (t : Finset ι) (h : ι → SplitEpi f) [∀ i, IsClosedImmersion (h i).section_] (U : X.Opens)
+    (hU : ∀ i ∈ t, Set.range (h i).section_ ⊆ U) [SmoothOfRelativeDimension 1 (U.ι ≫ f)]
+    (g : T ⟶ S) :
+    (∏ i ∈ t, ((h i).pullback g).section_.ker).IsRelativeEffectiveCartier (pullback.snd f g) := by
+  rw [prod_ker_pullback_section]
+  exact (TauCeti.isRelativeEffectiveCartier_prod fun i hi ↦
+    Hom.isRelativeEffectiveCartier_ker_of_comp_eq_id _ (h i).id U (hU i hi)).comap g
+
+end AlgebraicGeometry.Scheme.IdealSheafData

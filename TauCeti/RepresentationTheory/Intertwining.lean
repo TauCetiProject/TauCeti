@@ -31,6 +31,8 @@ caller has already done.
   onto a subrepresentation that its image fills.
 * `Representation.IntertwiningMap.lcomp`: precomposition with an intertwining map, as an
   intertwining map of the conjugation representations `Representation.linHom`.
+* `DistribMulActionHom.toIntertwiningMap`: an equivariant additive map of `G`-modules, as an
+  intertwining map of the attached representations over `ℤ`.
 
 ## Main results
 
@@ -108,3 +110,30 @@ theorem lcomp_apply (u : IntertwiningMap ρ' ρ) (σ : Representation A G W) (φ
 end lcomp
 
 end Representation.IntertwiningMap
+
+namespace DistribMulActionHom
+
+open Representation
+
+variable {G V W : Type*} [Monoid G] [AddCommGroup V] [DistribMulAction G V] [AddCommGroup W]
+  [DistribMulAction G W]
+
+/-- An equivariant additive map `f : V →+[G] W` of `G`-modules, as an intertwining map between the
+representations `Representation.ofDistribMulAction ℤ G` on `V` and on `W`. -/
+def toIntertwiningMap (f : V →+[G] W) :
+    IntertwiningMap (ofDistribMulAction ℤ G V) (ofDistribMulAction ℤ G W) :=
+  f.toAddMonoidHom.toIntLinearMap.intertwiningMap_of_isIntertwiningMap _ _ fun g v =>
+    map_smul f g v
+
+/-- The linear map underlying `f.toIntertwiningMap` is `f`, as a `ℤ`-linear map. -/
+@[simp]
+theorem toLinearMap_toIntertwiningMap (f : V →+[G] W) :
+    f.toIntertwiningMap.toLinearMap = f.toAddMonoidHom.toIntLinearMap :=
+  (rfl)
+
+/-- `f.toIntertwiningMap` acts as `f`. -/
+@[simp]
+theorem coe_toIntertwiningMap (f : V →+[G] W) : ⇑f.toIntertwiningMap = ⇑f :=
+  (rfl)
+
+end DistribMulActionHom

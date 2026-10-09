@@ -107,7 +107,6 @@ lemma groupScheme_X_left (G : FGCommGrpCat.{u}) :
 
 /-- After identifying its source with `Spec R[G]`, the structural morphism of `D(G)` is
 induced by the group-algebra structure map. -/
-@[simp]
 lemma groupScheme_X_hom (G : FGCommGrpCat.{u}) :
     (groupScheme R G).X.hom =
       eqToHom (groupScheme_X_left R G) ≫

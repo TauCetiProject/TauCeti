@@ -85,6 +85,18 @@ noncomputable def generatedCoordinateMap :
     GeneralLinear.coordinateHopfAlgebra A 56 ⟶ generatedCoordinateHopfAlgebra A :=
   CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 56) (generatedDefiningIdeal A)
 
+/-- After exposing the generated coordinate algebra as its quotient presentation, the generated
+coordinate map is the quotient morphism. -/
+theorem generatedCoordinateMap_comp_eqToIso_hom :
+    generatedCoordinateMap A ≫ (eqToIso (generatedCoordinateHopfAlgebra_def A)).hom =
+      CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 56)
+        (generatedDefiningIdeal A) := by
+  -- In this defining module the deliberately opaque named quotient and quotient map reduce,
+  -- so the equality transport is the identity.  Consumers use this theorem as the interface.
+  change CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 56)
+      (generatedDefiningIdeal A) ≫ 𝟙 _ = _
+  simp
+
 /-- The generated subgroup coordinate morphism is surjective. -/
 theorem generatedCoordinateMap_surjective : Function.Surjective (generatedCoordinateMap A).hom :=
   CommHopfAlgCat.mkQuotient_surjective
@@ -131,5 +143,11 @@ theorem generatedCoordinateLift_unique (j : Sum (Fin 7 ⊕ Fin 7) Unit)
 instance : Algebra.FiniteType A (generatedCoordinateHopfAlgebra A) := by
   rw [generatedCoordinateHopfAlgebra_def]
   infer_instance
+
+/-- The generated type-`E₇` subgroup as a finite-type commutative Hopf algebra. -/
+noncomputable abbrev finiteTypeGeneratedCoordinateHopfAlgebra :
+    FiniteTypeCommHopfAlgCat.{u, u} A :=
+  ⟨generatedCoordinateHopfAlgebra A,
+    (inferInstance : Algebra.FiniteType A (generatedCoordinateHopfAlgebra A))⟩
 
 end TauCeti.E7Minuscule

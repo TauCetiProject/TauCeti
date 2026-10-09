@@ -124,8 +124,8 @@ noncomputable def pathsInto (n : ℕ) (j : R) : Submodule k (pathAlgebra k R) :=
   Submodule.span k
     (Set.range fun p : PathInto R n j => (ofPath ⟨p.1.1, j, p.1.2⟩ : pathAlgebra k R))
 
-/-- The span of paths of length `n` from `i` to `j`. For a finite vertex type this is the
-degree-`n` part of the corner `e_j kR e_i`. -/
+/-- The span of paths of length `n` from `i` to `j`: the degree-`n` part of the corner
+`e_j kR e_i`. -/
 noncomputable def pathsBetween (n : ℕ) (i j : R) : Submodule k (pathAlgebra k R) :=
   Submodule.span k
     (Set.range fun p : PathBetween R n i j => (ofPath ⟨i, j, p.1⟩ : pathAlgebra k R))
@@ -232,12 +232,12 @@ theorem mem_pathsBetween_iff {n : ℕ} {i j : R} {x : pathAlgebra k R} :
         simpa only [mul_smul_comm, smul_mul_assoc] using Submodule.smul_mem _ r hx
 
 /-- **The paths of fixed length between two vertices form the corresponding graded corner.** -/
-theorem pathsBetween_eq_cornerSubmodule_inf_grade [Finite R] (n : ℕ) (i j : R) :
+theorem pathsBetween_eq_cornerSubmodule_inf_grade (n : ℕ) (i j : R) :
     pathsBetween k n i j =
       cornerSubmodule k (vertexIdempotent k j) (vertexIdempotent k i) ⊓ grade k R n := by
   ext x
   rw [mem_pathsBetween_iff, Submodule.mem_inf, mem_cornerSubmodule_iff k
-    (vertexIdempotent_mul_self j) (vertexIdempotent_mul_self i), and_comm]
+    (vertexIdempotent_mul_self (k := k) j) (vertexIdempotent_mul_self (k := k) i), and_comm]
 
 /-- The product of an element of `pathsInto k a i` and one of `pathsInto k c j` lies in
 `pathsInto k (c + a) i`: the paths of the right factor are followed by those of the left one. -/

@@ -360,6 +360,14 @@ theorem card_cIco_add_card_cIco_swap {a b : Fin n} (h : a ≠ b) :
     Fintype.card_fin] at hcard
   exact hcard
 
+/-- A point lies outside a nondegenerate half-open cyclic interval exactly when it lies in the
+opposite one. -/
+theorem notMem_cIco_iff_mem_cIco_swap {a b x : Fin n} (h : a ≠ b) :
+    x ∉ cIco a b ↔ x ∈ cIco b a := by
+  have hx : x ∈ cIco a b ∪ cIco b a := (cIco_union_swap h).symm ▸ Finset.mem_univ x
+  exact ⟨fun hab => (Finset.mem_union.1 hx).resolve_left hab,
+    fun hba hab => Finset.disjoint_left.1 (disjoint_cIco_swap a b) hab hba⟩
+
 /-- Two oriented cyclic intervals have non-interleaving endpoint pairs.
 
 The endpoints `a₀`, `a₁` lie on the same side of the pair `b₀`, `b₁`, and conversely. This
@@ -533,6 +541,12 @@ theorem not_mem_cIoo_iff {a b x : Fin n} (h : a ≠ b) :
       exact right_notMem_cIoo a b
     · intro hxab
       exact not_mem_cIoo_and_cIoo_swap a b x ⟨hxab, hx⟩
+
+/-- For distinct endpoints, the closed cyclic interval from `a` to `b` is the complement of the
+open cyclic interval from `b` to `a`. -/
+theorem mem_insert_cIco_iff_notMem_cIoo {a b x : Fin n} (h : a ≠ b) :
+    x ∈ insert b (cIco a b) ↔ x ∉ cIoo b a := by
+  rw [not_mem_cIoo_iff h.symm, cIco_of_ne h, Finset.mem_insert, Finset.mem_insert]
 
 /-- Rotating a cyclic order: if `b` lies on the clockwise arc from `a` to `c`, then `c` lies on
 the clockwise arc from `b` to `a`. -/
