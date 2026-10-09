@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
-public import Mathlib.CategoryTheory.EffectiveEpi.Basic
 public import Mathlib.CategoryTheory.Limits.Shapes.KernelPair
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Section
 
@@ -31,7 +30,8 @@ This file proves effective descent, with uniqueness, of sections and of morphism
 
 In both cases base change is a bijection onto the sections, respectively morphisms, satisfying
 the descent condition (`sectionDescentEquiv`, `homDescentEquiv`). The proof of the second case
-uses that `pr₁^*, pr₂^*` form the kernel pair of `X' ⟶ X` (Mathlib's `IsKernelPair.pullback`).
+uses that `pr₁^*, pr₂^*` form the kernel pair of `X' ⟶ X` (`pullback.isKernelPair_mapSnd`), so
+that `X' ⟶ X` is their coequalizer.
 Uniqueness on its own only needs base change of `p` to be an epimorphism, and is Mathlib's
 `CategoryTheory.Over.faithful_pullback`.
 
@@ -70,15 +70,6 @@ section Section
 
 variable {Y : C} (g : Y ⟶ S) [EffectiveEpi p]
 
-omit [EffectiveEpi p] in
-/-- The descent condition on `s'` makes `s' ≫ fst` coequalize every pair of morphisms that become
-equal in `S`. -/
-private theorem comp_fst_eq_of_comp_eq {s' : S' ⟶ pullback g p}
-    (h : pullback.fst p p ≫ s' ≫ pullback.fst g p = pullback.snd p p ≫ s' ≫ pullback.fst g p)
-    {Z : C} (a b : Z ⟶ S') (hab : a ≫ p = b ≫ p) :
-    a ≫ s' ≫ pullback.fst g p = b ≫ s' ≫ pullback.fst g p := by
-  simpa using pullback.lift a b hab ≫= h
-
 /-- **Descent of a section.** Let `p : S' ⟶ S` be an effective epimorphism and `g : Y ⟶ S`. A
 morphism `s' : S' ⟶ Y ×_S S'` whose two pullbacks to `S' ×_S S'` agree as `S' ×_S S'`-points of
 `Y` descends to a morphism `S ⟶ Y` (`comp_descendSection`). If `s'` is a section of
@@ -87,14 +78,15 @@ morphism `s' : S' ⟶ Y ×_S S'` whose two pullbacks to `S' ×_S S'` agree as `S
 noncomputable def descendSection (s' : S' ⟶ pullback g p)
     (h : pullback.fst p p ≫ s' ≫ pullback.fst g p = pullback.snd p p ≫ s' ≫ pullback.fst g p) :
     S ⟶ Y :=
-  EffectiveEpi.desc p (s' ≫ pullback.fst g p) (comp_fst_eq_of_comp_eq p g h)
+  Cofork.IsColimit.desc (isColimitCoforkOfEffectiveEpi p _ (pullback.isLimit p p))
+    (s' ≫ pullback.fst g p) h
 
 /-- The descended section, pulled back to `S'`, is the `S'`-point of `Y` given by `s'`. -/
 @[reassoc (attr := simp)]
 theorem comp_descendSection (s' : S' ⟶ pullback g p)
     (h : pullback.fst p p ≫ s' ≫ pullback.fst g p = pullback.snd p p ≫ s' ≫ pullback.fst g p) :
-    p ≫ descendSection p g s' h = s' ≫ pullback.fst g p := by
-  rw [descendSection, EffectiveEpi.fac]
+    p ≫ descendSection p g s' h = s' ≫ pullback.fst g p :=
+  Cofork.IsColimit.π_desc' (isColimitCoforkOfEffectiveEpi p _ (pullback.isLimit p p)) _ h
 
 /-- The descent of a section of `Y ×_S S' ⟶ S'` is a section of `g`. -/
 @[reassoc (attr := simp)]
@@ -154,25 +146,6 @@ section Hom
 
 variable {X Y : Over S}
 
-/-- The projections `X ×_S (S' ×_S S') ⟶ X ×_S S'` form the kernel pair of the base change
-`X ×_S S' ⟶ X` of `p`. -/
-private theorem isKernelPair_mapSnd (X : Over S) :
-    IsKernelPair (pullback.fst X.hom p) (pullback.mapSnd X.hom p _ (pullback.fst p p) rfl)
-      (pullback.mapSnd X.hom p _ (pullback.snd p p) pullback.condition.symm) := by
-  convert (IsKernelPair.of_hasPullback p).pullback X.hom <;> ext <;> simp
-
-/-- The descent condition on `φ` makes `φ ≫ fst` coequalize every pair of morphisms that become
-equal in `X`. -/
-private theorem comp_left_fst_eq_of_comp_eq
-    {φ : (Over.pullback p).obj X ⟶ (Over.pullback p).obj Y}
-    (h : pullback.mapSnd X.hom p _ (pullback.fst p p) rfl ≫ φ.left ≫ pullback.fst Y.hom p =
-      pullback.mapSnd X.hom p _ (pullback.snd p p) pullback.condition.symm ≫ φ.left ≫
-        pullback.fst Y.hom p)
-    {Z : C} (a b : Z ⟶ pullback X.hom p)
-    (hab : a ≫ pullback.fst X.hom p = b ≫ pullback.fst X.hom p) :
-    a ≫ φ.left ≫ pullback.fst Y.hom p = b ≫ φ.left ≫ pullback.fst Y.hom p := by
-  simpa using (isKernelPair_mapSnd p X).lift a b hab ≫= h
-
 variable [EffectiveEpi (pullback.fst X.hom p)]
 
 /-- **Descent of a morphism.** A morphism `φ : X ×_S S' ⟶ Y ×_S S'` over `S'`, whose two pullbacks
@@ -184,10 +157,12 @@ noncomputable def descendHom (φ : (Over.pullback p).obj X ⟶ (Over.pullback p)
       pullback.mapSnd X.hom p _ (pullback.snd p p) pullback.condition.symm ≫ φ.left ≫
         pullback.fst Y.hom p) :
     X ⟶ Y :=
-  Over.homMk (EffectiveEpi.desc (pullback.fst X.hom p) (φ.left ≫ pullback.fst Y.hom p)
-      (comp_left_fst_eq_of_comp_eq p h)) <| by
-    rw [← cancel_epi (pullback.fst X.hom p), EffectiveEpi.fac_assoc, Category.assoc,
-      pullback.condition]
+  Over.homMk (Cofork.IsColimit.desc ((EffectiveEpi.getStruct _).isColimitCoforkOfIsPullback
+      (pullback.isKernelPair_mapSnd X.hom p)) (φ.left ≫ pullback.fst Y.hom p) h) <| by
+    have hπ := Cofork.IsColimit.π_desc' ((EffectiveEpi.getStruct _).isColimitCoforkOfIsPullback
+      (pullback.isKernelPair_mapSnd X.hom p)) _ h
+    rw [Cofork.π_ofπ] at hπ
+    rw [← cancel_epi (pullback.fst X.hom p), reassoc_of% hπ, pullback.condition]
     simpa using (Over.w φ =≫ p).trans pullback.condition.symm
 
 /-- The descended morphism, composed with the projection `X ×_S S' ⟶ X`, is `φ` followed by
@@ -198,7 +173,8 @@ theorem fst_comp_descendHom_left (φ : (Over.pullback p).obj X ⟶ (Over.pullbac
       pullback.mapSnd X.hom p _ (pullback.snd p p) pullback.condition.symm ≫ φ.left ≫
         pullback.fst Y.hom p) :
     pullback.fst X.hom p ≫ (descendHom p φ h).left = φ.left ≫ pullback.fst Y.hom p :=
-  EffectiveEpi.fac _ _ (comp_left_fst_eq_of_comp_eq p h)
+  Cofork.IsColimit.π_desc' ((EffectiveEpi.getStruct _).isColimitCoforkOfIsPullback
+    (pullback.isKernelPair_mapSnd X.hom p)) _ h
 
 /-- **Uniqueness of descended morphisms.** A morphism `X ⟶ Y` over `S` whose composite with the
 projection `X ×_S S' ⟶ X` is `φ` followed by the projection `Y ×_S S' ⟶ Y` is the descended
