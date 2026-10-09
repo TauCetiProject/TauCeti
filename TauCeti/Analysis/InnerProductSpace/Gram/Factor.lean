@@ -186,10 +186,10 @@ variable {𝕜 E F G : Type*} [RCLike 𝕜]
   [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] [CompleteSpace G]
 
 /-- Two bounded operators with a common source have equal Gram operators exactly when they have
-equal pointwise norms. The proof follows Mathlib's
-`ContinuousLinearMap.isStarNormal_iff_norm_eq_adjoint`. -/
+equal pointwise norms. -/
 theorem adjoint_comp_self_eq_adjoint_comp_self_iff {T : E →L[𝕜] F} {A : E →L[𝕜] G} :
     A† ∘L A = T† ∘L T ↔ ∀ x, ‖A x‖ = ‖T x‖ := by
+  -- The proof follows Mathlib's `ContinuousLinearMap.isStarNormal_iff_norm_eq_adjoint`.
   have hsymm : ((A† ∘L A - T† ∘L T : E →L[𝕜] E) : E →ₗ[𝕜] E).IsSymmetric :=
     (isPositive_adjoint_comp_self A).isSymmetric.sub (isPositive_adjoint_comp_self T).isSymmetric
   rw [← sub_eq_zero, ← coe_inj, toLinearMap_zero, ← hsymm.inner_map_self_eq_zero]
