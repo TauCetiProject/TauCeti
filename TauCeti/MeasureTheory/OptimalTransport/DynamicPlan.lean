@@ -16,8 +16,8 @@ import Mathlib.Topology.Metrizable.ContinuousMap
 # Dynamic plans concentrated on geodesics
 
 A *dynamic plan* on a metric space `X` is a measure `η` on the path space `C(I, X)`. Its law at
-time `t`, `TauCeti.DynamicPlan.timeMarginal η t`, is the pushforward of `η` along the evaluation
-at `t`, and its *endpoint law* `TauCeti.DynamicPlan.endpointLaw η` is the pushforward along
+time `t`, `η.timeMarginal t`, is the pushforward of `η` along the evaluation at `t`, and its
+*endpoint law* `η.endpointLaw` is the pushforward along
 `γ ↦ (γ 0, γ 1)`, a measure on `X × X` whose marginals are the laws at times `0` and `1`. When
 `η` is concentrated on the geodesic paths `TauCeti.geodesicPaths X`, the laws at times `s` and
 `t` are coupled by the law of `(γ s, γ t)`, and each coupled pair is at distance `|s - t|` times the
@@ -39,16 +39,19 @@ plan interpolate between `μ` and `ν`, with `W_p (η_s, η_t) ≤ |s - t| * W_p
 
 ## Main definitions
 
-* `TauCeti.DynamicPlan.timeMarginal η t`: the law at time `t` of a dynamic plan `η`.
-* `TauCeti.DynamicPlan.endpointLaw η`: the joint law of the two endpoints of a dynamic plan `η`.
+* `MeasureTheory.Measure.timeMarginal η t`: the law at time `t` of a dynamic plan `η`.
+* `MeasureTheory.Measure.endpointLaw η`: the joint law of the two endpoints of a dynamic plan `η`.
+
+A dynamic plan is a plain `Measure C(I, X)`, so these declarations live in the namespace of
+Mathlib's `MeasureTheory.Measure`, where dot notation such as `η.timeMarginal t` finds them.
 
 ## Main results
 
-* `TauCeti.exists_measurable_ae_mem_geodesicPaths`: on a Polish metric space, relative to an
-  s-finite law of pairs of points almost all of which are joined by a geodesic, a geodesic joining
-  almost every pair can be chosen measurably in the pair.
-* `TauCeti.exists_ae_mem_geodesicPaths_endpointLaw_eq`: every such law of pairs of points is the
-  endpoint law of a dynamic plan concentrated on geodesics.
+* `MeasureTheory.Measure.exists_measurable_ae_mem_geodesicPaths`: on a Polish metric space,
+  relative to an s-finite law of pairs of points almost all of which are joined by a geodesic, a
+  geodesic joining almost every pair can be chosen measurably in the pair.
+* `MeasureTheory.Measure.exists_ae_mem_geodesicPaths_endpointLaw_eq`: every such law of pairs of
+  points is the endpoint law of a dynamic plan concentrated on geodesics.
 * `TauCeti.wassersteinEDist_timeMarginal_le`: the displacement bound between the laws at two times
   of a dynamic plan concentrated on geodesics.
 * `TauCeti.exists_ae_mem_geodesicPaths_wassersteinEDist_timeMarginal_le`: on a Polish geodesic space
@@ -70,9 +73,7 @@ public section
 open MeasureTheory Set
 open scoped ENNReal unitInterval
 
-namespace TauCeti
-
-namespace DynamicPlan
+namespace MeasureTheory.Measure
 
 variable {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
 
@@ -145,41 +146,9 @@ theorem fst_endpointLaw (η : Measure C(I, X)) : (endpointLaw η).fst = timeMarg
 theorem snd_endpointLaw (η : Measure C(I, X)) : (endpointLaw η).snd = timeMarginal η 1 :=
   Measure.snd_map_prodMk (ContinuousMap.measurable_eval 0) (ContinuousMap.measurable_eval 1)
 
-end DynamicPlan
-
-open DynamicPlan
-
-section Displacement
-
-variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [BorelSpace X]
-  [SecondCountableTopology X]
-
-/-- **The displacement bound along geodesics.** For a dynamic plan `η` concentrated on geodesic
-paths, the `p`-Wasserstein distance between its laws at times `s` and `t` is at most
-`|s - t|` times the `Lᵖ` size of the ground distance under its endpoint law. -/
-theorem wassersteinEDist_timeMarginal_le {η : Measure C(I, X)}
-    (hη : ∀ᵐ γ ∂η, γ ∈ geodesicPaths X) (p : ℝ≥0∞) (s t : I) :
-    wassersteinEDist p (timeMarginal η s) (timeMarginal η t) ≤
-      edist s t * eLpNorm (fun z : X × X ↦ edist z.1 z.2) p (endpointLaw η) := by
-  have hd : Measurable fun z : X × X ↦ edist z.1 z.2 := measurable_edist
-  have hev (r : I) : Measurable fun γ : C(I, X) ↦ γ r := ContinuousMap.measurable_eval r
-  have hcoup : IsCoupling (η.map fun γ ↦ (γ s, γ t)) (timeMarginal η s) (timeMarginal η t) :=
-    ⟨Measure.fst_map_prodMk (hev s) (hev t), Measure.snd_map_prodMk (hev s) (hev t)⟩
-  refine (wassersteinEDist_le hcoup p).trans ?_
-  rw [endpointLaw_eq_map,
-    eLpNorm_map_measure hd.aestronglyMeasurable ((hev s).prodMk (hev t)).aemeasurable,
-    eLpNorm_map_measure hd.aestronglyMeasurable ((hev 0).prodMk (hev 1)).aemeasurable,
-    edist_nndist, ← smul_eq_mul, ← ENNReal.smul_def]
-  refine eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul'
-    (hd.comp ((hev s).prodMk (hev t))).aestronglyMeasurable ?_ p
-  filter_upwards [hη] with γ hγ
-  simp only [Function.comp_apply, enorm_eq_self, edist_nndist, ← ENNReal.coe_mul,
-    ENNReal.coe_le_coe, ← NNReal.coe_le_coe, NNReal.coe_mul, coe_nndist]
-  rw [mem_geodesicPaths_iff.1 hγ s t, Subtype.dist_eq, Real.dist_eq]
-
-end Displacement
-
 section Polish
+
+open TauCeti (geodesicPaths isClosed_geodesicPaths isClosed_setOf_mem_geodesicPaths_endpoints)
 
 variable {X : Type*} [MetricSpace X] [CompleteSpace X] [SecondCountableTopology X]
   [MeasurableSpace X] [BorelSpace X]
@@ -220,6 +189,47 @@ theorem exists_ae_mem_geodesicPaths_endpointLaw_eq (π : Measure (X × X)) [SFin
     filter_upwards [hGπ] with z hz
     simp [hz.2.1, hz.2.2]
 
+end Polish
+
+end MeasureTheory.Measure
+
+namespace TauCeti
+
+section Displacement
+
+variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [BorelSpace X]
+  [SecondCountableTopology X]
+
+/-- **The displacement bound along geodesics.** For a dynamic plan `η` concentrated on geodesic
+paths, the `p`-Wasserstein distance between its laws at times `s` and `t` is at most
+`|s - t|` times the `Lᵖ` size of the ground distance under its endpoint law. -/
+theorem wassersteinEDist_timeMarginal_le {η : Measure C(I, X)}
+    (hη : ∀ᵐ γ ∂η, γ ∈ geodesicPaths X) (p : ℝ≥0∞) (s t : I) :
+    wassersteinEDist p (η.timeMarginal s) (η.timeMarginal t) ≤
+      edist s t * eLpNorm (fun z : X × X ↦ edist z.1 z.2) p η.endpointLaw := by
+  have hd : Measurable fun z : X × X ↦ edist z.1 z.2 := measurable_edist
+  have hev (r : I) : Measurable fun γ : C(I, X) ↦ γ r := ContinuousMap.measurable_eval r
+  have hcoup : IsCoupling (η.map fun γ ↦ (γ s, γ t)) (η.timeMarginal s) (η.timeMarginal t) :=
+    ⟨Measure.fst_map_prodMk (hev s) (hev t), Measure.snd_map_prodMk (hev s) (hev t)⟩
+  refine (wassersteinEDist_le hcoup p).trans ?_
+  rw [Measure.endpointLaw_eq_map,
+    eLpNorm_map_measure hd.aestronglyMeasurable ((hev s).prodMk (hev t)).aemeasurable,
+    eLpNorm_map_measure hd.aestronglyMeasurable ((hev 0).prodMk (hev 1)).aemeasurable,
+    edist_nndist, ← smul_eq_mul, ← ENNReal.smul_def]
+  refine eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul'
+    (hd.comp ((hev s).prodMk (hev t))).aestronglyMeasurable ?_ p
+  filter_upwards [hη] with γ hγ
+  simp only [Function.comp_apply, enorm_eq_self, edist_nndist, ← ENNReal.coe_mul,
+    ENNReal.coe_le_coe, ← NNReal.coe_le_coe, NNReal.coe_mul, coe_nndist]
+  rw [mem_geodesicPaths_iff.1 hγ s t, Subtype.dist_eq, Real.dist_eq]
+
+end Displacement
+
+section Polish
+
+variable {X : Type*} [MetricSpace X] [CompleteSpace X] [SecondCountableTopology X]
+  [MeasurableSpace X] [BorelSpace X]
+
 /-- **Geodesic interpolation of an optimal coupling.** On a Polish geodesic space, for a finite
 nonzero exponent `p`, two finite measures `μ` and `ν` admitting a coupling are the laws at times
 `0` and `1` of a dynamic plan `η` concentrated on geodesic paths whose laws at any two times `s` and
@@ -228,17 +238,17 @@ nonzero exponent `p`, two finite measures `μ` and `ν` admitting a coupling are
 theorem exists_ae_mem_geodesicPaths_wassersteinEDist_timeMarginal_le [IsGeodesicSpace X] {p : ℝ≥0∞}
     (hp0 : p ≠ 0) (hp : p ≠ ∞) (μ ν : Measure X) [IsFiniteMeasure μ]
     (hcoup : ∃ π, IsCoupling π μ ν) :
-    ∃ η : Measure C(I, X), (∀ᵐ γ ∂η, γ ∈ geodesicPaths X) ∧ timeMarginal η 0 = μ ∧
-      timeMarginal η 1 = ν ∧
-      ∀ s t : I, wassersteinEDist p (timeMarginal η s) (timeMarginal η t) ≤
+    ∃ η : Measure C(I, X), (∀ᵐ γ ∂η, γ ∈ geodesicPaths X) ∧ η.timeMarginal 0 = μ ∧
+      η.timeMarginal 1 = ν ∧
+      ∀ s t : I, wassersteinEDist p (η.timeMarginal s) (η.timeMarginal t) ≤
         edist s t * wassersteinEDist p μ ν := by
   obtain ⟨π, hπ, hπopt⟩ := exists_isCoupling_eLpNorm_eq_wassersteinEDist hp0 hp μ ν hcoup
   have : IsFiniteMeasure π := hπ.isFiniteMeasure
-  obtain ⟨η, hη, hηπ⟩ := exists_ae_mem_geodesicPaths_endpointLaw_eq π
+  obtain ⟨η, hη, hηπ⟩ := π.exists_ae_mem_geodesicPaths_endpointLaw_eq
     (.of_forall fun z ↦ IsGeodesicSpace.exists_mem_geodesicPaths z.1 z.2)
   refine ⟨η, hη, ?_, ?_, fun s t ↦ ?_⟩
-  · rw [← fst_endpointLaw, hηπ, hπ.fst_eq]
-  · rw [← snd_endpointLaw, hηπ, hπ.snd_eq]
+  · rw [← Measure.fst_endpointLaw, hηπ, hπ.fst_eq]
+  · rw [← Measure.snd_endpointLaw, hηπ, hπ.snd_eq]
   · simpa only [hηπ, hπopt] using wassersteinEDist_timeMarginal_le hη p s t
 
 end Polish
