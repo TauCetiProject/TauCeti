@@ -12,7 +12,6 @@ import TauCeti.Algebra.AlgebraicGroup.Semisimple.Isogeny
 import TauCeti.Algebra.AlgebraicGroup.Semisimple.Reductive
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.CentralIsogeny
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Semisimple
-import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Smooth
 
 /-!
 # The projective general linear group is semisimple

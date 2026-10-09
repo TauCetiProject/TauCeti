@@ -26,9 +26,11 @@ is `Q`. Applied to the projection of a semisimple group onto its adjoint quotien
 
 The coordinate morphism `O(Q) → O(G)` is injective, so smoothness and geometric connectedness
 pass from `G` to `Q`. The substance is the triviality of the solvable radical of `Q` over an
-algebraic closure, which holds for any faithfully flat homomorphism with central kernel. Let
-`S ⊆ Q` be connected, normal, smooth and solvable, with preimage `P ⊆ G`. The identity component
-`(P_red)°` of its reduction is a connected smooth subgroup of `G`. It is normal because
+algebraic closure. Over an algebraically closed field, this holds for a faithfully flat
+homomorphism with central kernel from a reduced finite-type group with trivial solvable radical;
+the homomorphism need not be finite. Let `S ⊆ Q` be connected, normal, smooth and solvable,
+with preimage `P ⊆ G`. The identity component `(P_red)°` of its reduction is a connected smooth
+subgroup of `G`. It is normal because
 conjugation by a rational point is an automorphism of `P_red`, and normality of reduced subgroups
 can be tested on rational points. It is solvable because it is an extension of a subgroup of `S`
 by a subgroup of the central kernel. Semisimplicity of `G` makes it trivial, so `P_red` is
@@ -38,8 +40,8 @@ group, hence trivial.
 ## Main declarations
 
 * `TauCeti.FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal_eq_augmentation_of_isCentral`:
-  over an algebraically closed field, triviality of the solvable radical passes to the target of
-  a faithfully flat homomorphism with central kernel.
+  over an algebraically closed field, triviality of the solvable radical passes from a reduced
+  finite-type group to the target of a faithfully flat homomorphism with central kernel.
 * `TauCeti.semisimpleCommHopfAlgProperty.of_isCentralIsogeny`: the target of a central isogeny
   from a semisimple group is semisimple.
 
@@ -81,6 +83,12 @@ private abbrev toReducedQuotient : G.obj ⟶ (reducedQuotient G P).obj :=
 private theorem toReducedQuotient_surjective :
     Function.Surjective (toReducedQuotient G P).hom :=
   (CommHopfAlgCat.mkQuotient_surjective _ _).comp (CommHopfAlgCat.mkQuotient_surjective _ _)
+
+/-- An element of `G` vanishes on `P_red` exactly when its class modulo `P` is nilpotent. -/
+private theorem toReducedQuotient_eq_zero_iff (y : G) :
+    (toReducedQuotient G P).hom y = 0 ↔
+      IsNilpotent ((CommHopfAlgCat.mkQuotient G.obj P).hom y) := by
+  rw [CommHopfAlgCat.comp_apply, CommHopfAlgCat.mkQuotient_eq_zero_iff, mem_reduction]
 
 /-- The Hopf ideal of the identity component of `P_red`, as a closed subgroup of `G`. -/
 private abbrev reducedIdentityComponent : HopfIdeal k G :=
@@ -222,9 +230,8 @@ private theorem geometricallySolvablePoints_quotient_of_map_le {Q G : _root_.Com
     have hy' : (mkQuotient Q J).hom y ∈ HopfIdeal.augmentation k (quotient Q J) := by
       rw [HopfIdeal.mem_augmentation, CoalgHomClass.counit_comp_apply]
       exact (HopfIdeal.mem_augmentation k Q).mp (HopfIdeal.mem_toIdeal.mp hy)
-    have hcomp : (mkQuotient G I).hom (f.hom y) = h.hom ((mkQuotient Q J).hom y) := by
-      rw [← BialgHom.comp_apply, ← BialgHom.comp_apply, ← _root_.CommHopfAlgCat.hom_comp,
-        ← _root_.CommHopfAlgCat.hom_comp, mkQuotient_comp_liftQuotient]
+    have hcomp : (mkQuotient G I).hom (f.hom y) = h.hom ((mkQuotient Q J).hom y) :=
+      (liftQuotient_mkQuotient_apply J _ hJ' y).symm
     simp only [Ideal.mem_comap, RingHom.mem_ker, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
       BialgHom.coe_toAlgHom, _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply]
     rw [hcomp, mkQuotient_eq_zero_iff, kernelHopfIdeal_def]
@@ -268,10 +275,8 @@ private theorem eq_augmentation_of_moduleFinite_reducedQuotient
     rw [injective_iff_map_eq_zero]
     intro z hz
     obtain ⟨y, rfl⟩ := CommHopfAlgCat.mkQuotient_surjective Q.obj J z
-    rw [← BialgHom.comp_apply, ← _root_.CommHopfAlgCat.hom_comp,
-      CommHopfAlgCat.mkQuotient_comp_liftQuotient, _root_.CommHopfAlgCat.hom_comp,
-      _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply, BialgHom.comp_apply,
-      CommHopfAlgCat.mkQuotient_eq_zero_iff, HopfIdeal.mem_reduction] at hz
+    rw [CommHopfAlgCat.liftQuotient_mkQuotient_apply, CommHopfAlgCat.comp_apply,
+      HopfIdeal.toReducedQuotient_eq_zero_iff] at hz
     obtain ⟨n, hn⟩ := hz
     rw [← map_pow, ← map_pow, CommHopfAlgCat.mkQuotient_eq_zero_iff] at hn
     -- Faithful flatness: `J` is the contraction of its extension `P`.
@@ -301,12 +306,7 @@ private theorem eq_augmentation_of_moduleFinite_reducedQuotient
 /-- **Trivial solvable radicals pass to central quotients.** Over an algebraically closed field,
 let `f` represent a faithfully flat homomorphism `G → Q` with central kernel, from a reduced
 finite-type affine group `G` with trivial solvable radical. Then the solvable radical of `Q` is
-trivial as well.
-
-Given a connected normal smooth solvable subgroup `S ⊆ Q`, the identity component of the reduced
-preimage of `S` is a connected normal smooth subgroup of `G`; it is solvable because it is an
-extension of a subgroup of `S` by a central subgroup. So it is trivial, the reduced preimage of
-`S` is finite, and therefore so is its image `S`; being connected and smooth, `S` is trivial. -/
+trivial as well. The homomorphism need not be finite. -/
 theorem solvableRadicalDefiningIdeal_eq_augmentation_of_isCentral
     {Q G : FiniteTypeCommHopfAlgCat.{u, u} k} [IsReduced G] (f : Q.obj ⟶ G.obj)
     (hf : f.hom.toAlgHom.toRingHom.FaithfullyFlat)
@@ -333,11 +333,7 @@ namespace semisimpleCommHopfAlgProperty
 variable {k : Type u} [Field k] {Q G : FiniteTypeCommHopfAlgCat.{u, u} k}
 
 /-- **The target of a central isogeny from a semisimple group is semisimple.** If `f` represents
-a central isogeny `G → Q` and `G` is semisimple, then so is `Q`. Smoothness and geometric
-connectedness pass to `Q` because its coordinate ring embeds in that of `G`. Over an algebraic
-closure, the solvable radical of `Q` is trivial by
-`FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal_eq_augmentation_of_isCentral`, which only
-uses faithful flatness and centrality of the kernel. -/
+a central isogeny `G → Q` and `G` is semisimple, then so is `Q`. -/
 theorem of_isCentralIsogeny (hG : semisimpleCommHopfAlgProperty k G) (f : Q.obj ⟶ G.obj)
     (hf : CommHopfAlgCat.IsCentralIsogeny f) : semisimpleCommHopfAlgProperty k Q := by
   have hG' :=
