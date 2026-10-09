@@ -156,7 +156,10 @@ private theorem exists_restriction_generator {V : Subgroup (AbsoluteGaloisGroup 
     Subgroup.map_comap_eq_self_of_surjective (QuotientGroup.mk'_surjective V) T
   have hTS : T.map e.toMonoidHom = S := Subgroup.map_comap_eq_self_of_surjective e.surjective S
   let eS := (e.subgroupMap T).trans (MulEquiv.subgroupCongr hTS)
-  have heS (t : T) : (eS t : H) = e t := rfl
+  have heS (t : T) : (eS t : H) = e t := by
+    simp only [eS, MulEquiv.trans_apply]
+    exact (MulEquiv.subgroupCongr_apply hTS ((e.subgroupMap T) t)).trans
+      (MulEquiv.coe_subgroupMap_apply e T t)
   let ES := explicitH2AddEquivGroupCohomology (B := Rep.res S.subtype B) eS ψ
     (fun t m ↦ hψ t m)
   have hdim := (ClassFieldTheory.strictCohomologicalDimensionAt_galSeparableClosure_eq_two
