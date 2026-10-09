@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Epi
 public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.RepresentationTheory.Character
 public import Mathlib.RepresentationTheory.Intertwining
@@ -23,9 +24,6 @@ import Mathlib.LinearAlgebra.TensorProduct.Pi
 -- Non-public: bijectivity of the base-changed quotient map (`QuotSMulTop.baseChange_mkQ_bijective`)
 -- is used only to construct `Representation.baseChangeQuotSMulTopEquiv`.
 import TauCeti.LinearAlgebra.TensorProduct.Quotient
--- Non-public: the heterogeneous unitor `TensorProduct.lid'` is used only to construct
--- `Representation.baseChangeRestrictScalarsIntEquiv`.
-import Mathlib.Algebra.Algebra.Epi
 -- Non-public: the bundling lemmas `FDRep.character_of` and `FDRep.character_ρ` are used only inside
 -- the proof of `FDRep.character_baseChange`.
 import TauCeti.RepresentationTheory.FDRep
@@ -82,8 +80,9 @@ of a permutation lattice `ℤ[X]` modulo a prime is `k[X]` and its rationalizati
 * `Representation.Equiv.baseChange`: base change transports an equivalence of representations.
 * `Representation.baseChangeQuotSMulTopEquiv`: if `r` maps to `0` in `A`, the base change of `ρ`
   is the base change of its reduction `ρ.quotSMulTop r` modulo `r`.
-* `Representation.baseChangeRestrictScalarsIntEquiv`: the reduction `ZMod n ⊗_ℤ W` of a
-  representation over `ZMod n` is the representation itself.
+* `Representation.baseChangeRestrictScalarsIntEquiv`: if `ℤ → A` is an epimorphism (for example
+  `A = ZMod n`), the base change `A ⊗_ℤ W` of a representation over `A` is the representation
+  itself.
 * `TauCeti.baseChangeOfMulActionEquiv`: the base change of `R[X]` is `A[X]`.
 * `TauCeti.baseChangeComapEquiv`: the base change of the permutation module `X →₀ R` is `A[X]`.
 -/
@@ -460,35 +459,33 @@ end QuotSMulTop
 
 section RestrictScalarsInt
 
-variable {n : ℕ} {G W : Type*} [Monoid G] [AddCommGroup W] [Module (ZMod n) W]
+variable {A G W : Type*} [CommRing A] [Algebra.IsEpi ℤ A] [Monoid G] [AddCommGroup W]
+  [Module A W]
 
-/-- **The reduction of a `ZMod n`-representation is itself**: `r ⊗ w ↦ r • w` is a
-`G`-equivariant `ZMod n`-linear isomorphism `ZMod n ⊗_ℤ W ≃ W`, because every element of `ZMod n`
-is the image of an integer. -/
+/-- **The reduction of a representation over an epimorphic `ℤ`-algebra is itself**: for a
+commutative ring `A` such that `ℤ → A` is an epimorphism (for example `A = ZMod n`),
+`r ⊗ w ↦ r • w` is a `G`-equivariant `A`-linear isomorphism `A ⊗_ℤ W ≃ W`. -/
 noncomputable def _root_.Representation.baseChangeRestrictScalarsIntEquiv
-    (ρ : _root_.Representation (ZMod n) G W) :
-    (_root_.Representation.baseChange (ZMod n) ρ.restrictScalarsInt).Equiv ρ :=
-  have := Algebra.isEpi_of_surjective_algebraMap ℤ (ZMod n) ZMod.intCast_surjective
-  _root_.Representation.Equiv.mk (TensorProduct.lid' ℤ (ZMod n) W) fun g ↦ by
+    (ρ : _root_.Representation A G W) :
+    (_root_.Representation.baseChange A ρ.restrictScalarsInt).Equiv ρ :=
+  _root_.Representation.Equiv.mk (TensorProduct.lid' ℤ A W) fun g ↦ by
     ext w
     simp
 
 /-- `Representation.baseChangeRestrictScalarsIntEquiv` multiplies out a pure tensor. -/
 @[simp]
 theorem _root_.Representation.baseChangeRestrictScalarsIntEquiv_tmul
-    (ρ : _root_.Representation (ZMod n) G W) (r : ZMod n) (w : W) :
-    ρ.baseChangeRestrictScalarsIntEquiv (r ⊗ₜ[ℤ] w) = r • w := by
-  unfold _root_.Representation.baseChangeRestrictScalarsIntEquiv
-  have := Algebra.isEpi_of_surjective_algebraMap ℤ (ZMod n) ZMod.intCast_surjective
-  exact TensorProduct.lid'_apply_tmul ℤ (ZMod n) W r w
+    (ρ : _root_.Representation A G W) (r : A) (w : W) :
+    ρ.baseChangeRestrictScalarsIntEquiv (r ⊗ₜ[ℤ] w) = r • w :=
+  TensorProduct.lid'_apply_tmul ℤ A W r w
 
 /-- The inverse of `Representation.baseChangeRestrictScalarsIntEquiv` sends `w` to `1 ⊗ w`. -/
 @[simp]
 theorem _root_.Representation.baseChangeRestrictScalarsIntEquiv_symm_apply
-    (ρ : _root_.Representation (ZMod n) G W) (w : W) :
-    ρ.baseChangeRestrictScalarsIntEquiv.symm w = (1 : ZMod n) ⊗ₜ[ℤ] w := by
+    (ρ : _root_.Representation A G W) (w : W) :
+    ρ.baseChangeRestrictScalarsIntEquiv.symm w = (1 : A) ⊗ₜ[ℤ] w := by
   rw [← _root_.Representation.Equiv.symm_apply_apply ρ.baseChangeRestrictScalarsIntEquiv
-      ((1 : ZMod n) ⊗ₜ[ℤ] w), _root_.Representation.baseChangeRestrictScalarsIntEquiv_tmul,
+      ((1 : A) ⊗ₜ[ℤ] w), _root_.Representation.baseChangeRestrictScalarsIntEquiv_tmul,
     one_smul]
 
 end RestrictScalarsInt
