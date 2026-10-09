@@ -307,12 +307,12 @@ lemma fiberPullbackFstIso_hom_comp_fiberι (p : E ⟶ B) (g : B' ⟶ B) (b' : B'
     (p.fiberPullbackFstIso g b').hom ≫ p.fiberι (g b') =
       (TopCat.pullbackFst g p).fiberι b' ≫ TopCat.pullbackSnd g p := (rfl)
 
-@[simp]
+-- Not `@[simp]`: the reducible `TopCat.pullbackFst` in the fibre's type is unfolded when
+-- indexing, so `simp` never matches the left-hand sides of these two lemmas; use `rw` instead.
 lemma fiberPullbackFstIso_hom_apply_coe (p : E ⟶ B) (g : B' ⟶ B) (b' : B')
     (x : (TopCat.pullbackFst g p).fiber b') :
     ((p.fiberPullbackFstIso g b').hom x : E) = x.1.1.2 := (rfl)
 
-@[simp]
 lemma fiberPullbackFstIso_inv_apply_coe (p : E ⟶ B) (g : B' ⟶ B) (b' : B') (x : p.fiber (g b')) :
     ((p.fiberPullbackFstIso g b').inv x : ↑(TopCat.of { q : B' × E // g q.1 = p q.2 })) =
       ⟨(b', x.1), x.2.symm⟩ := (rfl)
