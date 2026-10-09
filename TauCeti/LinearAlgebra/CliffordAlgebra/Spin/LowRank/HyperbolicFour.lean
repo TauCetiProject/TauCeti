@@ -57,9 +57,12 @@ private theorem hyperbolicFour_finrank :
 
 private theorem nondegenerate_hyperbolicFour :
     (splitEvenForm K 2).Nondegenerate := by
-  rw [show splitEvenForm K 2 = QuadraticForm.dualProd K (Fin 2 → K) by
+  -- `splitEvenForm` is opaque across modules, so compare through its application theorem.
+  have hForm :
+      splitEvenForm K 2 = QuadraticForm.dualProd K (Fin 2 → K) := by
     ext x
-    simp]
+    rw [splitEvenForm_apply, QuadraticForm.dualProd_apply]
+  rw [hForm]
   exact nondegenerate_dualProd (Module.eval_apply_injective K)
 
 private theorem hyperbolicFour_W_ne_bot :
