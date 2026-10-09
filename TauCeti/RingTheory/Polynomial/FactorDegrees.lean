@@ -185,14 +185,6 @@ theorem _root_.Polynomial.squarefree_map_of_nodup_factorDegrees {f : ℤ[X]} {p 
 
 /-! ### Multiplicity one at primes not dividing the discriminant -/
 
-/-- At a prime dividing neither the leading coefficient nor the discriminant, the reduction is
-separable: the reduction keeps the degree, so its discriminant is the reduction of `f.discr`. -/
-private theorem separable_map_of_not_dvd_discr {f : ℤ[X]} {p : ℕ} [Fact p.Prime]
-    (hlc : ¬ (p : ℤ) ∣ f.leadingCoeff) (hd : ¬ (p : ℤ) ∣ f.discr) :
-    (f.map (Int.castRingHom (ZMod p))).Separable := by
-  rw [f.separable_map_iff_map_discr_ne_zero _ (by simpa [ZMod.intCast_zmod_eq_zero_iff_dvd])]
-  simpa [ZMod.intCast_zmod_eq_zero_iff_dvd] using hd
-
 /-- **Multiplicity one.** If the prime `p` divides neither the leading coefficient nor the
 discriminant of `f`, then each normalized irreducible factor of the reduction of `f` modulo `p`
 occurs exactly once: the factor degrees are the degrees of the distinct irreducible factors of
@@ -200,7 +192,7 @@ the reduction. -/
 theorem _root_.Polynomial.nodup_normalizedFactors_map_of_not_dvd_discr {f : ℤ[X]} {p : ℕ}
     [Fact p.Prime] (hlc : ¬ (p : ℤ) ∣ f.leadingCoeff) (hd : ¬ (p : ℤ) ∣ f.discr) :
     (normalizedFactors (f.map (Int.castRingHom (ZMod p)))).Nodup := by
-  have hsep := separable_map_of_not_dvd_discr hlc hd
+  have hsep := (f.separable_map_zmod_iff_not_dvd_discr p hlc).mpr hd
   exact (squarefree_iff_nodup_normalizedFactors hsep.ne_zero).mp hsep.squarefree
 
 /-- If the prime `p` divides neither the leading coefficient nor the discriminant of `f`, the
@@ -209,7 +201,7 @@ number of factor degrees equal to `1` is the number of distinct roots of the red
 theorem _root_.Polynomial.count_one_factorDegrees_eq_card_roots {f : ℤ[X]} {p : ℕ}
     [Fact p.Prime] (hlc : ¬ (p : ℤ) ∣ f.leadingCoeff) (hd : ¬ (p : ℤ) ∣ f.discr) :
     (f.factorDegrees p).count 1 = (f.map (Int.castRingHom (ZMod p))).roots.toFinset.card := by
-  have hsep := separable_map_of_not_dvd_discr hlc hd
+  have hsep := (f.separable_map_zmod_iff_not_dvd_discr p hlc).mpr hd
   rw [factorDegrees_def, count_one_map_natDegree_normalizedFactors hsep.ne_zero hsep.squarefree]
 
 /-- If the prime `p` divides neither the leading coefficient nor the discriminant of `f`, then at
