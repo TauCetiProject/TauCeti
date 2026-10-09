@@ -16,10 +16,9 @@ Small generic lemmas extending `Mathlib/NumberTheory/ModularForms/Basic.lean` an
 actions: the conjugation `σ` is trivial on `SL(2, ℤ)`-matrices — a special case of
 `UpperHalfPlane.σ_eq_refl_of_det_pos`, which lives with `σ` itself in
 `TauCeti/Analysis/Complex/UpperHalfPlane/MoebiusAction.lean` — the `CuspForm`
-translation equations Mathlib does not yet provide (`CuspForm.mcast_apply` and the
-`GL(2, ℝ)`-level `CuspForm.coe_translate_gl`), and the weight-`k` slash action of `-I`
-(`ModularForm.slash_neg_one`), the source of every parity constraint on weights and
-nebentypus characters.
+cast equation Mathlib does not yet provide (`CuspForm.mcast_apply`), and the weight-`k`
+slash action of `-I` (`ModularForm.slash_neg_one`), the source of every parity constraint on
+weights and nebentypus characters.
 
 It also records how modular and cusp forms move between two nested groups `Γ' ≤ Γ`. Shrinking
 the group is unconditional (`ModularForm.ofLe`): slash invariance restricts, and every cusp of
@@ -158,13 +157,6 @@ lemma slash_zpow_mul_mul_zpow_eq_smul (k : ℤ) (f : ℍ → ℂ) {δ γ : GL (F
 analogue of Mathlib's `ModularForm.mcast_apply`, which Mathlib does not yet provide. -/
 lemma _root_.CuspForm.mcast_apply {a b : ℤ} {Γ Γ' : Subgroup (GL (Fin 2) ℝ)} (h : a = b)
     (f : CuspForm Γ a) (hΓ : Γ' = Γ := by rfl) (z : ℍ) : CuspForm.mcast h f hΓ z = f z := (rfl)
-
-/-- `GL(2, ℝ)`-level coercion lemma for `CuspForm.translate`; Mathlib's
-`CuspForm.coe_translate` is specialized to `SL(2, ℤ)` arguments. -/
-@[simp]
-lemma _root_.CuspForm.coe_translate_gl {F : Type*} [FunLike F UpperHalfPlane ℂ] {k : ℤ}
-    {Γ : Subgroup (GL (Fin 2) ℝ)} [CuspFormClass F Γ k] (f : F) (g : GL (Fin 2) ℝ) :
-    ⇑(CuspForm.translate f g) = ⇑f ∣[k] g := (rfl)
 
 /-- The weight-`k` slash action of `-I` is multiplication by `(-1) ^ k`: `-I` acts trivially
 on `ℍ` and has determinant `1`, so the only surviving factor is its automorphy factor
@@ -376,6 +368,48 @@ lemma mem_range_ofLeₗ_iff [Γ.HasDetOne] [Γ'.HasDetOne] (h : Γ' ≤ Γ)
     f ∈ LinearMap.range (ofLeₗ h) ↔ ∀ γ ∈ Γ, ⇑f ∣[k] γ = ⇑f :=
   ⟨by rintro ⟨g, rfl⟩ γ hγ; exact g.slash_action_eq' γ hγ,
     fun hf ↦ ⟨ofSlashInvariant hc f hf, rfl⟩⟩
+
+/-- `ModularForm.ofLe` agrees with Mathlib's `ModularForm.restrict`. -/
+lemma ofLe_eq_restrict (h : Γ' ≤ Γ) (f : ModularForm Γ k) : ofLe h f = restrict h f :=
+  DFunLike.coe_injective (by rw [coe_ofLe, coe_restrict])
+
+variable (Γ) in
+/-- Mathlib's trace `ModularForm.trace` from `Γ'` to a group `Γ` in which `Γ'` has finite relative
+index, as a `ℂ`-linear map. -/
+noncomputable def traceₗ [Γ.HasDetOne] [Γ'.HasDetOne] [Γ'.IsFiniteRelIndex Γ] :
+    ModularForm Γ' k →ₗ[ℂ] ModularForm Γ k where
+  toFun f := ModularForm.trace Γ f
+  map_add' f g := by
+    let _ := Fintype.ofFinite (Γ ⧸ Γ'.subgroupOf Γ)
+    apply DFunLike.coe_injective
+    rw [FunLike.coe_add, coe_trace, coe_trace, coe_trace, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun q _ ↦ ?_
+    induction q using QuotientGroup.induction_on' with
+    | H h => rw [SlashInvariantForm.quotientFunc_mk, SlashInvariantForm.quotientFunc_mk,
+        SlashInvariantForm.quotientFunc_mk, FunLike.coe_add, SlashAction.add_slash]
+  map_smul' c f := by
+    let _ := Fintype.ofFinite (Γ ⧸ Γ'.subgroupOf Γ)
+    apply DFunLike.coe_injective
+    rw [FunLike.coe_smul, coe_trace, coe_trace, RingHom.id_apply, Finset.smul_sum]
+    refine Finset.sum_congr rfl fun q _ ↦ ?_
+    induction q using QuotientGroup.induction_on' with
+    | H h =>
+      have hdet : 0 < ((h.val⁻¹ : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ).det := by
+        rw [← Matrix.GeneralLinearGroup.val_det_apply,
+          Subgroup.HasDetOne.det_eq (inv_mem h.property), Units.val_one]
+        exact one_pos
+      rw [SlashInvariantForm.quotientFunc_mk, SlashInvariantForm.quotientFunc_mk,
+        FunLike.coe_smul, ModularForm.smul_slash_of_det_pos k hdet]
+
+@[simp]
+lemma traceₗ_apply [Γ.HasDetOne] [Γ'.HasDetOne] [Γ'.IsFiniteRelIndex Γ] (f : ModularForm Γ' k) :
+    traceₗ Γ f = ModularForm.trace Γ f := (rfl)
+
+/-- Tracing the restriction of a form for `Γ` back to `Γ` multiplies it by the relative index.
+This is Mathlib's `trace_restrict` for the linear trace. -/
+lemma traceₗ_ofLe [Γ.HasDetOne] [Γ'.HasDetOne] [Γ'.IsFiniteRelIndex Γ] (h : Γ' ≤ Γ)
+    (f : ModularForm Γ k) : traceₗ Γ (ofLe h f) = (Γ'.relIndex Γ : ℂ) • f := by
+  rw [traceₗ_apply, ofLe_eq_restrict, trace_restrict, Nat.cast_smul_eq_nsmul]
 
 end ModularForm
 

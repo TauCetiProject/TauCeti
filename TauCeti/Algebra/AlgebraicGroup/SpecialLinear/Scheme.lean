@@ -121,13 +121,8 @@ instance isClosedImmersion_groupSchemeι :
 /-- The structural morphism of the special-linear group scheme is locally of finite type. -/
 instance locallyOfFiniteType_groupScheme :
     AlgebraicGeometry.LocallyOfFiniteType (groupScheme R n).X.hom := by
-  let H : FiniteTypeCommHopfAlgCat R :=
-    ⟨GeneralLinear.coordinateHopfAlgebra R n, by
-      rw [← GeneralLinear.finiteTypeCoordinateHopfAlgebra_obj]
-      exact (GeneralLinear.finiteTypeCoordinateHopfAlgebra R n).property⟩
   rw [groupScheme_def]
-  exact FiniteTypeCommHopfAlgCat.locallyOfFiniteType_quotientSpec
-    H (definingHopfIdeal R n)
+  infer_instance
 
 /-! ### Scheme-valued points -/
 

@@ -96,6 +96,41 @@ theorem d4TripledWeight_injective : Function.Injective d4TripledWeight := by
 theorem d4TripledWeight_zero : d4TripledWeight 0 = Pi.single 0 1 := by
   decide
 
+/-- The second weight of the natural block, in simple-coroot coordinates. -/
+@[simp]
+theorem d4TripledWeight_one : d4TripledWeight 1 = ![-1, 1, 0, 0] := by
+  decide
+
+/-- The third weight of the natural block, in simple-coroot coordinates. -/
+@[simp]
+theorem d4TripledWeight_two : d4TripledWeight 2 = ![0, -1, 1, 1] := by
+  decide
+
+/-- The fourth weight of the natural block, in simple-coroot coordinates. -/
+@[simp]
+theorem d4TripledWeight_three : d4TripledWeight 3 = ![0, 0, -1, 1] := by
+  decide
+
+/-- The fifth weight of the natural block, in simple-coroot coordinates. -/
+@[simp]
+theorem d4TripledWeight_four : d4TripledWeight 4 = ![0, 0, 1, -1] := by
+  decide
+
+/-- The sixth weight of the natural block, in simple-coroot coordinates. -/
+@[simp]
+theorem d4TripledWeight_five : d4TripledWeight 5 = ![0, 1, -1, -1] := by
+  decide
+
+/-- The seventh weight of the natural block, in simple-coroot coordinates. -/
+@[simp]
+theorem d4TripledWeight_six : d4TripledWeight 6 = ![1, -1, 0, 0] := by
+  decide
+
+/-- The eighth weight of the natural block, in simple-coroot coordinates. -/
+@[simp]
+theorem d4TripledWeight_seven : d4TripledWeight 7 = ![-1, 0, 0, 0] := by
+  decide
+
 /-- The first weight of the second block is the fundamental weight `ϖ₃`. -/
 @[simp]
 theorem d4TripledWeight_eight : d4TripledWeight 8 = Pi.single 2 1 := by
@@ -165,6 +200,11 @@ integer so that it can serve directly as a block labelling of the coordinates of
 def d4TripledSummand (a : Fin 24) : ℤ :=
   ((a : ℕ) / 8 : ℕ)
 
+/-- A tripled weight lies in the natural summand exactly when its table index is below eight. -/
+theorem d4TripledSummand_eq_zero_iff (a : Fin 24) :
+    d4TripledSummand a = 0 ↔ (a : ℕ) < 8 := by
+  decide +kernel +revert
+
 /-- Simple reflections preserve each of the three summands. -/
 @[simp]
 theorem d4TripledSummand_d4TripledReflection (i : Fin 4) (a : Fin 24) :
@@ -211,6 +251,37 @@ theorem range_typeDSpinWeight_four_subset_range_d4TripledWeight :
   revert s
   simp only [typeDSpinWeight_apply]
   decide +kernel
+
+private theorem d4TripledSummand_eq_of_weight_apply_eq_typeDSpinWeight (a : Fin 24)
+    (s : Finset (Fin 4)) (h : ∀ i, d4TripledWeight a i = typeDSpinWeight s i) :
+    d4TripledSummand a = if Even s.card then 2 else 1 := by
+  revert a s
+  simp only [typeDSpinWeight_apply]
+  decide +kernel
+
+/-- A tripled-table entry carrying a type-`D₄` spin weight belongs to the odd half-spin block
+for an odd sign set and to the even half-spin block for an even sign set. -/
+theorem d4TripledSummand_eq_of_weight_eq_typeDSpinWeight (a : Fin 24)
+    (s : Finset (Fin 4)) (h : d4TripledWeight a = typeDSpinWeight s) :
+    d4TripledSummand a = if Even s.card then 2 else 1 :=
+  d4TripledSummand_eq_of_weight_apply_eq_typeDSpinWeight a s fun i ↦ congrFun h i
+
+private theorem exists_typeDSpinWeight_apply_eq_d4TripledWeight_iff (a : Fin 24) :
+    (∃ s : Finset (Fin 4), ∀ i, typeDSpinWeight s i = d4TripledWeight a i) ↔
+      d4TripledSummand a ≠ 0 := by
+  revert a
+  simp only [typeDSpinWeight_apply]
+  decide +kernel
+
+/-- A tripled-table weight is a type-`D₄` spin weight exactly when it belongs to one of the
+two half-spin blocks rather than the natural block. -/
+theorem exists_typeDSpinWeight_eq_d4TripledWeight_iff (a : Fin 24) :
+    (∃ s : Finset (Fin 4), typeDSpinWeight s = d4TripledWeight a) ↔
+      d4TripledSummand a ≠ 0 := by
+  rw [← exists_typeDSpinWeight_apply_eq_d4TripledWeight_iff]
+  apply exists_congr
+  intro s
+  exact ⟨fun h i ↦ congrFun h i, fun h ↦ funext h⟩
 
 /-- **The tripled weights span the full type-`D₄` character lattice.** The last sixteen entries
 are the two half-spin blocks, hence contain the full type-`D₄` spin-weight family, which already

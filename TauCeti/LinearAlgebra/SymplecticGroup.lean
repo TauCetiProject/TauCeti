@@ -31,6 +31,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 * `Matrix.eq_J_conj_iff_mul_J_eq`: cancelling a conjugation by `J`.
 * `SymplecticGroup.transpose_eq_J_conj_inv`: the transpose of a symplectic matrix is the
   `J`-conjugate of its inverse.
+* `SymplecticGroup.mem_iff_neg_J_mul_transpose_mul_J_mul_eq_one`: the symplectic matrices are the
+  unitary elements for the symplectic adjoint `A ↦ -(J * Aᵀ * J)`.
 * `SymplecticGroup.fromBlocks_upper_mem`: `fromBlocks 1 B 0 1` for symmetric `B`;
 * `SymplecticGroup.fromBlocks_lower_mem`: `fromBlocks 1 0 C 1` for symmetric `C`;
 * `SymplecticGroup.fromBlocks_diagonal_mem`: `fromBlocks A 0 0 D` when `Aᵀ * D = 1`.
@@ -82,6 +84,16 @@ theorem transpose_eq_J_conj_inv {A : Matrix (l ⊕ l) (l ⊕ l) R}
   rw [eq_J_conj_iff_mul_J_eq, inv_eq_symplectic_inv A hA]
   calc Aᵀ * J l R = J l R * (-J l R) * (Aᵀ * J l R) := by rw [J_mul_neg_J, one_mul]
     _ = J l R * (-J l R * Aᵀ * J l R) := by noncomm_ring
+
+/-- **Symplectic matrices are the unitary elements for the symplectic adjoint**
+`A ↦ J⁻¹ * Aᵀ * J = -(J * Aᵀ * J)`: a matrix is symplectic exactly when its adjoint is a left
+inverse. Mathlib's `SymplecticGroup.inv_left_mul_aux` is the forward direction. -/
+theorem mem_iff_neg_J_mul_transpose_mul_J_mul_eq_one {A : Matrix (l ⊕ l) (l ⊕ l) R} :
+    A ∈ symplecticGroup l R ↔ -(J l R * Aᵀ * J l R * A) = 1 := by
+  refine ⟨inv_left_mul_aux, fun h => mem_iff'.mpr ?_⟩
+  calc Aᵀ * J l R * A = -J l R * J l R * (Aᵀ * J l R * A) := by rw [neg_J_mul_J, one_mul]
+    _ = J l R * -(J l R * Aᵀ * J l R * A) := by noncomm_ring
+    _ = J l R := by rw [h, mul_one]
 
 /-- An upper unitriangular block matrix is symplectic when its upper-right block is symmetric. -/
 theorem fromBlocks_upper_mem {B : Matrix l l R} (hB : Bᵀ = B) :

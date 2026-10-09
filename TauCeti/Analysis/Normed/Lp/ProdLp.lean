@@ -8,18 +8,23 @@ module
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 
 /-!
-# Bounds for coordinates and the `ℓ^p` product norm
+# The `ℓ^p` product: coordinate bounds and components of indicators
 
 Mathlib bounds each factor of `WithLp p (α × β)` by the whole (`WithLp.norm_fst_le` and
 `WithLp.norm_snd_le`) and computes the norm exactly for `p = 1` and `p = 2`.  This file records
 the opposite bound, valid for every exponent `1 ≤ p ≤ ∞`: the `ℓ^p` norm of a pair is at most the
 sum of the norms of its two components.  For `p = 1` the bound is an identity for every pair.
 
+It also records that taking a component of `WithLp p (α × β)` commutes with `Set.indicator`, as
+Mathlib's `norm_indicator_eq_indicator_norm` does for the norm.
+
 ## Main statements
 
 * `WithLp.prod_norm_le_norm_fst_add_norm_snd` — the bound `‖x‖ ≤ ‖x.fst‖ + ‖x.snd‖`.
 * `TauCeti.snd_lt_one` — a unit vector in `E × ℝ` other than `(0, 1)` has last coordinate
   strictly less than `1`.
+* `WithLp.fst_indicator`, `WithLp.snd_indicator` — a component of an indicator is the indicator
+  of the component.
 -/
 
 public section
@@ -56,5 +61,21 @@ theorem snd_lt_one {u : WithLp 2 (E × ℝ)} (hnorm : ‖u‖ = 1)
   simpa using hsq
 
 end Real
+
+section Indicator
+
+variable {p : ℝ≥0∞} {ι α β : Type*} [AddCommGroup α] [AddCommGroup β] {s : Set ι}
+
+/-- The first component of an indicator function is the indicator of the first components. -/
+theorem _root_.WithLp.fst_indicator (f : ι → WithLp p (α × β)) (x : ι) :
+    (s.indicator f x).fst = s.indicator (fun y => (f y).fst) x :=
+  (congr_fun (Set.indicator_comp_of_zero (g := WithLp.fst) WithLp.zero_fst) x).symm
+
+/-- The second component of an indicator function is the indicator of the second components. -/
+theorem _root_.WithLp.snd_indicator (f : ι → WithLp p (α × β)) (x : ι) :
+    (s.indicator f x).snd = s.indicator (fun y => (f y).snd) x :=
+  (congr_fun (Set.indicator_comp_of_zero (g := WithLp.snd) WithLp.zero_snd) x).symm
+
+end Indicator
 
 end TauCeti

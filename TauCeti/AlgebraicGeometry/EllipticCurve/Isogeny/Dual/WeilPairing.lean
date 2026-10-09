@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Separable
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.WeilPairing.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PointHom.DivisorPullback
 

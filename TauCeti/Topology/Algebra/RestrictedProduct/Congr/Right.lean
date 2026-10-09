@@ -90,6 +90,33 @@ theorem restrictedProductCongrRight_symm_apply {H : ι → Type w} [∀ i, Group
     (restrictedProductCongrRight U U' φ hφ).symm y i = (φ i).symm (y i) := by
   rfl
 
+/-- A componentwise equivalence which carries the reference subgroup bijectively at every index
+carries the everywhere-integral subgroup onto the everywhere-integral subgroup. The hypothesis is
+deliberately pointwise, rather than eventual: the latter only identifies the ambient restricted
+products and is insufficient for this conclusion. -/
+theorem map_integralSubgroup_restrictedProductCongrRight
+    {H : ι → Type w} [∀ i, Group (H i)]
+    (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
+    (φ : ∀ i, G i ≃* H i)
+    (hφ : ∀ i, Set.BijOn (φ i) (U i) (U' i)) :
+    (integralSubgroup U).map
+        (restrictedProductCongrRight U U' φ (.of_forall hφ) :
+          (Πʳ i, [G i, (U i : Set (G i))]) →*
+            Πʳ i, [H i, (U' i : Set (H i))]) =
+      integralSubgroup U' := by
+  apply le_antisymm
+  · rintro _ ⟨x, hx, rfl⟩
+    apply (mem_integralSubgroup U' _).mpr
+    intro i
+    exact (hφ i).mapsTo ((mem_integralSubgroup U x).mp hx i)
+  · intro y hy
+    refine ⟨(restrictedProductCongrRight U U' φ (.of_forall hφ)).symm y, ?_, ?_⟩
+    · apply (mem_integralSubgroup U _).mpr
+      intro i
+      rw [restrictedProductCongrRight_symm_apply]
+      exact (hφ i).equiv_symm.mapsTo ((mem_integralSubgroup U' y).mp hy i)
+    · exact (restrictedProductCongrRight U U' φ (.of_forall hφ)).apply_symm_apply y
+
 /-- The forward change-of-factors equivalence is continuous when its coordinate maps are
 continuous. -/
 @[to_additive continuous_addRestrictedProductCongrRight]

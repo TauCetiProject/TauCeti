@@ -72,6 +72,8 @@ series of a profinite group.
   carries the closed normal closure of a set onto the closed normal closure of its image.
 * `Subgroup.commutator_topologicalClosure_right_le`: a closed subgroup containing `⁅A, B⁆`
   contains `⁅A, B.topologicalClosure⁆`.
+* `DenseRange.topologicalClosure_map_commutator`: a homomorphism with dense range maps the
+  commutator subgroup onto a dense subgroup of the closed commutator subgroup.
 * `Subgroup.topologicalClosure_commutator_le_of_forall_commutatorElement_mem`: a closed normal
   subgroup containing the commutators of a topological generating set contains the closure of
   the commutator subgroup.
@@ -91,6 +93,11 @@ series of a profinite group.
   generate a dense subgroup.
 * `TauCeti.discreteTopology_of_conjAct_smul_eq`: a conjugate `g H g⁻¹` of a discrete
   subgroup `H` is discrete.
+* `MonoidHom.discreteTopology_range_of_finite_preimage`: a homomorphism into a `T1` topological
+  group has discrete range when some neighbourhood of the identity has finite preimage.
+* `MonoidHom.isEmbedding_of_isCompact_preimage`: a continuous injective homomorphism into a
+  Hausdorff topological group is an embedding when some neighbourhood of the identity has compact
+  preimage.
 -/
 
 public section
@@ -315,6 +322,27 @@ theorem commutator_topologicalClosure_right_le {A B N : Subgroup G} (hN : IsClos
   rw [← SetLike.mem_coe, topologicalClosure_coe] at hb
   exact closure_minimal (fun y hy ↦ h a ha y hy) (hN.preimage hcont) hb
 
+/-- **Commutators of a dense image are dense in the commutators.** If `f : M →* H` has dense
+range, the image of the commutator subgroup of `M` is dense in the closed commutator subgroup of
+`H`. No topology on `M` is involved. -/
+theorem _root_.DenseRange.topologicalClosure_map_commutator {M : Type*} [Group M] {f : M →* H}
+    (hd : DenseRange f) :
+    ((_root_.commutator M).map f).topologicalClosure =
+      (_root_.commutator H).topologicalClosure := by
+  refine le_antisymm (topologicalClosure_mono ?_) (topologicalClosure_minimal _ ?_ ?_)
+  · rw [map_commutator_eq]
+    exact commutator_mono le_top le_top
+  · -- `⁅f.range, f.range⁆` is the image of the commutator subgroup, and the closure of `f.range`
+    -- is everything, so closing up one side at a time gives all commutators of `H`.
+    have hr : f.range.topologicalClosure = ⊤ := dense_iff_topologicalClosure_eq_top.1 hd
+    rw [_root_.commutator_def H, ← hr]
+    refine commutator_topologicalClosure_right_le (isClosed_topologicalClosure _) ?_
+    rw [commutator_comm]
+    refine commutator_topologicalClosure_right_le (isClosed_topologicalClosure _) ?_
+    rw [← map_commutator_eq]
+    exact le_topologicalClosure _
+  · exact isClosed_topologicalClosure _
+
 open scoped commutatorElement in
 /-- **Commutators of topological generators generate the commutators.** If `s` topologically
 generates `G` and `N` is a closed normal subgroup containing the commutators of the elements of
@@ -522,5 +550,48 @@ theorem discreteTopology_of_conjAct_smul_eq {G : Type*} [Group G] [TopologicalSp
   exact ((Topology.IsEmbedding.of_comp_iff Topology.IsEmbedding.subtypeVal).mp hφ).discreteTopology
 
 end Conj
+
+open scoped Topology in
+/-- A homomorphism into a `T1` topological group has discrete range as soon as some neighbourhood
+of the identity has finite preimage. -/
+@[to_additive /-- A homomorphism into a `T1` additive topological group has discrete range as soon
+as some neighbourhood of zero has finite preimage. -/]
+theorem _root_.MonoidHom.discreteTopology_range_of_finite_preimage {G H : Type*} [Group G]
+    [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [T1Space H] (f : G →* H) {W : Set H}
+    (hW : W ∈ 𝓝 1) (hfin : (f ⁻¹' W).Finite) : DiscreteTopology f.range := by
+  refine discreteTopology_of_isOpen_singleton_one
+    (isOpen_singleton_of_finite_mem_nhds _ (s := Subtype.val ⁻¹' W)
+      (continuous_subtype_val.continuousAt.preimage_mem_nhds hW) ?_)
+  refine (hfin.image f.rangeRestrict).subset ?_
+  rintro ⟨_, g, rfl⟩ hg
+  exact ⟨g, hg, Subtype.ext rfl⟩
+
+open scoped Topology in
+/-- A continuous injective homomorphism into a Hausdorff topological group is a topological
+embedding as soon as some neighbourhood of the identity has compact preimage. -/
+@[to_additive /-- A continuous injective homomorphism into a Hausdorff additive topological group
+is a topological embedding as soon as some neighbourhood of zero has compact preimage. -/]
+theorem _root_.MonoidHom.isEmbedding_of_isCompact_preimage {G H : Type*} [Group G]
+    [TopologicalSpace G] [IsTopologicalGroup G] [Group H] [TopologicalSpace H]
+    [IsTopologicalGroup H] [T2Space H] (f : G →* H) (hf : Continuous f)
+    (hinj : Function.Injective f) {W : Set H} (hW : W ∈ 𝓝 1) (hc : IsCompact (f ⁻¹' W)) :
+    Topology.IsEmbedding f := by
+  refine ⟨IsTopologicalGroup.isInducing_iff_nhds_one.2 (le_antisymm ?_ ?_), hinj⟩
+  · exact (hf.tendsto' 1 1 (map_one f)).le_comap
+  -- On the compact set `f ⁻¹' W` the map is a continuous injection into a Hausdorff space, hence
+  -- inducing; and a neighbourhood of `1` in `H` can be shrunk into `W`.
+  have : CompactSpace (f ⁻¹' W) := isCompact_iff_compactSpace.1 hc
+  have hind : Topology.IsInducing (f ∘ Subtype.val : f ⁻¹' W → H) :=
+    ((hf.comp continuous_subtype_val).isClosedEmbedding
+      (hinj.comp Subtype.val_injective)).isInducing
+  intro s hs
+  have h1 : (1 : G) ∈ f ⁻¹' W := by simpa using mem_of_mem_nhds hW
+  have hs' : (Subtype.val : f ⁻¹' W → G) ⁻¹' s ∈ 𝓝 ⟨1, h1⟩ :=
+    continuous_subtype_val.continuousAt.preimage_mem_nhds hs
+  rw [hind.nhds_eq_comap, Filter.mem_comap] at hs'
+  obtain ⟨t, ht, hts⟩ := hs'
+  refine Filter.mem_comap.2 ⟨t ∩ W, Filter.inter_mem (by simpa using ht) hW, ?_⟩
+  rintro x ⟨hxt, hxW⟩
+  exact @hts ⟨x, hxW⟩ hxt
 
 end TauCeti

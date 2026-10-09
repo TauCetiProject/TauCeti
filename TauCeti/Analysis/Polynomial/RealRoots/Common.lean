@@ -9,8 +9,7 @@ public import TauCeti.Analysis.Polynomial.CommonRoots
 public import TauCeti.Analysis.Polynomial.RealRoots.Ordered
 
 import TauCeti.RingTheory.Polynomial.Roots
-import TauCeti.Topology.Algebra.Polynomial
-import TauCeti.Topology.MetricSpace.SeparatedBalls
+import TauCeti.Topology.Algebra.Polynomial.RootMultiplicity
 
 /-!
 # Common ordered real roots of a finite family of real polynomials
@@ -135,11 +134,11 @@ theorem exists_continuous_ordered_common_roots_of_preconnectedSpace [Finite ι]
       rw [hdeg k x]
       exact_mod_cast Nat.lt_of_not_le hi
   -- the results on ordered real roots apply to the product of the members
-  obtain ⟨n, r, hrc, hrm, hroots, -⟩ :=
+  obtain ⟨n, r, hrc, hrm, hroots, hmult⟩ :=
     exists_continuous_ordered_roots_of_preconnectedSpace (F := fun x => ∏ k, F k x)
       (d := ∑ k, d k)
       (fun i _ => continuous_iff_continuousAt.2 fun x =>
-        continuousAt_coeff_prod _ (fun k _ i => (hF' k i).continuousAt) i)
+        continuousAt_coeff_prod _ (fun k _ i _ => (hF' k i).continuousAt))
       (fun x => by rw [degree_prod, Nat.cast_sum]; exact Finset.sum_congr rfl fun k _ => hdeg k x)
       (fun x₀ => (eventually_card_aroots_prod_eq (fun k i hi => (hF k i hi).continuousAt)
         (fun k => Eventually.of_forall (hdeg k)) (fun k => hcard k x₀)
@@ -148,35 +147,14 @@ theorem exists_continuous_ordered_common_roots_of_preconnectedSpace [Finite ι]
     rw [← hroots x t, IsRoot.def, eval_prod, Finset.prod_eq_zero_iff]
     simp only [Finset.mem_univ, true_and, IsRoot.def]
   refine ⟨n, r, hrc, hrm, hroot, fun k i => ?_⟩
-  -- the multiplicity in each member is locally constant, by the family matching lemma
+  -- Constant product multiplicity forces every factor multiplicity to be locally constant.
   suffices h : IsLocallyConstant fun x => (F k x).rootMultiplicity (r x i) from
     h.apply_eq_of_preconnectedSpace
   refine (IsLocallyConstant.iff_eventually_eq _).2 fun x₀ => ?_
-  -- a real root of a member at `x` is a point of the union of complex root sets
-  have hmemU (x : B) (j : Fin n) :
-      (r x j : ℂ) ∈ Finset.univ.biUnion fun k => ((F k x).aroots ℂ).toFinset := by
-    obtain ⟨l, hl⟩ := (hroot x (r x j)).2 ⟨j, rfl⟩
-    refine Finset.mem_biUnion.2 ⟨l, Finset.mem_univ _, Multiset.mem_toFinset.2 ?_⟩
-    rw [mem_aroots, ← Complex.coe_algebraMap, aeval_algebraMap_apply_eq_algebraMap_eval,
-      hl.eq_zero, map_zero]
-    exact ⟨hne l x, rfl⟩
-  obtain ⟨ρ, hρ, -, hsep⟩ := exists_pos_closedBall_subset_and_lt_dist
-    (T := Finset.univ.biUnion fun k => ((F k x₀).aroots ℂ).toFinset) (U := fun _ => Set.univ)
-    fun _ _ => univ_mem
-  have hclose : ∀ᶠ x in 𝓝 x₀, dist (r x i) (r x₀ i) < ρ :=
-    (Metric.continuousAt_iff'.1 (hrc i).continuousAt) ρ hρ
-  filter_upwards [eventually_exists_bijOn_biUnion_aroots_toFinset
-    (fun k i hi => (hF k i hi).continuousAt) (fun k => Eventually.of_forall (hdeg k))
-    (fun k => hcard k x₀) (fun k l hkl => hgcd hkl x₀) hρ, hclose] with x ⟨e, he, hed⟩ hx
-  -- the partner of `r x₀ i` under the complex matching is `r x i`
-  obtain ⟨z, hz, hez⟩ := he.surjOn (hmemU x i)
-  obtain rfl : z = r x₀ i := eq_of_dist_lt_of_dist_lt (hsep z hz _ (hmemU x₀ i)) (y := r x i)
-    (by rw [← hez, dist_eq_norm]; exact (hed z hz).1)
-    (by rwa [Complex.isometry_ofReal.dist_eq])
-  have hmult := (hed _ hz).2 k
-  rw [hez] at hmult
-  rw [eq_rootMultiplicity_map (algebraMap ℝ ℂ).injective (r x i),
-    eq_rootMultiplicity_map (algebraMap ℝ ℂ).injective (r x₀ i)]
-  exact hmult
+  exact (eventually_rootMultiplicity_eq_of_prod Finset.univ
+    (fun k _ j hj => (hF k j hj).continuousAt)
+    (fun k _ => .of_forall fun x => (natDegree_eq_of_degree_eq_some (hdeg k x)).le)
+    (hrc i).continuousAt (fun k _ => hne k x₀)
+    (.of_forall fun x => hmult i x x₀)).mono fun _ hx => hx k (Finset.mem_univ k)
 
 end Polynomial

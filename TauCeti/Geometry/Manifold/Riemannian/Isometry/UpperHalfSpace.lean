@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Reflection
 public import TauCeti.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Geometry.Euclidean.Inversion
-public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace
+public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Ext
 
 /-!
