@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 
 -- Access the constructor body to supply its missing public computation rule, and the body of
--- `IsLocalDiffeomorphAt` to supply its introduction rule.
+-- `IsLocalDiffeomorphAt` to construct and destructure its witness.
 import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 
 /-!
