@@ -29,6 +29,8 @@ commutative rings, where it normalizes homogeneous coordinates of points of proj
 * `IsUnit.isUnimodular_pi`: a coordinate vector with a unit coordinate is unimodular.
 * `TauCeti.Module.isUnimodular_iff_exists_isUnit`: over a directly finite local semiring, a vector
   with finitely many coordinates is unimodular if and only if one of its coordinates is a unit.
+* `TauCeti.forall_mul_eq_mul_iff_exists_units`: two coordinate families generating the unit ideal
+  are unit multiples of one another exactly when their `2 × 2` minors vanish.
 -/
 
 public section
@@ -90,6 +92,49 @@ theorem isUnimodular_iff_exists_isUnit {R ι : Type*} [Semiring R] [IsLocalRing 
   exact ⟨i, isUnit_of_mul_isUnit_left hi⟩
 
 end TauCeti.Module
+
+namespace TauCeti
+
+variable {R ι : Type*} [CommSemiring R]
+
+/-- If a coordinate family generates the unit ideal and a second family has vanishing `2 × 2`
+minors against it, then the second family is a multiple of the first. -/
+theorem exists_forall_eq_mul_of_mul_eq_mul {a b : ι → R}
+    (ha : Ideal.span (Set.range a) = ⊤) (hab : ∀ i j, b i * a j = b j * a i) :
+    ∃ u : R, ∀ j, b j = u * a j := by
+  obtain ⟨s, hs⟩ := Finsupp.mem_span_range_iff_exists_finsupp.mp
+    (ha ▸ Submodule.mem_top : (1 : R) ∈ Ideal.span (Set.range a))
+  refine ⟨s.sum fun i r ↦ r * b i, fun j ↦ ?_⟩
+  -- Multiply `b j` by `1 = ∑ sᵢ aᵢ` and swap each `aᵢ` with `b j` using the minors.
+  calc b j = (s.sum fun i r ↦ r • a i) * b j := by rw [hs, one_mul]
+    _ = (s.sum fun i r ↦ r * b i) * a j := by
+      simp only [Finsupp.sum_mul, smul_eq_mul, mul_assoc, hab, mul_comm (a _)]
+
+/-- Two coordinate families, each generating the unit ideal, are unit multiples of one another
+exactly when all their `2 × 2` minors vanish. -/
+theorem forall_mul_eq_mul_iff_exists_units {a b : ι → R}
+    (ha : Ideal.span (Set.range a) = ⊤) (hb : Ideal.span (Set.range b) = ⊤) :
+    (∀ i j, b i * a j = b j * a i) ↔ ∃ c : Rˣ, ∀ i, b i = c * a i := by
+  constructor
+  · intro hab
+    obtain ⟨u, hu⟩ := exists_forall_eq_mul_of_mul_eq_mul ha hab
+    obtain ⟨v, hv⟩ := exists_forall_eq_mul_of_mul_eq_mul hb fun i j ↦ by
+      rw [mul_comm, hab j i, mul_comm]
+    obtain ⟨t, ht⟩ := Finsupp.mem_span_range_iff_exists_finsupp.mp
+      (hb ▸ Submodule.mem_top : (1 : R) ∈ Ideal.span (Set.range b))
+    -- `u * v` fixes every `b j`, and the `b j` generate the unit ideal.
+    have huv : u * v = 1 := by
+      calc u * v = u * v * (t.sum fun i r ↦ r • b i) := by rw [ht, mul_one]
+        _ = t.sum fun i r ↦ r • b i := by
+          simp only [Finsupp.mul_sum, smul_eq_mul]
+          refine Finsupp.sum_congr fun i _ ↦ ?_
+          rw [mul_left_comm, mul_assoc, ← hv, ← hu]
+        _ = 1 := ht
+    exact ⟨⟨u, v, huv, by rw [mul_comm, huv]⟩, hu⟩
+  · rintro ⟨c, hc⟩ i j
+    rw [hc i, hc j, mul_right_comm, mul_assoc]
+
+end TauCeti
 
 namespace Module.IsUnimodular
 
