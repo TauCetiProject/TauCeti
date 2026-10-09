@@ -22,25 +22,23 @@ iterating resolvent steps gives the *minimizing movement* scheme of De Giorgi. T
 here are the discrete counterparts of the energy-dissipation inequality on which the convergence of
 that scheme rests.
 
-The squared-distance penalty `d(x, y)² / (2τ)` is computed in `ℝ≥0∞`, so it is `∞` at every point at
-infinite distance from `x`: the infimum only sees the finite-distance component of `x`. Accordingly
-a resolvent step of finite energy stays at finite distance from its starting point
-(`TauCeti.edist_ne_top_of_mem_moreauYosidaResolvent`). Ambrosio–Gigli–Savaré take energies with
-values in `(-∞, ∞]`; here `φ` may take the value `⊥`, and the results assume `φ ≠ ⊥` at the points
-where they need it.
+The infimum and the minimization run only over the points at finite distance from `x`, so both
+depend only on the finite-distance component of `x`, and a resolvent step stays at finite distance
+from its starting point (`TauCeti.edist_ne_top_of_mem_moreauYosidaResolvent`). Ambrosio–Gigli–Savaré
+take energies with values in `(-∞, ∞]`; here `φ` may take the value `⊥`, and the results assume
+`φ ≠ ⊥` at the points where they need it.
 
 ## Main definitions
 
 * `TauCeti.moreauYosida φ τ x`: the Moreau–Yosida approximation `φ_τ(x)`.
 * `TauCeti.moreauYosidaResolvent φ τ x`: the resolvent `J_τ x`, the set of minimizers of
-  `y ↦ φ y + d(x, y)² / (2τ)`.
+  `y ↦ φ y + d(x, y)² / (2τ)` over the points at finite distance from `x`.
 
 ## Main results
 
 * `TauCeti.apply_add_le_of_mem_moreauYosidaResolvent`: the one-step energy estimate
   `φ y + d(x, y)² / (2τ) ≤ φ x` for `y ∈ J_τ x`.
-* `TauCeti.edist_ne_top_of_mem_moreauYosidaResolvent`: a resolvent step of finite energy has
-  finite length.
+* `TauCeti.edist_ne_top_of_mem_moreauYosidaResolvent`: a resolvent step has finite length.
 * `TauCeti.edist_le_edist_of_mem_moreauYosidaResolvent` and
   `TauCeti.apply_le_apply_of_mem_moreauYosidaResolvent`: for `τ < σ`, a resolvent step of time `σ`
   goes at least as far as one of time `τ`, and reaches energy at most as large.
@@ -72,66 +70,72 @@ section PseudoEMetricSpace
 variable {X : Type*} [PseudoEMetricSpace X] {φ ψ : X → EReal} {τ σ : ℝ≥0} {x y : X}
 
 /-- The *Moreau–Yosida approximation* `φ_τ(x) = inf_y (φ y + d(x, y)² / (2τ))` of an energy `φ`
-with time step `τ`. The penalty is computed in `ℝ≥0∞`, so points at infinite distance from `x` do
-not contribute. -/
+with time step `τ`. The infimum runs over the points `y` at finite distance from `x`, so points
+at infinite distance from `x` do not contribute, even where `φ y = ⊥`. -/
 def moreauYosida (φ : X → EReal) (τ : ℝ≥0) (x : X) : EReal :=
-  ⨅ y, φ y + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞)
+  ⨅ (y) (_ : edist x y ≠ ⊤), φ y + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞)
 
 /-- The defining formula of the Moreau–Yosida approximation, as an infimum. -/
 theorem moreauYosida_def (φ : X → EReal) (τ : ℝ≥0) (x : X) :
-    moreauYosida φ τ x = ⨅ y, φ y + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞) :=
+    moreauYosida φ τ x = ⨅ (y) (_ : edist x y ≠ ⊤), φ y + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞) :=
   (rfl)
 
-/-- The Moreau–Yosida approximation at `x` is at most the penalized energy at any point `y`. -/
-theorem moreauYosida_le (φ : X → EReal) (τ : ℝ≥0) (x y : X) :
+/-- The Moreau–Yosida approximation at `x` is at most the penalized energy at any point `y` at
+finite distance from `x`. -/
+theorem moreauYosida_le (φ : X → EReal) (τ : ℝ≥0) {x y : X} (h : edist x y ≠ ⊤) :
     moreauYosida φ τ x ≤ φ y + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞) :=
-  iInf_le (fun y ↦ φ y + ((edist x y ^ 2 / (2 * τ) : ℝ≥0∞) : EReal)) y
+  iInf₂_le (f := fun y (_ : edist x y ≠ ⊤) ↦ φ y + ((edist x y ^ 2 / (2 * τ) : ℝ≥0∞) : EReal)) y h
 
 /-- A lower bound for the Moreau–Yosida approximation is a lower bound for the penalized energy
-at every point. -/
+at every point at finite distance from `x`. -/
 theorem le_moreauYosida_iff {c : EReal} :
-    c ≤ moreauYosida φ τ x ↔ ∀ y, c ≤ φ y + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞) :=
-  le_iInf_iff
+    c ≤ moreauYosida φ τ x ↔
+      ∀ y, edist x y ≠ ⊤ → c ≤ φ y + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞) :=
+  le_iInf₂_iff
 
 /-- The Moreau–Yosida approximation lies below the energy. -/
 theorem moreauYosida_le_self (φ : X → EReal) (τ : ℝ≥0) (x : X) : moreauYosida φ τ x ≤ φ x := by
-  simpa using moreauYosida_le φ τ x x
+  simpa using moreauYosida_le φ τ (x := x) (y := x) (by simp)
 
 /-- The Moreau–Yosida approximation is monotone in the energy. -/
 theorem moreauYosida_mono (h : φ ≤ ψ) (τ : ℝ≥0) (x : X) :
     moreauYosida φ τ x ≤ moreauYosida ψ τ x :=
-  iInf_mono fun y ↦ add_le_add_left (h y) _
+  iInf₂_mono fun y _ ↦ add_le_add_left (h y) _
 
 /-- The Moreau–Yosida approximation decreases as the time step grows. -/
 theorem antitone_moreauYosida (φ : X → EReal) (x : X) : Antitone (moreauYosida φ · x) :=
-  fun _ _ h ↦ iInf_mono fun _ ↦ add_le_add_right (EReal.coe_ennreal_le_coe_ennreal_iff.2 <|
+  fun _ _ h ↦ iInf₂_mono fun _ _ ↦ add_le_add_right (EReal.coe_ennreal_le_coe_ennreal_iff.2 <|
     ENNReal.div_le_div_left (mul_le_mul_right (ENNReal.coe_le_coe.2 h) _) _) _
 
-/-- The *resolvent* `J_τ x` of an energy `φ`: the set of points `y` minimizing
-`y ↦ φ y + d(x, y)² / (2τ)`, that is, attaining the Moreau–Yosida approximation `φ_τ(x)`
+/-- The *resolvent* `J_τ x` of an energy `φ`: the set of points `y` at finite distance from `x`
+minimizing `y ↦ φ y + d(x, y)² / (2τ)` among the points at finite distance from `x`, that is,
+attaining the Moreau–Yosida approximation `φ_τ(x)`
 (`TauCeti.mem_moreauYosidaResolvent_iff_eq_moreauYosida`). It may be empty or contain several
 points. -/
 def moreauYosidaResolvent (φ : X → EReal) (τ : ℝ≥0) (x : X) : Set X :=
-  {y | ∀ z, φ y + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞) ≤ φ z + (edist x z ^ 2 / (2 * τ) : ℝ≥0∞)}
+  {y | edist x y ≠ ⊤ ∧ ∀ z, edist x z ≠ ⊤ →
+    φ y + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞) ≤ φ z + (edist x z ^ 2 / (2 * τ) : ℝ≥0∞)}
 
-/-- The defining property of the resolvent: `y` minimizes the penalized energy. -/
+/-- The defining property of the resolvent: `y` is at finite distance from `x` and minimizes the
+penalized energy among the points at finite distance from `x`. -/
 theorem mem_moreauYosidaResolvent_iff :
-    y ∈ moreauYosidaResolvent φ τ x ↔
-      ∀ z, φ y + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞) ≤ φ z + (edist x z ^ 2 / (2 * τ) : ℝ≥0∞) :=
+    y ∈ moreauYosidaResolvent φ τ x ↔ edist x y ≠ ⊤ ∧ ∀ z, edist x z ≠ ⊤ →
+      φ y + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞) ≤ φ z + (edist x z ^ 2 / (2 * τ) : ℝ≥0∞) :=
   Iff.rfl
 
-/-- A point lies in the resolvent exactly when it attains the Moreau–Yosida approximation. -/
+/-- A point lies in the resolvent exactly when it is at finite distance from `x` and attains the
+Moreau–Yosida approximation. -/
 theorem mem_moreauYosidaResolvent_iff_eq_moreauYosida :
     y ∈ moreauYosidaResolvent φ τ x ↔
-      φ y + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞) = moreauYosida φ τ x :=
-  ⟨fun h ↦ le_antisymm (le_iInf h) (moreauYosida_le φ τ x y),
-    fun h z ↦ h.le.trans (moreauYosida_le φ τ x z)⟩
+      edist x y ≠ ⊤ ∧ φ y + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞) = moreauYosida φ τ x :=
+  ⟨fun h ↦ ⟨h.1, le_antisymm (le_iInf₂ h.2) (moreauYosida_le φ τ h.1)⟩,
+    fun h ↦ ⟨h.1, fun _ hz ↦ h.2.le.trans (moreauYosida_le φ τ hz)⟩⟩
 
 /-- **One-step energy estimate.** A resolvent step `y ∈ J_τ x` lowers the energy by at least the
 penalty `d(x, y)² / (2τ)`. -/
 theorem apply_add_le_of_mem_moreauYosidaResolvent (hy : y ∈ moreauYosidaResolvent φ τ x) :
     φ y + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞) ≤ φ x := by
-  simpa using hy x
+  simpa using hy.2 x (by simp)
 
 /-- A resolvent step does not increase the energy. -/
 theorem apply_le_of_mem_moreauYosidaResolvent (hy : y ∈ moreauYosidaResolvent φ τ x) :
@@ -144,20 +148,15 @@ energy. -/
 theorem apply_ne_top_of_mem_moreauYosidaResolvent (hy : y ∈ moreauYosidaResolvent φ τ x)
     (hx : moreauYosida φ τ x ≠ ⊤) : φ y ≠ ⊤ := by
   rintro h
-  rw [← mem_moreauYosidaResolvent_iff_eq_moreauYosida.1 hy, h, EReal.top_add_of_ne_bot
+  rw [← (mem_moreauYosidaResolvent_iff_eq_moreauYosida.1 hy).2, h, EReal.top_add_of_ne_bot
     (EReal.coe_ennreal_ne_bot _)] at hx
   exact hx rfl
 
-/-- **Resolvent steps stay in the finite-distance component.** A resolvent step `y ∈ J_τ x` from a
-point where the Moreau–Yosida approximation is finite, to a point where `φ y ≠ ⊥`, has finite
-length. -/
-theorem edist_ne_top_of_mem_moreauYosidaResolvent (hy : y ∈ moreauYosidaResolvent φ τ x)
-    (hφy : φ y ≠ ⊥) (hx : moreauYosida φ τ x ≠ ⊤) : edist x y ≠ ⊤ := by
-  rintro h
-  rw [← mem_moreauYosidaResolvent_iff_eq_moreauYosida.1 hy, h, ENNReal.top_pow two_ne_zero,
-    ENNReal.top_div_of_ne_top (ENNReal.mul_ne_top ENNReal.ofNat_ne_top ENNReal.coe_ne_top),
-    EReal.coe_ennreal_top, EReal.add_top_of_ne_bot hφy] at hx
-  exact hx rfl
+/-- **Resolvent steps stay in the finite-distance component.** A resolvent step `y ∈ J_τ x` has
+finite length. -/
+theorem edist_ne_top_of_mem_moreauYosidaResolvent (hy : y ∈ moreauYosidaResolvent φ τ x) :
+    edist x y ≠ ⊤ :=
+  hy.1
 
 /-- For a finite step, the penalty `d(x, y)² / (2τ)` is the real number
 `(d(x, y).toReal)² / (2τ)`. -/
@@ -192,14 +191,14 @@ private theorem edist_le_edist_and_apply_le_apply (hτ : 0 < τ) (hτσ : τ < �
   have hσ : 0 < σ := hτ.trans hτσ
   have hx₁ : moreauYosida φ σ x ≠ ⊤ :=
     ne_top_of_le_ne_top hx (antitone_moreauYosida φ x hτσ.le)
-  have hd₀ := edist_ne_top_of_mem_moreauYosidaResolvent hy₀ hφy₀ hx
-  have hd₁ := edist_ne_top_of_mem_moreauYosidaResolvent hy₁ hφy₁ hx₁
+  have hd₀ := edist_ne_top_of_mem_moreauYosidaResolvent hy₀
+  have hd₁ := edist_ne_top_of_mem_moreauYosidaResolvent hy₁
   obtain ⟨a₀, ha₀⟩ : ∃ a : ℝ, φ y = a :=
     ⟨_, (EReal.coe_toReal (apply_ne_top_of_mem_moreauYosidaResolvent hy₀ hx) hφy₀).symm⟩
   obtain ⟨a₁, ha₁⟩ : ∃ a : ℝ, φ y₁ = a :=
     ⟨_, (EReal.coe_toReal (apply_ne_top_of_mem_moreauYosidaResolvent hy₁ hx₁) hφy₁).symm⟩
-  have h₀ := hy₀ y₁
-  have h₁ := hy₁ y
+  have h₀ := hy₀.2 y₁ hd₁
+  have h₁ := hy₁.2 y hd₀
   rw [ha₀, ha₁, coe_edist_sq_div_eq hτ hd₀, coe_edist_sq_div_eq hτ hd₁, ← EReal.coe_add,
     ← EReal.coe_add, EReal.coe_le_coe_iff] at h₀
   rw [ha₀, ha₁, coe_edist_sq_div_eq hσ hd₀, coe_edist_sq_div_eq hσ hd₁, ← EReal.coe_add,
@@ -281,7 +280,7 @@ descending slope of `φ` at `y` is at most `d(x, y) / τ`. -/
 theorem descendingSlope_le_of_mem_moreauYosidaResolvent (hτ : 0 < τ)
     (hy : y ∈ moreauYosidaResolvent φ τ x) (hφy : φ y ≠ ⊥) (hx : moreauYosida φ τ x ≠ ⊤) :
     descendingSlope φ y ≤ edist x y / τ := by
-  have hd := edist_ne_top_of_mem_moreauYosidaResolvent hy hφy hx
+  have hd := edist_ne_top_of_mem_moreauYosidaResolvent hy
   obtain ⟨a, ha⟩ : ∃ a : ℝ, φ y = a :=
     ⟨_, (EReal.coe_toReal (apply_ne_top_of_mem_moreauYosidaResolvent hy hx) hφy).symm⟩
   refine ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ descendingSlope_le_of_eventually_le ?_
@@ -289,7 +288,10 @@ theorem descendingSlope_le_of_mem_moreauYosidaResolvent (hτ : 0 < τ)
   filter_upwards [nhdsWithin_le_nhds (Metric.eball_mem_nhds y (ENNReal.ofReal_pos.2 hδ))]
     with z hz
   rw [Metric.mem_eball, edist_comm] at hz
-  have hyz := hy z
+  have hyz' : edist y z ≠ ⊤ := (hz.trans ENNReal.ofReal_lt_top).ne
+  have hxz : edist x z ≤ edist x y + edist y z := edist_triangle x y z
+  have hxz' : edist x z ≠ ⊤ := ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨hd, hyz'⟩) hxz
+  have hyz := hy.2 z hxz'
   rw [ha] at hyz ⊢
   -- If `φ z = ⊤` there is no decrease; `φ z = ⊥` contradicts minimality of `y`.
   by_cases htop : φ z = ⊤
@@ -300,9 +302,6 @@ theorem descendingSlope_le_of_mem_moreauYosidaResolvent (hτ : 0 < τ)
     exact EReal.add_ne_bot_iff.2 ⟨EReal.coe_ne_bot a, EReal.coe_ennreal_ne_bot _⟩
       (le_bot_iff.1 hyz)
   obtain ⟨b, hb⟩ : ∃ b : ℝ, φ z = b := ⟨_, (EReal.coe_toReal htop hbot).symm⟩
-  have hyz' : edist y z ≠ ⊤ := (hz.trans ENNReal.ofReal_lt_top).ne
-  have hxz : edist x z ≤ edist x y + edist y z := edist_triangle x y z
-  have hxz' : edist x z ≠ ⊤ := ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨hd, hyz'⟩) hxz
   rw [hb, coe_edist_sq_div_eq hτ hd, coe_edist_sq_div_eq hτ hxz', ← EReal.coe_add,
     ← EReal.coe_add, EReal.coe_le_coe_iff] at hyz
   rw [hb, ← EReal.coe_sub, EReal.real_coe_toENNReal,
@@ -346,7 +345,8 @@ theorem moreauYosidaResolvent_half_norm_sq (hτ : 0 < τ) (x : E) :
   have hk : 0 < (1 + (τ : ℝ)) / (2 * τ) := by have := NNReal.coe_pos.2 hτ; positivity
   ext y
   simp only [mem_moreauYosidaResolvent_iff, half_norm_sq_add_edist_sq_div hτ,
-    EReal.coe_le_coe_iff, mem_singleton_iff]
+    EReal.coe_le_coe_iff, mem_singleton_iff, ne_eq, edist_ne_top, not_false_eq_true, true_and,
+    forall_const]
   refine ⟨fun h ↦ ?_, fun h z ↦ ?_⟩
   · have := h ((1 + (τ : ℝ))⁻¹ • x)
     rw [sub_self, norm_zero] at this
@@ -365,7 +365,7 @@ theorem moreauYosida_half_norm_sq (hτ : 0 < τ) (x : E) :
       moreauYosidaResolvent (fun y ↦ ((‖y‖ ^ 2 / 2 : ℝ) : EReal)) τ x := by
     rw [moreauYosidaResolvent_half_norm_sq hτ]
     exact mem_singleton _
-  rw [← mem_moreauYosidaResolvent_iff_eq_moreauYosida.1 hmem, half_norm_sq_add_edist_sq_div hτ,
+  rw [← (mem_moreauYosidaResolvent_iff_eq_moreauYosida.1 hmem).2, half_norm_sq_add_edist_sq_div hτ,
     sub_self, norm_zero]
   simp
 
