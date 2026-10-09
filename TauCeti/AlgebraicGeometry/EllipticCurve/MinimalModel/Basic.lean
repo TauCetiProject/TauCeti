@@ -46,6 +46,10 @@ scaling factor of valuation `1`.
 * `WeierstrassCurve.valuation_Δ_minimal_smul` and
   `WeierstrassCurve.valuation_c₄_minimal_smul`: the chosen minimal equations of isomorphic curves
   have the same discriminant and `c₄` valuations.
+* `WeierstrassCurve.hasGoodReduction_minimal_smul_iff` and
+  `WeierstrassCurve.HasGoodReduction.hasGoodReduction_minimal`: good reduction of the chosen
+  minimal equation is a property of the curve, and holds whenever some equation has good
+  reduction.
 * `WeierstrassCurve.HasSplitMultiplicativeReduction.of_isMinimal_smul`: split multiplicative
   reduction transfers along such a change of variables.
 
@@ -299,6 +303,27 @@ theorem valuation_c₄_minimal_smul (D : VariableChange K) (W : WeierstrassCurve
     (W.minimal R) ((D • W).minimal R) _ _ hEll C hC
   rw [← hC, variableChange_c₄, map_mul, map_pow, Units.val_inv_eq_inv_val, map_inv₀, hu]
   simp
+
+/-- The chosen minimal equation has good reduction exactly when its discriminant is a unit at the
+place. -/
+theorem hasGoodReduction_minimal_iff (W : WeierstrassCurve K) :
+    (W.minimal R).HasGoodReduction R ↔ valuation K (maximalIdeal R) (W.minimal R).Δ = 1 :=
+  ⟨fun h ↦ h.goodReduction, fun h ↦ ⟨h⟩⟩
+
+/-- **Good reduction is a property of the curve**: the chosen minimal equations of two equations
+related by a change of variables have good reduction together. -/
+@[simp]
+theorem hasGoodReduction_minimal_smul_iff (D : VariableChange K) (W : WeierstrassCurve K) :
+    ((D • W).minimal R).HasGoodReduction R ↔ (W.minimal R).HasGoodReduction R := by
+  rw [hasGoodReduction_minimal_iff, hasGoodReduction_minimal_iff, valuation_Δ_minimal_smul]
+
+/-- An equation with good reduction has a chosen minimal equation with good reduction. -/
+theorem HasGoodReduction.hasGoodReduction_minimal {W : WeierstrassCurve K}
+    (h : W.HasGoodReduction R) : (W.minimal R).HasGoodReduction R := by
+  have := h.toIsMinimal
+  obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal R
+  rw [hasGoodReduction_minimal_iff, valuation_Δ_eq_of_isMinimal_smul R C hC]
+  exact h.goodReduction
 
 /-- **Split multiplicative reduction is an isomorphism invariant of minimal models.** If two
 minimal Weierstrass models of an elliptic curve over `K` are related by a change of variables

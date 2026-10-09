@@ -50,7 +50,7 @@ theorem isEquiv_comap_infinityPlace_map (W : Affine F) (f : F →+* K) :
   -- The comap is evaluation after the function-field coefficient embedding.
   change 1 < infinityPlace (W.map f)
     (FunctionField.map W f (algebraMap F[X] W.FunctionField Polynomial.X))
-  rw [← genericX_eq_algebraMap, FunctionField.map_genericX, genericX_eq_algebraMap]
+  rw [FunctionField.map_algebraMap_X]
   exact one_lt_infinityPlace_X (W.map f)
 
 end WeierstrassCurve.Affine

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Lifts
+public import TauCeti.FieldTheory.FunctionField.Place.Degree
 public import TauCeti.FieldTheory.FunctionField.Place.Existence
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 
@@ -54,6 +55,9 @@ here.
 * `TauCeti.Place.exists_injective_restrict_eq`: **Kummer's theorem**, packaged: an injective
   family of places over `P`, indexed by a family of monic irreducible factors of the reduction of
   `φ`, whose relative degrees are at least the degrees of the factors.
+* `TauCeti.Place.exists_finset_card_eq_forall_exists_restrict_eq_valuation_sub_lt_one`: over an
+  algebraically closed `k`, a separable reduction of `φ` gives `deg φ` constants `a`, each with a
+  place over `P` at which `y - a` vanishes.
 
 ## References
 
@@ -350,6 +354,45 @@ theorem exists_injective_restrict_eq (hF : IsFunctionField k F) (P : Place k F) 
     (hQval i) (hgm j) (hgmap j ▸ hirr j) ?_
   rw [hij]
   exact hQval j
+
+/-- **Kummer's theorem at a place of separable reduction, over an algebraically closed field.**
+Let `y : F'` be a root of a monic `φ` over the valuation ring of a place `P` of `F / k`, whose image
+in `F[X]` is the minimal polynomial of `y`. If `k` is algebraically closed and the reduction of `φ`
+modulo `P` is separable, then there are `deg φ` constants `a`, the roots of the reduction, each
+with a place of `F' / k'` over `P` at which `y - a` vanishes. -/
+theorem exists_finset_card_eq_forall_exists_restrict_eq_valuation_sub_lt_one [IsAlgClosed k]
+    (hF : IsFunctionField k F) (P : Place k F) (y : F') {φ : P.integers[X]}
+    (hmin : φ.map (algebraMap P.integers F) = minpoly F y)
+    (hsep : (φ.map (IsLocalRing.residue P.integers)).Separable) :
+    ∃ s : Finset k, s.card = φ.natDegree ∧ ∀ a ∈ s, ∃ P' : Place k' F',
+      P'.restrict k F = P ∧ P'.valuation (y - algebraMap k F' a) < 1 := by
+  classical
+  -- Move the reduction of `φ` to `k` along the residue field `F_P ≃ k`.
+  have hdeg := P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF
+  set e := P.residueFieldEquivOfDegreeEqOne hdeg
+  set ψ := (φ.map (IsLocalRing.residue P.integers)).map (e.symm : P.ResidueField →+* k)
+  have hmonic : φ.Monic := monic_of_map_eq_minpoly hmin
+  have hψdeg : ψ.natDegree = φ.natDegree := by
+    rw [(hmonic.map _).natDegree_map, hmonic.natDegree_map]
+  refine ⟨ψ.roots.toFinset, ?_, fun a ha ↦ ?_⟩
+  · rw [Multiset.toFinset_card_of_nodup (nodup_roots hsep.map),
+      IsAlgClosed.card_roots_eq_natDegree, hψdeg]
+  -- Each root `a` gives the factor `X - a` of the reduction, and Kummer's theorem a place.
+  have hroot :
+      (φ.map (IsLocalRing.residue P.integers)).IsRoot (algebraMap k P.ResidueField a) := by
+    have h := isRoot_of_mem_roots (Multiset.mem_toFinset.mp ha)
+    rw [← e.symm_apply_apply a] at h
+    rw [← residueFieldEquivOfDegreeEqOne_apply P hdeg]
+    exact (isRoot_map_iff (f := (e.symm : P.ResidueField →+* k)) e.symm.injective).mp h
+  have hgmap : (X - C (algebraMap k P.integers a)).map (IsLocalRing.residue P.integers) =
+      X - C (algebraMap k P.ResidueField a) := by
+    rw [Polynomial.map_sub, Polynomial.map_X, Polynomial.map_C,
+      IsScalarTower.algebraMap_apply k P.integers P.ResidueField,
+      IsLocalRing.ResidueField.algebraMap_eq]
+  obtain ⟨P', hP', hv, -⟩ := exists_restrict_eq_of_irreducible_map_residue (k' := k') hF P y hmin
+    (monic_X_sub_C _) (hgmap ▸ irreducible_X_sub_C _) (hgmap ▸ dvd_iff_isRoot.mpr hroot)
+  refine ⟨P', hP', ?_⟩
+  rwa [map_sub, integersEval_X, integersEval_algebraMap] at hv
 
 end Kummer
 

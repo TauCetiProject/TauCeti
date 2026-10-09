@@ -20,7 +20,9 @@ differential `η` of `k(x) / k` with
 
 and it is the differential written `dx` in the classical language, whose local components are the
 residues `η_P (z) = res_P (z dx)`.  This is Stichtenoth,
-*Algebraic Function Fields and Codes*, 2nd ed., Proposition 1.7.4.
+*Algebraic Function Fields and Codes*, 2nd ed., Proposition 1.7.4.  The identification with
+residues at the rational places is in
+`TauCeti.FieldTheory.FunctionField.Differential.RatFunc.Residue`.
 
 ## The construction
 

@@ -55,7 +55,6 @@ the upper-triangular subgroup is a Borel subgroup is proved in every rank in
 
 public section
 
-open CategoryTheory WithConv
 open scoped MatrixGroups
 
 namespace TauCeti.SpecialLinear.Borel

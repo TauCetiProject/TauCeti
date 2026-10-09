@@ -40,6 +40,9 @@ quotient. The ideal is required to be closed; for a complete Hausdorff Huber rin
   and `TauCeti.ValuationSpectrum.range_presentationLimitPreAdicSpaceQuotientComap_base`: the
   quotient morphism is a closed embedding of the underlying spaces, onto the points whose support
   contains `J`.
+* `TauCeti.ValuationSpectrum.presentationLimitPreAdicSpaceComap_quotientLift_comp_quotientComap`:
+  the morphism induced by a morphism of Huber pairs annihilating `J` factors through the quotient
+  morphism.
 * `TauCeti.ValuationSpectrum.isClosedImmersion_presentationLimitPreAdicSpaceQuotientComap`: the
   quotient morphism by a closed ideal is a closed immersion.
 * `TauCeti.PreAdicSpace.IsClosedImmersion.isClosedEmbedding`: a closed immersion is a closed
@@ -133,6 +136,33 @@ theorem range_presentationLimitPreAdicSpaceQuotientComap_base :
       Subtype.val ⁻¹' {v : Spv A | J ≤ v.supp} := by
   rw [coe_presentationLimitPreAdicSpaceQuotientComap_base]
   exact Pair.Hom.range_spaComap_quotientHom S J
+
+/-- **The factorisation property of the quotient morphism** (Wedhorn, Proposition 7.38): if a
+morphism `f : (A, A⁺) → (B, B⁺)` of Huber pairs annihilates `J`, the morphism
+`Spa(B, B⁺) ⟶ Spa(A, A⁺)` of pre-adic spaces induced by `f` factors through the quotient
+morphism, as the morphism induced by the factorisation `(A ⧸ J, (A ⧸ J)⁺) → (B, B⁺)` of `f`
+(`TauCeti.Huber.Pair.Hom.quotientLift`) followed by the quotient morphism. -/
+theorem presentationLimitPreAdicSpaceComap_quotientLift_comp_quotientComap {B : Type u}
+    [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B] {T : Pair B}
+    (P' : PairOfDefinition B) (hP' : P'.ringOfDefinition ≤ T.plus) (f : Pair.Hom S T)
+    (hf : J ≤ RingHom.ker f.toRingHom)
+    (hopen : ∀ ⦃I : Ideal A⦄, IsOpen (I : Set A) → IsOpen (I.map f.toRingHom : Set B))
+    (hsheafT : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
+      (presentationLimitPresheaf P' T.plus)) :
+    presentationLimitPreAdicSpaceComap (f.quotientLift J hf).toRingHom
+        (f.quotientLift J hf).continuous_toRingHom
+        (fun _ hI ↦ f.isOpen_map_quotientLift J hf hopen hI) (f.quotientLift J hf).map_mem_plus
+        (S.quotient J).isRingOfIntegralElements.isPowerBounded_of_mem
+        T.isRingOfIntegralElements.isPowerBounded_of_mem
+        (P.quotient_ringOfDefinition_le_quotient_plus hP J) hP' hsheafT ≫
+      presentationLimitPreAdicSpaceQuotientComap S P hP J hsheaf =
+    presentationLimitPreAdicSpaceComap f.toRingHom f.continuous_toRingHom hopen f.map_mem_plus
+      S.isRingOfIntegralElements.isPowerBounded_of_mem
+      T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheafT := by
+  rw [presentationLimitPreAdicSpaceQuotientComap, ← presentationLimitPreAdicSpaceComap_comp]
+  congr 1
+  rw [← Pair.Hom.toRingHom_quotientHom, ← Pair.Hom.toRingHom_comp,
+    Pair.Hom.quotientLift_comp_quotientHom]
 
 end ValuationSpectrum
 

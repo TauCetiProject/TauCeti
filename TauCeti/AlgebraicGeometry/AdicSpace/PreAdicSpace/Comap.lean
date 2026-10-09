@@ -30,6 +30,12 @@ image of every open ideal of `A` is open in `B` (for instance, for adic homomorp
 * `TauCeti.ValuationSpectrum.presentationLimitPreAdicSpaceComap`: the induced morphism of
   pre-adic spaces.
 
+## Main results
+
+* `TauCeti.ValuationSpectrum.presentationLimitPreAdicSpaceComap_id`,
+  `TauCeti.ValuationSpectrum.presentationLimitPreAdicSpaceComap_comp`: the construction is
+  contravariantly functorial.
+
 ## References
 
 * T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, §8.1.
@@ -547,6 +553,59 @@ theorem presentationLimitPreAdicSpaceComap_toHom
     (presentationLimitPreAdicSpaceComap φ hφ hopen hplus hAplus hBplus hP hP' hsheaf).toHom =
       presentationLimitPresheafedSpaceComap φ hφ hopen hplus hAplus hBplus hP hP' hsheaf := by
   rw [presentationLimitPreAdicSpaceComap]
+
+/-! ### Functoriality -/
+
+/-- **The identity of `A` induces the identity morphism** of `Spa(A, A⁺)`. -/
+@[simp]
+theorem presentationLimitPreAdicSpaceComap_id (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hP : P.ringOfDefinition ≤ Aplus)
+    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
+      (presentationLimitPresheaf P Aplus)) :
+    presentationLimitPreAdicSpaceComap (P := P) (P' := P) (RingHom.id A) continuous_id
+        (fun J hJ ↦ by rwa [Ideal.map_id]) (fun _ ha ↦ ha) hAplus hAplus hP hP hsheaf =
+      𝟙 _ := by
+  ext1
+  rw [presentationLimitPreAdicSpaceComap_toHom]
+  exact PresheafedSpace.ext _ _ spaComapTopHom_id (presentationLimitPresheafComap_id hAplus hsheaf)
+
+section Comp
+
+variable {C : Type v} [CommRing C] [TopologicalSpace C] [IsTopologicalRing C]
+  {P'' : PairOfDefinition C} {Cplus : Subring C}
+
+/-- **The morphisms are contravariantly functorial**: for continuous homomorphisms
+`φ : A → B` and `ψ : B → C` of Huber rings, the morphism `Spa(C, C⁺) ⟶ Spa(A, A⁺)` induced by
+`ψ ∘ φ` is the morphism induced by `ψ` followed by the morphism induced by `φ`. -/
+theorem presentationLimitPreAdicSpaceComap_comp
+    (φ : A →+* B) (hφ : Continuous φ)
+    (hopen : ∀ ⦃J : Ideal A⦄, IsOpen (J : Set A) → IsOpen (J.map φ : Set B))
+    (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+    (ψ : B →+* C) (hψ : Continuous ψ)
+    (hopen' : ∀ ⦃J : Ideal B⦄, IsOpen (J : Set B) → IsOpen (J.map ψ : Set C))
+    (hplus' : ∀ b ∈ Bplus, ψ b ∈ Cplus)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b)
+    (hCplus : ∀ ⦃c⦄, c ∈ Cplus → IsPowerBounded c)
+    (hP : P.ringOfDefinition ≤ Aplus) (hP' : P'.ringOfDefinition ≤ Bplus)
+    (hP'' : P''.ringOfDefinition ≤ Cplus)
+    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
+      (presentationLimitPresheaf P' Bplus))
+    (hsheaf' : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Cplus))
+      (presentationLimitPresheaf P'' Cplus)) :
+    presentationLimitPreAdicSpaceComap (P := P) (P' := P'') (ψ.comp φ) (hψ.comp hφ)
+        (fun J hJ ↦ by rw [← Ideal.map_map]; exact hopen' (hopen hJ))
+        (fun a ha ↦ hplus' (φ a) (hplus a ha)) hAplus hCplus hP hP'' hsheaf' =
+      presentationLimitPreAdicSpaceComap ψ hψ hopen' hplus' hBplus hCplus hP' hP'' hsheaf' ≫
+        presentationLimitPreAdicSpaceComap φ hφ hopen hplus hAplus hBplus hP hP' hsheaf := by
+  ext1
+  rw [PreAdicSpace.comp_toHom, presentationLimitPreAdicSpaceComap_toHom,
+    presentationLimitPreAdicSpaceComap_toHom, presentationLimitPreAdicSpaceComap_toHom]
+  exact PresheafedSpace.ext _ _ (spaComapTopHom_comp φ hφ hplus hψ hplus')
+    (presentationLimitPresheafComap_comp φ hφ hopen hplus hBplus hsheaf ψ hψ hopen' hplus' hCplus
+      hsheaf')
+
+end Comp
 
 end TauCeti.ValuationSpectrum
 

@@ -44,6 +44,8 @@ Along a ring isomorphism `φ : R ≃+* R'` the base change morphism is an isomor
   morphism, the structure morphisms and `Spec f` is a pullback square.
 * `WeierstrassCurve.projModelZero_projModelBaseChange`: the base change morphism carries the zero
   section to the zero section.
+* `WeierstrassCurve.isPullback_projModelZero_projModelBaseChange`: the zero section of
+  `projModel (W.map f)` is the base change of the zero section of `projModel W` along `Spec f`.
 * `WeierstrassCurve.projModelPoint_projModelBaseChange`: the base change morphism sends the point
   with homogeneous coordinates `P`, over `g : R' →+* S`, to the point with the same homogeneous
   coordinates, over `g.comp f`.
@@ -255,6 +257,18 @@ theorem projModelZero_projModelBaseChange :
       Spec.map (CommRingCat.ofHom f) ≫ W.projModelZero := by
   rw [projModelBaseChange]
   exact W.projModelZero_map _ _ f 1 fun _ _ _ ↦ by simp [evalZero_baseChangeGradedHom]
+
+/-- The zero section of `projModel (W.map f)` is the base change of the zero section of
+`projModel W` along `Spec f : Spec R' ⟶ Spec R`: the square formed by the two zero sections, the
+base change morphism and `Spec f` is a pullback square. -/
+theorem isPullback_projModelZero_projModelBaseChange :
+    IsPullback (W.map f).projModelZero (Spec.map (CommRingCat.ofHom f))
+      (W.projModelBaseChange f) W.projModelZero :=
+  .of_right
+    (by simpa only [W.projModelZero_projModelOver, (W.map f).projModelZero_projModelOver]
+      using IsPullback.id_horiz (Spec.map (CommRingCat.ofHom f)))
+    (W.projModelZero_projModelBaseChange f)
+    (W.isPullback_projModelBaseChange f).flip
 
 /-! ### Points -/
 

@@ -686,6 +686,12 @@ theorem typeE₈SimpleRoot_apply (i j : Fin 8) :
     typeE₈SimpleRoot i j = if j = i then 1 else 0 := by
   simp [typeE₈SimpleRoot, Pi.basisFun_apply, Pi.single_apply]
 
+/-- The `i`-th simple root of type `E₈` is the `i`-th standard basis vector. -/
+-- Not a `simp` lemma: the definition is sealed so that `simp` keeps `typeE₈SimpleRoot i` intact.
+theorem typeE₈SimpleRoot_eq_basisFun (i : Fin 8) :
+    typeE₈SimpleRoot i = Pi.basisFun ℚ (Fin 8) i := by
+  rw [typeE₈SimpleRoot]
+
 /-- **The Gram matrix of the type `E₈` root lattice in its simple-root basis is the Cartan matrix
 `CartanMatrix.E 8`.** -/
 @[simp]

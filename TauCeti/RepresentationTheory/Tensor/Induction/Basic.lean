@@ -210,6 +210,14 @@ noncomputable def tensorInducedRepresentation (U : Subgroup G) (s : U.LeftTransv
     Representation R G (⨂[R] _ : G ⧸ U, M) :=
   (ρ.wreathTensor (G ⧸ U)).comp (U.monomialHom s)
 
+/-- The tensor-induced action is the wreath tensor action pulled back along the monomial
+homomorphism. -/
+theorem tensorInducedRepresentation_apply (U : Subgroup G) (s : U.LeftTransversal)
+    {M : Type w} [AddCommMonoid M] [Module R M] (ρ : Representation R U M)
+    (g : G) (z : ⨂[R] _ : G ⧸ U, M) :
+    U.tensorInducedRepresentation s ρ g z =
+      ρ.wreathTensor (G ⧸ U) (U.monomialHom s g) z := (rfl)
+
 /-- The action of tensor induction on a pure tensor. The factor at the coset `x` is acted on by
 the transversal word at `x`, while the tensor coordinates are translated by `g⁻¹`. -/
 @[simp]
@@ -256,3 +264,56 @@ theorem tensorInductionFunctor_map_hom_apply_tprod (U : Subgroup G) (s : U.LeftT
   Rep.wreathTensorMap_hom_apply_tprod R U (G ⧸ U) f m
 
 end Subgroup
+
+namespace Representation.IntertwiningMap
+
+variable {R : Type u} {G : Type v} [CommSemiring R] [Group G]
+  {U : Subgroup G} {M : Type w} {N : Type y}
+  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+  {ρ : Representation R U M} {τ : Representation R U N}
+
+/-- Tensoring an intertwining map in every factor intertwines tensor induction along the
+same transversal. -/
+noncomputable def tensorInduced (f : ρ.IntertwiningMap τ) (s : U.LeftTransversal) :
+    (U.tensorInducedRepresentation s ρ).IntertwiningMap
+      (U.tensorInducedRepresentation s τ) where
+  toLinearMap := PiTensorProduct.map fun _ ↦ f.toLinearMap
+  isIntertwining' g := (f.wreathTensor (G ⧸ U)).isIntertwining' (U.monomialHom s g)
+
+/-- The underlying linear map of tensor induction applies the intertwining map in each factor. -/
+@[simp] theorem tensorInduced_toLinearMap (f : ρ.IntertwiningMap τ) (s : U.LeftTransversal) :
+    (f.tensorInduced s).toLinearMap = PiTensorProduct.map fun _ ↦ f.toLinearMap := (rfl)
+
+/-- The tensor-induced intertwining map acts factorwise on pure tensors. -/
+@[simp] theorem tensorInduced_apply_tprod (f : ρ.IntertwiningMap τ) (s : U.LeftTransversal)
+    (m : G ⧸ U → M) :
+    f.tensorInduced s (PiTensorProduct.tprod R m) =
+      PiTensorProduct.tprod R fun i ↦ f (m i) :=
+  f.wreathTensor_apply_tprod (G ⧸ U) m
+
+/-- Tensor induction of the identity intertwining map is the identity map. -/
+@[simp] theorem tensorInduced_id (s : U.LeftTransversal) :
+    (IntertwiningMap.id ρ).tensorInduced s =
+      IntertwiningMap.id (U.tensorInducedRepresentation s ρ) := by
+  apply IntertwiningMap.ext
+  -- Restriction along `monomialHom` changes the action, not the underlying linear map:
+  -- `tensorInduced` and `wreathTensor` both reduce to the same `PiTensorProduct.map`.
+  -- The identity maps also have definitionally equal `toLinearMap` projections.
+  have h := congrArg IntertwiningMap.toLinearMap
+    (IntertwiningMap.wreathTensor_id (ρ := ρ) (G ⧸ U))
+  exact h
+
+/-- Tensor induction of a composite intertwining map is the composite of the induced maps. -/
+@[simp] theorem tensorInduced_comp {P : Type z} [AddCommMonoid P] [Module R P]
+    {υ : Representation R U P} (g : τ.IntertwiningMap υ) (f : ρ.IntertwiningMap τ)
+    (s : U.LeftTransversal) :
+    (g.comp f).tensorInduced s = (g.tensorInduced s).comp (f.tensorInduced s) := by
+  apply IntertwiningMap.ext
+  -- Restriction along `monomialHom` changes the action, not the underlying linear maps:
+  -- `tensorInduced` and `wreathTensor` both reduce to the same `PiTensorProduct.map`.
+  -- Composition also has definitionally equal `toLinearMap` projections in both cases.
+  have h := congrArg IntertwiningMap.toLinearMap
+    (IntertwiningMap.wreathTensor_comp g f (G ⧸ U))
+  exact h
+
+end Representation.IntertwiningMap
