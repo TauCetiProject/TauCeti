@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.CategoryTheory.Abelian.CommSq
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative
 public import TauCeti.Algebra.Homology.HomologySequenceBiprod
 
 /-!
@@ -39,7 +40,9 @@ of singular homology for an open cover by two sets is obtained from such a squar
 ## Main definitions and results
 
 * `SSet.shortExact_mayerVietorisShortComplex`: it is short exact for a pushout square whose top
-  map is a monomorphism.
+  map is a monomorphism; `SSet.shortExact_mayerVietoris` writes it with middle term
+  `C(X₂) ⊞ C(X₃)`, and its first map is split in each degree
+  (`SSet.isSplitMono_biprod_lift_chainComplexMap_f`).
 * `SSet.mayerVietorisToBiprod`, `SSet.mayerVietorisFromBiprod`: the maps
   `Hₙ(X₁) ⟶ Hₙ(X₂) ⊞ Hₙ(X₃)` and `Hₙ(X₂) ⊞ Hₙ(X₃) ⟶ Hₙ(X₄)`.
 * `SSet.mayerVietorisδ`: the connecting morphism `Hₙ(X₄) ⟶ Hₘ(X₁)` for `m + 1 = n`.
@@ -147,10 +150,24 @@ private lemma mayerVietorisToBiprod_eq (t : X₁ ⟶ X₂) (l : X₁ ⟶ X₃) (
         (HomologicalComplex.homologyMap (-chainComplexMap l R) n) := by
   rw [mayerVietorisToBiprod, HomologicalComplex.homologyMap_neg]
 
+/-- In each degree, the first map `C(X₁) ⟶ C(X₂) ⊞ C(X₃)` of the Mayer–Vietoris sequence is a split
+monomorphism when `t` is a monomorphism. -/
+instance isSplitMono_biprod_lift_chainComplexMap_f [Mono t] (i : ℕ) :
+    IsSplitMono ((biprod.lift (chainComplexMap t R) (-chainComplexMap l R)).f i) := by
+  -- `SSetPair.of t` has `t` as its structure map, so this is the split monomorphism instance for
+  -- the chains of a pair of simplicial sets.
+  have : IsSplitMono ((chainComplexMap t R).f i) :=
+    inferInstanceAs (IsSplitMono ((chainComplexMap (SSetPair.of t).hom R).f i))
+  exact IsSplitMono.mk'
+    { retraction := (biprod.fst : X₂.chainComplex R ⊞ X₃.chainComplex R ⟶ _).f i ≫
+        retraction ((chainComplexMap t R).f i)
+      id := by rw [← Category.assoc, ← HomologicalComplex.comp_f, biprod.lift_fst,
+        IsSplitMono.id] }
+
 variable (sq : IsPushout t l r b) [Mono t]
 
 /-- The Mayer–Vietoris short exact sequence, written with its middle term `C(X₂) ⊞ C(X₃)`. -/
-private lemma shortExact_mayerVietoris :
+lemma shortExact_mayerVietoris :
     (ShortComplex.mk (biprod.lift (chainComplexMap t R) (-chainComplexMap l R))
       (biprod.desc (chainComplexMap r R) (chainComplexMap b R))
       (sq.map ((chainComplexFunctor C).obj R)).shortComplex.zero).ShortExact :=

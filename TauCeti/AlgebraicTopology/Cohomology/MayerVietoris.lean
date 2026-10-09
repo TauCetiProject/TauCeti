@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Basic
-public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 
 /-!
 # The Mayer–Vietoris sequence in singular cohomology
@@ -47,7 +47,9 @@ subcomplex with the singular cohomology of `X` (`TauCeti.smallSingularCohomology
   `SSet.mayerVietorisCochainδ`: the maps of its long exact cohomology sequence, exact by
   `SSet.mayerVietorisCochain_exact₁`, `SSet.mayerVietorisCochain_exact₂` and
   `SSet.mayerVietorisCochain_exact₃`, with connecting morphism natural in maps of pushout squares
-  (`SSet.mayerVietorisCochainδ_naturality`).
+  (`SSet.mayerVietorisCochainδ_naturality`); the other two maps are natural as well
+  (`SSet.mayerVietorisCochainToBiprod_naturality`,
+  `SSet.mayerVietorisCochainFromBiprod_naturality`).
 * `TauCeti.smallSingularCohomologyIso`: restricting cochains to the chains subordinate to an open
   cover is an isomorphism on cohomology, natural in maps of covered spaces
   (`TauCeti.smallSingularCohomologyIso_naturality`).
@@ -108,42 +110,21 @@ lemma shortExact_mayerVietorisCochainShortComplex (sq : IsPushout t l r b) [Mono
       ((linearYonedaFunctor k M).map (chainComplexMap b R).op))
     (biprod.desc ((linearYonedaFunctor k M).map (chainComplexMap t R).op)
       (-(linearYonedaFunctor k M).map (chainComplexMap l R).op)) _).ShortExact
-  let S : ShortComplex (ChainComplex C ℕ) :=
-    ShortComplex.mk (biprod.lift (chainComplexMap t R) (-chainComplexMap l R))
-      (biprod.desc (chainComplexMap r R) (chainComplexMap b R))
-      (by simp [← Functor.map_comp, sq.w])
-  have hS : S.ShortExact := shortExact_mayerVietorisShortComplex R sq
-  -- `SSetPair.of t` has `t` as its structure map, so this is the split monomorphism instance for
-  -- the chains of a pair of simplicial sets.
-  have ht (i : ℕ) : IsSplitMono ((chainComplexMap t R).f i) :=
-    inferInstanceAs (IsSplitMono ((chainComplexMap (SSetPair.of t).hom R).f i))
-  have (i : ℕ) : IsSplitMono (S.f.f i) :=
-    IsSplitMono.mk'
-      { retraction := (biprod.fst : X₂.chainComplex R ⊞ X₃.chainComplex R ⟶ _).f i ≫
-          @retraction _ _ _ _ ((chainComplexMap t R).f i) (ht i)
-        id := by rw [← Category.assoc, ← HomologicalComplex.comp_f, biprod.lift_fst,
-          IsSplitMono.id] }
-  have he : ((linearYonedaFunctor k M).mapIso (biprod.opIso _ _) ≪≫
-      (linearYonedaFunctor k M).mapBiprod _ _).inv =
-        biprod.desc ((linearYonedaFunctor k M).map
-          (biprod.fst : X₂.chainComplex R ⊞ X₃.chainComplex R ⟶ _).op)
-          ((linearYonedaFunctor k M).map biprod.snd.op) := by
-    rw [Iso.trans_inv, Functor.mapIso_inv, Functor.mapBiprod_inv]
-    apply biprod.hom_ext'
-    · rw [biprod.inl_desc_assoc, ← Functor.map_comp, biprod.inl_opIso_inv, biprod.inl_desc]
-    · rw [biprod.inr_desc_assoc, ← Functor.map_comp, biprod.inr_opIso_inv, biprod.inr_desc]
+  have he := (linearYonedaFunctor k M).mapIso_biprod_opIso_trans_mapBiprod_inv
+    (X₂.chainComplex R) (X₃.chainComplex R)
   -- `Hom(-, M)` keeps the degreewise split chain sequence short exact; it remains to identify
   -- `Hom(C(X₂) ⊞ C(X₃), M)` with `Hom(C(X₂), M) ⊞ Hom(C(X₃), M)` compatibly with the maps.
-  refine ShortComplex.shortExact_of_iso (Iso.symm ?_) (shortExact_map_linearYonedaFunctor k M hS)
+  refine ShortComplex.shortExact_of_iso (Iso.symm ?_)
+    (shortExact_map_linearYonedaFunctor k M (shortExact_mayerVietoris R sq))
   refine ShortComplex.isoMk (Iso.refl ((linearYonedaFunctor k M).obj (op (X₄.chainComplex R))))
     (((linearYonedaFunctor k M).mapIso (biprod.opIso _ _) ≪≫
       (linearYonedaFunctor k M).mapBiprod _ _).symm)
     (Iso.refl ((linearYonedaFunctor k M).obj (op (X₁.chainComplex R)))) ?_ ?_
   · rw [Iso.symm_hom, he]
-    dsimp [S, ShortComplex.op, -linearYonedaFunctor_obj]
+    dsimp [ShortComplex.op, -linearYonedaFunctor_obj]
     simp [biprod.desc_eq, ← Functor.map_comp, ← op_comp, -linearYonedaFunctor_obj]
   · rw [Iso.symm_hom, he]
-    dsimp [S, ShortComplex.op, -linearYonedaFunctor_obj]
+    dsimp [ShortComplex.op, -linearYonedaFunctor_obj]
     apply biprod.hom_ext' <;>
       simp [← Functor.map_comp, ← op_comp, -linearYonedaFunctor_obj]
 
@@ -203,6 +184,33 @@ private lemma mayerVietorisCochainFromBiprod_eq (t : X₁ ⟶ X₂) (l : X₁ �
         (HomologicalComplex.homologyMap (-cochainComplexMap l) n) := by
   rw [mayerVietorisCochainFromBiprod, HomologicalComplex.homologyMap_neg]
 
+variable {Y₁ Y₂ Y₃ Y₄ : SSet.{w}} {t' : Y₁ ⟶ Y₂} {l' : Y₁ ⟶ Y₃} {r' : Y₂ ⟶ Y₄} {b' : Y₃ ⟶ Y₄}
+  (φ₁ : X₁ ⟶ Y₁) (φ₂ : X₂ ⟶ Y₂) (φ₃ : X₃ ⟶ Y₃) (φ₄ : X₄ ⟶ Y₄)
+
+/-- The first map of the cochain Mayer–Vietoris sequence is natural in maps of squares. -/
+@[reassoc]
+lemma mayerVietorisCochainToBiprod_naturality (hr : r ≫ φ₄ = φ₂ ≫ r') (hb : b ≫ φ₄ = φ₃ ≫ b')
+    (n : ℕ) :
+    HomologicalComplex.homologyMap (cochainComplexMap φ₄) n ≫
+        mayerVietorisCochainToBiprod R k M r b n =
+      mayerVietorisCochainToBiprod R k M r' b' n ≫
+        biprod.map (HomologicalComplex.homologyMap (cochainComplexMap φ₂) n)
+          (HomologicalComplex.homologyMap (cochainComplexMap φ₃) n) := by
+  apply biprod.hom_ext <;>
+    simp [← HomologicalComplex.homologyMap_comp, ← cochainComplexMap_comp, hr, hb]
+
+/-- The second map of the cochain Mayer–Vietoris sequence is natural in maps of squares. -/
+@[reassoc]
+lemma mayerVietorisCochainFromBiprod_naturality (ht : t ≫ φ₂ = φ₁ ≫ t')
+    (hl : l ≫ φ₃ = φ₁ ≫ l') (n : ℕ) :
+    biprod.map (HomologicalComplex.homologyMap (cochainComplexMap φ₂) n)
+        (HomologicalComplex.homologyMap (cochainComplexMap φ₃) n) ≫
+          mayerVietorisCochainFromBiprod R k M t l n =
+      mayerVietorisCochainFromBiprod R k M t' l' n ≫
+        HomologicalComplex.homologyMap (cochainComplexMap φ₁) n := by
+  apply biprod.hom_ext' <;>
+    simp [← HomologicalComplex.homologyMap_comp, ← cochainComplexMap_comp, ht, hl]
+
 variable (sq : IsPushout t l r b) [Mono t]
 
 /-- The cochain Mayer–Vietoris connecting morphism `Hⁿ(X₁) ⟶ Hᵐ(X₄)`, where `n + 1 = m`: the
@@ -252,9 +260,6 @@ lemma mono_mayerVietorisCochainToBiprod_zero : Mono (mayerVietorisCochainToBipro
       rw [ComplexShape.up_Rel] at h
       omega
   exact HomologicalComplex.mono_biprod_lift_homologyMap 0
-
-variable {Y₁ Y₂ Y₃ Y₄ : SSet.{w}} {t' : Y₁ ⟶ Y₂} {l' : Y₁ ⟶ Y₃} {r' : Y₂ ⟶ Y₄} {b' : Y₃ ⟶ Y₄}
-  (φ₁ : X₁ ⟶ Y₁) (φ₂ : X₂ ⟶ Y₂) (φ₃ : X₃ ⟶ Y₃) (φ₄ : X₄ ⟶ Y₄)
 
 /-- **Naturality of the cochain Mayer–Vietoris connecting morphism** in maps of pushout
 squares. -/
@@ -386,7 +391,8 @@ private abbrev smallIso (n : ℕ) :
     X.singularCohomology R k M n ≅
       (((X.smallSingularSubcomplex ![U, V] : SSet).chainComplex R).linearYonedaObj k M).homology
         n :=
-  TauCeti.smallSingularCohomologyIso R k M ![U, V] (isOpen_vecCons hU hV) (iUnion_vecCons hUV) n
+  TauCeti.smallSingularCohomologyIso R k M ![U, V] (TauCeti.isOpen_vecCons hU hV)
+    ((TauCeti.iUnion_vecCons U V).trans hUV) n
 
 private lemma smallIso_hom (n : ℕ) :
     (smallIso R k M hU hV hUV n).hom =
@@ -520,15 +526,16 @@ lemma singularCohomologyMayerVietorisδ_naturality (n m : ℕ) (h : n + 1 = m :=
           (SSet.cochainComplexMap (X.smallSingularSubcomplexMap ![U, V] ![U', V'] f id hf)) m ≫
         (smallIso R k M hU hV hUV m).inv := by
     rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv]
-    exact TauCeti.smallSingularCohomologyIso_naturality R k M ![U, V] (isOpen_vecCons hU hV)
-      (iUnion_vecCons hUV) ![U', V'] f id hf (isOpen_vecCons hU' hV') (iUnion_vecCons hUV') m
+    exact TauCeti.smallSingularCohomologyIso_naturality R k M ![U, V]
+      (TauCeti.isOpen_vecCons hU hV) ((TauCeti.iUnion_vecCons U V).trans hUV) ![U', V'] f id hf
+      (TauCeti.isOpen_vecCons hU' hV') ((TauCeti.iUnion_vecCons U' V').trans hUV') m
   have hnat := SSet.mayerVietorisCochainδ_naturality R k M
-    (isPushout_toSSet_inter_smallSingularSubcomplex U V)
     (toSSet.map (ofHom ⟨(hfU.inter_inter hfV).restrict,
       f.hom.continuous.restrict (hfU.inter_inter hfV)⟩))
     (toSSet.map (ofHom ⟨hfU.restrict, f.hom.continuous.restrict hfU⟩))
     (toSSet.map (ofHom ⟨hfV.restrict, f.hom.continuous.restrict hfV⟩))
     (X.smallSingularSubcomplexMap ![U, V] ![U', V'] f id hf)
+    (isPushout_toSSet_inter_smallSingularSubcomplex U V)
     (isPushout_toSSet_inter_smallSingularSubcomplex U' V')
     (by rw [← Functor.map_comp, ← Functor.map_comp, ofHom_inclusion_comp])
     (by rw [← Functor.map_comp, ← Functor.map_comp, ofHom_inclusion_comp])

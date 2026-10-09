@@ -75,9 +75,9 @@ lemma mono_biprod_lift_homologyMap (i : ι) [Mono (homologyMap (biprod.lift f₁
 /-- The map `Hᵢ(A) ⊞ Hᵢ(B) ⟶ Hᵢ(Z)` induced by `g₁ + g₂` is an epimorphism when the map induced
 by `biprod.desc g₁ g₂` is. -/
 lemma epi_biprod_desc_homologyMap (i : ι) [Epi (homologyMap (biprod.desc g₁ g₂) i)] :
-    Epi (biprod.desc (homologyMap g₁ i) (homologyMap g₂ i)) := by
-  rw [← homologyBiprodIso_hom_comp_desc_homologyMap] at *
-  exact (epi_comp_iff_of_epi (homologyBiprodIso A B i).hom _).1 inferInstance
+    Epi (biprod.desc (homologyMap g₁ i) (homologyMap g₂ i)) :=
+  (epi_comp_iff_of_epi (homologyBiprodIso A B i).hom _).1
+    (by rw [homologyBiprodIso_hom_comp_desc_homologyMap]; infer_instance)
 
 end HomologicalComplex
 
