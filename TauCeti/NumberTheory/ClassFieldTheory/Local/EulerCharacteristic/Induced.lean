@@ -48,10 +48,9 @@ are made for an abstract `L` because the local-field structure of a finite exten
   `χ_K(Ind_C^{G_K ⧸ V} B) = χ_L(B)`.
 * `TauCeti.ClassFieldTheory.localCardNorm_galRepOfQuotient_ind`:
   `φ_K(Ind_C^{G_K ⧸ V} B) = φ_L(B)`.
-* `TauCeti.ClassFieldTheory.localEulerCharacteristic_eq_localCardNorm_galRepOfQuotient_ind_iff`:
-  `χ_K = φ_K` holds for `Ind_C^{G_K ⧸ V} B` exactly when `χ_L = φ_L` holds for `B`.
 * `localEulerCharacteristic_eq_localCardNorm_fdGalRepOfQuotient_indFDRep_iff`:
-  the same for Tau Ceti's finite-dimensional induction model `indFDRep`.
+  `χ_K = φ_K` holds for the inflation of Tau Ceti's finite-dimensional induction model
+  `indFDRep B` exactly when `χ_L = φ_L` holds for `B`.
 * `localEulerCharacteristic_eq_localCardNorm_fdGalRepOfQuotient_indFDRep_of_shapiroField`:
   the transport at the fixed field `shapiroField K V C`, with its finite-extension local-field
   structure. This is the form consumed by the modular-Artin reduction of `χ_K = φ_K` to
@@ -169,22 +168,6 @@ theorem localCardNorm_galRepOfQuotient_ind (p : ℕ) [Fact p.Prime]
 
 /-! ### Transport of `χ = φ` across Shapiro's lemma -/
 
-/-- **Shapiro transport of `χ = φ`.** For `L` the fixed field of `C ≤ G_K ⧸ V`, the identity
-`χ_K = φ_K` holds for the inflation of `Ind_C^{G_K ⧸ V} B` exactly when `χ_L = φ_L` holds for
-`B`. -/
-theorem localEulerCharacteristic_eq_localCardNorm_galRepOfQuotient_ind_iff (p : ℕ) [Fact p.Prime]
-    [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] [FinitePadicExtension K p]
-    [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] [FinitePadicExtension L p]
-    [IsScalarTower ℚ_[p] K L] (hn : (n : K) ≠ 0) [Finite B] :
-    localEulerCharacteristic hn ((galRepOfQuotient n K V).obj (Rep.ind C.subtype B)) =
-        localCardNorm p ((galRepOfQuotient n K V).obj (Rep.ind C.subtype B)) ↔
-      localEulerCharacteristic
-          (map_natCast (algebraMap K L) n ▸ (map_ne_zero (algebraMap K L)).2 hn)
-          (shapiroGalRep σ n hσ B) =
-        localCardNorm p (shapiroGalRep σ n hσ B) := by
-  rw [localEulerCharacteristic_galRepOfQuotient_ind σ n hσ B hn,
-    localCardNorm_galRepOfQuotient_ind σ n hσ B p]
-
 /-- **Shapiro transport of `χ = φ` for finite-dimensional induction.** For `L` the fixed field of
 `C ≤ G_K ⧸ V` and a finite-dimensional `ZMod ℓ`-representation `B` of `C`, the identity
 `χ_K = φ_K` holds for the inflation of `indFDRep B` exactly when `χ_L = φ_L` holds for `B`. -/
@@ -194,26 +177,34 @@ theorem localEulerCharacteristic_eq_localCardNorm_fdGalRepOfQuotient_indFDRep_if
     [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] [FinitePadicExtension L p]
     [IsScalarTower ℚ_[p] K L] (ℓ : ℕ) [Fact ℓ.Prime]
     (hσ : (absoluteGaloisGroupExtend K L σ).range = C.comap (QuotientGroup.mk' V.toSubgroup))
-    (B : FDRep (ZMod ℓ) C) (hℓ : (ℓ : K) ≠ 0) :
-    localEulerCharacteristic hℓ ((fdGalRepOfQuotient ℓ K V).obj (indFDRep B)) =
+    (B : FDRep (ZMod ℓ) C) :
+    localEulerCharacteristic
+        (map_natCast (algebraMap ℚ_[p] K) ℓ ▸
+          (map_ne_zero (algebraMap ℚ_[p] K)).2 (Nat.cast_ne_zero.2 (NeZero.ne ℓ)))
+        ((fdGalRepOfQuotient ℓ K V).obj (indFDRep B)) =
         localCardNorm p ((fdGalRepOfQuotient ℓ K V).obj (indFDRep B)) ↔
       let _ : Finite ((forget₂ (FDRep (ZMod ℓ) C) (Rep (ZMod ℓ) C)).obj B) :=
         Module.finite_of_finite (ZMod ℓ) (M := B)
       localEulerCharacteristic
-          (map_natCast (algebraMap K L) ℓ ▸ (map_ne_zero (algebraMap K L)).2 hℓ)
+          (map_natCast (algebraMap ℚ_[p] L) ℓ ▸
+            (map_ne_zero (algebraMap ℚ_[p] L)).2 (Nat.cast_ne_zero.2 (NeZero.ne ℓ)))
           (shapiroGalRep σ ℓ hσ ((forget₂ (FDRep (ZMod ℓ) C) (Rep (ZMod ℓ) C)).obj B)) =
         localCardNorm p
           (shapiroGalRep σ ℓ hσ ((forget₂ (FDRep (ZMod ℓ) C) (Rep (ZMod ℓ) C)).obj B)) := by
   let _ : Finite ((forget₂ (FDRep (ZMod ℓ) C) (Rep (ZMod ℓ) C)).obj B) :=
     Module.finite_of_finite (ZMod ℓ) (M := B)
+  have hℓ : (ℓ : K) ≠ 0 :=
+    map_natCast (algebraMap ℚ_[p] K) ℓ ▸
+      (map_ne_zero (algebraMap ℚ_[p] K)).2 (Nat.cast_ne_zero.2 (NeZero.ne ℓ))
   -- The inflation of `indFDRep B` is that of `Ind_C B` on the forgotten representation.
   let e : (fdGalRepOfQuotient ℓ K V).obj (indFDRep B) ≅
       (galRepOfQuotient ℓ K V).obj
         (Rep.ind C.subtype ((forget₂ (FDRep (ZMod ℓ) C) (Rep (ZMod ℓ) C)).obj B)) :=
     eqToIso (fdGalRepOfQuotient_obj ℓ K V _) ≪≫
       (galRepOfQuotient ℓ K V).mapIso (indFDRepForgetIso B)
-  rw [localEulerCharacteristic_congr hℓ e, localCardNorm_congr p e]
-  exact localEulerCharacteristic_eq_localCardNorm_galRepOfQuotient_ind_iff σ ℓ hσ _ p hℓ
+  rw [localEulerCharacteristic_congr hℓ e, localCardNorm_congr p e,
+    localEulerCharacteristic_galRepOfQuotient_ind σ ℓ hσ _ hℓ,
+    localCardNorm_galRepOfQuotient_ind σ ℓ hσ _ p]
 
 /-- **Shapiro transport of `χ = φ` at the canonical fixed field.** For `K/ℚ_p` finite, if
 `χ = φ` holds for a finite-dimensional `ZMod ℓ`-representation `B` of `C ≤ G_K ⧸ V` read over the
@@ -275,6 +266,6 @@ theorem localEulerCharacteristic_eq_localCardNorm_fdGalRepOfQuotient_indFDRep_of
     ValuativeExtension.trans ℚ_[p] K (shapiroField K V C)
   exact (localEulerCharacteristic_eq_localCardNorm_fdGalRepOfQuotient_indFDRep_iff
     (shapiroFieldEmbedding K V C) p ℓ (range_absoluteGaloisGroupExtend_shapiroFieldEmbedding K V C)
-    B _).2 hB
+    B).2 hB
 
 end TauCeti.ClassFieldTheory
