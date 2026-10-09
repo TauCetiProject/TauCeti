@@ -86,7 +86,7 @@ theorem linearFlow_add (s t : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ) :
   ring_nf
 
 omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
-/-- The linear flow solves `ż = (-wᵢ zᵢ)ᵢ`. -/
+/-- The linear flow solves the ODE `z' = (-wᵢ zᵢ)ᵢ`. -/
 theorem hasDerivAt_linearFlow (z : Fin (Module.finrank ℝ E) → ℝ) (t : ℝ) :
     HasDerivAt (fun t ↦ φ.linearFlow t z) (fun i ↦ -(φ.weight i * φ.linearFlow t z i)) t := by
   refine hasDerivAt_pi.2 fun i ↦ ?_
