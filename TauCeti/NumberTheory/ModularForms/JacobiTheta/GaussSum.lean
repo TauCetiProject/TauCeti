@@ -39,6 +39,8 @@ evaluation. This is the classical theta-function route of Landsberg and Schaar.
 ## Main results
 
 * `TauCeti.sum_range_cexp_two_pi_I_sq_div`: Gauss's evaluation of the quadratic Gauss sum.
+* `TauCeti.sum_range_two_mul_cexp_two_pi_I_sq_div_four_mul`: its half for a modulus `4M`, the
+  Gauss sum of the discriminant form of the rank-one lattice `⟨2M⟩`.
 
 ## References
 
@@ -265,5 +267,45 @@ theorem sum_range_cexp_two_pi_I_sq_div (N : ℕ) :
   simp only [mul_one] at heq
   rw [heq, ← hω']
   ring
+
+/-- **Half of Gauss's quadratic sum of modulus `4M`**:
+`∑_{k < 2M} e^{2πi k² / (4M)} = (1 + i) √M`. The summand has period `2M`, so this is half of
+the sum over the full range `r < 4M`. -/
+theorem sum_range_two_mul_cexp_two_pi_I_sq_div_four_mul (M : ℕ) :
+    ∑ k ∈ Finset.range (2 * M), cexp (2 * π * I * ((k : ℂ) ^ 2 / (4 * M))) =
+      (1 + I) * √(M : ℝ) := by
+  set f : ℕ → ℂ := fun k ↦ cexp (2 * π * I * ((k : ℂ) ^ 2 / (4 * M)))
+  rcases Nat.eq_zero_or_pos M with rfl | hM
+  · simp
+  have hM' : (M : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hM.ne'
+  -- The full Gauss sum of modulus `4M` runs over two periods of `f`.
+  have hper (k : ℕ) : f (2 * M + k) = f k := by
+    have h : 2 * π * I * (((2 * M + k : ℕ) : ℂ) ^ 2 / (4 * M)) =
+        2 * π * I * ((k : ℂ) ^ 2 / (4 * M)) + (k + M : ℕ) * (2 * π * I) := by
+      push_cast
+      field_simp
+      ring
+    simp only [f, h, Complex.exp_add, Complex.exp_nat_mul_two_pi_mul_I, mul_one]
+  have hsum : ∑ r ∈ Finset.range (4 * M), cexp (2 * π * I * r ^ 2 / (4 * M : ℕ)) =
+      2 * ∑ k ∈ Finset.range (2 * M), f k := by
+    have hf (r : ℕ) : cexp (2 * π * I * r ^ 2 / (4 * M : ℕ)) = f r := by
+      simp only [f]
+      push_cast
+      ring_nf
+    simp only [hf]
+    rw [show 4 * M = 2 * M + 2 * M by ring, Finset.sum_range_add]
+    simp only [hper]
+    ring
+  have hgauss := sum_range_cexp_two_pi_I_sq_div (4 * M)
+  have hI : (-I) ^ (4 * M) = 1 := by
+    rw [pow_mul, show (-I) ^ 4 = 1 by ring_nf; rw [I_pow_four], one_pow]
+  have hsqrt : ((√((4 * M : ℕ) : ℝ) : ℝ) : ℂ) = 2 * √(M : ℝ) := by
+    have h4 : √(4 : ℝ) = 2 := by
+      rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]
+    rw [Nat.cast_mul, Nat.cast_ofNat, Real.sqrt_mul (by norm_num), h4]
+    push_cast
+    ring
+  rw [hsum, hI, hsqrt] at hgauss
+  linear_combination hgauss / 2
 
 end TauCeti

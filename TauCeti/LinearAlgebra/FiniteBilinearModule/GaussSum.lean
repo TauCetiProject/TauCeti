@@ -526,6 +526,13 @@ theorem gaussSign_neg : A.neg.gaussSign = -A.gaussSign := by
       rw [hk', map_mul, conj_ofReal, ← expCircle_neg, ← map_neg, hcard]
     rw [gaussSign, gaussSign, dite_eq_right h, dite_eq_right h', neg_zero]
 
+/-- The zero module has Gauss sum `1 = √1` and hence Gauss-sum invariant `0`. -/
+theorem gaussSign_eq_zero_of_subsingleton [Subsingleton A] : A.gaussSign = 0 := by
+  refine gaussSign_eq_of_gaussSum_eq A ?_
+  obtain ⟨_⟩ := nonempty_fintype A
+  rw [gaussSum_eq_sum, Fintype.sum_subsingleton _ 0, Nat.card_of_subsingleton (0 : A)]
+  simp
+
 variable {A} in
 /-- **The Gauss-sum invariant of a nondegenerate metabolic module vanishes.** -/
 theorem gaussSign_eq_zero_of_isMetabolic (hA : A.IsNondegenerate) (h : A.IsMetabolic) :
