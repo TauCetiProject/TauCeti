@@ -18,10 +18,10 @@ only that `M` contains a primitive `m`-th root of unity — although when `M / K
 subgroup is `Gal(M/K(μ_m))`, which is the reading the crossing argument uses.
 
 Without a primitive root, the same subgroup is the kernel of the action of `Aut(M/K)` on the
-cyclic group `μ_m(M)`. Its index therefore divides the order `φ(#μ_m(M))` of the automorphism group
-of `μ_m(M)`. For a prime `p` this index is prime to `p`: adjoining the `p`-th roots of unity is a
-step of degree prime to `p`, the reduction step in the Kummer-theoretic proofs of class field
-theory.
+group `μ_m(M)`. For `m ≠ 0` this group is cyclic, so the index divides the order `φ(#μ_m(M))` of
+the automorphism group of `μ_m(M)`. For a prime `p` this index is prime to `p`: adjoining the
+`p`-th roots of unity is a step of degree prime to `p`, the reduction step in the Kummer-theoretic
+proofs of class field theory.
 
 ## Main results
 
@@ -66,7 +66,7 @@ variable {K M : Type*} [Field K] [Field M] [Algebra K M]
 
 /-- **The fixers of `K(μ_m)` are the automorphisms acting trivially on `μ_m(M)`.** Unlike
 `IsPrimitiveRoot.fixingSubgroup_adjoin_nth_roots_eq_ker_autToPow`, this needs no primitive root:
-the action on the cyclic group `μ_m(M)` replaces the cyclotomic character. -/
+the action on the group `μ_m(M)` replaces the cyclotomic character. -/
 theorem fixingSubgroup_adjoin_nth_roots_eq_ker (m : ℕ) :
     (adjoin K {b : M | b ^ m = 1}).fixingSubgroup =
       (MulDistribMulAction.toMulAut (M ≃ₐ[K] M) (rootsOfUnity m M)).ker := by
