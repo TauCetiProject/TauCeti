@@ -274,6 +274,8 @@ private theorem realThreeTransportedEvenEquiv_eq :
   apply CliffordAlgebra.EvenHom.ext
   apply LinearMap.ext₂
   intro x y
+  -- `EvenHom.ext` leaves equality of the underlying bilinear generator maps. Expose their
+  -- applications because the available transport lemmas rewrite the generators, not these maps.
   change realThreeTransportedEvenEquiv
       ((CliffordAlgebra.even.ι (realCliffordForm 3 0)).bilin x y) =
     realCliffordThreeZeroEvenEquivQuaternion
@@ -308,6 +310,8 @@ private theorem realThreeTransportedSpinEquiv_eq :
     simp only [CliffordAlgebra.coe_evenUnitaryGroupEvenPart,
       CliffordAlgebra.coe_spinGroupToEvenUnitary_apply,
       CliffordAlgebra.coe_evenEquivOfIsometry_apply]
+    -- The coercion lemmas reduce both even-unitary values to Clifford elements; expose the
+    -- remaining bundled Spin-equivalence coercion before applying its named application lemma.
     change (realThreeToWeightedSumSquaresOne.spinGroupEquiv s : CliffordAlgebra _) =
       CliffordAlgebra.equivOfIsometry realThreeToWeightedSumSquaresOne
         (s : CliffordAlgebra _)
@@ -330,6 +334,8 @@ theorem realSpinThreeEquivQuaternionUnitary_action
     rw [CliffordAlgebra.spinGroup_smul_apply, CliffordAlgebra.spinGroup_smul_apply]
     have hmap := QuadraticMap.Isometry.spinGroupMap_spinVectorAction
       realThreeToWeightedSumSquaresOne.toIsometry s v
+    -- Naturality is stated for `spinGroupMap`, whereas the local term uses the bundled
+    -- `spinGroupEquiv`; expose the common `spinVectorAction` equation before rewriting that bridge.
     change CliffordAlgebra.spinVectorAction _
         (realThreeToWeightedSumSquaresOne.toIsometry.spinGroupMap s) v =
       CliffordAlgebra.spinVectorAction _ s v at hmap

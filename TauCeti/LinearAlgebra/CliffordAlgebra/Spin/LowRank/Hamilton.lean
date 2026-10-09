@@ -340,7 +340,12 @@ private theorem hamiltonVolume_mem_center :
     hamiltonVolume (K := K) ∈
       Subalgebra.center K (CliffordAlgebra (hamiltonThreeForm (K := K))) := by
   apply prod_map_ι_mem_center_of_odd_length (hamiltonBasisList_pairwise (K := K))
-    (by change Odd 3; decide) (hamiltonBasisList_span (K := K))
+    (by
+      -- The private basis list is definitionally a three-element literal; expose its length so
+      -- `decide` can discharge the parity condition expected by the central-volume theorem.
+      change Odd 3
+      decide)
+    (hamiltonBasisList_span (K := K))
 
 private noncomputable def hamiltonVectorEven :
     (Fin 3 → K) →ₗ[K] even (hamiltonThreeForm (K := K)) where
@@ -498,6 +503,8 @@ private theorem coe_hamiltonVectorEven (v : Fin 3 → K) :
     exact LinearMap.congr_fun h v
   apply (Pi.basisFun K (Fin 3)).ext
   intro i
+  -- Basis extensionality leaves the two composed linear maps applied to a basis vector. Expose
+  -- those applications so the previously proved basis-vector identity has exactly the goal type.
   change (hamiltonVectorEven (K := K) (hamiltonBasisVector i) :
       CliffordAlgebra (hamiltonThreeForm (K := K))) =
     ι (hamiltonThreeForm (K := K)) (hamiltonBasisVector i) * hamiltonVolume (K := K)
