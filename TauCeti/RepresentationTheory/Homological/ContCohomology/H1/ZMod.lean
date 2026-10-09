@@ -11,10 +11,11 @@ public import TauCeti.Topology.Algebra.ContinuousZModDual
 /-!
 # The `ZMod n`-module structure on `H¹` and its continuous-dual interpretation
 
-For a topological group `G` acting continuously on `ZMod n` the quotient `H¹(G, ZMod n) = Z¹/B¹`
-carries a `ZMod n`-module structure: scalar `n` annihilates every `ZMod n`-valued element of the
-ambient group, hence every continuous `1`-cocycle, hence the `1`-coboundaries and their cosets, so
-`TauCeti.instModuleH1` transports the module structure to the quotient. This is the same
+For a topological group `G` acting continuously on a `ZMod n`-module `A`, the quotient
+`H¹(G, A) = Z¹/B¹` carries a `ZMod n`-module structure: scalar `n` annihilates every
+`A`-valued element of the ambient group, hence every continuous `1`-cocycle, hence the
+`1`-coboundaries and their cosets, so `TauCeti.instModuleH1` transports the module structure to
+the quotient. This is the same
 observation that gives the continuous character group its own `ZMod n`-module structure in
 `TauCeti.Topology.Algebra.ContinuousZModDual`, and it needs no profiniteness and no pro-`p`
 hypothesis: it holds for every `n` and every continuous action.
@@ -37,7 +38,9 @@ theorem, is in `TauCeti.Topology.Algebra.Group.Profinite.ProP.H1Dual`.
 
 ## Main definitions
 
-* `TauCeti.instModuleH1`: `H¹(G, ZMod n)` is a `ZMod n`-module, for any continuous action.
+* `TauCeti.instModuleH1`: `H¹(G, A)` is a `ZMod n`-module when `A` is, for any continuous action.
+* `TauCeti.h1EquivContinuousZModHom`: for a trivial action, `H¹(G, A)` is the module of
+  continuous homomorphisms from `G` to the additive group of `A`.
 * `TauCeti.h1EquivContinuousZModDual`: for a trivial action, `H¹(G, ZMod n)` is the continuous
   `ZMod n`-dual `TauCeti.continuousZModDual n G` of `G`, as `ZMod n`-modules.
 
@@ -60,7 +63,7 @@ namespace TauCeti
 
 open ContCohomology
 
-universe u
+universe u v
 
 -- For prime `p`, `AddCommGroup (ZMod p)` is also derivable from `[IsSimpleAddGroup (ZMod p)]
 -- [AddGroup.IsNilpotent (ZMod p)]`; that structure is not reducibly the ring one, so the
@@ -70,27 +73,59 @@ attribute [local instance 2000] Ring.toAddCommGroup
 
 section ModuleStructure
 
-variable {n : ℕ} {G : Type u} [Monoid G] [TopologicalSpace G] [DistribMulAction G (ZMod n)]
-  [ContinuousSMul G (ZMod n)]
+variable {n : ℕ} {G : Type u} [Monoid G] [TopologicalSpace G]
+  {A : Type v} [AddCommGroup A] [Module (ZMod n) A] [TopologicalSpace A]
+  [IsTopologicalAddGroup A] [DistribMulAction G A] [ContinuousSMul G A]
 
-/-- **`H¹(G, ZMod n)` is a `ZMod n`-module.** Scalar `n` annihilates every `ZMod n`-valued
-continuous `1`-cocycle, so it annihilates the subgroup of `1`-coboundaries, and the quotient
-`Z¹/B¹` therefore inherits a `ZMod n`-module structure from the ambient group. The action on the
-coefficients is arbitrary here: identifying this module with the group of continuous characters
-`TauCeti.continuousZModDual n G` is `TauCeti.h1EquivContinuousZModDual`, which needs a trivial
-action. -/
-noncomputable instance instModuleH1 : Module (ZMod n) (H1 G (ZMod n)) :=
+/-- **`H¹(G, A)` inherits the `ZMod n`-module structure of `A`.** Scalar `n` annihilates every
+continuous `A`-valued `1`-cocycle, so it annihilates the subgroup of `1`-coboundaries, and the
+quotient `Z¹/B¹` inherits a `ZMod n`-module structure. The coefficient action is arbitrary. -/
+noncomputable instance instModuleH1 : Module (ZMod n) (H1 G A) :=
   QuotientAddGroup.zmodModule fun x ↦ by
-    -- The `n`-fold multiple of a cocycle with values in `ZMod n` is the zero cocycle, and the
-    -- zero cocycle is a `1`-coboundary.
-    have hx : (n • x : Z1 G (ZMod n)) = 0 := by
+    have hx : (n • x : Z1 G A) = 0 := by
       apply Subtype.ext
       funext g
-      simp
+      exact ZModModule.char_nsmul_eq_zero n _
     rw [hx]
     exact AddSubgroup.zero_mem _
 
 end ModuleStructure
+
+section ContinuousHom
+
+variable {n : ℕ} {G : Type u} [Group G] [TopologicalSpace G]
+  {A : Type v} [AddCommGroup A] [Module (ZMod n) A] [TopologicalSpace A]
+  [IsTopologicalAddGroup A] [DistribMulAction G A] [ContinuousSMul G A]
+  (htriv : ∀ (g : G) (a : A), g • a = a)
+
+include htriv
+
+/-- For a trivial action on a `ZMod n`-module `A`, first cohomology is the `ZMod n`-module of
+continuous homomorphisms from `G` to the additive group of `A`. -/
+noncomputable def h1EquivContinuousZModHom :
+    H1 G A ≃ₗ[ZMod n] Additive (G →ₜ* Multiplicative A) :=
+  (H1EquivOfSmulEqSelf htriv).toLinearEquiv
+    (ZMod.map_smul (H1EquivOfSmulEqSelf htriv))
+
+/-- The underlying additive equivalence of `h1EquivContinuousZModHom` is
+`H1EquivOfSmulEqSelf`. -/
+@[simp]
+theorem h1EquivContinuousZModHom_apply (x : H1 G A) :
+    h1EquivContinuousZModHom (n := n) htriv x = H1EquivOfSmulEqSelf htriv x :=
+  congrFun (AddEquiv.coe_toLinearEquiv (H1EquivOfSmulEqSelf htriv)
+    (ZMod.map_smul (H1EquivOfSmulEqSelf htriv))) x
+
+/-- Applying `H1EquivOfSmulEqSelf` to the inverse of the linear equivalence recovers the
+continuous homomorphism. -/
+@[simp]
+theorem H1EquivOfSmulEqSelf_h1EquivContinuousZModHom_symm_apply
+    (f : Additive (G →ₜ* Multiplicative A)) :
+    H1EquivOfSmulEqSelf htriv
+      ((h1EquivContinuousZModHom (n := n) htriv).symm f) = f := by
+  rw [← h1EquivContinuousZModHom_apply (n := n) htriv,
+    LinearEquiv.apply_symm_apply]
+
+end ContinuousHom
 
 section ContinuousDual
 
@@ -104,11 +139,17 @@ sent to the continuous homomorphism `G → Multiplicative ZMod n` that its cocyc
 for trivial coefficients is that cocycle itself, as an isomorphism of `ZMod n`-modules. -/
 noncomputable def h1EquivContinuousZModDual :
     H1 G (ZMod n) ≃ₗ[ZMod n] continuousZModDual n G :=
-  (H1EquivOfSmulEqSelf htriv).toLinearEquiv (ZMod.map_smul (H1EquivOfSmulEqSelf htriv))
+  h1EquivContinuousZModHom (n := n) htriv
+
+/-- The continuous-dual equivalence has the same underlying map as
+`H1EquivOfSmulEqSelf`. -/
+@[simp]
+theorem h1EquivContinuousZModDual_apply (x : H1 G (ZMod n)) :
+    h1EquivContinuousZModDual htriv x = H1EquivOfSmulEqSelf htriv x :=
+  h1EquivContinuousZModHom_apply htriv x
 
 /-- The image of a class of `H¹(G, ZMod n)` is the character its cocycle defines: evaluated at `g`
 it is the cocycle's value at `g`, read in the multiplicative encoding of `ZMod n`. -/
-@[simp]
 theorem h1EquivContinuousZModDual_apply_mk (f : Z1 G (ZMod n)) (g : G) :
     Additive.toMul (h1EquivContinuousZModDual htriv (f : H1 G (ZMod n))) g
       = Multiplicative.ofAdd ((f : G → ZMod n) g) := by
