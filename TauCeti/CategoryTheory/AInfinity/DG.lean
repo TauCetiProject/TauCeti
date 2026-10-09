@@ -224,21 +224,6 @@ private theorem totalMul_homInclusion_of_ne {X Y' Y Z : C} (h : Y' ≠ Y)
   rw [totalMul_homInclusion_homInclusion, homProjection_homInclusion_of_ne (by simp [h]),
     map_zero, map_zero]
 
-/-- Induction on the total module of morphisms: a property closed under sums and holding on every
-hom module holds everywhere. -/
-@[elab_as_elim]
-private theorem totalHom_induction {P : TotalHom R C → Prop} (zero : P 0)
-    (add : ∀ x y, P x → P y → P (x + y))
-    (homInclusion : ∀ X Y (f : homModule (R := R) X Y), P (homInclusion X Y f))
-    (x : TotalHom R C) : P x := by
-  let := Classical.decEq C
-  induction x using DirectSum.induction_on with
-  | zero => exact zero
-  | add x y hx hy => exact add x y hx hy
-  | of a f =>
-    have h := homInclusion a.1 a.2 f
-    rwa [homInclusion_eq_lof, lof_eq_of] at h
-
 /-- Induction on the morphisms of degree `p` in the total module: a property closed under sums and
 holding on the morphisms of degree `p` of every hom module holds on every element of degree
 `p`. -/
@@ -246,14 +231,10 @@ private theorem piece_induction {p : ℤ} {P : TotalHom R C → Prop} (zero : P 
     (add : ∀ x y, P x → P y → P (x + y))
     (homInclusion : ∀ X Y (f : DGHom R p X Y), P (homInclusion X Y (homLof X Y p f)))
     {x : TotalHom R C} (hx : x ∈ (totalGrading R C).piece p) : P x := by
-  classical
-  rw [← DirectSum.sum_support_of x]
-  refine Finset.sum_induction _ P add zero fun a _ ↦ ?_
-  have hxa := homProjection_mem_piece hx a.1 a.2
-  rw [homProjection_apply, grading_piece] at hxa
-  obtain ⟨f, hf⟩ := hxa
-  have h := homInclusion a.1 a.2 f
-  rwa [hf, homInclusion_eq_lof, lof_eq_of] at h
+  refine totalGrading_piece_induction zero add (fun X Y f hf ↦ ?_) hx
+  rw [grading_piece] at hf
+  obtain ⟨f, rfl⟩ := hf
+  exact homInclusion X Y f
 
 private theorem totalMul_assoc (x y z : TotalHom R C) :
     totalMul (totalMul x y) z = totalMul x (totalMul y z) := by

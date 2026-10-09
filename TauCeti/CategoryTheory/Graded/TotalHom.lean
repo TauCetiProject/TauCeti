@@ -41,6 +41,9 @@ statements that use it.
 
 * `TauCeti.GradedLinearQuiver.mem_totalGrading_piece_iff`: an element of the total module has
   degree `n` exactly when each of its components has.
+* `TauCeti.GradedLinearQuiver.totalHom_induction` and
+  `TauCeti.GradedLinearQuiver.totalGrading_piece_induction`: induction on the total module, and on
+  its elements of a given degree, from the hom modules.
 * `TauCeti.GradedLinearQuiver.homInclusion_homProjection_of_mem_range`: an element of the image
   of a hom module is recovered from its component there.
 * `TauCeti.GradedLinearQuiver.IsPathCompatible.ext`: a path-compatible operation is determined
@@ -123,6 +126,21 @@ theorem totalHom_ext {x y : TotalHom R C}
     (h : ∀ X Y : C, homProjection X Y x = homProjection X Y y) : x = y :=
   DirectSum.ext_component R fun p ↦ h p.1 p.2
 
+/-- **Induction on the total module of morphisms**: a property closed under sums and holding on
+every hom module holds everywhere. -/
+@[elab_as_elim]
+theorem totalHom_induction {P : TotalHom R C → Prop} (zero : P 0)
+    (add : ∀ x y, P x → P y → P (x + y))
+    (homInclusion : ∀ X Y (f : homModule (R := R) X Y), P (homInclusion X Y f))
+    (x : TotalHom R C) : P x := by
+  classical
+  induction x using DirectSum.induction_on with
+  | zero => exact zero
+  | add x y hx hy => exact add x y hx hy
+  | of a f =>
+    have h := homInclusion a.1 a.2 f
+    rwa [homInclusion_eq_lof, DirectSum.lof_eq_of] at h
+
 /-- An element of the image of the morphisms `X ⟶ Y` is the inclusion of its component there. -/
 theorem homInclusion_homProjection_of_mem_range {X Y : C} {x : TotalHom R C}
     (hx : x ∈ LinearMap.range (homInclusion (R := R) X Y)) :
@@ -143,6 +161,20 @@ theorem homProjection_mem_piece {n : ℤ} {x : TotalHom R C}
     (hx : x ∈ (totalGrading R C).piece n) (X Y : C) :
     homProjection X Y x ∈ (grading (R := R) X Y).piece n :=
   (mem_totalGrading_piece_iff n x).1 hx X Y
+
+/-- **Induction on the elements of degree `n` of the total module**: a property closed under sums
+and holding on the morphisms of degree `n` of every hom module holds on every element of degree
+`n`. -/
+theorem totalGrading_piece_induction {n : ℤ} {P : TotalHom R C → Prop} (zero : P 0)
+    (add : ∀ x y, P x → P y → P (x + y))
+    (homInclusion : ∀ X Y (f : homModule (R := R) X Y),
+      f ∈ (grading (R := R) X Y).piece n → P (homInclusion X Y f))
+    {x : TotalHom R C} (hx : x ∈ (totalGrading R C).piece n) : P x := by
+  classical
+  rw [← DirectSum.sum_support_of x]
+  refine Finset.sum_induction _ P add zero fun a _ ↦ ?_
+  have h := homInclusion a.1 a.2 _ (homProjection_mem_piece hx a.1 a.2)
+  rwa [homProjection_apply, homInclusion_eq_lof, DirectSum.lof_eq_of] at h
 
 /-- An included morphism has degree `n` in the total module exactly when it has degree `n`. -/
 @[simp]
