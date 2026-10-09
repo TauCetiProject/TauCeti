@@ -27,7 +27,7 @@ exchangeability alone does not ensure recurrence. De Finetti's theorem can then 
 to the exchangeable excursion process, as in
 `TauCeti.Probability.Exchangeability.Recurrence.Representation`.
 
-For a Markov chain itself the excursions are not merely exchangeable but i.i.d.
+For a recurrent Markov chain itself the excursions are not merely exchangeable but i.i.d.
 (`TauCeti.Probability.Process.Excursion.MarkovChain`); in the language of de Finetti's theorem,
 their directing measure is the constant excursion law.
 
