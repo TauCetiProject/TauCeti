@@ -28,7 +28,8 @@ a finite Galois extension `E/K` and `K ⊆ L ⊆ E`, the crossed product of the 
 of Brauer classes corresponds to restriction in Galois cohomology.
 
 Whether `g` maps `B` onto `C_A(L)` is a dimension count
-(`AlgHom.range_eq_centralizer_iff_finrank_mul_finrank_eq`): the image of `g` always lies in the
+(`AlgHom.range_eq_centralizer_iff_finrank_mul_finrank_eq`, in
+`TauCeti/Algebra/CentralSimple/Centralizer/Basic.lean`): the image of `g` always lies in the
 centralizer, because `L` is central in `B`, and the centralizer theorem
 `[L : K] · dim_K C_A(L) = dim_K A` (`TauCeti.finrank_mul_finrank_centralizer_of_isField`) gives the
 dimension of the centralizer.
@@ -45,8 +46,6 @@ nonzero sizes `a`, `b` (`TauCeti.IsSimpleRing.nonempty_algEquiv_matrix_mulOpposi
 
 ## Main results
 
-* `AlgHom.range_eq_centralizer_iff_finrank_mul_finrank_eq`: `g` maps `B` onto the centralizer of
-  the image of `L` exactly when `[L : K] · dim_K B = dim_K A`.
 * `TauCeti.BrauerGroup.baseChange_mk_eq_mk_of_range_eq_centralizer`: if `g` maps `B` onto the
   centralizer of the image of `L`, then `[L ⊗[K] A] = [B]` in `Br(L)`.
 
@@ -68,14 +67,6 @@ section Centralizer
 variable {K : Type*} [Field K] {A : Type*} [Ring A] [Algebra K A] (L : Type*) [Field L]
   [Algebra K L] {B : Type*} [Ring B] [Algebra L B] [Algebra K B] [IsScalarTower K L B]
 
-omit [Algebra K L] [IsScalarTower K L B] in
-variable {L} in
-/-- The image of `l` in `A` commutes with the image of every element of `B`, because `l` is central
-in `B`. -/
-private theorem commute_apply_algebraMap (g : B →ₐ[K] A) (b : B) (l : L) :
-    g b * g (algebraMap L B l) = g (algebraMap L B l) * g b := by
-  rw [← map_mul, ← map_mul, Algebra.commutes]
-
 /-! ### Right multiplication through `g` -/
 
 namespace BaseChangeModule
@@ -90,7 +81,7 @@ private theorem toEnd_mul_apply (r : L ⊗[K] A) (x : A) (b : B) :
   induction r using TensorProduct.inductionOn with
   | tmul l a =>
     simp only [toEnd_tmul_apply, AlgHom.comp_apply, IsScalarTower.coe_toAlgHom', mul_assoc,
-      commute_apply_algebraMap]
+      ← map_mul, Algebra.commutes]
   | add r s hr hs => simp only [map_add, LinearMap.add_apply, hr, hs, add_mul]
 
 /-- Right multiplication by `g b`, as an endomorphism of the `L ⊗[K] A`-module `A`. -/
@@ -113,25 +104,20 @@ private noncomputable def mulRightAlgHom :
   toFun b := mulRight L g b.unop
   map_one' := by
     ext x
-    obtain ⟨x, rfl⟩ := (of (g.comp (IsScalarTower.toAlgHom K L B))).surjective x
     rw [MulOpposite.unop_one, mulRight_of, map_one g, mul_one, Module.End.one_apply]
   map_mul' b c := by
     ext x
-    obtain ⟨x, rfl⟩ := (of (g.comp (IsScalarTower.toAlgHom K L B))).surjective x
     rw [MulOpposite.unop_mul, Module.End.mul_apply, mulRight_of, mulRight_of, mulRight_of,
       map_mul g, mul_assoc]
   map_zero' := by
     ext x
-    obtain ⟨x, rfl⟩ := (of (g.comp (IsScalarTower.toAlgHom K L B))).surjective x
     rw [MulOpposite.unop_zero, mulRight_of, map_zero g, mul_zero, map_zero, LinearMap.zero_apply]
   map_add' b c := by
     ext x
-    obtain ⟨x, rfl⟩ := (of (g.comp (IsScalarTower.toAlgHom K L B))).surjective x
     rw [MulOpposite.unop_add, LinearMap.add_apply, mulRight_of, mulRight_of, mulRight_of, map_add g,
       mul_add, map_add]
   commutes' l := by
     ext x
-    obtain ⟨x, rfl⟩ := (of (g.comp (IsScalarTower.toAlgHom K L B))).surjective x
     simp only [MulOpposite.algebraMap_apply, MulOpposite.unop_op, mulRight_of,
       Module.algebraMap_end_apply, lsmul_of, AlgHom.comp_apply, IsScalarTower.coe_toAlgHom']
 
@@ -140,37 +126,6 @@ end BaseChangeModule
 /-! ### The centralizer of the subfield -/
 
 variable [Algebra.IsCentral K A] [IsSimpleRing A] [FiniteDimensional K A] [IsSimpleRing B]
-
-/-- **The centralizer of a subfield, through a model.** A `K`-algebra homomorphism `g : B →ₐ[K] A`
-out of a simple `L`-algebra maps `B` onto the centralizer of the image of `L` exactly when
-`[L : K] · dim_K B = dim_K A`, which is the dimension of that centralizer given by the centralizer
-theorem. -/
-theorem _root_.AlgHom.range_eq_centralizer_iff_finrank_mul_finrank_eq (g : B →ₐ[K] A) :
-    g.range = Subalgebra.centralizer K ((g.comp (IsScalarTower.toAlgHom K L B)).range : Set A) ↔
-      finrank K L * finrank K B = finrank K A := by
-  set f := g.comp (IsScalarTower.toAlgHom K L B)
-  have hf : Function.Injective f := f.toRingHom.injective
-  have hg : Function.Injective g := g.toRingHom.injective
-  have : FiniteDimensional K L := FiniteDimensional.of_injective f.toLinearMap hf
-  have : FiniteDimensional K B := FiniteDimensional.of_injective g.toLinearMap hg
-  have hL : finrank K f.range = finrank K L :=
-    (AlgEquiv.ofInjective f hf).toLinearEquiv.finrank_eq.symm
-  have hB : finrank K g.range = finrank K B :=
-    (AlgEquiv.ofInjective g hg).toLinearEquiv.finrank_eq.symm
-  have hC := finrank_mul_finrank_centralizer_of_isField f.range
-    ((AlgEquiv.ofInjective f hf).symm.toMulEquiv.isField (Field.toIsField L))
-  rw [hL] at hC
-  constructor
-  · intro h
-    rw [← hB, h, hC]
-  · intro h
-    refine Subalgebra.eq_of_le_of_finrank_eq ?_ ?_
-    · rintro _ ⟨b, rfl⟩
-      rw [Subalgebra.mem_centralizer_iff]
-      rintro _ ⟨l, rfl⟩
-      exact (commute_apply_algebraMap g b l).symm
-    · rw [hB]
-      exact Nat.eq_of_mul_eq_mul_left finrank_pos (h.trans hC.symm)
 
 namespace BaseChangeModule
 
