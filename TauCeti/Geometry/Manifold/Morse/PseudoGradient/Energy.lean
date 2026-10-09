@@ -24,9 +24,9 @@ which is the quantity that the flow actually controls.
 
 ## Main declarations
 
-* `TauCeti.IsAdaptedPseudoGradient.integrable_mvfderiv_apply_of_tendsto`: the rate of decrease of
-  `f` along an integral curve of `X` on which `f` has limits at both ends is integrable.
-* `TauCeti.IsAdaptedPseudoGradient.integral_neg_mvfderiv_apply_eq_sub_of_tendsto`: the energy
+* `TauCeti.IsMIntegralCurve.integrable_mvfderiv_apply_of_tendsto`: the rate of decrease of `f`
+  along an integral curve of `X` on which `df(X) ≤ 0` and `f` has limits at both ends is integrable.
+* `TauCeti.IsMIntegralCurve.integral_neg_mvfderiv_apply_eq_sub_of_tendsto`: the energy
   identity `∫ -df(X)(γ t) dt = a - b` when `f (γ t)` tends to `a` and `b` at `-∞` and `+∞`.
 * `IsAdaptedPseudoGradient.integrable_mvfderiv_apply_flow_of_mem_unstableSet_inter_stableSet`
   and `integral_neg_mvfderiv_apply_flow_eq_sub_of_mem_unstableSet_inter_stableSet` (in the same
@@ -50,19 +50,18 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
   {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
 
-namespace IsAdaptedPseudoGradient
+namespace IsMIntegralCurve
 
-section Curve
-
-variable (hX : IsAdaptedPseudoGradient f X) {γ : ℝ → M} {a b : ℝ}
-  (hf : ∀ t, MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f (γ t)) (hγ : IsMIntegralCurve γ X)
+variable {γ : ℝ → M} {a b : ℝ} (hγ : IsMIntegralCurve γ X)
+  (hf : ∀ t, MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f (γ t))
+  (hnonpos : ∀ t, mvfderiv 𝓘(ℝ, E) f (γ t) (X (γ t)) ≤ 0)
   (hbot : Tendsto (f ∘ γ) atBot (𝓝 a)) (htop : Tendsto (f ∘ γ) atTop (𝓝 b))
-include hX hf hγ hbot htop
+include hγ hf hnonpos hbot htop
 
-omit [FiniteDimensional ℝ E] in
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- **The rate of decrease of `f` along an integral curve is integrable.** If `γ` is an integral
-curve of `X`, `f` is differentiable along it and `f ∘ γ` has finite limits as `t → -∞` and as
-`t → +∞`, then `t ↦ df(X)(γ t)` is integrable on the real line. -/
+curve of `X` along which `f` is differentiable and `df(X) ≤ 0`, and `f ∘ γ` has finite limits as
+`t → -∞` and as `t → +∞`, then `t ↦ df(X)(γ t)` is integrable on the real line. -/
 theorem integrable_mvfderiv_apply_of_tendsto :
     Integrable fun t ↦ mvfderiv 𝓘(ℝ, E) f (γ t) (X (γ t)) := by
   -- The derivative of `f ∘ γ` is nonpositive, so it is integrable on each half-line, since
@@ -70,28 +69,29 @@ theorem integrable_mvfderiv_apply_of_tendsto :
   have hderiv (t : ℝ) := Manifold.hasDerivAt_comp_curve (hf t) (hγ t)
   rw [← integrableOn_univ, ← Iio_union_Ici (a := (0 : ℝ)), integrableOn_union,
     integrableOn_Ici_iff_integrableOn_Ioi]
-  refine ⟨?_, integrableOn_Ioi_deriv_of_nonpos' (fun t _ ↦ hderiv t)
-    (fun t _ ↦ hX.mvfderiv_apply_nonpos _) htop⟩
+  refine ⟨?_, integrableOn_Ioi_deriv_of_nonpos' (fun t _ ↦ hderiv t) (fun t _ ↦ hnonpos t) htop⟩
   -- Reflect the negative half-line onto the positive one.
   rw [← (Measure.measurePreserving_neg (volume : Measure ℝ)).integrableOn_comp_preimage
     (Homeomorph.neg ℝ).measurableEmbedding, neg_preimage, neg_Iio, neg_zero, ← integrableOn_neg_iff]
   refine integrableOn_Ioi_deriv_of_nonneg' (g := fun s ↦ f (γ (-s))) (fun s _ ↦ ?_)
     (fun s _ ↦ ?_) (hbot.comp tendsto_neg_atTop_atBot)
   · simpa [comp_def] using (hderiv (-s)).comp s (hasDerivAt_neg s)
-  · simpa using hX.mvfderiv_apply_nonpos _
+  · simpa using hnonpos (-s)
 
-omit [FiniteDimensional ℝ E] in
-/-- **The energy identity.** If `γ` is an integral curve of `X`, `f` is differentiable along it
-and `f ∘ γ` tends to `a` as `t → -∞` and to `b` as `t → +∞`, then the energy
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- **The energy identity.** If `γ` is an integral curve of `X` along which `f` is differentiable
+and `df(X) ≤ 0`, and `f ∘ γ` tends to `a` as `t → -∞` and to `b` as `t → +∞`, then the energy
 `∫ -df(X)(γ t) dt` is `a - b`. -/
 theorem integral_neg_mvfderiv_apply_eq_sub_of_tendsto :
     ∫ t, -mvfderiv 𝓘(ℝ, E) f (γ t) (X (γ t)) = a - b := by
   -- The fundamental theorem of calculus on the real line.
   rw [integral_neg, integral_of_hasDerivAt_of_tendsto
     (fun t ↦ Manifold.hasDerivAt_comp_curve (hf t) (hγ t))
-    (hX.integrable_mvfderiv_apply_of_tendsto hf hγ hbot htop) hbot htop, neg_sub]
+    (integrable_mvfderiv_apply_of_tendsto hγ hf hnonpos hbot htop) hbot htop, neg_sub]
 
-end Curve
+end IsMIntegralCurve
+
+namespace IsAdaptedPseudoGradient
 
 variable [CompactSpace M] [T2Space M] (hX : IsAdaptedPseudoGradient f X) {x y p : M}
   (hf : ∀ t, MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f (hX.flow t p)) (hfx : ContinuousAt f x)
@@ -103,16 +103,18 @@ converges to `x` as `t → -∞` and to `y` as `t → +∞`, `f` is differentiab
 at `x` and `y`, then `t ↦ df(X)(φ_t p)` is integrable on the real line. -/
 theorem integrable_mvfderiv_apply_flow_of_mem_unstableSet_inter_stableSet :
     Integrable fun t ↦ mvfderiv 𝓘(ℝ, E) f (hX.flow t p) (X (hX.flow t p)) :=
-  hX.integrable_mvfderiv_apply_of_tendsto hf (hX.isMIntegralCurve_flow p)
-    (hfx.tendsto.comp (Flow.mem_unstableSet.1 hp.1)) (hfy.tendsto.comp (Flow.mem_stableSet.1 hp.2))
+  IsMIntegralCurve.integrable_mvfderiv_apply_of_tendsto (hX.isMIntegralCurve_flow p) hf
+    (fun _ ↦ hX.mvfderiv_apply_nonpos _) (hfx.tendsto.comp (Flow.mem_unstableSet.1 hp.1))
+    (hfy.tendsto.comp (Flow.mem_stableSet.1 hp.2))
 
 /-- **The energy identity for a connecting orbit.** If the orbit of `p` converges to `x` as
 `t → -∞` and to `y` as `t → +∞`, `f` is differentiable along it and continuous at `x` and `y`, its
 energy `∫ -df(X)(φ_t p) dt` is the drop `f x - f y`. -/
 theorem integral_neg_mvfderiv_apply_flow_eq_sub_of_mem_unstableSet_inter_stableSet :
     ∫ t, -mvfderiv 𝓘(ℝ, E) f (hX.flow t p) (X (hX.flow t p)) = f x - f y :=
-  hX.integral_neg_mvfderiv_apply_eq_sub_of_tendsto hf (hX.isMIntegralCurve_flow p)
-    (hfx.tendsto.comp (Flow.mem_unstableSet.1 hp.1)) (hfy.tendsto.comp (Flow.mem_stableSet.1 hp.2))
+  IsMIntegralCurve.integral_neg_mvfderiv_apply_eq_sub_of_tendsto (hX.isMIntegralCurve_flow p) hf
+    (fun _ ↦ hX.mvfderiv_apply_nonpos _) (hfx.tendsto.comp (Flow.mem_unstableSet.1 hp.1))
+    (hfy.tendsto.comp (Flow.mem_stableSet.1 hp.2))
 
 end IsAdaptedPseudoGradient
 
