@@ -44,22 +44,22 @@ local instance : ExactPairing (dual E).obj E.obj :=
 
 /-- The canonical internal-Hom base-change comparison is invertible for a finite locally free
 source and an arbitrary target sheaf of modules. -/
-instance isIso_pullbackInternalHomComparison :
-    IsIso (pullbackInternalHomComparison E.obj f) := by
+instance isIso_pullbackIhomComparison :
+    IsIso (pullbackIhomComparison E.obj f) := by
   have : (dual E).obj.IsQuasicoherent := ((toQuasicoherent Y).obj (dual E)).property
-  exact isIso_pullbackInternalHomComparison_of_exactPairing E.obj f (dual E).obj
+  exact isIso_pullbackIhomComparison_of_exactPairing E.obj f (dual E).obj
 
 /-- Arbitrary pullback commutes with internal Hom from a finite locally free sheaf, naturally
 in every target sheaf of modules. -/
-def pullbackInternalHomIso :
+def pullbackIhomIso :
     ihom E.obj ⋙ Scheme.Modules.pullback f ≅
       Scheme.Modules.pullback f ⋙ ihom ((Scheme.Modules.pullback f).obj E.obj) :=
-  asIso (pullbackInternalHomComparison E.obj f)
+  asIso (pullbackIhomComparison E.obj f)
 
 /-- The forward map of the base-change isomorphism is the canonical comparison. -/
 @[simp]
-theorem pullbackInternalHomIso_hom :
-    (pullbackInternalHomIso E f).hom = pullbackInternalHomComparison E.obj f :=
+theorem pullbackIhomIso_hom :
+    (pullbackIhomIso E f).hom = pullbackIhomComparison E.obj f :=
   (rfl)
 
 end

@@ -17,7 +17,7 @@ finite locally free sources, without flatness of `f` or finiteness of the target
 
 The comparison is the mate of the inverse tensor comparison with left factor `M`.
 It is characterized by evaluation and is natural in every target sheaf of modules.
-Use `TauCeti.AlgebraicGeometry.pullbackInternalHomComparison M f` for the comparison.
+Use `TauCeti.AlgebraicGeometry.pullbackIhomComparison M f` for the comparison.
 Invertibility follows by identifying internal Hom with tensoring by the dual, and using the
 tensor comparison with that quasicoherent dual as left factor. The proof uses
 `TauCeti.ihomIsoTensorLeft` and `CategoryTheory.Functor.mapExactPairing` to transport
@@ -45,7 +45,7 @@ variable {X Y : Scheme.{u}} (M : Y.Modules) [M.IsQuasicoherent] (f : X ⟶ Y)
 
 /-- The canonical base-change comparison for internal Hom from a quasicoherent sheaf.
 It is natural in arbitrary target sheaves of modules. -/
-def pullbackInternalHomComparison :
+def pullbackIhomComparison :
     ihom M ⋙ Scheme.Modules.pullback f ⟶
       Scheme.Modules.pullback f ⋙ ihom ((Scheme.Modules.pullback f).obj M) :=
   (mateEquiv (ihom.adjunction M)
@@ -55,8 +55,8 @@ def pullbackInternalHomComparison :
 /-- Evaluation after the base-change comparison is the pullback of evaluation, preceded by
 the inverse canonical tensor comparison. This characterizes the base-change map. -/
 @[reassoc (attr := simp)]
-theorem whiskerLeft_pullbackInternalHomComparison_app_comp_ev (F : Y.Modules) :
-    (Scheme.Modules.pullback f).obj M ◁ (pullbackInternalHomComparison M f).app F ≫
+theorem whiskerLeft_pullbackIhomComparison_app_comp_ev (F : Y.Modules) :
+    (Scheme.Modules.pullback f).obj M ◁ (pullbackIhomComparison M f).app F ≫
         (ihom.ev ((Scheme.Modules.pullback f).obj M)).app
           ((Scheme.Modules.pullback f).obj F) =
       inv (δ (Scheme.Modules.pullback f) M ((ihom M).obj F)) ≫
@@ -67,7 +67,7 @@ theorem whiskerLeft_pullbackInternalHomComparison_app_comp_ev (F : Y.Modules) :
   -- Express the mate equation using module whiskering and evaluation, rather than
   -- `tensorLeft.map`, `TwoSquare.app`, and the adjunction counits.
   change (Scheme.Modules.pullback f).obj M ◁
-      (pullbackInternalHomComparison M f).app F ≫
+      (pullbackIhomComparison M f).app F ≫
         (ihom.ev ((Scheme.Modules.pullback f).obj M)).app
           ((Scheme.Modules.pullback f).obj F) =
     (Scheme.Modules.pullbackTensorLeftIso f M).inv.app
@@ -83,18 +83,18 @@ theorem whiskerLeft_pullbackInternalHomComparison_app_comp_ev (F : Y.Modules) :
 
 /-- The base-change comparison is obtained by currying the pullback of evaluation, after
 inverting the canonical tensor comparison. -/
-theorem pullbackInternalHomComparison_app_eq_curry (F : Y.Modules) :
-    (pullbackInternalHomComparison M f).app F =
+theorem pullbackIhomComparison_app_eq_curry (F : Y.Modules) :
+    (pullbackIhomComparison M f).app F =
       curry (inv (δ (Scheme.Modules.pullback f) M ((ihom M).obj F)) ≫
         (Scheme.Modules.pullback f).map ((ihom.ev M).app F)) := by
   exact (curry_uncurry _).symm.trans
-    (congrArg curry (whiskerLeft_pullbackInternalHomComparison_app_comp_ev M f F))
+    (congrArg curry (whiskerLeft_pullbackIhomComparison_app_comp_ev M f F))
 
 /-- The canonical internal-Hom base-change comparison is invertible for every scheme morphism
 when its quasicoherent source has a quasicoherent left dual, without any condition on the target. -/
-theorem isIso_pullbackInternalHomComparison_of_exactPairing
+theorem isIso_pullbackIhomComparison_of_exactPairing
     (D : Y.Modules) [D.IsQuasicoherent] [ExactPairing D M] :
-    IsIso (pullbackInternalHomComparison M f) := by
+    IsIso (pullbackIhomComparison M f) := by
   let QD : QuasicoherentSheaf Y := ⟨D, inferInstance⟩
   let QM : QuasicoherentSheaf Y := ⟨M, inferInstance⟩
   let : ExactPairing QD QM :=
@@ -154,11 +154,11 @@ theorem isIso_pullbackInternalHomComparison_of_exactPairing
       ← P.map_comp, whiskerLeft_ihomIsoTensorLeft_hom_app_comp_evaluation]
   -- Evaluation uniquely characterizes the canonical comparison, so the constructed
   -- natural isomorphism has precisely that forward map.
-  have h : (pullbackInternalHomComparison M f) = i.hom := by
+  have h : (pullbackIhomComparison M f) = i.hom := by
     apply NatTrans.ext
     funext F
     apply uncurry_injective
-    exact (whiskerLeft_pullbackInternalHomComparison_app_comp_ev M f F).trans (hi F).symm
+    exact (whiskerLeft_pullbackIhomComparison_app_comp_ev M f F).trans (hi F).symm
   rw [h]
   infer_instance
 
