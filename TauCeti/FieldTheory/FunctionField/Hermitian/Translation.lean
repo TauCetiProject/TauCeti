@@ -74,6 +74,8 @@ for each of the `q²` choices of `a`.
   `TauCeti.pow_add_self_add_add_mul_pow_eq_add_pow_succ` and
   `TauCeti.pow_pow_add_pow_eq_neg_pow_succ`: the parameters of a composite and of an inverse again
   satisfy the two conditions on `(a, b)`.
+* `TauCeti.IsHermitianCoordinates.finite_hermitianTranslations`: the translation group is
+  finite over any finite constant field.
 * `TauCeti.IsHermitianCoordinates.natCard_hermitianTranslations`: over a field with `q²`
   elements, the group of translations has order `q³`.
 
@@ -342,6 +344,23 @@ theorem translation_zero (ha : (0 : K) ^ (p ^ n) ^ 2 = 0)
     (hb : (0 : K) ^ p ^ n + 0 = 0 ^ (p ^ n + 1)) : h.translation hq ha hb = 1 := by
   refine IntermediateField.algEquiv_ext_of_adjoin_eq_top h.adjoin_eq_top ?_
   rintro z (rfl | rfl) <;> simp [(expChar_pos K p).ne']
+
+omit hq in
+/-- The Hermitian translation group is finite over a finite constant field. -/
+theorem finite_hermitianTranslations [Finite K] :
+    Finite (hermitianTranslations K p n x y) := by
+  classical
+  choose a b ha hb hx hy using
+    fun σ : hermitianTranslations K p n x y ↦ σ.property
+  apply Finite.of_injective (fun σ ↦ (a σ, b σ))
+  intro σ τ heq
+  have ha' : a σ = a τ := congrArg Prod.fst heq
+  have hb' : b σ = b τ := congrArg Prod.snd heq
+  apply Subtype.ext
+  apply IntermediateField.algEquiv_ext_of_adjoin_eq_top h.adjoin_eq_top
+  rintro z (rfl | rfl)
+  · rw [hx σ, hx τ, ha']
+  · rw [hy σ, hy τ, ha', hb']
 
 omit hq in
 /-- **The order of the translation group**: over a field with `q²` elements, `q = p ^ n`, the

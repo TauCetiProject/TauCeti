@@ -60,6 +60,8 @@ theorem exists_isHermitianCoordinates (K : Type u) [Field K] {q : ℕ} (hq : 1 <
   · apply IntermediateField.map_injective E.val
     rw [IntermediateField.adjoin_map, Set.image_pair,
       ← AlgHom.fieldRange_eq_map, IntermediateField.fieldRange_val]
+    -- The subtype coordinates `x` and `y` have values `a` and `b`, so the two generators
+    -- coincide definitionally with those used to define `E`.
     rfl
   · apply Subtype.ext
     have hb' : b ^ q + b - a ^ (q + 1) = 0 := by

@@ -39,6 +39,12 @@ namespace IsHermitianCoordinates
 variable {K F : Type*} [Field K] [Field F] [Algebra K F]
 variable {p n : ℕ} [ExpChar K p] {x y : F}
 
+private theorem cast_pow_eq_zero (hq : 1 < p ^ n) : ((p ^ n : ℕ) : K) = 0 := by
+  have hn : n ≠ 0 := by rintro rfl; simp at hq
+  rcases ‹ExpChar K p› with _ | hp
+  · simp at hq
+  · rw [Nat.cast_pow, CharP.cast_eq_zero K p, zero_pow hn]
+
 /-- For `q = pⁿ ≥ 41` over a field with `q²` elements, the translation subgroup of the
 Hermitian function field exceeds the Hurwitz bound `84(g - 1)`. -/
 theorem eighty_four_mul_genus_sub_one_lt_natCard_hermitianTranslations
@@ -46,11 +52,7 @@ theorem eighty_four_mul_genus_sub_one_lt_natCard_hermitianTranslations
     (hK : Nat.card K = (p ^ n) ^ 2) (hq : 41 ≤ p ^ n) :
     84 * (genus K F - 1) < Nat.card (hermitianTranslations K p n x y) := by
   have hq' : 1 < p ^ n := by omega
-  have hn : n ≠ 0 := by rintro rfl; simp at hq
-  have hchar : ((p ^ n : ℕ) : K) = 0 := by
-    rcases ‹ExpChar K p› with _ | hp
-    · simp at hq
-    · rw [Nat.cast_pow, CharP.cast_eq_zero K p, zero_pow hn]
+  have hchar : ((p ^ n : ℕ) : K) = 0 := cast_pow_eq_zero hq'
   let : Finite K := Nat.finite_of_card_ne_zero (by
     rw [hK]
     exact pow_ne_zero 2 (by omega))
@@ -63,23 +65,24 @@ theorem eighty_four_mul_genus_sub_one_lt_natCard_hermitianTranslations
   have hbound : 84 * genus K F < (p ^ n) ^ 3 := by nlinarith
   exact (Nat.mul_le_mul_left 84 (Nat.sub_le _ 1)).trans_lt hbound
 
-/-- The extension over the field fixed by the Hermitian translations has a place that is
-not tame whenever `q ≥ 41`.
-
-The finite-group instance makes the fixed-field extension algebraic, so that its places and
-tameness predicate can be formed. Its existence follows from the translation-group count. -/
+/-- Over a field with `q²` elements, where `q = pⁿ ≥ 41`, the Hermitian function field has a
+place that is not tame over the field fixed by its translations. -/
 theorem exists_not_isTame_hermitianTranslations
     (h : IsHermitianCoordinates K (p ^ n) x y)
-    [Finite (hermitianTranslations K p n x y)]
     (hK : Nat.card K = (p ^ n) ^ 2) (hq : 41 ≤ p ^ n) :
+    letI : Finite (hermitianTranslations K p n x y) := by
+      let : Finite K := Nat.finite_of_card_ne_zero (by
+        rw [hK]
+        exact pow_ne_zero 2 (by omega))
+      exact h.finite_hermitianTranslations
     ∃ P : Place K F,
       ¬ Place.IsTame K (IntermediateField.fixedField (hermitianTranslations K p n x y)) P := by
   classical
-  have hn : n ≠ 0 := by rintro rfl; simp at hq
-  have hchar : ((p ^ n : ℕ) : K) = 0 := by
-    rcases ‹ExpChar K p› with _ | hp
-    · simp at hq
-    · rw [Nat.cast_pow, CharP.cast_eq_zero K p, zero_pow hn]
+  let : Finite K := Nat.finite_of_card_ne_zero (by
+    rw [hK]
+    exact pow_ne_zero 2 (by omega))
+  let := h.finite_hermitianTranslations
+  have hchar : ((p ^ n : ℕ) : K) = 0 := cast_pow_eq_zero (by omega)
   by_contra htame
   have hle := natCard_le_eighty_four_mul_genus_sub_one
     (h.isFunctionField (by omega)) (h.isIntegrallyClosedIn (by omega) hchar)
@@ -102,7 +105,9 @@ theorem exists_hermitianTranslations_hurwitz_counterexample :
         Nat.card (hermitianTranslations (GaloisField 2 12) 2 6 x y) := by
   obtain ⟨F, _, _, x, y, h⟩ :=
     exists_isHermitianCoordinates (GaloisField 2 12) (q := 64) (by decide)
-  have h' : IsHermitianCoordinates (GaloisField 2 12) (2 ^ 6) x y := h
+  have h' : IsHermitianCoordinates (GaloisField 2 12) (2 ^ 6) x y := by
+    norm_num
+    exact h
   have hK : Nat.card (GaloisField 2 12) = (2 ^ 6) ^ 2 := by
     rw [GaloisField.card 2 12 (by decide)]
     norm_num
@@ -114,7 +119,7 @@ theorem exists_hermitianTranslations_hurwitz_counterexample :
   have hcard : Nat.card (hermitianTranslations (GaloisField 2 12) 2 6 x y) = 262144 := by
     simpa using h'.natCard_hermitianTranslations hK
   refine ⟨F, inferInstance, inferInstance, x, y, h, hg,
-    Nat.finite_of_card_ne_zero (by rw [hcard]; decide), hcard, ?_⟩
+    h'.finite_hermitianTranslations, hcard, ?_⟩
   exact h'.eighty_four_mul_genus_sub_one_lt_natCard_hermitianTranslations hK (by decide)
 
 end TauCeti
