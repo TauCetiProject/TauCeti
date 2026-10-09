@@ -39,7 +39,9 @@ open WithConv
 
 namespace TauCeti
 
--- Closed-subgroup unipotence detection uses the same-universe Jordan decomposition API.
+-- The shared universe is required by `HopfAlgebra.isUnipotentPoint_mapDomain_iff_of_surjective`.
+-- Its reflection proof uses `Point.isUnipotentPoint_iff_semisimplePart_eq_one` and
+-- `Point.semisimplePart_mapDomain`, whose Jordan decomposition API also shares this universe.
 universe u
 
 namespace CommHopfAlgCat
