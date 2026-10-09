@@ -23,29 +23,32 @@ coupled by the law of `(γ s, γ t)`, and each coupled pair is at distance `|s -
 distance between the endpoints of its geodesic. This gives the displacement bound
 `W_p (η_s, η_t) ≤ |s - t| * ‖d‖_{Lᵖ(π)}` for every exponent `p`, where `π` is the endpoint law.
 
-Conversely, on a Polish geodesic space every law `π` of pairs of points is the endpoint law of a
-dynamic plan concentrated on geodesics. The relation between a pair of points and the geodesic
+Conversely, on a Polish metric space every law `π` of pairs of points almost all of which are
+joined by a geodesic (for instance, any law on a geodesic space) is the endpoint law of a dynamic
+plan concentrated on geodesics. The relation between a pair of points and the geodesic
 paths joining them is closed (`TauCeti.isClosed_setOf_mem_geodesicPaths_endpoints`), hence
 analytic in the Polish space `(X × X) × C(I, X)`, so the Jankov–von Neumann uniformization theorem
 chooses, measurably in the pair of endpoints and for `π`-almost every pair, a geodesic joining them.
 The pushforward of `π` along this choice is the required dynamic plan. No global Borel choice of
 geodesics is claimed: the choice depends on `π` and is only defined `π`-almost everywhere.
 
-Applied to an optimal coupling `π` of `μ` and `ν`, the laws at times `0 ≤ t ≤ 1` of this dynamic
+Applied to an optimal coupling `π` of `μ` and `ν` on a Polish geodesic space, for a finite nonzero
+exponent `p`, the laws at times `0 ≤ t ≤ 1` of this dynamic
 plan interpolate between `μ` and `ν`, with `W_p (η_s, η_t) ≤ |s - t| * W_p (μ, ν)`.
 
 ## Main results
 
-* `TauCeti.exists_measurable_ae_mem_geodesicPaths`: on a Polish geodesic space, relative to an
-  s-finite law of pairs of points, a geodesic joining almost every pair can be chosen measurably in
-  the pair.
-* `TauCeti.exists_ae_mem_geodesicPaths_map_eq`: every s-finite law of pairs of points is the
-  endpoint law of a dynamic plan concentrated on geodesics.
+* `TauCeti.exists_measurable_ae_mem_geodesicPaths`: on a Polish metric space, relative to an
+  s-finite law of pairs of points almost all of which are joined by a geodesic, a geodesic joining
+  almost every pair can be chosen measurably in the pair.
+* `TauCeti.exists_ae_mem_geodesicPaths_map_eq`: every such law of pairs of points is the endpoint
+  law of a dynamic plan concentrated on geodesics.
 * `TauCeti.wassersteinEDist_map_eval_le`: the displacement bound between the laws at two times of
   a dynamic plan concentrated on geodesics.
-* `TauCeti.exists_ae_mem_geodesicPaths_wassersteinEDist_map_eval_le`: two finite measures with a
-  coupling are the laws at times `0` and `1` of a dynamic plan concentrated on geodesics whose laws
-  at times `s` and `t` are within `|s - t| * W_p (μ, ν)` of each other.
+* `TauCeti.exists_ae_mem_geodesicPaths_wassersteinEDist_map_eval_le`: on a Polish geodesic space
+  and for a finite nonzero exponent `p`, two finite measures with a coupling are the laws at times
+  `0` and `1` of a dynamic plan concentrated on geodesics whose laws at times `s` and `t` are
+  within `|s - t| * W_p (μ, ν)` of each other.
 
 ## References
 
@@ -95,12 +98,13 @@ end Displacement
 section Polish
 
 variable {X : Type*} [MetricSpace X] [CompleteSpace X] [SecondCountableTopology X]
-  [MeasurableSpace X] [BorelSpace X] [IsGeodesicSpace X]
+  [MeasurableSpace X] [BorelSpace X]
 
-/-- **Measurable choice of geodesics.** On a Polish geodesic space, relative to an s-finite law `π`
-of pairs of points, there is a Borel map choosing, for `π`-almost every pair `z`, a geodesic path
-from `z.1` to `z.2`. -/
-theorem exists_measurable_ae_mem_geodesicPaths (π : Measure (X × X)) [SFinite π] :
+/-- **Measurable choice of geodesics.** On a Polish metric space, relative to an s-finite law `π`
+of pairs of points almost all of which are joined by a geodesic path, there is a Borel map
+choosing, for `π`-almost every pair `z`, a geodesic path from `z.1` to `z.2`. -/
+theorem exists_measurable_ae_mem_geodesicPaths (π : Measure (X × X)) [SFinite π]
+    (hπ : ∀ᵐ z ∂π, ∃ γ ∈ geodesicPaths X, γ 0 = z.1 ∧ γ 1 = z.2) :
     ∃ G : X × X → C(I, X), Measurable G ∧
       ∀ᵐ z ∂π, G z ∈ geodesicPaths X ∧ G z 0 = z.1 ∧ G z 1 = z.2 := by
   rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
@@ -111,16 +115,17 @@ theorem exists_measurable_ae_mem_geodesicPaths (π : Measure (X × X)) [SFinite 
     isClosed_setOf_mem_geodesicPaths_endpoints.analyticSet.exists_measurable_ae_uniformization
       (R := R) π
   refine ⟨G, hG, ?_⟩
-  filter_upwards [hGR] with z hz
-  obtain ⟨γ, hγ, hγ0, hγ1⟩ := IsGeodesicSpace.exists_mem_geodesicPaths z.1 z.2
+  filter_upwards [hGR, hπ] with z hz ⟨γ, hγ, hγ0, hγ1⟩
   obtain ⟨hGz, hGe⟩ := hz ⟨(z, γ), ⟨hγ, by rw [hγ0, hγ1]⟩, rfl⟩
   exact ⟨hGz, congr_arg Prod.fst hGe, congr_arg Prod.snd hGe⟩
 
-/-- **Lifting a law of pairs to geodesics.** On a Polish geodesic space, every s-finite law `π` of
-pairs of points is the endpoint law of a dynamic plan concentrated on geodesic paths. -/
-theorem exists_ae_mem_geodesicPaths_map_eq (π : Measure (X × X)) [SFinite π] :
+/-- **Lifting a law of pairs to geodesics.** On a Polish metric space, every s-finite law `π` of
+pairs of points almost all of which are joined by a geodesic path is the endpoint law of a dynamic
+plan concentrated on geodesic paths. -/
+theorem exists_ae_mem_geodesicPaths_map_eq (π : Measure (X × X)) [SFinite π]
+    (hπ : ∀ᵐ z ∂π, ∃ γ ∈ geodesicPaths X, γ 0 = z.1 ∧ γ 1 = z.2) :
     ∃ η : Measure C(I, X), (∀ᵐ γ ∂η, γ ∈ geodesicPaths X) ∧ η.map (fun γ ↦ (γ 0, γ 1)) = π := by
-  obtain ⟨G, hG, hGπ⟩ := exists_measurable_ae_mem_geodesicPaths π
+  obtain ⟨G, hG, hGπ⟩ := exists_measurable_ae_mem_geodesicPaths π hπ
   have he : Measurable fun γ : C(I, X) ↦ (γ 0, γ 1) :=
     (ContinuousMap.measurable_eval 0).prodMk (ContinuousMap.measurable_eval 1)
   refine ⟨π.map G, (ae_map_iff hG.aemeasurable isClosed_geodesicPaths.measurableSet).2 ?_, ?_⟩
@@ -136,8 +141,9 @@ nonzero exponent `p`, two finite measures `μ` and `ν` admitting a coupling are
 `0` and `1` of a dynamic plan `η` concentrated on geodesic paths whose laws at any two times `s` and
 `t` are within `|s - t| * W_p (μ, ν)` of each other. The dynamic plan lifts an optimal coupling of
 `μ` and `ν`. -/
-theorem exists_ae_mem_geodesicPaths_wassersteinEDist_map_eval_le {p : ℝ≥0∞} (hp0 : p ≠ 0)
-    (hp : p ≠ ∞) (μ ν : Measure X) [IsFiniteMeasure μ] (hcoup : ∃ π, IsCoupling π μ ν) :
+theorem exists_ae_mem_geodesicPaths_wassersteinEDist_map_eval_le [IsGeodesicSpace X] {p : ℝ≥0∞}
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) (μ ν : Measure X) [IsFiniteMeasure μ]
+    (hcoup : ∃ π, IsCoupling π μ ν) :
     ∃ η : Measure C(I, X), (∀ᵐ γ ∂η, γ ∈ geodesicPaths X) ∧ η.map (fun γ ↦ γ 0) = μ ∧
       η.map (fun γ ↦ γ 1) = ν ∧
       ∀ s t : I, wassersteinEDist p (η.map fun γ ↦ γ s) (η.map fun γ ↦ γ t) ≤
@@ -145,6 +151,7 @@ theorem exists_ae_mem_geodesicPaths_wassersteinEDist_map_eval_le {p : ℝ≥0∞
   obtain ⟨π, hπ, hπopt⟩ := exists_isCoupling_eLpNorm_eq_wassersteinEDist hp0 hp μ ν hcoup
   have : IsFiniteMeasure π := hπ.isFiniteMeasure
   obtain ⟨η, hη, hηπ⟩ := exists_ae_mem_geodesicPaths_map_eq π
+    (.of_forall fun z ↦ IsGeodesicSpace.exists_mem_geodesicPaths z.1 z.2)
   have hev (r : I) : Measurable fun γ : C(I, X) ↦ γ r := ContinuousMap.measurable_eval r
   refine ⟨η, hη, ?_, ?_, fun s t ↦ ?_⟩
   · rw [← Measure.fst_map_prodMk (hev 0) (hev 1), hηπ, hπ.fst_eq]

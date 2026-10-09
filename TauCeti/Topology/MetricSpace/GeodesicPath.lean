@@ -13,7 +13,8 @@ public import TauCeti.Topology.MetricSpace.Length
 # Geodesic segments as points of path space
 
 The path space of a topological space `X` is `C(I, X)`, the continuous maps from the unit interval
-with the compact-open topology; for a compact domain this is the topology of uniform convergence.
+with the compact-open topology; when `X` is a pseudometric space, as below, this is the topology of
+uniform convergence since the domain is compact.
 This file singles out the geodesic segments inside it: `TauCeti.geodesicPaths X` is the set of
 paths `γ` with `dist (γ s) (γ t) = |s - t| * dist (γ 0) (γ 1)`. These are exactly the restrictions
 to `[0, 1]` of the curves `TauCeti.IsGeodesicSegment` describes, so a pseudometric space is a
@@ -68,6 +69,7 @@ def geodesicPaths : Set C(I, X) :=
   {γ | ∀ s t : I, dist (γ s) (γ t) = |(s : ℝ) - t| * dist (γ 0) (γ 1)}
 
 /-- Membership in the geodesic paths, unfolded. -/
+@[simp]
 theorem mem_geodesicPaths_iff :
     γ ∈ geodesicPaths X ↔ ∀ s t : I, dist (γ s) (γ t) = |(s : ℝ) - t| * dist (γ 0) (γ 1) :=
   Iff.rfl
