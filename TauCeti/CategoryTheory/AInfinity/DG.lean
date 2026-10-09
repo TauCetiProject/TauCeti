@@ -144,14 +144,7 @@ private theorem kellerComp_assoc {W X Y Z : C} (h : homModule (R := R) Y Z)
   | homLof p f =>
   rw [kellerComp_homLof_homLof h g rfl, kellerComp_homLof_homLof g f rfl,
     kellerComp_homLof_homLof _ f (add_assoc p q r).symm,
-    kellerComp_homLof_homLof h _ rfl]
-  simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul R, smul_dgComp, dgComp_smul, smul_smul,
-    ← Int.cast_mul]
-  rw [dgComp_assoc R f g h rfl rfl rfl]
-  congr 3
-  rw [← Units.val_mul, ← Units.val_mul, ← Int.negOnePow_add, ← Int.negOnePow_add]
-  congr 2
-  ring
+    kellerComp_homLof_homLof h _ rfl, negOnePow_smul_dgComp_assoc R f g h rfl rfl rfl]
 
 /-- The differential of the hom modules of the graded linear quiver of a differential graded
 category: the differential of the Hom complex, applied in every degree. -/
@@ -175,17 +168,8 @@ private theorem homDiff_kellerComp {X Y Z : C} {q : ℤ} (g : DGHom R q Y Z)
   | homLof p f =>
   rw [kellerComp_homLof_homLof g f rfl, homDiff_homLof, homDiff_homLof, homDiff_homLof,
     kellerComp_homLof_homLof (dgDifferential R q g) f (add_assoc p q 1).symm,
-    kellerComp_homLof_homLof g (dgDifferential R p f) (add_right_comm p 1 q), map_zsmul_unit,
-    dgDifferential_dgComp, smul_add, ← map_zsmul_unit, ← map_add]
-  congr 1
-  have e₁ : (p * q).negOnePow * p.negOnePow = (p * (q + 1)).negOnePow := by
-    rw [← Int.negOnePow_add, Int.negOnePow_eq_iff]
-    exact ⟨0, by ring⟩
-  have e₂ : q.negOnePow * ((p + 1) * q).negOnePow = (p * q).negOnePow := by
-    rw [← Int.negOnePow_add, Int.negOnePow_eq_iff]
-    exact ⟨q, by ring⟩
-  rw [smul_smul, smul_smul, e₁, e₂]
-  exact add_comm _ _
+    kellerComp_homLof_homLof g (dgDifferential R p f) (add_right_comm p 1 q),
+    dgDifferential_negOnePow_smul_dgComp, map_add, ← map_zsmul_unit]
 
 private theorem homDiff_homDiff {X Y : C} (f : homModule (R := R) X Y) :
     homDiff X Y (homDiff X Y f) = 0 := by
