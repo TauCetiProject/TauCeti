@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.FiniteGraph
 public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Pullback.Basic
 import TauCeti.Combinatorics.DenseGraphLimits.Kernel.Pullback
+import TauCeti.MeasureTheory.Measure.Dirac
 import TauCeti.MeasureTheory.Measure.UnitIntervalMap
 
 /-!
@@ -87,12 +88,6 @@ private theorem cutDistPullback_const_right_of_measurePreserving (U : Graphon Ω
   refine le_antisymm ((cutDistPullback_le U _ hf₀ hg₀).trans_eq (hval f₀ g₀ hf₀ hg₀)) ?_
   rw [cutDistPullback_def]
   exact le_csInf ⟨_, f₀, g₀, hf₀, hg₀, rfl⟩ fun r ⟨f, g, hf, hg, hr⟩ => hr ▸ (hval f g hf hg).ge
-
-/-- A constant map out of `(I, volume)` onto a point `b` is measure preserving onto `δ_b`, with no
-hypothesis on the carrier. -/
-private theorem measurePreserving_const_dirac {Ω : Type*} [MeasurableSpace Ω] (b : Ω) :
-    MeasurePreserving (fun _ : I => b) volume (Measure.dirac b) :=
-  ⟨measurable_const, by rw [Measure.map_const, measure_univ, one_smul]⟩
 
 /-- **The map form of the cut distance to a constant graphon is a cut norm.** For a graphon `U` on
 a standard Borel `(Ω₁, μ₁)` and the constant graphon `p` on a standard Borel `(Ω₂, μ₂)`, the map

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Dynamics.Ergodic.MeasurePreserving
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 
@@ -23,6 +24,8 @@ under that weaker hypothesis, which is the one a.e.-measurable interfaces such a
 * `Measure.map_dirac_of_aemeasurable` — the Dirac pushforward formula for a map that is
   only a.e. measurable.
 * `Measure.dirac_eq_dirac_of_inseparable` — inseparable points have equal Borel Dirac measures.
+* `TauCeti.MeasureTheory.measurePreserving_const_dirac` — a constant map out of a probability
+  space onto a point `b` is measure preserving onto `Measure.dirac b`.
 -/
 
 public section
@@ -53,3 +56,19 @@ theorem dirac_eq_dirac_of_inseparable [TopologicalSpace X] [BorelSpace X]
   exact fun _ hs ↦ hxy.mem_measurableSet_iff hs
 
 end Measure
+
+namespace TauCeti
+
+namespace MeasureTheory
+
+variable {X : Type*} {Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
+
+/-- A constant map out of a probability space onto a point `b` is measure preserving onto
+`Measure.dirac b`, with no hypothesis on either measurable space. -/
+theorem measurePreserving_const_dirac {μ : Measure X} [IsProbabilityMeasure μ] (b : Y) :
+    MeasurePreserving (fun _ : X => b) μ (Measure.dirac b) :=
+  ⟨measurable_const, by rw [Measure.map_const, measure_univ, one_smul]⟩
+
+end MeasureTheory
+
+end TauCeti
