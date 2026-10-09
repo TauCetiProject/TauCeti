@@ -73,13 +73,10 @@ theorem weightLeviDefiningHopfIdeal_toIdeal_le_ker {A : Type*} [CommRing A] [Alg
     (hf : ∀ i j, w i ≠ w j → f (coordinateHopfAlgebraAlgEquiv R N
       (coordinateRingMap R N (MvPolynomial.X (i, j)))) = 0) :
     (weightLeviDefiningHopfIdeal R w).toIdeal ≤ RingHom.ker f.toRingHom := by
-  rw [weightLeviDefiningHopfIdeal_def, HopfIdeal.sup_toIdeal,
-    weightParabolicDefiningHopfIdeal_toIdeal, weightParabolicDefiningHopfIdeal_toIdeal]
-  refine sup_le (Ideal.span_le.2 fun x hx ↦ ?_) (Ideal.span_le.2 fun x hx ↦ ?_) <;>
-    obtain ⟨i, j, hij, rfl⟩ := (mem_weightParabolicRelationSet_iff R _ x).mp hx <;>
-    rw [SetLike.mem_coe, RingHom.mem_ker]
-  · exact hf i j hij.ne
-  · exact hf i j fun h ↦ hij.ne (by simp [h])
+  rw [weightLeviDefiningHopfIdeal_def, HopfIdeal.sup_toIdeal]
+  exact sup_le (weightParabolicDefiningHopfIdeal_toIdeal_le_ker R w f fun i j h ↦ hf i j h.ne)
+    (weightParabolicDefiningHopfIdeal_toIdeal_le_ker R (-w) f fun i j h ↦
+      hf i j fun e ↦ h.ne (by simp [e]))
 
 /-- The coordinate Hopf algebra of the weight Levi attached to `w`. -/
 noncomputable abbrev weightLeviCoordinateHopfAlgebra (w : Fin N → ℤ) :
