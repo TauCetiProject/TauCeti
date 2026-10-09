@@ -45,25 +45,25 @@ theorem laurentSeriesExpansion_derivativeOfSeparating (z : F) :
       _root_.LaurentSeries.derivative k (P.laurentSeriesExpansion hP ht z) := by
   let e := P.laurentSeriesExpansion hP ht
   let : Algebra F (LaurentSeries k) := e.toRingHom.toAlgebra
+  have he (w : F) : algebraMap F (LaurentSeries k) w = e w := rfl
   have : @IsScalarTower k F (LaurentSeries k) _ _ Algebra.toSMul :=
     .of_algebraMap_eq fun c ↦ (e.commutes c).symm
   -- Derivations use the coefficientwise `k`-action on the target, not its algebra action.
   have : IsScalarTower k F (LaurentSeries k) :=
     .of_algebraMap_smul fun c z ↦ by
-      simp [Algebra.smul_def, RingHom.algebraMap_toAlgebra, e.commutes,
-        PowerSeries.algebraMap_eq, HahnSeries.ofPowerSeries_C]
+      rw [Algebra.smul_def, he, e.commutes, laurentSeries_algebraMap_mul_eq_smul]
   let δ : Derivation k F (LaurentSeries k) :=
     (laurentSeriesDerivativeDerivation k).compAlgebraMap F
   have hδ (w : F) : δ w = _root_.LaurentSeries.derivative k (e w) := by
-    simp [δ, Derivation.compAlgebraMap_apply, RingHom.algebraMap_toAlgebra]
+    rw [Derivation.compAlgebraMap_apply, laurentSeriesDerivativeDerivation_apply, he]
   have hδt : δ t = 1 := by
     rw [hδ, laurentSeriesExpansion_uniformizer]
     simp [_root_.LaurentSeries.derivative_apply]
   have h := congrArg δ.liftKaehlerDifferential (derivativeOfSeparating_smul_D htsep z)
   rw [map_smul, Derivation.liftKaehlerDifferential_comp_D,
     Derivation.liftKaehlerDifferential_comp_D, hδt, hδ] at h
-  simpa only [Algebra.smul_def, RingHom.algebraMap_toAlgebra, mul_one,
-    AlgHom.toRingHom_eq_coe, RingHom.coe_coe, e] using h
+  rw [Algebra.smul_def, he, mul_one] at h
+  exact h
 
 /-- The coefficient formula for function-field differentiation in a separating uniformizer.
 The integer multiplier is interpreted in the constant field, so it can vanish in positive

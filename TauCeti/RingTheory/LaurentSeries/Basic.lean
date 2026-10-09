@@ -68,6 +68,18 @@ theorem coeff_algebraMap_mul (c : R) (f : R⸨X⸩) (n : ℤ) :
 
 end TauCeti.LaurentSeries
 
+namespace TauCeti
+
+/-- Multiplication by a constant of the Laurent-series algebra structure agrees with the
+coefficientwise scalar action. -/
+theorem laurentSeries_algebraMap_mul_eq_smul {R : Type*} [CommSemiring R]
+    (c : R) (f : LaurentSeries R) :
+    algebraMap R (LaurentSeries R) c * f = c • f := by
+  ext n
+  rw [LaurentSeries.coeff_algebraMap_mul, HahnSeries.coeff_smul, smul_eq_mul]
+
+end TauCeti
+
 namespace PowerSeries
 
 open HahnSeries LaurentSeries

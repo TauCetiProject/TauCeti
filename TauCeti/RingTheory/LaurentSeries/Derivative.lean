@@ -64,7 +64,8 @@ theorem laurentSeries_derivative_mul (f g : LaurentSeries R) :
       single 1 (1 : R) *
         (f * _root_.LaurentSeries.derivative R g +
           g * _root_.LaurentSeries.derivative R f) := by
-    simpa only [mul_add, mul_assoc, mul_left_comm, mul_comm] using hEuler
+    rw [hEuler]
+    ring
   ext n
   have h := congrArg (fun s : LaurentSeries R ↦ s.coeff (n + 1)) h'
   simpa only [coeff_single_mul_add, one_mul] using h
@@ -77,9 +78,9 @@ noncomputable def laurentSeriesDerivativeDerivation :
   toFun f := _root_.LaurentSeries.derivative R f
   map_add' f g := (_root_.LaurentSeries.derivative R).map_add f g
   map_smul' c f := by
-    ext n
-    simp [Algebra.smul_def, HahnSeries.algebraMap_apply', PowerSeries.algebraMap_eq,
-      HahnSeries.ofPowerSeries_C]
+    change _root_.LaurentSeries.derivative R (algebraMap R (LaurentSeries R) c * f) =
+      c • _root_.LaurentSeries.derivative R f
+    rw [laurentSeries_algebraMap_mul_eq_smul, map_smul]
   map_one_eq_zero' := by
     ext n
     suffices n + 1 = 0 → (n : R) + 1 = 0 by
