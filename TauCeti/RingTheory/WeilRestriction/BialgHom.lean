@@ -95,7 +95,7 @@ private lemma distribBaseChange_symm_map_comul (F : T ⊗[A] H' →ₐ[T] T ⊗[
     comulAlgHom_apply]
   induction comul (R := A) x using TensorProduct.inductionOn with
   | add z w hz hw => simp only [tmul_add, map_add, hz, hw]
-  | tmul a b => simp [TauCeti.Algebra.TensorProduct.distribBaseChange_symm_tmul]
+  | tmul a b => simp [TauCeti.distribBaseChange_symm_tmul_eq_mul]
 
 -- The condition, at the elements of `S ⊆ H'`, for `f : H' →ₐ[A] T ⊗[A] H` to extend to a
 -- `T`-bialgebra homomorphism `T ⊗[A] H' → T ⊗[A] H`: compatibility with the counits and with
