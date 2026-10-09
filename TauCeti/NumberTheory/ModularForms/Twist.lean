@@ -83,12 +83,15 @@ variable {M N L : ℕ} {k : ℤ}
 `[1, a/M; 0, 1] γ = γ' [1, a'/M; 0, 1]` for some `γ' ∈ SL(2, ℤ)` with lower-left entry `C`,
 upper-left entry `A + a M c` and lower-right entry `D - a' M c`.
 
-The congruence on `a'` is what makes `γ'` integral: `A D ≡ 1 (mod M)`, so `a D ≡ a' A (mod M)`. -/
-theorem exists_upperRightHom_mul_mapGL_eq_mapGL_mul_upperRightHom [NeZero M] (γ : SL(2, ℤ))
+The congruence on `a'` is what makes `γ'` integral: `A D ≡ 1 (mod M)`, so `a D ≡ a' A (mod M)`.
+For `M = 0` both translations are the identity (`a / 0 = 0`) and `γ' = γ`. -/
+theorem exists_upperRightHom_mul_mapGL_eq_mapGL_mul_upperRightHom (γ : SL(2, ℤ))
     {c a a' : ℤ} (hc : γ 1 0 = M * M * c) (ha : (a' : ZMod M) = a * (γ 1 1 : ZMod M) ^ 2) :
     ∃ γ' : SL(2, ℤ), γ' 0 0 = γ 0 0 + a * M * c ∧ γ' 1 0 = γ 1 0 ∧
       γ' 1 1 = γ 1 1 - a' * M * c ∧
       upperRightHom ((a : ℝ) / M) * mapGL ℝ γ = mapGL ℝ γ' * upperRightHom ((a' : ℝ) / M) := by
+  rcases eq_or_ne M 0 with rfl | hM0
+  · exact ⟨γ, by simp, rfl, by simp, by simp⟩
   have hdet : γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 = 1 := by
     have h := γ.det_coe
     rwa [Matrix.det_fin_two] at h
@@ -109,7 +112,7 @@ theorem exists_upperRightHom_mul_mapGL_eq_mapGL_mul_upperRightHom [NeZero M] (γ
   have hγ' : (γ' : Matrix (Fin 2) (Fin 2) ℤ) =
       !![γ 0 0 + a * M * c, γ 0 1 + e - a * a' * c; γ 1 0, γ 1 1 - a' * M * c] := rfl
   refine ⟨γ', by simp [hγ'], by simp [hγ'], by simp [hγ'], ?_⟩
-  have hM : (M : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne M)
+  have hM : (M : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hM0
   have hcR : (γ 1 0 : ℝ) = M * M * c := by exact_mod_cast hc
   have heR : (a : ℝ) * γ 1 1 - a' * γ 0 0 = M * e := by exact_mod_cast he
   -- the `(0, 0)` and `(1, 0)` entries close by `simp`; the `(0, 1)` entry is `a D ≡ a' A`
@@ -123,7 +126,7 @@ theorem exists_upperRightHom_mul_mapGL_eq_mapGL_mul_upperRightHom [NeZero M] (γ
 /-- **The level of a translate by `a / M`.** For `N * M ∣ L` and `M * M ∣ L`, `Γ₁(L)` is contained
 in the conjugate `[1, a/M; 0, 1]⁻¹ Γ₁(N) [1, a/M; 0, 1]`, so the translate `τ ↦ f(τ + a/M)` of a
 form for `Γ₁(N)` is a form for `Γ₁(L)`. -/
-theorem Gamma1_map_le_conjAct_upperRightHom [NeZero M] (hNL : N * M ∣ L) (hML : M * M ∣ L)
+theorem Gamma1_map_le_conjAct_upperRightHom (hNL : N * M ∣ L) (hML : M * M ∣ L)
     (a : ℤ) : (Gamma1 L).map (mapGL ℝ) ≤
       ConjAct.toConjAct (upperRightHom ((a : ℝ) / M))⁻¹ • (Gamma1 N).map (mapGL ℝ) := by
   rintro _ ⟨γ, hγ, rfl⟩

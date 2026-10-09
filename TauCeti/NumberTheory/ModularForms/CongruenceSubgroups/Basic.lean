@@ -170,16 +170,20 @@ theorem mem_Gamma0_iff_dvd {N : ℕ} {A : SL(2, ℤ)} : A ∈ Gamma0 N ↔ (N : 
   Gamma0_mem.trans (ZMod.intCast_zmod_eq_zero_iff_dvd _ N)
 
 /-- A matrix of `Γ₀(L)`, for `N * M ∣ L` and `M * M ∣ L`, has lower-left entry `M * M * c` with
-`N ∣ M * c`. -/
-theorem exists_eq_mul_mul_of_mem_Gamma0 {M N L : ℕ} [NeZero M] (hNL : N * M ∣ L)
+`N ∣ M * c`.
+
+It holds for every `M`, `M = 0` included, where `M * M ∣ L` forces `L = 0`. -/
+theorem exists_eq_mul_mul_of_mem_Gamma0 {M N L : ℕ} (hNL : N * M ∣ L)
     (hML : M * M ∣ L) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 L) :
     ∃ c : ℤ, γ 1 0 = M * M * c ∧ (N : ℤ) ∣ M * c := by
   obtain ⟨x, hx⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (Gamma0_mem.mp hγ)
   obtain ⟨y, rfl⟩ := hML
   refine ⟨y * x, by rw [hx]; push_cast; ring, ?_⟩
   have hNy : N ∣ M * y := by
+    rcases Nat.eq_zero_or_pos M with rfl | hM
+    · simp
     have : M * N ∣ M * (M * y) := by simpa [mul_comm N M, mul_assoc] using hNL
-    exact (Nat.mul_dvd_mul_iff_left (Nat.pos_of_ne_zero (NeZero.ne M))).mp this
+    exact (Nat.mul_dvd_mul_iff_left hM).mp this
   have := (Int.natCast_dvd_natCast.mpr hNy).mul_right x
   push_cast at this
   simpa [mul_assoc] using this
