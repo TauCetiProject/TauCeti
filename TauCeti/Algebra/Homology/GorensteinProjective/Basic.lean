@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.TotallyAcyclic
+public import TauCeti.Algebra.Homology.TotallyAcyclic.Basic
 public import TauCeti.CategoryTheory.Exact.ExtensionClosed
 
 /-!

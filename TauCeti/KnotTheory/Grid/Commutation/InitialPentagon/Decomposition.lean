@@ -44,6 +44,9 @@ Section 5.1, and the existing terminal-side decomposition API.
 * `TauCeti.GridDiagram.sum_rename_unblockedCoefficient_mul_initialPentagonCoefficient` and
   `TauCeti.GridDiagram.sum_initialPentagonCoefficient_mul_unblockedCoefficient_swapColumns`
   rewrite the two matrix products as sums over composite domains.
+* `TauCeti.GridDiagram.rectangleInitialPentagonWeight_eq_prod_OColumnsOfSquares_union` and
+  `TauCeti.GridDiagram.initialPentagonRectangleWeight_eq_prod_OColumnsOfSquares_union` express
+  disjoint composite weights as products over their union of covered squares.
 * `TauCeti.GridDiagram.initialPentagonMap_unblockedDifferential_single_apply` and
   `TauCeti.GridDiagram.unblockedDifferential_initialPentagonMap_single_apply`: the same
   identities for the coefficients of the two composites on a grid-state generator.
@@ -293,6 +296,49 @@ theorem initialPentagonRectangleWeight_def {x z : GridState n}
       G.initialPentagonWeight R C D.pentagon *
         (G.swapColumns C.column (finRotate n C.column)).OMonomial R D.second.toGridRectangle :=
   (rfl)
+
+/-- When its two domains are disjoint, a rectangle--initial-side pentagon weight is the product
+of one renamed variable for each covered `O`-marking. -/
+theorem rectangleInitialPentagonWeight_eq_prod_OColumnsOfSquares_union
+    {x z : GridState n}
+    (D : GridRectangleInitialPentagonDecomposition C.column C.turnRow x z)
+    (h : Disjoint D.first.toGridRectangle.coveredSquares D.pentagon.coveredSquares) :
+    G.rectangleInitialPentagonWeight C R D =
+      ∏ c ∈ G.OColumnsOfSquares
+        (D.first.toGridRectangle.coveredSquares ∪ D.pentagon.coveredSquares),
+        MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) c) := by
+  rw [G.rectangleInitialPentagonWeight_def C R D,
+    G.rename_OMonomial_eq_prod_swapSquareWeight R,
+    G.initialPentagonWeight_eq_prod_coveredSquares R C]
+  simp only [G.swapSquareWeight_def R]
+  rw [← Finset.prod_union h]
+  exact G.prod_ite_OSet_eq_prod_OColumnsOfSquares
+    (fun c => (MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) c) :
+      MvPolynomial (Fin n) R)) _
+
+/-- When the pentagon and the rectangle read back in the original columns are disjoint, an
+initial-side pentagon--rectangle weight counts each covered `O`-marking once. -/
+theorem initialPentagonRectangleWeight_eq_prod_OColumnsOfSquares_union
+    {x z : GridState n}
+    (D : GridInitialPentagonRectangleDecomposition C.column C.turnRow x z)
+    (h : Disjoint D.pentagon.coveredSquares
+      (D.second.toGridRectangle.coveredSquares.map
+        ((Equiv.swap C.column (finRotate n C.column)).prodCongr
+          (Equiv.refl (Fin n))).toEmbedding)) :
+    G.initialPentagonRectangleWeight C R D =
+      ∏ c ∈ G.OColumnsOfSquares (D.pentagon.coveredSquares ∪
+        D.second.toGridRectangle.coveredSquares.map
+          ((Equiv.swap C.column (finRotate n C.column)).prodCongr
+            (Equiv.refl (Fin n))).toEmbedding),
+        MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) c) := by
+  rw [G.initialPentagonRectangleWeight_def C R D,
+    G.initialPentagonWeight_eq_prod_coveredSquares R C,
+    G.OMonomial_swapColumns_eq_prod_swapSquareWeight R]
+  simp only [G.swapSquareWeight_def R]
+  rw [← Finset.prod_union h]
+  exact G.prod_ite_OSet_eq_prod_OColumnsOfSquares
+    (fun c => (MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) c) :
+      MvPolynomial (Fin n) R)) _
 
 /-- An initial-side pentagon followed by a rectangle of the commuted diagram has the weight of a
 rectangle followed by an initial-side pentagon when the two composite domains cover the same

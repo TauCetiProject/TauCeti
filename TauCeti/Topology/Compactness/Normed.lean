@@ -8,44 +8,38 @@ module
 public import Mathlib.Analysis.Normed.Group.Bounded
 
 /-!
-# Uniform local norm bounds over compact parameter spaces
+# Uniform local norm bounds over compact parameter sets
 
 This file records a uniform local boundedness consequence of continuity over a compact family.
+Such bounds provide constant dominating functions for compact-parameter integration.
 
 ## Main declarations
 
-* `TauCeti.exists_eventually_norm_le_compact_family`: a continuous family indexed by a compact
-  parameter space is uniformly bounded near any fiber contained in its open domain.
+* `IsCompact.exists_eventually_norm_le`: a function continuous at every point of a compact fiber
+  is uniformly bounded on nearby fibers, which remain in any open set containing the original
+  fiber.
 -/
 
 public section
 
-namespace TauCeti
-
 open Filter Set
 open scoped Topology
 
-variable {X P α H : Type*} [TopologicalSpace X] [TopologicalSpace P] [TopologicalSpace α]
-  [CompactSpace α] [NormedAddCommGroup H]
+variable {X P H : Type*} [TopologicalSpace X] [TopologicalSpace P] [SeminormedAddGroup H]
 
-/-- A function continuous on an open set `W ⊆ X × P` is bounded on `{x} × ι(α)`, uniformly for
-`x` near a point `x₀` with `{x₀} × ι(α) ⊆ W`, when `α` is compact and `ι` is continuous. -/
-theorem exists_eventually_norm_le_compact_family {W : Set (X × P)} {F : X × P → H}
-    {ι : α → P} (hι : Continuous ι) (hW : IsOpen W) (hF : ContinuousOn F W) {x₀ : X}
-    (hx₀ : ∀ y, (x₀, ι y) ∈ W) :
-    ∃ C, ∀ᶠ x in 𝓝 x₀, ∀ y, (x, ι y) ∈ W ∧ ‖F (x, ι y)‖ ≤ C := by
-  obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn
-    (hF.comp_continuous (continuous_const.prodMk hι) hx₀).continuousOn
+/-- A function continuous at every point of `{x₀} × K`, with `K` compact, is uniformly bounded
+on `{x} × K` for `x` near `x₀`. These nearby fibers also lie in any open set `W` containing
+the original fiber. -/
+theorem IsCompact.exists_eventually_norm_le {K : Set P} (hK : IsCompact K)
+    {W : Set (X × P)} {F : X × P → H} {x₀ : X} (hW : IsOpen W)
+    (hF : ∀ y ∈ K, ContinuousAt F (x₀, y)) (hx₀ : ∀ y ∈ K, (x₀, y) ∈ W) :
+    ∃ C, ∀ᶠ x in 𝓝 x₀, ∀ y ∈ K, (x, y) ∈ W ∧ ‖F (x, y)‖ ≤ C := by
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn (fun y hy ↦
+    (hF y hy).comp_continuousWithinAt
+      (continuous_const.prodMk continuous_id).continuousWithinAt)
   refine ⟨C + 1, ?_⟩
-  have h := isCompact_univ.eventually_forall_of_forall_eventually (x₀ := x₀)
-    (P := fun x y ↦ (x, ι y) ∈ W ∧ ‖F (x, ι y)‖ ≤ C + 1) fun y _ ↦ by
-      have hmem : (x₀, ι y) ∈ W := hx₀ y
-      have hlt : ∀ᶠ z in 𝓝 (x₀, ι y), ‖F z‖ < C + 1 :=
-        (hF.continuousAt (hW.mem_nhds hmem)).norm.eventually_lt_const
-          (lt_of_le_of_lt (hC y (mem_univ y)) (lt_add_one C))
-      have hφ : Continuous fun z : X × α ↦ (z.1, ι z.2) := by fun_prop
-      exact (hφ.tendsto (x₀, y)).eventually ((hW.eventually_mem hmem).and hlt) |>.mono
-        fun z hz ↦ ⟨hz.1, hz.2.le⟩
-  simpa only [mem_univ, true_imp_iff] using h
-
-end TauCeti
+  apply hK.eventually_forall_of_forall_eventually
+  intro y hy
+  have hlt : ∀ᶠ z in 𝓝 (x₀, y), ‖F z‖ < C + 1 :=
+    (hF y hy).norm.eventually_lt_const ((hC y hy).trans_lt (lt_add_one C))
+  exact ((hW.eventually_mem (hx₀ y hy)).and hlt).mono fun _ hz ↦ ⟨hz.1, hz.2.le⟩

@@ -414,6 +414,18 @@ theorem mkQuotient_comp_rootSubgroupToBaseChangeCoordinateMap (k : Fin 4 ⊕ Fin
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     d4TripledWeight A k
 
+/-- Composing the carrier coordinate morphism with a numbered root-subgroup map recovers its
+ambient transported coordinate map. -/
+@[reassoc (attr := simp)]
+theorem coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap (k : Fin 4 ⊕ Fin 4) :
+    coordinateMap A ≫ rootSubgroupToBaseChangeCoordinateMap A k =
+      kostantRootSubgroupBaseChangePresentationCoordinateMap
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+        (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
+        rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis A k := by
+  rw [coordinateMap]
+  exact mkQuotient_comp_rootSubgroupToBaseChangeCoordinateMap A k
+
 /-- Under the base-change coordinate isomorphism, the factored `k`th root-subgroup map is the
 scalar extension of its integral coordinate map. -/
 @[simp]

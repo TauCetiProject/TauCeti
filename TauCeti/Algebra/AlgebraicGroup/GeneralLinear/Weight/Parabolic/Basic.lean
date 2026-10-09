@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import Mathlib.LinearAlgebra.Matrix.Block
-import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # Weight-parabolic subgroup schemes of the general linear group
@@ -182,8 +181,8 @@ theorem weightParabolicCoordinateMap_apply (w : Fin N → ℤ)
 
 /-- The quotient coordinate morphism defining the weight parabolic is surjective. -/
 theorem weightParabolicCoordinateMap_surjective (w : Fin N → ℤ) :
-    Function.Surjective (weightParabolicCoordinateMap R w).hom := by
-  exact CommHopfAlgCat.mkQuotient_surjective
+    Function.Surjective (weightParabolicCoordinateMap R w).hom :=
+  CommHopfAlgCat.mkQuotient_surjective
     (coordinateHopfAlgebra R N) (weightParabolicDefiningHopfIdeal R w)
 
 /-- A forbidden coordinate vanishes in the weight-parabolic coordinate algebra. -/

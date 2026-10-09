@@ -23,7 +23,9 @@ lower-triangular lower-right block, and zero lower-left block.
 The quotient Hopf algebra represents these matrices over every commutative algebra,
 including nonreduced algebras and characteristic two. Its algebra-valued point groups
 are solvable. The diagonal symplectic torus factorization is developed in
-`TauCeti.Algebra.AlgebraicGroup.Symplectic.IsotropicFlag.DiagonalTorus`.
+`TauCeti.Algebra.AlgebraicGroup.Symplectic.IsotropicFlag.DiagonalTorus`. Positive root subgroup
+factorizations are developed in
+`TauCeti.Algebra.AlgebraicGroup.Symplectic.IsotropicFlag.RootSubgroup`.
 These constructions provide the flag subgroup used in the standard symplectic pinning;
 no smoothness, connectedness, or Borel maximality assertion is made here.
 
@@ -40,6 +42,7 @@ points arguments follow
 public section
 
 open AlgebraicGeometry CategoryTheory WithConv Matrix
+open scoped CategoryTheory.MonObj
 
 namespace TauCeti.Symplectic.IsotropicFlag
 
@@ -112,11 +115,6 @@ noncomputable abbrev coordinateHopfAlgebra : CommHopfAlgCat.{u} R :=
 noncomputable abbrev coordinateMap :
     Symplectic.coordinateHopfAlgebra R m ⟶ coordinateHopfAlgebra R m :=
   CommHopfAlgCat.mkQuotient (Symplectic.coordinateHopfAlgebra R m) (definingHopfIdeal R m)
-
-/-- The isotropic flag subgroup has finite-type coordinate algebra. -/
-instance instAlgebraFiniteTypeCoordinateHopfAlgebra :
-    Algebra.FiniteType R (coordinateHopfAlgebra R m) :=
-  Algebra.FiniteType.quotient R (definingHopfIdeal R m).toIdeal
 
 /-- The closed subgroup scheme of `Sp₂ₘ` of symplectic matrices preserving the standard
 complete isotropic flag. -/
@@ -251,6 +249,8 @@ theorem isSolvable_points :
     (pointsMulEquiv R m (A := A)).injective
 
 end Points
+
+
 
 /-- The isotropic flag subgroup has solvable geometric points over every field. -/
 theorem geometricallySolvablePointsCommHopfAlgProperty_coordinateHopfAlgebra

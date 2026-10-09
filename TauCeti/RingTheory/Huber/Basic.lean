@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import TauCeti.RingTheory.Huber.PowerBounded
 import TauCeti.RingTheory.Ideal.PowerStabilization
+import TauCeti.RingTheory.Subring.SpanSingleton
 public import TauCeti.Topology.Algebra.Group.FirstCountable
 
 /-!
@@ -32,6 +33,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
 * `TauCeti.Huber.IsHuberRing`: `A` admits a pair of definition.
 * `TauCeti.Huber.IsTateRing`: a Huber ring with a topologically nilpotent unit.
 * `TauCeti.Huber.IsPseudoUniformizer`: a topologically nilpotent unit of `A`.
+* `TauCeti.Huber.PairOfDefinition.ofIsPseudoUniformizer`: the pair of definition `(A₀, ϖ A₀)`
+  attached to an open bounded subring `A₀` containing a pseudouniformiser `ϖ`.
 
 ## Main results
 
@@ -61,7 +64,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
   nilpotent element — a pseudouniformiser, in the Tate case — rescales any element of `A` to a
   topologically nilpotent one. The multiplier is a unit in the Tate case, so the rescaled element
   is an associate of the original.
-* `TauCeti.Huber.IsHuberRing.quotient`: a quotient of a Huber ring is a Huber ring.
+* `TauCeti.Huber.IsHuberRing.quotient` and `TauCeti.Huber.IsTateRing.quotient`: a quotient of a
+  Huber ring is a Huber ring, and a quotient of a Tate ring is a Tate ring.
 * `TauCeti.Huber.PairOfDefinition.isBounded_ringOfDefinition`: a ring of definition is bounded,
   hence `A₀ ≤ A°` (`TauCeti.Huber.PairOfDefinition.le_powerBoundedSubring`). This is the
   boundedness half of Wedhorn Corollary 6.4.
@@ -69,6 +73,10 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
 * `TauCeti.Huber.IsPseudoUniformizer.hasBasis_nhds_zero`: for a pseudouniformiser `ϖ` and a ring
   of definition `A₀` of a Tate ring, the sets `ϖⁿ A₀` are a neighbourhood basis of zero; the
   Tate-ring form is `TauCeti.Huber.IsTateRing.exists_hasBasis_nhds_zero`.
+* `TauCeti.Huber.IsTateRing.of_isOpen_isBounded` and
+  `TauCeti.Huber.isTateRing_iff_exists_isOpen_isBounded`: conversely, a topological ring with an
+  open bounded subring and a pseudouniformiser is a Tate ring. This is how Tate rings given by a
+  norm, such as nonarchimedean normed fields, are recognised.
 * `TauCeti.Huber.IsHuberRing.of_discreteTopology`: a discrete ring is Huber, the first of the
   roadmap's Layer-0 examples.
 * `TauCeti.Huber.exists_sum_eq_of_mem_span_mul`: pure algebra, stated here because it is what
@@ -592,6 +600,12 @@ instance IsHuberRing.quotient {A : Type*} [CommRing A] [TopologicalSpace A]
     [IsTopologicalRing A] [IsHuberRing A] (J : Ideal A) : IsHuberRing (A ⧸ J) :=
   ⟨IsHuberRing.nonempty_pairOfDefinition.elim fun P ↦ ⟨P.quotient J⟩⟩
 
+/-- Quotients of Tate rings, with the quotient topology, are Tate rings: the image of a
+pseudouniformiser is a pseudouniformiser. -/
+instance IsTateRing.quotient {A : Type*} [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsTateRing A] (J : Ideal A) : IsTateRing (A ⧸ J) :=
+  IsTateRing.of_continuous (φ := Ideal.Quotient.mk J) continuous_quot_mk
+
 section Discrete
 
 variable (A : Type*) [CommRing A] [TopologicalSpace A] [DiscreteTopology A]
@@ -708,6 +722,87 @@ theorem IsTateRing.exists_hasBasis_nhds_zero (A : Type*) [CommRing A] [Topologic
   obtain ⟨a, ha⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
   obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
   exact ⟨a, P, ha, ha.hasBasis_nhds_zero P⟩
+
+namespace PairOfDefinition
+
+variable (A₀ : Subring A) (hA₀ : IsOpen (A₀ : Set A)) (hb : IsBounded (A₀ : Set A)) {ϖ : A}
+  (hϖ : IsPseudoUniformizer ϖ) (hϖA₀ : ϖ ∈ A₀)
+
+include hA₀ hb hϖ in
+/-- The topology of an open bounded subring `A₀` containing a pseudouniformiser `ϖ` is the
+`ϖ A₀`-adic one. Each `ϖⁿ A₀` is open, being the image of the open `A₀` under multiplication by the
+unit `ϖⁿ`; they are cofinal because `A₀` is bounded and `ϖⁿ → 0`. -/
+private theorem isAdic_span_singleton : IsAdic (Ideal.span {(⟨ϖ, hϖA₀⟩ : A₀)}) := by
+  rw [isAdic_iff]
+  refine ⟨fun n ↦ ?_, fun s hs ↦ ?_⟩
+  · rw [A₀.coe_span_singleton_pow hϖA₀]
+    exact (hA₀.smul (hϖ.isUnit.pow n).unit).preimage continuous_subtype_val
+  · rw [IsInducing.subtypeVal.nhds_eq_comap, ZeroMemClass.coe_zero, Filter.mem_comap] at hs
+    obtain ⟨t, ht, hts⟩ := hs
+    obtain ⟨n, hn⟩ := hb.exists_pow_mul_subset hϖ.isTopologicallyNilpotent ht
+    refine ⟨n, ?_⟩
+    rw [A₀.coe_span_singleton_pow hϖA₀]
+    refine fun x hx ↦ hts (hn ?_)
+    rw [Set.singleton_mul]
+    exact hx
+
+/-- **The pair of definition `(A₀, ϖ A₀)`** of a topological ring with an open bounded subring
+`A₀` containing a pseudouniformiser `ϖ`: the topology of `A₀` is the `ϖ`-adic one. -/
+noncomputable def ofIsPseudoUniformizer : PairOfDefinition A where
+  ringOfDefinition := A₀
+  isOpen_ringOfDefinition := hA₀
+  idealOfDefinition := Ideal.span {(⟨ϖ, hϖA₀⟩ : A₀)}
+  fg_idealOfDefinition := Submodule.fg_span_singleton _
+  isAdic_idealOfDefinition := isAdic_span_singleton A₀ hA₀ hb hϖ hϖA₀
+
+/-- The ring of definition of `ofIsPseudoUniformizer` is the given subring. -/
+@[simp]
+theorem ofIsPseudoUniformizer_ringOfDefinition :
+    (ofIsPseudoUniformizer A₀ hA₀ hb hϖ hϖA₀).ringOfDefinition = A₀ := (rfl)
+
+/-- **The ideal of definition of `ofIsPseudoUniformizer` is `ϖ A₀`**, in membership form: an element
+belongs exactly when it is `ϖ` times an element of `A₀`.
+
+As for the other explicit pairs of definition, the membership form is used because the type of
+`idealOfDefinition` depends on the pair's `ringOfDefinition`. -/
+@[simp]
+theorem mem_ofIsPseudoUniformizer_idealOfDefinition
+    {x : (ofIsPseudoUniformizer A₀ hA₀ hb hϖ hϖA₀).ringOfDefinition} :
+    x ∈ (ofIsPseudoUniformizer A₀ hA₀ hb hϖ hϖA₀).idealOfDefinition ↔
+      ∃ y ∈ A₀, ϖ * y = x := by
+  -- the ideal of definition is `Ideal.span {ϖ}` by construction, and `x` is an element of `A₀`
+  exact A₀.mem_span_singleton_iff hϖA₀
+
+end PairOfDefinition
+
+/-- **A topological ring with an open bounded subring and a pseudouniformiser is a Tate ring.** The
+pseudouniformiser need not lie in the subring: a high enough power of it does, and that power is
+again a pseudouniformiser, so `PairOfDefinition.ofIsPseudoUniformizer` applies to it. -/
+theorem IsTateRing.of_isOpen_isBounded (A₀ : Subring A) (hA₀ : IsOpen (A₀ : Set A))
+    (hb : IsBounded (A₀ : Set A)) {ϖ : A} (hϖ : IsPseudoUniformizer ϖ) : IsTateRing A := by
+  obtain ⟨N, hN⟩ := Filter.eventually_atTop.mp
+    (hϖ.isTopologicallyNilpotent.eventually_mem (hA₀.mem_nhds A₀.zero_mem))
+  have hϖN : IsPseudoUniformizer (ϖ ^ (N + 1)) := by
+    refine ⟨hϖ.isUnit.pow _, ?_⟩
+    have h := hϖ.isTopologicallyNilpotent.comp
+      (tendsto_atTop_mono (fun m ↦ Nat.le_mul_of_pos_left m N.succ_pos) tendsto_id)
+    simpa only [IsTopologicallyNilpotent, Function.comp_def, id, pow_mul] using h
+  exact
+    { nonempty_pairOfDefinition :=
+        ⟨PairOfDefinition.ofIsPseudoUniformizer A₀ hA₀ hb hϖN (hN _ N.le_succ)⟩
+      exists_isPseudoUniformizer := ⟨ϖ, hϖ⟩ }
+
+/-- **A topological ring is a Tate ring exactly when it has an open bounded subring and a
+pseudouniformiser.** One direction is `IsTateRing.of_isOpen_isBounded`; conversely, a ring of
+definition is open and bounded. -/
+theorem isTateRing_iff_exists_isOpen_isBounded :
+    IsTateRing A ↔ (∃ A₀ : Subring A, IsOpen (A₀ : Set A) ∧ IsBounded (A₀ : Set A)) ∧
+      ∃ ϖ : A, IsPseudoUniformizer ϖ := by
+  refine ⟨fun _ ↦ ⟨?_, IsTateRing.exists_isPseudoUniformizer⟩, ?_⟩
+  · obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
+    exact ⟨P.ringOfDefinition, P.isOpen_ringOfDefinition, P.isBounded_ringOfDefinition⟩
+  · rintro ⟨⟨A₀, hA₀, hb⟩, ϖ, hϖ⟩
+    exact IsTateRing.of_isOpen_isBounded A₀ hA₀ hb hϖ
 
 end Tate
 

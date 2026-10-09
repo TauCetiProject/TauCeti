@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Ring.Subring.Units
 public import TauCeti.NumberTheory.ClassFieldTheory.FiniteCohomology.DegreeTwo
+public import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 
 /-!
 # The local Euler characteristic
@@ -18,11 +19,23 @@ file defines the three-term local Euler characteristic
 χ_F(A) = |H⁰(F, A)| |H²(F, A)| / |H¹(F, A)|.
 ```
 
+Over a finite compatible extension `F` of `ℚ_p` (`TauCeti.FinitePadicExtension`) it also defines
+the normalized absolute value of the order of `A`,
+
+```text
+φ_F(A) = ‖#A‖_F = |#A|_p ^ [F : ℚ_p] = p ^ (-[F : ℚ_p] v_p(#A)),
+```
+
+so that Tate's local Euler characteristic formula reads `χ_F = φ_F`.
+
 ## Main results
 
 * `TauCeti.ClassFieldTheory.localEulerCharacteristic`: the positive-rational-valued local Euler
   characteristic of a finite smooth discrete Galois representation.
 * `TauCeti.ClassFieldTheory.localEulerCharacteristic_congr`: invariance under isomorphism.
+* `TauCeti.ClassFieldTheory.localCardNorm`: the normalized absolute value `φ_F(A)` of the order.
+* `TauCeti.ClassFieldTheory.localCardNorm_congr`: invariance under isomorphism.
+* `TauCeti.ClassFieldTheory.localCardNorm_mul_of_exact`: multiplicativity in short exact sequences.
 -/
 
 public noncomputable section
@@ -31,7 +44,11 @@ namespace TauCeti.ClassFieldTheory
 
 open ContCohomology
 
-variable {n : ℕ} {F : Type} [Field F] [ValuativeRel F] [TopologicalSpace F]
+variable {n : ℕ}
+
+section EulerCharacteristic
+
+variable {F : Type} [Field F] [ValuativeRel F] [TopologicalSpace F]
   [IsNonarchimedeanLocalField F]
 
 /-- **The three-term local Euler characteristic** of a finite smooth discrete Galois
@@ -80,5 +97,64 @@ theorem localEulerCharacteristic_congr (hn : (n : F) ≠ 0) {A B : GalRep n F}
   apply Subtype.ext
   apply Units.ext
   simp only [localEulerCharacteristic_coe, hcard]
+
+end EulerCharacteristic
+
+section CardNorm
+
+variable {F : Type} [Field F] [ValuativeRel F] [TopologicalSpace F]
+  [IsNonarchimedeanLocalField F] (p : ℕ) [Fact p.Prime] [FinitePadicExtension F p]
+
+/-- **The normalized absolute value of the order** of a finite Galois representation over a
+finite compatible extension `F` of `ℚ_p`, as a positive rational number:
+`φ_F(A) = ‖#A‖_F = |#A|_p ^ [F : ℚ_p] = p ^ (-[F : ℚ_p] v_p(#A))`, the right-hand side of Tate's
+local Euler characteristic formula `χ_F(A) = φ_F(A)`. -/
+def localCardNorm (A : GalRep n F) [Finite A.V] : Units.posSubgroup ℚ :=
+  have hq : 0 < padicNorm p (Nat.card A.V) ^ Module.finrank ℚ_[p] F :=
+    pow_pos ((padicNorm.nonneg _).lt_of_ne
+      (padicNorm.nonzero (Nat.cast_ne_zero.2 Nat.card_pos.ne')).symm) _
+  ⟨Units.mk0 _ hq.ne', hq⟩
+
+/-- The value of `localCardNorm` in `ℚ`. -/
+@[simp]
+theorem localCardNorm_coe (A : GalRep n F) [Finite A.V] :
+    ((localCardNorm p A).1 : ℚ) = padicNorm p (Nat.card A.V) ^ Module.finrank ℚ_[p] F := by
+  rfl
+
+/-- **Isomorphism invariance of `localCardNorm`.** Isomorphic representations have the same
+order, hence the same normalized absolute value of the order. -/
+theorem localCardNorm_congr {A B : GalRep n F} [Finite A.V] (e : A ≅ B) :
+    haveI : Finite B.V := .of_surjective e.hom.hom fun y ↦ ⟨e.inv.hom y, by simp⟩
+    localCardNorm p A = localCardNorm p B := by
+  apply Subtype.ext
+  apply Units.ext
+  simp only [localCardNorm_coe,
+    Nat.card_congr ((CategoryTheory.forget (GalRep n F)).mapIso e).toEquiv]
+
+/-- **Multiplicativity of `localCardNorm`.** If `0 → A → B → C → 0` is an exact sequence of
+representations with `B` finite, then `φ_F(B) = φ_F(A) φ_F(C)`: the order of `B` is the product
+of the orders of `A` and `C`, and the `p`-adic norm is multiplicative. -/
+theorem localCardNorm_mul_of_exact {A B C : GalRep n F} [Finite B.V]
+    (f : A ⟶ B) (g : B ⟶ C) (hf : Function.Injective f.hom)
+    (hfg : Function.Exact f.hom g.hom) (hg : Function.Surjective g.hom) :
+    haveI : Finite A.V := .of_injective _ hf
+    haveI : Finite C.V := .of_surjective _ hg
+    localCardNorm p B = localCardNorm p A * localCardNorm p C := by
+  have : Finite A.V := .of_injective _ hf
+  have : Finite C.V := .of_surjective _ hg
+  have hcard : Nat.card B.V = Nat.card A.V * Nat.card C.V := by
+    have hker : g.hom.toAddMonoidHom.ker = f.hom.toAddMonoidHom.range := by
+      ext b
+      exact (hfg b).trans Iff.rfl
+    rw [← AddSubgroup.card_ker_mul_card_range g.hom.toAddMonoidHom, hker,
+      (AddMonoidHom.range_eq_top (f := g.hom.toAddMonoidHom)).2 hg, AddSubgroup.card_top,
+      mul_left_inj' Nat.card_pos.ne']
+    exact (Nat.card_congr (Equiv.ofInjective _ hf)).symm
+  apply Subtype.ext
+  apply Units.ext
+  simp only [localCardNorm_coe, Subgroup.coe_mul, Units.val_mul, hcard, Nat.cast_mul,
+    padicNorm.mul, mul_pow]
+
+end CardNorm
 
 end TauCeti.ClassFieldTheory

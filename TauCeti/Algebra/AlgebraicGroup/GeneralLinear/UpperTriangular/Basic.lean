@@ -42,13 +42,7 @@ The pointwise identifications are assembled into a natural isomorphism of group-
 * T. A. Springer, *Linear Algebraic Groups*, Sections 2.4 and 6.3.
 * J. S. Milne, *Algebraic Groups* (2017), Chapters 12--13.
 * The quotient-points equivalence and functor proofs follow the pattern of
-  `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic`;
-  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Borel` is their rank-two specialization.
-* The root-subgroup declarations generalize the rank-two construction formerly in
-  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Borel` under the `GL2Borel` API.
-
-This advances Layer 5, "Lie--Kolchin; solvable groups", of the ReductiveGroups roadmap. It
-constructs the general-rank group scheme whose abstract point groups were already proved solvable.
+  `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic`.
 -/
 
 public section
@@ -396,15 +390,9 @@ theorem pointsNatIso_inv_app_apply (A : CommAlgCat.{w} R)
 
 end Functor
 
-end TauCeti.GeneralLinear.UpperTriangular
+section RootSubgroup
 
-namespace TauCeti.GeneralLinear.UpperTriangular
-
-universe u w
-
-noncomputable section
-
-variable (R : Type u) [CommRing R] {n : ℕ} {i j : Fin n}
+variable {n} {i j : Fin n}
 
 /-- A root subgroup indexed by `i < j` consists of upper-triangular matrices, so its points lie
 in the standard upper-triangular closed subgroup. -/
@@ -419,8 +407,9 @@ theorem rootSubgroupPoints_mem (hij : i < j)
   rw [mem_definingPointsSubgroup_iff, GeneralLinear.pointsMulEquiv_rootSubgroupPoints]
   exact transvectionUnit_mem_upperTriangularGroup hij _
 
-/-- The coordinate morphism of the root subgroup `x_ij`, for `i < j`, into the standard
-upper-triangular coordinate Hopf algebra. -/
+/-- The coordinate morphism `O(B_n) → O(𝔾ₐ)` of the root subgroup `x_ij`, for `i < j`: the ambient
+coordinate morphism `O(GL_n) → O(𝔾ₐ)` descended to the standard upper-triangular coordinate Hopf
+algebra. Its direction is opposite to the represented group-scheme morphism `rootSubgroup`. -/
 noncomputable def rootSubgroupCoordinateMap (hij : i < j) :
     coordinateHopfAlgebra R n ⟶ AdditiveGroup.coordinateHopfAlgebra R :=
   CommHopfAlgCat.liftQuotient (definingHopfIdeal R n)
@@ -522,6 +511,6 @@ theorem rootSubgroup_comp_inclusion (hij : i < j) :
     GeneralLinear.weightParabolicInclusion_def, ← hcomp]
   simp only [Category.assoc, eqToHom_refl, Category.id_comp, eqToIso.hom]
 
-end
+end RootSubgroup
 
 end TauCeti.GeneralLinear.UpperTriangular

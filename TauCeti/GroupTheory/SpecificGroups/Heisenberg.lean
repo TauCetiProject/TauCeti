@@ -30,6 +30,8 @@ group.
 
 * `TauCeti.HeisenbergGroup`: the Heisenberg group over a ring, with its group structure.
 * `TauCeti.HeisenbergGroup.zAxis`: the central subgroup of elements `(0, 0, z)`.
+* `TauCeti.HeisenbergGroup.map`: the homomorphism induced by a ring homomorphism, with
+  `map_id` and `map_comp`.
 
 ## Main results
 
@@ -157,6 +159,38 @@ theorem commutatorElement_eq_one_of_mem_zAxis {a : HeisenbergGroup R} (ha : a �
     (b : HeisenbergGroup R) : ⁅a, b⁆ = 1 :=
   commutatorElement_eq_one_iff_mul_comm.mpr
     ((Subgroup.mem_center_iff.mp (zAxis_le_center ha) b).symm)
+
+/-- A ring homomorphism `f : R →+* S` induces the group homomorphism
+`HeisenbergGroup R →* HeisenbergGroup S` applying `f` to each coordinate. -/
+def map {S : Type*} [Ring S] (f : R →+* S) : HeisenbergGroup R →* HeisenbergGroup S where
+  toFun a := ⟨f a.x, f a.y, f a.z⟩
+  map_one' := by ext <;> simp
+  map_mul' a b := by ext <;> simp
+
+@[simp]
+theorem map_apply {S : Type*} [Ring S] (f : R →+* S) (a : HeisenbergGroup R) :
+    map f a = ⟨f a.x, f a.y, f a.z⟩ :=
+  (rfl)
+
+/-- The identity ring homomorphism induces the identity of the Heisenberg group. -/
+@[simp]
+theorem map_id : map (RingHom.id R) = MonoidHom.id (HeisenbergGroup R) := by
+  ext <;> simp
+
+/-- The homomorphism induced by a composite of ring homomorphisms is the composite of the induced
+homomorphisms. -/
+@[simp]
+theorem map_comp {S T : Type*} [Ring S] [Ring T] (g : S →+* T) (f : R →+* S) :
+    map (g.comp f) = (map g).comp (map f) := by
+  ext <;> simp
+
+/-- The homomorphism induced by a surjective ring homomorphism is surjective. -/
+theorem map_surjective {S : Type*} [Ring S] {f : R →+* S} (hf : Function.Surjective f) :
+    Function.Surjective (map f) := fun b ↦ by
+  obtain ⟨x, hx⟩ := hf b.x
+  obtain ⟨y, hy⟩ := hf b.y
+  obtain ⟨z, hz⟩ := hf b.z
+  exact ⟨⟨x, y, z⟩, by ext <;> simp [hx, hy, hz]⟩
 
 section CharP
 

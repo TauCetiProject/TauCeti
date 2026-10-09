@@ -44,6 +44,11 @@ Conversely, every semialgebraic set is described by a condition on the signs of 
 polynomials (`TauCeti.IsSemialgebraic.exists_eq_setOf_sign_eval`), and so membership in it depends
 on only finitely many coordinates (`TauCeti.IsSemialgebraic.exists_finset_mem_iff_of_eqOn`).
 
+Closure under projection is recorded as the property `TauCeti.HasSemialgebraicProjections R` of the
+ordered ring `R`, with field `TauCeti.HasSemialgebraicProjections.isSemialgebraic_image_tail`.
+Its consequences, such as quantifier elimination and the image and composition laws of
+semialgebraic functions, are stated under this assumption.
+
 ## References
 
 S. Basu, R. Pollack, and M.-F. Roy,
@@ -408,5 +413,20 @@ theorem IsSemialgebraic.exists_finset_mem_iff_of_eqOn {s : Set (σ → R)} (hs :
   have h (i : Fin m) : eval x (p i) = eval y (p i) :=
     eval₂Hom_congr' rfl (fun j hj _ => hxy (by simpa using ⟨i, hj⟩)) rfl
   simp [h]
+
+/-! ### Projection closure -/
+
+variable (R) in
+/-- Semialgebraic subsets of the coordinate spaces over `R` *have semialgebraic projections* if,
+for every `n`, forgetting the coordinate `0` (`Fin.tail`) maps semialgebraic subsets of
+`Fin (n + 1) → R` to semialgebraic subsets of `Fin n → R`. For `R = ℝ` this is the
+Tarski–Seidenberg theorem, proved by cylindrical algebraic decomposition in
+`TauCeti.Geometry.RealAlgebraic.CAD.Existence`. It fails for some ordered fields: over `ℚ`,
+forgetting `t` maps the parabola `{(t, x) | t ^ 2 = x}` to the set of rational squares, which is
+dense and codense in the positive rationals and so is not semialgebraic. -/
+class HasSemialgebraicProjections : Prop where
+  /-- Forgetting the coordinate `0` maps semialgebraic sets to semialgebraic sets. -/
+  isSemialgebraic_image_tail {n : ℕ} {s : Set (Fin (n + 1) → R)} :
+    IsSemialgebraic s → IsSemialgebraic (Fin.tail '' s)
 
 end TauCeti

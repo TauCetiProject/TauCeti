@@ -8,17 +8,24 @@ module
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
-# Cutting a function off near zero
+# The smooth transition function and cutoffs near zero
 
-For `m > 0` and a function `g : ℝ → ℝ`, `TauCeti.positiveCutoff m g` is the product of `g` with
-a smooth transition from `0` to `1` on `[m/4, m/2]`. It vanishes for `t ≤ m/4` and agrees with
-`g` for `t ≥ m/2`, so it is a globally defined replacement for a function such as `t ↦ 1/t` or
-`Real.log` that is only well behaved on `(0, ∞)`. If `g` is `C¹` on `(0, ∞)` then the cutoff is
-`C¹` on `ℝ`, and if `g'` is bounded on `[m, ∞)` then the derivative of the cutoff is bounded on
-`ℝ`; these are the hypotheses of chain rules for Sobolev functions.
+Mathlib's `Analysis/SpecialFunctions/SmoothTransition.lean` proves that
+`Real.smoothTransition` is smooth and equals one on `[1, ∞)`, but states no derivative values.
+This file records that its derivative vanishes on the open ray `(1, ∞)`, where the function is
+locally constant.
+
+It also uses the smooth transition to cut a function off near zero. For `m > 0` and a function
+`g : ℝ → ℝ`, `TauCeti.positiveCutoff m g` is the product of `g` with a smooth transition from `0`
+to `1` on `[m/4, m/2]`. It vanishes for `t ≤ m/4` and agrees with `g` for `t ≥ m/2`, so it is a
+globally defined replacement for a function such as `t ↦ 1/t` or `Real.log` that is only well
+behaved on `(0, ∞)`. If `g` is `C¹` on `(0, ∞)` then the cutoff is `C¹` on `ℝ`, and if `g'` is
+bounded on `[m, ∞)` then the derivative of the cutoff is bounded on `ℝ`; these are the hypotheses
+of chain rules for Sobolev functions.
 
 ## Main declarations
 
+* `Real.smoothTransition.deriv_of_one_lt`: `deriv Real.smoothTransition x = 0` for `1 < x`.
 * `TauCeti.positiveCutoff`: the cutoff of `g` near zero.
 * `TauCeti.contDiff_positiveCutoff`: the cutoff of a function that is `C¹` on `(0, ∞)` is `C¹`.
 * `TauCeti.exists_nnnorm_deriv_positiveCutoff_le`: its derivative is bounded when `g'` is bounded
@@ -31,6 +38,17 @@ noncomputable section
 
 open Filter Set
 open scoped ContDiff NNReal Topology
+
+namespace Real.smoothTransition
+
+/-- The smooth transition function has derivative zero to the right of `1`, where it is
+identically one. -/
+theorem deriv_of_one_lt {x : ℝ} (hx : 1 < x) : deriv smoothTransition x = 0 := by
+  have h : smoothTransition =ᶠ[𝓝 x] fun _ => 1 :=
+    eventually_of_mem (Ioi_mem_nhds hx) fun _ ht => one_of_one_le (le_of_lt ht)
+  rw [h.deriv_eq, deriv_const]
+
+end Real.smoothTransition
 
 namespace TauCeti
 

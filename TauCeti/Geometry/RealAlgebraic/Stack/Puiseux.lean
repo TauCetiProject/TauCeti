@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Geometry.RealAlgebraic.Stack.Delineation
 public import TauCeti.Analysis.Polynomial.Puiseux.RealRoots
-import TauCeti.Topology.Algebra.Polynomial
-import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
 # Local delineations from prepared complex splittings
@@ -25,7 +23,9 @@ No constancy of the number of real roots or of their multiplicities is assumed.
 
 This is the local passage from a prepared Puiseux splitting to a real stack. The prepared
 splitting and its discriminant identity are inputs; ambient order on sections is a separate
-conclusion requiring additional information.
+conclusion requiring additional information. The final step, from a local ordered enumeration of
+the real roots with constant multiplicities to a delineation on a ball, is
+`TauCeti.exists_delineation_ball_of_isRoot_iff`.
 
 ## References
 
@@ -57,8 +57,7 @@ theorem exists_delineation_on_hyperplane {n a : ℕ}
     ∃ ε > 0, ∃ D : Delineation (fun (_ : Unit) (b : ball b₀ ε) ↦ F b),
       ∀ i, ∃ s : B → ℝ, AnalyticOnNhd ℝ s (ball b₀ ε) ∧
         ∀ b : ball b₀ ε, D.root i b = s b := by
-  classical
-  obtain ⟨k, s, U, hU, hbU, hs, hmono, hroots, hpos, hmult⟩ :=
+  obtain ⟨k, s, U, hU, hbU, hs, hmono, hroots, -, hmult⟩ :=
     exists_analyticOnNhd_ordered_real_roots_on_hyperplane hr hP hu hu0 hdiscr hφ hreal
   let ψ : B → E × ℂ := fun b ↦ (φ b, 0)
   have hψ : AnalyticAt ℝ ψ b₀ := hφ.prod analyticAt_const
@@ -69,61 +68,30 @@ theorem exists_delineation_on_hyperplane {n a : ℕ}
       (F b).map (algebraMap ℝ ℂ) = ∏ i, (X - C (r i (ψ b))) := by
     filter_upwards [hψ.continuousAt.tendsto.eventually hP, hreal] with b hb hFb
     exact hFb.symm.trans hb
-  obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff.1
-    (Filter.Eventually.and (hU.mem_nhds hbU) (hbranches.and hsplit))
-  let V := ball b₀ ε
-  have hVU : V ⊆ U := fun b hb ↦ (hball hb).1
-  have hV : PreconnectedSpace V :=
-    isPreconnected_iff_preconnectedSpace.1 (convex_ball b₀ ε).isPreconnected
-  let := hV
   -- The splitting determines both the degree and every coefficient of the real family.
-  have hmonic (b : V) : (F b).Monic := by
+  have hmonic : ∀ᶠ b in 𝓝 b₀, (F b).Monic := by
+    filter_upwards [hsplit] with b hb
     apply monic_of_injective (algebraMap ℝ ℂ).injective
-    rw [(hball b.property).2.2]
+    rw [hb]
     exact monic_prod_X_sub_C _ _
-  have hdeg (b : V) : (F b).natDegree = n := by
-    rw [← natDegree_map_eq_of_injective (algebraMap ℝ ℂ).injective,
-      (hball b.property).2.2, natDegree_finsetProd_X_sub_C_eq_card]
+  have hdeg : ∀ᶠ b in 𝓝 b₀, (F b).natDegree = n := by
+    filter_upwards [hsplit] with b hb
+    rw [← natDegree_map_eq_of_injective (algebraMap ℝ ℂ).injective, hb,
+      natDegree_finsetProd_X_sub_C_eq_card]
     simp
-  have hcoeff (j : ℕ) : Continuous (fun b : V ↦ (F b).coeff j) := by
-    have hc : Continuous (fun b : V ↦ (∏ i, (X - C (r i (ψ b)))).coeff j) :=
-      (Sym.continuous_coeff_prod_X_sub_C Finset.univ j).comp
-        (continuous_pi fun i ↦ continuous_iff_continuousAt.2 fun b ↦
-          ((hball b.property).2.1 i).continuousAt.comp continuous_subtype_val.continuousAt)
-    refine (Complex.continuous_re.comp hc).congr fun b ↦ ?_
-    simp only [Function.comp_apply]
-    rw [← (hball b.property).2.2, coeff_map]
-    simp
-  have heval : Continuous (fun z : V × ℝ ↦ (F z.1).eval z.2) :=
-    continuous_eval_of_continuous_coeff (fun j _ ↦ hcoeff j) (fun b ↦ (hdeg b).le)
-  let θ : Fin k → V → ℝ := fun i b ↦ s i b
-  have hθ (i : Fin k) : Continuous (θ i) :=
-    ((hs i).mono hVU).continuousOn.domRestrict
-  have hθmono (b : V) : StrictMono (fun i ↦ θ i b) := hmono b (hVU b.property)
-  have hcover (b : V) (t : ℝ) : (F b).IsRoot t ↔ ∃ i, θ i b = t :=
-    hroots b (hVU b.property) t
-  let m : Fin k → ℕ := fun i ↦ (F b₀).rootMultiplicity (s i b₀)
-  have hm (b : V) (i : Fin k) : (F b).rootMultiplicity (θ i b) = m i :=
-    hmult b (hVU b.property) i
-  -- Multiplicity data identify the zero sections, and root coverage excludes sector zeros.
-  let D : Delineation (fun (_ : Unit) (b : V) ↦ F b) := {
-    count := k
-    root := θ
-    continuous_root := hθ
-    strictMono_root := hθmono
-    multiplicity := fun _ ↦ m
-    rootMultiplicity_root := fun _ i b ↦ hm b i
-    exists_root_eq := fun _ b _ t ht ↦ (hcover b t).1 ht
-    exists_multiplicity_pos := fun i ↦ ⟨(), hpos i⟩
-    eq_zero_or_ne_zero := fun _ ↦ .inr fun b ↦ (hmonic b).ne_zero
-    natDegree_eq := fun _ b c ↦ (hdeg b).trans (hdeg c).symm
-    signInvariant_sectionSet := fun _ i ↦ signInvariant_eval_sectionSet
-      (I := {i | 0 < m i}) heval (hθ i) (fun b ↦ (hθmono b).injective)
-      (.inr fun b ↦ (hmonic b).ne_zero) (fun b _ t ↦ by
-        rw [← IsRoot.def, hcover b t]
-        exact ⟨fun ⟨i, hi⟩ ↦ ⟨i, hpos i, hi⟩, fun ⟨i, _, hi⟩ ↦ ⟨i, hi⟩⟩)
-    signInvariant_sectorSet := fun _ _ ↦ signInvariant_eval_sectorSet heval hθ hθmono
-      (.inr fun b ↦ (hmonic b).ne_zero) (fun b _ t ht ↦ (hcover b t).1 ht) }
-  exact ⟨ε, hε, D, fun i ↦ ⟨s i, (hs i).mono hVU, fun _ ↦ rfl⟩⟩
+  have hcoeff : ∀ᶠ b in 𝓝 b₀, ∀ j, ContinuousAt (fun b ↦ (F b).coeff j) b := by
+    filter_upwards [hbranches, hsplit.eventually_nhds] with b hb hbs j
+    have hc : ContinuousAt (fun b ↦ ((∏ i, (X - C (r i (ψ b)))).coeff j).re) b :=
+      Complex.continuous_re.continuousAt.comp <|
+        (Sym.continuous_coeff_prod_X_sub_C Finset.univ j).continuousAt.comp
+          (continuousAt_pi.2 fun i ↦ (hb i).continuousAt)
+    refine hc.congr (hbs.mono fun c hc ↦ ?_)
+    simp only [← hc, coeff_map, Complex.coe_algebraMap, Complex.ofReal_re]
+  obtain ⟨ε, hε, hεU, D, hD⟩ := exists_delineation_ball_of_isRoot_iff hcoeff
+    (hmonic.mono fun _ h ↦ h.ne_zero) hdeg (hU.mem_nhds hbU) (fun i ↦ (hs i).continuousOn)
+    hmono hroots hmult
+  refine ⟨ε, hε, D, fun i ↦ ?_⟩
+  obtain ⟨j, hj⟩ := hD i
+  exact ⟨s j, (hs j).mono hεU, hj⟩
 
 end TauCeti
