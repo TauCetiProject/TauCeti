@@ -61,11 +61,12 @@ variable {K X : Type*} [Field K] [TopologicalSpace K] [T1Space K] [PerfectSpace 
 
 /-- If every transverse-plane order in a nonempty open set of directions agrees with its
 value at a fixed parameter throughout some neighborhood, then the ambient orders agree on
-one common neighborhood. The neighborhoods for the individual directions may differ. -/
+one common neighborhood. The neighborhoods for the individual directions may differ, and the
+total-degree bound is needed only near the fixed parameter. -/
 theorem eventually_orderAt_eq_of_transverse (n D : ℕ)
     {U : Set (Fin n → K)} (hU : IsOpen U) (hne : U.Nonempty)
     (p : X → MvPolynomial (Fin (n + 1)) K) (a : X → Fin (n + 1) → K)
-    (hp : ∀ x, (p x).totalDegree ≤ D) {x : X}
+    {x : X} (hp : ∀ᶠ y in nhds x, (p y).totalDegree ≤ D)
     (hlocal : ∀ v ∈ U, ∀ᶠ y in nhds x,
       (MvPolynomial.aeval
         (Fin.cons (MvPolynomial.C (a y 0) + MvPolynomial.X (1 : Fin 2))
@@ -92,8 +93,8 @@ theorem eventually_orderAt_eq_of_transverse (n D : ℕ)
           (fun i ↦ MvPolynomial.C (a x i.succ) +
             MvPolynomial.C (v.1 i) * MvPolynomial.X (0 : Fin 2)))
         (p x)).orderAt (0 : Fin 2 → K) := fun v ↦ hlocal v (hTU v.property)
-  filter_upwards [Filter.eventually_all.2 hslice] with y hy
-  rw [horder (p y) (hp y) (a y), horder (p x) (hp x) (a x)]
+  filter_upwards [Filter.eventually_all.2 hslice, hp] with y hy hpy
+  rw [horder (p y) hpy (a y), horder (p x) hp.self_of_nhds (a x)]
   exact iInf_congr fun v ↦ hy v
 
 /-- Local constancy of all transverse-plane orders in a nonempty open set of directions
@@ -112,7 +113,7 @@ theorem isLocallyConstant_orderAt_of_transverse (n D : ℕ)
     IsLocallyConstant fun x ↦ (p x).orderAt (a x) := by
   rw [IsLocallyConstant.iff_eventually_eq]
   intro x
-  exact eventually_orderAt_eq_of_transverse n D hU hne p a hp fun v hv ↦
+  exact eventually_orderAt_eq_of_transverse n D hU hne p a (.of_forall hp) fun v hv ↦
     (hlocal v hv).eventually_eq x
 
 end TauCeti
