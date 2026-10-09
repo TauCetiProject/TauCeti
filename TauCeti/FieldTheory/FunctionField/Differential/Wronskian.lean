@@ -16,7 +16,7 @@ from `TauCeti.FieldTheory.FunctionField.Differential.Kaehler`, this file proves 
 Wronskian of a finite family of functions is nonzero precisely when the family is linearly
 independent over the exact constant field in characteristic zero.
 
-In particular, coefficients of a basis of a Riemann--Roch space have nonzero Wronskian.
+In particular, the elements of any basis of a Riemann--Roch space have nonzero Wronskian.
 For the canonical series, this is the nonvanishing prerequisite for describing Weierstrass
 weights by a ramification divisor. This file proves nonvanishing; it does not construct that
 divisor or compute its local orders.
