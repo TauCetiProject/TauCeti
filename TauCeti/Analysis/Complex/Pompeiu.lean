@@ -12,7 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Module
+import TauCeti.Analysis.Complex.SmulI
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.MeasureTheory.Integral.NormRpow
 
@@ -69,28 +69,6 @@ namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-section Algebra
-
-/-- Rotating `L 1 + I • L I` by the conjugate of `e` gives the derivative of `L` along `e` plus
-`I` times its derivative along `I * e`. With `e = e^{iθ}` and `L` the derivative of `u` at
-`w + r e^{iθ}`, these are `∂ᵣ v` and `r⁻¹ ∂_θ v` for `v (r, θ) = u (w + r e^{iθ})`. -/
-private lemma conj_smul_apply_one_add_I_smul_apply_I (L : ℂ →L[ℝ] F) (e : ℂ) :
-    conj e • (L 1 + I • L I) = L e + I • L (I * e) := by
-  have hL : ∀ z : ℂ, L z = (z.re : ℂ) • L 1 + (z.im : ℂ) • L I := fun z => by
-    have hz : z = z.re • (1 : ℂ) + z.im • I := by
-      apply Complex.ext <;> simp
-    conv_lhs => rw [hz]
-    rw [map_add, map_smul, map_smul, Complex.coe_smul, Complex.coe_smul]
-  have he : conj e = (e.re : ℂ) - e.im * I := by
-    apply Complex.ext <;> simp
-  rw [hL e, hL (I * e), he]
-  simp only [mul_re, I_re, I_im, mul_im, zero_mul, one_mul, zero_sub, zero_add, ofReal_neg]
-  match_scalars
-  · ring
-  · linear_combination -(e.im : ℂ) * I_sq
-
-end Algebra
-
 section Polar
 
 /-- The unit vector `e^{iθ}`, written as in `Complex.polarCoord_symm_apply`. -/
@@ -117,7 +95,7 @@ private lemma smul_polarCoord_symm_inv_smul (L : ℂ →L[ℝ] F) {r : ℝ} (hr 
       (r : ℂ) * ((r : ℂ) * expI θ)⁻¹ = (expI θ)⁻¹ := by field_simp [ofReal_ne_zero.2 hr]
       _ = conj (expI θ) := Complex.inv_eq_conj (norm_expI θ)
   rw [Complex.polarCoord_symm_apply, ← Complex.coe_smul, smul_smul, hinv,
-    conj_smul_apply_one_add_I_smul_apply_I]
+    L.conj_smul_apply_one_add_I_smul_apply_I]
 
 variable {u : ℂ → F}
 
@@ -228,14 +206,6 @@ theorem
   field_simp [Real.pi_ne_zero]
   simp
 
-/-- The kernel `z ↦ (w - z)⁻¹` of the Cauchy transform is locally integrable on `ℂ`. -/
-lemma _root_.Complex.locallyIntegrable_sub_inv (w : ℂ) :
-    LocallyIntegrable (fun z : ℂ => (w - z)⁻¹) volume := by
-  refine (locallyIntegrable_norm_sub_rpow (mu := volume) (s := -1) (by simp) w).mono
-    (measurable_const.sub measurable_id).inv.aestronglyMeasurable (ae_of_all _ fun z => ?_)
-  rw [norm_inv, Real.norm_eq_abs, abs_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _),
-    Real.rpow_neg_one]
-
 /-- Recentring the Cauchy transform at the evaluation point turns it into a convolution with the
 kernel `t ↦ t⁻¹`. -/
 private lemma integral_sub_inv_smul_eq_convolution {G : Type*} [NormedAddCommGroup G]
@@ -251,11 +221,8 @@ differentiable, and its derivative is the Cauchy transform of the derivative of 
 theorem _root_.HasCompactSupport.hasFDerivAt_integral_sub_inv_smul {f : ℂ → F}
     (hc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) (w : ℂ) :
     HasFDerivAt (fun w => ∫ z, (w - z)⁻¹ • f z) (∫ z, (w - z)⁻¹ • fderiv ℝ f z) w := by
-  have hK : LocallyIntegrable (fun t : ℂ => t⁻¹) volume := by
-    convert (Complex.locallyIntegrable_sub_inv 0).neg using 1
-    ext t
-    simp
-  have h := hc.hasFDerivAt_convolution_right (ContinuousLinearMap.lsmul ℝ ℂ) hK hf w
+  have h := hc.hasFDerivAt_convolution_right (ContinuousLinearMap.lsmul ℝ ℂ)
+    Complex.locallyIntegrable_inv hf w
   rw [funext fun w => integral_sub_inv_smul_eq_convolution f w,
     integral_sub_inv_smul_eq_convolution]
   convert h using 1
