@@ -41,10 +41,10 @@ universe v u
 
 namespace HomologicalComplex₂
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteCoproducts C]
+variable {C : Type u} [Category.{v} C] [Preadditive C]
 
 /-- A first-quadrant bicomplex has a total complex as soon as finite coproducts exist. -/
-instance hasTotal_down_nat
+instance hasTotal_down_nat [HasFiniteCoproducts C]
     (K : HomologicalComplex₂ C (ComplexShape.down ℕ) (ComplexShape.down ℕ)) :
     K.HasTotal (ComplexShape.down ℕ) := fun n ↦
   have : Finite (ComplexShape.π (ComplexShape.down ℕ) (ComplexShape.down ℕ)
@@ -53,7 +53,7 @@ instance hasTotal_down_nat
   inferInstance
 
 variable (K : HomologicalComplex₂ C (ComplexShape.down ℕ) (ComplexShape.down ℕ))
-  {E : ChainComplex C ℕ} (ε : K.X 0 ⟶ E) (hε : K.d 1 0 ≫ ε = 0)
+  [K.HasTotal (ComplexShape.down ℕ)] {E : ChainComplex C ℕ} (ε : K.X 0 ⟶ E) (hε : K.d 1 0 ≫ ε = 0)
 
 /-- The components of `totalAugmentation`: `ε` on the column `0` and zero on the other columns. -/
 private def totalAugmentationAux (n p q : ℕ)
