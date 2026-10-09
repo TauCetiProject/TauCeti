@@ -129,12 +129,12 @@ section BaseChange
 variable (S : Type*) [CommRing S] [IsDomain S] [IsDiscreteValuationRing S]
   {L : Type*} [Field L] [Algebra S L] [IsFractionRing S L] [Algebra K L] [Algebra R S]
 
-/-- **No additive reduction survives base change.** Let `S` be a discrete valuation ring with
-fraction field `L`, receiving `R` compatibly with `K → L`. If an elliptic curve over `K` has good
-or multiplicative reduction over `R`, then over `L` it has good or multiplicative reduction over
-`S`. No ramification hypothesis is needed and `R → S` need not be local: a unit discriminant or a
-unit `c₄` of an integral model over `R` stays a unit over `S`. This is Silverman, *AEC*,
-VII.5.4(b). -/
+/-- **Absence of additive reduction is preserved by base change.** Let `S` be a discrete
+valuation ring with fraction field `L`, receiving `R` compatibly with `K → L`. If an elliptic curve
+over `K` has good or multiplicative reduction over `R`, then over `L` it has good or multiplicative
+reduction over `S`. No ramification hypothesis is needed and `R → S` need not be local: a unit
+discriminant or a unit `c₄` of an integral model over `R` stays a unit over `S`. This is Silverman,
+*AEC*, VII.5.4(b). -/
 theorem not_hasAdditiveReduction_minimal_baseChange {W : WeierstrassCurve K} [W.IsElliptic]
     (hRS : (algebraMap S L).comp (algebraMap R S) = (algebraMap K L).comp (algebraMap R K))
     (h : ¬ (W.minimal R).HasAdditiveReduction R) :
