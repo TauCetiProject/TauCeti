@@ -42,11 +42,8 @@ theorem _root_.QuadraticForm.continuous_atFinitePlace [NumberField K]
     (Q : QuadraticForm K V) (v : HeightOneSpectrum (𝓞 K))
     [TopologicalSpace (v.FiniteScalarExtension (V := V))]
     [IsModuleTopology (v.adicCompletion K) (v.FiniteScalarExtension (V := V))] :
-    Continuous (Q.atFinitePlace v) := by
-  have : CharZero (v.adicCompletion K) :=
-    charZero_of_injective_algebraMap (algebraMap K (v.adicCompletion K)).injective
-  let : Invertible (2 : v.adicCompletion K) := invertibleOfNonzero two_ne_zero
-  exact (Q.atFinitePlace v).continuous
+    Continuous (Q.atFinitePlace v) :=
+  (Q.atFinitePlace v).continuous
 
 /-- A quadratic form localized at a real place is continuous for the module topology. -/
 @[continuity, fun_prop]
@@ -56,7 +53,6 @@ theorem _root_.QuadraticForm.continuous_atRealPlace
     [IsModuleTopology ℝ (RealScalarExtension (V := V) w)] :
     Continuous (Q.atRealPlace w) := by
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  let : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
   exact (Q.atRealPlace w).continuous
 
 /-- A quadratic form localized through a complex embedding is continuous for the module
@@ -68,7 +64,6 @@ theorem _root_.QuadraticForm.continuous_atComplexEmbedding
     [IsModuleTopology ℂ (w.ComplexScalarExtension (V := V))] :
     Continuous (Q.atComplexEmbedding w) := by
   let : Algebra K ℂ := w.embedding.toAlgebra
-  let : Invertible (2 : ℂ) := invertibleOfNonzero two_ne_zero
   exact (Q.atComplexEmbedding w).continuous
 
 /-- Around a real local vector with nonzero value there is an open neighborhood on which

@@ -36,7 +36,7 @@ the class of the explicit `2`-cocycle `c_{D₁₆} ∘ (ρ_a × ρ_a)` of `G_K`:
 N^{Ev}((a)) = ρ_a^* c_{D₁₆}
 ```
 
-(`TauCeti.galoisEvens_kummerClass_eq_pullback`). This is the first step of Serre's computation of
+(`TauCeti.galoisEvens2_kummerClass_eq_pullback`). This is the first step of Serre's computation of
 `N^{Ev}((a))` in terms of Kummer classes of `K`, which evaluates `c_{D₁₆} ∘ (ρ_a × ρ_a)` through a
 lift of `ρ_a` to the dihedral group of order sixteen in `Pin⁺₂`.
 
@@ -49,7 +49,7 @@ lift of `ρ_a` to the dihedral group of order sixteen in `Pin⁺₂`.
 
 * `TauCeti.coordC_kummerInd`: the swap coordinate of `ρ_a(h)` is `rootSign (σ x) h` for any
   `x ∈ L ∖ K`, the character of `G_K` with kernel `G_L`.
-* `TauCeti.galoisEvens_kummerClass_eq_pullback`: `N^{Ev}((a))` is the class of
+* `TauCeti.galoisEvens2_kummerClass_eq_pullback`: `N^{Ev}((a))` is the class of
   `c_{D₁₆} ∘ (ρ_a × ρ_a)`.
 
 ## References
@@ -120,7 +120,7 @@ theorem continuous_wreathD16Cocycle_kummerInd (σ : L →ₐ[K] SeparableClosure
 extension `L/K`, `a ∈ Lˣ`, a square root `r` of `σ a` and any `s ∉ galoisSubgroup K L σ`,
 `N^{Ev}((a)) ∈ H²(G_K, 𝔽₂)` is the class of the `2`-cocycle `c_{D₁₆} ∘ (ρ_a × ρ_a)`, where
 `ρ_a = kummerInd σ hdeg a r hr s hs` and `c_{D₁₆} = wreathD16Cocycle`. -/
-theorem galoisEvens_kummerClass_eq_pullback [Invertible (2 : L)]
+theorem galoisEvens2_kummerClass_eq_pullback [Invertible (2 : L)]
     (σ : L →ₐ[K] SeparableClosure K) (hdeg : Module.finrank K L = 2) (a : Lˣ)
     (r : SeparableClosure K) (hr : r ^ 2 = σ (a : L)) (s : AbsoluteGaloisGroup K)
     (hs : s ∉ galoisSubgroup K L σ) :
