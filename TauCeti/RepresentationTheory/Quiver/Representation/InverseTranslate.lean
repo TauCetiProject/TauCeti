@@ -46,7 +46,7 @@ universe u v w t
 variable (k : Type u) (Q : Type v) [Field k] [Quiver.{w} Q]
   [Finite (Quiver.TotalPath Q)]
 
-local instance : Finite Q :=
+local instance instFiniteInverseTranslate : Finite Q :=
   Finite.of_injective (fun q : Q ↦ (⟨q, q, Quiver.Path.nil⟩ : Quiver.TotalPath Q))
     (fun _ _ h ↦ congrArg Sigma.fst h)
 
@@ -55,9 +55,9 @@ local notation "eRep" => quiverRepEquivalence k Q
 local notation "F" => quiverRepFunctor k Q
 local notation "D" => ModuleCat.rightScalarDual k
 
-local instance : Module.Finite k kQ := module_finite_pathAlgebra k Q
-local instance : IsArtinianRing kQᵐᵒᵖ := IsArtinianRing.of_finite k kQᵐᵒᵖ
-local instance : IsNoetherianRing kQᵐᵒᵖ := IsNoetherianRing.of_finite k kQᵐᵒᵖ
+private local instance : Module.Finite k kQ := module_finite_pathAlgebra k Q
+private local instance : IsArtinianRing kQᵐᵒᵖ := IsArtinianRing.of_finite k kQᵐᵒᵖ
+private local instance : IsNoetherianRing kQᵐᵒᵖ := IsNoetherianRing.of_finite k kQᵐᵒᵖ
 
 private theorem arDual_finite (M : QuiverRep.{u, v, w, max u v w t} k Q)
     (hM : IsFinDim k Q M) : Module.Finite k (D ((eRep).functor.obj M)) := by
