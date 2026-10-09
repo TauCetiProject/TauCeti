@@ -245,6 +245,7 @@ theorem mvfderiv_sphereHeight_eq_zero_iff (v x : sphere (0 : E) 1) :
     simpa using h u
 
 /-- The critical points of the height function, stated with `mfderiv`, are the two poles. -/
+@[simp]
 theorem mfderiv_sphereHeight_eq_zero_iff (v x : sphere (0 : E) 1) :
     mfderiv (𝓡 n) 𝓘(ℝ) (sphereHeight v) x = 0 ↔ x = v ∨ x = -v := by
   rw [← mvfderiv_eq_zero_iff, mvfderiv_sphereHeight_eq_zero_iff]

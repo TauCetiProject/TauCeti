@@ -53,6 +53,7 @@ variable [FiniteDimensional ℝ E] {v : sphere (0 : E) 1}
   {X : (x : sphere (0 : E) 1) → TangentSpace (𝓡 n) x}
 
 /-- **Nothing flows into the north pole.** The stable set of the north pole `v` is `{v}`. -/
+@[simp]
 theorem stableSet_sphereHeight_self (hX : IsAdaptedPseudoGradient (sphereHeight v) X) :
     hX.flow.stableSet v = {v} :=
   hX.stableSet_eq_singleton_of_lt
@@ -60,6 +61,7 @@ theorem stableSet_sphereHeight_self (hX : IsAdaptedPseudoGradient (sphereHeight 
     fun _ ↦ sphereHeight_lt_self
 
 /-- **Nothing flows out of the south pole.** The unstable set of the south pole `-v` is `{-v}`. -/
+@[simp]
 theorem unstableSet_sphereHeight_neg (hX : IsAdaptedPseudoGradient (sphereHeight v) X) :
     hX.flow.unstableSet (-v) = {-v} :=
   hX.unstableSet_eq_singleton_of_lt
@@ -68,6 +70,7 @@ theorem unstableSet_sphereHeight_neg (hX : IsAdaptedPseudoGradient (sphereHeight
 
 /-- **Everything except the south pole flows out of the north pole.** The unstable set of the
 north pole `v` is the complement of the south pole `-v`. -/
+@[simp]
 theorem unstableSet_sphereHeight_self (hX : IsAdaptedPseudoGradient (sphereHeight v) X) :
     hX.flow.unstableSet v = {-v}ᶜ :=
   hX.unstableSet_eq_compl_of_critical_eq_or_eq (isMorse_sphereHeight v)
@@ -76,6 +79,7 @@ theorem unstableSet_sphereHeight_self (hX : IsAdaptedPseudoGradient (sphereHeigh
 
 /-- **Everything except the north pole flows into the south pole.** The stable set of the south
 pole `-v` is the complement of the north pole `v`. -/
+@[simp]
 theorem stableSet_sphereHeight_neg (hX : IsAdaptedPseudoGradient (sphereHeight v) X) :
     hX.flow.stableSet (-v) = {v}ᶜ :=
   hX.stableSet_eq_compl_of_critical_eq_or_eq (isMorse_sphereHeight v)
