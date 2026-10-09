@@ -72,16 +72,6 @@ theorem isRelativeEffectiveCartier_zeroSectionDivisor_pow [W.IsElliptic] (n : �
 
 variable {R' : Type u} [CommRing R'] (f : R →+* R')
 
--- The zero section of `projModel (W.map f)` is the pullback of the zero section of `projModel W`.
-private theorem isPullback_projModelZero_projModelBaseChange :
-    IsPullback (W.map f).projModelZero (Spec.map (CommRingCat.ofHom f))
-      (W.projModelBaseChange f) W.projModelZero :=
-  .of_right
-    (by simpa only [W.projModelZero_projModelOver, (W.map f).projModelZero_projModelOver]
-      using IsPullback.id_horiz (Spec.map (CommRingCat.ofHom f)))
-    (W.projModelZero_projModelBaseChange f)
-    (W.isPullback_projModelBaseChange f).flip
-
 /-- **The zero-section divisor commutes with arbitrary base change.** Under the canonical map
 `projModel (W.map f) ⟶ projModel W`, the inverse image of `[0]` is the zero-section divisor of the
 base-changed Weierstrass curve. -/
