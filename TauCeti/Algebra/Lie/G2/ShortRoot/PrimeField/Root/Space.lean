@@ -56,7 +56,7 @@ connected group scheme of type `G₂`, and no Borel subgroup or pinning is const
   criterion.
 * `TauCeti.G2ShortRoot.PrimeField.mem_adjointWeightSpace_splitMaximalTorus_iff`: the same
   criterion for the chosen split maximal torus.
-* `TauCeti.G2ShortRoot.PrimeField.adjointWeightSpace_splitMaximalTorus_weightCharacter`:
+* `adjointWeightSpace_splitMaximalTorus_weightCharacter_eq_weightTorus`:
   transport from lifted torus coordinates to the original numbered root spaces.
 * `TauCeti.G2ShortRoot.PrimeField.adjointWeightSpace_rootGeneratorWeight_eq_span`: each simple root
   space is the line spanned by its root vector.
@@ -398,7 +398,7 @@ theorem mem_adjointWeightSpace_splitMaximalTorus_iff
 
 /-- The chosen split maximal torus has the same adjoint weight spaces as the weight torus,
 with characters indexed by the lifted node type. -/
-theorem adjointWeightSpace_splitMaximalTorus_weightCharacter (μ : Fin 2 → ℤ) :
+theorem adjointWeightSpace_splitMaximalTorus_weightCharacter_eq_weightTorus (μ : Fin 2 → ℤ) :
     Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
         (SplitTorus.weightCharacter (fun j : ULift.{0} (Fin 2) => μ j.down)) =
       Derivation.adjointWeightSpace weightTorusCoordinateMap.hom

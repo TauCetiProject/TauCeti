@@ -115,7 +115,7 @@ private theorem adjointWeightSpace_simpleRootCharacter_eq_span (i : Fin 2) :
         (ofAdd_simpleRootCharacter i)
     _ = Derivation.adjointWeightSpace weightTorusCoordinateMap.hom
         (SplitTorus.weightCharacter (G2.rootGeneratorWeight valid_G2 (.inl i))) :=
-      adjointWeightSpace_splitMaximalTorus_weightCharacter _
+      adjointWeightSpace_splitMaximalTorus_weightCharacter_eq_weightTorus _
     _ = _ := adjointWeightSpace_rootGeneratorWeight_eq_span (.inl i)
 
 /-- Each numbered raising root is an intrinsic positive root for the chosen torus and positive
@@ -166,7 +166,9 @@ private theorem tangentMatrix_lower_eq_zero
   exact Bialgebra.CounitAlgebra.algEquivSelf_apply (ZMod 3)
     (GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7) (ZMod 3) (0 : ZMod 3)
 
-private theorem height_pos_of_isPositiveRoot (α : ULift.{0} (Fin 2) →₀ ℤ)
+/-- Every intrinsic positive root for the chosen torus and positive subgroup has strictly
+positive integral height under the functional `3a + 5b` in fundamental-weight coordinates. -/
+theorem height_pos_of_isPositiveRoot (α : ULift.{0} (Fin 2) →₀ ℤ)
     (hα : splitMaximalTorus.IsPositiveRoot positiveDefiningIdeal α) :
     0 < 3 * α (ULift.up 0) + 5 * α (ULift.up 1) := by
   rw [SplitMaximalTorus.isPositiveRoot_iff] at hα
