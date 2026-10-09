@@ -242,7 +242,9 @@ noncomputable def geckGeneratedCoordinateHopfAlgebraBaseChangeIso [Module.Free k
 /-- The base-change identification of the generated Geck subgroups is compatible with their
 closed immersions into `GLₙ`. -/
 @[reassoc (attr := simp)]
-theorem baseChangeMap_geckGeneratedCoordinateMap_comp_baseChangeIso_hom [Module.Free k K] :
+theorem
+  baseChangeMap_geckGeneratedCoordinateMap_comp_geckGeneratedCoordinateHopfAlgebraBaseChangeIso_hom
+    [Module.Free k K] :
     CommHopfAlgCat.baseChangeMap (K := K) (t.geckGeneratedCoordinateMap ht k) ≫
         (t.geckGeneratedCoordinateHopfAlgebraBaseChangeIso ht k K).hom =
       (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (t.geckDim ht)).hom ≫
