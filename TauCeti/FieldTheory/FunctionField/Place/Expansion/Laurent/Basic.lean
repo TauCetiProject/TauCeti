@@ -65,6 +65,13 @@ theorem laurentSeriesExpansion_apply (z : F) :
     P.laurentSeriesExpansion hP ht z =
       P.completionEquivLaurentSeries hP ht (P.completionEmbedding z) := (rfl)
 
+/-- Completion preserves the Laurent coefficients of a function. -/
+-- Not `@[simp]`: `completionLaurentCoeff_apply` already simplifies the left-hand side.
+theorem completionLaurentCoeff_completionEmbedding (n : ℤ) (z : F) :
+    P.completionLaurentCoeff hP ht n (P.completionEmbedding z) =
+      (P.laurentSeriesExpansion hP ht z).coeff n := by
+  rw [completionLaurentCoeff_apply, laurentSeriesExpansion_apply]
+
 /-- The Laurent expansion of an integral function is its power-series expansion. -/
 @[simp]
 theorem laurentSeriesExpansion_coe (x : P.integers) :
@@ -179,6 +186,12 @@ noncomputable def residue : F →ₗ[k] k :=
 /-- The residue is the coefficient of `T⁻¹` in the Laurent expansion. -/
 theorem residue_apply (z : F) :
     P.residue hP ht z = (P.laurentSeriesExpansion hP ht z).coeff (-1) := (rfl)
+
+/-- Completion preserves the residue of a function at the chosen uniformizer. -/
+-- Not `@[simp]`: `completionResidue_apply` already simplifies the left-hand side.
+theorem completionResidue_completionEmbedding (z : F) :
+    P.completionResidue hP ht (P.completionEmbedding z) = P.residue hP ht z := by
+  rw [completionResidue_apply, residue_apply, laurentSeriesExpansion_apply]
 
 /-- Functions integral at the place have residue zero. -/
 theorem residue_eq_zero_of_mem_integers {z : F} (hz : z ∈ P.integers) :
