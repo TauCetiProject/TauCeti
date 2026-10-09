@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Point
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.VariableChange
 
 /-!
 # The group law on point representatives of a projective Weierstrass curve
@@ -19,7 +21,10 @@ file states laws of that group for point representatives, where they hold up to 
 Commutativity holds over any commutative ring and for all point representatives: `add P Q` and
 `add Q P` are equivalent, because each coordinate of `addXYZ` changes sign when `P` and `Q` are
 swapped. Associativity is the one of Mathlib's group, for nonsingular point representatives over a
-field.
+field. Over a field, the group law also commutes with a change of variables `C`: the homogeneous
+coordinate map `P ↦ C.toMatrix *ᵥ P` from `C • W` to `W` carries `add P Q` to a representative of
+`add (C.toMatrix *ᵥ P) (C.toMatrix *ᵥ Q)`. This is read off the affine point groups, where the
+change of variables is the group isomorphism `WeierstrassCurve.Affine.Point.addEquivVariableChange`.
 
 ## Main results
 
@@ -29,6 +34,13 @@ field.
   representatives are equivalent.
 * `WeierstrassCurve.Projective.add_assoc_equiv`: over a field, the sums `add (add P Q) T` and
   `add P (add Q T)` of three nonsingular point representatives are equivalent.
+* `WeierstrassCurve.Projective.Point.toAffine_eq_toAffine_iff`: over a field, two nonsingular point
+  representatives have the same affine point exactly when they are equivalent.
+* `WeierstrassCurve.Projective.Point.toAffine_toMatrix_mulVec`: over a field, the affine point of
+  `C.toMatrix *ᵥ P` is the image of the affine point of `P` under the change of variables `C`.
+* `WeierstrassCurve.Projective.toMatrix_mulVec_add_equiv`: over a field, for nonsingular point
+  representatives `P` and `Q` of `C • W`, the image of `add P Q` under `C.toMatrix` is equivalent
+  to the sum `add (C.toMatrix *ᵥ P) (C.toMatrix *ᵥ Q)` on `W`.
 -/
 
 public section
@@ -90,6 +102,65 @@ theorem add_assoc_equiv (hP : W.Nonsingular P) (hQ : W.Nonsingular Q) (hT : W.No
       (add_assoc (⟨(nonsingularLift_iff P).mpr hP⟩ : W.Point) ⟨(nonsingularLift_iff Q).mpr hQ⟩
         ⟨(nonsingularLift_iff T).mpr hT⟩)
 
+/-- Over a field, two nonsingular point representatives have the same affine point exactly when
+they are equivalent. -/
+theorem Point.toAffine_eq_toAffine_iff (hP : W.Nonsingular P) (hQ : W.Nonsingular Q) :
+    Point.toAffine W P = Point.toAffine W Q ↔ P ≈ Q := by
+  classical
+  refine ⟨fun h ↦ Quotient.exact (congrArg Point.point ((Point.toAffineAddEquiv W).injective
+    (a₁ := ⟨(nonsingularLift_iff P).mpr hP⟩) (a₂ := ⟨(nonsingularLift_iff Q).mpr hQ⟩) ?_)),
+    Point.toAffine_of_equiv⟩
+  rwa [Point.toAffineAddEquiv_apply, Point.toAffineAddEquiv_apply, Point.toAffineLift_eq,
+    Point.toAffineLift_eq]
+
 end Field
+
+section VariableChange
+
+variable {F : Type*} [Field F] {W : WeierstrassCurve F} (C : VariableChange F) {P Q : Fin 3 → F}
+
+open Matrix
+
+/-- Over a field, the affine point of the image `C.toMatrix *ᵥ P` on `W` of a point representative
+`P` of `C • W` is the image of the affine point of `P` under the change of variables
+`(x, y) ↦ (u²x + r, u³y + u²sx + t)`. Both sides are `0` when `P` is singular. -/
+@[simp]
+theorem Point.toAffine_toMatrix_mulVec (P : Fin 3 → F) :
+    Point.toAffine W.toProjective (C.toMatrix *ᵥ P) =
+      Affine.Point.equivVariableChange W C (Point.toAffine (C • W).toProjective P) := by
+  have hz : (C.toMatrix *ᵥ P) 2 = P 2 := by
+    simp [VariableChange.toMatrix_def, mulVec, dotProduct, Fin.sum_univ_three]
+  by_cases hP : (C • W).toProjective.Nonsingular P
+  · by_cases hPz : P 2 = 0
+    · rw [Point.toAffine_of_Z_eq_zero hPz, Point.toAffine_of_Z_eq_zero (hz.trans hPz),
+        Affine.Point.equivVariableChange_zero]
+    · rw [Point.toAffine_of_Z_ne_zero hP hPz,
+        Point.toAffine_of_Z_ne_zero ((nonsingular_variableChange W C P).mp hP) (hz ▸ hPz),
+        Affine.Point.equivVariableChange_some, Affine.Point.some.injEq, hz]
+      constructor <;> field_simp <;>
+        simp [VariableChange.toMatrix_def, mulVec, dotProduct, Fin.sum_univ_three] <;> ring
+  · rw [Point.toAffine_of_singular hP,
+      Point.toAffine_of_singular (mt (nonsingular_variableChange W C P).mpr hP),
+      Affine.Point.equivVariableChange_zero]
+
+/-- **The group law commutes with a change of variables.** Over a field, let `P` and `Q` be
+nonsingular point representatives of `C • W`. The image under `C.toMatrix` of their sum
+`add P Q` on `C • W` is equivalent to the sum `add (C.toMatrix *ᵥ P) (C.toMatrix *ᵥ Q)` of their
+images on `W`. -/
+theorem toMatrix_mulVec_add_equiv (hP : (C • W).toProjective.Nonsingular P)
+    (hQ : (C • W).toProjective.Nonsingular Q) :
+    C.toMatrix *ᵥ (C • W).toProjective.add P Q ≈
+      W.toProjective.add (C.toMatrix *ᵥ P) (C.toMatrix *ᵥ Q) := by
+  classical
+  have hP' := (nonsingular_variableChange W C P).mp hP
+  have hQ' := (nonsingular_variableChange W C Q).mp hQ
+  -- both sides are nonsingular, so it suffices that they have the same affine point
+  rw [← Point.toAffine_eq_toAffine_iff
+    ((nonsingular_variableChange W C _).mp (nonsingular_add hP hQ)) (nonsingular_add hP' hQ'),
+    Point.toAffine_add hP' hQ', Point.toAffine_toMatrix_mulVec, Point.toAffine_toMatrix_mulVec,
+    Point.toAffine_toMatrix_mulVec, Point.toAffine_add hP hQ,
+    ← Affine.Point.coe_addEquivVariableChange, map_add]
+
+end VariableChange
 
 end WeierstrassCurve.Projective
