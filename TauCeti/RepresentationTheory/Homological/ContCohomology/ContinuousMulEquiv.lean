@@ -54,17 +54,18 @@ compatible pair `(e, 𝟙)` induces `Hⁿ(G, X) ≅ Hⁿ(H, Res_e X)`, with inve
 noncomputable def continuousCohomologyIso (e : H ≃ₜ* G) (X : TopRep R G) (n : ℕ) :
     continuousCohomology n X ≅ continuousCohomology n (TopRep.res ((e : H →ₜ* G) : H →* G) X) where
   hom := ContinuousCohomology.map (e : H →ₜ* G) (𝟙 _) n
-  inv := ContinuousCohomology.map (e.symm : G →ₜ* H) (eqToHom (TopRep.res_symm_res e.toMulEquiv X)) n
+  inv := ContinuousCohomology.map (e.symm : G →ₜ* H)
+    (eqToHom (TopRep.res_symm_res e.toMulEquiv X)) n
   hom_inv_id := by
-    rw [← ContinuousCohomology.map_comp, ← ContinuousCohomology.map_id]
-    refine TauCeti.ContinuousCohomology.map_congr
-      (ContinuousMonoidHom.ext e.apply_symm_apply) ?_ n
+    refine (ContinuousCohomology.map_comp _ _ _ _ n).symm.trans
+      ((TauCeti.ContinuousCohomology.map_congr
+        (ContinuousMonoidHom.ext e.apply_symm_apply) ?_ n).trans (ContinuousCohomology.map_id _ n))
     exact (heq_of_eq ((congrArg (· ≫ eqToHom _) ((TopRep.resFunctor _).map_id _)).trans
       (Category.id_comp _))).trans (eqToHom_heq_id_cod _ _ _)
   inv_hom_id := by
-    rw [← ContinuousCohomology.map_comp, ← ContinuousCohomology.map_id]
-    refine TauCeti.ContinuousCohomology.map_congr
-      (ContinuousMonoidHom.ext e.symm_apply_apply) ?_ n
+    refine (ContinuousCohomology.map_comp _ _ _ _ n).symm.trans
+      ((TauCeti.ContinuousCohomology.map_congr
+        (ContinuousMonoidHom.ext e.symm_apply_apply) ?_ n).trans (ContinuousCohomology.map_id _ n))
     exact (heq_of_eq ((Category.comp_id _).trans (eqToHom_map _ _))).trans
       (eqToHom_heq_id_cod _ _ _)
 
@@ -79,7 +80,8 @@ identity being transported along `TopRep.res_symm_res`. -/
 @[simp]
 theorem continuousCohomologyIso_inv (e : H ≃ₜ* G) (X : TopRep R G) (n : ℕ) :
     (e.continuousCohomologyIso X n).inv =
-      ContinuousCohomology.map (e.symm : G →ₜ* H) (eqToHom (TopRep.res_symm_res e.toMulEquiv X)) n :=
+      ContinuousCohomology.map (e.symm : G →ₜ* H)
+        (eqToHom (TopRep.res_symm_res e.toMulEquiv X)) n :=
   (rfl)
 
 /-- Restriction along an isomorphism of topological groups does not change the cardinality of
