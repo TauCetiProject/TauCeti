@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Intertwining
+public import TauCeti.LinearAlgebra.Dual.Contraction
 public import TauCeti.LinearAlgebra.LinearEquiv.Basic
 public import TauCeti.RepresentationTheory.Invariants
 
@@ -198,39 +199,25 @@ open Module (finrank)
 
 variable {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
 
-/-- The contraction `Dual V ⊗ V ≃ k`, `f ⊗ v ↦ f v`, of a line with basis `b`: the tensor product
-of the coordinate maps `f ↦ f (b 0)` and `v ↦ b.coord 0 v`. -/
-private noncomputable def lineContractEquiv (b : Module.Basis (Fin 1) k V) :
-    TensorProduct k (Module.Dual k V) V ≃ₗ[k] k :=
-  (_root_.TensorProduct.congr (b.dualBasis.equivFun.trans (LinearEquiv.funUnique (Fin 1) k k))
-    (b.equivFun.trans (LinearEquiv.funUnique (Fin 1) k k))).trans (_root_.TensorProduct.lid k k)
-
-private theorem lineContractEquiv_tmul (b : Module.Basis (Fin 1) k V) (f : Module.Dual k V)
-    (v : V) :
-    lineContractEquiv b (f ⊗ₜ v) = f v := by
-  conv_rhs => rw [← b.sum_repr v]
-  simp [lineContractEquiv, mul_comm]
-
 /-- **The dual of a line tensored with the line is trivial.** For a one-dimensional
-representation, the contraction `Dual V ⊗ V → k`, `f ⊗ v ↦ f v`
-(`Representation.dualTprodEquivTrivialOfFinrankEqOne_tmul`), is an equivalence onto the trivial
+representation, the contraction `Dual V ⊗ V ≃ k`, `f ⊗ v ↦ f v`
+(`TauCeti.contractLeftEquivOfFinrankEqOne`), is an equivalence onto the trivial
 representation. -/
 noncomputable def dualTprodEquivTrivialOfFinrankEqOne (ρ : Representation k G V)
     (h : finrank k V = 1) :
     (tprod (dual ρ) ρ).Equiv (trivial k G k) :=
-  haveI : FiniteDimensional k V := Module.finite_of_finrank_eq_succ h
-  .mk (lineContractEquiv (Module.finBasisOfFinrankEq k V h)) fun g ↦
+  .mk (TauCeti.contractLeftEquivOfFinrankEqOne h) fun g ↦
     _root_.TensorProduct.ext' fun f v ↦ by
       simp only [LinearMap.coe_comp, Function.comp_apply, tprod_apply, TensorProduct.map_tmul,
-        LinearEquiv.coe_coe, lineContractEquiv_tmul, dual_apply, Module.Dual.transpose_apply,
-        trivial_apply]
+        LinearEquiv.coe_coe, TauCeti.contractLeftEquivOfFinrankEqOne_tmul, dual_apply,
+        Module.Dual.transpose_apply, trivial_apply]
       rw [inv_self_apply]
 
 @[simp]
 theorem dualTprodEquivTrivialOfFinrankEqOne_tmul (ρ : Representation k G V)
     (h : finrank k V = 1) (f : Module.Dual k V) (v : V) :
     dualTprodEquivTrivialOfFinrankEqOne ρ h (f ⊗ₜ v) = f v :=
-  lineContractEquiv_tmul _ f v
+  TauCeti.contractLeftEquivOfFinrankEqOne_tmul h f v
 
 end Representation
 

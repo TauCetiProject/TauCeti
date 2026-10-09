@@ -80,12 +80,14 @@ theorem finrankInvariantsK0_permK0_self_mul (V : FDRep k G) :
     refine eq_top_iff.2 fun v _ g ↦ ?_
     rw [Subsingleton.elim g 1, map_one]
     rfl
-  -- Projection formula and Frobenius reciprocity reduce to invariants over the trivial subgroup.
-  rw [hperm, ← indK0_mul_resK0, one_mul, finrankInvariantsK0_indK0]
   -- Over the trivial subgroup every vector is invariant.
-  rw [resK0_fdRepK0RingEquiv_of, fdRepK0RingEquiv_of, finrankInvariantsK0_of, htop, finrank_top]
-  -- The carrier of the restricted representation is that of `V`.
-  rfl
+  have hres : finrankInvariantsK0
+      (resK0 k (⊥ : Subgroup G).subtype (fdRepK0RingEquiv k G (ExactK0.of V))) = finrank k V := by
+    rw [resK0_fdRepK0RingEquiv_of, fdRepK0RingEquiv_of, finrankInvariantsK0_of, htop, finrank_top]
+    -- The carrier of the restricted representation is that of `V`.
+    rfl
+  -- Projection formula and Frobenius reciprocity reduce to invariants over the trivial subgroup.
+  rw [hperm, ← indK0_mul_resK0, one_mul, finrankInvariantsK0_indK0, hres]
 
 /-- **The tensor-invariant dimension of `[M^∨] * (1 + [M] + c [k[G]])`** for a line `M`: it is
 `dimₖ (M^∨ ⊗ A)ᴳ + dimₖ Aᴳ + c dimₖ A`. The three terms come from `[M^∨] * 1 = [M^∨]`, from
@@ -116,9 +118,15 @@ theorem finrankTensorInvariantsK0_dual_mul_one_add_add (M A : FDRep k G) (hM : f
   have hreg : finrankTensorInvariantsK0 A
       (fdRepK0RingEquiv k G (ExactK0.of (FDRep.of (Representation.dual M.ρ))) * permK0 k G G) =
       finrank k A := by
-    -- Move the regular representation to the front and absorb it.
-    rw [finrankTensorInvariantsK0_apply, mul_comm _ (permK0 k G G), mul_assoc, ← map_mul,
-      ExactK0.of_mul_of, finrankInvariantsK0_permK0_self_mul, hdim]
+    -- Move the regular representation to the front, in front of the class of `M^∨ ⊗ A`.
+    have hnorm : fdRepK0RingEquiv k G (ExactK0.of (FDRep.of (Representation.dual M.ρ))) *
+        permK0 k G G * fdRepK0RingEquiv k G (ExactK0.of A) =
+        permK0 k G G *
+          fdRepK0RingEquiv k G (ExactK0.of (FDRep.of (Representation.dual M.ρ) ⊗ A)) := by
+      rw [← ExactK0.of_mul_of, map_mul]
+      ring
+    -- The regular representation absorbs the invariants.
+    rw [finrankTensorInvariantsK0_apply, hnorm, finrankInvariantsK0_permK0_self_mul, hdim]
   -- Expand the product in `G₀(k[G])`, then evaluate each term.
   rw [mul_add, mul_add, mul_one, mul_smul_comm, fdRepK0RingEquiv_dual_mul_self_eq_one M hM]
   simp only [map_add, map_nsmul, hdual, hone, hreg]
