@@ -87,13 +87,19 @@ theorem affineToricSchemeModObj_bot (hi : IsIntegralLattice i) :
   exact (mul_spec_asOver_spec_left (R := .of ℂ)
     (A := .of (affineCoordinateRing hi (⊥ : PointedCone ℝ V)))).symm
 
-/-- The spectrum of restriction to a face is an equivariant morphism for the internal
-dense-torus actions. The morphism is bundled by the complex-algebra spectrum functor. -/
-instance isModHom_spec_faceAffineCoordinateRingMap (hi : IsIntegralLattice i)
+/-- The canonical face morphism respects the complex-scheme structures. -/
+instance isOver_faceAffineToricSchemeMap (hi : IsIntegralLattice i)
+    {σ τ : PointedCone ℝ V} (hτσ : τ.IsFaceOf σ) :
+    (faceAffineToricSchemeMap hi hτσ).IsOver (Spec (.of ℂ)) := by
+  rw [faceAffineToricSchemeMap_def]
+  infer_instance
+
+/-- The canonical face morphism is equivariant for the internal dense-torus actions. -/
+instance isModHom_faceAffineToricSchemeMap (hi : IsIntegralLattice i)
     {σ τ : PointedCone ℝ V} (hτσ : τ.IsFaceOf σ) :
     IsModHom ((denseTorusScheme hi).asOver (Spec (.of ℂ)))
-      ((Spec.map (CommRingCat.ofHom
-        (faceAffineCoordinateRingMap hi hτσ).toRingHom)).asOver (Spec (.of ℂ))) := by
+      ((faceAffineToricSchemeMap hi hτσ).asOver (Spec (.of ℂ))) := by
+  simp only [faceAffineToricSchemeMap_def]
   let : (algSpec (.of ℂ)).LaxMonoidal :=
     (braidedAlgSpec (R := .of ℂ)).toLaxBraided.toLaxMonoidal
   let := affineCoordinateRingCoactionModObj hi τ
