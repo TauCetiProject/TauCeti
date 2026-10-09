@@ -22,8 +22,7 @@ No finiteness, field, or algebraic-group hypothesis is needed. The empty set giv
 the set of all simple reflections gives the ambient group. This file does not classify all
 subgroups containing `B` or identify these abstract subgroups with subgroup schemes.
 
-The proof uses the rank-one Bruhat multiplication law and Mathlib's subgroup-closure induction,
-following the standard BN-pair argument. The Bruhat cells and their uniqueness are those of
+The Bruhat cells and their uniqueness are those of
 `TauCeti.GroupTheory.TitsSystem.Bruhat.Basic` and `Bruhat.Uniqueness`.
 
 ## References
