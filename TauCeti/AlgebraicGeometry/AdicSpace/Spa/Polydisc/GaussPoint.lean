@@ -36,7 +36,7 @@ continuity need only a normed commutative ring with multiplicative ultrametric n
 When `K` is complete, these points are not classical: the support of `η_r` is trivial, while the
 classical point at `a` kills `T - a`. Distinct radii give distinct points by comparing
 powers of `T` with constants. The file does not treat Wedhorn's classification of all points of
-the disc, nor discs about centres other than the origin.
+the disc; the Gauss points of discs about other centres are `TauCeti.ValuationSpectrum.discPoint`.
 
 ## Main definitions
 
