@@ -82,10 +82,12 @@ theorem mvfderiv_apply_riemannianGradient :
   (inner_riemannianGradient_left _).symm
 
 /-- The gradient vanishes exactly where the differential does. -/
+@[simp]
 theorem riemannianGradient_eq_zero_iff : riemannianGradient I f x = 0 ↔ mvfderiv I f x = 0 := by
   rw [riemannianGradient, LinearIsometryEquiv.map_eq_zero_iff]
 
 /-- The gradient of `-f` is the opposite of the gradient of `f`. -/
+@[simp]
 theorem riemannianGradient_neg : riemannianGradient I (-f) x = -riemannianGradient I f x := by
   rw [riemannianGradient, riemannianGradient, mvfderiv_neg]
   exact (rieszDual (I := I) x).toLinearEquiv.map_neg _
