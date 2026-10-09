@@ -158,7 +158,7 @@ theorem convolutionLp_convolution [CompleteSpace F] (hp : p ≠ ∞) {k₁ k₂ 
 /-- On a set `s` of finite measure, the convolution integrand `(x, y) ↦ k(y) • f(x - y)` of an
 integrable kernel `k` and an `Lᵖ` function `f` is integrable: `∫_s ‖f(x - y)‖ dx` is bounded
 uniformly in `y`, by the `Lᵖ` norm of `f`. -/
-private theorem integrable_convolution_integrand_restrict [CompleteSpace F] {k : E → ℝ}
+private theorem integrable_convolution_integrand_restrict {k : E → ℝ}
     (hk : Integrable k μ) {f : E → F} (hf : MemLp f p μ) {s : Set E} (hμs : μ s < ∞) :
     Integrable (Function.uncurry fun x y ↦ k y • f (x - y)) ((μ.restrict s).prod μ) := by
   have _ : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hμs.ne
