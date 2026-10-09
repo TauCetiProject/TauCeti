@@ -56,6 +56,7 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.predAbove_succ_succAbove`: `Fin.predAbove p` inverts `p.succ.succAbove`, the
   counterpart of Mathlib's `Fin.predAbove_succAbove` for `p.castSucc.succAbove`.
 * `Fin.val_succAbove`: the value of `p.succAbove i`, read off the comparison of `i` with `p`.
+* `Fin.val_predAbove`: the value of `p.predAbove i`, read off the comparison of `i` with `p`.
 * `Fin.finRotate_succ_eq_succ_succAbove` and `Fin.finRotate_succ_succAbove_of_ne`: the cyclic
   successor of `Fin (n + 1)` against the embeddings `Fin.succ` and `i.succ.succAbove` of `Fin n`,
   as used when a new entry is inserted into a cyclic sequence.
@@ -202,6 +203,13 @@ theorem val_succAbove {n : ℕ} (p : Fin (n + 1)) (i : Fin n) :
     (p.succAbove i : ℕ) = if (i : ℕ) < p then (i : ℕ) else (i : ℕ) + 1 := by
   unfold succAbove
   split_ifs <;> simp_all [lt_def]
+
+/-- The value of `p.predAbove i`: the value of `i` up to `p`, and one less above `p`. -/
+theorem val_predAbove {n : ℕ} (p : Fin n) (i : Fin (n + 1)) :
+    (p.predAbove i : ℕ) = if (p : ℕ) < i then (i : ℕ) - 1 else (i : ℕ) := by
+  rcases lt_or_ge p.castSucc i with h | h
+  · simp [predAbove_of_castSucc_lt _ _ h, show (p : ℕ) < i from h]
+  · simp [predAbove_of_le_castSucc _ _ h, show ¬ (p : ℕ) < i by simpa [le_def] using h]
 
 /-- The cyclic successor of `i.succ` in `Fin (n + 1)` is the cyclic successor of `i` in `Fin n`,
 read through the embedding `i.succ.succAbove` that skips `i.succ`. -/
