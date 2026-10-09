@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Basic
 import TauCeti.Algebra.Category.GradedModuleCat.Abelian
 import TauCeti.Algebra.Category.GradedModuleCat.HomLaurentSupport
-import TauCeti.Algebra.Category.GradedModuleCat.IdempotentGradedDimension
+import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.GradedDimension
 import TauCeti.CategoryTheory.ObjectProperty.Retract
 import TauCeti.CategoryTheory.Preadditive.Indecomposable
 import TauCeti.CategoryTheory.Preadditive.Radical.Multiplicity
