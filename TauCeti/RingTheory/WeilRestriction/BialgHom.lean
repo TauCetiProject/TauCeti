@@ -10,6 +10,8 @@ public import Mathlib.RingTheory.FiniteStability
 public import TauCeti.RingTheory.WeilRestriction.Basic
 
 import Mathlib.RingTheory.TensorProduct.Finite
+import TauCeti.Algebra.Bialgebra.BaseChange
+import TauCeti.Algebra.TensorProduct.BaseChange
 import TauCeti.RingTheory.TensorProduct.ComponentIdeal
 
 /-!
@@ -84,32 +86,6 @@ private def comulRight (f : H' →ₐ[A] T ⊗[A] H) : H' →ₐ[A] T ⊗[A] (H 
     ((Algebra.TensorProduct.map (AlgHom.id A T) Algebra.TensorProduct.includeRight).comp f)).comp
     (comulAlgHom A H')
 
--- Moving the comultiplication of the `T`-bialgebra `T ⊗[A] H` to `T ⊗[A] (H ⊗[A] H)`.
-private lemma distribBaseChange_symm_comul (y : T ⊗[A] H) :
-    (AlgebraTensorModule.distribBaseChange A T H H).symm (comul (R := T) y) =
-      Algebra.TensorProduct.map (AlgHom.id A T) (comulAlgHom A H) y := by
-  induction y with
-  | add y z hy hz => simp [hy, hz]
-  | tmul t h =>
-    rw [TensorProduct.comul_tmul, CommSemiring.comul_apply, Algebra.TensorProduct.map_tmul,
-      AlgHom.id_apply, comulAlgHom_apply]
-    induction comul (R := A) h using TensorProduct.inductionOn with
-    | add z w hz hw => simp only [tmul_add, map_add, hz, hw]
-    | tmul a b => simp
-
--- `distribBaseChange` identifies `y ⊗ y'` with the product of `y` in the first factor of
--- `H ⊗[A] H` and `y'` in the second.
-private lemma distribBaseChange_symm_tmul (y y' : T ⊗[A] H) :
-    (AlgebraTensorModule.distribBaseChange A T H H).symm (y ⊗ₜ[T] y') =
-      Algebra.TensorProduct.map (AlgHom.id A T) Algebra.TensorProduct.includeLeft y *
-        Algebra.TensorProduct.map (AlgHom.id A T) Algebra.TensorProduct.includeRight y' := by
-  induction y using TensorProduct.inductionOn with
-  | add y z hy hz => simp only [TensorProduct.add_tmul, map_add, hy, hz, add_mul]
-  | tmul t h =>
-    induction y' using TensorProduct.inductionOn with
-    | add y z hy hz => simp only [TensorProduct.tmul_add, map_add, hy, hz, mul_add]
-    | tmul t' h' => simp
-
 -- Moving `(F ⊗ F) ∘ comul` on `1 ⊗ x` to `T ⊗[A] (H ⊗[A] H)`.
 private lemma distribBaseChange_symm_map_comul (F : T ⊗[A] H' →ₐ[T] T ⊗[A] H) (x : H') :
     (AlgebraTensorModule.distribBaseChange A T H H).symm
@@ -119,7 +95,7 @@ private lemma distribBaseChange_symm_map_comul (F : T ⊗[A] H' →ₐ[T] T ⊗[
     comulAlgHom_apply]
   induction comul (R := A) x using TensorProduct.inductionOn with
   | add z w hz hw => simp only [tmul_add, map_add, hz, hw]
-  | tmul a b => simp [distribBaseChange_symm_tmul]
+  | tmul a b => simp [TauCeti.Algebra.TensorProduct.distribBaseChange_symm_tmul]
 
 -- The condition, at the elements of `S ⊆ H'`, for `f : H' →ₐ[A] T ⊗[A] H` to extend to a
 -- `T`-bialgebra homomorphism `T ⊗[A] H' → T ⊗[A] H`: compatibility with the counits and with
@@ -150,27 +126,19 @@ private def bialgHomEquiv :
       (AlgebraTensorModule.distribBaseChange A T H H).symm.injective <| by
         simp only [AlgHom.comp_apply, AlgHom.restrictScalars_apply,
           Algebra.TensorProduct.includeRight_apply, comulAlgHom_apply]
-        rw [distribBaseChange_symm_map_comul, distribBaseChange_symm_comul, Equiv.symm_apply_apply,
-          AlgHom.liftEquiv_tmul, one_smul]
+        rw [distribBaseChange_symm_map_comul, TauCeti.Bialgebra.distribBaseChange_symm_comul,
+          Equiv.symm_apply_apply, AlgHom.liftEquiv_tmul, one_smul]
         exact ((f.2 x trivial).2).symm)
   invFun F := ⟨(AlgHom.liftEquiv A T H' (T ⊗[A] H)).symm F, fun x _ ↦ by
     refine ⟨by simp [Algebra.smul_def], ?_⟩
     have h := congr((AlgebraTensorModule.distribBaseChange A T H H).symm
       ($(BialgHom.map_comp_comulAlgHom F) (1 ⊗ₜ[A] x)))
     simp only [AlgHom.comp_apply, comulAlgHom_apply, distribBaseChange_symm_map_comul,
-      distribBaseChange_symm_comul] at h
+      TauCeti.Bialgebra.distribBaseChange_symm_comul] at h
     simpa [comulLeft] using h.symm⟩
   left_inv f := Subtype.ext ((AlgHom.liftEquiv A T H' (T ⊗[A] H)).symm_apply_apply f.1)
   right_inv F := BialgHom.coe_toAlgHom_injective
     ((AlgHom.liftEquiv A T H' (T ⊗[A] H)).apply_symm_apply F.toAlgHom)
-
--- The counit of `T ⊗[A] H` is natural in `T`.
-private lemma counitAlgHom_map {W : Type*} [CommRing W] [Algebra A W] (g : W →ₐ[A] T)
-    (y : W ⊗[A] H) : counitAlgHom T (T ⊗[A] H) (Algebra.TensorProduct.map g (AlgHom.id A H) y) =
-      g (counitAlgHom W (W ⊗[A] H) y) := by
-  induction y using TensorProduct.inductionOn with
-  | add y z hy hz => simp only [map_add, hy, hz]
-  | tmul w h => simp
 
 private lemma map_comp_comulLeft {W : Type*} [CommRing W] [Algebra A W] (g : W →ₐ[A] T)
     (f : H' →ₐ[A] W ⊗[A] H) :
@@ -254,7 +222,8 @@ private lemma homIdealOn_le_ker_iff (S : Set H') (g : WeilRestriction A H (H ⊗
     componentIdeal_le_ker_iff, SetLike.mem_coe, RingHom.mem_ker, IsBialgPointOn,
     Subtype.forall, ← forall₂_and]
   refine forall₂_congr fun x _ ↦ and_congr ?_ ?_
-  · rw [map_sub, AlgHom.commutes, sub_eq_zero, AlgHom.comp_apply, counitAlgHom_map]
+  · rw [map_sub, AlgHom.commutes, sub_eq_zero, AlgHom.comp_apply,
+      TauCeti.Bialgebra.counitAlgHom_map]
   · -- on `W ⊗[A] (H ⊗[A] H)`, base change along `g` is `g ⊗ (H ⊗[A] H)`
     have hg (y : WeilRestriction A H (H ⊗[A] H') ⊗[A] (H ⊗[A] H)) :
         g.toLinearMap.rTensor (H ⊗[A] H) y =

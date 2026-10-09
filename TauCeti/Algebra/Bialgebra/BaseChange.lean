@@ -33,6 +33,9 @@ Galois extension be recognised over an algebraic closure.
   tensors.
 * `TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv_symm_tmul`: the value of its
   inverse on pure tensors.
+* `TauCeti.Bialgebra.counitAlgHom_map`: the counit of a base change `A ⊗[k] H` is natural in `A`.
+* `TauCeti.Bialgebra.distribBaseChange_symm_comul`: distributing scalar extension over `H ⊗[k] H`
+  carries the comultiplication of `A ⊗[k] H` to the base change of the comultiplication of `H`.
 
 ## References
 
@@ -143,3 +146,30 @@ theorem baseChangeTowerBialgEquiv_symm_tmul (s : K) (h : H) :
 end Tower
 
 end TauCeti.Bialgebra.TensorProduct
+
+namespace TauCeti.Bialgebra
+
+variable {k H : Type*} [CommSemiring k] [Semiring H] [_root_.Bialgebra k H]
+
+/-- The counit of a base change `A ⊗[k] H` is natural in the commutative `k`-algebra `A`. -/
+theorem counitAlgHom_map {A B : Type*} [CommSemiring A] [Algebra k A] [CommSemiring B]
+    [Algebra k B] (g : A →ₐ[k] B) (y : A ⊗[k] H) :
+    _root_.Bialgebra.counitAlgHom B (B ⊗[k] H) (Algebra.TensorProduct.map g (AlgHom.id k H) y) =
+      g (_root_.Bialgebra.counitAlgHom A (A ⊗[k] H) y) := by
+  induction y using _root_.TensorProduct.inductionOn with
+  | add y z hy hz => simp only [map_add, hy, hz]
+  | tmul a h => simp
+
+/-- Distributing scalar extension along `A` over `H ⊗[k] H` carries the comultiplication of the
+`A`-bialgebra `A ⊗[k] H` to the base change of the comultiplication of `H`. -/
+theorem distribBaseChange_symm_comul {A : Type*} [CommSemiring A] [Algebra k A] (y : A ⊗[k] H) :
+    (_root_.TensorProduct.AlgebraTensorModule.distribBaseChange k A H H).symm
+        (Coalgebra.comul (R := A) y) =
+      Algebra.TensorProduct.map (AlgHom.id k A) (_root_.Bialgebra.comulAlgHom k H) y := by
+  induction y using _root_.TensorProduct.inductionOn with
+  | add y z hy hz => simp only [map_add, hy, hz]
+  | tmul a h =>
+    rw [TauCeti.Coalgebra.baseChange_comul_tmul, LinearEquiv.symm_apply_apply]
+    simp
+
+end TauCeti.Bialgebra
