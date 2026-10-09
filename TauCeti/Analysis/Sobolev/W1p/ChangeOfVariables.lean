@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.MeyersSerrin
 public import TauCeti.MeasureTheory.Function.Jacobian
+public import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
+public import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 
 /-!
@@ -24,7 +26,8 @@ where `DΦ(x)*` is the adjoint of the derivative. It is a bounded linear operato
 `TauCeti.W1p.compL`, of norm at most `max 1 L * c ^ (-1/p)`.
 
 The Jacobian bound makes precomposition bounded on `Lᵖ`
-(`MeasureTheory.map_restrict_le_smul_restrict_image`), and with the bound on `DΦ` the pair
+(`MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`,
+`MeasureTheory.eLpNorm_comp_le_of_map_le_smul`), and with the bound on `DΦ` the pair
 `(u ∘ Φ, DΦ* (∇u ∘ Φ))` is a bounded linear function of the value-gradient jet `(u, ∇u)`. For `u`
 smooth on `V` this pair is the classical value and gradient of `u ∘ Φ`, so it lies in
 `W^{1,p}(U)`. Since `W^{1,p}(U)` is closed in the space of jets and the smooth elements are dense
@@ -64,33 +67,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {mu : Measure E}
   {U V : Opens E} {p : ENNReal} [Fact (1 ≤ p)] {Φ : E → E} {L c : ℝ}
-
-/-! ### Transport along a map with bounded pushforward
-
-In this section and the next, `Φ` is almost everywhere measurable for `μ` on `U` and pushes `μ` on
-`U` forward to at most `C` times `μ` on `V`; `MeasureTheory.map_restrict_le_smul_restrict_image`
-supplies this for a change of variables with Jacobian bounded below. -/
-
-section Transport
-
-variable {C : ENNReal} (hm : AEMeasurable Φ (mu.restrict U))
-  (hmap : (mu.restrict U).map Φ ≤ C • mu.restrict V)
-include hm hmap
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] [Fact (1 ≤ p)] in
-/-- An almost-everywhere statement on `V` holds at `Φ x` for almost every `x ∈ U`. -/
-private theorem ae_comp {P : E → Prop} (h : ∀ᵐ y ∂mu.restrict V, P y) :
-    ∀ᵐ x ∂mu.restrict U, P (Φ x) :=
-  ae_of_ae_map hm ((Measure.absolutelyContinuous_of_le_smul hmap).ae_le h)
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] [Fact (1 ≤ p)] in
-/-- A function almost everywhere strongly measurable on `V` stays so after precomposition by `Φ`. -/
-private theorem aestronglyMeasurable_comp {F : Type*} [NormedAddCommGroup F] {g : E → F}
-    (hg : AEStronglyMeasurable g (mu.restrict V)) :
-    AEStronglyMeasurable (fun x => g (Φ x)) (mu.restrict U) :=
-  (hg.mono_ac (Measure.absolutelyContinuous_of_le_smul hmap)).comp_aemeasurable hm
-
-end Transport
 
 /-! ### The pullback of value-gradient jets -/
 
@@ -159,7 +135,8 @@ include hm hmap hL in
 private theorem eLpNorm_adjointJet_comp_le (J : Sobolev1JetLp mu V p) :
     eLpNorm (fun x => adjointJet (fderiv ℝ Φ x) (J (Φ x))) p (mu.restrict U) ≤
       ENNReal.ofReal (max 1 L) * (C ^ (1 / p).toReal * eLpNorm J p (mu.restrict V)) := by
-  have hJ := aestronglyMeasurable_comp hm hmap (Lp.aestronglyMeasurable J)
+  have hJ := (Lp.aestronglyMeasurable J).comp_aemeasurable_of_map_absolutelyContinuous hm
+    (Measure.absolutelyContinuous_of_le_smul hmap)
   have hmeas : AEStronglyMeasurable (fun x => adjointJet (fderiv ℝ Φ x) (J (Φ x)))
       (mu.restrict U) := continuous_adjointJet.comp_aestronglyMeasurable
     ((measurable_fderiv ℝ Φ).aestronglyMeasurable.prodMk hJ)
@@ -187,12 +164,14 @@ private def pullbackJetL : Sobolev1JetLp mu V p →L[ℝ] Sobolev1JetLp mu U p :
       map_add' := fun J K => by
         rw [← MemLp.toLp_add]
         refine MemLp.toLp_congr _ _ ?_
-        filter_upwards [ae_comp hm hmap (Lp.coeFn_add J K)] with x hx
+        filter_upwards [ae_comp_of_map_absolutelyContinuous hm
+          (Measure.absolutelyContinuous_of_le_smul hmap) (Lp.coeFn_add J K)] with x hx
         rw [hx, Pi.add_apply, adjointJet_add, Pi.add_apply]
       map_smul' := fun a J => by
         rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
         refine MemLp.toLp_congr _ _ ?_
-        filter_upwards [ae_comp hm hmap (Lp.coeFn_smul a J)] with x hx
+        filter_upwards [ae_comp_of_map_absolutelyContinuous hm
+          (Measure.absolutelyContinuous_of_le_smul hmap) (Lp.coeFn_smul a J)] with x hx
         rw [hx, Pi.smul_apply, adjointJet_smul, Pi.smul_apply] }
     (max 1 L * (C ^ (1 / p).toReal).toReal) fun J => by
       rw [LinearMap.coe_mk, AddHom.coe_mk, Lp.norm_toLp, mul_assoc, Lp.norm_def,
@@ -222,6 +201,7 @@ private theorem pullbackJetL_mem_of_contDiffOn (hΦ : DifferentiableOn ℝ Φ U)
     (hu : (W1p.value u : E → ℝ) =ᵐ[mu.restrict V] f) :
     pullbackJetL hm hmap hC hL (u : Sobolev1JetLp mu V p) ∈ w1pSubmodule mu U p := by
   set T := pullbackJetL hm hmap hC hL (u : Sobolev1JetLp mu V p)
+  have hac := Measure.absolutelyContinuous_of_le_smul hmap
   have hΦx : ∀ x ∈ (U : Set E), DifferentiableAt ℝ Φ x := fun x hx =>
     (hΦ x hx).differentiableAt (U.isOpen.mem_nhds hx)
   have hfy : ∀ y ∈ (V : Set E), DifferentiableAt ℝ f y := fun y hy =>
@@ -234,12 +214,14 @@ private theorem pullbackJetL_mem_of_contDiffOn (hΦ : DifferentiableOn ℝ Φ U)
   have hval : Sobolev1JetLp.value T =ᵐ[mu.restrict U] f ∘ Φ := by
     filter_upwards [Sobolev1JetLp.value_apply_ae T,
       pullbackJetL_ae hm hmap hC hL (u : Sobolev1JetLp mu V p),
-      ae_comp hm hmap (W1p.value_apply_ae u), ae_comp hm hmap hu] with x h1 h2 h3 h4
+      ae_comp_of_map_absolutelyContinuous hm hac (W1p.value_apply_ae u),
+      ae_comp_of_map_absolutelyContinuous hm hac hu] with x h1 h2 h3 h4
     rw [h1, h2, adjointJet_fst, ← h3, Function.comp_apply, h4]
   have hder : Sobolev1JetLp.candidateWeakFDeriv T =ᵐ[mu.restrict U] fderiv ℝ (f ∘ Φ) := by
     filter_upwards [Sobolev1JetLp.gradient_apply_ae T,
       pullbackJetL_ae hm hmap hC hL (u : Sobolev1JetLp mu V p),
-      ae_comp hm hmap (W1p.gradient_apply_ae u), ae_comp hm hmap hgrad,
+      ae_comp_of_map_absolutelyContinuous hm hac (W1p.gradient_apply_ae u),
+      ae_comp_of_map_absolutelyContinuous hm hac hgrad,
       ae_restrict_mem U.isOpen.measurableSet] with x h1 h2 h3 h4 hx
     ext v
     rw [Sobolev1JetLp.candidateWeakFDeriv_apply, h1, h2, adjointJet_snd, ← h3,
@@ -279,24 +261,7 @@ end Operator
 
 section ChangeOfVariables
 
-omit [FiniteDimensional ℝ E] [Fact (1 ≤ p)] in
-private theorem aemeasurable_restrict_of_differentiableOn (hΦ : DifferentiableOn ℝ Φ U) :
-    AEMeasurable Φ (mu.restrict U) :=
-  hΦ.continuousOn.aemeasurable U.isOpen.measurableSet
-
 variable [mu.IsAddHaarMeasure]
-
-omit [Fact (1 ≤ p)] in
-private theorem map_restrict_le_of_differentiableOn (hΦ : DifferentiableOn ℝ Φ U)
-    (hinj : InjOn Φ U) (hmaps : MapsTo Φ U V) (hc : 0 < c)
-    (hdet : ∀ x ∈ (U : Set E), c ≤ |(fderiv ℝ Φ x).det|) :
-    (mu.restrict U).map Φ ≤ (ENNReal.ofReal c)⁻¹ • mu.restrict V :=
-  (map_restrict_le_smul_restrict_image mu U.isOpen.measurableSet (fun x hx =>
-    ((hΦ x hx).differentiableAt (U.isOpen.mem_nhds hx)).hasFDerivAt.hasFDerivWithinAt) hinj hc
-      hdet).trans (by gcongr; exact hmaps.image_subset)
-
-private theorem inv_ofReal_ne_top (hc : 0 < c) : (ENNReal.ofReal c)⁻¹ ≠ ⊤ :=
-  ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 hc).ne'
 
 variable (Φ) (hp : p ≠ ⊤) (hΦ : DifferentiableOn ℝ Φ U) (hinj : InjOn Φ U) (hmaps : MapsTo Φ U V)
   (hL : ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ L) (hc : 0 < c)
@@ -309,28 +274,30 @@ precomposition with `Φ` is a bounded linear operator `W^{1,p}(V) →L[ℝ] W^{1
 (`TauCeti.W1p.gradient_compL_ae`). -/
 def W1p.compL : W1p mu V p →L[ℝ] W1p mu U p :=
   ContinuousLinearMap.codRestrict
-    ((pullbackJetL (aemeasurable_restrict_of_differentiableOn hΦ)
-      (map_restrict_le_of_differentiableOn hΦ hinj hmaps hc hdet) (inv_ofReal_ne_top hc) hL).comp
+    ((pullbackJetL (hΦ.continuousOn.aemeasurable U.isOpen.measurableSet)
+      (map_restrict_le_smul_restrict_of_differentiableOn mu U.isOpen hΦ hinj hmaps hc hdet)
+      (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 hc).ne') hL).comp
         (w1pSubmodule mu V p).toSubmodule.subtypeL)
     (w1pSubmodule mu U p).toSubmodule
-    (fun u => pullbackJetL_mem (aemeasurable_restrict_of_differentiableOn hΦ)
-      (map_restrict_le_of_differentiableOn hΦ hinj hmaps hc hdet) (inv_ofReal_ne_top hc) hL hp hΦ
-        hmaps u)
+    (fun u => pullbackJetL_mem (hΦ.continuousOn.aemeasurable U.isOpen.measurableSet)
+      (map_restrict_le_smul_restrict_of_differentiableOn mu U.isOpen hΦ hinj hmaps hc hdet)
+      (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 hc).ne') hL hp hΦ hmaps u)
 
 /-- The ambient jet of `W1p.compL Φ … u` is the pulled-back jet of `u`. -/
 private theorem coe_compL (u : W1p mu V p) :
     ((W1p.compL Φ hp hΦ hinj hmaps hL hc hdet u : W1p mu U p) : Sobolev1JetLp mu U p) =
-      pullbackJetL (aemeasurable_restrict_of_differentiableOn hΦ)
-        (map_restrict_le_of_differentiableOn hΦ hinj hmaps hc hdet) (inv_ofReal_ne_top hc) hL
-        (u : Sobolev1JetLp mu V p) :=
+      pullbackJetL (hΦ.continuousOn.aemeasurable U.isOpen.measurableSet)
+        (map_restrict_le_smul_restrict_of_differentiableOn mu U.isOpen hΦ hinj hmaps hc hdet)
+        (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 hc).ne') hL (u : Sobolev1JetLp mu V p) :=
   rfl
 
 private theorem coe_compL_ae (u : W1p mu V p) :
     ((W1p.compL Φ hp hΦ hinj hmaps hL hc hdet u : W1p mu U p) : Sobolev1JetLp mu U p)
       =ᵐ[mu.restrict U] fun x =>
         adjointJet (fderiv ℝ Φ x) ((u : Sobolev1JetLp mu V p) (Φ x)) :=
-  pullbackJetL_ae (aemeasurable_restrict_of_differentiableOn hΦ)
-    (map_restrict_le_of_differentiableOn hΦ hinj hmaps hc hdet) (inv_ofReal_ne_top hc) hL _
+  pullbackJetL_ae (hΦ.continuousOn.aemeasurable U.isOpen.measurableSet)
+    (map_restrict_le_smul_restrict_of_differentiableOn mu U.isOpen hΦ hinj hmaps hc hdet)
+    (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 hc).ne') hL _
 
 /-- The value of `W1p.compL Φ … u` is `u ∘ Φ`, almost everywhere on `U`. -/
 theorem W1p.value_compL_ae (u : W1p mu V p) :
@@ -338,8 +305,10 @@ theorem W1p.value_compL_ae (u : W1p mu V p) :
       fun x => W1p.value u (Φ x) := by
   filter_upwards [W1p.value_apply_ae (W1p.compL Φ hp hΦ hinj hmaps hL hc hdet u),
     coe_compL_ae Φ hp hΦ hinj hmaps hL hc hdet u,
-    ae_comp (aemeasurable_restrict_of_differentiableOn hΦ)
-      (map_restrict_le_of_differentiableOn hΦ hinj hmaps hc hdet) (W1p.value_apply_ae u)]
+    ae_comp_of_map_absolutelyContinuous (hΦ.continuousOn.aemeasurable U.isOpen.measurableSet)
+      (Measure.absolutelyContinuous_of_le_smul
+        (map_restrict_le_smul_restrict_of_differentiableOn mu U.isOpen hΦ hinj hmaps hc hdet))
+      (W1p.value_apply_ae u)]
     with x h1 h2 h3
   rw [h1, h2, adjointJet_fst, h3]
 
@@ -350,17 +319,19 @@ theorem W1p.gradient_compL_ae (u : W1p mu V p) :
       fun x => (fderiv ℝ Φ x).adjoint (W1p.gradient u (Φ x)) := by
   filter_upwards [W1p.gradient_apply_ae (W1p.compL Φ hp hΦ hinj hmaps hL hc hdet u),
     coe_compL_ae Φ hp hΦ hinj hmaps hL hc hdet u,
-    ae_comp (aemeasurable_restrict_of_differentiableOn hΦ)
-      (map_restrict_le_of_differentiableOn hΦ hinj hmaps hc hdet) (W1p.gradient_apply_ae u)]
+    ae_comp_of_map_absolutelyContinuous (hΦ.continuousOn.aemeasurable U.isOpen.measurableSet)
+      (Measure.absolutelyContinuous_of_le_smul
+        (map_restrict_le_smul_restrict_of_differentiableOn mu U.isOpen hΦ hinj hmaps hc hdet))
+      (W1p.gradient_apply_ae u)]
     with x h1 h2 h3
   rw [h1, h2, adjointJet_snd, h3]
 
 /-- `W1p.compL Φ …` has operator norm at most `max 1 L * c ^ (-1/p)`. -/
 theorem W1p.norm_compL_le (u : W1p mu V p) :
     ‖W1p.compL Φ hp hΦ hinj hmaps hL hc hdet u‖ ≤ max 1 L * c⁻¹ ^ (1 / p).toReal * ‖u‖ := by
-  have h := norm_pullbackJetL_le (aemeasurable_restrict_of_differentiableOn hΦ)
-    (map_restrict_le_of_differentiableOn hΦ hinj hmaps hc hdet) (inv_ofReal_ne_top hc) hL
-    (u : Sobolev1JetLp mu V p)
+  have h := norm_pullbackJetL_le (hΦ.continuousOn.aemeasurable U.isOpen.measurableSet)
+    (map_restrict_le_smul_restrict_of_differentiableOn mu U.isOpen hΦ hinj hmaps hc hdet)
+    (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 hc).ne') hL (u : Sobolev1JetLp mu V p)
   rw [← ENNReal.toReal_rpow, ENNReal.toReal_inv, ENNReal.toReal_ofReal hc.le] at h
   rwa [← Submodule.norm_coe, coe_compL, ← Submodule.norm_coe u]
 

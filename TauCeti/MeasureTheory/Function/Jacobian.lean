@@ -17,17 +17,20 @@ normed space with an additive Haar measure `μ`. Mathlib's change of variables f
 on `s` with `c > 0`, then `f` pushes `μ` on `s` forward to at most `c⁻¹ μ` on `f '' s`
 (`MeasureTheory.map_restrict_le_smul_restrict_image`).
 
-A pushforward bound `μ.map f ≤ C • ν` is what makes precomposition with `f` bounded from `Lᵖ(ν)` to
-`Lᵖ(μ)`, with norm at most `C ^ (1/p)` (`MeasureTheory.eLpNorm_comp_le_of_map_le_smul`). For a
-change of variables no upper bound on the Jacobian is needed, but a Jacobian that may vanish gives
-no such bound.
+For `f` differentiable on an open set `s` and mapping it into `t`, the same bound holds with the
+Fréchet derivative `fderiv ℝ f` as Jacobian and `μ` on `t` in place of `μ` on `f '' s`
+(`MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`).
+
+Such a pushforward bound `μ.map f ≤ C • ν` gives the `eLpNorm` estimate for precomposition with
+`f` (`MeasureTheory.eLpNorm_comp_le_of_map_le_smul`). For a change of variables no upper bound on
+the Jacobian is needed, but a Jacobian that may vanish gives no such bound.
 
 ## Main declarations
 
 * `MeasureTheory.map_restrict_le_smul_restrict_image`: the pushforward of `μ` on `s` is at most
   `c⁻¹ μ` on `f '' s`.
-* `MeasureTheory.eLpNorm_comp_le_of_map_le_smul`: the `Lᵖ` bound for precomposition by a map with
-  bounded pushforward.
+* `MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`: the same for `f`
+  differentiable on an open set `s` and mapping it into `t`, with `μ` on `t` as the target.
 -/
 
 public section
@@ -37,19 +40,9 @@ open scoped ENNReal
 
 namespace MeasureTheory
 
-/-- **`Lᵖ` bound for precomposition.** If `f` pushes `μ` forward to at most `C • ν`, then
-precomposition with `f` maps `Lᵖ(ν)` to `Lᵖ(μ)` with norm at most `C ^ (1/p)`. -/
-theorem eLpNorm_comp_le_of_map_le_smul {α β F : Type*} [MeasurableSpace α] [MeasurableSpace β]
-    [NormedAddCommGroup F] {μ : Measure α} {ν : Measure β} {f : α → β} {C : ℝ≥0∞}
-    (hf : AEMeasurable f μ) (hmap : μ.map f ≤ C • ν) {g : β → F}
-    (hg : AEStronglyMeasurable g ν) (p : ℝ≥0∞) :
-    eLpNorm (g ∘ f) p μ ≤ C ^ (1 / p).toReal * eLpNorm g p ν := by
-  rw [← eLpNorm_map_measure (hg.mono_ac (Measure.absolutelyContinuous_of_le_smul hmap)) hf]
-  exact eLpNorm_le_of_measure_le_smul hmap
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
-  {s : Set E} {f : E → E} {f' : E → E →L[ℝ] E} {c : ℝ}
+  {s t : Set E} {f : E → E} {f' : E → E →L[ℝ] E} {c : ℝ}
 
 /-- **Pushforward bound from a Jacobian lower bound.** If `f` is injective and differentiable on
 a measurable set `s`, and `c ≤ |det f'|` on `s` with `c > 0`, then `f` pushes `μ` restricted to
@@ -80,5 +73,17 @@ theorem map_restrict_le_smul_restrict_image (hs : MeasurableSet s)
     ENNReal.ofReal_ne_top, ← setLIntegral_const]
   exact lintegral_mono_ae ((ae_restrict_of_ae (ae_restrict_mem hs)).mono fun x hx =>
     ENNReal.ofReal_le_ofReal (hdet x hx))
+
+/-- **Pushforward bound for a map differentiable on an open set.** If `f` is injective and
+differentiable on an open set `s`, maps `s` into `t`, and `c ≤ |det (fderiv ℝ f x)|` on `s` with
+`c > 0`, then `f` pushes `μ` restricted to `s` forward to at most `c⁻¹` times `μ` restricted to
+`t`. -/
+theorem map_restrict_le_smul_restrict_of_differentiableOn (hs : IsOpen s)
+    (hf : DifferentiableOn ℝ f s) (hinj : InjOn f s) (hmaps : MapsTo f s t) (hc : 0 < c)
+    (hdet : ∀ x ∈ s, c ≤ |(fderiv ℝ f x).det|) :
+    (μ.restrict s).map f ≤ (ENNReal.ofReal c)⁻¹ • μ.restrict t :=
+  (map_restrict_le_smul_restrict_image μ hs.measurableSet (fun x hx =>
+    ((hf x hx).differentiableAt (hs.mem_nhds hx)).hasFDerivAt.hasFDerivWithinAt) hinj hc
+      hdet).trans (by gcongr; exact hmaps.image_subset)
 
 end MeasureTheory
