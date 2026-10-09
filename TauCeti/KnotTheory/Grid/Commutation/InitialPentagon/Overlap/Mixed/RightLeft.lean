@@ -165,6 +165,21 @@ noncomputable def recutRightEqLeft
     D.second_left_eq
   first_turn_mem := D.rightLeftRecut_first_turn_mem hcommon hother hfirst hsecond hturn
 
+/-- Forgetting the turn row of the promoted decomposition recovers the generic recut. -/
+@[simp]
+theorem recutRightEqLeft_toGridRectangleDecomposition
+    (D : GridRectangleInitialPentagonDecomposition a s x z)
+    (hcommon : D.first.right = D.second.left)
+    (hother : D.first.left ≠ D.second.right)
+    (hfirst : D.first.IsEmpty) (hsecond : D.pentagon.IsEmpty)
+    (hturn : s ∉ Grid.cIco D.first.bottom D.first.top) :
+    (D.recutRightEqLeft hcommon hother hfirst hsecond hturn).toGridRectangleDecomposition =
+      D.recut (D.hasOneCommonSide_of_right_eq_left hcommon hother)
+        hfirst (by
+          rw [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] at hsecond ⊢
+          simpa only [D.pentagon_toGridRectangleBetween] using hsecond) :=
+  (rfl)
+
 /-- The promoted decomposition is an empty-rectangle recut of the original composite domain. -/
 theorem isRecut_recutRightEqLeft
     (D : GridRectangleInitialPentagonDecomposition a s x z)
