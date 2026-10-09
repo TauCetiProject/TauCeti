@@ -9,10 +9,11 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 public import TauCeti.Geometry.Polygon.Simple
 import Mathlib.Topology.Algebra.Module.Equiv.Pi
+import Mathlib.Topology.Algebra.Module.Equiv.Prod
 import TauCeti.Analysis.Convex.Between
 import TauCeti.Analysis.LocallyConvex.Separation
-import TauCeti.Analysis.Normed.Affine.Coordinate
 import TauCeti.Analysis.Normed.Affine.Ray
+import TauCeti.Topology.Algebra.Affine.Coordinate
 
 /-!
 # Polygonal knots are locally flat
@@ -84,7 +85,7 @@ theorem IsSimple.exists_isSliceChart {n : ℕ} [NeZero n] {poly : Polygon P n}
     (zero_notMem_segment_of_affineSegment_inter_eq ha hb hab)
     ((ContinuousLinearMap.fst ℝ ℝ F').comp e.toContinuousLinearMap) (u := e.symm (1, 0))
     (by simp)
-  obtain ⟨Φ, hΦ⟩ := exists_homeomorph_fst_eq e ℓ hℓ z
+  obtain ⟨Φ, hΦ⟩ := e.exists_homeomorph_fst_eq ℓ hℓ z
   -- Near `z` the polygon is the union of the rays along `d₁` and `d₂`, a graph over `ℓ`.
   obtain ⟨g, hg, hℓg, hrange⟩ := exists_continuous_range_eq_rays ℓ h₁ h₂ z
   obtain ⟨r, hr, hrU⟩ := Metric.mem_nhds_iff.1 hU

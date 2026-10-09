@@ -223,30 +223,10 @@ namespace TauCeti
 
 variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
 
-/-- An algebra equivalence carries the center onto the center. -/
-theorem map_center_eq_center (e : A ≃ₐ[R] B) :
-    (Subalgebra.center R A).map (e : A →ₐ[R] B) = Subalgebra.center R B := by
-  refine le_antisymm ?_ ?_
-  · rintro _ hx
-    obtain ⟨a, ha, rfl⟩ := Subalgebra.mem_map.mp hx
-    rw [Subalgebra.mem_center_iff] at ha ⊢
-    intro b'
-    obtain ⟨a', rfl⟩ := e.surjective b'
-    simp only [AlgEquiv.coe_toAlgHom]
-    rw [← map_mul, ← map_mul, ha a']
-  · intro b hb
-    rw [Subalgebra.mem_center_iff] at hb
-    refine Subalgebra.mem_map.mpr ⟨e.symm b, ?_, e.apply_symm_apply b⟩
-    rw [Subalgebra.mem_center_iff]
-    intro a
-    apply e.injective
-    rw [map_mul, map_mul, e.apply_symm_apply]
-    exact hb (e a)
-
 /-- The center of an algebra, transported along an algebra equivalence. -/
 def centerCongr (e : A ≃ₐ[R] B) :
     Subalgebra.center R A ≃ₐ[R] Subalgebra.center R B :=
-  (e.subalgebraMap _).trans (Subalgebra.equivOfEq _ _ (map_center_eq_center e))
+  (e.subalgebraMap _).trans (Subalgebra.equivOfEq _ _ (Subalgebra.map_center_eq e))
 
 @[simp]
 theorem centerCongr_apply_coe (e : A ≃ₐ[R] B) (x : Subalgebra.center R A) :

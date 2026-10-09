@@ -13,7 +13,7 @@ import TauCeti.Algebra.Polynomial.Thom
 import TauCeti.FieldTheory.IsRealClosed.Real
 import TauCeti.FieldTheory.RealClosure.AbstractRolle
 import TauCeti.RingTheory.Polynomial.Roots
-import TauCeti.Topology.Algebra.Polynomial
+import TauCeti.Topology.Algebra.Polynomial.Basic
 
 /-!
 # Delineations of families of real polynomials
