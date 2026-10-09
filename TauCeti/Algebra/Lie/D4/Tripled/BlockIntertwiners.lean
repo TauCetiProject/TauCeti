@@ -75,19 +75,16 @@ abbrev blockModuleEquiv (R : Type u) [Semiring R] (j : Fin 3) :
 /-! ## Restricted Chevalley generators -/
 
 /-- The positive Chevalley-generator matrix restricted to one block and extended to `R`. -/
-@[expose]
 def blockRaisingMatrix (R : Type u) [Ring R] (j : Fin 3) (i : Fin 4) :
     Matrix (Block j) (Block j) R :=
   ((raisingMatrix i).map (Int.castRingHom R)).submatrix Subtype.val Subtype.val
 
 /-- The negative Chevalley-generator matrix restricted to one block and extended to `R`. -/
-@[expose]
 def blockLoweringMatrix (R : Type u) [Ring R] (j : Fin 3) (i : Fin 4) :
     Matrix (Block j) (Block j) R :=
   ((loweringMatrix i).map (Int.castRingHom R)).submatrix Subtype.val Subtype.val
 
 /-- The Cartan-generator matrix restricted to one block and extended to `R`. -/
-@[expose]
 def blockCartanGeneratorMatrix (R : Type u) [Ring R] (j : Fin 3) (i : Fin 4) :
     Matrix (Block j) (Block j) R :=
   ((cartanGeneratorMatrix i).map (Int.castRingHom R)).submatrix Subtype.val Subtype.val
@@ -97,23 +94,20 @@ entry. -/
 @[simp]
 theorem blockRaisingMatrix_apply (R : Type u) [Ring R]
     (j : Fin 3) (i : Fin 4) (a b : Block j) :
-    blockRaisingMatrix R j i a b = (raisingMatrix i a.1 b.1 : R) :=
-  rfl
+    blockRaisingMatrix R j i a b = (raisingMatrix i a.1 b.1 : R) := (rfl)
 
 /-- An entry of a restricted negative generator is the cast of the corresponding full-table
 entry. -/
 @[simp]
 theorem blockLoweringMatrix_apply (R : Type u) [Ring R]
     (j : Fin 3) (i : Fin 4) (a b : Block j) :
-    blockLoweringMatrix R j i a b = (loweringMatrix i a.1 b.1 : R) :=
-  rfl
+    blockLoweringMatrix R j i a b = (loweringMatrix i a.1 b.1 : R) := (rfl)
 
 /-- An entry of a restricted Cartan generator is the cast of the corresponding full-table entry. -/
 @[simp]
 theorem blockCartanGeneratorMatrix_apply (R : Type u) [Ring R]
     (j : Fin 3) (i : Fin 4) (a b : Block j) :
-    blockCartanGeneratorMatrix R j i a b = (cartanGeneratorMatrix i a.1 b.1 : R) :=
-  rfl
+    blockCartanGeneratorMatrix R j i a b = (cartanGeneratorMatrix i a.1 b.1 : R) := (rfl)
 
 /-- Triality intertwines the positive generator matrices on consecutive blocks, entrywise. -/
 theorem blockRaisingMatrix_triality (R : Type u) [Ring R]
