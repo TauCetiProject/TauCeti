@@ -108,60 +108,6 @@ private theorem matrixBilinearForm_ite_smul_le {A : Matrix ι ι ℝ}
     rw [ite_eq_right hz, ite_eq_right hT]
     simp
 
-omit [DecidableEq ι] in
-/-- For `φ ∈ C_c^∞(Ω)` and `F` with bounded second derivative, the product `-φ F'(u)` lies in
-`H¹(Ω)`, with weak gradient `-φ F''(u) ∇u - F'(u) ∇φ`. It is formed as
-`φ (F'(0) - F'(u)) - F'(0) φ`, since `TauCeti.W1p.contDiffComp` composes only with functions
-vanishing at `0`. -/
-private theorem exists_value_eq_neg_mul_deriv {u : W1p mu Omega 2} {F : ℝ → ℝ}
-    (hF : ContDiff ℝ 2 F) {M' : ℝ≥0} (hM' : ∀ t, ‖deriv (deriv F) t‖₊ ≤ M')
-    (φ : 𝓓(Omega, ℝ)) :
-    ∃ T₀ : W1p mu Omega 2,
-      (∀ᵐ x ∂mu.restrict Omega, W1p.value T₀ x = -(φ x * deriv F (W1p.value u x))) ∧
-      ∀ᵐ x ∂mu.restrict Omega, W1p.gradient T₀ x =
-        -(φ x * deriv (deriv F) (W1p.value u x)) • W1p.gradient u x -
-          deriv F (W1p.value u x) • ∇ (φ : EuclideanSpace ℝ ι → ℝ) x := by
-  have hp : (2 : ℝ≥0∞) ≠ (∞ : ℝ≥0∞) := ENNReal.ofNat_ne_top
-  -- `G = F'(0) - F'` is `C¹`, vanishes at `0` and has derivative `-F''`.
-  set G : ℝ → ℝ := fun t => deriv F 0 - deriv F t with hGdef
-  have hdF : ContDiff ℝ 1 (deriv F) := (contDiff_succ_iff_deriv.1 hF).2.2
-  have hGC : ContDiff ℝ 1 G := contDiff_const.sub hdF
-  have hdG : ∀ t, deriv G t = -deriv (deriv F) t := fun t =>
-    deriv_const_sub (deriv F 0)
-  have hMG : ∀ t, ‖deriv G t‖₊ ≤ M' := fun t => by rw [hdG, nnnorm_neg]; exact hM' t
-  have hG0 : G 0 = 0 := sub_self _
-  set g := W1p.contDiffComp hp hGC hMG hG0 u
-  obtain ⟨Mφ, hMφ, hφM, hgradφM⟩ :=
-    (φ.contDiff.of_le (by simp)).exists_abs_le_and_norm_gradient_le φ.hasCompactSupport
-  have hφM' : ∀ x ∈ Omega, |φ x| ≤ Mφ := fun x _ => hφM x
-  have hgradφM' : ∀ x ∈ Omega, ‖∇ (φ : EuclideanSpace ℝ ι → ℝ) x‖ ≤ Mφ :=
-    fun x _ => hgradφM x
-  set Φ := W1p.ofTestFunctionₗ mu Omega 2 φ
-  set Ψ := W1p.contDiffSMul φ φ.contDiff hMφ hφM' hgradφM' g
-  have hvalg := W1p.value_contDiffComp_ae hp hGC hMG hG0 u
-  refine ⟨Ψ - deriv F 0 • Φ, ?_, ?_⟩
-  · have hlin : W1p.value (Ψ - deriv F 0 • Φ) = W1p.value Ψ - deriv F 0 • W1p.value Φ := by
-      simp only [← W1p.valueL_apply, map_sub, map_smul]
-    filter_upwards [Lp.coeFn_sub (W1p.value Ψ) (deriv F 0 • W1p.value Φ),
-      Lp.coeFn_smul (deriv F 0) (W1p.value Φ),
-      W1p.value_contDiffSMul_ae φ.contDiff hMφ hφM' hgradφM' g, hvalg,
-      testFunctionLp_apply_ae (mu := mu) 2 φ] with x h₁ h₂ h₃ h₄ h₅
-    rw [hlin, h₁, Pi.sub_apply, h₂, Pi.smul_apply, h₃, h₄, W1p.value_ofTestFunctionₗ, h₅,
-      smul_eq_mul, smul_eq_mul, hGdef]
-    ring
-  · have hlin : W1p.gradient (Ψ - deriv F 0 • Φ) =
-        W1p.gradient Ψ - deriv F 0 • W1p.gradient Φ := by
-      simp only [← W1p.gradientL_apply, map_sub, map_smul]
-    filter_upwards [Lp.coeFn_sub (W1p.gradient Ψ) (deriv F 0 • W1p.gradient Φ),
-      Lp.coeFn_smul (deriv F 0) (W1p.gradient Φ),
-      W1p.gradient_contDiffSMul_ae φ.contDiff hMφ hφM' hgradφM' g, hvalg,
-      W1p.gradient_contDiffComp_ae hp hGC hMG hG0 u,
-      gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x h₁ h₂ h₃ h₄ h₅ h₆
-    rw [hlin, h₁, Pi.sub_apply, h₂, Pi.smul_apply, h₃, h₄, h₅, W1p.gradient_ofTestFunctionₗ, h₆,
-      hdG, hGdef]
-    simp only [sub_smul, neg_smul]
-    module
-
 /-- The test-function case of `TauCeti.PDE.UniformlyEllipticOn.energyFormH1_contDiffComp_nonpos`:
 `a(F(u), φ⁺) ≤ 0` for every `φ ∈ C_c^∞(Ω)`. The supersolution inequality is tested against
 `T = (-φ F'(u))⁺`, and the energy densities of `a(F(u), φ⁺)` and `-a(u, T)` are compared
@@ -182,7 +128,21 @@ private theorem energyFormH1_contDiffComp_posPart_ofTestFunction_nonpos
   have hp : (2 : ℝ≥0∞) ≠ (∞ : ℝ≥0∞) := ENNReal.ofNat_ne_top
   set w := W1p.contDiffComp hp (hF.of_le one_le_two) hM hF0 u
   set P := W1p.posPart hp (W1p.ofTestFunctionₗ mu Omega 2 φ)
-  obtain ⟨T₀, hvalT₀, hgradT₀⟩ := exists_value_eq_neg_mul_deriv (u := u) hF hM' φ
+  -- `T₀ = -φ F'(u)`, with weak gradient `-φ F''(u) ∇u - F'(u) ∇φ`.
+  have hdF : ContDiff ℝ 1 (deriv F) := (contDiff_succ_iff_deriv.1 hF).2.2
+  set T₀ := -W1p.testFunctionSMulComp hp φ hdF hM' u
+  have hvalT₀ : ∀ᵐ x ∂mu.restrict Omega, W1p.value T₀ x = -(φ x * deriv F (W1p.value u x)) := by
+    filter_upwards [Lp.coeFn_neg (W1p.value (W1p.testFunctionSMulComp hp φ hdF hM' u)),
+      W1p.value_testFunctionSMulComp_ae hp φ hdF hM' u] with x h₁ h₂
+    rw [← W1p.valueL_apply, map_neg, W1p.valueL_apply, h₁, Pi.neg_apply, h₂]
+  have hgradT₀ : ∀ᵐ x ∂mu.restrict Omega, W1p.gradient T₀ x =
+      -(φ x * deriv (deriv F) (W1p.value u x)) • W1p.gradient u x -
+        deriv F (W1p.value u x) • ∇ (φ : EuclideanSpace ℝ ι → ℝ) x := by
+    filter_upwards [Lp.coeFn_neg (W1p.gradient (W1p.testFunctionSMulComp hp φ hdF hM' u)),
+      W1p.gradient_testFunctionSMulComp_ae hp φ hdF hM' u] with x h₁ h₂
+    rw [← W1p.gradientL_apply, map_neg, W1p.gradientL_apply, h₁, Pi.neg_apply, h₂,
+      neg_smul]
+    abel
   set T := W1p.posPart hp T₀
   -- `T` is a nonnegative element of `H¹₀(Ω)`, being supported in the support of `φ`.
   have hvalT : ∀ᵐ x ∂mu.restrict Omega, W1p.value T x = max (W1p.value T₀ x) 0 := by
@@ -265,14 +225,8 @@ theorem UniformlyEllipticOn.energyFormH1_contDiffComp_nonpos
       continuous_const
   have hsub := w1p0Submodule_subset_of_isClosed hclosed fun φ =>
     energyFormH1_contDiffComp_posPart_ofTestFunction_nonpos h ha hu hF hM hM' hF0 hum hF' hF'' φ
-  have hvv : W1p.posPart hp (v : W1p mu Omega 2) = v := by
-    refine W1p.ext_value ?_
-    rw [W1p.value_posPart]
-    refine Lp.ext ?_
-    filter_upwards [Lp.coeFn_posPart (W1p.value (v : W1p mu Omega 2)), hv] with x hx hvx
-    rw [hx, max_eq_left hvx]
   have := hsub v.2
-  rwa [mem_ofPred_eq, hvv] at this
+  rwa [mem_ofPred_eq, W1p.posPart_eq_self_of_ae_nonneg hp hv] at this
 
 /-! ### The lower bound for positive supersolutions -/
 

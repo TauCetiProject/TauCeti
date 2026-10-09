@@ -8,6 +8,9 @@ module
 public import TauCeti.Analysis.Sobolev.Leibniz
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Sobolev.W1p.ChainRule
+
 /-!
 # Multiplication by a smooth cutoff on `W^{1,p}(Ω)`
 
@@ -50,6 +53,9 @@ localization arguments need.
   `‖∇(ψ u)‖₂² ≤ 2 ∫ ψ² ‖∇u‖² + 2 ∫ ‖∇ψ‖² u²`.
 * `TauCeti.W1p.contDiffSMul_mem_w1p0Submodule`: it preserves `W^{1,p}_0(Ω)`, the closure of
   `C_c^∞(Ω)`.
+* `TauCeti.W1p.testFunctionSMulComp`: for `p < ∞`, a test function `φ` and a `C¹` function `G`
+  with bounded derivative, the product `φ G(u)`, with weak gradient `φ G'(u) ∇u + G(u) ∇φ`.
+  Unlike `TauCeti.W1p.contDiffComp`, it does not require `G(0) = 0`.
 
 ## References
 
@@ -356,5 +362,96 @@ theorem W1p.norm_contDiffSMulL_le (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)
     ‖W1p.contDiffSMulL (mu := mu) (Omega := Omega) (p := p)
       psi hpsi hM hpsiM hgradM‖ ≤ 2 * M :=
   LinearMap.mkContinuous_norm_le _ (by positivity) _
+
+/-! ### Products of a test function with a composition -/
+
+section TestFunctionSMulComp
+
+open scoped NNReal
+
+variable {G : ℝ → ℝ} {N : ℝ≥0}
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- A test function and its gradient are bounded on `Ω` by a common nonnegative constant. -/
+private theorem exists_abs_le_and_norm_gradient_le_testFunction (phi : 𝓓(Omega, ℝ)) :
+    ∃ M : ℝ, 0 ≤ M ∧ (∀ x ∈ Omega, |phi x| ≤ M) ∧ ∀ x ∈ Omega, ‖∇ (phi : E → ℝ) x‖ ≤ M := by
+  obtain ⟨M, hM, hphiM, hgradM⟩ :=
+    (phi.contDiff.of_le (by simp)).exists_abs_le_and_norm_gradient_le phi.hasCompactSupport
+  exact ⟨M, hM, fun x _ => hphiM x, fun x _ => hgradM x⟩
+
+/-- **The product of a test function with a composition.** For `1 ≤ p < ∞`, a test function
+`φ ∈ C_c^∞(Ω)` and a `C¹` function `G` with bounded derivative, the product `φ G(u)` of `φ` with
+the composition `G(u)` of a Sobolev function `u ∈ W^{1,p}(Ω)` is again in `W^{1,p}(Ω)`. Its
+value and weak gradient are `φ G(u)` and `φ G'(u) ∇u + G(u) ∇φ`, by
+`TauCeti.W1p.value_testFunctionSMulComp_ae` and `TauCeti.W1p.gradient_testFunctionSMulComp_ae`.
+
+Unlike `TauCeti.W1p.contDiffComp`, no condition `G(0) = 0` is needed: the compact support of `φ`
+makes the constant part `G(0) φ` a Sobolev function. The product is formed as
+`φ (G(u) - G(0)) + G(0) φ`. -/
+def W1p.testFunctionSMulComp (hp : p ≠ (∞ : ℝ≥0∞)) (phi : 𝓓(Omega, ℝ)) (hG : ContDiff ℝ 1 G)
+    (hN : ∀ t, ‖deriv G t‖₊ ≤ N) (u : W1p mu Omega p) : W1p mu Omega p :=
+  W1p.contDiffSMul phi phi.contDiff
+      (exists_abs_le_and_norm_gradient_le_testFunction phi).choose_spec.1
+      (exists_abs_le_and_norm_gradient_le_testFunction phi).choose_spec.2.1
+      (exists_abs_le_and_norm_gradient_le_testFunction phi).choose_spec.2.2
+      (W1p.contDiffComp hp (hG.sub contDiff_const)
+        (fun t => by rw [deriv_sub_const]; exact hN t) (sub_self (G 0)) u) +
+    G 0 • W1p.ofTestFunctionₗ mu Omega p phi
+
+/-- The value of `W1p.testFunctionSMulComp hp φ hG hN u` is `φ G(u)` almost everywhere. -/
+theorem W1p.value_testFunctionSMulComp_ae (hp : p ≠ (∞ : ℝ≥0∞)) (phi : 𝓓(Omega, ℝ))
+    (hG : ContDiff ℝ 1 G) (hN : ∀ t, ‖deriv G t‖₊ ≤ N) (u : W1p mu Omega p) :
+    ∀ᵐ x ∂mu.restrict Omega,
+      W1p.value (W1p.testFunctionSMulComp hp phi hG hN u) x = phi x * G (W1p.value u x) := by
+  rw [W1p.testFunctionSMulComp]
+  set w := W1p.contDiffComp hp (hG.sub contDiff_const)
+    (fun t => by rw [deriv_sub_const]; exact hN t) (sub_self (G 0)) u
+  set h := exists_abs_le_and_norm_gradient_le_testFunction phi
+  set Φ := W1p.ofTestFunctionₗ mu Omega p phi
+  set Ψ := W1p.contDiffSMul phi phi.contDiff h.choose_spec.1 h.choose_spec.2.1
+    h.choose_spec.2.2 w
+  have hlin : W1p.value (Ψ + G 0 • Φ) = W1p.value Ψ + G 0 • W1p.value Φ := by
+    simp only [← W1p.valueL_apply, map_add, map_smul]
+  filter_upwards [Lp.coeFn_add (W1p.value Ψ) (G 0 • W1p.value Φ),
+    Lp.coeFn_smul (G 0) (W1p.value Φ),
+    W1p.value_contDiffSMul_ae phi.contDiff h.choose_spec.1 h.choose_spec.2.1 h.choose_spec.2.2 w,
+    W1p.value_contDiffComp_ae hp (hG.sub contDiff_const)
+      (fun t => by rw [deriv_sub_const]; exact hN t) (sub_self (G 0)) u,
+    testFunctionLp_apply_ae (mu := mu) p phi] with x h₁ h₂ h₃ h₄ h₅
+  rw [hlin, h₁, Pi.add_apply, h₂, Pi.smul_apply, h₃, h₄, W1p.value_ofTestFunctionₗ, h₅,
+    smul_eq_mul, smul_eq_mul]
+  ring
+
+/-- The weak gradient of `W1p.testFunctionSMulComp hp φ hG hN u` is `φ G'(u) ∇u + G(u) ∇φ`
+almost everywhere. -/
+theorem W1p.gradient_testFunctionSMulComp_ae (hp : p ≠ (∞ : ℝ≥0∞)) (phi : 𝓓(Omega, ℝ))
+    (hG : ContDiff ℝ 1 G) (hN : ∀ t, ‖deriv G t‖₊ ≤ N) (u : W1p mu Omega p) :
+    ∀ᵐ x ∂mu.restrict Omega,
+      W1p.gradient (W1p.testFunctionSMulComp hp phi hG hN u) x =
+        (phi x * deriv G (W1p.value u x)) • W1p.gradient u x +
+          G (W1p.value u x) • ∇ (phi : E → ℝ) x := by
+  rw [W1p.testFunctionSMulComp]
+  set w := W1p.contDiffComp hp (hG.sub contDiff_const)
+    (fun t => by rw [deriv_sub_const]; exact hN t) (sub_self (G 0)) u
+  set h := exists_abs_le_and_norm_gradient_le_testFunction phi
+  set Φ := W1p.ofTestFunctionₗ mu Omega p phi
+  set Ψ := W1p.contDiffSMul phi phi.contDiff h.choose_spec.1 h.choose_spec.2.1
+    h.choose_spec.2.2 w
+  have hlin : W1p.gradient (Ψ + G 0 • Φ) = W1p.gradient Ψ + G 0 • W1p.gradient Φ := by
+    simp only [← W1p.gradientL_apply, map_add, map_smul]
+  filter_upwards [Lp.coeFn_add (W1p.gradient Ψ) (G 0 • W1p.gradient Φ),
+    Lp.coeFn_smul (G 0) (W1p.gradient Φ),
+    W1p.gradient_contDiffSMul_ae phi.contDiff h.choose_spec.1 h.choose_spec.2.1
+      h.choose_spec.2.2 w,
+    W1p.value_contDiffComp_ae hp (hG.sub contDiff_const)
+      (fun t => by rw [deriv_sub_const]; exact hN t) (sub_self (G 0)) u,
+    W1p.gradient_contDiffComp_ae hp (hG.sub contDiff_const)
+      (fun t => by rw [deriv_sub_const]; exact hN t) (sub_self (G 0)) u,
+    gradientTestFunctionLp_apply_ae (mu := mu) p phi] with x h₁ h₂ h₃ h₄ h₅ h₆
+  rw [hlin, h₁, Pi.add_apply, h₂, Pi.smul_apply, h₃, h₄, h₅, W1p.gradient_ofTestFunctionₗ, h₆,
+    deriv_sub_const, mul_smul, sub_smul]
+  abel
+
+end TestFunctionSMulComp
 
 end TauCeti
