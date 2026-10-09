@@ -23,14 +23,14 @@ inside the original domain.
 
 A function locally integrable on a null-measurable set `s`, vanishing almost everywhere on `s` off
 a null-measurable compact `K ⊆ s`, is integrable on the whole space after extension by zero. This
-is the step that turns a local hypothesis plus compact support into a global one.
-
-Pairing a locally integrable function with a fixed vector in an inner product space gives a
-locally integrable scalar function, as Mathlib records for `Integrable` and `MemLp`. Both sets are
+is the step that turns a local hypothesis plus compact support into a global one. Both sets are
 asked to be null-measurable explicitly because nothing here ties the topology on `X` to its
 measurable space -- there is no `OpensMeasurableSpace` or `BorelSpace` assumption, so neither
 compactness nor closedness of `K` carries any measurability with it. (Absent a separation axiom
 `K` need not even be closed, but that is the lesser obstacle.)
+
+Pairing a locally integrable function with a fixed vector in an inner product space gives a
+locally integrable scalar function, as Mathlib records for `Integrable` and `MemLp`.
 
 ## Main declarations
 
