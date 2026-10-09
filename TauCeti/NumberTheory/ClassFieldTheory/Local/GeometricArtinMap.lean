@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Subgroup.Ker
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Unramified
-public import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.ArtinMap
 
 /-!
 # The geometric normalization of the absolute local Artin map
@@ -27,8 +27,7 @@ those of `artinMap K` read through inversion.
 
 * It is continuous (`continuous_geometricArtinMap`), has the same image as `artinMap K`
   (`range_geometricArtinMap`), hence dense image (`denseRange_geometricArtinMap`), and the same
-  kernel (`ker_geometricArtinMap`); in characteristic zero it is injective
-  (`injective_geometricArtinMap`).
+  kernel (`ker_geometricArtinMap`).
 * Its unramified coordinate is the inverse, in the multiplicatively written `ℤ̂`, of the
   normalized valuation (`unramifiedCoordinate_geometricArtinMap`). So every lift of the geometric
   Artin symbol of a uniformizer is the inverse of an arithmetic Frobenius lift
@@ -78,9 +77,8 @@ theorem continuous_geometricArtinMap : Continuous (geometricArtinMap K) :=
   (continuous_artinMap K).inv
 
 /-- **The geometric and arithmetic local Artin maps have the same image.** -/
-theorem range_geometricArtinMap : (geometricArtinMap K).range = (artinMap K).range := by
-  ext y
-  refine ⟨fun ⟨x, hx⟩ ↦ ⟨x⁻¹, ?_⟩, fun ⟨x, hx⟩ ↦ ⟨x⁻¹, ?_⟩⟩ <;> simpa using hx
+theorem range_geometricArtinMap : (geometricArtinMap K).range = (artinMap K).range :=
+  MonoidHom.range_inv _
 
 /-- The geometric local Artin map has dense image. -/
 theorem denseRange_geometricArtinMap : DenseRange (geometricArtinMap K) := by
@@ -89,14 +87,8 @@ theorem denseRange_geometricArtinMap : DenseRange (geometricArtinMap K) := by
 
 /-- **The geometric and arithmetic local Artin maps have the same kernel**, the intersection of the
 norm subgroups (`ker_artinMap_eq_iInf`). -/
-theorem ker_geometricArtinMap : (geometricArtinMap K).ker = (artinMap K).ker := by
-  ext x
-  simp
-
-/-- The geometric local Artin map is injective in characteristic zero, in particular for a finite
-extension of `ℚ_p`. -/
-theorem injective_geometricArtinMap [CharZero K] : Function.Injective (geometricArtinMap K) :=
-  inv_injective.comp (injective_artinMap K)
+theorem ker_geometricArtinMap : (geometricArtinMap K).ker = (artinMap K).ker :=
+  MonoidHom.ker_inv _
 
 /-! ### The geometric Frobenius normalization -/
 
