@@ -82,6 +82,14 @@ theorem succ_le_order_iff {f : MvPowerSeries σ R} {n : ℕ∞} :
   rw [coeff_pderiv, mul_comm, ← Nat.cast_succ, ← nsmul_eq_mul] at this
   exact (nsmul_eq_zero_iff.mp this).resolve_right (Nat.succ_ne_zero _)
 
+end MvPowerSeries
+
+namespace MvPowerSeries
+
+open Finsupp
+
+variable {σ R : Type*} [CommRing R] [IsAddTorsionFree R]
+
 /-- Over a ring without additive torsion, a power series vanishes if its partial derivative in
 `X i` vanishes and it vanishes at `X i = 0`. -/
 theorem eq_zero_of_pderiv_eq_zero_of_subst_eq_zero [DecidableEq σ] {i : σ}
