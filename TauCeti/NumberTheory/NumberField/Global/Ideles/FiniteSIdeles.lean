@@ -41,7 +41,7 @@ one place at a time, through Shapiro's lemma for each semi-local factor.
 
 ## Main results
 
-* `TauCeti.mem_finiteSIdeles_iff_valued`: a finite idele is an `S`-idele exactly when its
+* `TauCeti.mem_finiteSIdeles_iff_valued_eq_one`: a finite idele is an `S`-idele exactly when its
   components at the places not above `S` have valuation one.
 
 ## References
@@ -90,7 +90,7 @@ theorem mem_finiteSIdeles_iff {a : (FiniteAdeleRing (𝒪 L) L)ˣ} :
 
 /-- A finite idele is an `S`-idele exactly when its component at every place of `L` not above
 `S` has valuation one. -/
-theorem mem_finiteSIdeles_iff_valued {a : (FiniteAdeleRing (𝒪 L) L)ˣ} :
+theorem mem_finiteSIdeles_iff_valued_eq_one {a : (FiniteAdeleRing (𝒪 L) L)ˣ} :
     a ∈ finiteSIdeles L S ↔
       ∀ w : HeightOneSpectrum (𝒪 L), w.under (𝒪 K) ∉ S →
         Valued.v ((a : FiniteAdeleRing (𝒪 L) L) w) = 1 := by
