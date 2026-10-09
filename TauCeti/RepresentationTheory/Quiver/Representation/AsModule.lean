@@ -217,11 +217,12 @@ noncomputable def toEnd : pathAlgebra k Q →ₐ[k] Module.End k (DirectSum Q (v
 theorem toEnd_ofPath (x : Quiver.TotalPath Q) : toEnd k Q M (ofPath x) = pathEnd k Q M x := by
   rw [toEnd, PathAlgebra.liftAlgHom_ofPath]
 
-/-- A loop at `v` acts on `⨁_u M_u` through the summand `M_v` only. -/
-theorem toEnd_ofPath_loop {v : Q} (p : _root_.Quiver.Path v v) :
-    toEnd k Q M (ofPath ⟨v, v, p⟩) =
-      DirectSum.lof k Q (vertexSpace k Q M) v ∘ₗ mapₗ k Q M p ∘ₗ
-        DirectSum.component k Q (vertexSpace k Q M) v := by
+/-- The basis element of a path `p` from `a` to `b` acts on `⨁_u M_u` by reading off the
+`a`-component, applying the structure map of `p`, and including the result in the `b`-summand. -/
+theorem toEnd_ofPath_mk {a b : Q} (p : _root_.Quiver.Path a b) :
+    toEnd k Q M (ofPath ⟨a, b, p⟩) =
+      DirectSum.lof k Q (vertexSpace k Q M) b ∘ₗ mapₗ k Q M p ∘ₗ
+        DirectSum.component k Q (vertexSpace k Q M) a := by
   rw [toEnd_ofPath]
   exact LinearMap.ext fun z => pathEnd_mk_apply k Q M p z
 

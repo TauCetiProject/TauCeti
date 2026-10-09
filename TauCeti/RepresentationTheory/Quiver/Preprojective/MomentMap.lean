@@ -90,7 +90,7 @@ private theorem toEnd_headBacktrackElem {i j : Q} (a : i ⟶ j) :
           mapₗ k (Symmetrify Q) M (Quiver.reverse (Symmetrify.of.map a)).toPath) ∘ₗ
           DirectSum.component k (Symmetrify Q) (vertexSpace k (Symmetrify Q) M)
             (Symmetrify.of.obj j) := by
-  rw [headBacktrackElem_def, toEnd_ofPath_loop, mapₗ_comp]
+  rw [headBacktrackElem_def, toEnd_ofPath_mk, mapₗ_comp]
 
 /-- The tail backtrack `a* a` of an arrow `a : i ⟶ j` acts on the summand `M_i` as `x_{a*} x_a`. -/
 private theorem toEnd_tailBacktrackElem {i j : Q} (a : i ⟶ j) :
@@ -100,7 +100,7 @@ private theorem toEnd_tailBacktrackElem {i j : Q} (a : i ⟶ j) :
           mapₗ k (Symmetrify Q) M (Symmetrify.of.map a).toPath) ∘ₗ
           DirectSum.component k (Symmetrify Q) (vertexSpace k (Symmetrify Q) M)
             (Symmetrify.of.obj i) := by
-  rw [tailBacktrackElem_def, toEnd_ofPath_loop, mapₗ_comp]
+  rw [tailBacktrackElem_def, toEnd_ofPath_mk, mapₗ_comp]
 
 end Backtrack
 
