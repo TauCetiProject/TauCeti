@@ -85,23 +85,10 @@ theorem d4TripledSummand_d4SpinIndex (s : Finset (Fin 4)) :
     d4TripledSummand (d4SpinIndex s) = if Even s.card then 2 else 1 :=
   d4TripledSummand_eq_of_weight_eq_typeDSpinWeight _ _ (d4TripledWeight_d4SpinIndex s)
 
-/-- No spin sign set indexes the natural eight-dimensional block. -/
-theorem d4TripledSummand_d4SpinIndex_ne_zero (s : Finset (Fin 4)) :
+private theorem d4TripledSummand_d4SpinIndex_ne_zero (s : Finset (Fin 4)) :
     d4TripledSummand (d4SpinIndex s) ≠ 0 := by
   rw [d4TripledSummand_d4SpinIndex]
   split <;> norm_num
-
-/-- The `V(ϖ₃)` block consists exactly of the odd-cardinality spin sign sets. -/
-theorem d4TripledSummand_d4SpinIndex_eq_one_iff (s : Finset (Fin 4)) :
-    d4TripledSummand (d4SpinIndex s) = 1 ↔ Odd s.card := by
-  rw [d4TripledSummand_d4SpinIndex]
-  by_cases h : Even s.card <;> simp [h, ← Nat.not_even_iff_odd]
-
-/-- The `V(ϖ₄)` block consists exactly of the even-cardinality spin sign sets. -/
-theorem d4TripledSummand_d4SpinIndex_eq_two_iff (s : Finset (Fin 4)) :
-    d4TripledSummand (d4SpinIndex s) = 2 ↔ Even s.card := by
-  rw [d4TripledSummand_d4SpinIndex]
-  by_cases h : Even s.card <;> simp [h]
 
 /-- The spin indices are exactly the last two, half-spin blocks of the tripled table. -/
 theorem range_d4SpinIndex :
@@ -143,14 +130,7 @@ noncomputable def d4SpinIndexEquiv :
 @[simp]
 theorem coe_d4SpinIndexEquiv (s : Finset (Fin 4)) :
     (d4SpinIndexEquiv s : Fin 24) = d4SpinIndex s := by
-  change ((Equiv.ofBijective d4SpinIndexSubtype d4SpinIndexSubtype_bijective s).1) = _
-  exact congrArg Subtype.val
-    (Equiv.ofBijective_apply d4SpinIndexSubtype d4SpinIndexSubtype_bijective s)
-
-/-- The weight equation for the spin-index equivalence. -/
-theorem d4TripledWeight_d4SpinIndexEquiv (s : Finset (Fin 4)) :
-    d4TripledWeight (d4SpinIndexEquiv s) = typeDSpinWeight s := by
-  simp
+  simp [d4SpinIndexEquiv, d4SpinIndexSubtype]
 
 /-- A tripled simple reflection restricted to the two half-spin blocks. -/
 def d4TripledHalfSpinReflection (i : Fin 4) :
