@@ -45,6 +45,23 @@ theorem hasOneCommonSide_of_terminal_overlap (D : GridPentagonRectangleDecomposi
     have hne := Grid.ne_left_of_mem_cIoo hcol
     grind
 
+/-- A pentagon followed by a rectangle ending on the pentagon's initial side has exactly one
+common side column when its two other sides differ. -/
+theorem hasOneCommonSide_of_right_eq_left (E : GridPentagonRectangleDecomposition a s x z)
+    (hcommon : E.rectangle.right = E.pentagon.left)
+    (hother : E.rectangle.left ≠ E.pentagon.right) :
+    E.toRectangleDecomposition.HasOneCommonSide := by
+  apply E.toRectangleDecomposition.hasOneCommonSide_iff_existsUnique.mpr
+  refine ⟨E.pentagon.left, ?_, ?_⟩
+  · simp [GridRectangleBetween.mem_sideColumns, hcommon]
+  · intro c hc
+    simp only [GridRectangleBetween.mem_sideColumns, toRectangleDecomposition_first_left,
+      toRectangleDecomposition_first_right, toRectangleDecomposition_second_left,
+      toRectangleDecomposition_second_right] at hc
+    have hfirst := E.pentagon.left_ne_right
+    have hsecond := E.rectangle.left_ne_right
+    grind
+
 private theorem underlying_first_isEmpty (D : GridPentagonRectangleDecomposition a s x z)
     (hp : D.pentagon.IsEmpty) : D.toRectangleDecomposition.first.IsEmpty := by
   simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
@@ -167,6 +184,20 @@ theorem isRecut_recutTerminal (D : GridPentagonRectangleDecomposition a s x z)
       (D.recutTerminal hcommon hcol hp hr).toRectangleDecomposition := by
   rw [D.recutTerminal_toRectangleDecomposition]
   exact D.toRectangleDecomposition.isRecut_recut _ _ _
+
+/-- The terminal self-recut is the only pentagon--rectangle domain recutting the underlying
+two-step domain. -/
+theorem recutTerminal_eq_of_isRecut (D : GridPentagonRectangleDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hcol : D.rectangle.left ∈ Grid.cIoo D.pentagon.left D.pentagon.right)
+    (hp : D.pentagon.IsEmpty) (hr : D.rectangle.IsEmpty)
+    {E : GridPentagonRectangleDecomposition a s x z}
+    (hE : D.toRectangleDecomposition.IsRecut E.toRectangleDecomposition) :
+    D.recutTerminal hcommon hcol hp hr = E := by
+  apply toRectangleDecomposition_injective
+  exact (D.toRectangleDecomposition.existsUnique_isRecut
+    (D.hasOneCommonSide_of_terminal_overlap hcommon hcol) (D.underlying_first_isEmpty hp)
+    (D.underlying_second_isEmpty hr)).unique (D.isRecut_recutTerminal _ _ _ _) hE
 
 /-- The recut enlarges the pentagon downwards, leaves its top row fixed, and cuts the remaining
 rectangle along the old pentagon's initial side. The new common side is terminal for the
@@ -295,36 +326,12 @@ theorem recutTerminal_mem_pentagonRectangleDecompositions
     (hcol : D.rectangle.left ∈ Grid.cIoo D.pentagon.left D.pentagon.right)
     (hp : D.pentagon.IsEmpty) (hr : D.rectangle.IsEmpty)
     (hD : D ∈ G.pentagonRectangleDecompositions C x z) :
-    D.recutTerminal hcommon hcol hp hr ∈ G.pentagonRectangleDecompositions C x z := by
-  classical
-  let E := D.recutTerminal hcommon hcol hp hr
-  let e := ((Equiv.swap C.column (finRotate n C.column)).prodCongr
-    (Equiv.refl (Fin n))).toEmbedding
-  obtain ⟨hP, hR⟩ := (G.mem_pentagonRectangleDecompositions C D).1 hD
-  have hPX := ((G.mem_pentagons _).1 hP).2
-  have hRX := (((G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles _).1 hR).2
-  have hmapX : Disjoint (D.rectangle.toGridRectangle.coveredSquares.map e) G.XSet := by
-    exact (G.disjoint_map_swapColumns_XSet_iff C.column (finRotate n C.column) _).2 hRX
-  have hunion := congrArg Multiset.toFinset
-    (D.coveredSquares_val_add_recutTerminal hcommon hcol hp hr)
-  simp only [Multiset.toFinset_add, Finset.val_toFinset] at hunion
-  have hnew : Disjoint (E.pentagon.coveredSquares ∪
-      E.rectangle.toGridRectangle.coveredSquares.map e) G.XSet := by
-    rw [hunion]
-    exact Finset.disjoint_union_left.mpr ⟨hPX, hmapX⟩
-  obtain ⟨hEP, hER⟩ := Finset.disjoint_union_left.mp hnew
+    D.recutTerminal hcommon hcol hp hr ∈ G.pentagonRectangleDecompositions C x z :=
   have hrecut := D.isRecut_recutTerminal hcommon hcol hp hr
-  refine (G.mem_pentagonRectangleDecompositions C _).2
-    ⟨(G.mem_pentagons _).2 ⟨?_, hEP⟩,
-      ((G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles _).2 ⟨?_, ?_⟩⟩
-  · simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-      GridPentagonRectangleDecomposition.toRectangleDecomposition_first_toGridRectangle]
-      using hrecut.isEmpty_first
-  · simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-      GridPentagonRectangleDecomposition.toRectangleDecomposition_middle,
-      GridPentagonRectangleDecomposition.toRectangleDecomposition_second_toGridRectangle]
-      using hrecut.isEmpty_second
-  · exact (G.disjoint_map_swapColumns_XSet_iff C.column (finRotate n C.column) _).1 hER
+  G.mem_pentagonRectangleDecompositions_of_val_add_val_eq_pentagonRectangle C hD
+    (GridPentagonRectangleDecomposition.isEmpty_pentagon_of_isRecut _ hrecut)
+    (GridPentagonRectangleDecomposition.isEmpty_rectangle_of_isRecut _ hrecut)
+    (D.coveredSquares_val_add_recutTerminal hcommon hcol hp hr)
 
 /-- The terminal self-recut preserves the monomial contribution to the pentagon--rectangle
 coefficient sum over any commutative semiring. -/

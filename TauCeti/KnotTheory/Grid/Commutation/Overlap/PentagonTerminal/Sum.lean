@@ -152,11 +152,9 @@ theorem mem_pentagonTerminalSelfPairs
   · rintro ⟨D, rfl⟩
     exact ⟨D.val, D.property, G.pentagonTerminalPartner_isRecut C D⟩
   · rintro ⟨D, hD, hrecut⟩
-    obtain ⟨hone, hp, hr⟩ := G.pentagonTerminalSource_underlying C ⟨D, hD⟩
     refine ⟨⟨D, hD⟩, ?_⟩
-    apply GridPentagonRectangleDecomposition.toRectangleDecomposition_injective
-    exact (D.toRectangleDecomposition.existsUnique_isRecut hone hp hr).unique
-      (G.pentagonTerminalPartner_isRecut C ⟨D, hD⟩) hrecut
+    unfold pentagonTerminalPartner
+    exact D.recutTerminal_eq_of_isRecut _ _ _ _ hrecut
 
 /-- Every terminal self-pair term is counted in the pentagon--rectangle coefficient sum. -/
 theorem pentagonTerminalSelfPairs_subset_pentagonRectangleDecompositions :
