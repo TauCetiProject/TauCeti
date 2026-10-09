@@ -12,6 +12,9 @@ public import TauCeti.AlgebraicTopology.Sphere.Zero
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import TauCeti.AlgebraicTopology.Disk
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
+public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+public import TauCeti.Analysis.InnerProductSpace.OrthogonalLast
+public import TauCeti.Geometry.Sphere.LinearIsometry
 
 /-!
 # The homology of spheres
@@ -27,10 +30,20 @@ and the degree.
 Iterating this suspension isomorphism down to the zero-sphere, whose reduced homology is one copy
 of the coefficient object in degree zero and vanishes above, computes the reduced homology of the
 unit sphere of an `(n + 1)`-dimensional real inner product space: it is one copy of the
-coefficient object in degree `n` and vanishes in every other degree.  Mathlib's `TopCat.sphere n`
-is the universe lift of the unit sphere of `EuclideanSpace ℝ (Fin (n + 1))`; through
-`TauCeti.diskBoundaryHomeomorph` it is homeomorphic to the unit sphere of a Euclidean space of the
-same dimension in the lifted universe, so the same computation applies to it.
+coefficient object in degree `n` and vanishes in every other degree.
+
+The identification with the coefficient object, that is, the generator of `H_redₙ(Sⁿ)`, is
+determined by an orthonormal basis `b` indexed by `Fin (n + 1)`: the suspension isomorphisms are
+taken at the last basis vector, then at the last remaining one on the equator, and so on, down to
+the zero-sphere `{b 0, -b 0}` with generator `[-b 0] - [b 0]`.  The suspension isomorphism is
+natural under linear isometries carrying one pole to the other, so a linear isometry carrying the
+basis `b` to a basis `c` carries the generator determined by `b` to the generator determined by
+`c`.
+
+Mathlib's `TopCat.sphere n` is the universe lift of the unit sphere of
+`EuclideanSpace ℝ (Fin (n + 1))`; through `TauCeti.diskBoundaryHomeomorph` it is homeomorphic to
+the unit sphere of a Euclidean space of the same dimension in the lifted universe, so the same
+computation applies to it, and the standard basis of that space gives its standard generator.
 
 For the unit circle `S` of a two-dimensional real inner product space, the explicit form of the
 Mayer–Vietoris sequence is recorded directly: the cover is by the two open arcs `S ∖ {p}` and
@@ -49,7 +62,9 @@ Coefficients are an object `R` of an abelian category with coproducts.
   isomorphism.
 * `TauCeti.reducedSingularHomologySphereSuccIso`: the isomorphism
   `H_redₖ₊₁(S) ≅ H_redₖ(S ∩ (ℝ ∙ p)ᗮ)`, given by that connecting morphism followed by the homotopy
-  equivalence of `S ∖ {p, -p}` with the equator.
+  equivalence of `S ∖ {p, -p}` with the equator, and
+  `TauCeti.reducedSingularHomologySphereSuccIso_hom_naturality`: its naturality under linear
+  isometries.
 * `TauCeti.reducedSingularHomologySphereIsoOfFinrankEq`: the unit spheres of two
   finite-dimensional real normed spaces of the same dimension have isomorphic reduced homology,
   which transports the computations below from inner product spaces to normed spaces.
@@ -59,11 +74,18 @@ Coefficients are an object `R` of an abelian category with coproducts.
   `TauCeti.singularHomologySphereOneIso_inv_mayerVietorisδ`: `H₁(S) ≅ R` for the circle, whose
   generator the Mayer–Vietoris connecting morphism of the cover by `S ∖ {p}` and `S ∖ {-p}` sends
   to `[-x] - [x]` in the zeroth homology of `S ∖ {p, -p}`.
-* `TauCeti.isZero_reducedSingularHomologyFunctor_sphere_of_ne` and
-  `TauCeti.reducedSingularHomologySphereIso`: for `finrank ℝ E = n + 1`, the reduced homology of
-  the unit sphere of `E` vanishes in degrees `k ≠ n` and is isomorphic to `R` in degree `n`.
+* `TauCeti.isZero_reducedSingularHomologyFunctor_sphere_of_ne`: for `finrank ℝ E = n + 1`, the
+  reduced homology of the unit sphere of `E` vanishes in degrees `k ≠ n`.
+* `TauCeti.reducedSingularHomologySphereIso`: the isomorphism `H_redₙ(S) ≅ R` determined by an
+  orthonormal basis of `E` indexed by `Fin (n + 1)`, with the recursion
+  `TauCeti.reducedSingularHomologySphereIso_succ` and the degree-zero generator
+  `TauCeti.reducedSingularHomologySphereIso_inv_ι`.
+* `TauCeti.reducedSingularHomologySphereIso_hom_naturality`: a linear isometry matching two
+  orthonormal bases carries the generator determined by one to the generator determined by the
+  other.
 * `TauCeti.isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne` and
-  `TauCeti.reducedSingularHomologyTopCatSphereIso`: the same for Mathlib's `TopCat.sphere n`.
+  `TauCeti.reducedSingularHomologyTopCatSphereIso`: the same for Mathlib's `TopCat.sphere n`, with
+  the standard generator determined by the standard basis.
 
 ## References
 
@@ -211,6 +233,67 @@ lemma reducedSingularHomologySphereSuccIso_hom (k : ℕ) :
   -- Both remaining compositions use the same `toSSet` homology object definitionally.
   rfl
 
+/-- **Naturality of the suspension isomorphism under linear isometries.** A linear isometry
+`f : E →ₗᵢ[ℝ] F` sending the pole `p` to the pole `q` intertwines the suspension isomorphisms at
+`p` and at `q`, where the equators are related by the restriction
+`f.orthogonalComplementSingletonMap` of `f` to the orthogonal complements of the poles. -/
+@[reassoc]
+lemma reducedSingularHomologySphereSuccIso_hom_naturality {F : Type w} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] (f : E →ₗᵢ[ℝ] F) (q : sphere (0 : F) 1) (hpq : f p = q) (k : ℕ) :
+    (reducedSingularHomologyFunctor R (k + 1)).map
+          (TopCat.ofHom ⟨f.unitSphereMap, f.continuous_unitSphereMap⟩) ≫
+        (reducedSingularHomologySphereSuccIso R q k).hom =
+      (reducedSingularHomologySphereSuccIso R p k).hom ≫
+        (reducedSingularHomologyFunctor R k).map
+          (TopCat.ofHom ⟨(f.orthogonalComplementSingletonMap hpq).unitSphereMap,
+            (f.orthogonalComplementSingletonMap hpq).continuous_unitSphereMap⟩) := by
+  let g : TopCat.of (sphere (0 : E) 1) ⟶ TopCat.of (sphere (0 : F) 1) :=
+    TopCat.ofHom ⟨f.unitSphereMap, f.continuous_unitSphereMap⟩
+  have hg : Function.Injective g := fun x y h ↦
+    Subtype.ext (f.injective (by simpa [g] using congrArg Subtype.val h))
+  have hU : Set.MapsTo g ({p}ᶜ : Set (sphere (0 : E) 1)) {q}ᶜ :=
+    fun x hx hgx ↦ hx (hg (hgx.trans (Subtype.ext (by simp [g, hpq])).symm))
+  have hV : Set.MapsTo g ({-p}ᶜ : Set (sphere (0 : E) 1)) {-q}ᶜ :=
+    fun x hx hgx ↦ hx (hg (hgx.trans (Subtype.ext (by simp [g, hpq]))))
+  simp only [reducedSingularHomologySphereSuccIso_hom, Category.assoc]
+  -- The inclusion of reduced homology, the Mayer–Vietoris connecting morphism and the radial
+  -- projection onto the equator are each natural for `g`.  The first two squares are stated with
+  -- ordinary homology in its `toSSet` form, the source of the connecting morphism.
+  have hι : (reducedSingularHomologyFunctor R (k + 1)).map g ≫
+      (reducedSingularHomologyι R (k + 1)).app (TopCat.of (sphere (0 : F) 1)) =
+      (reducedSingularHomologyι R (k + 1)).app (TopCat.of (sphere (0 : E) 1)) ≫
+        SSet.homologyMap (TopCat.toSSet.map g) R (k + 1) :=
+    (reducedSingularHomologyι R (k + 1)).naturality g
+  have hδ := TopCat.reducedMayerVietorisδ_naturality R (X := TopCat.of (sphere (0 : E) 1))
+    isOpen_compl_singleton isOpen_compl_singleton (compl_singleton_union_compl_singleton_neg p)
+    isOpen_compl_singleton isOpen_compl_singleton (compl_singleton_union_compl_singleton_neg q)
+    g hU hV k
+  have hE : (reducedSingularHomologyFunctor R k).map (TopCat.ofHom ⟨(hU.inter_inter hV).restrict,
+        g.hom.continuous.restrict (hU.inter_inter hV)⟩) ≫
+        (reducedSingularHomologyFunctor R k).map (TopCat.ofHom (equatorHomotopyEquiv q).toFun) =
+      (reducedSingularHomologyFunctor R k).map (TopCat.ofHom (equatorHomotopyEquiv p).toFun) ≫
+        (reducedSingularHomologyFunctor R k).map
+          (TopCat.ofHom ⟨(f.orthogonalComplementSingletonMap hpq).unitSphereMap,
+            (f.orthogonalComplementSingletonMap hpq).continuous_unitSphereMap⟩) := by
+    rw [← Functor.map_comp, ← Functor.map_comp]
+    congr 1
+    ext x
+    -- The orthogonal projection away from a unit vector, and normalization, commute with `f`.
+    simp only [TopCat.hom_ofHom, ContinuousMap.coe_mk, TopCat.hom_comp, ConcreteCategory.hom_ofHom,
+      ContinuousMap.comp_apply, coe_equatorHomotopyEquiv_apply, NormedSpace.normalize, ← hpq,
+      Set.MapsTo.val_restrict_apply, LinearIsometry.coe_unitSphereMap_apply,
+      Submodule.starProjection_orthogonal_val, Submodule.starProjection_singleton,
+      LinearIsometry.inner_map_map, LinearIsometry.norm_map, norm_eq_of_mem_sphere, one_pow,
+      RCLike.ofReal_real_eq_id, id_eq, div_one,
+      LinearIsometry.coe_orthogonalComplementSingletonMap_apply, map_smul, map_sub, g]
+    rw [← f.map_smul, ← f.map_sub, f.norm_map]
+  -- The composites are chained as terms: rewriting would have to match ordinary homology in its
+  -- two definitionally equal forms, `singularHomologyFunctor` and `toSSet` homology.
+  refine ((Category.assoc _ _ _).symm.trans ((hι =≫ _).trans (Category.assoc _ _ _))).trans ?_
+  refine (congrArg (fun t ↦ _ ≫ t) ((reassoc_of% hδ) _).symm).trans ?_
+  rw [hE]
+  exact congrArg (fun t ↦ _ ≫ t) (Category.assoc _ _ _).symm
+
 section Circle
 
 variable {p} (hE : finrank ℝ E = 2) {x : sphere (0 : E) 1}
@@ -326,51 +409,93 @@ theorem isZero_reducedSingularHomologyFunctor_sphere_of_ne {n k : ℕ} (h : finr
 argument so that it can vary along the induction on the dimension. -/
 private def reducedSingularHomologySphereIsoAux :
     (n : ℕ) → (E : Type w) → [NormedAddCommGroup E] → [InnerProductSpace ℝ E] →
-      finrank ℝ E = n + 1 →
+      OrthonormalBasis (Fin (n + 1)) ℝ E →
       ((reducedSingularHomologyFunctor R n).obj (TopCat.of (sphere (0 : E) 1)) ≅ R)
-  | 0, E, _, _, h =>
-    haveI : Nontrivial E := Module.nontrivial_of_finrank_eq_succ h
-    haveI := (NormedSpace.sphere_nonempty (E := E) (x := 0).mpr zero_le_one).coe_sort
-    reducedSingularHomologySphereZeroIso R h (Classical.arbitrary _)
-  | n + 1, E, _, _, h =>
-    haveI : Nontrivial E := Module.nontrivial_of_finrank_eq_succ h
-    haveI := (NormedSpace.sphere_nonempty (E := E) (x := 0).mpr zero_le_one).coe_sort
-    haveI : Fact (finrank ℝ E = (n + 1) + 1) := ⟨h⟩
-    let p : sphere (0 : E) 1 := Classical.arbitrary _
-    reducedSingularHomologySphereSuccIso R p n ≪≫ reducedSingularHomologySphereIsoAux n _
-      (Submodule.finrank_orthogonal_span_singleton (ne_zero_of_mem_unit_sphere p))
+  | 0, _, _, _, b =>
+    reducedSingularHomologySphereZeroIso R (by simp [finrank_eq_card_basis b.toBasis])
+      ⟨b 0, by simp⟩
+  | n + 1, _, _, _, b =>
+    reducedSingularHomologySphereSuccIso R ⟨b (Fin.last _), by simp⟩ n ≪≫
+      reducedSingularHomologySphereIsoAux n _ b.orthogonalLast
 
-/-- **The reduced homology of a sphere in its dimension.**  For a real inner product space `E` of
-dimension `n + 1`, the reduced singular homology of its unit sphere in degree `n` is one copy of
-the coefficient object.  The isomorphism iterates the suspension isomorphism
-`TauCeti.reducedSingularHomologySphereSuccIso` along a chosen point of each sphere down to the
-zero-sphere `TauCeti.reducedSingularHomologySphereZeroIso`; it depends on these choices, and is
-one choice of generator rather than a canonical identification. -/
-def reducedSingularHomologySphereIso {n : ℕ} (h : finrank ℝ E = n + 1) :
+/-- **The reduced homology of a sphere in its dimension.**  An orthonormal basis `b` of a real
+inner product space `E`, indexed by `Fin (n + 1)`, determines an isomorphism between the reduced
+singular homology of the unit sphere of `E` in degree `n` and one copy of the coefficient object,
+that is, a generator of `H_redₙ(Sⁿ)`.
+
+In degree zero the sphere is `{b 0, -b 0}` and the generator is the class `[-b 0] - [b 0]`
+(`TauCeti.reducedSingularHomologySphereIso_inv_ι`).  In positive degree the isomorphism is the
+suspension isomorphism `TauCeti.reducedSingularHomologySphereSuccIso` at the last basis vector,
+followed by the isomorphism for the equator determined by the remaining basis vectors
+`b.orthogonalLast` (`TauCeti.reducedSingularHomologySphereIso_succ`).  Linear isometries matching
+two bases carry one generator to the other
+(`TauCeti.reducedSingularHomologySphereIso_hom_naturality`). -/
+def reducedSingularHomologySphereIso {n : ℕ} (b : OrthonormalBasis (Fin (n + 1)) ℝ E) :
     (reducedSingularHomologyFunctor R n).obj (TopCat.of (sphere (0 : E) 1)) ≅ R :=
-  reducedSingularHomologySphereIsoAux R n E h
+  reducedSingularHomologySphereIsoAux R n E b
 
-/-- For a one-dimensional space, the chosen generator of `H_red₀(S)` is the zero-sphere
-isomorphism `TauCeti.reducedSingularHomologySphereZeroIso` at the point `Classical.arbitrary` of
-the sphere. -/
+/-- In degree zero, `TauCeti.reducedSingularHomologySphereIso` is the zero-sphere isomorphism
+`TauCeti.reducedSingularHomologySphereZeroIso` at the basis vector `b 0`. -/
 @[simp]
-lemma reducedSingularHomologySphereIso_zero (h : finrank ℝ E = 0 + 1)
-    [Nonempty (sphere (0 : E) 1)] :
-    reducedSingularHomologySphereIso R h =
-      reducedSingularHomologySphereZeroIso R h (Classical.arbitrary _) := (rfl)
+lemma reducedSingularHomologySphereIso_zero (b : OrthonormalBasis (Fin 1) ℝ E) :
+    reducedSingularHomologySphereIso R b =
+      reducedSingularHomologySphereZeroIso R (by simp [finrank_eq_card_basis b.toBasis])
+        ⟨b 0, by simp⟩ :=
+  (rfl)
 
-/-- For a space of dimension `n + 2`, the chosen generator of `H_redₙ₊₁(S)` is the suspension
-isomorphism at the point `p = Classical.arbitrary` of the sphere, followed by the chosen generator
-of the reduced homology of the equator, the unit sphere of `(ℝ ∙ p)ᗮ`.  The dimension hypothesis
-`hp` on the equator may be any proof of it. -/
+/-- In degree `n + 1`, `TauCeti.reducedSingularHomologySphereIso` is the suspension isomorphism at
+the last basis vector, followed by the isomorphism for the equator determined by the remaining
+basis vectors. -/
 @[simp]
-lemma reducedSingularHomologySphereIso_succ {n : ℕ} (h : finrank ℝ E = n + 1 + 1)
-    [Nonempty (sphere (0 : E) 1)]
-    (hp : finrank ℝ (ℝ ∙ ((Classical.arbitrary (sphere (0 : E) 1) : sphere (0 : E) 1) : E))ᗮ =
-      n + 1) :
-    reducedSingularHomologySphereIso R h =
-      reducedSingularHomologySphereSuccIso R (Classical.arbitrary _) n ≪≫
-        reducedSingularHomologySphereIso R hp := (rfl)
+lemma reducedSingularHomologySphereIso_succ {n : ℕ} (b : OrthonormalBasis (Fin (n + 2)) ℝ E) :
+    reducedSingularHomologySphereIso R b =
+      reducedSingularHomologySphereSuccIso R ⟨b (Fin.last _), by simp⟩ n ≪≫
+        reducedSingularHomologySphereIso R b.orthogonalLast :=
+  (rfl)
+
+/-- **The generator of the reduced homology of the zero-sphere** determined by an orthonormal basis
+`b` of a one-dimensional space is the class `[-b 0] - [b 0]`. -/
+-- Not a simp lemma: `reducedSingularHomologyι_zero_app` rewrites the degree-zero inclusion
+-- inside the left-hand side first, so this would fail the `simpNF` linter.
+@[reassoc]
+lemma reducedSingularHomologySphereIso_inv_ι (b : OrthonormalBasis (Fin 1) ℝ E) :
+    (reducedSingularHomologySphereIso R b).inv ≫
+        (reducedSingularHomologyι R 0).app (TopCat.of (sphere (0 : E) 1)) =
+      singularHomology₀Section R (X := TopCat.of (sphere (0 : E) 1)) (-⟨b 0, by simp⟩) -
+        singularHomology₀Section R (X := TopCat.of (sphere (0 : E) 1)) ⟨b 0, by simp⟩ :=
+  reducedSingularHomologySphereZeroIso_inv_ι R _ _
+
+/-- **Naturality of the generators of the homology of spheres.**  Let `b` and `c` be orthonormal
+bases of real inner product spaces `E` and `F`, indexed by `Fin (n + 1)`, and let
+`f : E →ₗᵢ[ℝ] F` be a linear isometry with `f (b i) = c i` for every `i`.  Then the map induced on
+`H_redₙ` by the restriction of `f` to the unit spheres carries the generator determined by `b` to
+the generator determined by `c`. -/
+theorem reducedSingularHomologySphereIso_hom_naturality {F : Type w} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] {n : ℕ} (b : OrthonormalBasis (Fin (n + 1)) ℝ E)
+    (c : OrthonormalBasis (Fin (n + 1)) ℝ F) (f : E →ₗᵢ[ℝ] F) (hf : ∀ i, f (b i) = c i) :
+    (reducedSingularHomologyFunctor R n).map
+          (TopCat.ofHom ⟨f.unitSphereMap, f.continuous_unitSphereMap⟩) ≫
+        (reducedSingularHomologySphereIso R c).hom =
+      (reducedSingularHomologySphereIso R b).hom := by
+  induction n generalizing E F with
+  | zero =>
+    -- On the zero-sphere, `f` carries the class `[-b 0] - [b 0]` to `[-c 0] - [c 0]`.
+    rw [← cancel_epi (reducedSingularHomologySphereIso R b).inv, Iso.inv_hom_id,
+      ← Category.assoc, ← Iso.eq_comp_inv, Category.id_comp,
+      ← cancel_mono ((reducedSingularHomologyι R 0).app _), Category.assoc,
+      (reducedSingularHomologyι R 0).naturality, reducedSingularHomologySphereIso_inv_ι_assoc,
+      reducedSingularHomologySphereIso_inv_ι, Preadditive.sub_comp,
+      singularHomology₀Section_naturality, singularHomology₀Section_naturality]
+    congr 2 <;> ext <;> simp [hf]
+  | succ n ih =>
+    -- The suspension isomorphisms at the last basis vectors are natural, and the restriction of
+    -- `f` to the equators matches the remaining basis vectors.
+    rw [reducedSingularHomologySphereIso_succ, reducedSingularHomologySphereIso_succ,
+      Iso.trans_hom, Iso.trans_hom,
+      reducedSingularHomologySphereSuccIso_hom_naturality_assoc R ⟨b (Fin.last _), by simp⟩ f
+        ⟨c (Fin.last _), by simp⟩ (hf (Fin.last _))]
+    congr 1
+    exact ih _ _ _ fun i ↦ Subtype.ext (by simp [hf])
 
 end Dimension
 
@@ -382,23 +507,31 @@ theorem isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne {n k : ℕ} (hk
   (isZero_reducedSingularHomologyFunctor_sphere_of_ne R (finrank_euclideanSpace_ulift_fin (n + 1))
     hk).of_iso ((diskBoundaryHomeomorph (n + 1)).toHomotopyEquiv.reducedSingularHomologyIso R k)
 
-/-- **The reduced homology of `TopCat.sphere n` in degree `n` is one copy of the coefficient
-object.**  This is one choice of generator, transported from
-`TauCeti.reducedSingularHomologySphereIso` along `TauCeti.diskBoundaryHomeomorph`. -/
+/-- **The standard generator of the reduced homology of `TopCat.sphere n`.**  The reduced
+homology of `TopCat.sphere n` in degree `n` is one copy of the coefficient object, through the
+homeomorphism `TauCeti.diskBoundaryHomeomorph` with the unit sphere of
+`EuclideanSpace ℝ (ULift (Fin (n + 1)))` and the generator
+`TauCeti.reducedSingularHomologySphereIso` determined by the standard basis of that space, in its
+order.  The generator involves no choices: by `TauCeti.reducedSingularHomologySphereIso_succ` it
+is obtained from the class `[-e₀] - [e₀]` of the zero-sphere by suspending successively at the
+last standard basis vector. -/
 def reducedSingularHomologyTopCatSphereIso (n : ℕ) :
     (reducedSingularHomologyFunctor R n).obj (TopCat.sphere.{w} n) ≅ R :=
   (diskBoundaryHomeomorph (n + 1)).toHomotopyEquiv.reducedSingularHomologyIso R n ≪≫
-    reducedSingularHomologySphereIso R (finrank_euclideanSpace_ulift_fin (n + 1))
+    reducedSingularHomologySphereIso R
+      ((EuclideanSpace.basisFun (ULift.{w} (Fin (n + 1))) ℝ).reindex Equiv.ulift)
 
-/-- The chosen generator of `H_redₙ(TopCat.sphere n)` is the map induced by the homeomorphism
+/-- The standard generator of `H_redₙ(TopCat.sphere n)` is the map induced by the homeomorphism
 `TauCeti.diskBoundaryHomeomorph` with the unit sphere of `EuclideanSpace ℝ (ULift (Fin (n + 1)))`,
-followed by the chosen generator `TauCeti.reducedSingularHomologySphereIso` of that sphere. -/
+followed by the generator `TauCeti.reducedSingularHomologySphereIso` of that sphere determined by
+its standard basis. -/
 @[simp]
 lemma reducedSingularHomologyTopCatSphereIso_hom (n : ℕ) :
     (reducedSingularHomologyTopCatSphereIso R n).hom =
       (reducedSingularHomologyFunctor R n).map
           (TopCat.ofHom (diskBoundaryHomeomorph (n + 1)).toHomotopyEquiv.toFun) ≫
-        (reducedSingularHomologySphereIso R (finrank_euclideanSpace_ulift_fin (n + 1))).hom :=
+        (reducedSingularHomologySphereIso R
+          ((EuclideanSpace.basisFun (ULift.{w} (Fin (n + 1))) ℝ).reindex Equiv.ulift)).hom :=
   -- The source object of the composite is `TopCat.sphere n` only up to unfolding, so `simp` and
   -- `rw` cannot apply `Iso.trans_hom` here; the equations are chained as terms instead.
   (Iso.trans_hom _ _).trans
