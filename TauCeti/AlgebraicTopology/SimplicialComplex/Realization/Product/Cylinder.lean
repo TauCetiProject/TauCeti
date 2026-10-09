@@ -42,14 +42,22 @@ variable {α : Type*} [LinearOrder α] (K : AbstractSimplicialComplex α)
 with the original coordinate first and time second. -/
 def orderedCylinderRealizationHomeomorph :
     Realization K.orderedCylinder ≃ₜ Realization K × unitInterval :=
-  (K.orderedProdRealizationHomeomorph (⊤ : AbstractSimplicialComplex (Fin 2))
-    (finite_faces_orderedProd hK (Set.toFinite _))).trans
-      ((Homeomorph.refl _).prodCongr realizationOneSimplexHomeomorphUnitInterval)
+  -- Transport both the realization carrier and its topology along the characteristic equality.
+  Eq.rec (motive := fun C _ => Realization C ≃ₜ Realization K × unitInterval)
+    ((K.orderedProdRealizationHomeomorph (⊤ : AbstractSimplicialComplex (Fin 2))
+      (finite_faces_orderedProd hK (Set.toFinite _))).trans
+        ((Homeomorph.refl _).prodCongr realizationOneSimplexHomeomorphUnitInterval))
+    (K.orderedCylinder_def).symm
 
 /-- The spatial coordinate is the first marginal of the barycentric coordinates. -/
 @[simp]
 theorem orderedCylinderRealizationHomeomorph_fst_val (z : Realization K.orderedCylinder) :
     (K.orderedCylinderRealizationHomeomorph hK z).1.1 = Finsupp.mapDomain Prod.fst z.1 := by
+  -- Eliminate the carrier equality before applying the product computation rule.
+  unfold orderedCylinderRealizationHomeomorph
+  generalize_proofs hfin hEq
+  generalize K.orderedCylinder = C at hEq z ⊢
+  cases hEq
   let z' : Realization (K.orderedProd (⊤ : AbstractSimplicialComplex (Fin 2))) := z
   have h := K.orderedProdRealizationMap_fst_val (⊤ : AbstractSimplicialComplex (Fin 2)) z'
   rw [← orderedProdRealizationHomeomorph_apply K _
@@ -61,6 +69,11 @@ theorem orderedCylinderRealizationHomeomorph_fst_val (z : Realization K.orderedC
 theorem orderedCylinderRealizationHomeomorph_snd_coe (z : Realization K.orderedCylinder) :
     ((K.orderedCylinderRealizationHomeomorph hK z).2 : ℝ) =
       Finsupp.mapDomain Prod.snd z.1 1 := by
+  -- Eliminate the carrier equality before applying the product computation rule.
+  unfold orderedCylinderRealizationHomeomorph
+  generalize_proofs hfin hEq
+  generalize K.orderedCylinder = C at hEq z ⊢
+  cases hEq
   let z' : Realization (K.orderedProd (⊤ : AbstractSimplicialComplex (Fin 2))) := z
   have h := K.orderedProdRealizationMap_snd_val (⊤ : AbstractSimplicialComplex (Fin 2)) z'
   rw [← orderedProdRealizationHomeomorph_apply K _
@@ -94,6 +107,13 @@ theorem orderedCylinderRealizationHomeomorph_symm_snd_val_zero
     (p : Realization K × unitInterval) :
     Finsupp.mapDomain Prod.snd
       ((K.orderedCylinderRealizationHomeomorph hK).symm p).1 0 = 1 - (p.2 : ℝ) := by
+  -- Reduce the inverse of the composite to the product inverse and interval inverse.
+  unfold orderedCylinderRealizationHomeomorph
+  generalize_proofs hfin hEq
+  generalize K.orderedCylinder = C at hEq ⊢
+  cases hEq
+  simp only [Homeomorph.symm_trans_apply, Homeomorph.prodCongr_symm,
+    Homeomorph.coe_prodCongr, Homeomorph.refl_symm, Homeomorph.refl_apply]
   have h := K.orderedProdRealizationHomeomorph_symm_snd_val
     (⊤ : AbstractSimplicialComplex (Fin 2))
     (finite_faces_orderedProd hK (Set.toFinite _))
