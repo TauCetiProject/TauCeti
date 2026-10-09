@@ -173,15 +173,17 @@ theorem exists_measurable_ae_mem_geodesicPaths (π : Measure (X × X)) [SFinite 
   exact ⟨hGz, congr_arg Prod.fst hGe, congr_arg Prod.snd hGe⟩
 
 /-- **Lifting a law of pairs to geodesics.** On a Polish metric space, every s-finite law `π` of
-pairs of points almost all of which are joined by a geodesic path is the endpoint law of a dynamic
-plan concentrated on geodesic paths. -/
+pairs of points almost all of which are joined by a geodesic path is the endpoint law of an
+s-finite dynamic plan concentrated on geodesic paths. -/
 theorem exists_ae_mem_geodesicPaths_endpointLaw_eq (π : Measure (X × X)) [SFinite π]
     (hπ : ∀ᵐ z ∂π, ∃ γ ∈ geodesicPaths X, γ 0 = z.1 ∧ γ 1 = z.2) :
-    ∃ η : Measure C(I, X), (∀ᵐ γ ∂η, γ ∈ geodesicPaths X) ∧ endpointLaw η = π := by
+    ∃ η : Measure C(I, X), SFinite η ∧ (∀ᵐ γ ∂η, γ ∈ geodesicPaths X) ∧
+      endpointLaw η = π := by
   obtain ⟨G, hG, hGπ⟩ := exists_measurable_ae_mem_geodesicPaths π hπ
   have he : Measurable fun γ : C(I, X) ↦ (γ 0, γ 1) :=
     (ContinuousMap.measurable_eval 0).prodMk (ContinuousMap.measurable_eval 1)
-  refine ⟨π.map G, (ae_map_iff hG.aemeasurable isClosed_geodesicPaths.measurableSet).2 ?_, ?_⟩
+  refine ⟨π.map G, inferInstance,
+    (ae_map_iff hG.aemeasurable isClosed_geodesicPaths.measurableSet).2 ?_, ?_⟩
   · filter_upwards [hGπ] with z hz using hz.1
   · rw [endpointLaw_def, Measure.map_map he hG]
     conv_rhs => rw [← Measure.map_id (μ := π)]
@@ -232,21 +234,26 @@ variable {X : Type*} [MetricSpace X] [CompleteSpace X] [SecondCountableTopology 
 
 /-- **Geodesic interpolation of an optimal coupling.** On a Polish geodesic space, for a finite
 nonzero exponent `p`, two finite measures `μ` and `ν` admitting a coupling are the laws at times
-`0` and `1` of a dynamic plan `η` concentrated on geodesic paths whose laws at any two times `s` and
-`t` are within `|s - t| * W_p (μ, ν)` of each other. The dynamic plan lifts an optimal coupling of
-`μ` and `ν`. -/
+`0` and `1` of a finite dynamic plan `η` concentrated on geodesic paths whose laws at any two times
+`s` and `t` are within `|s - t| * W_p (μ, ν)` of each other. The dynamic plan lifts an optimal
+coupling of `μ` and `ν`. -/
 theorem exists_ae_mem_geodesicPaths_wassersteinEDist_timeMarginal_le [IsGeodesicSpace X] {p : ℝ≥0∞}
     (hp0 : p ≠ 0) (hp : p ≠ ∞) (μ ν : Measure X) [IsFiniteMeasure μ]
     (hcoup : ∃ π, IsCoupling π μ ν) :
-    ∃ η : Measure C(I, X), (∀ᵐ γ ∂η, γ ∈ geodesicPaths X) ∧ η.timeMarginal 0 = μ ∧
-      η.timeMarginal 1 = ν ∧
+    ∃ η : Measure C(I, X), IsFiniteMeasure η ∧ (∀ᵐ γ ∂η, γ ∈ geodesicPaths X) ∧
+      η.timeMarginal 0 = μ ∧ η.timeMarginal 1 = ν ∧
       ∀ s t : I, wassersteinEDist p (η.timeMarginal s) (η.timeMarginal t) ≤
         edist s t * wassersteinEDist p μ ν := by
   obtain ⟨π, hπ, hπopt⟩ := exists_isCoupling_eLpNorm_eq_wassersteinEDist hp0 hp μ ν hcoup
   have : IsFiniteMeasure π := hπ.isFiniteMeasure
-  obtain ⟨η, hη, hηπ⟩ := π.exists_ae_mem_geodesicPaths_endpointLaw_eq
+  obtain ⟨η, -, hη, hηπ⟩ := π.exists_ae_mem_geodesicPaths_endpointLaw_eq
     (.of_forall fun z ↦ IsGeodesicSpace.exists_mem_geodesicPaths z.1 z.2)
-  refine ⟨η, hη, ?_, ?_, fun s t ↦ ?_⟩
+  have : IsFiniteMeasure (η.map fun γ ↦ (γ 0, γ 1)) := by
+    rw [← Measure.endpointLaw_def, hηπ]
+    infer_instance
+  refine ⟨η, Measure.isFiniteMeasure_of_map (μ := η) (f := fun γ ↦ (γ 0, γ 1))
+    ((ContinuousMap.measurable_eval 0).prodMk (ContinuousMap.measurable_eval 1)).aemeasurable,
+    hη, ?_, ?_, fun s t ↦ ?_⟩
   · rw [← Measure.fst_endpointLaw, hηπ, hπ.fst_eq]
   · rw [← Measure.snd_endpointLaw, hηπ, hπ.snd_eq]
   · simpa only [hηπ, hπopt] using wassersteinEDist_timeMarginal_le hη p s t
