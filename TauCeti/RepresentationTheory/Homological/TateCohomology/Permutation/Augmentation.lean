@@ -40,27 +40,32 @@ open CategoryTheory CategoryTheory.Limits MulAction
 
 namespace TauCeti.TateCohomology
 
-variable {G X : Type} [Group G] [Fintype G] [MulAction G X] [Nonempty X]
+variable {G X : Type} [Group G] [Fintype G] [MulAction G X]
 
 /-- Degree-minus-one Tate cohomology of the integral sum-zero permutation lattice is finite.
-No finiteness of the permutation set or cyclicity of the group is required. -/
+No nonemptiness or finiteness of the permutation set or cyclicity of the group is required. -/
 instance finite_tateCohomology_negOne_augmentationSubrepresentation :
     Finite (tateCohomology
       (Rep.of (augmentationSubrepresentation ℤ G X).toRepresentation) (-1)) := by
-  have hS := permutationAugmentationSequence_shortExact ℤ G X
-  rw [permutationAugmentationSequence_def] at hS
-  have hT := _root_.TateCohomology.map_tateComplexFunctor_shortExact hS
-  have hzero : IsZero (tateCohomology (Rep.ofMulAction ℤ G X) (-1)) :=
-    ModuleCat.isZero_of_subsingleton _
-  have hepi := hT.epi_δ (-2) (-1) (by decide) hzero
-  have : Finite (tateCohomology (Rep.trivial ℤ G ℤ) (-2)) :=
-    Finite.of_equiv _ HNegTwoAddEquivAbelianization.toEquiv.symm
-  exact Finite.of_surjective (_root_.TateCohomology.δ hS (-2))
-    ((ModuleCat.epi_iff_surjective _).1 hepi)
+  rcases isEmpty_or_nonempty X with hX | hX
+  · have : Subsingleton (MonoidAlgebra ℤ X) := MonoidAlgebra.coeff_injective.subsingleton
+    have := Function.Injective.subsingleton (HNegOneIsoNormKernelQuotient
+      (Rep.of (augmentationSubrepresentation ℤ G X).toRepresentation)).toLinearEquiv.injective
+    infer_instance
+  · have hS := permutationAugmentationSequence_shortExact ℤ G X
+    rw [permutationAugmentationSequence_def] at hS
+    have hT := _root_.TateCohomology.map_tateComplexFunctor_shortExact hS
+    have hzero : IsZero (tateCohomology (Rep.ofMulAction ℤ G X) (-1)) :=
+      ModuleCat.isZero_of_subsingleton _
+    have hepi := hT.epi_δ (-2) (-1) (by decide) hzero
+    have : Finite (tateCohomology (Rep.trivial ℤ G ℤ) (-2)) :=
+      Finite.of_equiv _ HNegTwoAddEquivAbelianization.toEquiv.symm
+    exact Finite.of_surjective (_root_.TateCohomology.δ hS (-2))
+      ((ModuleCat.epi_iff_surjective _).1 hepi)
 
 /-- For a finite cyclic group acting on a nonempty set, the sum-zero lattice's Herbrand quotient
 is that of the permutation lattice divided by the order of the group. -/
-theorem herbrandQuotient_augmentationSubrepresentation_eq_div [IsCyclic G] :
+theorem herbrandQuotient_augmentationSubrepresentation_eq_div [Nonempty X] [IsCyclic G] :
     herbrandQuotient (Rep.of (augmentationSubrepresentation ℤ G X).toRepresentation) =
       herbrandQuotient (Rep.ofMulAction ℤ G X) / Nat.card G := by
   have hS := permutationAugmentationSequence_shortExact ℤ G X
@@ -71,7 +76,7 @@ theorem herbrandQuotient_augmentationSubrepresentation_eq_div [IsCyclic G] :
 
 /-- The sum-zero permutation lattice has Herbrand quotient the product of orbit stabilizer
 orders divided by the group order. The set must be nonempty for augmentation onto `ℤ`. -/
-theorem herbrandQuotient_augmentationSubrepresentation [IsCyclic G]
+theorem herbrandQuotient_augmentationSubrepresentation [Nonempty X] [IsCyclic G]
     [Fintype (orbitRel.Quotient G X)] :
     herbrandQuotient (Rep.of (augmentationSubrepresentation ℤ G X).toRepresentation) =
       (∏ ω : orbitRel.Quotient G X, (Nat.card (stabilizer G ω.out) : ℚ)) / Nat.card G := by
