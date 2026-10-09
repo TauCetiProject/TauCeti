@@ -97,26 +97,18 @@ theorem twoPointBarycenterTime_zero {p : ℝ} (hp : p ≠ 1) : twoPointBarycente
 theorem twoPointBarycenterTime_one {p : ℝ} (hp : p ≠ 1) : twoPointBarycenterTime p 1 = 1 := by
   simp [twoPointBarycenterTime_def, Real.zero_rpow (inv_ne_zero (sub_ne_zero.2 hp))]
 
-/-- The denominator of the barycentric time is positive for every weight in `[0, 1]`. -/
-private theorem rpow_add_rpow_pos (r : ℝ) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
-    0 < (1 - t) ^ r + t ^ r := by
-  rcases ht.1.eq_or_lt with rfl | ht₀
-  · simpa using add_pos_of_pos_of_nonneg zero_lt_one (Real.rpow_nonneg le_rfl r)
-  · exact add_pos_of_nonneg_of_pos (Real.rpow_nonneg (sub_nonneg.2 ht.2) r)
-      (Real.rpow_pos_of_pos ht₀ r)
-
 /-- The barycentric time of the complementary weight is the complementary time. -/
 @[simp]
 theorem twoPointBarycenterTime_one_sub (p : ℝ) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
     twoPointBarycenterTime p (1 - t) = 1 - twoPointBarycenterTime p t := by
-  have hS := (rpow_add_rpow_pos (p - 1)⁻¹ ht).ne'
+  have hS := (Real.one_sub_rpow_add_rpow_pos (p - 1)⁻¹ ht).ne'
   rw [twoPointBarycenterTime_def, twoPointBarycenterTime_def, sub_sub_cancel, add_comm (t ^ _),
     eq_sub_iff_add_eq, ← add_div, div_self hS]
 
 /-- The barycentric time of a weight in `[0, 1]` lies in `[0, 1]`. -/
 theorem twoPointBarycenterTime_mem_Icc (p : ℝ) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
     twoPointBarycenterTime p t ∈ Icc (0 : ℝ) 1 := by
-  have hS := rpow_add_rpow_pos (p - 1)⁻¹ ht
+  have hS := Real.one_sub_rpow_add_rpow_pos (p - 1)⁻¹ ht
   rw [twoPointBarycenterTime_def]
   exact ⟨div_nonneg (Real.rpow_nonneg ht.1 _) hS.le, (div_le_one hS).2
     (le_add_of_nonneg_left (Real.rpow_nonneg (sub_nonneg.2 ht.2) _))⟩
@@ -132,7 +124,7 @@ variable {p t D a b : ℝ}
 private theorem mul_rpow_sub_one_eq (hp : 1 < p) (ht : t ∈ Icc (0 : ℝ) 1) (hD : 0 ≤ D) :
     (1 - t) * (twoPointBarycenterTime p t * D) ^ (p - 1) =
       t * ((1 - twoPointBarycenterTime p t) * D) ^ (p - 1) := by
-  have hS := rpow_add_rpow_pos (p - 1)⁻¹ ht
+  have hS := Real.one_sub_rpow_add_rpow_pos (p - 1)⁻¹ ht
   have hp₁ : p - 1 ≠ 0 := sub_ne_zero.2 hp.ne'
   have hDS : 0 ≤ D / ((1 - t) ^ (p - 1)⁻¹ + t ^ (p - 1)⁻¹) := div_nonneg hD hS.le
   have hτ : twoPointBarycenterTime p t * D =
@@ -165,6 +157,26 @@ private theorem mul_rpow_add_mul_rpow_eq (hp : 1 < p) (ht : t ∈ Icc (0 : ℝ) 
   linear_combination p * ((1 - twoPointBarycenterTime p t) * D - b) *
     mul_rpow_sub_one_eq hp ht hD
 
+/-- The three terms of the excess in `mul_rpow_add_mul_rpow_eq` are nonnegative: the two
+weighted tangent-line gaps by convexity of `u ↦ u ^ p`, and the slack term since `a + b ≥ D`. -/
+private theorem tangent_gaps_nonneg (hp : 1 < p) (ht : t ∈ Icc (0 : ℝ) 1) (hD : 0 ≤ D)
+    (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : D ≤ a + b) :
+    0 ≤ (1 - t) * (a ^ p - ((twoPointBarycenterTime p t * D) ^ p +
+          p * (twoPointBarycenterTime p t * D) ^ (p - 1) *
+            (a - twoPointBarycenterTime p t * D))) ∧
+      0 ≤ t * (b ^ p - (((1 - twoPointBarycenterTime p t) * D) ^ p +
+          p * ((1 - twoPointBarycenterTime p t) * D) ^ (p - 1) *
+            (b - (1 - twoPointBarycenterTime p t) * D))) ∧
+      0 ≤ p * ((1 - t) * (twoPointBarycenterTime p t * D) ^ (p - 1)) * (a + b - D) := by
+  have hτ := twoPointBarycenterTime_mem_Icc p ht
+  have hτD : 0 ≤ twoPointBarycenterTime p t * D := mul_nonneg hτ.1 hD
+  refine ⟨mul_nonneg (sub_nonneg.2 ht.2)
+      (sub_nonneg.2 (Real.rpow_add_mul_rpow_sub_one_mul_sub_le_rpow hp.le ha hτD)),
+    mul_nonneg ht.1 (sub_nonneg.2 (Real.rpow_add_mul_rpow_sub_one_mul_sub_le_rpow hp.le hb
+      (mul_nonneg (sub_nonneg.2 hτ.2) hD))),
+    mul_nonneg (mul_nonneg (by linarith) (mul_nonneg (sub_nonneg.2 ht.2)
+      (Real.rpow_nonneg hτD _))) (sub_nonneg.2 hab)⟩
+
 /-- **The scalar two-point problem.** For `1 < p` and `t ∈ [0, 1]`, if `a, b ≥ 0` and
 `a + b ≥ D ≥ 0`, then `(1 - t) a ^ p + t b ^ p` is at least its value at `a = τ D`,
 `b = (1 - τ) D`. -/
@@ -173,16 +185,8 @@ private theorem mul_rpow_add_mul_rpow_le (hp : 1 < p) (ht : t ∈ Icc (0 : ℝ) 
     (1 - t) * (twoPointBarycenterTime p t * D) ^ p +
         t * ((1 - twoPointBarycenterTime p t) * D) ^ p ≤
       (1 - t) * a ^ p + t * b ^ p := by
-  have hτ := twoPointBarycenterTime_mem_Icc p ht
-  have ha' := Real.rpow_add_mul_rpow_sub_one_mul_sub_le_rpow hp.le ha (mul_nonneg hτ.1 hD)
-  have hb' := Real.rpow_add_mul_rpow_sub_one_mul_sub_le_rpow hp.le hb
-    (mul_nonneg (sub_nonneg.2 hτ.2) hD)
-  have hslack : 0 ≤ p * ((1 - t) * (twoPointBarycenterTime p t * D) ^ (p - 1)) * (a + b - D) :=
-    mul_nonneg (mul_nonneg (by linarith) (mul_nonneg (sub_nonneg.2 ht.2)
-      (Real.rpow_nonneg (mul_nonneg hτ.1 hD) _))) (sub_nonneg.2 hab)
+  obtain ⟨hga, hgb, hslack⟩ := tangent_gaps_nonneg hp ht hD ha hb hab
   rw [mul_rpow_add_mul_rpow_eq (a := a) (b := b) hp ht hD]
-  have := mul_nonneg (sub_nonneg.2 ht.2) (sub_nonneg.2 ha')
-  have := mul_nonneg ht.1 (sub_nonneg.2 hb')
   linarith
 
 /-- **The equality case of the scalar two-point problem.** If, in addition to the hypotheses of
@@ -219,14 +223,8 @@ private theorem eq_of_mul_rpow_add_mul_rpow_le (hp : 1 < p) (ht : t ∈ Icc (0 :
   have hτ := twoPointBarycenterTime_mem_Icc p ht
   have hτD : 0 ≤ twoPointBarycenterTime p t * D := mul_nonneg hτ.1 hD
   have hτD' : 0 ≤ (1 - twoPointBarycenterTime p t) * D := mul_nonneg (sub_nonneg.2 hτ.2) hD
-  have ha' := Real.rpow_add_mul_rpow_sub_one_mul_sub_le_rpow hp.le ha hτD
-  have hb' := Real.rpow_add_mul_rpow_sub_one_mul_sub_le_rpow hp.le hb hτD'
-  have hslack : 0 ≤ p * ((1 - t) * (twoPointBarycenterTime p t * D) ^ (p - 1)) * (a + b - D) :=
-    mul_nonneg (mul_nonneg (by linarith) (mul_nonneg (sub_nonneg.2 ht.2)
-      (Real.rpow_nonneg hτD _))) (sub_nonneg.2 hab)
+  obtain ⟨hga, hgb, hslack⟩ := tangent_gaps_nonneg hp ht hD ha hb hab
   rw [mul_rpow_add_mul_rpow_eq (a := a) (b := b) hp ht hD] at hle
-  have hga := mul_nonneg (sub_nonneg.2 ht₁.le) (sub_nonneg.2 ha')
-  have hgb := mul_nonneg ht.1 (sub_nonneg.2 hb')
   constructor
   · by_contra h
     have := mul_pos (sub_pos.2 ht₁)
@@ -249,15 +247,16 @@ private theorem frechetPower_ofReal_smul_dirac_add (p : ℝ≥0∞) (ht : t ∈ 
     frechetPower p (ENNReal.ofReal (1 - t) • Measure.dirac x + ENNReal.ofReal t • Measure.dirac y)
         z =
       ENNReal.ofReal ((1 - t) * dist z x ^ p.toReal + t * dist z y ^ p.toReal) := by
-  have hm : Measurable fun w ↦ edist z w ^ p.toReal :=
-    (continuous_const.edist continuous_id).measurable.pow_const _
   have hpow (w : X) : edist z w ^ p.toReal = ENNReal.ofReal (dist z w ^ p.toReal) := by
     rw [edist_dist, ENNReal.ofReal_rpow_of_nonneg dist_nonneg ENNReal.toReal_nonneg]
-  rw [frechetPower_def, lintegral_add_measure, lintegral_smul_measure, lintegral_smul_measure,
-    lintegral_dirac' _ hm, lintegral_dirac' _ hm, hpow, hpow,
-    ENNReal.ofReal_add (mul_nonneg (sub_nonneg.2 ht.2) (by positivity))
-      (mul_nonneg ht.1 (by positivity)),
-    ENNReal.ofReal_mul (sub_nonneg.2 ht.2), ENNReal.ofReal_mul ht.1, smul_eq_mul, smul_eq_mul]
+  have hμ : ENNReal.ofReal (1 - t) • Measure.dirac x + ENNReal.ofReal t • Measure.dirac y =
+      ∑ i, ![ENNReal.ofReal (1 - t), ENNReal.ofReal t] i • Measure.dirac (![x, y] i) := by
+    simp [Fin.sum_univ_two]
+  rw [hμ, frechetPower_sum_smul_dirac, Fin.sum_univ_two]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, smul_eq_mul, hpow,
+    ← ENNReal.ofReal_mul (sub_nonneg.2 ht.2), ← ENNReal.ofReal_mul ht.1]
+  exact (ENNReal.ofReal_add (mul_nonneg (sub_nonneg.2 ht.2) (by positivity))
+    (mul_nonneg ht.1 (by positivity))).symm
 
 /-- For `0 < p < ∞`, a point is a `p`-Fréchet barycenter of `(1 - t) δ_x + t δ_y` exactly when it
 minimizes the real functional `w ↦ (1 - t) d(w, x) ^ p + t d(w, y) ^ p`. -/

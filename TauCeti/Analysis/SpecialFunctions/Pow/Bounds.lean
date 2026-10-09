@@ -23,12 +23,16 @@ For `1 ≤ p`, the graph of `u ↦ u ^ p` on `[0, ∞)` lies above each of its t
 Bernoulli's inequality made homogeneous, and it is the first-order optimality test for weighted
 sums of powers.
 
+For `t ∈ [0, 1]` and any exponent `r`, the sum `(1 - t) ^ r + t ^ r` is positive, so it can be
+used as the normalizing denominator of a pair of weights.
+
 ## Main results
 
 * `Real.rpow_neg_le_half`: `y ^ (-s) ≤ 1 / 2` for `2 ≤ y` and `1 ≤ s`.
 * `Real.exists_pos_lt_one_lt_rpow`: for `θ < 1` and any `β`, some `τ ∈ (0, 1)` has `θ < τ ^ β`.
 * `Real.rpow_add_mul_rpow_sub_one_mul_sub_le_rpow` and
   `Real.rpow_add_mul_rpow_sub_one_mul_sub_lt_rpow`: the tangent-line inequalities for `u ↦ u ^ p`.
+* `Real.one_sub_rpow_add_rpow_pos`: `0 < (1 - t) ^ r + t ^ r` for `t ∈ [0, 1]`.
 -/
 
 public section
@@ -84,5 +88,13 @@ theorem rpow_add_mul_rpow_sub_one_mul_sub_le_rpow {p u v : ℝ} (hp : 1 ≤ p) (
   rcases eq_or_ne u v with rfl | huv
   · simp
   exact (rpow_add_mul_rpow_sub_one_mul_sub_lt_rpow hp hu hv huv).le
+
+/-- For `t ∈ [0, 1]` and any exponent `r`, `(1 - t) ^ r + t ^ r` is positive: at least one of the
+two bases is positive. -/
+theorem one_sub_rpow_add_rpow_pos (r : ℝ) {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) :
+    0 < (1 - t) ^ r + t ^ r := by
+  rcases ht.1.eq_or_lt with rfl | ht₀
+  · simpa using add_pos_of_pos_of_nonneg zero_lt_one (rpow_nonneg le_rfl r)
+  · exact add_pos_of_nonneg_of_pos (rpow_nonneg (sub_nonneg.2 ht.2) r) (rpow_pos_of_pos ht₀ r)
 
 end Real
