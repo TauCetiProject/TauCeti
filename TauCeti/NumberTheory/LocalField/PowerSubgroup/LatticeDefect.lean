@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.PowerClassGroup
 public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.Algebra.Module.Torsion.Snake
 public import TauCeti.NumberTheory.LocalField.DeepUnits.Basic
@@ -56,7 +57,9 @@ formula, where Kummer theory identifies `H¹(L, μ_ℓ)` with `Lˣ ⧸ (Lˣ)^ℓ
 The finiteness of the reductions and torsion subgroups, which the definition of the defect asks
 for, is recorded by instances: `Lˣ ⧸ (Lˣ)^ℓ` is finite since `(Lˣ)^ℓ` has finite index
 (`TauCeti.finiteIndex_range_powMonoidHom`), and the reductions of the `U(L,i)` are then finite by
-the snake lemma (`TauCeti.finite_quotSMulTop_of_exact`).
+the snake lemma (`TauCeti.finite_quotSMulTop_of_exact`). The multiplicative power classes
+`TauCeti.powerClassQuotient Lˣ ℓ` are finite as well
+(`TauCeti.finite_additive_powerClassQuotient_units`).
 
 ## Main results
 
@@ -119,6 +122,12 @@ instance finite_quotSMulTop_additive_units (n : ℕ) [NeZero (n : L)] :
   have := Finite.of_surjective _ (QuotientGroup.lift_surjective_of_surjective _ φ
     N.mkQ_surjective hφ)
   exact Finite.of_equiv _ Multiplicative.toAdd
+
+/-- When `n` is nonzero in `L`, the `n`th power classes `Lˣ ⧸ (Lˣ)^n`, written additively, form a
+finite group. -/
+instance finite_additive_powerClassQuotient_units (n : ℕ) [NeZero (n : L)] :
+    Finite (Additive (powerClassQuotient Lˣ n)) :=
+  Finite.of_equiv _ (quotSMulTopPowerClassEquiv (G := Lˣ) n).toEquiv
 
 /-- The normalized valuation `Lˣ → ℤ`, written additively, as a `ℤ`-linear map. -/
 private noncomputable abbrev valuationInt : Additive Lˣ →ₗ[ℤ] ℤ :=
