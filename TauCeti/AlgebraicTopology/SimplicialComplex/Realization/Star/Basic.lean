@@ -146,6 +146,14 @@ theorem mem_geometricLink_iff (x : Realization K) :
   simp [geometricLink, PreAbstractSimplicialComplex.mem_link,
     support_mem, Finset.disjoint_singleton_right]
 
+/-- The geometric link is compact when its combinatorial link has finitely many faces,
+even when the ambient vertex type is infinite. -/
+theorem isCompact_geometricLink_of_finite
+    (hfin : (PreAbstractSimplicialComplex.link K.toPreAbstractSimplicialComplex {v}).faces.Finite) :
+    IsCompact (geometricLink K v) := by
+  rw [Set.ext (mem_geometricLink_iff K v)]
+  exact K.isCompact_setOf_support_mem PreAbstractSimplicialComplex.link_le hfin
+
 /-- The apex, regarded as a point of its geometric closed star. -/
 def starApex : closedStarRealization K {v} :=
   ⟨vertex K v, by
