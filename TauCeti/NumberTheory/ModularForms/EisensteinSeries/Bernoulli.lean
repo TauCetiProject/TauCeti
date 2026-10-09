@@ -50,7 +50,7 @@ theorem qExpansion_normalizedCharEisensteinSeriesMF_coeff_zero
     (qExpansion 1 (normalizedCharEisensteinSeriesMF ψ φ hk huv)).coeff 0 =
       if u = 1 then -φ.generalizedBernoulli k / (2 * (k : ℂ)) else 0 := by
   let _ : NeZero v := NeZero.of_dvd ((dvd_mul_left v u).trans huv)
-  rw [normalizedCharEisensteinSeriesMF_eq_smul, FunLike.coe_smul,
+  rw [normalizedCharEisensteinSeriesMF_def, FunLike.coe_smul,
     ModularForm.qExpansion_smul one_pos (TauCeti.one_mem_strictPeriods_Gamma1_map N),
     PowerSeries.coeff_smul,
     qExpansion_charEisensteinSeriesMF_coeff ψ φ hk huv hpar]

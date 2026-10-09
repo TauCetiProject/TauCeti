@@ -68,7 +68,7 @@ def normalizedCharEisensteinSeriesMF (hk : 3 ≤ (k : ℤ)) (huv : u * v ∣ N) 
 
 /-- The normalized series is the raw character Eisenstein series multiplied by the inverse
 of its expected first Fourier coefficient. -/
-theorem normalizedCharEisensteinSeriesMF_eq_smul (hk : 3 ≤ (k : ℤ)) (huv : u * v ∣ N) :
+theorem normalizedCharEisensteinSeriesMF_def (hk : 3 ≤ (k : ℤ)) (huv : u * v ∣ N) :
     haveI : NeZero v := NeZero.of_dvd ((dvd_mul_left v u).trans huv)
     normalizedCharEisensteinSeriesMF psi phi hk huv =
       (2 * (-2 * π * I) ^ k / ((k - 1).factorial * v ^ k) * gaussSum phi⁻¹ stdAddChar)⁻¹ •
