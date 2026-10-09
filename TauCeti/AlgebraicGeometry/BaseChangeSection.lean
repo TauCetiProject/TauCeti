@@ -79,6 +79,19 @@ lemma baseChangeSection_comp_pullback_map {T' T : Over S} (φ : T' ⟶ T) :
   simp only [baseChangeSection, hcomm, Category.assoc]
   exact congrArg (· ≫ (pullbackSymmetry f T.hom).hom) hsection
 
+/-- The base-changed section over `T'` is the pullback of the base-changed section over `T`
+along a morphism `T' ⟶ T` of schemes over `S`. -/
+lemma isPullback_baseChangeSection {T' T : Over S} (φ : T' ⟶ T) :
+    IsPullback (baseChangeSection f x₀ hx₀ T') φ.left
+      ((Over.pullback f).map φ).left (baseChangeSection f x₀ hx₀ T) := by
+  have H : IsPullback ((Over.pullback f).map φ).left (pullback.fst T'.hom f)
+      (pullback.fst T.hom f) φ.left := by
+    refine IsPullback.of_right ?_ (by simp) (IsPullback.of_hasPullback T.hom f).flip
+    simpa using (IsPullback.of_hasPullback T'.hom f).flip
+  exact IsPullback.of_right
+    (by simpa only [baseChangeSection_fst] using IsPullback.id_horiz φ.left)
+    (baseChangeSection_comp_pullback_map f x₀ hx₀ φ) H.flip
+
 end
 
 end AlgebraicGeometry
