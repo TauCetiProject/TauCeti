@@ -247,11 +247,8 @@ theorem zeroSectionDivisor_pow_three_comap_chartι (i : Fin 3) :
   by_cases hi : i = 1
   · -- on `D₊(Y)`, `(X/Y, Z/Y)³ = (Z/Y)`
     subst hi
-    -- `ofIdealTop` is the inverse of `equivOfIsAffine`, so it commutes with powers
-    have hpow (I : Ideal Γ(Spec (.of (W.toProjective.ChartRing 1)), ⊤)) :
-        ofIdealTop I ^ 3 = ofIdealTop (I ^ 3) := by
-      simp only [← equivOfIsAffine_symm_apply, map_pow]
-    rw [zeroSectionDivisor_comap_chartι_one, hpow, ← Ideal.map_pow, span_pow_three_chartOne]
+    rw [zeroSectionDivisor_comap_chartι_one, ← ofIdealTop_pow, ← Ideal.map_pow,
+      span_pow_three_chartOne]
   · -- on `D₊(X)` and `D₊(Z)`, both sides are the unit ideal
     have hu : IsUnit (W.toProjective.chartPoint i 2) := by
       fin_cases i
