@@ -49,19 +49,21 @@ variable (K L : Type) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
 
-/-- Inclusion of the valuation-zero units in the multiplicative group, as a morphism of
-integral Galois representations. -/
-def unitFiltrationZeroIncl :
-    Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0) ⟶
-      Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ :=
-  Rep.ofHom <| LinearMap.intertwiningMap_of_isIntertwiningMap _ _
-    (unitFiltration L 0).subtype.toAdditive.toIntLinearMap fun σ x ↦
-      congrArg Additive.ofMul (AlgEquiv.coe_smul_unitFiltration σ x.toMul)
-
-/-- The inclusion is the subgroup inclusion, written additively. -/
-@[simp]
-theorem unitFiltrationZeroIncl_apply (x : Additive (unitFiltration L 0)) :
-    (unitFiltrationZeroIncl K L).hom x = Additive.ofMul (x.toMul : Lˣ) := (rfl)
+/-- On the valuation-zero units of a Galois extension, the representation norm of `Gal(L/K)` is
+the field norm. -/
+theorem coe_norm_unitFiltrationZero [IsGalois K L]
+    (x : Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)) :
+    (((Rep.toAdditive
+        ((Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)).norm.hom x)).toMul :
+          Lˣ) : L) =
+      algebraMap K L (Algebra.norm K (((Rep.toAdditive x).toMul : Lˣ) : L)) := by
+  -- Compare in `Lˣ`, where the representation norm is the field norm.
+  have hc := congr($(Rep.norm_comm (unitFiltrationZeroIncl K L)).hom x)
+  simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_apply] at hc
+  rw [unitFiltrationZeroIncl_apply K L x, unitFiltrationZeroIncl_apply K L
+    ((Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)).norm.hom x)] at hc
+  rw [← groupCohomology.norm_ofAlgebraAutOnUnits_eq]
+  exact congr(((Additive.toMul (Rep.toAdditive $hc.symm) : Lˣ) : L))
 
 /-- Normalized valuation as a morphism from the multiplicative Galois representation to the
 trivial integral representation. -/
@@ -71,11 +73,9 @@ def unitsValuationHom : Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ ⟶ Rep.tr
       -- `change` evaluates `Representation.ofMulDistribMulAction` on `Additive Lˣ`,
       -- reduces the target's `Representation.trivial` action to the identity, and evaluates
       -- `toAdditiveLeft.toIntLinearMap` as `Multiplicative.toAdd` of normalized valuation.
-      -- Equality then follows from the original valuations through their order comparison.
       change (normalizedValuation L (σ • x.toMul)).toAdd =
         (normalizedValuation L x.toMul).toAdd
-      apply le_antisymm <;> rw [toAdd_normalizedValuation_le_iff_valuation_le] <;>
-        simp [AlgEquiv.smul_units_def, σ.valuation_eq]
+      rw [AlgEquiv.smul_units_def, AlgEquiv.normalizedValuation_unitsMap]
 
 /-- The valuation morphism evaluates to the additive normalized valuation. -/
 @[simp]
@@ -94,6 +94,9 @@ theorem unitsValuationHom_eq_zero_iff (x : Rep.ofMulDistribMulAction (L ≃ₐ[K
 theorem unitFiltrationZeroIncl_comp_unitsValuationHom :
     unitFiltrationZeroIncl K L ≫ unitsValuationHom K L = 0 := by
   ext x
+  simp only [Rep.hom_comp, Representation.IntertwiningMap.toLinearMap_apply,
+    Representation.IntertwiningMap.comp_apply]
+  rw [unitFiltrationZeroIncl_apply K L x]
   exact (unitsValuationHom_eq_zero_iff K L _).2 x.toMul.2
 
 /-- The canonical valuation short complex of integral Galois representations. The last term
@@ -130,13 +133,12 @@ theorem unitsValuationSequence_shortExact : (unitsValuationSequence K L).ShortEx
     rw [unitsValuationHom_eq_zero_iff]
     constructor
     · intro hx
-      exact ⟨Additive.ofMul ⟨(Rep.toAdditive x).toMul, hx⟩, rfl⟩
+      exact ⟨Additive.ofMul ⟨(Rep.toAdditive x).toMul, hx⟩,
+        (unitFiltrationZeroIncl_apply K L _).trans (by rfl)⟩
     · rintro ⟨y, rfl⟩
+      rw [unitFiltrationZeroIncl_apply K L y]
       exact y.toMul.2
-  · intro x y h
-    apply Additive.toMul.injective
-    apply Subtype.ext
-    exact congrArg Additive.toMul h
+  · exact unitFiltrationZeroIncl_injective K L
   · intro n
     obtain ⟨x, hx⟩ := normalizedValuation_surjective (K := L) (Multiplicative.ofAdd n)
     exact ⟨Additive.ofMul x, congrArg Multiplicative.toAdd hx⟩

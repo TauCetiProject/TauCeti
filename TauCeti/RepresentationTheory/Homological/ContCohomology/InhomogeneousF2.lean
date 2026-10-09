@@ -1,0 +1,396 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialF2
+
+/-!
+# Explicit inhomogeneous cochains with trivial `𝔽₂` coefficients
+
+Explicit cohomological constructions with trivial `𝔽₂` coefficients, such as the two-point graph
+cocycle of the Evens norm or a factor set pulled back along a homomorphism, are given by formulas
+`G → ZMod 2` and `G × G → ZMod 2`. Continuous cohomology with these coefficients is computed by
+Mathlib's homogeneous cochains of `TauCeti.trivialF2 G`, whose carrier is the universe lift
+`ULift (ZMod 2)`. This file places continuous formulas in that complex, through the classical
+passage `f ↦ ((g₀, g₁) ↦ f (g₀⁻¹ g₁))` and `f ↦ ((g₀, g₁, g₂) ↦ f (g₀⁻¹ g₁, g₁⁻¹ g₂))` from
+inhomogeneous to homogeneous cochains, the action being trivial. These constructors are the only
+place where the universe lift is crossed.
+
+Under this passage the canonical differential becomes the inhomogeneous one: a formula is a cocycle
+exactly when it satisfies the inhomogeneous cocycle identity, and the differential of the image of
+a `1`-cochain `ψ` is the image of `(g, h) ↦ ψ h - ψ (g h) + ψ g`. Hence two continuous
+inhomogeneous `2`-cocycles that differ by such an explicit coboundary have the same class in
+`continuousCohomology 2 (trivialF2 G)`. This is how a coboundary witness written as a formula
+crosses to the canonical object.
+
+No local compactness is needed: the homogeneous cochains are obtained by currying a jointly
+continuous function, which is always possible. For a general discrete module, the passage between
+the two kinds of cochains is `TauCeti.ContCohomology.cochainEquiv1` and
+`TauCeti.ContCohomology.cochainEquiv2`.
+
+The explicit low-degree model presents a class with these coefficients as the class of a continuous
+inhomogeneous cocycle in `H¹` or `H²`, carried to `continuousCohomology n (trivialF2 G)` by the
+comparisons `TauCeti.ContCohomology.explicitH1AddEquivContinuousCohomology` and
+`TauCeti.ContCohomology.explicitH2AddEquivContinuousCohomology` followed by the identification
+`TauCeti.ofDiscreteModule_trivialF2` of the coefficients. The last section proves that this is the
+`TopRep.cochainClass` of the image of the same formula, so that a class defined in the explicit
+model can be computed with on homogeneous cochains, and conversely.
+
+## Main definitions
+
+* `TauCeti.ContCohomology.inhomogeneousCochain1`, `TauCeti.ContCohomology.inhomogeneousCochain2`:
+  a continuous `ZMod 2`-valued function on `G`, respectively `G × G`, as a homogeneous cochain of
+  `trivialF2 G`.
+* `TauCeti.ContCohomology.f2CocycleClass`: the class in `continuousCohomology 2 (trivialF2 G)` of
+  a continuous inhomogeneous `2`-cocycle.
+
+## Main results
+
+* `TauCeti.ContCohomology.inhomogeneousCochain1_d_eq_zero_iff`: the image of `f : G → ZMod 2` is a
+  cocycle exactly when `f` is additive, that is, a homomorphism.
+* `TauCeti.ContCohomology.inhomogeneousCochain2_d_eq_zero_iff`: the image of `f : G × G → ZMod 2`
+  is a cocycle exactly when `f` satisfies the inhomogeneous `2`-cocycle identity.
+* `TauCeti.ContCohomology.d_inhomogeneousCochain1`: the differential of the image of a `1`-cochain
+  is the image of its inhomogeneous coboundary.
+* `TauCeti.ContCohomology.cochainClass_inhomogeneousCochain2_eq_of_coboundary`: cohomologous
+  continuous inhomogeneous `2`-cocycles have the same class.
+* `TauCeti.ContCohomology.f2CocycleClass_add` and `TauCeti.ContCohomology.f2CocycleClass_eq_add`:
+  the class of an explicit `2`-cocycle is additive and kills coboundaries.
+* `TauCeti.ContCohomology.trivialF2Map_cochainClass_inhomogeneousCochain1`: pulling back along a
+  continuous homomorphism `φ` sends the class of the image of `f` to the class of the image of
+  `f ∘ φ`.
+* `TauCeti.ContCohomology.eqToHom_explicitH1AddEquivContinuousCohomology_eq_cochainClass` and
+  `TauCeti.ContCohomology.eqToHom_explicitH2AddEquivContinuousCohomology_eq_cochainClass`: the
+  explicit class of a trivial-`𝔽₂` cocycle in degree one, respectively two (over a locally compact
+  group, where the explicit comparison exists), is the canonical class of its image.
+
+## References
+
+* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., Ch. I, §2: the
+  inhomogeneous description of continuous cochains.
+-/
+
+public section
+
+namespace TauCeti.ContCohomology
+
+open TopRep
+
+universe u
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+/-- A continuous function `f : G → ZMod 2`, as the homogeneous `1`-cochain
+`(g₀, g₁) ↦ f (g₀⁻¹ * g₁)` of the trivial `𝔽₂` coefficients `trivialF2 G`, lifted to their
+carrier.
+
+Source: this constructor is close to the degree-`1` constructor of Tau Ceti PR
+[#11157](https://github.com/TauCetiProject/TauCeti/pull/11157); here it is stated on
+`homogeneousCochains (trivialF2 G)` directly, without local compactness, with
+`inhomogeneousCochain2` as its degree-`2` counterpart. -/
+noncomputable def inhomogeneousCochain1 (f : G → ZMod 2) (hf : Continuous f) :
+    (homogeneousCochains (trivialF2 G)).X 1 :=
+  ⟨ContinuousMap.curry ⟨fun q : G × G ↦ (trivialF2Equiv G).symm (f (q.1⁻¹ * q.2)),
+      continuous_of_discreteTopology.comp (hf.comp (continuous_fst.inv.mul continuous_snd))⟩,
+    fun g ↦ by
+      ext h₀ h₁
+      simp only [ContRepresentation.coind₁_apply_apply, trivialF2_ρ_apply_apply,
+        ContinuousMap.curry_apply, ContinuousMap.coe_mk, mul_inv_rev, inv_inv, mul_assoc,
+        mul_inv_cancel_left]⟩
+
+/-- The value of `inhomogeneousCochain1 f hf` at `(g₀, g₁)` is `f (g₀⁻¹ * g₁)`, lifted to the
+carrier of `trivialF2 G`. -/
+@[simp]
+theorem inhomogeneousCochain1_apply (f : G → ZMod 2) (hf : Continuous f) (g₀ g₁ : G) :
+    (inhomogeneousCochain1 f hf).val g₀ g₁ = (trivialF2Equiv G).symm (f (g₀⁻¹ * g₁)) :=
+  (rfl)
+
+/-- A continuous function `f : G × G → ZMod 2`, as the homogeneous `2`-cochain
+`(g₀, g₁, g₂) ↦ f (g₀⁻¹ * g₁, g₁⁻¹ * g₂)` of the trivial `𝔽₂` coefficients `trivialF2 G`, lifted
+to their carrier. -/
+noncomputable def inhomogeneousCochain2 (f : G × G → ZMod 2) (hf : Continuous f) :
+    (homogeneousCochains (trivialF2 G)).X 2 :=
+  ⟨ContinuousMap.curry <| ContinuousMap.curry
+      ⟨fun q : (G × G) × G ↦ (trivialF2Equiv G).symm (f (q.1.1⁻¹ * q.1.2, q.1.2⁻¹ * q.2)),
+        continuous_of_discreteTopology.comp (hf.comp
+          ((continuous_fst.comp continuous_fst).inv.mul (continuous_snd.comp continuous_fst)
+            |>.prodMk ((continuous_snd.comp continuous_fst).inv.mul continuous_snd)))⟩,
+    fun g ↦ by
+      ext h₀ h₁ h₂
+      simp only [ContRepresentation.coind₁_apply_apply, trivialF2_ρ_apply_apply,
+        ContinuousMap.curry_apply, ContinuousMap.coe_mk, mul_inv_rev, inv_inv, mul_assoc,
+        mul_inv_cancel_left]⟩
+
+/-- The value of `inhomogeneousCochain2 f hf` at `(g₀, g₁, g₂)` is `f (g₀⁻¹ * g₁, g₁⁻¹ * g₂)`,
+lifted to the carrier of `trivialF2 G`. -/
+@[simp]
+theorem inhomogeneousCochain2_apply (f : G × G → ZMod 2) (hf : Continuous f) (g₀ g₁ g₂ : G) :
+    (inhomogeneousCochain2 f hf).val g₀ g₁ g₂ =
+      (trivialF2Equiv G).symm (f (g₀⁻¹ * g₁, g₁⁻¹ * g₂)) :=
+  (rfl)
+
+/-- **The canonical differential of an inhomogeneous `1`-cochain is its inhomogeneous
+coboundary**: the differential of the image of `ψ` is the image of
+`(g, h) ↦ ψ h - ψ (g * h) + ψ g`. -/
+theorem d_inhomogeneousCochain1 (ψ : G → ZMod 2) (hψ : Continuous ψ) :
+    ((homogeneousCochains (trivialF2 G)).d 1 2).hom (inhomogeneousCochain1 ψ hψ) =
+      inhomogeneousCochain2 (fun p ↦ ψ p.2 - ψ (p.1 * p.2) + ψ p.1)
+        (((hψ.comp continuous_snd).sub (hψ.comp (continuous_fst.mul continuous_snd))).add
+          (hψ.comp continuous_fst)) := by
+  apply Subtype.ext
+  ext g₀ g₁ g₂
+  rw [homogeneousCochains.d_one_apply, inhomogeneousCochain1_apply, inhomogeneousCochain1_apply,
+    inhomogeneousCochain1_apply, inhomogeneousCochain2_apply]
+  simp only [← map_sub, mul_assoc, mul_inv_cancel_left]
+  congr 1
+  abel
+
+/-- **The image of `f : G → ZMod 2` is a cocycle exactly when `f` is additive.** With trivial
+coefficients the inhomogeneous `1`-cocycles are the homomorphisms. -/
+theorem inhomogeneousCochain1_d_eq_zero_iff (f : G → ZMod 2) (hf : Continuous f) :
+    ((homogeneousCochains (trivialF2 G)).d 1 2).hom (inhomogeneousCochain1 f hf) = 0 ↔
+      ∀ g h : G, f (g * h) = f g + f h := by
+  constructor
+  · intro hd g h
+    have e := congrArg
+      (fun z : (homogeneousCochains (trivialF2 G)).X 2 ↦ trivialF2Equiv G (z.val 1 g (g * h))) hd
+    simp only at e
+    rw [homogeneousCochains.d_one_apply, inhomogeneousCochain1_apply, inhomogeneousCochain1_apply,
+      inhomogeneousCochain1_apply] at e
+    simp only [Submodule.coe_zero, ContinuousMap.zero_apply, map_sub, map_zero,
+      AddEquiv.apply_symm_apply, inv_one, one_mul, inv_mul_cancel_left] at e
+    linear_combination -e
+  · intro hc
+    apply Subtype.ext
+    ext g₀ g₁ g₂
+    rw [homogeneousCochains.d_one_apply, inhomogeneousCochain1_apply, inhomogeneousCochain1_apply,
+      inhomogeneousCochain1_apply]
+    simp only [← map_sub, Submodule.coe_zero, ContinuousMap.zero_apply,
+      ← map_zero (trivialF2Equiv G).symm]
+    have h := hc (g₀⁻¹ * g₁) (g₁⁻¹ * g₂)
+    simp only [mul_assoc, mul_inv_cancel_left] at h
+    congr 1
+    linear_combination -h
+
+/-- **The image of a homomorphism is a cocycle.** -/
+theorem inhomogeneousCochain1_d_eq_zero (f : G → ZMod 2) (hf : Continuous f)
+    (hcocycle : ∀ g h : G, f (g * h) = f g + f h) :
+    ((homogeneousCochains (trivialF2 G)).d 1 2).hom (inhomogeneousCochain1 f hf) = 0 :=
+  (inhomogeneousCochain1_d_eq_zero_iff f hf).2 hcocycle
+
+/-- **The image of `f : G × G → ZMod 2` is a cocycle exactly when `f` satisfies the inhomogeneous
+`2`-cocycle identity** `f (g * h, j) + f (g, h) = f (h, j) + f (g, h * j)`. -/
+theorem inhomogeneousCochain2_d_eq_zero_iff (f : G × G → ZMod 2) (hf : Continuous f) :
+    ((homogeneousCochains (trivialF2 G)).d 2 3).hom (inhomogeneousCochain2 f hf) = 0 ↔
+      ∀ g h j : G, f (g * h, j) + f (g, h) = f (h, j) + f (g, h * j) := by
+  constructor
+  · intro hd g h j
+    have e := congrArg (fun z : (homogeneousCochains (trivialF2 G)).X 3 ↦
+      trivialF2Equiv G (z.val 1 g (g * h) (g * h * j))) hd
+    simp only at e
+    rw [homogeneousCochains.d_two_apply, inhomogeneousCochain2_apply, inhomogeneousCochain2_apply,
+      inhomogeneousCochain2_apply, inhomogeneousCochain2_apply] at e
+    simp only [Submodule.coe_zero, ContinuousMap.zero_apply, map_sub, map_zero,
+      AddEquiv.apply_symm_apply, inv_one, one_mul, mul_inv_rev, mul_assoc,
+      inv_mul_cancel_left] at e
+    linear_combination -e
+  · intro hc
+    apply Subtype.ext
+    ext g₀ g₁ g₂ g₃
+    rw [homogeneousCochains.d_two_apply, inhomogeneousCochain2_apply, inhomogeneousCochain2_apply,
+      inhomogeneousCochain2_apply, inhomogeneousCochain2_apply]
+    simp only [← map_sub, Submodule.coe_zero, ContinuousMap.zero_apply,
+      ← map_zero (trivialF2Equiv G).symm]
+    have h := hc (g₀⁻¹ * g₁) (g₁⁻¹ * g₂) (g₂⁻¹ * g₃)
+    simp only [mul_assoc, mul_inv_cancel_left] at h
+    congr 1
+    linear_combination -h
+
+/-- **The image of an inhomogeneous `2`-cocycle is a cocycle.** -/
+theorem inhomogeneousCochain2_d_eq_zero (f : G × G → ZMod 2) (hf : Continuous f)
+    (hcocycle : ∀ g h j : G, f (g * h, j) + f (g, h) = f (h, j) + f (g, h * j)) :
+    ((homogeneousCochains (trivialF2 G)).d 2 3).hom (inhomogeneousCochain2 f hf) = 0 :=
+  (inhomogeneousCochain2_d_eq_zero_iff f hf).2 hcocycle
+
+/-- **Cohomologous inhomogeneous `2`-cocycles have the same class.** If two continuous functions
+`f f' : G × G → ZMod 2` whose images are cocycles differ by the inhomogeneous coboundary
+`(g, h) ↦ ψ h - ψ (g * h) + ψ g` of a continuous `ψ : G → ZMod 2`, their images have the same class
+in `continuousCohomology 2 (trivialF2 G)`. The cocycle hypotheses are typically
+`inhomogeneousCochain2_d_eq_zero f hf hcf` and its counterpart for `f'`. -/
+theorem cochainClass_inhomogeneousCochain2_eq_of_coboundary (f f' : G × G → ZMod 2)
+    (hf : Continuous f) (hf' : Continuous f') (ψ : G → ZMod 2) (hψ : Continuous ψ)
+    (hfψ : ∀ g h : G, f (g, h) = f' (g, h) + (ψ h - ψ (g * h) + ψ g))
+    (ha : ((homogeneousCochains (trivialF2 G)).d 2 3).hom (inhomogeneousCochain2 f hf) = 0)
+    (hb : ((homogeneousCochains (trivialF2 G)).d 2 3).hom (inhomogeneousCochain2 f' hf') = 0) :
+    (trivialF2 G).cochainClass 2 (inhomogeneousCochain2 f hf) ha =
+      (trivialF2 G).cochainClass 2 (inhomogeneousCochain2 f' hf') hb := by
+  refine cochainClass_eq_of_sub_eq_d (j := 1) rfl ha hb (inhomogeneousCochain1 ψ hψ) ?_
+  rw [d_inhomogeneousCochain1]
+  apply Subtype.ext
+  ext g₀ g₁ g₂
+  rw [Submodule.coe_sub, ContinuousMap.sub_apply, ContinuousMap.sub_apply,
+    ContinuousMap.sub_apply, inhomogeneousCochain2_apply, inhomogeneousCochain2_apply,
+    inhomogeneousCochain2_apply, ← map_sub, hfψ]
+  simp only [mul_assoc, mul_inv_cancel_left, add_sub_cancel_left]
+
+/-- The passage from inhomogeneous to homogeneous `2`-cochains is additive. -/
+@[simp]
+theorem inhomogeneousCochain2_add (f₁ f₂ : G × G → ZMod 2) (hf₁ : Continuous f₁)
+    (hf₂ : Continuous f₂) :
+    inhomogeneousCochain2 (fun q ↦ f₁ q + f₂ q) (hf₁.add hf₂) =
+      inhomogeneousCochain2 f₁ hf₁ + inhomogeneousCochain2 f₂ hf₂ := by
+  apply Subtype.ext
+  ext g₀ g₁ g₂
+  rw [Submodule.coe_add, ContinuousMap.add_apply, ContinuousMap.add_apply,
+    ContinuousMap.add_apply, inhomogeneousCochain2_apply, inhomogeneousCochain2_apply,
+    inhomogeneousCochain2_apply, map_add]
+
+/-! ### The class of an explicit `2`-cocycle -/
+
+/-- **The class of an explicit continuous `𝔽₂`-valued `2`-cocycle**: the class in
+`continuousCohomology 2 (trivialF2 G)` of a continuous `f : G × G → ZMod 2` satisfying the
+inhomogeneous `2`-cocycle identity, that is, the `TopRep.cochainClass` of its image
+`inhomogeneousCochain2 f hf`. -/
+noncomputable def f2CocycleClass (f : G × G → ZMod 2) (hf : Continuous f)
+    (hc : ∀ g h j : G, f (g * h, j) + f (g, h) = f (h, j) + f (g, h * j)) :
+    continuousCohomology 2 (trivialF2 G) :=
+  (trivialF2 G).cochainClass 2 (inhomogeneousCochain2 f hf)
+    (inhomogeneousCochain2_d_eq_zero f hf hc)
+
+/-- `f2CocycleClass` is the class of the image of the cocycle in the homogeneous complex. -/
+theorem f2CocycleClass_def (f : G × G → ZMod 2) (hf : Continuous f)
+    (hc : ∀ g h j : G, f (g * h, j) + f (g, h) = f (h, j) + f (g, h * j)) :
+    f2CocycleClass f hf hc =
+      (trivialF2 G).cochainClass 2 (inhomogeneousCochain2 f hf)
+        (inhomogeneousCochain2_d_eq_zero f hf hc) :=
+  (rfl)
+
+/-- **The class of an explicit `2`-cocycle is additive**: `[f₁ + f₂] = [f₁] + [f₂]`. -/
+@[simp]
+theorem f2CocycleClass_add (f₁ f₂ : G × G → ZMod 2) (hf₁ : Continuous f₁) (hf₂ : Continuous f₂)
+    (hc₁ : ∀ g h j : G, f₁ (g * h, j) + f₁ (g, h) = f₁ (h, j) + f₁ (g, h * j))
+    (hc₂ : ∀ g h j : G, f₂ (g * h, j) + f₂ (g, h) = f₂ (h, j) + f₂ (g, h * j)) :
+    f2CocycleClass (fun q ↦ f₁ q + f₂ q) (hf₁.add hf₂)
+        (fun g h j ↦ by linear_combination hc₁ g h j + hc₂ g h j) =
+      f2CocycleClass f₁ hf₁ hc₁ + f2CocycleClass f₂ hf₂ hc₂ := by
+  rw [f2CocycleClass_def, f2CocycleClass_def, f2CocycleClass_def,
+    ← cochainClass_add _ _ (inhomogeneousCochain2_d_eq_zero f₁ hf₁ hc₁)
+      (inhomogeneousCochain2_d_eq_zero f₂ hf₂ hc₂)]
+  congr 1
+  exact inhomogeneousCochain2_add f₁ f₂ hf₁ hf₂
+
+/-- **The class of an explicit `2`-cocycle kills coboundaries and is additive**: if
+`f = f₁ + f₂ + ∂ψ` for a continuous `ψ : G → ZMod 2`, with `∂ψ` the inhomogeneous coboundary
+`(g, h) ↦ ψ h - ψ (g * h) + ψ g`, then `[f] = [f₁] + [f₂]`. -/
+theorem f2CocycleClass_eq_add (f f₁ f₂ : G × G → ZMod 2) (hf : Continuous f)
+    (hf₁ : Continuous f₁) (hf₂ : Continuous f₂)
+    (hc : ∀ g h j : G, f (g * h, j) + f (g, h) = f (h, j) + f (g, h * j))
+    (hc₁ : ∀ g h j : G, f₁ (g * h, j) + f₁ (g, h) = f₁ (h, j) + f₁ (g, h * j))
+    (hc₂ : ∀ g h j : G, f₂ (g * h, j) + f₂ (g, h) = f₂ (h, j) + f₂ (g, h * j))
+    (ψ : G → ZMod 2) (hψ : Continuous ψ)
+    (h : ∀ g h : G, f (g, h) = f₁ (g, h) + f₂ (g, h) + (ψ h - ψ (g * h) + ψ g)) :
+    f2CocycleClass f hf hc = f2CocycleClass f₁ hf₁ hc₁ + f2CocycleClass f₂ hf₂ hc₂ :=
+  (cochainClass_inhomogeneousCochain2_eq_of_coboundary f (fun q ↦ f₁ q + f₂ q) hf (hf₁.add hf₂)
+      ψ hψ h _ _).trans
+    (f2CocycleClass_add f₁ f₂ hf₁ hf₂ hc₁ hc₂)
+
+/-! ### Pullback along a continuous homomorphism -/
+
+section Pullback
+
+open CategoryTheory
+
+variable {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+
+/-- **Pullback of the class of an inhomogeneous `1`-cocycle.** Along a continuous homomorphism
+`φ : H → G`, the map `TauCeti.trivialF2Map φ 1` sends the class of the image of a continuous
+`f : G → ZMod 2` to the class of the image of `f ∘ φ`. The two cocycle hypotheses are typically
+`inhomogeneousCochain1_d_eq_zero` for `f` and for `f ∘ φ`. -/
+theorem trivialF2Map_cochainClass_inhomogeneousCochain1 (φ : H →ₜ* G) (f : G → ZMod 2)
+    (hf : Continuous f)
+    (hd : ((homogeneousCochains (trivialF2 G)).d 1 2).hom (inhomogeneousCochain1 f hf) = 0)
+    (hd' : ((homogeneousCochains (trivialF2 H)).d 1 2).hom
+      (inhomogeneousCochain1 (f ∘ φ) (hf.comp φ.continuous)) = 0) :
+    trivialF2Map φ 1 ((trivialF2 G).cochainClass 1 (inhomogeneousCochain1 f hf) hd) =
+      (trivialF2 H).cochainClass 1 (inhomogeneousCochain1 (f ∘ φ) (hf.comp φ.continuous)) hd' := by
+  rw [cochainClass_def, trivialF2Map_def, TauCeti.ContinuousCohomology.map_π_apply,
+    ← cochainClass_iCycles]
+  congr 1
+  apply Subtype.ext
+  ext h₀ h₁
+  -- The coefficient map of `trivialF2Map` is the transport between the two trivial objects, which
+  -- is the identity on the decoded values.
+  rw [TauCeti.ContinuousCohomology.iCycles_cocyclesMap_one_apply φ _ _
+      ((trivialF2Equiv G).trans (trivialF2Equiv H).symm).toAddMonoidHom fun m => ?_,
+    HomologicalComplex.iCycles_cyclesMkOfEq, inhomogeneousCochain1_apply,
+    inhomogeneousCochain1_apply]
+  · simp [map_mul, map_inv]
+  · rw [TopRep.eqToHom_hom_apply]
+    apply (trivialF2Equiv H).injective
+    simp [trivialF2Equiv_cast]
+
+end Pullback
+
+/-! ### Explicit classes as canonical cochain classes -/
+
+section Explicit
+
+open CategoryTheory
+
+attribute [local instance] TopRep.distribMulAction
+
+/-- `G` acts continuously on the trivial coefficients `𝔽₂`, which are smooth discrete. -/
+local instance : ContinuousSMul G (trivialF2 G).V :=
+  (isSmoothDiscrete_trivialF2 G).continuousSMul
+
+/-- **The explicit degree-one class of a trivial-`𝔽₂` cocycle is its canonical cochain class.** If
+the continuous cocycle `c` is the formula `f : G → ZMod 2` lifted to the carrier of `trivialF2 G`,
+the degree-one comparison sends its class to the `TopRep.cochainClass` of
+`inhomogeneousCochain1 f`. -/
+theorem eqToHom_explicitH1AddEquivContinuousCohomology_eq_cochainClass
+    (c : Z1 G (trivialF2 G).V) (f : G → ZMod 2) (hf : Continuous f)
+    (hcf : ∀ g, (c : G → (trivialF2 G).V) g = (trivialF2Equiv G).symm (f g))
+    (hd : ((homogeneousCochains (trivialF2 G)).d 1 2).hom (inhomogeneousCochain1 f hf) = 0) :
+    (eqToHom (congrArg (continuousCohomology 1) (ofDiscreteModule_trivialF2 G))).hom
+        (explicitH1AddEquivContinuousCohomology G (trivialF2 G).V c) =
+      (trivialF2 G).cochainClass 1 (inhomogeneousCochain1 f hf) hd := by
+  rw [explicitH1AddEquivContinuousCohomology_apply]
+  refine eqToHom_π_eq_cochainClass (ofDiscreteModule_trivialF2 G) _ _ _ (Subtype.ext ?_)
+  ext g₀ g₁
+  rw [inhomogeneousCochain1_apply]
+  -- Both carriers are `(trivialF2 G).V`, so the `cast` of values along the transport is trivial.
+  refine ((eval_iCycles_eqToHom (ofDiscreteModule_trivialF2 G) _ (n := 1) (T := TopRep.V)
+    (fun B a => a.val g₀ g₁)).trans (cast_eq _ _)).trans ?_
+  refine (congrArg (fun z => z.val g₀ g₁) (iCycles_cocycleEquiv1 G (trivialF2 G).V c)).trans ?_
+  rw [cochainEquiv1_apply, homogeneous1_apply, TopRep.distribMulAction_smul,
+    trivialF2_ρ_apply_apply, hcf]
+
+/-- **The explicit degree-two class of a trivial-`𝔽₂` cocycle is its canonical cochain class.** If
+the continuous cocycle `c` is the formula `f : G × G → ZMod 2` lifted to the carrier of
+`trivialF2 G`, the degree-two comparison sends its class to the `TopRep.cochainClass` of
+`inhomogeneousCochain2 f`. -/
+theorem eqToHom_explicitH2AddEquivContinuousCohomology_eq_cochainClass [LocallyCompactSpace G]
+    (c : Z2 G (trivialF2 G).V) (f : G × G → ZMod 2) (hf : Continuous f)
+    (hcf : ∀ p, (c : G × G → (trivialF2 G).V) p = (trivialF2Equiv G).symm (f p))
+    (hd : ((homogeneousCochains (trivialF2 G)).d 2 3).hom (inhomogeneousCochain2 f hf) = 0) :
+    (eqToHom (congrArg (continuousCohomology 2) (ofDiscreteModule_trivialF2 G))).hom
+        (explicitH2AddEquivContinuousCohomology G (trivialF2 G).V c) =
+      (trivialF2 G).cochainClass 2 (inhomogeneousCochain2 f hf) hd := by
+  rw [explicitH2AddEquivContinuousCohomology_apply]
+  refine eqToHom_π_eq_cochainClass (ofDiscreteModule_trivialF2 G) _ _ _ (Subtype.ext ?_)
+  ext g₀ g₁ g₂
+  rw [inhomogeneousCochain2_apply]
+  refine ((eval_iCycles_eqToHom (ofDiscreteModule_trivialF2 G) _ (n := 2) (T := TopRep.V)
+    (fun B a => a.val g₀ g₁ g₂)).trans (cast_eq _ _)).trans ?_
+  refine (congrArg (fun z => z.val g₀ g₁ g₂) (iCycles_cocycleEquiv2 G (trivialF2 G).V c)).trans ?_
+  rw [cochainEquiv2_apply, homogeneous2_apply, TopRep.distribMulAction_smul,
+    trivialF2_ρ_apply_apply, hcf]
+
+end Explicit
+
+end TauCeti.ContCohomology

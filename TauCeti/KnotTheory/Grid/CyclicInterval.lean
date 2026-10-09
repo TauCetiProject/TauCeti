@@ -360,6 +360,14 @@ theorem card_cIco_add_card_cIco_swap {a b : Fin n} (h : a ≠ b) :
     Fintype.card_fin] at hcard
   exact hcard
 
+/-- A point lies outside a nondegenerate half-open cyclic interval exactly when it lies in the
+opposite one. -/
+theorem notMem_cIco_iff_mem_cIco_swap {a b x : Fin n} (h : a ≠ b) :
+    x ∉ cIco a b ↔ x ∈ cIco b a := by
+  have hx : x ∈ cIco a b ∪ cIco b a := (cIco_union_swap h).symm ▸ Finset.mem_univ x
+  exact ⟨fun hab => (Finset.mem_union.1 hx).resolve_left hab,
+    fun hba hab => Finset.disjoint_left.1 (disjoint_cIco_swap a b) hab hba⟩
+
 /-- Two oriented cyclic intervals have non-interleaving endpoint pairs.
 
 The endpoints `a₀`, `a₁` lie on the same side of the pair `b₀`, `b₁`, and conversely. This
@@ -495,6 +503,16 @@ theorem ite_mem_cIco_eq_add_of_mem_cIoo {u v w s : Fin n} (hv : v ∈ cIoo u w)
   simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hv hs ⊢
   split_ifs at hv hs ⊢ <;> omega
 
+/-- A point `v` strictly inside the arc from `u` to `w` cuts the open arc from a point `s` of the
+arc from `u` to `v` to `w` into the open arc from `s` to `v` and the arc from `v` to `w`,
+counted. -/
+theorem ite_mem_cIoo_eq_add_of_mem_cIoo {u v w s : Fin n} (hv : v ∈ cIoo u w)
+    (hs : s ∈ cIco u v) (t : Fin n) :
+    (if t ∈ cIoo s w then 1 else 0 : ℕ) =
+      (if t ∈ cIoo s v then 1 else 0) + if t ∈ cIco v w then 1 else 0 := by
+  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hv hs ⊢
+  split_ifs at hv hs ⊢ <;> omega
+
 /-- A point `s` of the arc from `u` to `w` cuts it into the arc before `s`, the point `s` and the
 open arc after `s`, counted. -/
 theorem ite_mem_cIco_eq_add_add {u w s : Fin n} (hs : s ∈ cIco u w) (t : Fin n) :
@@ -523,6 +541,12 @@ theorem not_mem_cIoo_iff {a b x : Fin n} (h : a ≠ b) :
       exact right_notMem_cIoo a b
     · intro hxab
       exact not_mem_cIoo_and_cIoo_swap a b x ⟨hxab, hx⟩
+
+/-- For distinct endpoints, the closed cyclic interval from `a` to `b` is the complement of the
+open cyclic interval from `b` to `a`. -/
+theorem mem_insert_cIco_iff_notMem_cIoo {a b x : Fin n} (h : a ≠ b) :
+    x ∈ insert b (cIco a b) ↔ x ∉ cIoo b a := by
+  rw [not_mem_cIoo_iff h.symm, cIco_of_ne h, Finset.mem_insert, Finset.mem_insert]
 
 /-- Rotating a cyclic order: if `b` lies on the clockwise arc from `a` to `c`, then `c` lies on
 the clockwise arc from `b` to `a`. -/
@@ -951,6 +975,15 @@ theorem mem_cIco_of_mem_cIco_of_mem_cIoo {A B C s : Fin n}
   have hunion := cIco_union_cIco_eq_cIco_of_mem_cIoo hB
   rw [← hunion]
   exact Finset.mem_union.mpr (Or.inl hmem)
+
+/-- If `s` lies in the half-open cyclic interval from `A` to `C` and `s'` lies strictly between
+`s` and `C`, then the closed cyclic interval from `s` to `s'` lies in the one from `A` to `C`. -/
+theorem insert_cIco_subset_cIco {A C s s' : Fin n} (hs : s ∈ cIco A C) (hs' : s' ∈ cIoo s C) :
+    insert s' (cIco s s') ⊆ cIco A C := by
+  intro r hr
+  have hr' : r = s' ∨ r ∈ cIco s s' := Finset.mem_insert.mp hr
+  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hs hs' hr' ⊢
+  split_ifs at hs hs' hr' ⊢ <;> omega
 
 /-- A point is never in the half-open cyclic interval starting at its own successor.
 Going clockwise from `c + 1`, the point `c` is the last point reached — only after a full

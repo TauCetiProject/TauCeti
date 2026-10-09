@@ -32,6 +32,8 @@ algebraic closure of the ground field via the counit.
   algebras over a field.
 * `TauCeti.SemisimpleCommHopfAlgCat`: the full subcategory of semisimple coordinate Hopf
   algebras.
+* `TauCeti.semisimpleCommHopfAlgProperty_of_geometricFiber_iso`: establish semisimplicity
+  using an isomorphic coordinate model of the geometric fibre.
 * `TauCeti.semisimpleCommHopfAlgProperty.eq_augmentation`: every connected normal smooth
   solvable closed subgroup of a semisimple group's geometric fibre is trivial.
 * `TauCeti.semisimpleCommHopfAlgProperty.geometricFiberCounitBialgEquiv`: a semisimple group
@@ -119,6 +121,29 @@ instance (k : Type u) [Field k] :
       geometricallySolvablePointsCommHopfAlgProperty (AlgebraicClosure k)).inverseImage
         (forget₂ (FiniteTypeCommHopfAlgCat.{u, u} (AlgebraicClosure k))
           (CommHopfAlgCat.{u} (AlgebraicClosure k))))).IsClosedUnderIsomorphisms)
+
+/-- Establish semisimplicity by identifying the geometric fibre with a coordinate model
+on which connected smooth normal solvable closed subgroups can be eliminated. -/
+theorem semisimpleCommHopfAlgProperty_of_geometricFiber_iso
+    (k : Type u) [Field k] (H : FiniteTypeCommHopfAlgCat.{u, u} k)
+    (G : CommHopfAlgCat.{u} (AlgebraicClosure k))
+    (hsmooth : Algebra.Smooth k H)
+    (hconnected : geometricallyConnectedCommHopfAlgProperty k H.obj)
+    (e : (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H).obj ≅ G)
+    (htrivial : ∀ (I : HopfIdeal (AlgebraicClosure k) G), I.IsNormal →
+      geometricallyConnectedCommHopfAlgProperty (AlgebraicClosure k)
+        (CommHopfAlgCat.quotient G I) →
+      Algebra.Smooth (AlgebraicClosure k) (CommHopfAlgCat.quotient G I) →
+      geometricallySolvablePointsCommHopfAlgProperty (AlgebraicClosure k)
+        (CommHopfAlgCat.quotient G I) →
+      I = HopfIdeal.augmentation (AlgebraicClosure k) G) :
+    semisimpleCommHopfAlgProperty k H := by
+  apply geometricNormalSubgroupFreeCommHopfAlgProperty_of_geometricFiber_iso k
+    (smoothCommHopfAlgProperty (AlgebraicClosure k) ⊓
+      geometricallySolvablePointsCommHopfAlgProperty (AlgebraicClosure k))
+    H G hsmooth hconnected e
+  intro I hI hconn hP
+  exact htrivial I hI hconn ((smoothCommHopfAlgProperty_iff _).mp hP.1) hP.2
 
 /-- The category of semisimple finite-type commutative Hopf algebras over a field. -/
 abbrev SemisimpleCommHopfAlgCat (k : Type u) [Field k] :=

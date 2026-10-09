@@ -28,6 +28,8 @@ base change acts entrywise on the Gram matrix of a basis and maps its determinan
 
 ## Main declarations
 
+* `LinearMap.BilinForm.liftBaseChange`: lifting a form-preserving map preserves the
+  base-changed form, without assuming the map exhibits a base change.
 * `IsBaseChange.bilinForm_baseChange`: if a bilinear form restricts along a map to a
   second form, evaluating it through the associated base-change equivalence agrees with the
   canonical base change of the second form.
@@ -56,14 +58,14 @@ variable {R : Type*} {A : Type*} {M : Type*} {N : Type*}
 variable [CommSemiring R] [CommSemiring A] [Algebra R A]
 variable [AddCommMonoid M] [Module R M]
 variable [AddCommMonoid N] [Module A N] [Module R N] [IsScalarTower R A N]
-variable {f : M →ₗ[R] N} (h : IsBaseChange A f)
+variable {f : M →ₗ[R] N}
 
-/-- If `B` restricts along `f` to `B'`, evaluating `B` on base-changed vectors agrees with the
-canonical base change of `B'`. -/
-theorem _root_.IsBaseChange.bilinForm_baseChange (B' : LinearMap.BilinForm R M)
+/-- If `B` restricts along `f` to `B'`, evaluating `B` on the images of `f.liftBaseChange A`
+agrees with the canonical base change of `B'`. The map `f` need not exhibit a base change. -/
+theorem _root_.LinearMap.BilinForm.liftBaseChange (B' : LinearMap.BilinForm R M)
     (B : LinearMap.BilinForm A N)
     (hB : ∀ x y : M, B (f x) (f y) = algebraMap R A (B' x y)) (x y : A ⊗[R] M) :
-    B (h.equiv x) (h.equiv y) = B'.baseChange A x y := by
+    B (f.liftBaseChange A x) (f.liftBaseChange A y) = B'.baseChange A x y := by
   induction x using TensorProduct.inductionOn with
   | add x₁ x₂ hx₁ hx₂ =>
     simp only [map_add, LinearMap.add_apply, hx₁, hx₂]
@@ -72,10 +74,21 @@ theorem _root_.IsBaseChange.bilinForm_baseChange (B' : LinearMap.BilinForm R M)
     | add y₁ y₂ hy₁ hy₂ =>
       simp only [map_add, hy₁, hy₂]
     | tmul a' m' =>
-      simp only [IsBaseChange.equiv_tmul, LinearMap.BilinForm.smul_left,
+      simp only [LinearMap.liftBaseChange_tmul, LinearMap.BilinForm.smul_left,
         LinearMap.BilinForm.smul_right, LinearMap.BilinForm.baseChange_tmul,
         hB, Algebra.smul_def]
       ring
+
+/-- If `B` restricts along a base-change map to `B'`, its base-change equivalence preserves
+the canonical base change of `B'`. -/
+theorem _root_.IsBaseChange.bilinForm_baseChange (h : IsBaseChange A f)
+    (B' : LinearMap.BilinForm R M) (B : LinearMap.BilinForm A N)
+    (hB : ∀ x y : M, B (f x) (f y) = algebraMap R A (B' x y)) (x y : A ⊗[R] M) :
+    B (h.equiv x) (h.equiv y) = B'.baseChange A x y := by
+  have hf : f.liftBaseChange A = h.equiv.toLinearMap := by
+    ext
+    simp [IsBaseChange.equiv_tmul]
+  simpa only [hf, LinearEquiv.coe_coe] using B'.liftBaseChange B hB x y
 
 end
 

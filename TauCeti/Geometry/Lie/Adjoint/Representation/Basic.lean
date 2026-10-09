@@ -12,13 +12,10 @@ public import TauCeti.RepresentationTheory.Continuous.Transport
 /-!
 # The group adjoint representation
 
-This file bundles the roadmap-facing group adjoint `Ad` as a continuous representation on
+This file bundles the group adjoint `Ad` as a continuous representation on
 left-invariant derivations. It transports operator-valued smoothness across the canonical
 isometric identification between left-invariant derivations and the tangent space at the identity,
 then derives joint smoothness of the action by evaluation.
-
-This advances Deliverable A, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
 
 ## Main definitions
 
@@ -30,10 +27,6 @@ This advances Deliverable A, Layer 1 of
 * `TauCeti.Lie.contMDiff_continuousAdjointRepresentation`: the bounded-operator-valued
   representation is smooth.
 
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The group adjoint".
 -/
 
 public section
@@ -78,7 +71,7 @@ private noncomputable def modelAdjointRepresentation : ContRepresentation ℝ G 
 
 /-- The adjoint representation valued in bounded operators. -/
 def continuousAdjointRepresentation : ContRepresentation ℝ G (LeftInvariantDerivation I G) :=
-  TauCeti.ContRepresentation.congr (derivationModelEquiv (I := I) (G := G)).symm
+  ContinuousLinearEquiv.congr (derivationModelEquiv (I := I) (G := G)).symm
     (modelAdjointRepresentation (I := I) (G := G))
 
 private theorem continuousAdjointRepresentation_coe :
@@ -86,7 +79,7 @@ private theorem continuousAdjointRepresentation_coe :
       (derivationModelEquiv (I := I) (G := G)).symm.conjContinuousAlgEquiv
         (show E →L[ℝ] E from adjointContinuousLinearMap (I := I) g) :=
   by
-    rw [continuousAdjointRepresentation, TauCeti.ContRepresentation.coe_congr,
+    rw [continuousAdjointRepresentation, ContinuousLinearEquiv.coe_congr,
       modelAdjointRepresentation]
     rfl
 
@@ -94,7 +87,7 @@ private theorem continuousAdjointRepresentation_coe :
 @[simp]
 theorem continuousAdjointRepresentation_apply (g : G) (D : LeftInvariantDerivation I G) :
     continuousAdjointRepresentation (I := I) g D = Ad (I := I) g D := by
-  rw [continuousAdjointRepresentation, TauCeti.ContRepresentation.congr_apply]
+  rw [continuousAdjointRepresentation, ContinuousLinearEquiv.congr_apply]
   apply (derivationModelEquiv (I := I) (G := G)).injective
   rw [ContinuousLinearEquiv.apply_symm_apply]
   -- `GroupLieAlgebra I G` is definitionally `E`; expose the conjugated model-space operator.

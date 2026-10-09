@@ -1,0 +1,96 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Polynomial.BigOperators
+public import Mathlib.Algebra.Polynomial.Eval.Degree
+public import Mathlib.Topology.Algebra.Ring.Basic
+
+/-!
+# Continuity of polynomial families
+
+For a family of polynomials `f x` over a topological semiring, indexed by a parameter `x`, the
+coefficients of a product are finite sums of products of coefficients of the factors. Hence if
+every coefficient of each factor is continuous at a point, so is every coefficient of the product.
+This is used to treat the product of a finite family of polynomials with continuous coefficients
+as a single polynomial family.
+
+If the degrees of the family are bounded and its coefficients are continuous, then the evaluation
+`(x, t) ↦ (f x).eval t` is jointly continuous, since it is a finite sum of products of
+coefficients with powers of `t`.
+
+## Main results
+
+* `Polynomial.continuousAt_eval`: evaluation along a continuous point for a family of locally
+  bounded degree.
+* `Polynomial.continuousAt_coeff_mul`: coefficients of a product of two families.
+* `Polynomial.continuousAt_coeff_prod`: coefficients of a finite product of families.
+* `Polynomial.continuous_eval_of_continuous_coeff`: joint continuity of the evaluation of a family
+  of bounded degree.
+-/
+
+public section
+
+open Filter Topology
+
+namespace Polynomial
+
+/-- Evaluation along a point continuous at `x₀` is continuous at `x₀` if the coefficients of
+index at most `d` are continuous there and the family has degree bounded by `d` nearby. -/
+theorem continuousAt_eval {X R : Type*} [TopologicalSpace X] [TopologicalSpace R]
+    [Semiring R] [IsTopologicalSemiring R] {f : X → R[X]} {r : X → R} {x₀ : X} {d : ℕ}
+    (hf : ∀ i ≤ d, ContinuousAt (fun x ↦ (f x).coeff i) x₀)
+    (hd : ∀ᶠ x in 𝓝 x₀, (f x).natDegree ≤ d) (hr : ContinuousAt r x₀) :
+    ContinuousAt (fun x ↦ (f x).eval (r x)) x₀ := by
+  have heq : (fun x ↦ (f x).eval (r x)) =ᶠ[𝓝 x₀]
+      fun x ↦ ∑ i ∈ Finset.range (d + 1), (f x).coeff i * r x ^ i := by
+    filter_upwards [hd] with x hx
+    exact eval_eq_sum_range' (Nat.lt_succ_of_le hx) _
+  have hc : ContinuousAt (fun x ↦ ∑ i ∈ Finset.range (d + 1),
+      (f x).coeff i * r x ^ i) x₀ :=
+    tendsto_finsetSum _ fun i hi ↦ (hf i (Finset.mem_range_succ_iff.1 hi)).mul (hr.pow i)
+  exact hc.congr_of_eventuallyEq heq
+
+variable {X R ι : Type*} [TopologicalSpace X] [TopologicalSpace R] {x₀ : X}
+
+/-- The coefficient of index `i` in a product of two polynomial families is continuous at `x₀`
+if the coefficients of indices at most `i` in both factors are continuous there. -/
+theorem continuousAt_coeff_mul [Semiring R] [IsTopologicalSemiring R] {f g : X → R[X]} {i : ℕ}
+    (hf : ∀ j ≤ i, ContinuousAt (fun x ↦ (f x).coeff j) x₀)
+    (hg : ∀ j ≤ i, ContinuousAt (fun x ↦ (g x).coeff j) x₀) :
+    ContinuousAt (fun x ↦ (f x * g x).coeff i) x₀ := by
+  simp only [coeff_mul]
+  refine tendsto_finsetSum _ fun p hp ↦ ?_
+  have hp := Finset.mem_antidiagonal.mp hp
+  exact (hf p.1 (by omega)).mul (hg p.2 (by omega))
+
+/-- The coefficient of index `i` in a finite product of polynomial families is continuous at `x₀`
+if the coefficients of indices at most `i` in every factor are continuous there. -/
+theorem continuousAt_coeff_prod [CommSemiring R] [IsTopologicalSemiring R]
+    {f : ι → X → R[X]} (s : Finset ι) {i : ℕ}
+    (hf : ∀ k ∈ s, ∀ j ≤ i, ContinuousAt (fun x ↦ (f k x).coeff j) x₀) :
+    ContinuousAt (fun x ↦ (∏ k ∈ s, f k x).coeff i) x₀ := by
+  classical
+  induction s using Finset.induction_on generalizing i with
+  | empty =>
+    simp only [Finset.prod_empty]
+    exact continuousAt_const
+  | insert k s hk ih =>
+    simp only [Finset.prod_insert hk]
+    exact continuousAt_coeff_mul (hf k (Finset.mem_insert_self k s))
+      (fun j hj ↦ ih fun l hl m hm ↦ hf l (Finset.mem_insert_of_mem hl) m (hm.trans hj))
+
+/-- If a family of polynomials has degree at most `d` and its coefficients of index at most `d` are
+continuous, then its evaluation is jointly continuous in the parameter and the point. -/
+theorem continuous_eval_of_continuous_coeff [Semiring R] [IsTopologicalSemiring R]
+    {f : X → R[X]} {d : ℕ}
+    (hf : ∀ i ≤ d, Continuous fun x => (f x).coeff i) (hd : ∀ x, (f x).natDegree ≤ d) :
+    Continuous fun z : X × R => (f z.1).eval z.2 := by
+  refine continuous_iff_continuousAt.2 fun z ↦ ?_
+  exact continuousAt_eval (fun i hi ↦ ((hf i hi).comp continuous_fst).continuousAt)
+    (.of_forall fun y ↦ hd y.1) continuous_snd.continuousAt
+
+end Polynomial

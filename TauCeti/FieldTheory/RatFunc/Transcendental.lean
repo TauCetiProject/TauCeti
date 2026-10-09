@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
+public import Mathlib.FieldTheory.RatFunc.IntermediateField
 public import Mathlib.FieldTheory.Separable
 
 /-!
@@ -21,6 +22,10 @@ The structure is not an instance: it depends on the element `x` and on a proof, 
 transcendental elements induce distinct `k(X)`-algebra structures on the same `F`. It is meant
 to be introduced locally with `letI`.
 
+The nonconstant rational function `X - X⁻¹` is also shown to be transcendental.
+Consequently substitution at it loses no polynomial information, including in positive
+characteristic.
+
 ## Main definitions
 
 * `TauCeti.ratFuncAlgebraOfTranscendental`: the `k(X)`-algebra structure on `F` sending `X`
@@ -33,6 +38,7 @@ to be introduced locally with `letI`.
   `k`-algebra structure.
 * `TauCeti.isSeparable_ratFuncAlgebraOfTranscendental`: separability over `k⟮x⟯` transfers to
   separability over `k(X)`.
+* `TauCeti.transcendental_ratFunc_X_sub_inv`: `X - X⁻¹` is transcendental.
 -/
 
 public section
@@ -42,6 +48,25 @@ noncomputable section
 namespace TauCeti
 
 open scoped IntermediateField
+open scoped Polynomial
+
+/-- The rational function `X - X⁻¹` is transcendental over the coefficient field,
+in every characteristic. -/
+theorem transcendental_ratFunc_X_sub_inv (k : Type*) [Field k] :
+    Transcendental k (RatFunc.X - RatFunc.X⁻¹ : RatFunc k) := by
+  apply RatFunc.transcendental_of_ne_C
+  rintro ⟨c, hc⟩
+  have he : Polynomial.aeval (RatFunc.X : RatFunc k)
+      (Polynomial.X ^ 2 - Polynomial.C c * Polynomial.X - 1) = 0 := by
+    simp only [map_sub, map_pow, Polynomial.aeval_X, Polynomial.aeval_C, map_mul, map_one]
+    rw [RatFunc.algebraMap_eq_C]
+    have hx := RatFunc.X_ne_zero (K := k)
+    field_simp at hc
+    linear_combination hc
+  have hp := (transcendental_iff_injective.mp (RatFunc.transcendental_X (K := k)))
+    (he.trans (map_zero _).symm)
+  have hcoeff := congrArg (fun p : k[X] ↦ p.coeff 2) hp
+  norm_num [Polynomial.coeff_one] at hcoeff
 
 variable {k : Type*} [Field k] {F : Type*} [Field F] [Algebra k F] {x : F}
 

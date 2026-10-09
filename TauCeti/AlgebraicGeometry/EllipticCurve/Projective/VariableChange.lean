@@ -32,6 +32,13 @@ and `W`.
 
 * `WeierstrassCurve.VariableChange.toMatrix_mul`: `toMatrix` is an anti-homomorphism, matching the
   action `(C * C') • W = C • C' • W`.
+* `WeierstrassCurve.VariableChange.toMatrix_map`: `toMatrix` commutes with mapping along a ring
+  homomorphism.
+* `WeierstrassCurve.VariableChange.toMatrix_injective` and
+  `WeierstrassCurve.VariableChange.toMatrix_inj`: a change of variables is determined by its
+  matrix.
+* `WeierstrassCurve.Projective.equation_variableChange`: `P` solves the projective Weierstrass
+  equation of `C • W` exactly when `C.toMatrix *ᵥ P` solves that of `W`.
 * `WeierstrassCurve.Projective.linearSubst_polynomial`: the substitution multiplies the
   homogeneous Weierstrass polynomial by `u⁶`.
 * `WeierstrassCurve.Projective.variableChangeEquiv_one` and
@@ -46,6 +53,16 @@ and `W`.
 
 * [J. H. Silverman, *The Arithmetic of Elliptic Curves*, III.1][silverman2009]
 * N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, 2.2.
+
+## Provenance
+
+`toMatrix_injective` is adapted from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at commit
+`c3415f32a313e19ace43e05479aeaa0d56ca287a`, file
+`projects/ModularCurves/ModularCurves/EllipticCurve/ComparisonInjective.lean`: it is the last step
+of the proof of `projModelVCIso_injective'`, which recovers `u` from `u²` and `u³`, and `s` from
+`u²` and `u²s`, by cancelling the unit `u²`, and concludes by `VariableChange.ext`. The source has
+no matrix of a change of variables and applies this step to coefficients it has read off the
+affine coordinate ring; here it is stated for the entries of `toMatrix`.
 -/
 
 public section
@@ -63,6 +80,11 @@ namespace VariableChange
 `(x, y) ↦ (u²x + r, u³y + u²sx + t)`. -/
 def toMatrix (C : VariableChange R) : Matrix (Fin 3) (Fin 3) R :=
   !![(C.u : R) ^ 2, 0, C.r; (C.u : R) ^ 2 * C.s, (C.u : R) ^ 3, C.t; 0, 0, 1]
+
+/-- The entries of the matrix `C.toMatrix` of a change of variables. -/
+theorem toMatrix_def (C : VariableChange R) :
+    C.toMatrix = !![(C.u : R) ^ 2, 0, C.r; (C.u : R) ^ 2 * C.s, (C.u : R) ^ 3, C.t; 0, 0, 1] :=
+  (rfl)
 
 @[simp]
 theorem toMatrix_one : toMatrix (1 : VariableChange R) = 1 := by
@@ -82,6 +104,32 @@ theorem toMatrix_mul_toMatrix_inv (C : VariableChange R) : toMatrix C * toMatrix
 
 theorem toMatrix_inv_mul_toMatrix (C : VariableChange R) : toMatrix C⁻¹ * toMatrix C = 1 := by
   rw [← toMatrix_mul, mul_inv_cancel, toMatrix_one]
+
+/-- The matrix of a change of variables mapped along a ring homomorphism `f` is the matrix of the
+original change of variables with `f` applied to its entries. -/
+@[simp]
+theorem toMatrix_map {S : Type*} [CommRing S] (C : VariableChange R) (f : R →+* S) :
+    (C.map f).toMatrix = C.toMatrix.map f := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [toMatrix]
+
+/-- A change of variables `C = (u, r, s, t)` is determined by its matrix `C.toMatrix`. -/
+theorem toMatrix_injective :
+    Function.Injective (toMatrix : VariableChange R → Matrix (Fin 3) (Fin 3) R) := by
+  intro C C' h
+  -- the entries `u²`, `r`, `u²s`, `u³` and `t` of the two matrices agree
+  simp only [toMatrix_def, Equiv.apply_eq_iff_eq, Matrix.vecCons_inj, and_true, true_and] at h
+  obtain ⟨⟨h00, h02⟩, h10, h11, h12⟩ := h
+  -- `u = u³ / u²`, and then `s = u²s / u²`
+  have hu : (C.u : R) = C'.u :=
+    (C.u.isUnit.pow 2).mul_left_cancel (by linear_combination h11 - (C'.u : R) * h00)
+  exact VariableChange.ext (Units.ext hu) h02
+    ((C.u.isUnit.pow 2).mul_left_cancel (by rw [h10, h00])) h12
+
+/-- Two changes of variables have the same matrix exactly when they are equal. -/
+@[simp]
+theorem toMatrix_inj {C C' : VariableChange R} : C.toMatrix = C'.toMatrix ↔ C = C' :=
+  toMatrix_injective.eq_iff
 
 end VariableChange
 
@@ -188,6 +236,14 @@ theorem variableChangeEquiv_symm_mem_grading {n : ℕ} {x : (C • W).toProjecti
   obtain ⟨p, hp, rfl⟩ := (C • W).toProjective.mem_grading_iff.mp hx
   rw [variableChangeEquiv_symm_mk]
   exact mk_mem_grading _ (hp.linearSubst _)
+
+open Matrix in
+/-- A point representative `P` solves the projective Weierstrass equation of `C • W` exactly when
+its image `C.toMatrix *ᵥ P = [u²P₀ + rP₂ : u²sP₀ + u³P₁ + tP₂ : P₂]` solves that of `W`. -/
+theorem equation_variableChange (P : Fin 3 → R) :
+    (C • W).toProjective.Equation P ↔ W.toProjective.Equation (C.toMatrix *ᵥ P) := by
+  rw [Projective.Equation, Projective.Equation, ← eval_linearSubst, linearSubst_polynomial,
+    eval_mul, eval_C, (C.u.isUnit.pow 6).mul_right_eq_zero]
 
 open Matrix in
 /-- Evaluating at `[0 : 1 : 0]` after the change of variables is evaluating at

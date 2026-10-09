@@ -42,7 +42,10 @@ orthogonality against the identity class (`TauCeti.sum_finrank_spechtModule_mul_
 leaves only `σ = 1`, whose term is the character of the tensor power.
 
 That the character of `𝕊^μ(kⁿ)` on the torus is the Schur polynomial `s_μ` is the identity
-`(1 / d!) · ∑_σ χ^μ(σ) · p_{ρ(σ)} = s_μ` of Frobenius, which is not proved here.
+`(1 / d!) · ∑_σ χ^μ(σ) · p_{ρ(σ)} = s_μ` of Frobenius (`TauCeti.sum_spechtChar_smul_psumPart`);
+the conclusion is drawn in
+`TauCeti/RepresentationTheory/ClassicalGroups/WeylModule/Character.lean`
+(`TauCeti.char_weylRepOfShape_diagramOf_diagonal`).
 
 ## Main results
 

@@ -91,6 +91,15 @@ instance isOver_affineToricChartι (σ : Φ.cones) :
       exact h
     simpa only [specOverSpec_over] using h
 
+/-- Composing an affine chart inclusion with the global structure morphism gives the
+structure morphism of the affine chart. -/
+@[reassoc]
+theorem affineToricChartι_comp_algebraicRealizationStructureMap (σ : Φ.cones) :
+    Φ.affineToricChartι σ ≫ Φ.algebraicRealizationStructureMap =
+      Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing Φ.lattice σ.1))) := by
+  rw [← algebraicRealization_over, ← specOverSpec_over]
+  exact comp_over (Φ.affineToricChartι σ) (Spec (.of ℂ))
+
 end Fan
 
 namespace FanHom

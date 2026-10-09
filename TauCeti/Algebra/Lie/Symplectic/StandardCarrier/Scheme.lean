@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Schem
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Relations
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Rigidity
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.RootInToral
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Torus
 
 /-!
@@ -20,37 +21,42 @@ weights into the Kostant toral-closure construction. It defines the carrier, its
 subgroups and weight torus, their bundled matrix-valued points, and the scheme-level pinning
 relation.
 
-Nothing here asserts that the carrier is reductive, that its weight torus is maximal, or that the
-carrier is the separately constructed symplectic group scheme. Those statements remain part of
-Layer 9 of the reductive-groups roadmap; see the scope disclaimer in
-`TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Basic`.
+The file does not prove that the carrier is reductive, that its weight torus is maximal, or that
+it is the separately constructed symplectic group scheme.
+
+## Main definitions
+
+* `TauCeti.SpStd.groupScheme`: the carrier, cut out of the general linear group by
+  `TauCeti.SpStd.definingIdeal`, with its closed immersion `TauCeti.SpStd.carrierι`.
+* `TauCeti.SpStd.rootSubgroup` and `TauCeti.SpStd.weightTorus`: the numbered root subgroups and
+  the split weight torus, each a closed immersion into the carrier.
+* `TauCeti.SpStd.points`, `TauCeti.SpStd.rootSubgroupPoints` and
+  `TauCeti.SpStd.weightTorusPoints`: the corresponding groups of matrix-valued points.
+
+## Main results
+
+* `TauCeti.SpStd.groupScheme_hom_ext`: a morphism from the carrier to the affine group scheme of
+  a commutative Hopf algebra is determined by its restrictions to the numbered root subgroups and
+  the weight torus.
+* `TauCeti.SpStd.weightTorus_conj_rootSubgroup`: the pinning equation, conjugation by the weight
+  torus rescales each numbered root subgroup by its root character.
 -/
 
 public section
-
-open scoped Matrix
 
 universe v
 
 namespace TauCeti.SpStd
 
-open LieAlgebra.Symplectic
-open scoped TensorProduct
 open scoped CategoryTheory.MonObj
 
-attribute [local instance] TauCeti.moduleNNRat
-attribute [local instance 100] LieRing.ofAssociativeRing
-
 variable (n : ℕ)
-
 
 /-! ## The pinned carrier -/
 
 section Carrier
 
 open AlgebraicGeometry CategoryTheory
-
-attribute [local instance high] Algebra.toModule
 
 /-- The Hopf ideal cutting out the full-weight type-`C_(n+1)` carrier inside the standard
 general linear group. -/
@@ -110,16 +116,9 @@ theorem carrierι_eq_eqToHom_comp_hopfIdealInclusion :
     carrierι n =
       eqToHom (groupScheme_def n) ≫
         GeneralLinear.hopfIdealInclusion ℤ ((n + 1) + (n + 1)) (definingIdeal n) := by
-  have hgroup : groupScheme_def n =
-      congrArg (CommHopfAlgCat.quotientSpec
-        (GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1))))
-          (definingIdeal_def n).symm :=
-    Subsingleton.elim _ _
   rw [carrierι_def, TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupSchemeι_def,
-    GeneralLinear.hopfIdealInclusion_def]
-  rw [hgroup, ← Category.assoc, CommHopfAlgCat.eqToHom_comp_quotientSpecι]
-  · rw [eqToIso.hom]
-  · exact (definingIdeal_def n).symm
+    GeneralLinear.hopfIdealInclusion_def, ← Category.assoc,
+    CommHopfAlgCat.eqToHom_comp_quotientSpecι _ (definingIdeal_def n).symm, eqToIso.hom]
 
 /-- The type-`C_(n+1)` carrier is a closed subgroup scheme of its ambient general linear group. -/
 instance isClosedImmersion_carrierι : IsClosedImmersion (carrierι n).hom.hom.left := by
@@ -190,8 +189,9 @@ the standard-module weights. -/
     (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv) (isNilpotent_rep_rootGenerator n)
     (latticeBasis n) (basisWeight n)
 
-/-- Two morphisms out of the type-`C_(n+1)` carrier agree when they agree on every numbered root
-subgroup and on the split weight torus. -/
+/-- Two morphisms from the type-`C_(n+1)` carrier to the affine group scheme of a commutative Hopf
+`ℤ`-algebra `Y` agree when they agree on every numbered root subgroup and on the split weight
+torus. -/
 @[ext]
 theorem groupScheme_hom_ext {Y : _root_.CommHopfAlgCat.{0} ℤ}
     (φ ψ : groupScheme n ⟶
@@ -273,18 +273,6 @@ weights. -/
   exact TauCeti.UniversalEnvelopingAlgebra.coe_kostantToralWeightTorusPoints
     _ _ _ _ _ _ _ _ A s
 
-/-- The coordinate-algebra map representing a numbered root subgroup is surjective. -/
-private theorem representedRootCoordinateMap_surjective
-    (k : Fin (n + 1) ⊕ Fin (n + 1)) :
-    Function.Surjective
-      (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap (rootGenerator n)
-        (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
-        k (isNilpotent_rep_rootGenerator n k) (latticeBasis n)).hom :=
-  TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap_surjective _ _ _ _ _ _ _ _
-    isUnit_one (rep_rootGenerator_latticeBasis n k)
-    (rep_rootGenerator_rep_rootGenerator_eq_zero n k _)
-
 /-- The root-subgroup coordinate map remains surjective after adjoining the weight torus. -/
 theorem rootSubgroupCoordinateMap_surjective (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     Function.Surjective
@@ -292,18 +280,16 @@ theorem rootSubgroupCoordinateMap_surjective (k : Fin (n + 1) ⊕ Fin (n + 1)) :
         (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
         (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
         (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) k).hom :=
-  TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToralCoordinateMap_surjective_of_surjective
-    _ _ _ _ _ _ _ _ k (representedRootCoordinateMap_surjective n k)
+  TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToralCoordinateMap_surjective
+    _ _ _ _ _ k _ _ _ isUnit_one (rep_rootGenerator_latticeBasis n k)
+    (rep_rootGenerator_rep_rootGenerator_eq_zero n k _)
 
 /-- Every numbered root subgroup is a closed copy of the additive group. -/
 instance isClosedImmersion_rootSubgroup (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     IsClosedImmersion (rootSubgroup n k).hom.hom.left :=
-  TauCeti.UniversalEnvelopingAlgebra.isClosedImmersion_kostantRootSubgroupToToral_of_surjective
-    (rootGenerator n)
-    (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
-    (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) k
-    (rootSubgroupCoordinateMap_surjective n k)
+  TauCeti.UniversalEnvelopingAlgebra.isClosedImmersion_kostantRootSubgroupToToral
+    _ _ _ _ _ k _ _ _ isUnit_one (rep_rootGenerator_latticeBasis n k)
+    (rep_rootGenerator_rep_rootGenerator_eq_zero n k _)
 
 /-- The full-weight torus is a closed immersion into the type `C_(n+1)` carrier. -/
 instance isClosedImmersion_weightTorus : IsClosedImmersion (weightTorus n).hom.hom.left :=

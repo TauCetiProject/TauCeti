@@ -278,11 +278,13 @@ theorem IsProjectiveCover.exists_comp_eq {f : P →ₗ[R] M} (hf : IsProjectiveC
   ext p
   simp
 
-variable (k : Type*) [CommSemiring k] [Algebra k R] [Module k T] [IsScalarTower k R T]
+variable (k : Type*) [Semiring k] [Module k T] [SMulCommClass R k T]
 
 /-- **A projective cover is invisible to a semisimple target.** Precomposition with a projective
 cover `f : P →ₗ[R] M` is a `k`-linear isomorphism from `Hom_R(M, T)` to `Hom_R(P, T)` for every
-semisimple `R`-module `T`: it is injective because `f` is onto, and surjective by
+semisimple `R`-module `T` with commuting `R`- and `k`-actions. In particular, `k` can be the
+endomorphism ring `Module.End R T`, acting by postcomposition. The map is injective because `f` is
+onto, and surjective by
 `TauCeti.IsProjectiveCover.exists_comp_eq`.
 
 Compare `TauCeti.homCongrRight`, which transports a hom space along an isomorphism of its target:

@@ -186,9 +186,6 @@ theorem mixedIIDWith_of_forall_rectangles {μ : Measure Ω} [IsFiniteMeasure μ]
     MixedIIDWith μ X ν := by
   refine MixedIIDWith.intro hX hν ?_
   intro m k hk
-  have : IsFiniteMeasure (blockLaw μ X k) := by
-    rw [blockLaw_def]
-    infer_instance
   refine measure_eq_of_forall_univ_pi ?_
   intro B hB
   rw [h_rect m k hk B hB]

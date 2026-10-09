@@ -8,6 +8,8 @@ module
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Pullbacks
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
+public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.SplitEpi
 
 /-!
 # Base change of ideal sheaves
@@ -16,7 +18,17 @@ This file identifies the closed subscheme of an ideal sheaf pulled back along a 
 projection with the corresponding base change. It also records the resulting preservation of
 flatness for the closed subscheme, and the affine-local form of that flatness: over affine opens
 `W ⊆ S` and `U ⊆ f⁻¹ W`, the quotient `Γ(X, U) ⧸ I(U)` is flat over `Γ(S, W)`
-(`flat_appLE_comp_ofHom_quotient_mk`).
+(`flat_appLE_comp_ofHom_quotient_mk`). Conversely, flatness of that quotient is exactly flatness
+of the restricted subscheme morphism (`TauCeti.flat_resLE_subschemeι_iff`).
+
+The ideal sheaf of a closed immersion pulled back along any pullback square is the inverse image
+of its ideal sheaf (`AlgebraicGeometry.Scheme.IdealSheafData.ker_eq_comap_of_isPullback`). In
+particular, for a section `s` of `f : X ⟶ S` which is a closed immersion, the ideal sheaf of its
+base change `T ⟶ X ×_S T` along `g : T ⟶ S` is the inverse image of the ideal sheaf of `s`
+(`CategoryTheory.SplitEpi.ker_pullback_section`), and the same holds for the product of the
+ideal sheaves of finitely many sections
+(`AlgebraicGeometry.Scheme.IdealSheafData.prod_ker_pullback_section`). Taking the ideal sheaf of
+a section, or of a finite family of sections, therefore commutes with arbitrary base change.
 -/
 
 public section
@@ -72,6 +84,33 @@ theorem flat_comap_subschemeι_comp_snd (I : X.IdealSheafData) (f : X ⟶ S)
   rw [← comapPullbackFstIso_hom_snd]
   infer_instance
 
+/-- **Ideal sheaves of closed immersions are stable under base change.** If `i' : P ⟶ X` is the
+base change of a closed immersion `i : Z ⟶ Y` along `f : X ⟶ Y`, then the ideal sheaf of `i'` is
+the inverse image of the ideal sheaf of `i`. -/
+theorem ker_eq_comap_of_isPullback {P Y Z : Scheme.{u}} {i' : P ⟶ X} {g : P ⟶ Z} {f : X ⟶ Y}
+    (i : Z ⟶ Y) [IsClosedImmersion i] (h : IsPullback i' g f i) : i'.ker = i.ker.comap f := by
+  rw [← h.isoPullback_hom_fst, Scheme.Hom.ker_comp_of_isIso, ker_fst_of_isClosedImmersion]
+
+/-- **The ideal sheaf of a section commutes with base change.** For a section `h.section_` of
+`f : X ⟶ S` which is a closed immersion, as it is when `f` is separated, the ideal sheaf of its
+base change `(h.pullback g).section_ : T ⟶ X ×_S T` along `g : T ⟶ S` is the inverse image of
+the ideal sheaf of `h.section_` along the projection `X ×_S T ⟶ X`. -/
+theorem _root_.CategoryTheory.SplitEpi.ker_pullback_section {f : X ⟶ S} (h : SplitEpi f)
+    [IsClosedImmersion h.section_] (g : T ⟶ S) :
+    (h.pullback g).section_.ker = h.section_.ker.comap (pullback.fst f g) :=
+  ker_eq_comap_of_isPullback _ (h.isPullback_pullback_section g)
+
+/-- The ideal sheaves of finitely many sections of `f : X ⟶ S`, each a closed immersion, commute
+with base change along `g : T ⟶ S`: the product of the ideal sheaves of the base-changed
+sections `T ⟶ X ×_S T` is the inverse image of the product of the original ideal sheaves. For
+sections through the smooth locus of a relative curve, this is the statement that the divisor
+`s₁ + ⋯ + sₙ` commutes with base change. -/
+theorem prod_ker_pullback_section {ι : Type*} (t : Finset ι) {f : X ⟶ S}
+    (h : ι → SplitEpi f) [∀ i, IsClosedImmersion (h i).section_] (g : T ⟶ S) :
+    ∏ i ∈ t, ((h i).pullback g).section_.ker =
+      (∏ i ∈ t, (h i).section_.ker).comap (pullback.fst f g) := by
+  simp only [comap_prod, SplitEpi.ker_pullback_section]
+
 /-- If the closed subscheme of `I` is flat over `S`, then over an affine open `W` of `S`, the
 quotient `Γ(X, U) ⧸ I(U)` is flat over `Γ(S, W)` for every affine open `U ⊆ f⁻¹ W`. -/
 theorem flat_appLE_comp_ofHom_quotient_mk (I : X.IdealSheafData) (f : X ⟶ S)
@@ -85,3 +124,27 @@ theorem flat_appLE_comp_ofHom_quotient_mk (I : X.IdealSheafData) (f : X ⟶ S)
   exact (RingHom.Flat.respectsIso.cancel_right_isIso _ _).mp h
 
 end AlgebraicGeometry.Scheme.IdealSheafData
+
+namespace TauCeti
+
+open AlgebraicGeometry AlgebraicGeometry.Scheme.IdealSheafData
+
+variable {S X : Scheme.{u}}
+
+/-- Flatness of the closed subscheme cut out by `I` over a pair of affine opens is equivalent
+to flatness of its quotient algebra of sections over the base. -/
+theorem flat_resLE_subschemeι_iff {I : X.IdealSheafData} {f : X ⟶ S}
+    {W : S.Opens} (hW : IsAffineOpen W) (U : X.affineOpens)
+    (hUW : U.1 ≤ f ⁻¹ᵁ W) :
+    Flat ((I.subschemeι ≫ f).resLE W (I.subschemeι ⁻¹ᵁ U.1)
+      ((Scheme.Hom.preimage_mono I.subschemeι hUW).trans_eq rfl)) ↔
+      (f.appLE W U hUW ≫ CommRingCat.ofHom (Ideal.Quotient.mk (I.ideal U))).hom.Flat := by
+  have : IsAffine W.toScheme := hW
+  have : IsAffine (I.subschemeι ⁻¹ᵁ U.1).toScheme := U.2.preimage I.subschemeι
+  rw [HasRingHomProperty.iff_of_isAffine (P := @Flat),
+    RingHom.Flat.respectsIso.arrow_mk_iso_iff (arrowResLEAppIso _ _ _ _),
+    ← Scheme.Hom.appLE_comp_appLE I.subschemeι f W U.1 _ hUW le_rfl,
+    ← Scheme.Hom.app_eq_appLE, subschemeι_app, ← Category.assoc]
+  exact RingHom.Flat.respectsIso.cancel_right_isIso _ _
+
+end TauCeti

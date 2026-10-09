@@ -8,11 +8,10 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Cyclic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
-public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
+public import TauCeti.LinearAlgebra.IntegralLattice.Level
 public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Minimum
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import TauCeti.LinearAlgebra.IntegralLattice.StandardCoordinates
-public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
 import Mathlib.Algebra.BigOperators.Field
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Dynkin
 
@@ -30,6 +29,9 @@ det E₇ = 2,   A_{E₇} ≃+ ℤ/2,   q(ϖ₇) = 3/4,
 det E₈ = 1,   A_{E₈} = 0,      E₈ is unimodular.
 ```
 
+Their levels are respectively `3`, `4`, and `1`, computed from these quadratic values
+using `IntegralLattice.IsEven.level_eq_addOrderOf` and the even-unimodular criterion.
+
 The generators are the classes of the minuscule fundamental weights, `ϖ₁` for `E₆` and `ϖ₇` for
 `E₇`, written in the simple-root coordinates that the inverse Cartan matrix dictates:
 
@@ -46,8 +48,8 @@ of `ϖ₁` has additive order exactly `3` because the first simple-root coordina
 and the discriminant group has that same order, so `ϖ₁` generates; the same argument with the
 second coordinate `3/2` of `ϖ₇` and the order `2` settles type `E₇`.
 
-The half-norm convention is the one fixed by the integral-lattices roadmap: `q_L(x) = ⟨x,x⟩ / 2`
-in `ℚ/ℤ`.  Nikulin's full-norm values for these rows are `4/3` and `3/2`.
+The half-norm convention is `q_L(x) = ⟨x,x⟩ / 2` in `ℚ/ℤ`.  Nikulin's full-norm values for these
+rows are `4/3` and `3/2`.
 
 Both cyclic discriminant forms are presented through
 `TauCeti.FiniteQuadraticModule.cyclic`, which builds the form on `ℤ/m` whose generator carries a
@@ -80,6 +82,7 @@ the branch node of the diagram is `α₄`, and `α₂` is the short arm.
 * `TauCeti.IntegralLattice.isUnimodular_typeE₈RootLattice`: `E₈` is unimodular, so its discriminant
   form is trivial.
 * `TauCeti.IntegralLattice.minimum_typeE₈RootLattice`: `E₈` has minimum `2`.
+* `TauCeti.IntegralLattice.level_typeE₆RootLattice` and its analogues: the levels are `3`, `4`, `1`.
 
 ## References
 
@@ -87,8 +90,6 @@ the branch node of the diagram is `α₄`, and `α₂` is the short arm.
 * J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, Chapter 4, §8.
 * W. Ebeling, *Lattices and Codes*, Chapters 1 and 3.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, plates V, VI, VII.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 5, the `E₆`, `E₇` and `E₈` rows of the ADE
-  table.
 -/
 
 public section
@@ -96,8 +97,6 @@ public section
 namespace TauCeti
 
 namespace IntegralLattice
-
-open Finset
 
 /-! ## The root lattice of type `E₆` -/
 
@@ -139,7 +138,7 @@ private theorem det_cartanMatrixE₆_ne_zero : (CartanMatrix.E 6).det ≠ 0 := b
   norm_num
 
 /-- The type `E₆` root lattice is nondegenerate because its Cartan matrix is nonsingular. -/
-noncomputable instance instIsNondegenerateTypeE₆RootLattice :
+instance instIsNondegenerateTypeE₆RootLattice :
     typeE₆RootLattice.IsNondegenerate := by
   rw [typeE₆RootLattice]
   refine isNondegenerate_ofGramMatrix _ _ _ ?_
@@ -180,7 +179,7 @@ theorem natCard_discriminantGroup_typeE₆RootLattice :
 private def typeE₆WeightCoeff : Fin 6 → ℤ := ![4, 3, 5, 6, 4, 2]
 
 /-- The minuscule fundamental weight `ϖ₁` of type `E₆`, in simple-root coordinates. -/
-noncomputable def typeE₆MinusculeWeight : Fin 6 → ℚ :=
+def typeE₆MinusculeWeight : Fin 6 → ℚ :=
   fun j ↦ (typeE₆WeightCoeff j : ℚ) / 3
 
 @[simp]
@@ -324,6 +323,15 @@ theorem discriminantQuadraticMap_typeE₆MinusculeWeightClass :
   rw [coe_typeE₆MinusculeWeightDual, form_typeE₆MinusculeWeight_self]
   norm_num
 
+/-- The level of the `E₆` root lattice is `3`. -/
+@[simp]
+theorem level_typeE₆RootLattice : typeE₆RootLattice.level = 3 := by
+  rw [isEven_typeE₆RootLattice.level_eq_addOrderOf _
+    zmultiples_typeE₆MinusculeWeightClass_eq_top,
+    discriminantQuadraticMap_typeE₆MinusculeWeightClass]
+  simpa only [Rat.cast_id, mul_one] using
+    (_root_.AddCircle.addOrderOf_coe_rat (p := (1 : ℚ)) (q := 2 / 3)).trans (by norm_num)
+
 /-- **The discriminant bilinear value of the minuscule weight `ϖ₁` of type `E₆` is `1/3`.** -/
 @[simp]
 theorem discriminantPairing_typeE₆MinusculeWeightClass :
@@ -415,7 +423,7 @@ private theorem det_cartanMatrixE₇_ne_zero : (CartanMatrix.E 7).det ≠ 0 := b
   norm_num
 
 /-- The type `E₇` root lattice is nondegenerate because its Cartan matrix is nonsingular. -/
-noncomputable instance instIsNondegenerateTypeE₇RootLattice :
+instance instIsNondegenerateTypeE₇RootLattice :
     typeE₇RootLattice.IsNondegenerate := by
   rw [typeE₇RootLattice]
   refine isNondegenerate_ofGramMatrix _ _ _ ?_
@@ -456,7 +464,7 @@ theorem natCard_discriminantGroup_typeE₇RootLattice :
 private def typeE₇WeightCoeff : Fin 7 → ℤ := ![2, 3, 4, 6, 5, 4, 3]
 
 /-- The minuscule fundamental weight `ϖ₇` of type `E₇`, in simple-root coordinates. -/
-noncomputable def typeE₇MinusculeWeight : Fin 7 → ℚ :=
+def typeE₇MinusculeWeight : Fin 7 → ℚ :=
   fun j ↦ (typeE₇WeightCoeff j : ℚ) / 2
 
 @[simp]
@@ -600,6 +608,15 @@ theorem discriminantQuadraticMap_typeE₇MinusculeWeightClass :
   rw [coe_typeE₇MinusculeWeightDual, form_typeE₇MinusculeWeight_self]
   norm_num
 
+/-- The level of the `E₇` root lattice is `4`, not the exponent `2` of its discriminant group. -/
+@[simp]
+theorem level_typeE₇RootLattice : typeE₇RootLattice.level = 4 := by
+  rw [isEven_typeE₇RootLattice.level_eq_addOrderOf _
+    zmultiples_typeE₇MinusculeWeightClass_eq_top,
+    discriminantQuadraticMap_typeE₇MinusculeWeightClass]
+  simpa only [Rat.cast_id, mul_one] using
+    (_root_.AddCircle.addOrderOf_coe_rat (p := (1 : ℚ)) (q := 3 / 4)).trans (by norm_num)
+
 /-- **The discriminant bilinear value of the minuscule weight `ϖ₇` of type `E₇` is `1/2`.** -/
 @[simp]
 theorem discriminantPairing_typeE₇MinusculeWeightClass :
@@ -700,7 +717,7 @@ private theorem det_cartanMatrixE₈_ne_zero : (CartanMatrix.E 8).det ≠ 0 := b
   norm_num
 
 /-- The type `E₈` root lattice is nondegenerate because its Cartan matrix is nonsingular. -/
-noncomputable instance instIsNondegenerateTypeE₈RootLattice :
+instance instIsNondegenerateTypeE₈RootLattice :
     typeE₈RootLattice.IsNondegenerate := by
   rw [typeE₈RootLattice]
   refine isNondegenerate_ofGramMatrix _ _ _ ?_
@@ -744,6 +761,12 @@ theorem discriminant_typeE₈RootLattice : typeE₈RootLattice.discriminant = 1 
 theorem isUnimodular_typeE₈RootLattice : typeE₈RootLattice.IsUnimodular := by
   rw [isUnimodular_iff_isUnit_determinant, determinant_typeE₈RootLattice]
   exact isUnit_one
+
+/-- The even unimodular `E₈` root lattice has level `1`. -/
+@[simp]
+theorem level_typeE₈RootLattice : typeE₈RootLattice.level = 1 :=
+  typeE₈RootLattice.level_eq_one_iff.mpr
+    ⟨isEven_typeE₈RootLattice, isUnimodular_typeE₈RootLattice⟩
 
 /-- **The type `E₈` root lattice is self-dual.** -/
 @[simp]

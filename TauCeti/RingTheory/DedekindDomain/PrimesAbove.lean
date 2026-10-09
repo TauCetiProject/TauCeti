@@ -33,6 +33,8 @@ The Selmer group of the fraction field of `B` relative to these primes is
 
 * `IsDedekindDomain.HeightOneSpectrum.liesOver_under`: the `LiesOver` instance relating a prime
   to its contraction, which the `under`-indexed results downstream need.
+* `IsDedekindDomain.HeightOneSpectrum.under_surjective`: every height one prime of `R` lies
+  under one of `B`.
 * `IsDedekindDomain.HeightOneSpectrum.under_under`: contraction through a tower agrees with
   direct contraction.
 * `IsDedekindDomain.HeightOneSpectrum.liesOverTowerEquiv`: primes over a fixed prime correspond
@@ -80,6 +82,16 @@ stated at `under R w` and consuming a `LiesOver` hypothesis, such as
 instance liesOver_under (w : HeightOneSpectrum B) :
     w.asIdeal.LiesOver (under R w).asIdeal :=
   ⟨rfl⟩
+
+/-- **Every height one prime of `R` lies under one of `B`**, for an integral extension of domains
+with injective algebra map: contraction `HeightOneSpectrum B → HeightOneSpectrum R` is
+surjective. -/
+theorem under_surjective [FaithfulSMul R B] :
+    Function.Surjective (under R : HeightOneSpectrum B → HeightOneSpectrum R) := by
+  rintro ⟨p, hp, hp0⟩
+  obtain ⟨P, hP, rfl⟩ := p.exists_ideal_over_prime_of_isIntegral_of_isDomain (S := B)
+    (by simp)
+  exact ⟨⟨P, hP, fun h ↦ hp0 (by rw [h, Ideal.under_bot])⟩, rfl⟩
 
 section UnderTower
 

@@ -503,11 +503,6 @@ section Independence
 
 variable (k F) (P' : Place k' F') [Algebra.IsIntegral F F']
 
-private theorem valuation_lt_of_ord_lt {x y : F'} (hx : x ≠ 0) (hy : y ≠ 0)
-    (h : P'.ord y < P'.ord x) : P'.valuation x < P'.valuation y := by
-  rw [P'.valuation_eq_exp_neg_ord hx, P'.valuation_eq_exp_neg_ord hy, WithZero.exp_lt_exp]
-  omega
-
 private theorem eq_of_mul_add_natCast_eq {e : ℕ} {j j' : Fin e} {a b : ℤ}
     (h : (e : ℤ) * a + (j : ℕ) = (e : ℤ) * b + (j' : ℕ)) : j = j' := by
   have key : ∀ (m : ℤ) (l : Fin e), ((e : ℤ) * m + (l : ℕ)) % (e : ℤ) = (l : ℕ) := by
@@ -543,7 +538,8 @@ private theorem exists_valuation_sum_eq {e : ℕ} (A : Fin e → F')
         rw [hm, hm₀]
         exact fun hcontra ↦ hj.2 (eq_of_mul_add_natCast_eq hcontra)
       have hge := hj₀ j (by simp [hJdef, hAj])
-      exact valuation_lt_of_ord_lt P' hAj hj₀A (by omega)
+      apply (Valuation.ord_lt_ord_iff_valuation_gt P'.valuation hj₀A hAj).mp
+      simpa only [Valuation.ord_def, ord_def] using lt_of_le_of_ne hge hne.symm
   exact ⟨j₀, hj₀A, hj₀ j₁ (by simp [hJdef, hj₁]),
     P'.valuation.map_sum_eq_of_lt (Finset.mem_univ j₀) hlt⟩
 
@@ -668,13 +664,7 @@ theorem ramificationIdx_dvd_ord_sum_of_linearIndependent_residue {ι : Type*} [F
   · obtain ⟨i₁, hi₁⟩ := not_forall.mp hc
     exact (exists_ord_sum_eq_mul k F P' s hind c hi₁).2
 
-/-- **The independence statement behind the fundamental inequality** (Stichtenoth,
-Theorem 3.1.11): if the residues at `P'` of finitely many elements of `𝒪_{P'}` are independent
-over the residue field of the place `P` below, and `t` is a prime element for `P'`, then the
-products of those elements with `t ^ j` for `0 ≤ j < e(P' ∣ P)` are independent over `F`. The
-reason is that the order at `P'` of an `F`-combination of the given elements is a multiple of
-`e(P' ∣ P)`, so the `e(P' ∣ P)` blocks have pairwise distinct orders. -/
-theorem linearIndependent_mul_pow_of_linearIndependent_residue {ι : Type*} [Finite ι]
+private theorem linearIndependent_mul_pow_of_linearIndependent_residue_finite {ι : Type*} [Finite ι]
     (s : ι → P'.integers)
     (hind : LinearIndependent (P'.restrict k F).ResidueField
       fun i ↦ IsLocalRing.residue P'.integers (s i))
@@ -689,6 +679,7 @@ theorem linearIndependent_mul_pow_of_linearIndependent_residue {ι : Type*} [Fin
   by_contra hex
   rw [not_forall] at hex
   obtain ⟨⟨i₁, j₁⟩, hp₁⟩ := hex
+  -- Group the relation by powers of the uniformizer; the blocks have distinct orders modulo `e`.
   set A : Fin e → F' := fun j ↦ ∑ i, algebraMap F F' (c (i, j)) * (s i : F') with hA
   have hkey : ∑ j : Fin e, A j * t ^ (j : ℕ) = 0 := by
     rw [Fintype.sum_prod_type] at hc
@@ -715,6 +706,30 @@ theorem linearIndependent_mul_pow_of_linearIndependent_residue {ι : Type*} [Fin
     (exists_ord_sum_eq_mul k F P' s hind (fun i ↦ c (i, j₁)) (i₁ := i₁) hp₁).1
   exact (sum_ne_zero_of_ord_eq_mul_add_natCast P' (fun j ↦ A j * t ^ (j : ℕ)) hTord
     (mul_ne_zero hA₁ (pow_ne_zero _ ht0))) hkey
+
+/-- **The independence statement behind the fundamental inequality** (Stichtenoth,
+Theorem 3.1.11): if the residues at `P'` of a family of elements of `𝒪_{P'}` are independent
+over the residue field of the place `P` below, and `t` is a prime element for `P'`, then the
+products of those elements with `t ^ j` for `0 ≤ j < e(P' ∣ P)` are independent over `F`. The
+reason is that the order at `P'` of an `F`-combination of the given elements is a multiple of
+`e(P' ∣ P)`, so the `e(P' ∣ P)` blocks have pairwise distinct orders. -/
+theorem linearIndependent_mul_pow_of_linearIndependent_residue {ι : Type*}
+    (s : ι → P'.integers)
+    (hind : LinearIndependent (P'.restrict k F).ResidueField
+      fun i ↦ IsLocalRing.residue P'.integers (s i))
+    {t : F'} (ht : P'.ord t = 1) :
+    LinearIndependent F fun p : ι × Fin (ramificationIdx F P') ↦ (s p.1 : F') * t ^ (p.2 : ℕ) := by
+  classical
+  -- A finite subfamily of products uses only finitely many elements of the residue family.
+  rw [linearIndependent_iff_finset_linearIndependent]
+  intro S
+  let I := S.image Prod.fst
+  have hI := linearIndependent_mul_pow_of_linearIndependent_residue_finite k F P'
+    (fun i : I ↦ s i) (hind.comp Subtype.val Subtype.val_injective) ht
+  let f : S → I × Fin (ramificationIdx F P') :=
+    fun p ↦ (⟨p.1.1, Finset.mem_image_of_mem Prod.fst p.2⟩, p.1.2)
+  exact hI.comp f fun p q h ↦ Subtype.ext <|
+    congrArg (fun x : I × Fin (ramificationIdx F P') ↦ (x.1.1, x.2)) h
 
 end Independence
 

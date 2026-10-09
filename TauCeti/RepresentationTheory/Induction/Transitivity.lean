@@ -10,15 +10,16 @@ public import Mathlib.CategoryTheory.Adjunction.Unique
 public import Mathlib.RepresentationTheory.Coinduced
 public import Mathlib.RepresentationTheory.Induced
 public import TauCeti.RepresentationTheory.Induction.Restriction
+import TauCeti.RepresentationTheory.Coinduced
 
 /-!
 # Transitivity of induction and coinduction
 
 This file records restriction and coinduction in stages for representations along composable monoid
 homomorphisms, and induction in stages along composable group homomorphisms. It obtains the natural
-isomorphisms from the equality of restriction functors `TauCeti.resFunctor_comp` and
+isomorphisms from the equality of restriction functors `MonoidHom.resFunctor_comp` and
 Mathlib's induction--restriction and restriction--coinduction adjunctions. This is the categorical
-core used by the subgroup form of induction in the induction and Mackey-theory roadmap.
+core used by the subgroup form of induction.
 
 Uniqueness of adjoints produces those isomorphisms without ever saying what they *do*, and a
 comparison map known only up to an abstract adjoint characterisation is of no use to a computation
@@ -91,9 +92,6 @@ in the readable form, and `rw` and `exact` still apply the lemmas as usual.
 
 ## References
 
-This is the "explicit representative-level formula for the isomorphism" that Layer 0 of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md` asks for alongside
-transitivity of induction, "rather than leaving it an abstract adjoint comparison". See
 C. W. Curtis, I. Reiner, *Methods of Representation Theory, Vol. I*, §10, and J.-P. Serre,
 *Linear Representations of Finite Groups*, §7.
 -/
@@ -163,31 +161,18 @@ lemma indV_ind_hom_ext {V W : Type*} [AddCommGroup V] [Module k V] [AddCommGroup
 
 end IndV
 
-section CoindV
-
-variable [CommRing k] [Monoid G] [Monoid H]
-
-/-- The coinduced action translates the argument of a function: `(h • f) h₁ = f (h₁ * h)`. Used to
-retype the values of a coinduced representation along the group action. -/
-private lemma coind_ρ_apply_coe_apply {V : Type*} [AddCommGroup V] [Module k V] (φ : G →* H)
-    (ρ : Representation k G V) (f : Representation.coindV φ ρ) (h h₁ : H) :
-    ((Representation.coind φ ρ h) f).1 h₁ = f.1 (h₁ * h) :=
-  rfl
-
-end CoindV
-
 section Restriction
 
 variable [Semiring k] [Monoid G] [Monoid H] [Monoid K]
 
 /-- Restriction along two composable group homomorphisms is naturally isomorphic to restriction
-along their composite.  The two functors are in fact equal (`TauCeti.resFunctor_comp`), so this is
+along their composite.  The two functors are in fact equal (`MonoidHom.resFunctor_comp`), so this is
 that equality read as an isomorphism. -/
 def Rep.resFunctorCompIso (φ : G →* H) (ψ : H →* K) :
     Rep.resFunctor.{max u v w x} (k := k) ψ ⋙
       Rep.resFunctor.{max u v w x} (k := k) φ ≅
         Rep.resFunctor.{max u v w x} (k := k) (ψ.comp φ) :=
-  eqToIso (resFunctor_comp ψ φ).symm
+  eqToIso (MonoidHom.resFunctor_comp ψ φ).symm
 
 /-- The forward component of `resFunctorCompIso` acts as the identity on vectors. -/
 @[simp↓]
@@ -343,14 +328,14 @@ lemma Rep.eq_indFunctorCompIso_hom_app (φ : G →* H) (ψ : H →* K) (A : Rep.
 
 /-- **Induction along an isomorphism is restriction along its inverse.** For `e : G ≃* H`,
 `Ind_e ≅ Res_{e⁻¹}` as functors `Rep k G ⥤ Rep k H`: both are left adjoint to `Res_e`, which is an
-equivalence (`TauCeti.resFunctorEquiv`). -/
+equivalence (`MulEquiv.resFunctorEquiv`). -/
 noncomputable def Rep.indFunctorMulEquivIso (e : G ≃* H) :
     Rep.indFunctor.{max u v w} k e.toMonoidHom ≅
       Rep.resFunctor.{max u v w} e.symm.toMonoidHom :=
   (Rep.indResAdjunction.{max u v w} k e.toMonoidHom).leftAdjointUniq
-      ((resFunctorEquiv e).symm.toAdjunction.ofNatIsoRight
-        (eqToIso (resFunctorEquiv_functor e))) ≪≫
-    eqToIso (resFunctorEquiv_inverse e)
+      ((MulEquiv.resFunctorEquiv e).symm.toAdjunction.ofNatIsoRight
+        (eqToIso (MulEquiv.resFunctorEquiv_functor e))) ≪≫
+    eqToIso (MulEquiv.resFunctorEquiv_inverse e)
 
 /-- **Induction in stages through an intermediate subgroup.** For subgroups `S ≤ T` of `G`,
 inducing a representation of `S`, viewed as the subgroup `S.subgroupOf T` of `T`, first to `T`
@@ -443,7 +428,7 @@ lemma Rep.coindFunctorCompIso_hom_app_hom_apply_coe_apply (φ : G →* H) (ψ : 
       Rep.coindFunctor.{max u v w x} k ψ).obj A).ρ κ F)
   rw [hcomm] at h1
   simp only [Functor.comp_obj, Rep.coindFunctor_obj, Rep.of_ρ] at h1
-  rw [coind_ρ_apply_coe_apply, coind_ρ_apply_coe_apply] at h1
+  rw [Representation.coind_apply_coe_apply, Representation.coind_apply_coe_apply] at h1
   simpa using h1
 
 /-- **Coinduction in stages on functions, backwards**: the inverse of the coinduction-in-stages
@@ -463,7 +448,7 @@ lemma Rep.coindFunctorCompIso_inv_app_hom_apply_coe_apply_coe_apply (φ : G →*
   have hmem := (((Rep.coindFunctorCompIso φ ψ).inv.app A).hom f).2 h κ
   simp only [Rep.coindFunctor_obj, Rep.of_ρ] at hmem
   have hx : f.1 (ψ h * κ) = ((((Rep.coindFunctorCompIso φ ψ).inv.app A).hom f).1 κ).1 (1 * h) := by
-    rw [← hhom (ψ h * κ), hmem, coind_ρ_apply_coe_apply]
+    rw [← hhom (ψ h * κ), hmem, Representation.coind_apply_coe_apply]
   rw [hx, one_mul]
 
 end Coinduction

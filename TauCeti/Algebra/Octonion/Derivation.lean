@@ -94,9 +94,11 @@ packages `TauCeti.Octonion.derivationOfTriple` as a linear equivalence.
 * `TauCeti.Octonion.derivation_apply_conj`: a derivation commutes with conjugation.
 * `TauCeti.Octonion.polar_derivation_apply_self_eq_zero` and
   `TauCeti.Octonion.polar_derivation_apply_left_eq_neg`: a derivation is **skew** for the symmetric
-  bilinear form of the norm, `⟨D x, y⟩ = -⟨x, D y⟩`.
+  bilinear form of the norm, `⟨D x, y⟩ = -⟨x, D y⟩`;
+  `TauCeti.Octonion.associated_derivation_add_eq_zero` is the same statement written with
+  `QuadraticMap.associated`, half the polar form.
 * `TauCeti.Octonion.derivationLieAlgebra_le_skewAdjointLieSubalgebra`: `Der 𝕆 ≤ 𝔰𝔬(N)`, the
-  previous item as an inclusion of Lie subalgebras of `Module.End R 𝕆`.
+  skewness as an inclusion of Lie subalgebras of `Module.End R 𝕆`.
 * `TauCeti.Octonion.isFaithful_imaginaryLieSubmodule`: `Der 𝕆` acts faithfully on `Im 𝕆` over
   every commutative ring; `TauCeti.Octonion.instIsFaithfulImaginaryLieSubmodule` is its instance
   form.
@@ -106,9 +108,8 @@ packages `TauCeti.Octonion.derivationOfTriple` as a linear equivalence.
   `TauCeti.Octonion.lie_lowerDerivation_lowerDerivation` and
   `TauCeti.Octonion.lie_upperDerivation_lowerDerivation`: the brackets of the three families with
   one another, the relations of the `ℤ/3`-grading.
-* `TauCeti.Octonion.derivationOfTriple_injective`: the fourteen parameters are independent, and
-  `TauCeti.Octonion.fourteen_le_finrank_derivationLieAlgebra`: hence `14 ≤ finrank (Der 𝕆)` over a
-  field. In particular `Der 𝕆` is not the zero Lie algebra
+* `TauCeti.Octonion.derivationOfTriple_injective`: the fourteen parameters are independent.
+  In particular `Der 𝕆` is not the zero Lie algebra
   (`TauCeti.Octonion.instNontrivialDerivationLieAlgebra`), so none of the above is vacuous.
 * `TauCeti.Octonion.derivationOfTriple_surjective`: every derivation of `𝕆` is in the
   fourteen-parameter family, over any commutative ring.
@@ -118,12 +119,13 @@ packages `TauCeti.Octonion.derivationOfTriple` as a linear equivalence.
 
 ## Implementation notes
 
-Everything is stated over a commutative ring. The rank count `finrank (Der 𝕆) = 14` asks in
-addition for the strong rank condition, and the older lower bound `14 ≤ finrank (Der 𝕆)` for a
-field. Faithfulness needs no further hypothesis on the base ring: the imaginary vector matrices
-generate the diagonal idempotent by multiplication. In characteristic `2`, the imaginary octonions
-contain the unit, so its line is a trivial subrepresentation; this obstructs irreducibility but
-does not affect faithfulness.
+Everything is stated over a commutative ring, except
+`TauCeti.Octonion.associated_derivation_add_eq_zero`, which asks for an invertible `2` because
+`QuadraticMap.associated` does. The rank count `finrank (Der 𝕆) = 14` asks in addition for the
+strong rank condition. Faithfulness needs no further hypothesis on the base ring: the imaginary
+vector matrices generate the diagonal idempotent by multiplication. In characteristic `2`, the
+imaginary octonions contain the unit, so its line is a trivial subrepresentation; this obstructs
+irreducibility but does not affect faithfulness.
 
 The two coordinate extractions the argument needs — reading the `a` and `b` entries of an equation
 between multiples of `⟨1, 0, 0, 0⟩` and of `1` — are isolated in a private lemma, so none of the
@@ -154,13 +156,6 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 variable {R : Type*} [CommRing R] (D : derivationLieAlgebra R (Octonion R))
 
 /-! ### The key identity -/
-
-/-- Conjugation as a reflection in the trace: `conj x = tr x · 1 - x`, the form of
-`TauCeti.Octonion.add_conj` a derivation is applied to. -/
-private theorem conj_eq_trace_smul_one_sub (x : Octonion R) :
-    conj x = trace x • (1 : Octonion R) - x := by
-  rw [← add_conj]
-  abel
 
 /-- **A derivation negates conjugated inputs.** It kills `1` and conjugation is the reflection
 `x ↦ tr x · 1 - x`, so `D (conj x) = -D x`. Once the values of `D` are known to have vanishing
@@ -194,10 +189,7 @@ private theorem trace_derivation_smul_eq_polar_smul_one (x : Octonion R) :
   have h₂ := mul_conj_add_mul_conj x d
   rw [conj_eq_trace_smul_one_sub d, conj_eq_trace_smul_one_sub x, mul_sub, mul_sub,
     mul_smul_comm, mul_one, mul_smul_comm, mul_one] at h₂
-  have h₃ : trace d • x + (trace x • d - (d * x + x * d))
-      = QuadraticMap.polar (normQuadraticForm R) x d • (1 : Octonion R) := by
-    rw [← h₂]; abel
-  rwa [h₁, sub_self, add_zero] at h₃
+  linear_combination (norm := module) h₂ + h₁
 
 /-- The polarization of `TauCeti.Octonion.trace_derivation_smul_eq_polar_smul_one`: the identity is
 quadratic in `x`, and this is its associated bilinear form. -/
@@ -209,37 +201,8 @@ private theorem trace_derivation_smul_add_smul (x y : Octonion R) :
   have hx := trace_derivation_smul_eq_polar_smul_one D x
   have hy := trace_derivation_smul_eq_polar_smul_one D y
   have h := trace_derivation_smul_eq_polar_smul_one D (x + y)
-  have hL : trace ((D : Module.End R (Octonion R)) (x + y)) • (x + y)
-      = trace ((D : Module.End R (Octonion R)) x) • x +
-          trace ((D : Module.End R (Octonion R)) y) • y +
-          (trace ((D : Module.End R (Octonion R)) x) • y +
-            trace ((D : Module.End R (Octonion R)) y) • x) := by
-    rw [map_add, map_add]
-    module
-  have hR : QuadraticMap.polar (normQuadraticForm R) (x + y)
-        ((D : Module.End R (Octonion R)) (x + y))
-      = QuadraticMap.polar (normQuadraticForm R) x ((D : Module.End R (Octonion R)) x) +
-          QuadraticMap.polar (normQuadraticForm R) y ((D : Module.End R (Octonion R)) y) +
-          (QuadraticMap.polar (normQuadraticForm R) x ((D : Module.End R (Octonion R)) y) +
-            QuadraticMap.polar (normQuadraticForm R) y ((D : Module.End R (Octonion R)) x)) := by
-    rw [map_add, QuadraticMap.polar_add_left, QuadraticMap.polar_add_right,
-      QuadraticMap.polar_add_right]
-    ring
-  rw [hL, hR, hx, hy] at h
-  have h' : trace ((D : Module.End R (Octonion R)) x) • y +
-        trace ((D : Module.End R (Octonion R)) y) • x
-      = (QuadraticMap.polar (normQuadraticForm R) x ((D : Module.End R (Octonion R)) x) +
-          QuadraticMap.polar (normQuadraticForm R) y ((D : Module.End R (Octonion R)) y) +
-          (QuadraticMap.polar (normQuadraticForm R) x ((D : Module.End R (Octonion R)) y) +
-            QuadraticMap.polar (normQuadraticForm R) y ((D : Module.End R (Octonion R)) x))) •
-          (1 : Octonion R)
-        - QuadraticMap.polar (normQuadraticForm R) x ((D : Module.End R (Octonion R)) x) •
-          (1 : Octonion R)
-        - QuadraticMap.polar (normQuadraticForm R) y ((D : Module.End R (Octonion R)) y) •
-          (1 : Octonion R) := by
-    rw [← h]; abel
-  rw [h']
-  module
+  simp only [map_add, QuadraticMap.polar_add_left, QuadraticMap.polar_add_right] at h
+  linear_combination (norm := module) h - hx - hy
 
 /-- The two coordinate extractions the argument needs. The diagonal idempotent `⟨1, 0, 0, 0⟩` and
 the unit `1 = ⟨1, 1, 0, 0⟩` differ in their second diagonal entry, so an equation between multiples
@@ -310,6 +273,23 @@ theorem polar_derivation_apply_left_eq_neg (x y : Octonion R) :
     polar_derivation_apply_self_eq_zero, zero_add, add_zero] at h
   rw [QuadraticMap.polar_comm]
   exact eq_neg_of_add_eq_zero_right h
+
+/-- **A derivation is skew for the norm form**, in the half-polar form
+`QuadraticMap.associated`: `β (D x) y + β x (D y) = 0`. This is
+`TauCeti.Octonion.polar_derivation_apply_left_eq_neg` carried across the factor of two that
+separates `QuadraticMap.polar` from `QuadraticMap.associated`, for the benefit of constructions
+that write the symmetric bilinear form of the norm the latter way, as the product of the split
+Albert algebra does. -/
+@[simp]
+theorem associated_derivation_add_eq_zero [Invertible (2 : R)] (x y : Octonion R) :
+    QuadraticMap.associated (normQuadraticForm R) ((D : Module.End R (Octonion R)) x) y
+      + QuadraticMap.associated (normQuadraticForm R) x
+        ((D : Module.End R (Octonion R)) y) = 0 := by
+  have hhalf : ∀ a b : Octonion R,
+      QuadraticMap.associated (normQuadraticForm R) a b
+        = ⅟(2 : Module.End R R) • QuadraticMap.polar (normQuadraticForm R) a b :=
+    fun _ _ => (rfl)
+  rw [hhalf, hhalf, ← smul_add, polar_derivation_apply_left_eq_neg, neg_add_cancel, smul_zero]
 
 /-- **`Der 𝕆 ≤ 𝔰𝔬(N)`**: every derivation of the split octonions is skew-adjoint for the symmetric
 bilinear form of the norm, so the derivation algebra is a Lie subalgebra of the orthogonal Lie
@@ -614,19 +594,12 @@ def lowerDerivation : (Fin 3 → R) →ₗ[R] derivationLieAlgebra R (Octonion R
 
 /-! ### The brackets of the three families -/
 
-/-- The trace of `⟨u, t⟩ • 1 - 3 • u tᵀ` vanishes: the rank-one matrix `u tᵀ` has trace `⟨u, t⟩`,
-and `1 : Matrix (Fin 3) (Fin 3) R` has trace `3`. -/
-private theorem trace_smul_one_sub_smul_vecMulVec_eq_zero (u t : Fin 3 → R) :
-    Matrix.trace ((u ⬝ᵥ t) • (1 : Matrix (Fin 3) (Fin 3) R) -
-      (3 : R) • Matrix.vecMulVec u t) = 0 := by
-  simp [Matrix.trace_sub, mul_comm]
-
 /-- **The `𝔰𝔩₃` parameter of the bracket of an upper and a lower vector derivation**: the matrix
 `⟨u, t⟩ • 1 - 3 • u tᵀ`, whose trace vanishes because the rank-one matrix `u tᵀ` has trace
 `⟨u, t⟩`.  See `TauCeti.Octonion.lie_upperDerivation_lowerDerivation`. -/
 def slOfVectors (u t : Fin 3 → R) : LieAlgebra.SpecialLinear.sl (Fin 3) R :=
   ⟨(u ⬝ᵥ t) • 1 - (3 : R) • Matrix.vecMulVec u t,
-    LinearMap.mem_ker.mpr (trace_smul_one_sub_smul_vecMulVec_eq_zero u t)⟩
+    LinearMap.mem_ker.mpr (by simp [Matrix.trace_sub, mul_comm])⟩
 
 @[simp] theorem coe_slOfVectors (u t : Fin 3 → R) :
     (slOfVectors u t : Matrix (Fin 3) (Fin 3) R) =
@@ -757,16 +730,6 @@ theorem derivationOfTriple_injective :
     have hv := congrArg (fun z => Octonion.v z i) (hx ⟨0, 0, Pi.single j 1, 0⟩)
     simpa [hu, ht, Matrix.mulVec_single] using hv
   simp [Prod.ext_iff, hu, ht, Subtype.ext_iff, hM]
-
-/-- **`Der 𝕆` has rank at least `14`.**  The fourteen parameters of
-`TauCeti.Octonion.derivationOfTriple` -- eight for a trace-zero `3 × 3` matrix and three for each
-of the two vectors -- are independent, so they bound the dimension of the derivation algebra from
-below.  The rank is in fact exactly `14`, by `TauCeti.Octonion.finrank_derivationLieAlgebra`. -/
-theorem fourteen_le_finrank_derivationLieAlgebra (K : Type*) [Field K] :
-    14 ≤ Module.finrank K (derivationLieAlgebra K (Octonion K)) := by
-  have h := LinearMap.finrank_le_finrank_of_injective (derivationOfTriple_injective (R := K))
-  rwa [Module.finrank_prod, Module.finrank_prod, finrank_sl, Module.finrank_fintype_fun_eq_card,
-    Fintype.card_fin] at h
 
 /-! ### Every derivation lies in the fourteen-parameter family -/
 

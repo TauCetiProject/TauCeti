@@ -50,10 +50,8 @@ theorem memSobolev_one_of_hasWeakFDerivOn
     (u : Lp ℝ 2 (volume : Measure E)) (g : Lp E 2 (volume : Measure E))
     (h : HasWeakFDerivOn volume ⊤ u (fun x => innerSL ℝ (g x))) :
     MemSobolev 1 2 (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u)) := by
-  rw [← zero_add (1 : ℝ),
-    memSobolev_add_one_iff _ (stdOrthonormalBasis ℝ E)]
-  refine ⟨memSobolev_zero_iff.mpr ⟨_, rfl⟩, fun i => ?_⟩
-  let v := stdOrthonormalBasis ℝ E i
+  rw [← zero_add (1 : ℝ), TemperedDistribution.memSobolev_add_one_iff]
+  refine ⟨memSobolev_zero_iff.mpr ⟨_, rfl⟩, fun v => ?_⟩
   let d : Lp ℝ 2 (volume : Measure E) := (innerSL ℝ v).compLp g
   have hd : HasWeakLineDerivOn volume ⊤ u d v := by
     refine (h.hasWeakLineDerivOn v).congr_ae_deriv ?_

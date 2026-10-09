@@ -57,6 +57,8 @@ and the one Shapiro's lemma is stated against.
   in the coefficients;
 * `TauCeti.DiscreteCoind.eval_unit` and `TauCeti.DiscreteCoind.trace_unit`: evaluation at `1`
   retracts the unit, and the trace of the unit is multiplication by the index `[G : U]`;
+* `TauCeti.DiscreteCoind.trace_map_single`: the trace of the coinduction of an equivariant map
+  `f : A → M` applied to `single hU g a` is `g⁻¹ • f a`;
 * `TauCeti.DiscreteCoind.trace_conj`: for `V = gUg⁻¹`, conjugation commutes with the traces;
 * `TauCeti.DiscreteCoind.ofContinuousMap` and `TauCeti.DiscreteCoind.toContinuousMap`: a
   continuous map into a discrete group as an element of `Coind_1^G A`, and conversely, packaged as
@@ -588,6 +590,37 @@ theorem smul_single (g' g : G) (a : A) :
     rw [hv, hx', single_apply_mul, single_apply_mul]
   · rw [single_apply_of_notMem hU a hx, single_apply_of_notMem hU a]
     simpa [mul_assoc] using hx
+
+section Trace
+
+variable [U.FiniteIndex] {R : Type*} [Semiring R] [Module R A] [SMulCommClass U R A]
+  {M : Type*} [AddCommGroup M] [DistribMulAction G M] [Module R M] [SMulCommClass U R M]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+/-- **The trace of a coinduced single**: for a `U`-equivariant linear map `f : A → M` into a
+`G`-module, the trace of the coinduction of `f` applied to `single hU g a` is `g⁻¹ • f a`. Only the
+coset of `g⁻¹` contributes to the trace. -/
+theorem trace_map_single (f : A →ₗ[R] M) (hf : ∀ (u : U) (a : A), f (u • a) = u • f a)
+    (g : G) (a : A) : trace G U M (map f hf (single G U A hU g a)) = g⁻¹ • f a := by
+  have hg : single G U A hU g a = g⁻¹ • single G U A hU 1 a := by simp
+  rw [hg, map_smul, _root_.map_smul, trace_apply,
+    Finset.sum_eq_single_of_mem ((1 : G) : G ⧸ U) (Finset.mem_univ _)]
+  · have h1 : ((1 : G) : G ⧸ U).out⁻¹ ∈ U := by
+      simpa using QuotientGroup.eq.1 (QuotientGroup.out_eq' ((1 : G) : G ⧸ U))
+    have := single_apply_mul hU 1 a ⟨_, h1⟩
+    rw [mul_one] at this
+    rw [map_apply, this, hf, Subgroup.smul_def, smul_smul]
+    rw [smul_smul, mul_assoc, mul_inv_cancel, mul_one]
+  · intro x _ hx
+    rw [map_apply, single_apply_of_notMem hU, _root_.map_zero, smul_zero]
+    intro hmem
+    apply hx
+    rw [inv_one, mul_one] at hmem
+    rw [← QuotientGroup.out_eq' x]
+    exact QuotientGroup.eq.2 (by simpa using hmem)
+
+end Trace
 
 end Single
 

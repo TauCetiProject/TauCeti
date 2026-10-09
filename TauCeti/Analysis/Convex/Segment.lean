@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Segment
+public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.Normed.Module.Ray
+public import Mathlib.Order.Interval.Set.ProjIcc
 
 /-!
-# Membership in a segment with an endpoint at the origin
+# Affine segments and membership criteria
 
 Mathlib describes membership in a segment through the ray predicate `SameRay` by
 `mem_segment_iff_sameRay`: `x ∈ [y -[𝕜] z] ↔ SameRay 𝕜 (x - y) (z - x)`. That form is symmetric in
@@ -32,12 +33,19 @@ No strict convexity is involved: the alternative route through `sameRay_iff_norm
 `StrictConvexSpace ℝ E` instance, whereas `sameRay_iff_norm_smul_eq` and
 `inner_eq_norm_mul_iff_real` hold in any normed, respectively inner product, space.
 
+The clamped affine segment `Set.convexSegment` joins two points of any convex set, with no
+topology or norm required. It agrees with the affine line map on `[0, 1]` and is constant outside
+that interval. Its smoothness in convex open subsets is developed in
+`TauCeti/Geometry/Manifold/ContMDiff/Subtype.lean`, and its Riemannian length in
+`TauCeti/Geometry/Manifold/Riemannian/Convex.lean`.
+
 The affine half-open segment result is also recorded here: in an additive commutative group with a
 module structure over a linear ordered field, it identifies the image of a scalar interval under
 an affine parametrization with a segment whose terminal endpoint is removed.
 
 ## Main results
 
+* `Set.convexSegment` — an affine segment in a convex set, clamped to `[0, 1]`.
 * `TauCeti.mem_segment_zero_left_iff_sameRay_and_norm_le` —
   `m ∈ [0 -[ℝ] w] ↔ SameRay ℝ m w ∧ ‖m‖ ≤ ‖w‖`. Both conjuncts are needed.
 * `TauCeti.eq_of_mem_segment_zero_left_of_norm_eq` — the norm separates the points of `[0, w]`.
@@ -51,17 +59,58 @@ The origin-at-an-end and origin-in-the-middle criteria are consumed by
 `TauCeti/Analysis/Complex/Conformal/Poincare/Betweenness.lean`, which identifies the hyperbolic
 segments of the Poincaré disc issuing from, or straddling, the origin with the Euclidean ones; `ℂ`
 is a real inner product space with `⟪w, z⟫_ℝ = (z * conj w).re`
-(`Complex.inner`), so the two inner-product criteria are what that file needs. It proved them
-itself, by hand, in the complex-number-specific `Complex.normSq` language and only for `ℂ`, its
-own docstrings recording that they are "statements about complex numbers rather than about the
-hyperbolic metric". Nothing in them is about complex numbers either, which is why they live here.
-This supports the hyperbolic-metric layer L2 of the conformal-mapping roadmap
-(`TauCetiRoadmap/ConformalMapping/README.md`) without adding to it.
+(`Complex.inner`), so the two inner-product criteria translate the ray and norm conditions into
+complex-number formulas.
 The affine half-open segment result is consumed by
 `TauCeti/Analysis/Complex/Conformal/SchwarzChristoffel/UnboundedEdge.lean`.
 -/
 
 public section
+
+namespace Set
+
+section ClampedSegment
+
+variable {𝕜 E : Type*} [Ring 𝕜] [LinearOrder 𝕜] [IsOrderedRing 𝕜]
+  [AddCommGroup E] [Module 𝕜 E] (s : Set E)
+
+/-- The affine segment between two points of a convex set, parametrized on `[0, 1]` and
+extended constantly outside that interval. No topology is needed for this construction. -/
+def convexSegment (hs : Convex 𝕜 s) (x y : s) : 𝕜 → s :=
+  IccExtend zero_le_one fun t ↦
+    ⟨AffineMap.lineMap (k := 𝕜) (x : E) (y : E) t,
+      hs.lineMap_mem x.property y.property t.property⟩
+
+/-- The ambient value of the clamped segment is the affine line map at the clamped parameter. -/
+@[simp]
+theorem coe_convexSegment_apply (hs : Convex 𝕜 s) (x y : s) (t : 𝕜) :
+    (convexSegment s hs x y t : E) =
+      AffineMap.lineMap (k := 𝕜) (x : E) (y : E) (projIcc 0 1 zero_le_one t) := (rfl)
+
+/-- On `[0, 1]`, the clamped segment agrees with the ambient affine line map. -/
+theorem convexSegment_val_eqOn (hs : Convex 𝕜 s) (x y : s) :
+    EqOn (Subtype.val ∘ convexSegment s hs x y)
+      (AffineMap.lineMap (k := 𝕜) (x : E) (y : E)) (Icc 0 1) := by
+  intro t ht
+  simp [projIcc_of_mem zero_le_one ht]
+
+/-- The clamped segment starts at its first endpoint. -/
+@[simp]
+theorem convexSegment_zero (hs : Convex 𝕜 s) (x y : s) :
+    convexSegment s hs x y 0 = x := by
+  apply Subtype.ext
+  simp
+
+/-- The clamped segment ends at its second endpoint. -/
+@[simp]
+theorem convexSegment_one (hs : Convex 𝕜 s) (x y : s) :
+    convexSegment s hs x y 1 = y := by
+  apply Subtype.ext
+  simp
+
+end ClampedSegment
+
+end Set
 
 namespace TauCeti
 

@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.CharZero.Infinite
-public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
-public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
 public import TauCeti.RingTheory.DedekindDomain.Ideal
 public import TauCeti.RingTheory.Ideal.Norm.AbsNorm
@@ -45,12 +42,12 @@ into good primes; this is the engine behind both
 * `TauCeti.MultiplicativeIdealWeight.ext_heightOneSpectrum`: a weight is determined by its
   values at the height-one primes;
 * `TauCeti.MultiplicativeIdealWeight.ofBadPrimes`, the pointwise `CommMonoid` structure (whose
-  unit is the trivial weight), `TauCeti.MultiplicativeIdealWeight.restrict`,
+  unit is the trivial weight), `TauCeti.MultiplicativeIdealWeight.restrictAway`,
   `TauCeti.MultiplicativeIdealWeight.conj` and
   `TauCeti.MultiplicativeIdealWeight.normTwist`: the constructors and operations;
 * `TauCeti.MultiplicativeIdealWeight.badPrimes_pow`, `TauCeti.MultiplicativeIdealWeight.conj_pow`,
   `TauCeti.MultiplicativeIdealWeight.normTwist_pow` and
-  `TauCeti.MultiplicativeIdealWeight.restrict_pow`, with their unitary counterparts: powers, in
+  `TauCeti.MultiplicativeIdealWeight.restrictAway_pow`, with their unitary counterparts: powers, in
   particular the pointwise square `χ ^ 2` used by the `3-4-1` argument, keep the bad primes and
   commute with the operations, the `n`-th power of a twist by `z` being the twist by `n * z`.
   Preservation of bad primes and compatibility with restriction require a nonzero exponent;
@@ -67,14 +64,14 @@ into good primes; this is the engine behind both
   `TauCeti.UnitaryIdealWeight.norm_eq_one` on all good ideals,
   `TauCeti.UnitaryIdealWeight.norm_normTwist` for the modulus of an arbitrary norm twist,
   `TauCeti.UnitaryIdealWeight.ofPowEqOne` for finite-order weights, and the operations
-  `TauCeti.UnitaryIdealWeight.conj`, `TauCeti.UnitaryIdealWeight.restrict` and
+  `TauCeti.UnitaryIdealWeight.conj`, `TauCeti.UnitaryIdealWeight.restrictAway` and
   `TauCeti.UnitaryIdealWeight.normTwist` (the last for the imaginary norm twists only), and
   `TauCeti.UnitaryIdealWeight.toIdealArithmeticFunction` for its passage to the general carrier;
 * `TauCeti.MultiplicativeIdealWeight.map` and `TauCeti.UnitaryIdealWeight.map`, with their
-  equivalences `mapEquiv`: functoriality under an isomorphism `K ≃+* L` of the ambient fields,
-  together with the identity and composition laws, the preservation of the pointwise product
-  (`map_one` and `map_mul` on both carriers), the naturality of restriction, conjugation and norm
-  twists, and the compatibilities
+  multiplicative equivalences `mapEquiv`: functoriality under an isomorphism `K ≃+* L` of the
+  ambient fields, together with the identity and composition laws, the preservation of the
+  pointwise product (`map_one` and `map_mul` on both carriers), the naturality of restriction,
+  conjugation and norm twists, and the compatibilities
   `TauCeti.MultiplicativeIdealWeight.badPrimes_map` and
   `TauCeti.MultiplicativeIdealWeight.toIdealArithmeticFunction_map`.
 
@@ -86,8 +83,8 @@ integral ideals underlies no weight, because `→*₀` forces the value `0` at `
 everywhere-one function on the *nonzero* ideals is the trivial weight instead
 (`TauCeti.MultiplicativeIdealWeight.toIdealArithmeticFunction_one`).
 `TauCeti.UnitaryIdealWeight.norm_normTwist_apply_ne_one` says that a norm twist with
-`Re z ≠ 0` changes the modulus at every good ideal of absolute norm greater than one, so such
-twists live only in the general carrier.
+`Re z ≠ 0` has modulus different from one at every ideal of absolute norm greater than one, so
+such twists live only in the general carrier.
 
 ## References
 
@@ -176,8 +173,6 @@ theorem mem_badPrimes {χ : MultiplicativeIdealWeight K} {𝔭 : HeightOneSpectr
 theorem finite_badPrimes (χ : MultiplicativeIdealWeight K) : χ.badPrimes.Finite :=
   χ.finite_setOf_apply_eq_zero
 
-variable {χ : MultiplicativeIdealWeight K}
-
 /-- An ideal is **good** for `χ` when it is prime to the bad primes of `χ`. In particular a
 good ideal is nonzero, even when `χ` has no bad primes at all. -/
 abbrev IsGood (χ : MultiplicativeIdealWeight K) (I : Ideal (𝓞 K)) : Prop :=
@@ -240,7 +235,6 @@ theorem ofBadPrimes_apply (hS : S.Finite) (I : Ideal (𝓞 K)) :
 
 @[simp]
 theorem badPrimes_ofBadPrimes (hS : S.Finite) : (ofBadPrimes S hS).badPrimes = S := by
-  classical
   ext 𝔭
   simp [badPrimes, ofBadPrimes_apply]
 
@@ -338,25 +332,25 @@ theorem isGood_one_iff {I : Ideal (𝓞 K)} :
 
 /-- **Restriction away from a finite set of primes**: `χ` is left unchanged on the ideals prime
 to `S` and set to `0` on the others. -/
-noncomputable def restrict (χ : MultiplicativeIdealWeight K)
+noncomputable def restrictAway (χ : MultiplicativeIdealWeight K)
     (S : Set (HeightOneSpectrum (𝓞 K))) (hS : S.Finite) : MultiplicativeIdealWeight K :=
   χ * ofBadPrimes S hS
 
 open scoped Classical in
 @[simp]
-theorem restrict_apply (χ : MultiplicativeIdealWeight K) (hS : S.Finite) (I : Ideal (𝓞 K)) :
-    χ.restrict S hS I = if Ideal.IsPrimeTo I S then χ I else 0 := by
-  by_cases h : Ideal.IsPrimeTo I S <;> simp [restrict, ofBadPrimes_apply, h]
+theorem restrictAway_apply (χ : MultiplicativeIdealWeight K) (hS : S.Finite) (I : Ideal (𝓞 K)) :
+    χ.restrictAway S hS I = if Ideal.IsPrimeTo I S then χ I else 0 := by
+  by_cases h : Ideal.IsPrimeTo I S <;> simp [restrictAway, ofBadPrimes_apply, h]
 
 @[simp]
-theorem badPrimes_restrict (χ : MultiplicativeIdealWeight K) (hS : S.Finite) :
-    (χ.restrict S hS).badPrimes = χ.badPrimes ∪ S := by
-  simp [restrict]
+theorem badPrimes_restrictAway (χ : MultiplicativeIdealWeight K) (hS : S.Finite) :
+    (χ.restrictAway S hS).badPrimes = χ.badPrimes ∪ S := by
+  simp [restrictAway]
 
 /-- Restricting away from no prime at all changes nothing. -/
 @[simp]
-theorem restrict_empty (χ : MultiplicativeIdealWeight K)
-    (hS : (∅ : Set (HeightOneSpectrum (𝓞 K))).Finite) : χ.restrict ∅ hS = χ := by
+theorem restrictAway_empty (χ : MultiplicativeIdealWeight K)
+    (hS : (∅ : Set (HeightOneSpectrum (𝓞 K))).Finite) : χ.restrictAway ∅ hS = χ := by
   ext I
   rcases eq_or_ne I ⊥ with rfl | hI
   · simp
@@ -365,27 +359,26 @@ theorem restrict_empty (χ : MultiplicativeIdealWeight K)
 open scoped Classical in
 /-- **Forbidding one more prime.** Restricting away from `insert 𝔭 S` kills the ideals divisible
 by `𝔭` and agrees with the restriction away from `S` on the others. -/
-theorem restrict_insert_apply (χ : MultiplicativeIdealWeight K)
+theorem restrictAway_insert_apply (χ : MultiplicativeIdealWeight K)
     {𝔭 : HeightOneSpectrum (𝓞 K)} (hS : S.Finite) (I : Ideal (𝓞 K)) :
-    χ.restrict (insert 𝔭 S) (hS.insert 𝔭) I =
-      if 𝔭.asIdeal ∣ I then 0 else χ.restrict S hS I := by
-  rw [restrict_apply, restrict_apply, Ideal.isPrimeTo_insert_iff]
+    χ.restrictAway (insert 𝔭 S) (hS.insert 𝔭) I =
+      if 𝔭.asIdeal ∣ I then 0 else χ.restrictAway S hS I := by
+  rw [restrictAway_apply, restrictAway_apply, Ideal.isPrimeTo_insert_iff]
   by_cases hdvd : 𝔭.asIdeal ∣ I <;> simp [hdvd]
 
 /-- Restricting the trivial weight away from `S` gives the indicator weight of ideals prime to
 every prime in `S`. -/
 @[simp]
-theorem one_restrict (hS : S.Finite) :
-    (1 : MultiplicativeIdealWeight K).restrict S hS = ofBadPrimes S hS :=
+theorem one_restrictAway (hS : S.Finite) :
+    (1 : MultiplicativeIdealWeight K).restrictAway S hS = ofBadPrimes S hS :=
   one_mul _
 
 /-- **Restriction commutes with nonzero powers.** The exponent must be nonzero:
-`(χ ^ 0).restrict S hS` is the indicator weight `ofBadPrimes S hS`, while
-`χ.restrict S hS ^ 0` is the trivial weight. -/
+`(χ ^ 0).restrictAway S hS` is the indicator weight `ofBadPrimes S hS`, while
+`χ.restrictAway S hS ^ 0` is the trivial weight. -/
 @[simp]
-theorem restrict_pow (χ : MultiplicativeIdealWeight K) (hS : S.Finite) {n : ℕ} (hn : n ≠ 0) :
-    (χ ^ n).restrict S hS = χ.restrict S hS ^ n := by
-  classical
+theorem restrictAway_pow (χ : MultiplicativeIdealWeight K) (hS : S.Finite) {n : ℕ} (hn : n ≠ 0) :
+    (χ ^ n).restrictAway S hS = χ.restrictAway S hS ^ n := by
   ext I
   by_cases hI : Ideal.IsPrimeTo I S <;> simp [hI, hn]
 
@@ -467,6 +460,7 @@ theorem normTwist_zero (χ : MultiplicativeIdealWeight K) : normTwist 0 χ = χ 
   simp
 
 /-- Successive norm twists combine by adding their parameters. -/
+@[simp]
 theorem normTwist_normTwist (z w : ℂ) (χ : MultiplicativeIdealWeight K) :
     normTwist z (normTwist w χ) = normTwist (z + w) χ := by
   ext I
@@ -507,9 +501,10 @@ theorem normTwist_pow (z : ℂ) (χ : MultiplicativeIdealWeight K) (n : ℕ) :
 -/
 
 /-- A weight **is a norm twist on its good ideals**, with parameter `u`, when
-`χ I = N(I) ^ (u * I)` at every ideal `I` prime to its bad primes. Away from the bad primes such
-a weight is the purely imaginary norm twist `TauCeti.MultiplicativeIdealWeight.normTwist` of the
-trivial weight, and it is the whole of that twist once the bad primes are taken into account
+`χ I = N(I) ^ (u * Complex.I)` at every ideal `I` prime to its bad primes. Away from the bad
+primes such a weight is the purely imaginary norm twist
+`TauCeti.MultiplicativeIdealWeight.normTwist` of the trivial weight, and it is the whole of that
+twist once the bad primes are taken into account
 (`TauCeti.MultiplicativeIdealWeight.IsNormTwistOnGood.eq_normTwist`).
 
 These weights give degenerate examples in families of ideal weights: their `L`-series is a
@@ -531,15 +526,6 @@ theorem IsTrivialOnGood.apply_eq_one {χ : MultiplicativeIdealWeight K} (h : χ.
     {I : Ideal (𝓞 K)} (hI : χ.IsGood I) : χ I = 1 :=
   h I hI
 
-/-- A weight trivial on its good ideals takes only the values `0` and `1`, so it is bounded by one
-on every ideal. -/
-theorem IsTrivialOnGood.norm_apply_le_one {χ : MultiplicativeIdealWeight K}
-    (h : χ.IsTrivialOnGood) {I : Ideal (𝓞 K)} : ‖χ I‖ ≤ 1 := by
-  by_cases hI : χ.IsGood I
-  · rw [h.apply_eq_one hI, norm_one]
-  · rw [(χ.apply_eq_zero_iff_not_isGood I).mpr hI, norm_zero]
-    exact zero_le_one
-
 /-- The norm twists with parameter `0` on the good ideals are the weights that are trivial
 there. -/
 @[simp]
@@ -554,20 +540,18 @@ theorem isTrivialOnGood_one : (1 : MultiplicativeIdealWeight K).IsTrivialOnGood 
 /-- The indicator of the ideals prime to a finite set `S` of primes is trivial on its good
 ideals, which are exactly those ideals. -/
 theorem isTrivialOnGood_ofBadPrimes (hS : S.Finite) : (ofBadPrimes S hS).IsTrivialOnGood := by
-  classical
   intro I hI
   rw [ofBadPrimes_apply]
   simp [(isGood_ofBadPrimes_iff hS).mp hI]
 
 /-- **A norm twist on the good ideals is a norm twist of an indicator weight.** A weight that is
-a norm twist with parameter `u` on its good ideals is the twist by `N(I) ^ (u * I)` of the
-indicator of the ideals prime to its bad primes. The bad set is a parameter, so that a caller
-holding it as a `Finset` need not convert. -/
+a norm twist with parameter `u` on its good ideals is the twist by `N(I) ^ (u * Complex.I)` of
+the indicator of the ideals prime to its bad primes. The bad set is a parameter, so that a
+caller holding it as a `Finset` need not convert. -/
 theorem IsNormTwistOnGood.eq_normTwist {χ : MultiplicativeIdealWeight K} {u : ℝ}
     (h : χ.IsNormTwistOnGood u) (hSbad : χ.badPrimes = S) :
     χ = normTwist (-((u : ℂ) * Complex.I))
       (ofBadPrimes S (hSbad ▸ χ.finite_badPrimes)) := by
-  classical
   ext I
   by_cases hI : χ.IsGood I
   · have hI' : Ideal.IsPrimeTo I S := hI.mono hSbad.symm.subset
@@ -577,9 +561,9 @@ theorem IsNormTwistOnGood.eq_normTwist {χ : MultiplicativeIdealWeight K} {u : �
     rw [(χ.apply_eq_zero_iff_not_isGood I).mpr hI, normTwist_apply, ofBadPrimes_apply]
     simp [hI']
 
-/-- **A twist adds to the parameter.** Twisting by `N(I) ^ (v * I)` turns a norm twist with
-parameter `u` on the good ideals into one with parameter `u + v`; the good ideals are unchanged.
--/
+/-- **A twist adds to the parameter.** Twisting by `N(I) ^ (v * Complex.I)` turns a norm twist
+with parameter `u` on the good ideals into one with parameter `u + v`; the good ideals are
+unchanged. -/
 theorem IsNormTwistOnGood.normTwist {χ : MultiplicativeIdealWeight K} {u : ℝ}
     (h : χ.IsNormTwistOnGood u) (v : ℝ) :
     (MultiplicativeIdealWeight.normTwist (-((v : ℂ) * Complex.I)) χ).IsNormTwistOnGood
@@ -594,8 +578,8 @@ theorem IsNormTwistOnGood.normTwist {χ : MultiplicativeIdealWeight K} {u : ℝ}
   ring
 
 /-- **Converse of `TauCeti.MultiplicativeIdealWeight.IsNormTwistOnGood.eq_normTwist`.** The
-twist by `N(I) ^ (u * I)` of the indicator of the ideals prime to a finite set of primes is a
-norm twist with parameter `u` on its good ideals. -/
+twist by `N(I) ^ (u * Complex.I)` of the indicator of the ideals prime to a finite set of primes
+is a norm twist with parameter `u` on its good ideals. -/
 theorem isNormTwistOnGood_normTwist_ofBadPrimes (hS : S.Finite) (u : ℝ) :
     (normTwist (-((u : ℂ) * Complex.I)) (ofBadPrimes S hS)).IsNormTwistOnGood u := by
   have h0 : (ofBadPrimes S hS).IsNormTwistOnGood 0 :=
@@ -662,16 +646,19 @@ theorem toIdealArithmeticFunction_apply (χ : MultiplicativeIdealWeight K) (I : 
     χ.toIdealArithmeticFunction I = χ I :=
   IdealArithmeticFunction.restrict_apply _ I
 
+/-- The ideal arithmetic function underlying a norm twist multiplies by `N(I) ^ (-z)`. -/
+theorem toIdealArithmeticFunction_normTwist (z : ℂ) (χ : MultiplicativeIdealWeight K) :
+    (normTwist z χ).toIdealArithmeticFunction =
+      fun I ↦ χ.toIdealArithmeticFunction I * (Ideal.absNorm (I : Ideal (𝓞 K)) : ℂ) ^ (-z) :=
+  funext fun I ↦ by simp [normTwist_apply]
+
 /-- **Regrouping absorbs a norm twist.** Twisting a weight by `N(I) ^ (-z)` twists its `n`-th norm
 coefficient by `n ^ (-z)`. -/
 @[simp]
 theorem normCoeff_normTwist (z : ℂ) (χ : MultiplicativeIdealWeight K) (n : ℕ) :
     normCoeff K (normTwist z χ).toIdealArithmeticFunction n =
       normCoeff K χ.toIdealArithmeticFunction n * (n : ℂ) ^ (-z) := by
-  have h : (normTwist z χ).toIdealArithmeticFunction =
-      fun I ↦ χ.toIdealArithmeticFunction I * (Ideal.absNorm (I : Ideal (𝓞 K)) : ℂ) ^ (-z) :=
-    funext fun I ↦ by simp [normTwist_apply]
-  rw [h, normCoeff_mul_absNorm_cpow]
+  rw [toIdealArithmeticFunction_normTwist, normCoeff_mul_absNorm_cpow]
 
 /-- The ideal arithmetic function underlying a completely multiplicative ideal weight is
 multiplicative on relatively prime ideals. -/
@@ -723,11 +710,7 @@ theorem coe_ne_const_one (χ : MultiplicativeIdealWeight K) :
 section Transport
 
 variable {L M : Type*} [Field L] [NumberField L] [Field M] [NumberField M]
-
-omit [NumberField K] [NumberField L] in
-private theorem asIdeal_equivOfRingEquiv_symm (e : K ≃+* L) (𝔮 : HeightOneSpectrum (𝓞 L)) :
-    ((HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e)).symm 𝔮).asIdeal =
-      Ideal.comap (RingOfIntegers.mapRingEquiv e) 𝔮.asIdeal := rfl
+  {S : Set (HeightOneSpectrum (𝓞 K))}
 
 /-- **Transport along an isomorphism of fields.** An isomorphism `e : K ≃+* L` carries a
 multiplicative ideal weight on `K` to one on `L`, by pulling ideals of `𝓞 L` back to `𝓞 K`
@@ -740,7 +723,7 @@ noncomputable def map (e : K ≃+* L) (χ : MultiplicativeIdealWeight K) :
     refine (χ.finite_badPrimes.image
       (HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e))).subset fun 𝔮 h𝔮 ↦ ?_
     refine ⟨_, ?_, Equiv.apply_symm_apply _ 𝔮⟩
-    rw [mem_badPrimes, asIdeal_equivOfRingEquiv_symm]
+    rw [mem_badPrimes, HeightOneSpectrum.asIdeal_equivOfRingEquiv_symm]
     simpa [badPrimes] using h𝔮
 
 @[simp]
@@ -756,7 +739,7 @@ theorem badPrimes_map (e : K ≃+* L) (χ : MultiplicativeIdealWeight K) :
       HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) '' χ.badPrimes := by
   ext 𝔮
   rw [Equiv.image_eq_preimage_symm, Set.mem_preimage, mem_badPrimes, mem_badPrimes,
-    asIdeal_equivOfRingEquiv_symm, map_apply]
+    HeightOneSpectrum.asIdeal_equivOfRingEquiv_symm, map_apply]
 
 @[simp]
 theorem toIdealArithmeticFunction_map (e : K ≃+* L) (χ : MultiplicativeIdealWeight K) :
@@ -779,23 +762,6 @@ theorem map_map (e : K ≃+* L) (e' : L ≃+* M) (χ : MultiplicativeIdealWeight
     rw [toIdealArithmeticFunction_map, toIdealArithmeticFunction_map,
       toIdealArithmeticFunction_map, IdealArithmeticFunction.map_map]
 
-/-- **Transport along an isomorphism of fields, as an equivalence** of the two carriers, with
-inverse the transport along `e.symm`. -/
-noncomputable def mapEquiv (e : K ≃+* L) :
-    MultiplicativeIdealWeight K ≃ MultiplicativeIdealWeight L where
-  toFun := map e
-  invFun := map e.symm
-  left_inv χ := by rw [map_map, e.self_trans_symm, map_id]
-  right_inv χ := by rw [map_map, e.symm_trans_self, map_id]
-
-@[simp]
-theorem mapEquiv_apply (e : K ≃+* L) (χ : MultiplicativeIdealWeight K) :
-    mapEquiv e χ = map e χ := (rfl)
-
-@[simp]
-theorem mapEquiv_symm_apply (e : K ≃+* L) (χ : MultiplicativeIdealWeight L) :
-    (mapEquiv e).symm χ = map e.symm χ := (rfl)
-
 /-! Transport preserves the pointwise `CommMonoid` structure. -/
 
 @[simp]
@@ -810,6 +776,24 @@ theorem map_mul (e : K ≃+* L) (χ ψ : MultiplicativeIdealWeight K) :
   ext I
   rw [map_apply, mul_apply, mul_apply, map_apply, map_apply]
 
+/-- **Transport along an isomorphism of fields, as a multiplicative equivalence** of the two
+carriers, with inverse the transport along `e.symm`. -/
+noncomputable def mapEquiv (e : K ≃+* L) :
+    MultiplicativeIdealWeight K ≃* MultiplicativeIdealWeight L where
+  toFun := map e
+  invFun := map e.symm
+  left_inv χ := by rw [map_map, e.self_trans_symm, map_id]
+  right_inv χ := by rw [map_map, e.symm_trans_self, map_id]
+  map_mul' := map_mul e
+
+@[simp]
+theorem mapEquiv_apply (e : K ≃+* L) (χ : MultiplicativeIdealWeight K) :
+    mapEquiv e χ = map e χ := (rfl)
+
+@[simp]
+theorem mapEquiv_symm_apply (e : K ≃+* L) (χ : MultiplicativeIdealWeight L) :
+    (mapEquiv e).symm χ = map e.symm χ := (rfl)
+
 /-- Transport carries an indicator weight to the indicator of the image prime set. -/
 @[simp]
 theorem map_ofBadPrimes (e : K ≃+* L) (hS : S.Finite) :
@@ -821,12 +805,12 @@ theorem map_ofBadPrimes (e : K ≃+* L) (hS : S.Finite) :
 
 /-- Transport commutes with restriction after carrying the excluded prime set forward. -/
 @[simp]
-theorem map_restrict (e : K ≃+* L) (χ : MultiplicativeIdealWeight K) (hS : S.Finite) :
-    map e (χ.restrict S hS) =
-      (map e χ).restrict
+theorem map_restrictAway (e : K ≃+* L) (χ : MultiplicativeIdealWeight K) (hS : S.Finite) :
+    map e (χ.restrictAway S hS) =
+      (map e χ).restrictAway
         (HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) '' S)
         (hS.image _) := by
-  rw [restrict, map_mul, map_ofBadPrimes, restrict]
+  rw [restrictAway, map_mul, map_ofBadPrimes, restrictAway]
 
 /-- Transport commutes with complex conjugation. -/
 @[simp]
@@ -885,6 +869,17 @@ theorem norm_le_one (χ : UnitaryIdealWeight K) (I : Ideal (𝓞 K)) : ‖χ.1 I
   · exact (norm_eq_one χ hI).le
   · rw [(MultiplicativeIdealWeight.apply_eq_zero_iff_not_isGood χ.1 I).mpr hI, norm_zero]
     exact zero_le_one
+
+end UnitaryIdealWeight
+
+/-- A weight trivial on its good ideals is unitary, so it is bounded by one on every ideal
+(`TauCeti.UnitaryIdealWeight.norm_le_one`). -/
+theorem MultiplicativeIdealWeight.IsTrivialOnGood.norm_apply_le_one
+    {χ : MultiplicativeIdealWeight K} (h : χ.IsTrivialOnGood) {I : Ideal (𝓞 K)} : ‖χ I‖ ≤ 1 :=
+  UnitaryIdealWeight.norm_le_one
+    ⟨χ, fun _ h𝔭 ↦ by rw [h.apply_eq_one (Ideal.isPrimeTo_asIdeal_iff.mpr h𝔭), norm_one]⟩ I
+
+namespace UnitaryIdealWeight
 
 /-- The trivial weight is unitary. -/
 noncomputable instance : One (UnitaryIdealWeight K) :=
@@ -986,18 +981,22 @@ theorem norm_normTwist (χ : UnitaryIdealWeight K) (z : ℂ) {I : Ideal (𝓞 K)
   rw [MultiplicativeIdealWeight.normTwist_apply, norm_mul, norm_eq_one χ hI, one_mul,
     Complex.norm_natCast_cpow_of_pos hN, Complex.neg_re]
 
-/-- **Rejection test.** A norm twist with `Re z ≠ 0` leaves the unitary carrier: at every good
-ideal of absolute norm greater than one its modulus differs from `1`. Such twists therefore
-live only in `TauCeti.MultiplicativeIdealWeight`. -/
+/-- **Rejection test.** A norm twist with `Re z ≠ 0` leaves the unitary carrier: at every ideal
+of absolute norm greater than one its modulus differs from `1`, being `N(I) ^ (-Re z)` at a good
+ideal and `0` elsewhere. Such twists therefore live only in `TauCeti.MultiplicativeIdealWeight`. -/
 theorem norm_normTwist_apply_ne_one (χ : UnitaryIdealWeight K) {z : ℂ} (hz : z.re ≠ 0)
-    {I : Ideal (𝓞 K)} (hI : χ.1.IsGood I) (hN : 1 < Ideal.absNorm I) :
+    {I : Ideal (𝓞 K)} (hN : 1 < Ideal.absNorm I) :
     ‖MultiplicativeIdealWeight.normTwist z χ.1 I‖ ≠ 1 := by
-  have hN' : (1 : ℝ) < (Ideal.absNorm I : ℝ) := by exact_mod_cast hN
-  rw [norm_normTwist χ z hI]
-  rcases lt_trichotomy z.re 0 with h | h | h
-  · exact ne_of_gt ((Real.one_lt_rpow_iff_of_pos (by linarith)).mpr (Or.inl ⟨hN', by linarith⟩))
-  · exact absurd h hz
-  · exact ne_of_lt (Real.rpow_lt_one_of_one_lt_of_neg hN' (by linarith))
+  by_cases hI : χ.1.IsGood I
+  · have hN' : (1 : ℝ) < (Ideal.absNorm I : ℝ) := by exact_mod_cast hN
+    rw [norm_normTwist χ z hI]
+    rcases lt_trichotomy z.re 0 with h | h | h
+    · exact ne_of_gt ((Real.one_lt_rpow_iff_of_pos (by linarith)).mpr (Or.inl ⟨hN', by linarith⟩))
+    · exact absurd h hz
+    · exact ne_of_lt (Real.rpow_lt_one_of_one_lt_of_neg hN' (by linarith))
+  · rw [MultiplicativeIdealWeight.normTwist_apply,
+      (MultiplicativeIdealWeight.apply_eq_zero_iff_not_isGood χ.1 I).mpr hI, zero_mul, norm_zero]
+    exact zero_ne_one
 
 /-- The conjugate of a unitary weight is unitary. -/
 def conj (χ : UnitaryIdealWeight K) : UnitaryIdealWeight K :=
@@ -1027,32 +1026,32 @@ theorem conj_pow (χ : UnitaryIdealWeight K) (n : ℕ) : conj (χ ^ n) = conj χ
 
 /-- Restricting a unitary weight away from a finite set of primes keeps it unitary: the
 restricted weight is unchanged at the primes that are good for it. -/
-noncomputable def restrict (χ : UnitaryIdealWeight K) (S : Set (HeightOneSpectrum (𝓞 K)))
+noncomputable def restrictAway (χ : UnitaryIdealWeight K) (S : Set (HeightOneSpectrum (𝓞 K)))
     (hS : S.Finite) : UnitaryIdealWeight K :=
-  ⟨χ.1.restrict S hS, fun 𝔭 h𝔭 ↦ by
-    rw [MultiplicativeIdealWeight.badPrimes_restrict, Set.mem_union, not_or] at h𝔭
-    rw [MultiplicativeIdealWeight.restrict_apply]
+  ⟨χ.1.restrictAway S hS, fun 𝔭 h𝔭 ↦ by
+    rw [MultiplicativeIdealWeight.badPrimes_restrictAway, Set.mem_union, not_or] at h𝔭
+    rw [MultiplicativeIdealWeight.restrictAway_apply]
     simp [h𝔭.2, χ.2 𝔭 h𝔭.1]⟩
 
 @[simp]
-theorem val_restrict (χ : UnitaryIdealWeight K) (S : Set (HeightOneSpectrum (𝓞 K)))
-    (hS : S.Finite) : (restrict χ S hS).1 = χ.1.restrict S hS := (rfl)
+theorem val_restrictAway (χ : UnitaryIdealWeight K) (S : Set (HeightOneSpectrum (𝓞 K)))
+    (hS : S.Finite) : (restrictAway χ S hS).1 = χ.1.restrictAway S hS := (rfl)
 
 /-- Restricting a unitary weight away from no prime at all changes nothing. -/
 @[simp]
-theorem restrict_empty (χ : UnitaryIdealWeight K)
-    (hS : (∅ : Set (HeightOneSpectrum (𝓞 K))).Finite) : restrict χ ∅ hS = χ :=
-  Subtype.ext (by rw [val_restrict, MultiplicativeIdealWeight.restrict_empty])
+theorem restrictAway_empty (χ : UnitaryIdealWeight K)
+    (hS : (∅ : Set (HeightOneSpectrum (𝓞 K))).Finite) : restrictAway χ ∅ hS = χ :=
+  Subtype.ext (by rw [val_restrictAway, MultiplicativeIdealWeight.restrictAway_empty])
 
 /-- **Restriction of unitary weights commutes with nonzero powers**, in particular with the
-pointwise square. As for `TauCeti.MultiplicativeIdealWeight.restrict_pow`, the exponent `0` is
+pointwise square. As for `TauCeti.MultiplicativeIdealWeight.restrictAway_pow`, the exponent `0` is
 excluded. -/
 @[simp]
-theorem restrict_pow (χ : UnitaryIdealWeight K) (S : Set (HeightOneSpectrum (𝓞 K)))
-    (hS : S.Finite) {n : ℕ} (hn : n ≠ 0) : restrict (χ ^ n) S hS = restrict χ S hS ^ n :=
+theorem restrictAway_pow (χ : UnitaryIdealWeight K) (S : Set (HeightOneSpectrum (𝓞 K)))
+    (hS : S.Finite) {n : ℕ} (hn : n ≠ 0) : restrictAway (χ ^ n) S hS = restrictAway χ S hS ^ n :=
   Subtype.ext (by
-    rw [val_restrict, val_pow, val_pow, val_restrict,
-      MultiplicativeIdealWeight.restrict_pow _ _ hn])
+    rw [val_restrictAway, val_pow, val_pow, val_restrictAway,
+      MultiplicativeIdealWeight.restrictAway_pow _ _ hn])
 
 section Transport
 
@@ -1065,7 +1064,7 @@ noncomputable def map (e : K ≃+* L) (χ : UnitaryIdealWeight K) : UnitaryIdeal
     rw [MultiplicativeIdealWeight.badPrimes_map, Equiv.image_eq_preimage_symm,
       Set.mem_preimage] at h𝔮
     rw [MultiplicativeIdealWeight.map_apply,
-      ← MultiplicativeIdealWeight.asIdeal_equivOfRingEquiv_symm]
+      ← HeightOneSpectrum.asIdeal_equivOfRingEquiv_symm]
     exact χ.2 _ h𝔮⟩
 
 @[simp]
@@ -1081,21 +1080,6 @@ theorem map_map (e : K ≃+* L) (e' : L ≃+* M) (χ : UnitaryIdealWeight K) :
     map e' (map e χ) = map (e.trans e') χ :=
   Subtype.ext (by rw [val_map, val_map, val_map, MultiplicativeIdealWeight.map_map])
 
-/-- **Transport along an isomorphism of fields, as an equivalence** of the unitary carriers. -/
-noncomputable def mapEquiv (e : K ≃+* L) : UnitaryIdealWeight K ≃ UnitaryIdealWeight L where
-  toFun := map e
-  invFun := map e.symm
-  left_inv χ := by rw [map_map, e.self_trans_symm, map_id]
-  right_inv χ := by rw [map_map, e.symm_trans_self, map_id]
-
-@[simp]
-theorem mapEquiv_apply (e : K ≃+* L) (χ : UnitaryIdealWeight K) :
-    mapEquiv e χ = map e χ := (rfl)
-
-@[simp]
-theorem mapEquiv_symm_apply (e : K ≃+* L) (χ : UnitaryIdealWeight L) :
-    (mapEquiv e).symm χ = map e.symm χ := (rfl)
-
 /-! Transport preserves the pointwise `CommMonoid` structure of the unitary carrier too. -/
 
 @[simp]
@@ -1108,18 +1092,35 @@ theorem map_mul (e : K ≃+* L) (χ ψ : UnitaryIdealWeight K) :
   Subtype.ext (by
     rw [val_map, val_mul, val_mul, val_map, val_map, MultiplicativeIdealWeight.map_mul])
 
+/-- **Transport along an isomorphism of fields, as a multiplicative equivalence** of the unitary
+carriers. -/
+noncomputable def mapEquiv (e : K ≃+* L) : UnitaryIdealWeight K ≃* UnitaryIdealWeight L where
+  toFun := map e
+  invFun := map e.symm
+  left_inv χ := by rw [map_map, e.self_trans_symm, map_id]
+  right_inv χ := by rw [map_map, e.symm_trans_self, map_id]
+  map_mul' := map_mul e
+
+@[simp]
+theorem mapEquiv_apply (e : K ≃+* L) (χ : UnitaryIdealWeight K) :
+    mapEquiv e χ = map e χ := (rfl)
+
+@[simp]
+theorem mapEquiv_symm_apply (e : K ≃+* L) (χ : UnitaryIdealWeight L) :
+    (mapEquiv e).symm χ = map e.symm χ := (rfl)
+
 /-- Transport commutes with restriction on unitary weights after carrying the excluded prime set
 forward. -/
 @[simp]
-theorem map_restrict (e : K ≃+* L) (χ : UnitaryIdealWeight K)
+theorem map_restrictAway (e : K ≃+* L) (χ : UnitaryIdealWeight K)
     (S : Set (HeightOneSpectrum (𝓞 K))) (hS : S.Finite) :
-    map e (χ.restrict S hS) =
-      (map e χ).restrict
+    map e (χ.restrictAway S hS) =
+      (map e χ).restrictAway
         (HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) '' S)
         (hS.image _) :=
   Subtype.ext (by
-    rw [val_map, val_restrict, val_restrict, val_map,
-      MultiplicativeIdealWeight.map_restrict])
+    rw [val_map, val_restrictAway, val_restrictAway, val_map,
+      MultiplicativeIdealWeight.map_restrictAway])
 
 /-- Transport commutes with complex conjugation on unitary weights. -/
 @[simp]

@@ -63,11 +63,9 @@ carries the inner product making the weight basis orthonormal, which for `d ≥ 
 
 ## References
 
-This is the `su2Irrep_exhaust` target of the `SU(2)` engine case of
-`TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md`. The route taken is the
-character-theoretic one, not the Lie-algebra highest-weight argument that the roadmap names; it
-runs on the irreducibility and weight results of `TauCeti/RepresentationTheory/SU2/Irreducible.lean`
-together with the density of the character span. It is not circular. Peter-Weyl is nowhere used;
+The character-theoretic argument uses the irreducibility and weight results of
+`TauCeti/RepresentationTheory/SU2/Irreducible.lean` together with the density of the character
+span. It is not circular. Peter-Weyl is nowhere used;
 the density is Stone-Weierstrass applied to the Chebyshev recursion for `χ_d`; and the
 orthogonality relations invoked are the general compact-group ones of
 `TauCeti/RepresentationTheory/Compact/Character/Basic.lean`, which know nothing of `SU(2)`, rather
@@ -254,7 +252,7 @@ functions. But the character of `π` is itself a class function, and pairs with 
 the first orthogonality relation.
 
 Unitarity is not assumed: Weyl's unitarian trick
-(`TauCeti.ContRepresentation.exists_isUnitary_congr`) makes any such representation unitary after
+(`ContRepresentation.exists_isUnitary_congr`) makes any such representation unitary after
 conjugating by an automorphism of the carrier, and the conjugation is an equivalence, so it
 changes neither the hypotheses nor the conclusion. -/
 private theorem exists_nonempty_equiv_symPower_of_innerProductSpace {V : Type*}
@@ -262,9 +260,10 @@ private theorem exists_nonempty_equiv_symPower_of_innerProductSpace {V : Type*}
     (π : ContRepresentation ℂ SU2 V)
     (hπ : Continuous π) (hirr : Representation.IsIrreducible π.toRepresentation) :
     ∃ d : ℕ, Nonempty ((symPower d).Equiv π.toRepresentation) := by
-  obtain ⟨e, he⟩ := ContRepresentation.exists_isUnitary_congr π hπ
-  obtain ⟨d, hd⟩ := exists_nonempty_equiv_symPower_of_isUnitary (ContRepresentation.congr e π)
-    (ContRepresentation.continuous_congr e hπ) he (ContRepresentation.isIrreducible_congr e hirr)
+  obtain ⟨e, he⟩ := π.exists_isUnitary_congr hπ
+  obtain ⟨d, hd⟩ := exists_nonempty_equiv_symPower_of_isUnitary (ContinuousLinearEquiv.congr e π)
+    (ContinuousLinearEquiv.continuous_congr e hπ) he (ContinuousLinearEquiv.isIrreducible_congr e
+        hirr)
   refine ⟨d, ⟨hd.some.trans (Representation.Equiv.mk (e.symm : V ≃ₗ[ℂ] V) fun g ↦ ?_)⟩⟩
   exact LinearMap.ext fun v ↦ by
     simp [_root_.ContRepresentation.toMonoidHom_apply]
@@ -284,8 +283,8 @@ theorem exists_nonempty_equiv_symPower {V : Type*} [NormedAddCommGroup V] [Norme
   let e : V ≃L[ℂ] EuclideanSpace ℂ (Fin (Module.finrank ℂ V)) :=
     ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
   obtain ⟨d, hd⟩ := exists_nonempty_equiv_symPower_of_innerProductSpace
-    (ContRepresentation.congr e π) (ContRepresentation.continuous_congr e hπ)
-    (ContRepresentation.isIrreducible_congr e hirr)
+    (ContinuousLinearEquiv.congr e π) (ContinuousLinearEquiv.continuous_congr e hπ)
+    (ContinuousLinearEquiv.isIrreducible_congr e hirr)
   refine ⟨d, ⟨hd.some.trans (Representation.Equiv.mk
     (e.symm : EuclideanSpace ℂ (Fin (Module.finrank ℂ V)) ≃ₗ[ℂ] V) fun g ↦ ?_)⟩⟩
   exact LinearMap.ext fun v ↦ by

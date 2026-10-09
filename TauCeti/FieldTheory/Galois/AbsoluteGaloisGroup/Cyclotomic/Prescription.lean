@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Character
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Orientation
 public import TauCeti.FieldTheory.GaloisCohomology.Kummer
 public import TauCeti.RingTheory.RootsOfUnity.ZMod
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Inflation
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 
 /-!
@@ -17,7 +19,9 @@ import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 Let `K` be a field in which the prime `p` is invertible and `χ = χ_cyc` the `p`-adic cyclotomic
 character of its absolute Galois group `G_K`. This file proves that `χ` has Labute's prescription
 property: every reduction `H¹(G_K, I(χ)/pⁱ) → H¹(G_K, I(χ)/p)` of the twisted coefficients is
-surjective. The proof is Kummer theory, with no input from local duality or reciprocity.
+surjective. When `K` contains a primitive `p`-th root of unity, the same holds for the cyclotomic
+orientation of the maximal pro-`p` Galois group `G_K(p)`, the character through which `χ`
+factors. The proof is Kummer theory, with no input from local duality or reciprocity.
 
 A primitive `pʲ`-th root of unity `ζ` of the separable closure identifies `I(χ)/pʲ` with the
 roots of unity `μ_{pʲ}`, by `x ↦ ζ ^ x`. This is equivariant because `G_K` acts on `μ_{pʲ}`
@@ -29,7 +33,9 @@ class at level `pʲ` is a Kummer class (`TauCeti.explicitCoeff1_kummerCoeffPow_s
 
 The prescription property is the hypothesis under which a character of a Demushkin group is its
 canonical character. It descends from `G_K` to the maximal pro-`p` quotient `G_K(p)`
-(`TauCeti.hasPrescriptionProperty_comp_quotientMk_proPKernel_iff`).
+(`TauCeti.hasPrescriptionProperty_comp_quotientMk_proPKernel_iff`), because twisted inflation
+along `G_K → G_K(p)` is bijective and compatible with the reductions. The cyclotomic orientation
+pulls back to `χ` along this map, so it has the property as well.
 
 ## Main definitions
 
@@ -44,6 +50,8 @@ canonical character. It descends from `G_K` to the maximal pro-`p` quotient `G_K
 * `TauCeti.kummerCoeffPow_zModTwistEquivKummerCoeff`: it turns the reductions into power maps.
 * `TauCeti.continuousLocalCyclotomicCharacter_hasPrescriptionProperty`: the cyclotomic character
   has the prescription property.
+* `TauCeti.cyclotomicOrientation_hasPrescriptionProperty`: if `μ_p ⊆ K`, the cyclotomic
+  orientation of `G_K(p)` has the prescription property.
 
 ## References
 
@@ -171,5 +179,22 @@ theorem continuousLocalCyclotomicCharacter_hasPrescriptionProperty [NeZero (p : 
   obtain ⟨z, hz⟩ := explicitCoeff1_kummerCoeffPow_surjective hpi (pow_dvd_pow p hi) (E hζ' y)
   obtain ⟨w, rfl⟩ := (E hζ).surjective z
   exact ⟨w, (E hζ').injective ((hsq w).trans hz)⟩
+
+variable (p K) in
+/-- **The cyclotomic orientation has the prescription property**: if `K` contains a primitive
+`p`-th root of unity, then for the cyclotomic orientation `χ` of the maximal pro-`p` Galois group
+`G_K(p)`, every reduction `H¹(G_K(p), I(χ)/pⁱ) → H¹(G_K(p), I(χ)/p)` is surjective. The
+orientation pulls back to the cyclotomic character of `G_K`, which has the property, and the
+property descends along `G_K → G_K(p)`. -/
+theorem cyclotomicOrientation_hasPrescriptionProperty (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
+    HasPrescriptionProperty (cyclotomicOrientation p K hmu) := by
+  have : NeZero (p : K) := by
+    obtain ⟨ζ, hζ⟩ := hmu
+    exact hζ.neZero'
+  -- `absoluteGaloisGroupProPQuotientMap` is by definition (an `abbrev`) the quotient map by the
+  -- pro-`p` kernel, so the pullback lemma rewrites the descended statement
+  rw [← hasPrescriptionProperty_comp_quotientMk_proPKernel_iff,
+    cyclotomicOrientation_comp_absoluteGaloisGroupProPQuotientMap]
+  exact continuousLocalCyclotomicCharacter_hasPrescriptionProperty p K
 
 end TauCeti

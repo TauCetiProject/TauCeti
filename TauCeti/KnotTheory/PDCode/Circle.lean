@@ -149,7 +149,7 @@ def adjoinCircle (D : OrientedPDCode n) (orientation : Bool) : OrientedPDCode n 
   orientation_edgePair := D.orientation_edgePair
   orientation_oppositeCrossingSlot := D.orientation_oppositeCrossingSlot
   crossinglessComponents := orientation ::ₘ D.crossinglessComponents
-  crossinglessComponents_card := by simp
+  card_crossinglessComponents := by simp
 
 /-- Forgetting orientation leaves the added circle in the underlying code. -/
 @[simp] theorem toPDCode_adjoinCircle (D : OrientedPDCode n) (orientation : Bool) :
@@ -184,7 +184,7 @@ theorem exists_eq_adjoinCircle_of_mem {D : OrientedPDCode n} {o : Bool}
     (h : o ∈ D.crossinglessComponents) :
     ∃ D₀ : OrientedPDCode n, D = OrientedPDCode.adjoinCircle D₀ o := by
   have hcard : D.crossinglessComponentCount = D.crossinglessComponentCount - 1 + 1 := by
-    rw [← D.crossinglessComponents_card]
+    rw [← D.card_crossinglessComponents]
     exact (Nat.succ_pred_eq_of_pos (Multiset.card_pos_iff_exists_mem.2 ⟨o, h⟩)).symm
   refine ⟨{ toPDCode := { D.toPDCode with
               crossinglessComponentCount := D.crossinglessComponentCount - 1 }
@@ -192,8 +192,8 @@ theorem exists_eq_adjoinCircle_of_mem {D : OrientedPDCode n} {o : Bool}
             orientation_edgePair := D.orientation_edgePair
             orientation_oppositeCrossingSlot := D.orientation_oppositeCrossingSlot
             crossinglessComponents := D.crossinglessComponents.erase o
-            crossinglessComponents_card := by
-              rw [Multiset.card_erase_of_mem h, D.crossinglessComponents_card,
+            card_crossinglessComponents := by
+              rw [Multiset.card_erase_of_mem h, D.card_crossinglessComponents,
                 Nat.pred_eq_sub_one] },
     ?_⟩
   apply OrientedPDCode.ext
@@ -232,7 +232,7 @@ def adjoinCircle (D : FramedOrientedPDCode n) (orientation : Bool) (framing : �
   framing_edgePair := D.framing_edgePair
   framing_oppositeCrossingSlot := D.framing_oppositeCrossingSlot
   crossinglessFramings := (orientation, framing) ::ₘ D.crossinglessFramings
-  crossinglessFramings_map_fst := by simp [D.crossinglessFramings_map_fst]
+  map_fst_crossinglessFramings := by simp [D.map_fst_crossinglessFramings]
 
 /-- Forgetting framing retains the orientation of the added circle. -/
 @[simp] theorem toOrientedPDCode_adjoinCircle (D : FramedOrientedPDCode n)

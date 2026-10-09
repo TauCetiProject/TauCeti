@@ -25,6 +25,8 @@ Neither result requires completeness, an exact constant field, or a function-fie
 
 A prime-to-`p` pole cannot be improved by any Artin–Schreier substitution, even with an
 imperfect residue field.
+`TauCeti.ne_pow_sub_self_of_exists_reduced_artinSchreier_pole` proves that a class with such a
+representative is nontrivial.
 `TauCeti.ord_sub_pow_sub_self_le_of_ord_neg_of_not_dvd` records this maximality,
 and `TauCeti.ord_reduced_artinSchreier_representative_eq` gives uniqueness.
 The integral alternative includes the zero representative, so no statement

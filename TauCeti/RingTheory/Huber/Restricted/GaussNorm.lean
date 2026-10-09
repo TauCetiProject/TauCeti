@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 
 /-!
 # The Gauss norm topology on restricted multivariate series

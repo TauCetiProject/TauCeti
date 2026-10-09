@@ -90,6 +90,13 @@ theorem samplePopulation_def (σ : Measure (ι → κ)) (ρ : Measure (κ → α
     samplePopulation σ ρ = (σ.prod ρ).map fun p i => p.2 (p.1 i) :=
   Measure.mapₗ_mk_apply_of_aemeasurable measurable_reindexPopulation.aemeasurable
 
+/-- Sampling a finite population law along a finite selection law gives a finite law. -/
+instance isFiniteMeasure_samplePopulation (σ : Measure (ι → κ)) (ρ : Measure (κ → α))
+    [IsFiniteMeasure σ] [IsFiniteMeasure ρ] :
+    IsFiniteMeasure (samplePopulation σ ρ) := by
+  rw [samplePopulation_def]
+  infer_instance
+
 /-- Sampling a probability population along a probability selection law is a probability law. -/
 instance isProbabilityMeasure_samplePopulation (σ : Measure (ι → κ)) (ρ : Measure (κ → α))
     [IsProbabilityMeasure σ] [IsProbabilityMeasure ρ] :

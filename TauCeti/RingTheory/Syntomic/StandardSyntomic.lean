@@ -8,9 +8,11 @@ module
 public import Mathlib.RingTheory.Extension.Presentation.Basic
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
+public import TauCeti.Topology.PureDimension
 import Mathlib.RingTheory.KrullDimension.Polynomial
 import Mathlib.RingTheory.TensorProduct.MvPolynomial
 import TauCeti.RingTheory.KrullDimension.FiniteType
+import TauCeti.RingTheory.KrullDimension.Presentation
 
 /-!
 # Standard syntomic algebras
@@ -41,6 +43,9 @@ a complete intersection, is not standard syntomic of relative dimension zero.
 * `TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension.ringKrullDim_tensorProduct_of_field`:
   the dimension condition holds for all fibres over fields, not just over residue fields: if
   `R → K` is a ring map to a field and `K ⊗[R] S` is nontrivial, it has Krull dimension `n`.
+* `TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension.isPureDimensional_primeSpectrum`: over a
+  field, the spectrum of a standard syntomic algebra of relative dimension `n` is pure-dimensional
+  of dimension `n`, since it is a global complete intersection.
 * `TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension.baseChange`: standard syntomic algebras of
   relative dimension `n` are stable under arbitrary base change.
 * `TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension.of_algEquiv`: invariance under
@@ -150,6 +155,26 @@ theorem ringKrullDim_tensorProduct_of_field (K : Type w) [Field K] [Algebra R K]
       at hdim
     exact absurd hdim (not_subsingleton _)
   | inr hF => rw [hdim, h.ringKrullDim_fiber p]
+
+variable (n) in
+/-- Over a field `k`, the spectrum of a standard syntomic algebra of relative dimension `n` is
+pure-dimensional of dimension `n`: every irreducible component has dimension `n`. -/
+theorem isPureDimensional_primeSpectrum (k : Type u) (A : Type v) [Field k] [CommRing A]
+    [Algebra k A] [hA : IsStandardSyntomicOfRelativeDimension n k A] :
+    IsPureDimensional n (PrimeSpectrum A) := by
+  -- `A = k[x₁, …, x_{n+c}] ⧸ (f₁, …, f_c)` is a global complete intersection: `dim A ≤ n`.
+  obtain ⟨ι, σ, _, _, P, hP⟩ := hA.exists_presentation
+  have hdim : P.dimension = n := by
+    rw [_root_.Algebra.Presentation.dimension, hP, Nat.add_sub_cancel]
+  rw [← hdim]
+  refine P.isPureDimensional_primeSpectrum ?_
+  rw [hdim]
+  cases subsingleton_or_nontrivial A with
+  | inl _ => simp [ringKrullDim_eq_bot_of_subsingleton]
+  | inr _ =>
+    let e := _root_.Algebra.TensorProduct.lid k A
+    have : Nontrivial (k ⊗[k] A) := e.toEquiv.nontrivial
+    rw [← ringKrullDim_eq_of_ringEquiv e.toRingEquiv, hA.ringKrullDim_tensorProduct_of_field k]
 
 include h in
 /-- Standard syntomic algebras of relative dimension `n` are invariant under isomorphism. -/

@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.PathSpace.Invariant.Tail
+public import TauCeti.Probability.Process.Tail.ShiftInvariant
 public import TauCeti.Probability.Exchangeability.PathSpace.ContractableLaw
-public import TauCeti.Probability.Exchangeability.Cylinder
+public import TauCeti.Probability.Process.Cylinder
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.Data.Fin.StrictMono
 
 /-!
 # Moving a block through a reindexing, over an invariant event
@@ -84,9 +85,10 @@ monotonicity are one way to obtain that, not requirements: a merely shift-invari
 No material is adapted from `cameronfreer/exchangeability`. That development carries its own
 block-reindexing and factorization material for the Koopman argument; the statements here were
 assembled from Tau Ceti's own pieces — the eventual-translation extension
-`exists_strictMono_nat_extending_fin_eventually_add`, the invariant-event preimage identity
-`preimage_reindex_eq_of_measurableSet_invariants_of_eventually_add`, contractable reindexing
-`ContractableLaw.measurePreserving_reindex`, and Mathlib's `MeasurePreserving.restrict_preimage`.
+`StrictMono.exists_strictMono_nat_extending_fin_eventually_add`, the invariant-event preimage
+identity `preimage_reindex_eq_of_measurableSet_invariants_of_eventually_add`, contractable
+reindexing `ContractableLaw.measurePreserving_reindex`, and Mathlib's
+`MeasurePreserving.restrict_preimage`.
 
 -/
 
@@ -139,7 +141,7 @@ theorem ContractableLaw.map_restrict_prefixProj_of_strictMono_of_measurableSet_i
     {A : Set (ℕ → α)} (hA : MeasurableSet[MeasurableSpace.invariants (shift α)] A) :
     (ρ.restrict A).map (fun x : ℕ → α => fun i : Fin m => x (k i))
       = (ρ.restrict A).map (prefixProj α m) := by
-  obtain ⟨φ, C, hφ_mono, hφ_eq, hφ_add⟩ := exists_strictMono_nat_extending_fin_eventually_add hk
+  obtain ⟨φ, C, hφ_mono, hφ_eq, hφ_add⟩ := hk.exists_strictMono_nat_extending_fin_eventually_add
   have hmp := measurePreserving_restrict_reindex_of_measurableSet_invariants_of_eventually_add
     (hρ.measurePreserving_reindex hφ_mono) hφ_add hA
   have hcomp : (fun x : ℕ → α => fun i : Fin m => x (k i))
@@ -164,7 +166,7 @@ theorem integral_mul_block_eq_prefixProj_of_strictMono_of_measurable_invariants
     {w : (ℕ → α) → ℝ} (hw : Measurable[MeasurableSpace.invariants (shift α)] w)
     {f : (Fin m → α) → ℝ} (hf : Measurable f) :
     ∫ x, w x * f (fun i => x (k i)) ∂ρ = ∫ x, w x * f (prefixProj α m x) ∂ρ := by
-  obtain ⟨φ, C, hφ_mono, hφ_eq, hφ_add⟩ := exists_strictMono_nat_extending_fin_eventually_add hk
+  obtain ⟨φ, C, hφ_mono, hφ_eq, hφ_add⟩ := hk.exists_strictMono_nat_extending_fin_eventually_add
   have hmp := hρ.measurePreserving_reindex hφ_mono
   have hw' : Measurable w := hw.mono (MeasurableSpace.invariants_le _) le_rfl
   have hgm : Measurable fun x : ℕ → α => w x * f (prefixProj α m x) :=

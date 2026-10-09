@@ -121,13 +121,8 @@ instance isClosedImmersion_groupSchemeι :
 /-- The structural morphism of the special-linear group scheme is locally of finite type. -/
 instance locallyOfFiniteType_groupScheme :
     AlgebraicGeometry.LocallyOfFiniteType (groupScheme R n).X.hom := by
-  let H : FiniteTypeCommHopfAlgCat R :=
-    ⟨GeneralLinear.coordinateHopfAlgebra R n, by
-      rw [← GeneralLinear.finiteTypeCoordinateHopfAlgebra_obj]
-      exact (GeneralLinear.finiteTypeCoordinateHopfAlgebra R n).property⟩
   rw [groupScheme_def]
-  exact FiniteTypeCommHopfAlgCat.locallyOfFiniteType_quotientSpec
-    H (definingHopfIdeal R n)
+  infer_instance
 
 /-! ### Scheme-valued points -/
 
@@ -175,7 +170,6 @@ theorem schemePointsMulEquiv_groupSchemePointMulEquiv
 
 /-- The inverse scheme-points equivalence sends a determinant-one matrix to the spectrum point
 induced by its canonical coordinate-algebra point. -/
-@[simp]
 lemma schemePointsMulEquiv_symm_apply (g : Matrix.SpecialLinearGroup (Fin n) A) :
     (schemePointsMulEquiv n A).symm g =
       groupSchemePointMulEquiv n A

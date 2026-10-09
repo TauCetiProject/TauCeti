@@ -20,6 +20,8 @@ Its component at a place of `L` is the semilocal comparison at the place below i
 
 The construction assembles `infiniteSemilocalEquiv` through Mathlib's
 `TensorProduct.piLeft`. This includes the real-to-complex factors of local degree two.
+In a tower `K ⊆ L ⊆ M`, the comparison for `M/K` factors through the one for `L/K`
+(`infiniteAdeleBaseChangeEquiv_tower`).
 
 ## References
 
@@ -71,7 +73,7 @@ below it and the local embedding of the field element. -/
 theorem infiniteAdeleBaseChangeHom_tmul_apply (a : InfiniteAdeleRing K) (x : L)
     (w : InfinitePlace L) :
     infiniteAdeleBaseChangeHom K L (a ⊗ₜ x) w =
-      LiesOver.completionMap (a (w.comap (algebraMap K L))) *
+      LiesOver.completionMap _ w (a (w.comap (algebraMap K L))) *
         algebraMap L w.Completion x := by
   rw [infiniteAdeleBaseChangeHom_tmul]
   -- Evaluate multiplication in the infinite-adele type synonym before rewriting its factors.
@@ -206,7 +208,7 @@ map from the place below it and the local embedding of the field element. -/
 theorem infiniteAdeleBaseChangeEquiv_tmul_apply (a : InfiniteAdeleRing K) (x : L)
     (w : InfinitePlace L) :
     infiniteAdeleBaseChangeEquiv K L (a ⊗ₜ x) w =
-      LiesOver.completionMap (a (w.comap (algebraMap K L))) *
+      LiesOver.completionMap _ w (a (w.comap (algebraMap K L))) *
         algebraMap L w.Completion x := by
   have h : (infiniteAdeleBaseChangeEquiv K L).toAlgHom =
       infiniteAdeleBaseChangeHom K L := by simp
@@ -220,5 +222,18 @@ theorem infiniteAdeleBaseChangeEquiv_symm_algebraMap (x : L) :
     (infiniteAdeleBaseChangeEquiv K L).symm
       (algebraMap L (InfiniteAdeleRing L) x) = 1 ⊗ₜ[K] x := by
   exact infiniteAdeleBaseChangeAlgEquiv_symm_algebraMap K L x
+
+/-- **Base change of infinite adeles in a tower** `K ⊆ L ⊆ M`: the comparison for `M/K` factors
+through the comparison for `L/K`, followed by the comparison for `M/L`. -/
+theorem infiniteAdeleBaseChangeEquiv_tower (M : Type*) [Field M] [NumberField M] [Algebra K M]
+    [Algebra L M] [IsScalarTower K L M] [TopologicalSpace (InfiniteAdeleRing K ⊗[K] M)]
+    [IsModuleTopology (InfiniteAdeleRing K) (InfiniteAdeleRing K ⊗[K] M)]
+    [TopologicalSpace (InfiniteAdeleRing L ⊗[L] M)]
+    [IsModuleTopology (InfiniteAdeleRing L) (InfiniteAdeleRing L ⊗[L] M)]
+    (a : InfiniteAdeleRing K) (z : M) :
+    infiniteAdeleBaseChangeEquiv K M (a ⊗ₜ z) =
+      infiniteAdeleBaseChangeEquiv L M (infiniteAdeleBaseChangeEquiv K L (a ⊗ₜ 1) ⊗ₜ z) := by
+  simp only [infiniteAdeleBaseChangeEquiv_tmul, map_one, mul_one]
+  rw [← infiniteAdeleExtension_comp K L M, RingHom.comp_apply]
 
 end TauCeti.GlobalNumberFields

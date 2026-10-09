@@ -6,14 +6,12 @@ Authors: Codex
 module
 
 public import Mathlib.Algebra.Homology.CommSq
-public import Mathlib.CategoryTheory.Limits.Constructions.FiniteProductsOfBinaryProducts
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Biproducts
 public import Mathlib.CategoryTheory.Limits.Shapes.BinaryBiproducts
 public import Mathlib.CategoryTheory.Limits.Shapes.Kernels
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
-public import Mathlib.Data.Fintype.BigOperators
 
 /-!
 # Binary biproduct squares
@@ -23,15 +21,20 @@ through the maps obtained by changing one summand at a time, and the squares obt
 an identity summand are pushouts or pullbacks. The biproduct of two cokernels is the cokernel of
 the biproduct of the two morphisms (`CategoryTheory.Limits.CokernelCofork.isColimitBiprod`); this
 is the biproduct analogue of Mathlib's `CategoryTheory.Limits.CokernelCofork.isColimitTensor`.
-The short complex of a mapped commutative square agrees with the mapped short complex through
-the canonical biproduct comparison.
+For functors preserving zero morphisms, biproduct preservation is stable under composition
+and follows from preservation of products and coproducts of the same shape. The short complex
+of a mapped commutative square agrees with the mapped short complex through the canonical
+biproduct comparison.
 
-In a preadditive category, a zero object and binary biproducts already give all finite biproducts
-(`TauCeti.hasFiniteBiproducts_of_hasBinaryBiproducts`), and a finite biproduct indexed by
+In a category with zero morphisms, a zero object and binary biproducts give all finite biproducts
+(`TauCeti.hasFiniteBiproducts_of_hasBinaryBiproducts`), and a biproduct indexed by
 `Option J` splits off its `none` summand (`TauCeti.biproductOptionIso`); the latter is the
 inductive step for computing additive invariants of finite biproducts. An additive functor which
 kills one summand of a binary biproduct inverts the projection onto the other
-(`CategoryTheory.Functor.isIso_map_biprod_fst_of_isZero`).
+(`CategoryTheory.Functor.isIso_map_biprod_fst_of_isZero`). For a functor out of `Cᵒᵖ`, the
+comparison `F.obj (op (X ⊞ Y)) ≅ F.obj (op X) ⊞ F.obj (op Y)` through `biprod.opIso` has inverse
+given by the images of the projections
+(`CategoryTheory.Functor.mapIso_biprod_opIso_trans_mapBiprod_inv`).
 -/
 
 public section
@@ -101,41 +104,78 @@ theorem isPullback_biprod_map_fst {X Y : C} (f : X ⟶ Y) (Z : C)
     (biprod.isoProd Y Z).symm (Iso.refl Y)
     (by simp) (by ext <;> simp) (by simp) (by simp)
 
-section Preadditive
-
-variable {C : Type u} [Category.{v} C] [Preadditive C]
-
-/-- A preadditive category with a zero object and binary biproducts has all finite biproducts.
+open ZeroObject in
+/-- A category with zero morphisms, a zero object and binary biproducts has finite biproducts.
 Like Mathlib's `CategoryTheory.Limits.hasBinaryBiproducts_of_finite_biproducts`, this is a theorem
 rather than an instance, so that a concrete category may keep finite biproducts with better
 definitional properties. -/
 theorem hasFiniteBiproducts_of_hasBinaryBiproducts [HasZeroObject C] [HasBinaryBiproducts C] :
-    HasFiniteBiproducts C :=
-  have : HasFiniteProducts C := hasFiniteProducts_of_has_binary_and_terminal
-  HasFiniteBiproducts.of_hasFiniteProducts
+    HasFiniteBiproducts C where
+  out n := by
+    classical
+    refine Fintype.induction_empty_option
+      (P := fun J _ => HasBiproductsOfShape J C) ?_ ?_ ?_ (Fin n)
+    · intro α β _ e hα
+      let : Fintype α := Fintype.ofEquiv β e.symm
+      let : HasBiproductsOfShape α C := hα
+      exact hasBiproductsOfShape_of_equiv C e.symm
+    · refine ⟨fun f => HasBiproduct.mk ?_⟩
+      let b : Bicone f := { pt := 0, π := fun j => j.elim, ι := fun j => j.elim }
+      exact ⟨b, ⟨Fan.IsLimit.mk _ (fun _ => 0) (fun _ j => j.elim)
+        (fun _ _ _ => (isZero_zero C).eq_of_tgt _ _),
+        Cofan.IsColimit.mk _ (fun _ => 0) (fun _ j => j.elim)
+        (fun _ _ _ => (isZero_zero C).eq_of_src _ _)⟩⟩
+    · intro α _ hα
+      let : HasBiproductsOfShape α C := hα
+      refine ⟨fun f => HasBiproduct.mk ?_⟩
+      let b : Bicone f :=
+        { pt := f none ⊞ ⨁ fun j => f (some j)
+          π := fun j => match j with
+            | none => biprod.fst
+            | some j => biprod.snd ≫ biproduct.π _ j
+          ι := fun j => match j with
+            | none => biprod.inl
+            | some j => biproduct.ι (fun j => f (some j)) j ≫ biprod.inr
+          ι_π := by
+            rintro (_ | j) (_ | k) <;> simp [biproduct.ι_π] }
+      refine ⟨b, ⟨Fan.IsLimit.mk _ (fun s =>
+        biprod.lift (s.proj none) (biproduct.lift fun j => s.proj (some j))) ?_ ?_,
+        Cofan.IsColimit.mk _ (fun s =>
+        biprod.desc (s.inj none) (biproduct.desc fun j => s.inj (some j))) ?_ ?_⟩⟩
+      · rintro s (_ | j) <;> simp [b]
+      · intro s m hm
+        apply biprod.hom_ext
+        · simpa [b] using hm none
+        · apply biproduct.hom_ext
+          intro j
+          simpa [b] using hm (some j)
+      · rintro s (_ | j) <;> simp [b]
+      · intro s m hm
+        apply biprod.hom_ext'
+        · simpa [b] using hm none
+        · apply biproduct.hom_ext'
+          intro j
+          simpa [b] using hm (some j)
 
-variable {J : Type} [Fintype J] (f : Option J → C) [HasBiproduct f]
+variable {J : Type w} (f : Option J → C) [HasBiproduct f]
   [HasBiproduct fun j => f (some j)] [HasBinaryBiproduct (f none) (⨁ fun j => f (some j))]
 
 /-- A biproduct indexed by `Option J` is the binary biproduct of its `none` summand and the
 biproduct of the remaining summands. -/
 noncomputable def biproductOptionIso : ⨁ f ≅ f none ⊞ ⨁ fun j => f (some j) where
   hom := biprod.lift (biproduct.π f none) (biproduct.lift fun j => biproduct.π f (some j))
-  inv := biprod.desc (biproduct.ι f none) (biproduct.desc fun j => biproduct.ι f (some j))
+  inv := biproduct.lift fun j => match j with
+    | none => biprod.fst
+    | some j => biprod.snd ≫ biproduct.π _ j
   hom_inv_id := by
-    rw [biprod.lift_desc, biproduct.lift_desc, ← biproduct.total, Fintype.sum_option]
+    apply biproduct.hom_ext
+    rintro (_ | j) <;> simp
   inv_hom_id := by
-    apply biprod.hom_ext' <;> apply biprod.hom_ext
+    apply biprod.hom_ext
     · simp
-    · ext j
-      simp [biproduct.ι_π_ne _ (Option.some_ne_none j).symm]
-    · ext j
-      simp [biproduct.ι_π_ne _ (Option.some_ne_none j)]
-    · ext j k
-      by_cases h : k = j
-      · subst h
-        simp
-      · simp [biproduct.ι_π_ne _ h, biproduct.ι_π_ne _ (mt Option.some_inj.mp h)]
+    · apply biproduct.hom_ext
+      intro j
+      simp
 
 @[simp]
 theorem biproductOptionIso_hom_fst :
@@ -147,9 +187,68 @@ theorem biproductOptionIso_hom_snd_π (j : J) :
     (biproductOptionIso f).hom ≫ biprod.snd ≫ biproduct.π _ j = biproduct.π f (some j) := by
   simp [biproductOptionIso]
 
-end Preadditive
+@[simp]
+theorem biprod_inl_biproductOptionIso_inv :
+    biprod.inl ≫ (biproductOptionIso f).inv = biproduct.ι f none := by
+  classical
+  apply biproduct.hom_ext
+  rintro (_ | j) <;> simp [biproductOptionIso]
+
+@[simp]
+theorem biproduct_ι_biprod_inr_biproductOptionIso_inv (j : J) :
+    biproduct.ι (fun j => f (some j)) j ≫ biprod.inr ≫ (biproductOptionIso f).inv =
+      biproduct.ι f (some j) := by
+  classical
+  apply biproduct.hom_ext
+  rintro (_ | k) <;> simp [biproductOptionIso, biproduct.ι_π]
 
 end TauCeti
+
+namespace CategoryTheory.Limits
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
+  {D : Type u'} [Category.{w'} D] [HasZeroMorphisms D]
+  {E : Type*} [Category* E] [HasZeroMorphisms E]
+
+/-- The composite of functors preserving biproducts of shape `J` preserves them. -/
+instance (priority := 100) preservesBiproductsOfShape_comp (J : Type w) (F : C ⥤ D)
+    (G : D ⥤ E) [F.PreservesZeroMorphisms] [G.PreservesZeroMorphisms]
+    [PreservesBiproductsOfShape J F] [PreservesBiproductsOfShape J G] :
+    PreservesBiproductsOfShape J (F ⋙ G) where
+  preserves := { preserves := fun hb =>
+    ⟨isBilimitOfPreserves G (isBilimitOfPreserves F hb)⟩ }
+
+/-- A functor preserving zero morphisms, products and coproducts of shape `J` preserves
+biproducts of that shape. -/
+instance (priority := 100) preservesBiproductsOfShape_of_preservesLimits_and_colimits
+    (J : Type w) (F : C ⥤ D) [F.PreservesZeroMorphisms]
+    [PreservesLimitsOfShape (Discrete J) F] [PreservesColimitsOfShape (Discrete J) F] :
+    PreservesBiproductsOfShape J F where
+  preserves := fun {f} => { preserves := fun {b} hb => ⟨{
+    isLimit := IsLimit.ofIsoLimit
+      ((IsLimit.postcomposeHomEquiv (Discrete.compNatIsoDiscrete _ _) _).symm
+        (isLimitOfPreserves F hb.isLimit))
+      (Cone.ext (Iso.refl (F.obj b.pt)) (by
+        rintro ⟨j⟩
+        -- Unfold `Cone.postcompose`, `Functor.mapCone`, `Bicone.toCone` and
+        -- `Functor.mapBicone`, including their composite discrete endpoints.
+        -- `Discrete.compNatIsoDiscrete` contributes identities. Projection rewrites alone
+        -- leave these endpoint types opaque, so the identity laws need this conversion.
+        change F.map (b.π j) ≫ 𝟙 (F.obj (f j)) = 𝟙 (F.obj b.pt) ≫ F.map (b.π j)
+        simp))
+    isColimit := IsColimit.ofIsoColimit
+      ((IsColimit.precomposeInvEquiv (Discrete.compNatIsoDiscrete _ _) _).symm
+        (isColimitOfPreserves F hb.isColimit))
+      (Cocone.ext (Iso.refl (F.obj b.pt)) (by
+        rintro ⟨j⟩
+        -- Unfold `Cocone.precompose`, `Functor.mapCocone`, `Bicone.toCocone` and
+        -- `Functor.mapBicone`, including their composite discrete endpoints.
+        -- `Discrete.compNatIsoDiscrete` contributes identities. Projection rewrites alone
+        -- leave these endpoint types opaque, so the identity laws need this conversion.
+        change (𝟙 (F.obj (f j)) ≫ F.map (b.ι j)) ≫ 𝟙 (F.obj b.pt) = F.map (b.ι j)
+        simp)) }⟩ }
+
+end CategoryTheory.Limits
 
 namespace CategoryTheory.Functor
 
@@ -166,6 +265,27 @@ theorem isIso_map_biprod_fst_of_isZero (X Y : C) [HasBinaryBiproduct X Y]
   · rw [← F.map_comp, eq_sub_of_add_eq biprod.total]
     simp [hY.eq_zero_of_tgt (F.map biprod.snd)]
   · rw [← F.map_comp, biprod.inl_fst, F.map_id]
+
+section Op
+
+open Opposite
+
+variable {C : Type u} {D : Type v} [Category.{w} C] [Category.{w'} D] [HasZeroMorphisms C]
+  [HasZeroMorphisms D] (F : Cᵒᵖ ⥤ D) (X Y : C) [HasBinaryBiproduct X Y]
+  [F.PreservesZeroMorphisms] [PreservesBinaryBiproduct (op X) (op Y) F]
+
+/-- For a functor `F` out of `Cᵒᵖ`, the inverse of the comparison
+`F.obj (op (X ⊞ Y)) ≅ F.obj (op X) ⊞ F.obj (op Y)` through `biprod.opIso` is given by the images
+of the opposites of the projections. -/
+theorem mapIso_biprod_opIso_trans_mapBiprod_inv :
+    (F.mapIso (biprod.opIso X Y) ≪≫ F.mapBiprod (op X) (op Y)).inv =
+      biprod.desc (F.map (biprod.fst : X ⊞ Y ⟶ X).op) (F.map (biprod.snd : X ⊞ Y ⟶ Y).op) := by
+  rw [Iso.trans_inv, Functor.mapIso_inv, Functor.mapBiprod_inv]
+  apply biprod.hom_ext'
+  · rw [biprod.inl_desc_assoc, ← F.map_comp, biprod.inl_opIso_inv, biprod.inl_desc]
+  · rw [biprod.inr_desc_assoc, ← F.map_comp, biprod.inr_opIso_inv, biprod.inr_desc]
+
+end Op
 
 end CategoryTheory.Functor
 

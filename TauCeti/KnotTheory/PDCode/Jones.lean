@@ -285,7 +285,7 @@ theorem jonesPolynomial_eq_pow (D : OrientedPDCode 0) :
 /-- **The unknot has Jones polynomial `1`.** -/
 @[simp]
 theorem jonesPolynomial_unknot (orientation : Bool) : (unknot orientation).jonesPolynomial = 1 := by
-  rw [jonesPolynomial_eq_pow, ← crossinglessComponents_card, crossinglessComponents_unknot]
+  rw [jonesPolynomial_eq_pow, ← card_crossinglessComponents, crossinglessComponents_unknot]
   simp
 
 /-- An isolated kink in an otherwise empty diagram has Jones polynomial one, for either
@@ -294,7 +294,7 @@ orientation and either crossing sign. -/
 @[simp 1100] theorem jonesPolynomial_adjoinKink_empty (o b : Bool) :
     (empty.adjoinKink o b).jonesPolynomial = 1 := by
   rw [jonesPolynomial_adjoinKink, jonesPolynomial_eq_pow]
-  simp [← crossinglessComponents_card]
+  simp [← card_crossinglessComponents]
 
 end OrientedPDCode
 

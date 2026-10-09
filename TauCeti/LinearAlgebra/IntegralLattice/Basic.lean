@@ -30,6 +30,8 @@ The form restricts to a canonical `ℤ`-bilinear form on the carrier.  Conversel
 * `TauCeti.IntegralLattice`: an integral symmetric lattice in a rational vector space.
 * `TauCeti.IntegralLattice.IsNondegenerate`: the nondegeneracy mixin for an integral lattice.
 * `TauCeti.IntegralLattice.form_mem_one`: the rational form takes integer values on lattice vectors.
+* `TauCeti.IntegralLattice.le_dualSubmodule_of_le_carrier`: every submodule of the carrier is
+  integral for the lattice form.
 * `TauCeti.IntegralLattice.rationalBasis`: the ambient `ℚ`-basis extending a chosen `ℤ`-basis of
   the carrier.
 * `TauCeti.IntegralLattice.integralForm`: the induced `ℤ`-bilinear form on the carrier.
@@ -96,6 +98,14 @@ theorem form_flip (L : IntegralLattice V) : L.form.flip = L.form :=
 theorem form_mem_one (L : IntegralLattice V) (x y : L) :
     L.form x y ∈ (1 : Submodule ℤ ℚ) :=
   L.le_dual x.2 (y : V) y.2
+
+/-- Every ambient submodule contained in the carrier is integral for the lattice form. -/
+theorem le_dualSubmodule_of_le_carrier (L : IntegralLattice V) {N : Submodule ℤ V}
+    (hN : N ≤ L.carrier) : N ≤ L.form.dualSubmodule N := by
+  intro x hx
+  rw [LinearMap.BilinForm.mem_dualSubmodule]
+  intro y hy
+  exact L.le_dual (hN hx) y (hN hy)
 
 /-- The chosen `ℤ`-basis of an integral lattice extends to a `ℚ`-basis of the ambient space. -/
 noncomputable def rationalBasis (L : IntegralLattice V) :

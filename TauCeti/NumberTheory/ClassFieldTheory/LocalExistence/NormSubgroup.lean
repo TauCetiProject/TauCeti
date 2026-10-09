@@ -55,7 +55,7 @@ public noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
-open ValuativeRel
+open _root_.ValuativeRel
 
 section Basic
 

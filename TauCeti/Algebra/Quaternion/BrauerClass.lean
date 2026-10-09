@@ -273,6 +273,14 @@ theorem quaternionClass_mul_left (a b c : Kˣ) :
   rw [quaternionClass_comm, quaternionClass_mul, quaternionClass_comm a,
     quaternionClass_comm b]
 
+/-- The quaternion symbol of a power in the second argument is the power of the symbol:
+`[(a, bⁿ)] = [(a, b)]ⁿ`. -/
+theorem quaternionClass_pow_right (a b : Kˣ) (n : ℕ) :
+    quaternionClass a (b ^ n) = quaternionClass a b ^ n := by
+  induction n with
+  | zero => rw [pow_zero, pow_zero, quaternionClass_one_right]
+  | succ n ih => rw [pow_succ, quaternionClass_mul, ih, pow_succ]
+
 /-- `[(a,a)] = [(a,-1)]`, since `a = (-1) · (-a)` and `[(a,-a)] = 1`. -/
 theorem quaternionClass_self (a : Kˣ) : quaternionClass a a = quaternionClass a (-1) :=
   calc quaternionClass a a = quaternionClass a (-1 * -a) := by rw [neg_one_mul, neg_neg]

@@ -37,7 +37,7 @@ a private level-selection lemma packages that choice.
 A pseudouniformiser of `A` stays one in `A⟨X⟩_T` as a constant series, so the Tate property is
 inherited too. Since completion preserves both properties
 (`TauCeti.Huber.IsHuberRing.completion`, `TauCeti.Huber.IsTateRing.completion`), the completed
-algebra `A⟨X₁,…,Xₖ⟩` of the roadmap — the separated completion of the trivial-weight `A⟨X⟩_T` — is
+algebra `A⟨X₁,…,Xₖ⟩` — the separated completion of the trivial-weight `A⟨X⟩_T` — is
 a Huber ring, Tate whenever `A` is; its completeness and separatedness are those of any separated
 completion and need no argument here.
 
@@ -59,17 +59,14 @@ completion and need no argument here.
   (`TauCeti.Huber.PairOfDefinition.isAdic_weightedIdeal_one`) follow.
 * `TauCeti.Huber.isHuberRing_weightedRestrictedSubring` and
   `TauCeti.Huber.isTateRing_weightedRestrictedSubring`: the two instances. The completed algebra
-  `A⟨X₁,…,Xₖ⟩` at the trivial weight, which is the roadmap's object, inherits both from them by
+  `A⟨X₁,…,Xₖ⟩` at the trivial weight inherits both from them by
   synthesis, with no separate result: see the `example`s at the end of the file.
 
 ## Provenance
 
-No formalisation of this result was available: the roadmap's status table records restricted power
-series and strong noetherianness as existing AINTLIB material but lists no Huber structure on
-them, and no Tau Ceti module for `A⟨X⟩_T` supplies a `PairOfDefinition`. The coefficient
-decomposition reuses `TauCeti.Huber.exists_sum_eq_of_mem_span_mul`, which was written for Wedhorn
-Remark 6.8 — the Huber structure on the completion `Â` — and serves the same purpose here: it
-bounds, uniformly in the level, the number of generators a decomposition needs.
+The coefficient decomposition reuses `TauCeti.Huber.exists_sum_eq_of_mem_span_mul`, proved for
+Wedhorn Remark 6.8 — the Huber structure on the completion `Â` — and serves the same purpose here:
+it bounds, uniformly in the level, the number of generators a decomposition needs.
 
 ## References
 
@@ -178,7 +175,7 @@ def weightedRingOfDefinition (P : PairOfDefinition A) (hT : IsWeightFamily T) :
   carrier := weightedNhd T hT P.ringOfDefinition.toAddSubgroup
   zero_mem' := (weightedNhd T hT P.ringOfDefinition.toAddSubgroup).zero_mem
   one_mem' := by
-    have h := weightedC_mem_weightedNhd hT (U := P.ringOfDefinition.toAddSubgroup)
+    have h := (weightedC_mem_weightedNhd hT (U := P.ringOfDefinition.toAddSubgroup)).mpr
       P.ringOfDefinition.one_mem
     rwa [map_one] at h
   add_mem' hf hg := (weightedNhd T hT P.ringOfDefinition.toAddSubgroup).add_mem hf hg
@@ -197,7 +194,7 @@ theorem mem_weightedRingOfDefinition (P : PairOfDefinition A) (hT : IsWeightFami
 noncomputable def weightedRingOfDefinitionC (P : PairOfDefinition A) (hT : IsWeightFamily T) :
     P.ringOfDefinition →+* P.weightedRingOfDefinition hT :=
   ((weightedC T hT).comp P.ringOfDefinition.subtype).codRestrict _ fun a ↦
-    weightedC_mem_weightedNhd hT a.2
+    (weightedC_mem_weightedNhd hT).mpr a.2
 
 @[simp]
 theorem coe_weightedRingOfDefinitionC (P : PairOfDefinition A) (hT : IsWeightFamily T)
@@ -233,7 +230,7 @@ theorem mem_weightedIdeal (P : PairOfDefinition A) (hT : IsWeightFamily T) (n : 
 theorem weightedRingOfDefinitionC_mem_weightedIdeal (P : PairOfDefinition A)
     (hT : IsWeightFamily T) {n : ℕ} {a : P.ringOfDefinition} (ha : (a : A) ∈ P.idealImage n) :
     P.weightedRingOfDefinitionC hT a ∈ P.weightedIdeal hT n :=
-  weightedC_mem_weightedNhd hT ha
+  (weightedC_mem_weightedNhd hT).mpr ha
 
 /-- At `n = 0` the bound is the `A₀` bound, so `I⁰⟨X⟩_T` is all of `A₀⟨X⟩_T`. -/
 @[simp]
@@ -486,7 +483,7 @@ instance isTateRing_weightedRestrictedSubring [IsTopologicalRing A] [IsTateRing 
     obtain ⟨a, ha⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
     exact ⟨weightedC T hT a, ha.map (continuous_weightedC hT)⟩
 
--- The completed algebra `A⟨X₁,…,Xₖ⟩` of the roadmap — the separated completion of the
+-- The completed algebra `A⟨X₁,…,Xₖ⟩` — the separated completion of the
 -- trivial-weight `A⟨X⟩_T` — needs no result of its own: the instances above and
 -- `TauCeti.Huber.IsHuberRing.completion` / `TauCeti.Huber.IsTateRing.completion` already give it
 -- by synthesis, which these two `example`s record.

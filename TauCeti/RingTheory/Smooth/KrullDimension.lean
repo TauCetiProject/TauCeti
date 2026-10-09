@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.Unramified.LocalStructure
 public import TauCeti.RingTheory.KrullDimension.Fiber
 public import TauCeti.RingTheory.KrullDimension.FiniteType
-public import TauCeti.RingTheory.KrullDimension.Equidimensional
 public import TauCeti.RingTheory.Ideal.MinimalPrime.Localization
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 public import TauCeti.RingTheory.Smooth.Regular

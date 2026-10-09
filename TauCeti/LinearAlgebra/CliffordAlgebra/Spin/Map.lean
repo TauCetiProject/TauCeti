@@ -301,7 +301,7 @@ quadratic forms. -/
 theorem spinToOrthogonal_spinGroupEquiv [Invertible (2 : R)]
     (e : Q₁.IsometryEquiv Q₂) (x : spinGroup Q₁) :
     spinToOrthogonal Q₂ (e.spinGroupEquiv x) =
-      orthogonalGroupCongr e (spinToOrthogonal Q₁ x) := by
+      e.orthogonalGroupCongr (spinToOrthogonal Q₁ x) := by
   rw [← specialOrthogonalToOrthogonal_spinToSpecialOrthogonal,
     ← e.specialOrthogonalGroupCongr_spinToSpecialOrthogonal,
     e.specialOrthogonalToOrthogonal_specialOrthogonalGroupCongr,

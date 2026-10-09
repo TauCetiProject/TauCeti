@@ -469,6 +469,14 @@ theorem coe_algebraMap_constants (c : k) :
 evaluation map `f ↦ f(P)` is `IsLocalRing.residue P.integers`. -/
 noncomputable abbrev ResidueField : Type v := IsLocalRing.ResidueField P.integers
 
+/-- The canonical map from an algebra acting compatibly on the valuation ring to the residue
+field is reduction after the map to the valuation ring. -/
+theorem algebraMap_residueField {R : Type*} [CommSemiring R] [Algebra R P.integers]
+    [Algebra R P.ResidueField] [IsScalarTower R P.integers P.ResidueField] (r : R) :
+    algebraMap R P.ResidueField r =
+      IsLocalRing.residue P.integers (algebraMap R P.integers r) := by
+  rw [IsScalarTower.algebraMap_apply R P.integers _, IsLocalRing.ResidueField.algebraMap_eq]
+
 /-- Evaluation at a place vanishes exactly on elements of positive valuation. -/
 theorem residue_eq_zero_iff_valuation_lt_one {f : P.integers} :
     IsLocalRing.residue P.integers f = 0 ↔ P.valuation (f : F) < 1 := by

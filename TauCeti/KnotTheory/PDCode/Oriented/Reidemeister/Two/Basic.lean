@@ -74,7 +74,7 @@ def insertCircleClasp (D : OrientedPDCode n) (p : Fin (4 * n)) (o b : Bool) :
           PDCode.insertCircleClasp_crossing_castSucc_castSucc]
         simp
   crossinglessComponents := D.crossinglessComponents
-  crossinglessComponents_card := by simp
+  card_crossinglessComponents := by simp
 
 variable (D : OrientedPDCode n) (p : Fin (4 * n)) (o b : Bool)
 

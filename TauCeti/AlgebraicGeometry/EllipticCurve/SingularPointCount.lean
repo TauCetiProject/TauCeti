@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Singular
 public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
 public import TauCeti.AlgebraicGeometry.EllipticCurve.NodePolynomial
 import Mathlib.SetTheory.Cardinal.Finite
@@ -154,13 +153,6 @@ slopes of the tangent lines there. -/
 private noncomputable abbrev tangentQuadratic : F[X] :=
   C 1 * X ^ 2 + C W.a₁ * X + C (-W.a₂)
 
-/-- At a model singular at the origin the equation reads `y² + a₁ x y = x³ + a₂ x²`. -/
-private theorem equation_iff_of_isSingular_zero (h : W.toAffine.IsSingular 0 0) (x y : F) :
-    W.toAffine.Equation x y ↔ y ^ 2 + W.a₁ * x * y = x ^ 3 + W.a₂ * x ^ 2 := by
-  obtain ⟨h₆, h₄, h₃⟩ := (WeierstrassCurve.Affine.isSingular_zero _).1 h
-  rw [WeierstrassCurve.Affine.equation_iff, h₆, h₄, h₃]
-  ring_nf
-
 /-- **The solutions at a model singular at the origin are parametrised by the tangent slope.**
 Away from the origin a solution `(x, y)` has `x ≠ 0`, and its slope `t = y / x` satisfies
 `x = t² + a₁ t - a₂`; conversely every `t` off the roots of the tangent quadratic gives the solution
@@ -170,7 +162,7 @@ private theorem card_equation_add_card_rootSet_of_isSingular_zero [Finite F]
     Nat.card {p : F × F // W.toAffine.Equation p.1 p.2} +
       Nat.card ((tangentQuadratic W).rootSet F) = Nat.card F + 1 := by
   classical
-  have hE := equation_iff_of_isSingular_zero W h
+  have hE := WeierstrassCurve.Affine.equation_iff_of_isSingular_zero h
   set S := {p : F × F // W.toAffine.Equation p.1 p.2}
   -- the only solution with `x = 0` is the origin
   have hx : ∀ p : S, p.1.1 = 0 → p.1 = 0 := by
@@ -206,19 +198,6 @@ private theorem card_equation_add_card_rootSet_of_isSingular_zero [Finite F]
     Nat.card_sum]
   omega
 
-/-- The invariants of a model singular at the origin: the tangent quadratic has discriminant `b₂`,
-`c₄ = b₂²`, and the node polynomial is `c₄` times the tangent quadratic. -/
-private theorem invariants_of_isSingular_zero (h : W.toAffine.IsSingular 0 0) :
-    discrim 1 W.a₁ (-W.a₂) = W.b₂ ∧ W.c₄ = W.b₂ ^ 2 ∧
-      W.nodePolynomial = C W.c₄ * tangentQuadratic W := by
-  obtain ⟨h₆, h₄, h₃⟩ := (WeierstrassCurve.Affine.isSingular_zero _).1 h
-  have hb₄ : W.b₄ = 0 := by rw [WeierstrassCurve.b₄, h₄, h₃]; ring
-  have hb₆ : W.b₆ = 0 := by rw [WeierstrassCurve.b₆, h₆, h₃]; ring
-  refine ⟨by rw [discrim, WeierstrassCurve.b₂]; ring, by rw [WeierstrassCurve.c₄, hb₄]; ring, ?_⟩
-  rw [WeierstrassCurve.nodePolynomial_def, hb₄, hb₆, tangentQuadratic]
-  simp only [C_mul, C_neg, C_1, mul_zero, sub_zero, zero_add]
-  ring
-
 /-- **Moving the singular point to the origin.** Over a finite field a model with `Δ = 0` has a
 rational singular point, and translating it to the origin changes neither the trace, nor `c₄`, nor
 whether the node polynomial splits. -/
@@ -247,10 +226,10 @@ included. -/
 theorem _root_.WeierstrassCurve.frobeniusTrace_eq_zero_of_c₄_eq_zero [Finite F] (hΔ : W.Δ = 0)
     (hc₄ : W.c₄ = 0) : W.frobeniusTrace = 0 := by
   obtain ⟨V, h, htr, hc, -⟩ := exists_isSingular_zero_frobeniusTrace_eq W hΔ
-  obtain ⟨hd, hb, -⟩ := invariants_of_isSingular_zero V h
+  have hb := WeierstrassCurve.Affine.c₄_eq_b₂_sq_of_isSingular_zero h
   have hd0 : discrim 1 V.a₁ (-V.a₂) = 0 := by
-    rw [hd]
-    exact (pow_eq_zero_iff two_ne_zero).1 (hb ▸ hc.trans hc₄)
+    simpa [discrim, WeierstrassCurve.b₂] using
+      (pow_eq_zero_iff two_ne_zero).1 (hb ▸ hc.trans hc₄)
   rw [htr, Nat.card_eq_fintype_card, card_rootSet_quadratic_of_discrim_eq_zero one_ne_zero
     (splits_quadratic_of_discrim_eq_zero one_ne_zero hd0) hd0]
   norm_num
@@ -261,12 +240,14 @@ nonsingular points, the point at infinity included. -/
 theorem _root_.WeierstrassCurve.frobeniusTrace_eq_one_of_splits [Finite F] (hΔ : W.Δ = 0)
     (hc₄ : W.c₄ ≠ 0) (hs : W.nodePolynomial.Splits) : W.frobeniusTrace = 1 := by
   obtain ⟨V, h, htr, hc, hsV⟩ := exists_isSingular_zero_frobeniusTrace_eq W hΔ
-  obtain ⟨hd, hb, hn⟩ := invariants_of_isSingular_zero V h
-  rw [← hsV, hn, splits_mul_iff_right (C_ne_zero.2 (hc ▸ hc₄)) (Splits.C _)] at hs
+  rw [← hsV, V.nodePolynomial_eq_of_isSingular_zero h,
+    splits_mul_iff_right (C_ne_zero.2 (hc ▸ hc₄)) (Splits.C _)] at hs
   have hsep : (tangentQuadratic V).Separable := by
-    rw [separable_quadratic_iff_discrim_ne_zero one_ne_zero, hd]
-    rintro h0
-    exact hc₄ (by rw [← hc, hb, h0]; ring)
+    rw [separable_quadratic_iff_discrim_ne_zero one_ne_zero]
+    have hb₂ : V.b₂ ≠ 0 := fun h0 ↦ hc₄ (by
+      rw [← hc, WeierstrassCurve.Affine.c₄_eq_b₂_sq_of_isSingular_zero h, h0]
+      simp)
+    simpa [discrim, WeierstrassCurve.b₂] using hb₂
   rw [htr, Nat.card_eq_fintype_card,
     card_rootSet_eq_natDegree hsep (by rwa [Algebra.algebraMap_self, map_id]),
     natDegree_quadratic one_ne_zero]
@@ -279,8 +260,7 @@ theorem _root_.WeierstrassCurve.frobeniusTrace_eq_neg_one_of_not_splits [Finite 
     (hΔ : W.Δ = 0) (hs : ¬ W.nodePolynomial.Splits) :
     W.frobeniusTrace = -1 := by
   obtain ⟨V, h, htr, -, hsV⟩ := exists_isSingular_zero_frobeniusTrace_eq W hΔ
-  obtain ⟨-, -, hn⟩ := invariants_of_isSingular_zero V h
-  rw [← hsV, hn] at hs
+  rw [← hsV, V.nodePolynomial_eq_of_isSingular_zero h] at hs
   have ht : ¬ (tangentQuadratic V).Splits := fun ht ↦ hs ((Splits.C _).mul ht)
   rw [splits_quadratic_iff_exists_root one_ne_zero] at ht
   have : IsEmpty ((tangentQuadratic V).rootSet F) :=

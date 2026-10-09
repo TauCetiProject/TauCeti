@@ -85,6 +85,15 @@ theorem coeff_ofCoeffList (l : List R) (i : ℕ) :
     | zero => simp
     | succ i => simpa using ih i
 
+/-- Evaluating `TauCeti.Polynomial.ofCoeffList l` is Horner's rule run directly on the list. -/
+theorem eval₂_ofCoeffList {S : Type*} [Semiring S] (f : R →+* S) (r : S) (l : List R) :
+    (ofCoeffList l).eval₂ f r = l.foldl (fun y a => y * r + f a) 0 := by
+  induction l using List.reverseRecOn with
+  | nil => simp
+  | append_singleton l a ih =>
+    rw [ofCoeffList_concat, eval₂_add, eval₂_mul_X, eval₂_C, List.foldl_append, ih]
+    rfl
+
 /-- A list of `n` coefficients defines a polynomial of degree less than `n`. -/
 theorem degree_ofCoeffList_lt (l : List R) : (ofCoeffList l).degree < l.length := by
   rw [degree_lt_iff_coeff_zero]

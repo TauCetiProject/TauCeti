@@ -627,7 +627,7 @@ private theorem gradedPow_mem_map_basisModificationDelta_pi_sup_span_gradedPowIt
     have h := gradedCast_gradedBracket_swap (gradedMkZero p (freeProP p X) (of b))
       (gradedMkZero p (freeProP p X) (of a))
     rw [gradedCast_rfl] at h
-    rw [h, gradedPow_neg_of_one_le le_rfl]
+    rw [h, gradedPow_neg]
   -- `π [ξ_a, ξ_b] = [π ξ_a, ξ_b] + (p choose 2) • [[ξ_a, ξ_b], ξ_a]` lies in `H` for `a ≠ i₁, i₂`.
   have hgen (a : X) (ha : a ≠ i₁) (ha₂ : a ≠ i₂) (b : X) :
       gradedPow p (freeProP p X) 1 (gradedBracket p (freeProP p X) 0 0

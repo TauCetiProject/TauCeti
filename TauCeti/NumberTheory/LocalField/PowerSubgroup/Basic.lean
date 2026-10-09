@@ -387,6 +387,12 @@ theorem finiteIndex_range_powMonoidHom {n : ℕ} (hn : (n : K) ≠ 0) :
   rw [Subgroup.index_eq_card, card_powerClasses hn]
   exact mul_ne_zero (mul_ne_zero hn0 Nat.card_pos.ne') (pow_ne_zero _ Nat.card_pos.ne')
 
+/-- In characteristic zero, the subgroup `(Kˣ)ⁿ` of `n`-th powers has finite index in `Kˣ` for
+every nonzero `n`. -/
+instance instFiniteIndexRangePowMonoidHom [CharZero K] {n : ℕ} [NeZero n] :
+    (powMonoidHom n : Kˣ →* Kˣ).range.FiniteIndex :=
+  finiteIndex_range_powMonoidHom (Nat.cast_ne_zero.2 (NeZero.ne n))
+
 /-- **The number of `n`-th power classes away from the residue characteristic.** For `n`
 invertible in `𝒪[K]`, the quotient `Kˣ ⧸ (Kˣ)ⁿ` has `n · #μ_n(K)` elements, where `μ_n(K)` is the
 group of `n`-th roots of unity in `K`. This holds in either characteristic. -/

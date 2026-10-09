@@ -32,6 +32,8 @@ index to one of finite index, and in a tower `K ≤ H` the index of `H` divides 
 
 * `MonoidHom.transfer_eq_prod_of_bijective`: the transfer computed from an arbitrary indexed
   family of coset representatives.
+* `MonoidHom.transfer_eq_prod_mul_out`: for a normal subgroup, computation by right
+  multiplication of quotient representatives, matching the factor-set convention.
 * `MonoidHom.transfer_comp`: the transfer is natural in the commutative target.
 * `MonoidHom.transfer_apply_of_mulEquiv`: the transfer is invariant under an isomorphism of
   ambient groups carrying one subgroup onto the other.
@@ -79,6 +81,31 @@ theorem transfer_eq_prod_of_bijective {ι : Type*} [Fintype ι] (f : ι → G)
   refine (Fintype.prod_bijective _ ((MulAction.bijective g).comp σ.bijective) _ _ fun i ↦ ?_).symm
   simp [smul_apply_eq_smul_apply_inv_smul, IsComplement.leftQuotientEquiv_apply hσ,
     σ.symm_apply_eq.mpr (hgσ i).symm]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+/-- For a normal finite-index subgroup, the transfer may be computed by multiplying on the
+right of quotient representatives. This convention makes the transfer of a representative the
+product of the corresponding factor-set values. -/
+theorem transfer_eq_prod_mul_out [H.Normal] [H.FiniteIndex] (g : G) :
+    transfer ϕ g = ∏ q : G ⧸ H,
+      ϕ ⟨q.out * g * (q * (g : G ⧸ H)).out⁻¹, by
+        apply (QuotientGroup.eq_one_iff _).mp
+        simp [QuotientGroup.mk_mul, QuotientGroup.mk_inv]⟩ := by
+  have hf : Function.Bijective fun q : G ⧸ H => (q.out⁻¹ : G ⧸ H) := by
+    simpa using (Equiv.inv (G ⧸ H)).bijective
+  have hπ : ∀ q : G ⧸ H,
+      (((q * (g : G ⧸ H)⁻¹).out⁻¹ : G) : G ⧸ H) = (g * q.out⁻¹ : G) := by
+    intro q
+    simp [QuotientGroup.mk_mul, QuotientGroup.mk_inv]
+  -- Use the inverse representatives as a left transversal, then reindex by right multiplication.
+  rw [transfer_eq_prod_of_bijective ϕ (fun q : G ⧸ H => q.out⁻¹) hf g
+    (fun q => q * (g : G ⧸ H)⁻¹) hπ]
+  refine (Fintype.prod_equiv (Equiv.mulRight (g : G ⧸ H)) _ _ ?_).symm
+  intro q
+  congr 1
+  apply Subtype.ext
+  simp [mul_assoc]
 
 private theorem transfer_eq_prod_out [H.FiniteIndex] [Fintype (G ⧸ H)] (g : G) : transfer ϕ g =
     ∏ q : G ⧸ H, ϕ ⟨(g • q).out⁻¹ * (g * q.out), QuotientGroup.eq.mp (mk_out_smul g q)⟩ :=

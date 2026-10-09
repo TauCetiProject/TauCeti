@@ -20,6 +20,8 @@ characteristic, this also gives uniqueness of the reduced Artin–Schreier pole 
 The pole and maximality results need no characteristic hypothesis. In characteristic `p`,
 with `n = p`, they give the local nontriviality criterion for an Artin–Schreier equation:
 a pole of order prime to `p` rules out a root in the base field.
+`TauCeti.ne_pow_sub_self_of_exists_reduced_artinSchreier_pole` applies this criterion
+when a translated representative has such a pole.
 
 ## References
 
@@ -82,6 +84,21 @@ end Valuation
 namespace TauCeti
 
 variable {F : Type*} [Field F] {v : _root_.Valuation F ℤᵐ⁰}
+
+/-- A supplied reduced Artin–Schreier pole makes the class of `u` nontrivial.
+Only exponential characteristic `p > 1` is needed; no perfection or function-field
+hypothesis is needed. -/
+theorem ne_pow_sub_self_of_exists_reduced_artinSchreier_pole
+    (p : ℕ) (hp : 1 < p) [ExpChar F p] {u : F}
+    (hpole : ∃ w₀ : F, v.ord (u - (w₀ ^ p - w₀)) < 0 ∧
+      ¬ (p : ℤ) ∣ v.ord (u - (w₀ ^ p - w₀))) :
+    ∀ w : F, w ^ p - w ≠ u := by
+  obtain ⟨w₀, hneg, hdiv⟩ := hpole
+  intro w hw
+  apply v.ne_pow_sub_self_of_ord_neg_of_not_dvd
+    hp hneg hdiv (w - w₀)
+  rw [← hw, sub_pow_expChar]
+  ring
 
 /-- A negative order not divisible by `n > 1` is maximal among all representatives
 `u - (w ^ n - w)`. No perfection or characteristic hypothesis is needed for this

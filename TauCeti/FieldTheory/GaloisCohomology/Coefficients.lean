@@ -14,6 +14,8 @@ public import TauCeti.FieldTheory.Galois.Restriction
 public import TauCeti.FieldTheory.KrullTopology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
 public import TauCeti.RingTheory.RootsOfUnity.Action
+-- Non-public: the roots of unity of a separably closed field are used only inside a proof.
+import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 -- Non-public: lifting a unit of `Kˢ` lying in `K` to a unit of `K` is used only inside a proof.
 import TauCeti.Algebra.GroupWithZero.Units.Basic
 
@@ -31,9 +33,9 @@ UnitsCoeff K = Additive (Kˢ)ˣ,      KummerCoeff K n = Additive μₙ,
 
 with `μₙ = rootsOfUnity n Kˢ`. Both are **discrete** `G_K`-modules: their point stabilizers are
 open because every element of `Kˢ` is separable over `K`, hence lies in a finite subextension
-(`TauCeti.stabilizer_isOpen_units`). The action on `μₙ` is in general nontrivial, and the Kummer
-isomorphism is false for the trivial action, so it is the module and not the abstract group that
-is named here.
+(`Units.stabilizer_isOpen_of_isIntegral`). The action on `μₙ` is in general nontrivial, and the
+Kummer isomorphism is false for the trivial action, so it is the module and not the abstract group
+that is named here.
 
 The two maps between them assemble the **Kummer sequence**
 
@@ -58,6 +60,8 @@ are strictly larger than `Kˣ`.
 
 * `TauCeti.UnitsCoeff`, `TauCeti.KummerCoeff`: the two coefficient modules, with their discrete
   topologies.
+* `TauCeti.kummerCoeffAddEquivZMod`: an additive isomorphism `μₙ ≃ ℤ/nℤ`, for `n` invertible in
+  `K`.
 * `TauCeti.kummerCoeffIncl`, `TauCeti.unitsCoeffPow`: the inclusion `μₙ ↪ (Kˢ)ˣ` and the `n`-th
   power map, the two maps of the Kummer sequence.
 * `TauCeti.kummerShortExact`: the Kummer sequence as a short exact sequence of discrete
@@ -74,6 +78,7 @@ are strictly larger than `Kˣ`.
 
 * `TauCeti.unitsCoeff_continuousSMul`, `TauCeti.kummerCoeff_continuousSMul`: the coefficients are
   discrete modules, that is, the action is continuous.
+* `TauCeti.natCard_kummerCoeff`: `μₙ` has `n` elements, for `n` invertible in `K`.
 * `TauCeti.smul_kummerCoeff_eq_self`: the action on `μₙ` is trivial when `K` contains a primitive
   `n`th root of unity.
 * `TauCeti.mem_H0_unitsCoeff_iff`: a unit of `Kˢ` fixed by `G_K` comes from `Kˣ`.
@@ -110,7 +115,8 @@ instance : DiscreteTopology (UnitsCoeff K) := ⟨rfl⟩
 /-- **`(Kˢ)ˣ` is a discrete `G_K`-module**: every unit of `Kˢ` is separable over `K`, so it lies
 in a finite subextension and its stabilizer is open. -/
 instance unitsCoeff_continuousSMul : ContinuousSMul (AbsoluteGaloisGroup K) (UnitsCoeff K) :=
-  continuousSMul_iff_stabilizer_isOpen.2 fun x => stabilizer_isOpen_units (K := K) x.toMul
+  continuousSMul_iff_stabilizer_isOpen.2 fun x =>
+    x.toMul.stabilizer_isOpen_of_isIntegral (Algebra.IsIntegral.isIntegral _)
 
 /-! ### The roots of unity -/
 
@@ -131,7 +137,8 @@ the underlying unit of `Kˢ`, which is open. -/
 instance kummerCoeff_continuousSMul :
     ContinuousSMul (AbsoluteGaloisGroup K) (KummerCoeff K n) :=
   continuousSMul_iff_stabilizer_isOpen.2 fun x => by
-    convert stabilizer_isOpen_units (K := K) (x.toMul : (SeparableClosure K)ˣ) using 2
+    convert Units.stabilizer_isOpen_of_isIntegral (x.toMul : (SeparableClosure K)ˣ)
+      (Algebra.IsIntegral.isIntegral (R := K) _) using 2
     ext σ
     refine ⟨fun h => ?_, fun h => Additive.toMul.injective (Subtype.ext (by simpa using h))⟩
     simpa using
@@ -152,6 +159,23 @@ theorem smul_kummerCoeff_eq_self [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n
   simp only [Additive.toMul_smul, rootsOfUnity.coe_smul, AlgEquiv.smul_units_def, Units.coe_map,
     MonoidHom.coe_ofClass]
   rw [hx, map_pow, AlgEquiv.commutes]
+
+variable {K n} in
+/-- **`μₙ` has `n` elements** for `n` invertible in `K`. -/
+theorem natCard_kummerCoeff (hn : IsUnit (n : K)) : Nat.card (KummerCoeff K n) = n := by
+  have : NeZero (n : K) := ⟨hn.ne_zero⟩
+  have : NeZero n := NeZero.of_neZero_natCast K
+  exact (Nat.card_congr Additive.toMul).trans
+    (HasEnoughRootsOfUnity.natCard_rootsOfUnity (SeparableClosure K) n)
+
+variable {K n} in
+/-- **`μₙ` is cyclic of order `n`** for `n` invertible in `K`: the `n`th roots of unity of `Kˢ`
+are additively isomorphic to `ℤ/nℤ`. The isomorphism is not canonical; it amounts to a choice of
+primitive `n`th root of unity in `Kˢ`. -/
+def kummerCoeffAddEquivZMod (hn : IsUnit (n : K)) : KummerCoeff K n ≃+ ZMod n :=
+  have : NeZero (n : K) := ⟨hn.ne_zero⟩
+  have : NeZero n := NeZero.of_neZero_natCast K
+  addEquivOfAddCyclicCardEq <| by rw [Nat.card_zmod, natCard_kummerCoeff hn]
 
 /-! ### The two maps of the Kummer sequence -/
 

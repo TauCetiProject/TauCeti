@@ -88,56 +88,56 @@ def completionEquivAdicCompletionOfValuationEq (P : Place k F)
   continuous_invFun := continuous_completionAdicRingEquiv_symm F p _ hP
 
 /-- The completion of the adic place is the affine-model adic completion, over the constants. -/
-def completionEquivAdicCompletion : (adic k F p).Completion ≃A[k] p.adicCompletion F :=
-  completionEquivAdicCompletionOfValuationEq k F p (adic k F p) (valuation_adic k F p)
+def completionEquivAdicCompletion : (ofPrime k F p).Completion ≃A[k] p.adicCompletion F :=
+  completionEquivAdicCompletionOfValuationEq k F p (ofPrime k F p) (valuation_ofPrime k F p)
 
-private theorem completionEquivAdicCompletion_apply (x : (adic k F p).Completion) :
+private theorem completionEquivAdicCompletion_apply (x : (ofPrime k F p).Completion) :
     completionEquivAdicCompletion k F p x =
-      completionAdicRingEquiv F p _ (valuation_adic k F p) x := rfl
+      completionAdicRingEquiv F p _ (valuation_ofPrime k F p) x := rfl
 
 /-- The comparison carries the intrinsic field embedding to the adic field embedding. -/
 @[simp]
 theorem completionEquivAdicCompletion_completionEmbedding (x : F) :
-    completionEquivAdicCompletion k F p ((adic k F p).completionEmbedding x) =
+    completionEquivAdicCompletion k F p ((ofPrime k F p).completionEmbedding x) =
       algebraMap F (p.adicCompletion F) x := by
   rw [completionEquivAdicCompletion_apply, completionEmbedding_apply,
     completionAdicRingEquiv_embedding]
 
 /-- The comparison preserves the normalized valuation on completed functions. -/
 @[simp]
-theorem valuation_completionEquivAdicCompletion (x : (adic k F p).Completion) :
+theorem valuation_completionEquivAdicCompletion (x : (ofPrime k F p).Completion) :
     Valued.v (completionEquivAdicCompletion k F p x) =
-      (adic k F p).completionPlace.valuation x := by
+      (ofPrime k F p).completionPlace.valuation x := by
   rw [completionEquivAdicCompletion_apply, completionPlace_valuation]
-  exact valuation_completionAdicRingEquiv F p _ (valuation_adic k F p) x
+  exact valuation_completionAdicRingEquiv F p _ (valuation_ofPrime k F p) x
 
 /-- The comparison preserves uniformizers for the normalized completed valuations. -/
 @[simp]
-theorem isUniformizer_completionEquivAdicCompletion_iff (x : (adic k F p).Completion) :
+theorem isUniformizer_completionEquivAdicCompletion_iff (x : (ofPrime k F p).Completion) :
     (Valued.v : Valuation (p.adicCompletion F) ℤᵐ⁰).IsUniformizer
         (completionEquivAdicCompletion k F p x) ↔
-      (adic k F p).completionPlace.valuation.IsUniformizer x := by
+      (ofPrime k F p).completionPlace.valuation.IsUniformizer x := by
   rw [TauCeti.isUniformizer_adicCompletion_iff, Valuation.IsUniformizer.iff,
     Valuation.IsRankOneDiscrete.generator_eq_exp_neg_one_of_surjective
-      (adic k F p).completionPlace.valuation_surjective,
+      (ofPrime k F p).completionPlace.valuation_surjective,
     valuation_completionEquivAdicCompletion]
   rfl
 
 /-- The field comparison identifies the two rings of integers. -/
 @[simp]
-theorem completionEquivAdicCompletion_mem_integers_iff (x : (adic k F p).Completion) :
+theorem completionEquivAdicCompletion_mem_integers_iff (x : (ofPrime k F p).Completion) :
     completionEquivAdicCompletion k F p x ∈ p.adicCompletionIntegers F ↔
-      x ∈ (adic k F p).completionPlace.integers := by
+      x ∈ (ofPrime k F p).completionPlace.integers := by
   rw [HeightOneSpectrum.mem_adicCompletionIntegers, valuation_completionEquivAdicCompletion,
     mem_integers_iff]
 
 /-- The continuous restriction of the completion comparison to the two valuation rings,
 over the constants. -/
 def completionIntegersEquivAdicCompletionIntegers :
-    (adic k F p).completionPlace.integers ≃A[k] p.adicCompletionIntegers F where
+    (ofPrime k F p).completionPlace.integers ≃A[k] p.adicCompletionIntegers F where
   toAlgEquiv := AlgEquiv.ofRingEquiv
     (f := (completionEquivAdicCompletion k F p).toAlgEquiv.toRingEquiv.restrict
-      (adic k F p).completionPlace.integers (p.adicCompletionIntegers F)
+      (ofPrime k F p).completionPlace.integers (p.adicCompletionIntegers F)
       fun x ↦ (completionEquivAdicCompletion_mem_integers_iff k F p x).symm) fun c ↦ by
     apply Subtype.ext
     simp only [RingEquiv.restrict_apply_coe, AlgEquiv.coe_toRingEquiv,
@@ -155,7 +155,7 @@ def completionIntegersEquivAdicCompletionIntegers :
 /-- The valuation-ring comparison is the restriction of the field comparison. -/
 @[simp]
 theorem completionIntegersEquivAdicCompletionIntegers_apply
-    (x : (adic k F p).completionPlace.integers) :
+    (x : (ofPrime k F p).completionPlace.integers) :
     (completionIntegersEquivAdicCompletionIntegers k F p x : p.adicCompletion F) =
       completionEquivAdicCompletion k F p x := (rfl)
 
@@ -164,7 +164,7 @@ theorem completionIntegersEquivAdicCompletionIntegers_apply
 theorem completionIntegersEquivAdicCompletionIntegers_completionIntegersEmbedding_algebraMap
     (r : R) :
     completionIntegersEquivAdicCompletionIntegers k F p
-        ((adic k F p).completionIntegersEmbedding (algebraMap R (adic k F p).integers r)) =
+        ((ofPrime k F p).completionIntegersEmbedding (algebraMap R (ofPrime k F p).integers r)) =
       algebraMap R (p.adicCompletionIntegers F) r := by
   apply Subtype.ext
   rw [completionIntegersEquivAdicCompletionIntegers_apply, completionIntegersEmbedding_apply,
@@ -174,35 +174,36 @@ theorem completionIntegersEquivAdicCompletionIntegers_completionIntegersEmbeddin
 
 /-- The completed residue fields agree under the valuation-ring comparison. -/
 def completionResidueFieldEquivAdicCompletionIntegers :
-    (adic k F p).completionPlace.ResidueField ≃ₐ[k]
+    (ofPrime k F p).completionPlace.ResidueField ≃ₐ[k]
       IsLocalRing.ResidueField (p.adicCompletionIntegers F) :=
   IsLocalRing.ResidueField.mapAlgEquiv
     (completionIntegersEquivAdicCompletionIntegers k F p).toAlgEquiv
 
 /-- Both residue comparison routes agree on each affine-model representative. -/
-theorem completionResidueFieldEquivAdicCompletionIntegers_apply_adicResidueHom
+theorem completionResidueFieldEquivAdicCompletionIntegers_apply_algebraMap
     (r : R) :
     completionResidueFieldEquivAdicCompletionIntegers k F p
-        ((adic k F p).residueFieldEquivCompletion (adicResidueHom k F p r)) =
+        ((ofPrime k F p).residueFieldEquivCompletion
+          (algebraMap R (ofPrime k F p).ResidueField r)) =
       residueFieldAlgEquivAdicCompletionIntegers (K := F) k (v := p)
         (Ideal.Quotient.mk p.asIdeal r) := by
-  rw [adicResidueHom_apply, residueFieldEquivCompletion_apply_residue]
+  rw [algebraMap_residueField, residueFieldEquivCompletion_apply_residue]
   simp only [completionResidueFieldEquivAdicCompletionIntegers,
     IsLocalRing.ResidueField.mapAlgEquiv_residue, ContinuousAlgEquiv.coe_toAlgEquiv,
     completionIntegersEquivAdicCompletionIntegers_completionIntegersEmbedding_algebraMap]
   rw [residueFieldAlgEquivAdicCompletionIntegers_apply]
   exact (p.residueFieldEquivAdicCompletionIntegers_apply_mk (K := F) r).symm
 
-/-- The affine-model residue equivalence equals the composite of `adicResidueFieldEquiv`,
+/-- The affine-model residue equivalence is the composite of `quotientAlgEquivResidueFieldOfPrime`,
 `residueFieldEquivCompletion`, and `completionResidueFieldEquivAdicCompletionIntegers`. -/
 theorem residueFieldAlgEquivAdicCompletionIntegers_eq_trans :
     residueFieldAlgEquivAdicCompletionIntegers (K := F) k (v := p) =
-      (adicResidueFieldEquiv k F p).trans
-        ((adic k F p).residueFieldEquivCompletion.trans
+      (quotientAlgEquivResidueFieldOfPrime k F p).trans
+        ((ofPrime k F p).residueFieldEquivCompletion.trans
           (completionResidueFieldEquivAdicCompletionIntegers k F p)) := by
   ext x
   obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x
-  simpa only [AlgEquiv.trans_apply, adicResidueFieldEquiv_mk] using
-    (completionResidueFieldEquivAdicCompletionIntegers_apply_adicResidueHom k F p r).symm
+  simpa only [AlgEquiv.trans_apply, quotientAlgEquivResidueFieldOfPrime_mk] using
+    (completionResidueFieldEquivAdicCompletionIntegers_apply_algebraMap k F p r).symm
 
 end TauCeti.Place

@@ -8,8 +8,9 @@ module
 public import TauCeti.Data.Nat.Prime.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.BaseChange
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Closed
-public import TauCeti.Topology.Algebra.QuadraticForm.OrthogonalGroup.Closed
+public import TauCeti.Topology.Algebra.QuadraticForm.OrthogonalGroup.SpecialOrthogonal
 public import Mathlib.NumberTheory.Padics.ProperSpace
+import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Projection
 
 /-!
 # Compatible compact-open subgroups for orthogonal and Spin groups
@@ -22,9 +23,15 @@ projection land in this intersection.
 
 This file packages the independent families, their compactness and openness, the almost-everywhere
 integrality of rational points, and the compatibility condition. It derives the special orthogonal
-family, its membership criterion, its openness, the restricted Spin projection, and
-almost-everywhere integrality for rational special orthogonal points. In particular, no separately
-chosen special orthogonal family can drift away from the orthogonal family.
+family, its membership criterion, its openness and compactness, the restricted Spin projection,
+and almost-everywhere integrality for rational special orthogonal points. In particular, no
+separately chosen special orthogonal family can drift away from the orthogonal family.
+
+New tuples are obtained from old ones by shrinking: intersecting the orthogonal reference
+subgroups with open subgroups `W p` that contain them at almost every prime, and the Spin ones
+with the preimages of the `W p`, gives a compatible tuple agreeing with the original at almost
+every prime. This is how tuples differing at finitely many primes, such as level structures at a
+single prime, arise.
 
 The topology on every group is the canonical one inherited from the ambient finite-dimensional
 algebra; the package stores no topology of its own.
@@ -37,6 +44,8 @@ algebra; the package stores no topology of its own.
   orthogonal family.
 * `TauCeti.QuadraticMap.OrthogonalCompactOpens.spinToSpecialOrthogonal`: the local Spin projection
   restricted to the reference subgroups.
+* `TauCeti.QuadraticMap.OrthogonalCompactOpens.infOpenSubgroup`: the shrinking of a tuple by a
+  family of open subgroups of the local orthogonal groups.
 
 ## References
 
@@ -127,6 +136,14 @@ theorem isOpen_specialOrthogonal (p : Nat.Primes) :
     (_root_.QuadraticMap.continuous_specialOrthogonalToOrthogonal (Q.baseChange ℚ_[p]))
 
 omit [FiniteDimensional ℚ V] in
+/-- The derived special orthogonal reference subgroup is compact, being the preimage of a compact
+subgroup under the closed embedding `SO(Q_p) → O(Q_p)`. -/
+theorem isCompact_specialOrthogonal (p : Nat.Primes) :
+    IsCompact (U.specialOrthogonal p : Set (specialOrthogonalGroup (Q.baseChange ℚ_[p]))) :=
+  (_root_.QuadraticMap.isClosedEmbedding_specialOrthogonalToOrthogonal
+    (Q.baseChange ℚ_[p])).isCompact_preimage (U.isCompact_orthogonal p)
+
+omit [FiniteDimensional ℚ V] in
 /-- The local Spin projection carries the Spin reference subgroup into the derived special
 orthogonal reference subgroup. -/
 theorem mapsTo_specialOrthogonal (p : Nat.Primes) :
@@ -159,17 +176,99 @@ theorem eventually_specialOrthogonal (g : specialOrthogonalGroup Q) :
       specialOrthogonalGroupBaseChange (A := ℚ_[p]) Q g ∈ U.specialOrthogonal p := by
   filter_upwards [U.eventually_orthogonal
     (_root_.QuadraticMap.specialOrthogonalToOrthogonal Q g)] with p hp
-  rw [mem_specialOrthogonal_iff]
-  have hmap :
-      _root_.QuadraticMap.specialOrthogonalToOrthogonal (Q.baseChange ℚ_[p])
-          (specialOrthogonalGroupBaseChange (A := ℚ_[p]) Q g) =
-        orthogonalGroupBaseChange (A := ℚ_[p]) Q
-          (_root_.QuadraticMap.specialOrthogonalToOrthogonal Q g) := by
-    apply Subtype.ext
-    rw [coe_specialOrthogonalToOrthogonal, coe_orthogonalGroupBaseChange,
-      coe_specialOrthogonalGroupBaseChange, coe_specialOrthogonalToOrthogonal]
-  rw [hmap]
+  rw [mem_specialOrthogonal_iff, specialOrthogonalToOrthogonal_specialOrthogonalGroupBaseChange]
   exact hp
+
+omit [FiniteDimensional ℚ V] in
+/-- A Spin reference point acts through an orthogonal reference point. -/
+theorem spinToOrthogonal_mem_orthogonal (p : Nat.Primes) {x : spinGroup (Q.baseChange ℚ_[p])}
+    (hx : x ∈ U.spin p) :
+    CliffordAlgebra.spinToOrthogonal (Q.baseChange ℚ_[p]) x ∈ U.orthogonal p := by
+  rw [← CliffordAlgebra.specialOrthogonalToOrthogonal_spinToSpecialOrthogonal]
+  exact U.spin_maps p hx
+
+omit [FiniteDimensional ℚ V] in
+/-- Shrinking the orthogonal reference subgroups shrinks the derived special orthogonal ones. -/
+theorem specialOrthogonal_mono {U U' : OrthogonalCompactOpens Q}
+    (h : ∀ p, U.orthogonal p ≤ U'.orthogonal p) (p : Nat.Primes) :
+    U.specialOrthogonal p ≤ U'.specialOrthogonal p :=
+  Subgroup.comap_mono (h p)
+
+omit [FiniteDimensional ℚ V] in
+/-- Orthogonal reference families agreeing at almost every prime have derived special orthogonal
+families agreeing at almost every prime. -/
+theorem eventually_specialOrthogonal_eq {U U' : OrthogonalCompactOpens Q}
+    (h : ∀ᶠ p in cofinite, U.orthogonal p = U'.orthogonal p) :
+    ∀ᶠ p in cofinite, U.specialOrthogonal p = U'.specialOrthogonal p :=
+  h.mono fun p hp ↦ by rw [specialOrthogonal, specialOrthogonal, hp]
+
+/-! ### Shrinking a compatible tuple at finitely many primes -/
+
+/-- Intersect the orthogonal reference subgroups of `U` with open subgroups `W p` of the local
+orthogonal groups, and the Spin reference subgroups with the preimages of the `W p`. When
+`U.orthogonal p ≤ W p` at almost every prime, as for a family `W` that is `⊤` away from finitely
+many primes, the result is again a compatible compact-open tuple. It agrees with `U` at almost
+every prime and is contained in `U` at every prime. -/
+def infOpenSubgroup (W : ∀ p : Nat.Primes, OpenSubgroup (orthogonalGroup (Q.baseChange ℚ_[p])))
+    (hW : ∀ᶠ p in cofinite, U.orthogonal p ≤ W p) : OrthogonalCompactOpens Q where
+  orthogonal p := U.orthogonal p ⊓ W p
+  spin p := U.spin p ⊓
+    (W p : Subgroup (orthogonalGroup (Q.baseChange ℚ_[p]))).comap
+      (CliffordAlgebra.spinToOrthogonal (Q.baseChange ℚ_[p]))
+  isOpen_orthogonal p := (U.isOpen_orthogonal p).inter (W p).isOpen
+  isCompact_orthogonal p := (U.isCompact_orthogonal p).inter_right (W p).isClosed
+  isOpen_spin p := (U.isOpen_spin p).inter
+    ((W p).isOpen.preimage (CliffordAlgebra.continuous_spinToOrthogonal _))
+  isCompact_spin p := (U.isCompact_spin p).inter_right
+    ((W p).isClosed.preimage (CliffordAlgebra.continuous_spinToOrthogonal _))
+  spin_maps p x hx := by
+    refine ⟨U.spin_maps p hx.1, ?_⟩
+    rw [SetLike.mem_coe, CliffordAlgebra.specialOrthogonalToOrthogonal_spinToSpecialOrthogonal]
+    exact hx.2
+  eventually_orthogonal g := by
+    filter_upwards [U.eventually_orthogonal g, hW] with p hp hpW
+    exact ⟨hp, hpW hp⟩
+  eventually_spin x := by
+    filter_upwards [U.eventually_spin x, hW] with p hp hpW
+    exact ⟨hp, hpW (U.spinToOrthogonal_mem_orthogonal p hp)⟩
+
+variable (W : ∀ p : Nat.Primes, OpenSubgroup (orthogonalGroup (Q.baseChange ℚ_[p])))
+  (hW : ∀ᶠ p in cofinite, U.orthogonal p ≤ W p)
+
+/-- The orthogonal reference subgroups of the shrunken tuple are the intersections with `W`. -/
+@[simp]
+theorem infOpenSubgroup_orthogonal (p : Nat.Primes) :
+    (U.infOpenSubgroup W hW).orthogonal p = U.orthogonal p ⊓ W p :=
+  (rfl)
+
+/-- The Spin reference subgroups of the shrunken tuple are cut out by the preimages of `W`. -/
+@[simp]
+theorem infOpenSubgroup_spin (p : Nat.Primes) :
+    (U.infOpenSubgroup W hW).spin p =
+      U.spin p ⊓ (W p : Subgroup (orthogonalGroup (Q.baseChange ℚ_[p]))).comap
+        (CliffordAlgebra.spinToOrthogonal (Q.baseChange ℚ_[p])) :=
+  (rfl)
+
+/-- The shrunken orthogonal reference subgroups are contained in those of `U`. -/
+theorem infOpenSubgroup_orthogonal_le (p : Nat.Primes) :
+    (U.infOpenSubgroup W hW).orthogonal p ≤ U.orthogonal p :=
+  inf_le_left
+
+/-- The shrunken Spin reference subgroups are contained in those of `U`. -/
+theorem infOpenSubgroup_spin_le (p : Nat.Primes) :
+    (U.infOpenSubgroup W hW).spin p ≤ U.spin p :=
+  inf_le_left
+
+/-- The shrunken tuple has the orthogonal reference subgroups of `U` at almost every prime. -/
+theorem eventually_infOpenSubgroup_orthogonal_eq :
+    ∀ᶠ p in cofinite, (U.infOpenSubgroup W hW).orthogonal p = U.orthogonal p :=
+  hW.mono fun _ hp ↦ inf_eq_left.mpr hp
+
+/-- The shrunken tuple has the Spin reference subgroups of `U` at almost every prime. -/
+theorem eventually_infOpenSubgroup_spin_eq :
+    ∀ᶠ p in cofinite, (U.infOpenSubgroup W hW).spin p = U.spin p := by
+  filter_upwards [hW] with p hp
+  exact inf_eq_left.mpr fun x hx ↦ hp (U.spinToOrthogonal_mem_orthogonal p hx)
 
 end OrthogonalCompactOpens
 

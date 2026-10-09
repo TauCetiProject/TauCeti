@@ -14,9 +14,10 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Analysis.Calculus.SegmentIncrement
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.MeasureTheory.Integral.Dilation
+import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
-# The potential estimate behind the Poincaré–Wirtinger inequality
+# Potential estimates for `C¹` functions
 
 This file proves the pointwise estimate that controls the oscillation of a `C¹` function about
 its mean by a Riesz potential of its derivative. Let `Ω` be an open subset of a finite-dimensional
@@ -33,6 +34,12 @@ For a bounded convex open `Ω` and `x ∈ Ω` one may take `D = diam Ω`; this i
 Gilbarg–Trudinger, Lemma 7.16. Integrating the right-hand side in `x` and bounding the Riesz
 potential `y ↦ ‖x - y‖ ^ (1 - n)` in `Lᵖ` yields the Poincaré–Wirtinger inequality.
 
+For a `C¹` function `u` with compact support, restricting the integrated oscillation bound on
+`ball x D` to a shell `ρ < ‖y - x‖ < D` outside the support, where `u` vanishes, and letting
+`D → ∞` gives the pointwise bound `‖u x‖ ≤ (n ω)⁻¹ ∫ ‖Du y‖ ‖x - y‖ ^ (1 - n) dy` with
+`ω = μ(B(0, 1))`, which is Gilbarg–Trudinger, Lemma 7.14. Combined with the `Lᵖ` bounds for
+Riesz potentials, it yields Sobolev inequalities for compactly supported functions.
+
 The statements use lower Lebesgue integrals, so no integrability of the derivative or of the
 kernel is assumed.
 
@@ -45,11 +52,13 @@ kernel is assumed.
 * `TauCeti.enorm_sub_setAverage_le_of_starConvex`: the bound on the deviation from the mean over
   any subset of positive measure.
 * `TauCeti.enorm_sub_setAverage_le_of_convex`: the form for convex sets with `D = diam Ω`.
+* `TauCeti.enorm_le_lintegral_enorm_fderiv_mul_enorm_sub_rpow`: the pointwise potential bound for
+  compactly supported functions.
 
 ## References
 
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  Lemma 7.16.
+  Lemmas 7.14 and 7.16.
 -/
 
 public section
@@ -58,7 +67,7 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory Metric Set Module
+open Filter MeasureTheory Metric Set Module Topology
 open scoped ENNReal
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -262,5 +271,77 @@ theorem enorm_sub_setAverage_le_of_convex [CompleteSpace F] (hΩ : IsOpen Ω) (h
         ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ * ‖x - y‖ₑ ^ (1 - (finrank ℝ E : ℝ)) ∂μ :=
   enorm_sub_setAverage_le_of_starConvex hΩ hu (hΩc.starConvex hx)
     (fun _ hy => mem_closedBall.2 (dist_le_diam_of_mem hb hy hx)) hS hS₀
+
+/-- **The potential estimate for compactly supported functions** (Gilbarg–Trudinger,
+Lemma 7.14). If `u` is `C¹` with compact support, then at every point `x`,
+
+`‖u x‖ ≤ (n ω)⁻¹ ∫ ‖Du y‖ ‖x - y‖ ^ (1 - n) dy`,
+
+where `n ≥ 1` is the dimension of the space and `ω = μ(B(0, 1))`. -/
+theorem enorm_le_lintegral_enorm_fderiv_mul_enorm_sub_rpow [Nontrivial E] (hu : ContDiff ℝ 1 u)
+    (h2u : HasCompactSupport u) (x : E) :
+    ‖u x‖ₑ ≤ ENNReal.ofReal ((finrank ℝ E * μ.real (ball 0 1))⁻¹) *
+      ∫⁻ y, ‖fderiv ℝ u y‖ₑ * ‖x - y‖ₑ ^ (1 - (finrank ℝ E : ℝ)) ∂μ := by
+  set n := finrank ℝ E
+  set ω := μ.real (ball (0 : E) 1)
+  set P := ∫⁻ y, ‖fderiv ℝ u y‖ₑ * ‖x - y‖ₑ ^ (1 - (n : ℝ)) ∂μ
+  have hn0 : n ≠ 0 := finrank_pos.ne'
+  have hn : (0 : ℝ) < n := by exact_mod_cast finrank_pos
+  have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne'
+    measure_ball_lt_top.ne
+  obtain ⟨ρ₀, hρ₀⟩ := h2u.isBounded.subset_closedBall x
+  set ρ := max ρ₀ 0
+  have hρ : 0 ≤ ρ := le_max_right _ _
+  have hsupp : tsupport u ⊆ closedBall x ρ :=
+    hρ₀.trans (closedBall_subset_closedBall (le_max_left _ _))
+  -- For `D > ρ`, compare `u x` with the values of `u` on the shell `ρ < ‖y - x‖ < D`, which
+  -- vanish, using the potential estimate on the ball `B(x, D)`.
+  have hbound : ∀ D, ρ < D → ‖u x‖ₑ ≤ ENNReal.ofReal (D ^ n / (n * ω * (D ^ n - ρ ^ n))) * P := by
+    intro D hD
+    have hD0 : 0 < D := hρ.trans_lt hD
+    have hDρ : 0 < D ^ n - ρ ^ n := sub_pos.2 (pow_lt_pow_left₀ hD hρ hn0)
+    set S := ball x D \ closedBall x ρ
+    have hS : μ S = ENNReal.ofReal (ω * (D ^ n - ρ ^ n)) := by
+      rw [measure_sdiff (closedBall_subset_ball hD) measurableSet_closedBall.nullMeasurableSet
+          measure_closedBall_lt_top.ne, Measure.addHaar_ball μ x hD0.le,
+        Measure.addHaar_closedBall μ x hρ, ← ENNReal.sub_mul (fun _ _ => measure_ball_lt_top.ne),
+        ← ENNReal.ofReal_sub _ (by positivity), ← ofReal_measureReal measure_ball_lt_top.ne,
+        ← ENNReal.ofReal_mul hDρ.le, mul_comm]
+    have hshell : ‖u x‖ₑ * μ S ≤ ∫⁻ y in ball x D, ‖u x - u y‖ₑ ∂μ :=
+      calc
+        ‖u x‖ₑ * μ S = ∫⁻ _ in S, ‖u x‖ₑ ∂μ := (setLIntegral_const _ _).symm
+        _ = ∫⁻ y in S, ‖u x - u y‖ₑ ∂μ :=
+          setLIntegral_congr_fun (measurableSet_ball.diff measurableSet_closedBall)
+            fun y hy => by
+              rw [image_eq_zero_of_notMem_tsupport fun h => hy.2 (hsupp h), sub_zero]
+        _ ≤ _ := lintegral_mono_set sdiff_subset
+    have hstar := setLIntegral_enorm_sub_le_of_starConvex (μ := μ) isOpen_ball hu.contDiffOn
+      ((convex_ball x D).starConvex (mem_ball_self hD0)) ball_subset_closedBall
+    have h₁ : ‖u x‖ₑ * ENNReal.ofReal (ω * (D ^ n - ρ ^ n)) ≤ ENNReal.ofReal (D ^ n / n) * P := by
+      rw [← hS]
+      exact hshell.trans (hstar.trans (by gcongr; exact setLIntegral_le_lintegral _ _))
+    rw [← ENNReal.le_div_iff_mul_le (Or.inl (by positivity)) (Or.inl ENNReal.ofReal_ne_top),
+      ENNReal.mul_div_right_comm, ← ENNReal.ofReal_div_of_pos (by positivity)] at h₁
+    refine h₁.trans_eq ?_
+    congr 2
+    field_simp
+  -- Let `D → ∞`.
+  have hlim : Tendsto (fun D : ℝ => D ^ n / (n * ω * (D ^ n - ρ ^ n))) atTop
+      (𝓝 ((n * ω)⁻¹)) := by
+    have h₁ : Tendsto (fun D : ℝ => (ρ / D) ^ n) atTop (𝓝 0) := by
+      have h := ((tendsto_const_nhds (x := ρ)).div_atTop tendsto_id).pow n
+      rwa [zero_pow hn0] at h
+    have h₂ := (tendsto_const_nhds (x := (n * ω)⁻¹)).mul
+      ((tendsto_const_nhds (x := (1 : ℝ)).sub h₁).inv₀ (by norm_num))
+    rw [sub_zero, inv_one, mul_one] at h₂
+    refine h₂.congr' ?_
+    filter_upwards [eventually_gt_atTop ρ] with D hD
+    have hD0 : 0 < D := hρ.trans_lt hD
+    have hDρ : D ^ n - ρ ^ n ≠ 0 := (sub_pos.2 (pow_lt_pow_left₀ hD hρ hn0)).ne'
+    rw [div_pow, one_sub_div (pow_pos hD0 n).ne', inv_div]
+    field_simp
+  exact ge_of_tendsto (ENNReal.Tendsto.mul_const (ENNReal.tendsto_ofReal hlim)
+    (Or.inl (ENNReal.ofReal_pos.2 (by positivity)).ne'))
+    ((eventually_gt_atTop ρ).mono hbound)
 
 end TauCeti

@@ -65,20 +65,20 @@ of `L` is the image of the component at `w.comap (algebraMap K L)` under the com
 `K_{w.comap (algebraMap K L)} → L_w`. -/
 noncomputable def infiniteAdeleExtension : InfiniteAdeleRing K →+* InfiniteAdeleRing L :=
   RingHom.pi fun w ↦
-    LiesOver.completionMap.comp (Pi.evalRingHom _ (w.comap (algebraMap K L)))
+    (LiesOver.completionMap _ w).comp (Pi.evalRingHom _ (w.comap (algebraMap K L)))
 
 variable {K L} in
 /-- The component of `infiniteAdeleExtension K L x` at `w` is the image of the component of `x` at
 `w.comap (algebraMap K L)`. -/
 @[simp]
 theorem infiniteAdeleExtension_apply (x : InfiniteAdeleRing K) (w : InfinitePlace L) :
-    infiniteAdeleExtension K L x w = LiesOver.completionMap (x (w.comap (algebraMap K L))) :=
+    infiniteAdeleExtension K L x w = LiesOver.completionMap _ w (x (w.comap (algebraMap K L))) :=
   (rfl)
 
 /-- The extension map of infinite adele rings is continuous. -/
 @[continuity, fun_prop]
 theorem continuous_infiniteAdeleExtension : Continuous (infiniteAdeleExtension K L) :=
-  continuous_pi fun _ ↦ LiesOver.continuous_completionMap.comp (continuous_apply _)
+  continuous_pi fun w ↦ (LiesOver.continuous_completionMap _ w).comp (continuous_apply _)
 
 /-- The extension map of infinite adele rings extends `K → L` along the diagonal embeddings. -/
 @[simp]
@@ -116,8 +116,8 @@ theorem infiniteAdeleExtension_comp (M : Type*) [Field M] [Algebra L M]
     rw [← InfinitePlace.comap_comp, ← IsScalarTower.algebraMap_eq K L M]
   let hwo : w.LiesOver v := hv.symm ▸ inferInstance
   have h :
-      (LiesOver.completionMap (v := w.comap (algebraMap L M)) (w := w)).comp
-        (LiesOver.completionMap (v := v) (w := w.comap (algebraMap L M))) =
+      (LiesOver.completionMap (w.comap (algebraMap L M)) w).comp
+        (LiesOver.completionMap v (w.comap (algebraMap L M))) =
         @LiesOver.completionMap K M _ _ _ v w hwo := by
     exact LiesOver.completionMap_comp
   calc
@@ -141,10 +141,10 @@ theorem infiniteAdeleExtension_self :
   simp only [infiniteAdeleExtension_apply, RingHom.id_apply, Algebra.algebraMap_self,
     InfinitePlace.comap_id]
   have hwo : w.LiesOver w := ⟨rfl⟩
-  have h : (LiesOver.completionMap (v := w) (w := w)) = RingHom.id _ := by
+  have h : LiesOver.completionMap w w = RingHom.id _ := by
     apply DFunLike.coe_injective
     apply (InfinitePlace.Completion.denseRange_coe w).equalizer
-      LiesOver.continuous_completionMap continuous_id
+      (LiesOver.continuous_completionMap w w) continuous_id
     funext y
     simp [Function.comp_apply, LiesOver.completionMap_coe,
       WithAbs.algebraMap_left_apply, WithAbs.algebraMap_right_apply]

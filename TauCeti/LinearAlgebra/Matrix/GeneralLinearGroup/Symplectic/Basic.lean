@@ -41,7 +41,7 @@ The final sections construct the elementary one-parameter subgroups belonging to
 `±2eᵢ` and the short roots `eᵢ-eⱼ`, `eᵢ+eⱼ`, and `-eᵢ-eⱼ` in `Fin (m+m)` coordinates. The
 symplectic coordinate Hopf algebra and group scheme live in
 `TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic`; their root-subgroup morphisms live in
-`TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup`.
+`TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup.Basic`.
 
 ## Main declarations
 

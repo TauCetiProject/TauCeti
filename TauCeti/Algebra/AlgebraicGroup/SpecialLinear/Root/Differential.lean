@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.RootSubgroup.Basic
-public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Tangent
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Tangent.Basic
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Differential
 
 /-!

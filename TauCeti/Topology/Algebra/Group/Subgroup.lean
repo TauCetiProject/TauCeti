@@ -44,6 +44,8 @@ series of a profinite group.
 * `Subgroup.continuous_subgroupOf_codRestrict`: the inclusion of `U ⊓ D` into `U`, presented
   using `U.subgroupOf D`, is continuous.
 * `Dense.denseRange_subgroupOf_codRestrict`: a dense subgroup meets an open subgroup densely.
+* `Subgroup.index_comap_of_denseRange`: the preimage of an open subgroup under a homomorphism with
+  dense range has the same index.
 * `Subgroup.instIsClosedTopologicalClosure`: the topological closure of a subgroup is closed.
 * `Subgroup.dense_iff_topologicalClosure_eq_top`: a subgroup is dense exactly when its topological
   closure is everything; `IsClosed.subgroup_topologicalClosure_eq`: a closed subgroup is its own
@@ -89,6 +91,8 @@ series of a profinite group.
   generate a dense subgroup.
 * `TauCeti.discreteTopology_of_conjAct_smul_eq`: a conjugate `g H g⁻¹` of a discrete
   subgroup `H` is discrete.
+* `MonoidHom.discreteTopology_range_of_finite_preimage`: a homomorphism into a `T1` topological
+  group has discrete range when some neighbourhood of the identity has finite preimage.
 -/
 
 public section
@@ -144,6 +148,27 @@ theorem _root_.Dense.denseRange_subgroupOf_codRestrict {D U : Subgroup G}
       exact ⟨⟨⟨x, hxD⟩, x.2⟩, rfl⟩
   rw [DenseRange, hrange]
   exact hD.preimage hU.isOpenMap_subtype_val
+
+/-- **An open subgroup has the same index in a dense subgroup.** If `f : G' →* G` has dense range
+and `U` is an open subgroup of `G`, then the preimage of `U` has the same index in `G'` as `U` has
+in `G`: the range of `f` meets every coset of `U`, since the cosets are open.
+
+The proof is adapted from Mathlib's `Subgroup.index_comap_of_surjective`. -/
+theorem index_comap_of_denseRange [ContinuousMul G] {G' : Type*} [Group G'] {f : G' →* G}
+    (hf : DenseRange f) {U : Subgroup G} (hU : IsOpen (U : Set G)) :
+    (U.comap f).index = U.index := by
+  have key (x y : G') :
+      QuotientGroup.leftRel (U.comap f) x y ↔ QuotientGroup.leftRel U (f x) (f y) := by
+    simp only [QuotientGroup.leftRel_apply, mem_comap, map_mul, map_inv]
+  refine Nat.card_congr (Equiv.ofBijective (Quotient.map' f fun x y ↦ (key x y).1) ⟨?_, ?_⟩)
+  · refine Quotient.ind' fun x ↦ Quotient.ind' fun y h ↦ ?_
+    exact Quotient.sound' ((key x y).2 (Quotient.exact' h))
+  · -- The coset `g U` is open and nonempty, so it meets the dense range of `f`.
+    refine Quotient.ind' fun g ↦ ?_
+    obtain ⟨x, hx⟩ := hf.exists_mem_open (hU.leftCoset g) ⟨g, mem_own_leftCoset U.toSubmonoid g⟩
+    refine ⟨Quotient.mk'' x, Quotient.sound' ?_⟩
+    rw [QuotientGroup.leftRel_apply]
+    simpa [mem_leftCoset_iff] using U.inv_mem ((mem_leftCoset_iff g).1 hx)
 
 variable [IsTopologicalGroup G]
 
@@ -499,5 +524,20 @@ theorem discreteTopology_of_conjAct_smul_eq {G : Type*} [Group G] [TopologicalSp
   exact ((Topology.IsEmbedding.of_comp_iff Topology.IsEmbedding.subtypeVal).mp hφ).discreteTopology
 
 end Conj
+
+open scoped Topology in
+/-- A homomorphism into a `T1` topological group has discrete range as soon as some neighbourhood
+of the identity has finite preimage. -/
+@[to_additive /-- A homomorphism into a `T1` additive topological group has discrete range as soon
+as some neighbourhood of zero has finite preimage. -/]
+theorem _root_.MonoidHom.discreteTopology_range_of_finite_preimage {G H : Type*} [Group G]
+    [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [T1Space H] (f : G →* H) {W : Set H}
+    (hW : W ∈ 𝓝 1) (hfin : (f ⁻¹' W).Finite) : DiscreteTopology f.range := by
+  refine discreteTopology_of_isOpen_singleton_one
+    (isOpen_singleton_of_finite_mem_nhds _ (s := Subtype.val ⁻¹' W)
+      (continuous_subtype_val.continuousAt.preimage_mem_nhds hW) ?_)
+  refine (hfin.image f.rangeRestrict).subset ?_
+  rintro ⟨_, g, rfl⟩ hg
+  exact ⟨g, hg, Subtype.ext rfl⟩
 
 end TauCeti

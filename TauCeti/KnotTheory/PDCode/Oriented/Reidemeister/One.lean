@@ -86,7 +86,7 @@ def reidemeisterOne (D : OrientedPDCode n) (h : Fin (4 * n)) (b : Bool) :
     | cast i =>
         simp
   crossinglessComponents := D.crossinglessComponents
-  crossinglessComponents_card := by simp
+  card_crossinglessComponents := by simp
 
 /-- Forgetting orientation after inserting an oriented kink gives the underlying unoriented
 first Reidemeister move. -/

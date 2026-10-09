@@ -43,6 +43,8 @@ morphism of the associated toric schemes.
   toric scheme.
 * `TauCeti.Toric.Fan.exists_affineToricChartι_apply_eq`: the affine toric charts cover the toric
   scheme.
+* `TauCeti.Toric.Fan.affineToricOpenCover`: the cone-indexed affine open cover of the toric
+  scheme.
 * `TauCeti.Toric.Fan.affineToricChartι_eq_affineToricChartι_iff`: points of two
   charts are identified exactly along the chart of the intersection of the two cones.
 * `TauCeti.Toric.FanHom.affineToricChartMap`: the affine chart map attached to a fan morphism.
@@ -284,6 +286,39 @@ theorem affineToricChartι_eq_affineToricChartι_iff
   · rw [← hzx, ← hzy, ← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply,
       affineToricOverlapLeft_comp_affineToricChartι,
       affineToricOverlapRight_comp_affineToricChartι]
+
+/-- The intersection of two affine cone opens is the affine open of the intersection cone. -/
+@[simp]
+theorem range_affineToricChartι_inter_range_affineToricChartι (σ τ : Φ.cones) :
+    Set.range (Φ.affineToricChartι σ) ∩ Set.range (Φ.affineToricChartι τ) =
+      Set.range (Φ.affineToricChartι (σ ⊓ τ)) := by
+  ext x
+  constructor
+  · rintro ⟨⟨y, rfl⟩, ⟨z, hz⟩⟩
+    obtain ⟨w, hw, _⟩ := (Φ.affineToricChartι_eq_affineToricChartι_iff y z).mp hz.symm
+    refine ⟨w, ?_⟩
+    rw [← Φ.affineToricOverlapLeft_comp_affineToricChartι σ τ, Scheme.Hom.comp_apply, hw]
+  · rintro ⟨w, rfl⟩
+    constructor
+    · exact ⟨Φ.affineToricOverlapLeft σ τ w, by
+        rw [← Scheme.Hom.comp_apply, Φ.affineToricOverlapLeft_comp_affineToricChartι]⟩
+    · exact ⟨Φ.affineToricOverlapRight σ τ w, by
+        rw [← Scheme.Hom.comp_apply, Φ.affineToricOverlapRight_comp_affineToricChartι]⟩
+
+/-- The canonical affine open cover of the scheme of a finite fan, indexed by its cones. -/
+-- Expose the cover so that its index type is the cone type in importing modules.
+@[expose]
+noncomputable def affineToricOpenCover : Φ.algebraicRealization.OpenCover :=
+  Scheme.Cover.mkOfCovers Φ.cones Φ.affineToricChart Φ.affineToricChartι
+    Φ.exists_affineToricChartι_apply_eq
+
+@[simp]
+theorem affineToricOpenCover_X (σ : Φ.cones) :
+    Φ.affineToricOpenCover.X σ = Φ.affineToricChart σ := (rfl)
+
+@[simp]
+theorem affineToricOpenCover_f (σ : Φ.cones) :
+    Φ.affineToricOpenCover.f σ = Φ.affineToricChartι σ := (rfl)
 
 end TauCeti.Toric.Fan
 

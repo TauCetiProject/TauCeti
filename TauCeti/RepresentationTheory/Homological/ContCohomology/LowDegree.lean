@@ -356,6 +356,19 @@ theorem coe_explicitMap0 {H : Type*} [Monoid H] {N : Type*} [AddCommGroup N]
     (explicitMap0 G M φ f hequiv m : N) = f (m : M) :=
   (rfl)
 
+/-- **The degree-zero pullback along an isomorphism is bijective**: for a surjective
+`φ : H →* G` and an additive equivalence `f : M ≃+ N` with `f (φ h • m) = h • f m`, the
+`H`-invariants of `N` are exactly the images of the `G`-invariants of `M`. -/
+theorem explicitMap0_bijective {H : Type*} [Monoid H] {N : Type*} [AddCommGroup N]
+    [DistribMulAction H N] (φ : H →* G) (hφ : Function.Surjective φ) (f : M ≃+ N)
+    (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) :
+    Function.Bijective (explicitMap0 G M φ f.toAddMonoidHom hequiv) := by
+  refine ⟨fun x y hxy => Subtype.ext (f.injective (congrArg Subtype.val hxy)), fun m => ?_⟩
+  refine ⟨⟨f.symm m, (FixedPoints.mem_addSubgroup G M _).2 fun g => f.injective ?_⟩,
+    Subtype.ext (f.apply_symm_apply _)⟩
+  obtain ⟨h, rfl⟩ := hφ g
+  rw [hequiv, f.apply_symm_apply, (FixedPoints.mem_addSubgroup H N m).1 m.2]
+
 /-- Pullback along the identity compatible pair is the identity on degree-zero cohomology. -/
 @[simp]
 theorem explicitMap0_id :
@@ -439,11 +452,11 @@ theorem coe_explicitRes0 (m : H0 G M) : (explicitRes0 G M U m : M) = m :=
 /-- Restriction in degree zero is natural in equivariant coefficient homomorphisms. -/
 theorem map_explicitRes0 {N : Type*} [AddCommGroup N] [DistribMulAction G N]
     (f : M →+[G] N) (m : H0 G M) :
-    fixedPointsMap f U (explicitRes0 G M U m) =
+    f.fixedPointsMap U (explicitRes0 G M U m) =
       explicitRes0 G N U (explicitCoeff0 G M f m) := by
   ext
   rw [coe_explicitRes0, coe_explicitCoeff0, ← coe_explicitRes0 G M U m]
-  exact coe_fixedPointsMap f U _
+  exact f.coe_fixedPointsMap U _
 
 /-- Restriction in degree zero is the compatible-pair pullback along the inclusion of the subgroup
 with the identity on the coefficients. -/

@@ -22,8 +22,10 @@ Lipschitz, Pin, and Spin subgroups along scalar extensions.
 ## Main results
 
 * `CliffordAlgebra.ofBaseChangeAux_involute` proves naturality of the grade involution.
+* `CliffordAlgebra.ofBaseChangeAux_reverse` proves naturality of Clifford reversal.
 * `CliffordAlgebra.ofBaseChangeAux_star` proves naturality of Clifford conjugation.
 * `CliffordAlgebra.ofBaseChangeAux_mem_even` proves preservation of the even subalgebra.
+* `CliffordAlgebra.ofBaseChangeAux_injective` proves injectivity for faithful flat extensions.
 * `CliffordAlgebra.ofBaseChangeAux_baseChange` identifies direct and successive scalar extension.
 -/
 
@@ -52,17 +54,26 @@ theorem ofBaseChangeAux_involute (Q : QuadraticForm R M) (x : CliffordAlgebra Q)
   | mul x y hx hy => simp only [map_mul, hx, hy]
 
 /-- The canonical map to the Clifford algebra after extension of scalars commutes with Clifford
+reversal. -/
+@[simp]
+theorem ofBaseChangeAux_reverse (Q : QuadraticForm R M) (x : CliffordAlgebra Q) :
+    ofBaseChangeAux A Q (reverse x) =
+      reverse (Q := Q.baseChange A) (ofBaseChangeAux A Q x) := by
+  induction x using CliffordAlgebra.induction with
+  | algebraMap r =>
+      rw [reverse.commutes, (ofBaseChangeAux A Q).commutes]
+      rw [IsScalarTower.algebraMap_apply R A (CliffordAlgebra (Q.baseChange A)),
+        reverse.commutes]
+  | ι m => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | mul x y hx hy => simp only [reverse.map_mul, map_mul, hx, hy]
+
+/-- The canonical map to the Clifford algebra after extension of scalars commutes with Clifford
 conjugation. -/
 @[simp]
 theorem ofBaseChangeAux_star (Q : QuadraticForm R M) (x : CliffordAlgebra Q) :
     ofBaseChangeAux A Q (star x) = star (ofBaseChangeAux A Q x) := by
-  induction x using CliffordAlgebra.induction with
-  | algebraMap r =>
-      rw [star_algebraMap, (ofBaseChangeAux A Q).commutes]
-      rw [IsScalarTower.algebraMap_apply R A (CliffordAlgebra (Q.baseChange A)), star_algebraMap]
-  | ι m => simp
-  | add x y hx hy => simp only [star_add, map_add, hx, hy]
-  | mul x y hx hy => simp only [star_mul, map_mul, hx, hy]
+  simp only [star_def, ofBaseChangeAux_reverse, ofBaseChangeAux_involute]
 
 /-- The canonical map to the Clifford algebra after extension of scalars sends even elements to
 even elements. -/
@@ -82,6 +93,27 @@ theorem ofBaseChangeAux_mem_even (Q : QuadraticForm R M) {x : CliffordAlgebra Q}
       simpa only [map_mul, ofBaseChangeAux_ι, zero_add] using
         SetLike.mul_mem_graded
           (ι_mul_ι_mem_evenOdd_zero (Q.baseChange A) (1 ⊗ₜ[R] m) (1 ⊗ₜ[R] n)) hx
+
+/-- Under the identification `Cℓ(A ⊗ M) ≃ A ⊗ Cℓ(M)` of `CliffordAlgebra.toBaseChange`, the
+canonical map to the Clifford algebra after extension of scalars sends `x` to `1 ⊗ x`. -/
+@[simp]
+theorem toBaseChange_ofBaseChangeAux (Q : QuadraticForm R M) (x : CliffordAlgebra Q) :
+    toBaseChange A Q (ofBaseChangeAux A Q x) = 1 ⊗ₜ x := by
+  have h : ofBaseChange A Q (1 ⊗ₜ x) = ofBaseChangeAux A Q x :=
+    (Algebra.TensorProduct.lift_tmul _ _ _ 1 x).trans (by rw [map_one, one_mul])
+  rw [← h, toBaseChange_ofBaseChange]
+
+/-- The canonical map to the Clifford algebra after extension of scalars is injective when the
+extension is faithful and the Clifford algebra is flat; in particular, for every extension of
+fields. -/
+theorem ofBaseChangeAux_injective [FaithfulSMul R A] (Q : QuadraticForm R M)
+    [Module.Flat R (CliffordAlgebra Q)] :
+    Function.Injective (ofBaseChangeAux A Q) := by
+  intro x y hxy
+  apply Algebra.TensorProduct.includeRight_injective (A := A)
+    (FaithfulSMul.algebraMap_injective R A)
+  simpa only [toBaseChange_ofBaseChangeAux, Algebra.TensorProduct.includeRight_apply] using
+    congrArg (toBaseChange A Q) hxy
 
 section ScalarTower
 

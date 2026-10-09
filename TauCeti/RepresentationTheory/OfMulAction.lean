@@ -25,6 +25,12 @@ is the sum of the coefficients of `v` along the `H`-orbit of `x`. Hence if `g` f
 sums of `v` are invariant under `g`. The orbit sums of `v` are the finitely supported function
 `v.coeff.mapDomain (Quotient.mk (MulAction.orbitRel H X))` on the orbit space.
 
+For a finite group `G`, the coefficient of the norm `∑ g, g • v` at `x` is `∑ g, v(g • x)`. In
+particular the norm of the basis vector at `x` has coefficient `|G_x|` at `x` and vanishes off the
+orbit of `x`, while a vector fixed by `G` has constant coefficients along each orbit, so it is
+determined by its coefficients at a set of orbit representatives. These are the inputs of the
+computation of the low-degree Tate cohomology of `k[X]`.
+
 ## Main results
 
 * `TauCeti.commute_ofMulAction`: commuting actions on `X` give commuting permutation
@@ -39,6 +45,14 @@ sums of `v` are invariant under `g`. The orbit sums of `v` are the finitely supp
   the `H`-orbit sums of `g • v` at `g • x` are those of `v` at `x`.
 * `TauCeti.mapDomain_orbitRel_mk_coeff_smul_of_ofMulAction_sum`: if `g` fixes
   `∑ i ∈ s, h i • v` and `#s` is cancellable, the `H`-orbit sums of `v` are `g`-invariant.
+* `TauCeti.coeff_smul_of_forall_ofMulAction_eq`: a fixed vector of `k[X]` has the same coefficient
+  at every point of an orbit.
+* `TauCeti.eq_of_coeff_out_eq_of_forall_ofMulAction_eq`: two fixed vectors of `k[X]` agreeing at
+  the chosen representative of every orbit are equal.
+* `TauCeti.coeff_norm_ofMulAction`: the coefficients of the norm of a vector of `k[X]`.
+* `TauCeti.coeff_norm_ofMulAction_single_self`,
+  `TauCeti.coeff_norm_ofMulAction_single_of_notMem_orbit`: the norm of the basis vector at `x` has
+  coefficient `|G_x|` at `x` and vanishes off the orbit of `x`.
 
 ## References
 
@@ -144,5 +158,63 @@ theorem mapDomain_orbitRel_mk_coeff_smul_of_ofMulAction_sum {ι : Type*} {s : Fi
     mapDomain_orbitRel_mk_coeff_ofMulAction_smul (H := H) g (∑ i ∈ s, ofMulAction k H X (h i) v) x
 
 end Commuting
+
+/-! ### Norms and invariant vectors -/
+
+section Norm
+
+variable {G : Type*} [Group G] [MulAction G X]
+
+/-- A vector of `k[X]` fixed by the permutation representation has the same coefficient at every
+point of an orbit. -/
+theorem coeff_smul_of_forall_ofMulAction_eq {v : k[X]} (hv : ∀ g, ofMulAction k G X g v = v)
+    (g : G) (x : X) : v.coeff (g • x) = v.coeff x := by
+  conv_rhs => rw [← hv g⁻¹]
+  rw [coeff_ofMulAction, inv_inv]
+
+/-- Two vectors of `k[X]` fixed by the permutation representation are equal as soon as they agree
+at the chosen representative of every orbit. -/
+theorem eq_of_coeff_out_eq_of_forall_ofMulAction_eq {v w : k[X]}
+    (hv : ∀ g, ofMulAction k G X g v = v) (hw : ∀ g, ofMulAction k G X g w = w)
+    (h : ∀ ω : MulAction.orbitRel.Quotient G X, v.coeff ω.out = w.coeff ω.out) : v = w := by
+  ext x
+  obtain ⟨g, hg⟩ : ∃ g : G, g • x = (Quotient.mk (MulAction.orbitRel G X) x).out :=
+    Quotient.mk_out (s := MulAction.orbitRel G X) x
+  rw [← coeff_smul_of_forall_ofMulAction_eq hv g, ← coeff_smul_of_forall_ofMulAction_eq hw g, hg,
+    h]
+
+variable [Fintype G]
+
+/-- The coefficient of the norm `∑ g, g • v` of `v : k[X]` at `x` is the sum of the coefficients of
+`v` at the points `g • x`. -/
+@[simp]
+theorem coeff_norm_ofMulAction (v : k[X]) (x : X) :
+    ((ofMulAction k G X).norm v).coeff x = ∑ g : G, v.coeff (g • x) := by
+  simp only [Representation.norm, LinearMap.sum_apply, coeff_sum, Finsupp.finsetSum_apply,
+    coeff_ofMulAction]
+  exact Fintype.sum_equiv (Equiv.inv G) _ _ fun _ ↦ rfl
+
+/-- The norm of `single x r` has coefficient `|G_x| • r` at `x`, where `G_x` is the stabilizer
+of `x`. -/
+theorem coeff_norm_ofMulAction_single_self (x : X) (r : k) :
+    ((ofMulAction k G X).norm (single x r)).coeff x = Nat.card (stabilizer G x) • r := by
+  classical
+  simp only [coeff_norm_ofMulAction, coeff_single, Finsupp.single_apply]
+  rw [Finset.sum_ite, Finset.sum_const_zero, add_zero, Finset.sum_const, Nat.card_eq_fintype_card,
+    Fintype.card_subtype]
+  congr 2
+  ext g
+  simp [eq_comm]
+
+/-- The norm of `single x r` vanishes off the orbit of `x`. -/
+theorem coeff_norm_ofMulAction_single_of_notMem_orbit {x y : X} (h : y ∉ orbit G x) (r : k) :
+    ((ofMulAction k G X).norm (single x r)).coeff y = 0 := by
+  classical
+  refine (coeff_norm_ofMulAction _ _).trans (Finset.sum_eq_zero fun g _ ↦ ?_)
+  rw [coeff_single, Finsupp.single_apply, ite_eq_right_iff]
+  rintro rfl
+  exact absurd ⟨g⁻¹, inv_smul_smul g y⟩ h
+
+end Norm
 
 end TauCeti

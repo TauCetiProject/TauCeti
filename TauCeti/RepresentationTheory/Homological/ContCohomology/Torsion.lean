@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Torsion
+public import TauCeti.GroupTheory.Torsion
 public import TauCeti.RepresentationTheory.Continuous.Coinduced
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Additive
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.HomologySequence
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution
 
 /-!
@@ -38,6 +39,11 @@ A second, hypothesis-free form of the same phenomenon is also recorded here: an 
 coefficients is an exponent of `Hⁿ(G, X)` in every degree, for any topological group, by
 exponent-inheritance along the coinduced resolution.
 
+Torsion in positive degree keeps the long exact sequence of a short exact sequence
+`0 → A → B → C → 0` of discrete modules over a compact group exact on `p`-primary components: a
+`p`-primary class in the image of a map of torsion groups has a `p`-primary preimage
+(`TauCeti.exists_mem_primaryComponent_apply_eq`).
+
 ## Main results
 
 * `TauCeti.ContinuousCohomology.exists_openSubgroup_index_nsmul_eq_zero`: every class of positive
@@ -47,6 +53,10 @@ exponent-inheritance along the coinduced resolution.
   vanishes when `X` is a `ℚ`-vector space.
 * `TauCeti.ContinuousCohomology.nsmul_continuousCohomology_eq_zero`: in every degree, and over
   any topological group, `Hⁿ(G, X)` is killed by every `N` that kills `X`.
+* `TauCeti.ContCohomology.DiscreteShortExact.primaryComponent_middle_eq_bot` and
+  `TauCeti.ContCohomology.DiscreteShortExact.primaryComponent_right_eq_bot`: the long exact sequence
+  of a short exact sequence of discrete modules over a compact group is exact on `p`-primary
+  components in positive degrees.
 
 ## References
 
@@ -181,3 +191,70 @@ theorem nsmul_continuousCohomology_eq_zero (hX : ∀ x : X.V, N • x = 0) (n : 
 end Exponent
 
 end TauCeti.ContinuousCohomology
+
+/-! ### Exactness on `p`-primary components -/
+
+universe u
+
+namespace TauCeti.ContCohomology.DiscreteShortExact
+
+open _root_.ContinuousCohomology _root_.TauCeti.ContinuousCohomology
+
+variable {p : ℕ} {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  {A : Type u} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A] [DistribMulAction G A]
+  {B : Type u} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B] [DistribMulAction G B]
+  [ContinuousSMul G B]
+  {C : Type u} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C] [DistribMulAction G C]
+
+/-- **Exactness at `Hⁿ⁺¹(G, B)` on `p`-primary components.** For a short exact sequence
+`0 → A → B → C → 0` of discrete modules over a compact group and a prime `p`, if the `p`-primary
+components of `Hⁿ⁺¹(G, A)` and `Hⁿ⁺¹(G, C)` vanish, so does that of `Hⁿ⁺¹(G, B)`. -/
+theorem primaryComponent_middle_eq_bot (S : DiscreteShortExact G A B C) (hp : p.Prime) {n : ℕ}
+    (hA : AddCommGroup.primaryComponent
+      (continuousCohomology (n + 1) (ofDiscreteModule ℤ G A)) p = ⊥)
+    (hC : AddCommGroup.primaryComponent
+      (continuousCohomology (n + 1) (ofDiscreteModule ℤ G C)) p = ⊥) :
+    AddCommGroup.primaryComponent
+      (continuousCohomology (n + 1) (ofDiscreteModule ℤ G B)) p = ⊥ := by
+  refine (AddSubgroup.eq_bot_iff_forall _).2 fun x hx ↦ ?_
+  -- the image of `x` in `Hⁿ⁺¹(G, C)` is `p`-primary, hence zero
+  have hπx : coeffMap (ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant) (n + 1) x =
+      0 := by
+    obtain ⟨k, hk⟩ := hx
+    have hmem : coeffMap (ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant) (n + 1) x ∈
+        AddCommGroup.primaryComponent _ p := ⟨k, by rw [← map_nsmul, hk, _root_.map_zero]⟩
+    rwa [hC, AddSubgroup.mem_bot] at hmem
+  obtain ⟨a, rfl⟩ := (S.longExact_exact₂ (n + 1) x).1 hπx
+  -- `a` may be replaced by a `p`-primary class with the same image, and that class vanishes
+  obtain ⟨a', ha', hia'⟩ := exists_mem_primaryComponent_apply_eq
+    (coeffMap (ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant) (n + 1)).hom hp
+    (isAddTorsion_continuousCohomology n a) hx
+  rw [hA, AddSubgroup.mem_bot] at ha'
+  rw [← hia', ha', _root_.map_zero]
+
+/-- **Exactness at `Hⁿ⁺¹(G, C)` on `p`-primary components.** For a short exact sequence
+`0 → A → B → C → 0` of discrete modules over a compact group and a prime `p`, if the `p`-primary
+components of `Hⁿ⁺¹(G, B)` and `Hⁿ⁺²(G, A)` vanish, so does that of `Hⁿ⁺¹(G, C)`. -/
+theorem primaryComponent_right_eq_bot (S : DiscreteShortExact G A B C) (hp : p.Prime) {n : ℕ}
+    (hB : AddCommGroup.primaryComponent
+      (continuousCohomology (n + 1) (ofDiscreteModule ℤ G B)) p = ⊥)
+    (hA : AddCommGroup.primaryComponent
+      (continuousCohomology (n + 2) (ofDiscreteModule ℤ G A)) p = ⊥) :
+    AddCommGroup.primaryComponent
+      (continuousCohomology (n + 1) (ofDiscreteModule ℤ G C)) p = ⊥ := by
+  refine (AddSubgroup.eq_bot_iff_forall _).2 fun x hx ↦ ?_
+  -- the connecting map sends `x` into the `p`-primary component of `Hⁿ⁺²(G, A)`, which vanishes
+  have hδx : S.delta (n + 1) x = 0 := by
+    obtain ⟨k, hk⟩ := hx
+    have hmem : S.delta (n + 1) x ∈ AddCommGroup.primaryComponent _ p :=
+      ⟨k, by rw [← map_nsmul, hk, _root_.map_zero]⟩
+    rwa [hA, AddSubgroup.mem_bot] at hmem
+  obtain ⟨b, rfl⟩ := (S.longExact_exact₃ (n + 1) x).1 hδx
+  -- `b` may be replaced by a `p`-primary class with the same image, and that class vanishes
+  obtain ⟨b', hb', hb'x⟩ := exists_mem_primaryComponent_apply_eq
+    (coeffMap (ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant) (n + 1)).hom hp
+    (isAddTorsion_continuousCohomology n b) hx
+  rw [hB, AddSubgroup.mem_bot] at hb'
+  rw [← hb'x, hb', _root_.map_zero]
+
+end TauCeti.ContCohomology.DiscreteShortExact

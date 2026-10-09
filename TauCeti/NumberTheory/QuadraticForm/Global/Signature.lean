@@ -37,6 +37,9 @@ half of the archimedean classification; the complex half is in
 
 * `QuadraticForm.realPositiveIndex_add_realNegativeIndex_eq_finrank`: the indices of a
   nondegenerate form add to its rank.
+* `QuadraticForm.realPositiveIndex_weightedSumSquares`,
+  `QuadraticForm.realNegativeIndex_weightedSumSquares`: the indices of a diagonal form count its
+  coefficients that are positive, respectively negative, at the place.
 * `QuadraticMap.Equivalent.realSignature_eq`: equivalent forms have equal real signatures.
 * `QuadraticForm.realSignature_prod`: real-place signatures are additive under orthogonal
   products.
@@ -131,6 +134,28 @@ theorem realPositiveIndex_add_realNegativeIndex_eq_finrank [FiniteDimensional K 
   have hsum := sigPos_add_sigNeg_add_radical (Q := Q.atRealPlace w)
   rw [hlocal.radical_eq_bot, finrank_bot, add_zero, Module.finrank_baseChange] at hsum
   simpa only [realPositiveIndex_eq_sigPos, realNegativeIndex_eq_sigNeg] using hsum
+
+section WeightedSumSquares
+
+variable {ι : Type*} [Fintype ι]
+
+/-- The positive index of a diagonal form `⟨a₁, …, aₙ⟩` at a real place `w` is the number of
+coefficients that are positive under the real embedding of `w`. -/
+theorem realPositiveIndex_weightedSumSquares (a : ι → K) (w : {w : InfinitePlace K // w.IsReal}) :
+    realPositiveIndex (QuadraticMap.weightedSumSquares K a) w =
+      {i | 0 < embedding_of_isReal w.2 (a i)}.ncard := by
+  rw [realPositiveIndex_eq_sigPos, (QuadraticMap.Equivalent.sigPos_eq
+    ⟨atRealPlaceWeightedSumSquares w a⟩), sigPos_weightedSumSquares]
+
+/-- The negative index of a diagonal form `⟨a₁, …, aₙ⟩` at a real place `w` is the number of
+coefficients that are negative under the real embedding of `w`. -/
+theorem realNegativeIndex_weightedSumSquares (a : ι → K) (w : {w : InfinitePlace K // w.IsReal}) :
+    realNegativeIndex (QuadraticMap.weightedSumSquares K a) w =
+      {i | embedding_of_isReal w.2 (a i) < 0}.ncard := by
+  rw [realNegativeIndex_eq_sigNeg, (QuadraticMap.Equivalent.sigNeg_eq
+    ⟨atRealPlaceWeightedSumSquares w a⟩), sigNeg_weightedSumSquares]
+
+end WeightedSumSquares
 
 variable {W : Type v'} [AddCommGroup W] [Module K W]
 variable {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}

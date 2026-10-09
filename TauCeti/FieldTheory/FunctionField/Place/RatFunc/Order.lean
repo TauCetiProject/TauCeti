@@ -58,7 +58,7 @@ variable {k : Type*} [Field k]
 multiplicity of `q` in `r`. -/
 theorem ord_adicOfIrreducible_algebraMap {q r : k[X]} (hq : Irreducible q) (hr : r ≠ 0) :
     (adicOfIrreducible hq).ord (algebraMap k[X] (RatFunc k) r) = multiplicity q r := by
-  rw [adicOfIrreducible_def, ord_algebraMap_adic _ _ _ hr,
+  rw [adicOfIrreducible_def, ord_ofPrime_algebraMap _ _ _ hr,
     HeightOneSpectrum.ofIrreducible_asIdeal]
   exact_mod_cast multiplicity_eq_of_emultiplicity_eq Ideal.emultiplicity_span_eq_emultiplicity
 
@@ -222,7 +222,7 @@ theorem forall_ord_adicOfIrreducible_nonneg_iff {f : RatFunc k} :
     exact h q hq
   · rintro ⟨p, rfl⟩ q hq
     rw [adicOfIrreducible_def]
-    exact ord_algebraMap_adic_nonneg k (RatFunc k) _ p
+    exact ord_ofPrime_algebraMap_nonneg k (RatFunc k) _ p
 
 /-- A function regular at `P_q` has zero residue exactly when `q` divides its reduced numerator. -/
 theorem residue_adicOfIrreducible_eq_zero_iff {q : k[X]} (hq : Irreducible q)

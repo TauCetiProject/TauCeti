@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Quaternion.ComplexMatrix
 public import TauCeti.Algebra.Star.Unitary
+public import Mathlib.Algebra.Star.UnitaryStarAlgAut
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Four
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Four
 
@@ -31,6 +32,8 @@ split real group.
   unit-quaternion groups and exposes its forward and inverse Clifford equations.
 * `TauCeti.normSq_fst_realSpinFourEquivQuaternionUnitaryProd` and
   `TauCeti.normSq_snd_realSpinFourEquivQuaternionUnitaryProd` state the two norm-one conditions.
+* `TauCeti.realSpinFourEquivQuaternionUnitaryProd_action` identifies the vector action with left
+  multiplication by the first quaternion and inverse right multiplication by the second.
 * `TauCeti.realSpinFourEquivSpecialUnitaryProd` identifies compact real `Spin(4)` with
   `SU(2) × SU(2)`.
 
@@ -153,6 +156,227 @@ theorem normSq_snd_realSpinFourEquivQuaternionUnitaryProd
     Quaternion.normSq
         ((realSpinFourEquivQuaternionUnitaryProd s).2 : ℍ[ℝ]) = (1 : ℝ) :=
   Quaternion.normSq_coe_unitary_eq_one _
+
+private abbrev Q4 := realCliffordForm 4 0
+
+private noncomputable abbrev e4 (i : Fin 4) : Fin 4 → ℝ :=
+  Pi.basisFun ℝ (Fin 4) i
+
+private noncomputable def vectorEven4 :
+    (Fin 4 → ℝ) →ₗ[ℝ] CliffordAlgebra.even Q4 :=
+  (CliffordAlgebra.even.ι Q4).bilin.flip (e4 3)
+
+private theorem map_vectorEven4 (v : Fin 4 → ℝ) :
+    (realCliffordFourZeroEvenEquivQuaternionProd (vectorEven4 v)).1 *
+        (_root_.QuaternionAlgebra.Basis.self ℝ).k =
+      realCliffordFourZeroQuaternionEquiv v := by
+  rw [vectorEven4, LinearMap.flip_apply,
+    realCliffordFourZeroEvenEquivQuaternionProd_ι]
+  ext <;> simp [e4, Pi.basisFun_apply, QuaternionAlgebra.mk_mul_mk]
+
+private noncomputable def quaternionKUnitary : unitary ℍ[ℝ] :=
+  ⟨(_root_.QuaternionAlgebra.Basis.self ℝ).k, by
+    rw [Quaternion.mem_unitary_iff_normSq_eq_one]
+    simp [Quaternion.normSq]⟩
+
+private noncomputable def quaternionKConj : ℍ[ℝ] ≃⋆ₐ[ℝ] ℍ[ℝ] :=
+  Unitary.conjStarAlgAut ℝ ℍ[ℝ] quaternionKUnitary
+
+private theorem quaternionKConj_apply (q : ℍ[ℝ]) :
+    quaternionKConj q = ⟨q.re, -q.imI, -q.imJ, q.imK⟩ :=
+  by
+    simp only [quaternionKConj, Unitary.conjStarAlgAut_apply]
+    ext <;> simp [quaternionKUnitary]
+
+private theorem e4_three_sq :
+    CliffordAlgebra.ι Q4 (e4 3) * CliffordAlgebra.ι Q4 (e4 3) = 1 := by
+  rw [CliffordAlgebra.ι_sq_scalar]
+  simp [Q4, e4, Pi.basisFun_apply]
+
+private noncomputable def referenceConjEven :
+    CliffordAlgebra.even Q4 →ₐ[ℝ] CliffordAlgebra.even Q4 where
+  toFun x :=
+    ⟨CliffordAlgebra.ι Q4 (e4 3) * x * CliffordAlgebra.ι Q4 (e4 3), by
+      -- Expose membership in the degree-zero part after multiplying degrees `1 + 0 + 1`.
+      change _ ∈ CliffordAlgebra.evenOdd Q4 0
+      have h := SetLike.mul_mem_graded
+        (SetLike.mul_mem_graded (CliffordAlgebra.ι_mem_evenOdd_one Q4 (e4 3)) x.2)
+        (CliffordAlgebra.ι_mem_evenOdd_one Q4 (e4 3))
+      exact (show (1 + 1 : ZMod 2) = 0 by decide) ▸ h⟩
+  map_one' := by
+    apply Subtype.ext
+    -- Expose the even-subalgebra coercions in the ambient Clifford algebra.
+    change CliffordAlgebra.ι Q4 (e4 3) * 1 * CliffordAlgebra.ι Q4 (e4 3) = 1
+    simpa only [mul_one] using e4_three_sq
+  map_mul' x y := by
+    apply Subtype.ext
+    -- Expose multiplication through the even-subalgebra coercion.
+    change CliffordAlgebra.ι Q4 (e4 3) * (x * y) * CliffordAlgebra.ι Q4 (e4 3) =
+      (CliffordAlgebra.ι Q4 (e4 3) * x * CliffordAlgebra.ι Q4 (e4 3)) *
+        (CliffordAlgebra.ι Q4 (e4 3) * y * CliffordAlgebra.ι Q4 (e4 3))
+    -- Reassociate so that the square of the reference vector can be simplified.
+    rw [show (CliffordAlgebra.ι Q4 (e4 3) * x * CliffordAlgebra.ι Q4 (e4 3)) *
+          (CliffordAlgebra.ι Q4 (e4 3) * y * CliffordAlgebra.ι Q4 (e4 3)) =
+        CliffordAlgebra.ι Q4 (e4 3) * x *
+          (CliffordAlgebra.ι Q4 (e4 3) * CliffordAlgebra.ι Q4 (e4 3)) * y *
+            CliffordAlgebra.ι Q4 (e4 3) by noncomm_ring, e4_three_sq]
+    simp only [mul_one]
+    noncomm_ring
+  map_zero' := by apply Subtype.ext; simp
+  map_add' x y := by apply Subtype.ext; simp [mul_add, add_mul]
+  commutes' r := by
+    apply Subtype.ext
+    -- Expose scalar multiplication in the ambient algebra before commuting the scalar.
+    change CliffordAlgebra.ι Q4 (e4 3) * algebraMap ℝ (CliffordAlgebra Q4) r *
+      CliffordAlgebra.ι Q4 (e4 3) = algebraMap ℝ (CliffordAlgebra Q4) r
+    rw [← Algebra.commutes, mul_assoc, e4_three_sq, mul_one]
+
+private theorem coe_referenceConjEven (x : CliffordAlgebra.even Q4) :
+    (referenceConjEven x : CliffordAlgebra Q4) =
+      CliffordAlgebra.ι Q4 (e4 3) * x * CliffordAlgebra.ι Q4 (e4 3) :=
+  rfl
+
+private noncomputable def swapQuaternionKConj : ℍ[ℝ] × ℍ[ℝ] →ₐ[ℝ] ℍ[ℝ] × ℍ[ℝ] where
+  toFun q := (quaternionKConj q.2, quaternionKConj q.1)
+  map_one' := by ext <;> simp
+  map_mul' q r := by ext <;> simp
+  map_zero' := by ext <;> simp
+  map_add' q r := by ext <;> simp
+  commutes' r := by ext <;> simp [quaternionKConj_apply]
+
+private theorem referenceConjEven_bilin (m n : Fin 4 → ℝ) :
+    referenceConjEven ((CliffordAlgebra.even.ι Q4).bilin m n) =
+      (CliffordAlgebra.even.ι Q4).bilin (e4 3) m *
+        (CliffordAlgebra.even.ι Q4).bilin n (e4 3) := by
+  apply Subtype.ext
+  -- Expose both even bilinear products in the ambient Clifford algebra.
+  change CliffordAlgebra.ι Q4 (e4 3) *
+      (CliffordAlgebra.ι Q4 m * CliffordAlgebra.ι Q4 n) *
+        CliffordAlgebra.ι Q4 (e4 3) =
+    (CliffordAlgebra.ι Q4 (e4 3) * CliffordAlgebra.ι Q4 m) *
+      (CliffordAlgebra.ι Q4 n * CliffordAlgebra.ι Q4 (e4 3))
+  noncomm_ring
+
+private theorem map_referenceConjEven (x : CliffordAlgebra.even Q4) :
+    realCliffordFourZeroEvenEquivQuaternionProd (referenceConjEven x) =
+      swapQuaternionKConj (realCliffordFourZeroEvenEquivQuaternionProd x) := by
+  have h :
+      realCliffordFourZeroEvenEquivQuaternionProd.toAlgHom.comp referenceConjEven =
+        swapQuaternionKConj.comp realCliffordFourZeroEvenEquivQuaternionProd.toAlgHom := by
+    apply CliffordAlgebra.even.algHom_ext
+    apply CliffordAlgebra.EvenHom.ext
+    apply LinearMap.ext₂
+    intro m n
+    -- Expose evaluation of the two composed homomorphisms on a bilinear generator.
+    change realCliffordFourZeroEvenEquivQuaternionProd
+        (referenceConjEven ((CliffordAlgebra.even.ι Q4).bilin m n)) =
+      swapQuaternionKConj (realCliffordFourZeroEvenEquivQuaternionProd
+        ((CliffordAlgebra.even.ι Q4).bilin m n))
+    rw [referenceConjEven_bilin, map_mul,
+      realCliffordFourZeroEvenEquivQuaternionProd_ι,
+      realCliffordFourZeroEvenEquivQuaternionProd_ι,
+      realCliffordFourZeroEvenEquivQuaternionProd_ι]
+    apply Prod.ext <;> ext <;>
+      simp [swapQuaternionKConj, quaternionKConj_apply, e4, Pi.basisFun_apply,
+        QuaternionAlgebra.mk_mul_mk] <;> ring
+  exact DFunLike.congr_fun h x
+
+private theorem quaternionKConj_star_mul_k (q : ℍ[ℝ]) :
+    quaternionKConj (star q) * (_root_.QuaternionAlgebra.Basis.self ℝ).k =
+      (_root_.QuaternionAlgebra.Basis.self ℝ).k * star q := by
+  ext <;> simp [quaternionKConj_apply, QuaternionAlgebra.mk_mul_mk]
+
+private theorem coe_vectorEven4 (v : Fin 4 → ℝ) :
+    (vectorEven4 v : CliffordAlgebra Q4) =
+      CliffordAlgebra.ι Q4 v * CliffordAlgebra.ι Q4 (e4 3) :=
+  rfl
+
+private theorem vectorEven4_spin_action (s : spinGroup Q4) (v : Fin 4 → ℝ) :
+    vectorEven4 (s • v) =
+      CliffordAlgebra.evenUnitaryGroupEvenPart Q4
+          (CliffordAlgebra.spinGroupToEvenUnitary Q4 s) *
+        vectorEven4 v *
+          referenceConjEven
+            (CliffordAlgebra.reverseEven Q4
+              (CliffordAlgebra.evenUnitaryGroupEvenPart Q4
+                (CliffordAlgebra.spinGroupToEvenUnitary Q4 s))) := by
+  apply Subtype.ext
+  rw [coe_vectorEven4, CliffordAlgebra.spinGroup_smul_apply,
+    CliffordAlgebra.ι_spinVectorAction_apply]
+  simp only [Subalgebra.coe_mul, coe_vectorEven4]
+  rw [coe_referenceConjEven, CliffordAlgebra.coe_evenUnitaryGroupEvenPart,
+    CliffordAlgebra.coe_reverseEven_apply,
+    CliffordAlgebra.coe_evenUnitaryGroupEvenPart,
+    CliffordAlgebra.coe_spinGroupToEvenUnitary_apply]
+  -- Expose every even-part coercion in the ambient Clifford algebra.
+  change (s : CliffordAlgebra Q4) * CliffordAlgebra.ι Q4 v *
+      star (s : CliffordAlgebra Q4) * CliffordAlgebra.ι Q4 (e4 3) =
+    (s : CliffordAlgebra Q4) *
+      (CliffordAlgebra.ι Q4 v * CliffordAlgebra.ι Q4 (e4 3)) *
+        (CliffordAlgebra.ι Q4 (e4 3) *
+          CliffordAlgebra.reverse (s : CliffordAlgebra Q4) *
+            CliffordAlgebra.ι Q4 (e4 3))
+  rw [CliffordAlgebra.reverse_eq_star_of_mem_even
+    ⟨(s : CliffordAlgebra Q4), spinGroup.mem_even s.2⟩]
+  -- Reassociate twice to isolate and cancel the square of the reference vector.
+  rw [show (s : CliffordAlgebra Q4) * CliffordAlgebra.ι Q4 v *
+          star (s : CliffordAlgebra Q4) * CliffordAlgebra.ι Q4 (e4 3) =
+        (s : CliffordAlgebra Q4) *
+          (CliffordAlgebra.ι Q4 v * CliffordAlgebra.ι Q4 (e4 3)) *
+            (CliffordAlgebra.ι Q4 (e4 3) * star (s : CliffordAlgebra Q4) *
+              CliffordAlgebra.ι Q4 (e4 3)) by
+      rw [show (s : CliffordAlgebra Q4) *
+              (CliffordAlgebra.ι Q4 v * CliffordAlgebra.ι Q4 (e4 3)) *
+                (CliffordAlgebra.ι Q4 (e4 3) * star (s : CliffordAlgebra Q4) *
+                  CliffordAlgebra.ι Q4 (e4 3)) =
+            (s : CliffordAlgebra Q4) * CliffordAlgebra.ι Q4 v *
+              (CliffordAlgebra.ι Q4 (e4 3) * CliffordAlgebra.ι Q4 (e4 3)) *
+                star (s : CliffordAlgebra Q4) * CliffordAlgebra.ι Q4 (e4 3) by
+          noncomm_ring, e4_three_sq]
+      simp only [mul_one]]
+
+/-- Under the compact real four-dimensional Spin equivalence and the quaternion
+isometry, the vector action is left multiplication by the first unit quaternion and inverse right
+multiplication by the second. -/
+theorem realSpinFourEquivQuaternionUnitaryProd_action
+    (s : spinGroup (realCliffordForm 4 0)) (v : Fin 4 → ℝ) :
+    realCliffordFourZeroQuaternionEquiv (s • v) =
+      (realSpinFourEquivQuaternionUnitaryProd s).1 *
+        realCliffordFourZeroQuaternionEquiv v *
+          star (realSpinFourEquivQuaternionUnitaryProd s).2 := by
+  rw [← map_vectorEven4, vectorEven4_spin_action, map_mul, map_mul,
+    map_referenceConjEven, realCliffordFourZeroEvenEquivQuaternionProd_reverseEven,
+    ← coe_realSpinFourEquivQuaternionUnitaryProd_apply]
+  -- Expose the two quaternion components and the reference-vector coordinate factor.
+  change ((realSpinFourEquivQuaternionUnitaryProd s).1 : ℍ[ℝ]) *
+        (realCliffordFourZeroEvenEquivQuaternionProd (vectorEven4 v)).1 *
+          quaternionKConj (star ((realSpinFourEquivQuaternionUnitaryProd s).2 : ℍ[ℝ])) *
+            (_root_.QuaternionAlgebra.Basis.self ℝ).k =
+      ((realSpinFourEquivQuaternionUnitaryProd s).1 : ℍ[ℝ]) *
+        realCliffordFourZeroQuaternionEquiv v *
+          star ((realSpinFourEquivQuaternionUnitaryProd s).2 : ℍ[ℝ])
+  -- Reassociate to apply the identity moving quaternion `k` past the conjugated factor.
+  rw [show ((realSpinFourEquivQuaternionUnitaryProd s).1 : ℍ[ℝ]) *
+          (realCliffordFourZeroEvenEquivQuaternionProd (vectorEven4 v)).1 *
+            quaternionKConj
+              (star ((realSpinFourEquivQuaternionUnitaryProd s).2 : ℍ[ℝ])) *
+              (_root_.QuaternionAlgebra.Basis.self ℝ).k =
+        ((realSpinFourEquivQuaternionUnitaryProd s).1 : ℍ[ℝ]) *
+          (realCliffordFourZeroEvenEquivQuaternionProd (vectorEven4 v)).1 *
+            (quaternionKConj
+              (star ((realSpinFourEquivQuaternionUnitaryProd s).2 : ℍ[ℝ])) *
+              (_root_.QuaternionAlgebra.Basis.self ℝ).k) by noncomm_ring,
+    quaternionKConj_star_mul_k]
+  -- Reassociate once more to expose the vector-to-quaternion coordinate equation.
+  rw [show ((realSpinFourEquivQuaternionUnitaryProd s).1 : ℍ[ℝ]) *
+          (realCliffordFourZeroEvenEquivQuaternionProd (vectorEven4 v)).1 *
+            ((_root_.QuaternionAlgebra.Basis.self ℝ).k *
+              star ((realSpinFourEquivQuaternionUnitaryProd s).2 : ℍ[ℝ])) =
+        ((realSpinFourEquivQuaternionUnitaryProd s).1 : ℍ[ℝ]) *
+          ((realCliffordFourZeroEvenEquivQuaternionProd (vectorEven4 v)).1 *
+            (_root_.QuaternionAlgebra.Basis.self ℝ).k) *
+              star ((realSpinFourEquivQuaternionUnitaryProd s).2 : ℍ[ℝ]) by
+      noncomm_ring, map_vectorEven4]
 
 /-- The compact real form of the exceptional isomorphism in dimension four:
 `Spin(4) ≃ SU(2) × SU(2)`. -/

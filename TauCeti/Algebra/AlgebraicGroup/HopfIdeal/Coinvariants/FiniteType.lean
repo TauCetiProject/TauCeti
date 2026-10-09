@@ -12,7 +12,8 @@ public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.FiniteType
 
 For a normal closed subgroup of a geometrically reduced finite-type affine group over a field,
 the invariant functions form a finite-type Hopf algebra. The corresponding affine quotient
-projection is faithfully flat. The subgroup may be nonreduced, and the field need not be perfect.
+projection is faithfully flat and finitely presented. The subgroup may be nonreduced, and the
+field need not be perfect.
 
 These statements concern the actual coinvariant algebra, rather than a chosen finite-type
 subalgebra of it. Identifying the kernel of this projection with the original normal subgroup
@@ -57,6 +58,18 @@ theorem faithfullyFlat_coinvariantsι (hI : I.IsNormal) :
   let : Algebra.IsGeometricallyReduced k (coinvariants hI) :=
     Algebra.IsGeometricallyReduced.of_injective (coinvariantsι hI).hom.toAlgHom hinj
   exact (faithfullyFlat_iff_injective_of_isGeometricallyReduced (coinvariantsι hI)).mpr hinj
+
+/-- The normal affine quotient projection is finitely presented. -/
+theorem finitePresentation_coinvariantsι (hI : I.IsNormal) :
+    (coinvariantsι hI).hom.toAlgHom.toRingHom.FinitePresentation := by
+  let : Algebra.FiniteType k (coinvariants hI) := hI.finiteType_coinvariants
+  let : IsNoetherianRing (coinvariants hI) :=
+    Algebra.FiniteType.isNoetherianRing k (coinvariants hI)
+  apply RingHom.FinitePresentation.of_finiteType.mp
+  exact RingHom.FiniteType.of_comp_finiteType (f := algebraMap k (coinvariants hI))
+    (g := (coinvariantsι hI).hom.toAlgHom.toRingHom)
+    ((coinvariantsι hI).hom.toAlgHom.comp_algebraMap.symm ▸
+      RingHom.finiteType_algebraMap.mpr (inferInstance : Algebra.FiniteType k H))
 
 end CommHopfAlgCat
 

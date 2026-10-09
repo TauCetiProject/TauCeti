@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Exact.Basic
-public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.Algebra.GroupAction.QuotientAddGroup
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 public import TauCeti.Topology.Algebra.Group.Quotient.Basic
-public import TauCeti.Topology.Algebra.GroupAction.InternalHom.DoubleDual
+public import TauCeti.Topology.Algebra.GroupAction.InternalHom.Basic
+import TauCeti.Topology.Discrete
 
 /-!
 # Short exact sequences of discrete modules, and the low-degree connecting maps
@@ -30,20 +29,20 @@ the explicit low-degree complex of
 Discreteness of the coefficients is used twice, once at each of the two ends of the sequence.
 Discreteness of `C` gives surjectivity on cochains: a continuous cochain into `C` is locally
 constant, so composing it with *any* set-theoretic section of `B → C` is still continuous
-(`TauCeti.ContCohomology.exists_continuous_lift`). Discreteness of `A` and of `B` gives exactness
-in the middle: an injection of discrete spaces reflects continuity
-(`TauCeti.ContCohomology.continuous_of_injective_comp`), so a continuous cochain into `B` that the
-projection kills retracts to a *continuous* cochain into `A`
+(`TauCeti.exists_continuous_lift`). Discreteness of `B` gives exactness in the middle: every
+function out of `B` is continuous, so the retraction onto the image of `incl` is continuous, and a
+continuous cochain into `B` that the projection kills retracts to a *continuous* cochain into `A`
 (`TauCeti.ContCohomology.DiscreteShortExact.exists_continuous_incl_comp_eq`, whence
-`C1_map_incl_eq_inf_ker`); it is also what makes `incl` and `proj` continuous. For general
+`C1_map_incl_eq_inf_ker`). Cocycle conditions descend along `incl` because an injection into a
+discrete space reflects continuity (`TauCeti.continuous_of_injective_comp`). Discreteness of `A`
+and of `B` is also what makes `incl` and `proj` continuous. For general
 topological coefficients neither argument applies, since a set-theoretic section need not be
 continuous and a continuous cochain need not be locally constant; the cochain sequence can still
 be exact when suitable continuous lifts exist. Nothing below is asserted in that more general
 setting.
 
 The sequence is carried by a structure rather than by loose hypotheses because every statement
-here — and, later, the compatibility of corestriction with the connecting maps — is about the same
-sequence and has to name the same two coefficient maps.
+here is about the same sequence and has to name the same two coefficient maps.
 
 ## Main definitions
 
@@ -71,11 +70,6 @@ sequence and has to name the same two coefficient maps.
 
 ## Main statements
 
-* `TauCeti.ContCohomology.exists_continuous_lift`: a continuous cochain on any topological space
-  lifts along any surjection onto a discrete space. This is the degree-agnostic form of
-  surjectivity of `Cⁿ(G, B) → Cⁿ(G, C)`.
-* `TauCeti.ContCohomology.continuous_of_injective_comp`: an injection of discrete spaces reflects
-  continuity. This is the degree-agnostic form of exactness in the middle.
 * `TauCeti.ContCohomology.DiscreteShortExact.compLeft_incl_injective`,
   `C1_map_incl_eq_inf_ker` and `C1_map_proj_eq_C1`: exactness of
   `0 → C¹(X, A) → C¹(X, B) → C¹(X, C) → 0` at its left, middle and right nodes, with
@@ -86,8 +80,8 @@ sequence and has to name the same two coefficient maps.
 * `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta0_apply` and
   `explicitDelta1_apply`: the two connecting maps evaluated on representatives, in the shape of
   Mathlib's discrete `groupCohomology.δ₀_apply` and `δ₁_apply`. They hold for an *arbitrary*
-  preimage and an arbitrary representing cocycle, so they are also the public form of the
-  well-definedness of the two maps. Their cocycle hypotheses are discharged by
+  preimage and an arbitrary representing cochain, so they are also the public form of the
+  well-definedness of the two maps. The cocycle proofs in their conclusions are
   `TauCeti.ContCohomology.DiscreteShortExact.mem_Z1_of_incl_comp_eq_d0` and
   `mem_Z2_of_incl_comp_eq_d1`, which need no cocycle input of their own.
 
@@ -100,8 +94,8 @@ map out of them is continuous. Exactness in the middle is Mathlib's `Function.Ex
 The cochain maps are Mathlib's `AddMonoidHom.compLeft`, postcomposition on a function space; the
 statements of exactness are therefore about the image and kernel of that homomorphism restricted
 to the cochain subgroup `C¹ X -`, which is `C¹(G, -)` at `X = G` and `C²(G, -)` at `X = G × G`.
-The compatible-pair pullback of Layer 2 is a different map — it moves the group as well as the
-coefficients — and is not used here.
+The compatible-pair pullback, which moves the group as well as the coefficients, is a different
+map and is not used here.
 
 Both connecting maps are built from a *variable* preimage first, and the independence of the
 choice is a theorem rather than a definitional accident; only then is the map defined by choosing
@@ -112,19 +106,13 @@ choices the mathematical statements must not mention; the public interface to th
 has in hand.
 
 The cochain sequences are stated for a topological monoid `G`. The two connecting maps ask in
-addition that the coefficients be discrete `G`-modules with a *continuous* action,
-`[ContinuousSMul G A]` and `[ContinuousSMul G B]`: without it `B¹ ≤ Z¹` and `B² ≤ Z²` fail and the
-quotients `H1` and `H2` cannot be formed. `δ¹` asks moreover for a continuous multiplication on
-`G`, which is what carries continuity through `d¹`. `DiscreteShortExact.restrict` is the one
-exception in the other direction: restricting the sequence to a subgroup asks `G` to be a group.
-Profiniteness plays no part in this layer.
-
-This implements the "exactness of cochains" and "the short exact sequence as data" milestones of
-Layer 5 of the human-authored roadmap at `TauCetiRoadmap/ProfiniteCohomology/README.md`, together
-with the two connecting maps and their descriptions on representatives from that layer's long
-exact sequence milestone, whose `Suggested.lean` fixes the names `DiscreteShortExact`,
-`DiscreteShortExact.restrict`, `explicitDelta0`, `explicitDelta0_apply`, `explicitDelta1` and
-`explicitDelta1_apply`.
+addition that the coefficients be discrete `G`-modules with a *continuous* action:
+`[ContinuousSMul G A]` and `[ContinuousSMul G B]` for `δ⁰`, and also `[ContinuousSMul G C]` for
+`δ¹`. Without it `B¹ ≤ Z¹` and `B² ≤ Z²` fail and the quotients `H1` and `H2` cannot be formed.
+`δ¹` asks moreover for a continuous multiplication on `G`, which is what carries continuity
+through `d¹`. Restricting the sequence to a subgroup (`DiscreteShortExact.restrict`) and the
+dual sequence (`DiscreteShortExact.dual`, whose conjugation action needs inverses) ask `G` to be a
+group. Profiniteness plays no part here.
 
 ## References
 
@@ -139,10 +127,10 @@ namespace TauCeti.ContCohomology
 
 universe u vA vB vC vN w
 
-/-! ### Cochain lifting and descent
+/-! ### Cochain lifting
 
-The two inputs from topology that make the continuous cochain sequences exact. Neither uses the
-group, the action or the sequence, so both are stated for bare maps of topological spaces. -/
+The canonical set-theoretic lift of a cochain along a surjection, from which the connecting maps
+below are built. Its continuity is `TauCeti.exists_continuous_lift`'s argument. -/
 
 section Lift
 
@@ -164,37 +152,15 @@ private theorem continuous_liftCochain (hp : Function.Surjective p) {f : X → C
     (hf : Continuous f) : Continuous (liftCochain hp f) :=
   (continuous_of_discreteTopology (f := Function.surjInv hp)).comp hf
 
-/-- **A continuous cochain lifts along any surjection onto a discrete space.** Discreteness of the
-target is the sufficient hypothesis used here: `f` is locally constant, so composing it with any
-set-theoretic section of `p` is continuous again. Stated on an arbitrary topological space and for
-a bare surjection, hence in every degree at once. -/
-theorem exists_continuous_lift (hp : Function.Surjective p) {f : X → C} (hf : Continuous f) :
-    ∃ e : X → B, Continuous e ∧ ∀ x, p (e x) = f x :=
-  ⟨liftCochain hp f, continuous_liftCochain hp hf, apply_liftCochain hp f⟩
-
 end Lift
-
-section Descent
-
-variable {X : Type w} [TopologicalSpace X] {A : Type vA} [TopologicalSpace A] [DiscreteTopology A]
-  {B : Type vB} [TopologicalSpace B] [DiscreteTopology B]
-
-/-- **An injective map of discrete spaces reflects continuity.** Continuity into the discrete `A`
-and `B` is local constancy, and local constancy descends along an injection. -/
-theorem continuous_of_injective_comp {f : A → B} (hf : Function.Injective f) {a : X → A}
-    (h : Continuous fun x => f (a x)) : Continuous a :=
-  (IsLocallyConstant.iff_continuous a).1 <|
-    IsLocallyConstant.desc a f ((IsLocallyConstant.iff_continuous _).2 h) hf
-
-end Descent
 
 /-- A short exact sequence `0 → A → B → C → 0` of discrete `G`-modules.
 
 Discreteness of the three modules is what makes the continuous cochain sequences exact:
 discreteness of `C` makes arbitrary set-theoretic lifts of continuous cochains continuous, and
-discreteness of `A` and `B` makes the inclusion reflect continuity, which is what retracts a
-continuous cochain killed by the projection. Continuity of the two maps is a further consequence
-of it, not data. -/
+discreteness of `B` makes the retraction onto the image of the inclusion continuous, which is
+what retracts a continuous cochain killed by the projection. Continuity of the two maps is a
+further consequence of it, not data. -/
 structure DiscreteShortExact (G : Type u) [Monoid G]
     (A : Type vA) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
     [DistribMulAction G A]
@@ -256,6 +222,16 @@ theorem inclDistribMulActionHom_apply (a : A) : S.inclDistribMulActionHom a = S.
 
 @[simp]
 theorem projDistribMulActionHom_apply (b : B) : S.projDistribMulActionHom b = S.proj b := (rfl)
+
+/-- The additive homomorphism underlying the bundled inclusion is `incl`. -/
+@[simp]
+theorem coe_addMonoidHom_inclDistribMulActionHom :
+    (S.inclDistribMulActionHom : A →+ B) = S.incl := (rfl)
+
+/-- The additive homomorphism underlying the bundled projection is `proj`. -/
+@[simp]
+theorem coe_addMonoidHom_projDistribMulActionHom :
+    (S.projDistribMulActionHom : B →+ C) = S.proj := (rfl)
 
 /-- The bundled inclusion is injective, as `incl` is. -/
 theorem inclDistribMulActionHom_injective : Function.Injective S.inclDistribMulActionHom :=
@@ -328,9 +304,8 @@ def ofAddSubgroup (N : AddSubgroup B) (hN : ∀ g : G, ∀ x ∈ N, g • x ∈ 
     proj_equivariant := fun g b ↦ (N.quotientDistribMulAction_smul_mk hN g b).symm
     incl_injective := N.subtype_injective
     proj_surjective := QuotientAddGroup.mk'_surjective N
-    exact := fun b ↦ by
-      rw [QuotientAddGroup.mk'_apply, QuotientAddGroup.eq_zero_iff]
-      exact ⟨fun hb ↦ ⟨⟨b, hb⟩, rfl⟩, fun ⟨a, ha⟩ ↦ ha ▸ a.2⟩ }
+    exact := by
+      rw [AddMonoidHom.exact_iff, QuotientAddGroup.ker_mk', AddSubgroup.range_subtype] }
 
 @[simp]
 theorem ofAddSubgroup_incl (N : AddSubgroup B) (hN : ∀ g : G, ∀ x ∈ N, g • x ∈ N) :
@@ -473,28 +448,6 @@ theorem dual_projDistribMulActionHom :
     (S.dual N hsurj).projDistribMulActionHom = InternalHom.precomp G S.inclDistribMulActionHom :=
   DistribMulActionHom.ext fun _ => rfl
 
-/-- **Evaluation is a morphism from a sequence to its double dual, on the inclusions.** The
-inclusion of the double dual sequence `0 → A^{∨∨} → B^{∨∨} → C^{∨∨} → 0` carries the evaluation
-class of `a : A` to the evaluation class of `S.incl a`. -/
-theorem dual_dual_incl_eval
-    (hsurj' : Function.Surjective
-      (InternalHom.precomp G (S.dual N hsurj).inclDistribMulActionHom (N := N))) (a : A) :
-    ((S.dual N hsurj).dual N hsurj').incl (InternalHom.eval G A N a) =
-      InternalHom.eval G B N (S.incl a) := by
-  rw [dual_incl, dual_projDistribMulActionHom]
-  exact InternalHom.precomp_precomp_eval S.inclDistribMulActionHom a
-
-/-- **Evaluation is a morphism from a sequence to its double dual, on the projections.** The
-projection of the double dual sequence `0 → A^{∨∨} → B^{∨∨} → C^{∨∨} → 0` carries the evaluation
-class of `b : B` to the evaluation class of `S.proj b`. -/
-theorem dual_dual_proj_eval
-    (hsurj' : Function.Surjective
-      (InternalHom.precomp G (S.dual N hsurj).inclDistribMulActionHom (N := N))) (b : B) :
-    ((S.dual N hsurj).dual N hsurj').proj (InternalHom.eval G B N b) =
-      InternalHom.eval G C N (S.proj b) := by
-  rw [dual_proj, dual_inclDistribMulActionHom]
-  exact InternalHom.precomp_precomp_eval S.projDistribMulActionHom b
-
 end Dual
 
 section Retract
@@ -523,13 +476,6 @@ private theorem incl_retract {b : B} (hb : S.proj b = 0) : S.incl (S.retract b) 
 private theorem retract_zero : S.retract (0 : B) = 0 := by
   simpa using S.retract_incl 0
 
-/-- Retracting a continuous cochain that is killed by the projection leaves it continuous. -/
-private theorem continuous_retract_comp {X : Type*} [TopologicalSpace X] {φ : X → B}
-    (hφ : Continuous φ) (h0 : ∀ x, S.proj (φ x) = 0) :
-    Continuous fun x => S.retract (φ x) :=
-  continuous_of_injective_comp S.incl_injective <| by
-    simpa only [fun x => S.incl_retract (h0 x)] using hφ
-
 end Retract
 
 section Cochains
@@ -554,7 +500,7 @@ variable [TopologicalSpace X]
 `A`, obtained by retracting the cochain pointwise. -/
 theorem exists_continuous_incl_comp_eq {φ : X → B} (hφ : Continuous φ)
     (hzero : ∀ x, S.proj (φ x) = 0) : ∃ a : X → A, Continuous a ∧ ∀ x, S.incl (a x) = φ x :=
-  ⟨fun x => S.retract (φ x), S.continuous_retract_comp hφ hzero,
+  ⟨fun x => S.retract (φ x), (continuous_of_discreteTopology (f := S.retract)).comp hφ,
     fun x => S.incl_retract (hzero x)⟩
 
 variable (X) in
@@ -577,7 +523,7 @@ theorem C1_map_incl_eq_inf_ker :
 
 variable (X) in
 /-- Exactness of `C¹(X, B) → C¹(X, C) → 0` at the right node: every continuous cochain into `C`
-lifts, by `TauCeti.ContCohomology.exists_continuous_lift`. -/
+lifts, by `TauCeti.exists_continuous_lift`. -/
 theorem C1_map_proj_eq_C1 : AddSubgroup.map (S.proj.compLeft X) (C1 X B) = C1 X C := by
   ext f
   refine ⟨?_, fun hf => ?_⟩
@@ -707,8 +653,8 @@ variable {G : Type u} [Monoid G] [TopologicalSpace G]
 variable (S) in
 /-- **A cochain on `A` lying over a coboundary of `B` is a continuous `1`-cocycle.** No cocycle
 hypothesis is needed, a coboundary being a continuous cocycle already; this is the case
-`e = d⁰ b` of `TauCeti.ContCohomology.DiscreteShortExact.mem_Z1_of_incl_comp_mem_Z1`. It is what
-discharges the hypothesis `ha` of
+`e = d⁰ b` of `TauCeti.ContCohomology.DiscreteShortExact.mem_Z1_of_incl_comp_mem_Z1`. It is the
+cocycle proof in the conclusion of
 `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta0_apply`, whose `hab` it takes verbatim. -/
 theorem mem_Z1_of_incl_comp_eq_d0 {b : B} {a : G → A}
     (hab : ∀ g : G, S.incl (a g) = g • b - b) : a ∈ Z1 G A :=
@@ -767,13 +713,13 @@ noncomputable def explicitDelta0 : H0 G C →+ H1 G A :=
       rw [Function.surjInv_eq S.proj_surjective, map_add, Function.surjInv_eq S.proj_surjective,
         Function.surjInv_eq S.proj_surjective, AddSubgroup.coe_add])
 
-/-- **`δ⁰` on representatives.** For *any* preimage `b` of an invariant `c` and any continuous
-`1`-cocycle `a` with `incl ∘ a = d⁰ b`, the class of `a` is `δ⁰ c`. This mirrors the shape of
-Mathlib's discrete `groupCohomology.δ₀_apply`. The hypothesis `ha` is discharged from `hab` by
-`TauCeti.ContCohomology.DiscreteShortExact.mem_Z1_of_incl_comp_eq_d0`. -/
+/-- **`δ⁰` on representatives.** For *any* preimage `b` of an invariant `c` and any `a : G → A`
+with `incl ∘ a = d⁰ b`, `a` is a continuous `1`-cocycle
+(`TauCeti.ContCohomology.DiscreteShortExact.mem_Z1_of_incl_comp_eq_d0`) and its class is `δ⁰ c`.
+This mirrors the shape of Mathlib's discrete `groupCohomology.δ₀_apply`. -/
 theorem explicitDelta0_apply (c : H0 G C) {b : B} (hb : S.proj b = (c : C)) {a : G → A}
-    (ha : a ∈ Z1 G A) (hab : ∀ g : G, S.incl (a g) = g • b - b) :
-    S.explicitDelta0 c = H1pi G A ⟨a, ha⟩ := by
+    (hab : ∀ g : G, S.incl (a g) = g • b - b) :
+    S.explicitDelta0 c = H1pi G A ⟨a, S.mem_Z1_of_incl_comp_eq_d0 hab⟩ := by
   have hbinv : S.proj b ∈ H0 G C := by
     rw [hb]
     exact c.2
@@ -847,8 +793,9 @@ private theorem continuous_liftCochain_coe (f : Z1 G C) :
     Continuous (liftCochain S.proj_surjective (f : G → C)) :=
   continuous_liftCochain S.proj_surjective (mem_Z1_iff.1 f.2).1
 
-/-- The canonical lift of a continuous `1`-cocycle on `C` lies over that cocycle. -/
-private theorem isCocycle₁_liftCochain (f : Z1 G C) :
+/-- The projection of the canonical lift of a continuous `1`-cocycle on `C` is a `1`-cocycle: by
+`apply_liftCochain` it is the cocycle itself. -/
+private theorem isCocycle₁_proj_liftCochain (f : Z1 G C) :
     groupCohomology.IsCocycle₁ fun g =>
       S.proj (liftCochain S.proj_surjective (f : G → C) g) := by
   simpa only [apply_liftCochain S.proj_surjective] using (mem_Z1_iff.1 f.2).2
@@ -871,8 +818,8 @@ variable (S) in
 /-- **A cochain on `A` lying over a coboundary of `B` is a continuous `2`-cocycle.** No cocycle
 hypothesis on `e` is needed, a continuous coboundary being a continuous cocycle already; this is
 the case `z = d¹ e` of
-`TauCeti.ContCohomology.DiscreteShortExact.mem_Z2_of_incl_comp_mem_Z2`. It is what discharges the
-hypothesis `ha` of
+`TauCeti.ContCohomology.DiscreteShortExact.mem_Z2_of_incl_comp_mem_Z2`. It is the cocycle proof
+in the conclusion of
 `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta1_apply`, whose `hae` it takes verbatim. -/
 theorem mem_Z2_of_incl_comp_eq_d1 {e : G → B} (hc : Continuous e) {a : G × G → A}
     (hae : ∀ g h : G, S.incl (a (g, h)) = g • e h - e (g * h) + e g) : a ∈ Z2 G A :=
@@ -898,7 +845,6 @@ private noncomputable def delta1Class {e : G → B} (hc : Continuous e)
   H2pi G A ⟨S.delta1Cochain e, delta1Cochain_mem_Z2 hc (fun _ => rfl) hf⟩
 
 /-- The class attached to a lift is represented by its `δ¹` cochain. -/
-@[simp]
 private theorem delta1Class_def {e : G → B} (hc : Continuous e)
     (hf : groupCohomology.IsCocycle₁ fun g => S.proj (e g)) :
     S.delta1Class hc hf =
@@ -946,22 +892,34 @@ variable (S) in
 `1`-cocycle on `C`, through its canonical lift. -/
 private noncomputable def delta1Hom : Z1 G C →+ H2 G A :=
   AddMonoidHom.mk'
-    (fun f => S.delta1Class (S.continuous_liftCochain_coe f) (S.isCocycle₁_liftCochain f))
+    (fun f => S.delta1Class (S.continuous_liftCochain_coe f) (S.isCocycle₁_proj_liftCochain f))
     fun f f' => by
       refine (delta1Class_congr _ ((S.continuous_liftCochain_coe f).add
-        (S.continuous_liftCochain_coe f')) (S.isCocycle₁_liftCochain (f + f'))
-        (isCocycle₁_proj_add (S.isCocycle₁_liftCochain f) (S.isCocycle₁_liftCochain f'))
+        (S.continuous_liftCochain_coe f')) (S.isCocycle₁_proj_liftCochain (f + f'))
+        (isCocycle₁_proj_add (S.isCocycle₁_proj_liftCochain f) (S.isCocycle₁_proj_liftCochain f'))
         (funext fun g => by
           rw [apply_liftCochain S.proj_surjective, Pi.add_apply, map_add,
             apply_liftCochain S.proj_surjective, apply_liftCochain S.proj_surjective,
             AddSubgroup.coe_add, Pi.add_apply])).trans ?_
-      exact delta1Class_add _ _ (S.isCocycle₁_liftCochain f) (S.isCocycle₁_liftCochain f')
+      exact delta1Class_add _ _ (S.isCocycle₁_proj_liftCochain f) (S.isCocycle₁_proj_liftCochain f')
 
 /-- Before descent to `H¹`, `δ¹` is the class of the cochain obtained from the canonical lift. -/
-@[simp]
 private theorem delta1Hom_apply (f : Z1 G C) :
     S.delta1Hom f =
-      S.delta1Class (S.continuous_liftCochain_coe f) (S.isCocycle₁_liftCochain f) := (rfl)
+      S.delta1Class (S.continuous_liftCochain_coe f) (S.isCocycle₁_proj_liftCochain f) := (rfl)
+
+/-- Before descent to `H¹`, `δ¹` is the class of the cochain of *any* continuous lift. -/
+private theorem delta1Hom_eq_of_lift (f : Z1 G C) {e : G → B} (hc : Continuous e)
+    (he : ∀ g, S.proj (e g) = (f : G → C) g) :
+    S.delta1Hom f =
+      H2pi G A ⟨S.delta1Cochain e, delta1Cochain_mem_Z2 hc he (mem_Z1_iff.1 f.2).2⟩ := by
+  have he' : groupCohomology.IsCocycle₁ fun g => S.proj (e g) := by
+    simpa only [he] using (mem_Z1_iff.1 f.2).2
+  have hproj : (fun g => S.proj (liftCochain S.proj_surjective (f : G → C) g)) =
+      fun g => S.proj (e g) := funext fun g => by
+    rw [apply_liftCochain S.proj_surjective, he]
+  rw [delta1Hom_apply, delta1Class_congr _ hc (S.isCocycle₁_proj_liftCochain f) he' hproj,
+    delta1Class_def]
 
 /-- `δ¹` before descent to cohomology kills the `1`-coboundaries. -/
 private theorem delta1Hom_eq_zero_of_mem_B1 (f : Z1 G C) (hf : (f : G → C) ∈ B1 G C) :
@@ -973,20 +931,8 @@ private theorem delta1Hom_eq_zero_of_mem_B1 (f : Z1 G C) (hf : (f : G → C) ∈
   have hzero : S.delta1Cochain (d0 G B b) = 0 := funext fun p => by
     rw [delta1Cochain_apply, congrFun (d1_comp_d0_apply (G := G) b) p]
     exact S.retract_zero
-  have hsubtype :
-      (⟨S.delta1Cochain (d0 G B b),
-          delta1Cochain_mem_Z2 (continuous_d0_apply (G := G) b) he
-            (mem_Z1_iff.1 f.2).2⟩ :
-        Z2 G A) = 0 :=
-    Subtype.ext hzero
-  have hd0 : groupCohomology.IsCocycle₁ fun g => S.proj (d0 G B b g) := by
-    simpa only [he] using (mem_Z1_iff.1 f.2).2
-  have hproj : (fun g => S.proj (liftCochain S.proj_surjective (f : G → C) g)) =
-      fun g => S.proj (d0 G B b g) := funext fun g => by
-    rw [apply_liftCochain S.proj_surjective, he]
-  rw [delta1Hom_apply, delta1Class_congr _ (continuous_d0_apply (G := G) b)
-      (S.isCocycle₁_liftCochain f) hd0 hproj, delta1Class_def, hsubtype]
-  exact map_zero _
+  rw [delta1Hom_eq_of_lift f (continuous_d0_apply (G := G) b) he]
+  exact (congrArg (H2pi G A) (Subtype.ext hzero)).trans (map_zero _)
 
 variable [ContinuousSMul G C]
 
@@ -999,31 +945,24 @@ noncomputable def explicitDelta1 : H1 G C →+ H2 G A :=
 
 /-- The quotient lift defining `explicitDelta1` computes to `delta1Hom` on a representative. -/
 private theorem explicitDelta1_H1pi (f : Z1 G C) :
-    S.explicitDelta1 (f : H1 G C) = S.delta1Hom f := by
+    S.explicitDelta1 (H1pi G C f) = S.delta1Hom f := by
   rw [explicitDelta1]
   exact QuotientAddGroup.lift_mk' _ _ f
 
 variable (S) in
 /-- **`δ¹` on representatives.** For *any* continuous lift `e` of a continuous `1`-cocycle `f` on
-`C` and any continuous `2`-cocycle `a` with `incl ∘ a = d¹ e`, the class of `a` is `δ¹` of the
-class of `f`. This mirrors the shape of Mathlib's discrete `groupCohomology.δ₁_apply`. The
-hypothesis `ha` is discharged from `hae` by
-`TauCeti.ContCohomology.DiscreteShortExact.mem_Z2_of_incl_comp_eq_d1`. -/
+`C` and any `a : G × G → A` with `incl ∘ a = d¹ e`, `a` is a continuous `2`-cocycle
+(`TauCeti.ContCohomology.DiscreteShortExact.mem_Z2_of_incl_comp_eq_d1`) and its class is `δ¹` of
+the class of `f`. This mirrors the shape of Mathlib's discrete `groupCohomology.δ₁_apply`. -/
 theorem explicitDelta1_apply (f : Z1 G C) {e : G → B} (hc : Continuous e)
-    (he : ∀ g, S.proj (e g) = (f : G → C) g) {a : G × G → A} (ha : a ∈ Z2 G A)
+    (he : ∀ g, S.proj (e g) = (f : G → C) g) {a : G × G → A}
     (hae : ∀ g h : G, S.incl (a (g, h)) = g • e h - e (g * h) + e g) :
-    S.explicitDelta1 (H1pi G C f) = H2pi G A ⟨a, ha⟩ := by
+    S.explicitDelta1 (H1pi G C f) = H2pi G A ⟨a, S.mem_Z2_of_incl_comp_eq_d1 hc hae⟩ := by
   have hcochain : a = S.delta1Cochain e := funext fun p => by
     obtain ⟨g, h⟩ := p
     exact S.incl_injective (((hae g h).trans (d1_apply e g h).symm).trans
       (incl_delta1Cochain he (mem_Z1_iff.1 f.2).2 (g, h)).symm)
-  have he' : groupCohomology.IsCocycle₁ fun g => S.proj (e g) := by
-    simpa only [he] using (mem_Z1_iff.1 f.2).2
-  have hproj : (fun g => S.proj (liftCochain S.proj_surjective (f : G → C) g)) =
-      fun g => S.proj (e g) := funext fun g => by
-    rw [apply_liftCochain S.proj_surjective, he]
-  rw [QuotientAddGroup.mk'_apply, explicitDelta1_H1pi, delta1Hom_apply,
-    delta1Class_congr _ hc (S.isCocycle₁_liftCochain f) he' hproj, delta1Class_def]
+  rw [explicitDelta1_H1pi, delta1Hom_eq_of_lift f hc he]
   exact congrArg (H2pi G A) (Subtype.ext hcochain.symm)
 
 end Delta1
@@ -1038,7 +977,7 @@ universe uS
 
 open CategoryTheory
 
-variable {G : Type uS} [Group G]
+variable {G : Type*} [Monoid G]
   {A : Type uS} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A] [DistribMulAction G A]
   {B : Type uS} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B] [DistribMulAction G B]
   {C : Type uS} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C] [DistribMulAction G C]
@@ -1048,7 +987,7 @@ variable {G : Type uS} [Group G]
 /-- A short exact sequence of discrete `G`-modules as a short complex of canonical coefficient
 objects in `TopRep ℤ G`. -/
 @[expose, simps]
-noncomputable def toShortComplex : ShortComplex (TopRep.{uS} ℤ G) where
+def toShortComplex : ShortComplex (TopRep.{uS} ℤ G) where
   f := ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant
   g := ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant
   zero := TopRep.hom_ext <| DFunLike.ext _ _ fun a : A ↦ S.proj_incl a

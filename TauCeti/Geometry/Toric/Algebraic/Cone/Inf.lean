@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Convex.Cone.Relations
 public import TauCeti.Geometry.Toric.Algebraic.Cone.Basic
 public import TauCeti.Geometry.Toric.Algebraic.Lattice
 
@@ -62,35 +63,6 @@ namespace TauCeti.Toric
 
 variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] {i : N →+ V}
 
-/-- Moving from a nonnegative vector `c` along `-k`, where `k` vanishes off the support of `c`
-and has a positive coordinate, until the first coordinate vanishes stays nonnegative and shrinks
-the support. -/
-private theorem exists_pos_sub_smul_nonneg_support_ssubset {ι : Type*} [Finite ι]
-    {c k : ι → ℝ} (hc : 0 ≤ c) (hk : ∀ j, c j = 0 → k j = 0) (hpos : ∃ j, 0 < k j) :
-    ∃ s : ℝ, 0 < s ∧ 0 ≤ c - s • k ∧ Function.support (c - s • k) ⊂ Function.support c := by
-  classical
-  have := Fintype.ofFinite ι
-  let P := Finset.univ.filter fun j ↦ 0 < k j
-  have hP : P.Nonempty := let ⟨j, hj⟩ := hpos; ⟨j, by simpa [P] using hj⟩
-  obtain ⟨j₁, hj₁, hs⟩ := P.exists_mem_eq_inf' hP fun j ↦ c j / k j
-  have hkj₁ : 0 < k j₁ := by simpa [P] using hj₁
-  have hcpos : ∀ j, 0 < k j → 0 < c j := fun j hj ↦
-    (hc j).lt_of_ne' fun h ↦ hj.ne' (hk j h)
-  have hs₀ : 0 < P.inf' hP fun j ↦ c j / k j := by
-    rw [hs]
-    exact div_pos (hcpos j₁ hkj₁) hkj₁
-  refine ⟨P.inf' hP fun j ↦ c j / k j, hs₀, fun j ↦ ?_, ?_⟩
-  · simp only [Pi.zero_apply, Pi.sub_apply, Pi.smul_apply, smul_eq_mul, sub_nonneg]
-    rcases lt_or_ge 0 (k j) with hkj | hkj
-    · exact (le_div_iff₀ hkj).1 (P.inf'_le _ (by simpa [P] using hkj))
-    · exact (mul_nonpos_of_nonneg_of_nonpos hs₀.le hkj).trans (hc j)
-  · refine (Set.ssubset_iff_of_subset (Function.support_subset_iff'.2 fun j hj ↦ ?_)).2
-      ⟨j₁, (hcpos j₁ hkj₁).ne', ?_⟩
-    · rw [Function.notMem_support] at hj
-      simp [hj, hk j hj]
-    · rw [Function.notMem_support, hs]
-      simp [div_mul_cancel₀ _ hkj₁.ne']
-
 /-- The induction step for `mem_hull_natCast_relations_iff_of_liftBaseChange_injective`: an
 integral relation `k` among the `v j`, supported in the support of a nonnegative real relation `c`
 and positive somewhere, writes `c` as a nonnegative combination of nonnegative real relations of
@@ -107,12 +79,13 @@ private theorem mem_hull_natCast_relations_of_int_relation {ι : Type*} [Fintype
     have hkR : ∑ j, kR j • i (v j) = 0 := by
       simpa only [kR, map_sum, map_zsmul, map_zero, Int.cast_smul_eq_zsmul] using congrArg i hkv
     simp [sub_smul, Finset.sum_sub_distrib, mul_smul, ← Finset.smul_sum, hcv, hkR]
-  obtain ⟨s, hs, hu, hsub⟩ := exists_pos_sub_smul_nonneg_support_ssubset hc
+  obtain ⟨s, hs, hu, hsub⟩ := TauCeti.exists_pos_sub_smul_nonneg_support_ssubset hc (Set.toFinite _)
     (k := kR) (fun j h ↦ by simp [kR, hk j h]) (let ⟨j, hj⟩ := hpos; ⟨j, by simpa [kR]⟩)
   have hu₁ := step _ hu (hrel s) hsub
   by_cases hneg : ∃ j, k j < 0
   · -- Both directions along `k` leave the cone: `c` lies between two smaller relations.
-    obtain ⟨t, ht, hu', hsub'⟩ := exists_pos_sub_smul_nonneg_support_ssubset hc
+    obtain ⟨t, ht, hu', hsub'⟩ :=
+      TauCeti.exists_pos_sub_smul_nonneg_support_ssubset hc (Set.toFinite _)
       (k := -kR) (fun j h ↦ by simp [kR, hk j h]) (let ⟨j, hj⟩ := hneg; ⟨j, by simpa [kR]⟩)
     have hu₂ := step _ hu' (by simpa [sub_eq_add_neg] using hrel (-t)) hsub'
     have hcomb : c = (t / (s + t)) • (c - s • kR) + (s / (s + t)) • (c - t • -kR) := by
@@ -132,26 +105,6 @@ private theorem mem_hull_natCast_relations_of_int_relation {ι : Type*} [Fintype
       simp only [kR]
       exact_mod_cast Int.toNat_of_nonneg (hneg j)
 
-/-- A nonnegative combination of natural-number relations among the `v j` is a nonnegative real
-relation among the `i (v j)`: the easy half of
-`mem_hull_natCast_relations_iff_of_liftBaseChange_injective`. -/
-private theorem nonneg_relation_of_mem_hull_natCast_relations {ι : Type*} [Fintype ι]
-    {v : ι → N} {c : ι → ℝ}
-    (hc : c ∈ PointedCone.hull ℝ
-      ((fun k : ι → ℕ ↦ fun j ↦ (k j : ℝ)) '' {k | ∑ j, k j • v j = 0})) :
-    0 ≤ c ∧ ∑ j, c j • i (v j) = 0 := by
-  induction hc using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨k, hk, rfl⟩ := hx
-    refine ⟨fun j ↦ Nat.cast_nonneg _, ?_⟩
-    simpa only [map_sum, map_nsmul, map_zero, Nat.cast_smul_eq_nsmul] using congrArg i hk
-  | zero => simp
-  | add x y _ _ hx hy =>
-    exact ⟨add_nonneg hx.1 hy.1, by simp [add_smul, Finset.sum_add_distrib, hx.2, hy.2]⟩
-  | smul r x _ hx =>
-    refine ⟨fun j ↦ mul_nonneg r.2 (hx.1 j), ?_⟩
-    simp [← Nonneg.coe_smul, mul_smul, ← Finset.smul_sum, hx.2]
-
 /-- **Rational generation of nonnegative relations.** When the real-linear map
 `ℝ ⊗[ℤ] N →ₗ[ℝ] V` induced by `i` is injective (for instance when `i` is an integral lattice, or
 more generally extends scalars from `ℤ` to `ℝ`), for finitely many lattice vectors `v j`, a real
@@ -165,7 +118,7 @@ theorem mem_hull_natCast_relations_iff_of_liftBaseChange_injective
         ((fun k : ι → ℕ ↦ fun j ↦ (k j : ℝ)) '' {k | ∑ j, k j • v j = 0}) ↔
       0 ≤ c ∧ ∑ j, c j • i (v j) = 0 := by
   classical
-  refine ⟨nonneg_relation_of_mem_hull_natCast_relations, ?_⟩
+  refine ⟨i.nonneg_relation_of_mem_hull_natCast_relations, ?_⟩
   rintro ⟨hc, hcv⟩
   -- Strong induction on the number of nonzero coordinates of `c`.
   induction hn : (Function.support c).ncard using Nat.strong_induction_on generalizing c with
@@ -177,10 +130,9 @@ theorem mem_hull_natCast_relations_iff_of_liftBaseChange_injective
   by_cases hli : LinearIndependent ℤ fun j : {j // c j ≠ 0} ↦ v j
   · -- Independent vectors in the support admit no nonzero real relation, so `c = 0`.
     have hsupp : ∑ j : {j // c j ≠ 0}, c j • i (v j) = 0 := by
-      have h := Fintype.sum_subtype_add_sum_subtype (fun j ↦ c j ≠ 0) fun j ↦ c j • i (v j)
-      have h0 : ∑ j : {j // ¬c j ≠ 0}, c j • i (v j) = 0 :=
-        Finset.sum_eq_zero fun j _ ↦ by simp [not_not.1 j.2]
-      rwa [h0, add_zero, hcv] at h
+      rw [Fintype.sum_of_injective Subtype.val Subtype.val_injective
+        (fun j : {j // c j ≠ 0} ↦ c j • i (v j)) (fun j ↦ c j • i (v j))
+        (by simp +contextual) (by simp), hcv]
     have hzero := Fintype.linearIndependent_iff.1
       ((linearIndependent_comp_iff_of_liftBaseChange_injective hi).2 hli) (fun j ↦ c j) hsupp
     have : c = 0 := funext fun j ↦ by_contra fun hj ↦ hj (hzero ⟨j, hj⟩)
@@ -191,52 +143,15 @@ theorem mem_hull_natCast_relations_iff_of_liftBaseChange_injective
     have hk : ∀ j, c j = 0 → k j = 0 := fun j h ↦ by simp [k, h]
     have hkg : ∀ j : {j // c j ≠ 0}, k j = g j := fun j ↦ by simp [k, j.2]
     have hkv : ∑ j, k j • v j = 0 := by
-      rw [← Fintype.sum_subtype_add_sum_subtype (fun j ↦ c j ≠ 0)]
-      have h0 : ∑ j : {j // ¬c j ≠ 0}, k j • v j = 0 :=
-        Finset.sum_eq_zero fun j _ ↦ by simp [hk j (not_not.1 j.2)]
-      rw [h0, add_zero]
-      simpa only [hkg] using hg
+      rw [← Fintype.sum_of_injective Subtype.val Subtype.val_injective
+        (fun j : {j // c j ≠ 0} ↦ g j • v j) (fun j ↦ k j • v j)
+        (by simp +contextual [k]) (by simp [hkg])]
+      exact hg
     have hkj₀ : k j₀ ≠ 0 := hkg j₀ ▸ hj₀
     rcases hkj₀.lt_or_gt with hlt | hgt
     · exact mem_hull_natCast_relations_of_int_relation hc hcv step (k := -k)
         (by simpa [neg_smul] using hkv) (fun j h ↦ by simp [hk j h]) ⟨j₀, by simpa using hlt⟩
     · exact mem_hull_natCast_relations_of_int_relation hc hcv step hkv hk ⟨j₀, hgt⟩
-
-/-- The cone generated by the images of the natural-number points of a finitely generated monoid
-`AddSubmonoid.closure G` is the cone generated by the images of `G`. -/
-private theorem hull_natCast_image_closure {ι : Type*} (G : Set (ι → ℕ)) :
-    PointedCone.hull ℝ ((fun k : ι → ℕ ↦ fun j ↦ (k j : ℝ)) '' AddSubmonoid.closure G) =
-      PointedCone.hull ℝ ((fun k : ι → ℕ ↦ fun j ↦ (k j : ℝ)) '' G) := by
-  -- The coordinatewise cast is the additive map `AddMonoidHom.compLeft (Nat.castAddMonoidHom ℝ) ι`.
-  have hcast : (fun k : ι → ℕ ↦ fun j ↦ (k j : ℝ)) =
-      ⇑(AddMonoidHom.compLeft (Nat.castAddMonoidHom ℝ) ι) := rfl
-  rw [hcast, ← AddSubmonoid.coe_map, AddMonoidHom.map_mclosure]
-  exact Submodule.span_closure
-
-/-- For finite sets `s` and `t` of lattice vectors, a point of the intersection of the cones they
-generate is `∑ a, c a • i a` for a nonnegative real relation `c` between the vectors of `s` and
-the negatives of those of `t`. -/
-private theorem exists_nonneg_relation_of_mem_inf {s t : Finset N} {x : V}
-    (hx : x ∈ PointedCone.hull ℝ (i '' (s : Set N)) ⊓ PointedCone.hull ℝ (i '' (t : Set N))) :
-    ∃ c : s ⊕ t → ℝ, 0 ≤ c ∧
-      ∑ j, c j • i (Sum.elim (fun a : s ↦ (a : N)) (fun b : t ↦ -(b : N)) j) = 0 ∧
-      x = ∑ a : s, c (.inl a) • i a := by
-  obtain ⟨hxσ, hxτ⟩ := hx
-  rw [SetLike.mem_coe, Set.image_eq_range,
-    Submodule.mem_span_range_iff_exists_fun] at hxσ hxτ
-  obtain ⟨cσ, hcσ⟩ := hxσ
-  obtain ⟨cτ, hcτ⟩ := hxτ
-  -- The scalar action of nonnegative reals on a pointed cone is the real one.
-  have hcσ' : ∑ a : s, (cσ a : ℝ) • i a = x := hcσ
-  have hcτ' : ∑ b : t, (cτ b : ℝ) • i b = x := hcτ
-  refine ⟨Sum.elim (fun a ↦ (cσ a : ℝ)) fun b ↦ (cτ b : ℝ), fun j ↦ ?_, ?_, ?_⟩
-  · rcases j with a | b
-    exacts [(cσ a).2, (cτ b).2]
-  · simp only [Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr, map_neg, smul_neg,
-      Finset.sum_neg_distrib]
-    rw [hcσ', hcτ', add_neg_cancel]
-  · simp only [Sum.elim_inl]
-    exact hcσ'.symm
 
 /-- **Intersections of lattice-rational cones.** When the real-linear map `ℝ ⊗[ℤ] N →ₗ[ℝ] V`
 induced by `i` is injective (for instance when `i` is an integral lattice, or more generally
@@ -264,14 +179,22 @@ theorem IsLatticeRational.inf {σ τ : PointedCone ℝ V}
     simpa [f, Fintype.sum_sum_type, v, p, add_neg_eq_zero] using AddMonoidHom.mem_eqLocusM.1 hkf
   refine isLatticeRational_iff.2 ⟨hGfin.toFinset.image p, le_antisymm ?_ ?_⟩
   · intro x hx
-    obtain ⟨c, hc, hcv, rfl⟩ := exists_nonneg_relation_of_mem_inf hx
+    simp only [Set.image_eq_range] at hx
+    obtain ⟨c, hc, hcv, rfl⟩ := PointedCone.exists_nonneg_relation_of_mem_inf_hull_range
+      (R := ℝ) (a := fun a : s ↦ i a) (b := fun b : t ↦ i b) hx
     -- `c` is a nonnegative combination of the finitely many natural relations in `G`.
-    have hcG := (mem_hull_natCast_relations_iff_of_liftBaseChange_injective hi v).2 ⟨hc, hcv⟩
+    have hcG := (mem_hull_natCast_relations_iff_of_liftBaseChange_injective hi v).2
+      ⟨hc, by simpa [v, Fintype.sum_sum_type] using hcv⟩
     have hK : {k : s ⊕ t → ℕ | ∑ j, k j • v j = 0} = AddSubmonoid.closure G := by
       ext k
       rw [hG, SetLike.mem_coe, AddMonoidHom.mem_eqLocusM]
       simp [f]
-    rw [hK, hull_natCast_image_closure] at hcG
+    -- Casting natural coordinates is an additive map, so taking additive closure does not
+    -- change the cone hull of its image.
+    have hcast : (fun k : s ⊕ t → ℕ ↦ fun j ↦ (k j : ℝ)) =
+        ⇑(AddMonoidHom.compLeft (Nat.castAddMonoidHom ℝ) (s ⊕ t)) := rfl
+    rw [hK, hcast, ← AddSubmonoid.coe_map, AddMonoidHom.map_mclosure,
+      PointedCone.hull, Submodule.span_closure] at hcG
     -- Reading a real relation on the generators of `σ` carries the generators to `i '' p '' G`.
     let L : (s ⊕ t → ℝ) →ₗ[ℝ] V := ∑ a : s, (LinearMap.proj (.inl a)).smulRight (i a)
     have hL : ∀ d, L d = ∑ a : s, d (.inl a) • i a := fun d ↦ by simp [L]

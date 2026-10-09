@@ -44,7 +44,9 @@ namespace TauCeti.E6DoubledMinuscule
 
 universe u
 
-variable (k : Type u) [Field k]
+section Ring
+
+variable (k : Type u) [CommRing k]
 
 attribute [local instance] standardComodule
 
@@ -74,7 +76,10 @@ private theorem root_mulVec_single_sub (j : Fin 6 ⊕ Fin 6) (a : Fin 54)
 
 /-- Root points propagate membership of a coordinate vector along a simple reflection. -/
 private theorem single_reflection_mem
-    (N : Subcomodule k (coordinateHopfAlgebra k) (Fin 54 → k))
+    (N : Submodule k (Fin 54 → k))
+    (hroot : ∀ j v, v ∈ N →
+      ((rootSubgroupPoints j k (Multiplicative.ofAdd 1) :
+        Matrix.GeneralLinearGroup (Fin 54) k) : Matrix (Fin 54) (Fin 54) k) *ᵥ v ∈ N)
     (a : Fin 27 ⊕ Fin 27) (i : Fin 6) (ha : Pi.single (matrixIndexEquiv a) 1 ∈ N) :
     Pi.single (matrixIndexEquiv (reflection i a)) 1 ∈ N := by
   have hcases : e6DoubledMinusculeWeight a i = -1 ∨
@@ -89,9 +94,7 @@ private theorem single_reflection_mem
       · exact Or.inr (Or.inl (by simp [h]))
       · exact Or.inl (by simp [h])
   rcases hcases with hneg | hzero | hpos
-  · have hact := points_mulVec_mem k N (rootSubgroupPoints (.inl i) k
-      (Multiplicative.ofAdd 1)) ha
-    have hsub := N.toSubmodule.sub_mem hact ha
+  · have hsub := N.sub_mem (hroot (.inl i) _ ha) ha
     rw [root_mulVec_single_sub k (.inl i) _ (by simpa [matrixWeight_apply] using hneg)] at hsub
     cases a <;> simpa using hsub
   · have hfix : reflection i a = a := by
@@ -103,14 +106,15 @@ private theorem single_reflection_mem
         have hz : e6MinusculeWeight a i = 0 := by simpa using hzero
         rw [reflection_inr, (e6MinusculeReflection_eq_self_iff i a).2 hz]
     rwa [hfix]
-  · have hact := points_mulVec_mem k N (rootSubgroupPoints (.inr i) k
-      (Multiplicative.ofAdd 1)) ha
-    have hsub := N.toSubmodule.sub_mem hact ha
+  · have hsub := N.sub_mem (hroot (.inr i) _ ha) ha
     rw [root_mulVec_single_sub k (.inr i) _ (by simpa [matrixWeight_apply] using hpos)] at hsub
     cases a <;> simpa using hsub
 
 private theorem single_mem_of_summand_eq
-    (N : Subcomodule k (coordinateHopfAlgebra k) (Fin 54 → k))
+    (N : Submodule k (Fin 54 → k))
+    (hroot : ∀ j v, v ∈ N →
+      ((rootSubgroupPoints j k (Multiplicative.ofAdd 1) :
+        Matrix.GeneralLinearGroup (Fin 54) k) : Matrix (Fin 54) (Fin 54) k) *ᵥ v ∈ N)
     {a b : Fin 54} (hab : matrixSummand a = matrixSummand b)
     (hb : Pi.single b 1 ∈ N) : Pi.single a 1 ∈ N := by
   obtain ⟨a, rfl⟩ := matrixIndexEquiv.surjective a
@@ -125,7 +129,7 @@ private theorem single_mem_of_summand_eq
         (fun d ↦ Pi.single (matrixIndexEquiv (.inl d)) (1 : k) ∈ N)
         (fun i ↦ e6MinusculeReflection i) (fun i ↦ e6MinusculeReflection_apply_apply i)
         (fun d i hd ↦ by simpa only [reflection_inl] using
-          single_reflection_mem k N (.inl d) i hd) l 0
+          single_reflection_mem k N hroot (.inl d) i hd) l 0
       simpa [hl] using h
     | inr c =>
       obtain ⟨l, hl⟩ := exists_e6MinusculeReflections_eq c
@@ -133,36 +137,64 @@ private theorem single_mem_of_summand_eq
         (fun d ↦ Pi.single (matrixIndexEquiv (.inr d)) (1 : k) ∈ N)
         (fun i ↦ e6MinusculeReflection i) (fun i ↦ e6MinusculeReflection_apply_apply i)
         (fun d i hd ↦ by simpa only [reflection_inr] using
-          single_reflection_mem k N (.inr d) i hd) l 0
+          single_reflection_mem k N hroot (.inr d) i hd) l 0
       simpa [hl] using h
   cases a <;> cases b <;> simp_all
 
-/-- The standard comodule of the doubled minuscule E₆ carrier is completely reducible over every
-field, including fields of characteristic two and three. -/
-theorem isCompletelyReducible_standardComodule :
-    Comodule.IsCompletelyReducible k (coordinateHopfAlgebra k) (Fin 54 → k) := by
+end Ring
+
+variable (k : Type u) [Field k]
+
+attribute [local instance] standardComodule
+
+/-- A comodule with the doubled minuscule torus weights, the numbered root actions, and no
+coefficients mixing the two minuscule blocks is completely reducible. -/
+theorem isCompletelyReducible_of_minusculeWeights_of_rootSubgroupPoints
+    {H : Type*} [AddCommGroup H] [Module k H] [Coalgebra k H]
+    [Comodule k H (Fin 54 → k)]
+    (τ : H →ₗc[k] (DiagonalizableGroup.coordinateRing k
+      (SplitTorus.characterGroup (Fin 6))).obj)
+    (hτ : Comodule.Corestrict τ =
+      Comodule.ofWeights (Pi.basisFun k (Fin 54)) minusculeCharacter)
+    (hroot : ∀ (N : Subcomodule k H (Fin 54 → k)) j v, v ∈ N →
+      ((rootSubgroupPoints j k (Multiplicative.ofAdd 1) :
+        Matrix.GeneralLinearGroup (Fin 54) k) : Matrix (Fin 54) (Fin 54) k) *ᵥ v ∈ N)
+    (hblock : ∀ a b, matrixSummand a ≠ matrixSummand b →
+      Comodule.coefficientMatrix (C := H) (Pi.basisFun k (Fin 54)) a b = 0) :
+    Comodule.IsCompletelyReducible k H (Fin 54 → k) := by
   classical
   apply Comodule.IsCompletelyReducible.of_exists_isCompl
   intro N
   let s : Set (Fin 54) := {a | Pi.single a (1 : k) ∈ N}
   have hs : ∀ a b, matrixSummand a = matrixSummand b → b ∈ s → a ∈ s :=
-    fun _ _ hab hb ↦ single_mem_of_summand_eq k N hab hb
+    fun _ _ hab hb ↦ single_mem_of_summand_eq k N.toSubmodule (hroot N) hab hb
   -- The coordinate lines absent from N form a union of the two preserved blocks.
   let M := (Pi.basisFun k (Fin 54)).coordinateSpanSubcomodule sᶜ <|
     ((Pi.basisFun k (Fin 54)).coordinateSpanIsStable_iff
-      (C := coordinateHopfAlgebra k) sᶜ).2 <| by
+      (C := H) sᶜ).2 <| by
       intro a ha b hb
       have hab : matrixSummand a ≠ matrixSummand b :=
         fun h ↦ hb (hs b a h.symm (Set.notMem_compl_iff.mp ha))
-      rw [coefficientMatrix_basisFun]
-      exact coordinateMap_X_eq_zero k hab
+      exact hblock a b hab
   have hM : M.toSubmodule = Submodule.span k ((Pi.basisFun k (Fin 54)) '' sᶜ) :=
     Module.Basis.coordinateSpanSubcomodule_toSubmodule _ _ _
   refine ⟨M, ?_⟩
   rw [hM, Subcomodule.toSubmodule_eq_span_of_corestrict_eq_ofWeights
-    (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom minusculeCharacter
-    minusculeCharacter_injective (torusCorestrict_eq_ofWeights k) N]
+    τ minusculeCharacter minusculeCharacter_injective hτ N]
   exact (Pi.basisFun k (Fin 54)).linearIndependent.isCompl_span_image
     (Pi.basisFun k (Fin 54)).span_eq isCompl_compl
+
+/-- The standard comodule of the doubled minuscule E₆ carrier is completely reducible over every
+field, including fields of characteristic two and three. -/
+theorem isCompletelyReducible_standardComodule :
+    Comodule.IsCompletelyReducible k (coordinateHopfAlgebra k) (Fin 54 → k) :=
+  isCompletelyReducible_of_minusculeWeights_of_rootSubgroupPoints k
+    (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom
+    (torusCorestrict_eq_ofWeights k)
+    (fun N j _ hw ↦ points_mulVec_mem k N
+      (rootSubgroupPoints j k (Multiplicative.ofAdd 1)) hw)
+    (fun a b hab ↦ by
+      rw [coefficientMatrix_basisFun]
+      exact coordinateMap_X_eq_zero k hab)
 
 end TauCeti.E6DoubledMinuscule

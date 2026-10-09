@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.BilinearMap
-public import Mathlib.LinearAlgebra.Complex.Module
 public import TauCeti.Geometry.Symplectic.AlmostComplex
+public import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # Almost complex structures as complex module structures
@@ -23,7 +22,7 @@ deliberately a `def`, not an instance, because the complex structure depends on 
 is not canonical. The backward direction `AlmostComplexStructure.ofComplexModule` reads an almost
 complex structure off any complex module structure compatible with the real scalars. The round-trip
 lemmas say that `ofComplexModule` applied to `complexModule J` returns `J`, and that the module
-structure induced from `ofComplexModule` recovers the original complex scalar action.
+structure induced from `ofComplexModule` recovers the original complex module structure.
 
 ## Main declarations
 
@@ -37,8 +36,8 @@ structure induced from `ofComplexModule` recovers the original complex scalar ac
 * `TauCeti.AlmostComplexStructure.ofComplexModule`: the almost complex structure `v ↦ i • v` on a
   complex module.
 * `TauCeti.AlmostComplexStructure.ofComplexModule_complexModule`: the round trip recovers `J`.
-* `TauCeti.AlmostComplexStructure.complexModule_ofComplexModule_smul`: the opposite round trip
-  recovers the original complex scalar action.
+* `TauCeti.AlmostComplexStructure.complexModule_ofComplexModule`: the opposite round trip
+  recovers the original complex module structure.
 -/
 
 public section
@@ -53,55 +52,40 @@ section ToComplex
 
 variable [AddCommGroup V] [Module ℝ V]
 
-private lemma module_compHom_smul_def {R S M : Type*} [Semiring R] [Semiring S]
-    [AddCommMonoid M] [Module R M] (f : S →+* R) (s : S) (m : M) :
-    letI : Module S M := Module.compHom M f
-    s • m = f s • m :=
-  rfl
-
-private lemma toLinearMap_mul_toLinearMap (J : AlmostComplexStructure V) :
-    J.toLinearMap * J.toLinearMap = -1 := by
-  ext v
-  simp [Module.End.mul_apply, J.apply_apply]
-
-private lemma liftAux_toRingHom_apply (J : AlmostComplexStructure V)
-    (hJ : J.toLinearMap * J.toLinearMap = -1) (z : ℂ) (v : V) :
-    ((Complex.liftAux J.toLinearMap hJ).toRingHom z) v = z.re • v + z.im • J v := by
-  exact congrArg (fun f : Module.End ℝ V => f v) (Complex.liftAux_apply J.toLinearMap hJ z)
-
 /-- The complex vector space structure on a real module `V` induced by an almost complex
 structure `J`: the scalar `a + b·i` acts as `a • v + b • J v`.
 
 This is a `def` rather than an instance because the complex structure is not canonical: it depends
-on the chosen `J`. Restricted to the real scalars it is the original `Module ℝ V`
+on the chosen `J`. It uses `Complex.liftAux` to extend the real scalars through the endomorphism
+algebra. Restricted to the real scalars it is the original `Module ℝ V`
 (`complexModule_isScalarTower`, `complexModule_ofReal_smul`). -/
 @[implicit_reducible]
-def complexModule (J : AlmostComplexStructure V) : Module ℂ V where
-  __ := Module.compHom V (Complex.liftAux J.toLinearMap J.toLinearMap_mul_toLinearMap).toRingHom
+def complexModule (J : AlmostComplexStructure V) : Module ℂ V :=
+  Module.compHom V (Complex.liftAux J.toLinearMap (by
+    simpa only [Module.End.mul_eq_comp, Module.End.one_eq_id] using J.square_neg)).toRingHom
 
 /-- The defining formula for the complex action induced by an almost complex structure. -/
 @[simp]
 lemma complexModule_smul_def (J : AlmostComplexStructure V) (z : ℂ) (v : V) :
     letI := J.complexModule
-    z • v = z.re • v + z.im • J v :=
-  by
+    z • v = z.re • v + z.im • J v := by
   let := J.complexModule
-  rw [module_compHom_smul_def, Module.End.smul_def]
-  exact liftAux_toRingHom_apply J J.toLinearMap_mul_toLinearMap z v
+  rw [MulAction.compHom_smul_def, Module.End.smul_def]
+  exact congrArg (fun f : Module.End ℝ V => f v) (Complex.liftAux_apply J.toLinearMap _ z)
 
 /-- In the induced complex structure, multiplication by `i` is `J`. -/
 lemma complexModule_I_smul (J : AlmostComplexStructure V) (v : V) :
     letI := J.complexModule
-    (Complex.I) • v = J v := by
+    Complex.I • v = J v := by
   let := J.complexModule
-  rw [complexModule_smul_def, Complex.I_re, Complex.I_im, zero_smul, one_smul, zero_add]
+  simp
 
 /-- The induced complex action restricts along `ℝ → ℂ` to the original real action. -/
 lemma complexModule_ofReal_smul (J : AlmostComplexStructure V) (r : ℝ) (v : V) :
     letI := J.complexModule
     (r : ℂ) • v = r • v := by
   let := J.complexModule
-  rw [complexModule_smul_def, Complex.ofReal_re, Complex.ofReal_im, zero_smul, add_zero]
+  simp
 
 /-- `ℝ`, `ℂ`, and `V` form a scalar tower for the induced complex structure: the real scalars act
 the same whether through `ℝ` or through `ℂ`. -/
@@ -109,10 +93,8 @@ lemma complexModule_isScalarTower (J : AlmostComplexStructure V) :
     letI := J.complexModule
     IsScalarTower ℝ ℂ V := by
   let := J.complexModule
-  refine ⟨fun a b v => ?_⟩
-  rw [complexModule_smul_def, complexModule_smul_def, Complex.smul_re, Complex.smul_im]
-  simp only [smul_eq_mul]
-  module
+  exact IsScalarTower.of_algebraMap_smul fun r v => by
+    simpa only [Complex.coe_algebraMap] using J.complexModule_ofReal_smul r v
 
 end ToComplex
 
@@ -122,7 +104,6 @@ variable [AddCommGroup V] [Module ℝ V] [Module ℂ V] [IsScalarTower ℝ ℂ V
 
 /-- The almost complex structure `v ↦ i • v` on a complex module whose real scalars are compatible
 with the ambient real structure. This is the inverse construction to `complexModule`. -/
-@[expose]
 def ofComplexModule (V : Type*) [AddCommGroup V] [Module ℝ V] [Module ℂ V] [IsScalarTower ℝ ℂ V] :
     AlmostComplexStructure V where
   toLinearMap := (LinearMap.lsmul ℂ V Complex.I).restrictScalars ℝ
@@ -133,7 +114,7 @@ def ofComplexModule (V : Type*) [AddCommGroup V] [Module ℝ V] [Module ℂ V] [
 /-- The almost complex structure read from a complex module acts by multiplication by `i`. -/
 @[simp]
 lemma ofComplexModule_apply (v : V) : ofComplexModule V v = Complex.I • v :=
-  rfl
+  (rfl)
 
 end OfComplex
 
@@ -149,33 +130,16 @@ lemma ofComplexModule_complexModule {V : Type*} [AddCommGroup V] [Module ℝ V]
   refine AlmostComplexStructure.ext fun v => ?_
   rw [ofComplexModule_apply, complexModule_I_smul]
 
-/-- Decompose a complex scalar action into its real and imaginary parts, when the real scalar
-action is the one induced by the complex scalar action. -/
+/-- The complex module induced by `ofComplexModule` is the original module structure. -/
 @[simp]
-lemma re_smul_add_im_smul_I_eq_complex_smul {V : Type*}
-    [AddCommGroup V] [Module ℝ V] [Module ℂ V] [IsScalarTower ℝ ℂ V] (z : ℂ) (v : V) :
-    z.re • v + z.im • (Complex.I • v) = z • v := by
-  conv_rhs =>
-    rw [← Complex.re_add_im z, add_smul, mul_smul]
-  rw [← IsScalarTower.algebraMap_smul ℂ z.re v,
-    ← IsScalarTower.algebraMap_smul ℂ z.im (Complex.I • v)]
-  rw [Complex.coe_algebraMap]
-
-/-- The complex module induced by `ofComplexModule` has the original complex scalar action. -/
-lemma complexModule_ofComplexModule_smul {V : Type*}
-    [AddCommGroup V] [Module ℝ V] [Module ℂ V] [IsScalarTower ℝ ℂ V] (z : ℂ) (v : V) :
-    let smul₀ : ℂ → V → V := (· • ·)
-    letI := (ofComplexModule V).complexModule
-    z • v = smul₀ z v := by
-  let smul₀ : ℂ → V → V := (· • ·)
-  have ofComplexModule_smul (w : V) : ofComplexModule V w = smul₀ Complex.I w := by
-    rw [ofComplexModule_apply]
-  have hdecomp : z.re • v + z.im • smul₀ Complex.I v = smul₀ z v := by
-    exact re_smul_add_im_smul_I_eq_complex_smul z v
-  let := (ofComplexModule V).complexModule
-  rw [complexModule_smul_def]
-  rw [ofComplexModule_smul]
-  exact hdecomp
+lemma complexModule_ofComplexModule {V : Type*}
+    [AddCommGroup V] [Module ℝ V] [m : Module ℂ V] [IsScalarTower ℝ ℂ V] :
+    (ofComplexModule V).complexModule = m := by
+  apply Module.ext
+  funext z v
+  exact ((ofComplexModule V).complexModule_smul_def z v).trans (by
+    rw [ofComplexModule_apply, Complex.re_smul_add_im_smul]
+    rfl)
 
 end AlmostComplexStructure
 

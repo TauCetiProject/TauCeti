@@ -25,8 +25,8 @@ range contains every `n`-th root of unity of `P`, provided every element of `M` 
 sees such an `f` as an isomorphism. This is the form in which an injection of coefficient groups
 whose image is the `n`-torsion induces bijections on duals.
 
-The same transport principle applies to a perfect biadditive pairing: bijective changes of both
-variables and of the target preserve bijectivity of its curried homomorphism.
+The same transport principle applies to biadditive pairings: bijective changes of both variables
+and of the target preserve bijectivity of the curried homomorphism.
 
 ## Main results
 
@@ -37,9 +37,12 @@ variables and of the target preserve bijectivity of its curried homomorphism.
   homomorphism onto the `n`-th roots of unity is bijective on homomorphisms out of a monoid killed
   by `n`.
 * `MonoidHom.compHom_bijective`, `AddMonoidHom.compHom_bijective`: postcomposition with a bijective
-  homomorphism is bijective on homomorphisms out of any monoid.
-* `AddMonoidHom.bijective_of_bijective_pairing`: a perfect biadditive pairing remains perfect
-  after bijective changes of variables and target.
+  homomorphism is bijective on homomorphisms out of any unital magma.
+* `AddMonoidHom.bijective_of_bijective_pairing`: bijectivity of a curried biadditive pairing is
+  preserved by bijective changes of variables and target.
+* `TauCeti.forall_eq_zero_and_exists_eq_of_bijective_of_addEquiv`: a pairing that reads, through
+  additive equivalences, as a bijective curried homomorphism separates the points of its second
+  argument, and every homomorphism out of its first argument is pairing with some point.
 -/
 
 public section
@@ -55,17 +58,29 @@ inverse bijection. -/
 a commutative additive monoid: `Hom(-, P)` takes isomorphisms to isomorphisms. The inverse is
 precomposition with the inverse bijection. -/]
 theorem _root_.MonoidHom.compHom'_bijective {f : M →* N} (hf : Function.Bijective f) :
-    Function.Bijective (MonoidHom.compHom' f : (N →* P) →* M →* P) :=
-  ⟨fun φ ψ h => MonoidHom.ext fun n => by
-      obtain ⟨m, rfl⟩ := hf.2 n
-      exact DFunLike.congr_fun h m,
-    fun χ => ⟨χ.comp (MulEquiv.ofBijective f hf).symm.toMonoidHom, MonoidHom.ext fun m =>
-      congrArg χ ((MulEquiv.ofBijective f hf).symm_apply_apply m)⟩⟩
+    Function.Bijective (MonoidHom.compHom' f : (N →* P) →* M →* P) := by
+  convert (MulEquiv.ofBijective f hf).symm.monoidHomCongrLeft.bijective using 1
+  ext φ m
+  simp
 
-/-- A biadditive pairing remains perfect after bijective changes of variables and target. -/
+/-- Postcomposition with a bijective homomorphism `f : N →* P` is bijective on homomorphisms out
+of any unital magma: `Hom(M, -)` takes isomorphisms to isomorphisms. The bundled form is Mathlib's
+`MulEquiv.monoidHomCongrRight`. -/
+@[to_additive /-- Postcomposition with a bijective homomorphism `f : N →+ P` is bijective on
+homomorphisms out of any additive unital magma: `Hom(M, -)` takes isomorphisms to isomorphisms.
+The bundled form is Mathlib's `AddEquiv.addMonoidHomCongrRight`. -/]
+theorem _root_.MonoidHom.compHom_bijective {M N P : Type*} [MulOneClass M] [CommMonoid N]
+    [CommMonoid P] {f : N →* P} (hf : Function.Bijective f) :
+    Function.Bijective (MonoidHom.compHom f : (M →* N) →* M →* P) := by
+  convert (MulEquiv.ofBijective f hf).monoidHomCongrRight.bijective using 1
+  ext φ m
+  simp
+
+/-- Bijectivity of a curried biadditive pairing is preserved by bijective changes of variables
+and target. -/
 theorem _root_.AddMonoidHom.bijective_of_bijective_pairing
     {X X' Y Y' Z Z' : Type*}
-    [AddMonoid X] [AddMonoid X'] [AddMonoid Y] [AddMonoid Y']
+    [AddZero X] [AddZero X'] [AddZeroClass Y] [AddZeroClass Y']
     [AddCommMonoid Z] [AddCommMonoid Z']
     (P : X →+ Y →+ Z) (P' : X' →+ Y' →+ Z')
     (eX : X' →+ X) (eY : Y' →+ Y) (eZ : Z →+ Z')
@@ -73,31 +88,34 @@ theorem _root_.AddMonoidHom.bijective_of_bijective_pairing
     (hZ : Function.Bijective eZ) (hP : Function.Bijective P)
     (hcomm : ∀ x y, P' x y = eZ (P (eX x) (eY y))) :
     Function.Bijective P' := by
-  let eX' := AddEquiv.ofBijective eX hX
-  let eY' := AddEquiv.ofBijective eY hY
-  let eZ' := AddEquiv.ofBijective eZ hZ
-  constructor
-  · intro x x' h
-    apply hX.1
-    apply hP.1
+  have h : (P' : X' → Y' →+ Z') =
+      (AddMonoidHom.compHom eZ : (Y' →+ Z) → Y' →+ Z') ∘
+        (AddMonoidHom.compHom' eY) ∘ P ∘ eX := by
+    funext x
     ext y
-    obtain ⟨y', rfl⟩ := hY.2 y
-    apply hZ.1
-    rw [← hcomm, ← hcomm, h]
-  · intro q
-    let q₀ : Y →+ Z := eZ'.symm.toAddMonoidHom.comp
-      (q.comp eY'.symm.toAddMonoidHom)
-    obtain ⟨x, hx⟩ := hP.2 q₀
-    refine ⟨eX'.symm x, AddMonoidHom.ext fun y => ?_⟩
-    have heX : eX (eX'.symm x) = x := eX'.apply_symm_apply x
-    have heY : eY'.symm.toAddMonoidHom (eY y) = y := by
-      simpa only [eY', AddEquiv.coe_toAddMonoidHom, AddEquiv.ofBijective_apply] using
-        eY'.symm_apply_apply y
-    have heZ : eZ (eZ'.symm.toAddMonoidHom (q y)) = q y := by
-      simpa only [eZ', AddEquiv.coe_toAddMonoidHom, AddEquiv.ofBijective_apply] using
-        eZ'.apply_symm_apply (q y)
-    rw [hcomm, heX, hx]
-    simpa only [q₀, AddMonoidHom.comp_apply, heY] using heZ
+    simpa using hcomm x y
+  rw [h]
+  exact (AddMonoidHom.compHom_bijective hZ).comp
+    ((AddMonoidHom.compHom'_bijective hY).comp (hP.comp hX))
+
+/-- A pairing `pair : X → Y → Z` that reads, through additive equivalences `eX` and `eY`, as a
+bijective curried homomorphism `α : Y₀ → (X₀ →+ Z)` separates the points of its second argument,
+and every homomorphism `X →+ Z` is pairing with some point of `Y`. -/
+theorem forall_eq_zero_and_exists_eq_of_bijective_of_addEquiv {X Y X₀ Y₀ Z : Type*}
+    [AddZeroClass X] [AddZeroClass Y] [AddZeroClass X₀] [AddZeroClass Y₀] [AddCommMonoid Z]
+    (pair : X → Y → Z) (eX : X₀ ≃+ X) (eY : Y₀ ≃+ Y) (α : Y₀ →+ X₀ →+ Z)
+    (hα : Function.Bijective α) (h : ∀ x y, pair (eX x) (eY y) = α y x) :
+    (∀ y : Y, (∀ x : X, pair x y = 0) → y = 0) ∧
+      ∀ ψ : X →+ Z, ∃ y : Y, ∀ x : X, pair x y = ψ x := by
+  refine ⟨fun y hy => ?_, fun ψ => ?_⟩
+  · have hα0 : α (eY.symm y) = α 0 := by
+      ext x
+      rw [← h, eY.apply_symm_apply, map_zero, AddMonoidHom.zero_apply]
+      exact hy _
+    rw [← eY.apply_symm_apply y, hα.1 hα0, map_zero]
+  · obtain ⟨y, hy⟩ := hα.2 (ψ.comp eX.toAddMonoidHom)
+    refine ⟨eY y, fun x => ?_⟩
+    rw [← eX.apply_symm_apply x, h, hy, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom]
 
 /-- Postcomposition with an injective homomorphism `f : N →* P` is bijective on homomorphisms out
 of a monoid `M` all of whose elements satisfy `a ^ n = 1`, provided the range of `f` contains every
@@ -122,19 +140,5 @@ theorem _root_.MonoidHom.compHom_bijective_of_forall_pow_eq_one {M N P : Type*} 
     · rw [hφ, map_mul, map_mul, hφ, hφ]
     · simpa only [MonoidHom.compHom_apply_apply, MonoidHom.comp_apply, MonoidHom.coe_mk,
         OneHom.coe_mk] using hφ a
-
-/-- Postcomposition with a bijective homomorphism `f : N →* P` is bijective on homomorphisms out of
-any monoid: `Hom(M, -)` takes isomorphisms to isomorphisms. This is the case `n = 0` of
-`MonoidHom.compHom_bijective_of_forall_pow_eq_one`; the bundled form is Mathlib's
-`MulEquiv.monoidHomCongrRightEquiv`. -/
-@[to_additive /-- Postcomposition with a bijective homomorphism `f : N →+ P` is bijective on
-homomorphisms out of any additive monoid: `Hom(M, -)` takes isomorphisms to isomorphisms. This is
-the case `n = 0` of `AddMonoidHom.compHom_bijective_of_forall_nsmul_eq_zero`; the bundled form is
-Mathlib's `AddEquiv.addMonoidHomCongrRightEquiv`. -/]
-theorem _root_.MonoidHom.compHom_bijective {M N P : Type*} [Monoid M] [CommMonoid N]
-    [CommMonoid P] {f : N →* P} (hf : Function.Bijective f) :
-    Function.Bijective (MonoidHom.compHom f : (M →* N) →* M →* P) :=
-  MonoidHom.compHom_bijective_of_forall_pow_eq_one hf.1 (n := 0) (fun a => pow_zero a)
-    fun y _ => hf.2 y
 
 end TauCeti

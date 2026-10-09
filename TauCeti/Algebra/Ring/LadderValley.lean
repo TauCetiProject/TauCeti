@@ -35,7 +35,9 @@ and then climbs, the product vanishes (`TauCeti.d_mul_ladderValley_zero_eq_zero`
 following a valley word is again a valley word (`TauCeti.u_mul_ladderValley`), these moves reduce
 every product of composable steps to a valley word up to sign, or to zero. A valley word from rung
 `a` to rung `b` has length at most `a + b`, so longer products vanish; this bounds the length of
-the nonzero paths in the preprojective algebra of type `A`.
+the nonzero paths in the preprojective algebra of type `A`. For two composable valley words,
+`TauCeti.ladderValley_mul_ladderValley` gives their product with the exact crossing sign;
+`TauCeti.ladderValley_mul_ladderValley_eq_zero` handles a negative formal bottom.
 
 Without the relation `d 0 * u 0 = 0` at the bottom rung, a descent after a climb from rung `0`
 leaves the turn `d 0 * u 0` (`TauCeti.d_mul_ladderValley_zero_zero`). Its powers are, up to sign,
@@ -115,6 +117,17 @@ theorem ladderValley_zero_mul_ladderValley (m s r : ℕ) :
     ladderValley u d m 0 r * ladderValley u d m s 0 = ladderValley u d m s r := by
   simp [ladderValley]
 
+/-- Two consecutive climbs concatenate, including the descent preceding the first climb. -/
+@[simp]
+theorem ladderValley_climb_mul (m s r t : ℕ) :
+    ladderValley u d (m + r) 0 t * ladderValley u d m s r =
+      ladderValley u d m s (r + t) := by
+  induction t with
+  | zero => simp
+  | succ t ih =>
+    rw [← u_mul_ladderValley, mul_assoc, ih]
+    simpa only [Nat.add_assoc] using u_mul_ladderValley u d m s (r + t)
+
 end Monoid
 
 section Ring
@@ -145,6 +158,66 @@ theorem d_mul_ladderValley_zero_eq_zero (hud₀ : d 0 * u 0 = 0)
   | succ r ih =>
     rw [← u_mul_ladderValley, ← mul_assoc, zero_add,
       eq_neg_of_add_eq_zero_left (hud r), neg_mul, mul_assoc, ih, mul_zero, neg_zero]
+
+/-- Commuting a descent of `s` steps past a climb of `r` steps costs the sign `(-1)^(s*r)`.
+The bottom of the resulting valley is `m`. No bottom-rung relation is needed. -/
+@[simp]
+private theorem ladderValley_descent_mul (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0)
+    (m s t r : ℕ) :
+    ladderValley u d (m + r) s 0 * ladderValley u d (m + s) t r =
+      (-1) ^ (s * r) * ladderValley u d m (t + s) r := by
+  induction s generalizing m with
+  | zero => simp
+  | succ s ih =>
+    have hleft : m + r + 1 = (m + 1) + r := by omega
+    have hright : m + (s + 1) = (m + 1) + s := by omega
+    rw [← d_mul_ladderValley_succ_zero, hleft, hright, mul_assoc, ih]
+    rw [← mul_assoc, ((Commute.neg_one_right _).pow_right (s * r)).eq, mul_assoc,
+      d_mul_ladderValley hud, ← mul_assoc, ← pow_add]
+    congr 2
+    simp [Nat.add_mul]
+
+/-- The product of two composable valley words, when its bottom is nonnegative.
+Each descent in the later word crosses every climb in the earlier word. -/
+@[simp]
+theorem ladderValley_mul_ladderValley (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0)
+    {m l s t r q : ℕ} (hcomp : m + s = l + q) (hbottom : s ≤ l) :
+    ladderValley u d m s r * ladderValley u d l t q =
+      (-1) ^ (s * q) * ladderValley u d (l - s) (t + s) (q + r) := by
+  obtain ⟨b, hb⟩ := Nat.exists_eq_add_of_le hbottom
+  have hl : l = b + s := by omega
+  have hm : m = b + q := by omega
+  rw [hl, Nat.add_sub_cancel, hm, ← ladderValley_zero_mul_ladderValley u d (b + q) s r,
+    mul_assoc, ladderValley_descent_mul hud]
+  rw [← mul_assoc, ((Commute.neg_one_right _).pow_right (s * q)).eq, mul_assoc,
+    ladderValley_climb_mul]
+
+/-- A composable descent which pushes a valley below rung zero vanishes. -/
+private theorem ladderValley_descent_mul_eq_zero (hud₀ : d 0 * u 0 = 0)
+    (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0)
+    {m l s t r : ℕ} (hcomp : m + s = l + r) (hbottom : l < s) :
+    ladderValley u d m s 0 * ladderValley u d l t r = 0 := by
+  induction s generalizing m l t r with
+  | zero => omega
+  | succ s ih =>
+    rw [← d_mul_ladderValley_succ_zero, mul_assoc]
+    by_cases hl : l < s
+    · rw [ih (by omega) hl, mul_zero]
+    · have hl' : l = s := by omega
+      have hr : r = m + 1 := by omega
+      have hcomp' : m + 1 + s = s + r := by omega
+      rw [hl', ladderValley_mul_ladderValley hud hcomp' le_rfl, Nat.sub_self, hr,
+        ← mul_assoc, ((Commute.neg_one_right _).pow_right (s * (m + 1))).eq, mul_assoc,
+        d_mul_ladderValley_zero_eq_zero hud₀ hud, mul_zero]
+
+/-- Two composable valley words multiply to zero if their formal bottom is negative. -/
+@[simp]
+theorem ladderValley_mul_ladderValley_eq_zero (hud₀ : d 0 * u 0 = 0)
+    (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0)
+    {m l s t r q : ℕ} (hcomp : m + s = l + q) (hbottom : l < s) :
+    ladderValley u d m s r * ladderValley u d l t q = 0 := by
+  rw [← ladderValley_zero_mul_ladderValley u d m s r, mul_assoc,
+    ladderValley_descent_mul_eq_zero hud₀ hud hcomp hbottom, mul_zero]
 
 /-- **A descent after a climb from rung `0` leaves a turn at rung `0`.** If the turns at every
 positive rung cancel, then climbing `r + 1` rungs from rung `0` and descending one rung gives, up

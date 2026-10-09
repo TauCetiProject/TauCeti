@@ -375,6 +375,18 @@ theorem not_isFaithful_self_heisenberg [Nontrivial R] :
   rw [h] at this
   simpa using this
 
+/-- Any product of three defining Heisenberg matrices is zero. This makes the defining
+representation factor through the augmentation-cube quotient of the enveloping algebra. -/
+theorem mul_mul_heisenberg_eq_zero (a b c : heisenberg R) :
+    (a : Matrix (Fin 3) (Fin 3) R) * (b : Matrix (Fin 3) (Fin 3) R) *
+      (c : Matrix (Fin 3) (Fin 3) R) = 0 := by
+  have ha := mem_strictUpperTriangular_iff.mp a.property
+  have hb := mem_strictUpperTriangular_iff.mp b.property
+  have hc := mem_strictUpperTriangular_iff.mp c.property
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [Matrix.mul_apply, Fin.sum_univ_three, ha, hb, hc]
+
 /-! ### The augmentation ideal -/
 
 /-- **The central generator of the Heisenberg Lie algebra lies in the square of the augmentation

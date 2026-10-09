@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.InformationTheory.KullbackLeibler.ChangeOfReference
 public import TauCeti.InformationTheory.KullbackLeibler.Convex
 public import TauCeti.InformationTheory.KullbackLeibler.Tilted
-public import TauCeti.MeasureTheory.OptimalTransport.Cost.Basic
+public import TauCeti.MeasureTheory.Integral.Prod
+public import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
 
 /-!
 # Entropic optimal transport and the static Schrödinger problem
@@ -48,6 +50,15 @@ free energy `-ε log Z ≥ 0`, and the two problems have the same optimal coupli
 * `TauCeti.exists_isCoupling_klDiv_eq_schroedingerValue` and
   `TauCeti.existsUnique_isCoupling_klDiv_eq_schroedingerValue`: for a finite reference measure
   and a finite source measure, a finite Schrödinger value is attained, by exactly one coupling.
+* `TauCeti.IsCoupling.klDiv_eq_klDiv_add_klDiv_of_eq_withDensity`: if a coupling `π` has density
+  `exp (φ(x) + ψ(y))` against `R`, every coupling `γ` satisfies the Pythagorean identity
+  `klDiv γ R = klDiv γ π + klDiv π R`.
+* `TauCeti.IsCoupling.klDiv_eq_schroedingerValue_of_eq_withDensity` and
+  `TauCeti.schroedingerValue_eq_ofReal_of_eq_withDensity`: such a coupling is the Schrödinger
+  minimizer, and the Schrödinger value is the dual value `∫ φ dμ + ∫ ψ dν` of its potentials,
+  corrected by the masses of `R` and `μ`.
+* `TauCeti.exists_ae_eq_add_const_of_withDensity_exp_eq`: when `R` dominates `μ.prod ν`, the
+  potentials are unique up to one additive constant.
 * `TauCeti.entropicTransportCost_zero` and `TauCeti.transportCost_le_entropicTransportCost`: at
   zero temperature the regularised value is the transport cost, which it always dominates.
 * `TauCeti.entropicTransportCost_const`: for a constant cost the regularised value is the
@@ -59,6 +70,10 @@ free energy `-ε log Z ≥ 0`, and the two problems have the same optimal coupli
 * `TauCeti.lintegral_add_mul_klDiv_eq_entropicTransportCost_iff`: a coupling is optimal for the
   regularised problem exactly when it is optimal for the Schrödinger problem with the Gibbs
   reference.
+* `TauCeti.IsCoupling.lintegral_add_mul_klDiv_eq_entropicTransportCost_of_eq_withDensity` and
+  `TauCeti.entropicTransportCost_eq_ofReal_of_eq_withDensity`: a coupling with density
+  `exp ((φ(x) + ψ(y) - c(x, y)) / ε)` against `μ.prod ν` is optimal for the regularised problem,
+  whose value is then `∫ φ dμ + ∫ ψ dν`.
 
 ## Implementation notes
 
@@ -80,16 +95,28 @@ attained on arbitrary measurable spaces `X` and `Y`. No topology, separability, 
 of `R` to a probability measure is assumed. Together with uniqueness, the minimizing coupling is
 then well defined whenever the Schrödinger value is finite.
 
+The potentials `φ` and `ψ` are the dual side of the problem. A coupling whose density against
+the reference factorises as `exp (φ(x) + ψ(y))`, with `φ ∈ L¹(μ)` and `ψ ∈ L¹(ν)`, is the
+minimizer: `log (dπ/dR)` then integrates to the same value `∫ φ dμ + ∫ ψ dν` against every
+coupling, which is the hypothesis of Csiszár's Pythagorean identity
+`TauCeti.klDiv_eq_klDiv_add_klDiv`. This is the sufficiency half of the characterisation of the
+Schrödinger minimizer by its density; the converse, that the minimizer has such a density, needs
+further hypotheses and is not part of this file. The potentials are measurable functions rather
+than almost everywhere defined ones, since the density is taken against `R` and not against the
+marginals.
+
 ## References
 
 * M. Nutz, *Introduction to Entropic Optimal Transport*, lecture notes, Columbia University, 2021,
   for the regularised problem, its Gibbs reference measure, and the reduction to minimising
-  relative entropy.
+  relative entropy, and Theorem 2.1 for the product form of the minimizer's density and the
+  uniqueness of its potentials up to a constant.
 * C. Léonard, *A survey of the Schrödinger problem and some of its connections with optimal
   transport*, Discrete Contin. Dyn. Syst. 34 (2014), for the static Schrödinger problem.
 * I. Csiszár, *I-divergence geometry of probability distributions and minimization problems*,
   Ann. Probability 3 (1975), 146–158, Theorem 2.1, whose existence argument for entropy
-  minimizers over convex sets closed in total variation is followed here.
+  minimizers over convex sets closed in total variation is followed here, and for the
+  Pythagorean identity of relative entropy.
 -/
 
 public section
@@ -304,6 +331,126 @@ theorem existsUnique_isCoupling_klDiv_eq_schroedingerValue [IsFiniteMeasure μ]
   obtain ⟨π, hπ, hπval⟩ := exists_isCoupling_klDiv_eq_schroedingerValue h
   exact ⟨π, ⟨hπ, hπval⟩, fun σ hσ ↦ (hπ.eq_of_klDiv_eq_schroedingerValue hσ.1 hπval hσ.2 h).symm⟩
 
+/-! ### Schrödinger potentials -/
+
+section Potentials
+
+variable {φ φ' : X → ℝ} {ψ ψ' : Y → ℝ}
+
+/-- The log-likelihood ratio of a measure with density `exp (φ(x) + ψ(y))` against `R` is
+`φ(x) + ψ(y)`. Against a coupling of `μ` and `ν` it is integrable, with the integral
+`kantorovichDualValue μ ν φ ψ` of the two potentials. -/
+private theorem integrable_llr_withDensity_exp_and_integral_eq [SigmaFinite R]
+    {σ : Measure (X × Y)} (hσ : IsCoupling σ μ ν) (hφ : Measurable φ) (hψ : Measurable ψ)
+    (hφi : Integrable φ μ) (hψi : Integrable ψ ν) (hσR : σ ≪ R) :
+    Integrable (llr (R.withDensity fun z ↦ ENNReal.ofReal (Real.exp (φ z.1 + ψ z.2))) R) σ ∧
+      ∫ z, llr (R.withDensity fun z ↦ ENNReal.ofReal (Real.exp (φ z.1 + ψ z.2))) R z ∂σ =
+        kantorovichDualValue μ ν φ ψ := by
+  have hllr := hσR.ae_le (llr_withDensity_exp (f := fun z ↦ φ z.1 + ψ z.2) (by fun_prop))
+  exact ⟨(integrable_congr hllr).2 (hσ.integrable_add_split hφi hψi),
+    (integral_congr_ae hllr).trans (kantorovichDualValue_eq_integral hσ hφi hψi).symm⟩
+
+/-- **The Pythagorean identity of the Schrödinger problem.** Let `π` be a coupling of `μ` and `ν`
+whose density against the finite reference `R` is `exp (φ(x) + ψ(y))`, for measurable potentials
+`φ ∈ L¹(μ)` and `ψ ∈ L¹(ν)`. Then every coupling `γ` of `μ` and `ν` satisfies
+`klDiv γ R = klDiv γ π + klDiv π R`. -/
+theorem IsCoupling.klDiv_eq_klDiv_add_klDiv_of_eq_withDensity [IsFiniteMeasure μ]
+    [IsFiniteMeasure R] {γ : Measure (X × Y)} (hγ : IsCoupling γ μ ν) (hπ : IsCoupling π μ ν)
+    (hπR : π = R.withDensity fun z ↦ ENNReal.ofReal (Real.exp (φ z.1 + ψ z.2)))
+    (hφ : Measurable φ) (hψ : Measurable ψ) (hφi : Integrable φ μ) (hψi : Integrable ψ ν) :
+    klDiv γ R = klDiv γ π + klDiv π R := by
+  have := hγ.isFiniteMeasure
+  have := hπ.isFiniteMeasure
+  have hπR' : π ≪ R := hπR ▸ withDensity_absolutelyContinuous _ _
+  have hRπ : R ≪ π := hπR ▸ withDensity_absolutelyContinuous' (by fun_prop)
+    (ae_of_all _ fun z ↦ by simp [Real.exp_pos])
+  by_cases hγR : γ ≪ R
+  swap
+  · simp [klDiv_of_not_ac hγR, klDiv_of_not_ac fun h ↦ hγR (h.trans hπR')]
+  obtain ⟨hγi, hγv⟩ := integrable_llr_withDensity_exp_and_integral_eq hγ hφ hψ hφi hψi hγR
+  obtain ⟨hπi, hπv⟩ := integrable_llr_withDensity_exp_and_integral_eq hπ hφ hψ hφi hψi hπR'
+  rw [← hπR] at hγi hγv hπi hπv
+  exact klDiv_eq_klDiv_add_klDiv (hγR.trans hRπ) hπR' hγi hπi (hγv.trans hπv.symm)
+
+/-- The relative entropy of a coupling with density `exp (φ(x) + ψ(y))` against `R` is the dual
+value `∫ φ dμ + ∫ ψ dν` of its potentials, corrected by the difference of the masses of `R` and
+`μ`. -/
+theorem IsCoupling.klDiv_eq_ofReal_of_eq_withDensity [IsFiniteMeasure μ] [IsFiniteMeasure R]
+    (hπ : IsCoupling π μ ν)
+    (hπR : π = R.withDensity fun z ↦ ENNReal.ofReal (Real.exp (φ z.1 + ψ z.2)))
+    (hφ : Measurable φ) (hψ : Measurable ψ) (hφi : Integrable φ μ) (hψi : Integrable ψ ν) :
+    klDiv π R =
+      ENNReal.ofReal (kantorovichDualValue μ ν φ ψ + R.real Set.univ - μ.real Set.univ) := by
+  have := hπ.isFiniteMeasure
+  have hπR' : π ≪ R := hπR ▸ withDensity_absolutelyContinuous _ _
+  obtain ⟨hπi, hπv⟩ := integrable_llr_withDensity_exp_and_integral_eq hπ hφ hψ hφi hψi hπR'
+  rw [← hπR] at hπi hπv
+  rw [klDiv_of_ac_of_integrable hπR' hπi, hπv, measureReal_def π, ← hπ.measure_univ_left,
+    ← measureReal_def]
+
+/-- The real number in `TauCeti.IsCoupling.klDiv_eq_ofReal_of_eq_withDensity` is nonnegative: it is
+the real form of a relative entropy. -/
+private theorem IsCoupling.kantorovichDualValue_add_sub_nonneg_of_eq_withDensity
+    [IsFiniteMeasure μ] [IsFiniteMeasure R] (hπ : IsCoupling π μ ν)
+    (hπR : π = R.withDensity fun z ↦ ENNReal.ofReal (Real.exp (φ z.1 + ψ z.2)))
+    (hφ : Measurable φ) (hψ : Measurable ψ) (hφi : Integrable φ μ) (hψi : Integrable ψ ν) :
+    0 ≤ kantorovichDualValue μ ν φ ψ + R.real Set.univ - μ.real Set.univ := by
+  have := hπ.isFiniteMeasure
+  have hπR' : π ≪ R := hπR ▸ withDensity_absolutelyContinuous _ _
+  obtain ⟨hπi, hπv⟩ := integrable_llr_withDensity_exp_and_integral_eq hπ hφ hψ hφi hψi hπR'
+  rw [← hπR] at hπi hπv
+  have := integral_llr_add_sub_measure_univ_nonneg hπR' hπi
+  rwa [hπv, measureReal_def π, ← hπ.measure_univ_left, ← measureReal_def] at this
+
+/-- **A product density certifies the Schrödinger minimizer.** A coupling `π` of `μ` and `ν`
+whose density against the finite reference `R` is `exp (φ(x) + ψ(y))`, for measurable
+potentials `φ ∈ L¹(μ)` and `ψ ∈ L¹(ν)`, attains the Schrödinger value. By
+`TauCeti.IsCoupling.eq_of_klDiv_eq_schroedingerValue` it is the only coupling to do so. -/
+theorem IsCoupling.klDiv_eq_schroedingerValue_of_eq_withDensity [IsFiniteMeasure μ]
+    [IsFiniteMeasure R] (hπ : IsCoupling π μ ν)
+    (hπR : π = R.withDensity fun z ↦ ENNReal.ofReal (Real.exp (φ z.1 + ψ z.2)))
+    (hφ : Measurable φ) (hψ : Measurable ψ) (hφi : Integrable φ μ) (hψi : Integrable ψ ν) :
+    klDiv π R = schroedingerValue R μ ν :=
+  le_antisymm (le_schroedingerValue fun γ hγ ↦ by
+      rw [hγ.klDiv_eq_klDiv_add_klDiv_of_eq_withDensity hπ hπR hφ hψ hφi hψi]
+      exact le_add_self)
+    (schroedingerValue_le_klDiv hπ R)
+
+/-- **The value of the Schrödinger problem from its potentials.** If some coupling of `μ` and `ν`
+has density `exp (φ(x) + ψ(y))` against the finite reference `R`, for measurable potentials
+`φ ∈ L¹(μ)` and `ψ ∈ L¹(ν)`, then the Schrödinger value is the dual value
+`∫ φ dμ + ∫ ψ dν` of the potentials, corrected by the difference of the masses of `R` and `μ`.
+For probability measures `μ` and `R` the correction vanishes. -/
+theorem schroedingerValue_eq_ofReal_of_eq_withDensity [IsFiniteMeasure μ] [IsFiniteMeasure R]
+    (hπ : IsCoupling π μ ν)
+    (hπR : π = R.withDensity fun z ↦ ENNReal.ofReal (Real.exp (φ z.1 + ψ z.2)))
+    (hφ : Measurable φ) (hψ : Measurable ψ) (hφi : Integrable φ μ) (hψi : Integrable ψ ν) :
+    schroedingerValue R μ ν =
+      ENNReal.ofReal (kantorovichDualValue μ ν φ ψ + R.real Set.univ - μ.real Set.univ) := by
+  rw [← hπ.klDiv_eq_schroedingerValue_of_eq_withDensity hπR hφ hψ hφi hψi,
+    hπ.klDiv_eq_ofReal_of_eq_withDensity hπR hφ hψ hφi hψi]
+
+/-- **Uniqueness of the Schrödinger potentials.** If a reference measure `R` dominates the
+product of the nonzero marginals, two pairs of potentials that give the same density
+`exp (φ(x) + ψ(y))` against `R` differ by one additive constant, `μ`- and `ν`-almost everywhere:
+`φ = φ' + a` and `ψ = ψ' - a`. -/
+theorem exists_ae_eq_add_const_of_withDensity_exp_eq [SFinite ν] [SigmaFinite R] (hμ : μ ≠ 0)
+    (hν : ν ≠ 0) (hR : μ.prod ν ≪ R) (hφ : Measurable φ) (hψ : Measurable ψ)
+    (hφ' : Measurable φ') (hψ' : Measurable ψ')
+    (h : (R.withDensity fun z ↦ ENNReal.ofReal (Real.exp (φ z.1 + ψ z.2))) =
+      R.withDensity fun z ↦ ENNReal.ofReal (Real.exp (φ' z.1 + ψ' z.2))) :
+    ∃ a, φ =ᵐ[μ] (fun x ↦ φ' x + a) ∧ ψ =ᵐ[ν] (fun y ↦ ψ' y - a) := by
+  rw [withDensity_eq_iff_of_sigmaFinite (by fun_prop) (by fun_prop)] at h
+  obtain ⟨a, hφa, hψa⟩ := exists_ae_eq_const_of_ae_prod_eq (f := fun x ↦ φ x - φ' x)
+    (g := fun y ↦ ψ' y - ψ y) hμ hν <| hR.ae_le <| h.mono fun z hz ↦ by
+      have := Real.exp_injective <|
+        (ENNReal.ofReal_eq_ofReal_iff (Real.exp_pos _).le (Real.exp_pos _).le).1 hz
+      linarith
+  exact ⟨a, hφa.mono fun x hx ↦ by simp only at hx; linarith,
+    hψa.mono fun y hy ↦ by simp only at hy; linarith⟩
+
+end Potentials
+
 /-! ### Entropically regularised transport -/
 
 /-- The entropically regularised transport cost of `μ` and `ν` for the cost `c` at temperature
@@ -426,5 +573,137 @@ theorem lintegral_add_mul_klDiv_eq_entropicTransportCost_iff [IsProbabilityMeasu
     entropicTransportCost_eq_mul_schroedingerValue_add hc hc_top hε,
     ENNReal.add_left_inj (ENNReal.mul_ne_top ENNReal.coe_ne_top ENNReal.ofReal_ne_top),
     ENNReal.mul_right_inj (ENNReal.coe_ne_zero.2 hε) ENNReal.coe_ne_top]
+
+/-! ### Potentials of the regularised problem -/
+
+section GibbsPotentials
+
+variable {φ : X → ℝ} {ψ : Y → ℝ}
+
+/-- A plan with density `exp ((φ(x) + ψ(y) - c(x, y)) / ε)` against `μ.prod ν` has density
+`exp (φ(x) / ε + log Z + ψ(y) / ε)` against the Gibbs measure
+`R = Z⁻¹ e^{-c/ε} (μ ⊗ ν)`, where `Z = ∫ e^{-c/ε} d(μ ⊗ ν)`. -/
+private theorem eq_withDensity_tilted_of_eq_withDensity [IsProbabilityMeasure μ]
+    [IsProbabilityMeasure ν] (hc : AEMeasurable c (μ.prod ν))
+    (hπc : π = (μ.prod ν).withDensity fun z ↦
+      ENNReal.ofReal (Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε)))
+    (hφ : Measurable φ) (hψ : Measurable ψ) :
+    π = ((μ.prod ν).tilted fun z ↦ -((c z).toReal / ε)).withDensity fun z ↦
+      ENNReal.ofReal (Real.exp ((φ z.1 / ε + Real.log (∫ z, Real.exp (-((c z).toReal / ε))
+        ∂μ.prod ν)) + ψ z.2 / ε)) := by
+  have hexp : Integrable (fun z ↦ Real.exp (-((c z).toReal / ε))) (μ.prod ν) :=
+    MeasureTheory.integrable_exp_neg_of_ae_nonneg (hc.ennreal_toReal.div_const _) <|
+      ae_of_all _ fun z ↦ by positivity
+  have hZ : 0 < ∫ z, Real.exp (-((c z).toReal / ε)) ∂μ.prod ν := integral_exp_pos hexp
+  rw [Measure.tilted, ← withDensity_mul₀ (by fun_prop) (by fun_prop), hπc]
+  congr 1
+  funext z
+  rw [Pi.mul_apply, ← ENNReal.ofReal_mul (by positivity)]
+  congr 1
+  set Z := ∫ z, Real.exp (-((c z).toReal / ε)) ∂μ.prod ν
+  have hexponent : (φ z.1 + ψ z.2 - (c z).toReal) / ε =
+      -((c z).toReal / ε) + ((φ z.1 / ε + Real.log Z) + ψ z.2 / ε) - Real.log Z := by
+    ring
+  rw [hexponent, Real.exp_sub, Real.exp_add, Real.exp_log hZ, div_mul_eq_mul_div]
+
+/-- Changing the potentials on null sets does not change a Gibbs density against `μ.prod ν`. -/
+private theorem withDensity_exp_congr_ae [SFinite ν] {φ₀ : X → ℝ} {ψ₀ : Y → ℝ}
+    (hφ : φ =ᵐ[μ] φ₀) (hψ : ψ =ᵐ[ν] ψ₀) :
+    ((μ.prod ν).withDensity fun z ↦
+      ENNReal.ofReal (Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε))) =
+      (μ.prod ν).withDensity fun z ↦
+        ENNReal.ofReal (Real.exp ((φ₀ z.1 + ψ₀ z.2 - (c z).toReal) / ε)) := by
+  refine withDensity_congr_ae ?_
+  filter_upwards [Measure.quasiMeasurePreserving_fst.ae_eq_comp hφ,
+    Measure.quasiMeasurePreserving_snd.ae_eq_comp hψ] with z h₁ h₂
+  simp only [Function.comp_apply] at h₁ h₂
+  rw [h₁, h₂]
+
+/-- **A Gibbs density certifies the entropic optimal plan.** For probability measures `μ` and
+`ν`, a cost `c` finite `μ.prod ν`-almost everywhere, and a positive temperature `ε`, a coupling
+`π` whose density against `μ.prod ν` is `exp ((φ(x) + ψ(y) - c(x, y)) / ε)`, for potentials
+`φ ∈ L¹(μ)` and `ψ ∈ L¹(ν)`, is optimal for the regularised transport problem. -/
+theorem IsCoupling.lintegral_add_mul_klDiv_eq_entropicTransportCost_of_eq_withDensity
+    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (hπ : IsCoupling π μ ν)
+    (hc : AEMeasurable c (μ.prod ν)) (hc_top : ∀ᵐ z ∂μ.prod ν, c z ≠ ∞) (hε : ε ≠ 0)
+    (hπc : π = (μ.prod ν).withDensity fun z ↦
+      ENNReal.ofReal (Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε)))
+    (hφi : Integrable φ μ) (hψi : Integrable ψ ν) :
+    ∫⁻ z, c z ∂π + ε * klDiv π (μ.prod ν) = entropicTransportCost c ε μ ν := by
+  wlog hφψ : Measurable φ ∧ Measurable ψ generalizing φ ψ
+  · have hφ₀ := hφi.1.ae_eq_mk
+    have hψ₀ := hψi.1.ae_eq_mk
+    exact this (hπc.trans (withDensity_exp_congr_ae hφ₀ hψ₀)) ((integrable_congr hφ₀).1 hφi)
+      ((integrable_congr hψ₀).1 hψi) ⟨hφi.1.measurable_mk, hψi.1.measurable_mk⟩
+  obtain ⟨hφ, hψ⟩ := hφψ
+  have hexp : Integrable (fun z ↦ Real.exp (-((c z).toReal / ε))) (μ.prod ν) :=
+    MeasureTheory.integrable_exp_neg_of_ae_nonneg (hc.ennreal_toReal.div_const _) <|
+      ae_of_all _ fun z ↦ by positivity
+  have := isProbabilityMeasure_tilted hexp
+  refine (lintegral_add_mul_klDiv_eq_entropicTransportCost_iff hπ hc hc_top hε).2 ?_
+  exact hπ.klDiv_eq_schroedingerValue_of_eq_withDensity
+    (φ := fun x ↦ φ x / ε + Real.log (∫ z, Real.exp (-((c z).toReal / ε)) ∂μ.prod ν))
+    (ψ := fun y ↦ ψ y / ε) (eq_withDensity_tilted_of_eq_withDensity hc hπc hφ hψ)
+    ((hφ.div_const _).add_const _) (hψ.div_const _) ((hφi.div_const _).add (integrable_const _))
+    (hψi.div_const _)
+
+/-- **The entropic transport cost from its potentials.** For probability measures `μ` and `ν`,
+a cost `c` finite `μ.prod ν`-almost everywhere, and a positive temperature `ε`, if some coupling
+has density `exp ((φ(x) + ψ(y) - c(x, y)) / ε)` against `μ.prod ν`, for potentials
+`φ ∈ L¹(μ)` and `ψ ∈ L¹(ν)`, then the regularised transport cost is the dual value
+`∫ φ dμ + ∫ ψ dν` of the potentials. -/
+theorem entropicTransportCost_eq_ofReal_of_eq_withDensity [IsProbabilityMeasure μ]
+    [IsProbabilityMeasure ν] (hπ : IsCoupling π μ ν) (hc : AEMeasurable c (μ.prod ν))
+    (hc_top : ∀ᵐ z ∂μ.prod ν, c z ≠ ∞) (hε : ε ≠ 0)
+    (hπc : π = (μ.prod ν).withDensity fun z ↦
+      ENNReal.ofReal (Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε)))
+    (hφi : Integrable φ μ) (hψi : Integrable ψ ν) :
+    entropicTransportCost c ε μ ν = ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) := by
+  wlog hφψ : Measurable φ ∧ Measurable ψ generalizing φ ψ
+  · have hφ₀ := hφi.1.ae_eq_mk
+    have hψ₀ := hψi.1.ae_eq_mk
+    rw [kantorovichDualValue_def, integral_congr_ae hφ₀, integral_congr_ae hψ₀,
+      ← kantorovichDualValue_def]
+    exact this (hπc.trans (withDensity_exp_congr_ae hφ₀ hψ₀)) ((integrable_congr hφ₀).1 hφi)
+      ((integrable_congr hψ₀).1 hψi) ⟨hφi.1.measurable_mk, hψi.1.measurable_mk⟩
+  obtain ⟨hφ, hψ⟩ := hφψ
+  have hexp : Integrable (fun z ↦ Real.exp (-((c z).toReal / ε))) (μ.prod ν) :=
+    MeasureTheory.integrable_exp_neg_of_ae_nonneg (hc.ennreal_toReal.div_const _) <|
+      ae_of_all _ fun z ↦ by positivity
+  have := isProbabilityMeasure_tilted hexp
+  have hπR := eq_withDensity_tilted_of_eq_withDensity hc hπc hφ hψ
+  obtain ⟨Z, hZ_def⟩ : ∃ Z, ∫ z, Real.exp (-((c z).toReal / ε)) ∂μ.prod ν = Z := ⟨_, rfl⟩
+  have hZ : 0 < Z := hZ_def ▸ integral_exp_pos hexp
+  have hZ1 : Z ≤ 1 := by
+    rw [← hZ_def]
+    calc ∫ z, Real.exp (-((c z).toReal / ε)) ∂μ.prod ν ≤ ∫ _, (1 : ℝ) ∂μ.prod ν :=
+          integral_mono hexp (integrable_const 1) fun z ↦ by
+            simp only [Real.exp_le_one_iff, Left.neg_nonpos_iff]
+            positivity
+      _ = 1 := by simp
+  rw [hZ_def] at hπR
+  have hφ' : Integrable (fun x ↦ φ x / ε + Real.log Z) μ :=
+    (hφi.div_const _).add (integrable_const _)
+  have hnonneg := hπ.kantorovichDualValue_add_sub_nonneg_of_eq_withDensity
+    (φ := fun x ↦ φ x / ε + Real.log Z) (ψ := fun y ↦ ψ y / ε) hπR
+    ((hφ.div_const _).add_const _) (hψ.div_const _) hφ' (hψi.div_const _)
+  have hdual : kantorovichDualValue μ ν (fun x ↦ φ x / ε + Real.log Z) (fun y ↦ ψ y / ε) =
+      kantorovichDualValue μ ν φ ψ / ε + Real.log Z := by
+    simp only [kantorovichDualValue_def, integral_add (hφi.div_const _) (integrable_const _),
+      integral_div, integral_const, probReal_univ, smul_eq_mul, one_mul]
+    ring
+  simp only [probReal_univ, add_sub_cancel_right, hdual] at hnonneg
+  rw [entropicTransportCost_eq_mul_schroedingerValue_add hc hc_top hε, hZ_def,
+    schroedingerValue_eq_ofReal_of_eq_withDensity (φ := fun x ↦ φ x / ε + Real.log Z)
+      (ψ := fun y ↦ ψ y / ε) hπ hπR ((hφ.div_const _).add_const _)
+      (hψ.div_const _) hφ' (hψi.div_const _), hdual, probReal_univ, probReal_univ,
+    add_sub_cancel_right, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul ε.coe_nonneg,
+    ← ENNReal.ofReal_mul ε.coe_nonneg, ← ENNReal.ofReal_add (mul_nonneg ε.coe_nonneg hnonneg)
+      (mul_nonneg ε.coe_nonneg (neg_nonneg.2 (Real.log_nonpos hZ.le hZ1)))]
+  congr 1
+  field_simp
+  ring
+
+end GibbsPotentials
 
 end TauCeti

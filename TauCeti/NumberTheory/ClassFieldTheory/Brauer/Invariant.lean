@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.MaximalUnramified
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Restriction
+import TauCeti.NumberTheory.ClassFieldTheory.Brauer.BaseChange
 import TauCeti.NumberTheory.ClassFieldTheory.Brauer.LocalH2Bound
 import TauCeti.NumberTheory.LocalField.FiniteExtension.Tower
 import TauCeti.NumberTheory.LocalField.Unramified.BaseChange
@@ -43,7 +44,8 @@ inflated from the unramified extension `K_f/K` of degree `f` restricts to the cl
 along the base change `H²(Gal(K_f/K), K_fˣ) → H²(Gal(L_f/L), L_fˣ)`, where `L_f/L` is the
 unramified extension of degree `f`, which contains the image of `K_f` under the identification
 `Kˢ ≃ Lˢ` (`TauCeti.unramifiedExtension_le_restrictScalars_unramifiedExtension`,
-`TauCeti.ClassFieldTheory.brRes_relBrInfl`), and this base change multiplies the unramified
+`TauCeti.ClassFieldTheory.brBaseChange_eq_brRes`,
+`TauCeti.ClassFieldTheory.brBaseChange_relBrInfl`), and this base change multiplies the unramified
 invariant by `[L : K]` (`TauCeti.ClassFieldTheory.unramifiedInv_map_baseChange`). Since
 multiplication by `[L : K]` is surjective on `ℚ/ℤ`, restriction is surjective, and corestriction
 `TauCeti.ClassFieldTheory.brCor K L σ` preserves the invariant because
@@ -305,8 +307,8 @@ theorem invMap_brRes (x : Br K) :
   have : IsUnramified L (𝓥 f) := isUnramified_unramifiedExtension f.ne_zero
   have : ValuativeExtension K (𝓥 f) := ValuativeExtension.trans K L (𝓥 f)
   have : ValuativeExtension (𝓤 f) (𝓥 f) := ι.valuativeExtension
-  rw [brRes_relBrInfl K L (𝓤 f) (𝓥 f) σ (𝓤 f).val (𝓥 f).val
-    (fun e => (separableClosureRingEquiv K L σ).apply_symm_apply e) y, invMap_relBrInfl,
+  rw [← brBaseChange_eq_brRes K L σ,
+    brBaseChange_relBrInfl K L (𝓤 f) (𝓥 f) (𝓤 f).val (𝓥 f).val y, invMap_relBrInfl,
     invMap_relBrInfl, unramifiedInv_map_baseChange]
 
 /-- **Restriction of Brauer classes along a finite extension of nonarchimedean local fields is

@@ -8,7 +8,8 @@ module
 public import Mathlib.CategoryTheory.Action.Continuous
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.RepresentationTheory.Continuous.TopRep
-public import Mathlib.Topology.Algebra.MulAction
+public import Mathlib.Topology.Algebra.OpenSubgroup
+public import Mathlib.Topology.Instances.ZMod
 
 /-!
 # Smooth discrete topological representations
@@ -87,40 +88,24 @@ provide the basic examples of smooth discrete objects used by coefficient constr
   homomorphism.
 * `TauCeti.isSmoothDiscrete_trivial`: a trivial representation on a discrete module is smooth
   discrete.
-* `TauCeti.discreteRepEquivSmoothTopRep`: the two translations are an equivalence of categories
-  between `TauCeti.DiscreteRep R G` and `TauCeti.SmoothDiscreteTopRep R G`.
+* `TauCeti.discreteRepEquivSmoothTopRep`: for a topological group `G`, the two translations are an
+  equivalence of categories between `TauCeti.DiscreteRep R G` and
+  `TauCeti.SmoothDiscreteTopRep R G`.
 * `TauCeti.not_isSmoothDiscrete_ofDiscreteModule_units_zmod`: a discrete object that is not
   smooth, so the subcategory is proper and the continuity hypothesis above is needed.
 
-## Roadmap
+## Implementation notes
 
-This serves Layer 1 of the human-authored roadmap at `TauCetiRoadmap/ProfiniteCohomology/README.md`,
-whose "smooth discrete objects" and "the categorical dictionary" bullets it addresses. What is
-delivered here is the predicate `TauCeti.IsSmoothDiscrete`, its closure under restriction, and the
-dictionary in both directions up to the equivalence of categories; the closure of the smooth
-discrete objects under finite products, subobjects and quotients, which the first of those bullets
-also asks for, is not yet statable, because Mathlib's `TopRep` carries no limit, subobject or
-quotient API to state it against.
-
-The *names* below follow the human-authored
-`TauCetiRoadmap/ProfiniteCohomology/Suggested.lean`, which fixes `TauCeti.IsSmoothDiscrete` and its
-two fields, `TauCeti.ofDiscreteModule`, `TauCeti.ofDiscreteModule_isSmoothDiscrete`,
-`TauCeti.ofDiscreteModuleMap`, `TauCeti.SmoothDiscreteTopRep`, `TauCeti.smoothDiscreteι`,
-`TauCeti.DiscreteRep`, `TauCeti.toSmoothDiscrete`, `TauCeti.ofSmoothDiscrete` and
-`TauCeti.discreteRepEquivSmoothTopRep`. The signatures and the field list deviate from it in four
-places, each deliberately:
-
-* the coefficient ring is an arbitrary topological ring `R` and the group is only a `Monoid`
-  wherever the proofs allow, rather than `ℤ` and a topological group throughout;
+* The coefficient ring is an arbitrary topological ring `R`, and the group is only a `Monoid`
+  wherever the proofs allow. The equivalence of categories is stated for a topological group:
+  over a topological monoid, open point stabilizers need not make the action continuous.
 * `TauCeti.ofDiscreteModule` takes `R` and `G` explicitly, since neither is determined by the
-  module `M` alone;
-* `TauCeti.DiscreteRep` names its discreteness field `discreteTopology`, after the class it
-  carries, and adds a field `continuousSMulRing` for `ContinuousSMul R V`, without which the
-  underlying module is not an object of `TopModuleCat R` and `TauCeti.ofDiscreteModule` does not
-  apply;
-* morphisms of `TauCeti.DiscreteRep` are Mathlib's `Representation.IntertwiningMap`s rather than a
-  new structure, and they drop the `cont` field the roadmap lists, continuity being automatic on
-  discrete modules.
+  module `M` alone.
+* `TauCeti.DiscreteRep` carries a field `continuousSMulRing` for `ContinuousSMul R V`, without
+  which the underlying module is not an object of `TopModuleCat R` and `TauCeti.ofDiscreteModule`
+  does not apply.
+* Morphisms of `TauCeti.DiscreteRep` are Mathlib's `Representation.IntertwiningMap`s rather than a
+  new structure, continuity being automatic on discrete modules.
 
 The carrier `TopRep` and its functoriality are Mathlib's, and are consumed rather than restated.
 -/
@@ -211,7 +196,7 @@ end TopRep
 
 namespace TauCeti
 
-open CategoryTheory ContRepresentation
+open CategoryTheory
 
 universe u v w
 
@@ -310,6 +295,19 @@ lemma IsSmoothDiscrete.res {H : Type*} [Monoid H] [TopologicalSpace H] {φ : H �
   rw [hpre]
   exact (hX.stabilizer_isOpen x).preimage hφ
 
+/-- Smoothness passes to the source of an injective morphism: a continuous injection into a
+discrete space has discrete source, and by equivariance the stabilizer of `x` is the stabilizer
+of `f x`. -/
+lemma IsSmoothDiscrete.of_injective {X Y : TopRep R G} (f : X ⟶ Y)
+    (hf : Function.Injective f.hom) (hY : IsSmoothDiscrete R Y) : IsSmoothDiscrete R X := by
+  have := hY.discreteTopology
+  refine ⟨.of_continuous_injective f.hom.continuous hf, fun x ↦ ?_⟩
+  have hstab : {g : G | X.ρ g x = x} = {g : G | Y.ρ g (f.hom x) = f.hom x} := by
+    ext g
+    simp only [Set.mem_ofPred_eq, ← f.hom.isIntertwining g x, hf.eq_iff]
+  rw [hstab]
+  exact hY.stabilizer_isOpen _
+
 omit [TopologicalSpace G] in
 /-- A discrete object is the image of its own underlying module under the dictionary; openness of
 the stabilizers plays no part, and a smooth discrete object supplies the discreteness through
@@ -365,10 +363,30 @@ lemma isSmoothDiscrete_iff_continuousSMul (X : TopRep R G) [DiscreteTopology X.V
 /-- The derived action on a smooth discrete object is continuous, so the underlying module of such
 an object is a discrete `G`-module in the unbundled classes. -/
 lemma IsSmoothDiscrete.continuousSMul {X : TopRep R G} (hX : IsSmoothDiscrete R X) :
-    haveI := hX.discreteTopology
     ContinuousSMul G X.V :=
   haveI := hX.discreteTopology
   (isSmoothDiscrete_iff_continuousSMul X).1 hX
+
+omit [IsTopologicalGroup G] in
+/-- Smoothness passes to the target of a surjective morphism with discrete target: the stabilizer
+of `f x` is a subgroup containing the open stabilizer of `x`, hence open since `G` has separately
+continuous multiplication. That continuity cannot be dropped: for `G` cyclic of order four with
+only `{1}` open among its proper nonempty subsets, `ℤ[i]` with a generator acting by `i` is smooth
+discrete, but in its quotient `ℤ[i]/2` the stabilizer of `1` is `{1, g²}`, which is not open.
+Discreteness of the target is a hypothesis because the topology of `Y` is part of its data. -/
+lemma IsSmoothDiscrete.of_surjective [SeparatelyContinuousMul G] {X Y : TopRep R G}
+    [DiscreteTopology Y.V] (f : X ⟶ Y)
+    (hf : Function.Surjective f.hom) (hX : IsSmoothDiscrete R X) : IsSmoothDiscrete R Y := by
+  let := X.distribMulAction
+  let := Y.distribMulAction
+  refine ⟨‹_›, fun y ↦ ?_⟩
+  obtain ⟨x, rfl⟩ := hf y
+  rw [← TopRep.coe_stabilizer]
+  apply Subgroup.isOpen_mono (H₁ := MulAction.stabilizer G x)
+  · intro g hg
+    simp only [MulAction.mem_stabilizer_iff, TopRep.distribMulAction_smul] at hg ⊢
+    rw [← f.hom.isIntertwining, hg]
+  · simpa only [TopRep.coe_stabilizer] using hX.stabilizer_isOpen x
 
 /-- Smoothness is Mathlib's continuity condition on the corresponding object of
 `Action (TopModuleCat R) G`, transported along `TopRep.toActionTopModFunc`: the two conditions of
@@ -405,9 +423,9 @@ variable (N : Type w) [AddCommGroup N] [Module R N] [TopologicalSpace N] [Discre
 variable {R G M N}
 
 /-- A `G`-equivariant `R`-linear map of discrete modules as a morphism of `TopRep R G`.
-Continuity is automatic, the source being discrete. The body is `@[expose]`d for the same reason
-as `TauCeti.ofDiscreteModule`'s: the equivalence of categories below is built from this
-constructor, and an exposed definition may only be built from exposed ones. -/
+Continuity is automatic, the source being discrete. The body is `@[expose]`d because the exposed
+equivalence of categories below, `TauCeti.discreteRepEquivSmoothTopRep`, is built from this
+constructor, and its definitional checks unfold it. -/
 @[expose] def ofDiscreteModuleMap (f : M →ₗ[R] N) (hf : ∀ (g : G) (m : M), f (g • m) = g • f m) :
     ofDiscreteModule R G M ⟶ ofDiscreteModule R G N :=
   TopRep.ofHom
@@ -595,11 +613,9 @@ lemma ofDiscreteModulePair_id (f : M →ₗ[R] N)
 
 /-- **The dictionary commutes with restriction to a subgroup**: restricting the canonical object of
 a discrete `G`-module along `S ↪ G` is the canonical object of the same module over `S`, on the
-nose rather than up to isomorphism. Without this identification the restriction of a canonical
-object and the canonical object of the restriction are two unrelated terms, and no transport square
-along a subgroup inclusion can be typed. -/
--- Not `@[simp]`: this is an equation between objects, used to type the statements that mention
--- both sides rather than to rewrite inside them.
+nose rather than up to isomorphism. The two sides are definitionally equal, so a morphism into or
+out of one is already a morphism of the other; this lemma names the identification for `rw`. -/
+-- Not `@[simp]`: this is an equation between objects, rewritten with explicitly where needed.
 lemma res_ofDiscreteModule (S : Subgroup G) :
     TopRep.res (S.subtype : S →* G) (ofDiscreteModule R G M) = ofDiscreteModule R S M := (rfl)
 
@@ -612,9 +628,11 @@ section CoefficientCategories
 variable (R : Type u) [Ring R] [TopologicalSpace R]
   (G : Type v) [Monoid G] [TopologicalSpace G]
 
-/-- The full subcategory of `TopRep R G` on the smooth discrete objects: the half of `TopRep R G`
-that the dictionary is an equivalence with. Its inclusion into `TopRep R G` is
-`TauCeti.smoothDiscreteι`. -/
+/-- The full subcategory of `TopRep R G` on the smooth discrete objects. Its inclusion into
+`TopRep R G` is `TauCeti.smoothDiscreteι`. For a topological group `G` it is equivalent to
+`TauCeti.DiscreteRep R G` (`TauCeti.discreteRepEquivSmoothTopRep`); for a topological monoid, open
+point stabilizers need not make the action continuous, and `TauCeti.toSmoothDiscrete` need not be
+essentially surjective. -/
 abbrev SmoothDiscreteTopRep : Type _ :=
   ObjectProperty.FullSubcategory (fun X : TopRep.{w} R G ↦ IsSmoothDiscrete R X)
 
@@ -625,9 +643,9 @@ abbrev smoothDiscreteι : SmoothDiscreteTopRep.{u, v, w} R G ⥤ TopRep.{w} R G 
   ObjectProperty.ι (fun X : TopRep.{w} R G ↦ IsSmoothDiscrete R X)
 
 /-- A discrete `G`-module with continuous `G`-action, bundled: the source side of the dictionary
-as a category, so that the dictionary can be an equivalence rather than a constructor. The fields
-are exactly the instances `TauCeti.ofDiscreteModule` and
-`TauCeti.ofDiscreteModule_isSmoothDiscrete` ask for. -/
+as a category. For a topological group `G` it is equivalent to `TauCeti.SmoothDiscreteTopRep R G`
+(`TauCeti.discreteRepEquivSmoothTopRep`). The fields are exactly the instances
+`TauCeti.ofDiscreteModule` and `TauCeti.ofDiscreteModule_isSmoothDiscrete` ask for. -/
 structure DiscreteRep where
   /-- the underlying module -/
   V : Type w
@@ -662,11 +680,10 @@ abbrev DiscreteRep.ρ (X : DiscreteRep.{u, v, w} R G) : Representation R G X.V :
 
 /-- The discrete `G`-modules with continuous `G`-action form a category under Mathlib's
 `Representation.IntertwiningMap`s of the representations they carry, that is, under the
-`G`-equivariant `R`-linear maps. Continuity, which the roadmap lists as a third datum of a
-morphism, is automatic on discrete modules (`continuous_of_discreteTopology`), so nothing is
-carried beyond Mathlib's type. These are the morphisms of the *source* side, not the morphisms of
-`TopRep R G` transported along the dictionary, so `TauCeti.discreteRepEquivSmoothTopRep` proves the
-morphism dictionary rather than assuming it. -/
+`G`-equivariant `R`-linear maps. Continuity is automatic on discrete modules
+(`continuous_of_discreteTopology`), so nothing is carried beyond Mathlib's type. These are the
+morphisms of the *source* side, not the morphisms of `TopRep R G` transported along the dictionary,
+so `TauCeti.discreteRepEquivSmoothTopRep` proves the morphism dictionary rather than assuming it. -/
 instance : Category.{w} (DiscreteRep.{u, v, w} R G) where
   Hom X Y := Representation.IntertwiningMap X.ρ Y.ρ
   id X := .id X.ρ
@@ -710,7 +727,7 @@ to the smooth discrete object it names, and an equivariant map to the morphism i
     ((toSmoothDiscrete R G).obj X).obj = ofDiscreteModule R G X.V := (rfl)
 
 /-- `toSmoothDiscrete` sends a morphism `f` to the morphism acting as `f`. -/
-@[simp] lemma toSmoothDiscrete_map_hom_apply {X Y : DiscreteRep.{u, v, w} R G} (f : X ⟶ Y)
+@[simp] lemma toSmoothDiscrete_map_hom_hom_apply {X Y : DiscreteRep.{u, v, w} R G} (f : X ⟶ Y)
     (x : X.V) : ((toSmoothDiscrete R G).map f).hom.hom x = f.toLinearMap x := (rfl)
 
 end CoefficientCategories
@@ -727,12 +744,12 @@ variable {R G} in
 underlying representation is definitionally `TopRep.res U.subtype A.obj`. The object map of
 `smoothDiscreteResFunctor` is not exposed, so statements that must see this definitional equality
 (for instance the domain of `coindTraceHom`) use this abbreviation instead. -/
-noncomputable abbrev smoothDiscreteResTopRep (A : SmoothDiscreteTopRep.{u, v, w} R G) :
+abbrev smoothDiscreteResTopRep (A : SmoothDiscreteTopRep.{u, v, w} R G) :
     SmoothDiscreteTopRep.{u, v, w} R U :=
   ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩
 
 /-- Restriction along `U → G` on smooth discrete representations. -/
-noncomputable def smoothDiscreteResFunctor :
+def smoothDiscreteResFunctor :
     SmoothDiscreteTopRep.{u, v, w} R G ⥤ SmoothDiscreteTopRep.{u, v, w} R U where
   obj A := ⟨TopRep.res (U.subtype : U →* G) A.obj,
     A.property.res continuous_subtype_val⟩
@@ -779,9 +796,10 @@ end Restriction
 
 /-! ### The equivalence of coefficient categories -/
 
-/-- The underlying module of a smooth discrete object is discrete. Recording this as a local
-instance is what lets `TauCeti.ofDiscreteModule` be applied to it below. -/
-local instance instDiscreteTopologyOfSmoothDiscrete {R : Type u} [Ring R] [TopologicalSpace R]
+/-- The underlying module of a smooth discrete object is discrete. This is what lets the object
+map of `TauCeti.ofSmoothDiscrete` below build a `TauCeti.DiscreteRep` on it, and what downstream
+constructions on smooth discrete objects use to treat their modules as discrete. -/
+instance instDiscreteTopologyOfSmoothDiscrete {R : Type u} [Ring R] [TopologicalSpace R]
     {G : Type v} [Monoid G] [TopologicalSpace G] (X : SmoothDiscreteTopRep.{u, v, w} R G) :
     DiscreteTopology X.obj.V :=
   X.property.discreteTopology
@@ -875,26 +893,19 @@ end CoefficientEquivalence
 
 section NotSmooth
 
-/-- The coefficients of the non-example below carry the discrete topology. -/
-local instance instTopologicalSpaceZModThree : TopologicalSpace (ZMod 3) := ⊥
-
-/-- The topology chosen just above is by definition the discrete one. -/
-local instance instDiscreteTopologyZModThree : DiscreteTopology (ZMod 3) := ⟨rfl⟩
-
-/-- The group of the non-example below carries the indiscrete topology, whose only open sets are
-`∅` and the whole group. -/
-local instance instTopologicalSpaceUnitsZModThree : TopologicalSpace (ZMod 3)ˣ := ⊤
-
 /-- An object of `TopRep R G` whose underlying module is discrete need not be smooth. Here the
 two-element group `(ZMod 3)ˣ` acts on the discrete module `ZMod 3` by multiplication, so the
-stabilizer of `1` is the singleton `{1}`; giving the group the indiscrete topology makes that
-singleton non-open. This is why the dictionary above has the discrete `G`-modules *with continuous
-`G`-action* as its source, and it is what the hypothesis `ContinuousSMul G M` of
-`TauCeti.ofDiscreteModule_isSmoothDiscrete` rules out. Stating it needs `TauCeti.ofDiscreteModule`
-to be available without that hypothesis, which is why the hypothesis sits on the results that use
-it rather than on the construction. -/
+stabilizer of `1` is the singleton `{1}`; giving the group the indiscrete topology `⊤`, whose only
+open sets are `∅` and the whole group, makes that singleton non-open. The statement names that
+topology explicitly: it is not the topology `(ZMod 3)ˣ` has as the unit group of the discrete ring
+`ZMod 3`, for which the same object is smooth. This is why the dictionary above has the discrete
+`G`-modules *with continuous `G`-action* as its source, and it is what the hypothesis
+`ContinuousSMul G M` of `TauCeti.ofDiscreteModule_isSmoothDiscrete` rules out. Stating it needs
+`TauCeti.ofDiscreteModule` to be available without that hypothesis, which is why the hypothesis
+sits on the results that use it rather than on the construction. -/
 lemma not_isSmoothDiscrete_ofDiscreteModule_units_zmod :
-    ¬ IsSmoothDiscrete ℤ (ofDiscreteModule ℤ (ZMod 3)ˣ (ZMod 3)) := by
+    ¬ @IsSmoothDiscrete ℤ _ _ (ZMod 3)ˣ _ ⊤ (ofDiscreteModule ℤ (ZMod 3)ˣ (ZMod 3)) := by
+  let : TopologicalSpace (ZMod 3)ˣ := ⊤
   intro h
   have hopen := h.stabilizer_isOpen (1 : ZMod 3)
   simp only [ofDiscreteModule_ρ_apply_apply] at hopen

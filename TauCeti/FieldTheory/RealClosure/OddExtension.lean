@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.RealClosure.PolynomialCone
 public import TauCeti.Algebra.Polynomial.OddDegreeFactor
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import Mathlib.RingTheory.AdjoinRoot
 import Mathlib.FieldTheory.PrimitiveElement
 
 /-! # Extending an ordering across odd-degree algebraic adjunctions
@@ -42,7 +43,11 @@ private theorem extensionCone.exists_lt (p : K[X])
     (hodd : Odd p.natDegree) (hneg : -1 ∈ extensionCone (algebraMap K (AdjoinRoot p))) :
     ∃ r : K[X], Irreducible r ∧ Odd r.natDegree ∧ r.natDegree < p.natDegree ∧
       -1 ∈ extensionCone (algebraMap K (AdjoinRoot r)) := by
-  obtain ⟨s, hs, hsdeg, hseval⟩ := extensionCone.exists_aeval_root_eq p hodd.pos hneg
+  have := AdjoinRoot.nontrivial p (natDegree_pos_iff_degree_pos.mp hodd.pos).ne'
+  obtain ⟨s, hs, hsdeg, hseval⟩ :=
+    PowerBasis.exists_aeval_eq_of_mem_extensionCone
+      (AdjoinRoot.powerBasis (ne_zero_of_natDegree_gt hodd.pos)) hneg
+  simp only [AdjoinRoot.powerBasis_dim, AdjoinRoot.powerBasis_gen] at hsdeg hseval
   let w := (1 : K[X]) + s
   have hw : w ∈ extensionCone (C : K →+* K[X]) := add_mem (one_mem _) hs
   have hw0 : w ≠ 0 := by

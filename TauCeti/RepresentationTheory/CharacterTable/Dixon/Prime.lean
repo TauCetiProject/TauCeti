@@ -209,7 +209,7 @@ section Representation
 variable {V : Type*} [AddCommGroup V] [Module (ZMod p) V]
 
 /-- **At a good Dixon prime every group element acts semisimply.** This is
-`TauCeti.Representation.isSemisimple_apply` at the invertibility of `|G|` that the good-prime
+`Representation.isSemisimple_apply` at the invertibility of `|G|` that the good-prime
 certificate supplies. -/
 theorem isSemisimple_apply (hp : IsGoodDixonPrime G p)
     (ρ : Representation (ZMod p) G V) (g : G) : Module.End.IsSemisimple (ρ g) :=
