@@ -41,7 +41,7 @@ turns these two embeddings into the equality of orders.
 
 The Kummer character `MonoidHom.kummerCharacter` of `TauCeti.FieldTheory.Kummer.Character` takes
 its values in the roots of unity of a base field that is algebraically closed in the extension; the
-base field here is not, so the pairing below takes its values in the top field.
+base field here need not be, so the pairing below takes its values in the top field.
 
 ## Main definitions
 
@@ -53,8 +53,9 @@ base field here is not, so the pairing below takes its values in the top field.
 * `TauCeti.finiteDimensional_kummerField`: it is finite when `Δ ∩ (Kˣ)ⁿ` has finite index in `Δ`.
 * `TauCeti.finrank_kummerField`: `[K(Δ^{1/n}) : K] = [Δ : Δ ∩ (Kˣ)ⁿ]`, when every element of `Δ`
   has an `n`-th root in `E`.
-* `TauCeti.exists_eq_algebraMap_mul_of_pow_eq`: over a field containing the `n`-th roots of unity,
-  two elements of an extension with the same `n`-th power differ by a factor from the base field.
+* `TauCeti.exists_eq_algebraMap_mul_of_pow_eq`: over a domain containing the `n`-th roots of
+  unity, two elements of a field extension with the same `n`-th power differ by a factor from the
+  base.
 
 ## References
 
@@ -71,17 +72,17 @@ namespace TauCeti
 
 section RootsOfUnity
 
-variable {K : Type*} [Field K] {n : ℕ} [NeZero n] [HasEnoughRootsOfUnity K n]
-  {F : Type*} [Field F] [Algebra K F]
+variable {K : Type*} [CommRing K] [IsDomain K] {n : ℕ} [NeZero n] [HasEnoughRootsOfUnity K n]
+  {F : Type*} [Field F] [Algebra K F] [FaithfulSMul K F]
 
-/-- If `K` contains the `n`-th roots of unity, then two elements of an extension field of `K`
-with the same `n`-th power differ by a factor from `K`. -/
+/-- If the domain `K` contains the `n`-th roots of unity, then two elements of a field extension
+of `K` with the same `n`-th power differ by a factor from `K`. -/
 theorem exists_eq_algebraMap_mul_of_pow_eq {x y : F} (hy : y ≠ 0) (h : x ^ n = y ^ n) :
     ∃ z : K, x = algebraMap K F z * y := by
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot K n
   have hK : (primitiveRoots n K).Nonempty := ⟨ζ, (mem_primitiveRoots (NeZero.pos n)).2 hζ⟩
   have hxy : (x / y) ^ n = 1 := by rw [div_pow, h, div_self (pow_ne_zero _ hy)]
-  refine ⟨(((rootsOfUnityEquivOfPrimitiveRoots (algebraMap K F).injective hK).symm
+  refine ⟨(((rootsOfUnityEquivOfPrimitiveRoots (FaithfulSMul.algebraMap_injective K F) hK).symm
     (rootsOfUnity.mkOfPowEq _ hxy) : Kˣ) : K), ?_⟩
   rw [rootsOfUnityEquivOfPrimitiveRoots_symm_apply, rootsOfUnity.coe_mkOfPowEq,
     div_mul_cancel₀ _ hy]
@@ -97,10 +98,6 @@ def kummerField (Δ : Subgroup Kˣ) : IntermediateField K E :=
 
 variable {E n} {Δ : Subgroup Kˣ}
 
-theorem kummerField_def :
-    kummerField E n Δ = adjoin K {x : E | ∃ a ∈ Δ, x ^ n = algebraMap K E a} :=
-  (rfl)
-
 /-- An `n`-th root of an element of `Δ` lies in `K(Δ^{1/n})`. -/
 theorem mem_kummerField_of_pow_eq {x : E} {a : Kˣ} (ha : a ∈ Δ)
     (hx : x ^ n = algebraMap K E a) : x ∈ kummerField E n Δ :=
@@ -109,7 +106,7 @@ theorem mem_kummerField_of_pow_eq {x : E} {a : Kˣ} (ha : a ∈ Δ)
 /-- `K(Δ^{1/n})` is the smallest subfield containing the `n`-th roots of the elements of `Δ`. -/
 theorem kummerField_le_iff {F : IntermediateField K E} :
     kummerField E n Δ ≤ F ↔ ∀ a ∈ Δ, ∀ x : E, x ^ n = algebraMap K E a → x ∈ F := by
-  rw [kummerField_def, adjoin_le_iff]
+  rw [kummerField, adjoin_le_iff]
   exact ⟨fun h a ha x hx ↦ h ⟨a, ha, hx⟩, fun h _ ⟨a, ha, hx⟩ ↦ h a ha _ hx⟩
 
 /-- `K(Δ^{1/n})` is monotone in `Δ`. -/
@@ -225,7 +222,7 @@ instance isAbelianGalois_kummerField : IsAbelianGalois K (kummerField E n Δ) :=
     simp only [AlgEquiv.mul_apply, hz, hw, map_mul, AlgEquiv.commutes]
     ring
   exact { is_comm := ⟨fun σ τ ↦ AlgEquiv.coe_toAlgHom_injective <|
-    algHom_ext_of_eq_adjoin K kummerField_def fun x ⟨a, ha, hx⟩ ↦ hcomm σ τ _ (hgen ha hx)⟩ }
+    algHom_ext_of_eq_adjoin K rfl fun x ⟨a, ha, hx⟩ ↦ hcomm σ τ _ (hgen ha hx)⟩ }
 
 /-- In the Galois group of `K(Δ^{1/n})/K`, an automorphism is determined by how it moves one
 chosen `n`-th root `r a` of each `a ∈ Δ`. -/
@@ -233,7 +230,7 @@ private theorem algEquiv_ext_of_apply_div_self_eq {r : Δ → kummerField E n Δ
     (hr : ∀ a, r a ^ n = algebraMap K _ ((a : Kˣ) : K)) {σ τ : kummerField E n Δ ≃ₐ[K] _}
     (h : ∀ a, σ (r a) / r a = τ (r a) / r a) : σ = τ := by
   refine AlgEquiv.coe_toAlgHom_injective <|
-    algHom_ext_of_eq_adjoin K kummerField_def fun x ⟨a, ha, hx⟩ ↦ ?_
+    algHom_ext_of_eq_adjoin K rfl fun x ⟨a, ha, hx⟩ ↦ ?_
   have hy : (⟨x, mem_kummerField_of_pow_eq ha hx⟩ : kummerField E n Δ) ^ n = algebraMap K _ a :=
     Subtype.ext (by simpa using hx)
   have hpow := hy.trans (hr ⟨a, ha⟩).symm
