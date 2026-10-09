@@ -33,8 +33,7 @@ representations of `Gal(L/K)`,
 ```
 
 the map sending `y` to the function `g ↦ ((id ⊗ g) y)_w` (`semilocalUnitsCoindIso`); its
-bijectivity is an instance of `TauCeti.semilocal_eq_of_forall_component_eq` and
-`TauCeti.semilocal_exists_forall_component_eq`. Shapiro's
+bijectivity is an instance of `TauCeti.semilocal_resCoindToHom_bijective`. Shapiro's
 lemma therefore computes the cohomology of the semi-local units from the local Galois
 cohomology of `L_wˣ`.
 
@@ -168,33 +167,21 @@ private theorem exists_place_asIdeal_eq_smul (g : L ≃ₐ[K] L) :
 /-- For `L/K` Galois, `semilocalUnitsToCoind` is bijective: the semi-local units are the product
 of the units of the completions above `v`, which `id ⊗ g` permutes through `completionCongr`. -/
 private theorem semilocalUnitsToCoind_bijective [IsGalois K L] :
-    Function.Bijective (semilocalUnitsToCoind v w).hom := by
-  let e := ((Units.mapEquiv (semilocalEquiv L v).toMulEquiv).trans MulEquiv.piUnits).toEquiv
-  let T (g : L ≃ₐ[K] L) {i j : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}}
-      (h : j.1.asIdeal = g • i.1.asIdeal) :=
-    (Units.mapEquiv (completionCongr v g h).toMulEquiv).toEquiv
-  have he (g : L ≃ₐ[K] L) (y : (v.adicCompletion K ⊗[K] L)ˣ)
-      {i j : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}}
-      (h : j.1.asIdeal = g • i.1.asIdeal) :
-      e (Units.map (semilocalGaloisHom (v.adicCompletion K) L g : _ →* _) y) j = T g h (e y i) :=
-    Units.ext (semilocalEquiv_semilocalGaloisHom g h y)
-  refine ⟨fun y y' h ↦ Additive.toMul.injective <| semilocal_eq_of_forall_component_eq e T he
-    (w := ⟨w, ‹_›⟩) (exists_asIdeal_eq_smul v w) fun g ↦ Units.ext ?_, fun F ↦ ?_⟩
-  · exact (semilocalUnitsToCoind_apply v w y.toMul g).symm.trans <|
-      (congrArg (fun F ↦ ((Additive.toMul (α := (w.adicCompletion L)ˣ) (F.1 g) :
-        (w.adicCompletion L)ˣ) : w.adicCompletion L)) h).trans
-          (semilocalUnitsToCoind_apply v w y'.toMul g)
-  obtain ⟨y, hy⟩ := semilocal_exists_forall_component_eq e T he (w := ⟨w, ‹_›⟩)
+    Function.Bijective (semilocalUnitsToCoind v w).hom :=
+  semilocal_resCoindToHom_bijective
+    (p := fun i : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal} ↦ i.1.asIdeal)
+    (w := ⟨w, ‹_›⟩) (M := fun i ↦ (i.1.adicCompletion L)ˣ)
+    (T := fun g _ _ h ↦ (Units.mapEquiv (completionCongr v g h).toMulEquiv).toEquiv)
+    (semilocalUnitsComponent v w)
+    (Additive.toMul.trans
+      ((Units.mapEquiv (semilocalEquiv L v).toMulEquiv).trans MulEquiv.piUnits).toEquiv)
+    (fun g y _ _ h ↦ Units.ext (semilocalEquiv_semilocalGaloisHom g h
+      (Additive.toMul (α := (v.adicCompletion K ⊗[K] L)ˣ) y).1)) Additive.toMul (fun _ ↦ rfl)
+    (fun d a ↦ Units.ext (DFunLike.congr_fun (decompositionHom_apply (v := v) (w := w) d)
+      (Additive.toMul (α := (w.adicCompletion L)ˣ) a).1))
     (fun g g' _ _ _ h h' a ↦
       Units.ext (DFunLike.congr_fun (completionCongr_trans (v := v) g g' h h') a.1))
     (exists_asIdeal_eq_smul v w) (exists_place_asIdeal_eq_smul v w)
-    (fun g ↦ Additive.toMul (F.1 g)) fun d hd g ↦
-      (congrArg Additive.toMul (F.2 ⟨d, MulAction.mem_stabilizer_iff.mpr hd.symm⟩ g)).trans <|
-        Units.ext (DFunLike.congr_fun (decompositionHom_apply (v := v) (w := w)
-          ⟨d, MulAction.mem_stabilizer_iff.mpr hd.symm⟩)
-          (Additive.toMul (α := (w.adicCompletion L)ˣ) (F.1 g)).1)
-  exact ⟨Additive.ofMul y, Subtype.ext <| funext fun g ↦ Additive.toMul.injective <|
-    Units.ext <| (semilocalUnitsToCoind_apply v w y g).trans (congrArg Units.val (hy g))⟩
 
 /-- **The semi-local units are coinduced.** For `L/K` Galois and `w` a place above `v`, the units
 of `K_v ⊗[K] L` are, as an integral representation of `Gal(L/K)`, coinduced from the units of
