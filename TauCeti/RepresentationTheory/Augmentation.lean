@@ -189,6 +189,39 @@ theorem permutationAugmentationSequence_def :
             (mem_augmentationSubrepresentation_iff (k := k) (G := G)).mp v.2) :=
   (rfl)
 
+/-- The first term of the permutation augmentation sequence is the augmentation
+subrepresentation. -/
+@[simp]
+theorem permutationAugmentationSequence_X₁ :
+    (permutationAugmentationSequence k G X).X₁ =
+      Rep.of (augmentationSubrepresentation k G X).toRepresentation :=
+  (rfl)
+
+/-- The middle term of the permutation augmentation sequence is the permutation representation. -/
+@[simp]
+theorem permutationAugmentationSequence_X₂ :
+    (permutationAugmentationSequence k G X).X₂ = Rep.ofMulAction k G X :=
+  (rfl)
+
+/-- The last term of the permutation augmentation sequence is the trivial representation on `k`. -/
+@[simp]
+theorem permutationAugmentationSequence_X₃ :
+    (permutationAugmentationSequence k G X).X₃ = Rep.trivial k G k :=
+  (rfl)
+
+/-- The first map of the permutation augmentation sequence is the kernel inclusion. -/
+@[simp]
+theorem permutationAugmentationSequence_f :
+    HEq (permutationAugmentationSequence k G X).f
+      (Rep.ofHom (augmentationSubrepresentation k G X).subtype) :=
+  (HEq.rfl)
+
+/-- The second map of the permutation augmentation sequence is the coefficient sum. -/
+@[simp]
+theorem permutationAugmentationSequence_g :
+    HEq (permutationAugmentationSequence k G X).g (permutationAugmentation k G X) :=
+  (HEq.rfl)
+
 /-- The augmentation sequence on a nonempty permutation set is short exact. It need not
 split equivariantly when the cardinality of the set is not invertible. -/
 theorem permutationAugmentationSequence_shortExact [Nonempty X] :
