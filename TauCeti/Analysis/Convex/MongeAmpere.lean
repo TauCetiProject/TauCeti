@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Analysis.Convex.Hessian
 public import TauCeti.Analysis.Convex.SubgradientImage
+public import TauCeti.Analysis.Convex.Measure
 public import Mathlib.MeasureTheory.Function.Jacobian
+import Mathlib.Analysis.InnerProductSpace.Dual
+import Mathlib.Analysis.LocallyConvex.Separation
 
 /-!
 # The Aleksandrov Monge–Ampère measure of a convex function
@@ -50,6 +53,17 @@ injective there (`TauCeti.apply_sub_eq_zero_of_gradient_eq`). The gradient image
 where the Hessian is degenerate is null, and the Hessian of a convex function has nonnegative
 determinant (`TauCeti.isPositive_of_hasFDerivAt_gradient`).
 
+The *Aleksandrov maximum principle* bounds a convex function by its Monge–Ampère mass: if `u` is
+convex on a bounded open convex `Ω`, continuous on the closure and nonnegative on the frontier,
+then `(-u x₀) ^ n ≤ C diam(Ω) ^ (n - 1) dist(x₀, ∂Ω) MA_u(Ω)` for `x₀ ∈ Ω`, with
+`C = 2 ^ (n + 1) / μ (ball 0 1)`
+(`TauCeti.ofReal_neg_pow_mul_addHaar_ball_le_mul_mongeAmpereMeasure`). Every slope `p` of an
+affine function through `(x₀, u x₀)` lying below `u` on the frontier is a subgradient of `u` at
+some point of `Ω` (`TauCeti.exists_forall_add_inner_le_of_forall_frontier`). When `u ≥ 0` on the
+frontier, these slopes include a convex set containing a ball of radius `-u x₀ / diam Ω` and a
+point of norm `-u x₀ / dist(x₀, ∂Ω)`, and the volume of such a set is bounded below by
+`Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le`.
+
 ## Main definitions
 
 * `TauCeti.mongeAmpereMeasure μ f` — the Aleksandrov Monge–Ampère measure of `f`; it is `0` when
@@ -69,14 +83,19 @@ determinant (`TauCeti.isPositive_of_hasFDerivAt_gradient`).
   set;
 * `TauCeti.mongeAmpereMeasure_eq_withDensity_det` and
   `TauCeti.mongeAmpereMeasure_ite_eq_withDensity_det` — for a twice differentiable convex function,
-  the Aleksandrov measure is `det (D²f) dx` on the interior of the effective domain.
+  the Aleksandrov measure is `det (D²f) dx` on the interior of the effective domain;
+* `TauCeti.exists_forall_add_inner_le_of_forall_frontier` — slopes of affine functions through a
+  point of the graph that lie below the boundary values are subgradients at points of `Ω`;
+* `TauCeti.ofReal_neg_pow_mul_addHaar_ball_le_mul_mongeAmpereMeasure` — **the Aleksandrov
+  maximum principle**.
 
 ## References
 
 * A. D. Aleksandrov, *Dirichlet's problem for the equation Det ‖z_{ij}‖ = φ(z₁, …, zₙ, z, x₁, …,
   xₙ). I*, Vestnik Leningrad. Univ. Ser. Mat. Meh. Astr. 13 (1958), 5–24.
 * C. E. Gutiérrez, *The Monge–Ampère Equation*, 2nd ed., Progress in Nonlinear Differential
-  Equations and Their Applications 89, Birkhäuser, 2016, §1.1, in particular Theorem 1.1.13.
+  Equations and Their Applications 89, Birkhäuser, 2016, §1.1, in particular Theorem 1.1.13, and
+  §1.4 for the Aleksandrov maximum principle.
 * A. Figalli, *The Monge–Ampère Equation and Its Applications*, Zurich Lectures in Advanced
   Mathematics, EMS, 2017, §2.1, in particular Theorem 2.3.
 -/
@@ -87,7 +106,7 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory Measure Set Filter Metric
+open MeasureTheory Measure Set Filter Metric Module
 open scoped Topology ENNReal Gradient
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {f : E → EReal}
@@ -409,5 +428,156 @@ theorem mongeAmpereMeasure_ite_eq_withDensity_det {Ω : Set E} [DecidablePred (�
     rw [(hG x hx.2).fderiv_eq]
 
 end Smooth
+
+/-! ### The Aleksandrov maximum principle -/
+
+section MaximumPrinciple
+
+variable {Ω : Set E} {u : E → ℝ}
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- **Slopes below the boundary values are subgradients.** Let `Ω` be bounded and `u` continuous
+on its closure, and let `x₀ ∈ Ω`. If the affine function `x ↦ u x₀ + ⟪x - x₀, p⟫` lies below `u`
+on the frontier of `Ω`, then `p` is a subgradient of `u` relative to `Ω` at some point `x₁ ∈ Ω`:
+`u x₁ + ⟪x - x₁, p⟫ ≤ u x` for every `x ∈ Ω`. -/
+theorem exists_forall_add_inner_le_of_forall_frontier [ProperSpace E]
+    (hΩ : Bornology.IsBounded Ω) (hu : ContinuousOn u (closure Ω)) {x₀ : E} (hx₀ : x₀ ∈ Ω)
+    {p : E} (hp : ∀ x ∈ frontier Ω, u x₀ + inner ℝ (x - x₀) p ≤ u x) :
+    ∃ x₁ ∈ Ω, ∀ x ∈ Ω, u x₁ + inner ℝ (x - x₁) p ≤ u x := by
+  -- Minimize `u - ⟪·, p⟫` over the compact closure of `Ω`.
+  have hcont : ContinuousOn (fun x => u x - inner ℝ x p) (closure Ω) :=
+    hu.sub (continuous_id.inner continuous_const).continuousOn
+  obtain ⟨x₁, hx₁, hmin⟩ := hΩ.isCompact_closure.exists_isMinOn ⟨x₀, subset_closure hx₀⟩ hcont
+  have hmin' : ∀ x ∈ Ω, u x₁ - inner ℝ x₁ p ≤ u x - inner ℝ x p := fun x hx =>
+    isMinOn_iff.1 hmin x (subset_closure hx)
+  by_cases h₁ : x₁ ∈ Ω
+  · refine ⟨x₁, h₁, fun x hx => ?_⟩
+    have := hmin' x hx
+    rw [inner_sub_left]
+    linarith
+  · -- A minimum on the frontier is no smaller than the value at `x₀`, which is then a minimum.
+    refine ⟨x₀, hx₀, fun x hx => ?_⟩
+    have h₂ := hp x₁ ⟨hx₁, fun h => h₁ (interior_subset h)⟩
+    have h₃ := hmin' x hx
+    rw [inner_sub_left] at h₂ ⊢
+    linarith
+
+variable [Nontrivial E] (μ : Measure E) [μ.IsAddHaarMeasure] [DecidablePred (· ∈ Ω)]
+
+/-- **The Aleksandrov maximum principle.** Let `Ω` be a bounded open convex subset of a real inner
+product space `E` of finite dimension `n ≥ 1`, and let `u` be convex on `Ω`, continuous on its
+closure, and nonnegative on its frontier. Then at every `x₀ ∈ Ω`,
+
+  `(-u x₀) ^ n * μ (ball 0 1) ≤ 2 ^ (n + 1) * diam Ω ^ (n - 1) * dist(x₀, ∂Ω) * MA_u(Ω)`,
+
+where `dist(x₀, ∂Ω)` is the distance from `x₀` to the complement of `Ω` and `MA_u` is the
+Aleksandrov Monge–Ampère measure of `u` (extended by `⊤` off `Ω`) with respect to the additive
+Haar measure `μ`. When `MA_u(Ω)` is finite, this bounds `-u` below on `Ω` and shows that
+`-u x₀ = O(dist(x₀, ∂Ω) ^ (1 / n))` as `x₀` approaches the boundary. -/
+theorem ofReal_neg_pow_mul_addHaar_ball_le_mul_mongeAmpereMeasure (hΩo : IsOpen Ω)
+    (hΩ : Bornology.IsBounded Ω) (hu : ConvexOn ℝ Ω u) (hc : ContinuousOn u (closure Ω))
+    (hfr : ∀ x ∈ frontier Ω, 0 ≤ u x) {x₀ : E} (hx₀ : x₀ ∈ Ω) :
+    ENNReal.ofReal (-u x₀) ^ finrank ℝ E * μ (ball 0 1) ≤
+      2 ^ (finrank ℝ E + 1) * ENNReal.ofReal (diam Ω ^ (finrank ℝ E - 1) * infDist x₀ Ωᶜ) *
+        mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) Ω := by
+  -- The subgradient image of `Ω` contains the convex set `P` of slopes of affine functions through
+  -- `(x₀, u x₀)` lying below `0` on the frontier. It contains the ball of radius `h / D` about `0`,
+  -- with `h = -u x₀` and `D = diam Ω`, and a slope of norm `h / d`, with `d = dist(x₀, ∂Ω)`,
+  -- normal to a hyperplane supporting `Ω` at a nearest point of the complement.
+  set n := finrank ℝ E
+  have hn : 1 ≤ n := finrank_pos
+  rcases le_or_gt 0 (u x₀) with hux₀ | hux₀
+  · rw [ENNReal.ofReal_of_nonpos (by linarith), zero_pow (by omega), zero_mul]
+    exact bot_le
+  set h := -u x₀
+  have hh : 0 < h := by linarith
+  set d := infDist x₀ Ωᶜ
+  set D := diam Ω
+  -- The complement of `Ω` is nonempty, and `x₀` is at positive distance `d` from it, attained at
+  -- some `z ∉ Ω`; the ball of radius `d` about `x₀` lies in `Ω`, so `D ≥ 2 * d > 0`.
+  have hΩc : Ωᶜ.Nonempty := nonempty_compl.2 fun h' => NormedSpace.unbounded_univ ℝ E (h' ▸ hΩ)
+  obtain ⟨z, hz, hzd⟩ := hΩo.isClosed_compl.exists_infDist_eq_dist hΩc x₀
+  have hd : 0 < d := (hΩo.isClosed_compl.notMem_iff_infDist_pos hΩc).1 fun h' => h' hx₀
+  have hD : 0 < D := by
+    have hsub : ball x₀ d ⊆ Ω := by simpa using ball_infDist_subset_compl (x := x₀) (s := Ωᶜ)
+    have := diam_mono hsub hΩ
+    rw [diam_ball_eq x₀ hd.le] at this
+    linarith
+  -- The admissible slopes.
+  set P := {p : E | ∀ x ∈ frontier Ω, u x₀ + inner ℝ (x - x₀) p ≤ 0}
+  have hPconv : Convex ℝ P := by
+    intro p hp q hq a b ha hb hab x hx
+    have h₁ := mul_le_mul_of_nonneg_left (hp x hx) ha
+    have h₂ := mul_le_mul_of_nonneg_left (hq x hx) hb
+    rw [inner_add_right, real_inner_smul_right, real_inner_smul_right]
+    nlinarith
+  have hball : ball 0 (h / D) ⊆ P := by
+    intro p hp x hx
+    rw [mem_ball_zero_iff] at hp
+    have hxD : ‖x - x₀‖ ≤ D := by
+      rw [← dist_eq_norm]
+      calc dist x x₀ ≤ diam (closure Ω) :=
+            dist_le_diam_of_mem hΩ.closure (frontier_subset_closure hx) (subset_closure hx₀)
+        _ = D := diam_closure Ω
+    have := (real_inner_le_norm (x - x₀) p).trans
+      (mul_le_mul hxD hp.le (norm_nonneg p) hD.le)
+    rw [mul_div_cancel₀ h hD.ne'] at this
+    linarith
+  -- A supporting half-space of `Ω` through `z` gives a slope of norm `h / d`.
+  obtain ⟨g, hg⟩ := geometric_hahn_banach_open_point hu.1 hΩo hz
+  set w := (InnerProductSpace.toDual ℝ E).symm g
+  have hw : ∀ a, inner ℝ w a = g a := fun a => InnerProductSpace.toDual_symm_apply
+  have hw0 : w ≠ 0 := fun h' => by simpa [← hw, h'] using hg x₀ hx₀
+  have hw0' : 0 < ‖w‖ := norm_pos_iff.2 hw0
+  have hq : (h / (d * ‖w‖)) • w ∈ P := by
+    intro x hx
+    have hgx : g x ≤ g z :=
+      closure_minimal (fun a ha => (hg a ha).le) (isClosed_le g.continuous continuous_const)
+        (frontier_subset_closure hx)
+    have hdz : d = ‖z - x₀‖ := by
+      rw [dist_comm, dist_eq_norm] at hzd
+      exact hzd
+    have hgz : g (z - x₀) ≤ ‖w‖ * d := by
+      rw [← hw, hdz]
+      exact real_inner_le_norm w (z - x₀)
+    rw [map_sub] at hgz
+    have key : h / (d * ‖w‖) * (g x - g x₀) ≤ h :=
+      calc h / (d * ‖w‖) * (g x - g x₀) ≤ h / (d * ‖w‖) * (‖w‖ * d) :=
+            mul_le_mul_of_nonneg_left (by linarith) (by positivity)
+        _ = h := by field_simp
+    rw [real_inner_smul_right, real_inner_comm, hw, map_sub]
+    have hdef : h = -u x₀ := rfl
+    linarith
+  have hqn : dist ((h / (d * ‖w‖)) • w) 0 = h / d := by
+    rw [dist_zero_right, norm_smul, Real.norm_of_nonneg (by positivity)]
+    field_simp
+  -- Every admissible slope is a subgradient of `u` relative to `Ω` at a point of `Ω`.
+  have hPS : P ⊆ ⋃ x ∈ Ω ∩ Ω, {y | ∀ x' ∈ Ω, u x + inner ℝ (x' - x) y ≤ u x'} := by
+    intro p hp
+    obtain ⟨x₁, hx₁, hx₁'⟩ := exists_forall_add_inner_le_of_forall_frontier hΩ hc hx₀
+      fun x hx => (hp x hx).trans (hfr x hx)
+    exact mem_biUnion ⟨hx₁, hx₁⟩ hx₁'
+  -- Multiply the volume bound for `P` through by `D ^ (n - 1) * d`.
+  have hreal : D ^ (n - 1) * d * (h / d * (h / D) ^ (n - 1)) = h ^ n := by
+    rw [div_pow, ← Nat.sub_add_cancel hn, pow_succ']
+    simp only [Nat.add_sub_cancel]
+    field_simp
+  calc ENNReal.ofReal h ^ n * μ (ball 0 1)
+      = ENNReal.ofReal (D ^ (n - 1) * d) *
+          (ENNReal.ofReal (h / d * (h / D) ^ (n - 1)) * μ (ball 0 1)) := by
+        rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity), hreal,
+          ENNReal.ofReal_pow hh.le]
+    _ ≤ ENNReal.ofReal (D ^ (n - 1) * d) * (2 ^ (n + 1) * μ P) := by
+        rw [← hqn]
+        gcongr _ * ?_
+        exact hPconv.ofReal_dist_mul_pow_mul_addHaar_ball_le (μ := μ) (div_pos hh hD) hball hq
+    _ ≤ ENNReal.ofReal (D ^ (n - 1) * d) *
+          (2 ^ (n + 1) * μ (⋃ x ∈ Ω ∩ Ω, {y | ∀ x' ∈ Ω, u x + inner ℝ (x' - x) y ≤ u x'})) := by
+        gcongr
+    _ = _ := by
+        rw [mongeAmpereMeasure_ite_apply μ hΩo hu AbsolutelyContinuous.rfl hΩo.measurableSet]
+        ring
+
+end MaximumPrinciple
 
 end TauCeti
