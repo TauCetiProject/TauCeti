@@ -26,6 +26,10 @@ so every subcomodule is stable under symplectic matrices.
 
 * `TauCeti.Symplectic.standardComodule`: the standard `O(Sp₂ₘ)`-comodule on `R^(2m)`.
 * `TauCeti.Symplectic.isFaithful_standardComodule`: the standard comodule is faithful.
+* `TauCeti.Symplectic.basePointsRepresentation_eq_mulVec`: a base-valued point acts by its
+  symplectic matrix.
+* `TauCeti.Symplectic.scalar_sq_eq_one_of_basePointsRepresentation_eq_smul`: a point acting as
+  a scalar has scalar a square root of one.
 * `TauCeti.Symplectic.mulVec_mem`: a standard subcomodule is stable under every symplectic
   matrix.
 * `TauCeti.Symplectic.instIsSimpleOrderSubcomodule`: over a field and in positive rank, the
@@ -123,25 +127,58 @@ theorem piScalarRight_comp_endOfPoint
 
 end PointAction
 
+-- `@[simp]` would fail `simpNF`: the left-hand side already simplifies via
+-- `basePointsRepresentation_corestrict` and the general-linear action formula.
+/-- A base-valued point acts on the standard symplectic comodule by its symplectic matrix. -/
+theorem basePointsRepresentation_eq_mulVec
+    (g : WithConv (coordinateHopfAlgebra R m →ₐ[R] R)) (v : Fin (m + m) → R) :
+    Comodule.basePointsRepresentation (R := R) (H := coordinateHopfAlgebra R m)
+        (Fin (m + m) → R) g v =
+      ((pointsMulEquiv (R := R) (A := R) m g : GL (Fin (m + m)) R) :
+        Matrix (Fin (m + m)) (Fin (m + m)) R) *ᵥ v := by
+  rw [Comodule.basePointsRepresentation_corestrict (coordinateMap R m).hom g,
+    GeneralLinear.basePointsRepresentation_eq_mulVec]
+  have hpoint :
+      AlgHom.mapDomain (coordinateMap R m).hom g =
+        CommHopfAlgCat.quotientPointsHom
+          (GeneralLinear.coordinateHopfAlgebra R (m + m)) (definingHopfIdeal R m)
+          (CommAlgCat.of R R) g := by
+    rw [coordinateMap_def, AlgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply]
+  rw [hpoint, ← GeneralLinear.pointsMulEquiv_apply, pointsMulEquiv_coe]
+
+/-- A scalar point in the standard representation of `Sp₂ₘ`, for `m ≠ 0`, has scalar a square
+root of one: the scalar matrix `c • 1` preserves the alternating form only when `c ^ 2 = 1`. -/
+theorem scalar_sq_eq_one_of_basePointsRepresentation_eq_smul (hm : m ≠ 0)
+    (g : WithConv (coordinateHopfAlgebra R m →ₐ[R] R)) (c : R)
+    (hc : Comodule.basePointsRepresentation (R := R) (H := coordinateHopfAlgebra R m)
+      (Fin (m + m) → R) g = c • (1 : Module.End R (Fin (m + m) → R))) : c ^ 2 = 1 := by
+  have hmat : ((pointsMulEquiv (R := R) (A := R) m g : GL (Fin (m + m)) R) :
+      Matrix (Fin (m + m)) (Fin (m + m)) R) = c • (1 : Matrix (Fin (m + m)) (Fin (m + m)) R) := by
+    apply Matrix.toLin'.injective
+    apply LinearMap.ext
+    intro v
+    have hv := LinearMap.congr_fun hc v
+    rw [basePointsRepresentation_eq_mulVec] at hv
+    simpa only [Matrix.toLin'_apply, Matrix.smul_mulVec, Matrix.one_mulVec,
+      LinearMap.smul_apply, Module.End.one_apply] using hv
+  -- The symplectic relation for `c • 1` reads `(c ^ 2) • J = J`; multiplying by `J` and reading
+  -- off a diagonal entry gives `c ^ 2 = 1`.
+  have hJ := GLSymplecticFin.mem_iff.mp (pointsMulEquiv (R := R) (A := R) m g).2
+  rw [hmat, Matrix.transpose_smul, Matrix.transpose_one, Matrix.smul_mul, Matrix.one_mul,
+    Matrix.mul_smul, Matrix.mul_one, smul_smul, ← sq] at hJ
+  have hJJ := congrArg (fun M ↦ M * JFin m R) hJ
+  simp only [Matrix.smul_mul, JFin_mul_self] at hJJ
+  have hentry := congrFun (congrFun hJJ ⟨0, by omega⟩) ⟨0, by omega⟩
+  simpa using hentry
+
 /-- **A subcomodule of the standard symplectic comodule is stable under every symplectic
 matrix.** -/
 theorem mulVec_mem (N : Subcomodule R (coordinateHopfAlgebra R m) (Fin (m + m) → R))
     (g : GLSymplecticFin m R) {w : Fin (m + m) → R} (hw : w ∈ N) :
     (g.1 : Matrix (Fin (m + m)) (Fin (m + m)) R) *ᵥ w ∈ N := by
-  let q := (pointsMulEquiv (R := R) (A := R) m).symm g
-  have h := Comodule.basePointsRepresentation_mem N q hw
-  rw [Comodule.basePointsRepresentation_corestrict (coordinateMap R m).hom q,
-    GeneralLinear.basePointsRepresentation_eq_mulVec] at h
-  have hpoint :
-      AlgHom.mapDomain (coordinateMap R m).hom q =
-        CommHopfAlgCat.quotientPointsHom
-          (GeneralLinear.coordinateHopfAlgebra R (m + m)) (definingHopfIdeal R m)
-          (CommAlgCat.of R R) q := by
-    rw [coordinateMap_def, AlgHom.mapDomain_apply,
-      CommHopfAlgCat.quotientPointsHom_apply]
-  rw [hpoint, ← GeneralLinear.pointsMulEquiv_apply, pointsMulEquiv_coe,
-    MulEquiv.apply_symm_apply] at h
-  exact h
+  have h := Comodule.basePointsRepresentation_mem N
+    ((pointsMulEquiv (R := R) (A := R) m).symm g) hw
+  rwa [basePointsRepresentation_eq_mulVec, MulEquiv.apply_symm_apply] at h
 
 section Simple
 
