@@ -42,6 +42,9 @@ convolution semigroup rests:
 * `TauCeti.convolutionLp_convolution`: `(k₁ ⋆ k₂) ⋆ f = k₁ ⋆ (k₂ ⋆ f)`.
 * `TauCeti.convolutionLp_ae_eq_convolution`: the operator is represented almost everywhere by the
   classical pointwise convolution `(k ⋆ f)(x) = ∫ y, k(y) • f(x - y) dμ(y)`.
+* `TauCeti.integrable_convolution_integrand_restrict`: on a set of finite measure, the
+  convolution integrand `(x, y) ↦ k(y) • f(x - y)` of an `L¹` kernel and an `Lᵖ` function is
+  integrable, which justifies local Fubini arguments.
 
 ## References
 
@@ -158,7 +161,7 @@ theorem convolutionLp_convolution [CompleteSpace F] (hp : p ≠ ∞) {k₁ k₂ 
 /-- On a set `s` of finite measure, the convolution integrand `(x, y) ↦ k(y) • f(x - y)` of an
 integrable kernel `k` and an `Lᵖ` function `f` is integrable: `∫_s ‖f(x - y)‖ dx` is bounded
 uniformly in `y`, by the `Lᵖ` norm of `f`. -/
-private theorem integrable_convolution_integrand_restrict {k : E → ℝ}
+theorem integrable_convolution_integrand_restrict {k : E → ℝ}
     (hk : Integrable k μ) {f : E → F} (hf : MemLp f p μ) {s : Set E} (hμs : μ s < ∞) :
     Integrable (Function.uncurry fun x y ↦ k y • f (x - y)) ((μ.restrict s).prod μ) := by
   have _ : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hμs.ne
