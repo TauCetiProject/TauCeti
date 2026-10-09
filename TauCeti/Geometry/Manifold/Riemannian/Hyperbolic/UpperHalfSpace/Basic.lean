@@ -30,9 +30,9 @@ For `0 < c`, a linear isometry `A` of `E` and `b ∈ E`, the similarity
 height `t` by the same factor `c`, so it is a Riemannian isometry. These similarities act
 transitively, so the upper half-space model is a homogeneous Riemannian manifold.
 
-Only analyticity of the metric and homogeneity are established here: the constant curvature `-1`
-and the completeness of this metric are not proved, so it is not (yet) shown to be a
-`TauCeti.HyperbolicMetric`.
+Analyticity of the metric and homogeneity are established here. The module
+`UpperHalfSpace.Curvature` proves constant curvature `-1`, and `UpperHalfSpace.Metric` combines
+this with completeness to construct a `TauCeti.HyperbolicMetric`.
 
 ## Main definitions
 

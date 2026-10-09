@@ -16,6 +16,9 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
 
 * `TauCeti.ae_of_ae_fst` / `TauCeti.ae_of_ae_snd` transfer an a.e. statement about one factor to the
   product measure, along `Measure.quasiMeasurePreserving_fst` / `_snd`.
+* `TauCeti.exists_ae_eq_const_of_ae_prod_eq`: if `f x = g y` for almost every `(x, y)` in a product
+  of nonzero measures, then `f` and `g` are almost everywhere the same constant. This is the
+  uniqueness of a function of the form `f(x) + g(y)` up to one additive constant.
 * `TauCeti.measurable_setLIntegral_of_measurableSet` proves measurability of a set integral whose
   truncating relation is jointly measurable.
 * `TauCeti.lintegral_mul_setLIntegral_eq` exchanges a weighted integral of set integrals over an
@@ -138,6 +141,20 @@ theorem ae_of_ae_fst [SFinite ν] {p : α → Prop} (hp : ∀ᵐ x ∂μ, p x) :
 theorem ae_of_ae_snd [SFinite ν] {p : β → Prop} (hp : ∀ᵐ y ∂ν, p y) :
     ∀ᵐ q : α × β ∂(μ.prod ν), p q.2 :=
   Measure.quasiMeasurePreserving_snd.tendsto_ae.eventually hp
+
+/-- If `f x = g y` for `μ.prod ν`-almost every `(x, y)`, with both measures nonzero, then `f` and
+`g` are almost everywhere equal to one and the same constant. -/
+theorem exists_ae_eq_const_of_ae_prod_eq [SFinite ν] {δ : Type*} {f : α → δ} {g : β → δ}
+    (hμ : μ ≠ 0) (hν : ν ≠ 0) (h : ∀ᵐ z ∂μ.prod ν, f z.1 = g z.2) :
+    ∃ c, f =ᵐ[μ] (fun _ ↦ c) ∧ g =ᵐ[ν] (fun _ ↦ c) := by
+  have h' := Measure.ae_ae_of_ae_prod h
+  have : (ae μ).NeBot := ae_neBot.2 hμ
+  have : (ae ν).NeBot := ae_neBot.2 hν
+  obtain ⟨x₀, hx₀⟩ := h'.exists
+  refine ⟨f x₀, ?_, hx₀.mono fun _ hy ↦ hy.symm⟩
+  filter_upwards [h'] with x hx
+  obtain ⟨y, hxy, hx₀y⟩ := (hx.and hx₀).exists
+  rw [hxy, hx₀y]
 
 /-- **A rectangle bound for an integral against a product of conditional laws.** If `f` is bounded
 by `b` on `s ×ˢ t`, then its lower Lebesgue integral against the product of the laws of `μ` and `ν`

@@ -101,7 +101,7 @@ theorem coordinateHopfAlgebraBaseChangeIso_hom_relationMatrix (i j : Fin (m + m)
 
 /-- The general-linear base-change isomorphism carries the base-changed symplectic defining Hopf
 ideal onto the symplectic defining Hopf ideal over the new base. -/
-private theorem map_baseChangeHopfIdeal_definingHopfIdeal :
+theorem map_baseChangeHopfIdeal_definingHopfIdeal :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (definingHopfIdeal R m)).map
         (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K (m + m)).hom.hom =
       definingHopfIdeal K m := by

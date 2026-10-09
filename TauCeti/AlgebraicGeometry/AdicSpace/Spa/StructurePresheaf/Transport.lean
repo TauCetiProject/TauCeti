@@ -37,6 +37,12 @@ between completed rational localisations of
 The consequences for `TauCeti.Huber.IsSheafyForEveryPresentation` are in
 `TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SheafForEveryPresentation`.
 
+## Main definitions
+
+* `TauCeti.ValuationSpectrum.presentationLimitPresheafIsoPushforward` : the presentation-limit
+  presheaf of `(A, A⁺)` as the pushforward of that of `(B, B⁺)`, along mutually inverse continuous
+  ring homomorphisms.
+
 ## Main results
 
 * `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_iff_of_ringEquiv` : invariance of
@@ -206,8 +212,15 @@ private noncomputable def presentationLimitIso (W : Opens ↥(spa Aplus)) :
   hom_inv_id := presentationLimitHom_comp_presentationLimitHom _ _ _ _ _ _ _ _ _ _
   inv_hom_id := presentationLimitHom_comp_presentationLimitHom _ _ _ _ _ _ _ _ _ _
 
-/-- The presentation-limit presheaf of `(A, A⁺)` is the pushforward of that of `(B, B⁺)`. -/
-private noncomputable def presentationLimitPresheafIso :
+/-- **Transport of the presentation-limit presheaf along an isomorphism.** For mutually inverse
+continuous ring homomorphisms `φ : A → B` and `ψ : B → A` carrying `A⁺` into `B⁺` and `B⁺` into
+`A⁺`, the presentation-limit presheaf of `(A, A⁺)` for a pair of definition `P` is isomorphic to
+the pushforward of that of `(B, B⁺)` for a pair of definition `P'` along the homeomorphism
+`Spa(B, B⁺) → Spa(A, A⁺)` induced by `φ`. On an open `W`, the component
+`𝒪_{Spa A}(W) → 𝒪_{Spa B}(φ⁻¹W)` is assembled from the base changes `A⟨T/s⟩ → B⟨φ(T)/φ(s)⟩` of
+the universal property. At `A = B` and `P = P'` this is the action on the structure presheaf of an
+automorphism of the pair `(A, A⁺)`. -/
+noncomputable def presentationLimitPresheafIsoPushforward :
     presentationLimitPresheaf P Aplus ≅
       (TopCat.Presheaf.pushforward _ (spaComapTopHom φ hφ hplus)).obj
         (presentationLimitPresheaf P' Bplus) :=
@@ -249,7 +262,7 @@ theorem isSheaf_presentationLimitPresheaf_iff_of_ringEquiv (e : A ≃+* B) (he :
     (Y := TopCat.of ↥(spa (Aplus.map (e : A →+* B)))) (F := presentationLimitPresheaf P Aplus)
     (G := presentationLimitPresheaf P' (Aplus.map (e : A →+* B)))
     (spaTopIso _ he h₁ _ he' e.symm_apply_apply e.apply_symm_apply h₂)
-    (presentationLimitPresheafIso _ he h₁ _ he' e.symm_apply_apply e.apply_symm_apply h₂)
+    (presentationLimitPresheafIsoPushforward _ he h₁ _ he' e.symm_apply_apply e.apply_symm_apply h₂)
 
 end TauCeti.ValuationSpectrum
 

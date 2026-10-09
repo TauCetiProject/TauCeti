@@ -183,6 +183,12 @@ theorem splittingModuleProj_apply (x : splittingModule A u) :
     splittingModuleProj A u x = (splittingModuleEquiv A u x).1 :=
   (rfl)
 
+/-- The inclusion of `A` followed by the projection to `I_G` is zero. -/
+@[reassoc (attr := simp)]
+theorem splittingModuleIncl_comp_splittingModuleProj :
+    splittingModuleIncl A u ≫ splittingModuleProj A u = 0 := by
+  ext; rfl
+
 /-- The short complex `A → A(u) → I_G` associated to the splitting module. -/
 def splittingModuleSES : ShortComplex (Rep k G) :=
   { X₁ := A
@@ -191,6 +197,13 @@ def splittingModuleSES : ShortComplex (Rep k G) :=
     f := splittingModuleIncl A u
     g := splittingModuleProj A u
     zero := by ext; rfl }
+
+/-- The splitting-module sequence has maps the inclusion of `A` and the projection to `I_G`. -/
+theorem splittingModuleSES_def :
+    splittingModuleSES A u =
+      ShortComplex.mk (splittingModuleIncl A u) (splittingModuleProj A u)
+        (splittingModuleIncl_comp_splittingModuleProj A u) :=
+  (rfl)
 
 /-- The left object of the splitting-module sequence is the original representation. -/
 @[simp]
