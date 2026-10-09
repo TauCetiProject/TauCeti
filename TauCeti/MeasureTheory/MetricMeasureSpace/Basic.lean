@@ -113,12 +113,12 @@ theorem referenceMeasure_supportSpace (X : MetricMeasureSpace) :
 theorem measurePreserving_subtype_coe (X : MetricMeasureSpace) :
     MeasurePreserving ((↑) : X.referenceMeasure.support → X)
       X.supportSpace.referenceMeasure X.referenceMeasure :=
-  X.referenceMeasure.measurePreserving_subtype_coe_of_ae_mem
+  measurePreserving_subtype_coe_of_ae_mem X.referenceMeasure
     X.referenceMeasure.isClosed_support.measurableSet X.referenceMeasure.support_mem_ae
 
 /-- The support representative has positive reference measure on every nonempty open set. -/
 instance (X : MetricMeasureSpace) : X.supportSpace.referenceMeasure.IsOpenPosMeasure :=
-  X.referenceMeasure.isOpenPosMeasure_comap_subtype_support
+  isOpenPosMeasure_comap_subtype_support X.referenceMeasure
     X.referenceMeasure.isClosed_support.measurableSet X.referenceMeasure.support_mem_ae
 
 /-- The reduced reference measure has support equal to the entire reduced carrier. -/
@@ -230,7 +230,7 @@ theorem symm_trans_self (e : Equiv X Y) : e.symm.trans e = Equiv.refl Y := by ex
 theorem image_support (e : Equiv X Y) : e '' X.referenceMeasure.support =
     Y.referenceMeasure.support := by
   rw [← e.measurePreserving.map_eq]
-  exact (X.referenceMeasure.support_map_homeomorph e.toIsometryEquiv.toHomeomorph
+  exact (support_map_homeomorph X.referenceMeasure e.toIsometryEquiv.toHomeomorph
     e.measurePreserving.measurable).symm
 
 @[simp]
