@@ -16,8 +16,8 @@ Strict morphisms of `A∞` algebras are exactly strict functors between their on
 categories. The correspondence preserves identity and composition. It imposes no
 unit condition on either side, and works over any commutative ground ring.
 
-The correspondence uses the existing strict algebra morphisms and the operation comparison
-for `AInfinitySingleObj.aInfinityCategory`, rather than rebuilding the bar-map equation.
+The correspondence transports strict algebra morphisms and their identity and composition
+laws to one-object `A∞` categories, and recovers algebra morphisms from strict functors.
 
 ## References
 
