@@ -70,12 +70,7 @@ theorem residue_eq_coeff_laurentSeriesExpansion_mul_derivative (hs : P.ord s = 1
     { toFun z := (P.laurentSeriesExpansion hP ht z *
         LaurentSeries.derivative k (P.laurentSeriesExpansion hP ht s)).coeff (-1)
       map_add' x y := by simp [add_mul]
-      map_smul' c x := by
-        -- The `k`-action on `k⸨X⸩` is the algebra action, multiplication by a constant series;
-        -- turn it into the coefficientwise action, which commutes with `coeff`.
-        rw [RingHom.id_apply, smul_eq_mul, Algebra.smul_def (A := F), map_mul, AlgHom.commutes,
-          HahnSeries.algebraMap_apply', PowerSeries.algebraMap_eq, HahnSeries.ofPowerSeries_C,
-          mul_assoc, HahnSeries.C_mul_eq_smul, HahnSeries.coeff_smul, smul_eq_mul] }
+      map_smul' c x := by simp [Algebra.smul_def, mul_assoc] }
   have hR_apply (z : F) : R z = (P.laurentSeriesExpansion hP ht z *
       LaurentSeries.derivative k (P.laurentSeriesExpansion hP ht s)).coeff (-1) := rfl
   have hR : P.residue hP hs = R := by

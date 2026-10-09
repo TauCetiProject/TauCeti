@@ -442,10 +442,13 @@ theorem linearMap_ext_zpow {M : Type*} [AddCommGroup M] [Module k M] (hP : P.deg
       rw [neg_add_cancel, mem_filtration_zero_iff] at hint
       obtain ⟨c, hc, -⟩ := P.existsUnique_sub_sum_mem_filtration hP ht 1 _ hint
       -- `z - c 0 • t ^ j = t ^ j * (t ^ (-j) * z - c 0)` has order at least `j + 1`.
-      have hrem := P.mul_mem_filtration (htj j) hc
-      rw [Fin.sum_univ_one, Fin.val_zero, pow_zero, mul_one, mul_sub, ← mul_assoc,
-        ← zpow_add₀ ht0, add_neg_cancel, zpow_zero, one_mul, mul_comm, ← Algebra.smul_def,
-        show j + ((1 : ℕ) : ℤ) = m - d by omega] at hrem
+      have heq : t ^ j * (t ^ (-j) * z - ∑ i : Fin 1, algebraMap k F (c i) * t ^ (i : ℕ)) =
+          z - c 0 • t ^ j := by
+        rw [Fin.sum_univ_one, Algebra.smul_def, mul_sub, ← mul_assoc, ← zpow_add₀ ht0]
+        simp [mul_comm]
+      have hrem : z - c 0 • t ^ j ∈ P.filtration (m - d) := by
+        rw [← heq, show m - d = j + ((1 : ℕ) : ℤ) by omega]
+        exact P.mul_mem_filtration (htj j) hc
       calc f z = f (z - c 0 • t ^ j) + c 0 • f (t ^ j) := by
             rw [← map_smul, ← map_add, sub_add_cancel]
         _ = g z := by

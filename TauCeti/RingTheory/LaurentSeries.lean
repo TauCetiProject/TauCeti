@@ -31,6 +31,8 @@ uses `PowerSeries.coeff_succ_pow_succ_eq_coeff_pow_mul_derivative` instead.
 
 * `TauCeti.LaurentSeries.isScalarTower_powerSeries`: the algebra actions of `R` on `R⟦X⟧` and
   `R⸨X⸩` form a scalar tower.
+* `TauCeti.LaurentSeries.coeff_algebraMap_mul`: multiplication by a constant of the algebra
+  structure acts coefficientwise.
 * `PowerSeries.coe_derivative`: the derivative of Laurent series extends that of power series.
 * `PowerSeries.coeff_neg_one_coe_zpow_mul_derivative`: the residue of `φ ^ n * φ'` for a power
   series `φ` of order one is `1` if `n = -1` and `0` otherwise.
@@ -55,6 +57,14 @@ the algebra structures, since the `R`-algebra structure on `R⸨X⸩` is the one
 instance isScalarTower_powerSeries :
     @IsScalarTower R R⟦X⟧ R⸨X⸩ Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
   .of_algebraMap_eq' rfl
+
+/-- Multiplying a Laurent series by a constant of the `R`-algebra structure on `R⸨X⸩` multiplies
+each coefficient by that constant. -/
+@[simp]
+theorem coeff_algebraMap_mul (c : R) (f : R⸨X⸩) (n : ℤ) :
+    (algebraMap R R⸨X⸩ c * f).coeff n = c * f.coeff n := by
+  rw [HahnSeries.algebraMap_apply', PowerSeries.algebraMap_eq, HahnSeries.ofPowerSeries_C,
+    HahnSeries.C_mul_eq_smul, HahnSeries.coeff_smul, smul_eq_mul]
 
 end TauCeti.LaurentSeries
 
@@ -99,8 +109,10 @@ theorem coeff_neg_one_coe_zpow_mul_derivative {k : Type*} [Field k] {φ : k⟦X�
     have hinv : (((X * u : k⟦X⟧) : k⸨X⸩) ^ (m + 1))⁻¹ =
         single (-((m + 1 : ℕ) : ℤ)) (1 : k) * ((u⁻¹ ^ (m + 1) : k⟦X⟧) : k⸨X⸩) := by
       refine inv_eq_of_mul_eq_one_right ?_
-      rw [coe_mul, ofPowerSeries_X, mul_pow, single_pow, one_pow, ← coe_pow,
-        mul_mul_mul_comm, single_mul_single, ← coe_mul, ← mul_pow, mul_comm u, hvu]
+      -- Cancel `u` in `k⟦X⟧`, then cancel `X ^ (m + 1)` against `single (-(m + 1)) 1`.
+      have hX : (X * u) ^ (m + 1) * u⁻¹ ^ (m + 1) = X ^ (m + 1) := by
+        rw [mul_pow, mul_assoc, ← mul_pow, mul_comm u, hvu, one_pow, mul_one]
+      rw [← coe_pow, mul_left_comm, ← coe_mul, hX, ofPowerSeries_X_pow]
       simp
     rw [zpow_negSucc, hinv, mul_assoc, ← coe_mul, coeff_single_mul, one_mul, coeff_coe,
       ite_eq_right (show ¬(-1 - -((m + 1 : ℕ) : ℤ) < 0) by omega),
