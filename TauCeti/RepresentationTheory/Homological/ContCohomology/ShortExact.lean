@@ -34,8 +34,10 @@ function out of `B` is continuous, so the retraction onto the image of `incl` is
 continuous cochain into `B` that the projection kills retracts to a *continuous* cochain into `A`
 (`TauCeti.ContCohomology.DiscreteShortExact.exists_continuous_incl_comp_eq`, whence
 `C1_map_incl_eq_inf_ker`). Cocycle conditions descend along `incl` because an injection into a
-discrete space reflects continuity (`TauCeti.continuous_of_injective_comp`). Discreteness of `A`
-and of `B` is also what makes `incl` and `proj` continuous. For general
+discrete space reflects continuity; these are the general
+`TauCeti.ContCohomology.mem_Z1_of_injective_comp_mem_Z1` and `mem_Z2_of_injective_comp_mem_Z2`
+of `LowDegree.lean`. Discreteness of `A` and of `B` is also what makes `incl` and `proj`
+continuous. For general
 topological coefficients neither argument applies, since a set-theoretic section need not be
 continuous and a continuous cochain need not be locally constant; the cochain sequence can still
 be exact when suitable continuous lifts exist. Nothing below is asserted in that more general
@@ -153,56 +155,6 @@ private theorem continuous_liftCochain (hp : Function.Surjective p) {f : X → C
   (continuous_of_discreteTopology (f := Function.surjInv hp)).comp hf
 
 end Lift
-
-/-! ### Cocycles descending along an injective equivariant map -/
-
-section InjectiveDescent
-
-variable {G : Type u} [Monoid G] [TopologicalSpace G]
-  {A : Type vA} [AddCommGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
-  [DistribMulAction G A]
-  {B : Type vB} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B] [DistribMulAction G B]
-  {φ : A →+ B}
-
-/-- **A `1`-cochain on `A` lying over a continuous `1`-cocycle on `B` along an injective
-equivariant map is one.** Both halves of membership in `Z¹` descend: continuity because an
-injection into the discrete `B` reflects it, whatever the topology of `A`, and the cocycle identity
-because the map is injective. -/
-theorem mem_Z1_of_injective_comp_mem_Z1 (hφ : Function.Injective φ)
-    (heq : ∀ (g : G) (a : A), φ (g • a) = g • φ a) {a : G → A} {e : G → B}
-    (hae : ∀ g : G, φ (a g) = e g) (he : e ∈ Z1 G B) : a ∈ Z1 G A := by
-  obtain ⟨hcont, hcocycle⟩ := mem_Z1_iff.1 he
-  refine mem_Z1_iff.2 ⟨continuous_of_injective_comp hφ ?_, fun g h => ?_⟩
-  · simpa only [hae] using hcont
-  · refine hφ ?_
-    simp only [map_add, heq, hae]
-    exact hcocycle g h
-
-/-- **A `2`-cochain on `A` lying over a continuous `2`-cocycle on `B` along an injective
-equivariant map is one**, the degree-`2` counterpart of
-`TauCeti.ContCohomology.mem_Z1_of_injective_comp_mem_Z1`. -/
-theorem mem_Z2_of_injective_comp_mem_Z2 (hφ : Function.Injective φ)
-    (heq : ∀ (g : G) (a : A), φ (g • a) = g • φ a) {a : G × G → A} {z : G × G → B}
-    (haz : ∀ p : G × G, φ (a p) = z p) (hz : z ∈ Z2 G B) : a ∈ Z2 G A := by
-  obtain ⟨hcont, hcocycle⟩ := mem_Z2_iff.1 hz
-  refine mem_Z2_iff.2 ⟨continuous_of_injective_comp hφ ?_, fun g h j => ?_⟩
-  · simpa only [haz] using hcont
-  · refine hφ ?_
-    simp only [map_add, heq, haz]
-    exact hcocycle g h j
-
-/-- **A cochain on `A` lying over a coboundary of `B` along an injective equivariant map is a
-continuous `1`-cocycle**: the case `e = d⁰ b` of
-`TauCeti.ContCohomology.mem_Z1_of_injective_comp_mem_Z1`, a coboundary being a continuous cocycle
-already. -/
-theorem mem_Z1_of_injective_comp_eq_d0 [ContinuousSMul G B] (hφ : Function.Injective φ)
-    (heq : ∀ (g : G) (a : A), φ (g • a) = g • φ a) {b : B} {a : G → A}
-    (hab : ∀ g : G, φ (a g) = g • b - b) : a ∈ Z1 G A :=
-  mem_Z1_of_injective_comp_mem_Z1 hφ heq (e := d0 G B b)
-    (fun g => (hab g).trans (d0_apply b g).symm)
-    (B1_le_Z1 G B (mem_B1_iff.2 ⟨b, fun g => (d0_apply b g).symm⟩))
-
-end InjectiveDescent
 
 /-- A short exact sequence `0 → A → B → C → 0` of discrete `G`-modules.
 
@@ -862,9 +814,7 @@ in the conclusion of
 `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta1_apply`, whose `hae` it takes verbatim. -/
 theorem mem_Z2_of_incl_comp_eq_d1 {e : G → B} (hc : Continuous e) {a : G × G → A}
     (hae : ∀ g h : G, S.incl (a (g, h)) = g • e h - e (g * h) + e g) : a ∈ Z2 G A :=
-  mem_Z2_of_incl_comp_mem_Z2 (z := d1 G B e)
-    (fun p => (hae p.1 p.2).trans (d1_apply e p.1 p.2).symm)
-    (B2_le_Z2 G B (mem_B2_iff.2 ⟨e, hc, rfl⟩))
+  mem_Z2_of_injective_comp_eq_d1 S.incl_injective S.incl_equivariant hc hae
 
 /-- The cochain attached to a lift of a continuous `1`-cocycle is a continuous `2`-cocycle. -/
 private theorem delta1Cochain_mem_Z2 {e : G → B} (hc : Continuous e) {f : G → C}
