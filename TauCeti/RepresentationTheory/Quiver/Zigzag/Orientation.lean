@@ -485,7 +485,7 @@ variable {V : Type u} {G : SimpleGraph V}
 
 /-- If `f` chooses a neighbour at every vertex of `G` with no two vertices choosing each other, then
 some reorientation of any orientation of `G` has no sinks: turning around the arrows `j ⟶ i` with
-`f j = i` leaves every vertex `u` with the outgoing arrow `u ⟶ f u`. -/
+`f i = j` leaves every vertex `u` with the outgoing arrow `u ⟶ f u`. -/
 theorem exists_forall_exists_nonempty_reorient_hom (o : Orientation G) {f : V → V}
     (hf : ∀ u, G.Adj u (f u) ∧ f (f u) ≠ u) :
     ∃ σ : ∀ ⦃i j : OrientedQuiver G o⦄, (i ⟶ j) → Bool,
