@@ -29,6 +29,7 @@ subset of `F` for any topology in which the functionals `B x` are continuous.
 
 * `TauCeti.subdifferential B f x` — the set of `y : F` with `f x` finite and
   `f x + B (x' - x) y ≤ f x'` for every `x'`.
+* `TauCeti.subgradientImage B f s` — the subgradient image `⋃ x ∈ s, ∂f(x)` of a set `s`.
 
 ## Main statements
 
@@ -36,7 +37,9 @@ subset of `F` for any topology in which the functionals `B x` are continuous.
   maximises `x' ↦ B x' y - f x'`, and `TauCeti.mem_subdifferential_iff_add_fenchelConjugate_eq` —
   **the Fenchel–Young equality characterisation** `y ∈ ∂f(x) ↔ f x + f⋆ y = B x y`;
 * `TauCeti.mem_subdifferential_coe_iff` — for a real-valued `f` the finiteness condition is
-  automatic and membership is the subgradient inequality;
+  automatic and membership is the subgradient inequality, and
+  `TauCeti.mem_subdifferential_iff_forall_toReal_add_le` is the same statement between real
+  representatives for an `f` that is never `⊥`;
 * `TauCeti.convex_subdifferential` and `TauCeti.isClosed_subdifferential` — the subdifferential
   is convex, and closed for a topology making every `B x` continuous;
 * `TauCeti.mem_subdifferential_fenchelConjugate_of_mem_subdifferential` — **conjugate-subgradient
@@ -116,6 +119,59 @@ theorem mem_subdifferential_coe_iff (f : E → ℝ) :
     y ∈ subdifferential B (fun x => (f x : EReal)) x ↔ ∀ x', f x + B (x' - x) y ≤ f x' := by
   simp only [mem_subdifferential_iff, ne_eq, EReal.coe_ne_bot, EReal.coe_ne_top,
     not_false_eq_true, true_and, ← EReal.coe_add, EReal.coe_le_coe_iff]
+
+/-- If `f` never takes the value `⊥` and is finite at `x`, then `y` is a subgradient at `x` exactly
+when the subgradient inequality holds between real representatives at every point of the
+effective domain. -/
+theorem mem_subdifferential_iff_forall_toReal_add_le (hbot : ∀ x', f x' ≠ ⊥) (hx : f x ≠ ⊤) :
+    y ∈ subdifferential B f x ↔
+      ∀ x', f x' ≠ ⊤ → (f x).toReal + B (x' - x) y ≤ (f x').toReal := by
+  rw [mem_subdifferential_iff]
+  refine ⟨fun h x' hx' => ?_, fun h => ⟨hbot x, hx, fun x' => ?_⟩⟩
+  · have h := h.2.2 x'
+    rwa [← EReal.coe_toReal hx (hbot x), ← EReal.coe_toReal hx' (hbot x'), ← EReal.coe_add,
+      EReal.coe_le_coe_iff] at h
+  rcases eq_or_ne (f x') ⊤ with hx' | hx'
+  · rw [hx']
+    exact le_top
+  rw [← EReal.coe_toReal hx (hbot x), ← EReal.coe_toReal hx' (hbot x'), ← EReal.coe_add,
+    EReal.coe_le_coe_iff]
+  exact h x' hx'
+
+/-! ### Subgradient images -/
+
+/-- The *subgradient image* `∂f(s) = ⋃ x ∈ s, ∂f(x)` of a set `s` with respect to the pairing
+`B`: the set of all subgradients of `f` at points of `s`. -/
+def subgradientImage (f : E → EReal) (s : Set E) : Set F :=
+  ⋃ x ∈ s, subdifferential B f x
+
+/-- A point of the subgradient image is a subgradient at some point of the set. -/
+@[simp]
+theorem mem_subgradientImage_iff {s : Set E} :
+    y ∈ subgradientImage B f s ↔ ∃ x ∈ s, y ∈ subdifferential B f x := by
+  simp only [subgradientImage, Set.mem_iUnion, exists_prop]
+
+/-- The subgradient image is monotone in the set. -/
+theorem subgradientImage_mono {s t : Set E} (h : s ⊆ t) :
+    subgradientImage B f s ⊆ subgradientImage B f t :=
+  Set.biUnion_subset_biUnion_left h
+
+/-- The subgradient image of the empty set is empty. -/
+@[simp]
+theorem subgradientImage_empty : subgradientImage B f ∅ = ∅ :=
+  Set.biUnion_empty _
+
+/-- The subgradient image of a union is the union of the subgradient images. -/
+@[simp]
+theorem subgradientImage_union (s t : Set E) :
+    subgradientImage B f (s ∪ t) = subgradientImage B f s ∪ subgradientImage B f t :=
+  Set.biUnion_union s t _
+
+/-- The subgradient image of an indexed union is the union of the subgradient images. -/
+@[simp]
+theorem subgradientImage_iUnion {ι : Sort*} (s : ι → Set E) :
+    subgradientImage B f (⋃ i, s i) = ⋃ i, subgradientImage B f (s i) :=
+  Set.biUnion_iUnion s _
 
 /-! ### Subgradients and the conjugate -/
 
