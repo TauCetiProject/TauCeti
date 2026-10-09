@@ -243,6 +243,7 @@ instance : NormOneClass (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) :=
   ⟨by simp [norm_def]⟩
 
 /-- The interval norm of `p` is `max(ρ₁, ρ₂)`. -/
+@[simp]
 theorem norm_natCast : ‖(p : IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)‖ = max (ρ₁ : ℝ) ρ₂ := by
   rw [← map_natCast (algebraMap (𝕎 O) (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)), norm_algebraMap,
     gaussValuation_p, gaussValuation_p]
@@ -288,6 +289,7 @@ theorem algebraMap_intervalRing_injective :
     (B := IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂), hx, map_zero]
 
 /-- The norm of `p` in `B^I` is `max(ρ₁, ρ₂)`. -/
+@[simp]
 theorem norm_natCast_intervalRing :
     ‖(p : IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)‖ = max (ρ₁ : ℝ) ρ₂ := by
   rw [← map_natCast (Completion.coeRingHom :

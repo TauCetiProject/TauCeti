@@ -71,6 +71,7 @@ theorem Subring.mem_unitClosedBall {x : R} : x ∈ Subring.unitClosedBall R ↔ 
   Submonoid.mem_unitClosedBall R
 
 /-- The carrier of `Subring.unitClosedBall R` is `Metric.closedBall 0 1`. -/
+@[simp]
 theorem Subring.coe_unitClosedBall :
     (Subring.unitClosedBall R : Set R) = Metric.closedBall 0 1 := by
   ext
