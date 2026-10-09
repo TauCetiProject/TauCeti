@@ -210,9 +210,10 @@ theorem algebraStrictUnit
 
 /-- An `A∞` algebra is strictly unital exactly when its one-object `A∞` category is strictly
 unital. -/
+@[simp]
 theorem strictlyUnital_aInfinityCategory_iff :
     (aInfinityCategory 𝒜).StrictlyUnital ↔ ∃ e : A, 𝒜.StrictUnit e := by
-  rw [AInfinityCategory.strictlyUnital_iff_exists]
+  unfold AInfinityCategory.StrictlyUnital
   constructor
   · rintro ⟨e, he⟩
     exact ⟨e (star 𝒜), algebraStrictUnit 𝒜 he⟩

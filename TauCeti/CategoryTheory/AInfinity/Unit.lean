@@ -29,6 +29,9 @@ laws remain stated directly on individual hom modules.
 * `TauCeti.AInfinityCategory.StrictUnit.homDifferential_eq_zero`: strict identities are closed.
 * `TauCeti.AInfinityCategory.StrictUnit.eq`: a strict identity family is unique.
 
+The definition and interface adapt `TauCeti.AInfinityAlgebra.StrictUnit` from
+`TauCeti/Algebra/Homology/AInfinity/Algebra/Unit.lean` to the many-object setting.
+
 ## References
 
 * B. Keller, *Introduction to A-infinity algebras and modules*, Sections 3.1 and 7.1.
@@ -70,11 +73,6 @@ attribute [simp] StrictUnit.binary_left StrictUnit.binary_right
 /-- An `A∞` category is strictly unital when it admits a family of strict identities. -/
 def StrictlyUnital (𝒞 : AInfinityCategory R C) : Prop :=
   ∃ e : ∀ X : C, homModule (R := R) X X, 𝒞.StrictUnit e
-
-/-- Being strictly unital means admitting a family of strict identities. -/
-theorem strictlyUnital_iff_exists (𝒞 : AInfinityCategory R C) :
-    𝒞.StrictlyUnital ↔ ∃ e : ∀ X : C, homModule (R := R) X X, 𝒞.StrictUnit e :=
-  Iff.rfl
 
 namespace StrictUnit
 
