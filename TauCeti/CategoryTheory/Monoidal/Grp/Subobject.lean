@@ -72,8 +72,9 @@ theorem isMonHom_grpObjOfMono (i : H ⟶ G) [Mono i]
   let := grpObjOfMono i e m j he hm hj
   exact ⟨he, hm⟩
 
-/-- A monomorphism into a group object admits at most one compatible group structure. -/
-theorem grpObj_eq_of_mono (i : H ⟶ G) [Mono i] (a b : GrpObj H)
+omit [GrpObj G] in
+/-- A monomorphism into a monoid object admits at most one compatible group structure. -/
+theorem grpObj_eq_of_mono [MonObj G] (i : H ⟶ G) [Mono i] (a b : GrpObj H)
     (ha : @IsMonHom _ _ _ H G a.toMonObj inferInstance i)
     (hb : @IsMonHom _ _ _ H G b.toMonObj inferInstance i) : a = b := by
   apply GrpObj.ext
