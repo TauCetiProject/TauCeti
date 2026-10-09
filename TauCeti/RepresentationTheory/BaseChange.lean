@@ -477,8 +477,10 @@ noncomputable def _root_.Representation.baseChangeRestrictScalarsIntEquiv
 @[simp]
 theorem _root_.Representation.baseChangeRestrictScalarsIntEquiv_tmul
     (ρ : _root_.Representation (ZMod n) G W) (r : ZMod n) (w : W) :
-    ρ.baseChangeRestrictScalarsIntEquiv (r ⊗ₜ[ℤ] w) = r • w :=
-  (rfl)
+    ρ.baseChangeRestrictScalarsIntEquiv (r ⊗ₜ[ℤ] w) = r • w := by
+  unfold _root_.Representation.baseChangeRestrictScalarsIntEquiv
+  have := Algebra.isEpi_of_surjective_algebraMap ℤ (ZMod n) ZMod.intCast_surjective
+  exact TensorProduct.lid'_apply_tmul ℤ (ZMod n) W r w
 
 /-- The inverse of `Representation.baseChangeRestrictScalarsIntEquiv` sends `w` to `1 ⊗ w`. -/
 @[simp]

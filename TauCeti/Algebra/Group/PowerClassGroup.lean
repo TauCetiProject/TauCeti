@@ -159,7 +159,18 @@ noncomputable def quotSMulTopPowerClassEquiv :
 @[simp]
 theorem quotSMulTopPowerClassEquiv_mk (x : Additive G) :
     quotSMulTopPowerClassEquiv n (Submodule.Quotient.mk x) =
-      Additive.ofMul (powerClassHom G n x.toMul) :=
-  (rfl)
+      Additive.ofMul (powerClassHom G n x.toMul) := by
+  refine (AddEquiv.trans_apply _ _ _).trans ?_
+  refine (congrArg _ (QuotientAddGroup.quotientAddEquivOfEq_mk _ x)).trans ?_
+  exact QuotientAddGroup.kerLift_mk (MonoidHom.toAdditive (powerClassHom G n)) x
+
+/-- The inverse of the reduction/power-class equivalence sends the power class of `x` to the
+class of `x` modulo `n`. -/
+@[simp]
+theorem quotSMulTopPowerClassEquiv_symm_ofMul_mk (x : G) :
+    (quotSMulTopPowerClassEquiv n).symm
+        (Additive.ofMul (QuotientGroup.mk x : powerClassQuotient G n)) =
+      Submodule.Quotient.mk (Additive.ofMul x) := by
+  rw [AddEquiv.symm_apply_eq, quotSMulTopPowerClassEquiv_mk, powerClassHom_apply, toMul_ofMul]
 
 end TauCeti

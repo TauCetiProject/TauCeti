@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.LatticeDefect.Basic
-public import TauCeti.RepresentationTheory.RestrictScalars
 
 /-!
 # Reduction classes of `ZMod n`-representations

@@ -57,6 +57,19 @@ theorem quotSMulTopUnitsPowerClassRepresentationEquiv_apply_mk
       Additive.ofMul (powerClassHom Lˣ n x.toMul) :=
   quotSMulTopPowerClassEquiv_mk n x
 
+/-- The inverse of `TauCeti.quotSMulTopUnitsPowerClassRepresentationEquiv` sends the `n`th power
+class of `x` to the class of `x` modulo `n`. -/
+@[simp]
+theorem quotSMulTopUnitsPowerClassRepresentationEquiv_symm_ofMul_mk
+    {K L : Type*} [Field K] [Field L] [Algebra K L] (n : ℕ) (x : Lˣ) :
+    (quotSMulTopUnitsPowerClassRepresentationEquiv (K := K) n).symm
+        (Additive.ofMul (QuotientGroup.mk x : powerClassQuotient Lˣ n)) =
+      Submodule.Quotient.mk (Additive.ofMul x) := by
+  rw [← Representation.Equiv.symm_apply_apply
+      (quotSMulTopUnitsPowerClassRepresentationEquiv (K := K) n)
+      (Submodule.Quotient.mk (Additive.ofMul x)),
+    quotSMulTopUnitsPowerClassRepresentationEquiv_apply_mk, toMul_ofMul, powerClassHom_apply]
+
 /-! ### The class of the power-class representation -/
 
 section LocalField
