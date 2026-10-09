@@ -9,16 +9,40 @@ public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.RepresentationTheory.Rep.Basic
 
 /-!
-# Morphisms into finite direct sums of representations
+# Finite direct sums of representations
 
 A morphism into a finite direct sum is determined by its component morphisms. The resulting
 linear equivalence lets dimension computations use a concrete direct-sum representation without
 replacing it by a categorical biproduct.
+
+The natural identification with a dependent product conjugates the direct-sum action to the
+componentwise action, so finite direct sums can also be studied through product linear maps.
 -/
 
 public section
 
 open CategoryTheory Representation DirectSum
+
+namespace Representation
+
+/-- The finite direct-sum action becomes the componentwise action under the natural
+identification with the dependent product. -/
+@[simp]
+theorem conj_directSum_linearEquivFunOnFintype
+    {k G ι : Type*} [CommSemiring k] [Monoid G] [Fintype ι]
+    {V : ι → Type*} [∀ i, AddCommMonoid (V i)] [∀ i, Module k (V i)]
+    (ρ : ∀ i, Representation k G (V i)) (g : G) :
+    (DirectSum.linearEquivFunOnFintype k ι V).conj (directSum ρ g) =
+      LinearMap.piMap (fun i ↦ ρ i g) := by
+  classical
+  apply LinearMap.ext
+  intro x
+  funext i
+  simp only [LinearEquiv.conj_apply_apply, LinearMap.coe_piMap, Pi.map_apply,
+    DirectSum.linearEquivFunOnFintype_apply, directSum_apply, DirectSum.lmap_apply]
+  rw [← DirectSum.linearEquivFunOnFintype_apply k ι V, LinearEquiv.apply_symm_apply]
+
+end Representation
 
 namespace Rep
 

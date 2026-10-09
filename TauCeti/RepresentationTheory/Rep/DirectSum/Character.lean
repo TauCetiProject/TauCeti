@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Character
 import TauCeti.LinearAlgebra.Trace.Pi
+import TauCeti.RepresentationTheory.Rep.DirectSum.Basic
 
 /-!
 # Characters of finite direct sums
@@ -33,13 +34,8 @@ theorem char_directSum (ρ : ∀ i, Representation k G (V i)) (g : G) :
     (directSum ρ).character g = ∑ i, (ρ i).character g := by
   classical
   let e := DirectSum.linearEquivFunOnFintype k ι V
-  have h : e.conj (directSum ρ g) = LinearMap.piMap (fun i ↦ ρ i g) := by
-    apply LinearMap.ext
-    intro x
-    funext i
-    simpa [e, LinearEquiv.conj_apply, directSum_apply] using
-      congrArg (ρ i g) (congrFun (e.apply_symm_apply x) i)
-  rw [character, ← LinearMap.trace_conj' _ e, h, LinearMap.trace_piMap]
-  rfl
+  rw [character, ← LinearMap.trace_conj' _ e,
+    conj_directSum_linearEquivFunOnFintype, LinearMap.trace_piMap]
+  simp only [character]
 
 end Representation

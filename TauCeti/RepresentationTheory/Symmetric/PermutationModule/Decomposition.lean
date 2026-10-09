@@ -48,7 +48,8 @@ theorem nonempty_equiv_permutationModule_directSum_spechtModule (μ : n.Partitio
       char_permutationModule_eq_sum_kostkaNumber_mul_spechtChar μ g
   · apply Finset.sum_congr rfl
     intro lam _
-    simpa only [nsmul_eq_mul, FDRep.character, Representation.character] using
+    rw [← FDRep.character_ρ (spechtModule lam) g]
+    simpa only [nsmul_eq_mul] using
       (Fin.sum_const (kostkaNumber lam μ) (Representation.character (spechtModule lam).ρ g)).symm
 
 /-- The categorical form of Young's rule: `M^μ` is isomorphic to the finite direct sum
