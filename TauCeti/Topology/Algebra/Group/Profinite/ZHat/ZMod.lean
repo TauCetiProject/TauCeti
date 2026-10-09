@@ -361,6 +361,7 @@ theorem toZMod_ringLift (n : ℕ+) (r : R) : toZMod n (ringLift f hf r) = f n r 
 
 /-- The ring homomorphism assembled from a compatible family is, as an additive homomorphism, the
 additive lift of the same family. -/
+@[simp]
 theorem coe_addMonoidHom_ringLift :
     (ringLift f hf : R →+ Additive zHat.{u}) =
       addLift (fun n ↦ (f n : R →+ ZMod n))
