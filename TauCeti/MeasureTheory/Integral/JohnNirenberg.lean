@@ -60,33 +60,6 @@ open scoped ENNReal NNReal
 variable {ι : Type*} [Fintype ι] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {f : (ι → ℝ) → E} {q₀ : ℤ × (ι → ℤ)} {M : ℝ≥0}
 
-/-- A dyadic cube `Q'` on which the average of `h` restricted to the dyadic cube `Q` exceeds the
-average of `h` over `Q` lies inside `Q`: by the nesting of dyadic cubes, otherwise `Q'` is
-either disjoint from `Q` or contains it. -/
-private theorem dyadicCube_subset_of_setLAverage_le_of_lt {h : (ι → ℝ) → ℝ≥0∞} {t : ℝ≥0∞}
-    {q q' : ℤ × (ι → ℤ)} (hq : ⨍⁻ x in dyadicCube q.1 q.2, h x ∂volume ≤ t)
-    (hq' : t < ⨍⁻ x in dyadicCube q'.1 q'.2, (dyadicCube q.1 q.2).indicator h x ∂volume) :
-    dyadicCube q'.1 q'.2 ⊆ dyadicCube q.1 q.2 := by
-  set Q := dyadicCube q.1 q.2
-  set Q' := dyadicCube q'.1 q'.2
-  have hint : ⨍⁻ x in Q', Q.indicator h x ∂volume = (∫⁻ x in Q ∩ Q', h x) / volume Q' := by
-    rw [setLAverage_eq, lintegral_indicator (measurableSet_dyadicCube q.1 q.2),
-      Measure.restrict_restrict (measurableSet_dyadicCube q.1 q.2)]
-  have hcases : Q' ⊆ Q ∨ Q ⊆ Q' ∨ Disjoint Q Q' := by
-    rcases le_total q'.1 q.1 with hle | hle
-    · exact (dyadicCube_subset_or_disjoint hle q'.2 q.2).imp_right fun hd => .inr hd.symm
-    · exact .inr (dyadicCube_subset_or_disjoint hle q.2 q'.2)
-  rcases hcases with hsub | hsub | hdisj
-  · exact hsub
-  · refine absurd hq' (not_lt.2 (hint ▸ ?_))
-    rw [inter_eq_left.2 hsub]
-    refine le_trans ?_ hq
-    rw [setLAverage_eq]
-    exact ENNReal.div_le_div_left (measure_mono hsub) _
-  · rw [hint, hdisj.inter_eq, Measure.restrict_empty, lintegral_zero_measure,
-      ENNReal.zero_div] at hq'
-    exact absurd hq' not_lt_zero
-
 /-- **One Calderón–Zygmund step.** Let `f` be integrable on the dyadic cube `Q₀`, with
 `⨍_{Q₀} ‖f - f_{Q₀}‖ ≤ M` for some `M ≠ 0`. Then there are dyadic cubes `Q ⊆ Q₀` of total measure
 at most `|Q₀| / 2` such that the measure of the set where `‖f - f_{Q₀}‖ > 2ⁿ⁺¹ (N + 1) M` is at most
@@ -122,9 +95,8 @@ private theorem exists_volume_lt_enorm_sub_setAverage_le_tsum [Nonempty ι] [Com
     (hg.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top (volume_dyadicCube_ne_top _ _).lt_top)).ne
   -- The cubes lie in `Q`.
   have hsub : ∀ q ∈ C, dyadicCube q.1 q.2 ⊆ Q := fun q hq =>
-    dyadicCube_subset_of_setLAverage_le_of_lt
-      (hMQ.trans (le_mul_of_one_le_left' one_le_two))
-      (lt_setLAverage_of_mem_calderonZygmundCubes hq)
+    dyadicCube_subset_of_mem_calderonZygmundCubes_indicator
+      (hMQ.trans (le_mul_of_one_le_left' one_le_two)) hq
   -- They cover at most half of `Q`.
   have hvol : volume (⋃ q ∈ C, dyadicCube q.1 q.2) ≤ 2⁻¹ * volume Q := by
     set V := volume (⋃ q ∈ C, dyadicCube q.1 q.2)

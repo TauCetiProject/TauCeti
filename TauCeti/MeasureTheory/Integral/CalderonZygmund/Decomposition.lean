@@ -119,6 +119,35 @@ theorem setLAverage_le_of_mem_calderonZygmundCubes (hq : q ∈ calderonZygmundCu
         rw [volume_dyadicCube_add_one q.1 q.2]
         ring
 
+/-- **Localization.** The Calderón–Zygmund cubes of `g` restricted to a dyadic cube `Q₀`, at a
+height `t` at least the average of `g` over `Q₀`, lie inside `Q₀`: by the nesting of dyadic cubes,
+any other dyadic cube is either disjoint from `Q₀` or contains it, and so has average at most
+`t`. -/
+theorem dyadicCube_subset_of_mem_calderonZygmundCubes_indicator {q₀ : ℤ × (ι → ℤ)}
+    (ht : ⨍⁻ x in dyadicCube q₀.1 q₀.2, g x ∂volume ≤ t)
+    (hq : q ∈ calderonZygmundCubes ((dyadicCube q₀.1 q₀.2).indicator g) t) :
+    dyadicCube q.1 q.2 ⊆ dyadicCube q₀.1 q₀.2 := by
+  set Q₀ := dyadicCube q₀.1 q₀.2
+  set Q := dyadicCube q.1 q.2
+  have hlt := lt_setLAverage_of_mem_calderonZygmundCubes hq
+  have hint : ⨍⁻ x in Q, Q₀.indicator g x ∂volume = (∫⁻ x in Q₀ ∩ Q, g x) / volume Q := by
+    rw [setLAverage_eq, lintegral_indicator (measurableSet_dyadicCube q₀.1 q₀.2),
+      Measure.restrict_restrict (measurableSet_dyadicCube q₀.1 q₀.2)]
+  have hcases : Q ⊆ Q₀ ∨ Q₀ ⊆ Q ∨ Disjoint Q₀ Q := by
+    rcases le_total q.1 q₀.1 with hle | hle
+    · exact (dyadicCube_subset_or_disjoint hle q.2 q₀.2).imp_right fun hd => .inr hd.symm
+    · exact .inr (dyadicCube_subset_or_disjoint hle q₀.2 q.2)
+  rcases hcases with hsub | hsub | hdisj
+  · exact hsub
+  · refine absurd hlt (not_lt.2 (hint ▸ ?_))
+    rw [inter_eq_left.2 hsub]
+    refine le_trans ?_ ht
+    rw [setLAverage_eq]
+    exact ENNReal.div_le_div_left (measure_mono hsub) _
+  · rw [hint, hdisj.inter_eq, Measure.restrict_empty, lintegral_zero_measure,
+      ENNReal.zero_div] at hlt
+    exact absurd hlt not_lt_zero
+
 /-- Distinct Calderón–Zygmund cubes are disjoint. -/
 theorem pairwiseDisjoint_calderonZygmundCubes :
     (calderonZygmundCubes g t).PairwiseDisjoint fun q => dyadicCube q.1 q.2 := by
