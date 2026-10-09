@@ -13,16 +13,12 @@ public import TauCeti.Algebra.Homology.DG.Module.Right.Hom.Complex
 
 For DG `(A, B)`-bimodules, a degree-`p` cochain is a homogeneous right `B`-linear map
 satisfying `f(a • x) = (-1)^(p*r) • (a • f(x))` for `a` of degree `r`. Its differential
-is `δ(f) = dN ∘ f - (-1)^p • f ∘ dM`. The left Leibniz rules show that this signed left
-linearity is preserved. Right linearity and the square-zero identity are inherited from
-`dgRightModuleCochains.differential`, rather than proved a second time.
+is `δ(f) = dN ∘ f - (-1)^p • f ∘ dM`. This differential preserves signed left linearity,
+giving a subcomplex of the Hom complex of right DG `B`-modules.
 
-The closed degree-zero cochains are linearly identified with `DGBimoduleHom`. Extending
-left linearity from homogeneous algebra elements uses their direct-sum decomposition.
-
-The categorical differential equations are named rewrites: dependent component carriers make
-simplifier matching sensitive to normalization of successor indices. The cochain differential
-and the zero-cocycle identification have simplification rules for their evaluations.
+The closed degree-zero cochains are linearly identified with `DGBimoduleHom`: in degree zero,
+the signed left-action law is ordinary left linearity, and closedness is compatibility with
+the module differentials.
 
 ## References
 
@@ -137,16 +133,17 @@ private theorem differential_mem (p : ℤ)
   simp only [dgRightModuleCochains.differential_apply]
   rw [map_smul_left f ha, map_zsmul_unit, hN.leibniz ha, hM.leibniz ha,
     map_add, map_zsmul_unit, map_smul_left f (hA.map_mem ha), map_smul_left f ha]
-  simp only [add_mul, mul_add, mul_one, one_mul, Int.negOnePow_add, mul_smul,
-    smul_add, smul_sub]
-  rw [smul_comm p.negOnePow (p * r).negOnePow, smul_smul p.negOnePow p.negOnePow,
-    Int.units_mul_self, one_smul, smul_comm r.negOnePow (p * r).negOnePow,
-    smul_comm r.negOnePow a, smul_comm p.negOnePow (p * r).negOnePow,
-    smul_comm p.negOnePow r.negOnePow, smul_comm p.negOnePow a]
+  -- The two occurrences of the degree-p sign cancel in the coefficient of dA(a).
+  have hsign : (p + p * (r + 1)).negOnePow = (p * r).negOnePow := by
+    rw [show p + p * (r + 1) = 2 * p + p * r by ring,
+      Int.negOnePow_add, Int.negOnePow_two_mul, one_mul]
+  simp only [smul_add, smul_sub, smul_comm _ a, smul_smul, ← Int.negOnePow_add, hsign]
+  rw [show p + (r + p * r) = (p + 1) * r + p by ring,
+    show p * r + r = (p + 1) * r by ring]
   abel
 
-/-- The bimodule cochain differential is the restriction of the right-module differential.
-The left Leibniz rules ensure its values still satisfy the signed left-action law. -/
+/-- The restriction of the graded commutator `δ(f) = dN ∘ f - (-1)^p • f ∘ dM`
+to homogeneous signed bimodule maps. -/
 def differential (p : ℤ) :
     dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := 𝒩) p →ₗ[R]
       dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := 𝒩) (p + 1) :=
@@ -163,7 +160,7 @@ theorem differential_apply (p : ℤ)
       dN (f.1.1 x) - p.negOnePow • f.1.1 (dM x) :=
   dgRightModuleCochains.differential_apply p f.1 x
 
-/-- The restricted differential squares to zero, by the right-module Hom complex identity. -/
+/-- The bimodule cochain differential squares to zero. -/
 theorem differential_comp_self (p : ℤ) :
     (differential (hM := hM) (hN := hN) (p + 1)).comp
       (differential (hM := hM) (hN := hN) p) = 0 := by
@@ -175,8 +172,8 @@ theorem differential_comp_self (p : ℤ) :
 
 end dgBimoduleCochains
 
-/-- The Hom cochain complex of DG `(A, B)`-bimodules, over their commutative ground ring.
-The body is exposed so its component carriers compute to the bimodule cochain modules. -/
+/-- The Hom cochain complex of DG `(A, B)`-bimodules, over their commutative ground ring. -/
+-- Expose the body so its component carriers compute to the bimodule cochain modules.
 @[expose]
 def dgBimoduleHomComplex (hM : IsDGBimodule hA hB ℳ dM)
     (hN : IsDGBimodule hA hB 𝒩 dN) : CochainComplex (ModuleCat R) ℤ :=
@@ -194,6 +191,8 @@ theorem dgBimoduleHomComplex_X (hM : IsDGBimodule hA hB ℳ dM)
   rfl
 
 /-- The successor differential is the restricted graded commutator. -/
+-- This is a named rewrite: dependent component carriers make simp matching sensitive to
+-- normalization of successor indices.
 theorem dgBimoduleHomComplex_d (hM : IsDGBimodule hA hB ℳ dM)
     (hN : IsDGBimodule hA hB 𝒩 dN) (p : ℤ) :
     (dgBimoduleHomComplex hM hN).d p (p + 1) =
@@ -209,7 +208,7 @@ theorem dgBimoduleHomComplex_d_apply (hM : IsDGBimodule hA hB ℳ dM)
   exact LinearMap.congr_fun (ModuleCat.hom_ofHom _) f
 
 /-- Closed degree-zero cochains are linearly identified with DG bimodule morphisms.
-The underlying right-module identification is reused in both directions. -/
+Both directions preserve the underlying map `M → N`. -/
 def dgBimoduleHomLinearEquivZeroCocycles (hM : IsDGBimodule hA hB ℳ dM)
     (hN : IsDGBimodule hA hB 𝒩 dN) :
     DGBimoduleHom hM hN ≃ₗ[R] LinearMap.ker
@@ -240,30 +239,18 @@ def dgBimoduleHomLinearEquivZeroCocycles (hM : IsDGBimodule hA hB ℳ dM)
     exact (dgRightModuleHomLinearEquivZeroCocycles
       hM.isDGRightModule hN.isDGRightModule).symm_apply_apply f.1
   right_inv f := by
-    apply Subtype.ext
-    apply Subtype.ext
-    exact congrArg
-      (fun z : LinearMap.ker (dgRightModuleCochains.differential
-        (hM := hM.isDGRightModule) (hN := hN.isDGRightModule) 0) ↦ z.1)
-      ((dgRightModuleHomLinearEquivZeroCocycles
-      hM.isDGRightModule hN.isDGRightModule).apply_symm_apply
-        ⟨f.1.1, congrArg Subtype.val f.2⟩)
+    ext x
+    simp only [dgRightModuleHomLinearEquivZeroCocycles_apply,
+      dgRightModuleHomLinearEquivZeroCocycles_symm_apply]
   map_add' f g := by
-    apply Subtype.ext
-    apply Subtype.ext
-    exact congrArg
-      (fun z : LinearMap.ker (dgRightModuleCochains.differential
-        (hM := hM.isDGRightModule) (hN := hN.isDGRightModule) 0) ↦ z.1)
-      ((dgRightModuleHomLinearEquivZeroCocycles
-      hM.isDGRightModule hN.isDGRightModule).map_add f.1 g.1)
+    ext x
+    simp only [dgRightModuleHomLinearEquivZeroCocycles_apply,
+      Submodule.coe_add, DGRightModuleHom.add_apply, LinearMap.add_apply]
   map_smul' c f := by
-    apply Subtype.ext
-    apply Subtype.ext
-    exact congrArg
-      (fun z : LinearMap.ker (dgRightModuleCochains.differential
-        (hM := hM.isDGRightModule) (hN := hN.isDGRightModule) 0) ↦ z.1)
-      ((dgRightModuleHomLinearEquivZeroCocycles
-      hM.isDGRightModule hN.isDGRightModule).map_smul c f.1)
+    ext x
+    simp only [dgRightModuleHomLinearEquivZeroCocycles_apply,
+      Submodule.coe_smul_of_tower, DGRightModuleHom.smul_apply, LinearMap.smul_apply,
+      RingHom.id_apply]
 
 /-- The zero-cocycle associated to a bimodule morphism has the same values. -/
 @[simp↓]
