@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.PointMap
--- Proof-only: base change to a separable closure, on points and on morphisms.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.BaseChange
 -- Proof-only: an elliptic curve has infinitely many points over a separably closed field.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 -- Proof-only: every isogeny is a separable isogeny after a Frobenius power.
@@ -44,6 +43,7 @@ morphisms, along the faithful, additive base change (`TauCeti.Isogeny.Hom.map_in
 * `TauCeti.Isogeny.Hom.comp_add`: composition is additive in the inner morphism, over any field.
 * `TauCeti.Isogeny.Hom.compLeftHom`: postcomposition by a morphism, as an additive homomorphism.
 * The `Ring (Hom W W)` and `IsDomain (Hom W W)` instances.
+* `TauCeti.Isogeny.Hom.mapRingHom`: base change of endomorphisms, as a ring homomorphism.
 
 ## References
 
@@ -181,6 +181,34 @@ noncomputable instance : Ring (Hom W₁ W₁) where
 isogeny. -/
 instance : IsDomain (Hom W₁ W₁) :=
   NoZeroDivisors.to_isDomain _
+
+section BaseChange
+
+variable {K : Type*} [Field K]
+
+/-- Base change preserves the identity endomorphism, the `1` of the endomorphism ring. -/
+@[simp]
+theorem map_one (f : F →+* K) : (1 : Hom W₁ W₁).map f = 1 :=
+  id_map W₁ f
+
+/-- **Base change of endomorphisms is a ring homomorphism**: it preserves the group law on
+morphisms, composition and the identity. -/
+noncomputable def mapRingHom (f : F →+* K) : Hom W₁ W₁ →+* Hom (W₁.map f) (W₁.map f) where
+  toFun h := h.map f
+  map_zero' := zero_map f
+  map_one' := map_one f
+  map_add' h h' := map_add h h' f
+  map_mul' h h' := comp_map h h' f
+
+@[simp]
+theorem mapRingHom_apply (f : F →+* K) (h : Hom W₁ W₁) : mapRingHom f h = h.map f := (rfl)
+
+/-- Base change preserves powers of endomorphisms. -/
+@[simp]
+theorem map_pow (h : Hom W₁ W₁) (n : ℕ) (f : F →+* K) : (h ^ n).map f = h.map f ^ n :=
+  (mapRingHom f).map_pow h n
+
+end BaseChange
 
 end TauCeti.Isogeny.Hom
 
