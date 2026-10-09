@@ -808,7 +808,7 @@ theorem coe_specialOrthogonalToGeneralLinear
 
 /-- A special orthogonal transformation acts on coordinate vectors through its general-linear
 matrix. -/
-theorem _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear_mulVec
+theorem specialOrthogonalToGeneralLinear_mulVec
     (Q : QuadraticMap R (n → R) N)
     (g : specialOrthogonalGroup Q) (v : n → R) :
     (((specialOrthogonalToGeneralLinear Q g : Matrix.GeneralLinearGroup n R) :
