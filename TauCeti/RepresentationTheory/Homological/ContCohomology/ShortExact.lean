@@ -223,6 +223,16 @@ theorem inclDistribMulActionHom_apply (a : A) : S.inclDistribMulActionHom a = S.
 @[simp]
 theorem projDistribMulActionHom_apply (b : B) : S.projDistribMulActionHom b = S.proj b := (rfl)
 
+/-- The additive homomorphism underlying the bundled inclusion is `incl`. -/
+@[simp]
+theorem coe_addMonoidHom_inclDistribMulActionHom :
+    (S.inclDistribMulActionHom : A →+ B) = S.incl := (rfl)
+
+/-- The additive homomorphism underlying the bundled projection is `proj`. -/
+@[simp]
+theorem coe_addMonoidHom_projDistribMulActionHom :
+    (S.projDistribMulActionHom : B →+ C) = S.proj := (rfl)
+
 /-- The bundled inclusion is injective, as `incl` is. -/
 theorem inclDistribMulActionHom_injective : Function.Injective S.inclDistribMulActionHom :=
   S.incl_injective

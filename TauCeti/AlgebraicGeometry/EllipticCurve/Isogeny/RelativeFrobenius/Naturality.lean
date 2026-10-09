@@ -29,6 +29,9 @@ ellipticity or perfectness assumption, and include exponential characteristic `1
 
 * `TauCeti.Isogeny.iterateRelativeFrobeniusIsogeny_map` and
   `TauCeti.Isogeny.relativeFrobeniusIsogeny_map`: compatibility with field base change.
+* `TauCeti.Isogeny.degree_relativeFrobeniusIsogeny_map` and
+  `TauCeti.Isogeny.separableDegree_relativeFrobeniusIsogeny_map`: after any base change, relative
+  Frobenius still has degree `p` and separable degree `1`.
 * `TauCeti.Isogeny.iterateRelativeFrobeniusIsogeny_comp`: the iterated naturality square.
 * `TauCeti.Isogeny.relativeFrobeniusIsogeny_comp`: the one-step naturality square.
 
@@ -88,6 +91,39 @@ theorem relativeFrobeniusIsogeny_map {K : Type*} [Field K]
   cases eF
   cases eK
   exact h
+
+/-- **Relative Frobenius has degree `p` after any base change**: its base change is relative
+Frobenius of the base-changed curve, up to the identification of target curves in
+`relativeFrobeniusIsogeny_map`, and transport along that identification keeps the degree. -/
+@[simp]
+theorem degree_relativeFrobeniusIsogeny_map {K : Type*} [Field K]
+    (W : WeierstrassCurve.Affine F) (f : F →+* K) :
+    ((relativeFrobeniusIsogeny p W).map f).degree = p := by
+  let := expChar_of_injective_ringHom f.injective p
+  -- Transport along an equality of target curves keeps the degree.
+  have key : ∀ {V : WeierstrassCurve.Affine K} (e : (W.map (frobenius F p)).map f = V)
+      (ψ : Isogeny (W.map f) V), e ▸ (relativeFrobeniusIsogeny p W).map f = ψ →
+        ((relativeFrobeniusIsogeny p W).map f).degree = ψ.degree := by
+    rintro V rfl ψ rfl
+    rfl
+  exact (key _ _ (relativeFrobeniusIsogeny_map p W f)).trans
+    (degree_relativeFrobeniusIsogeny p (W.map f))
+
+/-- **Relative Frobenius stays purely inseparable after any base change**: the separable degree
+of its base change is `1`, by the same identification as `degree_relativeFrobeniusIsogeny_map`. -/
+@[simp]
+theorem separableDegree_relativeFrobeniusIsogeny_map {K : Type*} [Field K]
+    (W : WeierstrassCurve.Affine F) (f : F →+* K) :
+    ((relativeFrobeniusIsogeny p W).map f).separableDegree = 1 := by
+  let := expChar_of_injective_ringHom f.injective p
+  -- Transport along an equality of target curves keeps the separable degree.
+  have key : ∀ {V : WeierstrassCurve.Affine K} (e : (W.map (frobenius F p)).map f = V)
+      (ψ : Isogeny (W.map f) V), e ▸ (relativeFrobeniusIsogeny p W).map f = ψ →
+        ((relativeFrobeniusIsogeny p W).map f).separableDegree = ψ.separableDegree := by
+    rintro V rfl ψ rfl
+    rfl
+  exact (key _ _ (relativeFrobeniusIsogeny_map p W f)).trans
+    (separableDegree_relativeFrobeniusIsogeny p (W.map f))
 
 /-- Iterated relative Frobenius is natural in the isogeny: its square commutes with
 the isogeny obtained by applying the iterated Frobenius to the coefficients. -/

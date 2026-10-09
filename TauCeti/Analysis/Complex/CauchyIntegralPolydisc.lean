@@ -301,10 +301,11 @@ theorem hasFDerivAt_circleIntegral {p : V} (hf : ∀ ζ ∈ sphere c |R|, Analyt
   have hG : ContinuousOn G {x | AnalyticAt ℂ f x} := fun x hx =>
     (hx.fderiv.continuousAt.clm_comp continuousAt_const).continuousWithinAt
   -- Near `p`, `f` is analytic on `{q} × sphere c |R|` and `G` is bounded there uniformly in `q`.
-  obtain ⟨C, hC⟩ := exists_eventually_norm_le_compact_family (ι := ((↑) : sphere c |R| → ℂ))
-    continuous_subtype_val (isOpen_analyticAt ℂ f) hG fun ζ => hf ζ ζ.2
+  obtain ⟨C, hC⟩ := (isCompact_sphere c |R|).exists_eventually_norm_le
+    (F := G) (x₀ := p) (isOpen_analyticAt ℂ f)
+    (fun ζ hζ => (hf ζ hζ).fderiv.continuousAt.clm_comp continuousAt_const) hf
   set s := {q : V | ∀ θ, AnalyticAt ℂ f (q, circleMap c R θ) ∧ ‖G (q, circleMap c R θ)‖ ≤ C}
-  have hs : s ∈ 𝓝 p := hC.mono fun q hq θ => hq ⟨_, circleMap_mem_sphere' c R θ⟩
+  have hs : s ∈ 𝓝 p := hC.mono fun q hq θ => hq _ (circleMap_mem_sphere' c R θ)
   have hcont : ∀ q ∈ s, Continuous fun θ => f (q, circleMap c R θ) := fun q hq =>
     continuous_iff_continuousAt.2 fun θ => (hq θ).1.continuousAt.comp_of_eq
       (f := fun θ => (q, circleMap c R θ)) (by fun_prop) rfl

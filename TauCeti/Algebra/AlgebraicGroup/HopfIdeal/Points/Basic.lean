@@ -39,12 +39,11 @@ the point factors uniquely through the quotient algebra.
 * `CommHopfAlgCat.mapDomainMulEquiv_mem_quotientPointsSubgroup_comapOfSurjective_iff`: transport of
   quotient-subgroup membership along a bialgebra equivalence.
 
-## References
+## Implementation notes
 
-This is a Layer 3 prerequisite for `TauCetiRoadmap/ReductiveGroups/README.md`, "Hopf ideals ↔
-closed subgroup schemes". It builds on the quotient Hopf algebra API in
-`TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic` and Mathlib's algebra quotient universal
-property `Ideal.Quotient.liftₐ`.
+The file builds on the quotient Hopf algebra API in
+`TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic` and on Mathlib's algebra quotient
+universal property `Ideal.Quotient.liftₐ`.
 -/
 
 public section

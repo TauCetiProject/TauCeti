@@ -390,14 +390,6 @@ private theorem range_γ1₂ : range γ1₂ ⊆ {z | 0 ≤ (z : ℂ).im} :=
     mul_nonneg_of_nonpos_of_nonpos (by norm_num) (sin_nonpos_of_pi_le
       (by linarith [two_pi_mul_tHalf]) (by simpa using h₂))
 
-/-- Two paths with the same endpoints in a simply connected subset are homotopic. -/
-private theorem homotopic_of_range_subset {V : Set ThricePuncturedSphere} (hV : IsSimplyConnected V)
-    {x y : ThricePuncturedSphere} {p q : Path x y} (hp : range p ⊆ V) (hq : range q ⊆ V) :
-    p.Homotopic q :=
-  let ⟨K, _⟩ := Path.exists_homotopy_forall_mem_of_isSimplyConnected hV
-    (range_subset_iff.1 hp) (range_subset_iff.1 hq)
-  ⟨K⟩
-
 /-- A subset of the real axis lies in both closed half-planes. -/
 private theorem subset_halfPlanes_of_real {S : Set ThricePuncturedSphere}
     (hS : S ⊆ {z | (z : ℂ).im = 0}) :
@@ -413,20 +405,20 @@ theorem αPlus_trans_δ_trans_symm_homotopic_γ0_trans_γ1 :
     ((αPlus.trans δ).trans αPlus.symm).Homotopic (γ0.trans γ1) := by
   -- the three pairs of pieces, each pair in a common closed half-plane
   have hA : (αPlus.trans δ₁).Homotopic (γ0₁.trans segNeg) :=
-    homotopic_of_range_subset isSimplyConnected_upper
+    isPathHomotopyTrivial_def.mp isSimplyConnected_upper.isPathHomotopyTrivial _ _
       (by rw [Path.trans_range]; exact union_subset range_αPlus range_δ₁)
       (by
         rw [Path.trans_range]
         exact union_subset range_γ0₁ (subset_halfPlanes_of_real (range_realSegment ..)).1)
   have hB : δ₂.Homotopic (segNeg.symm.trans (γ0₂.trans (γ1₁.trans segPos))) :=
-    homotopic_of_range_subset isSimplyConnected_lower range_δ₂
+    isPathHomotopyTrivial_def.mp isSimplyConnected_lower.isPathHomotopyTrivial _ _ range_δ₂
       (by
         simp only [Path.trans_range, Path.symm_range]
         exact union_subset (subset_halfPlanes_of_real (range_realSegment ..)).2 <|
           union_subset range_γ0₂ <|
             union_subset range_γ1₁ (subset_halfPlanes_of_real (range_realSegment ..)).2)
   have hC : (δ₃.trans αPlus.symm).Homotopic (segPos.symm.trans γ1₂) :=
-    homotopic_of_range_subset isSimplyConnected_upper
+    isPathHomotopyTrivial_def.mp isSimplyConnected_upper.isPathHomotopyTrivial _ _
       (by
         rw [Path.trans_range, Path.symm_range]
         exact union_subset range_δ₃ range_αPlus)
@@ -564,7 +556,7 @@ theorem mob1InfMulAut_periph0 : mob1InfMulAut periph0 = periph0 := by
   -- from `−1` to `1/3`, and its upper half, back to `−1`, are homotopic in the closed lower and
   -- upper half-planes to paths made of the halves of `γ0` and segments of the real axis.
   have hL : (γ0₁.map mob1Inf.continuous).Homotopic ((segLeft.trans γ0₂).trans segMid.symm) :=
-    homotopic_of_range_subset isSimplyConnected_lower
+    isPathHomotopyTrivial_def.mp isSimplyConnected_lower.isPathHomotopyTrivial _ _
       (by
         rintro _ ⟨t, rfl⟩
         exact im_coe_mob1Inf_nonpos (range_γ0₁ ⟨t, rfl⟩))
@@ -573,7 +565,7 @@ theorem mob1InfMulAut_periph0 : mob1InfMulAut periph0 = periph0 := by
         exact union_subset (union_subset (subset_halfPlanes_of_real (range_realSegment ..)).2
           range_γ0₂) (subset_halfPlanes_of_real (range_realSegment ..)).2)
   have hU : (γ0₂.map mob1Inf.continuous).Homotopic ((segMid.trans γ0₁).trans segLeft.symm) :=
-    homotopic_of_range_subset isSimplyConnected_upper
+    isPathHomotopyTrivial_def.mp isSimplyConnected_upper.isPathHomotopyTrivial _ _
       (by
         rintro _ ⟨t, rfl⟩
         exact im_coe_mob1Inf_nonneg (range_γ0₂ ⟨t, rfl⟩))
@@ -599,7 +591,7 @@ theorem mob1InfMulAut_periph1 : mob1InfMulAut periph1 = periphInf := by
   -- half-planes to paths made of the halves of `γ0` and `γ1` and segments of the real axis.
   have hU : (γ1₁.map mob1Inf.continuous).Homotopic
       (((segLeft.trans γ0₁.symm).trans γ1₂.symm).trans segRight) :=
-    homotopic_of_range_subset isSimplyConnected_upper
+    isPathHomotopyTrivial_def.mp isSimplyConnected_upper.isPathHomotopyTrivial _ _
       (by
         rintro _ ⟨t, rfl⟩
         exact im_coe_mob1Inf_nonneg (range_γ1₁ ⟨t, rfl⟩))
@@ -610,7 +602,7 @@ theorem mob1InfMulAut_periph1 : mob1InfMulAut periph1 = periphInf := by
           (subset_halfPlanes_of_real (range_realSegment ..)).1)
   have hL : (γ1₂.map mob1Inf.continuous).Homotopic
       (((segRight.symm.trans γ1₁.symm).trans γ0₂.symm).trans segLeft.symm) :=
-    homotopic_of_range_subset isSimplyConnected_lower
+    isPathHomotopyTrivial_def.mp isSimplyConnected_lower.isPathHomotopyTrivial _ _
       (by
         rintro _ ⟨t, rfl⟩
         exact im_coe_mob1Inf_nonpos (range_γ1₂ ⟨t, rfl⟩))

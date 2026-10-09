@@ -461,11 +461,11 @@ section Derivative
 
 variable [CommRing R] [IsAddTorsionFree R] {p : MvPolynomial σ R} {a : σ → R}
 
-/-- Over a ring without additive torsion, `p` has order at least `n + 1` at `a` if and only if
-`p` vanishes at `a` and every partial derivative of `p` has order at least `n` at `a`. -/
-theorem succ_le_orderAt_iff {n : ℕ} :
-    ((n + 1 : ℕ) : ℕ∞) ≤ p.orderAt a ↔
-      eval a p = 0 ∧ ∀ i, (n : ℕ∞) ≤ (pderiv i p).orderAt a := by
+/-- Over a ring without additive torsion, `p` has order at least `n + 1` at `a`, for `n : ℕ∞`,
+if and only if `p` vanishes at `a` and every partial derivative has order at least `n` there. -/
+theorem succ_le_orderAt_iff {n : ℕ∞} :
+    n + 1 ≤ p.orderAt a ↔
+      eval a p = 0 ∧ ∀ i, n ≤ (pderiv i p).orderAt a := by
   rw [orderAt_def, MvPowerSeries.succ_le_order_iff, constantCoeff_coe, constantCoeff_taylor]
   simp only [orderAt_def, MvPowerSeries.pderiv_coe, pderiv_taylor]
 
@@ -478,7 +478,7 @@ theorem orderAt_eq_one_of_eval_pderiv_ne_zero (hp : eval a p = 0) {i : σ}
     intro h
     have hder := (succ_le_orderAt_iff (n := 1)).mp h
     have hpos := hder.2 i
-    rw [Nat.cast_one, Order.one_le_iff_pos, orderAt_pos_iff] at hpos
+    rw [Order.one_le_iff_pos, orderAt_pos_iff] at hpos
     exact hi hpos
   · simpa only [Order.one_le_iff_pos, orderAt_pos_iff] using hp
 
@@ -509,7 +509,7 @@ theorem le_orderAt_iff_eval_foldl_pderiv {n : ℕ} :
   induction n generalizing p with
   | zero => simp
   | succ n ih =>
-    simp only [succ_le_orderAt_iff, ih]
+    simp only [Nat.cast_add, Nat.cast_one, succ_le_orderAt_iff, ih]
     refine ⟨fun ⟨h0, h⟩ l hl ↦ ?_, fun h ↦ ⟨h [] (by simp), fun i l hl ↦
       h (i :: l) (by simpa using hl)⟩⟩
     cases l with

@@ -794,22 +794,25 @@ theorem specialOrthogonalToGeneralLinear_apply
   rw [specialOrthogonalToGeneralLinear, MonoidHom.comp_apply]
   rw [orthogonalToGeneralLinear_apply, coe_specialOrthogonalToOrthogonal]
 
+/-- The underlying matrix of the special coordinate inclusion is the matrix of the linear
+equivalence. -/
+@[simp]
+theorem coe_specialOrthogonalToGeneralLinear
+    (Q : QuadraticMap R (n → R) N) (g : specialOrthogonalGroup Q) :
+    ((specialOrthogonalToGeneralLinear Q g : Matrix.GeneralLinearGroup n R) : Matrix n n R) =
+      LinearMap.toMatrix' (g : (n → R) ≃ₗ[R] (n → R)).toLinearMap := by
+  ext i j
+  simp only [specialOrthogonalToGeneralLinear_apply, LinearMap.toMatrix'_apply,
+    LinearEquiv.coe_coe]
+
 /-- A special orthogonal transformation acts on coordinate vectors through its general-linear
 matrix. -/
-@[simp]
 theorem _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear_mulVec
     (Q : QuadraticMap R (n → R) N)
     (g : specialOrthogonalGroup Q) (v : n → R) :
     (((specialOrthogonalToGeneralLinear Q g : Matrix.GeneralLinearGroup n R) :
       Matrix n n R) *ᵥ v) = ((g : (n → R) ≃ₗ[R] (n → R)) v) := by
-  have hmatrix :
-      ((specialOrthogonalToGeneralLinear Q g : Matrix.GeneralLinearGroup n R) :
-        Matrix n n R) = LinearMap.toMatrix' (g : (n → R) →ₗ[R] (n → R)) := by
-    ext i j
-    rw [specialOrthogonalToGeneralLinear_apply]
-    rfl
-  rw [hmatrix, LinearMap.toMatrix'_mulVec]
-  rfl
+  rw [coe_specialOrthogonalToGeneralLinear, LinearMap.toMatrix'_mulVec, LinearEquiv.coe_coe]
 
 /-- The coordinate inclusion of a special orthogonal group is injective. -/
 theorem specialOrthogonalToGeneralLinear_injective

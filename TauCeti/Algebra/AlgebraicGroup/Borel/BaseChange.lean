@@ -14,9 +14,10 @@ import TauCeti.Algebra.AlgebraicGroup.Solvable.BaseChange
 # Borel candidates under field extension
 
 The three conditions defining a Borel candidate — smoothness, geometric connectedness and
-geometric solvability of the coordinate quotient — descend along field extensions. Consequently,
-a Borel subgroup over an arbitrary field, whose base change to an algebraic closure is a maximal
-Borel candidate, is in particular a Borel candidate over the ground field.
+geometric solvability of the coordinate quotient — are preserved by and descend along field
+extensions. Consequently, a Borel subgroup over an arbitrary field, whose base change to an
+algebraic closure is a maximal Borel candidate, is in particular a Borel candidate over the ground
+field, and a Borel candidate over a field is one on every geometric fiber.
 
 Each of the three conditions descends by its own mechanism. Smoothness descends along the
 faithfully flat field extension `k → K`, using Mathlib's
@@ -27,6 +28,8 @@ the base change of the coordinate quotient by `CommHopfAlgCat.quotientBaseChange
 
 ## Main declarations
 
+* `TauCeti.HopfIdeal.IsBorelCandidate.baseChange`: Borel candidatehood is preserved by field
+  extension.
 * `TauCeti.HopfIdeal.IsBorelCandidate.of_baseChange`: Borel candidatehood descends along a field
   extension.
 * `TauCeti.HopfIdeal.IsBorel.isBorelCandidate`: a Borel subgroup over an arbitrary field is a
@@ -52,6 +55,25 @@ namespace HopfIdeal.IsBorelCandidate
 
 variable {k K : Type u} [Field k] [Field K] [Algebra k K]
 variable {H : CommHopfAlgCat.{u} k} [Algebra.FiniteType k H] {I : HopfIdeal k H}
+
+/-- Borel candidatehood is preserved by field extension. -/
+theorem baseChange
+    (hI : IsBorelCandidate k ⟨H, (finiteTypeCommHopfAlgProperty_iff H).2 inferInstance⟩ I) :
+    IsBorelCandidate K
+      (FiniteTypeCommHopfAlgCat.baseChange (K := K)
+        ⟨H, (finiteTypeCommHopfAlgProperty_iff H).2 inferInstance⟩)
+      (CommHopfAlgCat.baseChangeHopfIdeal (K := K) I) := by
+  let qIso := CommHopfAlgCat.quotientBaseChangeIso (K := K) I
+  refine IsBorelCandidate.mk ?_ ?_ ?_
+  · apply (smoothCommHopfAlgProperty K).prop_of_iso qIso.symm
+    let _ : Algebra.Smooth k (CommHopfAlgCat.quotient H I) :=
+      (smoothCommHopfAlgProperty_iff _).mp hI.smooth
+    exact (smoothCommHopfAlgProperty_iff _).mpr inferInstance
+  · apply (geometricallyConnectedCommHopfAlgProperty K).prop_of_iso qIso.symm
+    exact geometricallyConnectedCommHopfAlgProperty.baseChange k K _ hI.geometricallyConnected
+  · apply (geometricallySolvablePointsCommHopfAlgProperty K).prop_of_iso qIso.symm
+    exact geometricallySolvablePointsCommHopfAlgProperty.baseChange
+      (CommHopfAlgCat.quotient H I) hI.geometricallySolvable
 
 /-- Borel candidatehood descends along a field extension. -/
 theorem of_baseChange

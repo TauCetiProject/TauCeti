@@ -98,13 +98,13 @@ variable (k : Type w) [Field k] {V : Type u} (G : SimpleGraph V) [Finite V]
 multiplying it by `e_i` on the left and by `e_j` on the right. -/
 noncomputable def zigzagCornerMap (i j : V) :
     nonisolatedZigzagQuotient k G →ₗ[k] nonisolatedZigzagQuotient k G :=
-  cornerMap k (zigzagVertexIdempotent k G i) (zigzagVertexIdempotent k G j)
+  LinearMap.mulLeftRight k (zigzagVertexIdempotent k G i, zigzagVertexIdempotent k G j)
 
 @[simp]
 theorem zigzagCornerMap_apply (i j : V) (x : nonisolatedZigzagQuotient k G) :
     zigzagCornerMap k G i j x =
       zigzagVertexIdempotent k G i * x * zigzagVertexIdempotent k G j :=
-  cornerMap_apply k _ _ x
+  LinearMap.mulLeftRight_apply _ _ _
 
 /-- **The corner `e_i Z e_j` of a zigzag algebra**, as a `k`-submodule of the relation quotient:
 the elements which `e_i` fixes on the left and `e_j` fixes on the right. -/

@@ -40,6 +40,17 @@ isomorphism of the presented groups. In particular a presented group depends on 
 through their closed normal closure. Finally, the pro-`p` group presented by the images of a set
 of profinite relators is a quotient of the profinite group they present.
 
+## Main definitions
+
+* `TauCeti.presentedProfiniteGroup`, `TauCeti.presentedProP`: the profinite and the pro-`p` group
+  presented by a type of generators and a set of relators in the free group of the same kind.
+* `TauCeti.presentedProfiniteGroup.mk`, `TauCeti.presentedProP.mk`: the quotient map from the free
+  group.
+* `TauCeti.presentedProfiniteGroup.of`, `TauCeti.presentedProP.of`: the canonical generators.
+* `TauCeti.presentedProfiniteGroup.lift`, `TauCeti.presentedProP.lift`: the continuous
+  homomorphism out of a presented group induced by one out of the free group that kills the
+  relators.
+
 ## Main results
 
 * `TauCeti.presentedProfiniteGroup.existsUnique_lift`, `TauCeti.presentedProP.existsUnique_lift`:
@@ -154,10 +165,8 @@ theorem dense_closure_range_of :
 the presented profinite group. -/
 noncomputable def lift {G : Type v} [Monoid G] [TopologicalSpace G] [T1Space G]
     (ψ : freeProfiniteGroup X →ₜ* G) (hψ : ∀ r ∈ rels, ψ r = 1) :
-    presentedProfiniteGroup X rels →ₜ* G := by
-  let R : Subgroup (freeProfiniteGroup X) := (Subgroup.normalClosure rels).topologicalClosure
-  exact ContinuousMonoidHom.quotientLift R ψ
-    (topologicalClosure_normalClosure_le_ker hψ)
+    presentedProfiniteGroup X rels →ₜ* G :=
+  ContinuousMonoidHom.quotientLift _ ψ (topologicalClosure_normalClosure_le_ker hψ)
 
 /-- The factorisation through a presented profinite group recovers the original map after the
 canonical quotient projection. -/
@@ -551,10 +560,8 @@ theorem isTopologicallyFinitelyGenerated [Finite X] :
 the presented pro-`p` group. -/
 noncomputable def lift {P : Type v} [Monoid P] [TopologicalSpace P] [T1Space P]
     (ψ : freeProP p X →ₜ* P) (hψ : ∀ r ∈ rels, ψ r = 1) :
-    presentedProP p X rels →ₜ* P := by
-  let R : Subgroup (freeProP p X) := (Subgroup.normalClosure rels).topologicalClosure
-  exact ContinuousMonoidHom.quotientLift R ψ
-    (topologicalClosure_normalClosure_le_ker hψ)
+    presentedProP p X rels →ₜ* P :=
+  ContinuousMonoidHom.quotientLift _ ψ (topologicalClosure_normalClosure_le_ker hψ)
 
 /-- The factorisation through a presented pro-`p` group recovers the original map after the
 canonical quotient projection. -/
