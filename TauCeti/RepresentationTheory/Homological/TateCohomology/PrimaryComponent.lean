@@ -63,7 +63,7 @@ Tate cohomology group of `A`. -/
 theorem nsmul_tateCohomology_bijective {A : Rep k G} {p : ℕ}
     (hp : Function.Bijective fun a : A.V ↦ p • a) (n : ℤ) :
     Function.Bijective fun x : tateCohomology A n ↦ p • x := by
-  -- Multiplication by `p` on `Ĥⁿ(G, A)` is the map induced by the automorphism `p • 𝟙 A`.
+  -- Multiplication by `p` on `Ĥⁿ(G, A)` is the map induced by the automorphism `p • 𝟙 A`.
   have : IsIso ((forget (Rep k G)).map (p • 𝟙 A)) := (isIso_iff_bijective _).mpr hp
   have : IsIso (p • 𝟙 A) := isIso_of_reflects_iso _ (forget (Rep k G))
   convert ConcreteCategory.bijective_of_isIso ((tateCohomologyFunctor n).map (p • 𝟙 A)) using 1
