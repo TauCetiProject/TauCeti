@@ -49,6 +49,8 @@ arbitrary centres are obtained from those about the origin.
   to a point of `Spa (A, A°)` and a tuple `a ∈ (A°)ᵏ`.
 * `TauCeti.ValuationSpectrum.translateHom`: the translation `Tᵢ ↦ Tᵢ + aᵢ` of `A⟨T⟩` by
   `a ∈ (A°)ᵏ`.
+* `TauCeti.ValuationSpectrum.translateEquiv`: the same translation as a ring automorphism, with
+  inverse the translation by `-a`.
 
 ## Main results
 
@@ -60,6 +62,8 @@ arbitrary centres are obtained from those about the origin.
 * `TauCeti.ValuationSpectrum.classicalPoint_injective`: when `x` has trivial support, the
   classical points are parametrised faithfully by `(A°)ᵏ`;
   `TauCeti.ValuationSpectrum.classicalPoint_injective_of_isField` is the case of a field.
+* `TauCeti.ValuationSpectrum.ne_classicalPoint_of_supp_eq_bot`: a point with trivial support is
+  not classical.
 * `TauCeti.ValuationSpectrum.hasSum_translateHom`: `f(T + a)` is the sum of the translated
   monomials of `f`.
 * `TauCeti.ValuationSpectrum.translateHom_comp_translateHom`: translating by `b` and then by `a`
@@ -211,6 +215,21 @@ theorem classicalPoint_injective_of_isField (hA : IsField A) (x : spa (powerBoun
     rw [hd, zero_mul] at h
     exact x.1.toValuativeRel.not_vle_one_zero h
 
+/-- **A point with trivial support is not classical**: the classical point at `a` kills
+`T₀ - a₀`, which is nonzero. -/
+theorem ne_classicalPoint_of_supp_eq_bot [Nontrivial A] [NeZero k] (p : closedPolydisc k A)
+    (hp : p.1.supp = ⊥) (x : spa (powerBoundedSubring A)) (a : Fin k → A)
+    (ha : ∀ i, IsPowerBounded (a i)) : p ≠ classicalPoint x a ha := by
+  rintro rfl
+  have hmem : weightedX (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight 0 -
+      weightedC _ isWeightFamily_one_weight (a 0) ∈ (classicalPoint x a ha).1.supp := by
+    rw [mem_supp_iff, classicalPoint_vle]
+    simp
+  rw [hp, Ideal.mem_bot, sub_eq_zero] at hmem
+  -- the variable and a constant differ in their coefficient of `T₀`
+  have hcoeff := congrArg (MvPowerSeries.coeff (Finsupp.single 0 1)) (congrArg Subtype.val hmem)
+  simp [MvPowerSeries.coeff_X, MvPowerSeries.coeff_C] at hcoeff
+
 end ClassicalPoints
 
 section Translation
@@ -239,7 +258,7 @@ noncomputable def translateHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a 
       (isPowerBounded_weightedX_add_weightedC a ha))
 
 /-- **The translate of `f` is the sum of its translated monomials**: `f(T + a)` is the sum of the
-terms `aν (T + a)ν`, where `aν` is the coefficient of `Tν` in `f`. -/
+terms `fν (T + a)ν`, where `fν` is the coefficient of `Tν` in `f`. -/
 theorem hasSum_translateHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
     (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
     HasSum (fun ν : Fin k →₀ ℕ ↦
@@ -307,24 +326,51 @@ theorem translateHom_neg_translateHom (a : Fin k → A) (ha : ∀ i, IsPowerBoun
     translateHom (-a) (fun i ↦ (ha i).neg) (translateHom a ha f) = f := by
   simp
 
+/-- Translation by `a` undoes translation by `-a`. -/
+theorem translateHom_translateHom_neg (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
+    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+    translateHom a ha (translateHom (-a) (fun i ↦ (ha i).neg) f) = f := by
+  simp
+
+/-- **Translation by `a ∈ (A°)ᵏ` as a ring automorphism** of `A⟨T₁, …, Tₖ⟩`, with inverse the
+translation by `-a`. -/
+noncomputable def translateEquiv (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
+    weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight ≃+*
+      weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight :=
+  RingEquiv.ofRingHom (translateHom a ha) (translateHom (-a) fun i ↦ (ha i).neg)
+    (RingHom.ext (translateHom_translateHom_neg a ha))
+    (RingHom.ext (translateHom_neg_translateHom a ha))
+
+/-- The automorphism `translateEquiv a ha` acts as `translateHom a ha`. -/
+@[simp]
+theorem coe_translateEquiv (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
+    ⇑(translateEquiv a ha) = translateHom a ha :=
+  (rfl)
+
+/-- The inverse of `translateEquiv a ha` is the translation by `-a`. -/
+@[simp]
+theorem coe_translateEquiv_symm (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
+    ⇑(translateEquiv a ha).symm = translateHom (-a) fun i ↦ (ha i).neg :=
+  (rfl)
+
 /-- Translation is injective. -/
 theorem translateHom_injective (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
     Function.Injective (translateHom a ha) :=
-  Function.LeftInverse.injective (translateHom_neg_translateHom a ha)
+  (translateEquiv a ha).injective
+
+/-- Translation is surjective. -/
+theorem translateHom_surjective (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
+    Function.Surjective (translateHom a ha) :=
+  (translateEquiv a ha).surjective
 
 /-- Translation carries `A⟨T⟩°` into itself, so it is an endomorphism of the Huber pair
 `(A⟨T⟩, A⟨T⟩°)` and `spaComap` along it maps the closed polydisc to itself. -/
 theorem translateHom_mem_powerBoundedSubring (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
     {f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight}
-    (hf : f ∈ powerBoundedSubring _) : translateHom a ha f ∈ powerBoundedSubring _ := by
-  -- A continuous ring homomorphism need not preserve power-boundedness; translation does because
-  -- translation by `-a` inverts it, so the image of a neighbourhood `V` of zero contains the
-  -- neighbourhood of zero obtained by pulling `V` back along that inverse.
-  refine mem_powerBoundedSubring.mpr
-    ((mem_powerBoundedSubring.mp hf).map (continuous_translateHom a ha).continuousAt fun V hV ↦ ?_)
-  refine Filter.mem_of_superset
-    ((continuous_translateHom (-a) fun i ↦ (ha i).neg).continuousAt.preimage_mem_nhds
-      (by rwa [map_zero])) fun g hg ↦ ⟨_, hg, by simp⟩
+    (hf : f ∈ powerBoundedSubring _) : translateHom a ha f ∈ powerBoundedSubring _ :=
+  mem_powerBoundedSubring.mpr ((isPowerBounded_ringEquiv_iff (translateEquiv a ha)
+    (continuous_translateHom a ha) (continuous_translateHom _ _)).mpr
+      (mem_powerBoundedSubring.mp hf))
 
 end Translation
 

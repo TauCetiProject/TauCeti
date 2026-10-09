@@ -21,9 +21,12 @@ the closed unit disc `closedPolydisc 1 K`. For a centre `a` with `‖a‖ ≤ 1`
 η_{a,r} : f = ∑ bₙ (T - a)ⁿ ↦ sup_n ‖bₙ‖ rⁿ.
 ```
 
-These are the points of types (2) and (3) in Wedhorn's description of the closed unit disc
-(Example 7.57), the points on its limbs. The point `η_{a,r}` is the pullback of the Gauss point
-`η_r = gaussPoint` about the origin along the translation `T ↦ T + a` of `K⟨T⟩`.
+These are the Gauss points of the `K`-rational discs in the closed unit disc. When `K` is
+algebraically closed they are exactly the points of types (2) (`r ∈ |K^×|`) and (3)
+(`r ∉ |K^×|`) in Wedhorn's description of the closed unit disc (Example 7.57); over a general `K`,
+Gauss points of discs whose centres need a field extension are not of this form. The point
+`η_{a,r}` is the pullback of the Gauss point `η_r = gaussPoint` about the origin along the
+translation `T ↦ T + a` of `K⟨T⟩`.
 
 The main result is that `η_{a,r}` depends only on the disc `D(a, r) = {y : ‖y - a‖ ≤ r}`, while
 distinct radii give distinct points: `η_{a,r} = η_{b,s}` exactly when `r = s` and
@@ -47,7 +50,8 @@ classical point.
   `η_r`.
 * `TauCeti.ValuationSpectrum.discPoint_eq_discPoint_iff`: `η_{a,r} = η_{b,s}` if and only if
   `r = s` and `‖a - b‖ ≤ r`.
-* `TauCeti.ValuationSpectrum.discPoint_one`: at radius one every centre gives the Gauss point.
+* `TauCeti.ValuationSpectrum.discPoint_radius_one`: at radius one every centre gives the Gauss
+  point.
 * `TauCeti.ValuationSpectrum.supp_discPoint` and
   `TauCeti.ValuationSpectrum.discPoint_ne_classicalPoint`: `η_{a,r}` has trivial support and is
   not a classical point.
@@ -99,12 +103,11 @@ private theorem closedDiscGaussValuation_translateHom_le (hr₀ : 0 < r) (hr₁ 
   -- in one variable every multi-index is `n • e₀`
   obtain ⟨n, rfl⟩ : ∃ n, ν = Finsupp.single 0 n :=
     ⟨ν 0, Finsupp.ext fun i ↦ by rw [Subsingleton.elim i 0, Finsupp.single_eq_same]⟩
-  rw [Valuation.mem_leAddSubgroup_iff, ← NNReal.coe_le_coe, map_mul, Fin.prod_univ_one, map_pow,
-    NNReal.coe_mul, NNReal.coe_pow, closedDiscGaussValuation_weightedC, coe_nnnorm,
-    Finsupp.single_eq_same]
-  calc ‖MvPowerSeries.coeff (Finsupp.single 0 n) (f : MvPowerSeries (Fin 1) R)‖ *
-        (v (weightedX _ _ 0 + weightedC _ isWeightFamily_one_weight (a 0)) : ℝ) ^ n
-      ≤ ‖MvPowerSeries.coeff (Finsupp.single 0 n) (f : MvPowerSeries (Fin 1) R)‖ * r ^ n := by
+  rw [Valuation.mem_leAddSubgroup_iff, ← NNReal.coe_le_coe, map_mul,
+    closedDiscGaussValuation_weightedC]
+  simp only [map_pow, Fin.prod_univ_one, Finsupp.single_eq_same]
+  push_cast
+  calc _ ≤ ‖MvPowerSeries.coeff (Finsupp.single 0 n) (f : MvPowerSeries (Fin 1) R)‖ * r ^ n := by
         gcongr
     _ ≤ v f := norm_coeff_mul_pow_le_closedDiscGaussValuation hr₀ hr₁ f n
 
@@ -221,9 +224,6 @@ theorem discPoint_eq_discPoint_iff {a b : K} (ha : ‖a‖ ≤ 1) (hb : ‖b‖ 
       (IsUltrametricDist.norm_add_le_max a (-b)).trans (max_le ha (by rwa [norm_neg]))
   -- pulling back along translation by `-b` is injective, and carries `η_{c,t}` to `η_{c - b,t}`
   let τ := translateHom (-fun _ : Fin 1 ↦ b) fun _ ↦ (isPowerBounded_iff_norm_le_one.mpr hb).neg
-  have hsurj : Function.Surjective τ := fun f ↦
-    ⟨_, translateHom_neg_translateHom (fun _ : Fin 1 ↦ b)
-      (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr hb) f⟩
   have hshift (c : K) (hc : ‖c‖ ≤ 1) (hcb : ‖c - b‖ ≤ 1) {t : ℝ} (ht₀ : 0 < t) (ht₁ : t ≤ 1) :
       comap τ (discPoint c hc ht₀ ht₁).1 = (discPoint (c - b) hcb ht₀ ht₁).1 := by
     rw [discPoint_val, discPoint_val, ← Function.comp_apply (f := comap τ), ← comap_comp,
@@ -233,11 +233,12 @@ theorem discPoint_eq_discPoint_iff {a b : K} (ha : ‖a‖ ≤ 1) (hb : ‖b‖ 
   have hbb : ∀ hbb : ‖b - b‖ ≤ 1, discPoint (b - b) hbb hs₀ hs₁ = gaussPoint hs₀ hs₁ := by
     simp only [sub_self, discPoint_zero, implies_true]
   rw [← discPoint_eq_gaussPoint_iff hab hr₀ hr₁ hs₀ hs₁, Subtype.ext_iff, Subtype.ext_iff,
-    ← (comap_injective hsurj).eq_iff, hshift a ha hab hr₀ hr₁, hshift b hb (by simp) hs₀ hs₁, hbb]
+    ← (comap_injective (translateHom_surjective _ _ : Function.Surjective τ)).eq_iff,
+    hshift a ha hab hr₀ hr₁, hshift b hb (by simp) hs₀ hs₁, hbb]
 
 /-- **At radius one every centre gives the Gauss point of the disc**: `D(a, 1)` is the whole
 closed unit disc. -/
-theorem discPoint_one (a : K) (ha : ‖a‖ ≤ 1) :
+theorem discPoint_radius_one (a : K) (ha : ‖a‖ ≤ 1) :
     discPoint a ha zero_lt_one le_rfl = gaussPoint (K := K) zero_lt_one le_rfl :=
   discPoint_eq_gaussPoint_of_norm_le ha zero_lt_one le_rfl ha
 
@@ -257,14 +258,7 @@ theorem supp_discPoint (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r �
 /-- **The points `η_{a,r}` are not classical points.** -/
 theorem discPoint_ne_classicalPoint (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     (x : spa (powerBoundedSubring K)) (b : Fin 1 → K) (hb : ∀ i, IsPowerBounded (b i)) :
-    discPoint a ha hr₀ hr₁ ≠ classicalPoint x b hb := by
-  intro h
-  have hvle := (classicalPoint_vle x b hb
-    (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
-      weightedC _ isWeightFamily_one_weight (b 0)) 0).mpr (by simp)
-  rw [← h, discPoint_vle_zero_iff, sub_eq_zero] at hvle
-  -- the variable and a constant differ in their coefficient of `T`
-  have hcoeff := congrArg (MvPowerSeries.coeff (Finsupp.single 0 1)) (congrArg Subtype.val hvle)
-  simp [MvPowerSeries.coeff_X, MvPowerSeries.coeff_C] at hcoeff
+    discPoint a ha hr₀ hr₁ ≠ classicalPoint x b hb :=
+  ne_classicalPoint_of_supp_eq_bot _ (supp_discPoint a ha hr₀ hr₁) x b hb
 
 end TauCeti.ValuationSpectrum
