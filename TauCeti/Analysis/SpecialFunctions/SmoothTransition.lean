@@ -34,19 +34,21 @@ open scoped ContDiff NNReal Topology
 
 namespace TauCeti
 
-/-- The function `t ↦ s((4t - m)/m) g(t)`, where `s` is `Real.smoothTransition`. It vanishes for
-`t ≤ m/4` and agrees with `g` for `t ≥ m/2`, so it is a globally defined replacement for a
-function `g` that is only well behaved on `(0, ∞)`. -/
+/-- The function `t ↦ s((4t - m)/m) g(t)`, where `s` is `Real.smoothTransition`. For `m > 0` it
+vanishes for `t ≤ m/4` and agrees with `g` for `t ≥ m/2`, so it is a globally defined replacement
+for a function `g` that is only well behaved on `(0, ∞)`. -/
 def positiveCutoff (m : ℝ) (g : ℝ → ℝ) (t : ℝ) : ℝ :=
   Real.smoothTransition ((4 * t - m) / m) * g t
 
 /-- The cutoff vanishes on `(-∞, m/4]`. -/
+@[simp]
 theorem positiveCutoff_of_le {m : ℝ} (hm : 0 < m) (g : ℝ → ℝ) {t : ℝ}
     (ht : t ≤ m / 4) : positiveCutoff m g t = 0 := by
   rw [positiveCutoff, Real.smoothTransition.zero_of_nonpos
     (div_nonpos_of_nonpos_of_nonneg (by linarith) hm.le), zero_mul]
 
 /-- The cutoff agrees with `g` on `[m/2, ∞)`. -/
+@[simp]
 theorem positiveCutoff_of_ge {m : ℝ} (hm : 0 < m) (g : ℝ → ℝ) {t : ℝ}
     (ht : m / 2 ≤ t) : positiveCutoff m g t = g t := by
   rw [positiveCutoff, Real.smoothTransition.one_of_one_le
