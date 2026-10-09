@@ -539,65 +539,7 @@ variable {E F₁ F₂ F₃ : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
   [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
   [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
-  {α : Type*} {k l : ℕ}
-
-/-! The next four lemmas locate the entries of `j.insertNth x y` in the two blocks of
-`Fin ((k + 1) + (l + 1))`, according to whether the inserted slot `j` lies in the first block or
-the second. -/
-
-private lemma insertNth_castAdd_comp_castAdd (i : Fin (k + 1)) (x : α)
-    (y : Fin (k + 1 + l) → α) :
-    (fun a : Fin (k + 1) => Fin.insertNth (α := fun _ => α)
-      (Fin.castAdd (l + 1) i : Fin (k + 1 + l + 1)) x y (Fin.castAdd (l + 1) a)) =
-      Fin.insertNth (α := fun _ => α) i x
-        (fun b : Fin k => y (Fin.cast (show k + (l + 1) = k + 1 + l by omega)
-          (Fin.castAdd (l + 1) b))) := by
-  rw [Fin.eq_insertNth_iff]
-  refine ⟨Fin.insertNth_apply_same _ _ _, funext fun b => ?_⟩
-  have : (Fin.castAdd (l + 1) (i.succAbove b) : Fin (k + 1 + l + 1)) =
-      (Fin.castAdd (l + 1) i : Fin (k + 1 + l + 1)).succAbove
-        (Fin.cast (show k + (l + 1) = k + 1 + l by omega) (Fin.castAdd (l + 1) b)) := by
-    ext
-    simp only [Fin.val_castAdd, Fin.val_succAbove, Fin.val_cast]
-  simp only [Fin.removeNth, this, Fin.insertNth_apply_succAbove]
-
-private lemma insertNth_castAdd_apply_natAdd (i : Fin (k + 1)) (x : α)
-    (y : Fin (k + 1 + l) → α) (b : Fin (l + 1)) :
-    Fin.insertNth (α := fun _ => α) (Fin.castAdd (l + 1) i : Fin (k + 1 + l + 1)) x y
-      (Fin.natAdd (k + 1) b) =
-      y (Fin.cast (show k + (l + 1) = k + 1 + l by omega) (Fin.natAdd k b)) := by
-  have : (Fin.natAdd (k + 1) b : Fin (k + 1 + l + 1)) =
-      (Fin.castAdd (l + 1) i : Fin (k + 1 + l + 1)).succAbove
-        (Fin.cast (show k + (l + 1) = k + 1 + l by omega) (Fin.natAdd k b)) := by
-    ext
-    simp only [Fin.val_natAdd, Fin.val_castAdd, Fin.val_succAbove, Fin.val_cast]
-    split_ifs <;> omega
-  rw [this, Fin.insertNth_apply_succAbove]
-
-private lemma insertNth_natAdd_apply_castAdd (i : Fin (l + 1)) (x : α)
-    (y : Fin (k + 1 + l) → α) (a : Fin (k + 1)) :
-    Fin.insertNth (α := fun _ => α) (Fin.natAdd (k + 1) i : Fin (k + 1 + l + 1)) x y
-      (Fin.castAdd (l + 1) a) = y (Fin.castAdd l a) := by
-  have : (Fin.castAdd (l + 1) a : Fin (k + 1 + l + 1)) =
-      (Fin.natAdd (k + 1) i : Fin (k + 1 + l + 1)).succAbove (Fin.castAdd l a) := by
-    ext
-    simp only [Fin.val_natAdd, Fin.val_castAdd, Fin.val_succAbove]
-    split_ifs <;> omega
-  rw [this, Fin.insertNth_apply_succAbove]
-
-private lemma insertNth_natAdd_comp_natAdd (i : Fin (l + 1)) (x : α)
-    (y : Fin (k + 1 + l) → α) :
-    (fun b : Fin (l + 1) => Fin.insertNth (α := fun _ => α)
-      (Fin.natAdd (k + 1) i : Fin (k + 1 + l + 1)) x y (Fin.natAdd (k + 1) b)) =
-      Fin.insertNth (α := fun _ => α) i x (fun c : Fin l => y (Fin.natAdd (k + 1) c)) := by
-  rw [Fin.eq_insertNth_iff]
-  refine ⟨Fin.insertNth_apply_same _ _ _, funext fun c => ?_⟩
-  have : (Fin.natAdd (k + 1) (i.succAbove c) : Fin (k + 1 + l + 1)) =
-      (Fin.natAdd (k + 1) i : Fin (k + 1 + l + 1)).succAbove (Fin.natAdd (k + 1) c) := by
-    ext
-    simp only [Fin.val_natAdd, Fin.val_succAbove]
-    split_ifs <;> omega
-  simp only [Fin.removeNth, this, Fin.insertNth_apply_succAbove]
+  {k l : ℕ}
 
 /-- The terms of the expansion of `(wedgeWith mu phi psi).curryLeft v` in which `v` lands in the
 `i`-th slot of `phi`: each such slot contributes the signed sum of `wedgeWith mu (phi.curryLeft v)
@@ -615,7 +557,7 @@ private lemma sum_sign_smul_insertNth_castAdd (mu : F₁ →L[ℝ] F₂ →L[ℝ
             (w ∘ Fin.cast (show k + (l + 1) = k + 1 + l by omega)) (sigma (Fin.castAdd (l + 1) a)))
           (psi fun b =>
             (w ∘ Fin.cast (show k + (l + 1) = k + 1 + l by omega)) (sigma (Fin.natAdd k b))) := by
-  simp_rw [insertNth_castAdd_comp_castAdd, insertNth_castAdd_apply_natAdd,
+  simp_rw [Fin.insertNth_castAdd_comp_castAdd, Fin.insertNth_castAdd_apply_natAdd,
     ContinuousAlternatingMap.map_insertNth, ← ContinuousAlternatingMap.curryLeft_apply_apply,
     map_zsmul, FunLike.coe_smul, Pi.smul_apply, smul_comm (Perm.sign _),
     ← Finset.smul_sum, smul_smul, Fin.val_castAdd, ← pow_add, ← two_mul, pow_mul, neg_one_sq,
@@ -641,7 +583,7 @@ private lemma sum_sign_smul_insertNth_natAdd (mu : F₁ →L[ℝ] F₂ →L[ℝ]
           (psi.curryLeft v fun b => w (sigma (Fin.natAdd (k + 1) b))) := by
   have hsign : (-1 : ℤ) ^ (k + 1 + (i : ℕ)) * (-1) ^ (i : ℕ) = (-1) ^ (k + 1) := by
     rw [pow_add, mul_assoc, ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, mul_one]
-  simp_rw [insertNth_natAdd_apply_castAdd, insertNth_natAdd_comp_natAdd,
+  simp_rw [Fin.insertNth_natAdd_apply_castAdd, Fin.insertNth_natAdd_comp_natAdd,
     ContinuousAlternatingMap.map_insertNth, ← ContinuousAlternatingMap.curryLeft_apply_apply,
     map_zsmul, smul_comm (Perm.sign _), ← Finset.smul_sum, smul_smul, Fin.val_natAdd, hsign,
     Function.comp_apply]

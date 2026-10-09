@@ -451,34 +451,26 @@ theorem sum_sign_smul_cons_comp_eq_sum_insertNth {α M : Type*} [AddCommGroup M]
     ∑ σ : Perm (Fin (n + 1)), sign σ • g (Fin.cons x w ∘ σ) =
       ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j : ℕ) •
         ∑ τ : Perm (Fin n), sign τ • g (j.insertNth x (w ∘ τ)) := by
-  -- `Φ (j, τ)` sends `j` to `0` and `j.succAbove m` to `(τ m).succ`, so it rearranges
-  -- `Fin.cons x w` into `j.insertNth x (w ∘ τ)`; it is a bijection with sign `(-1) ^ j * sign τ`.
-  set Φ : Fin (n + 1) × Perm (Fin n) → Perm (Fin (n + 1)) :=
-    fun p => decomposeFin.symm (0, p.2) * p.1.cycleRange with hΦ
-  have hΦ_self (p : Fin (n + 1) × Perm (Fin n)) : Φ p p.1 = 0 := by
-    simp [hΦ]
-  have hΦ_succAbove (p : Fin (n + 1) × Perm (Fin n)) (m : Fin n) :
-      Φ p (p.1.succAbove m) = (p.2 m).succ := by
-    simp [hΦ]
-  have hbij : Function.Bijective Φ := by
-    refine (Fintype.bijective_iff_injective_and_card Φ).mpr ⟨?_, ?_⟩
-    · rintro ⟨j, τ⟩ ⟨j', τ'⟩ h
-      obtain rfl : j = j' := by
-        have h₁ := hΦ_self (j, τ)
-        rw [h] at h₁
-        exact (Φ (j', τ')).injective (h₁.trans (hΦ_self (j', τ')).symm)
-      simpa using decomposeFin.symm.injective (mul_right_cancel h)
-    · simp [Fintype.card_perm, Nat.factorial_succ]
+  cases n with
+  | zero => simp [Fin.insertNth_zero']
+  | succ n =>
+  -- Reindex by Mathlib's `decomposeFin'`: `(decomposeFin'Symm j τ⁻¹)⁻¹` sends `j` to `0` and
+  -- `j.succAbove m` to `(τ m).succ`, so it rearranges `Fin.cons x w` into
+  -- `j.insertNth x (w ∘ τ)`, and its sign is `(-1) ^ j * sign τ`.
   symm
   simp_rw [Finset.smul_sum]
   rw [← Fintype.sum_prod_type']
-  refine Fintype.sum_bijective Φ hbij _ _ fun p => ?_
-  have hcomp : Fin.cons x w ∘ Φ p = p.1.insertNth x (w ∘ p.2) := by
+  refine Fintype.sum_equiv ((Equiv.prodCongr (Equiv.refl _) (Equiv.inv _)).trans
+    (decomposeFin'.symm.trans (Equiv.inv _))) _ _ fun ⟨j, τ⟩ => ?_
+  have hcomp : Fin.cons x w ∘ ⇑((decomposeFin'Symm j τ⁻¹)⁻¹) = j.insertNth x (w ∘ τ) := by
     rw [Fin.eq_insertNth_iff]
-    refine ⟨by simp [hΦ_self], funext fun m => ?_⟩
-    simp [Fin.removeNth, hΦ_succAbove]
-  rw [hcomp]
-  simp only [hΦ, Perm.sign_mul, decomposeFin.symm_sign, Fin.sign_cycleRange]
-  simp [Units.smul_def, mul_smul, smul_comm ((-1 : ℤ) ^ (p.1 : ℕ))]
+    refine ⟨by simp, funext fun m => ?_⟩
+    have : (decomposeFin'Symm j τ⁻¹)⁻¹ (j.succAbove m) = (τ m).succ :=
+      Perm.inv_eq_iff_eq.mpr (by simp)
+    simp only [Fin.removeNth, Function.comp_apply, this, Fin.cons_succ]
+  simp only [Equiv.trans_apply, Equiv.prodCongr_apply, Prod.map_apply, Equiv.coe_refl, id_eq,
+    Equiv.inv_apply, decomposeFin'_symm]
+  rw [hcomp, Perm.sign_inv, sign_decomposeFin'Symm, Perm.sign_inv, mul_smul]
+  simp [Units.smul_def]
 
 end TauCeti
