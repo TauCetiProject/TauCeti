@@ -232,15 +232,10 @@ theorem _root_.AlgebraicGeometry.Scheme.singularLocus_eq_comap_of_isPullback
   -- the goal using the chosen chart maps.
   change (X'.singularLocus R').comap ((hU x).preimage g).fromSpec =
     ((X.singularLocus R).comap g).comap ((hU x).preimage g).fromSpec
-  rw [← Scheme.IdealSheafData.comap_comp,
-    ← IsAffineOpen.SpecMap_appLE_fromSpec g (hU x) ((hU x).preimage g) le_rfl,
-    Scheme.IdealSheafData.comap_comp]
   rw [Scheme.IdealSheafData.comap_fromSpec_eq_ofIdealTop,
-    Scheme.IdealSheafData.comap_fromSpec_eq_ofIdealTop, Scheme.IdealSheafData.comap_ofIdealTop,
-    Scheme.singularLocus_ideal, Scheme.singularLocus_ideal]
-  rw [Ideal.map_map, ← CommRingCat.hom_comp, ← Scheme.ΓSpecIso_inv_naturality,
-    CommRingCat.hom_comp, ← Ideal.map_map]
-  rw [← Scheme.fittingIdeal_kaehlerDifferential_preimage_eq_map H (hU x) 1]
+    Scheme.IdealSheafData.comap_comap_fromSpec_eq_ofIdealTop _ g (hU x) ((hU x).preimage g) le_rfl,
+    Scheme.singularLocus_ideal, Scheme.singularLocus_ideal,
+    Scheme.fittingIdeal_kaehlerDifferential_preimage_eq_map H (hU x) 1]
 
 /-- **The singular subscheme commutes with base change.** If `X'` is the base change of `X` along
 `Spec R' → Spec R`, with projection `g : X' ⟶ X`, then `Sing(X'/R')` is the base change
