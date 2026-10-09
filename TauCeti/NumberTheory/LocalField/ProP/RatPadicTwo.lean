@@ -21,14 +21,8 @@ and `(-3)⁻¹` on `A`, `S` and `Y`, to the cyclotomic orientation of `G_{ℚ₂
 `ℤ₂ˣ`. The commutator convention is `(x, y) = x⁻¹ y⁻¹ x y`, and the quotient uses the closed normal
 closure of the relator.
 
-The theorem is not a separate classification. `ℚ₂` has degree `1`, which is odd, so it lies in the
-odd dyadic branch (`TauCeti.isDyadicOddCase_ratPadic`) with `q(ℚ₂) = 2`
-(`TauCeti.localRootOfUnityOrder_two_ratPadic`) and generator rank `3`. The marked odd-degree theorem
-`TauCeti.absoluteGaloisGroupProP_two_marked_of_degree_odd` at `N = 1` presents `G_{ℚ₂}(2)` by the
-relator `x₁² x₂⁴ (x₂, x₃)`, which is the defining relator of `D₀`
-(`TauCeti.d0Relator_eq_demushkinWordTwoOdd`), with the cyclotomic orientation taking the values of
-the standard orientation on the marked generators; the two characters then agree by
-`TauCeti.standardD0Orientation_unique`.
+`ℚ₂` has degree `1` over itself, so it lies in the odd dyadic branch, with `q(ℚ₂) = 2` and
+generator rank `3`.
 
 The marking is what separates this statement from its inverse-normalized twin: with the geometric
 normalization of reciprocity the value on `Y` would be `-3` instead of `(-3)⁻¹`, still a
@@ -86,18 +80,19 @@ theorem topologicalGeneratorRankNat_absoluteGaloisGroupProP_two_ratPadic
 orientation of `D₀` pulls back to the cyclotomic orientation of `G_{ℚ₂}(2)`, and that orientation
 is onto `ℤ₂ˣ`. So the generators `e⁻¹ A`, `e⁻¹ S`, `e⁻¹ Y` have cyclotomic values `-1`, `1` and
 `(-3)⁻¹` (`TauCeti.standardD0Orientation_d0A`, `TauCeti.standardD0Orientation_d0S`,
-`TauCeti.standardD0Orientation_d0Y`).
-
-This is `TauCeti.absoluteGaloisGroupProP_two_marked_of_degree_odd` at `N = 1`. -/
+`TauCeti.standardD0Orientation_d0Y`). -/
 theorem absoluteGaloisGroupProP_two_ratPadic_marked :
     ∃ e : absoluteGaloisGroupProP 2 ℚ_[2] ≃ₜ* demushkinD0,
       standardD0Orientation.comp (e : absoluteGaloisGroupProP 2 ℚ_[2] →ₜ* demushkinD0) =
           cyclotomicOrientation 2 ℚ_[2] ratPadicTwo_hasPrimitiveRoot ∧
         Function.Surjective (cyclotomicOrientation 2 ℚ_[2] ratPadicTwo_hasPrimitiveRoot) := by
+  -- Specialize the marked odd-degree theorem at `N = [ℚ₂ : ℚ₂] = 1`: its relator
+  -- `x₁² x₂⁴ (x₂, x₃)` is the defining relator of `D₀`, and its cyclotomic values on the marked
+  -- generators are those of the standard orientation, which is then unique.
   have hmarked := absoluteGaloisGroupProP_two_marked_of_degree_odd ℚ_[2]
     ratPadicTwo_hasPrimitiveRoot (by simp)
-  rw [show Module.finrank ℚ_[2] ℚ_[2] + 2 = 3 by simp, ← d0Relator_eq_demushkinWordTwoOdd]
-    at hmarked
+  have hrank : Module.finrank ℚ_[2] ℚ_[2] + 2 = 3 := by simp
+  rw [hrank, ← d0Relator_eq_demushkinWordTwoOdd] at hmarked
   obtain ⟨e, hA, hY, h⟩ := hmarked
   have hS := h 1 one_ne_zero (by norm_num) (by norm_num)
   have h0 : presentedProPGen 2 3 {d0Relator} 0 = d0A := by simp [presentedProPGen_of_lt]
@@ -106,11 +101,11 @@ theorem absoluteGaloisGroupProP_two_ratPadic_marked :
   rw [h0] at hA
   rw [h1] at hS
   rw [h2] at hY
+  have hne : (1 - 2 ^ 2 : ℤ_[2]) ≠ 0 := by norm_num
   have hcomp : (cyclotomicOrientation 2 ℚ_[2] ratPadicTwo_hasPrimitiveRoot).comp
       (e.symm : demushkinD0 →ₜ* absoluteGaloisGroupProP 2 ℚ_[2]) = standardD0Orientation :=
     standardD0Orientation_unique _ hA hS (Units.ext (by
-      rw [← mul_left_inj' (show (1 - 2 ^ 2 : ℤ_[2]) ≠ 0 by norm_num),
-        negThreeUnit_inv_mul_one_sub_two_pow_two]
+      rw [← mul_left_inj' hne, negThreeUnit_inv_mul_one_sub_two_pow_two]
       exact hY))
   have heq : standardD0Orientation.comp (e : absoluteGaloisGroupProP 2 ℚ_[2] →ₜ* demushkinD0) =
       cyclotomicOrientation 2 ℚ_[2] ratPadicTwo_hasPrimitiveRoot := by
