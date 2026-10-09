@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Kummer.BaseChange
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.RootsOfUnity
-public import TauCeti.NumberTheory.ClassFieldTheory.Local.Symbol
+public import TauCeti.NumberTheory.ClassFieldTheory.Global.LocalInvariant
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.NumberTheory.ClassFieldTheory.Local.TameSymbol
@@ -28,6 +29,8 @@ above `2` at which `a` and `b` are both units: there `K_v(√b)` is unramified, 
 norm from it. Only finitely many places are excluded, so the invariants of a fixed pair have finite
 support, the finite set `finiteHilbertSupport K a b`. The sum of the invariants over that set,
 together with the archimedean invariants, is the left-hand side of Hilbert's reciprocity law.
+The comparison `finiteInvAt_kummerBrauerClass` identifies every finite term with the localization
+of the global Kummer-cup Brauer class, so this sum can be read in the global Brauer sequence.
 
 ## Main definitions
 
@@ -106,6 +109,18 @@ theorem toRatAddCircle_finiteHilbertInvariantAt (v : HeightOneSpectrum (𝓞 K))
           (kummerClass _ h2
             (Units.map (algebraMap K (v.adicCompletion K) : K →* v.adicCompletion K) b)))) := by
   rw [finiteHilbertInvariantAt_def K v a b hζ h2, localSymbol_apply, toRatAddCircle_h2MuEquivZMod]
+
+/-- The finite Hilbert invariant is the local invariant of one global Kummer-cup Brauer class.
+This identifies the finite terms of Hilbert reciprocity with Brauer localization. -/
+theorem finiteInvAt_kummerBrauerClass (v : HeightOneSpectrum (𝓞 K)) (a b : Kˣ)
+    (hζ : IsPrimitiveRoot (-1 : K) 2) (h2 : IsUnit (2 : K)) :
+    finiteInvAt K v (kummerBrauerClass (-1) hζ h2 a b) =
+      ZMod.toRatAddCircle 2 (finiteHilbertInvariantAt K v a b) := by
+  have hζv : IsPrimitiveRoot (-1 : v.adicCompletion K) 2 := .neg_one 0 (by decide)
+  have h2v : IsUnit (2 : v.adicCompletion K) := hζv.neZero'.out.isUnit
+  rw [finiteInvAt_apply, brBaseChange_kummerBrauerClass _ _ _ h2v]
+  simpa only [map_neg, map_one, kummerBrauerClass_def] using
+    (toRatAddCircle_finiteHilbertInvariantAt K v a b hζv h2v).symm
 
 /-- The Hilbert invariant at a finite place is additive in its first argument. -/
 theorem finiteHilbertInvariantAt_mul_left (v : HeightOneSpectrum (𝓞 K)) (a a' b : Kˣ) :

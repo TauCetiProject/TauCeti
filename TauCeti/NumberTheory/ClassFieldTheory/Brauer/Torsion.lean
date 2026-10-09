@@ -91,6 +91,32 @@ theorem h2MuToBr_muNRepH2Equiv
                 (AbsoluteGaloisGroup F) (KummerCoeff F n) x))) := by
   rw [h2MuToBr_apply, AddEquiv.symm_apply_apply]
 
+/-- On the explicit model, the Kummer-to-Brauer map is induced by the coefficient inclusion. -/
+theorem h2MuToBr_muNRepH2Equiv_eq_explicitMap2
+    (x : H2 (AbsoluteGaloisGroup F) (KummerCoeff F n)) :
+    h2MuToBr n F (muNRepH2Equiv n F x) =
+      unitsRepH2Equiv F (explicitMap2 (AbsoluteGaloisGroup F) (KummerCoeff F n)
+        (AbsoluteGaloisGroup F) (UnitsCoeff F) (ContinuousMonoidHom.id _)
+        (kummerCoeffIncl F n) continuous_of_discreteTopology
+        (fun g x ↦ by simpa only [ContinuousMonoidHom.coe_id, id_eq]
+          using kummerCoeffIncl_equivariant F n g x) x) := by
+  rw [h2MuToBr_muNRepH2Equiv, h2KummerToUnits_def]
+  let f : KummerCoeff F n →+[AbsoluteGaloisGroup F] UnitsCoeff F :=
+    { toFun := kummerCoeffIncl F n
+      map_smul' := kummerCoeffIncl_equivariant F n
+      map_zero' := map_zero _
+      map_add' := map_add _ }
+  have hmap : kummerCoeffToUnits F n =
+      ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap (fun g x ↦ map_smul f g x) := by
+    ext x
+    exact kummerCoeffToUnits_hom_apply F n x
+  rw [hmap]
+  have h := explicitH2AddEquivContinuousCohomology_coeffMap
+    (AbsoluteGaloisGroup F) (KummerCoeff F n) (UnitsCoeff F) f x
+  rw [explicitCoeff2_eq_explicitMap2] at h
+  rw [h, AddEquiv.symm_apply_apply]
+  rfl
+
 /-- **The map from roots-of-unity cohomology into the Brauer group is injective** when `n` is
 invertible in `F`. -/
 theorem h2MuToBr_injective (hn : IsUnit (n : F)) :
