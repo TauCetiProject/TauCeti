@@ -53,6 +53,8 @@ presheafed spaces (`CategoryTheory.GlueData.mapGlueData`).
 * `TauCeti.PreAdicSpace.IsOpenImmersion.hasPullback_of_left`: pullbacks of open immersions exist.
 * `TauCeti.PreAdicSpace.IsOpenImmersion.pullback_snd_of_left`: open immersions are stable under
   base change.
+* `TauCeti.PreAdicSpace.IsOpenImmersion.range_pullback_snd_of_left`: the base change of an open
+  immersion `f` along `g` has image `g⁻¹(f(X))`.
 * `TauCeti.PreAdicSpace.IsOpenImmersion.forgetToPresheafedSpace_preservesPullback_of_left`: the
   forgetful functor to presheafed spaces preserves pullbacks of open immersions.
 
@@ -249,11 +251,26 @@ noncomputable def pullbackConeOfLeftIsLimit : IsLimit (pullbackConeOfLeft f g) :
         s.condition],
       lift_fac _ _ _, fun {m} _ hm => lift_uniq _ _ _ m hm⟩
 
+/-- The first leg of `pullbackConeOfLeft` is the factorisation through `f` of the restriction of
+`g` to `g⁻¹(f(X))`. -/
+@[simp]
+theorem pullbackConeOfLeft_fst :
+    (pullbackConeOfLeft f g).fst =
+      lift f (Y.ofRestrict (TopCat.snd_isOpenEmbedding_of_left H.base_open g.base) ≫ g)
+        (by
+          rintro _ ⟨p, rfl⟩
+          exact ⟨pullback.fst f.base g.base p, CategoryTheory.congr_fun pullback.condition p⟩) :=
+  rfl
+
 /-- The first leg of `pullbackConeOfLeft` is the first leg of Mathlib's pullback cone of presheafed
 spaces, both factoring the restriction of `g` through the monomorphism `f`. -/
-private theorem pullbackConeOfLeft_fst_toHom :
+theorem pullbackConeOfLeft_fst_toHom :
     (pullbackConeOfLeft f g).fst.toHom =
       PresheafedSpace.IsOpenImmersion.pullbackConeOfLeftFst f.toHom g.toHom :=
+  -- The ascription below types `(pullbackConeOfLeft f g).fst.toHom` with source Mathlib's
+  -- `Y.toPresheafedSpace.restrict _`, the source of `pullbackConeOfLeftFst`: the cone point
+  -- `Y.restrict _` has this underlying presheafed space by definition
+  -- (`PreAdicSpace.restrict_toPresheafedSpace`, proved by `rfl`).
   have h : ((pullbackConeOfLeft f g).fst.toHom ≫ f.toHom :
       (pullbackConeOfLeft f g).pt.toPresheafedSpace ⟶ Z.toPresheafedSpace) =
         PresheafedSpace.IsOpenImmersion.pullbackConeOfLeftFst f.toHom g.toHom ≫ f.toHom :=
@@ -279,6 +296,30 @@ instance pullback_fst_of_right : IsOpenImmersion (pullback.fst g f) := by
   rw [← pullbackSymmetry_hom_comp_snd]
   infer_instance
 
+/-- The image of the base change of an open immersion `f` along `g` is the preimage under `g` of
+the image of `f`. -/
+theorem range_pullback_snd_of_left :
+    Set.range (pullback.snd f g).base = g.base ⁻¹' Set.range f.base := by
+  rw [← (IsPullback.of_isLimit (pullbackConeOfLeftIsLimit f g)).isoPullback_inv_snd, comp_base,
+    TopCat.coe_comp, Function.Surjective.range_comp ?_, pullbackConeOfLeft_snd, ofRestrict_base]
+  · exact TopCat.pullback_snd_range f.base g.base
+  · exact (TopCat.homeoOfIso (forgetToTop.mapIso _).symm).surjective
+
+/-- The image of the base change of an open immersion `f` along `g` is the preimage under `g` of
+the image of `f`. -/
+theorem range_pullback_fst_of_right :
+    Set.range (pullback.fst g f).base = g.base ⁻¹' Set.range f.base := by
+  rw [← pullbackSymmetry_hom_comp_snd, comp_base, TopCat.coe_comp,
+    Function.Surjective.range_comp ?_, range_pullback_snd_of_left]
+  exact (TopCat.homeoOfIso (forgetToTop.mapIso (pullbackSymmetry g f))).surjective
+
+/-- The image in `Z` of the pullback of an open immersion `f` along `g` is the intersection of the
+images of `f` and `g`. -/
+theorem range_pullback_to_base_of_left :
+    Set.range (pullback.fst f g ≫ f).base = Set.range f.base ∩ Set.range g.base := by
+  rw [pullback.condition, comp_base, TopCat.coe_comp, Set.range_comp, range_pullback_snd_of_left,
+    Set.image_preimage_eq_inter_range]
+
 /-- The map from the pullback of two open immersions to their common target is an open
 immersion. -/
 instance pullback_to_base_isOpenImmersion [IsOpenImmersion g] :
@@ -290,8 +331,13 @@ instance pullback_to_base_isOpenImmersion [IsOpenImmersion g] :
 of `pullbackConeOfLeft` is Mathlib's pullback cone of presheafed spaces. -/
 instance forgetToPresheafedSpace_preservesPullback_of_left :
     PreservesLimit (cospan f g) forgetToPresheafedSpace :=
-  -- The legs of the image cone are `forgetToPresheafedSpace.map` of the legs of
-  -- `pullbackConeOfLeft`, which are by definition their underlying morphisms `Hom.toHom`.
+  -- The point of the image cone is `(Y.restrict _).toPresheafedSpace`, which is by definition
+  -- Mathlib's `Y.toPresheafedSpace.restrict _` (`PreAdicSpace.restrict_toPresheafedSpace`, proved
+  -- by `rfl`), so the points are identified by `Iso.refl`. The legs of the image cone are
+  -- `forgetToPresheafedSpace.map` of the legs of `pullbackConeOfLeft`, which are by definition
+  -- their underlying morphisms `Hom.toHom`; the first is `pullbackConeOfLeftFst` by
+  -- `pullbackConeOfLeft_fst_toHom` and the second is `Y.toPresheafedSpace.ofRestrict _` by
+  -- `PreAdicSpace.ofRestrict_toHom`.
   preservesLimit_of_preserves_limit_cone (pullbackConeOfLeftIsLimit f g) <|
     (isLimitMapConePullbackConeEquiv _ _).symm.toFun
       ((PresheafedSpace.IsOpenImmersion.pullbackConeOfLeftIsLimit f.toHom g.toHom).ofIsoLimit
