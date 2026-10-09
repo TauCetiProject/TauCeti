@@ -64,6 +64,12 @@ namespace TauCeti
 private def padicPrimeUnit (p : ℕ) [Fact p.Prime] : ℚ_[p]ˣ :=
   Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
 
+/-- `TauCeti.Padic.isUniformizer_natCast_self`, unfolded and restated for `padicPrimeUnit`. -/
+private theorem normalizedValuation_padicPrimeUnit (p : ℕ) [Fact p.Prime] :
+    normalizedValuation ℚ_[p] (padicPrimeUnit p) = .ofAdd 1 := by
+  rw [padicPrimeUnit]
+  exact (isUniformizer_def _).1 (Padic.isUniformizer_natCast_self p)
+
 private def padicUnitReduction (p j : ℕ) [Fact p.Prime] :
     unitFiltration ℚ_[p] 0 →* (ZMod (p ^ j))ˣ :=
   (PadicInt.unitsToZModPow j).toMonoidHom.comp
@@ -92,14 +98,14 @@ private theorem unitsEquivIntProd_eq_of_padic_decomposition (p : ℕ) [Fact p.Pr
     (x : ℚ_[p]ˣ) (k : ℤ) (w : ℤ_[p]ˣ)
     (hx : (x : ℚ_[p]) = (p : ℚ_[p]) ^ k * ((w : ℤ_[p]) : ℚ_[p])) :
     unitsEquivIntProd ℚ_[p] (padicPrimeUnit p)
-      ((isUniformizer_def _).1 (Padic.isUniformizer_natCast_self p)) x =
+      (normalizedValuation_padicPrimeUnit p) x =
         (.ofAdd k, padicIntegerUnitToFiltration p w) := by
   have hx_units : x = (padicPrimeUnit p) ^ k * padicIntegerUnitToFiltration p w := by
     apply Units.ext
     simpa [padicPrimeUnit, coe_padicIntegerUnitToFiltration] using hx
   rw [hx_units]
   have h := (unitsEquivIntProd ℚ_[p] (padicPrimeUnit p)
-    ((isUniformizer_def _).1 (Padic.isUniformizer_natCast_self p))).apply_symm_apply
+    (normalizedValuation_padicPrimeUnit p)).apply_symm_apply
       (.ofAdd k, padicIntegerUnitToFiltration p w)
   simpa only [unitsEquivIntProd_symm_apply, toAdd_ofAdd] using h
 
@@ -126,7 +132,7 @@ def cyclotomicSymbol (m : ℕ) [NeZero m] (p : ℕ) [Fact p.Prime] :
   hprimary.unitsEquivProd.symm.toMonoidHom.comp <|
     (cyclotomicSymbolComponents m p).comp <|
       (unitsEquivIntProd ℚ_[p] (padicPrimeUnit p)
-        ((isUniformizer_def _).1 (Padic.isUniformizer_natCast_self p))).toMonoidHom
+        (normalizedValuation_padicPrimeUnit p)).toMonoidHom
 
 /-- On a prime-power divisor `p ^ j` of the modulus, the explicit local cyclotomic symbol is the
 inverse of the reduction of the p-adic unit part. -/
@@ -143,7 +149,7 @@ theorem unitsMap_cyclotomicSymbol_primePow (m : ℕ) [NeZero m] (p : ℕ) [Fact 
   have hjprimary : p ^ j ∣ p ^ padicValNat p m := pow_dvd_pow p hjle
   have hsplit :
       (unitsEquivIntProd ℚ_[p] (padicPrimeUnit p)
-        ((isUniformizer_def _).1 (Padic.isUniformizer_natCast_self p))).toMulEquiv x =
+        (normalizedValuation_padicPrimeUnit p)).toMulEquiv x =
           (.ofAdd k, padicIntegerUnitToFiltration p w) :=
     unitsEquivIntProd_eq_of_padic_decomposition p x k w hx
   have hmap : ZMod.unitsMap hj =
@@ -176,7 +182,7 @@ theorem unitsMap_cyclotomicSymbol_of_coprime (m : ℕ) [NeZero m] (p : ℕ) [Fac
       (hcop'.mul_dvd_of_dvd_of_dvd hprimary.dvd hd)
   have hsplit :
       (unitsEquivIntProd ℚ_[p] (padicPrimeUnit p)
-        ((isUniformizer_def _).1 (Padic.isUniformizer_natCast_self p))).toMulEquiv x =
+        (normalizedValuation_padicPrimeUnit p)).toMulEquiv x =
           (.ofAdd k, padicIntegerUnitToFiltration p w) :=
     unitsEquivIntProd_eq_of_padic_decomposition p x k w hx
   have hmap : ZMod.unitsMap hd =
