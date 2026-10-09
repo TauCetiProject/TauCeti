@@ -18,9 +18,10 @@ convention `TotalComplexShape (ComplexShape.down ℕ) (ComplexShape.down ℕ) (C
 
 An augmentation `ε : K.X 0 ⟶ E` of the column `0` by a chain complex `E`, that is a chain map
 vanishing on the image of the horizontal differential `K.d 1 0`, induces a chain map
-`HomologicalComplex₂.totalAugmentation` from the total complex to `E`. It is the map whose being a
-quasi-isomorphism expresses that the augmented rows `⋯ ⟶ (K.X 1).X q ⟶ (K.X 0).X q ⟶ E.X q` are
-exact, as for the Čech complex of a cover or an acyclic resolution.
+`HomologicalComplex₂.totalAugmentation` from the total complex to `E`. Exactness of the augmented
+rows `⋯ ⟶ (K.X 1).X q ⟶ (K.X 0).X q ⟶ E.X q` is a sufficient condition for this map to be a
+quasi-isomorphism, as for the Čech complex of a cover or an acyclic resolution; the converse
+fails in general, and neither direction is proved here.
 
 ## Main definitions
 
@@ -77,18 +78,18 @@ def totalAugmentation : K.total (ComplexShape.down ℕ) ⟶ E where
     rcases p with _ | p
     · obtain rfl : q = n + 1 := by simpa using h
       rw [d₁_eq_zero _ _ _ _ _ (by simp), zero_comp, zero_add,
-        d₂_eq K _ 0 (show (ComplexShape.down ℕ).Rel (n + 1) n by simp) n (by simp)]
+        d₂_eq K _ 0 (ComplexShape.down_mk _ _ rfl) n (by simp)]
       simp [totalAugmentationAux]
     · have h' : ComplexShape.π (ComplexShape.down ℕ) (ComplexShape.down ℕ) (ComplexShape.down ℕ)
           (p, q) = n := by
         simp at h ⊢
         omega
-      rw [d₁_eq K _ (show (ComplexShape.down ℕ).Rel (p + 1) p by simp) q n h']
+      rw [d₁_eq K _ (ComplexShape.down_mk _ _ rfl) q n h']
       have h₂ : K.d₂ (ComplexShape.down ℕ) (p + 1) q n ≫
           K.totalDesc (K.totalAugmentationAux ε n) = 0 := by
         rcases q with _ | q
         · rw [d₂_eq_zero _ _ _ _ _ (by simp), zero_comp]
-        · rw [d₂_eq K _ (p + 1) (show (ComplexShape.down ℕ).Rel (q + 1) q by simp) n
+        · rw [d₂_eq K _ (p + 1) (ComplexShape.down_mk _ _ rfl) n
             (by simp at h ⊢; omega)]
           simp [totalAugmentationAux]
       rw [h₂, add_zero]

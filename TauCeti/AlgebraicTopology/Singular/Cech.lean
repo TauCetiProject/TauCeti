@@ -39,11 +39,11 @@ neither is proved in this file.
 
 ## Main definitions
 
-* `TopCat.cechSingularChains U R`: the functor `s ↦ C(U_s; R)` on finite sets of indices.
-* `TopCat.cechDoubleComplex U R`: the Čech double complex of singular chains of `U`.
-* `TopCat.cechAugmentation U R`: the augmentation of its column `p = 0` to `C(X; R)`, vanishing on
-  the image of the horizontal differential (`TopCat.cechDoubleComplex_d_comp_cechAugmentation`).
-* `TopCat.cechTotalAugmentation U R`: the induced chain map from the total complex to `C(X; R)`.
+* `TauCeti.cechSingularChains U R`: the functor `s ↦ C(U_s; R)` on finite sets of indices.
+* `TauCeti.cechDoubleComplex U R`: the Čech double complex of singular chains of `U`.
+* `TauCeti.cechAugmentation U R`: the augmentation of its column `p = 0` to `C(X; R)`, vanishing on
+  the image of the horizontal differential (`TauCeti.cechDoubleComplex_d_comp_cechAugmentation`).
+* `TauCeti.cechTotalAugmentation U R`: the induced chain map from the total complex to `C(X; R)`.
 
 ## References
 
@@ -60,7 +60,7 @@ open CategoryTheory Limits Opposite TopologicalSpace AlgebraicTopology
 
 universe w v u
 
-namespace TopCat
+namespace TauCeti
 
 attribute [local instance] hasFiniteCoproducts_of_hasCoproducts
 
@@ -134,4 +134,4 @@ abbrev cechTotalAugmentation :
   (cechDoubleComplex U R).totalAugmentation (cechAugmentation U R)
     (cechDoubleComplex_d_comp_cechAugmentation U R)
 
-end TopCat
+end TauCeti

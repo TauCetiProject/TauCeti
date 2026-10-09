@@ -37,7 +37,8 @@ augmentation `∑ᵢ F({i}) ⟶ F(∅)`.
 ## Main definitions
 
 * `CategoryTheory.Functor.orderedCechComplex F`: the ordered Čech complex of `F`; its
-  differential is characterised on summands by `Functor.ι_orderedCechComplex_d`.
+  differential is characterised on summands by `Functor.ι_orderedCechComplex_d`, and it vanishes
+  from the cardinality of a finite index type on (`Functor.isZero_orderedCechComplex_X`).
 * `CategoryTheory.orderedCechComplexFunctor C ι`: the ordered Čech complex as a functor of `F`.
 * `CategoryTheory.Functor.orderedCechAugmentation F`: the augmentation to `F(∅)`, placed in
   degree `0`, which restricts each summand `F({i})` to `F(∅)`.
@@ -187,6 +188,15 @@ lemma ι_orderedCechComplexDesc {p : ℕ} {A : C}
 lemma orderedCechComplex_hom_ext {p : ℕ} {A : C} {f g : F.orderedCechComplex.X p ⟶ A}
     (h : ∀ s, F.orderedCechComplexι s ≫ f = F.orderedCechComplexι s ≫ g) : f = g :=
   Sigma.hom_ext _ _ h
+
+/-- The ordered Čech complex vanishes in the degrees `p` at least the cardinality of a finite index
+type, as there is no set of `p + 1` indices. -/
+lemma isZero_orderedCechComplex_X [Fintype ι] {p : ℕ} (hp : Fintype.card ι ≤ p) :
+    IsZero (F.orderedCechComplex.X p) := by
+  rw [IsZero.iff_id_eq_zero]
+  ext s
+  have := s.2 ▸ card_le_univ s.1
+  omega
 
 private lemma orderedCechComplex_d (p : ℕ) :
     F.orderedCechComplex.d (p + 1) p = F.orderedCechD p := by
