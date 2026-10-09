@@ -12,6 +12,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapAlong
 public import TauCeti.FieldTheory.FunctionField.Divisor.Principal
 -- Proof-only: a valuation with no pole at `x` has no pole on the coordinate ring.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.CoordinateRingIntegral
+-- Proof-only: the place of `f P` restricts to a valuation equivalent to the place of `P`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint.Reduction
 -- Proof-only: a valuation bounded on a Dedekind domain is equivalent to an adic valuation, and a
 -- generating set of a height one prime contains an element of order one.
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
@@ -83,20 +85,6 @@ theorem isTrivialOn_comap_valuation_map (w : Place K (W.map f).FunctionField) :
     rw [Valuation.comap_apply, map_algebraMap]
     exact Valuation.IsTrivialOn.eq_one (f a) ((map_ne_zero f).mpr ha)
 
-/-- `f` carries the function `x - x₀` on `W` to the function `x - f x₀` on `W.map f`. -/
-private theorem map_algebraMap_XClass (x : F) :
-    map W f (algebraMap W.CoordinateRing W.FunctionField (CoordinateRing.XClass W x)) =
-      algebraMap (W.map f).CoordinateRing (W.map f).FunctionField
-        (CoordinateRing.XClass (W.map f) (f x)) := by
-  rw [algebraMap_XClass, algebraMap_XClass, map_sub, map_genericX, map_algebraMap]
-
-/-- `f` carries the function `y - y₀` on `W` to the function `y - f y₀` on `W.map f`. -/
-private theorem map_algebraMap_YClass (y : F) :
-    map W f (algebraMap W.CoordinateRing W.FunctionField (CoordinateRing.YClass W (C y))) =
-      algebraMap (W.map f).CoordinateRing (W.map f).FunctionField
-        (CoordinateRing.YClass (W.map f) (C (f y))) := by
-  rw [algebraMap_YClass, algebraMap_YClass, map_sub, map_genericY, map_algebraMap]
-
 /-- **The place at infinity of `W.map f` restricts to the place at infinity of `W`.** -/
 -- The two are equivalent, and `x / y` has order one at both.
 private theorem comap_valuation_infinity_map :
@@ -114,73 +102,26 @@ private theorem comap_valuation_infinity_map :
 
 variable [W.IsElliptic]
 
-/-- The functions `x - x₀` and `y - y₀` vanish at the point `(x₀, y₀)`. -/
-private theorem valuation_ofPrime_pointPlace_lt_one {L : Type*} [Field L]
-    {V : WeierstrassCurve.Affine L} [V.IsElliptic] {x y : L} (h : V.Equation x y) :
-    (Place.ofPrime L V.FunctionField (CoordinateRing.pointPlace h)).valuation
-        (algebraMap V.CoordinateRing V.FunctionField (CoordinateRing.XClass V x)) < 1 ∧
-      (Place.ofPrime L V.FunctionField (CoordinateRing.pointPlace h)).valuation
-        (algebraMap V.CoordinateRing V.FunctionField (CoordinateRing.YClass V (C y))) < 1 := by
-  simp only [Place.valuation_ofPrime_algebraMap_lt_one_iff, CoordinateRing.pointPlace_asIdeal,
-    CoordinateRing.XYIdeal]
-  exact ⟨Ideal.subset_span (Set.mem_insert _ _),
-    Ideal.subset_span (Set.mem_insert_of_mem _ rfl)⟩
-
-/-- The function `x` has no pole at an affine point. -/
-private theorem valuation_ofPrime_pointPlace_X_le_one {L : Type*} [Field L]
-    {V : WeierstrassCurve.Affine L} [V.IsElliptic] {x y : L} (h : V.Equation x y) :
-    (Place.ofPrime L V.FunctionField (CoordinateRing.pointPlace h)).valuation
-      (algebraMap L[X] V.FunctionField X) ≤ 1 := by
-  rw [IsScalarTower.algebraMap_apply L[X] V.CoordinateRing V.FunctionField,
-    Place.valuation_ofPrime]
-  exact HeightOneSpectrum.valuation_le_one _ _
-
 /-- **The place of `f P` restricts to the place of `P`**, at an affine point `P`. -/
--- The restriction is centred at `(x - x₀, y - y₀)`, so it is equivalent to the place of `P`; it is
--- normalized because one of `x - f x₀` and `y - f y₀` is a uniformizer at `f P`.
+-- The restriction is equivalent to the place of `P`; it is normalized because one of `x - f x₀`
+-- and `y - f y₀`, both images of functions on `W`, is a uniformizer at `f P`.
 private theorem comap_valuation_ofPrime_pointPlace_map {x y : F} (h : W.Nonsingular x y) :
     (Place.ofPrime K (W.map f).FunctionField
         (CoordinateRing.pointPlace
           ((W.map_nonsingular f.injective x y).mpr h).left)).valuation.comap (map W f) =
       (Place.ofPrime F W.FunctionField (CoordinateRing.pointPlace h.left)).valuation := by
   have h' := (W.map_nonsingular f.injective x y).mpr h
-  set w := Place.ofPrime K (W.map f).FunctionField (CoordinateRing.pointPlace h'.left)
-  set u := w.valuation.comap (map W f) with hu
-  have := isTrivialOn_comap_valuation_map W f w
-  -- `x - x₀` and `y - y₀` vanish at the restriction, and `x` has no pole there
-  have hX : u (algebraMap W.CoordinateRing W.FunctionField (CoordinateRing.XClass W x)) < 1 := by
-    rw [hu, Valuation.comap_apply, map_algebraMap_XClass]
-    exact (valuation_ofPrime_pointPlace_lt_one h'.left).1
-  have hY :
-      u (algebraMap W.CoordinateRing W.FunctionField (CoordinateRing.YClass W (C y))) < 1 := by
-    rw [hu, Valuation.comap_apply, map_algebraMap_YClass]
-    exact (valuation_ofPrime_pointPlace_lt_one h'.left).2
-  have hle : u (algebraMap F[X] W.FunctionField X) ≤ 1 := by
-    rw [hu, Valuation.comap_apply, ← genericX_eq_algebraMap, map_genericX, genericX_eq_algebraMap]
-    exact valuation_ofPrime_pointPlace_X_le_one h'.left
-  have : u.IsNontrivial := ⟨⟨_, (Valuation.ne_zero_iff u).mpr
-    fun h0 ↦ CoordinateRing.XClass_ne_zero (W' := W) x
-      (IsFractionRing.injective W.CoordinateRing W.FunctionField (h0.trans (map_zero _).symm)),
-    hX.ne⟩⟩
-  obtain ⟨Q, hQu, hQmem⟩ := Valuation.exists_heightOneSpectrum_isEquiv_of_le_one W.CoordinateRing
-    u (Valuation.algebraMap_coordinateRing_le_one u hle)
-  have hQ := CoordinateRing.eq_pointPlace_of_mem_asIdeal h.left ((hQmem _).mpr hX)
-    ((hQmem _).mpr hY)
-  -- one of `x - f x₀` and `y - f y₀` has order one at `f P`, so the restriction is normalized
   obtain ⟨r, hr, hr1⟩ := (CoordinateRing.pointPlace h'.left).exists_mem_intValuation_eq_exp_neg_one
     (s := {CoordinateRing.XClass (W.map f) (f x), CoordinateRing.YClass (W.map f) (C (f y))})
     (by rw [CoordinateRing.pointPlace_asIdeal, CoordinateRing.XYIdeal])
-  have hsurj : Function.Surjective u := by
+  obtain ⟨r₀, rfl⟩ : ∃ r₀, CoordinateRing.map W f r₀ = r := by
     rcases hr with rfl | rfl
-    · refine Valuation.surjective_of_map_eq_exp_neg_one u (t := algebraMap W.CoordinateRing
-        W.FunctionField (CoordinateRing.XClass W x)) ?_
-      rw [hu, Valuation.comap_apply, map_algebraMap_XClass, Place.valuation_ofPrime_algebraMap, hr1]
-    · refine Valuation.surjective_of_map_eq_exp_neg_one u (t := algebraMap W.CoordinateRing
-        W.FunctionField (CoordinateRing.YClass W (C y))) ?_
-      rw [hu, Valuation.comap_apply, map_algebraMap_YClass, Place.valuation_ofPrime_algebraMap, hr1]
-  refine Valuation.eq_of_isEquiv_of_surjective hsurj (Place.valuation_surjective _) ?_
-  rw [Place.valuation_ofPrime, ← hQ]
-  exact hQu.symm
+    · exact ⟨_, CoordinateRing.map_XClass W f x⟩
+    · exact ⟨CoordinateRing.YClass W (C y), by rw [CoordinateRing.map_YClass, Polynomial.map_C]⟩
+  refine Valuation.eq_of_isEquiv_of_surjective (Valuation.surjective_of_map_eq_exp_neg_one _
+    (t := algebraMap W.CoordinateRing W.FunctionField r₀) ?_) (Place.valuation_surjective _)
+    (isEquiv_comap_pointPlace_map W f h.left)
+  rw [Valuation.comap_apply, map_algebraMap_coordinateRing, Place.valuation_ofPrime_algebraMap, hr1]
 
 /-- **The place of `f P` restricts to the place of `P`**: for every function `z` on `W`, the value
 of `f^* z` at `f P` is the value of `z` at `P`. -/
@@ -235,21 +176,20 @@ theorem eq_pointEquivDegreeOnePlace_mapAlong_of_isEquiv (w : Place K (W.map f).F
     rw [coe_pointEquivDegreeOnePlace_zero, Place.valuation_infinity] at h
     rw [← Point.zero_def, Point.mapAlong_zero, Point.zero_def, coe_pointEquivDegreeOnePlace_zero]
     have hx := h.one_lt_iff_one_lt.mpr (one_lt_infinityPlace_X W)
-    rw [Valuation.comap_apply, ← genericX_eq_algebraMap, map_genericX,
-      genericX_eq_algebraMap] at hx
+    rw [Valuation.comap_apply, map_algebraMap_X] at hx
     refine Place.eq_of_isEquiv ?_
     rw [Place.valuation_infinity]
     exact isEquiv_infinityPlace_of_one_lt _ hx
   · -- `x` has no pole at `w`, and `x - f x₀`, `y - f y₀` vanish there
     rw [coe_pointEquivDegreeOnePlace_some] at h
     rw [Point.mapAlong_some, coe_pointEquivDegreeOnePlace_some]
-    have hx := h.le_one_iff_le_one.mpr (valuation_ofPrime_pointPlace_X_le_one hP.left)
-    rw [Valuation.comap_apply, ← genericX_eq_algebraMap, map_genericX,
-      genericX_eq_algebraMap] at hx
-    have hX := h.lt_one_iff_lt_one.mpr (valuation_ofPrime_pointPlace_lt_one hP.left).1
-    have hY := h.lt_one_iff_lt_one.mpr (valuation_ofPrime_pointPlace_lt_one hP.left).2
-    rw [Valuation.comap_apply, map_algebraMap_XClass] at hX
-    rw [Valuation.comap_apply, map_algebraMap_YClass] at hY
+    have hx := h.le_one_iff_le_one.mpr
+      ((Place.exists_eq_ofPrime_iff_valuation_X_le_one _).mp ⟨_, rfl⟩)
+    rw [Valuation.comap_apply, map_algebraMap_X] at hx
+    have hX := h.lt_one_iff_lt_one.mpr (valuation_pointPlace_genericX_sub_lt_one W hP.left)
+    have hY := h.lt_one_iff_lt_one.mpr (valuation_pointPlace_genericY_sub_lt_one W hP.left)
+    rw [Valuation.comap_apply, map_sub, map_genericX, map_algebraMap, ← algebraMap_XClass] at hX
+    rw [Valuation.comap_apply, map_sub, map_genericY, map_algebraMap, ← algebraMap_YClass] at hY
     obtain ⟨Q, rfl⟩ := (Place.exists_eq_ofPrime_iff_valuation_X_le_one w).mpr hx
     rw [CoordinateRing.eq_pointPlace_of_mem_asIdeal _
       ((Place.valuation_ofPrime_algebraMap_lt_one_iff _ _ _).mp hX)

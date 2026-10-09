@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
+public import TauCeti.Algebra.Module.Torsion.Snake
 
 /-!
 # The point map induced by a ring homomorphism
@@ -34,6 +35,8 @@ the points of the curve `W.map f` over `S`, with no fields and no tower involved
   sends `(x, y)` to `(x ^ (p ^ n), y ^ (p ^ n))`.
 * `WeierstrassCurve.Affine.Point.mapAlong_add` and `mapAlong_zsmul`: over fields the transport is
   additive and commutes with integer multiples.
+* `WeierstrassCurve.torsionMapAlong`: over fields, its restriction `E[N] → (W.map f)[N]` to the
+  `N`-torsion.
 
 `Affine.Point.map` is already an `AddMonoidHom`, so installing `f.toAlgebra` locally and rewriting
 with `mapAlong_eq_map` gives `map_add`, `map_zero` and `map_zsmul` from Mathlib directly, including
@@ -193,6 +196,23 @@ theorem _root_.WeierstrassCurve.Affine.Point.mapAlong_zsmul (n : ℤ) (P : W.toA
       n • WeierstrassCurve.Affine.Point.mapAlong f hf P :=
   map_zsmul (AddMonoidHom.mk' (WeierstrassCurve.Affine.Point.mapAlong f hf)
     (WeierstrassCurve.Affine.Point.mapAlong_add f hf)) n P
+
+variable (W) in
+/-- **The `N`-torsion carried along a homomorphism of fields**: the point map `P ↦ f P` of
+`WeierstrassCurve.Affine.Point.mapAlong`, restricted to `E[N]`. -/
+noncomputable def _root_.WeierstrassCurve.torsionMapAlong (N : ℤ) :
+    Submodule.torsionBy ℤ W.toAffine.Point N →+ Submodule.torsionBy ℤ (W.map f).toAffine.Point N :=
+  (torsionByMap N (AddMonoidHom.mk' (WeierstrassCurve.Affine.Point.mapAlong f f.injective)
+    (WeierstrassCurve.Affine.Point.mapAlong_add f f.injective)).toIntLinearMap).toAddMonoidHom
+
+variable (W) in
+/-- The point underlying the image of an `N`-torsion point is its image under the point map. -/
+@[simp]
+theorem _root_.WeierstrassCurve.coe_torsionMapAlong_apply (N : ℤ)
+    (S : Submodule.torsionBy ℤ W.toAffine.Point N) :
+    (W.torsionMapAlong f N S : (W.map f).toAffine.Point) =
+      (S : W.toAffine.Point).mapAlong f f.injective := by
+  simp [WeierstrassCurve.torsionMapAlong]
 
 end FieldHom
 
