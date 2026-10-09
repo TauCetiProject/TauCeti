@@ -5,12 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.PGroup
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.PGroup.FirstCohomology
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.Basic
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Basic
 import Mathlib.GroupTheory.Nilpotent
-import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Cyclic.FirstCohomology
 import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Cyclic.SecondCohomology
 import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Inflation
 import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClosedSubgroup
@@ -105,17 +101,15 @@ end Step
 variable {V : Subgroup G} [V.Normal]
 
 /-- For a profinite group `G` with `scd_p G ≤ 2` and an open normal subgroup `V` whose quotient
-`G ⧸ V` is a `p`-group, `H¹(G ⧸ V, V^ab(p)) = 0`, and `u_{G/V}(p)` generates
+`G ⧸ V` is a `p`-group, `u_{G/V}(p)` generates
 `H²(G ⧸ V, V^ab(p))`, a group of order `#(G ⧸ V)`. -/
-private theorem abelianizationProPClass_of_isPGroup (hp : p.Prime)
+theorem abelianizationProPClass_generates_of_isPGroup (hp : p.Prime)
     (h : strictCohomologicalDimensionAt.{u} p G ≤ 2) (hV : IsOpen (V : Set G))
     (hpV : IsPGroup p (G ⧸ V)) :
-    Subsingleton (H1 (G ⧸ V) (Additive (abelianizationProP p G V))) ∧
-      AddSubgroup.zmultiples (abelianizationProPClass p G V hV) = ⊤ ∧
-        Nat.card (H2 (G ⧸ V) (Additive (abelianizationProP p G V))) = Nat.card (G ⧸ V) := by
-  -- Both conclusions are proved together by induction on `#(G ⧸ V)`, since the step in degree two
-  -- needs the vanishing of `H¹` for a smaller quotient. A nontrivial `p`-group `G ⧸ V` has a
-  -- normal subgroup of index `p`, whose preimage `W` satisfies `#(G ⧸ W) = p`: the prime-order
+    AddSubgroup.zmultiples (abelianizationProPClass p G V hV) = ⊤ ∧
+      Nat.card (H2 (G ⧸ V) (Additive (abelianizationProP p G V))) = Nat.card (G ⧸ V) := by
+  -- Induct on `#(G ⧸ V)`, using the standalone H¹ vanishing theorem for the smaller quotient.
+  -- A nontrivial `p`-group `G ⧸ V` has a normal subgroup of index `p`, whose preimage `W` satisfies `#(G ⧸ W) = p`: the prime-order
   -- case applies to `W ◁ G`, the induction hypothesis to `V.subgroupOf W ◁ W`, and the step
   -- lemmas combine them.
   induction hn : Nat.card (G ⧸ V) using Nat.strong_induction_on generalizing G V with
@@ -123,7 +117,7 @@ private theorem abelianizationProPClass_of_isPGroup (hp : p.Prime)
   have : Finite (G ⧸ V) := V.quotient_finite_of_isOpen hV
   rcases subsingleton_or_nontrivial (G ⧸ V) with _ | _
   · rw [← hn, Nat.card_of_subsingleton (1 : G ⧸ V), Nat.card_of_subsingleton (0 : H2 _ _)]
-    exact ⟨inferInstance, Subsingleton.elim _ _, rfl⟩
+    exact ⟨Subsingleton.elim _ _, rfl⟩
   -- Pull a normal subgroup of index `p` of the nontrivial `p`-group `G ⧸ V` back to `W`.
   have : Fact p.Prime := ⟨hp⟩
   have : Group.IsNilpotent (G ⧸ V) := hpV.isNilpotent
@@ -145,24 +139,14 @@ private theorem abelianizationProPClass_of_isPGroup (hp : p.Prime)
     rw [← hn, Subgroup.card_eq_card_quotient_mul_card_subgroup C, ← Subgroup.index_eq_card,
       hCindex, Nat.card_congr eWV.toEquiv]
   have : CompactSpace W := isCompact_iff_compactSpace.mp (W.isClosed_of_isOpen hW).isCompact
-  obtain ⟨_, hWV2, hWVcard⟩ := ih _ (by rw [hn']; exact lt_mul_left Nat.card_pos hp.one_lt)
+  obtain ⟨hWV2, hWVcard⟩ := ih _ (by rw [hn']; exact lt_mul_left Nat.card_pos hp.one_lt)
     ((strictCohomologicalDimensionAt_le_of_isClosed (W.isClosed_of_isOpen hW)).trans h)
     (W.subgroupOf_isOpen V hV) ((hpV.to_subgroup C).of_equiv eWV.symm) rfl
-  have := subsingleton_h1_abelianizationProP_of_card_eq_prime hp h hW hWcard
+  have := subsingleton_h1_abelianizationProP_of_isPGroup hp
+    ((strictCohomologicalDimensionAt_le_of_isClosed (W.isClosed_of_isOpen hW)).trans h)
+    (W.subgroupOf_isOpen V hV) ((hpV.to_subgroup C).of_equiv eWV.symm)
   have hW2 := abelianizationProPClass_generates_of_card_eq_prime hp h hW hWcard
   have h2 := abelianizationProPClass_generates_of_le hp h hVW hV hW2.1 hWV2
-  exact ⟨subsingleton_h1_abelianizationProP_of_le hp h hVW hV, h2.1,
-    by rw [h2.2, hW2.2, hWVcard, hn']⟩
-
-/-- **The class of the pro-`p` class module generates `H²` for a `p`-group quotient**
-(NSW (3.6.4), (ii) ⇒ (iii), in degree two and `p`-primary form). For a profinite group `G` with
-`scd_p G ≤ 2` and an open normal subgroup `V` whose quotient `G ⧸ V` is a `p`-group, the class
-`u_{G/V}(p)` generates `H²(G ⧸ V, V^ab(p))`, and this group has order `#(G ⧸ V)`. -/
-theorem abelianizationProPClass_generates_of_isPGroup (hp : p.Prime)
-    (h : strictCohomologicalDimensionAt.{u} p G ≤ 2) (hV : IsOpen (V : Set G))
-    (hpV : IsPGroup p (G ⧸ V)) :
-    AddSubgroup.zmultiples (abelianizationProPClass p G V hV) = ⊤ ∧
-      Nat.card (H2 (G ⧸ V) (Additive (abelianizationProP p G V))) = Nat.card (G ⧸ V) :=
-  (abelianizationProPClass_of_isPGroup hp h hV hpV).2
+  exact ⟨h2.1, by rw [h2.2, hW2.2, hWVcard, hn']⟩
 
 end TauCeti

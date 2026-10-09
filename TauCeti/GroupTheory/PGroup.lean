@@ -233,9 +233,7 @@ theorem _root_.IsPGroup.index_eq_prime_of_isCoatom [Finite G] [hp : Fact p.Prime
   exact (Subgroup.index_eq_card (H := H)).trans <|
     (Nat.card_congr QuotientGroup.quotientBot.toEquiv).symm.trans hKindex
 
-/-- **A nontrivial finite `p`-group has a central element of order `p`.** The centre is a
-nontrivial `p`-group, so Cauchy's theorem applies to it. Its cyclic subgroup is a normal subgroup
-of order `p`, which is the usual inductive step for finite `p`-groups. -/
+/-- A nontrivial finite `p`-group has an element in its centre of order `p`. -/
 theorem _root_.IsPGroup.exists_mem_center_orderOf_eq_prime [Fact p.Prime] [Finite G]
     [Nontrivial G] (hG : IsPGroup p G) : ∃ z ∈ Subgroup.center G, orderOf z = p := by
   have := hG.center_nontrivial
