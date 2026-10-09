@@ -61,6 +61,7 @@ theorem realCliffordUnitLevelAntipode_antipode {n : ℕ} (x : realCliffordUnitLe
   simp only [coe_realCliffordUnitLevelAntipode, neg_neg]
 
 /-- A point of the compact real Clifford unit level differs from its antipode. -/
+@[simp]
 theorem ne_realCliffordUnitLevelAntipode {n : ℕ} (x : realCliffordUnitLevel n) :
     x ≠ realCliffordUnitLevelAntipode x := by
   intro h
