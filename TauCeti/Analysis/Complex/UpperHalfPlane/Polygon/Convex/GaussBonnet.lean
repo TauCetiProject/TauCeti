@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.NormalForm
+import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Sides
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.GaussBonnet
 import TauCeti.Data.Fin.Basic
 
@@ -37,6 +38,7 @@ these statements the vertices are indexed by natural numbers `k`, cast to `Fin n
 * `ConvexPolygon.volume_carrier_ne_top`, `ConvexPolygon.toReal_volume_carrier`: the area is
   finite, equal to the angular defect.
 * `ConvexPolygon.sum_interiorAngle_le`: the angular defect is nonnegative.
+* `ConvexPolygon.volume_frontier_carrier`: the boundary of a convex polygon is null.
 * `ConvexPolygon.volume_carrier_of_forall_eq_inr`: an ideal polygon has area `(n - 2) π`;
   `ConvexPolygon.volume_carrier_three_of_forall_eq_inr`: an ideal triangle has area `π`.
 * `ConvexPolygon.volume_carrier_three_of_vertex_one_of_vertex_two`: a triangle with two ideal
@@ -238,6 +240,13 @@ theorem sum_interiorAngle_le : ∑ i, P.interiorAngle i ≤ (n - 2) * π := by
 theorem volume_carrier_ne_top : volume P.carrier ≠ ⊤ := by
   rw [volume_carrier]
   exact ENNReal.ofReal_ne_top
+
+/-- The boundary of a convex polygon is a null set: it is the union of finitely many sides, each
+contained in a geodesic line. -/
+theorem volume_frontier_carrier : volume (frontier P.carrier) = 0 := by
+  rw [P.frontier_carrier]
+  exact measure_iUnion_null fun i ↦
+    measure_mono_null (P.side_subset_range_sideGeodesic i) (volume_range_geodesicLine _)
 
 /-- The area of a convex polygon, as a real number, is its angular defect. -/
 theorem toReal_volume_carrier :
