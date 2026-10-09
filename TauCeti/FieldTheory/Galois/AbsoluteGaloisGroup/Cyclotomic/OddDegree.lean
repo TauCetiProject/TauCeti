@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Surjectivity
 public import TauCeti.NumberTheory.LocalField.RootsOfUnity.Basic
 
+import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Range
 import TauCeti.NumberTheory.Cyclotomic.Irreducible
 
 /-!
@@ -17,8 +18,10 @@ This file shows that the local cyclotomic character of a finite odd-degree exten
 full image in `ℤ₂ˣ`. The base case `Φ₁` is linear, while for positive exponents the translated
 `2`-power cyclotomic polynomial over `ℤ₂` is Eisenstein.
 
-The predicate `IsDyadicOddCase` packages the two numerical invariants used by the odd dyadic case
-of the local Galois-group classification. See Serre, *Local Fields*, Chapter IV, §4, for the
+The full image forces the absence of a primitive fourth root of unity, which would put the image
+inside `1 + 4ℤ₂`. So the predicate `IsDyadicOddCase`, which packages the two numerical invariants
+used by the odd dyadic case of the local Galois-group classification, is equivalent to odd degree
+(`TauCeti.isDyadicOddCase_iff_odd_finrank`). See Serre, *Local Fields*, Chapter IV, §4, for the
 cyclotomic extensions of local fields.
 -/
 
@@ -48,6 +51,16 @@ theorem range_localCyclotomicCharacter_of_odd_finrank
   | succ n =>
       rw [Nat.totient_prime_pow Nat.prime_two (Nat.succ_pos n)]
       simpa using (Nat.coprime_two_left.mpr hodd).pow_left n
+
+/-- An extension of `ℚ₂` of odd degree contains no primitive fourth root of unity. Such a root
+would put the image of the cyclotomic character inside `U^(2) = 1 + 4ℤ₂`, which does not contain
+`-1`, while in odd degree that image is all of `ℤ₂ˣ`. -/
+theorem not_exists_isPrimitiveRoot_four_of_odd_finrank (hodd : Odd (Module.finrank ℚ_[2] K)) :
+    ¬ ∃ ζ : K, IsPrimitiveRoot ζ 4 := fun hmu ↦ by
+  have hle :=
+    range_localCyclotomicCharacter_le_unitsPrincipal (p := 2) (n := 2) (by simpa using hmu)
+  rw [range_localCyclotomicCharacter_of_odd_finrank K hodd] at hle
+  exact absurd (neg_one_mem_unitsPrincipal_two_iff.mp (hle (Subgroup.mem_top _))) (by norm_num)
 
 variable [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
 
@@ -94,6 +107,18 @@ omit [FiniteDimensional ℚ_[2] K] in
 theorem IsDyadicOddCase.odd_finrank (hcase : IsDyadicOddCase K) :
     Odd (Module.finrank ℚ_[2] K) :=
   ((isDyadicOddCase_iff (K := K)).mp hcase).2
+
+omit [FiniteDimensional ℚ_[2] K] in
+/-- A finite extension of `ℚ₂` is in the odd dyadic case exactly when its degree is odd: odd degree
+already excludes a primitive fourth root of unity
+(`TauCeti.not_exists_isPrimitiveRoot_four_of_odd_finrank`), so that `q(K) = 2`. -/
+theorem isDyadicOddCase_iff_odd_finrank :
+    IsDyadicOddCase K ↔ Odd (Module.finrank ℚ_[2] K) := by
+  refine ⟨IsDyadicOddCase.odd_finrank K, fun hodd ↦ IsDyadicOddCase.mk K ?_ hodd⟩
+  have : FiniteDimensional ℚ_[2] K := .of_finrank_pos hodd.pos
+  intro _
+  exact not_not.mp fun h ↦ not_exists_isPrimitiveRoot_four_of_odd_finrank K hodd
+    ((localRootOfUnityOrder_ne_two_iff (by norm_num)).mp h)
 
 /-- In the odd dyadic case, the image of the local cyclotomic character is all of `ℤ₂ˣ`. -/
 theorem range_localCyclotomicCharacter_of_degree_odd (hcase : IsDyadicOddCase K) :
