@@ -32,9 +32,14 @@ particular, local equations can be shrunk into any neighbourhood
 on every affine open inside `U` is one on every open subset of `U`
 (`Scheme.isSMulRegular_map_of_forall_affineOpens`), and the pullback of a nonzerodivisor along a
 flat morphism to an affine scheme is a nonzerodivisor on every affine open
-(`Scheme.Hom.isSMulRegular_map_appTop`). A global function that is a nonzerodivisor generating
-the ideal on every affine open is a global equation of an effective Cartier divisor
-(`isEffectiveCartier_of_forall_ideal_eq_span`).
+(`Scheme.Hom.isSMulRegular_map_appTop`, and `Scheme.Hom.isSMulRegular_map_appTop_ΓSpecIso_inv`
+for a nonzerodivisor of a ring `R` pulled back along `X ⟶ Spec R`, through
+`Scheme.isSMulRegular_ΓSpecIso_inv`); both rest on
+`Scheme.Hom.isSMulRegular_appLE`. A global function that is a nonzerodivisor on every affine open
+is a global equation of an effective Cartier divisor
+(`isEffectiveCartier_ofIdealTop_span_singleton`); in particular, so is the pullback of a
+nonzerodivisor along a flat morphism to an affine scheme
+(`Scheme.Hom.isEffectiveCartier_ofIdealTop_span_appTop`).
 
 The empty closed subscheme is an effective Cartier divisor, with equation `1`. Equations
 need not generate proper ideals; a zero equation is permitted only on the empty scheme.
@@ -76,6 +81,15 @@ theorem Scheme.isSMulRegular_map_of_forall_affineOpens {U V : X.Opens} (hVU : V 
   simp only [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp, homOfLE_comp] at hres
   simpa only [smul_eq_mul] using hres
 
+/-- Along a flat morphism `f`, the image under `f.appLE` of a nonzerodivisor on an affine open `U`
+of the target is a nonzerodivisor on every affine open `V ⊆ f ⁻¹ᵁ U` of the source. -/
+theorem Scheme.Hom.isSMulRegular_appLE {Y : Scheme.{u}} (f : X ⟶ Y) [Flat f] {U : Y.Opens}
+    (hU : IsAffineOpen U) {V : X.Opens} (hV : IsAffineOpen V) (e : V ≤ f ⁻¹ᵁ U) {b : Γ(Y, U)}
+    (hb : IsSMulRegular Γ(Y, U) b) : IsSMulRegular Γ(X, V) (f.appLE U V e b) := by
+  let := (f.appLE U V e).hom.toAlgebra
+  have : Module.Flat Γ(Y, U) Γ(X, V) := f.flat_appLE hU hV e
+  simpa only [RingHom.algebraMap_toAlgebra] using hb.of_flat (S := Γ(X, V))
+
 /-- A nonzerodivisor on an affine open `U` restricts to a nonzerodivisor on every open subset
 `V ⊆ U`, affine or not. -/
 theorem IsAffineOpen.isSMulRegular_map {U V : X.Opens} (hU : IsAffineOpen U) (hVU : V ≤ U)
@@ -83,22 +97,42 @@ theorem IsAffineOpen.isSMulRegular_map {U V : X.Opens} (hU : IsAffineOpen U) (hV
     IsSMulRegular Γ(X, V) (X.presheaf.map (homOfLE hVU).op a) :=
   Scheme.isSMulRegular_map_of_forall_affineOpens hVU fun W hWU ↦ by
     -- The restriction `Γ(X, U) ⟶ Γ(X, W)` between affine opens is flat, so `a` stays regular on
-    -- `W`. `appLE` of the identity is the restriction along `W ≤ 𝟙 X ⁻¹ᵁ U`, and `𝟙 X ⁻¹ᵁ U = U`
-    -- holds by definition, so the algebra map is the restriction map.
+    -- `W`.
     have hWU' : W.1 ≤ (𝟙 X : X ⟶ X) ⁻¹ᵁ U := hWU
-    let := ((𝟙 X : X ⟶ X).appLE U W hWU').hom.toAlgebra
-    have : Module.Flat Γ(X, U) Γ(X, W) := Scheme.Hom.flat_appLE (𝟙 X) hU W.2 hWU'
-    exact ha.of_flat
+    have hres : (𝟙 X : X ⟶ X).appLE U W hWU' a = X.presheaf.map (homOfLE hWU).op a := by
+      -- `appLE` of the identity is the restriction along `W ≤ 𝟙 X ⁻¹ᵁ U`, and `𝟙 X ⁻¹ᵁ U = U`
+      -- holds by definition.
+      rfl
+    simpa only [hres] using (𝟙 X : X ⟶ X).isSMulRegular_appLE hU W.2 hWU' ha
 
 /-- Along a flat morphism to an affine scheme, the pullback of a nonzerodivisor restricts to a
 nonzerodivisor on every affine open of the source. -/
 theorem Scheme.Hom.isSMulRegular_map_appTop {Y : Scheme.{u}} [IsAffine Y] (f : X ⟶ Y) [Flat f]
     {b : Γ(Y, ⊤)} (hb : IsSMulRegular Γ(Y, ⊤) b) (U : X.affineOpens) :
     IsSMulRegular Γ(X, U) (X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op (f.appTop b)) := by
-  -- The algebra map of `f.appLE ⊤ U` is by definition `f.appTop` followed by restriction to `U`.
-  let := (f.appLE ⊤ U.1 le_top).hom.toAlgebra
-  have : Module.Flat Γ(Y, ⊤) Γ(X, U) := f.flat_appLE (isAffineOpen_top Y) U.2 le_top
-  exact hb.of_flat
+  have hres : f.appLE ⊤ U.1 le_top b =
+      X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op (f.appTop b) := by
+    -- `appLE` is `app` followed by restriction, `appTop` is `app ⊤`, and `f ⁻¹ᵁ ⊤ = ⊤` holds by
+    -- definition.
+    rfl
+  simpa only [hres] using f.isSMulRegular_appLE (isAffineOpen_top Y) U.2 le_top hb
+
+/-- A nonzerodivisor `π` of a ring `R` is a nonzerodivisor among the global functions on
+`Spec R`. -/
+theorem Scheme.isSMulRegular_ΓSpecIso_inv {R : Type u} [CommRing R] {π : R}
+    (hπ : IsSMulRegular R π) :
+    IsSMulRegular Γ(Spec (.of R), ⊤) ((Scheme.ΓSpecIso (.of R)).inv π) :=
+  (Equiv.isSMulRegular_congr (e := (Scheme.ΓSpecIso (.of R)).symm.commRingCatIsoToRingEquiv)
+    (r := π) (s := (Scheme.ΓSpecIso (.of R)).inv π)
+    fun b ↦ (Scheme.ΓSpecIso (.of R)).inv.hom.map_mul π b).mp hπ
+
+/-- The pullback of a nonzerodivisor `π` of `R` along a flat morphism `X ⟶ Spec R` restricts to a
+nonzerodivisor on every affine open of `X`. -/
+theorem Scheme.Hom.isSMulRegular_map_appTop_ΓSpecIso_inv {R : Type u} [CommRing R]
+    (f : X ⟶ Spec (.of R)) [Flat f] {π : R} (hπ : IsSMulRegular R π) (U : X.affineOpens) :
+    IsSMulRegular Γ(X, U) (X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op
+      (f.appTop ((Scheme.ΓSpecIso (.of R)).inv π))) :=
+  f.isSMulRegular_map_appTop (Scheme.isSMulRegular_ΓSpecIso_inv hπ) U
 
 end AlgebraicGeometry
 
@@ -143,26 +177,18 @@ theorem isEffectiveCartier_top (X : Scheme.{u}) :
     X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
   exact ⟨⟨U, hU⟩, hxU, 1, IsSMulRegular.one Γ(X, U), by simp⟩
 
-/-- On an affine scheme, a global nonzerodivisor cuts out an effective Cartier divisor.
-The equation may be a unit, in which case the closed subscheme is empty. -/
-theorem isEffectiveCartier_ofIdealTop_span_singleton [IsAffine X] (a : Γ(X, ⊤))
-    (ha : IsSMulRegular Γ(X, ⊤) a) : (ofIdealTop (Ideal.span {a})).IsEffectiveCartier := by
-  intro x
-  exact ⟨⟨⊤, isAffineOpen_top X⟩, Set.mem_univ x, a, ha, by simp⟩
-
-/-- If the restriction of a global function `a` to every affine open is a nonzerodivisor
-generating the ideal of `I` there, then `I` is an effective Cartier divisor with global equation
-`a`. -/
-theorem isEffectiveCartier_of_forall_ideal_eq_span {I : X.IdealSheafData} {a : Γ(X, ⊤)}
+/-- A global function whose restriction to every affine open is a nonzerodivisor cuts out an
+effective Cartier divisor, with global equation `a`. The equation may be a unit, in which case
+the closed subscheme is empty. -/
+theorem isEffectiveCartier_ofIdealTop_span_singleton (a : Γ(X, ⊤))
     (ha : ∀ U : X.affineOpens,
-      IsSMulRegular Γ(X, U) (X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op a))
-    (hIa : ∀ U : X.affineOpens,
-      I.ideal U = Ideal.span {X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op a}) :
-    I.IsEffectiveCartier := by
+      IsSMulRegular Γ(X, U) (X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op a)) :
+    (ofIdealTop (Ideal.span {a})).IsEffectiveCartier := by
   intro x
   obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
     X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
-  exact ⟨⟨U, hU⟩, hxU, _, ha ⟨U, hU⟩, hIa ⟨U, hU⟩⟩
+  refine ⟨⟨U, hU⟩, hxU, _, ha ⟨U, hU⟩, ?_⟩
+  rw [ofIdealTop_ideal, Ideal.map_span, Set.image_singleton]
 
 /-- Effective Cartier equations can equivalently be given on the affine open subschemes
 themselves, with exact equality of their restricted ideal sheaves. -/
@@ -249,6 +275,15 @@ theorem IsEffectiveCartier.comap {I : Y.IdealSheafData} (hI : I.IsEffectiveCarti
     _ = (ofIdealTop (Ideal.span {a})).comap g := by rw [hUa]
     _ = ofIdealTop (Ideal.span {g.appTop a}) := by
       rw [comap_ofIdealTop, Ideal.map_span, Set.image_singleton]
+
+/-- Along a flat morphism `f : X ⟶ Y` to an affine scheme, the pullback of a nonzerodivisor `b`
+on `Y` cuts out an effective Cartier divisor on `X`, with global equation `f.appTop b`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.isEffectiveCartier_ofIdealTop_span_appTop [IsAffine Y]
+    (f : X ⟶ Y) [Flat f] {b : Γ(Y, ⊤)} (hb : IsSMulRegular Γ(Y, ⊤) b) :
+    (ofIdealTop (Ideal.span {f.appTop b})).IsEffectiveCartier := by
+  have h := (isEffectiveCartier_ofIdealTop_span_singleton b
+    fun U ↦ (isAffineOpen_top Y).isSMulRegular_map le_top hb).comap f
+  rwa [comap_ofIdealTop, Ideal.map_span, Set.image_singleton] at h
 
 end AlgebraicGeometry.Scheme.IdealSheafData
 
