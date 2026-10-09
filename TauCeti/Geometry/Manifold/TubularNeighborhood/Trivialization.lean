@@ -10,8 +10,9 @@ public import TauCeti.Geometry.Manifold.TubularNeighborhood.NormalFrame
 /-!
 # Local trivializations of the Euclidean normal bundle
 
-The normal fibres of a `C^(n+1)` immersion admit local linear trivializations whose
-coordinate maps are `C^n`. The model fibre at a chosen point `x₀` is its normal space.
+The normal fibres of a `C^(n+1)` immersion into a finite-dimensional real inner product
+space admit local linear trivializations whose coordinate maps are `C^n`. The model fibre at a
+chosen point `x₀` is its normal space.
 Orthogonal projection transports that space to nearby normal spaces; the inverse is
 obtained by inverting the compression of this projection to the original normal space.
 
@@ -23,7 +24,9 @@ advance. No compactness, injectivity of the core map, or choice of basis is need
 
 The projection and its regularity are supplied by `normalSubspace` and
 `contMDiff_normalSubspace_starProjection`; the fibrewise inverse identity uses
-`Submodule.starProjection_inverse_apply`.
+`Submodule.starProjection_inverse_apply`. The algebraic coordinate operators only require
+orthogonal projections onto the relevant fibres; their recovery identity only requires the
+moving normal fibre to be finite-dimensional. Regularity holds in a complete ambient space.
 
 ## References
 
@@ -46,45 +49,54 @@ variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {f : M → V}
 
-section Complete
-
-variable [CompleteSpace V]
+section Projection
 
 /-- The normal projection at `x`, compressed to the normal space at `x₀`. Its
 invertibility specifies the domain of the local normal trivialization at `x₀`. -/
-def normalCompression (I : ModelWithCorners ℝ E H) (f : M → V) (x₀ x : M) :
+def normalCompression (I : ModelWithCorners ℝ E H) (f : M → V) (x₀ x : M)
+    [(normalSubspace I f x₀).HasOrthogonalProjection]
+    [(normalSubspace I f x).HasOrthogonalProjection] :
     normalSubspace I f x₀ →L[ℝ] normalSubspace I f x₀ :=
   (normalSubspace I f x₀).orthogonalProjectionOnto ∘L
     (normalSubspace I f x).starProjection ∘L (normalSubspace I f x₀).subtypeL
 
 /-- The compression is the moving normal projection sandwiched between inclusion
 and projection for the reference fibre. -/
-theorem normalCompression_def (x₀ x : M) :
+theorem normalCompression_def (x₀ x : M)
+    [(normalSubspace I f x₀).HasOrthogonalProjection]
+    [(normalSubspace I f x).HasOrthogonalProjection] :
     normalCompression I f x₀ x = (normalSubspace I f x₀).orthogonalProjectionOnto ∘L
       (normalSubspace I f x).starProjection ∘L (normalSubspace I f x₀).subtypeL :=
   (rfl)
 
 /-- At the reference point the compression is the identity. -/
-@[simp] theorem normalCompression_self (x₀ : M) : normalCompression I f x₀ x₀ = 1 := by
+@[simp] theorem normalCompression_self (x₀ : M)
+    [(normalSubspace I f x₀).HasOrthogonalProjection] : normalCompression I f x₀ x₀ = 1 := by
   ext w
   simp [normalCompression, Submodule.starProjection_eq_self_iff.mpr w.property]
 
 /-- Ambient-vector coordinates in the reference normal fibre. These recover a reference
 vector after projection to the moving normal fibre whenever the compression is invertible. -/
-def normalCoordinateMap (I : ModelWithCorners ℝ E H) (f : M → V) (x₀ x : M) :
+def normalCoordinateMap (I : ModelWithCorners ℝ E H) (f : M → V) (x₀ x : M)
+    [(normalSubspace I f x₀).HasOrthogonalProjection]
+    [(normalSubspace I f x).HasOrthogonalProjection] :
     V →L[ℝ] normalSubspace I f x₀ :=
   Ring.inverse (normalCompression I f x₀ x) ∘L
     (normalSubspace I f x₀).orthogonalProjectionOnto
 
 /-- The ambient coordinate operator is the inverse compression followed by
 projection onto the reference normal space. -/
-theorem normalCoordinateMap_def (x₀ x : M) :
+theorem normalCoordinateMap_def (x₀ x : M)
+    [(normalSubspace I f x₀).HasOrthogonalProjection]
+    [(normalSubspace I f x).HasOrthogonalProjection] :
     normalCoordinateMap I f x₀ x = Ring.inverse (normalCompression I f x₀ x) ∘L
       (normalSubspace I f x₀).orthogonalProjectionOnto :=
   (rfl)
 
 /-- Coordinates of a projected reference vector recover that vector. -/
 @[simp] theorem normalCoordinateMap_starProjection (x₀ x : M)
+    [(normalSubspace I f x₀).HasOrthogonalProjection]
+    [(normalSubspace I f x).HasOrthogonalProjection]
     (hx : IsUnit (normalCompression I f x₀ x)) (w : normalSubspace I f x₀) :
     normalCoordinateMap I f x₀ x ((normalSubspace I f x).starProjection w) = w := by
   have h := congrArg (fun T : normalSubspace I f x₀ →L[ℝ] normalSubspace I f x₀ => T w)
@@ -93,7 +105,9 @@ theorem normalCoordinateMap_def (x₀ x : M) :
 
 /-- The continuous-linear change from the reference normal fibre at `x₀` to that at `x₁`.
 On overlaps it transports coordinates between the corresponding normal trivializations. -/
-def normalCoordinateChange (I : ModelWithCorners ℝ E H) (f : M → V) (x₀ x₁ x : M) :
+def normalCoordinateChange (I : ModelWithCorners ℝ E H) (f : M → V) (x₀ x₁ x : M)
+    [(normalSubspace I f x₁).HasOrthogonalProjection]
+    [(normalSubspace I f x).HasOrthogonalProjection] :
     normalSubspace I f x₀ →L[ℝ] normalSubspace I f x₁ :=
   normalCoordinateMap I f x₁ x ∘L (normalSubspace I f x).starProjection ∘L
     (normalSubspace I f x₀).subtypeL
@@ -101,27 +115,25 @@ def normalCoordinateChange (I : ModelWithCorners ℝ E H) (f : M → V) (x₀ x�
 /-- A change of normal coordinates projects into the moving fibre and takes its target
 reference coordinates. -/
 @[simp] theorem normalCoordinateChange_apply (x₀ x₁ x : M)
+    [(normalSubspace I f x₁).HasOrthogonalProjection]
+    [(normalSubspace I f x).HasOrthogonalProjection]
     (w : normalSubspace I f x₀) :
     normalCoordinateChange I f x₀ x₁ x w =
       normalCoordinateMap I f x₁ x ((normalSubspace I f x).starProjection w) :=
   (rfl)
 
-end Complete
-
-section FiniteDimensional
-
-variable [FiniteDimensional ℝ V]
-
 /-- Projecting the coordinates recovers a normal vector, when the two fibres have the
-same dimension and the compression is invertible. -/
+same finite dimension and the compression is invertible. -/
 theorem starProjection_normalCoordinateMap (x₀ x : M)
+    [FiniteDimensional ℝ (normalSubspace I f x)]
+    [(normalSubspace I f x₀).HasOrthogonalProjection]
     (hrank : Module.finrank ℝ (normalSubspace I f x₀) =
       Module.finrank ℝ (normalSubspace I f x))
     (hx : IsUnit (normalCompression I f x₀ x)) {v : V} (hv : v ∈ normalSubspace I f x) :
     (normalSubspace I f x).starProjection (normalCoordinateMap I f x₀ x v) = v :=
   Submodule.starProjection_inverse_apply hrank hx hv
 
-end FiniteDimensional
+end Projection
 
 section Regularity
 
@@ -133,7 +145,7 @@ theorem contMDiff_normalCompression
     (hf : ContMDiff I 𝓘(ℝ, V) (n + 1) f)
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (x₀ : M) :
     ContMDiff I 𝓘(ℝ, normalSubspace I f x₀ →L[ℝ] normalSubspace I f x₀) n
-      (normalCompression I f x₀) :=
+      (fun x => normalCompression I f x₀ x) :=
   contMDiff_const.clm_comp
     ((contMDiff_normalSubspace_starProjection hf himm).clm_comp contMDiff_const)
 
@@ -143,11 +155,13 @@ theorem contMDiffAt_normalCoordinateMap
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (x₀ : M) {x : M}
     (hx : IsUnit (normalCompression I f x₀ x)) :
     ContMDiffAt I 𝓘(ℝ, V →L[ℝ] normalSubspace I f x₀) n
-      (normalCoordinateMap I f x₀) x := by
+      (fun y => normalCoordinateMap I f x₀ y) x := by
+  simp_rw [normalCoordinateMap_def]
   have hinv := (contDiffAt_ringInverse ℝ
     (R := normalSubspace I f x₀ →L[ℝ] normalSubspace I f x₀) (n := n) hx.unit).contMDiffAt
   rw [hx.unit_spec] at hinv
-  exact (hinv.comp x (contMDiff_normalCompression hf himm x₀ x)).clm_comp contMDiffAt_const
+  exact (hinv.comp x (contMDiff_normalCompression hf himm x₀ x)).clm_comp
+    (contMDiffAt_const (c := (normalSubspace I f x₀).orthogonalProjectionOnto))
 
 /-- Changes between projected normal-fibre coordinates are `C^n` wherever the target
 compression is invertible. On the overlap of two trivializations these are their fibrewise
@@ -156,7 +170,7 @@ theorem contMDiffOn_normalCoordinateChange
     (hf : ContMDiff I 𝓘(ℝ, V) (n + 1) f)
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (x₀ x₁ : M) :
     ContMDiffOn I 𝓘(ℝ, normalSubspace I f x₀ →L[ℝ] normalSubspace I f x₁) n
-      (normalCoordinateChange I f x₀ x₁)
+      (fun x => normalCoordinateChange I f x₀ x₁ x)
       {x | IsUnit (normalCompression I f x₁ x)} := by
   intro x hx
   exact ((contMDiffAt_normalCoordinateMap hf himm x₁ hx).clm_comp
