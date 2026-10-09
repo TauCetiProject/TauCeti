@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Data.Fin.Tuple.Reflection
 public import TauCeti.CategoryTheory.AInfinity.Basic
 
 /-!
@@ -53,7 +54,7 @@ structure AInfinityStrictFunctor (𝒞 : AInfinityCategory R C) (𝒟 : AInfinit
     f ∈ (grading (R := R) X Y).piece p →
       map X Y f ∈ (grading (R := R) (obj X) (obj Y)).piece p
   /-- Each operation is preserved on every composable string, in Keller's input order. -/
-  map_operation' : ∀ {n : ℕ} (X : Fin (n + 1) → C)
+  map_m' : ∀ {n : ℕ} (X : Fin (n + 1) → C)
     (f : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)),
     map (X 0) (X (Fin.last n))
         (homProjection (X 0) (X (Fin.last n))
@@ -101,7 +102,7 @@ theorem map_mem (F : AInfinityStrictFunctor 𝒞 𝒟) (X Y : C) {p : ℤ}
   F.map_mem' X Y hf
 
 /-- A strict functor preserves operations on composable strings of arbitrary morphisms. -/
-theorem map_operation (F : AInfinityStrictFunctor 𝒞 𝒟) {n : ℕ}
+theorem map_m (F : AInfinityStrictFunctor 𝒞 𝒟) {n : ℕ}
     (X : Fin (n + 1) → C)
     (f : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) :
     F.map (X 0) (X (Fin.last n))
@@ -110,13 +111,12 @@ theorem map_operation (F : AInfinityStrictFunctor 𝒞 𝒟) {n : ℕ}
       homProjection (F.obj (X 0)) (F.obj (X (Fin.last n)))
         (𝒟.m n fun i ↦ homInclusion (F.obj (X i.rev.castSucc)) (F.obj (X i.rev.succ))
           (F.map (X i.rev.castSucc) (X i.rev.succ) (f i))) :=
-  F.map_operation' X f
+  F.map_m' X f
 
 /-- The map of a strict functor on the degree-`p` piece of a Hom module. -/
 def gradedMap (F : AInfinityStrictFunctor 𝒞 𝒟) (X Y : C) (p : ℤ) :
     grHom R X Y p →ₗ[R] grHom R (F.obj X) (F.obj Y) p :=
-  (F.map X Y ∘ₗ ((grading (R := R) X Y).piece p).subtype).codRestrict _
-    (fun f ↦ F.map_mem X Y f.property)
+  (F.map X Y).restrict fun _ hf ↦ F.map_mem X Y hf
 
 @[simp]
 theorem coe_gradedMap (F : AInfinityStrictFunctor 𝒞 𝒟) (X Y : C) (p : ℤ)
@@ -135,7 +135,22 @@ theorem map_pathOperation (F : AInfinityStrictFunctor 𝒞 𝒟) {n : ℕ}
         (fun i ↦ F.gradedMap (X i.rev.castSucc) (X i.rev.succ) (d i) (f i)) := by
   apply Subtype.ext
   simpa only [coe_gradedMap, AInfinityCategory.coe_pathOperation_apply, Function.comp_apply]
-    using F.map_operation X (fun i ↦ (f i).val)
+    using F.map_m X (fun i ↦ (f i).val)
+
+-- Mathlib's tuple reflection expands fixed arities to vector literals. This supplies a shared
+-- normalization for the unary and binary equations; congruence then identifies their entries.
+private theorem map_m_etaExpand (F : AInfinityStrictFunctor 𝒞 𝒟) {n : ℕ}
+    (X : Fin (n + 1) → C)
+    (f : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) :
+    F.map (X 0) (X (Fin.last n))
+        (homProjection (X 0) (X (Fin.last n))
+          (𝒞.m n (FinVec.etaExpand fun i ↦
+            homInclusion (X i.rev.castSucc) (X i.rev.succ) (f i)))) =
+      homProjection (F.obj (X 0)) (F.obj (X (Fin.last n)))
+        (𝒟.m n (FinVec.etaExpand fun i ↦
+          homInclusion (F.obj (X i.rev.castSucc)) (F.obj (X i.rev.succ))
+            (F.map (X i.rev.castSucc) (X i.rev.succ) (f i)))) := by
+  simpa only [FinVec.etaExpand_eq] using F.map_m X f
 
 /-- A strict functor commutes with the differential of every Hom module. -/
 @[simp]
@@ -143,11 +158,11 @@ theorem map_homDifferential (F : AInfinityStrictFunctor 𝒞 𝒟) (X Y : C)
     (f : homModule (R := R) X Y) :
     F.map X Y (𝒞.homDifferential X Y f) =
       𝒟.homDifferential (F.obj X) (F.obj Y) (F.map X Y f) := by
-  have h := F.map_operation ![X, Y]
+  have h := F.map_m_etaExpand ![X, Y]
     (Fin.cases (motive := fun i ↦ homModule (R := R)
       (![X, Y] i.rev.castSucc) (![X, Y] i.rev.succ)) f fun i ↦ i.elim0)
   simp only [AInfinityCategory.homDifferential_apply]
-  convert h using 1 <;> congr 3 <;> funext i <;> fin_cases i <;> rfl
+  convert h using 1 <;> congr!
 
 /-- A strict functor preserves the binary composition `m₂(g,f)`. -/
 @[simp]
@@ -155,12 +170,12 @@ theorem map_comp (F : AInfinityStrictFunctor 𝒞 𝒟) (X Y Z : C)
     (g : homModule (R := R) Y Z) (f : homModule (R := R) X Y) :
     F.map X Z (𝒞.comp X Y Z g f) =
       𝒟.comp (F.obj X) (F.obj Y) (F.obj Z) (F.map Y Z g) (F.map X Y f) := by
-  have h := F.map_operation ![X, Y, Z]
+  have h := F.map_m_etaExpand ![X, Y, Z]
     (Fin.cases (motive := fun i ↦ homModule (R := R)
       (![X, Y, Z] i.rev.castSucc) (![X, Y, Z] i.rev.succ))
       g (Fin.cases f fun i ↦ i.elim0))
   simp only [AInfinityCategory.comp_apply]
-  convert h using 1 <;> congr 3 <;> funext i <;> fin_cases i <;> rfl
+  convert h using 1 <;> congr!
 
 /-- The identity strict functor of a nonunital `A∞` category. -/
 -- Expose the object map so the types of the characteristic Hom-map equations reduce.
@@ -169,7 +184,7 @@ protected def id (𝒞 : AInfinityCategory R C) : AInfinityStrictFunctor 𝒞 �
   obj := _root_.id
   map _ _ := LinearMap.id
   map_mem' _ _ {_} {_} hf := hf
-  map_operation' _ _ := rfl
+  map_m' _ _ := rfl
 
 @[simp]
 theorem id_obj (𝒞 : AInfinityCategory R C) (X : C) :
@@ -187,10 +202,10 @@ def comp (G : AInfinityStrictFunctor 𝒟 ℰ) (F : AInfinityStrictFunctor 𝒞 
   obj := G.obj ∘ F.obj
   map X Y := G.map (F.obj X) (F.obj Y) ∘ₗ F.map X Y
   map_mem' X Y {_} {_} hf := G.map_mem _ _ (F.map_mem X Y hf)
-  map_operation' X f := by
+  map_m' X f := by
     simp only [LinearMap.comp_apply, Function.comp_apply]
-    rw [F.map_operation]
-    exact G.map_operation (F.obj ∘ X) (fun i ↦ F.map _ _ (f i))
+    rw [F.map_m]
+    exact G.map_m (F.obj ∘ X) (fun i ↦ F.map _ _ (f i))
 
 @[simp]
 theorem comp_obj (G : AInfinityStrictFunctor 𝒟 ℰ) (F : AInfinityStrictFunctor 𝒞 𝒟)

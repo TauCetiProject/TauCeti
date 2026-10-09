@@ -46,7 +46,7 @@ noncomputable def toStrictFunctor (f : AInfinityStrictHom 𝒜 ℬ) :
   obj _ := star ℬ
   map _ _ := f.toLinearMap
   map_mem' _ _ {_} {_} ha := f.map_mem ha
-  map_operation' X x := by
+  map_m' X x := by
     rw [homProjection_m_homInclusion_aInfinityCategory]
     exact (f.map_m _ _).trans
       (homProjection_m_homInclusion_aInfinityCategory ℬ (fun _ ↦ star ℬ) _).symm
@@ -63,6 +63,19 @@ end AInfinityStrictHom
 
 namespace AInfinityStrictFunctor
 
+/-- Strict functors between one-object categories are determined by the map on endomorphisms. -/
+@[ext]
+theorem ext_singleObj
+    {F G : AInfinityStrictFunctor (aInfinityCategory 𝒜) (aInfinityCategory ℬ)}
+    (hmap : ∀ a : A, F.map (star 𝒜) (star 𝒜) a = G.map (star 𝒜) (star 𝒜) a) :
+    F = G := by
+  apply ext_of_obj_eq (funext fun _ ↦ Subsingleton.elim _ _)
+  intro X Y a
+  obtain rfl := Subsingleton.elim X (star 𝒜)
+  obtain rfl := Subsingleton.elim Y (star 𝒜)
+  -- Hom modules are independent of the endpoints, so object-map transport is constant.
+  simpa only [eq_rec_constant] using hmap a
+
 /-- The algebra morphism determined by a strict functor between one-object categories. -/
 noncomputable def toStrictHom
     (F : AInfinityStrictFunctor (aInfinityCategory 𝒜) (aInfinityCategory ℬ)) :
@@ -71,7 +84,7 @@ noncomputable def toStrictHom
   map_mem' ha := F.map_mem _ _ ha
   map_m' n := by
     ext x
-    have h := F.map_operation (fun _ ↦ star 𝒜) x
+    have h := F.map_m (fun _ ↦ star 𝒜) x
     rw [homProjection_m_homInclusion_aInfinityCategory 𝒜 (fun _ ↦ star 𝒜) x] at h
     exact h.trans (homProjection_m_homInclusion_aInfinityCategory ℬ
       (fun _ ↦ F.obj (star 𝒜)) (fun i ↦ F.map _ _ (x i)))
@@ -108,13 +121,9 @@ theorem toStrictHom_comp
 theorem toStrictFunctor_toStrictHom
     (F : AInfinityStrictFunctor (aInfinityCategory 𝒜) (aInfinityCategory ℬ)) :
     F.toStrictHom.toStrictFunctor = F := by
-  have hobj : F.toStrictHom.toStrictFunctor.obj = F.obj :=
-    funext fun _ ↦ Subsingleton.elim _ _
-  apply ext_of_obj_eq hobj
-  intro X Y f
-  obtain rfl := Subsingleton.elim X (star 𝒜)
-  obtain rfl := Subsingleton.elim Y (star 𝒜)
-  rfl
+  apply ext_singleObj
+  intro a
+  simp only [AInfinityStrictHom.toStrictFunctor_map, toStrictHom_toLinearMap]
 
 end AInfinityStrictFunctor
 
@@ -150,16 +159,16 @@ theorem strictFunctorEquiv_symm_apply
 theorem toStrictFunctor_id (𝒜 : AInfinityAlgebra R A) :
     (AInfinityStrictHom.id 𝒜).toStrictFunctor =
       AInfinityStrictFunctor.id (aInfinityCategory 𝒜) := by
-  apply AInfinityStrictFunctor.ext_of_obj_eq (funext fun _ ↦ Subsingleton.elim _ _)
-  intro X Y a
+  apply AInfinityStrictFunctor.ext_singleObj
+  intro a
   simp only [toStrictFunctor_map, id_toLinearMap, AInfinityStrictFunctor.id_map]
 
 /-- The one-object comparison preserves composition. -/
 @[simp]
 theorem toStrictFunctor_comp (g : AInfinityStrictHom ℬ 𝒞) (f : AInfinityStrictHom 𝒜 ℬ) :
     (g.comp f).toStrictFunctor = g.toStrictFunctor.comp f.toStrictFunctor := by
-  apply AInfinityStrictFunctor.ext_of_obj_eq (funext fun _ ↦ Subsingleton.elim _ _)
-  intro X Y a
+  apply AInfinityStrictFunctor.ext_singleObj
+  intro a
   simp only [toStrictFunctor_map, comp_toLinearMap, AInfinityStrictFunctor.comp_map]
 
 end AInfinityStrictHom
