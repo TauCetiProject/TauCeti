@@ -229,6 +229,23 @@ private theorem genericMatrix_reconstruction
   simp [hQ, hinv, genericSymmetric, ← mul_assoc,
     (genericMatrix_inverse R m).2, genericMatrix_lowerLeft R m]
 
+/-- The parameter point after any value-ring map is its mapped Levi–unipotent block product. -/
+private theorem parameterPoint_map_matrix
+    {S : Type*} [CommRing S] (f : ParameterRing R m →+* S) :
+    (((GLSymplecticFin.mulEquivGLSymplectic m S
+        (GLSymplecticFin.IsotropicFlag.map m f (parameterPoint R m)).val :
+        GLSymplectic (Fin m) S) : GL (Fin m ⊕ Fin m) S) :
+        Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) S) =
+      Matrix.fromBlocks
+          (Matrix.GeneralLinearGroup.map f (parameterLevi R m) : Matrix (Fin m) (Fin m) S) 0 0
+          (((Matrix.GeneralLinearGroup.map f (parameterLevi R m))⁻¹ : GL (Fin m) S) :
+            Matrix (Fin m) (Fin m) S)ᵀ *
+        Matrix.fromBlocks 1 ((parameterSymmetric R m).map f) 0 1 := by
+  rw [GLSymplecticFin.IsotropicFlag.coe_map]
+  dsimp only [parameterPoint]
+  rw [map_mul, GLSymplecticFin.map_leviHom, GLSymplecticFin.map_upperUnipotent, map_mul]
+  simp
+
 private theorem evaluateParameterRing_point :
     GLSymplecticFin.IsotropicFlag.map m (evaluateParameterRing R m).toRingHom
       (parameterPoint R m) = genericPoint R m := by
@@ -236,14 +253,8 @@ private theorem evaluateParameterRing_point :
   apply (GLSymplecticFin.mulEquivGLSymplectic m _).injective
   apply Subtype.ext
   apply Units.ext
-  simpa only [GLSymplecticFin.IsotropicFlag.coe_map, parameterPoint, map_mul,
-    GLSymplecticFin.map_leviHom,
-    GLSymplecticFin.map_upperUnipotent, GLSymplecticFin.mulEquivGLSymplectic_leviHom,
-    Subgroup.coe_mul, Units.val_mul, GLSymplectic.coe_leviHom,
-    GLSymplecticFin.coe_mulEquivGLSymplectic,
-    GLSymplecticFin.coe_mulEquivGLSymplectic_upperUnipotent,
-    GLSymplectic.coe_ofSymplecticGroup, evaluateParameterRing_symmetric R m, genericMatrix] using
-    genericMatrix_reconstruction R m _ (evaluateParameterRing_levi R m)
+  rw [parameterPoint_map_matrix, evaluateParameterRing_symmetric]
+  exact genericMatrix_reconstruction R m _ (evaluateParameterRing_levi R m)
 
 private theorem evaluateParameterRing_comp_parameterAlgHom :
     (evaluateParameterRing R m).comp (parameterAlgHom R m) =
