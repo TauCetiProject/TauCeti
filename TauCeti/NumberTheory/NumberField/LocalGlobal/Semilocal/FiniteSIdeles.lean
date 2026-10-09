@@ -337,10 +337,10 @@ private theorem finiteSIdelesPiHom_surjective :
   · refine (finiteSIdelesPiHom_apply_inl L S ⟨_, ha⟩ ⟨v, hv⟩).trans ?_
     rw [finiteIdeleSemilocalHom_finiteIdeleOfSemilocalUnits]
     simp only [y, hv, dite_true]
-    rfl
+    exact ofMul_toMul _
   · refine (finiteSIdelesPiHom_apply_inr L S ⟨_, ha⟩ ⟨v, hv⟩).trans ?_
     simp only [finiteIdeleSemilocalHom_finiteIdeleOfSemilocalUnits, y, hv, dite_false]
-    rfl
+    exact (congrArg Additive.ofMul (Subtype.coe_eta _ _)).trans (ofMul_toMul _)
 
 private instance : IsIso (finiteSIdelesPiHom L S) :=
   (ConcreteCategory.isIso_iff_bijective _).2
