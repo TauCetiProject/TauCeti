@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Smooth
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ZeroSection
 import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # The zero-section divisor of a projective Weierstrass model
@@ -42,7 +43,8 @@ divisor-theoretic input for identifying `𝒪(3[0])` with the restriction of the
 * `WeierstrassCurve.zeroSectionDivisor_map`: `[0]` commutes with arbitrary base change.
 * `WeierstrassCurve.zeroSectionDivisor_pow_map`: the same is true for `n[0]`.
 * `WeierstrassCurve.zeroSectionDivisor_comap_chartι_one` and
-  `WeierstrassCurve.zeroSectionDivisor_comap_chartι_of_ne_one`: `[0]` on the standard charts.
+  `WeierstrassCurve.zeroSectionDivisor_comap_chartι_eq_top_of_ne_one`: `[0]` on the standard
+  charts.
 * `WeierstrassCurve.zeroSectionDivisor_pow_three_comap_chartι`: `3[0]` is the hyperplane section
   `Z = 0`.
 
@@ -134,30 +136,6 @@ private theorem isUnit_chartPoint_zero_two : IsUnit (W.toProjective.chartPoint 0
     algebraMap R _ W.a₆ * z ^ 2) ?_
   linear_combination h
 
-/-- If `z (1 - t) = x³` for some `t` in the ideal `(x, z)`, then `(x, z)³ = (z)`. This is the
-ideal computation behind `span_pow_three_chartOne`, stated over an arbitrary commutative ring. -/
-private theorem span_pair_pow_three_eq_span_singleton {A : Type*} [CommRing A] {x z t : A}
-    (hz : z * (1 - t) = x ^ 3) (ht : t ∈ Ideal.span {x, z}) :
-    Ideal.span {x, z} ^ 3 = Ideal.span {z} := by
-  have hxm : x ∈ Ideal.span {x, z} := Ideal.subset_span (by simp)
-  have hzm : z ∈ Ideal.span {x, z} := Ideal.subset_span (by simp)
-  refine le_antisymm ?_ ?_
-  · -- modulo `z`, the ideal `(x, z)` becomes `(x)`, and `x³ = z (1 - t)` vanishes
-    rw [← Ideal.mk_ker (I := Ideal.span {z}), ← Ideal.map_eq_bot_iff_le_ker, Ideal.map_pow,
-      Ideal.map_span, Set.image_pair,
-      Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self z), Set.pair_comm,
-      Ideal.span_insert_zero, Ideal.span_singleton_pow, ← map_pow, ← hz,
-      Ideal.Quotient.eq_zero_iff_mem.mpr
-        (Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self z)),
-      Ideal.span_singleton_eq_bot]
-  · -- substituting `z = x³ + z t` into itself gives `z = x³ (1 + t) + z t²`
-    rw [Ideal.span_le, Set.singleton_subset_iff, SetLike.mem_coe]
-    have hz' : x ^ 3 * (1 + t) + z * t ^ 2 = z := by linear_combination -(1 + t) * hz
-    suffices x ^ 3 * (1 + t) + z * t ^ 2 ∈ Ideal.span {x, z} ^ 3 by rwa [hz'] at this
-    refine add_mem (Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow hxm 3)) ?_
-    rw [pow_succ']
-    exact Ideal.mul_mem_mul hzm (Ideal.pow_mem_pow ht 2)
-
 /-- On the chart `D₊(Y)`, with `x = X/Y` and `z = Z/Y`, the ideal `(x, z)` of the zero section
 satisfies `(x, z)³ = (z)`. -/
 private theorem span_pow_three_chartOne :
@@ -168,7 +146,7 @@ private theorem span_pow_three_chartOne :
   set x := W.toProjective.chartPoint 1 0
   set z := W.toProjective.chartPoint 1 2
   -- with `Y = 1`, the Weierstrass equation reads `z (1 - t) = x³`
-  refine span_pair_pow_three_eq_span_singleton
+  refine Ideal.span_pair_pow_eq_span_singleton
     (t := algebraMap R _ W.a₂ * x * x + algebraMap R _ W.a₄ * x * z +
       algebraMap R _ W.a₆ * z * z - algebraMap R _ W.a₁ * x - algebraMap R _ W.a₃ * z)
     (by linear_combination h) ?_
@@ -203,8 +181,11 @@ private theorem ker_chartOneEvalZero :
       · simpa using Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span (by simp) : _ ∈ J)
       · simp
       · simpa using Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span (by simp) : _ ∈ J)
-    rw [← Ideal.Quotient.eq_zero_iff_mem, ← Ideal.Quotient.mkₐ_eq_mk R, key, AlgHom.comp_apply,
-      show W.chartOneEvalZero a = 0 from ha, map_zero]
+    have ha' : W.chartOneEvalZero a = 0 := by
+      rw [← AlgHom.coe_toRingHom, ← RingHom.mem_ker]
+      exact ha
+    rw [← Ideal.Quotient.eq_zero_iff_mem, ← Ideal.Quotient.mkₐ_eq_mk R, key, AlgHom.comp_apply, ha',
+      map_zero]
   · rw [Ideal.span_le, Set.pair_subset_iff]
     exact ⟨RingHom.mem_ker.mpr (by simpa using W.chartOneEvalZero_mk_X 0),
       RingHom.mem_ker.mpr (by simpa using W.chartOneEvalZero_mk_X 2)⟩
@@ -239,7 +220,7 @@ theorem zeroSectionDivisor_comap_chartι_one :
 /-- **The zero-section divisor misses the charts `D₊(X)` and `D₊(Z)`.** On the standard affine
 charts `D₊(Xᵢ)` with `i ≠ 1`, the ideal of the divisor `[0]` is the unit ideal. -/
 @[simp]
-theorem zeroSectionDivisor_comap_chartι_of_ne_one {i : Fin 3} (hi : i ≠ 1) :
+theorem zeroSectionDivisor_comap_chartι_eq_top_of_ne_one {i : Fin 3} (hi : i ≠ 1) :
     W.zeroSectionDivisor.comap (W.chartι i) = ⊤ := by
   rw [← support_eq_bot_iff, support_comap]
   refine TopologicalSpace.Closeds.ext (Set.eq_empty_iff_forall_notMem.mpr fun x hx ↦ ?_)
@@ -266,17 +247,22 @@ theorem zeroSectionDivisor_pow_three_comap_chartι (i : Fin 3) :
   by_cases hi : i = 1
   · -- on `D₊(Y)`, `(X/Y, Z/Y)³ = (Z/Y)`
     subst hi
-    rw [zeroSectionDivisor_comap_chartι_one, ← equivOfIsAffine_symm_apply, ← map_pow,
-      equivOfIsAffine_symm_apply, ← Ideal.map_pow, span_pow_three_chartOne]
+    -- `ofIdealTop` is the inverse of `equivOfIsAffine`, so it commutes with powers
+    have hpow (I : Ideal Γ(Spec (.of (W.toProjective.ChartRing 1)), ⊤)) :
+        ofIdealTop I ^ 3 = ofIdealTop (I ^ 3) := by
+      simp only [← equivOfIsAffine_symm_apply, map_pow]
+    rw [zeroSectionDivisor_comap_chartι_one, hpow, ← Ideal.map_pow, span_pow_three_chartOne]
   · -- on `D₊(X)` and `D₊(Z)`, both sides are the unit ideal
     have hu : IsUnit (W.toProjective.chartPoint i 2) := by
       fin_cases i
       · exact W.isUnit_chartPoint_zero_two
       · exact absurd rfl hi
       · exact W.toProjective.chartPoint_self 2 ▸ isUnit_one
-    rw [zeroSectionDivisor_comap_chartι_of_ne_one W hi, Ideal.span_singleton_eq_top.mpr hu,
-      Ideal.map_top, ← Ideal.one_eq_top, ← equivOfIsAffine_symm_apply, map_one, ← one_eq_top,
-      one_pow]
+    have hrhs : ofIdealTop ((Ideal.span {W.toProjective.chartPoint i 2}).map
+        (Scheme.ΓSpecIso (.of (W.toProjective.ChartRing i))).inv.hom) = 1 := by
+      rw [Ideal.span_singleton_eq_top.mpr hu, Ideal.map_top, ← Ideal.one_eq_top,
+        ← equivOfIsAffine_symm_apply, map_one]
+    rw [zeroSectionDivisor_comap_chartι_eq_top_of_ne_one W hi, hrhs, ← one_eq_top, one_pow]
 
 end Chart
 
