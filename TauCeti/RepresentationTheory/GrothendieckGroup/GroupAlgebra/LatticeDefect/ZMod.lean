@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.BaseChange
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.LatticeDefect.Basic
-public import TauCeti.RepresentationTheory.RestrictScalars
 
 /-!
 # Reduction classes of `ZMod n`-representations
@@ -15,7 +15,8 @@ A representation `ρ` of `G` over `ZMod n` is in particular a representation on 
 `ρ.restrictScalarsInt`. Its reduction `ZMod n ⊗_ℤ W` is `W` again: since every element of
 `ZMod n` is the image of an integer, Mathlib's `TensorProduct.lidOfCompatibleSMul` identifies
 `ZMod n ⊗_ℤ W` with `W` by `r ⊗ w ↦ r • w`, and this identification is `G`-equivariant
-(`Representation.baseChangeRestrictScalarsIntEquiv`). Hence the reduction class of
+(`Representation.baseChangeRestrictScalarsIntEquiv`, in
+`TauCeti.RepresentationTheory.BaseChange`). Hence the reduction class of
 `ρ.restrictScalarsInt` in `G₀(ZMod n[G])` is the class of `ρ` itself
 (`TauCeti.reductionK0_restrictScalarsInt`).
 
@@ -29,27 +30,6 @@ open TensorProduct
 open scoped MonoidAlgebra
 
 variable {n : ℕ} {G : Type} [Monoid G] {W : Type} [AddCommGroup W] [Module (ZMod n) W]
-
-namespace Representation
-
-/-- **The reduction of a `ZMod n`-module is itself**: `r ⊗ w ↦ r • w` is a `G`-equivariant
-`ZMod n`-linear isomorphism `ZMod n ⊗_ℤ W ≃ W` for every representation `ρ` of `G` over
-`ZMod n`. -/
-noncomputable def baseChangeRestrictScalarsIntEquiv (ρ : Representation (ZMod n) G W) :
-    (Representation.baseChange (ZMod n) ρ.restrictScalarsInt).Equiv ρ :=
-  haveI : CompatibleSMul ℤ (ZMod n) (ZMod n) W :=
-    .of_algebraMap_surjective _ _ ZMod.intCast_surjective
-  .mk (TensorProduct.lidOfCompatibleSMul ℤ (ZMod n) W) fun g ↦ by
-    ext w
-    simp [TensorProduct.lidOfCompatibleSMul_tmul, Representation.baseChange_apply]
-
-/-- The equivalence `ZMod n ⊗_ℤ W ≃ W` is the scalar multiplication on pure tensors. -/
-@[simp]
-theorem baseChangeRestrictScalarsIntEquiv_tmul (ρ : Representation (ZMod n) G W) (r : ZMod n)
-    (w : W) : ρ.baseChangeRestrictScalarsIntEquiv (r ⊗ₜ w) = r • w :=
-  (rfl)
-
-end Representation
 
 namespace TauCeti
 
