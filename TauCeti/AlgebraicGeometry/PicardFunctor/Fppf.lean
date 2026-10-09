@@ -28,6 +28,8 @@ component, require additional geometric input.
 
 * `TauCeti.AlgebraicGeometry.relativePicardAddPresheaf`: the relative Picard presheaf written as
   an additive commutative group;
+* `TauCeti.AlgebraicGeometry.relativePicardAddPresheafMk`: the canonical section represented by
+  a line-bundle class;
 * `TauCeti.AlgebraicGeometry.relativePicardFppfSheaf`: its fppf sheafification;
 * `TauCeti.AlgebraicGeometry.relativePicardToFppfSheaf`: the canonical map from
   `T ↦ Pic(X_T) / Pic(T)` to the relative Picard fppf sheaf;
@@ -58,27 +60,36 @@ variable {S X : Scheme.{u}} (f : X ⟶ S)
 /-- The relative Picard presheaf, transported from multiplicative to additive notation. This
 changes only the presentation of the abelian group law: addition is tensor product of
 line-bundle classes. -/
--- Expose the transport so additive representatives can be used as sections.
-@[expose]
 def relativePicardAddPresheaf : (Over S)ᵒᵖ ⥤ AddCommGrpCat.{u + 1} :=
   relativePicardPresheaf f ⋙ CommGrpCat.toAddCommGrp
 
-/-- The value of the additive relative Picard presheaf at `T` is
-`Additive (Pic(X_T) / Pic(T))`. -/
-lemma relativePicardAddPresheaf_obj (T : (Over S)ᵒᵖ) :
-    (relativePicardAddPresheaf f).obj T = AddCommGrpCat.of
-      (Additive (LineBundleClass (pullback T.unop.hom f) ⧸
-        (LineBundleClass.pullbackHom (pullback.fst T.unop.hom f)).range)) :=
-  rfl
+/-- The section of the additive relative Picard presheaf represented by a line-bundle class. -/
+def relativePicardAddPresheafMk (T : (Over S)ᵒᵖ)
+    (a : LineBundleClass (pullback T.unop.hom f)) : (relativePicardAddPresheaf f).obj T :=
+  by
+    unfold relativePicardAddPresheaf
+    exact Additive.ofMul (QuotientGroup.mk a)
 
-/-- The additive relative Picard presheaf acts on a line-bundle class by pullback. -/
+/-- Every section of the additive relative Picard presheaf is represented by a line-bundle
+class. -/
+theorem relativePicardAddPresheafMk_surjective (T : (Over S)ᵒᵖ) :
+    Function.Surjective (relativePicardAddPresheafMk f T) := by
+  unfold relativePicardAddPresheafMk relativePicardAddPresheaf
+  intro a
+  obtain ⟨a, rfl⟩ := QuotientGroup.mk_surjective a.toMul
+  exact ⟨a, rfl⟩
+
+/-- Pulling back a represented section of the additive relative Picard presheaf pulls back its
+line-bundle class. -/
 @[simp]
-lemma relativePicardAddPresheaf_map_ofMul_mk {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T')
+lemma relativePicardAddPresheaf_map_mk {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T')
     (a : LineBundleClass (pullback T.unop.hom f)) :
-    (relativePicardAddPresheaf f).map φ (Additive.ofMul (QuotientGroup.mk a)) =
-      Additive.ofMul
-        (QuotientGroup.mk (LineBundleClass.pullback ((Over.pullback f).map φ.unop).left a)) :=
-  congrArg Additive.ofMul (relativePicardPresheaf_map_mk f φ a)
+    (relativePicardAddPresheaf f).map φ (relativePicardAddPresheafMk f T a) =
+      relativePicardAddPresheafMk f T'
+        (LineBundleClass.pullback ((Over.pullback f).map φ.unop).left a) :=
+  by
+    unfold relativePicardAddPresheafMk relativePicardAddPresheaf
+    exact congrArg Additive.ofMul (relativePicardPresheaf_map_mk f φ a)
 
 /-- The **relative Picard fppf sheaf** of `f : X ⟶ S`, obtained by sheafifying the presheaf
 `T ↦ Pic(X_T) / Pic(T)` on the fppf site of schemes over `S`.
