@@ -13,7 +13,7 @@ public import TauCeti.Topology.CWComplex.Classical.Sphere
 # The circle has finite CW type
 
 The unit circle `Circle` is the unit sphere of `ℂ` (`Circle.homeomorphSphere`), and an additive
-circle `AddCircle p` of positive period is homeomorphic to it (`AddCircle.homeomorphCircle`).  The
+circle `AddCircle p` of nonzero period is homeomorphic to it (`AddCircle.homeomorphCircle`).  The
 minimal CW structure on spheres (`TauCeti.finiteCWType_sphere`) therefore gives both finite CW
 type, and with `TauCeti.FiniteCWType.pi` so does every torus `∀ i, AddCircle (p i)` over a finite
 index type.
@@ -21,7 +21,7 @@ index type.
 ## Main declarations
 
 * `TauCeti.finiteCWType_circle`: `Circle` has finite CW type.
-* `TauCeti.finiteCWType_addCircle`: `AddCircle p` has finite CW type for `0 < p`.
+* `TauCeti.finiteCWType_addCircle`: `AddCircle p` has finite CW type for `p ≠ 0`.
 -/
 
 public section
@@ -32,9 +32,9 @@ namespace TauCeti
 instance finiteCWType_circle : FiniteCWType Circle :=
   Circle.homeomorphSphere.finiteCWType
 
-/-- An additive circle `AddCircle p` of positive period has finite CW type, being homeomorphic to
+/-- An additive circle `AddCircle p` of nonzero period has finite CW type, being homeomorphic to
 the unit circle. -/
-instance finiteCWType_addCircle (p : ℝ) [hp : Fact (0 < p)] : FiniteCWType (AddCircle p) :=
-  (AddCircle.homeomorphCircle hp.out.ne').finiteCWType
+instance finiteCWType_addCircle (p : ℝ) [NeZero p] : FiniteCWType (AddCircle p) :=
+  (AddCircle.homeomorphCircle (NeZero.ne p)).finiteCWType
 
 end TauCeti
