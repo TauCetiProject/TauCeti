@@ -40,7 +40,7 @@ variable {k : Type u} {Q : Type v} [Field k] [Quiver.{w} Q] [Finite Q]
 
 /-- For a finite-dimensional indecomposable `X` and a finite-dimensional `Y`, morphisms in
 either direction have the same dimension modulo the radical. -/
-theorem finrank_quotient_jacobsonRadicalSubmodule_symm (hX : IsFinDim k Q X)
+theorem finrank_quotient_jacobsonRadicalSubmodule_comm (hX : IsFinDim k Q X)
     (hI : Indecomposable X) (hY : IsFinDim k Q Y) :
     Module.finrank k ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) =
       Module.finrank k ((Y ⟶ X) ⧸ jacobsonRadicalSubmodule k Y X) := by
@@ -52,6 +52,6 @@ theorem finrank_quotient_jacobsonRadicalSubmodule_symm (hX : IsFinDim k Q X)
     fun j ↦ finiteDimensional_hom (hfin j) hX
   have : ∀ j, FiniteDimensional k (X ⟶ P j) :=
     fun j ↦ finiteDimensional_hom hX (hfin j)
-  exact TauCeti.finrank_quotient_jacobsonRadicalSubmodule_symm_of_iso_biproduct k P e
+  exact TauCeti.finrank_quotient_jacobsonRadicalSubmodule_comm_of_iso_biproduct k P e
 
 end TauCeti.QuiverRep

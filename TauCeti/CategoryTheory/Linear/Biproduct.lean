@@ -57,7 +57,7 @@ theorem homBiproductLinearEquiv_symm_apply (f : ∀ j, X j ⟶ Y) :
   (rfl)
 
 /-- Morphisms into a biproduct form the product of the Hom spaces into its summands. -/
-noncomputable def biproductHomLinearEquiv :
+noncomputable def homToBiproductLinearEquiv :
     (Y ⟶ ⨁ X) ≃ₗ[k] (∀ j, Y ⟶ X j) where
   toFun f j := f ≫ biproduct.π X j
   invFun f := biproduct.lift f
@@ -72,14 +72,14 @@ noncomputable def biproductHomLinearEquiv :
 
 /-- The equivalence reads off a morphism's component at a summand. -/
 @[simp]
-theorem biproductHomLinearEquiv_apply (f : Y ⟶ ⨁ X) (j : J) :
-    biproductHomLinearEquiv k X Y f j = f ≫ biproduct.π X j :=
+theorem homToBiproductLinearEquiv_apply (f : Y ⟶ ⨁ X) (j : J) :
+    homToBiproductLinearEquiv k X Y f j = f ≫ biproduct.π X j :=
   (rfl)
 
 /-- The inverse assembles a family of morphisms by the biproduct lift map. -/
 @[simp]
-theorem biproductHomLinearEquiv_symm_apply (f : ∀ j, Y ⟶ X j) :
-    (biproductHomLinearEquiv k X Y).symm f = biproduct.lift f :=
+theorem homToBiproductLinearEquiv_symm_apply (f : ∀ j, Y ⟶ X j) :
+    (homToBiproductLinearEquiv k X Y).symm f = biproduct.lift f :=
   (rfl)
 
 /-- Finite Hom modules out of each summand give a finite Hom module out of a finite

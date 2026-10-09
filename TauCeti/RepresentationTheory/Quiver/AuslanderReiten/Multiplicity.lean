@@ -82,6 +82,6 @@ theorem card_arrows_of_almostSplit_right_eq_left (hS : S.IsAlmostSplit)
       ((ExactStructure.abelian_conflation _).mpr hS.shortExact) hA hC
   rw [card_arrows_of_almostSplit_right hS hA hC hX hI,
     card_arrows_of_almostSplit_left hS hA hC hX hI]
-  exact QuiverRep.finrank_quotient_jacobsonRadicalSubmodule_symm hX hI hB
+  exact QuiverRep.finrank_quotient_jacobsonRadicalSubmodule_comm hX hI hB
 
 end TauCeti.irreducibleMorphismQuiver
