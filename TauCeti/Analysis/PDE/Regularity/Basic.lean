@@ -43,8 +43,10 @@ quotient of `a`, which the Lipschitz bound controls uniformly in `t`:
 
 (`TauCeti.PDE.abs_energyFormH1_differenceQuotient_add_le`). For a constant coefficient the error
 vanishes and this is the integrated form of the discrete integration-by-parts identity
-`∫ (Dᵗ g) h = -∫ g (D⁻ᵗ h)`. Testing the equation against `Dᵗ u` itself and using ellipticity on
-the left and the difference-quotient bound `‖D⁻ᵗ g‖_{L²} ≤ ‖w‖ ‖∇g‖_{L²}` on the right gives
+`∫ (Dᵗ g) h = -∫ g (D⁻ᵗ h)`. Testing the equation against `D⁻ᵗ(Dᵗ u)`, this discrete integration
+by parts turns `a(u, D⁻ᵗ(Dᵗ u))` into minus the energy `a(Dᵗ u, Dᵗ u)` of `Dᵗ u`, up to the
+Lipschitz error. Using ellipticity on the left and the difference-quotient bound
+`‖D⁻ᵗ g‖_{L²} ≤ ‖w‖ ‖∇g‖_{L²}` (with `g = Dᵗ u`) on the right gives
 
 `λ ‖∇Dᵗ u‖²_{L²} ≤ a(Dᵗ u, Dᵗ u) ≤ (‖f‖_{L²} + K ‖∇u‖_{L²}) ‖w‖ ‖∇Dᵗ u‖_{L²}`,
 
@@ -105,23 +107,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   {lam Lam : ℝ} {K : ℝ≥0}
 
 omit [DecidableEq ι] in
-/-- A coefficient field is almost everywhere strongly measurable as soon as its matrix bilinear
-forms vary continuously: the entry `aⁱʲ(x)` is the value of `matrixBilinearForm (a x)` on the
-`i`-th and `j`-th standard basis vectors. -/
-private theorem aestronglyMeasurable_of_continuous_matrixBilinearForm
-    {nu : Measure (EuclideanSpace ℝ ι)} (ha : Continuous fun x => matrixBilinearForm (a x)) :
-    AEStronglyMeasurable a nu := by
-  classical
-  have hM : Continuous fun B : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ =>
-      Matrix.of fun i j => B (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) :=
-    continuous_matrix fun i j =>
-      ((ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single j (1 : ℝ))).comp
-        (ContinuousLinearMap.apply ℝ _ (EuclideanSpace.single i (1 : ℝ)))).continuous
-  refine (hM.comp_aestronglyMeasurable ha.aestronglyMeasurable).congr (.of_forall fun x => ?_)
-  ext i j
-  simp
-
-omit [DecidableEq ι] in
 /-- **Translation moves across the energy form.** For opposite vectors `h` and `k`, translating
 the first argument of the energy form of `a` by `h` is the same as translating the second
 argument and the coefficient field by `k`:
@@ -180,7 +165,7 @@ private theorem memLp_energyIntegrand_comp_add
   have hC' : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ C := fun x => hC _ ⟨x, rfl⟩
   exact memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0)
     ((norm_nonneg (matrixBilinearForm (a 0))).trans (hC' 0))
-    (aestronglyMeasurable_of_continuous_matrixBilinearForm
+    (Continuous.aestronglyMeasurable (β := ι → ι → ℝ) <| continuous_of_continuous_matrixBilinearForm
       (ha.comp (continuous_id.add continuous_const)))
     aestronglyMeasurable_const aestronglyMeasurable_const
     (fun x _ eta xi => by
@@ -325,18 +310,6 @@ theorem energyFormH1_differenceQuotient_eq_neg (A : Matrix ι ι ℝ) (w : Eucli
   simp only [NNReal.coe_zero, zero_mul, abs_nonpos_iff] at h
   linarith
 
-/-- A constant matrix with quadratic form bounded below by `λ ‖ξ‖²` is uniformly elliptic on the
-whole space, with upper constant the larger of `λ` and the operator norm of its bilinear form. -/
-private theorem uniformlyEllipticOn_univ_const (hlam : 0 < lam)
-    (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ dotProduct ξ (Matrix.mulVec A ξ)) :
-    UniformlyEllipticOn Set.univ (fun _ : EuclideanSpace ℝ ι => A) lam
-      (max lam ‖matrixBilinearForm A‖) :=
-  UniformlyEllipticOn.of_bounds hlam (le_max_left _ _)
-    (fun _ _ ξ => by simpa [Matrix.toQuadraticForm'_apply] using hA ξ)
-    (fun _ _ η ξ => by
-      simpa [Real.norm_eq_abs] using (matrixBilinearForm A).le_of_opNorm₂_le_of_le
-        (le_max_right lam _) le_rfl le_rfl)
-
 /-- **The difference quotients of the gradient of a weak solution are uniformly bounded.** Let
 `a` be uniformly elliptic on the whole space with lower constant `λ`, and let `x ↦ a(x)` be
 `K`-Lipschitz in the operator norm of its bilinear forms. For a weak solution `u ∈ H¹(ℝⁿ)` of
@@ -363,7 +336,7 @@ theorem UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_lipschitzWith
     isBounded_iff_forall_norm_le.2 ⟨Lam, by
       rintro _ ⟨x, rfl⟩
       exact ha.opNorm_matrixBilinearForm_le (mem_univ x)⟩
-  -- The discrete integration-by-parts estimate, tested against `Dᵗ u` itself.
+  -- The discrete integration-by-parts estimate, with `Dᵗ u` in the second argument.
   have hDQ := abs_energyFormH1_differenceQuotient_add_le hbdd hK w t (u : W1p mu ⊤ 2)
     (W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _) (u : W1p mu ⊤ 2))
   set g := W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _) (u : W1p mu ⊤ 2)
@@ -371,7 +344,8 @@ theorem UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_lipschitzWith
   -- Ellipticity bounds the Dirichlet energy of the difference quotient from below.
   have hlow : lam * ‖W1p.gradient g‖ ^ 2 ≤ energyFormH1 a 0 0 g g :=
     mul_norm_gradient_sq_le_energyFormH1_self_of_zero_drift (gamma := 0) ha
-      (aestronglyMeasurable_of_continuous_matrixBilinearForm hK.continuous)
+      (Continuous.aestronglyMeasurable (β := ι → ι → ℝ) <|
+        continuous_of_continuous_matrixBilinearForm hK.continuous)
       aestronglyMeasurable_const (fun _ _ => rfl) (fun _ _ => by simp) (fun _ _ => le_rfl) g
   -- The weak equation, tested against the reverse difference quotient of `Dᵗ u`.
   have hv0 : v ∈ w1p0Submodule mu ⊤ 2 := W1p.mem_w1p0Submodule_top (by norm_num) v
@@ -414,7 +388,7 @@ theorem UniformlyEllipticOn.norm_gradient_differenceQuotient_le
       (u : W1p mu ⊤ 2))‖ ≤ ‖w‖ * ‖f‖ / lam := by
   classical
   simpa using
-    (uniformlyEllipticOn_univ_const hlam hA).norm_gradient_differenceQuotient_le_of_lipschitzWith
+    (uniformlyEllipticOn_const univ hlam hA).norm_gradient_differenceQuotient_le_of_lipschitzWith
       (K := 0) (LipschitzWith.const _) hu w t
 
 /-- **The second-order weak directional derivatives of a whole-space weak solution.** Let `a` be
@@ -509,7 +483,7 @@ theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient
         HasWeakLineDerivOn mu ⊤
           (fun x => ⟪W1p.gradient (u : W1p mu ⊤ 2) x, y⟫_ℝ) G w := by
   classical
-  simpa using (uniformlyEllipticOn_univ_const hlam hA)
+  simpa using (uniformlyEllipticOn_const univ hlam hA)
     |>.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzWith (K := 0) (LipschitzWith.const _)
       hu y w
 
@@ -545,7 +519,7 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq
     {u : W1p0 mu ⊤ 2} (hu : IsWeakSolutionDirichlet (fun _ => A) 0 0 f u) :
     ∃ U : Wkp mu ⊤ 2 2, Wkp.lowerOrder 1 U = (u : W1p mu ⊤ 2) := by
   classical
-  exact (uniformlyEllipticOn_univ_const hlam hA).exists_lowerOrder_eq_of_lipschitzWith
+  exact (uniformlyEllipticOn_const univ hlam hA).exists_lowerOrder_eq_of_lipschitzWith
     (K := 0) (LipschitzWith.const _) hu
 
 end PDE
