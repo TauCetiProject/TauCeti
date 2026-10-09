@@ -74,6 +74,7 @@ noncomputable def d4SpinPlusExteriorBasis
 private theorem d4SpinPlusBasisVector_linearIndependent :
     LinearIndependent ℚ (P.d4SpinPlusExteriorBasis b) := by
   apply LinearIndependent.of_comp (spinPlus Q P).subtype
+  -- Coercing the half-spin subtype exposes the underlying exterior-basis family.
   change LinearIndependent ℚ (fun s : {s : Finset (Fin 4) // Even s.card} ↦
     b.ExteriorAlgebra s.1)
   exact b.ExteriorAlgebra.linearIndependent.comp Subtype.val Subtype.val_injective
@@ -99,6 +100,7 @@ noncomputable def d4SpinMinusExteriorBasis
 private theorem d4SpinMinusBasisVector_linearIndependent :
     LinearIndependent ℚ (P.d4SpinMinusExteriorBasis b) := by
   apply LinearIndependent.of_comp (spinMinus Q P).subtype
+  -- Coercing the half-spin subtype exposes the underlying exterior-basis family.
   change LinearIndependent ℚ (fun s : {s : Finset (Fin 4) // Odd s.card} ↦
     b.ExteriorAlgebra s.1)
   exact b.ExteriorAlgebra.linearIndependent.comp Subtype.val Subtype.val_injective
@@ -307,6 +309,7 @@ private theorem d4SpinPlusBlockEquiv_serreE_exteriorBasis (hline : P.line = ⊥)
     rw [hact, P.d4SpinPlusBlockEquiv_exteriorBasis,
       P.d4SpinPlusBlockEquiv_exteriorBasis, Matrix.mulVec_single_one]
     ext a
+    -- Evaluate the transported basis vector and the raising matrix at one block coordinate.
     change (Pi.single (d4SpinPlusIndexEquiv t) (1 : ℚ) :
         {a : Fin 24 // d4TripledSummand a = 2} → ℚ) a =
       D4Tripled.weightTable.raisingMatrixQ i (a : Fin 24)
@@ -335,6 +338,7 @@ private theorem d4SpinPlusBlockEquiv_serreE_exteriorBasis (hline : P.line = ⊥)
         P.typeDSpinRep_serreE_exteriorBasis_eq_zero b (by omega) i s hs
     rw [hact, map_zero, P.d4SpinPlusBlockEquiv_exteriorBasis, Matrix.mulVec_single_one]
     ext a
+    -- Evaluate the zero vector and the raising matrix at one block coordinate.
     change 0 = D4Tripled.weightTable.raisingMatrixQ i (a : Fin 24)
       (d4SpinPlusIndexEquiv s : Fin 24)
     rw [TauCeti.MinusculeWeightTable.raisingMatrixQ_apply]
@@ -364,6 +368,7 @@ private theorem d4SpinPlusBlockEquiv_serreF_exteriorBasis (hline : P.line = ⊥)
     rw [hact, P.d4SpinPlusBlockEquiv_exteriorBasis,
       P.d4SpinPlusBlockEquiv_exteriorBasis, Matrix.mulVec_single_one]
     ext a
+    -- Evaluate the transported basis vector and the lowering matrix at one block coordinate.
     change (Pi.single (d4SpinPlusIndexEquiv t) (1 : ℚ) :
         {a : Fin 24 // d4TripledSummand a = 2} → ℚ) a =
       D4Tripled.weightTable.loweringMatrixQ i (a : Fin 24)
@@ -392,6 +397,7 @@ private theorem d4SpinPlusBlockEquiv_serreF_exteriorBasis (hline : P.line = ⊥)
         P.typeDSpinRep_serreF_exteriorBasis_eq_zero b (by omega) i s hs
     rw [hact, map_zero, P.d4SpinPlusBlockEquiv_exteriorBasis, Matrix.mulVec_single_one]
     ext a
+    -- Evaluate the zero vector and the lowering matrix at one block coordinate.
     change 0 = D4Tripled.weightTable.loweringMatrixQ i (a : Fin 24)
       (d4SpinPlusIndexEquiv s : Fin 24)
     rw [TauCeti.MinusculeWeightTable.loweringMatrixQ_apply]
@@ -401,6 +407,7 @@ private theorem d4SpinPlusBlockEquiv_serreF_exteriorBasis (hline : P.line = ⊥)
 
 /-- The even half-spin coordinate equivalence intertwines each positive simple-root operator with
 the raising matrix on the `V(ϖ₄)` block of the tripled table. -/
+@[simp]
 theorem d4SpinPlusBlockEquiv_serreE (hline : P.line = ⊥) (i : Fin 4)
     (x : spinPlus Q P) :
     P.d4SpinPlusBlockEquiv b
@@ -412,6 +419,7 @@ theorem d4SpinPlusBlockEquiv_serreE (hline : P.line = ⊥) (i : Fin 4)
 
 /-- The even half-spin coordinate equivalence intertwines each negative simple-root operator with
 the lowering matrix on the `V(ϖ₄)` block of the tripled table. -/
+@[simp]
 theorem d4SpinPlusBlockEquiv_serreF (hline : P.line = ⊥) (i : Fin 4)
     (x : spinPlus Q P) :
     P.d4SpinPlusBlockEquiv b
@@ -440,6 +448,7 @@ private theorem d4SpinPlusBlockEquiv_serreH_exteriorBasis (hline : P.line = ⊥)
       P.spinAction_typeDSimpleCorootBivector_basis b (by omega) i s
   rw [hact, map_smul, P.d4SpinPlusBlockEquiv_exteriorBasis, Matrix.mulVec_single_one]
   ext a
+  -- Evaluate scalar multiplication and the diagonal matrix at one block coordinate.
   change (typeDSpinWeight s i : ℚ) *
       ((Pi.single (d4SpinPlusIndexEquiv s) (1 : ℚ) :
         {a : Fin 24 // d4TripledSummand a = 2} → ℚ) a) =
@@ -457,6 +466,7 @@ private theorem d4SpinPlusBlockEquiv_serreH_exteriorBasis (hline : P.line = ⊥)
 
 /-- The even half-spin coordinate equivalence intertwines each Cartan generator with the diagonal
 weight matrix on the `V(ϖ₄)` block of the tripled table. -/
+@[simp]
 theorem d4SpinPlusBlockEquiv_serreH (hline : P.line = ⊥) (i : Fin 4)
     (x : spinPlus Q P) :
     P.d4SpinPlusBlockEquiv b
@@ -506,6 +516,7 @@ private theorem d4SpinMinusBlockEquiv_serreE_exteriorBasis (hline : P.line = ⊥
     rw [hact, P.d4SpinMinusBlockEquiv_exteriorBasis,
       P.d4SpinMinusBlockEquiv_exteriorBasis, Matrix.mulVec_single_one]
     ext a
+    -- Evaluate the transported basis vector and the raising matrix at one block coordinate.
     change (Pi.single (d4SpinMinusIndexEquiv t) (1 : ℚ) :
         {a : Fin 24 // d4TripledSummand a = 1} → ℚ) a =
       D4Tripled.weightTable.raisingMatrixQ i (a : Fin 24)
@@ -534,6 +545,7 @@ private theorem d4SpinMinusBlockEquiv_serreE_exteriorBasis (hline : P.line = ⊥
         P.typeDSpinRep_serreE_exteriorBasis_eq_zero b (by omega) i s hs
     rw [hact, map_zero, P.d4SpinMinusBlockEquiv_exteriorBasis, Matrix.mulVec_single_one]
     ext a
+    -- Evaluate the zero vector and the raising matrix at one block coordinate.
     change 0 = D4Tripled.weightTable.raisingMatrixQ i (a : Fin 24)
       (d4SpinMinusIndexEquiv s : Fin 24)
     rw [TauCeti.MinusculeWeightTable.raisingMatrixQ_apply]
@@ -563,6 +575,7 @@ private theorem d4SpinMinusBlockEquiv_serreF_exteriorBasis (hline : P.line = ⊥
     rw [hact, P.d4SpinMinusBlockEquiv_exteriorBasis,
       P.d4SpinMinusBlockEquiv_exteriorBasis, Matrix.mulVec_single_one]
     ext a
+    -- Evaluate the transported basis vector and the lowering matrix at one block coordinate.
     change (Pi.single (d4SpinMinusIndexEquiv t) (1 : ℚ) :
         {a : Fin 24 // d4TripledSummand a = 1} → ℚ) a =
       D4Tripled.weightTable.loweringMatrixQ i (a : Fin 24)
@@ -591,6 +604,7 @@ private theorem d4SpinMinusBlockEquiv_serreF_exteriorBasis (hline : P.line = ⊥
         P.typeDSpinRep_serreF_exteriorBasis_eq_zero b (by omega) i s hs
     rw [hact, map_zero, P.d4SpinMinusBlockEquiv_exteriorBasis, Matrix.mulVec_single_one]
     ext a
+    -- Evaluate the zero vector and the lowering matrix at one block coordinate.
     change 0 = D4Tripled.weightTable.loweringMatrixQ i (a : Fin 24)
       (d4SpinMinusIndexEquiv s : Fin 24)
     rw [TauCeti.MinusculeWeightTable.loweringMatrixQ_apply]
@@ -599,6 +613,7 @@ private theorem d4SpinMinusBlockEquiv_serreF_exteriorBasis (hline : P.line = ⊥
 
 /-- The odd half-spin coordinate equivalence intertwines each positive simple-root operator with
 the raising matrix on the `V(ϖ₃)` block of the tripled table. -/
+@[simp]
 theorem d4SpinMinusBlockEquiv_serreE (hline : P.line = ⊥) (i : Fin 4)
     (x : spinMinus Q P) :
     P.d4SpinMinusBlockEquiv b
@@ -610,6 +625,7 @@ theorem d4SpinMinusBlockEquiv_serreE (hline : P.line = ⊥) (i : Fin 4)
 
 /-- The odd half-spin coordinate equivalence intertwines each negative simple-root operator with
 the lowering matrix on the `V(ϖ₃)` block of the tripled table. -/
+@[simp]
 theorem d4SpinMinusBlockEquiv_serreF (hline : P.line = ⊥) (i : Fin 4)
     (x : spinMinus Q P) :
     P.d4SpinMinusBlockEquiv b
@@ -638,6 +654,7 @@ private theorem d4SpinMinusBlockEquiv_serreH_exteriorBasis (hline : P.line = ⊥
       P.spinAction_typeDSimpleCorootBivector_basis b (by omega) i s
   rw [hact, map_smul, P.d4SpinMinusBlockEquiv_exteriorBasis, Matrix.mulVec_single_one]
   ext a
+  -- Evaluate scalar multiplication and the diagonal matrix at one block coordinate.
   change (typeDSpinWeight s i : ℚ) *
       ((Pi.single (d4SpinMinusIndexEquiv s) (1 : ℚ) :
         {a : Fin 24 // d4TripledSummand a = 1} → ℚ) a) =
@@ -655,6 +672,7 @@ private theorem d4SpinMinusBlockEquiv_serreH_exteriorBasis (hline : P.line = ⊥
 
 /-- The odd half-spin coordinate equivalence intertwines each Cartan generator with the diagonal
 weight matrix on the `V(ϖ₃)` block of the tripled table. -/
+@[simp]
 theorem d4SpinMinusBlockEquiv_serreH (hline : P.line = ⊥) (i : Fin 4)
     (x : spinMinus Q P) :
     P.d4SpinMinusBlockEquiv b

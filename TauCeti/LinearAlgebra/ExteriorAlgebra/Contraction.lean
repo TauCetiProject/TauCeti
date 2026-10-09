@@ -96,16 +96,19 @@ theorem involute_basis {I : Type w} [LinearOrder I]
   rw [ExteriorAlgebra.basis_apply]
   exact involute_ιMulti _
 
+private def basisEraseSignOfErase {I : Type w} [LinearOrder I]
+    (i : I) (t : Finset I) (hi : i ∉ t) : ℤˣ :=
+  let u : Set.powersetCard I 1 := ⟨{i}, Finset.card_singleton i⟩
+  let t' : Set.powersetCard I t.card := ⟨t, rfl⟩
+  (Set.powersetCard.permOfDisjoint (s := u) (t := t') (by simp [u, t', hi])).sign
+
 /-- The shuffle sign for the singleton basis vector indexed by `i` followed by the basis vector
 indexed by `s.erase i`. When `i ∈ s`, this is the sign of moving `i` to the front of `s`. -/
 def basisEraseSign {I : Type w} [LinearOrder I] (i : I) (s : Finset I) : ℤˣ :=
-  let u : Set.powersetCard I 1 := ⟨{i}, Finset.card_singleton i⟩
-  let t : Set.powersetCard I (s.erase i).card := ⟨s.erase i, rfl⟩
-  (Set.powersetCard.permOfDisjoint (s := u) (t := t) (by simp [u, t])).sign
+  basisEraseSignOfErase i (s.erase i) (by simp)
 
-/-- The shuffle sign which moves `i` to the front of an ordered exterior monomial is `-1`
-raised to the number of indices before `i`. -/
-theorem basisEraseSign_eq_neg_one_pow_card_filter_lt {I : Type w} [LinearOrder I]
+private theorem basisEraseSign_eq_neg_one_pow_card_filter_lt_of_mem
+    {I : Type w} [LinearOrder I]
     (i : I) (s : Finset I) (hi : i ∈ s) :
     basisEraseSign i s = (-1 : ℤˣ) ^ (s.filter (fun j ↦ j < i)).card := by
   classical
@@ -154,15 +157,18 @@ theorem basisEraseSign_eq_neg_one_pow_card_filter_lt {I : Type w} [LinearOrder I
     apply Equiv.ext
     intro j
     apply e.injective
+    -- Unfold the conjugated shuffle so both sides are compared in the increasing enumeration.
     change e (c (p (c.symm j))) = e (k.cycleRange.symm j)
     have hrhs : e (k.cycleRange.symm j) =
         (Fin.cons (e k) (k.removeNth (fun q ↦ e q)) : Fin (n + 1) → I) j := by
       simpa only [Function.comp_apply] using
         congrFun (Fin.cons_removeNth_eq_comp_cycleRange_symm e k) j |>.symm
     rw [hrhs, hek]
+    -- The disjoint-union permutation enumerates the singleton first and the erased set second.
     change e (c (p (c.symm j))) =
       (Fin.cons i (k.removeNth (fun q ↦ e q)) : Fin (n + 1) → I) j
     rw [hremove]
+    -- Expose the function represented by the increasing enumeration before applying `hec`.
     change (fun q ↦ e (c q)) (p (c.symm j)) = _
     rw [hec]
     let x : (Set.powersetCard.disjUnion hdisj).val :=
@@ -184,10 +190,12 @@ theorem basisEraseSign_eq_neg_one_pow_card_filter_lt {I : Type w} [LinearOrder I
           apply Fin.ext
           rfl
         simp only [x, hzero, Fin.cons_zero]
+        -- Coercing the disjoint-union subtype reveals the singleton entry.
         change ↑(Equiv.Finset.disjUnionEquiv u.val t.val hdisj
           (Sum.inl ((Set.powersetCard.orderIsoOfFin u) 0))) = i
         rw [Equiv.Finset.disjUnionEquiv_inl]
         dsimp only [Set.powersetCard.orderIsoOfFin, u]
+        -- The unique increasing enumeration of a singleton is constant at its element.
         change Finset.orderEmbOfFin {i} (Finset.card_singleton i) 0 = i
         exact Finset.orderEmbOfFin_singleton i 0
     | succ q =>
@@ -198,6 +206,7 @@ theorem basisEraseSign_eq_neg_one_pow_card_filter_lt {I : Type w} [LinearOrder I
           simp [c]
           omega
         simp only [x, hsucc, Fin.cons_succ]
+        -- Coercing the right summand reveals the increasing enumeration of `s.erase i`.
         change ↑(Equiv.Finset.disjUnionEquiv u.val t.val hdisj
           (Sum.inr ((Set.powersetCard.orderIsoOfFin t) q))) =
             (s.erase i).orderEmbOfFin (show (s.erase i).card = n from rfl) q
@@ -209,6 +218,7 @@ theorem basisEraseSign_eq_neg_one_pow_card_filter_lt {I : Type w} [LinearOrder I
   have hsign : Equiv.Perm.sign p' = Equiv.Perm.sign p := by
     simp [p']
   rw [basisEraseSign]
+  -- Unfolding the local permutation exposes the sign computed above.
   change Equiv.Perm.sign p = _
   rw [← hsign, hp, Equiv.Perm.sign_symm, Fin.sign_cycleRange]
   congr 1
@@ -226,6 +236,29 @@ theorem basisEraseSign_eq_neg_one_pow_card_filter_lt {I : Type w} [LinearOrder I
       · exact e.lt_iff_lt.mp (by simpa [e, j, k] using hxi)
       · exact congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨x, hxs⟩)
   rw [← Fin.card_Iio k, ← himage, Finset.card_image_of_injective _ e.injective]
+
+/-- The shuffle sign which moves `i` to the front of an ordered exterior monomial is `-1`
+raised to the number of indices before `i`. This formula also applies when `i ∉ s`: inserting
+`i` changes neither the erased set defining the shuffle nor the indices strictly below `i`. -/
+theorem basisEraseSign_eq_neg_one_pow_card_filter_lt {I : Type w} [LinearOrder I]
+    (i : I) (s : Finset I) :
+    basisEraseSign i s = (-1 : ℤˣ) ^ (s.filter (fun j ↦ j < i)).card := by
+  classical
+  by_cases hi : i ∈ s
+  · exact basisEraseSign_eq_neg_one_pow_card_filter_lt_of_mem i s hi
+  · have hsign : basisEraseSign i (insert i s) = basisEraseSign i s := by
+      simp [basisEraseSign, hi]
+    have hfilter : (insert i s).filter (fun j ↦ j < i) = s.filter (fun j ↦ j < i) := by
+      ext j
+      simp only [Finset.mem_filter, Finset.mem_insert]
+      constructor
+      · rintro ⟨hji' | hjs, hji⟩
+        · exact ((ne_of_lt hji) hji').elim
+        · exact ⟨hjs, hji⟩
+      · exact fun h ↦ ⟨Or.inr h.1, h.2⟩
+    rw [← hsign, ← hfilter]
+    exact basisEraseSign_eq_neg_one_pow_card_filter_lt_of_mem i (insert i s)
+      (Finset.mem_insert_self i s)
 
 /-- The exterior-basis vector indexed by a singleton is the image of the corresponding basis
 vector under the exterior-algebra generator. -/
@@ -286,7 +319,7 @@ theorem basis_singleton_mul_basis_erase {I : Type w} [LinearOrder I]
     simp [Set.powersetCard.disjUnion, u, t, hi]
   have hprod := ExteriorAlgebra.basis_mul_of_disjoint b u t hdisj
   rw [hunion] at hprod
-  simpa [basisEraseSign, u, t] using hprod
+  simpa [basisEraseSign, basisEraseSignOfErase, u, t] using hprod
 
 /-- **Creating a basis coordinate inserts it into the index set**, with the shuffle sign that
 moves it to the front; it is zero when the coordinate is already present, since a repeated

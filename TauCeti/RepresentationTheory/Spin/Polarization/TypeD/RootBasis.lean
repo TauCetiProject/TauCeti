@@ -51,9 +51,9 @@ private theorem chainRaisingShuffleSign (i : Fin n) (s : Finset (Fin n))
         TauCeti.ExteriorAlgebra.basisEraseSign i
           (insert i (s.erase ⟨(i : ℕ) + 1, hi⟩)) = 1 := by
   let j : Fin n := ⟨(i : ℕ) + 1, hi⟩
-  rw [TauCeti.ExteriorAlgebra.basisEraseSign_eq_neg_one_pow_card_filter_lt j s hjs,
+  rw [TauCeti.ExteriorAlgebra.basisEraseSign_eq_neg_one_pow_card_filter_lt j s,
     TauCeti.ExteriorAlgebra.basisEraseSign_eq_neg_one_pow_card_filter_lt i
-      (insert i (s.erase j)) (Finset.mem_insert_self i _)]
+      (insert i (s.erase j))]
   have hfilter : s.filter (fun x ↦ x < j) =
       (insert i (s.erase j)).filter (fun x ↦ x < i) := by
     ext x
@@ -75,14 +75,14 @@ private theorem chainRaisingShuffleSign (i : Fin n) (s : Finset (Fin n))
   exact negOnePow_mul_self _
 
 private theorem chainLoweringShuffleSign (i : Fin n) (s : Finset (Fin n))
-    (hi : (i : ℕ) + 1 < n) (his : i ∈ s) :
+    (hi : (i : ℕ) + 1 < n) :
     TauCeti.ExteriorAlgebra.basisEraseSign i s *
         TauCeti.ExteriorAlgebra.basisEraseSign ⟨(i : ℕ) + 1, hi⟩
           (insert ⟨(i : ℕ) + 1, hi⟩ (s.erase i)) = 1 := by
   let j : Fin n := ⟨(i : ℕ) + 1, hi⟩
-  rw [TauCeti.ExteriorAlgebra.basisEraseSign_eq_neg_one_pow_card_filter_lt i s his,
+  rw [TauCeti.ExteriorAlgebra.basisEraseSign_eq_neg_one_pow_card_filter_lt i s,
     TauCeti.ExteriorAlgebra.basisEraseSign_eq_neg_one_pow_card_filter_lt j
-      (insert j (s.erase i)) (Finset.mem_insert_self j _)]
+      (insert j (s.erase i))]
   have hfilter : s.filter (fun x ↦ x < i) =
       (insert j (s.erase i)).filter (fun x ↦ x < j) := by
     ext x
@@ -114,10 +114,9 @@ private theorem forkRaisingShuffleSign (s : Finset (Fin n))
   have hpq : p < q := by
     simp only [p, q, Fin.lt_def]
     omega
-  rw [TauCeti.ExteriorAlgebra.basisEraseSign_eq_neg_one_pow_card_filter_lt q
-      (insert q s) (Finset.mem_insert_self q _),
+  rw [TauCeti.ExteriorAlgebra.basisEraseSign_eq_neg_one_pow_card_filter_lt q (insert q s),
     TauCeti.ExteriorAlgebra.basisEraseSign_eq_neg_one_pow_card_filter_lt p
-      (insert p (insert q s)) (Finset.mem_insert_self p _)]
+      (insert p (insert q s))]
   have hfilter : (insert q s).filter (fun x ↦ x < q) =
       (insert p (insert q s)).filter (fun x ↦ x < p) := by
     ext x
@@ -140,9 +139,7 @@ private theorem forkRaisingShuffleSign (s : Finset (Fin n))
   rw [hfilter]
   exact negOnePow_mul_self _
 
-private theorem forkLoweringShuffleSign (s : Finset (Fin n))
-    (hp : (⟨n - 2, by omega⟩ : Fin n) ∈ s)
-    (hq : (⟨n - 1, by omega⟩ : Fin n) ∈ s) :
+private theorem forkLoweringShuffleSign (s : Finset (Fin n)) :
     TauCeti.ExteriorAlgebra.basisEraseSign ⟨n - 2, by omega⟩ s *
       TauCeti.ExteriorAlgebra.basisEraseSign ⟨n - 1, by omega⟩
         (s.erase ⟨n - 2, by omega⟩) = 1 := by
@@ -151,9 +148,8 @@ private theorem forkLoweringShuffleSign (s : Finset (Fin n))
   have hpq : p < q := by
     simp only [p, q, Fin.lt_def]
     omega
-  rw [TauCeti.ExteriorAlgebra.basisEraseSign_eq_neg_one_pow_card_filter_lt p s hp,
-    TauCeti.ExteriorAlgebra.basisEraseSign_eq_neg_one_pow_card_filter_lt q (s.erase p)
-      (Finset.mem_erase.mpr ⟨hpq.ne', hq⟩)]
+  rw [TauCeti.ExteriorAlgebra.basisEraseSign_eq_neg_one_pow_card_filter_lt p s,
+    TauCeti.ExteriorAlgebra.basisEraseSign_eq_neg_one_pow_card_filter_lt q (s.erase p)]
   have hfilter : s.filter (fun x ↦ x < p) =
       (s.erase p).filter (fun x ↦ x < q) := by
     ext x
@@ -212,6 +208,7 @@ theorem typeDSpinRep_serreE_exteriorBasis (i : Fin n) (s : Finset (Fin n))
     rw [P.typeDSpinRep_serreE_eq_spinAction b hn, hrefl]
     simp only [P.typeDSimpleRootBivector_def b, dite_eq_right hi, map_mul, Module.End.mul_apply,
       TauCeti.spinAction_ι_wedge]
+    -- Unfolding the Fock action exposes the two exterior multiplications at the fork node.
     change ExteriorAlgebra.ι ℚ (b p) *
       (ExteriorAlgebra.ι ℚ (b q) * b.ExteriorAlgebra s) = _
     simp only [TauCeti.ExteriorAlgebra.ι_mul_basis, hmem.2, ite_false, hmem.1,
@@ -245,7 +242,7 @@ theorem typeDSpinRep_serreF_exteriorBasis (i : Fin n) (s : Finset (Fin n))
       Module.End.mul_apply, TauCeti.spinAction_ι_wedge, TauCeti.spinAction_ι_contract,
       P.pairingEquiv_dualVector]
     rw [TauCeti.ExteriorAlgebra.ι_mul_contractLeft_coord_basis_of_not_mem_of_mem
-      b q i s hmem.2 hmem.1, chainLoweringShuffleSign i s hi hmem.1, one_smul]
+      b q i s hmem.2 hmem.1, chainLoweringShuffleSign i s hi, one_smul]
   · let p : Fin n := ⟨n - 2, by omega⟩
     let q : Fin n := ⟨n - 1, by omega⟩
     have hiq : i = q := Fin.ext (by have := i.isLt; dsimp [q]; omega)
@@ -264,13 +261,14 @@ theorem typeDSpinRep_serreF_exteriorBasis (i : Fin n) (s : Finset (Fin n))
     rw [P.typeDSpinRep_serreF_eq_spinAction b hn, hrefl]
     simp only [P.typeDSimpleNegativeRootBivector_def b, dite_eq_right hi, map_mul,
       Module.End.mul_apply, TauCeti.spinAction_ι_contract, P.pairingEquiv_dualVector]
+    -- Unfolding the Fock action exposes the two successive contractions at the fork node.
     change contractLeft (Q := (0 : QuadraticForm ℚ P.W)) (b.coord q)
       (contractLeft (Q := (0 : QuadraticForm ℚ P.W)) (b.coord p)
         (b.ExteriorAlgebra s)) = _
     simp only [TauCeti.ExteriorAlgebra.contractLeft_coord_basis, hmem.1, ite_true,
       Units.smul_def, map_zsmul]
     rw [ite_eq_left (Finset.mem_erase.mpr ⟨Ne.symm hpq, hmem.2⟩), smul_smul]
-    have hsign := forkLoweringShuffleSign (hn := hn) s hmem.1 hmem.2
+    have hsign := forkLoweringShuffleSign (hn := hn) s
     rcases Int.units_eq_one_or (TauCeti.ExteriorAlgebra.basisEraseSign p s) with hp' | hp' <;>
       rcases Int.units_eq_one_or
         (TauCeti.ExteriorAlgebra.basisEraseSign q (s.erase p)) with hq' | hq' <;>
@@ -293,6 +291,7 @@ theorem typeDSpinRep_serreE_exteriorBasis_eq_zero (i : Fin n) (s : Finset (Fin n
     simp only [P.typeDSimpleRootBivector_def b, dite_eq_left hi, map_mul,
       Module.End.mul_apply, TauCeti.spinAction_ι_wedge, TauCeti.spinAction_ι_contract,
       P.pairingEquiv_dualVector]
+    -- Unfolding the Fock action exposes creation after coordinate contraction at a chain node.
     change ExteriorAlgebra.ι ℚ (b i) *
       contractLeft (Q := (0 : QuadraticForm ℚ P.W)) (b.coord q) (b.ExteriorAlgebra s) = 0
     have hiq : i ≠ q := by
@@ -317,6 +316,7 @@ theorem typeDSpinRep_serreE_exteriorBasis_eq_zero (i : Fin n) (s : Finset (Fin n
     rw [P.typeDSpinRep_serreE_eq_spinAction b hn]
     simp only [P.typeDSimpleRootBivector_def b, dite_eq_right hi, map_mul,
       Module.End.mul_apply, TauCeti.spinAction_ι_wedge]
+    -- Unfolding the Fock action exposes the two exterior multiplications at the fork node.
     change ExteriorAlgebra.ι ℚ (b p) *
       (ExteriorAlgebra.ι ℚ (b q) * b.ExteriorAlgebra s) = 0
     rcases hnot with hp | hq
@@ -342,6 +342,7 @@ theorem typeDSpinRep_serreF_exteriorBasis_eq_zero (i : Fin n) (s : Finset (Fin n
     simp only [P.typeDSimpleNegativeRootBivector_def b, dite_eq_left hi, map_mul,
       Module.End.mul_apply, TauCeti.spinAction_ι_wedge, TauCeti.spinAction_ι_contract,
       P.pairingEquiv_dualVector]
+    -- Unfolding the Fock action exposes creation after coordinate contraction at a chain node.
     change ExteriorAlgebra.ι ℚ (b q) *
       contractLeft (Q := (0 : QuadraticForm ℚ P.W)) (b.coord i) (b.ExteriorAlgebra s) = 0
     have hqi : q ≠ i := by
