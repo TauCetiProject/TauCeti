@@ -15,6 +15,7 @@ import TauCeti.FieldTheory.GaloisGroups.FactorDegrees
 import TauCeti.FieldTheory.GaloisGroups.Orbits
 import TauCeti.GroupTheory.Perm.MultipleTransitivity
 import TauCeti.GroupTheory.Perm.Recognition
+import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
 # Galois groups over `ℚ` from factorizations modulo primes
@@ -306,6 +307,10 @@ theorem not_two_dvd_discr_X_pow_five_sub_X_sub_one :
   rw [← hf.separable_map_zmod_iff_not_dvd_discr, PerfectField.separable_iff_squarefree]
   exact squarefree_map_of_nodup_factorDegrees (hf.map _).ne_zero
     (by rw [factorDegrees_X_pow_five_sub_X_sub_one_two]; decide)
+
+/-- The discriminant of `X ^ 5 - X - 1` is `2869 = 19 · 151`. -/
+theorem discr_X_pow_five_sub_X_sub_one : (X ^ 5 - X - 1 : ℤ[X]).discr = 2869 := by
+  simpa [sub_eq_add_neg] using discr_X_pow_five_add_C_mul_X_add_C (-1 : ℤ) (-1)
 
 /-- **The Galois group of `X ^ 5 - X - 1` over `ℚ` is `S₅`.** -/
 theorem surjective_galActionHom_X_pow_five_sub_X_sub_one :

@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
 import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 import Mathlib.Algebra.Polynomial.Div
-import Mathlib.Analysis.Normed.Ring.Lemmas
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.LinearCombination
 
@@ -16,8 +15,8 @@ import Mathlib.Tactic.LinearCombination
 # Weierstrass division for restricted power series
 
 Let `f` be a power series which is distinguished of degree `s` at the radius `c`: its
-Gauss norm is attained in degree `s`, and every later coefficient is strictly smaller. A
-*Weierstrass division* by `f` writes a power series as
+positive Gauss norm is attained in degree `s`, and every later weighted coefficient norm is
+strictly smaller. A *Weierstrass division* by `f` writes a power series as
 
 ```text
 q * f + r,    q restricted,    r vanishing in every degree ≥ s
@@ -90,7 +89,7 @@ variable [IsUltrametricDist R] [NormMulClass R]
 
 /-- **The Weierstrass lower bound for the quotient.** In a decomposition `q * f + r` by a
 distinguished series `f` of degree `s`, with `r` vanishing in every degree `≥ s`, the Gauss norm of
-the sum is at least the Gauss norm of `q * f`. -/
+the sum is at least the product of the Gauss norms of `q` and `f`. -/
 theorem IsDistinguished.le_gaussNorm_mul_add (hf : IsDistinguished c s f) (hc : 0 < c)
     (hq : q.IsRestricted c) (hr : ∀ m, s ≤ m → r.coeff m = 0) :
     q.gaussNorm norm c * f.gaussNorm norm c ≤ (q * f + r).gaussNorm norm c := by
@@ -129,22 +128,15 @@ theorem IsDistinguished.gaussNorm_le_gaussNorm_mul_add (hf : IsDistinguished c s
       norm_nonneg norm_mul_le IsUltrametricDist.isNonarchimedean_norm norm_zero
       (hasGaussNorm_of_isRestricted hq).hasMvGaussNorm hf.hasGaussNorm.hasMvGaussNorm).trans
       (hf.le_gaussNorm_mul_add hc hq hr)
-  rw [PowerSeries.gaussNorm_eq]
-  refine ciSup_le fun m ↦ ?_
-  have hsub : ‖r.coeff m‖ ≤ max ‖(q * f + r).coeff m‖ ‖(q * f).coeff m‖ := by
-    have hrw : r.coeff m = (q * f + r).coeff m + -((q * f).coeff m) := by
-      rw [map_add]; abel
-    rw [hrw]
-    simpa only [norm_neg] using
-      IsUltrametricDist.isNonarchimedean_norm ((q * f + r).coeff m) (-((q * f).coeff m))
-  calc ‖r.coeff m‖ * c ^ m
-      ≤ max ‖(q * f + r).coeff m‖ ‖(q * f).coeff m‖ * c ^ m :=
-        mul_le_mul_of_nonneg_right hsub (pow_nonneg hc.le m)
-    _ = max (‖(q * f + r).coeff m‖ * c ^ m) (‖(q * f).coeff m‖ * c ^ m) :=
-        max_mul_of_nonneg _ _ (pow_nonneg hc.le m)
-    _ ≤ (q * f + r).gaussNorm norm c :=
-        max_le (PowerSeries.le_gaussNorm norm c _ hbsum m)
-          ((PowerSeries.le_gaussNorm norm c _ hbqf m).trans hqf)
+  have hbneg : (-(q * f)).HasGaussNorm norm c := by
+    simpa only [PowerSeries.HasGaussNorm, map_neg, norm_neg] using hbqf
+  have hbound := PowerSeries.gaussNorm_add_le_max norm c (q * f + r) (-(q * f)) hc.le
+    norm_nonneg IsUltrametricDist.isNonarchimedean_norm hbsum hbneg
+  have hcancel : q * f + r + -(q * f) = r := by abel
+  have hneg : (-(q * f)).gaussNorm norm c = (q * f).gaussNorm norm c :=
+    MvPowerSeries.gaussNorm_neg norm (fun _ : Unit ↦ c) norm_neg _
+  rw [hcancel, hneg] at hbound
+  exact hbound.trans (max_le le_rfl hqf)
 
 /-- **The Weierstrass division estimate** (Bosch–Güntzer–Remmert §5.2.1, Theorem 2). If `f` is
 distinguished of degree `s` at the radius `c`, `q` is restricted, and `r` vanishes in
@@ -161,19 +153,17 @@ theorem IsDistinguished.gaussNorm_mul_add_eq_max (hf : IsDistinguished c s f) (h
       max (q.gaussNorm norm c * f.gaussNorm norm c) (r.gaussNorm norm c) := by
   refine le_antisymm ?_ (max_le (hf.le_gaussNorm_mul_add hc hq hr)
     (hf.gaussNorm_le_gaussNorm_mul_add hc hq hr))
-  have hqf : (q * f).gaussNorm norm c = q.gaussNorm norm c * f.gaussNorm norm c := by
-    rcases eq_or_ne q 0 with rfl | hq0
-    · simp [PowerSeries.gaussNorm_zero norm c (norm_zero : ‖(0 : R)‖ = 0)]
-    · obtain ⟨n, hn⟩ := exists_isDistinguished hc hq hq0
-      exact (hn.mul hf hc).norm_coeff_mul_pow_eq.symm.trans
-        (hn.norm_coeff_mul_mul_pow_eq_gaussNorm_mul hf hc)
-  rw [← hqf]
-  exact PowerSeries.gaussNorm_add_le_max norm c (q * f) r hc.le norm_nonneg
+  have hqf : (q * f).gaussNorm norm c ≤ q.gaussNorm norm c * f.gaussNorm norm c :=
+    MvPowerSeries.gaussNorm_mul_le norm (fun _ : Unit ↦ c) q f (fun _ ↦ hc.le)
+      norm_nonneg norm_mul_le IsUltrametricDist.isNonarchimedean_norm norm_zero
+      (hasGaussNorm_of_isRestricted hq).hasMvGaussNorm hf.hasGaussNorm.hasMvGaussNorm
+  exact (PowerSeries.gaussNorm_add_le_max norm c (q * f) r hc.le norm_nonneg
     IsUltrametricDist.isNonarchimedean_norm
     (hasGaussNorm_mul hc.le (hasGaussNorm_of_isRestricted hq) hf.hasGaussNorm)
-    (hasGaussNorm_of_isRestricted (isRestricted_of_forall_coeff_eq_zero hr))
+    (hasGaussNorm_of_isRestricted (isRestricted_of_forall_coeff_eq_zero hr))).trans
+      (max_le_max hqf le_rfl)
 
-/-- **Uniqueness in Weierstrass division** (Bosch–Güntzer–Remmert §5.2.1, Theorem 2). A restricted
+/-- **Uniqueness in Weierstrass division** (Bosch–Güntzer–Remmert §5.2.1, Theorem 2). Any power
 series has at most one decomposition `q * f + r` with `q` restricted and `r` vanishing in every
 degree `≥ s`, for `f` distinguished of degree `s`. -/
 theorem IsDistinguished.eq_and_eq_of_mul_add_eq_mul_add (hf : IsDistinguished c s f) (hc : 0 < c)
@@ -238,8 +228,7 @@ private theorem exists_gaussNorm_sub_mul_add_le (hf : IsDistinguished c s f)
   have htailr : (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)).IsRestricted c := by
     rw [sub_eq_add_neg]
     exact PowerSeries.isRestricted.add c hfr (PowerSeries.isRestricted.neg c
-      (isRestricted_of_forall_coeff_eq_zero (n := s + 1) fun m hm ↦ by
-        rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc, ite_eq_right (by omega)]))
+      (isRestricted_polynomial _))
   rcases eq_or_ne g 0 with rfl | hg0
   · exact ⟨0, 0, PowerSeries.isRestricted_zero c, fun m _ ↦ by simp, by simp [hzero],
       by simp [hzero], by simp [hzero]⟩
@@ -277,8 +266,7 @@ private theorem exists_gaussNorm_sub_mul_add_le (hf : IsDistinguished c s f)
   have hsmallr : (g - ((g.trunc N : Polynomial R) : PowerSeries R)).IsRestricted c := by
     rw [sub_eq_add_neg]
     exact PowerSeries.isRestricted.add c hg (PowerSeries.isRestricted.neg c
-      (isRestricted_of_forall_coeff_eq_zero (n := N) fun m hm ↦ by
-        rw [hgcoeff m, ite_eq_right (by omega)]))
+      (isRestricted_polynomial _))
   -- Divide that truncation by `f⁻`, a polynomial of degree `s` whose leading coefficient is a
   -- unit: after scaling by the inverse of that unit it is monic, so division by it is possible.
   have hPs : (f.trunc (s + 1) : Polynomial R).coeff s = f.coeff s := by
@@ -305,9 +293,7 @@ private theorem exists_gaussNorm_sub_mul_add_le (hf : IsDistinguished c s f)
     rw [Polynomial.coeff_coe]
     exact Polynomial.coeff_eq_zero_of_degree_lt (hrdeg.trans_le (by exact_mod_cast hm))
   have hQr : ((Qp : Polynomial R) : PowerSeries R).IsRestricted c :=
-    isRestricted_of_forall_coeff_eq_zero (n := Qp.natDegree + 1) fun m hm ↦ by
-      rw [Polynomial.coeff_coe]
-      exact Polynomial.coeff_eq_zero_of_natDegree_lt (by omega)
+    isRestricted_polynomial Qp
   have hdivPS : ((g.trunc N : Polynomial R) : PowerSeries R)
       = (Qp : PowerSeries R) * ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)
         + (rp : PowerSeries R) := by
