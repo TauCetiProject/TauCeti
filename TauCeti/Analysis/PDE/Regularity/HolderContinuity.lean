@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
 /-!
 # Hölder continuity of weak solutions (De Giorgi)
 
-Let `a` be measurable and uniformly elliptic on an open set `Ω ⊆ ℝⁿ`, `n ≥ 3`, with constants
+Let `a` be measurable and uniformly elliptic on an open set `Ω ⊆ ℝⁿ`, `n ≥ 1`, with constants
 `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`. This file proves
 De Giorgi's theorem: `u` has a representative which is locally Hölder continuous in `Ω`, with an
 exponent `α ∈ (0, 1]` depending only on `λ`, `Λ`, the dimension and the normalization of the
@@ -61,9 +61,8 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {lam Lam : ℝ}
 
-/-- **De Giorgi's theorem: Hölder continuity of weak solutions.** Let `2*` be the Sobolev
-exponent of `W^{1,2}` in dimension `n`, so that `1/2* + 1/n = 1/2` and `2* < ∞` (this forces
-`n ≥ 3`). There are `α ∈ (0, 1]` and `C > 0`, depending only on `λ`, `Λ`, the dimension and the
+/-- **De Giorgi's theorem: Hölder continuity of weak solutions.** Let `n ≥ 1` be the
+dimension. There are `α ∈ (0, 1]` and `C > 0`, depending only on `λ`, `Λ`, the dimension and the
 normalization of the additive Haar measure `mu`, such that the following holds. Let `a` be
 measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak
 solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`. If the closed `R`-thickening of a set `K` lies in `Ω`, then the
@@ -73,8 +72,7 @@ precise representative of `u` is Hölder continuous on `K` with exponent `α` an
 The precise representative agrees with `u` almost everywhere on `Ω`
 (`TauCeti.W1p.ae_eq_preciseRepresentative`). No regularity of the coefficients
 beyond measurability is assumed. -/
-theorem exists_holderOnWith_preciseRepresentative {pstar : ℝ≥0∞}
-    (hpstar : pstar ≠ (∞ : ℝ≥0∞)) (hexp : pstar⁻¹ + (Fintype.card ι : ℝ≥0∞)⁻¹ = 2⁻¹) :
+theorem exists_holderOnWith_preciseRepresentative [Nonempty ι] :
     ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ α ≤ 1 ∧ 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
       {K : Set (EuclideanSpace ℝ ι)} {R : ℝ},
@@ -87,10 +85,9 @@ theorem exists_holderOnWith_preciseRepresentative {pstar : ℝ≥0∞}
           (preciseRepresentative mu (W1p.value u)) K := by
   obtain ⟨α, C₀, hα, hα1, hC₀, hosc⟩ :=
     exists_ae_value_mem_Icc_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral (mu := mu) (lam := lam)
-      (Lam := Lam) hpstar hexp
+      (Lam := Lam)
   obtain ⟨D, hD, hbound⟩ :=
     exists_ae_abs_value_le_mul_rpow_mul_sqrt_setIntegral (mu := mu) (lam := lam) (Lam := Lam)
-      hpstar hexp
   lift α to ℝ≥0 using hα.le
   refine ⟨α, max C₀ (4 * D), NNReal.coe_pos.1 hα, NNReal.coe_le_one.1 hα1,
     lt_max_of_lt_left hC₀, ?_⟩
@@ -153,14 +150,12 @@ theorem exists_holderOnWith_preciseRepresentative {pstar : ℝ≥0∞}
           gcongr
           exact le_max_right _ _
 
-/-- **De Giorgi's theorem on compact sets.** Let `2*` be the Sobolev exponent of `W^{1,2}` in
-dimension `n`, so that `1/2* + 1/n = 1/2` and `2* < ∞` (this forces `n ≥ 3`). There is
+/-- **De Giorgi's theorem on compact sets.** Let `n ≥ 1` be the dimension. There is
 `α ∈ (0, 1]`, depending only on `λ`, `Λ`, the dimension and the normalization of the additive
 Haar measure `mu`, such that the following holds. Let `a` be measurable and uniformly elliptic on
 `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`. Then the
 precise representative of `u` is Hölder continuous with exponent `α` on every compact `K ⊆ Ω`. -/
-theorem exists_holderOnWith_preciseRepresentative_of_isCompact {pstar : ℝ≥0∞}
-    (hpstar : pstar ≠ (∞ : ℝ≥0∞)) (hexp : pstar⁻¹ + (Fintype.card ι : ℝ≥0∞)⁻¹ = 2⁻¹) :
+theorem exists_holderOnWith_preciseRepresentative_of_isCompact [Nonempty ι] :
     ∃ α : ℝ≥0, 0 < α ∧ α ≤ 1 ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
       {K : Set (EuclideanSpace ℝ ι)},
@@ -170,26 +165,24 @@ theorem exists_holderOnWith_preciseRepresentative_of_isCompact {pstar : ℝ≥0�
       IsCompact K → K ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
         ∃ C : ℝ≥0, HolderOnWith C α (preciseRepresentative mu (W1p.value u)) K := by
   obtain ⟨α, _, hα, hα1, -, hhol⟩ :=
-    exists_holderOnWith_preciseRepresentative (mu := mu) (lam := lam) (Lam := Lam) hpstar hexp
+    exists_holderOnWith_preciseRepresentative (mu := mu) (lam := lam) (Lam := Lam)
   refine ⟨α, hα, hα1, ?_⟩
   intro Omega a u K h ha hu hK hKΩ
   obtain ⟨R, hR, hRK⟩ := hK.exists_cthickening_subset_open Omega.isOpen hKΩ
   exact ⟨_, hhol h ha hu hR hRK⟩
 
-/-- **Continuity of weak solutions.** Let `2*` be the Sobolev exponent of `W^{1,2}` in dimension
-`n`, so that `1/2* + 1/n = 1/2` and `2* < ∞` (this forces `n ≥ 3`). Let `a` be measurable and
+/-- **Continuity of weak solutions.** Let `n ≥ 1` be the dimension. Let `a` be measurable and
 uniformly elliptic on `Ω`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`. Then the
 precise representative of `u`, which agrees with `u` almost everywhere on `Ω`, is continuous on
 `Ω`. -/
-theorem continuousOn_preciseRepresentative {pstar : ℝ≥0∞} (hpstar : pstar ≠ (∞ : ℝ≥0∞))
-    (hexp : pstar⁻¹ + (Fintype.card ι : ℝ≥0∞)⁻¹ = 2⁻¹) {Omega : Opens (EuclideanSpace ℝ ι)}
+theorem continuousOn_preciseRepresentative [Nonempty ι] {Omega : Opens (EuclideanSpace ℝ ι)}
     {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega))
     (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) = 0) :
     ContinuousOn (preciseRepresentative mu (W1p.value u)) Omega := by
   obtain ⟨α, _, hα, -, -, hhol⟩ :=
-    exists_holderOnWith_preciseRepresentative (mu := mu) (lam := lam) (Lam := Lam) hpstar hexp
+    exists_holderOnWith_preciseRepresentative (mu := mu) (lam := lam) (Lam := Lam)
   intro x hx
   obtain ⟨ε, hε, hsub⟩ := nhds_basis_closedBall.mem_iff.1 (Omega.isOpen.mem_nhds hx)
   have hε2 : 0 < ε / 2 := half_pos hε

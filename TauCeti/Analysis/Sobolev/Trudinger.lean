@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Embedding
-import TauCeti.Analysis.Sobolev.Poincare.Potential
-import TauCeti.MeasureTheory.Integral.RieszPotential
+public import TauCeti.Analysis.Sobolev.FiniteMeasure
 
 /-!
 # The borderline Sobolev embedding `p = n`
@@ -24,12 +22,10 @@ growth rate which, summed in the exponential series, gives Trudinger's exponenti
 of `|u| ^ (n / (n - 1))`. For `n = 1` the constant is bounded in `q`, in line with the embedding
 of `W^{1,1}_0` in `L^∞`.
 
-The proof is that of Gilbarg–Trudinger, Theorem 7.15. A `C¹` function `u` with compact support in
-`Ω` is bounded pointwise by the Riesz potential of `‖Du‖` of order one,
-`‖u x‖ ≤ (n ω)⁻¹ ∫_Ω ‖Du y‖ ‖x - y‖ ^ (1 - n) dy`
-(`TauCeti.enorm_le_lintegral_enorm_fderiv_mul_enorm_sub_rpow`), and that potential maps `Lⁿ(Ω)`
-to `L^q(Ω)` with the stated constant (`TauCeti.eLpNorm_setLIntegral_enorm_sub_rpow_mul_le` with
-`κ = 1/n`, `p = n`). The estimate then passes from test functions to their closure
+The proof is that of Gilbarg–Trudinger, Theorem 7.15: the bound is the case `p = n`,
+`δ = 1/n - 1/q` of the Sobolev inequality on sets of finite measure,
+`TauCeti.eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_lt`, which rests on the Riesz potential
+of `‖Du‖` of order one. The estimate then passes from test functions to their closure
 `W^{1,n}_0(Ω)` (`TauCeti.W1p.eLpNorm_value_le_of_forall_testFunction`).
 
 ## Main declarations
@@ -75,56 +71,19 @@ theorem eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv (hu : ContDiff ℝ 1 u)
         (q * (1 - (finrank ℝ E : ℝ)⁻¹) + 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹ + (q : ℝ)⁻¹)) *
         μ Ω ^ (q : ℝ)⁻¹ * eLpNorm (fderiv ℝ u) (finrank ℝ E) μ := by
   set n := finrank ℝ E
-  set ω := μ.real (ball (0 : E) 1)
-  have hn : (1 : ℝ) ≤ n := by exact_mod_cast finrank_pos
-  have hn0 : (n : ℝ) ≠ 0 := by positivity
-  have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne'
-    measure_ball_lt_top.ne
-  have hq' : (n : ℝ) ≤ q := by exact_mod_cast hq
-  have hq0 : (0 : ℝ) < q := by linarith
-  -- The Riesz potential of order one of `‖Du‖`, over `Ω`.
-  set V : E → ℝ≥0∞ := fun x =>
-    ∫⁻ y in Ω, ‖x - y‖ₑ ^ ((n : ℝ) * ((n : ℝ)⁻¹ - 1)) * ‖fderiv ℝ u y‖ₑ ∂μ
-  have hcont := hu.continuous_fderiv one_ne_zero
-  -- The pointwise potential bound `‖u x‖ ≤ (n ω)⁻¹ V x`.
-  have hpt : ∀ x, ‖u x‖ₑ ≤ ENNReal.ofReal ((n * ω)⁻¹) * ‖V x‖ₑ := fun x => by
-    refine (enorm_le_lintegral_enorm_fderiv_mul_enorm_sub_rpow (μ := μ) hu h2u x).trans_eq ?_
-    rw [enorm_eq_self, ← setLIntegral_eq_of_support_subset (s := Ω)]
-    · congr 1
-      refine lintegral_congr fun y => ?_
-      rw [mul_comm, show (n : ℝ) * ((n : ℝ)⁻¹ - 1) = 1 - n by field_simp]
-    · intro y hy
-      by_contra hyΩ
-      rw [mem_support, fderiv_of_notMem_tsupport ℝ fun h => hyΩ (hsupp h)] at hy
-      simp [enorm_eq_nnnorm] at hy
-  -- The `Lⁿ`-`L^q` bound for the potential, with `κ = 1/n`, `p = n` and `δ = 1/n - 1/q`.
-  have hpot := eLpNorm_setLIntegral_enorm_sub_rpow_mul_le (μ := μ) (p := (n : ℝ≥0)) (q := q)
-    (κ := (n : ℝ)⁻¹) (δ := (n : ℝ)⁻¹ - (q : ℝ)⁻¹) (by exact_mod_cast finrank_pos) hq
-    (by simp) (by linarith [inv_pos.2 hq0]) (inv_le_one_of_one_le₀ hn) hΩ
-    hcont.enorm.aemeasurable
-  rw [← eLpNorm_restrict_eq_of_support_subset hu.continuous.aestronglyMeasurable
-    ((subset_tsupport _).trans hsupp)]
-  calc
-    eLpNorm u q (μ.restrict Ω) ≤ ENNReal.ofReal ((n * ω)⁻¹) * eLpNorm V q (μ.restrict Ω) :=
-      eLpNorm_le_mul_eLpNorm_of_ae_le_mul'' _ hu.continuous.aestronglyMeasurable.restrict
-        (ae_of_all _ hpt)
-    _ ≤ _ := by
-      rw [mul_assoc]
-      refine (mul_le_mul_right hpot _).trans_eq ?_
-      have hbase : (1 - ((n : ℝ)⁻¹ - (q : ℝ)⁻¹)) / ((n : ℝ)⁻¹ - ((n : ℝ)⁻¹ - (q : ℝ)⁻¹)) =
-          q * (1 - (n : ℝ)⁻¹) + 1 := by
-        field_simp [hn0]
-        ring
-      have hexp : 1 - ((n : ℝ)⁻¹ - (q : ℝ)⁻¹) = 1 - (n : ℝ)⁻¹ + (q : ℝ)⁻¹ := by ring
-      have hω' : ω ^ (1 - (n : ℝ)⁻¹) = ω * ω ^ (-(n : ℝ)⁻¹) := by
-        rw [sub_eq_add_neg, Real.rpow_add hω, Real.rpow_one]
-      rw [hbase, hexp, hω', sub_sub_cancel, eLpNorm_enorm _ hcont.aestronglyMeasurable,
-        eLpNorm_restrict_eq_of_support_subset hcont.aestronglyMeasurable
-          ((support_fderiv_subset ℝ).trans hsupp),
-        ENNReal.coe_natCast, ← mul_assoc, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity)]
-      rw [mul_assoc]
-      congr 2
-      field_simp
+  have hn0 : (n : ℝ) ≠ 0 := by have : 0 < n := finrank_pos; positivity
+  have hq0 : (0 : ℝ) < q := lt_of_lt_of_le (by have : 0 < n := finrank_pos; positivity)
+    (by exact_mod_cast hq : (n : ℝ) ≤ q)
+  have h := eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_lt (μ := μ) hu h2u hΩ hsupp
+    (p := n) (by exact_mod_cast finrank_pos) hq (δ := (n : ℝ)⁻¹ - (q : ℝ)⁻¹) (by simp)
+    (by linarith [inv_pos.2 hq0])
+  -- At `p = n`, `δ = 1/n - 1/q`, so `1/n - δ = 1/q` and `(1 - δ) / (1/n - δ) = q (1 - 1/n) + 1`.
+  have hbase : (1 - ((n : ℝ)⁻¹ - (q : ℝ)⁻¹)) / ((n : ℝ)⁻¹ - ((n : ℝ)⁻¹ - (q : ℝ)⁻¹)) =
+      q * (1 - (n : ℝ)⁻¹) + 1 := by
+    field_simp [hn0]
+    ring
+  rwa [hbase, sub_sub_cancel, show 1 - ((n : ℝ)⁻¹ - (q : ℝ)⁻¹) = 1 - (n : ℝ)⁻¹ + (q : ℝ)⁻¹ by
+    ring, ENNReal.coe_natCast] at h
 
 end CompactSupport
 
