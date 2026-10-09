@@ -21,6 +21,8 @@ Lie-algebra isomorphism: the universal covering group and `G` have the same Lie 
 
 ## Main results
 
+* `TauCeti.UniversalCover.isLocalDiffeomorphAt_projHom_one`: the universal covering projection is a
+  local diffeomorphism at the identity.
 * `TauCeti.UniversalCover.lieEquivProjHom`: the Lie-algebra equivalence induced by the universal
   covering projection.
 * `TauCeti.UniversalCover.lieMap_projHom_bijective`: the Lie map of the covering homomorphism is
@@ -45,13 +47,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [LocallyPathConnectedSpace G] [SemilocallySimplyConnectedSpace G] [LieGroup I ∞ G]
 
 variable (I G) in
-/-- The covering homomorphism of the universal cover of a Lie group induces a bijection, hence a
-Lie-algebra isomorphism, between the Lie algebras of left-invariant derivations. -/
-theorem lieMap_projHom_bijective :
-    Function.Bijective
-      (lieMap ((projHom : UniversalCover (1 : G) →ₜ* G).toContMDiffMonoidMorphism I I)) :=
-  Lie.lieMap_bijective_of_isLocalDiffeomorphAt _ <| by
-    simpa using isLocalDiffeomorph_proj (I := I) (n := ∞) (1 : G) 1
+/-- The universal covering projection of a Lie group is a local diffeomorphism at the identity. -/
+theorem isLocalDiffeomorphAt_projHom_one :
+    IsLocalDiffeomorphAt I I ∞
+      ((projHom : UniversalCover (1 : G) →ₜ* G).toContMDiffMonoidMorphism I I) 1 := by
+  simpa using isLocalDiffeomorph_proj (I := I) (n := ∞) (1 : G) 1
 
 variable (I G) in
 /-- The universal covering projection induces an equivalence between the Lie algebra of the
@@ -59,8 +59,8 @@ universal covering group and the Lie algebra of the base group. -/
 noncomputable def lieEquivProjHom :
     LeftInvariantDerivation I (UniversalCover (1 : G)) ≃ₗ⁅ℝ⁆ LeftInvariantDerivation I G :=
   Lie.lieEquivOfIsLocalDiffeomorphAt
-    ((projHom : UniversalCover (1 : G) →ₜ* G).toContMDiffMonoidMorphism I I) <| by
-      simpa using isLocalDiffeomorph_proj (I := I) (n := ∞) (1 : G) 1
+    ((projHom : UniversalCover (1 : G) →ₜ* G).toContMDiffMonoidMorphism I I)
+    (isLocalDiffeomorphAt_projHom_one I G)
 
 /-- The Lie-algebra equivalence induced by the universal covering projection acts by the Lie
 functor. -/
@@ -70,6 +70,21 @@ theorem lieEquivProjHom_apply (X : LeftInvariantDerivation I (UniversalCover (1 
       lieMap ((projHom : UniversalCover (1 : G) →ₜ* G).toContMDiffMonoidMorphism I I) X := by
   simp [lieEquivProjHom]
 
+variable (I G) in
+/-- The covering homomorphism of the universal cover of a Lie group induces a bijection, hence a
+Lie-algebra isomorphism, between the Lie algebras of left-invariant derivations. -/
+theorem lieMap_projHom_bijective :
+    Function.Bijective
+      (lieMap ((projHom : UniversalCover (1 : G) →ₜ* G).toContMDiffMonoidMorphism I I)) := by
+  have h :
+      lieMap ((projHom : UniversalCover (1 : G) →ₜ* G).toContMDiffMonoidMorphism I I) =
+        (lieEquivProjHom I G).toLieHom := by
+    apply LieHom.ext
+    intro X
+    exact (lieEquivProjHom_apply X).symm
+  rw [h]
+  exact (lieEquivProjHom I G).bijective
+
 /-- The inverse of the Lie-algebra equivalence induced by the universal covering projection sends
 the Lie map of a derivation back to that derivation. -/
 @[simp]
@@ -78,8 +93,8 @@ theorem lieEquivProjHom_symm_apply_lieMap
     (lieEquivProjHom I G).symm
         (lieMap ((projHom : UniversalCover (1 : G) →ₜ* G).toContMDiffMonoidMorphism I I) X) =
       X := by
-  rw [← lieEquivProjHom_apply]
-  exact (lieEquivProjHom I G).symm_apply_apply X
+  exact Lie.lieEquivOfIsLocalDiffeomorphAt_symm_apply_lieMap _
+    (isLocalDiffeomorphAt_projHom_one I G) X
 
 /-- The Lie map of the universal covering projection sends the inverse Lie-algebra equivalence of a
 derivation back to that derivation. -/
@@ -88,7 +103,7 @@ theorem lieMap_projHom_lieEquivProjHom_symm_apply (Y : LeftInvariantDerivation I
     lieMap ((projHom : UniversalCover (1 : G) →ₜ* G).toContMDiffMonoidMorphism I I)
         ((lieEquivProjHom I G).symm Y) =
       Y := by
-  rw [← lieEquivProjHom_apply]
-  exact (lieEquivProjHom I G).apply_symm_apply Y
+  exact Lie.lieMap_lieEquivOfIsLocalDiffeomorphAt_symm_apply _
+    (isLocalDiffeomorphAt_projHom_one I G) Y
 
 end TauCeti.UniversalCover
