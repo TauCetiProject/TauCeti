@@ -158,6 +158,7 @@ theorem halfFrobenius_halfFrobenius (e : SuzukiReeIndex) (g : e.1.AmbientGroup) 
     exact TitsLieIndex.steinberg_steinberg TitsLieIndex.of g
 
 /-- The square relation `τ ^ 2 = Frob_p` as an equation in the endomorphism monoid. -/
+@[simp]
 theorem halfFrobenius_sq (e : SuzukiReeIndex) :
     HPow.hPow (α := Monoid.End e.1.AmbientGroup) e.halfFrobenius 2 = e.1.primeFrobenius :=
   (pow_two (M := Monoid.End _) _).trans (MonoidHom.ext e.halfFrobenius_halfFrobenius)
