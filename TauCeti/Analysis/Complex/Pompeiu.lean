@@ -32,7 +32,7 @@ compactly supported `C¹` maps `u : ℂ → F` into a complex Banach space.
   differentiable, its derivative is the Cauchy transform of the derivative of `f`, and
   `D` of it is `f`.
 
-So the Cauchy transform inverts `\bar∂` on both sides on compactly supported `C¹` maps. This
+So the Cauchy transform inverts `D = 2 \bar∂` on both sides on compactly supported `C¹` maps. This
 representation is the starting point of the elliptic estimates for the Cauchy–Riemann operator:
 differentiating it expresses `∂ u` through `\bar∂ u` by the Beurling transform, a singular integral
 operator, and the Calderón–Zygmund inequality `‖∇u‖_{Lᵖ} ≤ C ‖\bar∂ u‖_{Lᵖ}` for compactly supported
@@ -45,11 +45,12 @@ along each ray.
 
 ## Main results
 
-* `HasCompactSupport.two_pi_inv_smul_integral_sub_inv_smul_fderiv`: the Cauchy–Pompeiu formula.
+* `HasCompactSupport.two_pi_inv_smul_integral_sub_inv_smul_fderiv_apply_one_add_I_smul_apply_I`:
+  the Cauchy–Pompeiu formula.
 * `HasCompactSupport.hasFDerivAt_integral_sub_inv_smul`: the Cauchy transform of a compactly
   supported `C¹` map is differentiable, with derivative the transform of the derivative.
-* `HasCompactSupport.fderiv_two_pi_inv_smul_integral_sub_inv_smul`: `\bar∂` of the Cauchy transform
-  of a compactly supported `C¹` map `f` is `f`.
+* `HasCompactSupport.fderiv_apply_one_add_I_smul_apply_I_two_pi_inv_smul_integral_sub_inv_smul`:
+  `D = 2 \bar∂` of the Cauchy transform of a compactly supported `C¹` map `f` is `f`.
 
 ## References
 
@@ -182,7 +183,9 @@ variable [CompleteSpace F]
 /-- **The Cauchy–Pompeiu formula** for a compactly supported `C¹` map `u : ℂ → F`: `u` is the
 Cauchy transform of `∂ₓ u + i ∂ᵧ u = 2 \bar∂ u`,
 `u w = (2π)⁻¹ ∫ (w - z)⁻¹ • (∂ₓ u z + i ∂ᵧ u z)`, the integral being over the whole plane. -/
-theorem _root_.HasCompactSupport.two_pi_inv_smul_integral_sub_inv_smul_fderiv {u : ℂ → F}
+theorem
+  _root_.HasCompactSupport.two_pi_inv_smul_integral_sub_inv_smul_fderiv_apply_one_add_I_smul_apply_I
+    {u : ℂ → F}
     (hc : HasCompactSupport u) (hu : ContDiff ℝ 1 u) (w : ℂ) :
     (2 * π : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • (fderiv ℝ u z 1 + I • fderiv ℝ u z I) = u w := by
   set G : ℂ → F := fun z => fderiv ℝ u z 1 + I • fderiv ℝ u z I with hG
@@ -194,16 +197,18 @@ theorem _root_.HasCompactSupport.two_pi_inv_smul_integral_sub_inv_smul_fderiv {u
   rw [hcentre, ← Complex.integral_comp_polarCoord_symm]
   set A : ℝ × ℝ → F := fun p => fderiv ℝ u (w + p.1 * expI p.2) (expI p.2) with hA
   set B : ℝ × ℝ → F := fun p => fderiv ℝ u (w + p.1 * expI p.2) (I * expI p.2) with hB
-  have hmeas : MeasurableSet (polarCoord.target) := measurableSet_Ioi.prod measurableSet_Ioo
+  have hmeas : MeasurableSet (polarCoord.target) := by
+    rw [polarCoord_target]
+    exact measurableSet_Ioi.prod measurableSet_Ioo
   -- In polar coordinates the integrand is `A + I • B`, with `A` radial and `B` angular.
   have hAB : EqOn (fun p : ℝ × ℝ => p.1 • ((Complex.polarCoord.symm p)⁻¹ •
       G (w + Complex.polarCoord.symm p))) (fun p => A p + I • B p) polarCoord.target := by
     rintro ⟨r, θ⟩ ⟨hr, -⟩
     have hr0 : (r : ℂ) ≠ 0 := ofReal_ne_zero.2 (ne_of_gt hr)
     have hinv : (r : ℂ) * ((r : ℂ) * expI θ)⁻¹ = conj (expI θ) := by
-      have hn : ‖expI θ‖ = 1 := norm_expI θ
-      rw [mul_inv, ← mul_assoc, mul_inv_cancel₀ hr0, one_mul, inv_def, normSq_eq_norm_sq, hn]
-      simp
+      calc
+        (r : ℂ) * ((r : ℂ) * expI θ)⁻¹ = (expI θ)⁻¹ := by field_simp
+        _ = conj (expI θ) := Complex.inv_eq_conj (norm_expI θ)
     simp only [Complex.polarCoord_symm_apply, hA, hB, hG]
     rw [← Complex.coe_smul, smul_smul, hinv, conj_smul_apply_one_add_I_smul_apply_I]
   -- Both parts are integrable: they are continuous and vanish for large radius.
@@ -229,8 +234,7 @@ theorem _root_.HasCompactSupport.two_pi_inv_smul_integral_sub_inv_smul_fderiv {u
   have hBi : IntegrableOn B polarCoord.target := hint (fun θ => I * expI θ) (by fun_prop)
   have hprod : (volume : Measure (ℝ × ℝ)).restrict polarCoord.target =
       (volume.restrict (Ioi (0 : ℝ))).prod (volume.restrict (Ioo (-π) π)) := by
-    rw [Measure.volume_eq_prod, Measure.prod_restrict]
-    rfl
+    rw [polarCoord_target, Measure.volume_eq_prod, Measure.prod_restrict]
   -- The radial part integrates to `-u w` along each ray.
   have hAval : ∫ p in polarCoord.target, A p = -((2 * π) • u w) := by
     rw [hprod, integral_prod_symm _ (by rw [← hprod]; exact hAi)]
@@ -245,13 +249,14 @@ theorem _root_.HasCompactSupport.two_pi_inv_smul_integral_sub_inv_smul_fderiv {u
     refine setIntegral_eq_zero_of_forall_eq_zero fun r hr => ?_
     exact integral_Ioo_fderiv_apply_circle hu w (ne_of_gt hr)
   rw [setIntegral_congr_fun hmeas hAB,
-    integral_add (g := fun p => I • B p) hAi (hBi.smul I), integral_smul, hAval,
-    hBval, smul_zero, add_zero, neg_neg, ← Complex.coe_smul, smul_smul]
+    integral_add (g := fun p => I • B p) hAi (hBi.smul I), integral_smul, hAval, hBval]
+  simp only [smul_zero, add_zero, neg_neg, ← Complex.coe_smul, smul_smul]
   push_cast
-  rw [inv_mul_cancel₀ (by simp [Real.pi_ne_zero]), one_smul]
+  field_simp [Real.pi_ne_zero]
+  simp
 
 /-- The kernel `z ↦ (w - z)⁻¹` of the Cauchy transform is locally integrable on `ℂ`. -/
-private lemma locallyIntegrable_sub_inv (w : ℂ) :
+lemma locallyIntegrable_sub_inv (w : ℂ) :
     LocallyIntegrable (fun z : ℂ => (w - z)⁻¹) volume := by
   refine (locallyIntegrable_norm_sub_rpow (mu := volume) (s := -1) (by simp) w).mono
     (measurable_const.sub measurable_id).inv.aestronglyMeasurable (ae_of_all _ fun z => ?_)
@@ -281,13 +286,16 @@ theorem _root_.HasCompactSupport.hasFDerivAt_integral_sub_inv_smul {f : ℂ → 
   rw [funext fun w => integral_sub_inv_smul_eq_convolution f w,
     integral_sub_inv_smul_eq_convolution]
   convert h using 1
+  ext v
   simp only [convolution_def]
   congr 1 with t
 
-/-- The Cauchy transform inverts `\bar∂` from the other side: for a compactly supported `C¹` map
-`f : ℂ → F`, the transform `T f w = (2π)⁻¹ ∫ (w - z)⁻¹ • f z` satisfies
+/-- The Cauchy transform inverts `D = 2 \bar∂` from the other side: for a compactly supported
+`C¹` map `f : ℂ → F`, the transform `T f w = (2π)⁻¹ ∫ (w - z)⁻¹ • f z` satisfies
 `∂ₓ (T f) + i ∂ᵧ (T f) = f`, that is `2 \bar∂ (T f) = f`. -/
-theorem _root_.HasCompactSupport.fderiv_two_pi_inv_smul_integral_sub_inv_smul {f : ℂ → F}
+theorem
+  _root_.HasCompactSupport.fderiv_apply_one_add_I_smul_apply_I_two_pi_inv_smul_integral_sub_inv_smul
+    {f : ℂ → F}
     (hc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) (w : ℂ) :
     fderiv ℝ (fun w => (2 * π : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z) w 1 +
       I • fderiv ℝ (fun w => (2 * π : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z) w I = f w := by
@@ -305,7 +313,9 @@ theorem _root_.HasCompactSupport.fderiv_two_pi_inv_smul_integral_sub_inv_smul {f
   simp only [smul_apply, ContinuousLinearMap.integral_apply hintL]
   rw [smul_comm I, ← smul_add, ← integral_smul,
     ← integral_add (g := fun z => I • (w - z)⁻¹ • fderiv ℝ f z I) (hint 1) ((hint I).smul I)]
-  conv_rhs => rw [← hc.two_pi_inv_smul_integral_sub_inv_smul_fderiv hf w]
+  conv_rhs =>
+    rw [← hc.two_pi_inv_smul_integral_sub_inv_smul_fderiv_apply_one_add_I_smul_apply_I
+      hf w]
   congr 2 with z
   rw [smul_add, smul_comm I]
 
