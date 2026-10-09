@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Field.ZMod
-public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
 public import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
@@ -109,8 +108,9 @@ theorem shapiroOpenSubgroup_index :
 /-- The Shapiro fixed field is fixed exactly by the preimage of `C`: the preimage is open, hence
 closed, and infinite Galois theory recovers a closed subgroup from its fixed field. -/
 theorem fixingSubgroup_shapiroField [IsGalois F (AlgebraicClosure F)] :
-    (shapiroField F V C).fixingSubgroup = (shapiroOpenSubgroup F V C).toSubgroup :=
-  InfiniteGalois.fixingSubgroup_fixedField
+    (shapiroField F V C).fixingSubgroup = (shapiroOpenSubgroup F V C).toSubgroup := by
+  rw [shapiroField_def]
+  exact InfiniteGalois.fixingSubgroup_fixedField
     (⟨(shapiroOpenSubgroup F V C).toSubgroup, (shapiroOpenSubgroup F V C).isClosed⟩ :
       ClosedSubgroup (AlgebraicClosure F ≃ₐ[F] AlgebraicClosure F))
 

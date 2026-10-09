@@ -13,14 +13,14 @@ public import Mathlib.RepresentationTheory.Continuous.TopRep
 This file supplements Mathlib's restriction `TopRep.res φ` of a topological representation along a
 monoid homomorphism `φ` with its behaviour under composition: restricting along `φ` and then along
 `ψ` is restricting along `φ.comp ψ`, restricting along the identity does nothing, and so restricting
-along an isomorphism of topological groups and then along its inverse gives the representation
+along a group isomorphism and then along its inverse gives the representation
 back.
 
 ## Main results
 
 * `TopRep.res_res`: `Res_ψ (Res_φ X) = Res_{φ ∘ ψ} X`.
 * `TopRep.res_id`: `Res_id X = X`.
-* `TopRep.res_symm_res`: `Res_{e⁻¹} (Res_e X) = X` for `e : H ≃ₜ* G`.
+* `TopRep.res_symm_res`: `Res_{e⁻¹} (Res_e X) = X` for `e : H ≃* G`.
 -/
 
 public section
@@ -42,10 +42,10 @@ theorem res_id (X : TopRep k G) : res (MonoidHom.id G) X = X :=
 
 -- Not `@[simp]`: `res_res` already rewrites the left-hand side to a single restriction along
 -- `(e : H →* G).comp e.symm`, so the simpNF linter rejects this lemma as a simp lemma.
-/-- Restricting along `e : H ≃ₜ* G` and then along `e⁻¹` gives back the representation. -/
-theorem res_symm_res [TopologicalSpace G] [TopologicalSpace H] (e : H ≃ₜ* G) (X : TopRep k G) :
-    res ((e.symm : G →ₜ* H) : G →* H) (res ((e : H →ₜ* G) : H →* G) X) = X := by
-  have hcomp : ((e : H →ₜ* G) : H →* G).comp ((e.symm : G →ₜ* H) : G →* H) = .id G :=
+/-- Restricting along `e : H ≃* G` and then along `e⁻¹` gives back the representation. -/
+theorem res_symm_res (e : H ≃* G) (X : TopRep k G) :
+    res e.symm.toMonoidHom (res e.toMonoidHom X) = X := by
+  have hcomp : e.toMonoidHom.comp e.symm.toMonoidHom = .id G :=
     MonoidHom.ext e.apply_symm_apply
   rw [res_res, hcomp, res_id]
 

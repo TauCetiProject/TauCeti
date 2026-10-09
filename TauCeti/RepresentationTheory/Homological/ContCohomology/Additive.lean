@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Homology.Linear
+public import TauCeti.RepresentationTheory.Continuous.TopRep.Res
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 
@@ -199,19 +200,14 @@ section Additive
 variable (R : Type u) [Ring R] [TopologicalSpace R]
   (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
-omit [IsTopologicalGroup G] in
-private theorem res_id_eq (X : TopRep R G) :
-    TopRep.res (ContinuousMonoidHom.id G : G →* G) X = X := by
-  rfl
-
 private def resIdHom (X : TopRep R G) :
     TopRep.res (ContinuousMonoidHom.id G : G →* G) X ⟶ X :=
-  eqToHom (res_id_eq R G X)
+  eqToHom (TopRep.res_id X)
 
 private theorem coeffMap_eq_map_id {X Y : TopRep R G} (f : X ⟶ Y) (n : ℕ) :
     coeffMap f n = map (ContinuousMonoidHom.id G) (resIdHom R G X ≫ f) n := by
   rw [coeffMap_def]
-  exact map_congr rfl (eqToHom_comp_heq f (res_id_eq R G X)).symm n
+  exact map_congr rfl (eqToHom_comp_heq f (TopRep.res_id X)).symm n
 
 private theorem coeffMap_add {X Y : TopRep R G} (f g : X ⟶ Y) (n : ℕ) :
     coeffMap (f + g) n = coeffMap f n + coeffMap g n := by

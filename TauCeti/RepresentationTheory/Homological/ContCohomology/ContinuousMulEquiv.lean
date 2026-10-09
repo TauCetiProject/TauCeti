@@ -54,7 +54,7 @@ compatible pair `(e, 𝟙)` induces `Hⁿ(G, X) ≅ Hⁿ(H, Res_e X)`, with inve
 noncomputable def continuousCohomologyIso (e : H ≃ₜ* G) (X : TopRep R G) (n : ℕ) :
     continuousCohomology n X ≅ continuousCohomology n (TopRep.res ((e : H →ₜ* G) : H →* G) X) where
   hom := ContinuousCohomology.map (e : H →ₜ* G) (𝟙 _) n
-  inv := ContinuousCohomology.map (e.symm : G →ₜ* H) (eqToHom (TopRep.res_symm_res e X)) n
+  inv := ContinuousCohomology.map (e.symm : G →ₜ* H) (eqToHom (TopRep.res_symm_res e.toMulEquiv X)) n
   hom_inv_id := by
     rw [← ContinuousCohomology.map_comp, ← ContinuousCohomology.map_id]
     refine TauCeti.ContinuousCohomology.map_congr
@@ -79,7 +79,7 @@ identity being transported along `TopRep.res_symm_res`. -/
 @[simp]
 theorem continuousCohomologyIso_inv (e : H ≃ₜ* G) (X : TopRep R G) (n : ℕ) :
     (e.continuousCohomologyIso X n).inv =
-      ContinuousCohomology.map (e.symm : G →ₜ* H) (eqToHom (TopRep.res_symm_res e X)) n :=
+      ContinuousCohomology.map (e.symm : G →ₜ* H) (eqToHom (TopRep.res_symm_res e.toMulEquiv X)) n :=
   (rfl)
 
 /-- Restriction along an isomorphism of topological groups does not change the cardinality of
