@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.InformationTheory.KullbackLeibler.Basic
-public import Mathlib.MeasureTheory.Measure.LogLikelihoodRatio
 
 /-!
 # Changing the reference measure of a relative entropy
