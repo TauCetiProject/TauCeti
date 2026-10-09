@@ -15,8 +15,8 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.RestrictSc
 
 Let `F` be a finite extension of `ℚ_p`. Tate's local Euler characteristic formula
 `χ_F(A) = φ_F(A)` is stated for every finite smooth discrete `A : GalRep n F`. This file reduces
-it to modules with coefficients in a prime field `ZMod ℓ`, which is step 2 of the proof
-(NSW (7.3.1); Milne, *Arithmetic Duality Theorems*, I, Theorem 2.8).
+it to modules with coefficients in a prime field `ZMod ℓ`, following NSW (7.3.1) and Milne,
+*Arithmetic Duality Theorems*, I, Theorem 2.8.
 
 Two observations make the reduction. First, the continuous cohomology of a discrete module does
 not see its scalars (`TauCeti.ContCohomology.ofDiscreteModuleRestrictScalarsIntEquiv`), so a
