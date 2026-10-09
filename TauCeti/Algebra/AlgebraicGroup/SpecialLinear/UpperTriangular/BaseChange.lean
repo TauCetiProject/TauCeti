@@ -51,7 +51,7 @@ noncomputable def coordinateHopfAlgebraBaseChangeIso :
 /-- The Borel base-change isomorphism commutes with restriction of functions from `SLₙ`.
 Contravariantly, this identifies the base change of the Borel inclusion with the inclusion
 constructed over the new base. -/
-@[reassoc]
+@[simp, reassoc]
 theorem baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom :
     CommHopfAlgCat.baseChangeMap (K := K) (coordinateMap R n) ≫
         (coordinateHopfAlgebraBaseChangeIso R K n).hom =
