@@ -32,7 +32,7 @@ theorem isCompact_orthogonalGroup_iff_posDef_or_negDef (Q : _root_.QuadraticForm
     IsCompact (TauCeti.QuadraticMap.orthogonalGroup Q : Set (V ≃ₗ[ℝ] V)) ↔
       Q.PosDef ∨ (-Q).PosDef := by
   let _ : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
-  exact (TauCeti.QuadraticMap.isCompact_orthogonalGroup_iff Q hQ).trans
+  exact (TauCeti.QuadraticMap.isCompact_orthogonalGroup_iff Q hQ.radical_eq_bot).trans
     (_root_.QuadraticForm.anisotropic_iff_posDef_or_negDef Q)
 
 end QuadraticForm
