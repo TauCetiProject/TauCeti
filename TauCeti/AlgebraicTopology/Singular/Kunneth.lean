@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth
 public import TauCeti.AlgebraicTopology.Singular.CrossProduct
-import Mathlib.Algebra.Category.ModuleCat.Products
 
 /-!
 # The Künneth theorem for singular homology over a field
@@ -119,13 +118,14 @@ the Alexander–Whitney map gives the algebraic Künneth map of the singular cha
 @[simp, reassoc]
 lemma singularHomologyKunneth_comp_homologyMap_alexanderWhitney :
     singularHomologyKunneth X Y R S n ≫ homologyMap (alexanderWhitney X Y R S) n =
-      homologyKunneth ((toSSet.obj X).chainComplex R) ((toSSet.obj Y).chainComplex S) n :=
-  -- `Hₙ(X × Y; R ⊗ S)` is by definition the homology of the singular chain complex, so this is
-  -- the algebraic Künneth map followed by the homology of the Eilenberg–Zilber homotopy.
-  (Category.assoc _ _ _).trans <| (homologyKunneth _ _ n ≫=
-    ((homologyMap_comp _ _ n).symm.trans
-      (((shuffleAlexanderWhitneyHomotopy X Y R S).homologyMap_eq n).trans
-        (homologyMap_id _ n)))).trans (Category.comp_id _)
+      homologyKunneth ((toSSet.obj X).chainComplex R) ((toSSet.obj Y).chainComplex S) n := by
+  -- The shuffle map followed by the Alexander–Whitney map is homotopic to the identity.
+  have h : homologyMap (shuffle X Y R S) n ≫ homologyMap (alexanderWhitney X Y R S) n = 𝟙 _ := by
+    rw [← homologyMap_comp, (shuffleAlexanderWhitneyHomotopy X Y R S).homologyMap_eq,
+      homologyMap_id]
+  -- `Hₙ(X × Y; R ⊗ S)` is by definition the homology of the singular chain complex, so the
+  -- Künneth map followed by the Alexander–Whitney map is the algebraic Künneth map.
+  exact (Category.assoc _ _ _).trans ((homologyKunneth _ _ n ≫= h).trans (Category.comp_id _))
 
 /-- The Künneth map is an isomorphism exactly when the algebraic Künneth map of the singular
 chain complexes is, since the shuffle map is a chain homotopy equivalence. -/
@@ -200,23 +200,12 @@ section Semisimple
 
 variable {k : Type w} [CommRing k]
 
-/-- The singular chain modules `Cₙ(X; M) = ⨁ M` with semisimple coefficients `M` are semisimple. -/
-private lemma isSemisimpleModule_chainComplex_X (X : TopCat.{w}) (M : ModuleCat.{w} k)
-    [IsSemisimpleModule k M] (n : ℕ) :
-    IsSemisimpleModule k (((toSSet.obj X).chainComplex M).X n) := by
-  classical
-  -- `Cₙ(X; M)` is by definition the coproduct of copies of `M` indexed by the `n`-simplices.
-  exact .congr ((ModuleCat.coprodIsoDirectSum fun _ : (toSSet.obj X).obj
-    (.op (.mk n)) ↦ M).toLinearEquiv.trans (finsuppLequivDFinsupp k).symm)
-
 /-- **The Künneth theorem over a field**: for semisimple modules `M` and `N` over a commutative
 ring `k`, for instance any modules over a field, the Künneth map
 `⨁_{p + q = n} Hₚ(X; M) ⊗ H_q(Y; N) ⟶ Hₙ(X × Y; M ⊗ N)` is an isomorphism. -/
 instance isIso_singularHomologyKunneth (X Y : TopCat.{w}) (M N : ModuleCat.{w} k)
     [IsSemisimpleModule k M] [IsSemisimpleModule k N] (n : ℕ) :
     IsIso (singularHomologyKunneth X Y M N n) :=
-  have := isSemisimpleModule_chainComplex_X X M
-  have := isSemisimpleModule_chainComplex_X Y N
   (isIso_singularHomologyKunneth_iff X Y M N n).mpr inferInstance
 
 /-- **The Künneth isomorphism** `⨁_{p + q = n} Hₚ(X; M) ⊗ H_q(Y; N) ≅ Hₙ(X × Y; M ⊗ N)` for
