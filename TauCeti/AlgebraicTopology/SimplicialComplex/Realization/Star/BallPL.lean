@@ -19,8 +19,8 @@ manifolds.  The theorem is stated with the compactness of the coordinate link ma
 combinatorial link supplies it through its finite realization, while the radial PL extension itself
 does not require a finite ambient vertex type.
 
-The proof reads the star as a cone, applies `IsPLOn.coneMap`, and projects away the height
-coordinate.  Thus the apex is included in the same PL formula as every other point.
+The conical extension includes the apex and agrees with the radial formula away from it, so the
+resulting ambient coordinate formula represents the closed-star ball homeomorphism on every point.
 
 ## References
 
@@ -81,8 +81,9 @@ theorem exists_isPiecewiseAffineOn_closedStarHomeomorphClosedBall
       apply Subtype.ext
       simpa only [starApex_val] using (Realization.eq_vertex_iff K x.1 v).mpr hv
     rw [he]
-    change π (coneMap F (starToCone v ((starApex K v).1.1 : ι → ℝ))) = _
-    rw [starToCone_of_not_lt (starApex K v) (by simp), coneMap_zero]
+    rw [Function.comp_apply, Function.comp_apply,
+      starToCone_of_not_lt (starApex K v) (by simp), coneMap_zero,
+      closedStarHomeomorphClosedBall_starApex hK e]
     simp [π]
 
 /-- The piecewise-affine ball formula is piecewise linear on the closed-star coordinates. -/
@@ -101,9 +102,12 @@ theorem exists_isPLOn_closedStarHomeomorphClosedBall
   exact ⟨G, hG.isPLOn, hG_eq⟩
 
 /-- Compact finite-dimensional link coordinates turn local PL link data into the ball formula. -/
+private theorem isCompact_closedStarRealization_of_finite [Finite ι] :
+    IsCompact (closedStarRealization K {v}) := by
+  let := Fintype.ofFinite ι
+  exact K.isCompact_closedStarRealization (Set.toFinite _)
+
 theorem exists_isPLOn_closedStarHomeomorphClosedBall_of_isPLOn [Finite ι]
-    (hK : IsCompact (closedStarRealization K {v}))
-    (hlink : IsCompact (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))))
     (e : geometricLink K v ≃ₜ Metric.sphere (0 : E) 1)
     (F : (ι → ℝ) → E)
     (hF : ∀ y : geometricLink K v, F (y.1.1 : ι → ℝ) = e y)
@@ -111,7 +115,21 @@ theorem exists_isPLOn_closedStarHomeomorphClosedBall_of_isPLOn [Finite ι]
     ∃ G : (ι → ℝ) → E,
       IsPLOn G (range (fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ))) ∧
       ∀ x : closedStarRealization K {v},
-        G (x.1.1 : ι → ℝ) = (closedStarHomeomorphClosedBall hK e x : E) := by
+        G (x.1.1 : ι → ℝ) = (closedStarHomeomorphClosedBall
+          (K.isCompact_closedStarRealization (by
+            let := Fintype.ofFinite ι
+            exact Set.toFinite _)) e x : E) := by
+  let := Fintype.ofFinite ι
+  have hK := isCompact_closedStarRealization_of_finite (K := K) (v := v)
+  have hlink : IsCompact (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))) := by
+    have hcompact : IsCompact (geometricLink K v) := by
+      simpa only [Set.inter_def, Set.mem_ofPred_eq, Function.comp_apply,
+        ← mem_geometricLink, Set.ofPred_mem_eq] using
+        (K.isCompact_closedStarRealization (σ := {v}) (Set.toFinite _)).inter_left
+          (isClosed_eq ((continuous_apply v).comp (continuous_realization_coe K))
+            (continuous_const (y := (0 : ℝ))))
+    let : CompactSpace (geometricLink K v) := isCompact_iff_compactSpace.mp hcompact
+    exact isCompact_range ((continuous_realization_coe K).comp continuous_subtype_val)
   exact exists_isPLOn_closedStarHomeomorphClosedBall hK e F hF
     (hf.isPiecewiseAffineOn_of_isCompact hlink)
 

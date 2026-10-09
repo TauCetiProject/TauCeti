@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Homeomorph
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Basic
 public import TauCeti.Topology.Cone
-public import TauCeti.Topology.PL.Map
+public import Mathlib.Topology.Algebra.Ring.Real
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
 
 /-!
@@ -37,6 +37,7 @@ def starToCone (v : ι) : (ι → ℝ) →ᴬ[ℝ] ((ι → ℝ) × ℝ) :=
       (ContinuousLinearMap.proj v).toContinuousAffineMap)
 
 /-- The coordinate formula for `starToCone`. -/
+@[simp]
 theorem starToCone_apply (v : ι) (x : ι → ℝ) :
     starToCone v x = (x - x v • Pi.single v 1, 1 - x v) := (rfl)
 
