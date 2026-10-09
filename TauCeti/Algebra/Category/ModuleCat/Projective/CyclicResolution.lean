@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Homology.AlternatingConst
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.CategoryTheory.Preadditive.Projective.Resolution
-public import TauCeti.Algebra.Category.FGModuleCat.Stable.Syzygy
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Polynomial.Periodic
 public import TauCeti.RingTheory.AdjoinRoot.Basic
 
@@ -44,6 +43,8 @@ of the local ring `A`, so this is the minimal free resolution of `M_i`.
 
 ## Main results
 
+* `TauCeti.range_toSpanSingleton_op_eq_ker`: if the right annihilator of `a` is `bA`, then on the
+  regular right module the image of left multiplication by `b` is the kernel of that by `a`.
 * `TauCeti.cyclicModuleProjectiveResolution_complex_d_apply`: the differential into degree `j`
   is left multiplication by `a` for even `j` and by `b` for odd `j`.
 * `TauCeti.cyclicModuleProjectiveResolution_π_f_zero`: the augmentation is the quotient map.
@@ -114,14 +115,25 @@ theorem cyclicModuleResolutionComplex_d_apply (j : ℕ) (c : Aᵐᵒᵖ) :
     ((cyclicModuleResolutionComplex a b hab hba).d (j + 1) j).hom c =
       c * op (if Even j then a else b) := by
   rw [cyclicModuleResolutionComplex_d]
-  change LinearMap.toSpanSingleton Aᵐᵒᵖ Aᵐᵒᵖ (op (if Even j then a else b)) c = _
-  rw [LinearMap.toSpanSingleton_apply, smul_eq_mul]
+  -- `rw [ModuleCat.hom_ofHom]` does not fire because the source is spelled `X (j + 1)`, not `A`
+  exact (LinearMap.toSpanSingleton_apply Aᵐᵒᵖ Aᵐᵒᵖ _ c).trans (smul_eq_mul _ _)
 
 end Complex
 
 /-! ### The resolution -/
 
 section Resolution
+
+/-- If the right annihilator of `a` is `bA`, then the image of left multiplication by `b` on
+the regular right `A`-module is the kernel of left multiplication by `a`. -/
+theorem range_toSpanSingleton_op_eq_ker {a b : A} (hab : ∀ c : A, a * c = 0 ↔ b ∣ c) :
+    LinearMap.range (LinearMap.toSpanSingleton Aᵐᵒᵖ Aᵐᵒᵖ (op b)) =
+      LinearMap.ker (LinearMap.toSpanSingleton Aᵐᵒᵖ Aᵐᵒᵖ (op a)) := by
+  ext c
+  induction c using MulOpposite.rec' with | _ c => ?_
+  simp only [LinearMap.mem_range, LinearMap.mem_ker, LinearMap.toSpanSingleton_apply, smul_eq_mul,
+    op_surjective.exists, ← op_mul, op_inj, op_eq_zero_iff, hab]
+  exact ⟨fun ⟨d, hd⟩ ↦ ⟨d, hd.symm⟩, fun ⟨d, hd⟩ ↦ ⟨d, hd.symm⟩⟩
 
 variable {a b : A}
 
@@ -158,12 +170,8 @@ def cyclicModuleProjectiveResolution :
       rw [quasiIsoAt_iff_exactAt' (hL := ChainComplex.exactAt_succ_single_obj ..),
         HomologicalComplex.exactAt_iff' _ (m + 2) (m + 1) m (by simp) (by simp),
         ShortComplex.moduleCat_exact_iff_range_eq_ker]
-      change LinearMap.range
-          ((cyclicModuleResolutionComplex a b ((hab b).2 dvd_rfl) ((hba a).2 dvd_rfl)).d
-            (m + 2) (m + 1)).hom =
-        LinearMap.ker
-          ((cyclicModuleResolutionComplex a b ((hab b).2 dvd_rfl) ((hba a).2 dvd_rfl)).d
-            (m + 1) m).hom
+      simp only [HomologicalComplex.shortComplexFunctor'_obj_f,
+        HomologicalComplex.shortComplexFunctor'_obj_g]
       rw [cyclicModuleResolutionComplex_d, cyclicModuleResolutionComplex_d]
       by_cases hm : Even m
       · -- `using!` bridges the reducible spelling of the middle complex term with the regular
@@ -184,6 +192,7 @@ theorem cyclicModuleProjectiveResolution_complex :
 
 /-- The differential of `TauCeti.cyclicModuleProjectiveResolution` into degree `j` is left
 multiplication by `a` for even `j` and by `b` for odd `j`. -/
+@[simp]
 theorem cyclicModuleProjectiveResolution_complex_d_apply (j : ℕ) (c : Aᵐᵒᵖ) :
     ((cyclicModuleProjectiveResolution hab hba).complex.d (j + 1) j).hom c =
       c * op (if Even j then a else b) :=
@@ -215,9 +224,8 @@ resolution of `M_i`. -/
 def cyclicModuleRootPowProjectiveResolution (hi : i ≤ n) :
     ProjectiveResolution (ModuleCat.of (AdjoinRoot (X ^ n : R[X]))ᵐᵒᵖ
       ((AdjoinRoot (X ^ n : R[X]))ᵐᵒᵖ ⧸ Ideal.span {op (AdjoinRoot.root (X ^ n : R[X]) ^ i)})) :=
-  cyclicModuleProjectiveResolution (AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff hi) <| by
-    simpa only [Nat.sub_sub_self hi] using
-      AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff (R := R) (Nat.sub_le n i)
+  cyclicModuleProjectiveResolution (AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff hi)
+    (AdjoinRoot.root_X_pow_sub_pow_mul_eq_zero_iff hi)
 
 /-- The complex of `TauCeti.cyclicModuleRootPowProjectiveResolution` is the general cyclic-module
 resolution complex specialized to `x ^ i` and `x ^ (n - i)`. -/
@@ -226,9 +234,7 @@ theorem cyclicModuleRootPowProjectiveResolution_complex (hi : i ≤ n) :
     (cyclicModuleRootPowProjectiveResolution R hi).complex =
       (cyclicModuleProjectiveResolution
         (AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff hi)
-        (by
-          simpa only [Nat.sub_sub_self hi] using
-            AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff (R := R) (Nat.sub_le n i))).complex :=
+        (AdjoinRoot.root_X_pow_sub_pow_mul_eq_zero_iff hi)).complex :=
   (rfl)
 
 /-- The augmentation of `TauCeti.cyclicModuleRootPowProjectiveResolution` is the quotient map. -/
@@ -241,6 +247,7 @@ theorem cyclicModuleRootPowProjectiveResolution_π_f_zero (hi : i ≤ n) :
 
 /-- The differential of `TauCeti.cyclicModuleRootPowProjectiveResolution` into degree `j` is
 multiplication by `x ^ i` for even `j` and by `x ^ (n - i)` for odd `j`. -/
+@[simp]
 theorem cyclicModuleRootPowProjectiveResolution_complex_d_apply (hi : i ≤ n) (j : ℕ)
     (c : (AdjoinRoot (X ^ n : R[X]))ᵐᵒᵖ) :
     ((cyclicModuleRootPowProjectiveResolution R hi).complex.d (j + 1) j).hom c =
