@@ -28,6 +28,8 @@ specializing `K` to `ℚ`.
 
 * `TauCeti.hyperbolicFourEvenEquivMatrixProd` identifies the even Clifford algebra with two
   two-by-two matrix algebras.
+* `TauCeti.hyperbolicFourEvenEquivMatrixProd_apply` relates it to the canonical half-spin
+  matrix-product model.
 * `TauCeti.hyperbolicFourSpinEquivSpecialLinearProd` identifies the Spin group with
   `SL₂(K) × SL₂(K)`.
 * The accompanying coercion theorems expose the forward and inverse maps through the chosen even
@@ -75,6 +77,21 @@ noncomputable def hyperbolicFourEvenEquivMatrixProd :
       Matrix (Fin 2) (Fin 2) K × Matrix (Fin 2) (Fin 2) K := by
   simpa using (splitEvenPolarization K 2).evenCliffordEquivProdMatrix
     (hyperbolicFour_W_ne_bot K) (hyperbolicFour_finrank K)
+
+/-- The hyperbolic even-Clifford equivalence applies the matrix-product model of the canonical
+polarization. The latter's application theorem identifies its two coordinates with the matrices
+of the two half-spin actions. -/
+@[simp]
+theorem hyperbolicFourEvenEquivMatrixProd_apply
+    (x : even (splitEvenForm K 2)) :
+    hyperbolicFourEvenEquivMatrixProd K x =
+      (splitEvenPolarization K 2).evenCliffordEquivProdMatrix (l := 2)
+        (Submodule.finrank_eq_zero.not.1 <| by
+          rw [(splitEvenPolarization K 2).finrank_W_eq_of_finrank_eq_two_mul
+            (by simp [SplitEvenSpace] : finrank K (SplitEvenSpace K 2) = 2 * 2)]
+          norm_num)
+        (by simp [SplitEvenSpace]) x := by
+  simp [hyperbolicFourEvenEquivMatrixProd]
 
 /-- The Spin group of the four-dimensional hyperbolic space is the product of two special linear
 groups of degree two. -/
