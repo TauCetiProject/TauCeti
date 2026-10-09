@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Projective
+import Mathlib.RingTheory.Flat.Equalizer
 import TauCeti.Algebra.Module.Projective.Schanuel
 import TauCeti.LinearAlgebra.FreeModule.PID
 import TauCeti.RepresentationTheory.Homological.TateCohomology.HomologySequence
+import TauCeti.RepresentationTheory.Rep.TensorShortExact
 
 /-!
 # Cohomologically trivial representations have projective dimension at most one
@@ -31,23 +33,41 @@ sequence, since `F` and `A` are, so it is projective by the lattice form of the 
 (`LinearMap.projective_ker_of_projective_ker`) the kernel of any other surjection onto `A` from a
 projective module, in any universe, is then projective too.
 
+The resolution of length one makes cohomological triviality stable under tensor products: if `A`
+is cohomologically trivial and `Tor₁^k(M, A) = 0`, then `M ⊗ A`, with the diagonal action, is
+cohomologically trivial (Nakayama, Ann. of Math. 65 (1957)), because tensoring
+`0 → R → F → A → 0` with `M` stays exact and `M ⊗ R`, `M ⊗ F` are cohomologically trivial
+(`Rep.isZero_res_tensor_of_shortExact`). This is how the theorem of Nakayama and Rim enters the
+Tate–Nakayama generalization `Ĥ^r(G, M) ≃ Ĥ^{r+2}(G, M ⊗ C)` of Tate's theorem, for a class module
+`C` with `Tor₁^ℤ(M, C) = 0`, whose splitting module is cohomologically trivial. The vanishing of
+`Tor₁^k(M, A)` is stated without a `Tor` functor, in the equivalent form that `M ⊗ -` keeps
+injective the first map of every short exact sequence `0 → X → Y → A → 0` of `k`-modules; it
+holds when `M` is flat over `k` and when `A` is.
+
 ## Main statements
 
 * `Rep.projective_ker_of_isZero_res`: if `A` is cohomologically trivial, every
   surjection onto `A.ρ.asModule` from a projective `k[G]`-module has projective kernel.
+* `Rep.isZero_res_tensor_of_isZero_res`: if `A` is cohomologically trivial and
+  `Tor₁^k(M, A) = 0`, then `M ⊗ A` is cohomologically trivial.
+* `Rep.isZero_res_tensor_of_isZero_res_of_flat_left`,
+  `Rep.isZero_res_tensor_of_isZero_res_of_flat_right`: the same when `M`, respectively `A`, is
+  flat over `k`.
 
 ## References
 
 * D. S. Rim, *Modules over finite groups*, Ann. of Math. 69 (1959).
 * K. S. Brown, *Cohomology of Groups*, Chapter VI, §8.
 * J.-P. Serre, *Local Fields*, Chapter IX, §§3–5.
+* T. Nakayama, *Cohomology of class field theory and tensor product modules I*, Ann. of Math. 65
+  (1957).
 -/
 
 public section
 
 universe u
 
-open CategoryTheory Limits TauCeti.TateCohomology
+open CategoryTheory Limits MonoidalCategory TauCeti.TateCohomology
 
 namespace Rep
 
@@ -105,5 +125,72 @@ theorem projective_ker_of_isZero_res
   have := projective_ker_linearCombination hk A hA
   f.projective_ker_of_projective_ker hf _
     (Finsupp.linearCombination_surjective _ Function.surjective_id)
+
+/-- **Tensoring with a cohomologically trivial module.** Let `k` be a principal ideal domain of
+characteristic zero in which every prime number is a unit or generates a maximal ideal, and let
+`A` be a cohomologically trivial representation of a finite group `G` over `k`. If
+`Tor₁^k(M, A) = 0`, in the form that `M ⊗ X → M ⊗ Y` is injective for every short exact sequence
+`0 → X → Y → A → 0` of `k`-modules, then `M ⊗ A` is cohomologically trivial. -/
+theorem isZero_res_tensor_of_isZero_res
+    (hk : ∀ p : ℕ, p.Prime → IsUnit (p : k) ∨ (Ideal.span {(p : k)}).IsMaximal)
+    (A : Rep k G)
+    (hA : ∀ (S : Subgroup G) [Fintype S] (n : ℤ),
+      IsZero (tateCohomology (res S.subtype A) n))
+    (M : Rep k G)
+    (hM : ∀ {X Y : Type u} [AddCommGroup X] [Module k X] [AddCommGroup Y] [Module k Y]
+      (f : X →ₗ[k] Y) (g : Y →ₗ[k] A.V), Function.Injective f → Function.Exact f g →
+        Function.Surjective g → Function.Injective (f.lTensor M.V))
+    (S : Subgroup G) [Fintype S] (n : ℤ) :
+    IsZero (tateCohomology (res S.subtype (M ⊗ A)) n) := by
+  -- The free cover `F ↠ A` has projective kernel `R`, by the theorem of Nakayama and Rim.
+  set q := Finsupp.linearCombination (MonoidAlgebra k G) (id : A.ρ.asModule → _)
+  have hq : Function.Surjective q :=
+    Finsupp.linearCombination_surjective _ Function.surjective_id
+  have := projective_ker_linearCombination hk A hA
+  -- The resolution `0 ⟶ R ⟶ F ⟶ A ⟶ 0`, transported to representations. Its terms are
+  -- `ofModuleMonoidAlgebra.obj` of the three modules by definition of `ShortComplex.map`, so the
+  -- counit of `equivalenceModuleMonoidAlgebra` identifies their `k[G]`-modules with `R`, `F`, `A`.
+  let T := q.shortComplexKer.map ofModuleMonoidAlgebra
+  have hT : T.ShortExact := (q.shortExact_shortComplexKer hq).map_of_exact _
+  have : Module.Projective (MonoidAlgebra k G) T.X₁.ρ.asModule := .of_equiv
+    (equivalenceModuleMonoidAlgebra.counitIso.app q.shortComplexKer.X₁).toLinearEquiv.symm
+  have : Module.Projective (MonoidAlgebra k G) T.X₂.ρ.asModule := .of_equiv
+    (equivalenceModuleMonoidAlgebra.counitIso.app q.shortComplexKer.X₂).toLinearEquiv.symm
+  let e : T.X₃ ≅ A := (equivalenceModuleMonoidAlgebra.unitIso.app A).symm
+  -- Tensoring the resolution with `M` keeps its first map injective, by the hypothesis on `Tor₁`.
+  have hinj : Function.Injective (T.f.hom.toLinearMap.lTensor M.V) := by
+    have hexact := (exact_iff_function_exact T).1 hT.exact
+    refine hM _ (T.g ≫ e.hom).hom.toLinearMap ((mono_iff_injective T.f).1 hT.mono_f) ?_ ?_
+    · exact hexact.comp_injective _ ((mono_iff_injective e.hom).1 inferInstance) (map_zero _)
+    · exact ((epi_iff_surjective e.hom).1 inferInstance).comp
+        ((epi_iff_surjective T.g).1 hT.epi_g)
+  exact (isZero_res_tensor_of_shortExact M hT hinj S n).of_iso
+    ((tateCohomologyFunctor n).mapIso ((resFunctor S.subtype).mapIso (whiskerLeftIso M e.symm)))
+
+/-- **Tensoring a cohomologically trivial module with a flat module.** Over `k` as in
+`Rep.isZero_res_tensor_of_isZero_res`, if `A` is cohomologically trivial and `M` is flat over `k`,
+then `M ⊗ A` is cohomologically trivial. -/
+theorem isZero_res_tensor_of_isZero_res_of_flat_left
+    (hk : ∀ p : ℕ, p.Prime → IsUnit (p : k) ∨ (Ideal.span {(p : k)}).IsMaximal)
+    (A : Rep k G)
+    (hA : ∀ (S : Subgroup G) [Fintype S] (n : ℤ),
+      IsZero (tateCohomology (res S.subtype A) n))
+    (M : Rep k G) [Module.Flat k M.V] (S : Subgroup G) [Fintype S] (n : ℤ) :
+    IsZero (tateCohomology (res S.subtype (M ⊗ A)) n) :=
+  isZero_res_tensor_of_isZero_res hk A hA M
+    (fun f _ hf _ _ ↦ Module.Flat.lTensor_preserves_injective_linearMap f hf) S n
+
+/-- **Tensoring a flat cohomologically trivial module.** Over `k` as in
+`Rep.isZero_res_tensor_of_isZero_res`, if `A` is cohomologically trivial and flat over `k`, then
+`M ⊗ A` is cohomologically trivial for every representation `M`. -/
+theorem isZero_res_tensor_of_isZero_res_of_flat_right
+    (hk : ∀ p : ℕ, p.Prime → IsUnit (p : k) ∨ (Ideal.span {(p : k)}).IsMaximal)
+    (A : Rep k G) [Module.Flat k A.V]
+    (hA : ∀ (S : Subgroup G) [Fintype S] (n : ℤ),
+      IsZero (tateCohomology (res S.subtype A) n))
+    (M : Rep k G) (S : Subgroup G) [Fintype S] (n : ℤ) :
+    IsZero (tateCohomology (res S.subtype (M ⊗ A)) n) :=
+  isZero_res_tensor_of_isZero_res hk A hA M
+    (fun f g hf hfg hg ↦ LinearMap.lTensor_injective_of_exact_of_flat g hg f hf hfg M.V) S n
 
 end Rep
