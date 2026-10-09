@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Lie.AutomaticSmoothness
 public import TauCeti.Geometry.Lie.Faithfulness
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Descent
 
 /-!
 # The Lie functor on continuous homomorphisms
@@ -17,17 +16,11 @@ uses that automatic smoothness result to expose the Lie functor directly on bund
 homomorphisms. Its identity, composition, exponential, and faithfulness laws are inherited from
 the smooth Lie functor.
 
-The final theorem records how the Lie map behaves under descent through a quotient homomorphism:
-the differential of the descended homomorphism, followed by the differential of the quotient map,
-is the differential of the original homomorphism.
-
 ## Main results
 
 * `ContinuousMonoidHom.lieMap` is the Lie map of a continuous homomorphism.
 * `ContinuousMonoidHom.lieMap_comp` gives its composition law.
 * `ContinuousMonoidHom.lieMap_injective` gives faithfulness on preconnected sources.
-* `ContinuousMonoidHom.lieMap_liftOfIsQuotientMap_comp` preserves the Lie map under quotient
-  descent.
 -/
 
 public section
@@ -60,7 +53,7 @@ real Lie groups. -/
 
 /-- The Lie map of a continuous homomorphism is the smooth Lie map obtained by automatic
 smoothness. -/
-theorem lieMap_eq_lieMap_toContMDiffMonoidMorphism (f : G →ₜ* G') :
+theorem lieMap_def (f : G →ₜ* G') :
     lieMap (I := I) (I' := I') f =
       _root_.lieMap (f.toContMDiffMonoidMorphism I I') :=
   rfl
@@ -121,22 +114,5 @@ theorem lieMap_injective [PreconnectedSpace G] :
   ext x
   simpa only [ContinuousMonoidHom.coe_toContMDiffMonoidMorphism] using
     congrArg (fun k : ContMDiffMonoidMorphism I I' ∞ G G' ↦ k x) hsmooth
-
-/-- The Lie map of a homomorphism descended through a quotient, composed with the quotient's Lie
-map, is the Lie map of the original homomorphism. -/
-theorem lieMap_liftOfIsQuotientMap_comp
-    {Q : Type*} [Group Q] [TopologicalSpace Q] [ChartedSpace H' Q] [LieGroup I' ∞ Q]
-    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
-    {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}
-    {G'' : Type*} [TopologicalSpace G''] [ChartedSpace H'' G''] [Group G'']
-    [FiniteDimensional ℝ E''] [LieGroup I'' ∞ G'']
-    (p : G →ₜ* Q) (hp : IsQuotientMap p) (f : G →ₜ* G'')
-    (hf : (p : G →* Q).ker ≤ (f : G →* G'').ker) :
-    (lieMap (I := I') (I' := I'') (liftOfIsQuotientMap p hp f hf)).comp
-        (lieMap (I := I) (I' := I') p) =
-      lieMap (I := I) (I' := I'') f := by
-  rw [← lieMap_comp]
-  congr 1
-  exact liftOfIsQuotientMap_comp p hp f hf
 
 end ContinuousMonoidHom

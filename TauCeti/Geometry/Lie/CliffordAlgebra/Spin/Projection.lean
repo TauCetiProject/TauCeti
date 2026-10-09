@@ -40,8 +40,6 @@ Lie homomorphism from quadratic Clifford elements to skew-symmetric matrices.
   differential in quadratic-Clifford and skew-matrix coordinates.
 * `TauCeti.CliffordAlgebra.isQuotientMap_realCliffordSpinToSpecialOrthogonalSmoothRange` records
   the quotient property of the smooth carrier projection.
-* `TauCeti.CliffordAlgebra.lieMap_lift_realCliffordSpinToSpecialOrthogonalSmoothRange_comp`
-  identifies the differential of a homomorphism descended through that projection.
 
 ## References
 
@@ -342,17 +340,18 @@ theorem isQuotientMap_realCliffordSpinToSpecialOrthogonalSmoothRange (n : ℕ) :
     Homeomorph.compactSpace
       (realCliffordSpinContinuousMulEquivUnitsRange n).toHomeomorph
   apply Topology.IsQuotientMap.of_surjective_continuous
-  · intro y
-    obtain ⟨x, hx⟩ := realCliffordSpinToSpecialOrthogonalRange_surjective n y
-    refine ⟨x, ?_⟩
-    -- Expose the smooth morphism below its continuous coercion so its application theorem matches.
-    change realCliffordSpinToSpecialOrthogonalSmoothRange n x = y
-    rw [realCliffordSpinToSpecialOrthogonalSmoothRange_apply]
-    exact hx
+  · -- Expose the smooth map's function coercion so its application theorem transports surjectivity.
+    change Function.Surjective (realCliffordSpinToSpecialOrthogonalSmoothRange n)
+    have hmap : (realCliffordSpinToSpecialOrthogonalSmoothRange n :
+        SpinUnitsRange(n) → SpecialOrthogonalUnitsRange(n)) =
+        realCliffordSpinToSpecialOrthogonalRange n := by
+      funext x
+      exact realCliffordSpinToSpecialOrthogonalSmoothRange_apply n x
+    simpa only [hmap] using realCliffordSpinToSpecialOrthogonalRange_surjective n
   · exact p.continuous
 
 /-- The supplied differential of the compact real Spin projection is its continuous Lie map. -/
-theorem realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousLieMap (n : ℕ) :
+theorem realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousMonoidHomLieMap (n : ℕ) :
     realCliffordSpinToSpecialOrthogonalRangeLieMap n =
       ContinuousMonoidHom.lieMap
         (I := 𝓘(ℝ, SpinLieModel(n)))
@@ -365,57 +364,10 @@ theorem realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousLieMap (n : 
   -- their selected smooth and continuous presentations before using the public defining equation.
   change _root_.lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n) =
     ContinuousMonoidHom.lieMap p
-  rw [ContinuousMonoidHom.lieMap_eq_lieMap_toContMDiffMonoidMorphism]
+  rw [ContinuousMonoidHom.lieMap_def]
   apply congrArg _root_.lieMap
   apply DFunLike.coe_injective
   rw [ContinuousMonoidHom.coe_toContMDiffMonoidMorphism]
   rfl
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
-  [FiniteDimensional ℝ E] [LieGroup I ∞ G]
-
-/-- Descending a continuous homomorphism through the compact real Spin projection preserves its
-Lie map after composition with the projection differential. -/
-theorem lieMap_lift_realCliffordSpinToSpecialOrthogonalSmoothRange_comp
-    (n : ℕ) (f : SpinUnitsRange(n) →ₜ* G)
-    (hf : ((show SpinUnitsRange(n) →ₜ* SpecialOrthogonalUnitsRange(n) from
-        realCliffordSpinToSpecialOrthogonalSmoothRange n) :
-          SpinUnitsRange(n) →* SpecialOrthogonalUnitsRange(n)).ker ≤
-      (f : SpinUnitsRange(n) →* G).ker) :
-    (ContinuousMonoidHom.lieMap
-        (I := 𝓘(ℝ, SpecialOrthogonalLieModel(n))) (I' := I)
-        (ContinuousMonoidHom.liftOfIsQuotientMap
-          (show SpinUnitsRange(n) →ₜ* SpecialOrthogonalUnitsRange(n) from
-            realCliffordSpinToSpecialOrthogonalSmoothRange n)
-          (isQuotientMap_realCliffordSpinToSpecialOrthogonalSmoothRange n)
-          f hf)).comp
-      (realCliffordSpinToSpecialOrthogonalRangeLieMap n) =
-    ContinuousMonoidHom.lieMap (I := 𝓘(ℝ, SpinLieModel(n))) (I' := I) f := by
-  let p : SpinUnitsRange(n) →ₜ* SpecialOrthogonalUnitsRange(n) :=
-    realCliffordSpinToSpecialOrthogonalSmoothRange n
-  let hp : Topology.IsQuotientMap p :=
-    isQuotientMap_realCliffordSpinToSpecialOrthogonalSmoothRange n
-  let g : SpecialOrthogonalUnitsRange(n) →ₜ* G :=
-    ContinuousMonoidHom.liftOfIsQuotientMap p hp f hf
-  have hprojection : realCliffordSpinToSpecialOrthogonalRangeLieMap n =
-      ContinuousMonoidHom.lieMap
-        (I := 𝓘(ℝ, SpinLieModel(n)))
-        (I' := 𝓘(ℝ, SpecialOrthogonalLieModel(n))) p :=
-    realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousLieMap n
-  have hdescent := ContinuousMonoidHom.lieMap_liftOfIsQuotientMap_comp
-    (I := 𝓘(ℝ, SpinLieModel(n)))
-    (I' := 𝓘(ℝ, SpecialOrthogonalLieModel(n))) (I'' := I)
-    p hp f hf
-  -- The displayed lift retains its quotient and kernel proofs; expose the proof-irrelevant
-  -- let-bound presentation so `hdescent` and the projection bridge have the same middle map.
-  change (ContinuousMonoidHom.lieMap
-      (I := 𝓘(ℝ, SpecialOrthogonalLieModel(n))) (I' := I) g).comp
-      (realCliffordSpinToSpecialOrthogonalRangeLieMap n) = _
-  exact congrArg
-    (fun L ↦ (ContinuousMonoidHom.lieMap
-      (I := 𝓘(ℝ, SpecialOrthogonalLieModel(n))) (I' := I) g).comp L)
-    hprojection |>.trans hdescent
 
 end TauCeti.CliffordAlgebra
