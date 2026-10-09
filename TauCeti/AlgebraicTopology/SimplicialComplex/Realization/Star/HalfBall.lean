@@ -170,14 +170,23 @@ def closedStarHomeomorphHalfBall
     (f := Equiv.ofBijective _ (halfBallMap_bijective e))
     ((continuous_halfBallMap hcompact e).subtype_mk (halfBallMap_mem e))
 
+/-- The forward closed-star chart is the radial half-ball map. -/
+private theorem coe_closedStarHomeomorphHalfBall
+    (hcompact : IsCompact (closedStarRealization K {v}))
+    (e : geometricLink K v ≃ₜ {z : sphere (0 : E) 1 // 0 ≤ ⟪(z : E), (p : E)⟫})
+    (x : closedStarRealization K {v}) :
+    (closedStarHomeomorphHalfBall hcompact e x : E) = halfBallMap e x := by
+  -- Both homeoOfEquivCompactToT2 and Equiv.ofBijective preserve the forward function.
+  rfl
+
 /-- The radius in the half-ball is exactly the mass away from the apex. -/
 @[simp]
 theorem norm_closedStarHomeomorphHalfBall
     (hcompact : IsCompact (closedStarRealization K {v}))
     (e : geometricLink K v ≃ₜ {z : sphere (0 : E) 1 // 0 ≤ ⟪(z : E), (p : E)⟫})
     (x : closedStarRealization K {v}) :
-    ‖(closedStarHomeomorphHalfBall hcompact e x : E)‖ = 1 - x.1.1 v :=
-  norm_halfBallMap e x
+    ‖(closedStarHomeomorphHalfBall hcompact e x : E)‖ = 1 - x.1.1 v := by
+  rw [coe_closedStarHomeomorphHalfBall, norm_halfBallMap]
 
 variable (hcompact : IsCompact (closedStarRealization K {v}))
   (e : geometricLink K v ≃ₜ {z : sphere (0 : E) 1 // 0 ≤ ⟪(z : E), (p : E)⟫})
@@ -190,7 +199,7 @@ theorem coe_closedStarHomeomorphHalfBall_of_lt
     (closedStarHomeomorphHalfBall hcompact e x : E) =
       (1 - x.1.1 v) • ((e (starLinkProjection K v
         ⟨x.1, (mem_puncturedClosedStar K v _).mpr ⟨x.2, hx⟩⟩)).1 : E) := by
-  exact dite_eq_left hx
+  rw [coe_closedStarHomeomorphHalfBall, halfBallMap, dite_eq_left hx]
 
 /-- The closed half-ball chart sends its apex to the origin. -/
 @[simp]
@@ -205,8 +214,8 @@ theorem coe_closedStarHomeomorphHalfBall_starRay
     (y : geometricLink K v) (t : Ico (0 : ℝ) 1) :
     (closedStarHomeomorphHalfBall hcompact e
       ⟨(starRay K v y t).1, ((mem_puncturedClosedStar K v _).mp
-        (starRay K v y t).2).1⟩ : E) = (1 - t.1) • ((e y).1 : E) :=
-  halfBallMap_starRay e y t
+        (starRay K v y t).2).1⟩ : E) = (1 - t.1) • ((e y).1 : E) := by
+  rw [coe_closedStarHomeomorphHalfBall, halfBallMap_starRay]
 
 /-- The inverse chart recovers the barycentric coordinate at the apex from the radius. -/
 @[simp]
