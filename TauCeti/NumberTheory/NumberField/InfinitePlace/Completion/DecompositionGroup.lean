@@ -155,7 +155,7 @@ variable {w w' : InfinitePlace L} [w.LiesOver v] [w'.LiesOver v]
 /-- `completionCongr v σ h` extends `σ`. -/
 @[simp]
 theorem completionCongr_algebraMap (σ : L ≃ₐ[K] L) (h : w' = σ • w) (x : L) :
-    completionCongr v σ h (algebraMap L w.Completion x) = algebraMap L w'.Completion (σ x) :=
+    completionCongr v σ h (x : w.Completion) = (σ x : w'.Completion) :=
   completionRingEquiv_coe σ h (WithAbs.toAbs w.1 x)
 
 variable (v) in
@@ -170,7 +170,8 @@ theorem eq_completionCongr_of_continuous (σ : L ≃ₐ[K] L) (h : w' = σ • w
     (hfL : ∀ x : L, f (algebraMap L w.Completion x) = algebraMap L w'.Completion (σ x)) :
     f = completionCongr v σ h :=
   completion_funext hf (continuous_completionCongr v σ h) fun x ↦ by
-    rw [hfL, completionCongr_algebraMap]
+    rw [hfL, Completion.algebraMap_apply, Completion.algebraMap_apply,
+      completionCongr_algebraMap]
 
 /-- `completionCongr` depends only on the automorphism, not on the proof that it carries `w`
 to `w'`. -/
@@ -196,8 +197,8 @@ theorem completionCongr_trans {w'' : InfinitePlace L} [w''.LiesOver v]
       completionCongr v (τ * σ) (by rw [hτ, hσ, mul_smul]) :=
   AlgEquiv.ext (congrFun (eq_completionCongr_of_continuous (τ * σ) _
     ((continuous_completionCongr v τ hτ).comp (continuous_completionCongr v σ hσ)) fun x ↦ by
-      rw [AlgEquiv.trans_apply, completionCongr_algebraMap, completionCongr_algebraMap,
-        AlgEquiv.mul_apply]))
+      rw [AlgEquiv.trans_apply, Completion.algebraMap_apply, Completion.algebraMap_apply,
+        completionCongr_algebraMap, completionCongr_algebraMap, AlgEquiv.mul_apply]))
 
 /-- The inverse of `completionCongr v σ h` is `completionCongr` of `σ⁻¹`. -/
 @[simp]
@@ -233,8 +234,7 @@ theorem decompositionHom_apply (τ : MulAction.stabilizer (L ≃ₐ[K] L) w) :
 /-- The defining property of `decompositionHom`: on `L` it is the action of the automorphism. -/
 @[simp]
 theorem decompositionHom_algebraMap (τ : MulAction.stabilizer (L ≃ₐ[K] L) w) (x : L) :
-    decompositionHom v w τ (algebraMap L w.Completion x) =
-      algebraMap L w.Completion ((τ : L ≃ₐ[K] L) x) := by
+    decompositionHom v w τ (x : w.Completion) = ((τ : L ≃ₐ[K] L) x : w.Completion) := by
   rw [decompositionHom_apply, completionCongr_algebraMap]
 
 variable (v w) in
@@ -243,8 +243,9 @@ theorem decompositionHom_injective : Function.Injective (decompositionHom v w) :
   rw [injective_iff_map_eq_one]
   intro τ hτ
   ext x
-  have := congr($hτ (algebraMap L w.Completion x))
-  rw [decompositionHom_algebraMap, AlgEquiv.one_apply] at this
+  have := congr($hτ (x : w.Completion))
+  rw [decompositionHom_algebraMap, AlgEquiv.one_apply, ← Completion.algebraMap_apply,
+    ← Completion.algebraMap_apply] at this
   exact (algebraMap L w.Completion).injective this
 
 /-! ### The decomposition group is the local Galois group -/

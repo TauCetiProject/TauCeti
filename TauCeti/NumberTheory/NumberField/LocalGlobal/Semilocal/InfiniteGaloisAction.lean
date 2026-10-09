@@ -101,7 +101,8 @@ theorem infiniteSemilocalEquiv_infiniteSemilocalGaloisHom (σ : L ≃ₐ[K] L)
   induction z using TensorProduct.inductionOn with
   | tmul a x =>
     rw [infiniteSemilocalGaloisHom_tmul, infiniteSemilocalEquiv_tmul, infiniteSemilocalEquiv_tmul,
-      map_mul, AlgEquiv.commutes, completionCongr_algebraMap]
+      map_mul, AlgEquiv.commutes, Completion.algebraMap_apply, Completion.algebraMap_apply,
+      completionCongr_algebraMap]
   | add x y hx hy => simp [map_add, hx, hy]
 
 end GaloisHom
