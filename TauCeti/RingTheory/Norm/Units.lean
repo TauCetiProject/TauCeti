@@ -32,6 +32,7 @@ finiteness where the value is computed.
 ## Main results
 
 * `AlgHom.normGroup_le_normGroup`: a larger extension has a smaller norm group.
+* `TauCeti.pow_finrank_mem_normGroup`: the `[L : K]`-th power of an element of `Kˣ` is a norm.
 -/
 
 public section
@@ -78,6 +79,13 @@ theorem _root_.AlgHom.normGroup_le_normGroup {M : Type*} [Field M] [Algebra K M]
   have : Module.Finite M L := .of_restrictScalars_finite K M L
   rintro _ ⟨y, rfl⟩
   exact ⟨Algebra.normUnits M y, Units.ext (by simp [Algebra.norm_norm])⟩
+
+variable {K} in
+/-- **Powers to the degree are norms.** The norm of `a ∈ K` from `L` is `a ^ [L : K]`, so
+`a ^ [L : K]` lies in the norm group `N_{L/K}(Lˣ)`. -/
+theorem pow_finrank_mem_normGroup [Module.Finite K L] (a : Kˣ) :
+    a ^ Module.finrank K L ∈ normGroup K L :=
+  mem_normGroup_iff.2 ⟨Units.map (algebraMap K L).toMonoidHom a, by simp [Algebra.norm_algebraMap]⟩
 
 end NormGroup
 
