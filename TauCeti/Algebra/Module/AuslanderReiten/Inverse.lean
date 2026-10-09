@@ -29,9 +29,6 @@ non-injectivity of an indecomposable `E`. Algebraic closedness is not required.
 
 * M. Auslander, I. Reiten, S. O. Smalø, *Representation Theory of Artin Algebras*,
   Cambridge University Press (1995), Section IV.1.
-
-The proofs use the ordinary transpose's indecomposability and projective-summand results,
-and the equivariant scalar-duality results in `TauCeti.Algebra.Module.Dual`.
 -/
 
 public section
@@ -46,6 +43,7 @@ variable {A : Type u} [Ring A] {N : ModuleCat.{v} Aᵐᵒᵖ}
 
 /-- A finite minimal right transpose is projective exactly when its source is projective.
 Neither finite length nor indecomposability of the source is required. -/
+@[simp]
 theorem projective_rightTranspose_iff (Q : FiniteProjectivePresentation N)
     (hQ : IsMinimalProjectivePresentation Q.p Q.π) :
     Module.Projective A Q.rightTranspose ↔ Module.Projective Aᵐᵒᵖ N := by
