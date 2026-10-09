@@ -34,6 +34,9 @@ functor reflects limits.
   sieve, tested against every topological commutative ring.
 * `TauCeti.TopCommRingCat.isSheaf_of_isSheaf_forget`: the sheaf property for a Grothendieck
   topology.
+* `TauCeti.TopCommRingCat.isSeparatedFor_forget_of_isSheafFor`: the sheaf condition for a sieve,
+  tested against every topological commutative ring, makes the underlying presheaf of sets
+  separated for that sieve.
 * `TauCeti.TopCommRingCat.isInducing_restrictionMap_of_isSheafFor`: conversely, the topology of the
   sections of a sheaf is induced by the restriction maps along a covering sieve.
 
@@ -154,7 +157,7 @@ theorem isSheafFor_of_isSheafFor_forget {X : C} (S : Sieve X)
 /-- A presheaf of topological rings satisfying the sheaf condition for `S` against every
 topological commutative ring has a separated underlying presheaf of sets: elements of `F(X)` are
 tested against the discrete polynomial ring in one variable. -/
-private theorem isSeparatedFor_forget_of_isSheafFor {X : C} {S : Sieve X}
+theorem isSeparatedFor_forget_of_isSheafFor {X : C} {S : Sieve X}
     (h : ∀ E : _root_.TopCommRingCat.{v}, Presieve.IsSheafFor (F ⋙ coyoneda.obj (op E)) S.arrows) :
     Presieve.IsSeparatedFor (F ⋙ forget _root_.TopCommRingCat) S.arrows := by
   let _ : TopologicalSpace (MvPolynomial PUnit.{v + 1} ℤ) := ⊥

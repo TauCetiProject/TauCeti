@@ -192,9 +192,11 @@ theorem disjoint_preimage_zpow_windowU
     (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (n : ℤ) {k : ℤ}
     (hk : k ≠ 0) :
     Disjoint (⇑(frobeniusHomeomorph hI ^ k) ⁻¹' (Subtype.val ⁻¹' windowU p ϖ n))
-      (Subtype.val ⁻¹' windowU p ϖ n) :=
-  Set.disjoint_left.mpr fun v hv hv' ↦
-    (disjoint_windowU hI (show n - k ≠ n by omega)).notMem_of_mem_left
+      (Subtype.val ⁻¹' windowU p ϖ n) := by
+  -- a point whose `φ^k`-translate lies in `U_n` lies in `U_(n - k)`, a window disjoint from `U_n`
+  have hnk : n - k ≠ n := by omega
+  exact Set.disjoint_left.mpr fun v hv hv' ↦
+    (disjoint_windowU hI hnk).notMem_of_mem_left
       ((frobeniusHomeomorph_zpow_mem_windowU_iff hI k (n - k) v).mp (by simpa using hv)) hv'
 
 /-- **The `V` windows wander**: no nontrivial integer Frobenius translate of `V_n` meets `V_n`. -/
@@ -202,9 +204,11 @@ theorem disjoint_preimage_zpow_windowV
     (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (n : ℤ) {k : ℤ}
     (hk : k ≠ 0) :
     Disjoint (⇑(frobeniusHomeomorph hI ^ k) ⁻¹' (Subtype.val ⁻¹' windowV p ϖ n))
-      (Subtype.val ⁻¹' windowV p ϖ n) :=
-  Set.disjoint_left.mpr fun v hv hv' ↦
-    (disjoint_windowV hI (show n - k ≠ n by omega)).notMem_of_mem_left
+      (Subtype.val ⁻¹' windowV p ϖ n) := by
+  -- a point whose `φ^k`-translate lies in `V_n` lies in `V_(n - k)`, a window disjoint from `V_n`
+  have hnk : n - k ≠ n := by omega
+  exact Set.disjoint_left.mpr fun v hv hv' ↦
+    (disjoint_windowV hI hnk).notMem_of_mem_left
       ((frobeniusHomeomorph_zpow_mem_windowV_iff hI k (n - k) v).mp (by simpa using hv)) hv'
 
 private theorem isOpenEmbedding_quotientMap_restrict
