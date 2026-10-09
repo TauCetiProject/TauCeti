@@ -95,7 +95,7 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimension
 /-- Normal addition has a `C^n` local right inverse near every image point of a
 `C^(n+1)` immersion. On a source patch this inverse recovers the zero section. The
 normal bundle carries its projected atlas, with model fibre `F` of the codimension. -/
-theorem exists_contMDiff_localNormalInverse
+theorem exists_contMDiff_normalBundle_add_rightInverse
     (hf : ContMDiff I 𝓘(ℝ, V) (n + 1) f)
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x))
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E)
@@ -159,7 +159,7 @@ theorem isLocalDiffeomorphAt_normalBundle_add_zeroSection
   have hA : ContMDiff (I.prod 𝓘(ℝ, F)) 𝓘(ℝ, V) n A :=
     contMDiff_normalBundle_add hf himm hdim
   obtain ⟨U, -, hx₀, t, hUt, R, hR, -, hright, hzero⟩ :=
-    exists_contMDiff_localNormalInverse hf himm hdim x₀ hn
+    exists_contMDiff_normalBundle_add_rightInverse hf himm hdim x₀ hn
   let y₀ : t := ⟨f x₀, hUt ⟨x₀, hx₀, rfl⟩⟩
   have hRy : R y₀ = z := hzero x₀ hx₀ y₀ rfl
   have hcomp : A ∘ R = (Subtype.val : t → V) := funext hright
