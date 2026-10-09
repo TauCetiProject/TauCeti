@@ -59,12 +59,26 @@ noncomputable def monodromyChainMap :
   ((singularChainComplexFunctor C).obj R).map
     (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F)))
 
+/-- The monodromy chain map is the singular-chain functor applied to the monodromy. -/
+lemma monodromyChainMap_def :
+    monodromyChainMap φ R =
+      ((singularChainComplexFunctor C).obj R).map
+        (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F))) :=
+  (rfl)
+
 /-- The map on singular chains induced by inclusion of the fibre at height zero. -/
 noncomputable def fibreInclusionChainMap :
     ((singularChainComplexFunctor C).obj R).obj (TopCat.of F) ⟶
       ((singularChainComplexFunctor C).obj R).obj (TopCat.of (TauCeti.MappingTorus φ)) :=
   ((singularChainComplexFunctor C).obj R).map
     (TopCat.ofHom (TauCeti.MappingTorus.incl φ))
+
+/-- The fibre-inclusion chain map is the singular-chain functor applied to the fibre inclusion. -/
+lemma fibreInclusionChainMap_def :
+    fibreInclusionChainMap φ R =
+      ((singularChainComplexFunctor C).obj R).map
+        (TopCat.ofHom (TauCeti.MappingTorus.incl φ)) :=
+  (rfl)
 
 /-- The singular-chain map induced by monodromy followed by fibre inclusion is chain-homotopic
 to the fibre-inclusion chain map. -/
@@ -100,35 +114,33 @@ noncomputable def wangEndomorphism :
       ((singularChainComplexFunctor C).obj R).obj (TopCat.of F) :=
   𝟙 _ - monodromyChainMap φ R
 
+/-- The Wang endomorphism is the identity minus the monodromy chain map. -/
+lemma wangEndomorphism_def : wangEndomorphism φ R = 𝟙 _ - monodromyChainMap φ R :=
+  (rfl)
+
 /-- On homology, the Wang endomorphism is the identity minus the map induced by monodromy. -/
 @[simp]
 lemma homologyMap_wangEndomorphism [CategoryWithHomology C] (n : ℕ) :
     HomologicalComplex.homologyMap (wangEndomorphism φ R) n =
       𝟙 _ - HomologicalComplex.homologyMap (monodromyChainMap φ R) n := by
-  rw [wangEndomorphism, HomologicalComplex.homologyMap_sub,
+  rw [wangEndomorphism_def, HomologicalComplex.homologyMap_sub,
     HomologicalComplex.homologyMap_id]
 
 /-- The fibre inclusion after `id - φ_*` is null-homotopic.  The sign is chosen so that the
 endomorphism on the fibre is literally `id - φ_*`, rather than its negative. -/
 noncomputable def wangNullHomotopy :
     _root_.Homotopy
-      (wangEndomorphism φ R ≫ fibreInclusionChainMap φ R) 0 where
-  hom := -(singularChainHomotopy φ R).hom
-  zero i j hij := by
-    rw [Pi.neg_apply, Pi.neg_apply, (singularChainHomotopy φ R).zero i j hij, neg_zero]
-  comm i := by
-    have h := (singularChainHomotopy φ R).comm i
-    simp only [HomologicalComplex.comp_f] at h
-    simp only [HomologicalComplex.comp_f, wangEndomorphism, HomologicalComplex.sub_f_apply,
-      Preadditive.sub_comp, Category.id_comp, HomologicalComplex.zero_f, add_zero, map_neg, h]
-    abel
+      (wangEndomorphism φ R ≫ fibreInclusionChainMap φ R) 0 :=
+  (_root_.Homotopy.ofEq
+      (by rw [wangEndomorphism_def, Preadditive.sub_comp, Category.id_comp])).trans
+    (_root_.Homotopy.equivSubZero (singularChainHomotopy φ R).symm)
 
 /-- The null-homotopy used in the Wang mapping-cone map is the negative of the canonical
 monodromy homotopy. -/
 @[simp]
 lemma wangNullHomotopy_hom (i j : ℕ) :
-    (wangNullHomotopy φ R).hom i j = -(singularChainHomotopy φ R).hom i j :=
-  (rfl)
+    (wangNullHomotopy φ R).hom i j = -(singularChainHomotopy φ R).hom i j := by
+  simp [wangNullHomotopy, _root_.Homotopy.equivSubZero]
 
 section WangMappingCone
 
@@ -177,6 +189,11 @@ noncomputable def fibreChainMap :
       ((singularChainComplexFunctor C).obj R).obj (TopCat.of G) :=
   ((singularChainComplexFunctor C).obj R).map (TopCat.ofHom g)
 
+/-- The fibre chain map is the singular-chain functor applied to the map of fibres. -/
+lemma fibreChainMap_def :
+    fibreChainMap R g = ((singularChainComplexFunctor C).obj R).map (TopCat.ofHom g) :=
+  (rfl)
+
 /-- The map on singular chains induced by a map of mapping tori. -/
 noncomputable def mappingTorusChainMap :
     ((singularChainComplexFunctor C).obj R).obj (TopCat.of (TauCeti.MappingTorus φ)) ⟶
@@ -184,31 +201,41 @@ noncomputable def mappingTorusChainMap :
   ((singularChainComplexFunctor C).obj R).map
     (TopCat.ofHom (TauCeti.MappingTorus.map φ ψ g h))
 
+/-- The mapping-torus chain map is the singular-chain functor applied to the map of mapping
+tori. -/
+lemma mappingTorusChainMap_def :
+    mappingTorusChainMap φ R ψ g h =
+      ((singularChainComplexFunctor C).obj R).map
+        (TopCat.ofHom (TauCeti.MappingTorus.map φ ψ g h)) :=
+  (rfl)
+
 /-- A map intertwining two monodromies gives a commuting square on singular chains. -/
+@[reassoc]
 lemma monodromyChainMap_comp_fibreChainMap (h : Function.Semiconj g φ ψ) :
     monodromyChainMap φ R ≫ fibreChainMap R g =
       fibreChainMap R g ≫ monodromyChainMap ψ R := by
-  rw [monodromyChainMap, fibreChainMap, monodromyChainMap,
+  rw [monodromyChainMap_def, fibreChainMap_def, monodromyChainMap_def,
     ← Functor.map_comp, ← Functor.map_comp]
   congr 1
   ext x
   exact h x
 
 /-- Fibre inclusion is natural for maps of mapping tori. -/
+@[reassoc]
 lemma fibreInclusionChainMap_comp_mappingTorusChainMap :
     fibreInclusionChainMap φ R ≫ mappingTorusChainMap φ R ψ g h =
       fibreChainMap R g ≫ fibreInclusionChainMap ψ R := by
-  rw [fibreInclusionChainMap, mappingTorusChainMap, fibreChainMap, fibreInclusionChainMap,
-    ← Functor.map_comp, ← Functor.map_comp]
+  rw [fibreInclusionChainMap_def, mappingTorusChainMap_def, fibreChainMap_def,
+    fibreInclusionChainMap_def, ← Functor.map_comp, ← Functor.map_comp]
   congr 1
-  ext x
-  simp
+  exact congrArg TopCat.ofHom (map_comp_incl φ ψ g h)
 
 /-- The fibre chain map intertwines the Wang endomorphisms `id - φ_*` and `id - ψ_*`. -/
+@[reassoc]
 lemma wangEndomorphism_comp_fibreChainMap (h : Function.Semiconj g φ ψ) :
     wangEndomorphism φ R ≫ fibreChainMap R g =
       fibreChainMap R g ≫ wangEndomorphism ψ R := by
-  simp only [wangEndomorphism, Preadditive.sub_comp, Preadditive.comp_sub,
+  simp only [wangEndomorphism_def, Preadditive.sub_comp, Preadditive.comp_sub,
     Category.id_comp, Category.comp_id]
   rw [monodromyChainMap_comp_fibreChainMap φ R ψ g h]
 
