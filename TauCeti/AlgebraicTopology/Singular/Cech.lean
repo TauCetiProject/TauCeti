@@ -43,7 +43,10 @@ homology commutes with the coproduct defining the column. None of this is proved
 
 * `TauCeti.cechSingularChains U R`: the functor `s ↦ C(U_s; R)` on finite sets of indices.
 * `TauCeti.cechDoubleComplex U R`: the Čech double complex of singular chains of `U`, with the
-  summand inclusions `TauCeti.cechDoubleComplexι U R s`. Its horizontal and vertical differentials
+  summand inclusions `TauCeti.cechDoubleComplexι U R s`, which exhibit each column and each of its
+  terms as a coproduct (`TauCeti.isColimitCechDoubleComplexCofan`,
+  `TauCeti.isColimitCechDoubleComplexXCofan`), with morphisms out of a column given on summands by
+  `TauCeti.cechDoubleComplexDesc`. Its horizontal and vertical differentials
   are described by `TauCeti.ι_cechDoubleComplex_d` and `TauCeti.cechDoubleComplexι_f_comp_d`, and
   it vanishes from the column of the number of open sets on
   (`TauCeti.isZero_cechDoubleComplex_X`).
@@ -116,6 +119,37 @@ def cechDoubleComplexι {p : ℕ} (s : {s : Finset ι // #s = p + 1}) :
     (cechSingularChains U R).obj (op s.1) ⟶ (cechDoubleComplex U R).X p :=
   (cechSingularChains U R).orderedCechComplexι s
 
+/-- The summand inclusions `TauCeti.cechDoubleComplexι` exhibit the column `p` of the Čech double
+complex as the coproduct of the `C(U_s; R)` over the sets `s` of `p + 1` indices. -/
+def isColimitCechDoubleComplexCofan (p : ℕ) :
+    IsColimit (Cofan.mk ((cechDoubleComplex U R).X p) (cechDoubleComplexι U R (p := p))) :=
+  (cechSingularChains U R).isColimitOrderedCechComplexCofan p
+
+/-- The summand inclusions exhibit the term of bidegree `(p, q)` of the Čech double complex as the
+coproduct of the `C_q(U_s; R)` over the sets `s` of `p + 1` indices. -/
+def isColimitCechDoubleComplexXCofan (p q : ℕ) :
+    IsColimit (Cofan.mk (((cechDoubleComplex U R).X p).X q)
+      fun s ↦ (cechDoubleComplexι U R (p := p) s).f q) :=
+  -- Coproducts of chain complexes are computed degreewise.
+  isColimitCofanMkObjOfIsColimit (HomologicalComplex.eval C (ComplexShape.down ℕ) q) _ _
+    (isColimitCechDoubleComplexCofan U R p)
+
+/-- The morphism out of the column `p` of the Čech double complex given on each summand
+`C(U_s; R)`. -/
+def cechDoubleComplexDesc {p : ℕ} {A : ChainComplex C ℕ}
+    (f : ∀ s : {s : Finset ι // #s = p + 1}, (cechSingularChains U R).obj (op s.1) ⟶ A) :
+    (cechDoubleComplex U R).X p ⟶ A :=
+  (cechSingularChains U R).orderedCechComplexDesc f
+
+/-- The morphism `TauCeti.cechDoubleComplexDesc U R f` restricts to `f s` on the summand
+`C(U_s; R)`. -/
+@[reassoc (attr := simp)]
+lemma ι_cechDoubleComplexDesc {p : ℕ} {A : ChainComplex C ℕ}
+    (f : ∀ s : {s : Finset ι // #s = p + 1}, (cechSingularChains U R).obj (op s.1) ⟶ A)
+    (s : {s : Finset ι // #s = p + 1}) :
+    cechDoubleComplexι U R s ≫ cechDoubleComplexDesc U R f = f s :=
+  (cechSingularChains U R).ι_orderedCechComplexDesc f s
+
 /-- Morphisms out of a column of the Čech double complex agree when they agree on every summand. -/
 @[ext]
 lemma cechDoubleComplex_hom_ext {p : ℕ} {A : ChainComplex C ℕ}
@@ -130,9 +164,7 @@ lemma cechDoubleComplex_X_X_hom_ext {p q : ℕ} {A : C}
     {f g : ((cechDoubleComplex U R).X p).X q ⟶ A}
     (h : ∀ s, (cechDoubleComplexι U R s).f q ≫ f = (cechDoubleComplexι U R s).f q ≫ g) :
     f = g :=
-  -- Coproducts of chain complexes are computed degreewise.
-  (isColimitOfPreserves (HomologicalComplex.eval C (ComplexShape.down ℕ) q)
-    ((cechSingularChains U R).isColimitOrderedCechComplexCofan p)).hom_ext fun ⟨s⟩ ↦ h s
+  Cofan.IsColimit.hom_ext (isColimitCechDoubleComplexXCofan U R p q) _ _ h
 
 /-- The horizontal differential of the Čech double complex on the summand of
 `s = {i₀ < ⋯ < iₚ₊₁}` is the alternating sum of the maps induced by the inclusions
