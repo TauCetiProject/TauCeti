@@ -43,6 +43,8 @@ projections.
 
 public section
 
+namespace TauCeti
+
 variable {R : Type*}
 
 /-- An element `u` of a star monoid is a *partial isometry* when `u * star u * u = u`.
@@ -56,9 +58,9 @@ structure IsPartialIsometry [Mul R] [Star R] (u : R) : Prop where
 
 namespace IsPartialIsometry
 
-section Monoid
+section Semigroup
 
-variable [Monoid R] [StarMul R] {u : R}
+variable [Semigroup R] [StarMul R] {u : R}
 
 /-- The adjoint form of the defining identity: `star u * u * star u = star u`. -/
 theorem star_mul_self_mul_star (hu : IsPartialIsometry u) : star u * u * star u = star u := by
@@ -88,6 +90,12 @@ theorem isStarProjection_mul_star_self (hu : IsPartialIsometry u) :
     IsStarProjection (u * star u) :=
   ⟨hu.isIdempotentElem_mul_star_self, .mul_star_self u⟩
 
+end Semigroup
+
+section Monoid
+
+variable [Monoid R] [StarMul R] {u : R}
+
 /-- An isometry, that is an element with `star u * u = 1`, is a partial isometry. -/
 theorem of_star_mul_self_eq_one (h : star u * u = 1) : IsPartialIsometry u :=
   ⟨by rw [mul_assoc, h, mul_one]⟩
@@ -106,29 +114,32 @@ variable (R) in
 protected theorem one : IsPartialIsometry (1 : R) :=
   of_star_mul_self_eq_one (by simp)
 
+end Monoid
+
 /-- The image of a partial isometry under a multiplicative map preserving `star` is a partial
 isometry. -/
-protected theorem map {S F : Type*} [Monoid S] [StarMul S] [FunLike F R S] [StarHomClass F R S]
-    [MulHomClass F R S] (hu : IsPartialIsometry u) (f : F) : IsPartialIsometry (f u) :=
+protected theorem map [Mul R] [Star R] {S F : Type*} [Mul S] [Star S] [FunLike F R S]
+    [StarHomClass F R S] [MulHomClass F R S] {u : R} (hu : IsPartialIsometry u) (f : F) :
+    IsPartialIsometry (f u) :=
   ⟨by rw [← map_star, ← map_mul, ← map_mul, hu.mul_star_mul_self]⟩
-
-end Monoid
 
 variable (R) in
 /-- Zero is a partial isometry. -/
 @[simp]
-protected theorem zero [MonoidWithZero R] [StarMul R] : IsPartialIsometry (0 : R) :=
+protected theorem zero [MulZeroClass R] [Star R] : IsPartialIsometry (0 : R) :=
   ⟨by rw [mul_zero]⟩
 
 end IsPartialIsometry
 
 /-- An element is a partial isometry if and only if its star is. -/
 @[simp]
-theorem isPartialIsometry_star_iff [Monoid R] [StarMul R] {u : R} :
+theorem isPartialIsometry_star_iff [Semigroup R] [StarMul R] {u : R} :
     IsPartialIsometry (star u) ↔ IsPartialIsometry u :=
   ⟨fun h ↦ by simpa using h.star, .star⟩
 
 /-- A star projection is a partial isometry. -/
-theorem IsStarProjection.isPartialIsometry [Mul R] [Star R] {p : R}
+theorem _root_.IsStarProjection.isPartialIsometry [Mul R] [Star R] {p : R}
     (hp : IsStarProjection p) : IsPartialIsometry p :=
   ⟨by rw [hp.isSelfAdjoint.star_eq, hp.isIdempotentElem.eq, hp.isIdempotentElem.eq]⟩
+
+end TauCeti

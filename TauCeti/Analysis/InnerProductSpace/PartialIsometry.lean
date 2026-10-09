@@ -35,8 +35,9 @@ agree with the star-monoid predicate.
 
 ## Main statements
 
-* `ContinuousLinearMap.isPartialIsometry_iff_adjoint_comp_self_eq_starProjection`: `u` is a
-  partial isometry if and only if `u† u` is the orthogonal projection onto `(ker u)ᗮ`.
+* `ContinuousLinearMap.isPartialIsometry_iff_adjoint_comp_self_eq_starProjection`,
+  `LinearMap.isPartialIsometry_iff_adjoint_comp_self_eq_starProjection`: `u` is a partial
+  isometry if and only if `u† u` is the orthogonal projection onto `(ker u)ᗮ`.
 * `ContinuousLinearMap.isPartialIsometry_iff_norm_map`,
   `LinearMap.isPartialIsometry_iff_norm_map`: `u` is a partial isometry if and only if
   `‖u x‖ = ‖x‖` for every `x ∈ (ker u)ᗮ`.
@@ -174,10 +175,10 @@ theorem isPartialIsometry_zero : (0 : E →L[𝕜] F).IsPartialIsometry :=
   ⟨by simp⟩
 
 /-- On endomorphisms, the rectangular partial-isometry predicate agrees with the star-monoid
-predicate `IsPartialIsometry`. -/
+predicate `TauCeti.IsPartialIsometry`. -/
 theorem isPartialIsometry_iff_starMul {u : E →L[𝕜] E} :
-    u.IsPartialIsometry ↔ _root_.IsPartialIsometry u := by
-  rw [isPartialIsometry_iff, _root_.isPartialIsometry_iff, star_eq_adjoint, mul_def, mul_def,
+    u.IsPartialIsometry ↔ TauCeti.IsPartialIsometry u := by
+  rw [isPartialIsometry_iff, TauCeti.isPartialIsometry_iff, star_eq_adjoint, mul_def, mul_def,
     comp_assoc]
 
 end ContinuousLinearMap
@@ -228,16 +229,22 @@ theorem isPartialIsometry_iff_norm_map :
   simpa using (isPartialIsometry_toContinuousLinearMap_iff (u := u)).symm.trans
     ContinuousLinearMap.isPartialIsometry_iff_norm_map
 
+/-- A linear map between finite-dimensional inner product spaces is a partial isometry if and
+only if `u† u` is the orthogonal projection onto the orthogonal complement of its kernel. -/
+theorem isPartialIsometry_iff_adjoint_comp_self_eq_starProjection :
+    u.IsPartialIsometry ↔ u.adjoint ∘ₗ u = (ker u)ᗮ.starProjection := by
+  have := FiniteDimensional.complete 𝕜 E
+  have := FiniteDimensional.complete 𝕜 F
+  refine isPartialIsometry_toContinuousLinearMap_iff.symm.trans ?_
+  simp only [ContinuousLinearMap.isPartialIsometry_iff_adjoint_comp_self_eq_starProjection,
+    ← adjoint_toContinuousLinearMap, ← ContinuousLinearMap.coe_inj,
+    ContinuousLinearMap.toLinearMap_comp, coe_toContinuousLinearMap]
+
 /-- For a partial isometry `u`, `u† u` is the orthogonal projection onto the initial space
 `(ker u)ᗮ`. -/
 theorem IsPartialIsometry.adjoint_comp_self_eq_starProjection (hu : u.IsPartialIsometry) :
-    u.adjoint ∘ₗ u = (ker u)ᗮ.starProjection := by
-  have := FiniteDimensional.complete 𝕜 E
-  have := FiniteDimensional.complete 𝕜 F
-  have h := (isPartialIsometry_toContinuousLinearMap_iff.mpr hu)
-    |>.adjoint_comp_self_eq_starProjection
-  rw [← adjoint_toContinuousLinearMap] at h
-  exact congr(($h : E →ₗ[𝕜] E))
+    u.adjoint ∘ₗ u = (ker u)ᗮ.starProjection :=
+  isPartialIsometry_iff_adjoint_comp_self_eq_starProjection.mp hu
 
 /-- The initial projection `u† u` of a partial isometry is a symmetric projection. -/
 theorem IsPartialIsometry.isSymmetricProjection_adjoint_comp_self (hu : u.IsPartialIsometry) :
@@ -277,10 +284,10 @@ theorem isPartialIsometry_zero : (0 : E →ₗ[𝕜] F).IsPartialIsometry :=
   ⟨by simp⟩
 
 /-- On endomorphisms, the rectangular partial-isometry predicate agrees with the star-monoid
-predicate `IsPartialIsometry`. -/
+predicate `TauCeti.IsPartialIsometry`. -/
 theorem isPartialIsometry_iff_starMul {u : E →ₗ[𝕜] E} :
-    u.IsPartialIsometry ↔ _root_.IsPartialIsometry u := by
-  rw [isPartialIsometry_iff, _root_.isPartialIsometry_iff, star_eq_adjoint,
+    u.IsPartialIsometry ↔ TauCeti.IsPartialIsometry u := by
+  rw [isPartialIsometry_iff, TauCeti.isPartialIsometry_iff, star_eq_adjoint,
     Module.End.mul_eq_comp, Module.End.mul_eq_comp, comp_assoc]
 
 end LinearMap
