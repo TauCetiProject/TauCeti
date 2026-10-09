@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 public import Mathlib.RingTheory.Finiteness.Projective
-import TauCeti.LinearAlgebra.Determinant
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Determinants of endomorphisms of finite projective modules
