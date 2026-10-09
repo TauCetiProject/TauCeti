@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Uniform
-public import Mathlib.Analysis.Normed.Field.UnitBall
+public import TauCeti.Analysis.Normed.Ring.Ultra
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.SpecificLimits.Normed
 
@@ -27,8 +27,6 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
 
 ## Main results
 
-* `Subring.unitClosedBall`: the closed unit ball of an ultrametric seminormed ring with
-  `‖1‖ = 1`, an open subring.
 * `TauCeti.Huber.isBounded_closedBall_zero`: closed balls about zero are bounded.
 * `TauCeti.Huber.isPowerBounded_iff_norm_le_one`: in a normed division ring an element is
   power-bounded exactly when its norm is at most one.
@@ -52,36 +50,6 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
 public section
 
 open Filter Topology
-
-section UnitClosedBall
-
-variable (R : Type*) [SeminormedRing R] [IsUltrametricDist R] [NormOneClass R]
-
-/-- **The closed unit ball of an ultrametric seminormed ring with `‖1‖ = 1` is a subring**: it is
-the submonoid `Submonoid.unitClosedBall` and the open additive subgroup
-`IsUltrametricDist.closedBall_openAddSubgroup`. -/
-def Subring.unitClosedBall : Subring R :=
-  { Submonoid.unitClosedBall R,
-    (IsUltrametricDist.closedBall_openAddSubgroup R one_pos : AddSubgroup R) with }
-
-variable {R} in
-/-- An element lies in the closed unit ball exactly when its norm is at most one. -/
-@[simp]
-theorem Subring.mem_unitClosedBall {x : R} : x ∈ Subring.unitClosedBall R ↔ ‖x‖ ≤ 1 :=
-  Submonoid.mem_unitClosedBall R
-
-/-- The carrier of `Subring.unitClosedBall R` is `Metric.closedBall 0 1`. -/
-@[simp]
-theorem Subring.coe_unitClosedBall :
-    (Subring.unitClosedBall R : Set R) = Metric.closedBall 0 1 := by
-  ext
-  simp
-
-/-- The closed unit ball of an ultrametric seminormed ring is open. -/
-theorem Subring.isOpen_unitClosedBall : IsOpen (Subring.unitClosedBall R : Set R) :=
-  (IsUltrametricDist.closedBall_openAddSubgroup R one_pos).isOpen'
-
-end UnitClosedBall
 
 namespace TauCeti.Huber
 
