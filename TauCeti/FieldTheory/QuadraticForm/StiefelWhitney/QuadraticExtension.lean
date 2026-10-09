@@ -10,6 +10,8 @@ public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Transfer
 public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Class
 public import TauCeti.LinearAlgebra.QuadraticForm.Transfer.QuadraticExtension
 
+import TauCeti.NumberTheory.HilbertSymbol.ExtensionNorm
+
 /-!
 # The Stiefel–Whitney classes of the trace forms of a quadratic extension
 
@@ -97,10 +99,10 @@ theorem sw1Class_formClass_traceTransfer_sq_of_sq (hfin : Module.finrank K L = 2
     (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L (d : K))
     (h1 : ((QuadraticMap.sq (R := L) (A := L)).traceTransfer K).Nondegenerate) :
     sw1Class (formClass _ h1) = kummerClass d := by
-  rw [sw1Class_formClass _ h1 _ (equivalent_traceTransfer_sq_unitOfInvertible hfin hx hx2),
-    sw1_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_zero,
-    kummerClass_mul, ← add_assoc, ← kummerClass_mul, (kummerClass_eq_zero_iff_square K).2
-      (Subgroup.mem_square.2 (IsSquare.mul_self _)), zero_add]
+  rw [sw1Class_formClass _ h1 _ (equivalent_traceTransfer_sq_unitOfInvertible hfin hx hx2)]
+  simp only [sw1_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one, ← kummerClass_mul,
+    kummerClass_eq_kummerClass_iff_isSquare_mul]
+  exact ⟨unitOfInvertible 2 * d, by ac_rfl⟩
 
 /-- **The second Stiefel–Whitney class of the trace form of a quadratic algebra**: if `L` is
 generated over `K` by a square root `x ∉ K` of `d`, then `w₂(Tr_*⟨1⟩) = (2) ∪ (d)`. Indeed
@@ -113,9 +115,9 @@ theorem sw2Class_formClass_traceTransfer_sq_of_sq (hfin : Module.finrank K L = 2
   have h22 : (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
       (kummerClass (unitOfInvertible (2 : K))) (kummerClass (unitOfInvertible (2 : K))) = 0 :=
     (cup_kummerClass_eq_zero_iff _ _).2 ⟨2, 1, by simp only [val_unitOfInvertible]; ring⟩
-  rw [sw2Class_formClass _ h1 _ (equivalent_traceTransfer_sq_unitOfInvertible hfin hx hx2),
-    sw2_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_zero,
-    kummerClass_mul, map_add, h22, zero_add]
+  rw [sw2Class_formClass _ h1 _ (equivalent_traceTransfer_sq_unitOfInvertible hfin hx hx2)]
+  simp only [sw2_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one, kummerClass_mul, map_add,
+    h22, zero_add]
 
 end CommRing
 
@@ -142,13 +144,13 @@ theorem sw2Class_formClass_traceTransfer_smul_sq_of_sq (hfin : Module.finrank K 
     fin_cases i <;> simp [N, ht]
   -- `d t / N` and `(−d N)(−t)` differ by the square `N²`.
   have hsq : kummerClass (d * t / N) = kummerClass (-(d * N)) + kummerClass (-t) := by
-    rw [← kummerClass_mul, ← kummerSquareClassEquiv_squareClass,
-      ← kummerSquareClassEquiv_squareClass, (squareClass_eq_iff_isSquare_mul _ _).2]
+    rw [← kummerClass_mul, kummerClass_eq_kummerClass_iff_isSquare_mul]
     refine ⟨d * t, Units.ext ?_⟩
     simp only [Units.val_mul, Units.val_div_eq_div_val, Units.val_neg]
     field_simp [N.ne_zero]
-  rw [sw2Class_formClass _ ha _ hdiag, sw2_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_zero, hsq, map_add, cup_kummerClass_neg_self, add_zero]
+  rw [sw2Class_formClass _ ha _ hdiag]
+  simp only [sw2_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one, hsq, map_add,
+    cup_kummerClass_neg_self, add_zero]
 
 /-- **The second Stiefel–Whitney class of a twisted trace form at trace zero**: if `L/K` is a
 quadratic extension and `a ∈ Lˣ` has trace zero, then `Tr_*⟨a⟩` is the hyperbolic plane, so
@@ -171,9 +173,9 @@ theorem cup_sw1Class_formClass_traceTransfer_sq_galoisCor_eq_zero [Invertible (2
     (h1 : ((QuadraticMap.sq (R := L) (A := L)).traceTransfer K).Nondegenerate) (a : Lˣ) :
     (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (sw1Class (formClass _ h1))
       (galoisCor K L σ 1 (kummerClass a)) = 0 := by
-  have : Algebra.IsQuadraticExtension K L := ⟨hfin⟩
   rw [sw1Class_formClass_traceTransfer_sq_of_sq hfin hx hx2 h1, galoisCor_kummerClass,
-    cup_kummerClass_normUnits_eq_zero hx hx2]
+    cup_kummerClass_eq_zero_iff_hilbertSymbol_eq_one]
+  exact hilbertSymbol_normUnits_eq_one ⟨x, by rw [← hx2, _root_.sq]⟩ a
 
 end Field
 
