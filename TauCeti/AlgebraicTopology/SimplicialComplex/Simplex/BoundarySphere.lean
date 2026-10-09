@@ -350,28 +350,11 @@ theorem nonempty_homeomorph_simplexBoundary_sphere {ι : Type*}
     Nonempty ({x : Realization A // x.1.support ∈ simplexBoundary V} ≃ₜ
       sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) := by
   classical
-  let e := (Finset.equivFinOfCardEq hV).symm
-  let f : Fin (n + 2) ↪ ι := e.toEmbedding.trans (Function.Embedding.subtype (· ∈ V))
-  have himage : (Finset.univ : Finset (Fin (n + 2))).image f = V := by
-    ext v
-    simp only [Finset.mem_image, Finset.mem_univ, true_and]
-    constructor
-    · rintro ⟨i, rfl⟩
-      exact (e i).2
-    · intro hv
-      exact ⟨e.symm ⟨v, hv⟩, congrArg Subtype.val (e.apply_symm_apply _)⟩
   let P := simplexBoundary (Finset.univ : Finset (Fin (n + 2)))
   have hP : P = (standardSuccSimplexBoundary n).toPreAbstractSimplicialComplex :=
     (standardSuccSimplexBoundary_toPreAbstractSimplicialComplex n).symm
-  have hmap : P.map f = simplexBoundary V := by
-    rw [map_simplexBoundary, himage]
-  let r := P.relabelingHomeomorph f hP.le (by rw [hmap]; exact hA)
-  let s : {x : Realization (standardSuccSimplexBoundary n) // x.1.support ∈ P} ≃ₜ
-      Realization (standardSuccSimplexBoundary n) :=
-    (Homeomorph.setCongr (Set.eq_univ_of_forall fun x => by
-      rw [hP]; exact support_mem _ x)).trans
-      (Homeomorph.Set.univ _)
-  exact ⟨(Homeomorph.setCongr (by rw [hmap])).trans
-    (r.symm.trans (s.trans (realizationStandardSuccSimplexBoundaryHomeomorphSphere n)))⟩
+  exact ⟨(finsetRelabelingHomeomorph hV (fun f himage => by
+      rw [map_simplexBoundary, himage]) hP hA).trans
+    (realizationStandardSuccSimplexBoundaryHomeomorphSphere n)⟩
 
 end PreAbstractSimplicialComplex
