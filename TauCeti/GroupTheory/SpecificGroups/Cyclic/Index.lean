@@ -29,6 +29,8 @@ lands in `K` at all, and both readings agree through the convention `index = 0`.
   relative index is the least positive exponent with `g ^ n ∈ H`. No generator hypothesis is needed
   here, `g` generating `⟨g⟩`; `AddSubgroup.isLeast_nsmul_mem_relIndex_zmultiples` is the additive
   form.
+* `IsCyclic.index_sup`: in a cyclic group, the index of `H ⊔ K` is the gcd of the indices of `H`
+  and `K`.
 -/
 
 public section
@@ -109,3 +111,37 @@ theorem isLeast_pow_mem_relIndex_zpowers (g : G) (H : Subgroup G)
   exact isLeast_pow_mem_index (H.subgroupOf (zpowers g)) (zpowers_mk_self_eq_top g)
 
 end Subgroup
+
+namespace IsCyclic
+
+variable {G : Type*} [Group G] [IsCyclic G]
+
+open Subgroup
+
+/-- **In a cyclic group, the index of a join is the gcd of the indices**: in a cyclic group
+`H ≤ K` exactly when `K.index` divides `H.index`, so the join `H ⊔ K`, the least subgroup above
+both, has the greatest common divisor of `H.index` and `K.index` as its index. No finiteness is
+assumed; a subgroup of infinite index has index `0` by convention. -/
+@[to_additive
+/-- **In an additive cyclic group, the index of a join is the gcd of the indices.** -/]
+theorem index_sup (H K : Subgroup G) : (H ⊔ K).index = H.index.gcd K.index := by
+  obtain ⟨g, hg⟩ := isCyclic_iff_exists_zpowers_eq_top.mp ‹_›
+  set d := H.index.gcd K.index
+  -- `zpowers (g ^ d)` has index `d`, since `d` divides the order of `g`.
+  have hd : (zpowers (g ^ (d : ℤ))).index = d := by
+    rw [index_zpowers_zpow hg, Int.gcd_natCast_natCast, Nat.gcd_eq_left_iff_dvd,
+      orderOf_eq_card_of_zpowers_eq_top hg]
+    rcases finite_or_infinite G with _ | _
+    · exact (Nat.gcd_dvd_left _ _).trans H.index_dvd_card
+    · rw [Nat.card_eq_zero_of_infinite]
+      exact dvd_zero d
+  have hH : H ≤ zpowers (g ^ (d : ℤ)) :=
+    subgroup_le_iff_index_dvd.mpr (by rw [hd]; exact Nat.gcd_dvd_left _ _)
+  have hK : K ≤ zpowers (g ^ (d : ℤ)) :=
+    subgroup_le_iff_index_dvd.mpr (by rw [hd]; exact Nat.gcd_dvd_right _ _)
+  refine Nat.dvd_antisymm
+    (Nat.dvd_gcd (index_dvd_of_le le_sup_left) (index_dvd_of_le le_sup_right)) ?_
+  rw [← hd]
+  exact subgroup_le_iff_index_dvd.mp (sup_le hH hK)
+
+end IsCyclic

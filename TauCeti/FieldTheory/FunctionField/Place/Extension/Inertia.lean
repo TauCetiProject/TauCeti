@@ -38,6 +38,10 @@ separate: `P` is totally ramified over `T`, while `P ∩ T` is unramified over `
 residue extension.  Over both the decomposition and the inertia field the valuation ring of `P` is
 the integral closure of the valuation ring below it.
 
+More generally, for any intermediate field `E` the inertia group over `E` is the inertia group over
+`F` intersected with `Gal(F' / E)`, so that with separable residue extension the ramification index
+`e(P ∩ E ∣ P ∩ F)` is the index of `Gal(F' / E)` in the inertia group.
+
 This is Stichtenoth, Definition 3.8.1 and the second half of Theorem 3.8.2; the first half — the
 order of the decomposition group, and the decomposition field — is in
 `TauCeti/FieldTheory/FunctionField/Place/Extension/Decomposition.lean`.
@@ -88,6 +92,11 @@ order of the decomposition group, and the decomposition field — is in
   `TauCeti.Place.relativeDegree_restrict_inertiaField`: with separable residue extension,
   `[F' : T] = e`, all of the ramification happens above `T` and all of the residue extension
   below it.
+* `TauCeti.Place.restrictScalars_mem_decompositionSubgroup_iff` and
+  `TauCeti.Place.ramificationIdx_restrict_eq_relIndex`: for an intermediate field `E`, the
+  decomposition group over `E` is the one over `F` intersected with `Gal(F' / E)`, and with
+  separable residue extension `e(P ∩ E ∣ P ∩ F)` is the index of `Gal(F' / E)` in the inertia
+  group.
 
 ## References
 
@@ -629,6 +638,82 @@ theorem relativeDegree_restrict_inertiaField :
     (F₁ := (inertiaField F P : Type v')) P, relativeDegree_inertiaField, one_mul]
 
 end InertiaField
+
+section IntermediateField
+
+/-! ### Ramification of intermediate fields
+
+For an intermediate field `E` of `F' / F`, the decomposition and inertia groups of `P` over `E` are
+those over `F` intersected with `Gal(F' / E)`. With separable residue extension the inertia group
+over `F` has order `e(P ∣ P ∩ F)` and the one over `E` has order `e(P ∣ P ∩ E)`, so multiplicativity
+of ramification indices reads `e(P ∩ E ∣ P ∩ F)` as the index of `Gal(F' / E)` in the inertia
+group. -/
+
+variable (F) (P : Place k F') (E : IntermediateField F F')
+
+/-- An automorphism of `F'` over an intermediate field `E` fixes `P` exactly when it does as an
+automorphism over `F`. -/
+theorem restrictScalars_mem_decompositionSubgroup_iff (σ : F' ≃ₐ[E] F') :
+    σ.restrictScalars F ∈ P.integers.decompositionSubgroup F ↔
+      σ ∈ P.integers.decompositionSubgroup E := by
+  rw [← stabilizer_eq_decompositionSubgroup, ← stabilizer_eq_decompositionSubgroup,
+    MulAction.mem_stabilizer_iff, MulAction.mem_stabilizer_iff, restrictScalars_smul]
+
+/-- An automorphism of `F'` over an intermediate field `E` fixing `P` lies in the inertia group
+over `F` exactly when it lies in the inertia group over `E`: both say that it acts trivially on the
+residue field of `P`. -/
+private theorem mk_restrictScalars_mem_inertiaSubgroup_iff
+    (σ : P.integers.decompositionSubgroup E) :
+    (⟨(σ : F' ≃ₐ[E] F').restrictScalars F,
+        (restrictScalars_mem_decompositionSubgroup_iff F P E σ).mpr σ.2⟩ :
+          P.integers.decompositionSubgroup F) ∈ P.integers.inertiaSubgroup F ↔
+      σ ∈ P.integers.inertiaSubgroup E := by
+  rw [mem_inertiaSubgroup_iff, mem_inertiaSubgroup_iff]
+  -- Both automorphisms act on `𝒪_P` through the same underlying map of `F'`.
+  rfl
+
+/-- The inertia group of `P` over an intermediate field `E` is, as a subgroup of `Gal(F' / F)`,
+the intersection of `Gal(F' / E)` with the inertia group over `F`; in particular the two have
+the same order. -/
+private theorem natCard_inertiaSubgroup_intermediateField :
+    Nat.card (P.integers.inertiaSubgroup E) = Nat.card ↥(E.fixingSubgroup ⊓
+      (P.integers.inertiaSubgroup F).map (P.integers.decompositionSubgroup F).subtype) := by
+  refine Nat.card_congr
+    { toFun g := ⟨((g : P.integers.decompositionSubgroup E) : F' ≃ₐ[E] F').restrictScalars F,
+        (E.fixingSubgroupEquiv.symm ((g : P.integers.decompositionSubgroup E) : F' ≃ₐ[E] F')).2,
+        Subgroup.mem_map_of_mem _ ((mk_restrictScalars_mem_inertiaSubgroup_iff F P E g).mpr g.2)⟩
+      invFun h := ⟨⟨E.fixingSubgroupEquiv ⟨h, h.2.1⟩, ?_⟩, ?_⟩
+      left_inv g := rfl
+      right_inv h := rfl }
+  · obtain ⟨-, ⟨g, -, hg⟩⟩ := h.2
+    rw [← restrictScalars_mem_decompositionSubgroup_iff F P E,
+      show (E.fixingSubgroupEquiv ⟨h, h.2.1⟩).restrictScalars F = h from AlgEquiv.ext fun _ ↦ rfl,
+      ← hg]
+    exact g.2
+  · obtain ⟨-, ⟨g, hgT, hg⟩⟩ := h.2
+    rw [← mk_restrictScalars_mem_inertiaSubgroup_iff F P E]
+    have hgT : g ∈ P.integers.inertiaSubgroup F := hgT
+    convert hgT using 1
+    exact Subtype.ext (AlgEquiv.ext fun x ↦ (congrArg (fun σ : F' ≃ₐ[F] F' ↦ σ x) hg).symm)
+
+variable [FiniteDimensional F F'] [IsGalois F F']
+variable [Algebra.IsSeparable (P.restrict k F).ResidueField P.ResidueField]
+
+/-- **The ramification index of an intermediate field is an index in the inertia group**: with
+separable residue extension, `e(P ∩ E ∣ P ∩ F)` is the index of `Gal(F' / E) ∩ G_T(P)` in the
+inertia group `G_T(P)` of `P` over `F`, viewed inside `Gal(F' / F)`. -/
+theorem ramificationIdx_restrict_eq_relIndex :
+    ramificationIdx F (P.restrict k E) = E.fixingSubgroup.relIndex
+      ((P.integers.inertiaSubgroup F).map (P.integers.decompositionSubgroup F).subtype) := by
+  have := isSeparable_residueField_restrict_top k F (k₁ := k) (F₁ := E) P
+  have htower := ramificationIdx_restrict_mul (k₁ := k) (F₀ := F) (F₁ := E) P
+  rw [← card_inertiaSubgroup F P, ← card_inertiaSubgroup E P,
+    ← Subgroup.card_map_of_injective (P.integers.decompositionSubgroup F).subtype_injective,
+    ← Subgroup.relIndex_mul_card E.fixingSubgroup, natCard_inertiaSubgroup_intermediateField,
+    mul_comm] at htower
+  exact (Nat.eq_of_mul_eq_mul_left Nat.card_pos htower).symm
+
+end IntermediateField
 
 end Place
 
