@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Subgroup.Map
 public import TauCeti.LinearAlgebra.LinearMap.EqOn
 public import TauCeti.LinearAlgebra.Matrix.ToLin
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry
@@ -12,7 +13,6 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.Reflection
 import Mathlib.LinearAlgebra.SpecialLinearGroup
 import TauCeti.LinearAlgebra.QuadraticForm.Radical
-import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
@@ -282,20 +282,21 @@ Over an algebraically closed field every nondegenerate quadratic form of a given
 to every other, so this is what makes `O(Q)` depend on the rank alone. -/
 def orthogonalGroupCongr (e : Q₁.IsometryEquiv Q₂) :
     orthogonalGroup Q₁ ≃* orthogonalGroup Q₂ :=
-  ((LinearEquiv.autCongr e.toLinearEquiv).subgroupMap _).trans
-    (MulEquiv.subgroupCongr (map_orthogonalGroup e))
+  TauCeti.Subgroup.congrOfMapEq (LinearEquiv.autCongr e.toLinearEquiv) (map_orthogonalGroup e)
 
 @[simp]
 theorem coe_orthogonalGroupCongr_apply (e : Q₁.IsometryEquiv Q₂) (f : orthogonalGroup Q₁) (m : M₂) :
     (e.orthogonalGroupCongr f : M₂ ≃ₗ[R] M₂) m
       = e.toLinearEquiv ((f : M₁ ≃ₗ[R] M₁) (e.toLinearEquiv.symm m)) := by
-  simp [orthogonalGroupCongr, LinearEquiv.autCongr_apply_apply]
+  simp [orthogonalGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_apply,
+    LinearEquiv.autCongr_apply_apply]
 
 @[simp]
 theorem coe_orthogonalGroupCongr_symm_apply (e : Q₁.IsometryEquiv Q₂) (g : orthogonalGroup Q₂)
     (m : M₁) : ((e.orthogonalGroupCongr).symm g : M₁ ≃ₗ[R] M₁) m
       = e.toLinearEquiv.symm ((g : M₂ ≃ₗ[R] M₂) (e.toLinearEquiv m)) := by
-  simp [orthogonalGroupCongr, LinearEquiv.autCongr_symm_apply_apply]
+  simp [orthogonalGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_symm_apply,
+    LinearEquiv.autCongr_symm_apply_apply]
 
 /-- Transporting the orthogonal group along the identity isometry is the identity equivalence. -/
 @[simp]
@@ -581,9 +582,8 @@ theorem coe_specialOrthogonalWithinEquiv_symm_apply
 
 /-- On a zero module the determinant kernel is all of `O(Q)`, both groups being trivial; this is
 the case excluded from `index_specialOrthogonalWithin`. -/
-theorem specialOrthogonalWithin_eq_top [Subsingleton M] : specialOrthogonalWithin Q = ⊤ := by
-  refine eq_top_iff.mpr fun g _ => ?_
-  rw [mem_specialOrthogonalWithin_iff, Subsingleton.elim (g : M ≃ₗ[R] M) 1, map_one]
+theorem specialOrthogonalWithin_eq_top [Subsingleton M] : specialOrthogonalWithin Q = ⊤ :=
+  Subsingleton.elim _ _
 
 end Det
 
@@ -611,7 +611,8 @@ private theorem map_specialOrthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
   constructor
   · rintro ⟨f, hf, rfl⟩
     constructor
-    · exact (e.orthogonalGroupCongr ⟨f, hf.1⟩).2
+    · rw [← map_orthogonalGroup e]
+      exact Subgroup.mem_map_of_mem _ hf.1
     · -- Restate `autCongr` through Mathlib's special-linear congruence.
       rw [LinearEquiv.autCongr_apply]
       exact (SpecialLinearGroup.congr_linearEquiv e.toLinearEquiv ⟨f, hf.2⟩).prop
@@ -619,7 +620,8 @@ private theorem map_specialOrthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
     refine ⟨(LinearEquiv.autCongr e.toLinearEquiv).symm g, ?_,
       (LinearEquiv.autCongr e.toLinearEquiv).apply_symm_apply g⟩
     constructor
-    · exact ((e.orthogonalGroupCongr).symm ⟨g, hg.1⟩).2
+    · rw [← Subgroup.mem_map_equiv, MulEquiv.toMonoidHom_eq_coe, map_orthogonalGroup e]
+      exact hg.1
     · -- Restate inverse `autCongr` through Mathlib's special-linear congruence.
       rw [LinearEquiv.autCongr_symm_apply]
       exact (SpecialLinearGroup.congr_linearEquiv e.toLinearEquiv.symm ⟨g, hg.2⟩).prop

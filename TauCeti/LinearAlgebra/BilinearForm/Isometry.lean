@@ -555,9 +555,8 @@ theorem coe_specialIsometryWithinEquiv_symm_apply (g : specialIsometryGroup B) :
   simp [specialIsometryWithinEquiv, Subgroup.subgroupOfEquivOfLe]
 
 /-- On a subsingleton module every isometry has determinant one. -/
-theorem specialIsometryWithin_eq_top [Subsingleton M] : specialIsometryWithin B = ⊤ := by
-  refine eq_top_iff.mpr fun g _ ↦ ?_
-  rw [mem_specialIsometryWithin_iff, Subsingleton.elim (g : M ≃ₗ[R] M) 1, map_one]
+theorem specialIsometryWithin_eq_top [Subsingleton M] : specialIsometryWithin B = ⊤ :=
+  Subsingleton.elim _ _
 
 section Congr
 
