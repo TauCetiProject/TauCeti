@@ -130,6 +130,12 @@ lemma single_eq_zsmul_ofPoint (a : X) (b : ℤ) :
     (Finsupp.single a b : WeilDivisor X) = b • ofPoint a :=
   (Finsupp.smul_single_one a b).symm
 
+/-- The sum of the points of a finite set has coefficient `1` on the set and `0` off it. -/
+@[simp]
+lemma coeff_sum_ofPoint [DecidableEq X] (s : Finset X) (x : X) :
+    coeff (∑ y ∈ s, ofPoint y) x = if x ∈ s then 1 else 0 := by
+  simp [coeff, ofPoint, Finsupp.finsetSum_apply, Finsupp.single_apply]
+
 /-- A divisor is effective when every coefficient is nonnegative. -/
 def IsEffective (D : WeilDivisor X) : Prop :=
   ∀ x, 0 ≤ coeff D x

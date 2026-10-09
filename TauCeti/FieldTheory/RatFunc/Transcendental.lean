@@ -38,6 +38,8 @@ characteristic.
   `k`-algebra structure.
 * `TauCeti.isSeparable_ratFuncAlgebraOfTranscendental`: separability over `k⟮x⟯` transfers to
   separability over `k(X)`.
+* `TauCeti.ratFuncAlgebraOfTranscendental_eq_liftAlgebra`: when `x` is the image of `X` under a
+  `k[X]`-algebra structure, the structure is Mathlib's `RatFunc.liftAlgebra`.
 * `TauCeti.transcendental_ratFunc_X_sub_inv`: `X - X⁻¹` is transcendental.
 -/
 
@@ -118,5 +120,27 @@ theorem isSeparable_ratFuncAlgebraOfTranscendental (hx : Transcendental k x)
   ext r
   rw [RingHom.comp_apply, RingHom.comp_apply, algebraMap_ratFuncAlgebraOfTranscendental_apply]
   simp
+
+open scoped RatFunc in
+/-- When `F` is already a `k[X]`-algebra in which `X` acts as `x`, the structure induced by `x` is
+Mathlib's scoped `RatFunc.liftAlgebra`, the extension of the `k[X]`-action to fractions: the two
+`k(X)`-algebra structures agree on `k[X]`, hence everywhere. This lets results stated for
+`ratFuncAlgebraOfTranscendental` be read in the `RatFunc.liftAlgebra` structure. -/
+theorem ratFuncAlgebraOfTranscendental_eq_liftAlgebra [Algebra k[X] F] [IsScalarTower k k[X] F]
+    [FaithfulSMul k[X] F] (hx : Transcendental k x) (hX : algebraMap k[X] F Polynomial.X = x) :
+    ratFuncAlgebraOfTranscendental hx = RatFunc.liftAlgebra k F := by
+  subst hX
+  refine Algebra.algebra_ext _ _ fun r ↦ ?_
+  -- Both structure maps send a polynomial `p` to its image in `F`.
+  have h := IsLocalization.ringHom_ext (nonZeroDivisors k[X])
+    (j := @algebraMap (RatFunc k) F _ _ (ratFuncAlgebraOfTranscendental hx))
+    (k := @algebraMap (RatFunc k) F _ _ (RatFunc.liftAlgebra k F)) <| RingHom.ext fun p ↦ by
+      simp only [RingHom.comp_apply, algebraMap_ratFuncAlgebraOfTranscendental_apply,
+        RatFunc.algEquivOfTranscendental_algebraMap,
+        IntermediateField.AdjoinSimple.coe_aeval_gen_apply,
+        ← IsScalarTower.algebraMap_apply k[X] (RatFunc k) F]
+      rw [← IsScalarTower.coe_toAlgHom' k k[X] F, Polynomial.aeval_algHom_apply,
+        Polynomial.aeval_X_left_apply]
+  exact congrArg (· r) h
 
 end TauCeti
