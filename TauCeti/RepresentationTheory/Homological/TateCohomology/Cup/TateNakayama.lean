@@ -199,14 +199,6 @@ end Sequences
 
 variable {G : Type} [Group G] [Fintype G]
 
-/-- The connecting map of a short exact sequence is bijective in degree `n` when the middle term
-has no Tate cohomology in degrees `n` and `n + 1`. -/
-private theorem δ_bijective {S : ShortComplex (Rep ℤ G)} (hS : S.ShortExact) (n : ℤ)
-    (h₀ : IsZero (tateCohomology S.X₂ n)) (h₁ : IsZero (tateCohomology S.X₂ (n + 1))) :
-    Function.Bijective (_root_.TateCohomology.δ hS n) :=
-  ConcreteCategory.bijective_of_isIso
-    ((_root_.TateCohomology.map_tateComplexFunctor_shortExact hS).δIso n (n + 1) rfl h₀ h₁).hom
-
 omit [Fintype G] in
 /-- If a class `u` whose restriction to every subgroup `S` of prime-power order generates
 `H²(S, C)`, a group with `|S|` elements, is a multiple `m • w`, then no prime divisor of `|G|`
@@ -305,8 +297,7 @@ private theorem cup_δ_δ (C : Rep ℤ G) (u : groupCohomology C 2) {r : ℤ}
         rw [cup_δ_of_leftInverse M shortExact_augSES
           (exists_leftInverse_augmentationι (k := ℤ) (G := G)).choose_spec (add_zero r) x]
     _ = _ := by
-        rw [Units.smul_def, Units.smul_def, map_zsmul, smul_smul, ← Units.val_mul,
-          Int.units_mul_self, Units.val_one, one_smul, cup_zero_right]
+        simp [Units.smul_def, smul_smul, cup_zero_right]
 
 /-- Cup product with an integer `m` prime to `|G|`, read as a class of `H⁰(G, ℤ) = ℤ/|G|`, is
 bijective. -/
@@ -335,10 +326,10 @@ private theorem cupH0_zsmul_bijective {r : ℤ} {m : ℤ}
       hm p hp hpG (Int.natCast_dvd.2 hpm)
   have ha : a • m • trivialTateHZeroOne G = trivialTateHZeroOne G := by
     apply (H0LinearEquivTrivialIntZModCard G).injective
-    rw [map_zsmul, map_zsmul, H0LinearEquivTrivialIntZModCard_trivialTateHZeroOne, smul_smul,
-      zsmul_one, show a * m = 1 - b * Nat.card G by linarith]
-    push_cast
-    rw [ZMod.natCast_self, mul_zero, sub_zero]
+    have hab' : ((a * m : ℤ) : ZMod (Nat.card G)) = 1 := by
+      rw [show a * m = 1 - b * Nat.card G by linarith]
+      simp [-Nat.card_eq_fintype_card]
+    simp [smul_smul, hab']
   -- Multiplication by `m` on the target is therefore inverted by multiplication by `a`.
   have key (t : tateCohomology (M ⊗ Rep.trivial ℤ G ℤ) r) : a • m • t = t := by
     obtain ⟨x, rfl⟩ := hone.2 t
@@ -424,8 +415,9 @@ theorem cup_bijective_of_forall_isPGroup_of_lTensor_injective (C : Rep ℤ G)
     exact cup_δ_δ M C u x _
   rw [show (fun x ↦ cup M C r 2 (r + 1 + 1) h x
       (((_root_.TateCohomology.isoGroupCohomology 2).app C).inv u)) = _ from funext hcup]
-  exact (δ_bijective Ts (r + 1) (hMCu _) (hMCu _)).comp ((δ_bijective Ta r (hMP _) (hMP _)).comp
-    (cupH0_zsmul_bijective M (not_dvd_of_eq_zsmul C u hgen hcard huw)))
+  exact (δ_bijective_of_isZero_X₂ Ts (r + 1) (hMCu _) (hMCu _)).comp
+    ((δ_bijective_of_isZero_X₂ Ta r (hMP _) (hMP _)).comp
+      (cupH0_zsmul_bijective M (not_dvd_of_eq_zsmul C u hgen hcard huw)))
 
 end TateNakayama
 
