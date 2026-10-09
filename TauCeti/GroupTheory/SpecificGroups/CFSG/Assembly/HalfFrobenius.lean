@@ -45,7 +45,7 @@ simply connected group scheme; that comparison transfers along an identification
 * `TauCeti.SuzukiReeIndex.halfFrobenius_simpleRootSubgroup`: the action on the Bourbaki-numbered
   simple root subgroups, through the length permutation and exponents of the index.
 * `TauCeti.SuzukiReeIndex.halfFrobenius_halfFrobenius` and
-  `TauCeti.SuzukiReeIndex.halfFrobenius_comp_halfFrobenius`: the square of the half-Frobenius is
+  `TauCeti.SuzukiReeIndex.halfFrobenius_sq`: the square of the half-Frobenius is
   the prime-field Frobenius.
 * `TauCeti.SuzukiReeIndex.steinberg_eq_halfFrobenius_pow`: the Steinberg endomorphism is the
   `(2m + 1)`-st power of the half-Frobenius.
@@ -54,8 +54,6 @@ simply connected group scheme; that comparison transfers along an identification
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§12.3 and 13.4.
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS **80** (1968), §11.
-* The case split follows `TauCeti.ValidLieTypeIndex.steinberg` in
-  `TauCeti.GroupTheory.SpecificGroups.CFSG.Assembly.LieType`.
 -/
 
 public section
@@ -159,10 +157,10 @@ theorem halfFrobenius_halfFrobenius (e : SuzukiReeIndex) (g : e.1.AmbientGroup) 
   · rw [halfFrobenius_tits, ValidLieTypeIndex.primeFrobenius_tits]
     exact TitsLieIndex.steinberg_steinberg TitsLieIndex.of g
 
-/-- The square relation `τ ∘ τ = Frob_p` as an equation of endomorphisms. -/
-theorem halfFrobenius_comp_halfFrobenius (e : SuzukiReeIndex) :
-    e.halfFrobenius.comp e.halfFrobenius = e.1.primeFrobenius :=
-  MonoidHom.ext e.halfFrobenius_halfFrobenius
+/-- The square relation `τ ^ 2 = Frob_p` as an equation in the endomorphism monoid. -/
+theorem halfFrobenius_sq (e : SuzukiReeIndex) :
+    HPow.hPow (α := Monoid.End e.1.AmbientGroup) e.halfFrobenius 2 = e.1.primeFrobenius :=
+  (pow_two (M := Monoid.End _) _).trans (MonoidHom.ext e.halfFrobenius_halfFrobenius)
 
 /-- **The Steinberg endomorphism of a Suzuki--Ree index is the odd power `τ ^ (2m + 1)` of its
 half-Frobenius**, for `2m + 1` the field exponent the index records. -/
