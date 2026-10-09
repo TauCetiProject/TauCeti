@@ -465,6 +465,21 @@ lemma reducedSingularHomologySphereIso_inv_ι (b : OrthonormalBasis (Fin 1) ℝ 
         singularHomology₀Section R (X := TopCat.of (sphere (0 : E) 1)) ⟨b 0, by simp⟩ :=
   reducedSingularHomologySphereZeroIso_inv_ι R _ _
 
+/-- The degree-zero case of `TauCeti.reducedSingularHomologySphereIso_hom_naturality`, stated
+for the inverses: on the zero-sphere, `f` carries the class `[-b 0] - [b 0]` to `[-c 0] - [c 0]`. -/
+private lemma reducedSingularHomologySphereIso_inv_naturality_zero {F : Type w}
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] (b : OrthonormalBasis (Fin 1) ℝ E)
+    (c : OrthonormalBasis (Fin 1) ℝ F) (f : E →ₗᵢ[ℝ] F) (hf : ∀ i, f (b i) = c i) :
+    (reducedSingularHomologySphereIso R b).inv ≫
+        (reducedSingularHomologyFunctor R 0).map
+          (TopCat.ofHom ⟨f.unitSphereMap, f.continuous_unitSphereMap⟩) =
+      (reducedSingularHomologySphereIso R c).inv := by
+  rw [← cancel_mono ((reducedSingularHomologyι R 0).app _), Category.assoc,
+    (reducedSingularHomologyι R 0).naturality, reducedSingularHomologySphereIso_inv_ι_assoc,
+    reducedSingularHomologySphereIso_inv_ι, Preadditive.sub_comp]
+  simp only [singularHomology₀Section_naturality]
+  congr 2 <;> ext <;> simp [hf]
+
 /-- **Naturality of the generators of the homology of spheres.**  Let `b` and `c` be orthonormal
 bases of real inner product spaces `E` and `F`, indexed by `Fin (n + 1)`, and let
 `f : E →ₗᵢ[ℝ] F` be a linear isometry with `f (b i) = c i` for every `i`.  Then the map induced on
@@ -479,14 +494,8 @@ theorem reducedSingularHomologySphereIso_hom_naturality {F : Type w} [NormedAddC
       (reducedSingularHomologySphereIso R b).hom := by
   induction n generalizing E F with
   | zero =>
-    -- On the zero-sphere, `f` carries the class `[-b 0] - [b 0]` to `[-c 0] - [c 0]`.
-    rw [← cancel_epi (reducedSingularHomologySphereIso R b).inv, Iso.inv_hom_id,
-      ← Category.assoc, ← Iso.eq_comp_inv, Category.id_comp,
-      ← cancel_mono ((reducedSingularHomologyι R 0).app _), Category.assoc,
-      (reducedSingularHomologyι R 0).naturality, reducedSingularHomologySphereIso_inv_ι_assoc,
-      reducedSingularHomologySphereIso_inv_ι, Preadditive.sub_comp,
-      singularHomology₀Section_naturality, singularHomology₀Section_naturality]
-    congr 2 <;> ext <;> simp [hf]
+    rw [← Iso.eq_comp_inv, ← Iso.inv_comp_eq]
+    exact reducedSingularHomologySphereIso_inv_naturality_zero R b c f hf
   | succ n ih =>
     -- The suspension isomorphisms at the last basis vectors are natural, and the restriction of
     -- `f` to the equators matches the remaining basis vectors.
