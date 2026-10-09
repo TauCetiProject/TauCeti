@@ -12,9 +12,9 @@ public import TauCeti.Geometry.Toric.Analytic.Fan.Comparison.TorusAction
 # Compactness of toric projective space
 
 The fan of projective space `TauCeti.Toric.Fan.projectiveSpace` is regular and complete. Its
-analytic realization, the complex manifold obtained by gluing the standard affine charts of
-projective space, is therefore compact. So are the complex points of its fan scheme, with their
-affine-chart topology, through the algebraic–analytic comparison.
+analytic realization, the space glued from the affine toric charts of its cones, is therefore
+compact. So are the complex points of its fan scheme, with their affine-chart topology, through
+the algebraic–analytic comparison.
 
 ## Main declarations
 

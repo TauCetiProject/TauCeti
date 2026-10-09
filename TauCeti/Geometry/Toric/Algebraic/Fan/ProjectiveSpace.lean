@@ -137,7 +137,14 @@ nonnegative combination of the ray generators with coefficients vanishing outsid
 theorem mem_projectiveSpaceCone_iff {S : Set (Option ι)} {x : V} :
     x ∈ projectiveSpaceCone b i S ↔ ∃ c : Option ι → ℝ, (∀ k ∉ S, c k = 0) ∧ (∀ k, 0 ≤ c k) ∧
       ∑ k, c k • i (projectiveSpaceGenerator b k) = x := by
-  rw [projectiveSpaceCone_eq_hull, PointedCone.mem_hull_image_iff_sum]
+  rw [projectiveSpaceCone_eq_hull, PointedCone.mem_hull_image_iff_linearCombination]
+  constructor
+  · rintro ⟨c, hcS, hc0, rfl⟩
+    refine ⟨c, (Finsupp.mem_supported' ℝ c).1 hcS, hc0, ?_⟩
+    simp [Finsupp.linearCombination_apply, Finsupp.sum_fintype]
+  · rintro ⟨c, hcS, hc0, rfl⟩
+    refine ⟨Finsupp.equivFunOnFinite.symm c, (Finsupp.mem_supported' ℝ _).2 hcS, hc0, ?_⟩
+    simp [Finsupp.linearCombination_apply, Finsupp.sum_fintype]
 
 @[simp]
 theorem projectiveSpaceCone_empty : projectiveSpaceCone b i ∅ = ⊥ := by
