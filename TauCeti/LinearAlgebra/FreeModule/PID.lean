@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.RingTheory.PrincipalIdealDomain
 import Mathlib.SetTheory.Cardinal.Order
@@ -19,6 +20,9 @@ of the submodule by elimination of the greatest coordinate in the finite support
 
 This is the arbitrary-rank form of Lang, *Algebra*, Chapter III, Theorem 7.1.  Mathlib's
 `Submodule.nonempty_basis_of_pid` is the finite-rank form.
+
+Since a projective module embeds in a free module, every submodule of a projective module over such
+a ring is projective: principal ideal domains are hereditary.
 -/
 
 public section
@@ -158,5 +162,14 @@ theorem free_of_isPrincipalIdealRing (N : Submodule R M) [Module.Free R M] :
   apply Module.Free.of_basis
   apply Basis.mk pivot_linearIndependent
   simpa [P] using span_pivot_eq_top.ge
+
+/-- Every submodule of a projective module over a principal ideal ring without zero divisors is
+projective: the module embeds in a free module, where the image of the submodule is free by
+`Submodule.free_of_isPrincipalIdealRing`. -/
+theorem projective_of_isPrincipalIdealRing (N : Submodule R M) [Module.Projective R M] :
+    Module.Projective R N := by
+  obtain ⟨s, hs⟩ := Module.projective_def.mp ‹Module.Projective R M›
+  have : Module.Free R (N.map s) := (N.map s).free_of_isPrincipalIdealRing
+  exact .of_equiv' (N.equivMapOfInjective s hs.injective).symm
 
 end Submodule

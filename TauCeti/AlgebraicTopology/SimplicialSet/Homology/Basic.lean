@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
+public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 public import Mathlib.RingTheory.SimpleModule.Basic
 
 /-!
@@ -76,5 +77,15 @@ instance isSemisimpleModule_chainComplex_X {k : Type w} [Ring k] (X : SSet.{w})
   -- `Cₙ(X; M)` is by definition the coproduct of copies of `M` indexed by the `n`-simplices.
   exact .congr ((ModuleCat.coprodIsoDirectSum fun _ : X _⦋n⦌ ↦ M).toLinearEquiv.trans
     (finsuppLequivDFinsupp k).symm)
+
+/-- The simplicial chain objects `Cₙ(X; R) = ∐ R` with projective coefficients `R` are
+projective. -/
+instance projective_chainComplex_X {C : Type u} [Category.{v} C] [HasCoproducts.{w} C]
+    [Preadditive C] (X : SSet.{w}) (R : C) [Projective R] (n : ℕ) :
+    Projective ((X.chainComplex R).X n) where
+  -- `Cₙ(X; R)` is by definition the coproduct of copies of `R` indexed by the `n`-simplices.
+  factors f e _ := ⟨Sigma.desc fun x ↦ Projective.factorThru (X.ιChainComplex x ≫ f) e,
+    Sigma.hom_ext _ _ fun _ ↦
+      (Sigma.ι_comp_desc_assoc _ _ _).trans (Projective.factorThru_comp _ _)⟩
 
 end SSet
