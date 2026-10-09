@@ -111,7 +111,7 @@ theorem twistedBoundaryF2_kummerIndLift_cohomologous (σ : L →ₐ[K] Separable
     · simp [ψ, h]
     · have hψ : ψ g = 1 := ite_eq_right h
       rw [hψ, (hz g).resolve_left h, ZMod.val_one, pow_one, neg_one_mul]
-  refine ⟨ψ, ?_, fun g h => twistedBoundaryF2_eq_of_twistedBoundary_eq ?_⟩
+  refine ⟨ψ, ?_, fun g h => ?_⟩
   · -- `ψ g` only depends on `ρ_a(g)`, on `g(Q)` and on the signs of the `c_i`, all locally
     -- constant in `g`.
     have hρ : IsLocallyConstant (kummerInd σ hdeg a r hr s hs) := by
@@ -129,6 +129,10 @@ theorem twistedBoundaryF2_kummerIndLift_cohomologous (σ : L →ₐ[K] Separable
     simp only [ψ, z, kummerIndLift_def, h₁, h₂, h₃]
   · -- The twisted boundary of `z` is the sign of the cup product twisted by `∂ψ`, and, `z` being
     -- `\tilde{ρ}_a` in the frame `Q`, it is the twisted boundary of `\tilde{ρ}_a`.
+    apply twistedBoundaryF2_eq_of_eq_sign
+    suffices hδ : twistedBoundary (kummerIndLift σ hdeg a r hr s hs hr2) (g, h) =
+        (-1) ^ (rootSign (c 1) g * rootSign (c 0) h + (ψ h - ψ (g * h) + ψ g)).val by
+      simpa only [Algebra.smul_def, map_pow, map_neg, map_one, mul_one] using hδ
     refine (twistedBoundary_conj_eq_iff _ hQdet ((Commute.neg_one_left Q).pow_left _) _).1 ?_
     rw [← hz_def, hzψ, twistedBoundary_neg_one_pow_mul, twistedBoundary_pinDiagonalLift_rootSign hc,
       ← pow_val_add (by simp), add_comm (rootSign (c 1) g * _)]
