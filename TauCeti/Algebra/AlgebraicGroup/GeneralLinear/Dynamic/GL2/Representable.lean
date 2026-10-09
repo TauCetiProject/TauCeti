@@ -59,11 +59,10 @@ variable {R : Type u} [CommRing R]
 
 /-- The Borel coordinate Hopf algebra represents the dynamic parabolic functor for
 `t ↦ diag(t, 1)`. -/
-noncomputable def borelPointsIsoParabolicFunctor :
+noncomputable abbrev borelPointsIsoParabolicFunctor :
     HopfAlgebra.pointsFunctor (R := R) (H := Borel.coordinateHopfAlgebra R) ≅
-      Cocharacter.parabolicFunctor (dynamicCocharacter (R := R)) := by
-  rw [dynamicCocharacter_eq_weightCocharacter]
-  exact weightParabolicPointsIso R Borel.weights
+      Cocharacter.parabolicFunctor (dynamicCocharacter (R := R)) :=
+  weightParabolicPointsIso R Borel.weights
 
 /-! ## The dynamic Levi -/
 
