@@ -97,6 +97,15 @@ theorem exists_isUnimodular_map_equiv_add_of_nonsingular {P Q : Fin 3 → R} (hP
     rw [map_dblAddXYZ]
     exact (hu.map f).ne_zero
 
+/-- Over a field, the image of a unimodular solution on an elliptic curve is a nonzero solution,
+hence nonsingular. -/
+private theorem nonsingular_map_of_isUnimodular [W'.IsElliptic] {K : Type v} [Field K]
+    (f : R →+* K) {T : Fin 3 → R} (hT : W'.Equation T) (hT₁ : Module.IsUnimodular R T) :
+    (W'.map f).Nonsingular (f ∘ T) := by
+  obtain ⟨i, hi⟩ := TauCeti.Module.isUnimodular_iff_exists_isUnit.mp hT₁
+  exact (equation_iff_nonsingular_of_ne_zero
+    (Function.ne_iff.mpr ⟨i, (hi.map f).ne_zero⟩)).mp (hT.map f)
+
 /-- **The sum of two points over a local ring.** Let `P` and `Q` be unimodular solutions of the
 projective Weierstrass equation of an elliptic curve `W'` over a local ring `R`. Then there is a
 unimodular solution `S` such that, for every ring homomorphism `f : R →+* K` to a field, `f ∘ S`
@@ -106,19 +115,9 @@ theorem exists_isUnimodular_map_equiv_add [W'.IsElliptic] {P Q : Fin 3 → R} (h
     (hQ : W'.Equation Q) (hP₁ : Module.IsUnimodular R P) (hQ₁ : Module.IsUnimodular R Q) :
     ∃ S : Fin 3 → R, W'.Equation S ∧ Module.IsUnimodular R S ∧
       ∀ {K : Type v} [Field K] (f : R →+* K), f ∘ S ≈ (W'.map f).add (f ∘ P) (f ∘ Q) := by
-  -- `P` and `Q` have a unit coordinate, so over a field their images are nonzero solutions, hence
-  -- nonsingular
-  obtain ⟨i, hi⟩ := TauCeti.Module.isUnimodular_iff_exists_isUnit.mp hP₁
-  obtain ⟨j, hj⟩ := TauCeti.Module.isUnimodular_iff_exists_isUnit.mp hQ₁
   obtain ⟨S, hS, hS₁, hSf⟩ := exists_isUnimodular_map_equiv_add_of_nonsingular hP hQ
-    ((equation_iff_nonsingular_of_ne_zero (Function.ne_iff.mpr ⟨i, (hi.map _).ne_zero⟩)).mp
-      (hP.map _))
-    ((equation_iff_nonsingular_of_ne_zero (Function.ne_iff.mpr ⟨j, (hj.map _).ne_zero⟩)).mp
-      (hQ.map _))
-  exact ⟨S, hS, hS₁, fun f ↦ hSf f
-    ((equation_iff_nonsingular_of_ne_zero (Function.ne_iff.mpr ⟨i, (hi.map f).ne_zero⟩)).mp
-      (hP.map f))
-    ((equation_iff_nonsingular_of_ne_zero (Function.ne_iff.mpr ⟨j, (hj.map f).ne_zero⟩)).mp
-      (hQ.map f))⟩
+    (nonsingular_map_of_isUnimodular _ hP hP₁) (nonsingular_map_of_isUnimodular _ hQ hQ₁)
+  exact ⟨S, hS, hS₁, fun f ↦ hSf f (nonsingular_map_of_isUnimodular f hP hP₁)
+    (nonsingular_map_of_isUnimodular f hQ hQ₁)⟩
 
 end WeierstrassCurve.Projective
