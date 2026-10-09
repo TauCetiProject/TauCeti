@@ -18,7 +18,7 @@ import TauCeti.Topology.Order.Interval
 /-!
 # Primitives of integrable functions on the line
 
-Two facts about the primitive `t ↦ ∫ s in t₀..t, f s` of a vector-valued function `f`, which are
+Three facts about the primitive `t ↦ ∫ s in t₀..t, f s` of a vector-valued function `f`, which are
 used to identify weak derivatives on an interval with ordinary primitives.
 
 * `TauCeti.intervalIntegral.continuousOn_primitive_interval_of_locallyIntegrableOn`: if `f` is
@@ -26,6 +26,9 @@ used to identify weak derivatives on an interval with ordinary primitives.
   continuous on the interval.
   Mathlib's `intervalIntegral.continuousOn_primitive_interval'` covers a compact interval on which
   `f` is integrable.
+* `TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo`: if `f` is
+  integrable on the open interval `(a, b)`, its primitive based at a point of `[a, b]` is
+  continuous on the closed interval `[a, b]`.
 * `TauCeti.intervalIntegral.integral_deriv_smul_primitive_eq_sub_of_le`: integration by parts
   between a `C¹` real function `φ` and the primitive of an integrable `f`, which need not be
   differentiable anywhere:
@@ -65,6 +68,15 @@ theorem continuousOn_primitive_interval_of_locallyIntegrableOn {μ : Measure ℝ
     (by rw [uIcc_of_le hle]; exact Ioo_subset_Icc_self ht₀')
   rw [uIcc_of_le hle] at hcont
   exact (hcont.continuousAt (Icc_mem_nhds hx'.1 hx'.2)).continuousWithinAt
+
+/-- The primitive `t ↦ ∫ s in t₀..t, f s ∂μ` of a function integrable on the open interval
+`Ioo a b`, based at a point `t₀` of `Icc a b`, is continuous on the closed interval `Icc a b`. -/
+theorem continuousOn_primitive_interval_of_integrableOn_Ioo {μ : Measure ℝ}
+    [NullSingletonClass μ] {t₀ : ℝ} (hf : IntegrableOn f (Ioo a b) μ) (ht₀ : t₀ ∈ Icc a b) :
+    ContinuousOn (fun t ↦ ∫ s in t₀..t, f s ∂μ) (Icc a b) := by
+  have hab : a ≤ b := ht₀.1.trans ht₀.2
+  simpa [uIcc_of_le hab] using _root_.intervalIntegral.continuousOn_primitive_interval'
+    ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab).2 hf) (uIcc_of_le hab ▸ ht₀)
 
 variable [CompleteSpace E]
 

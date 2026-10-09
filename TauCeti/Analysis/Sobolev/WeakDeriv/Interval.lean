@@ -150,14 +150,6 @@ end Primitive
 
 /-! ### The fundamental theorem of calculus -/
 
-/-- The primitive of a function integrable on `Ioo a b`, based at a point of `Icc a b`, is
-continuous on `Icc a b`. -/
-private theorem continuousOn_primitive_Icc_of_integrableOn_Ioo (hu' : IntegrableOn u' (Ioo a b))
-    (ht₀ : t₀ ∈ Icc a b) : ContinuousOn (fun t ↦ ∫ s in t₀..t, u' s) (Icc a b) := by
-  have hab : a ≤ b := ht₀.1.trans ht₀.2
-  simpa [uIcc_of_le hab] using continuousOn_primitive_interval'
-    ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab).2 hu') (uIcc_of_le hab ▸ ht₀)
-
 /-- **The du Bois-Reymond lemma for weak derivatives.** A function whose weak derivative on
 `Ioo a b` is `0` is almost everywhere equal to a constant on `Ioo a b`. -/
 theorem HasWeakLineDerivOn.exists_ae_eq_const
@@ -208,7 +200,8 @@ theorem HasWeakLineDerivOn.exists_continuousOn_ae_eq
   have ht₀ : (a + b) / 2 ∈ Ioo a b := ⟨by linarith, by linarith⟩
   obtain ⟨c, hc⟩ := h.exists_ae_eq_add_intervalIntegral ht₀
   exact ⟨_, continuousOn_const.add
-    (continuousOn_primitive_Icc_of_integrableOn_Ioo hu' (Ioo_subset_Icc_self ht₀)), hc⟩
+    (TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hu'
+      (Ioo_subset_Icc_self ht₀)), hc⟩
 
 /-- **The fundamental theorem of calculus for a continuous representative.** Let `u'` be the weak
 derivative of `u` on `Ioo a b`, integrable on `Ioo a b`, and let `v` be continuous on `Icc a b`
@@ -227,7 +220,8 @@ theorem HasWeakLineDerivOn.integral_eq_sub
     (intervalIntegrable_iff_integrableOn_Ioo_of_le hab.le).2 hu'
   set w : ℝ → _ := fun t ↦ c + ∫ r in (a + b) / 2..t, u' r with hw_def
   have hw : ContinuousOn w (Icc a b) := continuousOn_const.add
-    (continuousOn_primitive_Icc_of_integrableOn_Ioo hu' (Ioo_subset_Icc_self ht₀))
+    (TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hu'
+      (Ioo_subset_Icc_self ht₀))
   -- Two functions continuous on `Icc a b` and almost everywhere equal on `Ioo a b` agree on
   -- `Icc a b`.
   have heq : EqOn v w (Icc a b) :=
