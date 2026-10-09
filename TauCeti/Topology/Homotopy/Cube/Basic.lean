@@ -9,7 +9,7 @@ public import Mathlib.Topology.Homotopy.HomotopyGroup
 public import Mathlib.Topology.Connected.PathConnected
 
 /-!
-# Path-connectedness of the cube and its boundary
+# The cube and its boundary
 
 Mathlib's higher homotopy groups `π_ n X x` are built from generalized loops `Ω^ N X x`,
 continuous maps `I^N → X` sending the cube boundary `Cube.boundary N`
@@ -23,6 +23,12 @@ This file supplies that missing input:
 * the whole cube `I^N` is path connected (`TauCeti.isPathConnected_cube`);
 * its boundary is path connected as soon as the index type has at least two elements
   (`TauCeti.isPathConnected_cubeBoundary`).
+
+It also records how the boundary of a cube with one extra direction splits, mirroring Mathlib's
+`Cube.boundary_sum_iff`: a point of `I^(Option N)` is on the boundary exactly when its `none`
+coordinate is `0` or `1` or its remaining coordinates are on the boundary of `I^N`
+(`Cube.boundary_option_iff`). This is how a cube `I × I^N` with a distinguished first direction,
+as used for relative homotopy groups, is compared with the absolute cube `I^(Option N)`.
 
 The resulting path-connectedness declarations expose `JoinedIn` witnesses through their
 `.joinedIn` methods, so callers can use the generic connectedness API directly.
@@ -40,9 +46,22 @@ at `0` while releasing the first.
 * `TauCeti.zero_mem_cubeBoundary`: the corner `0` lies on the boundary.
 * `TauCeti.isPathConnected_cubeBoundary`: for `[Nontrivial N]`, `Cube.boundary N` is path
   connected.
+* `Cube.boundary_option_iff`: the boundary of `I^(Option N)`.
 -/
 
 public section
+
+open scoped Topology unitInterval in
+/-- A point of the cube `I^(Option N)` lies on its boundary exactly when its `none` coordinate is
+`0` or `1`, or its remaining coordinates lie on the boundary of `I^N`. -/
+theorem Cube.boundary_option_iff {N : Type*} {y : I^(Option N)} :
+    y ∈ Cube.boundary (Option N) ↔
+      (y none = 0 ∨ y none = 1) ∨ (fun k => y (some k)) ∈ Cube.boundary N := by
+  constructor
+  · rintro ⟨_ | k, hk⟩
+    exacts [Or.inl hk, Or.inr ⟨k, hk⟩]
+  · rintro (h | ⟨k, hk⟩)
+    exacts [⟨none, h⟩, ⟨some k, hk⟩]
 
 namespace TauCeti
 
