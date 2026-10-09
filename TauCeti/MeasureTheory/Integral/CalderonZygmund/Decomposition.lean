@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Integral.Average
 public import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube
+import TauCeti.Analysis.Normed.Group.InfiniteSum
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 
 /-!
@@ -27,11 +28,11 @@ where the sum runs over a countable family of pairwise disjoint dyadic cubes `Q`
   if `f ∈ Lᵖ` for a finite `p`, the series `∑_Q b_Q` converges to `f - g` in `Lᵖ`.
 
 It is the device that turns `L²` bounds for singular integral operators into weak type `(1, 1)`
-bounds (`TauCeti.mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le`): the good part is
-bounded, hence in `L²` with `‖g‖₂² ≤ 2ⁿ t ‖f‖₁`, while the bad parts have mean zero on small
-cubes, where the smoothness of the kernel makes them nearly cancel. Together with Marcinkiewicz
-interpolation this gives `Lᵖ` boundedness for `1 < p < 2`; the range `2 < p < ∞` then follows by
-applying the corresponding bounds to the adjoint and using duality.
+bounds (`ContinuousLinearMap.mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le`): the
+good part is bounded, hence in `L²` with `‖g‖₂² ≤ 2ⁿ t ‖f‖₁`, while the bad parts have mean
+zero on small cubes, where the smoothness of the kernel makes them nearly cancel. Together with
+Marcinkiewicz interpolation this gives `Lᵖ` boundedness for `1 < p < 2`; the range `2 < p < ∞`
+then follows by applying the corresponding bounds to the adjoint and using duality.
 
 The cubes are the maximal dyadic cubes on which the average of `‖f‖` exceeds `t`
 (`TauCeti.calderonZygmundCubes`). They exist because averages over large cubes are small, which
@@ -391,27 +392,6 @@ theorem subsingleton_support_calderonZygmundBad (f : (ι → ℝ) → E) (t : �
   exact Set.disjoint_left.1 (pairwiseDisjoint_calderonZygmundCubes q.2 q'.2
     fun h => hne (Subtype.ext h)) (hmem hq) (hmem hq')
 
-omit [NormedSpace ℝ E] in
-/-- For a family with at most one nonzero term, the finite partial sums tend to the sum, and each
-differs from it by at most its extended norm. -/
-private theorem tendsto_sum_and_enorm_sum_sub_tsum_le {κ : Type*} {u : κ → E}
-    (hu : (Function.support u).Subsingleton) :
-    Tendsto (fun s : Finset κ => ∑ i ∈ s, u i) atTop (𝓝 (∑' i, u i)) ∧
-      ∀ s : Finset κ, ‖∑ i ∈ s, u i - ∑' i, u i‖ₑ ≤ ‖∑' i, u i‖ₑ := by
-  rcases hu.eq_empty_or_singleton with h | ⟨i, h⟩
-  · have h0 : u = 0 := Function.support_eq_empty_iff.1 h
-    simp [h0]
-  · have hi (j : κ) (hj : j ≠ i) : u j = 0 :=
-      Function.notMem_support.1 fun h' => hj (by simpa [h] using h')
-    rw [tsum_eq_single i hi]
-    refine ⟨tendsto_const_nhds.congr' ?_, fun s => ?_⟩
-    · filter_upwards [eventually_ge_atTop {i}] with s hs
-      exact (Finset.sum_eq_single_of_mem i (Finset.singleton_subset_iff.1 hs) fun j _ => hi j).symm
-    · by_cases his : i ∈ s
-      · rw [Finset.sum_eq_single_of_mem i his fun j _ => hi j, sub_self, enorm_zero]
-        exact zero_le
-      · rw [Finset.sum_eq_zero fun j hj => hi j fun h => his (h ▸ hj), zero_sub, enorm_neg]
-
 /-- If `f` and its good part at height `t` are in `Lᵖ` for a finite `p ≥ 1`, then the bad parts sum
 in `Lᵖ` to `f` minus the good part. -/
 theorem hasSum_toLp_calderonZygmundBad {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞) (hf : MemLp f p)
@@ -424,8 +404,10 @@ theorem hasSum_toLp_calderonZygmundBad {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p
   have hsum (x : ι → ℝ) : (f - calderonZygmundGood f t) x =
       ∑' q : 𝒬, calderonZygmundBad f q x := by
     rw [Pi.sub_apply, ← calderonZygmundGood_add_tsum_calderonZygmundBad f t x, add_sub_cancel_left]
-  have hpt (x : ι → ℝ) := tendsto_sum_and_enorm_sum_sub_tsum_le
-    (subsingleton_support_calderonZygmundBad f t x)
+  have hpt (x : ι → ℝ) := subsingleton_support_calderonZygmundBad f t x
+  have hconv (x : ι → ℝ) : HasSum (fun q : 𝒬 => calderonZygmundBad f q x)
+      (∑' q : 𝒬, calderonZygmundBad f q x) :=
+    (summable_of_hasFiniteSupport (hpt x).finite).hasSum
   simp only [HasSum, SummationFilter.unconditional_filter]
   rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm']
   refine (tendsto_eLpNorm_sub_of_ae_tendsto (f := F) (C := 1)
@@ -433,8 +415,11 @@ theorem hasSum_toLp_calderonZygmundBad {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p
     (.of_forall fun s => Finset.aestronglyMeasurable_fun_sum s fun q _ =>
       (memLp_calderonZygmundBad hf q.1).aestronglyMeasurable)
     (hf.sub hg).aestronglyMeasurable (hf.sub hg)
-    (.of_forall fun s => .of_forall fun x => by simpa [F, hsum x] using (hpt x).2 s)
-    (.of_forall fun x => by simpa [F, hsum x] using (hpt x).1)).congr fun s => eLpNorm_congr_ae ?_
+    (.of_forall fun s => .of_forall fun x => by
+      simpa [F, hsum x] using (hpt x).enorm_sum_sub_tsum_le s)
+    (.of_forall fun x => by
+      simpa [F, hsum x, HasSum, SummationFilter.unconditional_filter] using hconv x)).congr
+    fun s => eLpNorm_congr_ae ?_
   filter_upwards [Lp.coeFn_finsetSum s fun q : 𝒬 => (memLp_calderonZygmundBad hf q.1).toLp _,
     ae_all_iff.2 fun q : 𝒬 => (memLp_calderonZygmundBad hf q.1).coeFn_toLp,
     (hf.sub hg).coeFn_toLp] with x hx hq hfg

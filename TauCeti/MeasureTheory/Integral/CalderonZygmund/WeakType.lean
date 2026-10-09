@@ -21,7 +21,7 @@ that ball with integral zero,
 The conclusion is that for every `f ∈ L²` and every `t`,
 
 `t · |{‖T f‖ > t}| ≤ (2ⁿ (4 ‖T‖² + 1) + 4 B) ‖f‖₁`
-(`TauCeti.mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le`).
+(`ContinuousLinearMap.mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le`).
 
 The cancellation condition holds for an operator given off the support of `b` by a kernel,
 `T b x = ∫ K x y (b y) dy`, satisfying **Hörmander's kernel condition**
@@ -30,9 +30,9 @@ The cancellation condition holds for an operator given off the support of `b` by
 (`TauCeti.setLIntegral_compl_closedBall_enorm_le_of_hormander`). Since `b` has mean zero, `K x y₀`
 can be subtracted from the kernel, and for `y` in the ball and `x` outside the doubled ball the
 difference `K x y - K x y₀` is controlled by Hörmander's condition. Combining the two gives the
-classical form of the theorem (`TauCeti.mul_volume_lt_enorm_le_of_hormander`). The weak-type bound
-is the endpoint estimate that Marcinkiewicz interpolation against the `L²` bound turns into `Lᵖ`
-bounds for `1 < p < 2`.
+classical form of the theorem (`ContinuousLinearMap.mul_volume_lt_enorm_le_of_hormander`). The
+weak-type bound is the endpoint estimate that Marcinkiewicz interpolation against the `L²` bound
+turns into `Lᵖ` bounds for `1 < p < 2`.
 
 ## The proof
 
@@ -49,12 +49,12 @@ Points of `ℝⁿ` are functions `ι → ℝ`, so distances and balls are taken 
 
 ## Main declarations
 
-* `TauCeti.mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le`: an `L²`-bounded operator
-  satisfying the cancellation condition is of weak type `(1, 1)`.
+* `ContinuousLinearMap.mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le`: an
+  `L²`-bounded operator satisfying the cancellation condition is of weak type `(1, 1)`.
 * `TauCeti.setLIntegral_compl_closedBall_enorm_le_of_hormander`: Hörmander's kernel condition
   implies the cancellation condition, in any metric measure space.
-* `TauCeti.mul_volume_lt_enorm_le_of_hormander`: an `L²`-bounded operator with a kernel satisfying
-  Hörmander's condition is of weak type `(1, 1)`.
+* `ContinuousLinearMap.mul_volume_lt_enorm_le_of_hormander`: an `L²`-bounded operator with a
+  kernel satisfying Hörmander's condition is of weak type `(1, 1)`.
 
 ## References
 
@@ -155,8 +155,8 @@ times the volume of the cube. -/
 private theorem volume_closedBall_dyadicCube (k : ℤ) (m : ι → ℤ) :
     volume (closedBall (fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k) (2 * (2 ^ k / 2))) =
       2 ^ Fintype.card ι * volume (dyadicCube k m) := by
-  rw [Real.volume_pi_closedBall _ (by positivity), volume_dyadicCube,
-    show (2 : ℝ) * (2 * (2 ^ k / 2)) = 2 * 2 ^ k by ring, mul_pow,
+  have hr : (2 : ℝ) * (2 * (2 ^ k / 2)) = 2 * 2 ^ k := by ring
+  rw [Real.volume_pi_closedBall _ (by positivity), volume_dyadicCube, hr, mul_pow,
     ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat]
 
 /-- The union of the doubled balls around the Calderón–Zygmund cubes of `g` at height `t` has
@@ -177,6 +177,20 @@ private theorem mul_volume_biUnion_closedBall_le (g : (ι → ℝ) → ℝ≥0�
     _ ≤ 2 ^ Fintype.card ι * ∫⁻ x, g x :=
         mul_le_mul_right (mul_volume_biUnion_calderonZygmundCubes_le.trans
           (setLIntegral_le_lintegral _ _)) _
+
+end WeakType
+
+end TauCeti
+
+namespace ContinuousLinearMap
+
+open Filter MeasureTheory Metric Set TauCeti
+open scoped ENNReal Topology
+
+section WeakType
+
+variable {ι : Type*} [Fintype ι] {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 omit [CompleteSpace E] in
 /-- Chebyshev's inequality for the image of the good part under an operator bounded on `L²`. -/
@@ -365,4 +379,4 @@ theorem mul_volume_lt_enorm_le_of_hormander [Nonempty ι] [CompleteSpace F]
 
 end WeakType
 
-end TauCeti
+end ContinuousLinearMap
