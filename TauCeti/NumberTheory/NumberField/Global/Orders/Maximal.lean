@@ -127,10 +127,11 @@ theorem mapEquiv_maximalOrderFractionalIdealEquiv_toPrincipalIdeal (x : Kˣ) :
 /-- The principal fractional ideals of `𝓞 K` correspond to those of the maximal order. -/
 @[simp]
 theorem mapEquiv_maximalOrderFractionalIdealEquiv_symm_toPrincipalIdeal (x : Kˣ) :
-    (Units.mapEquiv (maximalOrderFractionalIdealEquiv K : _ ≃* _)).symm
+    Units.mapEquiv (maximalOrderFractionalIdealEquiv K : _ ≃* _).symm
         (toPrincipalIdeal (𝓞 K) K x) =
       toPrincipalIdeal (maximalNumberFieldOrder K).toSubalgebra K x := by
-  rw [MulEquiv.symm_apply_eq, mapEquiv_maximalOrderFractionalIdealEquiv_toPrincipalIdeal]
+  rw [← Units.mapEquiv_symm, MulEquiv.symm_apply_eq,
+    mapEquiv_maximalOrderFractionalIdealEquiv_toPrincipalIdeal]
 
 variable (K)
 
@@ -156,7 +157,7 @@ def maximalOrderNarrowPicEquiv : NarrowPic (maximalNumberFieldOrder K) ≃* Narr
         exact NarrowClassGroup.mkPrincipal_eq_one_of_isTotallyPositive hx)
     (NarrowClassGroup.lift
       ((NarrowPic.mk _).comp
-        (Units.mapEquiv (maximalOrderFractionalIdealEquiv K : _ ≃* _)).symm.toMonoidHom)
+        (Units.mapEquiv (maximalOrderFractionalIdealEquiv K : _ ≃* _).symm).toMonoidHom)
       fun J hJ ↦ by
         obtain ⟨x, hx, rfl⟩ := mem_narrowPrincipalSubgroup.mp hJ
         rw [MonoidHom.mem_ker, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
@@ -167,12 +168,12 @@ def maximalOrderNarrowPicEquiv : NarrowPic (maximalNumberFieldOrder K) ≃* Narr
       obtain ⟨I, rfl⟩ := NarrowPic.mk_surjective _ c
       rw [MonoidHom.comp_apply, NarrowPic.lift_mk, MonoidHom.comp_apply, NarrowClassGroup.lift_mk,
         MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.coe_toMonoidHom,
-        MulEquiv.symm_apply_apply, MonoidHom.id_apply])
+        ← Units.mapEquiv_symm, MulEquiv.symm_apply_apply, MonoidHom.id_apply])
     (MonoidHom.ext fun c ↦ by
       obtain ⟨J, rfl⟩ := NarrowClassGroup.mk_surjective c
       rw [MonoidHom.comp_apply, NarrowClassGroup.lift_mk, MonoidHom.comp_apply, NarrowPic.lift_mk,
         MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.coe_toMonoidHom,
-        MulEquiv.apply_symm_apply, MonoidHom.id_apply])
+        ← Units.mapEquiv_symm, MulEquiv.apply_symm_apply, MonoidHom.id_apply])
 
 variable {K}
 
