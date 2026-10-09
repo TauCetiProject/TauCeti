@@ -45,7 +45,8 @@ hypothesis on `p` for any fpqc or fppf morphism of schemes, so the results are e
 * `TauCeti.monObjObj_descendMonObj`, `TauCeti.grpObjObj_descendGrpObj`: the base change of the
   descended structure is the given one.
 * `TauCeti.eq_descendMonObj`, `TauCeti.eq_descendGrpObj`: uniqueness of the descended structure.
-* `TauCeti.isCommMonObj_descendMonObj`: the descended structure is commutative if the given one is.
+* `TauCeti.isCommMonObj_descendMonObj`, `TauCeti.isCommMonObj_descendGrpObj`: the descended
+  structure is commutative if the given one is.
 * `TauCeti.isMonHom_descendHom`: a homomorphism satisfying the descent condition descends to a
   homomorphism.
 -/
@@ -190,6 +191,14 @@ theorem eq_descendGrpObj (h : GrpObj X)
     (e : Functor.grpObjObj (F := Over.pullback p) (G := X) = ‹GrpObj ((Over.pullback p).obj X)›) :
     h = descendGrpObj p X h_one h_mul h_inv :=
   (Over.pullback p).grpObjObj_injective X <| e.trans (grpObjObj_descendGrpObj p X).symm
+
+/-- **Descent of commutativity.** If the given group object structure on `X ×_S S'` is
+commutative, so is the descended group object structure on `X`. The underlying monoid object of
+`descendGrpObj` is `descendMonObj` by construction, so this is `isCommMonObj_descendMonObj`. -/
+theorem isCommMonObj_descendGrpObj [IsCommMonObj ((Over.pullback p).obj X)] :
+    letI := descendGrpObj p X h_one h_mul h_inv
+    IsCommMonObj X :=
+  isCommMonObj_descendMonObj p X
 
 end GrpObj
 
