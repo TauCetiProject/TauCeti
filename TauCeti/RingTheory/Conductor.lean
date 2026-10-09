@@ -80,6 +80,7 @@ theorem mem_conductor_iff {a : A} :
   simp [conductor_eq_colon, Submodule.mem_colon, Submodule.mem_one, Algebra.smul_def]
 
 /-- The conductor is the unit ideal exactly when `A → B` is surjective. -/
+@[simp]
 theorem conductor_eq_top_iff : conductor A B = ⊤ ↔ Function.Surjective (algebraMap A B) := by
   simp [Ideal.eq_top_iff_one, Function.Surjective]
 
