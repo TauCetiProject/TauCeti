@@ -90,28 +90,6 @@ section Subset
 variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F]
   [NormedSpace ℝ F] [CompleteSpace F] {f : X → F} {s t : Set X}
 
-/-- The average of `f` over a subset `s` of `t` differs from a constant `c` by at most
-`μ t / μ s` times the average of `‖f - c‖` over `t`. -/
-theorem norm_setAverage_sub_le_of_subset (hst : s ⊆ t) (hs : μ s ≠ 0) (ht : μ t ≠ ⊤)
-    (hf : IntegrableOn f t μ) (c : F) :
-    ‖(⨍ x in s, f x ∂μ) - c‖ ≤ μ.real t / μ.real s * ⨍ x in t, ‖f x - c‖ ∂μ := by
-  have hs' : μ s ≠ ⊤ := ne_top_of_le_ne_top ht (measure_mono hst)
-  have hsr : 0 < μ.real s := ENNReal.toReal_pos hs hs'
-  have htr : 0 < μ.real t := hsr.trans_le (measureReal_mono hst ht)
-  have hfs : IntegrableOn f s μ := hf.mono_set hst
-  have heq : (⨍ x in s, f x ∂μ) - c = ⨍ x in s, (f x - c) ∂μ := by
-    rw [setAverage_fun_sub hfs (integrableOn_const hs'), setAverage_const hs hs']
-  calc ‖(⨍ x in s, f x ∂μ) - c‖ ≤ (μ.real s)⁻¹ * ∫ x in t, ‖f x - c‖ ∂μ := by
-        rw [heq, setAverage_eq, norm_smul, norm_inv, Real.norm_of_nonneg hsr.le]
-        gcongr
-        refine (norm_integral_le_integral_norm _).trans
-          (setIntegral_mono_set ?_ ?_ hst.eventuallyLE)
-        · exact (hf.sub (integrableOn_const ht)).norm
-        · exact ae_of_all _ fun _ ↦ norm_nonneg _
-    _ = μ.real t / μ.real s * ⨍ x in t, ‖f x - c‖ ∂μ := by
-        rw [setAverage_eq, smul_eq_mul]
-        field_simp
-
 /-- The average of a nonnegative function over a subset `s` of `t` is at most `μ t / μ s` times
 its average over `t`. -/
 theorem setLAverage_le_div_mul_setLAverage_of_subset {g : X → ℝ≥0∞} (hst : s ⊆ t)
@@ -138,6 +116,20 @@ theorem enorm_setAverage_sub_le_of_subset (hst : s ⊆ t) (hs : μ s ≠ 0) (ht 
     _ ≤ ⨍⁻ x in s, ‖f x - c‖ₑ ∂μ := enorm_setAverage_le_setLAverage _ _ _
     _ ≤ μ t / μ s * ⨍⁻ x in t, ‖f x - c‖ₑ ∂μ :=
         setLAverage_le_div_mul_setLAverage_of_subset hst ht
+
+/-- The average of `f` over a subset `s` of `t` differs from a constant `c` by at most
+`μ t / μ s` times the average of `‖f - c‖` over `t`. -/
+theorem norm_setAverage_sub_le_of_subset (hst : s ⊆ t) (hs : μ s ≠ 0) (ht : μ t ≠ ⊤)
+    (hf : IntegrableOn f t μ) (c : F) :
+    ‖(⨍ x in s, f x ∂μ) - c‖ ≤ μ.real t / μ.real s * ⨍ x in t, ‖f x - c‖ ∂μ := by
+  have hfc : IntegrableOn (fun x => f x - c) t μ := hf.sub (integrableOn_const ht)
+  have hav : (⨍⁻ x in t, ‖f x - c‖ₑ ∂μ).toReal = ⨍ x in t, ‖f x - c‖ ∂μ := by
+    simpa using toReal_setLAverage hfc.1.enorm (ae_of_all _ fun _ => enorm_ne_top)
+  rw [← toReal_enorm, measureReal_def, measureReal_def, ← ENNReal.toReal_div, ← hav,
+    ← ENNReal.toReal_mul]
+  exact ENNReal.toReal_mono
+    (ENNReal.mul_ne_top (ENNReal.div_ne_top ht hs) (setLAverage_lt_top hfc.2.ne).ne)
+    (enorm_setAverage_sub_le_of_subset hst hs ht (hf.mono_set hst) c)
 
 /-- The mean oscillation of `f` on `s` about its own average is at most twice its mean oscillation
 about any constant `c`. -/

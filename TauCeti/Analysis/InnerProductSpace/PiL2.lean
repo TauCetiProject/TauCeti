@@ -36,6 +36,11 @@ distance of the coordinate vectors, which places cubes inside Euclidean balls.
   square root of the coordinate count times the Euclidean norm.
 * `EuclideanSpace.dist_le_sqrt_card_mul_dist_ofLp`: the Euclidean distance is at most `√n` times
   the sup distance of the coordinate vectors.
+* `EuclideanSpace.preimage_ofLp_closedBall_subset_closedBall`,
+  `EuclideanSpace.preimage_ofLp_ball_subset_ball`: a cube of half-side `r` lies in the
+  concentric Euclidean ball of radius `√n * r`.
+* `EuclideanSpace.closedBall_subset_preimage_ofLp_closedBall`: a Euclidean ball of radius `r`
+  lies in the concentric cube of half-side `r`.
 
 ## Source
 
@@ -86,6 +91,30 @@ theorem dist_le_sqrt_card_mul_dist_ofLp (x y : EuclideanSpace 𝕜 ι) :
     rw [NNReal.coe_rpow, NNReal.coe_natCast, Real.sqrt_eq_rpow]
     norm_num
   rwa [hc, WithLp.toLp_ofLp, WithLp.toLp_ofLp] at h
+
+/-- The cube of half-side `r` about `ofLp x` lies in the Euclidean ball of radius `√n * r`
+about `x`. -/
+theorem preimage_ofLp_closedBall_subset_closedBall (x : EuclideanSpace 𝕜 ι) (r : ℝ) :
+    WithLp.ofLp ⁻¹' Metric.closedBall (WithLp.ofLp x) r ⊆
+      Metric.closedBall x (Real.sqrt (Fintype.card ι) * r) := fun y hy =>
+  (dist_le_sqrt_card_mul_dist_ofLp y x).trans
+    (mul_le_mul_of_nonneg_left hy (Real.sqrt_nonneg _))
+
+/-- The open cube of half-side `r` about `ofLp x` lies in the open Euclidean ball of radius
+`√n * r` about `x`. -/
+theorem preimage_ofLp_ball_subset_ball [Nonempty ι] (x : EuclideanSpace 𝕜 ι) (r : ℝ) :
+    WithLp.ofLp ⁻¹' Metric.ball (WithLp.ofLp x) r ⊆
+      Metric.ball x (Real.sqrt (Fintype.card ι) * r) := fun y hy =>
+  (dist_le_sqrt_card_mul_dist_ofLp y x).trans_lt
+    (mul_lt_mul_of_pos_left hy (Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)))
+
+/-- The closed Euclidean ball of radius `r` about `x` lies in the cube of half-side `r` about
+`ofLp x`. -/
+theorem closedBall_subset_preimage_ofLp_closedBall (x : EuclideanSpace 𝕜 ι) (r : ℝ) :
+    Metric.closedBall x r ⊆ WithLp.ofLp ⁻¹' Metric.closedBall (WithLp.ofLp x) r := fun y hy => by
+  have h := (PiLp.lipschitzWith_ofLp 2 (fun _ : ι => 𝕜)).dist_le_mul y x
+  rw [NNReal.coe_one, one_mul] at h
+  exact h.trans hy
 
 end EuclideanSpace
 
