@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.Topology.Algebra.Ring.Subring
 
+import TauCeti.RingTheory.IntegralClosure.Map
+
 /-!
 # Huber pairs
 
@@ -26,6 +28,8 @@ explicit.
   sense of Mathlib's `IsIntegrallyClosedIn`, and contained in `A°`.
 * `TauCeti.Huber.Pair`: a Huber pair, that is, a choice of `A⁺`.
 * `TauCeti.Huber.Pair.Hom`: a continuous ring homomorphism carrying `A⁺` into `B⁺`.
+* `TauCeti.Huber.Pair.Hom.IsQuotientMapping`: a morphism `(A, A⁺) → (B, B⁺)` that is surjective,
+  continuous and open, with `B⁺` the integral closure of the image of `A⁺`.
 
 ## Main results
 
@@ -47,6 +51,13 @@ explicit.
   the quotient ideal.
 * `TauCeti.Huber.Pair.Hom.isOpen_map_quotientLift`: the factorisation carries open ideals to
   ideals generating open ideals when the original morphism does.
+* `TauCeti.Huber.Pair.isQuotientMapping_quotientHom`: the morphism to a quotient pair is a
+  quotient mapping.
+* `TauCeti.Huber.Pair.Hom.IsQuotientMapping.comp`: quotient mappings compose.
+* `TauCeti.Huber.Pair.Hom.IsQuotientMapping.of_comp`: `g` is a quotient mapping when `g ∘ f` is
+  one and `f` is surjective.
+* `TauCeti.Huber.Pair.Hom.IsQuotientMapping.plus_eq_map`: an injective quotient mapping carries
+  `A⁺` onto `B⁺`, so it is an isomorphism of Huber pairs.
 
 ## Provenance
 
@@ -59,7 +70,8 @@ of the image plus ring; this file bundles the construction with the current Tau 
 
 ## References
 
-* [Wedhorn, *Adic Spaces*][wedhorn_adic], Definition 7.14, Remark 7.15, and Definition 7.22.
+* [Wedhorn, *Adic Spaces*][wedhorn_adic], Definition 7.14, Remark 7.15, Definition 7.22, and
+  Definition 8.42.
 * [AINTLIB](https://github.com/CBirkbeck/AINTLIB), branch `dev/adic-spaces`,
   `projects/AdicSpaces/Adic spaces/AffinoidRings.lean`.
 -/
@@ -362,6 +374,122 @@ theorem Hom.isOpen_map_quotientLift {S : Pair A} {T : Pair B} (J : Ideal A) (f :
   exact hopen (hI.preimage (quotientHom S J).continuous_toRingHom)
 
 end Quotient
+
+section QuotientMapping
+
+/-! ### Quotient mappings
+
+A morphism of Huber pairs `π : (A, A⁺) → (B, B⁺)` is a *quotient mapping* (Wedhorn,
+Definition 8.42) when `π : A → B` is surjective, continuous and open and `B⁺` is the integral
+closure of `π(A⁺)` in `B`. The integral closure of `π(A⁺)` lies in `B⁺` for every morphism
+(`Hom.integralClosure_map_le_plus`), so only the reverse inclusion is a condition
+(`Hom.isQuotientMapping_iff_le`). The canonical morphism to a quotient pair is a quotient mapping
+(`isQuotientMapping_quotientHom`), and quotient mappings are closed under composition and under
+cancellation of a surjective first factor (`Hom.IsQuotientMapping.comp`,
+`Hom.IsQuotientMapping.of_comp`). -/
+
+/-- For every morphism of Huber pairs `f : (A, A⁺) → (B, B⁺)`, the integral closure of `f(A⁺)` in
+`B` is contained in `B⁺`: `B⁺` contains `f(A⁺)` and is integrally closed in `B`. -/
+theorem Hom.integralClosure_map_le_plus {S : Pair A} {T : Pair B} (f : Hom S T) :
+    (integralClosure (S.plus.map f.toRingHom) B).toSubring ≤ T.plus :=
+  have := T.isRingOfIntegralElements.isIntegrallyClosedIn
+  Subring.integralClosure_subring_le_iff.mpr <| Subring.map_le_iff_le_comap.mpr f.map_mem_plus
+
+/-- A morphism of Huber pairs `f : (A, A⁺) → (B, B⁺)` is a **quotient mapping** (Wedhorn,
+Definition 8.42) if `f : A → B` is surjective, continuous and open, and `B⁺` is the integral
+closure of `f(A⁺)` in `B`. -/
+structure Hom.IsQuotientMapping {S : Pair A} {T : Pair B} (f : Hom S T) : Prop where
+  /-- The underlying map is surjective, continuous and open. -/
+  isOpenQuotientMap : IsOpenQuotientMap f.toRingHom
+  /-- `B⁺` is the integral closure of `f(A⁺)` in `B`. -/
+  plus_eq : T.plus = (integralClosure (S.plus.map f.toRingHom) B).toSubring
+
+/-- A morphism of Huber pairs is a quotient mapping exactly when it is an open quotient map and
+`B⁺` lies in the integral closure of `f(A⁺)`; the reverse inclusion always holds
+(`Hom.integralClosure_map_le_plus`). -/
+theorem Hom.isQuotientMapping_iff_le {S : Pair A} {T : Pair B} (f : Hom S T) :
+    f.IsQuotientMapping ↔ IsOpenQuotientMap f.toRingHom ∧
+      T.plus ≤ (integralClosure (S.plus.map f.toRingHom) B).toSubring :=
+  ⟨fun h ↦ ⟨h.isOpenQuotientMap, h.plus_eq.le⟩,
+    fun h ↦ ⟨h.1, le_antisymm h.2 f.integralClosure_map_le_plus⟩⟩
+
+/-- The identity morphism of a Huber pair is a quotient mapping. -/
+protected theorem Hom.IsQuotientMapping.id (S : Pair A) : (Hom.id S).IsQuotientMapping :=
+  (isQuotientMapping_iff_le _).mpr
+    ⟨by simpa using IsOpenQuotientMap.id, fun a ha ↦ by
+      rw [toRingHom_id, Subring.map_id]
+      exact algebraMap_mem (integralClosure S.plus A) ⟨a, ha⟩⟩
+
+/-- A quotient mapping of Huber pairs with injective underlying map carries `A⁺` onto `B⁺`; as it
+is also a homeomorphism, it is an isomorphism of Huber pairs. Applied to the factorisation of a
+quotient mapping through the quotient pair by its kernel, which is again a quotient mapping
+(`Hom.isQuotientMapping_quotientLift_iff`), this identifies every quotient mapping with a quotient
+pair up to isomorphism. -/
+theorem Hom.IsQuotientMapping.plus_eq_map {S : Pair A} {T : Pair B} {f : Hom S T}
+    (hf : f.IsQuotientMapping) (hinj : Function.Injective f.toRingHom) :
+    T.plus = S.plus.map f.toRingHom := by
+  let e := RingEquiv.ofBijective f.toRingHom ⟨hinj, hf.isOpenQuotientMap.surjective⟩
+  have he : (e : A →+* B) = f.toRingHom := RingHom.ext fun _ ↦ rfl
+  -- `f` is a homeomorphism, so it carries the integrally closed `A⁺` onto an integrally closed
+  -- subring of `B`, which contains the integral closure `B⁺` of `f(A⁺)`
+  have := (S.isRingOfIntegralElements.map e f.continuous_toRingHom
+    (e.toEquiv.continuous_symm_iff.mpr hf.isOpenQuotientMap.isOpenMap)).isIntegrallyClosedIn
+  rw [he] at this
+  refine le_antisymm ?_ (Subring.map_le_iff_le_comap.mpr f.map_mem_plus)
+  rw [hf.plus_eq]
+  exact Subring.integralClosure_subring_le_iff.mpr le_rfl
+
+/-- A composite of quotient mappings of Huber pairs is a quotient mapping. -/
+theorem Hom.IsQuotientMapping.comp {S : Pair A} {T : Pair B} {U : Pair C} {g : Hom T U}
+    {f : Hom S T} (hg : g.IsQuotientMapping) (hf : f.IsQuotientMapping) :
+    (g.comp f).IsQuotientMapping := by
+  refine (isQuotientMapping_iff_le _).mpr
+    ⟨hg.isOpenQuotientMap.comp hf.isOpenQuotientMap, ?_⟩
+  -- `U⁺` is the integral closure of `g(T⁺)`, and `T⁺` is the integral closure of `f(A⁺)`, whose
+  -- image under `g` is integral over `g(f(A⁺))`.
+  rw [hg.plus_eq, hf.plus_eq, toRingHom_comp, ← Subring.map_map]
+  exact Subring.integralClosure_subring_le_iff.mpr
+    (Subring.map_integralClosure_le g.toRingHom (S.plus.map f.toRingHom))
+
+/-- If a composite `g ∘ f` of morphisms of Huber pairs is a quotient mapping and `f` is
+surjective, then `g` is a quotient mapping. -/
+theorem Hom.IsQuotientMapping.of_comp {S : Pair A} {T : Pair B} {U : Pair C} {g : Hom T U}
+    {f : Hom S T} (hf : Function.Surjective f.toRingHom) (h : (g.comp f).IsQuotientMapping) :
+    g.IsQuotientMapping := by
+  refine (isQuotientMapping_iff_le _).mpr
+    ⟨.of_comp f.continuous_toRingHom hf g.continuous_toRingHom h.isOpenQuotientMap, ?_⟩
+  -- `U⁺` is the integral closure of `g(f(A⁺))`, and `g(f(A⁺)) ⊆ g(T⁺)`.
+  rw [h.plus_eq, toRingHom_comp, ← Subring.map_map]
+  refine Subring.integralClosure_subring_le_iff.mpr fun c hc ↦ ?_
+  obtain ⟨b, hb, rfl⟩ := Subring.mem_map.mp hc
+  obtain ⟨a, ha, rfl⟩ := Subring.mem_map.mp hb
+  exact algebraMap_mem (integralClosure (T.plus.map g.toRingHom) C)
+    ⟨_, f.toRingHom a, f.map_mem_plus a ha, rfl⟩
+
+/-- Precomposing with a quotient mapping `f` neither creates nor destroys quotient mappings:
+`g ∘ f` is a quotient mapping exactly when `g` is. -/
+theorem Hom.isQuotientMapping_comp_iff {S : Pair A} {T : Pair B} {U : Pair C} {g : Hom T U}
+    {f : Hom S T} (hf : f.IsQuotientMapping) :
+    (g.comp f).IsQuotientMapping ↔ g.IsQuotientMapping :=
+  ⟨.of_comp hf.isOpenQuotientMap.surjective, (·.comp hf)⟩
+
+/-- The canonical morphism from a Huber pair to its quotient by an ideal `J` is a quotient
+mapping. -/
+theorem isQuotientMapping_quotientHom (S : Pair A) (J : Ideal A) :
+    (quotientHom S J).IsQuotientMapping where
+  isOpenQuotientMap := QuotientRing.isOpenQuotientMap_mk J
+  plus_eq := by rw [quotient_plus, Hom.toRingHom_quotientHom]
+
+/-- A morphism of Huber pairs annihilating `J` is a quotient mapping exactly when its
+factorisation through the quotient pair by `J` is one. -/
+@[simp]
+theorem Hom.isQuotientMapping_quotientLift_iff {S : Pair A} {T : Pair B} (J : Ideal A)
+    (f : Hom S T) (hJ : J ≤ RingHom.ker f.toRingHom) :
+    (f.quotientLift J hJ).IsQuotientMapping ↔ f.IsQuotientMapping := by
+  rw [← isQuotientMapping_comp_iff (isQuotientMapping_quotientHom S J),
+    quotientLift_comp_quotientHom]
+
+end QuotientMapping
 
 end Pair
 

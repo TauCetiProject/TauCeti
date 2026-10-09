@@ -15,7 +15,9 @@ An `R`-algebra map `f : A → B` restricts to a map `f.mapIntegralClosure` betwe
 closures of `R` in `A` and in `B`. This file records that this restriction is functorial and
 preserves injectivity, and that primes of the integral closure of `R` in `A` are contractions of
 primes of the integral closure of `R` in `B` when `f` is injective: the integral closure in `B` is
-integral over `R`, so lying over applies along the restricted map.
+integral over `R`, so lying over applies along the restricted map. It also records that an
+arbitrary ring homomorphism `g : B → C` carries the integral closure of a subring `S ⊆ B` into the
+integral closure of `g(S)`; no algebra structure over a common base is needed for this.
 
 ## Main results
 
@@ -23,6 +25,8 @@ integral over `R`, so lying over applies along the restricted map.
 * `AlgHom.mapIntegralClosure_injective`: it preserves injectivity.
 * `Ideal.exists_isPrime_comap_mapIntegralClosure_eq`: a prime of the integral closure in `A` is
   the contraction of a prime of the integral closure in `B` along an injective `f`.
+* `Subring.map_integralClosure_le`: a ring homomorphism `g` carries the integral closure of a
+  subring `S` into the integral closure of `g(S)`.
 -/
 
 public section
@@ -61,3 +65,11 @@ theorem Ideal.exists_isPrime_comap_mapIntegralClosure_eq (P : Ideal (integralClo
       (f.mapIntegralClosure : integralClosure R A →+* integralClosure R B)).mp
         (AlgHom.mapIntegralClosure_injective hf)]
     exact bot_le
+
+/-- A ring homomorphism `g : B →+* C` carries the integral closure of a subring `S` of `B` into
+the integral closure of the image `g(S)` in `C`. -/
+theorem Subring.map_integralClosure_le (g : B →+* C) (S : Subring B) :
+    (integralClosure S B).toSubring.map g ≤ (integralClosure (S.map g) C).toSubring := by
+  rintro _ ⟨x, hx, rfl⟩
+  exact IsIntegral.map_of_comp_eq (g.restrict S (S.map g) fun y hy ↦ ⟨y, hy, rfl⟩) g
+    (RingHom.ext fun _ ↦ rfl) hx
