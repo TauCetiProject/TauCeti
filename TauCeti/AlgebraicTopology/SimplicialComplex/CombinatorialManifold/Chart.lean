@@ -25,6 +25,10 @@ asserting smooth or piecewise-linear compatibility. It needs no finiteness or co
 ambient vertex type or complex. In particular, two-point links give one-dimensional
 charts.
 
+The general simplification rules `AbstractSimplicialComplex.starChartedSpace_atlas` and
+`AbstractSimplicialComplex.starChartedSpace_chartAt_vertex` also compute the atlas and
+preferred vertex charts of `AbstractSimplicialComplex.sphereLinkChartedSpace`.
+
 The local homeomorphisms come from
 `IsCombinatorialSphere.exists_homeomorph_openStar_ball`. Their extension to charts uses
 Mathlib's `OpenPartialHomeomorph.lift_openEmbedding` and the open inclusion of a ball.
@@ -119,21 +123,5 @@ def sphereLinkChartedSpace :
     ChartedSpace (EuclideanSpace ℝ (Fin (n + 1))) (Realization K) :=
   K.starChartedSpace (fun v ↦ K.sphereLinkChart v (hs v))
     (fun v ↦ K.sphereLinkChart_source v (hs v))
-
-/-- The spherical-link atlas consists exactly of the vertex-star charts. -/
-@[simp]
-theorem sphereLinkChartedSpace_atlas :
-    @atlas (EuclideanSpace ℝ (Fin (n + 1))) _ (Realization K) _
-      (K.sphereLinkChartedSpace hs) = range (fun v ↦ K.sphereLinkChart v (hs v)) := by
-  unfold sphereLinkChartedSpace
-  exact K.starChartedSpace_atlas _ _
-
-/-- At a vertex, the preferred spherical-link chart is that vertex's own chart. -/
-@[simp]
-theorem sphereLinkChartedSpace_chartAt_vertex :
-    @chartAt (EuclideanSpace ℝ (Fin (n + 1))) _ (Realization K) _
-      (K.sphereLinkChartedSpace hs) (vertex K v) = K.sphereLinkChart v (hs v) := by
-  unfold sphereLinkChartedSpace
-  exact K.starChartedSpace_chartAt_vertex _ _ v
 
 end AbstractSimplicialComplex
