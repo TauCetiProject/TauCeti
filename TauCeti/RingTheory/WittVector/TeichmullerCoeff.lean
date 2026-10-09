@@ -72,7 +72,6 @@ theorem zero_teichmullerCoeff (n : ℕ) : (0 : 𝕎 R).teichmullerCoeff n = 0 :=
   simp [teichmullerCoeff_eq_iff, zero_pow (pow_ne_zero n hp.out.ne_zero)]
 
 /-- The Teichmüller coordinates of `[a] p ^ m`: `a` in position `m` and `0` elsewhere. -/
-@[simp]
 theorem teichmullerCoeff_teichmuller_mul_pow (a : R) (m n : ℕ) :
     (teichmuller p a * (p : 𝕎 R) ^ m).teichmullerCoeff n = if n = m then a else 0 := by
   split_ifs with h
@@ -80,6 +79,12 @@ theorem teichmullerCoeff_teichmuller_mul_pow (a : R) (m n : ℕ) :
     rw [teichmullerCoeff_eq_iff, teichmuller_mul_pow_coeff]
   · rw [teichmullerCoeff_eq_iff, teichmuller_mul_pow_coeff_of_ne _ h,
       zero_pow (pow_ne_zero n hp.out.ne_zero)]
+
+/-- The Teichmüller coordinates of `p ^ m`: `1` in position `m` and `0` elsewhere. -/
+@[simp]
+theorem teichmullerCoeff_natCast_pow (m n : ℕ) :
+    ((p : 𝕎 R) ^ m).teichmullerCoeff n = if n = m then 1 else 0 := by
+  simpa using teichmullerCoeff_teichmuller_mul_pow (p := p) (1 : R) m n
 
 /-- The Teichmüller coordinates of `[a]`: `a` in position `0` and `0` elsewhere. -/
 @[simp]
