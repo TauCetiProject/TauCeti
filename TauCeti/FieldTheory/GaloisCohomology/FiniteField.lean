@@ -8,8 +8,10 @@ module
 public import TauCeti.FieldTheory.GaloisCohomology.Coefficients
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteCyclic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.DegreeTwoDescent
+public import Mathlib.RepresentationTheory.Homological.ContCohomology.Basic
 import Mathlib.Algebra.Group.Submonoid.BigOperators
 import Mathlib.FieldTheory.Finite.GaloisField
+import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 
 /-!
 # Degree-two Galois cohomology over a finite field
@@ -130,8 +132,23 @@ theorem subsingleton_H2_additive_units_of_finite
 
 variable (K) in
 /-- **The cohomological Brauer group of a finite field vanishes.** -/
-theorem subsingleton_H2_unitsCoeff_of_finite :
+instance subsingleton_H2_unitsCoeff_of_finite :
     Subsingleton (H2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) :=
   subsingleton_H2_additive_units_of_finite
+
+variable (K) in
+/-- **The cohomological Brauer group of a finite field vanishes**, stated for Mathlib's
+canonical continuous cohomology: `H²(G_K, (Kˢ)ˣ) = 0`. -/
+theorem isZero_continuousCohomology_two_unitsCoeff_of_finite :
+    CategoryTheory.Limits.IsZero (continuousCohomology 2
+      (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K))) := by
+  let h : Subsingleton (DiscreteH2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) :=
+    (discreteH2Equiv (AbsoluteGaloisGroup K) (UnitsCoeff K)).toEquiv.subsingleton_congr.mpr
+      inferInstance
+  rw [← (explicitH2IsoContinuousCohomology
+    (AbsoluteGaloisGroup K) (UnitsCoeff K)).isZero_iff]
+  rw [CategoryTheory.Limits.IsZero.iff_id_eq_zero]
+  ext x
+  exact h.elim _ _
 
 end TauCeti
