@@ -137,7 +137,7 @@ theorem _root_.Transcendental.irreducible_map_aeval_gen (hx : _root_.Transcenden
   rw [mapEquiv_apply, Polynomial.map_map]
   congr 1
   refine RingHom.ext fun p ↦ ?_
-  simp [e]
+  exact (RatFunc.algEquivOfTranscendental_algebraMap x hx p).symm
 
 /-- **The degree of a point of a plane curve over `k⟮x⟯`**: if `x` is transcendental and `y`
 satisfies `φ(x, y) = 0` for an irreducible `φ ∈ k[X][Y]`, then the minimal polynomial of `y` over
