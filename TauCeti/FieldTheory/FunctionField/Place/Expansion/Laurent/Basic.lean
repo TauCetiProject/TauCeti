@@ -158,7 +158,8 @@ theorem laurentSeriesExpansion_ext_iff {x y : F} :
     apply (P.completionEquivLaurentSeries hP ht).injective
     apply HahnSeries.ext
     funext n
-    simpa only [laurentSeriesExpansion_apply, AlgHom.coe_toRingHom] using h n
+    simpa only [laurentSeriesExpansion_apply, AlgHom.toRingHom_eq_coe,
+      AlgHom.coe_toRingHom] using h n
 
 /-! ### Residues -/
 
