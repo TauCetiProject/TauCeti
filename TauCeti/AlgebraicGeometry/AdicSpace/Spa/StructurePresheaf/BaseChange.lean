@@ -33,8 +33,8 @@ A⟨p⟩ → B⟨q⟩.
 ```
 
 This is `Presentation.mapHomOfSubset`. Unlike `Presentation.mapHom`, it does not require the
-mapped presentation `(φ(T), φ(s))` to be admissible in `B`; this is what permits pullback maps to
-be assembled from arbitrary rational opens of the target.
+denominator of `q` to be `φ(s)` or the numerators of `q` to contain `φ(T)`; this is what permits
+pullback maps to be assembled from arbitrary rational opens of the target.
 
 When `φ` carries open ideals to open ideals and `A⁺` into `B⁺`, the preimage of the rational
 subset `R(T/s)` of `Spa(A, A⁺)` under the induced map `Spa(B, B⁺) → Spa(A, A⁺)` is the rational
