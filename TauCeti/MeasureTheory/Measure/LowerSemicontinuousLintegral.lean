@@ -34,6 +34,9 @@ the value `∞` is allowed on both sides.
 * `TauCeti.isClosed_setOfPred_lintegral_le_finiteMeasure` and
   `TauCeti.isClosed_setOfPred_lintegral_le_probabilityMeasure`: the sublevel sets of the pairing
   are closed.
+* `TauCeti.lowerSemicontinuousOn_lintegral_comp`: for `h` lower semicontinuous and `Φ` arbitrary,
+  `μ ↦ ∫⁻ x, h (Φ x) ∂μ` is still lower semicontinuous on a set of probability measures for which
+  `Φ` is continuous on closed sets of uniformly almost full mass.
 
 ## Implementation notes
 
@@ -140,5 +143,76 @@ theorem exists_lintegral_eq_iInf {K : Set (ProbabilityMeasure Ω)} (hK : K.Nonem
   obtain ⟨μ, hμK, hμ⟩ := exists_isMinOn_lintegral hK hKc hf
   refine ⟨μ, hμK, le_antisymm ?_ (iInf_le_of_le ⟨μ, hμK⟩ le_rfl)⟩
   exact le_iInf fun ν ↦ hμ ν.2
+
+section Lusin
+
+/-! ### Integrands that are continuous only on closed sets of uniformly large mass
+
+An integrand `h ∘ Φ` with `h` lower semicontinuous but `Φ` merely measurable is not lower
+semicontinuous, and its integral is not lower semicontinuous in the measure on all of
+`ProbabilityMeasure Ω`. It still is on a set `S` of measures for which `Φ` is continuous on closed
+sets carrying all but an arbitrarily small part of the mass of every member of `S` at once: the
+uniformity is what lets the exceptional set be ignored along a convergent family. Lusin's theorem
+supplies such closed sets whenever the members of `S` share a fixed image under a map through which
+`Φ` factors, as the squares of the couplings of two fixed marginals do. -/
+
+/-- **Lower semicontinuity under a uniform Lusin condition.** Let `h : W → ℝ≥0∞` be lower
+semicontinuous, `Φ : Ω → W` arbitrary, and `S` a set of probability measures on `Ω` such that for
+every `ε > 0` some closed set `C`, on which `Φ` is continuous, has complement of mass at most `ε`
+for every member of `S`. If `h ∘ Φ` is almost-everywhere measurable for each member of `S`, then
+`μ ↦ ∫⁻ x, h (Φ x) ∂μ` is lower semicontinuous on `S` for the weak topology. -/
+theorem lowerSemicontinuousOn_lintegral_comp {W : Type*} [TopologicalSpace W] {h : W → ℝ≥0∞}
+    {Φ : Ω → W} {S : Set (ProbabilityMeasure Ω)} (hh : LowerSemicontinuous h)
+    (hΦ : ∀ ε : ℝ≥0∞, ε ≠ 0 →
+      ∃ C, IsClosed C ∧ ContinuousOn Φ C ∧ ∀ μ ∈ S, (μ : Measure Ω) Cᶜ ≤ ε)
+    (hm : ∀ μ ∈ S, AEMeasurable (fun x ↦ h (Φ x)) (μ : Measure Ω)) :
+    LowerSemicontinuousOn (fun μ : ProbabilityMeasure Ω ↦ ∫⁻ x, h (Φ x) ∂(μ : Measure Ω)) S := by
+  classical
+  intro μ₀ hμ₀ c hc
+  beta_reduce at hc ⊢
+  -- Truncate `h ∘ Φ` at a finite height `M` without losing the strict inequality at `μ₀`.
+  have hsup : ∫⁻ x, h (Φ x) ∂(μ₀ : Measure Ω) =
+      ⨆ n : ℕ, ∫⁻ x, min (h (Φ x)) n ∂(μ₀ : Measure Ω) := by
+    rw [← lintegral_iSup' (fun n ↦ (hm μ₀ hμ₀).min aemeasurable_const)
+      (.of_forall fun x m n hmn ↦ min_le_min_left _ (Nat.cast_le.mpr hmn))]
+    refine lintegral_congr fun x ↦ ?_
+    rw [← inf_iSup_eq, ENNReal.iSup_natCast, inf_top_eq]
+  rw [hsup] at hc
+  obtain ⟨M, hM⟩ := lt_iSup_iff.mp hc
+  obtain ⟨c', hcc', hc'M⟩ := exists_between hM
+  -- Off a closed set `C` of nearly full mass, replace the truncation by its maximal value `M`:
+  -- the result `G` is lower semicontinuous and exceeds the truncation by at most `M` on `Cᶜ`.
+  obtain ⟨C, hC, hΦC, hCS⟩ := hΦ ((c' - c) / M) (by
+    simp [ENNReal.div_eq_zero_iff, tsub_eq_zero_iff_le, hcc'.not_ge])
+  set G : Ω → ℝ≥0∞ := fun x ↦ if x ∈ C then min (h (Φ x)) M else M with hG_def
+  have hG : LowerSemicontinuous G := by
+    refine lowerSemicontinuous_iff.mpr fun x ↦ lowerSemicontinuousAt_iff.mpr fun y hy ↦ ?_
+    by_cases hx : x ∈ C
+    · simp only [hG_def, hx, ↓reduceIte, lt_min_iff] at hy
+      have hev : ∀ᶠ x' in 𝓝[C] x, y < h (Φ x') :=
+        (hΦC x hx).tendsto.eventually (lowerSemicontinuousAt_iff.mp (hh (Φ x)) y hy.1)
+      filter_upwards [eventually_nhdsWithin_iff.mp hev] with x' hx'
+      by_cases hx'C : x' ∈ C
+      · simpa [hG_def, hx'C] using ⟨hx' hx'C, hy.2⟩
+      · simpa [hG_def, hx'C] using hy.2
+    · filter_upwards [hC.isOpen_compl.mem_nhds hx] with x' hx'
+      simpa [hG_def, hx, show x' ∉ C from hx'] using hy
+  have hG_le : ∀ x, G x ≤ h (Φ x) + Cᶜ.indicator (fun _ ↦ (M : ℝ≥0∞)) x := fun x ↦ by
+    by_cases hx : x ∈ C <;> simp [hG_def, hx]
+  have hc'G : c' < ∫⁻ x, G x ∂(μ₀ : Measure Ω) :=
+    hc'M.trans_le (lintegral_mono fun x ↦ by by_cases hx : x ∈ C <;> simp [hG_def, hx])
+  filter_upwards [nhdsWithin_le_nhds (lowerSemicontinuousAt_iff.mp
+    (lowerSemicontinuous_lintegral_probabilityMeasure hG μ₀) c' hc'G), self_mem_nhdsWithin]
+    with μ hμ hμS
+  by_contra! hle
+  refine (hμ.trans_le ((lintegral_mono hG_le).trans ?_)).false
+  rw [lintegral_add_right _ (measurable_const.indicator hC.isOpen_compl.measurableSet),
+    lintegral_indicator_const hC.isOpen_compl.measurableSet, ← add_tsub_cancel_of_le hcc'.le]
+  have hMC : (M : ℝ≥0∞) * (μ : Measure Ω) Cᶜ ≤ (M : ℝ≥0∞) * ((c' - c) / M) := by
+    gcongr
+    exact hCS μ hμS
+  exact add_le_add hle (hMC.trans ENNReal.mul_div_le)
+
+end Lusin
 
 end TauCeti
