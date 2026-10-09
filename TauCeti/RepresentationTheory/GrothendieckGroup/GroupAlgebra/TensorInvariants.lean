@@ -75,14 +75,15 @@ theorem finrankInvariantsK0_permK0_self_mul (V : FDRep k G) :
   have hperm : permK0 k G G = indK0 k (⊥ : Subgroup G) 1 := by
     rw [exactK0_one_eq_of_trivial, indK0_of_trivial]
     exact permK0_congr k (QuotientGroup.quotientBot (G := G)).symm.toEquiv fun _ _ ↦ rfl
-  rw [hperm, ← indK0_mul_resK0, one_mul, finrankInvariantsK0_indK0, resK0_fdRepK0RingEquiv_of,
-    fdRepK0RingEquiv_of, finrankInvariantsK0_of]
   have htop : Representation.invariants
       (FDRep.ρ ((Action.res (FGModuleCat k) (⊥ : Subgroup G).subtype).obj V)) = ⊤ := by
     refine eq_top_iff.2 fun v _ g ↦ ?_
     rw [Subsingleton.elim g 1, map_one]
     rfl
-  rw [htop, finrank_top]
+  -- Projection formula and Frobenius reciprocity reduce to invariants over the trivial subgroup.
+  rw [hperm, ← indK0_mul_resK0, one_mul, finrankInvariantsK0_indK0]
+  -- Over the trivial subgroup every vector is invariant.
+  rw [resK0_fdRepK0RingEquiv_of, fdRepK0RingEquiv_of, finrankInvariantsK0_of, htop, finrank_top]
   -- The carrier of the restricted representation is that of `V`.
   rfl
 
@@ -108,16 +109,19 @@ theorem finrankTensorInvariantsK0_dual_mul_one_add_add (M A : FDRep k G) (hM : f
     rfl
   have hone : finrankTensorInvariantsK0 A 1 = finrank k (Representation.invariants A.ρ) := by
     rw [finrankTensorInvariantsK0_apply, one_mul, fdRepK0RingEquiv_of, finrankInvariantsK0_of]
+  -- The carrier of a tensor product in `FDRep` is the tensor product of the carriers.
+  have hdim : finrank k (FDRep.of (Representation.dual M.ρ) ⊗ A : FDRep k G) = finrank k A := by
+    change finrank k (TensorProduct k (Module.Dual k M) A) = finrank k A
+    simp [Module.finrank_tensorProduct, Subspace.dual_finrank_eq, hM]
   have hreg : finrankTensorInvariantsK0 A
       (fdRepK0RingEquiv k G (ExactK0.of (FDRep.of (Representation.dual M.ρ))) * permK0 k G G) =
       finrank k A := by
+    -- Move the regular representation to the front and absorb it.
     rw [finrankTensorInvariantsK0_apply, mul_comm _ (permK0 k G G), mul_assoc, ← map_mul,
-      ExactK0.of_mul_of, finrankInvariantsK0_permK0_self_mul]
-    congr 1
-    -- The carrier of a tensor product in `FDRep` is the tensor product of the carriers.
-    change finrank k (TensorProduct k (Module.Dual k M) A) = finrank k A
-    rw [Module.finrank_tensorProduct, Subspace.dual_finrank_eq, hM, one_mul]
-  rw [mul_add, mul_add, mul_one, fdRepK0RingEquiv_dual_mul_self_eq_one M hM, mul_smul_comm,
-    map_add, map_add, map_nsmul, hdual, hone, hreg, nsmul_eq_mul]
+      ExactK0.of_mul_of, finrankInvariantsK0_permK0_self_mul, hdim]
+  -- Expand the product in `G₀(k[G])`, then evaluate each term.
+  rw [mul_add, mul_add, mul_one, mul_smul_comm, fdRepK0RingEquiv_dual_mul_self_eq_one M hM]
+  simp only [map_add, map_nsmul, hdual, hone, hreg]
+  rw [nsmul_eq_mul]
 
 end TauCeti

@@ -330,6 +330,11 @@ theorem coe_trivialHomEquivInvariants_apply (A : Rep k G) (f : Rep.trivial k G k
     (trivialHomEquivInvariants A f : A) = f.hom 1 :=
   (rfl)
 
+@[simp]
+theorem trivialHomEquivInvariants_symm_apply_hom (A : Rep k G) (x : A.ρ.invariants) (r : k) :
+    ((trivialHomEquivInvariants A).symm x).hom r = r • (x : A) :=
+  (rfl)
+
 end Rep
 
 namespace Representation.IsIrreducible
