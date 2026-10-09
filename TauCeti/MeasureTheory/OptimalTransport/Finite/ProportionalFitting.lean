@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.Matrix.Sinkhorn
+public import TauCeti.MeasureTheory.Measure.Prod
 public import TauCeti.MeasureTheory.OptimalTransport.ProportionalFitting
 
 /-!
@@ -77,39 +78,16 @@ variable {ι κ : Type*} [Fintype ι] [Fintype κ] [MeasurableSpace ι] [Measura
 /-! ### The half-steps on a diagonal scaling -/
 
 omit [Fintype ι] in
-/-- The mass of a row of a finite measure on `ι × κ` is the sum of the masses of its points. -/
-private theorem map_fst_real_singleton [IsFiniteMeasure π] (i : ι) :
-    (π.map Prod.fst).real {i} = ∑ j, π.real {(i, j)} := by
-  have h : Prod.fst ⁻¹' {i} = ⋃ j ∈ (Finset.univ : Finset κ), ({(i, j)} : Set (ι × κ)) := by
-    ext ⟨i', j⟩
-    simp [eq_comm]
-  rw [map_measureReal_apply measurable_fst (measurableSet_singleton i), h,
-    measureReal_biUnion_finset (fun j _ j' _ hj ↦ by simpa using hj)
-      (fun j _ ↦ measurableSet_singleton _)]
-
-omit [Fintype κ] in
-/-- The mass of a column of a finite measure on `ι × κ` is the sum of the masses of its points. -/
-private theorem map_snd_real_singleton [IsFiniteMeasure π] (j : κ) :
-    (π.map Prod.snd).real {j} = ∑ i, π.real {(i, j)} := by
-  have h : Prod.snd ⁻¹' {j} = ⋃ i ∈ (Finset.univ : Finset ι), ({(i, j)} : Set (ι × κ)) := by
-    ext ⟨i, j'⟩
-    simp [eq_comm]
-  rw [map_measureReal_apply measurable_snd (measurableSet_singleton j), h,
-    measureReal_biUnion_finset (fun i _ i' _ hi ↦ by simpa using hi)
-      (fun i _ ↦ measurableSet_singleton _)]
-
-omit [Fintype ι] in
 /-- **The row half-step is the Sinkhorn row update.** If the masses of a finite measure `π` on
 `ι × κ` are the diagonal scaling `u i * K i j * v j` of `K` by row factors with no zero entry, then
 reweighting `π` along the first coordinate towards `μ` gives the diagonal scaling of `K` by the
 row factors `K.sinkhornUpdate a v` and the same column factors, where `a i = μ.real {i}`. -/
-theorem fitLaw_fst_real_singleton [IsFiniteMeasure π] [IsFiniteMeasure μ]
+theorem fitLaw_fst_real_singleton [IsFiniteMeasure π] [SigmaFinite μ]
     (hπ : ∀ i j, π.real {(i, j)} = u i * K i j * v j) (hu : ∀ i, u i ≠ 0)
     (hμ : ∀ i, μ.real {i} = a i) (i : ι) (j : κ) :
     (π.fitLaw Prod.fst μ).real {(i, j)} = K.sinkhornUpdate a v i * K i j * v j := by
-  rw [measureReal_def, fitLaw_apply_singleton measurable_fst, ENNReal.toReal_mul,
-    ENNReal.toReal_div, ← measureReal_def, ← measureReal_def, ← measureReal_def,
-    map_fst_real_singleton, hμ, hπ, sinkhornUpdate_apply, mulVec_apply_eq_sum]
+  rw [fitLaw_real_singleton measurable_fst, map_fst_real_singleton, hμ, hπ, sinkhornUpdate_apply,
+    mulVec_apply_eq_sum]
   have hrow : ∑ j, u i * K i j * v j = u i * ∑ j, K i j * v j := by
     rw [Finset.mul_sum]
     exact Finset.sum_congr rfl fun j _ ↦ mul_assoc _ _ _
@@ -124,13 +102,12 @@ on `ι × κ` are the diagonal scaling `u i * K i j * v j` of `K` by column fact
 entry, then reweighting `π` along the second coordinate towards `ν` gives the diagonal scaling of
 `K` by the same row factors and the column factors `Kᵀ.sinkhornUpdate b u`, where
 `b j = ν.real {j}`. -/
-theorem fitLaw_snd_real_singleton [IsFiniteMeasure π] [IsFiniteMeasure ν]
+theorem fitLaw_snd_real_singleton [IsFiniteMeasure π] [SigmaFinite ν]
     (hπ : ∀ i j, π.real {(i, j)} = u i * K i j * v j) (hv : ∀ j, v j ≠ 0)
     (hν : ∀ j, ν.real {j} = b j) (i : ι) (j : κ) :
     (π.fitLaw Prod.snd ν).real {(i, j)} = u i * K i j * Kᵀ.sinkhornUpdate b u j := by
-  rw [measureReal_def, fitLaw_apply_singleton measurable_snd, ENNReal.toReal_mul,
-    ENNReal.toReal_div, ← measureReal_def, ← measureReal_def, ← measureReal_def,
-    map_snd_real_singleton, hν, hπ, sinkhornUpdate_apply, mulVec_apply_eq_sum]
+  rw [fitLaw_real_singleton measurable_snd, map_snd_real_singleton, hν, hπ, sinkhornUpdate_apply,
+    mulVec_apply_eq_sum]
   have hcol : ∑ i, u i * K i j * v j = (∑ i, K i j * u i) * v j := by
     rw [Finset.sum_mul]
     exact Finset.sum_congr rfl fun i _ ↦ by ring
@@ -228,8 +205,10 @@ theorem IsCoupling.real_singleton_eq_of_klDiv_eq_schroedingerValue [IsFiniteMeas
   have hσc : IsCoupling σ μ ν := by
     refine ⟨ext_iff_measureReal_singleton.2 fun i ↦ ?_,
       ext_iff_measureReal_singleton.2 fun j ↦ ?_⟩
-    · simp_rw [fst, map_fst_real_singleton, hσ_apply, hrow, hμ]
-    · simp_rw [snd, map_snd_real_singleton, hσ_apply, hcol, hν]
+    · rw [fst, map_fst_real_singleton]
+      simp_rw [hσ_apply, hrow, hμ]
+    · rw [snd, map_snd_real_singleton]
+      simp_rw [hσ_apply, hcol, hν]
   have hφ : Measurable fun i ↦ Real.log (u i) := measurable_of_finite _
   have hψ : Measurable fun j ↦ Real.log (v j) := measurable_of_finite _
   have hφi : Integrable (fun i ↦ Real.log (u i)) μ := Integrable.of_finite
