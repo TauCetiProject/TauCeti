@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Constructions
+public import Mathlib.Analysis.Analytic.Polynomial
 public import Mathlib.Topology.OpenPartialHomeomorph.IsImage
 import Mathlib.Topology.Algebra.Group.Basic
 import Mathlib.Topology.OpenPartialHomeomorph.Continuity
@@ -456,6 +457,16 @@ theorem _root_.AnalyticOnNhd.analyticOnSubmanifold (hf : AnalyticOnNhd 𝕜 f S)
   obtain ⟨e, hxe, he⟩ := hS.exists_isAnalyticChart x hx
   exact ⟨e, hxe, he, (hf x hx).comp_of_eq (he.analyticAt_symm_firstCoords hxe hx)
     (he.symm_firstCoords_firstCoords_apply hxe hx)⟩
+
+/-- The coefficients of a polynomial with multivariate polynomial coefficients, specialized
+by evaluation on an analytic submanifold, are intrinsically analytic. -/
+theorem IsAnalyticSubmanifold.analyticOnSubmanifold_coeff_map_eval
+    (hS : IsAnalyticSubmanifold d S) (p : Polynomial (MvPolynomial (Fin n) 𝕜)) (j : ℕ) :
+    AnalyticOnSubmanifold d (fun x ↦ (p.map (MvPolynomial.eval x)).coeff j) S := by
+  simp only [Polynomial.coeff_map]
+  exact ((AnalyticOnNhd.eval_continuousLinearMap
+    (ContinuousLinearMap.id 𝕜 (Fin n → 𝕜)) (p.coeff j)).mono
+      (Set.subset_univ S)).analyticOnSubmanifold hS
 
 /-- The composition of an analytic function on `S` with a function analytic on a set containing
 its values on `S` is analytic on `S`. -/

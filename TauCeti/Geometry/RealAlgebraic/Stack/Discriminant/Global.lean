@@ -103,11 +103,8 @@ theorem exists_analytic_delineation_of_orderAt_discr_eq
     (q := fun x t ↦ (p.map (MvPolynomial.eval x)).rootMultiplicity t) hconn hlocal
   -- Polynomial coefficients are intrinsically analytic, so the glued real roots are too.
   have hcoeff (k : Unit) (j : ℕ) : AnalyticOnSubmanifold d
-      (fun x ↦ (p.map (MvPolynomial.eval x)).coeff j) S := by
-    simp only [Polynomial.coeff_map]
-    exact ((AnalyticOnNhd.eval_continuousLinearMap
-      (ContinuousLinearMap.id ℝ (Fin n → ℝ)) (p.coeff j)).mono
-        (Set.subset_univ S)).analyticOnSubmanifold hS
+      (fun x ↦ (p.map (MvPolynomial.eval x)).coeff j) S :=
+    hS.analyticOnSubmanifold_coeff_map_eval p j
   refine ⟨D, fun i ↦ ?_⟩
   let r := Function.extend Subtype.val (D.root i) (fun _ ↦ 0)
   have hr (x : S) : r x = D.root i x := Subtype.val_injective.extend_apply _ _ x

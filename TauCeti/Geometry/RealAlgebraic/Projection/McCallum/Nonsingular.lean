@@ -10,7 +10,6 @@ public import TauCeti.Geometry.RealAlgebraic.IrreducibleBasis
 public import TauCeti.Geometry.RealAlgebraic.OrderInvariant
 public import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 import Mathlib.Analysis.Complex.Polynomial.Basic
-import Mathlib.Analysis.Analytic.Polynomial
 
 /-!
 # Nonsingular McCallum lifting
@@ -112,11 +111,8 @@ theorem exists_delineation_orderAt_eq_of_nonsingular (hB : F.IsIrreducibleBasis 
   -- Intrinsic analyticity of coefficients makes sections analytic; sectors are relatively open.
   have hcoeff (b : B) (j : ℕ) :
       TauCeti.AnalyticOnSubmanifold d
-        (fun x ↦ (b.1.map (MvPolynomial.eval x)).coeff j) S := by
-    simp only [Polynomial.coeff_map]
-    exact ((AnalyticOnNhd.eval_continuousLinearMap
-      (ContinuousLinearMap.id ℝ (Fin n → ℝ)) (b.1.coeff j)).mono
-        (Set.subset_univ S)).analyticOnSubmanifold hS
+        (fun x ↦ (b.1.map (MvPolynomial.eval x)).coeff j) S :=
+    hS.analyticOnSubmanifold_coeff_map_eval b.1 j
   refine ⟨D, fun E hE ↦ ⟨D.exists_isAnalyticSubmanifold_of_mem_stackCells hS hcoeff hE,
     fun f hf ↦ ?_⟩⟩
   -- Simple fiber zeros have ambient order one. Transfer these basis orders through factorization.
