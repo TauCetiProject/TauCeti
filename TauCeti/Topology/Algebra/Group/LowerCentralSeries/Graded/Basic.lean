@@ -453,6 +453,13 @@ theorem gradedCast_rfl {k : ℕ} (x : gradedPiece p G k) : gradedCast p G rfl x 
   rw [gradedCast]
 
 @[simp]
+theorem gradedCast_gradedCast {i j k : ℕ} (hij : i = j) (hjk : j = k) (x : gradedPiece p G i) :
+    gradedCast p G hjk (gradedCast p G hij x) = gradedCast p G (hij.trans hjk) x := by
+  subst hij
+  subst hjk
+  simp only [gradedCast_rfl]
+
+@[simp]
 theorem gradedCast_gradedMk {j k : ℕ} (h : j = k) (x : pLowerCentralSeries p G j) :
     gradedCast p G h (gradedMk p G j x) = gradedMk p G k ⟨x, h ▸ x.2⟩ := by
   subst h; rfl
