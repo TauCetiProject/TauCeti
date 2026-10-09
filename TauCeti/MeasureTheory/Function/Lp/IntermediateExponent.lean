@@ -11,12 +11,13 @@ import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 /-!
 # `Lᵖ` membership at an intermediate exponent
 
-A function lying in both `L^{p₀}` and `L^{p₁}` lies in `Lᵖ` for every `p` between them, on an
+A function lying in both `L^{p₀}` and `L^{p₁}` lies in `Lᵖ` for every `0 < p₀ ≤ p ≤ p₁`, on an
 arbitrary measure space. Pointwise, `‖f‖ ^ p ≤ ‖f‖ ^ {p₀} + ‖f‖ ^ {p₁}` when `p₁` is finite,
 according as `‖f‖ ≤ 1` or not, and `‖f‖ ^ p ≤ ‖f‖_∞ ^ {p - p₀} ‖f‖ ^ {p₀}` when `p₁ = ∞`.
 
-This inclusion `L^{p₀} ∩ L^{p₁} ⊆ Lᵖ` is what lets an operator bounded into two `Lᵖ` spaces be
-compared with its values in the intermediate space, as in the Riesz–Thorin theorem.
+This inclusion `L^{p₀} ∩ L^{p₁} ⊆ Lᵖ` for `0 < p₀ ≤ p ≤ p₁` is what lets an operator bounded
+into two `Lᵖ` spaces be compared with its values in the intermediate space, as in the Riesz–Thorin
+theorem.
 -/
 
 public section

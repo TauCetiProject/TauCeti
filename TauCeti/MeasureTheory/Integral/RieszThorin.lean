@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 import Mathlib.Analysis.Complex.Hadamard
+import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
 
@@ -23,7 +24,10 @@ Then `‖T f‖_q ≤ M₀ ^ (1 - θ) M₁ ^ θ ‖f‖_p` for every simple `f`
 (`TauCeti.eLpNorm_le_rpow_mul_rpow_mul_eLpNorm`). The exponents are arbitrary in `(0, ∞]` on
 the source side (an exponent `0` makes the statement trivial) and in `[1, ∞]` on the target
 side, and the constant is the weighted geometric mean of the two endpoint norms. The scalars
-are complex: for real scalars the bound holds in general only up to a factor `2`.
+are complex: for real scalars the bound holds in general only up to a factor `2`. The target
+measure is σ-finite, an assumption only needed for an infinite target exponent `q`; for `q < ∞`
+the theorem holds on an arbitrary measure space
+(`TauCeti.eLpNorm_le_rpow_mul_rpow_mul_eLpNorm_of_ne_top`).
 
 Compared with Marcinkiewicz interpolation, the theorem asks for strong-type bounds at both
 endpoints, but it loses nothing in the constant and lets the source and target exponents move
@@ -238,7 +242,6 @@ private theorem ofReal_re_expo_mul_inv {s₀ s₁ s : ℝ≥0∞} (hs₀ : s₀ 
       ENNReal.ofReal (1 - z.re) * s₀⁻¹ + ENNReal.ofReal z.re * s₁⁻¹ := by
   have h₀ : s₀⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 hs₀
   have h₁ : s₁⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 hs₁
-  have hθ1 : 0 ≤ 1 - θ := sub_nonneg.2 hθ.2.le
   have hz1 : 0 ≤ 1 - z.re := sub_nonneg.2 hz.2
   have hre := re_expo_mul (ENNReal.toReal_nonneg (a := s₀⁻¹)) (ENNReal.toReal_nonneg (a := s₁⁻¹))
     hθ z
@@ -246,11 +249,8 @@ private theorem ofReal_re_expo_mul_inv {s₀ s₁ s : ℝ≥0∞} (hs₀ : s₀ 
     (ENNReal.toReal_nonneg (a := s₁⁻¹)) hθ hz
   have h0 : (0 : ℝ) ≤ (s₀⁻¹).toReal := ENNReal.toReal_nonneg
   have h1 : (0 : ℝ) ≤ (s₁⁻¹).toReal := ENNReal.toReal_nonneg
-  have hs' : s⁻¹ = ENNReal.ofReal ((1 - θ) * (s₀⁻¹).toReal + θ * (s₁⁻¹).toReal) := by
-    rw [ENNReal.ofReal_add (mul_nonneg hθ1 h0) (mul_nonneg hθ.1.le h1), ENNReal.ofReal_mul hθ1,
-      ENNReal.ofReal_mul hθ.1.le, ENNReal.ofReal_toReal h₀, ENNReal.ofReal_toReal h₁, hs]
-  rw [hs', ← ENNReal.ofReal_mul hnn, hre,
-    ENNReal.ofReal_add (mul_nonneg hz1 h0) (mul_nonneg hz.1 h1),
+  rw [inv_eq_ofReal_of_inv_eq hs₀ hs₁ (Set.Ioo_subset_Icc_self hθ) hs, ← ENNReal.ofReal_mul hnn,
+    hre, ENNReal.ofReal_add (mul_nonneg hz1 h0) (mul_nonneg hz.1 h1),
     ENNReal.ofReal_mul hz1, ENNReal.ofReal_mul hz.1, ENNReal.ofReal_toReal h₀,
     ENNReal.ofReal_toReal h₁]
 
@@ -449,127 +449,20 @@ private theorem enorm_integral_mul_le_mul (T : SimpleFunc α ℂ →ₗ[ℂ] (β
         congr
         rw [← NNReal.coe_rpow, ← NNReal.coe_rpow, ← NNReal.coe_mul, ENNReal.ofReal_coe_nnreal]
 
-/-- An interpolated exponent `1 / s = (1 - θ) / s₀ + θ / s₁` is the reciprocal of a real number in
-the closed interval between the reciprocals of the endpoints. -/
-private theorem inv_eq_ofReal_of_inv_eq {s₀ s₁ s : ℝ≥0∞} (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) {θ : ℝ}
-    (hθ : θ ∈ Set.Ioo (0 : ℝ) 1)
-    (hs : s⁻¹ = ENNReal.ofReal (1 - θ) * s₀⁻¹ + ENNReal.ofReal θ * s₁⁻¹) :
-    s⁻¹ = ENNReal.ofReal ((1 - θ) * (s₀⁻¹).toReal + θ * (s₁⁻¹).toReal) := by
-  have h₀ : s₀⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 hs₀
-  have h₁ : s₁⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 hs₁
-  have hθ1 : 0 ≤ 1 - θ := sub_nonneg.2 hθ.2.le
-  rw [ENNReal.ofReal_add (mul_nonneg hθ1 ENNReal.toReal_nonneg)
-    (mul_nonneg hθ.1.le ENNReal.toReal_nonneg), ENNReal.ofReal_mul hθ1, ENNReal.ofReal_mul hθ.1.le,
-    ENNReal.ofReal_toReal h₀, ENNReal.ofReal_toReal h₁, hs]
-
-/-- A simple function of finite `Lᵖ` norm, with `p` interpolating between `p₀` and `p₁`, lies in
-both endpoint spaces. -/
-private theorem memLp_of_eLpNorm_ne_top (f : SimpleFunc α ℂ) {p₀ p₁ p : ℝ≥0∞} (hp₀ : p₀ ≠ 0)
-    (hp₁ : p₁ ≠ 0) {θ : ℝ} (hθ : θ ∈ Set.Ioo (0 : ℝ) 1)
-    (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹)
-    (hf : eLpNorm f p μ ≠ ∞) : MemLp f p₀ μ ∧ MemLp f p₁ μ := by
-  have hp0 : p ≠ 0 := by
-    rw [← ENNReal.inv_ne_top, inv_eq_ofReal_of_inv_eq hp₀ hp₁ hθ hp]
-    exact ENNReal.ofReal_ne_top
-  rcases eq_or_ne p ∞ with rfl | hptop
-  · -- Then both endpoint exponents are `∞` as well.
-    have h := hp.symm
-    rw [ENNReal.inv_top, add_eq_zero, mul_eq_zero, mul_eq_zero] at h
-    have hθ0 : ENNReal.ofReal θ ≠ 0 := by simpa using hθ.1
-    have hθ1 : ENNReal.ofReal (1 - θ) ≠ 0 := by simpa using hθ.2
-    obtain ⟨h₀ | h₀, h₁ | h₁⟩ := h
-    all_goals first
-      | exact absurd h₀ hθ1
-      | exact absurd h₁ hθ0
-      | rw [ENNReal.inv_eq_zero.1 h₀, ENNReal.inv_eq_zero.1 h₁]
-        exact ⟨f.memLp_top μ, f.memLp_top μ⟩
-  · have hfib := SimpleFunc.measure_preimage_lt_top_of_memLp hp0 hptop f (memLp_iff.2 hf.lt_top)
-    exact ⟨SimpleFunc.memLp_of_finite_measure_preimage p₀ hfib,
-      SimpleFunc.memLp_of_finite_measure_preimage p₁ hfib⟩
-
-/-- An interpolated exponent lies between the two endpoint exponents. -/
-private theorem le_and_le_or_le_and_le {s₀ s₁ s : ℝ≥0∞} (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) {θ : ℝ}
-    (hθ : θ ∈ Set.Ioo (0 : ℝ) 1)
-    (hs : s⁻¹ = ENNReal.ofReal (1 - θ) * s₀⁻¹ + ENNReal.ofReal θ * s₁⁻¹) :
-    (s₀ ≤ s ∧ s ≤ s₁) ∨ (s₁ ≤ s ∧ s ≤ s₀) := by
-  have e := inv_eq_ofReal_of_inv_eq hs₀ hs₁ hθ hs
-  have e₀ : s₀⁻¹ = ENNReal.ofReal (s₀⁻¹).toReal :=
-    (ENNReal.ofReal_toReal (ENNReal.inv_ne_top.2 hs₀)).symm
-  have e₁ : s₁⁻¹ = ENNReal.ofReal (s₁⁻¹).toReal :=
-    (ENNReal.ofReal_toReal (ENNReal.inv_ne_top.2 hs₁)).symm
-  have hθ0 := hθ.1
-  have hθ1 := hθ.2
-  rcases le_total (s₀⁻¹).toReal (s₁⁻¹).toReal with h | h
-  · right
-    constructor
-    · rw [← ENNReal.inv_le_inv, e]
-      exact (ENNReal.ofReal_le_ofReal (by nlinarith)).trans_eq e₁.symm
-    · rw [← ENNReal.inv_le_inv, e]
-      exact e₀.le.trans (ENNReal.ofReal_le_ofReal (by nlinarith))
-  · left
-    constructor
-    · rw [← ENNReal.inv_le_inv, e]
-      exact (ENNReal.ofReal_le_ofReal (by nlinarith)).trans_eq e₀.symm
-    · rw [← ENNReal.inv_le_inv, e]
-      exact e₁.le.trans (ENNReal.ofReal_le_ofReal (by nlinarith))
-
-/-- Conjugate exponents interpolate in the same way as the exponents themselves. -/
-private theorem one_le_and_inv_conjExponent_eq {q₀ q₁ q : ℝ≥0∞} (hq₀ : 1 ≤ q₀) (hq₁ : 1 ≤ q₁)
-    {θ : ℝ} (hθ : θ ∈ Set.Ioo (0 : ℝ) 1)
-    (hq : q⁻¹ = ENNReal.ofReal (1 - θ) * q₀⁻¹ + ENNReal.ofReal θ * q₁⁻¹) :
-    1 ≤ q ∧ q.conjExponent⁻¹ =
-      ENNReal.ofReal (1 - θ) * q₀.conjExponent⁻¹ + ENNReal.ofReal θ * q₁.conjExponent⁻¹ := by
-  have hq₀0 : q₀ ≠ 0 := (zero_lt_one.trans_le hq₀).ne'
-  have hq₁0 : q₁ ≠ 0 := (zero_lt_one.trans_le hq₁).ne'
-  have e := inv_eq_ofReal_of_inv_eq hq₀0 hq₁0 hθ hq
-  set r₀ := (q₀⁻¹).toReal
-  set r₁ := (q₁⁻¹).toReal
-  have hr₀ : r₀ ≤ 1 := ENNReal.toReal_le_of_le_ofReal zero_le_one
-    (by simpa using ENNReal.inv_le_one.2 hq₀)
-  have hr₁ : r₁ ≤ 1 := ENNReal.toReal_le_of_le_ofReal zero_le_one
-    (by simpa using ENNReal.inv_le_one.2 hq₁)
-  have hr₀' : 0 ≤ r₀ := ENNReal.toReal_nonneg
-  have hr₁' : 0 ≤ r₁ := ENNReal.toReal_nonneg
-  have hθ0 := hθ.1
-  have hθ1 := hθ.2
-  have hr : (1 - θ) * r₀ + θ * r₁ ≤ 1 := by nlinarith
-  have hq1 : 1 ≤ q := by
-    rw [← ENNReal.inv_le_one, e, ← ENNReal.ofReal_one]
-    exact ENNReal.ofReal_le_ofReal hr
-  refine ⟨hq1, ?_⟩
-  have conj : ∀ {s : ℝ≥0∞}, 1 ≤ s → s⁻¹ ≠ ∞ →
-      s.conjExponent⁻¹ = ENNReal.ofReal (1 - (s⁻¹).toReal) := fun {s} hs hs' => by
-    have := ENNReal.HolderConjugate.conjExponent hs
-    rw [← ENNReal.HolderConjugate.one_sub_inv s s.conjExponent, ENNReal.ofReal_sub _
-      ENNReal.toReal_nonneg, ENNReal.ofReal_one, ENNReal.ofReal_toReal hs']
-  rw [conj hq1 (by rw [e]; exact ENNReal.ofReal_ne_top), e,
-    conj hq₀ (ENNReal.inv_ne_top.2 hq₀0), conj hq₁ (ENNReal.inv_ne_top.2 hq₁0),
-    ENNReal.toReal_ofReal (by positivity), ← ENNReal.ofReal_mul (sub_nonneg.2 hθ1.le),
-    ← ENNReal.ofReal_mul hθ0.le, ← ENNReal.ofReal_add (by nlinarith) (by nlinarith)]
-  congr 1
-  ring
-
-end RieszThorin
-
-open RieszThorin in
-/-- **The Riesz–Thorin interpolation theorem.** Let `T` be a complex-linear map from simple
-functions on `(α, μ)` to almost-everywhere classes on a σ-finite `(β, ν)` with
-`‖T f‖_{q₀} ≤ M₀ ‖f‖_{p₀}` and `‖T f‖_{q₁} ≤ M₁ ‖f‖_{p₁}` for all simple `f`, where
-`p₀, p₁ ∈ [0, ∞]` and `1 ≤ q₀, q₁ ≤ ∞`. For `0 < θ < 1` and the intermediate exponents
-`1 / p = (1 - θ) / p₀ + θ / p₁`, `1 / q = (1 - θ) / q₀ + θ / q₁`,
-
-`‖T f‖_q ≤ M₀ ^ (1 - θ) M₁ ^ θ ‖f‖_p`
-
-for every simple `f`. σ-finiteness of `ν` is only used when `q = ∞`. -/
-theorem eLpNorm_le_rpow_mul_rpow_mul_eLpNorm [SigmaFinite ν]
+/-- The Riesz–Thorin bound, assuming `ν` σ-finite only when the target exponent `q` is infinite,
+which is where the duality against simple functions needs it. -/
+private theorem eLpNorm_le_of_ne_top_or_sigmaFinite
     {T : SimpleFunc α ℂ →ₗ[ℂ] (β →ₘ[ν] ℂ)} {p₀ p₁ p q₀ q₁ q : ℝ≥0∞} (hq₀ : 1 ≤ q₀)
     (hq₁ : 1 ≤ q₁) {θ : ℝ} (hθ : θ ∈ Set.Ioo (0 : ℝ) 1)
     (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹)
-    (hq : q⁻¹ = ENNReal.ofReal (1 - θ) * q₀⁻¹ + ENNReal.ofReal θ * q₁⁻¹) {M₀ M₁ : ℝ≥0}
+    (hq : q⁻¹ = ENNReal.ofReal (1 - θ) * q₀⁻¹ + ENNReal.ofReal θ * q₁⁻¹)
+    (hν : q ≠ ∞ ∨ SigmaFinite ν) {M₀ M₁ : ℝ≥0}
     (h₀ : ∀ f, eLpNorm (T f) q₀ ν ≤ M₀ * eLpNorm f p₀ μ)
     (h₁ : ∀ f, eLpNorm (T f) q₁ ν ≤ M₁ * eLpNorm f p₁ μ) (f : SimpleFunc α ℂ) :
     eLpNorm (T f) q ν ≤ ↑(M₀ ^ (1 - θ) * M₁ ^ θ) * eLpNorm f p μ := by
-  obtain ⟨hq1, hq'⟩ := one_le_and_inv_conjExponent_eq hq₀ hq₁ hθ hq
+  have hθ' := Set.Ioo_subset_Icc_self hθ
+  have hq1 := one_le_of_inv_eq hq₀ hq₁ hθ' hq
+  have hq' := inv_conjExponent_eq_of_inv_eq hq₀ hq₁ hθ' hq
   have := ENNReal.HolderConjugate.conjExponent hq₀
   have := ENNReal.HolderConjugate.conjExponent hq₁
   have := ENNReal.HolderConjugate.conjExponent hq1
@@ -601,22 +494,73 @@ theorem eLpNorm_le_rpow_mul_rpow_mul_eLpNorm [SigmaFinite ν]
   rcases eq_or_ne (eLpNorm f p μ) ∞ with hf | hf
   · rw [hf, ENNReal.mul_top (by exact_mod_cast hM)]
     exact le_top
+  have hp0 : p ≠ 0 := by
+    rw [← ENNReal.inv_ne_top, inv_eq_ofReal_of_inv_eq hp₀ hp₁ hθ' hp]
+    exact ENNReal.ofReal_ne_top
+  -- The simple function `f` lies in both source spaces: its fibres have finite measure when
+  -- `p < ∞`, and `p = ∞` forces `p₀ = p₁ = ∞`.
+  obtain ⟨hf₀, hf₁⟩ : MemLp f p₀ μ ∧ MemLp f p₁ μ := by
+    rcases eq_or_ne p ∞ with hptop | hptop
+    · obtain ⟨rfl, rfl⟩ := (eq_top_iff_of_inv_eq hθ hp).1 hptop
+      exact ⟨f.memLp_top μ, f.memLp_top μ⟩
+    · have hfib := SimpleFunc.measure_preimage_lt_top_of_memLp hp0 hptop f (memLp_iff.2 hf.lt_top)
+      exact ⟨SimpleFunc.memLp_of_finite_measure_preimage p₀ hfib,
+        SimpleFunc.memLp_of_finite_measure_preimage p₁ hfib⟩
   -- `T f` lies in both target spaces, hence in the intermediate one.
-  obtain ⟨hf₀, hf₁⟩ := memLp_of_eLpNorm_ne_top f hp₀ hp₁ hθ hp hf
   have hT₀ : MemLp (T f) q₀ ν :=
     memLp_iff.2 ((h₀ f).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hf₀.eLpNorm_lt_top))
   have hT₁ : MemLp (T f) q₁ ν :=
     memLp_iff.2 ((h₁ f).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hf₁.eLpNorm_lt_top))
   have hTq : MemLp (T f) q ν := by
-    rcases le_and_le_or_le_and_le hq₀0 hq₁0 hθ hq with ⟨h₁', h₂'⟩ | ⟨h₁', h₂'⟩
+    rcases Set.mem_uIcc.1 (mem_uIcc_of_inv_eq hq₀0 hq₁0 hθ' hq) with ⟨h₁', h₂'⟩ | ⟨h₁', h₂'⟩
     · exact hT₀.of_le_of_le hT₁ hq₀0 h₁' h₂'
     · exact hT₁.of_le_of_le hT₀ hq₁0 h₁' h₂'
-  have hp0 : p ≠ 0 := by
-    rw [← ENNReal.inv_ne_top, inv_eq_ofReal_of_inv_eq hp₀ hp₁ hθ hp]
-    exact ENNReal.ofReal_ne_top
   -- Duality reduces the bound to the bilinear estimate.
-  refine hTq.eLpNorm_le_of_forall_enorm_integral_mul_le (q' := q.conjExponent) fun g hg => ?_
-  exact (enorm_integral_mul_le_mul T hp₀ hp₁ hp0 (ENNReal.HolderConjugate.ne_zero _ q) hθ hp hq'
-    h₀ h₁ hf hg.eLpNorm_lt_top.ne)
+  have key : ∀ g : SimpleFunc β ℂ, MemLp g q.conjExponent ν →
+      ‖∫ y, T f y * g y ∂ν‖ₑ ≤ ↑(M₀ ^ (1 - θ) * M₁ ^ θ) * eLpNorm f p μ *
+        eLpNorm g q.conjExponent ν := fun g hg =>
+    enorm_integral_mul_le_mul T hp₀ hp₁ hp0 (ENNReal.HolderConjugate.ne_zero _ q) hθ hp hq'
+      h₀ h₁ hf hg.eLpNorm_lt_top.ne
+  rcases hν with hqtop | hν
+  · exact hTq.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top hqtop key
+  · exact hTq.eLpNorm_le_of_forall_enorm_integral_mul_le key
+
+end RieszThorin
+
+open RieszThorin in
+/-- **The Riesz–Thorin interpolation theorem.** Let `T` be a complex-linear map from simple
+functions on `(α, μ)` to almost-everywhere classes on a σ-finite `(β, ν)` with
+`‖T f‖_{q₀} ≤ M₀ ‖f‖_{p₀}` and `‖T f‖_{q₁} ≤ M₁ ‖f‖_{p₁}` for all simple `f`, where
+`p₀, p₁ ∈ [0, ∞]` and `1 ≤ q₀, q₁ ≤ ∞`. For `0 < θ < 1` and the intermediate exponents
+`1 / p = (1 - θ) / p₀ + θ / p₁`, `1 / q = (1 - θ) / q₀ + θ / q₁`,
+
+`‖T f‖_q ≤ M₀ ^ (1 - θ) M₁ ^ θ ‖f‖_p`
+
+for every simple `f`. σ-finiteness of `ν` is only used when `q = ∞`; for `q < ∞` see
+`TauCeti.eLpNorm_le_rpow_mul_rpow_mul_eLpNorm_of_ne_top`. -/
+theorem eLpNorm_le_rpow_mul_rpow_mul_eLpNorm [SigmaFinite ν]
+    {T : SimpleFunc α ℂ →ₗ[ℂ] (β →ₘ[ν] ℂ)} {p₀ p₁ p q₀ q₁ q : ℝ≥0∞} (hq₀ : 1 ≤ q₀)
+    (hq₁ : 1 ≤ q₁) {θ : ℝ} (hθ : θ ∈ Set.Ioo (0 : ℝ) 1)
+    (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹)
+    (hq : q⁻¹ = ENNReal.ofReal (1 - θ) * q₀⁻¹ + ENNReal.ofReal θ * q₁⁻¹) {M₀ M₁ : ℝ≥0}
+    (h₀ : ∀ f, eLpNorm (T f) q₀ ν ≤ M₀ * eLpNorm f p₀ μ)
+    (h₁ : ∀ f, eLpNorm (T f) q₁ ν ≤ M₁ * eLpNorm f p₁ μ) (f : SimpleFunc α ℂ) :
+    eLpNorm (T f) q ν ≤ ↑(M₀ ^ (1 - θ) * M₁ ^ θ) * eLpNorm f p μ :=
+  eLpNorm_le_of_ne_top_or_sigmaFinite hq₀ hq₁ hθ hp hq (Or.inr ‹_›) h₀ h₁ f
+
+open RieszThorin in
+/-- **The Riesz–Thorin interpolation theorem** for a finite target exponent, on an arbitrary
+measure space `(β, ν)`: under the hypotheses of `TauCeti.eLpNorm_le_rpow_mul_rpow_mul_eLpNorm`,
+if the intermediate exponent `q` is finite then `‖T f‖_q ≤ M₀ ^ (1 - θ) M₁ ^ θ ‖f‖_p` for every
+simple `f`, without assuming `ν` σ-finite. -/
+theorem eLpNorm_le_rpow_mul_rpow_mul_eLpNorm_of_ne_top
+    {T : SimpleFunc α ℂ →ₗ[ℂ] (β →ₘ[ν] ℂ)} {p₀ p₁ p q₀ q₁ q : ℝ≥0∞} (hq₀ : 1 ≤ q₀)
+    (hq₁ : 1 ≤ q₁) {θ : ℝ} (hθ : θ ∈ Set.Ioo (0 : ℝ) 1)
+    (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹)
+    (hq : q⁻¹ = ENNReal.ofReal (1 - θ) * q₀⁻¹ + ENNReal.ofReal θ * q₁⁻¹) (hqtop : q ≠ ∞)
+    {M₀ M₁ : ℝ≥0} (h₀ : ∀ f, eLpNorm (T f) q₀ ν ≤ M₀ * eLpNorm f p₀ μ)
+    (h₁ : ∀ f, eLpNorm (T f) q₁ ν ≤ M₁ * eLpNorm f p₁ μ) (f : SimpleFunc α ℂ) :
+    eLpNorm (T f) q ν ≤ ↑(M₀ ^ (1 - θ) * M₁ ^ θ) * eLpNorm f p μ :=
+  eLpNorm_le_of_ne_top_or_sigmaFinite hq₀ hq₁ hθ hp hq (Or.inl hqtop) h₀ h₁ f
 
 end TauCeti
