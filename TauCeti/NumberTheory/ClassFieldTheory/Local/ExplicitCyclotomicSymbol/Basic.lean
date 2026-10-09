@@ -265,9 +265,9 @@ theorem cyclotomicSymbol_eq_one_of_norm_sub_one_lt (m : ℕ) [NeZero m] (p : ℕ
   · rw [Nat.IsExactDivisor.unitsEquivProd_apply_fst,
       unitsMap_cyclotomicSymbol_primePow m p hprimary.dvd x 0 _ hw, Prod.fst_one, inv_eq_one]
     apply Units.ext
-    rw [Units.coe_map, Units.val_one, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-      ← sub_eq_zero, ← map_one (PadicInt.toZModPow (p := p) _), ← map_sub,
-      ← RingHom.mem_ker, PadicInt.ker_toZModPow, ← PadicInt.norm_le_pow_iff_mem_span_pow]
+    simp only [Units.coe_map, Units.val_one, RingHom.toMonoidHom_eq_coe,
+      MonoidHom.coe_ofClass]
+    apply PadicInt.toZModPow_eq_one_of_norm_sub_one_le
     rw [PadicInt.norm_def, PadicInt.coe_sub, PadicInt.mkUnits_eq, PadicInt.coe_one, ← hm]
     exact hx.le
   · rw [Nat.IsExactDivisor.unitsEquivProd_apply_snd,
