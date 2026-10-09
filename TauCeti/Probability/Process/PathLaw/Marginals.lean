@@ -202,8 +202,9 @@ theorem _root_.Nat.blockPerm_mul_add (m : ℕ) [NeZero m] (τ : Equiv.Perm ℕ) 
     Nat.blockPerm m τ (i * m + j) = τ i * m + j := by
   have h (k : ℕ) : k * m + (j : ℕ) = (Nat.divModEquiv m).symm (k, j) :=
     (Nat.divModEquiv_symm_apply m (k, j)).symm
-  rw [h, h, Nat.blockPerm, Equiv.permCongr_apply, Equiv.symm_symm, Equiv.apply_symm_apply,
-    Equiv.prodCongr_apply, Prod.map_apply, Equiv.refl_apply]
+  -- Keep the indices in `divModEquiv` form so that `simp` cancels the equivalence.
+  rw [h, h]
+  simp [Nat.blockPerm, -Nat.divModEquiv_symm_apply]
 
 /-- Block marginals are equivariant when a block permutation is extended to all path
 coordinates by `Nat.blockPerm`. -/
