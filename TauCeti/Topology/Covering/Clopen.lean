@@ -62,9 +62,9 @@ theorem _root_.IsCoveringMap.subtypeVal_comp {p : E → s} (hp : IsCoveringMap p
       (IsEvenlyCovered.of_preimage_eq_empty Empty (hs.isClosed.isOpen_compl.mem_nhds hx) ?_)
     exact Set.eq_empty_of_forall_notMem fun e he => he (p e).2
 
-/-- **A covering map with finite fibres restricts to a covering map on a clopen set.** The
-inclusion of a clopen subset `t` is a covering map, and a covering map with finite fibres
-followed by it is again one (`IsCoveringMap.comp`). -/
+/-- **A covering map with finite fibres restricts to a covering map on a clopen set.** For a
+clopen subset `t ⊆ E`, the inclusion `t ↪ E` followed by `p : E → X` is a covering map
+`t → X`. -/
 theorem _root_.IsCoveringMap.domRestrict_of_isClopen {p : E → X} (hp : IsCoveringMap p)
     (hfin : ∀ x, (p ⁻¹' {x}).Finite) {t : Set E} (ht : IsClopen t) :
     IsCoveringMap (t.domRestrict p) :=
