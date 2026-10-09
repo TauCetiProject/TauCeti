@@ -200,6 +200,12 @@ integer so that it can serve directly as a block labelling of the coordinates of
 def d4TripledSummand (a : Fin 24) : ℤ :=
   ((a : ℕ) / 8 : ℕ)
 
+/-- Each summand of the tripled weight table contains eight coordinates. -/
+@[simp]
+theorem card_d4TripledSummand_fiber (j : Fin 3) :
+    Fintype.card {a : Fin 24 // d4TripledSummand a = j} = 8 := by
+  fin_cases j <;> decide +kernel
+
 /-- A tripled weight lies in the natural summand exactly when its table index is below eight. -/
 theorem d4TripledSummand_eq_zero_iff (a : Fin 24) :
     d4TripledSummand a = 0 ↔ (a : ℕ) < 8 := by
@@ -324,6 +330,15 @@ def d4TripledTrialityPerm : Equiv.Perm (Fin 24) where
 private theorem d4TripledTrialityPerm_apply (a : Fin 24) :
     d4TripledTrialityPerm a = d4TripledTrialityIndex a :=
   (rfl)
+
+/-- Triality carries block `j` to the next block in the cycle `0 → 1 → 2 → 0`. -/
+@[simp]
+theorem d4TripledSummand_d4TripledTrialityPerm_eq_iff (a : Fin 24) (j : Fin 3) :
+    d4TripledSummand (d4TripledTrialityPerm a) = (![1, 2, 0] j : Fin 3) ↔
+      d4TripledSummand a = j := by
+  rw [d4TripledTrialityPerm_apply]
+  revert a j
+  decide +kernel
 
 /-- Triality carries the highest weight `ϖ₁` of the natural block to the highest weight `ϖ₃` of
 the second block. -/
