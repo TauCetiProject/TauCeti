@@ -36,6 +36,8 @@ form.
 * `TauCeti.ConstantMultiplication.mem_lieSubalgebra_definingHopfIdeal_iff`: an ambient tangent
   vector lies in the Lie algebra of the subgroup exactly when its matrix is a derivation of the
   multiplication.
+* `TauCeti.ConstantMultiplication.toMatrix_leibniz_iff`: the structure-matrix equations for
+  a linear endomorphism are equivalent to its Leibniz rule.
 
 ## References
 
@@ -103,5 +105,35 @@ theorem mem_lieSubalgebra_definingHopfIdeal_iff
       (GeneralLinear.coordinateHopfAlgebra R n) B).injective
     rw [map_zero, derivation_relationMatrix C d, ← sub_add_eq_sub_sub, h k, sub_self,
       Matrix.zero_apply]
+
+section Basis
+
+variable {S T : Type*} [CommRing S] [Algebra R S]
+  [NonUnitalNonAssocSemiring T] [Module S T] [IsScalarTower S T T]
+  [SMulCommClass S T T]
+
+/-- In a basis with the given structure matrices, the linearized multiplication equations
+are equivalent to the associative Leibniz rule. The multiplication need not be associative
+or unital. -/
+theorem toMatrix_leibniz_iff (b : Module.Basis (Fin n) S T)
+    (hC : ∀ k, LinearMap.toMatrix b b (LinearMap.mulLeft S (b k)) =
+      (C k).map (algebraMap R S)) (f : T →ₗ[S] T) :
+    (∀ k, LinearMap.toMatrix b b f * (C k).map (algebraMap R S) =
+      imageStructureMatrix R n C (LinearMap.toMatrix b b f) k +
+        (C k).map (algebraMap R S) * LinearMap.toMatrix b b f) ↔
+      ∀ x y, f (x * y) = f x * y + x * f y := by
+  simp_rw [imageStructureMatrix_toMatrix R n C b hC, ← hC,
+    ← LinearMap.toMatrix_comp, ← map_add, (LinearMap.toMatrix b b).injective.eq_iff]
+  constructor
+  · intro h x y
+    have hx : f ∘ₗ LinearMap.mulRight S y =
+        LinearMap.mulRight S y ∘ₗ f + LinearMap.mulRight S (f y) :=
+      b.ext fun k => by simpa using LinearMap.congr_fun (h k) y
+    simpa using LinearMap.congr_fun hx x
+  · intro h k
+    ext y
+    simp [h]
+
+end Basis
 
 end TauCeti.ConstantMultiplication
