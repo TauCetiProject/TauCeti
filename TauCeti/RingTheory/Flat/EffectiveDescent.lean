@@ -139,10 +139,7 @@ structure DescentDatum where
   /-- The coaction `B → S ⊗[R] B`, linear over `S` acting on the left factor. -/
   coaction : B →ₐ[S] S ⊗[R] B
   /-- The coaction is a section of the multiplication map `S ⊗[R] B → B`. -/
-  counit_coaction (b : B) :
-    Algebra.TensorProduct.lift (Algebra.ofId S B) (AlgHom.id R B)
-      (fun s b ↦ by rw [Algebra.ofId_apply]; exact Algebra.commute_algebraMap_left s _)
-      (coaction b) = b
+  counit_coaction (b : B) : TensorProduct.mulLeft (coaction b) = b
   /-- The cocycle condition: `(id ⊗ θ) ∘ θ = (id ⊗ (1 ⊗ ·)) ∘ θ`. -/
   coassoc (b : B) :
     Algebra.TensorProduct.map (AlgHom.id R S) (coaction.restrictScalars R) (coaction b) =
@@ -685,52 +682,13 @@ theorem iso_tmul (E : IsoDescentDatum R S B) (b : B) (t : S) :
     E.iso (b ⊗ₜ t) = E.iso (b ⊗ₜ 1) * 1 ⊗ₜ algebraMap S B t := by
   rw [← E.iso_one_tmul, ← map_mul, Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
 
-omit [Algebra S B] [IsScalarTower R S B] in
-/-- Reassociating `y ⊗ 1` and swapping the last two factors inserts `1` in the middle. -/
-private theorem map_comm_assoc_tmul_one (y : S ⊗[R] B) :
-    Algebra.TensorProduct.map (AlgHom.id R S)
-        (Algebra.TensorProduct.comm R B S : B ⊗[R] S →ₐ[R] S ⊗[R] B)
-        (Algebra.TensorProduct.assoc R R R S B S (y ⊗ₜ 1)) =
-      Algebra.TensorProduct.map (AlgHom.id R S) Algebra.TensorProduct.includeRight y := by
-  induction y using TensorProduct.inductionOn with
-  | tmul s b => simp
-  | add x y hx hy => simp only [add_tmul, map_add, hx, hy]
-
-/-- `φ₂₃` applied to (the reassociation of) `y ⊗ 1` is `id ⊗ (b ↦ φ (b ⊗ 1))` applied to `y`. -/
-private theorem map_assoc_tmul_one (φ : B ⊗[R] S →ₐ[S] S ⊗[R] B) (y : S ⊗[R] B) :
-    Algebra.TensorProduct.map (AlgHom.id R S) (φ.restrictScalars R)
-        (Algebra.TensorProduct.assoc R R R S B S (y ⊗ₜ 1)) =
-      Algebra.TensorProduct.map (AlgHom.id R S)
-        ((φ.comp Algebra.TensorProduct.includeLeft).restrictScalars R) y := by
-  induction y using TensorProduct.inductionOn with
-  | tmul s b => simp
-  | add x y hx hy => simp only [add_tmul, map_add, hx, hy]
-
 end IsoDescentDatum
 
 namespace DescentDatum
 
 variable {R S B}
 
-/-- The multiplication map `S ⊗[R] B → B`, `s ⊗ b ↦ s • b`. -/
-private noncomputable def mulLeft : S ⊗[R] B →ₐ[S] B :=
-  Algebra.TensorProduct.lift (Algebra.ofId S B) (AlgHom.id R B)
-    (fun s b ↦ by rw [Algebra.ofId_apply]; exact Algebra.commute_algebraMap_left s _)
-
-private theorem mulLeft_tmul (s : S) (b : B) :
-    (mulLeft (s ⊗ₜ[R] b) : B) = algebraMap S B s * b := by
-  simp [mulLeft]
-
-private theorem mulLeft_coaction (D : DescentDatum R S B) (b : B) : mulLeft (D.coaction b) = b :=
-  D.counit_coaction b
-
-omit [IsScalarTower R S B] in
-/-- `1 ⊗ t` is central in `S ⊗[R] B` for `t` in the image of `S`. -/
-private theorem commute_one_tmul_algebraMap (x : S ⊗[R] B) (t : S) :
-    Commute x (1 ⊗ₜ algebraMap S B t) := by
-  induction x using TensorProduct.inductionOn with
-  | tmul s b => exact (Commute.one_right s).tmul (Algebra.commute_algebraMap_right t b)
-  | add x y hx hy => exact hx.add_left hy
+open TauCeti.Algebra.TensorProduct
 
 variable (D : DescentDatum R S B)
 
@@ -757,70 +715,61 @@ private theorem isoInv_tmul (s : S) (b : B) :
       algebraMap S B s ⊗ₜ 1 * Algebra.TensorProduct.comm R S B (D.coaction b) := by
   simp [isoInv, Algebra.TensorProduct.algebraMap_apply]
 
-/-- `s ⊗ y ↦ (1 ⊗ s) * y`, contracting the first two factors of `S ⊗[R] (S ⊗[R] B)` into
-`S ⊗[R] B` with the outer copy of `S` acting on `B`. -/
-private noncomputable def contractLeft : S ⊗[R] (S ⊗[R] B) →ₐ[R] S ⊗[R] B :=
-  Algebra.TensorProduct.lift
-    (Algebra.TensorProduct.includeRight.comp (IsScalarTower.toAlgHom R S B)) (AlgHom.id R _)
-    (fun s x ↦ by rw [AlgHom.comp_apply]; exact (commute_one_tmul_algebraMap x s).symm)
-
-private theorem contractLeft_tmul (s : S) (x : S ⊗[R] B) :
-    contractLeft (s ⊗ₜ x) = (1 : S) ⊗ₜ[R] algebraMap S B s * x := by
-  rw [contractLeft, Algebra.TensorProduct.lift_tmul]
-  rfl
-
 private theorem isoHom_comm (x : S ⊗[R] B) :
     D.isoHom (Algebra.TensorProduct.comm R S B x) =
-      contractLeft
-        (Algebra.TensorProduct.map (AlgHom.id R S) (D.coaction.restrictScalars R) x) := by
+      Algebra.TensorProduct.map (AlgHom.id R S) (mulLeft.restrictScalars R)
+        (Algebra.TensorProduct.leftComm R S S B
+          (Algebra.TensorProduct.map (AlgHom.id R S) (D.coaction.restrictScalars R) x)) := by
   induction x using TensorProduct.inductionOn with
   | tmul s b =>
-    simp [isoHom_tmul, contractLeft_tmul, (commute_one_tmul_algebraMap (D.coaction b) s).eq]
+    have key (y : S ⊗[R] B) :
+        Algebra.TensorProduct.map (AlgHom.id R S) (mulLeft.restrictScalars R)
+          (Algebra.TensorProduct.leftComm R S S B (s ⊗ₜ y)) = 1 ⊗ₜ algebraMap S B s * y := by
+      induction y using TensorProduct.inductionOn with
+      | tmul t b => simp [Algebra.TensorProduct.tmul_mul_tmul]
+      | add y y' hy hy' => simp only [tmul_add, map_add, hy, hy', mul_add]
+    simp [isoHom_tmul, key, (commute_one_tmul_algebraMap (D.coaction b) s).eq]
   | add x y hx hy => simp only [map_add, hx, hy]
-
-private theorem contractLeft_map_includeRight (x : S ⊗[R] B) :
-    contractLeft (Algebra.TensorProduct.map (AlgHom.id R S)
-      Algebra.TensorProduct.includeRight x) = (1 : S) ⊗ₜ[R] mulLeft x := by
-  induction x using TensorProduct.inductionOn with
-  | tmul s b => simp [contractLeft_tmul, mulLeft_tmul]
-  | add x y hx hy => simp only [map_add, hx, hy, tmul_add]
 
 private theorem isoHom_isoInv (x : S ⊗[R] B) : D.isoHom (D.isoInv x) = x := by
   suffices h : D.isoHom.comp D.isoInv = AlgHom.id S _ from congr($h x)
   refine Algebra.TensorProduct.ext (Subsingleton.elim _ _) (AlgHom.ext fun b ↦ ?_)
-  have h1 := congr(contractLeft $(D.coassoc b))
-  simp only [← isoHom_comm, contractLeft_map_includeRight, mulLeft_coaction] at h1
+  have hR (y : S ⊗[R] B) :
+      Algebra.TensorProduct.map (AlgHom.id R S) (mulLeft.restrictScalars R)
+        (Algebra.TensorProduct.leftComm R S S B
+          (Algebra.TensorProduct.map (AlgHom.id R S) Algebra.TensorProduct.includeRight y)) =
+        (1 : S) ⊗ₜ[R] mulLeft y := by
+    induction y using TensorProduct.inductionOn with
+    | tmul s b => simp
+    | add x y hx hy => simp only [map_add, hx, hy, tmul_add]
+  have h1 := congr(Algebra.TensorProduct.map (AlgHom.id R S) (mulLeft.restrictScalars R)
+    (Algebra.TensorProduct.leftComm R S S B $(D.coassoc b)))
+  simp only [← isoHom_comm, hR, D.counit_coaction] at h1
   simpa [isoInv_tmul, ← Algebra.TensorProduct.one_def] using h1
 
-/-- `s ⊗ y ↦ (s ⊗ 1) * τ y`, with `τ : S ⊗[R] B ≃ B ⊗[R] S` swapping the factors. -/
-private noncomputable def contractSwap : S ⊗[R] (S ⊗[R] B) →ₐ[S] B ⊗[R] S :=
-  Algebra.TensorProduct.lift (Algebra.ofId S (B ⊗[R] S))
-    (Algebra.TensorProduct.comm R S B).toAlgHom
-    (fun s x ↦ by rw [Algebra.ofId_apply]; exact Algebra.commute_algebraMap_left s _)
-
-private theorem contractSwap_tmul (s : S) (x : S ⊗[R] B) :
-    contractSwap (s ⊗ₜ x) = algebraMap S B s ⊗ₜ 1 * Algebra.TensorProduct.comm R S B x := by
-  simp [contractSwap, Algebra.TensorProduct.algebraMap_apply]
-
 private theorem isoInv_eq (x : S ⊗[R] B) :
-    D.isoInv x = contractSwap
-      (Algebra.TensorProduct.map (AlgHom.id R S) (D.coaction.restrictScalars R) x) := by
+    D.isoInv x = mulLeft (Algebra.TensorProduct.map (AlgHom.id R S)
+      (Algebra.TensorProduct.comm R S B : S ⊗[R] B →ₐ[R] B ⊗[R] S)
+      (Algebra.TensorProduct.map (AlgHom.id R S) (D.coaction.restrictScalars R) x)) := by
   induction x using TensorProduct.inductionOn with
-  | tmul s b => simp [isoInv_tmul, contractSwap_tmul]
+  | tmul s b => simp [isoInv_tmul, Algebra.TensorProduct.algebraMap_apply]
   | add x y hx hy => simp only [map_add, hx, hy]
-
-private theorem contractSwap_map_includeRight (x : S ⊗[R] B) :
-    contractSwap (Algebra.TensorProduct.map (AlgHom.id R S)
-      Algebra.TensorProduct.includeRight x) = mulLeft x ⊗ₜ[R] (1 : S) := by
-  induction x using TensorProduct.inductionOn with
-  | tmul s b => simp [contractSwap_tmul, mulLeft_tmul]
-  | add x y hx hy => simp only [map_add, hx, hy, add_tmul]
 
 private theorem isoInv_isoHom (x : B ⊗[R] S) : D.isoInv (D.isoHom x) = x := by
   suffices h : D.isoInv.comp D.isoHom = AlgHom.id S _ from congr($h x)
   refine Algebra.TensorProduct.ext (AlgHom.ext fun b ↦ ?_) (AlgHom.ext fun t ↦ ?_)
-  · have h1 := congr(contractSwap $(D.coassoc b))
-    simp only [← isoInv_eq, contractSwap_map_includeRight, mulLeft_coaction] at h1
+  · have hR (y : S ⊗[R] B) :
+        mulLeft (Algebra.TensorProduct.map (AlgHom.id R S)
+          (Algebra.TensorProduct.comm R S B : S ⊗[R] B →ₐ[R] B ⊗[R] S)
+          (Algebra.TensorProduct.map (AlgHom.id R S) Algebra.TensorProduct.includeRight y)) =
+          mulLeft y ⊗ₜ[R] (1 : S) := by
+      induction y using TensorProduct.inductionOn with
+      | tmul s b =>
+        simp [Algebra.TensorProduct.algebraMap_apply, Algebra.TensorProduct.tmul_mul_tmul]
+      | add x y hx hy => simp only [map_add, hx, hy, add_tmul]
+    have h1 := congr(mulLeft (Algebra.TensorProduct.map (AlgHom.id R S)
+      (Algebra.TensorProduct.comm R S B : S ⊗[R] B →ₐ[R] B ⊗[R] S) $(D.coassoc b)))
+    simp only [← isoInv_eq, hR, D.counit_coaction] at h1
     simpa [isoHom_tmul, ← Algebra.TensorProduct.one_def] using h1
   · simp [isoHom_tmul, isoInv_tmul, Algebra.TensorProduct.algebraMap_apply]
 
@@ -847,10 +796,9 @@ noncomputable def toIsoDescentDatum : IsoDescentDatum R S B where
           simp [Algebra.TensorProduct.tmul_mul_tmul]
         simp only [Algebra.TensorProduct.map_tmul, TensorProduct.rightComm_tmul,
           AlgHom.restrictScalars_apply, AlgEquiv.coe_toAlgHom, AlgHom.id_apply, isoEquiv_tmul,
-          split, map_mul, IsoDescentDatum.map_assoc_tmul_one,
-          IsoDescentDatum.map_comm_assoc_tmul_one]
-        have hθ : (D.isoEquiv : B ⊗[R] S →ₐ[S] S ⊗[R] B).comp
-            Algebra.TensorProduct.includeLeft = D.coaction :=
+          split, map_mul, map_assoc_tmul_one, Algebra.TensorProduct.comm_comp_includeLeft]
+        have hθ : ((D.isoEquiv : B ⊗[R] S →ₐ[S] S ⊗[R] B).restrictScalars R).comp
+            Algebra.TensorProduct.includeLeft = D.coaction.restrictScalars R :=
           AlgHom.ext fun b ↦ by simp [isoEquiv_tmul, ← Algebra.TensorProduct.one_def]
         rw [hθ, D.coassoc]
         congr 1
@@ -875,14 +823,9 @@ namespace IsoDescentDatum
 
 variable {R S B}
 
-open DescentDatum
+open TauCeti.Algebra.TensorProduct
 
 variable (E : IsoDescentDatum R S B)
-
-/-- The multiplication map `B ⊗[R] S → B`, `b ⊗ t ↦ b * t`. -/
-private noncomputable def mulRight : B ⊗[R] S →ₐ[S] B :=
-  Algebra.TensorProduct.lift (AlgHom.id S B) (IsScalarTower.toAlgHom R S B)
-    (fun b t ↦ by rw [IsScalarTower.coe_toAlgHom']; exact Algebra.commute_algebraMap_right t b)
 
 private theorem coassoc (b : B) :
     Algebra.TensorProduct.map (AlgHom.id R S)
@@ -893,24 +836,7 @@ private theorem coassoc (b : B) :
   have h := E.cocycle ((b ⊗ₜ 1) ⊗ₜ 1)
   simp only [Algebra.TensorProduct.map_tmul, TensorProduct.rightComm_tmul,
     AlgHom.restrictScalars_apply, AlgEquiv.coe_toAlgHom, AlgHom.id_apply] at h
-  rwa [map_assoc_tmul_one, map_comm_assoc_tmul_one] at h
-
-private theorem mulLeft_map_mulLeft_map (θ : B →ₐ[S] S ⊗[R] B) (y : S ⊗[R] B) :
-    mulLeft (Algebra.TensorProduct.map (AlgHom.id R S) (mulLeft.restrictScalars R)
-      (Algebra.TensorProduct.map (AlgHom.id R S) (θ.restrictScalars R) y)) =
-      mulLeft (θ (mulLeft y)) := by
-  induction y using TensorProduct.inductionOn with
-  | tmul s b => simp [mulLeft_tmul, Algebra.TensorProduct.algebraMap_apply]
-  | add x y hx hy => simp only [map_add, hx, hy]
-
-private theorem mulLeft_map_mulLeft_map_includeRight (y : S ⊗[R] B) :
-    mulLeft (Algebra.TensorProduct.map (AlgHom.id R S)
-      ((mulLeft : S ⊗[R] B →ₐ[S] B).restrictScalars R)
-      (Algebra.TensorProduct.map (AlgHom.id R S) Algebra.TensorProduct.includeRight y)) =
-      mulLeft y := by
-  induction y using TensorProduct.inductionOn with
-  | tmul s b => simp [mulLeft_tmul]
-  | add x y hx hy => simp only [map_add, hx, hy]
+  rwa [map_assoc_tmul_one, map_assoc_tmul_one, Algebra.TensorProduct.comm_comp_includeLeft] at h
 
 /-- **Normalisation of a descent datum along the diagonal.** The composite
 `B → B ⊗[R] S → S ⊗[R] B → B`, `b ↦ μ (iso (b ⊗ 1))` with `μ` the multiplication map, is the
@@ -921,16 +847,31 @@ private theorem mulLeft_iso_tmul_one (b : B) : mulLeft (E.iso (b ⊗ₜ 1)) = b 
   -- `c` intertwines the two multiplication maps along `iso`, hence is surjective.
   have hmul : mulLeft.comp (E.iso : B ⊗[R] S →ₐ[S] S ⊗[R] B) = c.comp mulRight := by
     refine Algebra.TensorProduct.ext (AlgHom.ext fun b ↦ ?_) (AlgHom.ext fun t ↦ ?_)
-    · simp [hc, mulRight]
-    · simp [mulRight, mulLeft_tmul]
+    · simp [hc]
+    · simp
   have hsurj : Function.Surjective c := fun b ↦
     ⟨mulRight (E.iso.symm (1 ⊗ₜ b)), by
-      simpa [mulLeft_tmul] using congr($hmul.symm (E.iso.symm (1 ⊗ₜ b)))⟩
+      simpa using congr($hmul.symm (E.iso.symm (1 ⊗ₜ b)))⟩
   -- `c` is idempotent, by the cocycle condition.
   have hidem : ∀ a, c (c a) = c a := fun a ↦ by
+    have hθ (θ : B →ₐ[S] S ⊗[R] B) (y : S ⊗[R] B) :
+        mulLeft (Algebra.TensorProduct.map (AlgHom.id R S) (mulLeft.restrictScalars R)
+          (Algebra.TensorProduct.map (AlgHom.id R S) (θ.restrictScalars R) y)) =
+          mulLeft (θ (mulLeft y)) := by
+      induction y using TensorProduct.inductionOn with
+      | tmul s b => simp [Algebra.TensorProduct.algebraMap_apply]
+      | add x y hx hy => simp only [map_add, hx, hy]
+    have hR (y : S ⊗[R] B) :
+        mulLeft (Algebra.TensorProduct.map (AlgHom.id R S)
+          ((mulLeft : S ⊗[R] B →ₐ[S] B).restrictScalars R)
+          (Algebra.TensorProduct.map (AlgHom.id R S) Algebra.TensorProduct.includeRight y)) =
+          mulLeft y := by
+      induction y using TensorProduct.inductionOn with
+      | tmul s b => simp
+      | add x y hx hy => simp only [map_add, hx, hy]
     have h := congr(mulLeft (Algebra.TensorProduct.map (AlgHom.id R S)
       (mulLeft.restrictScalars R) $(E.coassoc a)))
-    rw [mulLeft_map_mulLeft_map, mulLeft_map_mulLeft_map_includeRight] at h
+    rw [hθ, hR] at h
     simpa [hc] using h
   obtain ⟨a, rfl⟩ := hsurj b
   simpa [hc] using hidem a
