@@ -33,6 +33,8 @@ Along a ring isomorphism `φ : R ≃+* R'` the base change morphism is an isomor
 
 * `WeierstrassCurve.projModelBaseChange W f`: the morphism `projModel (W.map f) ⟶ projModel W`
   induced by extending coefficients along `f`.
+* `WeierstrassCurve.projModelOverBaseChangeIso W f`: the isomorphism in `Over (Spec R')` between
+  `Over.mk (W.map f).projModelOver` and the base change of `Over.mk W.projModelOver` along `Spec f`.
 * `WeierstrassCurve.projModelMapIso W φ`: for a ring isomorphism `φ : R ≃+* R'`, the base change
   morphism along `φ` as an isomorphism `projModel (W.map φ) ≅ projModel W`.
 
@@ -88,7 +90,7 @@ which push a point of a chart of `projModel (W.map f)` through the base change m
 
 public section
 
-open CategoryTheory AlgebraicGeometry HomogeneousLocalization MvPolynomial
+open CategoryTheory Limits AlgebraicGeometry HomogeneousLocalization MvPolynomial
 
 universe u
 
@@ -246,6 +248,33 @@ theorem projModelBaseChange_projModelOver :
     W.projModelBaseChange f ≫ W.projModelOver =
       (W.map f).projModelOver ≫ Spec.map (CommRingCat.ofHom f) :=
   (W.isPullback_projModelBaseChange f).w
+
+/-- The projective model of `W.map f` over `Spec R'` is the base change of the projective model of
+`W` along `Spec f : Spec R' ⟶ Spec R`: the isomorphism in `Over (Spec R')` between
+`Over.mk (W.map f).projModelOver` and the image of `Over.mk W.projModelOver` under the pullback
+functor along `Spec f`, given by the base change square `isPullback_projModelBaseChange`. -/
+noncomputable def projModelOverBaseChangeIso :
+    Over.mk (W.map f).projModelOver ≅
+      (Over.pullback (Spec.map (CommRingCat.ofHom f))).obj (Over.mk W.projModelOver) :=
+  Over.isoMk (W.isPullback_projModelBaseChange f).isoPullback (by simp)
+
+/-- The first component of the base change isomorphism is the base change morphism
+`projModel (W.map f) ⟶ projModel W`. -/
+@[reassoc (attr := simp)]
+theorem projModelOverBaseChangeIso_hom_left_fst :
+    (W.projModelOverBaseChangeIso f).hom.left ≫
+        pullback.fst W.projModelOver (Spec.map (CommRingCat.ofHom f)) =
+      W.projModelBaseChange f := by
+  simp [projModelOverBaseChangeIso]
+
+/-- The second component of the base change isomorphism is the structure morphism of
+`projModel (W.map f)`. -/
+@[reassoc (attr := simp)]
+theorem projModelOverBaseChangeIso_hom_left_snd :
+    (W.projModelOverBaseChangeIso f).hom.left ≫
+        pullback.snd W.projModelOver (Spec.map (CommRingCat.ofHom f)) =
+      (W.map f).projModelOver := by
+  simp [projModelOverBaseChangeIso]
 
 /-! ### The zero section -/
 

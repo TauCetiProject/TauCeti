@@ -25,8 +25,9 @@ by fibre products (`CategoryTheory.Over.lift_left` and its companions).
 
 The monoid object is compatible with base change. For a ring homomorphism `f : R →+* R'`, the
 projective model of `W.map f` over `Spec R'` is isomorphic, as an object of `Over (Spec R')`, to the
-image of `Over.mk W.projModelOver` under the pullback functor along `Spec f`, through the base
-change square `WeierstrassCurve.isPullback_projModelBaseChange`. The pullback functor carries the
+image of `Over.mk W.projModelOver` under the pullback functor along `Spec f`
+(`WeierstrassCurve.projModelOverBaseChangeIso`, from the base change square
+`WeierstrassCurve.isPullback_projModelBaseChange`). The pullback functor carries the
 monoid object of `W` to a monoid object over `Spec R'` (`CategoryTheory.Functor.monObjObj`), and
 the isomorphism is a homomorphism of monoid objects.
 
@@ -34,8 +35,6 @@ the isomorphism is a homomorphism of monoid objects.
 
 * `WeierstrassCurve.monObjProjModelOver`: the monoid object structure on `Over.mk W.projModelOver`,
   with unit the zero section and multiplication the addition morphism.
-* `WeierstrassCurve.projModelOverBaseChangeIso W f`: the isomorphism in `Over (Spec R')` between
-  `Over.mk (W.map f).projModelOver` and the base change of `Over.mk W.projModelOver` along `Spec f`.
 
 ## Main results
 
@@ -153,33 +152,6 @@ section BaseChange
 open scoped CategoryTheory.Obj
 
 variable {R' : Type u} [CommRing R'] (f : R →+* R')
-
-/-- The projective model of `W.map f` over `Spec R'` is the base change of the projective model of
-`W` along `Spec f : Spec R' ⟶ Spec R`: the isomorphism in `Over (Spec R')` between
-`Over.mk (W.map f).projModelOver` and the image of `Over.mk W.projModelOver` under the pullback
-functor along `Spec f`, given by the base change square `isPullback_projModelBaseChange`. -/
-noncomputable def projModelOverBaseChangeIso :
-    Over.mk (W.map f).projModelOver ≅
-      (Over.pullback (Spec.map (CommRingCat.ofHom f))).obj (Over.mk W.projModelOver) :=
-  Over.isoMk (W.isPullback_projModelBaseChange f).isoPullback (by simp)
-
-/-- The first component of the base change isomorphism is the base change morphism
-`projModel (W.map f) ⟶ projModel W`. -/
-@[reassoc (attr := simp)]
-theorem projModelOverBaseChangeIso_hom_left_fst :
-    (W.projModelOverBaseChangeIso f).hom.left ≫
-        pullback.fst W.projModelOver (Spec.map (CommRingCat.ofHom f)) =
-      W.projModelBaseChange f := by
-  simp [projModelOverBaseChangeIso]
-
-/-- The second component of the base change isomorphism is the structure morphism of
-`projModel (W.map f)`. -/
-@[reassoc (attr := simp)]
-theorem projModelOverBaseChangeIso_hom_left_snd :
-    (W.projModelOverBaseChangeIso f).hom.left ≫
-        pullback.snd W.projModelOver (Spec.map (CommRingCat.ofHom f)) =
-      (W.map f).projModelOver := by
-  simp [projModelOverBaseChangeIso]
 
 /-- **The monoid object commutes with base change.** The base change isomorphism
 `projModelOverBaseChangeIso W f` is a homomorphism from the monoid object of `W.map f` to the
