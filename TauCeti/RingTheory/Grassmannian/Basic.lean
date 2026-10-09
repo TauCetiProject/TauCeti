@@ -51,7 +51,7 @@ variable {P : Type*} [AddCommGroup P] [Module R P] [Module.Finite R P] [Module.P
 
 /-- The kernel of a surjection `φ : M → P` onto a finite projective module `P` of constant rank
 `k`, as a point of `G(k, M; R)`. -/
-@[expose] noncomputable def ofSurjective (φ : M →ₗ[R] P) (hφ : Function.Surjective φ)
+noncomputable def ofSurjective (φ : M →ₗ[R] P) (hφ : Function.Surjective φ)
     (hP : ∀ p, rankAtStalk (R := R) P p = k) : G(k, M; R) where
   toSubmodule := LinearMap.ker φ
   finite_quotient := Module.Finite.equiv (φ.quotKerEquivOfSurjective hφ).symm

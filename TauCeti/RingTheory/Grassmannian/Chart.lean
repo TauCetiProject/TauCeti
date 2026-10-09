@@ -126,14 +126,15 @@ noncomputable def chartEquiv (x : Fin k → M) :
   right_inv φ := by
     ext m : 2
     -- `R^k ≃ M ⧸ ker φ` sends `φ m` to the class of `m`
-    refine (LinearEquiv.symm_apply_eq _).2 ((Submodule.Quotient.eq _).2 (LinearMap.mem_ker.2 ?_))
-    rw [map_sub, TauCeti.leftInverse_fintypeLinearCombination φ.2, sub_self]
+    refine (LinearEquiv.symm_apply_eq _).2 ((Submodule.Quotient.eq _).2 ?_)
+    rw [toSubmodule_ofSurjective, LinearMap.mem_ker, map_sub,
+      TauCeti.leftInverse_fintypeLinearCombination φ.2, sub_self]
 
 @[simp]
 theorem toSubmodule_chartEquiv_symm_apply (x : Fin k → M)
     (φ : {φ : M →ₗ[R] Fin k → R // ∀ i, φ (x i) = Pi.single i 1}) :
     ((chartEquiv R x).symm φ).1.toSubmodule = LinearMap.ker φ.1 :=
-  (rfl)
+  toSubmodule_ofSurjective _ _ _
 
 @[simp]
 theorem chartEquiv_apply_apply_self (x : Fin k → M) (N : chart R x) (i : Fin k) :
@@ -218,7 +219,7 @@ theorem chartBaseChangeEquiv_apply_apply (x : Fin k → M)
 theorem toSubmodule_chartBaseChangeEquiv_symm_apply (x : Fin k → M)
     (ψ : {ψ : M →ₗ[R] Fin k → A // ∀ i, ψ (x i) = Pi.single i 1}) :
     ((chartBaseChangeEquiv R A x).symm ψ).1.toSubmodule = LinearMap.ker (ψ.1.liftBaseChange A) :=
-  (rfl)
+  toSubmodule_ofSurjective _ _ _
 
 /-- The chart points over `A` and `B` attached to `ψ : M → A^k` and to `f ∘ ψ : M → B^k` correspond
 under base change along `f : A → B`. -/
@@ -361,7 +362,7 @@ theorem toSubmodule_chartHomEquiv_apply (x : Fin k → M) {A : Type w} [CommRing
     (chartHomEquiv R x A g).1.toSubmodule =
       LinearMap.ker ((g.toLinearMap.compLeft (Fin k) ∘ₗ
         ChartAlgebra.universalLinearMap R x).liftBaseChange A) :=
-  (rfl)
+  toSubmodule_ofSurjective _ _ _
 
 @[simp]
 theorem chartHomEquiv_symm_apply_universalLinearMap (x : Fin k → M) {A : Type w} [CommRing A]
