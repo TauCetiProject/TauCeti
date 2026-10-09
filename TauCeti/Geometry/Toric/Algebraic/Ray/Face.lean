@@ -29,8 +29,15 @@ a square in `ℝ³`, spanned by `(1, 0, 1)`, `(0, 1, 1)`, `(-1, 0, 1)` and `(0, 
 with four rays, but the cone spanned by two opposite rays is not a face, so its ten faces do not
 exhaust the sixteen subsets of its rays.
 
+Conversely, the cone spanned by the images of some vectors of an integral basis is regular: its
+rays are indexed by those vectors, which are primitive, and the basis extends them.
+
 ## Main declarations
 
+* `TauCeti.Toric.toricRayEquivOfLinearIndependent` and
+  `TauCeti.Toric.apply_mem_iff_toricRayEquivOfLinearIndependent`: the rays of the cone hull of a
+  finite linearly independent family are indexed by the family, each ray containing exactly one
+  of its members.
 * `TauCeti.Toric.exists_face_rays_eq_of_isSimplicial`: any subset of the rays of a simplicial
   cone is exactly the set of rays contained in one of its faces.
 * `TauCeti.Toric.IsRegularCone.faceOrderIso`: the face lattice of a regular cone is the lattice
@@ -40,6 +47,8 @@ exhaust the sixteen subsets of its rays.
   ray alone.
 * `TauCeti.Toric.IsRegularCone.faceOrderIso_symm_apply_toPointedCone`: the face attached to a
   subset of rays is the cone spanned by the corresponding primitive ray generators.
+* `TauCeti.Toric.isRegularCone_hull_image_basis`: the cone spanned by the images of some vectors
+  of an integral basis is regular.
 
 ## References
 
@@ -63,7 +72,10 @@ private theorem exists_faceOrderIsoSet_toricRay_eq_singleton
   simpa only [← Nat.card_coe_set_eq] using
     (finrank_span_face_eq_card_faceOrderIsoSet v hv hcone ρ.1).symm.trans ρ.2
 
-private noncomputable def toricRayEquivOfLinearIndependent
+/-- The rays of the cone hull of a finite linearly independent family `v : ι → V` are indexed by
+`ι`: each ray is spanned by exactly one member of the family. The member attached to a ray is
+characterised by `TauCeti.Toric.apply_mem_iff_toricRayEquivOfLinearIndependent`. -/
+noncomputable def toricRayEquivOfLinearIndependent
     {C : PointedCone ℝ V} {ι : Type*} [Finite ι] (v : ι → V)
     (hv : LinearIndependent ℝ v) (hcone : C = PointedCone.hull ℝ (Set.range v)) :
     ToricRay C ≃ ι := by
@@ -103,6 +115,18 @@ private theorem faceOrderIsoSet_toricRay
   classical
   unfold toricRayEquivOfLinearIndependent
   exact Classical.choose_spec (exists_faceOrderIsoSet_toricRay_eq_singleton v hv hcone ρ)
+
+/-- A member of a finite linearly independent family lies on a ray of the cone it generates
+exactly when it is the member indexing that ray. -/
+theorem apply_mem_iff_toricRayEquivOfLinearIndependent
+    {C : PointedCone ℝ V} {ι : Type*} [Finite ι] (v : ι → V)
+    (hv : LinearIndependent ℝ v) (hcone : C = PointedCone.hull ℝ (Set.range v))
+    (ρ : ToricRay C) (a : ι) :
+    v a ∈ ρ ↔ a = toricRayEquivOfLinearIndependent v hv hcone ρ := by
+  have h := congrArg (a ∈ ·) (faceOrderIsoSet_toricRay v hv hcone ρ)
+  simp only [PointedCone.faceOrderIsoSet_apply, Set.mem_ofPred_eq, Set.mem_singleton_iff,
+    eq_iff_iff] at h
+  exact h
 
 /-- The real dimension of a face of a simplicial cone is its number of rays. -/
 theorem finrank_span_face_eq_card_rays_of_isSimplicial (hσ : σ.IsSimplicial) (F : σ.Face) :
@@ -228,5 +252,38 @@ theorem finrank_span_face_eq_card_rays (F : σ.Face) :
   exact Nat.card_congr e
 
 end IsRegularCone
+
+/-! ### Cones spanned by part of an integral basis -/
+
+/-- The cone spanned by the images of some vectors of an integral basis is regular, the basis
+extending its primitive ray generators. The cones of the standard fans, such as the coordinate
+cones of affine space and the cones of projective space, are of this form. -/
+theorem isRegularCone_hull_image_basis (hi : IsIntegralLattice i) {κ : Type*} [Finite κ]
+    (b : Module.Basis κ ℤ N) (A : Set κ) :
+    IsRegularCone i (PointedCone.hull ℝ (i '' (b '' A))) := by
+  classical
+  let _ : Fintype κ := Fintype.ofFinite κ
+  -- The images of the basis vectors form a real basis of `V`.
+  have hB (j : κ) : hi.isBaseChange.basis b j = i (b j) := by
+    simpa using hi.isBaseChange.basis_apply b j
+  let w : A → V := fun a ↦ i (b a)
+  have hw : LinearIndependent ℝ w := by
+    have h := (hi.isBaseChange.basis b).linearIndependent.comp ((↑) : A → κ) Subtype.val_injective
+    simpa only [Function.comp_def, hB] using h
+  have hrange : i '' (b '' A) = Set.range w := by
+    rw [Set.image_image, Set.image_eq_range]
+  have hcone : PointedCone.hull ℝ (i '' (b '' A)) = PointedCone.hull ℝ (Set.range w) := by
+    rw [hrange]
+  have hfin : (b '' A).Finite := A.toFinite.image b
+  let e := toricRayEquivOfLinearIndependent w hw hcone
+  refine ⟨⟨isLatticeRational_iff.2 ⟨hfin.toFinset, by rw [Set.Finite.coe_toFinset]⟩,
+      hcone ▸ PointedCone.salient_hull_range hw⟩, Fintype.card κ,
+    b.reindex (Fintype.equivFin κ),
+    (e.toEmbedding.trans (Function.Embedding.subtype A)).trans (Fintype.equivFin κ).toEmbedding,
+    ⟨fun ρ ↦ ?_⟩⟩
+  simp only [Function.Embedding.trans_apply, Equiv.coe_toEmbedding, Module.Basis.reindex_apply,
+    Equiv.symm_apply_apply]
+  exact isPrimitiveGenerator_iff.2
+    ⟨(apply_mem_iff_toricRayEquivOfLinearIndependent w hw hcone ρ (e ρ)).2 rfl, b.isPrimitive _⟩
 
 end TauCeti.Toric
