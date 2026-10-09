@@ -52,10 +52,8 @@ variable (G M : Type*) [MulOneClass G] [Finite G] [CommRing M] [IsDomain M]
 
 /-- A finite monoid has only finitely many homomorphisms into a domain: they are linearly
 independent in the finite free module `G → M`. -/
-instance finite_monoidHom : Finite (G →* M) := by
-  have := Fintype.ofFinite G
-  exact Cardinal.lt_aleph0_iff_finite.mp
-    ((linearIndependent_monoidHom G M).lt_aleph0_of_finite)
+instance finite_monoidHom : Finite (G →* M) :=
+  (linearIndependent_monoidHom G M).finite
 
 /-- **Dedekind's bound.** A finite monoid `G` has at most `#G` homomorphisms into a domain `M`,
 since they are linearly independent in the `M`-module `G → M` of rank `#G`. -/

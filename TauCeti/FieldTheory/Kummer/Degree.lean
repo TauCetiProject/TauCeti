@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Galois.Abelian
 public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 
 import Mathlib.FieldTheory.KummerExtension
+import TauCeti.RingTheory.RootsOfUnity.PowFiber
 import TauCeti.FieldTheory.Kummer.Extension
 import TauCeti.LinearAlgebra.LinearIndependent.MonoidHom
 
@@ -56,6 +57,9 @@ base field here need not be, so the pairing below takes its values in the top fi
 * `TauCeti.exists_eq_algebraMap_mul_of_pow_eq`: over a domain containing the `n`-th roots of
   unity, two elements of a field extension with the same `n`-th power differ by a factor from the
   base.
+* `AlgEquiv.apply_div_self_eq_of_pow_eq`, `AlgEquiv.apply_div_self_eq_mul_of_pow_eq`,
+  `AlgEquiv.mul_apply_div_self_of_pow_eq`: the Kummer pairing `σ y / y` only depends on `y ^ n`,
+  and it is multiplicative in `y ^ n` and in `σ`.
 
 ## References
 
@@ -77,15 +81,14 @@ variable {K : Type*} [CommRing K] [IsDomain K] {n : ℕ} [NeZero n] [HasEnoughRo
 
 /-- If the domain `K` contains the `n`-th roots of unity, then two elements of a field extension
 of `K` with the same `n`-th power differ by a factor from `K`. -/
-theorem exists_eq_algebraMap_mul_of_pow_eq {x y : F} (hy : y ≠ 0) (h : x ^ n = y ^ n) :
+theorem exists_eq_algebraMap_mul_of_pow_eq {x y : F} (h : x ^ n = y ^ n) :
     ∃ z : K, x = algebraMap K F z * y := by
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot K n
   have hK : (primitiveRoots n K).Nonempty := ⟨ζ, (mem_primitiveRoots (NeZero.pos n)).2 hζ⟩
-  have hxy : (x / y) ^ n = 1 := by rw [div_pow, h, div_self (pow_ne_zero _ hy)]
+  obtain ⟨ξ, rfl⟩ := (pow_eq_pow_iff_exists_rootsOfUnity_smul (NeZero.ne n)).1 h.symm
   refine ⟨(((rootsOfUnityEquivOfPrimitiveRoots (FaithfulSMul.algebraMap_injective K F) hK).symm
-    (rootsOfUnity.mkOfPowEq _ hxy) : Kˣ) : K), ?_⟩
-  rw [rootsOfUnityEquivOfPrimitiveRoots_symm_apply, rootsOfUnity.coe_mkOfPowEq,
-    div_mul_cancel₀ _ hy]
+    ξ : Kˣ) : K), ?_⟩
+  rw [rootsOfUnityEquivOfPrimitiveRoots_symm_apply, rootsOfUnity.smul_eq_mul]
 
 end RootsOfUnity
 
@@ -118,7 +121,8 @@ section Finite
 
 variable [NeZero n]
 
-private theorem ne_zero_of_pow_eq {F : Type*} [Field F] [Algebra K F] {x : F} {a : Kˣ}
+/-- An `n`-th root of a unit of `K` is nonzero. -/
+theorem ne_zero_of_pow_eq_algebraMap {F : Type*} [Field F] [Algebra K F] {x : F} {a : Kˣ}
     (hx : x ^ n = algebraMap K F a) : x ≠ 0 := by
   rintro rfl
   rw [zero_pow (NeZero.ne n), eq_comm, map_eq_zero] at hx
@@ -157,37 +161,44 @@ section Galois
 
 variable [NeZero n] [HasEnoughRootsOfUnity K n] {L : Type*} [Field L] [Algebra K L]
 
-/-- A `K`-automorphism moves an `n`-th root of an element of `K` by a factor from `K`. -/
-private theorem exists_apply_eq_algebraMap_mul (σ : L ≃ₐ[K] L) {y : L} {a : Kˣ}
-    (hy : y ^ n = algebraMap K L a) : ∃ z : K, σ y = algebraMap K L z * y :=
-  exists_eq_algebraMap_mul_of_pow_eq (ne_zero_of_pow_eq hy) (by rw [← map_pow, hy, σ.commutes])
+/-- If `K` contains the `n`-th roots of unity, a `K`-automorphism moves an `n`-th root of a unit
+of `K` by a factor from `K`. -/
+theorem _root_.AlgEquiv.exists_apply_eq_algebraMap_mul_of_pow_eq (σ : L ≃ₐ[K] L) {y : L}
+    {a : Kˣ} (hy : y ^ n = algebraMap K L a) : ∃ z : K, σ y = algebraMap K L z * y :=
+  exists_eq_algebraMap_mul_of_pow_eq (by rw [← map_pow, hy, σ.commutes])
 
-/-- The Kummer pairing `σ y / y` only depends on `y ^ n`. -/
-private theorem apply_div_self_eq_of_pow_eq (σ : L ≃ₐ[K] L) {y y' : L} {a : Kˣ}
+/-- If `K` contains the `n`-th roots of unity, the Kummer pairing `σ y / y` of a `K`-automorphism
+`σ` with an `n`-th root `y` of a unit of `K` only depends on `y ^ n`. -/
+theorem _root_.AlgEquiv.apply_div_self_eq_of_pow_eq (σ : L ≃ₐ[K] L) {y y' : L} {a : Kˣ}
     (hy : y ^ n = algebraMap K L a) (h : y' ^ n = y ^ n) : σ y' / y' = σ y / y := by
-  obtain ⟨z, rfl⟩ := exists_eq_algebraMap_mul_of_pow_eq (K := K) (ne_zero_of_pow_eq hy) h
-  have hz : algebraMap K L z ≠ 0 := left_ne_zero_of_mul (ne_zero_of_pow_eq (h.trans hy))
+  obtain ⟨z, rfl⟩ := exists_eq_algebraMap_mul_of_pow_eq (K := K) h
+  have hz : algebraMap K L z ≠ 0 :=
+    left_ne_zero_of_mul (ne_zero_of_pow_eq_algebraMap (h.trans hy))
   rw [map_mul, AlgEquiv.commutes, mul_div_mul_left _ _ hz]
 
-/-- The Kummer pairing `σ y / y` is trivial when `y ^ n` is an `n`-th power in `K`. -/
-private theorem apply_div_self_eq_one_of_pow_eq (σ : L ≃ₐ[K] L) {y : L} {c : Kˣ}
+/-- If `K` contains the `n`-th roots of unity, the Kummer pairing `σ y / y` is trivial when `y ^ n`
+is the `n`-th power of a unit of `K`. -/
+theorem _root_.AlgEquiv.apply_div_self_eq_one_of_pow_eq (σ : L ≃ₐ[K] L) {y : L} {c : Kˣ}
     (hy : y ^ n = algebraMap K L ((c : K) ^ n)) : σ y / y = 1 := by
-  rw [apply_div_self_eq_of_pow_eq (n := n) σ (y := algebraMap K L c) (a := c ^ n) (by simp)
+  rw [σ.apply_div_self_eq_of_pow_eq (n := n) (y := algebraMap K L c) (a := c ^ n) (by simp)
     (by rw [hy, map_pow]), AlgEquiv.commutes, div_self (by simp)]
 
-/-- The Kummer pairing `σ y / y` is multiplicative in `y ^ n`. -/
-private theorem apply_div_self_eq_mul_of_pow_eq (σ : L ≃ₐ[K] L) {y y' w : L} {a b : Kˣ}
+/-- If `K` contains the `n`-th roots of unity, the Kummer pairing `σ y / y` is multiplicative in
+`y ^ n`: it takes the same value at a root `w` of `a * b` as the product of its values at roots of
+`a` and of `b`. -/
+theorem _root_.AlgEquiv.apply_div_self_eq_mul_of_pow_eq (σ : L ≃ₐ[K] L) {y y' w : L} {a b : Kˣ}
     (hy : y ^ n = algebraMap K L a) (hy' : y' ^ n = algebraMap K L b)
     (hw : w ^ n = algebraMap K L (a * b : Kˣ)) : σ w / w = σ y / y * (σ y' / y') := by
-  rw [apply_div_self_eq_of_pow_eq (n := n) σ (y := y * y') (a := a * b)
+  rw [σ.apply_div_self_eq_of_pow_eq (n := n) (y := y * y') (a := a * b)
     (by simp [mul_pow, hy, hy']) (by simp [mul_pow, hy, hy', hw]), map_mul, mul_div_mul_comm]
 
-/-- The Kummer pairing `σ y / y` is multiplicative in `σ`. -/
-private theorem mul_apply_div_self (σ τ : L ≃ₐ[K] L) {y : L} {a : Kˣ}
+/-- If `K` contains the `n`-th roots of unity, the Kummer pairing `σ y / y` at an `n`-th root `y`
+of a unit of `K` is multiplicative in `σ`. -/
+theorem _root_.AlgEquiv.mul_apply_div_self_of_pow_eq (σ τ : L ≃ₐ[K] L) {y : L} {a : Kˣ}
     (hy : y ^ n = algebraMap K L a) : (σ * τ) y / y = σ y / y * (τ y / y) := by
-  obtain ⟨z, hz⟩ := exists_apply_eq_algebraMap_mul τ hy
+  obtain ⟨z, hz⟩ := τ.exists_apply_eq_algebraMap_mul_of_pow_eq hy
   rw [AlgEquiv.mul_apply, hz, map_mul, AlgEquiv.commutes,
-    mul_div_cancel_right₀ _ (ne_zero_of_pow_eq hy), mul_div_assoc, mul_comm]
+    mul_div_cancel_right₀ _ (ne_zero_of_pow_eq_algebraMap hy), mul_div_assoc, mul_comm]
 
 /-- **`K(Δ^{1/n})/K` is an abelian Galois extension** when `K` contains the `n`-th roots of unity.
 Each generator is a root of a separable binomial `Xⁿ - a` that splits in `K(Δ^{1/n})`, and each
@@ -217,8 +228,8 @@ instance isAbelianGalois_kummerField : IsAbelianGalois K (kummerField E n Δ) :=
   -- Two automorphisms commute on each generator, since both move it by a constant factor.
   have hcomm (σ τ : M ≃ₐ[K] M) (y : M) {a : Kˣ} (hy : y ^ n = algebraMap K M a) :
       (σ * τ) y = (τ * σ) y := by
-    obtain ⟨z, hz⟩ := exists_apply_eq_algebraMap_mul σ hy
-    obtain ⟨w, hw⟩ := exists_apply_eq_algebraMap_mul τ hy
+    obtain ⟨z, hz⟩ := σ.exists_apply_eq_algebraMap_mul_of_pow_eq hy
+    obtain ⟨w, hw⟩ := τ.exists_apply_eq_algebraMap_mul_of_pow_eq hy
     simp only [AlgEquiv.mul_apply, hz, hw, map_mul, AlgEquiv.commutes]
     ring
   exact { is_comm := ⟨fun σ τ ↦ AlgEquiv.coe_toAlgHom_injective <|
@@ -234,9 +245,9 @@ private theorem algEquiv_ext_of_apply_div_self_eq {r : Δ → kummerField E n Δ
   have hy : (⟨x, mem_kummerField_of_pow_eq ha hx⟩ : kummerField E n Δ) ^ n = algebraMap K _ a :=
     Subtype.ext (by simpa using hx)
   have hpow := hy.trans (hr ⟨a, ha⟩).symm
-  have hσ := apply_div_self_eq_of_pow_eq σ (hr ⟨a, ha⟩) hpow
-  have hτ := apply_div_self_eq_of_pow_eq τ (hr ⟨a, ha⟩) hpow
-  rw [h, ← hτ, div_left_inj' (ne_zero_of_pow_eq hy)] at hσ
+  have hσ := σ.apply_div_self_eq_of_pow_eq (hr ⟨a, ha⟩) hpow
+  have hτ := τ.apply_div_self_eq_of_pow_eq (hr ⟨a, ha⟩) hpow
+  rw [h, ← hτ, div_left_inj' (ne_zero_of_pow_eq_algebraMap hy)] at hσ
   exact hσ
 
 /-- **The Galois group of `K(Δ^{1/n})/K` embeds in the characters of `Δ` modulo `n`-th powers**,
@@ -251,11 +262,11 @@ private theorem natCard_algEquiv_kummerField_le
   let χ (σ : kummerField E n Δ ≃ₐ[K] _) : Δ ⧸ P.subgroupOf Δ →* kummerField E n Δ :=
     QuotientGroup.lift _
       { toFun a := σ (r a) / r a
-        map_one' := apply_div_self_eq_one_of_pow_eq (n := n) σ (c := 1) (by simp [hr])
-        map_mul' a b := apply_div_self_eq_mul_of_pow_eq σ (hr a) (hr b) (hr (a * b)) }
+        map_one' := σ.apply_div_self_eq_one_of_pow_eq (n := n) (c := 1) (by simp [hr])
+        map_mul' a b := σ.apply_div_self_eq_mul_of_pow_eq (hr a) (hr b) (hr (a * b)) }
       fun a ha ↦ by
         obtain ⟨c, hc⟩ := Subgroup.mem_subgroupOf.1 ha
-        exact apply_div_self_eq_one_of_pow_eq (n := n) σ (c := c) (by simp [hr, ← hc])
+        exact σ.apply_div_self_eq_one_of_pow_eq (n := n) (c := c) (by simp [hr, ← hc])
   have hχ : Function.Injective χ := fun σ τ h ↦ algEquiv_ext_of_apply_div_self_eq hr
     fun a ↦ DFunLike.congr_fun h (QuotientGroup.mk a)
   exact (Nat.card_le_card_of_injective χ hχ).trans (natCard_monoidHom_le _ _)
@@ -268,22 +279,22 @@ private theorem relIndex_le_natCard_algEquiv_kummerField
     (powMonoidHom n : Kˣ →* Kˣ).range.relIndex Δ ≤
       Nat.card (kummerField E n Δ ≃ₐ[K] kummerField E n Δ) := by
   set P := (powMonoidHom n : Kˣ →* Kˣ).range
-  have hr0 (a : Δ) : r a ≠ 0 := ne_zero_of_pow_eq (hr a)
+  have hr0 (a : Δ) : r a ≠ 0 := ne_zero_of_pow_eq_algebraMap (hr a)
   have hmul (σ : kummerField E n Δ ≃ₐ[K] _) (a b : Δ) :
       σ (r (a * b)) / r (a * b) = σ (r a) / r a * (σ (r b) / r b) :=
-    apply_div_self_eq_mul_of_pow_eq σ (hr a) (hr b) (hr (a * b))
+    σ.apply_div_self_eq_mul_of_pow_eq (hr a) (hr b) (hr (a * b))
   let ψ : Δ ⧸ P.subgroupOf Δ →* ((kummerField E n Δ ≃ₐ[K] _) →* kummerField E n Δ) :=
     QuotientGroup.lift _
       { toFun a :=
           { toFun σ := σ (r a) / r a
             map_one' := by simp [hr0 a]
-            map_mul' σ τ := mul_apply_div_self σ τ (hr a) }
+            map_mul' σ τ := σ.mul_apply_div_self_of_pow_eq τ (hr a) }
         map_one' := MonoidHom.ext fun σ ↦
-          apply_div_self_eq_one_of_pow_eq (n := n) σ (c := 1) (by simp [hr])
+          σ.apply_div_self_eq_one_of_pow_eq (n := n) (c := 1) (by simp [hr])
         map_mul' a b := MonoidHom.ext fun σ ↦ hmul σ a b }
       fun a ha ↦ MonoidHom.ext fun σ ↦ by
         obtain ⟨c, hc⟩ := Subgroup.mem_subgroupOf.1 ha
-        exact apply_div_self_eq_one_of_pow_eq (n := n) σ (c := c) (by simp [hr, ← hc])
+        exact σ.apply_div_self_eq_one_of_pow_eq (n := n) (c := c) (by simp [hr, ← hc])
   -- If `a ∈ Δ` pairs trivially with every automorphism, its root `r a` is fixed by the Galois
   -- group, hence lies in `K`, and `a` is an `n`-th power.
   have hψ : Function.Injective ψ := by
@@ -294,7 +305,7 @@ private theorem relIndex_le_natCard_algEquiv_kummerField
     have hfix (σ : kummerField E n Δ ≃ₐ[K] _) : σ (r (a⁻¹ * b)) = r (a⁻¹ * b) := by
       have h' : σ (r a) / r a = σ (r b) / r b := DFunLike.congr_fun h σ
       rw [← div_eq_one_iff_eq (hr0 _), hmul, ← h', ← hmul, inv_mul_cancel,
-        apply_div_self_eq_one_of_pow_eq (n := n) σ (c := 1) (by simp [hr])]
+        σ.apply_div_self_eq_one_of_pow_eq (n := n) (c := 1) (by simp [hr])]
     obtain ⟨c, hc⟩ := (IsGalois.mem_range_algebraMap_iff_fixed _).2 hfix
     have hc0 : c ≠ 0 := by rintro rfl; exact hr0 _ (by rw [← hc, map_zero])
     refine ⟨Units.mk0 c hc0, Units.ext ((algebraMap K (kummerField E n Δ)).injective ?_)⟩
