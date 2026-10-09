@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Basic
 public import TauCeti.Topology.Homotopy.Cube.Basic
-public import TauCeti.Topology.PiCurry
 
 /-!
 # The exact homotopy sequence of a based pair
