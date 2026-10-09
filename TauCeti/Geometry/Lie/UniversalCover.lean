@@ -58,9 +58,9 @@ variable (I G) in
 universal covering group and the Lie algebra of the base group. -/
 noncomputable def lieEquivProjHom :
     LeftInvariantDerivation I (UniversalCover (1 : G)) ≃ₗ⁅ℝ⁆ LeftInvariantDerivation I G :=
-  LieEquiv.ofBijective
-    (lieMap ((projHom : UniversalCover (1 : G) →ₜ* G).toContMDiffMonoidMorphism I I))
-    (lieMap_projHom_bijective I G)
+  Lie.lieEquivOfIsLocalDiffeomorphAt
+    ((projHom : UniversalCover (1 : G) →ₜ* G).toContMDiffMonoidMorphism I I) <| by
+      simpa using isLocalDiffeomorph_proj (I := I) (n := ∞) (1 : G) 1
 
 /-- The Lie-algebra equivalence induced by the universal covering projection acts by the Lie
 functor. -/
