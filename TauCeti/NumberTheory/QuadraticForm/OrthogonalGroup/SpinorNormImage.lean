@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.CompactOpen
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.LowRank
-import Mathlib.NumberTheory.Padics.LocalField
+public import TauCeti.NumberTheory.LocalField.Padic
 import TauCeti.Algebra.Group.PowMonoidHom
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Open
 
