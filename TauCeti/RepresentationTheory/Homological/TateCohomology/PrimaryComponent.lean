@@ -15,18 +15,18 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restrictio
 Let `G` be a finite group and `A` a representation of `G` over a commutative ring `k`.
 
 **`p`-primary Tate cohomology sees only `p`.** If multiplication by a natural number `p` is
-bijective on `A`, it induces a bijection of every `Ĥⁿ(G, A)`, by functoriality, so the `p`-primary
+bijective on `A`, it induces a bijection of every `Ĥⁿ(G, A)`, by functoriality, so the `p`-primary
 component `TauCeti.pPowerTorsion p k (tateCohomology A n)` of every Tate cohomology group of `A` is
 trivial (`TauCeti.TateCohomology.pPowerTorsion_tateCohomology_eq_bot`). Applied to the restriction
 of `A` to a subgroup `S`, on which multiplication by `p` is the same map, this is the vanishing of
-the `p`-primary component of `Ĥⁿ(S, A)` for every subgroup `S` and every `n ∈ ℤ`.
+the `p`-primary component of `Ĥⁿ(S, A)` for every subgroup `S` and every `n ∈ ℤ`.
 
 With the long exact sequence, the `p`-primary components of Tate cohomology are therefore
 unchanged along a short exact sequence `0 → X₁ → X₂ → X₃ → 0` one of whose outer terms has
 bijective multiplication by a prime `p`. If `p` is bijective on `X₁`, the map
-`Ĥⁿ(G, X₂) → Ĥⁿ(G, X₃)` is a bijection of `p`-primary components
+`Ĥⁿ(G, X₂) → Ĥⁿ(G, X₃)` is a bijection of `p`-primary components
 (`TauCeti.TateCohomology.bijOn_pPowerTorsion_map_g`); if it is bijective on `X₃`, so is
-`Ĥⁿ(G, X₁) → Ĥⁿ(G, X₂)` (`TauCeti.TateCohomology.bijOn_pPowerTorsion_map_f`). The torsion
+`Ĥⁿ(G, X₁) → Ĥⁿ(G, X₂)` (`TauCeti.TateCohomology.bijOn_pPowerTorsion_map_f`). The torsion
 argument is `TauCeti.injOn_pPowerTorsion_of_exact` and `TauCeti.surjOn_pPowerTorsion_of_exact`,
 which use that all the groups involved are killed by `|G|`
 (`TauCeti.TateCohomology.natCard_nsmul_eq_zero`).
@@ -87,7 +87,7 @@ variable {S : ShortComplex (Rep k G)} (hS : S.ShortExact) {p : ℕ} [Fact p.Prim
 include hS
 
 /-- Along a short exact sequence `0 → X₁ → X₂ → X₃ → 0` on whose first term multiplication by a
-prime `p` is bijective, the map `Ĥⁿ(G, X₂) → Ĥⁿ(G, X₃)` is a bijection of `p`-primary
+prime `p` is bijective, the map `Ĥⁿ(G, X₂) → Ĥⁿ(G, X₃)` is a bijection of `p`-primary
 components. -/
 theorem bijOn_pPowerTorsion_map_g (hp : Function.Bijective fun a : S.X₁.V ↦ p • a) (n : ℤ) :
     Set.BijOn ((tateCohomologyFunctor n).map S.g) (pPowerTorsion p k (tateCohomology S.X₂ n))
@@ -106,7 +106,7 @@ theorem bijOn_pPowerTorsion_map_g (hp : Function.Bijective fun a : S.X₁.V ↦ 
       natCard_nsmul_eq_zero (pPowerTorsion_tateCohomology_eq_bot hp (n + 1))
 
 /-- Along a short exact sequence `0 → X₁ → X₂ → X₃ → 0` on whose last term multiplication by a
-prime `p` is bijective, the map `Ĥⁿ(G, X₁) → Ĥⁿ(G, X₂)` is a bijection of `p`-primary
+prime `p` is bijective, the map `Ĥⁿ(G, X₁) → Ĥⁿ(G, X₂)` is a bijection of `p`-primary
 components. -/
 theorem bijOn_pPowerTorsion_map_f (hp : Function.Bijective fun a : S.X₃.V ↦ p • a) (n : ℤ) :
     Set.BijOn ((tateCohomologyFunctor n).map S.f) (pPowerTorsion p k (tateCohomology S.X₁ n))
