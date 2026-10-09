@@ -7,8 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Transvection
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Projection
-public import TauCeti.Topology.Algebra.QuadraticForm.Transvection
+import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Projection
+import TauCeti.Topology.Algebra.QuadraticForm.Transvection
 
 /-!
 # Continuity and noncompactness of Spin transvection lifts

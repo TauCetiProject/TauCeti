@@ -36,9 +36,9 @@ orthogonal group is witnessed by the split torus instead
 
 * `QuadraticMap.continuous_transvection` proves continuity for families in both parameters.
 * `QuadraticMap.continuous_transvectionHom` proves continuity of the quotient homomorphism.
-* `QuadraticMap.tendsto_transvection_smul_cocompact`: the family `t ↦ E_{u,t w}` leaves every
-  compact set of linear automorphisms when `w ∉ K ∙ u`.
-* `QuadraticMap.tendsto_transvectionHom_smul_cocompact`: the same for the root-subgroup
+* `QuadraticMap.tendsto_transvection_smul_cobounded_cocompact`: the family `t ↦ E_{u,t w}`
+  leaves every compact set of linear automorphisms when `w ∉ K ∙ u`.
+* `QuadraticMap.tendsto_transvectionHom_smul_cobounded_cocompact`: the same for the root-subgroup
   homomorphism along a nonzero parameter class.
 * `QuadraticMap.isCompact_range_transvectionHom_iff`: the root subgroup is compact exactly when its
   parameter space is trivial.
@@ -138,7 +138,7 @@ and a vector `w` orthogonal to `u` but not a multiple of it, the Eichler transve
 eventually leave every compact set of linear automorphisms as `t` tends to infinity in `K`.
 The field is nontrivially normed so that `cobounded K` is a nontrivial filter: over a trivially
 normed field it is `⊥` and the statement would hold vacuously. -/
-theorem tendsto_transvection_smul_cocompact (hu : Q u = 0) (huw : polar Q u w = 0)
+theorem tendsto_transvection_smul_cobounded_cocompact (hu : Q u = 0) (huw : polar Q u w = 0)
     (hpolar : Q.polarBilin u ≠ 0) (hw : w ∉ K ∙ u) :
     Tendsto (fun t : K ↦ transvection Q hu (w := t • w)
         (by rw [polar_smul_right, huw, smul_zero]))
@@ -166,7 +166,8 @@ theorem tendsto_transvection_smul_cocompact (hu : Q u = 0) (huw : polar Q u w = 
 /-- **Eichler root subgroups are unbounded.** Along a nonzero class `q` in the parameter space
 `u^⊥ / K ∙ u` of an isotropic vector outside the polar radical, the Eichler transvections
 `t ↦ E_{u, t q}` eventually leave every compact subset of the special orthogonal group. -/
-theorem tendsto_transvectionHom_smul_cocompact (hu : Q u = 0) (hpolar : Q.polarBilin u ≠ 0)
+theorem tendsto_transvectionHom_smul_cobounded_cocompact (hu : Q u = 0)
+    (hpolar : Q.polarBilin u ≠ 0)
     {q : LinearMap.ker (Q.polarBilin u) ⧸
       (K ∙ u).comap (LinearMap.ker (Q.polarBilin u)).subtype} (hq : q ≠ 0) :
     Tendsto (fun t : K ↦ transvectionHom Q hu (t • q)) (cobounded K)
@@ -180,7 +181,7 @@ theorem tendsto_transvectionHom_smul_cocompact (hu : Q u = 0) (hpolar : Q.polarB
     ((Additive.toMul g : specialOrthogonalGroup Q) : V ≃ₗ[K] V)
   have hι : Continuous ι := continuous_subtype_val.comp continuous_toMul
   refine (tendsto_comap_iff.mpr ?_).mono_right (comap_cocompact_le hι)
-  refine (tendsto_transvection_smul_cocompact hu huw hpolar hwu).congr fun t ↦ ?_
+  refine (tendsto_transvection_smul_cobounded_cocompact hu huw hpolar hwu).congr fun t ↦ ?_
   rw [Function.comp_apply, ← Submodule.Quotient.mk_smul]
   exact (coe_transvectionHom_mk hu _).symm
 
@@ -197,7 +198,7 @@ theorem isCompact_range_transvectionHom_iff (hu : Q u = 0) (hpolar : Q.polarBili
   obtain ⟨q, hq⟩ := exists_ne (0 : LinearMap.ker (Q.polarBilin u) ⧸
     (K ∙ u).comap (LinearMap.ker (Q.polarBilin u)).subtype)
   obtain ⟨t, ht⟩ :=
-    ((tendsto_transvectionHom_smul_cocompact hu hpolar hq).eventually_mem
+    ((tendsto_transvectionHom_smul_cobounded_cocompact hu hpolar hq).eventually_mem
       hcpt.compl_mem_cocompact).exists
   exact ht ⟨t • q, rfl⟩
 
