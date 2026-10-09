@@ -142,37 +142,6 @@ theorem genus_le_finrank_sub_one_mul_finrank_sub_two_div_two (hF : IsFunctionFie
 
 /-! ### Plane models -/
 
-/-- Over a field with more than `n` elements, the leading form `φ_n` of a nonzero polynomial `φ`
-of total degree `n` satisfies `φ_n(c, 1) ≠ 0` for some `c`. -/
-private theorem exists_sum_coeff_mul_pow_ne_zero {φ : MvPolynomial (Fin 2) k} (hφ : φ ≠ 0)
-    (hcard : (φ.totalDegree : ℕ∞) < ENat.card k) :
-    ∃ c : k, ∑ s ∈ φ.support with s 0 + s 1 = φ.totalDegree, φ.coeff s * c ^ s 0 ≠ 0 := by
-  classical
-  set n := φ.totalDegree
-  -- The dehomogenized leading form `φ_n(X, 1)`.
-  let g : k[X] := ∑ s ∈ φ.support with s 0 + s 1 = n, Polynomial.C (φ.coeff s) * Polynomial.X ^ s 0
-  have hdeg : g.natDegree ≤ n := Polynomial.natDegree_sum_le_of_forall_le _ _ fun s hs ↦
-    (Polynomial.natDegree_C_mul_X_pow_le _ _).trans (by have := (Finset.mem_filter.1 hs).2; omega)
-  -- A monomial `s₀` of top degree contributes the coefficient of `X ^ s₀ 0` alone.
-  obtain ⟨s₀, hs₀, hs₀n⟩ := MvPolynomial.exists_mem_support_add_eq_totalDegree hφ
-  have hs₀S : s₀ ∈ φ.support.filter fun s ↦ s 0 + s 1 = n := Finset.mem_filter.2 ⟨hs₀, hs₀n⟩
-  have hg : g ≠ 0 := by
-    intro h0
-    have := congrArg (Polynomial.coeff · (s₀ 0)) h0
-    simp only [g, Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul_X_pow,
-      Polynomial.coeff_zero] at this
-    rw [Finset.sum_eq_single s₀ (fun s hs hne ↦ ite_eq_right_iff.mpr fun h ↦ (hne ?_).elim)
-      (fun h ↦ (h hs₀S).elim)] at this
-    · simp only [↓reduceIte] at this
-      exact (MvPolynomial.mem_support_iff.mp hs₀) this
-    · have h1 := (Finset.mem_filter.1 hs).2
-      have h2 := (Finset.mem_filter.1 hs₀S).2
-      ext i
-      fin_cases i <;> simp <;> omega
-  obtain ⟨c, hc⟩ := g.exists_eval_ne_zero_of_natDegree_lt_card hg
-    (lt_of_le_of_lt (Nat.cast_le.mpr hdeg) (Cardinal.natCast_lt_toENat.mp hcard))
-  exact ⟨c, by simpa [g, Polynomial.eval_finsetSum] using hc⟩
-
 /-- **The poles of `y` are bounded by those of `x - c y`.**  If `φ(x, y) = 0` and the leading form
 of `φ` does not vanish at `(c, 1)`, then `v_P(y) ≤ max 1 v_P(x - c y)` at every place `P`. -/
 private theorem valuation_le_max_one_valuation_sub (P : Place k F) {φ : MvPolynomial (Fin 2) k}
@@ -241,52 +210,12 @@ private theorem valuation_le_max_one_valuation_sub (P : Place k F) {φ : MvPolyn
     Valuation.IsTrivialOn.eq_one _ hc] at hlt1
   exact lt_irrefl _ hlt1
 
-/-- If `φ(u + c y, y) = 0` and the leading form of `φ` does not vanish at `(c, 1)`, then `y` has
-degree at most `deg φ` over `k(u)`: it is a root of `φ(u + c Y, Y)`, whose coefficient of `Y ^ n`
-is `φ_n(c, 1)`. -/
-private theorem natDegree_minpoly_le_totalDegree {φ : MvPolynomial (Fin 2) k} {u y : F} {c : k}
-    (hφ : MvPolynomial.aeval ![u + algebraMap k F c * y, y] φ = 0)
-    (hc : ∑ s ∈ φ.support with s 0 + s 1 = φ.totalDegree, φ.coeff s * c ^ s 0 ≠ 0) :
-    (minpoly k⟮u⟯ y).natDegree ≤ φ.totalDegree := by
-  classical
-  set n := φ.totalDegree
-  let L : k⟮u⟯[X] := Polynomial.C (algebraMap k k⟮u⟯ c) * Polynomial.X +
-    Polynomial.C (IntermediateField.AdjoinSimple.gen k u)
-  let ψ : k⟮u⟯[X] := ∑ s ∈ φ.support,
-    Polynomial.C (algebraMap k k⟮u⟯ (φ.coeff s)) * (L ^ s 0 * Polynomial.X ^ s 1)
-  have hL : L.natDegree ≤ 1 := Polynomial.natDegree_linear_le
-  have hterm : ∀ s : Fin 2 →₀ ℕ, (L ^ s 0 * Polynomial.X ^ s 1).natDegree ≤ s 0 + s 1 :=
-    fun s ↦ Polynomial.natDegree_mul_le.trans (add_le_add
-      ((Polynomial.natDegree_pow_le_of_le _ hL).trans (by rw [mul_one]))
-      (Polynomial.natDegree_X_pow_le _))
-  have hψdeg : ψ.natDegree ≤ n := Polynomial.natDegree_sum_le_of_forall_le _ _ fun s hs ↦
-    (Polynomial.natDegree_C_mul_le _ _).trans
-      ((hterm s).trans (MvPolynomial.add_le_totalDegree_of_mem_support hs))
-  have hcoeff : ψ.coeff n =
-      algebraMap k k⟮u⟯ (∑ s ∈ φ.support with s 0 + s 1 = n, φ.coeff s * c ^ s 0) := by
-    rw [Polynomial.finsetSum_coeff, map_sum, Finset.sum_filter]
-    refine Finset.sum_congr rfl fun s hs ↦ ?_
-    rw [Polynomial.coeff_C_mul]
-    split_ifs with hsn
-    · have hpow := Polynomial.coeff_pow_of_natDegree_le (m := s 0) hL
-      rw [mul_one] at hpow
-      rw [← hsn, Polynomial.coeff_mul_X_pow, hpow]
-      simp [L]
-    · rw [Polynomial.coeff_eq_zero_of_natDegree_lt ((hterm s).trans_lt
-        (lt_of_le_of_ne (MvPolynomial.add_le_totalDegree_of_mem_support hs) hsn)), mul_zero]
-  have hψ0 : ψ ≠ 0 := fun h ↦ hc <| (algebraMap k k⟮u⟯).injective <| by
-    rw [← hcoeff, h, Polynomial.coeff_zero, map_zero]
-  have hψy : Polynomial.aeval y ψ = 0 := by
-    rw [← hφ, MvPolynomial.aeval_fin_two_eq_sum]
-    simp [ψ, L, ← IsScalarTower.algebraMap_apply, add_comm]
-  exact (Polynomial.natDegree_le_natDegree (minpoly.degree_le_of_ne_zero _ y hψ0 hψy)).trans hψdeg
-
 /-- The plane-model bound over a constant field with more than `deg φ` elements. -/
 private theorem genus_le_of_lt_card (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
     {x y : F} (hxy : k⟮x, y⟯ = ⊤) {φ : MvPolynomial (Fin 2) k} (hφ : φ ≠ 0)
     (hφxy : MvPolynomial.aeval ![x, y] φ = 0) (hcard : (φ.totalDegree : ℕ∞) < ENat.card k) :
     genus k F ≤ (φ.totalDegree - 1) * (φ.totalDegree - 2) / 2 := by
-  obtain ⟨c, hc⟩ := exists_sum_coeff_mul_pow_ne_zero hφ hcard
+  obtain ⟨c, hc⟩ := MvPolynomial.exists_sum_coeff_mul_pow_ne_zero hφ hcard
   set u := x - algebraMap k F c * y with hu_def
   have hx : x = u + algebraMap k F c * y := by rw [hu_def]; ring
   have hval : ∀ P : Place k F, P.valuation y ≤ max 1 (P.valuation u) := fun P ↦
@@ -328,7 +257,10 @@ private theorem genus_le_of_lt_card (hF : IsFunctionField k F) (hex : IsIntegral
       IntermediateField.restrictScalars_injective k <| by
         rw [IntermediateField.adjoin_simple_adjoin_simple, huy,
           IntermediateField.restrictScalars_top]]
-    exact natDegree_minpoly_le_totalDegree (hx ▸ hφxy) hc
+    refine MvPolynomial.natDegree_minpoly_le_totalDegree
+      (u := IntermediateField.AdjoinSimple.gen k u) ?_ hc
+    rw [IntermediateField.AdjoinSimple.algebraMap_gen, ← hx]
+    exact hφxy
   have h := genus_le_finrank_sub_one_mul_finrank_sub_two_div_two hF hex (u := Units.mk0 u hu0) hu hy
     huy
   rw [Units.val_mk0] at h
