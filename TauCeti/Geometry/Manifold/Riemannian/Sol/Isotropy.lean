@@ -35,18 +35,17 @@ open scoped ContDiff Manifold
 
 namespace TauCeti.Sol
 
-private def reflectionL : (ℝ × ℝ × ℝ) →L[ℝ] ℝ × ℝ × ℝ :=
-  (ContinuousLinearMap.fst ℝ ℝ (ℝ × ℝ)).prod
-    ((-(ContinuousLinearMap.fst ℝ ℝ ℝ)).prod (ContinuousLinearMap.snd ℝ ℝ ℝ) |>.comp
-      (ContinuousLinearMap.snd ℝ ℝ (ℝ × ℝ)))
+private def reflectionL : (ℝ × ℝ × ℝ) ≃L[ℝ] ℝ × ℝ × ℝ :=
+  (ContinuousLinearEquiv.refl ℝ ℝ).prodCongr
+    ((ContinuousLinearEquiv.neg ℝ).prodCongr (ContinuousLinearEquiv.refl ℝ ℝ))
 
 private theorem reflectionL_apply (v : ℝ × ℝ × ℝ) :
     reflectionL v = (v.1, -v.2.1, v.2.2) := rfl
 
-private def axisSwapL : (ℝ × ℝ × ℝ) →L[ℝ] ℝ × ℝ × ℝ :=
-  ((ContinuousLinearMap.fst ℝ ℝ ℝ).comp (ContinuousLinearMap.snd ℝ ℝ (ℝ × ℝ))).prod
-    ((ContinuousLinearMap.fst ℝ ℝ (ℝ × ℝ)).prod
-      (-((ContinuousLinearMap.snd ℝ ℝ ℝ).comp (ContinuousLinearMap.snd ℝ ℝ (ℝ × ℝ)))))
+private def axisSwapL : (ℝ × ℝ × ℝ) ≃L[ℝ] ℝ × ℝ × ℝ :=
+  (ContinuousLinearEquiv.prodAssoc ℝ ℝ ℝ ℝ).symm.trans
+    (((ContinuousLinearEquiv.prodComm ℝ ℝ ℝ).prodCongr
+      (ContinuousLinearEquiv.neg ℝ)).trans (ContinuousLinearEquiv.prodAssoc ℝ ℝ ℝ ℝ))
 
 private theorem axisSwapL_apply (v : ℝ × ℝ × ℝ) :
     axisSwapL v = (v.2.1, v.1, -v.2.2) := rfl
@@ -111,9 +110,12 @@ private def isometryOfInvolution (L : (ℝ × ℝ × ℝ) →L[ℝ] ℝ × ℝ �
 
 /-- Reflection in the `xz`-plane, as a Riemannian isometry of Sol. -/
 def reflection : Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Sol :=
-  isometryOfInvolution reflectionL
-    (fun v => by simp [reflectionL_apply])
-    (fun p v w => by simp only [reflectionL_apply]; ring)
+  isometryOfInvolution reflectionL.toContinuousLinearMap
+    (fun v => by
+      simpa only [ContinuousLinearEquiv.coe_coe, reflectionL,
+        ContinuousLinearEquiv.prodCongr_symm, ContinuousLinearEquiv.refl_symm,
+        ContinuousLinearEquiv.symm_neg] using reflectionL.symm_apply_apply v)
+    (fun p v w => by simp only [ContinuousLinearEquiv.coe_coe, reflectionL_apply]; ring)
 
 /-- Reflection negates the `y` coordinate and preserves the other two coordinates. -/
 @[simp] theorem reflection_apply (p : Sol) : reflection p = mk p.x (-p.y) p.z := by
@@ -126,9 +128,14 @@ def reflection : Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Sol :=
 /-- Interchange the horizontal coordinates and reverse the height, as a Riemannian
 isometry of Sol. -/
 def axisSwap : Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Sol :=
-  isometryOfInvolution axisSwapL
-    (fun v => by simp [axisSwapL_apply])
-    (fun p v w => by simp only [axisSwapL_apply]; ring_nf)
+  isometryOfInvolution axisSwapL.toContinuousLinearMap
+    (fun v => by
+      simpa only [ContinuousLinearEquiv.coe_coe, axisSwapL,
+        ContinuousLinearEquiv.symm_trans_apply, ContinuousLinearEquiv.trans_apply,
+        ContinuousLinearEquiv.prodCongr_symm, ContinuousLinearEquiv.prodComm_symm,
+        ContinuousLinearEquiv.symm_neg, ContinuousLinearEquiv.symm_symm] using
+          axisSwapL.symm_apply_apply v)
+    (fun p v w => by simp only [ContinuousLinearEquiv.coe_coe, axisSwapL_apply]; ring_nf)
 
 /-- The horizontal interchange is accompanied by reversal of the height. -/
 @[simp] theorem axisSwap_apply (p : Sol) : axisSwap p = mk p.y p.x (-p.z) := by
