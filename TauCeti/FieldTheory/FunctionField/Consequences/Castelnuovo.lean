@@ -47,8 +47,6 @@ consists of elements of `F₂`.
 
 ## Main results
 
-* `TauCeti.Place.linearIndependent_of_ord_neg_of_restrict_eq`: functions of `F` with a pole at
-  one place over `P₁` each, and regular at the others, are linearly independent over `F₁`.
 * `TauCeti.genus_le_finrank_mul_genus_add_finrank_mul_genus_add_of_isSplitCompletely`:
   **Castelnuovo's inequality** `g ≤ n₁ g₁ + n₂ g₂ + (n₁ - 1) (n₂ - 1)`, from a place of `F₁`
   splitting completely in `F` with distinct rational restrictions to `F₂`.
@@ -68,103 +66,10 @@ namespace TauCeti
 
 open AlgebraicGeometry
 
-namespace Place
-
-variable {k F₁ F : Type*} [Field k] [Field F₁] [Field F]
-variable [Algebra k F₁] [Algebra k F] [Algebra F₁ F] [IsScalarTower k F₁ F]
-variable [Algebra.IsIntegral F₁ F]
-
-/-- The order of `c • z` at a place `P` of `F` over the place `P₁` of `F₁`, for `c ∈ F₁`. -/
-private theorem ord_smul_of_restrict_eq {P₁ : Place k F₁} {P : Place k F}
-    (hP : P.restrict k F₁ = P₁) {c : F₁} (hc : c ≠ 0) {z : F} (hz : z ≠ 0) :
-    P.ord (c • z) = ramificationIdx F₁ P * P₁.ord c + P.ord z := by
-  rw [Algebra.smul_def, P.ord_mul ((map_ne_zero _).mpr hc) hz, ord_algebraMap_restrict k F₁ P c,
-    hP]
-
-/-- **Poles at the places over a place give independence over the subfield.** Let `P i` be places
-of `F` over one place `P₁` of `F₁`, and let `z i ∈ F` be regular at `P j` for `j ≠ i`. If `z i`
-has a pole at `P i` for every `i ≠ i₀`, and `z i₀` is a nonzero function without zero at `P i₀`,
-then the `z i` are linearly independent over `F₁`. -/
-theorem linearIndependent_of_ord_neg_of_restrict_eq {ι : Type*} [Finite ι] {P₁ : Place k F₁}
-    {P : ι → Place k F} (hP : ∀ i, (P i).restrict k F₁ = P₁) {z : ι → F} {i₀ : ι}
-    (hz₀ : z i₀ ≠ 0) (hord₀ : (P i₀).ord (z i₀) ≤ 0) (hpole : ∀ i, i ≠ i₀ → (P i).ord (z i) < 0)
-    (hreg : ∀ i j, i ≠ j → 0 ≤ (P i).ord (z j)) :
-    LinearIndependent F₁ z := by
-  classical
-  have := Fintype.ofFinite ι
-  have hz : ∀ i, z i ≠ 0 := fun i ↦ by
-    rcases eq_or_ne i i₀ with rfl | hi
-    · exact hz₀
-    · rintro h
-      have := hpole i hi
-      rw [h, ord_zero] at this
-      exact this.false
-  rw [Fintype.linearIndependent_iff]
-  intro c hc
-  by_contra! hne
-  obtain ⟨i₁, hi₁⟩ := hne
-  -- A coefficient of least order at `P₁`.
-  obtain ⟨m, hmS, hmin⟩ := Finset.exists_min_image (Finset.univ.filter fun i ↦ c i ≠ 0)
-    (fun i ↦ P₁.ord (c i)) ⟨i₁, by simpa using hi₁⟩
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hmS hmin
-  -- The index at whose place the sum is tested: a minimizer other than `i₀` if there is one.
-  obtain ⟨j, hcj, hjmin, hlt⟩ : ∃ j, c j ≠ 0 ∧ P₁.ord (c j) = P₁.ord (c m) ∧
-      ∀ i, i ≠ j → c i ≠ 0 →
-        (P j).ord (c j • z j) < (P j).ord (c i • z i) := by
-    by_cases hA : ∃ j, j ≠ i₀ ∧ c j ≠ 0 ∧ P₁.ord (c j) = P₁.ord (c m)
-    · obtain ⟨j, hji₀, hcj, hjm⟩ := hA
-      refine ⟨j, hcj, hjm, fun i hij hci ↦ ?_⟩
-      rw [ord_smul_of_restrict_eq (hP j) hcj (hz j), ord_smul_of_restrict_eq (hP j) hci (hz i)]
-      have he : (0 : ℤ) ≤ ramificationIdx F₁ (P j) := by positivity
-      have := mul_le_mul_of_nonneg_left (hjm ▸ hmin i hci) he
-      linarith [hpole j hji₀, hreg j i (Ne.symm hij)]
-    · push Not at hA
-      have hm : m = i₀ := by
-        by_contra h
-        exact hA m h hmS rfl
-      subst hm
-      refine ⟨m, hmS, rfl, fun i hij hci ↦ ?_⟩
-      rw [ord_smul_of_restrict_eq (hP m) hmS (hz m), ord_smul_of_restrict_eq (hP m) hci (hz i)]
-      have he : (0 : ℤ) < ramificationIdx F₁ (P m) := by exact_mod_cast ramificationIdx_pos F₁ _
-      have hlt := lt_of_le_of_ne (hmin i hci) (Ne.symm (hA i hij hci))
-      have := mul_lt_mul_of_pos_left hlt he
-      linarith [hreg m i (Ne.symm hij)]
-  -- The summand of index `j` has strictly least order at `P j`, so the sum is nonzero.
-  refine (P j).sum_ne_zero_of_forall_ord_lt (s := Finset.univ.filter fun i ↦ c i ≠ 0)
-    (f := fun i ↦ c i • z i) (by simpa using hcj) (smul_ne_zero hcj (hz j))
-    (fun i hi hij ↦ hlt i hij (by simpa using hi)) ?_
-  rw [Finset.sum_filter_of_ne fun i _ h ↦ left_ne_zero_of_smul h]
-  exact hc
-
-end Place
-
 variable {k F₁ F₂ F : Type*} [Field k] [Field F₁] [Field F₂] [Field F]
 variable [Algebra k F₁] [Algebra k F₂] [Algebra k F] [Algebra F₁ F] [Algebra F₂ F]
 variable [IsScalarTower k F₁ F] [IsScalarTower k F₂ F]
 variable [FiniteDimensional F₁ F] [FiniteDimensional F₂ F]
-
-/-- For an effective divisor `B` of `F₂` with `deg B = g(F₂)` and `ℓ(B) = 1`, and a rational place
-`Q`, some function of `L(B + Q)` has a pole at `Q`: Riemann's theorem gives `ℓ(B + Q) ≥ 2`. -/
-private theorem exists_mem_riemannRochSpace_add_ofPoint_ord_neg (hF₂ : IsFunctionField k F₂)
-    {B : Divisor k F₂} (hB : 0 ≤ B) (hBdeg : Divisor.degree B = genus k F₂)
-    (hBdim : Divisor.dim B = 1) {Q : Place k F₂} (hQ : Q.degree = 1) :
-    ∃ z ∈ riemannRochSpace (B + WeilDivisor.ofPoint Q), Q.ord z < 0 := by
-  have := finiteDimensional_riemannRochSpace hF₂ (B + WeilDivisor.ofPoint Q)
-  have hdim := Divisor.degree_add_one_sub_genus_le_dim hF₂ (B + WeilDivisor.ofPoint Q)
-  rw [Divisor.degree_add, Divisor.degree_ofPoint, hBdeg, hQ] at hdim
-  have hlt : riemannRochSpace B < riemannRochSpace (B + WeilDivisor.ofPoint Q) := by
-    refine Submodule.lt_of_le_of_finrank_lt_finrank (riemannRochSpace_mono ?_) ?_
-    · exact WeilDivisor.le_add_ofPoint B Q
-    · rw [← Divisor.dim_def, ← Divisor.dim_def, hBdim]
-      push_cast at hdim
-      omega
-  obtain ⟨z, hz, hzB⟩ := IsConcreteLE.exists_of_lt hlt
-  refine ⟨z, hz, ?_⟩
-  have h := Divisor.ord_eq_neg_coeff_of_not_mem_sub_ofPoint hz (by rwa [add_sub_cancel_right])
-  rw [h, WeilDivisor.coeff_add, WeilDivisor.coeff_ofPoint_self]
-  have := WeilDivisor.coeff_le_coeff hB Q
-  rw [WeilDivisor.coeff_zero] at this
-  omega
 
 /-- **Castelnuovo's inequality** (Stichtenoth, Theorem 3.11.3), from a split place. Let `F / k`
 have exact constants and let `F₁`, `F₂` be subfields of `F` containing `k` over which `F` is
@@ -209,7 +114,7 @@ theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add_of_isSplitCompletel
   obtain ⟨P₀, hP₀⟩ : S.Nonempty := Finset.card_pos.mp (hScard ▸ Module.finrank_pos)
   -- At every rational place `Q` of `F₂`, a function `w Q ∈ L(B + Q)` with a pole at `Q`.
   choose! w hwL hwpole using fun (Q : Place k F₂) (hQ : Q.degree = 1) ↦
-    exists_mem_riemannRochSpace_add_ofPoint_ord_neg hF₂ hB0 hBdeg hBdim hQ
+    Divisor.exists_mem_riemannRochSpace_add_ofPoint_ord_neg hF₂ hB0 hBdeg hBdim hQ
   -- The basis: `1` at `P₀`, and `w` of the restriction at the other places over `P₁`.
   let u : S → F₂ := fun P ↦ if (P : Place k F) = P₀ then 1 else w ((P : Place k F).restrict k F₂)
   have hli : LinearIndependent F₁ fun P : S ↦ algebraMap F₂ F (u P) := by
