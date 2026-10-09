@@ -94,6 +94,7 @@ private theorem factorThru_apply_eq (y : G) :
   rfl
 
 /-- Under a norm bound, the factor sends `A x` to `T x`. -/
+@[simp]
 theorem factorThru_apply_apply (h : ∃ C, ∀ x, ‖T x‖ ≤ C * ‖A x‖) (x : E) :
     T.factorThru A (A x) = T x := by
   rw [factorThru_apply_eq, orthogonalProjectionOnto_apply_apply]
@@ -105,6 +106,7 @@ theorem factorThru_comp (h : ∃ C, ∀ x, ‖T x‖ ≤ C * ‖A x‖) : T.fact
   exact factorThru_apply_apply h x
 
 /-- The factor vanishes on the orthogonal complement of the range of `A`. -/
+@[simp]
 theorem factorThru_apply_of_mem_orthogonal {y : G} (hy : y ∈ A.rangeᗮ) :
     T.factorThru A y = 0 := by
   rw [factorThru_apply_eq, Submodule.orthogonalProjectionOnto_eq_zero_iff.2
@@ -165,7 +167,8 @@ back to `A`. -/
 theorem adjoint_factorThru_comp (h : ∀ x, ‖T x‖ = ‖A x‖) : (T.factorThru A)† ∘L T = A := by
   -- The extension of `A x ↦ T x` from the range of `A` to its closure is a linear isometry.
   let V := (T : E →ₗ[𝕜] F).extendOfIsometry (denseRange_toClosureRange A) h
-  have hV (k) : (T : E →ₗ[𝕜] F).extendOfNorm (toClosureRange A) k = V k := rfl
+  have hV (k) : (T : E →ₗ[𝕜] F).extendOfNorm (toClosureRange A) k = V k :=
+    (LinearMap.extendOfIsometry_apply (T : E →ₗ[𝕜] F) (denseRange_toClosureRange A) h k).symm
   have hTx (x : E) : T x = V (toClosureRange A x) :=
     (LinearMap.extendOfIsometry_eq (T : E →ₗ[𝕜] F) (denseRange_toClosureRange A) h x).symm
   ext x
@@ -183,7 +186,8 @@ variable {𝕜 E F G : Type*} [RCLike 𝕜]
   [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] [CompleteSpace G]
 
 /-- Two bounded operators with a common source have equal Gram operators exactly when they have
-equal pointwise norms. -/
+equal pointwise norms. The proof follows Mathlib's
+`ContinuousLinearMap.isStarNormal_iff_norm_eq_adjoint`. -/
 theorem adjoint_comp_self_eq_adjoint_comp_self_iff {T : E →L[𝕜] F} {A : E →L[𝕜] G} :
     A† ∘L A = T† ∘L T ↔ ∀ x, ‖A x‖ = ‖T x‖ := by
   have hsymm : ((A† ∘L A - T† ∘L T : E →L[𝕜] E) : E →ₗ[𝕜] E).IsSymmetric :=
