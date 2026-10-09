@@ -12,7 +12,6 @@ public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 
 import TauCeti.RingTheory.Huber.Normed
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
-import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
 # A sheafy Tate ring that is not uniform
@@ -30,10 +29,12 @@ is strongly noetherian and sheafy, but it is not uniform. Over a field and with 
 
 Strong noetherianness and sheafiness hold because the ideal `(Xᵢ²)` is closed, as is every ideal
 of `A⟨X₁, …, Xₖ⟩`, so the quotient is again a complete Hausdorff strongly noetherian Tate ring and
-Wedhorn's Theorem 8.28(b) applies to it. Uniformity fails because the class of `Xᵢ` is a nonzero
-nilpotent, while a Hausdorff uniform Tate ring is reduced (`TauCeti.Huber.IsUniform.isReduced`):
-every rescaling `ϖ⁻ⁿ Xᵢ` is nilpotent, hence power-bounded, so the power-bounded elements are
-unbounded.
+Wedhorn's Theorem 8.28(b) applies to it. Uniformity fails because the class of `Xᵢ` is
+nilpotent, while in a uniform Tate ring every nilpotent lies in the closure of zero
+(`TauCeti.Huber.IsUniform.nilradical_le_closure_bot`): every rescaling `ϖ⁻ⁿ Xᵢ` is nilpotent,
+hence power-bounded. But the coefficient of the monomial `Xᵢ` is continuous and vanishes on
+`(Xᵢ²)`, so `Xᵢ` is not in the closure of `(Xᵢ²)`. This part needs only that `A` is a nonzero
+Hausdorff Tate ring.
 
 The example shows that the uniformity hypothesis of the Buzzard–Verberkmoes criterion is
 sufficient but not necessary for sheafiness.
@@ -43,8 +44,8 @@ sufficient but not necessary for sheafiness.
 * `TauCeti.Huber.isStronglyNoetherian_quotient_span_weightedX_sq`: `A⟨X⟩ ⧸ (Xᵢ²)` is strongly
   noetherian.
 * `TauCeti.Huber.isSheafyRing_quotient_span_weightedX_sq`: `A⟨X⟩ ⧸ (Xᵢ²)` is sheafy.
-* `TauCeti.Huber.not_isUniform_quotient_span_weightedX_sq`: `A⟨X⟩ ⧸ (Xᵢ²)` is not uniform when
-  `A` is nonzero.
+* `TauCeti.Huber.not_isUniform_quotient_span_weightedX_sq`: `A⟨X⟩ ⧸ (Xᵢ²)` is not uniform for
+  every nonzero Hausdorff Tate ring `A`.
 
 ## References
 
@@ -58,24 +59,7 @@ public section
 
 namespace TauCeti.Huber
 
-section Nonzero
-
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A] [Nontrivial A]
-  {k : ℕ}
-
-/-- Over a nonzero ring, `Xᵢ` is not a multiple of `Xᵢ²` in `A⟨X₁, …, Xₖ⟩`: every multiple of
-`Xᵢ²` has zero coefficient at the monomial `Xᵢ`. -/
-private theorem weightedX_notMem_span_weightedX_sq (i : Fin k) :
-    weightedX (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight i ∉
-      Ideal.span {weightedX (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight i ^ 2} := by
-  intro h
-  obtain ⟨f, hf⟩ := Ideal.mem_span_singleton'.mp h
-  have := congrArg (fun g : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
-    isWeightFamily_one_weight ↦ MvPowerSeries.coeff (Finsupp.single i 1)
-      (g : MvPowerSeries (Fin k) A)) hf
-  simp [coe_weightedX, MvPowerSeries.X_pow_eq, MvPowerSeries.coeff_mul_monomial] at this
-
-end Nonzero
+section Sheafy
 
 variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
   [IsTateRing A] [IsStronglyNoetherian A] [CompleteSpace A] [T0Space A] {k : ℕ}
@@ -104,22 +88,47 @@ theorem isSheafyRing_quotient_span_weightedX_sq (i : Fin k) :
   isSheafyRing_quotient_of_isStronglyNoetherian _
     (Ideal.isClosed_weightedRestrictedSubring_one_weight _)
 
-/-- **`A⟨X₁, …, Xₖ⟩ ⧸ (Xᵢ²)` is not uniform** over a nonzero complete Hausdorff strongly
-noetherian Tate ring `A`. The quotient is a Hausdorff Tate ring in which the class of `Xᵢ` is a
-nonzero nilpotent, and a Hausdorff uniform Tate ring is reduced. -/
+end Sheafy
+
+section NonUniform
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
+  [T0Space A] {k : ℕ}
+
+/-- Every element of `closure (Xᵢ²)` in `A⟨X₁, …, Xₖ⟩` has zero coefficient at the monomial
+`Xᵢ`: every multiple of `Xᵢ²` does, and that coefficient is continuous with closed zero set. -/
+private theorem coeff_single_eq_zero_of_mem_closure_span_weightedX_sq (i : Fin k)
+    {f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight}
+    (hf : f ∈ closure (Ideal.span
+      {weightedX (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight i ^ 2} : Set _)) :
+    MvPowerSeries.coeff (Finsupp.single i 1) (f : MvPowerSeries (Fin k) A) = 0 := by
+  refine closure_minimal (fun g hg ↦ ?_) (isClosed_singleton.preimage
+    (continuous_coeff_one_weight (Finsupp.single i 1))) hf
+  obtain ⟨g, rfl⟩ := Ideal.mem_span_singleton'.mp hg
+  simp [coe_weightedX, MvPowerSeries.X_pow_eq, MvPowerSeries.coeff_mul_monomial]
+
+/-- **`A⟨X₁, …, Xₖ⟩ ⧸ (Xᵢ²)` is not uniform** over a nonzero Hausdorff Tate ring `A`. The class
+of `Xᵢ` is nilpotent, so in a uniform Tate ring it would lie in the closure of zero; but every
+element of the closure of `(Xᵢ²)` has zero coefficient at `Xᵢ`. -/
 theorem not_isUniform_quotient_span_weightedX_sq [Nontrivial A] (i : Fin k) :
     ¬ IsUniform (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
       isWeightFamily_one_weight ⧸
         Ideal.span
           {weightedX (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight i ^ 2}) := by
   intro h
-  have _ := (Ideal.Quotient.t1Space_iff _).mpr
-    (Ideal.isClosed_weightedRestrictedSubring_one_weight
-      (Ideal.span {weightedX (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight i ^ 2}))
-  refine weightedX_notMem_span_weightedX_sq (A := A) i (Ideal.Quotient.eq_zero_iff_mem.mp ?_)
-  refine h.isReduced.eq_zero _ ⟨2, ?_⟩
-  rw [← map_pow, Ideal.Quotient.eq_zero_iff_mem]
-  exact Ideal.subset_span rfl
+  set J := Ideal.span {weightedX (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight i ^ 2}
+  have hX : Ideal.Quotient.mk J (weightedX _ isWeightFamily_one_weight i) ∈
+      (⊥ : Ideal _).closure := h.nilradical_le_closure_bot (mem_nilradical.mpr ⟨2, by
+    rw [← map_pow (Ideal.Quotient.mk J), Ideal.Quotient.eq_zero_iff_mem]
+    exact Ideal.subset_span rfl⟩)
+  rw [← SetLike.mem_coe, Ideal.coe_closure, Submodule.bot_coe, ← Set.mem_preimage,
+    (QuotientRing.isOpenQuotientMap_mk J).isOpenMap.preimage_closure_eq_closure_preimage
+      continuous_quot_mk] at hX
+  have := coeff_single_eq_zero_of_mem_closure_span_weightedX_sq i
+    (closure_mono (fun _ ↦ Ideal.Quotient.eq_zero_iff_mem.mp) hX)
+  simp [coe_weightedX, MvPowerSeries.coeff_X] at this
+
+end NonUniform
 
 /-! ### The ring `K⟨X, Q⟩ ⧸ (Q²)`
 
