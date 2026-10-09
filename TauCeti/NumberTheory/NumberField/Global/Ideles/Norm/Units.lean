@@ -15,7 +15,8 @@ import Mathlib.Topology.ContinuousMap.Basic
 
 The logarithms of the archimedean absolute values of an everywhere-integral idele are
 well defined modulo the logarithms of global units when one passes to its idele class.
-This gives a continuous map from the trivial ray subgroup to `logSpace K / unitLattice K`.
+This gives a continuous additive homomorphism from the trivial ray subgroup (with its
+additive group structure) to `logSpace K / unitLattice K`.
 Its restriction to norm-one classes is surjective. Consequently compactness of the norm-one
 idele class group implies compactness of the logarithmic unit quotient, the cocompactness
 part of Dirichlet's unit theorem.
@@ -121,52 +122,56 @@ private theorem integralIdeleLog_factorsThrough :
     simpa only [RingHom.toMonoidHom_eq_coe] using ideleLog_unitEmbedding u
   apply QuotientAddGroup.eq.mpr
   -- The quotient equality uses subtraction, while ideles use multiplication and inversion.
-  rw [show -ideleLog (Additive.ofMul x.1) + ideleLog (Additive.ofMul y.1) =
-      ideleLog (Additive.ofMul (x.1⁻¹ * y.1)) by
-        rw [← map_neg, ← map_add]; rfl, hlog]
+  rw [← map_neg, ← map_add, ← ofMul_inv, ← ofMul_mul, hlog]
   exact Submodule.mem_map.mpr ⟨Additive.ofMul u, Submodule.mem_top, rfl⟩
 
-/-- Archimedean logarithms modulo global units on the trivial ray subgroup. This subgroup
-consists of the idele classes admitting an everywhere-integral representative. -/
-def unitLogQuotient :
+private def integralUnitLog :
     C(raySubgroup (Modulus.one K), logSpace K ⧸ (unitLattice K).toAddSubgroup) :=
   integralClassMap_isQuotientMap.lift integralIdeleLog integralIdeleLog_factorsThrough
 
-/-- The logarithmic quotient map evaluated on an everywhere-integral representative. -/
-@[simp]
-theorem unitLogQuotient_mk (x : IdeleGroup (𝓞 K) K)
+private theorem integralUnitLog_mk (x : IdeleGroup (𝓞 K) K)
     (hx : x ∈ ideleCongruenceSubgroup (Modulus.one K)) :
-    unitLogQuotient ⟨(x : IdeleClassGroup (𝓞 K) K), mem_raySubgroup_iff.mpr ⟨x, hx, rfl⟩⟩ =
+    integralUnitLog ⟨(x : IdeleClassGroup (𝓞 K) K), mem_raySubgroup_iff.mpr ⟨x, hx, rfl⟩⟩ =
       QuotientAddGroup.mk (ideleLog (Additive.ofMul x)) := by
   exact ContinuousMap.congr_fun
     (integralClassMap_isQuotientMap.lift_comp integralIdeleLog
       integralIdeleLog_factorsThrough) ⟨x, hx⟩
 
-/-- The identity idele class has zero logarithmic class. -/
-@[simp]
-theorem unitLogQuotient_one : unitLogQuotient (1 : raySubgroup (Modulus.one K)) = 0 := by
-  have h : (⟨((1 : IdeleGroup (𝓞 K) K) : IdeleClassGroup (𝓞 K) K),
-      mem_raySubgroup_iff.mpr ⟨1, one_mem _, rfl⟩⟩ : raySubgroup (Modulus.one K)) = 1 :=
-    Subtype.ext (QuotientGroup.mk_one _)
-  rw [← h]
-  simpa using unitLogQuotient_mk (1 : IdeleGroup (𝓞 K) K) (one_mem _)
+/-- Archimedean logarithms modulo global units on the trivial ray subgroup, viewed additively.
+This subgroup consists of the idele classes admitting an everywhere-integral representative. -/
+def unitLogQuotient :
+    Additive (raySubgroup (Modulus.one K)) →+ logSpace K ⧸ (unitLattice K).toAddSubgroup :=
+  AddMonoidHom.mk' (fun c ↦ integralUnitLog c.toMul) fun c d ↦ by
+    obtain ⟨x, hx⟩ := integralClassMap_isQuotientMap.surjective c.toMul
+    obtain ⟨y, hy⟩ := integralClassMap_isQuotientMap.surjective d.toMul
+    -- Unwrap the additive domain to use the continuous descent on multiplicative classes.
+    change integralUnitLog (c.toMul * d.toMul) =
+      integralUnitLog c.toMul + integralUnitLog d.toMul
+    rw [← hx, ← hy]
+    have hmul : integralClassMap x * integralClassMap y = integralClassMap (x * y) :=
+      Subtype.ext (QuotientGroup.mk_mul _ x.1 y.1).symm
+    rw [hmul]
+    calc
+      _ = QuotientAddGroup.mk (ideleLog (Additive.ofMul (x.1 * y.1))) :=
+        integralUnitLog_mk _ (mul_mem x.2 y.2)
+      _ = _ := by
+        rw [ofMul_mul, map_add, QuotientAddGroup.mk_add]
+        exact congrArg₂ (· + ·) (integralUnitLog_mk x.1 x.2).symm
+          (integralUnitLog_mk y.1 y.2).symm
 
-/-- Multiplication of integral idele classes adds their logarithmic classes. -/
+/-- The logarithmic quotient homomorphism is continuous. -/
+@[fun_prop]
+theorem continuous_unitLogQuotient : Continuous (unitLogQuotient (K := K)) :=
+  integralUnitLog.continuous.comp continuous_toMul
+
+/-- The logarithmic quotient homomorphism evaluated on an everywhere-integral representative. -/
 @[simp]
-theorem unitLogQuotient_mul (c d : raySubgroup (Modulus.one K)) :
-    unitLogQuotient (c * d) = unitLogQuotient c + unitLogQuotient d := by
-  obtain ⟨x, rfl⟩ := integralClassMap_isQuotientMap.surjective c
-  obtain ⟨y, rfl⟩ := integralClassMap_isQuotientMap.surjective d
-  have hmul : integralClassMap x * integralClassMap y = integralClassMap (x * y) :=
-    Subtype.ext (QuotientGroup.mk_mul _ x.1 y.1).symm
-  rw [hmul]
-  calc
-    _ = QuotientAddGroup.mk (ideleLog (Additive.ofMul (x.1 * y.1))) :=
-      unitLogQuotient_mk _ (mul_mem x.2 y.2)
-    _ = _ := by
-      rw [ofMul_mul, map_add, QuotientAddGroup.mk_add]
-      exact congrArg₂ (· + ·) (unitLogQuotient_mk x.1 x.2).symm
-        (unitLogQuotient_mk y.1 y.2).symm
+theorem unitLogQuotient_mk (x : IdeleGroup (𝓞 K) K)
+    (hx : x ∈ ideleCongruenceSubgroup (Modulus.one K)) :
+    unitLogQuotient (Additive.ofMul
+      ⟨(x : IdeleClassGroup (𝓞 K) K), mem_raySubgroup_iff.mpr ⟨x, hx, rfl⟩⟩) =
+      QuotientAddGroup.mk (ideleLog (Additive.ofMul x)) :=
+  integralUnitLog_mk x hx
 
 /-- Every logarithmic vector is realized by an everywhere-integral idele of norm one. -/
 theorem exists_ideleLog_eq_and_norm_eq_one (y : logSpace K) :
@@ -203,19 +208,19 @@ theorem exists_ideleLog_eq_and_norm_eq_one (y : logSpace K) :
 
 /-- The logarithmic quotient map remains surjective on norm-one classes in the trivial
 ray subgroup. -/
-theorem unitLogQuotient_normOne_surjective :
-    Function.Surjective (fun c : {c : raySubgroup (Modulus.one K) |
-        c.1 ∈ IdeleClassGroup.normOne K} ↦ unitLogQuotient c.1) := by
-  intro z
+theorem unitLogQuotient_normOne_surjective
+    (z : logSpace K ⧸ (unitLattice K).toAddSubgroup) :
+    ∃ c : raySubgroup (Modulus.one K), c.1 ∈ IdeleClassGroup.normOne K ∧
+      unitLogQuotient (Additive.ofMul c) = z := by
   obtain ⟨y, rfl⟩ := QuotientAddGroup.mk_surjective z
   obtain ⟨x, hx, hnorm, hlog⟩ := exists_ideleLog_eq_and_norm_eq_one y
-  refine ⟨⟨⟨(x : IdeleClassGroup (𝓞 K) K), mem_raySubgroup_iff.mpr ⟨x, hx, rfl⟩⟩,
-    IdeleClassGroup.mk_mem_normOne_iff.mpr hnorm⟩, ?_⟩
+  refine ⟨⟨(x : IdeleClassGroup (𝓞 K) K), mem_raySubgroup_iff.mpr ⟨x, hx, rfl⟩⟩,
+    IdeleClassGroup.mk_mem_normOne_iff.mpr hnorm, ?_⟩
   exact (unitLogQuotient_mk x hx).trans (congrArg QuotientAddGroup.mk hlog)
 
-/-- Compactness of the norm-one idele class group implies compactness of the logarithmic
-unit quotient, expressed in Mathlib's coordinates for the trace-zero hyperplane. -/
-theorem compactSpace_unitLogQuotient :
+/-- The quotient of `logSpace K` by the unit lattice is compact: the logarithmic unit
+lattice is cocompact in Mathlib's coordinates omitting the distinguished infinite place. -/
+instance compactSpace_logSpace_quotient_unitLattice :
     CompactSpace (logSpace K ⧸ (unitLattice K).toAddSubgroup) := by
   let S : Set (raySubgroup (Modulus.one K)) :=
     {c | c.1 ∈ IdeleClassGroup.normOne K}
@@ -230,7 +235,11 @@ theorem compactSpace_unitLogQuotient :
     exact ⟨fun ⟨a, ha, hac⟩ ↦ hac ▸ ⟨a.2, ha⟩,
       fun ⟨hc₁, hc₂⟩ ↦ ⟨⟨c, hc₁⟩, hc₂, rfl⟩⟩
   let : CompactSpace S := isCompact_iff_compactSpace.mp hS
-  exact unitLogQuotient_normOne_surjective.compactSpace
-    (unitLogQuotient.continuous.comp continuous_subtype_val)
+  have hs : Function.Surjective (fun c : S ↦ unitLogQuotient (Additive.ofMul c.1)) := by
+    intro z
+    obtain ⟨c, hc, hlog⟩ := unitLogQuotient_normOne_surjective z
+    exact ⟨⟨c, hc⟩, hlog⟩
+  exact hs.compactSpace
+    (continuous_unitLogQuotient.comp (continuous_ofMul.comp continuous_subtype_val))
 
 end TauCeti.GlobalNumberFields
