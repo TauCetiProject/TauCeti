@@ -70,29 +70,29 @@ theorem le_of_mem_unstableSet_of_antitone (hy : y ∈ φ.unstableSet x) (hg : Co
   simpa only [map_zero_apply] using hanti.ge_of_tendsto (hg.tendsto.comp (mem_unstableSet.1 hy)) 0
 
 /-- **A strict maximum is a fixed point.** A strict global maximum of a function antitone along
-every orbit is fixed by the flow. -/
-theorem fixed_of_antitone_of_strictMax (hanti : ∀ y, Antitone fun t ↦ g (φ t y))
+its orbit is fixed by the flow. -/
+theorem fixed_of_antitone_of_strictMax (hanti : Antitone fun t ↦ g (φ t x))
     (hmax : ∀ y, y ≠ x → g y < g x) (t : ℝ) : φ t x = x := by
   -- In backward time the orbit cannot go below the maximum, and in forward time it is the inverse
   -- of a backward orbit.
   have hneg : ∀ s ≤ 0, φ s x = x := fun s hs ↦ by
     by_contra hne
-    have h : g x ≤ g (φ s x) := by simpa only [map_zero_apply] using hanti x hs
+    have h : g x ≤ g (φ s x) := by simpa only [map_zero_apply] using hanti hs
     exact (hmax _ hne).not_ge h
   rcases le_total t 0 with ht | ht
   · exact hneg t ht
   · calc φ t x = φ t (φ (-t) x) := by rw [hneg (-t) (neg_nonpos.2 ht)]
       _ = x := by rw [← map_add, add_neg_cancel, map_zero_apply]
 
-/-- Reversing the flow and negating the function preserves antitonicity along orbits. -/
-private theorem antitone_reverse_neg (hanti : ∀ y, Antitone fun t ↦ g (φ t y)) (y : α) :
+/-- Reversing the flow and negating the function preserves antitonicity along an orbit. -/
+private theorem antitone_reverse_neg (hanti : Antitone fun t ↦ g (φ t y)) :
     Antitone fun t ↦ (-g) (φ.reverse t y) := fun s t hst ↦ by
   simp only [reverse_apply, Pi.neg_apply]
-  exact neg_le_neg (hanti y (neg_le_neg hst))
+  exact neg_le_neg (hanti (neg_le_neg hst))
 
 /-- **A strict minimum is a fixed point.** A strict global minimum of a function antitone along
-every orbit is fixed by the flow. -/
-theorem fixed_of_antitone_of_strictMin (hanti : ∀ y, Antitone fun t ↦ g (φ t y))
+its orbit is fixed by the flow. -/
+theorem fixed_of_antitone_of_strictMin (hanti : Antitone fun t ↦ g (φ t x))
     (hmin : ∀ y, y ≠ x → g x < g y) (t : ℝ) : φ t x = x := by
   have h := fixed_of_antitone_of_strictMax (antitone_reverse_neg hanti)
     (fun y hy ↦ neg_lt_neg (hmin y hy)) (-t)
@@ -104,7 +104,7 @@ to `x` in forward time. -/
 theorem stableSet_eq_singleton_of_antitone (hg : ContinuousAt g x)
     (hanti : ∀ y, Antitone fun t ↦ g (φ t y)) (hmax : ∀ y, y ≠ x → g y < g x) :
     φ.stableSet x = {x} := by
-  have hx := fixed_of_antitone_of_strictMax hanti hmax
+  have hx := fixed_of_antitone_of_strictMax (hanti x) hmax
   refine eq_singleton_iff_unique_mem.2 ⟨mem_stableSet.2 ?_, fun y hy ↦ ?_⟩
   · simpa only [hx] using tendsto_const_nhds
   · by_contra hyx
@@ -117,7 +117,7 @@ theorem unstableSet_eq_singleton_of_antitone (hg : ContinuousAt g x)
     (hanti : ∀ y, Antitone fun t ↦ g (φ t y)) (hmin : ∀ y, y ≠ x → g x < g y) :
     φ.unstableSet x = {x} := by
   rw [← stableSet_reverse]
-  exact stableSet_eq_singleton_of_antitone hg.neg (antitone_reverse_neg hanti)
+  exact stableSet_eq_singleton_of_antitone hg.neg (fun y ↦ antitone_reverse_neg (hanti y))
     fun y hy ↦ neg_lt_neg (hmin y hy)
 
 end Limit
