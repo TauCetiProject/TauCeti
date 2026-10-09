@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
 public import TauCeti.Analysis.GradientFlow.Slope
+public import TauCeti.Data.EReal.Operations
 public import TauCeti.MeasureTheory.Function.MetricDerivative
 
 /-!
@@ -101,12 +102,6 @@ theorem IsStrongUpperGradient.mono (hg : IsStrongUpperGradient φ g) (hgg' : ∀
   (hg hγ).trans <| add_le_add_right (EReal.coe_ennreal_le_coe_ennreal_iff.2 <|
     lintegral_mono fun _ ↦ mul_le_mul_left (hgg' _) _) _
 
-/-- For a finite `I : ℝ≥0∞`, the inequality `x ≤ y + I` between extended reals is the
-corresponding inequality between reals. -/
-private lemma coe_le_coe_add_coe_iff {x y : ℝ} {I : ℝ≥0∞} (hI : I ≠ ∞) :
-    (x : EReal) ≤ y + I ↔ x ≤ y + I.toReal := by
-  rw [← EReal.coe_ennreal_toReal hI, ← EReal.coe_add, EReal.coe_le_coe_iff]
-
 /-- For a real function `f` with strong upper gradient `g` and a curve `γ` absolutely continuous on
 `[a, b]`, `|f (γ a) - f (γ b)| ≤ ∫⁻ r in Ι a b, g (γ r) * |γ'|(r)`. -/
 theorem IsStrongUpperGradient.edist_le_lintegral {f : X → ℝ}
@@ -115,9 +110,9 @@ theorem IsStrongUpperGradient.edist_le_lintegral {f : X → ℝ}
     edist (f (γ a)) (f (γ b)) ≤ ∫⁻ r in Ι a b, g (γ r) * metricDerivative γ r := by
   rcases eq_or_ne (∫⁻ r in Ι a b, g (γ r) * metricDerivative γ r) ∞ with hI | hI
   · exact hI ▸ le_top
-  have h₁ := (coe_le_coe_add_coe_iff hI).1 (hg hγ)
+  have h₁ := (EReal.coe_le_coe_add_coe_ennreal_iff hI).1 (hg hγ)
   have h₂ := hg hγ.symm
-  rw [uIoc_comm, coe_le_coe_add_coe_iff hI] at h₂
+  rw [uIoc_comm, EReal.coe_le_coe_add_coe_ennreal_iff hI] at h₂
   rw [edist_dist, Real.dist_eq, ← ENNReal.ofReal_toReal hI]
   exact ENNReal.ofReal_le_ofReal (abs_sub_le_iff.2 ⟨by linarith, by linarith⟩)
 
@@ -134,39 +129,9 @@ theorem IsStrongUpperGradient.absolutelyContinuousOnInterval_comp {f : X → ℝ
 
 end PseudoMetricSpace
 
-section MetricSpace
+section EMetricSpace
 
-variable {X : Type*} [MetricSpace X]
-
-/-- The norm of the derivative of a real function `g` at `t` is at most the upper limit of its
-rates of decrease `(g t - g u)⁺ / |u - t|`: approaching `t` from the right gives `(-g'(t))⁺` and
-from the left `g'(t)⁺`. -/
-private lemma enorm_le_limsup_ofReal_sub_div_edist {g : ℝ → ℝ} {t D : ℝ} (hD : HasDerivAt g D t) :
-    ‖D‖ₑ ≤ limsup (fun u ↦ ENNReal.ofReal (g t - g u) / edist u t) (𝓝[≠] t) := by
-  have hslope := hasDerivAt_iff_tendsto_slope.1 hD
-  have hright : Tendsto (fun u ↦ ENNReal.ofReal (g t - g u) / edist u t) (𝓝[>] t)
-      (𝓝 (ENNReal.ofReal (-D))) := by
-    refine ((ENNReal.continuous_ofReal.tendsto _).comp
-      (hslope.mono_left (nhdsWithin_mono _ fun u (hu : t < u) ↦ hu.ne')).neg).congr'
-      (eventually_nhdsWithin_of_forall fun u (hu : t < u) ↦ ?_)
-    dsimp only [Function.comp_apply]
-    rw [edist_dist, Real.dist_eq, abs_of_pos (sub_pos.2 hu),
-      ← ENNReal.ofReal_div_of_pos (sub_pos.2 hu), slope_def_field, ← neg_div, neg_sub]
-  have hleft : Tendsto (fun u ↦ ENNReal.ofReal (g t - g u) / edist u t) (𝓝[<] t)
-      (𝓝 (ENNReal.ofReal D)) := by
-    refine ((ENNReal.continuous_ofReal.tendsto _).comp
-      (hslope.mono_left (nhdsWithin_mono _ fun u (hu : u < t) ↦ hu.ne))).congr'
-      (eventually_nhdsWithin_of_forall fun u (hu : u < t) ↦ ?_)
-    dsimp only [Function.comp_apply]
-    rw [edist_dist, Real.dist_eq, abs_of_neg (sub_neg.2 hu),
-      ← ENNReal.ofReal_div_of_pos (neg_pos.2 (sub_neg.2 hu)), slope_def_field, ← neg_div_neg_eq,
-      neg_sub, neg_sub]
-  rw [Real.enorm_eq_ofReal_abs, abs_eq_max_neg, ENNReal.ofReal_max]
-  refine max_le ?_ ?_
-  · rw [← hleft.limsup_eq]
-    exact limsup_le_limsup_of_le (nhdsWithin_mono _ fun u (hu : u < t) ↦ hu.ne)
-  · rw [← hright.limsup_eq]
-    exact limsup_le_limsup_of_le (nhdsWithin_mono _ fun u (hu : t < u) ↦ hu.ne')
+variable {X : Type*} [EMetricSpace X]
 
 /-- If `γ` is continuous at `t`, the rates of decrease of `f` from `γ t` to `γ u` have upper limit
 at most the descending slope of `f` at `γ t` as `u → t`. -/
@@ -200,23 +165,33 @@ theorem _root_.HasDerivAt.enorm_le_descendingSlope_mul_metricDerivative {f : X �
     exact le_top
   -- The rate of decrease of `f ∘ γ` between `t` and `u` is the rate of decrease of `f` between
   -- `γ t` and `γ u` times the difference quotient of `γ`.
-  have hQ := limsup_ofReal_sub_div_edist_le_descendingSlope (f := f)
-    (continuousAt_of_metricDerivative_ne_top hM)
-  calc ‖D‖ₑ ≤ limsup (fun u ↦ ENNReal.ofReal (f (γ t) - f (γ u)) / edist u t) (𝓝[≠] t) :=
-        by simpa only using enorm_le_limsup_ofReal_sub_div_edist hD
+  have hγ := continuousAt_of_metricDerivative_ne_top hM
+  have hQ := limsup_ofReal_sub_div_edist_le_descendingSlope (f := f) hγ
+  calc ‖D‖ₑ = limsup (fun u ↦ ENNReal.ofReal (f (γ t) - f (γ u)) / edist t u) (𝓝[≠] t) :=
+        hD.descendingSlope_eq.symm.trans (descendingSlope_coe _ t)
     _ ≤ limsup ((fun u ↦ ENNReal.ofReal (f (γ t) - f (γ u)) / edist (γ t) (γ u)) *
           fun u ↦ edist (γ u) (γ t) / edist u t) (𝓝[≠] t) := by
-        refine limsup_le_limsup (Eventually.of_forall fun u ↦ ?_)
+        -- Near `t`, the distance from `γ t` to `γ u` is finite and can be cancelled.
+        refine limsup_le_limsup ?_
+        filter_upwards [nhdsWithin_le_nhds (hγ.eventually (Metric.eball_mem_nhds (γ t) one_pos))]
+          with u hu₁
         by_cases hu : γ u = γ t
         · simp [hu]
         have h0 : edist (γ t) (γ u) ≠ 0 := (edist_pos.2 (Ne.symm hu)).ne'
-        simp only [Pi.mul_apply, edist_comm (γ u), div_eq_mul_inv, mul_assoc]
-        rw [← mul_assoc _ (edist (γ t) (γ u)), ENNReal.inv_mul_cancel h0 (edist_ne_top _ _),
-          one_mul]
+        have htop : edist (γ t) (γ u) ≠ ∞ :=
+          (edist_comm (γ t) (γ u) ▸ hu₁.trans ENNReal.one_lt_top).ne
+        simp only [Pi.mul_apply, edist_comm (γ u), edist_comm u, div_eq_mul_inv, mul_assoc]
+        rw [← mul_assoc _ (edist (γ t) (γ u)), ENNReal.inv_mul_cancel h0 htop, one_mul]
     _ ≤ S * metricDerivative γ t := by
         rw [metricDerivative_def] at hM ⊢
         exact (ENNReal.limsup_mul_le' (Or.inr hM) (Or.inl (ne_top_of_le_ne_top hS hQ))).trans
           (mul_le_mul_left hQ _)
+
+end EMetricSpace
+
+section MetricSpace
+
+variable {X : Type*} [MetricSpace X]
 
 /-- The descending slope of a locally Lipschitz function is a strong upper gradient: along every
 absolutely continuous curve `γ` on `[a, b]`,
@@ -254,7 +229,7 @@ theorem _root_.LocallyLipschitz.isStrongUpperGradient_descendingSlope {f : X →
   rcases eq_or_ne I ∞ with hI | hI
   · rw [hI, EReal.coe_ennreal_top, EReal.add_top_of_ne_bot (EReal.coe_ne_bot _)]
     exact le_top
-  · rw [coe_le_coe_add_coe_iff hI]
+  · rw [EReal.coe_le_coe_add_coe_ennreal_iff hI]
     linarith [(ENNReal.ofReal_le_iff_le_toReal hI).1 hle]
 
 end MetricSpace

@@ -45,7 +45,7 @@ off the effective domain carries no meaning.
 * `TauCeti.descendingSlope_const_mul`: positive homogeneity of the slope of real-valued
   functions.
 * `HasFDerivAt.descendingSlope_eq`: on a real normed space the slope of a function differentiable
-  at `x` is the norm of its derivative.
+  at `x` is the norm of its derivative; `HasDerivAt.descendingSlope_eq` is the one-variable case.
 
 ## References
 
@@ -144,16 +144,15 @@ private theorem descendingSlope_le_enorm_of_hasFDerivAt (hf : HasFDerivAt f f' x
     descendingSlope (fun y ↦ (f y : EReal)) x ≤ ‖f'‖ₑ := by
   refine ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ descendingSlope_le_of_eventually_le ?_
   filter_upwards [nhdsWithin_le_nhds (hf.isLittleO.bound hε)] with y hy
-  rw [← EReal.coe_sub, EReal.real_coe_toENNReal, edist_comm, edist_eq_enorm_sub,
-    ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_coe_nnreal,
-    ← ENNReal.ofReal_add (norm_nonneg _) ε.coe_nonneg,
-    ← ENNReal.ofReal_mul (add_nonneg (norm_nonneg _) ε.coe_nonneg)]
-  refine ENNReal.ofReal_le_ofReal ?_
   have h₁ : -f' (y - x) ≤ ‖f'‖ * ‖y - x‖ := (neg_le_abs _).trans (f'.le_opNorm _)
   have h₂ := (neg_le_abs _).trans (Real.norm_eq_abs _ ▸ hy)
-  calc f x - f y = -(f y - f x - f' (y - x)) + -f' (y - x) := by ring
-    _ ≤ ε * ‖y - x‖ + ‖f'‖ * ‖y - x‖ := add_le_add h₂ h₁
-    _ = (‖f'‖ + ε) * ‖y - x‖ := by ring
+  have key : f x - f y ≤ (‖f'‖ + ε) * ‖y - x‖ :=
+    calc f x - f y = -(f y - f x - f' (y - x)) + -f' (y - x) := by ring
+      _ ≤ ε * ‖y - x‖ + ‖f'‖ * ‖y - x‖ := add_le_add h₂ h₁
+      _ = (‖f'‖ + ε) * ‖y - x‖ := by ring
+  rw [← EReal.coe_sub, EReal.real_coe_toENNReal, edist_comm, edist_eq_enorm_sub]
+  simpa [ENNReal.ofReal_mul (add_nonneg (norm_nonneg f') ε.coe_nonneg), ENNReal.ofReal_add,
+    ofReal_norm] using ENNReal.ofReal_le_ofReal key
 
 /-- The descending slope at `x` of a function differentiable at `x` is at least the norm of its
 derivative: the function decreases at rate close to `‖f'‖` along a ray `t ↦ x - t • w` on which
@@ -195,9 +194,8 @@ private theorem enorm_le_descendingSlope_of_hasFDerivAt (hf : HasFDerivAt f f' x
       (𝓝[>] 0) (𝓝 (ENNReal.ofReal (f' w / ‖w‖))) := by
     refine ((ENNReal.continuous_ofReal.tendsto _).comp hlim).congr'
       (eventually_nhdsWithin_of_forall fun t (ht : 0 < t) ↦ ?_)
-    dsimp only [Function.comp_apply]
-    rw [edist_eq_enorm_sub, sub_sub_cancel, ← ofReal_norm,
-      norm_smul, Real.norm_of_nonneg ht.le, ENNReal.ofReal_div_of_pos (mul_pos ht hwpos)]
+    simp [edist_eq_enorm_sub, ← ofReal_norm, norm_smul, abs_of_pos ht,
+      ENNReal.ofReal_div_of_pos (mul_pos ht hwpos)]
   calc (r : ℝ≥0∞) = ENNReal.ofReal r := (ENNReal.ofReal_coe_nnreal).symm
     _ ≤ ENNReal.ofReal (f' w / ‖w‖) := by
         refine ENNReal.ofReal_le_ofReal (hrw.le.trans ?_)
@@ -215,6 +213,13 @@ theorem _root_.HasFDerivAt.descendingSlope_eq (hf : HasFDerivAt f f' x) :
     descendingSlope (fun y ↦ (f y : EReal)) x = ‖f'‖ₑ :=
   le_antisymm (descendingSlope_le_enorm_of_hasFDerivAt hf)
     (enorm_le_descendingSlope_of_hasFDerivAt hf)
+
+/-- The descending slope at `t` of a real function of a real variable with derivative `D` at `t`
+is `|D|`. -/
+theorem _root_.HasDerivAt.descendingSlope_eq {g : ℝ → ℝ} {D t : ℝ} (hg : HasDerivAt g D t) :
+    descendingSlope (fun u ↦ (g u : EReal)) t = ‖D‖ₑ := by
+  rw [hg.hasFDerivAt.descendingSlope_eq]
+  simp only [enorm_eq_nnnorm, ContinuousLinearMap.nnnorm_toSpanSingleton]
 
 end NormedSpace
 
