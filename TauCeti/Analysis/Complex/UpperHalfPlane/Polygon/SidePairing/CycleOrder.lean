@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.VertexSector
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Vertex.Sector
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
 
@@ -18,7 +18,7 @@ order `t`, including `t = 1`. This supplies the finite-cycle relations used in p
 presentations. Neither discreteness nor a fundamental-domain assumption is needed: the angle
 condition alone determines this order. The converse angle condition for a fundamental polygon
 requires no-overlap and is proved in
-`TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.VertexStabilizer`.
+`TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Vertex.Stabilizer`.
 
 ## References
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.CycleOrder
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Tessellation
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.VertexSector
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Vertex.Sector
 
 /-!
 # Stabilizers of the finite vertices of a fundamental polygon

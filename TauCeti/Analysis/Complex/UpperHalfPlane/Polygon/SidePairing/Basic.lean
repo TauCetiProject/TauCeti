@@ -28,7 +28,7 @@ properties. Going around a cycle `k` times gives the `k`-th power of the cycle t
 
 At a finite vertex cycle, the relation `m · sum = 2π` between the order of a cycle transformation
 and the angle sum needs the polygon to be a fundamental domain, and is proved in
-`TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.VertexStabilizer`.
+`TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Vertex.Stabilizer`.
 
 ## Main definitions
 
