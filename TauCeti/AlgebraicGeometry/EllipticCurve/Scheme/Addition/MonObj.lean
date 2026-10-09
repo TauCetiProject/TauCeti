@@ -39,7 +39,7 @@ the isomorphism is a homomorphism of monoid objects.
 ## Main results
 
 * `WeierstrassCurve.isCommMonObj_projModelOver`: the monoid object is commutative.
-* `WeierstrassCurve.projModelOver_one_left` and `WeierstrassCurve.projModelOver_mul_left`: the
+* `WeierstrassCurve.one_projModelOver_left` and `WeierstrassCurve.mul_projModelOver_left`: the
   underlying morphisms of schemes of the unit and the multiplication are the zero section and the
   addition morphism.
 * `WeierstrassCurve.isMonHom_projModelOverBaseChangeIso_hom`: the base change isomorphism is a
@@ -81,7 +81,7 @@ variable [W.IsElliptic]
 /-- The projective model of an elliptic Weierstrass curve `W` over `R`, as an object of
 `Over (Spec R)`, is a monoid object of the cartesian monoidal category `Over (Spec R)`: its unit is
 the zero section `projModelZero W` and its multiplication is the Bosma–Lenstra addition morphism
-`additionMorphism W` (`projModelOver_one_left`, `projModelOver_mul_left`). -/
+`additionMorphism W` (`one_projModelOver_left`, `mul_projModelOver_left`). -/
 noncomputable instance monObjProjModelOver : MonObj (Over.mk W.projModelOver) where
   one := Over.homMk W.projModelZero (by simp)
   mul := Over.homMk W.additionMorphism (by simp [additionMorphism_projModelOver])
@@ -129,13 +129,13 @@ noncomputable instance monObjProjModelOver : MonObj (Over.mk W.projModelOver) wh
 
 /-- The unit of the monoid object `Over.mk W.projModelOver` is the zero section. -/
 @[simp]
-theorem projModelOver_one_left : η[Over.mk W.projModelOver].left = W.projModelZero :=
+theorem one_projModelOver_left : η[Over.mk W.projModelOver].left = W.projModelZero :=
   (rfl)
 
 /-- The multiplication of the monoid object `Over.mk W.projModelOver` is the Bosma–Lenstra
 addition morphism. -/
 @[simp]
-theorem projModelOver_mul_left : μ[Over.mk W.projModelOver].left = W.additionMorphism :=
+theorem mul_projModelOver_left : μ[Over.mk W.projModelOver].left = W.additionMorphism :=
   (rfl)
 
 /-- The monoid object `Over.mk W.projModelOver` is commutative, because the addition morphism is
