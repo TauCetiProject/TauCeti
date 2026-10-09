@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.PGroup
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.PGroup.FirstCohomology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Basic
 import Mathlib.GroupTheory.Nilpotent
@@ -173,15 +174,6 @@ private theorem abelianizationProPClass_of_isPGroup (hp : p.Prime)
   have h2 := abelianizationProPClass_generates_of_le hp h hVW hV hW2.1 hWV2
   exact ⟨subsingleton_h1_abelianizationProP_of_le hp h hVW hV, h2.1,
     by rw [h2.2, hW2.2, hWVcard, hn']⟩
-
-/-- **The class module of a `p`-group quotient has trivial `H¹`** (NSW (3.6.4), (ii) ⇒ (iii), in
-degree one and `p`-primary form). For a profinite group `G` with `scd_p G ≤ 2` and an open normal
-subgroup `V` whose quotient `G ⧸ V` is a `p`-group, `H¹(G ⧸ V, V^ab(p)) = 0`. -/
-theorem subsingleton_h1_abelianizationProP_of_isPGroup (hp : p.Prime)
-    (h : strictCohomologicalDimensionAt.{u} p G ≤ 2) (hV : IsOpen (V : Set G))
-    (hpV : IsPGroup p (G ⧸ V)) :
-    Subsingleton (H1 (G ⧸ V) (Additive (abelianizationProP p G V))) :=
-  (abelianizationProPClass_of_isPGroup hp h hV hpV).1
 
 /-- **The class of the pro-`p` class module generates `H²` for a `p`-group quotient**
 (NSW (3.6.4), (ii) ⇒ (iii), in degree two and `p`-primary form). For a profinite group `G` with
