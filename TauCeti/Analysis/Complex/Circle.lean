@@ -31,11 +31,8 @@ namespace Circle
 
 /-- The unit circle `Circle` is homeomorphic to the unit sphere `sphere (0 : ℂ) 1`, by the identity
 on underlying complex numbers. -/
-def homeomorphSphere : Circle ≃ₜ sphere (0 : ℂ) 1 where
-  toFun z := ⟨z, mem_sphere_zero_iff_norm.2 z.norm_coe⟩
-  invFun z := ⟨z, mem_sphere_zero_iff_norm.2 (norm_eq_of_mem_sphere z)⟩
-  continuous_toFun := continuous_subtype_val.subtype_mk _
-  continuous_invFun := continuous_subtype_val.subtype_mk _
+def homeomorphSphere : Circle ≃ₜ sphere (0 : ℂ) 1 :=
+  Homeomorph.refl _
 
 @[simp]
 theorem coe_homeomorphSphere (z : Circle) : (homeomorphSphere z : ℂ) = z :=

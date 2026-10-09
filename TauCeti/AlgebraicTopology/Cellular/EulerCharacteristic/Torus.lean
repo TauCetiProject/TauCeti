@@ -34,16 +34,19 @@ public section
 namespace TauCeti
 
 /-- The unit circle has Euler characteristic zero. -/
+@[simp]
 theorem eulerChar_circle : eulerChar Circle = 0 := by
   rw [Circle.homeomorphSphere.eulerChar_eq, eulerChar_sphere (n := 1) Complex.finrank_real_complex]
   norm_num
 
 /-- An additive circle of positive period has Euler characteristic zero. -/
+@[simp]
 theorem eulerChar_addCircle (p : ℝ) [hp : Fact (0 < p)] : eulerChar (AddCircle p) = 0 := by
   rw [(AddCircle.homeomorphCircle hp.out.ne').eulerChar_eq, eulerChar_circle]
 
 /-- **The Euler characteristic of a torus.**  A product `∀ i, AddCircle (p i)` of finitely many
 circles of positive periods, with at least one factor, has Euler characteristic zero. -/
+@[simp]
 theorem eulerChar_torus {ι : Type} [Finite ι] [Nonempty ι] (p : ι → ℝ) [∀ i, Fact (0 < p i)] :
     eulerChar (∀ i, AddCircle (p i)) = 0 := by
   have := Fintype.ofFinite ι
