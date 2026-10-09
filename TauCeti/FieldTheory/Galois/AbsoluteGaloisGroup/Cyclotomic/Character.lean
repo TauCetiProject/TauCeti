@@ -20,8 +20,10 @@ The character `localCyclotomicCharacter p K` records the action of
 It is Mathlib's cyclotomic character restricted from ring automorphisms to the Galois group.
 The pointwise equation fixes this choice of character for later arithmetic comparisons.
 Two elements whose characters agree modulo `p ^ n` act alike on the `p ^ n`-th roots of unity
-(`apply_eq_apply_of_toZModPow_localCyclotomicCharacter_eq`); in particular powers `g ^ i` and
-`g ^ j` with `i ≡ j` modulo `φ(p ^ n)` do (`apply_pow_eq_apply_pow_of_modEq_totient`).
+(`apply_eq_apply_of_toZModPow_localCyclotomicCharacter_eq`); in particular an element whose
+character is `1` modulo `p ^ n` fixes them
+(`apply_eq_self_of_toZModPow_localCyclotomicCharacter_eq_one`), and powers `g ^ i` and `g ^ j` with
+`i ≡ j` modulo `φ(p ^ n)` act alike on them (`apply_pow_eq_apply_pow_of_modEq_totient`).
 Its bundled form `continuousLocalCyclotomicCharacter p K` is the continuous homomorphism that the
 twisted coefficients `TauCeti.ZModTwist` and the prescription property
 `TauCeti.HasPrescriptionProperty` take. It factors through the topological abelianization as
@@ -62,6 +64,18 @@ theorem apply_eq_apply_of_toZModPow_localCyclotomicCharacter_eq
   rw [localCyclotomicCharacter_apply, localCyclotomicCharacter_apply] at h
   exact (cyclotomicCharacter.spec p σ₁.toRingEquiv z hz).trans
     (h ▸ (cyclotomicCharacter.spec p σ₂.toRingEquiv z hz).symm)
+
+variable {p K} in
+/-- An element of `Field.absoluteGaloisGroup K` whose cyclotomic character is `1` modulo `p ^ n`
+fixes the `p ^ n`-th roots of unity. -/
+theorem apply_eq_self_of_toZModPow_localCyclotomicCharacter_eq_one
+    [∀ i, HasEnoughRootsOfUnity (AlgebraicClosure K) (p ^ i)]
+    {σ : Field.absoluteGaloisGroup K} {n : ℕ}
+    (h : PadicInt.toZModPow n (localCyclotomicCharacter p K σ : ℤ_[p]) = 1)
+    {z : AlgebraicClosure K} (hz : z ^ p ^ n = 1) :
+    DFunLike.coe (F := Gal(AlgebraicClosure K/K)) σ z = z :=
+  apply_eq_apply_of_toZModPow_localCyclotomicCharacter_eq (σ₂ := 1)
+    (by rw [h, map_one, Units.val_one, map_one]) hz
 
 variable {p K} in
 /-- Powers of `g ∈ Field.absoluteGaloisGroup K` whose exponents agree modulo `φ(p ^ n)` agree on

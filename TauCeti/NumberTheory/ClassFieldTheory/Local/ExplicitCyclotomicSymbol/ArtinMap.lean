@@ -106,11 +106,9 @@ private theorem exists_localCyclotomicCharacter_eq_inv_and_apply_eq (u : ℤ_[p]
   have hf : f ≠ 0 := (Nat.totient_pos.2 (pow_pos hp.pos n)).ne'
   set N := p ^ f - 1
   have hpf : 1 < p ^ f := Nat.one_lt_pow hf hp.one_lt
-  have hcopN : p.Coprime N := by
-    refine (Nat.Prime.coprime_iff_not_dvd hp).2 fun h ↦ hp.one_lt.ne' ?_
-    have h1 := Nat.dvd_sub (dvd_pow_self p hf) h
-    rw [Nat.sub_sub_self hpf.le] at h1
-    exact Nat.eq_one_of_dvd_one h1
+  have hcopN : p.Coprime N :=
+    ((Nat.coprime_self_sub_right hpf.le).2 (Nat.coprime_one_right _)).coprime_dvd_left
+      (dvd_pow_self p hf)
   set m := p ^ n * N with hm_def
   have hN0 : 0 < N := Nat.sub_pos_of_lt hpf
   have hm0 : 0 < m := Nat.mul_pos (pow_pos hp.pos n) hN0
@@ -192,18 +190,17 @@ private theorem exists_localCyclotomicCharacter_eq_inv_and_apply_eq (u : ℤ_[p]
   have hgz : DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) g z =
       DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) ρ z := by
     calc _ = DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) (g ^ 1) z :=
-          congrArg (fun a : Field.absoluteGaloisGroup ℚ_[p] ↦
-            DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) a z) (pow_one g).symm
+          (pow_one g).symm ▸ rfl
       _ = DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) (g ^ k) z :=
           apply_pow_eq_apply_pow_of_modEq_totient g hk1 hz
       _ = _ := (hρg z (by rw [hm_def, pow_mul, hz, one_pow])).symm
   have hτz : DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) τ
       (DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) σ z) =
         DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) σ z :=
-    (apply_eq_apply_of_toZModPow_localCyclotomicCharacter_eq (σ₂ := 1) (n := n)
-      (by rw [hτχ, map_one]) ((map_pow (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) σ z _).symm.trans
-        (by rw [hz]; exact map_one (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) σ))).trans
-        (absoluteGaloisGroup_one_apply ℚ_[p] _)
+    apply_eq_self_of_toZModPow_localCyclotomicCharacter_eq_one
+      (by rw [hτχ, Units.val_one, map_one])
+      (by rw [← map_pow (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) σ, hz,
+        map_one (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) σ])
   exact hτz.symm.trans hgz
 
 /-- **The cyclotomic normalization at `ℚ_p`**: `χ_cyc(Art_{ℚ_p}(u)) = u⁻¹` for `u ∈ ℤ_pˣ`. If `σ`
