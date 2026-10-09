@@ -14,11 +14,13 @@ import Mathlib.LinearAlgebra.PID
 /-!
 # Dimensions of the even and odd period-polynomial spaces
 
-For positive even degree `w`, parity has trace `1` on the period-polynomial space. Consequently
-its even part has one more dimension than its odd part. Combining this with the algebraic
-calculation of the total dimension identifies the dimensions of the even and odd parts with
-those of level-one modular and cusp forms, respectively. These are the dimension comparisons
-needed to turn injective even and odd period maps into isomorphisms.
+Over a characteristic-zero field, for positive even degree `w`, parity has trace `1` on the
+period-polynomial space. Consequently its even part has one more dimension than its odd part.
+Combining this with the algebraic
+calculation of the total dimension identifies, over `ℂ` and for every degree `w`, the dimensions
+of the even and odd parts with those of level-one modular and cusp forms, respectively.
+These are the dimension comparisons needed to turn injective even and odd period maps into
+isomorphisms.
 
 The reflection `J : P(X,Y) ↦ P(Y,X)` preserves both kernels defining the period-polynomial
 space. It has trace zero on each kernel and trace one on all binary forms of even degree.
@@ -124,7 +126,6 @@ private lemma trace_swap_ker_S (hw : Even w) :
       ((δ).restrict (swap_mem_ker ((Commute.one_left δ).add_left (swap_commute_S hw)))) = 0 := by
   have h := LinearMap.two_mul_trace_restrict_ker_one_add (S_sq (K := K) hw)
     (swap_commute_S hw)
-    (swap_mem_ker ((Commute.one_left δ).add_left (swap_commute_S hw)))
   rw [trace_swap hw, trace_S_swap hw] at h
   linear_combination h / 2
 
@@ -132,14 +133,14 @@ private lemma trace_swap_ker_U (hw : Even w) :
     LinearMap.trace K (LinearMap.ker (1 + υ + υ ^ 2))
       ((δ).restrict (swap_mem_ker (swap_commute_U_sum hw))) = 0 := by
   have h := LinearMap.three_mul_trace_restrict_ker_one_add_add_sq (U_cube (K := K) hw)
-    (swap_commute_U_sum hw) (swap_mem_ker (swap_commute_U_sum hw))
+    (swap_commute_U_sum hw)
   rw [trace_swap hw, trace_U_swap hw, trace_U_sq_swap hw] at h
   linear_combination h / 3
 
 private lemma trace_swap_periodPolynomials (hw : Even w) (hw₀ : w ≠ 0) :
     LinearMap.trace K (periodPolynomials K w)
       ((δ).restrict (swap_mem_periodPolynomials hw)) = -1 := by
-  have h := trace_restrict_inf_add_trace_restrict_sup δ
+  have h := LinearMap.trace_restrict_inf_add_trace_restrict_sup δ
     (swap_mem_ker ((Commute.one_left δ).add_left (swap_commute_S hw)))
     (swap_mem_ker (swap_commute_U_sum hw))
   rw [trace_swap_ker_S hw, trace_swap_ker_U hw] at h
@@ -253,26 +254,42 @@ theorem finrank_oddPeriodPolynomials_add_eq (hw : Even w) (hw₀ : w ≠ 0) :
   obtain ⟨m, rfl⟩ := hw
   omega
 
-/-- In positive even degree, the even period-polynomial space has the dimension of the
-level-one modular-form space of weight `w + 2`. -/
-theorem finrank_evenPeriodPolynomials_eq_finrank_modularForm (hw : Even w) (hw₀ : w ≠ 0) :
-    finrank ℂ (evenPeriodPolynomials ℂ w) = finrank ℂ (ModularForm 𝒮ℒ (w + 2 : ℕ)) := by
-  have hdiff := finrank_evenPeriodPolynomials_eq_finrank_odd_add_one (K := ℂ) hw hw₀
-  have htotal := finrank_periodPolynomials_eq_finrank_modularForm_add_finrank_cuspForm w
-  have hsum := finrank_even_add_finrank_odd (K := ℂ) (w := w)
-  have : FiniteDimensional ℂ (CuspForm 𝒮ℒ (w + 2 : ℕ)) :=
-    .of_injective _ CuspForm.toModularFormₗ_injective
-  have hMS := ModularForm.rank_eq_one_add_rank_cuspForm (k := w + 2) (by omega)
-    (hw.add even_two)
-  rw [← finrank_eq_rank, ← finrank_eq_rank] at hMS
-  norm_cast at hMS
+/-- The dimension of the even period-polynomial space, computed algebraically, in a form
+without truncated subtraction: `dim W_w⁺ + w/2 = ⌈w/4⌉ + ⌈w/3⌉`. -/
+theorem finrank_evenPeriodPolynomials_add_eq (hw : Even w) (hw₀ : w ≠ 0) :
+    finrank K (evenPeriodPolynomials K w) + w / 2 = (w + 3) / 4 + (w + 2) / 3 := by
+  have hdiff := finrank_evenPeriodPolynomials_eq_finrank_odd_add_one (K := K) hw hw₀
+  have hodd := finrank_oddPeriodPolynomials_add_eq (K := K) hw hw₀
   omega
 
-/-- In positive even degree, the odd period-polynomial space has the dimension of the
+/-- For every degree, the even period-polynomial space has the dimension of the
+level-one modular-form space of weight `w + 2`. -/
+theorem finrank_evenPeriodPolynomials_eq_finrank_modularForm (w : ℕ) :
+    finrank ℂ (evenPeriodPolynomials ℂ w) = finrank ℂ (ModularForm 𝒮ℒ (w + 2 : ℕ)) := by
+  have htotal := finrank_periodPolynomials_eq_finrank_modularForm_add_finrank_cuspForm w
+  have hsum := finrank_even_add_finrank_odd (K := ℂ) (w := w)
+  by_cases hw₀ : w = 0
+  · subst w
+    rw [periodPolynomials_zero, finrank_bot] at htotal hsum
+    omega
+  by_cases hw : Even w
+  · have hdiff := finrank_evenPeriodPolynomials_eq_finrank_odd_add_one (K := ℂ) hw hw₀
+    have : FiniteDimensional ℂ (CuspForm 𝒮ℒ (w + 2 : ℕ)) :=
+      .of_injective _ CuspForm.toModularFormₗ_injective
+    have hMS := ModularForm.rank_eq_one_add_rank_cuspForm (k := w + 2) (by omega)
+      (hw.add even_two)
+    rw [← finrank_eq_rank, ← finrank_eq_rank] at hMS
+    norm_cast at hMS
+    omega
+  · rw [periodPolynomials_eq_bot_of_odd (mul_right_injective₀ two_ne_zero)
+      (Nat.not_even_iff_odd.mp hw), finrank_bot] at htotal hsum
+    omega
+
+/-- For every degree, the odd period-polynomial space has the dimension of the
 level-one cusp-form space of weight `w + 2`. -/
-theorem finrank_oddPeriodPolynomials_eq_finrank_cuspForm (hw : Even w) (hw₀ : w ≠ 0) :
+theorem finrank_oddPeriodPolynomials_eq_finrank_cuspForm (w : ℕ) :
     finrank ℂ (oddPeriodPolynomials ℂ w) = finrank ℂ (CuspForm 𝒮ℒ (w + 2 : ℕ)) := by
-  have hM := finrank_evenPeriodPolynomials_eq_finrank_modularForm hw hw₀
+  have hM := finrank_evenPeriodPolynomials_eq_finrank_modularForm w
   have hsum := finrank_even_add_finrank_odd (K := ℂ) (w := w)
   have htotal := finrank_periodPolynomials_eq_finrank_modularForm_add_finrank_cuspForm w
   omega

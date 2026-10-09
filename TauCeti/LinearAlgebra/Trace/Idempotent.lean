@@ -127,7 +127,11 @@ theorem LinearMap.trace_mul_add_mul_trace_restrict_ker {c f : Module.End K M} {a
 by `tr f` and `tr(σ f)`. -/
 theorem LinearMap.two_mul_trace_restrict_ker_one_add {σ f : End K M} (hσ : σ ^ 2 = 1)
     (hσf : Commute σ f)
-    (hf : ∀ x ∈ _root_.LinearMap.ker (1 + σ), f x ∈ _root_.LinearMap.ker (1 + σ)) :
+    (hf : ∀ x ∈ _root_.LinearMap.ker (1 + σ), f x ∈ _root_.LinearMap.ker (1 + σ) :=
+      fun x hx ↦ by
+        rw [_root_.LinearMap.mem_ker] at hx ⊢
+        rw [← Module.End.mul_apply, ((Commute.one_left f).add_left hσf).eq,
+          Module.End.mul_apply, hx, map_zero]) :
     2 * _root_.LinearMap.trace K (_root_.LinearMap.ker (1 + σ)) (f.restrict hf) =
       _root_.LinearMap.trace K M f - _root_.LinearMap.trace K M (σ * f) := by
   have hc : (1 + σ) * (1 + σ) = (2 : K) • (1 + σ) := by
@@ -142,7 +146,9 @@ determined by `tr f`, `tr(υ f)` and `tr(υ² f)`. -/
 theorem LinearMap.three_mul_trace_restrict_ker_one_add_add_sq {υ f : End K M}
     (hυ : υ ^ 3 = 1) (hcf : Commute (1 + υ + υ ^ 2) f)
     (hf : ∀ x ∈ _root_.LinearMap.ker (1 + υ + υ ^ 2), f x ∈
-      _root_.LinearMap.ker (1 + υ + υ ^ 2)) :
+      _root_.LinearMap.ker (1 + υ + υ ^ 2) := fun x hx ↦ by
+        rw [_root_.LinearMap.mem_ker] at hx ⊢
+        rw [← Module.End.mul_apply, hcf.eq, Module.End.mul_apply, hx, map_zero]) :
     3 * _root_.LinearMap.trace K (_root_.LinearMap.ker (1 + υ + υ ^ 2)) (f.restrict hf) =
       2 * _root_.LinearMap.trace K M f - _root_.LinearMap.trace K M (υ * f) -
         _root_.LinearMap.trace K M (υ ^ 2 * f) := by
