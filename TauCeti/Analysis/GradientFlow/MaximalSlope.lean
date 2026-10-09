@@ -24,7 +24,7 @@ at most the *dissipation*
 
 since `g` controls the rate of change of `φ ∘ u` by `g (u r) |u'|(r)`, and Young's inequality
 bounds this product by the integrand above. A *`p`-curve of maximal slope* is a curve along which
-the energy drops by at least the dissipation: the energy-dissipation inequality
+the energy is finite and drops by at least the dissipation: the energy-dissipation inequality
 
 `φ (u t) + (1/p) ∫_s^t |u'| ^ p + (1/q) ∫_s^t g (u r) ^ q ≤ φ (u s)`
 
@@ -33,10 +33,10 @@ flow `u' = -∇φ(u)` of a smooth energy on a Hilbert space, which are curves of
 descending slope (`TauCeti.isCurveOfMaximalSlope_of_hasGradientAt`).
 
 When `g` is a strong upper gradient the two bounds meet. Along a curve of maximal slope the
-energy identity holds: the energy drops by exactly the dissipation. Where the energy is finite,
-the metric speed and the upper gradient are moreover related by `|u'| ^ p = g (u) ^ q` almost
-everywhere, and the energy drop is the `p`-action. Conversely, the energy-dissipation inequality
-between the endpoints of a compact interval already makes a curve of maximal slope on the whole
+energy identity holds: the energy drops by exactly the dissipation. The metric speed and the upper
+gradient are moreover related by `|u'| ^ p = g (u) ^ q` almost everywhere, and the energy drop is
+the `p`-action. Conversely, the energy-dissipation inequality between the endpoints of a compact
+interval, with the energy finite there, already makes a curve of maximal slope on the whole
 interval.
 
 ## Main definitions
@@ -55,8 +55,8 @@ interval.
 * `TauCeti.IsCurveOfMaximalSlope.ae_metricDerivative_rpow_eq`: `|u'| ^ p = g (u) ^ q` almost
   everywhere, and `TauCeti.IsCurveOfMaximalSlope.apply_eq_add_curveAction`: the energy drop is the
   `p`-action.
-* `TauCeti.isCurveOfMaximalSlope_Icc_iff`: on `[a, b]` it suffices to check the
-  energy-dissipation inequality between `a` and `b`.
+* `TauCeti.isCurveOfMaximalSlope_Icc_iff`: on `[a, b]` it suffices to check finiteness of the
+  energy at `a` and `b` and the energy-dissipation inequality between `a` and `b`.
 * `TauCeti.isCurveOfMaximalSlope_of_hasGradientAt`: on a Hilbert space, a `C¹` solution of
   `u' = -∇f(u)` is a `2`-curve of maximal slope for the descending slope of `f`;
   `TauCeti.isCurveOfMaximalSlope_exp_neg_smul` is the flow `t ↦ e⁻ᵗ x` of `‖x‖² / 2`.
@@ -68,9 +68,12 @@ continuous curve such that `φ ∘ u` agrees almost everywhere with a nonincreas
 satisfying `ψ' ≤ -(1/p) |u'| ^ p - (1/q) g (u) ^ q` almost everywhere. Here the integrated
 energy-dissipation inequality is required of `φ ∘ u` itself, on every pair of times of an
 arbitrary set `I` (so `I` may be closed, open or unbounded), together with absolute continuity of
-`u` between them. Ruling out a modification of `φ ∘ u` on a null set is a genuine restriction
-only for weak upper gradients: for a strong upper gradient, Ambrosio–Gigli–Savaré show that
-`φ ∘ u` is locally absolutely continuous along their curves of maximal slope.
+`u` between them. Since `φ` takes values in `EReal`, where this inequality holds trivially once
+`φ (u s) = ⊤` or `φ (u t) = ⊥`, the energy `φ ∘ u` is moreover required to be finite on `I`,
+as the real-valued `ψ` of Ambrosio–Gigli–Savaré is. Ruling out a modification of `φ ∘ u` on a
+null set is a genuine restriction only for weak upper gradients: for a strong upper gradient,
+Ambrosio–Gigli–Savaré show that `φ ∘ u` is locally absolutely continuous along their curves of
+maximal slope.
 
 ## References
 
@@ -167,38 +170,49 @@ theorem IsStrongUpperGradient.le_add_dissipation (hg : IsStrongUpperGradient φ 
     _
 
 /-- `u` is a *`p`-curve of maximal slope* for the energy `φ` with respect to the upper gradient `g`
-on the set of times `I` if for all `s ≤ t` in `I` the curve is absolutely continuous on `[s, t]`
-and satisfies the energy-dissipation inequality
-`φ (u t) + (1/p) ∫_s^t |u'| ^ p + (1/q) ∫_s^t g (u r) ^ q ≤ φ (u s)`. Here `q` is meant to be the
-conjugate exponent of `p`. -/
+on the set of times `I` if the energy `φ (u s)` is finite for every `s ∈ I`, and for all `s ≤ t`
+in `I` the curve is absolutely continuous on `[s, t]` and satisfies the energy-dissipation
+inequality `φ (u t) + (1/p) ∫_s^t |u'| ^ p + (1/q) ∫_s^t g (u r) ^ q ≤ φ (u s)`. Here `q` is meant
+to be the conjugate exponent of `p`. -/
 def IsCurveOfMaximalSlope (p q : ℝ) (φ : X → EReal) (g : X → ℝ≥0∞) (u : ℝ → X) (I : Set ℝ) :
     Prop :=
-  ∀ ⦃s⦄, s ∈ I → ∀ ⦃t⦄, t ∈ I → s ≤ t →
-    AbsolutelyContinuousOnInterval u s t ∧ φ (u t) + dissipation p q g u s t ≤ φ (u s)
+  (∀ ⦃s⦄, s ∈ I → φ (u s) ≠ ⊤ ∧ φ (u s) ≠ ⊥) ∧
+    ∀ ⦃s⦄, s ∈ I → ∀ ⦃t⦄, t ∈ I → s ≤ t →
+      AbsolutelyContinuousOnInterval u s t ∧ φ (u t) + dissipation p q g u s t ≤ φ (u s)
 
 /-- The defining property of a curve of maximal slope. -/
 theorem isCurveOfMaximalSlope_iff : IsCurveOfMaximalSlope p q φ g u I ↔
-    ∀ ⦃s⦄, s ∈ I → ∀ ⦃t⦄, t ∈ I → s ≤ t →
-      AbsolutelyContinuousOnInterval u s t ∧ φ (u t) + dissipation p q g u s t ≤ φ (u s) :=
+    (∀ ⦃s⦄, s ∈ I → φ (u s) ≠ ⊤ ∧ φ (u s) ≠ ⊥) ∧
+      ∀ ⦃s⦄, s ∈ I → ∀ ⦃t⦄, t ∈ I → s ≤ t →
+        AbsolutelyContinuousOnInterval u s t ∧ φ (u t) + dissipation p q g u s t ≤ φ (u s) :=
   Iff.rfl
 
 namespace IsCurveOfMaximalSlope
+
+/-- The energy is not `⊤` along a curve of maximal slope. -/
+theorem apply_ne_top (h : IsCurveOfMaximalSlope p q φ g u I) (hs : s ∈ I) : φ (u s) ≠ ⊤ :=
+  (h.1 hs).1
+
+/-- The energy is not `⊥` along a curve of maximal slope. -/
+theorem apply_ne_bot (h : IsCurveOfMaximalSlope p q φ g u I) (hs : s ∈ I) : φ (u s) ≠ ⊥ :=
+  (h.1 hs).2
 
 /-- A curve of maximal slope is absolutely continuous between any two of its times. -/
 theorem absolutelyContinuousOnInterval (h : IsCurveOfMaximalSlope p q φ g u I) (hs : s ∈ I)
     (ht : t ∈ I) : AbsolutelyContinuousOnInterval u s t := by
   rcases le_total s t with hst | hts
-  · exact (h hs ht hst).1
-  · exact (h ht hs hts).1.symm
+  · exact (h.2 hs ht hst).1
+  · exact (h.2 ht hs hts).1.symm
 
 /-- The **energy-dissipation inequality** along a curve of maximal slope. -/
 theorem apply_add_dissipation_le (h : IsCurveOfMaximalSlope p q φ g u I) (hs : s ∈ I) (ht : t ∈ I)
     (hst : s ≤ t) : φ (u t) + dissipation p q g u s t ≤ φ (u s) :=
-  (h hs ht hst).2
+  (h.2 hs ht hst).2
 
 /-- A curve of maximal slope on `I` is a curve of maximal slope on every subset of `I`. -/
 theorem mono (h : IsCurveOfMaximalSlope p q φ g u I) (hJI : J ⊆ I) :
-    IsCurveOfMaximalSlope p q φ g u J := fun _ hs _ ht hst ↦ h (hJI hs) (hJI ht) hst
+    IsCurveOfMaximalSlope p q φ g u J :=
+  ⟨fun _ hs ↦ h.1 (hJI hs), fun _ hs _ ht hst ↦ h.2 (hJI hs) (hJI ht) hst⟩
 
 /-- The energy is nonincreasing along a curve of maximal slope. -/
 theorem antitoneOn (h : IsCurveOfMaximalSlope p q φ g u I) : AntitoneOn (fun t ↦ φ (u t)) I :=
@@ -210,31 +224,27 @@ maximal slope by exactly the dissipation, `φ (u s) = φ (u t) + dissipation p q
 theorem apply_eq_add_dissipation (h : IsCurveOfMaximalSlope p q φ g u I)
     (hg : IsStrongUpperGradient φ g) (hpq : p.HolderConjugate q) (hs : s ∈ I) (ht : t ∈ I)
     (hst : s ≤ t) : φ (u s) = φ (u t) + dissipation p q g u s t :=
-  le_antisymm (hg.le_add_dissipation hpq (h hs ht hst).1) (h.apply_add_dissipation_le hs ht hst)
+  le_antisymm (hg.le_add_dissipation hpq (h.2 hs ht hst).1) (h.apply_add_dissipation_le hs ht hst)
 
-/-- Along a curve of maximal slope for a strong upper gradient `g` and an energy finite at `u s`
-and `u t`, the metric speed and the upper gradient satisfy `|u'| ^ p = g (u) ^ q` almost everywhere
-between `s` and `t`. -/
+/-- Along a curve of maximal slope for a strong upper gradient `g`, the metric speed and the upper
+gradient satisfy `|u'| ^ p = g (u) ^ q` almost everywhere between `s` and `t`. -/
 theorem ae_metricDerivative_rpow_eq (h : IsCurveOfMaximalSlope p q φ g u I)
     (hg : IsStrongUpperGradient φ g) (hpq : p.HolderConjugate q) (hs : s ∈ I) (ht : t ∈ I)
-    (hst : s ≤ t) (hφs : φ (u s) ≠ ⊤) (hφt : φ (u t) ≠ ⊥)
-    (hgu : AEMeasurable (fun r ↦ g (u r)) (volume.restrict (Ι s t))) :
+    (hst : s ≤ t) (hgu : AEMeasurable (fun r ↦ g (u r)) (volume.restrict (Ι s t))) :
     ∀ᵐ r ∂volume.restrict (Ι s t), metricDerivative u r ^ p = g (u r) ^ q := by
-  have hu := (h hs ht hst).1
+  have hu := (h.2 hs ht hst).1
   have heq := h.apply_eq_add_dissipation hg hpq hs ht hst
   set D := dissipation p q g u s t
   set F := ∫⁻ r in Ι s t, g (u r) * metricDerivative u r
-  -- The energy at `u t` and the dissipation are finite.
-  have hφt' : φ (u t) ≠ ⊤ := fun h' ↦ hφs <| by
-    rw [heq, h', EReal.top_add_of_ne_bot (EReal.coe_ennreal_ne_bot _)]
-  have hD : D ≠ ∞ := fun h' ↦ hφs <| by
-    rw [heq, h', EReal.coe_ennreal_top, EReal.add_top_of_ne_bot hφt]
+  -- The dissipation is finite.
+  have hD : D ≠ ∞ := fun h' ↦ h.apply_ne_top hs <| by
+    rw [heq, h', EReal.coe_ennreal_top, EReal.add_top_of_ne_bot (h.apply_ne_bot ht)]
   have hFD : F ≤ D := hu.lintegral_mul_metricDerivative_le_dissipation hpq
   have hF : F ≠ ∞ := ne_top_of_le_ne_top hD hFD
   -- The upper-gradient bound forces the integral of `g (u r) |u'|(r)` to be the dissipation.
   have hDF : D ≤ F := by
     have h₁ : φ (u s) ≤ φ (u t) + F := hg.le_add_lintegral hu
-    lift φ (u t) to ℝ using ⟨hφt', hφt⟩ with y
+    lift φ (u t) to ℝ using h.1 ht with y
     rw [heq, ← EReal.coe_ennreal_toReal hD, ← EReal.coe_ennreal_toReal hF, ← EReal.coe_add,
       ← EReal.coe_add, EReal.coe_le_coe_iff] at h₁
     exact (ENNReal.toReal_le_toReal hD hF).1 (by linarith)
@@ -265,12 +275,11 @@ theorem ae_metricDerivative_rpow_eq (h : IsCurveOfMaximalSlope p q φ g u I)
 upper gradient, the energy drops by exactly the `p`-action, `φ (u s) = φ (u t) + A_p(u)`. -/
 theorem apply_eq_add_curveAction (h : IsCurveOfMaximalSlope p q φ g u I)
     (hg : IsStrongUpperGradient φ g) (hpq : p.HolderConjugate q) (hs : s ∈ I) (ht : t ∈ I)
-    (hst : s ≤ t) (hφs : φ (u s) ≠ ⊤) (hφt : φ (u t) ≠ ⊥)
-    (hgu : AEMeasurable (fun r ↦ g (u r)) (volume.restrict (Ι s t))) :
+    (hst : s ≤ t) (hgu : AEMeasurable (fun r ↦ g (u r)) (volume.restrict (Ι s t))) :
     φ (u s) = φ (u t) + curveAction p u s t := by
   have hA : curveAction p u s t = ∫⁻ r in Ι s t, g (u r) ^ q :=
     (curveAction_def p u s t).trans <|
-      lintegral_congr_ae (h.ae_metricDerivative_rpow_eq hg hpq hs ht hst hφs hφt hgu)
+      lintegral_congr_ae (h.ae_metricDerivative_rpow_eq hg hpq hs ht hst hgu)
   rw [h.apply_eq_add_dissipation hg hpq hs ht hst, dissipation_def, ← hA, div_eq_mul_inv,
     div_eq_mul_inv, ← mul_add, hpq.inv_add_inv_ennreal, mul_one]
 
@@ -278,45 +287,54 @@ theorem apply_eq_add_curveAction (h : IsCurveOfMaximalSlope p q φ g u I)
 strong upper gradient, `φ (u s) = φ (u t) + ∫_s^t g (u r) ^ q dr`. -/
 theorem apply_eq_add_lintegral_rpow (h : IsCurveOfMaximalSlope p q φ g u I)
     (hg : IsStrongUpperGradient φ g) (hpq : p.HolderConjugate q) (hs : s ∈ I) (ht : t ∈ I)
-    (hst : s ≤ t) (hφs : φ (u s) ≠ ⊤) (hφt : φ (u t) ≠ ⊥)
-    (hgu : AEMeasurable (fun r ↦ g (u r)) (volume.restrict (Ι s t))) :
+    (hst : s ≤ t) (hgu : AEMeasurable (fun r ↦ g (u r)) (volume.restrict (Ι s t))) :
     φ (u s) = φ (u t) + ∫⁻ r in Ι s t, g (u r) ^ q := by
-  rw [h.apply_eq_add_curveAction hg hpq hs ht hst hφs hφt hgu, curveAction_def,
-    lintegral_congr_ae (h.ae_metricDerivative_rpow_eq hg hpq hs ht hst hφs hφt hgu)]
+  rw [h.apply_eq_add_curveAction hg hpq hs ht hst hgu, curveAction_def,
+    lintegral_congr_ae (h.ae_metricDerivative_rpow_eq hg hpq hs ht hst hgu)]
 
 end IsCurveOfMaximalSlope
 
 /-- For a strong upper gradient `g`, a curve absolutely continuous on `[a, b]` is a curve of
-maximal slope on `[a, b]` as soon as the energy-dissipation inequality holds between `a` and `b`,
-provided `φ (u a) < ∞` and `φ (u b) > -∞`. -/
+maximal slope on `[a, b]` as soon as `φ (u a) < ∞`, `φ (u b) > -∞` and the energy-dissipation
+inequality holds between `a` and `b`. -/
 theorem isCurveOfMaximalSlope_Icc_iff (hg : IsStrongUpperGradient φ g)
-    (hpq : p.HolderConjugate q) (hab : a ≤ b) (hu : AbsolutelyContinuousOnInterval u a b)
-    (ha : φ (u a) ≠ ⊤) (hb : φ (u b) ≠ ⊥) :
+    (hpq : p.HolderConjugate q) (hab : a ≤ b) (hu : AbsolutelyContinuousOnInterval u a b) :
     IsCurveOfMaximalSlope p q φ g u (Icc a b) ↔
-      φ (u b) + dissipation p q g u a b ≤ φ (u a) := by
-  refine ⟨fun h ↦ h.apply_add_dissipation_le ⟨le_rfl, hab⟩ ⟨hab, le_rfl⟩ hab,
-    fun h s hs t ht hst ↦ ?_⟩
+      φ (u a) ≠ ⊤ ∧ φ (u b) ≠ ⊥ ∧ φ (u b) + dissipation p q g u a b ≤ φ (u a) := by
+  have ha₀ : a ∈ Icc a b := ⟨le_rfl, hab⟩
+  have hb₀ : b ∈ Icc a b := ⟨hab, le_rfl⟩
+  refine ⟨fun h ↦ ⟨h.apply_ne_top ha₀, h.apply_ne_bot hb₀,
+    h.apply_add_dissipation_le ha₀ hb₀ hab⟩, fun ⟨ha, hb, h⟩ ↦ ?_⟩
   have hsub : ∀ ⦃x y⦄, x ∈ Icc a b → y ∈ Icc a b → AbsolutelyContinuousOnInterval u x y :=
     fun x y hx hy ↦ hu.mono (uIcc_subset_uIcc (Icc_subset_uIcc hx) (Icc_subset_uIcc hy))
-  refine ⟨hsub hs ht, ?_⟩
-  -- The energy-dissipation inequality is trivial if `φ (u s) = ⊤` or `φ (u t) = ⊥`.
-  rcases eq_or_ne (φ (u s)) ⊤ with hs' | hs'
-  · exact hs' ▸ le_top
-  rcases eq_or_ne (φ (u t)) ⊥ with ht' | ht'
-  · rw [ht', EReal.bot_add]
-    exact bot_le
-  -- The upper-gradient bounds on `[a, s]` and `[t, b]`.
-  have h₁ := hg.le_add_dissipation hpq (hsub ⟨le_rfl, hab⟩ hs)
-  have h₃ := hg.le_add_dissipation hpq (hsub ht ⟨hab, le_rfl⟩)
-  have hD : dissipation p q g u a s + dissipation p q g u s t + dissipation p q g u t b =
-      dissipation p q g u a b := by
-    rw [dissipation_add p q g u (mem_uIcc_of_le hs.1 hst),
-      dissipation_add p q g u (mem_uIcc_of_le (hs.1.trans hst) ht.2)]
-  -- All energies involved and the dissipations are finite.
+  -- The energies at `a` and `b` and the dissipation on `[a, b]` are finite.
   have hDab : dissipation p q g u a b ≠ ∞ := by
     intro h'
     rw [h', EReal.coe_ennreal_top, EReal.add_top_of_ne_bot hb, top_le_iff] at h
     exact ha h
+  have ha' : φ (u a) ≠ ⊥ :=
+    ne_bot_of_le_ne_bot (EReal.add_ne_bot_iff.2 ⟨hb, EReal.coe_ennreal_ne_bot _⟩) h
+  have hb' : φ (u b) ≠ ⊤ :=
+    ne_top_of_le_ne_top ha ((le_add_of_nonneg_right (EReal.coe_ennreal_nonneg _)).trans h)
+  -- Hence the energy is finite on all of `[a, b]`, by the upper-gradient bounds on `[a, x]` and
+  -- `[x, b]`.
+  have hfin : ∀ ⦃x⦄, x ∈ Icc a b → φ (u x) ≠ ⊤ ∧ φ (u x) ≠ ⊥ := fun x hx ↦ by
+    have hDxb : dissipation p q g u x b ≠ ∞ := ne_top_of_le_ne_top hDab
+      (dissipation_add p q g u (mem_uIcc_of_le hx.1 hx.2) ▸ le_add_self)
+    refine ⟨ne_top_of_le_ne_top ?_ (hg.le_add_dissipation hpq (hsub hx hb₀)), fun h' ↦ ?_⟩
+    · rw [← EReal.coe_ennreal_toReal hDxb]
+      exact EReal.add_ne_top hb' (EReal.coe_ne_top _)
+    · have h₁ := hg.le_add_dissipation (q := q) hpq (hsub ha₀ hx)
+      rw [h', EReal.bot_add, le_bot_iff] at h₁
+      exact ha' h₁
+  refine ⟨hfin, fun s hs t ht hst ↦ ⟨hsub hs ht, ?_⟩⟩
+  -- The upper-gradient bounds on `[a, s]` and `[t, b]`.
+  have h₁ := hg.le_add_dissipation hpq (hsub ha₀ hs)
+  have h₃ := hg.le_add_dissipation hpq (hsub ht hb₀)
+  have hD : dissipation p q g u a s + dissipation p q g u s t + dissipation p q g u t b =
+      dissipation p q g u a b := by
+    rw [dissipation_add p q g u (mem_uIcc_of_le hs.1 hst),
+      dissipation_add p q g u (mem_uIcc_of_le (hs.1.trans hst) ht.2)]
   have hDas : dissipation p q g u a s ≠ ∞ :=
     ne_top_of_le_ne_top hDab (hD ▸ le_self_add.trans le_self_add)
   have hDst : dissipation p q g u s t ≠ ∞ :=
@@ -326,23 +344,14 @@ theorem isCurveOfMaximalSlope_Icc_iff (hg : IsStrongUpperGradient φ g)
       (dissipation p q g u t b).toReal = (dissipation p q g u a b).toReal := by
     rw [← hD, ENNReal.toReal_add (ENNReal.add_ne_top.2 ⟨hDas, hDst⟩) hDtb,
       ENNReal.toReal_add hDas hDst]
-  have ha' : φ (u a) ≠ ⊥ :=
-    ne_bot_of_le_ne_bot (EReal.add_ne_bot_iff.2 ⟨hb, EReal.coe_ennreal_ne_bot _⟩) h
-  have hb' : φ (u b) ≠ ⊤ :=
-    ne_top_of_le_ne_top ha ((le_add_of_nonneg_right (EReal.coe_ennreal_nonneg _)).trans h)
   rw [← EReal.coe_ennreal_toReal hDab] at h
   rw [← EReal.coe_ennreal_toReal hDas] at h₁
   rw [← EReal.coe_ennreal_toReal hDtb] at h₃
   rw [← EReal.coe_ennreal_toReal hDst]
   lift φ (u a) to ℝ using ⟨ha, ha'⟩ with ra
   lift φ (u b) to ℝ using ⟨hb', hb⟩ with rb
-  have hs'' : φ (u s) ≠ ⊥ := fun h' ↦ by
-    rw [h', EReal.bot_add, le_bot_iff] at h₁
-    exact EReal.coe_ne_bot _ h₁
-  have ht'' : φ (u t) ≠ ⊤ := ne_top_of_le_ne_top (EReal.add_ne_top (EReal.coe_ne_top _)
-    (EReal.coe_ne_top _)) h₃
-  lift φ (u s) to ℝ using ⟨hs', hs''⟩ with rs
-  lift φ (u t) to ℝ using ⟨ht'', ht'⟩ with rt
+  lift φ (u s) to ℝ using hfin hs with rs
+  lift φ (u t) to ℝ using hfin ht with rt
   rw [← EReal.coe_add, EReal.coe_le_coe_iff] at h h₁ h₃ ⊢
   linarith
 
@@ -360,7 +369,7 @@ theorem isCurveOfMaximalSlope_of_hasGradientAt {f : E → ℝ} {u G : ℝ → E}
     (hu : ∀ t ∈ I, HasDerivAt u (-G t) t) (hG : ContinuousOn G I) :
     IsCurveOfMaximalSlope 2 2 (fun x ↦ (f x : EReal)) (descendingSlope fun x ↦ (f x : EReal)) u
       I := by
-  intro s hs t ht hst
+  refine ⟨fun _ _ ↦ ⟨EReal.coe_ne_top _, EReal.coe_ne_bot _⟩, fun s hs t ht hst ↦ ?_⟩
   have hsub : uIcc s t ⊆ I := uIcc_of_le hst ▸ Set.OrdConnected.out ‹_› hs ht
   -- The curve is Lipschitz on `[s, t]`, since its velocity is bounded there.
   obtain ⟨C, hC⟩ := isCompact_uIcc.exists_bound_of_continuousOn (hG.mono hsub)
