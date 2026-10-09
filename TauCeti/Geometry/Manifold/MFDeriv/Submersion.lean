@@ -30,7 +30,7 @@ variable {𝕜 E H M F G : Type*} [NontriviallyNormedField 𝕜]
 
 /-- A surjective continuous linear map composed with a local diffeomorphism has a surjective
 vector-valued manifold derivative. No finite-dimensionality assumption is needed. -/
-theorem surjective_mvfderiv_comp_of_isLocalDiffeomorphAt {n : ℕ∞ω} {f : M → F} {x : M}
+theorem mvfderiv_comp_surjective_of_isLocalDiffeomorphAt {n : ℕ∞ω} {f : M → F} {x : M}
     (hf : IsLocalDiffeomorphAt I 𝓘(𝕜, F) n f x) (hn : n ≠ 0)
     (L : F →L[𝕜] G) (hL : Function.Surjective L) :
     Function.Surjective (mvfderiv I (L ∘ f) x) := by

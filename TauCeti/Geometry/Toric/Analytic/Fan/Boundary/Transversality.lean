@@ -42,7 +42,7 @@ variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
 equations whose complex differential is surjective at every point of the neighbourhood.
 This is the transversality of the ray-indexed boundary, including intersections of any number
 of components. Components not through the chosen point do not meet this neighbourhood. -/
-theorem exists_contMDiffOn_analyticBoundaryComponent_eq_zero_surjective_mvfderiv
+theorem exists_contMDiffOn_analyticBoundaryComponent_eq_zero_mvfderiv_surjective
     (x : Φ.analyticRealization hΦ) :
     letI := Φ.analyticChartedSpace hΦ
     letI := Fintype.ofFinite {ρ : Φ.Ray // x ∈ Φ.analyticBoundaryComponent hΦ ρ}
@@ -72,7 +72,7 @@ theorem exists_contMDiffOn_analyticBoundaryComponent_eq_zero_surjective_mvfderiv
   refine ⟨e.source, L ∘ e, e.open_source, hx,
     L.contMDiff.comp_contMDiffOn e.contMDiffOn, ?_, ?_⟩
   · intro y hy
-    exact surjective_mvfderiv_comp_of_isLocalDiffeomorphAt
+    exact mvfderiv_comp_surjective_of_isLocalDiffeomorphAt
       (_root_.PartialDiffeomorph.isLocalDiffeomorphAt _ _ ∞ e hy) (by simp) L hL
   · intro y hy ρ
     rw [he y hy ρ]
