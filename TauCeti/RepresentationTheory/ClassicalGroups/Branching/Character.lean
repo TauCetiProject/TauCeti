@@ -12,8 +12,8 @@ public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Branching
 /-!
 # Branching of Weyl-module characters on the diagonal torus
 
-The character of the Weyl module of a shape `μ` on `GL (n + 1)` restricts on the diagonal
-`GL n × GL 1` to
+The character of the Weyl module of a shape `μ` on `GL (n + 1)` restricts to the diagonal
+torus `(kˣ)ⁿ × kˣ` as
 
 `χ_μ(diag(t, z)) = ∑_ν z ^ (|μ| - |ν|) * χ_ν(diag t)`,
 
@@ -26,7 +26,7 @@ These are identities of group characters evaluated on the diagonal torus, not is
 of restricted representations. They provide the character calculation for multiplicity-free
 branching; identifying the representation summands is a separate step.
 
-The proofs combine `TauCeti.char_weylRepOfShape_diagramOf_diagonal`, the Weyl-module
+The proofs combine `TauCeti.char_weylRepOfShape_diagonal_eq_eval_diagramSchurPoly`, the Weyl-module
 character formula, with `TauCeti.eval_snoc_diagramSchurPoly`, the Schur-polynomial branching
 identity. The `FDRep` forms also apply to `TauCeti.schurFunctor` over `ℂ`.
 
@@ -44,7 +44,8 @@ universe u
 
 variable (k : Type u) [Field k] [CharZero k] (n : ℕ) (μ : YoungDiagram)
 
-/-- On the diagonal `GL n × GL 1`, the Weyl character branches over interlacing shapes.
+/-- On diagonal matrices `diag(t, z)` of `GL (n + 1)`, the Weyl character branches over
+interlacing shapes.
 The last coordinate records the number of boxes removed from the shape. -/
 theorem char_weylRepOfShape_diagonal_snoc (t : Fin n → kˣ) (z : kˣ) :
     Representation.character (V := ↥(weylModuleOfShape k (n + 1) μ).toSubmodule)
@@ -54,26 +55,13 @@ theorem char_weylRepOfShape_diagonal_snoc (t : Fin n → kˣ) (z : kˣ) :
           Representation.character (V := ↥(weylModuleOfShape k n ν).toSubmodule)
             (weylRepOfShape k n ν) (diagGL t) := by
   classical
-  have hchar (m : ℕ) (ν : YoungDiagram) (s : Fin m → kˣ) :
-      Representation.character (V := ↥(weylModuleOfShape k m ν).toSubmodule)
-          (weylRepOfShape k m ν) (diagGL s) =
-        MvPolynomial.eval (fun i => (s i : k)) (diagramSchurPoly m k ν) := by
-    have h := char_weylRepOfShape_diagramOf_diagonal k m (shapePartition ν) s
-    rw [schurPoly_eq_rename, diagramOf_shapePartition] at h
-    have hrename (r : ℕ) (e : Fin r ≃ Fin m) :
-        MvPolynomial.rename e (diagramSchurPoly r k ν) = diagramSchurPoly m k ν := by
-      have hr : r = m := by simpa only [Fintype.card_fin] using Fintype.card_congr e
-      subst r
-      exact isSymmetric_diagramSchurPoly m k ν e
-    rw [hrename] at h
-    exact h
-  simp_rw [hchar]
+  simp_rw [char_weylRepOfShape_diagonal_eq_eval_diagramSchurPoly]
   have hsnoc : (fun i : Fin (n + 1) => ((Fin.snoc t z : Fin (n + 1) → kˣ) i : k)) =
       Fin.snoc (fun i => (t i : k)) (z : k) :=
     Fin.comp_snoc (fun a : kˣ => (a : k)) t z
   rw [hsnoc, eval_snoc_diagramSchurPoly]
 
-/-- The diagonal `GL n × GL 1` branching identity for the bundled Weyl module. -/
+/-- The diagonal-torus branching identity for the bundled Weyl module. -/
 theorem char_weylFDRepOfShape_diagonal_snoc (t : Fin n → kˣ) (z : kˣ) :
     (weylFDRepOfShape k (n + 1) μ).character (diagGL (Fin.snoc t z)) =
       ∑ ν ∈ YoungDiagram.interlacingShapes n μ,
