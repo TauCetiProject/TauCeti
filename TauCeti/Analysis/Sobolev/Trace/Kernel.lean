@@ -60,38 +60,6 @@ open scoped ContDiff ENNReal Gradient
 
 namespace TauCeti
 
-/-! ### A bound for the boundary-layer cutoff -/
-
-section Cutoff
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- The boundary-layer cutoff and its gradient are bounded by a common constant. -/
-private theorem exists_normalCutoff_bound [CompleteSpace E] (a : ℝ) {c : ℝ} (hc : 0 ≤ c) :
-    ∃ M, 0 ≤ M ∧ (∀ x, |normalCutoff (E := E) a c x| ≤ M) ∧
-      ∀ x, ‖∇ (normalCutoff (E := E) a c) x‖ ≤ M := by
-  obtain ⟨B, hB⟩ := (Real.smoothTransition.contDiff.continuous_deriv le_rfl).norm
-    |>.bddAbove_range_of_hasCompactSupport Real.smoothTransition.hasCompactSupport_deriv.norm
-  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB ⟨0, rfl⟩)
-  refine ⟨max 1 (B * c), zero_le_one.trans (le_max_left _ _), fun x => ?_, fun x => ?_⟩
-  · rw [abs_of_nonneg (normalCutoff_nonneg a c x)]
-    exact (normalCutoff_le_one a c x).trans (le_max_left _ _)
-  · have hfst : ‖WithLp.fstL 2 ℝ ℝ E‖ ≤ 1 :=
-      ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun y => by
-        rw [one_mul]
-        exact WithLp.norm_fst_le ℝ y
-    rw [norm_gradient_eq_norm_fderiv, (hasFDerivAt_normalCutoff a c x).fderiv, norm_smul,
-      norm_mul, Real.norm_of_nonneg hc]
-    calc ‖deriv Real.smoothTransition (c * (x.fst - a) - 1)‖ * c * ‖WithLp.fstL 2 ℝ ℝ E‖
-        ≤ B * c * 1 := by
-          gcongr
-          exact hB ⟨_, rfl⟩
-      _ ≤ max 1 (B * c) := by
-          rw [mul_one]
-          exact le_max_right _ _
-
-end Cutoff
-
 /-! ### Functions vanishing off the half-space -/
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -156,7 +124,7 @@ then its restriction to `H` lies in `W^{1,p}_0(H)`. -/
 theorem W1p.restrictL_mem_w1p0Submodule_normalHalfSpace (hp : p ≠ (∞ : ℝ≥0∞)) (a : ℝ)
     (w : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p)
     (hw : ∀ᵐ x ∂volume, x ∉ normalHalfSpace (E := E) a → W1p.value w x = 0) :
-    W1p.restrictL (show normalHalfSpace (E := E) a ≤ ⊤ from le_top) w ∈
+    W1p.restrictL (le_top : normalHalfSpace (E := E) a ≤ ⊤) w ∈
       w1p0Submodule volume (normalHalfSpace (E := E) a) p := by
   -- The translates of `w` by `s` in the normal direction depend continuously on `s`.
   have hg : Continuous fun s : ℝ => WithLp.toLp 2 (-s, (0 : E)) :=
@@ -183,7 +151,7 @@ if its extension by zero, in value and weak gradient, is a Sobolev function on `
 theorem W1p.mem_w1p0Submodule_normalHalfSpace_iff (hp : p ≠ (∞ : ℝ≥0∞)) (a : ℝ)
     (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) p) :
     u ∈ w1p0Submodule volume (normalHalfSpace (E := E) a) p ↔
-      Sobolev1JetLp.extendByZeroₗᵢ (show normalHalfSpace (E := E) a ≤ ⊤ from le_top)
+      Sobolev1JetLp.extendByZeroₗᵢ (le_top : normalHalfSpace (E := E) a ≤ ⊤)
         (u : Sobolev1JetLp (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) p) ∈
           w1pSubmodule volume ⊤ p := by
   refine ⟨fun hu => Sobolev1JetLp.extendByZeroₗᵢ_mem_w1pSubmodule le_top hu, fun hJ => ?_⟩

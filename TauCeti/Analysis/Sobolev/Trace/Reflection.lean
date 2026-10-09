@@ -44,7 +44,8 @@ Dominated convergence then passes to the limit.
 * `TauCeti.normalReflection`: the affine reflection `(t, y) ↦ (2a - t, y)` in `{a} × E`, with
   its measure preservation and derivative.
 * `TauCeti.normalCutoff`: the smooth cutoff `σ(c (x.fst - a) - 1)` of the normal coordinate,
-  supported a positive distance inside the half-space.
+  supported a positive distance inside the half-space, with the common bound
+  `TauCeti.exists_normalCutoff_bound` on it and its gradient.
 * `TauCeti.HasWeakFDerivOn.add_comp_normalReflection`: the even reflection of a weakly
   differentiable function on the half-space is weakly differentiable on the whole space.
 
@@ -58,7 +59,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set TopologicalSpace Filter
-open scoped ContDiff Topology Distributions
+open scoped ContDiff Topology Distributions Gradient
 
 namespace TauCeti
 
@@ -223,7 +224,14 @@ theorem normalCutoff_nonneg (a c : ℝ) (x : WithLp 2 (ℝ × E)) : 0 ≤ normal
 theorem normalCutoff_le_one (a c : ℝ) (x : WithLp 2 (ℝ × E)) : normalCutoff a c x ≤ 1 :=
   Real.smoothTransition.le_one _
 
+/-- The boundary-layer cutoff is zero where `c (x.fst - a) ≤ 1`. -/
+@[simp]
+theorem normalCutoff_eq_zero {a c : ℝ} {x : WithLp 2 (ℝ × E)} (hx : c * (x.fst - a) ≤ 1) :
+    normalCutoff a c x = 0 :=
+  Real.smoothTransition.zero_of_nonpos (by linarith)
+
 /-- The boundary-layer cutoff is one where `c (x.fst - a) ≥ 2`. -/
+@[simp]
 theorem normalCutoff_eq_one {a c : ℝ} {x : WithLp 2 (ℝ × E)} (hx : 2 ≤ c * (x.fst - a)) :
     normalCutoff a c x = 1 :=
   Real.smoothTransition.one_of_one_le (by linarith)
@@ -302,13 +310,43 @@ theorem tsupport_normalCutoff_subset (a : ℝ) {c : ℝ} (hc : 0 < c) :
   refine (closure_minimal (fun x hx => ?_) hclosed).trans fun x hx => ?_
   · have h0 : 0 < c * (x.fst - a) - 1 := by
       by_contra h
-      exact hx (Real.smoothTransition.zero_of_nonpos (not_lt.1 h))
+      exact hx (normalCutoff_eq_zero (by linarith [not_lt.1 h]))
     rw [mem_ofPred_eq, inv_eq_one_div, ← le_sub_iff_add_le', div_le_iff₀ hc]
     linarith
   · have : a < x.fst := lt_of_lt_of_le (lt_add_of_pos_right a (inv_pos.2 hc)) hx
     simpa using this
 
 end Cutoff
+
+section CutoffBound
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+
+/-- The boundary-layer cutoff and its gradient are bounded by a common constant. -/
+theorem exists_normalCutoff_bound (a : ℝ) {c : ℝ} (hc : 0 ≤ c) :
+    ∃ M, 0 ≤ M ∧ (∀ x, |normalCutoff (E := E) a c x| ≤ M) ∧
+      ∀ x, ‖∇ (normalCutoff (E := E) a c) x‖ ≤ M := by
+  obtain ⟨B, hB⟩ := (Real.smoothTransition.contDiff.continuous_deriv le_rfl).norm
+    |>.bddAbove_range_of_hasCompactSupport Real.smoothTransition.hasCompactSupport_deriv.norm
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB ⟨0, rfl⟩)
+  refine ⟨max 1 (B * c), zero_le_one.trans (le_max_left _ _), fun x => ?_, fun x => ?_⟩
+  · rw [abs_of_nonneg (normalCutoff_nonneg a c x)]
+    exact (normalCutoff_le_one a c x).trans (le_max_left _ _)
+  · have hfst : ‖WithLp.fstL 2 ℝ ℝ E‖ ≤ 1 :=
+      ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun y => by
+        rw [one_mul]
+        exact WithLp.norm_fst_le ℝ y
+    rw [norm_gradient_eq_norm_fderiv, (hasFDerivAt_normalCutoff a c x).fderiv, norm_smul,
+      norm_mul, Real.norm_of_nonneg hc]
+    calc ‖deriv Real.smoothTransition (c * (x.fst - a) - 1)‖ * c * ‖WithLp.fstL 2 ℝ ℝ E‖
+        ≤ B * c * 1 := by
+          gcongr
+          exact hB ⟨_, rfl⟩
+      _ ≤ max 1 (B * c) := by
+          rw [mul_one]
+          exact le_max_right _ _
+
+end CutoffBound
 
 /-! ### Integration by parts up to the boundary -/
 
