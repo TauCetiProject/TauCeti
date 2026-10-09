@@ -60,6 +60,7 @@ theorem rationalNonsplitQuaternaryForm_apply (v : Fin 4 → ℚ) :
   ring
 
 /-- The discriminant of `x² + y² + z² + 2w²` is `2`. -/
+@[simp]
 theorem rationalNonsplitQuaternaryForm_discr' :
     QuadraticForm.discr' rationalNonsplitQuaternaryForm = 2 := by
   rw [rationalNonsplitQuaternaryForm]
@@ -70,6 +71,7 @@ theorem rationalNonsplitQuaternaryForm_discr' :
     _ = 2 := by norm_num [Fin.prod_univ_succ]
 
 /-- The rational form `x² + y² + z² + 2w²` is nondegenerate. -/
+@[simp]
 theorem nondegenerate_rationalNonsplitQuaternaryForm :
     rationalNonsplitQuaternaryForm.Nondegenerate := by
   apply QuadraticMap.nondegenerate_weightedSumSquares
