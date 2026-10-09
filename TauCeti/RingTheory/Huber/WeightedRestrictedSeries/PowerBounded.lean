@@ -54,8 +54,9 @@ variable {k : ℕ} {A : Type*} [CommRing A] [TopologicalSpace A] [Nonarchimedean
 /-- **A weighted variable `a · Xᵢ` is power-bounded** whenever `a ∈ T i`: the weight `Tᵢ` is
 exactly what multiplies `Xᵢ` back into the unit ball of `A⟨X⟩_T`.
 
-Over a Tate ring these elements present `A⟨X⟩_T` as a quotient of an unweighted restricted
-power-series algebra, one variable for each element of each finite `Tᵢ`
+Over a Tate ring the images of these elements present the completion of `A⟨X⟩_T` as a
+quotient of an unweighted restricted power-series algebra, one variable for each element of
+each finite `Tᵢ`
 (`TauCeti.Huber.isStrictlyTopologicallyFiniteType_algebraMap_completion_weightedRestrictedSubring`).
 -/
 theorem isPowerBounded_weightedC_mul_weightedX {T : Fin k → Set A} (hT : IsWeightFamily T)
