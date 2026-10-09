@@ -98,7 +98,8 @@ theorem solvableRadicalDefiningIdeal_le_comap
 
 /-- A schematically dominant homomorphism to a group with trivial solvable radical kills the
 source radical: the source radical is contained in its scheme-theoretic kernel. -/
-theorem kernelHopfIdeal_le_solvableRadicalDefiningIdeal_of_target_radical_eq_augmentation
+theorem
+kernelHopfIdeal_le_solvableRadicalDefiningIdeal_of_solvableRadicalDefiningIdeal_eq_augmentation
     (H D : FiniteTypeCommHopfAlgCat.{u, u} k)
     (hD : solvableRadicalDefiningIdeal D = HopfIdeal.augmentation k D)
     (f : D.obj ⟶ H.obj) (hf : Function.Injective f.hom) :
@@ -110,14 +111,15 @@ theorem kernelHopfIdeal_le_solvableRadicalDefiningIdeal_of_target_radical_eq_aug
 
 /-- A connected normal smooth solvable kernel of a schematically dominant homomorphism to a
 group with trivial solvable radical is the solvable radical of the source. -/
-theorem solvableRadicalDefiningIdeal_eq_kernelHopfIdeal_of_target_radical_eq_augmentation
+theorem
+solvableRadicalDefiningIdeal_eq_kernelHopfIdeal_of_solvableRadicalDefiningIdeal_eq_augmentation
     (H D : FiniteTypeCommHopfAlgCat.{u, u} k)
     (hD : solvableRadicalDefiningIdeal D = HopfIdeal.augmentation k D)
     (f : D.obj ⟶ H.obj) (hf : Function.Injective f.hom)
     (hker : HopfIdeal.IsSolvableRadicalCandidate H (CommHopfAlgCat.kernelHopfIdeal f)) :
     solvableRadicalDefiningIdeal H = CommHopfAlgCat.kernelHopfIdeal f :=
   le_antisymm (solvableRadicalDefiningIdeal_le H _ hker)
-    (kernelHopfIdeal_le_solvableRadicalDefiningIdeal_of_target_radical_eq_augmentation
+    (kernelHopfIdeal_le_solvableRadicalDefiningIdeal_of_solvableRadicalDefiningIdeal_eq_augmentation
       H D hD f hf)
 
 /-- A connected normal smooth solvable kernel with semisimple quotient is the solvable radical.
@@ -127,8 +129,8 @@ theorem solvableRadicalDefiningIdeal_eq_kernelHopfIdeal_of_semisimple
     (f : D.obj ⟶ H.obj) (hf : Function.Injective f.hom)
     (hker : HopfIdeal.IsSolvableRadicalCandidate H (CommHopfAlgCat.kernelHopfIdeal f)) :
     solvableRadicalDefiningIdeal H = CommHopfAlgCat.kernelHopfIdeal f :=
-  solvableRadicalDefiningIdeal_eq_kernelHopfIdeal_of_target_radical_eq_augmentation H D
-    hD.solvableRadicalDefiningIdeal_eq_augmentation f hf hker
+  solvableRadicalDefiningIdeal_eq_kernelHopfIdeal_of_solvableRadicalDefiningIdeal_eq_augmentation
+    H D hD.solvableRadicalDefiningIdeal_eq_augmentation f hf hker
 
 end FiniteTypeCommHopfAlgCat
 
