@@ -23,7 +23,7 @@ group homomorphism
 
 written additively. Its values are `2`-torsion, it sends the two-fold Pfister class `⟨⟨a, b⟩⟩` to
 the quaternion class `[(a, b)]`, and it vanishes on the three-fold Pfister classes, which
-additively generate `I(K)³`. So it descends to a homomorphism `c̄ : I(K)²/I(K)³ → Br(K)` with
+additively generate `I(K)³`. So it descends to a homomorphism `c' : I(K)²/I(K)³ → Br(K)` with
 values in the `2`-torsion subgroup `Br(K)[2]`. No injectivity or surjectivity statement is made
 here.
 
@@ -43,7 +43,7 @@ here.
 * `TauCeti.cliffordHomI2_pfisterClass`: `c⟨⟨a, b⟩⟩ = [(a, b)]`.
 * `TauCeti.cliffordHomI2_two_torsion`: the values of `c` are `2`-torsion.
 * `TauCeti.cliffordHomI2_eq_zero`: `c` vanishes on `I(K)³`.
-* `TauCeti.cliffordHomI2Bar_mk`: `c̄` computes `c` on representatives.
+* `TauCeti.cliffordHomI2Bar_mk`: `c'` computes `c` on representatives.
 
 ## References
 
@@ -179,7 +179,7 @@ noncomputable abbrev fundamentalI3InI2 (K : Type u) [Field K] [Invertible (2 : K
     Submodule (WittRing K) ↥(fundamentalIdeal K ^ 2) :=
   Submodule.comap (fundamentalIdeal K ^ 2).subtype (fundamentalIdeal K ^ 3)
 
-/-- **The Clifford homomorphism** `c̄ : I(K)²/I(K)³ → Br(K)`, written additively: the descent of
+/-- **The Clifford homomorphism** `c' : I(K)²/I(K)³ → Br(K)`, written additively: the descent of
 `TauCeti.cliffordHomI2`, which vanishes on `I(K)³`. Its values are those of `c`, so they are
 `2`-torsion by `TauCeti.cliffordHomI2_two_torsion`. -/
 noncomputable def cliffordHomI2Bar :
@@ -188,7 +188,7 @@ noncomputable def cliffordHomI2Bar :
   -- Mathlib's `Submodule.liftQ`.
   QuotientAddGroup.lift (fundamentalI3InI2 K).toAddSubgroup cliffordHomI2 cliffordHomI2_eq_zero
 
-/-- `c̄` computes `c` on a representative. -/
+/-- `c'` computes `c` on a representative. -/
 @[simp]
 theorem cliffordHomI2Bar_mk (x : ↥(fundamentalIdeal K ^ 2)) :
     cliffordHomI2Bar (Submodule.Quotient.mk x) = cliffordHomI2 x :=
