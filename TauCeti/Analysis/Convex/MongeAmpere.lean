@@ -55,14 +55,14 @@ determinant (`TauCeti.isPositive_of_hasFDerivAt_gradient`).
 
 The *Aleksandrov maximum principle* bounds a convex function by its Monge–Ampère mass: if `u` is
 convex on a bounded open convex `Ω`, continuous on the closure and nonnegative on the frontier,
-then `(-u x₀) ^ n ≤ C diam(Ω) ^ (n - 1) dist(x₀, ∂Ω) MA_u(Ω)` for `x₀ ∈ Ω`, with
+then `max (-u x₀) 0 ^ n ≤ C diam(Ω) ^ (n - 1) dist(x₀, ∂Ω) MA_u(Ω)` for `x₀ ∈ Ω`, with
 `C = 2 ^ (n + 1) / μ (ball 0 1)`
 (`TauCeti.ofReal_neg_pow_mul_addHaar_ball_le_mul_mongeAmpereMeasure`). Every slope `p` of an
 affine function through `(x₀, u x₀)` lying below `u` on the frontier is a subgradient of `u` at
 some point of `Ω` (`TauCeti.exists_forall_add_inner_le_of_forall_frontier`). When `u ≥ 0` on the
-frontier, these slopes include a convex set containing a ball of radius `-u x₀ / diam Ω` and a
-point of norm `-u x₀ / dist(x₀, ∂Ω)`, and the volume of such a set is bounded below by
-`Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le`.
+frontier and `u x₀ < 0`, these slopes include a convex set containing a ball of radius
+`-u x₀ / diam Ω` and a point of norm `-u x₀ / dist(x₀, ∂Ω)`, and the volume of such a set is
+bounded below by `Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le`.
 
 ## Main definitions
 
@@ -84,8 +84,6 @@ point of norm `-u x₀ / dist(x₀, ∂Ω)`, and the volume of such a set is bou
 * `TauCeti.mongeAmpereMeasure_eq_withDensity_det` and
   `TauCeti.mongeAmpereMeasure_ite_eq_withDensity_det` — for a twice differentiable convex function,
   the Aleksandrov measure is `det (D²f) dx` on the interior of the effective domain;
-* `TauCeti.exists_forall_add_inner_le_of_forall_frontier` — slopes of affine functions through a
-  point of the graph that lie below the boundary values are subgradients at points of `Ω`;
 * `TauCeti.ofReal_neg_pow_mul_addHaar_ball_le_mul_mongeAmpereMeasure` — **the Aleksandrov
   maximum principle**.
 
@@ -435,45 +433,19 @@ section MaximumPrinciple
 
 variable {Ω : Set E} {u : E → ℝ}
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- **Slopes below the boundary values are subgradients.** Let `Ω` be bounded and `u` continuous
-on its closure, and let `x₀ ∈ Ω`. If the affine function `x ↦ u x₀ + ⟪x - x₀, p⟫` lies below `u`
-on the frontier of `Ω`, then `p` is a subgradient of `u` relative to `Ω` at some point `x₁ ∈ Ω`:
-`u x₁ + ⟪x - x₁, p⟫ ≤ u x` for every `x ∈ Ω`. -/
-theorem exists_forall_add_inner_le_of_forall_frontier [ProperSpace E]
-    (hΩ : Bornology.IsBounded Ω) (hu : ContinuousOn u (closure Ω)) {x₀ : E} (hx₀ : x₀ ∈ Ω)
-    {p : E} (hp : ∀ x ∈ frontier Ω, u x₀ + inner ℝ (x - x₀) p ≤ u x) :
-    ∃ x₁ ∈ Ω, ∀ x ∈ Ω, u x₁ + inner ℝ (x - x₁) p ≤ u x := by
-  -- Minimize `u - ⟪·, p⟫` over the compact closure of `Ω`.
-  have hcont : ContinuousOn (fun x => u x - inner ℝ x p) (closure Ω) :=
-    hu.sub (continuous_id.inner continuous_const).continuousOn
-  obtain ⟨x₁, hx₁, hmin⟩ := hΩ.isCompact_closure.exists_isMinOn ⟨x₀, subset_closure hx₀⟩ hcont
-  have hmin' : ∀ x ∈ Ω, u x₁ - inner ℝ x₁ p ≤ u x - inner ℝ x p := fun x hx =>
-    isMinOn_iff.1 hmin x (subset_closure hx)
-  by_cases h₁ : x₁ ∈ Ω
-  · refine ⟨x₁, h₁, fun x hx => ?_⟩
-    have := hmin' x hx
-    rw [inner_sub_left]
-    linarith
-  · -- A minimum on the frontier is no smaller than the value at `x₀`, which is then a minimum.
-    refine ⟨x₀, hx₀, fun x hx => ?_⟩
-    have h₂ := hp x₁ ⟨hx₁, fun h => h₁ (interior_subset h)⟩
-    have h₃ := hmin' x hx
-    rw [inner_sub_left] at h₂ ⊢
-    linarith
-
 variable [Nontrivial E] (μ : Measure E) [μ.IsAddHaarMeasure] [DecidablePred (· ∈ Ω)]
 
 /-- **The Aleksandrov maximum principle.** Let `Ω` be a bounded open convex subset of a real inner
 product space `E` of finite dimension `n ≥ 1`, and let `u` be convex on `Ω`, continuous on its
 closure, and nonnegative on its frontier. Then at every `x₀ ∈ Ω`,
 
-  `(-u x₀) ^ n * μ (ball 0 1) ≤ 2 ^ (n + 1) * diam Ω ^ (n - 1) * dist(x₀, ∂Ω) * MA_u(Ω)`,
+  `max (-u x₀) 0 ^ n * μ (ball 0 1) ≤ 2 ^ (n + 1) * diam Ω ^ (n - 1) * dist(x₀, ∂Ω) * MA_u(Ω)`,
 
 where `dist(x₀, ∂Ω)` is the distance from `x₀` to the complement of `Ω` and `MA_u` is the
 Aleksandrov Monge–Ampère measure of `u` (extended by `⊤` off `Ω`) with respect to the additive
-Haar measure `μ`. When `MA_u(Ω)` is finite, this bounds `-u` below on `Ω` and shows that
-`-u x₀ = O(dist(x₀, ∂Ω) ^ (1 / n))` as `x₀` approaches the boundary. -/
+Haar measure `μ`. When `MA_u(Ω)` is finite, this bounds the negative part `max (-u x₀) 0` above
+on `Ω` and shows that `max (-u x₀) 0 = O(dist(x₀, ∂Ω) ^ (1 / n))` as `x₀` approaches the
+boundary. -/
 theorem ofReal_neg_pow_mul_addHaar_ball_le_mul_mongeAmpereMeasure (hΩo : IsOpen Ω)
     (hΩ : Bornology.IsBounded Ω) (hu : ConvexOn ℝ Ω u) (hc : ContinuousOn u (closure Ω))
     (hfr : ∀ x ∈ frontier Ω, 0 ≤ u x) {x₀ : E} (hx₀ : x₀ ∈ Ω) :
