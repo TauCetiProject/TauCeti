@@ -147,6 +147,8 @@ theorem map_homDifferential (F : AInfinityStrictFunctor 𝒞 𝒟) (X Y : C)
   have h := F.map_m ![X, Y] x
   rw [← 𝒞.homDifferential_eq_m ![X, Y] x,
     ← 𝒟.homDifferential_eq_m (fun i ↦ F.obj (![X, Y] i)) (fun i ↦ F.map _ _ (x i))] at h
+  -- At the closed indices 0 and Fin.last 1, the literal tuple evaluates to X and Y,
+  -- and Fin.cases evaluates x 0 to f. These are constructor reductions.
   exact h
 
 /-- A strict functor preserves the binary composition `m₂(g,f)`. -/
@@ -161,6 +163,8 @@ theorem map_comp (F : AInfinityStrictFunctor 𝒞 𝒟) (X Y Z : C)
   have h := F.map_m ![X, Y, Z] x
   rw [← 𝒞.comp_eq_m ![X, Y, Z] x,
     ← 𝒟.comp_eq_m (fun i ↦ F.obj (![X, Y, Z] i)) (fun i ↦ F.map _ _ (x i))] at h
+  -- At the closed indices 0, 1 and Fin.last 2, the literal tuple evaluates to X, Y and Z;
+  -- the nested Fin.cases evaluates x 0 to g and x 1 to f by constructor reduction.
   exact h
 
 /-- The identity strict functor of a nonunital `A∞` category. -/
