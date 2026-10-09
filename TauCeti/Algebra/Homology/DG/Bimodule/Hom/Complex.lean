@@ -152,6 +152,16 @@ def differential (p : ℤ) :
       (dgBimoduleCochains (B := B) (𝒜 := 𝒜) p).subtype |>.codRestrict _
         (differential_mem (hM := hM) (hN := hN) p)
 
+/-- Forgetting signed left linearity takes the bimodule differential to the
+right-module differential. -/
+@[simp↓]
+theorem differential_val (p : ℤ)
+    (f : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := 𝒩) p) :
+    (differential (hM := hM) (hN := hN) p f).1 =
+      dgRightModuleCochains.differential
+        (hM := hM.isDGRightModule) (hN := hN.isDGRightModule) p f.1 := by
+  rfl
+
 /-- Evaluation of the differential is the graded commutator. -/
 @[simp↓]
 theorem differential_apply (p : ℤ)
@@ -164,11 +174,13 @@ theorem differential_apply (p : ℤ)
 theorem differential_comp_self (p : ℤ) :
     (differential (hM := hM) (hN := hN) (p + 1)).comp
       (differential (hM := hM) (hN := hN) p) = 0 := by
-  ext f x
-  have hfg := LinearMap.congr_fun
+  apply LinearMap.ext
+  intro f
+  apply Subtype.ext
+  simpa only [LinearMap.comp_apply, differential_val, LinearMap.zero_apply,
+    Submodule.coe_zero] using LinearMap.congr_fun
     (dgRightModuleCochains.differential_comp_self
       (hM := hM.isDGRightModule) (hN := hN.isDGRightModule) p) f.1
-  exact congrArg (fun g ↦ g.1 x) hfg
 
 end dgBimoduleCochains
 
@@ -226,11 +238,8 @@ def dgBimoduleHomLinearEquivZeroCocycles (hM : IsDGBimodule hA hB ℳ dM)
         hM.isDGRightModule hN.isDGRightModule f.1).2⟩
   invFun f := ⟨(dgRightModuleHomLinearEquivZeroCocycles
     hM.isDGRightModule hN.isDGRightModule).symm ⟨f.1.1, by
-      -- Kernel membership unfolds to vanishing of the restricted differential;
-      -- forgetting its subtype gives the same underlying right-module cochain.
-      change dgRightModuleCochains.differential
-        (hM := hM.isDGRightModule) (hN := hN.isDGRightModule) 0 f.1.1 = 0
-      exact congrArg Subtype.val f.2⟩, by
+      simpa only [LinearMap.mem_ker, dgBimoduleCochains.differential_val,
+        Submodule.coe_zero] using congrArg Subtype.val f.2⟩, by
       apply (mem_dgBimoduleHomSubmodule hM hN _).mpr
       intro a x
       simp only [dgRightModuleHomLinearEquivZeroCocycles_symm_apply]
