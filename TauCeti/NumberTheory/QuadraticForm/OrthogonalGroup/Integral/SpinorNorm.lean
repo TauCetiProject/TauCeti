@@ -322,7 +322,6 @@ private theorem exists_spinorNorm_eq_squareClassHom (hp : p ≠ 2) [Nontrivial �
   let d : ℤ_[p] := ⟨Q (b j), (hunit j).le⟩
   have ha : IsUnit a := PadicInt.isUnit_iff.mpr (hunit i)
   have hd : IsUnit d := PadicInt.isUnit_iff.mpr (hunit j)
-  let : HenselianLocalRing ℤ_[p] := IsAdicComplete.henselianLocalRing _
   -- Represent `a⁻¹ u` by the binary form `a x² + d y²`.
   obtain ⟨x, y, hxy⟩ := exists_mul_sq_add_mul_sq_eq_of_isUnit h2 ha hd
     (ha.unit⁻¹ * u).isUnit

@@ -73,11 +73,8 @@ theorem HenselianRing.henselianLocalRing (R : Type*) [CommRing R] [IsLocalRing R
 
 /-- A local ring that is complete for the adic topology of its maximal ideal is a Henselian local
 ring. This is Mathlib's `IsAdicComplete.henselianRing` at `I = 𝔪`, read through
-`TauCeti.HenselianRing.henselianLocalRing`.
-
-Use this witness explicitly: registering it as an instance would create a cycle with
-`HenselianLocalRing.toIsLocalRing`. -/
-theorem IsAdicComplete.henselianLocalRing (R : Type*) [CommRing R] [IsLocalRing R]
+`TauCeti.HenselianRing.henselianLocalRing`. -/
+instance IsAdicComplete.henselianLocalRing (R : Type*) [CommRing R] [IsLocalRing R]
     [IsAdicComplete (maximalIdeal R) R] : HenselianLocalRing R :=
   HenselianRing.henselianLocalRing R
 

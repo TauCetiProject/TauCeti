@@ -86,8 +86,6 @@ theorem hilbertSymbol_eq_one_of_valued_eq_one {v : HeightOneSpectrum (𝓞 K)}
       Units.ext rfl⟩
   obtain ⟨r, rfl⟩ := hunit hu
   obtain ⟨r', rfl⟩ := hunit hu'
-  let : HenselianLocalRing (v.adicCompletionIntegers K) :=
-    TauCeti.IsAdicComplete.henselianLocalRing _
   exact hilbertSymbol_units_map_eq_one (ht2' ▸ ht) _ _
 
 /-- **The Hilbert symbol at a good finite place.** If `2`, `a` and `b` are units at the finite

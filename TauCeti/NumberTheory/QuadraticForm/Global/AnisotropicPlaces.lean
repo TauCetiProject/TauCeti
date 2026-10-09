@@ -71,8 +71,6 @@ theorem not_anisotropic_atFinitePlace_weightedSumSquares {ι : Type*} [Fintype �
   obtain ⟨uᵢ, huᵢ, huᵢa⟩ := v.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one hi
   obtain ⟨uⱼ, huⱼ, huⱼa⟩ := v.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one hj
   obtain ⟨uₖ, huₖ, huₖa⟩ := v.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one hk
-  let : HenselianLocalRing (v.adicCompletionIntegers K) :=
-    TauCeti.IsAdicComplete.henselianLocalRing _
   -- The binary form `⟨aᵢ, aⱼ⟩` represents `-aₖ` over the integers of `K_v`.
   obtain ⟨x, y, hxy⟩ := TauCeti.exists_mul_sq_add_mul_sq_eq_of_isUnit (ht2' ▸ ht) huᵢ huⱼ huₖ.neg
   have hxy' := congrArg (fun z : v.adicCompletionIntegers K ↦ (z : v.adicCompletion K)) hxy

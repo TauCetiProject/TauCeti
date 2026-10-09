@@ -17,7 +17,8 @@ linear map, also as an operator on alternating maps. This is the flat regularity
 needed for the smooth bundle of alternating maps.
 
 We use Mathlib's polynomial description of multilinear pullback and recover the alternating
-map by normalized alternatization over `ℝ`. No completeness or finite-dimensionality
+map by normalized alternatization over `ℝ`. The polynomial regularity API is developed by
+Sophie Morel in `Mathlib.Analysis.Analytic.CPolynomial`. No completeness or finite-dimensionality
 assumption is needed.
 The regularity parameter ranges over `ℕ∞ω`, including analytic regularity `ω`.
 

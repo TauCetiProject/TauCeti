@@ -105,12 +105,7 @@ theorem mfderiv_unitSphereEquiv_extendSphereTangent
   have hfx := unitSphereEquiv_extendSphereTangent_apply_self e
   ext v
   apply injective_mvfderiv_subtypeVal_sphere y
-  have h : mvfderiv (𝓡 k) ((↑) : sphere (0 : F) 1 → F)
-      (unitSphereEquiv e.extendSphereTangent x)
-      (mfderiv (𝓡 n) (𝓡 k) (unitSphereEquiv e.extendSphereTangent) x v) =
-      e.extendSphereTangent (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v) := by
-    rw [mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply]
-    exact TauCeti.mfderiv_coe_sphere_unitSphereEquiv (n := n) (k := k) e.extendSphereTangent x v
+  have h := mvfderiv_coe_sphere_unitSphereEquiv (n := n) (k := k) e.extendSphereTangent x v
   rw [hfx] at h
   -- `TangentSpace` is a type alias indexed by the base point. After identifying
   -- the points, `erw` sees the common model space beneath these different indices.

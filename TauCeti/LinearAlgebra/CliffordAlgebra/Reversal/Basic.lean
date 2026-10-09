@@ -239,8 +239,7 @@ variable [Invertible (2 : R)]
   module
 
 /-- Clifford reversal negates the image of the exterior-square bivector map. -/
--- The general reversal rule for the quadratic Lie subalgebra already simplifies this expression.
-theorem reverse_bivectorExterior (q : QuadraticForm R M) (x : ⋀[R]^2 M) :
+@[simp] theorem reverse_bivectorExterior (q : QuadraticForm R M) (x : ⋀[R]^2 M) :
     reverse (bivectorExterior q x) = -bivectorExterior q x := by
   let P := LinearMap.eqLocus (reverse (Q := q)) (-LinearMap.id)
   have hle : LinearMap.range (bivectorExterior q) ≤ P :=
