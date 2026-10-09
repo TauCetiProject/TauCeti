@@ -70,6 +70,9 @@ arbitrary centres are obtained from those about the origin.
   is translating by `a + b`.
 * `TauCeti.ValuationSpectrum.translateHom_mem_powerBoundedSubring`: translation preserves
   `A⟨T⟩°`.
+* `TauCeti.ValuationSpectrum.evalAtHom_comp_translateHom`: translating by `a` and then evaluating
+  at `b` is evaluating at `b + a`; `TauCeti.ValuationSpectrum.comap_translateHom_classicalPoint`
+  is the resulting recentring of classical points.
 
 ## References
 
@@ -371,6 +374,32 @@ theorem translateHom_mem_powerBoundedSubring (a : Fin k → A) (ha : ∀ i, IsPo
   mem_powerBoundedSubring.mpr ((isPowerBounded_ringEquiv_iff (translateEquiv a ha)
     (continuous_translateHom a ha) (continuous_translateHom _ _)).mpr
       (mem_powerBoundedSubring.mp hf))
+
+/-- **Evaluating a translate**: translating by `a` and then evaluating at `b` is evaluating at
+`b + a`. -/
+theorem evalAtHom_comp_translateHom (a b : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
+    (hb : ∀ i, IsPowerBounded (b i)) :
+    (evalAtHom b hb).comp (translateHom a ha) = evalAtHom (b + a) (fun i ↦ (hb i).add (ha i)) :=
+  weightedRestrictedSubring_ringHom_ext_of_continuous _
+    ((continuous_evalAtHom b hb).comp (continuous_translateHom a ha))
+    (continuous_evalAtHom _ _) (by simp) (by simp)
+
+/-- **Evaluating a translate**, applied to a series: `f(T + a)` at `b` is `f(b + a)`. -/
+@[simp]
+theorem evalAtHom_translateHom (a b : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
+    (hb : ∀ i, IsPowerBounded (b i))
+    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+    evalAtHom b hb (translateHom a ha f) = evalAtHom (b + a) (fun i ↦ (hb i).add (ha i)) f :=
+  RingHom.congr_fun (evalAtHom_comp_translateHom a b ha hb) f
+
+/-- **Translating recentres classical points**: pulling the classical point at `b` back along the
+translation `T ↦ T + a` gives the classical point at `b + a`. -/
+theorem comap_translateHom_classicalPoint (x : spa (powerBoundedSubring A)) (a b : Fin k → A)
+    (ha : ∀ i, IsPowerBounded (a i)) (hb : ∀ i, IsPowerBounded (b i)) :
+    comap (translateHom a ha) (classicalPoint x b hb).1 =
+      (classicalPoint x (b + a) fun i ↦ (hb i).add (ha i)).1 := by
+  rw [classicalPoint, classicalPoint, spaComap_val, spaComap_val,
+    ← Function.comp_apply (f := comap _), ← comap_comp, evalAtHom_comp_translateHom]
 
 end Translation
 
