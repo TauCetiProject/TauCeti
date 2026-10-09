@@ -53,8 +53,6 @@ block file leaves open, for the groups where the general construction is availab
   representation.**
 * `TauCeti.peterWeylBlockAveraging_eq_isotypicProjector`: **the character averaging operator of a
   block is the isotypic projector of the model in the left regular representation.**
-* `TauCeti.peterWeylBlockAveraging_comp_leftRegularLp`: **that projector is equivariant**, so each
-  block is a complemented subrepresentation and not merely a translation-stable subspace.
 * `TauCeti.toSubmodule_range_isotypicProjector_leftRegularLp`,
   `TauCeti.mem_peterWeylBlock_iff_mem_isotypicComponent` and
   `TauCeti.restrictScalars_isotypicComponent_eq_peterWeylBlock`: **the `π`-block of `L²(G)` is the
@@ -168,22 +166,6 @@ theorem peterWeylBlockAveraging_eq_isotypicProjector (model : IrrepModel 𝕜 G)
   refine ContinuousMap.ext fun g => ?_
   rw [ContRepresentation.isotypicKernel_apply]
   simp
-
-/-- **The character averaging operator of a block commutes with left translation**, for a finite
-discrete group: it is an intertwiner of the left regular representation.
-
-The block file proves that each block is *stable* under translation
-(`TauCeti.leftRegularLp_mem_peterWeylBlock`); this says the projection onto it is equivariant, which
-is what makes the block a subrepresentation complemented by the kernel of the projection. It holds
-because the averaging kernel is a class function
-(`ContRepresentation.isotypicKernel_conj`), the property that makes an integrated operator
-an intertwiner. -/
-theorem peterWeylBlockAveraging_comp_leftRegularLp (model : IrrepModel 𝕜 G) (g : G) :
-    (peterWeylBlockAveraging model).comp (leftRegularLp 𝕜 G g)
-      = (leftRegularLp 𝕜 G g).comp (peterWeylBlockAveraging model) := by
-  rw [peterWeylBlockAveraging_eq_isotypicProjector]
-  exact (ContRepresentation.isotypicProjector (leftRegularLp 𝕜 G) continuous_of_discreteTopology
-    model.rep model.continuous_rep).isIntertwining' g
 
 section Skeleton
 

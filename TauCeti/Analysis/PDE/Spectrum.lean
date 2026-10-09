@@ -128,13 +128,7 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.Is
   {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
   {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ} {C : ℝ}
 
-/-- Shortcut normed group instance on `H¹₀(Ω)`, needed by the inherited Hilbert structure. -/
-noncomputable local instance instNormedAddCommGroupH1ZeroSpectrum :
-    NormedAddCommGroup (W1p0 mu Omega 2) := inferInstance
-
-/-- Shortcut inner-product instance on `H¹₀(Ω)`. -/
-noncomputable local instance instInnerProductSpaceH1ZeroSpectrum :
-    InnerProductSpace ℝ (W1p0 mu Omega 2) := inferInstance
+attribute [local instance] W1p0.instNormedAddCommGroup W1p0.instInnerProductSpace
 
 /-! ### The solution operator on `L²(Ω)` -/
 

@@ -121,12 +121,6 @@ forward direction is identified with that model by
 
 ## References
 
-This is the essential-surjectivity half of `quiverRepEquivalence`, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, which asks for the
-equivalence "sending a module `M` to the representation `v ↦ eᵥ M`, with an arrow acting by left
-multiplication, and inverting through the idempotent decomposition `M = ⨁ᵥ eᵥ M`"; the fully
-faithful half is `TauCeti.quiverRepFunctorFullyFaithful`.
-
 The plan of the file follows Mathlib's group-algebra analogue: the type synonym carrying a module
 structure through `Module.compHom`, the equivalence with the underlying type and the shape of the
 final `≌ ModuleCat (algebra)` statement are those of `Representation.asModule`,
@@ -358,10 +352,9 @@ theorem sum_ofVertex_toVertex [Fintype Q] (x : asModule k Q M) :
 theorem ofVertex_injective (v : Q) : Function.Injective (ofVertex k Q M v) :=
   Function.LeftInverse.injective (toVertex_ofVertex k Q M v)
 
--- Not `@[simp]`: the specialized `TauCeti.QuiverRep.smul_ofVertex` and
--- `TauCeti.QuiverRep.vertexIdempotent_smul` are the simp-normal forms of the action, this one
--- being stated on an arbitrary element and so introducing `TauCeti.QuiverRep.toVertex` where they
--- do not.
+-- Not `@[simp]`: on an arbitrary element this introduces `TauCeti.QuiverRep.toVertex`, and as a
+-- simp lemma it would make the specialized `TauCeti.QuiverRep.smul_ofVertex`, the simp-normal form
+-- of the action on a vertex component, provable by `simp`.
 /-- **A basis path acts by transporting the component at its source**: it reads off that
 component, applies the structure map, and puts the result in the component at its target. This is
 `TauCeti.QuiverRep.pathEnd` read on `TauCeti.QuiverRep.asModule`. -/

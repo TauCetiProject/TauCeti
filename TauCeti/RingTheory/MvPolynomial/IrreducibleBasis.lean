@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Polynomial.IrreducibleBasis
+public import TauCeti.RingTheory.Polynomial.IrreducibleBasis.Basic
 public import TauCeti.RingTheory.MvPolynomial.OrderAt
 import TauCeti.Algebra.MvPolynomial.Equiv
 

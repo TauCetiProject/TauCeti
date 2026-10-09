@@ -16,8 +16,9 @@ by its unit, the two alternating words of each length `1, …, c`, and just one 
 of length `c + 1`. Here length counts backtracks, not arrows. The two longest words sum to
 zero, because `(x + y)^(c + 1) = 0`. Thus there are `2 n - 4` spanning indices.
 
-These are explicit candidates for fork-corner coordinates in the Frobenius pairing. This file
-proves spanning and the resulting dimension upper bound, not linear independence. The longest
+These are the fork-corner coordinates for the Frobenius pairing. This file proves spanning and
+the resulting dimension upper bound. Linear independence over a field is proved in
+`TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.Basis`. The longest
 word relation holds in every source/target corner and over every commutative ring, including
 characteristic two. As in the existing type-`D` word API, quotient carriers use
 `forkNeighborSetFintype`; imported callers can select it as a local instance when writing
@@ -54,7 +55,8 @@ theorem preprojectiveDForkVertex_val (hn : 3 ≤ n) :
     (preprojectiveDForkVertex n hn).val = n - 3 := (rfl)
 
 /-- The reduced family of fork-corner words: the empty word, two alternating words for each
-backtrack length `1, …, n - 3`, and one word of length `n - 2`. Independence is not asserted. -/
+backtrack length `1, …, n - 3`, and one word of length `n - 2`. Over a field they are linearly
+independent, by `TauCeti.linearIndependent_signlessPreprojectiveDForkWords`. -/
 noncomputable def signlessPreprojectiveDForkWords (hn : 3 ≤ n) :
     Option (Bool × Fin c) ⊕ Unit → Π
   | .inl none => e (preprojectiveDForkVertex n hn)
@@ -145,8 +147,9 @@ theorem cornerSubmodule_signlessPreprojective_D_fork_eq_span (hn : 3 ≤ n) :
     rintro z ⟨i, rfl⟩
     exact signlessPreprojectiveDForkWords_mem_cornerSubmodule k hn i
 
-/-- The natural-number rank of the fork corner is at most `2 n - 4`; over a field this
-bounds its dimension. Nonvanishing and independence of the words are separate questions. -/
+/-- The natural-number rank of the fork corner is at most `2 n - 4`, over every nontrivial
+commutative ring. Over a field it is equal to `2 n - 4`, by
+`TauCeti.finrank_cornerSubmodule_signlessPreprojective_D_fork`. -/
 theorem finrank_cornerSubmodule_signlessPreprojective_D_fork_le [Nontrivial k] (hn : 3 ≤ n) :
     Module.finrank k
       (cornerSubmodule k (e (preprojectiveDForkVertex n hn)) (e (preprojectiveDForkVertex n hn))) ≤

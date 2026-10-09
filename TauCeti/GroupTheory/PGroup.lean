@@ -8,6 +8,7 @@ module
 import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.GroupTheory.Nilpotent
+import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import Mathlib.GroupTheory.PGroup
 
 /-!
@@ -40,6 +41,9 @@ that a homomorphism into a pro-`p` group kills their intersection.
 * `IsPGroup.subsingleton_of_coprime`, `IsPGroup.subsingleton_of_ne`: a group that is a `p`-group
   and a `q`-group for coprime `p`, `q`, in particular for distinct primes, is trivial.
 * `IsPGroup.smul_zmod_eq_self`: a `p`-group acts trivially on the additive group `ZMod p`.
+* `MonoidHom.apply_eq_self_of_iterate_pow_eq_self`: an endomorphism of a group of order `p`
+  with a `p`-power iterate equal to the identity is the identity.
+* `IsPGroup.le_total_of_isCyclic`: the subgroups of a finite cyclic `p`-group form a chain.
 * `TauCeti.exists_isPGroup_quotient_notMem_of_pow_pow_eq_one`: in a finite commutative
   group, an element of `p`-power order survives in some `p`-group quotient.
 * `IsPGroup.index_eq_prime_of_isCoatom`: a maximal subgroup of a finite `p`-group has index
@@ -138,6 +142,38 @@ theorem _root_.IsPGroup.smul_zmod_eq_self [Fact p.Prime] (hG : IsPGroup p G)
   have hu := hpow (p ^ k)
   rw [hk, one_smul, ZMod.pow_card_pow] at hu
   rw [hlin, ← hu, one_mul]
+
+/-- An endomorphism of a group of prime order `p` some `p`-power iterate of which is the identity
+is itself the identity. This is the form in which a `p`-group acts trivially on a group of order
+`p`: the endomorphism is a power map `a ↦ a ^ m` of the cyclic group, and `m ^ (p ^ k) ≡ m`
+modulo `p`. -/
+theorem _root_.MonoidHom.apply_eq_self_of_iterate_pow_eq_self [Fact p.Prime] {A : Type*}
+    [Group A] (f : A →* A) (hA : Nat.card A = p) {k : ℕ} (hf : ∀ a, f^[p ^ k] a = a) (a : A) :
+    f a = a := by
+  have : IsCyclic A := isCyclic_of_prime_card (p := p) hA
+  obtain ⟨m, hm⟩ := f.map_cyclic
+  have hiter (n : ℕ) (b : A) : f^[n] b = b ^ (m ^ n) := by
+    induction n with
+    | zero => simp
+    | succ n ih => rw [Function.iterate_succ_apply', ih, hm, ← zpow_mul, pow_succ]
+  have hmod : m ^ p ^ k ≡ m [ZMOD orderOf a] := by
+    refine Int.ModEq.of_dvd (Int.natCast_dvd_natCast.2 (hA ▸ orderOf_dvd_natCard a)) ?_
+    rw [← ZMod.intCast_eq_intCast_iff]
+    push_cast
+    exact ZMod.pow_card_pow (p := p) _
+  calc f a = a ^ m := hm a
+    _ = a ^ (m ^ p ^ k) := zpow_eq_zpow_iff_modEq.2 hmod.symm
+    _ = a := (hiter _ a).symm.trans (hf a)
+
+/-- The subgroups of a finite cyclic `p`-group are totally ordered by inclusion: in a cyclic group
+one subgroup contains another exactly when its order is divisible by the other's, and here every
+order is a power of `p`. -/
+theorem _root_.IsPGroup.le_total_of_isCyclic [Fact p.Prime] [Finite G] [IsCyclic G]
+    (hG : IsPGroup p G) (H K : Subgroup G) : H ≤ K ∨ K ≤ H := by
+  obtain ⟨a, ha⟩ := IsPGroup.iff_card.1 (hG.to_subgroup H)
+  obtain ⟨b, hb⟩ := IsPGroup.iff_card.1 (hG.to_subgroup K)
+  simp only [IsCyclic.subgroup_le_iff_card_dvd, ha, hb]
+  exact (le_total a b).imp (pow_dvd_pow p) (pow_dvd_pow p)
 
 open scoped IsMulCommutative in
 /-- In a finite commutative group, a nontrivial element of `p`-power order survives in some

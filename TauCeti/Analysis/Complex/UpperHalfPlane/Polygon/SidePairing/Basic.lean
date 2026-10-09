@@ -58,6 +58,8 @@ theorem.
 * `ConvexPolygon.SidePairing.cycleAngleSum_next`,
   `ConvexPolygon.SidePairing.cycleAngleSum_nonneg`: the angle sum does not depend on the
   starting vertex of the cycle, and is nonnegative.
+* `ConvexPolygon.SidePairing.sum_range_mul_cycleLength_interiorAngle`: `t` circuits of a cycle
+  have total angle `t` times the angle sum.
 
 ## Source
 
@@ -363,6 +365,23 @@ theorem cycleAngleSum_eq_sum_range (j : Fin n) :
       ∑ m ∈ Finset.range (σ.cycleLength j), P.interiorAngle (σ.next^[m] j) := by
   rw [cycleAngleSum, cycle_eq_image, Finset.sum_image (Finset.coe_range _ ▸
     Function.iterate_injOn_Iio_minimalPeriod)]
+
+/-- Summing the interior angles over `t` circuits of the cycle through `j` gives `t` times its
+angle sum. -/
+theorem sum_range_mul_cycleLength_interiorAngle (j : Fin n) (t : ℕ) :
+    ∑ m ∈ Finset.range (t * σ.cycleLength j), P.interiorAngle (σ.next^[m] j) =
+      t * σ.cycleAngleSum j := by
+  induction t with
+  | zero => simp
+  | succ t ih =>
+    have hper : σ.next^[t * σ.cycleLength j] j = j := by
+      rw [cycleLength_def]
+      exact ((Function.isPeriodicPt_minimalPeriod σ.next j).const_mul t).eq
+    rw [Nat.succ_mul, Finset.sum_range_add, ih, Nat.cast_succ, add_mul, one_mul,
+      σ.cycleAngleSum_eq_sum_range]
+    congr 1
+    refine Finset.sum_congr rfl fun l _ ↦ ?_
+    rw [add_comm, Function.iterate_add_apply, hper]
 
 end SidePairing
 

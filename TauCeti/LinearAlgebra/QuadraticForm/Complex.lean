@@ -45,7 +45,7 @@ theorem _root_.QuadraticForm.not_anisotropic_of_isAlgClosed
   intro hQ
   obtain ⟨e⟩ := Q.equivalent_weightedSumSquares_of_isAlgClosed
     (QuadraticMap.separatingLeft_of_anisotropic Q hQ)
-  obtain ⟨i, hi⟩ := IsAlgClosed.exists_eq_mul_self (-1 : K)
+  obtain ⟨i, hi⟩ := IsAlgClosed.isSquare (-1 : K)
   let k := Module.finrank K W - 2
   have hk : k + 1 + 1 = Module.finrank K W := by
     dsimp [k]
@@ -105,7 +105,7 @@ theorem _root_.QuadraticForm.represents_of_ne_zero_of_isAlgClosed
   obtain ⟨v, hv⟩ : ∃ v, Q v ≠ 0 := by
     by_contra! h
     exact hQ (QuadraticMap.ext h)
-  obtain ⟨t, ht⟩ := IsAlgClosed.exists_eq_mul_self (a / Q v)
+  obtain ⟨t, ht⟩ := IsAlgClosed.isSquare (a / Q v)
   exact (QuadraticMap.represents_iff Q a).2
     ⟨t • v, by rw [QuadraticMap.map_smul, ← ht, smul_eq_mul, div_mul_cancel₀ _ hv]⟩
 

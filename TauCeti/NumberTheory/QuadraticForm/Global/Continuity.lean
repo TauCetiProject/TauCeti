@@ -10,7 +10,7 @@ public import TauCeti.Topology.Algebra.QuadraticForm.Continuity
 
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Open
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
-import TauCeti.Topology.Algebra.Field.Squares
+import TauCeti.Topology.Algebra.GroupWithZero.Squares
 
 /-!
 # Continuity of localized quadratic forms
@@ -102,7 +102,9 @@ theorem _root_.QuadraticForm.exists_isOpen_isSquare_div_atFinitePlace [NumberFie
     exact two_ne_zero
   obtain ⟨U, hU, hUo, hxU⟩ := mem_nhds_iff.mp
     ((Q.continuous_atFinitePlace v).continuousAt.eventually_isSquare_div_of_isOpen_squares
-      (isOpen_range_powMonoidHom h2) hx)
+      (by
+        simpa only [← square_eq_range_powMonoidHom, Subgroup.coe_square]
+          using isOpen_range_powMonoidHom h2) hx)
   exact ⟨U, hUo, hxU, fun z hz ↦ hU hz⟩
 
 end TauCeti
