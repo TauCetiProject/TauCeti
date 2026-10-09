@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 public import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
 
 /-!
@@ -23,10 +24,11 @@ predicate is independent of the equation presenting the curve: changing variable
 chosen local minimal equation, but the two minimal equations have the same discriminant and `c₄`
 valuations.
 
-Finally, semistability is preserved by base change (Silverman VII.5.4(b)). Locally, no additive
-reduction is the same as having *some* integral model with a unit discriminant or a unit `c₄`, not
-necessarily the chosen minimal one, and such a model stays integral with that unit along any map of
-discrete valuation rings compatible with the fraction fields. Globally, a height-one prime of the
+Finally, semistability is preserved by base change along any extension, generalizing Silverman
+VII.5.4(b), which is stated for finite extensions. Locally, no additive reduction is the same as
+having *some* integral model with a unit discriminant or a unit `c₄`, not necessarily the chosen
+minimal one, and such a model stays integral with that unit along any map of discrete valuation
+rings compatible with the fraction fields. Globally, a height-one prime of the
 larger Dedekind domain lies over a height-one prime of the smaller one, whose local ring maps to its
 own, or over zero, where the curve has good reduction.
 
@@ -123,14 +125,6 @@ theorem not_hasAdditiveReduction_minimal_iff_exists_isUnit (W : WeierstrassCurve
 
 /-! ### Base change -/
 
-/-- The base change of an elliptic curve is elliptic. Mathlib's instance is stated for
-`WeierstrassCurve.map`, which instance search does not see through the plain `def`
-`WeierstrassCurve.baseChange`; this local copy avoids importing the affine point theory that
-carries the global one. -/
-local instance isElliptic_baseChange {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
-    (W : WeierstrassCurve A) [W.IsElliptic] : (W.baseChange B).IsElliptic :=
-  inferInstanceAs (W.map _).IsElliptic
-
 section BaseChange
 
 variable (S : Type*) [CommRing S] [IsDomain S] [IsDiscreteValuationRing S]
@@ -140,8 +134,8 @@ variable (S : Type*) [CommRing S] [IsDomain S] [IsDiscreteValuationRing S]
 valuation ring with fraction field `L`, receiving `R` compatibly with `K → L`. If an elliptic curve
 over `K` has good or multiplicative reduction over `R`, then over `L` it has good or multiplicative
 reduction over `S`. No ramification hypothesis is needed and `R → S` need not be local: a unit
-discriminant or a unit `c₄` of an integral model over `R` stays a unit over `S`. This is Silverman,
-*AEC*, VII.5.4(b). -/
+discriminant or a unit `c₄` of an integral model over `R` stays a unit over `S`. This generalizes
+Silverman, *AEC*, VII.5.4(b), which is stated for a finite extension `L / K`. -/
 theorem not_hasAdditiveReduction_minimal_baseChange {W : WeierstrassCurve K} [W.IsElliptic]
     (hRS : (algebraMap S L).comp (algebraMap R S) = (algebraMap K L).comp (algebraMap R K))
     (h : ¬ (W.minimal R).HasAdditiveReduction R) :
