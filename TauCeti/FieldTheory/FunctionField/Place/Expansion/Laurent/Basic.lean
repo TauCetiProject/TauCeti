@@ -173,7 +173,8 @@ theorem laurentCoeff_ext_iff {x y : F} :
     apply P.completionEmbedding.injective
     apply (P.completionLaurentCoeff_ext_iff hP ht).2
     intro n
-    simpa only [completionLaurentCoeff_completionEmbedding] using h n
+    simpa only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
+      completionLaurentCoeff_completionEmbedding] using h n
 
 /-! ### Residues -/
 
@@ -197,8 +198,9 @@ theorem completionResidue_completionEmbedding (z : F) :
 
 /-- Functions integral at the place have residue zero. -/
 theorem residue_eq_zero_of_mem_integers {z : F} (hz : z ∈ P.integers) :
-    P.residue hP ht z = 0 :=
-  P.coeff_laurentSeriesExpansion_eq_zero_of_mem_filtration hP ht
+    P.residue hP ht z = 0 := by
+  rw [residue_apply]
+  exact P.coeff_laurentSeriesExpansion_eq_zero_of_mem_filtration hP ht
     (P.mem_filtration_zero_iff.mpr hz) (by omega)
 
 /-- The residue depends only on the function modulo integral functions. -/
