@@ -292,7 +292,6 @@ theorem W1p.gradient_extendByReflectionL_ae (a : ℝ)
     · rw [indicator_of_notMem hx, indicator_of_notMem hx]
 
 /-- Restricting the reflection extension back to the half-space recovers the original function. -/
-@[simp]
 theorem W1p.restrictL_extendByReflectionL (a : ℝ)
     (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) p) :
     W1p.restrictL (show normalHalfSpace (E := E) a ≤ ⊤ from le_top)
@@ -358,7 +357,6 @@ theorem W1p.halfSpaceTrace_apply (a : ℝ)
 /-- The half-space trace of the restriction of a whole-space `H¹` function is its hyperplane
 trace. With `TauCeti.W1p.hyperplaneTrace_ofTestFunction_apply_ae`, this identifies the trace of
 the restriction of a test function with its classical boundary values. -/
-@[simp]
 theorem W1p.halfSpaceTrace_restrictL (a : ℝ)
     (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 2) :
     W1p.halfSpaceTrace a (W1p.restrictL (show normalHalfSpace (E := E) a ≤ ⊤ from le_top) u) =

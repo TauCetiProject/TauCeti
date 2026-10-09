@@ -91,7 +91,6 @@ theorem normalLinearReflection_apply (x : WithLp 2 (ℝ × E)) :
   simp
 
 /-- The linear normal reflection is an involution. -/
-@[simp]
 theorem normalLinearReflection_normalLinearReflection (x : WithLp 2 (ℝ × E)) :
     normalLinearReflection E (normalLinearReflection E x) = x :=
   Submodule.reflection_reflection _ x
@@ -117,7 +116,6 @@ theorem normalReflection_apply (a : ℝ) (x : WithLp 2 (ℝ × E)) :
   simp [normalReflection, vadd_eq_add, ← WithLp.toLp_add, sub_eq_add_neg]
 
 /-- The normal reflection is an involution. -/
-@[simp]
 theorem normalReflection_normalReflection (a : ℝ) (x : WithLp 2 (ℝ × E)) :
     normalReflection E a (normalReflection E a x) = x := by
   cases x; simp
