@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Distribution
+public import TauCeti.Geometry.Manifold.IsManifold.Basic
 public import Mathlib.Geometry.Manifold.Immersion
 public import Mathlib.Geometry.Manifold.Instances.Real
 
@@ -20,8 +21,9 @@ construction of immersed Lie subgroups.
 
 This file provides both the unbundled predicate `TauCeti.IsIntegralManifold` for a specified
 immersion and `TauCeti.IntegralManifold`, which packages a `k`-dimensional source manifold and its
-parametrization.  The rank theorem shows that the dimension of any finite-dimensional source is
-forced by the rank of the distribution; it is not extra data hidden in the definition.
+parametrization.  The rank theorem shows that, for regularity `n ≠ 0`, the dimension of any
+finite-dimensional source equals the rank of the distribution at any image point; it is not extra
+data hidden in the definition.
 
 ## Main definitions
 
@@ -31,8 +33,8 @@ forced by the rank of the distribution; it is not extra data hidden in the defin
 
 ## Main results
 
-* `TauCeti.IsIntegralManifold.finrank_model_eq`: the source dimension equals the rank of the
-  distribution.
+* `TauCeti.IsIntegralManifold.finrank_model_eq`: for regularity `n ≠ 0`, the source model
+  dimension equals the rank of the distribution at any image point.
 * `TauCeti.isIntegralManifold_id`: the identity is an integral manifold of the full tangent
   distribution.
 
@@ -107,21 +109,15 @@ theorem IsIntegralManifold.contMDiff (hf : IsIntegralManifold J n D f) :
     ContMDiff J I n f :=
   hf.isImmersion.contMDiff
 
--- `TangentSpace` uses the model vector space definitionally, but its definition is intentionally
--- irreducible.
-private theorem finrank_tangentSpace_eq_model (y : N) :
-    Module.finrank ℝ (TangentSpace J y) = Module.finrank ℝ E' :=
-  rfl
-
-/-- The model dimension of an integral manifold equals the rank of the distribution at any source
-point. -/
+/-- For regularity `n ≠ 0`, the model dimension of an integral manifold `f` equals the rank of
+the distribution at the image point `f y` of any source point `y`. -/
 theorem IsIntegralManifold.finrank_model_eq
     (hf : IsIntegralManifold J n D f) (hn : n ≠ 0) (y : N)
     (hD : Module.finrank ℝ (D (f y)) = k) : Module.finrank ℝ E' = k := by
   -- Integrality identifies the fiber of `D` with the range of the injective differential.
   rw [← hD, ← hf.range_mfderiv y,
     LinearMap.finrank_range_of_inj (hf.isImmersion.mfderiv_injective hn y)]
-  exact finrank_tangentSpace_eq_model (J := J) (E' := E') y
+  exact finrank_tangentSpace (I := J) y
 
 /-- The identity map of a nonempty manifold is an integral manifold of the full tangent
 distribution. -/
