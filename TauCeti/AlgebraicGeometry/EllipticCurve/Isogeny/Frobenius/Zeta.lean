@@ -105,6 +105,7 @@ theorem zetaRatFunc_def : W.zetaRatFunc =
 `Z(W/F, 1 / (q T)) = Z(W/F, T)` in `ℚ(T)`, where `q` is the number of elements of `F`. The
 substitution `T ↦ 1 / (q T)` is the linear fractional transformation with coefficient matrix
 `!![0, 1; q, 0]`. -/
+@[simp]
 theorem mobiusAutOf_zetaRatFunc :
     RatFunc.mobiusAutOf (a := 0) (b := 1) (c := (Nat.card F : ℚ)) (d := 0)
       (by simpa using (Nat.card_pos (α := F)).ne') W.zetaRatFunc = W.zetaRatFunc := by
@@ -224,20 +225,15 @@ theorem zetaFunction_eq_mul_inv :
 `(1 - a_q T + q T²) / ((1 - T) (1 - q T))` in `ℚ(T)` expands to `Z(W/F, T)` in `ℚ⸨T⸩`. Since the
 expansion map `ℚ(T) → ℚ⸨T⸩` is injective, `zetaRatFunc` is the only rational function with this
 expansion. -/
+@[simp]
 theorem coe_zetaRatFunc : (W.zetaRatFunc : ℚ⸨X⸩) = (W.zetaFunction : ℚ⸨X⸩) := by
-  have hN : ((1 - RatFunc.C (W.frobeniusTrace : ℚ) * RatFunc.X +
-      RatFunc.C (Nat.card F : ℚ) * RatFunc.X ^ 2 : RatFunc ℚ) : ℚ⸨X⸩) =
-      ((1 - C (W.frobeniusTrace : ℚ) * X + C (Nat.card F : ℚ) * X ^ 2 : ℚ⟦X⟧) : ℚ⸨X⸩) := by
-    simp
-  have hD : (((1 - RatFunc.X) * (1 - RatFunc.C (Nat.card F : ℚ) * RatFunc.X) : RatFunc ℚ) :
-      ℚ⸨X⸩) = (((1 - X) * (1 - C (Nat.card F : ℚ) * X) : ℚ⟦X⟧) : ℚ⸨X⸩) := by
-    simp
-  have hD0 : ((1 - X) * (1 - C (Nat.card F : ℚ) * X) : ℚ⟦X⟧) ≠ 0 := by
-    intro h0
-    simpa using congrArg constantCoeff h0
-  rw [zetaRatFunc_def, map_div₀, hN, hD, div_eq_iff ((map_ne_zero_iff _
-    HahnSeries.ofPowerSeries_injective).2 hD0), ← map_mul,
-    W.zetaFunction_mul_one_sub_X_mul_one_sub_C_mul_X]
+  have hP : constantCoeff ((1 - X) * (1 - C (Nat.card F : ℚ) * X) : ℚ⟦X⟧) ≠ 0 := by simp
+  -- the expansion of the power-series inverse of the denominator is its inverse in `ℚ⸨X⸩`
+  have hinv : ((((1 - X) * (1 - C (Nat.card F : ℚ) * X))⁻¹ : ℚ⟦X⟧) : ℚ⸨X⸩) =
+      (((1 - X) * (1 - C (Nat.card F : ℚ) * X) : ℚ⟦X⟧) : ℚ⸨X⸩)⁻¹ :=
+    eq_inv_of_mul_eq_one_left (by rw [← map_mul, PowerSeries.inv_mul_cancel _ hP, map_one])
+  rw [zetaRatFunc_def, W.zetaFunction_eq_mul_inv, map_mul, hinv, ← div_eq_mul_inv, map_div₀]
+  simp
 
 /-- **The Riemann hypothesis for an elliptic curve over a finite field** (Silverman V.2.4): every
 complex zero `z` of the numerator `1 - a_q T + q T²` of the zeta function has `|z| = q^{-1/2}`,
