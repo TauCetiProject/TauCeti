@@ -334,7 +334,7 @@ private theorem d4TripledTrialityPerm_apply (a : Fin 24) :
 /-- Triality carries block `j` to the next block in the cycle `0 → 1 → 2 → 0`. -/
 @[simp]
 theorem d4TripledSummand_d4TripledTrialityPerm_eq_iff (a : Fin 24) (j : Fin 3) :
-    d4TripledSummand (d4TripledTrialityPerm a) = (![1, 2, 0] j : Fin 3) ↔
+    d4TripledSummand (d4TripledTrialityPerm a) = ((j + 1 : Fin 3) : ℤ) ↔
       d4TripledSummand a = j := by
   rw [d4TripledTrialityPerm_apply]
   revert a j

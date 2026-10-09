@@ -52,28 +52,14 @@ universe u
 
 /-! ## The cyclic block equivalences -/
 
-/-- The cycle of the natural and two half-spin blocks, numbered `0 → 1 → 2 → 0`. -/
-@[expose]
-def nextBlock : Equiv.Perm (Fin 3) where
-  toFun := ![1, 2, 0]
-  invFun := ![2, 0, 1]
-  left_inv j := by fin_cases j <;> rfl
-  right_inv j := by fin_cases j <;> rfl
-
-/-- Applying the block cycle three times returns to the original block. -/
-@[simp]
-theorem nextBlock_apply_apply_apply (j : Fin 3) :
-    nextBlock (nextBlock (nextBlock j)) = j := by
-  fin_cases j <;> rfl
-
 /-- The eight coordinates in the `j`-th block of the tripled weight table. -/
 abbrev Block (j : Fin 3) := {a : Fin 24 // d4TripledSummand a = j}
 
 /-- Triality restricted to an equivalence from one eight-dimensional block to the next. -/
-@[expose]
-def blockIndexEquiv (j : Fin 3) : Block j ≃ Block (nextBlock j) :=
+abbrev blockIndexEquiv (j : Fin 3) : Block j ≃ Block (finRotate 3 j) :=
   d4TripledTrialityPerm.subtypeEquiv fun a => by
-    simp [nextBlock]
+    rw [finRotate_apply]
+    exact (d4TripledSummand_d4TripledTrialityPerm_eq_iff a j).symm
 
 /-- The underlying table index of the restricted block equivalence is the triality index. -/
 @[simp]
@@ -82,16 +68,9 @@ theorem coe_blockIndexEquiv (j : Fin 3) (a : Block j) :
   rfl
 
 /-- The coordinate equivalence induced by triality from one block to the next. -/
-def blockModuleEquiv (R : Type u) [Semiring R] (j : Fin 3) :
-    (Block j → R) ≃ₗ[R] (Block (nextBlock j) → R) :=
+abbrev blockModuleEquiv (R : Type u) [Semiring R] (j : Fin 3) :
+    (Block j → R) ≃ₗ[R] (Block (finRotate 3 j) → R) :=
   LinearEquiv.piCongrLeft' R (fun _ => R) (blockIndexEquiv j)
-
-/-- The block coordinate equivalence reindexes a function by inverse triality. -/
-@[simp]
-theorem blockModuleEquiv_apply (R : Type u) [Semiring R] (j : Fin 3) (v : Block j → R)
-    (a : Block (nextBlock j)) :
-    blockModuleEquiv R j v a = v ((blockIndexEquiv j).symm a) := by
-  rw [blockModuleEquiv, LinearEquiv.piCongrLeft'_apply]
 
 /-! ## Restricted Chevalley generators -/
 
@@ -113,7 +92,7 @@ def blockCartanGeneratorMatrix (R : Type u) [Ring R] (j : Fin 3) (i : Fin 4) :
 /-- Triality intertwines the positive generator matrices on consecutive blocks, entrywise. -/
 theorem blockRaisingMatrix_triality (R : Type u) [Ring R]
     (j : Fin 3) (i : Fin 4) (a b : Block j) :
-    blockRaisingMatrix R (nextBlock j) (trialityPermD4 i)
+    blockRaisingMatrix R (finRotate 3 j) (trialityPermD4 i)
         (blockIndexEquiv j a) (blockIndexEquiv j b) =
       blockRaisingMatrix R j i a b := by
   exact congrArg (Int.castRingHom R) (raisingMatrix_trialityPerm i a.1 b.1)
@@ -121,7 +100,7 @@ theorem blockRaisingMatrix_triality (R : Type u) [Ring R]
 /-- Triality intertwines the negative generator matrices on consecutive blocks, entrywise. -/
 theorem blockLoweringMatrix_triality (R : Type u) [Ring R]
     (j : Fin 3) (i : Fin 4) (a b : Block j) :
-    blockLoweringMatrix R (nextBlock j) (trialityPermD4 i)
+    blockLoweringMatrix R (finRotate 3 j) (trialityPermD4 i)
         (blockIndexEquiv j a) (blockIndexEquiv j b) =
       blockLoweringMatrix R j i a b := by
   exact congrArg (Int.castRingHom R) (loweringMatrix_trialityPerm i a.1 b.1)
@@ -129,33 +108,37 @@ theorem blockLoweringMatrix_triality (R : Type u) [Ring R]
 /-- Triality intertwines the Cartan-generator matrices on consecutive blocks, entrywise. -/
 theorem blockCartanGeneratorMatrix_triality (R : Type u) [Ring R]
     (j : Fin 3) (i : Fin 4) (a b : Block j) :
-    blockCartanGeneratorMatrix R (nextBlock j) (trialityPermD4 i)
+    blockCartanGeneratorMatrix R (finRotate 3 j) (trialityPermD4 i)
         (blockIndexEquiv j a) (blockIndexEquiv j b) =
       blockCartanGeneratorMatrix R j i a b := by
   exact congrArg (Int.castRingHom R) (cartanGeneratorMatrix_trialityPerm i a.1 b.1)
 
 private theorem blockModuleEquiv_mulVec (R : Type u) [Semiring R] (j : Fin 3)
     (M : Matrix (Block j) (Block j) R)
-    (N : Matrix (Block (nextBlock j)) (Block (nextBlock j)) R)
+    (N : Matrix (Block (finRotate 3 j)) (Block (finRotate 3 j)) R)
     (h : ∀ a b, N (blockIndexEquiv j a) (blockIndexEquiv j b) = M a b)
     (v : Block j → R) :
     blockModuleEquiv R j (M *ᵥ v) = N *ᵥ blockModuleEquiv R j v := by
   funext a
-  rw [blockModuleEquiv_apply, Matrix.mulVec, Matrix.mulVec]
-  simp only [dotProduct]
-  rw [← (blockIndexEquiv j).sum_comp]
-  simp only [blockModuleEquiv_apply]
-  apply Finset.sum_congr rfl
-  intro b _
-  simpa using congrArg (fun z : R => z * v b)
-    (h ((blockIndexEquiv j).symm a) b).symm
+  have hNM : N.submatrix (blockIndexEquiv j) (blockIndexEquiv j) = M := by
+    ext x y
+    exact h x y
+  have hs := Matrix.submatrix_mulVec_equiv N v
+    (blockIndexEquiv j) (blockIndexEquiv j)
+  have ha := congrFun hs ((blockIndexEquiv j).symm a)
+  have hcoe : blockModuleEquiv R j v = v ∘ (blockIndexEquiv j).symm := by
+    funext x
+    simp
+  rw [hcoe]
+  simpa only [hNM, LinearEquiv.piCongrLeft'_apply, Function.comp_apply,
+    Equiv.apply_symm_apply] using ha
 
 /-- The restricted triality equivalence intertwines every positive generator action with the
 generator at the triality image of its node. -/
 theorem blockModuleEquiv_raising_mulVec (R : Type u) [Ring R]
     (j : Fin 3) (i : Fin 4) (v : Block j → R) :
     blockModuleEquiv R j (blockRaisingMatrix R j i *ᵥ v) =
-      blockRaisingMatrix R (nextBlock j) (trialityPermD4 i) *ᵥ blockModuleEquiv R j v :=
+      blockRaisingMatrix R (finRotate 3 j) (trialityPermD4 i) *ᵥ blockModuleEquiv R j v :=
   blockModuleEquiv_mulVec R j _ _ (blockRaisingMatrix_triality R j i) v
 
 /-- The restricted triality equivalence intertwines every negative generator action with the
@@ -163,7 +146,7 @@ generator at the triality image of its node. -/
 theorem blockModuleEquiv_lowering_mulVec (R : Type u) [Ring R]
     (j : Fin 3) (i : Fin 4) (v : Block j → R) :
     blockModuleEquiv R j (blockLoweringMatrix R j i *ᵥ v) =
-      blockLoweringMatrix R (nextBlock j) (trialityPermD4 i) *ᵥ blockModuleEquiv R j v :=
+      blockLoweringMatrix R (finRotate 3 j) (trialityPermD4 i) *ᵥ blockModuleEquiv R j v :=
   blockModuleEquiv_mulVec R j _ _ (blockLoweringMatrix_triality R j i) v
 
 /-- The restricted triality equivalence intertwines every Cartan-generator action with the
@@ -171,7 +154,7 @@ generator at the triality image of its node. -/
 theorem blockModuleEquiv_cartanGenerator_mulVec (R : Type u) [Ring R]
     (j : Fin 3) (i : Fin 4) (v : Block j → R) :
     blockModuleEquiv R j (blockCartanGeneratorMatrix R j i *ᵥ v) =
-      blockCartanGeneratorMatrix R (nextBlock j) (trialityPermD4 i) *ᵥ
+      blockCartanGeneratorMatrix R (finRotate 3 j) (trialityPermD4 i) *ᵥ
         blockModuleEquiv R j v :=
   blockModuleEquiv_mulVec R j _ _ (blockCartanGeneratorMatrix_triality R j i) v
 
