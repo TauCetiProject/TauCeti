@@ -891,7 +891,8 @@ theorem gradedMap_id (k : ℕ) :
 
 /-- The graded map induced by a composite is the composite of the graded maps: `gr_k` is a
 functor. -/
-@[simp]
+-- Not `@[simp]`: on the left-hand side `hg` and `hf` occur only inside the proof `hg.comp hf`,
+-- so `simp` cannot instantiate them.
 theorem gradedMap_comp (g : H →* K) (hg : Continuous g) (f : G →* H) (hf : Continuous f) (k : ℕ) :
     gradedMap p (g.comp f) (hg.comp hf) k = (gradedMap p g hg k).comp (gradedMap p f hf k) := by
   refine AddMonoidHom.ext fun x => ?_
