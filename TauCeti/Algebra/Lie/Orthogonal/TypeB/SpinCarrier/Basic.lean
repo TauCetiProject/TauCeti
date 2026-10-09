@@ -332,24 +332,14 @@ private theorem rep_coroot_ne_zero (i : Fin (n + 1)) :
     rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
       (TauCeti.typeBSimpleCorootGenerator (K := ℚ) i)) ≠ 0 := by
   intro hzero
-  have hweight :=
-    (isCartanWeightVector_iff (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n)).1
-      (isCartanWeightVector_latticeBasis n (Fintype.equivFin (Finset (Fin (n + 1))) {i})) i
-  simp only [hzero, LinearMap.zero_apply, coe_latticeBasis] at hweight
-  simp only [basisWeight, signSet, Equiv.symm_apply_apply] at hweight
-  have hone : TauCeti.DynkinType.typeBSpinWeight ({i} : Finset (Fin (n + 1))) i = 1 := by
-    rw [TauCeti.DynkinType.typeBSpinWeight_apply]
-    by_cases hnext : (i : ℕ) + 1 < n + 1
-    · have hnotmax : ¬IsMax i :=
-        not_isMax_of_lt (b := (⟨(i : ℕ) + 1, hnext⟩ : Fin (n + 1))) (by simp [Fin.lt_def])
-      have hsucc : Order.succ i ∉ ({i} : Finset (Fin (n + 1))) := by
-        rw [Finset.mem_singleton, Order.succ_eq_iff_isMax]
-        exact hnotmax
-      simp [hnext, hsucc]
-    · simp [hnext]
-  rw [hone] at hweight
-  simp only [Int.cast_one, one_smul] at hweight
-  exact (polarizationBasis n).ExteriorAlgebra.ne_zero {i} hweight.symm
+  have h := (isCartanWeightVector_iff _ _).1
+    ((polarization n).isCartanWeightVector_typeBSpinRep_exteriorBasis
+      (polarizationBasis n) (remainderOne n) (TauCeti.splitOddForm_remainderOne ℚ (n + 1)) {i}) i
+  rw [hzero, LinearMap.zero_apply] at h
+  have hone : SpinPolarizationData.typeBSpinCorootWeight ({i} : Finset (Fin (n + 1))) i = 1 := by
+    induction i using Fin.lastCases <;> simp [Fin.castSucc_lt_succ.ne']
+  rw [hone, Int.cast_one, one_smul] at h
+  exact (polarizationBasis n).ExteriorAlgebra.ne_zero {i} h.symm
 
 /-- The represented positive and negative simple generators at a common type-`B` node, together
 with the represented simple coroot, form an `sl_2` triple. -/
@@ -361,19 +351,10 @@ theorem isSl2Triple_rep_rootGenerator (i : Fin (n + 1)) :
         (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ) (.inl i))))
       (rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ) (.inr i)))) := by
-  let φ := (polarization n).typeBSpinLieRep (polarizationBasis n) (remainderOne n)
-    (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
-  have hrep (x : LieAlgebra.Orthogonal.typeB (Fin (n + 1)) ℚ) :
-      rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ x) = φ x := by
-    simp only [_root_.UniversalEnvelopingAlgebra.ι_apply, rep, SpinPolarizationData.typeBSpinRep_ι,
-      SpinPolarizationData.typeBSpinLieRep_apply, φ]
-  have hh : φ (TauCeti.typeBSimpleCorootGenerator (K := ℚ) i) ≠ 0 := by
-    rw [← hrep]
-    exact rep_coroot_ne_zero n i
-  have hsource := TauCeti.isSl2Triple_typeBSimpleRootGenerator (K := ℚ) i
-  have htriple := hsource.map φ hh
-  simpa only [hrep, TauCeti.typeBSimpleRootGeneratorFamily_inl,
-    TauCeti.typeBSimpleRootGeneratorFamily_inr] using htriple
+  have h := (TauCeti.isSl2Triple_typeBSimpleRootGenerator (K := ℚ) i).map
+    ((rep n).toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)) (rep_coroot_ne_zero n i)
+  simpa only [LieHom.comp_apply, AlgHom.toLieHom_apply,
+    TauCeti.typeBSimpleRootGeneratorFamily_inl, TauCeti.typeBSimpleRootGeneratorFamily_inr] using h
 
 /-! ## The closed carrier and its pinned generators -/
 
