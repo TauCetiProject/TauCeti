@@ -11,7 +11,7 @@ public import TauCeti.Topology.Algebra.QuadraticForm.OrthogonalGroup.Compact
 /-!
 # Compactness of real orthogonal groups and definiteness
 
-The orthogonal group of a nondegenerate quadratic form on a finite-dimensional real vector space
+The orthogonal group of a quadratic form on a finite-dimensional real vector space
 is compact exactly when the form is positive or negative definite. The topology is the canonical
 topology on linear automorphisms, recording each automorphism and its inverse; no topology on the
 underlying vector space needs to be chosen. The criterion includes the zero-dimensional space.
@@ -25,14 +25,13 @@ namespace QuadraticForm
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
 
-/-- The orthogonal group of a nondegenerate real quadratic form is compact if and only if the
+/-- The orthogonal group of a real quadratic form is compact if and only if the
 form is positive or negative definite, with the canonical topology on linear automorphisms. -/
-theorem isCompact_orthogonalGroup_iff_posDef_or_negDef (Q : _root_.QuadraticForm ℝ V)
-    (hQ : Q.Nondegenerate) :
+theorem isCompact_orthogonalGroup_iff_posDef_or_negDef (Q : _root_.QuadraticForm ℝ V) :
     IsCompact (TauCeti.QuadraticMap.orthogonalGroup Q : Set (V ≃ₗ[ℝ] V)) ↔
       Q.PosDef ∨ (-Q).PosDef := by
   let _ : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
-  exact (TauCeti.QuadraticMap.isCompact_orthogonalGroup_iff Q hQ.radical_eq_bot).trans
+  exact (TauCeti.QuadraticMap.isCompact_orthogonalGroup_iff Q).trans
     (_root_.QuadraticForm.anisotropic_iff_posDef_or_negDef Q)
 
 end QuadraticForm
