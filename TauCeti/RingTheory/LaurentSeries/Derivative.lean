@@ -72,15 +72,14 @@ theorem laurentSeries_derivative_mul (f g : LaurentSeries R) :
 
 /-- Formal Laurent differentiation as a derivation. Its linear map is the existing
 coefficientwise derivative. -/
-noncomputable def laurentSeriesDerivativeDerivation :
+noncomputable def laurentSeriesDerivation :
     Derivation R (LaurentSeries R) (LaurentSeries R) where
-  -- The source algebra action and the coefficientwise scalar action agree propositionally.
   toFun f := _root_.LaurentSeries.derivative R f
   map_add' f g := (_root_.LaurentSeries.derivative R).map_add f g
   map_smul' c f := by
-    change _root_.LaurentSeries.derivative R (algebraMap R (LaurentSeries R) c * f) =
-      c • _root_.LaurentSeries.derivative R f
-    rw [laurentSeries_algebraMap_mul_eq_smul, map_smul]
+    -- The source uses the algebra action; Mathlib's derivative uses the coefficientwise action.
+    rw [Algebra.smul_def, laurentSeries_algebraMap_mul_eq_smul]
+    exact map_smul (_root_.LaurentSeries.derivative R) c f
   map_one_eq_zero' := by
     ext n
     suffices n + 1 = 0 → (n : R) + 1 = 0 by
@@ -93,7 +92,7 @@ noncomputable def laurentSeriesDerivativeDerivation :
 
 /-- The bundled Laurent derivation evaluates as the coefficientwise derivative. -/
 @[simp]
-theorem laurentSeriesDerivativeDerivation_apply (f : LaurentSeries R) :
-    laurentSeriesDerivativeDerivation R f = _root_.LaurentSeries.derivative R f := (rfl)
+theorem laurentSeriesDerivation_apply (f : LaurentSeries R) :
+    laurentSeriesDerivation R f = _root_.LaurentSeries.derivative R f := (rfl)
 
 end TauCeti

@@ -53,9 +53,9 @@ theorem laurentSeriesExpansion_derivativeOfSeparating (z : F) :
     .of_algebraMap_smul fun c z ↦ by
       rw [Algebra.smul_def, he, e.commutes, laurentSeries_algebraMap_mul_eq_smul]
   let δ : Derivation k F (LaurentSeries k) :=
-    (laurentSeriesDerivativeDerivation k).compAlgebraMap F
+    (laurentSeriesDerivation k).compAlgebraMap F
   have hδ (w : F) : δ w = _root_.LaurentSeries.derivative k (e w) := by
-    rw [Derivation.compAlgebraMap_apply, laurentSeriesDerivativeDerivation_apply, he]
+    rw [Derivation.compAlgebraMap_apply, laurentSeriesDerivation_apply, he]
   have hδt : δ t = 1 := by
     rw [hδ, laurentSeriesExpansion_uniformizer]
     simp [_root_.LaurentSeries.derivative_apply]
