@@ -225,45 +225,43 @@ section SpecialOrthogonal
 
 variable [FiniteDimensional ℚ V]
 
-/-- The comparison of finite adelic special orthogonal class sets for tuples whose orthogonal
-reference families satisfy `U ≤ U'` and agree at almost every prime: transport along
+/-- The comparison of finite adelic special orthogonal class sets for tuples whose special
+orthogonal reference families satisfy `U ≤ U'` and agree at almost every prime: transport along
 `restrictedProductCongr`, then enlarge the right subgroup from the image of `∏_p U_p^{SO}` to
-`∏_p U'_p^{SO}`. Both hypotheses are on the orthogonal families, from which the special
-orthogonal families are derived. -/
+`∏_p U'_p^{SO}`. The hypotheses follow from the corresponding ones on the orthogonal families by
+`specialOrthogonal_mono` and `eventually_specialOrthogonal_eq`. -/
 def finiteAdelicSpecialOrthogonalDoubleCosetMapOfTupleLE
-    (hle : ∀ p, U.orthogonal p ≤ U'.orthogonal p)
-    (h : ∀ᶠ p in cofinite, U.orthogonal p = U'.orthogonal p) :
+    (hle : ∀ p, U.specialOrthogonal p ≤ U'.specialOrthogonal p)
+    (h : ∀ᶠ p in cofinite, U.specialOrthogonal p = U'.specialOrthogonal p) :
     U.finiteAdelicSpecialOrthogonalDoubleCoset → U'.finiteAdelicSpecialOrthogonalDoubleCoset :=
   DoubleCoset.quotientMapOfLERight U'.finiteAdelicSpecialOrthogonalDiagonal.range
-      ((integralSubgroupOf_le_integralSubgroup_iff _ _).mpr (specialOrthogonal_mono hle)) ∘
+      ((integralSubgroupOf_le_integralSubgroup_iff _ _).mpr hle) ∘
     DoubleCoset.quotientCongr U.finiteAdelicSpecialOrthogonalDiagonal.range
       (integralSubgroup U.specialOrthogonal)
-      (restrictedProductCongr U.specialOrthogonal U'.specialOrthogonal
-        (eventually_specialOrthogonal_eq h))
-      (U.map_range_finiteAdelicSpecialOrthogonalDiagonal U' _)
-      (map_integralSubgroup_restrictedProductCongr _ _ _)
+      (restrictedProductCongr U.specialOrthogonal U'.specialOrthogonal h)
+      (U.map_range_finiteAdelicSpecialOrthogonalDiagonal U' h)
+      (map_integralSubgroup_restrictedProductCongr _ _ h)
 
 /-- The special orthogonal comparison of class sets sends the class of an adele to the class of
 the same adele. -/
 @[simp]
 theorem finiteAdelicSpecialOrthogonalDoubleCosetMapOfTupleLE_apply_mk
-    (hle : ∀ p, U.orthogonal p ≤ U'.orthogonal p)
-    (h : ∀ᶠ p in cofinite, U.orthogonal p = U'.orthogonal p)
+    (hle : ∀ p, U.specialOrthogonal p ≤ U'.specialOrthogonal p)
+    (h : ∀ᶠ p in cofinite, U.specialOrthogonal p = U'.specialOrthogonal p)
     (x : U.finiteAdelicSpecialOrthogonal) :
     U.finiteAdelicSpecialOrthogonalDoubleCosetMapOfTupleLE U' hle h
         (DoubleCoset.mk U.finiteAdelicSpecialOrthogonalDiagonal.range
           (integralSubgroup U.specialOrthogonal) x) =
       DoubleCoset.mk U'.finiteAdelicSpecialOrthogonalDiagonal.range
         (integralSubgroup U'.specialOrthogonal)
-        (restrictedProductCongr U.specialOrthogonal U'.specialOrthogonal
-          (eventually_specialOrthogonal_eq h) x) := by
+        (restrictedProductCongr U.specialOrthogonal U'.specialOrthogonal h x) := by
   rw [finiteAdelicSpecialOrthogonalDoubleCosetMapOfTupleLE, Function.comp_apply,
     DoubleCoset.quotientCongr_apply_mk, DoubleCoset.quotientMapOfLERight_apply_mk]
 
 /-- The special orthogonal comparison of class sets is surjective. -/
 theorem finiteAdelicSpecialOrthogonalDoubleCosetMapOfTupleLE_surjective
-    (hle : ∀ p, U.orthogonal p ≤ U'.orthogonal p)
-    (h : ∀ᶠ p in cofinite, U.orthogonal p = U'.orthogonal p) :
+    (hle : ∀ p, U.specialOrthogonal p ≤ U'.specialOrthogonal p)
+    (h : ∀ᶠ p in cofinite, U.specialOrthogonal p = U'.specialOrthogonal p) :
     Function.Surjective (U.finiteAdelicSpecialOrthogonalDoubleCosetMapOfTupleLE U' hle h) := by
   unfold finiteAdelicSpecialOrthogonalDoubleCosetMapOfTupleLE
   exact (DoubleCoset.quotientMapOfLERight_surjective _ _).comp (Equiv.surjective _)
