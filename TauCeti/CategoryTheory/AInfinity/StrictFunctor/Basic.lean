@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Data.Fin.Tuple.Reflection
 public import TauCeti.CategoryTheory.AInfinity.Basic
 
 /-!
@@ -137,32 +136,18 @@ theorem map_pathOperation (F : AInfinityStrictFunctor 𝒞 𝒟) {n : ℕ}
   simpa only [coe_gradedMap, AInfinityCategory.coe_pathOperation_apply, Function.comp_apply]
     using F.map_m X (fun i ↦ (f i).val)
 
--- Mathlib's tuple reflection expands fixed arities to vector literals. This supplies a shared
--- normalization for the unary and binary equations; congruence then identifies their entries.
-private theorem map_m_etaExpand (F : AInfinityStrictFunctor 𝒞 𝒟) {n : ℕ}
-    (X : Fin (n + 1) → C)
-    (f : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) :
-    F.map (X 0) (X (Fin.last n))
-        (homProjection (X 0) (X (Fin.last n))
-          (𝒞.m n (FinVec.etaExpand fun i ↦
-            homInclusion (X i.rev.castSucc) (X i.rev.succ) (f i)))) =
-      homProjection (F.obj (X 0)) (F.obj (X (Fin.last n)))
-        (𝒟.m n (FinVec.etaExpand fun i ↦
-          homInclusion (F.obj (X i.rev.castSucc)) (F.obj (X i.rev.succ))
-            (F.map (X i.rev.castSucc) (X i.rev.succ) (f i)))) := by
-  simpa only [FinVec.etaExpand_eq] using F.map_m X f
-
 /-- A strict functor commutes with the differential of every Hom module. -/
 @[simp]
 theorem map_homDifferential (F : AInfinityStrictFunctor 𝒞 𝒟) (X Y : C)
     (f : homModule (R := R) X Y) :
     F.map X Y (𝒞.homDifferential X Y f) =
       𝒟.homDifferential (F.obj X) (F.obj Y) (F.map X Y f) := by
-  have h := F.map_m_etaExpand ![X, Y]
-    (Fin.cases (motive := fun i ↦ homModule (R := R)
-      (![X, Y] i.rev.castSucc) (![X, Y] i.rev.succ)) f fun i ↦ i.elim0)
-  simp only [AInfinityCategory.homDifferential_apply]
-  convert h using 1 <;> congr!
+  let x := Fin.cases (motive := fun i ↦ homModule (R := R)
+    (![X, Y] i.rev.castSucc) (![X, Y] i.rev.succ)) f fun i ↦ i.elim0
+  have h := F.map_m ![X, Y] x
+  rw [← 𝒞.homDifferential_eq_m ![X, Y] x,
+    ← 𝒟.homDifferential_eq_m (fun i ↦ F.obj (![X, Y] i)) (fun i ↦ F.map _ _ (x i))] at h
+  exact h
 
 /-- A strict functor preserves the binary composition `m₂(g,f)`. -/
 @[simp]
@@ -170,12 +155,13 @@ theorem map_comp (F : AInfinityStrictFunctor 𝒞 𝒟) (X Y Z : C)
     (g : homModule (R := R) Y Z) (f : homModule (R := R) X Y) :
     F.map X Z (𝒞.comp X Y Z g f) =
       𝒟.comp (F.obj X) (F.obj Y) (F.obj Z) (F.map Y Z g) (F.map X Y f) := by
-  have h := F.map_m_etaExpand ![X, Y, Z]
-    (Fin.cases (motive := fun i ↦ homModule (R := R)
-      (![X, Y, Z] i.rev.castSucc) (![X, Y, Z] i.rev.succ))
-      g (Fin.cases f fun i ↦ i.elim0))
-  simp only [AInfinityCategory.comp_apply]
-  convert h using 1 <;> congr!
+  let x := Fin.cases (motive := fun i ↦ homModule (R := R)
+    (![X, Y, Z] i.rev.castSucc) (![X, Y, Z] i.rev.succ))
+    g (Fin.cases f fun i ↦ i.elim0)
+  have h := F.map_m ![X, Y, Z] x
+  rw [← 𝒞.comp_eq_m ![X, Y, Z] x,
+    ← 𝒟.comp_eq_m (fun i ↦ F.obj (![X, Y, Z] i)) (fun i ↦ F.map _ _ (x i))] at h
+  exact h
 
 /-- The identity strict functor of a nonunital `A∞` category. -/
 -- Expose the object map so the types of the characteristic Hom-map equations reduce.
