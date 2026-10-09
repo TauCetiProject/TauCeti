@@ -65,8 +65,10 @@ theorem rpow_add_mul_rpow_sub_one_mul_sub_lt_rpow {p u v : ℝ} (hp : 1 < p) (hu
       rw [le_div_iff₀ hv]
       linarith
     have h := one_add_mul_self_lt_rpow_one_add hs (div_ne_zero (sub_ne_zero.2 huv) hv.ne') hp
-    rw [show 1 + (u - v) / v = u / v by field_simp; ring, div_rpow hu hv.le,
-      lt_div_iff₀ (rpow_pos_of_pos hv p)] at h
+    have hu_div : 1 + (u - v) / v = u / v := by
+      field_simp
+      ring
+    rw [hu_div, div_rpow hu hv.le, lt_div_iff₀ (rpow_pos_of_pos hv p)] at h
     rw [rpow_sub_one hv.ne']
     calc v ^ p + p * (v ^ p / v) * (u - v) = (1 + p * ((u - v) / v)) * v ^ p := by
           field_simp

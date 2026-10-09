@@ -16,16 +16,18 @@ For `1 < p < ∞` and `t ∈ [0, 1]`, the `p`-Fréchet barycenters of the law
 `(1 - t) δ_x + t δ_y` on a pseudometric space minimize
 `z ↦ (1 - t) d(z, x) ^ p + t d(z, y) ^ p`. Writing `a = d(x, z)`, `b = d(z, y)` and
 `D = d(x, y)`, the triangle inequality only gives `a + b ≥ D`, and the scalar problem of
-minimizing `(1 - t) a ^ p + t b ^ p` subject to `a + b ≥ D` has the unique solution
-`a = τ D`, `b = (1 - τ) D`, where
+minimizing `(1 - t) a ^ p + t b ^ p` subject to `a + b ≥ D` is solved by `a = τ D`,
+`b = (1 - τ) D`, where
 
 `τ = t ^ (1 / (p - 1)) / ((1 - t) ^ (1 / (p - 1)) + t ^ (1 / (p - 1)))`
 
-is `TauCeti.twoPointBarycenterTime p t`. Consequently a point at distance `τ D` from `x` and
-`(1 - τ) D` from `y` is a barycenter; once such a point exists, these distances characterize
-the barycenters; and in a geodesic space the barycenters are exactly the points dividing some
-geodesic from `x` to `y` at time `τ`. For `p = 2` the time is `t` itself, so the quadratic
-barycenter of `(1 - t) δ_x + t δ_y` sits at time `t` of a geodesic.
+is `TauCeti.twoPointBarycenterTime p t`. For `0 < t < 1` this solution is unique; at the
+endpoint weights `t = 0` and `t = 1` uniqueness needs the remaining triangle inequalities
+`a ≤ D + b` and `b ≤ D + a`, which the distances satisfy. Consequently a point at distance
+`τ D` from `x` and `(1 - τ) D` from `y` is a barycenter; once such a point exists, these
+distances characterize the barycenters; and in a geodesic space the barycenters are exactly the
+points dividing some geodesic from `x` to `y` at time `τ`. For `p = 2` the time is `t` itself,
+so the quadratic barycenter of `(1 - t) δ_x + t δ_y` sits at time `t` of a geodesic.
 
 Applied to a Wasserstein space that is a geodesic space, such as `P_p(ℝ)`, this locates the
 barycenter of two laws on a Wasserstein geodesic between them.
@@ -102,6 +104,7 @@ private theorem rpow_add_rpow_pos (r : ℝ) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 
       (Real.rpow_pos_of_pos ht₀ r)
 
 /-- The barycentric time of the complementary weight is the complementary time. -/
+@[simp]
 theorem twoPointBarycenterTime_one_sub (p : ℝ) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
     twoPointBarycenterTime p (1 - t) = 1 - twoPointBarycenterTime p t := by
   have hS := (rpow_add_rpow_pos (p - 1)⁻¹ ht).ne'
