@@ -10,9 +10,9 @@ public import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRing.Basis
 -- Proof-only: `CoordinateRing.map` fixes the coordinates and is compatible with the scalars.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRingMap
--- Proof-only: a field extension is flat, so `1 ⊗ v` stays linearly independent.
-import Mathlib.RingTheory.Flat.Basic
--- Proof-only: the basis of a scalar extension `K ⊗_F M` induced by a basis of `M`.
+-- `RingHom.Flat`, the hypothesis of `CoordinateRing.linearIndependent_map`.
+public import Mathlib.RingTheory.RingHom.Flat
+-- Proof-only: the basis of a scalar extension `S ⊗_R M` induced by a basis of `M`.
 import Mathlib.RingTheory.TensorProduct.Free
 
 /-!
@@ -25,11 +25,11 @@ precisely, `CoordinateRing.map` induces an `S[X]`-linear isomorphism
 `p • CoordinateRing.map W f z`.
 
 Over the base ring itself the same holds: `CoordinateRing.map` sends the monomial basis
-`{xⁱ, xⁱy}` of `R[W]` over `R` to that of `S[W.map f]` over `S`. For a homomorphism of fields
-`f : F →+* K` this identifies `K[W.map f]` with `K ⊗_F F[W]`, so `F`-linearly independent elements
-of `F[W]` stay `K`-linearly independent in `K[W.map f]`. This linear disjointness of `F[W]` and `K`
-is the input to the comparison of the function fields of `W` and `W.map f`, and through it of the
-degrees of isogenies under base change.
+`{xⁱ, xⁱy}` of `R[W]` over `R` to that of `S[W.map f]` over `S`. This identifies `S[W.map f]` with
+`S ⊗_R R[W]`, so when `f` is flat, `R`-linearly independent elements of `R[W]` stay `S`-linearly
+independent in `S[W.map f]`. For a homomorphism of fields `f : F →+* K`, this linear disjointness
+of `F[W]` and `K` is the input to the comparison of the function fields of `W` and `W.map f`, and
+through it of the degrees of isogenies under base change.
 
 ## Main definitions
 
@@ -42,8 +42,8 @@ degrees of isogenies under base change.
   the module base change of the source coordinate ring.
 * `WeierstrassCurve.Affine.CoordinateRing.map_basisMonomials`: `CoordinateRing.map` sends the
   monomial basis to the monomial basis.
-* `WeierstrassCurve.Affine.CoordinateRing.linearIndependent_map`: over fields, `F`-linearly
-  independent elements of `F[W]` stay `K`-linearly independent in `K[W.map f]`.
+* `WeierstrassCurve.Affine.CoordinateRing.linearIndependent_map`: for flat `f`, `R`-linearly
+  independent elements of `R[W]` stay `S`-linearly independent in `S[W.map f]`.
 
 -/
 
@@ -134,21 +134,17 @@ theorem _root_.WeierstrassCurve.Affine.CoordinateRing.map_basisMonomials (i : �
   obtain ⟨i, j⟩ := i
   simp [map_of_X, map_root]
 
-section Field
-
-variable {F K : Type*} [Field F] [Field K] (W : _root_.WeierstrassCurve.Affine F) (f : F →+* K)
-
-/-- **`F[W]` and `K` are linearly disjoint over `F` in `K[W.map f]`**: `CoordinateRing.map` sends
-`F`-linearly independent elements of `F[W]` to `K`-linearly independent elements of
-`K[W.map f]`. -/
+/-- **`R[W]` and `S` are linearly disjoint over `R` in `S[W.map f]`**: for a flat `f : R →+* S`,
+`CoordinateRing.map` sends `R`-linearly independent elements of `R[W]` to `S`-linearly independent
+elements of `S[W.map f]`. -/
 theorem _root_.WeierstrassCurve.Affine.CoordinateRing.linearIndependent_map {ι : Type*}
-    {v : ι → W.CoordinateRing} (hv : LinearIndependent F v) :
-    LinearIndependent K (map W f ∘ v) := by
+    (hf : f.Flat) {v : ι → W.CoordinateRing} (hv : LinearIndependent R v) :
+    LinearIndependent S (map W f ∘ v) := by
   algebraize [f]
-  -- The monomial bases correspond, so `K[W.map f]` is the scalar extension `K ⊗_F F[W]`, through
-  -- the `K`-linear isomorphism `e` below, and `K` is flat over `F`.
-  let e : K ⊗[F] W.CoordinateRing ≃ₗ[K] (W.map f).CoordinateRing :=
-    (Algebra.TensorProduct.basis K (CoordinateRing.basisMonomials W)).equiv
+  -- The monomial bases correspond, so `S[W.map f]` is the scalar extension `S ⊗_R R[W]`, through
+  -- the `S`-linear isomorphism `e` below, and `S` is flat over `R`.
+  let e : S ⊗[R] W.CoordinateRing ≃ₗ[S] (W.map f).CoordinateRing :=
+    (Algebra.TensorProduct.basis S (CoordinateRing.basisMonomials W)).equiv
       (CoordinateRing.basisMonomials (W.map f)) (Equiv.refl _)
   have he (z : W.CoordinateRing) : e (1 ⊗ₜ z) = map W f z := by
     obtain ⟨c, rfl⟩ := (CoordinateRing.basisMonomials W).repr.symm.surjective z
@@ -156,16 +152,14 @@ theorem _root_.WeierstrassCurve.Affine.CoordinateRing.linearIndependent_map {ι 
     | zero => simp
     | add c d hc hd => simp only [map_add, TensorProduct.tmul_add, hc, hd]
     | single j a =>
-      rw [Module.Basis.repr_symm_single, TensorProduct.tmul_smul, ← algebraMap_smul K a,
+      rw [Module.Basis.repr_symm_single, TensorProduct.tmul_smul, ← algebraMap_smul S a,
         map_smul, ← Algebra.TensorProduct.basis_apply, Module.Basis.equiv_apply,
         Equiv.refl_apply, Algebra.smul_def, Algebra.smul_def a, map_mul, map_algebraMap,
         map_basisMonomials, RingHom.algebraMap_toAlgebra]
-  have h := (Module.Flat.linearIndependent_one_tmul (S := K) hv).map' e.toLinearMap e.ker
+  have h := (Module.Flat.linearIndependent_one_tmul (S := S) hv).map' e.toLinearMap e.ker
   convert h using 1
   ext i
   simp [he]
-
-end Field
 
 end TauCeti
 

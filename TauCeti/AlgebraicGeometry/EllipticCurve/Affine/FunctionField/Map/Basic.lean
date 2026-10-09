@@ -227,7 +227,10 @@ theorem linearIndependent_map {ι : Type*} {v : ι → W.FunctionField}
     rw [Algebra.smul_def, map_mul, ← map_algebraMap_coordinateRing, ha j j.2, Algebra.smul_def,
       map_mul, Function.comp_apply, Algebra.smul_def, ← IsScalarTower.algebraMap_apply]
     ring
-  exact Fintype.linearIndependent_iff.1 (CoordinateRing.linearIndependent_map W f hav) _ hrel
+  have hf : f.Flat := by
+    algebraize [f]
+    exact inferInstanceAs (Module.Flat F K)
+  exact Fintype.linearIndependent_iff.1 (CoordinateRing.linearIndependent_map W f hf hav) _ hrel
     ⟨i, hi⟩
 
 variable (W₂ : WeierstrassCurve.Affine F)
