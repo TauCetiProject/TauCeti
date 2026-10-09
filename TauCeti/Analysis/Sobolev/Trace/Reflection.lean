@@ -101,7 +101,7 @@ theorem normalLinearReflection_symm : (normalLinearReflection E).symm = normalLi
   Submodule.reflection_symm
 
 /-- The linear normal reflection is self-adjoint. -/
-theorem inner_normalLinearReflection_left (x y : WithLp 2 (ℝ × E)) :
+theorem inner_normalLinearReflection_left_eq_right (x y : WithLp 2 (ℝ × E)) :
     inner ℝ (normalLinearReflection E x) y = inner ℝ x (normalLinearReflection E y) := by
   rw [← (normalLinearReflection E).inner_map_map, normalLinearReflection_normalLinearReflection]
 
@@ -479,7 +479,7 @@ private theorem integral_lineDeriv_smul_add_comp_normalReflection {a : ℝ}
   have hinner (x : WithLp 2 (ℝ × E)) :
       inner ℝ (G x + normalLinearReflection E (G (ρ x))) d =
         inner ℝ (G x) d + ε * inner ℝ (G (ρ x)) d := by
-    rw [inner_add_left, inner_normalLinearReflection_left, hd, real_inner_smul_right]
+    rw [inner_add_left, inner_normalLinearReflection_left_eq_right, hd, real_inner_smul_right]
   -- The reflected test function `ψ = φ ∘ ρ` and the combination `χ = φ + ε ψ`.
   have hφd : Differentiable ℝ φ := hφ.differentiable (by simp)
   set ψ : WithLp 2 (ℝ × E) → ℝ := fun x => φ (ρ x) with hψdef
