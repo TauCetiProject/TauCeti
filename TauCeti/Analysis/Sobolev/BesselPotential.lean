@@ -192,7 +192,10 @@ theorem memSobolev_one_of_w1p_value_eq (u : Lp ℝ 2 (volume : Measure E))
     (w : W1p volume ⊤ 2) (hw : (W1p.value w : E → ℝ) =ᵐ[volume] u) :
     MemSobolev 1 2 (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u)) := by
   have hvolume : (volume : Measure E).restrict ((⊤ : Opens E) : Set E) = volume := by simp
-  rw [show (1 : ℝ) = 0 + 1 by norm_num, memSobolev_add_one_iff]
+  have hiff := memSobolev_add_one_iff (s := 0)
+    (f := Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u))
+  rw [zero_add] at hiff
+  rw [hiff]
   refine ⟨memSobolev_zero_iff.mpr ⟨_, rfl⟩, fun v => ?_⟩
   let g : Lp ℝ 2 (volume : Measure E) :=
     castLpₗᵢ (𝕜 := ℝ) hvolume ((innerSL ℝ v).compLp (W1p.gradient w))

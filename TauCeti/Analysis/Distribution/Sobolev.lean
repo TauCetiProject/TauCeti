@@ -53,15 +53,23 @@ variable [NormedSpace ℂ F]
 Mathlib's normalisation of the Fourier transform. -/
 theorem besselPotential_two_eq_sub_laplacian (f : 𝓢'(E, F)) :
     besselPotential E F 2 f = f - ((2 * π) ^ 2)⁻¹ • Δ f := by
+  -- The Bessel symbol of order `2` is `1 + ‖x‖²`, so the Bessel potential splits as the
+  -- identity plus the Fourier multiplier with symbol `‖x‖²`.
   have hsymb : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((2 : ℝ) / 2) : ℝ) : ℂ)) =
       (fun _ ↦ (1 : ℂ)) + fun x ↦ ((‖x‖ ^ 2 : ℝ) : ℂ) := by
     ext x
     norm_num
-  have hpi : ((2 * π) ^ 2)⁻¹ * (2 * π) ^ 2 = 1 := inv_mul_cancel₀ (by positivity)
-  rw [besselPotential, hsymb, laplacian_eq_fourierMultiplierCLM, smul_smul, mul_neg, hpi,
-    neg_smul, one_smul, sub_neg_eq_add, fourierMultiplierCLM_apply,
-    smulLeftCLM_add (by fun_prop) (by fun_prop)]
-  simp [fourierMultiplierCLM_apply]
+  have hsplit : besselPotential E F 2 f =
+      f + fourierMultiplierCLM F (fun x : E ↦ ((‖x‖ ^ 2 : ℝ) : ℂ)) f := by
+    rw [besselPotential, hsymb, fourierMultiplierCLM_apply,
+      smulLeftCLM_add (by fun_prop) (by fun_prop)]
+    simp [fourierMultiplierCLM_apply]
+  -- Mathlib writes `Δ` as the Fourier multiplier with symbol `-(2π)² ‖x‖²`.
+  have hΔ : ((2 * π) ^ 2)⁻¹ • Δ f =
+      -fourierMultiplierCLM F (fun x : E ↦ ((‖x‖ ^ 2 : ℝ) : ℂ)) f := by
+    rw [laplacian_eq_fourierMultiplierCLM, smul_smul, mul_neg,
+      inv_mul_cancel₀ (by positivity), neg_one_smul]
+  rw [hsplit, hΔ, sub_neg_eq_add]
 
 variable [CompleteSpace F]
 
@@ -85,10 +93,16 @@ theorem memSobolev_add_one_of_lineDerivOp {ι : Type*} [Fintype ι] (b : Orthono
   -- With `J^r` the Bessel potential of order `r`, membership of `f` in `H^{s+1}` is membership
   -- of `J¹ f = J⁻¹ (J² f)` in `H^s`, and `J² f = f - (2π)⁻² ∑ᵢ ∂ᵢ ∂ᵢ f`. The operator `J⁻¹`
   -- maps `f` and each `∂ᵢ ∂ᵢ f` into `H^s`.
-  rw [add_comm, ← memSobolev_besselPotential_iff, show (1 : ℝ) = 2 + -1 by norm_num,
-    ← besselPotential_besselPotential_apply, besselPotential_two_eq_sub_laplacian,
-    laplacian_eq_sum b, map_sub, ContinuousLinearMap.map_smul_of_tower, map_sum,
-    RCLike.real_smul_eq_coe_smul (K := ℂ)]
+  have hJ : besselPotential E F 1 f = besselPotential E F (-1) f -
+      ((2 * π) ^ 2)⁻¹ • ∑ i, besselPotential E F (-1) (∂_{b i} (∂_{b i} f)) := by
+    calc besselPotential E F 1 f
+        = besselPotential E F (-1) (besselPotential E F 2 f) := by
+          rw [besselPotential_besselPotential_apply]
+          norm_num
+      _ = _ := by
+          rw [besselPotential_two_eq_sub_laplacian, laplacian_eq_sum b, map_sub,
+            ContinuousLinearMap.map_smul_of_tower, map_sum]
+  rw [add_comm, ← memSobolev_besselPotential_iff, hJ, RCLike.real_smul_eq_coe_smul (K := ℂ)]
   refine MemSobolev.sub ?_ (MemSobolev.smul _ (MemSobolev.sum fun i _ => ?_))
   · rw [memSobolev_besselPotential_iff]
     exact hf.mono (by linarith)
