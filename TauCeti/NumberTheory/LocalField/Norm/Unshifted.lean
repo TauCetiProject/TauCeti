@@ -67,14 +67,9 @@ fields, the norm carries `U(L, i)` into `U(K, ⌊φ_{L/K}(i)⌋)`, because
 theorem map_normUnits_unitFiltration_le_floor_herbrand (i : ℕ) :
     (unitFiltration L i).map (Algebra.normUnits K) ≤
       unitFiltration K ⌊(herbrand K L ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩ : ℝ)⌋₊ := by
-  -- `φ(i) ≥ φ(0) = 0`, so the floor of `φ(i)` is at most `φ(i)`.
+  -- `ψℕ(0) = 0 ≤ i`, so `0 ≤ φ(i)` and the floor of `φ(i)` is at most `φ(i)`.
   have h0 : (0 : ℝ) ≤ herbrand K L ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩ := by
-    have h := (herbrand_strictMono K L).monotone
-      (show (⟨(0 : ℕ), Nat.cast_mem_ramificationIndexDomain 0⟩ : RamificationIndexDomain) ≤
-        ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩ from
-        Subtype.mk_le_mk.2 (Nat.cast_le.2 i.zero_le))
-    rw [herbrand_of_coe_le_zero K L (by simp)] at h
-    simpa using Subtype.coe_le_coe.2 h
+    simpa using (psiNat_le_iff K L (n := 0) (m := i)).1 (by simp [psiNat_zero])
   exact (Subgroup.map_mono (unitFiltration_antitone
     ((psiNat_le_iff K L).2 (Nat.floor_le h0)))).trans
     (map_normUnits_unitFiltration_psiNat_le K L _)
