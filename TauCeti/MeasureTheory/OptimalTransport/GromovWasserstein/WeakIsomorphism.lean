@@ -22,7 +22,7 @@ values in an extended metric space. Transitivity uses gluing; it requires a fini
 and a standard Borel outer carrier, rather than a topology on every carrier.
 
 For an extended metric target and every nonzero exponent, an exact coupling is precisely a
-coupling of zero distortion. Consequently weakly isomorphic kernels with an extended metric
+coupling of zero distortion. Consequently weakly isomorphic kernels with a pseudo extended metric
 target have Gromov–Wasserstein distance zero. The converse requires an attainment theorem and
 is not asserted here.
 
@@ -106,17 +106,9 @@ theorem areWeaklyIsomorphicKernels_congr_ae [IsFiniteMeasure μ]
     exact areWeaklyIsomorphicKernels_iff.mpr ⟨π, hπ, ha'.symm.trans (heq.trans hb')⟩
   exact ⟨transfer hX hY, transfer hX.symm hY.symm⟩
 
-section EMetricSpace
+section PseudoEMetricSpace
 
-variable [EMetricSpace Z] {p : ℝ≥0∞}
-
-/-- Weak isomorphism is equivalent to the existence of a zero-distortion coupling at any
-nonzero exponent, including `∞`. This does not assert attainment of the distance infimum. -/
-theorem areWeaklyIsomorphicKernels_iff_exists_distortion_eq_zero (hp : p ≠ 0) :
-    AreWeaklyIsomorphicKernels μ ωX ν ωY ↔
-      ∃ π : Measure (X × Y), IsCoupling π μ ν ∧
-        gromovWassersteinDistortion p ωX ωY π = 0 := by
-  simp only [areWeaklyIsomorphicKernels_iff, gromovWassersteinDistortion_eq_zero_iff hp]
+variable [PseudoEMetricSpace Z]
 
 /-- Weakly isomorphic kernels have zero Gromov–Wasserstein distance at every exponent.
 This implication also holds at exponent zero. -/
@@ -131,6 +123,20 @@ theorem AreWeaklyIsomorphicKernels.gromovWassersteinEDist_eq_zero
     filter_upwards [heq] with q hq
     simp [hq]
   rw [eLpNorm_congr_ae hzero, eLpNorm_zero]
+
+end PseudoEMetricSpace
+
+section EMetricSpace
+
+variable [EMetricSpace Z] {p : ℝ≥0∞}
+
+/-- Weak isomorphism is equivalent to the existence of a zero-distortion coupling at any
+nonzero exponent, including `∞`. This does not assert attainment of the distance infimum. -/
+theorem areWeaklyIsomorphicKernels_iff_exists_distortion_eq_zero (hp : p ≠ 0) :
+    AreWeaklyIsomorphicKernels μ ωX ν ωY ↔
+      ∃ π : Measure (X × Y), IsCoupling π μ ν ∧
+        gromovWassersteinDistortion p ωX ωY π = 0 := by
+  simp only [areWeaklyIsomorphicKernels_iff, gromovWassersteinDistortion_eq_zero_iff hp]
 
 /-- A common s-finite parametrizing measure with equal pulled-back kernels gives a weak
 isomorphism. The witness coupling is the pushforward along the paired parametrizing maps. -/
