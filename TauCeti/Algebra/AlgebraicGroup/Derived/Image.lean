@@ -115,7 +115,7 @@ variable [IsAlgClosed k] [Algebra.FiniteType k H] [Algebra.FiniteType k K] [IsRe
 /-- Over an algebraically closed field, a schematically dominant homomorphism between
 finite-type affine groups with reduced target restricts to a faithfully flat homomorphism
 of derived subgroups. The source group need not be reduced. -/
-theorem derivedMap_faithfullyFlat (f : H ⟶ K) (hf : Function.Injective f.hom) :
+theorem faithfullyFlat_derivedMap (f : H ⟶ K) (hf : Function.Injective f.hom) :
     (derivedMap f).hom.toAlgHom.toRingHom.FaithfullyFlat := by
   let _ := (smoothCommHopfAlgProperty_iff _).mp
     (smoothCommHopfAlgProperty_quotient_derivedDefiningIdeal H)
