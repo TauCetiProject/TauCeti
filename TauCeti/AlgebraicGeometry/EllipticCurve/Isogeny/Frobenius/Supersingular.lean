@@ -79,10 +79,11 @@ trace of Frobenius. In particular `π̂` is separable exactly when `a_q` is nonz
 theorem pullbackDifferential_dualFrobeniusIsogeny_invariantDifferential :
     (dualFrobeniusIsogeny W).pullbackDifferential (invariantDifferential W) =
       W.frobeniusTrace • invariantDifferential W := by
+  -- `π̂ = [a_q] - π`, and `simp` uses `π^*ω = 0`
   rw [← Hom.pullbackDifferential_ofIsogeny, ofIsogeny_dualFrobeniusIsogeny,
     Hom.pullbackDifferential_sub_invariantDifferential,
-    Hom.pullbackDifferential_zsmul_id_invariantDifferential, Hom.pullbackDifferential_ofIsogeny,
-    pullbackDifferential_frobeniusIsogeny, LinearMap.zero_apply, sub_zero]
+    Hom.pullbackDifferential_zsmul_id_invariantDifferential]
+  simp
 
 end TauCeti.Isogeny
 
@@ -139,9 +140,9 @@ theorem isOrdinary_iff_not_dvd_frobeniusTrace :
   have : CharP F p :=
     (expChar_prime_iff (R := F) (exists_separableDegree_dualFrobeniusIsogeny_eq p W).1).1 ‹_›
   -- `π̂` is separable exactly when it does not kill `ω`, and `π̂^*ω = a_q ω`
-  rw [isOrdinary_iff_isSeparable_dualFrobeniusIsogeny, isSeparable_iff_pullbackDifferential_ne_zero,
-    pullbackDifferential_dualFrobeniusIsogeny_invariantDifferential, Ne,
-    Affine.zsmul_invariantDifferential_eq_zero_iff, CharP.intCast_eq_zero_iff F p]
+  rw [isOrdinary_iff_isSeparable_dualFrobeniusIsogeny, isSeparable_iff_pullbackDifferential_ne_zero]
+  simp [Affine.zsmul_invariantDifferential_eq_zero_iff, CharP.intCast_eq_zero_iff F p,
+    -frobeniusTrace_def]
 
 /-- **The trace criterion for supersingularity**: an elliptic curve over a finite field of
 characteristic `p` is supersingular exactly when `p` divides its trace of Frobenius `a_q`
@@ -161,7 +162,8 @@ theorem isSupersingular_iff_card_point_modEq_one :
     rw [hq, Nat.cast_pow]
     exact dvd_pow_self _ hf
   rw [isSupersingular_iff_dvd_frobeniusTrace, frobeniusTrace_eq_card_point, add_sub_assoc,
-    dvd_add_right hpq, ← Int.natCast_modEq_iff, Int.modEq_iff_dvd, Nat.cast_one]
+    dvd_add_right hpq]
+  simp [Nat.modEq_iff_dvd]
 
 /-- **Over `𝔽_p` with `p ≥ 5`, supersingularity is the vanishing of the trace**: an elliptic curve
 over a field with `p ≥ 5` elements, `p` its characteristic, is supersingular exactly when its trace
