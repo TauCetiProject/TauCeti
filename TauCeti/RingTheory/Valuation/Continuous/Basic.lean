@@ -80,6 +80,8 @@ sets are *literally equal* for equivalent valuations, which is
   a discrete ring is continuous.
 * `Valuation.IsContinuous.comap` : **Remark 7.9**, continuity is inherited along a
   continuous ring homomorphism.
+* `Valuation.IsContinuous.of_lt_imp_lt` : a valuation strictly dominated by a continuous one is
+  continuous.
 * `TauCeti.isClosed_supp_of_isContinuous`: the support of a continuous valuation is closed.
 
 ## References
@@ -164,6 +166,20 @@ theorem IsContinuous.sub_lt_mem_nhds [SeparatelyContinuousAdd A] {v : Valuation 
     simpa only [sub_eq_add_neg] using continuous_add_const (-a)
   refine ((hv b).preimage hcont).mem_nhds ?_
   simpa using zero_lt_iff.mpr hb
+
+/-- **A valuation strictly dominated by a continuous one is continuous.** If `w` is continuous,
+vanishes only where `v` does, and `w a < w b` forces `v a < v b`, then `v` is continuous: around
+each `x` with `v x < v b`, the `w`-ball `{y | w (y - x) < w b}` stays inside `{y | v y < v b}`.
+This is how valuations refining a continuous one, such as the rank-two points of a disc beside
+its Gauss points, inherit continuity. -/
+theorem IsContinuous.of_lt_imp_lt [SeparatelyContinuousAdd A] {v : Valuation A Γ₀}
+    {w : Valuation A Γ₀'} (hw : w.IsContinuous) (h0 : ∀ b, w b = 0 → v b = 0)
+    (h : ∀ a b, w a < w b → v a < v b) : v.IsContinuous := by
+  refine (isContinuous_iff_forall_ne_zero v).mpr fun b hb ↦ isOpen_iff_mem_nhds.mpr fun x hx ↦ ?_
+  filter_upwards [hw.sub_lt_mem_nhds x fun hwb ↦ hb (h0 b hwb)] with y hy
+  calc v y = v ((y - x) + x) := by rw [sub_add_cancel]
+    _ ≤ max (v (y - x)) (v x) := v.map_add _ _
+    _ < v b := max_lt (h _ _ hy) hx
 
 /-- **A continuous valuation is locally constant off its support.** Every point near `x` has
 value `v x`, as soon as `v x ≠ 0`. Mathlib's `Valued.locally_const` is the special case in which
