@@ -61,7 +61,8 @@ one of them: `W.autGroup ≃* (Hom W W)ˣ`.
 * `TauCeti.Isogeny.degree_variableChangeIsogeny`: they have degree one.
 * `TauCeti.Isogeny.variableChangeIsogeny_inj`: a change of variables is determined by its isogeny.
 * `TauCeti.Isogeny.exists_algebraMap_eq_pullback_of_degree_eq_one`: an isogeny of degree one out
-  of an elliptic curve pulls the coordinate ring back into the coordinate ring.
+  of a curve with integrally closed coordinate ring (for instance an elliptic curve) pulls the
+  coordinate ring back into the coordinate ring.
 * `TauCeti.Isogeny.exists_variableChangeIsogeny_eq_of_degree_eq_one`: **an isogeny of degree one
   between elliptic curves is the isogeny of a change of variables.**
 * `TauCeti.Isogeny.Hom.autGroupToUnits_injective` and
@@ -188,12 +189,12 @@ private theorem algebraMap_X (W : WeierstrassCurve.Affine F) :
       algebraMap W.CoordinateRing W.FunctionField (AdjoinRoot.of W.polynomial Polynomial.X) := by
   rw [IsScalarTower.algebraMap_apply F[X] W.CoordinateRing, AdjoinRoot.algebraMap_eq]
 
-variable [W₁.IsElliptic]
-
-/-- **An isogeny of degree one out of an elliptic curve pulls the coordinate ring back into the
-coordinate ring**: the pullback of a function on the affine curve `W₂` is a function on the affine
-curve `W₁`. -/
-theorem exists_algebraMap_eq_pullback_of_degree_eq_one (φ : Isogeny W₁ W₂) (hφ : φ.degree = 1)
+/-- **An isogeny of degree one out of a curve with integrally closed coordinate ring pulls the
+coordinate ring back into the coordinate ring**: the pullback of a function on the affine curve
+`W₂` is a function on the affine curve `W₁`. This applies to elliptic `W₁`, by
+`WeierstrassCurve.Affine.isIntegrallyClosed_coordinateRing`. -/
+theorem exists_algebraMap_eq_pullback_of_degree_eq_one [IsIntegrallyClosed W₁.CoordinateRing]
+    (φ : Isogeny W₁ W₂) (hφ : φ.degree = 1)
     (z : W₂.CoordinateRing) :
     ∃ w : W₁.CoordinateRing, algebraMap W₁.CoordinateRing W₁.FunctionField w = φ.pullback z := by
   -- The inverse `ψ` maps infinity to infinity, so `z` is integral over `R(W₁)` acting through
@@ -211,10 +212,9 @@ theorem exists_algebraMap_eq_pullback_of_degree_eq_one (φ : Isogeny W₁ W₂) 
     have h := congrArg φ.fieldPullback.toRingHom hpz
     rwa [Polynomial.hom_eval₂, map_zero, hcomp, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
       fieldPullback_algebraMap] at h
-  have := W₁.isIntegrallyClosed_coordinateRing
   exact IsIntegrallyClosed.isIntegral_iff.mp hint
 
-variable [W₂.IsElliptic]
+variable [W₁.IsElliptic] [W₂.IsElliptic]
 
 /-- A degree-one isogeny pulls `x` back to `αx + β` with `α ≠ 0`. The pullback `f` of `x₂` lies in
 the coordinate ring and has a pole at infinity, so its pole has order at least two; conversely `x₁`
@@ -228,6 +228,8 @@ private theorem exists_pullback_X_eq_of_degree_eq_one (φ : Isogeny W₁ W₂) (
   have hv (w : W₂.CoordinateRing) :
       v₂ (algebraMap W₂.CoordinateRing W₂.FunctionField w) = W₁.infinityPlace (φ.pullback w) :=
     comap_fieldPullback_apply_algebraMap φ _ w
+  have := W₁.isIntegrallyClosed_coordinateRing
+  have := W₂.isIntegrallyClosed_coordinateRing
   have hx₁ := one_lt_infinityPlace_X W₁
   obtain ⟨f, hf⟩ := exists_algebraMap_eq_pullback_of_degree_eq_one φ hφ
     (AdjoinRoot.of W₂.polynomial Polynomial.X)
@@ -265,6 +267,8 @@ private theorem exists_pullback_root_eq_of_degree_eq_one (φ : Isogeny W₁ W₂
   have hv (w : W₂.CoordinateRing) :
       v₂ (algebraMap W₂.CoordinateRing W₂.FunctionField w) = W₁.infinityPlace (φ.pullback w) :=
     comap_fieldPullback_apply_algebraMap φ _ w
+  have := W₁.isIntegrallyClosed_coordinateRing
+  have := W₂.isIntegrallyClosed_coordinateRing
   obtain ⟨g, hg⟩ := exists_algebraMap_eq_pullback_of_degree_eq_one φ hφ
     (AdjoinRoot.root W₂.polynomial)
   obtain ⟨ψ, hψφ, -⟩ := exists_comp_eq_id_and_comp_eq_id_of_degree_eq_one φ hφ
