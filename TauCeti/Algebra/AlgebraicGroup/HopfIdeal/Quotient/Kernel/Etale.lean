@@ -51,7 +51,7 @@ variable {R : Type u} [CommRing R] {H K : _root_.CommHopfAlgCat.{v} R}
 
 /-- The scheme-theoretic kernel of an étale affine group homomorphism is étale
 over the base. The ambient groups need not themselves be étale or smooth. -/
-theorem algebraEtale_quotient_kernelHopfIdeal {f : H ⟶ K}
+theorem algebraEtale_quotient_kernelHopfIdeal_of_etale {f : H ⟶ K}
     (hf : f.hom.toAlgHom.toRingHom.Etale) :
     Algebra.Etale R (K ⧸ (kernelHopfIdeal f).toIdeal) := by
   let := f.hom.toAlgHom.toAlgebra
@@ -69,7 +69,7 @@ theorem etale_iff_algebraEtale_quotient_kernelHopfIdeal (f : H ⟶ K)
     (hf : f.hom.toAlgHom.toRingHom.FaithfullyFlat) :
     f.hom.toAlgHom.toRingHom.Etale ↔
       Algebra.Etale R (K ⧸ (kernelHopfIdeal f).toIdeal) := by
-  refine ⟨algebraEtale_quotient_kernelHopfIdeal, fun h ↦ ?_⟩
+  refine ⟨algebraEtale_quotient_kernelHopfIdeal_of_etale, fun h ↦ ?_⟩
   let := f.hom.toAlgHom.toAlgebra
   have : Module.FaithfullyFlat H K := hf
   have : Algebra.Etale K (K ⊗[H] K) :=

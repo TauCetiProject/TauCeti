@@ -43,7 +43,7 @@ variable {R : Type u} [CommRing R] {H K : _root_.CommHopfAlgCat.{v} R}
 
 /-- The scheme-theoretic kernel of a smooth affine group homomorphism is smooth over
 the base, without any smoothness assumption on the ambient groups. -/
-theorem algebraSmooth_quotient_kernelHopfIdeal {f : H ⟶ K}
+theorem algebraSmooth_quotient_kernelHopfIdeal_of_smooth {f : H ⟶ K}
     (hf : f.hom.toAlgHom.toRingHom.Smooth) :
     Algebra.Smooth R (K ⧸ (kernelHopfIdeal f).toIdeal) := by
   let := f.hom.toAlgHom.toAlgebra
@@ -61,7 +61,7 @@ theorem smooth_iff_algebraSmooth_quotient_kernelHopfIdeal (f : H ⟶ K)
     (hf : f.hom.toAlgHom.toRingHom.FaithfullyFlat) :
     f.hom.toAlgHom.toRingHom.Smooth ↔
       Algebra.Smooth R (K ⧸ (kernelHopfIdeal f).toIdeal) := by
-  refine ⟨algebraSmooth_quotient_kernelHopfIdeal, fun h ↦ ?_⟩
+  refine ⟨algebraSmooth_quotient_kernelHopfIdeal_of_smooth, fun h ↦ ?_⟩
   let := f.hom.toAlgHom.toAlgebra
   have : Module.FaithfullyFlat H K := hf
   have : Algebra.Smooth K (K ⊗[H] K) :=
