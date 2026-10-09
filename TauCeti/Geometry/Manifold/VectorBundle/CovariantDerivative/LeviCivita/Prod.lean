@@ -21,12 +21,13 @@ differentiates a product vector field `(Y₁, Y₂)` factor by factor:
 This is the input for the curvature of a product, which is the product of the curvatures of the
 factors (`TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Prod`).
 
-The proof goes through the Koszul formula: on product fields the Koszul expression of the product
-metric is the sum of the Koszul expressions of the factors
-(`TauCeti.Manifold.koszul_prodVectorField`), because the inner product of product fields is a sum of
-functions of one factor each and the Lie bracket of product fields is computed factor by factor
-(`TauCeti.Manifold.mlieBracket_prodVectorField`). Every tangent vector of `M × N` is the value of a
-product field, so the Koszul formula determines the connection.
+On product fields the Koszul expression of the product metric splits as a sum over the factors,
+
+`K((X₁, X₂), (Y₁, Y₂), (Z₁, Z₂))(x, y) = K(X₁, Y₁, Z₁)(x) + K(X₂, Y₂, Z₂)(y)`,
+
+since the inner product of product fields is a sum of functions of one factor each and the Lie
+bracket of product fields is computed factor by factor
+(`TauCeti.Manifold.mlieBracket_prodVectorField`).
 
 ## Main results
 
@@ -138,7 +139,8 @@ theorem tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField (hY₁ : MDif
       (extend F (e w).2 : Π y : N, TangentSpace J y) p = w := by
     apply e.injective
     rw [tangentSpaceProdEquiv_prodVectorField, extend_apply_self, extend_apply_self]
-  -- Compare the Koszul formulas of the product and of the factors on these fields.
+  -- The Koszul formula determines the connection, and on these product fields the Koszul
+  -- expression of the product metric is the sum of those of the factors.
   have hkoszul := two_inner_leviCivitaConnection_eq_koszul (I := I.prod J) (M := M × N)
     (mdifferentiableAt_prodVectorField hX₁ hX₂) (mdifferentiableAt_prodVectorField hY₁ hY₂)
     (mdifferentiableAt_prodVectorField hZ₁ hZ₂)

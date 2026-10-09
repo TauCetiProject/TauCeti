@@ -24,9 +24,9 @@ Product fields are the fields along which the geometry of a product manifold spl
 space at every point is spanned by values of product fields, and differential operators such as the
 Levi-Civita connection of a product metric are computed on them.
 
-The bracket is identified through the derivation property `mvfderiv_mlieBracket`: a vector-valued
-function on `M`, such as a chart, composed with the projection `M × N → M` differentiates a product
-field through its first component only (`TauCeti.mvfderiv_comp_fst_apply`).
+A vector-valued function on `M` composed with the projection `M × N → M` differentiates a product
+field `(X, Y)` along `X` only (`TauCeti.mvfderiv_comp_fst_apply`), and symmetrically for `N`; this
+is what makes the bracket of product fields split.
 
 ## Main definitions
 
@@ -137,23 +137,19 @@ private theorem fst_mlieBracket_prodVectorField (hX₁ : MDifferentiableAt I I.t
     (show (1 : ℕ∞ω) ≤ 2 by norm_num).trans le_minSmoothness
   have : IsManifold I 1 M := .of_le h1
   have : IsManifold J 1 N := .of_le h1
-  -- Test both brackets against the chart of `M` at `p.1`, composed with the projection.
+  -- Test the bracket of the product fields against the chart of `M` at `p.1`, composed with
+  -- the projection: this differentiates product fields through their `M`-component only.
   set φ := extChartAt I p.1
   have hφ : ContMDiffAt I 𝓘(𝕜, E) (minSmoothness 𝕜 2) φ p.1 := contMDiffAt_extChartAt
   have hprod := mvfderiv_mlieBracket (hφ.comp p contMDiffAt_fst) le_rfl
     (mdifferentiableAt_prodVectorField hX₁ hX₂) (mdifferentiableAt_prodVectorField hY₁ hY₂)
-  have hfactor := mvfderiv_mlieBracket hφ le_rfl hX₁ hY₁
   have hW (W₁ : Π x : M, TangentSpace I x) (W₂ : Π y : N, TangentSpace J y) :
       (fun q ↦ mvfderiv (I.prod J) (φ ∘ Prod.fst) q (prodVectorField W₁ W₂ q)) =
         (fun x ↦ mvfderiv I φ x (W₁ x)) ∘ Prod.fst :=
     funext fun q ↦ mvfderiv_comp_fst_apply φ q _
   rw [hW, hW, mvfderiv_comp_fst_apply, mvfderiv_comp_fst_apply, mvfderiv_comp_fst_apply,
-    prodVectorField_fst, prodVectorField_fst, ← hfactor] at hprod
-  obtain ⟨e, he⟩ := isInvertible_mfderiv_extChartAt (I := I) (mem_extChartAt_source p.1)
-  have hinj : Function.Injective (mvfderiv I φ p.1) := by
-    rw [mvfderiv, ContinuousLinearMap.coe_comp, ← he]
-    exact (NormedSpace.fromTangentSpace _).injective.comp e.injective
-  exact hinj hprod
+    prodVectorField_fst, prodVectorField_fst] at hprod
+  exact eq_mlieBracket_of_mvfderiv_extChartAt hX₁ hY₁ hprod
 
 private theorem snd_mlieBracket_prodVectorField (hX₁ : MDifferentiableAt I I.tangent (T% X₁) p.1)
     (hY₁ : MDifferentiableAt I I.tangent (T% Y₁) p.1)
@@ -165,23 +161,19 @@ private theorem snd_mlieBracket_prodVectorField (hX₁ : MDifferentiableAt I I.t
     (show (1 : ℕ∞ω) ≤ 2 by norm_num).trans le_minSmoothness
   have : IsManifold I 1 M := .of_le h1
   have : IsManifold J 1 N := .of_le h1
-  -- Test both brackets against the chart of `N` at `p.2`, composed with the projection.
+  -- Test the bracket of the product fields against the chart of `N` at `p.2`, composed with
+  -- the projection: this differentiates product fields through their `N`-component only.
   set φ := extChartAt J p.2
   have hφ : ContMDiffAt J 𝓘(𝕜, E') (minSmoothness 𝕜 2) φ p.2 := contMDiffAt_extChartAt
   have hprod := mvfderiv_mlieBracket (hφ.comp p contMDiffAt_snd) le_rfl
     (mdifferentiableAt_prodVectorField hX₁ hX₂) (mdifferentiableAt_prodVectorField hY₁ hY₂)
-  have hfactor := mvfderiv_mlieBracket hφ le_rfl hX₂ hY₂
   have hW (W₁ : Π x : M, TangentSpace I x) (W₂ : Π y : N, TangentSpace J y) :
       (fun q ↦ mvfderiv (I.prod J) (φ ∘ Prod.snd) q (prodVectorField W₁ W₂ q)) =
         (fun y ↦ mvfderiv J φ y (W₂ y)) ∘ Prod.snd :=
     funext fun q ↦ mvfderiv_comp_snd_apply φ q _
   rw [hW, hW, mvfderiv_comp_snd_apply, mvfderiv_comp_snd_apply, mvfderiv_comp_snd_apply,
-    prodVectorField_snd, prodVectorField_snd, ← hfactor] at hprod
-  obtain ⟨e, he⟩ := isInvertible_mfderiv_extChartAt (I := J) (mem_extChartAt_source p.2)
-  have hinj : Function.Injective (mvfderiv J φ p.2) := by
-    rw [mvfderiv, ContinuousLinearMap.coe_comp, ← he]
-    exact (NormedSpace.fromTangentSpace _).injective.comp e.injective
-  exact hinj hprod
+    prodVectorField_snd, prodVectorField_snd] at hprod
+  exact eq_mlieBracket_of_mvfderiv_extChartAt hX₂ hY₂ hprod
 
 /-- The Lie bracket of two product vector fields is the product of the Lie brackets of their
 factors: `[(X₁, X₂), (Y₁, Y₂)] = ([X₁, Y₁], [X₂, Y₂])` at every point where the four factors are
