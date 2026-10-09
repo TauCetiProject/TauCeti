@@ -592,6 +592,19 @@ theorem hasOneCommonSide_of_isRecut {D E : GridRectangleDecomposition x z} (h : 
   · exact E.hasOneCommonSide_of_mem_commonSideColumns (c := E.first.left) (by simp [hc]) hzx
   · exact E.hasOneCommonSide_of_mem_commonSideColumns (c := E.first.right) (by simp [hc]) hzx
 
+/-- Two decompositions by empty rectangles with exactly one common side column that admit the
+same recut are equal. -/
+theorem IsRecut.eq_of_target_eq {D E F : GridRectangleDecomposition x z}
+    (hD : D.IsRecut F) (hE : E.IsRecut F)
+    (honeD : D.HasOneCommonSide) (honeE : E.HasOneCommonSide)
+    (hfD : D.first.IsEmpty) (hsD : D.second.IsEmpty)
+    (hfE : E.first.IsEmpty) (hsE : E.second.IsEmpty) : D = E := by
+  have hbackD := hD.symm honeD hfD hsD
+  have hbackE := hE.symm honeE hfE hsE
+  have honeF := hasOneCommonSide_of_isRecut hbackD
+    (D.target_ne_source_of_hasOneCommonSide honeD)
+  exact (F.existsUnique_isRecut honeF hD.isEmpty_first hD.isEmpty_second).unique hbackD hbackE
+
 /-- The recut of a two-step decomposition by two empty rectangles sharing exactly one side
 column. -/
 noncomputable def recut (D : GridRectangleDecomposition x z) (hone : D.HasOneCommonSide)
