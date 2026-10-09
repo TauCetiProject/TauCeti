@@ -682,12 +682,15 @@ private theorem isIso_presentationLimitPreAdicSpaceComapIsoHom_toHom :
       (Y := (presentationLimitPreAdicSpace P Aplus hAplus hP).toPresheafedSpace)
       (presentationLimitPreAdicSpaceComapIsoHom φ hφ hplus ψ hψ hψφ hφψ hplus' hAplus hBplus hP
         hP').toHom := by
-  have hbase : IsIso (spaComapTopHom φ hφ hplus) := by
+  let f := (presentationLimitPreAdicSpaceComapIsoHom φ hφ hplus ψ hψ hψφ hφψ hplus' hAplus hBplus
+    hP hP').toHom
+  have : IsIso f.base := by
+    change IsIso (spaComapTopHom φ hφ hplus)
     rw [← spaComapTopIso_hom φ hφ hplus ψ hψ hψφ hφψ hplus']
     infer_instance
-  exact @PresheafedSpace.isIso_of_components _ _ _ _ _ hbase
-    (Iso.isIso_hom (presentationLimitPresheafIsoPushforward (P := P) (P' := P') φ hφ hplus ψ hψ hψφ
-      hφψ hplus'))
+  have : IsIso f.c := Iso.isIso_hom (presentationLimitPresheafIsoPushforward (P := P) (P' := P') φ
+    hφ hplus ψ hψ hψφ hφψ hplus')
+  exact PresheafedSpace.isIso_of_components f
 
 /-- **An isomorphism of Huber pairs induces an isomorphism of pre-adic spaces.** Let `φ : A → B`
 and `ψ : B → A` be mutually inverse continuous ring homomorphisms carrying `A⁺` into `B⁺` and `B⁺`
