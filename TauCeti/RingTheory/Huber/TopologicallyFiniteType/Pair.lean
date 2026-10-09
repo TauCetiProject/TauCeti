@@ -192,7 +192,7 @@ theorem Hom.isTopologicallyFiniteType_id (S : Pair A) :
     ext a
     simp [ev]
   have hinv : Function.LeftInverse ev.extension.toRingHom (S.weightedCompletionHom hT).toRingHom :=
-    fun a ↦ by simpa using congrArg (fun f : Hom S S ↦ f.toRingHom a) hsec
+    fun a ↦ by simp [weightedCompletionHom, ev]
   refine ⟨0, T, finZeroElim, hT, ev.extension,
     (Hom.isQuotientMapping_iff_isOpenQuotientMap_and_isIntegral _).mpr ⟨?_, fun a ha ↦ ?_⟩, hsec⟩
   · -- a continuous map with a continuous section is a quotient map, hence open for groups

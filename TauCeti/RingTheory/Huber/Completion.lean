@@ -40,6 +40,8 @@ converge because `Â` is complete, and their sums exhibit the element as a combi
 * `TauCeti.Huber.PairOfDefinition.toCompletionRingOfDefinition`: the completion map restricted to
   `A₀` and corestricted to `Â₀`.
 * `TauCeti.Huber.PairOfDefinition.completion`: the pair of definition of `Â` they assemble into.
+* `TauCeti.Huber.completionPlus`: the plus ring `Â⁺` of the completion, the closure of the image
+  of `A⁺`. It is opaque; `completionPlus_def` is its characterisation.
 
 ## Main results
 
@@ -70,7 +72,8 @@ converge because `Â` is complete, and their sums exhibit the element as a combi
 * `TauCeti.Huber.Pair.completion` and `TauCeti.Huber.Pair.completionHom`: the completed Huber pair
   `(Â, Â⁺)`, with `Â⁺` the closure of the image of `A⁺`, and the completion map as a morphism of
   Huber pairs. `TauCeti.Huber.Pair.Hom.extension` extends a morphism into a complete Hausdorff
-  Huber pair along it, uniquely by `TauCeti.Huber.Pair.Hom.ext_completion`.
+  Huber pair along it, uniquely by `TauCeti.Huber.Pair.Hom.ext_completion`, and agrees with it on
+  `A` by `TauCeti.Huber.Pair.Hom.extension_toRingHom_coe`.
 
 ## References
 
@@ -612,6 +615,25 @@ theorem IsRingOfIntegralElements.completion [IsHuberRing A] {Aplus : Subring A}
     Completion.isIntegrallyClosedIn_topologicalClosure_map_coeRingHom h.isOpen,
     topologicalClosure_map_coeRingHom_le_powerBoundedSubring h.le_powerBoundedSubring⟩
 
+/-- The plus ring of the completion: the closure in `Â` of the image of `A⁺`. When `A⁺` is a ring
+of integral elements so is this, by `TauCeti.Huber.IsRingOfIntegralElements.completion`, which is
+Wedhorn's Lemma 7.47. -/
+noncomputable def completionPlus (Aplus : Subring A) : Subring (Completion A) :=
+  (Aplus.map (Completion.coeRingHom : A →+* Completion A)).topologicalClosure
+
+/-- `completionPlus` is the closure of the image of `A⁺`. The unbundled statements, whose plus ring
+is spelled out, go through this lemma: `completionPlus` is opaque outside this module. -/
+theorem completionPlus_def (Aplus : Subring A) :
+    completionPlus Aplus =
+      (Aplus.map (Completion.coeRingHom : A →+* Completion A)).topologicalClosure :=
+  (rfl)
+
+/-- The completion map carries `A⁺` into `Â⁺`: this is the `hplus` argument `spaComap` takes
+along `A → Â`. -/
+theorem map_mem_completionPlus {Aplus : Subring A} {a : A} (ha : a ∈ Aplus) :
+    Completion.coeRingHom a ∈ completionPlus Aplus :=
+  Subring.le_topologicalClosure _ ⟨a, ha, rfl⟩
+
 /-! ### The completion of a Huber pair -/
 
 namespace Pair
@@ -622,21 +644,19 @@ variable [IsHuberRing A]
 image of `A⁺`, a ring of integral elements by `TauCeti.Huber.IsRingOfIntegralElements.completion`
 (Wedhorn, Lemma 7.47). -/
 noncomputable def completion (S : Pair A) : Pair (Completion A) where
-  plus := (S.plus.map (Completion.coeRingHom : A →+* Completion A)).topologicalClosure
-  isRingOfIntegralElements := S.isRingOfIntegralElements.completion
+  plus := completionPlus S.plus
+  isRingOfIntegralElements := completionPlus_def S.plus ▸ S.isRingOfIntegralElements.completion
 
-/-- The plus ring of the completed pair is the closure of the image of `A⁺`. -/
+/-- The plus ring of the completed pair is `completionPlus A⁺`, the closure of the image of `A⁺`. -/
 @[simp]
-theorem completion_plus (S : Pair A) :
-    S.completion.plus =
-      (S.plus.map (Completion.coeRingHom : A →+* Completion A)).topologicalClosure :=
+theorem completion_plus (S : Pair A) : S.completion.plus = completionPlus S.plus :=
   (rfl)
 
 /-- **The completion map `(A, A⁺) → (Â, Â⁺)`** as a morphism of Huber pairs. -/
 noncomputable def completionHom (S : Pair A) : Hom S S.completion where
   toRingHom := Completion.coeRingHom
   continuous_toRingHom := Completion.continuous_coeRingHom
-  map_mem_plus _ ha := Subring.le_topologicalClosure _ ⟨_, ha, rfl⟩
+  map_mem_plus _ ha := map_mem_completionPlus ha
 
 /-- The underlying ring homomorphism of the completion morphism is the completion map. -/
 @[simp]
@@ -666,17 +686,27 @@ noncomputable def Hom.extension (f : Hom S U) : Hom S.completion U where
       f.map_mem_plus a ha
 
 /-- The underlying ring homomorphism of the extension is the continuous extension of `f`. -/
-@[simp]
 theorem Hom.toRingHom_extension (f : Hom S U) :
     f.extension.toRingHom = Completion.extensionHom f.toRingHom f.continuous_toRingHom :=
   (rfl)
+
+/-- The extension of `f` agrees with `f` on the image of `A`. -/
+@[simp]
+theorem Hom.extension_toRingHom_coe (f : Hom S U) (a : A) :
+    f.extension.toRingHom (a : Completion A) = f.toRingHom a :=
+  Completion.extensionHom_coe f.toRingHom f.continuous_toRingHom a
+
+/-- The extension of `f` agrees with `f` after the completion morphism. -/
+theorem Hom.extension_toRingHom_completionHom (f : Hom S U) (a : A) :
+    f.extension.toRingHom (S.completionHom.toRingHom a) = f.toRingHom a :=
+  f.extension_toRingHom_coe a
 
 /-- The extension of `f` restricts to `f` along the completion map. -/
 @[simp]
 theorem Hom.extension_comp_completionHom (f : Hom S U) :
     f.extension.comp S.completionHom = f := by
   ext a
-  simp [Completion.extensionHom_coe f.toRingHom f.continuous_toRingHom]
+  simp
 
 end Extension
 
