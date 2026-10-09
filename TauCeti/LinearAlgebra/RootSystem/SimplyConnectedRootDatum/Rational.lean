@@ -83,7 +83,8 @@ def rationalRootSystem :
     (toLinearMap_simplyConnectedRootDatum t ht)
 
 /-- Identify the rational root system with entrywise base change of its integral datum.
-This lets constructions on base-changed pairings apply without unfolding the rational model. -/
+The body of `rationalRootSystem` is not exposed to importing modules, so use this equation
+to apply constructions on base-changed pairings to the rational model. -/
 theorem rationalRootSystem_def :
     t.rationalRootSystem ht = rootPairingBaseChange ℚ (t.simplyConnectedRootDatum ht)
       (toLinearMap_simplyConnectedRootDatum t ht) :=
