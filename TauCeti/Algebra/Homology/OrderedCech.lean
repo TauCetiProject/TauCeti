@@ -36,9 +36,10 @@ augmentation `∑ᵢ F({i}) ⟶ F(∅)`.
 
 ## Main definitions
 
-* `CategoryTheory.Functor.orderedCechComplex F`: the ordered Čech complex of `F`; its
-  differential is characterised on summands by `Functor.ι_orderedCechComplex_d`, and it vanishes
-  from the cardinality of a finite index type on (`Functor.isZero_orderedCechComplex_X`).
+* `CategoryTheory.Functor.orderedCechComplex F`: the ordered Čech complex of `F`; its terms are
+  coproducts (`Functor.isColimitOrderedCechComplexCofan`), its differential is characterised on
+  summands by `Functor.ι_orderedCechComplex_d`, and it vanishes from the cardinality of a finite
+  index type on (`Functor.isZero_orderedCechComplex_X`).
 * `CategoryTheory.orderedCechComplexFunctor C ι`: the ordered Čech complex as a functor of `F`.
 * `CategoryTheory.Functor.orderedCechAugmentation F`: the augmentation to `F(∅)`, placed in
   degree `0`, which restricts each summand `F({i})` to `F(∅)`.
@@ -183,6 +184,12 @@ lemma ι_orderedCechComplexDesc {p : ℕ} {A : C}
     F.orderedCechComplexι s ≫ F.orderedCechComplexDesc f = f s :=
   Sigma.ι_comp_desc f s
 
+/-- The summand inclusions `Functor.orderedCechComplexι` exhibit the degree `p` term of the ordered
+Čech complex as the coproduct of the `F(s)` over the sets `s` with `p + 1` elements. -/
+def isColimitOrderedCechComplexCofan (p : ℕ) :
+    IsColimit (Cofan.mk (F.orderedCechComplex.X p) (F.orderedCechComplexι (p := p))) :=
+  coproductIsCoproduct _
+
 /-- Morphisms out of a term of the ordered Čech complex agree when they agree on every summand. -/
 @[ext]
 lemma orderedCechComplex_hom_ext {p : ℕ} {A : C} {f g : F.orderedCechComplex.X p ⟶ A}
@@ -275,8 +282,11 @@ lemma orderedCechComplex_d_comp_orderedCechAugmentation :
   obtain ⟨a, b, hab, rfl⟩ := card_eq_two.1 hs
   -- Order the pair, then both restrictions to `F(∅)` agree.
   wlog h : a < b generalizing a b
-  · rw [show (⟨{a, b}, hs⟩ : {s : Finset ι // #s = 0 + 1 + 1}) =
-      ⟨{b, a}, by rwa [pair_comm]⟩ from Subtype.ext (pair_comm a b)]
+  · -- The summand is indexed by the subtype of sets of size two, so swapping `a` and `b` must
+    -- also transport the cardinality proof `hs`; a plain `rw [pair_comm]` would leave it ill-typed.
+    have e : (⟨{a, b}, hs⟩ : {s : Finset ι // #s = 0 + 1 + 1}) = ⟨{b, a}, pair_comm a b ▸ hs⟩ :=
+      Subtype.ext (pair_comm a b)
+    rw [e]
     exact this b a hab.symm _ (hab.lt_or_gt.resolve_left h)
   rw [ι_orderedCechComplex_d_pair_assoc F h, Preadditive.sub_comp, Category.assoc,
     Category.assoc, ι_orderedCechAugmentation, ι_orderedCechAugmentation, ← F.map_comp,

@@ -18,10 +18,11 @@ convention `TotalComplexShape (ComplexShape.down ℕ) (ComplexShape.down ℕ) (C
 
 An augmentation `ε : K.X 0 ⟶ E` of the column `0` by a chain complex `E`, that is a chain map
 vanishing on the image of the horizontal differential `K.d 1 0`, induces a chain map
-`HomologicalComplex₂.totalAugmentation` from the total complex to `E`. Exactness of the augmented
-rows `⋯ ⟶ (K.X 1).X q ⟶ (K.X 0).X q ⟶ E.X q` is a sufficient condition for this map to be a
-quasi-isomorphism, as for the Čech complex of a cover or an acyclic resolution; the converse
-fails in general, and neither direction is proved here.
+`HomologicalComplex₂.totalAugmentation` from the total complex to `E`. When `C` is abelian, so
+that homology is defined, exactness of the augmented rows `⋯ ⟶ (K.X 1).X q ⟶ (K.X 0).X q ⟶ E.X q`
+is a sufficient condition for this map to be a quasi-isomorphism, as for the Čech complex of a
+cover or an acyclic resolution; the converse fails in general, and neither direction is proved
+here.
 
 ## Main definitions
 
