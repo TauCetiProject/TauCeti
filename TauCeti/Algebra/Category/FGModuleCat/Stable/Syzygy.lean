@@ -76,9 +76,20 @@ open CategoryTheory CategoryTheory.Limits MulOpposite
 
 universe u
 
-namespace FGModuleCat
-
 variable {A : Type u} [Ring A]
+
+/-- If the right annihilator of `a` is `bA`, then the image of left multiplication by `b` on
+the regular right `A`-module is the kernel of left multiplication by `a`. -/
+theorem range_toSpanSingleton_op_eq_ker {a b : A} (hab : ∀ c : A, a * c = 0 ↔ b ∣ c) :
+    LinearMap.range (LinearMap.toSpanSingleton Aᵐᵒᵖ Aᵐᵒᵖ (op b)) =
+      LinearMap.ker (LinearMap.toSpanSingleton Aᵐᵒᵖ Aᵐᵒᵖ (op a)) := by
+  ext c
+  induction c using MulOpposite.rec' with | _ c => ?_
+  simp only [LinearMap.mem_range, LinearMap.mem_ker, LinearMap.toSpanSingleton_apply, smul_eq_mul,
+    op_surjective.exists, ← op_mul, op_inj, op_eq_zero_iff, hab]
+  exact ⟨fun ⟨d, hd⟩ ↦ ⟨d, hd.symm⟩, fun ⟨d, hd⟩ ↦ ⟨d, hd.symm⟩⟩
+
+namespace FGModuleCat
 
 /-- For `a * b = 0`, left multiplication by `a`, as a map of right `A`-modules
 `A ⧸ bA ⟶ A`. On `Aᵐᵒᵖ` it is right multiplication by `op a`, which kills `op b`. -/
