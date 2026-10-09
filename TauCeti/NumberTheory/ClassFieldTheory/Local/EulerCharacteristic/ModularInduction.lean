@@ -27,7 +27,7 @@ to `ℓ`.
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.forall_localEulerCharacteristic_eq_localCardNorm_of_indFDRep`: the
+* `TauCeti.ClassFieldTheory.localEulerCharacteristic_eq_localCardNorm_of_indFDRep`: the
   local Euler characteristic formula for every finite smooth discrete `ZMod ℓ`-representation
   follows from the formula for the inflations of representations induced from cyclic subgroups of
   order prime to `ℓ`.
@@ -52,7 +52,7 @@ variable (p : ℕ) [Fact p.Prime] (F : Type) [Field F] [CharZero F] [ValuativeRe
 for the inflation to `G_F` of every representation of a finite Galois quotient `G_F ⧸ V` induced
 from a cyclic subgroup of order prime to `ℓ`, then it holds for every finite smooth discrete
 `ZMod ℓ`-representation of `G_F`. -/
-theorem forall_localEulerCharacteristic_eq_localCardNorm_of_indFDRep
+theorem localEulerCharacteristic_eq_localCardNorm_of_indFDRep
     (ℓ : ℕ) [Fact ℓ.Prime]
     (h : ∀ (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F))
       (C : Subgroup (Field.absoluteGaloisGroup F ⧸ V.toSubgroup)),
