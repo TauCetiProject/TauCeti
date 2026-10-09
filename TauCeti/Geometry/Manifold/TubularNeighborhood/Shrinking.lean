@@ -19,9 +19,6 @@ This is the shrinking step for assembling smooth tubular inverses: choose a zero
 neighbourhood on which normal addition is a local diffeomorphism, then shrink the globally
 injective tube into it. The normal bundle retains its topology induced from `M × V`.
 
-Reuse `IsOpen.exists_contMDiffMap_closedBall_subset` for smooth radius selection and
-`isEmbedding_totalSpace_normalSubspace` to pass between the normal bundle and the product.
-
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Theorem 6.24.
 -/
 
