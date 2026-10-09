@@ -35,6 +35,7 @@ its target glue to an ideal sheaf. Without finiteness only one inclusion holds.
 
 ## Main results
 
+* `TauCeti.Algebra.conductor_eq_annihilator`: the conductor is the annihilator of `B / A`.
 * `TauCeti.Algebra.mem_conductor_iff`: `a` lies in the conductor exactly when `a • b` lies in the
   image of `A` for every `b : B`.
 * `TauCeti.Algebra.conductor_eq_colon`: the conductor is the colon ideal `(A : B)`.
@@ -65,6 +66,12 @@ quotient of `B` by the image of `A`. Its elements are the `a : A` with `a • B 
 (`TauCeti.Algebra.mem_conductor_iff`). -/
 def conductor : Ideal A :=
   Module.annihilator A (B ⧸ (1 : Submodule A B))
+
+/-- The conductor is the annihilator of the quotient of `B` by the image of `A`. Under the module
+system the body of `conductor` is not exported, so this is how importers unfold it. -/
+theorem conductor_eq_annihilator :
+    conductor A B = Module.annihilator A (B ⧸ (1 : Submodule A B)) :=
+  (rfl)
 
 /-- The conductor is the colon ideal `(A : B)` of `A` in `B`. -/
 theorem conductor_eq_colon : conductor A B = (1 : Submodule A B).colon Set.univ :=
