@@ -134,8 +134,9 @@ theorem semilocal_resCoindToHom_bijective {k : Type*} [CommRing k] {B : Rep k G}
     exact congrArg (fun F ↦ eA (F.1 g)) h
   obtain ⟨x, hx⟩ := semilocal_exists_forall_component_eq e T he hT htrans hsurj
     (fun g ↦ eA (F.1 g)) fun d hd g ↦ by
-      rw [show d * g = (MulAction.stabilizer G (p w)).subtype
-        ⟨d, MulAction.mem_stabilizer_iff.mpr hd.symm⟩ * g from rfl, F.2, hA]
+      have hF := F.2 ⟨d, MulAction.mem_stabilizer_iff.mpr hd.symm⟩ g
+      simp only [Subgroup.subtype_apply] at hF
+      rw [hF, hA]
   exact ⟨x, Subtype.ext <| funext fun g ↦ eA.injective <| (hf _).trans (hx g)⟩
 
 end Coinduction
