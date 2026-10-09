@@ -133,6 +133,23 @@ theorem recutInitialSelf_geometry :
     D.recut_first_bottom_top_of_left_eq_left_of_mem_cIoo hcommon hcol hfirst hsecond
   exact ⟨hright, hbottom, htop, hsecondLeft, hsecondRight⟩
 
+/-- The self-recut rectangle ends at the original pentagon's top row. -/
+@[simp]
+theorem recutInitialSelf_second_top :
+    (D.recutInitialSelf hcommon hcol hfirst hsecond).second.top = D.first.top := by
+  have hone := D.hasOneCommonSide_of_left_eq_left_of_mem_cIoo hcommon hcol
+  have hdata := D.isRecutOfLeftEqLeft_recut hcommon hone hfirst hsecond
+  obtain ⟨-, -, -, -, hright⟩ := D.recutInitialSelf_geometry hcommon hcol hfirst hsecond
+  rw [GridRectangleBetween.top_def, hright]
+  rcases hdata.recut_branch with ⟨hcol', -⟩ | ⟨-, hmiddle, -, -⟩
+  · exact False.elim (Finset.disjoint_left.mp (Grid.disjoint_cIoo_swap _ _) hcol
+      (Grid.mem_cIoo_cyclic_left hcol'))
+  · -- Promotion adds only proof fields, so its intermediate state is the generic recut's.
+    simp only [recutInitialSelf]
+    rw [hmiddle, GridState.swapColumns_apply,
+      Equiv.swap_apply_of_ne_of_ne D.first.left_ne_right.symm
+        (Grid.ne_right_of_mem_cIoo hcol).symm, GridRectangleBetween.top_def]
+
 /-- The original and recut initial-side pentagon--rectangle domains cover the same squares with
 the same multiplicities, the rectangles of the commuted diagram being read in the original diagram
 with the two columns next to the replaced line exchanged. -/
@@ -223,24 +240,10 @@ theorem recutInitialSelf_mem_initialPentagonRectangleDecompositions
     (hD : D ∈ G.initialPentagonRectangleDecompositions C x z) :
     D.recutInitialSelf hcommon hcol hfirst hsecond ∈
       G.initialPentagonRectangleDecompositions C x z := by
-  classical
-  let E := D.recutInitialSelf hcommon hcol hfirst hsecond
-  let e := ((Equiv.swap C.column (finRotate n C.column)).prodCongr
-    (Equiv.refl (Fin n))).toEmbedding
-  rw [mem_initialPentagonRectangleDecompositions, mem_initialPentagons,
-    GridInitialPentagonRectangleDecomposition.pentagon_toGridRectangleBetween,
-    (G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles,
-    ← G.disjoint_map_swapColumns_XSet_iff] at hD ⊢
-  have hunion := congrArg Multiset.toFinset
-    (D.coveredSquares_val_add_val_recutInitialSelf hcommon hcol hfirst hsecond)
-  simp only [Multiset.toFinset_add, Finset.val_toFinset] at hunion
-  have hnew : Disjoint (E.pentagon.coveredSquares ∪
-      E.second.toGridRectangle.coveredSquares.map e) G.XSet := by
-    rw [hunion]
-    exact Finset.disjoint_union_left.mpr ⟨hD.1.2, hD.2.2⟩
   have hrecut := D.isRecut_recutInitialSelf hcommon hcol hfirst hsecond
-  exact ⟨⟨hrecut.isEmpty_first, (Finset.disjoint_union_left.mp hnew).1⟩, hrecut.isEmpty_second,
-    (Finset.disjoint_union_left.mp hnew).2⟩
+  exact G.mem_initialPentagonRectangleDecompositions_of_val_add_val_eq_initialPentagonRectangle
+    C hD hrecut.isEmpty_first hrecut.isEmpty_second
+    (D.coveredSquares_val_add_val_recutInitialSelf hcommon hcol hfirst hsecond)
 
 /-- The initial-side self-recut preserves the monomial contribution to the initial-side
 pentagon--rectangle coefficient sum over any commutative semiring. -/
