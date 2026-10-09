@@ -144,15 +144,14 @@ private theorem energyFormH1_contDiffComp_posPart_ofTestFunction_nonpos
       neg_smul]
     abel
   set T := W1p.posPart hp T₀
-  -- `T` is a nonnegative element of `H¹₀(Ω)`, being supported in the support of `φ`.
+  -- `T` is a nonnegative element of `H¹₀(Ω)`, as the positive part of `-φ F'(u)`.
   have hvalT : ∀ᵐ x ∂mu.restrict Omega, W1p.value T x = max (W1p.value T₀ x) 0 := by
     rw [W1p.value_posPart]
     exact Lp.coeFn_posPart _
-  have hTmem : T ∈ w1p0Submodule mu Omega 2 := by
-    refine W1p.mem_w1p0Submodule_of_isCompact hp φ.hasCompactSupport φ.tsupport_subset ?_
-    filter_upwards [hvalT, hvalT₀] with x h₁ h₂ hx
-    rw [h₁, h₂, image_eq_zero_of_notMem_tsupport hx]
-    simp
+  have hTmem : T ∈ w1p0Submodule mu Omega 2 :=
+    W1p.posPart_mem_w1p0Submodule hp
+      ((w1p0Submodule mu Omega 2).toSubmodule.neg_mem
+        (W1p.testFunctionSMulComp_mem_w1p0Submodule hp φ hdF hM' u))
   have hTnonneg : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value T x := by
     filter_upwards [hvalT] with x hx
     rw [hx]

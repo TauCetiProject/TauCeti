@@ -51,6 +51,8 @@ density and of interior estimates.
   boundary values.
 * `TauCeti.W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport`: multiplication by a
   compactly supported cutoff lands in `W^{1,p}_0(Ω)`.
+* `TauCeti.W1p.testFunctionSMulComp_mem_w1p0Submodule`: the product `φ G(u)` of a test function
+  with a composition lands in `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.value_extendByZeroL_contDiffSMul_ae` and
   `TauCeti.W1p.gradient_extendByZeroL_contDiffSMul_ae`: the value and weak gradient of a cutoff
   product extended by zero to the whole space.
@@ -212,6 +214,17 @@ theorem W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (hp : p ≠ (∞
   refine W1p.mem_w1p0Submodule_of_isCompact hp hcpt hts ?_
   filter_upwards [W1p.value_contDiffSMul_ae hpsi hM hpsiM hgradM u] with x hx hxK
   rw [hx, image_eq_zero_of_notMem_tsupport hxK, zero_smul]
+
+/-- **The product of a test function with a composition lies in `W^{1,p}_0(Ω)`.**  The product
+`φ G(u)` of a test function `φ ∈ C_c^∞(Ω)` with the composition `G(u)` of any
+`u ∈ W^{1,p}(Ω)` vanishes off the support of `φ`, so it has zero boundary values. -/
+theorem W1p.testFunctionSMulComp_mem_w1p0Submodule (hp : p ≠ (∞ : ℝ≥0∞)) (phi : 𝓓(Omega, ℝ))
+    {G : ℝ → ℝ} (hG : ContDiff ℝ 1 G) {N : NNReal} (hN : ∀ t, ‖deriv G t‖₊ ≤ N)
+    (u : W1p mu Omega p) :
+    W1p.testFunctionSMulComp hp phi hG hN u ∈ w1p0Submodule mu Omega p := by
+  refine W1p.mem_w1p0Submodule_of_isCompact hp phi.hasCompactSupport phi.tsupport_subset ?_
+  filter_upwards [W1p.value_testFunctionSMulComp_ae hp phi hG hN u] with x hx hxK
+  rw [hx, image_eq_zero_of_notMem_tsupport hxK, zero_mul]
 
 /-! ### Localisation to the whole space -/
 
