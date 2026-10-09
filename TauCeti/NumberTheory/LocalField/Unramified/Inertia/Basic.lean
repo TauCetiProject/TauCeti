@@ -77,7 +77,7 @@ of `I_K`, and each of them generates `G_K` topologically together with `I_K`.
   `X^{q^f} − X` to the `q^n`-th power.
 * `TauCeti.IsArithFrobeniusLift.apply_of_pow_eq_one`: a Frobenius lift acts on the roots of unity
   of order prime to the residue characteristic by `ζ ↦ ζ ^ q`.
-* `TauCeti.IsArithFrobeniusLift.restrictNormalHom_unramifiedExtension`,
+* `TauCeti.IsArithFrobeniusLift.restrictNormalHom_unramifiedExtension_eq_frobeniusAlgEquiv`,
   `TauCeti.IsArithFrobeniusLift.zpowers_restrictNormalHom_unramifiedExtension`: a Frobenius lift
   restricts to the arithmetic Frobenius of the unramified extension of each degree `f`, which it
   therefore generates.
@@ -416,7 +416,8 @@ theorem apply_of_pow_eq_one (hσ : IsArithFrobeniusLift K σ) {m : ℕ}
 unramified extension `K_f` of degree `f` inside `K^{alg}`, an arithmetic Frobenius lift acts as the
 arithmetic Frobenius of `K_f / K`. This holds for any structure of nonarchimedean local field on
 `K_f` compatible with `K`. -/
-theorem restrictNormalHom_unramifiedExtension (hσ : IsArithFrobeniusLift K σ) {f : ℕ}
+theorem restrictNormalHom_unramifiedExtension_eq_frobeniusAlgEquiv
+    (hσ : IsArithFrobeniusLift K σ) {f : ℕ}
     [ValuativeRel (unramifiedExtension K (AlgebraicClosure K) f)]
     [TopologicalSpace (unramifiedExtension K (AlgebraicClosure K) f)]
     [IsNonarchimedeanLocalField (unramifiedExtension K (AlgebraicClosure K) f)]
@@ -442,7 +443,7 @@ theorem zpowers_restrictNormalHom_unramifiedExtension (hσ : IsArithFrobeniusLif
   have := finiteExtension_isNonarchimedeanLocalField K F
   have := finiteExtension_valuativeExtension K F
   have : IsUnramified K F := isUnramified_unramifiedExtension hf
-  rw [hσ.restrictNormalHom_unramifiedExtension, zpowers_frobeniusAlgEquiv]
+  rw [hσ.restrictNormalHom_unramifiedExtension_eq_frobeniusAlgEquiv, zpowers_frobeniusAlgEquiv]
 
 /-- **A Frobenius lift acts on finite residue fields as the `q`-th power map.** The restriction of
 an arithmetic Frobenius lift to a finite normal subextension `L` of `K^{alg}/K` acts on the residue
