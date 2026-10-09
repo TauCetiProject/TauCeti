@@ -119,6 +119,7 @@ theorem homProjection_totalHomInclusion (X Y : FullSubquiver P)
 
 /-- The component of the inclusion of an element between two objects of `C` not both in the full
 subquiver vanishes. -/
+@[simp]
 theorem homProjection_totalHomInclusion_of_not {X Y : C} (h : ¬ (P X ∧ P Y))
     (x : TotalHom R (FullSubquiver P)) :
     homProjection (R := R) X Y (totalHomInclusion R P x) = 0 := by
