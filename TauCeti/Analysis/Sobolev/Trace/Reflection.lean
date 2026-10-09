@@ -43,6 +43,8 @@ Dominated convergence then passes to the limit.
   `Submodule.reflection` in the hyperplane `{0} × E`.
 * `TauCeti.normalReflection`: the affine reflection `(t, y) ↦ (2a - t, y)` in `{a} × E`, with
   its measure preservation and derivative.
+* `TauCeti.normalCutoff`: the smooth cutoff `σ(c (x.fst - a) - 1)` of the normal coordinate,
+  supported a positive distance inside the half-space.
 * `TauCeti.HasWeakFDerivOn.add_comp_normalReflection`: the even reflection of a weakly
   differentiable function on the half-space is weakly differentiable on the whole space.
 
@@ -206,14 +208,29 @@ section Cutoff
 
 variable {E : Type*}
 
-/-- The argument `(n + 1) (x.fst - a) - 1` of the `n`-th boundary cutoff. -/
+/-- The boundary-layer cutoff `x ↦ σ(c (x.fst - a) - 1)` of slope `c` in the normal coordinate,
+where `σ` is `Real.smoothTransition`. For `0 < c` it vanishes when `x.fst ≤ a + 1 / c` and is one
+when `x.fst ≥ a + 2 / c`, so it is supported a positive distance inside the half-space
+`TauCeti.normalHalfSpace a`. -/
+def normalCutoff (a c : ℝ) (x : WithLp 2 (ℝ × E)) : ℝ :=
+  Real.smoothTransition (c * (x.fst - a) - 1)
+
+/-- The boundary-layer cutoff is nonnegative. -/
+theorem normalCutoff_nonneg (a c : ℝ) (x : WithLp 2 (ℝ × E)) : 0 ≤ normalCutoff a c x :=
+  Real.smoothTransition.nonneg _
+
+/-- The boundary-layer cutoff is at most one. -/
+theorem normalCutoff_le_one (a c : ℝ) (x : WithLp 2 (ℝ × E)) : normalCutoff a c x ≤ 1 :=
+  Real.smoothTransition.le_one _
+
+/-- The boundary-layer cutoff is one where `c (x.fst - a) ≥ 2`. -/
+theorem normalCutoff_eq_one {a c : ℝ} {x : WithLp 2 (ℝ × E)} (hx : 2 ≤ c * (x.fst - a)) :
+    normalCutoff a c x = 1 :=
+  Real.smoothTransition.one_of_one_le (by linarith)
+
+/-- The argument `(n + 1) (x.fst - a) - 1` of the boundary cutoff of slope `n + 1`. -/
 private def cutoffArg (a : ℝ) (n : ℕ) (x : WithLp 2 (ℝ × E)) : ℝ :=
   ((n : ℝ) + 1) * (x.fst - a) - 1
-
-/-- The `n`-th boundary cutoff: smooth, zero when `x.fst ≤ a + 1 / (n + 1)` and one when
-`x.fst ≥ a + 2 / (n + 1)`. -/
-private def cutoff (a : ℝ) (n : ℕ) (x : WithLp 2 (ℝ × E)) : ℝ :=
-  Real.smoothTransition (cutoffArg a n x)
 
 private theorem eventually_lt_cutoffArg {a : ℝ} {x : WithLp 2 (ℝ × E)} (hx : a < x.fst) (c : ℝ) :
     ∀ᶠ n : ℕ in atTop, c < cutoffArg a n x := by
@@ -223,15 +240,9 @@ private theorem eventually_lt_cutoffArg {a : ℝ} {x : WithLp 2 (ℝ × E)} (hx 
         (sub_pos.2 hx))
   exact h.eventually_gt_atTop c
 
-private theorem eventually_cutoff_eq_one {a : ℝ} {x : WithLp 2 (ℝ × E)} (hx : a < x.fst) :
-    ∀ᶠ n : ℕ in atTop, cutoff a n x = 1 :=
+private theorem eventually_normalCutoff_eq_one {a : ℝ} {x : WithLp 2 (ℝ × E)} (hx : a < x.fst) :
+    ∀ᶠ n : ℕ in atTop, normalCutoff a ((n : ℝ) + 1) x = 1 :=
   (eventually_lt_cutoffArg hx 1).mono fun _ hn => Real.smoothTransition.one_of_one_le hn.le
-
-private theorem cutoff_nonneg (a : ℝ) (n : ℕ) (x : WithLp 2 (ℝ × E)) : 0 ≤ cutoff a n x :=
-  Real.smoothTransition.nonneg _
-
-private theorem cutoff_le_one (a : ℝ) (n : ℕ) (x : WithLp 2 (ℝ × E)) : cutoff a n x ≤ 1 :=
-  Real.smoothTransition.le_one _
 
 variable [NormedAddCommGroup E] [NormedSpace ℝ E]
 
@@ -239,29 +250,33 @@ private theorem contDiff_cutoffArg (a : ℝ) (n : ℕ) :
     ContDiff ℝ ∞ (cutoffArg (E := E) a n) :=
   (contDiff_const.mul ((WithLp.fstL 2 ℝ ℝ E).contDiff.sub contDiff_const)).sub contDiff_const
 
-private theorem contDiff_cutoff (a : ℝ) (n : ℕ) : ContDiff ℝ ∞ (cutoff (E := E) a n) :=
-  Real.smoothTransition.contDiff.comp (contDiff_cutoffArg a n)
+/-- The boundary-layer cutoff is smooth. -/
+theorem contDiff_normalCutoff (a c : ℝ) : ContDiff ℝ ∞ (normalCutoff (E := E) a c) :=
+  Real.smoothTransition.contDiff.comp
+    ((contDiff_const.mul ((WithLp.fstL 2 ℝ ℝ E).contDiff.sub contDiff_const)).sub contDiff_const)
 
-private theorem hasFDerivAt_cutoff (a : ℝ) (n : ℕ) (x : WithLp 2 (ℝ × E)) :
-    HasFDerivAt (cutoff a n)
-      ((deriv Real.smoothTransition (cutoffArg a n x) * ((n : ℝ) + 1)) •
-        WithLp.fstL 2 ℝ ℝ E) x := by
-  have hℓ : HasFDerivAt (cutoffArg (E := E) a n) (((n : ℝ) + 1) • WithLp.fstL 2 ℝ ℝ E) x :=
-    (((WithLp.fstL 2 ℝ ℝ E).hasFDerivAt.sub_const a).const_mul ((n : ℝ) + 1)).sub_const 1
+/-- The derivative of the boundary-layer cutoff is `σ'(c (x.fst - a) - 1) c` times the normal
+coordinate. -/
+theorem hasFDerivAt_normalCutoff (a c : ℝ) (x : WithLp 2 (ℝ × E)) :
+    HasFDerivAt (normalCutoff a c)
+      ((deriv Real.smoothTransition (c * (x.fst - a) - 1) * c) • WithLp.fstL 2 ℝ ℝ E) x := by
+  have hℓ : HasFDerivAt (fun y : WithLp 2 (ℝ × E) => c * (y.fst - a) - 1)
+      (c • WithLp.fstL 2 ℝ ℝ E) x :=
+    (((WithLp.fstL 2 ℝ ℝ E).hasFDerivAt.sub_const a).const_mul c).sub_const 1
   have hst : HasDerivAt Real.smoothTransition
-      (deriv Real.smoothTransition (cutoffArg a n x)) (cutoffArg a n x) :=
+      (deriv Real.smoothTransition (c * (x.fst - a) - 1)) (c * (x.fst - a) - 1) :=
     ((Real.smoothTransition.contDiff (n := 1)).differentiable one_ne_zero _).hasDerivAt
   exact (hst.comp_hasFDerivAt x hℓ).congr_fderiv (by rw [smul_smul])
 
 /-- The product rule for a cutoff times a differentiable function. -/
-private theorem lineDeriv_cutoff_mul (a : ℝ) (n : ℕ) {χ : WithLp 2 (ℝ × E) → ℝ}
+private theorem lineDeriv_normalCutoff_mul (a : ℝ) (n : ℕ) {χ : WithLp 2 (ℝ × E) → ℝ}
     (hχ : Differentiable ℝ χ) (x v : WithLp 2 (ℝ × E)) :
-    lineDeriv ℝ (cutoff a n * χ) x v =
-      cutoff a n x * fderiv ℝ χ x v +
+    lineDeriv ℝ (normalCutoff a ((n : ℝ) + 1) * χ) x v =
+      normalCutoff a ((n : ℝ) + 1) x * fderiv ℝ χ x v +
         χ x * (deriv Real.smoothTransition (cutoffArg a n x) * (((n : ℝ) + 1) * v.fst)) := by
-  rw [((hasFDerivAt_cutoff a n x).mul (hχ x).hasFDerivAt).hasLineDerivAt v |>.lineDeriv]
+  rw [((hasFDerivAt_normalCutoff a _ x).mul (hχ x).hasFDerivAt).hasLineDerivAt v |>.lineDeriv]
   simp only [FunLike.coe_add, Pi.add_apply, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul,
-    WithLp.fstL_apply]
+    WithLp.fstL_apply, cutoffArg]
   ring
 
 /-- A differentiable function vanishing on the hyperplane `{a} × E`, with derivative bounded by
@@ -278,20 +293,19 @@ private theorem abs_le_mul_sub_of_eq_zero_on_hyperplane {a M : ℝ} {χ : WithLp
   rwa [hχa x.snd, sub_zero, hx', WithLp.norm_toLp_fst, Real.norm_of_nonneg (sub_nonneg.2 hx),
     Real.norm_eq_abs] at hmv
 
-/-- The support of the `n`-th cutoff stays a positive distance inside the half-space. -/
-private theorem tsupport_cutoff_subset (a : ℝ) (n : ℕ) :
-    tsupport (cutoff (E := E) a n) ⊆ normalHalfSpace (E := E) a := by
-  have hpos : (0 : ℝ) < (n : ℝ) + 1 := by positivity
-  have hclosed : IsClosed {x : WithLp 2 (ℝ × E) | a + ((n : ℝ) + 1)⁻¹ ≤ x.fst} :=
+/-- For a positive slope `c`, the boundary-layer cutoff is supported a positive distance inside
+the half-space. -/
+theorem tsupport_normalCutoff_subset (a : ℝ) {c : ℝ} (hc : 0 < c) :
+    tsupport (normalCutoff (E := E) a c) ⊆ normalHalfSpace (E := E) a := by
+  have hclosed : IsClosed {x : WithLp 2 (ℝ × E) | a + c⁻¹ ≤ x.fst} :=
     isClosed_le continuous_const (WithLp.fstL 2 ℝ ℝ E).continuous
   refine (closure_minimal (fun x hx => ?_) hclosed).trans fun x hx => ?_
-  · have h0 : 0 < cutoffArg a n x := by
+  · have h0 : 0 < c * (x.fst - a) - 1 := by
       by_contra h
       exact hx (Real.smoothTransition.zero_of_nonpos (not_lt.1 h))
-    simp only [cutoffArg] at h0
-    rw [mem_ofPred_eq, inv_eq_one_div, ← le_sub_iff_add_le', div_le_iff₀ hpos]
+    rw [mem_ofPred_eq, inv_eq_one_div, ← le_sub_iff_add_le', div_le_iff₀ hc]
     linarith
-  · have : a < x.fst := lt_of_lt_of_le (lt_add_of_pos_right a (inv_pos.2 hpos)) hx
+  · have : a < x.fst := lt_of_lt_of_le (lt_add_of_pos_right a (inv_pos.2 hc)) hx
     simpa using this
 
 end Cutoff
@@ -307,16 +321,16 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 half-space. -/
 private theorem tendsto_integral_cutoff_mul {a : ℝ} {F : WithLp 2 (ℝ × E) → ℝ}
     (hF : Integrable F) (hF0 : ∀ x, ¬ a < x.fst → F x = 0) :
-    Tendsto (fun n : ℕ => ∫ x, cutoff a n x * F x) atTop (𝓝 (∫ x, F x)) := by
+    Tendsto (fun n : ℕ => ∫ x, normalCutoff a ((n : ℝ) + 1) x * F x) atTop (𝓝 (∫ x, F x)) := by
   refine tendsto_integral_of_dominated_convergence (fun x => ‖F x‖)
-    (fun n => (contDiff_cutoff a n).continuous.aestronglyMeasurable.mul hF.1) hF.norm
+    (fun n => (contDiff_normalCutoff a _).continuous.aestronglyMeasurable.mul hF.1) hF.norm
     (fun n => Eventually.of_forall fun x => ?_) (Eventually.of_forall fun x => ?_)
   · rw [norm_mul]
     exact mul_le_of_le_one_left (norm_nonneg _)
-      (by rw [Real.norm_of_nonneg (cutoff_nonneg a n x)]; exact cutoff_le_one a n x)
+      (by rw [Real.norm_of_nonneg (normalCutoff_nonneg a _ x)]; exact normalCutoff_le_one a _ x)
   · by_cases hx : a < x.fst
     · exact tendsto_const_nhds.congr' <|
-        (eventually_cutoff_eq_one hx).mono fun n hn => by simp [hn]
+        (eventually_normalCutoff_eq_one hx).mono fun n hn => by simp [hn]
     · simp [hF0 x hx]
 
 /-- The error term created by differentiating the cutoff in the normal direction tends to zero
@@ -414,20 +428,21 @@ private theorem integral_fderiv_mul_eq_neg_of_halfSpace {a : ℝ} {v : WithLp 2 
   have hint2 (n : ℕ) : Integrable fun x => χ x * D n x * w x := by
     simpa using hw.integrable_smul_left_of_hasCompactSupport (hχ.continuous.mul
       ((hdst.comp (contDiff_cutoffArg a n).continuous).mul continuous_const)) hχc.mul_right
-  have hint1' (n : ℕ) : Integrable fun x => cutoff a n x * (fderiv ℝ χ x v * w x) :=
-    hint1.bdd_mul (contDiff_cutoff a n).continuous.aestronglyMeasurable
+  have hint1' (n : ℕ) :
+      Integrable fun x => normalCutoff a ((n : ℝ) + 1) x * (fderiv ℝ χ x v * w x) :=
+    hint1.bdd_mul (contDiff_normalCutoff a _).continuous.aestronglyMeasurable
       (Eventually.of_forall fun x => by
-        rw [Real.norm_of_nonneg (cutoff_nonneg a n x)]; exact cutoff_le_one a n x)
-  -- The weak derivative identity on the half-space, tested against `cutoff a n * χ`.
-  have key (n : ℕ) : (∫ x, cutoff a n x * (fderiv ℝ χ x v * w x)) +
-      ∫ x, χ x * D n x * w x = -∫ x, cutoff a n x * (χ x * w' x) := by
+        rw [Real.norm_of_nonneg (normalCutoff_nonneg a _ x)]; exact normalCutoff_le_one a _ x)
+  -- The weak derivative identity on the half-space, tested against `normalCutoff a (n + 1) * χ`.
+  have key (n : ℕ) : (∫ x, normalCutoff a ((n : ℝ) + 1) x * (fderiv ℝ χ x v * w x)) +
+      ∫ x, χ x * D n x * w x = -∫ x, normalCutoff a ((n : ℝ) + 1) x * (χ x * w' x) := by
     let θ : 𝓓(normalHalfSpace (E := E) a, ℝ) :=
-      ⟨cutoff a n * χ, (contDiff_cutoff a n).mul hχ, hχc.mul_left,
-        tsupport_mul_subset_left.trans (tsupport_cutoff_subset a n)⟩
+      ⟨normalCutoff a ((n : ℝ) + 1) * χ, (contDiff_normalCutoff a _).mul hχ, hχc.mul_left,
+        tsupport_mul_subset_left.trans (tsupport_normalCutoff_subset a (by positivity))⟩
     have hθ := h.integral_lineDeriv_smul_eq_neg_integral_smul θ
     have hcoe : ((θ : 𝓓(normalHalfSpace (E := E) a, ℝ)) : WithLp 2 (ℝ × E) → ℝ) =
-        cutoff a n * χ := rfl
-    simp only [hcoe, lineDeriv_cutoff_mul a n (hχ.differentiable (by simp)), smul_eq_mul,
+        normalCutoff a ((n : ℝ) + 1) * χ := rfl
+    simp only [hcoe, lineDeriv_normalCutoff_mul a n (hχ.differentiable (by simp)), smul_eq_mul,
       Pi.mul_apply] at hθ
     rw [← integral_add (hint1' n) (hint2 n)]
     convert hθ using 2
