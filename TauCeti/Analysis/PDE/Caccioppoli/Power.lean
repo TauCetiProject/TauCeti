@@ -39,6 +39,8 @@ bound for `∫ ψ² u^{p-2} ⟨a ∇u, ∇u⟩`; Young's inequality absorbs the 
 
 * `TauCeti.PDE.UniformlyEllipticOn.setIntegral_sq_mul_rpow_mul_norm_gradient_sq_le`: the
   Caccioppoli inequality for powers of a positive supersolution.
+* `TauCeti.PDE.UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_of_ae_eq_rpow`: its
+  form as a Caccioppoli inequality for the power `u^{p/2}`.
 
 ## References
 
@@ -265,6 +267,62 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_rpow_mul_norm_gradient_sq_le
   calc X = 2 / lam * (lam / 2 * X) := by field_simp
     _ ≤ 2 / lam * (2 * Lam ^ 2 / lam / (1 - p) ^ 2 * Y) := by gcongr
     _ = (2 * Lam / ((1 - p) * lam)) ^ 2 * Y := by field_simp
+
+/-- **The Caccioppoli inequality for the power `w = u^{p/2}` of a positive supersolution.** Under
+the hypotheses of `TauCeti.PDE.UniformlyEllipticOn.setIntegral_sq_mul_rpow_mul_norm_gradient_sq_le`,
+let `w ∈ H¹(Ω)` have value `u^{p/2}` and gradient `(p/2) u^{p/2-1} ∇u`, as provided by
+`TauCeti.W1p.exists_value_gradient_ae_eq_rpow`. Then for every `p < 1` and every smooth `ψ`
+compactly supported in `Ω`,
+
+`∫_Ω ψ² ‖∇w‖² ≤ (|p| Λ / ((1 - p) λ))² ∫_Ω ‖∇ψ‖² w²`.
+
+This is the energy estimate that Moser's iteration combines with a Sobolev inequality for `ψ w`;
+at `p = 0` both sides vanish, since `w` is then constant. -/
+theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_of_ae_eq_rpow
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega)) {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        0 ≤ energyFormH1 a 0 0 u (v : W1p mu Omega 2))
+    {ε : ℝ} (hε : 0 < ε) (hεu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x)
+    {p : ℝ} (hp : p < 1) {w : W1p mu Omega 2}
+    (hwv : W1p.value w =ᵐ[mu.restrict Omega] fun x => W1p.value u x ^ (p / 2))
+    (hwg : W1p.gradient w =ᵐ[mu.restrict Omega]
+      fun x => (p / 2 * W1p.value u x ^ (p / 2 - 1)) • W1p.gradient u x)
+    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hcpt : HasCompactSupport ψ)
+    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
+    ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
+      (|p| * Lam / ((1 - p) * lam)) ^ 2 *
+        ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu := by
+  have hlam := h.pos
+  have h1p : 0 < 1 - p := by linarith
+  have hc := h.setIntegral_sq_mul_rpow_mul_norm_gradient_sq_le ha hu hε hεu hp hψ hcpt hts
+  -- Both sides in terms of `u`: `‖∇w‖² = (p/2)² u^{p-2} ‖∇u‖²` and `w² = u^p`.
+  have hl : ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu = (p / 2) ^ 2 *
+      ∫ x in Omega, ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2) ∂mu := by
+    rw [← integral_const_mul]
+    refine integral_congr_ae ?_
+    filter_upwards [hwg, hεu] with x hx hux
+    have hU : 0 < W1p.value u x := hε.trans_le hux
+    rw [hx, norm_smul, Real.norm_eq_abs, mul_pow, abs_mul, mul_pow, sq_abs, sq_abs,
+      ← Real.rpow_natCast (W1p.value u x ^ (p / 2 - 1)), ← Real.rpow_mul hU.le]
+    push_cast
+    ring_nf
+  have hr : ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu =
+      ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value u x ^ p ∂mu := by
+    refine integral_congr_ae ?_
+    filter_upwards [hwv, hεu] with x hx hux
+    rw [hx, ← Real.rpow_mul_natCast (hε.le.trans hux)]
+    norm_num
+  rw [hl, hr]
+  calc (p / 2) ^ 2 * ∫ x in Omega, ψ x ^ 2 * (W1p.value u x ^ (p - 2) *
+          ‖W1p.gradient u x‖ ^ 2) ∂mu
+      ≤ (p / 2) ^ 2 * ((2 * Lam / ((1 - p) * lam)) ^ 2 *
+          ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value u x ^ p ∂mu) := by gcongr
+    _ = (|p| * Lam / ((1 - p) * lam)) ^ 2 *
+          ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value u x ^ p ∂mu := by
+        simp only [div_pow, mul_pow, sq_abs]
+        field_simp
 
 end PDE
 

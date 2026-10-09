@@ -603,15 +603,11 @@ theorem exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral_of_inv_add_eq_inv {
     exact absurd hexp.symm (by simp)
   have hpinv : pstar⁻¹ ≠ (∞ : ℝ≥0∞) :=
     ne_top_of_le_ne_top (by simp) (hexp ▸ le_self_add)
-  have hninv : (Fintype.card ι : ℝ≥0∞)⁻¹ ≠ (∞ : ℝ≥0∞) := by simp [hn]
   -- The exponent `2*` exceeds `2`, and `1 - 2/2* = 2/n`.
   have hq : 2 < pstar := by
     rw [← ENNReal.inv_lt_inv, ← hexp]
     exact ENNReal.lt_add_right hpinv (ENNReal.inv_ne_zero.2 (ENNReal.natCast_ne_top _))
-  have hreal : pstar.toReal⁻¹ + (Fintype.card ι : ℝ)⁻¹ = 2⁻¹ := by
-    have := congrArg ENNReal.toReal hexp
-    rwa [ENNReal.toReal_add hpinv hninv, ENNReal.toReal_inv, ENNReal.toReal_inv,
-      ENNReal.toReal_natCast, ENNReal.toReal_inv, ENNReal.toReal_ofNat] at this
+  have hreal := toReal_inv_add_inv_eq_inv hexp
   have hα : -(1 - 2 / pstar.toReal)⁻¹ = -(Fintype.card ι : ℝ) / 2 := by
     have hn' : (Fintype.card ι : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn
     have hpinv' : pstar.toReal⁻¹ = 2⁻¹ - (Fintype.card ι : ℝ)⁻¹ := by linarith

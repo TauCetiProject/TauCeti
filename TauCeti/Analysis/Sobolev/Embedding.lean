@@ -56,6 +56,9 @@ is exactly what rules this out, and it is carried as an explicit hypothesis thro
 * `TauCeti.one_sub_two_div_toReal_nonneg` and
   `TauCeti.W1p.integral_value_sq_le_of_eLpNorm_le`: exponent and support estimates used with a
   Sobolev inequality.
+* `TauCeti.toReal_inv_add_inv_eq_inv` and `TauCeti.one_lt_toReal_div_two_and_div_mul_eq`: the
+  exponent relation `1/2* + 1/n = 1/2` of `W^{1,2}` read in `ℝ`, and the arithmetic of the ratio
+  `χ = 2*/2` that Moser's iteration multiplies exponents by.
 
 * `TauCeti.W1p.eLpNorm_value_le_of_forall_testFunction`: the transfer principle, from an
   estimate on test functions to the same estimate on `W^{1,p}_0(Ω)`.
@@ -230,6 +233,43 @@ theorem one_le_of_inv_add_eq_inv {r : ENNReal} (hexp : pstar⁻¹ + r = p⁻¹) 
   calc pstar⁻¹ ≤ pstar⁻¹ + r := le_self_add
     _ = p⁻¹ := hexp
     _ ≤ 1 := ENNReal.inv_le_one.2 hp1
+
+/-- The exponent relation `1/2* + 1/n = 1/2` of the Sobolev embedding of `W^{1,2}` in dimension
+`n`, read in `ℝ`. No finiteness hypothesis on `2*` is needed: at `2* = ∞` the relation forces
+`n = 2`, and both sides use `ENNReal.toReal ∞ = 0`. -/
+theorem toReal_inv_add_inv_eq_inv {n : ℕ} (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = 2⁻¹) :
+    pstar.toReal⁻¹ + (n : ℝ)⁻¹ = 2⁻¹ := by
+  have hpinv : pstar⁻¹ ≠ ∞ := ne_top_of_le_ne_top (by simp) (hexp ▸ le_self_add)
+  have hninv : (n : ℝ≥0∞)⁻¹ ≠ ∞ := ne_top_of_le_ne_top (by simp) (hexp ▸ le_add_self)
+  have := congrArg ENNReal.toReal hexp
+  rwa [ENNReal.toReal_add hpinv hninv, ENNReal.toReal_inv, ENNReal.toReal_inv,
+    ENNReal.toReal_natCast, ENNReal.toReal_inv, ENNReal.toReal_ofNat] at this
+
+/-- The exponent arithmetic of Moser's iteration in dimension `n ≥ 3`. If `1/2* + 1/n = 1/2` with
+`2* < ∞`, then `χ = 2*/2` exceeds `1`, and multiplying an exponent `t` by `χ` lowers `n/t` by
+`2/t`, that is `n/(tχ) = n/t - 2/t`. -/
+theorem one_lt_toReal_div_two_and_div_mul_eq {n : ℕ} (hpstar : pstar ≠ ∞)
+    (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = 2⁻¹) :
+    1 < pstar.toReal / 2 ∧ ∀ t : ℝ, t ≠ 0 → (n : ℝ) / (t * (pstar.toReal / 2)) = n / t - 2 / t := by
+  have hn : n ≠ 0 := by
+    rintro rfl
+    rw [Nat.cast_zero, ENNReal.inv_zero, add_top] at hexp
+    exact absurd hexp.symm (by simp)
+  have hn0 : (0 : ℝ) < n := Nat.cast_pos.2 (Nat.pos_of_ne_zero hn)
+  have hpinv : pstar⁻¹ ≠ ∞ := ne_top_of_le_ne_top (by simp) (hexp ▸ le_self_add)
+  have hreal := toReal_inv_add_inv_eq_inv hexp
+  have hpstar0 : 0 < pstar.toReal := ENNReal.toReal_pos (ENNReal.inv_ne_top.1 hpinv) hpstar
+  -- The real exponent relation gives `1/χ = 1 - 2/n`.
+  have hχinv : (pstar.toReal / 2)⁻¹ = 1 - 2 / n := by
+    rw [inv_div, div_eq_mul_inv 2 (n : ℝ), div_eq_mul_inv 2 pstar.toReal,
+      show pstar.toReal⁻¹ = 2⁻¹ - (n : ℝ)⁻¹ by linarith]
+    ring
+  refine ⟨?_, fun t ht => ?_⟩
+  · rw [← inv_lt_one₀ (by positivity), hχinv]
+    have : (0 : ℝ) < 2 / n := by positivity
+    linarith
+  · rw [div_mul_eq_div_div, div_eq_mul_inv ((n : ℝ) / t), hχinv]
+    field_simp
 
 /-- **The Gagliardo--Nirenberg--Sobolev inequality on `W^{1,p}_0(Ω)`.** If `1 ≤ p` and the Sobolev
 conjugate `p⋆` satisfies `1/p⋆ + 1/n = 1/p`, where `n = dim E`, then every `u ∈ W^{1,p}_0(Ω)`
