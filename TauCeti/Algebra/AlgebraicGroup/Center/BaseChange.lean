@@ -28,6 +28,8 @@ point of `H`, so it kills every equation of the original center.
 
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_centerDefiningIdeal`: the defining ideal of the
   center commutes with extension of the ground field.
+* `TauCeti.CommHopfAlgCat.isCentral_of_isCentral_baseChangeHopfIdeal`: a field extension
+  reflects centrality of closed subgroup schemes.
 * `TauCeti.CommHopfAlgCat.centerDefiningIdeal_baseChange_eq_augmentation_iff`: a field extension
   preserves and reflects triviality of the center.
 * `TauCeti.CommHopfAlgCat.centerCoordinateBaseChangeIso`: the coordinate isomorphism between
@@ -82,6 +84,15 @@ theorem baseChangeHopfIdeal_centerDefiningIdeal
             (K := K) A (centerDefiningIdeal H) q).mpr hrestrictMem) y hy)
   · exact (centerDefiningIdeal_le_iff _ _).mpr
       (isCentral_baseChangeHopfIdeal (isCentral_centerDefiningIdeal H))
+
+/-- A field extension reflects centrality of closed subgroup schemes. -/
+theorem isCentral_of_isCentral_baseChangeHopfIdeal
+    {H : _root_.CommHopfAlgCat.{v} k} {J : HopfIdeal k H}
+    (hJ : (baseChangeHopfIdeal (K := K) J).IsCentral) : J.IsCentral := by
+  apply (centerDefiningIdeal_le_iff H J).mp
+  apply (baseChangeHopfIdeal_le_iff_of_faithfullyFlat (K := K) _ _).mp
+  rw [baseChangeHopfIdeal_centerDefiningIdeal]
+  exact (centerDefiningIdeal_le_iff _ _).mpr hJ
 
 /-- A field extension preserves and reflects triviality of the scheme-theoretic center.
 

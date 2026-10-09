@@ -150,6 +150,7 @@ theorem IsNormal.isCentral_of_finite_of_isGeometricallyReduced (hI : I.IsNormal)
   let Q' := CommHopfAlgCat.quotient H'.obj I'
   let e := CommHopfAlgCat.quotientBaseChangeIso (K := K) I
   let _ : ConnectedSpace (PrimeSpectrum H') := hH.connectedSpace_algebraicClosureBaseChange
+  -- The carrier of `FiniteTypeCommHopfAlgCat.baseChange` unfolds to `K ⊗[k] H`.
   let _ : IsReduced H' := inferInstanceAs (IsReduced (K ⊗[k] H))
   let _ : Module.Finite K Q' :=
     Module.Finite.equiv (_root_.CommHopfAlgCat.ofIso e).symm.toLinearEquiv
@@ -157,10 +158,7 @@ theorem IsNormal.isCentral_of_finite_of_isGeometricallyReduced (hI : I.IsNormal)
     (ConcreteCategory.bijective_of_isIso e.hom).1
   have hcentral : I'.IsCentral :=
     (CommHopfAlgCat.isNormal_baseChangeHopfIdeal hI).isCentral_of_finite_of_isReduced
-  apply (CommHopfAlgCat.centerDefiningIdeal_le_iff H.obj I).mp
-  apply (CommHopfAlgCat.baseChangeHopfIdeal_le_iff_of_faithfullyFlat (K := K) _ _).mp
-  rw [CommHopfAlgCat.baseChangeHopfIdeal_centerDefiningIdeal]
-  exact (CommHopfAlgCat.centerDefiningIdeal_le_iff H'.obj I').mpr hcentral
+  exact CommHopfAlgCat.isCentral_of_isCentral_baseChangeHopfIdeal hcentral
 
 end Field
 

@@ -85,10 +85,8 @@ theorem isCentralIsogeny_baseChangeMap_iff (f : H ⟶ K) :
     apply (isCentralIsogeny_iff f).mpr
     refine ⟨hi.finite, hi.faithfullyFlat, ?_⟩
     have hcentral := hf.isCentral_kernelHopfIdeal
-    rw [← centerDefiningIdeal_le_iff, ← baseChangeHopfIdeal_centerDefiningIdeal,
-      ← baseChangeHopfIdeal_kernelHopfIdeal,
-      baseChangeHopfIdeal_le_iff_of_faithfullyFlat, centerDefiningIdeal_le_iff] at hcentral
-    exact hcentral
+    rw [← baseChangeHopfIdeal_kernelHopfIdeal] at hcentral
+    exact isCentral_of_isCentral_baseChangeHopfIdeal hcentral
   · exact IsCentralIsogeny.baseChange
 
 end Field
