@@ -7,7 +7,8 @@ module
 
 public import TauCeti.FieldTheory.GaloisCohomology.EquivariantKummer
 public import TauCeti.NumberTheory.LocalField.PowerSubgroup.LatticeDefect
-public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.LatticeDefect.ZMod
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.LatticeDefect.RestrictScalarsInt
+public import TauCeti.RingTheory.ZMod.IsEpi
 
 /-!
 # Power classes as reductions of the multiplicative group
