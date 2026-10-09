@@ -265,6 +265,31 @@ def splitMaximalTorusCoordinateMap : carrierAlgebra ⟶
       (SplitTorus.characterGroup (ULift.{0} (Fin 2)))).obj :=
   weightTorusCoordinateMap ≫ weightTorusCoordinateIso.hom
 
+/-- In the ambient matrix coordinates, the standard-coordinate torus has the original
+short-root weights, indexed by the lifted node type. -/
+theorem splitMaximalTorusCoordinateMap_comp_mkQuotient :
+    CommHopfAlgCat.mkQuotient _ (CommHopfAlgCat.commonKernelHopfIdeal generator) ≫
+        splitMaximalTorusCoordinateMap =
+      GeneralLinear.weightTorusCoordinateMap
+        (R := ZMod 3) (fun (i : Fin 7) (j : ULift.{0} (Fin 2)) => weight i j.down) := by
+  rw [splitMaximalTorusCoordinateMap, ← Category.assoc,
+    CommHopfAlgCat.mkQuotient_comp_commonKernelLift, generator_inr,
+    GeneralLinear.weightTorusBaseChangeCoordinateMap_eq]
+  apply _root_.CommHopfAlgCat.hom_ext
+  apply GeneralLinear.coordinateHopfAlgebra_bialgHom_ext (ZMod 3) 7
+  intro i j
+  simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply]
+  rw [GeneralLinear.weightTorusCoordinateMap_X,
+    GeneralLinear.weightTorusCoordinateMap_X]
+  split_ifs with hij
+  · rw [weightTorusCoordinateIso_hom_single]
+    congr 1
+    apply Multiplicative.ofAdd.injective
+    ext l
+    simp [weightTorusCharacterEquiv, AddEquiv.toMultiplicative_apply_apply,
+      Finsupp.domCongr_apply, Finsupp.equivMapDomain_apply]
+  · exact map_zero _
+
 /-- The standard-coordinate weight-torus morphism is surjective. -/
 theorem splitMaximalTorusCoordinateMap_surjective :
     Function.Surjective splitMaximalTorusCoordinateMap.hom := by
