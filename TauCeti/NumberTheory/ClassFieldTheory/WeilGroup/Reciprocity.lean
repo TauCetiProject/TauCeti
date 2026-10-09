@@ -22,10 +22,13 @@ along the injection `W_K^ab → G_K^ab`. It is a continuous open surjection for 
 local field, and it is injective because the absolute local Artin map is, which in characteristic
 zero is a consequence of local existence (`injective_artinMap`).
 
-The target is the topological abelianization: the algebraic quotient of `W_K` by its commutator
-subgroup is a different group, since that subgroup need not be closed. In characteristic `p` the
-map `weilArtinMap K` is still a continuous open surjection, but its injectivity would need the
-existence of the `p`-primary abelian extensions, so no isomorphism is stated there.
+The target is the topological abelianization, the quotient of `W_K` by the closure of its
+commutator subgroup. It agrees with the algebraic abelianization when the commutator subgroup is
+closed; taking the closure makes the quotient Hausdorff without proving that.
+
+In characteristic `p` the map `weilArtinMap K` is still a continuous open surjection, but its
+injectivity would need the existence of the `p`-primary abelian extensions, so no isomorphism is
+stated there.
 
 ## Main definitions
 
