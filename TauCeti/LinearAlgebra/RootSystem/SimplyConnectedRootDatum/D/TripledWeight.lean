@@ -212,6 +212,37 @@ theorem range_typeDSpinWeight_four_subset_range_d4TripledWeight :
   simp only [typeDSpinWeight_apply]
   decide +kernel
 
+private theorem d4TripledSummand_eq_of_weight_apply_eq_typeDSpinWeight (a : Fin 24)
+    (s : Finset (Fin 4)) (h : ∀ i, d4TripledWeight a i = typeDSpinWeight s i) :
+    d4TripledSummand a = if Even s.card then 2 else 1 := by
+  revert a s
+  simp only [typeDSpinWeight_apply]
+  decide +kernel
+
+/-- A tripled-table entry carrying a type-`D₄` spin weight belongs to the odd half-spin block
+for an odd sign set and to the even half-spin block for an even sign set. -/
+theorem d4TripledSummand_eq_of_weight_eq_typeDSpinWeight (a : Fin 24)
+    (s : Finset (Fin 4)) (h : d4TripledWeight a = typeDSpinWeight s) :
+    d4TripledSummand a = if Even s.card then 2 else 1 :=
+  d4TripledSummand_eq_of_weight_apply_eq_typeDSpinWeight a s fun i ↦ congrFun h i
+
+private theorem exists_typeDSpinWeight_apply_eq_d4TripledWeight_iff (a : Fin 24) :
+    (∃ s : Finset (Fin 4), ∀ i, typeDSpinWeight s i = d4TripledWeight a i) ↔
+      d4TripledSummand a ≠ 0 := by
+  revert a
+  simp only [typeDSpinWeight_apply]
+  decide +kernel
+
+/-- A tripled-table weight is a type-`D₄` spin weight exactly when it belongs to one of the
+two half-spin blocks rather than the natural block. -/
+theorem exists_typeDSpinWeight_eq_d4TripledWeight_iff (a : Fin 24) :
+    (∃ s : Finset (Fin 4), typeDSpinWeight s = d4TripledWeight a) ↔
+      d4TripledSummand a ≠ 0 := by
+  rw [← exists_typeDSpinWeight_apply_eq_d4TripledWeight_iff]
+  apply exists_congr
+  intro s
+  exact ⟨fun h i ↦ congrFun h i, fun h ↦ funext h⟩
+
 /-- **The tripled weights span the full type-`D₄` character lattice.** The last sixteen entries
 are the two half-spin blocks, hence contain the full type-`D₄` spin-weight family, which already
 spans the simply connected character lattice. -/
