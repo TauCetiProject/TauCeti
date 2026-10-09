@@ -121,6 +121,34 @@ theorem IsLeftAlmostSplit.isIso_of_τ₃_eq_id (hf : IsLeftAlmostSplit S.f) (hS 
   have : IsIso φ.τ₂ := ShortComplex.isIso₂_of_shortExact_of_isIso₁₃ φ hS hS
   exact ShortComplex.isIso_of_isIso φ
 
+/-- An endomorphism of an exact short complex with epic, right almost-split final map,
+acting as the identity on the left-hand end, is invertible on the right-hand end. -/
+theorem IsRightAlmostSplit.isIso_τ₃_of_τ₁_eq_id (hg : IsRightAlmostSplit S.g) (hS : S.Exact)
+    [Epi S.g] [IsLocalRing (End S.X₃)] (φ : S ⟶ S) (hφ : φ.τ₁ = 𝟙 S.X₁) : IsIso φ.τ₃ := by
+  have hcoker : S.f ≫ (𝟙 S.X₂ - φ.τ₂) = 0 := by
+    simp [Preadditive.comp_sub, ← φ.comm₁₂, hφ]
+  obtain ⟨γ, hγ⟩ := hS.desc' (𝟙 S.X₂ - φ.τ₂) hcoker
+  have hγg : γ ≫ S.g = 𝟙 S.X₃ - φ.τ₃ := by
+    apply (cancel_epi S.g).mp
+    rw [← Category.assoc, hγ, sub_comp, Category.id_comp,
+      φ.comm₂₃, comp_sub, Category.comp_id]
+  have hnot : ¬ IsIso (𝟙 S.X₃ - φ.τ₃) := fun h ↦
+    hg.not_isSplitEpi (IsSplitEpi.mk'
+      ⟨inv (𝟙 S.X₃ - φ.τ₃) ≫ γ, by rw [Category.assoc, hγg, IsIso.inv_hom_id]⟩)
+  rcases IsLocalRing.isUnit_or_isUnit_one_sub_self (R := End S.X₃) φ.τ₃ with h | h
+  · exact (isUnit_iff_isIso _).mp h
+  · exact absurd ((isUnit_iff_isIso _).mp h) hnot
+
+/-- An endomorphism of a short exact sequence with right almost-split final map, acting as
+the identity on the left-hand end, is an isomorphism. -/
+theorem IsRightAlmostSplit.isIso_of_τ₁_eq_id (hg : IsRightAlmostSplit S.g) (hS : S.ShortExact)
+    [IsLocalRing (End S.X₃)] (φ : S ⟶ S) (hφ : φ.τ₁ = 𝟙 S.X₁) : IsIso φ := by
+  have := hS.epi_g
+  have : IsIso φ.τ₃ := hg.isIso_τ₃_of_τ₁_eq_id hS.exact φ hφ
+  have : IsIso φ.τ₁ := hφ ▸ inferInstanceAs (IsIso (𝟙 S.X₁))
+  have : IsIso φ.τ₂ := ShortComplex.isIso₂_of_shortExact_of_isIso₁₃ φ hS hS
+  exact ShortComplex.isIso_of_isIso φ
+
 /-! ### The comparison morphism -/
 
 /-- **A map `e` into the right-hand end of an exact short complex `S'` with monic first map and
