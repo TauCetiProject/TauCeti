@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Matrix.Defs
+public import Mathlib.Data.Matrix.Basic
 public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.Topology.LocallyConstant.Basic
 import Mathlib.Topology.Algebra.OpenSubgroup
