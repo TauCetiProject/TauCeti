@@ -47,12 +47,6 @@ structure IsQuotientMapping (f : Hom S T) : Prop where
   /-- The plus ring has the quotient-pair integral closure. -/
   plus_eq : T.plus = (integralClosure (S.plus.map f.toRingHom) B).toSubring
 
-/-- Characterisation of quotient mappings by the underlying topology and plus ring. -/
-theorem isQuotientMapping_iff (f : Hom S T) :
-    IsQuotientMapping f ↔ IsOpenQuotientMap f.toRingHom ∧
-      T.plus = (integralClosure (S.plus.map f.toRingHom) B).toSubring :=
-  ⟨fun h ↦ ⟨h.isOpenQuotientMap, h.plus_eq⟩, fun h ↦ ⟨h.1, h.2⟩⟩
-
 /-- Membership in the target plus ring is integrality over the image of the source plus ring. -/
 theorem IsQuotientMapping.mem_plus_iff {f : Hom S T} (hf : IsQuotientMapping f) {b : B} :
     b ∈ T.plus ↔ IsIntegral (S.plus.map f.toRingHom) b := by
@@ -60,7 +54,7 @@ theorem IsQuotientMapping.mem_plus_iff {f : Hom S T} (hf : IsQuotientMapping f) 
 
 /-- A pair morphism that is an open quotient map is a quotient mapping if every target plus
 ring element is integral over the image plus ring. The other inclusion is automatic. -/
-theorem isQuotientMapping_iff_isIntegral (f : Hom S T) :
+theorem isQuotientMapping_iff_isOpenQuotientMap_and_isIntegral (f : Hom S T) :
     IsQuotientMapping f ↔ IsOpenQuotientMap f.toRingHom ∧
       ∀ b ∈ T.plus, IsIntegral (S.plus.map f.toRingHom) b := by
   constructor
@@ -76,7 +70,7 @@ theorem isQuotientMapping_iff_isIntegral (f : Hom S T) :
 /-- The identity of a Huber pair is a quotient mapping. -/
 @[simp]
 theorem isQuotientMapping_id (S : Pair A) : IsQuotientMapping (id S) := by
-  apply (isQuotientMapping_iff_isIntegral _).mpr
+  apply (isQuotientMapping_iff_isOpenQuotientMap_and_isIntegral _).mpr
   refine ⟨?_, fun a ha ↦ ?_⟩
   · simpa only [toRingHom_id, RingHom.coe_id] using (IsOpenQuotientMap.id (X := A))
   · rw [toRingHom_id, Subring.map_id]
@@ -96,7 +90,7 @@ theorem isQuotientMapping_quotientHom (S : Pair A) (J : Ideal A) :
 have the same integral closure condition as their composite presentation. -/
 theorem IsQuotientMapping.comp {f : Hom S T} {g : Hom T U}
     (hg : IsQuotientMapping g) (hf : IsQuotientMapping f) : IsQuotientMapping (g.comp f) := by
-  apply (isQuotientMapping_iff_isIntegral _).mpr
+  apply (isQuotientMapping_iff_isOpenQuotientMap_and_isIntegral _).mpr
   refine ⟨?_, fun c hc ↦ ?_⟩
   · simpa only [toRingHom_comp, RingHom.coe_comp] using
       hg.isOpenQuotientMap.comp hf.isOpenQuotientMap
