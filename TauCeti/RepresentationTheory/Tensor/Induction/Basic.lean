@@ -296,6 +296,9 @@ noncomputable def tensorInduced (f : ρ.IntertwiningMap τ) (s : U.LeftTransvers
     (IntertwiningMap.id ρ).tensorInduced s =
       IntertwiningMap.id (U.tensorInducedRepresentation s ρ) := by
   apply IntertwiningMap.ext
+  -- Restriction along `monomialHom` changes the action, not the underlying linear map:
+  -- `tensorInduced` and `wreathTensor` both reduce to the same `PiTensorProduct.map`.
+  -- The identity maps also have definitionally equal `toLinearMap` projections.
   have h := congrArg IntertwiningMap.toLinearMap
     (IntertwiningMap.wreathTensor_id (ρ := ρ) (G ⧸ U))
   exact h
@@ -306,6 +309,9 @@ noncomputable def tensorInduced (f : ρ.IntertwiningMap τ) (s : U.LeftTransvers
     (s : U.LeftTransversal) :
     (g.comp f).tensorInduced s = (g.tensorInduced s).comp (f.tensorInduced s) := by
   apply IntertwiningMap.ext
+  -- Restriction along `monomialHom` changes the action, not the underlying linear maps:
+  -- `tensorInduced` and `wreathTensor` both reduce to the same `PiTensorProduct.map`.
+  -- Composition also has definitionally equal `toLinearMap` projections in both cases.
   have h := congrArg IntertwiningMap.toLinearMap
     (IntertwiningMap.wreathTensor_comp g f (G ⧸ U))
   exact h
