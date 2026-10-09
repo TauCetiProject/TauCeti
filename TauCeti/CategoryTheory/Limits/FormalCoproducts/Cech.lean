@@ -57,15 +57,7 @@ theorem cechFunctor_map_comp_cechIsoCechNerve_hom {X Y : FormalCoproduct.{w} C} 
           ((isTerminalIncl _ hT).hom_ext _ _)) := by
   refine NatTrans.ext (funext fun n ↦ WidePullback.hom_ext _ _ _ (fun j ↦ ?_) ?_)
   · -- both sides are the `j`-th projection of `X.cech` followed by `φ`
-    have h₁ : (powerMap φ _ ≫ (Y.cechIsoCechNerveApp hT n).hom) ≫ WidePullback.π _ j =
-        X.powerπ j ≫ φ :=
-      (Category.assoc _ _ _).trans <|
-        (_ ≫= Y.cechIsoCechNerveApp_hom_π hT n j).trans (powerMap_π φ _ j)
-    refine h₁.trans (Eq.symm ?_)
-    simp only [NatTrans.comp_app, cechIsoCechNerve_hom_app, Arrow.mapCechNerve_app,
-      Arrow.homMk_left, Arrow.homMk_right, Category.comp_id]
-    exact (Category.assoc _ _ _).trans <| (_ ≫= WidePullback.lift_π _ _ _ _ j).trans <|
-      (Category.assoc _ _ _).symm.trans (X.cechIsoCechNerveApp_hom_π hT n j =≫ φ)
+    simp [cechFunctor]
   · exact (isTerminalIncl _ hT).hom_ext _ _
 
 end CategoryTheory.Limits.FormalCoproduct

@@ -208,8 +208,12 @@ theorem val_succAbove {n : ℕ} (p : Fin (n + 1)) (i : Fin n) :
 theorem val_predAbove {n : ℕ} (p : Fin n) (i : Fin (n + 1)) :
     (p.predAbove i : ℕ) = if (p : ℕ) < i then (i : ℕ) - 1 else (i : ℕ) := by
   rcases lt_or_ge p.castSucc i with h | h
-  · simp [predAbove_of_castSucc_lt _ _ h, show (p : ℕ) < i from h]
-  · simp [predAbove_of_le_castSucc _ _ h, show ¬ (p : ℕ) < i by simpa [le_def] using h]
+  · rw [predAbove_of_castSucc_lt _ _ h]
+    rw [lt_def, val_castSucc] at h
+    simp [h]
+  · rw [predAbove_of_le_castSucc _ _ h]
+    rw [le_def, val_castSucc] at h
+    simp [h]
 
 /-- The cyclic successor of `i.succ` in `Fin (n + 1)` is the cyclic successor of `i` in `Fin n`,
 read through the embedding `i.succ.succAbove` that skips `i.succ`. -/

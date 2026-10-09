@@ -295,6 +295,7 @@ noncomputable def cechComplexMapHomotopy (φ ψ : FormalCoproduct.mk _ U ⟶ For
 of families `φ : U ⟶ V` and `ψ : V ⟶ U`, for instance two open covers each refining the other, the
 induced maps `Č(V, P) ⟶ Č(U, P)` and `Č(U, P) ⟶ Č(V, P)` are mutually inverse homotopy
 equivalences. -/
+@[expose, simps hom inv]
 noncomputable def cechComplexHomotopyEquiv (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
     (ψ : FormalCoproduct.mk _ V ⟶ FormalCoproduct.mk _ U) :
     HomotopyEquiv ((cechComplexFunctor V).obj P) ((cechComplexFunctor U).obj P) where
