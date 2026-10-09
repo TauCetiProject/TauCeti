@@ -67,6 +67,15 @@ private theorem homCokernelDualToTranslate_apply (f : P₁ →ₗ[A] P₀)
       (auslanderReitenTransposeTensorEquivCokernel f (BalancedTensorProduct.tmul k A t n)) := by
   simp [homCokernelDualToTranslate]
 
+private theorem homCokernelDual_ext (f : P₁ →ₗ[A] P₀)
+    {u v : Module.Dual k ((P₁ →ₗ[A] N) ⧸ range (f.lcomp k N))}
+    (h : ∀ t n,
+      u (auslanderReitenTransposeTensorEquivCokernel f (BalancedTensorProduct.tmul k A t n)) =
+        v (auslanderReitenTransposeTensorEquivCokernel f
+          (BalancedTensorProduct.tmul k A t n))) : u = v := by
+  apply (LinearMap.cancel_right (auslanderReitenTransposeTensorEquivCokernel f).surjective).mp
+  exact BalancedTensorProduct.hom_ext h
+
 private noncomputable def translateToHomCokernelDual (f : P₁ →ₗ[A] P₀) :
     (N →ₗ[A] AuslanderReitenTranslate k f) →ₗ[k]
       Module.Dual k ((P₁ →ₗ[A] N) ⧸ range (f.lcomp k N)) where
@@ -77,23 +86,13 @@ private noncomputable def translateToHomCokernelDual (f : P₁ →ₗ[A] P₀) :
           (LinearMap.congr_fun (g.map_smul a n) t).symm)).comp
       (auslanderReitenTransposeTensorEquivCokernel f).symm.toLinearMap
   map_add' := fun g h ↦ by
-    apply LinearMap.ext
-    intro q
-    obtain ⟨z, rfl⟩ := (auslanderReitenTransposeTensorEquivCokernel f).surjective q
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply,
-      LinearMap.add_apply]
-    induction z using BalancedTensorProduct.induction_on with
-    | ht t n => simp
-    | ha z w hz hw => simp only [map_add, hz, hw]; ring
+    apply homCokernelDual_ext f
+    intro t n
+    simp
   map_smul' := fun c g ↦ by
-    apply LinearMap.ext
-    intro q
-    obtain ⟨z, rfl⟩ := (auslanderReitenTransposeTensorEquivCokernel f).surjective q
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply,
-      LinearMap.smul_apply, smul_eq_mul]
-    induction z using BalancedTensorProduct.induction_on with
-    | ht t n => simp
-    | ha z w hz hw => simp only [map_add, hz, hw, mul_add]
+    apply homCokernelDual_ext f
+    intro t n
+    simp
 
 private theorem translateToHomCokernelDual_apply (f : P₁ →ₗ[A] P₀)
     (g : N →ₗ[A] AuslanderReitenTranslate k f) (t : AuslanderReitenTranspose f) (n : N) :
@@ -115,13 +114,9 @@ noncomputable def auslanderReitenHomCokernelDualEquiv (f : P₁ →ₗ[A] P₀) 
     (by
       apply LinearMap.ext
       intro u
-      apply LinearMap.ext
-      intro q
-      obtain ⟨z, rfl⟩ := (auslanderReitenTransposeTensorEquivCokernel f).surjective q
-      induction z using BalancedTensorProduct.induction_on with
-      | ht t n =>
-        simp [translateToHomCokernelDual_apply, homCokernelDualToTranslate_apply]
-      | ha z w hz hw => simpa only [map_add] using congrArg₂ (· + ·) hz hw)
+      apply homCokernelDual_ext f
+      intro t n
+      simp [translateToHomCokernelDual_apply, homCokernelDualToTranslate_apply])
 
 /-- Evaluation at a transpose class and a vector is evaluation of the dual functional
 on the class of the elementary map `x ↦ φ(x) • n`. -/
