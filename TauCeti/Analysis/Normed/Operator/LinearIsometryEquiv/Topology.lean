@@ -55,6 +55,17 @@ theorem continuous_operatorNorm_iff {X : Type*} [TopologicalSpace X]
     Continuous f ↔ Continuous fun x => (f x).toContinuousLinearEquiv.toContinuousLinearMap :=
   isEmbedding_toContinuousLinearMap.continuous_iff
 
+/-- Joint evaluation of linear isometry equivalences is continuous in the operator norm
+topology. -/
+theorem continuousEval_operatorNorm : ContinuousEval (E ≃ₗᵢ[𝕜] F) E F where
+  continuous_eval := by
+    simpa only [Function.comp_apply, ContinuousLinearEquiv.coe_coe,
+      coe_toContinuousLinearEquiv] using
+      (isEmbedding_toContinuousLinearMap.continuous.comp continuous_fst).clm_apply continuous_snd
+
+scoped[TauCeti.LinearIsometryEquivOperatorNorm] attribute [instance]
+  LinearIsometryEquiv.continuousEval_operatorNorm
+
 /-- The operator norm topology on linear isometry equivalences is Hausdorff. -/
 theorem t2Space_operatorNorm : T2Space (E ≃ₗᵢ[𝕜] F) :=
   isEmbedding_toContinuousLinearMap.t2Space
@@ -67,8 +78,8 @@ is equivalent to continuity of its value at every vector. -/
 theorem continuous_operatorNorm_iff_apply [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
     {X : Type*} [TopologicalSpace X] {f : X → E ≃ₗᵢ[𝕜] F} :
     Continuous f ↔ ∀ v, Continuous fun x => f x v := by
-  rw [continuous_operatorNorm_iff, continuous_clm_apply]
-  rfl
+  simpa only [ContinuousLinearEquiv.coe_coe, coe_toContinuousLinearEquiv] using
+    ((continuous_operatorNorm_iff (f := f)).trans continuous_clm_apply)
 
 end LinearIsometryEquiv
 
