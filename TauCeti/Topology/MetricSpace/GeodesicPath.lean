@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.CompactOpen
-public import Mathlib.Topology.UnitInterval
 public import TauCeti.Topology.MetricSpace.Length
 
 /-!
