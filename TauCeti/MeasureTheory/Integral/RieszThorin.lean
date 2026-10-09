@@ -10,6 +10,7 @@ import Mathlib.Analysis.Complex.Hadamard
 import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
+import TauCeti.MeasureTheory.Function.SimpleFunc
 
 /-!
 # The Riesz–Thorin interpolation theorem
@@ -176,22 +177,20 @@ private theorem fiberInd_apply (u : SimpleFunc γ ℂ) (c : ℂ) (x : γ) :
   simp only [fiberInd, SimpleFunc.restrict_apply _ (u.measurableSet_fiber c), SimpleFunc.coe_const]
   by_cases h : u x = c <;> simp [h]
 
-private theorem map_apply_eq_sum (u : SimpleFunc γ ℂ) (ψ : ℂ → ℂ) (x : γ) :
-    u.map ψ x = ∑ c ∈ u.range, ψ c * fiberInd u c x := by
-  rw [Finset.sum_eq_single (u x)]
-  · simp [fiberInd_apply]
-  · intro c _ hc
-    simp [fiberInd_apply, Ne.symm hc]
-  · intro h
-    exact absurd (u.mem_range_self x) h
+private theorem smul_fiberInd (u : SimpleFunc γ ℂ) (a c : ℂ) :
+    a • fiberInd u c = (SimpleFunc.const γ a).restrict (u ⁻¹' {c}) := by
+  ext x
+  simp [fiberInd_apply, SimpleFunc.restrict_apply _ (u.measurableSet_fiber c), Set.indicator]
 
 private theorem map_eq_sum (u : SimpleFunc γ ℂ) (ψ : ℂ → ℂ) :
     u.map ψ = ∑ c ∈ u.range, ψ c • fiberInd u c := by
-  ext x
-  have h : ⇑(∑ c ∈ u.range, ψ c • fiberInd u c) = ∑ c ∈ u.range, ⇑(ψ c • fiberInd u c) :=
-    map_sum (AddMonoidHom.mk' (fun v : SimpleFunc γ ℂ => (v : γ → ℂ)) SimpleFunc.coe_add) _ _
-  rw [h, map_apply_eq_sum, Finset.sum_apply]
-  simp
+  simp_rw [smul_fiberInd]
+  exact u.map_eq_sum_restrict_const ψ
+
+private theorem map_apply_eq_sum (u : SimpleFunc γ ℂ) (ψ : ℂ → ℂ) (x : γ) :
+    u.map ψ x = ∑ c ∈ u.range, ψ c * fiberInd u c x := by
+  rw [u.map_apply_eq_sum_restrict_const]
+  simp_rw [← smul_fiberInd, SimpleFunc.smul_apply, smul_eq_mul]
 
 private theorem integral_map_powSign_eq_sum (T : SimpleFunc α ℂ →ₗ[ℂ] (β →ₘ[ν] ℂ))
     (f : SimpleFunc α ℂ) (g : SimpleFunc β ℂ) (w w' : ℂ)
