@@ -26,10 +26,10 @@ acting by `π`. The `𝔽_p[π]`-module is Mathlib's `Module.AEval'` of the endo
 `R[X]`-module attached to an `R`-linear endomorphism, and the Lie algebra structure is the general
 one of `TauCeti.Module.AEval'.lieAlgebra` for an endomorphism commuting with inner derivations.
 
-For `p = 2` none of this holds: `π` fails to be additive in degree zero, with defect the bracket
-(`TauCeti.gradedPow_add_zero_of_two`), and the defect is nonzero for a free pro-`2` group of rank
-two (`TauCeti.gradedPow_freeProP_two_not_additive`). This is why the dyadic Demushkin relators need
-separate treatment.
+For `p = 2` the construction fails in general: in degree zero `π` is additive only up to the
+bracket (`TauCeti.gradedPow_add_zero_of_two`), and this defect can be nonzero; it is for a free
+pro-`2` group of rank two (`TauCeti.gradedPow_freeProP_two_not_additive`). This is why the
+dyadic Demushkin relators need separate treatment.
 
 ## Main definitions
 
