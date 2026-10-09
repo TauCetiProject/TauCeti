@@ -72,7 +72,7 @@ first and second cohomology. -/
 private theorem isZero_groupCohomology_res_splittingModule (S : Subgroup G) [Finite S]
     (h1 : IsZero (groupCohomology (res S.subtype A) 1))
     (hgen : ∀ x : groupCohomology (res S.subtype A) 2,
-      ∃ m : ℤ, m • groupCohomology.map S.subtype (𝟙 (res S.subtype A)) 2 u = x)
+      ∃ r : k, r • groupCohomology.map S.subtype (𝟙 (res S.subtype A)) 2 u = x)
     [Finite (k ⧸ Ideal.span {(Nat.card S : k)})]
     (hcard : Nat.card (groupCohomology (res S.subtype A) 2) =
       Nat.card (k ⧸ Ideal.span {(Nat.card S : k)})) :
@@ -111,13 +111,13 @@ private theorem isZero_groupCohomology_res_splittingModule (S : Subgroup G) [Fin
   -- the splitting module.
   have hδ : Function.Surjective δ := by
     intro x
-    obtain ⟨m, rfl⟩ := hgen x
+    obtain ⟨r, rfl⟩ := hgen x
     have hcomp := groupCohomology.map_comp S.subtype (MonoidHom.id S) (𝟙 (res S.subtype A))
       ((resFunctor S.subtype).map (splittingModuleIncl A u)) 2
     obtain ⟨y, hy⟩ := hex₁ (groupCohomology.map S.subtype (𝟙 (res S.subtype A)) 2 u)
       ((ConcreteCategory.congr_hom hcomp u).symm.trans
         (map_splittingModuleIncl_res_eq_zero A u S.subtype))
-    exact ⟨m • y, (map_zsmul δ.hom m y).trans (congrArg _ hy)⟩
+    exact ⟨r • y, (map_smul δ.hom r y).trans (congrArg _ hy)⟩
   have hδbij : Function.Bijective δ :=
     -- `X.X₁` is `res S.subtype A` by definition of `ShortComplex.map`.
     hδ.bijective_of_nat_card_le (by rw [hcardI, ← hcard]; rfl)
@@ -152,7 +152,7 @@ theorem isZero_res_splittingModule [Finite G]
       IsZero (groupCohomology (res S.subtype A) 1))
     (hgen : ∀ (p : ℕ) [Fact p.Prime] (S : Subgroup G), IsPGroup p S →
       ∀ x : groupCohomology (res S.subtype A) 2,
-        ∃ m : ℤ, m • groupCohomology.map S.subtype (𝟙 (res S.subtype A)) 2 u = x)
+        ∃ r : k, r • groupCohomology.map S.subtype (𝟙 (res S.subtype A)) 2 u = x)
     (hfin : ∀ (p : ℕ) [Fact p.Prime] (S : Subgroup G), IsPGroup p S →
       Finite (k ⧸ Ideal.span {(Nat.card S : k)}))
     (hcard : ∀ (p : ℕ) [Fact p.Prime] (S : Subgroup G), IsPGroup p S →
