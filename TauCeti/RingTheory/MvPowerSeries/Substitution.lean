@@ -51,6 +51,8 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   every other to `0`, for an index type of any size.
 * `MvPowerSeries.ne_of_subst_eq_X_of_subst_eq_zero` : a substitution sending one series to `X` and
   another to `0` separates them.
+* `MvPowerSeries.subst_powerSeriesSubst` : substituting into the composite of a one-variable
+  series with a multivariate one is substituting into the inner series.
 
 ## Separating multivariable parameters
 
@@ -234,6 +236,14 @@ theorem ne_of_subst_eq_X_of_subst_eq_zero {O : Type*} [CommRing O] [Nontrivial O
     {g : σ' → MvPowerSeries Unit O} {a b : MvPowerSeries σ' O}
     (ha : subst g a = PowerSeries.X) (hb : subst g b = 0) : a ≠ b := fun hab ↦
   PowerSeries.X_ne_zero (by rw [← ha, hab]; exact hb)
+
+/-- Substituting `b` into the composite `f ∘ g` of a one-variable series `f` with a multivariate
+series `g` is substituting `g ∘ b` into `f`. -/
+theorem subst_powerSeriesSubst {O : Type*} [CommRing O] {σ' τ' : Type*}
+    {b : σ' → MvPowerSeries τ' O} (hb : HasSubst b) {g : MvPowerSeries σ' O}
+    (hg : PowerSeries.HasSubst g) (f : PowerSeries O) :
+    subst b (PowerSeries.subst g f) = PowerSeries.subst (subst b g) f := by
+  rw [PowerSeries.subst_def, PowerSeries.subst_def, subst_comp_subst_apply hg.const hb]
 
 end MvPowerSeries
 
