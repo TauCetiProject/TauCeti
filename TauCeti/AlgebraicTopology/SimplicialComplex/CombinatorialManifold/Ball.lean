@@ -46,16 +46,9 @@ theorem IsCombinatorialBall.nonempty_homeomorph_closedBall {ι : Type*} [Decidab
       Q ≤ (⊤ : AbstractSimplicialComplex ι).toPreAbstractSimplicialComplex := by
     rw [top_toPreAbstractSimplicialComplex]
     exact le_top
-  have r : {x : Realization K // x.1.support ∈ P} ≃ₜ
-      {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ P} := by
-    have hmap : P.map (Function.Embedding.refl ι) = P := by
-      rw [Function.Embedding.coe_refl]
-      exact PreAbstractSimplicialComplex.map_id
-    exact (P.relabelingHomeomorph (Function.Embedding.refl ι) hK (htop _)).trans
-      (Homeomorph.setCongr (by rw [hmap]))
   obtain ⟨V, hV, he⟩ := isCombinatorialBall_iff.mp h
   obtain ⟨e⟩ := he.nonempty_homeomorph h.finite_faces
   obtain ⟨b⟩ := nonempty_homeomorph_simplex_closedBall hV (htop _)
-  exact ⟨r.trans (e.trans b)⟩
+  exact ⟨(P.ambientHomeomorph hK (htop _)).trans (e.trans b)⟩
 
 end PreAbstractSimplicialComplex

@@ -58,23 +58,15 @@ noncomputable def _root_.Equiv.stdSimplexHomeomorph (e : M ≃ N) :
   continuous_toFun := continuous_map R e
   continuous_invFun := continuous_map R e.symm
 
-/-- Reindexing a standard simplex transports each barycentric weight to the corresponding
-vertex. -/
+/-- The simplex reindexing homeomorphism acts by Mathlib's standard simplex map. -/
 @[simp]
-lemma _root_.Equiv.stdSimplexHomeomorph_weights_apply (e : M ≃ N) (x : StdSimplex R M) (n : N) :
-    (Equiv.stdSimplexHomeomorph e x).weights n = x.weights (e.symm n) := by
-  simpa only [Equiv.stdSimplexHomeomorph, Homeomorph.homeomorph_mk_coe, Equiv.coe_fn_mk,
-    weights_map, Equiv.apply_symm_apply] using
-    Finsupp.mapDomain_apply_of_injective e.injective x.weights (e.symm n)
+lemma _root_.Equiv.coe_stdSimplexHomeomorph (e : M ≃ N) :
+    ⇑(e.stdSimplexHomeomorph (R := R)) = map e := (rfl)
 
-/-- The inverse reindexing reads a weight at the corresponding vertex in the target. -/
+/-- Inverting the simplex reindexing homeomorphism inverts the vertex equivalence. -/
 @[simp]
-lemma _root_.Equiv.stdSimplexHomeomorph_symm_weights_apply (e : M ≃ N) (x : StdSimplex R N)
-    (m : M) :
-    ((Equiv.stdSimplexHomeomorph e).symm x).weights m = x.weights (e m) := by
-  simpa only [Equiv.stdSimplexHomeomorph, Homeomorph.homeomorph_mk_coe_symm, Equiv.coe_fn_symm_mk,
-    weights_map, Equiv.symm_apply_apply] using
-    Finsupp.mapDomain_apply_of_injective e.symm.injective x.weights (e m)
+lemma _root_.Equiv.stdSimplexHomeomorph_symm (e : M ≃ N) :
+    (e.stdSimplexHomeomorph (R := R)).symm = e.symm.stdSimplexHomeomorph := (rfl)
 
 /-- An affine map from a standard simplex to a standard simplex on a finite type is
 continuous. -/

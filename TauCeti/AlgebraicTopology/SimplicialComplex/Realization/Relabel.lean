@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Subcomplex
+public import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # Relabeling polyhedra with unused vertices
@@ -161,5 +162,36 @@ theorem relabelingHomeomorph_symm_val
     ((P.relabelingHomeomorph f hK hL).symm y).1.1 =
       Finsupp.comapDomain f y.1.1 f.injective.injOn :=
   relabelingBackward_val P f hK y
+
+section Ambient
+
+variable [DecidableEq α] {K' L' : AbstractSimplicialComplex α}
+
+/-- Changing the containing weak realization preserves the polyhedron of a precomplex
+and its barycentric coordinates. No finiteness assumption is needed. -/
+def ambientHomeomorph
+    (hK : P ≤ K'.toPreAbstractSimplicialComplex)
+    (hL : P ≤ L'.toPreAbstractSimplicialComplex) :
+    {x : Realization K' // x.1.support ∈ P} ≃ₜ
+      {x : Realization L' // x.1.support ∈ P} := by
+  have hmap : P.map (Function.Embedding.refl α) = P := by
+    rw [Function.Embedding.coe_refl]
+    exact PreAbstractSimplicialComplex.map_id
+  exact (P.relabelingHomeomorph (Function.Embedding.refl α) hK
+    (by simpa only [hmap] using hL)).trans
+    (Homeomorph.setCongr (by rw [hmap]))
+
+/-- Changing the ambient complex leaves the barycentric coordinate vector unchanged. -/
+@[simp]
+theorem ambientHomeomorph_val
+    (hK : P ≤ K'.toPreAbstractSimplicialComplex)
+    (hL : P ≤ L'.toPreAbstractSimplicialComplex)
+    (x : {x : Realization K' // x.1.support ∈ P}) :
+    (P.ambientHomeomorph hK hL x).1.1 = x.1.1 := by
+  -- `erw` reduces the `SetLike` coercions identifying the intermediate subtype.
+  erw [ambientHomeomorph, Homeomorph.trans_apply, Homeomorph.setCongr_apply]
+  simp
+
+end Ambient
 
 end PreAbstractSimplicialComplex
