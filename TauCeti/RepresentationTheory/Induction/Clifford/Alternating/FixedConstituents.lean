@@ -18,9 +18,9 @@ import TauCeti.RepresentationTheory.CharacterTable.Determined
 # Recovering the fixed constituents for `A₄ ◁ S₄`
 
 Inducing the restriction of a symmetric-group representation gives its direct sum with its
-sign twist, in characteristic zero. Consequently a simple representation lying over that
-restriction is one of these two summands. This identifies the representations of `S₄` lying
-over the fixed trivial and three-dimensional constituents of `A₄`.
+sign twist, in characteristic zero. If the original representation is simple, then a simple
+representation lying over that restriction is one of these two summands. This identifies the
+representations of `S₄` lying over the fixed trivial and three-dimensional constituents of `A₄`.
 
 The character identity holds over every field. The decomposition and recovery use
 characteristic zero, where characters determine representations; algebraic closure is unnecessary.
