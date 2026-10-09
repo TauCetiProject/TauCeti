@@ -60,6 +60,13 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
 H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*,
 Theorem 6.11 (the Hilbert--Schmidt spectral decomposition); L. C. Evans, *Partial Differential
 Equations*, Appendix D.6.
+
+The eigenvector cross-term identity
+`LinearMap.IsSymmetric.inner_sub_apply_of_apply_eq_smul_of_apply_eq_smul` is adapted from the
+corresponding eigenvector identity of the
+[AIQ-Kitware DKPS formalization](https://github.com/AIQ-Kitware/aiq-dkps-formalization)
+(Kitware, Inc.; Apache-2.0), generalized here to `RCLike` scalars and a non-symmetric second
+operator.
 -/
 
 public section
