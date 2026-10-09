@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.SemilocalUnits
-public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.FiniteSIdeles
+public import TauCeti.NumberTheory.NumberField.Global.Ideles.FiniteSIdeles
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Pi
 
 /-!

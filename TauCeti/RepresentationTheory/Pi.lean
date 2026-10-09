@@ -109,7 +109,7 @@ namespace Rep
 
 universe w
 
-variable {k G : Type*} [CommRing k] [Monoid G] {ι : Type w} (M : ι → Rep.{w} k G)
+variable {k G : Type*} [CommSemiring k] [Monoid G] {ι : Type w} (M : ι → Rep.{w} k G)
 
 /-- The product of a family of representations, as an object of `Rep k G`. -/
 noncomputable abbrev pi : Rep.{w} k G := Rep.of (Representation.pi fun i ↦ (M i).ρ)

@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Global.Adeles.GaloisAction
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.FiniteAdele
-public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.IntegralUnits
 public import TauCeti.RepresentationTheory.Pi
-public import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
 /-!
 # The finite `S`-ideles as a product of semi-local factors
@@ -22,26 +19,19 @@ Let `L/K` be an extension of number fields and `S` a finite set of finite places
 I_{L,S}^f = ∏_{v ∈ S} ∏_{w ∣ v} L_wˣ × ∏_{v ∉ S} ∏_{w ∣ v} 𝒪_wˣ.
 ```
 
-The components of a finite idele at the places above a finite place `v` of `K` form a unit of
-the semi-local algebra `K_v ⊗[K] L ≃ ∏_{w ∣ v} L_w` (`finiteIdeleSemilocalHom`), and a finite
-idele is determined by these semi-local components
-(`eq_of_forall_finiteIdeleSemilocalHom_eq`). Conversely, a family of semi-local units which are
-integral at all but finitely many places is the family of semi-local components of a finite idele
-(`finiteIdeleOfSemilocalUnits`). Taking components is equivariant for the Galois action of
-`Aut(L/K)` on finite adeles (`GlobalNumberFields.finiteAdeleGaloisAction`) and on the semi-local
-algebras (`semilocalGaloisHom`).
-
-Together, these identify the finite `S`-ideles, as an integral representation of `Aut(L/K)`, with
-the product over the places of `K` of the semi-local unit groups `(K_v ⊗[K] L)ˣ` for `v ∈ S` and
-of the integral semi-local unit groups for `v ∉ S` (`finiteSIdelesPiIso`). This is the form in
-which the Tate cohomology of the `S`-ideles is computed one place at a time, through Shapiro's
-lemma for each semi-local factor.
+A finite idele is determined by its semi-local components in the units of
+`K_v ⊗[K] L ≃ ∏_{w ∣ v} L_w` (`TauCeti.finiteIdeleSemilocalHom`), and taking components is
+equivariant for the Galois action of `Aut(L/K)` on finite adeles
+(`GlobalNumberFields.finiteAdeleGaloisAction`) and on the semi-local algebras
+(`semilocalGaloisHom`). Together with the assembly of a finite idele from semi-local units
+(`TauCeti.finiteIdeleOfSemilocalUnits`), these identify the finite `S`-ideles, as an integral
+representation of `Aut(L/K)`, with the product over the places of `K` of the semi-local unit groups
+`(K_v ⊗[K] L)ˣ` for `v ∈ S` and of the integral semi-local unit groups for `v ∉ S`
+(`finiteSIdelesPiIso`). This is the form in which the Tate cohomology of the `S`-ideles is computed
+one place at a time, through Shapiro's lemma for each semi-local factor.
 
 ## Main definitions
 
-* `TauCeti.finiteIdeleSemilocalHom L v`: the components above `v` of a finite idele of `L`, as a
-  unit of `K_v ⊗[K] L`.
-* `TauCeti.finiteIdeleOfSemilocalUnits`: the finite idele with prescribed semi-local components.
 * `TauCeti.finiteSIdeles L S`: the finite `S`-ideles of `L`, as a subgroup of the finite ideles.
 * `TauCeti.finiteSIdelesRep L S`: the finite `S`-ideles, as an integral representation of
   `Aut(L/K)`.
@@ -51,10 +41,6 @@ lemma for each semi-local factor.
 
 ## Main results
 
-* `TauCeti.eq_of_forall_finiteIdeleSemilocalHom_eq`: a finite idele is determined by its
-  semi-local components.
-* `TauCeti.finiteIdeleSemilocalHom_map_finiteAdeleGaloisAction`: taking semi-local components is
-  Galois equivariant.
 * `TauCeti.mem_finiteSIdeles_iff_valued`: a finite idele is an `S`-idele exactly when its
   components at the places not above `S` have valuation one.
 
@@ -78,103 +64,6 @@ universe u
 
 variable {K : Type u} [Field K] [NumberField K] (L : Type u) [Field L] [NumberField L]
   [Algebra K L]
-
-/-! ### The semi-local components of a finite idele -/
-
-section SemilocalComponent
-
-variable (v : HeightOneSpectrum (𝒪 K))
-
-/-- **The semi-local component of a finite idele.** The components of a finite idele of `L` at
-the places of `L` above the finite place `v` of `K`, as a unit of `K_v ⊗[K] L`. -/
-def finiteIdeleSemilocalHom : (FiniteAdeleRing (𝒪 L) L)ˣ →* (v.adicCompletion K ⊗[K] L)ˣ :=
-  Units.map (finiteAdeleSemilocalHom L v)
-
-variable {L v}
-
-/-- The semi-local component of a finite idele, as a unit of `K_v ⊗[K] L`, has the semi-local
-component of the underlying finite adele as its value. -/
-@[simp]
-theorem coe_finiteIdeleSemilocalHom (a : (FiniteAdeleRing (𝒪 L) L)ˣ) :
-    (finiteIdeleSemilocalHom L v a : v.adicCompletion K ⊗[K] L) =
-      finiteAdeleSemilocalHom L v a :=
-  (rfl)
-
-/-- Under the semi-local decomposition, the semi-local component of a finite idele is its family
-of components at the places above `v`. -/
-private theorem semilocalEquiv_finiteIdeleSemilocalHom (a : (FiniteAdeleRing (𝒪 L) L)ˣ)
-    (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) :
-    semilocalEquiv L v (finiteIdeleSemilocalHom L v a) w = (a : FiniteAdeleRing (𝒪 L) L) w.1 := by
-  rw [coe_finiteIdeleSemilocalHom, semilocalEquiv_finiteAdeleSemilocalHom]
-
-/-- **A finite idele is determined by its semi-local components.** -/
-theorem eq_of_forall_finiteIdeleSemilocalHom_eq {a b : (FiniteAdeleRing (𝒪 L) L)ˣ}
-    (h : ∀ v : HeightOneSpectrum (𝒪 K),
-      finiteIdeleSemilocalHom L v a = finiteIdeleSemilocalHom L v b) :
-    a = b := by
-  refine Units.ext (FiniteAdeleRing.ext L fun w ↦ ?_)
-  rw [← semilocalEquiv_finiteIdeleSemilocalHom (v := w.under (𝒪 K)) a ⟨w, inferInstance⟩,
-    ← semilocalEquiv_finiteIdeleSemilocalHom (v := w.under (𝒪 K)) b ⟨w, inferInstance⟩,
-    h (w.under (𝒪 K))]
-
-variable (v) in
-/-- **Taking semi-local components is Galois equivariant.** The semi-local component of the
-transport of a finite idele along `σ ∈ Aut(L/K)` is the image of its semi-local component under
-`id ⊗ σ`. -/
-theorem finiteIdeleSemilocalHom_map_finiteAdeleGaloisAction (σ : L ≃ₐ[K] L)
-    (a : (FiniteAdeleRing (𝒪 L) L)ˣ) :
-    finiteIdeleSemilocalHom L v
-        (Units.map (GlobalNumberFields.finiteAdeleGaloisAction K L σ : _ →* _) a) =
-      Units.map (semilocalGaloisHom L v σ : _ →* _) (finiteIdeleSemilocalHom L v a) := by
-  have h : (semilocalGaloisHom L v σ).toAlgHom =
-      Algebra.TensorProduct.map (AlgHom.id _ _) (σ : L →ₐ[K] L) :=
-    Algebra.TensorProduct.ext' fun _ _ ↦ by simp
-  ext : 1
-  simpa [GlobalNumberFields.finiteAdeleGaloisAction_apply,
-    finiteAdeleSemilocalHom_finiteAdeleEquiv] using (DFunLike.congr_fun h _).symm
-
-/-- **The finite idele with prescribed semi-local components.** A family of units
-`y v ∈ (K_v ⊗[K] L)ˣ`, integral in every component for all but finitely many `v`, assembles to a
-finite idele of `L` whose component at a place `w` above `v` is the component of `y v` at `w`. -/
-def finiteIdeleOfSemilocalUnits (y : ∀ v : HeightOneSpectrum (𝒪 K), (v.adicCompletion K ⊗[K] L)ˣ)
-    (hy : ∀ᶠ v in Filter.cofinite, y v ∈ semilocalIntegralUnits L v) :
-    (FiniteAdeleRing (𝒪 L) L)ˣ :=
-  RestrictedProduct.mkUnit
-    (fun w ↦ Units.map ((Pi.evalMonoidHom (fun w' :
-        {w' : HeightOneSpectrum (𝒪 L) // w'.asIdeal.LiesOver (w.under (𝒪 K)).asIdeal} ↦
-          w'.1.adicCompletion L) ⟨w, inferInstance⟩).comp
-        (semilocalEquiv L (w.under (𝒪 K)) : _ →* _)) (y (w.under (𝒪 K))))
-    (by
-      filter_upwards [(tendsto_under_cofinite (𝒪 K) (𝒪 L)).eventually hy] with w hw
-      exact adicCompletionIntegers.mem_units_iff_valued_eq_one.2
-        ((mem_semilocalIntegralUnits_iff _ _).1 hw ⟨w, inferInstance⟩))
-
-/-- The component of `finiteIdeleOfSemilocalUnits y hy` at a place `w` of `L` is the component
-at `w` of the prescribed unit `y v`, for `v` the place of `K` below `w`. -/
-theorem coe_finiteIdeleOfSemilocalUnits_apply
-    (y : ∀ v : HeightOneSpectrum (𝒪 K), (v.adicCompletion K ⊗[K] L)ˣ)
-    (hy : ∀ᶠ v in Filter.cofinite, y v ∈ semilocalIntegralUnits L v)
-    (w : HeightOneSpectrum (𝒪 L)) :
-    (finiteIdeleOfSemilocalUnits y hy : FiniteAdeleRing (𝒪 L) L) w =
-      semilocalEquiv L (w.under (𝒪 K)) (y (w.under (𝒪 K))) ⟨w, inferInstance⟩ :=
-  -- `rfl` deliberately unfolds `RestrictedProduct.mkUnit`, `Units.map` and `Pi.evalMonoidHom`
-  -- in the definition of `finiteIdeleOfSemilocalUnits`
-  (rfl)
-
-/-- The semi-local components of `finiteIdeleOfSemilocalUnits y hy` are the prescribed units
-`y v`. -/
-@[simp]
-theorem finiteIdeleSemilocalHom_finiteIdeleOfSemilocalUnits
-    (y : ∀ v : HeightOneSpectrum (𝒪 K), (v.adicCompletion K ⊗[K] L)ˣ)
-    (hy : ∀ᶠ v in Filter.cofinite, y v ∈ semilocalIntegralUnits L v) :
-    finiteIdeleSemilocalHom L v (finiteIdeleOfSemilocalUnits y hy) = y v := by
-  refine Units.ext ((semilocalEquiv L v).injective (funext fun w ↦ ?_))
-  rw [semilocalEquiv_finiteIdeleSemilocalHom]
-  obtain ⟨w, hw⟩ := w
-  obtain rfl := under_eq_of_liesOver hw
-  exact coe_finiteIdeleOfSemilocalUnits_apply y hy w
-
-end SemilocalComponent
 
 /-! ### The finite `S`-ideles -/
 
