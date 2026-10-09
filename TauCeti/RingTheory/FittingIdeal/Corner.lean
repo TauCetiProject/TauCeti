@@ -9,13 +9,13 @@ public import TauCeti.RingTheory.FittingIdeal.Determinant
 import Mathlib.Tactic.LinearCombination
 
 /-!
-# Maximal minors of a matrix with left and right null vectors
+# Codimension-one minors of a matrix with left and right null vectors
 
 For a square matrix of size `n + 1`, left and right null vectors whose last coordinates
 are units allow its `n`-minors ideal to be computed from its last principal minor.
 The right null vector removes the last relation generator, and the left null vector
 expresses the last ambient coordinate in terms of the others. No rank or domain
-assumption is needed, so the formula also applies when every maximal minor vanishes.
+assumption is needed, so the formula also applies when every codimension-one minor vanishes.
 
 This is the algebraic calculation relating a Burau corner determinant to the
 presentation ideal of an Alexander module.

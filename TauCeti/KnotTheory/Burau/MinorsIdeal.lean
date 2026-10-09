@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.FittingIdeal.Corner
 /-!
 # The Burau presentation ideal
 
-The maximal minors of the unreduced Burau matrix minus the identity generate the
+The codimension-one minors of the unreduced Burau matrix minus the identity generate the
 principal ideal of the Burau--Alexander corner determinant. Equivalently, the first
 Fitting ideal of its cokernel is that principal ideal. These formulas compare the
 determinant algorithm with the presentation-ideal algorithm for Alexander invariants.
@@ -32,9 +32,9 @@ open Matrix KnotTheory LinearMap
 
 variable {R : Type*} [CommRing R]
 
-/-- The maximal minors of `burau β - 1` generate the ideal of its Alexander
+/-- The codimension-one minors of `burau β - 1` generate the ideal of its Alexander
 corner determinant. -/
-theorem minorsIdeal_range_burau_sub_one (β : MarkovBraid) (t : Rˣ) :
+theorem minorsIdeal_range_burau_sub_one_eq_span_burauAlexander (β : MarkovBraid) (t : Rˣ) :
     (range ((burau (β.predStrands + 1) t β.braid :
       Matrix (Fin (β.predStrands + 1)) (Fin (β.predStrands + 1)) R) - 1).mulVecLin).minorsIdeal
         β.predStrands = Ideal.span {β.burauAlexander t} := by
@@ -46,7 +46,7 @@ theorem minorsIdeal_range_burau_sub_one (β : MarkovBraid) (t : Rˣ) :
 /-- The first Fitting ideal of the unreduced Burau cokernel is the principal
 Alexander ideal, including for the one-strand unknot. -/
 @[simp]
-theorem fittingIdeal_coker_burau_sub_one_one (β : MarkovBraid) (t : Rˣ) :
+theorem fittingIdeal_coker_burau_sub_one_one_eq_span_burauAlexander (β : MarkovBraid) (t : Rˣ) :
     fittingIdeal R ((Fin (β.predStrands + 1) → R) ⧸
       range ((burau (β.predStrands + 1) t β.braid :
         Matrix (Fin (β.predStrands + 1)) (Fin (β.predStrands + 1)) R) - 1).mulVecLin) 1 =
@@ -54,6 +54,6 @@ theorem fittingIdeal_coker_burau_sub_one_one (β : MarkovBraid) (t : Rˣ) :
   nontriviality R
   rw [fittingIdeal_eq_minorsIdeal_ker (Submodule.mkQ_surjective _),
     Submodule.ker_mkQ, Module.finrank_fin_fun]
-  simpa only [Nat.add_sub_cancel] using β.minorsIdeal_range_burau_sub_one t
+  simpa only [Nat.add_sub_cancel] using β.minorsIdeal_range_burau_sub_one_eq_span_burauAlexander t
 
 end TauCeti.MarkovBraid
