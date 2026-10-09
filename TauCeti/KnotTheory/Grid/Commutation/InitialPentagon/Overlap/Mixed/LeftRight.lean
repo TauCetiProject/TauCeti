@@ -282,6 +282,8 @@ theorem coveredSquares_val_add_val_recutLeftEqRightFirst
     rw [hEunder]
     exact hrecut.isRepartition
   have hEbottom : E.first.bottom = D.second.bottom := by
+    -- `toGridRectangleDecomposition` is the abbreviation for the parent two-step decomposition,
+    -- so `E.first` is its first rectangle; restate the goal through it for `hEunder` to rewrite.
     change E.toGridRectangleDecomposition.first.bottom = _
     rw [hEunder]
     exact (D.toGridRectangleDecomposition.isRecutOfLeftEqRight_recut hcommon
