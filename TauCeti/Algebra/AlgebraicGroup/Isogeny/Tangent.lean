@@ -83,7 +83,8 @@ theorem finrank_lie_eq (hf : IsIsogeny f) :
 /-- The differential of an isogeny between smooth finite-type affine groups is bijective
 exactly when its scheme-theoretic kernel is étale. This distinguishes separable isogenies
 from inseparable ones in positive characteristic. -/
-theorem algebraEtale_kernel_iff_bijective_derivationCompLieHom (hf : IsIsogeny f) :
+theorem algebraEtale_quotient_kernelHopfIdeal_iff_bijective_derivationCompLieHom
+    (hf : IsIsogeny f) :
     Algebra.Etale k (K ⧸ (kernelHopfIdeal f).toIdeal) ↔
       Function.Bijective (derivationCompLieHom (B := k) f.hom) := by
   rw [algebraEtale_quotient_kernelHopfIdeal_iff]
@@ -98,7 +99,7 @@ noncomputable def lieEquivOfEtaleKernel (hf : IsIsogeny f)
     Derivation k K (Bialgebra.CounitAlgebra k K k) ≃ₗ⁅k⁆
       Derivation k H (Bialgebra.CounitAlgebra k H k) :=
   LieEquiv.ofBijective (derivationCompLieHom (B := k) f.hom)
-    (hf.algebraEtale_kernel_iff_bijective_derivationCompLieHom.mp hker)
+    (hf.algebraEtale_quotient_kernelHopfIdeal_iff_bijective_derivationCompLieHom.mp hker)
 
 /-- The forward Lie homomorphism of the equivalence is the differential. -/
 @[simp]
