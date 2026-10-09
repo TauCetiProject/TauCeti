@@ -208,7 +208,8 @@ private theorem enorm_le_descendingSlope_of_hasFDerivAt (hf : HasFDerivAt f f' x
           (𝓝[>] 0)).trans_le (limsup_le_limsup_of_le hmap)
 
 /-- On a real normed space, the descending slope at `x` of a function with derivative `f'` at `x`
-is the norm of `f'`: the function decreases fastest in the direction where `f'` is largest. -/
+is the norm of `f'`: the function decreases fastest in the direction opposite to where `f'`
+is largest. -/
 theorem _root_.HasFDerivAt.descendingSlope_eq (hf : HasFDerivAt f f' x) :
     descendingSlope (fun y ↦ (f y : EReal)) x = ‖f'‖ₑ :=
   le_antisymm (descendingSlope_le_enorm_of_hasFDerivAt hf)
