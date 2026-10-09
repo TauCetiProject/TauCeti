@@ -158,19 +158,14 @@ theorem exists_algEquiv_reverseEven_eq_neg_J_mul_transpose_mul_J (Q : QuadraticF
 
 /-- **The dimension-five symplectic model is split exactly when the even Clifford algebra is.**
 For a five-dimensional quadratic space, there is a matrix model carrying Clifford reversal to
-the standard symplectic adjoint if and only if the even Clifford algebra is a matrix algebra. -/
+the standard symplectic adjoint if and only if the even Clifford algebra splits, `C₀ ≃ M₄(K)`. -/
 theorem exists_algEquiv_reverseEven_eq_neg_J_mul_transpose_mul_J_iff
     (Q : QuadraticForm K V) (hV : finrank K V = 5) :
     (∃ e : even Q ≃ₐ[K] Matrix (Fin 2 ⊕ Fin 2) (Fin 2 ⊕ Fin 2) K,
       ∀ x, e (reverseEven Q x) = -(J (Fin 2) K * (e x)ᵀ * J (Fin 2) K)) ↔
-      Nonempty (even Q ≃ₐ[K] Matrix (Fin 2 ⊕ Fin 2) (Fin 2 ⊕ Fin 2) K) := by
-  constructor
-  · rintro ⟨e, -⟩
-    exact ⟨e⟩
-  · rintro ⟨e⟩
-    let e₄ : even Q ≃ₐ[K] Matrix (Fin 4) (Fin 4) K :=
-      e.trans (Matrix.reindexAlgEquiv K K finSumFinEquiv)
-    exact exists_algEquiv_reverseEven_eq_neg_J_mul_transpose_mul_J Q hV e₄
+      Nonempty (even Q ≃ₐ[K] Matrix (Fin 4) (Fin 4) K) :=
+  ⟨fun ⟨e, _⟩ => ⟨e.trans (Matrix.reindexAlgEquiv K K finSumFinEquiv)⟩,
+    fun ⟨e⟩ => exists_algEquiv_reverseEven_eq_neg_J_mul_transpose_mul_J Q hV e⟩
 
 /-- **Split `Spin₅` is `Sp₄`.** For a nondegenerate quadratic form on a five-dimensional space
 whose even Clifford algebra splits, `C₀ ≃ M₄(K)`, the group `Spin(Q)` is isomorphic to the
