@@ -56,9 +56,11 @@ private theorem hyperbolicFour_finrank :
   simp [SplitEvenSpace]
 
 private theorem nondegenerate_hyperbolicFour :
-    (splitEvenForm K 2).Nondegenerate :=
-  (splitEvenPolarization K 2).nondegenerate_of_line_eq_bot
-    (splitEvenPolarization_line K 2)
+    (splitEvenForm K 2).Nondegenerate := by
+  rw [show splitEvenForm K 2 = QuadraticForm.dualProd K (Fin 2 → K) by
+    ext x
+    simp]
+  exact nondegenerate_dualProd (Module.eval_apply_injective K)
 
 private theorem hyperbolicFour_W_ne_bot :
     (splitEvenPolarization K 2).W ≠ ⊥ :=
@@ -67,7 +69,11 @@ private theorem hyperbolicFour_W_ne_bot :
       (hyperbolicFour_finrank K)]
     norm_num
 
-variable [Invertible (2 : K)]
+variable [NeZero (2 : K)]
+
+/-- The internal invertibility witness used by the characteristic-not-two Clifford APIs. -/
+local instance hyperbolicFourInvertibleTwo : Invertible (2 : K) :=
+  invertibleOfNonzero (NeZero.ne (2 : K))
 
 /-- The even Clifford algebra of the four-dimensional hyperbolic space is a product of two
 two-by-two matrix algebras. The two factors are its actions on the half-spin summands of the
