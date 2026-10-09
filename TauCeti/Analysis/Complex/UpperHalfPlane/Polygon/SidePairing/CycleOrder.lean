@@ -19,9 +19,6 @@ presentations. Neither discreteness nor a fundamental-domain assumption is neede
 condition alone determines this order. The converse angle condition for a fundamental polygon
 requires no-overlap and is a separate statement.
 
-The argument uses the accumulated sector angles and the faithful derivative character of a point
-stabilizer, followed by Mathlib's `Complex.isPrimitiveRoot_exp`.
-
 ## References
 
 * Alan Beardon, *The Geometry of Discrete Groups*, Chapter 9.
