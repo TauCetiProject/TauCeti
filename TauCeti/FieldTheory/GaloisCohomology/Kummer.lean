@@ -168,17 +168,9 @@ theorem kummerCoeffIncl_kummerCocycle
 /-- **The Kummer ratio `g ↦ g α / α` is a continuous `1`-cocycle** with values in `μₙ`. -/
 theorem kummerCocycle_mem_Z1
     (hα : α ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a) :
-    kummerCocycle hα ∈ Z1 (AbsoluteGaloisGroup K) (KummerCoeff K n) := by
-  have hd0 : ∀ g : AbsoluteGaloisGroup K, kummerCoeffIncl K n (kummerCocycle hα g) =
-      d0 (AbsoluteGaloisGroup K) (UnitsCoeff K) (Additive.ofMul α) g := fun g =>
-    (kummerCoeffIncl_kummerCocycle hα g).trans (d0_apply _ g).symm
-  refine mem_Z1_iff.2 ⟨continuous_of_injective_comp (kummerCoeffIncl_injective K n) ?_,
-    fun g h => kummerCoeffIncl_injective K n ?_⟩
-  · simpa only [hd0] using
-      continuous_d0_apply (G := AbsoluteGaloisGroup K) (Additive.ofMul α : UnitsCoeff K)
-  · rw [map_add, kummerCoeffIncl_equivariant, kummerCoeffIncl_kummerCocycle,
-      kummerCoeffIncl_kummerCocycle, kummerCoeffIncl_kummerCocycle, smul_sub, smul_smul]
-    abel
+    kummerCocycle hα ∈ Z1 (AbsoluteGaloisGroup K) (KummerCoeff K n) :=
+  ContCohomology.mem_Z1_of_injective_comp_eq_d0 (kummerCoeffIncl_injective K n)
+    (kummerCoeffIncl_equivariant K n) (kummerCoeffIncl_kummerCocycle hα)
 
 /-- The class in `H¹(G_K, μₙ)` of the Kummer cocycle of a chosen `n`th root. -/
 def kummerCocycleClass
