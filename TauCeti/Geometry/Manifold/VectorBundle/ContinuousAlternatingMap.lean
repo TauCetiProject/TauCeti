@@ -79,7 +79,7 @@ theorem contMDiffOn_continuousAlternatingMapCoordChange
 variable [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul ℝ (E₂ x)]
 
 /-- Smoothness of the existing alternating-map prebundle, using its existing coordinate changes. -/
-instance Bundle.ContinuousAlternatingMap.vectorPrebundle.isContMDiff
+instance instIsContMDiffContinuousAlternatingMapVectorPrebundle
     [ContMDiffVectorBundle n F₁ E₁ IB] [ContMDiffVectorBundle n F₂ E₂ IB] :
     (Bundle.ContinuousAlternatingMap.vectorPrebundle ℝ ι F₁ E₁ F₂ E₂).IsContMDiff IB n where
   exists_contMDiffCoordChange := by
@@ -89,7 +89,7 @@ instance Bundle.ContinuousAlternatingMap.vectorPrebundle.isContMDiff
       Pretrivialization.continuousAlternatingMapCoordChange_apply⟩
 
 /-- Alternating maps between fibers of real `C^n` vector bundles form a `C^n` vector bundle. -/
-instance ContMDiffVectorBundle.continuousAlternatingMap
+instance instContMDiffVectorBundleContinuousAlternatingMap
     [ContMDiffVectorBundle n F₁ E₁ IB] [ContMDiffVectorBundle n F₂ E₂ IB] :
     ContMDiffVectorBundle n (F₁ [⋀^ι]→L[ℝ] F₂) (fun x ↦ E₁ x [⋀^ι]→L[ℝ] E₂ x) IB :=
   (Bundle.ContinuousAlternatingMap.vectorPrebundle ℝ ι F₁ E₁ F₂ E₂).contMDiffVectorBundle IB
