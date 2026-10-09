@@ -276,7 +276,7 @@ agreement subring of the identity and Frobenius, followed by the inclusion of th
 private theorem exists_homeomorph_eqLocus (U : (Opens (spaX hI))ᵒᵖ) :
     ∃ e : (spaXPresheaf P hI).obj U ≃ₜ RingHom.eqLocus (RingHom.id _)
         ((pushforwardSpaYPresheafFrobenius P hI).app U).hom.1,
-      ∀ x, ((spaXPresheafι P hI).app U).hom.1 x = (e x).1 := by
+      ⇑((spaXPresheafι P hI).app U).hom.1 = Subtype.val ∘ e := by
   -- Evaluation at `U` followed by the inclusion into `TopCommRingCat` preserves the equalizer,
   -- which in `TopCommRingCat` is the agreement subring `equalizerFork`.
   let G := (evaluation (Opens (spaX hI))ᵒᵖ CompleteSeparatedTopCommRingCat.{v}).obj U ⋙
@@ -285,7 +285,7 @@ private theorem exists_homeomorph_eqLocus (U : (Opens (spaX hI))ᵒᵖ) :
   let e := hl.conePointUniqueUpToIso (TopCommRingCat.equalizerForkIsLimit _ _)
   have he := hl.conePointUniqueUpToIso_hom_comp (TopCommRingCat.equalizerForkIsLimit _ _)
     WalkingParallelPair.zero
-  refine ⟨TopCat.homeoOfIso ((forget₂ _root_.TopCommRingCat TopCat).mapIso e), fun x ↦ ?_⟩
+  refine ⟨TopCat.homeoOfIso ((forget₂ _root_.TopCommRingCat TopCat).mapIso e), funext fun x ↦ ?_⟩
   exact (ConcreteCategory.congr_hom he x).symm
 
 /-- **The sections of `𝒪_𝒳` embed in those of `𝒪_𝒴`**: on each open `U ⊆ 𝒳`, the inclusion
@@ -295,7 +295,7 @@ theorem isClosedEmbedding_spaXPresheafι_app (U : (Opens (spaX hI))ᵒᵖ) :
   obtain ⟨e, he⟩ := exists_homeomorph_eqLocus P hI U
   have hcl : IsClosed {s | s = ((pushforwardSpaYPresheafFrobenius P hI).app U).hom.1 s} :=
     isClosed_eq continuous_id ((pushforwardSpaYPresheafFrobenius P hI).app U).hom.2
-  rw [show ⇑((spaXPresheafι P hI).app U).hom.1 = Subtype.val ∘ e from funext he]
+  rw [he]
   -- membership in `RingHom.eqLocus f g` is `f s = g s` by definition (`RingHom.mem_eqLocus` is
   -- proved by `Iff.rfl`), so the agreement subring is the closed set `hcl` as a subtype
   exact hcl.isClosedEmbedding_subtypeVal.comp e.isClosedEmbedding
@@ -306,8 +306,7 @@ theorem range_spaXPresheafι_app (U : (Opens (spaX hI))ᵒᵖ) :
     Set.range ((spaXPresheafι P hI).app U).hom.1 =
       {s | ((pushforwardSpaYPresheafFrobenius P hI).app U).hom.1 s = s} := by
   obtain ⟨e, he⟩ := exists_homeomorph_eqLocus P hI U
-  rw [show ⇑((spaXPresheafι P hI).app U).hom.1 = Subtype.val ∘ e from funext he,
-    Set.range_comp, e.range_coe, Set.image_univ, Subtype.range_coe_subtype]
+  rw [he, Set.range_comp, e.range_coe, Set.image_univ, Subtype.range_coe_subtype]
   ext s
   exact eq_comm
 
