@@ -21,17 +21,17 @@ counts, rather than only their intermediate grid state. This is the input for th
 pairing of juxtaposed domains in the proof of commutation invariance.
 
 The two kinds of hexagon and pentagon are represented by sum types. This retains the distinction
-between the two turn sides while avoiding four parallel decomposition structures. The three
-structures here expose their intermediate state and constituent domains, have extensionality
-lemmas, and their counted finite families have membership characterizations.
+between the two turn sides while avoiding four parallel decomposition types. All three composite
+domain families specialize one generic two-step decomposition, whose counted finite families have
+membership characterizations.
 
 ## Main results
 
 * `TauCeti.GridDiagram.sum_commutationHexagonCoefficient_mul_unblockedCoefficient` and
   `TauCeti.GridDiagram.sum_unblockedCoefficient_mul_commutationHexagonCoefficient` rewrite the
   two rectangle--hexagon matrix products as composite-domain sums.
-* `TauCeti.GridDiagram.sum_commutationPentagonCoefficient_mul_reverseCoefficient` rewrites the
-  round-trip commutation coefficient as a sum over pairs of pentagons.
+* `TauCeti.GridDiagram.sum_rename_commutationPentagonCoefficient_mul_commutationPentagonCoefficient`
+  rewrites the round-trip commutation coefficient as a sum over pairs of pentagons.
 * `TauCeti.GridDiagram.unblockedDifferential_commutationHomotopy_add_eq_iff_decompositions`
   states the homotopy equation entirely in terms of the three finite domain families.
 
@@ -56,163 +56,23 @@ initial side. -/
 abbrev GridCommutationPentagonBetween {n : ℕ} (a s : Fin n) (x y : GridState n) :=
   GridPentagonBetween a s x y ⊕ GridInitialPentagonBetween a s x y
 
-/-- A two-step domain consisting of a commutation hexagon followed by a rectangle. -/
-structure GridHexagonRectangleDecomposition {n : ℕ} (a s s' : Fin n)
-    (x z : GridState n) where
-  /-- The grid state at which the hexagon and rectangle meet. -/
+/-- A pair of composable domains through an intermediate grid state. -/
+structure GridTwoStepDecomposition {n : ℕ}
+    (A B : GridState n → GridState n → Type*) (x z : GridState n) where
+  /-- The grid state at which the two domains meet. -/
   middle : GridState n
-  /-- The first domain, a hexagon of either kind. -/
-  hexagon : GridCommutationHexagonBetween a s s' x middle
-  /-- The second domain, an oriented rectangle. -/
-  rectangle : GridRectangleBetween middle z
+  /-- The first domain, from the source to the intermediate state. -/
+  first : A x middle
+  /-- The second domain, from the intermediate state to the target. -/
+  second : B middle z
 
-/-- A two-step domain consisting of a rectangle followed by a commutation hexagon. -/
-structure GridRectangleHexagonDecomposition {n : ℕ} (a s s' : Fin n)
-    (x z : GridState n) where
-  /-- The grid state at which the rectangle and hexagon meet. -/
-  middle : GridState n
-  /-- The first domain, an oriented rectangle. -/
-  rectangle : GridRectangleBetween x middle
-  /-- The second domain, a hexagon of either kind. -/
-  hexagon : GridCommutationHexagonBetween a s s' middle z
+namespace GridTwoStepDecomposition
 
-/-- A two-step domain consisting of a commutation pentagon followed by a pentagon for the reverse
-commutation. -/
-structure GridPentagonPairDecomposition {n : ℕ} (a s b t : Fin n)
-    (x z : GridState n) where
-  /-- The grid state at which the two pentagons meet. -/
-  middle : GridState n
-  /-- The pentagon for the forward commutation. -/
-  first : GridCommutationPentagonBetween a s x middle
-  /-- The pentagon for the reverse commutation. -/
-  second : GridCommutationPentagonBetween b t middle z
+variable {n : ℕ} {A B : GridState n → GridState n → Type*} {x z : GridState n}
 
-namespace GridHexagonRectangleDecomposition
-
-variable {n : ℕ} {a s s' : Fin n} {x z : GridState n}
-
-/-- Two hexagon--rectangle decompositions are equal when their intermediate states and domains
-agree. -/
+/-- Two two-step decompositions are equal when their intermediate states and domains agree. -/
 @[ext]
-theorem ext {D E : GridHexagonRectangleDecomposition a s s' x z}
-    (hmiddle : D.middle = E.middle) (hhexagon : HEq D.hexagon E.hexagon)
-    (hrectangle : HEq D.rectangle E.rectangle) : D = E := by
-  cases D
-  cases E
-  simp_all
-
-private def sigmaEquiv :
-    GridHexagonRectangleDecomposition a s s' x z ≃
-      Σ y : GridState n,
-        Σ _hexagon : GridCommutationHexagonBetween a s s' x y, GridRectangleBetween y z where
-  toFun D := ⟨D.middle, D.hexagon, D.rectangle⟩
-  invFun D := ⟨D.1, D.2.1, D.2.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-/-- The finite family of hexagon--rectangle decompositions selected by prescribed families of
-hexagons and rectangles. -/
-noncomputable def decompositionsOf
-    (hexagons : ∀ u v : GridState n,
-      Finset (GridCommutationHexagonBetween a s s' u v))
-    (rectangles : ∀ u v : GridState n, Finset (GridRectangleBetween u v))
-    (x z : GridState n) : Finset (GridHexagonRectangleDecomposition a s s' x z) := by
-  classical
-  exact ((Finset.univ.sigma fun y => (hexagons x y).sigma fun _ => rectangles y z).map
-    (sigmaEquiv (a := a) (s := s) (s' := s') (x := x) (z := z)).symm.toEmbedding)
-
-/-- Membership in `decompositionsOf` is membership of both constituent domains. -/
-@[simp]
-theorem mem_decompositionsOf
-    (hexagons : ∀ u v : GridState n,
-      Finset (GridCommutationHexagonBetween a s s' u v))
-    (rectangles : ∀ u v : GridState n, Finset (GridRectangleBetween u v))
-    (D : GridHexagonRectangleDecomposition a s s' x z) :
-    D ∈ decompositionsOf hexagons rectangles x z ↔
-      D.hexagon ∈ hexagons x D.middle ∧ D.rectangle ∈ rectangles D.middle z := by
-  classical
-  simp [decompositionsOf, sigmaEquiv]
-
-/-- A sum over selected hexagon--rectangle decompositions is the corresponding iterated sum. -/
-theorem sum_decompositionsOf {M : Type*} [AddCommMonoid M]
-    (hexagons : ∀ u v : GridState n,
-      Finset (GridCommutationHexagonBetween a s s' u v))
-    (rectangles : ∀ u v : GridState n, Finset (GridRectangleBetween u v))
-    (w : ∀ y, GridCommutationHexagonBetween a s s' x y → GridRectangleBetween y z → M) :
-    ∑ D ∈ decompositionsOf hexagons rectangles x z, w D.middle D.hexagon D.rectangle =
-      ∑ y, ∑ P ∈ hexagons x y, ∑ r ∈ rectangles y z, w y P r := by
-  classical
-  simp [decompositionsOf, sigmaEquiv, Finset.sum_sigma']
-
-end GridHexagonRectangleDecomposition
-
-namespace GridRectangleHexagonDecomposition
-
-variable {n : ℕ} {a s s' : Fin n} {x z : GridState n}
-
-/-- Two rectangle--hexagon decompositions are equal when their intermediate states and domains
-agree. -/
-@[ext]
-theorem ext {D E : GridRectangleHexagonDecomposition a s s' x z}
-    (hmiddle : D.middle = E.middle) (hrectangle : HEq D.rectangle E.rectangle)
-    (hhexagon : HEq D.hexagon E.hexagon) : D = E := by
-  cases D
-  cases E
-  simp_all
-
-private def sigmaEquiv :
-    GridRectangleHexagonDecomposition a s s' x z ≃
-      Σ y : GridState n,
-        Σ _rectangle : GridRectangleBetween x y, GridCommutationHexagonBetween a s s' y z where
-  toFun D := ⟨D.middle, D.rectangle, D.hexagon⟩
-  invFun D := ⟨D.1, D.2.1, D.2.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-/-- The finite family of rectangle--hexagon decompositions selected by prescribed families of
-rectangles and hexagons. -/
-noncomputable def decompositionsOf
-    (rectangles : ∀ u v : GridState n, Finset (GridRectangleBetween u v))
-    (hexagons : ∀ u v : GridState n,
-      Finset (GridCommutationHexagonBetween a s s' u v))
-    (x z : GridState n) : Finset (GridRectangleHexagonDecomposition a s s' x z) := by
-  classical
-  exact ((Finset.univ.sigma fun y => (rectangles x y).sigma fun _ => hexagons y z).map
-    (sigmaEquiv (a := a) (s := s) (s' := s') (x := x) (z := z)).symm.toEmbedding)
-
-/-- Membership in `decompositionsOf` is membership of both constituent domains. -/
-@[simp]
-theorem mem_decompositionsOf
-    (rectangles : ∀ u v : GridState n, Finset (GridRectangleBetween u v))
-    (hexagons : ∀ u v : GridState n,
-      Finset (GridCommutationHexagonBetween a s s' u v))
-    (D : GridRectangleHexagonDecomposition a s s' x z) :
-    D ∈ decompositionsOf rectangles hexagons x z ↔
-      D.rectangle ∈ rectangles x D.middle ∧ D.hexagon ∈ hexagons D.middle z := by
-  classical
-  simp [decompositionsOf, sigmaEquiv]
-
-/-- A sum over selected rectangle--hexagon decompositions is the corresponding iterated sum. -/
-theorem sum_decompositionsOf {M : Type*} [AddCommMonoid M]
-    (rectangles : ∀ u v : GridState n, Finset (GridRectangleBetween u v))
-    (hexagons : ∀ u v : GridState n,
-      Finset (GridCommutationHexagonBetween a s s' u v))
-    (w : ∀ y, GridRectangleBetween x y → GridCommutationHexagonBetween a s s' y z → M) :
-    ∑ D ∈ decompositionsOf rectangles hexagons x z, w D.middle D.rectangle D.hexagon =
-      ∑ y, ∑ r ∈ rectangles x y, ∑ P ∈ hexagons y z, w y r P := by
-  classical
-  simp [decompositionsOf, sigmaEquiv, Finset.sum_sigma']
-
-end GridRectangleHexagonDecomposition
-
-namespace GridPentagonPairDecomposition
-
-variable {n : ℕ} {a s b t : Fin n} {x z : GridState n}
-
-/-- Two pentagon-pair decompositions are equal when their intermediate states and both pentagons
-agree. -/
-@[ext]
-theorem ext {D E : GridPentagonPairDecomposition a s b t x z}
+theorem ext {D E : GridTwoStepDecomposition A B x z}
     (hmiddle : D.middle = E.middle) (hfirst : HEq D.first E.first)
     (hsecond : HEq D.second E.second) : D = E := by
   cases D
@@ -220,48 +80,84 @@ theorem ext {D E : GridPentagonPairDecomposition a s b t x z}
   simp_all
 
 private def sigmaEquiv :
-    GridPentagonPairDecomposition a s b t x z ≃
-      Σ y : GridState n,
-        Σ _first : GridCommutationPentagonBetween a s x y,
-          GridCommutationPentagonBetween b t y z where
+    GridTwoStepDecomposition A B x z ≃ Σ y : GridState n, Σ _first : A x y, B y z where
   toFun D := ⟨D.middle, D.first, D.second⟩
   invFun D := ⟨D.1, D.2.1, D.2.2⟩
   left_inv _ := rfl
   right_inv _ := rfl
 
-/-- The finite family of pentagon-pair decompositions selected by prescribed forward and reverse
-pentagon families. -/
+/-- The finite family of two-step decompositions selected by prescribed domain families. -/
 noncomputable def decompositionsOf
-    (first : ∀ u v : GridState n, Finset (GridCommutationPentagonBetween a s u v))
-    (second : ∀ u v : GridState n, Finset (GridCommutationPentagonBetween b t u v))
-    (x z : GridState n) : Finset (GridPentagonPairDecomposition a s b t x z) := by
+    (first : ∀ u v : GridState n, Finset (A u v))
+    (second : ∀ u v : GridState n, Finset (B u v))
+    (x z : GridState n) : Finset (GridTwoStepDecomposition A B x z) := by
   classical
   exact ((Finset.univ.sigma fun y => (first x y).sigma fun _ => second y z).map
-    (sigmaEquiv (a := a) (s := s) (b := b) (t := t) (x := x) (z := z)).symm.toEmbedding)
+    (sigmaEquiv (A := A) (B := B) (x := x) (z := z)).symm.toEmbedding)
 
-/-- Membership in `decompositionsOf` is membership of both pentagons. -/
+/-- Membership in `decompositionsOf` is membership of both constituent domains. -/
 @[simp]
 theorem mem_decompositionsOf
-    (first : ∀ u v : GridState n, Finset (GridCommutationPentagonBetween a s u v))
-    (second : ∀ u v : GridState n, Finset (GridCommutationPentagonBetween b t u v))
-    (D : GridPentagonPairDecomposition a s b t x z) :
+    (first : ∀ u v : GridState n, Finset (A u v))
+    (second : ∀ u v : GridState n, Finset (B u v))
+    (D : GridTwoStepDecomposition A B x z) :
     D ∈ decompositionsOf first second x z ↔
       D.first ∈ first x D.middle ∧ D.second ∈ second D.middle z := by
   classical
   simp [decompositionsOf, sigmaEquiv]
 
-/-- A sum over selected pentagon-pair decompositions is the corresponding iterated sum. -/
+/-- A sum over selected two-step decompositions is the corresponding iterated sum. -/
 theorem sum_decompositionsOf {M : Type*} [AddCommMonoid M]
-    (first : ∀ u v : GridState n, Finset (GridCommutationPentagonBetween a s u v))
-    (second : ∀ u v : GridState n, Finset (GridCommutationPentagonBetween b t u v))
-    (w : ∀ y, GridCommutationPentagonBetween a s x y →
-      GridCommutationPentagonBetween b t y z → M) :
+    (first : ∀ u v : GridState n, Finset (A u v))
+    (second : ∀ u v : GridState n, Finset (B u v))
+    (w : ∀ y, A x y → B y z → M) :
     ∑ D ∈ decompositionsOf first second x z, w D.middle D.first D.second =
       ∑ y, ∑ P ∈ first x y, ∑ Q ∈ second y z, w y P Q := by
   classical
   simp [decompositionsOf, sigmaEquiv, Finset.sum_sigma']
 
-end GridPentagonPairDecomposition
+end GridTwoStepDecomposition
+
+/-- A two-step domain consisting of a commutation hexagon followed by a rectangle. -/
+abbrev GridHexagonRectangleDecomposition {n : ℕ} (a s s' : Fin n)
+    (x z : GridState n) :=
+  GridTwoStepDecomposition (GridCommutationHexagonBetween a s s') GridRectangleBetween x z
+
+namespace GridHexagonRectangleDecomposition
+
+/-- The commutation hexagon in a hexagon--rectangle decomposition. -/
+abbrev hexagon {n : ℕ} {a s s' : Fin n} {x z : GridState n}
+    (D : GridHexagonRectangleDecomposition a s s' x z) := D.first
+
+/-- The rectangle in a hexagon--rectangle decomposition. -/
+abbrev rectangle {n : ℕ} {a s s' : Fin n} {x z : GridState n}
+    (D : GridHexagonRectangleDecomposition a s s' x z) := D.second
+
+end GridHexagonRectangleDecomposition
+
+/-- A two-step domain consisting of a rectangle followed by a commutation hexagon. -/
+abbrev GridRectangleHexagonDecomposition {n : ℕ} (a s s' : Fin n)
+    (x z : GridState n) :=
+  GridTwoStepDecomposition GridRectangleBetween (GridCommutationHexagonBetween a s s') x z
+
+namespace GridRectangleHexagonDecomposition
+
+/-- The rectangle in a rectangle--hexagon decomposition. -/
+abbrev rectangle {n : ℕ} {a s s' : Fin n} {x z : GridState n}
+    (D : GridRectangleHexagonDecomposition a s s' x z) := D.first
+
+/-- The commutation hexagon in a rectangle--hexagon decomposition. -/
+abbrev hexagon {n : ℕ} {a s s' : Fin n} {x z : GridState n}
+    (D : GridRectangleHexagonDecomposition a s s' x z) := D.second
+
+end GridRectangleHexagonDecomposition
+
+/-- A two-step domain consisting of a commutation pentagon followed by a pentagon for the reverse
+commutation. -/
+abbrev GridPentagonPairDecomposition {n : ℕ} (a s b t : Fin n)
+    (x z : GridState n) :=
+  GridTwoStepDecomposition (GridCommutationPentagonBetween a s)
+    (GridCommutationPentagonBetween b t) x z
 
 namespace GridDiagram
 
@@ -341,7 +237,7 @@ theorem commutationPentagonWeight_inr {x y : GridState n}
 the commutation homotopy. -/
 noncomputable def hexagonRectangleDecompositions (x z : GridState n) :
     Finset (GridHexagonRectangleDecomposition C.column C.turnRow C.oppositeTurnRow x z) :=
-  GridHexagonRectangleDecomposition.decompositionsOf (G.commutationHexagons C)
+  GridTwoStepDecomposition.decompositionsOf (G.commutationHexagons C)
     G.unblockedRectangles x z
 
 /-- Membership in the counted hexagon--rectangle family is countedness of both domains. -/
@@ -358,7 +254,7 @@ theorem mem_hexagonRectangleDecompositions {x z : GridState n}
 after the differential. -/
 noncomputable def rectangleHexagonDecompositions (x z : GridState n) :
     Finset (GridRectangleHexagonDecomposition C.column C.turnRow C.oppositeTurnRow x z) :=
-  GridRectangleHexagonDecomposition.decompositionsOf G.unblockedRectangles
+  GridTwoStepDecomposition.decompositionsOf G.unblockedRectangles
     (G.commutationHexagons C) x z
 
 /-- Membership in the counted rectangle--hexagon family is countedness of both domains. -/
@@ -375,7 +271,7 @@ theorem mem_rectangleHexagonDecompositions {x z : GridState n}
 noncomputable def pentagonPairDecompositions (x z : GridState n) :
     Finset (GridPentagonPairDecomposition C.column C.turnRow C.reverse.column
       C.reverse.turnRow x z) :=
-  GridPentagonPairDecomposition.decompositionsOf (G.commutationPentagons C)
+  GridTwoStepDecomposition.decompositionsOf (G.commutationPentagons C)
     ((G.swapColumns C.column b).commutationPentagons C.reverse) x z
 
 /-- Membership in the counted pentagon-pair family is countedness of the forward and reverse
@@ -396,11 +292,25 @@ noncomputable def hexagonRectangleWeight {x z : GridState n}
     MvPolynomial (Fin n) R :=
   G.commutationHexagonWeight C R D.hexagon * G.OMonomial R D.rectangle.toGridRectangle
 
+/-- The weight of a hexagon--rectangle decomposition is the product of the two domain weights. -/
+theorem hexagonRectangleWeight_def {x z : GridState n}
+    (D : GridHexagonRectangleDecomposition C.column C.turnRow C.oppositeTurnRow x z) :
+    G.hexagonRectangleWeight C R D =
+      G.commutationHexagonWeight C R D.hexagon *
+        G.OMonomial R D.rectangle.toGridRectangle := (rfl)
+
 /-- The weight of a counted rectangle followed by a hexagon. -/
 noncomputable def rectangleHexagonWeight {x z : GridState n}
     (D : GridRectangleHexagonDecomposition C.column C.turnRow C.oppositeTurnRow x z) :
     MvPolynomial (Fin n) R :=
   G.OMonomial R D.rectangle.toGridRectangle * G.commutationHexagonWeight C R D.hexagon
+
+/-- The weight of a rectangle--hexagon decomposition is the product of the two domain weights. -/
+theorem rectangleHexagonWeight_def {x z : GridState n}
+    (D : GridRectangleHexagonDecomposition C.column C.turnRow C.oppositeTurnRow x z) :
+    G.rectangleHexagonWeight C R D =
+      G.OMonomial R D.rectangle.toGridRectangle *
+        G.commutationHexagonWeight C R D.hexagon := (rfl)
 
 /-- The weight of a forward pentagon followed by a reverse pentagon. The first factor is renamed
 because the forward commutation map is semilinear. -/
@@ -411,32 +321,60 @@ noncomputable def pentagonPairWeight {x z : GridState n}
   MvPolynomial.rename (Equiv.swap C.column b) (G.commutationPentagonWeight C R D.first) *
     (G.swapColumns C.column b).commutationPentagonWeight C.reverse R D.second
 
+/-- The weight of a pentagon pair is the product of the renamed forward weight and the reverse
+weight. -/
+theorem pentagonPairWeight_def {x z : GridState n}
+    (D : GridPentagonPairDecomposition C.column C.turnRow C.reverse.column
+      C.reverse.turnRow x z) :
+    G.pentagonPairWeight C R D =
+      MvPolynomial.rename (Equiv.swap C.column b) (G.commutationPentagonWeight C R D.first) *
+        (G.swapColumns C.column b).commutationPentagonWeight C.reverse R D.second := (rfl)
+
+/-- The coefficient that counts commutation hexagons of either turn-side kind. -/
+noncomputable def commutationHexagonCoefficient (x y : GridState n) :
+    MvPolynomial (Fin n) R :=
+  G.hexagonCoefficient R C x y + G.initialHexagonCoefficient R C x y
+
+/-- The commutation hexagon coefficient is the sum of the two turn-side coefficients. -/
+theorem commutationHexagonCoefficient_def (x y : GridState n) :
+    G.commutationHexagonCoefficient C R x y =
+      G.hexagonCoefficient R C x y + G.initialHexagonCoefficient R C x y := (rfl)
+
+/-- The coefficient that counts commutation pentagons of either turn-side kind. -/
+noncomputable def commutationPentagonCoefficient (x y : GridState n) :
+    MvPolynomial (Fin n) R :=
+  G.pentagonCoefficient R C x y + G.initialPentagonCoefficient R C x y
+
+/-- The commutation pentagon coefficient is the sum of the two turn-side coefficients. -/
+theorem commutationPentagonCoefficient_def (x y : GridState n) :
+    G.commutationPentagonCoefficient C R x y =
+      G.pentagonCoefficient R C x y + G.initialPentagonCoefficient R C x y := (rfl)
+
 /-- The sum of the two kinds of hexagon coefficients is the sum of their combined weights. -/
 theorem commutationHexagonCoefficient_eq_sum_weight (x y : GridState n) :
-    G.hexagonCoefficient R C x y + G.initialHexagonCoefficient R C x y =
+    G.commutationHexagonCoefficient C R x y =
       ∑ P ∈ G.commutationHexagons C x y, G.commutationHexagonWeight C R P := by
-  rw [G.hexagonCoefficient_def R C x y, G.initialHexagonCoefficient_def R C x y,
-    commutationHexagons, Finset.sum_disjSum]
-  rfl
+  rw [G.commutationHexagonCoefficient_def C R, G.hexagonCoefficient_def R C x y,
+    G.initialHexagonCoefficient_def R C x y, commutationHexagons, Finset.sum_disjSum]
+  simp only [commutationHexagonWeight_inl, commutationHexagonWeight_inr]
 
 /-- The sum of the two kinds of pentagon coefficients is the sum of their combined weights. -/
 theorem commutationPentagonCoefficient_eq_sum_weight (x y : GridState n) :
-    G.pentagonCoefficient R C x y + G.initialPentagonCoefficient R C x y =
+    G.commutationPentagonCoefficient C R x y =
       ∑ P ∈ G.commutationPentagons C x y, G.commutationPentagonWeight C R P := by
-  rw [G.pentagonCoefficient_def R C x y, G.initialPentagonCoefficient_def R C x y,
-    commutationPentagons, Finset.sum_disjSum]
-  rfl
+  rw [G.commutationPentagonCoefficient_def C R, G.pentagonCoefficient_def R C x y,
+    G.initialPentagonCoefficient_def R C x y, commutationPentagons, Finset.sum_disjSum]
+  simp only [commutationPentagonWeight_inl, commutationPentagonWeight_inr]
 
 /-- The hexagon--rectangle matrix product is the sum of the weights of the counted composite
 domains. -/
 theorem sum_commutationHexagonCoefficient_mul_unblockedCoefficient (x z : GridState n) :
     ∑ y : GridState n,
-        (G.hexagonCoefficient R C x y + G.initialHexagonCoefficient R C x y) *
-          G.unblockedCoefficient R y z =
+        G.commutationHexagonCoefficient C R x y * G.unblockedCoefficient R y z =
       ∑ D ∈ G.hexagonRectangleDecompositions C x z, G.hexagonRectangleWeight C R D := by
   simp_rw [G.commutationHexagonCoefficient_eq_sum_weight C R,
     G.unblockedCoefficient_def R, Finset.sum_mul_sum]
-  exact (GridHexagonRectangleDecomposition.sum_decompositionsOf
+  exact (GridTwoStepDecomposition.sum_decompositionsOf
     (G.commutationHexagons C) G.unblockedRectangles
     (fun _ P r => G.commutationHexagonWeight C R P * G.OMonomial R r.toGridRectangle)).symm
 
@@ -444,27 +382,27 @@ theorem sum_commutationHexagonCoefficient_mul_unblockedCoefficient (x z : GridSt
 domains. -/
 theorem sum_unblockedCoefficient_mul_commutationHexagonCoefficient (x z : GridState n) :
     ∑ y : GridState n, G.unblockedCoefficient R x y *
-        (G.hexagonCoefficient R C y z + G.initialHexagonCoefficient R C y z) =
+        G.commutationHexagonCoefficient C R y z =
       ∑ D ∈ G.rectangleHexagonDecompositions C x z, G.rectangleHexagonWeight C R D := by
   simp_rw [G.unblockedCoefficient_def R, G.commutationHexagonCoefficient_eq_sum_weight C R,
     Finset.sum_mul_sum]
-  exact (GridRectangleHexagonDecomposition.sum_decompositionsOf G.unblockedRectangles
+  exact (GridTwoStepDecomposition.sum_decompositionsOf G.unblockedRectangles
     (G.commutationHexagons C)
     (fun _ r P => G.OMonomial R r.toGridRectangle * G.commutationHexagonWeight C R P)).symm
 
 /-- The forward--reverse pentagon matrix product is the sum of the weights of the counted
 pentagon pairs. -/
-theorem sum_commutationPentagonCoefficient_mul_reverseCoefficient (x z : GridState n) :
+theorem sum_rename_commutationPentagonCoefficient_mul_commutationPentagonCoefficient
+    (x z : GridState n) :
     ∑ y : GridState n,
         MvPolynomial.rename (Equiv.swap C.column b)
-            (G.pentagonCoefficient R C x y + G.initialPentagonCoefficient R C x y) *
-          ((G.swapColumns C.column b).pentagonCoefficient R C.reverse y z +
-            (G.swapColumns C.column b).initialPentagonCoefficient R C.reverse y z) =
+            (G.commutationPentagonCoefficient C R x y) *
+          (G.swapColumns C.column b).commutationPentagonCoefficient C.reverse R y z =
       ∑ D ∈ G.pentagonPairDecompositions C x z, G.pentagonPairWeight C R D := by
   simp_rw [G.commutationPentagonCoefficient_eq_sum_weight C R,
     (G.swapColumns C.column b).commutationPentagonCoefficient_eq_sum_weight C.reverse R,
     map_sum, Finset.sum_mul_sum]
-  exact (GridPentagonPairDecomposition.sum_decompositionsOf (G.commutationPentagons C)
+  exact (GridTwoStepDecomposition.sum_decompositionsOf (G.commutationPentagons C)
     ((G.swapColumns C.column b).commutationPentagons C.reverse)
     (fun _ P Q => MvPolynomial.rename (Equiv.swap C.column b)
       (G.commutationPentagonWeight C R P) *
@@ -484,10 +422,13 @@ theorem unblockedDifferential_commutationHomotopy_add_eq_iff_decompositions :
           (if x = z then 1 else 0) +
             ∑ D ∈ G.pentagonPairDecompositions C x z, G.pentagonPairWeight C R D := by
   rw [G.unblockedDifferential_commutationHomotopy_add_eq_iff C R]
-  simp_rw [Finset.sum_add_distrib,
+  simp_rw [← G.commutationHexagonCoefficient_def C R,
+    ← G.commutationPentagonCoefficient_def C R,
+    ← (G.swapColumns C.column b).commutationPentagonCoefficient_def C.reverse R,
+    Finset.sum_add_distrib,
     G.sum_commutationHexagonCoefficient_mul_unblockedCoefficient C R,
     G.sum_unblockedCoefficient_mul_commutationHexagonCoefficient C R,
-    G.sum_commutationPentagonCoefficient_mul_reverseCoefficient C R]
+    G.sum_rename_commutationPentagonCoefficient_mul_commutationPentagonCoefficient C R]
 
 end GridDiagram
 

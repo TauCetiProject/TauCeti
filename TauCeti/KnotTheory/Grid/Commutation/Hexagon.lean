@@ -55,7 +55,8 @@ it vanishes.
 `GridDiagram.hexagonMap` and `GridDiagram.initialHexagonMap` count the empty hexagons of the two
 kinds carrying no `X`-marking, and `GridDiagram.commutationHomotopy` is their sum, the map `H`
 above. That `∂⁻ ∘ H + H ∘ ∂⁻` is the identity plus `Ψ ∘ Φ` is not proved here;
-`Commutation/Homotopy.lean` writes it as an identity between matrix coefficients.
+`GridDiagram.unblockedDifferential_commutationHomotopy_add_eq_iff` writes it as an identity
+between matrix coefficients.
 
 ## Main definitions
 
