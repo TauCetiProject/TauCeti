@@ -298,20 +298,6 @@ section Points
 
 variable {A : Type w} [CommRing A] [Algebra R A]
 
-/-- The determinant point map is the component of the generic contravariant point map induced by
-the determinant coordinate morphism. -/
-private theorem determinantPoints_eq_mapPointsFunctor_app
-    (g : HopfAlgebra.points (R := R)
-      (H := GeneralLinear.coordinateHopfAlgebra R n) (CommAlgCat.of R A)) :
-    GeneralLinear.determinantPoints R n g =
-      (CommHopfAlgCat.mapPointsFunctor
-        (GeneralLinear.determinantCoordinateMap R n)).app (CommAlgCat.of R A) g := by
-  apply WithConv.ofConv_injective
-  apply AlgHom.ext
-  intro x
-  rw [GeneralLinear.determinantPoints_apply_apply,
-    CommHopfAlgCat.mapPointsFunctor_app_apply_apply]
-
 /-- Membership in the point subgroup cut out by the determinant kernel is determinant one.
 This is the ambient membership criterion that further cuts consume; the determinant-one cut of
 the orthogonal group (`TauCeti.SpecialOrthogonal`) combines it with the orthogonal one. -/
@@ -323,31 +309,13 @@ theorem mem_definingPointsSubgroup_iff_det_eq_one
         (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
         (CommAlgCat.of R A) ↔
       (GeneralLinear.pointsMulEquiv n g : Matrix (Fin n) (Fin n) A).det = 1 := by
-  rw [← Matrix.GeneralLinearGroup.val_det_apply, Units.val_eq_one]
-  constructor
-  · intro hg
-    have hpoint : GeneralLinear.determinantPoints R n g = 1 := by
-      rw [determinantPoints_eq_mapPointsFunctor_app]
-      exact (CommHopfAlgCat.mapPointsFunctor_app_eq_one_iff
-        (GeneralLinear.determinantCoordinateMap R n) (CommAlgCat.of R A) g).mpr hg
-    rw [← GeneralLinear.pointsMulEquiv_determinantPoints R n g, hpoint, map_one,
-      MonoidHom.one_apply]
-  · intro hdet
-    have hpoint : GeneralLinear.determinantPoints R n g = 1 := by
-      apply (DiagonalizableGroup.pointsMulEquiv
-        (R := R) (A := A) (G := Multiplicative ℤ)).injective
-      apply MonoidHom.ext_mint
-      rw [GeneralLinear.pointsMulEquiv_determinantPoints, hdet, map_one,
-        MonoidHom.one_apply]
-    apply (CommHopfAlgCat.mapPointsFunctor_app_eq_one_iff
-      (GeneralLinear.determinantCoordinateMap R n) (CommAlgCat.of R A) g).mp
-    have hmap :
-        (CommHopfAlgCat.mapPointsFunctor
-          (GeneralLinear.determinantCoordinateMap R n)).app (CommAlgCat.of R A) g = 1 := by
-      rw [← determinantPoints_eq_mapPointsFunctor_app]
-      exact hpoint
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply] at hmap
-    exact hmap
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, GeneralLinear.pointsMulEquiv_apply,
+    ← GeneralLinear.point_apply_determinantGroupLike, ← sub_eq_zero, ← map_one g.ofConv,
+    ← map_sub]
+  simp only [← HopfIdeal.mem_toIdeal, definingHopfIdeal_toIdeal, Ideal.mem_span_singleton']
+  refine ⟨fun h ↦ h _ ⟨1, one_mul _⟩, ?_⟩
+  rintro h _ ⟨c, rfl⟩
+  rw [map_mul, h, mul_zero]
 
 /-- Turn a determinant-kernel ambient point into its determinant-one matrix. -/
 private noncomputable def pointsSubgroupToSL
