@@ -18,17 +18,22 @@ Let `a` be measurable and uniformly elliptic on `Ω ⊆ ℝⁿ` with constants `
 
 meaning `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`. If `u ≥ m` almost everywhere and `F` is
 convex and nonincreasing on `[m, ∞)`, then `F(u)` is a weak **sub**solution:
-`a(F(u), v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`. Formally, the weak gradient of `F(u)` is
-`F'(u) ∇u` and
+`a(F(u), v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`. The weak gradient of `F(u)` is
+`F'(u) ∇u`, and the formal computation is
 
 `a(F(u), v) = ∫ F'(u) ⟨a ∇u, ∇v⟩ = -a(u, -F'(u) v) - ∫ F''(u) v ⟨a ∇u, ∇u⟩ ≤ 0`,
 
-since `-F'(u) v ≥ 0` is an admissible test function for the supersolution `u`, and `F'' ≥ 0`.
+using `-F'(u) v ≥ 0` as a test function for the supersolution `u`, and `F'' ≥ 0`. This is only
+formal because `-F'(u) v` need not lie in `H¹₀(Ω)` for a general `v`; the proof carries it out
+for `v` a test function and extends the inequality by density (see the implementation notes).
 
-The main application is to `F(t) = 1/t`: the reciprocal of a supersolution bounded below by a
-positive constant is a subsolution, so De Giorgi's local boundedness theorem for subsolutions
-bounds it from above. This is the lower bound for positive supersolutions in Moser's proof of
-the Harnack inequality: in dimension `n ≥ 3`, on every ball `B(x₀, R) ⊆ Ω`,
+The main application is to the reciprocal `t ↦ 1/t` of a supersolution bounded below by a
+positive constant. The reciprocal itself is not `C²` and does not vanish at `0`, so it is
+approached by the functions `t ↦ t / (t² + c²)`: these are convex and nonincreasing on
+`[2c, ∞)`, so each `u / (u² + c²)` is a subsolution once `2c ≤ m`, and De Giorgi's local
+boundedness theorem for subsolutions bounds them from above, uniformly in `c`. Letting `c → 0`
+bounds `u⁻¹`. This is the lower bound for positive supersolutions in Moser's proof of the
+Harnack inequality: in dimension `n ≥ 3`, on every ball `B(x₀, R) ⊆ Ω`,
 
 `u⁻¹ ≤ D R^{-n/2} ‖u⁻¹‖_{L²(B(x₀, R))}` almost everywhere on `B(x₀, R/2)`,
 
@@ -195,8 +200,9 @@ almost everywhere on `Ω`. Let `F` be `C²` with bounded first and second deriva
 `F'' ≥ 0` on `[m, ∞)`. Then `F(u)` is a weak subsolution: `a(F(u), v) ≤ 0` for every
 nonnegative `v ∈ H¹₀(Ω)`.
 
-The conditions at `0` and the global bounds on `F'` and `F''` only make `F(u)` and `F'(u)`
-Sobolev functions; the sign conditions are used on `[m, ∞)` alone. -/
+The condition at `0` and the global bounds on `F'` and `F''` only make `F(u)` and the localized
+products `φ F'(u)`, for test functions `φ ∈ C_c^∞(Ω)`, Sobolev functions; the sign conditions are
+used on `[m, ∞)` alone. -/
 theorem UniformlyEllipticOn.energyFormH1_contDiffComp_nonpos
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega)) {u : W1p mu Omega 2}

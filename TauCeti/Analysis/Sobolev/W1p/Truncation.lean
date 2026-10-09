@@ -24,8 +24,6 @@ Dirichlet boundary data, as needed in weak comparison arguments.
 * `TauCeti.W1p.continuous_posPartAbove`: continuity in the full Sobolev norm.
 * `TauCeti.W1p.posPartAbove_mem_w1p0Submodule`: preservation of the homogeneous Dirichlet
   condition.
-* `TauCeti.W1p.posPart_eq_self_of_ae_nonneg`: the positive part of a nonnegative function is the
-  function itself.
 
 The corresponding positive-part results are the special case `k = 0`.
 -/
@@ -179,16 +177,6 @@ theorem W1p.continuous_posPartAbove (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k) :
   rw [hu]
   exact ((continuousAt_posPartAboveJet k hz).tendsto.comp hx).congr'
     (Eventually.of_forall fun n ↦ (hg n).symm)
-
-/-- The positive part of an almost everywhere nonnegative Sobolev function is the function
-itself. -/
-theorem W1p.posPart_eq_self_of_ae_nonneg (hp : p ≠ ∞) {u : W1p mu Omega p}
-    (hu : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value u x) :
-    W1p.posPart hp u = u := by
-  refine W1p.ext_value (Lp.ext ?_)
-  rw [W1p.value_posPart]
-  filter_upwards [Lp.coeFn_posPart (W1p.value u), hu] with x hx hux
-  rw [hx, max_eq_left hux]
 
 /-- Taking the positive part is continuous in the Sobolev norm for finite exponents. -/
 theorem W1p.continuous_posPart (hp : p ≠ ∞) :
