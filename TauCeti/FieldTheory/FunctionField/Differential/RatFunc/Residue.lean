@@ -24,11 +24,6 @@ This is the rational-function-field case of Stichtenoth's identification of loca
 with residues, and the base case from which it is transported to a separable extension of
 `k(x)` along the cotrace.
 
-Both sides of each identity are `k`-linear in `z`, vanish once `z` vanishes to high enough
-order at the place, and agree on the powers of the uniformizer, so they are equal by
-`TauCeti.Place.linearMap_ext_zpow`.  On the powers of `x - a` the local component is computed
-from the abstract residue theorem `∑_P η_P (z) = 0`: only `P_a` and `P_∞` contribute.
-
 Feeding the identification back into the abstract residue theorem gives the **residue theorem
 for `k(x)`**: if every pole of `z` is a rational place, then
 `∑_{a ∈ k} res_{P_a, x - a} (z) = res_{P_∞, x⁻¹} (x² z)`, the classical statement that the
@@ -78,6 +73,8 @@ theorem repartitionDualComponent_ratFuncWeilDifferential_infty (z : RatFunc k) :
   let g : RatFunc k →ₗ[k] k :=
     -((infty k).residue (degree_infty k) ord_infty_inv_X ∘ₗ
       LinearMap.mulLeft k (RatFunc.X ^ 2))
+  -- Both sides are `k`-linear in `z`, vanish once `z` vanishes to high enough order at `P_∞`,
+  -- and agree on the powers of `x⁻¹`, so they are equal by `Place.linearMap_ext_zpow`.
   refine LinearMap.congr_fun
     (?_ : repartitionDualComponent (ratFuncWeilDifferential k) (infty k) = g) z
   refine (infty k).linearMap_ext_zpow (degree_infty k) ord_infty_inv_X (m := 2)
@@ -186,6 +183,8 @@ theorem repartitionDualComponent_ratFuncWeilDifferential_adicOfIrreducible_X_sub
         (adicOfIrreducible (irreducible_X_sub_C a)) z =
       (adicOfIrreducible (irreducible_X_sub_C a)).residue (degree_adicOfIrreducible_X_sub_C a)
         (ord_adicOfIrreducible_X_sub_C_self a) z := by
+  -- Both sides are `k`-linear in `z`, vanish on the functions integral at `P_a`, and agree on
+  -- the powers of `x - a`, so they are equal by `Place.linearMap_ext_zpow`.
   refine LinearMap.congr_fun ?_ z
   refine (adicOfIrreducible (irreducible_X_sub_C a)).linearMap_ext_zpow
     (degree_adicOfIrreducible_X_sub_C a) (ord_adicOfIrreducible_X_sub_C_self a) (m := 0)
