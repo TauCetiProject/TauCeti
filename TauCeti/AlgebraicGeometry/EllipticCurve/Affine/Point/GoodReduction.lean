@@ -86,6 +86,7 @@ reduction. -/
 theorem reductionPoint_toProjective_point (P : W.Point) :
     (reductionPoint v P).toProjective.point = reduction v P := by
   classical
+  rw [reductionPoint, ← reductionProjective_point]
   exact congrArg Projective.Point.point
     ((Projective.Point.toAffineAddEquiv ((integralModel v.valuationSubring W).map
       (residue v.valuationSubring)).toProjective).left_inv
