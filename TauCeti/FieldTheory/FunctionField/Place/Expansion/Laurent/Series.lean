@@ -28,8 +28,8 @@ on the valuation ring available without choosing numerator-denominator presentat
 * `TauCeti.Place.completionEquivLaurentSeries_uniformizer`: a chosen uniformizer maps to `X`.
 * `TauCeti.Place.completionLaurentCoeff_ext_iff`: Laurent coefficients determine a completed
   element.
-* `TauCeti.Place.completionResidue_symm_derivative`: completed residues kill formal
-  derivatives.
+* `TauCeti.Place.completionResidue_completionEquivLaurentSeries_symm_derivative`:
+  completed residues kill formal derivatives.
 
 ## Reference
 
@@ -152,7 +152,9 @@ theorem ord_completionEquivLaurentSeries (x : P.Completion) :
 /-- The `n`-th Laurent coefficient on the completed local field, with respect to the uniformizer
 `t`. -/
 noncomputable def completionLaurentCoeff (n : ℤ) : P.Completion →ₗ[k] k :=
-  -- Use the coefficientwise Hahn-series module structure expected by `coeff.linearMap`.
+  -- `toLinearMap` targets `Algebra.toModule`, but `coeff.linearMap` expects
+  -- `HahnSeries.instModule`; these are not definitionally equal. This scalar bridge
+  -- supplies the coefficientwise module structure without changing the public maps.
   (HahnSeries.coeff.linearMap n).comp
     ({ toFun := (P.completionEquivLaurentSeries hP ht).toAlgHom
        map_add' := (P.completionEquivLaurentSeries hP ht).toAlgHom.map_add
@@ -184,7 +186,7 @@ theorem completionLaurentCoeff_ext_iff {x y : P.Completion} :
     simpa only [completionLaurentCoeff_apply] using h n
 
 /-- The coefficient of a Laurent monomial is zero away from its exponent. -/
-theorem completionLaurentCoeff_symm_single (m n : ℤ) (c : k) :
+theorem completionLaurentCoeff_completionEquivLaurentSeries_symm_single (m n : ℤ) (c : k) :
     P.completionLaurentCoeff hP ht n
         ((P.completionEquivLaurentSeries hP ht).symm (HahnSeries.single m c)) =
       if n = m then c else 0 := by
@@ -219,7 +221,7 @@ theorem completionResidue_coe_integer_eq_zero
 
 /-- The coefficient of `X⁻¹` in the formal derivative of a Laurent series is zero.  Equivalently,
 the local residue kills formal derivatives. -/
-theorem completionResidue_symm_derivative (f : LaurentSeries k) :
+theorem completionResidue_completionEquivLaurentSeries_symm_derivative (f : LaurentSeries k) :
     P.completionResidue hP ht
         ((P.completionEquivLaurentSeries hP ht).symm (LaurentSeries.derivative k f)) = 0 := by
   simp [completionResidue_apply, LaurentSeries.derivative_apply]

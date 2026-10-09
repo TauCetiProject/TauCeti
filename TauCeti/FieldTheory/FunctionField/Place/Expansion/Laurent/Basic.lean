@@ -73,8 +73,8 @@ noncomputable def laurentCoeff (n : ℤ) : F →ₗ[k] k :=
 @[simp]
 theorem laurentCoeff_apply (n : ℤ) (z : F) :
     P.laurentCoeff hP ht n z = (P.laurentSeriesExpansion hP ht z).coeff n := by
-  change P.completionLaurentCoeff hP ht n (P.completionEmbedding z) = _
-  rw [completionLaurentCoeff_apply, laurentSeriesExpansion_apply]
+  rw [laurentCoeff, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
+    completionLaurentCoeff_apply, laurentSeriesExpansion_apply]
 
 /-- Completion preserves the Laurent coefficients of a function. -/
 -- Not `@[simp]`: `completionLaurentCoeff_apply` already simplifies the left-hand side.
@@ -187,8 +187,8 @@ noncomputable def residue : F →ₗ[k] k :=
 /-- The residue is the coefficient of `T⁻¹` in the Laurent expansion. -/
 theorem residue_apply (z : F) :
     P.residue hP ht z = (P.laurentSeriesExpansion hP ht z).coeff (-1) := by
-  change P.completionResidue hP ht (P.completionEmbedding z) = _
-  rw [completionResidue_apply, laurentSeriesExpansion_apply]
+  rw [residue, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
+    completionResidue_apply, laurentSeriesExpansion_apply]
 
 /-- Completion preserves the residue of a function at the chosen uniformizer. -/
 -- Not `@[simp]`: `completionResidue_apply` already simplifies the left-hand side.
