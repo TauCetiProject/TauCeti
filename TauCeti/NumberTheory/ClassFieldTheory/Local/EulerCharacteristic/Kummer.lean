@@ -8,7 +8,6 @@ module
 public import TauCeti.FieldTheory.GaloisCohomology.EquivariantKummer
 public import TauCeti.NumberTheory.ClassFieldTheory.FiniteQuotient
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.H1.Tensor
-public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 
 /-!
 # Equivariant Kummer theory on a finite Galois quotient of `G_F`
@@ -54,6 +53,8 @@ twist removal `Representation.rankOneTwistEquiv` gives the equivalence.
 
 * `TauCeti.ClassFieldTheory.restrictSubgroupH1Equiv_smul`: the identification of `H¹` intertwines
   the two conjugation actions.
+* `TauCeti.ClassFieldTheory.smul_kummerCoeff_eq_self_of_mem_fixingSubgroup`: if `M` inflates to
+  `μₙ`, the subgroup fixing `σ(L)` acts trivially on `μₙ`.
 * `TauCeti.ClassFieldTheory.dualTensorHom_kummerH1ConjRepresentationEquiv`: the Kummer class of
   `x` corresponds to `m ↦ log(m) • x`.
 
@@ -113,15 +114,16 @@ theorem restrictSubgroupH1Equiv_smul
       g • restrictSubgroupH1Equiv σ n hV x := by
   induction x using QuotientAddGroup.induction_on with
   | _ c =>
-    rw [restrictSubgroupH1Equiv_apply, restrictSubgroupH1Equiv_apply, smul_mk, explicitMap1_mk,
-      explicitMap1_mk, smul_mk]
-    -- Both sides are classes of pulled-back cocycles; they agree pointwise because the
-    -- restriction isomorphism is a homomorphism and the action on `ℤ/n` is trivial.
-    refine congrArg _ (Subtype.ext (funext fun h ↦ ?_))
-    rw [cocyclesMap1_apply, cocyclesMap1_apply, cocyclesMap1_apply, cocyclesMap1_apply]
-    simp only [AddMonoidHom.id_apply, DistribSMul.toAddMonoidHom_apply]
-    -- The trivial action on `ℤ/n` is the identity by definition (`trivialZModAction`).
-    exact congrArg (c : σ.fieldRange.fixingSubgroup → ZMod n) (Subtype.ext (by simp))
+    -- Write both conjugations as pullbacks (`smul_mk`), so each side is a composite of two
+    -- `explicitMap1`s applied to the class of `c`.
+    rw [restrictSubgroupH1Equiv_apply, restrictSubgroupH1Equiv_apply, explicitMap1_mk, smul_mk,
+      smul_mk, ← explicitMap1_mk, ← explicitMap1_mk, ← explicitMap1_mk]
+    -- The composites of the group homomorphisms agree because the restriction isomorphism is a
+    -- homomorphism; those of the coefficient maps because the action on `ℤ/n` is trivial
+    -- (`trivialZModAction`).
+    exact explicitMap1_explicitMap1_of_comp_eq
+      (hφ := ContinuousMonoidHom.ext fun _ ↦ Subtype.ext (by simp))
+      (hqf := AddMonoidHom.ext fun _ ↦ rfl) ..
 
 /-! ### The roots of unity as a representation of the quotient -/
 
@@ -179,14 +181,13 @@ private theorem smul_kummerCoeff_eq (hn : IsUnit (n : F))
     AddEquiv.symm_apply_apply, AddEquiv.apply_symm_apply]
   conv_lhs => rw [← (inflationIso e).inv_hom_id_apply (kummerCoeffEquivMuNRep n F ξ)]
   rw [← TopRep.hom_comm_apply]
-  -- The inflated action is that of the class of `g` (`galRepOfQuotient_ρ_apply`, which holds by
-  -- `rfl`), on the underlying representation of `M`; the forgetful functor `FDRep → Rep` hides
-  -- this from `rw`.
-  rfl
+  -- The inflated action is that of the class of `g` on the underlying representation of `M`.
+  exact congrArg (inflationIso e).hom.hom ((galRepOfQuotient_ρ_apply n F V _ g _).trans
+    (LinearMap.congr_fun (DFunLike.congr_fun (FDRep.forget₂_ρ M) _) _))
 
 omit [Normal F L] in
 /-- If `M` inflates to `μₙ`, the subgroup of `Gal(Fˢ/F)` fixing `σ(L)` acts trivially on `μₙ`. -/
-private theorem smul_kummerCoeff_eq_self (hn : IsUnit (n : F))
+theorem smul_kummerCoeff_eq_self_of_mem_fixingSubgroup (hn : IsUnit (n : F))
     (hV : (absoluteGaloisGroupExtend F L σ).range = V.toSubgroup)
     {M : FDRep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup)}
     (e : (fdGalRepOfQuotient n F V).obj M ≅ muNRep n F) (h : AbsoluteGaloisGroup F)
@@ -217,8 +218,8 @@ def kummerH1ConjRepresentationEquiv (hn : IsUnit (n : F))
         (absoluteGaloisGroupExtendQuotientEquiv F L σ hV).toMonoidHom)) :=
   Representation.rankOneTwistEquiv M.ρ _ _ (coordinate hn e)
     (((fixingSubgroupKummerEquivOfTrivial σ hn (kummerCoeffAddEquivZMod hn) (fun _ _ ↦ rfl)
-      (smul_kummerCoeff_eq_self σ hn hV e)).trans (restrictSubgroupH1Equiv σ n hV)).toLinearEquiv
-      (ZMod.map_smul _))
+      (smul_kummerCoeff_eq_self_of_mem_fixingSubgroup σ hn hV e)).trans
+        (restrictSubgroupH1Equiv σ n hV)).toLinearEquiv (ZMod.map_smul _))
     fun q x ↦ by
       have : NeZero n := ⟨by rintro rfl; simp at hn⟩
       induction q using QuotientGroup.induction_on with | H g => ?_
@@ -252,13 +253,11 @@ theorem dualTensorHom_kummerH1ConjRepresentationEquiv (hn : IsUnit (n : F))
     (hV : (absoluteGaloisGroupExtend F L σ).range = V.toSubgroup)
     {M : FDRep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup)}
     (e : (fdGalRepOfQuotient n F V).obj M ≅ muNRep n F)
-    (hN : ∀ h : AbsoluteGaloisGroup F, h ∈ σ.fieldRange.fixingSubgroup →
-      ∀ ξ : KummerCoeff F n, h • ξ = ξ)
     (x : Additive (powerClassQuotient Lˣ n)) (m : M) :
     dualTensorHom (ZMod n) M (Additive (powerClassQuotient Lˣ n))
         (kummerH1ConjRepresentationEquiv σ hn hV e (restrictSubgroupH1Equiv σ n hV
           (fixingSubgroupKummerEquivOfTrivial σ hn (kummerCoeffAddEquivZMod hn) (fun _ _ ↦ rfl)
-            hN x))) m =
+            (smul_kummerCoeff_eq_self_of_mem_fixingSubgroup σ hn hV e) x))) m =
       kummerCoeffAddEquivZMod hn ((kummerCoeffEquivMuNRep n F).symm
         ((eqToIso (fdGalRepOfQuotient_obj n F V M).symm ≪≫ e).hom.hom m)) • x := by
   rw [kummerH1ConjRepresentationEquiv, Representation.dualTensorHom_rankOneTwistEquiv,
