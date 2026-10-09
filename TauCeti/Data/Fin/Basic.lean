@@ -359,6 +359,7 @@ theorem insertNth_castAdd_comp_castAdd {α : Type*} {k l : ℕ} (i : Fin (k + 1)
 
 /-- Inserting `x` at a slot of the first block of `Fin ((k + 1) + (l + 1))` leaves the entries of
 the second block as the corresponding entries of `y`, shifted down by one. -/
+@[simp]
 theorem insertNth_castAdd_apply_natAdd {α : Type*} {k l : ℕ} (i : Fin (k + 1)) (x : α)
     (y : Fin (k + 1 + l) → α) (b : Fin (l + 1)) :
     Fin.insertNth (α := fun _ => α) (Fin.castAdd (l + 1) i : Fin (k + 1 + l + 1)) x y
@@ -374,6 +375,7 @@ theorem insertNth_castAdd_apply_natAdd {α : Type*} {k l : ℕ} (i : Fin (k + 1)
 
 /-- Inserting `x` at a slot of the second block of `Fin ((k + 1) + (l + 1))` leaves the entries of
 the first block as the corresponding entries of `y`. -/
+@[simp]
 theorem insertNth_natAdd_apply_castAdd {α : Type*} {k l : ℕ} (i : Fin (l + 1)) (x : α)
     (y : Fin (k + 1 + l) → α) (a : Fin (k + 1)) :
     Fin.insertNth (α := fun _ => α) (Fin.natAdd (k + 1) i : Fin (k + 1 + l + 1)) x y
