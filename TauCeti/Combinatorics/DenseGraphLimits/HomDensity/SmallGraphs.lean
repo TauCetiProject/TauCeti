@@ -36,10 +36,9 @@ empty graph — costs only that substitution.
 
 **Where the transports come from.**  For two vertices it is Mathlib's `MeasurableEquiv.finTwoArrow`
 with `measurePreserving_finTwoArrow`; for three vertices it is `finThreeArrow` with
-`measurePreserving_finThreeArrow`, and for four vertices it is `finFourArrowPairPair` with
-`measurePreserving_finFourArrowPairPair`, both from `TauCeti.MeasureTheory.Constructions.Pi`.  The
-four-vertex transport pairs the coordinates as `((x 0, x 2), (x 1, x 3))` for the four-cycle
-formulas.
+`measurePreserving_finThreeArrow`, from `TauCeti.MeasureTheory.Constructions.Pi`.  The four-vertex
+transport composes `finFourArrow` with a reordering of the coordinates, pairing them
+as `((x 0, x 2), (x 1, x 3))` for the four-cycle formulas.
 
 ## Main results
 
@@ -137,6 +136,65 @@ theorem integrable_prod_edgeFactor_fin_three (F : SimpleGraph (Fin 3)) [Decidabl
   have hx : ![x 0, x 1, x 2] = x := FinVec.etaExpand_eq x
   rw [hx]
 
+private def middleSwap (Ω : Type*) [MeasurableSpace Ω] :
+    (Ω × Ω × Ω) ≃ᵐ Ω × Ω × Ω :=
+  ((MeasurableEquiv.prodAssoc : ((Ω × Ω) × Ω) ≃ᵐ Ω × Ω × Ω).symm.trans
+    ((MeasurableEquiv.prodComm : (Ω × Ω) ≃ᵐ Ω × Ω).prodCongr
+      (MeasurableEquiv.refl Ω))).trans
+    (MeasurableEquiv.prodAssoc : ((Ω × Ω) × Ω) ≃ᵐ Ω × Ω × Ω)
+
+private def reorderFour (Ω : Type*) [MeasurableSpace Ω] :
+    (Ω × Ω × Ω × Ω) ≃ᵐ Ω × Ω × Ω × Ω :=
+  (MeasurableEquiv.refl Ω).prodCongr (middleSwap Ω)
+
+private def finFourArrowPairPair (Ω : Type*) [MeasurableSpace Ω] :
+    (Fin 4 → Ω) ≃ᵐ (Ω × Ω) × (Ω × Ω) :=
+  (finFourArrow (β := Ω)).trans (reorderFour Ω) |>.trans
+    ((MeasurableEquiv.prodAssoc : ((Ω × Ω) × (Ω × Ω)) ≃ᵐ Ω × Ω × (Ω × Ω)).symm)
+
+private theorem middleSwap_apply (p : Ω × Ω × Ω) :
+    middleSwap Ω p = (p.2.1, p.1, p.2.2) := by
+  rfl
+
+/-- The reordering behind the four-cycle transport sends `(a, b, c, d)` to `((a, c), (b, d))`. -/
+private theorem prodAssoc_symm_reorderFour_apply (p : Ω × Ω × Ω × Ω) :
+    (MeasurableEquiv.prodAssoc : ((Ω × Ω) × (Ω × Ω)) ≃ᵐ Ω × Ω × (Ω × Ω)).symm (reorderFour Ω p) =
+      ((p.1, p.2.2.1), (p.2.1, p.2.2.2)) := (rfl)
+
+@[simp]
+private theorem finFourArrowPairPair_apply (x : Fin 4 → Ω) :
+    finFourArrowPairPair Ω x = ((x 0, x 2), (x 1, x 3)) := by
+  rw [finFourArrowPairPair, MeasurableEquiv.trans_apply, MeasurableEquiv.trans_apply,
+    finFourArrow_apply, prodAssoc_symm_reorderFour_apply]
+
+private theorem measurePreserving_middleSwap (μ : Measure Ω) [SigmaFinite μ] :
+    MeasurePreserving (middleSwap Ω) (μ.prod (μ.prod μ)) (μ.prod (μ.prod μ)) := by
+  have hAssoc : MeasurePreserving
+      (MeasurableEquiv.prodAssoc : ((Ω × Ω) × Ω) ≃ᵐ Ω × Ω × Ω)
+      ((μ.prod μ).prod μ) (μ.prod (μ.prod μ)) :=
+    measurePreserving_prodAssoc μ μ μ
+  have hSwap : MeasurePreserving (MeasurableEquiv.prodComm : (Ω × Ω) ≃ᵐ Ω × Ω)
+      (μ.prod μ) (μ.prod μ) := Measure.measurePreserving_swap
+  convert hAssoc.comp ((hSwap.prod (MeasurePreserving.id μ)).comp hAssoc.symm) using 1
+  funext p
+  exact middleSwap_apply p
+
+private theorem measurePreserving_finFourArrowPairPair (μ : Measure Ω) [SigmaFinite μ] :
+    MeasurePreserving (finFourArrowPairPair Ω) (Measure.pi fun _ : Fin 4 => μ)
+      ((μ.prod μ).prod (μ.prod μ)) := by
+  have hright := measurePreserving_finFourArrow μ
+  have hswap : MeasurePreserving (reorderFour Ω)
+      (μ.prod (μ.prod (μ.prod μ))) (μ.prod (μ.prod (μ.prod μ))) :=
+    (MeasurePreserving.id μ).prod (measurePreserving_middleSwap μ)
+  have hassoc : MeasurePreserving
+      ((MeasurableEquiv.prodAssoc : ((Ω × Ω) × (Ω × Ω)) ≃ᵐ Ω × Ω × (Ω × Ω)).symm)
+      (μ.prod (μ.prod (μ.prod μ))) ((μ.prod μ).prod (μ.prod μ)) :=
+    (measurePreserving_prodAssoc μ μ (μ.prod μ)).symm
+  convert hassoc.comp (hswap.comp hright) using 1
+  funext x
+  rw [finFourArrowPairPair_apply, Function.comp_apply, Function.comp_apply,
+    finFourArrow_apply, prodAssoc_symm_reorderFour_apply]
+
 /-- **The four-vertex transport.**  For any graph on `Fin 4`, the homomorphism density is an
 integral over two copies of `Ω × Ω`, with the coordinates paired for the four-cycle formulas. -/
 theorem homDensity_fin_four (F : SimpleGraph (Fin 4)) [DecidableRel F.Adj] (W : Graphon Ω μ) :
@@ -152,7 +210,7 @@ theorem homDensity_fin_four (F : SimpleGraph (Fin 4)) [DecidableRel F.Adj] (W : 
     have hx : ![x 0, x 1, x 2, x 3] = x := FinVec.etaExpand_eq x
     rw [hx]
   rw [homDensity_def, ← (measurePreserving_finFourArrowPairPair μ).integral_comp
-    (finFourArrowPairPair (β := Ω)).measurableEmbedding
+    (finFourArrowPairPair Ω).measurableEmbedding
     (fun p : (Ω × Ω) × (Ω × Ω) =>
       ∏ e ∈ F.edgeFinset, edgeFactor W ![p.1.1, p.2.1, p.1.2, p.2.2] e)]
   simp only [finFourArrowPairPair_apply]
@@ -166,7 +224,7 @@ theorem integrable_prod_edgeFactor_fin_four (F : SimpleGraph (Fin 4)) [Decidable
       ∏ e ∈ F.edgeFinset, edgeFactor W ![p.1.1, p.2.1, p.1.2, p.2.2] e)
       ((μ.prod μ).prod (μ.prod μ)) := by
   refine ((measurePreserving_finFourArrowPairPair μ).integrable_comp_emb
-    (finFourArrowPairPair (β := Ω)).measurableEmbedding).mp ?_
+    (finFourArrowPairPair Ω).measurableEmbedding).mp ?_
   refine (integrable_homDensity_integrand F W).congr (ae_of_all _ fun x => ?_)
   simp only [Function.comp_apply, finFourArrowPairPair_apply]
   have hx : ![x 0, x 1, x 2, x 3] = x := FinVec.etaExpand_eq x

@@ -47,9 +47,7 @@ construction.
 (`MeasurableEquiv.finTwoArrow`, `measurePreserving_finTwoArrow`). `finThreeArrow`
 and `finFourArrow` are the next two cases, identifying `Fin 3 → β` and `Fin 4 → β`
 with the right-nested products `β × β × β` and `β × β × β × β`; under them the product measure
-`Measure.pi fun _ => μ` becomes the iterated product of `μ`. `finFourArrowPairPair` instead groups
-the four coordinates as the pair of pairs `((x 0, x 2), (x 1, x 3))`, carrying the product measure
-to `(μ ⊗ μ) ⊗ (μ ⊗ μ)`.
+`Measure.pi fun _ => μ` becomes the iterated product of `μ`.
 
 ## Main statements
 
@@ -64,10 +62,7 @@ to `(μ ⊗ μ) ⊗ (μ ⊗ μ)`.
 * `TauCeti.finThreeArrow` and `TauCeti.finFourArrow`, with
   `TauCeti.measurePreserving_finThreeArrow` and `TauCeti.measurePreserving_finFourArrow` — functions
   on `Fin 3` and `Fin 4` as iterated products, carrying `Measure.pi` to the iterated product
-  measure;
-* `TauCeti.finFourArrowPairPair` and `TauCeti.measurePreserving_finFourArrowPairPair` — functions
-  on `Fin 4` as the pair of pairs `((x 0, x 2), (x 1, x 3))`, carrying `Measure.pi` to
-  `(μ ⊗ μ) ⊗ (μ ⊗ μ)`.
+  measure.
 
 ## Implementation
 
@@ -310,69 +305,6 @@ theorem measurePreserving_finFourArrow (μ : Measure β) [SigmaFinite μ] :
       (μ.prod (μ.prod (μ.prod μ))) :=
   ((MeasurePreserving.id μ).prod (measurePreserving_finThreeArrow μ)).comp
     (measurePreserving_piFinSuccAbove (fun _ : Fin 4 => μ) 0)
-
-/-- Swapping the first two factors of a triple, `(a, b, c) ↦ (b, a, c)`. -/
-private def middleSwap : (β × β × β) ≃ᵐ β × β × β :=
-  ((MeasurableEquiv.prodAssoc : ((β × β) × β) ≃ᵐ β × β × β).symm.trans
-    ((MeasurableEquiv.prodComm : (β × β) ≃ᵐ β × β).prodCongr
-      (MeasurableEquiv.refl β))).trans
-    (MeasurableEquiv.prodAssoc : ((β × β) × β) ≃ᵐ β × β × β)
-
-/-- Swapping the middle two factors of a quadruple, `(a, b, c, d) ↦ (a, c, b, d)`. -/
-private def reorderFour : (β × β × β × β) ≃ᵐ β × β × β × β :=
-  (MeasurableEquiv.refl β).prodCongr middleSwap
-
-private theorem middleSwap_apply (p : β × β × β) :
-    middleSwap p = (p.2.1, p.1, p.2.2) := by
-  rfl
-
-/-- The reordering behind `finFourArrowPairPair` sends `(a, b, c, d)` to `((a, c), (b, d))`. -/
-private theorem prodAssoc_symm_reorderFour_apply (p : β × β × β × β) :
-    (MeasurableEquiv.prodAssoc : ((β × β) × (β × β)) ≃ᵐ β × β × (β × β)).symm (reorderFour p) =
-      ((p.1, p.2.2.1), (p.2.1, p.2.2.2)) := (rfl)
-
-private theorem measurePreserving_middleSwap (μ : Measure β) [SigmaFinite μ] :
-    MeasurePreserving (middleSwap (β := β)) (μ.prod (μ.prod μ)) (μ.prod (μ.prod μ)) := by
-  have hAssoc : MeasurePreserving
-      (MeasurableEquiv.prodAssoc : ((β × β) × β) ≃ᵐ β × β × β)
-      ((μ.prod μ).prod μ) (μ.prod (μ.prod μ)) :=
-    measurePreserving_prodAssoc μ μ μ
-  have hSwap : MeasurePreserving (MeasurableEquiv.prodComm : (β × β) ≃ᵐ β × β)
-      (μ.prod μ) (μ.prod μ) := Measure.measurePreserving_swap
-  convert hAssoc.comp ((hSwap.prod (MeasurePreserving.id μ)).comp hAssoc.symm) using 1
-  funext p
-  exact middleSwap_apply p
-
-/-- Functions on `Fin 4` as a pair of pairs, grouping coordinates `0, 2` and coordinates `1, 3`:
-`x ↦ ((x 0, x 2), (x 1, x 3))`. In this grouping each edge of the four-cycle `0 - 1 - 2 - 3 - 0`
-joins a coordinate of the first pair to one of the second. -/
-def finFourArrowPairPair : (Fin 4 → β) ≃ᵐ (β × β) × (β × β) :=
-  (finFourArrow (β := β)).trans reorderFour |>.trans
-    ((MeasurableEquiv.prodAssoc : ((β × β) × (β × β)) ≃ᵐ β × β × (β × β)).symm)
-
-/-- `finFourArrowPairPair` reads off the coordinates `0, 2` and `1, 3` as two pairs. -/
-@[simp]
-theorem finFourArrowPairPair_apply (x : Fin 4 → β) :
-    finFourArrowPairPair x = ((x 0, x 2), (x 1, x 3)) := by
-  rw [finFourArrowPairPair, MeasurableEquiv.trans_apply, MeasurableEquiv.trans_apply,
-    finFourArrow_apply, prodAssoc_symm_reorderFour_apply]
-
-/-- Under `finFourArrowPairPair` the product measure on `Fin 4 → β` is the product
-`(μ ⊗ μ) ⊗ (μ ⊗ μ)` of two copies of `μ ⊗ μ`. -/
-theorem measurePreserving_finFourArrowPairPair (μ : Measure β) [SigmaFinite μ] :
-    MeasurePreserving (finFourArrowPairPair (β := β)) (Measure.pi fun _ : Fin 4 => μ)
-      ((μ.prod μ).prod (μ.prod μ)) := by
-  have hswap : MeasurePreserving (reorderFour (β := β))
-      (μ.prod (μ.prod (μ.prod μ))) (μ.prod (μ.prod (μ.prod μ))) :=
-    (MeasurePreserving.id μ).prod (measurePreserving_middleSwap μ)
-  have hassoc : MeasurePreserving
-      ((MeasurableEquiv.prodAssoc : ((β × β) × (β × β)) ≃ᵐ β × β × (β × β)).symm)
-      (μ.prod (μ.prod (μ.prod μ))) ((μ.prod μ).prod (μ.prod μ)) :=
-    (measurePreserving_prodAssoc μ μ (μ.prod μ)).symm
-  convert hassoc.comp (hswap.comp (measurePreserving_finFourArrow μ)) using 1
-  funext x
-  rw [finFourArrowPairPair_apply, Function.comp_apply, Function.comp_apply,
-    finFourArrow_apply, prodAssoc_symm_reorderFour_apply]
 
 end FinArrow
 
