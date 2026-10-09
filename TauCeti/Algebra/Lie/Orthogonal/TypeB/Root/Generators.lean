@@ -522,11 +522,10 @@ theorem typeBSimpleNegativeRootMatrix_mem_typeB (i : Fin (n + 1)) :
 theorem typeBSimpleCorootMatrix_mem_typeB (i : Fin (n + 1)) :
     typeBSimpleCorootMatrix (K := K) i ∈ LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K := by
   refine Fin.lastCases ?_ (fun j => ?_) i
-  · rw [typeBSimpleCorootMatrix_last]
-    exact (typeBShortCorootGenerator (K := K) (Fin.last n)).property
-  · rw [typeBSimpleCorootMatrix_castSucc]
-    exact (typeBDifferenceCorootGenerator (K := K) j.castSucc j.succ
-      (ne_of_lt j.castSucc_lt_succ)).property
+  · rw [typeBSimpleCorootMatrix_last, typeBShortCorootMatrix]
+    exact typeBDiagonalMatrix_mem_typeB _
+  · rw [typeBSimpleCorootMatrix_castSucc, typeBDifferenceCorootMatrix]
+    exact typeBDiagonalMatrix_mem_typeB _
 
 /-- The positive simple-root vector `eᵢ` for the Bourbaki pinning of `Bₙ₊₁`. -/
 def typeBSimpleRootGenerator (i : Fin (n + 1)) :
