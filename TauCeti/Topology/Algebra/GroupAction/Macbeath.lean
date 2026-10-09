@@ -109,6 +109,17 @@ theorem macbeathHom_of (U : Set X) (s : macbeathGenerators G U) :
     macbeathHom G U (PresentedGroup.of s) = s :=
   PresentedGroup.toGroup.of _
 
+/-- The evaluation of the presented group on the image of a word in the Macbeath generators is
+the evaluation of the word itself. -/
+@[simp]
+theorem macbeathHom_mk (U : Set X) (w : FreeGroup (macbeathGenerators G U)) :
+    macbeathHom G U (PresentedGroup.mk _ w) = FreeGroup.lift Subtype.val w := by
+  have h : (macbeathHom G U).comp (PresentedGroup.mk _) = FreeGroup.lift Subtype.val :=
+    FreeGroup.ext_hom _ _ fun s ↦ by
+      rw [FreeGroup.lift_apply_of]
+      exact macbeathHom_of U s
+  exact DFunLike.congr_fun h w
+
 variable {U : Set X}
 
 theorem one_mem_macbeathGenerators (hU : U.Nonempty) : (1 : G) ∈ macbeathGenerators G U := by
@@ -393,6 +404,13 @@ theorem macbeathEquiv_apply [SimplyConnectedSpace X] (hUo : IsOpen U)
     macbeathEquiv hUo hUc hcover a = macbeathHom G U a :=
   (rfl)
 
+@[simp]
+theorem macbeathEquiv_symm_apply_of [SimplyConnectedSpace X] (hUo : IsOpen U)
+    (hUc : IsPathConnected U) (hcover : ⋃ g : G, g • U = univ) {g : G}
+    (hg : g ∈ macbeathGenerators G U) :
+    (macbeathEquiv hUo hUc hcover).symm g = PresentedGroup.of ⟨g, hg⟩ :=
+  (MulEquiv.symm_apply_eq _).2 (by simp)
+
 /-- **Macbeath's theorem**, as a description of the relations: if the translates of a
 path-connected open set `U` cover a simply connected space, then the kernel of the evaluation of
 words in the Macbeath generators of `U` is the normal closure of the Macbeath relations. -/
@@ -400,13 +418,8 @@ theorem ker_lift_eq_normalClosure_macbeathRels [SimplyConnectedSpace X] (hUo : I
     (hUc : IsPathConnected U) (hcover : ⋃ g : G, g • U = univ) :
     (FreeGroup.lift (Subtype.val : macbeathGenerators G U → G)).ker =
       Subgroup.normalClosure (macbeathRels G U) := by
-  have h : FreeGroup.lift (Subtype.val : macbeathGenerators G U → G) =
-      (macbeathHom G U).comp (PresentedGroup.mk _) :=
-    FreeGroup.ext_hom _ _ fun s ↦ by
-      rw [FreeGroup.lift_apply_of]
-      exact (macbeathHom_of U s).symm
   ext x
-  rw [h, MonoidHom.mem_ker, MonoidHom.comp_apply,
+  rw [MonoidHom.mem_ker, ← macbeathHom_mk,
     (injective_iff_map_eq_one' _).1 (macbeathHom_injective hUo hUc hcover),
     PresentedGroup.mk_eq_one_iff]
 
