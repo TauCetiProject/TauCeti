@@ -77,6 +77,7 @@ classical `φ_{L/K}` is instead defined through a Galois closure.
   `TauCeti.LocalFieldsRamification.psiNat_eq_iff`: `ψℕ(n) = m ↔ #G_1 + ⋯ + #G_m = n · #G_0`.
 * `TauCeti.LocalFieldsRamification.psiNat_strictMono`,
   `TauCeti.LocalFieldsRamification.self_le_psiNat`: `ψℕ` is strictly increasing and `n ≤ ψℕ(n)`.
+* `TauCeti.LocalFieldsRamification.psiNat_le_iff`: `ψℕ(n) ≤ m ↔ n ≤ φ(m)`.
 * `TauCeti.LocalFieldsRamification.psiNat_eq_self_iff`,
   `TauCeti.LocalFieldsRamification.psiNat_eq_add_card_mul_sub`: `ψℕ(v) = v` exactly when
   `G_v = G_0`, and `ψℕ(v) = t + #G_0 (v - t)` for `v ≥ t` when the filtration is
@@ -567,6 +568,15 @@ theorem psiNat_strictMono : StrictMono (psiNat K L) := fun a b h ↦ by
 /-- `n ≤ ψℕ_{L/K}(n)`: the inverse Herbrand function never lowers a unit depth. -/
 theorem self_le_psiNat (n : ℕ) : n ≤ psiNat K L n := by
   exact (psiNat_strictMono K L).id_le n
+
+/-- **`ψℕ_{L/K}` and `φ_{L/K}` form a Galois connection** on natural numbers: `ψℕ(n) ≤ m` exactly
+when `n ≤ φ(m)`. In particular `ψℕ(⌊φ(m)⌋) ≤ m`. -/
+theorem psiNat_le_iff {n m : ℕ} :
+    psiNat K L n ≤ m ↔ (n : ℝ) ≤ herbrand K L ⟨m, Nat.cast_mem_ramificationIndexDomain m⟩ := by
+  rw [← Nat.cast_le (α := ℝ), coe_psiNat]
+  exact (Subtype.coe_le_coe (x := inverseHerbrand K L _)
+    (y := ⟨m, Nat.cast_mem_ramificationIndexDomain m⟩)).trans
+    ((herbrandOrderIso K L).symm_apply_le.trans Subtype.coe_le_coe)
 
 /-- `ψℕ_{L/K}(v) = v` exactly when `G_v = G_0`, that is when the lower filtration is constant
 through `v`. -/
