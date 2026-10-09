@@ -60,11 +60,6 @@ open WeierstrassCurve.Affine
 variable {F K : Type*} [Field F] [Field K] [DecidableEq F] [DecidableEq K] (W : WeierstrassCurve F)
   (f : F →+* K)
 
-omit [DecidableEq F] [DecidableEq K] in
-/-- `(n : K) ≠ 0` when `(n : F) ≠ 0`, since `f` is injective. -/
-private theorem intCast_ne_zero_map (g : F →+* K) {n : ℤ} (hn : (n : F) ≠ 0) : (n : K) ≠ 0 := by
-  rwa [← map_intCast g, map_ne_zero]
-
 variable [W.IsElliptic] [IsSepClosed F] [IsSepClosed K]
 
 omit [DecidableEq K] in
@@ -79,18 +74,21 @@ theorem principal_map_eq_weilPairingDivisor {n : ℤ} (hchar : (n : F) ≠ 0)
         (Units.map (FunctionField.map W.toAffine f).toMonoidHom g) =
       weilPairingDivisor (W.map f) hψ' (T.mapAlong f f.injective) := by
   classical
-  have hcharK := intCast_ne_zero_map f hchar
+  have hcharK : (n : K) ≠ 0 := by rwa [← map_intCast f, map_ne_zero]
   obtain ⟨R₀, hR₀⟩ := W.toAffine.exists_point_zsmul_eq_of_zsmul_eq_zero hchar hT
   -- write both divisors as sums over the `n`-torsion, `∑_{n • S = O} ((R₀ + S) - (S))`
   rw [weilPairingDivisor_eq_sum W hchar hR₀] at hg
   rw [weilPairingDivisor_eq_sum (W.map f) hcharK
     (R₀ := R₀.mapAlong f f.injective) (by rw [← Point.mapAlong_zsmul, hR₀])]
   set s₀ := (finite_setOf_zsmul_eq W (psiFunctionField_ne_zero W hchar) 0).toFinset
-  rw [show ∑ S ∈ s₀, (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine (R₀ + S)).1 -
+  -- present the divisor of `g` as the pushforward of a divisor on points, the form taken by
+  -- `principal_map_eq_pushforward`
+  have hpush : ∑ S ∈ s₀, (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine (R₀ + S)).1 -
       WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine S).1) =
       WeilDivisor.pushforward (fun P ↦ (pointEquivDegreeOnePlace W.toAffine P).1)
-        (∑ S ∈ s₀, (WeilDivisor.ofPoint (R₀ + S) - WeilDivisor.ofPoint S)) by
-    simp [map_sum]] at hg
+        (∑ S ∈ s₀, (WeilDivisor.ofPoint (R₀ + S) - WeilDivisor.ofPoint S)) := by
+    simp [map_sum]
+  rw [hpush] at hg
   rw [FunctionField.principal_map_eq_pushforward W.toAffine f hg]
   simp only [map_sum, map_sub, WeilDivisor.pushforward_ofPoint, Point.mapAlong_add]
   -- the `n`-torsion of `W` maps bijectively onto that of `W.map f`
@@ -119,7 +117,7 @@ theorem weilPairing_torsionMapAlong (N : ℕ) [NeZero N] (hN : (N : F) ≠ 0)
   have hg' : Divisor.principal (W.map f).toAffine.isFunctionField
       (Units.map (FunctionField.map W.toAffine f).toMonoidHom g) =
       weilPairingDivisor (W.map f) (psiFunctionField_ne_zero (W.map f)
-        (intCast_ne_zero_map f hchar)) (W.torsionMapAlong f N T) := by
+        (by rwa [← map_intCast f, map_ne_zero])) (W.torsionMapAlong f N T) := by
     rw [coe_torsionMapAlong_apply]
     exact principal_map_eq_weilPairingDivisor W f hchar hT hg
   refine Additive.toMul.injective <| Subtype.val_injective <| Units.val_injective <|
