@@ -20,7 +20,7 @@ is carried out for every positive finite block width.
 
 For `m > 0`, `P.blockMarginals m i` is the pushforward of `P` to the `i`-th consecutive block of
 `m` coordinates, from `TauCeti.Probability.Process.PathLaw.Marginals`. Permuting those blocks by
-`τ` is the permutation `blockPerm m τ` of all path coordinates, which keeps the within-block
+`τ` is the permutation `Nat.blockPerm m τ` of all path coordinates, which keeps the within-block
 position fixed. Thus an invariant law on random path measures makes the block marginals fully
 exchangeable. Applying the measurable injective code for probability measures and de Finetti
 gives a conditional-i.i.d. factorization for every fixed width. Unlike the one-coordinate
@@ -72,22 +72,22 @@ theorem fullyExchangeable_blockMarginals_of_invariant
     FullyExchangeable π fun i P => blockMarginals P m i := by
   intro τ
   have hmap : Measurable fun P : ProbabilityMeasure (ℕ → α) =>
-      P.map (permReindex (blockPerm m τ)) :=
+      P.map (permReindex (Nat.blockPerm m τ)) :=
     TauCeti.MeasureTheory.measurable_probabilityMeasure_map
-      (measurable_reindex (blockPerm m τ))
+      (measurable_reindex (Nat.blockPerm m τ))
   have hfun : (fun P : ProbabilityMeasure (ℕ → α) =>
       fun i => blockMarginals P m (τ i)) =
-      blockMarginals (m := m) ∘ fun P => P.map (permReindex (blockPerm m τ)) := by
+      blockMarginals (m := m) ∘ fun P => P.map (permReindex (Nat.blockPerm m τ)) := by
     funext P
     exact (P.blockMarginals_map_permReindex_blockPerm m τ).symm
   calc
     π.map (fun P => fun i => blockMarginals P m (τ i)) =
         π.map (blockMarginals (m := m) ∘
-          fun P => P.map (permReindex (blockPerm m τ))) := by rw [hfun]
-    _ = (π.map fun P => P.map (permReindex (blockPerm m τ))).map
+          fun P => P.map (permReindex (Nat.blockPerm m τ))) := by rw [hfun]
+    _ = (π.map fun P => P.map (permReindex (Nat.blockPerm m τ))).map
           (blockMarginals (m := m)) :=
       (Measure.map_map (measurable_blockMarginals m) hmap).symm
-    _ = π.map (blockMarginals (m := m)) := by rw [hπ (blockPerm m τ)]
+    _ = π.map (blockMarginals (m := m)) := by rw [hπ (Nat.blockPerm m τ)]
     _ = pathLaw π (fun i P => blockMarginals P m i) := (rfl)
 
 /-- **The coded finite block marginals of an invariant random path measure are exchangeable.**

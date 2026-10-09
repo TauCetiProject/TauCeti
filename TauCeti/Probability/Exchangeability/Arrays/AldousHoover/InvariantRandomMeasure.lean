@@ -71,7 +71,7 @@ theorem SeparatelyExchangeable.exists_directing_arrayRow_codedCoordinateMarginal
       ConditionallyIIDWith μ (arrayRow X) ν ∧
         ConditionallyIID (μ.map ν) fun i P => P.codedCoordinateMarginals i := by
   obtain ⟨ν, hν, hinv⟩ := h.exists_directing_arrayRow_mixingLaw_invariant hX
-  have hinv' := map_map_permReindex_eq_of_map_eq hν.measurable_directing hinv
+  have hinv' := map_map_permReindex_eq_of_map_eq hν.measurable_directing.aemeasurable hinv
   exact ⟨ν, hν, conditionallyIID_codedCoordinateMarginals_of_invariant (μ.map ν) hinv'⟩
 
 /-- **Every positive-width block marginal of a row directing measure admits a conditional de
@@ -88,7 +88,7 @@ theorem SeparatelyExchangeable.exists_directing_arrayRow_codedBlockMarginals
         ∀ (m : ℕ) [NeZero m],
           ConditionallyIID (μ.map ν) fun i P => P.codedBlockMarginals m i := by
   obtain ⟨ν, hν, hinv⟩ := h.exists_directing_arrayRow_mixingLaw_invariant hX
-  have hinv' := map_map_permReindex_eq_of_map_eq hν.measurable_directing hinv
+  have hinv' := map_map_permReindex_eq_of_map_eq hν.measurable_directing.aemeasurable hinv
   exact ⟨ν, hν, fun m => conditionallyIID_codedBlockMarginals_of_invariant (μ.map ν) m hinv'⟩
 
 end Probability

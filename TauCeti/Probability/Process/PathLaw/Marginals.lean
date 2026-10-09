@@ -22,7 +22,7 @@ random path measure induces random measure-valued sequences.
 
 Both paths are equivariant under reindexing. Permuting the path coordinates by `τ` permutes the
 coordinate marginals by `τ`. Permuting the blocks of width `m` by `τ` and keeping the position
-inside each block fixed is the permutation `blockPerm m τ` of path coordinates, and it permutes
+inside each block fixed is the permutation `Nat.blockPerm m τ` of path coordinates, and it permutes
 the block marginals by `τ`. This equivariance is what transfers invariance in law of a random
 path measure under coordinate permutations to its sequences of marginals.
 
@@ -47,8 +47,9 @@ information.
   `permReindex`;
 * `MeasureTheory.ProbabilityMeasure.blockMarginals` and its coded form
   `MeasureTheory.ProbabilityMeasure.codedBlockMarginals`;
-* `MeasureTheory.ProbabilityMeasure.blockMarginals_map_permReindex_blockPerm` -- equivariance of
-  the block marginals under block permutations;
+* `MeasureTheory.ProbabilityMeasure.blockMarginals_map_permReindex_blockPerm` and its coded form
+  `MeasureTheory.ProbabilityMeasure.codedBlockMarginals_map_permReindex_blockPerm` -- equivariance
+  of the block marginals under the block permutations `Nat.blockPerm`;
 * `MeasureTheory.ProbabilityMeasure.map_blockSplitEquiv_blockMarginals_mul` and
   `MeasureTheory.ProbabilityMeasure.map_blockRestriction_blockMarginals_mul` -- compatibility
   between block widths;
@@ -72,18 +73,18 @@ open TauCeti.MeasureTheory
 
 variable {α : Type*} [MeasurableSpace α]
 
-/-- Invariance in law of a measurable random path measure under reindexing implies invariance
-under the induced action on probability measures. -/
+/-- Invariance in law of an almost-everywhere measurable random path measure under reindexing
+implies invariance under the induced action on probability measures. -/
 theorem map_map_permReindex_eq_of_map_eq
     {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
-    {ν : Ω → ProbabilityMeasure (ℕ → α)} (hν : Measurable ν)
+    {ν : Ω → ProbabilityMeasure (ℕ → α)} (hν : AEMeasurable ν μ)
     (hinv : ∀ τ : Equiv.Perm ℕ,
       μ.map (fun ω => (ν ω).map (fun x : ℕ → α => fun k => x (τ k))) = μ.map ν) :
     ∀ τ : Equiv.Perm ℕ, (μ.map ν).map (fun P => P.map (permReindex τ)) = μ.map ν := by
   intro τ
   have hpush : Measurable fun P : ProbabilityMeasure (ℕ → α) => P.map (permReindex τ) :=
     measurable_probabilityMeasure_map (measurable_reindex τ)
-  rw [Measure.map_map hpush hν]
+  rw [AEMeasurable.map_map_of_aemeasurable hpush.aemeasurable hν]
   have hcomp : (fun P : ProbabilityMeasure (ℕ → α) => P.map (permReindex τ)) ∘ ν =
       fun ω => (ν ω).map (fun x : ℕ → α => fun k => x (τ k)) := by
     funext ω
@@ -192,22 +193,24 @@ theorem measurable_blockMarginals (m : ℕ) [NeZero m] :
 
 /-- The permutation of path coordinates that permutes the consecutive blocks of width `m` by `τ`
 and preserves the position inside each block. -/
-def blockPerm (m : ℕ) [NeZero m] (τ : Equiv.Perm ℕ) : Equiv.Perm ℕ :=
+def _root_.Nat.blockPerm (m : ℕ) [NeZero m] (τ : Equiv.Perm ℕ) : Equiv.Perm ℕ :=
   (Nat.divModEquiv m).symm.permCongr (Equiv.prodCongr τ (Equiv.refl (Fin m)))
 
 /-- The block permutation moves position `j` of block `i` to position `j` of block `τ i`. -/
 @[simp]
-theorem blockPerm_mul_add (m : ℕ) [NeZero m] (τ : Equiv.Perm ℕ) (i : ℕ) (j : Fin m) :
-    blockPerm m τ (i * m + j) = τ i * m + j := by
-  have h (k : ℕ) : k * m + (j : ℕ) = (Nat.divModEquiv m).symm (k, j) := rfl
-  rw [h, h, blockPerm, Equiv.permCongr_apply, Equiv.symm_symm, Equiv.apply_symm_apply]
-  rfl
+theorem _root_.Nat.blockPerm_mul_add (m : ℕ) [NeZero m] (τ : Equiv.Perm ℕ) (i : ℕ) (j : Fin m) :
+    Nat.blockPerm m τ (i * m + j) = τ i * m + j := by
+  have h (k : ℕ) : k * m + (j : ℕ) = (Nat.divModEquiv m).symm (k, j) :=
+    (Nat.divModEquiv_symm_apply m (k, j)).symm
+  rw [h, h, Nat.blockPerm, Equiv.permCongr_apply, Equiv.symm_symm, Equiv.apply_symm_apply,
+    Equiv.prodCongr_apply, Prod.map_apply, Equiv.refl_apply]
 
 /-- Block marginals are equivariant when a block permutation is extended to all path
-coordinates by `blockPerm`. -/
+coordinates by `Nat.blockPerm`. -/
+@[simp]
 theorem _root_.MeasureTheory.ProbabilityMeasure.blockMarginals_map_permReindex_blockPerm
     (P : ProbabilityMeasure (ℕ → α)) (m : ℕ) [NeZero m] (τ : Equiv.Perm ℕ) :
-    (P.map (permReindex (blockPerm m τ))).blockMarginals m =
+    (P.map (permReindex (Nat.blockPerm m τ))).blockMarginals m =
       permReindex τ (P.blockMarginals m) := by
   funext i
   apply ProbabilityMeasure.toMeasure_injective
@@ -215,10 +218,10 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.blockMarginals_map_permReindex_b
   rw [Measure.map_map]
   · congr 1
     funext x j
-    exact congrArg x (blockPerm_mul_add m τ i j)
+    exact congrArg x (Nat.blockPerm_mul_add m τ i j)
   · exact Measurable.of_eval fun j =>
       measurable_pi_apply (blockIndex m i j)
-  · exact measurable_reindex (blockPerm m τ)
+  · exact measurable_reindex (Nat.blockPerm m τ)
 
 /-! ### Compatibility between block widths -/
 
@@ -350,6 +353,18 @@ theorem measurable_codedBlockMarginals (m : ℕ) [NeZero m]
   Measurable.of_eval fun i =>
     measurable_probabilityMeasureCode.comp
       ((measurable_pi_apply i).comp (measurable_blockMarginals m))
+
+/-- Coding commutes with permuting the block marginals by a block permutation. -/
+@[simp]
+theorem _root_.MeasureTheory.ProbabilityMeasure.codedBlockMarginals_map_permReindex_blockPerm
+    (P : ProbabilityMeasure (ℕ → α)) (m : ℕ) [NeZero m]
+    [MeasurableSpace.CountablyGenerated (Fin m → α)] (τ : Equiv.Perm ℕ) :
+    (P.map (permReindex (Nat.blockPerm m τ))).codedBlockMarginals m =
+      permReindex τ (P.codedBlockMarginals m) := by
+  funext i
+  simp only [codedBlockMarginals_apply, permReindex_apply]
+  exact congrArg probabilityMeasureCode
+    (congrFun (blockMarginals_map_permReindex_blockPerm P m τ) i)
 
 /-- Two path measures are equal if their coded zeroth block marginals agree at every positive
 width, assuming countable generation of the finite product spaces being coded. -/
