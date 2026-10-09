@@ -40,6 +40,7 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
   `w i₀ = 1` at some index `i₀`.
 * `PadicInt.units_neg_one_ne_one`: `-1 ≠ 1` in `ℤ_[p]ˣ`.
 * `PadicInt.range_units_val`: the units of `ℤ_[p]` are the elements of norm `1`.
+* `PadicInt.valuation_coe_unit`: a unit of `ℤ_[p]` has valuation `0`.
 * `Padic.exists_eq_zpow_valuation_mul`: every nonzero `x : ℚ_[p]` is `p ^ v(x)` times a unit of
   `ℤ_[p]`.
 * `Padic.inv_natCast_le_norm_natCast`: the `p`-adic norm of a positive integer `m` is at least
@@ -94,6 +95,13 @@ theorem units_neg_one_ne_one : (-1 : ℤ_[p]ˣ) ≠ 1 := fun h ↦ by
 theorem range_units_val : Set.range (Units.val : ℤ_[p]ˣ → ℤ_[p]) = {x | ‖x‖ = 1} :=
   -- `IsUnit x` is by definition `∃ u : ℤ_[p]ˣ, ↑u = x`, that is `x ∈ Set.range Units.val`.
   Set.ext fun _ ↦ isUnit_iff
+
+/-- A unit of `ℤ_p` has valuation `0`, since `v(u) + v(u⁻¹) = v(1) = 0`. -/
+@[simp]
+theorem valuation_coe_unit (u : ℤ_[p]ˣ) : (u : ℤ_[p]).valuation = 0 := by
+  have h := valuation_mul u.ne_zero u⁻¹.ne_zero
+  rw [Units.mul_inv, valuation_one] at h
+  omega
 
 /-- `ℤ_pˣ` is compact: it is the closed unit sphere of the compact space `ℤ_p`, and the topology
 on the units of the complete normed ring `ℤ_p` is the subspace topology. -/
