@@ -229,6 +229,19 @@ def infiniteHilbertInvariantAt (w : InfinitePlace K) (a b : Kˣ) : ZMod 2 :=
       (kummerClass _ hζ.neZero'.out.isUnit
         (Units.map (algebraMap K w.Completion : K →* w.Completion) b)) = 0 then 0 else 1
 
+open scoped Classical in
+/-- The Hilbert invariant at an infinite place, unfolded: `0` when the cup product of the Kummer
+classes of the localized elements vanishes and `1` otherwise, for any proofs that `-1` is a
+primitive square root of unity and that `2` is a unit in `K_w`. -/
+theorem infiniteHilbertInvariantAt_def (w : InfinitePlace K) (a b : Kˣ)
+    (hζ : IsPrimitiveRoot (-1 : w.Completion) 2) (h2 : IsUnit (2 : w.Completion)) :
+    infiniteHilbertInvariantAt K w a b =
+      if (kummerCupPairing (-1) hζ).cup 1 1
+          (kummerClass _ h2 (Units.map (algebraMap K w.Completion : K →* w.Completion) a))
+          (kummerClass _ h2 (Units.map (algebraMap K w.Completion : K →* w.Completion) b)) = 0
+        then 0 else 1 :=
+  (rfl)
+
 /-- The Hilbert invariant at an infinite place vanishes exactly when the cup product of the Kummer
 classes of the localized elements does, for any proofs that `-1` is a primitive square root of
 unity and that `2` is a unit in `K_w`. -/
@@ -238,7 +251,7 @@ theorem infiniteHilbertInvariantAt_eq_zero_iff (w : InfinitePlace K) (a b : Kˣ)
       (kummerCupPairing (-1) hζ).cup 1 1
         (kummerClass _ h2 (Units.map (algebraMap K w.Completion : K →* w.Completion) a))
         (kummerClass _ h2 (Units.map (algebraMap K w.Completion : K →* w.Completion) b)) = 0 := by
-  rw [infiniteHilbertInvariantAt]
+  rw [infiniteHilbertInvariantAt_def K w a b hζ h2]
   split_ifs with h
   · exact iff_of_true rfl h
   · exact iff_of_false one_ne_zero h
@@ -278,8 +291,8 @@ theorem infiniteHilbertInvariantAt_of_isReal {w : InfinitePlace K} (hw : w.IsRea
   have : CharZero w.Completion := (Completion.extensionEmbedding w).charZero
   have hζ : IsPrimitiveRoot (-1 : w.Completion) 2 := .neg_one 0 (by decide)
   have key := (infiniteHilbertInvariantAt_eq_zero_iff K w a b hζ hζ.neZero'.out.isUnit).trans
-    (cup_kummerClass_eq_zero_iff_of_ringEquiv_real (Completion.ringEquivRealOfIsReal hw) hζ
-      hζ.neZero'.out.isUnit _ _)
+    (cup_kummerClass_eq_zero_iff_of_ringEquiv_real _ _ (Completion.ringEquivRealOfIsReal hw) hζ
+      hζ.neZero'.out.isUnit)
   have he (x : Kˣ) : Completion.ringEquivRealOfIsReal hw
       (Units.map (algebraMap K w.Completion : K →* w.Completion) x : w.Completion) =
       embedding_of_isReal hw (x : K) := by

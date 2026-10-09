@@ -9,7 +9,7 @@ public import TauCeti.FieldTheory.GaloisCohomology.Cyclic
 public import TauCeti.FieldTheory.Kummer.Cyclic
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Torsion
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Symbol
-public import TauCeti.RingTheory.Norm.Complex
+import TauCeti.RingTheory.Norm.Complex
 import TauCeti.RingTheory.Norm.Equiv
 
 /-!
@@ -333,12 +333,11 @@ end Norm
 
 section Real
 
-variable (e : K ≃+* ℝ) (hζ : IsPrimitiveRoot (-1 : K) 2) (hn : IsUnit ((2 : ℕ) : K))
-
 /-- **The real quadratic symbol.** Let `K` be a field isomorphic to `ℝ` through `e`, such as the
 completion of a field at a real place. The cup product `(a) ∪ (b)` of the mod-two Kummer classes of
 `a, b ∈ Kˣ` along the pairing of `-1` vanishes exactly when `a` or `b` is positive. -/
-theorem cup_kummerClass_eq_zero_iff_of_ringEquiv_real (a b : Kˣ) :
+theorem cup_kummerClass_eq_zero_iff_of_ringEquiv_real (a b : Kˣ) (e : K ≃+* ℝ)
+    (hζ : IsPrimitiveRoot (-1 : K) 2) (hn : IsUnit ((2 : ℕ) : K)) :
     (kummerCupPairing (-1) hζ).cup 1 1 (kummerClass K hn a) (kummerClass K hn b) = 0 ↔
       0 < e a ∨ 0 < e b := by
   by_cases hb : 0 < e b
