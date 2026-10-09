@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Functoriality
 import TauCeti.Algebra.AlgebraicGroup.Derived.Smooth
 import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.FaithfullyFlat
-public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.FaithfullyFlatPoints
+public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.DominantPoints
 
 /-!
 # Derived subgroups under dominant homomorphisms
@@ -21,14 +21,18 @@ of `K` is the derived defining ideal of `H`.
 
 The ideal equality uses the universal property of the derived subgroup and injectivity of the
 tensor square of `f`. It requires neither finite type nor smoothness, and preserves the full
-scheme structure. For reduced finite-type groups over an algebraically closed field, the
-induced morphism is faithfully flat and surjective on points valued in any algebraically
-closed extension field. These results let derived-subgroup constructions pass through
-quotient homomorphisms.
+scheme structure. For finite-type groups over any field, the induced morphism is surjective
+on points valued in any algebraically closed extension field. Over an algebraically closed
+base field, it is also faithfully flat when the target group is reduced. These results let
+derived-subgroup constructions pass through quotient homomorphisms.
 
 The construction uses the existing restriction map in
 `TauCeti.Algebra.AlgebraicGroup.Derived.Functoriality` and the smoothness theorem in
 `TauCeti.Algebra.AlgebraicGroup.Derived.Smooth`.
+
+## References
+
+* J. S. Milne, *Algebraic Groups* (2017), §6d.
 -/
 
 public section
@@ -74,7 +78,7 @@ end Field
 
 end BialgHom
 
-namespace CommHopfAlgCat
+namespace TauCeti.CommHopfAlgCat
 
 variable {k : Type u} [Field k] {H K : _root_.CommHopfAlgCat.{v} k}
 
@@ -94,6 +98,16 @@ theorem derivedMap_injective (f : H ⟶ K) (hf : Function.Injective f.hom) :
     Ideal.quotientMap_mk]
   simp only [Ideal.Quotient.mkₐ_eq_mk, RingHom.coe_coe]
 
+/-- A schematically dominant homomorphism between finite-type affine groups over a field is
+surjective on the points of their derived subgroups valued in any algebraically closed
+extension field. -/
+theorem derivedMap_mapPointsFunctor_app_surjective
+    [Algebra.FiniteType k H] [Algebra.FiniteType k K] (f : H ⟶ K)
+    (hf : Function.Injective f.hom)
+    (L : Type w) [Field L] [Algebra k L] [IsAlgClosed L] :
+    Function.Surjective ((mapPointsFunctor (derivedMap f)).app (CommAlgCat.of k L)) :=
+  mapPointsFunctor_app_surjective_of_injective L (derivedMap f) (derivedMap_injective f hf)
+
 section AlgClosed
 
 variable {H K : _root_.CommHopfAlgCat.{u} k}
@@ -111,19 +125,6 @@ theorem derivedMap_faithfullyFlat (f : H ⟶ K) (hf : Function.Injective f.hom) 
   exact (faithfullyFlat_iff_injective_of_isGeometricallyReduced (derivedMap f)).mpr
     (derivedMap_injective f hf)
 
-/-- Over an algebraically closed field, a schematically dominant homomorphism between
-finite-type affine groups with reduced target is surjective on the algebraically closed
-points of their derived subgroups. -/
-theorem derivedMap_mapPointsFunctor_app_surjective (f : H ⟶ K)
-    (hf : Function.Injective f.hom)
-    (L : Type w) [Field L] [Algebra k L] [IsAlgClosed L] :
-    Function.Surjective ((mapPointsFunctor (derivedMap f)).app (CommAlgCat.of k L)) := by
-  apply mapPointsFunctor_app_surjective_of_faithfullyFlat L (derivedMap f)
-  · apply AlgHom.FiniteType.of_comp_finiteType (f := Algebra.ofId k _)
-    rw [Algebra.comp_ofId]
-    exact RingHom.finiteType_algebraMap.mpr inferInstance
-  · exact derivedMap_faithfullyFlat f hf
-
 end AlgClosed
 
-end CommHopfAlgCat
+end TauCeti.CommHopfAlgCat
