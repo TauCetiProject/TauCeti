@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Polynomial.IrreducibleBasis.Basic
+public import TauCeti.RingTheory.Polynomial.IrreducibleBasis.Multiplicity
 public import TauCeti.RingTheory.MvPolynomial.Lazard.Map
-import Mathlib.Algebra.Polynomial.Roots
 
 /-!
 # Reconstructing Lazard evaluations from an irreducible basis
@@ -38,13 +37,16 @@ open MvPolynomial Polynomial
 namespace Finset.IsIrreducibleBasis
 
 variable {R : Type*} [CommRing R] [IsDomain R] {n : ℕ}
-  [UniqueFactorizationMonoid (MvPolynomial (Fin n) R)]
-  [NormalizedGCDMonoid (MvPolynomial (Fin n) R)]
   {F B : Finset (Polynomial (MvPolynomial (Fin n) R))}
 
 local notation "swap" =>
   (AlgEquiv.trans (AlgEquiv.symm (optionEquivLeft R (Fin n)))
     (optionEquivRight R (Fin n)))
+
+section Content
+
+variable [UniqueFactorizationMonoid (MvPolynomial (Fin n) R)]
+  [NormalizedGCDMonoid (MvPolynomial (Fin n) R)]
 
 /-- The Lazard evaluation of each input is a scalar times the product of powers
 of the Lazard evaluations of its basis factors. The scalar contains the Lazard-evaluated
@@ -98,6 +100,23 @@ theorem exists_lazardExponent_eq_content_add_sum (hB : F.IsIrreducibleBasis B)
   exact congrArg (_ + ·) (Finset.sum_congr rfl fun b hb' ↦
     lazardExponent_pow (hb b hb') _ _)
 
+/-- Invariant content and basis exponents give invariant input exponents, including
+zero inputs. No connectedness or nonnullification hypothesis is required. -/
+theorem lazardExponent_eq (hB : F.IsIrreducibleBasis B)
+    {f : Polynomial (MvPolynomial (Fin n) R)} (hf : f ∈ F) {a a' : Fin n → R}
+    (hc : f.content.lazardExponent a = f.content.lazardExponent a')
+    (hb : ∀ b ∈ B, (swap b).lazardExponent (Polynomial.C ∘ a) =
+      (swap b).lazardExponent (Polynomial.C ∘ a')) :
+    (swap f).lazardExponent (Polynomial.C ∘ a) =
+      (swap f).lazardExponent (Polynomial.C ∘ a') := by
+  by_cases hf0 : f = 0
+  · simp [hf0]
+  obtain ⟨e, he⟩ := hB.exists_lazardExponent_eq_content_add_sum hf hf0
+  rw [he a, he a', hc]
+  exact congrArg (_ + ·) (Finset.sum_congr rfl fun b hb' ↦ congrArg (e b • ·) (hb b hb'))
+
+end Content
+
 /-- The multiplicities in a nonzero input's Lazard evaluation are fixed weighted sums
 of the multiplicities in the basis evaluations, even on nullified ordinary fibers. -/
 theorem exists_rootMultiplicity_lazardEval_eq_sum (hB : F.IsIrreducibleBasis B)
@@ -105,20 +124,21 @@ theorem exists_rootMultiplicity_lazardEval_eq_sum (hB : F.IsIrreducibleBasis B)
     ∃ e : Polynomial (MvPolynomial (Fin n) R) → ℕ, ∀ (a : Fin n → R) (t : R),
       ((swap f).lazardEval (Polynomial.C ∘ a)).rootMultiplicity t =
         ∑ b ∈ B, e b * ((swap b).lazardEval (Polynomial.C ∘ a)).rootMultiplicity t := by
-  classical
-  obtain ⟨u, e, he⟩ := hB.exists_lazardEval_eq_C_mul_prod hf
+  obtain ⟨e, he⟩ := hB.exists_rootMultiplicity_eq_sum (A := R) hf
   refine ⟨e, fun a t ↦ ?_⟩
-  have hc : f.content.lazardEval a ≠ 0 :=
-    lazardEval_ne_zero (fun h ↦ hf0 (content_eq_zero_iff.mp h)) a
-  have hu : (u : MvPolynomial (Fin n) R).lazardEval a ≠ 0 :=
-    lazardEval_ne_zero u.ne_zero a
-  have hp : (∏ b ∈ B, (swap b).lazardEval (Polynomial.C ∘ a) ^ e b) ≠ 0 := by
-    refine Finset.prod_ne_zero_iff.mpr fun b hb ↦ pow_ne_zero _ ?_
-    apply lazardEval_ne_zero
-    simpa only [map_zero] using (swap).injective.ne (hB.irreducible b hb).ne_zero
-  rw [he, ← Polynomial.count_roots, Polynomial.roots_C_mul _ (mul_ne_zero hc hu),
-    Polynomial.roots_prod _ B hp]
-  simp [Polynomial.roots_pow, Multiset.count_bind, Polynomial.count_roots]
+  let φ : Polynomial (MvPolynomial (Fin n) R) →*₀ Polynomial R :=
+    (lazardEvalHom (Polynomial.C ∘ a)).comp (swap).toRingHom.toMonoidWithZeroHom
+  have hφ (g : Polynomial (MvPolynomial (Fin n) R)) :
+      φ g = (swap g).lazardEval (Polynomial.C ∘ a) := by
+    simp only [φ, MonoidWithZeroHom.comp_apply, RingHom.coe_toMonoidWithZeroHom,
+      RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv,
+      lazardEvalHom_apply]
+  have hC (c : MvPolynomial (Fin n) R) : ∃ r : R, φ (Polynomial.C c) = Polynomial.C r := by
+    refine ⟨c.lazardEval a, ?_⟩
+    rw [hφ, AlgEquiv.trans_apply, optionEquivRight_optionEquivLeft_symm_C,
+      lazardEval_map Polynomial.C Polynomial.C_injective]
+  have hp : swap f ≠ 0 := by simpa only [map_zero] using (swap).injective.ne hf0
+  simpa only [hφ] using he φ hC ((hφ f).symm ▸ lazardEval_ne_zero hp _) t
 
 /-- The union of the roots in `R` of the nonzero inputs' Lazard evaluations is
 exactly the roots of the basis evaluations. Thus a complete basis stack also covers the
@@ -143,21 +163,6 @@ theorem exists_isRoot_lazardEval_iff (hB : F.IsIrreducibleBasis B) (a : Fin n �
     refine ⟨f, hf, hf0, ht.dvd ?_⟩
     simpa only [lazardEvalHom_apply] using
       _root_.map_dvd (lazardEvalHom (Polynomial.C ∘ a)) (_root_.map_dvd (swap) hbf)
-
-/-- Invariant content and basis exponents give invariant input exponents, including
-zero inputs. No connectedness or nonnullification hypothesis is required. -/
-theorem lazardExponent_eq (hB : F.IsIrreducibleBasis B)
-    {f : Polynomial (MvPolynomial (Fin n) R)} (hf : f ∈ F) {a a' : Fin n → R}
-    (hc : f.content.lazardExponent a = f.content.lazardExponent a')
-    (hb : ∀ b ∈ B, (swap b).lazardExponent (Polynomial.C ∘ a) =
-      (swap b).lazardExponent (Polynomial.C ∘ a')) :
-    (swap f).lazardExponent (Polynomial.C ∘ a) =
-      (swap f).lazardExponent (Polynomial.C ∘ a') := by
-  by_cases hf0 : f = 0
-  · simp [hf0]
-  obtain ⟨e, he⟩ := hB.exists_lazardExponent_eq_content_add_sum hf hf0
-  rw [he a, he a', hc]
-  exact congrArg (_ + ·) (Finset.sum_congr rfl fun b hb' ↦ congrArg (e b • ·) (hb b hb'))
 
 /-- Equal basis root multiplicities imply equal input root multiplicities after Lazard
 evaluation. The base points and root coordinates may both differ. -/
