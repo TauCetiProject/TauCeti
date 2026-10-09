@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Action.Sigma
-public import Mathlib.Algebra.Group.Action.TransferInstance
+public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.NumberTheory.RamificationInertia.Galois
 public import TauCeti.NumberTheory.NumberField.AutomorphismAction
 public import TauCeti.RingTheory.Ideal.PrimesOver
+public import TauCeti.RingTheory.DedekindDomain.Action
 import TauCeti.RingTheory.Unramified.AlgEquiv
 
 /-!
@@ -42,6 +43,8 @@ transitivity.
   `TauCeti.stabilizer_primesOver_ringOfIntegers`: the primes-over action and its stabilizers
   agree with those on the underlying ideals.
 * `TauCeti.isPretransitive_primesOver_ringOfIntegers`: transitivity for Galois extensions.
+* `TauCeti.primesAboveRingOfIntegersSubMulAction`: primes above a set as a stable subset of
+  the height-one spectrum, usable in the S-unit valuation sequence.
 * `TauCeti.primesAboveRingOfIntegersMulAction` and
   `TauCeti.sigmaPrimesOverEquivPrimesAbove_smul`: the canonical primes-above action and its
   equivariant comparison with the fibre indexing.
@@ -257,12 +260,35 @@ instance isPretransitive_primesOver_ringOfIntegers [IsGalois K L] {p : Ideal (�
     obtain ⟨σ, hσ⟩ := Ideal.exists_smul_eq_of_isGaloisGroup p P.1 Q.1 (L ≃ₐ[K] L)
     exact ⟨σ, Subtype.ext ((coe_smul_primesOver_ringOfIntegers K L σ P).trans hσ)⟩
 
-/-- The automorphism action on primes above a set, transported from the primes-over fibres. -/
+/-- Primes above a set of base primes form a stable subset of the height-one spectrum.
+Its carrier is the existing `HeightOneSpectrum.primesAbove` set. -/
+noncomputable abbrev primesAboveRingOfIntegersSubMulAction
+    (S : Set (IsDedekindDomain.HeightOneSpectrum (𝓞 K))) :
+    SubMulAction (L ≃ₐ[K] L) (IsDedekindDomain.HeightOneSpectrum (𝓞 L)) where
+  carrier := IsDedekindDomain.HeightOneSpectrum.primesAbove (𝓞 K) (𝓞 L) S
+  smul_mem' σ {w} hw := by
+    rw [IsDedekindDomain.HeightOneSpectrum.mem_primesAbove_iff] at hw ⊢
+    convert hw using 1
+    apply IsDedekindDomain.HeightOneSpectrum.asIdeal_injective
+    -- Contraction of a height-one prime is contraction of its underlying ideal.
+    change (σ • w).asIdeal.under (𝓞 K) = w.asIdeal.under (𝓞 K)
+    rw [heightOneSpectrum_asIdeal_smul, Ideal.under_smul]
+
+omit [NumberField K] [NumberField L] in
+/-- The stable subset of primes above a set has the canonical primes-above carrier. -/
+@[simp]
+theorem primesAboveRingOfIntegersSubMulAction_coe
+    (S : Set (IsDedekindDomain.HeightOneSpectrum (𝓞 K))) :
+    (primesAboveRingOfIntegersSubMulAction K L S :
+      Set (IsDedekindDomain.HeightOneSpectrum (𝓞 L))) =
+      IsDedekindDomain.HeightOneSpectrum.primesAbove (𝓞 K) (𝓞 L) S := (rfl)
+
+/-- The automorphism action on primes above a set is the restricted height-one-prime action. -/
 noncomputable instance primesAboveRingOfIntegersMulAction
     (S : Set (IsDedekindDomain.HeightOneSpectrum (𝓞 K))) :
     MulAction (L ≃ₐ[K] L)
       ↥(IsDedekindDomain.HeightOneSpectrum.primesAbove (𝓞 K) (𝓞 L) S) :=
-  (sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) S).symm.mulAction (L ≃ₐ[K] L)
+  inferInstanceAs (MulAction (L ≃ₐ[K] L) (primesAboveRingOfIntegersSubMulAction K L S))
 
 /-- The canonical primes-above carrier and its fibre reindexing are equivariantly equivalent. -/
 @[simp]
@@ -271,23 +297,22 @@ theorem sigmaPrimesOverEquivPrimesAbove_smul
     (p : Σ v : S, v.1.asIdeal.primesOver (𝓞 L)) :
     sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) S (σ • p) =
       σ • sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) S p := by
-  -- The transported action applies the inverse reindexing, the fibre action, then reindexing.
-  change _ = sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) S
-    (σ • (sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) S).symm
-      (sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) S p))
-  rw [Equiv.symm_apply_apply]
+  apply Subtype.ext
+  apply IsDedekindDomain.HeightOneSpectrum.asIdeal_injective
+  -- The subtype action restricts the ambient action; compare the underlying ideals.
+  change _ = (σ • (sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) S p).1).asIdeal
+  rcases p with ⟨v, P⟩
+  simp only [sigmaPrimesOverEquivPrimesAbove_apply_asIdeal, Sigma.smul_mk,
+    coe_smul_primesOver_ringOfIntegers, heightOneSpectrum_asIdeal_smul]
 
+omit [NumberField K] [NumberField L] in
 /-- On underlying ideals, the primes-above action is the canonical pointwise ideal action. -/
 @[simp]
 theorem asIdeal_smul_primesAbove_ringOfIntegers
     (S : Set (IsDedekindDomain.HeightOneSpectrum (𝓞 K))) (σ : L ≃ₐ[K] L)
     (w : ↥(IsDedekindDomain.HeightOneSpectrum.primesAbove (𝓞 K) (𝓞 L) S)) :
     (σ • w).1.asIdeal = σ • w.1.asIdeal := by
-  obtain ⟨p, rfl⟩ := (sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) S).surjective w
-  rw [← sigmaPrimesOverEquivPrimesAbove_smul]
-  rcases p with ⟨v, P⟩
-  simp only [sigmaPrimesOverEquivPrimesAbove_apply_asIdeal, Sigma.smul_mk,
-    coe_smul_primesOver_ringOfIntegers]
+  exact heightOneSpectrum_asIdeal_smul σ w.1
 
 end PrimesOver
 
