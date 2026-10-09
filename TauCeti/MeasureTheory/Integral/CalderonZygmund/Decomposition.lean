@@ -27,7 +27,8 @@ where the sum runs over a countable family of pairwise disjoint dyadic cubes `Q`
 It is the device that turns `L²` bounds for singular integral operators into weak type `(1, 1)`
 bounds: the good part is bounded, hence in `L²`, while the bad parts have mean zero on small
 cubes, where the smoothness of the kernel makes them nearly cancel. Together with Marcinkiewicz
-interpolation this gives the `Lᵖ` boundedness of Calderón–Zygmund operators for `1 < p < ∞`.
+interpolation this gives `Lᵖ` boundedness for `1 < p < 2`; the range `2 < p < ∞` then follows by
+applying the corresponding bounds to the adjoint and using duality.
 
 The cubes are the maximal dyadic cubes on which the average of `‖f‖` exceeds `t`
 (`TauCeti.calderonZygmundCubes`). They exist because averages over large cubes are small, which
@@ -206,10 +207,12 @@ cube, and `0` off it. -/
 noncomputable def calderonZygmundBad (f : (ι → ℝ) → E) (q : ℤ × (ι → ℤ)) : (ι → ℝ) → E :=
   (dyadicCube q.1 q.2).indicator fun x => f x - ⨍ y in dyadicCube q.1 q.2, f y ∂volume
 
+@[simp]
 theorem calderonZygmundBad_of_mem (hx : x ∈ dyadicCube q.1 q.2) :
     calderonZygmundBad f q x = f x - ⨍ y in dyadicCube q.1 q.2, f y ∂volume :=
   indicator_of_mem hx _
 
+@[simp]
 theorem calderonZygmundBad_of_notMem (hx : x ∉ dyadicCube q.1 q.2) :
     calderonZygmundBad f q x = 0 :=
   indicator_of_notMem hx _
@@ -254,6 +257,7 @@ theorem integrable_calderonZygmundBad (hf : Integrable f) (q : ℤ × (ι → �
     (measurableSet_dyadicCube q.1 q.2)
 
 /-- Each bad part has integral zero. -/
+@[simp]
 theorem integral_calderonZygmundBad [CompleteSpace E] (f : (ι → ℝ) → E) (q : ℤ × (ι → ℤ)) :
     ∫ x, calderonZygmundBad f q x = 0 := by
   rw [calderonZygmundBad, integral_indicator (measurableSet_dyadicCube q.1 q.2)]

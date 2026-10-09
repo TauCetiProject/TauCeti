@@ -190,15 +190,6 @@ theorem tendsto_volume_dyadicCube_atTop [Nonempty ι] (m : ℤ → ι → ℤ) :
   obtain ⟨n, hn⟩ := exists_nat_gt b
   exact ⟨n, hn.le.trans <| by exact_mod_cast (Nat.lt_two_pow_self).le⟩
 
-/-- The side lengths `2ᵏ` of the dyadic cubes tend to zero as the level tends to `-∞`. -/
-private theorem tendsto_two_zpow_atBot : Tendsto (fun k : ℤ => (2 : ℝ) ^ k) atBot (𝓝 0) := by
-  have : Tendsto (fun k : ℤ => (2 : ℝ) ^ k) atTop atTop :=
-    tendsto_atTop_atTop_of_monotone (fun _ _ h => zpow_le_zpow_right₀ one_le_two h) fun b => by
-      obtain ⟨n, hn⟩ := exists_nat_gt b
-      exact ⟨n, hn.le.trans <| by exact_mod_cast (Nat.lt_two_pow_self).le⟩
-  refine (this.comp tendsto_neg_atBot_atTop).inv_tendsto_atTop.congr fun k => ?_
-  simp [zpow_neg]
-
 /-- **Lebesgue's differentiation theorem along dyadic cubes**: for an integrable `g`, at almost
 every `x` the averages of `g` over the dyadic cubes containing `x` converge to `g x` as the level
 tends to `-∞`. -/
@@ -211,7 +202,11 @@ theorem ae_tendsto_setLAverage_dyadicCube {g : (ι → ℝ) → ℝ≥0∞} (hg 
     with x hx
   have hδ : Tendsto (fun k : ℤ => (2 : ℝ) ^ k / 2) atBot (𝓝[>] 0) := by
     refine tendsto_nhdsWithin_iff.2 ⟨?_, Eventually.of_forall fun k => mem_Ioi.2 (by positivity)⟩
-    simpa using tendsto_two_zpow_atBot.div_const 2
+    have htwo : Tendsto (fun k : ℤ => (2 : ℝ) ^ k) atBot (𝓝 0) := by
+      simpa only [Function.comp_def, id_eq, Real.rpow_intCast] using
+        (tendsto_rpow_atBot_of_base_gt_one 2 one_lt_two).comp
+          ((tendsto_intCast_atBot_iff (R := ℝ)).2 tendsto_id)
+    simpa using htwo.div_const 2
   have hball := IsUnifLocDoublingMeasure.tendsto_closedBall_filterAt volume (c · x) _ hδ
     (Eventually.of_forall fun k => by
       rw [one_mul]
