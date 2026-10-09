@@ -73,9 +73,11 @@ lemma fiberMap_comp_fiberι (sq : CommSq f p p' g) (b : B) :
 @[simp]
 lemma fiberMap_id (sq : CommSq (𝟙 E) p p (𝟙 B)) (b : B) : sq.fiberMap b = 𝟙 _ := (rfl)
 
-/-- The map on fibres induced by the horizontal composite of two squares is the composite of the
-maps on fibres. -/
-lemma fiberMap_horiz_comp (sq : CommSq f p p' g) (sq' : CommSq f' p' p'' g') (b : B) :
-    (sq.horiz_comp sq').fiberMap b = sq.fiberMap b ≫ sq'.fiberMap (g b) := (rfl)
+/-- The composite of the maps on fibres induced by two squares is the map on fibres induced by
+their horizontal composite.  It is stated in this direction so that `simp` can use it: the
+middle map `p'` cannot be recovered from the composite square, as for `eqToHom_trans`. -/
+@[reassoc (attr := simp)]
+lemma fiberMap_comp_fiberMap (sq : CommSq f p p' g) (sq' : CommSq f' p' p'' g') (b : B) :
+    sq.fiberMap b ≫ sq'.fiberMap (g b) = (sq.horiz_comp sq').fiberMap b := (rfl)
 
 end CategoryTheory.CommSq

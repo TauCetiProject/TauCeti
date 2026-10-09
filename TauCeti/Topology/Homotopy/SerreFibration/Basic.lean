@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.MorphismProperty.LiftingProperty
-public import Mathlib.Topology.Category.TopCat.Limits.Pullbacks
 public import Mathlib.Topology.Category.TopCat.Monoidal
 public import Mathlib.Topology.Category.TopCat.Sphere
-public import Mathlib.Topology.Homotopy.Lifting
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Topology.Category.TopCat.Pullback
+public import TauCeti.Topology.Homotopy.Lifting
 
 /-!
 # Serre fibrations
@@ -26,14 +25,11 @@ cylinders, and this is how `TauCeti.TopCat.serreFibrations` is defined, as a
 theory of lifting properties apply: Serre fibrations contain the isomorphisms, are closed under
 composition, retracts and products, and are stable under base change.
 
-The homotopy lifting property itself, `TauCeti.HasHomotopyLiftingProperty`, is stated for maps
-between topological spaces in arbitrary universes.  Covering maps have it for every space
-(`IsCoveringMap.hasHomotopyLiftingProperty`), as do product projections
-(`TauCeti.hasHomotopyLiftingProperty_fst`), and a map with it lifts paths.  Since the closed unit
-ball of `ℝⁿ` is homeomorphic to the cube `Iⁿ`, a Serre fibration is equivalently a map with the
-homotopy lifting property with respect to every cube
-(`TauCeti.TopCat.mem_serreFibrations_iff_cube`); cubes are the convenient test spaces for
-subdivision arguments.
+The homotopy lifting property itself, `TauCeti.HasHomotopyLiftingProperty`, is in
+`TauCeti.Topology.Homotopy.Lifting`.  Since the closed unit ball of `ℝⁿ` is homeomorphic to the
+cube `Iⁿ`, a Serre fibration is equivalently a map with the homotopy lifting property with respect
+to every cube (`TauCeti.TopCat.mem_serreFibrations_iff_cube`); cubes are the convenient test spaces
+for subdivision arguments.
 
 A map of fibrations is a commutative square, and it induces maps between the fibres
 (`CategoryTheory.CommSq.fiberMap`, in `TauCeti.Topology.Category.TopCat.Fiber`).  The base change
@@ -43,8 +39,6 @@ of a fibration along a map `g : B' ⟶ B` is again a fibration
 
 ## Main declarations
 
-* `TauCeti.HasHomotopyLiftingProperty`: the homotopy lifting property of a map with respect to a
-  space.
 * `TauCeti.TopCat.serreFibrations`: Serre fibrations, the right lifting property with respect to
   the inclusions `ι₀ : Dⁿ ⟶ Dⁿ ⊗ I`.
 * `TauCeti.TopCat.mem_serreFibrations_iff` and `TauCeti.TopCat.mem_serreFibrations_iff_cube`:
@@ -71,91 +65,7 @@ noncomputable section
 open CategoryTheory Limits MorphismProperty MonoidalCategory CartesianMonoidalCategory
   unitInterval
 
-universe u v w w'
-
-section HomotopyLifting
-
-variable {E : Type u} {B : Type v} [TopologicalSpace E] [TopologicalSpace B]
-  {A : Type w} [TopologicalSpace A] {A' : Type w'} [TopologicalSpace A'] {p : E → B}
-
-namespace TauCeti
-
-/-- A map `p : E → B` has the *homotopy lifting property* with respect to a space `A` when every
-homotopy `H : I × A → B` whose initial map lifts along `p` to some `f : A → E` lifts along `p` to a
-homotopy `G : I × A → E` starting at `f`. -/
-def HasHomotopyLiftingProperty (p : E → B) (A : Type w) [TopologicalSpace A] : Prop :=
-  ∀ (f : C(A, E)) (H : C(I × A, B)), (∀ a, H (0, a) = p (f a)) →
-    ∃ G : C(I × A, E), p ∘ G = H ∧ ∀ a, G (0, a) = f a
-
-/-- Unfolding of `TauCeti.HasHomotopyLiftingProperty`, so that the property can be proved and
-used in modules that only import this one. -/
-theorem hasHomotopyLiftingProperty_iff :
-    HasHomotopyLiftingProperty p A ↔
-      ∀ (f : C(A, E)) (H : C(I × A, B)), (∀ a, H (0, a) = p (f a)) →
-        ∃ G : C(I × A, E), p ∘ G = H ∧ ∀ a, G (0, a) = f a :=
-  Iff.rfl
-
-/-- The defining consequence of the homotopy lifting property: a homotopy whose initial map lifts
-along `p` lifts along `p` to a homotopy starting at the given lift. -/
-theorem HasHomotopyLiftingProperty.exists_lift (h : HasHomotopyLiftingProperty p A)
-    (f : C(A, E)) (H : C(I × A, B)) (hH : ∀ a, H (0, a) = p (f a)) :
-    ∃ G : C(I × A, E), p ∘ G = H ∧ ∀ a, G (0, a) = f a :=
-  h f H hH
-
-/-- A map with the homotopy lifting property with respect to a nonempty space lifts paths: a path
-in `B` starting at `p e` lifts to a path in `E` starting at `e`. -/
-theorem HasHomotopyLiftingProperty.exists_path_lift [Nonempty A]
-    (h : HasHomotopyLiftingProperty p A) {e : E} {b : B} (γ : Path (p e) b) :
-    ∃ Γ : C(I, E), Γ 0 = e ∧ p ∘ Γ = γ := by
-  obtain ⟨G, hG, hG₀⟩ := h.exists_lift (.const A e) ⟨fun x ↦ γ x.1, by fun_prop⟩
-    fun _ ↦ γ.source
-  let a : A := Classical.arbitrary A
-  refine ⟨⟨fun t ↦ G (t, a), by fun_prop⟩, hG₀ a, funext fun t ↦ ?_⟩
-  exact congrFun hG (t, a)
-
-/-- A map with the homotopy lifting property with respect to a nonempty space, from a nonempty
-space onto a path-connected space, is surjective. -/
-theorem HasHomotopyLiftingProperty.surjective [Nonempty A] [Nonempty E] [PathConnectedSpace B]
-    (h : HasHomotopyLiftingProperty p A) : Function.Surjective p := by
-  intro b
-  let e : E := Classical.arbitrary E
-  obtain ⟨Γ, -, hΓ⟩ := h.exists_path_lift (PathConnectedSpace.somePath (p e) b)
-  exact ⟨Γ 1, (congrFun hΓ 1).trans (Path.target _)⟩
-
-/-- The projection `B × F → B` has the homotopy lifting property with respect to every space: a
-homotopy lifts by keeping the `F`-coordinate of the initial lift fixed. -/
-theorem hasHomotopyLiftingProperty_fst (F : Type*) [TopologicalSpace F] (A : Type w)
-    [TopologicalSpace A] : HasHomotopyLiftingProperty (Prod.fst : B × F → B) A :=
-  fun f H hH ↦ ⟨⟨fun x ↦ (H x, (f x.2).2), by fun_prop⟩, rfl, fun a ↦ Prod.ext (hH a) rfl⟩
-
-/-- The homotopy lifting property with respect to a space passes to every space homeomorphic to
-it. -/
-theorem HasHomotopyLiftingProperty.of_homeomorph (h : HasHomotopyLiftingProperty p A')
-    (e : A ≃ₜ A') : HasHomotopyLiftingProperty p A := by
-  -- transport the lifting problem along `e` and its solution back along `e.symm`
-  intro f H hH
-  let φ : C(I × A, I × A') := ⟨fun x ↦ (x.1, e x.2), by fun_prop⟩
-  let ψ : C(I × A', I × A) := ⟨fun x ↦ (x.1, e.symm x.2), by fun_prop⟩
-  obtain ⟨G, hG, hG₀⟩ := h.exists_lift (f.comp e.symm) (H.comp ψ) fun y ↦ hH (e.symm y)
-  refine ⟨G.comp φ, funext fun x ↦ ?_, fun x ↦ by simpa [φ] using hG₀ (e x)⟩
-  simpa [φ, ψ] using congrFun hG (φ x)
-
-end TauCeti
-
-open TauCeti
-
-/-- The homotopy lifting property with respect to a space depends on the space only up to
-homeomorphism. -/
-theorem Homeomorph.hasHomotopyLiftingProperty_iff (e : A ≃ₜ A') :
-    HasHomotopyLiftingProperty p A ↔ HasHomotopyLiftingProperty p A' :=
-  ⟨fun h ↦ h.of_homeomorph e.symm, fun h ↦ h.of_homeomorph e⟩
-
-/-- A covering map has the homotopy lifting property with respect to every space. -/
-theorem IsCoveringMap.hasHomotopyLiftingProperty (hp : IsCoveringMap p) (A : Type w)
-    [TopologicalSpace A] : HasHomotopyLiftingProperty p A :=
-  fun f H hH ↦ ⟨hp.liftHomotopy H f hH, hp.liftHomotopy_lifts H f hH, hp.liftHomotopy_zero H f hH⟩
-
-end HomotopyLifting
+universe u
 
 namespace TauCeti.TopCat
 
@@ -185,7 +95,7 @@ theorem hasLiftingProperty_ι₀_iff {p : E ⟶ B} :
     · exact ConcreteCategory.congr_hom sq.fac_left a
   · intro h
     refine ⟨fun {f g} sq ↦ ?_⟩
-    obtain ⟨G, hG, hG₀⟩ := h.exists_lift f.hom (g.hom.comp φ) fun a ↦
+    obtain ⟨G, hG, hG₀⟩ := h f.hom (g.hom.comp φ) fun a ↦
       (ConcreteCategory.congr_hom sq.w a).symm
     exact ⟨⟨{ l := TopCat.ofHom (G.comp ψ)
               fac_left := by ext a; exact hG₀ a
