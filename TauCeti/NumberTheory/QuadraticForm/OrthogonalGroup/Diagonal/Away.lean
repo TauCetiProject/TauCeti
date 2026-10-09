@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Diagonal.Finite
-public import TauCeti.Topology.Algebra.RestrictedProduct.Away.Basic
+public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.AwayAdelic
 
 /-!
 # Rational orthogonal and Spin points away from a set of primes
@@ -15,11 +15,11 @@ The rational diagonals in the restricted products away from `S` are the restrict
 finite adelic diagonals. Their coordinates are the usual scalar extensions at the primes outside
 `S`, and they commute with the componentwise maps `Spin → SO → O`.
 
-The target groups are instances of `TauCeti.RestrictedProductGroupAway`, with the compatible
-orthogonal, special orthogonal and Spin reference families. No finiteness assumption on `S` is
-needed to construct the maps. Injectivity needs only one prime outside `S`; in particular it holds
-for every finite `S`, by `Set.Finite.exists_notMem`. Omitting every prime would instead leave a
-trivial target, so no unconditional injectivity statement is made.
+The target groups are `awayAdelicOrthogonal`, `awayAdelicSpecialOrthogonal` and `awayAdelicSpin`,
+with the compatible orthogonal, special orthogonal and Spin reference families. No finiteness
+assumption on `S` is needed to construct the maps. Injectivity needs only one prime outside `S`;
+in particular it holds for every finite `S`, by `Set.Finite.exists_notMem`. Omitting every prime
+would instead leave a trivial target, so no unconditional injectivity statement is made.
 
 ## References
 
@@ -43,8 +43,8 @@ variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 /-- The rational orthogonal diagonal away from `S`, obtained by forgetting the finite diagonal's
 coordinates in `S`. -/
 def awayAdelicOrthogonalDiagonal :
-    orthogonalGroup Q →* RestrictedProductGroupAway S U.orthogonal :=
-  (restrictAway S U.orthogonal).comp U.finiteAdelicOrthogonalDiagonal
+    orthogonalGroup Q →* U.awayAdelicOrthogonal S :=
+  (U.finiteAdelicOrthogonalToAway S).comp U.finiteAdelicOrthogonalDiagonal
 
 /-- At a prime outside `S`, the orthogonal diagonal is scalar extension to that prime. -/
 @[simp]
@@ -55,8 +55,8 @@ theorem awayAdelicOrthogonalDiagonal_apply (g : orthogonalGroup Q)
 
 /-- Restricting the finite orthogonal diagonal gives the diagonal away from `S`. -/
 @[simp]
-theorem restrictAway_comp_finiteAdelicOrthogonalDiagonal :
-    (restrictAway S U.orthogonal).comp U.finiteAdelicOrthogonalDiagonal =
+theorem finiteAdelicOrthogonalToAway_comp_finiteAdelicOrthogonalDiagonal :
+    (U.finiteAdelicOrthogonalToAway S).comp U.finiteAdelicOrthogonalDiagonal =
       U.awayAdelicOrthogonalDiagonal S := (rfl)
 
 /-- The orthogonal diagonal away from `S` is injective when some prime remains. For finite `S`,
@@ -71,8 +71,8 @@ theorem awayAdelicOrthogonalDiagonal_injective (hS : ∃ p : Nat.Primes, p ∉ S
 /-- The rational Spin diagonal away from `S`. Its eventual integrality is inherited from the
 finite Spin diagonal. -/
 def awayAdelicSpinDiagonal :
-    spinGroup Q →* RestrictedProductGroupAway S U.spin :=
-  (restrictAway S U.spin).comp U.finiteAdelicSpinDiagonal
+    spinGroup Q →* U.awayAdelicSpin S :=
+  (U.finiteAdelicSpinToAway S).comp U.finiteAdelicSpinDiagonal
 
 /-- At a prime outside `S`, the Spin diagonal is scalar extension to that prime. -/
 @[simp]
@@ -83,8 +83,9 @@ theorem awayAdelicSpinDiagonal_apply (x : spinGroup Q) (p : {p : Nat.Primes // p
 
 /-- Restricting the finite Spin diagonal gives the diagonal away from `S`. -/
 @[simp]
-theorem restrictAway_comp_finiteAdelicSpinDiagonal :
-    (restrictAway S U.spin).comp U.finiteAdelicSpinDiagonal = U.awayAdelicSpinDiagonal S := (rfl)
+theorem finiteAdelicSpinToAway_comp_finiteAdelicSpinDiagonal :
+    (U.finiteAdelicSpinToAway S).comp U.finiteAdelicSpinDiagonal =
+      U.awayAdelicSpinDiagonal S := (rfl)
 
 /-- The Spin diagonal away from `S` is injective when some prime remains. -/
 theorem awayAdelicSpinDiagonal_injective (hS : ∃ p : Nat.Primes, p ∉ S) :
@@ -99,8 +100,8 @@ variable [FiniteDimensional ℚ V]
 /-- The rational special orthogonal diagonal away from `S`. Its integrality comes from the
 orthogonal reference family. -/
 def awayAdelicSpecialOrthogonalDiagonal :
-    specialOrthogonalGroup Q →* RestrictedProductGroupAway S U.specialOrthogonal :=
-  (restrictAway S U.specialOrthogonal).comp U.finiteAdelicSpecialOrthogonalDiagonal
+    specialOrthogonalGroup Q →* U.awayAdelicSpecialOrthogonal S :=
+  (U.finiteAdelicSpecialOrthogonalToAway S).comp U.finiteAdelicSpecialOrthogonalDiagonal
 
 /-- At a prime outside `S`, the special orthogonal diagonal is scalar extension to that prime. -/
 @[simp]
@@ -112,8 +113,8 @@ theorem awayAdelicSpecialOrthogonalDiagonal_apply (g : specialOrthogonalGroup Q)
 
 /-- Restricting the finite special orthogonal diagonal gives the diagonal away from `S`. -/
 @[simp]
-theorem restrictAway_comp_finiteAdelicSpecialOrthogonalDiagonal :
-    (restrictAway S U.specialOrthogonal).comp U.finiteAdelicSpecialOrthogonalDiagonal =
+theorem finiteAdelicSpecialOrthogonalToAway_comp_finiteAdelicSpecialOrthogonalDiagonal :
+    (U.finiteAdelicSpecialOrthogonalToAway S).comp U.finiteAdelicSpecialOrthogonalDiagonal =
       U.awayAdelicSpecialOrthogonalDiagonal S := (rfl)
 
 /-- The special orthogonal diagonal away from `S` is injective when some prime remains. -/
@@ -125,43 +126,25 @@ theorem awayAdelicSpecialOrthogonalDiagonal_injective (hS : ∃ p : Nat.Primes, 
   simpa using congrArg (fun x => x ⟨p, hp⟩) hgh
 
 /-- The componentwise Spin projection away from `S` commutes with the rational diagonals. -/
-theorem restrictedProductMapOfForall_comp_awayAdelicSpinDiagonal :
-    (restrictedProductMapOfForall
-      (fun p : {p : Nat.Primes // p ∉ S} => U.spin p.1)
-      (fun p => U.specialOrthogonal p.1)
-      (fun p => CliffordAlgebra.spinToSpecialOrthogonal (Q.baseChange ℚ_[(p.1 : ℕ)]))
-      (fun p => U.mapsTo_specialOrthogonal p.1)).comp (U.awayAdelicSpinDiagonal S) =
+theorem awayAdelicSpinToSpecialOrthogonal_comp_awayAdelicSpinDiagonal :
+    (U.awayAdelicSpinToSpecialOrthogonal S).comp (U.awayAdelicSpinDiagonal S) =
         (U.awayAdelicSpecialOrthogonalDiagonal S).comp
           (CliffordAlgebra.spinToSpecialOrthogonal Q) := by
   ext x p : 2
-  have h := congrArg (fun f => f x p.1)
-    U.finiteAdelicSpinToSpecialOrthogonal_comp_finiteAdelicSpinDiagonal
-  simpa only [MonoidHom.comp_apply, restrictedProductMapOfForall_apply,
+  simpa only [MonoidHom.comp_apply, awayAdelicSpinToSpecialOrthogonal_apply,
     awayAdelicSpinDiagonal_apply, awayAdelicSpecialOrthogonalDiagonal_apply,
     finiteAdelicSpinToSpecialOrthogonal_apply, finiteAdelicSpinDiagonal_apply,
-    finiteAdelicSpecialOrthogonalDiagonal_apply] using h
+    finiteAdelicSpecialOrthogonalDiagonal_apply] using congrArg (fun f ↦ f x p.1)
+      U.finiteAdelicSpinToSpecialOrthogonal_comp_finiteAdelicSpinDiagonal
 
 /-- The componentwise special orthogonal inclusion away from `S` commutes with the rational
 diagonals. -/
-theorem restrictedProductMapOfForall_comp_awayAdelicSpecialOrthogonalDiagonal :
-    (restrictedProductMapOfForall
-      (fun p : {p : Nat.Primes // p ∉ S} => U.specialOrthogonal p.1)
-      (fun p => U.orthogonal p.1)
-      (fun p => specialOrthogonalToOrthogonal (Q.baseChange ℚ_[(p.1 : ℕ)]))
-      (fun p _ hg => (U.mem_specialOrthogonal_iff p.1 _).mp hg)).comp
-        (U.awayAdelicSpecialOrthogonalDiagonal S) =
+theorem awayAdelicSpecialOrthogonalToOrthogonal_comp_awayAdelicSpecialOrthogonalDiagonal :
+    (U.awayAdelicSpecialOrthogonalToOrthogonal S).comp
+      (U.awayAdelicSpecialOrthogonalDiagonal S) =
           (U.awayAdelicOrthogonalDiagonal S).comp (specialOrthogonalToOrthogonal Q) := by
   ext g p : 2
-  have h := congrArg (fun f => f g p.1)
-    U.finiteAdelicSpecialOrthogonalToOrthogonal_comp_finiteAdelicSpecialOrthogonalDiagonal
-  calc
-    _ = specialOrthogonalToOrthogonal (Q.baseChange ℚ_[(p.1 : ℕ)])
-        (U.awayAdelicSpecialOrthogonalDiagonal S g p) :=
-      restrictedProductMapOfForall_apply _ _ _ _ _ p
-    _ = _ := by
-      simpa only [MonoidHom.comp_apply, awayAdelicSpecialOrthogonalDiagonal_apply,
-        awayAdelicOrthogonalDiagonal_apply, finiteAdelicSpecialOrthogonalToOrthogonal_apply,
-        finiteAdelicSpecialOrthogonalDiagonal_apply, finiteAdelicOrthogonalDiagonal_apply] using h
+  simp
 
 end
 
