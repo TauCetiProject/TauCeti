@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.ShortComplex.Splitting
 public import TauCeti.Algebra.Homology.TotallyAcyclic.Basic
 public import TauCeti.CategoryTheory.Exact.ExtensionClosed
 public import TauCeti.CategoryTheory.Exact.HomologicalComplex
@@ -46,24 +47,6 @@ namespace CochainComplex.IsTotallyAcyclic
 
 variable {A : Type u} [Ring A]
   {S : ShortComplex (CochainComplex (ModuleCat.{v} A) ℤ)}
-
-private lemma comp_section_comp_projection_eq_of_comp_inclusion_eq_zero
-    {T : ShortComplex (ModuleCat.{v} A)} (s : T.Splitting) (ρ : T.X₂ →ₗ[A] A)
-    (hρ : ρ.comp T.f.hom = 0) : (ρ.comp s.s.hom).comp T.g.hom = ρ := by
-  apply LinearMap.ext
-  intro x
-  have hid := congrArg ModuleCat.Hom.hom s.id
-  have hidx := LinearMap.congr_fun hid x
-  have hidx' : T.f.hom (s.r.hom x) + s.s.hom (T.g.hom x) = x := by
-    simpa only [ModuleCat.hom_add, ModuleCat.hom_comp, ModuleCat.hom_id,
-      LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply] using hidx
-  have hzero := LinearMap.congr_fun hρ (s.r.hom x)
-  simp only [LinearMap.comp_apply, LinearMap.zero_apply] at hzero ⊢
-  calc
-    ρ (s.s.hom (T.g.hom x)) = 0 + ρ (s.s.hom (T.g.hom x)) := by simp
-    _ = ρ (T.f.hom (s.r.hom x)) + ρ (s.s.hom (T.g.hom x)) := by rw [hzero]
-    _ = ρ (T.f.hom (s.r.hom x) + s.s.hom (T.g.hom x)) := (map_add ρ _ _).symm
-    _ = ρ x := congrArg ρ hidx'
 
 /-- The middle complex in a degreewise split extension of totally acyclic complexes is totally
 acyclic. The chosen splittings need not commute with the differentials. -/
@@ -125,8 +108,8 @@ theorem of_degreewise_split (h₁ : S.X₁.IsTotallyAcyclic) (h₃ : S.X₃.IsTo
         rw [hx, hrx', hψx]
         simp
       let ρ₃ : S.X₃.X j →ₗ[A] A := ρ.comp sⱼ.s.hom
-      have hρ_eq : ρ₃.comp (S.g.f j).hom = ρ := by
-        exact comp_section_comp_projection_eq_of_comp_inclusion_eq_zero sⱼ ρ hρf
+      have hρ_eq : ρ₃.comp (S.g.f j).hom = ρ :=
+        sⱼ.comp_s_hom_comp_g_hom_of_comp_f_hom_eq_zero ρ hρf
       have hρ : ρ.comp (S.X₂.d i j).hom = 0 := by
         ext x
         have hd := congrArg ModuleCat.Hom.hom (S.X₂.d_comp_d i j k)
