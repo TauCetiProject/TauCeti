@@ -133,7 +133,7 @@ private lemma integrable_and_integrable_exp [IsFiniteMeasure μ] (hf : Measurabl
 
 /-- Off the absolutely continuous case, the objectives along `n • 1_s`, for a `ν`-null measurable
 set `s` of positive `μ`-measure, are unbounded. -/
-private lemma exists_seq_of_not_absolutelyContinuous [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+private lemma exists_seq_of_not_absolutelyContinuous [IsFiniteMeasure μ]
     (hμν : ¬ μ ≪ ν) :
     ∃ g : ℕ → α → ℝ, (∀ n, Measurable (g n)) ∧ (∀ n, ∃ C, ∀ x, |g n x| ≤ C) ∧
       klDiv μ ν ≤ ⨆ n, ENNReal.ofReal (∫ x, g n x ∂μ - ∫ x, (exp (g n x) - 1) ∂ν) := by
