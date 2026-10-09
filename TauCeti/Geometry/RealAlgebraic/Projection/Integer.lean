@@ -35,9 +35,6 @@ delineate the real family.
 
 * `Finset.image_map_integerProjection`: the image of the integer projection in `ℝ[X 1, …, X n]` is
   the Collins projection of the real family.
-* `TauCeti.nonempty_delineation_image_finSuccEquiv_map_of_signInvariant_collinsProjection`: for an
-  injective coefficient map `φ : A →+* ℝ`, sign-invariance of the projection computed over `A` on
-  a preconnected set delineates the family mapped to `ℝ`.
 * `TauCeti.nonempty_delineation_integerFamily_of_signInvariant_integerProjection`:
   **integer delineability**. If every element of the integer projection is sign-invariant on a
   preconnected set `S ⊆ ℝⁿ`, the real family has a delineation over `S`.
@@ -133,26 +130,7 @@ end Finset
 
 namespace TauCeti
 
-variable {A : Type*} [CommRing A] {n : ℕ} {S : Set (Fin n → ℝ)}
-
-/-- **Delineability of families mapped to `ℝ`.** Let `P` be a finite family of polynomials in
-the variables `X 0, …, X n` over `A`, and let `φ : A →+* ℝ` be injective. If every element of the
-Collins projection computed over `A`, with `X 0` singled out, is sign-invariant after evaluation
-along `φ` on a preconnected set `S ⊆ ℝⁿ`, then the family obtained by mapping `P` to `ℝ` and
-singling out `X 0` has a delineation over `S`. -/
-theorem nonempty_delineation_image_finSuccEquiv_map_of_signInvariant_collinsProjection
-    [DecidableEq (MvPolynomial (Fin n) A)[X]] [DecidableEq (MvPolynomial (Fin n) ℝ)[X]]
-    {φ : A →+* ℝ} (hφ : Function.Injective φ) {P : Finset (MvPolynomial (Fin (n + 1)) A)}
-    (hS : IsPreconnected S)
-    (h : ∀ q ∈ (P.image (MvPolynomial.finSuccEquiv A n)).collinsProjection,
-      SignInvariant (fun x ↦ MvPolynomial.eval₂ φ x q) S) :
-    Nonempty (Delineation fun (p : P.image fun f ↦ MvPolynomial.finSuccEquiv ℝ n (f.map φ))
-      (x : S) ↦ p.1.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) x.1)) := by
-  classical
-  refine nonempty_delineation_of_signInvariant_collinsProjection hS fun q hq ↦ ?_
-  rw [Finset.collinsProjection_image_finSuccEquiv_map hφ] at hq
-  obtain ⟨r, hr, rfl⟩ := Finset.mem_image.1 hq
-  simpa only [MvPolynomial.eval₂_id, MvPolynomial.eval_map] using h r hr
+variable {n : ℕ} {S : Set (Fin n → ℝ)}
 
 /-- **Integer delineability.** Let `P` be a finite family of polynomials with integer
 coefficients in the variables `X 0, …, X n`. If every element of its integer projection is
