@@ -19,7 +19,8 @@ piecewise-linear continuity theorem, and retains the affine specialization in th
 `ContinuousAffineMap` namespace for consumers building PL embeddings.
 
 This is the graph building block for the locally flat embedding side of geometric topology. The
-non-affine statement applies, for example, to the absolute-value PL map.
+non-affine statement applies, for example, to the absolute-value PL map. The graph-chart
+criterion below transports this local model through an ambient homeomorphism.
 -/
 
 public section
@@ -42,5 +43,28 @@ theorem _root_.ContinuousAffineMap.isLocallyFlat_affineGraph
     [NormedAddCommGroup F] [NormedSpace ℝ F] (A : E →ᴬ[ℝ] F) :
     IsLocallyFlat E F (fun x : E => (x, A x)) :=
   (isPLOn_continuousAffineMap A (Set.univ : Set E)).isLocallyFlat_graph
+
+/-- A globally PL map is locally flat when an ambient homeomorphism presents its image as a
+graph.  The section equation on the first coordinate is the only compatibility needed: PL
+regularity supplies continuity of the graph function, and the existing graph theorem then
+transports local flatness through the ambient homeomorphism. -/
+theorem IsPLOn.isLocallyFlat_of_homeomorph_graph
+    {E M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup M] [NormedSpace ℝ M] [NormedAddCommGroup F]
+    {f : E → M} (hf : IsPLOn f (Set.univ : Set E)) (Φ : M ≃ₜ E × F)
+    (hΦ : ∀ x, (Φ (f x)).1 = x) :
+    IsLocallyFlat E F f := by
+  let g : E → F := fun x => (Φ (f x)).2
+  have hg : Continuous g := by
+    apply continuous_snd.comp
+    exact Φ.continuous.comp (continuousOn_univ.mp hf.continuousOn)
+  have hgraph : IsLocallyFlat E F (fun x => (x, g x)) :=
+    TauCeti.isLocallyFlat_graph g hg
+  have htransport := hgraph.homeomorph_comp Φ.symm
+  convert htransport using 1
+  funext x
+  apply Φ.injective
+  rw [Function.comp_apply, Φ.apply_symm_apply]
+  exact Prod.ext (hΦ x) rfl
 
 end TauCeti
