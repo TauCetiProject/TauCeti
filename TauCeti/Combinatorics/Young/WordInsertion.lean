@@ -34,6 +34,8 @@ correspondence.
 
 ## Main results
 
+* `TauCeti.insertWord_append`, `TauCeti.insertRecord_append`: both operations compose over a
+  concatenation of words.
 * `List.IsTableauRows.insertWord`: inserting a word into a tableau gives a tableau.
 * `TauCeti.flatten_insertWord_perm`: insertion conserves the letters.
 * `TauCeti.length_insertRecord`: one recorded row per letter.
@@ -96,21 +98,35 @@ theorem insertRecord_cons (rows : List (List α)) (x : α) (w : List α) :
     insertRecord rows (x :: w) =
       rowInsertIndex x rows :: insertRecord (rowInsert x rows) w := (rfl)
 
+/-- **Word insertion composes**: inserting a concatenation is inserting the first word, then the
+second into the result. -/
+@[simp]
+theorem insertWord_append (rows : List (List α)) (u v : List α) :
+    insertWord rows (u ++ v) = insertWord (insertWord rows u) v := by
+  induction u generalizing rows with
+  | nil => simp
+  | cons x u ih => simp [ih]
+
+/-- **The recording data composes**: a concatenation records the rows of the first word, followed
+by those the second word records when inserted into the tableau the first produced. -/
+@[simp]
+theorem insertRecord_append (rows : List (List α)) (u v : List α) :
+    insertRecord rows (u ++ v) = insertRecord rows u ++ insertRecord (insertWord rows u) v := by
+  induction u generalizing rows with
+  | nil => simp
+  | cons x u ih => simp [ih]
+
 /-- Inserting a word and then one more letter is inserting the longer word. -/
 theorem insertWord_concat (rows : List (List α)) (w : List α) (x : α) :
     insertWord rows (w ++ [x]) = rowInsert x (insertWord rows w) := by
-  induction w generalizing rows with
-  | nil => simp
-  | cons y w ih => simp [ih]
+  simp
 
 /-- The rows recorded by a word followed by one more letter are those of the word, followed by
 the row of the last letter's cell. -/
 theorem insertRecord_concat (rows : List (List α)) (w : List α) (x : α) :
     insertRecord rows (w ++ [x]) =
       insertRecord rows w ++ [rowInsertIndex x (insertWord rows w)] := by
-  induction w generalizing rows with
-  | nil => simp
-  | cons y w ih => simp [ih]
+  simp
 
 /-- One row is recorded per letter of the word. -/
 @[simp]
@@ -200,8 +216,9 @@ theorem reverseInsertWord_insertWord {rows : List (List α)} (h : rows.IsTableau
       reverseRowInsert_rowInsert x hu.nil_notMem hu.sortedLE]
     simp [ih]
 
-/-- **A word is determined by its insertion tableau and its recorded rows**: the first half of
-the Robinson--Schensted--Knuth correspondence is injective. -/
+/-- **A word is determined by its insertion tableau and its recorded rows**: the map taking a
+word to the pair of its insertion tableau and its recording data is injective. The insertion
+tableau on its own is not enough; the recorded rows are what reverse insertion follows. -/
 theorem insertWord_insertRecord_injective {rows : List (List α)} (h : rows.IsTableauRows) :
     Function.Injective fun w : List α => (insertWord rows w, insertRecord rows w) := by
   intro w w' hw
