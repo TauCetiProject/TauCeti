@@ -18,8 +18,8 @@ file states laws of that group for point representatives, where they hold up to 
 
 Commutativity holds over any commutative ring and for all point representatives: `add P Q` and
 `add Q P` are equivalent, because each coordinate of `addXYZ` changes sign when `P` and `Q` are
-swapped. Associativity is the one of Mathlib's group, for nonsingular point representatives over a
-field.
+swapped. Associativity and the inverse law are those of Mathlib's group, for nonsingular point
+representatives over a field.
 
 ## Main results
 
@@ -29,6 +29,9 @@ field.
   representatives are equivalent.
 * `WeierstrassCurve.Projective.add_assoc_equiv`: over a field, the sums `add (add P Q) T` and
   `add P (add Q T)` of three nonsingular point representatives are equivalent.
+* `WeierstrassCurve.Projective.neg_add_cancel_equiv`: over a field, the sum `add (neg P) P` of the
+  negation of a nonsingular point representative `P` and `P` is equivalent to the point at
+  infinity `![0, 1, 0]`.
 -/
 
 public section
@@ -89,6 +92,13 @@ theorem add_assoc_equiv (hP : W.Nonsingular P) (hQ : W.Nonsingular Q) (hT : W.No
     simpa only [Point.add_point, addMap_eq] using congrArg Point.point
       (add_assoc (⟨(nonsingularLift_iff P).mpr hP⟩ : W.Point) ⟨(nonsingularLift_iff Q).mpr hQ⟩
         ⟨(nonsingularLift_iff T).mpr hT⟩)
+
+/-- Over a field, the sum `W.add (W.neg P) P` of the negation of a nonsingular point representative
+`P` and `P` itself is equivalent to the point at infinity `![0, 1, 0]`. -/
+theorem neg_add_cancel_equiv (hP : W.Nonsingular P) : W.add (W.neg P) P ≈ ![0, 1, 0] :=
+  Quotient.exact <| by
+    simpa only [Point.add_point, Point.neg_point, Point.zero_point, negMap_eq, addMap_eq] using
+      congrArg Point.point (neg_add_cancel (⟨(nonsingularLift_iff P).mpr hP⟩ : W.Point))
 
 end Field
 
