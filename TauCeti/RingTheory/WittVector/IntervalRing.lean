@@ -55,6 +55,8 @@ Tate structure of `𝕎 O[1/(p [ϖ])]` comes from `TauCeti.Huber.IsTateRing.of_i
   `x ∈ 𝕎 O`.
 * `TauCeti.WittVector.isPseudoUniformizer_natCast_intervalRing` : `p` is a pseudouniformiser of
   `B^I`.
+* `TauCeti.WittVector.isPseudoUniformizer_teichmuller_intervalRing` : `[ϖ]` is a pseudouniformiser
+  of `B^I`.
 * `TauCeti.WittVector.IntervalLocalization.instIsTateRing` : `𝕎 O[1/(p [ϖ])]` with the interval
   norm is a Tate ring, so its completion `B^I` is a complete Hausdorff Tate ring by
   `TauCeti.Huber.IsTateRing.completion`.
@@ -306,12 +308,18 @@ theorem isPseudoUniformizer_natCast_intervalRing :
     ((Completion.norm_coe _).trans_lt
       (IntervalLocalization.norm_natCast_lt_one p hv hϖ hϖ' hρ₁ hρ₂))
 
-/-- The Teichmüller lift `[ϖ]` of the pseudouniformiser `ϖ` is a unit of `B^I`. -/
-theorem isUnit_algebraMap_teichmuller_intervalRing :
-    IsUnit (algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) (teichmuller p ϖ)) := by
-  rw [Completion.algebraMap_def]
-  exact (IntervalLocalization.isUnit_algebraMap_teichmuller p hv hϖ hϖ' hρ₁ hρ₂).map
-    (Completion.coeRingHom : _ →+* IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)
+/-- **`[ϖ]` is a pseudouniformiser of `B^I`**: the Teichmüller lift of the pseudouniformiser `ϖ`
+is a unit of norm `v(ϖ) < 1`. -/
+theorem isPseudoUniformizer_teichmuller_intervalRing :
+    IsPseudoUniformizer
+      (algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) (teichmuller p ϖ)) := by
+  refine IsPseudoUniformizer.of_norm_lt_one ?_ ?_
+  · rw [Completion.algebraMap_def]
+    exact (IntervalLocalization.isUnit_algebraMap_teichmuller p hv hϖ hϖ' hρ₁ hρ₂).map
+      (Completion.coeRingHom : _ →+* IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)
+  · rw [norm_algebraMap_intervalRing, gaussValuation_teichmuller, gaussValuation_teichmuller,
+      max_self]
+    exact_mod_cast hϖ'
 
 /-! `B^I` is a complete Hausdorff Tate ring: completeness and separatedness hold for every
 completion, and the Tate structure is that of `𝕎 O[1/(p [ϖ])]`, carried to the completion by
