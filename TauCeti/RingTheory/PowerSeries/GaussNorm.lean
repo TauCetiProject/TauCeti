@@ -43,12 +43,12 @@ values in `ℝ≥0` on the ring of restricted series, `gaussValuation`, whose su
 Pulled back to the Tate algebra at radii at most one, these valuations give the Gauss points of the
 closed unit disc.
 
-The Gauss norm at a positive radius is attained in a finite nonempty set of degrees. Its largest
-element is the distinguished degree, and its smallest is the *lowest dominant degree*
-(`IsLowestDominant`); both are additive on products. Recording one of them next to the Gauss norm
-refines `gaussValuation` to a valuation with values in the lexicographically ordered group
-`ℝ≥0ˣ ×ₗ ℤ`: `gaussValuationAbove` records the distinguished degree and `gaussValuationBelow` the
-negated lowest dominant degree. They are the Gauss norms at a radius infinitesimally above and
+At a positive radius, the Gauss norm of a nonzero restricted series is attained in a finite nonempty
+set of degrees. Its largest element is the distinguished degree, and its smallest is the *lowest
+dominant degree* (`IsLowestDominant`); both are additive on products. Recording one of them next to
+the Gauss norm refines `gaussValuation` to a valuation with values in the lexicographically ordered
+group `ℝ≥0ˣ ×ₗ ℤ`: `gaussValuationAbove` records the distinguished degree and `gaussValuationBelow`
+the negated lowest dominant degree. They are the Gauss norms at a radius infinitesimally above and
 infinitesimally below `c`, and pulled back to the Tate algebra they give the rank-two points of the
 closed unit disc next to its Gauss points.
 
