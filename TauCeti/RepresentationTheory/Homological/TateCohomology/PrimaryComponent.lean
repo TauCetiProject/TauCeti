@@ -28,7 +28,7 @@ bijective multiplication by a prime `p`. If `p` is bijective on `X₁`, the map
 (`TauCeti.TateCohomology.bijOn_pPowerTorsion_map_g`); if it is bijective on `X₃`, so is
 `Ĥⁿ(G, X₁) → Ĥⁿ(G, X₂)` (`TauCeti.TateCohomology.bijOn_pPowerTorsion_map_f`). The torsion
 argument is `TauCeti.injOn_pPowerTorsion_of_exact` and `TauCeti.surjOn_pPowerTorsion_of_exact`,
-which use that all the groups involved are killed by `|G|`
+which use that all the groups involved are torsion, being killed by `|G|`
 (`TauCeti.TateCohomology.natCard_nsmul_eq_zero`).
 
 ## Main statements
@@ -93,18 +93,19 @@ components. -/
 theorem bijOn_pPowerTorsion_map_g (hp : Function.Bijective fun a : S.X₁.V ↦ p • a) (n : ℤ) :
     Set.BijOn ((tateCohomologyFunctor n).map S.g) (pPowerTorsion p k (tateCohomology S.X₂ n))
       (pPowerTorsion p k (tateCohomology S.X₃ n)) := by
-  have hG : Nat.card G ≠ 0 := Nat.card_pos.ne'
   refine ⟨fun x hx ↦ ?_, ?_, ?_⟩
   · obtain ⟨j, hj⟩ := mem_pPowerTorsion_iff.mp hx
     exact mem_pPowerTorsion_iff.mpr ⟨j, by rw [← map_nsmul, hj, map_zero]⟩
-  · exact injOn_pPowerTorsion_of_exact hG
+  · exact injOn_pPowerTorsion_of_exact
       ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp
         (_root_.TateCohomology.exact₂ hS n))
-      natCard_nsmul_eq_zero (pPowerTorsion_tateCohomology_eq_bot hp n)
-  · exact surjOn_pPowerTorsion_of_exact hG
+      (ExponentExists.isAddTorsion ⟨_, Nat.card_pos, natCard_nsmul_eq_zero⟩)
+      (pPowerTorsion_tateCohomology_eq_bot hp n)
+  · exact surjOn_pPowerTorsion_of_exact
       ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp
         (_root_.TateCohomology.exact₃ hS n))
-      natCard_nsmul_eq_zero (pPowerTorsion_tateCohomology_eq_bot hp (n + 1))
+      (ExponentExists.isAddTorsion ⟨_, Nat.card_pos, natCard_nsmul_eq_zero⟩)
+      (pPowerTorsion_tateCohomology_eq_bot hp (n + 1))
 
 /-- Along a short exact sequence `0 → X₁ → X₂ → X₃ → 0` on whose last term multiplication by a
 prime `p` is bijective, the map `Ĥⁿ(G, X₁) → Ĥⁿ(G, X₂)` is a bijection of `p`-primary
@@ -112,18 +113,19 @@ components. -/
 theorem bijOn_pPowerTorsion_map_f (hp : Function.Bijective fun a : S.X₃.V ↦ p • a) (n : ℤ) :
     Set.BijOn ((tateCohomologyFunctor n).map S.f) (pPowerTorsion p k (tateCohomology S.X₁ n))
       (pPowerTorsion p k (tateCohomology S.X₂ n)) := by
-  have hG : Nat.card G ≠ 0 := Nat.card_pos.ne'
   refine ⟨fun x hx ↦ ?_, ?_, ?_⟩
   · obtain ⟨j, hj⟩ := mem_pPowerTorsion_iff.mp hx
     exact mem_pPowerTorsion_iff.mpr ⟨j, by rw [← map_nsmul, hj, map_zero]⟩
   · obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-    exact injOn_pPowerTorsion_of_exact hG
+    exact injOn_pPowerTorsion_of_exact
       ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp
         (_root_.TateCohomology.exact₁ hS m))
-      natCard_nsmul_eq_zero (pPowerTorsion_tateCohomology_eq_bot hp m)
-  · exact surjOn_pPowerTorsion_of_exact hG
+      (ExponentExists.isAddTorsion ⟨_, Nat.card_pos, natCard_nsmul_eq_zero⟩)
+      (pPowerTorsion_tateCohomology_eq_bot hp m)
+  · exact surjOn_pPowerTorsion_of_exact
       ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp
         (_root_.TateCohomology.exact₂ hS n))
-      natCard_nsmul_eq_zero (pPowerTorsion_tateCohomology_eq_bot hp n)
+      (ExponentExists.isAddTorsion ⟨_, Nat.card_pos, natCard_nsmul_eq_zero⟩)
+      (pPowerTorsion_tateCohomology_eq_bot hp n)
 
 end TauCeti.TateCohomology
