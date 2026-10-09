@@ -44,13 +44,6 @@ variable (K L : Type) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
   (ℓ : ℕ) [Fact ℓ.Prime]
 
-/-- When `ℓ` is nonzero in a local field `L`, the `ℓ`th power classes of `L` form a
-finite-dimensional `ZMod ℓ`-vector space. -/
-instance [NeZero (ℓ : L)] : Module.Finite (ZMod ℓ) (Additive (powerClassQuotient Lˣ ℓ)) :=
-  have : Finite (Additive (powerClassQuotient Lˣ ℓ)) :=
-    Finite.of_equiv _ (quotSMulTopPowerClassEquiv (G := Lˣ) ℓ).toEquiv
-  Module.Finite.of_finite
-
 omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
   [ValuativeExtension K L] [Module.Finite K L] in
 /-- The class of the power-class representation is the reduction class of `Lˣ ⧸ ℓLˣ`. -/
