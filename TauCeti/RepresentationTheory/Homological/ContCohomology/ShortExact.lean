@@ -159,13 +159,15 @@ end Lift
 section InjectiveDescent
 
 variable {G : Type u} [Monoid G] [TopologicalSpace G]
-  {A : Type vA} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A] [DistribMulAction G A]
+  {A : Type vA} [AddCommGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
+  [DistribMulAction G A]
   {B : Type vB} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B] [DistribMulAction G B]
   {φ : A →+ B}
 
 /-- **A `1`-cochain on `A` lying over a continuous `1`-cocycle on `B` along an injective
-equivariant map is one.** Both halves of membership in `Z¹` descend: continuity because the two
-modules are discrete, and the cocycle identity because the map is injective. -/
+equivariant map is one.** Both halves of membership in `Z¹` descend: continuity because an
+injection into the discrete `B` reflects it, whatever the topology of `A`, and the cocycle identity
+because the map is injective. -/
 theorem mem_Z1_of_injective_comp_mem_Z1 (hφ : Function.Injective φ)
     (heq : ∀ (g : G) (a : A), φ (g • a) = g • φ a) {a : G → A} {e : G → B}
     (hae : ∀ g : G, φ (a g) = e g) (he : e ∈ Z1 G B) : a ∈ Z1 G A := by
