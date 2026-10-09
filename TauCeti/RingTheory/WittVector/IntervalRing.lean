@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.Huber.Completion
 public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Valuation.ExtendToLocalization
 public import TauCeti.RingTheory.WittVector.GaussValuation
+import TauCeti.RingTheory.Valuation.SpanPow
 
 /-!
 # The interval rings `B^I` of the Fargues–Fontaine curve
@@ -65,6 +66,10 @@ extension to `B^I`. Hence the power-bounded elements of `B^I` are exactly its un
 * `TauCeti.WittVector.coe_powerBoundedSubring_intervalRing` : the power-bounded subring of `B^I`
   is its unit ball `B^{I,+}`.
 * `TauCeti.WittVector.isUniform_intervalRing` : `B^I` is uniform.
+* `TauCeti.WittVector.continuous_algebraMap_intervalRing` : `𝕎 O → B^I` is continuous for the
+  `(p, [ϖ])`-adic topology on `𝕎 O`.
+* `TauCeti.WittVector.exists_norm_le_one_algebraMap_eq_mul_intervalRing` : if `λ_ρ(x) ≤ λ_ρ(y)` at
+  both radii and `y` is a unit of `𝕎 O[1/(p [ϖ])]`, then `x / y` lies in the unit ball of `B^I`.
 * `TauCeti.WittVector.IntervalLocalization.instIsTateRing` : `𝕎 O[1/(p [ϖ])]` with the interval
   norm is a Tate ring, so its completion `B^I` is a complete Hausdorff Tate ring by
   `TauCeti.Huber.IsTateRing.completion`.
@@ -361,6 +366,57 @@ theorem coe_powerBoundedSubring_intervalRing :
 instance isUniform_intervalRing : IsUniform (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) :=
   IsUniform.of_isPowMul (isPseudoUniformizer_natCast_intervalRing p hv hϖ hϖ' hρ₁ hρ₂)
     (isPowMul_norm_intervalRing p hv hϖ hϖ' hρ₁ hρ₂)
+
+/-- **The map `𝕎 O → B^I` is continuous** for the `(p, [ϖ])`-adic topology on `𝕎 O`: both Gauss
+valuations are at most `1` on `𝕎 O` and at most `c = max(ρ₁, ρ₂, v(ϖ)) < 1` at `p` and `[ϖ]`, so
+the interval norm is at most `c ^ n` on `(p, [ϖ]) ^ (n + 1)`. -/
+theorem continuous_algebraMap_intervalRing [TopologicalSpace (𝕎 O)]
+    (hI : IsAdic (Ideal.span {(p : 𝕎 O), teichmuller p ϖ})) :
+    Continuous (algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)) := by
+  have : IsTopologicalRing (𝕎 O) := hI ▸ (Ideal.span _).nonarchimedean.toIsTopologicalRing
+  set c : ℝ≥0 := max (max ρ₁ ρ₂) (v (algebraMap O K ϖ))
+  have hc : c < 1 := max_lt (max_lt hρ₁.2 hρ₂.2) hϖ'
+  have hle {ρ : ℝ≥0} (hρ : ρ < 1) (hρc : ρ ≤ c) {n : ℕ} {a : 𝕎 O}
+      (ha : a ∈ Ideal.span {(p : 𝕎 O), teichmuller p ϖ} ^ (n + 1)) :
+      gaussValuation p hv ρ hρ a ≤ c ^ n := by
+    refine (gaussValuation p hv ρ hρ).map_le_pow_of_mem_span_pow_succ (fun t ht ↦ ?_)
+      (fun a _ ↦ gaussValuation_le_one hv hρ a) ha
+    rcases ht with rfl | rfl
+    · simpa using hρc
+    · simp [c]
+  refine continuous_of_continuousAt_zero _ ?_
+  rw [ContinuousAt, map_zero, Metric.nhds_basis_ball.tendsto_right_iff]
+  intro ε hε
+  obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one hε (show (c : ℝ) < 1 by exact_mod_cast hc)
+  filter_upwards [(hI.isOpen_pow (n + 1)).mem_nhds (zero_mem _)] with a ha
+  rw [mem_ball_zero_iff, norm_algebraMap_intervalRing, max_lt_iff]
+  constructor <;> refine lt_of_le_of_lt ?_ hn <;> exact_mod_cast hle _ (by simp [c]) ha
+
+/-- **Division by a unit of `𝕎 O[1/(p [ϖ])]` within the unit ball.** If `y ∈ 𝕎 O` becomes a unit
+of `𝕎 O[1/(p [ϖ])]` and `λ_ρ(x) ≤ λ_ρ(y)` at both radii, then `x = z y` in `B^I` for some `z` in
+the unit ball `B^{I,+} = {z : λ_I(z) ≤ 1}`, namely `z = x / y`. -/
+theorem exists_norm_le_one_algebraMap_eq_mul_intervalRing {x y : 𝕎 O}
+    (hy : IsUnit (algebraMap (𝕎 O) (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) y))
+    (h₁ : gaussValuation p hv ρ₁ hρ₁.2 x ≤ gaussValuation p hv ρ₁ hρ₁.2 y)
+    (h₂ : gaussValuation p hv ρ₂ hρ₂.2 x ≤ gaussValuation p hv ρ₂ hρ₂.2 y) :
+    ∃ z : IntervalRing p hv hϖ hϖ' hρ₁ hρ₂, ‖z‖ ≤ 1 ∧
+      algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) x =
+        z * algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) y := by
+  set L := IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂
+  set z : L := algebraMap (𝕎 O) L x * ↑hy.unit⁻¹
+  -- at each radius `λ_ρ(z) = λ_ρ(x) / λ_ρ(y) ≤ 1`
+  have hz {ρ : ℝ≥0} (hρ : ρ ∈ Set.Ioo 0 1)
+      (h : gaussValuation p hv ρ hρ.2 x ≤ gaussValuation p hv ρ hρ.2 y) :
+      gaussValuationAway p hv hϖ ρ hρ L z ≤ 1 := by
+    have hu : gaussValuation p hv ρ hρ.2 y * gaussValuationAway p hv hϖ ρ hρ L ↑hy.unit⁻¹ = 1 := by
+      rw [← gaussValuationAway_algebraMap hv hϖ hρ y (B := L), ← map_mul, hy.mul_val_inv, map_one]
+    rw [map_mul, gaussValuationAway_algebraMap]
+    exact (mul_le_mul_left h _).trans_eq hu
+  refine ⟨(z : Completion L), ?_, ?_⟩
+  · rw [Completion.norm_coe, IntervalLocalization.norm_def]
+    exact_mod_cast max_le (hz hρ₁ h₁) (hz hρ₂ h₂)
+  · rw [Completion.algebraMap_def, Completion.algebraMap_def, ← Completion.coe_mul, mul_assoc,
+      hy.val_inv_mul, mul_one]
 
 /-! `B^I` is a complete Hausdorff Tate ring: completeness and separatedness hold for every
 completion, and the Tate structure is that of `𝕎 O[1/(p [ϖ])]`, carried to the completion by
