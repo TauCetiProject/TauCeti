@@ -20,10 +20,12 @@ in reverse order, as required by the natural weights
 `ε₁, ε₂, ε₃, ε₄, -ε₄, -ε₃, -ε₂, -ε₁`. The standard split orthogonal matrices
 have negative entries on one half of each root operator, whereas the minuscule tripled matrices
 use coefficient `1` on every weight step. Multiplying the reversed negative-coordinate basis by
-the alternating signs `-1, 1, -1, 1` reconciles these conventions.
+the sign `(-1)^(i+1)` on coordinate `.inr i` reconciles these conventions; in standard coordinate
+order `i = 0, …, 3`, these signs are `-1, 1, -1, 1`.
 
-The three final equations are the entrywise intertwining identities for the positive, negative,
-and Cartan Chevalley generators. They fix both the Bourbaki node numbering and every basis sign.
+The final entrywise and matrix equations are the intertwining identities for the positive,
+negative, and Cartan Chevalley generators. They fix both the Bourbaki node numbering and every
+basis sign.
 
 ## Main declarations
 
@@ -33,6 +35,8 @@ and Cartan Chevalley generators. They fix both the Bourbaki node numbering and e
 * `TauCeti.D4Tripled.raisingMatrix_vectorIndex`,
   `TauCeti.D4Tripled.loweringMatrix_vectorIndex`, and
   `TauCeti.D4Tripled.cartanGeneratorMatrix_vectorIndex`: the signed generator comparisons.
+* `TauCeti.D4Tripled.raisingMatrix_vectorIndex_mul_diagonal` and its lowering and Cartan
+  counterparts: the same comparisons as matrix intertwining identities.
 
 ## References
 
@@ -123,6 +127,23 @@ private theorem piSingle_zero_one_eq_vector :
     (Pi.single 0 1 : Fin 4 → ℤ) = ![1, 0, 0, 0] := by
   decide
 
+/-- The natural block of the tripled table consists of the standard vector weights: the weight at
+a coordinate is the corresponding entry of the standard type-`D₄` Cartan diagonal. -/
+public theorem d4TripledWeight_vectorIndex (a : Fin 4 ⊕ Fin 4) (i : Fin 4) :
+    d4TripledWeight (vectorIndex a) i =
+      typeDDiagonalValue (typeDSimpleRoot 4 (by omega) i) a := by
+  rcases a with a | a <;> fin_cases a <;> fin_cases i <;>
+    simp [vectorIndex, typeDSimpleRoot_of_add_one_lt, typeDSimpleRoot_of_not_add_one_lt]
+
+/- The positive and negative generator comparisons share the same finite normalization after
+their respective public entry formulas have reduced the matrix definitions. -/
+local macro "solve_vector_generator" : tactic => set_option hygiene false in
+  `(tactic| (
+    rcases a with a | a <;> rcases b with b | b
+    all_goals fin_cases i <;> fin_cases a <;> fin_cases b <;>
+      simp [vectorIndex, vectorBasisSign, piSingle_zero_one_eq_vector,
+        CartanMatrix.D_four, Matrix.vecHead, Matrix.vecTail, Matrix.single_apply, Fin.ext_iff]))
+
 /-- The natural block of a tripled raising matrix is the standard vector raising matrix after the
 alternating basis normalization. With `D` the diagonal matrix of `vectorBasisSign`, the restricted
 tripled matrix `B` and standard matrix `A` satisfy `B * D = D * A` entrywise. -/
@@ -131,12 +152,7 @@ public theorem raisingMatrix_vectorIndex (i : Fin 4) (a b : Fin 4 ⊕ Fin 4) :
       vectorBasisSign a * TypeDStd.raisingMatrix (K := ℤ) 4 (by omega) i a b := by
   rw [D4Tripled.raisingMatrix_apply]
   simp only [vectorIndex_eq_d4TripledReflection_iff]
-  rcases a with a | a <;> rcases b with b | b
-  all_goals fin_cases i <;> fin_cases a <;> fin_cases b <;>
-    simp [vectorIndex, vectorBasisSign, piSingle_zero_one_eq_vector, d4TripledWeight_one,
-      d4TripledWeight_two, d4TripledWeight_three, d4TripledWeight_four,
-      d4TripledWeight_five, d4TripledWeight_six, d4TripledWeight_seven,
-      CartanMatrix.D_four, Matrix.vecHead, Matrix.vecTail, Matrix.single_apply, Fin.ext_iff]
+  solve_vector_generator
 
 /-- The natural block of a tripled lowering matrix is the standard vector lowering matrix after
 the same alternating basis normalization. -/
@@ -145,12 +161,7 @@ public theorem loweringMatrix_vectorIndex (i : Fin 4) (a b : Fin 4 ⊕ Fin 4) :
       vectorBasisSign a * TypeDStd.loweringMatrix (K := ℤ) 4 (by omega) i a b := by
   rw [D4Tripled.loweringMatrix_apply]
   simp only [vectorIndex_eq_d4TripledReflection_iff]
-  rcases a with a | a <;> rcases b with b | b
-  all_goals fin_cases i <;> fin_cases a <;> fin_cases b <;>
-    simp [vectorIndex, vectorBasisSign, piSingle_zero_one_eq_vector, d4TripledWeight_one,
-      d4TripledWeight_two, d4TripledWeight_three, d4TripledWeight_four,
-      d4TripledWeight_five, d4TripledWeight_six, d4TripledWeight_seven,
-      CartanMatrix.D_four, Matrix.vecHead, Matrix.vecTail, Matrix.single_apply, Fin.ext_iff]
+  solve_vector_generator
 
 /-- The natural block of a tripled Cartan-generator matrix is the standard vector Cartan matrix
 after the alternating basis normalization. -/
@@ -160,11 +171,43 @@ public theorem cartanGeneratorMatrix_vectorIndex (i : Fin 4) (a b : Fin 4 ⊕ Fi
         ((TypeDStd.cartanGenerator (K := ℤ) 4 (by omega) i :
           LieAlgebra.Orthogonal.typeD (Fin 4) ℤ) :
             Matrix (Fin 4 ⊕ Fin 4) (Fin 4 ⊕ Fin 4) ℤ) a b := by
-  rcases a with a | a <;> rcases b with b | b
-  all_goals fin_cases i <;> fin_cases a <;> fin_cases b <;>
-    simp [D4Tripled.cartanGeneratorMatrix_apply, TypeDStd.val_cartanGenerator,
-      vectorIndex, vectorBasisSign, d4TripledWeight_one,
-      d4TripledWeight_two, d4TripledWeight_three, d4TripledWeight_four,
-      d4TripledWeight_five, d4TripledWeight_six, d4TripledWeight_seven]
+  rw [D4Tripled.cartanGeneratorMatrix_apply, TypeDStd.val_cartanGenerator,
+    typeDDiagonalMatrix_apply]
+  simp only [vectorIndex_injective.eq_iff]
+  by_cases h : a = b
+  · subst b
+    simp [d4TripledWeight_vectorIndex, mul_comm]
+  · simp [h]
+
+/-- The restricted tripled raising matrix intertwines the alternating diagonal basis change with
+the standard vector raising matrix. -/
+public theorem raisingMatrix_vectorIndex_mul_diagonal (i : Fin 4) :
+    (raisingMatrix i).submatrix vectorIndex vectorIndex * Matrix.diagonal vectorBasisSign =
+      Matrix.diagonal vectorBasisSign * TypeDStd.raisingMatrix (K := ℤ) 4 (by omega) i := by
+  ext a b
+  simpa only [Matrix.mul_diagonal, Matrix.diagonal_mul, Matrix.submatrix_apply] using
+    raisingMatrix_vectorIndex i a b
+
+/-- The restricted tripled lowering matrix intertwines the alternating diagonal basis change with
+the standard vector lowering matrix. -/
+public theorem loweringMatrix_vectorIndex_mul_diagonal (i : Fin 4) :
+    (loweringMatrix i).submatrix vectorIndex vectorIndex * Matrix.diagonal vectorBasisSign =
+      Matrix.diagonal vectorBasisSign * TypeDStd.loweringMatrix (K := ℤ) 4 (by omega) i := by
+  ext a b
+  simpa only [Matrix.mul_diagonal, Matrix.diagonal_mul, Matrix.submatrix_apply] using
+    loweringMatrix_vectorIndex i a b
+
+/-- The restricted tripled Cartan-generator matrix intertwines the alternating diagonal basis
+change with the standard vector Cartan matrix. -/
+public theorem cartanGeneratorMatrix_vectorIndex_mul_diagonal (i : Fin 4) :
+    (cartanGeneratorMatrix i).submatrix vectorIndex vectorIndex *
+        Matrix.diagonal vectorBasisSign =
+      Matrix.diagonal vectorBasisSign *
+        ((TypeDStd.cartanGenerator (K := ℤ) 4 (by omega) i :
+          LieAlgebra.Orthogonal.typeD (Fin 4) ℤ) :
+            Matrix (Fin 4 ⊕ Fin 4) (Fin 4 ⊕ Fin 4) ℤ) := by
+  ext a b
+  simpa only [Matrix.mul_diagonal, Matrix.diagonal_mul, Matrix.submatrix_apply] using
+    cartanGeneratorMatrix_vectorIndex i a b
 
 end TauCeti.D4Tripled

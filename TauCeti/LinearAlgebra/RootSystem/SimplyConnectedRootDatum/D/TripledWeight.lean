@@ -97,30 +97,37 @@ theorem d4TripledWeight_zero : d4TripledWeight 0 = Pi.single 0 1 := by
   decide
 
 /-- The second weight of the natural block, in simple-coroot coordinates. -/
+@[simp]
 theorem d4TripledWeight_one : d4TripledWeight 1 = ![-1, 1, 0, 0] := by
   decide
 
 /-- The third weight of the natural block, in simple-coroot coordinates. -/
+@[simp]
 theorem d4TripledWeight_two : d4TripledWeight 2 = ![0, -1, 1, 1] := by
   decide
 
 /-- The fourth weight of the natural block, in simple-coroot coordinates. -/
+@[simp]
 theorem d4TripledWeight_three : d4TripledWeight 3 = ![0, 0, -1, 1] := by
   decide
 
 /-- The fifth weight of the natural block, in simple-coroot coordinates. -/
+@[simp]
 theorem d4TripledWeight_four : d4TripledWeight 4 = ![0, 0, 1, -1] := by
   decide
 
 /-- The sixth weight of the natural block, in simple-coroot coordinates. -/
+@[simp]
 theorem d4TripledWeight_five : d4TripledWeight 5 = ![0, 1, -1, -1] := by
   decide
 
 /-- The seventh weight of the natural block, in simple-coroot coordinates. -/
+@[simp]
 theorem d4TripledWeight_six : d4TripledWeight 6 = ![1, -1, 0, 0] := by
   decide
 
 /-- The eighth weight of the natural block, in simple-coroot coordinates. -/
+@[simp]
 theorem d4TripledWeight_seven : d4TripledWeight 7 = ![-1, 0, 0, 0] := by
   decide
 
