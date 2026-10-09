@@ -28,6 +28,8 @@ places `X ^ n` in degree `-n`.
   on which `X` lowers degree has no nonzero homogeneous elements above some degree.
 * `TauCeti.InternalGrading.coe_decompose_smul_of_mem`: when `X` lowers degree by a nonzero `d`, the
   homogeneous components of `a • x`, for `x` homogeneous, are the terms `a.coeff n • X ^ n • x`.
+* `TauCeti.InternalGrading.coe_decompose_X_pow_smul`: multiplication by `X ^ n` shifts every
+  homogeneous component down by `n * d`.
 * `TauCeti.InternalGrading.coe_decompose_smul_of_support_le`: at an upper bound for the support,
   polynomial multiplication acts on the component by the constant coefficient.
 * `TauCeti.InternalGrading.smul_injective_of_coeff_zero_ne_zero`: a polynomial with nonzero constant
@@ -136,6 +138,25 @@ theorem coe_decompose_smul_of_mem (hd : d ≠ 0)
     rw [notMem_support_iff.mp hn, zero_smul, DirectSum.decompose_zero, DirectSum.zero_apply,
       ZeroMemClass.coe_zero]
 
+/-- If `X` lowers degree by `d`, the component of `X ^ n • x` in degree `p` is `X ^ n` times the
+component of `x` in degree `p + n * d`. No homogeneity of `x` is assumed. -/
+theorem coe_decompose_X_pow_smul
+    (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d)) (n : ℕ)
+    (p : ℤ) (x : M) :
+    (DirectSum.decompose G.piece ((X ^ n : k[X]) • x) p : M) =
+      (X ^ n : k[X]) • (DirectSum.decompose G.piece x (p + n * d) : M) := by
+  have hf : LinearMap.IsHomogeneous (_root_.LinearMap.lsmul k[X] M (X ^ n))
+      G.piece G.piece (-(n : ℤ) * d) := by
+    apply LinearMap.isHomogeneous_def.mpr
+    intro q y hy
+    simpa only [neg_mul, sub_eq_add_neg, _root_.LinearMap.lsmul_apply] using
+      X_pow_smul_mem_piece hX n hy
+  have key := hf.map_decompose (p + n * d) x
+  have hi : p + (n : ℤ) * (d : ℤ) + (-(n : ℤ)) * (d : ℤ) = p := by ring
+  simp only [_root_.LinearMap.lsmul_apply] at key
+  rw [hi] at key
+  exact key.symm
+
 /-- At an upper bound for the degrees of the nonzero components of `x`, polynomial multiplication
 acts on the component by its constant coefficient, provided `X` strictly lowers degree. -/
 theorem coe_decompose_smul_of_support_le (hd : d ≠ 0)
@@ -145,20 +166,6 @@ theorem coe_decompose_smul_of_support_le (hd : d ≠ 0)
     (DirectSum.decompose G.piece (a • x) p : M) =
       a.coeff 0 • (DirectSum.decompose G.piece x p : M) := by
   classical
-  have hpow (n : ℕ) :
-      (DirectSum.decompose G.piece ((X ^ n : k[X]) • x) p : M) =
-        (X ^ n : k[X]) • (DirectSum.decompose G.piece x (p + n * d) : M) := by
-    have hf : LinearMap.IsHomogeneous (_root_.LinearMap.lsmul k[X] M (X ^ n))
-        G.piece G.piece (-(n : ℤ) * d) := by
-      apply LinearMap.isHomogeneous_def.mpr
-      intro q y hy
-      simpa only [neg_mul, sub_eq_add_neg, _root_.LinearMap.lsmul_apply] using
-        X_pow_smul_mem_piece hX n hy
-    have key := hf.map_decompose (p + n * d) x
-    have hi : p + (n : ℤ) * (d : ℤ) + (-(n : ℤ)) * (d : ℤ) = p := by ring
-    simp only [_root_.LinearMap.lsmul_apply] at key
-    rw [hi] at key
-    exact key.symm
   have hterm (n : ℕ) : (C (a.coeff n) * X ^ n) • x =
       a.coeff n • (X ^ n : k[X]) • x := by
     rw [mul_smul, ← algebraMap_eq, algebraMap_smul]
@@ -167,7 +174,7 @@ theorem coe_decompose_smul_of_support_le (hd : d ≠ 0)
   rw [DFinsupp.finsetSum_apply, Submodule.coe_sum, Finset.sum_eq_single 0]
   · simp [DirectSum.smul_apply]
   · intro n _ hn
-    rw [DirectSum.smul_apply, SetLike.val_smul, hpow, hx]
+    rw [DirectSum.smul_apply, SetLike.val_smul, coe_decompose_X_pow_smul hX, hx]
     · simp
     · have : 0 < (n : ℤ) * d := mul_pos (by exact_mod_cast Nat.pos_of_ne_zero hn)
         (by exact_mod_cast Nat.pos_of_ne_zero hd)
