@@ -76,6 +76,7 @@ theorem spinSixWedgeForm_ιMulti (u v : Fin 2 → (Fin 4 → K)) :
     spinSixWedgeForm K (exteriorPower.ιMulti K 2 u)
       (exteriorPower.ιMulti K 2 v) =
       (Matrix.of (Fin.append u v)).det := by
+  -- `wedgePairing` stores its degree equalities as transports; expose the fixed-degree wedge map.
   rw [show spinSixWedgeForm K =
       (exteriorPower.wedge K (Fin 4 → K) 2 2).compr₂
         (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv by
@@ -83,12 +84,15 @@ theorem spinSixWedgeForm_ιMulti (u v : Fin 2 → (Fin 4 → K)) :
     simpa only using spinSixWedgePairing_eq K 4 (by simp) rfl
       (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv]
   simp only [LinearMap.compr₂_apply]
+  -- The bundled wedge map reduces to multiplication only after extensionality in the
+  -- graded subtype.
   rw [show exteriorPower.wedge K (Fin 4 → K) 2 2
       (exteriorPower.ιMulti K 2 u) (exteriorPower.ιMulti K 2 v) =
       exteriorPower.ιMulti K 4 (Fin.append u v) by
     apply Subtype.ext
     simp only [SetLike.coe_gMul, exteriorPower.wedge, DirectSum.gMulLHom_apply_apply,
       exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_mul_ιMulti]]
+  -- Remove the remaining linear-map coercion so the top-degree basis theorem matches the goal.
   change (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv
       (exteriorPower.ιMulti K 4 (Fin.append u v)) =
     (Matrix.of (Fin.append u v)).det
@@ -162,11 +166,11 @@ noncomputable def spinSixSpecialLinearToIsometryGroup :
         ((stdSLRep K 4).exteriorPower 2).asGroupHom).codRestrict
     (BilinForm.isometryGroup (spinSixWedgeForm K))
     (fun g ↦ by
-      rw [BilinForm.mem_isometryGroup, BilinForm.isIsometry_iff]
-      intro x y
-      change spinSixWedgeForm K (((stdSLRep K 4).exteriorPower 2 g) x)
-          (((stdSLRep K 4).exteriorPower 2 g) y) = spinSixWedgeForm K x y
-      exact (spinSixWedgeForm_invariant K g).apply x y)
+      rw [BilinForm.mem_isometryGroup]
+      simpa only [MonoidHom.coe_comp, Function.comp_apply, MulEquiv.coe_toMonoidHom,
+        Representation.asGroupHom_apply,
+        LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap] using
+          spinSixWedgeForm_invariant K g)
 
 /-- The isometry-group homomorphism acts through the exterior-square representation. -/
 @[simp]
