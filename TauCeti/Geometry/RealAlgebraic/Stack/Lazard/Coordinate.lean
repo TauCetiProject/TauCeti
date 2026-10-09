@@ -18,7 +18,7 @@ usual nonzero-trailing-coefficient preparation does not apply.
 
 ## Main result
 
-* `TauCeti.lazardDelineation_C_mul_lastCoordinate`: the one-section Lazard delineation of a
+* `TauCeti.lazardDelineationCMulLastCoordinate`: the one-section Lazard delineation of a
   nonzero constant multiple of the last coordinate polynomial.
 * `TauCeti.nonempty_lazardDelineation_lastCoordinate`: the specialization to the monic coordinate.
 
@@ -46,7 +46,7 @@ private theorem optionEquivRight_C_mul_lastCoordinate (a : ℝ) :
 constant root section zero as its Lazard delineation over every nonempty base. No base-variable
 powers are removed, and the root has multiplicity one. This includes every associate of the
 coordinate polynomial over `ℝ`. -/
-noncomputable def lazardDelineation_C_mul_lastCoordinate (hS : S.Nonempty) {a : ℝ} (ha : a ≠ 0) :
+noncomputable def lazardDelineationCMulLastCoordinate (hS : S.Nonempty) {a : ℝ} (ha : a ≠ 0) :
     LazardDelineation (fun _ : Unit ↦ MvPolynomial.C a * X (Fin.last n)) S :=
     { nonempty := hS
       count := 1
@@ -80,29 +80,29 @@ noncomputable def lazardDelineation_C_mul_lastCoordinate (hS : S.Nonempty) {a : 
         exact ⟨(), by simp⟩ }
 
 @[simp]
-theorem lazardDelineation_C_mul_lastCoordinate_count (hS : S.Nonempty) {a : ℝ} (ha : a ≠ 0) :
-    (lazardDelineation_C_mul_lastCoordinate hS ha).count = 1 := (rfl)
+theorem lazardDelineationCMulLastCoordinate_count (hS : S.Nonempty) {a : ℝ} (ha : a ≠ 0) :
+    (lazardDelineationCMulLastCoordinate hS ha).count = 1 := (rfl)
 
 @[simp]
-theorem lazardDelineation_C_mul_lastCoordinate_root (hS : S.Nonempty) {a : ℝ} (ha : a ≠ 0)
-    (i : Fin (lazardDelineation_C_mul_lastCoordinate hS ha).count) (x : S) :
-    (lazardDelineation_C_mul_lastCoordinate hS ha).root i x = 0 := (rfl)
+theorem lazardDelineationCMulLastCoordinate_root (hS : S.Nonempty) {a : ℝ} (ha : a ≠ 0)
+    (i : Fin (lazardDelineationCMulLastCoordinate hS ha).count) (x : S) :
+    (lazardDelineationCMulLastCoordinate hS ha).root i x = 0 := (rfl)
 
 @[simp]
-theorem lazardDelineation_C_mul_lastCoordinate_exponent (hS : S.Nonempty) {a : ℝ}
+theorem lazardDelineationCMulLastCoordinate_exponent (hS : S.Nonempty) {a : ℝ}
     (ha : a ≠ 0) (k : Unit) :
-    (lazardDelineation_C_mul_lastCoordinate hS ha).exponent k = 0 := (rfl)
+    (lazardDelineationCMulLastCoordinate hS ha).exponent k = 0 := (rfl)
 
 @[simp]
-theorem lazardDelineation_C_mul_lastCoordinate_multiplicity (hS : S.Nonempty) {a : ℝ}
-    (ha : a ≠ 0) (k : Unit) (i : Fin (lazardDelineation_C_mul_lastCoordinate hS ha).count) :
-    (lazardDelineation_C_mul_lastCoordinate hS ha).multiplicity k i = 1 := (rfl)
+theorem lazardDelineationCMulLastCoordinate_multiplicity (hS : S.Nonempty) {a : ℝ}
+    (ha : a ≠ 0) (k : Unit) (i : Fin (lazardDelineationCMulLastCoordinate hS ha).count) :
+    (lazardDelineationCMulLastCoordinate hS ha).multiplicity k i = 1 := (rfl)
 
 /-- The distinguished coordinate itself has the constant root section zero over every nonempty
 base. -/
 theorem nonempty_lazardDelineation_lastCoordinate (hS : S.Nonempty) :
     Nonempty (LazardDelineation (fun _ : Unit ↦ X (Fin.last n)) S) := by
   simpa only [map_one, one_mul] using
-    Nonempty.intro (lazardDelineation_C_mul_lastCoordinate hS one_ne_zero)
+    Nonempty.intro (lazardDelineationCMulLastCoordinate hS one_ne_zero)
 
 end TauCeti
