@@ -9,7 +9,10 @@ public import Mathlib.Geometry.Convex.ConvexSpace.AffineMap
 public import Mathlib.Geometry.Convex.ConvexSpace.Topology
 
 /-!
-# Continuity of affine maps between standard simplices
+# Maps and homeomorphisms between standard simplices
+
+An equivalence of vertex types induces `Equiv.stdSimplexHomeomorph`, preserving
+barycentric weights under reindexing. No finiteness assumption on the vertex types is needed.
 
 An affine map `Convexity.StdSimplex.affineMapMk v` out of a standard simplex is determined by the
 images `v m` of the vertices. When the target is a standard simplex on a finite type, its
@@ -41,6 +44,37 @@ lemma weights_affineMapMk_apply [Fintype M] (v : M → StdSimplex R N) (w : StdS
 end Semiring
 
 variable [Ring R] [IsStrictOrderedRing R] [TopologicalSpace R] [IsTopologicalRing R]
+
+/-- An equivalence of vertex types induces a homeomorphism of standard simplices,
+with inverse induced by the inverse equivalence. -/
+noncomputable def _root_.Equiv.stdSimplexHomeomorph (e : M ≃ N) :
+    StdSimplex R M ≃ₜ StdSimplex R N where
+  toFun := map e
+  invFun := map e.symm
+  left_inv x := by
+    rw [← map_comp, Equiv.symm_comp_self, map_id]
+  right_inv x := by
+    rw [← map_comp, Equiv.self_comp_symm, map_id]
+  continuous_toFun := continuous_map R e
+  continuous_invFun := continuous_map R e.symm
+
+/-- Reindexing a standard simplex transports each barycentric weight to the corresponding
+vertex. -/
+@[simp]
+lemma _root_.Equiv.stdSimplexHomeomorph_weights_apply (e : M ≃ N) (x : StdSimplex R M) (n : N) :
+    (Equiv.stdSimplexHomeomorph e x).weights n = x.weights (e.symm n) := by
+  simpa only [Equiv.stdSimplexHomeomorph, Homeomorph.homeomorph_mk_coe, Equiv.coe_fn_mk,
+    weights_map, Equiv.apply_symm_apply] using
+    Finsupp.mapDomain_apply_of_injective e.injective x.weights (e.symm n)
+
+/-- The inverse reindexing reads a weight at the corresponding vertex in the target. -/
+@[simp]
+lemma _root_.Equiv.stdSimplexHomeomorph_symm_weights_apply (e : M ≃ N) (x : StdSimplex R N)
+    (m : M) :
+    ((Equiv.stdSimplexHomeomorph e).symm x).weights m = x.weights (e m) := by
+  simpa only [Equiv.stdSimplexHomeomorph, Homeomorph.homeomorph_mk_coe_symm, Equiv.coe_fn_symm_mk,
+    weights_map, Equiv.symm_apply_apply] using
+    Finsupp.mapDomain_apply_of_injective e.symm.injective x.weights (e m)
 
 /-- An affine map from a standard simplex to a standard simplex on a finite type is
 continuous. -/

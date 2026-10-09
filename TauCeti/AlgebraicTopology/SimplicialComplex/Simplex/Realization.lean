@@ -150,7 +150,10 @@ noncomputable def simplexRealizationHomeomorph (K : AbstractSimplicialComplex ι
 @[simp] theorem simplexRealizationHomeomorph_symm_val (K : AbstractSimplicialComplex ι)
     (V : Finset ι) (hV : V ∈ K)
     (x : {x : Realization K // x.1.support ∈ PreAbstractSimplicialComplex.simplex V}) :
-    ((K.simplexRealizationHomeomorph V hV).symm x).1 = x.1.1 := (rfl)
+    ((K.simplexRealizationHomeomorph V hV).symm x).1 = x.1.1 := by
+  have h := congrArg (fun y => y.1.1)
+    ((K.simplexRealizationHomeomorph V hV).apply_symm_apply x)
+  simpa only [simplexRealizationHomeomorph_val] using h
 
 variable [Fintype ι] [Nonempty ι]
 
