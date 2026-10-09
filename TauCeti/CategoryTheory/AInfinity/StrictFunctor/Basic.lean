@@ -78,6 +78,21 @@ theorem ext {F G : AInfinityStrictFunctor 𝒞 𝒟} (hobj : F.obj = G.obj)
   cases hmap
   rfl
 
+/-- Strict functors with equal object maps are equal if their Hom maps agree pointwise,
+after transporting the target endpoints along the object-map equality. -/
+@[ext (iff := false)]
+theorem ext_of_obj_eq {F G : AInfinityStrictFunctor 𝒞 𝒟} (hobj : F.obj = G.obj)
+    (hmap : ∀ (X Y : C) (f : homModule (R := R) X Y),
+      (hobj ▸ F.map X Y f) = G.map X Y f) : F = G := by
+  cases F
+  cases G
+  cases hobj
+  apply ext
+  · rfl
+  · apply heq_of_eq
+    funext X Y
+    exact LinearMap.ext (hmap X Y)
+
 /-- The Hom map of a strict functor preserves degree. -/
 @[grind =>]
 theorem map_mem (F : AInfinityStrictFunctor 𝒞 𝒟) (X Y : C) {p : ℤ}
@@ -189,21 +204,24 @@ theorem comp_map (G : AInfinityStrictFunctor 𝒟 ℰ) (F : AInfinityStrictFunct
 @[simp]
 theorem comp_id (F : AInfinityStrictFunctor 𝒞 𝒟) :
     F.comp (AInfinityStrictFunctor.id 𝒞) = F := by
-  apply ext rfl
-  exact heq_of_eq (by funext X Y; exact LinearMap.comp_id _)
+  apply ext_of_obj_eq rfl
+  intro X Y f
+  simp only [comp_map, id_map]
 
 @[simp]
 theorem id_comp (F : AInfinityStrictFunctor 𝒞 𝒟) :
     (AInfinityStrictFunctor.id 𝒟).comp F = F := by
-  apply ext rfl
-  exact heq_of_eq (by funext X Y; exact LinearMap.id_comp _)
+  apply ext_of_obj_eq rfl
+  intro X Y f
+  simp only [comp_map, id_map]
 
 /-- Composition of strict functors is associative. -/
 @[simp]
 theorem comp_assoc (H : AInfinityStrictFunctor ℰ 𝒦) (G : AInfinityStrictFunctor 𝒟 ℰ)
     (F : AInfinityStrictFunctor 𝒞 𝒟) : (H.comp G).comp F = H.comp (G.comp F) := by
-  apply ext rfl
-  exact heq_of_eq (by funext X Y; exact LinearMap.comp_assoc _ _ _)
+  apply ext_of_obj_eq rfl
+  intro X Y f
+  simp only [comp_map]
 
 end AInfinityStrictFunctor
 

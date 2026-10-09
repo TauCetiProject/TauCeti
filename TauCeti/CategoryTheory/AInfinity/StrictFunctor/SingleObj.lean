@@ -81,6 +81,11 @@ theorem toStrictHom_toLinearMap
     (F : AInfinityStrictFunctor (aInfinityCategory 𝒜) (aInfinityCategory ℬ)) :
     F.toStrictHom.toLinearMap = F.map (star 𝒜) (star 𝒜) := (rfl)
 
+@[simp]
+theorem coe_toStrictHom
+    (F : AInfinityStrictFunctor (aInfinityCategory 𝒜) (aInfinityCategory ℬ)) :
+    ⇑F.toStrictHom = F.map (star 𝒜) (star 𝒜) := (rfl)
+
 /-- The algebra morphism associated to the identity functor is the identity morphism. -/
 @[simp]
 theorem toStrictHom_id (𝒜 : AInfinityAlgebra R A) :
@@ -105,9 +110,8 @@ theorem toStrictFunctor_toStrictHom
     F.toStrictHom.toStrictFunctor = F := by
   have hobj : F.toStrictHom.toStrictFunctor.obj = F.obj :=
     funext fun _ ↦ Subsingleton.elim _ _
-  apply ext hobj
-  apply heq_of_eq
-  funext X Y
+  apply ext_of_obj_eq hobj
+  intro X Y f
   obtain rfl := Subsingleton.elim X (star 𝒜)
   obtain rfl := Subsingleton.elim Y (star 𝒜)
   rfl
@@ -146,19 +150,17 @@ theorem strictFunctorEquiv_symm_apply
 theorem toStrictFunctor_id (𝒜 : AInfinityAlgebra R A) :
     (AInfinityStrictHom.id 𝒜).toStrictFunctor =
       AInfinityStrictFunctor.id (aInfinityCategory 𝒜) := by
-  apply AInfinityStrictFunctor.ext (funext fun _ ↦ Subsingleton.elim _ _)
-  exact heq_of_eq (by
-    funext X Y
-    simp only [toStrictFunctor_map, id_toLinearMap, AInfinityStrictFunctor.id_map])
+  apply AInfinityStrictFunctor.ext_of_obj_eq (funext fun _ ↦ Subsingleton.elim _ _)
+  intro X Y a
+  simp only [toStrictFunctor_map, id_toLinearMap, AInfinityStrictFunctor.id_map]
 
 /-- The one-object comparison preserves composition. -/
 @[simp]
 theorem toStrictFunctor_comp (g : AInfinityStrictHom ℬ 𝒞) (f : AInfinityStrictHom 𝒜 ℬ) :
     (g.comp f).toStrictFunctor = g.toStrictFunctor.comp f.toStrictFunctor := by
-  apply AInfinityStrictFunctor.ext (funext fun _ ↦ Subsingleton.elim _ _)
-  exact heq_of_eq (by
-    funext X Y
-    simp only [toStrictFunctor_map, comp_toLinearMap, AInfinityStrictFunctor.comp_map])
+  apply AInfinityStrictFunctor.ext_of_obj_eq (funext fun _ ↦ Subsingleton.elim _ _)
+  intro X Y a
+  simp only [toStrictFunctor_map, comp_toLinearMap, AInfinityStrictFunctor.comp_map]
 
 end AInfinityStrictHom
 
