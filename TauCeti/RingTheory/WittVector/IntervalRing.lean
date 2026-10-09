@@ -16,9 +16,9 @@ public import TauCeti.RingTheory.WittVector.GaussValuation
 # The interval rings `B^I` of the Fargues–Fontaine curve
 
 Let `O` be the ring of integers of a valuation `v : Valuation K ℝ≥0` on a field `K`, perfect of
-characteristic `p`, and let `ϖ ∈ O` be nonzero; for instance `O = 𝒪_F` for a perfect
-nonarchimedean field `F` of characteristic `p` with pseudouniformiser `ϖ`, so that
-`𝕎 O = A_inf`. For `0 < ρ < 1` the Gauss valuation
+characteristic `p`, and let `ϖ ∈ O` be a pseudouniformiser, `0 < v(ϖ) < 1`; for instance
+`O = 𝒪_F` for a perfect nonarchimedean field `F` of characteristic `p` with pseudouniformiser
+`ϖ`, so that `𝕎 O = A_inf`. For `0 < ρ < 1` the Gauss valuation
 
 ```text
 λ_ρ(∑ₙ [xₙ] pⁿ) = supₙ v(xₙ) ρⁿ
@@ -140,51 +140,53 @@ end Away
 
 section Interval
 
-variable (hv : v.Integers O) (hϖ : ϖ ≠ 0) {ρ₁ ρ₂ : ℝ≥0} (hρ₁ : ρ₁ ∈ Set.Ioo 0 1)
-  (hρ₂ : ρ₂ ∈ Set.Ioo 0 1)
+variable (hv : v.Integers O) (hϖ : ϖ ≠ 0) (hϖ' : v (algebraMap O K ϖ) < 1) {ρ₁ ρ₂ : ℝ≥0}
+  (hρ₁ : ρ₁ ∈ Set.Ioo 0 1) (hρ₂ : ρ₂ ∈ Set.Ioo 0 1)
 
 /-- **`𝕎 O[1/(p [ϖ])]` with the interval norm.** This is the localisation of `𝕎 O` away from
-`p [ϖ]`, normed by `λ_I = max(λ_{ρ₁}, λ_{ρ₂})` (`TauCeti.WittVector.intervalNorm`); its completion
-is the interval ring `B^I`. -/
+`p [ϖ]`, for a pseudouniformiser `ϖ` (`0 < v(ϖ) < 1`), normed by `λ_I = max(λ_{ρ₁}, λ_{ρ₂})`
+(`TauCeti.WittVector.intervalNorm`); its completion is the interval ring `B^I`. -/
 -- The body is exposed because the ring structures below are transferred from
 -- `Localization.Away` along it.
 @[expose]
-def IntervalLocalization (_hv : v.Integers O) (_hϖ : ϖ ≠ 0) (_hρ₁ : ρ₁ ∈ Set.Ioo 0 1)
-    (_hρ₂ : ρ₂ ∈ Set.Ioo 0 1) : Type _ :=
+def IntervalLocalization (_hv : v.Integers O) (_hϖ : ϖ ≠ 0) (_hϖ' : v (algebraMap O K ϖ) < 1)
+    (_hρ₁ : ρ₁ ∈ Set.Ioo 0 1) (_hρ₂ : ρ₂ ∈ Set.Ioo 0 1) : Type _ :=
   Localization.Away ((p : 𝕎 O) * teichmuller p ϖ)
 
 namespace IntervalLocalization
 
-noncomputable instance : CommRing (IntervalLocalization p hv hϖ hρ₁ hρ₂) :=
+noncomputable instance : CommRing (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) :=
   inferInstanceAs (CommRing (Localization.Away _))
 
-noncomputable instance : Algebra (𝕎 O) (IntervalLocalization p hv hϖ hρ₁ hρ₂) :=
+noncomputable instance : Algebra (𝕎 O) (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) :=
   inferInstanceAs (Algebra (𝕎 O) (Localization.Away _))
 
 instance : IsLocalization.Away ((p : 𝕎 O) * teichmuller p ϖ)
-    (IntervalLocalization p hv hϖ hρ₁ hρ₂) :=
+    (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) :=
   inferInstanceAs (IsLocalization.Away ((p : 𝕎 O) * teichmuller p ϖ)
     (Localization.Away ((p : 𝕎 O) * teichmuller p ϖ)))
 
 /-- `p` is a unit of `𝕎 O[1/(p [ϖ])]`. -/
-theorem isUnit_natCast : IsUnit (p : IntervalLocalization p hv hϖ hρ₁ hρ₂) := by
-  simpa using IsLocalization.Away.isUnit_of_dvd (S := IntervalLocalization p hv hϖ hρ₁ hρ₂)
+theorem isUnit_natCast : IsUnit (p : IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) := by
+  simpa using IsLocalization.Away.isUnit_of_dvd (S := IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)
     ((p : 𝕎 O) * teichmuller p ϖ) (dvd_mul_right _ _)
 
 /-- `[ϖ]` is a unit of `𝕎 O[1/(p [ϖ])]`. -/
 theorem isUnit_algebraMap_teichmuller :
-    IsUnit (algebraMap (𝕎 O) (IntervalLocalization p hv hϖ hρ₁ hρ₂) (teichmuller p ϖ)) :=
+    IsUnit (algebraMap (𝕎 O) (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) (teichmuller p ϖ)) :=
   IsLocalization.Away.isUnit_of_dvd ((p : 𝕎 O) * teichmuller p ϖ) (dvd_mul_left _ _)
 
 end IntervalLocalization
 
 variable [CharP O p] [PerfectRing O p]
 
-local notation "λ₁" => gaussValuationAway p hv hϖ ρ₁ hρ₁ (IntervalLocalization p hv hϖ hρ₁ hρ₂)
-local notation "λ₂" => gaussValuationAway p hv hϖ ρ₂ hρ₂ (IntervalLocalization p hv hϖ hρ₁ hρ₂)
+local notation "λ₁" =>
+  gaussValuationAway p hv hϖ ρ₁ hρ₁ (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)
+local notation "λ₂" =>
+  gaussValuationAway p hv hϖ ρ₂ hρ₂ (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)
 
 /-- `λ_I = max(λ_{ρ₁}, λ_{ρ₂})` is ultrametric. -/
-private theorem max_gaussValuationAway_add_le (x y : IntervalLocalization p hv hϖ hρ₁ hρ₂) :
+private theorem max_gaussValuationAway_add_le (x y : IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) :
     max (λ₁ (x + y)) (λ₂ (x + y)) ≤ max (max (λ₁ x) (λ₂ x)) (max (λ₁ y) (λ₂ y)) :=
   max_le ((Valuation.map_add _ x y).trans (max_le_max (le_max_left _ _) (le_max_left _ _)))
     ((Valuation.map_add _ x y).trans (max_le_max (le_max_right _ _) (le_max_right _ _)))
@@ -192,11 +194,11 @@ private theorem max_gaussValuationAway_add_le (x y : IntervalLocalization p hv h
 /-- **The interval norm** `λ_I = max(λ_{ρ₁}, λ_{ρ₂})` on `𝕎 O[1/(p [ϖ])]`: a ring norm, which is
 ultrametric and submultiplicative because each `λ_ρ` is a valuation, and vanishes only at zero
 because `λ_{ρ₁}` does. -/
-noncomputable def intervalNorm : RingNorm (IntervalLocalization p hv hϖ hρ₁ hρ₂) where
+noncomputable def intervalNorm : RingNorm (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) where
   toFun x := max (λ₁ x) (λ₂ x)
   map_zero' := by simp
   add_le' x y := by
-    have h := max_gaussValuationAway_add_le p hv hϖ hρ₁ hρ₂ x y
+    have h := max_gaussValuationAway_add_le p hv hϖ hϖ' hρ₁ hρ₂ x y
     exact_mod_cast h.trans (max_le_add_of_nonneg zero_le zero_le)
   neg' x := by simp
   mul_le' x y := by
@@ -211,51 +213,51 @@ noncomputable def intervalNorm : RingNorm (IntervalLocalization p hv hϖ hρ₁ 
       (nonpos_iff_eq_zero.mp ((le_max_left _ _).trans_eq hx))
 
 /-- The interval norm is the larger of the two Gauss valuations. -/
-theorem intervalNorm_apply (x : IntervalLocalization p hv hϖ hρ₁ hρ₂) :
-    intervalNorm p hv hϖ hρ₁ hρ₂ x = max (λ₁ x : ℝ) (λ₂ x) :=
+theorem intervalNorm_apply (x : IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) :
+    intervalNorm p hv hϖ hϖ' hρ₁ hρ₂ x = max (λ₁ x : ℝ) (λ₂ x) :=
   NNReal.coe_max _ _
 
 namespace IntervalLocalization
 
-noncomputable instance : NormedCommRing (IntervalLocalization p hv hϖ hρ₁ hρ₂) where
-  __ := (intervalNorm p hv hϖ hρ₁ hρ₂).toNormedRing
+noncomputable instance : NormedCommRing (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) where
+  __ := (intervalNorm p hv hϖ hϖ' hρ₁ hρ₂).toNormedRing
   mul_comm := mul_comm
 
 /-- The norm of `𝕎 O[1/(p [ϖ])]` is the interval norm `λ_I`. -/
-theorem norm_def (x : IntervalLocalization p hv hϖ hρ₁ hρ₂) :
+theorem norm_def (x : IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) :
     ‖x‖ = max (λ₁ x : ℝ) (λ₂ x) :=
-  intervalNorm_apply p hv hϖ hρ₁ hρ₂ x
+  intervalNorm_apply p hv hϖ hϖ' hρ₁ hρ₂ x
 
 /-- On `𝕎 O`, the interval norm is `max(λ_{ρ₁}, λ_{ρ₂})`. -/
 @[simp]
 theorem norm_algebraMap (x : 𝕎 O) :
-    ‖algebraMap (𝕎 O) (IntervalLocalization p hv hϖ hρ₁ hρ₂) x‖ =
+    ‖algebraMap (𝕎 O) (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) x‖ =
       max (gaussValuation p hv ρ₁ hρ₁.2 x : ℝ) (gaussValuation p hv ρ₂ hρ₂.2 x) := by
   simp [norm_def]
 
-instance : IsUltrametricDist (IntervalLocalization p hv hϖ hρ₁ hρ₂) :=
+instance : IsUltrametricDist (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) :=
   IsUltrametricDist.isUltrametricDist_of_forall_norm_add_le_max_norm fun x y ↦ by
     simp only [norm_def, ← NNReal.coe_max, NNReal.coe_le_coe]
-    exact max_gaussValuationAway_add_le p hv hϖ hρ₁ hρ₂ x y
+    exact max_gaussValuationAway_add_le p hv hϖ hϖ' hρ₁ hρ₂ x y
 
-instance : NormOneClass (IntervalLocalization p hv hϖ hρ₁ hρ₂) :=
+instance : NormOneClass (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) :=
   ⟨by simp [norm_def]⟩
 
 /-- The interval norm of `p` is `max(ρ₁, ρ₂)`. -/
-theorem norm_natCast : ‖(p : IntervalLocalization p hv hϖ hρ₁ hρ₂)‖ = max (ρ₁ : ℝ) ρ₂ := by
-  rw [← map_natCast (algebraMap (𝕎 O) (IntervalLocalization p hv hϖ hρ₁ hρ₂)), norm_algebraMap,
+theorem norm_natCast : ‖(p : IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)‖ = max (ρ₁ : ℝ) ρ₂ := by
+  rw [← map_natCast (algebraMap (𝕎 O) (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)), norm_algebraMap,
     gaussValuation_p, gaussValuation_p]
 
 /-- **`𝕎 O[1/(p [ϖ])]` with the interval norm is a Tate ring**, with pseudouniformiser `p`. -/
-instance instIsTateRing : IsTateRing (IntervalLocalization p hv hϖ hρ₁ hρ₂) :=
-  IsTateRing.of_isUnit_norm_lt_one (R := IntervalLocalization p hv hϖ hρ₁ hρ₂)
-    (isUnit_natCast p hv hϖ hρ₁ hρ₂) <| by
+instance instIsTateRing : IsTateRing (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) :=
+  IsTateRing.of_isUnit_norm_lt_one (R := IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)
+    (isUnit_natCast p hv hϖ hϖ' hρ₁ hρ₂) <| by
     rw [norm_natCast]
     exact_mod_cast max_lt hρ₁.2 hρ₂.2
 
 /-- Scalar multiplication by `𝕎 O` is uniformly continuous, so that the `𝕎 O`-algebra structure
 extends to the completion `B^I`. -/
-instance : UniformContinuousConstSMul (𝕎 O) (IntervalLocalization p hv hϖ hρ₁ hρ₂) :=
+instance : UniformContinuousConstSMul (𝕎 O) (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) :=
   ⟨fun c ↦ by
     simp_rw [Algebra.smul_def]
     exact (Ring.uniformContinuousConstSMul _).uniformContinuous_const_smul _⟩
@@ -263,54 +265,54 @@ instance : UniformContinuousConstSMul (𝕎 O) (IntervalLocalization p hv hϖ h�
 end IntervalLocalization
 
 /-- **The interval ring `B^I`**: the completion of `𝕎 O[1/(p [ϖ])]` for the interval norm
-`λ_I = max(λ_{ρ₁}, λ_{ρ₂})`, for radii `ρ₁, ρ₂ ∈ (0, 1)` and `ϖ ≠ 0`. It is a complete Hausdorff
-normed commutative ring and a Tate ring. -/
+`λ_I = max(λ_{ρ₁}, λ_{ρ₂})`, for radii `ρ₁, ρ₂ ∈ (0, 1)` and a pseudouniformiser `ϖ`
+(`0 < v(ϖ) < 1`). It is a complete Hausdorff normed commutative ring and a Tate ring. -/
 abbrev IntervalRing : Type _ :=
-  Completion (IntervalLocalization p hv hϖ hρ₁ hρ₂)
+  Completion (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)
 
 /-- On `𝕎 O`, the norm of `B^I` is `max(λ_{ρ₁}, λ_{ρ₂})`. -/
 @[simp]
 theorem norm_algebraMap_intervalRing (x : 𝕎 O) :
-    ‖algebraMap (𝕎 O) (IntervalRing p hv hϖ hρ₁ hρ₂) x‖ =
+    ‖algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) x‖ =
       max (gaussValuation p hv ρ₁ hρ₁.2 x : ℝ) (gaussValuation p hv ρ₂ hρ₂.2 x) := by
   rw [Completion.algebraMap_def, Completion.norm_coe, IntervalLocalization.norm_algebraMap]
 
 /-- The map `𝕎 O → B^I` is injective. -/
 theorem algebraMap_intervalRing_injective :
-    Function.Injective (algebraMap (𝕎 O) (IntervalRing p hv hϖ hρ₁ hρ₂)) := by
+    Function.Injective (algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)) := by
   refine (injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_
-  have h := norm_algebraMap_intervalRing p hv hϖ hρ₁ hρ₂ x
+  have h := norm_algebraMap_intervalRing p hv hϖ hϖ' hρ₁ hρ₂ x
   rw [hx, norm_zero, eq_comm, ← NNReal.coe_max, NNReal.coe_eq_zero] at h
   exact (gaussValuation_eq_zero_iff hv hρ₁.1 hρ₁.2).mp
     (nonpos_iff_eq_zero.mp ((le_max_left _ _).trans_eq h))
 
 /-- **`p` is a pseudouniformiser of `B^I`**: it is a unit of norm `max(ρ₁, ρ₂) < 1`. -/
 theorem isPseudoUniformizer_natCast_intervalRing :
-    IsPseudoUniformizer (p : IntervalRing p hv hϖ hρ₁ hρ₂) := by
+    IsPseudoUniformizer (p : IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) := by
   refine IsPseudoUniformizer.of_norm_lt_one ?_ ?_
   · rw [← map_natCast (Completion.coeRingHom :
-      IntervalLocalization p hv hϖ hρ₁ hρ₂ →+* IntervalRing p hv hϖ hρ₁ hρ₂)]
-    exact (IntervalLocalization.isUnit_natCast p hv hϖ hρ₁ hρ₂).map _
-  · rw [← map_natCast (algebraMap (𝕎 O) (IntervalRing p hv hϖ hρ₁ hρ₂)),
+      IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂ →+* IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)]
+    exact (IntervalLocalization.isUnit_natCast p hv hϖ hϖ' hρ₁ hρ₂).map _
+  · rw [← map_natCast (algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)),
       norm_algebraMap_intervalRing, gaussValuation_p, gaussValuation_p]
     exact_mod_cast max_lt hρ₁.2 hρ₂.2
 
-/-- `[ϖ]` is a unit of `B^I`. -/
+/-- The Teichmüller lift `[ϖ]` of the pseudouniformiser `ϖ` is a unit of `B^I`. -/
 theorem isUnit_algebraMap_teichmuller_intervalRing :
-    IsUnit (algebraMap (𝕎 O) (IntervalRing p hv hϖ hρ₁ hρ₂) (teichmuller p ϖ)) := by
+    IsUnit (algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) (teichmuller p ϖ)) := by
   rw [Completion.algebraMap_def]
-  exact (IntervalLocalization.isUnit_algebraMap_teichmuller p hv hϖ hρ₁ hρ₂).map
-    (Completion.coeRingHom : _ →+* IntervalRing p hv hϖ hρ₁ hρ₂)
+  exact (IntervalLocalization.isUnit_algebraMap_teichmuller p hv hϖ hϖ' hρ₁ hρ₂).map
+    (Completion.coeRingHom : _ →+* IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)
 
 /-! `B^I` is a complete Hausdorff Tate ring: completeness and separatedness hold for every
 completion, and the Tate structure is that of `𝕎 O[1/(p [ϖ])]`, carried to the completion by
 `TauCeti.Huber.IsTateRing.completion` (Wedhorn, Remark 6.8). -/
 
-example : CompleteSpace (IntervalRing p hv hϖ hρ₁ hρ₂) := inferInstance
+example : CompleteSpace (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) := inferInstance
 
-example : T2Space (IntervalRing p hv hϖ hρ₁ hρ₂) := inferInstance
+example : T2Space (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) := inferInstance
 
-example : IsTateRing (IntervalRing p hv hϖ hρ₁ hρ₂) := inferInstance
+example : IsTateRing (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) := inferInstance
 
 end Interval
 
