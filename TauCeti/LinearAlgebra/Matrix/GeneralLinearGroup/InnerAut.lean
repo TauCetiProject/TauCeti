@@ -166,8 +166,8 @@ variable {n A : Type*} [Fintype n] [DecidableEq n] [CommSemiring A]
 open Matrix.GeneralLinearGroup in
 /-- **Automorphisms of a matrix algebra are Zariski-locally inner.** For an algebra automorphism
 `σ` of `Mₙ(A)` over a commutative semiring `A`, there are finitely many elements of `A` generating
-the unit ideal such that, along any homomorphism `φ : A →+* B` to a commutative semiring inverting one
-of them, `σ` becomes conjugation by an invertible matrix over `B`:
+the unit ideal such that, along any homomorphism `φ : A →+* B` to a commutative semiring
+inverting one of them, `σ` becomes conjugation by an invertible matrix over `B`:
 `(σ x).map φ = g (x.map φ) g⁻¹` for every `x`.
 
 Over a local semiring one of the elements is already a unit, which gives
