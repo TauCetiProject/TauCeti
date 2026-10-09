@@ -212,10 +212,4 @@ theorem irreducible_natCast_self : Irreducible (p : 𝒪[ℚ_[p]]) := by
   simpa only [map_natCast] using
     (PadicInt.irreducible_p (p := p)).map (_root_.Padic.integerRingEquiv p).symm
 
-/-- A direct witness of the strong rank condition for p-adic fields, avoiding searches through
-auxiliary algebra structures when computing base-change dimensions. -/
-instance instStrongRankCondition : StrongRankCondition ℚ_[p] := by
-  let hfield : Field ℚ_[p] := @NormedField.toField _ (_root_.Padic.normedField p)
-  exact @commRing_strongRankCondition _ hfield.toCommRing (@Field.toNontrivial _ hfield)
-
 end TauCeti.Padic

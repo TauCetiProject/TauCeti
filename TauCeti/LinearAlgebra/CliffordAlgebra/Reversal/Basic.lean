@@ -239,8 +239,7 @@ variable [Invertible (2 : R)]
   module
 
 /-- Clifford reversal negates the image of the exterior-square bivector map. -/
--- Prefer this explicit formula to the conditional rule for quadratic Clifford elements.
-@[simp 1100] theorem reverse_bivectorExterior (q : QuadraticForm R M) (x : ⋀[R]^2 M) :
+@[simp] theorem reverse_bivectorExterior (q : QuadraticForm R M) (x : ⋀[R]^2 M) :
     reverse (bivectorExterior q x) = -bivectorExterior q x := by
   let P := LinearMap.eqLocus (reverse (Q := q)) (-LinearMap.id)
   have hle : LinearMap.range (bivectorExterior q) ≤ P :=

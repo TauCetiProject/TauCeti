@@ -36,7 +36,6 @@ namespace PreAbstractSimplicialComplex
 variable {ι : Type*}
 
 /-- The one-vertex complex at `v`.  Its unique face is `{v}`. -/
-@[expose]
 def point (v : ι) : _root_.PreAbstractSimplicialComplex ι where
   faces := {{v}}
   isRelLowerSet_faces := by
@@ -47,10 +46,6 @@ def point (v : ι) : _root_.PreAbstractSimplicialComplex ι where
     subst w
     exact Finset.eq_singleton_iff_unique_mem.mpr ⟨hw, fun w hw =>
       Finset.mem_singleton.mp (hτσ hw)⟩
-
-/-- A one-vertex complex has exactly its singleton vertex as a face. -/
-@[simp]
-theorem _root_.TauCeti.faces_point (v : ι) : (point v).faces = {{v}} := rfl
 
 @[simp]
 theorem mem_point {v : ι} {σ : Finset ι} : σ ∈ point v ↔ σ = {v} := Iff.rfl

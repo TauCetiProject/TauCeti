@@ -103,12 +103,9 @@ tangent vector read in the ambient space. -/
 @[simp]
 theorem mvfderiv_coe_sphere_unitSphereEquiv (e : E ≃ₗᵢ[ℝ] F) (x : sphere (0 : E) 1)
     (v : TangentSpace (𝓡 n) x) :
-    mfderiv (𝓡 k) 𝓘(ℝ, F) ((↑) : sphere (0 : F) 1 → F) (unitSphereEquiv e x)
+    mvfderiv (𝓡 k) ((↑) : sphere (0 : F) 1 → F) (unitSphereEquiv e x)
         (mfderiv (𝓡 n) (𝓡 k) (unitSphereEquiv e) x v) =
-      e (mfderiv (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) x v) := by
-  change mvfderiv (𝓡 k) ((↑) : sphere (0 : F) 1 → F) (unitSphereEquiv e x)
-      (mfderiv (𝓡 n) (𝓡 k) (unitSphereEquiv e) x v) =
-    e (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v)
+      e (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v) := by
   have hcomp : ((↑) : sphere (0 : F) 1 → F) ∘ unitSphereEquiv e =
       e ∘ ((↑) : sphere (0 : E) 1 → E) :=
     funext fun y ↦ coe_unitSphereEquiv_apply e y

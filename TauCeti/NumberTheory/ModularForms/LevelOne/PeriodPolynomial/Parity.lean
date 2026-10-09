@@ -206,11 +206,10 @@ theorem finrank_evenPeriodPolynomials_eq_finrank_odd_add_one (hw : Even w) (hw�
   let τ : End K (periodPolynomials K w) :=
     (ε).restrict fun _ hx ↦ mem_periodPolynomials_binaryFormRep_parity hw hx
   have hε : ε ^ 2 = 1 := by
-    rw [← map_pow, ← op_pow]
-    have hmat : (!![-1, 0; 0, 1] : Matrix (Fin 2) (Fin 2) ℤ) ^ 2 = 1 := by
-      ext i j
-      fin_cases i <;> fin_cases j <;> norm_num [sq]
-    rw [hmat, op_one, map_one]
+    apply LinearMap.ext
+    intro x
+    simpa only [sq, Module.End.mul_apply, Module.End.one_apply] using
+      binaryFormRep_parity_involutive (R := K) (w := w) x
   have hτ : τ ^ 2 = 1 := by
     apply LinearMap.ext
     intro x

@@ -69,14 +69,14 @@ precomposition with the monodromy map. -/
 @[simp]
 lemma homologyMap_monodromy_comp_incl [CategoryWithHomology C] (n : ℕ) :
     HomologicalComplex.homologyMap
-          (SSet.chainComplexMap
-            (TopCat.toSSet.map (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F)))) R) n ≫
+          (((singularChainComplexFunctor C).obj R).map
+            (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F)))) n ≫
         HomologicalComplex.homologyMap
-          (SSet.chainComplexMap
-            (TopCat.toSSet.map (TopCat.ofHom (TauCeti.MappingTorus.incl φ))) R) n =
+          (((singularChainComplexFunctor C).obj R).map
+            (TopCat.ofHom (TauCeti.MappingTorus.incl φ))) n =
       HomologicalComplex.homologyMap
-        (SSet.chainComplexMap
-          (TopCat.toSSet.map (TopCat.ofHom (TauCeti.MappingTorus.incl φ))) R) n := by
+        (((singularChainComplexFunctor C).obj R).map
+          (TopCat.ofHom (TauCeti.MappingTorus.incl φ))) n := by
   rw [← HomologicalComplex.homologyMap_comp]
   exact (singularChainHomotopy φ R).homologyMap_eq n
 

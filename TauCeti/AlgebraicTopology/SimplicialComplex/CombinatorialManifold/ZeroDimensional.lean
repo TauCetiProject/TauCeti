@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.ZeroDimensional
 
@@ -44,14 +43,14 @@ theorem isCombinatorialBall_zero_iff :
     obtain ⟨V, hV, he⟩ := isCombinatorialBall_iff.mp h
     obtain ⟨v, rfl⟩ := Finset.card_eq_one.mp (by simpa using hV)
     have hc := he.encard_faces_eq_of_dimension_le_zero hdim
-    rw [simplex_singleton, TauCeti.faces_point, Set.encard_singleton] at hc
+    rw [faces_simplex_singleton, Set.encard_singleton] at hc
     obtain ⟨σ, hfaces⟩ := Set.encard_eq_one.mp hc.symm
     have hσ : σ ∈ K.faces := by
       rw [hfaces]
       simp
     obtain ⟨w, rfl⟩ := dimension_le_zero_iff.mp hdim σ hσ
     refine ⟨w, PreAbstractSimplicialComplex.ext ?_⟩
-    rw [simplex_singleton, TauCeti.faces_point]
+    rw [faces_simplex_singleton]
     exact hfaces
   · rintro ⟨v, rfl⟩
     exact isCombinatorialBall_simplex (by simp)

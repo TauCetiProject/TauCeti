@@ -292,8 +292,7 @@ theorem realCliffordTwoTwoEvenEquivMatrixProd_reverseEven
 
 /-- In the split matrix model of `Cl⁺(2,2)`, the reverse norm-one equation is determinant one in
 both matrix factors. -/
--- Use the matrix model before generic one-sided inverse tests.
-@[simp 1100]
+@[simp]
 theorem realCliffordTwoTwo_reverseEven_mul_self_eq_one_iff_det_eq_one
     (x : CliffordAlgebra.even (realCliffordForm 2 2)) :
     CliffordAlgebra.reverseEven (realCliffordForm 2 2) x * x = 1 ↔

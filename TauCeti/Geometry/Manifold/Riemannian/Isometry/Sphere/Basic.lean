@@ -9,8 +9,6 @@ public import TauCeti.Geometry.Diffeomorphism.Sphere
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere
 
-import TauCeti.Geometry.Manifold.VectorField.Regularity
-
 /-!
 # Linear isometries act on the round sphere by Riemannian isometries
 
@@ -71,9 +69,8 @@ def unitSphereRiemannianIsometry (e : E ≃ₗᵢ[ℝ] F) :
     have hcoe : ⇑(unitSphereDiffeomorph (n := n) (k := k) e ∞) = unitSphereEquiv e := by
       rw [← Diffeomorph.coe_toEquiv, unitSphereDiffeomorph_toEquiv]
     rw [TauCeti.inner_tangentSpace_sphere, TauCeti.inner_tangentSpace_sphere, hcoe]
-    simpa only [mvfderiv_apply_eq_mfderiv_apply] using
-      (congrArg₂ (inner ℝ : F → F → ℝ) (mvfderiv_coe_sphere_unitSphereEquiv (k := k) e x v)
-        (mvfderiv_coe_sphere_unitSphereEquiv (k := k) e x w)).trans (e.inner_map_map _ _)
+    exact (congrArg₂ (inner ℝ) (mvfderiv_coe_sphere_unitSphereEquiv (k := k) e x v)
+      (mvfderiv_coe_sphere_unitSphereEquiv (k := k) e x w)).trans (e.inner_map_map _ _)
 
 /-- The underlying diffeomorphism is the restriction `unitSphereDiffeomorph e ∞`. -/
 @[simp]
