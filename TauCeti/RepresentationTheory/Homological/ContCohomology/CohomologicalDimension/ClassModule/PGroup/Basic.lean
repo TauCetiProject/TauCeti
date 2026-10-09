@@ -52,27 +52,6 @@ section Step
 
 variable {V W : Subgroup G} [V.Normal] [W.Normal]
 
-/-- For open normal subgroups `V ≤ W` of `G` with `scd_p G ≤ 2`, if `H¹(G ⧸ W, W^ab(p))` and
-`H¹(W ⧸ V, V^ab(p))` vanish, then so does `H¹(G ⧸ V, V^ab(p))`. -/
-private theorem subsingleton_h1_abelianizationProP_of_le (hp : p.Prime)
-    (h : strictCohomologicalDimensionAt.{u} p G ≤ 2) (hVW : V ≤ W) (hV : IsOpen (V : Set G))
-    [Subsingleton (H1 (G ⧸ W) (Additive (abelianizationProP p G W)))]
-    [Subsingleton
-      (H1 (W ⧸ V.subgroupOf W) (Additive (abelianizationProP p W (V.subgroupOf W))))] :
-    Subsingleton (H1 (G ⧸ V) (Additive (abelianizationProP p G V))) := by
-  -- The map `i` from `H¹(G ⧸ W, W^ab(p))` is onto the kernel of restriction to the image of `W`
-  -- in `G ⧸ V`, and that restriction lands in `H¹(W ⧸ V, V^ab(p))`.
-  have : Finite (G ⧸ V) := V.quotient_finite_of_isOpen hV
-  have : V.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
-  have : Subsingleton (H1 (W.map (QuotientGroup.mk' V)) (Additive (abelianizationProP p G V))) :=
-    (abelianizationProPSubgroupOfH1Equiv p hVW hV).surjective.subsingleton
-  have hsurj : Function.Surjective (abelianizationProPInfl1 p hVW hV) := by
-    rw [← AddMonoidHom.range_eq_top, abelianizationProPInfl1_exact p hVW hV hp h,
-      AddMonoidHom.ker_eq_top_iff]
-    ext
-    exact Subsingleton.elim _ _
-  exact hsurj.subsingleton
-
 /-- For open normal subgroups `V ≤ W` of `G` with `scd_p G ≤ 2` and `H¹(W ⧸ V, V^ab(p))`
 trivial, if `u_{G/W}(p)` generates `H²(G ⧸ W, W^ab(p))` and `u_{W/V}(p)` generates
 `H²(W ⧸ V, V^ab(p))`, then `u_{G/V}(p)` generates `H²(G ⧸ V, V^ab(p))`, and the order of the

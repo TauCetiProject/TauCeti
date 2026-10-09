@@ -44,6 +44,34 @@ open ContCohomology
 
 universe u
 
+section Step
+
+variable {p : ℕ} {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [TotallyDisconnectedSpace G] {V W : Subgroup G} [V.Normal] [W.Normal]
+
+/-- For open normal subgroups `V ≤ W` of `G` with `scd_p G ≤ 2`, if `H¹(G ⧸ W, W^ab(p))` and
+`H¹(W ⧸ V, V^ab(p))` vanish, then so does `H¹(G ⧸ V, V^ab(p))`. -/
+theorem subsingleton_h1_abelianizationProP_of_le (hp : p.Prime)
+    (h : strictCohomologicalDimensionAt.{u} p G ≤ 2) (hVW : V ≤ W) (hV : IsOpen (V : Set G))
+    [Subsingleton (H1 (G ⧸ W) (Additive (abelianizationProP p G W)))]
+    [Subsingleton
+      (H1 (W ⧸ V.subgroupOf W) (Additive (abelianizationProP p W (V.subgroupOf W))))] :
+    Subsingleton (H1 (G ⧸ V) (Additive (abelianizationProP p G V))) := by
+  -- The map `i` from `H¹(G ⧸ W, W^ab(p))` is onto the kernel of restriction to the image of `W`
+  -- in `G ⧸ V`, and that restriction lands in `H¹(W ⧸ V, V^ab(p))`.
+  have : Finite (G ⧸ V) := V.quotient_finite_of_isOpen hV
+  have : V.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
+  have : Subsingleton (H1 (W.map (QuotientGroup.mk' V)) (Additive (abelianizationProP p G V))) :=
+    (abelianizationProPSubgroupOfH1Equiv p hVW hV).surjective.subsingleton
+  have hsurj : Function.Surjective (abelianizationProPInfl1 p hVW hV) := by
+    rw [← AddMonoidHom.range_eq_top, abelianizationProPInfl1_exact p hVW hV hp h,
+      AddMonoidHom.ker_eq_top_iff]
+    ext
+    exact Subsingleton.elim _ _
+  exact hsurj.subsingleton
+
+end Step
+
 private theorem subsingleton_h1_abelianizationProP_of_isPGroup_aux (p m : ℕ)
     (hp : p.Prime) :
     ∀ (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
@@ -108,21 +136,9 @@ private theorem subsingleton_h1_abelianizationProP_of_isPGroup_aux (p m : ℕ)
               (Additive (abelianizationProP p W (V.subgroupOf W)))) :=
           subsingleton_h1_abelianizationProP_of_card_eq_prime hp hWdim
             (W.subgroupOf_isOpen V hV) hcard
-        let _ : Subsingleton
-            (H1 (W.map (QuotientGroup.mk' V))
-              (Additive (abelianizationProP p G V))) :=
-          (abelianizationProPSubgroupOfH1Equiv p hVW hV).toEquiv.subsingleton_congr.mp
-            hrestricted
-        refine ⟨fun x y ↦ ?_⟩
-        have hres : explicitRes1 (G ⧸ V) (Additive (abelianizationProP p G V))
-            (W.map (QuotientGroup.mk' V)) (x - y) = 0 := Subsingleton.elim _ _
-        have hker : x - y ∈ (explicitRes1 (G ⧸ V)
-            (Additive (abelianizationProP p G V)) (W.map (QuotientGroup.mk' V))).ker := hres
-        rw [← abelianizationProPInfl1_exact p hVW hV hp hG] at hker
-        rcases hker with ⟨a, ha⟩
-        have : a = 0 := Subsingleton.elim _ _
-        rw [this, map_zero] at ha
-        exact sub_eq_zero.mp ha.symm
+        let _ := hsource
+        let _ := hrestricted
+        exact subsingleton_h1_abelianizationProP_of_le hp hG hVW hV
 
 /-- **The class module of a finite `p`-group quotient has trivial `H¹`.** For a profinite group
 `G` with `scd_p G ≤ 2` and an open normal subgroup `V` whose quotient is a `p`-group,
