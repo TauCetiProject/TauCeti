@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Map
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Join.Combinatorial
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Join.Star
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Pure
 
 /-!
 # Vertex stars in combinatorial manifolds
