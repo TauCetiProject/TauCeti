@@ -36,6 +36,8 @@ The ground-level norm of a restriction is its instance `W = U`, `W' = U'`.
 
 * `TauCeti.ClassFieldTheory.Formation.levelNorm_top_apply_coe`: the norm to the level of `G` is
   the sum of the translates by representatives of the cosets in `G`.
+* `TauCeti.ClassFieldTheory.Formation.levelNorm_inclusion`: the norm of an element of the larger
+  level `A^W` is its multiple by the index `[W : W']`.
 * `TauCeti.ClassFieldTheory.Formation.levelNorm_trans`: norms between levels compose along a
   tower of open subgroups.
 * `TauCeti.ClassFieldTheory.LayerRestriction.groundNorm_apply_coe`: the norm is the sum of the
@@ -137,6 +139,15 @@ theorem levelNorm_self (h : W ≤ W) : F.levelNorm h = AddMonoidHom.id (F.level 
   -- Every coset representative lies in `W`, so it fixes an element of the level `A^W`.
   simp [finsum_eq_sum_of_fintype, F.mem_level.1 x.2, ← Nat.card_eq_fintype_card]
 
+/-- **The norm of an element of the larger level `A^W` is its multiple by the index `[W : W']`.** -/
+theorem levelNorm_inclusion (h : W' ≤ W) (x : F.level W) :
+    F.levelNorm h (Submodule.inclusion (F.level_antitone h) x) =
+      W'.toSubgroup.relIndex W.toSubgroup • x := by
+  ext
+  rw [levelNorm_apply_coe]
+  -- Every coset representative lies in `W`, so it fixes an element of the level `A^W`.
+  simp [finsum_eq_sum_of_fintype, F.mem_level.1 x.2, Subgroup.relIndex, Subgroup.index_eq_card]
+
 /-- Norms between levels compose along a tower `W'' ≤ W' ≤ W` of open subgroups. -/
 theorem levelNorm_trans {W'' : OpenSubgroup G} (h : W' ≤ W) (h' : W'' ≤ W') :
     F.levelNorm (h'.trans h) = (F.levelNorm h).comp (F.levelNorm h') := by
@@ -178,10 +189,9 @@ theorem groundNorm_apply_coe (T : LayerRestriction small big) (F : Formation G)
 theorem groundNorm_groundInclusion (T : LayerRestriction small big) (F : Formation G)
     (x : F.level big.ground) :
     (dsimp% only (T.groundNorm F (T.groundInclusion F x))) = T.relativeDegree • x := by
-  ext
-  rw [groundNorm_apply_coe, groundInclusion_apply_coe]
-  -- Every coset representative lies in `U`, so it fixes an element of the ground level `A^U`.
-  simp [finsum_eq_sum_of_fintype, F.mem_level.1 x.2, Subgroup.relIndex, Subgroup.index_eq_card]
+  have hx : T.groundInclusion F x = Submodule.inclusion (F.level_antitone T.ground_le) x :=
+    Subtype.ext (groundInclusion_apply_coe T F x)
+  rw [hx, groundNorm, F.levelNorm_inclusion, relativeDegree_def]
 
 /-! ### Towers -/
 
