@@ -112,6 +112,11 @@ theorem sortedLT_crossingsAt (p : Fin n) : (w.crossingsAt p).SortedLT := by
   rw [List.sortedLT_iff_pairwise] at ⊢
   exact (List.sortedLT_iff_pairwise.1 (List.sortedLT_finRange w.length)).filter _
 
+/-- An empty braid word has no crossings at any strand position. -/
+@[simp]
+theorem crossingsAt_nil (p : Fin n) : crossingsAt ([] : BraidWord n) p = [] := by
+  simp [crossingsAt_def]
+
 /-- Adding a letter at the bottom of a braid word: along a strand position, its crossing comes
 first when the letter involves that position, followed by the crossings of the old word. -/
 theorem crossingsAt_cons (x : Fin (n - 1) × ℤˣ) (v : BraidWord n) (p : Fin n) :
@@ -151,7 +156,7 @@ both words. -/
 theorem crossingsAt_append_eq_nil_iff (u v : BraidWord n) (p : Fin n) :
     crossingsAt (u ++ v) p = [] ↔ u.crossingsAt p = [] ∧ v.crossingsAt p = [] := by
   induction u with
-  | nil => simp [crossingsAt_def]
+  | nil => simp
   | cons x u ih => simp only [List.cons_append, crossingsAt_cons_eq_nil_iff, ih]; tauto
 
 /-- Two letters on the same positions come first on either position, followed by the old
