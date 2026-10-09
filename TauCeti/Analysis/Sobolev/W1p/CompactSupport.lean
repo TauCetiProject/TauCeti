@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.CompactSupport
 public import TauCeti.Analysis.Sobolev.W1p.Density
 public import TauCeti.Analysis.Sobolev.W1p.Extension
+public import TauCeti.Analysis.Sobolev.W1p.Restriction
 
 /-!
 # Compactly supported Sobolev functions have zero boundary values
@@ -45,12 +46,19 @@ produces an element of `W^{1,p}_0(Ω)`.  The companion
 exactly what the compact support replaces here.  This is the localization step of Meyers--Serrin
 density and of interior estimates.
 
+`TauCeti.W1p.restrictL_contDiffSMul_mem_w1p0Submodule` trades the compact support of the cutoff
+for a function given on the whole space: for `w ∈ W^{1,p}(ℝⁿ)` and a bounded smooth `ψ` with
+bounded gradient and `tsupport ψ ⊆ Ω`, the restriction of `ψ w` to `Ω` lies in `W^{1,p}_0(Ω)`.
+Neither `ψ` nor `w` need have compact support, so it applies to unbounded `Ω` such as a half-space.
+
 ## Main declarations
 
 * `TauCeti.W1p.mem_w1p0Submodule_of_isCompact`: a compactly supported Sobolev function has zero
   boundary values.
 * `TauCeti.W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport`: multiplication by a
   compactly supported cutoff lands in `W^{1,p}_0(Ω)`.
+* `TauCeti.W1p.restrictL_contDiffSMul_mem_w1p0Submodule`: a whole-space Sobolev function times a
+  bounded cutoff supported in `Ω`, restricted to `Ω`, lies in `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.value_extendByZeroL_contDiffSMul_ae` and
   `TauCeti.W1p.gradient_extendByZeroL_contDiffSMul_ae`: the value and weak gradient of a cutoff
   product extended by zero to the whole space.
@@ -212,6 +220,50 @@ theorem W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (hp : p ≠ (∞
   refine W1p.mem_w1p0Submodule_of_isCompact hp hcpt hts ?_
   filter_upwards [W1p.value_contDiffSMul_ae hpsi hM hpsiM hgradM u] with x hx hxK
   rw [hx, image_eq_zero_of_notMem_tsupport hxK, zero_smul]
+
+/-- **A whole-space Sobolev function cut off inside `Ω` has zero boundary values on `Ω`.**  Let
+`w ∈ W^{1,p}(ℝⁿ)`, `1 ≤ p < ∞`, and let `ψ` be smooth with `|ψ| ≤ M`, `‖∇ψ‖ ≤ M` and
+`tsupport ψ ⊆ Ω`.  Then the restriction of `ψ w` to `Ω` lies in `W^{1,p}_0(Ω)`.
+
+Neither `ψ` nor `w` is assumed compactly supported: `w` is a limit of test functions on the whole
+space, and the cutoff carries each of them to a test function on `Ω`. -/
+theorem W1p.restrictL_contDiffSMul_mem_w1p0Submodule (hp : p ≠ (∞ : ℝ≥0∞)) {psi : E → ℝ}
+    (hpsi : ContDiff ℝ ∞ psi) {M : ℝ} (hM : 0 ≤ M)
+    (hpsiM : ∀ x ∈ (⊤ : Opens E), |psi x| ≤ M) (hgradM : ∀ x ∈ (⊤ : Opens E), ‖∇ psi x‖ ≤ M)
+    (hts : tsupport psi ⊆ (Omega : Set E)) (w : W1p mu ⊤ p) :
+    W1p.restrictL le_top (W1p.contDiffSMul psi hpsi hM hpsiM hgradM w) ∈
+      w1p0Submodule mu Omega p := by
+  -- The functions with this property form a closed set containing every test function.
+  have hclosed : IsClosed {v : W1p mu ⊤ p | W1p.restrictL le_top
+      (W1p.contDiffSMulL psi hpsi hM hpsiM hgradM v) ∈ w1p0Submodule mu Omega p} :=
+    (w1p0Submodule mu Omega p).isClosed.preimage
+      ((W1p.restrictL le_top).comp (W1p.contDiffSMulL psi hpsi hM hpsiM hgradM)).continuous
+  suffices htest : ∀ phi : 𝓓((⊤ : Opens E), ℝ), W1p.restrictL le_top
+      (W1p.contDiffSMulL psi hpsi hM hpsiM hgradM (W1p.ofTestFunctionₗ mu ⊤ p phi)) ∈
+        w1p0Submodule mu Omega p by
+    have hmem := w1p0Submodule_subset_of_isClosed hclosed
+      (fun phi => by rw [mem_ofPred_eq]; exact htest phi) (W1p.mem_w1p0Submodule_top hp w)
+    rw [mem_ofPred_eq, W1p.contDiffSMulL_apply] at hmem
+    exact hmem
+  intro phi
+  -- The cutoff of a test function on the whole space is a test function on `Ω`.
+  let Psi : 𝓓(Omega, ℝ) := ⟨psi * (phi : E → ℝ), hpsi.mul phi.contDiff,
+    phi.hasCompactSupport.mul_left, tsupport_mul_subset_left.trans hts⟩
+  have hPsi : W1p.restrictL le_top (W1p.contDiffSMulL psi hpsi hM hpsiM hgradM
+      (W1p.ofTestFunctionₗ mu ⊤ p phi)) = W1p.ofTestFunctionₗ mu Omega p Psi := by
+    refine W1p.ext_value (Lp.ext ?_)
+    have hval := W1p.value_contDiffSMul_ae hpsi hM hpsiM hgradM (W1p.ofTestFunctionₗ mu ⊤ p phi)
+    have hphi := testFunctionLp_apply_ae (mu := mu) p phi
+    have hmono : ae (mu.restrict (Omega : Set E)) ≤ ae (mu.restrict ((⊤ : Opens E) : Set E)) :=
+      ae_mono (Measure.restrict_mono (SetLike.coe_subset_coe.mpr le_top) le_rfl)
+    filter_upwards [W1p.value_restrictL_ae (mu := mu) (p := p) (le_top : Omega ≤ ⊤) _,
+      hval.filter_mono hmono, hphi.filter_mono hmono, testFunctionLp_apply_ae (mu := mu) p Psi]
+      with x h1 h2 h3 h4
+    have hcoe : (Psi : E → ℝ) = psi * (phi : E → ℝ) := TestFunction.coe_mk
+    rw [W1p.contDiffSMulL_apply, h1, h2, W1p.value_ofTestFunctionₗ, h3,
+      W1p.value_ofTestFunctionₗ, h4, hcoe, Pi.mul_apply, smul_eq_mul]
+  rw [hPsi]
+  exact W1p.ofTestFunctionₗ_mem_w1p0Submodule Psi
 
 /-! ### Localisation to the whole space -/
 
