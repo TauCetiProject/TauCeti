@@ -56,6 +56,8 @@ by approximation, and the *order* of the two limits matters.
 
 * `TauCeti.W1p.hasWeakFDerivOn_comp`: the chain rule, as a weak-derivative statement.
 * `TauCeti.W1p.contDiffComp`: `F ∘ u` as an element of `W^{1,p}(Ω)`.
+* `TauCeti.W1p.exists_value_gradient_ae_eq_comp_of_le`: the chain rule for `φ ∘ u` when `u` is
+  bounded below by a positive constant and `φ` is only `C¹` on `(0, ∞)`, as for `log u` and `u⁻¹`.
 * `TauCeti.W1p.hasWeakFDerivOn_posPart`: the weak gradient of the positive part.
 * `TauCeti.W1p.posPartAboveOfMemLp`: the shifted truncation `(u - k)⁺` at an arbitrary
   level, assuming its value is globally in `Lᵖ`.
@@ -403,6 +405,102 @@ theorem W1p.gradient_contDiffComp_ae (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F)
   exact MemLp.coeFn_toLp _
 
 end ChainRule
+
+/-! ### Composition with a function that is `C¹` on `(0, ∞)` -/
+
+section PositiveComp
+
+/-- A `C¹` modification of `φ` near `0`: it vanishes on `(-∞, ε/2]` and agrees with `φ` on
+`[3ε/4, ∞)`. The factor `χ(4t/ε - 2)`, with `χ = Real.smoothTransition`, switches from `0` to `1`
+on `[ε/2, 3ε/4]`. -/
+private noncomputable def positiveCutoff (φ : ℝ → ℝ) (ε t : ℝ) : ℝ :=
+  Real.smoothTransition (4 * t / ε - 2) * φ t
+
+variable {φ : ℝ → ℝ} {ε : ℝ}
+
+private theorem positiveCutoff_of_le (hε : 0 < ε) {t : ℝ} (ht : t ≤ ε / 2) :
+    positiveCutoff φ ε t = 0 := by
+  have h : 4 * t / ε ≤ 2 := by
+    rw [div_le_iff₀ hε]
+    linarith
+  rw [positiveCutoff, Real.smoothTransition.zero_of_nonpos (by linarith), zero_mul]
+
+private theorem positiveCutoff_of_le' (hε : 0 < ε) {t : ℝ} (ht : 3 * ε / 4 ≤ t) :
+    positiveCutoff φ ε t = φ t := by
+  have h : 3 ≤ 4 * t / ε := by
+    rw [le_div_iff₀ hε]
+    linarith
+  rw [positiveCutoff, Real.smoothTransition.one_of_one_le (by linarith), one_mul]
+
+private theorem contDiff_positiveCutoff (hε : 0 < ε) (hφ : ContDiffOn ℝ 1 φ (Ioi 0)) :
+    ContDiff ℝ 1 (positiveCutoff φ ε) := by
+  rw [contDiff_iff_contDiffAt]
+  intro t
+  rcases lt_or_ge t (ε / 2) with ht | ht
+  · -- Near a point of `(-∞, ε/2)` the function vanishes identically.
+    refine (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq ?_
+    filter_upwards [Iio_mem_nhds ht] with s hs
+    exact positiveCutoff_of_le hε (le_of_lt hs)
+  · have ht0 : 0 < t := by linarith
+    exact (Real.smoothTransition.contDiffAt.comp t (by fun_prop)).mul
+      (hφ.contDiffAt (Ioi_mem_nhds ht0))
+
+private theorem deriv_positiveCutoff_of_lt (hε : 0 < ε) {t : ℝ} (ht : 3 * ε / 4 < t) :
+    deriv (positiveCutoff φ ε) t = deriv φ t := by
+  refine Filter.EventuallyEq.deriv_eq ?_
+  filter_upwards [Ioi_mem_nhds ht] with s hs
+  exact positiveCutoff_of_le' hε (le_of_lt hs)
+
+private theorem exists_nnnorm_deriv_positiveCutoff_le (hε : 0 < ε) (hφ : ContDiffOn ℝ 1 φ (Ioi 0))
+    {M : ℝ} (hM : ∀ t, ε ≤ t → |deriv φ t| ≤ M) :
+    ∃ K : ℝ≥0, ∀ t, ‖deriv (positiveCutoff φ ε) t‖₊ ≤ K := by
+  have hcont : Continuous (deriv (positiveCutoff φ ε)) :=
+    (contDiff_one_iff_deriv.mp (contDiff_positiveCutoff hε hφ)).2
+  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
+    (hcont.continuousOn (s := Icc (ε / 2) ε))
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC ε ⟨by linarith, le_rfl⟩)
+  refine ⟨(max C M).toNNReal, fun t => ?_⟩
+  rw [← NNReal.coe_le_coe, coe_nnnorm, Real.coe_toNNReal _ (hC0.trans (le_max_left _ _))]
+  rcases lt_or_ge t (ε / 2) with ht | ht
+  · -- The function vanishes near `t`, so its derivative there is `0`.
+    have h0 : deriv (positiveCutoff φ ε) t = 0 := by
+      rw [Filter.EventuallyEq.deriv_eq (f := fun _ => (0 : ℝ)) ?_, deriv_const]
+      filter_upwards [Iio_mem_nhds ht] with s hs
+      exact positiveCutoff_of_le hε (le_of_lt hs)
+    rw [h0, norm_zero]
+    exact hC0.trans (le_max_left _ _)
+  rcases le_or_gt t ε with ht' | ht'
+  · exact (hC t ⟨ht, ht'⟩).trans (le_max_left _ _)
+  · rw [deriv_positiveCutoff_of_lt hε (by linarith), Real.norm_eq_abs]
+    exact (hM t ht'.le).trans (le_max_right _ _)
+
+variable [MeasurableSpace E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
+  [FiniteDimensional ℝ E] {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
+
+/-- **The chain rule for Sobolev functions bounded below by a positive constant.** Let
+`1 ≤ p < ∞` and let `u ∈ W^{1,p}(Ω)` satisfy `u ≥ ε` almost everywhere, for some `ε > 0`. If `φ`
+is `C¹` on `(0, ∞)`, with derivative bounded on `[ε, ∞)`, then `φ ∘ u ∈ W^{1,p}(Ω)`, with weak
+gradient `φ'(u) ∇u`.
+
+Unlike `TauCeti.W1p.contDiffComp`, the function `φ` need not be `C¹`, Lipschitz or zero at `0`:
+only its values on the range of `u` matter. This covers `log u` and the powers `u^β`, `β < 0`. -/
+theorem W1p.exists_value_gradient_ae_eq_comp_of_le (hp : p ≠ ∞)
+    (hφ : ContDiffOn ℝ 1 φ (Ioi 0)) (hε : 0 < ε) {M : ℝ} (hM : ∀ t, ε ≤ t → |deriv φ t| ≤ M)
+    {u : W1p mu Omega p} (hu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) :
+    ∃ w : W1p mu Omega p,
+      W1p.value w =ᵐ[mu.restrict Omega] (fun x => φ (W1p.value u x)) ∧
+        W1p.gradient w =ᵐ[mu.restrict Omega]
+          fun x => deriv φ (W1p.value u x) • W1p.gradient u x := by
+  obtain ⟨K, hK⟩ := exists_nnnorm_deriv_positiveCutoff_le hε hφ hM
+  have hF := contDiff_positiveCutoff hε hφ
+  have hF0 : positiveCutoff φ ε 0 = 0 := positiveCutoff_of_le hε (by linarith)
+  refine ⟨W1p.contDiffComp hp hF hK hF0 u, ?_, ?_⟩
+  · filter_upwards [W1p.value_contDiffComp_ae hp hF hK hF0 u, hu] with x hx hux
+    rw [hx, positiveCutoff_of_le' hε (by linarith)]
+  · filter_upwards [W1p.gradient_contDiffComp_ae hp hF hK hF0 u, hu] with x hx hux
+    rw [hx, deriv_positiveCutoff_of_lt hε (by linarith)]
+
+end PositiveComp
 
 /-! ### The positive part -/
 
