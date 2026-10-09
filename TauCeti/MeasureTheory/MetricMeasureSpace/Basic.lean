@@ -325,7 +325,7 @@ theorem supportSpaceEquivOfFullSupport_apply (X : MetricMeasureSpace)
 
 /-- The inverse full-support equivalence sends a point to the support point over it. -/
 @[simp↓]
-theorem supportSpaceEquivOfFullSupport_symm_apply (X : MetricMeasureSpace)
+theorem coe_supportSpaceEquivOfFullSupport_symm_apply (X : MetricMeasureSpace)
     [X.referenceMeasure.IsOpenPosMeasure] (x : X) :
     ((↑) : X.referenceMeasure.support → X) (X.supportSpaceEquivOfFullSupport.symm x) = x := by
   rw [← X.supportSpaceEquivOfFullSupport_apply]
