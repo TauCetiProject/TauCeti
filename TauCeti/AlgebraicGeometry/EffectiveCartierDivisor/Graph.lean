@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.BaseChangeSection
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Functor
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Section
 public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 
 /-!
 # Graphs of points as relative effective Cartier divisors
@@ -21,7 +22,9 @@ relative effective Cartier divisor on `X_T` over `T`
 (`Scheme.Hom.isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension`).
 
 Together these make the graph a natural transformation `graphDivisor` from the functor of points
-`T ↦ Hom_S(T, X)` of `X` to the functor `Div_{X/S}` of relative effective Cartier divisors.
+`T ↦ Hom_S(T, X)` of `X` to the functor `Div_{X/S}` of relative effective Cartier divisors. It is
+injective at every `T`, since a point is determined by its graph, and a section of a separated
+morphism by its ideal sheaf.
 Composed with the Abel map `D ↦ 𝒪(D)` it gives the degree-one Abel map `x ↦ 𝒪(Γₓ)` into the
 relative Picard presheaf, from which `TauCeti.AlgebraicGeometry.abelJacobiMap` is built.
 
@@ -29,8 +32,12 @@ relative Picard presheaf, from which `TauCeti.AlgebraicGeometry.abelJacobiMap` i
 
 * `TauCeti.AlgebraicGeometry.ker_graphSection_comp`: the ideal sheaf of the graph commutes with
   base change;
+* `TauCeti.AlgebraicGeometry.ker_graphSection_inj`: a point is determined by the ideal sheaf of
+  its graph;
 * `TauCeti.AlgebraicGeometry.graphDivisor`: the natural transformation `Hom_S(-, X) ⟶ Div_{X/S}`
-  sending a point to its graph.
+  sending a point to its graph;
+* `TauCeti.AlgebraicGeometry.graphDivisor_app_injective`: distinct points have distinct graph
+  divisors.
 
 ## References
 
@@ -69,6 +76,14 @@ inverse image of the ideal sheaf of the graph of `x` along `T' ×_S X ⟶ T ×_S
 lemma ker_graphSection_comp [IsSeparated f] {T' T : Over S} (φ : T' ⟶ T) (x : T ⟶ Over.mk f) :
     (graphSection (φ ≫ x)).ker = (graphSection x).ker.comap ((Over.pullback f).map φ).left :=
   Scheme.IdealSheafData.ker_eq_comap_of_isPullback _ (isPullback_graphSection φ x)
+
+/-- **A point is determined by the ideal sheaf of its graph**: for a separated `f`, two
+`T`-points of `X` over `S` are equal exactly when their graphs have the same ideal sheaf. -/
+lemma ker_graphSection_inj [IsSeparated f] {T : Over S} {x y : T ⟶ Over.mk f} :
+    (graphSection x).ker = (graphSection y).ker ↔ x = y := by
+  rw [Scheme.Hom.ker_eq_ker_iff_of_comp_eq_id (graphSection_fst x) (graphSection_fst y)]
+  refine ⟨fun h ↦ Over.OverMorphism.ext ?_, fun h ↦ h ▸ rfl⟩
+  rw [← graphSection_snd x, ← graphSection_snd y, h]
 
 variable [IsSeparated f] [SmoothOfRelativeDimension 1 f]
 
@@ -109,6 +124,12 @@ lemma graphDivisor_app_comp {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T') (x : T.unop 
     (graphDivisor f).app T' (φ.unop ≫ x) =
       (relativeEffectiveCartierSubfunctor f).toFunctor.map φ ((graphDivisor f).app T x) :=
   Subtype.ext (ker_graphSection_comp φ.unop x)
+
+/-- **Distinct points have distinct graph divisors**: for every scheme `T` over `S`, the graph
+divisor is injective on `T`-points. -/
+lemma graphDivisor_app_injective (T : (Over S)ᵒᵖ) :
+    Function.Injective ((graphDivisor f).app T) :=
+  fun _ _ h ↦ ker_graphSection_inj.mp (congrArg Subtype.val h)
 
 end
 

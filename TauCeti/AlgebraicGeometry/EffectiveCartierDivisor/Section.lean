@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Sum
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
 public import TauCeti.RingTheory.Localization.Ideal
@@ -162,9 +163,7 @@ theorem isRelativeEffectiveCartier_ker_of_comp_eq_id (hs : s ≫ f = 𝟙 S) [Is
   rw [IdealSheafData.isRelativeEffectiveCartier_iff]
   refine ⟨isEffectiveCartier_ker_of_comp_eq_id s hs U hU, ?_⟩
   -- The closed subscheme of `s.ker` maps isomorphically to `S`.
-  have h : s.ker.subschemeι ≫ f = inv s.toImage :=
-    IsIso.eq_inv_of_hom_inv_id (by rw [← Category.assoc, Scheme.Hom.toImage_imageι, hs])
-  rw [h]
+  have := isIso_ker_subschemeι_comp hs
   infer_instance
 
 /-- A section of a separated morphism `f : X ⟶ S` that is smooth of relative dimension one is a
