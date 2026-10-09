@@ -20,7 +20,7 @@ is almost everywhere, as appropriate for these spaces.
 Weak directional derivatives agree with the distributional derivatives of the associated
 tempered distribution, connecting the weak-gradient and Bessel-potential descriptions.
 
-Use `TauCeti.memSobolev_one_of_hasWeakFDerivOn u g h` for the weak-to-Bessel inclusion and
+Use `TauCeti.HasWeakFDerivOn.memSobolev_one h` for the weak-to-Bessel inclusion and
 `MeasureTheory.Lp.memSobolev_one_iff_exists_w1p_value_eq u` for the whole-space equivalence.
 
 ## References
@@ -45,8 +45,8 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E]
 
 /-- A real `L²` function with an `L²` weak gradient has first-order Bessel regularity. -/
-theorem memSobolev_one_of_hasWeakFDerivOn
-    (u : Lp ℝ 2 (volume : Measure E)) (g : Lp E 2 (volume : Measure E))
+theorem HasWeakFDerivOn.memSobolev_one
+    {u : Lp ℝ 2 (volume : Measure E)} {g : Lp E 2 (volume : Measure E)}
     (h : HasWeakFDerivOn volume ⊤ u (fun x => innerSL ℝ (g x))) :
     MemSobolev 1 2 (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u)) := by
   rw [← zero_add (1 : ℝ), TemperedDistribution.memSobolev_add_one_iff]
