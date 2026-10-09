@@ -110,7 +110,7 @@ theorem referenceMeasure_supportSpace (X : MetricMeasureSpace) :
       X.referenceMeasure.comap ((↑) : X.referenceMeasure.support → X) := (rfl)
 
 /-- Support reduction preserves all the reference measure, including infinite total mass. -/
-theorem measurePreserving_subtype_val (X : MetricMeasureSpace) :
+theorem measurePreserving_subtype_coe (X : MetricMeasureSpace) :
     MeasurePreserving ((↑) : X.referenceMeasure.support → X)
       X.supportSpace.referenceMeasure X.referenceMeasure :=
   measurePreserving_subtype_coe_of_ae_mem X.referenceMeasure
@@ -265,9 +265,9 @@ def supportEquiv (e : Equiv X Y) : Equiv X.supportSpace Y.supportSpace where
     let ν : Measure Y.referenceMeasure.support := Y.supportSpace.referenceMeasure
     have hf : Measurable f := e.supportIsometryEquiv.continuous.measurable
     have hX : MeasurePreserving ((↑) : X.referenceMeasure.support → X) μ X.referenceMeasure :=
-      X.measurePreserving_subtype_val
+      X.measurePreserving_subtype_coe
     have hY : MeasurePreserving ((↑) : Y.referenceMeasure.support → Y) ν Y.referenceMeasure :=
-      Y.measurePreserving_subtype_val
+      Y.measurePreserving_subtype_coe
     refine ⟨hf, ?_⟩
     apply (MeasurableEmbedding.subtype_coe
       Y.referenceMeasure.isClosed_support.measurableSet).map_injective
@@ -316,7 +316,7 @@ def supportSpaceEquivOfFullSupport (X : MetricMeasureSpace) [X.referenceMeasure.
         intro x y
         simp only [_root_.Equiv.subtypeUnivEquiv_apply]
         exact isometry_subtype_coe x y }
-  measurePreserving' := X.measurePreserving_subtype_val
+  measurePreserving' := X.measurePreserving_subtype_coe
 
 @[simp↓]
 theorem supportSpaceEquivOfFullSupport_apply (X : MetricMeasureSpace)
