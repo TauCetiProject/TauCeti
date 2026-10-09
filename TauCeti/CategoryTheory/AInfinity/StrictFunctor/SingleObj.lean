@@ -81,6 +81,23 @@ theorem toStrictHom_toLinearMap
     (F : AInfinityStrictFunctor (aInfinityCategory 𝒜) (aInfinityCategory ℬ)) :
     F.toStrictHom.toLinearMap = F.map (star 𝒜) (star 𝒜) := (rfl)
 
+/-- The algebra morphism associated to the identity functor is the identity morphism. -/
+@[simp]
+theorem toStrictHom_id (𝒜 : AInfinityAlgebra R A) :
+    (AInfinityStrictFunctor.id (aInfinityCategory 𝒜)).toStrictHom =
+      AInfinityStrictHom.id 𝒜 := by
+  apply AInfinityStrictHom.toLinearMap_injective
+  simp only [toStrictHom_toLinearMap, id_map, AInfinityStrictHom.id_toLinearMap]
+
+/-- Passing from one-object strict functors to algebra morphisms preserves composition. -/
+@[simp]
+theorem toStrictHom_comp
+    (G : AInfinityStrictFunctor (aInfinityCategory ℬ) (aInfinityCategory 𝒞))
+    (F : AInfinityStrictFunctor (aInfinityCategory 𝒜) (aInfinityCategory ℬ)) :
+    (G.comp F).toStrictHom = G.toStrictHom.comp F.toStrictHom := by
+  apply AInfinityStrictHom.toLinearMap_injective
+  simp only [toStrictHom_toLinearMap, comp_map, AInfinityStrictHom.comp_toLinearMap]
+
 /-- Passing from a one-object strict functor to its algebra morphism and back is a round trip. -/
 @[simp]
 theorem toStrictFunctor_toStrictHom
