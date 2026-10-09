@@ -52,16 +52,6 @@ variable {α β E F : Type*} [MeasurableSpace α] [MeasurableSpace β] {μ : Mea
   {ν : Measure β} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F] {q : ℝ≥0∞} [Fact (1 ≤ q)]
 
-omit [NormedSpace ℝ E] in
-/-- The `r`-th power integral of a function almost everywhere equal to `R.indicator f` is the
-`r`-th power integral of `f` over `R`. -/
-private theorem lintegral_rpow_enorm_eq_setLIntegral {R : Set α} (hR : MeasurableSet R) {r : ℝ}
-    (hr : 0 < r) {f g : α → E} (hg : g =ᵐ[μ] R.indicator f) :
-    ∫⁻ x, ‖g x‖ₑ ^ r ∂μ = ∫⁻ x in R, ‖f x‖ₑ ^ r ∂μ := by
-  rw [lintegral_congr_ae (hg.mono fun x hx => by rw [hx]), ← lintegral_indicator hR]
-  refine lintegral_congr fun x => ?_
-  by_cases hx : x ∈ R <;> simp [hx, hr]
-
 /-- **Chebyshev's inequality for a bounded operator on `L^q`**: such an operator is of weak type
 `(q, q)` with constant `‖T‖ ^ q`. -/
 private theorem rpow_mul_meas_lt_enorm_le (T : Lp E q μ →L[ℝ] Lp F q ν) (hq : q ≠ ∞)
@@ -79,25 +69,6 @@ private theorem rpow_mul_meas_lt_enorm_le (T : Lp E q μ →L[ℝ] Lp F q ν) (h
         rw [Lp.enorm_def]
         exact mul_meas_ge_le_pow_eLpNorm' (μ := ν) hq₀ hq t
     _ ≤ (‖T‖ₑ * ‖g‖ₑ) ^ q.toReal := ENNReal.rpow_le_rpow (T.le_opENorm g) hqr.le
-
-/-- A weak-type bound at the height `t / 2`, solved for the measure of the superlevel set. -/
-private theorem meas_le_of_ofReal_half_rpow_mul_le {X : Set β} {r t : ℝ} (hr : 0 < r)
-    (ht : 0 < t) {C : ℝ≥0∞} (h : ENNReal.ofReal (t / 2) ^ r * ν X ≤ C) :
-    ν X ≤ 2 ^ r * ENNReal.ofReal (t ^ (-r)) * C := by
-  have ht2 : 0 < t / 2 := half_pos ht
-  have hpos : ENNReal.ofReal (t / 2) ^ r ≠ 0 :=
-    (ENNReal.rpow_pos (ENNReal.ofReal_pos.2 ht2) ENNReal.ofReal_ne_top).ne'
-  have htop : ENNReal.ofReal (t / 2) ^ r ≠ ∞ :=
-    ENNReal.rpow_ne_top_of_nonneg hr.le ENNReal.ofReal_ne_top
-  have hinv : (ENNReal.ofReal (t / 2) ^ r)⁻¹ = 2 ^ r * ENNReal.ofReal (t ^ (-r)) := by
-    rw [ENNReal.ofReal_rpow_of_pos ht2, ← ENNReal.ofReal_inv_of_pos (Real.rpow_pos_of_pos ht2 r),
-      Real.div_rpow ht.le zero_le_two, inv_div, div_eq_mul_inv, ← Real.rpow_neg ht.le,
-      ENNReal.ofReal_mul (Real.rpow_nonneg zero_le_two r), ← ENNReal.ofReal_rpow_of_pos two_pos,
-      ENNReal.ofReal_ofNat]
-  calc ν X = (ENNReal.ofReal (t / 2) ^ r)⁻¹ * (ENNReal.ofReal (t / 2) ^ r * ν X) := by
-        rw [← mul_assoc, ENNReal.inv_mul_cancel hpos htop, one_mul]
-    _ ≤ (ENNReal.ofReal (t / 2) ^ r)⁻¹ * C := mul_le_mul_right h _
-    _ = 2 ^ r * ENNReal.ofReal (t ^ (-r)) * C := by rw [hinv]
 
 /-- **The splitting step of Marcinkiewicz interpolation** for an `L^q`-bounded operator of weak
 type `(p₀, p₀)`. At the height `t`, the part of `f` above `t` is controlled in `L^{p₀}` and the
@@ -137,10 +108,17 @@ private theorem meas_ofReal_lt_enorm_le (T : Lp E q μ →L[ℝ] Lp F q ν) (hq 
       ENNReal.ofReal_add (half_pos ht).le (half_pos ht).le]
     exact (enorm_add_le _ _).trans (add_le_add hnot.1 hnot.2)
   -- The high part by the weak `(p₀, p₀)` bound, the low part by Chebyshev's inequality.
-  have hhigh := meas_le_of_ofReal_half_rpow_mul_le hp₀ ht (hT f₁ _)
-  have hlow := meas_le_of_ofReal_half_rpow_mul_le hqr ht (rpow_mul_meas_lt_enorm_le T hq f₂ _)
-  rw [lintegral_rpow_enorm_eq_setLIntegral hS hp₀ h₁.coeFn_toLp] at hhigh
-  rw [lintegral_rpow_enorm_eq_setLIntegral hS.compl hqr h₂.coeFn_toLp] at hlow
+  have hhigh := meas_le_ofReal_rpow_neg_mul_of_rpow_mul_le (half_pos ht) (hT f₁ _)
+  have hlow := meas_le_ofReal_rpow_neg_mul_of_rpow_mul_le (half_pos ht)
+    (rpow_mul_meas_lt_enorm_le T hq f₂ _)
+  have hhalf (r : ℝ) : ENNReal.ofReal ((t / 2) ^ (-r)) = 2 ^ r * ENNReal.ofReal (t ^ (-r)) := by
+    rw [Real.div_rpow ht.le zero_le_two, Real.rpow_neg zero_le_two, div_inv_eq_mul,
+      ENNReal.ofReal_mul' (by positivity), ← ENNReal.ofReal_rpow_of_pos two_pos, mul_comm]
+    simp
+  rw [hhalf, lintegral_congr_ae (h₁.coeFn_toLp.mono fun _ hx => by rw [hx]),
+    lintegral_enorm_indicator_rpow hS hp₀] at hhigh
+  rw [hhalf, lintegral_congr_ae (h₂.coeFn_toLp.mono fun _ hx => by rw [hx]),
+    lintegral_enorm_indicator_rpow hS.compl hqr] at hlow
   have hSc : {x | ‖f x‖ₑ ≤ s} = Sᶜ := by ext x; simp [hSdef]
   rw [one_mul, hSc]
   refine (measure_mono_ae hsub).trans ((measure_union_le _ _).trans ?_)

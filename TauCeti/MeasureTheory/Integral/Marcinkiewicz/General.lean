@@ -448,6 +448,32 @@ theorem lintegral_rpow_le_of_meas_ofReal_lt_le
   rw [← hset₀, ← hset₁]
   exact h t ht
 
+/-- The `q`-th power integral of the truncation `R.indicator v` is the `q`-th power integral of
+`v` over `R`. -/
+theorem lintegral_enorm_indicator_rpow {E : Type*} [TopologicalSpace E] [ESeminormedAddMonoid E]
+    {R : Set α} (hR : MeasurableSet R) (hq : 0 < q) (v : α → E) :
+    ∫⁻ x, ‖R.indicator v x‖ₑ ^ q ∂μ = ∫⁻ x in R, ‖v x‖ₑ ^ q ∂μ := by
+  rw [← lintegral_indicator hR]
+  refine lintegral_congr fun x => ?_
+  by_cases hx : x ∈ R
+  · rw [Set.indicator_of_mem hx, Set.indicator_of_mem hx]
+  · rw [Set.indicator_of_notMem hx, Set.indicator_of_notMem hx, enorm_zero,
+      ENNReal.zero_rpow_of_pos hq]
+
+/-- A weak-type bound `r ^ q · ν X ≤ C` at a positive height `r`, solved for the measure of the
+superlevel set `X`. -/
+theorem meas_le_ofReal_rpow_neg_mul_of_rpow_mul_le {X : Set β} {r : ℝ} (hr : 0 < r)
+    {C : ℝ≥0∞} (h : ENNReal.ofReal r ^ q * ν X ≤ C) :
+    ν X ≤ ENNReal.ofReal (r ^ (-q)) * C := by
+  have hr₀ : ENNReal.ofReal r ≠ 0 := (ENNReal.ofReal_pos.2 hr).ne'
+  have hpos : ENNReal.ofReal r ^ q ≠ 0 := (ENNReal.rpow_pos (pos_iff_ne_zero.2 hr₀)
+    ENNReal.ofReal_ne_top).ne'
+  have htop : ENNReal.ofReal r ^ q ≠ ∞ := ENNReal.rpow_ne_top_of_ne_zero hr₀ ENNReal.ofReal_ne_top
+  calc ν X = (ENNReal.ofReal r ^ q)⁻¹ * (ENNReal.ofReal r ^ q * ν X) := by
+        rw [← mul_assoc, ENNReal.inv_mul_cancel hpos htop, one_mul]
+    _ ≤ (ENNReal.ofReal r ^ q)⁻¹ * C := mul_le_mul_right h _
+    _ = ENNReal.ofReal (r ^ (-q)) * C := by rw [← ENNReal.rpow_neg, ENNReal.ofReal_rpow_of_pos hr]
+
 section Operator
 
 variable {G : Type*} [MeasurableSpace G] [TopologicalSpace G] [OpensMeasurableSpace G]
@@ -508,36 +534,6 @@ theorem meas_ofReal_lt_le_add_setLIntegral (hv : AEMeasurable v μ) (ht : 0 < t)
             (ENNReal.ofReal_add (by positivity) (by positivity)).symm
         _ ≤ ENNReal.ofReal t := ENNReal.ofReal_le_ofReal (by nlinarith)
     exact absurd (hy'.trans_le hle) (lt_irrefl _)
-  -- Each weak-type bound turns into a bound on the measure of a superlevel set.
-  have hdiv : ∀ (r q : ℝ) (B : ℝ≥0∞) (w : α → G) (hw : AEMeasurable w μ) (hq : 0 < q),
-      (∀ (h : α → G), AEMeasurable h μ → ∀ r' : ℝ≥0∞,
-        r' ^ q * ν {y | r' < T h y} ≤ B * ∫⁻ x, ‖h x‖ₑ ^ q ∂μ) → 0 < r →
-      ν {y | ENNReal.ofReal r < T w y} ≤
-        B * ENNReal.ofReal (r ^ (-q)) * ∫⁻ x, ‖w x‖ₑ ^ q ∂μ := by
-    intro r q B w hw hq hweak hr
-    have hpos : (0 : ℝ≥0∞) < ENNReal.ofReal r ^ q :=
-      ENNReal.rpow_pos (ENNReal.ofReal_pos.2 hr) ENNReal.ofReal_ne_top
-    have htop : ENNReal.ofReal r ^ q ≠ ∞ :=
-      ENNReal.rpow_ne_top_of_nonneg hq.le ENNReal.ofReal_ne_top
-    have hinv : (ENNReal.ofReal r ^ q)⁻¹ = ENNReal.ofReal (r ^ (-q)) := by
-      rw [← ENNReal.rpow_neg, ENNReal.ofReal_rpow_of_pos hr]
-    calc ν {y | ENNReal.ofReal r < T w y}
-        = (ENNReal.ofReal r ^ q)⁻¹ *
-            (ENNReal.ofReal r ^ q * ν {y | ENNReal.ofReal r < T w y}) := by
-          rw [← mul_assoc, ENNReal.inv_mul_cancel hpos.ne' htop, one_mul]
-      _ ≤ (ENNReal.ofReal r ^ q)⁻¹ * (B * ∫⁻ x, ‖w x‖ₑ ^ q ∂μ) :=
-          mul_le_mul_right (hweak w hw _) _
-      _ = B * ENNReal.ofReal (r ^ (-q)) * ∫⁻ x, ‖w x‖ₑ ^ q ∂μ := by rw [hinv]; ring
-  -- The truncated pieces have the truncated integrals of `v` as their norms.
-  have hint : ∀ (q : ℝ), 0 < q → ∀ (R : Set α), MeasurableSet R →
-      ∫⁻ x, ‖R.indicator v x‖ₑ ^ q ∂μ = ∫⁻ x in R, ‖v x‖ₑ ^ q ∂μ := by
-    intro q hq R hR
-    rw [← lintegral_indicator hR]
-    refine lintegral_congr fun x => ?_
-    by_cases hx : x ∈ R
-    · rw [Set.indicator_of_mem hx, Set.indicator_of_mem hx]
-    · rw [Set.indicator_of_notMem hx, Set.indicator_of_notMem hx, enorm_zero,
-        ENNReal.zero_rpow_of_pos hq]
   have henorm : (fun x => ‖v x‖ₑ) =ᵐ[μ] fun x => ‖g x‖ₑ := hvg.mono fun _ hx => congrArg enorm hx
   have hS₀ : ∫⁻ x in S, ‖v x‖ₑ ^ p₀ ∂μ =
       ∫⁻ x in {x | ENNReal.ofReal (c * t) < ‖v x‖ₑ}, ‖v x‖ₑ ^ p₀ ∂μ := by
@@ -556,12 +552,15 @@ theorem meas_ofReal_lt_le_add_setLIntegral (hv : AEMeasurable v μ) (ht : 0 < t)
         measure_mono_ae hincl
     _ ≤ ν {y | ENNReal.ofReal (d * t) < T g₁ y} + ν {y | ENNReal.ofReal (e * t) < T g₂ y} :=
         measure_union_le _ _
-    _ ≤ A₀ * ENNReal.ofReal ((d * t) ^ (-p₀)) * ∫⁻ x, ‖g₁ x‖ₑ ^ p₀ ∂μ +
-          A₁ * ENNReal.ofReal ((e * t) ^ (-p₁)) * ∫⁻ x, ‖g₂ x‖ₑ ^ p₁ ∂μ :=
-        add_le_add (hdiv _ _ _ _ hg₁meas hp₀ hweak₀ (by positivity))
-          (hdiv _ _ _ _ hg₂meas hp₁ hweak₁ (by positivity))
+    _ ≤ ENNReal.ofReal ((d * t) ^ (-p₀)) * (A₀ * ∫⁻ x, ‖g₁ x‖ₑ ^ p₀ ∂μ) +
+          ENNReal.ofReal ((e * t) ^ (-p₁)) * (A₁ * ∫⁻ x, ‖g₂ x‖ₑ ^ p₁ ∂μ) :=
+        -- Each weak-type bound turns into a bound on the measure of a superlevel set.
+        add_le_add
+          (meas_le_ofReal_rpow_neg_mul_of_rpow_mul_le (by positivity) (hweak₀ g₁ hg₁meas _))
+          (meas_le_ofReal_rpow_neg_mul_of_rpow_mul_le (by positivity) (hweak₁ g₂ hg₂meas _))
     _ = _ := by
-        rw [hint p₀ hp₀ S hSmeas, hint p₁ hp₁ Sᶜ hSmeas.compl, hS₀, hS₁,
+        rw [lintegral_enorm_indicator_rpow hSmeas hp₀,
+          lintegral_enorm_indicator_rpow hSmeas.compl hp₁, hS₀, hS₁,
           Real.mul_rpow hd.le ht.le, Real.mul_rpow he.le ht.le,
           ENNReal.ofReal_mul (Real.rpow_nonneg hd.le _),
           ENNReal.ofReal_mul (Real.rpow_nonneg he.le _)]
