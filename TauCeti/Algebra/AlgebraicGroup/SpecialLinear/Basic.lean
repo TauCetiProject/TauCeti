@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Kernel
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Naturality
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.PointConjugation
 import TauCeti.Algebra.Bialgebra.MonoidAlgebra.Augmentation
+import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.Algebra.MonoidAlgebra.Exactness
 
 /-!
@@ -235,48 +236,18 @@ theorem mem_definingPointsSubgroup_iff_det_eq_one
   rintro h _ ⟨c, rfl⟩
   rw [map_mul, h, mul_zero]
 
-/-- Turn a determinant-kernel ambient point into its determinant-one matrix. -/
-private noncomputable def pointsSubgroupToSL
-    (g : CommHopfAlgCat.quotientPointsSubgroup
-      (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
-      (CommAlgCat.of R A)) :
-    Matrix.SpecialLinearGroup (Fin n) A :=
-  ⟨(GeneralLinear.pointsMulEquiv n g.1).val,
-    (mem_definingPointsSubgroup_iff_det_eq_one R n g.1).mp g.property⟩
-
-/-- Including the matrix attached to a determinant-kernel point recovers its ambient
-general-linear matrix. -/
-private lemma toGL_pointsSubgroupToSL
-    (g : CommHopfAlgCat.quotientPointsSubgroup
-      (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
-      (CommAlgCat.of R A)) :
-    Matrix.SpecialLinearGroup.toGL (pointsSubgroupToSL R n g) =
-      GeneralLinear.pointsMulEquiv n g.1 := by
-  apply Matrix.GeneralLinearGroup.ext
-  intro i j
-  rfl
-
-/-- Turn a determinant-one matrix into its ambient point, viewed in the determinant-kernel
-subgroup. -/
-private noncomputable def slToPointsSubgroup
-    (s : Matrix.SpecialLinearGroup (Fin n) A) :
-    CommHopfAlgCat.quotientPointsSubgroup
-      (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
-      (CommAlgCat.of R A) :=
-  ⟨(GeneralLinear.pointsMulEquiv (R := R) n).symm
-      (Matrix.SpecialLinearGroup.toGL s), by
-    apply (mem_definingPointsSubgroup_iff_det_eq_one R n _).mpr
-    rw [MulEquiv.apply_symm_apply]
-    exact s.property⟩
-
-/-- The ambient point underlying `slToPointsSubgroup` is obtained from the general-linear point
-equivalence. -/
-private theorem slToPointsSubgroup_val
-    (s : Matrix.SpecialLinearGroup (Fin n) A) :
-    (slToPointsSubgroup R n s).1 =
-      (GeneralLinear.pointsMulEquiv (R := R) (A := A) n).symm
-        (Matrix.SpecialLinearGroup.toGL s) :=
-  (rfl)
+/-- The general-linear point equivalence carries the determinant-kernel point subgroup onto the
+kernel of the determinant. -/
+private theorem map_quotientPointsSubgroup_eq_ker_det :
+    (CommHopfAlgCat.quotientPointsSubgroup (GeneralLinear.coordinateHopfAlgebra R n)
+        (definingHopfIdeal R n) (CommAlgCat.of R A)).map
+      (GeneralLinear.pointsMulEquiv (R := R) (A := A) n :
+        WithConv (GeneralLinear.coordinateHopfAlgebra R n →ₐ[R] A) →* GL (Fin n) A) =
+      (Matrix.GeneralLinearGroup.det : GL (Fin n) A →* Aˣ).ker := by
+  ext g
+  rw [← (GeneralLinear.pointsMulEquiv n).toMonoidHom_eq_coe, Subgroup.mem_map_equiv,
+    mem_definingPointsSubgroup_iff_det_eq_one, MulEquiv.apply_symm_apply, MonoidHom.mem_ker,
+    ← Units.val_eq_one, Matrix.GeneralLinearGroup.val_det_apply]
 
 /-- The subgroup of general-linear points cut out by the determinant kernel is the ordinary
 special linear group. -/
@@ -284,21 +255,22 @@ private noncomputable def definingPointsSubgroupMulEquiv :
     CommHopfAlgCat.quotientPointsSubgroup
         (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
         (CommAlgCat.of R A) ≃*
-      Matrix.SpecialLinearGroup (Fin n) A where
-  toFun := pointsSubgroupToSL R n
-  invFun := slToPointsSubgroup R n
-  left_inv g := by
-    apply Subtype.ext
-    rw [slToPointsSubgroup_val, toGL_pointsSubgroupToSL, MulEquiv.symm_apply_apply]
-  right_inv s := by
-    apply Matrix.SpecialLinearGroup.toGL_injective
-    rw [toGL_pointsSubgroupToSL, slToPointsSubgroup_val, MulEquiv.apply_symm_apply]
-  map_mul' g h := by
-    apply Matrix.SpecialLinearGroup.toGL_injective
-    rw [toGL_pointsSubgroupToSL, map_mul, toGL_pointsSubgroupToSL,
-      toGL_pointsSubgroupToSL]
-    simpa only [Subgroup.coe_mul] using
-      map_mul (GeneralLinear.pointsMulEquiv (R := R) (A := A) n) g.1 h.1
+      Matrix.SpecialLinearGroup (Fin n) A :=
+  (TauCeti.Subgroup.congrOfMapEq (GeneralLinear.pointsMulEquiv n)
+    (map_quotientPointsSubgroup_eq_ker_det R n)).trans
+      Matrix.SpecialLinearGroup.toGLKerEquiv.symm
+
+/-- Including the matrix attached to a determinant-kernel point recovers its ambient
+general-linear matrix. -/
+private theorem toGL_definingPointsSubgroupMulEquiv
+    (g : CommHopfAlgCat.quotientPointsSubgroup
+      (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
+      (CommAlgCat.of R A)) :
+    Matrix.SpecialLinearGroup.toGL (definingPointsSubgroupMulEquiv R n g) =
+      GeneralLinear.pointsMulEquiv n g.1 := by
+  rw [definingPointsSubgroupMulEquiv, MulEquiv.trans_apply,
+    ← Matrix.SpecialLinearGroup.toGLKerEquiv_apply_coe, MulEquiv.apply_symm_apply,
+    TauCeti.Subgroup.coe_congrOfMapEq_apply]
 
 /-- The group of algebra-valued points of the special-linear coordinate Hopf algebra is
 Mathlib's special linear group. The construction first applies the generic natural isomorphism
@@ -318,7 +290,7 @@ private theorem pointsMulEquiv_apply_eq
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n)
       (CommAlgCat.of R A)) :
     (pointsMulEquiv (R := R) (A := A) n) f =
-      pointsSubgroupToSL R n
+      definingPointsSubgroupMulEquiv R n
         (((CommHopfAlgCat.quotientPointsSubgroupNatIso
           (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)).app
           (CommAlgCat.of R A)).hom f) :=
@@ -341,16 +313,16 @@ theorem pointsMulEquiv_toGL
   rw [pointsMulEquiv_apply_eq]
   calc
     _ = Matrix.SpecialLinearGroup.toGL
-        (pointsSubgroupToSL R n
+        (definingPointsSubgroupMulEquiv R n
           ⟨CommHopfAlgCat.quotientPointsHom
               (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
               (CommAlgCat.of R A) f,
             CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup
               (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
               (CommAlgCat.of R A) f⟩) :=
-      (toGL_pointsSubgroupToSL R n _).symm
-    _ = _ := (congrArg
-      (fun g => Matrix.SpecialLinearGroup.toGL (pointsSubgroupToSL R n g)) hcomponent).symm
+      (toGL_definingPointsSubgroupMulEquiv R n _).symm
+    _ = _ := (congrArg (fun g => Matrix.SpecialLinearGroup.toGL
+      (definingPointsSubgroupMulEquiv R n g)) hcomponent).symm
 
 /-- The ambient point attached to a special-linear matrix is the general-linear point attached to
 its canonical inclusion. -/
