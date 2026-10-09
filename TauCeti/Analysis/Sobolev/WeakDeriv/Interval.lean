@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Distribution.DuBoisReymond
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
+import TauCeti.Topology.Order.Interval
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
@@ -59,8 +60,8 @@ theorem, turns `∫ φ' t • ∫ s in α..t, u' s` into `-∫ φ s • u' s`. T
   the function has a representative continuous on the closed interval.
 * `TauCeti.HasWeakLineDerivOn.integral_eq_sub`: the fundamental theorem of calculus for such a
   continuous representative.
-* `TauCeti.HasWeakLineDerivOn.norm_le_setAverage_add_integral`: the pointwise bound of a
-  continuous representative by the `W^{1,1}` norm.
+* `TauCeti.HasWeakLineDerivOn.norm_le_setAverage_add_integral`: the pointwise bound
+  `‖v t‖ ≤ ⨍ s in (a, b), ‖u s‖ + ∫ s in (a, b), ‖u' s‖` of a continuous representative `v`.
 
 ## References
 
@@ -91,20 +92,12 @@ theorem hasWeakLineDerivOn_intervalIntegral (hu' : LocallyIntegrableOn u' (Ioo a
     (ht₀ : t₀ ∈ Ioo a b) :
     HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t ↦ ∫ s in t₀..t, u' s) u' 1 := by
   refine hasWeakLineDerivOn_iff_testFunction.2 ⟨‹_›,
-    (TauCeti.intervalIntegral.continuousOn_primitive_Ioo hu' ht₀).locallyIntegrableOn
+    (TauCeti.intervalIntegral.continuousOn_primitive_interval_of_locallyIntegrableOn hu'
+      ht₀).locallyIntegrableOn
       measurableSet_Ioo, hu', fun φ ↦ ?_⟩
   -- Choose `[α, β] ⊆ Ioo a b` whose interior contains `t₀` and the support of `φ`.
-  set K := insert t₀ (tsupport (φ : ℝ → ℝ))
-  have hK : IsCompact K := φ.hasCompactSupport.insert t₀
-  have hKs : K ⊆ Ioo a b := insert_subset ht₀ φ.tsupport_subset
-  have hm := hKs (hK.sInf_mem (insert_nonempty _ _))
-  have hM := hKs (hK.sSup_mem (insert_nonempty _ _))
-  set α := (a + sInf K) / 2 with hα
-  set β := (sSup K + b) / 2 with hβ
-  have hαβ : Icc α β ⊆ Ioo a b := fun x hx ↦
-    ⟨by linarith [hx.1, hm.1], by linarith [hx.2, hM.2]⟩
-  have hsub : K ⊆ Ioo α β := fun x hx ↦
-    ⟨by linarith [csInf_le hK.bddBelow hx, hm.1], by linarith [le_csSup hK.bddAbove hx, hM.2]⟩
+  obtain ⟨α, β, hsub, hαβ⟩ := IsCompact.exists_Icc_between (φ.hasCompactSupport.insert t₀)
+    (insert_nonempty _ _) (insert_subset ht₀ φ.tsupport_subset)
   have ht₀αβ : t₀ ∈ Ioo α β := hsub (mem_insert _ _)
   have hle : α ≤ β := (ht₀αβ.1.trans ht₀αβ.2).le
   have hint : IntervalIntegrable u' volume α β :=
@@ -117,14 +110,15 @@ theorem hasWeakLineDerivOn_intervalIntegral (hu' : LocallyIntegrableOn u' (Ioo a
   have hφ'0 : ∀ t ∉ Ioo α β, deriv (φ : ℝ → ℝ) t = 0 := fun t ht ↦
     Function.notMem_support.1 fun h ↦ ht (hsub (mem_insert_of_mem _ (support_deriv_subset h)))
   -- Both pairings only see `[α, β]`.
+  have hαβ0 : ∀ g : ℝ → F, (∀ t ∉ Ioo α β, g t = 0) → ∫ t in α..β, g t = ∫ t, g t :=
+    fun g hg ↦ integral_eq_integral_of_support_subset fun t ht ↦
+      Ioo_subset_Ioc_self (not_not.1 fun h ↦ ht (hg t h))
   have hL : ∫ t, lineDeriv ℝ (φ : ℝ → ℝ) t 1 • ∫ s in t₀..t, u' s =
       ∫ t in α..β, deriv (φ : ℝ → ℝ) t • ∫ s in t₀..t, u' s := by
-    rw [integral_of_le hle, setIntegral_eq_integral_of_forall_compl_eq_zero fun t ht ↦ ?_]
-    · simp
-    · rw [hφ'0 t fun h ↦ ht (Ioo_subset_Ioc_self h), zero_smul]
-  have hR : ∫ t, (φ : ℝ → ℝ) t • u' t = ∫ t in α..β, (φ : ℝ → ℝ) t • u' t := by
-    rw [integral_of_le hle, setIntegral_eq_integral_of_forall_compl_eq_zero fun t ht ↦ ?_]
-    rw [hφ0 t fun h ↦ ht (Ioo_subset_Ioc_self h), zero_smul]
+    rw [hαβ0 _ (fun t ht ↦ by rw [hφ'0 t ht, zero_smul])]
+    simp
+  have hR : ∫ t, (φ : ℝ → ℝ) t • u' t = ∫ t in α..β, (φ : ℝ → ℝ) t • u' t :=
+    (hαβ0 _ fun t ht ↦ by rw [hφ0 t ht, zero_smul]).symm
   -- Rebase the primitive at `α`; the constant `∫ s in α..t₀, u' s` pairs to zero with `φ'`.
   have hsplit : EqOn (fun t ↦ deriv (φ : ℝ → ℝ) t • ∫ s in t₀..t, u' s)
       (fun t ↦ deriv (φ : ℝ → ℝ) t • (∫ s in α..t, u' s) -
@@ -145,6 +139,14 @@ theorem hasWeakLineDerivOn_intervalIntegral (hu' : LocallyIntegrableOn u' (Ioo a
 end Primitive
 
 /-! ### The fundamental theorem of calculus -/
+
+/-- The primitive of a function integrable on `Ioo a b`, based at a point of `Icc a b`, is
+continuous on `Icc a b`. -/
+private theorem continuousOn_primitive_Icc_of_integrableOn_Ioo (hu' : IntegrableOn u' (Ioo a b))
+    (ht₀ : t₀ ∈ Icc a b) : ContinuousOn (fun t ↦ ∫ s in t₀..t, u' s) (Icc a b) := by
+  have hab : a ≤ b := ht₀.1.trans ht₀.2
+  simpa [uIcc_of_le hab] using continuousOn_primitive_interval'
+    ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab).2 hu') (uIcc_of_le hab ▸ ht₀)
 
 /-- **The du Bois-Reymond lemma for weak derivatives.** A function whose weak derivative on
 `Ioo a b` is `0` is almost everywhere equal to a constant on `Ioo a b`. -/
@@ -195,11 +197,8 @@ theorem HasWeakLineDerivOn.exists_continuousOn_ae_eq
   · exact ⟨u, (subsingleton_Icc_of_ge hba).continuousOn _, EventuallyEq.rfl⟩
   have ht₀ : (a + b) / 2 ∈ Ioo a b := ⟨by linarith, by linarith⟩
   obtain ⟨c, hc⟩ := h.exists_ae_eq_add_intervalIntegral ht₀
-  have hint : IntervalIntegrable u' volume a b :=
-    (intervalIntegrable_iff_integrableOn_Ioo_of_le hab.le).2 hu'
-  refine ⟨_, continuousOn_const.add ?_, hc⟩
-  simpa [uIcc_of_le hab.le] using
-    continuousOn_primitive_interval' hint (uIcc_of_le hab.le ▸ Ioo_subset_Icc_self ht₀)
+  exact ⟨_, continuousOn_const.add
+    (continuousOn_primitive_Icc_of_integrableOn_Ioo hu' (Ioo_subset_Icc_self ht₀)), hc⟩
 
 /-- **The fundamental theorem of calculus for a continuous representative.** Let `u'` be the weak
 derivative of `u` on `Ioo a b`, integrable on `Ioo a b`, and let `v` be continuous on `Icc a b`
@@ -217,9 +216,8 @@ theorem HasWeakLineDerivOn.integral_eq_sub
   have hint : IntervalIntegrable u' volume a b :=
     (intervalIntegrable_iff_integrableOn_Ioo_of_le hab.le).2 hu'
   set w : ℝ → _ := fun t ↦ c + ∫ r in (a + b) / 2..t, u' r with hw_def
-  have hw : ContinuousOn w (Icc a b) := continuousOn_const.add <| by
-    simpa [uIcc_of_le hab.le] using
-      continuousOn_primitive_interval' hint (uIcc_of_le hab.le ▸ Ioo_subset_Icc_self ht₀)
+  have hw : ContinuousOn w (Icc a b) := continuousOn_const.add
+    (continuousOn_primitive_Icc_of_integrableOn_Ioo hu' (Ioo_subset_Icc_self ht₀))
   -- Two functions continuous on `Icc a b` and almost everywhere equal on `Ioo a b` agree on
   -- `Icc a b`.
   have heq : EqOn v w (Icc a b) :=

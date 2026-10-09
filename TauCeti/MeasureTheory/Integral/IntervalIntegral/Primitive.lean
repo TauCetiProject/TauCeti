@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.Topology.Order.Interval
 
 /-!
 # Primitives of integrable functions on the line
@@ -20,8 +21,9 @@ import Mathlib.MeasureTheory.Integral.Prod
 Two facts about the primitive `t ↦ ∫ s in t₀..t, f s` of a vector-valued function `f`, which are
 used to identify weak derivatives on an interval with ordinary primitives.
 
-* `TauCeti.intervalIntegral.continuousOn_primitive_Ioo`: if `f` is only locally integrable on an
-  open interval, its primitive based at a point of the interval is continuous on the interval.
+* `TauCeti.intervalIntegral.continuousOn_primitive_interval_of_locallyIntegrableOn`: if `f` is
+  only locally integrable on an open interval, its primitive based at a point of the interval is
+  continuous on the interval.
   Mathlib's `intervalIntegral.continuousOn_primitive_interval'` covers a compact interval on which
   `f` is integrable.
 * `TauCeti.intervalIntegral.integral_deriv_smul_primitive_eq_sub_of_le`: integration by parts
@@ -45,26 +47,24 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E} 
 
 /-- The primitive `t ↦ ∫ s in t₀..t, f s ∂μ` of a function locally integrable on the open interval
 `Ioo a b`, based at a point `t₀` of the interval, is continuous on the interval. -/
-theorem continuousOn_primitive_Ioo {μ : Measure ℝ} [NullSingletonClass μ] {t₀ : ℝ}
-    (hf : LocallyIntegrableOn f (Ioo a b) μ) (ht₀ : t₀ ∈ Ioo a b) :
+theorem continuousOn_primitive_interval_of_locallyIntegrableOn {μ : Measure ℝ}
+    [NullSingletonClass μ] {t₀ : ℝ} (hf : LocallyIntegrableOn f (Ioo a b) μ)
+    (ht₀ : t₀ ∈ Ioo a b) :
     ContinuousOn (fun t ↦ ∫ s in t₀..t, f s ∂μ) (Ioo a b) := by
   intro x hx
   -- `f` is integrable on a compact interval `[α, β] ⊆ (a, b)` whose interior contains `x, t₀`.
-  have ha : a < min x t₀ := lt_min hx.1 ht₀.1
-  have hb : max x t₀ < b := max_lt hx.2 ht₀.2
-  have hxt := min_le_left x t₀
-  have htx := min_le_right x t₀
-  have hxt' := le_max_left x t₀
-  have htx' := le_max_right x t₀
-  have hle : (a + min x t₀) / 2 ≤ (max x t₀ + b) / 2 := by linarith
-  have hint : IntervalIntegrable f μ ((a + min x t₀) / 2) ((max x t₀ + b) / 2) :=
+  obtain ⟨α, β, hsub, hαβ⟩ := (Set.toFinite {x, t₀}).isCompact.exists_Icc_between
+    (insert_nonempty _ _) (insert_subset hx (singleton_subset_iff.2 ht₀))
+  have hx' := hsub (mem_insert _ _)
+  have ht₀' := hsub (mem_insert_of_mem _ rfl)
+  have hle : α ≤ β := (hx'.1.trans hx'.2).le
+  have hint : IntervalIntegrable f μ α β :=
     (intervalIntegrable_iff_integrableOn_Icc_of_le hle).2 <|
-      hf.integrableOn_compact_subset (fun y hy ↦ ⟨by linarith [hy.1], by linarith [hy.2]⟩)
-        isCompact_Icc
+      hf.integrableOn_compact_subset hαβ isCompact_Icc
   have hcont := _root_.intervalIntegral.continuousOn_primitive_interval' (a := t₀) hint
-    (by rw [uIcc_of_le hle]; exact ⟨by linarith, by linarith⟩)
+    (by rw [uIcc_of_le hle]; exact Ioo_subset_Icc_self ht₀')
   rw [uIcc_of_le hle] at hcont
-  exact (hcont.continuousAt (Icc_mem_nhds (x := x) (by linarith) (by linarith))).continuousWithinAt
+  exact (hcont.continuousAt (Icc_mem_nhds hx'.1 hx'.2)).continuousWithinAt
 
 variable [CompleteSpace E]
 
