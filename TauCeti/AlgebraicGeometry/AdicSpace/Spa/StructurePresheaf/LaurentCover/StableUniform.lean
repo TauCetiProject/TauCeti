@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.LaurentCover.FiniteTopology
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.LaurentCover.Restrict
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.LaurentCover.Sheaf
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.StableUniform
@@ -25,11 +26,14 @@ W ∩ {|f| ≤ 1},  W ∩ {|f| ≥ 1}
 ```
 
 of `W`. Thus sections on `W` are determined on the two pieces and compatible sections glue.
+Moreover sections on `W` carry the topology induced by restriction to the two pieces.
 This is the local input for the induction proving that stably uniform affinoids are sheafy. As a
 sheaf condition for the presheaf of sets it is
 `isSheafFor_ofArrows_inf_laurentCoverOpen_of_isStablyUniform`. Together with stability under
 rational localisation, it shows that stable uniformity satisfies
-`TauCeti.ValuationSpectrum.LaurentGluing` (`laurentGluing_isStablyUniform`).
+`TauCeti.ValuationSpectrum.LaurentGluing` (`laurentGluing_isStablyUniform`), and, with the
+topological statement, `TauCeti.ValuationSpectrum.ContinuousLaurentGluing`
+(`continuousLaurentGluing_isStablyUniform`).
 
 ## Main results
 
@@ -43,6 +47,8 @@ rational localisation, it shows that stable uniformity satisfies
 * `isSheafFor_ofArrows_inf_laurentCoverOpen_of_isStablyUniform`: the presentation-limit presheaf
   of sets satisfies the sheaf condition for the two-piece Laurent cover of a rational subset.
 * `laurentGluing_isStablyUniform`: stable uniformity satisfies `LaurentGluing`.
+* `continuousLaurentGluing_isStablyUniform`: stable uniformity satisfies
+  `ContinuousLaurentGluing`.
 
 ## References
 
@@ -173,6 +179,19 @@ theorem laurentGluing_isStablyUniform :
   isSheafFor_ofArrows_inf_laurentCoverOpen P _ hA hAplus _ hW f :=
     have := hA
     isSheafFor_ofArrows_inf_laurentCoverOpen_of_isStablyUniform P hAplus hW f
+
+omit [IsStablyUniform A] in
+/-- **Stable uniformity admits continuous Laurent gluing.** It admits Laurent gluing
+(`laurentGluing_isStablyUniform`), and over a stably uniform Tate ring restriction from a rational
+subset to its two Laurent pieces is a closed embedding
+(`isClosedEmbedding_presentationLimitMap_inf_laurentCoverOpen_of_isStablyUniform`). -/
+theorem continuousLaurentGluing_isStablyUniform :
+    ContinuousLaurentGluing.{v} fun A _ _ _ _ ↦ IsStablyUniform A where
+  toLaurentGluing := laurentGluing_isStablyUniform
+  isInducing_inf_laurentCoverOpen P _ hA hAplus _ hW f :=
+    have := hA
+    (isClosedEmbedding_presentationLimitMap_inf_laurentCoverOpen_of_isStablyUniform P hAplus hW
+      f).isInducing
 
 end TauCeti.ValuationSpectrum
 

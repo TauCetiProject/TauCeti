@@ -37,6 +37,8 @@ first step in reading off the presentation of `Γ` from the polygon.
   paired translates contain a neighbourhood of each of its points other than a vertex.
 * `ConvexPolygon.SidePairing.iUnion_smul_carrier_eq_univ`: locally finite translates by a group
   containing the side-pairing maps cover the upper half-plane.
+* `ConvexPolygon.eq_of_smul_interior_inter_smul_carrier_nonempty`: when distinct translated
+  interiors are disjoint, two translates one of whose interiors meets the other are equal.
 * `ConvexPolygon.SidePairing.closure_range_map_eq`: the side-pairing maps generate the group of a
   locally finite fundamental polygon.
 
@@ -55,6 +57,32 @@ public section
 
 open Set Topology UpperHalfPlane
 open scoped MatrixGroups Pointwise
+
+namespace TauCeti.UpperHalfPlane.ConvexPolygon
+
+variable {n : ℕ} [NeZero n] {P : ConvexPolygon n}
+
+/-- **Overlapping translates of a polygon with disjoint translated interiors coincide.** Let
+distinct translates of the interior of `P` by `Γ` be disjoint. If the interior of a translate
+`g • P` meets a translate `g' • P`, with `g, g' ∈ Γ`, then `g = g'`. -/
+theorem eq_of_smul_interior_inter_smul_carrier_nonempty {Γ : Subgroup PSL(2, ℝ)}
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
+    {g g' : PSL(2, ℝ)} (hg : g ∈ Γ) (hg' : g' ∈ Γ)
+    (h : (g • interior P.carrier ∩ g' • P.carrier).Nonempty) : g = g' := by
+  obtain ⟨w, hw, hw'⟩ := h
+  -- the closed tile `g' • P` is the closure of its interior, which the open set meets
+  rw [← P.closure_interior_carrier, ← closure_smul] at hw'
+  obtain ⟨v, hv, hv'⟩ := mem_closure_iff.1 hw' _ (isOpen_interior.smul g) hw
+  let γ : Γ := ⟨g'⁻¹ * g, Γ.mul_mem (Γ.inv_mem hg') hg⟩
+  by_contra hne
+  have hγ : γ ≠ 1 := fun h1 ↦ hne (inv_mul_eq_one.1 (congrArg Subtype.val h1)).symm
+  have hv'' : g'⁻¹ • v ∈ (g'⁻¹ * g) • interior P.carrier := by
+    rw [mul_smul]
+    exact smul_mem_smul_set hv
+  exact disjoint_left.1 (hdisj γ hγ) hv'' (mem_smul_set_iff_inv_smul_mem.1 hv')
+
+end TauCeti.UpperHalfPlane.ConvexPolygon
 
 namespace TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing
 
@@ -140,17 +168,9 @@ theorem closure_range_map_eq {Γ : Subgroup PSL(2, ℝ)} (hmap : ∀ i, σ.map i
     (hlf.comp_injective (Subgroup.inclusion_injective hle))
   obtain ⟨p, hp⟩ := P.nonempty_interior_carrier
   obtain ⟨g, hg⟩ := mem_iUnion.1 (hcover ▸ mem_univ (γ • p))
-  -- `g⁻¹ γ` carries the interior point `p` into `P`, so it moves the interior onto itself
-  let δ : Γ := ⟨(g : PSL(2, ℝ))⁻¹ * γ, Γ.mul_mem (Γ.inv_mem (hle g.2)) hγ⟩
-  have hδ : δ = 1 := by
-    by_contra hne
-    have hx : (δ : PSL(2, ℝ)) • p ∈ closure (interior P.carrier) := by
-      rw [P.closure_interior_carrier, mul_smul]
-      exact (mem_smul_set_iff_inv_smul_mem).1 hg
-    obtain ⟨w, hw, hwP⟩ := mem_closure_iff.1 hx _
-      (isOpen_interior.smul (δ : PSL(2, ℝ))) (smul_mem_smul_set hp)
-    exact disjoint_left.1 (hdisj δ hne) hw hwP
-  have hgγ : (g : PSL(2, ℝ)) = γ := inv_mul_eq_one.1 (congrArg Subtype.val hδ)
-  exact hgγ ▸ g.2
+  -- `γ • p` lies in the interior of `γ • P` and in `g • P`, so these translates coincide
+  have hγg : γ = g := P.eq_of_smul_interior_inter_smul_carrier_nonempty hdisj hγ (hle g.2)
+    ⟨γ • p, smul_mem_smul_set hp, hg⟩
+  exact hγg ▸ g.2
 
 end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing

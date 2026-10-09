@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.BumpFunction.Average
+public import TauCeti.MeasureTheory.Function.Lp.Convolution
 public import TauCeti.MeasureTheory.Function.Lp.Translation
 
 /-!
@@ -38,6 +39,7 @@ by the same smooth kernel.
 * `TauCeti.normedBumpLp_apply`: the defining Bochner integral of that operator.
 * `TauCeti.normedBumpLp_eq_normedBumpAverageL`: this operator is the normalized-bump average of
   the `Lᵖ` translation action.
+* `TauCeti.normedBumpLp_eq_convolutionLp`: this operator is convolution with the normalized bump.
 * `TauCeti.compLpL_normedBumpLp`: this operator commutes with postcomposition by a continuous
   linear map.
 * `TauCeti.norm_normedBumpLp_le_one`: this averaging operator is an `Lᵖ` contraction.
@@ -92,6 +94,13 @@ theorem normedBumpLp_eq_normedBumpAverageL (hp : p ≠ ∞) (phi : ContDiffBump 
     normedBumpLp (F := F) hp phi mu =
       normedBumpAverageL phi mu (mu.translateLp p) (Measure.continuous_translateLp hp) :=
   (rfl)
+
+/-- Averaging against a normalized bump is convolution with the normalized bump, as an operator
+on `Lᵖ`. -/
+theorem normedBumpLp_eq_convolutionLp (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) :
+    normedBumpLp (F := F) hp phi mu = convolutionLp hp (phi.normed mu) mu := by
+  ext1 f
+  rw [normedBumpLp_apply, convolutionLp_apply hp phi.integrable_normed]
 
 /-- Averaging against a normalized bump commutes with postcomposition by a continuous linear map
 between Banach spaces. -/

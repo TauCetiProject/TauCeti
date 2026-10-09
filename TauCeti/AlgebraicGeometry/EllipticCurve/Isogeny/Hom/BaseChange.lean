@@ -10,6 +10,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Add
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapAlong
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.PointMap
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
+-- Proof-only: base change preserves the degree of an isogeny.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
 
 /-!
 # Faithful additive base change of morphisms of elliptic curves
@@ -34,6 +36,7 @@ and the identification of morphisms with their tautological points in `Isogeny.H
 * `TauCeti.Isogeny.Hom.mapAddHom`: additive base change.
 * `TauCeti.Isogeny.Hom.comp_map` and `TauCeti.Isogeny.Hom.map_add`: preservation of
   composition and addition.
+* `TauCeti.Isogeny.Hom.degree_map`: preservation of the degree.
 * `TauCeti.Isogeny.Hom.pointMap_map`: compatibility with the action on points.
 
 ## References
@@ -102,6 +105,11 @@ theorem comp_map (g : Hom W₂ W₃) (h : Hom W₁ W₂) (f : F →+* K) :
     (g.comp h).map f = (g.map f).comp (h.map f) := by
   rcases eq_zero_or_exists_ofIsogeny g with rfl | ⟨ψ, rfl⟩
   · simp
+  rcases eq_zero_or_exists_ofIsogeny h with rfl | ⟨φ, rfl⟩ <;> simp
+
+/-- **Base change preserves the degree**, the zero morphism included. -/
+@[simp]
+theorem degree_map (h : Hom W₁ W₂) (f : F →+* K) : (h.map f).degree = h.degree := by
   rcases eq_zero_or_exists_ofIsogeny h with rfl | ⟨φ, rfl⟩ <;> simp
 
 /-- Base change preserves identity morphisms. -/

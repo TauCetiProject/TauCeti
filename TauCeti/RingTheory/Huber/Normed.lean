@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Uniform
+public import TauCeti.Analysis.Normed.Ring.Ultra
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.SpecificLimits.Normed
 
@@ -17,11 +18,12 @@ sets are bounded in the sense of `TauCeti.Huber.IsBounded`. For a normed divisio
 this identifies the power-bounded elements with the closed unit ball and shows that the ring is
 uniform; for instance `ℚ_[p]` is uniform, and its power-bounded elements are those of `ℤ_[p]`.
 
-For a nontrivially normed field with an ultrametric norm the closed unit ball is moreover open,
-and every nonzero element of norm less than one is a pseudouniformiser, so the field is a Tate
-ring. This is the Tate structure of the complete rank-one nonarchimedean fields over which rigid
-geometry takes place: their closed polydiscs are the adic spectra of the Tate algebras
-`K⟨X₁, …, Xₙ⟩`.
+In a seminormed ring every unit of norm less than one is a pseudouniformiser. If the norm is
+moreover ultrametric with `‖1‖ = 1`, the closed unit ball is an open bounded subring, so such
+a ring with a unit of norm less than one is a Tate ring. In particular a nontrivially normed
+field with an ultrametric norm is a Tate ring. This is the Tate structure of the complete
+rank-one nonarchimedean fields over which rigid geometry takes place: their closed polydiscs are
+the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
 
 ## Main results
 
@@ -29,13 +31,16 @@ geometry takes place: their closed polydiscs are the adic spectra of the Tate al
 * `TauCeti.Huber.isPowerBounded_iff_norm_le_one`: in a normed division ring an element is
   power-bounded exactly when its norm is at most one.
 * `TauCeti.Huber.IsUniform.of_normedDivisionRing`: normed division rings are uniform.
+* `TauCeti.Huber.IsPseudoUniformizer.of_norm_lt_one`: in a seminormed ring a unit of norm less
+  than one is a pseudouniformiser.
 * `TauCeti.Huber.isPseudoUniformizer_iff_norm_lt_one`: in a normed division ring the
   pseudouniformisers are the nonzero elements of norm less than one.
 * `TauCeti.Huber.coe_powerBoundedSubring_eq_closedBall`: in an ultrametric normed field `K°` is the
   closed unit ball.
+* `TauCeti.Huber.IsTateRing.of_isUnit_norm_lt_one`: an ultrametric seminormed commutative ring
+  with `‖1‖ = 1` and a unit of norm less than one is a Tate ring.
 * `TauCeti.Huber.IsTateRing.of_nontriviallyNormedField`: a nontrivially normed field with an
-  ultrametric norm is a Tate ring, with `(𝒪_K, ϖ 𝒪_K)` as a pair of definition; for instance
-  `ℚ_[p]`.
+  ultrametric norm is a Tate ring; for instance `ℚ_[p]`.
 
 ## References
 
@@ -77,6 +82,12 @@ theorem IsPowerBounded.of_norm_le_one {R : Type*} [SeminormedRing R] {x : R}
   | succ n =>
     exact (norm_pow_le' x (Nat.succ_pos n)).trans
       ((pow_le_one₀ (norm_nonneg x) hx).trans (le_max_left 1 ‖(1 : R)‖))
+
+/-- **In a seminormed ring a unit of norm less than one is a pseudouniformiser**: its powers tend
+to zero. -/
+theorem IsPseudoUniformizer.of_norm_lt_one {R : Type*} [SeminormedRing R] {ϖ : R}
+    (hϖ : IsUnit ϖ) (hϖ1 : ‖ϖ‖ < 1) : IsPseudoUniformizer ϖ :=
+  isPseudoUniformizer_iff.mpr ⟨hϖ, tendsto_pow_atTop_nhds_zero_of_norm_lt_one hϖ1⟩
 
 section NormedDivisionRing
 
@@ -128,17 +139,22 @@ theorem coe_powerBoundedSubring_eq_closedBall :
 
 end Ultrametric
 
-/-- **A nontrivially normed field with an ultrametric norm is a Tate ring.** Its ring of integers
-`𝒪_K` is open and bounded, and any element `ϖ` with `0 < ‖ϖ‖ < 1` is a pseudouniformiser, so
-`(𝒪_K, ϖ 𝒪_K)` is a pair of definition (`PairOfDefinition.ofIsPseudoUniformizer`). -/
+/-- **An ultrametric seminormed commutative ring with `‖1‖ = 1` and a unit of norm less than one
+is a Tate ring.** The closed unit ball `Subring.unitClosedBall` is open because the norm is
+ultrametric and bounded because it is a ball, and the unit is a pseudouniformiser
+(`IsPseudoUniformizer.of_norm_lt_one`). -/
+theorem IsTateRing.of_isUnit_norm_lt_one {R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
+    [NormOneClass R] {ϖ : R} (hϖ : IsUnit ϖ) (hϖ1 : ‖ϖ‖ < 1) : IsTateRing R :=
+  IsTateRing.of_isOpen_isBounded (Subring.unitClosedBall R) (Subring.isOpen_unitClosedBall R)
+    (Subring.coe_unitClosedBall R ▸ isBounded_closedBall_zero 1)
+    (IsPseudoUniformizer.of_norm_lt_one hϖ hϖ1)
+
+/-- **A nontrivially normed field with an ultrametric norm is a Tate ring**, by
+`IsTateRing.of_isUnit_norm_lt_one` applied to any `ϖ` with `0 < ‖ϖ‖ < 1`. Its ring of integers
+`𝒪_K` is the closed unit ball. -/
 instance IsTateRing.of_nontriviallyNormedField (K : Type*) [NontriviallyNormedField K]
     [IsUltrametricDist K] : IsTateRing K := by
   obtain ⟨ϖ, h0, h1⟩ := NormedField.exists_norm_lt_one K
-  refine IsTateRing.of_isOpen_isBounded (powerBoundedSubring K) ?_ ?_
-    (isPseudoUniformizer_iff_norm_lt_one.mpr ⟨norm_pos_iff.mp h0, h1⟩)
-  · rw [coe_powerBoundedSubring_eq_closedBall]
-    exact IsUltrametricDist.isOpen_closedBall 0 one_ne_zero
-  · rw [coe_powerBoundedSubring_eq_closedBall]
-    exact isBounded_closedBall_zero 1
+  exact IsTateRing.of_isUnit_norm_lt_one (isUnit_iff_ne_zero.mpr (norm_pos_iff.mp h0)) h1
 
 end TauCeti.Huber

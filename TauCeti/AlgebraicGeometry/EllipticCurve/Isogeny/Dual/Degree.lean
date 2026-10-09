@@ -82,6 +82,7 @@ variable {ρ η : Isogeny W₁ W₂}
   [Algebra.IsSeparable ρ.fieldPullback.fieldRange W₁.FunctionField]
   [Algebra.IsSeparable η.fieldPullback.fieldRange W₁.FunctionField]
 
+omit [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField] in
 /-- **The symmetric dual composite is additive in the right variable** on separable isogenies:
 if `η = ψ + ρ`, then
 `φ̂ ∘ η + η̂ ∘ φ = (φ̂ ∘ ψ + ψ̂ ∘ φ) + (φ̂ ∘ ρ + ρ̂ ∘ φ)`. -/
@@ -96,6 +97,7 @@ theorem ofIsogeny_dual_comp_add_dual_comp_add_right
   rw [hη, ofIsogeny_dual_add ψ ρ η hη, Hom.comp_add, Hom.add_comp]
   abel
 
+omit [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField] in
 /-- **The symmetric dual composite is additive in the left variable** on separable isogenies.
 This is the left-variable form of
 `ofIsogeny_dual_comp_add_dual_comp_add_right`. -/
