@@ -37,6 +37,9 @@ emptiness forces (`GridRectangleDecomposition.cyclicOrder_of_isEmpty_of_left_eq_
 
 ## Main results
 
+* `TauCeti.GridRectanglePentagonDecomposition.coveredSquares_val_add_val_eq_of_isRepartition`:
+  the column balance criterion for a rectangle--pentagon and a pentagon--rectangle domain to cover
+  the same squares with the same multiplicities.
 * `TauCeti.GridDiagram.pentagonRectangleWeight_recutLeftEqLeft`: the recut along a common initial
   side preserves the weight.
 * `TauCeti.GridDiagram.pentagonRectangleWeight_recutRightEqRightFirst`: so does the recut along a
@@ -106,7 +109,8 @@ second rectangle exchanged, when their underlying rectangles repartition the sam
 two columns balance: at every row `t`, the second rectangle covers `(a, t)` and `t` lies between
 the new pentagon's bottom row and the turn row as often as the second rectangle covers
 `(finRotate n a, t)` and `t` lies between the original pentagon's bottom row and the turn row. -/
-private theorem val_add_val_eq_of_isRepartition (D : GridRectanglePentagonDecomposition a s x z)
+theorem coveredSquares_val_add_val_eq_of_isRepartition
+    (D : GridRectanglePentagonDecomposition a s x z)
     (E : GridPentagonRectangleDecomposition a s x z)
     (hrep : D.toRectangleDecomposition.IsRepartition E.toRectangleDecomposition)
     (hcol : ∀ t : Fin n,
@@ -227,7 +231,7 @@ theorem pentagonRectangleWeight_recutLeftEqLeft
     rw [hE, D.recutLeftEqLeft_toRectangleDecomposition]
     exact D.toRectangleDecomposition.isRecutOfLeftEqLeft_recut hleft hone hfirst hsecond
   apply G.pentagonRectangleWeight_eq_rectanglePentagonWeight_of_val_add_val_eq C R
-  refine D.val_add_val_eq_of_isRepartition E
+  refine D.coveredSquares_val_add_val_eq_of_isRepartition E
     (D.isRecut_recutLeftEqLeft hcommon hone hrectangle hpentagon).isRepartition fun t => ?_
   have hEright := hdata.recut_sides.2
   simp only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_right,
@@ -300,7 +304,7 @@ theorem pentagonRectangleWeight_recutRightEqRightFirst
       G.rectanglePentagonWeight C R D := by
   set E := D.recutRightEqRightFirst hcommon hone hrectangle hpentagon hfirst with hE
   apply G.pentagonRectangleWeight_eq_rectanglePentagonWeight_of_val_add_val_eq C R
-  refine D.val_add_val_eq_of_isRepartition E
+  refine D.coveredSquares_val_add_val_eq_of_isRepartition E
     (D.isRecut_recutRightEqRightFirst hcommon hone hrectangle hpentagon hfirst).isRepartition
     fun t => ?_
   obtain ⟨-, -, -, -, hcols, ha, -⟩ :=
