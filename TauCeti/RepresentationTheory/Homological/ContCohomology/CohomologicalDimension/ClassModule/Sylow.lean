@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.CoprimeRestriction
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.PGroup
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.PGroup.Basic
 import Mathlib.GroupTheory.Sylow
 import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClosedSubgroup
 

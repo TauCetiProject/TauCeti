@@ -26,6 +26,10 @@ on the valuation ring available without choosing numerator-denominator presentat
 * `TauCeti.Place.completionEquivLaurentSeries_apply_integer`: the equivalence restricts to the
   power-series expansion on the completed valuation ring.
 * `TauCeti.Place.completionEquivLaurentSeries_uniformizer`: a chosen uniformizer maps to `X`.
+* `TauCeti.Place.completionLaurentCoeff_ext_iff`: Laurent coefficients determine a completed
+  element.
+* `TauCeti.Place.completionResidue_completionEquivLaurentSeries_symm_derivative`:
+  completed residues kill formal derivatives.
 
 ## Reference
 
@@ -130,5 +134,84 @@ theorem ord_completionEquivLaurentSeries (x : P.Completion) :
         (P.completionEquivLaurentSeries hP ht x) =
       P.completionPlace.ord x := by
   rw [Valuation.ord_def, ord_def, P.valuation_completionEquivLaurentSeries hP ht]
+
+/-! ### Completed Laurent coefficients and residues -/
+
+/-- The `n`-th Laurent coefficient on the completed local field, with respect to the uniformizer
+`t`. -/
+noncomputable def completionLaurentCoeff (n : ℤ) : P.Completion →ₗ[k] k :=
+  -- `toLinearMap` targets `Algebra.toModule`, but `coeff.linearMap` expects
+  -- `HahnSeries.instModule`; these are not definitionally equal. This scalar bridge
+  -- supplies the coefficientwise module structure without changing the public maps.
+  (HahnSeries.coeff.linearMap n).comp
+    ({ toFun := (P.completionEquivLaurentSeries hP ht).toAlgHom
+       map_add' := (P.completionEquivLaurentSeries hP ht).toAlgHom.map_add
+       map_smul' := fun c z => by
+         rw [Algebra.smul_def, map_mul, AlgHom.commutes, HahnSeries.algebraMap_apply',
+           PowerSeries.algebraMap_eq, HahnSeries.ofPowerSeries_C, HahnSeries.C_mul_eq_smul,
+           RingHom.id_apply] } : P.Completion →ₗ[k] LaurentSeries k)
+
+/-- The completed Laurent coefficient is the corresponding coefficient of the Laurent-series
+expansion. -/
+@[simp]
+theorem completionLaurentCoeff_apply (n : ℤ) (z : P.Completion) :
+    P.completionLaurentCoeff hP ht n z =
+      (P.completionEquivLaurentSeries hP ht z).coeff n :=
+  (rfl)
+
+/-- Elements of the completed local field are equal exactly when all their Laurent coefficients
+are equal. -/
+theorem completionLaurentCoeff_ext_iff {x y : P.Completion} :
+    x = y ↔ ∀ n : ℤ,
+      P.completionLaurentCoeff hP ht n x = P.completionLaurentCoeff hP ht n y := by
+  constructor
+  · rintro rfl n
+    rfl
+  · intro h
+    apply (P.completionEquivLaurentSeries hP ht).injective
+    apply HahnSeries.ext
+    funext n
+    simpa only [completionLaurentCoeff_apply] using h n
+
+/-- The coefficient of a Laurent monomial is zero away from its exponent. -/
+theorem completionLaurentCoeff_completionEquivLaurentSeries_symm_single (m n : ℤ) (c : k) :
+    P.completionLaurentCoeff hP ht n
+        ((P.completionEquivLaurentSeries hP ht).symm (HahnSeries.single m c)) =
+      if n = m then c else 0 := by
+  simp [completionLaurentCoeff_apply, HahnSeries.coeff_single]
+
+/-- The negative Laurent coefficients of an integral element of the completed local field
+vanish. -/
+theorem completionLaurentCoeff_coe_integer_eq_zero (z : P.completionPlace.integers)
+    {n : ℤ} (hn : n < 0) :
+    P.completionLaurentCoeff hP ht n (z : P.Completion) = 0 := by
+  rw [completionLaurentCoeff_apply]
+  apply LaurentSeries.coeff_zero_of_lt_valuation k (D := 0) _ hn
+  rw [valuation_completionEquivLaurentSeries]
+  simpa using P.completionPlace.mem_integers_iff.mp z.2
+
+/-- The completed residue with respect to `t`, given by the coefficient of exponent `-1`. -/
+noncomputable def completionResidue : P.Completion →ₗ[k] k :=
+  P.completionLaurentCoeff hP ht (-1)
+
+/-- The completed residue is the coefficient of exponent `-1`. -/
+@[simp]
+theorem completionResidue_apply (z : P.Completion) :
+    P.completionResidue hP ht z =
+      (P.completionEquivLaurentSeries hP ht z).coeff (-1) :=
+  (rfl)
+
+/-- The completed residue vanishes on the completed valuation ring. -/
+theorem completionResidue_coe_integer_eq_zero
+    (z : P.completionPlace.integers) :
+    P.completionResidue hP ht (z : P.Completion) = 0 :=
+  P.completionLaurentCoeff_coe_integer_eq_zero hP ht z (by omega)
+
+/-- The coefficient of `X⁻¹` in the formal derivative of a Laurent series is zero.  Equivalently,
+the local residue kills formal derivatives. -/
+theorem completionResidue_completionEquivLaurentSeries_symm_derivative (f : LaurentSeries k) :
+    P.completionResidue hP ht
+        ((P.completionEquivLaurentSeries hP ht).symm (LaurentSeries.derivative k f)) = 0 := by
+  simp [completionResidue_apply, LaurentSeries.derivative_apply]
 
 end TauCeti.Place

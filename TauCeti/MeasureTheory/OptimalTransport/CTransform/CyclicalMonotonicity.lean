@@ -43,6 +43,9 @@ hypothesis appears, and the cost is an arbitrary real-valued function on a produ
 * `TauCeti.isCyclicallyMonotone_contactSet` — the contact set of a dual feasible pair is
   `c`-cyclically monotone, with `TauCeti.isCyclicallyMonotone_cSuperdifferential` its
   specialisation to a potential and its own `c`-transform;
+* `TauCeti.rockafellarPotential` — Rüschendorf's explicit potential of a set with a base point,
+  and `TauCeti.IsCyclicallyMonotone.subset_cSuperdifferential_rockafellarPotential`, which puts a
+  `c`-cyclically monotone set inside its `c`-superdifferential;
 * `TauCeti.IsCyclicallyMonotone.exists_isCConcave_subset_cSuperdifferential` — **the theorem of
   Rockafellar and Rüschendorf**: a `c`-cyclically monotone set lies in the
   `c`-superdifferential of a `c`-concave potential;
@@ -50,10 +53,13 @@ hypothesis appears, and the cost is an arbitrary real-valued function on a produ
 
 ## Implementation notes
 
-The chain value and the potential built from it are the proof's own scaffolding and are kept
-private: the representation theorem exposes the potential only through the existential, and a
-consumer that needs a named potential obtains one from it. The empty set is cyclically monotone
-and has no base point, so it is given the `c`-transform of the zero potential.
+The potential is public, with its defining infimum over chains, because its explicit form is
+what makes it measurable: on Polish spaces each strict sublevel set is a countable union of
+projections of Borel sets of chains, which is how
+`TauCeti.nullMeasurable_rockafellarPotential` integrates it in the dual attainment theorem. The
+algebraic manipulations of individual chains stay private. The empty set is cyclically monotone
+and has no base point, so the representation theorem gives it the `c`-transform of the zero
+potential.
 
 The extended-nonnegative counterpart of the first statement, for the dual pair of real
 potentials used by the primal interface, is
@@ -121,21 +127,29 @@ theorem isCyclicallyMonotone_cSuperdifferential (c : X × Y → ℝ) (φ : X →
 
 /-! ### The Rockafellar potential -/
 
-/-- The telescoping value of the chain `p = w 0, w 1, …, w n` followed by the target `x`. -/
-private def chainValue (c : X × Y → ℝ) {n : ℕ} (w : Fin (n + 1) → X × Y) (x : X) : ℝ :=
+/-- The telescoping value of the chain `w 0, w 1, …, w n` of pairs followed by the target `x`:
+`c (x, (w n).2) + ∑ i, c ((w (i + 1)).1, (w i).2) - ∑ i, c (w i)`. Rüschendorf's potential
+`TauCeti.rockafellarPotential` is its infimum over chains in a fixed set. -/
+def rockafellarChainValue (c : X × Y → ℝ) {n : ℕ} (w : Fin (n + 1) → X × Y) (x : X) : ℝ :=
   c (x, (w (Fin.last n)).2) + ∑ i : Fin n, c ((w i.succ).1, (w i.castSucc).2) - ∑ i, c (w i)
 
+/-- Unfolding the telescoping chain value. -/
+theorem rockafellarChainValue_def (c : X × Y → ℝ) {n : ℕ} (w : Fin (n + 1) → X × Y) (x : X) :
+    rockafellarChainValue c w x = c (x, (w (Fin.last n)).2) +
+      ∑ i : Fin n, c ((w i.succ).1, (w i.castSucc).2) - ∑ i, c (w i) := (rfl)
+
 /-- The value of the one-point chain `p` followed by `x`. -/
-private theorem chainValue_const (c : X × Y → ℝ) (p : X × Y) (x : X) :
-    chainValue c (fun _ : Fin 1 => p) x = c (x, p.2) - c p := by
-  simp [chainValue]
+private theorem rockafellarChainValue_const (c : X × Y → ℝ) (p : X × Y) (x : X) :
+    rockafellarChainValue c (fun _ : Fin 1 => p) x = c (x, p.2) - c p := by
+  simp [rockafellarChainValue]
 
 /-- Appending one further point `q` to a chain and retargeting at `x` changes the chain value by
 the cost difference `c (x, q.2) - c q`. This is the step that makes the potential decrease by at
 most that difference. -/
-private theorem chainValue_snoc (c : X × Y → ℝ) {n : ℕ} (w : Fin (n + 1) → X × Y) (q : X × Y)
-    (x : X) :
-    chainValue c (Fin.snoc w q) x = chainValue c w q.1 + (c (x, q.2) - c q) := by
+private theorem rockafellarChainValue_snoc (c : X × Y → ℝ) {n : ℕ} (w : Fin (n + 1) → X × Y)
+    (q : X × Y) (x : X) :
+    rockafellarChainValue c (Fin.snoc w q) x =
+      rockafellarChainValue c w q.1 + (c (x, q.2) - c q) := by
   set v : Fin (n + 2) → X × Y := Fin.snoc w q with hv
   have hstep : ∑ i : Fin (n + 1), c ((v i.succ).1, (v i.castSucc).2) =
       ∑ i : Fin n, c ((w i.succ).1, (w i.castSucc).2) + c (q.1, (w (Fin.last n)).2) := by
@@ -148,14 +162,14 @@ private theorem chainValue_snoc (c : X × Y → ℝ) {n : ℕ} (w : Fin (n + 1) 
     rw [Fin.sum_univ_castSucc]
     simp only [hv, Fin.snoc_castSucc, Fin.snoc_last]
   have hlast : v (Fin.last (n + 1)) = q := by simp [hv]
-  rw [chainValue, chainValue, hlast, hstep, htotal]
+  rw [rockafellarChainValue, rockafellarChainValue, hlast, hstep, htotal]
   ring
 
 /-- Closing a chain of points of a `c`-cyclically monotone set back at its own starting point
 gives a nonnegative chain value: the inequality is the cyclical-monotonicity inequality for the
 cyclic permutation of that cycle. -/
-private theorem chainValue_nonneg (hS : IsCyclicallyMonotone c S) {n : ℕ}
-    {w : Fin (n + 1) → X × Y} (hw : ∀ i, w i ∈ S) : 0 ≤ chainValue c w (w 0).1 := by
+private theorem rockafellarChainValue_nonneg (hS : IsCyclicallyMonotone c S) {n : ℕ}
+    {w : Fin (n + 1) → X × Y} (hw : ∀ i, w i ∈ S) : 0 ≤ rockafellarChainValue c w (w 0).1 := by
   have h := hS.sum_le (n + 1) (fun i => (w i).1) (fun i => (w i).2) (by simpa using hw)
     (finRotate (n + 1)).symm
   have hlhs : ∑ i, c ((w i).1, (w i).2) = ∑ i, c (w i) := by simp
@@ -167,46 +181,53 @@ private theorem chainValue_nonneg (hS : IsCyclicallyMonotone c S) {n : ℕ}
     rw [Fin.sum_univ_castSucc]
     simp [finRotate_apply, Fin.coeSucc_eq_succ, Fin.last_add_one, add_comm]
   rw [hlhs, hrhs] at h
-  rw [chainValue, sub_nonneg]
+  rw [rockafellarChainValue, sub_nonneg]
   exact h
 
 /-- Rüschendorf's potential attached to a base point `p` of `S`: the infimum, over all finite
 chains of points of `S` starting at `p`, of the telescoping chain value ending at `x`. -/
-private def rockafellarPotential (c : X × Y → ℝ) (S : Set (X × Y)) (p : X × Y) (x : X) : EReal :=
-  ⨅ (n : ℕ) (w : Fin (n + 1) → X × Y) (_ : w 0 = p) (_ : ∀ i, w i ∈ S), (chainValue c w x : EReal)
+def rockafellarPotential (c : X × Y → ℝ) (S : Set (X × Y)) (p : X × Y) (x : X) : EReal :=
+  ⨅ (n : ℕ) (w : Fin (n + 1) → X × Y) (_ : w 0 = p) (_ : ∀ i, w i ∈ S),
+    (rockafellarChainValue c w x : EReal)
+
+/-- Unfolding Rüschendorf's potential as an infimum over admissible chains. -/
+theorem rockafellarPotential_def (c : X × Y → ℝ) (S : Set (X × Y)) (p : X × Y) (x : X) :
+    rockafellarPotential c S p x = ⨅ (n : ℕ) (w : Fin (n + 1) → X × Y) (_ : w 0 = p)
+      (_ : ∀ i, w i ∈ S), (rockafellarChainValue c w x : EReal) := (rfl)
 
 /-- Every admissible chain bounds the potential from above. -/
-private theorem rockafellarPotential_le {p : X × Y} {n : ℕ} {w : Fin (n + 1) → X × Y}
+theorem rockafellarPotential_le {p : X × Y} {n : ℕ} {w : Fin (n + 1) → X × Y}
     (hw0 : w 0 = p) (hw : ∀ i, w i ∈ S) (x : X) :
-    rockafellarPotential c S p x ≤ (chainValue c w x : EReal) :=
+    rockafellarPotential c S p x ≤ (rockafellarChainValue c w x : EReal) :=
   iInf_le_of_le n <| iInf_le_of_le w <| iInf_le_of_le hw0 <| iInf_le _ hw
 
 /-- A lower bound valid on every admissible chain bounds the potential from below. -/
-private theorem le_rockafellarPotential {p : X × Y} {x : X} {a : EReal}
+theorem le_rockafellarPotential {p : X × Y} {x : X} {a : EReal}
     (h : ∀ (n : ℕ) (w : Fin (n + 1) → X × Y), w 0 = p → (∀ i, w i ∈ S) →
-      a ≤ (chainValue c w x : EReal)) :
+      a ≤ (rockafellarChainValue c w x : EReal)) :
     a ≤ rockafellarPotential c S p x :=
   le_iInf fun n => le_iInf fun w => le_iInf fun hw0 => le_iInf fun hw => h n w hw0 hw
 
 /-- The one-point chain bounds the potential by a real number, so it never takes the value `⊤`. -/
-private theorem rockafellarPotential_le_base {p : X × Y} (hp : p ∈ S) (x : X) :
+theorem rockafellarPotential_le_sub {p : X × Y} (hp : p ∈ S) (x : X) :
     rockafellarPotential c S p x ≤ ((c (x, p.2) - c p : ℝ) : EReal) := by
   refine le_of_le_of_eq (rockafellarPotential_le (w := fun _ : Fin 1 => p) rfl (fun _ => hp) x) ?_
-  rw [chainValue_const]
+  rw [rockafellarChainValue_const]
 
 /-- The potential vanishes at the source coordinate of its base point; this is where cyclical
 monotonicity is used, and it is what keeps the potential from being identically `⊥`. -/
-private theorem rockafellarPotential_self (hS : IsCyclicallyMonotone c S) {p : X × Y}
+@[simp]
+theorem rockafellarPotential_self (hS : IsCyclicallyMonotone c S) {p : X × Y}
     (hp : p ∈ S) : rockafellarPotential c S p p.1 = 0 := by
   refine le_antisymm ?_ (le_rockafellarPotential fun n w hw0 hw => ?_)
-  · simpa using rockafellarPotential_le_base hp p.1
-  · have h := chainValue_nonneg hS hw
+  · simpa using rockafellarPotential_le_sub hp p.1
+  · have h := rockafellarChainValue_nonneg hS hw
     rw [hw0] at h
     exact_mod_cast h
 
 /-- The descent inequality: moving the target from `q.1` to `x` costs the potential at most the
 cost difference along `q.2`. -/
-private theorem rockafellarPotential_le_add {p q : X × Y} (hq : q ∈ S) (x : X) :
+theorem rockafellarPotential_le_add {p q : X × Y} (hq : q ∈ S) (x : X) :
     rockafellarPotential c S p x ≤
       rockafellarPotential c S p q.1 + ((c (x, q.2) - c q : ℝ) : EReal) := by
   rw [← EReal.sub_le_iff_le_add (.inl (EReal.coe_ne_bot _)) (.inl (EReal.coe_ne_top _))]
@@ -220,11 +241,48 @@ private theorem rockafellarPotential_le_add {p q : X × Y} (hq : q ∈ S) (x : X
     · intro i
       simpa using hw i
   have h := rockafellarPotential_le (c := c) hsnoc0 hsnocmem x
-  rw [chainValue_snoc] at h
+  rw [rockafellarChainValue_snoc] at h
   calc rockafellarPotential c S p x - ((c (x, q.2) - c q : ℝ) : EReal)
-      ≤ ((chainValue c w q.1 + (c (x, q.2) - c q) : ℝ) : EReal) -
+      ≤ ((rockafellarChainValue c w q.1 + (c (x, q.2) - c q) : ℝ) : EReal) -
         ((c (x, q.2) - c q : ℝ) : EReal) := EReal.sub_le_sub h le_rfl
-    _ = (chainValue c w q.1 : EReal) := by rw [← EReal.coe_sub]; norm_num
+    _ = (rockafellarChainValue c w q.1 : EReal) := by rw [← EReal.coe_sub]; norm_num
+
+/-- **Rüschendorf's potential is a contact potential.** Every point of a `c`-cyclically monotone
+set lies in the `c`-superdifferential of the potential attached to any base point of the set. -/
+theorem IsCyclicallyMonotone.subset_cSuperdifferential_rockafellarPotential
+    (hS : IsCyclicallyMonotone c S) {p : X × Y} (hp : p ∈ S) :
+    S ⊆ cSuperdifferential c (rockafellarPotential c S p) := by
+  set φ := rockafellarPotential c S p with hφdef
+  have hstep : ∀ q ∈ S, ∀ x : X, φ x ≤ φ q.1 + ((c (x, q.2) - c q : ℝ) : EReal) :=
+    fun q hq x => rockafellarPotential_le_add hq x
+  rintro ⟨x, y⟩ hxy
+  have htop : φ x ≠ ⊤ := by
+    refine ne_top_of_le_ne_top (EReal.coe_ne_top _) (rockafellarPotential_le_sub hp x)
+  have hzero : φ p.1 = 0 := rockafellarPotential_self hS hp
+  have hbot : φ x ≠ ⊥ := by
+    intro hbot
+    have h := hstep (x, y) hxy p.1
+    rw [hbot, hzero] at h
+    simp at h
+  set b : ℝ := (φ x).toReal with hbdef
+  have hb : φ x = (b : EReal) := (EReal.coe_toReal htop hbot).symm
+  have hle : ∀ x' : X, ((c (x, y) : EReal)) - φ x ≤ (c (x', y) : EReal) - φ x' := by
+    intro x'
+    have h := hstep (x, y) hxy x'
+    rw [hb] at h ⊢
+    have hcoe : ((c (x', y) : EReal)) -
+        ((b + (c (x', y) - c (x, y)) : ℝ) : EReal) = (c (x, y) : EReal) - (b : EReal) := by
+      rw [← EReal.coe_sub, ← EReal.coe_sub, EReal.coe_eq_coe_iff]
+      ring
+    calc (c (x, y) : EReal) - (b : EReal)
+        = ((c (x', y) : ℝ) : EReal) - ((b + (c (x', y) - c (x, y)) : ℝ) : EReal) := hcoe.symm
+      _ ≤ ((c (x', y) : ℝ) : EReal) - φ x' := by
+          refine EReal.sub_le_sub le_rfl ?_
+          rw [EReal.coe_add]
+          exact h
+  have htrans : cTransform c φ y = (c (x, y) : EReal) - φ x :=
+    le_antisymm (cTransform_le c φ x y) (le_cTransform fun x' => hle x')
+  exact mem_cSuperdifferential_of_cTransform_eq hb htrans
 
 /-! ### The representation theorem -/
 
@@ -238,37 +296,7 @@ theorem IsCyclicallyMonotone.exists_isCConcave_subset_cSuperdifferential
   rcases S.eq_empty_or_nonempty with rfl | ⟨p, hp⟩
   · exact ⟨cTransformSymm c 0, isCConcave_cTransformSymm c 0, Set.empty_subset _⟩
   set φ := rockafellarPotential c S p with hφdef
-  have hstep : ∀ q ∈ S, ∀ x : X, φ x ≤ φ q.1 + ((c (x, q.2) - c q : ℝ) : EReal) :=
-    fun q hq x => rockafellarPotential_le_add hq x
-  have hsub : S ⊆ cSuperdifferential c φ := by
-    rintro ⟨x, y⟩ hxy
-    have htop : φ x ≠ ⊤ := by
-      refine ne_top_of_le_ne_top (EReal.coe_ne_top _) (rockafellarPotential_le_base hp x)
-    have hzero : φ p.1 = 0 := rockafellarPotential_self hS hp
-    have hbot : φ x ≠ ⊥ := by
-      intro hbot
-      have h := hstep (x, y) hxy p.1
-      rw [hbot, hzero] at h
-      simp at h
-    set b : ℝ := (φ x).toReal with hbdef
-    have hb : φ x = (b : EReal) := (EReal.coe_toReal htop hbot).symm
-    have hle : ∀ x' : X, ((c (x, y) : EReal)) - φ x ≤ (c (x', y) : EReal) - φ x' := by
-      intro x'
-      have h := hstep (x, y) hxy x'
-      rw [hb] at h ⊢
-      have hcoe : ((c (x', y) : EReal)) -
-          ((b + (c (x', y) - c (x, y)) : ℝ) : EReal) = (c (x, y) : EReal) - (b : EReal) := by
-        rw [← EReal.coe_sub, ← EReal.coe_sub, EReal.coe_eq_coe_iff]
-        ring
-      calc (c (x, y) : EReal) - (b : EReal)
-          = ((c (x', y) : ℝ) : EReal) - ((b + (c (x', y) - c (x, y)) : ℝ) : EReal) := hcoe.symm
-        _ ≤ ((c (x', y) : ℝ) : EReal) - φ x' := by
-            refine EReal.sub_le_sub le_rfl ?_
-            rw [EReal.coe_add]
-            exact h
-    have htrans : cTransform c φ y = (c (x, y) : EReal) - φ x :=
-      le_antisymm (cTransform_le c φ x y) (le_cTransform fun x' => hle x')
-    exact mem_cSuperdifferential_of_cTransform_eq hb htrans
+  have hsub : S ⊆ cSuperdifferential c φ := hS.subset_cSuperdifferential_rockafellarPotential hp
   refine ⟨cTransformSymm c (cTransform c φ), isCConcave_cTransformSymm _ _, fun z hz => ?_⟩
   have hz' : z ∈ contactSet c φ (cTransform c φ) := by
     rw [← cSuperdifferential_def]
