@@ -34,6 +34,8 @@ the everywhere-integral units together with the principal finite ideles.
 * `IsDedekindDomain.FiniteAdeleRing.count_coe_toFractionalIdeal`: the multiplicity of `v` in the
   fractional ideal of a finite idele is its `v`-adic order.  This is the characterizing property
   of `toFractionalIdeal`.
+* `IsDedekindDomain.FiniteAdeleRing.integralUnits_eq_units_integralAdeles`: the
+  everywhere-integral units are the unit group of the integral finite adeles.
 * `IsDedekindDomain.FiniteAdeleRing.toFractionalIdeal_surjective` and
   `IsDedekindDomain.FiniteAdeleRing.ker_toFractionalIdeal`: the fractional-ideal map is surjective
   with kernel the everywhere-integral units, so the invertible fractional ideals are the quotient
@@ -254,6 +256,15 @@ theorem mem_integralUnits_iff_forall_mem_adicCompletionIntegers {x : 𝔸ᶠ[R, 
     zero_lt_iff.mpr (valued_coe_units_apply_ne_zero x v)
   exact ⟨fun h ↦ ⟨h.le, by rw [h, inv_one]⟩,
     fun ⟨h₁, h₂⟩ ↦ le_antisymm h₁ ((inv_le_one₀ hpos).mp h₂)⟩
+
+variable (R K) in
+/-- The everywhere-integral units are the unit group of the integral finite adeles `∏_v 𝒪_v`: a
+finite idele lies in `integralUnits` exactly when it and its inverse are integral finite adeles. -/
+theorem integralUnits_eq_units_integralAdeles :
+    integralUnits R K = (integralAdeles R K).toSubmonoid.units := by
+  ext x
+  rw [mem_integralUnits_iff_forall_mem_adicCompletionIntegers, Submonoid.mem_units_iff]
+  exact forall_and.trans (and_congr mem_integralAdeles.symm mem_integralAdeles.symm)
 
 /-- The principal finite idele of a unit of `R` is an everywhere-integral unit. -/
 @[simp 1100] theorem unitEmbedding_map_algebraMap_mem_integralUnits (u : Rˣ) :

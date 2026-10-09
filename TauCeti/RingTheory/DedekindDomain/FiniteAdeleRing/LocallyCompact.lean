@@ -73,6 +73,6 @@ instance instSigmaCompactSpace [Countable R] [∀ v : HeightOneSpectrum R, Finit
       rw [mul_assoc, ← map_mul, mul_inv_cancel₀ hb', map_one, mul_one]
   rw [← isSigmaCompact_univ_iff, ← hs]
   exact isSigmaCompact_iUnion_of_isCompact _ fun b ↦
-    isCompact_integralFiniteAdeles.image (continuous_id.mul continuous_const)
+    (coe_integralAdeles R K ▸ isCompact_integralAdeles).image (continuous_id.mul continuous_const)
 
 end IsDedekindDomain.FiniteAdeleRing

@@ -65,7 +65,7 @@ theorem exists_isCompact_forall_exists_sub_algebraMap_mem :
     InfiniteAdeleRing.continuous_ringEquiv_mixedSpace_symm K
   have hD : IsCompact D :=
     (b.parallelepiped.isCompact.image he).prod
-      (FiniteAdeleRing.isCompact_integralFiniteAdeles (R := 𝓞 K) (K := K))
+      (FiniteAdeleRing.coe_integralAdeles (𝓞 K) K ▸ FiniteAdeleRing.isCompact_integralAdeles)
   refine ⟨D, hD, ?_⟩
   intro a
   -- Expose the product representation of the adele ring for the componentwise construction.

@@ -52,7 +52,8 @@ theorem eq_zero_of_forall_norm_lt_one_of_forall_mem_adicCompletionIntegers {x : 
     (hfin : ∀ v : HeightOneSpectrum (𝓞 K),
       (algebraMap K 𝔸[K] x).2 v ∈ v.adicCompletionIntegers K) :
     x = 0 := by
-  obtain ⟨a, rfl⟩ := (FiniteAdeleRing.forall_algebraMap_mem_adicCompletionIntegers_iff x).mp hfin
+  obtain ⟨a, rfl⟩ := (FiniteAdeleRing.algebraMap_mem_integralAdeles_iff (R := 𝓞 K) x).mp
+    (FiniteAdeleRing.mem_integralAdeles.mpr hfin)
   have hlt (w : InfinitePlace K) : w (algebraMap (𝓞 K) K a) < 1 :=
     (InfinitePlace.Completion.norm_coe w _).symm.trans_lt (hinf w)
   by_contra ha
@@ -80,7 +81,8 @@ instance discreteTopology_principalSubgroup :
   · obtain rfl : x = 0 := (AdeleRing.algebraMap_injective (𝓞 K) K).eq_iff.mp <| by
       simpa using congrArg Subtype.val h
     exact ⟨fun w ↦ (InfinitePlace.Completion.norm_coe w _).trans_lt (by simp),
-      (FiniteAdeleRing.forall_algebraMap_mem_adicCompletionIntegers_iff 0).mpr ⟨0, map_zero _⟩⟩
+      FiniteAdeleRing.mem_integralAdeles.mp
+        ((FiniteAdeleRing.algebraMap_mem_integralAdeles_iff (R := 𝓞 K) 0).mpr ⟨0, map_zero _⟩)⟩
   · obtain rfl := eq_zero_of_forall_norm_lt_one_of_forall_mem_adicCompletionIntegers h.1 h.2
     simp
 

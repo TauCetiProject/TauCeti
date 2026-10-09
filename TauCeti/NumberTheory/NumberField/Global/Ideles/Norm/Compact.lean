@@ -80,7 +80,9 @@ private lemma exists_isCompact_forall_exists_mul_unitEmbedding_mem :
     (NormedRing.inverse_continuousAt (hFunit x hx).unit).continuousWithinAt
   -- The finite parts: the integral finite adeles.
   let O : Set (FiniteAdeleRing (𝓞 K) K) := {a | ∀ v, a v ∈ v.adicCompletionIntegers K}
-  have hO : IsCompact O := FiniteAdeleRing.isCompact_integralFiniteAdeles
+  have hO : IsCompact O := by
+    simpa only [O, ← FiniteAdeleRing.coe_integralAdeles] using
+      FiniteAdeleRing.isCompact_integralAdeles
   let C : Set (AdeleRing (𝓞 K) K) := (e.symm '' F) ×ˢ O
   let D : Set (AdeleRing (𝓞 K) K) := (e.symm '' G) ×ˢ O
   have hC : IsCompact C :=
