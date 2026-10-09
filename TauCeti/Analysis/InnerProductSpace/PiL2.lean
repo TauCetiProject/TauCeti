@@ -39,8 +39,12 @@ distance of the coordinate vectors, which places cubes inside Euclidean balls.
 * `EuclideanSpace.preimage_ofLp_closedBall_subset_closedBall`,
   `EuclideanSpace.preimage_ofLp_ball_subset_ball`: a cube of half-side `r` lies in the
   concentric Euclidean ball of radius `√n * r`.
-* `EuclideanSpace.closedBall_subset_preimage_ofLp_closedBall`: a Euclidean ball of radius `r`
-  lies in the concentric cube of half-side `r`.
+* `PiLp.dist_ofLp_le`: the sup distance of the coordinate vectors is at most the `L^p` distance,
+  `1 ≤ p`.
+* `PiLp.closedBall_subset_preimage_ofLp_closedBall`, `PiLp.ball_subset_preimage_ofLp_ball`: a
+  ball of radius `r` in `PiLp p β`, `1 ≤ p`, lies in the concentric sup-norm ball of radius `r`;
+  for Euclidean space, in the concentric cube of half-side `r`.
+* `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
 
 ## Source
 
@@ -59,6 +63,10 @@ open scoped BigOperators
 namespace EuclideanSpace
 
 variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι]
+
+/-- The square root of the dimension of a nonzero Euclidean space is positive. -/
+theorem sqrt_card_pos [Nonempty ι] : 0 < Real.sqrt (Fintype.card ι) :=
+  Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)
 
 /--
 **`ℓ¹ ≤ √card · ℓ²` on Euclidean space.** For `x : EuclideanSpace 𝕜 ι`,
@@ -106,17 +114,32 @@ theorem preimage_ofLp_ball_subset_ball [Nonempty ι] (x : EuclideanSpace 𝕜 ι
     WithLp.ofLp ⁻¹' Metric.ball (WithLp.ofLp x) r ⊆
       Metric.ball x (Real.sqrt (Fintype.card ι) * r) := fun y hy =>
   (dist_le_sqrt_card_mul_dist_ofLp y x).trans_lt
-    (mul_lt_mul_of_pos_left hy (Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)))
-
-/-- The closed Euclidean ball of radius `r` about `x` lies in the cube of half-side `r` about
-`ofLp x`. -/
-theorem closedBall_subset_preimage_ofLp_closedBall (x : EuclideanSpace 𝕜 ι) (r : ℝ) :
-    Metric.closedBall x r ⊆ WithLp.ofLp ⁻¹' Metric.closedBall (WithLp.ofLp x) r := fun y hy => by
-  have h := (PiLp.lipschitzWith_ofLp 2 (fun _ : ι => 𝕜)).dist_le_mul y x
-  rw [NNReal.coe_one, one_mul] at h
-  exact h.trans hy
+    (mul_lt_mul_of_pos_left hy sqrt_card_pos)
 
 end EuclideanSpace
+
+namespace PiLp
+
+variable {p : ENNReal} [Fact (1 ≤ p)] {ι : Type*} [Fintype ι] {β : ι → Type*}
+  [∀ i, PseudoMetricSpace (β i)]
+
+/-- The sup distance of the coordinate vectors is at most the `L^p` distance, `1 ≤ p`. -/
+theorem dist_ofLp_le (x y : PiLp p β) : dist (WithLp.ofLp x) (WithLp.ofLp y) ≤ dist x y := by
+  simpa only [NNReal.coe_one, one_mul] using (lipschitzWith_ofLp p β).dist_le_mul x y
+
+/-- The closed ball of radius `r` about `x` lies in the closed sup-norm ball of radius `r` about
+`ofLp x`. -/
+theorem closedBall_subset_preimage_ofLp_closedBall (x : PiLp p β) (r : ℝ) :
+    Metric.closedBall x r ⊆ WithLp.ofLp ⁻¹' Metric.closedBall (WithLp.ofLp x) r := fun y hy =>
+  (dist_ofLp_le y x).trans hy
+
+/-- The open ball of radius `r` about `x` lies in the open sup-norm ball of radius `r` about
+`ofLp x`. -/
+theorem ball_subset_preimage_ofLp_ball (x : PiLp p β) (r : ℝ) :
+    Metric.ball x r ⊆ WithLp.ofLp ⁻¹' Metric.ball (WithLp.ofLp x) r := fun y hy =>
+  (dist_ofLp_le y x).trans_lt hy
+
+end PiLp
 
 namespace TauCeti
 

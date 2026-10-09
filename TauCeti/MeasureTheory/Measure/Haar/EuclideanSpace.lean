@@ -25,6 +25,8 @@ times that of the Euclidean ball of radius `r`, since that ball contains the cub
 * `EuclideanSpace.exists_map_toLp_symm_eq_smul`: an additive Haar measure is carried by `ofLp` to
   a positive finite multiple of Lebesgue measure.
 * `EuclideanSpace.measure_preimage_ofLp`: the measure of a preimage under `ofLp`.
+* `EuclideanSpace.measure_preimage_ofLp_closedBall`, `EuclideanSpace.measure_preimage_ofLp_ball`:
+  the measure of a cube.
 * `EuclideanSpace.measure_preimage_ofLp_closedBall_le`: a cube has measure at most `√nⁿ` times
   that of the Euclidean ball of the same radius.
 -/
@@ -57,22 +59,42 @@ theorem measure_preimage_ofLp {μ : Measure (EuclideanSpace ℝ ι)} {a : ℝ≥
   rw [← MeasurableEquiv.coe_toLp_symm, ← MeasurableEquiv.map_apply, he, Measure.smul_apply,
     smul_eq_mul]
 
+/-- If `ofLp` carries `μ` to `a • volume`, then `μ` gives the cube of half-side `r ≥ 0` the
+measure `a (2r)ⁿ`. -/
+theorem measure_preimage_ofLp_closedBall {μ : Measure (EuclideanSpace ℝ ι)} {a : ℝ≥0∞}
+    (he : μ.map (MeasurableEquiv.toLp 2 (ι → ℝ)).symm = a • volume) (y : ι → ℝ) {r : ℝ}
+    (hr : 0 ≤ r) :
+    μ (ofLp ⁻¹' closedBall y r) = a * ENNReal.ofReal ((2 * r) ^ Fintype.card ι) := by
+  rw [measure_preimage_ofLp he, Real.volume_pi_closedBall _ hr]
+
+/-- If `ofLp` carries `μ` to `a • volume`, then `μ` gives the open cube of half-side `r > 0` the
+measure `a (2r)ⁿ`. -/
+theorem measure_preimage_ofLp_ball {μ : Measure (EuclideanSpace ℝ ι)} {a : ℝ≥0∞}
+    (he : μ.map (MeasurableEquiv.toLp 2 (ι → ℝ)).symm = a • volume) (y : ι → ℝ) {r : ℝ}
+    (hr : 0 < r) :
+    μ (ofLp ⁻¹' ball y r) = a * ENNReal.ofReal ((2 * r) ^ Fintype.card ι) := by
+  rw [measure_preimage_ofLp he, Real.volume_pi_ball _ hr]
+
 /-- The Euclidean ball `B(x, r)` lies in the cube of half-side `r` centred at `x`, whose measure
 is at most `√nⁿ` times that of the ball. -/
 theorem measure_preimage_ofLp_closedBall_le [Nonempty ι] (μ : Measure (EuclideanSpace ℝ ι))
-    [μ.IsAddHaarMeasure] (x : EuclideanSpace ℝ ι) {r : ℝ} (hr : 0 < r) :
+    [μ.IsAddHaarMeasure] (x : EuclideanSpace ℝ ι) (r : ℝ) :
     μ (ofLp ⁻¹' closedBall (ofLp x) r) ≤
       ENNReal.ofReal (√(Fintype.card ι) ^ Fintype.card ι) * μ (ball x r) := by
   obtain ⟨a, -, -, he⟩ := exists_map_toLp_symm_eq_smul μ
-  have hs : 0 < √(Fintype.card ι : ℝ) := Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)
+  -- For `r ≤ 0` the cube is empty or a point, hence null.
+  rcases le_or_gt r 0 with hr | hr
+  · rw [measure_preimage_ofLp he, measure_mono_null (closedBall_subset_closedBall hr)
+      (by rw [closedBall_zero]; exact measure_singleton _), mul_zero]
+    exact zero_le
+  have hs : 0 < √(Fintype.card ι : ℝ) := sqrt_card_pos
   -- The ball contains the cube of half-side `r / √n`.
   have hsub : ofLp ⁻¹' ball (ofLp x) (r / √(Fintype.card ι)) ⊆ ball x r := by
     convert preimage_ofLp_ball_subset_ball x (r / √(Fintype.card ι)) using 2
     field_simp
   refine le_trans (le_of_eq ?_) (mul_le_mul_right (measure_mono hsub) _)
-  rw [measure_preimage_ofLp he, measure_preimage_ofLp he, Real.volume_pi_closedBall _ hr.le,
-    Real.volume_pi_ball _ (by positivity), mul_left_comm, ← ENNReal.ofReal_mul (by positivity),
-    ← mul_pow]
+  rw [measure_preimage_ofLp_closedBall he _ hr.le, measure_preimage_ofLp_ball he _ (by positivity),
+    mul_left_comm, ← ENNReal.ofReal_mul (by positivity), ← mul_pow]
   congr 3
   field_simp
 
