@@ -10,9 +10,10 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Ba
 /-!
 # Lifting upper-triangular invertible matrices
 
-Upper-triangular invertible matrices lift along quotient maps that reflect units. This is the
-diagonal-block lifting step for flag stabilizers: lift only the entries on and above the
-diagonal, then reflect invertibility of the determinant along the quotient map.
+Upper-triangular invertible matrices lift along surjective ring homomorphisms that reflect
+units. This is the diagonal-block lifting step for flag stabilizers: lift only the entries
+on and above the diagonal, then reflect invertibility of the determinant along the ring
+homomorphism.
 
 The entrywise construction follows
 `Matrix.SpecialLinearGroup.exists_isUpperTriangular_map_eq_of_isNilpotent` in
@@ -27,21 +28,21 @@ open Matrix
 
 variable {n : Type*} [Fintype n] [LinearOrder n] {R : Type*} [CommRing R]
 
-/-- Reduction along a quotient map that reflects units is surjective on the upper-triangular
-general linear subgroup, including for an empty index type. -/
-theorem map_quotient_mk_surjective (I : Ideal R) [IsLocalHom (Ideal.Quotient.mk I)] :
-    Function.Surjective (map (m := n) (Ideal.Quotient.mk I)) := by
+/-- A surjective ring homomorphism that reflects units induces a surjection on the
+upper-triangular general linear subgroup, including for an empty index type. -/
+theorem map_surjective {S : Type*} [CommRing S] (φ : R →+* S) [IsLocalHom φ]
+    (hφ : Function.Surjective φ) : Function.Surjective (map (m := n) φ) := by
   classical
   intro g
-  choose a ha using fun i j ↦ Ideal.Quotient.mk_surjective ((g.val : Matrix n n (R ⧸ I)) i j)
+  choose a ha using fun i j ↦ hφ ((g.val : Matrix n n S) i j)
   let M : Matrix n n R := Matrix.of fun i j ↦ if j < i then 0 else a i j
-  have hM : M.map (Ideal.Quotient.mk I) = g.val := by
+  have hM : M.map φ = g.val := by
     ext i j
     by_cases hji : j < i
     · simpa only [M, Matrix.map_apply, Matrix.of_apply, ite_eq_left hji, map_zero] using
         ((mem_iff.mp g.2) hji).symm
     · simp only [M, Matrix.map_apply, Matrix.of_apply, ite_eq_right hji, ha]
-  have hunit : IsUnit M.det := (isUnit_map_iff (Ideal.Quotient.mk I) M.det).mp (by
+  have hunit : IsUnit M.det := (isUnit_map_iff φ M.det).mp (by
     rw [RingHom.map_det, RingHom.mapMatrix_apply, hM]
     exact (Matrix.isUnit_iff_isUnit_det _).mp g.val.isUnit)
   let t : GL n R := Matrix.GeneralLinearGroup.mk'' M hunit

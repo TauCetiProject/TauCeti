@@ -14,9 +14,9 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Li
 
 A symplectic matrix preserving the standard complete isotropic flag factors as
 `diag(P, P⁻ᵀ) [1 T; 0 1]`, with `P` upper triangular and invertible and `T` symmetric.
-Both parameters lift along quotient maps that reflect units, including quotients by nilpotent
-ideals, so the flag subgroup has the infinitesimal lifting property over every commutative
-ring, including characteristic two.
+Both parameters lift along surjective ring homomorphisms that reflect units, including
+quotients by nilpotent ideals, so the flag subgroup has the infinitesimal lifting property
+over every commutative ring, including characteristic two.
 
 The factorization reuses `GLSymplecticFin.exists_gaussian_decomposition_of_isUnit_toBlocks₁₁`.
 
@@ -123,22 +123,22 @@ theorem exists_leviHom_mul_upperUnipotent (g : matrixSubgroup m (A := R)) :
   refine ⟨⟨P, hP⟩, T, hT, ?_⟩
   simpa only [hSzero, lowerUnipotent_zero, one_mul] using hfactor
 
-/-- Reduction along a quotient map that reflects units is surjective on the symplectic
+/-- A surjective ring homomorphism that reflects units induces a surjection on the symplectic
 isotropic flag subgroup. No invertibility of two is required. -/
-theorem map_quotient_mk_surjective (I : Ideal R) [IsLocalHom (Ideal.Quotient.mk I)] :
-    Function.Surjective (map m (Ideal.Quotient.mk I)) := by
+theorem map_surjective {S : Type*} [CommRing S] (φ : R →+* S) [IsLocalHom φ]
+    (hφ : Function.Surjective φ) : Function.Surjective (map m φ) := by
   classical
   intro g
   obtain ⟨P, T, hT, hg⟩ := exists_leviHom_mul_upperUnipotent g
-  obtain ⟨Q, hQ⟩ := UpperTriangularGroup.map_quotient_mk_surjective I P
-  choose a ha using fun i j ↦ Ideal.Quotient.mk_surjective (T i j)
+  obtain ⟨Q, hQ⟩ := UpperTriangularGroup.map_surjective φ hφ P
+  choose a ha using fun i j ↦ hφ (T i j)
   let U : Matrix (Fin m) (Fin m) R := Matrix.of fun i j ↦ if i ≤ j then a i j else a j i
   have hU : U.IsSymm := by
     rw [Matrix.IsSymm]
     ext i j
     simp only [Matrix.transpose_apply, U, Matrix.of_apply]
     split_ifs <;> grind
-  have hUT : U.map (Ideal.Quotient.mk I) = T := by
+  have hUT : U.map φ = T := by
     ext i j
     simp only [U, Matrix.map_apply, Matrix.of_apply]
     split_ifs with hij
