@@ -13,7 +13,7 @@ public import Mathlib.RepresentationTheory.Continuous.TopRep
 This file supplements Mathlib's restriction `TopRep.res φ` of a topological representation along a
 monoid homomorphism `φ` with its behaviour under composition: restricting along `φ` and then along
 `ψ` is restricting along `φ.comp ψ`, restricting along the identity does nothing, and so restricting
-along an isomorphism of topological groups and then along its inverse gives the representation
+along an isomorphism of topological monoids and then along its inverse gives the representation
 back.
 
 ## Main results
@@ -27,7 +27,7 @@ public section
 
 namespace TopRep
 
-variable {k G H K : Type*} [Ring k] [TopologicalSpace k] [Group G] [Group H] [Monoid K]
+variable {k G H K : Type*} [Ring k] [TopologicalSpace k] [Monoid G] [Monoid H] [Monoid K]
 
 /-- Restricting along `φ` and then along `ψ` is restricting along the composite `φ.comp ψ`. -/
 @[simp]
