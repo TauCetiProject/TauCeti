@@ -8,6 +8,10 @@ module
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Topology
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
 public import TauCeti.Analysis.Complex.AtInfinity
+import Mathlib.Analysis.Normed.Module.Connected
+import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import Mathlib.Topology.Algebra.Module.Cardinality
 
 /-!
 # Topology of the upper half-plane
@@ -31,6 +35,10 @@ preimages under it. In particular the closure of the open half-plane `{z | a < z
 closed half-plane `{z | a ≤ z.re}`, and likewise for `{z | z.re < a}`; transported by the
 `PSL(2, ℝ)`-action, this identifies the boundary of a half-plane bounded by a geodesic line.
 
+Since `w ↦ re w + exp (im w) i` is a continuous bijection from `ℂ` onto `ℍ`, the complement of a
+countable subset of `ℍ` is path connected and dense, as it is in the plane. Removing countably
+many points, such as the vertices of a tessellation, therefore keeps `ℍ` connected.
+
 ## Main declarations
 
 * `Real.nhdsWithin_upperHalfPlaneSet_neBot`.
@@ -46,6 +54,8 @@ closed half-plane `{z | a ≤ z.re}`, and likewise for `{z | z.re < a}`; transpo
 * `TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff`.
 * `TauCeti.UpperHalfPlane.closure_preimage_re`, `closure_setOfPred_lt_re`,
   `closure_setOfPred_re_lt`.
+* `Set.Countable.isPathConnected_compl_upperHalfPlane`,
+  `Set.Countable.dense_compl_upperHalfPlane`: complements of countable sets.
 
 ## References
 
@@ -257,6 +267,38 @@ theorem closure_setOfPred_re_lt (a : ℝ) : closure {z : ℍ | z.re < a} = {z : 
   -- `re ⁻¹' Set.Iic a` unfolds to `{z | z.re ≤ a}` for the same reason, in the other direction.
   rfl
 
+/-- There is a continuous bijection from `ℂ` onto `ℍ`, namely `w ↦ re w + exp (im w) i`. -/
+theorem exists_continuous_bijective_complex :
+    ∃ f : ℂ → ℍ, Continuous f ∧ Function.Bijective f := by
+  refine ⟨fun w ↦ ⟨w.re + Real.exp w.im * Complex.I,
+    by simp [-Complex.ofReal_exp, Real.exp_pos]⟩, by fun_prop, fun w w' h ↦ ?_, fun z ↦
+    ⟨z.re + Real.log z.im * Complex.I, UpperHalfPlane.ext (by
+      apply Complex.ext <;> simp [-Complex.ofReal_exp, Real.exp_log z.im_pos])⟩⟩
+  have h' := congrArg (fun z : ℍ ↦ (z : ℂ)) h
+  apply Complex.ext
+  · simpa [-Complex.ofReal_exp] using congrArg Complex.re h'
+  · simpa [-Complex.ofReal_exp] using congrArg Complex.im h'
+
 end TauCeti.UpperHalfPlane
+
+namespace Set.Countable
+
+/-- The complement of a countable subset of the upper half-plane is path connected, the analogue
+for `ℍ` of `Set.Countable.isPathConnected_compl_of_one_lt_rank`. -/
+theorem isPathConnected_compl_upperHalfPlane {s : Set ℍ} (hs : s.Countable) :
+    IsPathConnected sᶜ := by
+  obtain ⟨f, hf, hinj, hsurj⟩ := TauCeti.UpperHalfPlane.exists_continuous_bijective_complex
+  have := ((hs.preimage hinj).isPathConnected_compl_of_one_lt_rank
+    (by rw [Complex.rank_real_complex]; exact Nat.one_lt_ofNat)).image hf
+  rwa [← preimage_compl, image_preimage_eq _ hsurj] at this
+
+/-- The complement of a countable subset of the upper half-plane is dense, the analogue for `ℍ`
+of `Set.Countable.dense_compl`. -/
+theorem dense_compl_upperHalfPlane {s : Set ℍ} (hs : s.Countable) : Dense sᶜ := by
+  obtain ⟨f, hf, hinj, hsurj⟩ := TauCeti.UpperHalfPlane.exists_continuous_bijective_complex
+  have := hsurj.denseRange.dense_image hf ((hs.preimage hinj).dense_compl ℝ)
+  rwa [← preimage_compl, image_preimage_eq _ hsurj] at this
+
+end Set.Countable
 
 end

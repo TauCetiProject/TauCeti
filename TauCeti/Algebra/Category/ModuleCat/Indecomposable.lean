@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import TauCeti.CategoryTheory.Preadditive.Indecomposable
 public import TauCeti.RingTheory.KrullSchmidt.Indecomposable
+import Mathlib.RingTheory.LocalRing.RingHom.Basic
 
 /-!
 # Indecomposable modules are the indecomposable objects of `ModuleCat`
@@ -78,7 +79,6 @@ finite length is indecomposable exactly when its ring of endomorphisms in the ca
 theorem indecomposable_iff_isLocalRing_end (M : ModuleCat.{v} A) (hM : IsFiniteLength A M) :
     Indecomposable M ↔ IsLocalRing (End M) := by
   rw [indecomposable_iff_isIndecomposableModule, isIndecomposableModule_iff_isLocalRing_end hM]
-  exact ⟨fun _ ↦ IsLocalRing.of_ringEquiv M.endRingEquiv.symm,
-    fun _ ↦ IsLocalRing.of_ringEquiv M.endRingEquiv⟩
+  exact ⟨fun _ ↦ M.endRingEquiv.symm.isLocalRing, fun _ ↦ M.endRingEquiv.isLocalRing⟩
 
 end TauCeti

@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.GeneratorRelations
 public import TauCeti.RepresentationTheory.Spin.Polarization.Split.Odd
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.KostantLattice
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.SpinWeight
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.KostantForm
 public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
@@ -86,7 +84,9 @@ noncomputable abbrev polarizationBasis := TauCeti.splitOddBasis ℚ (n + 1)
 /-- The distinguished norm-one vector in the orthogonal remainder. -/
 noncomputable abbrev remainderOne := TauCeti.splitOddRemainderOne ℚ (n + 1)
 
-/-- The rational spin representation of the numbered type-`Bₙ₊₁` generators. -/
+/-- The rational spin representation of the split type-`Bₙ₊₁` matrix Lie algebra
+`LieAlgebra.Orthogonal.typeB (Fin (n + 1)) ℚ`, extended to its universal enveloping algebra. It
+acts on the exterior algebra of the first isotropic summand of the split polarization. -/
 noncomputable abbrev rep :=
   (polarization n).typeBSpinRep (polarizationBasis n) (remainderOne n)
     (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
@@ -507,7 +507,9 @@ instance isClosedImmersion_weightTorus :
   isClosedImmersion_kostantWeightTorusToToral _ _ _ _ _ _ _ _
     (span_range_basisWeight_eq_top n)
 
-/-- Morphisms out of the carrier agree on its root subgroups and weight torus. -/
+/-- Two morphisms from the type-`Bₙ₊₁` spin carrier to the affine group scheme of a commutative
+Hopf `ℤ`-algebra agree when they agree on every numbered root subgroup of the carrier and on its
+weight torus. -/
 @[ext]
 theorem groupScheme_hom_ext {Y : _root_.CommHopfAlgCat.{0} ℤ}
     (f g : groupScheme n ⟶
