@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Norm
+public import Mathlib.RingTheory.LaurentSeries
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.PowTrace
+public import TauCeti.FieldTheory.RatFunc.Mobius
 public import TauCeti.RingTheory.PowerSeries.Log
 -- Proof-only: the Hasse bound `a_q² ≤ 4q`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.HasseBound
@@ -36,12 +38,19 @@ power sums `∑ (1 + qⁿ - tₙ) Tⁿ / n` with such a sequence `t` is this rat
 (`PowerSeries.subst_exp_mul_one_sub_X_mul_one_sub_C_mul_X`). No roots of `T² - a_q T + q` are
 introduced.
 
+The closed form is an element `zetaRatFunc` of the rational function field `ℚ(T)`, whose Laurent
+expansion is `Z(W/F, T)`. The functional equation `Z(W/F, 1 / (q T)) = Z(W/F, T)` is an identity
+in `ℚ(T)`, for the substitution `T ↦ 1 / (q T)` is the linear fractional transformation of `ℚ(T)`
+with coefficient matrix `!![0, 1; q, 0]` but is not an operation on power series.
+
 The Hasse bound `a_q² ≤ 4q` then gives the Riemann hypothesis for `W`: every complex zero of the
 numerator `1 - a_q T + q T²` has absolute value `q^{-1/2}`.
 
 ## Main definitions
 
 * `WeierstrassCurve.zetaFunction`: the zeta function `Z(W/F, T) ∈ ℚ⟦T⟧`.
+* `WeierstrassCurve.zetaRatFunc`: the rational function `(1 - a_q T + q T²) / ((1 - T) (1 - q T))`
+  in `ℚ(T)`.
 
 ## Main results
 
@@ -52,6 +61,9 @@ numerator `1 - a_q T + q T²` has absolute value `q^{-1/2}`.
 * `WeierstrassCurve.zetaFunction_mul_one_sub_X_mul_one_sub_C_mul_X` and
   `WeierstrassCurve.zetaFunction_eq_mul_inv`: rationality,
   `Z(W/F, T) = (1 - a_q T + q T²) / ((1 - T) (1 - q T))`.
+* `WeierstrassCurve.coe_zetaRatFunc`: the Laurent expansion of `zetaRatFunc` is `Z(W/F, T)`.
+* `WeierstrassCurve.mobiusAutOf_zetaRatFunc`: the functional equation,
+  `Z(W/F, 1 / (q T)) = Z(W/F, T)` in `ℚ(T)`.
 * `WeierstrassCurve.norm_eq_inv_sqrt_card_of_one_sub_frobeniusTrace_mul_add_card_mul_sq_eq_zero`:
   the Riemann hypothesis, the zeros of `1 - a_q T + q T²` have absolute value `q^{-1/2}`.
 
@@ -63,8 +75,67 @@ numerator `1 - a_q T + q T²` has absolute value `q^{-1/2}`.
 public section
 
 open TauCeti TauCeti.Isogeny PowerSeries
+open scoped LaurentSeries
 
 namespace WeierstrassCurve
+
+section RatFunc
+
+variable {F : Type*} [Field F] [Finite F] (W : WeierstrassCurve F)
+
+/-- **The zeta function as a rational function**: the element
+`(1 - a_q T + q T²) / ((1 - T) (1 - q T))` of `ℚ(T)`, where `q` is the number of elements of `F`
+and `a_q` the Frobenius trace of `W`.
+
+For an elliptic curve its Laurent expansion is the zeta function `Z(W/F, T)` (`coe_zetaRatFunc`).
+Like the Frobenius trace, the formula is defined at every Weierstrass model, but only at an
+elliptic one is it a zeta function. -/
+noncomputable def zetaRatFunc : RatFunc ℚ :=
+  (1 - RatFunc.C (W.frobeniusTrace : ℚ) * RatFunc.X + RatFunc.C (Nat.card F : ℚ) * RatFunc.X ^ 2) /
+    ((1 - RatFunc.X) * (1 - RatFunc.C (Nat.card F : ℚ) * RatFunc.X))
+
+/-- The defining equation of `zetaRatFunc`. -/
+theorem zetaRatFunc_def : W.zetaRatFunc =
+    (1 - RatFunc.C (W.frobeniusTrace : ℚ) * RatFunc.X +
+        RatFunc.C (Nat.card F : ℚ) * RatFunc.X ^ 2) /
+      ((1 - RatFunc.X) * (1 - RatFunc.C (Nat.card F : ℚ) * RatFunc.X)) :=
+  (rfl)
+
+/-- **The functional equation of the zeta function** (Silverman V.2.4):
+`Z(W/F, 1 / (q T)) = Z(W/F, T)` in `ℚ(T)`, where `q` is the number of elements of `F`. The
+substitution `T ↦ 1 / (q T)` is the linear fractional transformation with coefficient matrix
+`!![0, 1; q, 0]`. -/
+theorem mobiusAutOf_zetaRatFunc :
+    RatFunc.mobiusAutOf (a := 0) (b := 1) (c := (Nat.card F : ℚ)) (d := 0)
+      (by simpa using (Nat.card_pos (α := F)).ne') W.zetaRatFunc = W.zetaRatFunc := by
+  set σ := RatFunc.mobiusAutOf (a := 0) (b := 1) (c := (Nat.card F : ℚ)) (d := 0)
+    (by simpa using (Nat.card_pos (α := F)).ne')
+  have hX : (RatFunc.X : RatFunc ℚ) ≠ 0 := RatFunc.X_ne_zero
+  have hq : RatFunc.C (Nat.card F : ℚ) ≠ 0 := by simpa using (Nat.card_pos (α := F)).ne'
+  have hσX : σ RatFunc.X = 1 / (RatFunc.C (Nat.card F : ℚ) * RatFunc.X) := by
+    simp [σ, RatFunc.mobiusOf_def]
+  -- `σ` fixes the constants; `AlgEquiv.commutes` does not apply, since the `ℚ`-algebra structure
+  -- of `ℚ(T)` it would synthesize is not the one `σ` is linear over
+  have hσC (c : ℚ) : σ (RatFunc.C c) = RatFunc.C c := by
+    rw [eq_ratCast RatFunc.C, map_ratCast]
+  -- the numerator and the denominator are both divided by `q T²`
+  have hN : σ (1 - RatFunc.C (W.frobeniusTrace : ℚ) * RatFunc.X +
+      RatFunc.C (Nat.card F : ℚ) * RatFunc.X ^ 2) =
+      (1 - RatFunc.C (W.frobeniusTrace : ℚ) * RatFunc.X +
+        RatFunc.C (Nat.card F : ℚ) * RatFunc.X ^ 2) /
+          (RatFunc.C (Nat.card F : ℚ) * RatFunc.X ^ 2) := by
+    simp only [map_add, map_sub, map_mul, map_pow, map_one, hσX, hσC]
+    field_simp
+    ring
+  have hD : σ ((1 - RatFunc.X) * (1 - RatFunc.C (Nat.card F : ℚ) * RatFunc.X)) =
+      (1 - RatFunc.X) * (1 - RatFunc.C (Nat.card F : ℚ) * RatFunc.X) /
+          (RatFunc.C (Nat.card F : ℚ) * RatFunc.X ^ 2) := by
+    simp only [map_sub, map_mul, map_one, hσX, hσC]
+    field_simp
+    ring
+  rw [zetaRatFunc_def, map_div₀, hN, hD, div_div_div_cancel_right₀ (by positivity)]
+
+end RatFunc
 
 variable {F : Type*} [Field F] [Finite F] (W : WeierstrassCurve F) [W.IsElliptic]
 
@@ -148,6 +219,25 @@ theorem zetaFunction_eq_mul_inv :
   have hP : constantCoeff ((1 - X) * (1 - C (Nat.card F : ℚ) * X) : ℚ⟦X⟧) ≠ 0 := by simp
   rw [← W.zetaFunction_mul_one_sub_X_mul_one_sub_C_mul_X, mul_assoc,
     PowerSeries.mul_inv_cancel _ hP, mul_one]
+
+/-- **The zeta function is the Laurent expansion of `zetaRatFunc`**: the rational function
+`(1 - a_q T + q T²) / ((1 - T) (1 - q T))` in `ℚ(T)` expands to `Z(W/F, T)` in `ℚ⸨T⸩`. Since the
+expansion map `ℚ(T) → ℚ⸨T⸩` is injective, `zetaRatFunc` is the only rational function with this
+expansion. -/
+theorem coe_zetaRatFunc : (W.zetaRatFunc : ℚ⸨X⸩) = (W.zetaFunction : ℚ⸨X⸩) := by
+  have hN : ((1 - RatFunc.C (W.frobeniusTrace : ℚ) * RatFunc.X +
+      RatFunc.C (Nat.card F : ℚ) * RatFunc.X ^ 2 : RatFunc ℚ) : ℚ⸨X⸩) =
+      ((1 - C (W.frobeniusTrace : ℚ) * X + C (Nat.card F : ℚ) * X ^ 2 : ℚ⟦X⟧) : ℚ⸨X⸩) := by
+    simp
+  have hD : (((1 - RatFunc.X) * (1 - RatFunc.C (Nat.card F : ℚ) * RatFunc.X) : RatFunc ℚ) :
+      ℚ⸨X⸩) = (((1 - X) * (1 - C (Nat.card F : ℚ) * X) : ℚ⟦X⟧) : ℚ⸨X⸩) := by
+    simp
+  have hD0 : ((1 - X) * (1 - C (Nat.card F : ℚ) * X) : ℚ⟦X⟧) ≠ 0 := by
+    intro h0
+    simpa using congrArg constantCoeff h0
+  rw [zetaRatFunc_def, map_div₀, hN, hD, div_eq_iff ((map_ne_zero_iff _
+    HahnSeries.ofPowerSeries_injective).2 hD0), ← map_mul,
+    W.zetaFunction_mul_one_sub_X_mul_one_sub_C_mul_X]
 
 /-- **The Riemann hypothesis for an elliptic curve over a finite field** (Silverman V.2.4): every
 complex zero `z` of the numerator `1 - a_q T + q T²` of the zeta function has `|z| = q^{-1/2}`,
