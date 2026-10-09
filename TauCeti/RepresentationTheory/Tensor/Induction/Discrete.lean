@@ -124,8 +124,11 @@ noncomputable def tensorInducedMap {A B : DiscreteRep.{u, v, w} R U} (f : A ⟶ 
   f.tensorInduced s
 
 /-- The underlying linear map of a discrete tensor-induced morphism is the tensor of the
-original linear map. -/
-@[simp] theorem tensorInducedMap_toLinearMap {A B : DiscreteRep.{u, v, w} R U} (f : A ⟶ B) :
+original linear map.
+
+This is an explicit rewrite lemma so that `tensorInducedMap_apply_tprod` remains the simp
+normal form for evaluation on pure tensors. -/
+theorem tensorInducedMap_toLinearMap {A B : DiscreteRep.{u, v, w} R U} (f : A ⟶ B) :
     (tensorInducedMap U hU s f).toLinearMap = PiTensorProduct.map fun _ ↦ f.toLinearMap :=
   Representation.IntertwiningMap.tensorInduced_toLinearMap f s
 
