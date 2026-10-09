@@ -65,13 +65,12 @@ instance instSigmaCompactSpace [Countable R] [∀ v : HeightOneSpectrum R, Finit
   -- Every finite adele has a common denominator `b`, so it lies in `s b`.
   have hs : ⋃ b, s b = Set.univ := by
     refine Set.eq_univ_of_forall fun a ↦ Set.mem_iUnion.mpr ?_
-    obtain ⟨b, hb0, hb⟩ := mul_nonZeroDivisor_mem_adicCompletionIntegers a
+    obtain ⟨b, hb0, hb⟩ := mul_nonZeroDivisor_mem_integralAdeles a
     have hb' : algebraMap R K b ≠ 0 := IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hb0
-    refine ⟨b, a * algebraMap K (FiniteAdeleRing R K) (algebraMap R K b),
-      mem_integralAdeles.mpr fun v ↦ ?_, ?_⟩
-    · simpa [IsScalarTower.algebraMap_apply R K (v.adicCompletion K)] using hb v
-    · dsimp only
-      rw [mul_assoc, ← map_mul, mul_inv_cancel₀ hb', map_one, mul_one]
+    rw [IsScalarTower.algebraMap_apply R K] at hb
+    refine ⟨b, _, hb, ?_⟩
+    dsimp only
+    rw [mul_assoc, ← map_mul, mul_inv_cancel₀ hb', map_one, mul_one]
   rw [← isSigmaCompact_univ_iff, ← hs]
   exact isSigmaCompact_iUnion_of_isCompact _ fun b ↦
     isCompact_integralAdeles.image (continuous_id.mul continuous_const)

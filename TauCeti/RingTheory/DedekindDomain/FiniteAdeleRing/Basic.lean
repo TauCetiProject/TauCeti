@@ -52,8 +52,8 @@ approximates `a`.
   at a finite place into the finite adeles is continuous.
 * `IsDedekindDomain.FiniteAdeleRing.algebraMap_mem_integralAdeles_iff`: the diagonal image of
   `x : K` is an integral finite adele if and only if `x` lies in `R`.
-* `IsDedekindDomain.FiniteAdeleRing.mul_nonZeroDivisor_mem_adicCompletionIntegers`: a finite adele
-  has a common denominator in `R`.
+* `IsDedekindDomain.FiniteAdeleRing.mul_nonZeroDivisor_mem_integralAdeles`: a finite adele has a
+  common denominator in `R`.
 * `IsDedekindDomain.FiniteAdeleRing.exists_forall_valued_sub_le_and_forall_valued_sub_le_one`:
   strong approximation with explicit precision at finitely many places and integrality everywhere.
 * `IsDedekindDomain.FiniteAdeleRing.denseRange_algebraMap`: `K` is dense in the finite adele ring.
@@ -199,7 +199,9 @@ theorem isCompact_integralAdeles
   exact isCompact_range (continuous_integralEmbedding (R := R) (K := K))
 
 /-- The diagonal image of an element of `K` in the finite adele ring is integral exactly when the
-element lies in `R`: the integral finite adeles meet `K` in `R`. -/
+element lies in `R`: the integral finite adeles meet `K` in `R`. It takes priority over the
+place-by-place unfolding `mem_integralAdeles` as a `simp` lemma. -/
+@[simp high]
 theorem algebraMap_mem_integralAdeles_iff (x : K) :
     algebraMap K (FiniteAdeleRing R K) x ∈ integralAdeles R K ↔ x ∈ (algebraMap R K).range := by
   simp only [mem_integralAdeles, algebraMap_apply, mem_adicCompletionIntegers,
@@ -222,16 +224,17 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R] {K : Type*} [Field K] [Al
 namespace FiniteAdeleRing
 
 /-- **A finite adele has a common denominator**: some nonzero divisor `b` of `R` makes `a * b`
-integral at every place. -/
-theorem mul_nonZeroDivisor_mem_adicCompletionIntegers (a : FiniteAdeleRing R K) :
-    ∃ b ∈ nonZeroDivisors R,
-      ∀ v, a v * algebraMap R (v.adicCompletion K) b ∈ v.adicCompletionIntegers K := by
+an integral finite adele. -/
+theorem mul_nonZeroDivisor_mem_integralAdeles (a : FiniteAdeleRing R K) :
+    ∃ b ∈ nonZeroDivisors R, a * algebraMap R (FiniteAdeleRing R K) b ∈ integralAdeles R K := by
   classical
   -- `a` is integral outside a finite set of places, and each of those has its own denominator
   have hT : {v | a v ∉ v.adicCompletionIntegers K}.Finite := Filter.eventually_cofinite.mp a.2
   choose b hb0 hb using fun v ↦
     adicCompletion.mul_nonZeroDivisor_mem_adicCompletionIntegers v (a v)
-  refine ⟨∏ v ∈ hT.toFinset, b v, prod_mem fun v _ ↦ hb0 v, fun v ↦ ?_⟩
+  refine ⟨∏ v ∈ hT.toFinset, b v, prod_mem fun v _ ↦ hb0 v, mem_integralAdeles.mpr fun v ↦ ?_⟩
+  -- by definition, the `v`-component of `algebraMap R 𝔸ᶠ[R, K] b` is `algebraMap R K_v b`
+  change a v * algebraMap R (v.adicCompletion K) _ ∈ _
   by_cases hv : v ∈ hT.toFinset
   · rw [← Finset.mul_prod_erase _ _ hv, map_mul, ← mul_assoc]
     exact mul_mem (hb v) (v.coe_mem_adicCompletionIntegers _)
@@ -247,7 +250,11 @@ theorem exists_forall_valued_sub_le_and_forall_valued_sub_le_one (a : FiniteAdel
       ∀ v, Valued.v (algebraMap K (v.adicCompletion K) x - a v) ≤ 1 := by
   classical
   -- `a` has a common denominator `d`
-  obtain ⟨d, hd0, hda⟩ := mul_nonZeroDivisor_mem_adicCompletionIntegers a
+  obtain ⟨d, hd0, hda⟩ := mul_nonZeroDivisor_mem_integralAdeles a
+  -- by definition, the `v`-component of `algebraMap R 𝔸ᶠ[R, K] d` is `algebraMap R K_v d`
+  replace hda (v : HeightOneSpectrum R) :
+      a v * algebraMap R (v.adicCompletion K) d ∈ v.adicCompletionIntegers K :=
+    mem_integralAdeles.mp hda v
   replace hd0 : d ≠ 0 := nonZeroDivisors.ne_zero hd0
   -- `d` is a unit outside the finite set `D` of primes dividing it
   have hD : {v : HeightOneSpectrum R | v.asIdeal ∣ Ideal.span {d}}.Finite :=
@@ -395,7 +402,7 @@ noncomputable def quotientEquivQuotientIntegralAdeles :
     exact ⟨x, (Submodule.Quotient.eq _).mpr hx⟩
   have hker : LinearMap.ker f = 1 := by
     ext x
-    simp [f, -mem_integralAdeles, algebraMap_mem_integralAdeles_iff, Submodule.mem_one]
+    simp [f, Submodule.mem_one]
   (Submodule.quotEquivOfEq _ _ hker.symm).trans (f.quotKerEquivOfSurjective hf)
 
 /-- The isomorphism `K / R ≃ 𝔸ᶠ / ∏_v 𝒪_v` sends the class of `x` to the class of its diagonal
