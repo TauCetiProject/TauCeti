@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Coinduced
+public import TauCeti.RepresentationTheory.Coinduced
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.DecompositionGroup
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Basic
-public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Galois
+public import TauCeti.Algebra.TensorProduct.BaseChange
 public import TauCeti.NumberTheory.RamificationInertia.Galois
 
 /-!
@@ -16,11 +16,11 @@ public import TauCeti.NumberTheory.RamificationInertia.Galois
 
 Let `L/K` be an extension of number fields and `v` a finite place of `K`. An automorphism `σ` of
 `L/K` acts on the semi-local algebra `K_v ⊗[K] L` through the second factor, by `id ⊗ σ`; this is
-`TauCeti.semilocalGaloisHom`, defined for an arbitrary base algebra. Under the semi-local
-decomposition `K_v ⊗[K] L ≃ ∏_{w ∣ v} L_w` it permutes the factors: the component at `σ • w` of
-`(id ⊗ σ) z` is the component of `z` at `w`, transported along the isomorphism of completions
-`L_w ≃ L_{σ • w}` induced by `σ` (`semilocalEquiv_semilocalGaloisHom`). This is the action under
-which the adelic Galois action of `L/K` restricts to the components above `v`
+the base change `TauCeti.Algebra.TensorProduct.baseChangeAutHom` of `σ` to `K_v`. Under the
+semi-local decomposition `K_v ⊗[K] L ≃ ∏_{w ∣ v} L_w` it permutes the factors: the component at
+`σ • w` of `(id ⊗ σ) z` is the component of `z` at `w`, transported along the isomorphism of
+completions `L_w ≃ L_{σ • w}` induced by `σ` (`semilocalEquiv_baseChangeAutHom`). This is the
+action under which the adelic Galois action of `L/K` restricts to the components above `v`
 (`TauCeti.finiteAdeleSemilocalHom_finiteAdeleEquiv`).
 
 When `L/K` is Galois, the Galois group permutes the places above `v` transitively, and the
@@ -33,7 +33,7 @@ representations of `Gal(L/K)`,
 ```
 
 the map sending `y` to the function `g ↦ ((id ⊗ g) y)_w` (`semilocalUnitsCoindIso`); its
-bijectivity is an instance of `TauCeti.semilocal_resCoindToHom_bijective`. Shapiro's
+bijectivity is an instance of `TauCeti.resCoindToHom_bijective_of_transport`. Shapiro's
 lemma therefore computes the cohomology of the semi-local units from the local Galois
 cohomology of `L_wˣ`.
 
@@ -50,7 +50,7 @@ cohomology of `L_wˣ`.
 
 ## Main results
 
-* `TauCeti.semilocalEquiv_semilocalGaloisHom`: under the semi-local decomposition, `id ⊗ σ`
+* `TauCeti.semilocalEquiv_baseChangeAutHom`: under the semi-local decomposition, `id ⊗ σ`
   carries the factor at `w` to the factor at `σ • w` by the isomorphism of completions.
 * `TauCeti.semilocalUnitsCoindIso`: the semi-local units are coinduced from one completion.
 
@@ -80,15 +80,15 @@ variable {K : Type*} [Field K] [NumberField K] {L : Type*} [Field L] [NumberFiel
 /-- **The Galois action permutes the semi-local factors.** If `σ` carries the place `w` above `v`
 to `w'`, then the component at `w'` of `(id ⊗ σ) z` is the component of `z` at `w`, transported
 along the isomorphism of completions `L_w ≃ L_{w'}` induced by `σ`. -/
-theorem semilocalEquiv_semilocalGaloisHom (σ : L ≃ₐ[K] L)
+theorem semilocalEquiv_baseChangeAutHom (σ : L ≃ₐ[K] L)
     {w w' : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}}
     (h : w'.1.asIdeal = σ • w.1.asIdeal) (z : v.adicCompletion K ⊗[K] L) :
-    semilocalEquiv L v (semilocalGaloisHom (v.adicCompletion K) L σ z) w' =
+    semilocalEquiv L v (Algebra.TensorProduct.baseChangeAutHom (v.adicCompletion K) L σ z) w' =
       completionCongr v σ h (semilocalEquiv L v z w) := by
   induction z using TensorProduct.inductionOn with
   | tmul a x =>
-    rw [semilocalGaloisHom_tmul, semilocalEquiv_tmul, semilocalEquiv_tmul, map_mul,
-      AlgEquiv.commutes, completionCongr_algebraMap]
+    rw [Algebra.TensorProduct.baseChangeAutHom_tmul, semilocalEquiv_tmul, semilocalEquiv_tmul,
+      map_mul, AlgEquiv.commutes, completionCongr_algebraMap]
   | add x y hx hy => simp [map_add, hx, hy]
 
 end GaloisHom
@@ -101,9 +101,9 @@ variable {K : Type u} [Field K] [NumberField K] (L : Type u) [Field L] [NumberFi
   [Algebra K L] (v : HeightOneSpectrum (𝒪 K))
 
 /-- The units of the semi-local algebra `K_v ⊗[K] L`, as an integral representation of
-`Aut(L/K)` acting through `semilocalGaloisHom`. -/
+`Aut(L/K)` acting through `Algebra.TensorProduct.baseChangeAutHom`. -/
 abbrev semilocalUnitsRep : Rep ℤ (L ≃ₐ[K] L) :=
-  Rep.res (semilocalGaloisHom (v.adicCompletion K) L)
+  Rep.res (Algebra.TensorProduct.baseChangeAutHom (v.adicCompletion K) L)
     (Rep.ofAlgebraAutOnUnits (v.adicCompletion K) (v.adicCompletion K ⊗[K] L))
 
 variable {L} (w : HeightOneSpectrum (𝒪 L)) [w.asIdeal.LiesOver v.asIdeal]
@@ -126,7 +126,7 @@ private def semilocalUnitsComponent :
     fun d ↦ LinearMap.ext fun y : Additive (v.adicCompletion K ⊗[K] L)ˣ ↦
       Additive.toMul.injective <| Units.ext <|
         -- an element of the decomposition group fixes `w`, so it acts on the factor at `w`
-        (semilocalEquiv_semilocalGaloisHom (w := ⟨w, ‹_›⟩) (w' := ⟨w, ‹_›⟩) (d : L ≃ₐ[K] L)
+        (semilocalEquiv_baseChangeAutHom (w := ⟨w, ‹_›⟩) (w' := ⟨w, ‹_›⟩) (d : L ≃ₐ[K] L)
           (MulAction.mem_stabilizer_iff.mp d.2).symm _).trans
             (DFunLike.congr_fun (decompositionHom_apply d) _).symm⟩
 
@@ -143,7 +143,8 @@ theorem semilocalUnitsToCoind_apply (y : (v.adicCompletion K ⊗[K] L)ˣ) (g : L
     ((Additive.toMul (α := (w.adicCompletion L)ˣ)
       (((semilocalUnitsToCoind v w).hom (Additive.ofMul y)).1 g) : (w.adicCompletion L)ˣ) :
         w.adicCompletion L) =
-      semilocalEquiv L v (semilocalGaloisHom (v.adicCompletion K) L g y) ⟨w, ‹_›⟩ :=
+      semilocalEquiv L v (Algebra.TensorProduct.baseChangeAutHom (v.adicCompletion K) L g y)
+        ⟨w, ‹_›⟩ :=
   (rfl)
 
 /-- For `L/K` Galois, every place above `v` is carried to `w` by some automorphism. -/
@@ -168,14 +169,14 @@ private theorem exists_place_asIdeal_eq_smul (g : L ≃ₐ[K] L) :
 of the units of the completions above `v`, which `id ⊗ g` permutes through `completionCongr`. -/
 private theorem semilocalUnitsToCoind_bijective [IsGalois K L] :
     Function.Bijective (semilocalUnitsToCoind v w).hom :=
-  semilocal_resCoindToHom_bijective
+  resCoindToHom_bijective_of_transport
     (p := fun i : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal} ↦ i.1.asIdeal)
     (w := ⟨w, ‹_›⟩) (M := fun i ↦ (i.1.adicCompletion L)ˣ)
     (T := fun g _ _ h ↦ (Units.mapEquiv (completionCongr v g h).toMulEquiv).toEquiv)
     (semilocalUnitsComponent v w)
     (Additive.toMul.trans
       ((Units.mapEquiv (semilocalEquiv L v).toMulEquiv).trans MulEquiv.piUnits).toEquiv)
-    (fun g y _ _ h ↦ Units.ext (semilocalEquiv_semilocalGaloisHom g h
+    (fun g y _ _ h ↦ Units.ext (semilocalEquiv_baseChangeAutHom g h
       (Additive.toMul (α := (v.adicCompletion K ⊗[K] L)ˣ) y).1)) Additive.toMul (fun _ ↦ rfl)
     (fun d a ↦ Units.ext (DFunLike.congr_fun (decompositionHom_apply (v := v) (w := w) d)
       (Additive.toMul (α := (w.adicCompletion L)ˣ) a).1))

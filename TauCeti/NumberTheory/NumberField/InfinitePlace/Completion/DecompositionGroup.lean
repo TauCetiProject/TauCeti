@@ -91,15 +91,6 @@ instance liesOver_smul (v : InfinitePlace K) (σ : L ≃ₐ[K] L) (w : InfiniteP
     simp
   exact ⟨congrArg Subtype.val h⟩
 
-/-- Two continuous maps out of `L_w` into a Hausdorff space agree once they agree on `L`. -/
-private theorem completion_funext {w : InfinitePlace L} {B : Type*} [TopologicalSpace B]
-    [T2Space B] {f g : w.Completion → B} (hf : Continuous f) (hg : Continuous g)
-    (h : ∀ x : L, f (algebraMap L w.Completion x) = g (algebraMap L w.Completion x)) : f = g := by
-  funext a
-  induction a using Completion.induction_on with
-  | hp => exact isClosed_eq hf hg
-  | ih a => exact h a.ofAbs
-
 /-- `σ` is an isometry from `L` with the absolute value `w` to `L` with the absolute value
 `σ • w`. -/
 private theorem isometry_withAbsCongr (σ : L ≃ₐ[K] L) {w w' : InfinitePlace L}
@@ -169,7 +160,7 @@ theorem eq_completionCongr_of_continuous (σ : L ≃ₐ[K] L) (h : w' = σ • w
     {f : w.Completion → w'.Completion} (hf : Continuous f)
     (hfL : ∀ x : L, f (algebraMap L w.Completion x) = algebraMap L w'.Completion (σ x)) :
     f = completionCongr v σ h :=
-  completion_funext hf (continuous_completionCongr v σ h) fun x ↦ by
+  Completion.funext_of_continuous hf (continuous_completionCongr v σ h) fun x ↦ by
     rw [hfL, Completion.algebraMap_apply, Completion.algebraMap_apply,
       completionCongr_algebraMap]
 
