@@ -73,7 +73,6 @@ theorem coe_rankOneDualGen : ((rankOneDualGen a : (rankOne a).dualCarrier) : ℚ
   (rfl)
 
 /-- Integer multiples of the dual generator have value `k/a`. -/
-@[simp]
 theorem coe_zsmul_rankOneDualGen (k : ℤ) :
     ((k • rankOneDualGen a : (rankOne a).dualCarrier) : ℚ) = k / a := by
   rw [SetLike.val_smul, coe_rankOneDualGen, zsmul_eq_mul]
@@ -182,7 +181,6 @@ theorem natCard_rankOne_discriminantGroup :
   rw [natCard_discriminantGroup, rankOne_discriminant]
 
 /-- The discriminant pairing on arbitrary multiples of the generator. -/
-@[simp]
 theorem discriminantPairing_zsmul_rankOneClass (k l : ℤ) :
     (rankOne a).discriminantPairing (k • rankOneClass a) (l • rankOneClass a) =
       ((k * l / a : ℚ) : AddCircle (1 : ℚ)) := by
