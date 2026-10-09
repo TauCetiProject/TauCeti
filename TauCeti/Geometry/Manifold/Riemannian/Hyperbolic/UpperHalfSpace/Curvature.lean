@@ -126,9 +126,11 @@ with inner products taken in the hyperbolic tangent metric. -/
   apply (tangentSpaceCastModel J x).injective
   rw [map_sub, second_connection_const, second_connection_const, ← smul_sub,
     connectionNumerator_curvature]
-  simp only [map_smul, map_sub, constantField_apply,
-    ContinuousLinearEquiv.apply_symm_apply, inner_def]
-  simp [div_eq_mul_inv, inv_pow, smul_sub, smul_smul]
+  -- `inner_def` identifies the hyperbolic tangent metric with the height-scaled coordinate metric.
+  simp only [map_smul, map_sub]
+  rw [inner_def, inner_def]
+  simp only [constantField_apply, ContinuousLinearEquiv.apply_symm_apply,
+    div_eq_mul_inv, inv_pow, smul_sub, smul_smul]
   module
 
 /-- Every tangent two-plane of the upper-half-space model has sectional curvature `-1`. -/
