@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.VectorSpace
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Coordinate.ModelSpace
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!

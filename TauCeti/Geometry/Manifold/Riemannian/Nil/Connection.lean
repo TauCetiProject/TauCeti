@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Geometry.Manifold.GroupLieAlgebra
 public import TauCeti.Geometry.Manifold.Riemannian.Nil.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Coordinate.ModelSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.VectorSpace
 import all TauCeti.Geometry.Manifold.Riemannian.Nil.Basic
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
 # The Levi-Civita connection of Nil
@@ -88,7 +90,7 @@ private theorem fderiv_form_apply (x u a b : R3) :
     · congr 1
       ring
   -- Evaluating the derivative of the bilinear field is differentiating its evaluations.
-  have h := TauCeti.Manifold.fderiv_bilin_apply (differentiableAt_form x)
+  have h := TauCeti.fderiv_bilin_apply (differentiableAt_form x)
     (differentiableAt_const a) (differentiableAt_const b) u
   simp only [fderiv_const_apply, map_zero, zero_apply, add_zero, hP.fderiv] at h
   rw [← h]
