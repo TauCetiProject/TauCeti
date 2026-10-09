@@ -63,6 +63,7 @@ theorem gelfandDual_apply (h : H) (x : V) : ι.gelfandDual h x = ⟪h, ι x⟫_�
   simp [gelfandDual]
 
 /-- The map `H → V*` of a Gelfand triple has the same norm as `ι`. -/
+@[simp]
 theorem norm_gelfandDual : ‖ι.gelfandDual‖ = ‖ι‖ := by
   refine le_antisymm (opNorm_le_bound _ (norm_nonneg _) fun h ↦
     opNorm_le_bound _ (by positivity) fun x ↦ ?_)
@@ -91,6 +92,7 @@ theorem gelfandDual_injective (hι : DenseRange ι) : Function.Injective ι.gelf
 
 /-- The bilinear form `(x, y) ↦ ⟪ι x, ι y⟫` that the composite `V → H → V*` defines on `V` is
 symmetric. -/
+@[simp]
 theorem flip_gelfandDual_comp : (ι.gelfandDual.comp ι).flip = ι.gelfandDual.comp ι := by
   ext x y
   simp [real_inner_comm]
