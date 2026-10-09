@@ -55,9 +55,10 @@ universe u
 
 /-- **Existence of the Tate module, for fields in `Type`.** -/
 private theorem nonempty_layerTateModule_of_type (L K : Type) [Field L] [Field K] [Algebra K L]
-    [Algebra ℚ_[p] L] [Module.Finite ℚ_[p] L] [Algebra ℚ_[p] K] [Module.Finite ℚ_[p] K]
-    [IsScalarTower ℚ_[p] K L] [IsGalois K L] [FiniteDimensional K L] :
-    Nonempty (LayerTateModule p L K) := by
+    [Algebra ℚ_[p] L] [Module.Finite ℚ_[p] L] [Algebra ℚ_[p] K] [IsScalarTower ℚ_[p] K L]
+    [IsGalois K L] : Nonempty (LayerTateModule p L K) := by
+  have : Module.Finite ℚ_[p] K := .left ℚ_[p] K L
+  have : FiniteDimensional K L := .right ℚ_[p] K L
   -- The local-field structures of `K` and `L`.
   let _ := finiteExtensionValuativeRel ℚ_[p] K
   let _ := finiteExtensionNormedFieldTopology ℚ_[p] K
@@ -87,9 +88,9 @@ a finite Galois extension `L/K` of `p`-adic fields there is a finitely generated
 `ℤ_p[Gal(L/K)]`-module of projective dimension at most one which is an extension of the
 augmentation ideal by `A(L)`. -/
 theorem nonempty_layerTateModule (L K : Type u) [Field L] [Field K] [Algebra K L]
-    [Algebra ℚ_[p] L] [Module.Finite ℚ_[p] L] [Algebra ℚ_[p] K] [Module.Finite ℚ_[p] K]
-    [IsScalarTower ℚ_[p] K L] [IsGalois K L] [FiniteDimensional K L] :
-    Nonempty (LayerTateModule p L K) := by
+    [Algebra ℚ_[p] L] [Module.Finite ℚ_[p] L] [Algebra ℚ_[p] K] [IsScalarTower ℚ_[p] K L]
+    [IsGalois K L] : Nonempty (LayerTateModule p L K) := by
+  have : Module.Finite ℚ_[p] K := .left ℚ_[p] K L
   -- The copy `L' / K'` of the layer in `Type`.
   have : Small.{0} L := Module.Finite.small.{0} ℚ_[p] L
   have : Small.{0} K := Module.Finite.small.{0} ℚ_[p] K
@@ -108,8 +109,6 @@ theorem nonempty_layerTateModule (L K : Type u) [Field L] [Field K] [Algebra K L
     exact ((Shrink.algEquiv ℚ_[p] L).commutes a)
   have hL : Module.Finite ℚ_[p] (Shrink.{0} L) :=
     .equiv (Shrink.algEquiv ℚ_[p] L).symm.toLinearEquiv
-  have hK : Module.Finite ℚ_[p] (Shrink.{0} K) :=
-    .equiv (Shrink.algEquiv ℚ_[p] K).symm.toLinearEquiv
   have hG : IsGalois (Shrink.{0} K) (Shrink.{0} L) :=
     IsGalois.of_equiv_equiv (f := eK.symm) (g := eL.symm) (RingHom.ext fun k ↦ by
       simp [halg])
@@ -139,11 +138,8 @@ theorem nonempty_layerTateModule (L K : Type u) [Field L] [Field K] [Algebra K L
         -- `AlgEquiv.ofRingEquiv` applies its ring equivalence, a conjugate by `eL`.
         change eL.symm ((σ * τ) (eL y)) = eL.symm (σ (eL (eL.symm (τ (eL y)))))
         simp [AlgEquiv.mul_apply] }
-  have : Finite (Shrink.{0} L ≃ₐ[Shrink.{0} K] Shrink.{0} L) := .of_equiv _ φ.toEquiv
-  have hfd : FiniteDimensional (Shrink.{0} K) (Shrink.{0} L) :=
-    IsGalois.finiteDimensional_of_finite _ _
-  obtain ⟨Y⟩ := @nonempty_layerTateModule_of_type p _ (Shrink.{0} L) (Shrink.{0} K) _ _ _ _ hL _ hK
-    hst hG hfd
+  obtain ⟨Y⟩ := @nonempty_layerTateModule_of_type p _ (Shrink.{0} L) (Shrink.{0} K) _ _ _ _ hL _ hst
+    hG
   exact LayerTateModule.nonempty_of_equiv φ (padicCompletionUnitsCongr p eL.symm)
     (padicCompletionUnitsCongr_smul p eL.symm)
     (fun σ x ↦ padicCompletionUnitsCongr_aut p K eL.symm σ (φ σ) (fun y ↦ by
