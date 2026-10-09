@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth
 public import TauCeti.AlgebraicTopology.Singular.CrossProduct
 
 /-!
-# The Künneth theorem for singular homology over a field
+# The Künneth theorem for singular homology over a field and with projective homology
 
 For topological spaces `X` and `Y` and coefficient objects `R` and `S`, the homology cross
 products `Hₚ(X; R) ⊗ H_q(Y; S) ⟶ Hₙ(X × Y; R ⊗ S)` with `p + q = n`
@@ -24,16 +24,28 @@ and in both coefficient objects.  Since the shuffle map is a chain homotopy equi
 (Eilenberg–Zilber), the Künneth map is an isomorphism exactly when the algebraic Künneth map of
 the singular chain complexes is.
 
-For semisimple modules `M` and `N` over a commutative ring `k`, the singular chain modules
-`Cₙ(X; M) = ⨁ M` and `Cₙ(Y; N) = ⨁ N` are semisimple, so the algebraic Künneth map is an
-isomorphism (`HomologicalComplex.isIso_homologyKunneth_of_isSemisimpleModule`).  This gives the
-**Künneth theorem**: the cross product induces an isomorphism
+For modules `M` and `N` over a commutative ring `k`, the algebraic Künneth map is an isomorphism
+when the cycles of the singular chain complexes `C(X; M)` and `C(Y; N)` split off their terms and
+their homology splits off their cycles
+(`HomologicalComplex.isIso_homologyKunneth_of_isSplitMono_of_isSplitEpi`).
+This gives the **Künneth theorem**: the cross product induces an isomorphism
 
 `⨁_{p + q = n} Hₚ(X; M) ⊗ H_q(Y; N) ≅ Hₙ(X × Y; M ⊗ N)`.
 
-Over a commutative semisimple ring `k`, for instance a field, every module is semisimple, and
-with `M = N = k`, along the unitor `k ⊗ k ≅ k`, this is the classical form
-`⨁_{p + q = n} Hₚ(X; k) ⊗ H_q(Y; k) ≅ Hₙ(X × Y; k)`.
+The splitting hypotheses hold in two standard situations.
+
+* For semisimple modules `M` and `N`, the singular chain modules `Cₙ(X; M) = ⨁ M` and
+  `Cₙ(Y; N) = ⨁ N` are semisimple, so every submodule splits off.  Over a commutative semisimple
+  ring `k`, for instance a field, every module is semisimple, and with `M = N = k`, along the
+  unitor `k ⊗ k ≅ k`, this is the classical form
+  `⨁_{p + q = n} Hₚ(X; k) ⊗ H_q(Y; k) ≅ Hₙ(X × Y; k)`.
+* When the cycles split off and the homology modules `Hₚ(X; M)` and `H_q(Y; N)` are projective,
+  the projection of the cycles onto the homology splits
+  (`TopCat.isIso_singularHomologyKunneth_of_projective`).  Mathematically, over a principal ideal
+  domain `k` with `M = N = k` the boundaries are submodules of free modules, so the cycles split
+  off and this covers spaces whose homology is free, as for products of spheres.  No instance
+  here provides that splitting yet, so the `IsSplitMono` hypothesis on the cycles must still be
+  supplied.
 
 ## Main definitions and results
 
@@ -44,8 +56,10 @@ with `M = N = k`, along the unitor `k ⊗ k ≅ k`, this is the classical form
   coefficients.
 * `TopCat.isIso_singularHomologyKunneth_iff`: the Künneth map is an isomorphism exactly when the
   algebraic Künneth map of the singular chain complexes is.
-* `TopCat.singularHomologyKunnethIso`: the Künneth isomorphism for semisimple coefficient modules,
-  for instance for all coefficient modules over a field.
+* `TopCat.singularHomologyKunnethIso`: the Künneth isomorphism when the cycles and the homology of
+  the singular chain complexes split off, for instance for all coefficient modules over a field.
+* `TopCat.isIso_singularHomologyKunneth_of_projective`: the Künneth theorem when the cycles split
+  off and the homology is projective.
 * `TopCat.singularHomologyKunnethUnitIso`: its form `⨁ Hₚ(X; k) ⊗ H_q(Y; k) ≅ Hₙ(X × Y; k)`
   with coefficients in the ring itself.
 
@@ -196,33 +210,60 @@ end Naturality
 
 end General
 
-section Semisimple
+section Split
 
 variable {k : Type w} [CommRing k]
 
-/-- **The Künneth theorem over a field**: for semisimple modules `M` and `N` over a commutative
-ring `k`, for instance any modules over a field, the Künneth map
-`⨁_{p + q = n} Hₚ(X; M) ⊗ H_q(Y; N) ⟶ Hₙ(X × Y; M ⊗ N)` is an isomorphism. -/
-instance isIso_singularHomologyKunneth (X Y : TopCat.{w}) (M N : ModuleCat.{w} k)
-    [IsSemisimpleModule k M] [IsSemisimpleModule k N] (n : ℕ) :
-    IsIso (singularHomologyKunneth X Y M N n) :=
+section
+
+variable (X Y : TopCat.{w}) (M N : ModuleCat.{w} k)
+  [∀ p, IsSplitMono (((toSSet.obj X).chainComplex M).iCycles p)]
+  [∀ p, IsSplitEpi (((toSSet.obj X).chainComplex M).homologyπ p)]
+  [∀ q, IsSplitMono (((toSSet.obj Y).chainComplex N).iCycles q)]
+  [∀ q, IsSplitEpi (((toSSet.obj Y).chainComplex N).homologyπ q)]
+
+/-- **The Künneth theorem for split singular chains**: if the cycles of the singular chain
+complexes `C(X; M)` and `C(Y; N)` split off their terms and their homology splits off their
+cycles, the Künneth map `⨁_{p + q = n} Hₚ(X; M) ⊗ H_q(Y; N) ⟶ Hₙ(X × Y; M ⊗ N)` is an
+isomorphism.  This holds for semisimple modules `M` and `N` over a commutative ring `k`, for
+instance any modules over a field, since the singular chain modules are then semisimple. -/
+instance isIso_singularHomologyKunneth (n : ℕ) : IsIso (singularHomologyKunneth X Y M N n) :=
   (isIso_singularHomologyKunneth_iff X Y M N n).mpr inferInstance
 
-/-- **The Künneth isomorphism** `⨁_{p + q = n} Hₚ(X; M) ⊗ H_q(Y; N) ≅ Hₙ(X × Y; M ⊗ N)` for
-semisimple modules `M` and `N` over a commutative ring, for instance any modules over a field,
-induced by the homology cross product. -/
-def singularHomologyKunnethIso (X Y : TopCat.{w}) (M N : ModuleCat.{w} k)
-    [IsSemisimpleModule k M] [IsSemisimpleModule k N] (n : ℕ) :
+/-- **The Künneth isomorphism** `⨁_{p + q = n} Hₚ(X; M) ⊗ H_q(Y; N) ≅ Hₙ(X × Y; M ⊗ N)`, induced
+by the homology cross product, when the cycles of the singular chain complexes split off their
+terms and their homology splits off their cycles; for instance for semisimple modules `M` and `N`
+over a commutative ring, such as any modules over a field. -/
+def singularHomologyKunnethIso (n : ℕ) :
     GradedObject.Monoidal.tensorObj (fun p ↦ ((singularHomologyFunctor _ p).obj M).obj X)
         (fun q ↦ ((singularHomologyFunctor _ q).obj N).obj Y) n ≅
       ((singularHomologyFunctor _ n).obj (M ⊗ N)).obj (X ⊗ Y) :=
   asIso (singularHomologyKunneth X Y M N n)
 
 @[simp]
-lemma singularHomologyKunnethIso_hom (X Y : TopCat.{w}) (M N : ModuleCat.{w} k)
-    [IsSemisimpleModule k M] [IsSemisimpleModule k N] (n : ℕ) :
+lemma singularHomologyKunnethIso_hom (n : ℕ) :
     (singularHomologyKunnethIso X Y M N n).hom = singularHomologyKunneth X Y M N n :=
   (rfl)
+
+end
+
+/-- **The Künneth theorem with projective homology**: if the cycles of the singular chain
+complexes `C(X; M)` and `C(Y; N)` split off their terms and the singular homology modules
+`Hₚ(X; M)` and `H_q(Y; N)` are all projective, the Künneth map
+`⨁_{p + q = n} Hₚ(X; M) ⊗ H_q(Y; N) ⟶ Hₙ(X × Y; M ⊗ N)` is an isomorphism.  Mathematically,
+over a principal ideal domain the cycles of the singular chains with coefficients in the ring
+split off, since the boundaries are submodules of free modules; no instance here provides this
+yet, so the `IsSplitMono` hypotheses on the cycles must be supplied by the caller. -/
+theorem isIso_singularHomologyKunneth_of_projective (X Y : TopCat.{w}) (M N : ModuleCat.{w} k)
+    [∀ p, IsSplitMono (((toSSet.obj X).chainComplex M).iCycles p)]
+    [hX : ∀ p, Projective (((singularHomologyFunctor _ p).obj M).obj X)]
+    [∀ q, IsSplitMono (((toSSet.obj Y).chainComplex N).iCycles q)]
+    [hY : ∀ q, Projective (((singularHomologyFunctor _ q).obj N).obj Y)] (n : ℕ) :
+    IsIso (singularHomologyKunneth X Y M N n) :=
+  -- `Hₚ(X; M)` is by definition the homology of the singular chain complex `C(X; M)`.
+  have (p : ℕ) : Projective (((toSSet.obj X).chainComplex M).homology p) := hX p
+  have (q : ℕ) : Projective (((toSSet.obj Y).chainComplex N).homology q) := hY q
+  inferInstance
 
 variable [IsSemisimpleRing k]
 
@@ -250,6 +291,6 @@ lemma ι_singularHomologyKunnethUnitIso_hom (X Y : TopCat.{w}) (p q n : ℕ) (h 
       ((singularHomologyFunctor _ n).map (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app (X ⊗ Y) := by
   simp [singularHomologyKunnethUnitIso]
 
-end Semisimple
+end Split
 
 end TopCat

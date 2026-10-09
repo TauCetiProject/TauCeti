@@ -43,6 +43,8 @@ with a diffeomorphism of the circle, while the ambient `Diff(N)`-action is postc
 * `TauCeti.isSmoothEmbedding_comp_diffeomorph` and
   `TauCeti.isSmoothEmbedding_diffeomorph_comp`, with their `_iff` companions: smooth embeddings are
   stable under composition with a diffeomorphism on either side.
+* `TauCeti.isSmoothEmbedding_comp_continuousLinearEquiv`: a smooth embedding of a vector space stays
+  one after a linear change of coordinates of the source, which changes its model.
 * `TauCeti.isSmoothEmbedding_diffeomorph`: a diffeomorphism is a smooth embedding.
 
 ## Main definitions
@@ -89,6 +91,14 @@ theorem isSmoothEmbedding_comp_diffeomorph [IsManifold I n M']
     (e : M' ≃ₘ^n⟮I, I⟯ M) (h : IsSmoothEmbedding I J n f) :
     IsSmoothEmbedding I J n (f ∘ e) :=
   ⟨isImmersion_comp_diffeomorph e h.isImmersion, h.isEmbedding.comp e.toHomeomorph.isEmbedding⟩
+
+/-- Precomposing a smooth embedding of a vector space with a continuous linear equivalence gives a
+smooth embedding, for the new source model. -/
+theorem isSmoothEmbedding_comp_continuousLinearEquiv {E₀ : Type*} [NormedAddCommGroup E₀]
+    [NormedSpace 𝕜 E₀] {g : E → N} (e : E₀ ≃L[𝕜] E) (h : IsSmoothEmbedding 𝓘(𝕜, E) J n g) :
+    IsSmoothEmbedding 𝓘(𝕜, E₀) J n (g ∘ e) :=
+  ⟨isImmersion_comp_continuousLinearEquiv e h.isImmersion,
+    h.isEmbedding.comp e.toHomeomorph.isEmbedding⟩
 
 /-- Transporting a smooth embedding by a diffeomorphism of the target gives a smooth embedding. -/
 theorem isSmoothEmbedding_diffeomorph_comp [IsManifold J n P]

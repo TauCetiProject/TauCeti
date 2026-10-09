@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.Group.End
 public import Mathlib.Algebra.Ring.Parity
+public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Logic.Equiv.Fin.Rotate
 public import Mathlib.Data.Fin.SuccPredOrder
@@ -53,6 +54,8 @@ range, so the value is a `dite` rather than a plain application.
   summands split off.
 * `Fin.natCast_ne_zero`: the cast of a natural number `0 < a < n` to `Fin n` (under
   `open Fin.NatCast`) is nonzero.
+* `Fin.insertNth_insertNth`: two insertions into a tuple commute, up to reindexing by `succAbove`
+  and `predAbove`; the dual of Mathlib's `Fin.removeNth_removeNth_eq_swap`.
 * `Fin.predAbove_succ_succAbove`: `Fin.predAbove p` inverts `p.succ.succAbove`, the
   counterpart of Mathlib's `Fin.predAbove_succAbove` for `p.castSucc.succAbove`.
 * `Fin.val_succAbove`: the value of `p.succAbove i`, read off the comparison of `i` with `p`.
@@ -336,6 +339,21 @@ theorem val_orderSucc_of_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n) :
 theorem orderSucc_eq_self_of_not_lt {n : ℕ} {i : Fin n} (h : ¬(i : ℕ) + 1 < n) :
     (Order.succ i : Fin n) = i :=
   IsMax.succ_eq fun b _ => Fin.le_def.2 (by have := b.isLt; have := i.isLt; omega)
+
+/-- Two insertions into a tuple commute, up to reindexing: inserting `a` at `i` after inserting
+`b` at `j` is inserting `b` at `i.succAbove j` after inserting `a` at `j.predAbove i`.  This is the
+dual of `Fin.removeNth_removeNth_eq_swap`. -/
+theorem insertNth_insertNth {n : ℕ} {β : Sort*} (i : Fin (n + 2)) (j : Fin (n + 1)) (a b : β)
+    (x : Fin n → β) :
+    @insertNth _ (fun _ ↦ β) i a (@insertNth _ (fun _ ↦ β) j b x) =
+      @insertNth _ (fun _ ↦ β) (i.succAbove j) b
+        (@insertNth _ (fun _ ↦ β) (j.predAbove i) a x) := by
+  rw [eq_insertNth_iff]
+  refine ⟨by simp, ?_⟩
+  funext k
+  rcases eq_self_or_eq_succAbove (j.predAbove i) k with rfl | ⟨k, rfl⟩
+  · simp only [removeNth, succAbove_succAbove_predAbove, insertNth_apply_same]
+  · simp only [removeNth, succAbove_succAbove_succAbove_predAbove, insertNth_apply_succAbove]
 
 /-! ### Inserting an entry into a tuple indexed by a sum of two blocks -/
 
