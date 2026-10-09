@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Functoriality
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Smooth
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Commutator
+import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.RingTheory.FiniteType.PointSeparation
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
@@ -105,9 +106,8 @@ theorem derivedDefiningIdeal_eq_specialLinear_definingHopfIdeal (k : Type u) [Fi
   have hg : g ∈ commutator (WithConv (coordinateHopfAlgebra k n →ₐ[k] K)) := by
     have heq : (commutator (WithConv (coordinateHopfAlgebra k n →ₐ[k] K))).map
         (pointsMulEquiv (R := k) (A := K) n).toMonoidHom =
-        commutator (Matrix.GeneralLinearGroup (Fin n) K) := by
-      rw [commutator_def, Subgroup.map_commutator, Subgroup.map_top_of_surjective _
-        (pointsMulEquiv n).surjective, ← commutator_def]
+        commutator (Matrix.GeneralLinearGroup (Fin n) K) :=
+      Subgroup.map_commutator_eq_commutator (pointsMulEquiv n).surjective
     rw [← heq] at hmatrix
     simpa only [Subgroup.mem_map_equiv, MulEquiv.symm_apply_apply] using hmatrix
   have hvanish := CommHopfAlgCat.commutator_le_quotientPointsSubgroup_of_le_derivedDefiningIdeal
