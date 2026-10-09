@@ -35,6 +35,9 @@ with angle sum `2π / t`.
 
 * `SidePairing.mem_interior_iUnion_inv_partialCycleMap_smul_carrier_iff`: the tiles cover a
   neighbourhood of a finite vertex exactly when their pulled-back sectors do.
+* `SidePairing.orientedAngle_rayToward_inv_partialCycleMap_smul_vertex`: in the common
+  coordinate at a finite vertex, the incoming ray of the `m`-th tile has turned clockwise
+  through the first `m` angles.
 * `SidePairing.arg_smulDeriv_cycleMap`: the rotation angle of a finite vertex cycle is its
   angle sum modulo `2π`.
 * `SidePairing.iUnion_inv_partialCycleMap_smul_vertexSector_eq_univ`: sectors with total angle at
@@ -91,7 +94,7 @@ theorem disjoint_inv_partialCycleMap_smul_vertexSector_succ_interior (j : Fin n)
   exact σ.disjoint_inv_map_smul_vertexSector_next_interior_vertexSector (σ.next^[m] j)
 
 /-- The tile at step `m` of a cycle through a finite vertex `z` has `z` as its vertex. -/
-private theorem inv_partialCycleMap_smul_vertex {j : Fin n} {z : ℍ} (hz : P.vertex j = .inl z)
+theorem inv_partialCycleMap_smul_vertex {j : Fin n} {z : ℍ} (hz : P.vertex j = .inl z)
     (m : ℕ) : ((σ.partialCycleMap j m)⁻¹ • P).vertex (σ.next^[m] j) = .inl z := by
   rw [vertex_smul, ← σ.partialCycleMap_smul_vertex j m, inv_smul_smul, hz]
 
@@ -127,7 +130,7 @@ theorem mem_interior_iUnion_inv_partialCycleMap_smul_carrier_iff {j : Fin n} {z 
 
 /-- In the common coordinate at a finite vertex, the incoming ray of the `m`-th tile is reached
 from the incoming ray of the first tile by turning clockwise through the first `m` angles. -/
-private theorem orientedAngle_rayToward_inv_partialCycleMap_smul_vertex {j : Fin n} {z : ℍ}
+theorem orientedAngle_rayToward_inv_partialCycleMap_smul_vertex {j : Fin n} {z : ℍ}
     (hz : P.vertex j = .inl z) (m : ℕ) :
     orientedAngle z (geodesicLine (rayToward z (P.vertex (j - 1))) 1)
         (geodesicLine (rayToward z
@@ -166,7 +169,7 @@ private theorem orientedAngle_rayToward_inv_partialCycleMap_smul_vertex_add_one 
 /-- In the common coordinate at a finite vertex, the angle of `w` measured from the outgoing ray of
 the `m`-th tile is its angle measured from the incoming ray of the first tile, plus the first
 `m + 1` angles. -/
-private theorem orientedAngle_rayToward_inv_partialCycleMap_smul_vertex_add_one_left {j : Fin n}
+theorem orientedAngle_rayToward_inv_partialCycleMap_smul_vertex_add_one_left {j : Fin n}
     {z : ℍ} (hz : P.vertex j = .inl z) (m : ℕ) (w : ℍ) :
     orientedAngle z (geodesicLine (rayToward z
         (((σ.partialCycleMap j m)⁻¹ • P).vertex (σ.next^[m] j + 1))) 1) w =

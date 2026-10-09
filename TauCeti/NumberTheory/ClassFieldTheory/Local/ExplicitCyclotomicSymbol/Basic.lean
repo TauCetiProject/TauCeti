@@ -64,10 +64,11 @@ namespace TauCeti
 private def padicPrimeUnit (p : ℕ) [Fact p.Prime] : ℚ_[p]ˣ :=
   Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
 
+/-- `TauCeti.Padic.isUniformizer_natCast_self`, unfolded and restated for `padicPrimeUnit`. -/
 private theorem normalizedValuation_padicPrimeUnit (p : ℕ) [Fact p.Prime] :
     normalizedValuation ℚ_[p] (padicPrimeUnit p) = .ofAdd 1 := by
-  rw [padicPrimeUnit, normalizedValuation_natCast, Padic.natCastValuation_self]
-  norm_num
+  rw [padicPrimeUnit]
+  exact (isUniformizer_def _).1 (Padic.isUniformizer_natCast_self p)
 
 private def padicUnitReduction (p j : ℕ) [Fact p.Prime] :
     unitFiltration ℚ_[p] 0 →* (ZMod (p ^ j))ˣ :=

@@ -53,7 +53,7 @@ theorem laurentSeriesExpansion_derivativeOfSeparating (z : F) :
       simp [Algebra.smul_def, RingHom.algebraMap_toAlgebra, e.commutes,
         PowerSeries.algebraMap_eq, HahnSeries.ofPowerSeries_C]
   let δ : Derivation k F (LaurentSeries k) :=
-    (TauCeti.LaurentSeries.derivativeDerivation k).compAlgebraMap F
+    (laurentSeriesDerivativeDerivation k).compAlgebraMap F
   have hδ (w : F) : δ w = _root_.LaurentSeries.derivative k (e w) := by
     simp [δ, Derivation.compAlgebraMap_apply, RingHom.algebraMap_toAlgebra]
   have hδt : δ t = 1 := by

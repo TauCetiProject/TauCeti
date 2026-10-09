@@ -285,6 +285,16 @@ noncomputable def quotientHom (S : Pair A) (J : Ideal A) : Hom S (S.quotient J) 
 theorem Hom.toRingHom_quotientHom (S : Pair A) (J : Ideal A) :
     (quotientHom S J).toRingHom = Ideal.Quotient.mk J := (rfl)
 
+/-- The image in `A ⧸ J` of a ring of definition contained in `A⁺` is contained in the plus ring
+of the quotient Huber pair, so the quotient pair of definition is compatible with the quotient
+Huber pair. -/
+theorem _root_.TauCeti.Huber.PairOfDefinition.quotient_ringOfDefinition_le_quotient_plus
+    (P : PairOfDefinition A) {S : Pair A} (hP : P.ringOfDefinition ≤ S.plus) (J : Ideal A) :
+    (P.quotient J).ringOfDefinition ≤ (S.quotient J).plus := by
+  rw [PairOfDefinition.quotient_ringOfDefinition]
+  rintro _ ⟨a, ha, rfl⟩
+  exact (quotientHom S J).map_mem_plus a (hP ha)
+
 /-- A morphism of Huber pairs annihilating `J` factors through the quotient pair. -/
 noncomputable def Hom.quotientLift {S : Pair A} {T : Pair B} (J : Ideal A) (f : Hom S T)
     (hJ : J ≤ RingHom.ker f.toRingHom) : Hom (S.quotient J) T where

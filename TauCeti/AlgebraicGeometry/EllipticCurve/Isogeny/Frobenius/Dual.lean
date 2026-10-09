@@ -54,6 +54,7 @@ and with it the Hasse bound, are computed. The second is not proved here.
   `π̂`.
 * `TauCeti.Isogeny.frobeniusIsogeny_comp_dualFrobeniusIsogeny`: `π ∘ π̂ = [q]`.
 * `TauCeti.Isogeny.degree_dualFrobeniusIsogeny`: `deg π̂ = q`.
+* `TauCeti.Isogeny.separableDegree_dualFrobeniusIsogeny`: `deg_s π̂ = deg_s [q]`.
 * `TauCeti.Isogeny.ofIsogeny_dualFrobeniusIsogeny_comp_ofIsogeny_frobeniusIsogeny` and
   `TauCeti.Isogeny.ofIsogeny_frobeniusIsogeny_comp_ofIsogeny_dualFrobeniusIsogeny`: both
   composites are `q • 1` in the additive group of endomorphisms.
@@ -143,6 +144,14 @@ theorem degree_dualFrobeniusIsogeny : (dualFrobeniusIsogeny W).degree = Nat.card
   refine degree_eq_of_comp_eq_mulByIntIsogenyOfNeZero_degree (hn := ?_) ?_
   · exact_mod_cast (frobeniusIsogeny W).degree_ne_zero
   · simpa only [degree_frobeniusIsogeny] using dualFrobeniusIsogeny_comp_frobeniusIsogeny W
+
+/-- **The dual of Frobenius carries the whole separable degree of `[q]`**: `deg_s π̂ = deg_s [q]`,
+since Frobenius is purely inseparable. -/
+theorem separableDegree_dualFrobeniusIsogeny :
+    (dualFrobeniusIsogeny W).separableDegree = (mulByIntIsogenyOfNeZero W (n := Nat.card F)
+      (mod_cast Nat.card_pos.ne')).separableDegree := by
+  rw [← dualFrobeniusIsogeny_comp_frobeniusIsogeny, separableDegree_comp,
+    separableDegree_frobeniusIsogeny, mul_one]
 
 /-- **Frobenius composed with its dual is multiplication by `q`** (Silverman III.6.2(a)). -/
 @[simp]

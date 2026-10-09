@@ -23,7 +23,7 @@ public section
 
 open HahnSeries
 
-namespace TauCeti.LaurentSeries
+namespace TauCeti
 
 variable (R : Type*) [CommRing R]
 
@@ -42,7 +42,7 @@ private theorem support_X_mul_derivative (f : LaurentSeries R) :
 
 /-- The coefficientwise Laurent derivative satisfies the product rule, in arbitrary
 characteristic. -/
-theorem derivative_mul (f g : LaurentSeries R) :
+theorem laurentSeries_derivative_mul (f g : LaurentSeries R) :
     _root_.LaurentSeries.derivative R (f * g) =
       f * _root_.LaurentSeries.derivative R g +
         g * _root_.LaurentSeries.derivative R f := by
@@ -71,7 +71,8 @@ theorem derivative_mul (f g : LaurentSeries R) :
 
 /-- Formal Laurent differentiation as a derivation. Its linear map is the existing
 coefficientwise derivative. -/
-noncomputable def derivativeDerivation : Derivation R (LaurentSeries R) (LaurentSeries R) where
+noncomputable def laurentSeriesDerivativeDerivation :
+    Derivation R (LaurentSeries R) (LaurentSeries R) where
   -- The source algebra action and the coefficientwise scalar action agree propositionally.
   toFun f := _root_.LaurentSeries.derivative R f
   map_add' f g := (_root_.LaurentSeries.derivative R).map_add f g
@@ -86,11 +87,12 @@ noncomputable def derivativeDerivation : Derivation R (LaurentSeries R) (Laurent
     intro h
     simpa using congrArg (fun i : ℤ ↦ (i : R)) h
   leibniz' f g := by
-    simpa only [LinearMap.coe_mk, AddHom.coe_mk, smul_eq_mul] using derivative_mul R f g
+    simpa only [LinearMap.coe_mk, AddHom.coe_mk, smul_eq_mul] using
+      laurentSeries_derivative_mul R f g
 
 /-- The bundled Laurent derivation evaluates as the coefficientwise derivative. -/
 @[simp]
-theorem derivativeDerivation_apply (f : LaurentSeries R) :
-    derivativeDerivation R f = _root_.LaurentSeries.derivative R f := (rfl)
+theorem laurentSeriesDerivativeDerivation_apply (f : LaurentSeries R) :
+    laurentSeriesDerivativeDerivation R f = _root_.LaurentSeries.derivative R f := (rfl)
 
-end TauCeti.LaurentSeries
+end TauCeti
