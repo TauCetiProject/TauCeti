@@ -53,6 +53,9 @@ what ties the sequence to the arrows of the Auslander-Reiten quiver.
   morphism factors through an almost split morphism by a split mono, resp. a split epi.**
 * `TauCeti.IsRightAlmostSplit.epi_of_epi` and `TauCeti.IsLeftAlmostSplit.mono_of_mono`: a right
   almost split morphism is an epimorphism as soon as *some* non-split-epi into its target is one.
+* `TauCeti.IsRightAlmostSplit.epi_iff_not_projective` and
+  `TauCeti.IsLeftAlmostSplit.mono_iff_not_injective`: with enough projectives or injectives,
+  epimorphicity or monomorphicity is equivalent to non-projectivity or non-injectivity of the end.
 * `TauCeti.IsRightAlmostSplit.not_projective` and `TauCeti.IsLeftAlmostSplit.not_injective`: **the
   target of an epimorphic right almost split morphism is not projective**, and dually the source of
   a monomorphic left almost split morphism is not injective.
@@ -381,6 +384,34 @@ theorem IsRightAlmostSplit.not_projective (hf : IsRightAlmostSplit f) [Epi f] : 
 theorem IsLeftAlmostSplit.not_injective (hf : IsLeftAlmostSplit f) [Mono f] : ¬ Injective X :=
   fun _ ↦ hf.not_isSplitMono
     (IsSplitMono.mk' ⟨Injective.factorThru (𝟙 X) f, Injective.comp_factorThru _ _⟩)
+
+/-- With enough projectives, a right almost-split morphism is epic exactly when its
+target is not projective. -/
+theorem IsRightAlmostSplit.epi_iff_not_projective [EnoughProjectives C]
+    (hf : IsRightAlmostSplit f) : Epi f ↔ ¬ Projective Y := by
+  constructor
+  · intro h
+    exact hf.not_projective
+  · intro hY
+    apply hf.epi_of_epi (Projective.π Y)
+    intro hsplit
+    let r : Retract Y (Projective.over Y) :=
+      ⟨section_ (Projective.π Y), Projective.π Y, hsplit.id⟩
+    exact hY r.projective
+
+/-- With enough injectives, a left almost-split morphism is monic exactly when its
+source is not injective. -/
+theorem IsLeftAlmostSplit.mono_iff_not_injective [EnoughInjectives C]
+    (hf : IsLeftAlmostSplit f) : Mono f ↔ ¬ Injective X := by
+  constructor
+  · intro h
+    exact hf.not_injective
+  · intro hX
+    apply hf.mono_of_mono (Injective.ι X)
+    intro hsplit
+    let r : Retract X (Injective.under X) :=
+      ⟨Injective.ι X, retraction (Injective.ι X), hsplit.id⟩
+    exact hX r.injective
 
 /-! ### Indecomposability of the almost split end -/
 
