@@ -235,9 +235,9 @@ theorem permutationAugmentationSequence_shortExact [Nonempty X] :
   change (permutationAugmentation k G X).hom v = 0 ↔
     ∃ w, (augmentationSubrepresentation k G X).subtype w = v
   rw [permutationAugmentation_apply]
-  simp only [Subrepresentation.coe_subtype]
-  exact ⟨fun hv => ⟨⟨v, mem_augmentationSubrepresentation_iff.mpr hv⟩, rfl⟩,
-    fun ⟨w, hw⟩ => hw ▸ (mem_augmentationSubrepresentation_iff (G := G)).mp w.2⟩
+  have h := (MonoidAlgebra.basis X k).sumCoords.exact_subtype_ker_map v
+  rw [← toSubmodule_augmentationSubrepresentation k G X] at h
+  simpa only [Subrepresentation.coe_subtype, Set.mem_range, Submodule.coe_subtype] using h
 
 end Sequence
 
