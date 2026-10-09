@@ -49,6 +49,11 @@ neighbourhood of `y` (`AlgebraicGeometry.Scheme.Hom.notMem_support_conductor_iff
 
 * J.-P. Serre, *Algebraic Groups and Class Fields*, Chapter IV, §1, for the conductor of the
   normalization of a singular curve.
+* The gluing of the local conductors to an ideal sheaf follows the construction of
+  `AlgebraicGeometry.Scheme.Modules.annihilator`
+  (`TauCeti/AlgebraicGeometry/Modules/Annihilator.lean`) and
+  `AlgebraicGeometry.Scheme.Modules.fittingIdeal`
+  (`TauCeti/AlgebraicGeometry/Modules/FittingIdeal/Basic.lean`).
 -/
 
 public section
@@ -130,6 +135,7 @@ theorem mem_conductor_ideal_iff {U : Y.affineOpens} {a : Γ(Y, U)} :
 
 /-- The conductor of `f` is the unit ideal over an affine open `U` exactly when
 `Γ(Y, U) → Γ(X, f⁻¹ U)` is surjective. -/
+@[simp]
 theorem conductor_ideal_eq_top_iff {U : Y.affineOpens} :
     f.conductor.ideal U = ⊤ ↔ Function.Surjective (f.app U) := by
   let := (f.app U).hom.toAlgebra
@@ -143,6 +149,7 @@ theorem ker_le_conductor : f.ker ≤ f.conductor := fun U ↦ by
 
 /-- **The conductor detects closed immersions.** The conductor of a finite morphism is the unit
 ideal sheaf exactly when the morphism is a closed immersion. -/
+@[simp]
 theorem conductor_eq_top_iff : f.conductor = ⊤ ↔ IsClosedImmersion f := by
   rw [isClosedImmersion_iff_isAffineHom, and_iff_right (inferInstance : IsAffineHom f),
     Scheme.IdealSheafData.ext_iff, funext_iff]

@@ -35,6 +35,7 @@ variable {A B : Type*} [CommSemiring A] [CommSemiring B] [Algebra A B] (S : Subm
 
 /-- The localization of the image `(1 : Submodule A B)` of `A` in `B` is the image of `A'` in
 `B'`, where `A'` and `B'` are the localizations of `A` at `S` and of `B` at the image of `S`. -/
+@[simp]
 theorem localized'_one :
     (1 : Submodule A B).localized' A' S (IsScalarTower.toAlgHom A B B').toLinearMap =
       (1 : Submodule A' B') := by

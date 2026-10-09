@@ -58,17 +58,13 @@ noncomputable section
 
 namespace TauCeti.Algebra
 
-variable (A B : Type*) [CommRing A] [CommRing B] [Algebra A B]
+variable (A B : Type*) [CommRing A] [Ring B] [Algebra A B]
 
 /-- The **conductor** of an `A`-algebra `B`: the annihilator of the `A`-module `B / A`, the
 quotient of `B` by the image of `A`. Its elements are the `a : A` with `a • B ⊆ A`
 (`TauCeti.Algebra.mem_conductor_iff`). -/
 def conductor : Ideal A :=
   Module.annihilator A (B ⧸ (1 : Submodule A B))
-
-/-- The conductor is the annihilator of the quotient of `B` by the image of `A`. -/
-theorem conductor_def : conductor A B = Module.annihilator A (B ⧸ (1 : Submodule A B)) :=
-  (rfl)
 
 /-- The conductor is the colon ideal `(A : B)` of `A` in `B`. -/
 theorem conductor_eq_colon : conductor A B = (1 : Submodule A B).colon Set.univ :=
@@ -94,6 +90,7 @@ theorem ker_algebraMap_le_conductor : RingHom.ker (algebraMap A B) ≤ conductor
 
 section Localization
 
+variable {B : Type*} [CommRing B] [Algebra A B]
 variable (S : Submonoid A) (A' B' : Type*) [CommRing A'] [CommRing B'] [Algebra A A']
   [IsLocalization S A'] [Algebra B B'] [IsLocalization (Algebra.algebraMapSubmonoid B S) B']
   [Algebra A' B'] [Algebra A B'] [IsScalarTower A A' B'] [IsScalarTower A B B']
