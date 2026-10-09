@@ -17,7 +17,7 @@ Let `M` be a `T₁` space and `x : M` a point in the source of an open partial h
 `φ : M → E` to a real normed space, such as a chart of a topological manifold modelled on `E`.
 The **local homology** of `M` at `x` is the relative singular homology `Hₖ(M, M ∖ {x})`.  This
 file computes it: it is the homology of `(E, E ∖ {φ x})`, so it vanishes in degree zero when
-`E ≠ 0` and is the reduced homology `H̃ₖ(S)` of the unit sphere `S` of `E` in degree `k + 1`.
+`E ≠ 0`, and in degree `k + 1` it is the degree-`k` reduced homology of the unit sphere `S` of `E`.
 When `E` has dimension `n`, `Hₖ(M, M ∖ {x})` therefore vanishes for `k ≠ n`, and for `n ≥ 1` it is
 one copy of the coefficients in degree `n`.
 
@@ -34,7 +34,7 @@ The computation has three steps.
   combined with the homeomorphism of source and target, this identifies `Hₖ(M, M ∖ {x})` with
   `Hₖ(E, E ∖ {φ x})` (`TauCeti.singularHomologyComplSingletonIsoOfChart`).
 * **The connecting morphism.**  Since `E` is contractible, the reduced connecting morphism
-  `Hₖ₊₁(E, E ∖ {y}) ⟶ H̃ₖ(E ∖ {y})` is an isomorphism.
+  from `Hₖ₊₁(E, E ∖ {y})` to the degree-`k` reduced homology of `E ∖ {y}` is an isomorphism.
 * **Radial retraction.**  `E ∖ {y}` is homotopy equivalent to the unit sphere of `E`
   (`TauCeti.complSingletonHomotopyEquivSphere`), by radial projection about `y` followed by
   translation.
@@ -42,7 +42,8 @@ The computation has three steps.
 ## Main definitions and results
 
 * `TauCeti.singularHomologyComplSingletonIsoOfChart`: `Hₖ(M, M ∖ {x}) ≅ Hₖ(E, E ∖ {φ x})`.
-* `TauCeti.singularHomologyComplSingletonIso`: `Hₖ₊₁(M, M ∖ {x}) ≅ H̃ₖ(S)`.
+* `TauCeti.singularHomologyComplSingletonIso`: `Hₖ₊₁(M, M ∖ {x})` is isomorphic to the
+  degree-`k` reduced homology of `S`.
 * `TauCeti.isZero_singularHomology_complSingleton_zero`: `H₀(M, M ∖ {x}) = 0` when `E ≠ 0`.
 * `TauCeti.isZero_singularHomology_complSingleton_of_ne`: `Hₖ(M, M ∖ {x}) = 0` for
   `k ≠ dim E`, for finite-dimensional `E`.
@@ -114,10 +115,11 @@ variable {M : Type w} [TopologicalSpace M] [T1Space M] {E : Type w} [NormedAddCo
   [NormedSpace ℝ E] (φ : OpenPartialHomeomorph M E) {x : M} (hx : x ∈ φ.source)
 
 /-- **Local homology at a point with a Euclidean chart.** For `x` in the source of an open
-partial homeomorphism `φ : M → E`, the local homology `Hₖ₊₁(M, M ∖ {x})` is the reduced homology
-`H̃ₖ` of the unit sphere of `E`.  It is `TauCeti.singularHomologyComplSingletonIsoOfChart`,
-followed by the reduced connecting morphism of the pair `(E, E ∖ {φ x})`, an isomorphism since
-`E` is contractible, and by `TauCeti.complSingletonHomotopyEquivSphere`. -/
+partial homeomorphism `φ : M → E`, the local homology `Hₖ₊₁(M, M ∖ {x})` is the degree-`k`
+reduced homology of the unit sphere of `E`.  It is
+`TauCeti.singularHomologyComplSingletonIsoOfChart`, followed by the reduced connecting morphism
+of the pair `(E, E ∖ {φ x})`, an isomorphism since `E` is contractible, and by
+`TauCeti.complSingletonHomotopyEquivSphere`. -/
 def singularHomologyComplSingletonIso (k : ℕ) :
     (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularHomology R (k + 1) ≅
       (reducedSingularHomologyFunctor R k).obj (TopCat.of (sphere (0 : E) 1)) :=
