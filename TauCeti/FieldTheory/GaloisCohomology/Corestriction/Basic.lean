@@ -175,7 +175,7 @@ the one attached to `τ` conjugates `galoisSubgroup K L σ` onto `galoisSubgroup
 with the two identifications with `G_L`, and corestriction is invariant under conjugation. -/
 theorem galoisCor_embedding_independent (τ : L →ₐ[K] SeparableClosure K) (n : ℕ) :
     galoisCor K L σ n = galoisCor K L τ n := by
-  obtain ⟨γ, hγ⟩ := exists_galoisSubgroupEquiv_eq_conj K L σ τ
+  obtain ⟨γ, hγ⟩ := exists_galoisSubgroupEquiv_symm_eq_conj K L σ τ
   -- The identification of `galoisSubgroup K L τ` with `galoisSubgroup K L σ` through `G_L`, which
   -- is conjugation by `γ⁻¹`.
   let κ : (galoisSubgroup K L τ).toSubgroup →ₜ* (galoisSubgroup K L σ).toSubgroup :=
@@ -183,9 +183,7 @@ theorem galoisCor_embedding_independent (τ : L →ₐ[K] SeparableClosure K) (n
       (ContinuousMonoidHom.toContinuousMonoidHom (galoisSubgroupEquiv K L τ).symm)
   have hκ (v : (galoisSubgroup K L τ).toSubgroup) :
       (κ v : AbsoluteGaloisGroup K) = γ⁻¹ * v * γ := by
-    have h := hγ ((galoisSubgroupEquiv K L τ).symm v)
-    rw [ContinuousMulEquiv.apply_symm_apply] at h
-    simp [κ, h, mul_assoc]
+    simpa [κ] using hγ v
   have hVU : (galoisSubgroup K L τ).toSubgroup =
       (galoisSubgroup K L σ).toSubgroup.map (MulAut.conj γ).toMonoidHom := by
     ext x

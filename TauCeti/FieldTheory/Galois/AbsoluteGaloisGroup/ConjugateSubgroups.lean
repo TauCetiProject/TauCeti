@@ -22,7 +22,9 @@ The automorphism carrying one embedding to the other comes from the transitive a
 embeddings in `TauCeti.FieldTheory.Normal.Embeddings`. Conjugacy of the fixing subgroups
 follows from the corresponding stabilizer conjugacy theorem. The finer statement
 `TauCeti.exists_galoisSubgroupEquiv_eq_conj` says that the two identifications of the absolute
-Galois group of `L` with these subgroups differ by conjugation by a single element of `G_K`.
+Galois group of `L` with these subgroups differ by conjugation by a single element of `G_K`;
+`TauCeti.exists_galoisSubgroupEquiv_symm_eq_conj` is the same fact read as a comparison of the
+two subgroups through `G_L`.
 
 The same holds for any other way of realizing `G_L` inside `G_K`: if a ring isomorphism
 `e : AlgebraicClosure L ≃+* AlgebraicClosure K` of algebraic closures extends the embedding `σ`,
@@ -75,6 +77,21 @@ theorem exists_galoisSubgroupEquiv_eq_conj [FiniteDimensional K L]
   rw [AlgEquiv.mul_apply, AlgEquiv.mul_apply, hγ',
     galoisSubgroupEquiv_apply_separableClosureRingEquiv,
     galoisSubgroupEquiv_apply_separableClosureRingEquiv, hγ]
+
+/-- **The comparison of the subgroups cut out by two embeddings is conjugation**: for `K`-embeddings
+`σ τ : L →ₐ[K] Kˢ` there is `γ : G_K` such that passing from `galoisSubgroup K L τ` to
+`galoisSubgroup K L σ` through `G_L`, by the inverse of `galoisSubgroupEquiv K L τ` followed by
+`galoisSubgroupEquiv K L σ`, is `v ↦ γ⁻¹ * v * γ`. -/
+theorem exists_galoisSubgroupEquiv_symm_eq_conj [FiniteDimensional K L]
+    (σ τ : L →ₐ[K] SeparableClosure K) :
+    ∃ γ : AbsoluteGaloisGroup K, ∀ v : (galoisSubgroup K L τ).toSubgroup,
+      (galoisSubgroupEquiv K L σ ((galoisSubgroupEquiv K L τ).symm v) : AbsoluteGaloisGroup K) =
+        γ⁻¹ * v * γ := by
+  obtain ⟨γ, hγ⟩ := exists_galoisSubgroupEquiv_eq_conj K L σ τ
+  refine ⟨γ, fun v => ?_⟩
+  have h := hγ ((galoisSubgroupEquiv K L τ).symm v)
+  rw [ContinuousMulEquiv.apply_symm_apply] at h
+  simp [h, mul_assoc]
 
 /-- **`absoluteGaloisGroupExtend` is conjugation by any extension of the embedding, up to an inner
 automorphism of `G_K`.** Let `e : AlgebraicClosure L ≃+* AlgebraicClosure K` be a ring isomorphism
