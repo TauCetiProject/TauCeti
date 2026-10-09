@@ -161,6 +161,7 @@ def typeBDiagonalCartan : LieSubalgebra K (LieAlgebra.Orthogonal.typeB ι K) whe
   carrier := {A | ∃ d : ι → K,
     (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) = typeBDiagonalMatrix d}
   zero_mem' := ⟨0, by
+    -- The zero inherited by `typeB` coerces definitionally to the ambient zero matrix.
     change (0 : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) = typeBDiagonalMatrix 0
     rw [typeBDiagonalMatrix_zero]⟩
   add_mem' := by
