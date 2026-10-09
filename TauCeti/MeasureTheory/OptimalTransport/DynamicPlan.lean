@@ -88,37 +88,37 @@ noncomputable def endpointLaw (η : Measure C(I, X)) : Measure (X × X) :=
   η.map fun γ ↦ (γ 0, γ 1)
 
 /-- The law at time `t` is the pushforward along the evaluation at `t`. -/
-theorem timeMarginal_eq_map (η : Measure C(I, X)) (t : I) :
+theorem timeMarginal_def (η : Measure C(I, X)) (t : I) :
     timeMarginal η t = η.map fun γ ↦ γ t :=
   (rfl)
 
 /-- The endpoint law is the pushforward along the pair of endpoints. -/
-theorem endpointLaw_eq_map (η : Measure C(I, X)) :
+theorem endpointLaw_def (η : Measure C(I, X)) :
     endpointLaw η = η.map fun γ ↦ (γ 0, γ 1) :=
   (rfl)
 
 /-- A finite dynamic plan has finite laws at every time. -/
 instance isFiniteMeasure_timeMarginal (η : Measure C(I, X)) [IsFiniteMeasure η] (t : I) :
     IsFiniteMeasure (timeMarginal η t) := by
-  rw [timeMarginal_eq_map]
+  rw [timeMarginal_def]
   infer_instance
 
 /-- A finite dynamic plan has a finite endpoint law. -/
 instance isFiniteMeasure_endpointLaw (η : Measure C(I, X)) [IsFiniteMeasure η] :
     IsFiniteMeasure (endpointLaw η) := by
-  rw [endpointLaw_eq_map]
+  rw [endpointLaw_def]
   infer_instance
 
 /-- A probability dynamic plan has probability laws at every time. -/
 instance isProbabilityMeasure_timeMarginal (η : Measure C(I, X)) [IsProbabilityMeasure η]
     (t : I) : IsProbabilityMeasure (timeMarginal η t) := by
-  rw [timeMarginal_eq_map]
+  rw [timeMarginal_def]
   infer_instance
 
 /-- A probability dynamic plan has a probability endpoint law. -/
 instance isProbabilityMeasure_endpointLaw (η : Measure C(I, X)) [IsProbabilityMeasure η] :
     IsProbabilityMeasure (endpointLaw η) := by
-  rw [endpointLaw_eq_map]
+  rw [endpointLaw_def]
   infer_instance
 
 variable [BorelSpace X]
@@ -183,7 +183,7 @@ theorem exists_ae_mem_geodesicPaths_endpointLaw_eq (π : Measure (X × X)) [SFin
     (ContinuousMap.measurable_eval 0).prodMk (ContinuousMap.measurable_eval 1)
   refine ⟨π.map G, (ae_map_iff hG.aemeasurable isClosed_geodesicPaths.measurableSet).2 ?_, ?_⟩
   · filter_upwards [hGπ] with z hz using hz.1
-  · rw [endpointLaw_eq_map, Measure.map_map he hG]
+  · rw [endpointLaw_def, Measure.map_map he hG]
     conv_rhs => rw [← Measure.map_id (μ := π)]
     refine Measure.map_congr ?_
     filter_upwards [hGπ] with z hz
@@ -212,7 +212,7 @@ theorem wassersteinEDist_timeMarginal_le {η : Measure C(I, X)}
   have hcoup : IsCoupling (η.map fun γ ↦ (γ s, γ t)) (η.timeMarginal s) (η.timeMarginal t) :=
     ⟨Measure.fst_map_prodMk (hev s) (hev t), Measure.snd_map_prodMk (hev s) (hev t)⟩
   refine (wassersteinEDist_le hcoup p).trans ?_
-  rw [Measure.endpointLaw_eq_map,
+  rw [Measure.endpointLaw_def,
     eLpNorm_map_measure hd.aestronglyMeasurable ((hev s).prodMk (hev t)).aemeasurable,
     eLpNorm_map_measure hd.aestronglyMeasurable ((hev 0).prodMk (hev 1)).aemeasurable,
     edist_nndist, ← smul_eq_mul, ← ENNReal.smul_def]
