@@ -434,7 +434,7 @@ theorem ae_infinite_setOf_eq_markovChainLaw_const (a₀ : α) :
   exact Set.infinite_univ
 
 /-- **The excursions of that chain are empty.** Its excursion law is the point mass at the empty
-word, which is what the representation theorem must give for a chain that never leaves `a₀`. -/
+word: a chain that never leaves `a₀` returns to `a₀` at every step. -/
 @[simp]
 theorem excursionLaw_const (a₀ : α) :
     excursionLaw (Kernel.const α (Measure.dirac a₀)) a₀ = Measure.dirac ([] : List α) := by
