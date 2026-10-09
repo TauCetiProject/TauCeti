@@ -19,8 +19,8 @@ group homomorphism `GL n R →* (Matrix n n R ≃ₐ[R] Matrix n n R)` and prove
 * over a commutative ring, its kernel is the center of `GL n R`, the invertible scalar matrices;
 * every algebra automorphism `σ` of `Matrix n n R` is Zariski-locally inner: there are finitely
   many elements of the commutative semiring `R` generating the unit ideal such that, after mapping
-  to a commutative ring in which one of them is invertible, `σ` becomes inner;
-* hence over a local ring, in particular over a field, every automorphism of a matrix algebra is
+  to a commutative semiring in which one of them is invertible, `σ` becomes inner;
+* hence over a local semiring, in particular over a field, every automorphism of a matrix algebra is
   inner (Skolem–Noether);
 * hence it induces an injective homomorphism from Mathlib's projective general linear group
   `PGL(n, R) = GL n R / Z(GL n R)`, which is bijective over a local ring.
@@ -166,14 +166,14 @@ variable {n A : Type*} [Fintype n] [DecidableEq n] [CommSemiring A]
 open Matrix.GeneralLinearGroup in
 /-- **Automorphisms of a matrix algebra are Zariski-locally inner.** For an algebra automorphism
 `σ` of `Mₙ(A)` over a commutative semiring `A`, there are finitely many elements of `A` generating
-the unit ideal such that, along any homomorphism `φ : A →+* B` to a commutative ring inverting one
+the unit ideal such that, along any homomorphism `φ : A →+* B` to a commutative semiring inverting one
 of them, `σ` becomes conjugation by an invertible matrix over `B`:
 `(σ x).map φ = g (x.map φ) g⁻¹` for every `x`.
 
-Over a local ring one of the elements is already a unit, which gives
+Over a local semiring one of the elements is already a unit, which gives
 `Matrix.GeneralLinearGroup.innerAut_surjective`. -/
 theorem exists_span_eq_top_forall_map_eq_innerAut (σ : Matrix n n A ≃ₐ[A] Matrix n n A) :
-    ∃ s : Finset A, Ideal.span (s : Set A) = ⊤ ∧ ∀ c ∈ s, ∀ {B : Type w} [CommRing B]
+    ∃ s : Finset A, Ideal.span (s : Set A) = ⊤ ∧ ∀ c ∈ s, ∀ {B : Type w} [CommSemiring B]
       (φ : A →+* B), IsUnit (φ c) →
         ∃ g : GL n B, ∀ x : Matrix n n A, (σ x).map φ = innerAut g (x.map φ) := by
   classical
@@ -217,9 +217,9 @@ namespace Matrix.GeneralLinearGroup
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
-/-- **Skolem–Noether for matrix algebras over a local ring**: every algebra automorphism of a
-matrix algebra over a commutative local ring, in particular over a field, is inner. -/
-theorem innerAut_surjective (K : Type*) [CommRing K] [IsLocalRing K] :
+/-- **Skolem–Noether for matrix algebras over a local semiring**: every algebra automorphism of a
+matrix algebra over a commutative local semiring, in particular over a field, is inner. -/
+theorem innerAut_surjective (K : Type*) [CommSemiring K] [IsLocalRing K] :
     Function.Surjective (innerAut (n := n) (R := K)) := by
   intro σ
   obtain ⟨s, hs, h⟩ := σ.exists_span_eq_top_forall_map_eq_innerAut
