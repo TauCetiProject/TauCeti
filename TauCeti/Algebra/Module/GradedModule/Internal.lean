@@ -49,6 +49,8 @@ the letterwise tuple operation that applies it on a half-open index interval.
   only finitely many nonzero homogeneous pieces.
 * `TauCeti.InternalGrading.koszulTwist_apply_of_mem`: the twist acts by the Koszul scalar on
   each homogeneous piece.
+* `TauCeti.InternalGrading.koszulTwist_one_apply_of_mem_negOnePow_smul`: the twist of parameter
+  one is the `ℤˣ`-scalar `(-1)^e` on degree `e`, over an additive group.
 * `TauCeti.InternalGrading.koszulTwist_comp`: twists compose by adding the twist parameters.
 * `TauCeti.InternalGrading.quadraticTwist_involutive`: the quadratic twist is an involution.
 * `TauCeti.LinearMap.IsHomogeneous.linearEquiv_symm`: the inverse of a degree-zero homogeneous
@@ -591,6 +593,20 @@ theorem InternalGrading.twistedTuple_zero_twist (G : InternalGrading R M) {n : �
   simp [twistedTuple]
 
 end KoszulTwistLemmas
+
+section KoszulTwistGroupLemmas
+
+variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- The Koszul twist of parameter one acts on an element of degree `e` as the sign `(-1)^e`,
+written as the `ℤˣ`-scalar `e.negOnePow` of the differential graded Leibniz rules.  This form
+needs `M` to be an additive group; `InternalGrading.koszulTwist_one_apply_of_mem` is the
+`R`-scalar form over an additive monoid. -/
+theorem InternalGrading.koszulTwist_one_apply_of_mem_negOnePow_smul (G : InternalGrading R M)
+    {x : M} {e : ℤ} (hx : x ∈ G.piece e) : koszulTwist G 1 x = e.negOnePow • x := by
+  rw [InternalGrading.koszulTwist_one_apply_of_mem G hx, Int.cast_smul_eq_zsmul, Units.smul_def]
+
+end KoszulTwistGroupLemmas
 
 namespace InternalGrading
 

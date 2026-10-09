@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.Cocycle
 public import TauCeti.Algebra.Homology.DG.Module.Right.Defs
+public import TauCeti.Algebra.Homology.GradedCochainComplex
 
 /-!
 # The twisted complex of a twisting cocycle
@@ -20,30 +21,28 @@ copy of `M` for each generator, and differential
 
 on a homogeneous elementary tensor `α ⊗ x`, written `Pi.single x α`.  The Koszul sign is carried by
 the Koszul twist of parameter one, `(InternalGrading.ofDecomposition ℳ).koszulTwist 1`, which is
-`α ↦ (-1) ^ |α| α` on `M`.  The total degree of `α ⊗ x` is `|α| - ind x`,
-so a generator of index `k` sits in cohomological degree `-k`, and `D` raises the total degree by
-one.
+`α ↦ (-1) ^ |α| α` on `M`.  The total degree of `α ⊗ x` is `|α| - ind x`, so a generator of index
+`k` sits in cohomological degree `-k`, and `D` raises the total degree by one.
 
-The main theorem is `D ∘ D = 0`.  The terms `dM (α · m x y)` and `(-1) ^ (|α| + 1) (dM α) · m x y`
-cancel against each other by the Leibniz rule, and what remains in the `z`-component is
-`α · (d (m x z) - Σ_y (-1) ^ (ind x - ind y) m x y * m y z)`, which vanishes by the twisting
-equation.  Right modules are represented as left modules over `Aᵐᵒᵖ`, so `α · a` is written
-`MulOpposite.op a • α`, and the product `(α · m x y) · m y z` becomes `op (m x y * m y z) • α`.
+The main theorem is that `D` squares to zero when `(ℳ, dM)` is a differential graded right module
+and `m` satisfies the twisting equation; the twisted complex is then packaged as a cochain complex
+of `R`-modules through `TauCeti.gradedCochainComplex`.  Right modules are represented as left
+modules over `Aᵐᵒᵖ`, so `α · a` is written `MulOpposite.op a • α`.
 
 ## Main definitions
 
 * `TauCeti.TwistingCocycle.totalGrading`: the grading of `P → M` by total degree.
 * `TauCeti.TwistingCocycle.twistedDifferential`: the differential `D` of the twisted complex.
+* `TauCeti.TwistingCocycle.twistedCochainComplex`: the twisted complex as a cochain complex of
+  `R`-modules.
 
 ## Main results
 
-* `TauCeti.InternalGrading.koszulTwist_one_ofDecomposition_apply_of_mem`: the Koszul twist of
-  parameter one, as the `ℤˣ`-scalar `negOnePow` used by `TauCeti.IsDGRightModule`.
 * `TauCeti.TwistingCocycle.twistedDifferential_single`: the formula on a homogeneous elementary
   tensor.
 * `TauCeti.TwistingCocycle.twistedDifferential_mem_totalGrading`: `D` raises the total degree by
   one.
-* `TauCeti.TwistingCocycle.twistedDifferential_sq`: `D ∘ D = 0`.
+* `TauCeti.TwistingCocycle.twistedDifferential_sq_zero`: `D ∘ D = 0`.
 
 ## References
 
@@ -55,7 +54,7 @@ equation.  Right modules are represented as left modules over `Aᵐᵒᵖ`, so `
 
 public section
 
-open DirectSum MulOpposite
+open CategoryTheory DirectSum MulOpposite
 
 namespace TauCeti
 
@@ -65,15 +64,6 @@ variable {R : Type uR} {A : Type uA} {M : Type uM}
   [CommRing R] [Ring A] [Algebra R A]
   [AddCommGroup M] [Module R M]
 
-/-- The Koszul twist of parameter one on an internally graded module, in the `ℤˣ`-scalar form
-`(-1) ^ q • α` of `TauCeti.IsDGRightModule`: on a homogeneous element of degree `q` it is
-`q.negOnePow • α`. -/
-theorem InternalGrading.koszulTwist_one_ofDecomposition_apply_of_mem (ℳ : ℤ → Submodule R M)
-    [DirectSum.Decomposition ℳ] {q : ℤ} {α : M} (hα : α ∈ ℳ q) :
-    (InternalGrading.ofDecomposition ℳ).koszulTwist 1 α = q.negOnePow • α := by
-  rw [InternalGrading.koszulTwist_one_apply_of_mem _
-    (by rwa [InternalGrading.ofDecomposition_piece]), Int.cast_smul_eq_zsmul, Units.smul_def]
-
 namespace TwistingCocycle
 
 variable [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M]
@@ -82,16 +72,14 @@ variable [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M]
 
 /-- The twisted complex `ℳ ⊗ ⟨P⟩`, identified with `P → M`, is graded in total degree `n` by
 `f x ∈ ℳ (n + ind x)`: the generator `x` sits in cohomological degree `-ind x`. -/
-def totalGrading (ℳ : ℤ → Submodule R M) (ind : P → ℤ) (n : ℤ) : Submodule R (P → M) where
-  carrier := {f | ∀ x, f x ∈ ℳ (n + ind x)}
-  add_mem' hf hg x := add_mem (hf x) (hg x)
-  zero_mem' _ := zero_mem _
-  smul_mem' c _ hf x := Submodule.smul_mem _ c (hf x)
+def totalGrading (ℳ : ℤ → Submodule R M) (ind : P → ℤ) (n : ℤ) : Submodule R (P → M) :=
+  Submodule.pi Set.univ fun x ↦ ℳ (n + ind x)
 
 omit [Fintype P] in
-theorem mem_totalGrading {ℳ : ℤ → Submodule R M} {n : ℤ} {f : P → M} :
-    f ∈ totalGrading ℳ ind n ↔ ∀ x, f x ∈ ℳ (n + ind x) :=
-  Iff.rfl
+theorem mem_totalGrading_iff {ℳ : ℤ → Submodule R M} {n : ℤ} {f : P → M} :
+    f ∈ totalGrading ℳ ind n ↔ ∀ x, f x ∈ ℳ (n + ind x) := by
+  rw [totalGrading, Submodule.mem_pi]
+  simp only [Set.mem_univ, true_implies]
 
 variable [SMulCommClass R Aᵐᵒᵖ M]
 
@@ -116,6 +104,14 @@ noncomputable def twistedDifferential (m : TwistingCocycle 𝒜 d P ind) (ℳ : 
 variable (m : TwistingCocycle 𝒜 d P ind) {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
   (dM : M →ₗ[R] M)
 
+omit [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M] [GradedAlgebra 𝒜] [Fintype P]
+  [SMulCommClass R Aᵐᵒᵖ M] in
+/-- The Koszul twist of parameter one of `ℳ`, on an element of degree `q`. -/
+private theorem koszulTwist_one_apply {q : ℤ} {α : M} (hα : α ∈ ℳ q) :
+    (InternalGrading.ofDecomposition ℳ).koszulTwist 1 α = q.negOnePow • α :=
+  InternalGrading.koszulTwist_one_apply_of_mem_negOnePow_smul _
+    (by rwa [InternalGrading.ofDecomposition_piece])
+
 omit [IsScalarTower R Aᵐᵒᵖ M] [GradedAlgebra 𝒜] in
 theorem twistedDifferential_apply (f : P → M) (y : P) :
     twistedDifferential m ℳ dM f y =
@@ -131,8 +127,7 @@ theorem twistedDifferential_single [DecidableEq P] (x : P) {q : ℤ} {α : M} (h
   funext y'
   simp only [twistedDifferential_apply, Pi.add_apply, Finset.sum_apply, Pi.single_apply]
   rw [Finset.sum_eq_single x (fun x' _ hx' ↦ by simp [hx']) (by simp)]
-  simp only [ite_true, InternalGrading.koszulTwist_one_ofDecomposition_apply_of_mem ℳ hα,
-    smul_comm (op (m.m x y')) q.negOnePow]
+  simp only [ite_true, koszulTwist_one_apply hα, smul_comm (op (m.m x y')) q.negOnePow]
   split_ifs with hxy <;> simp [hxy]
 
 omit [IsScalarTower R Aᵐᵒᵖ M] [GradedAlgebra 𝒜] in
@@ -152,6 +147,7 @@ variable {h : IsDGAlgebra 𝒜 d}
 theorem twistedDifferential_mem_totalGrading (hM : IsDGRightModule h ℳ dM)
     {n : ℤ} {f : P → M} (hf : f ∈ totalGrading ℳ ind n) :
     twistedDifferential m ℳ dM f ∈ totalGrading ℳ ind (n + 1) := by
+  rw [mem_totalGrading_iff] at hf ⊢
   intro y
   rw [twistedDifferential_apply]
   refine add_mem ?_ (Submodule.sum_mem _ fun x _ ↦ ?_)
@@ -159,7 +155,7 @@ theorem twistedDifferential_mem_totalGrading (hM : IsDGRightModule h ℳ dM)
     convert this using 2
     ring
   · have hα : (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (f x) ∈ ℳ (n + ind x) := by
-      rw [InternalGrading.koszulTwist_one_ofDecomposition_apply_of_mem ℳ (hf x)]
+      rw [koszulTwist_one_apply (hf x)]
       exact Submodule.smul_of_tower_mem _ _ (hf x)
     have hm : op (m.m x y) ∈
         (InternalGrading.ofDecomposition 𝒜).opposite.piece (ind y - ind x + 1) := by
@@ -172,7 +168,7 @@ theorem twistedDifferential_mem_totalGrading (hM : IsDGRightModule h ℳ dM)
 
 /-- The twisted differential squares to zero when `(ℳ, dM)` is a differential graded right module
 over `(𝒜, d)`. -/
-theorem twistedDifferential_sq (hM : IsDGRightModule h ℳ dM) (f : P → M) :
+theorem twistedDifferential_sq_zero (hM : IsDGRightModule h ℳ dM) (f : P → M) :
     twistedDifferential m ℳ dM (twistedDifferential m ℳ dM f) = 0 := by
   classical
   -- Reduce to a homogeneous elementary tensor `α ⊗ x`.
@@ -208,12 +204,44 @@ theorem twistedDifferential_sq (hM : IsDGRightModule h ℳ dM) (f : P → M) :
   -- What remains is the twisting equation for `m x z`, acting on `α`.
   rw [m.twisting x z, Finset.op_sum, Finset.sum_smul, ← Finset.sum_add_distrib]
   refine Finset.sum_eq_zero fun y _ ↦ ?_
+  -- The sign of the `y`-term: the exponent is rearranged to isolate an even part.
+  have hexp : q + (ind y - ind x + 1) + q = (ind x - ind y + 1) + 2 * (q + ind y - ind x) := by
+    ring
   have hsign : (q + (ind y - ind x + 1)).negOnePow * q.negOnePow = -(ind x - ind y).negOnePow := by
-    rw [← Int.negOnePow_add, ← Int.negOnePow_succ,
-      show q + (ind y - ind x + 1) + q = (ind x - ind y + 1) + 2 * (q + ind y - ind x) by ring,
-      Int.negOnePow_add, Int.negOnePow_two_mul, mul_one]
+    rw [← Int.negOnePow_add, ← Int.negOnePow_succ, hexp, Int.negOnePow_add,
+      Int.negOnePow_two_mul, mul_one]
   rw [op_smul, smul_assoc, smul_comm (op (m.m y z)) q.negOnePow, smul_smul, smul_smul,
     ← op_mul, hsign, Units.neg_smul, add_neg_cancel]
+
+/-- The twisted complex `ℳ ⊗ ⟨P⟩` as a cochain complex of `R`-modules: the degree-`n` term is
+`totalGrading ℳ ind n` and the differential is the restriction of `twistedDifferential`. -/
+noncomputable def twistedCochainComplex (hM : IsDGRightModule h ℳ dM) :
+    CochainComplex (ModuleCat.{max uP uM} R) ℤ :=
+  gradedCochainComplex (totalGrading ℳ ind) (twistedDifferential m ℳ dM)
+    (LinearMap.isHomogeneous_def.mpr fun _ _ hf ↦ twistedDifferential_mem_totalGrading m dM hM hf)
+    fun _ f ↦ twistedDifferential_sq_zero m dM hM f
+
+@[simp]
+theorem twistedCochainComplex_X (hM : IsDGRightModule h ℳ dM) (n : ℤ) :
+    (twistedCochainComplex m dM hM).X n = ModuleCat.of R (totalGrading ℳ ind n) := by
+  rw [twistedCochainComplex]
+  exact gradedCochainComplex_X n
+
+/-- The degree-`n` term of the twisted complex is the total-degree-`n` submodule of `P → M`, as a
+linear equivalence. -/
+noncomputable def twistedCochainComplexXEquiv (hM : IsDGRightModule h ℳ dM) (n : ℤ) :
+    (twistedCochainComplex m dM hM).X n ≃ₗ[R] totalGrading ℳ ind n :=
+  gradedCochainComplexXEquiv (ℳ := totalGrading ℳ ind) (dM := twistedDifferential m ℳ dM) n
+
+/-- Under `twistedCochainComplexXEquiv`, the differential of the twisted complex is the twisted
+differential. -/
+theorem twistedCochainComplexXEquiv_d (hM : IsDGRightModule h ℳ dM) (n : ℤ)
+    (f : (twistedCochainComplex m dM hM).X n) :
+    (twistedCochainComplexXEquiv m dM hM (n + 1)
+        (((twistedCochainComplex m dM hM).d n (n + 1)).hom f) : P → M) =
+      twistedDifferential m ℳ dM (twistedCochainComplexXEquiv m dM hM n f) := by
+  unfold twistedCochainComplexXEquiv
+  exact gradedCochainComplexXEquiv_d n f
 
 end TwistingCocycle
 
