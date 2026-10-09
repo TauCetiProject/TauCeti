@@ -18,10 +18,12 @@ The Young permutation characters of shapes `(2,2)` and `(2,1,1)` have values
 `1⁴`, `2·1²`, `2²`, `3·1`, and `4`. These are the characters obtained by inducing the
 trivial representation from the corresponding Young subgroups.
 
-Comparing with the certified integer character table of `S₄` gives multiplicities
+Comparing with the certified integer character table of `S₄` gives formal expansion coefficients
 `1,0,1,1,0` and `1,0,1,2,1`, in its row order: trivial, sign, degree two, standard,
-and sign-twisted standard. Together with the one-row, all-ones, and singleton-second-row
-calculations, these give every Young permutation character on four letters.
+and sign-twisted standard. These character identities hold over arbitrary fields; in characteristic
+zero, the Hom-dimension theorems recover these coefficients as multiplicities. Together with the
+one-row, all-ones, and singleton-second-row calculations, these give every Young permutation
+character on four letters.
 
 The fixed-tabloid calculation uses `quotientFiberSubgroupEquiv`: a fixed tabloid is a
 colouring constant on cycles, with the prescribed row sizes. No division or characteristic
@@ -220,13 +222,15 @@ open TauCeti Nat.Partition Equiv Finset
 or algebraic-closure assumption is needed for the Hom-dimension equality. -/
 theorem finrank_hom_indFDRep_trivial_parts_two_two {k : Type*} [Field k] [CharZero k]
     (V : FDRep k (Perm (Fin 4))) (μ : Nat.Partition 4) (hμ : μ.parts = {2, 2})
-    (i : SymmetricGroupFourClassIndex)
+    (i : Fin 5)
     (hV : ∀ j, V.character (symmetricGroupFourClassData.rep j) =
-      (symmetricGroupFourCharacterTable i j : k)) :
+      (symmetricGroupFourCharacterTable
+        (i.cast numClasses_symmetricGroupFourClassData.symm) j : k)) :
     Module.finrank k (V ⟶ indFDRep (FDRep.of (Representation.trivial k (youngSubgroup μ) k))) =
-      (![1, 0, 1, 1, 0] : Fin 5 → ℕ) (i.cast numClasses_symmetricGroupFourClassData) := by
+      (![1, 0, 1, 1, 0] : Fin 5 → ℕ) i := by
   have hchar : ∀ g, V.character g =
-      (symmetricGroupFourCharacterTable i (symmetricGroupFourClassData.index g) : k) := by
+      (symmetricGroupFourCharacterTable (i.cast numClasses_symmetricGroupFourClassData.symm)
+        (symmetricGroupFourClassData.index g) : k) := by
     intro g
     have hg := ClassFunction.eq_of_isConj (ClassFunction.ofCharacter V.ρ)
       (symmetricGroupFourClassData.isConj_rep_index g)
@@ -236,9 +240,9 @@ theorem finrank_hom_indFDRep_trivial_parts_two_two {k : Type*} [Field k] [CharZe
       (symmetricGroupFourCharacterTable ⟨0, by decide⟩ (symmetricGroupFourClassData.index g) +
         symmetricGroupFourCharacterTable ⟨2, by decide⟩ (symmetricGroupFourClassData.index g) +
         symmetricGroupFourCharacterTable ⟨3, by decide⟩ (symmetricGroupFourClassData.index g)) *
-      symmetricGroupFourCharacterTable i (symmetricGroupFourClassData.index g⁻¹) =
-      24 * ((![1, 0, 1, 1, 0] : Fin 5 → ℕ)
-        (i.cast numClasses_symmetricGroupFourClassData) : ℤ) := by
+      symmetricGroupFourCharacterTable (i.cast numClasses_symmetricGroupFourClassData.symm)
+        (symmetricGroupFourClassData.index g⁻¹) =
+      24 * ((![1, 0, 1, 1, 0] : Fin 5 → ℕ) i : ℤ) := by
     simp only [symmetricGroupFourCharacterTable_apply]
     fin_cases i <;> decide
   let : Invertible (Nat.card (Perm (Fin 4)) : k) := invertibleOfNonzero (by
@@ -255,13 +259,15 @@ theorem finrank_hom_indFDRep_trivial_parts_two_two {k : Type*} [Field k] [CharZe
 `S₄` character rows, are `1,0,1,2,1`. The character hypothesis selects a row. -/
 theorem finrank_hom_indFDRep_trivial_parts_two_one_one {k : Type*} [Field k] [CharZero k]
     (V : FDRep k (Perm (Fin 4))) (μ : Nat.Partition 4) (hμ : μ.parts = {2, 1, 1})
-    (i : SymmetricGroupFourClassIndex)
+    (i : Fin 5)
     (hV : ∀ j, V.character (symmetricGroupFourClassData.rep j) =
-      (symmetricGroupFourCharacterTable i j : k)) :
+      (symmetricGroupFourCharacterTable
+        (i.cast numClasses_symmetricGroupFourClassData.symm) j : k)) :
     Module.finrank k (V ⟶ indFDRep (FDRep.of (Representation.trivial k (youngSubgroup μ) k))) =
-      (![1, 0, 1, 2, 1] : Fin 5 → ℕ) (i.cast numClasses_symmetricGroupFourClassData) := by
+      (![1, 0, 1, 2, 1] : Fin 5 → ℕ) i := by
   have hchar : ∀ g, V.character g =
-      (symmetricGroupFourCharacterTable i (symmetricGroupFourClassData.index g) : k) := by
+      (symmetricGroupFourCharacterTable (i.cast numClasses_symmetricGroupFourClassData.symm)
+        (symmetricGroupFourClassData.index g) : k) := by
     intro g
     have hg := ClassFunction.eq_of_isConj (ClassFunction.ofCharacter V.ρ)
       (symmetricGroupFourClassData.isConj_rep_index g)
@@ -272,9 +278,9 @@ theorem finrank_hom_indFDRep_trivial_parts_two_one_one {k : Type*} [Field k] [Ch
         symmetricGroupFourCharacterTable ⟨2, by decide⟩ (symmetricGroupFourClassData.index g) +
         2 * symmetricGroupFourCharacterTable ⟨3, by decide⟩ (symmetricGroupFourClassData.index g) +
         symmetricGroupFourCharacterTable ⟨4, by decide⟩ (symmetricGroupFourClassData.index g)) *
-      symmetricGroupFourCharacterTable i (symmetricGroupFourClassData.index g⁻¹) =
-      24 * ((![1, 0, 1, 2, 1] : Fin 5 → ℕ)
-        (i.cast numClasses_symmetricGroupFourClassData) : ℤ) := by
+      symmetricGroupFourCharacterTable (i.cast numClasses_symmetricGroupFourClassData.symm)
+        (symmetricGroupFourClassData.index g⁻¹) =
+      24 * ((![1, 0, 1, 2, 1] : Fin 5 → ℕ) i : ℤ) := by
     simp only [symmetricGroupFourCharacterTable_apply]
     fin_cases i <;> decide
   let : Invertible (Nat.card (Perm (Fin 4)) : k) := invertibleOfNonzero (by
