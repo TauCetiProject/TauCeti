@@ -70,7 +70,7 @@ theorem contDiff_continuousAlternatingMap_compContinuousLinearMapCLM :
   ext1 f
   simp only [ContinuousLinearMap.comp_apply, P, _root_.smul_apply,
     hQ_apply, continuousMultilinearMapAlternatizationCLM_apply,
-    continuousAlternatingMap_alternatization_toContinuousMultilinearMap,
+    ContinuousAlternatingMap.coe_alternatization,
     compContinuousLinearMapCLM_apply]
   rw [← Nat.cast_smul_eq_nsmul ℝ, inv_smul_smul₀ (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _) :
     ((Fintype.card ι).factorial : ℝ) ≠ 0)]

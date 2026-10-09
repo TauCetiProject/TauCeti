@@ -16,10 +16,10 @@ Here it is bundled as a continuous linear map, so it can transport regularity of
 of multilinear maps. Its restriction to alternating maps is multiplication by the factorial
 of the number of arguments. No division or characteristic assumption is needed.
 
-For a multilinear map `f`, use `TauCeti.norm_continuousMultilinearMap_alternatization_le f`
+For a multilinear map `f`, use `TauCeti.ContinuousMultilinearMap.norm_alternatization_le f`
 for the norm bound and `TauCeti.continuousMultilinearMapAlternatizationCLM_apply f` to rewrite
 the bundled operator as Mathlib's signed sum. For an alternating map `a`,
-`TauCeti.continuousAlternatingMap_alternatization_toContinuousMultilinearMap a` computes
+`TauCeti.ContinuousAlternatingMap.coe_alternatization a` computes
 the signed sum of its underlying multilinear map. Use
 `TauCeti.continuousMultilinearMapAlternatizationCLM
   (𝕜 := 𝕜) (ι := ι) (E := E) (F := F)`
@@ -36,9 +36,11 @@ variable {𝕜 ι E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [Fintype ι]
 
+namespace ContinuousMultilinearMap
+
 open Classical in
 /-- The signed permutation sum has operator norm at most the factorial of its degree. -/
-theorem norm_continuousMultilinearMap_alternatization_le
+theorem norm_alternatization_le
     (f : ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ E) F) :
     ‖ContinuousMultilinearMap.alternatization f‖ ≤ (Fintype.card ι).factorial * ‖f‖ := by
   rw [← ContinuousAlternatingMap.norm_toContinuousMultilinearMap]
@@ -48,6 +50,8 @@ theorem norm_continuousMultilinearMap_alternatization_le
     _ = (Fintype.card ι).factorial * ‖f‖ := by
       simp [ContinuousMultilinearMap.norm_domDomCongr,
         Fintype.card_perm, nsmul_eq_mul]
+
+end ContinuousMultilinearMap
 
 /-- Mathlib's unnormalized alternatization, bundled as a continuous linear map. -/
 def continuousMultilinearMapAlternatizationCLM :
@@ -63,7 +67,7 @@ def continuousMultilinearMapAlternatizationCLM :
           _root_.smul_apply, ContinuousAlternatingMap.smul_apply,
           Finset.smul_sum]
         exact Finset.sum_congr rfl fun σ _ ↦ smul_comm _ _ _ }
-    (Fintype.card ι).factorial norm_continuousMultilinearMap_alternatization_le
+    (Fintype.card ι).factorial ContinuousMultilinearMap.norm_alternatization_le
 
 open Classical in
 /-- Evaluation of the continuous linear alternatization is the existing signed sum. -/
@@ -73,15 +77,19 @@ theorem continuousMultilinearMapAlternatizationCLM_apply
     continuousMultilinearMapAlternatizationCLM f =
       ContinuousMultilinearMap.alternatization f := (rfl)
 
+namespace ContinuousAlternatingMap
+
 open Classical in
 /-- Alternatization multiplies an already alternating map by its degree factorial. -/
 @[simp]
-theorem continuousAlternatingMap_alternatization_toContinuousMultilinearMap (f : E [⋀^ι]→L[𝕜] F) :
+theorem coe_alternatization (f : E [⋀^ι]→L[𝕜] F) :
     ContinuousMultilinearMap.alternatization f.toContinuousMultilinearMap =
       (Fintype.card ι).factorial • f := by
   apply ContinuousAlternatingMap.toAlternatingMap_injective
   simp only [ContinuousMultilinearMap.alternatization_apply_toAlternatingMap,
     ContinuousAlternatingMap.toAlternatingMap_smul]
   exact AlternatingMap.coe_alternatization f.toAlternatingMap
+
+end ContinuousAlternatingMap
 
 end TauCeti
