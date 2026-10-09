@@ -14,9 +14,9 @@ import Mathlib.Data.Nat.Prime.Basic
 # Local rings that are not commutative
 
 This file records basic facts about possibly noncommutative local rings. Their only idempotents
-are `0` and `1`, and locality transfers along a ring equivalence; these facts apply to endomorphism
-rings in the Krull-Schmidt theorem. In characteristic two the idempotent criterion identifies the
-zeros of the Artin–Schreier map `t ↦ t² + t`, without a finiteness assumption.
+are `0` and `1`; this fact applies to endomorphism rings in the Krull-Schmidt theorem. In
+characteristic two the idempotent criterion identifies the zeros of the Artin–Schreier map
+`t ↦ t² + t`, without a finiteness assumption.
 
 ## Main results
 
@@ -25,7 +25,6 @@ zeros of the Artin–Schreier map `t ↦ t² + t`, without a finiteness assumpti
 * `TauCeti.IsLocalRing.isDedekindFiniteMonoid`: a local ring is Dedekind-finite.
 * `TauCeti.IsLocalRing.sq_add_self_eq_zero_iff`: in characteristic two, `t² + t = 0` exactly
   when `t = 0` or `t = 1`.
-* `TauCeti.IsLocalRing.of_ringEquiv`: a semiring equivalent to a local semiring is local.
 * `TauCeti.IsLocalRing.isUnit_natCast_of_not_dvd`: if the prime `p` is not a unit, every natural
   number prime to `p` is a unit.
 -/
@@ -34,14 +33,11 @@ public section
 
 namespace TauCeti
 
-/-- An idempotent of a local ring is `0` or `1`. Mathlib's
-`IsLocalRing.isUnit_or_isUnit_one_sub_self` is stated over a commutative ring, so the splitting of
-`1 = a + (1 - a)` is taken here from `IsLocalRing.isUnit_or_isUnit_of_isUnit_add`, which holds over
-any semiring. -/
+/-- An idempotent of a possibly noncommutative local ring is `0` or `1`. -/
 theorem IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem {R : Type*} [Ring R] [IsLocalRing R]
     {a : R} (ha : IsIdempotentElem a) : a = 0 ∨ a = 1 := by
-  have hsum : IsUnit (a + (1 - a)) := by simp
-  rcases IsLocalRing.isUnit_or_isUnit_of_isUnit_add hsum with hu | hu
+  -- One of `a` and `1 - a` is a unit, and an idempotent unit is `1`.
+  rcases IsLocalRing.isUnit_or_isUnit_one_sub_self a with hu | hu
   · exact Or.inr (hu.mul_left_cancel (by rw [ha, mul_one]))
   · refine Or.inl ?_
     have hidem : IsIdempotentElem (1 - a) := IsIdempotentElem.one_sub ha
@@ -75,17 +71,6 @@ theorem IsLocalRing.sq_add_self_eq_zero_iff {R : Type*} [Ring R] [IsLocalRing R]
   constructor
   · exact IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem
   · rintro (rfl | rfl) <;> simp
-
-/-- A semiring equivalent to a local semiring is local. Mathlib's `RingEquiv.isLocalRing` asks the
-source to be commutative, since it goes through `IsLocalRing.of_surjective`; transporting the
-defining condition on a pair of elements summing to a unit needs no commutativity. -/
-theorem IsLocalRing.of_ringEquiv {R S : Type*} [Semiring R] [Semiring S] [IsLocalRing R]
-    (e : R ≃+* S) : IsLocalRing S := by
-  have := e.symm.toEquiv.nontrivial
-  refine IsLocalRing.of_isUnit_or_isUnit_of_isUnit_add fun a b hab ↦ ?_
-  have hsum : IsUnit (e.symm a + e.symm b) := by simpa using hab.map e.symm
-  exact (IsLocalRing.isUnit_or_isUnit_of_isUnit_add hsum).imp (fun hu ↦ by simpa using hu.map e)
-    fun hu ↦ by simpa using hu.map e
 
 /-- In a local ring in which the prime `p` is not a unit, every natural number prime to `p` is a
 unit. -/

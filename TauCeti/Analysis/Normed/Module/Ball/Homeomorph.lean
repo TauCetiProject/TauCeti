@@ -24,7 +24,7 @@ ball, the closed unit ball and the unit sphere of `E` onto those of `F`.
 The typical use compares the closed unit ball of the sup norm on `Fin n → ℝ`, which is the domain
 of the characteristic maps of a CW complex, with the Euclidean unit disk.
 
-Mathlib's radial homeomorphism `Homeomorph.unitBall : E ≃ₜ ball 0 1` of a real normed space onto
+Mathlib's radial homeomorphism `Homeomorph.unitBall : E ≃ₜ ball 0 1` of a real seminormed space onto
 its open unit ball, followed by the inclusion of the open unit ball in the closed unit ball, is an
 open embedding of `E` into the closed unit ball. It lets a chart valued in `E` be read as a chart
 valued in the closed unit ball.
@@ -50,7 +50,7 @@ noncomputable section
 
 open Metric Set Topology
 
-variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
+variable {W : Type*} [SeminormedAddCommGroup W] [NormedSpace ℝ W]
 
 /-- The inverse of `unitBall` in explicit radial coordinates. -/
 theorem _root_.Homeomorph.unitBall_symm_apply_coe (y : ball (0 : W) 1) :
@@ -143,29 +143,18 @@ theorem nonempty_homeomorph_cube_closedBall (F : Type*) [NormedAddCommGroup F] [
   let e : closedBall (0 : Fin k → ℝ) 1 ≃ₜ closedBall (0 : F) 1 :=
     (L.unitBallHomeomorph.image _).trans
       (Homeomorph.setCongr L.image_unitBallHomeomorph_closedBall)
-  -- The affine change `t ↦ 2t - 1` identifies `Iᵏ` with the closed unit ball of the sup norm.
-  have hmem (c : Fin k → I) : (fun i ↦ 2 * (c i : ℝ) - 1) ∈ closedBall (0 : Fin k → ℝ) 1 :=
-    mem_closedBall_zero_iff.2 <| (pi_norm_le_iff_of_nonneg zero_le_one).2 fun i ↦ by
-      rw [Real.norm_eq_abs, abs_le]
-      constructor <;> linarith [(c i).2.1, (c i).2.2]
-  let a : (Fin k → I) → closedBall (0 : Fin k → ℝ) 1 := fun c ↦ ⟨_, hmem c⟩
-  have ha : Continuous a := (continuous_pi fun i ↦ by fun_prop).subtype_mk hmem
-  have hai : Function.Injective a := fun c c' hcc' ↦ funext fun i ↦ Subtype.ext <| by
-    have := congr_fun (congrArg Subtype.val hcc') i
-    simp only [a] at this
-    linarith
-  have has : Function.Surjective a := by
-    rintro ⟨x, hx⟩
-    have hxi (i : Fin k) : |x i| ≤ 1 := by
-      simpa [Real.norm_eq_abs] using
-        (pi_norm_le_iff_of_nonneg zero_le_one).1 (mem_closedBall_zero_iff.1 hx) i
-    refine ⟨fun i ↦ ⟨(x i + 1) / 2, ?_, ?_⟩, Subtype.ext (funext fun i ↦ ?_)⟩
-    · linarith [(abs_le.1 (hxi i)).1]
-    · linarith [(abs_le.1 (hxi i)).2]
-    · simp only [a]
-      ring
-  exact ⟨(e.continuous.comp ha).homeoOfEquivCompactToT2
-    (f := Equiv.ofBijective _ (e.bijective.comp ⟨hai, has⟩))⟩
+  -- Apply the affine interval homeomorphism coordinatewise, then identify the product of
+  -- intervals with the closed unit ball of the sup norm.
+  let a : (Fin k → I) ≃ₜ (Fin k → Icc (-1 : ℝ) 1) :=
+    Homeomorph.piCongrRight fun _ ↦ (iccHomeoI (-1 : ℝ) 1 (by norm_num)).symm
+  let b : (Fin k → Icc (-1 : ℝ) 1) ≃ₜ univ.pi (fun _ : Fin k ↦ Icc (-1 : ℝ) 1) :=
+    { toEquiv := (Equiv.Set.univPi _).symm
+      continuous_toFun := by fun_prop
+      continuous_invFun := continuous_pi fun i ↦
+        ((continuous_apply i).comp continuous_subtype_val).subtype_mk _ }
+  have h : univ.pi (fun _ : Fin k ↦ Icc (-1 : ℝ) 1) = closedBall (0 : Fin k → ℝ) 1 := by
+    simp [closedBall_pi _ zero_le_one, Real.closedBall_eq_Icc]
+  exact ⟨a.trans <| b.trans <| (Homeomorph.setCongr h).trans e⟩
 
 section Sphere
 
@@ -186,9 +175,8 @@ def sphereHomeomorphOfFinrankEq (hEF : Module.finrank ℝ E = Module.finrank ℝ
 theorem coe_sphereHomeomorphOfFinrankEq_apply (hEF : Module.finrank ℝ E = Module.finrank ℝ F)
     (x : sphere (0 : E) 1) :
     (sphereHomeomorphOfFinrankEq hEF x : F) =
-      (ContinuousLinearEquiv.ofFinrankEq hEF).unitBallHomeomorph x := by
-  unfold sphereHomeomorphOfFinrankEq
-  rfl
+      (ContinuousLinearEquiv.ofFinrankEq hEF).unitBallHomeomorph x :=
+  (rfl)
 
 end Sphere
 

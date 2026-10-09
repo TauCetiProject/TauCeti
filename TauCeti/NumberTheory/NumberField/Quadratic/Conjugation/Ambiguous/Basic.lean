@@ -160,8 +160,6 @@ theorem exists_map_ringOfIntegersQuadraticConj_eq_self_of_sq_eq_one [IsTotallyCo
   obtain ⟨x, y, hx, hy, hxy⟩ := ClassGroup.mk0_eq_mk0_iff.mp hfix
   set σ := ringOfIntegersQuadraticConj hmin hgen
   have hinv : Function.Involutive σ := ringOfIntegersQuadraticConj_involutive hmin hgen
-  -- Restate the pushforward in `hxy` along the equivalence rather than its underlying hom.
-  simp only [Ideal.map_coe] at hxy
   have hJ0 : (J : Ideal (𝓞 K)) ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp J.2
   have hJm0 : Ideal.map σ (J : Ideal (𝓞 K)) ≠ 0 := by
     rw [ne_eq, Ideal.zero_eq_bot, Ideal.map_eq_bot_iff_of_injective σ.injective,
@@ -224,8 +222,7 @@ theorem classGroupMk0_sq_eq_one_of_map_ringOfIntegersQuadraticConj_eq_self
   (mulEquiv_ringOfIntegersQuadraticConj_apply_eq_self_iff hmin hgen (ClassGroup.mk0 I)).mp <| by
     rw [ClassGroup.mulEquiv_mk0]
     congr 1
-    exact Subtype.ext ((Ideal.map_coe (f := ringOfIntegersQuadraticConj hmin hgen)
-      (I : Ideal (𝓞 K))).trans hI)
+    exact Subtype.ext hI
 
 /-- An ordinary ideal class is **strongly ambiguous** if it is represented by an ideal fixed by
 quadratic conjugation. -/

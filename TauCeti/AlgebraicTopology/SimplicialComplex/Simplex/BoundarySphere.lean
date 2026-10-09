@@ -11,7 +11,7 @@ import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
 
 /-!
 # The realization of a simplex boundary

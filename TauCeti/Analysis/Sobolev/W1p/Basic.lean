@@ -175,8 +175,10 @@ theorem Sobolev1JetLp.gradient_apply_ae (J : Sobolev1JetLp mu Omega p) :
     (WithLp.sndL 2 ℝ ℝ E).compLp J x = (WithLp.sndL 2 ℝ ℝ E) (J x)
   exact (WithLp.sndL 2 ℝ ℝ E).coeFn_compLp J
 
+-- `Sobolev1JetLp` abbreviates an `Lp` space, and Mathlib's `MeasureTheory.Lp.ext` is `@[ext high]`;
+-- the priority puts this lemma before it.
 /-- Two Sobolev jets are equal when their value and gradient components are equal. -/
-@[ext]
+@[ext high + 1]
 theorem Sobolev1JetLp.ext {J K : Sobolev1JetLp mu Omega p}
     (hvalue : Sobolev1JetLp.value J = Sobolev1JetLp.value K)
     (hgradient : Sobolev1JetLp.gradient J = Sobolev1JetLp.gradient K) : J = K := by
