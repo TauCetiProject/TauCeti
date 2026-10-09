@@ -73,7 +73,7 @@ theorem exists_forall_eq_inv_mul_transpose_mul (φ : Matrix n n K →ₗ[K] Matr
   have hφg : ∀ X, φ X = (g : Matrix n n K) * Xᵀ * (↑g⁻¹ : Matrix n n K) := by
     intro X
     have h := AlgEquiv.congr_fun hg Xᵀ
-    simp only [GeneralLinearGroup.innerAut_apply, ← coe_units_inv] at h
+    simp only [GeneralLinearGroup.innerAut_apply] at h
     rw [h]
     simp [τ]
   refine ⟨g⁻¹, ?_, fun X => by rw [hφg, inv_inv]⟩
