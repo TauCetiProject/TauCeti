@@ -26,7 +26,7 @@ open MeasureTheory Set Topology
 namespace TauCeti
 
 /-- Pullback to a measurable conull set preserves the original measure under inclusion. -/
-theorem measurePreserving_subtype_val_of_ae_mem {X : Type*} [MeasurableSpace X]
+theorem measurePreserving_subtype_coe_of_ae_mem {X : Type*} [MeasurableSpace X]
     (μ : Measure X) {s : Set X} (hs : MeasurableSet s) (hμ : ∀ᵐ x ∂μ, x ∈ s) :
     MeasurePreserving ((↑) : s → X) (μ.comap (↑)) μ := by
   simpa only [Measure.restrict_eq_self_of_ae_mem hμ] using

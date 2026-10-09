@@ -113,7 +113,7 @@ theorem referenceMeasure_supportSpace (X : MetricMeasureSpace) :
 theorem measurePreserving_subtype_val (X : MetricMeasureSpace) :
     MeasurePreserving ((↑) : X.referenceMeasure.support → X)
       X.supportSpace.referenceMeasure X.referenceMeasure :=
-  measurePreserving_subtype_val_of_ae_mem X.referenceMeasure
+  measurePreserving_subtype_coe_of_ae_mem X.referenceMeasure
     X.referenceMeasure.isClosed_support.measurableSet X.referenceMeasure.support_mem_ae
 
 /-- The support representative has positive reference measure on every nonempty open set. -/
@@ -181,6 +181,12 @@ protected def symm (e : Equiv X Y) : Equiv Y X where
   toIsometryEquiv := e.toIsometryEquiv.symm
   measurePreserving' := e.measurePreserving.symm e.toIsometryEquiv.toHomeomorph.toMeasurableEquiv
 
+@[simp]
+theorem coe_symm (e : Equiv X Y) :
+    (e.symm : Y ≃ᵢ X) = (e : X ≃ᵢ Y).symm := by
+  ext
+  rfl
+
 /-- Composition of changes of presentation. -/
 protected def trans (e : Equiv X Y) (f : Equiv Y Z) : Equiv X Z where
   toIsometryEquiv := e.toIsometryEquiv.trans f.toIsometryEquiv
@@ -233,7 +239,7 @@ theorem mem_support_iff (e : Equiv X Y) (x : X) :
   exact e.toIsometryEquiv.injective.mem_set_image
 
 /-- The isometric equivalence induced on the supports of the reference measures. -/
-def supportIsometryEquiv (e : Equiv X Y) : X.supportSpace ≃ᵢ Y.supportSpace where
+private def supportIsometryEquiv (e : Equiv X Y) : X.supportSpace ≃ᵢ Y.supportSpace where
   toEquiv := e.toIsometryEquiv.toEquiv.subtypeEquiv (fun x ↦ (e.mem_support_iff x).symm)
   isometry_toFun := by
     -- Expose the support subtypes and their induced metrics for the distance rewrites.
@@ -246,7 +252,7 @@ def supportIsometryEquiv (e : Equiv X Y) : X.supportSpace ≃ᵢ Y.supportSpace 
 
 -- Rewrite before simp reduces the coercions through the bundled support carriers.
 @[simp↓]
-theorem coe_supportIsometryEquiv_apply (e : Equiv X Y) (x : X.supportSpace) :
+private theorem coe_supportIsometryEquiv_apply (e : Equiv X Y) (x : X.supportSpace) :
     ((↑) : Y.referenceMeasure.support → Y) (e.supportIsometryEquiv x) =
       e (((↑) : X.referenceMeasure.support → X) x) := (rfl)
 
@@ -316,6 +322,14 @@ def supportSpaceEquivOfFullSupport (X : MetricMeasureSpace) [X.referenceMeasure.
 theorem supportSpaceEquivOfFullSupport_apply (X : MetricMeasureSpace)
     [X.referenceMeasure.IsOpenPosMeasure] (x : X.supportSpace) :
     X.supportSpaceEquivOfFullSupport x = ((↑) : X.referenceMeasure.support → X) x := (rfl)
+
+/-- The inverse full-support equivalence sends a point to the support point over it. -/
+@[simp↓]
+theorem supportSpaceEquivOfFullSupport_symm_apply (X : MetricMeasureSpace)
+    [X.referenceMeasure.IsOpenPosMeasure] (x : X) :
+    ((↑) : X.referenceMeasure.support → X) (X.supportSpaceEquivOfFullSupport.symm x) = x := by
+  rw [← X.supportSpaceEquivOfFullSupport_apply]
+  exact X.supportSpaceEquivOfFullSupport.apply_symm_apply x
 
 end MetricMeasureSpace
 
