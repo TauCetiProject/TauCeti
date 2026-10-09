@@ -139,11 +139,10 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Nonarchi
 `T ↦ T + a`. -/
 noncomputable def discPoint (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
     closedPolydisc 1 K :=
-  ⟨comap (taylorHom (fun _ ↦ a) (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha))
-    (gaussPoint hr₀ hr₁).1,
-    (closedPolydisc_def 1 K).symm.subset <| comap_mem_spa (continuous_taylorHom _ _)
-      (fun _ hf ↦ taylorHom_mem_powerBoundedSubring _ _ hf)
-      ((closedPolydisc_def 1 K).subset (gaussPoint hr₀ hr₁).2)⟩
+  Homeomorph.setCongr (closedPolydisc_def 1 K).symm <|
+    spaComap (taylorHom (fun _ ↦ a) (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha))
+      (continuous_taylorHom _ _) _ _ (fun _ hf ↦ taylorHom_mem_powerBoundedSubring _ _ hf)
+      (Homeomorph.setCongr (closedPolydisc_def 1 K) (gaussPoint hr₀ hr₁))
 
 /-- The underlying point in `Spv K⟨T⟩` is the pullback of the Gauss point `η_r` along the
 translation `T ↦ T + a`. -/
@@ -151,7 +150,7 @@ theorem discPoint_val (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r �
     (discPoint a ha hr₀ hr₁).1 =
       comap (taylorHom (fun _ ↦ a) (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha))
         (gaussPoint hr₀ hr₁).1 :=
-  (rfl)
+  spaComap_val _ _ _ _ _ _
 
 /-- The point `η_{a,r}` compares `f` and `g` by the Gauss norms of radius `r` of `f(T + a)` and
 `g(T + a)`. -/
