@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.FiniteMeasureProd
 public import Mathlib.MeasureTheory.Measure.Sub
-import TauCeti.MeasureTheory.Measure.Coupling.Basic
 
 /-!
 # Couplings of two measures
@@ -31,7 +30,9 @@ measures, and the probability case is packaged separately as a subtype of
 * `TauCeti.Coupling μ ν` — couplings of two probability measures, bundled as a subtype of
   `MeasureTheory.ProbabilityMeasure (X × Y)`;
 * `TauCeti.Coupling.prod` — the independent coupling, and with it
-  `TauCeti.Coupling.instNonempty`.
+  `TauCeti.Coupling.instNonempty`;
+* `MeasureTheory.Measure.diagonalCoupling μ` — the pushforward of `μ` along the diagonal
+  `x ↦ (x, x)`.
 
 ## Main statements
 
@@ -57,6 +58,10 @@ measures, and the probability case is packaged separately as a subtype of
 * `TauCeti.isCoupling_map_swap_iff` and `TauCeti.isCoupling_map_prodMap_iff` —
   invariance of the relation under the coordinate swap and under measurable equivalences of the
   two factors;
+* `TauCeti.isCoupling_map_prodMk_of_measurePreserving` — two measure-preserving maps out of a
+  common space induce a coupling of their targets;
+* `MeasureTheory.Measure.isCoupling_diagonalCoupling` — the diagonal coupling couples a measure
+  with itself;
 * `TauCeti.isCoupling_toMeasure_iff` — the coupling condition on bundled probability measures,
   as the pair of equations for the two marginal pushforwards;
 * `TauCeti.IsCoupling.eq_map_prodMk` — a coupling out of a Dirac measure is the
@@ -77,15 +82,16 @@ The declarations sit in the bare `TauCeti` namespace rather than in `TauCeti.Mea
 `scripts/lint-dot-notation.py` rejects a new declaration under `TauCeti.<Mathlib type
 namespace>` that takes an explicit argument of that type, because `π.IsCoupling μ ν` would not
 elaborate there anyway. Dot notation on `hπ` works under either namespace; the bare namespace is
-forced by the lint rule and matches `TauCeti.MultiCoupling`.
+forced by the lint rule and matches `TauCeti.MultiCoupling`. The diagonal coupling and its
+lemmas are constructions on a single measure `μ`, so they live in the root
+`MeasureTheory.Measure` namespace instead, where `μ.diagonalCoupling` elaborates.
 
-This is Layer 0, item 1 of the optimal-transport roadmap.
+`IsCoupling` is a `Prop`, never a typeclass: a coupling of two given marginals is not canonical,
+and consumers such as transport costs and cut distances minimise over all of them, so instance
+resolution must never pick one.
 
 ## References
 
-* `TauCeti/MeasureTheory/Measure/Coupling/Basic.lean` is the formal source for the
-  measure-preserving projection and integral-transfer declarations and proofs adapted here to the
-  plan-first `TauCeti.IsCoupling` interface.
 * C. Villani, *Optimal Transport: Old and New*, Grundlehren 338, 2009, Chapter 1
   ("Couplings and changes of variables"), Definition 1.1, which is this relation for two
   probability measures. `TauCeti.IsCoupling` states it for arbitrary measures, so the
@@ -113,6 +119,41 @@ structure IsCoupling (π : Measure (X × Y)) (μ : Measure X) (ν : Measure Y) :
   fst_eq : π.fst = μ
   /-- The second marginal of a coupling is the prescribed target measure. -/
   snd_eq : π.snd = ν
+
+section Diagonal
+
+/-- The **diagonal coupling** of a measure with itself: the pushforward of `μ` along
+`x ↦ (x, x)`. -/
+def _root_.MeasureTheory.Measure.diagonalCoupling (μ : Measure X) : Measure (X × X) :=
+  μ.map fun x ↦ (x, x)
+
+/-- The diagonal coupling of a measurable set is the measure of its diagonal slice. -/
+theorem _root_.MeasureTheory.Measure.diagonalCoupling_apply (μ : Measure X) {s : Set (X × X)}
+    (hs : MeasurableSet s) : μ.diagonalCoupling s = μ {x | (x, x) ∈ s} := by
+  rw [Measure.diagonalCoupling, Measure.map_apply (measurable_id'.prodMk measurable_id') hs]
+  rfl
+
+/-- The diagonal is measure preserving onto the diagonal coupling.
+
+This is the defining pushforward, packaged for the transport lemmas that ask for a
+`MeasurePreserving` hypothesis. It is stated here because `diagonalCoupling` is not reducible
+outside this module, so a caller cannot supply the pushforward identity by `rfl`. -/
+theorem _root_.MeasureTheory.Measure.measurePreserving_diagonal (μ : Measure X) :
+    MeasurePreserving (fun x ↦ (x, x)) μ μ.diagonalCoupling :=
+  (measurable_id'.prodMk measurable_id').measurePreserving μ
+
+/-- The diagonal coupling couples a measure with itself. -/
+theorem _root_.MeasureTheory.Measure.isCoupling_diagonalCoupling (μ : Measure X) :
+    IsCoupling μ.diagonalCoupling μ μ :=
+  ⟨(Measure.fst_map_prodMk measurable_id' measurable_id').trans Measure.map_id,
+    (Measure.snd_map_prodMk measurable_id' measurable_id').trans Measure.map_id⟩
+
+/-- The diagonal coupling of a probability measure is a probability measure. -/
+instance _root_.MeasureTheory.Measure.instIsProbabilityMeasureDiagonalCoupling (μ : Measure X)
+    [IsProbabilityMeasure μ] : IsProbabilityMeasure μ.diagonalCoupling :=
+  by rw [Measure.diagonalCoupling]; infer_instance
+
+end Diagonal
 
 namespace IsCoupling
 
@@ -173,6 +214,30 @@ theorem integral_comp_snd (hπ : IsCoupling π μ ν) {f : Y → E}
     (hf : AEStronglyMeasurable f ν) : ∫ p, f p.2 ∂π = ∫ y, f y ∂ν := by
   rw [← hπ.measurePreserving_snd.map_eq] at hf ⊢
   exact (integral_map measurable_snd.aemeasurable hf).symm
+
+/-- **Integrability from upper bounds and a nonnegative split sum.** Let `f` and `g` be bounded
+above almost everywhere by integrable functions of the two marginals. If `f x + g y ≥ 0` for
+`π`-almost every `(x, y)`, then `f` and `g` are both integrable. -/
+theorem integrable_and_integrable_of_ae_add_nonneg (hπ : IsCoupling π μ ν) {f : X → ℝ}
+    {g : Y → ℝ} (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g ν) {U : X → ℝ}
+    {V : Y → ℝ} (hU : Integrable U μ) (hV : Integrable V ν) (hfU : ∀ᵐ x ∂μ, f x ≤ U x)
+    (hgV : ∀ᵐ y ∂ν, g y ≤ V y) (hfg : ∀ᵐ z ∂π, 0 ≤ f z.1 + g z.2) :
+    Integrable f μ ∧ Integrable g ν := by
+  have hG := hπ.integrable_add_split hU.abs hV.abs
+  have hbound : ∀ᵐ z ∂π, |f z.1| ≤ |U z.1| + |V z.2| ∧ |g z.2| ≤ |U z.1| + |V z.2| := by
+    filter_upwards [hπ.measurePreserving_fst.quasiMeasurePreserving.ae hfU,
+      hπ.measurePreserving_snd.quasiMeasurePreserving.ae hgV, hfg] with z hzU hzV hz
+    have := le_abs_self (U z.1)
+    have := le_abs_self (V z.2)
+    have := abs_nonneg (U z.1)
+    have := abs_nonneg (V z.2)
+    exact ⟨abs_le.2 ⟨by linarith, by linarith⟩, abs_le.2 ⟨by linarith, by linarith⟩⟩
+  exact ⟨(hπ.measurePreserving_fst.integrable_comp hf).1 <|
+      hG.mono' (hf.comp_measurePreserving hπ.measurePreserving_fst) <|
+        hbound.mono fun _ hz ↦ by simpa [Real.norm_eq_abs] using hz.1,
+    (hπ.measurePreserving_snd.integrable_comp hg).1 <|
+      hG.mono' (hg.comp_measurePreserving hπ.measurePreserving_snd) <|
+        hbound.mono fun _ hz ↦ by simpa [Real.norm_eq_abs] using hz.2⟩
 
 end Integral
 
@@ -324,16 +389,13 @@ protected theorem map_prod {H : Type*} [MeasurableSpace H] (hπ : IsCoupling π 
     IsCoupling ((π.prod η).map fun w ↦ (f (w.1.1, w.2), g (w.1.2, w.2)))
       ((μ.prod η).map f) ((ν.prod η).map g) := by
   -- Pair `π` with the diagonal plan of `η`, rearrange, and push forward coordinatewise.
-  have hη' := MeasureTheory.isCoupling_diagonalCoupling η
-  have hη : IsCoupling (MeasureTheory.diagonalCoupling η) η η :=
-    ⟨hη'.fst_eq, hη'.snd_eq⟩
-  let _ : SFinite (MeasureTheory.diagonalCoupling η) := by
-    rw [← (MeasureTheory.measurePreserving_diagonal η).map_eq]
+  let _ : SFinite η.diagonalCoupling := by
+    rw [← η.measurePreserving_diagonal.map_eq]
     infer_instance
-  have h := (hπ.prodProdProdComm hη).map hf hg
-  have hprod : π.prod (MeasureTheory.diagonalCoupling η) =
+  have h := (hπ.prodProdProdComm η.isCoupling_diagonalCoupling).map hf hg
+  have hprod : π.prod η.diagonalCoupling =
       (π.prod η).map (Prod.map id fun z ↦ (z, z)) :=
-    ((MeasurePreserving.id π).prod (MeasureTheory.measurePreserving_diagonal η)).map_eq.symm
+    ((MeasurePreserving.id π).prod η.measurePreserving_diagonal).map_eq.symm
   rwa [hprod, Measure.map_map (by fun_prop) (by fun_prop),
     Measure.map_map (by fun_prop) (by fun_prop)] at h
 
@@ -363,6 +425,14 @@ theorem isCoupling_map_prodMap_iff (e : X ≃ᵐ X') (f : Y ≃ᵐ Y') :
       (e.measurable.prodMap f.measurable), Prod.map_comp_map, e.symm_comp_self,
     f.symm_comp_self, Prod.map_id, Measure.map_id, e.map_symm_map, f.map_symm_map] using
     h.map e.symm.measurable f.symm.measurable
+
+/-- Two measure-preserving maps `f` and `g` out of a common space `(Ω, γ)` induce the coupling
+`(f, g)_# γ` of their targets. -/
+theorem isCoupling_map_prodMk_of_measurePreserving {Ω : Type*} [MeasurableSpace Ω]
+    {γ : Measure Ω} {f : Ω → X} {g : Ω → Y} (hf : MeasurePreserving f γ μ)
+    (hg : MeasurePreserving g γ ν) : IsCoupling (γ.map fun w ↦ (f w, g w)) μ ν :=
+  ⟨(Measure.fst_map_prodMk hf.measurable hg.measurable).trans hf.map_eq,
+    (Measure.snd_map_prodMk hf.measurable hg.measurable).trans hg.map_eq⟩
 
 /-- The zero measure couples the two zero measures. -/
 @[simp]

@@ -25,7 +25,8 @@ set already has a manifold chart.
 This is the splitting step in the parametric transversality package of McDuff--Salamon,
 *J-holomorphic Curves and Symplectic Topology*, 2nd ed., Appendix A.3. The resulting complement
 feeds Mathlib's complemented-kernel implicit function theorem, while
-`TauCeti.parameterProj` describes the derivative of the projection from the universal zero set to
+`ContinuousLinearMap.parameterProj` describes the derivative of the projection from the universal
+zero set to
 the parameter space.
 
 ## Main results

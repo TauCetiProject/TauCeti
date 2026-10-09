@@ -58,6 +58,12 @@ upper-triangular subgroup of `GL₂(R)` back along the canonical inclusion. -/
 def SL2Borel (R : Type u) [CommRing R] : Subgroup SL(2, R) :=
   (GL2Borel R).comap Matrix.SpecialLinearGroup.toGL
 
+/-- The standard Borel subgroup of `SL₂(R)` is the preimage of the upper-triangular subgroup of
+`GL₂(R)`. -/
+theorem SL2Borel_def (R : Type u) [CommRing R] :
+    SL2Borel R = (GL2Borel R).comap Matrix.SpecialLinearGroup.toGL := by
+  rw [SL2Borel]
+
 namespace SL2Borel
 
 section CommRing

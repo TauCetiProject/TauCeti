@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.HerbrandQuotient
 import Mathlib.RepresentationTheory.Homological.GroupCohomology.Hilbert90
 import Mathlib.GroupTheory.Abelianization.Finite
+import TauCeti.RepresentationTheory.Homological.TateCohomology.Finite
 import TauCeti.RepresentationTheory.Rep.TensorShortExact
 
 /-!
@@ -49,24 +50,6 @@ variable (K L : Type) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
 
-/-- Inclusion of the valuation-zero units in the multiplicative group, as a morphism of
-integral Galois representations. -/
-def unitFiltrationZeroIncl :
-    Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0) ⟶
-      Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ :=
-  Rep.ofHom <| LinearMap.intertwiningMap_of_isIntertwiningMap _ _
-    (unitFiltration L 0).subtype.toAdditive.toIntLinearMap fun σ x ↦
-      congrArg Additive.ofMul (AlgEquiv.coe_smul_unitFiltration σ x.toMul)
-
-/-- The inclusion is the subgroup inclusion, written additively. -/
-@[simp]
-theorem unitFiltrationZeroIncl_apply (x : Additive (unitFiltration L 0)) :
-    (unitFiltrationZeroIncl K L).hom x = Additive.ofMul (x.toMul : Lˣ) := (rfl)
-
-/-- The inclusion of the valuation-zero units in the multiplicative group is injective. -/
-theorem unitFiltrationZeroIncl_injective : Function.Injective (unitFiltrationZeroIncl K L).hom :=
-  fun _ _ h ↦ Additive.toMul.injective (Subtype.ext (congrArg Additive.toMul h))
-
 /-- On the valuation-zero units of a Galois extension, the representation norm of `Gal(L/K)` is
 the field norm. -/
 theorem coe_norm_unitFiltrationZero [IsGalois K L]
@@ -78,6 +61,8 @@ theorem coe_norm_unitFiltrationZero [IsGalois K L]
   -- Compare in `Lˣ`, where the representation norm is the field norm.
   have hc := congr($(Rep.norm_comm (unitFiltrationZeroIncl K L)).hom x)
   simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_apply] at hc
+  rw [unitFiltrationZeroIncl_apply K L x, unitFiltrationZeroIncl_apply K L
+    ((Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)).norm.hom x)] at hc
   rw [← groupCohomology.norm_ofAlgebraAutOnUnits_eq]
   exact congr(((Additive.toMul (Rep.toAdditive $hc.symm) : Lˣ) : L))
 
@@ -110,6 +95,9 @@ theorem unitsValuationHom_eq_zero_iff (x : Rep.ofMulDistribMulAction (L ≃ₐ[K
 theorem unitFiltrationZeroIncl_comp_unitsValuationHom :
     unitFiltrationZeroIncl K L ≫ unitsValuationHom K L = 0 := by
   ext x
+  simp only [Rep.hom_comp, Representation.IntertwiningMap.toLinearMap_apply,
+    Representation.IntertwiningMap.comp_apply]
+  rw [unitFiltrationZeroIncl_apply K L x]
   exact (unitsValuationHom_eq_zero_iff K L _).2 x.toMul.2
 
 /-- The canonical valuation short complex of integral Galois representations. The last term
@@ -146,8 +134,10 @@ theorem unitsValuationSequence_shortExact : (unitsValuationSequence K L).ShortEx
     rw [unitsValuationHom_eq_zero_iff]
     constructor
     · intro hx
-      exact ⟨Additive.ofMul ⟨(Rep.toAdditive x).toMul, hx⟩, rfl⟩
+      exact ⟨Additive.ofMul ⟨(Rep.toAdditive x).toMul, hx⟩,
+        (unitFiltrationZeroIncl_apply K L _).trans (by rfl)⟩
     · rintro ⟨y, rfl⟩
+      rw [unitFiltrationZeroIncl_apply K L y]
       exact y.toMul.2
   · exact unitFiltrationZeroIncl_injective K L
   · intro n
@@ -164,18 +154,16 @@ instance finite_tateCohomology_negOne_unitFiltration_zero :
       (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)) (-1)) := by
   have hS := unitsValuationSequence_shortExact K L
   rw [unitsValuationSequence_def] at hS
-  have hT := _root_.TateCohomology.map_tateComplexFunctor_shortExact hS
   have hzero : IsZero (tateCohomology (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) (-1)) := by
     simpa only [Rep.ofAlgebraAutOnUnits] using
       (ModuleCat.isZero_of_subsingleton
         (groupCohomology.H1 (Rep.ofAlgebraAutOnUnits K L))).of_iso
           (Rep.FiniteCyclicGroup.periodicIso (Rep.ofAlgebraAutOnUnits K L) (-1) 1 (by decide) ≪≫
             (_root_.TateCohomology.isoGroupCohomology 1).app _)
-  have hepi := hT.epi_δ (-2) (-1) (by decide) hzero
   have hfinite : Finite (tateCohomology (Rep.trivial ℤ (L ≃ₐ[K] L) ℤ) (-2)) :=
     Finite.of_equiv _ (TateCohomology.HNegTwoAddEquivAbelianization.toEquiv.symm)
-  exact Finite.of_surjective (_root_.TateCohomology.δ hS (-2))
-    ((ModuleCat.epi_iff_surjective _).1 hepi)
+  apply TateCohomology.finite_tateCohomology_X₁_of_shortExact_of_isZero_X₂ hS (-2)
+  simpa only [Int.reduceNeg, Int.reduceAdd] using hzero
 
 /-- The valuation sequence transfers the Herbrand quotient of the unit group to the
 multiplicative group, with factor the order of the automorphism group. -/

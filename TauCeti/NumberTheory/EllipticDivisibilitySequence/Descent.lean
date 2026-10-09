@@ -69,11 +69,12 @@ That predicate carries the parity and ordering conditions *inside* it. The induc
 hypothesis at quadruples whose validity is not known in advance, so the recursive call has to be
 a statement about indices alone.
 
-The antisymmetry of `atomRel` under transpositions is **not** proved here: `SignEquivariance.lean`
-already exports `atomRel_swap₁₂`, `atomRel_swap₂₃` and `atomRel_swap₃₄`, together with the general
-`atomRelFin4_perm`. It is that general form the sorting uses. The net has no distinguished index —
-`rel_eq` produces the quadruple `(2p + s, 2q + s, 2r + s, s)`, in which `s` is free — so all four
-are sorted, by `Tuple.sort` composed with the reversal, rather than three against a fixed `0`.
+The antisymmetry of `atomRel` under transpositions is **not** proved here: Mathlib already has
+`neg_atomRel₁₂`, `neg_atomRel₂₃` and `neg_atomRel₃₄`, and `SignEquivariance.lean` exports the
+general `atomRelFin4_perm` built on them. It is that general form the sorting uses. The net has
+no distinguished index — `rel_eq` produces the quadruple `(2p + s, 2q + s, 2r + s, s)`, in which
+`s` is free — so all four are sorted, by `Tuple.sort` composed with the reversal, rather than
+three against a fixed `0`.
 
 Two parts of the source's apparatus are not needed here, each because Mathlib has absorbed the
 layer that made them necessary. Its `rel₄_transf` is `atomRel_avg_sub`; and its minimal-index
@@ -105,8 +106,9 @@ rather than a concept and exists only to shorten four statements, so it would st
 public spelling of `atom _ _ * atomRel _ _ _ _`; the statements below write the product out.
 Its `addMulSub_sq_mul_rel₄_eq₉`, the nine-term expansion, is unused in the source itself — it
 occurs there only at its own declaration — and this descent does not need it. Its swap family
-`rel₄_swap₀₁`, `rel₄_swap₁₂`, `rel₄_swap₂₃` and the `relFin4_perm` built on them are already in
-this repository as `SignEquivariance.lean`, and are used from there.
+`rel₄_swap₀₁`, `rel₄_swap₁₂`, `rel₄_swap₂₃` is Mathlib's `neg_atomRel₁₂ … neg_atomRel₃₄`, which
+carry the negation on the other side, and the `relFin4_perm` built on it is already in this
+repository as `SignEquivariance.lean`, and is used from there.
 
 `rel₄_iff_evenRec` is the one source declaration carrying `set_option allowUnsafeReducibility
 true` together with `attribute [local reducible] Nat.rawCast`, which #2860 declined to bring

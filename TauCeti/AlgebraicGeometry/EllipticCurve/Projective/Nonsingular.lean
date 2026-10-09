@@ -14,7 +14,8 @@ Over a field, every nonzero point representative `[X : Y : Z]` satisfying the pr
 Weierstrass equation of an elliptic curve is nonsingular. This is the projective counterpart of
 Mathlib's `WeierstrassCurve.Affine.equation_iff_nonsingular`. The hypothesis that the
 representative is nonzero is necessary: `(0, 0, 0)` satisfies the homogeneous equation but all
-three partial derivatives vanish there.
+three partial derivatives vanish there. Conversely, over any commutative ring, a nonsingular point
+representative is nonzero.
 
 ## Main results
 
@@ -23,6 +24,8 @@ three partial derivatives vanish there.
   only if it is nonsingular.
 * `WeierstrassCurve.Projective.equation_iff_nonsingular_of_ne_zero`: on an elliptic curve over a
   field, a nonzero point representative satisfies the equation if and only if it is nonsingular.
+* `WeierstrassCurve.Projective.ne_zero_of_nonsingular`: over any commutative ring, a nonsingular
+  point representative is nonzero.
 -/
 
 public section
@@ -52,5 +55,10 @@ Weierstrass equation if and only if it is nonsingular. -/
 theorem equation_iff_nonsingular_of_ne_zero [W.IsElliptic] {P : Fin 3 → F} (hP : P ≠ 0) :
     W.Equation P ↔ W.Nonsingular P :=
   equation_iff_nonsingular_of_Δ_ne_zero_of_ne_zero (W.coe_Δ' ▸ W.Δ'.ne_zero) hP
+
+/-- Over any commutative ring, a nonsingular point representative is nonzero. -/
+theorem ne_zero_of_nonsingular {R : Type*} [CommRing R] {W' : Projective R} {P : Fin 3 → R}
+    (hP : W'.Nonsingular P) : P ≠ 0 :=
+  fun h ↦ by simp [h, nonsingular_iff] at hP
 
 end WeierstrassCurve.Projective

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Graded.Basic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution
 
 /-!
 # The cup product on continuous cohomology
@@ -46,7 +47,8 @@ morphisms of `TopModuleCat R`.
   `TauCeti.TopPairing.homologyπ_cupCocycles_eq_zero_of_right_eq_zero`: the cup product of a
   coboundary with a cocycle, in either order, is a coboundary.
 * `TauCeti.TopPairing.cup_π`: the cup product of the classes of two cocycles is the class of their
-  cup product.
+  cup product; `TauCeti.TopPairing.cup_cochainClass` is the same statement for the classes
+  `TopRep.cochainClass` of homogeneous cochains whose differential vanishes.
 
 ## References
 
@@ -185,6 +187,20 @@ theorem cup_π (m n : ℕ) (a : cocycles X m) (b : cocycles Y n) :
   rw [cup, HomologicalComplex.descHomologyₗ_π, LinearMap.flip_apply,
     HomologicalComplex.descHomologyₗ_π, LinearMap.flip_apply, LinearMap.compr₂_apply]
   rfl
+
+/-- **The cup product on classes of cochains**: the cup product of the classes `TopRep.cochainClass`
+of two homogeneous cocycles is the class of their cup product of cochains. -/
+theorem cup_cochainClass (m n : ℕ) (a : (homogeneousCochains X).X m)
+    (ha : ((homogeneousCochains X).d m (m + 1)).hom a = 0) (b : (homogeneousCochains Y).X n)
+    (hb : ((homogeneousCochains Y).d n (n + 1)).hom b = 0)
+    (hab : ((homogeneousCochains Z).d (m + n) (m + n + 1)).hom (P.cupCochain m n a b) = 0) :
+    P.cup m n (X.cochainClass m a ha) (Y.cochainClass n b hb) =
+      Z.cochainClass (m + n) (P.cupCochain m n a b) hab := by
+  rw [cochainClass_def, cochainClass_def, cochainClass_def, cup_π]
+  congr 1
+  apply (homogeneousCochains Z).iCycles_injective (m + n)
+  rw [iCycles_cupCocycles, HomologicalComplex.iCycles_cyclesMkOfEq,
+    HomologicalComplex.iCycles_cyclesMkOfEq, HomologicalComplex.iCycles_cyclesMkOfEq]
 
 end TopPairing
 

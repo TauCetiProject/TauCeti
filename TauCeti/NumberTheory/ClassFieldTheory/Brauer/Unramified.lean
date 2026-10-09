@@ -13,6 +13,7 @@ public import TauCeti.NumberTheory.LocalField.UnitFiltration.GaloisAction
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.BaseChange
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.NumberTheory.LocalField.Frobenius
+import TauCeti.NumberTheory.LocalField.UnitFiltration.Unramified
 import TauCeti.NumberTheory.LocalField.UnitFiltration.ValuationSequence
 
 /-!
@@ -76,6 +77,8 @@ Thus restriction preserves the representing unit and multiplies the invariant by
 
 ## Main results
 
+* `TauCeti.ClassFieldTheory.unramifiedClass_eq_cyclicClass`: the unramified class is the cyclic
+  class `TauCeti.cyclicClass` at arithmetic Frobenius.
 * `TauCeti.ClassFieldTheory.unramifiedClass_apply`: the unramified class is the explicit
   Frobenius-periodicity class of the embedded ground-field unit.
 * `TauCeti.ClassFieldTheory.unramifiedClass_eq_zero_iff`: the class of `a` vanishes exactly when
@@ -95,10 +98,9 @@ Thus restriction preserves the representing unit and multiplies the invariant by
   multiplies the invariant by `[K' : K]`.
 * `TauCeti.ClassFieldTheory.map_baseChange_eq_zero_of_finrank_dvd`: base change along an
   extension `K'/K` of degree a multiple of `[L : K]` kills `H²(Gal(L/K), Lˣ)`.
-* `TauCeti.ClassFieldTheory.subsingleton_H2_unitFiltration_zero`: the units `U(L,0)` of valuation
-  one have trivial `H²(Gal(L/K), U(L,0))`, since the norm maps them onto `U(K,0)`.
-* `TauCeti.ClassFieldTheory.H2π_eq_zero_of_forall_mem_unitFiltration_zero`: so a `2`-cocycle with
-  values in `U(L,0)` represents the zero class of `H²(Gal(L/K), Lˣ)`.
+* `TauCeti.ClassFieldTheory.H2π_eq_zero_of_forall_mem_unitFiltration_zero`: a `2`-cocycle with
+  values in the units `U(L,0)` of valuation one represents the zero class of `H²(Gal(L/K), Lˣ)`,
+  since `U(L,0)` has no Tate cohomology.
 * `TauCeti.ClassFieldTheory.mk_eq_zero_of_forall_mem_unitFiltration_zero`: the same for a
   continuous `2`-cocycle on `G_K` read off `Gal(L/K)` with values in `U(L,0)`.
 * `TauCeti.ClassFieldTheory.brBaseChange_relBrInfl_eq_zero`: a Brauer class inflated from a
@@ -137,6 +139,13 @@ Frobenius, under two-periodicity of the cohomology of the cyclic group `Gal(L/K)
 generator, arithmetic Frobenius. -/
 def unramifiedClass : Additive Kˣ →+ H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) :=
   cyclicClass (mem_zpowers_frobeniusAlgEquiv K L)
+
+/-- The unramified class is the cyclic class at arithmetic Frobenius, for any proof that Frobenius
+generates `Gal(L/K)`. -/
+theorem unramifiedClass_eq_cyclicClass
+    (hg : ∀ σ : L ≃ₐ[K] L, σ ∈ Subgroup.zpowers (frobeniusAlgEquiv (K := K) (L := L))) :
+    unramifiedClass K L = cyclicClass hg :=
+  (rfl)
 
 /-- The unramified class of a ground-field unit is its image under Frobenius periodicity. -/
 theorem unramifiedClass_apply (a : Kˣ) :
@@ -371,44 +380,6 @@ end BaseChange
 
 /-! ### Cocycles with unit values -/
 
-/-- **The units of an unramified layer have trivial `H²`**: `H²(Gal(L/K), U(L,0)) = 0`. By
-two-periodicity at arithmetic Frobenius, a class is represented by a Galois-fixed unit of valuation
-one, that is, by an element of `U(K,0)`, and in an unramified extension the norm maps `U(L,0)`
-onto `U(K,0)` (`TauCeti.map_normUnits_unitFiltration`). -/
-theorem subsingleton_H2_unitFiltration_zero :
-    Subsingleton (H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0))) := by
-  let _ : IsCyclic (L ≃ₐ[K] L) :=
-    ⟨frobeniusAlgEquiv (K := K) (L := L), fun σ ↦
-      Subgroup.mem_zpowers_iff.1 (mem_zpowers_frobeniusAlgEquiv K L σ)⟩
-  let _ : CommGroup (L ≃ₐ[K] L) := IsCyclic.commGroup
-  set A := Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)
-  refine subsingleton_of_forall_eq 0 fun x ↦ ?_
-  obtain ⟨y, rfl⟩ := Rep.FiniteCyclicGroup.groupCohomologyπEven_surjective A _
-    (mem_zpowers_frobeniusAlgEquiv K L) 2 even_two x
-  refine (Rep.FiniteCyclicGroup.groupCohomologyπEven_eq_zero_iff A _
-    (mem_zpowers_frobeniusAlgEquiv K L) 2 even_two y).2 ?_
-  -- The Frobenius-fixed unit `u` of valuation one is a unit `a` of `K` of valuation one.
-  set u : unitFiltration L 0 := (Rep.toAdditive y.1).toMul
-  have hfix : frobeniusAlgEquiv (K := K) (L := L) • u = u :=
-    congrArg (fun z ↦ (Rep.toAdditive z).toMul) (Rep.FiniteCyclicGroup.ρ_apply_of_mem_ker A _ y)
-  obtain ⟨a, hau⟩ := exists_unitsMap_eq_of_smul_eq (mem_zpowers_frobeniusAlgEquiv K L)
-    ((AlgEquiv.coe_smul_unitFiltration _ u).symm.trans congr(($hfix : Lˣ)))
-  have haU : a ∈ unitFiltration K 0 := by
-    rw [← ker_normalizedValuation, MonoidHom.mem_ker,
-      ← normalizedValuation_algebraMap_eq_one_iff (L := L), hau, ← MonoidHom.mem_ker,
-      ker_normalizedValuation]
-    exact u.2
-  -- `a` is the norm of some `b ∈ U(L,0)`, and the representation norm of `b` is `a`.
-  obtain ⟨b, hb, hba⟩ := (map_normUnits_unitFiltration (K := K) (L := L) 0).ge haU
-  refine ⟨Rep.toAdditive.symm (Additive.ofMul ⟨b, hb⟩), ?_⟩
-  apply (Rep.toAdditive (M := L ≃ₐ[K] L) (G := unitFiltration L 0)).injective
-  apply Additive.toMul.injective
-  apply Subtype.ext
-  apply Units.ext
-  refine (coe_norm_unitFiltrationZero K L _).trans ?_
-  rw [AddEquiv.apply_symm_apply, toMul_ofMul, Subgroup.coe_mk, ← Algebra.coe_normUnits, hba]
-  exact congrArg Units.val hau
-
 /-- **A unit-valued cocycle of an unramified layer is a coboundary.** If a `2`-cocycle of
 `Gal(L/K)` with values in `Lˣ` takes all its values in the units `U(L,0)` of valuation one, its
 class in `H²(Gal(L/K), Lˣ)` vanishes. -/
@@ -432,7 +403,10 @@ theorem H2π_eq_zero_of_forall_mem_unitFiltration_zero
     exact (mem_cocycles₂_iff (c : _ → _)).1 c.2 g h j
   have hmap : mapCocycles₂ (MonoidHom.id _) (unitFiltrationZeroIncl K L) ⟨c', hmem⟩ = c :=
     cocycles₂_ext fun g h ↦ hc' (g, h)
-  have := subsingleton_H2_unitFiltration_zero K L
+  -- `H²(Gal(L/K), U(L,0))` vanishes, since `U(L,0)` has no Tate cohomology.
+  have : Subsingleton (H2 A) := ModuleCat.isZero_iff_subsingleton.1 <|
+    (TauCeti.TateCohomology.isZero_tateCohomology_unitFiltration_zero_of_isUnramified
+      (K := K) (L := L) 2).of_iso ((_root_.TateCohomology.isoGroupCohomology 2).app _).symm
   rw [← hmap, ← H2π_comp_map_apply, Subsingleton.elim (H2π A ⟨c', hmem⟩) 0, map_zero]
 
 /-- **A continuous cocycle read off an unramified layer with unit values is a coboundary.** If a

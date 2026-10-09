@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Join
-public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Join.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Basic
 
 /-!
 # Joins of standard combinatorial balls and spheres

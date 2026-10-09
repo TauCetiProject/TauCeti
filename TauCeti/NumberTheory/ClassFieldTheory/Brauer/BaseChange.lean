@@ -198,7 +198,8 @@ theorem brBaseChange_self (x : Br K) : brBaseChange K K x = x := by
     (hφ := unitsCoeffBaseChange_smul (AlgHom.id K _)) (hψ := fun _ _ ↦ rfl)
     (ContinuousMonoidHom.ext fun _ ↦ (absoluteGaloisGroupMap_eq_iff _).2 fun _ ↦ rfl)
     (AddMonoidHom.ext fun _ ↦ Additive.toMul.injective (Units.ext (by simp)))
-  rw [brBaseChange_apply K K (AlgHom.id K _), hpair, explicitMap2_id, AddMonoidHom.id_apply,
+  rw [brBaseChange_apply K K (AlgHom.id K _), hpair,
+    explicitMap2_id (G := AbsoluteGaloisGroup K) (M := UnitsCoeff K), AddMonoidHom.id_apply,
     AddEquiv.apply_symm_apply]
 
 /-- **Base change is transitive**: for a tower `K ⊆ L ⊆ M`, base change from `K` to `L` followed
@@ -220,14 +221,17 @@ theorem brBaseChange_brBaseChange (M : Type w) [Field M] [Algebra K M] [Algebra 
     ((unitsCoeffBaseChange τ').comp (unitsCoeffBaseChange τ))
     (hf := continuous_of_discreteTopology) (hq := continuous_of_discreteTopology)
     (hφ := unitsCoeffBaseChange_smul τ'')
-    (hψ := fun g m ↦ by
-      rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, ContinuousMonoidHom.comp_toFun,
-        unitsCoeffBaseChange_smul, unitsCoeffBaseChange_smul])
+    (hψ := (absoluteGaloisGroupMap τ).comp_map_smul (absoluteGaloisGroupMap τ')
+      (unitsCoeffBaseChange τ) (unitsCoeffBaseChange τ')
+      (unitsCoeffBaseChange_smul τ) (unitsCoeffBaseChange_smul τ'))
     (ContinuousMonoidHom.ext fun g ↦
       (absoluteGaloisGroupMap_absoluteGaloisGroupMap τ τ' τ'' (fun _ ↦ rfl) g).symm)
     (AddMonoidHom.ext fun _ ↦ Additive.toMul.injective (Units.ext (by simp [τ''])))
   rw [brBaseChange_apply K L τ, brBaseChange_apply L M τ', brBaseChange_apply K M τ'',
-    AddEquiv.symm_apply_apply, hpair, explicitMap2_comp, AddMonoidHom.comp_apply]
+    AddEquiv.symm_apply_apply, hpair,
+    explicitMap2_comp (G := AbsoluteGaloisGroup K) (M := UnitsCoeff K)
+      (H := AbsoluteGaloisGroup L) (N := UnitsCoeff L)
+      (K := AbsoluteGaloisGroup M) (P := UnitsCoeff M), AddMonoidHom.comp_apply]
 
 /-- **Base change along an embedded extension is restriction**: if `L/K` is embedded in `Kˢ` by
 `σ`, then `brBaseChange K L` is the restriction `brRes K L σ`. In particular `brRes K L σ` does

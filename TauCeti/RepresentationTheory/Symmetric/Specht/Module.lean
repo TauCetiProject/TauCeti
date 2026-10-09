@@ -161,10 +161,7 @@ theorem smul_tabloid_injective (t : YoungTableau μ) :
 
 /-! ## Polytabloids -/
 
-/-- Classical decidability of membership in the column group, used to form its finite sum, as in
-`TauCeti/RepresentationTheory/Symmetric/Symmetrizer.lean`. -/
-noncomputable local instance (t : YoungTableau μ) : DecidablePred (· ∈ colSubgroup t) :=
-  Classical.decPred _
+attribute [local instance] YoungTableau.decidablePredMemColSubgroup
 
 /-- The **polytabloid** `e_t = b_t · {t}`: the column antisymmetrizer of `t` acting on the tabloid
 of `t` inside the Young permutation module of the shape of `μ`. -/

@@ -137,6 +137,23 @@ variable {degree : Fin d.numClasses → ℕ}
 variable (h : d.IsExactCharacterTableSpec conj omega table degree)
 include h
 
+/-- A ring homomorphism commuting with the specified conjugations transports an exact
+character-table certificate, leaving the degrees unchanged. -/
+theorem map {S : Type*} [CommRing S] {conj' : S → S} (f : R →+* S)
+    (hf : ∀ x, f (conj x) = conj' (f x)) :
+    d.IsExactCharacterTableSpec conj' (fun i j ↦ f (omega i j))
+      (fun i j ↦ f (table i j)) degree where
+  central_one i := by rw [h.central_one, map_one]
+  central_eigen i := (h.central_eigen i).map f
+  degree_pos := h.degree_pos
+  degree_dvd := h.degree_dvd
+  sum_degree_sq := h.sum_degree_sq
+  degree_mul_central i j := by
+    simpa only [map_mul, map_natCast] using congrArg f (h.degree_mul_central i j)
+  row_orthogonal i j := by
+    simpa only [map_sum, map_mul, map_natCast, hf, apply_ite, map_zero] using
+      congrArg f (h.row_orthogonal i j)
+
 /-- The identity column of a certified ordinary table is its supplied degree vector. -/
 theorem table_index_one (i : Fin d.numClasses) : table i (d.index 1) = (degree i : R) := by
   have hcard : (d.classFinset (d.index 1)).card = 1 := by

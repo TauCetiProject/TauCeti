@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.AdditionLaw.Basic
-import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Point
 import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Nonsingular
 import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Prime
 import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
@@ -53,17 +52,14 @@ open MvPolynomial
 
 variable {R S : Type*} [CommRing R] [CommRing S]
 
--- Over a field, `addXYZ` takes two nonsingular point representatives to a solution: it is
--- `add` unless they are equivalent, in which case it vanishes.
+-- Over a field, `addXYZ` takes two nonsingular point representatives to a solution: when it
+-- does not vanish, it is their sum `add`.
 private theorem equation_addXYZ_of_nonsingular {F : Type*} [Field F] {W : Projective F}
     {P Q : Fin 3 → F} (hP : W.Nonsingular P) (hQ : W.Nonsingular Q) :
     W.Equation (W.addXYZ P Q) := by
-  by_cases hPQ : P ≈ Q
-  · obtain ⟨u, rfl⟩ := hPQ
-    have h : W.addXYZ (u • Q) Q = ![0, 0, 0] := by
-      simpa [Units.smul_def, addXYZ_self] using W.addXYZ_smul Q Q u 1
-    simp [h, equation_iff]
-  · exact (add_of_not_equiv hPQ ▸ nonsingular_add hP hQ).left
+  by_cases h : W.addXYZ P Q = 0
+  · simp [h, equation_iff]
+  exact (add_of_addXYZ_ne_zero h ▸ nonsingular_add hP hQ).left
 
 /-! ### The universal pair of solutions -/
 

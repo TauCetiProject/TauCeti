@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Covolume
-public import TauCeti.Analysis.Complex.UpperHalfPlane.DirichletDomain
-public import TauCeti.MeasureTheory.Group.DirichletDomain.Faces
+public import TauCeti.Analysis.Complex.UpperHalfPlane.DirichletDomain.Faces
 public import TauCeti.Topology.MetricSpace.IsometricSMul
 
 /-!
@@ -29,8 +28,9 @@ convexity and closed-half-plane description are supplied by
 
 The imported `TauCeti.dirichletFace` API describes its equality faces: these cover the boundary,
 form a locally finite family, and the face indexed by `g` is paired with that indexed by `g⁻¹`
-by the transformation `g⁻¹`. Identifying which equality faces are sides requires further polygon
-geometry.
+by the transformation `g⁻¹`. Nontrivial faces are geodesically convex boundary pieces, and
+nonempty bounded faces are geodesic segments. Global finite-sidedness and the construction of
+ideal vertices require further polygon geometry.
 
 ## Main results
 

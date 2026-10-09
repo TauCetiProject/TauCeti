@@ -100,6 +100,8 @@ Peter-Weyl theorem, isotypic decomposition, biregular representation, compact gr
 
 public section
 
+open _root_.ContRepresentation
+
 open MeasureTheory
 open scoped InnerProductSpace
 
@@ -118,7 +120,7 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopo
 `L²(G)` for normalized Haar measure.
 
 A trace coefficient is continuous and `G` is compact, so `ContinuousMap.toLp` applies, exactly as
-for `TauCeti.ContRepresentation.matrixCoeffLp`. -/
+for `ContRepresentation.matrixCoeffLp`. -/
 noncomputable def traceCoeffLp (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
     (V →L[𝕜] V) →ₗ[𝕜] Lp 𝕜 2 (haarProb G) :=
   (ContinuousMap.toLp 2 (haarProb G) 𝕜 : C(G, 𝕜) →L[𝕜] Lp 𝕜 2 (haarProb G)).toLinearMap ∘ₗ
@@ -285,7 +287,7 @@ theorem coe_peterWeylBlockRep_apply (model : IrrepModel 𝕜 G) (p : G × G)
   ContRepresentation.coe_subrepresentation_apply p f
 
 /-- **A Peter-Weyl block has a continuous operator-valued action.** This is not
-`TauCeti.ContRepresentation.continuous_subrepresentation`: the ambient biregular representation of
+`ContRepresentation.continuous_subrepresentation`: the ambient biregular representation of
 `L²(G)` is only *strongly* continuous (`TauCeti.continuous_biRegularLp_apply`), and for an infinite
 compact group it is not continuous in the operator norm. The block, however, is finite-dimensional,
 so the surjection `TauCeti.traceCoeffBlock` onto it has a continuous linear section `s`, and the

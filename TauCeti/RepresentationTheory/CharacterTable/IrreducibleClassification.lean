@@ -38,7 +38,7 @@ the invariance statements it unlocks.
   permutation of the blocks**, matching degrees and block representations.
 * `TauCeti.natCard_degree_fiber_eq`: **the multiset of degrees does not depend on the
   presentation**, in the form that each degree occurs equally often in the two.
-* `TauCeti.nonempty_equiv_index_simpleSubmoduleClasses`: the block index is in bijection with the
+* `AlgEquiv.nonempty_equiv_index_simpleSubmoduleClasses`: the block index is in bijection with the
   isomorphism classes of simple `k[G]`-modules.
 
 ## Implementation notes
@@ -56,16 +56,13 @@ would be an invariant.
 
 Only the *representation*-level dictionary is new here. The module-level one, that the blocks of a
 presentation of any semisimple ring are in bijection with the isomorphism classes of its simple
-modules, is `TauCeti.nonempty_equiv_simpleSubmoduleClasses_of_ringEquiv_pi`; its group-algebra case
+modules, is `RingEquiv.nonempty_equiv_simpleSubmoduleClasses_of_pi`; its group-algebra case
 is recorded below as a corollary, since the two dictionaries are what
 `TauCeti/RepresentationTheory/CharacterTable/Wedderburn.lean` names as the statements needed before
 its block count may be called the count of irreducible representations.
 
 ## References
 
-This implements the block ⇆ irreducible-representation dictionary of Layer 2.5, and the invariance
-of the Wedderburn data behind the count of Layer 2, of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md).
 See J.-P. Serre, *Linear Representations of Finite Groups*, Section 6.4, or C. W. Curtis and
 I. Reiner, *Representation Theory of Finite Groups and Associative Algebras*, Section 26.
 -/
@@ -129,16 +126,16 @@ theorem exists_isIrreducible_finrank_eq (i : ι) :
   ⟨Fin (d i) → k, inferInstance, inferInstance, blockRepresentation e i,
     isIrreducible_blockRepresentation e i, Module.finrank_fin_fun k⟩
 
-omit [IsAlgClosed k] in
+omit [IsAlgClosed k] [Finite ι] in
 include e in
 /-- **The block index is in bijection with the isomorphism classes of simple `k[G]`-modules.** This
-is the group-algebra case of `TauCeti.nonempty_equiv_simpleSubmoduleClasses_of_ringEquiv_pi`, the
+is the group-algebra case of `RingEquiv.nonempty_equiv_simpleSubmoduleClasses_of_pi`, the
 module-level companion of `TauCeti.exists_nonempty_equiv_blockRepresentation`. -/
-theorem nonempty_equiv_index_simpleSubmoduleClasses :
+theorem _root_.AlgEquiv.nonempty_equiv_index_simpleSubmoduleClasses :
     Nonempty (ι ≃ SimpleSubmoduleClasses k[G] k[G]) := by
   have : NeZero (Nat.card G : k) := ⟨Invertible.ne_zero _⟩
   have : ∀ i, Nonempty (Fin (d i)) := fun i => ⟨⟨0, Nat.pos_of_ne_zero (NeZero.ne (d i))⟩⟩
-  exact nonempty_equiv_simpleSubmoduleClasses_of_ringEquiv_pi e.toRingEquiv
+  exact e.toRingEquiv.nonempty_equiv_simpleSubmoduleClasses_of_pi
 
 end Complete
 

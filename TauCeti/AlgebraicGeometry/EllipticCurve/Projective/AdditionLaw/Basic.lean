@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Formula
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Point
 public import Mathlib.LinearAlgebra.CrossProduct
 public import Mathlib.LinearAlgebra.Unimodular
-import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Point
 import Mathlib.LinearAlgebra.Projectivization.Constructions
 import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Nonsingular
@@ -49,6 +49,9 @@ curve its diagonal is the doubling formula, so its coordinates are named `dblAdd
 * `WeierstrassCurve.Projective.addXYZ_ne_zero_or_dblAddXYZ_ne_zero`: over a field, the laws
   `addXYZ` and `dblAddXYZ` do not vanish simultaneously at two nonsingular point representatives,
   which is the non-vanishing condition for the two laws to form a complete system.
+* `WeierstrassCurve.Projective.add_of_addXYZ_ne_zero` and
+  `WeierstrassCurve.Projective.dblAddXYZ_equiv_add`: a nonzero value of either law represents the
+  sum `add P Q`, the second over a field and at nonsingular point representatives.
 * `WeierstrassCurve.Projective.map_dblAddXYZ`: the law commutes with ring homomorphisms.
 * `WeierstrassCurve.Projective.span_range_addXYZ_union_range_dblAddXYZ_eq_top`: over a
   commutative ring, at two unimodular solutions of the equation of an elliptic curve, the six
@@ -81,6 +84,11 @@ Ported from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at commit
   `span_range_addXYZ_union_range_dblAddXYZ_eq_top`. The source states it at the universal points of
   a product of two charts; here the points are arbitrary solutions whose coordinates generate the
   unit ideal.
+* from `AdditionSpecPoints.lean`: `descended_lawOne_eq_add` and `descended_lawTwo_smul_add`, as
+  `add_of_addXYZ_ne_zero` and `dblAddXYZ_equiv_add`. The source states them at the images in a
+  field of the universal points of a product of two charts, the second as an equality up to a
+  nonzero scalar; here the points are arbitrary representatives (nonsingular, for the second), and
+  the first holds over any commutative ring.
 -/
 
 public section
@@ -557,12 +565,21 @@ theorem addXYZ_cross_dblAddXYZ {P Q : Fin 3 → R} (hP : W'.Equation P) (hQ : W'
   rw [cross_apply, addXYZ, dblAddXYZ]
   simp [addY_mul_dblAddZ hP hQ, addX_mul_dblAddZ hP hQ, addX_mul_dblAddY hP hQ]
 
-private theorem ne_zero_of_nonsingular {P : Fin 3 → R} (hP : W'.Nonsingular P) : P ≠ 0 :=
-  fun h ↦ by simp [h, nonsingular_iff] at hP
-
 private theorem dblAddXYZ_units_smul_self {P : Fin 3 → R} (hP : W'.Equation P) (u : Rˣ) :
     W'.dblAddXYZ (u • P) P = (u : R) ^ 2 • W'.dblXYZ P := by
   simpa [Units.smul_def, dblAddXYZ_self hP] using W'.dblAddXYZ_smul P P u 1
+
+/-- If the addition law `addXYZ` attached to the line `Z = 0` does not vanish at two point
+representatives `P` and `Q`, then its value `addXYZ P Q` is their sum `add P Q`. Unlike
+`dblAddXYZ_equiv_add` for the law attached to `Y = 0`, this is an equality rather than an
+equivalence, and it holds over any commutative ring, for representatives not necessarily on the
+curve. -/
+theorem add_of_addXYZ_ne_zero {P Q : Fin 3 → R} (h : W'.addXYZ P Q ≠ 0) :
+    W'.add P Q = W'.addXYZ P Q := by
+  -- if `P = u • Q`, then `addXYZ P Q` is `u ^ 2` times `addXYZ Q Q = 0`
+  refine add_of_not_equiv fun ⟨u, hu⟩ ↦ h ?_
+  simpa [← hu, Units.smul_def, addXYZ_self, funext_iff, Fin.forall_fin_succ] using
+    W'.addXYZ_smul Q Q u 1
 
 /-! ### Over a field -/
 
@@ -570,24 +587,33 @@ section Field
 
 variable {F : Type*} [Field F] {W : Projective F}
 
+/-- Over a field, a nonzero value of the addition law `dblAddXYZ P Q` attached to the line
+`Y = 0`, at two nonsingular point representatives `P` and `Q`, represents their sum `add P Q`.
+For the law `addXYZ` attached to the line `Z = 0`, a nonzero value is equal to `add P Q`, over any
+commutative ring and at any point representatives (`add_of_addXYZ_ne_zero`). -/
+theorem dblAddXYZ_equiv_add {P Q : Fin 3 → F} (hP : W.Nonsingular P) (hQ : W.Nonsingular Q)
+    (hd : W.dblAddXYZ P Q ≠ 0) : W.dblAddXYZ P Q ≈ W.add P Q := by
+  by_cases hPQ : P ≈ Q
+  · -- `P = u • Q`, and both `dblAddXYZ P Q` and `add P Q` are unit multiples of `dblXYZ Q`
+    obtain ⟨u, rfl⟩ : ∃ u : Fˣ, u • Q = P := hPQ
+    rw [dblAddXYZ_units_smul_self hQ.left, Units.smul_def, add_of_equiv (smul_equiv Q u.isUnit),
+      dblXYZ_smul, smul_equiv_smul _ _ (u.isUnit.pow 2) (u.isUnit.pow 4)]
+  -- otherwise `add P Q = addXYZ P Q`, which is nonzero; nonzero vectors with vanishing cross
+  -- product represent the same projective point
+  rw [add_of_not_equiv hPQ]
+  exact Setoid.symm <| (Projectivization.mk_eq_mk_iff F _ _
+      (ne_zero_of_nonsingular <| add_of_not_equiv hPQ ▸ nonsingular_add hP hQ) hd).mp <|
+    (Projectivization.mk_eq_mk_iff_crossProduct_eq_zero _ _).mpr <|
+      addXYZ_cross_dblAddXYZ hP.left hQ.left
+
 /-- Over a field, the value of the addition law attached to the line `Y = 0` at two nonsingular
 point representatives satisfies the Weierstrass equation. For solutions over an arbitrary
 commutative ring, see `WeierstrassCurve.Projective.Equation.dblAddXYZ`. -/
 theorem equation_dblAddXYZ_of_nonsingular {P Q : Fin 3 → F} (hP : W.Nonsingular P)
     (hQ : W.Nonsingular Q) : W.Equation (W.dblAddXYZ P Q) := by
-  by_cases hPQ : P ≈ Q
-  · obtain ⟨u, rfl⟩ := hPQ
-    rw [dblAddXYZ_units_smul_self hQ.left, equation_smul _ (u.isUnit.pow 2), ← add_self]
-    exact (nonsingular_add hQ hQ).left
-  have h := add_of_not_equiv hPQ ▸ nonsingular_add hP hQ
   by_cases hd : W.dblAddXYZ P Q = 0
   · simp [hd, equation_iff]
-  -- `addXYZ P Q` and `dblAddXYZ P Q` are nonzero with vanishing cross product, so they represent
-  -- the same projective point.
-  refine (equation_of_equiv ?_).mp h.left
-  exact (Projectivization.mk_eq_mk_iff F _ _ (ne_zero_of_nonsingular h) hd).mp <|
-    (Projectivization.mk_eq_mk_iff_crossProduct_eq_zero _ _).mpr <|
-      addXYZ_cross_dblAddXYZ hP.left hQ.left
+  exact (equation_of_equiv (dblAddXYZ_equiv_add hP hQ hd)).mpr (nonsingular_add hP hQ).left
 
 /-- Over a field, the addition laws `addXYZ` and `dblAddXYZ`, attached to the lines `Z = 0` and
 `Y = 0`, do not vanish simultaneously at two nonsingular point representatives. This is the

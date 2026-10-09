@@ -9,8 +9,11 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Comap
 public import TauCeti.RingTheory.Huber.WeightedEval.Continuous
 public import TauCeti.RingTheory.Huber.WeightedEval.Hom
 
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
+
 /-!
-# The closed polydisc and its classical points
+# The closed polydisc, its classical points and its translations
 
 The *closed polydisc* of dimension `k` over a nonarchimedean ring `A` is the adic spectrum
 `Spa (A⟨T₁, …, Tₖ⟩, A⟨T₁, …, Tₖ⟩°)` of the restricted power series ring with its power-bounded
@@ -30,6 +33,14 @@ The evaluation is taken along the identity of `A`, so `A` carries the hypotheses
 Wedhorn's evaluation converges: complete, Hausdorff, and nonarchimedean as a uniform additive
 group. For the polydisc itself, a nonarchimedean ring topology suffices.
 
+Under the same hypotheses, evaluating along the constant embedding `A → A⟨T⟩` at the shifted
+variables `Tᵢ + aᵢ` translates the polydisc: `f(T) ↦ f(T + a)` is a continuous ring endomorphism
+of `A⟨T⟩`, translations compose additively, and so each one is invertible and preserves `A⟨T⟩°`.
+Pulling a point back along a translation recentres it, which is how the Gauss points of discs about
+arbitrary centres are obtained from those about the origin. Following Mathlib's `Polynomial.taylor`
+and `Polynomial.taylorEquiv` for the same substitution on polynomials, the translations are named
+`taylorHom` and `taylorEquiv`.
+
 ## Main definitions
 
 * `TauCeti.ValuationSpectrum.closedPolydisc`: the closed polydisc `Spa (A⟨T⟩, A⟨T⟩°)`, with
@@ -38,6 +49,10 @@ group. For the polydisc itself, a nonarchimedean ring topology suffices.
   ring homomorphism `A⟨T⟩ →+* A`.
 * `TauCeti.ValuationSpectrum.classicalPoint`: the classical point of the closed polydisc attached
   to a point of `Spa (A, A°)` and a tuple `a ∈ (A°)ᵏ`.
+* `TauCeti.ValuationSpectrum.taylorHom`: the translation `Tᵢ ↦ Tᵢ + aᵢ` of `A⟨T⟩` by
+  `a ∈ (A°)ᵏ`.
+* `TauCeti.ValuationSpectrum.taylorEquiv`: the same translation as a ring automorphism, with
+  inverse the translation by `-a`.
 
 ## Main results
 
@@ -49,6 +64,17 @@ group. For the polydisc itself, a nonarchimedean ring topology suffices.
 * `TauCeti.ValuationSpectrum.classicalPoint_injective`: when `x` has trivial support, the
   classical points are parametrised faithfully by `(A°)ᵏ`;
   `TauCeti.ValuationSpectrum.classicalPoint_injective_of_isField` is the case of a field.
+* `TauCeti.ValuationSpectrum.ne_classicalPoint_of_supp_eq_bot`: a point with trivial support is
+  not classical.
+* `TauCeti.ValuationSpectrum.hasSum_taylorHom`: `f(T + a)` is the sum of the translated
+  monomials of `f`.
+* `TauCeti.ValuationSpectrum.taylorHom_comp_taylorHom`: translating by `b` and then by `a`
+  is translating by `a + b`.
+* `TauCeti.ValuationSpectrum.taylorHom_mem_powerBoundedSubring`: translation preserves
+  `A⟨T⟩°`.
+* `TauCeti.ValuationSpectrum.evalAtHom_comp_taylorHom`: translating by `a` and then evaluating
+  at `b` is evaluating at `b + a`; `TauCeti.ValuationSpectrum.comap_taylorHom_classicalPoint`
+  is the resulting recentring of classical points.
 
 ## References
 
@@ -194,6 +220,190 @@ theorem classicalPoint_injective_of_isField (hA : IsField A) (x : spa (powerBoun
     rw [hd, zero_mul] at h
     exact x.1.toValuativeRel.not_vle_one_zero h
 
+/-- **A point with trivial support is not classical**: the classical point at `a` kills
+`T₀ - a₀`, which is nonzero. -/
+theorem ne_classicalPoint_of_supp_eq_bot [Nontrivial A] [NeZero k] (p : closedPolydisc k A)
+    (hp : p.1.supp = ⊥) (x : spa (powerBoundedSubring A)) (a : Fin k → A)
+    (ha : ∀ i, IsPowerBounded (a i)) : p ≠ classicalPoint x a ha := by
+  rintro rfl
+  have hmem : weightedX (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight 0 -
+      weightedC _ isWeightFamily_one_weight (a 0) ∈ (classicalPoint x a ha).1.supp := by
+    rw [mem_supp_iff, classicalPoint_vle]
+    simp
+  rw [hp, Ideal.mem_bot, sub_eq_zero] at hmem
+  -- the variable and a constant differ in their coefficient of `T₀`
+  have hcoeff := congrArg (MvPowerSeries.coeff (Finsupp.single 0 1)) (congrArg Subtype.val hmem)
+  simp [MvPowerSeries.coeff_X, MvPowerSeries.coeff_C] at hcoeff
+
 end ClassicalPoints
+
+section Translation
+
+variable {k : ℕ} {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
+  [NonarchimedeanRing A] [CompleteSpace A] [T3Space A]
+
+omit [IsUniformAddGroup A] [CompleteSpace A] [T3Space A] in
+/-- The shifted variables `Tᵢ + aᵢ` are power-bounded in `A⟨T₁, …, Tₖ⟩` when the `aᵢ` are
+power-bounded in `A`. -/
+private theorem isPowerBounded_weightedX_add_weightedC (a : Fin k → A)
+    (ha : ∀ i, IsPowerBounded (a i)) (i : Fin k) :
+    IsPowerBounded (weightedX (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight i +
+      weightedC _ isWeightFamily_one_weight (a i)) :=
+  (isPowerBounded_weightedX_one_weight i).add (isPowerBounded_weightedC _ (ha i))
+
+/-- **Translation by `a ∈ (A°)ᵏ`**: the substitution `Tᵢ ↦ Tᵢ + aᵢ`, as a ring endomorphism of
+`A⟨T₁, …, Tₖ⟩`. It is Wedhorn's evaluation of restricted power series along the constant
+embedding `A → A⟨T⟩`, at the power-bounded tuple `(Tᵢ + aᵢ)ᵢ`. This is the restricted power
+series analogue of Mathlib's `Polynomial.taylor`. -/
+noncomputable def taylorHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
+    weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight →+*
+      weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight :=
+  weightedEvalHom isWeightFamily_one_weight
+    (continuous_weightedC isWeightFamily_one_weight).continuousAt
+    ((isWeightBounded_one_weight_iff_forall_isPowerBounded _ _).mpr
+      (isPowerBounded_weightedX_add_weightedC a ha))
+
+/-- **The translate of `f` is the sum of its translated monomials**: `f(T + a)` is the sum of the
+terms `fν (T + a)ν`, where `fν` is the coefficient of `Tν` in `f`. -/
+theorem hasSum_taylorHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
+    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+    HasSum (fun ν : Fin k →₀ ℕ ↦
+        weightedC _ isWeightFamily_one_weight
+            (MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A)) *
+          ∏ i, (weightedX _ isWeightFamily_one_weight i +
+            weightedC _ isWeightFamily_one_weight (a i)) ^ ν i)
+      (taylorHom a ha f) := by
+  rw [taylorHom, coe_weightedEvalHom]
+  convert hasSum_weightedEval_of_forall_isPowerBounded
+    (continuous_weightedC isWeightFamily_one_weight).continuousAt
+    (isPowerBounded_weightedX_add_weightedC a ha) (mem_weightedRestrictedSubring.mp f.2) using 1
+  exact funext fun ν ↦ (weightedEvalTerm_def _ _ _ ν).symm
+
+/-- Translation is continuous. -/
+theorem continuous_taylorHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
+    Continuous (taylorHom a ha) := by
+  rw [taylorHom]
+  exact continuous_weightedEvalHom _ _ _
+
+/-- Translation fixes the constants. -/
+@[simp]
+theorem taylorHom_weightedC (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) (c : A) :
+    taylorHom a ha (weightedC _ isWeightFamily_one_weight c) =
+      weightedC _ isWeightFamily_one_weight c := by
+  rw [taylorHom, weightedEvalHom_weightedC]
+
+/-- Translation by `a` sends the variable `Tᵢ` to `Tᵢ + aᵢ`. -/
+@[simp]
+theorem taylorHom_weightedX (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) (i : Fin k) :
+    taylorHom a ha (weightedX _ isWeightFamily_one_weight i) =
+      weightedX _ isWeightFamily_one_weight i + weightedC _ isWeightFamily_one_weight (a i) := by
+  rw [taylorHom, weightedEvalHom_weightedX]
+
+/-- Translation by zero is the identity. -/
+@[simp]
+theorem taylorHom_zero :
+    taylorHom (0 : Fin k → A) (fun _ ↦ isPowerBounded_zero) =
+      RingHom.id (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+        isWeightFamily_one_weight) :=
+  weightedRestrictedSubring_ringHom_ext_of_continuous _ (continuous_taylorHom _ _)
+    continuous_id (by simp) (by simp)
+
+/-- **Translations compose additively**: translating by `b` and then by `a` is translating by
+`a + b`. -/
+theorem taylorHom_comp_taylorHom (a b : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
+    (hb : ∀ i, IsPowerBounded (b i)) :
+    (taylorHom a ha).comp (taylorHom b hb) =
+      taylorHom (a + b) (fun i ↦ (ha i).add (hb i)) :=
+  weightedRestrictedSubring_ringHom_ext_of_continuous _
+    ((continuous_taylorHom a ha).comp (continuous_taylorHom b hb))
+    (continuous_taylorHom _ _) (by simp) (by simp [add_assoc])
+
+/-- **Translations compose additively**, applied to a series. -/
+@[simp]
+theorem taylorHom_taylorHom (a b : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
+    (hb : ∀ i, IsPowerBounded (b i))
+    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+    taylorHom a ha (taylorHom b hb f) = taylorHom (a + b) (fun i ↦ (ha i).add (hb i)) f :=
+  RingHom.congr_fun (taylorHom_comp_taylorHom a b ha hb) f
+
+/-- Translation by `-a` undoes translation by `a`. -/
+theorem taylorHom_neg_taylorHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
+    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+    taylorHom (-a) (fun i ↦ (ha i).neg) (taylorHom a ha f) = f := by
+  simp
+
+/-- Translation by `a` undoes translation by `-a`. -/
+theorem taylorHom_taylorHom_neg (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
+    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+    taylorHom a ha (taylorHom (-a) (fun i ↦ (ha i).neg) f) = f := by
+  simp
+
+/-- **Translation by `a ∈ (A°)ᵏ` as a ring automorphism** of `A⟨T₁, …, Tₖ⟩`, with inverse the
+translation by `-a`. -/
+noncomputable def taylorEquiv (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
+    weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight ≃+*
+      weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight :=
+  RingEquiv.ofRingHom (taylorHom a ha) (taylorHom (-a) fun i ↦ (ha i).neg)
+    (RingHom.ext (taylorHom_taylorHom_neg a ha))
+    (RingHom.ext (taylorHom_neg_taylorHom a ha))
+
+/-- The automorphism `taylorEquiv a ha` acts as `taylorHom a ha`. -/
+@[simp]
+theorem coe_taylorEquiv (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
+    ⇑(taylorEquiv a ha) = taylorHom a ha :=
+  (rfl)
+
+/-- The inverse of `taylorEquiv a ha` is the translation by `-a`. -/
+@[simp]
+theorem coe_taylorEquiv_symm (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
+    ⇑(taylorEquiv a ha).symm = taylorHom (-a) fun i ↦ (ha i).neg :=
+  (rfl)
+
+/-- Translation is injective. -/
+theorem taylorHom_injective (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
+    Function.Injective (taylorHom a ha) :=
+  (taylorEquiv a ha).injective
+
+/-- Translation is surjective. -/
+theorem taylorHom_surjective (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
+    Function.Surjective (taylorHom a ha) :=
+  (taylorEquiv a ha).surjective
+
+/-- Translation carries `A⟨T⟩°` into itself, so it is an endomorphism of the Huber pair
+`(A⟨T⟩, A⟨T⟩°)` and `spaComap` along it maps the closed polydisc to itself. -/
+theorem taylorHom_mem_powerBoundedSubring (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
+    {f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight}
+    (hf : f ∈ powerBoundedSubring _) : taylorHom a ha f ∈ powerBoundedSubring _ :=
+  mem_powerBoundedSubring.mpr ((isPowerBounded_ringEquiv_iff (taylorEquiv a ha)
+    (continuous_taylorHom a ha) (continuous_taylorHom _ _)).mpr
+      (mem_powerBoundedSubring.mp hf))
+
+/-- **Evaluating a translate**: translating by `a` and then evaluating at `b` is evaluating at
+`b + a`. -/
+theorem evalAtHom_comp_taylorHom (a b : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
+    (hb : ∀ i, IsPowerBounded (b i)) :
+    (evalAtHom b hb).comp (taylorHom a ha) = evalAtHom (b + a) (fun i ↦ (hb i).add (ha i)) :=
+  weightedRestrictedSubring_ringHom_ext_of_continuous _
+    ((continuous_evalAtHom b hb).comp (continuous_taylorHom a ha))
+    (continuous_evalAtHom _ _) (by simp) (by simp)
+
+/-- **Evaluating a translate**, applied to a series: `f(T + a)` at `b` is `f(b + a)`. -/
+@[simp]
+theorem evalAtHom_taylorHom (a b : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
+    (hb : ∀ i, IsPowerBounded (b i))
+    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+    evalAtHom b hb (taylorHom a ha f) = evalAtHom (b + a) (fun i ↦ (hb i).add (ha i)) f :=
+  RingHom.congr_fun (evalAtHom_comp_taylorHom a b ha hb) f
+
+/-- **Translating recentres classical points**: pulling the classical point at `b` back along the
+translation `T ↦ T + a` gives the classical point at `b + a`. -/
+theorem comap_taylorHom_classicalPoint (x : spa (powerBoundedSubring A)) (a b : Fin k → A)
+    (ha : ∀ i, IsPowerBounded (a i)) (hb : ∀ i, IsPowerBounded (b i)) :
+    comap (taylorHom a ha) (classicalPoint x b hb).1 =
+      (classicalPoint x (b + a) fun i ↦ (hb i).add (ha i)).1 := by
+  rw [classicalPoint, classicalPoint, spaComap_val, spaComap_val,
+    ← Function.comp_apply (f := comap _), ← comap_comp, evalAtHom_comp_taylorHom]
+
+end Translation
 
 end TauCeti.ValuationSpectrum

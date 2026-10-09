@@ -37,7 +37,7 @@ a private level-selection lemma packages that choice.
 A pseudouniformiser of `A` stays one in `A⟨X⟩_T` as a constant series, so the Tate property is
 inherited too. Since completion preserves both properties
 (`TauCeti.Huber.IsHuberRing.completion`, `TauCeti.Huber.IsTateRing.completion`), the completed
-algebra `A⟨X₁,…,Xₖ⟩` of the roadmap — the separated completion of the trivial-weight `A⟨X⟩_T` — is
+algebra `A⟨X₁,…,Xₖ⟩` — the separated completion of the trivial-weight `A⟨X⟩_T` — is
 a Huber ring, Tate whenever `A` is; its completeness and separatedness are those of any separated
 completion and need no argument here.
 
@@ -59,17 +59,14 @@ completion and need no argument here.
   (`TauCeti.Huber.PairOfDefinition.isAdic_weightedIdeal_one`) follow.
 * `TauCeti.Huber.isHuberRing_weightedRestrictedSubring` and
   `TauCeti.Huber.isTateRing_weightedRestrictedSubring`: the two instances. The completed algebra
-  `A⟨X₁,…,Xₖ⟩` at the trivial weight, which is the roadmap's object, inherits both from them by
+  `A⟨X₁,…,Xₖ⟩` at the trivial weight inherits both from them by
   synthesis, with no separate result: see the `example`s at the end of the file.
 
 ## Provenance
 
-No formalisation of this result was available: the roadmap's status table records restricted power
-series and strong noetherianness as existing AINTLIB material but lists no Huber structure on
-them, and no Tau Ceti module for `A⟨X⟩_T` supplies a `PairOfDefinition`. The coefficient
-decomposition reuses `TauCeti.Huber.exists_sum_eq_of_mem_span_mul`, which was written for Wedhorn
-Remark 6.8 — the Huber structure on the completion `Â` — and serves the same purpose here: it
-bounds, uniformly in the level, the number of generators a decomposition needs.
+The coefficient decomposition reuses `TauCeti.Huber.exists_sum_eq_of_mem_span_mul`, proved for
+Wedhorn Remark 6.8 — the Huber structure on the completion `Â` — and serves the same purpose here:
+it bounds, uniformly in the level, the number of generators a decomposition needs.
 
 ## References
 
@@ -169,35 +166,30 @@ private theorem exists_level (P : PairOfDefinition A) {hT : IsWeightFamily T} (n
 /-! ### The pair of definition of `A⟨X⟩_T` -/
 
 /-- `A₀⟨X⟩_T`, the **ring of definition of `A⟨X⟩_T`**: the series all of whose coefficients meet
-the `A₀` bound.
+the `A₀` bound, that is `TauCeti.Huber.weightedSubring` of `A₀`.
 
 Its carrier is the neighbourhood subgroup `TauCeti.Huber.weightedNhd` of `A₀`, which is what makes
-it open; that it is a subring is coefficientwise multiplicativity of `A₀`. -/
+it open. -/
 def weightedRingOfDefinition (P : PairOfDefinition A) (hT : IsWeightFamily T) :
-    Subring (weightedRestrictedSubring T hT) where
-  carrier := weightedNhd T hT P.ringOfDefinition.toAddSubgroup
-  zero_mem' := (weightedNhd T hT P.ringOfDefinition.toAddSubgroup).zero_mem
-  one_mem' := by
-    have h := weightedC_mem_weightedNhd hT (U := P.ringOfDefinition.toAddSubgroup)
-      P.ringOfDefinition.one_mem
-    rwa [map_one] at h
-  add_mem' hf hg := (weightedNhd T hT P.ringOfDefinition.toAddSubgroup).add_mem hf hg
-  neg_mem' hf := (weightedNhd T hT P.ringOfDefinition.toAddSubgroup).neg_mem hf
-  mul_mem' hf hg := mul_mem_weightedNhd
-    (Set.mul_subset_iff.mpr fun _ ha _ hb ↦ P.ringOfDefinition.mul_mem ha hb) hf hg
+    Subring (weightedRestrictedSubring T hT) :=
+  weightedSubring T hT P.ringOfDefinition
+
+/-- `A₀⟨X⟩_T` is `TauCeti.Huber.weightedSubring` of the ring of definition `A₀`. -/
+theorem weightedRingOfDefinition_def (P : PairOfDefinition A) (hT : IsWeightFamily T) :
+    P.weightedRingOfDefinition hT = weightedSubring T hT P.ringOfDefinition := (rfl)
 
 /-- Membership in `A₀⟨X⟩_T` is the `A₀` bound on every coefficient. -/
 @[simp]
 theorem mem_weightedRingOfDefinition (P : PairOfDefinition A) (hT : IsWeightFamily T)
     {f : weightedRestrictedSubring T hT} :
     f ∈ P.weightedRingOfDefinition hT ↔ f ∈ weightedNhd T hT P.ringOfDefinition.toAddSubgroup :=
-  (Iff.rfl)
+  mem_weightedSubring
 
 /-- The constant series `A₀ → A₀⟨X⟩_T`, the structure map of the ring of definition. -/
 noncomputable def weightedRingOfDefinitionC (P : PairOfDefinition A) (hT : IsWeightFamily T) :
     P.ringOfDefinition →+* P.weightedRingOfDefinition hT :=
   ((weightedC T hT).comp P.ringOfDefinition.subtype).codRestrict _ fun a ↦
-    weightedC_mem_weightedNhd hT a.2
+    (weightedC_mem_weightedSubring hT).mpr a.2
 
 @[simp]
 theorem coe_weightedRingOfDefinitionC (P : PairOfDefinition A) (hT : IsWeightFamily T)
@@ -233,7 +225,7 @@ theorem mem_weightedIdeal (P : PairOfDefinition A) (hT : IsWeightFamily T) (n : 
 theorem weightedRingOfDefinitionC_mem_weightedIdeal (P : PairOfDefinition A)
     (hT : IsWeightFamily T) {n : ℕ} {a : P.ringOfDefinition} (ha : (a : A) ∈ P.idealImage n) :
     P.weightedRingOfDefinitionC hT a ∈ P.weightedIdeal hT n :=
-  weightedC_mem_weightedNhd hT ha
+  (weightedC_mem_weightedNhd hT).mpr ha
 
 /-- At `n = 0` the bound is the `A₀` bound, so `I⁰⟨X⟩_T` is all of `A₀⟨X⟩_T`. -/
 @[simp]
@@ -270,7 +262,7 @@ private theorem exists_mem_weightedIdeal_coe_eq (P : PairOfDefinition A) (hT : I
       ((g : weightedRestrictedSubring T hT) : MvPowerSeries (Fin k) A) = s ∧
         g ∈ P.weightedIdeal hT n :=
   ⟨⟨⟨s, mem_weightedRestrictedSubring.mpr hres⟩,
-    mem_weightedNhd.mpr fun ν ↦
+    (P.mem_weightedRingOfDefinition hT).mpr <| mem_weightedNhd.mpr fun ν ↦
       weightMul_mono T ν (P.idealImage_le_ringOfDefinition n) (hmem ν)⟩,
     rfl, mem_weightedNhd.mpr hmem⟩
 
@@ -407,7 +399,7 @@ theorem fg_weightedIdeal_one (P : PairOfDefinition A) (hT : IsWeightFamily T) :
 /-- `A₀⟨X⟩_T` is open in `A⟨X⟩_T`. -/
 theorem isOpen_weightedRingOfDefinition (P : PairOfDefinition A) (hT : IsWeightFamily T) :
     IsOpen (P.weightedRingOfDefinition hT : Set (weightedRestrictedSubring T hT)) :=
-  isOpen_weightedNhd hT P.isOpen_ringOfDefinition
+  isOpen_weightedSubring hT P.isOpen_ringOfDefinition
 
 /-- Each `Iⁿ⟨X⟩_T` is open in `A₀⟨X⟩_T`. -/
 theorem isOpen_weightedIdeal (P : PairOfDefinition A) (hT : IsWeightFamily T) (n : ℕ) :
@@ -486,7 +478,7 @@ instance isTateRing_weightedRestrictedSubring [IsTopologicalRing A] [IsTateRing 
     obtain ⟨a, ha⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
     exact ⟨weightedC T hT a, ha.map (continuous_weightedC hT)⟩
 
--- The completed algebra `A⟨X₁,…,Xₖ⟩` of the roadmap — the separated completion of the
+-- The completed algebra `A⟨X₁,…,Xₖ⟩` — the separated completion of the
 -- trivial-weight `A⟨X⟩_T` — needs no result of its own: the instances above and
 -- `TauCeti.Huber.IsHuberRing.completion` / `TauCeti.Huber.IsTateRing.completion` already give it
 -- by synthesis, which these two `example`s record.

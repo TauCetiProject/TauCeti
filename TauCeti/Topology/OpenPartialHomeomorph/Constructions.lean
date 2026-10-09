@@ -12,9 +12,14 @@ public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 
 An open partial homeomorphism restricts to a chart on a subtype when membership in the subtype is
 detected by a parametrized coordinate slice. This file packages that topological construction;
-zero-slice subgroup charts use it after translating an ambient chart.
+zero-slice subgroup charts use it after translating an ambient chart. Continuous maps that are
+inverse on open sets also give an open partial homeomorphism on their mutual restrictions
+(`ContinuousOn.toOpenPartialHomeomorph`).
 
 ## Main definitions
+
+* `ContinuousOn.toOpenPartialHomeomorph` constructs an open partial homeomorphism from continuous
+  maps inverse on their mutual restrictions.
 
 * `OpenPartialHomeomorph.subtypeCoord` restricts an open partial homeomorphism to a subtype and
   reads its coordinates through a retraction onto the parametrized slice.
@@ -155,3 +160,49 @@ theorem coe_subtypeCoord_symm_apply (e : OpenPartialHomeomorph X Y) (s : Set X)
   simp [subtypeCoord, hz]
 
 end OpenPartialHomeomorph
+
+namespace ContinuousOn
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    {f : X → Y} {g : Y → X} {U : Set X} {V : Set Y}
+    (hf : ContinuousOn f U) (hg : ContinuousOn g V) (hU : IsOpen U) (hV : IsOpen V)
+    (hgf : LeftInvOn g f (U ∩ f ⁻¹' V)) (hfg : RightInvOn g f (V ∩ g ⁻¹' U))
+
+/-- Continuous maps on open sets define an open partial homeomorphism if they are inverse on
+points whose images lie in the other set. The forward and inverse maps are the given maps,
+and the source and target are exactly these mutual restrictions. -/
+def toOpenPartialHomeomorph : OpenPartialHomeomorph X Y where
+  toFun := f
+  invFun := g
+  source := U ∩ f ⁻¹' V
+  target := V ∩ g ⁻¹' U
+  map_source' x hx := ⟨hx.2, by simpa only [mem_preimage, hgf hx] using hx.1⟩
+  map_target' y hy := ⟨hy.2, by simpa only [mem_preimage, hfg hy] using hy.1⟩
+  left_inv' _ hx := hgf hx
+  right_inv' _ hy := hfg hy
+  open_source := hf.isOpen_inter_preimage hU hV
+  open_target := hg.isOpen_inter_preimage hV hU
+  continuousOn_toFun := hf.mono inter_subset_left
+  continuousOn_invFun := hg.mono inter_subset_left
+
+/-- The forward map of `toOpenPartialHomeomorph` is the given map. -/
+@[simp]
+theorem coe_toOpenPartialHomeomorph :
+    ⇑(hf.toOpenPartialHomeomorph hg hU hV hgf hfg) = f := (rfl)
+
+/-- The inverse map of `toOpenPartialHomeomorph` is the given inverse. -/
+@[simp]
+theorem coe_toOpenPartialHomeomorph_symm :
+    ⇑(hf.toOpenPartialHomeomorph hg hU hV hgf hfg).symm = g := (rfl)
+
+/-- The source of `toOpenPartialHomeomorph` consists of points of `U` mapped into `V`. -/
+@[simp]
+theorem toOpenPartialHomeomorph_source :
+    (hf.toOpenPartialHomeomorph hg hU hV hgf hfg).source = U ∩ f ⁻¹' V := (rfl)
+
+/-- The target of `toOpenPartialHomeomorph` consists of points of `V` mapped into `U`. -/
+@[simp]
+theorem toOpenPartialHomeomorph_target :
+    (hf.toOpenPartialHomeomorph hg hU hV hgf hfg).target = V ∩ g ⁻¹' U := (rfl)
+
+end ContinuousOn

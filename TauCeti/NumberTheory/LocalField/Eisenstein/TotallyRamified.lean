@@ -116,11 +116,9 @@ theorem isEisensteinAt_of_isRoot_of_irreducible {g : 𝒪[K][X]} (hg : g.leading
 theorem IsTotallyRamified.isEisensteinAt_minpoly (h : IsTotallyRamified K L) {ϖ : 𝒪[L]}
     (hϖ : Irreducible ϖ) : (minpoly 𝒪[K] ϖ).IsEisensteinAt 𝓂[K] := by
   have hint : IsIntegral 𝒪[K] ϖ := IsIntegral.of_finite 𝒪[K] ϖ
-  have hgen := h.adjoin_eq_top_of_irreducible hϖ
   refine isEisensteinAt_of_isRoot_of_irreducible (by simp [(minpoly.monic hint).leadingCoeff]) ?_
     hϖ ?_
-  · rw [← PowerBasis.ofAdjoinEqTop'_dim hint hgen, ← PowerBasis.finrank, finrank_integerRing,
-      ← (isTotallyRamified_iff_ramificationIndex_eq_finrank K L).mp h]
+  · simpa using (h.integralPowerBasis hϖ).natDegree_minpoly
   · rw [IsRoot, eval_map, ← aeval_def, minpoly.aeval]
 
 /-- **Totally ramified extensions are Eisenstein.** A totally ramified extension `L/K` of

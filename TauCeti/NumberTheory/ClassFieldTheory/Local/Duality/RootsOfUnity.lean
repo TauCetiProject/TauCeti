@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Symbol
+import TauCeti.Algebra.Module.ZMod.Dual
 
 /-!
 # The Tate dual of the roots of unity

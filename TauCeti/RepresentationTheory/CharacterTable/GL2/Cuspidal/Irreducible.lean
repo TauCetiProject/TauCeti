@@ -248,7 +248,7 @@ theorem characterPairing_GL2ScalarUnipotentInduction_GL2CuspidalVirtualCharacter
   classical
   have hG : IsUnit (Nat.card (GL (Fin 2) F) : ℂ) :=
     (Nat.cast_ne_zero.mpr Nat.card_pos.ne').isUnit
-  rw [GL2ScalarUnipotentInduction_def, ← ClassFunction.ind_ofFDRep, characterPairing_ind hG,
+  rw [GL2ScalarUnipotentInduction_def, ← Subgroup.indClassFunction_ofFDRep, characterPairing_ind hG,
     ClassFunction.characterPairing_symm, ClassFunction.characterPairing_apply]
   simp only [ClassFunction.comap_apply, Subgroup.coe_subtype, ClassFunction.ofFDRep_apply]
   rw [sum_GL2CuspidalVirtualCharacter_mul_GL2ScalarUnipotentRep θ hψ,
@@ -269,7 +269,7 @@ theorem characterPairing_GL2EllipticInduction_GL2CuspidalVirtualCharacter {θ : 
   classical
   have hG : IsUnit (Nat.card (GL (Fin 2) F) : ℂ) :=
     (Nat.cast_ne_zero.mpr Nat.card_pos.ne').isUnit
-  rw [GL2EllipticInduction_def, ← ClassFunction.ind_ofFDRep, characterPairing_ind hG,
+  rw [GL2EllipticInduction_def, ← Subgroup.indClassFunction_ofFDRep, characterPairing_ind hG,
     ClassFunction.characterPairing_symm, ClassFunction.characterPairing_apply]
   simp only [ClassFunction.comap_apply, Subgroup.coe_subtype, ClassFunction.ofFDRep_apply]
   rw [sum_GL2CuspidalVirtualCharacter_mul_GL2NonSplitTorusRep hθ ψ, mul_zero]

@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import Mathlib.NumberTheory.Padics.LocalField
+public import TauCeti.NumberTheory.LocalField.Uniformizer
 import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.NumberTheory.LegendreSymbol.Basic
 import Mathlib.NumberTheory.Padics.RingHoms
@@ -32,7 +33,8 @@ concrete p-adic norm and valuation APIs.
   number with `padicValNat`, and `Padic.natCastValuation_self` and
   `Padic.natCastValuation_two` are the two values it takes on the residue prime and on `2`.
 * `TauCeti.Padic.irreducible_natCast_self` shows that the residue prime is a uniformizer of
-  the integer ring.
+  the integer ring, and `TauCeti.Padic.isUniformizer_natCast_self` that it is a uniformizer of
+  `ℚ_[p]`.
 * `Padic.not_isSquare_neg_one_of_mod_four_eq_three`: `-1` is nonsquare in `ℚ_[p]` when
   `p ≡ 3 (mod 4)`.
 * `Padic.not_isSquare_intCast_of_not_isSquare_zmod`: an integer that is not a square modulo a
@@ -211,5 +213,14 @@ namespace TauCeti.Padic
 theorem irreducible_natCast_self : Irreducible (p : 𝒪[ℚ_[p]]) := by
   simpa only [map_natCast] using
     (PadicInt.irreducible_p (p := p)).map (_root_.Padic.integerRingEquiv p).symm
+
+/-- The residue prime `p` is a uniformizer of `ℚ_[p]`. -/
+theorem isUniformizer_natCast_self :
+    IsUniformizer ℚ_[p]
+      (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)) := by
+  rw [isUniformizer_def]
+  apply Multiplicative.toAdd.injective
+  rw [_root_.Padic.toAdd_normalizedValuation_eq_valuation, Units.val_mk0, _root_.Padic.valuation_p,
+    toAdd_ofAdd]
 
 end TauCeti.Padic

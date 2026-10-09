@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.AlternatingFive
+public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.AlternatingFive.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.TotallyOrthogonal
 
 /-!
@@ -18,7 +18,7 @@ Every irreducible complex representation of `A₅` is orthogonal: its Frobenius-
 
 The left side is `16`, consisting of the identity and the fifteen double transpositions. The right
 side is `1 + 3 + 3 + 4 + 5 = 16`, read from the certified exact cyclotomic character table in
-`TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.AlternatingFive`.
+`TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.AlternatingFive.Basic`.
 
 ## Main statements
 

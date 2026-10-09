@@ -25,6 +25,11 @@ H⁰(G, M) ≃+ H⁰_grp(G, M),   H¹(G, M) ≃+ H¹_grp(G, M),   H²(G, M) ≃+
 * `TauCeti.ContCohomology.explicitH0IsoGroupCohomology`,
   `TauCeti.ContCohomology.explicitH1IsoGroupCohomology` and
   `TauCeti.ContCohomology.explicitH2IsoGroupCohomology`: the three comparison isomorphisms.
+* `TauCeti.ContCohomology.explicitH1AddEquivGroupCohomology` and
+  `TauCeti.ContCohomology.explicitH2AddEquivGroupCohomology`: the same comparison for a
+  representation `B : Rep k H` over any coefficient ring, along a group isomorphism `G ≃* H` and an
+  equivariant additive isomorphism `M ≃+ B`; the comparisons in degrees `1` and `2` are their
+  instances along the identities.
 * `TauCeti.ContCohomology.H0AddEquivInvariants`,
   `TauCeti.ContCohomology.Z1AddEquivCocycles₁` and
   `TauCeti.ContCohomology.Z2AddEquivCocycles₂`: the underlying identifications of the numerators,
@@ -53,8 +58,9 @@ The universes are pinned by the pin and not by the mathematics. Mathlib's low-de
 coefficient ring is `ℤ`. Thus the three final comparison isomorphisms carry `G M : Type`, while the
 differentials, membership dictionaries, and numerator equivalences keep every universe not
 constrained by Mathlib's representation API arbitrary. `C1_eq_top` and `C2_eq_top` mention nothing
-of Mathlib's theory and are fully polymorphic. When the pin drops these restrictions the binders
-here can simply be widened.
+of Mathlib's theory and are fully polymorphic, and so are `G` and `M` in the comparisons along a
+compatible pair, where only `k` and `H` share a universe. When the pin drops these restrictions the
+binders here can simply be widened.
 
 The isomorphisms are built as `AddEquiv`s and not as isomorphisms in `ModuleCat ℤ`. The explicit
 `H¹` and `H²` are bare additive groups by construction, their inherited quotient topology being the
@@ -86,7 +92,7 @@ public section
 
 namespace TauCeti.ContCohomology
 
-universe u v
+universe u v w
 
 open groupCohomology
 
@@ -236,6 +242,180 @@ theorem explicitH0IsoGroupCohomology_symm_apply
 
 end ComparisonDegree0
 
+section CompatiblePair
+
+/-! ### Along a compatible pair, over any coefficient ring
+
+A module met in practice is usually a representation `B : Rep k H` over a larger coefficient ring
+`k`, of a group `H` that is only isomorphic to `G`, on a carrier that is only isomorphic to `M`.
+Along a group isomorphism `φ : G ≃* H` and an additive isomorphism `ψ : M ≃+ B` intertwining the two
+actions, the explicit `H¹` and `H²` of `M` are those of `B`. The coefficient ring plays no role: a
+cocycle of `B` over `k` is the same function as a cocycle of its underlying additive group.
+
+Mathlib's `groupCohomology.mapIso` transports along a group isomorphism and a `k`-linear
+isomorphism of representations over one coefficient ring; here `M` is only an additive group, so
+the comparison is built on cocycles directly. The identities `φ = .refl G`, `ψ = .refl M` give
+`explicitH1IsoGroupCohomology` and `explicitH2IsoGroupCohomology` below. -/
+
+variable {G : Type u} [Group G] {M : Type v} [AddCommGroup M] [DistribMulAction G M]
+  {k H : Type w} [CommRing k] [Group H] {B : Rep k H}
+  (φ : G ≃* H) (ψ : M ≃+ B) (hψ : ∀ (g : G) (m : M), ψ (g • m) = B.ρ (φ g) (ψ m))
+
+include hψ in
+/-- `ψ` intertwines the actions of `φ.symm h` on `M` and of `h` on `B`. -/
+private theorem apply_symm_smul (h : H) (m : M) : ψ (φ.symm h • m) = B.ρ h (ψ m) := by
+  rw [hψ, φ.apply_symm_apply]
+
+section CompatiblePairDegree1
+
+/-- A `1`-cochain of `G` in `M`, read as a `1`-cochain of `H` in `B`. -/
+private def transport₁ (f : G → M) : H → B := fun h ↦ ψ (f (φ.symm h))
+
+include hψ in
+private theorem transport₁_mem_cocycles₁_iff (f : G → M) :
+    transport₁ φ ψ f ∈ cocycles₁ B ↔ groupCohomology.IsCocycle₁ f := by
+  rw [mem_cocycles₁_iff]
+  constructor
+  · intro hf g g'
+    have := hf (φ g) (φ g')
+    simp only [transport₁, ← map_mul, φ.symm_apply_apply] at this
+    rw [← hψ, ← map_add] at this
+    exact ψ.injective this
+  · intro hf h h'
+    simp only [transport₁, map_mul, hf (φ.symm h) (φ.symm h'), map_add,
+      apply_symm_smul φ ψ hψ]
+
+include hψ in
+private theorem transport₁_mem_coboundaries₁_iff (f : G → M) :
+    transport₁ φ ψ f ∈ coboundaries₁ B ↔ f ∈ B1 G M := by
+  rw [mem_B1_iff, coboundaries₁, LinearMap.mem_range]
+  constructor
+  · rintro ⟨x, hx⟩
+    refine ⟨ψ.symm x, fun g ↦ ψ.injective ?_⟩
+    have := congrFun hx (φ g)
+    rw [d₀₁_hom_apply] at this
+    simpa [transport₁, map_sub, hψ] using this
+  · rintro ⟨x, hx⟩
+    refine ⟨ψ x, funext fun h ↦ ?_⟩
+    rw [d₀₁_hom_apply, transport₁, ← hx, map_sub, apply_symm_smul φ ψ hψ]
+
+variable [TopologicalSpace G] [DiscreteTopology G] [TopologicalSpace M]
+  [IsTopologicalAddGroup M] [ContinuousSMul G M]
+
+/-- **Explicit `H¹` against `groupCohomology` along a compatible pair.** For a discrete group `G`,
+a group isomorphism `φ : G ≃* H` and an additive isomorphism `ψ : M ≃+ B` onto a
+`k`-representation of `H` intertwining the actions, the explicit `H¹(G, M)` is `H¹(H, B)`. The
+class of a cocycle `z` goes to the class of `h ↦ ψ (z (φ⁻¹ h))`. -/
+noncomputable def explicitH1AddEquivGroupCohomology : H1 G M ≃+ groupCohomology B 1 := by
+  let c : Z1 G M →+ cocycles₁ B :=
+    { toFun z := ⟨transport₁ φ ψ z, (transport₁_mem_cocycles₁_iff φ ψ hψ z).2
+        (mem_Z1_iff.1 z.2).2⟩
+      map_zero' := Subtype.ext (funext fun _ ↦ map_zero ψ)
+      map_add' _ _ := Subtype.ext (funext fun _ ↦ map_add ψ _ _) }
+  let f := (H1π B).hom.toAddMonoidHom.comp c
+  have hf : Function.Surjective f := fun y ↦ by
+    induction y using H1_induction_on with
+    | h x =>
+      let z : G → M := fun g ↦ ψ.symm (x (φ g))
+      have hz : transport₁ φ ψ z = x := funext fun h ↦ by simp [transport₁, z]
+      have hzc : groupCohomology.IsCocycle₁ z :=
+        (transport₁_mem_cocycles₁_iff φ ψ hψ z).1 (hz ▸ x.2)
+      exact ⟨⟨z, mem_Z1_iff.2 ⟨continuous_of_discreteTopology, hzc⟩⟩,
+        congrArg (H1π B) (Subtype.ext hz)⟩
+  have hker : (B1 G M).addSubgroupOf (Z1 G M) = f.ker := by
+    ext z
+    rw [AddSubgroup.mem_addSubgroupOf, AddMonoidHom.mem_ker]
+    exact ((transport₁_mem_coboundaries₁_iff φ ψ hψ z).symm.trans
+      (H1π_eq_zero_iff (c z)).symm)
+  exact QuotientAddGroup.liftEquiv _ hf hker
+
+/-- `explicitH1AddEquivGroupCohomology` sends the class of a continuous `1`-cocycle `z` to the
+class of the cocycle `h ↦ ψ (z (φ⁻¹ h))`. -/
+theorem explicitH1AddEquivGroupCohomology_mk (z : Z1 G M) (c : cocycles₁ B)
+    (hc : ∀ h, c h = ψ ((z : G → M) (φ.symm h))) :
+    explicitH1AddEquivGroupCohomology φ ψ hψ (z : H1 G M) = H1π B c :=
+  -- The equivalence is `QuotientAddGroup.liftEquiv` of the transport of cocycles.
+  congrArg (H1π B) (Subtype.ext (funext fun h ↦ (hc h).symm))
+
+end CompatiblePairDegree1
+
+section CompatiblePairDegree2
+
+/-- A `2`-cochain of `G` in `M`, read as a `2`-cochain of `H` in `B`. -/
+private def transport₂ (f : G × G → M) : H × H → B := fun h ↦ ψ (f (φ.symm h.1, φ.symm h.2))
+
+include hψ in
+private theorem transport₂_mem_cocycles₂_iff (f : G × G → M) :
+    transport₂ φ ψ f ∈ cocycles₂ B ↔ groupCohomology.IsCocycle₂ f := by
+  rw [mem_cocycles₂_iff]
+  constructor
+  · intro hf g g' g''
+    have := hf (φ g) (φ g') (φ g'')
+    simp only [transport₂, ← map_mul, φ.symm_apply_apply] at this
+    rw [← hψ, ← map_add, ← map_add] at this
+    exact ψ.injective this
+  · intro hf h h' h''
+    simp only [transport₂, map_mul, ← map_add, hf (φ.symm h) (φ.symm h') (φ.symm h'')]
+    exact (map_add ψ _ _).trans (congrArg (· + _) (apply_symm_smul φ ψ hψ _ _))
+
+variable [TopologicalSpace G] [DiscreteTopology G] [TopologicalSpace M] [IsTopologicalAddGroup M]
+
+include hψ in
+private theorem transport₂_mem_coboundaries₂_iff (f : G × G → M) :
+    transport₂ φ ψ f ∈ coboundaries₂ B ↔ f ∈ B2 G M := by
+  rw [mem_B2_iff', coboundaries₂, LinearMap.mem_range]
+  constructor
+  · rintro ⟨x, hx⟩
+    refine ⟨fun g ↦ ψ.symm (x (φ g)), continuous_of_discreteTopology, fun g g' ↦ ψ.injective ?_⟩
+    have := congrFun hx (φ g, φ g')
+    rw [d₁₂_hom_apply] at this
+    simpa [transport₂, map_sub, map_add, hψ] using this
+  · rintro ⟨x, -, hx⟩
+    refine ⟨transport₁ φ ψ x, funext fun h ↦ ?_⟩
+    rw [d₁₂_hom_apply, transport₂, ← hx, map_add, map_sub, apply_symm_smul φ ψ hψ]
+    simp [transport₁]
+
+variable [ContinuousSMul G M]
+
+/-- **Explicit `H²` against `groupCohomology` along a compatible pair.** For a discrete group `G`,
+a group isomorphism `φ : G ≃* H` and an additive isomorphism `ψ : M ≃+ B` onto a
+`k`-representation of `H` intertwining the actions, the explicit `H²(G, M)` is `H²(H, B)`. The
+class of a cocycle `z` goes to the class of `(h, h') ↦ ψ (z (φ⁻¹ h, φ⁻¹ h'))`. -/
+noncomputable def explicitH2AddEquivGroupCohomology : H2 G M ≃+ groupCohomology B 2 := by
+  let c : Z2 G M →+ cocycles₂ B :=
+    { toFun z := ⟨transport₂ φ ψ z, (transport₂_mem_cocycles₂_iff φ ψ hψ z).2
+        (mem_Z2_iff.1 z.2).2⟩
+      map_zero' := Subtype.ext (funext fun _ ↦ map_zero ψ)
+      map_add' _ _ := Subtype.ext (funext fun _ ↦ map_add ψ _ _) }
+  let f := (H2π B).hom.toAddMonoidHom.comp c
+  have hf : Function.Surjective f := fun y ↦ by
+    induction y using H2_induction_on with
+    | h x =>
+      let z : G × G → M := fun g ↦ ψ.symm (x (φ g.1, φ g.2))
+      have hz : transport₂ φ ψ z = x := funext fun h ↦ by simp [transport₂, z]
+      have hzc : groupCohomology.IsCocycle₂ z :=
+        (transport₂_mem_cocycles₂_iff φ ψ hψ z).1 (hz ▸ x.2)
+      exact ⟨⟨z, mem_Z2_iff.2 ⟨continuous_of_discreteTopology, hzc⟩⟩,
+        congrArg (H2π B) (Subtype.ext hz)⟩
+  have hker : (B2 G M).addSubgroupOf (Z2 G M) = f.ker := by
+    ext z
+    rw [AddSubgroup.mem_addSubgroupOf, AddMonoidHom.mem_ker]
+    exact ((transport₂_mem_coboundaries₂_iff φ ψ hψ z).symm.trans
+      (H2π_eq_zero_iff (c z)).symm)
+  exact QuotientAddGroup.liftEquiv _ hf hker
+
+/-- `explicitH2AddEquivGroupCohomology` sends the class of a continuous `2`-cocycle `z` to the
+class of the cocycle `(h, h') ↦ ψ (z (φ⁻¹ h, φ⁻¹ h'))`. -/
+theorem explicitH2AddEquivGroupCohomology_mk (z : Z2 G M) (c : cocycles₂ B)
+    (hc : ∀ h, c h = ψ ((z : G × G → M) (φ.symm h.1, φ.symm h.2))) :
+    explicitH2AddEquivGroupCohomology φ ψ hψ (z : H2 G M) = H2π B c :=
+  -- The equivalence is `QuotientAddGroup.liftEquiv` of the transport of cocycles.
+  congrArg (H2π B) (Subtype.ext (funext fun h ↦ (hc h).symm))
+
+end CompatiblePairDegree2
+
+end CompatiblePair
+
 section NumeratorDegree1
 
 variable (G : Type) [Group G] [TopologicalSpace G] [DiscreteTopology G]
@@ -273,22 +453,11 @@ variable [ContinuousSMul G M]
 
 /-- **Layer 3, degree 1 against Mathlib's discrete group cohomology.** Every continuity condition
 is vacuous for a discrete group, so this identifies subquotients of the same function space.
-Layer 4 uses it at every finite level. -/
+Layer 4 uses it at every finite level. It is `explicitH1AddEquivGroupCohomology` along the
+identities. -/
 noncomputable def explicitH1IsoGroupCohomology :
-    H1 G M ≃+ groupCohomology (Rep.ofDistribMulAction ℤ G M) 1 := by
-  let φ := (groupCohomology.H1π (Rep.ofDistribMulAction ℤ G M)).hom.toAddMonoidHom.comp
-    (Z1AddEquivCocycles₁ G M).toAddMonoidHom
-  have hφ : Function.Surjective φ := fun y => by
-    induction y using groupCohomology.H1_induction_on with
-    | h c => exact ⟨((Z1AddEquivCocycles₁ G M).symm c : Z1 G M), rfl⟩
-  have hker : (B1 G M).addSubgroupOf (Z1 G M) = φ.ker := by
-    ext z
-    constructor
-    · exact fun hz => (groupCohomology.H1π_eq_zero_iff _).2
-        ((mem_coboundaries₁_iff_mem_B1 z.1).2 hz)
-    · exact fun hz => (mem_coboundaries₁_iff_mem_B1 z.1).1
-        ((groupCohomology.H1π_eq_zero_iff _).1 hz)
-  exact QuotientAddGroup.liftEquiv _ hφ hker
+    H1 G M ≃+ groupCohomology (Rep.ofDistribMulAction ℤ G M) 1 :=
+  explicitH1AddEquivGroupCohomology (.refl G) (.refl M) fun _ _ ↦ rfl
 
 /-- `explicitH1IsoGroupCohomology` sends the class of a continuous `1`-cocycle `z` to the class of
 `z` in Mathlib's `H¹`. -/
@@ -349,22 +518,11 @@ variable [ContinuousSMul G M]
 
 /-- **Layer 3, degree 2 against Mathlib's discrete group cohomology.** The denominator is where
 discreteness is used twice over: `B²` is the image of the *continuous* `1`-cochains, and over a
-discrete group those exhaust `G → M`. -/
+discrete group those exhaust `G → M`. It is `explicitH2AddEquivGroupCohomology` along the
+identities. -/
 noncomputable def explicitH2IsoGroupCohomology :
-    H2 G M ≃+ groupCohomology (Rep.ofDistribMulAction ℤ G M) 2 := by
-  let φ := (groupCohomology.H2π (Rep.ofDistribMulAction ℤ G M)).hom.toAddMonoidHom.comp
-    (Z2AddEquivCocycles₂ G M).toAddMonoidHom
-  have hφ : Function.Surjective φ := fun y => by
-    induction y using groupCohomology.H2_induction_on with
-    | h c => exact ⟨((Z2AddEquivCocycles₂ G M).symm c : Z2 G M), rfl⟩
-  have hker : (B2 G M).addSubgroupOf (Z2 G M) = φ.ker := by
-    ext z
-    constructor
-    · exact fun hz => (groupCohomology.H2π_eq_zero_iff _).2
-        ((mem_coboundaries₂_iff_mem_B2 z.1).2 hz)
-    · exact fun hz => (mem_coboundaries₂_iff_mem_B2 z.1).1
-        ((groupCohomology.H2π_eq_zero_iff _).1 hz)
-  exact QuotientAddGroup.liftEquiv _ hφ hker
+    H2 G M ≃+ groupCohomology (Rep.ofDistribMulAction ℤ G M) 2 :=
+  explicitH2AddEquivGroupCohomology (.refl G) (.refl M) fun _ _ ↦ rfl
 
 /-- `explicitH2IsoGroupCohomology` sends the class of a continuous `2`-cocycle `z` to the class of
 `z` in Mathlib's `H²`. -/

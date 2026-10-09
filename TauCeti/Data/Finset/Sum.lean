@@ -21,6 +21,8 @@ calculate joins of simplicial complexes factor by factor.
   under `Sum.map`.
 * `Finset.toLeft_erase_inl` and `Finset.toRight_erase_inl`: projections after erasing a
   left-tagged element.
+* `Finset.disjoint_disjSum_iff`: disjointness from a disjoint sum is characterized by disjointness
+  from its two projections.
 -/
 
 public section
@@ -62,5 +64,39 @@ omit [DecidableEq α] [DecidableEq β] in
     (s.erase (Sum.inl a)).toRight = s.toRight := by
   ext x
   simp
+
+omit [DecidableEq α] [DecidableEq β] in
+/-- Disjointness from a disjoint sum is equivalent to disjointness from its two projections. -/
+@[simp]
+theorem disjoint_disjSum_iff {ρ : Finset (α ⊕ β)} {s : Finset α} {t : Finset β} :
+    Disjoint ρ (s.disjSum t) ↔ Disjoint ρ.toLeft s ∧ Disjoint ρ.toRight t := by
+  classical
+  constructor
+  · intro h
+    constructor
+    · refine Finset.disjoint_left.mpr ?_
+      intro a haρ has
+      exact (Finset.disjoint_left.mp h (Finset.mem_toLeft.mp haρ))
+        (Finset.mem_disjSum.mpr (Or.inl ⟨a, has, rfl⟩))
+    · refine Finset.disjoint_left.mpr ?_
+      intro b hbρ hbt
+      exact (Finset.disjoint_left.mp h (Finset.mem_toRight.mp hbρ))
+        (Finset.mem_disjSum.mpr (Or.inr ⟨b, hbt, rfl⟩))
+  · rintro ⟨hleft, hright⟩
+    refine Finset.disjoint_left.mpr ?_
+    intro x hxρ hxst
+    rcases x with a | b
+    · rcases Finset.mem_disjSum.mp hxst with ⟨a', ha', haa'⟩ | h
+      · have : a' = a := Sum.inl.inj haa'
+        subst a'
+        exact (Finset.disjoint_left.mp hleft (Finset.mem_toLeft.mpr hxρ)) ha'
+      · rcases h with ⟨b', hb', hab'⟩
+        cases hab'
+    · rcases Finset.mem_disjSum.mp hxst with h | ⟨b', hb', hbb'⟩
+      · rcases h with ⟨a', ha', hab'⟩
+        cases hab'
+      · have : b' = b := Sum.inr.inj hbb'
+        subst b'
+        exact (Finset.disjoint_left.mp hright (Finset.mem_toRight.mpr hxρ)) hb'
 
 end Finset
