@@ -407,8 +407,9 @@ variable {R M N T P : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddComm
 /-- The radical of the orthogonal sum of a zero form with `Q` consists of the pairs whose second
 component lies in the radical of `Q`. Unlike `QuadraticMap.radical_prod`, this needs no hypothesis
 on `2`. -/
+@[simp]
 theorem radical_zero_prod (Q : QuadraticMap R N P) :
-    ((0 : QuadraticMap R T P).prod Q).radical = Q.radical.comap (LinearMap.snd R T N) := by
+    ((0 : QuadraticMap R T P).prod Q).radical = (⊤ : Submodule R T).prod Q.radical := by
   ext ⟨t, x⟩
   simp [mem_radical_iff', Prod.forall]
 
@@ -458,7 +459,8 @@ theorem equivalent_lift_radical_of_equivalent_zero_prod {Q : QuadraticMap R M P}
     {Q' : QuadraticMap R N P} (h : Q.Equivalent ((0 : QuadraticMap R T P).prod Q'))
     (hQ' : Q'.radical = ⊥) : (Q.lift Q.radical le_rfl).Equivalent Q' :=
   h.lift_radical.trans <| equivalent_lift_radical_of_comp_eq (LinearMap.snd R T N)
-    LinearMap.snd_surjective (by rw [radical_zero_prod, hQ', Submodule.comap_bot])
+    LinearMap.snd_surjective
+    (by rw [radical_zero_prod, hQ', ← Submodule.comap_snd, Submodule.comap_bot])
     (by ext; simp)
 
 /-- **Uniqueness of the totally isotropic part.** If `Q` is isometric to the orthogonal sum of the
@@ -470,7 +472,7 @@ theorem nonempty_linearEquiv_radical_of_equivalent_zero_prod {Q : QuadraticMap R
   obtain ⟨e⟩ := h
   have hrad :
       LinearMap.range (LinearMap.inl R T N) = Q.radical.map e.toLinearEquiv.toLinearMap := by
-    rw [← LinearMap.ker_snd, ← Submodule.comap_bot, ← hQ', ← radical_zero_prod]
+    rw [← LinearMap.ker_snd, ← Submodule.comap_bot, Submodule.comap_snd, ← hQ', ← radical_zero_prod]
     exact e.map_radical.symm
   exact ⟨((LinearEquiv.ofInjective _ LinearMap.inl_injective).trans
     (LinearEquiv.ofEq _ _ hrad)).trans (e.toLinearEquiv.submoduleMap Q.radical).symm⟩
