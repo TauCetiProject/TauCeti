@@ -192,7 +192,7 @@ private lemma norm_setAverage_closedBall_sub_le (hα : 0 < α)
         _ = C * (M * r ^ α) := by rw [hCq]
   obtain ⟨k, hk⟩ := exists_pow_lt_of_lt_one (div_pos hε (hε.trans_le hεr)) one_half_lt_one
   refine key k r (hε.trans_le hεr) hrρ ε ?_ hεr
-  calc r / 2 ^ k = (1 / 2) ^ k * r := by rw [one_div, inv_pow, div_eq_mul_inv, mul_comm]
+  calc r / 2 ^ k = (1 / 2) ^ k * r := by rw [one_div_pow]; ring
     _ ≤ ε := ((lt_div_iff₀ (hε.trans_le hεr)).1 hk).le
 
 /-- **Mean oscillation decay gives convergence of the averages.** Let `α > 0` and `ρ > 0`. If `f`
@@ -334,11 +334,12 @@ theorem exists_holderWith_ae_eq_iff_forall_setAverage_norm_sub_le {α : ℝ≥0}
     -- The averages of `f` and `g` over every ball agree.
     have havg : ⨍ z in closedBall x r, f z ∂μ = ⨍ z in closedBall x r, g z ∂μ :=
       average_congr (ae_restrict_of_ae hfg)
-    rw [havg, average_congr (ae_restrict_of_ae (hfg.mono fun y hy ↦ by rw [hy])),
-      NNReal.coe_mul, NNReal.coe_rpow, NNReal.coe_ofNat, mul_assoc,
-      ← Real.mul_rpow zero_le_two hr.le]
-    exact setAverage_norm_sub_setAverage_le_of_holderOnWith hα
-      (measure_closedBall_pos μ x hr).ne' (hg.holderOnWith _)
+    rw [havg, average_congr (ae_restrict_of_ae (hfg.mono fun y hy ↦ by rw [hy]))]
+    refine (setAverage_norm_sub_setAverage_le_of_holderOnWith hα
+      (measure_closedBall_pos μ x hr).ne' (hg.holderOnWith _)).trans_eq ?_
+    push_cast
+    rw [Real.mul_rpow zero_le_two hr.le]
+    ring
   · rintro ⟨M, hM⟩
     exact ⟨_, _, holderWith_preciseRepresentative_of_setAverage_norm_sub_le hα hf hM,
       ae_eq_preciseRepresentative hf⟩
