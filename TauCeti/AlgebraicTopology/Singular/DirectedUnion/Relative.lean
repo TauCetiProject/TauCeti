@@ -53,7 +53,7 @@ both the ambient space and the subspace. The cocone legs are the induced relativ
 def isColimitMapCoconeRelativeSingularChainComplex :
     IsColimit (((TopPair.singularChainComplexFunctor C).obj R).mapCocone c) := by
   have hA (j : J) : IsEmbedding (TopPair.Hom.snd (c.ι.app j)) :=
-    isEmbedding_topPairHom_snd_of_isEmbedding_fst (c.ι.app j) (hX j)
+    isEmbedding_snd_of_isEmbedding_fst (c.ι.app j) (hX j)
   -- `Functor.mapCocone` commutes definitionally with functor composition, which also
   -- reassociates definitionally. Unfolding the abbreviations `TopPair.proj₁` and
   -- `TopPair.proj₂` identifies their legs with `Hom.fst` and `Hom.snd`, and their

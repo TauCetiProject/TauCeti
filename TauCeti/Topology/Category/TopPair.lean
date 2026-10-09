@@ -28,7 +28,7 @@ an isomorphism of pairs (`TopPair.isIso_of_isIso_fst_of_surjective_snd`): the in
 subspaces is continuous because subspaces are embedded.
 
 An embedding of ambient spaces also embeds the subspaces, by
-`TauCeti.isEmbedding_topPairHom_snd_of_isEmbedding_fst f h` for a map of pairs `f`.
+`TauCeti.isEmbedding_snd_of_isEmbedding_fst f h` for a map of pairs `f`.
 
 The disjoint union `TopPair.sigma P = (Σ i, Xᵢ, Σ i, Aᵢ)` of a family of pairs `P i = (Xᵢ, Aᵢ)`,
 with the inclusions `TopPair.sigmaι P i` of the summands, is the coproduct of the family in
@@ -219,7 +219,7 @@ end TopPair
 namespace TauCeti
 
 /-- The subspace component of a map of pairs is an embedding if the ambient component is. -/
-lemma isEmbedding_topPairHom_snd_of_isEmbedding_fst {P Q : TopPair.{u}} (f : P ⟶ Q)
+lemma isEmbedding_snd_of_isEmbedding_fst {P Q : TopPair.{u}} (f : P ⟶ Q)
     (h : Topology.IsEmbedding (TopPair.Hom.fst f)) :
     Topology.IsEmbedding (TopPair.Hom.snd f) := by
   apply (Q.isEmbedding_map.of_comp_iff (f := TopPair.Hom.snd f)).mp

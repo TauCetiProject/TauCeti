@@ -68,8 +68,9 @@ continuity proved here.
 
 ## Implementation notes
 
-The sphere restrictions here and in `TauCeti.Geometry.Sphere.LinearIsometry` live in the
-root-level `LinearIsometryEquiv` namespace, allowing receiver notation. The differential formula
+The restriction equivalences and diffeomorphisms here and in
+`TauCeti.Geometry.Sphere.LinearIsometry` live in the root-level `LinearIsometryEquiv` namespace,
+allowing receiver notation. The differential formula
 is available as `TauCeti.mfderiv_coe_sphere_unitSphereEquiv e x v`. The reference inclusion
 remains project-owned top-level API in `TauCeti`; the auxiliary linear-map lemma remains in
 `TauCeti.LinearMap` as explained in the generic file.
