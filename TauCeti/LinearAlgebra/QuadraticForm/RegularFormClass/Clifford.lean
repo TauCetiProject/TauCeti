@@ -602,6 +602,18 @@ theorem cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero {x : Regu
   unfold Nat.ModEq
   omega
 
+/-- The exponents of `[(-1,-1)]` in the additivity of the Clifford invariant on `I(K)²` agree
+modulo two: `C(2m,2) C(2n,2) + C(m+n,2) ≡ C(m,2) + C(n,2)`. -/
+private theorem choose_two_mul_add_choose_two_modEq (m n : ℕ) :
+    (2 * m).choose 2 * (2 * n).choose 2 + (m + n).choose 2 ≡ m.choose 2 + n.choose 2 [MOD 2] := by
+  rw [← ZMod.natCast_eq_natCast_iff, two_mul, two_mul, Nat.add_choose_two, Nat.add_choose_two,
+    Nat.add_choose_two]
+  push_cast
+  generalize (m : ZMod 2) = a, (n : ZMod 2) = b, ((m.choose 2 : ℕ) : ZMod 2) = c,
+    ((n.choose 2 : ℕ) : ZMod 2) = d
+  revert a b c d
+  decide
+
 /-- **The Clifford invariant is additive on the square of the fundamental ideal**: for classes
 `x` and `y` of even rank with trivial signed discriminant, `c(x ⊥ y) = c(x) · c(y)`. These are
 the classes whose Witt classes lie in the square of the fundamental ideal
@@ -611,32 +623,26 @@ the Clifford invariant is not additive. -/
 theorem cliffordInvariant_add_of_signedDiscr_eq_zero {x y : RegularFormClass K}
     (hx : Even x.rank) (hxd : signedDiscr x = 0) (hy : Even y.rank) (hyd : signedDiscr y = 0) :
     cliffordInvariant (x + y) = cliffordInvariant x * cliffordInvariant y := by
-  obtain ⟨m, hm⟩ := hx
-  obtain ⟨n, hn⟩ := hy
-  have hxm : x.rank = 2 * m := by omega
-  have hyn : y.rank = 2 * n := by omega
+  obtain ⟨m, hxm⟩ := hx.two_dvd
+  obtain ⟨n, hyn⟩ := hy.two_dvd
   have hsd : signedDiscr (x + y) = 0 := by
-    rw [signedDiscr_add, hxd, hyd, hxm, mul_assoc, mul_comm 2, mul_nsmul,
-      ZModModule.char_nsmul_eq_zero 2 ((m * y.rank) • squareClass (-1 : Kˣ) : SquareClassGroup K)]
+    rw [signedDiscr_add, hxd, hyd, hxm, mul_assoc, mul_nsmul',
+      ZModModule.char_nsmul_eq_zero 2 (_ : SquareClassGroup K)]
     abel
-  rw [cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero
+  -- Lam's comparison reduces the claim to one about Hasse invariants and powers of `[(-1,-1)]`.
+  rw [cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero (m := m + n)
       (by rw [rank_add, hxm, hyn, mul_add]) hsd,
     cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero hxm hxd,
-    cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero hyn hyd, hasseInvariant_add,
-    signedDiscr_eq_zero_iff.mp hxd, signedDiscr_eq_zero_iff.mp hyd,
-    quaternionClassOnSquareClasses_nsmul_left, quaternionClassOnSquareClasses_nsmul_right,
-    quaternionClassOnSquareClasses_squareClass, ← pow_mul, hxm, hyn, mul_assoc, ← pow_add,
-    pow_eq_pow_of_modEq (n := 2) (b := m.choose 2 + n.choose 2) ?_ (quaternionClass_sq _ _),
+    cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero hyn hyd]
+  -- The correction term of the Hasse invariant is also a power of `[(-1,-1)]`.
+  have hdisc : quaternionClassOnSquareClasses (discr x) (discr y) =
+      quaternionClass (-1) (-1) ^ ((2 * m).choose 2 * (2 * n).choose 2) := by
+    simp [signedDiscr_eq_zero_iff.mp hxd, signedDiscr_eq_zero_iff.mp hyd, hxm, hyn,
+      quaternionClassOnSquareClasses_nsmul_left, pow_mul]
+  rw [hasseInvariant_add, hdisc, mul_assoc, ← pow_add,
+    pow_eq_pow_of_modEq (choose_two_mul_add_choose_two_modEq m n) (quaternionClass_sq _ _),
     pow_add]
-  · ac_rfl
-  -- The exponents agree modulo two: expand each binomial coefficient of a sum.
-  rw [← ZMod.natCast_eq_natCast_iff, two_mul, two_mul, Nat.add_choose_two, Nat.add_choose_two,
-    Nat.add_choose_two]
-  push_cast
-  generalize (m : ZMod 2) = a, (n : ZMod 2) = b, ((m.choose 2 : ℕ) : ZMod 2) = c,
-    ((n.choose 2 : ℕ) : ZMod 2) = d
-  revert a b c d
-  decide
+  ac_rfl
 
 end Lam
 

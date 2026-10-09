@@ -63,6 +63,7 @@ namespace RegularFormClass
 
 /-- **Adding a hyperbolic plane does not change the Clifford invariant**: `c(ℍ ⊥ x) = c(x)` for
 every class `x`, of either parity. -/
+@[simp]
 theorem cliffordInvariant_hyperbolicClass_add (x : RegularFormClass K) :
     cliffordInvariant (hyperbolicClass K + x) = cliffordInvariant x := by
   have heven {y : RegularFormClass K} (hy : Even y.rank) :
@@ -80,6 +81,7 @@ theorem cliffordInvariant_hyperbolicClass_add (x : RegularFormClass K) :
     mul_add, mk_rankOne_mul_hyperbolicClass, heven (by rw [rank_mul, rank_mk, one_mul]; exact hye),
     cliffordInvariant_add_mk_rankOne a hye]
 
+-- Not `@[simp]`: `nsmul_eq_mul` rewrites `m • hyperbolicClass K` to `↑m * hyperbolicClass K`.
 /-- Adding any number of hyperbolic planes does not change the Clifford invariant. -/
 theorem cliffordInvariant_nsmul_hyperbolicClass_add (m : ℕ) (x : RegularFormClass K) :
     cliffordInvariant (m • hyperbolicClass K + x) = cliffordInvariant x := by
