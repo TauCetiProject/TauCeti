@@ -64,7 +64,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
   nilpotent element — a pseudouniformiser, in the Tate case — rescales any element of `A` to a
   topologically nilpotent one. The multiplier is a unit in the Tate case, so the rescaled element
   is an associate of the original.
-* `TauCeti.Huber.IsHuberRing.quotient`: a quotient of a Huber ring is a Huber ring.
+* `TauCeti.Huber.IsHuberRing.quotient` and `TauCeti.Huber.IsTateRing.quotient`: a quotient of a
+  Huber ring is a Huber ring, and a quotient of a Tate ring is a Tate ring.
 * `TauCeti.Huber.PairOfDefinition.isBounded_ringOfDefinition`: a ring of definition is bounded,
   hence `A₀ ≤ A°` (`TauCeti.Huber.PairOfDefinition.le_powerBoundedSubring`). This is the
   boundedness half of Wedhorn Corollary 6.4.
@@ -598,6 +599,12 @@ theorem IsTateRing.exists_isTopologicallyNilpotent_pow_mul {A : Type*} [CommRing
 instance IsHuberRing.quotient {A : Type*} [CommRing A] [TopologicalSpace A]
     [IsTopologicalRing A] [IsHuberRing A] (J : Ideal A) : IsHuberRing (A ⧸ J) :=
   ⟨IsHuberRing.nonempty_pairOfDefinition.elim fun P ↦ ⟨P.quotient J⟩⟩
+
+/-- Quotients of Tate rings, with the quotient topology, are Tate rings: the image of a
+pseudouniformiser is a pseudouniformiser. -/
+instance IsTateRing.quotient {A : Type*} [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsTateRing A] (J : Ideal A) : IsTateRing (A ⧸ J) :=
+  IsTateRing.of_continuous (φ := Ideal.Quotient.mk J) continuous_quot_mk
 
 section Discrete
 

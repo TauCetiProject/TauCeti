@@ -55,6 +55,10 @@ that of `Tr_*⟨a⟩`.
 ## Main results
 
 * `TauCeti.twistedBoundary_conj`: changing frame by `Q` conjugates the twisted boundary by `Q`.
+* `TauCeti.twistedBoundary_conj_eq_iff`: conjugation detects a prescribed scalar boundary.
+* `TauCeti.twistedBoundary_neg_one_pow_mul`: multiplying a lift by a sign changes its boundary
+  by the corresponding coboundary.
+* `TauCeti.twistedBoundary_pinDiagonalLift_rootSign`: the boundary of a diagonal root-sign lift.
 * `TauCeti.map_pinLift_galois`: `g(pinLift w) = (−1)^{rootSign √2 g · c(w)} pinLift w`.
 * `TauCeti.twistedBoundary_kummerIndLift`, `TauCeti.twistedBoundaryF2_kummerIndLift`:
   `δ(\tilde{ρ}_a)(g, h) = (−1)^{c_{D₁₆}(ρ_a g, ρ_a h) + rootSign √2 g · rootSign (σ x) h}` for

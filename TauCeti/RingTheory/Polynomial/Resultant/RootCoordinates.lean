@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
+import TauCeti.RingTheory.Polynomial.Resultant.Normalization
 import TauCeti.RingTheory.Polynomial.RootEnumeration
 public import Mathlib.Algebra.Polynomial.Reverse
 import Mathlib.Algebra.Polynomial.Taylor
@@ -19,6 +20,10 @@ allow reciprocal coordinates centered at a nonroot: the new leading coefficient 
 of the original polynomial at that center. In a polynomial family this is useful even when
 the original leading coefficient vanishes upon specialization. Reversal is taken at the
 formal degree before specialization; it must not be recomputed at a smaller fiber degree.
+
+Combined with integral normalization, reversal at a nonroot `a` turns any polynomial into a monic
+polynomial over the same ring whose discriminant is that of the original polynomial times a power
+of its value at `a`.
 
 The identities include repeated roots and constant polynomials. No separability or
 characteristic-zero hypothesis is needed.
@@ -223,5 +228,32 @@ theorem discr_map_reverse {S : Type*} [CommRing S] (f : R[X]) (φ : R →+* S)
     rw [coeff_map, hdeg, coeff_reverse, revAt_le le_rfl, Nat.sub_self]
     exact h0
   rw [discr_map_of_natDegree_eq φ hmapdeg, discr_reverse f h0f]
+
+/-- Translating the root coordinate to a nonroot `a` and reversing at the formal degree keeps
+the degree. -/
+theorem natDegree_reverse_comp_X_add_C (f : R[X]) {a : R} (h : f.eval a ≠ 0) :
+    (f.comp (X + C a)).reverse.natDegree = f.natDegree := by
+  rw [← taylor_apply, reverse_natDegree, natTrailingDegree_eq_zero.2 (.inr (by
+    rwa [taylor_coeff_zero])), Nat.sub_zero, natDegree_taylor]
+
+/-- Translating the root coordinate to a nonroot `a` and reversing at the formal degree gives
+leading coefficient `f.eval a`. -/
+theorem leadingCoeff_reverse_comp_X_add_C (f : R[X]) {a : R} (h : f.eval a ≠ 0) :
+    (f.comp (X + C a)).reverse.leadingCoeff = f.eval a := by
+  rw [← taylor_apply, reverse_leadingCoeff, trailingCoeff, natTrailingDegree_eq_zero.2 (.inr (by
+    rwa [taylor_coeff_zero])), taylor_coeff_zero]
+
+/-- Normalized reciprocal coordinates centered at a nonroot `a` multiply the discriminant of a
+degree `n` polynomial by the `(n - 1) * (n - 2)` power of `f.eval a`. In a polynomial family,
+`f.eval a` can remain nonzero under a specialization that kills the leading coefficient of `f`;
+when that specialization lands in a field, such as `ℝ`, the factor becomes a unit, so this monic
+polynomial over the same ring carries the discriminant of `f` up to a unit factor there. -/
+theorem discr_integralNormalization_reverse_comp_X_add_C (f : R[X]) {a : R}
+    (h : f.eval a ≠ 0) :
+    (f.comp (X + C a)).reverse.integralNormalization.discr =
+      f.eval a ^ ((f.natDegree - 1) * (f.natDegree - 2)) * f.discr := by
+  rw [TauCeti.discr_integralNormalization, leadingCoeff_reverse_comp_X_add_C f h,
+    natDegree_reverse_comp_X_add_C f h,
+    discr_reverse _ (by rwa [← taylor_apply, taylor_coeff_zero]), discr_comp_X_add_C]
 
 end Polynomial
