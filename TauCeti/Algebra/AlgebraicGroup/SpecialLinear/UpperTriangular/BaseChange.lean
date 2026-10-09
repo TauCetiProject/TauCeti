@@ -19,8 +19,6 @@ the base of the standard Borel does not change its embedding in the special line
 No flatness or reducedness assumption on the base extension is needed. The construction
 uses `CommHopfAlgCat.quotientBaseChangeIsoOfMapEq` and the existing equality
 `SpecialLinear.UpperTriangular.map_baseChangeHopfIdeal_definingHopfIdeal`.
-The coordinate construction generalizes the rank-two Borel base-change construction in
-`TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Borel.Geometry`.
 
 ## References
 
