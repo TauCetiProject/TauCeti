@@ -103,8 +103,8 @@ private theorem zero_mem_Icc_rev (a : Fin (DynkinType.A n).rank) :
 private noncomputable def socleCoeff (a : Fin (DynkinType.A n).rank) : Π →ₗ[k] k :=
   Finsupp.lapply ⟨0, zero_mem_Icc_rev a⟩ ∘ₗ
     (signlessPreprojectiveACornerBasis k a a.rev).repr.toLinearMap ∘ₗ
-      (cornerMap k (e a.rev) (e a)).codRestrict _ fun y => by
-        rw [cornerMap_apply]
+      (LinearMap.mulLeftRight k (e a.rev, e a)).codRestrict _ fun y => by
+        rw [LinearMap.mulLeftRight_apply]
         exact mul_mul_mem_cornerSubmodule k _ _ y
 
 private theorem socleCoeff_apply (a : Fin (DynkinType.A n).rank) (y : Π) :
@@ -113,7 +113,7 @@ private theorem socleCoeff_apply (a : Fin (DynkinType.A n).rank) (y : Π) :
   simp only [socleCoeff, LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
     Finsupp.lapply_apply]
   congr 2
-  exact Subtype.ext (by rw [LinearMap.codRestrict_apply, cornerMap_apply])
+  exact Subtype.ext (by rw [LinearMap.codRestrict_apply, LinearMap.mulLeftRight_apply])
 
 /-- The socle coefficient only depends on the component in its corner. -/
 private theorem socleCoeff_congr (a : Fin (DynkinType.A n).rank) {y y' : Π}
