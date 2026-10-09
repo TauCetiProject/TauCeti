@@ -129,17 +129,6 @@ private theorem gaussSign_rankOne_of_pos (hm : 0 < m) :
   push_cast
   ring
 
-omit [NeZero m] in
-/-- `⟨2m⟩` is the negative of `⟨-2m⟩`. -/
-private theorem rankOne_eq_neg_rankOne_neg : rankOne m = -rankOne (-m) := by
-  refine IntegralLattice.ext ?_ ?_
-  · ext x
-    simp [neg_carrier]
-  · refine LinearMap.BilinForm.ext fun x y ↦ ?_
-    simp only [neg_form, LinearMap.neg_apply, rankOne_form_apply]
-    push_cast
-    ring
-
 /-- **Milgram's theorem for `⟨2m⟩`**: the discriminant form of the rank-one lattice `⟨2m⟩` has
 Gauss-sum invariant the sign of `m`. -/
 theorem gaussSign_discriminantQuadraticModule_rankOne :
@@ -167,23 +156,6 @@ private theorem sigPos_sub_sigNeg_rankOne (hm : m ≠ 0) :
     simp only [signature, Prod.mk.injEq] at h
     rw [h.1, h.2.2, Int.sign_eq_one_of_pos hm]
     simp
-
-omit [NeZero m] in
-/-- The rank-one Gram-matrix lattice with entry `2m` is `⟨2m⟩`. -/
-private theorem ofGramMatrix_singleton_eq_rankOne {c : ℤ} (hc : c = 2 * m)
-    (h : (Matrix.of fun (_ _ : Fin 1) ↦ c).IsSymm) :
-    ofGramMatrix (Basis.singleton (Fin 1) ℚ) (Matrix.of fun _ _ ↦ c) h = rankOne m := by
-  subst hc
-  refine IntegralLattice.ext ?_ ?_
-  · ext q
-    simp [Submodule.mem_span_singleton, eq_comm]
-  · refine LinearMap.BilinForm.ext fun p q ↦ ?_
-    let _ : DecidableEq (Fin 1) := Classical.decEq _
-    rw [rankOne_form_apply, ofGramMatrix_form, Matrix.toBilin_apply]
-    simp only [Fin.sum_univ_one, Basis.singleton_repr, Matrix.map_apply, Matrix.of_apply,
-      eq_intCast]
-    push_cast
-    ring
 
 /-! ## Splitting off a vector of nonzero norm, up to finite index -/
 
