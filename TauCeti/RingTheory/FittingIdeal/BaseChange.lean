@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+public import Mathlib.RingTheory.Kaehler.TensorProduct
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.RingTheory.TensorProduct.Finite
 public import TauCeti.RingTheory.FittingIdeal.Generators
@@ -31,6 +32,10 @@ of `K` exactly when `K ⊗[R] M` has dimension greater than `k`. For the residue
 prime `p`, this identifies the zero locus of `Fitt_k(M)`: `Fitt_k(M) ⊆ p` exactly when the fibre
 `κ(p) ⊗[R] M` has dimension greater than `k`.
 
+The Kähler differentials of a base change are the base change of the Kähler differentials, so
+their Fitting ideals, which cut out the singular locus of a relative curve, are compatible with
+base change of the ground ring: if `B = S ⊗[R] A`, then `Fitt_k(Ω[B⁄S]) = Fitt_k(Ω[A⁄R]) B`.
+
 ## Main results
 
 * `IsBaseChange.minorsIdeal_span_image`: the minors ideals of the `S`-span of the image of a
@@ -44,6 +49,8 @@ prime `p`, this identifies the zero locus of `Fitt_k(M)`: `Fitt_k(M) ⊆ p` exac
   when `k < dim_K K ⊗[R] M`.
 * `TauCeti.fittingIdeal_le_iff_lt_finrank`: `Fitt_k(M) ⊆ p` exactly when
   `k < dim_{κ(p)} κ(p) ⊗[R] M`.
+* `TauCeti.fittingIdeal_kaehlerDifferential_eq_map`: `Fitt_k(Ω[B⁄S]) = Fitt_k(Ω[A⁄R]) B` for
+  `B = S ⊗[R] A`.
 
 ## References
 
@@ -86,12 +93,15 @@ theorem minorsIdeal_span_image [Free R F] [Module.Finite R F] (hj : IsBaseChange
     -- The determinant is multilinear in the functionals `g k`, which are `S`-linear combinations
     -- of base changes of functionals on `F` since `Dual S W` is the base change of `Dual R F`.
     let μ : MultilinearMap S (fun _ : Fin p ↦ Dual S W) S :=
-      Matrix.detRowAlternating.toMultilinearMap.compLinearMap fun _ ↦
-        LinearMap.pi fun i ↦ LinearMap.applyₗ (j (v i))
+      (Matrix.detRowAlternating.compLinearMap
+        (LinearMap.pi fun i ↦ LinearMap.applyₗ (j (v i)))).toMultilinearMap
     have hμ (g : Fin p → Dual S W) : μ g = (Matrix.of fun i k ↦ g k (j (v i))).det := by
       rw [← Matrix.det_transpose]
-      simp only [μ, MultilinearMap.compLinearMap_apply, Matrix.det]
-      congr 1
+      simp only [μ, Matrix.detRowAlternating_compLinearMap_pi_apply,
+        LinearMap.applyₗ_apply_apply]
+      apply congrArg Matrix.det
+      ext i k
+      simp only [Matrix.transpose_apply, Matrix.of_apply]
     have hg (k : Fin p) : g k ∈ Submodule.span S (Set.range hj.toDual) :=
       hj.dual.inductionOn (g k) (fun f ↦ Submodule.subset_span ⟨f, rfl⟩)
         (fun s _ h ↦ Submodule.smul_mem _ s h) fun _ _ h₁ h₂ ↦ add_mem h₁ h₂
@@ -185,5 +195,23 @@ theorem fittingIdeal_le_iff_lt_finrank (p : Ideal R) [p.IsPrime] (k : ℕ) :
     fittingIdeal R M k ≤ p ↔ k < finrank p.ResidueField (p.ResidueField ⊗[R] M) := by
   rw [← fittingIdeal_map_eq_bot_iff_lt_finrank, Ideal.map_eq_bot_iff_le_ker,
     Ideal.ker_algebraMap_residueField]
+
+section Kaehler
+
+variable (R S A B : Type*) [CommRing R] [CommRing S] [Algebra R S] [CommRing A] [CommRing B]
+  [Algebra R A] [Algebra R B] [Algebra A B] [Algebra S B] [IsScalarTower R A B]
+  [IsScalarTower R S B] [Algebra.IsPushout R S A B] [Module.Finite A Ω[A⁄R]]
+
+/-- **Fitting ideals of Kähler differentials commute with base change**: if `B = S ⊗[R] A`, then
+`Fitt_k(Ω[B⁄S]) = Fitt_k(Ω[A⁄R]) B`, since `Ω[B⁄S]` is the base change `B ⊗[A] Ω[A⁄R]`
+(`KaehlerDifferential.tensorKaehlerEquiv`). -/
+theorem fittingIdeal_kaehlerDifferential_eq_map (k : ℕ) :
+    (haveI : Module.Finite B Ω[B⁄S] := .equiv (KaehlerDifferential.tensorKaehlerEquiv R S A B)
+     fittingIdeal B Ω[B⁄S] k) = (fittingIdeal A Ω[A⁄R] k).map (algebraMap A B) := by
+  have : Module.Finite B Ω[B⁄S] := .equiv (KaehlerDifferential.tensorKaehlerEquiv R S A B)
+  rw [← fittingIdeal_congr (KaehlerDifferential.tensorKaehlerEquiv R S A B),
+    fittingIdeal_baseChange]
+
+end Kaehler
 
 end TauCeti

@@ -13,7 +13,7 @@ public import TauCeti.Algebra.Lie.Presentation.Serre
 # Serre relations in the standard split Lie algebra of type B
 
 The Bourbaki-numbered matrices in
-`TauCeti.Algebra.Lie.Orthogonal.TypeB.RootGenerators` give explicit positive-root,
+`TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.Generators` give explicit positive-root,
 negative-root, and coroot generators for the standard integral split orthogonal Lie algebra of
 type `B`. This file proves the two families of Serre relations not supplied by the Cartan-action
 computations:
@@ -80,21 +80,11 @@ private theorem lie_typeBSimpleRootMatrix_typeBSimpleNegativeRootMatrix_of_ne
       induction j using Fin.lastCases with
       | last =>
           simp only [typeBSimpleRootMatrix_castSucc, typeBSimpleNegativeRootMatrix_last]
-          rcases i₀ with ⟨i, hi⟩
-          calc
-            ⁅typeBDifferenceRootMatrix (K := K) (⟨i, hi⟩ : Fin n).castSucc
-                (⟨i, hi⟩ : Fin n).succ (ne_of_lt Fin.castSucc_lt_succ),
-                typeBShortNegativeRootMatrix (Fin.last n)⁆ =
-                -⁅typeBShortNegativeRootMatrix (K := K) (Fin.last n),
-                  typeBDifferenceRootMatrix (⟨i, hi⟩ : Fin n).castSucc
-                    (⟨i, hi⟩ : Fin n).succ (ne_of_lt Fin.castSucc_lt_succ)⁆ :=
-                      (lie_skew _ _).symm
-            _ = 0 := by
-              rw [typeBShortNegativeRootMatrix_lie_differenceRootMatrix]
-              simp only [neg_eq_zero]
-              split_ifs with h
-              · exact (hij h.symm).elim
-              · rfl
+          rw [← lie_skew, typeBShortNegativeRootMatrix_lie_differenceRootMatrix]
+          simp only [neg_eq_zero]
+          split_ifs with h
+          · exact (hij h.symm).elim
+          · rfl
       | cast j₀ =>
           have hij₀ : i₀ ≠ j₀ := fun h ↦ hij (congrArg Fin.castSucc h)
           simp only [typeBSimpleRootMatrix_castSucc, typeBSimpleNegativeRootMatrix_castSucc]
@@ -259,22 +249,11 @@ private theorem lie_lie_typeBSimpleRootMatrix_castSucc_last
         typeBSimpleRootMatrix (K := K) (Fin.last n)⁆ =
           typeBShortRootMatrix i.castSucc := by
     simp only [typeBSimpleRootMatrix_castSucc, typeBSimpleRootMatrix_last]
-    calc
-      ⁅typeBDifferenceRootMatrix (K := K) i.castSucc i.succ hne,
-          typeBShortRootMatrix (Fin.last n)⁆ =
-          -⁅typeBShortRootMatrix (K := K) (Fin.last n),
-            typeBDifferenceRootMatrix i.castSucc i.succ hne⁆ := (lie_skew _ _).symm
-      _ = typeBShortRootMatrix i.castSucc := by
-        rw [typeBShortRootMatrix_lie_differenceRootMatrix, ite_eq_left hlast]
-        simp
+    rw [← lie_skew, typeBShortRootMatrix_lie_differenceRootMatrix, ite_eq_left hlast, neg_neg]
   rw [hinner]
   simp only [typeBSimpleRootMatrix_castSucc]
-  calc
-    ⁅typeBDifferenceRootMatrix (K := K) i.castSucc i.succ hne,
-        typeBShortRootMatrix i.castSucc⁆ =
-        -⁅typeBShortRootMatrix (K := K) i.castSucc,
-          typeBDifferenceRootMatrix i.castSucc i.succ hne⁆ := (lie_skew _ _).symm
-    _ = 0 := by rw [typeBShortRootMatrix_lie_differenceRootMatrix]; simp [hne]
+  rw [← lie_skew, typeBShortRootMatrix_lie_differenceRootMatrix]
+  simp [hne]
 
 /- The four `Fin.lastCases` branches separate ordinary long-root nodes from the terminal short-root
 node. Only the positive orientation is computed: the sign-reindexing below transports it to the

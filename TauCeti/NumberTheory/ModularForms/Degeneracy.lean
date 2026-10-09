@@ -393,7 +393,7 @@ lemma coe_levelRaise [𝒢'.HasDetOne] [NeZero d]
     (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : CuspForm 𝒢 k) :
     ⇑(levelRaise d h f) = (d : ℂ) ^ (1 - k) • (⇑f ∣[k] scaleGL d) := by
   unfold levelRaise
-  rw [FunLike.coe_smul, _root_.CuspForm.coe_ofLe, _root_.CuspForm.coe_translate_gl]
+  rw [FunLike.coe_smul, _root_.CuspForm.coe_ofLe, _root_.CuspForm.coe_translate]
 
 /-- **The defining formula for `V_d` on cusp forms**: `(V_d f) τ = f (d τ)`, with no stray
 power of `d`. -/

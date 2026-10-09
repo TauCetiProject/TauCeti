@@ -242,12 +242,12 @@ closer to `lam`, so the induction on the height of `lam - mu` stops exactly at a
 the set of weights admitting such a `w` is reflection stable, which is what lets the induction run
 inside it.
 
-`TauCeti.exists_mem_dominantChamber` is the same statement for an arbitrary weight, with dominance
-read as `0 ≤ ⟨mu, αᵢ^∨⟩` and no reference to `lam`; it needs a `[LinearOrder R]` on the coefficient
-ring, which is exactly what the weight space of a Lie algebra over an algebraically closed field
-does not carry. Here dominance is instead the order-free condition that each `⟨mu, αᵢ^∨⟩` is a
-natural number, which the hypotheses on `S` make available, and the cone below `lam` replaces the
-maximization argument. -/
+`RootPairing.exists_mem_dominantChamber` is the same statement for an arbitrary weight, with
+dominance read as `0 ≤ ⟨mu, αᵢ^∨⟩` and no reference to `lam`. It needs a `[LinearOrder R]` on the
+coefficient ring, which is exactly what the weight space of a Lie algebra over an algebraically
+closed field does not carry. Here dominance is instead the order-free condition that each
+`⟨mu, αᵢ^∨⟩` is a natural number, which the hypotheses on `S` make available, and the cone below
+`lam` replaces the maximization argument. -/
 theorem exists_weylGroup_smul_dominant_of_forall_reflection_mem_of_sub_mem_posRootCone
     {lam : M} {S : Set M}
     (hcone : ∀ mu ∈ S, lam - mu ∈ posRootCone P b)

@@ -120,6 +120,13 @@ noncomputable def pointsMulEquiv (A : CommAlgCat.{v} (ZMod 3)) :
     (MulEquiv.subgroupCongr (by
       simpa only [definingIdeal_def] using points_eq_hopfIdealPointsSubgroup A)).symm
 
+/-- The extended carrier's points identified with its matrix-valued prime-field points. -/
+noncomputable abbrev baseChangePointsEquiv (k : Type) [CommRing k] [Algebra (ZMod 3) k] :
+    HopfAlgebra.points (R := k) (H := CommHopfAlgCat.baseChange (K := k) carrierAlgebra)
+      (CommAlgCat.of k k) ≃* points k :=
+  (AlgHom.baseChangePointsMulEquiv (k := ZMod 3) (K := k) (A := carrierAlgebra)
+    (R := k)).symm.trans (pointsMulEquiv (CommAlgCat.of (ZMod 3) k))
+
 /-- A common-kernel quotient point is its underlying general-linear point read as a matrix. -/
 private theorem coe_pointsMulEquiv_apply (A : CommAlgCat.{v} (ZMod 3))
     (q : HopfAlgebra.points
@@ -473,7 +480,9 @@ private theorem pointsMulEquiv_commonKernelLift_root (k : Fin 2 ⊕ Fin 2)
         (CommAlgCat.of (ZMod 3) A) q).symm
     _ = _ := (coe_rootSubgroupPoints_gaPointsMulEquiv k A q).symm
 
-private theorem pointsMulEquiv_commonKernelLift_weightTorus
+/-- The coordinate lift of the weight-torus generator induces the named weight-torus map
+under the carrier and split-torus point equivalences. -/
+theorem pointsMulEquiv_commonKernelLift_weightTorus
     (A : Type) [CommRing A] [Algebra (ZMod 3) A]
     (q : HopfAlgebra.points (R := ZMod 3)
       (H := (DiagonalizableGroup.coordinateRing (ZMod 3)

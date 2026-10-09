@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Basic
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Sides
 
 /-!
 # Separation across paired polygon sides
@@ -14,8 +15,9 @@ A side-pairing transformation reverses the endpoints of an oriented side while p
 orientation of the upper half-plane. It therefore carries the left half-plane of that side to
 the right half-plane of the paired side. Consequently, the original polygon and its paired
 translate have disjoint interiors, and their intersection lies on the supporting geodesic of
-the paired side. The paired side itself belongs to their intersection. At points where all the
-other side inequalities in both tiles are strict, the two tiles together contain a neighbourhood.
+the paired side. The paired side itself belongs to their intersection. At every point of that
+side other than its finite endpoints, the two tiles together contain a neighbourhood: the
+strict inequalities for the other sides follow from convexity.
 
 These are the separation facts for adjacent tiles in a polygon tessellation. They apply to
 finite and ideal vertices, and even to a side paired with itself. They require no discreteness
@@ -31,6 +33,8 @@ coverage by all translates, require additional hypotheses.
   only on the supporting geodesic of the paired side.
 * `ConvexPolygon.SidePairing.mem_interior_union_smul_carrier`: local coverage when the other
   side inequalities in both tiles are strict.
+* `ConvexPolygon.SidePairing.mem_interior_union_smul_carrier_of_mem_side`: local coverage at
+  every nonendpoint point of a paired side, with no additional inequalities assumed.
 
 ## References
 
@@ -154,5 +158,26 @@ theorem mem_interior_union_smul_carrier (i : Fin n) {z : ℍ}
       rwa [← σ.map_smul_leftHalfPlane, closure_smul,
         Set.mem_smul_set_iff_inv_smul_mem] at hright
     · exact subset_closure (hwinv j hj)
+
+/-- At every point of the paired side other than its finite endpoints, the two adjacent
+polygon tiles together contain a neighbourhood. No extra side inequalities are assumed. -/
+theorem mem_interior_union_smul_carrier_of_mem_side (i : Fin n) {z : ℍ}
+    (hz : z ∈ P.side (σ.pair i)) (hzp : P.vertex (σ.pair i) ≠ .inl z)
+    (hzq : P.vertex (σ.pair i + 1) ≠ .inl z) :
+    z ∈ interior (P.carrier ∪ (σ.map i • P.carrier)) := by
+  have hzinv : (σ.map i)⁻¹ • z ∈ P.side i := by
+    rw [← σ.map_smul_side] at hz
+    exact Set.mem_smul_set_iff_inv_smul_mem.1 hz
+  have hpinv : P.vertex i ≠ .inl ((σ.map i)⁻¹ • z) := by
+    intro heq
+    apply hzq
+    rw [← σ.map_smul_vertex i, heq, Sum.smul_inl, smul_inv_smul]
+  have hqinv : P.vertex (i + 1) ≠ .inl ((σ.map i)⁻¹ • z) := by
+    intro heq
+    apply hzp
+    rw [← σ.map_smul_vertex_add_one i, heq, Sum.smul_inl, smul_inv_smul]
+  exact σ.mem_interior_union_smul_carrier i
+    (fun _ hj ↦ P.mem_leftHalfPlane_of_mem_side hz hzp hzq hj)
+    (fun _ hj ↦ P.mem_leftHalfPlane_of_mem_side hzinv hpinv hqinv hj)
 
 end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing

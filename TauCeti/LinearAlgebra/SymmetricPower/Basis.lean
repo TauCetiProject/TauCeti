@@ -42,7 +42,7 @@ orderings of an unordered tuple differ by a permutation.
   that is diagonal in a basis is the sum, over the unordered `n`-tuples of basis indices, of the
   product of the corresponding eigenvalues. This is the complete homogeneous symmetric polynomial
   in the eigenvalues, and is the symmetric counterpart of
-  `exteriorPower.trace_map_of_apply_basis`.
+  `Module.Basis.trace_map_exteriorPower_of_apply`.
 -/
 
 public section

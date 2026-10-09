@@ -52,7 +52,7 @@ So a character is the conjugate, not the sum, of its diagonal matrix coefficient
 conjugation as a transposition of the two arguments of the inner product. That transposition is
 also why `character_orthonormal_distinct` asks for the vanishing of the intertwiners `ρ → π` rather
 than `π → ρ`, and asks unitarity of `π` rather than of `ρ`: those are exactly the hypotheses of
-`TauCeti.ContRepresentation.schur_orthogonality_distinct` at the transposed pair. The reverse
+`ContRepresentation.schur_orthogonality_distinct` at the transposed pair. The reverse
 orientation is the conjugate statement, since `⟪χ_π, χ_ρ⟫ = conj ⟪χ_ρ, χ_π⟫`.
 
 Packaging the character in `L²` asks nothing of `V` beyond the finite-dimensional normed structure
@@ -71,7 +71,7 @@ public section
 open MeasureTheory
 open scoped InnerProductSpace
 
-open TauCeti TauCeti.ContRepresentation
+open TauCeti
 
 namespace ContRepresentation
 
@@ -174,7 +174,7 @@ theorem character_orthonormal_self [IsAlgClosed 𝕜] (hunitary : IsUnitary π)
   have hrow : ∀ i, ∑ k, ⟪matrixCoeffLp π hπ (e k) (e k), matrixCoeffLp π hπ (e i) (e i)⟫_𝕜 =
       (Module.finrank 𝕜 V : 𝕜)⁻¹ := by
     intro i
-    simp only [schur_orthogonality_basis π hπ hunitary hirr e]
+    simp only [π.schur_orthogonality_basis hπ hunitary hirr e]
     rw [Finset.sum_eq_single i (fun k _ hk ↦ by simp [hk]) (by simp)]
     simp
   rw [inner_characterLp_eq_sum π hπ π hπ e e, Finset.sum_congr rfl fun i _ ↦ hrow i,

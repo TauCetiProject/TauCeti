@@ -93,7 +93,7 @@ theorem isOpen_integratedCharacterSet :
   intro ψ hψ
   exact (π.mem_integratedCharacterSet_iff hcont hbdd A hA ψ).mpr ⟨f, hψ⟩
 
-variable (hπ : TauCeti.ContRepresentation.IsUnitary π)
+variable (hπ : ContRepresentation.IsUnitary π)
 
 /-- The continuous group character detected by an algebra character that does not annihilate the
 integrated form. -/

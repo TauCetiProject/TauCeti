@@ -73,6 +73,13 @@ lemma _root_.CategoryTheory.CommMon.sectionsAlgHom_apply {A B : CommMon X.Module
     CommMon.sectionsAlgHom f U x = f.hom.hom.app U x :=
   (rfl)
 
+/-- A morphism of commutative `𝒪ₓ`-algebras is determined by the algebra maps it induces on
+sections. -/
+lemma _root_.CategoryTheory.CommMon.hom_ext_of_sectionsAlgHom {A B : CommMon X.Modules}
+    {f g : A ⟶ B} (h : ∀ U, CommMon.sectionsAlgHom f U = CommMon.sectionsAlgHom g U) : f = g :=
+  CommMon.hom_ext _ _ (Scheme.Modules.hom_ext _ _ fun U ↦ ConcreteCategory.hom_ext _ _ fun x ↦
+    DFunLike.congr_fun (h U) x)
+
 @[simp]
 lemma _root_.CategoryTheory.CommMon.sectionsAlgHom_id (A : CommMon X.Modules) (U : X.Opens) :
     CommMon.sectionsAlgHom (𝟙 A) U = AlgHom.id Γ(X, U) Γ(A.X, U) := by

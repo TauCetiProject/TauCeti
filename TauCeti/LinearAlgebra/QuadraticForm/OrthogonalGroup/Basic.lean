@@ -12,7 +12,6 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.Reflection
 import Mathlib.LinearAlgebra.SpecialLinearGroup
 import TauCeti.LinearAlgebra.QuadraticForm.Radical
-import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
@@ -282,20 +281,21 @@ Over an algebraically closed field every nondegenerate quadratic form of a given
 to every other, so this is what makes `O(Q)` depend on the rank alone. -/
 def orthogonalGroupCongr (e : Q₁.IsometryEquiv Q₂) :
     orthogonalGroup Q₁ ≃* orthogonalGroup Q₂ :=
-  ((LinearEquiv.autCongr e.toLinearEquiv).subgroupMap _).trans
-    (MulEquiv.subgroupCongr (map_orthogonalGroup e))
+  TauCeti.Subgroup.congrOfMapEq (LinearEquiv.autCongr e.toLinearEquiv) (map_orthogonalGroup e)
 
 @[simp]
 theorem coe_orthogonalGroupCongr_apply (e : Q₁.IsometryEquiv Q₂) (f : orthogonalGroup Q₁) (m : M₂) :
     (e.orthogonalGroupCongr f : M₂ ≃ₗ[R] M₂) m
       = e.toLinearEquiv ((f : M₁ ≃ₗ[R] M₁) (e.toLinearEquiv.symm m)) := by
-  simp [orthogonalGroupCongr, LinearEquiv.autCongr_apply_apply]
+  simp [orthogonalGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_apply,
+    LinearEquiv.autCongr_apply_apply]
 
 @[simp]
 theorem coe_orthogonalGroupCongr_symm_apply (e : Q₁.IsometryEquiv Q₂) (g : orthogonalGroup Q₂)
     (m : M₁) : ((e.orthogonalGroupCongr).symm g : M₁ ≃ₗ[R] M₁) m
       = e.toLinearEquiv.symm ((g : M₂ ≃ₗ[R] M₂) (e.toLinearEquiv m)) := by
-  simp [orthogonalGroupCongr, LinearEquiv.autCongr_symm_apply_apply]
+  simp [orthogonalGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_symm_apply,
+    LinearEquiv.autCongr_symm_apply_apply]
 
 /-- Transporting the orthogonal group along the identity isometry is the identity equivalence. -/
 @[simp]
@@ -402,6 +402,12 @@ variable {Q : QuadraticMap R M N}
 theorem mem_specialOrthogonalGroup_iff {f : M ≃ₗ[R] M} :
     f ∈ specialOrthogonalGroup Q ↔ f ∈ orthogonalGroup Q ∧ LinearEquiv.det f = 1 := Iff.rfl
 
+/-- The determinant of an element of `SO(Q)` is one. -/
+@[simp]
+theorem det_coe_specialOrthogonalGroup (g : specialOrthogonalGroup Q) :
+    LinearEquiv.det (g : M ≃ₗ[R] M) = 1 :=
+  (mem_specialOrthogonalGroup_iff.mp g.2).2
+
 theorem specialOrthogonalGroup_le_orthogonalGroup (Q : QuadraticMap R M N) :
     specialOrthogonalGroup Q ≤ orthogonalGroup Q := inf_le_left
 
@@ -457,11 +463,11 @@ namespace QuadraticMap
 section Neg
 
 variable {R : Type u} {M : Type v} {N : Type w} [CommRing R] [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] (Q : QuadraticMap R M N)
+  [AddCommMonoid N] [Module R N] (Q : QuadraticMap R M N)
 
 /-- Negation `x ↦ -x` preserves every quadratic map. -/
 theorem neg_mem_orthogonalGroup : LinearEquiv.neg R ∈ TauCeti.QuadraticMap.orthogonalGroup Q :=
-  fun m ↦ Q.map_neg m
+  fun m ↦ by simpa using Q.map_smul (-1) m
 
 /-- The isometry `x ↦ -x`, as an element of the orthogonal group. On a free module of rank one
 over a domain, it and `1` are the only isometries of a nonzero quadratic map valued in a
@@ -536,8 +542,8 @@ theorem coe_specialOrthogonalToOrthogonal (g : TauCeti.QuadraticMap.specialOrtho
 theorem orthogonalDet_specialOrthogonalToOrthogonal
     (g : TauCeti.QuadraticMap.specialOrthogonalGroup Q) :
     orthogonalDet Q (specialOrthogonalToOrthogonal Q g) = 1 := by
-  rw [orthogonalDet_apply, coe_specialOrthogonalToOrthogonal]
-  exact (TauCeti.QuadraticMap.mem_specialOrthogonalGroup_iff.mp g.2).2
+  rw [orthogonalDet_apply, coe_specialOrthogonalToOrthogonal,
+    TauCeti.QuadraticMap.det_coe_specialOrthogonalGroup]
 
 theorem specialOrthogonalToOrthogonal_injective :
     Function.Injective (specialOrthogonalToOrthogonal Q) :=
@@ -575,9 +581,8 @@ theorem coe_specialOrthogonalWithinEquiv_symm_apply
 
 /-- On a zero module the determinant kernel is all of `O(Q)`, both groups being trivial; this is
 the case excluded from `index_specialOrthogonalWithin`. -/
-theorem specialOrthogonalWithin_eq_top [Subsingleton M] : specialOrthogonalWithin Q = ⊤ := by
-  refine eq_top_iff.mpr fun g _ => ?_
-  rw [mem_specialOrthogonalWithin_iff, Subsingleton.elim (g : M ≃ₗ[R] M) 1, map_one]
+theorem specialOrthogonalWithin_eq_top [Subsingleton M] : specialOrthogonalWithin Q = ⊤ :=
+  Subsingleton.elim _ _
 
 end Det
 
@@ -605,7 +610,8 @@ private theorem map_specialOrthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
   constructor
   · rintro ⟨f, hf, rfl⟩
     constructor
-    · exact (e.orthogonalGroupCongr ⟨f, hf.1⟩).2
+    · rw [← map_orthogonalGroup e]
+      exact Subgroup.mem_map_of_mem _ hf.1
     · -- Restate `autCongr` through Mathlib's special-linear congruence.
       rw [LinearEquiv.autCongr_apply]
       exact (SpecialLinearGroup.congr_linearEquiv e.toLinearEquiv ⟨f, hf.2⟩).prop
@@ -613,7 +619,8 @@ private theorem map_specialOrthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
     refine ⟨(LinearEquiv.autCongr e.toLinearEquiv).symm g, ?_,
       (LinearEquiv.autCongr e.toLinearEquiv).apply_symm_apply g⟩
     constructor
-    · exact ((e.orthogonalGroupCongr).symm ⟨g, hg.1⟩).2
+    · rw [← Subgroup.mem_map_equiv, MulEquiv.toMonoidHom_eq_coe, map_orthogonalGroup e]
+      exact hg.1
     · -- Restate inverse `autCongr` through Mathlib's special-linear congruence.
       rw [LinearEquiv.autCongr_symm_apply]
       exact (SpecialLinearGroup.congr_linearEquiv e.toLinearEquiv.symm ⟨g, hg.2⟩).prop
@@ -788,22 +795,25 @@ theorem specialOrthogonalToGeneralLinear_apply
   rw [specialOrthogonalToGeneralLinear, MonoidHom.comp_apply]
   rw [orthogonalToGeneralLinear_apply, coe_specialOrthogonalToOrthogonal]
 
+/-- The underlying matrix of the special coordinate inclusion is the matrix of the linear
+equivalence. -/
+@[simp]
+theorem coe_specialOrthogonalToGeneralLinear
+    (Q : QuadraticMap R (n → R) N) (g : specialOrthogonalGroup Q) :
+    ((specialOrthogonalToGeneralLinear Q g : Matrix.GeneralLinearGroup n R) : Matrix n n R) =
+      LinearMap.toMatrix' (g : (n → R) ≃ₗ[R] (n → R)).toLinearMap := by
+  ext i j
+  simp only [specialOrthogonalToGeneralLinear_apply, LinearMap.toMatrix'_apply,
+    LinearEquiv.coe_coe]
+
 /-- A special orthogonal transformation acts on coordinate vectors through its general-linear
 matrix. -/
-@[simp]
 theorem _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear_mulVec
     (Q : QuadraticMap R (n → R) N)
     (g : specialOrthogonalGroup Q) (v : n → R) :
     (((specialOrthogonalToGeneralLinear Q g : Matrix.GeneralLinearGroup n R) :
       Matrix n n R) *ᵥ v) = ((g : (n → R) ≃ₗ[R] (n → R)) v) := by
-  have hmatrix :
-      ((specialOrthogonalToGeneralLinear Q g : Matrix.GeneralLinearGroup n R) :
-        Matrix n n R) = LinearMap.toMatrix' (g : (n → R) →ₗ[R] (n → R)) := by
-    ext i j
-    rw [specialOrthogonalToGeneralLinear_apply]
-    rfl
-  rw [hmatrix, LinearMap.toMatrix'_mulVec]
-  rfl
+  rw [coe_specialOrthogonalToGeneralLinear, LinearMap.toMatrix'_mulVec, LinearEquiv.coe_coe]
 
 /-- The coordinate inclusion of a special orthogonal group is injective. -/
 theorem specialOrthogonalToGeneralLinear_injective

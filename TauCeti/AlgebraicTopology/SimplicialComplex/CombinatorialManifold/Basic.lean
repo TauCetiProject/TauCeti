@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Equivalence
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Link
 import Mathlib.Data.Nat.Cast.Order.Basic
 import Mathlib.Tactic.NormNum.Basic
 
@@ -108,6 +109,26 @@ needed. -/
 theorem isCombinatorialSphere_simplexBoundary (hV : V.card = n + 2) :
     IsCombinatorialSphere (simplexBoundary V) n :=
   ⟨V, hV, StellarEquivalentUpToRelabeling.refl _⟩
+
+/-- The link of a face in a standard simplex is a combinatorial ball of the complementary
+dimension. -/
+theorem isCombinatorialBall_link_simplex (hV : V.card = n + 1) (hσ : σ ⊆ V)
+    (hσcard : σ.card ≤ n) :
+    IsCombinatorialBall (link (simplex V) σ) (n - σ.card) := by
+  rw [link_simplex hσ]
+  apply isCombinatorialBall_simplex
+  rw [Finset.card_sdiff_of_subset hσ, hV]
+  omega
+
+/-- The link of a face in a standard simplex boundary is a combinatorial sphere of the
+complementary dimension. -/
+theorem isCombinatorialSphere_link_simplexBoundary (hV : V.card = n + 2) (hσ : σ ⊆ V)
+    (hσcard : σ.card ≤ n) :
+    IsCombinatorialSphere (link (simplexBoundary V) σ) (n - σ.card) := by
+  rw [link_simplexBoundary hσ]
+  apply isCombinatorialSphere_simplexBoundary
+  rw [Finset.card_sdiff_of_subset hσ, hV]
+  omega
 
 /-- Being a combinatorial ball transfers along an intrinsic stellar equivalence. -/
 theorem IsCombinatorialBall.of_stellarEquivalentUpToRelabeling
@@ -222,11 +243,8 @@ theorem isCombinatorialManifold_simplex (hV : V.card = n + 1) :
   | succ n =>
       refine isCombinatorialManifold_succ_iff.mpr fun v hv => ?_
       have hvmem : v ∈ V := singleton_mem_simplex.mp hv
-      rw [link_simplex (Finset.singleton_subset_iff.mpr hvmem)]
-      refine Or.inr (isCombinatorialBall_simplex ?_)
-      rw [Finset.card_sdiff_of_subset (Finset.singleton_subset_iff.mpr hvmem),
-        Finset.card_singleton, hV]
-      omega
+      exact Or.inr (isCombinatorialBall_link_simplex hV
+        (Finset.singleton_subset_iff.mpr hvmem) (by simp))
 
 /-- The boundary of the standard `(n+1)`-simplex is a combinatorial `n`-manifold. -/
 theorem isCombinatorialManifold_simplexBoundary (hV : V.card = n + 2) :
@@ -244,11 +262,8 @@ theorem isCombinatorialManifold_simplexBoundary (hV : V.card = n + 2) :
   | succ n =>
       refine isCombinatorialManifold_succ_iff.mpr fun v hv => ?_
       have hvmem : v ∈ V := (singleton_mem_simplexBoundary.mp hv).1
-      rw [link_simplexBoundary (Finset.singleton_subset_iff.mpr hvmem)]
-      refine Or.inl (isCombinatorialSphere_simplexBoundary ?_)
-      rw [Finset.card_sdiff_of_subset (Finset.singleton_subset_iff.mpr hvmem),
-        Finset.card_singleton, hV]
-      omega
+      exact Or.inl (isCombinatorialSphere_link_simplexBoundary hV
+        (Finset.singleton_subset_iff.mpr hvmem) (by simp))
 
 /-- A combinatorial `n`-manifold has dimension at most `n`. -/
 theorem IsCombinatorialManifold.dimension_le (h : IsCombinatorialManifold K n) :

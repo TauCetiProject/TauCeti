@@ -54,7 +54,8 @@ it vanishes.
 
 `GridDiagram.hexagonMap` and `GridDiagram.initialHexagonMap` count the empty hexagons of the two
 kinds carrying no `X`-marking, and `GridDiagram.commutationHomotopy` is their sum, the map `H`
-above. That `∂⁻ ∘ H + H ∘ ∂⁻` is the identity plus `Ψ ∘ Φ` is not proved here.
+above. That `∂⁻ ∘ H + H ∘ ∂⁻` is the identity plus `Ψ ∘ Φ` is not proved here;
+`Commutation/Homotopy.lean` writes it as an identity between matrix coefficients.
 
 ## Main definitions
 
@@ -501,6 +502,14 @@ theorem hexagonWeight_eq_monomial {a s s' : Fin n} {x y : GridState n}
   rw [hexagonWeight, monomial_sum_one]
   simp only [← X_pow_eq_monomial, pow_one]
 
+/-- The weight of a hexagon is the product, over the squares it covers, of the variable of the
+square's column at the `O`-marked squares and of `1` elsewhere. -/
+theorem hexagonWeight_eq_prod_coveredSquares {a s s' : Fin n} {x y : GridState n}
+    (P : GridHexagonBetween a s s' x y) :
+    G.hexagonWeight R P =
+      ∏ p ∈ P.coveredSquares, if p ∈ G.OSet then MvPolynomial.X p.1 else 1 :=
+  (G.prod_ite_OSet_eq_prod_OColumnsOfSquares MvPolynomial.X _).symm
+
 /-- The weight of a hexagon of a validated column commutation times the variable of `C.column` is
 the weight of its underlying rectangle. -/
 theorem X_mul_hexagonWeight {C : ColumnCommutationData G} {x y : GridState n}
@@ -526,6 +535,14 @@ theorem initialHexagonWeight_eq_monomial {a s s' : Fin n} {x y : GridState n}
   classical
   rw [initialHexagonWeight, monomial_sum_one]
   simp only [← X_pow_eq_monomial, pow_one]
+
+/-- The weight of a hexagon turning on its initial side is the product, over the squares it
+covers, of the variable of the square's column at the `O`-marked squares and of `1` elsewhere. -/
+theorem initialHexagonWeight_eq_prod_coveredSquares {a s s' : Fin n} {x y : GridState n}
+    (P : GridInitialHexagonBetween a s s' x y) :
+    G.initialHexagonWeight R P =
+      ∏ p ∈ P.coveredSquares, if p ∈ G.OSet then MvPolynomial.X p.1 else 1 :=
+  (G.prod_ite_OSet_eq_prod_OColumnsOfSquares MvPolynomial.X _).symm
 
 /-- The weight of a hexagon turning on its initial side times the variable of the column after
 `C.column` is the weight of its underlying rectangle. -/

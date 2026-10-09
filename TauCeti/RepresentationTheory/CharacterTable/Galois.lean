@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.End.FiniteOrder
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 public import Mathlib.FieldTheory.Minpoly.IsConjRoot
+import Mathlib.Algebra.Field.ULift
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.RepresentationTheory.BaseChange
 
@@ -23,7 +24,8 @@ them as a power map `μ ↦ μ ^ j`, and then `σ (χ(g)) = ∑ dim(V_μ) · μ 
 action on character values is by power maps of the group element**.
 
 This file proves that identity, first for an arbitrary ring endomorphism of an algebraically closed
-field and then, over `ℂ`, with the exponent `j` supplied by Mathlib's cyclotomic character
+field, over any field containing a primitive root of the requisite order, and then, over `ℂ`,
+with the exponent `j` supplied by Mathlib's cyclotomic character
 `IsPrimitiveRoot.autToPow`, which reads it off a chosen primitive root of unity and an algebra
 automorphism. A field automorphism of `ℂ` is automatically
 `ℚ`-linear, so `ℂ ≃ₐ[ℚ] ℂ` is the group of field automorphisms of `ℂ`; the endomorphism statement
@@ -32,6 +34,10 @@ need not be surjective.
 
 Complex conjugation is the instance `j = n - 1` of all this, and gives back
 `Representation.conj_char_eq_char_inv`, `conj (χ g) = χ g⁻¹`.
+
+For a field containing a primitive root, `IsAlgClosed.lift` extends the coefficient endomorphism
+to an embedding of its algebraic closure, where the eigenvalue argument applies;
+`Representation.character_baseChange` then descends the trace identity.
 
 Two consequences are recorded: `χ(g)` and `χ(g ^ j)` are conjugate algebraic numbers over `ℚ`
 (they are `IsConjRoot ℚ`), and a character value that is rational is unchanged by the power maps
@@ -93,16 +99,38 @@ theorem map_character_eq_character_pow (ρ : Representation k G V) {g : G} {n j 
   simp only [Representation.character, map_pow]
   exact Module.End.map_trace_eq_trace_pow hn (by rw [← map_pow, hg, map_one]) σ hσ
 
+omit [IsAlgClosed k] in
 /-- **The Galois action on character values is by power maps**, in the form where the power `j` is
 witnessed on a single primitive `n`-th root of unity: if `σ ζ = ζ ^ j` for a primitive `n`-th root
-of unity `ζ` and `g ^ n = 1`, then `σ (χ(g)) = χ(g ^ j)`. -/
+of unity `ζ` and `g ^ n = 1`, then `σ (χ(g)) = χ(g ^ j)`. The coefficient field need not be
+algebraically closed. -/
 theorem map_character_eq_character_pow_of_isPrimitiveRoot (ρ : Representation k G V) {g : G}
     {n j : ℕ} {ζ : k} (hζ : IsPrimitiveRoot ζ n) (hn : (n : k) ≠ 0) (hg : g ^ n = 1)
     (σ : k →+* k) (hσ : σ ζ = ζ ^ j) :
-    σ (ρ.character g) = ρ.character (g ^ j) :=
+    σ (ρ.character g) = ρ.character (g ^ j) := by
   have : NeZero n := ⟨fun h => hn (by rw [h, Nat.cast_zero])⟩
-  Representation.map_character_eq_character_pow ρ hn hg σ
-    fun _ hμ => IsPrimitiveRoot.map_eq_pow hζ σ hσ hμ
+  let L := AlgebraicClosure k
+  let ι : k →+* L := algebraMap k L
+  -- Lift the coefficient endomorphism to an embedding of the algebraic closure. The target
+  -- algebra structure is twisted only while constructing the lift.
+  obtain ⟨τ, hτ⟩ : ∃ τ : L →+* L, ∀ x : k, τ (ι x) = ι (σ x) := by
+    -- The copy separates the source and target algebra structures.
+    let : IsAlgClosed (ULift.{0} L) :=
+      IsAlgClosed.of_ringEquiv L _ ULift.ringEquiv.symm
+    let : Algebra k (ULift.{0} L) :=
+      (ULift.ringEquiv.symm.toRingHom.comp (ι.comp σ)).toAlgebra
+    let τ := IsAlgClosed.lift (R := k) (S := L) (M := ULift.{0} L)
+    refine ⟨ULift.ringEquiv.toRingHom.comp τ.toRingHom, fun x => ?_⟩
+    exact congrArg ULift.down (τ.commutes x)
+  have hroot : IsPrimitiveRoot (ι ζ) n := hζ.map_of_injective ι.injective
+  have hpower : τ (ι ζ) = (ι ζ) ^ j := by rw [hτ, hσ, map_pow]
+  have hnL : (n : L) ≠ 0 := by
+    simpa only [map_natCast] using (_root_.map_ne_zero (f := ι)).mpr hn
+  have hmap := map_character_eq_character_pow (ρ.baseChange L) hnL hg τ
+    (fun μ hμ => hroot.map_eq_pow τ hpower hμ)
+  simp only [character_baseChange] at hmap
+  apply ι.injective
+  exact (hτ (ρ.character g)).symm.trans hmap
 
 end Representation
 

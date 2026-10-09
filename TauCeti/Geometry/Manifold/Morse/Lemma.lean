@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Index
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Analysis.Calculus.Morse.LocalNormalForm
+import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
 # The Morse lemma on a smooth manifold
@@ -28,8 +29,12 @@ stable and unstable manifolds are then studied.
 
 * `TauCeti.MorseChart`: a chart centred at a critical point in which the function is a diagonal
   nondegenerate quadratic form.
+* `TauCeti.MorseChart.restr`: the restriction of a Morse chart to an open neighbourhood of its
+  centre.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.nonempty_morseChart`: the Morse lemma on a
   manifold, for a function smooth near the critical point.
+* `TauCeti.IsMorse.nonempty_morseChart`: every critical point of a Morse function has a Morse
+  chart.
 
 ## References
 
@@ -71,6 +76,49 @@ structure MorseChart (f : M → ℝ) (x : M) where
     f y = f x + (2 : ℝ)⁻¹ * ∑ i, weight i * (coord (toChart y) i) ^ 2
 
 attribute [simp] MorseChart.mem_source MorseChart.apply_self
+
+namespace MorseChart
+
+/-- The restriction of a Morse chart to an open neighbourhood `s` of its centre: the chart is
+restricted to `s`, and the coordinates and weights are unchanged. -/
+noncomputable def restr (φ : MorseChart E f x) {s : Set M} (hs : IsOpen s) (hx : x ∈ s) :
+    MorseChart E f x where
+  toChart := φ.toChart.restr s
+  mem_maximalAtlas := restr_mem_maximalAtlas _ φ.mem_maximalAtlas hs
+  mem_source := by rw [φ.toChart.restr_source' s hs]; exact ⟨φ.mem_source, hx⟩
+  apply_self := φ.apply_self
+  coord := φ.coord
+  weight := φ.weight
+  weight_eq_neg_one_or_eq_one := φ.weight_eq_neg_one_or_eq_one
+  ncard_weight_neg := φ.ncard_weight_neg
+  eq_quadratic y hy := φ.eq_quadratic y (by rw [φ.toChart.restr_source' s hs] at hy; exact hy.1)
+
+variable (φ : MorseChart E f x) {s : Set M} (hs : IsOpen s) (hx : x ∈ s)
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- The chart of a restricted Morse chart is the restricted chart. -/
+@[simp]
+theorem restr_toChart : (φ.restr hs hx).toChart = φ.toChart.restr s := by
+  rw [restr]
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- Restricting a Morse chart does not change its coordinates. -/
+@[simp]
+theorem restr_coord : (φ.restr hs hx).coord = φ.coord := by
+  rw [restr]
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- Restricting a Morse chart does not change its weights. -/
+@[simp]
+theorem restr_weight : (φ.restr hs hx).weight = φ.weight := by
+  rw [restr]
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- The source of a restricted Morse chart. -/
+theorem restr_source : (φ.restr hs hx).toChart.source = φ.toChart.source ∩ s :=
+  φ.toChart.restr_source' s hs
+
+end MorseChart
 
 /-- **The Morse lemma on a manifold.** At a nondegenerate critical point `x` of a function `f`
 that is smooth at every point of a neighbourhood of `x`, on a manifold modelled on a
@@ -132,6 +180,12 @@ theorem IsManifoldNondegenerateCriticalPoint.nonempty_morseChart
     rw [hessianQuadraticForm_apply] at hQ
     rw [← hQ, QuadraticMap.weightedSumSquares_apply]
     simp [sq]
+
+/-- Every critical point of a Morse function has a Morse chart. -/
+theorem IsMorse.nonempty_morseChart (hf : IsMorse 𝓘(ℝ, E) f) {x : M}
+    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) : Nonempty (MorseChart E f x) :=
+  ((isMorse_iff.1 hf).2 x ((mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm hf.contMDiff x).1
+    hx)).nonempty_morseChart (Filter.Eventually.of_forall fun _ ↦ hf.contMDiff.contMDiffAt)
 
 end Manifold
 

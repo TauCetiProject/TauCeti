@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Examples
+public import TauCeti.LinearAlgebra.IntegralLattice.Scaling
 public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
 
 /-!
@@ -92,6 +93,23 @@ theorem rankOne_discriminant (a : ℤ) : (rankOne a).discriminant = a.natAbs := 
 /-- Nonzero parameters give nondegenerate rank-one lattices. -/
 instance instIsNondegenerateRankOne (a : ℤ) [NeZero a] : (rankOne a).IsNondegenerate := by
   exact ⟨(rankOne a).determinant_ne_zero_iff.mp (by simpa using NeZero.ne a)⟩
+
+/-- The rank-one Gram-matrix lattice on the standard basis of `ℚ` with entry `a` is `⟨a⟩`. -/
+theorem ofGramMatrix_singleton_eq_rankOne (a : ℤ) {c : ℤ} (hc : c = a)
+    (h : (Matrix.of fun (_ _ : Fin 1) ↦ c).IsSymm) :
+    ofGramMatrix (Basis.singleton (Fin 1) ℚ) (Matrix.of fun _ _ ↦ c) h = rankOne a := by
+  subst c
+  rfl
+
+/-- `⟨a⟩` is the negative of `⟨-a⟩`. -/
+theorem rankOne_eq_neg_rankOne_neg (a : ℤ) : rankOne a = -rankOne (-a) := by
+  refine IntegralLattice.ext ?_ ?_
+  · ext x
+    simp [neg_carrier]
+  · refine LinearMap.BilinForm.ext fun x y ↦ ?_
+    simp only [neg_form, LinearMap.neg_apply, rankOne_form_apply]
+    push_cast
+    ring
 
 /-- The lattice `⟨a⟩` is unimodular exactly when `a` is a unit of `ℤ`. -/
 @[simp high]

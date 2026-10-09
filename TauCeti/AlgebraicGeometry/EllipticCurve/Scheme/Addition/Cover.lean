@@ -36,6 +36,8 @@ into a finite affine open cover of `E ×_S E`.
 
 ## Main results
 
+* `WeierstrassCurve.comp_chartPairLaw`: pushed along a homomorphism out of a product of two
+  charts, the six law coordinates are the two laws at the images of the universal points.
 * `WeierstrassCurve.span_range_chartPairLaw_eq_top`: the six law coordinates generate the unit
   ideal.
 * `WeierstrassCurve.exists_mem_range_specMap_comp_chartPairι`: every point of `E ×_S E` lies on the
@@ -57,6 +59,8 @@ Adapted from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at commit
   `ChartRing`, in place of the source's presented ring in four variables.
 * from `AdditionChartSpec.lean`: `chartProductCover`, as
   `exists_mem_range_specMap_comp_chartPairι`.
+* from `AdditionSpecPoints.lean`: `ringHom_lawOneTriple` and `ringHom_lawTwoTriple`, as
+  `comp_chartPairLaw`.
 * from `AdditionChartDomain.lean`: `span_lawOneTriple_union_lawTwoTriple_eq_top`, as
   `span_range_chartPairLaw_eq_top`.
 -/
@@ -99,6 +103,38 @@ theorem chartPairLaw_inr (i j k : Fin 3) :
         (includeRight ∘ W.toProjective.chartPoint j) k :=
   (rfl)
 
+/-- Pushed along a homomorphism `φ` out of the product `ChartRing i ⊗[R] ChartRing j` of two charts,
+the six coordinates `chartPairLaw W i j` of the two laws are the laws `addXYZ` and `dblAddXYZ`, for
+the curve `W` mapped along the composite structure map `R → A`, at the images under `φ` of the
+universal points `P` and `Q` of the two charts. -/
+theorem comp_chartPairLaw {A : CommRingCat.{u}} {i j : Fin 3}
+    (φ : CommRingCat.of (W.toProjective.ChartRing i ⊗[R] W.toProjective.ChartRing j) ⟶ A) :
+    φ.hom ∘ W.chartPairLaw i j = Sum.elim
+      ((W.toProjective.map (CommRingCat.ofHom (algebraMap R _) ≫
+          CommRingCat.ofHom includeLeftRingHom ≫ φ).hom).addXYZ
+        ((CommRingCat.ofHom includeLeftRingHom ≫ φ).hom ∘ W.toProjective.chartPoint i)
+        ((CommRingCat.ofHom (includeRight : _ →ₐ[R] _).toRingHom ≫ φ).hom ∘
+          W.toProjective.chartPoint j))
+      ((W.toProjective.map (CommRingCat.ofHom (algebraMap R _) ≫
+          CommRingCat.ofHom includeLeftRingHom ≫ φ).hom).dblAddXYZ
+        ((CommRingCat.ofHom includeLeftRingHom ≫ φ).hom ∘ W.toProjective.chartPoint i)
+        ((CommRingCat.ofHom (includeRight : _ →ₐ[R] _).toRingHom ≫ φ).hom ∘
+          W.toProjective.chartPoint j)) := by
+  have hW : (W.toProjective.baseChange
+      (W.toProjective.ChartRing i ⊗[R] W.toProjective.ChartRing j)).map φ.hom =
+        W.toProjective.map (CommRingCat.ofHom (algebraMap R _) ≫
+          CommRingCat.ofHom includeLeftRingHom ≫ φ).hom := by
+    rw [Projective.map, Projective.baseChange, WeierstrassCurve.baseChange,
+      WeierstrassCurve.map_map]
+    congr 1
+  -- both laws commute with `φ`, applied to the curve and to the points
+  rw [← hW]
+  ext (k | k)
+  · exact (congrArg φ.hom (W.chartPairLaw_inl i j k)).trans
+      (congrFun (Projective.map_addXYZ φ.hom _ _) k).symm
+  · exact (congrArg φ.hom (W.chartPairLaw_inr i j k)).trans
+      (congrFun (Projective.map_dblAddXYZ φ.hom _ _) k).symm
+
 /-- On an elliptic curve, the six coordinates of the two addition laws at the universal points of
 the product `ChartRing i ⊗[R] ChartRing j` of two charts generate the unit ideal. -/
 theorem span_range_chartPairLaw_eq_top [W.IsElliptic] (i j : Fin 3) :
@@ -110,9 +146,9 @@ theorem span_range_chartPairLaw_eq_top [W.IsElliptic] (i j : Fin 3) :
   exact Projective.span_range_addXYZ_union_range_dblAddXYZ_eq_top
     ((W.toProjective.equation_chartPoint i).baseChange _)
     ((W.toProjective.equation_chartPoint j).baseChange _)
-    (TauCeti.Module.isUnimodular_of_isUnit_apply (i := i)
+    (IsUnit.isUnimodular_pi (i := i)
       (by simp [← Algebra.TensorProduct.one_def]))
-    (TauCeti.Module.isUnimodular_of_isUnit_apply (i := j)
+    (IsUnit.isUnimodular_pi (i := j)
       (by simp [← Algebra.TensorProduct.one_def]))
 
 /-- Every point of `E ×_S E` lies on the product `D₊(Xᵢ) ×_S D₊(Xⱼ)` of two charts, at a point

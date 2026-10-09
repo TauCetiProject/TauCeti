@@ -70,6 +70,10 @@ to the canonical fraction fields used by Mathlib's different API.
   `TauCeti.Place.ramificationIdx_dvd_ord_sum_of_linearIndependent_residue` — and the
   ultrametric estimate `TauCeti.Place.sum_ne_zero_of_ord_eq_mul_add_natCast` with
   `TauCeti.Place.ord_sum_le_of_ord_eq_mul_add_natCast` that combines them.
+* `TauCeti.Place.ord_smul_of_restrict_eq`: `ord_P (c • z) = e(P ∣ P₁) · ord_{P₁} c + ord_P z`
+  for `c` in the subfield `F₁` and `P` over the place `P₁` of `F₁`.
+* `TauCeti.Place.linearIndependent_of_ord_neg_of_restrict_eq`: functions of `F` with a pole at
+  one place over `P₁` each, and regular at the others, are linearly independent over `F₁`.
 * `TauCeti.Place.ramificationIdx_mul_relativeDegree_le_finrank`: `e(P' ∣ P) · f(P' ∣ P) ≤
   [F' : F]`, with `TauCeti.Place.ramificationIdx_le_finrank` and
   `TauCeti.Place.relativeDegree_le_finrank` its two halves (Stichtenoth, Corollary 3.1.12).
@@ -732,6 +736,77 @@ theorem linearIndependent_mul_pow_of_linearIndependent_residue {ι : Type*}
     congrArg (fun x : I × Fin (ramificationIdx F P') ↦ (x.1.1, x.2)) h
 
 end Independence
+
+section IndependenceOverPlace
+
+variable {k F₁ F : Type*} [Field k] [Field F₁] [Field F]
+variable [Algebra k F₁] [Algebra k F] [Algebra F₁ F] [IsScalarTower k F₁ F]
+variable [Algebra.IsIntegral F₁ F]
+
+/-- The order of `c • z` at a place `P` of `F` over the place `P₁` of `F₁`, for `c ∈ F₁`:
+`ord_P (c • z) = e(P ∣ P₁) · ord_{P₁} c + ord_P z`. -/
+theorem ord_smul_of_restrict_eq {P₁ : Place k F₁} {P : Place k F}
+    (hP : P.restrict k F₁ = P₁) {c : F₁} (hc : c ≠ 0) {z : F} (hz : z ≠ 0) :
+    P.ord (c • z) = ramificationIdx F₁ P * P₁.ord c + P.ord z := by
+  rw [Algebra.smul_def, P.ord_mul ((map_ne_zero _).mpr hc) hz, ord_algebraMap_restrict k F₁ P c,
+    hP]
+
+/-- **Poles at the places over a place give independence over the subfield.** Let `P i` be places
+of `F` over one place `P₁` of `F₁`, and let `z i ∈ F` be regular at `P j` for `j ≠ i`. If `z i`
+has a pole at `P i` for every `i ≠ i₀`, and `z i₀` is a nonzero function without zero at `P i₀`,
+then the `z i` are linearly independent over `F₁`. -/
+theorem linearIndependent_of_ord_neg_of_restrict_eq {ι : Type*} [Finite ι] {P₁ : Place k F₁}
+    {P : ι → Place k F} (hP : ∀ i, (P i).restrict k F₁ = P₁) {z : ι → F} {i₀ : ι}
+    (hz₀ : z i₀ ≠ 0) (hord₀ : (P i₀).ord (z i₀) ≤ 0) (hpole : ∀ i, i ≠ i₀ → (P i).ord (z i) < 0)
+    (hreg : ∀ i j, i ≠ j → 0 ≤ (P i).ord (z j)) :
+    LinearIndependent F₁ z := by
+  classical
+  have := Fintype.ofFinite ι
+  have hz : ∀ i, z i ≠ 0 := fun i ↦ by
+    rcases eq_or_ne i i₀ with rfl | hi
+    · exact hz₀
+    · rintro h
+      have := hpole i hi
+      rw [h, ord_zero] at this
+      exact this.false
+  rw [Fintype.linearIndependent_iff]
+  intro c hc
+  by_contra! hne
+  obtain ⟨i₁, hi₁⟩ := hne
+  -- A coefficient of least order at `P₁`.
+  obtain ⟨m, hmS, hmin⟩ := Finset.exists_min_image (Finset.univ.filter fun i ↦ c i ≠ 0)
+    (fun i ↦ P₁.ord (c i)) ⟨i₁, by simpa using hi₁⟩
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hmS hmin
+  -- The index at whose place the sum is tested: a minimizer other than `i₀` if there is one.
+  obtain ⟨j, hcj, hjmin, hlt⟩ : ∃ j, c j ≠ 0 ∧ P₁.ord (c j) = P₁.ord (c m) ∧
+      ∀ i, i ≠ j → c i ≠ 0 →
+        (P j).ord (c j • z j) < (P j).ord (c i • z i) := by
+    by_cases hA : ∃ j, j ≠ i₀ ∧ c j ≠ 0 ∧ P₁.ord (c j) = P₁.ord (c m)
+    · obtain ⟨j, hji₀, hcj, hjm⟩ := hA
+      refine ⟨j, hcj, hjm, fun i hij hci ↦ ?_⟩
+      rw [ord_smul_of_restrict_eq (hP j) hcj (hz j), ord_smul_of_restrict_eq (hP j) hci (hz i)]
+      have he : (0 : ℤ) ≤ ramificationIdx F₁ (P j) := by positivity
+      have := mul_le_mul_of_nonneg_left (hjm ▸ hmin i hci) he
+      linarith [hpole j hji₀, hreg j i (Ne.symm hij)]
+    · push Not at hA
+      have hm : m = i₀ := by
+        by_contra h
+        exact hA m h hmS rfl
+      subst hm
+      refine ⟨m, hmS, rfl, fun i hij hci ↦ ?_⟩
+      rw [ord_smul_of_restrict_eq (hP m) hmS (hz m), ord_smul_of_restrict_eq (hP m) hci (hz i)]
+      have he : (0 : ℤ) < ramificationIdx F₁ (P m) := by exact_mod_cast ramificationIdx_pos F₁ _
+      have hlt := lt_of_le_of_ne (hmin i hci) (Ne.symm (hA i hij hci))
+      have := mul_lt_mul_of_pos_left hlt he
+      linarith [hreg m i (Ne.symm hij)]
+  -- The summand of index `j` has strictly least order at `P j`, so the sum is nonzero.
+  refine (P j).sum_ne_zero_of_forall_ord_lt (s := Finset.univ.filter fun i ↦ c i ≠ 0)
+    (f := fun i ↦ c i • z i) (by simpa using hcj) (smul_ne_zero hcj (hz j))
+    (fun i hi hij ↦ hlt i hij (by simpa using hi)) ?_
+  rw [Finset.sum_filter_of_ne fun i _ h ↦ left_ne_zero_of_smul h]
+  exact hc
+
+end IndependenceOverPlace
 
 section RamificationIdxBound
 

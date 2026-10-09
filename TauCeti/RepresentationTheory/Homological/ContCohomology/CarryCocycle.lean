@@ -135,8 +135,10 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G]
 private theorem isLocallyConstant_characterCarry {χ : Additive G →+ AddCircle (1 : ℚ)}
     (hχ : IsOpen (χ.ker : Set (Additive G))) :
     IsLocallyConstant fun p : G × G ↦ characterCarry χ p.1 p.2 :=
-  ((isLocallyConstant_character hχ).comp_continuous continuous_fst).comp₂
-    ((isLocallyConstant_character hχ).comp_continuous continuous_snd) fun x y ↦
+  ((χ.isLocallyConstant_of_isOpen_ker hχ).comp_continuous
+    (continuous_ofMul.comp continuous_fst)).comp₂
+    ((χ.isLocallyConstant_of_isOpen_ker hχ).comp_continuous
+      (continuous_ofMul.comp continuous_snd)) fun x y ↦
       ⌊(AddCircle.equivIco 1 0 x : ℚ) + AddCircle.equivIco 1 0 y⌋
 
 /-- The carry cochain of a character and an invariant is a continuous `2`-cocycle. -/
@@ -190,6 +192,25 @@ theorem cocyclesMap2_characterCarryCocycle {H : Type uH} [Group H] [TopologicalS
   refine Subtype.ext (funext fun ⟨h, k⟩ ↦ ?_)
   simp [cocyclesMap2_apply, characterCarryCocycle_apply, map_zsmul]
 
+/-- **Naturality of the carry class.** Pulling back the cohomology class of the carry cocycle of
+`χ` and `a` along a compatible pair `(φ, f)` gives the carry class of `χ ∘ φ` and `f a`.
+
+This is the degree-two cohomology form of `cocyclesMap2_characterCarryCocycle`. -/
+theorem explicitMap2_characterCarryCocycle {H : Type uH} [Group H] [TopologicalSpace H]
+    [ContinuousMul H] [ContinuousSMul G M]
+    {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
+    [IsTopologicalAddGroup N] [DistribMulAction H N] [ContinuousSMul H N]
+    (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
+    (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
+    (χ : Additive G →+ AddCircle (1 : ℚ)) (hχ : IsOpen (χ.ker : Set (Additive G)))
+    (a : H0 G M) :
+    explicitMap2 G M H N φ f hf hequiv (characterCarryCocycle χ hχ a : H2 G M) =
+      (characterCarryCocycle (χ.comp (φ : H →* G).toAdditive)
+        (by rw [← AddMonoidHom.comap_ker, AddSubgroup.coe_comap]
+            exact hχ.preimage (continuous_ofMul.comp (φ.continuous.comp continuous_toMul)))
+        (explicitMap0 G M φ f hequiv a) : H2 H N) := by
+  rw [explicitMap2_mk, cocyclesMap2_characterCarryCocycle]
+
 /-- **The class of the carry cocycle is additive in the character.** The carry cocycles of
 `χ₁ + χ₂`, `χ₁` and `χ₂` differ by the coboundary of `g ↦ ⌊χ₁'(g) + χ₂'(g)⌋ • a`. The classes are
 read in `Z² / B²`, which is `H2 G M` whenever the latter is defined. -/
@@ -211,7 +232,8 @@ theorem characterCarryCocycle_add_character
     AddCircle.intCast_floor_equivIco_add _ _
   have hfix (g : G) : g • (a : M) = a := (FixedPoints.mem_addSubgroup G M a).1 a.2 g
   refine mem_B2_iff.2 ⟨fun g ↦ (-e g) • (a : M),
-    (((isLocallyConstant_character hχ₁).comp₂ (isLocallyConstant_character hχ₂) fun x y ↦
+    ((((χ₁.isLocallyConstant_of_isOpen_ker hχ₁).comp_continuous continuous_ofMul).comp₂
+      ((χ₂.isLocallyConstant_of_isOpen_ker hχ₂).comp_continuous continuous_ofMul) fun x y ↦
       (-⌊(AddCircle.equivIco 1 0 x : ℚ) + AddCircle.equivIco 1 0 y⌋) • (a : M))).continuous,
     funext fun p ↦ ?_⟩
   obtain ⟨g, h⟩ := p
@@ -245,11 +267,11 @@ theorem characterCarryCocycle_zsmul_character
   induction k using Int.induction_on with
   | zero => simp
   | succ i ih =>
-    have h := characterCarryCocycle_add_character (isOpen_ker_zsmul hχ i) hχ a
+    have h := characterCarryCocycle_add_character (χ.isOpen_ker_zsmul hχ i) hχ a
     simp only [add_zsmul, one_zsmul]
     rw [h, ih]
   | pred i ih =>
-    have h := characterCarryCocycle_add_character (isOpen_ker_zsmul hχ (-i - 1)) hχ a
+    have h := characterCarryCocycle_add_character (χ.isOpen_ker_zsmul hχ (-i - 1)) hχ a
     simp only [sub_zsmul, one_zsmul, neg_add_cancel_right] at h ⊢
     rw [eq_add_neg_iff_add_eq, ← h, ih]
 

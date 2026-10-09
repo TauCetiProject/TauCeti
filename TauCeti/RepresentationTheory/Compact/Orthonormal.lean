@@ -110,12 +110,12 @@ theorem orthonormal_matrixCoeffLp {n : ι → ℕ} (hunitary : ∀ i, IsUnitary 
       exact_mod_cast Fin.pos a
     have hsq : (Real.sqrt (n i) : 𝕜) * (Real.sqrt (n i) : 𝕜) = (n i : 𝕜) := by
       rw [← RCLike.ofReal_mul, Real.mul_self_sqrt hn.le, RCLike.ofReal_natCast]
-    rw [schur_orthogonality_basis (π i) (hπ i) (hunitary i) (hirr i) (e i) b a d c,
+    rw [(π i).schur_orthogonality_basis (hπ i) (hunitary i) (hirr i) (e i) b a d c,
       ← mul_assoc, ← mul_assoc, hsq]
     have hn' : (n i : 𝕜) ≠ 0 := by
       exact_mod_cast hn.ne'
     split_ifs <;> simp_all [Sigma.ext_iff, Prod.ext_iff]
-  · rw [schur_orthogonality (π i) (hπ i) (π j) (hπ j) (hunitary j) (hirr i) (hirr j) (hne hij)]
+  · rw [(π i).schur_orthogonality (hπ i) (π j) (hπ j) (hunitary j) (hirr i) (hirr j) (hne hij)]
     simp [Sigma.ext_iff, hij]
 
 /-- **The irreducible characters are orthonormal.** The characters of a family of pairwise

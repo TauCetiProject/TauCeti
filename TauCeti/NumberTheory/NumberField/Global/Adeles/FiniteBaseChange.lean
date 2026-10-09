@@ -47,6 +47,8 @@ groups, as for the infinite-adele comparison in
   the semilocal map after evaluation at `v`.
 * `TauCeti.GlobalNumberFields.finiteAdeleBaseChangeHom_injective`,
   `TauCeti.GlobalNumberFields.finiteAdeleBaseChangeHom_surjective`: the map is bijective.
+* `TauCeti.GlobalNumberFields.finiteAdeleBaseChangeEquiv_tower`: in a tower `K ⊆ L ⊆ M`, base
+  change from `K` to `M` factors through base change from `K` to `L`.
 
 ## References
 
@@ -316,5 +318,18 @@ theorem finiteAdeleBaseChangeEquiv_symm_algebraMap (x : L) :
     (finiteAdeleBaseChangeEquiv K L).symm
       (algebraMap L (FiniteAdeleRing (𝓞 L) L) x) = 1 ⊗ₜ[K] x :=
   finiteAdeleBaseChangeAlgEquiv_symm_algebraMap K L x
+
+/-- **Base change of finite adeles in a tower** `K ⊆ L ⊆ M`: the comparison for `M/K` factors
+through the comparison for `L/K`, followed by the comparison for `M/L`. -/
+theorem finiteAdeleBaseChangeEquiv_tower (M : Type*) [Field M] [NumberField M] [Algebra K M]
+    [Algebra L M] [IsScalarTower K L M] [TopologicalSpace (FiniteAdeleRing (𝓞 K) K ⊗[K] M)]
+    [IsModuleTopology (FiniteAdeleRing (𝓞 K) K) (FiniteAdeleRing (𝓞 K) K ⊗[K] M)]
+    [TopologicalSpace (FiniteAdeleRing (𝓞 L) L ⊗[L] M)]
+    [IsModuleTopology (FiniteAdeleRing (𝓞 L) L) (FiniteAdeleRing (𝓞 L) L ⊗[L] M)]
+    (a : FiniteAdeleRing (𝓞 K) K) (z : M) :
+    finiteAdeleBaseChangeEquiv K M (a ⊗ₜ z) =
+      finiteAdeleBaseChangeEquiv L M (finiteAdeleBaseChangeEquiv K L (a ⊗ₜ 1) ⊗ₜ z) := by
+  simp only [finiteAdeleBaseChangeEquiv_tmul, map_one, mul_one]
+  rw [← finiteAdeleExtension_comp (𝓞 K) K (𝓞 L) L (𝓞 M) M, RingHom.comp_apply]
 
 end TauCeti.GlobalNumberFields

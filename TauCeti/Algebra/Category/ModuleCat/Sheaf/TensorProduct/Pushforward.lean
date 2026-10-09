@@ -58,6 +58,8 @@ maps of the pullback along a composite are the composites of the comparison maps
   `SheafOfModules.pullback_δ`;
 * `SheafOfModules.forget_μ_comp_map_pushforward_μ`: the tensor map of the pushforward on underlying
   presheaves;
+* `SheafOfModules.pushforward_μ_app_tmul`: on sections, the tensor map of the pushforward sends
+  the class of `m ⊗ n` to the class of `m ⊗ n`;
 * `SheafOfModules.isMonoidal_pushforwardComp_hom`: composing pushforwards is compatible with their
   lax monoidal structures;
 * `SheafOfModules.pullback_comp_η` and `SheafOfModules.pullback_comp_δ`: composing pullbacks is

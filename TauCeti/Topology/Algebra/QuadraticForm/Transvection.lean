@@ -45,7 +45,6 @@ open TauCeti
 universe u v w
 
 variable {K : Type u} [Field K] [TopologicalSpace K] [IsTopologicalRing K]
-  [Invertible (2 : K)]
   {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
   [TopologicalSpace V] [IsModuleTopology K V]
   {Q : QuadraticForm K V}
