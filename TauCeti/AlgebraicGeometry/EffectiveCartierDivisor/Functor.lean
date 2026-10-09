@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.BaseChangeSection
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Relative
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Functor
 public import Mathlib.CategoryTheory.Subfunctor.Basic
@@ -63,14 +64,6 @@ universe u
 noncomputable section
 
 variable {S X : Scheme.{u}} (f : X ⟶ S)
-
-/-- The morphism between two base changes induced by a morphism of `S`-schemes forms a pullback
-square with their first projections. -/
-lemma isPullback_over_pullback_map_left {T T' : Over S} (φ : T' ⟶ T) :
-    IsPullback ((Over.pullback f).map φ).left (pullback.fst T'.hom f)
-      (pullback.fst T.hom f) φ.left := by
-  refine IsPullback.of_right ?_ (by simp) (IsPullback.of_hasPullback T.hom f).flip
-  simpa using (IsPullback.of_hasPullback T'.hom f).flip
 
 /-- **The functor of relative effective Cartier divisors** of `f : X ⟶ S`, as a subfunctor of
 `baseChangeIdealSheafFunctor f`: at a scheme `T` over `S` it consists of the relative effective

@@ -82,7 +82,6 @@ variable [SmoothOfRelativeDimension 1 f]
 
 /-- The degree-one relative effective Cartier divisor obtained by pulling a fixed section `x₀`
 back to `X_T` for every `S`-scheme `T`. -/
-@[expose]
 def relativeEffectiveCartierDegreeOneSection (x₀ : S ⟶ X) (hx₀ : x₀ ≫ f = 𝟙 S)
     (T : (Over S)ᵒᵖ) :
     (relativeEffectiveCartierDegreeSubfunctor f 1).toFunctor.obj T :=
@@ -104,7 +103,7 @@ lemma relativeEffectiveCartierDegreeOneSection_val (x₀ : S ⟶ X) (hx₀ : x�
     (T : (Over S)ᵒᵖ) :
     (relativeEffectiveCartierDegreeOneSection f x₀ hx₀ T).1.1 =
       (baseChangeSection f x₀ hx₀ T.unop).ker :=
-  rfl
+  (rfl)
 
 /-- Pulling back the degree-one divisor supplied by `x₀` gives the divisor supplied by the
 base-changed section. -/
@@ -115,6 +114,8 @@ lemma relativeEffectiveCartierDegreeOneSection_map {T T' : (Over S)ᵒᵖ} (φ :
       relativeEffectiveCartierDegreeOneSection f x₀ hx₀ T' := by
   apply Subtype.ext
   apply Subtype.ext
+  simp only [Subfunctor.toFunctor_map, baseChangeIdealSheafFunctor_map_apply,
+    relativeEffectiveCartierDegreeOneSection_val]
   have := Scheme.Hom.isClosedImmersion_of_comp_eq_id
     (baseChangeSection f x₀ hx₀ T.unop) (baseChangeSection_fst f x₀ hx₀ T.unop)
   exact (Scheme.IdealSheafData.ker_eq_comap_of_isPullback
