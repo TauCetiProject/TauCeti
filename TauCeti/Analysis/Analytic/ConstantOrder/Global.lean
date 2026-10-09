@@ -17,9 +17,6 @@ The quotient is nonzero on the hyperplane. This globalizes the local power-times
 characterization of slice order, allowing analytic polynomial root differences to be factored
 with one exponent and one unit throughout a connected parameter domain.
 
-The quotient on the hyperplane is defined by its punctured slice limit. Local analytic
-quotients agree with it by uniqueness of limits, so no choice of local factors affects it.
-
 ## References
 
 * S. McCallum, A. Parusiński, L. Paunescu, *Validity proof of Lazard's method for CAD

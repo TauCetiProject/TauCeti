@@ -13,15 +13,12 @@ import Mathlib.Topology.LocallyConstant.Basic
 # Global power-times-unit forms of root differences
 
 Let an analytic polynomial family split into analytic linear factors on a product domain.
-If its discriminant is a power of the distinguished coordinate times a nowhere-zero analytic
-function, each difference of distinctly labelled roots has the same form throughout the domain,
+If its discriminant is a power of the distinguished coordinate times a nowhere-zero function
+analytic at each point of the distinguished hyperplane, each difference of distinctly labelled
+roots has the same form throughout the domain,
 with a fixed exponent and a nowhere-zero analytic unit. The parameter domain must be connected
 and open, and the distinguished domain must be a neighborhood of the center of the power.
 Roots may collide at that center.
-
-The local root-difference theorem makes the slice order locally constant. Connectedness fixes
-its exponent, and global analytic division supplies the unit. Away from the hyperplane,
-nonvanishing follows from the discriminant, so the unit has no zeros anywhere on the domain.
 
 ## References
 
@@ -46,7 +43,7 @@ theorem exists_analyticOnNhd_root_sub_eq_pow_mul_unit
     (hs : s ∈ 𝓝 c)
     (hr : ∀ i, AnalyticOnNhd 𝕜 (r i) (U ×ˢ s))
     (hP : ∀ p ∈ U ×ˢ s, P p = ∏ i, (X - C (r i p)))
-    {a : ℕ} {u : E × 𝕜 → 𝕜} (hu : AnalyticOnNhd 𝕜 u (U ×ˢ s))
+    {a : ℕ} {u : E × 𝕜 → 𝕜} (hu : ∀ x ∈ U, AnalyticAt 𝕜 u (x, c))
     (hu0 : ∀ p ∈ U ×ˢ s, u p ≠ 0)
     (hdiscr : ∀ p ∈ U ×ˢ s, (P p).discr = (p.2 - c) ^ a * u p)
     {i j : Fin n} (hij : i ≠ j) :
@@ -63,7 +60,7 @@ theorem exists_analyticOnNhd_root_sub_eq_pow_mul_unit
     obtain ⟨b, v, hv, hv0, heq⟩ := exists_root_sub_eq_pow_mul_unit
       (fun k ↦ hr k (x, c) ⟨hx, hc⟩)
       (eventually_of_mem hmem fun p hp ↦ hP p hp)
-      (hu (x, c) ⟨hx, hc⟩) (hu0 (x, c) ⟨hx, hc⟩)
+      (hu x hx) (hu0 (x, c) ⟨hx, hc⟩)
       (eventually_of_mem hmem fun p hp ↦ hdiscr p hp) hij
     exact ⟨b, (hdiff (x, c) ⟨hx, hc⟩).eventually_analyticOrderAt_eq_natCast_iff.2
       ⟨v, hv, hv0, by simpa only [smul_eq_mul] using heq⟩⟩
