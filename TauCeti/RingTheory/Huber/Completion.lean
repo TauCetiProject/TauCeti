@@ -67,10 +67,14 @@ converge because `Â` is complete, and their sums exhibit the element as a combi
   `TauCeti.Huber.IsRingOfIntegralElements.completion`: the closure in `Â` of the image of a subring
   of `A⁰` lies in `Â⁰`, and the closure of the image of a ring of integral elements of `A` is a ring
   of integral elements of `Â`.
+* `TauCeti.Huber.Pair.completion` and `TauCeti.Huber.Pair.completionHom`: the completed Huber pair
+  `(Â, Â⁺)`, with `Â⁺` the closure of the image of `A⁺`, and the completion map as a morphism of
+  Huber pairs. `TauCeti.Huber.Pair.Hom.extension` extends a morphism into a complete Hausdorff
+  Huber pair along it, uniquely by `TauCeti.Huber.Pair.Hom.ext_completion`.
 
 ## References
 
-* [Wedhorn, *Adic Spaces*][wedhorn_adic], Remark 6.8.
+* [Wedhorn, *Adic Spaces*][wedhorn_adic], Remark 6.8 and Lemma 7.47.
 * [The Stacks Project][stacks], Lemma 10.96.3 (tag
   [05GG](https://stacks.math.columbia.edu/tag/05GG)), the successive-approximation argument
   behind the private `completionIdealImageIdeal_le` below.
@@ -607,5 +611,83 @@ theorem IsRingOfIntegralElements.completion [IsHuberRing A] {Aplus : Subring A}
   ⟨Completion.isOpen_topologicalClosure_map_coeRingHom h.isOpen,
     Completion.isIntegrallyClosedIn_topologicalClosure_map_coeRingHom h.isOpen,
     topologicalClosure_map_coeRingHom_le_powerBoundedSubring h.le_powerBoundedSubring⟩
+
+/-! ### The completion of a Huber pair -/
+
+namespace Pair
+
+variable [IsHuberRing A]
+
+/-- **The completion `(Â, Â⁺)` of a Huber pair `(A, A⁺)`**: `Â⁺` is the closure in `Â` of the
+image of `A⁺`, a ring of integral elements by `TauCeti.Huber.IsRingOfIntegralElements.completion`
+(Wedhorn, Lemma 7.47). -/
+noncomputable def completion (S : Pair A) : Pair (Completion A) where
+  plus := (S.plus.map (Completion.coeRingHom : A →+* Completion A)).topologicalClosure
+  isRingOfIntegralElements := S.isRingOfIntegralElements.completion
+
+/-- The plus ring of the completed pair is the closure of the image of `A⁺`. -/
+@[simp]
+theorem completion_plus (S : Pair A) :
+    S.completion.plus =
+      (S.plus.map (Completion.coeRingHom : A →+* Completion A)).topologicalClosure :=
+  (rfl)
+
+/-- **The completion map `(A, A⁺) → (Â, Â⁺)`** as a morphism of Huber pairs. -/
+noncomputable def completionHom (S : Pair A) : Hom S S.completion where
+  toRingHom := Completion.coeRingHom
+  continuous_toRingHom := Completion.continuous_coeRingHom
+  map_mem_plus _ ha := Subring.le_topologicalClosure _ ⟨_, ha, rfl⟩
+
+/-- The underlying ring homomorphism of the completion morphism is the completion map. -/
+@[simp]
+theorem Hom.toRingHom_completionHom (S : Pair A) :
+    S.completionHom.toRingHom = Completion.coeRingHom :=
+  (rfl)
+
+section Extension
+
+variable {B : Type*} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
+  [CompleteSpace B] [T0Space B] [IsHuberRing B] {S : Pair A} {U : Pair B}
+
+/-- **A morphism into a complete Hausdorff Huber pair extends to the completed pair**: the
+continuous extension `Â → B` of `f` carries `Â⁺` into `B⁺`, since `B⁺` is open and hence closed.
+-/
+noncomputable def Hom.extension (f : Hom S U) : Hom S.completion U where
+  toRingHom := Completion.extensionHom f.toRingHom f.continuous_toRingHom
+  continuous_toRingHom := Completion.continuous_extension
+  map_mem_plus x hx := by
+    let F := Completion.extensionHom f.toRingHom f.continuous_toRingHom
+    have hcl : IsClosed ((U.plus.comap F : Subring (Completion A)) : Set (Completion A)) :=
+      (U.plus.toAddSubgroup.isClosed_of_isOpen U.isRingOfIntegralElements.isOpen).preimage
+        Completion.continuous_extension
+    refine Subring.topologicalClosure_minimal _
+      (Subring.map_le_iff_le_comap.mpr fun a ha ↦ ?_) hcl hx
+    simpa [F, Completion.extensionHom_coe f.toRingHom f.continuous_toRingHom] using
+      f.map_mem_plus a ha
+
+/-- The underlying ring homomorphism of the extension is the continuous extension of `f`. -/
+@[simp]
+theorem Hom.toRingHom_extension (f : Hom S U) :
+    f.extension.toRingHom = Completion.extensionHom f.toRingHom f.continuous_toRingHom :=
+  (rfl)
+
+/-- The extension of `f` restricts to `f` along the completion map. -/
+@[simp]
+theorem Hom.extension_comp_completionHom (f : Hom S U) :
+    f.extension.comp S.completionHom = f := by
+  ext a
+  simp [Completion.extensionHom_coe f.toRingHom f.continuous_toRingHom]
+
+end Extension
+
+/-- **Morphisms out of the completed pair are determined on `A`**: two morphisms into a Hausdorff
+Huber pair that agree after the completion map are equal. -/
+theorem Hom.ext_completion {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
+    [T2Space B] [IsHuberRing B] {S : Pair A} {U : Pair B} {g h : Hom S.completion U}
+    (hgh : g.comp S.completionHom = h.comp S.completionHom) : g = h :=
+  Hom.ext <| RingHom.coe_inj <| Completion.ext g.continuous_toRingHom h.continuous_toRingHom
+    fun a ↦ by simpa using congrArg (fun f : Hom S U ↦ f.toRingHom a) hgh
+
+end Pair
 
 end TauCeti.Huber
