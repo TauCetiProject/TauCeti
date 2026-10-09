@@ -38,7 +38,7 @@ namespace CliffordAlgebra
 open TauCeti
 
 /-- The compact real Spin projection, bundled as a continuous homomorphism. -/
-@[expose] noncomputable def realCliffordSpinProjectionZero (n : ℕ) [NeZero n] :
+noncomputable def realCliffordSpinProjectionZero (n : ℕ) [NeZero n] :
     realCliffordSpinGroupZero n →ₜ*
       QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) :=
   ⟨(realCliffordSpinDoubleCoverZero n).rightHom,
@@ -49,8 +49,27 @@ extension. -/
 @[simp]
 theorem realCliffordSpinProjectionZero_apply (n : ℕ) [NeZero n]
     (x : realCliffordSpinGroupZero n) :
-    realCliffordSpinProjectionZero n x = (realCliffordSpinDoubleCoverZero n).rightHom x :=
+    realCliffordSpinProjectionZero n x = (realCliffordSpinDoubleCoverZero n).rightHom x := by
+  rw [realCliffordSpinProjectionZero]
   rfl
+
+/-- The compact real Spin projection has the same underlying monoid homomorphism as the projection
+of the double-cover extension. -/
+@[simp]
+theorem coeMonoidHom_realCliffordSpinProjectionZero (n : ℕ) [NeZero n] :
+    (realCliffordSpinProjectionZero n : realCliffordSpinGroupZero n →*
+      QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)) =
+        (realCliffordSpinDoubleCoverZero n).rightHom := by
+  rw [realCliffordSpinProjectionZero]
+  rfl
+
+/-- The compact real Spin projection has the same underlying function as the projection of the
+double-cover extension. -/
+theorem coe_realCliffordSpinProjectionZero (n : ℕ) [NeZero n] :
+    (realCliffordSpinProjectionZero n : realCliffordSpinGroupZero n →
+      QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)) =
+        (realCliffordSpinDoubleCoverZero n).rightHom :=
+  funext (realCliffordSpinProjectionZero_apply n)
 
 /-- The compact real Spin projection is a quotient covering map by its kernel. -/
 theorem isQuotientCoveringMap_realCliffordSpinDoubleCoverZero_rightHom
@@ -74,19 +93,16 @@ theorem isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom
 
 /-- Continuous homomorphisms out of `SO(n)` are equivalent to continuous homomorphisms out of
 compact `Spin(n)` that kill the kernel of the double-cover projection. -/
-@[expose] noncomputable def realCliffordSpinHomEquivKer (n : ℕ) [NeZero n]
+noncomputable def realCliffordSpinHomEquivKer (n : ℕ) [NeZero n]
     [CompactSpace (realCliffordSpinGroupZero n)]
     {H : Type*} [Monoid H] [TopologicalSpace H] :
     (QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) →ₜ* H) ≃
       {f : realCliffordSpinGroupZero n →ₜ* H //
         (realCliffordSpinDoubleCoverZero n).rightHom.ker ≤
-          (f : realCliffordSpinGroupZero n →* H).ker} :=
-  ContinuousMonoidHom.homEquivOfIsQuotientMap (realCliffordSpinProjectionZero n) <|
-    by
-      rw [show (realCliffordSpinProjectionZero n : realCliffordSpinGroupZero n →
-          QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)) =
-          (realCliffordSpinDoubleCoverZero n).rightHom from
-        funext (realCliffordSpinProjectionZero_apply n)]
+          (f : realCliffordSpinGroupZero n →* H).ker} := by
+  simpa only [coeMonoidHom_realCliffordSpinProjectionZero] using
+    ContinuousMonoidHom.homEquivOfIsQuotientMap (realCliffordSpinProjectionZero n) <| by
+      rw [coe_realCliffordSpinProjectionZero]
       exact
         (isQuotientCoveringMap_realCliffordSpinDoubleCoverZero_rightHom n).toIsQuotientMap
 
@@ -102,8 +118,9 @@ theorem realCliffordSpinHomEquivKer_apply_coe (n : ℕ) [NeZero n]
         (realCliffordSpinDoubleCoverZero n).rightHom.ker ≤
           (g : realCliffordSpinGroupZero n →* H).ker}) :
       realCliffordSpinGroupZero n →ₜ* H) =
-        f.comp (realCliffordSpinProjectionZero n) :=
-  rfl
+        f.comp (realCliffordSpinProjectionZero n) := by
+  rw [realCliffordSpinHomEquivKer]
+  exact ContinuousMonoidHom.homEquivOfIsQuotientMap_apply_coe _ _ f
 
 /-- Descending a homomorphism from compact `Spin(n)` and composing again with the Spin projection
 recovers the original homomorphism. -/
@@ -115,6 +132,8 @@ theorem realCliffordSpinHomEquivKer_symm_apply_comp (n : ℕ) [NeZero n]
       (realCliffordSpinDoubleCoverZero n).rightHom.ker ≤
         (g : realCliffordSpinGroupZero n →* H).ker}) :
     ((realCliffordSpinHomEquivKer n).symm f).comp (realCliffordSpinProjectionZero n) = f.1 := by
-  exact ContinuousMonoidHom.liftOfIsQuotientMap_comp _ _ _ _
+  have h := congrArg Subtype.val ((realCliffordSpinHomEquivKer n).apply_symm_apply f)
+  rw [realCliffordSpinHomEquivKer_apply_coe] at h
+  exact h
 
 end CliffordAlgebra

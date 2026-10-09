@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
@@ -33,32 +34,30 @@ namespace ContinuousMonoidHom
 variable {G Q H : Type*} [Group G] [Group Q] [Monoid H]
   [TopologicalSpace G] [TopologicalSpace Q] [TopologicalSpace H]
 
-omit [TopologicalSpace G] [TopologicalSpace Q] in
-/-- The inverse of the first-isomorphism equivalence sends the image of an element to its kernel
-quotient class. -/
-private theorem quotientKerEquivOfSurjective_symm_apply (p : G →* Q)
-    (hp : Function.Surjective p) (x : G) :
-    (QuotientGroup.quotientKerEquivOfSurjective p hp).symm (p x) =
-      (x : G ⧸ p.ker) := by
-  apply (QuotientGroup.quotientKerEquivOfSurjective p hp).injective
-  rw [(QuotientGroup.quotientKerEquivOfSurjective p hp).apply_symm_apply]
-  exact QuotientGroup.kerLift_mk p x
+private noncomputable def liftMonoidHomOfIsQuotientMap (p : G →ₜ* Q) (hp : IsQuotientMap p)
+    (f : G →ₜ* H) (hf : (p : G →* Q).ker ≤ (f : G →* H).ker) : Q →* H :=
+  let e := QuotientGroup.quotientKerEquivOfSurjective (p : G →* Q) hp.surjective
+  let lift := TauCeti.ContinuousMonoidHom.quotientLift (p : G →* Q).ker f hf
+  lift.toMonoidHom.comp e.symm.toMonoidHom
+
+private theorem liftMonoidHomOfIsQuotientMap_comp_apply (p : G →ₜ* Q) (hp : IsQuotientMap p)
+    (f : G →ₜ* H) (hf : (p : G →* Q).ker ≤ (f : G →* H).ker) (x : G) :
+    liftMonoidHomOfIsQuotientMap p hp f hf (p x) = f x := by
+  have hx :
+      (QuotientGroup.quotientKerEquivOfSurjective (p : G →* Q)
+        hp.surjective).symm.toMonoidHom (p x) = (x : G ⧸ (p : G →* Q).ker) :=
+    TauCeti.QuotientGroup.quotientKerEquivOfSurjective_symm_apply
+      (p : G →* Q) hp.surjective x
+  rw [liftMonoidHomOfIsQuotientMap, MonoidHom.comp_apply, hx]
+  exact TauCeti.ContinuousMonoidHom.quotientLift_mk (p : G →* Q).ker f hf x
 
 /-- Descend a continuous group homomorphism through a quotient homomorphism whose kernel it
 kills. -/
 noncomputable def liftOfIsQuotientMap (p : G →ₜ* Q) (hp : IsQuotientMap p)
-    (f : G →ₜ* H) (hf : (p : G →* Q).ker ≤ (f : G →* H).ker) : Q →ₜ* H :=
-  let e := QuotientGroup.quotientKerEquivOfSurjective (p : G →* Q) hp.surjective
-  let lift := TauCeti.ContinuousMonoidHom.quotientLift (p : G →* Q).ker f hf
-  {
-  toMonoidHom := lift.toMonoidHom.comp e.symm.toMonoidHom
+    (f : G →ₜ* H) (hf : (p : G →* Q).ker ≤ (f : G →* H).ker) : Q →ₜ* H where
+  toMonoidHom := liftMonoidHomOfIsQuotientMap p hp f hf
   continuous_toFun := hp.continuous_iff.mpr <| f.continuous.congr fun x ↦
-    show f x = lift (e.symm (p x)) from by
-    have hx : e.symm (p x) = (x : G ⧸ (p : G →* Q).ker) :=
-      quotientKerEquivOfSurjective_symm_apply (p : G →* Q) hp.surjective x
-    rw [hx]
-    exact (TauCeti.ContinuousMonoidHom.quotientLift_mk (p : G →* Q).ker f hf x).symm
-  }
+    (liftMonoidHomOfIsQuotientMap_comp_apply p hp f hf x).symm
 
 /-- The descended continuous homomorphism agrees with the original homomorphism on every
 representative. -/
@@ -66,14 +65,7 @@ representative. -/
 theorem liftOfIsQuotientMap_comp_apply (p : G →ₜ* Q) (hp : IsQuotientMap p)
     (f : G →ₜ* H) (hf : (p : G →* Q).ker ≤ (f : G →* H).ker) (x : G) :
     liftOfIsQuotientMap p hp f hf (p x) = f x := by
-  let e := QuotientGroup.quotientKerEquivOfSurjective (p : G →* Q) hp.surjective
-  rw [show liftOfIsQuotientMap p hp f hf (p x) =
-      TauCeti.ContinuousMonoidHom.quotientLift (p : G →* Q).ker f hf
-        (e.symm (p x)) from rfl]
-  have hx : e.symm (p x) = (x : G ⧸ (p : G →* Q).ker) :=
-    quotientKerEquivOfSurjective_symm_apply (p : G →* Q) hp.surjective x
-  rw [hx]
-  exact TauCeti.ContinuousMonoidHom.quotientLift_mk (p : G →* Q).ker f hf x
+  exact liftMonoidHomOfIsQuotientMap_comp_apply p hp f hf x
 
 /-- Composing the descended homomorphism with the quotient homomorphism recovers the original
 homomorphism. -/
@@ -96,7 +88,7 @@ theorem liftOfIsQuotientMap_unique (p : G →ₜ* Q) (hp : IsQuotientMap p)
 
 /-- Precomposition with a quotient homomorphism identifies continuous homomorphisms on the
 quotient with continuous homomorphisms whose kernels contain the quotient kernel. -/
-@[expose] noncomputable def homEquivOfIsQuotientMap (p : G →ₜ* Q) (hp : IsQuotientMap p) :
+noncomputable def homEquivOfIsQuotientMap (p : G →ₜ* Q) (hp : IsQuotientMap p) :
     (Q →ₜ* H) ≃ {f : G →ₜ* H // (p : G →* Q).ker ≤ (f : G →* H).ker} :=
   let forward : (Q →ₜ* H) →
       {f : G →ₜ* H // (p : G →* Q).ker ≤ (f : G →* H).ker} := fun f ↦
@@ -120,14 +112,18 @@ theorem homEquivOfIsQuotientMap_apply_coe (p : G →ₜ* Q) (hp : IsQuotientMap 
     (f : Q →ₜ* H) :
     ((homEquivOfIsQuotientMap p hp f :
       {g : G →ₜ* H // (p : G →* Q).ker ≤ (g : G →* H).ker}) : G →ₜ* H) =
-      f.comp p :=
+      f.comp p := by
+  rw [homEquivOfIsQuotientMap]
   rfl
 
 /-- Evaluation of the inverse quotient-homomorphism equivalence. -/
 @[simp]
 theorem homEquivOfIsQuotientMap_symm_apply (p : G →ₜ* Q) (hp : IsQuotientMap p)
     (f : {g : G →ₜ* H // (p : G →* Q).ker ≤ (g : G →* H).ker}) :
-    (homEquivOfIsQuotientMap p hp).symm f = liftOfIsQuotientMap p hp f.1 f.2 :=
-  rfl
+    (homEquivOfIsQuotientMap p hp).symm f = liftOfIsQuotientMap p hp f.1 f.2 := by
+  apply (homEquivOfIsQuotientMap p hp).injective
+  rw [(homEquivOfIsQuotientMap p hp).apply_symm_apply]
+  apply Subtype.ext
+  rw [homEquivOfIsQuotientMap_apply_coe, liftOfIsQuotientMap_comp]
 
 end ContinuousMonoidHom

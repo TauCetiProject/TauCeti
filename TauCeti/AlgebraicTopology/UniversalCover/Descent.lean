@@ -30,7 +30,7 @@ variable {G K : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 /-- Continuous homomorphisms out of a path-connected group are equivalent to continuous
 homomorphisms out of its universal cover that kill the projection kernel. -/
-@[expose] noncomputable def homEquivKerProjHom :
+noncomputable def homEquivKerProjHom :
     (G →ₜ* K) ≃
       {f : UniversalCover (1 : G) →ₜ* K //
         ((projHom : UniversalCover (1 : G) →ₜ* G) :
@@ -47,8 +47,8 @@ theorem homEquivKerProjHom_apply_coe (f : G →ₜ* K) :
       {g : UniversalCover (1 : G) →ₜ* K //
         ((projHom : UniversalCover (1 : G) →ₜ* G) :
           UniversalCover (1 : G) →* G).ker ≤ (g : UniversalCover (1 : G) →* K).ker}) :
-      UniversalCover (1 : G) →ₜ* K) = f.comp projHom :=
-  rfl
+      UniversalCover (1 : G) →ₜ* K) = f.comp projHom := by
+  rw [homEquivKerProjHom, ContinuousMonoidHom.homEquivOfIsQuotientMap_apply_coe]
 
 /-- Descending a homomorphism from the universal cover and composing again with the covering
 projection recovers the original homomorphism. -/
@@ -58,7 +58,8 @@ theorem homEquivKerProjHom_symm_apply_comp
       ((projHom : UniversalCover (1 : G) →ₜ* G) :
         UniversalCover (1 : G) →* G).ker ≤ (g : UniversalCover (1 : G) →* K).ker}) :
     (homEquivKerProjHom.symm f).comp projHom = f.1 := by
-  exact ContinuousMonoidHom.liftOfIsQuotientMap_comp
-    (p := (projHom : UniversalCover (1 : G) →ₜ* G)) _ f.1 f.2
+  have h := congrArg Subtype.val (homEquivKerProjHom.apply_symm_apply f)
+  rw [homEquivKerProjHom_apply_coe] at h
+  exact h
 
 end TauCeti.UniversalCover
