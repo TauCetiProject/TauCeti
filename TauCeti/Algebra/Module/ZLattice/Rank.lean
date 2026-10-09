@@ -34,15 +34,7 @@ open Submodule Module
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E]
-
-private theorem isometry_comapSubtypeEquivOfLe {L F : Submodule ℤ E} (hLF : L ≤ F) :
-    Isometry (Submodule.comapSubtypeEquivOfLe hLF) := by
-  -- Both metrics are induced from E along Subtype.val, including the nested subtype of F.
-  intro x y
-  simp only [Subtype.edist_eq, Submodule.comapSubtypeEquivOfLe_apply_coe]
-
-variable [NormedSpace ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 private theorem discreteTopology_of_span_eq_top_of_finrank_eq
     (L : Submodule ℤ E) [Module.Finite ℤ L]
@@ -76,7 +68,11 @@ theorem discreteTopology_iff_finrank_eq_finrank_span
   have hLF : L ≤ F.restrictScalars ℤ := Submodule.subset_span
   let L' : Submodule ℤ F := L.comap (F.restrictScalars ℤ).subtype
   let e := Submodule.comapSubtypeEquivOfLe hLF
-  have he : Isometry e := isometry_comapSubtypeEquivOfLe hLF
+  -- After coercing to E, both directions are subtype projections.
+  have he : Continuous e := by
+    exact (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+  have he' : Continuous e.symm := by
+    exact (continuous_subtype_val.subtype_mk _).subtype_mk _
   have : Module.Finite ℤ L' := Module.Finite.equiv e.symm
   -- L' has carrier Subtype.val ⁻¹' (L : Set E) by definition of comap and restrictScalars.
   have hs : Submodule.span ℝ (L' : Set F) = ⊤ := Submodule.span_span_coe_preimage
@@ -85,13 +81,13 @@ theorem discreteTopology_iff_finrank_eq_finrank_span
   constructor
   · intro h
     have : DiscreteTopology L' := DiscreteTopology.of_continuous_injective
-      he.continuous e.injective
+      he e.injective
     have : IsZLattice ℝ L' := ⟨hs⟩
     exact e.symm.finrank_eq.trans (ZLattice.rank ℝ L')
   · intro hr
     have : DiscreteTopology L' := discreteTopology_of_span_eq_top_of_finrank_eq L' hs
       (e.finrank_eq.trans hr)
     exact DiscreteTopology.of_continuous_injective (β := L')
-      (he.right_inv e.apply_symm_apply).continuous e.symm.injective
+      he' e.symm.injective
 
 end TauCeti
