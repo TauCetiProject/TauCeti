@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
+public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 public import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
@@ -48,6 +49,17 @@ is faithfully flat over `R`:
 * `TauCeti.Algebra.DescentDatum.baseChangeHomEquiv` (full faithfulness): if `S` is faithfully
   flat over `R`, the `R`-algebra maps `A → A'` are exactly the morphisms between the canonical
   descent data on `S ⊗[R] A` and `S ⊗[R] A'`.
+
+Forming the descended algebra commutes with arbitrary base change `R → R'`:
+
+* `TauCeti.Algebra.DescentDatum.exact_lTensor_descended_val` and
+  `lTensor_descended_val_injective`: if `S` is faithfully flat over `R`, then
+  `M ⊗[R] D.descended → M ⊗[R] B ⇉ M ⊗[R] (S ⊗[R] B)` is an equalizer for every `R`-module `M`.
+* `TauCeti.Algebra.DescentDatum.tensorDescendedEquiv`: if `S` is faithfully flat over `R` and a
+  descent datum `D'` on `B'` relative to `R' → S'` is the base change of `D` along `R → R'`
+  (that is, `S' = R' ⊗[R] S` and `B' = R' ⊗[R] B` compatibly with the coactions), then
+  `R' ⊗[R] D.descended ≃ D'.descended`. This is the compatibility on overlaps needed to glue
+  the descents over the affine opens of a non-affine base.
 
 The faithfully flat input is the exactness of the Amitsur sequence
 `M → S ⊗[R] M ⇉ S ⊗[R] (S ⊗[R] M)` for an arbitrary `R`-module `M`
@@ -473,6 +485,152 @@ theorem tmul_baseChangeHomEquiv_symm_apply [Module.FaithfullyFlat R S]
   simp
 
 end BaseChange
+
+/-! ### Change of the base ring
+
+If `S` is faithfully flat over `R`, the equalizer `D.descended → B ⇉ S ⊗[R] B` stays an equalizer
+after tensoring with any `R`-module. Hence forming the descended algebra commutes with arbitrary
+base change `R → R'`. -/
+
+section ChangeOfBase
+
+variable [Module.FaithfullyFlat R S]
+
+/-- The isomorphism `S ⊗[R] (M ⊗[R] D.descended) ≃ M ⊗[R] B`, `s ⊗ m ⊗ a ↦ m ⊗ s • a`. -/
+private noncomputable def leftCommBaseChangeEquiv (M : Type*) [AddCommGroup M] [Module R M] :
+    S ⊗[R] (M ⊗[R] D.descended) ≃ₗ[R] M ⊗[R] B :=
+  TensorProduct.leftComm R S M D.descended ≪≫ₗ
+    (D.baseChangeEquiv.toLinearEquiv.restrictScalars R).lTensor M
+
+/-- The isomorphism `S ⊗[R] (S ⊗[R] (M ⊗[R] D.descended)) ≃ M ⊗[R] (S ⊗[R] B)`,
+`s ⊗ t ⊗ m ⊗ a ↦ m ⊗ s ⊗ t • a`. -/
+private noncomputable def leftCommBaseChangeEquiv₂ (M : Type*) [AddCommGroup M] [Module R M] :
+    S ⊗[R] (S ⊗[R] (M ⊗[R] D.descended)) ≃ₗ[R] M ⊗[R] (S ⊗[R] B) :=
+  (TensorProduct.leftComm R S M D.descended).lTensor S ≪≫ₗ TensorProduct.leftComm R S M _ ≪≫ₗ
+    ((D.baseChangeEquiv.toLinearEquiv.restrictScalars R).lTensor S).lTensor M
+
+variable (M : Type*) [AddCommGroup M] [Module R M]
+
+/-- Under `leftCommBaseChangeEquiv`, the inclusion `M ⊗ D.descended → M ⊗ B` is the first map
+`x ↦ 1 ⊗ x` of the Amitsur complex of `M ⊗ D.descended`. -/
+private theorem lTensor_descended_val_eq :
+    D.descended.val.toLinearMap.lTensor M =
+      (D.leftCommBaseChangeEquiv M).toLinearMap ∘ₗ
+        TensorProduct.mk R S (M ⊗[R] D.descended) 1 := by
+  ext m a
+  simp [leftCommBaseChangeEquiv]
+
+/-- If `S` is faithfully flat over `R`, the inclusion `D.descended → B` is universally
+injective: it stays injective after tensoring with any `R`-module `M`. -/
+theorem lTensor_descended_val_injective :
+    Function.Injective (D.descended.val.toLinearMap.lTensor M) := by
+  rw [lTensor_descended_val_eq, LinearMap.coe_comp, LinearEquiv.coe_coe,
+    EquivLike.comp_injective]
+  exact Module.FaithfullyFlat.tensorProduct_mk_injective _
+
+/-- **The descended algebra is a universal equalizer.** If `S` is faithfully flat over `R`, then
+for every `R`-module `M` the sequence `M ⊗ D.descended → M ⊗ B → M ⊗ (S ⊗ B)`, whose second map
+is `m ⊗ b ↦ m ⊗ (θ b - 1 ⊗ b)`, is exact. -/
+theorem exact_lTensor_descended_val :
+    Function.Exact (D.descended.val.toLinearMap.lTensor M)
+      (((D.coaction.restrictScalars R).toLinearMap -
+        (Algebra.TensorProduct.includeRight : B →ₐ[R] S ⊗[R] B).toLinearMap).lTensor M) := by
+  -- Transport the Amitsur complex of `M ⊗ D.descended` along the effectivity isomorphism.
+  refine Function.Exact.of_ladder_linearEquiv_of_exact (e₁ := LinearEquiv.refl R _)
+    (e₂ := D.leftCommBaseChangeEquiv M) (e₃ := D.leftCommBaseChangeEquiv₂ M)
+    (by rw [LinearEquiv.refl_toLinearMap, LinearMap.comp_id, lTensor_descended_val_eq]) ?_
+    (Module.FaithfullyFlat.exact_mk_one_lTensor_sub_mk_one S _)
+  ext s m a
+  have ha : D.coaction a = 1 ⊗ₜ (a : B) := a.2
+  simp [leftCommBaseChangeEquiv, leftCommBaseChangeEquiv₂, ha, Algebra.smul_def,
+    Algebra.TensorProduct.algebraMap_apply]
+
+end ChangeOfBase
+
+/-! ### Comparison along a base change of descent data -/
+
+section Comparison
+
+variable {R' S' B' : Type*} [CommRing R'] [CommRing S'] [Ring B'] [Algebra R R'] [Algebra R' S']
+  [Algebra R S'] [IsScalarTower R R' S'] [Algebra R' B'] [Algebra R B'] [IsScalarTower R R' B']
+  [Algebra S' B'] [IsScalarTower R' S' B'] {D' : DescentDatum R' S' B'}
+  {φ : S →ₐ[R] S'} {ψ : B →ₐ[R] B'}
+  (hθ : ∀ b, D'.coaction (ψ b) = (TensorProduct.mapOfCompatibleSMul R' R R S' B' ∘ₗ
+    TensorProduct.map φ.toLinearMap ψ.toLinearMap) (D.coaction b))
+
+include hθ in
+private theorem mem_descended_of_coaction_comp (a : D.descended) : ψ a ∈ D'.descended := by
+  have ha : D.coaction a = 1 ⊗ₜ (a : B) := a.2
+  simp [hθ, ha]
+
+/-- The comparison map `R' ⊗[R] D.descended → D'.descended`, `r ⊗ a ↦ r • ψ a`. -/
+private noncomputable def tensorDescendedHom : R' ⊗[R] D.descended →ₐ[R'] D'.descended :=
+  (Algebra.TensorProduct.lift (Algebra.ofId R' B') (ψ.comp D.descended.val) fun r a ↦ by
+    rw [Algebra.ofId_apply]; exact Algebra.commute_algebraMap_left r _).codRestrict
+    D'.descended fun x ↦ by
+    induction x using TensorProduct.inductionOn with
+    | tmul r a =>
+      rw [Algebra.TensorProduct.lift_tmul, Algebra.ofId_apply, ← Algebra.smul_def]
+      exact Subalgebra.smul_mem _ (D.mem_descended_of_coaction_comp hθ a) r
+    | add x y hx hy => rw [map_add]; exact add_mem hx hy
+
+private theorem coe_tensorDescendedHom (hψ : IsBaseChange R' (ψ.toLinearMap : B →ₗ[R] B'))
+    (x : R' ⊗[R] D.descended) :
+    (D.tensorDescendedHom hθ x : B') = hψ.equiv (D.descended.val.toLinearMap.lTensor R' x) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul r a => simp [tensorDescendedHom, IsBaseChange.equiv_tmul, Algebra.smul_def]
+  | add x y hx hy => simp only [map_add, Subalgebra.coe_add, hx, hy]
+
+include hθ in
+/-- Under the identification `R' ⊗[R] (S ⊗[R] B) ≃ S' ⊗[R'] B'`, the base change of the
+equalizer pair of `D` becomes the equalizer pair of `D'`. -/
+private theorem equiv_lTensor_coaction_sub (hφ : IsBaseChange R' φ.toLinearMap)
+    (hψ : IsBaseChange R' (ψ.toLinearMap : B →ₗ[R] B')) (y : R' ⊗[R] B) :
+    (hφ.tensorProduct hψ).equiv (((D.coaction.restrictScalars R).toLinearMap -
+        (Algebra.TensorProduct.includeRight : B →ₐ[R] S ⊗[R] B).toLinearMap).lTensor R' y) =
+      D'.coaction (hψ.equiv y) - 1 ⊗ₜ hψ.equiv y := by
+  induction y using TensorProduct.inductionOn with
+  | tmul r b =>
+    rw [LinearMap.lTensor_tmul, IsBaseChange.equiv_tmul, IsBaseChange.equiv_tmul,
+      LinearMap.sub_apply, map_sub, smul_sub]
+    simp only [AlgHom.toLinearMap_apply, AlgHom.coe_restrictScalars']
+    rw [← hθ, ← algebraMap_smul S' r (ψ b), map_smul, algebraMap_smul]
+    simp [tmul_smul]
+  | add x y hx hy => simp only [map_add, hx, hy, tmul_add]; abel
+
+include hθ in
+private theorem tensorDescendedHom_bijective [Module.FaithfullyFlat R S]
+    (hφ : IsBaseChange R' φ.toLinearMap) (hψ : IsBaseChange R' (ψ.toLinearMap : B →ₗ[R] B')) :
+    Function.Bijective (D.tensorDescendedHom hθ) := by
+  refine ⟨fun x y h ↦ D.lTensor_descended_val_injective R' (hψ.equiv.injective ?_),
+    fun x' ↦ ?_⟩
+  · rw [← D.coe_tensorDescendedHom hθ hψ, ← D.coe_tensorDescendedHom hθ hψ, h]
+  obtain ⟨y, hy'⟩ := hψ.equiv.surjective x'
+  -- `y` satisfies the base-changed descent condition, so it comes from `R' ⊗ D.descended`.
+  obtain ⟨z, rfl⟩ := (D.exact_lTensor_descended_val R' y).mp <|
+    (hφ.tensorProduct hψ).equiv.injective <| by
+      rw [D.equiv_lTensor_coaction_sub hθ hφ hψ, hy', map_zero, sub_eq_zero]
+      exact x'.2
+  exact ⟨z, Subtype.ext ((D.coe_tensorDescendedHom hθ hψ z).trans hy')⟩
+
+/-- **Descent commutes with base change.** Let `S` be faithfully flat over `R`, let `R → R'` be
+any ring map, and let `D'` be a descent datum on `B'` relative to `R' → S'`. Suppose that
+`φ : S → S'` and `ψ : B → B'` exhibit `S'` and `B'` as the base changes `R' ⊗[R] S` and
+`R' ⊗[R] B`, and that `ψ` intertwines the coactions, `θ' ∘ ψ = (φ ⊗ ψ) ∘ θ`. Then
+`r ⊗ a ↦ r • ψ a` is an isomorphism `R' ⊗[R] D.descended ≃ D'.descended`. -/
+noncomputable def tensorDescendedEquiv [Module.FaithfullyFlat R S]
+    (hφ : IsBaseChange R' φ.toLinearMap) (hψ : IsBaseChange R' (ψ.toLinearMap : B →ₗ[R] B')) :
+    R' ⊗[R] D.descended ≃ₐ[R'] D'.descended :=
+  AlgEquiv.ofBijective (D.tensorDescendedHom hθ) (D.tensorDescendedHom_bijective hθ hφ hψ)
+
+@[simp]
+theorem coe_tensorDescendedEquiv_tmul [Module.FaithfullyFlat R S]
+    (hφ : IsBaseChange R' φ.toLinearMap) (hψ : IsBaseChange R' (ψ.toLinearMap : B →ₗ[R] B'))
+    (r : R') (a : D.descended) :
+    (D.tensorDescendedEquiv hθ hφ hψ (r ⊗ₜ a) : B') = r • ψ a := by
+  simp [tensorDescendedEquiv, tensorDescendedHom, Algebra.smul_def]
+
+end Comparison
 
 end DescentDatum
 
