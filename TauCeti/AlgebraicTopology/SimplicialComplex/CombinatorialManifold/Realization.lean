@@ -51,7 +51,7 @@ theorem IsCombinatorialBall.nonempty_homeomorph_closedBall
   classical
   obtain ⟨V, hV, he⟩ := isCombinatorialBall_iff.mp h
   obtain ⟨s⟩ := he.nonempty_homeomorph h.finite_faces
-  obtain ⟨t⟩ := nonempty_homeomorph_simplex_closedBall hV (top_le _)
+  obtain ⟨t⟩ := nonempty_homeomorph_simplex_closedBall hV (le_top _)
   exact ⟨(topRealizationHomeomorph P hA).symm.trans (s.trans t)⟩
 
 /-- A combinatorial `n`-sphere has a weak polyhedron homeomorphic to the unit `n`-sphere,
@@ -65,7 +65,7 @@ theorem IsCombinatorialSphere.nonempty_homeomorph_sphere [DecidableEq ι]
   let r := topRealizationHomeomorph P hA
   obtain ⟨V, hV, he⟩ := isCombinatorialSphere_iff.mp h
   obtain ⟨s⟩ := he.nonempty_homeomorph h.finite_faces
-  obtain ⟨t⟩ := nonempty_homeomorph_simplexBoundary_sphere hV (top_le _)
+  obtain ⟨t⟩ := nonempty_homeomorph_simplexBoundary_sphere hV (le_top _)
   exact ⟨r.symm.trans (s.trans t)⟩
 
 end PreAbstractSimplicialComplex

@@ -148,7 +148,7 @@ def relabelingHomeomorph
   continuous_invFun := continuous_relabelingBackward P f hK hL
 
 /-- Every precomplex is contained in the top abstract simplicial complex. -/
-theorem top_le (Q : PreAbstractSimplicialComplex ι) :
+theorem le_top (Q : PreAbstractSimplicialComplex ι) :
     Q ≤ (⊤ : AbstractSimplicialComplex ι).toPreAbstractSimplicialComplex :=
   fun _ hσ => TauCeti.AbstractSimplicialComplex.mem_top_iff.mpr
     (Q.isRelLowerSet_faces.prop_of_mem hσ)
@@ -163,7 +163,7 @@ noncomputable def topRealizationHomeomorph
   classical
   have hid : P.map (Function.Embedding.refl ι) = P := by
     simpa only [Function.Embedding.coe_refl] using (map_id (K := P))
-  exact (P.relabelingHomeomorph (Function.Embedding.refl ι) (top_le P)
+  exact (P.relabelingHomeomorph (Function.Embedding.refl ι) (le_top P)
     (by rw [hid]; exact hA)).trans
     (Homeomorph.setCongr (by rw [hid]))
 
