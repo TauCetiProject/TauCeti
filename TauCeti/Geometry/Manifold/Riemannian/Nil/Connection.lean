@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.GroupLieAlgebra
 public import TauCeti.Geometry.Manifold.Riemannian.Nil.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.VectorSpace
 import all TauCeti.Geometry.Manifold.Riemannian.Nil.Basic
@@ -23,26 +24,23 @@ direction `u` is
 This is also the Christoffel map of `Nil` in its global chart, the input of the coordinate
 formula for the curvature tensor.
 
-The left-invariant vector fields of `Nil` are the left translates `X_a(p) = (a₁, a₂, a₃ + x a₂)`
-of the tangent vectors `a` at the identity. In particular `E₁ = ∂_x`, `E₂ = ∂_y + x ∂_z` and
-`E₃ = ∂_z` form a left-invariant orthonormal frame, with `[E₁, E₂] = E₃` the only nonzero
-bracket. The Levi-Civita connection preserves left-invariant fields:
+The left-invariant vector fields `X_a = mulInvariantVectorField a` of `Nil` are the left
+translates `X_a(p) = (a₁, a₂, a₃ + x a₂)` of the tangent vectors `a` at the identity. In
+particular `E₁ = ∂_x`, `E₂ = ∂_y + x ∂_z` and `E₃ = ∂_z` form a left-invariant orthonormal frame,
+with `[E₁, E₂] = E₃` the only nonzero bracket. The Levi-Civita connection preserves
+left-invariant fields:
 `∇_{X_a} X_b = X_c` with `c = ½ (a₂ b₃ + b₂ a₃, -(a₁ b₃ + b₁ a₃), a₁ b₂ - a₂ b₁)`. This is the
 classical table `∇_{E₁} E₂ = ½ E₃ = -∇_{E₂} E₁`, `∇_{E₁} E₃ = ∇_{E₃} E₁ = -½ E₂`,
 `∇_{E₂} E₃ = ∇_{E₃} E₂ = ½ E₁`, with all other entries zero.
-
-## Main definitions
-
-* `TauCeti.Nil.leftInvariantField`: the left-invariant vector field with a given value at the
-  identity.
 
 ## Main results
 
 * `TauCeti.Nil.leviCivitaConnection_const_apply`: the Levi-Civita derivative of a constant field.
 * `TauCeti.Nil.christoffelMap_leviCivitaConnection_apply`: the Christoffel map of `Nil` in its
   global chart, in any basis.
-* `TauCeti.Nil.mfderiv_mul_left_one`: the left-invariant field `X_a` is the left translate of `a`.
-* `TauCeti.Nil.leviCivitaConnection_leftInvariantField`: the Levi-Civita connection on
+* `TauCeti.Nil.tangentSpaceCastModel_mulInvariantVectorField`: the value of the left-invariant
+  field `X_a` in the model space.
+* `TauCeti.Nil.leviCivitaConnection_mulInvariantVectorField`: the Levi-Civita connection on
   left-invariant fields.
 
 ## References
@@ -75,16 +73,6 @@ through the contact form `dz - x dy`. -/
 private theorem fderiv_form_apply (x u a b : R3) :
     fderiv ℝ (fun r : R3 ↦ form r.1) x u a b =
       -u.1 * (a.2.1 * (b.2.2 - x.1 * b.2.1) + b.2.1 * (a.2.2 - x.1 * a.2.1)) := by
-  have hd := differentiableAt_form x
-  -- Evaluating the derivative of the bilinear field is differentiating its evaluations.
-  have h₁ : fderiv ℝ (fun r : R3 ↦ form r.1 a) x =
-      (fderiv ℝ (fun r : R3 ↦ form r.1) x).flip a := by
-    rw [fderiv_clm_apply hd (differentiableAt_const a)]
-    simp
-  have h₂ : fderiv ℝ (fun r : R3 ↦ form r.1 a b) x =
-      (fderiv ℝ (fun r : R3 ↦ form r.1 a) x).flip b := by
-    rw [fderiv_clm_apply (hd.clm_apply (differentiableAt_const a)) (differentiableAt_const b)]
-    simp
   have hP : HasFDerivAt (fun r : R3 ↦ form r.1 a b)
       ((-(a.2.1 * (b.2.2 - x.1 * b.2.1) + b.2.1 * (a.2.2 - x.1 * a.2.1))) •
         ContinuousLinearMap.fst ℝ ℝ (ℝ × ℝ)) x := by
@@ -99,9 +87,11 @@ private theorem fderiv_form_apply (x u a b : R3) :
       simp [form_apply]
     · congr 1
       ring
-  have h₃ := congrArg (fun L ↦ L u) (h₂.symm.trans hP.fderiv)
-  simp only [ContinuousLinearMap.flip_apply, h₁] at h₃
-  rw [h₃]
+  -- Evaluating the derivative of the bilinear field is differentiating its evaluations.
+  have h := TauCeti.Manifold.fderiv_bilin_apply (differentiableAt_form x)
+    (differentiableAt_const a) (differentiableAt_const b) u
+  simp only [fderiv_const_apply, map_zero, zero_apply, add_zero, hP.fderiv] at h
+  rw [← h]
   simp
   ring
 
@@ -187,58 +177,49 @@ theorem christoffelMap_leviCivitaConnection_apply {ι : Type*} [Fintype ι]
 
 /-! ### Left-invariant vector fields -/
 
-/-- The left-invariant vector field of `Nil` with value `a` at the identity. At a point with first
-coordinate `x` its value is `(a₁, a₂, a₃ + x a₂)`, the image of `a` under the differential of left
-multiplication; see `mfderiv_mul_left_leftInvariantField`. -/
-def leftInvariantField (a : R3) : Π p : Nil, TangentSpace 𝓘(ℝ, R3) p :=
-  fun p ↦ (tangentSpaceCastModel 𝓘(ℝ, R3) p).symm (a.1, a.2.1, a.2.2 + p.x * a.2.1)
-
-/-- The value of the left-invariant field `X_a` at a point with first coordinate `x` is
-`(a₁, a₂, a₃ + x a₂)`, read in the model space `ℝ³`. -/
+/-- The left-invariant vector field `mulInvariantVectorField a` of `Nil`, the left translate of
+the tangent vector `a` at the identity, has value `(a₁, a₂, a₃ + x a₂)` at a point with first
+coordinate `x`, read in the model space `ℝ³`. -/
 @[simp]
-theorem tangentSpaceCastModel_leftInvariantField (a : R3) (p : Nil) :
-    tangentSpaceCastModel 𝓘(ℝ, R3) p (leftInvariantField a p) =
+theorem tangentSpaceCastModel_mulInvariantVectorField (a : R3) (p : Nil) :
+    tangentSpaceCastModel 𝓘(ℝ, R3) p (mulInvariantVectorField (I := 𝓘(ℝ, R3)) a p) =
       (a.1, a.2.1, a.2.2 + p.x * a.2.1) := by
-  simp [leftInvariantField]
-
-/-- The field `X_a` is left-invariant: the differential of left multiplication by `p` carries its
-value at `q` to its value at `p * q`. -/
-theorem mfderiv_mul_left_leftInvariantField (a : R3) (p q : Nil) :
-    mfderiv 𝓘(ℝ, R3) 𝓘(ℝ, R3) (p * ·) q (leftInvariantField a q) =
-      leftInvariantField a (p * q) := by
-  apply (tangentSpaceCastModel 𝓘(ℝ, R3) (p * q)).injective
-  rw [tangentSpaceCastModel_mfderiv_mul_left, tangentSpaceCastModel_leftInvariantField,
-    tangentSpaceCastModel_leftInvariantField]
-  simp only [linearPart, xL, yL, zL, x_mul, ContinuousLinearMap.prod_apply, add_apply,
+  -- Both casts are the identity of `ℝ³`, so the value is the left translate of `a` from `1`.
+  refine (tangentSpaceCastModel_mfderiv_mul_left p 1 a).trans ?_
+  change linearPart p a = _
+  simp only [linearPart, xL, yL, zL, ContinuousLinearMap.prod_apply, add_apply,
     smul_apply, ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd',
     ContinuousLinearMap.coe_comp, Function.comp_apply, smul_eq_mul]
-  ring_nf
 
 /-- **The Levi-Civita connection of Nil on left-invariant fields.** The Levi-Civita derivative of
 the left-invariant field `X_b` along `X_a` is the left-invariant field `X_c` with
 `c = ½ (a₂ b₃ + b₂ a₃, -(a₁ b₃ + b₁ a₃), a₁ b₂ - a₂ b₁)`. -/
-theorem leviCivitaConnection_leftInvariantField (a b : R3) (p : Nil) :
-    leviCivitaConnection 𝓘(ℝ, R3) Nil (leftInvariantField b) p (leftInvariantField a p) =
-      leftInvariantField ((a.2.1 * b.2.2 + b.2.1 * a.2.2) / 2,
+theorem leviCivitaConnection_mulInvariantVectorField (a b : R3) (p : Nil) :
+    leviCivitaConnection 𝓘(ℝ, R3) Nil (mulInvariantVectorField (I := 𝓘(ℝ, R3)) b) p
+        (mulInvariantVectorField (I := 𝓘(ℝ, R3)) a p) =
+      mulInvariantVectorField (I := 𝓘(ℝ, R3)) (G := Nil) ((a.2.1 * b.2.2 + b.2.1 * a.2.2) / 2,
         -(a.1 * b.2.2 + b.1 * a.2.2) / 2, (a.1 * b.2.1 - a.2.1 * b.1) / 2) p := by
   -- Read in `ℝ³`, the field `X_b` is the affine map `r ↦ (b₁, b₂, b₃ + r₁ b₂)`.
   have hV : HasFDerivAt (fun r : R3 ↦ tangentSpaceCastModel 𝓘(ℝ, R3) (toProd.symm r)
-      (leftInvariantField b (toProd.symm r)))
+      (mulInvariantVectorField (I := 𝓘(ℝ, R3)) b (toProd.symm r)))
       ((0 : R3 →L[ℝ] ℝ).prod ((0 : R3 →L[ℝ] ℝ).prod
         (b.2.1 • ContinuousLinearMap.fst ℝ ℝ (ℝ × ℝ)))) (toProd p) := by
     have h := (hasFDerivAt_const b.1 (toProd p)).prodMk
       ((hasFDerivAt_const b.2.1 (toProd p)).prodMk
         (((hasFDerivAt_fst (𝕜 := ℝ) (p := toProd p)).mul_const b.2.1).const_add b.2.2))
     convert h using 1
-    ext <;> simp
-  have h := leviCivitaConnection_eq_fderiv_add p (leftInvariantField b) hV.differentiableAt
-    (a.1, a.2.1, a.2.2 + p.x * a.2.1)
+    · funext r
+      rw [tangentSpaceCastModel_mulInvariantVectorField]
+      simp [x]
+  have h := leviCivitaConnection_eq_fderiv_add p (mulInvariantVectorField (I := 𝓘(ℝ, R3)) b)
+    hV.differentiableAt (a.1, a.2.1, a.2.2 + p.x * a.2.1)
   apply (tangentSpaceCastModel 𝓘(ℝ, R3) p).injective
   -- The direction `X_a p` is the tangent vector `(a₁, a₂, a₃ + x a₂)`.
-  have ha : leftInvariantField a p =
-      (tangentSpaceCastModel 𝓘(ℝ, R3) p).symm (a.1, a.2.1, a.2.2 + p.x * a.2.1) := rfl
-  rw [ha, h, hV.fderiv, tangentSpaceCastModel_leftInvariantField,
-    tangentSpaceCastModel_leftInvariantField, christoffel]
+  have ha : mulInvariantVectorField (I := 𝓘(ℝ, R3)) a p =
+      (tangentSpaceCastModel 𝓘(ℝ, R3) p).symm (a.1, a.2.1, a.2.2 + p.x * a.2.1) := by
+    rw [ContinuousLinearEquiv.eq_symm_apply, tangentSpaceCastModel_mulInvariantVectorField]
+  rw [ha, h, hV.fderiv, tangentSpaceCastModel_mulInvariantVectorField,
+    tangentSpaceCastModel_mulInvariantVectorField, christoffel]
   simp only [ContinuousLinearMap.prod_apply, zero_apply, smul_apply,
     ContinuousLinearMap.coe_fst', smul_eq_mul, Prod.mk_add_mk, Prod.mk.injEq]
   refine ⟨by ring, by ring, by ring⟩

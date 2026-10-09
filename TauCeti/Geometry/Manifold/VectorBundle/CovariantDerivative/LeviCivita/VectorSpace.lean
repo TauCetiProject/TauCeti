@@ -125,7 +125,7 @@ end ChristoffelMap
 section Christoffel
 
 /-- The derivative of `y ↦ g y (A y) (B y)` for a field `g` of bilinear forms: the product rule. -/
-private theorem fderiv_bilin_apply {g : F → F →L[ℝ] F →L[ℝ] ℝ} {A B : F → F} {x : F}
+theorem fderiv_bilin_apply {g : F → F →L[ℝ] F →L[ℝ] ℝ} {A B : F → F} {x : F}
     (hg : DifferentiableAt ℝ g x) (hA : DifferentiableAt ℝ A x) (hB : DifferentiableAt ℝ B x)
     (u : F) :
     fderiv ℝ (fun y ↦ g y (A y) (B y)) x u =
