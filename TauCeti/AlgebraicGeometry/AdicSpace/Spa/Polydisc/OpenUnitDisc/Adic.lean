@@ -205,7 +205,7 @@ omit [CompleteSpace K] [IsTateRing K] in
 /-- **The open unit disc is not quasi-compact.** Its points form the exhaustion union
 `discExhaustionUnion c` inside the closed unit disc, which Gauss points of radius close to one
 prevent from being compact. -/
-theorem noncompactSpace_openUnitDiscPreAdicSpace (hc : IsPseudoUniformizer c) :
+instance noncompactSpace_openUnitDiscPreAdicSpace (hc : IsPseudoUniformizer c) :
     NoncompactSpace (openUnitDiscPreAdicSpace c P hc) := by
   obtain ⟨hc₀, hc₁⟩ := isPseudoUniformizer_iff_norm_lt_one.mp hc
   refine ⟨fun h ↦ not_isCompact_discExhaustionUnion hc₀ hc₁ ?_⟩
@@ -219,9 +219,8 @@ omit [CompleteSpace K] [IsTateRing K] in
 /-- **The open unit disc is not affinoid.** The underlying space of an affinoid pre-adic space
 is spectral, hence quasi-compact, and the open unit disc is not quasi-compact. -/
 theorem not_isAffinoid_openUnitDiscPreAdicSpace (hc : IsPseudoUniformizer c) :
-    ¬ PreAdicSpace.isAffinoid (openUnitDiscPreAdicSpace c P hc) := fun h ↦
-  not_compactSpace_iff.mpr (noncompactSpace_openUnitDiscPreAdicSpace c P hc)
-    (PreAdicSpace.spectralSpace_of_isAffinoid h).toCompactSpace
+    ¬ PreAdicSpace.isAffinoid (openUnitDiscPreAdicSpace c P hc) :=
+  PreAdicSpace.not_isAffinoid_of_noncompactSpace
 
 end TauCeti.ValuationSpectrum
 
