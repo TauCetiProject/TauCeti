@@ -84,12 +84,6 @@ theorem fixed_of_antitone_of_strictMax (hanti : Antitone fun t ↦ g (φ t x))
   · calc φ t x = φ t (φ (-t) x) := by rw [hneg (-t) (neg_nonpos.2 ht)]
       _ = x := by rw [← map_add, add_neg_cancel, map_zero_apply]
 
-/-- Reversing the flow and negating the function preserves antitonicity along an orbit. -/
-private theorem antitone_reverse_neg (hanti : Antitone fun t ↦ g (φ t y)) :
-    Antitone fun t ↦ (-g) (φ.reverse t y) := fun s t hst ↦ by
-  simp only [reverse_apply, Pi.neg_apply]
-  exact neg_le_neg (hanti (neg_le_neg hst))
-
 /-- **A strict minimum is a fixed point.** A strict global minimum of a function antitone along
 its orbit is fixed by the flow. -/
 theorem fixed_of_antitone_of_strictMin (hanti : Antitone fun t ↦ g (φ t x))
