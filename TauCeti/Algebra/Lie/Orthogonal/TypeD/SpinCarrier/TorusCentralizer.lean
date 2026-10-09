@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.StandardComodule
-import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
 # The torus centralizer of the type-D spin carrier
@@ -29,8 +28,7 @@ identification is needed before this calculation yields a maximal torus.
 * `TauCeti.TypeDSpinCarrier.centralizer_range_weightTorusPoints_eq_comap_diagonalTorus`: the
   centralizer as the inverse image of the ambient diagonal torus.
 * `TauCeti.TypeDSpinCarrier.diagonalPoints`: the diagonal points of the spin carrier.
-* `TauCeti.TypeDSpinCarrier.
-  centralizer_range_weightTorusPoints_eq_diagonalPoints_of_weightChar_basisWeight_injective`:
+* `centralizer_range_weightTorusPoints_eq_diagonalPoints_of_weightChar_basisWeight_injective`:
   the torus-centralizer calculation when the spin weight characters are distinct.
 * `TauCeti.TypeDSpinCarrier.eq_diagonalPoints_of_le_of_isMulCommutative`: maximality of the
   diagonal carrier points among commutative point subgroups.
