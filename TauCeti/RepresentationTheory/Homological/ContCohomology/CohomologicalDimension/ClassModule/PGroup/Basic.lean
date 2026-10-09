@@ -109,8 +109,8 @@ theorem abelianizationProPClass_generates_of_isPGroup (hp : p.Prime)
     AddSubgroup.zmultiples (abelianizationProPClass p G V hV) = ⊤ ∧
       Nat.card (H2 (G ⧸ V) (Additive (abelianizationProP p G V))) = Nat.card (G ⧸ V) := by
   -- Induct on `#(G ⧸ V)`, using the standalone H¹ vanishing theorem for the smaller quotient.
-  -- A nontrivial `p`-group `G ⧸ V` has a normal subgroup of index `p`, whose preimage `W` satisfies `#(G ⧸ W) = p`: the prime-order
-  -- case applies to `W ◁ G`, the induction hypothesis to `V.subgroupOf W ◁ W`, and the step
+  -- A nontrivial `p`-group `G ⧸ V` has a normal subgroup of index `p`, whose preimage `W`
+  -- satisfies `#(G ⧸ W) = p`: the prime-order case applies to `W ◁ G`, the induction hypothesis to `V.subgroupOf W ◁ W`, and the step
   -- lemmas combine them.
   induction hn : Nat.card (G ⧸ V) using Nat.strong_induction_on generalizing G V with
   | h n ih =>
