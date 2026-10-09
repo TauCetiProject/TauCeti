@@ -9,7 +9,6 @@ public import Mathlib.Topology.Algebra.Ring.Ideal
 public import TauCeti.RingTheory.Huber.StronglyNoetherian
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
 
-import TauCeti.RingTheory.Huber.Completion
 import TauCeti.RingTheory.Huber.OpenMapping
 import TauCeti.RingTheory.Huber.WeightedEval.Completion
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
@@ -105,14 +104,14 @@ it.
   presented by one variable for each element of each `Tᵢ`.
 * `TauCeti.Huber.IsTopologicallyFiniteType.isStrictlyTopologicallyFiniteType` and
   `TauCeti.Huber.isStrictlyTopologicallyFiniteType_iff_isTopologicallyFiniteType`: over a Tate
-  ring the two notions agree.
+  ring the two notions agree, Wedhorn Proposition 6.34.
 * `TauCeti.Huber.IsTopologicallyFiniteType.isStronglyNoetherian`: over a strongly noetherian Tate
   ring, an algebra topologically of finite type is strongly noetherian.
 
 ## References
 
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), §6.6, Definition 6.28 and
-  Proposition and Definition 6.29.
+  Proposition and Definition 6.29, and Proposition 6.34.
 -/
 
 public section
@@ -378,19 +377,11 @@ end OpenMappingPresentation
 
 /-! ### Weighted presentations over a Tate ring
 
-Over a Tate ring the weights can be removed: the completed weighted algebra `A⟨X₁, …, Xₖ⟩_T` is a
-quotient of an unweighted `A⟨Yⱼ⟩`, with one variable `Y_{(i, t)}` for each `t ∈ Tᵢ`, sent to
-`t Xᵢ`. These elements are power-bounded
-(`TauCeti.Huber.isPowerBounded_weightedC_mul_weightedX`), so the substitution is defined by the
-universal property of `A⟨Yⱼ⟩`. Coefficientwise, a polynomial whose coefficient at `ν` lies in
-`Tᵛ · U` is the image of one with coefficients in `U`; together with density of the polynomials
-this makes the closure of the image of every neighbourhood of zero a neighbourhood of zero, and
-Henkel's approximation argument (`TauCeti.mem_image_of_mem_closure_image`) removes the closure.
-The image is then an open subring containing every constant and, because a pseudouniformiser is
-a unit, every variable; so it is everything. The open mapping theorem makes the surjection open.
-
-The Tate hypothesis is used twice: to invert the pseudouniformiser, and in the open mapping
-theorem.
+Over a Tate ring the weights can be removed: the completed weighted algebra `A⟨X₁, …, Xₖ⟩_T` is an
+open quotient of an unweighted `A⟨Yⱼ⟩`, with one variable `Y_{(i, t)}` for each `t ∈ Tᵢ`, sent to
+`t Xᵢ`. Consequently the two finite-type notions of Wedhorn's §6.6 coincide over a Tate ring
+(Wedhorn Proposition 6.34), and strong noetherianness passes to every algebra topologically of
+finite type over a strongly noetherian Tate ring, which is the input to Corollary 8.35.
 -/
 
 section Lift
@@ -697,7 +688,8 @@ theorem IsTopologicallyFiniteType.isStrictlyTopologicallyFiniteType {B : Type*} 
   exact (isStrictlyTopologicallyFiniteType_algebraMap_completion_weightedRestrictedSubring hT
     hTfin).comp_isOpenQuotientMap hπ
 
-/-- Over a Tate ring the two finite-type notions of Wedhorn's §6.6 agree. -/
+/-- **Wedhorn Proposition 6.34**: over a Tate ring the two finite-type notions of Wedhorn's §6.6
+agree. Wedhorn assumes `B` complete `f`-adic; no hypothesis on `B` is needed here. -/
 theorem isStrictlyTopologicallyFiniteType_iff_isTopologicallyFiniteType {B : Type*} [CommRing B]
     [TopologicalSpace B] {φ : A →+* B} :
     IsStrictlyTopologicallyFiniteType φ ↔ IsTopologicallyFiniteType φ :=
