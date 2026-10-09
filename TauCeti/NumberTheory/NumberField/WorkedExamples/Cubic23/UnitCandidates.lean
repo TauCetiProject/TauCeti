@@ -68,7 +68,7 @@ namespace TauCeti.NumberField.Cubic23
 
 /-- The monic cubic `X³ + aX² + bX + c` with coefficient triple `t = (a, b, c)`. -/
 noncomputable def cubicCandidate (t : ℤ × ℤ × ℤ) : ℤ[X] :=
-  X ^ 3 + C t.1 * X ^ 2 + C t.2.1 * X + C t.2.2
+  Polynomial.monicOfCoeff ![t.2.2, t.2.1, t.1]
 
 /-- The coefficient triples `(a, b, c)` with `a, b ∈ {-3, …, 3}` and `c = ±1`. -/
 def cubicCandidateCoeffs : Finset (ℤ × ℤ × ℤ) :=
@@ -86,35 +86,35 @@ theorem mem_cubicCandidateCoeffs_iff (t : ℤ × ℤ × ℤ) :
   simp [cubicCandidateCoeffs]
 
 @[simp]
-theorem natDegree_cubicCandidate (t : ℤ × ℤ × ℤ) : (cubicCandidate t).natDegree = 3 := by
-  unfold cubicCandidate
-  compute_degree!
+theorem natDegree_cubicCandidate (t : ℤ × ℤ × ℤ) : (cubicCandidate t).natDegree = 3 :=
+  Polynomial.natDegree_monicOfCoeff _
 
 @[simp]
-theorem monic_cubicCandidate (t : ℤ × ℤ × ℤ) : (cubicCandidate t).Monic := by
-  unfold cubicCandidate
-  monicity!
+theorem monic_cubicCandidate (t : ℤ × ℤ × ℤ) : (cubicCandidate t).Monic :=
+  Polynomial.monic_monicOfCoeff _
 
 @[simp]
 theorem coeff_two_cubicCandidate (t : ℤ × ℤ × ℤ) : (cubicCandidate t).coeff 2 = t.1 := by
-  simp only [cubicCandidate, coeff_add, coeff_C_mul, coeff_X_pow, coeff_X, coeff_C]
-  norm_num
+  exact Polynomial.coeff_monicOfCoeff _ (2 : Fin 3)
 
 @[simp]
 theorem coeff_one_cubicCandidate (t : ℤ × ℤ × ℤ) : (cubicCandidate t).coeff 1 = t.2.1 := by
-  simp only [cubicCandidate, coeff_add, coeff_C_mul, coeff_X_pow, coeff_X, coeff_C]
-  norm_num
+  exact Polynomial.coeff_monicOfCoeff _ (1 : Fin 3)
 
 @[simp]
 theorem coeff_zero_cubicCandidate (t : ℤ × ℤ × ℤ) : (cubicCandidate t).coeff 0 = t.2.2 := by
-  simp [cubicCandidate]
+  exact Polynomial.coeff_monicOfCoeff _ (0 : Fin 3)
 
 @[simp]
 theorem aeval_cubicCandidate (t : ℤ × ℤ × ℤ) (x : ℝ) :
     aeval x (cubicCandidate t) = x ^ 3 + t.1 * x ^ 2 + t.2.1 * x + t.2.2 := by
-  simp [cubicCandidate]
+  rw [cubicCandidate, ← eval_map_algebraMap, Polynomial.map_monicOfCoeff,
+    Polynomial.eval_monicOfCoeff]
+  simp [Fin.sum_univ_three]
+  ring
 
 /-- The discriminant of `X³ + aX² + bX + c` is `a²b² - 4b³ - 4a³c - 27c² + 18abc`. -/
+@[simp]
 theorem discr_cubicCandidate (t : ℤ × ℤ × ℤ) :
     (cubicCandidate t).discr = t.1 ^ 2 * t.2.1 ^ 2 - 4 * t.2.1 ^ 3 - 4 * t.1 ^ 3 * t.2.2 -
       27 * t.2.2 ^ 2 + 18 * t.1 * t.2.1 * t.2.2 := by
@@ -138,10 +138,14 @@ theorem cubicCandidate_injective : Function.Injective cubicCandidate := by
 /-- A monic cubic is the candidate polynomial of its coefficients. -/
 theorem eq_cubicCandidate_of_monic {f : ℤ[X]} (hm : f.Monic) (hd : f.natDegree = 3) :
     f = cubicCandidate (f.coeff 2, f.coeff 1, f.coeff 0) := by
-  conv_lhs => rw [hm.as_sum, hd]
-  simp only [Finset.sum_range_succ, Finset.sum_range_zero, cubicCandidate, pow_zero, pow_one,
-    mul_one, zero_add]
-  ring
+  calc
+    f = Polynomial.monicOfCoeff (fun i : Fin 3 ↦ f.coeff (i : ℕ)) :=
+      (Polynomial.monicOfCoeff_coeff hm hd).symm
+    _ = cubicCandidate (f.coeff 2, f.coeff 1, f.coeff 0) := by
+      unfold cubicCandidate
+      congr 1
+      ext i
+      fin_cases i <;> rfl
 
 /-- There are exactly `98` candidates. -/
 theorem card_cubicCandidates : cubicCandidates.card = 98 := by
@@ -169,9 +173,9 @@ theorem mem_cubicCandidates_iff (f : ℤ[X]) :
     omega
 
 /-- In a cubic field, the candidate list `unitCandidates K B` is `cubicCandidates`
-whenever `1 ≤ B < 4 / 3`. -/
+whenever `1 ≤ B < 3 / 2`. -/
 theorem unitCandidates_eq_cubicCandidates_of_finrank_eq_three {K : Type*} [Field K]
-    [NumberField K] (hK : Module.finrank ℚ K = 3) {B : ℝ} (hB₁ : 1 ≤ B) (hB : B < 4 / 3) :
+    [NumberField K] (hK : Module.finrank ℚ K = 3) {B : ℝ} (hB₁ : 1 ≤ B) (hB : B < 3 / 2) :
     unitCandidates K B = cubicCandidates := by
   ext f
   rw [mem_unitCandidates_iff, mem_cubicCandidates_iff, hK]
@@ -216,14 +220,23 @@ theorem card_filter_cubicCandidates_aeval_one_eq_zero :
 
 section Roots
 
-variable {B : ℝ} (hB : B ^ 3 - B - 1 = 0) (hB₁ : 1 < B)
-include hB hB₁
+variable {B : ℝ} (hB : B ^ 3 - B - 1 = 0)
+include hB
+
+private theorem one_lt_of_pow_three_sub_self_sub_one_eq_zero : 1 < B := by
+  by_contra h
+  have hB₁ : B ≤ 1 := le_of_not_gt h
+  rcases le_or_gt B 0 with hB₀ | hB₀
+  · nlinarith [mul_nonpos_of_nonpos_of_nonneg hB₀ (sq_nonneg (B + 1)),
+      sq_nonneg (B + 1 / 2)]
+  · nlinarith [mul_nonneg hB₀.le (sub_nonneg.mpr hB₁),
+      mul_nonneg (sub_nonneg.mpr hB₁) (sq_nonneg B)]
 
 private theorem five_fourths_lt : 5 / 4 < B := by
+  have hB₁ := one_lt_of_pow_three_sub_self_sub_one_eq_zero hB
   by_contra h
   nlinarith [mul_nonneg (sub_nonneg.mpr hB₁.le) (sub_nonneg.mpr hB₁.le)]
 
-omit hB₁ in
 /-- The only candidate with a root at the real root `B` of `X³ - X - 1` is `X³ - X - 1`. -/
 private theorem eq_of_aeval_eq_zero {t : ℤ × ℤ × ℤ} (ht : aeval B (cubicCandidate t) = 0) :
     t = (0, -1, -1) := by
@@ -257,7 +270,7 @@ private theorem eq_of_aeval_eq_zero {t : ℤ × ℤ × ℤ} (ht : aeval B (cubic
   · simp only
     exact_mod_cast (by linarith : (t.2.2 : ℚ) = -1)
 
-omit hB hB₁ in
+omit hB in
 /-- A polynomial negative at `1` and positive at `5 / 4` has a root in `(1, B)` when
 `5 / 4 < B`. -/
 private theorem exists_root_Ioo_of_sign (h54 : 5 / 4 < B) (t : ℤ × ℤ × ℤ)
@@ -282,9 +295,9 @@ private theorem exists_root_Ioo_iff {t : ℤ × ℤ × ℤ} (ht : t ∈ cubicCan
     · exact Or.inl (Prod.ext h.1 (Prod.ext h.2.1 h.2.2))
     · exact Or.inr (Prod.ext h.1 (Prod.ext h.2.1 h.2.2))
   · rintro (rfl | rfl)
-    · exact exists_root_Ioo_of_sign (five_fourths_lt hB hB₁) (1, -2, -1) (by norm_num)
+    · exact exists_root_Ioo_of_sign (five_fourths_lt hB) (1, -2, -1) (by norm_num)
         (by norm_num)
-    · exact exists_root_Ioo_of_sign (five_fourths_lt hB hB₁) (2, -3, -1) (by norm_num)
+    · exact exists_root_Ioo_of_sign (five_fourths_lt hB) (2, -3, -1) (by norm_num)
         (by norm_num)
 
 /-- A candidate coefficient triple has a root in `[1, B]` exactly when it has a root at `1`, is
@@ -292,6 +305,7 @@ one of the two survivors of the open-interval test, or is `X³ - X - 1`. -/
 theorem exists_root_Icc_iff {t : ℤ × ℤ × ℤ} (ht : t ∈ cubicCandidateCoeffs) :
     (∃ x ∈ Set.Icc 1 B, aeval x (cubicCandidate t) = 0) ↔
       1 + t.1 + t.2.1 + t.2.2 = 0 ∨ t = (1, -2, -1) ∨ t = (2, -3, -1) ∨ t = (0, -1, -1) := by
+  have hB₁ := one_lt_of_pow_three_sub_self_sub_one_eq_zero hB
   constructor
   · rintro ⟨x, ⟨hx1, hxB⟩, hx⟩
     rcases hx1.eq_or_lt with rfl | hx1
@@ -300,7 +314,7 @@ theorem exists_root_Icc_iff {t : ℤ × ℤ × ℤ} (ht : t ∈ cubicCandidateCo
       exact_mod_cast (by simpa using hx : (1 : ℝ) + t.1 + t.2.1 + t.2.2 = 0)
     rcases hxB.eq_or_lt with rfl | hxB
     · exact Or.inr (Or.inr (Or.inr (eq_of_aeval_eq_zero hB hx)))
-    · rcases (exists_root_Ioo_iff hB hB₁ ht).mp ⟨x, ⟨hx1, hxB⟩, hx⟩ with h | h
+    · rcases (exists_root_Ioo_iff hB ht).mp ⟨x, ⟨hx1, hxB⟩, hx⟩ with h | h
       · exact Or.inr (Or.inl h)
       · exact Or.inr (Or.inr (Or.inl h))
   · rintro (h | h | h | rfl)
@@ -309,9 +323,9 @@ theorem exists_root_Icc_iff {t : ℤ × ℤ × ℤ} (ht : t ∈ cubicCandidateCo
       have h' : ((1 + t.1 + t.2.1 + t.2.2 : ℤ) : ℝ) = 0 := by rw [h, Int.cast_zero]
       push_cast at h'
       linear_combination h'
-    · obtain ⟨x, hx, hx0⟩ := (exists_root_Ioo_iff hB hB₁ ht).mpr (Or.inl h)
+    · obtain ⟨x, hx, hx0⟩ := (exists_root_Ioo_iff hB ht).mpr (Or.inl h)
       exact ⟨x, Set.Ioo_subset_Icc_self hx, hx0⟩
-    · obtain ⟨x, hx, hx0⟩ := (exists_root_Ioo_iff hB hB₁ ht).mpr (Or.inr h)
+    · obtain ⟨x, hx, hx0⟩ := (exists_root_Ioo_iff hB ht).mpr (Or.inr h)
       exact ⟨x, Set.Ioo_subset_Icc_self hx, hx0⟩
     · refine ⟨B, ⟨hB₁.le, le_rfl⟩, ?_⟩
       rw [aeval_cubicCandidate]
@@ -325,13 +339,17 @@ theorem filter_cubicCandidates_exists_root_Ioo :
     cubicCandidates.filter (fun f ↦ ∃ x ∈ Set.Ioo 1 B, aeval x f = 0) =
       {X ^ 3 + X ^ 2 - 2 * X - 1, X ^ 3 + 2 * X ^ 2 - 3 * X - 1} := by
   have h₁ : cubicCandidate (1, -2, -1) = X ^ 3 + X ^ 2 - 2 * X - 1 := by
-    simp [cubicCandidate]
+    apply Polynomial.funext
+    intro x
+    simp [cubicCandidate, Polynomial.eval_monicOfCoeff, Fin.sum_univ_three]
     ring
   have h₂ : cubicCandidate (2, -3, -1) = X ^ 3 + 2 * X ^ 2 - 3 * X - 1 := by
-    simp [cubicCandidate]
+    apply Polynomial.funext
+    intro x
+    simp [cubicCandidate, Polynomial.eval_monicOfCoeff, Fin.sum_univ_three]
     ring
   rw [cubicCandidates, Finset.filter_image, Finset.filter_congr fun t ht ↦
-    exists_root_Ioo_iff hB hB₁ ht, ← h₁, ← h₂]
+    exists_root_Ioo_iff hB ht, ← h₁, ← h₂]
   ext f
   simp only [Finset.mem_image, Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton]
   constructor
@@ -346,7 +364,7 @@ open scoped Classical in
 /-- Exactly two of the `98` candidates have a real root in `(1, B)`. -/
 theorem card_filter_cubicCandidates_exists_root_Ioo :
     (cubicCandidates.filter (fun f ↦ ∃ x ∈ Set.Ioo 1 B, aeval x f = 0)).card = 2 := by
-  rw [filter_cubicCandidates_exists_root_Ioo hB hB₁]
+  rw [filter_cubicCandidates_exists_root_Ioo hB]
   refine Finset.card_pair fun h ↦ ?_
   have := congrArg (eval 2) h
   norm_num at this
@@ -359,7 +377,7 @@ theorem card_filter_cubicCandidates_exists_root_Icc :
     (cubicCandidates.filter (fun f ↦ ∃ x ∈ Set.Icc 1 B, aeval x f = 0)).card = 15 := by
   rw [cubicCandidates, Finset.filter_image,
     Finset.card_image_of_injective _ cubicCandidate_injective,
-    Finset.filter_congr fun t ht ↦ exists_root_Icc_iff hB hB₁ ht]
+    Finset.filter_congr fun t ht ↦ exists_root_Icc_iff hB ht]
   rfl
 
 /-- No candidate of discriminant `-23` has a real root in `(1, B)`. -/
@@ -369,7 +387,7 @@ theorem not_exists_root_Ioo_of_discr_eq {f : ℤ[X]} (hf : f ∈ cubicCandidates
   intro h
   have hmem : f ∈ cubicCandidates.filter (fun f ↦ ∃ x ∈ Set.Ioo 1 B, aeval x f = 0) :=
     Finset.mem_filter.mpr ⟨hf, h⟩
-  rw [filter_cubicCandidates_exists_root_Ioo hB hB₁, Finset.mem_insert,
+  rw [filter_cubicCandidates_exists_root_Ioo hB, Finset.mem_insert,
     Finset.mem_singleton] at hmem
   rcases hmem with rfl | rfl
   · rw [discr_X_pow_three_add_X_sq_sub_two_mul_X_sub_one] at hd
@@ -417,6 +435,7 @@ theorem unitCandidates_eq_cubicCandidates (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2
     {u : (𝓞 K)ˣ} (hu : (u : 𝓞 K) = θ ^ 2 - θ) :
     unitCandidates K (w u) = cubicCandidates :=
   unitCandidates_eq_cubicCandidates_of_finrank_eq_three (finrank_eq_three hmin hgen)
-    (by linarith [(unit_value_mem_Ioo hmin hw hu).1]) (unit_value_mem_Ioo hmin hw hu).2
+    (by linarith [(unit_value_mem_Ioo hmin hw hu).1])
+    (by linarith [(unit_value_mem_Ioo hmin hw hu).2])
 
 end TauCeti.NumberField.Cubic23

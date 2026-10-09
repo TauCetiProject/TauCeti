@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Units.Elimination.Basic
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import TauCeti.NumberTheory.NumberField.WorkedExamples.Cubic23.Invariants
 
 /-!
@@ -372,17 +373,18 @@ theorem cubicUnitEliminationCertificate (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 +
     constructor
     · exact_mod_cast hb_lower_real
     · exact_mod_cast hb_upper_real
-  have h3 : g.coeff 3 = 1 := by rw [← hdeg]; exact hmonic.coeff_natDegree
   have heval (x : ℝ) : aeval x g = x ^ 3 + g.coeff 2 * x ^ 2 + g.coeff 1 * x + g.coeff 0 := by
-    rw [aeval_eq_sum_range, hdeg]
-    simp only [Finset.sum_range_succ, Finset.sum_range_zero, zsmul_eq_mul, h3, Int.cast_one,
-      pow_zero, pow_one, zero_add]
+    conv_lhs => rw [← Polynomial.monicOfCoeff_coeff hmonic hdeg]
+    rw [← eval_map_algebraMap, Polynomial.map_monicOfCoeff, Polynomial.eval_monicOfCoeff]
+    simp only [Fin.sum_univ_three, Fin.val_zero, Fin.val_one, Fin.val_two, pow_zero, pow_one,
+      mul_one, eq_intCast]
     ring
   have hpoly : g = X ^ 3 + C (g.coeff 2) * X ^ 2 + C (g.coeff 1) * X +
       C (g.coeff 0) := by
-    conv_lhs => rw [hmonic.as_sum, hdeg]
-    simp only [Finset.sum_range_succ, Finset.sum_range_zero, pow_zero, pow_one,
-      mul_one, zero_add]
+    conv_lhs => rw [← Polynomial.monicOfCoeff_coeff hmonic hdeg]
+    apply Polynomial.funext
+    intro x
+    simp [Polynomial.eval_monicOfCoeff, Fin.sum_univ_three]
     ring
   obtain ⟨haL, haU⟩ := ha4
   obtain ⟨hbL, hbU⟩ := hb4
