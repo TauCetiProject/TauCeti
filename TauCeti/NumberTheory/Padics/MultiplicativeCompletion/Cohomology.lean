@@ -77,6 +77,16 @@ private noncomputable def quotientGaloisSubgroupEquiv (ι : L →ₐ[K] Separabl
   (QuotientGroup.quotientMulEquivOfEq (galoisSubgroup_toSubgroup K L ι)).trans
     (quotientFixingSubgroupFieldRangeEquiv K L ι)
 
+omit [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+  [CharZero L] [Algebra ℚ_[p] K] [Algebra ℚ_[p] L] [IsScalarTower ℚ_[p] K L]
+  [Module.Finite ℚ_[p] L] [ValuativeExtension ℚ_[p] L] in
+/-- `quotientGaloisSubgroupEquiv` sends the class of `g` to the restriction of `g` to `L`. -/
+private theorem quotientGaloisSubgroupEquiv_mk (ι : L →ₐ[K] SeparableClosure K)
+    (g : AbsoluteGaloisGroup K) :
+    quotientGaloisSubgroupEquiv K L ι g = ι.restrictNormalHom g := by
+  rw [quotientGaloisSubgroupEquiv, MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
+    quotientFixingSubgroupFieldRangeEquiv_mk]
+
 /-- `classModuleAddEquiv` intertwines the action of `G_K ⧸ V` on `V^ab(p)` with the action of
 `Gal(L/K)` on `A(L)`, along `G_K ⧸ V ≃ Gal(L/K)`. -/
 private theorem classModuleAddEquiv_smul (ι : L →ₐ[K] SeparableClosure K)
@@ -90,11 +100,9 @@ private theorem classModuleAddEquiv_smul (ι : L →ₐ[K] SeparableClosure K)
   | H g =>
     set e := padicCompletionUnitsEquivAbelianizationProP p K L ι
     obtain ⟨z, rfl⟩ : ∃ z, Additive.ofMul (e z) = m := ⟨e.symm m.toMul, by simp⟩
-    rw [quotientGaloisSubgroupEquiv, MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
-      quotientFixingSubgroupFieldRangeEquiv_mk, classModuleAddEquiv_apply,
-      classModuleAddEquiv_apply, Additive.toMul_smul, toMul_ofMul,
-      ← padicCompletionUnitsEquivAbelianizationProP_smul]
-    simp [e, padicCompletionUnitsRepresentation_apply, padicCompletionUnitsLinearMap_apply]
+    rw [quotientGaloisSubgroupEquiv_mk, classModuleAddEquiv_apply, classModuleAddEquiv_apply]
+    simp [Additive.toMul_smul, ← padicCompletionUnitsEquivAbelianizationProP_smul, e,
+      padicCompletionUnitsRepresentation_apply, padicCompletionUnitsLinearMap_apply]
 
 variable [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] [CharZero K]
 
