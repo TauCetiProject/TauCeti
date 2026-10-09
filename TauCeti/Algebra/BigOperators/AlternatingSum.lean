@@ -43,7 +43,8 @@ theorem sum_Icc_negOnePow_smul_add {G : Type*} [AddCommGroup G] (f : ℤ → G) 
 
 /-- An alternating double sum over `Fin (n + 2) × Fin (n + 1)` vanishes when its terms satisfy the
 semi-simplicial identity `F (j + 1) i = F i j` for `i ≤ j`: the terms indexed by `(j + 1, i)` and
-by `(i, j)` cancel in pairs. -/
+by `(i, j)` cancel in pairs. This is the pairing in the proof of Mathlib's
+`AlgebraicTopology.AlternatingFaceMapComplex.d_squared`, stated for an arbitrary family `F`. -/
 theorem sum_sum_neg_one_pow_smul_eq_zero {G : Type*} [AddCommGroup G] {n : ℕ}
     (F : Fin (n + 2) → Fin (n + 1) → G)
     (hF : ∀ i j : Fin (n + 1), i ≤ j → F j.succ i = F i.castSucc j) :
