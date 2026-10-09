@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
+import Mathlib.RingTheory.KrullDimension.Zero
 import Mathlib.RingTheory.Spectrum.Prime.Noetherian
 
 /-!
@@ -17,9 +18,9 @@ spectrum is connected. Then its augmentation ideal is zero, so the affine group 
 trivial.
 
 A finite-dimensional algebra over a field is Artinian, so its prime spectrum is discrete. A
-connected discrete space has at most one point, so every prime ideal equals the augmentation
-ideal, which is prime as the kernel of the counit to the base field. Hence augmentation elements
-are nilpotent, and reducedness makes them zero.
+connected discrete space has at most one point, so the reduced ring `H` is a field
+(`PrimeSpectrum.subsingleton_iff_isField_of_isReduced`). The counit is then an injective ring
+homomorphism out of a field, so its kernel, the augmentation ideal, is zero.
 
 Neither smoothness nor an algebraically closed base field is needed. Reducedness is essential:
 the Frobenius kernel `αₚ` is finite and connected but not trivial.
@@ -43,21 +44,17 @@ ideal. -/
 theorem augmentation_eq_bot_of_moduleFinite [Module.Finite k H] [IsReduced H]
     [ConnectedSpace (PrimeSpectrum H)] : augmentation k H = ⊥ := by
   let _ : IsArtinianRing H := IsArtinianRing.of_finite k H
-  let _ : Subsingleton (PrimeSpectrum H) :=
-    Set.subsingleton_univ_iff.mp isPreconnected_univ.subsingleton
-  let p : PrimeSpectrum H :=
-    ⟨RingHom.ker (Bialgebra.counitAlgHom k H).toRingHom, RingHom.ker_isPrime _⟩
+  let _ : Nontrivial H := Bialgebra.nontrivial k
+  have hH : IsField H := PrimeSpectrum.subsingleton_iff_isField_of_isReduced.mp
+    subsingleton_of_preconnected_totallyDisconnected
+  have hinj : Function.Injective (Bialgebra.counitAlgHom k H) :=
+    let _ := hH.toField
+    (Bialgebra.counitAlgHom k H).toRingHom.injective
   rw [eq_bot_iff]
   intro x hx
   rw [mem_bot]
-  apply IsNilpotent.eq_zero
-  rw [nilpotent_iff_mem_prime]
-  intro q hq
-  have hpq : p = ⟨q, hq⟩ := Subsingleton.elim _ _
-  have hxp : x ∈ p.asIdeal := by
-    rw [RingHom.mem_ker]
-    exact (mem_augmentation k H).mp hx
-  rw [hpq] at hxp
-  exact hxp
+  refine hinj ?_
+  rw [map_zero]
+  exact (mem_augmentation k H).mp hx
 
 end TauCeti.HopfIdeal
