@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 public import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
+import TauCeti.Algebra.Regular.SMul
 
 /-!
 # Effective Cartier divisors as closed subschemes
@@ -32,11 +33,11 @@ particular, local equations can be shrunk into any neighbourhood
 on every affine open inside `U` is one on every open subset of `U`
 (`Scheme.isSMulRegular_map_of_forall_affineOpens`), and the pullback of a nonzerodivisor along a
 flat morphism to an affine scheme is a nonzerodivisor on every affine open
-(`Scheme.Hom.isSMulRegular_map_appTop`, and `Scheme.Hom.isSMulRegular_map_appTop_ΓSpecIso_inv`
-for a nonzerodivisor of a ring `R` pulled back along `X ⟶ Spec R`, through
-`Scheme.isSMulRegular_ΓSpecIso_inv`); both rest on
-`Scheme.Hom.isSMulRegular_appLE`. A global function that is a nonzerodivisor on every affine open
-is a global equation of an effective Cartier divisor
+(`Scheme.Hom.isSMulRegular_map_appTop`; a nonzerodivisor of a ring `R` is one on `Spec R` by
+`Scheme.isSMulRegular_ΓSpecIso_inv`); both rest on `Scheme.Hom.isSMulRegular_appLE`. A condition
+imposed on the restrictions of a section to all affine opens inside `U` is inherited by its
+restriction to any open `V ⊆ U` (`Scheme.forall_affineOpens_map_of_le`). A global function that
+is a nonzerodivisor on every affine open is a global equation of an effective Cartier divisor
 (`isEffectiveCartier_ofIdealTop_span_singleton`); in particular, so is the pullback of a
 nonzerodivisor along a flat morphism to an affine scheme
 (`Scheme.Hom.isEffectiveCartier_ofIdealTop_span_appTop`).
@@ -81,6 +82,16 @@ theorem Scheme.isSMulRegular_map_of_forall_affineOpens {U V : X.Opens} (hVU : V 
   simp only [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp, homOfLE_comp] at hres
   simpa only [smul_eq_mul] using hres
 
+/-- A condition imposed on the restrictions of a section `b` over `V` to all affine opens inside `V`
+is inherited by the restriction of `b` to any smaller open `V'`. -/
+theorem Scheme.forall_affineOpens_map_of_le {V V' : X.Opens} (hV'V : V' ≤ V) {b : Γ(X, V)}
+    {P : ∀ W : X.affineOpens, Γ(X, W) → Prop}
+    (h : ∀ (W : X.affineOpens) (hWV : W.1 ≤ V), P W (X.presheaf.map (homOfLE hWV).op b))
+    (W : X.affineOpens) (hWV' : W.1 ≤ V') :
+    P W (X.presheaf.map (homOfLE hWV').op (X.presheaf.map (homOfLE hV'V).op b)) := by
+  rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp, homOfLE_comp]
+  exact h W (hWV'.trans hV'V)
+
 /-- Along a flat morphism `f`, the image under `f.appLE` of a nonzerodivisor on an affine open `U`
 of the target is a nonzerodivisor on every affine open `V ⊆ f ⁻¹ᵁ U` of the source. -/
 theorem Scheme.Hom.isSMulRegular_appLE {Y : Scheme.{u}} (f : X ⟶ Y) [Flat f] {U : Y.Opens}
@@ -122,17 +133,7 @@ theorem Scheme.Hom.isSMulRegular_map_appTop {Y : Scheme.{u}} [IsAffine Y] (f : X
 theorem Scheme.isSMulRegular_ΓSpecIso_inv {R : Type u} [CommRing R] {π : R}
     (hπ : IsSMulRegular R π) :
     IsSMulRegular Γ(Spec (.of R), ⊤) ((Scheme.ΓSpecIso (.of R)).inv π) :=
-  (Equiv.isSMulRegular_congr (e := (Scheme.ΓSpecIso (.of R)).symm.commRingCatIsoToRingEquiv)
-    (r := π) (s := (Scheme.ΓSpecIso (.of R)).inv π)
-    fun b ↦ (Scheme.ΓSpecIso (.of R)).inv.hom.map_mul π b).mp hπ
-
-/-- The pullback of a nonzerodivisor `π` of `R` along a flat morphism `X ⟶ Spec R` restricts to a
-nonzerodivisor on every affine open of `X`. -/
-theorem Scheme.Hom.isSMulRegular_map_appTop_ΓSpecIso_inv {R : Type u} [CommRing R]
-    (f : X ⟶ Spec (.of R)) [Flat f] {π : R} (hπ : IsSMulRegular R π) (U : X.affineOpens) :
-    IsSMulRegular Γ(X, U) (X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op
-      (f.appTop ((Scheme.ΓSpecIso (.of R)).inv π))) :=
-  f.isSMulRegular_map_appTop (Scheme.isSMulRegular_ΓSpecIso_inv hπ) U
+  (TauCeti.isSMulRegular_map_iff (Scheme.ΓSpecIso (.of R)).symm.commRingCatIsoToRingEquiv π).mpr hπ
 
 end AlgebraicGeometry
 
@@ -200,18 +201,12 @@ theorem isEffectiveCartier_iff_exists_comap (I : X.IdealSheafData) :
   · intro hI x
     obtain ⟨U, hx, a, ha, hUa⟩ := hI x
     refine ⟨U, hx, U.1.topIso.inv a, ?_, ?_⟩
-    · exact (Equiv.isSMulRegular_congr
-        (e := U.1.topIso.symm.commRingCatIsoToRingEquiv.toEquiv)
-        (r := a) (s := U.1.topIso.inv a)
-        (by intro b; exact U.1.topIso.inv.hom.map_mul a b)).mp ha
+    · exact (TauCeti.isSMulRegular_map_iff U.1.topIso.symm.commRingCatIsoToRingEquiv a).mpr ha
     · rw [comap_ι_eq_ofIdealTop, hUa, Ideal.map_span, Set.image_singleton]
   · intro hI x
     obtain ⟨U, hx, a, ha, hUa⟩ := hI x
     refine ⟨U, hx, U.1.topIso.hom a, ?_, ?_⟩
-    · exact (Equiv.isSMulRegular_congr
-        (e := U.1.topIso.commRingCatIsoToRingEquiv.toEquiv)
-        (r := a) (s := U.1.topIso.hom a)
-        (by intro b; exact U.1.topIso.hom.hom.map_mul a b)).mp ha
+    · exact (TauCeti.isSMulRegular_map_iff U.1.topIso.commRingCatIsoToRingEquiv a).mpr ha
     · rw [comap_ι_eq_ofIdealTop] at hUa
       have h := congrArg (fun J : U.1.toScheme.IdealSheafData ↦
         J.ideal ⟨⊤, isAffineOpen_top U.1.toScheme⟩) hUa
@@ -244,8 +239,7 @@ theorem isEffectiveCartier_iff_exists_isOpenImmersion (I : X.IdealSheafData) :
         (by rw [← CommRingCat.hom_comp, ← Scheme.Hom.comp_appTop, e.hom_inv_id,
           Scheme.Hom.id_appTop, CommRingCat.hom_id])
     refine ⟨⟨φ.opensRange, isAffineOpen_opensRange φ⟩, ⟨y, rfl⟩, t a,
-      (Equiv.isSMulRegular_congr (e := t.toEquiv) (r := a) (s := t a)
-        fun b ↦ t.map_mul a b).mp ha, ?_⟩
+      (TauCeti.isSMulRegular_map_iff t a).mpr ha, ?_⟩
     rw [← φ.isoOpensRange_inv_comp, comap_comp, hφa, comap_ofIdealTop, Ideal.map_span,
       Set.image_singleton]
     simp [t, e]

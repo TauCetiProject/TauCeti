@@ -118,26 +118,20 @@ theorem exists_mul_eq_of_forall_ideal_eq_span {V : X.Opens} {b : Γ(X, V)}
   rw [← ht' ⟨⟨W, hW⟩, hWV⟩] at h
   simpa only [map_mul] using h
 
-omit I in
-/-- A condition imposed on the restrictions of a section `b` over `V` to all affine opens inside `V`
-is inherited by the restriction of `b` to any smaller open `V'`. -/
-private lemma forall_affineOpens_map_of_le {V V' : X.Opens} (hV'V : V' ≤ V) {b : Γ(X, V)}
-    {P : ∀ W : X.affineOpens, Γ(X, W) → Prop}
-    (h : ∀ (W : X.affineOpens) (hWV : W.1 ≤ V), P W (X.presheaf.map (homOfLE hWV).op b))
-    (W : X.affineOpens) (hWV' : W.1 ≤ V') :
-    P W (X.presheaf.map (homOfLE hWV').op (X.presheaf.map (homOfLE hV'V).op b)) := by
-  rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp, homOfLE_comp]
-  exact h W (hWV'.trans hV'V)
-
-/-- If the ideal sheaf `I` is generated on an affine open `U` by a nonzerodivisor `a`, then the
-restriction of `a` to every affine open `W ⊆ U` is a nonzerodivisor generating `I` on `W`. -/
+/-- If the ideal sheaf `I` is generated on an affine open `U` by a nonzerodivisor `a`, then for
+every open `V ⊆ U`, the restriction of `a|_V` to every affine open `W ⊆ V` is a nonzerodivisor
+generating `I` on `W`. -/
 private lemma forall_isSMulRegular_and_ideal_eq_span {U : X.affineOpens} {a : Γ(X, U)}
-    (ha : IsSMulRegular Γ(X, U) a) (hIa : I.ideal U = Ideal.span {a}) :
-    (∀ (W : X.affineOpens) (hWU : W.1 ≤ U.1),
-      IsSMulRegular Γ(X, W) (X.presheaf.map (homOfLE hWU).op a)) ∧
-    ∀ (W : X.affineOpens) (hWU : W.1 ≤ U.1),
-      I.ideal W = Ideal.span {X.presheaf.map (homOfLE hWU).op a} := by
-  refine ⟨fun W hWU ↦ U.2.isSMulRegular_map hWU ha, fun W hWU ↦ ?_⟩
+    (ha : IsSMulRegular Γ(X, U) a) (hIa : I.ideal U = Ideal.span {a}) {V : X.Opens}
+    (hVU : V ≤ U.1) :
+    (∀ (W : X.affineOpens) (hWV : W.1 ≤ V), IsSMulRegular Γ(X, W)
+      (X.presheaf.map (homOfLE hWV).op (X.presheaf.map (homOfLE hVU).op a))) ∧
+    ∀ (W : X.affineOpens) (hWV : W.1 ≤ V), I.ideal W =
+      Ideal.span {X.presheaf.map (homOfLE hWV).op (X.presheaf.map (homOfLE hVU).op a)} := by
+  refine ⟨Scheme.forall_affineOpens_map_of_le hVU (P := fun W c ↦ IsSMulRegular Γ(X, W) c)
+    fun W hWU ↦ U.2.isSMulRegular_map hWU ha,
+    Scheme.forall_affineOpens_map_of_le hVU (P := fun W c ↦ I.ideal W = Ideal.span {c})
+    fun W hWU ↦ ?_⟩
   rw [← I.map_ideal (U := W) (V := U) hWU, hIa, Ideal.map_span, Set.image_singleton]
   -- `Ideal.map` applies the underlying ring hom, the goal its `ConcreteCategory` coercion.
   rfl
@@ -148,10 +142,8 @@ theorem exists_mul_eq_of_ideal_eq_span {U : X.affineOpens} {a : Γ(X, U)}
     (ha : IsSMulRegular Γ(X, U) a) (hIa : I.ideal U = Ideal.span {a}) {V : X.Opens}
     (hVU : V ≤ U.1) {s : Γ(X, V)} (hs : s ∈ I.sections V) :
     ∃ t : Γ(X, V), X.presheaf.map (homOfLE hVU).op a * t = s :=
-  have h := I.forall_isSMulRegular_and_ideal_eq_span ha hIa
-  I.exists_mul_eq_of_forall_ideal_eq_span
-    (forall_affineOpens_map_of_le hVU (P := fun W c ↦ IsSMulRegular Γ(X, W) c) h.1)
-    (forall_affineOpens_map_of_le hVU (P := fun W c ↦ I.ideal W = Ideal.span {c}) h.2) hs
+  have h := I.forall_isSMulRegular_and_ideal_eq_span ha hIa hVU
+  I.exists_mul_eq_of_forall_ideal_eq_span h.1 h.2 hs
 
 /-- If the ideal sheaf `I` is generated on an affine open `U` by `a`, then `a` is a section of `I`
 over `U`. -/
@@ -206,18 +198,15 @@ theorem bijective_smul_map_sectionMk {U : X.affineOpens} {a : Γ(X, U)}
     Function.Bijective fun r : Γ(X, V) ↦
       r • I.sheaf.presheaf.map (homOfLE hVU).op
         (I.sectionMk a (I.mem_sections_of_ideal_eq_span hIa)) := by
-  have h := I.forall_isSMulRegular_and_ideal_eq_span ha hIa
+  have h := I.forall_isSMulRegular_and_ideal_eq_span ha hIa hVU
   -- The restriction of the section `a` of `I` is the section `a|_V`.
   have hmap : I.sheaf.presheaf.map (homOfLE hVU).op
       (I.sectionMk a (I.mem_sections_of_ideal_eq_span hIa)) =
       I.sectionMk (X.presheaf.map (homOfLE hVU).op a)
-        (I.mem_sections_of_forall_ideal_eq_span
-          (forall_affineOpens_map_of_le hVU (P := fun W c ↦ I.ideal W = Ideal.span {c}) h.2)) :=
+        (I.mem_sections_of_forall_ideal_eq_span h.2) :=
     I.sheafι_app_injective V (by rw [sheafι_app_map, sheafι_app_sectionMk, sheafι_app_sectionMk])
   simp only [hmap]
-  exact I.bijective_smul_sectionMk_of_forall_ideal_eq_span
-    (forall_affineOpens_map_of_le hVU (P := fun W c ↦ IsSMulRegular Γ(X, W) c) h.1)
-    (forall_affineOpens_map_of_le hVU (P := fun W c ↦ I.ideal W = Ideal.span {c}) h.2)
+  exact I.bijective_smul_sectionMk_of_forall_ideal_eq_span h.1 h.2
 
 /-- If the ideal sheaf `I` is generated on an affine open `U` by a nonzerodivisor `a`, then `a` is a
 global basis of `I` over `U`: multiplication by `a` is an isomorphism `𝒪_U ≅ I|_U`. -/
@@ -267,9 +256,9 @@ def unitIsoOfForallIdealEqSpan {a : Γ(X, ⊤)}
       I.ideal U = Ideal.span {X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op a}) :
     SheafOfModules.unit X.ringCatSheaf ≅ I.sheaf :=
   -- The restrictions of `a` to the opens of `X`, as a global section of `I`.
-  have hb (V : X.Opens) := forall_affineOpens_map_of_le (le_top : V ≤ ⊤)
+  have hb (V : X.Opens) := Scheme.forall_affineOpens_map_of_le (le_top : V ≤ ⊤)
     (P := fun W c ↦ IsSMulRegular Γ(X, W) c) fun W _ ↦ ha W
-  have hIb (V : X.Opens) := forall_affineOpens_map_of_le (le_top : V ≤ ⊤)
+  have hIb (V : X.Opens) := Scheme.forall_affineOpens_map_of_le (le_top : V ≤ ⊤)
     (P := fun W c ↦ I.ideal W = Ideal.span {c}) fun W _ ↦ hIa W
   let s : I.sheaf.sections := PresheafOfModules.sectionsMk
     (fun V ↦ I.sectionMk _ (I.mem_sections_of_forall_ideal_eq_span (hIb V.unop)))

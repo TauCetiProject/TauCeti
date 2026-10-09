@@ -83,7 +83,8 @@ pullback of `π` is an isomorphism `𝒪_X ≅ 𝒪_X(-X_s)` onto the ideal shea
 def unitIsoKerSpecialFiberι (hπ : maximalIdeal R = Ideal.span {π}) (hreg : IsSMulRegular R π) :
     SheafOfModules.unit X.ringCatSheaf ≅ (specialFiberι R toBase).ker.sheaf :=
   (specialFiberι R toBase).ker.unitIsoOfForallIdealEqSpan
-    (toBase.isSMulRegular_map_appTop_ΓSpecIso_inv hreg) (ideal_ker_specialFiberι toBase hπ)
+    (toBase.isSMulRegular_map_appTop (Scheme.isSMulRegular_ΓSpecIso_inv hreg))
+    (ideal_ker_specialFiberι toBase hπ)
 
 /-- The trivialization `unitIsoKerSpecialFiberι` is multiplication by `π`: composed with the
 inclusion of the ideal sheaf of the special fibre into `𝒪_X`, it sends a function `r` over `V`
