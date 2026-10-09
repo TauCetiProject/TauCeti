@@ -32,9 +32,9 @@ permutation representations faithful.
 
 public section
 
-namespace RootPairing
+namespace TauCeti
 
-open TauCeti Function Matrix
+open RootPairing Function Matrix
 
 variable {ι κ R : Type*} (S : Type*) [Fintype κ] [CommRing R] [CommRing S] [Algebra R S]
   [FaithfulSMul R S] (P : RootPairing ι R (κ → R) (κ → R))
@@ -59,7 +59,7 @@ noncomputable def weylGroupBaseChangeEquiv : P.weylGroup ≃* (Q).weylGroup :=
 /-- The base-change comparison leaves the root-index permutation unchanged.
 This is a rewrite rule, not a simp rule: `weylGroupToPerm` simplifies to `indexEquiv`. -/
 theorem weylGroupToPerm_weylGroupBaseChangeEquiv (w : P.weylGroup) :
-    (Q).weylGroupToPerm (P.weylGroupBaseChangeEquiv S hP hspan w) = P.weylGroupToPerm w := by
+    (Q).weylGroupToPerm (weylGroupBaseChangeEquiv S P hP hspan w) = P.weylGroupToPerm w := by
   unfold weylGroupBaseChangeEquiv
   exact (MonoidHom.apply_ofInjective_symm (f := (Q).weylGroupToPerm)
     ((Equiv.indexHom_injective_of_corootSpan_eq_top Q
@@ -69,7 +69,7 @@ theorem weylGroupToPerm_weylGroupBaseChangeEquiv (w : P.weylGroup) :
 /-- The inverse comparison also leaves the root-index permutation unchanged.
 As in the forward direction, use this with `rw` rather than `simp`. -/
 theorem weylGroupToPerm_weylGroupBaseChangeEquiv_symm (w : (Q).weylGroup) :
-    P.weylGroupToPerm ((P.weylGroupBaseChangeEquiv S hP hspan).symm w) =
+    P.weylGroupToPerm ((weylGroupBaseChangeEquiv S P hP hspan).symm w) =
       (Q).weylGroupToPerm w := by
   rw [← weylGroupToPerm_weylGroupBaseChangeEquiv S P hP hspan,
     MulEquiv.apply_symm_apply]
@@ -77,7 +77,7 @@ theorem weylGroupToPerm_weylGroupBaseChangeEquiv_symm (w : (Q).weylGroup) :
 /-- Base change sends each indexed reflection to the reflection with the same index. -/
 @[simp]
 theorem weylGroupBaseChangeEquiv_ofIdx (i : ι) :
-    P.weylGroupBaseChangeEquiv S hP hspan (weylGroup.ofIdx P i) = weylGroup.ofIdx Q i := by
+    weylGroupBaseChangeEquiv S P hP hspan (weylGroup.ofIdx P i) = weylGroup.ofIdx Q i := by
   have hinj : Injective (Q).weylGroupToPerm :=
     (Equiv.indexHom_injective_of_corootSpan_eq_top Q
       (span_range_coroot_rootPairingBaseChange_eq_top S P hP hspan)).comp Subtype.val_injective
@@ -89,13 +89,13 @@ theorem weylGroupBaseChangeEquiv_ofIdx (i : ι) :
 /-- The inverse base-change comparison preserves indexed reflections. -/
 @[simp]
 theorem weylGroupBaseChangeEquiv_symm_ofIdx (i : ι) :
-    (P.weylGroupBaseChangeEquiv S hP hspan).symm (weylGroup.ofIdx Q i) =
+    (weylGroupBaseChangeEquiv S P hP hspan).symm (weylGroup.ofIdx Q i) =
       weylGroup.ofIdx P i := by
   rw [← weylGroupBaseChangeEquiv_ofIdx S P hP hspan, MulEquiv.symm_apply_apply]
 
 /-- Entrywise scalar extension intertwines the Weyl-group actions on weight vectors. -/
 theorem weylGroupBaseChangeEquiv_smul (w : P.weylGroup) (x : κ → R) :
-    P.weylGroupBaseChangeEquiv S hP hspan w • Pi.algebraMap κ R S x =
+    weylGroupBaseChangeEquiv S P hP hspan w • Pi.algebraMap κ R S x =
       Pi.algebraMap κ R S (w • x) := by
   revert x
   obtain ⟨w, hw⟩ := w
@@ -103,7 +103,7 @@ theorem weylGroupBaseChangeEquiv_smul (w : P.weylGroup) (x : κ → R) :
   | mem i =>
     intro x
     -- The induction principle supplies a raw subtype, rather than the named reflection.
-    change P.weylGroupBaseChangeEquiv S hP hspan (weylGroup.ofIdx P i) •
+    change weylGroupBaseChangeEquiv S P hP hspan (weylGroup.ofIdx P i) •
       Pi.algebraMap κ R S x = Pi.algebraMap κ R S (weylGroup.ofIdx P i • x)
     rw [weylGroupBaseChangeEquiv_ofIdx]
     simp only [weylGroup.ofIdx_smul, Equiv.reflection_smul, reflection_apply,
@@ -112,11 +112,11 @@ theorem weylGroupBaseChangeEquiv_smul (w : P.weylGroup) (x : κ → R) :
     simp [Function.comp_apply, hP, ← RingHom.map_dotProduct, Algebra.smul_def]
   | one =>
     -- Likewise, the identity case is given as a raw subtype instead of `1`.
-    change ∀ x, P.weylGroupBaseChangeEquiv S hP hspan 1 • Pi.algebraMap κ R S x =
+    change ∀ x, weylGroupBaseChangeEquiv S P hP hspan 1 • Pi.algebraMap κ R S x =
       Pi.algebraMap κ R S (1 • x)
     simp
   | mul w₁ w₂ hw₁ hw₂ ih₁ ih₂ =>
     intro x
     rw [← Submonoid.mk_mul_mk _ _ _ hw₁ hw₂, map_mul, mul_smul, ih₂, ih₁, mul_smul]
 
-end RootPairing
+end TauCeti
