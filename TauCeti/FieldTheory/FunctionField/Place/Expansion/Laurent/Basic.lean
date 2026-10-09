@@ -144,6 +144,22 @@ theorem coeff_laurentSeriesExpansion_eq_coeff_powerSeriesExpansion (n : ℤ) {z 
   rw [map_mul, laurentSeriesExpansion_zpow_uniformizer,
     HahnSeries.coeff_single_mul, one_mul]
 
+/-- Functions are equal exactly when all coefficients of their Laurent expansions at a rational
+place agree. -/
+theorem laurentSeriesExpansion_ext_iff {x y : F} :
+    x = y ↔ ∀ n : ℤ,
+      (P.laurentSeriesExpansion hP ht x).coeff n =
+        (P.laurentSeriesExpansion hP ht y).coeff n := by
+  constructor
+  · rintro rfl n
+    rfl
+  · intro h
+    apply P.completionEmbedding.injective
+    apply (P.completionEquivLaurentSeries hP ht).injective
+    apply HahnSeries.ext
+    funext n
+    simpa only [laurentSeriesExpansion_apply] using h n
+
 /-! ### Residues -/
 
 /-- The residue `res_{P,t}` of a function at a rational place with respect to a chosen
