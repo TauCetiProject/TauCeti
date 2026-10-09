@@ -51,6 +51,7 @@ theorem singularTransfer_comp (hq : IsCoveringMap q) (hp : IsCoveringMap p)
     (hfinq : ∀ a, Finite ↥(q ⁻¹' {a})) (hfinp : ∀ b, Finite ↥(p ⁻¹' {b}))
     (R : C) :
     (hq.comp hp (fun a ↦ Set.finite_coe_iff.mp (hfinq a))).singularTransfer
+        -- Pin the categorical composite carrier and elaborate the private witness in tactic mode.
         (fun a ↦ show Finite ↥((p ≫ q) ⁻¹' {a}) from by
           exact finite_preimage_singleton_comp hfinq hfinp a) R =
       hq.singularTransfer hfinq R ≫ hp.singularTransfer hfinp R := by
@@ -87,6 +88,7 @@ theorem homologyMap_singularTransfer_comp [CategoryWithHomology C]
     (R : C) (n : ℕ) :
     HomologicalComplex.homologyMap
         ((hq.comp hp (fun a ↦ Set.finite_coe_iff.mp (hfinq a))).singularTransfer
+          -- Pin the categorical composite carrier and elaborate the private witness in tactic mode.
           (fun a ↦ show Finite ↥((p ≫ q) ⁻¹' {a}) from by
             exact finite_preimage_singleton_comp hfinq hfinp a) R) n =
       HomologicalComplex.homologyMap (hq.singularTransfer hfinq R) n ≫
