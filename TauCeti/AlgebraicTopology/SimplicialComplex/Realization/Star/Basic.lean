@@ -107,6 +107,12 @@ theorem isCompact_closedStarRealization {σ : Finset ι}
     IsCompact (K.closedStarRealization σ) :=
   K.isCompact_setOf_support_mem PreAbstractSimplicialComplex.closedStar_le hfin
 
+/-- The closed star of a vertex is compact when the ambient vertex type is finite. -/
+theorem isCompact_closedStarRealization_of_finite [Finite ι] (v : ι) :
+    IsCompact (K.closedStarRealization {v}) := by
+  let := Fintype.ofFinite ι
+  exact K.isCompact_closedStarRealization (Set.toFinite _)
+
 /-- Closed-star membership is determined by adjoining the finite vertex set to the carrier. -/
 theorem mem_closedStarRealization_iff {σ : Finset ι} {x : Realization K} :
     x ∈ K.closedStarRealization σ ↔ x.1.support ∪ σ ∈ K := by

@@ -116,7 +116,7 @@ theorem exists_isPLOn_closedStarMap [Finite ι]
     have hcompact : IsCompact (geometricLink K v) := by
       simpa only [Set.inter_def, Set.mem_ofPred_eq, Function.comp_apply,
         ← mem_geometricLink, Set.ofPred_mem_eq] using
-        (K.isCompact_closedStarRealization (σ := {v}) (Set.toFinite _)).inter_left
+        (K.isCompact_closedStarRealization_of_finite v).inter_left
           (isClosed_eq ((continuous_apply v).comp (continuous_realization_coe K))
             (continuous_const (y := (0 : ℝ))))
     have : CompactSpace (geometricLink K v) := isCompact_iff_compactSpace.mp hcompact

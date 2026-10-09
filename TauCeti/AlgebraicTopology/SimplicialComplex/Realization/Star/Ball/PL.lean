@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Ball
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Ball.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Cone
 public import TauCeti.Topology.PL.Cone
 
@@ -101,13 +101,12 @@ theorem exists_isPLOn_closedStarHomeomorphClosedBall
     hK e F hF hf
   exact ⟨G, hG.isPLOn, hG_eq⟩
 
-/-- Compact finite-dimensional link coordinates turn local PL link data into the ball formula. -/
-private theorem isCompact_closedStarRealization_of_finite [Finite ι] :
-    IsCompact (closedStarRealization K {v}) := by
-  let := Fintype.ofFinite ι
-  exact K.isCompact_closedStarRealization (Set.toFinite _)
+/-- A PL link-to-sphere map extends to a PL formula for the compact closed-star ball model.
 
+The explicit compactness hypothesis is reusable for any finite ambient vertex type, whose closed
+stars are compact by `isCompact_closedStarRealization_of_finite`. -/
 theorem exists_isPLOn_closedStarHomeomorphClosedBall_of_isPLOn [Finite ι]
+    (hK : IsCompact (closedStarRealization K {v}))
     (e : geometricLink K v ≃ₜ Metric.sphere (0 : E) 1)
     (F : (ι → ℝ) → E)
     (hF : ∀ y : geometricLink K v, F (y.1.1 : ι → ℝ) = e y)
@@ -115,17 +114,12 @@ theorem exists_isPLOn_closedStarHomeomorphClosedBall_of_isPLOn [Finite ι]
     ∃ G : (ι → ℝ) → E,
       IsPLOn G (range (fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ))) ∧
       ∀ x : closedStarRealization K {v},
-        G (x.1.1 : ι → ℝ) = (closedStarHomeomorphClosedBall
-          (K.isCompact_closedStarRealization (by
-            let := Fintype.ofFinite ι
-            exact Set.toFinite _)) e x : E) := by
-  let := Fintype.ofFinite ι
-  have hK := isCompact_closedStarRealization_of_finite (K := K) (v := v)
+        G (x.1.1 : ι → ℝ) = (closedStarHomeomorphClosedBall hK e x : E) := by
   have hlink : IsCompact (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))) := by
     have hcompact : IsCompact (geometricLink K v) := by
       simpa only [Set.inter_def, Set.mem_ofPred_eq, Function.comp_apply,
         ← mem_geometricLink, Set.ofPred_mem_eq] using
-        (K.isCompact_closedStarRealization (σ := {v}) (Set.toFinite _)).inter_left
+        hK.inter_left
           (isClosed_eq ((continuous_apply v).comp (continuous_realization_coe K))
             (continuous_const (y := (0 : ℝ))))
     let : CompactSpace (geometricLink K v) := isCompact_iff_compactSpace.mp hcompact
