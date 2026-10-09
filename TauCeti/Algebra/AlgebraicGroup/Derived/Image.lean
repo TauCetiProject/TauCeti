@@ -100,7 +100,7 @@ theorem derivedMap_injective (f : H ⟶ K) (hf : Function.Injective f.hom) :
 /-- A schematically dominant homomorphism between finite-type affine groups over a field is
 surjective on the points of their derived subgroups valued in any algebraically closed
 extension field. -/
-theorem derivedMap_mapPointsFunctor_app_surjective
+theorem mapPointsFunctor_derivedMap_app_surjective
     [Algebra.FiniteType k H] [Algebra.FiniteType k K] (f : H ⟶ K)
     (hf : Function.Injective f.hom)
     (L : Type w) [Field L] [Algebra k L] [IsAlgClosed L] :
