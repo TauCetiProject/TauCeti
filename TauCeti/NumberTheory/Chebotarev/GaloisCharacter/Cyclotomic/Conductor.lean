@@ -71,6 +71,10 @@ kernel of the Artin map. It divides `cyclotomicModulus K m` (`cyclotomicConducto
 noncomputable def cyclotomicConductor : Modulus K :=
   rayClassConductor (cyclotomicArtin K F m).ker
 
+/-- The cyclotomic conductor is the ray class conductor of the kernel of the Artin map. -/
+theorem cyclotomicConductor_def :
+    cyclotomicConductor K F m = (cyclotomicArtin K F m).ker.rayClassConductor := (rfl)
+
 /-- The conductor of `K(μ_m) / K` divides the cyclotomic modulus `(m)` times the real places. -/
 theorem cyclotomicConductor_dvd : cyclotomicConductor K F m ∣ cyclotomicModulus K m :=
   rayClassConductor_dvd _
@@ -164,18 +168,18 @@ private theorem cyclotomicConductor_rat_eq :
   exact key _ (cyclotomicModulus_rat m)
 
 /-- **The conductor of `ℚ(ζ_m)/ℚ` for `m ≤ 2` is trivial**: then `ℚ(ζ_m) = ℚ`. -/
-theorem cyclotomicConductor_rat_of_le_two (hm : m ≤ 2) :
+@[simp] theorem cyclotomicConductor_rat_of_le_two (hm : m ≤ 2) :
     cyclotomicConductor ℚ F m = Modulus.one ℚ := by
   rw [cyclotomicConductor_rat_eq, rayClassConductor_bot_ratModulus_of_le_two hm]
 
 /-- **The conductor of `ℚ(ζ_m)/ℚ` is `(m)·∞`** for `m > 2` not equal to `2` modulo `4`. -/
-theorem cyclotomicConductor_rat (h2 : 2 < m) (h4 : m % 4 ≠ 2) :
+@[simp] theorem cyclotomicConductor_rat (h2 : 2 < m) (h4 : m % 4 ≠ 2) :
     cyclotomicConductor ℚ F m = ratModulus m (NeZero.ne m) := by
   rw [cyclotomicConductor_rat_eq, rayClassConductor_bot_ratModulus h2 h4]
 
 /-- **The conductor of `ℚ(ζ_m)/ℚ` is `(m / 2)·∞`** for `m > 2` equal to `2` modulo `4`: then
 `ℚ(ζ_m) = ℚ(ζ_{m/2})` with `m / 2` odd. -/
-theorem cyclotomicConductor_rat_of_mod_four_eq_two (h2 : 2 < m) (h4 : m % 4 = 2) :
+@[simp] theorem cyclotomicConductor_rat_of_mod_four_eq_two (h2 : 2 < m) (h4 : m % 4 = 2) :
     cyclotomicConductor ℚ F m = ratModulus (m / 2) (by omega) := by
   rw [cyclotomicConductor_rat_eq, rayClassConductor_bot_ratModulus_of_mod_four_eq_two h2 h4]
 

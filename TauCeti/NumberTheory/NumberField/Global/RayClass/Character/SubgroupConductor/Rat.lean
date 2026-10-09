@@ -119,7 +119,7 @@ variable {n : ℕ} {hn : n ≠ 0}
 
 /-- **The conductor of the trivial subgroup modulo `(n)·∞` for `n ≤ 2` is trivial**: the ray class
 group is then trivial. -/
-theorem rayClassConductor_bot_ratModulus_of_le_two (h2 : n ≤ 2) :
+@[simp] theorem rayClassConductor_bot_ratModulus_of_le_two (h2 : n ≤ 2) :
     rayClassConductor (⊥ : Subgroup (RayClassGroup (ratModulus n hn))) = Modulus.one ℚ := by
   refine Modulus.eq_one_of_dvd_one ((rayClassConductor_dvd_iff (Modulus.one_dvd _) ⊥).mpr ?_)
   have : Subsingleton (RayClassGroup (ratModulus n hn)) := by
@@ -151,7 +151,7 @@ private theorem exists_rayClassConductor_bot_ratModulus_eq (h2 : 2 < n) :
 
 /-- **The conductor of the trivial subgroup modulo `(n)·∞` is `(n)·∞`** for `n > 2` not equal to
 `2` modulo `4`. -/
-theorem rayClassConductor_bot_ratModulus (h2 : 2 < n) (h4 : n % 4 ≠ 2) :
+@[simp] theorem rayClassConductor_bot_ratModulus (h2 : 2 < n) (h4 : n % 4 ≠ 2) :
     rayClassConductor (⊥ : Subgroup (RayClassGroup (ratModulus n hn))) = ratModulus n hn := by
   obtain ⟨d, hd, hdn, hφ, heq, -⟩ := exists_rayClassConductor_bot_ratModulus_eq h2
   rcases Nat.eq_or_eq_of_totient_eq_totient hdn hφ.symm with hdn' | hnd
@@ -164,7 +164,7 @@ theorem rayClassConductor_bot_ratModulus (h2 : 2 < n) (h4 : n % 4 ≠ 2) :
 
 /-- **The conductor of the trivial subgroup modulo `(n)·∞` is `(n / 2)·∞`** for `n > 2` equal to
 `2` modulo `4`: reduction `(ZMod n)ˣ → (ZMod (n / 2))ˣ` is then a bijection. -/
-theorem rayClassConductor_bot_ratModulus_of_mod_four_eq_two (h2 : 2 < n) (h4 : n % 4 = 2) :
+@[simp] theorem rayClassConductor_bot_ratModulus_of_mod_four_eq_two (h2 : 2 < n) (h4 : n % 4 = 2) :
     rayClassConductor (⊥ : Subgroup (RayClassGroup (ratModulus n hn))) =
       ratModulus (n / 2) (by omega) := by
   obtain ⟨d, hd, hdn, hφ, heq, hmin⟩ := exists_rayClassConductor_bot_ratModulus_eq h2
