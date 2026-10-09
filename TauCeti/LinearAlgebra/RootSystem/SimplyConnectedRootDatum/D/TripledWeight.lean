@@ -79,7 +79,6 @@ the weights of the natural representation, beginning at `ϖ₁ = (1, 0, 0, 0)`; 
 those of the half-spin representation `V(ϖ₃)`, beginning at `ϖ₃`; and indices `16` to `23` those
 of `V(ϖ₄)`, beginning at `ϖ₄`. Within each block every weight after the first is a simple
 reflection of an earlier weight of the block; no mathematical structure depends on the ordering. -/
-@[expose]
 def d4TripledWeight : Fin 24 → Fin 4 → ℤ := ![
   ![1, 0, 0, 0], ![-1, 1, 0, 0], ![0, -1, 1, 1], ![0, 0, -1, 1],
   ![0, 0, 1, -1], ![0, 1, -1, -1], ![1, -1, 0, 0], ![-1, 0, 0, 0],
@@ -95,6 +94,34 @@ theorem d4TripledWeight_injective : Function.Injective d4TripledWeight := by
 /-- The first weight of the natural block is the first fundamental weight `ϖ₁`. -/
 @[simp]
 theorem d4TripledWeight_zero : d4TripledWeight 0 = Pi.single 0 1 := by
+  decide
+
+/-- The second weight of the natural block, in simple-coroot coordinates. -/
+theorem d4TripledWeight_one : d4TripledWeight 1 = ![-1, 1, 0, 0] := by
+  decide
+
+/-- The third weight of the natural block, in simple-coroot coordinates. -/
+theorem d4TripledWeight_two : d4TripledWeight 2 = ![0, -1, 1, 1] := by
+  decide
+
+/-- The fourth weight of the natural block, in simple-coroot coordinates. -/
+theorem d4TripledWeight_three : d4TripledWeight 3 = ![0, 0, -1, 1] := by
+  decide
+
+/-- The fifth weight of the natural block, in simple-coroot coordinates. -/
+theorem d4TripledWeight_four : d4TripledWeight 4 = ![0, 0, 1, -1] := by
+  decide
+
+/-- The sixth weight of the natural block, in simple-coroot coordinates. -/
+theorem d4TripledWeight_five : d4TripledWeight 5 = ![0, 1, -1, -1] := by
+  decide
+
+/-- The seventh weight of the natural block, in simple-coroot coordinates. -/
+theorem d4TripledWeight_six : d4TripledWeight 6 = ![1, -1, 0, 0] := by
+  decide
+
+/-- The eighth weight of the natural block, in simple-coroot coordinates. -/
+theorem d4TripledWeight_seven : d4TripledWeight 7 = ![-1, 0, 0, 0] := by
   decide
 
 /-- The first weight of the second block is the fundamental weight `ϖ₃`. -/
@@ -163,9 +190,13 @@ theorem d4TripledWeight_reflection_apply (i : Fin 4) (a : Fin 24) (j : Fin 4) :
 /-- **The summand containing a tripled weight**, numbered `0`, `1` and `2` for `V(ϖ₁)`, `V(ϖ₃)`
 and `V(ϖ₄)`: the table lists the eight weights of each summand consecutively. The label is an
 integer so that it can serve directly as a block labelling of the coordinates of `GL₂₄`. -/
-@[expose]
 def d4TripledSummand (a : Fin 24) : ℤ :=
   ((a : ℕ) / 8 : ℕ)
+
+/-- A tripled weight lies in the natural summand exactly when its table index is below eight. -/
+theorem d4TripledSummand_eq_zero_iff (a : Fin 24) :
+    d4TripledSummand a = 0 ↔ (a : ℕ) < 8 := by
+  decide +kernel +revert
 
 /-- Simple reflections preserve each of the three summands. -/
 @[simp]
