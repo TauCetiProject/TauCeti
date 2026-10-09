@@ -54,6 +54,8 @@ order of the decomposition group, and the decomposition field — is in
   identification with the automorphism group of the separable part of the residue extension.
 * `TauCeti.Place.inertiaField`: the subfield of `F'` fixed by the inertia group of a place, with
   `TauCeti.Place.mem_inertiaField_iff` and `TauCeti.Place.fixingSubgroup_inertiaField`.
+* `TauCeti.Place.inertiaFieldAutEquiv`: the identification of the Galois group over the inertia
+  field with the inertia group, with `TauCeti.Place.coe_inertiaFieldAutEquiv_apply` computing it.
 
 ## Main results
 
@@ -501,6 +503,45 @@ theorem restrictScalars_smul_eq_self_of_inertiaField (τ : F' ≃ₐ[inertiaFiel
   obtain ⟨g, -, hg⟩ := exists_mem_inertiaSubgroup_coe_eq_restrictScalars F P τ
   rw [← hg, ← MulAction.mem_stabilizer_iff, stabilizer_eq_decompositionSubgroup]
   exact g.2
+
+omit [IsGalois F F'] in
+/-- **The Galois group over the inertia field is the inertia group**: reading an automorphism of
+`F'` over the inertia field of `P` as an automorphism over `F` identifies the two groups. -/
+noncomputable def inertiaFieldAutEquiv :
+    (F' ≃ₐ[inertiaField F P] F') ≃* P.integers.inertiaSubgroup F := by
+  have h₁ (σ : F' ≃ₐ[inertiaField F P] F') :
+      σ.restrictScalars F ∈ P.integers.decompositionSubgroup F := by
+    rw [← stabilizer_eq_decompositionSubgroup]
+    exact restrictScalars_smul_eq_self_of_inertiaField F P σ
+  have h₂ (σ : F' ≃ₐ[inertiaField F P] F') :
+      (⟨σ.restrictScalars F, h₁ σ⟩ : P.integers.decompositionSubgroup F) ∈
+        P.integers.inertiaSubgroup F := by
+    obtain ⟨g, hg, hgσ⟩ := exists_mem_inertiaSubgroup_coe_eq_restrictScalars F P σ
+    exact (Subtype.ext hgσ : g = ⟨σ.restrictScalars F, h₁ σ⟩) ▸ hg
+  let f : (F' ≃ₐ[inertiaField F P] F') →* P.integers.inertiaSubgroup F :=
+    { toFun σ := ⟨⟨σ.restrictScalars F, h₁ σ⟩, h₂ σ⟩
+      map_one' := rfl
+      map_mul' _ _ := rfl }
+  refine MulEquiv.ofBijective f ⟨fun σ τ h ↦ ?_, fun g ↦ ?_⟩
+  · exact AlgEquiv.restrictScalars_injective F (congrArg
+      (fun g : P.integers.inertiaSubgroup F ↦
+        ((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F')) h)
+  · have hg : ((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') ∈
+        (inertiaField F P).fixingSubgroup := by
+      rw [fixingSubgroup_inertiaField]
+      exact Subgroup.mem_map_of_mem _ g.2
+    exact ⟨(inertiaField F P).fixingSubgroupEquiv ⟨_, hg⟩, Subtype.ext (Subtype.ext (by ext; rfl))⟩
+
+omit [IsGalois F F'] in
+/-- The element of the inertia group attached by `TauCeti.Place.inertiaFieldAutEquiv` to an
+automorphism over the inertia field is that automorphism read over `F`. -/
+@[simp]
+theorem coe_inertiaFieldAutEquiv_apply (σ : F' ≃ₐ[inertiaField F P] F') :
+    ((inertiaFieldAutEquiv F P σ : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') =
+      σ.restrictScalars F :=
+  -- `(rfl)`, not `rfl`: the body of `inertiaFieldAutEquiv` is not `@[expose]`d, so a bare `rfl`
+  -- proof would be rechecked against the exported environment, where it is opaque.
+  (rfl)
 
 omit [IsGalois F F'] in
 /-- Over its inertia field a place is fixed by the whole Galois group. -/

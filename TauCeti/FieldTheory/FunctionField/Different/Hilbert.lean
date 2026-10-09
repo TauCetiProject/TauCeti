@@ -8,8 +8,7 @@ module
 public import TauCeti.FieldTheory.FunctionField.Different.Derivative
 public import TauCeti.FieldTheory.FunctionField.Different.Tame
 public import TauCeti.FieldTheory.FunctionField.Different.Tower
-public import TauCeti.FieldTheory.FunctionField.Place.Extension.IntegralBasis.TotallyRamified
-public import TauCeti.FieldTheory.FunctionField.Place.Extension.RamificationGroup
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.LocalRamificationGroup
 public import TauCeti.FieldTheory.Galois.Minpoly
 
 /-!
@@ -33,17 +32,16 @@ with `G_i(P')` the lower ramification groups of
 field `T` the place below `P'` is tame with `e = 1`, so it contributes nothing to the different,
 while `P'` is totally ramified over `T` and the valuation ring of `P'` is generated over that of
 `P' ∩ T` by any uniformizer `t`.  The monogenic form then reads the different exponent as
-`∑_{σ ≠ 1} ord(σ t - t)` over the inertia group, and an element `σ` of the inertia group lies in
-`G_i(P')` exactly when `ord(σ t - t) ≥ i + 1`; counting the pairs `(σ, i)` both ways gives the
-formula.  Without the separability hypothesis the formula fails in general: an inseparable residue
-extension already forces a positive different exponent at `e = 1`.
+`∑_{σ ≠ 1} ord(σ t - t)` over the inertia group, and the generic local-ring counting identity
+`TauCeti.IsLocalRing.sum_addVal_smul_sub_eq_finsum_card_ramificationGroup_sub_one`, for the
+inertia group acting on the valuation ring of `P'`, gives the formula.  Without the separability
+hypothesis the formula fails in general: an inseparable residue extension already forces a
+positive different exponent at `e = 1`.
 
 ## Main results
 
 * `TauCeti.Place.differentExponent_eq_sum_ord_sub_aut_of_algebra_adjoin_eq_top`: the different
   exponent of a monogenic Galois extension.
-* `TauCeti.Place.mem_ramificationGroup_iff_sub_mem_filtration`: an element of the inertia group
-  lies in `G_i` exactly when it moves a uniformizer by something of order at least `i + 1`.
 * `TauCeti.Place.differentExponent_eq_finsum_card_ramificationGroup_sub_one`: **Hilbert's
   different formula**.
 * `TauCeti.Place.differentExponent_eq_sum_range_card_ramificationGroup_sub_one`: the same formula
@@ -53,7 +51,7 @@ extension already forces a positive different exponent at `e = 1`.
 
 * J.-P. Serre, *Local Fields*, Chapter IV, §1.
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Proposition 3.8.5 and Theorem 3.8.7.
+  Theorem 3.8.7.
 -/
 
 public section
@@ -113,86 +111,6 @@ variable [FiniteDimensional F F'] [IsGalois F F']
 
 variable (F) (P : Place k F') [Algebra.IsSeparable (P.restrict k F).ResidueField P.ResidueField]
 
-/-- **The ramification groups are read off a uniformizer** (Stichtenoth, Proposition 3.8.5): when
-the residue extension is separable, an element `σ` of the inertia group of `P` lies in the `i`-th
-ramification group exactly when `σ t - t` has order at least `i + 1` for one uniformizer `t` at
-`P`. -/
-theorem mem_ramificationGroup_iff_sub_mem_filtration {t : F'} (ht : P.ord t = 1)
-    {g : P.integers.decompositionSubgroup F} (hg : g ∈ P.integers.inertiaSubgroup F) (i : ℕ) :
-    g ∈ ramificationGroup F P i ↔ (g : F' ≃ₐ[F] F') t - t ∈ P.filtration (i + 1) := by
-  have htP : t ∈ P.integers := P.mem_integers_iff_ord_nonneg.mpr (by omega)
-  refine ⟨fun h ↦ (mem_ramificationGroup_iff F P).mp h t htP, fun h ↦ ?_⟩
-  set T := inertiaField F P
-  -- Over the inertia field `T`, the valuation ring of `P` is the integral closure of `𝒪_{P ∩ T}`,
-  -- and `P` is totally ramified, so `t` generates it as an `𝒪_{P ∩ T}`-algebra.
-  have hint : ∀ {z : F'}, z ∈ P.integers → IsIntegral (P.restrict k T).integers z := fun hz ↦
-    (isIntegral_iff_mem_integers_of_decompositionSubgroup_eq_top T P
-      (decompositionSubgroup_inertiaField_eq_top F P)).mpr hz
-  let t' : integralClosure (P.restrict k T).integers F' := ⟨t, hint htP⟩
-  have hadj : Algebra.adjoin (P.restrict k T).integers {t'} = ⊤ :=
-    algebra_adjoin_integralClosure_eq_top_of_isTotallyRamified (k := k) T
-      (isTotallyRamified_inertiaField F P) ht
-  rw [mem_ramificationGroup_iff]
-  intro x hx
-  have hx' : (⟨x, hint hx⟩ : integralClosure (P.restrict k T).integers F') ∈
-      Algebra.adjoin (P.restrict k T).integers {t'} := hadj ▸ Algebra.mem_top
-  have hS (y : integralClosure (P.restrict k T).integers F') : (y : F') ∈ P.integers :=
-    algebraMap_mem_integers_of_mem_integralClosure k T P y
-  have hfilt (a : ℤ) {z w : F'} (hz : z ∈ P.filtration a) (hw : w ∈ P.integers) :
-      z * w ∈ P.filtration a := by
-    simpa using P.mul_mem_filtration hz (P.mem_filtration_zero_iff.mpr hw)
-  -- The elements `y` with `σ y - y` of order at least `i + 1` form an `𝒪_{P ∩ T}`-subalgebra,
-  -- since `σ` fixes `T`; it contains `t`, hence everything.
-  refine Algebra.adjoin_induction (A := integralClosure (P.restrict k T).integers F')
-    (p := fun y _ ↦ (g : F' ≃ₐ[F] F') (y : F') - (y : F') ∈ P.filtration ((i : ℤ) + 1))
-    (fun y hy ↦ ?_) (fun r ↦ ?_) (fun y z _ _ hy hz ↦ ?_) (fun y z _ _ hy hz ↦ ?_) hx'
-  · rw [Set.mem_singleton_iff.mp hy]
-    exact h
-  · have hr : ((algebraMap (P.restrict k T).integers
-        (integralClosure (P.restrict k T).integers F') r : _) : F') ∈ T := by
-      rw [Subalgebra.coe_algebraMap, IsScalarTower.algebraMap_apply _ T F',
-        IntermediateField.algebraMap_apply]
-      exact SetLike.coe_mem _
-    rw [(mem_inertiaField_iff F P _).mp hr g hg, sub_self]
-    exact zero_mem _
-  · simpa [add_sub_add_comm] using add_mem hy hz
-  · have hgy : (g : F' ≃ₐ[F] F') (y : F') ∈ P.integers :=
-      (mem_integers_decompositionSubgroup_apply F P g).mpr (hS y)
-    have key : (g : F' ≃ₐ[F] F') ((y * z : integralClosure _ F') : F') - ((y * z : _) : F') =
-        (g : F' ≃ₐ[F] F') (y : F') * ((g : F' ≃ₐ[F] F') (z : F') - (z : F')) +
-          ((g : F' ≃ₐ[F] F') (y : F') - (y : F')) * (z : F') := by
-      push_cast
-      rw [map_mul]
-      ring
-    rw [key]
-    exact add_mem (mul_comm ((g : F' ≃ₐ[F] F') (y : F')) _ ▸ hfilt _ hz hgy) (hfilt _ hy (hS z))
-
-/-- The automorphisms of `F'` over the inertia field of `P` are, read over `F`, exactly the
-elements of the inertia group of `P`. -/
-private noncomputable def inertiaFieldAutEquiv :
-    (F' ≃ₐ[inertiaField F P] F') ≃ P.integers.inertiaSubgroup F := by
-  have h₁ (σ : F' ≃ₐ[inertiaField F P] F') :
-      σ.restrictScalars F ∈ P.integers.decompositionSubgroup F := by
-    rw [← stabilizer_eq_decompositionSubgroup]
-    exact restrictScalars_smul_eq_self_of_inertiaField F P σ
-  have h₂ (σ : F' ≃ₐ[inertiaField F P] F') :
-      (⟨σ.restrictScalars F, h₁ σ⟩ : P.integers.decompositionSubgroup F) ∈
-        P.integers.inertiaSubgroup F := by
-    obtain ⟨g, hg, hgσ⟩ := exists_mem_inertiaSubgroup_coe_eq_restrictScalars F P σ
-    exact (Subtype.ext hgσ : g = ⟨σ.restrictScalars F, h₁ σ⟩) ▸ hg
-  refine Equiv.ofBijective (fun σ ↦ ⟨⟨σ.restrictScalars F, h₁ σ⟩, h₂ σ⟩)
-    ⟨fun σ τ h ↦ ?_, fun g ↦ ?_⟩
-  · exact AlgEquiv.restrictScalars_injective F (congrArg
-      (fun g : P.integers.inertiaSubgroup F ↦
-        ((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F')) h)
-  · have hg : ((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') ∈
-        (inertiaField F P).fixingSubgroup := by
-      rw [fixingSubgroup_inertiaField]
-      exact Subgroup.mem_map_of_mem _ g.2
-    refine ⟨(inertiaField F P).fixingSubgroupEquiv ⟨_, hg⟩, Subtype.ext (Subtype.ext ?_)⟩
-    ext x
-    rfl
-
 /-- The different exponent can be computed over the inertia field: below it the place is
 unramified with separable residue extension, so tame with different exponent `0`. -/
 private theorem differentExponent_eq_differentExponent_inertiaField :
@@ -204,9 +122,9 @@ private theorem differentExponent_eq_differentExponent_inertiaField :
       ⟨‹_›, by rw [ramificationIdx_restrict_inertiaField, Nat.cast_one]; exact one_ne_zero⟩
   have hd := (ramificationIdx_eq_differentExponent_add_one_iff k F _).mpr htame
   rw [ramificationIdx_restrict_inertiaField] at hd
+  have hd0 : differentExponent k F (P.restrict k (inertiaField F P)) = 0 := by omega
   rw [differentExponent_restrict_add (k₀ := k) (k₁ := k) (F₀ := F)
-    (F₁ := (inertiaField F P : Type v')) P, show differentExponent k F
-      (P.restrict k (inertiaField F P)) = 0 by omega, mul_zero, zero_add]
+    (F₁ := (inertiaField F P : Type v')) P, hd0, mul_zero, zero_add]
 
 /-- For a uniformizer `t` at `P`, the different exponent of `P` is the sum over the nontrivial
 elements `σ` of the inertia group of the orders of `σ t - t`. -/
@@ -224,71 +142,15 @@ private theorem differentExponent_eq_sum_ord_sub {t : F'} (ht : P.ord t = 1)
   have hadj : Algebra.adjoin (P.restrict k T).integers {t'} = ⊤ :=
     algebra_adjoin_integralClosure_eq_top_of_isTotallyRamified (k := k) T
       (isTotallyRamified_inertiaField F P) ht
-  have hψ1 : inertiaFieldAutEquiv F P 1 = 1 := rfl
   rw [differentExponent_eq_differentExponent_inertiaField,
     differentExponent_eq_sum_ord_sub_aut_of_algebra_adjoin_eq_top (k := k) T hadj]
-  refine Finset.sum_equiv (inertiaFieldAutEquiv F P) (fun σ ↦ ?_) (fun σ _ ↦ ?_)
-  · simp only [Finset.mem_erase, Finset.mem_univ, and_true, ne_eq, ← hψ1,
-      (inertiaFieldAutEquiv F P).injective.eq_iff]
-  · rw [← P.ord_neg, neg_sub]
+  have hψ (σ : F' ≃ₐ[T] F') : (inertiaFieldAutEquiv F P).toEquiv σ = inertiaFieldAutEquiv F P σ :=
     rfl
-
-/-- **Hilbert's different formula** (Stichtenoth, Theorem 3.8.7), with the sum cut off at an
-index `N` from which the ramification groups are trivial:
-`d(P ∣ P ∩ F) = ∑_{i < N} (|G_i(P)| - 1)`, when the residue extension is separable. -/
-theorem differentExponent_eq_sum_range_card_ramificationGroup_sub_one {N : ℕ}
-    (hN : ramificationGroup F P N = ⊥) :
-    differentExponent k F P = ∑ i ∈ Finset.range N, (Nat.card (ramificationGroup F P i) - 1) := by
-  classical
-  obtain ⟨t, ht⟩ := P.exists_isUniformizer
-  rw [isUniformizer_iff_ord_eq_one] at ht
-  -- Write `m g` for the order of `g t - t`, for `g` in the inertia group.
-  set m : P.integers.inertiaSubgroup F → ℤ := fun g ↦
-    P.ord (((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') t - t)
-  have hne (g : P.integers.inertiaSubgroup F) (hg : g ≠ 1) :
-      ((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') t - t ≠ 0 := by
-    intro h0
-    refine hg (Subtype.ext ((Subgroup.mem_bot).mp ?_))
-    rw [← iInf_ramificationGroup_eq_bot F P, Subgroup.mem_iInf]
-    exact fun i ↦ (mem_ramificationGroup_iff_sub_mem_filtration F P ht g.2 i).mpr
-      (h0 ▸ zero_mem _)
-  -- A nontrivial `g` lies in `G_i` exactly for `i < m g`, and `1 ≤ m g ≤ N`.
-  have hiff (g : P.integers.inertiaSubgroup F) (hg : g ≠ 1) (i : ℕ) :
-      (g : P.integers.decompositionSubgroup F) ∈ ramificationGroup F P i ↔ (i : ℤ) + 1 ≤ m g := by
-    rw [mem_ramificationGroup_iff_sub_mem_filtration F P ht g.2,
-      P.mem_filtration_iff_le_ord (hne g hg)]
-  have hcount (g : P.integers.inertiaSubgroup F) (hg : g ≠ 1) :
-      (((Finset.range N).filter fun i ↦
-        (g : P.integers.decompositionSubgroup F) ∈ ramificationGroup F P i).card : ℤ) = m g := by
-    have h0 : (1 : ℤ) ≤ m g := by
-      simpa using (hiff g hg 0).mp ((ramificationGroup_zero F P).symm ▸ g.2)
-    have hN' : m g ≤ N := by
-      by_contra hlt
-      exact hg (Subtype.ext ((Subgroup.mem_bot).mp (hN ▸ (hiff g hg N).mpr (by omega))))
-    have : (Finset.range N).filter (fun i ↦
-        (g : P.integers.decompositionSubgroup F) ∈ ramificationGroup F P i) =
-          Finset.range (m g).toNat := by
-      ext i
-      simp only [Finset.mem_filter, Finset.mem_range, hiff g hg]
-      omega
-    rw [this, Finset.card_range]
-    omega
-  have hcard (i : ℕ) : Nat.card (ramificationGroup F P i) =
-      (Finset.univ.filter fun g : P.integers.inertiaSubgroup F ↦
-        (g : P.integers.decompositionSubgroup F) ∈ ramificationGroup F P i).card := by
-    rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
-    exact Nat.card_congr (Equiv.subtypeSubtypeEquivSubtype
-      fun hg ↦ ramificationGroup_le_inertiaSubgroup F P i hg).symm
-  -- Count the pairs `(g, i)` with `g ≠ 1` in `G_i` and `i < N` in both orders.
-  zify
-  rw [differentExponent_eq_sum_ord_sub F P ht,
-    Finset.sum_congr rfl fun g hg ↦ (hcount g (Finset.ne_of_mem_erase hg)).symm]
-  simp only [Finset.card_filter, Nat.cast_sum]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [Nat.cast_sub Nat.card_pos, hcard, Finset.card_filter, Nat.cast_sum,
-    ← Finset.add_sum_erase _ _ (Finset.mem_univ 1)]
-  simp
+  refine Finset.sum_equiv (inertiaFieldAutEquiv F P).toEquiv (fun σ ↦ ?_) (fun σ _ ↦ ?_)
+  · simp only [Finset.mem_erase, Finset.mem_univ, and_true, ne_eq, hψ, MulEquiv.map_eq_one_iff]
+  · rw [hψ, coe_inertiaFieldAutEquiv_apply, AlgEquiv.restrictScalars_apply, ← P.ord_neg, neg_sub]
+    -- `t'` is `t` read in the integral closure, so its image in `F'` is `t` by definition.
+    rfl
 
 /-- **Hilbert's different formula** (Stichtenoth, Theorem 3.8.7): in a finite Galois extension
 with separable residue extension at `P`, the different exponent is
@@ -296,12 +158,61 @@ with separable residue extension at `P`, the different exponent is
 eventually trivial. -/
 theorem differentExponent_eq_finsum_card_ramificationGroup_sub_one :
     differentExponent k F P = ∑ᶠ i : ℕ, (Nat.card (ramificationGroup F P i) - 1) := by
-  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot F P
-  rw [differentExponent_eq_sum_range_card_ramificationGroup_sub_one F P (hN N le_rfl)]
-  refine (finsum_eq_sum_of_support_subset _ fun i hi ↦ ?_).symm
+  classical
+  obtain ⟨t, ht⟩ := P.exists_isUniformizer
+  rw [isUniformizer_iff_ord_eq_one] at ht
+  have htP : t ∈ P.integers := P.mem_integers_iff_ord_nonneg.mpr (by omega)
+  set ξ : P.integers := ⟨t, htP⟩
+  have hadj := algebra_adjoin_restrict_inertiaField_eq_top_of_ord_eq_one F P (t := ξ) ht
+  -- The decomposition group, hence the inertia group, acts faithfully on `𝒪_P`.
+  have : FaithfulSMul (P.integers.decompositionSubgroup F) P.integers :=
+    ⟨fun h ↦ ValuationSubring.decompositionSubgroup.ext P.integers fun x ↦
+      congrArg Subtype.val (h x)⟩
+  -- On `𝒪_P`, the order at `P` is the additive valuation of the discrete valuation ring.
+  have hval (y : P.integers) (hy : y ≠ 0) :
+      IsDiscreteValuationRing.addVal P.integers y = ((P.ord (y : F')).toNat : ℕ∞) := by
+    refine ENat.eq_of_forall_natCast_le_iff fun n ↦ ?_
+    rw [← TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal,
+      P.mem_maximalIdeal_pow_iff_coe_mem_filtration,
+      P.mem_filtration_iff_le_ord (by simpa using hy), Nat.cast_le]
+    have := P.mem_integers_iff_ord_nonneg.mp y.2
+    omega
+  -- The ramification groups of the inertia group acting on `𝒪_P` are those of `P`.
+  have hcard (i : ℕ) : Nat.card (IsLocalRing.ramificationGroup (P.integers.inertiaSubgroup F)
+      P.integers i) = Nat.card (ramificationGroup F P i) := by
+    rw [← IsLocalRing.subgroupOf_ramificationGroup,
+      ← ramificationGroup_eq_isLocalRing_ramificationGroup]
+    exact Nat.card_congr
+      (Subgroup.subgroupOfEquivOfLe (ramificationGroup_le_inertiaSubgroup F P i)).toEquiv
+  have hterm (g : P.integers.inertiaSubgroup F) (hg : g ∈ Finset.univ.erase 1) :
+      IsDiscreteValuationRing.addVal P.integers (g • ξ - ξ) =
+        ((P.ord (((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') t - t)).toNat :
+          ℕ∞) := by
+    rw [hval _ (sub_ne_zero.mpr fun h ↦ Finset.ne_of_mem_erase hg
+      (eq_one_of_smul_eq_of_adjoin_singleton_eq_top hadj h))]
+    -- `g` acts on `𝒪_P` through its action on `F'`, and `ξ` is `t` read in `𝒪_P`.
+    rfl
+  have h := IsLocalRing.sum_addVal_smul_sub_eq_finsum_card_ramificationGroup_sub_one hadj
+    (G := P.integers.inertiaSubgroup F)
+  simp only [hcard, Finset.sum_congr rfl hterm, ← Nat.cast_sum, Nat.cast_inj] at h
+  rw [← h, ← Nat.cast_inj (R := ℤ), Nat.cast_sum, differentExponent_eq_sum_ord_sub F P ht]
+  refine Finset.sum_congr rfl fun g _ ↦ (Int.toNat_of_nonneg ?_).symm
+  exact P.mem_integers_iff_ord_nonneg.mp (sub_mem
+    ((mem_integers_decompositionSubgroup_apply F P g).mpr htP) htP)
+
+/-- **Hilbert's different formula** (Stichtenoth, Theorem 3.8.7), with the sum cut off at an
+index `N` from which the ramification groups are trivial:
+`d(P ∣ P ∩ F) = ∑_{i < N} (|G_i(P)| - 1)`, when the residue extension is separable. -/
+theorem differentExponent_eq_sum_range_card_ramificationGroup_sub_one {N : ℕ}
+    (hN : ramificationGroup F P N = ⊥) :
+    differentExponent k F P = ∑ i ∈ Finset.range N, (Nat.card (ramificationGroup F P i) - 1) := by
+  rw [differentExponent_eq_finsum_card_ramificationGroup_sub_one F P]
+  refine finsum_eq_sum_of_support_subset _ fun i hi ↦ ?_
   rw [Finset.coe_range, Set.mem_Iio]
   by_contra h
-  rw [Function.mem_support, hN i (not_lt.mp h), Subgroup.card_bot, Nat.sub_self] at hi
+  have hbot : ramificationGroup F P i = ⊥ :=
+    eq_bot_iff.mpr (hN ▸ ramificationGroup_antitone F P (not_lt.mp h))
+  rw [Function.mem_support, hbot, Subgroup.card_bot, Nat.sub_self] at hi
   exact hi rfl
 
 end RamificationGroups

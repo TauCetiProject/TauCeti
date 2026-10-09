@@ -124,9 +124,7 @@ theorem isTame_iff :
 
 /-- **Tameness read on residue fields**: a place `P'` of `F' / k` is tame over `F` exactly when
 the residue extension `F'_{P'} / F_P` of the two places is separable and `e(P' ∣ P)` is nonzero in
-`F_P`.  The residue rings of the local model are identified with the residue fields of the two
-places by `TauCeti.Place.quotientAlgEquivResidueField`.  The constant field is not allowed to grow
-here: the constants of `F'` must lie in the local model over `𝒪_P`. -/
+`F_P`. -/
 theorem isTame_iff_isSeparable_residueField (P' : Place k F') :
     IsTame k F P' ↔ Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField ∧
       ((ramificationIdx F P' : ℕ) : (P'.restrict k F).ResidueField) ≠ 0 := by
@@ -159,7 +157,10 @@ theorem isTame_iff_isSeparable_residueField (P' : Place k F') :
       e, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, RingEquiv.trans_apply,
       Ideal.quotEquivOfEq_mk, AlgEquiv.coe_toRingEquiv, quotientAlgEquivResidueField_mk,
       residueHom_apply]
-    -- `e₀` is the identity and `Ideal.Quotient.mk` of the maximal ideal is the residue map.
+    -- `e₀` is the identity and `Ideal.Quotient.mk` of the maximal ideal is the residue map, but
+    -- only after unfolding `IsLocalRing.ResidueField` to the quotient: `e₀` expects an argument
+    -- of the quotient type, so rewriting with `IsLocalRing.residue_def` under it gives an
+    -- ill-typed motive. `change` restates the left side at the residue-field type instead.
     change algebraMap _ _ (IsLocalRing.residue _ r) = _
     rw [IsLocalRing.ResidueField.algebraMap_residue]
     exact congrArg _ (Subtype.ext (by simp [IsScalarTower.algebraMap_apply _ F F']))
