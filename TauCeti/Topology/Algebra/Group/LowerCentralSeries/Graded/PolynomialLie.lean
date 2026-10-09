@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Module.AEval
+public import TauCeti.Algebra.Lie.AEval
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.LieRing
 import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Pow
 
@@ -23,8 +23,8 @@ graded Lie algebra `⨁ k, gr_k(G)` that commutes with every inner derivation:
 
 So `⨁ k, gr_k(G)` is a Lie algebra over the polynomial ring `𝔽_p[π]`, with the indeterminate
 acting by `π`. The `𝔽_p[π]`-module is Mathlib's `Module.AEval'` of the endomorphism `π`, the
-`R[X]`-module attached to an `R`-linear endomorphism; this file puts the graded Lie ring on it and
-proves that the bracket is `𝔽_p[π]`-bilinear.
+`R[X]`-module attached to an `R`-linear endomorphism, and the Lie algebra structure is the general
+one of `TauCeti.Module.AEval'.lieAlgebra` for an endomorphism commuting with inner derivations.
 
 For `p = 2` none of this holds: `π` fails to be additive in degree zero, with defect the bracket
 (`TauCeti.gradedPow_add_zero_of_two`), and the defect is nonzero for a free pro-`2` group of rank
@@ -35,7 +35,7 @@ separate treatment.
 
 * `TauCeti.gradedPowLinearMap`: `π : gr_k(G) →ₗ[ZMod p] gr_{k+1}(G)`, for odd `p`.
 * `TauCeti.gradedPowEnd`: `π` on the direct sum `⨁ k, gr_k(G)`, of degree one.
-* The `LieRing` and `LieAlgebra (ZMod p)[X]` instances on `Module.AEval' (gradedPowEnd p G hp)`.
+* The `LieAlgebra (ZMod p)[X]` instance on `Module.AEval' (gradedPowEnd p G hp)`.
 
 ## Main results
 
@@ -126,42 +126,17 @@ theorem gradedPowEnd_lie_right (hp : Odd p) (x y : ⨁ k, gradedPiece p G k) :
 `f(π) ⁅x, y⁆ = ⁅x, f(π) y⁆` for `f ∈ 𝔽_p[X]`. This is the `𝔽_p[π]`-bilinearity of the bracket. -/
 theorem aeval_gradedPowEnd_lie_right (hp : Odd p) (f : (ZMod p)[X])
     (x y : ⨁ k, gradedPiece p G k) :
-    aeval (gradedPowEnd p G hp) f ⁅x, y⁆ = ⁅x, aeval (gradedPowEnd p G hp) f y⁆ := by
-  induction f using Polynomial.induction_on' with
-  | add f g hf hg => simp only [map_add, LinearMap.add_apply, hf, hg, lie_add]
-  | monomial n c =>
-    simp only [aeval_monomial, Module.End.mul_apply, Module.algebraMap_end_apply, lie_smul]
-    congr 1
-    induction n generalizing y with
-    | zero => simp only [pow_zero, Module.End.one_apply]
-    | succ n ih => rw [pow_succ, Module.End.mul_apply, Module.End.mul_apply,
-        gradedPowEnd_lie_right, ih]
+    aeval (gradedPowEnd p G hp) f ⁅x, y⁆ = ⁅x, aeval (gradedPowEnd p G hp) f y⁆ :=
+  Module.End.aeval_lie_right_of_lie_right (gradedPowEnd_lie_right hp) f x y
 
 /-! ### The `𝔽_p[π]`-Lie algebra -/
 
-/-- The graded Lie ring `⨁ k, gr_k(G)`, on its `𝔽_p[π]`-module `Module.AEval' (gradedPowEnd p G hp)`
-for odd `p`. -/
-instance (hp : Odd p) : LieRing (Module.AEval' (gradedPowEnd p G hp)) :=
-  inferInstanceAs (LieRing (⨁ k, gradedPiece p G k))
-
-/-- The `ZMod p`-Lie algebra `⨁ k, gr_k(G)`, on `Module.AEval' (gradedPowEnd p G hp)` for odd `p`;
-it is the restriction of scalars of the `𝔽_p[π]`-Lie algebra structure below along
-`ZMod p → (ZMod p)[X]`. -/
-instance (hp : Odd p) : LieAlgebra (ZMod p) (Module.AEval' (gradedPowEnd p G hp)) :=
-  inferInstanceAs (LieAlgebra (ZMod p) (⨁ k, gradedPiece p G k))
-
-/-- The bracket on `Module.AEval' (gradedPowEnd p G hp)` is the bracket of the graded Lie ring. -/
-@[simp]
-theorem aeval'_of_lie_of (hp : Odd p) (x y : ⨁ k, gradedPiece p G k) :
-    ⁅Module.AEval'.of (gradedPowEnd p G hp) x, Module.AEval'.of (gradedPowEnd p G hp) y⁆ =
-      Module.AEval'.of (gradedPowEnd p G hp) ⁅x, y⁆ :=
-  (rfl)
-
 /-- **The graded Lie algebra over `𝔽_p[π]`**, for odd `p`: on `Module.AEval' (gradedPowEnd p G hp)`,
 where the indeterminate `X` acts by `π` (`Module.AEval'.X_smul_of`), the bracket of the graded Lie
-ring is `𝔽_p[π]`-bilinear, by `TauCeti.aeval_gradedPowEnd_lie_right`. -/
+ring is `𝔽_p[π]`-bilinear, because `π` commutes with the bracket
+(`TauCeti.gradedPowEnd_lie_right`). -/
 noncomputable instance (hp : Odd p) :
-    LieAlgebra (ZMod p)[X] (Module.AEval' (gradedPowEnd p G hp)) where
-  lie_smul f x y := (aeval_gradedPowEnd_lie_right hp f x y).symm
+    LieAlgebra (ZMod p)[X] (Module.AEval' (gradedPowEnd p G hp)) :=
+  Module.AEval'.lieAlgebra (gradedPowEnd_lie_right hp)
 
 end TauCeti
