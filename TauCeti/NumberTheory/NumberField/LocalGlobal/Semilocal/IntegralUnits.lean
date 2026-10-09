@@ -65,7 +65,8 @@ theorem mem_semilocalIntegralUnits_iff (v : HeightOneSpectrum (𝓞 K))
 theorem semilocalGaloisHom_mem_semilocalIntegralUnits (v : HeightOneSpectrum (𝓞 K))
     (g : L ≃ₐ[K] L) {y : (v.adicCompletion K ⊗[K] L)ˣ}
     (hy : y ∈ semilocalIntegralUnits L v) :
-    Units.map (semilocalGaloisHom L v g : _ →* _) y ∈ semilocalIntegralUnits L v := by
+    Units.map (semilocalGaloisHom (v.adicCompletion K) L g : _ →* _) y ∈
+      semilocalIntegralUnits L v := by
   rw [mem_semilocalIntegralUnits_iff] at hy ⊢
   intro w
   let w' := (liesOverEquivPrimesOver (𝓞 L) v).symm
@@ -81,9 +82,9 @@ theorem semilocalGaloisHom_mem_semilocalIntegralUnits (v : HeightOneSpectrum (�
 instance semilocalIntegralUnitsMulDistribMulAction (v : HeightOneSpectrum (𝓞 K)) :
     MulDistribMulAction (L ≃ₐ[K] L) (semilocalIntegralUnits L v) := by
   letI := MulDistribMulAction.compHom (v.adicCompletion K ⊗[K] L)ˣ
-    (semilocalGaloisHom L v)
+    (semilocalGaloisHom (K := K) (v.adicCompletion K) L)
   letI : SMul (L ≃ₐ[K] L) (semilocalIntegralUnits L v) :=
-    ⟨fun g y ↦ ⟨Units.map (semilocalGaloisHom L v g : _ →* _) y.1,
+    ⟨fun g y ↦ ⟨Units.map (semilocalGaloisHom (v.adicCompletion K) L g : _ →* _) y.1,
       semilocalGaloisHom_mem_semilocalIntegralUnits v g y.2⟩⟩
   exact Subtype.coe_injective.mulDistribMulAction (semilocalIntegralUnits L v).subtype
     fun _ _ ↦ rfl
@@ -93,7 +94,7 @@ instance semilocalIntegralUnitsMulDistribMulAction (v : HeightOneSpectrum (𝓞 
 theorem coe_smul_semilocalIntegralUnits (v : HeightOneSpectrum (𝓞 K))
     (g : L ≃ₐ[K] L) (y : semilocalIntegralUnits L v) :
     ((g • y : semilocalIntegralUnits L v) : (v.adicCompletion K ⊗[K] L)ˣ) =
-      Units.map (semilocalGaloisHom L v g : _ →* _) y.1 :=
+      Units.map (semilocalGaloisHom (v.adicCompletion K) L g : _ →* _) y.1 :=
   (rfl)
 
 /-- The integral representation on the semi-local integer-unit group. -/
@@ -166,7 +167,7 @@ theorem semilocalIntegralUnitsToCoind_apply (y : semilocalIntegralUnits L v)
     (g : L ≃ₐ[K] L) :
     (((((semilocalIntegralUnitsToCoind v w).hom (Additive.ofMul y)).1 g).toMul.1 :
       (w.adicCompletion L)ˣ) : w.adicCompletion L) =
-        semilocalEquiv L v (semilocalGaloisHom L v g y.1) ⟨w, ‹_›⟩ :=
+        semilocalEquiv L v (semilocalGaloisHom (v.adicCompletion K) L g y.1) ⟨w, ‹_›⟩ :=
   (rfl)
 
 /-- Coinduction of the inclusion of local integer units into the full local unit group. -/
@@ -252,7 +253,7 @@ private theorem semilocalIntegralUnitsToCoind_bijective [IsGalois K L] :
       obtain ⟨g, hg⟩ := Ideal.exists_smul_eq_of_isGaloisGroup v.asIdeal
         w'.1.asIdeal w.asIdeal (L ≃ₐ[K] L)
       have hv : Valued.v (semilocalEquiv L v
-          (semilocalGaloisHom L v g u) ⟨w, ‹_›⟩) = 1 := by
+          (semilocalGaloisHom (v.adicCompletion K) L g u) ⟨w, ‹_›⟩) = 1 := by
         rw [← semilocalUnitsToCoind_apply v w u g]
         let val : Additive (w.adicCompletion L)ˣ → ℤᵐ⁰ := fun x ↦ Valued.v (x.toMul :
           w.adicCompletion L)
