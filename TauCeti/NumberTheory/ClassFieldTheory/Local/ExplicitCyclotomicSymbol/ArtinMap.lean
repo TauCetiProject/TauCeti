@@ -23,7 +23,8 @@ import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 This file proves the cyclotomic normalization of the absolute local Artin map of `ℚ_p` on units:
 if `σ ∈ G_{ℚ_p}` represents `Art_{ℚ_p}(u)` for `u ∈ ℤ_pˣ`, then `χ_cyc(σ) = u⁻¹`
 (`localCyclotomicCharacter_artinMap_padic`). It is the comparison of `Art_{ℚ_p}` with the explicit
-local symbols of the cyclotomic fields: no reciprocity law and no Lubin–Tate theory enters.
+local symbols of the cyclotomic fields: it uses local reciprocity (the kernel of the finite Artin
+maps is the norm group) and the explicit cyclotomic symbols, but no Lubin–Tate theory.
 
 ## Main results
 
