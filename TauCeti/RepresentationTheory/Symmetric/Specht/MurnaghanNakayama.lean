@@ -21,9 +21,9 @@ parts. `spechtCharValue_eq_sum_rimHook_removePart` uses Mathlib's
 reduce the size of the symmetric group at every step and so compute character values
 from the empty partition.
 
-The proof combines `psumPart_eq_sum_spechtCharValue_smul_schurPoly` (Frobenius's formula)
-with `psum_mul_schurPoly`, then compares coefficients using the Schur basis in a large
-enough finite alphabet. It does not assume any character recursion.
+The Frobenius characteristic identifies Specht characters with Schur polynomials.
+The power-sum identities `psumPart_eq_sum_spechtCharValue_smul_schurPoly` and
+`psum_mul_schurPoly` express this character recursion in symmetric polynomials.
 
 ## References
 
@@ -43,11 +43,12 @@ open scoped Classical in
 `ν` by adding a positive part `r`, its value in the Specht module of shape `μ` is the
 signed sum over the shapes obtained by removing a rim hook of size `r` from `μ`. -/
 theorem spechtCharValue_eq_sum_rimHook {n m r : ℕ} (μ ρ : n.Partition)
-    (ν : m.Partition) (hr : 0 < r) (hρ : ρ.parts = r ::ₘ ν.parts) :
+    (ν : m.Partition) (hρ : ρ.parts = r ::ₘ ν.parts) :
     spechtCharValue μ ρ =
       ∑ τ : m.Partition with (diagramOf μ).IsRimHook (diagramOf τ),
         (-1) ^ (diagramOf μ).rimHookHeight (diagramOf τ) * spechtCharValue τ ν := by
   classical
+  have hr : 0 < r := ρ.parts_pos (by simp [hρ])
   have hn : n = m + r := by
     have hs := congrArg Multiset.sum hρ
     simpa [ρ.parts_sum, ν.parts_sum, Nat.add_comm] using hs
@@ -86,7 +87,7 @@ theorem spechtCharValue_eq_sum_rimHook_removePart {n r : ℕ} (μ ρ : n.Partiti
         (-1) ^ (diagramOf μ).rimHookHeight (diagramOf τ) *
           spechtCharValue τ (Nat.Partition.partitionWithPartEquiv
             (Nat.succ_le_of_lt (ρ.parts_pos hρ)) (Nat.Partition.le_of_mem_parts hρ) ⟨ρ, hρ⟩) := by
-  apply spechtCharValue_eq_sum_rimHook (r := r) μ ρ _ (ρ.parts_pos hρ)
+  apply spechtCharValue_eq_sum_rimHook (r := r) μ ρ _
   simp only [Nat.Partition.partitionWithPartEquiv_apply_parts, Multiset.cons_erase hρ]
 
 open scoped Classical in
@@ -94,13 +95,13 @@ open scoped Classical in
 has the cycle type obtained by deleting one part `r` from that of `π`, including fixed
 points as parts of size one. -/
 theorem spechtChar_eq_sum_rimHook {n m r : ℕ} (μ : n.Partition)
-    (π : Equiv.Perm (Fin n)) (π' : Equiv.Perm (Fin m)) (hr : 0 < r)
+    (π : Equiv.Perm (Fin n)) (π' : Equiv.Perm (Fin m))
     (hπ : π.partition.parts = r ::ₘ π'.partition.parts) :
     spechtChar μ π =
       ∑ τ : m.Partition with (diagramOf μ).IsRimHook (diagramOf τ),
         (-1) ^ (diagramOf μ).rimHookHeight (diagramOf τ) * spechtChar τ π' := by
   simp_rw [spechtChar_eq_value]
-  apply spechtCharValue_eq_sum_rimHook (r := r) _ _ _ hr
+  apply spechtCharValue_eq_sum_rimHook (r := r) _ _ _
   simpa only [parts_partitionEquivConjClasses_symm_mk] using hπ
 
 end TauCeti
