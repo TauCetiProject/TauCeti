@@ -23,8 +23,8 @@ embeddings in `TauCeti.FieldTheory.Normal.Embeddings`. Conjugacy of the fixing s
 follows from the corresponding stabilizer conjugacy theorem. The finer statement
 `TauCeti.exists_galoisSubgroupEquiv_eq_conj` says that the two identifications of the absolute
 Galois group of `L` with these subgroups differ by conjugation by a single element of `G_K`;
-`TauCeti.exists_galoisSubgroupEquiv_symm_eq_conj` is the same fact read as a comparison of the
-two subgroups through `G_L`.
+`TauCeti.exists_galoisSubgroupComparison_eq_conj` is the same fact read on the comparison
+`TauCeti.galoisSubgroupComparison` of the two subgroups through `G_L`.
 
 The same holds for any other way of realizing `G_L` inside `G_K`: if a ring isomorphism
 `e : AlgebraicClosure L ≃+* AlgebraicClosure K` of algebraic closures extends the embedding `σ`,
@@ -78,15 +78,30 @@ theorem exists_galoisSubgroupEquiv_eq_conj [FiniteDimensional K L]
     galoisSubgroupEquiv_apply_separableClosureRingEquiv,
     galoisSubgroupEquiv_apply_separableClosureRingEquiv, hγ]
 
+/-- **The comparison of the subgroups cut out by two embeddings**: for `K`-embeddings
+`σ τ : L →ₐ[K] Kˢ`, the isomorphism `galoisSubgroup K L τ ≃ₜ* galoisSubgroup K L σ` through `G_L`,
+the inverse of `galoisSubgroupEquiv K L τ` followed by `galoisSubgroupEquiv K L σ`. By
+`exists_galoisSubgroupComparison_eq_conj` it is conjugation by an element of `G_K`. -/
+noncomputable def galoisSubgroupComparison [FiniteDimensional K L]
+    (σ τ : L →ₐ[K] SeparableClosure K) :
+    (galoisSubgroup K L τ).toSubgroup ≃ₜ* (galoisSubgroup K L σ).toSubgroup :=
+  (galoisSubgroupEquiv K L τ).symm.trans (galoisSubgroupEquiv K L σ)
+
+/-- `galoisSubgroupComparison K L σ τ` passes through `G_L`. -/
+@[simp]
+theorem galoisSubgroupComparison_apply [FiniteDimensional K L] (σ τ : L →ₐ[K] SeparableClosure K)
+    (v : (galoisSubgroup K L τ).toSubgroup) :
+    galoisSubgroupComparison K L σ τ v =
+      galoisSubgroupEquiv K L σ ((galoisSubgroupEquiv K L τ).symm v) := by
+  rw [galoisSubgroupComparison, ContinuousMulEquiv.trans_apply]
+
 /-- **The comparison of the subgroups cut out by two embeddings is conjugation**: for `K`-embeddings
-`σ τ : L →ₐ[K] Kˢ` there is `γ : G_K` such that passing from `galoisSubgroup K L τ` to
-`galoisSubgroup K L σ` through `G_L`, by the inverse of `galoisSubgroupEquiv K L τ` followed by
-`galoisSubgroupEquiv K L σ`, is `v ↦ γ⁻¹ * v * γ`. -/
-theorem exists_galoisSubgroupEquiv_symm_eq_conj [FiniteDimensional K L]
+`σ τ : L →ₐ[K] Kˢ` there is `γ : G_K` such that `galoisSubgroupComparison K L σ τ`, passing from
+`galoisSubgroup K L τ` to `galoisSubgroup K L σ` through `G_L`, is `v ↦ γ⁻¹ * v * γ`. -/
+theorem exists_galoisSubgroupComparison_eq_conj [FiniteDimensional K L]
     (σ τ : L →ₐ[K] SeparableClosure K) :
     ∃ γ : AbsoluteGaloisGroup K, ∀ v : (galoisSubgroup K L τ).toSubgroup,
-      (galoisSubgroupEquiv K L σ ((galoisSubgroupEquiv K L τ).symm v) : AbsoluteGaloisGroup K) =
-        γ⁻¹ * v * γ := by
+      (galoisSubgroupComparison K L σ τ v : AbsoluteGaloisGroup K) = γ⁻¹ * v * γ := by
   obtain ⟨γ, hγ⟩ := exists_galoisSubgroupEquiv_eq_conj K L σ τ
   refine ⟨γ, fun v => ?_⟩
   have h := hγ ((galoisSubgroupEquiv K L τ).symm v)

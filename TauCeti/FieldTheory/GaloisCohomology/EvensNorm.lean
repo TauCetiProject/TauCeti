@@ -157,15 +157,9 @@ the index-two norm is invariant under conjugation. -/
 theorem galoisEvens_embedding_independent (τ : L →ₐ[K] SeparableClosure K)
     (hL : Module.finrank K L = 2) :
     galoisEvens K L σ hL = galoisEvens K L τ hL := by
-  obtain ⟨γ, hγ⟩ := exists_galoisSubgroupEquiv_symm_eq_conj K L σ τ
-  -- The identification of `galoisSubgroup K L τ` with `galoisSubgroup K L σ` through `G_L`, which
-  -- is conjugation by `γ⁻¹`.
+  obtain ⟨γ, hγ⟩ := exists_galoisSubgroupComparison_eq_conj K L σ τ
   let κ : (galoisSubgroup K L τ).toSubgroup →ₜ* (galoisSubgroup K L σ).toSubgroup :=
-    (ContinuousMonoidHom.toContinuousMonoidHom (galoisSubgroupEquiv K L σ)).comp
-      (ContinuousMonoidHom.toContinuousMonoidHom (galoisSubgroupEquiv K L τ).symm)
-  have hκ (v : (galoisSubgroup K L τ).toSubgroup) :
-      (κ v : AbsoluteGaloisGroup K) = γ⁻¹ * v * γ := by
-    simpa [κ] using hγ v
+    galoisSubgroupComparison K L σ τ
   have hinv : (galoisF2Iso K L τ 1).inv = (galoisF2Iso K L σ 1).inv ≫ trivialF2Map κ 1 := by
     rw [galoisF2Iso_inv, galoisF2Iso_inv, ← trivialF2Map_comp]
     congr 1
@@ -173,6 +167,6 @@ theorem galoisEvens_embedding_independent (τ : L →ₐ[K] SeparableClosure K)
     simp [κ]
   ext x
   rw [galoisEvens_def, galoisEvens_def, hinv, ConcreteCategory.comp_apply,
-    evensNormIndexTwo_comp_of_conj _ _ _ _ γ κ hκ]
+    evensNormIndexTwo_comp_of_conj _ _ _ _ γ κ hγ]
 
 end TauCeti
