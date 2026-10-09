@@ -19,9 +19,10 @@ finite `q`, with the explicit bound
 
 `‖u‖_{L^q} ≤ n⁻¹ ω ^ (-1/n) (q (1 - 1/n) + 1) ^ (1 - 1/n + 1/q) μ(Ω) ^ (1/q) ‖Du‖_{Lⁿ}`
 
-for every `q ≥ n`. The constant grows like `q ^ (1 - 1/n)` as `q → ∞`; this is the growth rate
-which, summed in the exponential series, gives Trudinger's exponential integrability of
-`|u| ^ (n / (n - 1))`.
+for every `q ≥ n`. For `n ≥ 2` the constant grows like `q ^ (1 - 1/n)` as `q → ∞`; this is the
+growth rate which, summed in the exponential series, gives Trudinger's exponential integrability
+of `|u| ^ (n / (n - 1))`. For `n = 1` the constant is bounded in `q`, in line with the embedding
+of `W^{1,1}_0` in `L^∞`.
 
 The proof is that of Gilbarg–Trudinger, Theorem 7.15. A `C¹` function `u` with compact support in
 `Ω` is bounded pointwise by the Riesz potential of `‖Du‖` of order one,
