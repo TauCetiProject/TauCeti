@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth
 public import TauCeti.AlgebraicTopology.Singular.CrossProduct
+import Mathlib.Algebra.Category.ModuleCat.Products
 
 /-!
 # The Künneth theorem for singular homology over a field
@@ -24,14 +25,15 @@ and in both coefficient objects.  Since the shuffle map is a chain homotopy equi
 (Eilenberg–Zilber), the Künneth map is an isomorphism exactly when the algebraic Künneth map of
 the singular chain complexes is.
 
-Over a commutative semisimple ring `k`, for instance a field, every module is semisimple, so the
-algebraic Künneth map is an isomorphism
-(`HomologicalComplex.isIso_homologyKunneth_of_isSemisimpleModule`).  This gives the **Künneth
-theorem**: for `k`-modules `M` and `N` the cross product induces an isomorphism
+For semisimple modules `M` and `N` over a commutative ring `k`, the singular chain modules
+`Cₙ(X; M) = ⨁ M` and `Cₙ(Y; N) = ⨁ N` are semisimple, so the algebraic Künneth map is an
+isomorphism (`HomologicalComplex.isIso_homologyKunneth_of_isSemisimpleModule`).  This gives the
+**Künneth theorem**: the cross product induces an isomorphism
 
-`⨁_{p + q = n} Hₚ(X; M) ⊗ H_q(Y; N) ≅ Hₙ(X × Y; M ⊗ N)`,
+`⨁_{p + q = n} Hₚ(X; M) ⊗ H_q(Y; N) ≅ Hₙ(X × Y; M ⊗ N)`.
 
-and with `M = N = k`, along the unitor `k ⊗ k ≅ k`, the classical form
+Over a commutative semisimple ring `k`, for instance a field, every module is semisimple, and
+with `M = N = k`, along the unitor `k ⊗ k ≅ k`, this is the classical form
 `⨁_{p + q = n} Hₚ(X; k) ⊗ H_q(Y; k) ≅ Hₙ(X × Y; k)`.
 
 ## Main definitions and results
@@ -43,7 +45,8 @@ and with `M = N = k`, along the unitor `k ⊗ k ≅ k`, the classical form
   coefficients.
 * `TopCat.isIso_singularHomologyKunneth_iff`: the Künneth map is an isomorphism exactly when the
   algebraic Künneth map of the singular chain complexes is.
-* `TopCat.singularHomologyKunnethIso`: the Künneth isomorphism over a commutative semisimple ring.
+* `TopCat.singularHomologyKunnethIso`: the Künneth isomorphism for semisimple coefficient modules,
+  for instance for all coefficient modules over a field.
 * `TopCat.singularHomologyKunnethUnitIso`: its form `⨁ Hₚ(X; k) ⊗ H_q(Y; k) ≅ Hₙ(X × Y; k)`
   with coefficients in the ring itself.
 
@@ -195,27 +198,44 @@ end General
 
 section Semisimple
 
-variable {k : Type w} [CommRing k] [IsSemisimpleRing k]
+variable {k : Type w} [CommRing k]
 
-/-- **The Künneth theorem over a field**: over a commutative semisimple ring `k`, for instance a
-field, the Künneth map `⨁_{p + q = n} Hₚ(X; M) ⊗ H_q(Y; N) ⟶ Hₙ(X × Y; M ⊗ N)` is an
-isomorphism for all `k`-modules `M` and `N`. -/
-instance isIso_singularHomologyKunneth (X Y : TopCat.{w}) (M N : ModuleCat.{w} k) (n : ℕ) :
+/-- The singular chain modules `Cₙ(X; M) = ⨁ M` with semisimple coefficients `M` are semisimple. -/
+private lemma isSemisimpleModule_chainComplex_X (X : TopCat.{w}) (M : ModuleCat.{w} k)
+    [IsSemisimpleModule k M] (n : ℕ) :
+    IsSemisimpleModule k (((toSSet.obj X).chainComplex M).X n) := by
+  classical
+  -- `Cₙ(X; M)` is by definition the coproduct of copies of `M` indexed by the `n`-simplices.
+  exact .congr ((ModuleCat.coprodIsoDirectSum fun _ : (toSSet.obj X).obj
+    (.op (.mk n)) ↦ M).toLinearEquiv.trans (finsuppLequivDFinsupp k).symm)
+
+/-- **The Künneth theorem over a field**: for semisimple modules `M` and `N` over a commutative
+ring `k`, for instance any modules over a field, the Künneth map
+`⨁_{p + q = n} Hₚ(X; M) ⊗ H_q(Y; N) ⟶ Hₙ(X × Y; M ⊗ N)` is an isomorphism. -/
+instance isIso_singularHomologyKunneth (X Y : TopCat.{w}) (M N : ModuleCat.{w} k)
+    [IsSemisimpleModule k M] [IsSemisimpleModule k N] (n : ℕ) :
     IsIso (singularHomologyKunneth X Y M N n) :=
+  have := isSemisimpleModule_chainComplex_X X M
+  have := isSemisimpleModule_chainComplex_X Y N
   (isIso_singularHomologyKunneth_iff X Y M N n).mpr inferInstance
 
-/-- **The Künneth isomorphism** `⨁_{p + q = n} Hₚ(X; M) ⊗ H_q(Y; N) ≅ Hₙ(X × Y; M ⊗ N)` over a
-commutative semisimple ring `k`, for instance a field, induced by the homology cross product. -/
-def singularHomologyKunnethIso (X Y : TopCat.{w}) (M N : ModuleCat.{w} k) (n : ℕ) :
+/-- **The Künneth isomorphism** `⨁_{p + q = n} Hₚ(X; M) ⊗ H_q(Y; N) ≅ Hₙ(X × Y; M ⊗ N)` for
+semisimple modules `M` and `N` over a commutative ring, for instance any modules over a field,
+induced by the homology cross product. -/
+def singularHomologyKunnethIso (X Y : TopCat.{w}) (M N : ModuleCat.{w} k)
+    [IsSemisimpleModule k M] [IsSemisimpleModule k N] (n : ℕ) :
     GradedObject.Monoidal.tensorObj (fun p ↦ ((singularHomologyFunctor _ p).obj M).obj X)
         (fun q ↦ ((singularHomologyFunctor _ q).obj N).obj Y) n ≅
       ((singularHomologyFunctor _ n).obj (M ⊗ N)).obj (X ⊗ Y) :=
   asIso (singularHomologyKunneth X Y M N n)
 
 @[simp]
-lemma singularHomologyKunnethIso_hom (X Y : TopCat.{w}) (M N : ModuleCat.{w} k) (n : ℕ) :
+lemma singularHomologyKunnethIso_hom (X Y : TopCat.{w}) (M N : ModuleCat.{w} k)
+    [IsSemisimpleModule k M] [IsSemisimpleModule k N] (n : ℕ) :
     (singularHomologyKunnethIso X Y M N n).hom = singularHomologyKunneth X Y M N n :=
   (rfl)
+
+variable [IsSemisimpleRing k]
 
 /-- **The Künneth isomorphism with coefficients in the ring**:
 `⨁_{p + q = n} Hₚ(X; k) ⊗ H_q(Y; k) ≅ Hₙ(X × Y; k)` over a commutative semisimple ring `k`, for
