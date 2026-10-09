@@ -54,8 +54,8 @@ that of `Tr_*⟨a⟩`.
 ## Main results
 
 * `TauCeti.twistedBoundary_conj`: changing frame by `Q` conjugates the twisted boundary by `Q`.
-* `TauCeti.twistedBoundary_conj_eq_neg_one_pow_iff`: a change of frame leaves a scalar twisted
-  boundary `±1` unchanged.
+* `TauCeti.twistedBoundary_conj_eq_iff`: a change of frame leaves unchanged a twisted boundary
+  commuting with it, such as a scalar `±1`.
 * `TauCeti.twistedBoundary_neg_one_pow_mul`: twisting a cochain by signs `(−1)^ψ` multiplies its
   twisted boundary by `(−1)^{∂ψ}`.
 * `TauCeti.twistedBoundary_pinDiagonalLift_rootSign`: the twisted boundary of the diagonal lift
@@ -156,23 +156,22 @@ theorem twistedBoundary_conj
   rw [← Matrix.mul_assoc (Q.map g), hmap, Matrix.one_mul,
     Matrix.mul_nonsing_inv_cancel_left _ _ hdet]
 
-/-- **A change of frame does not change a scalar twisted boundary:** for an invertible matrix `Q`,
-the twisted boundary of `g ↦ Q⁻¹ · x(g) · g(Q)` is the sign `(−1)^n` exactly where that of `x`
-is. -/
-theorem twistedBoundary_conj_eq_neg_one_pow_iff
+/-- **A change of frame does not change a twisted boundary commuting with it:** for an invertible
+matrix `Q` and a matrix `S` commuting with `Q` (for instance a scalar such as a sign `(−1)^n`), the
+twisted boundary of `g ↦ Q⁻¹ · x(g) · g(Q)` is `S` exactly where that of `x` is. -/
+theorem twistedBoundary_conj_eq_iff
     (x : AbsoluteGaloisGroup K → Matrix (Fin 2) (Fin 2) (SeparableClosure K))
-    {Q : Matrix (Fin 2) (Fin 2) (SeparableClosure K)} (hQ : IsUnit Q.det)
-    (q : AbsoluteGaloisGroup K × AbsoluteGaloisGroup K) (n : ℕ) :
-    twistedBoundary (fun g => Q⁻¹ * x g * Q.map g) q = (-1) ^ n ↔
-      twistedBoundary x q = (-1) ^ n := by
-  have hc := ((Commute.neg_one_left Q).pow_left n).eq
+    {Q S : Matrix (Fin 2) (Fin 2) (SeparableClosure K)} (hQ : IsUnit Q.det) (hS : Commute S Q)
+    (q : AbsoluteGaloisGroup K × AbsoluteGaloisGroup K) :
+    twistedBoundary (fun g => Q⁻¹ * x g * Q.map g) q = S ↔ twistedBoundary x q = S := by
+  have hc := hS.eq
   rw [twistedBoundary_conj x hQ q]
   refine ⟨fun h => ?_, fun h => ?_⟩
   · calc twistedBoundary x q
         _ = Q * (Q⁻¹ * twistedBoundary x q * Q) * Q⁻¹ := by
           simp only [Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hQ, Matrix.mul_one,
             Matrix.mul_nonsing_inv_cancel_left _ _ hQ]
-        _ = (-1) ^ n := by
+        _ = S := by
           rw [h, ← hc, Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hQ, Matrix.mul_one]
   · rw [h, Matrix.mul_assoc, hc, ← Matrix.mul_assoc, Matrix.nonsing_inv_mul _ hQ, Matrix.one_mul]
 

@@ -129,7 +129,7 @@ theorem twistedBoundaryF2_kummerIndLift_cohomologous (σ : L →ₐ[K] Separable
     simp only [ψ, z, kummerIndLift_def, h₁, h₂, h₃]
   · -- The twisted boundary of `z` is the sign of the cup product twisted by `∂ψ`, and, `z` being
     -- `\tilde{ρ}_a` in the frame `Q`, it is the twisted boundary of `\tilde{ρ}_a`.
-    refine (twistedBoundary_conj_eq_neg_one_pow_iff _ hQdet _ _).1 ?_
+    refine (twistedBoundary_conj_eq_iff _ hQdet ((Commute.neg_one_left Q).pow_left _) _).1 ?_
     rw [← hz_def, hzψ, twistedBoundary_neg_one_pow_mul, twistedBoundary_pinDiagonalLift_rootSign hc,
       ← pow_val_add (by simp), add_comm (rootSign (c 1) g * _)]
 
