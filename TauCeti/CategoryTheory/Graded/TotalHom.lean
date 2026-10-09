@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Graded.Basic
 public import TauCeti.Algebra.Module.GradedModule.DirectSum
+public import TauCeti.Algebra.Module.GradedModule.Multilinear.Basic
 public import Mathlib.LinearAlgebra.Multilinear.DirectSum
 
 /-!
@@ -44,6 +45,8 @@ statements that use it.
   of a hom module is recovered from its component there.
 * `TauCeti.GradedLinearQuiver.IsPathCompatible.ext`: a path-compatible operation is determined
   by its values on composable strings.
+* `TauCeti.GradedLinearQuiver.isPathCompatible_of_homogeneous`: path compatibility can be tested
+  on homogeneous morphisms.
 
 ## References
 
@@ -171,6 +174,16 @@ structure IsPathCompatible {n : ℕ}
       (hij : (j : ℕ) = i + 1) (hne : t j ≠ s i) :
     f (fun k ↦ homInclusion (s k) (t k) (x k)) = 0
 
+/-- A string of morphisms in which the target of each morphism is the source of the one before it
+comes from a string of objects. -/
+private theorem exists_eq_of_chain {n : ℕ} (s t : Fin (n + 1) → C)
+    (hst : ∀ j : Fin n, t j.succ = s j.castSucc) :
+    ∃ X : Fin (n + 2) → C, s = (fun i ↦ X i.rev.castSucc) ∧ t = fun i ↦ X i.rev.succ := by
+  refine ⟨Fin.snoc (fun k ↦ s k.rev) (t 0), funext fun i ↦ by simp, funext fun i ↦ ?_⟩
+  cases i using Fin.cases with
+  | zero => simp
+  | succ j => simp [Fin.rev_succ, Fin.succ_castSucc, -Fin.castSucc_succ, hst]
+
 /-- **Path-compatible operations are determined by their values on composable strings.** -/
 theorem IsPathCompatible.ext {n : ℕ}
     {f g : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C)}
@@ -195,15 +208,49 @@ theorem IsPathCompatible.ext {n : ℕ}
     exact key (fun i ↦ (p i).1) (fun i ↦ (p i).2) x
   intro s t x
   by_cases hst : ∀ j : Fin n, t j.succ = s j.castSucc
-  · obtain ⟨X, rfl, rfl⟩ : ∃ X : Fin (n + 2) → C,
-        s = (fun i ↦ X i.rev.castSucc) ∧ t = fun i ↦ X i.rev.succ := by
-      refine ⟨Fin.snoc (fun k ↦ s k.rev) (t 0), funext fun i ↦ by simp, funext fun i ↦ ?_⟩
-      cases i using Fin.cases with
-      | zero => simp
-      | succ j => simp [Fin.rev_succ, Fin.succ_castSucc, -Fin.castSucc_succ, hst]
+  · obtain ⟨X, rfl, rfl⟩ := exists_eq_of_chain s t hst
     exact h X x
   · obtain ⟨j, hj⟩ := not_forall.1 hst
     rw [hf.eq_zero_of_ne s t x j.castSucc j.succ (by simp) hj,
       hg.eq_zero_of_ne s t x j.castSucc j.succ (by simp) hj]
+
+/-- A path-compatible operation sends a string of morphisms in which the target of each morphism
+is the source of the one before it to a morphism from the source `a` of its last morphism to the
+target `b` of its first.  This is `IsPathCompatible.mem_range_homInclusion` for a string presented
+by the sources and targets of its morphisms rather than by its objects. -/
+theorem IsPathCompatible.mem_range_homInclusion_of_chain {n : ℕ}
+    {f : MultilinearMap R (fun _ : Fin (n + 1) ↦ TotalHom R C) (TotalHom R C)}
+    (hf : IsPathCompatible f) (s t : Fin (n + 1) → C) (x : ∀ i, homModule (R := R) (s i) (t i))
+    (hst : ∀ j : Fin n, t j.succ = s j.castSucc) {a b : C} (ha : s (Fin.last n) = a)
+    (hb : t 0 = b) :
+    f (fun i ↦ homInclusion (s i) (t i) (x i)) ∈ LinearMap.range (homInclusion (R := R) a b) := by
+  subst ha hb
+  obtain ⟨X, rfl, rfl⟩ := exists_eq_of_chain s t hst
+  beta_reduce
+  rw [Fin.rev_last, Fin.castSucc_zero, Fin.rev_zero, Fin.succ_last]
+  exact hf.mem_range_homInclusion X x
+
+/-- **Path compatibility can be tested on homogeneous morphisms.** -/
+theorem isPathCompatible_of_homogeneous {n : ℕ}
+    {f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C)}
+    (mem_range : ∀ (X : Fin (n + 1) → C)
+      (x : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) (d : Fin n → ℤ),
+      (∀ i, x i ∈ (grading (R := R) (X i.rev.castSucc) (X i.rev.succ)).piece (d i)) →
+        f (fun i ↦ homInclusion _ _ (x i)) ∈
+          LinearMap.range (homInclusion (R := R) (X 0) (X (Fin.last n))))
+    (eq_zero : ∀ (s t : Fin n → C) (x : ∀ i, homModule (R := R) (s i) (t i)) (d : Fin n → ℤ),
+      (∀ i, x i ∈ (grading (R := R) (s i) (t i)).piece (d i)) → ∀ i j : Fin n,
+        (j : ℕ) = i + 1 → t j ≠ s i → f (fun k ↦ homInclusion (s k) (t k) (x k)) = 0) :
+    IsPathCompatible f where
+  mem_range_homInclusion X x :=
+    InternalGrading.multilinearMap_apply_mem
+      (fun i ↦ grading (R := R) (X i.rev.castSucc) (X i.rev.succ))
+      (f := f.compLinearMap fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ))
+      (fun d x hx ↦ mem_range X x d hx) x
+  eq_zero_of_ne s t x i j hij hne :=
+    (Submodule.mem_bot R).1 <| InternalGrading.multilinearMap_apply_mem
+      (fun k ↦ grading (R := R) (s k) (t k))
+      (f := f.compLinearMap fun k ↦ homInclusion (s k) (t k))
+      (fun d x hx ↦ (Submodule.mem_bot R).2 (eq_zero s t x d hx i j hij hne)) x
 
 end TauCeti.GradedLinearQuiver

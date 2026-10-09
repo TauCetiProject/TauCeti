@@ -267,14 +267,14 @@ private theorem commonKernelHopfIdeal_toIdeal_le_ker_ambientCoordinateMap :
   refine CommHopfAlgCat.commonKernelHopfIdeal_toIdeal_le_ker_of_comp_commonKernelLift generator
     ambientCoordinateMap fun j => ?_
   rcases j with k | ⟨⟩
-  · obtain ⟨u, hu⟩ := exists_map_genericMatrix_generator_inl k
-    obtain ⟨t, rfl⟩ : ∃ t, Multiplicative.ofAdd t = u := ⟨Multiplicative.toAdd u, rfl⟩
-    refine toIdeal_le_ker_of_map_genericMatrix_eq _
+  · refine toIdeal_le_ker_of_map_genericMatrix_eq _
       (rootSubgroupPoints (specialIsogenyRootIndex k)
         (AdditiveGroup.coordinateHopfAlgebra (ZMod 3))
-        (Multiplicative.ofAdd (t ^ specialIsogenyExponent k))) ?_
-    rw [map_genericMatrix_ambientCoordinateMap_comp_commonKernelLift, hu]
-    exact g2SpecialIsogeny_coe_rootSubgroupPoints k t
+        (Multiplicative.ofAdd
+          (SymmetricAlgebra.ι (ZMod 3) (ZMod 3) 1 ^ specialIsogenyExponent k))) ?_
+    rw [map_genericMatrix_ambientCoordinateMap_comp_commonKernelLift,
+      map_genericMatrix_generator_inl]
+    exact g2SpecialIsogeny_coe_rootSubgroupPoints k _
   · obtain ⟨s, hs⟩ := exists_map_genericMatrix_generator_inr
     refine toIdeal_le_ker_of_map_genericMatrix_eq _
       (weightTorusPoints ((DiagonalizableGroup.coordinateRing (ZMod 3)
@@ -566,9 +566,8 @@ private theorem ambientCoordinateMap_comp_specialIsogenyCoordinateMap :
     map_genericMatrix_carrierQuotient_comp_frobeniusCoordinateMap, ← g2SpecialIsogeny_map,
     ← g2SpecialIsogeny_map, map_pow_map, hXj]
   rcases j with k | ⟨⟩
-  · obtain ⟨u, hu⟩ := exists_map_genericMatrix_generator_inl k
-    rw [hu]
-    exact g2SpecialIsogeny_g2SpecialIsogeny_coe_rootSubgroupPoints_eq_map_pow k u
+  · rw [map_genericMatrix_generator_inl]
+    exact g2SpecialIsogeny_g2SpecialIsogeny_coe_rootSubgroupPoints_eq_map_pow k _
   · obtain ⟨s, hs⟩ := exists_map_genericMatrix_generator_inr
     rw [hs]
     exact g2SpecialIsogeny_g2SpecialIsogeny_coe_weightTorusPoints_eq_map_pow s

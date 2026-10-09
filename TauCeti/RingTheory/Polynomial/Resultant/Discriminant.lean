@@ -53,7 +53,10 @@ depressed specialization of that formula is used to compare a quartic with its c
   discriminant of a minimal polynomial is a norm.
 * `Polynomial.Monic.discr_mul`: the product formula for discriminants, with the square of the
   resultant as its cross term.
+* `Polynomial.discr_prod_of_monic`: the same formula for a finite product of monic polynomials,
+  with the pairwise resultants as cross terms.
 * `Polynomial.discr_X_pow_sub_C`: the discriminant of a binomial `X ^ n - C a`.
+* `TauCeti.discr_X_pow_five_add_C_mul_X_add_C`: the discriminant of `X⁵ + aX + b`.
 * `TauCeti.not_isSquare_discr_X_pow_five_sub_C`: the discriminant `3125a⁴` of a pure quintic
   `X ^ 5 - C a` over `ℚ` with `a ≠ 0` is not a square.
 * `TauCeti.discr_C_mul`, `TauCeti.isSquare_discr_iff_mem_range`: the scaling law and
@@ -65,6 +68,8 @@ depressed specialization of that formula is used to compare a quartic with its c
   `Polynomial.Monic.discr_ne_zero_iff_separable_map`: a monic polynomial is separable exactly
   when its discriminant is a unit; over a field that reads `discr f ≠ 0`, and over a domain the
   correct statement passes to the fraction field.
+* `Polynomial.Monic.squarefree_of_discr_ne_zero`: over a domain, a monic polynomial with nonzero
+  discriminant is squarefree.
 * `Polynomial.discr_ne_zero_iff`: over a field, a nonzero polynomial that need not be monic is
   separable exactly when its discriminant is nonzero.
 * `Polynomial.separable_map_iff_map_discr_ne_zero`,
@@ -313,6 +318,41 @@ theorem discr_mul {f g : R[X]} (hf : f.Monic) (hg : g.Monic) :
   ring_nf
   convert hdisc.symm using 1
   all_goals ring
+
+end Monic
+
+/-- The discriminant of a finite product of monic polynomials is the product of their
+discriminants and the square of the product of their pairwise resultants. This is
+`Polynomial.Monic.discr_mul` iterated; the pairs are taken once each, ordered by the index. -/
+theorem discr_prod_of_monic {ι : Type*} [LinearOrder ι] (s : Finset ι) (f : ι → R[X])
+    (hf : ∀ i ∈ s, (f i).Monic) :
+    (∏ i ∈ s, f i).discr =
+      (∏ i ∈ s, (f i).discr) * (∏ j ∈ s, ∏ i ∈ s with i < j, (f i).resultant (f j)) ^ 2 := by
+  nontriviality R
+  induction s using Finset.induction_on_max with
+  | empty => simpa using discr_C (R := R) 1
+  | insert m s hm ih =>
+    -- Split off the largest index `m`: its resultants with the earlier factors are exactly the
+    -- new pairs, and no earlier pair involves it.
+    have hms : m ∉ s := fun h ↦ (hm m h).false
+    have hf' : ∀ i ∈ s, (f i).Monic := fun i hi ↦ hf i (mem_insert_of_mem hi)
+    have hP : (∏ i ∈ s, f i).Monic := monic_prod_of_monic _ _ hf'
+    rw [prod_insert hms, mul_comm, hP.discr_mul (hf m (mem_insert_self m s)), ih hf',
+      resultant_prod_left s f (f m) _
+        (by rw [prod_eq_one fun i hi ↦ (hf' i hi).leadingCoeff]; exact one_ne_zero) le_rfl,
+      prod_insert hms, prod_insert hms]
+    have hnew : ∏ i ∈ insert m s with i < m, (f i).resultant (f m) =
+        ∏ i ∈ s, (f i).resultant (f m) := by
+      rw [filter_insert, filter_true_of_mem hm]
+      simp
+    have hold : ∀ j ∈ s, ∏ i ∈ insert m s with i < j, (f i).resultant (f j) =
+        ∏ i ∈ s with i < j, (f i).resultant (f j) := fun j hj ↦ by
+      rw [filter_insert]
+      simp [not_lt.mpr (hm j hj).le]
+    rw [hnew, prod_congr rfl hold]
+    ring
+
+namespace Monic
 
 /-! ### The root-product formula -/
 
@@ -709,6 +749,26 @@ theorem discr_ne_zero_iff_separable_map (K : Type*) [Field K]
   rw [f.separable_map_iff_map_discr_ne_zero _ (by simp [hf.leadingCoeff]), map_ne_zero_iff _
     (FaithfulSMul.algebraMap_injective R K)]
 
+/-- A monic polynomial over a domain with nonzero discriminant is squarefree. The discriminant
+makes it separable over the fraction field, hence squarefree there; a square factor over the
+domain is then constant, and divides the leading coefficient `1`. -/
+theorem squarefree_of_discr_ne_zero [IsDomain R] {f : R[X]} (hf : f.Monic) (hd : f.discr ≠ 0) :
+    Squarefree f := by
+  have hsep := (hf.discr_ne_zero_iff_separable_map (FractionRing R)).mp hd
+  intro g hg
+  obtain ⟨h, hh⟩ := hg
+  have hu : IsUnit (g.map (algebraMap R (FractionRing R))) :=
+    hsep.squarefree _ ⟨h.map (algebraMap R (FractionRing R)), by
+      rw [hh]; simp only [Polynomial.map_mul]⟩
+  have hg0 : g.natDegree = 0 := by
+    rw [← natDegree_map_eq_of_injective (FaithfulSMul.algebraMap_injective R (FractionRing R))]
+    exact natDegree_eq_zero_of_isUnit hu
+  -- `Polynomial.Monic.natDegree_eq_zero` would shadow the constant-polynomial characterization.
+  obtain ⟨a, rfl⟩ := Polynomial.natDegree_eq_zero.mp hg0
+  have hlc := congrArg Polynomial.leadingCoeff hh
+  rw [hf.leadingCoeff, leadingCoeff_mul, leadingCoeff_mul, leadingCoeff_C, mul_assoc] at hlc
+  exact isUnit_C.mpr (IsUnit.of_mul_eq_one _ hlc.symm)
+
 /-- A monic integral polynomial has separable reduction modulo a prime exactly when that prime
 does not divide its discriminant. -/
 -- Tagged `@[simp high]` rather than `@[simp]`: at the default priority the general
@@ -937,5 +997,47 @@ theorem discr_depressedQuartic (p q r : R) :
     simpa only [add_assoc] using monic_X_pow_add hdeg
   rw [hmonic.discr_of_natDegree_eq_four hf]
   simp [f]
+
+/-- The discriminant of the quintic trinomial `X⁵ + aX + b`, over any commutative ring. -/
+@[simp] theorem discr_X_pow_five_add_C_mul_X_add_C (a b : R) :
+    (X ^ 5 + C a * X + C b).discr = 256 * a ^ 5 + 3125 * b ^ 4 := by
+  nontriviality R
+  let f : R[X] := X ^ 5 + C a * X + C b
+  have hf : f.natDegree = 5 := by dsimp [f]; compute_degree!
+  let e : Fin (f.natDegree - 1 + f.natDegree) ≃ Fin 9 := finCongr (by omega)
+  have hmat : f.sylvesterDeriv.reindex e e =
+      !![b, 0, 0, 0, a, 0, 0, 0, 0;
+         a, b, 0, 0, 0, a, 0, 0, 0;
+         0, a, b, 0, 0, 0, a, 0, 0;
+         0, 0, a, b, 0, 0, 0, a, 0;
+         0, 0, 0, a, 5, 0, 0, 0, a;
+         1, 0, 0, 0, 0, 5, 0, 0, 0;
+         0, 1, 0, 0, 0, 0, 5, 0, 0;
+         0, 0, 1, 0, 0, 0, 0, 5, 0;
+         0, 0, 0, 1, 0, 0, 0, 0, 5] := by
+    ext ⟨i, hi⟩ ⟨j, hj⟩
+    simp only [sylvesterDeriv, hf, OfNat.ofNat_ne_zero, ↓reduceDIte, sylvester, Fin.addCases,
+      Nat.add_one_sub_one, Fin.val_castLT, Fin.val_subNat, Fin.val_cast, coeff_derivative,
+      eq_rec_constant, dite_eq_ite, Nat.reduceMul, Nat.reduceSub, Nat.cast_ofNat,
+      Matrix.reindex_apply, Matrix.submatrix_apply, Matrix.updateRow_apply, Matrix.of_apply,
+      e, finCongr_symm, finCongr_apply, Fin.cast_mk, Fin.mk.injEq,
+      Matrix.cons_val', Matrix.cons_val_fin_one]
+    have hi' : i ∈ Finset.range 9 := Finset.mem_range.mpr hi
+    have hj' : j ∈ Finset.range 9 := Finset.mem_range.mpr hj
+    fin_cases hi' <;>
+    · simp only [Fin.isValue, Fin.mk_one, Fin.reduceFinMk, Fin.zero_eta,
+        Matrix.cons_val_one, Matrix.cons_val_zero, Matrix.cons_val,
+        Nat.reduceEqDiff, OfNat.one_ne_ofNat, ↓reduceIte]
+      fin_cases hj' <;>
+      · simp only [f, coeff_add, coeff_C_mul, coeff_X_pow, coeff_X, coeff_C,
+          Nat.reduceAdd, Nat.reduceSub, Nat.reduceEqDiff, ↓reduceIte,
+          zero_add, add_zero, zero_mul, mul_zero, mul_one, one_mul]
+        norm_num [Set.mem_Icc, Matrix.cons_val]
+  -- Fold the local polynomial abbreviation to use the matrix identity.
+  change f.discr = _
+  rw [discr, ← Matrix.det_reindex_self e, hmat, hf]
+  norm_num
+  eval_det
+  ring
 
 end TauCeti

@@ -73,7 +73,7 @@ applies to the rest of that file. The source's `rename (fun _ ↦ s)` spelling i
 `PowerSeries.toMvPowerSeries s` throughout, as elsewhere in `FormalGroup/`.
 
 The source's private `ringHom_invOfUnit` is not ported. It carries no elliptic content, and the
-general statement now lives in a general file as `MvPowerSeries.ringHom_invOfUnit`, which this file
+general statement now lives in a general file as `MvPowerSeries.map_invOfUnit`, which this file
 uses directly.
 -/
 
@@ -186,7 +186,7 @@ private theorem subst_unitR_formalThirdRoot_eq {L : PowerSeries R}
   have hInv : subst (Sum.elim X (fun _ ↦ 0) : Unit ⊕ Unit → MvPowerSeries Unit R) (invOfUnit D 1) =
       invOfUnit (1 + PowerSeries.C W.a₂ * L + PowerSeries.C W.a₄ * L ^ 2 +
         PowerSeries.C W.a₆ * L ^ 3) 1 := by
-    have h := MvPowerSeries.ringHom_invOfUnit (S := R) (u := 1) (v := 1)
+    have h := MvPowerSeries.map_invOfUnit (S := R) (u := 1) (v := 1)
       (substAlgHom hasSubst_unitR) hD1
       (by rw [coe_substAlgHom, hDsub]; exact hD1')
     rwa [coe_substAlgHom, hDsub] at h

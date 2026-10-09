@@ -79,7 +79,7 @@ theorem map_reverseEven_eq_adjugate_prod_of_finrank_eq_four
   have hscalar (A : M × M) :
       A + f A ∈ Subalgebra.center K (M × M) := by
     have h : e (e.symm A + reverseEven Q (e.symm A)) ∈ Subalgebra.center K (M × M) :=
-      TauCeti.map_center_eq_center e ▸
+      Subalgebra.map_center_eq e ▸
         Subalgebra.mem_map.mpr ⟨_,
           add_reverseEven_mem_center_of_split_center Q hQ hV hE _, rfl⟩
     simpa only [map_add, e.apply_symm_apply, ← hf] using h

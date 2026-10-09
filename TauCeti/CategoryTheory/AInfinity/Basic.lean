@@ -180,8 +180,9 @@ theorem homDifferential_apply (X Y : C) (f : homModule (R := R) X Y) :
 the included morphism. -/
 @[simp]
 theorem homInclusion_homDifferential (X Y : C) (f : homModule (R := R) X Y) :
-    homInclusion X Y (𝒞.homDifferential X Y f) = 𝒞.m 1 ![homInclusion X Y f] := by
-  rw [homDifferential_apply]
+    homInclusion X Y (𝒞.homDifferential X Y f) =
+      𝒞.differential (homInclusion X Y f) := by
+  rw [AInfinityAlgebra.differential_apply, homDifferential_apply]
   apply homInclusion_homProjection_of_mem_range
   have h := (𝒞.isPathCompatible_m 1).mem_range_homInclusion ![X, Y]
     (Fin.cases (motive := fun i ↦ homModule (R := R) (![X, Y] i.rev.castSucc) (![X, Y] i.rev.succ))
@@ -194,11 +195,31 @@ theorem homInclusion_homDifferential (X Y : C) (f : homModule (R := R) X Y) :
     rfl
   rwa [e] at h
 
+/-- Taking a component intertwines the total differential with the Hom differential.
+In particular, it sends total boundaries to boundaries in the selected Hom module. -/
+theorem homProjection_differential (X Y : C) (x : TotalHom R C) :
+    homProjection X Y (𝒞.differential x) =
+      𝒞.homDifferential X Y (homProjection X Y x) := by
+  classical
+  suffices h : homProjection X Y ∘ₗ 𝒞.differential =
+      𝒞.homDifferential X Y ∘ₗ homProjection X Y from LinearMap.congr_fun h x
+  apply DirectSum.linearMap_ext
+  intro p
+  apply LinearMap.ext
+  intro f
+  simp only [LinearMap.comp_apply]
+  rw [← homInclusion_eq_lof p.1 p.2, ← homInclusion_homDifferential]
+  by_cases h : p = (X, Y)
+  · subst p
+    simp only [homProjection_homInclusion]
+  · rw [homProjection_homInclusion_of_ne h, homProjection_homInclusion_of_ne h, map_zero]
+
 /-- The differential of an `A∞` category raises the degree by one. -/
 theorem homDifferential_mem_piece {X Y : C} {p : ℤ} {f : homModule (R := R) X Y}
     (hf : f ∈ (grading (R := R) X Y).piece p) :
     𝒞.homDifferential X Y f ∈ (grading (R := R) X Y).piece (p + 1) := by
-  rw [← homInclusion_mem_totalGrading_piece_iff, homInclusion_homDifferential]
+  rw [← homInclusion_mem_totalGrading_piece_iff, homInclusion_homDifferential,
+    AInfinityAlgebra.differential_apply]
   simpa using 𝒞.m_mem_totalGrading_piece ![p] _
     (by simpa [Fin.forall_fin_one] using hf)
 
@@ -207,7 +228,8 @@ theorem homDifferential_mem_piece {X Y : C} {p : ℤ} {f : homModule (R := R) X 
 theorem homDifferential_homDifferential (X Y : C) (f : homModule (R := R) X Y) :
     𝒞.homDifferential X Y (𝒞.homDifferential X Y f) = 0 := by
   apply homInclusion_injective X Y
-  rw [homInclusion_homDifferential, homInclusion_homDifferential, map_zero]
+  rw [homInclusion_homDifferential, homInclusion_homDifferential, map_zero,
+    AInfinityAlgebra.differential_apply, AInfinityAlgebra.differential_apply]
   exact 𝒞.stasheff_arity_one _
 
 /-- The **composition** `m₂` of an `A∞` category: `𝒞.comp X Y Z g f` is the composite
@@ -260,7 +282,8 @@ theorem homDifferential_comp {X Y Z : C} {p : ℤ} {g : homModule (R := R) Y Z}
         negOnePowCast R p • 𝒞.comp X Y Z g (𝒞.homDifferential X Y f) := by
   apply homInclusion_injective X Z
   rw [map_add, map_smul]
-  simp only [homInclusion_homDifferential, homInclusion_comp]
+  simp only [homInclusion_homDifferential, homInclusion_comp,
+    AInfinityAlgebra.differential_apply]
   exact 𝒞.stasheff_arity_two _ _ p (by rwa [𝒞.grading_eq, homInclusion_mem_totalGrading_piece_iff])
 
 end AInfinityCategory

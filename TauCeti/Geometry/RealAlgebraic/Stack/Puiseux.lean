@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.RealAlgebraic.Stack.Delineation
 public import TauCeti.Analysis.Polynomial.Puiseux.RealRoots
-import TauCeti.Topology.Algebra.Polynomial
+import TauCeti.Topology.Algebra.Polynomial.Basic
 import Mathlib.Analysis.Normed.Module.Convex
 
 /-!

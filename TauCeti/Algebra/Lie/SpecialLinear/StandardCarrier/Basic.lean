@@ -16,7 +16,6 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Schem
 public import TauCeti.Algebra.Lie.UniversalEnveloping.MatrixRepresentation
 import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.RootInToral
-import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # The full-weight Chevalley carrier of type `A`
@@ -82,6 +81,8 @@ finite or simple.
   numbered root generators through the type `A_r` Cartan matrix.
 * `TauCeti.SlStd.isSl2Triple_rootGenerator`: the numbered generators at a Bourbaki node form an
   `sl₂` triple, from the identification of them with matrix units of `sl_{r+1}`.
+* `TauCeti.SlStd.isSl2Triple_rep_rootGenerator`: the numbered generators at a Bourbaki node form
+  an `sl₂` triple in the standard representation.
 * `TauCeti.SlStd.rep_kostantForm_mem_lattice`: the Kostant `ℤ`-form preserves the standard lattice,
   so the lattice is admissible.
 * `TauCeti.SlStd.span_range_weight_eq_top`: the weights of the standard module generate the full
@@ -114,8 +115,6 @@ universe v
 open LieAlgebra.SpecialLinear
 open scoped Matrix TensorProduct
 open scoped CategoryTheory.MonObj
-
-attribute [local instance] TauCeti.moduleNNRat
 
 variable (r : ℕ)
 
@@ -257,7 +256,6 @@ theorem weight_eq_ite_single_sub_ite_single (k : Fin (r + 1)) :
     weight r k =
       (if hk : (k : ℕ) < r then Pi.single ⟨k, hk⟩ 1 else 0) -
         (if hk : 0 < (k : ℕ) then Pi.single ⟨k - 1, by omega⟩ 1 else 0) := by
-  classical
   funext i
   simp only [weight_def, Pi.sub_apply]
   split_ifs
@@ -432,6 +430,20 @@ open AlgebraicGeometry CategoryTheory
 
 -- Match tensor products to the `ℤ`-algebra structure used by scalar extension.
 attribute [local instance high] Algebra.toModule
+
+attribute [local instance 100] LieRing.ofAssociativeRing in
+/-- The standard representation carries the numbered `sl₂` triple at node `i` to an `sl₂` triple
+of endomorphisms of the standard module. -/
+theorem isSl2Triple_rep_rootGenerator (i : Fin r) :
+    _root_.IsSl2Triple (rep r (_root_.UniversalEnvelopingAlgebra.ι ℚ (cartanGenerator r i)))
+      (rep r (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator r (.inl i))))
+      (rep r (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator r (.inr i)))) := by
+  refine (isSl2Triple_rootGenerator r i).map
+    ((rep r).toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)) fun hzero => ?_
+  have h := congrFun (DFunLike.congr_fun hzero (Pi.single i.castSucc 1)) i.castSucc
+  simp only [LieHom.comp_apply, AlgHom.toLieHom_apply, rep_ι_apply, val_cartanGenerator,
+    LinearMap.zero_apply, Pi.zero_apply] at h
+  simp [(Fin.castSucc_lt_succ (i := i)).ne'] at h
 
 /-- Every coordinate basis vector of the standard lattice is a Cartan weight vector. -/
 theorem isCartanWeightVector_latticeBasis (k : Fin (r + 1)) :

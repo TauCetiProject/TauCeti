@@ -30,6 +30,9 @@ subspaces is continuous because subspaces are embedded.
 The disjoint union `TopPair.sigma P = (Σ i, Xᵢ, Σ i, Aᵢ)` of a family of pairs `P i = (Xᵢ, Aᵢ)`,
 with the inclusions `TopPair.sigmaι P i` of the summands, is the coproduct of the family in
 `TopPair` (`TopPair.sigmaCofanIsColimit`).  Relative singular homology is additive along it.
+
+A continuous map into the ambient space of a pair with values in the subspace corestricts to a
+continuous map into the subspace, `TopPair.liftSnd`, because the subspace is embedded.
 -/
 
 public section
@@ -210,5 +213,28 @@ def sigmaCofanIsColimit : IsColimit (sigmaCofan P) :=
       · exact ConcreteCategory.congr_hom (congrArg Hom.fst (hm i)) x)
 
 end sigma
+
+section liftSnd
+
+variable (X : TopPair.{u}) {Z : Type*} [TopologicalSpace Z]
+
+/-- A continuous map into the ambient space of a pair that takes values in the subspace, viewed
+as a continuous map into the subspace. It is continuous because `X.map` is an embedding. -/
+noncomputable def liftSnd (g : C(Z, X.fst)) (hg : ∀ z, g z ∈ Set.range X.map) : C(Z, X.snd) :=
+  (X.isEmbedding_map.toHomeomorph.symm : C(Set.range X.map, X.snd)).comp
+    ⟨fun z => ⟨g z, hg z⟩, by fun_prop⟩
+
+variable {X}
+
+@[simp]
+theorem map_liftSnd (g : C(Z, X.fst)) (hg : ∀ z, g z ∈ Set.range X.map) (z : Z) :
+    X.map (X.liftSnd g hg z) = g z :=
+  congrArg Subtype.val (X.isEmbedding_map.toHomeomorph.apply_symm_apply ⟨g z, hg z⟩)
+
+theorem liftSnd_apply_eq_iff (g : C(Z, X.fst)) (hg : ∀ z, g z ∈ Set.range X.map) (z : Z)
+    (a : X.snd) : X.liftSnd g hg z = a ↔ g z = X.map a := by
+  rw [← X.isEmbedding_map.injective.eq_iff, map_liftSnd]
+
+end liftSnd
 
 end TopPair

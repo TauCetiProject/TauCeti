@@ -330,8 +330,8 @@ theorem coordinateMap_relationMatrix (i j : Fin n) :
     (coordinateMap R n C).hom (relationMatrix R n C i j) = 0 := by
   rw [coordinateMap_def]
   exact (CommHopfAlgCat.mkQuotient_eq_zero_iff _ _ _).mpr
-    (definingHopfIdeal_toIdeal R n C ▸
-      Ideal.subset_span (relationMatrix_mem_relationSet R n C i j))
+    (HopfIdeal.mem_toIdeal.mp (definingHopfIdeal_toIdeal R n C ▸
+      Ideal.subset_span (relationMatrix_mem_relationSet R n C i j)))
 
 /-! ### The group scheme and its closed immersion -/
 
