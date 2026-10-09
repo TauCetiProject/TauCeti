@@ -64,6 +64,8 @@ and `fB` to `π₁(A ∩ B, x)`, so they glue. Uniqueness is the generation half
   is simply connected.
 * `TauCeti.vanKampenLift_surjective`: the canonical homomorphism is surjective when `A ∩ B`
   is path connected.
+* `TauCeti.simplyConnectedSpace_of_isOpen_union`: two open simply connected sets with
+  path-connected intersection have simply connected union.
 * `TauCeti.vanKampenWideDesc`, `TauCeti.vanKampenWideDesc_map`: the universal property of
   `π₁(X, x)` for a family whose pairwise intersections are all `C`.
 * `TauCeti.vanKampenWide_hom_ext`: homomorphisms out of `π₁(X, x)` are determined by their
@@ -411,6 +413,40 @@ theorem vanKampenLift_surjective (hxA : x ∈ A) (hxB : x ∈ B)
   rw [← MonoidHom.range_eq_top, vanKampenLift_def]
   exact (Monoid.Coprod.range_lift _ _).trans
     (FundamentalGroup.range_map_subtypeVal_sup_eq_top hCover hA hB hAB hxA hxB)
+
+/-- **Two-set van Kampen criterion for simple connectedness.** A space covered by two open simply
+connected sets with path-connected intersection is simply connected. -/
+theorem simplyConnectedSpace_of_isOpen_union (hAopen : IsOpen A) (hBopen : IsOpen B)
+    (hCover : A ∪ B = univ) (hAB : IsPathConnected (A ∩ B))
+    [SimplyConnectedSpace A] [SimplyConnectedSpace B] :
+    SimplyConnectedSpace X := by
+  obtain ⟨z, hzA, hzB⟩ := hAB.nonempty
+  have hAsimple : IsSimplyConnected A := (inferInstance : SimplyConnectedSpace A)
+  have hBsimple : IsSimplyConnected B := (inferInstance : SimplyConnectedSpace B)
+  let _ : PathConnectedSpace X := pathConnectedSpace_iff_univ.mpr <| hCover ▸
+    hAsimple.isPathConnected.union hBsimple.isPathConnected hAB.nonempty
+  have hsurj := vanKampenLift_surjective hzA hzB
+    (by simpa [hAopen.interior_eq, hBopen.interior_eq] using hCover)
+    hAsimple.isPathConnected hBsimple.isPathConnected hAB
+  have hzsub : Subsingleton (FundamentalGroup X z) := by
+    have himage_one (g : Monoid.Coprod (FundamentalGroup A ⟨z, hzA⟩)
+        (FundamentalGroup B ⟨z, hzB⟩)) : vanKampenLift A B z hzA hzB g = 1 := by
+      induction g using Monoid.Coprod.induction_on with
+      | inl g => rw [Subsingleton.elim g 1, map_one, map_one]
+      | inr g => rw [Subsingleton.elim g 1, map_one, map_one]
+      | mul g h hg hh => rw [map_mul, hg, hh, mul_one]
+    constructor
+    intro g h
+    obtain ⟨g', rfl⟩ := hsurj g
+    obtain ⟨h', rfl⟩ := hsurj h
+    rw [himage_one, himage_one]
+  refine simply_connected_iff_loops_nullhomotopic.mpr ⟨inferInstance, fun x γ ↦ ?_⟩
+  let e := FundamentalGroup.fundamentalGroupMulEquivOfPath
+    (PathConnectedSpace.somePath z x)
+  have hxsub : Subsingleton (FundamentalGroup X x) :=
+    ⟨fun a b ↦ e.symm.injective (hzsub.elim (e.symm a) (e.symm b))⟩
+  exact Quotient.eq.mp (hxsub.elim (Path.Homotopic.Quotient.mk γ)
+    (Path.Homotopic.Quotient.mk (Path.refl x)))
 
 /-- **The based Seifert--van Kampen theorem for a simply connected overlap.**
 
