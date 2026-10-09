@@ -18,10 +18,11 @@ Mathlib's invariant-subspace predicate `Module.End.invtSubmodule` and proves the
 characterizations.
 
 When `U` admits an orthogonal projection `P = U.starProjection`, reduction is exactly
-commutation: `U` reduces `A` if and only if `P A = A P`. For a bounded operator on a Hilbert
-space, `U` reduces `A` if and only if it is invariant under both `A` and `A†`. Reduction is
-symmetric between `U` and `Uᗮ`, is preserved by taking adjoints, and for a symmetric operator is
-the same as invariance.
+commutation: `U` reduces `A` if and only if `P A = A P`; for such `U`, reduction is also
+symmetric between `U` and `Uᗮ`. If moreover `A` is a bounded operator on a Hilbert space (or an
+endomorphism of a finite-dimensional space), `U` reduces `A` if and only if it is invariant under
+both `A` and `A†`, and reduction is preserved by taking adjoints. For a symmetric operator,
+reduction is the same as invariance.
 
 ## Main definitions
 
@@ -32,12 +33,16 @@ the same as invariance.
 * `Submodule.isReducing_iff_commute_starProjection`: `U` reduces `A` if and only if `A` commutes
   with the orthogonal projection onto `U`; `Submodule.isReducing_coe_iff_commute_starProjection`
   is the same statement for bounded operators.
-* `Submodule.isReducing_orthogonal_iff`: `Uᗮ` reduces `A` if and only if `U` does.
+  Both require `U.HasOrthogonalProjection`.
+* `Submodule.isReducing_orthogonal_iff`: for `U` with an orthogonal projection, `Uᗮ` reduces `A`
+  if and only if `U` does.
+* `Submodule.IsReducing.iSup`: the supremum of a family of reducing subspaces is reducing.
 * `ContinuousLinearMap.isReducing_iff_mem_invtSubmodule_adjoint`,
-  `LinearMap.isReducing_iff_mem_invtSubmodule_adjoint`: `U` reduces `A` if and only if it is
-  invariant under `A` and `A†`.
-* `ContinuousLinearMap.isReducing_adjoint_iff`, `LinearMap.isReducing_adjoint_iff`: `U` reduces
-  `A†` if and only if it reduces `A`.
+  `Module.End.isReducing_iff_mem_invtSubmodule_adjoint`: `U` reduces `A` if and only if it is
+  invariant under `A` and `A†`; the first is for bounded operators on a complete space `E` and
+  `U` with an orthogonal projection, the second for endomorphisms of a finite-dimensional `E`.
+* `ContinuousLinearMap.isReducing_adjoint_iff`, `Module.End.isReducing_adjoint_iff`: `U` reduces
+  `A†` if and only if it reduces `A`, under the same respective hypotheses.
 * `LinearMap.IsSymmetric.isReducing_iff`: an invariant subspace of a symmetric operator reduces it.
 
 ## References
@@ -81,10 +86,19 @@ theorem isReducing_bot : (⊥ : Submodule 𝕜 E).IsReducing A :=
 theorem isReducing_top : (⊤ : Submodule 𝕜 E).IsReducing A :=
   ⟨invtSubmodule.top_mem A, by simp⟩
 
+/-- The supremum of a family of reducing subspaces is reducing. -/
+theorem IsReducing.iSup {ι : Type*} {U : ι → Submodule 𝕜 E} (hU : ∀ i, (U i).IsReducing A) :
+    (⨆ i, U i).IsReducing A := by
+  refine ⟨(mem_invtSubmodule_iff_map_le A).mpr ?_, ?_⟩
+  · rw [map_iSup]
+    exact iSup_mono fun i ↦ (mem_invtSubmodule_iff_map_le A).mp (hU i).1
+  · rw [← iInf_orthogonal, End.mem_invtSubmodule, comap_iInf]
+    exact iInf_mono fun i ↦ (hU i).2
+
 /-- The span of two reducing subspaces is reducing. -/
-theorem IsReducing.sup (hU : U.IsReducing A) (hV : V.IsReducing A) : (U ⊔ V).IsReducing A :=
-  ⟨invtSubmodule.sup_mem hU.1 hV.1, by
-    simpa [← inf_orthogonal] using invtSubmodule.inf_mem hU.2 hV.2⟩
+theorem IsReducing.sup (hU : U.IsReducing A) (hV : V.IsReducing A) : (U ⊔ V).IsReducing A := by
+  rw [sup_eq_iSup]
+  exact IsReducing.iSup (Bool.forall_bool.mpr ⟨hV, hU⟩)
 
 /-- A subspace with an orthogonal projection reduces `A` exactly when its orthogonal complement
 does. -/
@@ -107,8 +121,8 @@ theorem isReducing_iff_commute_starProjection [U.HasOrthogonalProjection] :
 commutes with the orthogonal projection onto it. -/
 theorem isReducing_coe_iff_commute_starProjection [U.HasOrthogonalProjection] {A : E →L[𝕜] E} :
     U.IsReducing A ↔ Commute U.starProjection A := by
-  simp only [isReducing_iff_commute_starProjection, commute_iff_eq,
-    ← ContinuousLinearMap.toLinearMap_mul, ContinuousLinearMap.coe_inj]
+  rw [ContinuousLinearMap.IsIdempotentElem.commute_iff (isIdempotentElem_starProjection U),
+    isReducing_iff, range_starProjection, ker_starProjection]
 
 end Submodule
 
@@ -134,16 +148,16 @@ theorem ContinuousLinearMap.isReducing_adjoint_iff [CompleteSpace E] [U.HasOrtho
 
 /-- On a finite-dimensional space, a subspace reduces an endomorphism `A` exactly when it is
 invariant under both `A` and its adjoint. -/
-theorem LinearMap.isReducing_iff_mem_invtSubmodule_adjoint [FiniteDimensional 𝕜 E]
+theorem Module.End.isReducing_iff_mem_invtSubmodule_adjoint [FiniteDimensional 𝕜 E]
     {A : End 𝕜 E} : U.IsReducing A ↔ U ∈ A.invtSubmodule ∧ U ∈ invtSubmodule A.adjoint := by
   rw [isReducing_iff, End.mem_invtSubmodule_adjoint_iff]
 
 /-- On a finite-dimensional space, a subspace reduces the adjoint of an endomorphism `A` exactly
 when it reduces `A`. -/
-theorem LinearMap.isReducing_adjoint_iff [FiniteDimensional 𝕜 E] {A : End 𝕜 E} :
+theorem Module.End.isReducing_adjoint_iff [FiniteDimensional 𝕜 E] {A : End 𝕜 E} :
     U.IsReducing A.adjoint ↔ U.IsReducing A := by
   rw [isReducing_iff_mem_invtSubmodule_adjoint, isReducing_iff_mem_invtSubmodule_adjoint,
-    adjoint_adjoint, and_comm]
+    LinearMap.adjoint_adjoint, and_comm]
 
 /-- A subspace reduces a symmetric operator exactly when it is invariant under it. -/
 theorem LinearMap.IsSymmetric.isReducing_iff {A : End 𝕜 E} (hA : A.IsSymmetric) :
