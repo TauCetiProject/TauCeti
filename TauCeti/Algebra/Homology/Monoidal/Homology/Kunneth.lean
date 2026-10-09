@@ -31,11 +31,13 @@ which hold in any such category:
   their tensor product is again a homotopy equivalence (`HomotopyEquiv.mapBifunctor`).
 
 Combining the two, the Künneth map is an isomorphism whenever `K` and `L` are homotopy equivalent
-to complexes with zero differential.  Every complex of semisimple modules, in particular every
-complex of vector spaces over a field, is of this kind, since its cycles and boundaries split off
-as direct summands (`HomologicalComplex.exists_homotopyEquiv_d_eq_zero`).  This gives the
-**Künneth theorem over a field**, and more generally for complexes of semisimple modules over a
-commutative ring.
+to complexes with zero differential.  A complex of modules is of this kind when its cycles split
+off its terms and its homology splits off its cycles
+(`HomologicalComplex.exists_homotopyEquiv_d_eq_zero`).  Every complex of semisimple modules, in
+particular every complex of vector spaces over a field, satisfies this, which gives the
+**Künneth theorem over a field**.  So does a complex whose cycles split off and whose homology is
+projective, for instance a complex of free modules over a principal ideal domain with free
+homology.
 
 ## Main definitions and results
 
@@ -48,9 +50,9 @@ commutative ring.
   under homotopy equivalences.
 * `HomologicalComplex.isIso_homologyKunneth_of_homotopyEquiv_of_d_eq_zero`: the Künneth map is
   an isomorphism for complexes homotopy equivalent to complexes with zero differentials.
-* `HomologicalComplex.isIso_homologyKunneth_of_isSemisimpleModule`: the Künneth theorem for
-  complexes of semisimple modules over a commutative ring, for instance of vector spaces over a
-  field.
+* `HomologicalComplex.isIso_homologyKunneth_of_isSplitMono_of_isSplitEpi`: the Künneth theorem
+  for complexes of modules over a commutative ring whose cycles and homology split off, for
+  instance complexes of vector spaces over a field.
 
 ## References
 
@@ -223,22 +225,27 @@ theorem isIso_homologyKunneth_of_homotopyEquiv_of_d_eq_zero (eK : HomotopyEquiv 
 
 end HomotopyEquiv
 
-section Semisimple
+section Split
 
 universe u
 
 variable {R : Type u} [CommRing R] {I : Type*} [Small.{u} I] [AddMonoid I] {c : ComplexShape I}
   [c.TensorSigns] [DecidableEq I] (K L : HomologicalComplex (ModuleCat.{u} R) c) (n : I)
-  [∀ i, IsSemisimpleModule R (K.X i)] [∀ i, IsSemisimpleModule R (L.X i)]
+  [∀ i, IsSplitMono (K.iCycles i)] [∀ i, IsSplitEpi (K.homologyπ i)]
+  [∀ i, IsSplitMono (L.iCycles i)] [∀ i, IsSplitEpi (L.homologyπ i)]
 
-/-- **The Künneth theorem over a field**: for complexes `K` and `L` of semisimple modules over a
-commutative ring `R`, for instance complexes of vector spaces over a field, the Künneth map
-`⨁_{p + q = n} Hₚ(K) ⊗ H_q(L) ⟶ Hₙ(K ⊗ L)` is an isomorphism. -/
-instance isIso_homologyKunneth_of_isSemisimpleModule : IsIso (homologyKunneth K L n) := by
+/-- **The Künneth theorem for split complexes**: for complexes `K` and `L` of modules over a
+commutative ring `R` whose cycles split off their terms and whose homology splits off their cycles,
+the Künneth map `⨁_{p + q = n} Hₚ(K) ⊗ H_q(L) ⟶ Hₙ(K ⊗ L)` is an isomorphism.  This applies to
+complexes of semisimple modules, for instance of vector spaces over a field
+(`HomologicalComplex.isSplitMono_iCycles_of_isSemisimpleModule`), and to complexes whose cycles
+split off and whose homology is projective
+(`HomologicalComplex.isSplitEpi_homologyπ_of_projective`). -/
+instance isIso_homologyKunneth_of_isSplitMono_of_isSplitEpi : IsIso (homologyKunneth K L n) := by
   obtain ⟨K', hK', ⟨eK⟩⟩ := K.exists_homotopyEquiv_d_eq_zero
   obtain ⟨L', hL', ⟨eL⟩⟩ := L.exists_homotopyEquiv_d_eq_zero
   exact isIso_homologyKunneth_of_homotopyEquiv_of_d_eq_zero n eK eL hK' hL'
 
-end Semisimple
+end Split
 
 end HomologicalComplex
