@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Extension
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Growth
 public import Mathlib.Analysis.Meromorphic.Order
+import Mathlib.NumberTheory.ModularForms.Petersson
 
 /-!
 # Meromorphic extension of functions of controlled growth at a cusp
@@ -257,7 +258,7 @@ theorem analyticAt_cuspExtension_zero_of_isBigO_exp_neg (D : Γ.CuspDatum) (n : 
       have hc : 0 < 2 * Real.pi * (n + 1) / D.width := by
         exact div_pos (mul_pos (mul_pos (by norm_num) Real.pi_pos) (by positivity)) D.width_pos
       have hzero : IsZeroAtImInfty fun z : ℍ ↦ f (D.scaling⁻¹ • z) := by
-        apply TauCeti.UpperHalfPlane.isZeroAtImInfty_of_isBigO_exp_neg hc
+        refine UpperHalfPlane.IsZeroAtImInfty.of_exp_decay ⟨_, hc, ?_⟩
         exact hdecay.congr_right fun z ↦ by
           congr 1
           push_cast

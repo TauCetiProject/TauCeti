@@ -70,6 +70,11 @@ element (`TauCeti.diagGL_const`).
 * `TauCeti.natCard_diagonalTorus`: the torus has `(q - 1)ⁿ` elements over a division semiring
   with `q` elements.
 * `TauCeti.centralizer_diagonalTorus`: the diagonal torus is its own centralizer.
+* `TauCeti.mem_centralizer_range_iff_apply_eq_zero_of_coe_eq_diagGL` and
+  `TauCeti.mem_centralizer_range_iff_isDiag_of_coe_eq_diagGL`: inside any subgroup, an element
+  centralizes a family of diagonal elements exactly when its entries vanish between the
+  coordinates the family separates; for a family separating all coordinates, exactly when it is
+  diagonal.
 * `TauCeti.centralizer_diagonalTorus_eq_top`: over a semiring with a single unit the centralizer
   is instead the whole group.
 * `TauCeti.scalar_mem_center` and `TauCeti.centralizer_scalar`: a scalar matrix is central, so its
@@ -294,6 +299,50 @@ theorem eq_diagonalTorus_of_le_of_isMulCommutative (H : Subgroup (GL (Fin n) k))
   Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative centralizer_diagonalTorus hle
 
 end IsLeftCancelMulZero
+
+section FamilyCentralizer
+
+variable [IsLeftCancelMulZero k] {X : Type*} {P : Subgroup (GL ι k)} {T : X → P}
+  {f : X → ι → kˣ}
+
+/-- **The centralizer of a family of diagonal elements.** Suppose `T` sends each `x` to an element
+of a subgroup `P` of `GL ι k` whose matrix is diagonal with entries `f x`. An element of `P`
+commutes with every `T x` exactly when its `(i, j)` entry vanishes whenever some `f x` takes
+different values at `i` and `j`. -/
+theorem mem_centralizer_range_iff_apply_eq_zero_of_coe_eq_diagGL
+    (hT : ∀ x, (T x : GL ι k) = diagGL (f x)) (g : P) :
+    g ∈ Subgroup.centralizer (Set.range T) ↔
+      ∀ i j, (∃ x, f x i ≠ f x j) → ((g : GL ι k) : Matrix ι ι k) i j = 0 := by
+  constructor
+  · rintro hg i j ⟨x, hx⟩
+    have hcomm := congrArg (fun y : P ↦ ((y : GL ι k) : Matrix ι ι k))
+      (Subgroup.mem_centralizer_iff.mp hg (T x) ⟨x, rfl⟩)
+    simp only [Subgroup.coe_mul, Units.val_mul, hT, diagGL_coe] at hcomm
+    exact apply_eq_zero_of_commute_diagonal hcomm fun h ↦ hx (Units.ext h)
+  · intro hg
+    rw [Subgroup.mem_centralizer_iff]
+    rintro _ ⟨x, rfl⟩
+    refine Subtype.ext (Units.ext ?_)
+    simp only [Subgroup.coe_mul, Units.val_mul, hT, diagGL_coe]
+    ext i j
+    rw [Matrix.diagonal_mul, Matrix.mul_diagonal]
+    by_cases hij : f x i = f x j
+    · rw [hij, mul_comm]
+    · rw [hg i j ⟨x, hij⟩, mul_zero, zero_mul]
+
+/-- **An element centralizing a separating family of diagonal elements is diagonal.** If every
+pair of distinct coordinates is separated by some `f x`, an element of `P` commutes with every
+`T x` exactly when its matrix is diagonal. -/
+theorem mem_centralizer_range_iff_isDiag_of_coe_eq_diagGL
+    (hT : ∀ x, (T x : GL ι k) = diagGL (f x))
+    (hf : Pairwise fun i j ↦ ∃ x, f x i ≠ f x j) (g : P) :
+    g ∈ Subgroup.centralizer (Set.range T) ↔ ((g : GL ι k) : Matrix ι ι k).IsDiag := by
+  rw [mem_centralizer_range_iff_apply_eq_zero_of_coe_eq_diagGL hT]
+  refine ⟨fun h i j hij ↦ h i j (hf hij), fun h i j ⟨x, hx⟩ ↦ h ?_⟩
+  rintro rfl
+  exact hx rfl
+
+end FamilyCentralizer
 
 end CommSemiring
 

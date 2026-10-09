@@ -27,6 +27,8 @@ base point to its target, and rays are equivariant under `PSL(2, ℝ)`.
   from its base point to its target; rays are equivariant.
 * `UpperHalfPlane.rayToward_eq_geodesicBetween`: a ray is the geodesic from its base point to its
   point at parameter `1`.
+* `TauCeti.UpperHalfPlane.rayToward_geodesicLine_inr_smul_infty`: the ray from a point of a
+  geodesic line towards its forward endpoint is that line, reparametrised.
 
 ## Source
 
@@ -109,5 +111,14 @@ theorem rayToward_smul (h : PSL(2, ℝ)) {A : ℍ} {p : ℍ ⊕ OnePoint ℝ} (h
     refine eq_of_geodesicLine_zero_eq_of_smul_infty_eq ?_ ?_
     · rw [geodesicLine_rayToward_zero, ← smul_geodesicLine, geodesicLine_rayToward_zero]
     · rw [rayToward_inr_smul_infty, mul_smul, rayToward_inr_smul_infty]
+
+/-- The ray from the point of a geodesic line at parameter `s` towards its forward endpoint is
+that line, reparametrised to start at `s`. -/
+theorem rayToward_geodesicLine_inr_smul_infty (g : PSL(2, ℝ)) (s : ℝ) :
+    rayToward (geodesicLine g s) (.inr (g • (∞ : OnePoint ℝ))) =
+      g * ↑(Matrix.SpecialLinearGroup.dilation s) :=
+  eq_of_geodesicLine_zero_eq_of_smul_infty_eq
+    (by rw [geodesicLine_rayToward_zero, geodesicLine_mul_dilation, add_zero])
+    (by rw [rayToward_inr_smul_infty, mul_smul, dilation_smul_infty])
 
 end TauCeti.UpperHalfPlane

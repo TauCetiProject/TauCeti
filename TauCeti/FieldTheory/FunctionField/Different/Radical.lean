@@ -7,6 +7,8 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Different.Derivative
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Radical
+import TauCeti.FieldTheory.FunctionField.Different.Tower
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 
 /-!
 # The different of a radical extension `y ^ n = u`
@@ -15,13 +17,18 @@ Let `F' / k'` be a finite separable extension of the field extension `F / k`, ge
 element `y` with `y ^ n = u` for some nonzero `u ∈ F`, where `n` is invertible in `k`. At a place
 `P'` of `F'` over the place `P` of `F`, write `r_P = gcd(n, ord_P u)`. Stichtenoth's
 Proposition 3.7.3(b) gives the ramification data `e(P' ∣ P) = n / r_P` and
-`d(P' ∣ P) = n / r_P - 1`. This file proves the two extreme cases, which together cover every
-place when `n` is prime. Both rest on Stichtenoth's Theorem 3.5.10(a) applied to `X ^ n - c`: if
-`F' = F(z)` with `z ^ n = c` regular at `P`, then `d(P' ∣ P) ≤ (n - 1) · ord_{P'} z`.
+`d(P' ∣ P) = n / r_P - 1`. Both rest on Stichtenoth's Theorem 3.5.10(a) applied to `X ^ n - c`:
+if `F' = F(z)` with `z ^ n = c` regular at `P`, then `d(P' ∣ P) ≤ (n - 1) · ord_{P'} z`. That bound
+first settles the two extreme cases.
 
 * If `n ∣ ord_P u` (that is, `r_P = n`), then `P` is unramified in `F'`: `d(P' ∣ P) = 0` and
   `e(P' ∣ P) = 1`.
 * If `gcd(n, ord_P u) = 1`, then `d(P' ∣ P) = n - 1`.
+
+The general case reduces to these through the tower `F ⊆ F(y ^ (n / r_P)) ⊆ F'`, using the
+multiplicativity of ramification indices and the transitivity of different exponents. Neither a
+root of unity in the constants nor the irreducibility of `X ^ n - u` is needed for this local
+data.
 
 For `n = 2` this is the different of `y ^ 2 = f(x)` over `k(x)` in characteristic not two: the
 places over `P` ramify exactly when `ord_P f` is odd, each with different exponent one.
@@ -34,6 +41,9 @@ places over `P` ramify exactly when `ord_P f` is odd, each with different expone
   `TauCeti.Place.ramificationIdx_eq_one_of_pow_eq_of_dvd_ord`: the unramified case.
 * `TauCeti.Place.differentExponent_add_one_eq_of_pow_eq_of_gcd_ord_eq_one`: the totally ramified
   case, `d(P' ∣ P) + 1 = n`.
+* `TauCeti.Place.ramificationIdx_eq_of_pow_eq` and
+  `TauCeti.Place.differentExponent_add_one_eq_of_pow_eq`: the general case,
+  `e(P' ∣ P) = d(P' ∣ P) + 1 = n / r_P`.
 * `TauCeti.Place.differentExponent_eq_of_pow_eq_of_prime` and
   `TauCeti.Place.ramificationIdx_eq_of_pow_eq_of_prime`: the different exponent and ramification
   index at every place of a radical extension `y ^ n = u` with `n` prime.
@@ -41,7 +51,7 @@ places over `P` ramify exactly when `ord_P f` is odd, each with different expone
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Proposition 3.7.3 and Theorem 3.5.10.
+  Proposition 3.7.3, Theorem 3.5.10 and Corollary 3.4.12.
 -/
 
 public section
@@ -171,6 +181,96 @@ theorem differentExponent_add_one_eq_of_pow_eq_of_gcd_ord_eq_one {y : F'} {n : �
   have : (differentExponent k F P' : ℤ) + 1 = n := by linarith
   exact_mod_cast this
 
+/-- For a radical extension `F' = F(y)`, `y ^ n = u`, both `e(P' ∣ P)` and `d(P' ∣ P) + 1` equal
+`n / gcd(n, ord_P u)`. -/
+private theorem ramificationIdx_eq_and_differentExponent_add_one_eq_of_pow_eq {y : F'} {n : ℕ}
+    {u : F} (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0) (hu : u ≠ 0) :
+    ramificationIdx F P' = n / Int.gcd n ((P'.restrict k F).ord u) ∧
+      differentExponent k F P' + 1 = n / Int.gcd n ((P'.restrict k F).ord u) := by
+  -- Work through the tower `F ⊆ F(y ^ (n / r_P)) ⊆ F'`: the element `y ^ (n / r_P)` is an
+  -- `r_P`-th root of `u`, so `P` is unramified in the middle field, and `y` is an
+  -- `(n / r_P)`-th root of an element of order coprime to `n / r_P` there, so the places of the
+  -- middle field below `P'` are totally ramified in `F'`.
+  have hn0 : n ≠ 0 := by
+    rintro rfl
+    exact hn Nat.cast_zero
+  set m := (P'.restrict k F).ord u
+  set r := Int.gcd n m
+  set s := n / r
+  have hrn : r ∣ n := by exact_mod_cast Int.gcd_dvd_left (n : ℤ) m
+  have hsr : s * r = n := Nat.div_mul_cancel hrn
+  have hr : (r : k) ≠ 0 := fun h ↦ hn (by rw [← hsr, Nat.cast_mul, h, mul_zero])
+  have hs : (s : k) ≠ 0 := fun h ↦ hn (by rw [← hsr, Nat.cast_mul, h, zero_mul])
+  -- The intermediate field `E = F(w)`, `w = y ^ s`, with `w ^ r = u`.
+  set E := F⟮y ^ s⟯
+  set w := IntermediateField.AdjoinSimple.gen F (y ^ s)
+  have hw : w ^ r = algebraMap F E u := by
+    apply (algebraMap E F').injective
+    rw [map_pow, IntermediateField.AdjoinSimple.algebraMap_gen, ← pow_mul, hsr, hy,
+      ← IsScalarTower.algebraMap_apply]
+  have hw0 : w ≠ 0 := fun h ↦ hu (by
+    rw [h, zero_pow (Nat.pos_of_dvd_of_pos hrn (Nat.pos_of_ne_zero hn0)).ne', eq_comm,
+      map_eq_zero] at hw
+    exact hw)
+  have hgenE : E⟮y⟯ = ⊤ := IntermediateField.adjoin_eq_top_of_adjoin_eq_top F hgen
+  have hyE : y ^ s = algebraMap E F' w :=
+    (IntermediateField.AdjoinSimple.algebraMap_gen F (y ^ s)).symm
+  have : IsScalarTower k E F' := .of_algebraMap_eq fun _ ↦ rfl
+  let Q : Place k E := P'.restrict k E
+  have hQ : Q.restrict k F = P'.restrict k F :=
+    restrict_restrict (k₀ := k) (F₀ := F) (k₁ := k) (F₁ := E) P'
+  -- `P` is unramified in `E`, since `r ∣ ord_P u`.
+  have hdvd : (r : ℤ) ∣ (Q.restrict k F).ord u := by
+    rw [hQ]
+    exact Int.gcd_dvd_right _ _
+  have hdQ := differentExponent_eq_zero_of_pow_eq_of_dvd_ord k F (P' := Q)
+    (IntermediateField.adjoin_adjoinSimple_gen_eq_top _) hw hr hu hdvd
+  have heQ := ramificationIdx_eq_one_of_pow_eq_of_dvd_ord k F (P' := Q)
+    (IntermediateField.adjoin_adjoinSimple_gen_eq_top _) hw hr hu hdvd
+  -- So `ord_Q w = m / r`, which is coprime to `s = n / r`.
+  have hordw : Q.ord w = m / r := by
+    have h : (r : ℤ) * Q.ord w = m := by
+      rw [natCast_mul_ord_eq_ramificationIdx_mul_ord_of_pow_eq k F (P' := Q) hw, heQ, hQ,
+        Nat.cast_one, one_mul]
+    rw [← h, Int.mul_ediv_cancel_left _ (by exact_mod_cast
+      (Nat.pos_of_dvd_of_pos hrn (Nat.pos_of_ne_zero hn0)).ne')]
+  have hgcd : Int.gcd s (Q.ord w) = 1 := by
+    rw [hordw, show (s : ℤ) = n / r by exact_mod_cast Int.natCast_div n r]
+    exact Int.gcd_div_gcd_div_gcd (Int.gcd_pos_of_ne_zero_left m (by exact_mod_cast hn0))
+  -- The places of `E` below `P'` are totally ramified in `F'`.
+  have hdE := differentExponent_add_one_eq_of_pow_eq_of_gcd_ord_eq_one k E hgenE hyE hs hw0 hgcd
+  have heE : ramificationIdx E P' = s := by
+    have hdiv := div_gcd_ord_dvd_ramificationIdx_of_pow_eq k E (P' := P')
+      (Nat.pos_of_ne_zero fun h ↦ hs (by rw [h, Nat.cast_zero])).ne' hyE
+    rw [hgcd, Nat.div_one] at hdiv
+    exact (hdE ▸ ramificationIdx_le_differentExponent_add_one k E P').antisymm
+      (Nat.le_of_dvd (ramificationIdx_pos E P') hdiv)
+  -- Compose in the tower `F ⊆ E ⊆ F'`.
+  have he := ramificationIdx_restrict_mul (k₁ := k) (F₀ := F) (F₁ := E) P'
+  have hd := differentExponent_restrict_add (k₀ := k) (k₁ := k) (F₀ := F) (F₁ := E) P'
+  refine ⟨?_, ?_⟩
+  · rw [he, heE, heQ, mul_one]
+  · rw [hd, hdQ, mul_zero, zero_add, hdE]
+
+/-- **The ramification index of a radical extension** (Stichtenoth, Proposition 3.7.3(b)): if
+`F' = F(y)` with `y ^ n = u` for a nonzero `u ∈ F` and `n` invertible in `k`, then
+`e(P' ∣ P) = n / r_P` for `r_P = gcd(n, ord_P u)` at the place `P` below `P'`. No root of unity
+in the constants and no irreducibility of `X ^ n - u` is needed. -/
+theorem ramificationIdx_eq_of_pow_eq {y : F'} {n : ℕ} {u : F} (hgen : F⟮y⟯ = ⊤)
+    (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0) (hu : u ≠ 0) :
+    ramificationIdx F P' = n / Int.gcd n ((P'.restrict k F).ord u) :=
+  (ramificationIdx_eq_and_differentExponent_add_one_eq_of_pow_eq k F hgen hy hn hu).1
+
+/-- **The different exponent of a radical extension** (Stichtenoth, Proposition 3.7.3(b)): if
+`F' = F(y)` with `y ^ n = u` for a nonzero `u ∈ F` and `n` invertible in `k`, then
+`d(P' ∣ P) = n / r_P - 1` for `r_P = gcd(n, ord_P u)` at the place `P` below `P'`, stated as
+`d(P' ∣ P) + 1 = n / r_P` so that no truncated subtraction appears. No root of unity in the
+constants and no irreducibility of `X ^ n - u` is needed. -/
+theorem differentExponent_add_one_eq_of_pow_eq {y : F'} {n : ℕ} {u : F} (hgen : F⟮y⟯ = ⊤)
+    (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0) (hu : u ≠ 0) :
+    differentExponent k F P' + 1 = n / Int.gcd n ((P'.restrict k F).ord u) :=
+  (ramificationIdx_eq_and_differentExponent_add_one_eq_of_pow_eq k F hgen hy hn hu).2
+
 /-- **The different exponent of a radical extension of prime exponent** (Stichtenoth,
 Proposition 3.7.3(b)): if `F' = F(y)` with `y ^ n = u` for a nonzero `u ∈ F`, `n` is prime and
 invertible in `k`, then `d(P' ∣ P)` is `0` when `n` divides the order of `u` at the place `P`
@@ -178,11 +278,12 @@ below `P'`, and `n - 1` otherwise. -/
 theorem differentExponent_eq_of_pow_eq_of_prime {y : F'} {n : ℕ} {u : F} (hp : n.Prime)
     (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0) (hu : u ≠ 0) :
     differentExponent k F P' = if (n : ℤ) ∣ (P'.restrict k F).ord u then 0 else n - 1 := by
+  have h := differentExponent_add_one_eq_of_pow_eq k F (P' := P') hgen hy hn hu
   split_ifs with hdvd
-  · exact differentExponent_eq_zero_of_pow_eq_of_dvd_ord k F hgen hy hn hu hdvd
-  · have := differentExponent_add_one_eq_of_pow_eq_of_gcd_ord_eq_one k F hgen hy hn hu
-      (Int.isCoprime_iff_gcd_eq_one.mp
-        ((Nat.prime_iff_prime_int.mp hp).coprime_iff_not_dvd.mpr hdvd))
+  · rw [Int.gcd_eq_natAbs_left hdvd, Int.natAbs_natCast, Nat.div_self hp.pos] at h
+    omega
+  · rw [Int.isCoprime_iff_gcd_eq_one.mp
+      ((Nat.prime_iff_prime_int.mp hp).coprime_iff_not_dvd.mpr hdvd), Nat.div_one] at h
     omega
 
 /-- **The ramification index of a radical extension of prime exponent** (Stichtenoth,
@@ -192,16 +293,11 @@ invertible in `k`, then the place `P` below `P'` is unramified when `n` divides 
 theorem ramificationIdx_eq_of_pow_eq_of_prime {y : F'} {n : ℕ} {u : F} (hp : n.Prime)
     (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0) (hu : u ≠ 0) :
     ramificationIdx F P' = if (n : ℤ) ∣ (P'.restrict k F).ord u then 1 else n := by
+  rw [ramificationIdx_eq_of_pow_eq k F (P' := P') hgen hy hn hu]
   split_ifs with hdvd
-  · exact ramificationIdx_eq_one_of_pow_eq_of_dvd_ord k F hgen hy hn hu hdvd
-  · -- `n ∣ e(P' ∣ P) ≤ d(P' ∣ P) + 1 = n`.
-    have hgcd := Int.isCoprime_iff_gcd_eq_one.mp
-      ((Nat.prime_iff_prime_int.mp hp).coprime_iff_not_dvd.mpr hdvd)
-    have hdiv := div_gcd_ord_dvd_ramificationIdx_of_pow_eq k F (P' := P') hp.ne_zero hy
-    rw [hgcd, Nat.div_one] at hdiv
-    have hd := differentExponent_add_one_eq_of_pow_eq_of_gcd_ord_eq_one k F hgen hy hn hu hgcd
-    have hle := ramificationIdx_le_differentExponent_add_one k F P'
-    exact (hd ▸ hle).antisymm (Nat.le_of_dvd (ramificationIdx_pos F P') hdiv)
+  · rw [Int.gcd_eq_natAbs_left hdvd, Int.natAbs_natCast, Nat.div_self hp.pos]
+  · rw [Int.isCoprime_iff_gcd_eq_one.mp
+      ((Nat.prime_iff_prime_int.mp hp).coprime_iff_not_dvd.mpr hdvd), Nat.div_one]
 
 end Place
 

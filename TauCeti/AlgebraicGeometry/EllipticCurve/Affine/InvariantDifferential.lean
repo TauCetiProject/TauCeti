@@ -43,8 +43,9 @@ by `W_Y⁻¹` gives the invariant-differential basis.
 Silverman's III.1.5 says more than anything proved here: that `div ω = 0`, so that `ω` is
 regular and nonvanishing at every point. This file proves that `ω` is a *basis* of
 `Ω[K(E)/F]`, which does not imply that — a nonzero rational differential may have both zeros
-and poles. The divisor statement needs a pointwise regularity and nonvanishing theory not
-developed here.
+and poles. The divisor statement is proved, through the Kähler–Weil comparison, as
+`WeierstrassCurve.Affine.weilDifferentialDivisor_invariantDifferential` in
+`TauCeti/AlgebraicGeometry/EllipticCurve/Affine/FunctionField/Divisor/InvariantDifferential.lean`.
 
 ## Provenance
 

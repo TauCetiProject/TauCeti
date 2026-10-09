@@ -100,7 +100,7 @@ private theorem exists_openPartialHomeomorph_normal {g : E → V} {u₀ : E}
     simp [h]
   have hDsurj : Surjective D := by
     refine (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).mp hDinj
-    rw [Module.finrank_prod, ContinuousLinearMap.finrank_orthogonal_range_of_injective hinj]
+    rw [Module.finrank_prod, LinearMap.finrank_orthogonal_range_of_injective hinj]
     have := Submodule.finrank_le (A u₀).range
     rw [LinearMap.finrank_range_of_inj hinj] at this
     omega
@@ -183,8 +183,8 @@ private theorem exists_injOn_isOpen_image_normal {g : E → V} {u₀ : E}
     obtain ⟨hu₁, -, hAu, hRu⟩ := hss hu
     refine ⟨hst ⟨hu₁, hδt (mem_ball_zero_iff.mpr hvδ)⟩, ?_⟩
     refine Submodule.starProjection_inverse_apply ?_ hRu hv
-    rw [ContinuousLinearMap.finrank_orthogonal_range_of_injective hinj,
-      ContinuousLinearMap.finrank_orthogonal_range_of_injective hAu]
+    rw [LinearMap.finrank_orthogonal_range_of_injective hinj,
+      LinearMap.finrank_orthogonal_range_of_injective hAu]
   have hΨρ : ∀ p : E × V, Q p.1 (ρ p).2 = p.2 → h (ρ p) = g p.1 + p.2 := by
     intro p hp
     rw [hΨh]
@@ -258,8 +258,8 @@ theorem finrank_normalSubspace {f : M → V} {x : M}
     (himm : Injective (mfderiv I 𝓘(ℝ, V) f x)) :
     Module.finrank ℝ (normalSubspace I f x) = Module.finrank ℝ V - Module.finrank ℝ E := by
   unfold normalSubspace
-  exact ContinuousLinearMap.finrank_orthogonal_range_of_injective (E := E) (V := V)
-    (A := (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V)) himm
+  exact LinearMap.finrank_orthogonal_range_of_injective (V := V)
+    (A := (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V).toLinearMap) himm
 
 omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
 /-- A vector is normal to `f` at `x` exactly when it is orthogonal to every value of the
