@@ -276,8 +276,7 @@ theorem kummerMap_eq_kummerCocycleClass (hn : IsUnit (n : K))
     Multiplicative.toAdd (kummerMap K n hn a) = kummerCocycleClass hα := by
   rw [kummerMap_apply, toAdd_ofAdd]
   refine (kummerShortExact K n hn).explicitDelta0_apply _
-    (b := (Additive.ofMul α : UnitsCoeff K)) (Additive.toMul.injective ?_)
-    (kummerCocycle_mem_Z1 hα) fun g => ?_
+    (b := (Additive.ofMul α : UnitsCoeff K)) (Additive.toMul.injective ?_) fun g => ?_
   · rw [kummerShortExact_proj, toMul_unitsCoeffPow, toMul_ofMul,
       toMul_coe_baseUnitsEquivInvariants, toMul_ofMul, hα]
   · rw [kummerShortExact_incl]

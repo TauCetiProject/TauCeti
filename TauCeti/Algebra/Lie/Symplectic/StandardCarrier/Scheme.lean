@@ -222,7 +222,8 @@ theorem points_def (A : Type v) [CommRing A] :
 
 /-- A matrix is a point of the type-`C_(n+1)` carrier exactly when its associated convolution
 point kills the carrier's defining Hopf ideal. -/
-@[simp] theorem mem_points_iff (A : Type v) [CommRing A]
+-- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.
+theorem mem_points_iff (A : Type v) [CommRing A]
     (g : _root_.Matrix.GeneralLinearGroup (Fin ((n + 1) + (n + 1))) A) :
     g ∈ points n A ↔
       ∀ x ∈ definingIdeal n,

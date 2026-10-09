@@ -8,8 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Composition
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.PointMap
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.MapsInfinity
--- Proof-only: a factor of `[deg φ]` through `φ` has degree `deg φ`.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
 -- Proof-only: `[m] = [n]` only if `m = n`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Comp
 -- Proof-only: `[n] = n • 1` in the endomorphism carrier.
@@ -29,15 +28,16 @@ the unique isogeny with `π̂ ∘ π = [q]` (Silverman III.6.1), and proves its 
 `π ∘ π̂ = [q]` as well, `deg π̂ = q`, and composition with `π̂` is additive in the inner morphism.
 Classically `π̂` is the `q`-power Verschiebung of `W`.
 
-The Frobenius isogeny is purely inseparable, so this is the inseparable case of the dual-isogeny
-construction, the one not covered by `TauCeti.Isogeny.dual`, which takes a separable isogeny over
-a separably closed field. The construction goes through the factorisation theorem on function
-fields: `[q]` factors through `π` because `[q]^* F(W)` lies in the field `π^* F(W)` of `q`-th
-powers (Silverman II.2.12).
+The Frobenius isogeny is purely inseparable, so this is an inseparable case of the dual-isogeny
+construction: `π̂` is the dual `TauCeti.Isogeny.dual` of `π` (`dual_frobeniusIsogeny`). It is
+constructed here directly through the factorisation theorem on function fields: `[q]` factors
+through `π` because `[q]^* F(W)` lies in the field `π^* F(W)` of `q`-th powers
+(Silverman II.2.12).
 
 The Frobenius identities `π ∘ π̂ = [q]`, proved here, and `π + π̂ = [a_q]`, with `a_q` the trace
 of Frobenius, are the relations from which the degree form on the endomorphisms `ℤ[π]` of `W`,
-and with it the Hasse bound, are computed. The second is not proved here.
+and with it the Hasse bound, are computed. The second is proved in
+`Isogeny/Frobenius/Charpoly.lean`.
 
 ## Main definitions
 
@@ -53,6 +53,7 @@ and with it the Hasse bound, are computed. The second is not proved here.
   `TauCeti.Isogeny.eq_dualFrobeniusIsogeny_iff_comp_eq`: `π̂ ∘ π = [q]`, and this characterises
   `π̂`.
 * `TauCeti.Isogeny.frobeniusIsogeny_comp_dualFrobeniusIsogeny`: `π ∘ π̂ = [q]`.
+* `TauCeti.Isogeny.dual_frobeniusIsogeny`: `π̂` is the dual of `π`.
 * `TauCeti.Isogeny.degree_dualFrobeniusIsogeny`: `deg π̂ = q`.
 * `TauCeti.Isogeny.separableDegree_dualFrobeniusIsogeny`: `deg_s π̂ = deg_s [q]`.
 * `TauCeti.Isogeny.ofIsogeny_dualFrobeniusIsogeny_comp_ofIsogeny_frobeniusIsogeny` and
@@ -97,10 +98,9 @@ theorem fieldRange_mulByIntIsogenyOfNeZero_card_le_fieldRange_frobeniusIsogeny :
     have e : mulByIntIsogenyOfNeZero W (n := Nat.card F) (mod_cast Nat.card_pos.ne') =
         mulByIntIsogenyOfNeZero W (pow_ne_zero (f : ℕ) (Nat.cast_ne_zero.2 hp.ne_zero)) :=
       (mulByIntIsogeny_inj W _ _).2 (by rw [hq, Nat.cast_pow])
-    rw [e, inseparableDegree_mulByIntIsogenyOfNeZero_pow W (Nat.cast_ne_zero.2 hp.ne_zero)]
-    exact pow_dvd_pow_of_dvd (dvd_inseparableDegree_mulByIntIsogeny W p
-      (psiFunctionField_ne_zero_of_Δ_ne_zero W W.isUnit_Δ.ne_zero (Nat.cast_ne_zero.2 hp.ne_zero))
-      (by rw [Int.cast_natCast, CharP.cast_eq_zero])) _
+    have := ExpChar.prime (R := F) hp
+    rw [e]
+    exact pow_dvd_inseparableDegree_mulByIntIsogenyOfNeZero_pow W p f
   -- so `[q]^* F(W)` lies in the pulled-back `f`-th Frobenius twist, which is the `q`-th powers
   calc (mulByIntIsogenyOfNeZero W (n := Nat.card F)
         (mod_cast Nat.card_pos.ne')).fieldPullback.fieldRange
@@ -136,6 +136,13 @@ theorem eq_dualFrobeniusIsogeny_iff_comp_eq {χ : Isogeny W W} :
       mulByIntIsogenyOfNeZero W (n := Nat.card F) (mod_cast Nat.card_pos.ne') :=
   ⟨fun h ↦ h ▸ dualFrobeniusIsogeny_comp_frobeniusIsogeny W, fun h ↦
     comp_right_injective _ (h.trans (dualFrobeniusIsogeny_comp_frobeniusIsogeny W).symm)⟩
+
+/-- **`π̂` is the dual of `π`**: the dual isogeny `TauCeti.Isogeny.dual` of the Frobenius isogeny
+is `dualFrobeniusIsogeny`. -/
+@[simp]
+theorem dual_frobeniusIsogeny : (frobeniusIsogeny W).dual = dualFrobeniusIsogeny W :=
+  (eq_dualFrobeniusIsogeny_iff_comp_eq W).2 <| by
+    rw [dual_comp, mulByIntIsogeny_inj, degree_frobeniusIsogeny]
 
 /-- **The dual of Frobenius has degree `q`**, the degree of Frobenius (Silverman III.6.2(e)). -/
 @[simp]

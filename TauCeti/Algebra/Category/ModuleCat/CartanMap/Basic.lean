@@ -341,6 +341,16 @@ theorem exactK0_of_range_of_surjective {M : Type v} {N : Type u} [AddCommGroup M
   let := Module.Finite.equiv (LinearEquiv.ofTop _ (LinearMap.range_eq_top.mpr hf)).symm
   exact ExactK0.of_congr (LinearEquiv.ofTop _ (LinearMap.range_eq_top.mpr hf)).toFGModuleCatIso
 
+/-- In `G₀(mod R)`, the class of a finitely generated module is the sum of the classes of a
+finitely generated submodule and of the quotient by it. -/
+theorem exactK0_of_eq_submodule_add_quotient {M : Type u} [AddCommGroup M] [Module R M]
+    [Module.Finite R M] (N : Submodule R M) [Module.Finite R N] :
+    (ExactK0.of (FGModuleCat.of R M) : ExactK0 (finiteModulesExactStructure R)) =
+      ExactK0.of (FGModuleCat.of R N) + ExactK0.of (FGModuleCat.of R (M ⧸ N)) := by
+  rw [exactK0_of_eq_range_add_range R (LinearMap.exact_subtype_mkQ N),
+    exactK0_of_range_of_injective R N.injective_subtype,
+    exactK0_of_range_of_surjective R N.mkQ_surjective]
+
 /-- **The Euler relation of a six-term exact sequence.** For an exact sequence
 `0 → M₁ → M₂ → M₃ → M₄ → M₅ → M₆ → 0` of finitely generated modules, the classes of the odd-indexed
 terms and of the even-indexed terms have the same sum in `G₀(mod R)`. This is the six-term case of
