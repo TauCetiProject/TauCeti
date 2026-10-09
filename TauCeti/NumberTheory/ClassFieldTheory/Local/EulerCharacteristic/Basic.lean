@@ -192,18 +192,25 @@ theorem natCard_continuousCohomology_one_eq_mul_of_localEulerCharacteristic_eq_l
     finite_H (Nat.cast_ne_zero.2 (NeZero.ne n)) A Fact.out (by omega)
   have hcard₁ : 0 < Nat.card (continuousCohomology 1 A) := Nat.card_pos
   have hA : 0 < Nat.card A.V := Nat.card_pos
-  have hq := congrArg (fun x : Units.posSubgroup ℚ ↦ ((x.1 : ℚ))) h
-  simp only [localEulerCharacteristic_coe, localCardNorm_coe] at hq
-  rw [padicNorm.eq_zpow_of_nonzero (by exact_mod_cast hA.ne'),
-    ← padicValRat_of_nat] at hq
-  norm_num [zpow_neg, zpow_natCast] at hq
-  field_simp [hcard₁.ne', (Fact.out : p.Prime).ne_zero] at hq
+  -- `φ_F(A) = (p ^ (v_p(#A) [F : ℚ_p]))⁻¹`, so `χ_F(A) = φ_F(A)` reads
+  -- `#H⁰ · #H² / #H¹ = (p ^ (v_p(#A) [F : ℚ_p]))⁻¹`.
+  have hnorm : padicNorm p (Nat.card A.V) = ((p : ℚ) ^ padicValNat p (Nat.card A.V))⁻¹ := by
+    rw [padicNorm.eq_zpow_of_nonzero (by exact_mod_cast hA.ne'), padicValRat.of_nat, zpow_neg,
+      zpow_natCast]
+  have hq :
+      (Nat.card (continuousCohomology 0 A) : ℚ) * Nat.card (continuousCohomology 2 A) /
+          Nat.card (continuousCohomology 1 A) =
+        ((p : ℚ) ^ (Module.finrank ℚ_[p] F * padicValNat p (Nat.card A.V)))⁻¹ := by
+    have := congrArg (fun x : Units.posSubgroup ℚ ↦ ((x.1 : ℚ))) h
+    simp only [localEulerCharacteristic_coe, localCardNorm_coe] at this
+    rw [this, hnorm, inv_pow, ← pow_mul, mul_comm]
   have hq' :
       (Nat.card (continuousCohomology 1 A) : ℚ) =
         Nat.card (continuousCohomology 0 A) * Nat.card (continuousCohomology 2 A) *
           (p : ℚ) ^ (Module.finrank ℚ_[p] F * padicValNat p (Nat.card A.V)) := by
-    rw [mul_comm (Module.finrank ℚ_[p] F) (padicValNat p (Nat.card A.V)), pow_mul]
-    exact hq.symm
+    rw [div_eq_iff (by exact_mod_cast hcard₁.ne'), eq_comm,
+      inv_mul_eq_iff_eq_mul₀ (pow_ne_zero _ (mod_cast (Fact.out : p.Prime).ne_zero))] at hq
+    rw [hq, mul_comm]
   exact_mod_cast hq'
 
 /-- **The `𝔽_p`-dimension form of the local Euler characteristic formula.** Equality of the local

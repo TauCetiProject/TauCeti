@@ -29,6 +29,9 @@ the category of topological modules.
 * `TopRep.isColimitCoker`: `TopRep.cokerπ f` is a cokernel of `f`.
 * `TopRep.exact_kerι`, `TopRep.exact_cokerπ`: the underlying maps of `kerι f, f` and of
   `f, cokerπ f` are exact.
+* `TopRep.natCard_ker_lt`, `TopRep.natCard_coker_lt`: for a nonzero morphism `f` of finite
+  representations, the kernel of `f` is strictly smaller than its source and the cokernel is
+  strictly smaller than its target.
 -/
 
 public section
@@ -145,5 +148,23 @@ def isColimitCoker : IsColimit (CokernelCofork.ofπ (cokerπ f) (comp_cokerπ f)
       ext b
       induction b using Submodule.Quotient.induction_on
       exact congr($hm _))
+
+/-- The kernel of a morphism `f` with finite source that does not vanish at `a` is strictly smaller
+than the source. -/
+theorem natCard_ker_lt [Finite A] {a : A} (ha : f.hom a ≠ 0) : Nat.card (ker f) < Nat.card A :=
+  Finite.card_subtype_lt (p := (· ∈ f.hom.ker)) ha
+
+/-- The cokernel of a morphism `f` with finite target that does not vanish at `a` is strictly
+smaller than the target. -/
+theorem natCard_coker_lt [Finite B] {a : A} (ha : f.hom a ≠ 0) :
+    Nat.card (coker f) < Nat.card B := by
+  have : Finite (coker f) := .of_surjective _ (cokerπ_surjective f)
+  have : Fintype B := Fintype.ofFinite _
+  have : Fintype (coker f) := Fintype.ofFinite _
+  rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
+  refine Fintype.card_lt_of_surjective_not_injective _ (cokerπ_surjective f) fun hinj ↦ ha ?_
+  refine hinj ?_
+  rw [map_zero]
+  exact (exact_cokerπ f _).2 ⟨a, rfl⟩
 
 end TopRep

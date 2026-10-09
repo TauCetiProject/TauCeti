@@ -134,31 +134,17 @@ theorem localEulerCharacteristic_eq_localCardNorm_of_forall_prime
   have : Finite (TopRep.coker ι).V := .of_surjective _ hπ
   have : Fact (IsSmoothDiscrete (ZMod n) (TopRep.ker f)) := ⟨.of_injective ι hι Fact.out⟩
   have : Fact (IsSmoothDiscrete (ZMod n) (TopRep.coker ι)) := ⟨.of_surjective π hπ Fact.out⟩
-  have : Fintype (TopRep.ker f).V := Fintype.ofFinite _
-  have : Fintype (TopRep.coker ι).V := Fintype.ofFinite _
   -- `A[ℓ] ≠ A` because `ℓ • x ≠ 0`, and `A[ℓ] ≠ 0` by Cauchy's theorem.
-  have hK : Nat.card (TopRep.ker f).V < N := by
-    rw [← hN, Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
-    refine Fintype.card_lt_of_injective_not_surjective _ hι fun hsurj ↦ hx ?_
-    obtain ⟨z, hz⟩ := hsurj x
-    have hz' := z.2
-    rw [LinearMap.mem_ker] at hz'
-    rw [← hz, ← hf, show ι.hom z = z.1 from TopRep.kerι_apply f z]
-    exact hz'
+  have hK : Nat.card (TopRep.ker f).V < N := hN ▸ TopRep.natCard_ker_lt f (a := x) (by rwa [hf])
+  have hyker : y ∈ LinearMap.ker (f.hom : A.V →ₗ[ZMod n] A.V) := by
+    rw [LinearMap.mem_ker]
+    exact (hf y).trans (by rw [← hy, addOrderOf_nsmul_eq_zero])
   have hC : Nat.card (TopRep.coker ι).V < N := by
-    rw [← hN, Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
-    refine Fintype.card_lt_of_surjective_not_injective _ hπ fun hinj ↦ ?_
-    have hy0 : y ≠ 0 := by
-      rintro rfl
-      simp only [addOrderOf_zero] at hy
-      exact hℓ.one_lt.ne hy
-    have hyι : π.hom y = π.hom 0 := by
-      have hyker : y ∈ LinearMap.ker (f.hom : A.V →ₗ[ZMod n] A.V) := by
-        rw [LinearMap.mem_ker]
-        exact (hf y).trans (by rw [← hy, addOrderOf_nsmul_eq_zero])
-      rw [map_zero]
-      exact (hιπ y).2 ⟨⟨y, hyker⟩, TopRep.kerι_apply f _⟩
-    exact hy0 (hinj hyι)
+    refine hN ▸ TopRep.natCard_coker_lt ι (a := ⟨y, hyker⟩) ?_
+    intro hy0
+    have hy0 : y = 0 := (TopRep.kerι_apply f ⟨y, hyker⟩).symm.trans hy0
+    rw [hy0, addOrderOf_zero] at hy
+    exact hℓ.one_lt.ne hy
   -- Both invariants are multiplicative along the sequence, and the ends satisfy the formula.
   have hn : IsUnit (n : F) := (Nat.cast_ne_zero.2 (NeZero.ne n)).isUnit
   rw [localEulerCharacteristic_mul_of_exact hn ι π hι hιπ hπ,
