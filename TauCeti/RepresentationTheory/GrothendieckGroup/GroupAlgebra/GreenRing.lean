@@ -20,8 +20,9 @@ exact Grothendieck ring even when representations are not semisimple.
 When the group order is invertible in the coefficient field, Maschke's theorem makes the
 comparison bijective. No algebraic-closure or characteristic-zero assumption is required.
 
-The construction composes `ExactK0.fromSplitRingHom` with `fdRepK0RingEquiv`; the bijectivity
-proof uses the existing `repRingEquivExactK0` rather than proving splitting again.
+The construction composes `ExactK0.fromSplitRingHom` with `fdRepK0RingEquiv`. Under the Maschke
+hypothesis, `repRingEquivExactK0` identifies split and exact representation classes, so Green-ring
+computations can be transported to `G₀(k[G])`.
 
 ## References
 
