@@ -51,15 +51,12 @@ variable {K : Type u} [Field K] [CharZero K]
   {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
   {n : ℕ} (b : Module.Basis (Fin (n + 1)) K P.W)
   (z : P.line) (hz : Q (z : V) = 1) [Invertible (2 : K)]
-  [LieModule.IsTriangularizable K
-    (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K)
-    (Unit ⊕ Fin (n + 1) ⊕ Fin (n + 1) → K)]
+  [LieAlgebra.IsKilling K (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K)]
 
 /-- **The type-`B` spin module is the irreducible highest-weight module `L(ωₗ)`.** Here `ωₗ`
 is the dual Cartan basis vector at the terminal short node of `typeBLieBasis`, so the equivalence
 uses its compatible Borel and abstract type-`B` root-system base. -/
 theorem nonempty_lieModuleEquiv_typeBSpin_irreducibleQuotient :
-    letI := isKilling_typeB (K := K) (ι := Fin (n + 1))
     letI := (typeBLieBasis (K := K) n).isCartanSubalgebra
     letI := (typeBLieBasis (K := K) n).isTriangularizable
     letI : LieRingModule (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K)
@@ -71,7 +68,6 @@ theorem nonempty_lieModuleEquiv_typeBSpin_irreducibleQuotient :
     Nonempty (ExteriorAlgebra K P.W ≃ₗ⁅K, LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K⁆
       irreducibleQuotient (typeBLieBasis (K := K) n).base
         ((typeBLieBasis (K := K) n).cartanBasis.dualBasis (Fin.last n))) := by
-  let _ := isKilling_typeB (K := K) (ι := Fin (n + 1))
   let _ := (typeBLieBasis (K := K) n).isCartanSubalgebra
   let _ := (typeBLieBasis (K := K) n).isTriangularizable
   let _ : LieRingModule (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K)

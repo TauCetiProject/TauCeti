@@ -290,16 +290,13 @@ variable {K : Type u} [Field K] [CharZero K]
   {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
   {n : ℕ} (b : Module.Basis (Fin (n + 1)) K P.W)
   (z : P.line) (hz : Q (z : V) = 1) [Invertible (2 : K)]
-  [LieModule.IsTriangularizable K
-    (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K)
-    (Unit ⊕ Fin (n + 1) ⊕ Fin (n + 1) → K)]
+  [LieAlgebra.IsKilling K (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K)]
 
 /-- **The all-coordinate spinor is a highest-weight vector of last fundamental weight.**
 The base and Borel are those of `typeBLieBasis`; its Cartan basis consists of the simple
 coroots, so the displayed dual basis vector is the abstract fundamental weight at the terminal
 short node. -/
 theorem isHighestWeightVector_typeBSpinLieRep_exteriorBasis_univ :
-    letI := isKilling_typeB (K := K) (ι := Fin (n + 1))
     letI := (typeBLieBasis (K := K) n).isCartanSubalgebra
     letI := (typeBLieBasis (K := K) n).isTriangularizable
     letI : LieRingModule (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K)
@@ -311,7 +308,6 @@ theorem isHighestWeightVector_typeBSpinLieRep_exteriorBasis_univ :
     IsHighestWeightVector (typeBLieBasis (K := K) n).base
       ((typeBLieBasis (K := K) n).cartanBasis.dualBasis (Fin.last n))
       (b.ExteriorAlgebra (Finset.univ : Finset (Fin (n + 1)))) := by
-  let _ := isKilling_typeB (K := K) (ι := Fin (n + 1))
   let _ := (typeBLieBasis (K := K) n).isCartanSubalgebra
   let _ := (typeBLieBasis (K := K) n).isTriangularizable
   let _ : LieRingModule (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K)
