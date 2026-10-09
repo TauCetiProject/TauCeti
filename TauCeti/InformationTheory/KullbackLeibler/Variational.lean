@@ -299,7 +299,7 @@ private lemma exists_boundedContinuousFunction_le [IsFiniteMeasure μ] [IsFinite
   obtain ⟨g₀, hg₀, -⟩ :=
     (integrable_and_integrable_exp (μ := μ + ν) hf hC).1.exists_boundedContinuous_integral_sub_le hδ
   set g : α →ᵇ ℝ := g₀ ⊓ BoundedContinuousFunction.const α C
-  have hg : ∀ x, g x = min (g₀ x) C := fun x ↦ rfl
+  have hg : ∀ x, g x = min (g₀ x) C := fun x ↦ by simp [g]
   have hdist : ∀ x, |f x - g x| ≤ ‖f x - g₀ x‖ := fun x ↦ by
     have := abs_min_sub_min_le_max (f x) C (g₀ x) C
     rwa [sub_self, abs_zero, max_eq_left (abs_nonneg _), min_eq_left (le_of_abs_le (hC x)),
