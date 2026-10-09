@@ -25,7 +25,8 @@ of such a metric.
 
 ## Main declarations
 
-* `TauCeti.MorseChart.IsEuclidean`: the metric is Euclidean in the coordinates of a Morse chart.
+* `TauCeti.MorseChart.IsEuclidean`: the metric is Euclidean in the coordinates of a Morse chart,
+  with `TauCeti.MorseChart.isEuclidean_iff` and `TauCeti.MorseChart.IsEuclidean.inner_eq`.
 * `TauCeti.MorseChart.IsEuclidean.neg_riemannianGradient_eq_field`: in such a chart the negative
   gradient is the linear field of the chart.
 * `TauCeti.isAdaptedPseudoGradient_neg_riemannianGradient`: the negative gradient is an adapted
@@ -60,7 +61,23 @@ def IsEuclidean : Prop :=
     inner ℝ v w = φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y v) ⬝ᵥ
       φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y w)
 
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- The defining property of a Morse chart in which the metric is Euclidean. -/
+theorem isEuclidean_iff : φ.IsEuclidean ↔ ∀ y ∈ φ.toChart.source, ∀ v w : TangentSpace 𝓘(ℝ, E) y,
+    inner ℝ v w = φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y v) ⬝ᵥ
+      φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y w) :=
+  Iff.rfl
+
 variable {φ}
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- In a Morse chart in which the metric is Euclidean, the metric is the dot product of the
+coordinates. -/
+theorem IsEuclidean.inner_eq (hφ : φ.IsEuclidean) {y : M} (hy : y ∈ φ.toChart.source)
+    (v w : TangentSpace 𝓘(ℝ, E) y) :
+    inner ℝ v w = φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y v) ⬝ᵥ
+      φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y w) :=
+  hφ y hy v w
 
 /-- **In a Morse chart in which the metric is Euclidean, the negative gradient is the linear field
 of the chart**, `z ↦ (-wᵢ zᵢ)ᵢ`. -/
@@ -70,6 +87,8 @@ theorem IsEuclidean.neg_riemannianGradient_eq_field (hφ : φ.IsEuclidean) {y : 
     have hdf : mvfderiv 𝓘(ℝ, E) f y v =
         ∑ i, φ.weight i * φ.coord (φ.toChart y) i *
           φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y v) i := by
+      -- `mvfderiv` composes `mfderiv` with `NormedSpace.fromTangentSpace`, which is the identity of
+      -- `ℝ`, so the two agree definitionally; Mathlib has no rewrite lemma between them.
       change mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y v = _
       rw [mfderiv_eq_fderiv_comp_of_eqOn φ.mem_maximalAtlas φ.eqOn_quadratic hy
         (φ.differentiableAt_quadratic _)]
@@ -83,7 +102,7 @@ theorem IsEuclidean.neg_riemannianGradient_eq_field (hφ : φ.IsEuclidean) {y : 
       rw [hneg, φ.coord_mfderiv_field hy]
       ext i
       simp
-    rw [hφ y hy, hdf, hX]
+    rw [hφ.inner_eq hy, hdf, hX]
     rfl
   rw [← h, neg_neg]
 
