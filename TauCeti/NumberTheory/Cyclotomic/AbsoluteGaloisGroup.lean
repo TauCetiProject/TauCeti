@@ -17,14 +17,15 @@ import TauCeti.NumberTheory.Cyclotomic.Adjoin
 # Subfields of `F(μ_m)` are cut out by their rational cyclotomic part
 
 Let `F` be a field of characteristic zero and `M` a subfield of `F(μ_m)` inside the algebraic
-closure `F̄`. The number field `ℚ(μ_m) ∩ M` already determines `M` Galois-theoretically: an element
-of the absolute Galois group `G_F` fixing `ℚ(μ_m) ∩ M` fixes `M`, so `ℚ(μ_m) ∩ M` generates `M`
-over `F`. This lets a statement about a subfield of a local cyclotomic extension `ℚ_p(μ_m)` be
-proved on a number field, as in the cyclotomic normalization of the local Artin map.
+closure `AlgebraicClosure F`. The number field `ℚ(μ_m) ∩ M` already determines `M`
+Galois-theoretically: an element of the absolute Galois group `G_F` fixing `ℚ(μ_m) ∩ M` fixes
+`M`, so `ℚ(μ_m) ∩ M` generates `M` over `F`. This lets a statement about a subfield of a local
+cyclotomic extension `ℚ_p(μ_m)` be proved on a number field, as in the cyclotomic normalization of
+the local Artin map.
 
 The proof is Galois theory in the finite Galois extension `ℚ(μ_m) / ℚ`
 (`IntermediateField.apply_eq_self_of_forall_mem_inf`), followed by the infinite Galois
-correspondence for `F̄ / F`.
+correspondence for `AlgebraicClosure F / F`.
 
 ## Main results
 
@@ -38,7 +39,7 @@ public section
 namespace TauCeti
 
 /-- **Reduction to `ℚ(μ_m)`.** Let `F` be a field of characteristic zero and `M` a subfield of
-`F(μ_m)` inside `F̄`. An element `σ ∈ G_F` that fixes `ℚ(μ_m) ∩ M` fixes `M`. -/
+`F(μ_m)` inside `AlgebraicClosure F`. An element `σ ∈ G_F` that fixes `ℚ(μ_m) ∩ M` fixes `M`. -/
 theorem apply_eq_self_of_forall_mem_adjoin_pow_eq_one {F : Type*} [Field F] [CharZero F] (m : ℕ)
     [NeZero m] {M : IntermediateField F (AlgebraicClosure F)}
     (hM : M ≤ IntermediateField.adjoin F {z : AlgebraicClosure F | z ^ m = 1})
@@ -57,7 +58,7 @@ theorem apply_eq_self_of_forall_mem_adjoin_pow_eq_one {F : Type*} [Field F] [Cha
     (σ : AlgebraicClosure F ≃ₐ[F] AlgebraicClosure F) hσ x.2
 
 /-- **`ℚ(μ_m) ∩ M` generates `M` over `F`**, for `F` a field of characteristic zero and `M` a
-subfield of `F(μ_m)` inside `F̄`: whatever in `G_F` fixes `ℚ(μ_m) ∩ M` fixes `M`. -/
+subfield of `F(μ_m)` inside `AlgebraicClosure F`: whatever in `G_F` fixes `ℚ(μ_m) ∩ M` fixes `M`. -/
 theorem le_adjoin_inf_of_le_adjoin_pow_eq_one {F : Type*} [Field F] [CharZero F] (m : ℕ)
     [NeZero m] {M : IntermediateField F (AlgebraicClosure F)}
     (hM : M ≤ IntermediateField.adjoin F {z : AlgebraicClosure F | z ^ m = 1}) :

@@ -25,11 +25,11 @@ import TauCeti.NumberTheory.Padics.PadicIntegers
 /-!
 # The explicit cyclotomic symbol kills local norms
 
-Let `M` be a finite extension of `ℚ_p` inside `ℚ_p(μ_m) ⊆ ℚ̄_p`. Every `σ ∈ G_{ℚ_p}` acting on
-`μ_m` through the explicit symbol `cyclotomicSymbol m p (N_{M/ℚ_p} y)` of a norm from `M` fixes
-`M`. This is the local input of the cyclotomic normalization of the local Artin map: it identifies
-the explicit symbol with the Artin symbol on the norm group, with no reciprocity law and no
-Lubin–Tate theory.
+Let `M` be a finite extension of `ℚ_p` inside `ℚ_p(μ_m) ⊆ AlgebraicClosure ℚ_[p]`. Every
+`σ ∈ G_{ℚ_p}` acting on `μ_m` through the explicit symbol `cyclotomicSymbol m p (N_{M/ℚ_p} y)` of a
+norm from `M` fixes `M`. This is the local input of the cyclotomic normalization of the local Artin
+map: it identifies the explicit symbol with the Artin symbol on the norm group, with no reciprocity
+law and no Lubin–Tate theory.
 
 The proof is global. The number field `K = ℚ(μ_m) ∩ M` cuts out in `Gal(ℚ_p(μ_m)/ℚ_p)` the same
 subgroup as `M`, so it suffices to show that `σ` fixes `K`. Weak approximation gives `Y ∈ K` close
@@ -56,14 +56,16 @@ open NumberField
 
 namespace TauCeti
 
-/-- **The approximating global element.** Let `K ⊆ ℚ̄_p` be a number field, Galois over `ℚ`, let
-`y₀ ∈ K`, and let `L` be a finite set of primes other than `p`. Some `Y ∈ K` is close to `y₀`, while
-every embedding of `K` into `ℚ̄_p` not coming from `G_{ℚ_p}`, every embedding into `ℚ̄_ℓ` for
-`ℓ ∈ L`, and every infinite place send `Y` close to `1`.
+/-- **The approximating global element.** Let `K ⊆ AlgebraicClosure ℚ_[p]` be a number field,
+Galois over `ℚ`, let `y₀ ∈ K`, and let `L` be a finite set of primes other than `p`. Some `Y ∈ K` is
+close to `y₀`, while every embedding of `K` into `AlgebraicClosure ℚ_[p]` not coming from
+`G_{ℚ_p}`, every embedding into `AlgebraicClosure ℚ_[ℓ]` for `ℓ ∈ L`, and every infinite place send
+`Y` close to `1`.
 
-The embeddings into `ℚ̄_p` with the absolute value of `K ⊆ ℚ̄_p` come from `G_{ℚ_p}`
-(`exists_algEquiv_apply_eq_of_norm_apply_eq`); the remaining absolute values are distinct from it,
-and equivalent ones among them are equal, so weak approximation applies. -/
+The embeddings into `AlgebraicClosure ℚ_[p]` with the absolute value of
+`K ⊆ AlgebraicClosure ℚ_[p]` come from `G_{ℚ_p}` (`exists_algEquiv_apply_eq_of_norm_apply_eq`); the
+remaining absolute values are distinct from it, and equivalent ones among them are equal, so weak
+approximation applies. -/
 private theorem exists_approximation (p : ℕ) [Fact p.Prime]
     (K : IntermediateField ℚ (AlgebraicClosure ℚ_[p])) [NumberField K] [IsGalois ℚ K]
     {L : Finset ℕ} (hL : ∀ ℓ ∈ L, ℓ.Prime) (hpL : p ∉ L) (y₀ : K) {ρ : ℝ} (hρ : 0 < ρ) :
