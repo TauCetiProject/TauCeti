@@ -14,7 +14,7 @@ import Mathlib.NumberTheory.LegendreSymbol.Basic
 import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
-import TauCeti.NumberTheory.Padics.PadicIntegers
+import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # Normalization of the p-adic absolute value
@@ -233,6 +233,7 @@ theorem isUniformizer_natCast_self_mul_unit (u : ℤ_[p]ˣ) :
   apply Multiplicative.toAdd.injective
   simp only [_root_.Padic.toAdd_normalizedValuation_eq_valuation, Units.coe_map,
     RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, PadicInt.algebraMap_apply,
-    PadicInt.valuation_coe, PadicInt.valuation_coe_unit, Nat.cast_zero, toAdd_one]
+    PadicInt.valuation_coe, PadicInt.valuation_eq_zero_of_isUnit u.isUnit, Nat.cast_zero,
+    toAdd_one]
 
 end TauCeti.Padic
