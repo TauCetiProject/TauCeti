@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Chris Birkbeck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck
+Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
@@ -34,6 +34,8 @@ proof uses, and the name places the divisibility in Mathlib's operand order.
 
 ## Main results
 
+* `ZMod.natCast_val_div_eq_intCast_div`: division of a residue representative agrees with
+  division of the original integer modulo the corresponding divisor of the residue modulus.
 * `ZMod.exists_dvd_sub_val_mul`: the congruence `j b ≡ a (mod n)` has a solution `j : ZMod n`
   whenever `b` is a unit modulo `n`.
 * `ZMod.natCast_dvd_val_sub_of_unitsMap_eq`: two units with the same image under `ZMod.unitsMap`
@@ -44,6 +46,8 @@ proof uses, and the name places the divisibility in Mathlib's operand order.
   congruent absolute values.
 * `ZMod.eq_of_forall_cast_eq_of_prime_pow_dvd`: a residue modulo `n` is determined by its
   reductions modulo the prime powers dividing `n`.
+* `ZMod.units_eq_of_forall_unitsMap_eq_of_prime_pow_dvd`: the same for units, through
+  `ZMod.unitsMap`.
 * `ZMod.equivPi_apply`: the components of Mathlib's Chinese remainder isomorphism `ZMod.equivPi`
   are the reductions modulo the prime powers exactly dividing `n`.
 * `ZMod.dvd_of_forall_mul_eq_zero`: divisibility inside `ZMod n` from annihilators: if every `r`
@@ -53,6 +57,25 @@ proof uses, and the name places the divisibility in Mathlib's operand order.
 public section
 
 namespace ZMod
+
+/-- Dividing a residue representative by `d` agrees modulo `m` with dividing the original
+integer, when `d` divides that integer and `m * d` divides the residue modulus. -/
+theorem natCast_val_div_eq_intCast_div {N m d : ℕ} [NeZero N] (hmd : m * d ∣ N)
+    {x : ℤ} (hd : (d : ℤ) ∣ x) :
+    (((x : ZMod N).val / d : ℕ) : ZMod m) = ((x / d : ℤ) : ZMod m) := by
+  have hd0 : (d : ℤ) ≠ 0 := by
+    intro hzero
+    have hd0 : d = 0 := by exact_mod_cast hzero
+    exact NeZero.ne N (by simpa [hd0] using hmd)
+  have hmd' : (m : ℤ) * d ∣ N := by exact_mod_cast hmd
+  have hdiff : (m : ℤ) * d ∣ ((x : ZMod N).val : ℤ) - x :=
+    hmd'.trans
+      ((intCast_eq_intCast_iff_dvd_sub _ _ _).mp (by simp))
+  have hquot := Int.ediv_dvd_ediv (dvd_mul_left (d : ℤ) m) hdiff
+  rw [mul_comm (m : ℤ) d, Int.mul_ediv_cancel_left _ hd0,
+    Int.sub_ediv_of_dvd _ hd] at hquot
+  rw [← Int.cast_natCast, Int.natCast_div, intCast_eq_intCast_iff_dvd_sub]
+  exact (dvd_sub_comm).mp hquot
 
 /-- **A linear congruence with unit coefficient is solvable.** If `b` is a unit modulo `n`, then
 `n ∣ a - j.val * b` for some `j : ZMod n`, namely `j = a b⁻¹`. -/
@@ -118,6 +141,14 @@ theorem eq_of_forall_cast_eq_of_prime_pow_dvd {n : ℕ} [NeZero n] {x y : ZMod n
   rcases eq_or_ne k 0 with rfl | hk
   · simp
   rw [← natCast_eq_zero_iff, natCast_val, cast_sub hpk, h p k hp hk hpk, sub_self]
+
+/-- **A unit is determined by its reductions modulo prime powers.** Two units modulo `n` whose
+images under `ZMod.unitsMap` agree for every prime power `p ^ k` dividing `n` are equal. -/
+theorem units_eq_of_forall_unitsMap_eq_of_prime_pow_dvd {n : ℕ} [NeZero n] {u v : (ZMod n)ˣ}
+    (h : ∀ p k : ℕ, p.Prime → k ≠ 0 → (hpk : p ^ k ∣ n) → unitsMap hpk u = unitsMap hpk v) :
+    u = v :=
+  Units.ext <| eq_of_forall_cast_eq_of_prime_pow_dvd fun p k hp hk hpk ↦
+    congr_arg Units.val (h p k hp hk hpk)
 
 /-- The component at `p` of the Chinese remainder isomorphism `ZMod.equivPi` is reduction modulo
 `p ^ n.factorization p`. -/

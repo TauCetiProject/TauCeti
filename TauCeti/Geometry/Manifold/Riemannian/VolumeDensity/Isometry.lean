@@ -110,11 +110,7 @@ variable [MeasurableSpace M] [BorelSpace M] [MeasurableSpace N] [BorelSpace N]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun y : N ↦ TangentSpace I' y)]
 
-/-- The Borel measurable space on the model vector space, used for chart volume. -/
-local instance chartIsometryMeasurableSpaceE : MeasurableSpace E := borel E
-
-/-- The model vector space's measurable space is its Borel measurable space. -/
-local instance : BorelSpace E := ⟨rfl⟩
+attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
 
 /-- A map which is injective and differentiable on a measurable subset `s` of the chart source at
 `α`, maps `s` into the chart source at `β`, and whose tangent maps at points of `s` preserve the

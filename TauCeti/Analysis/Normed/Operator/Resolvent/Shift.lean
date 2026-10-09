@@ -17,10 +17,11 @@ unchanged and translates its resolvent:
 `R(lambda, A - omega I) = R(lambda + omega, A)`.
 
 This file develops the characteristic resolvent API of the generic scalar shift from
-`TauCeti.LinearAlgebra.LinearPMap.Shift`, over an arbitrary nontrivially normed field — the
-generality of `TauCeti.LinearPMap.resolventSet` itself, so that a complex shift of a complex
-unbounded operator is covered.  The construction is independent of semigroups; in particular, it
-can be used for an operator not yet known to generate one.
+`TauCeti.LinearAlgebra.LinearPMap.Shift`. The results here are stated over an arbitrary
+nontrivially normed field, so a complex shift of a complex unbounded operator is covered.
+The continuous-inverse foundation itself applies to modules over a ring equipped with a
+topology. The construction is independent of semigroups; in particular, it can be used for
+an operator not yet known to generate one.
 
 ## Main results
 
@@ -33,6 +34,9 @@ public section
 noncomputable section
 
 namespace TauCeti.LinearPMap
+
+open _root_.LinearPMap (
+  IsResolventAt isResolventAt_resolvent mem_resolventSet_iff resolvent_eq_of_isResolventAt)
 
 variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup X]
   [NormedSpace 𝕜 X]
@@ -86,7 +90,7 @@ theorem isResolventAt_subScalar_iff {A : X →ₗ.[𝕜] X} {omega lambda : 𝕜
 /-- Translation of the resolvent set under the scalar shift `A ↦ A - omega I`. -/
 @[simp]
 theorem mem_resolventSet_subScalar_iff {A : X →ₗ.[𝕜] X} {omega lambda : 𝕜} :
-    lambda ∈ resolventSet (subScalar A omega) ↔ lambda + omega ∈ resolventSet A := by
+    lambda ∈ (subScalar A omega).resolventSet ↔ lambda + omega ∈ A.resolventSet := by
   rw [mem_resolventSet_iff, mem_resolventSet_iff]
   constructor <;> rintro ⟨R, hR⟩ <;> refine ⟨R, ?_⟩
   · exact isResolventAt_subScalar_iff.mp hR
@@ -95,8 +99,8 @@ theorem mem_resolventSet_subScalar_iff {A : X →ₗ.[𝕜] X} {omega lambda : �
 /-- Exact translation of the resolvent under the scalar shift `A ↦ A - omega I`. -/
 @[simp]
 theorem resolvent_subScalar {A : X →ₗ.[𝕜] X} {omega lambda : 𝕜}
-    (hlambda : lambda + omega ∈ resolventSet A) :
-    resolvent (subScalar A omega) lambda = resolvent A (lambda + omega) := by
+    (hlambda : lambda + omega ∈ A.resolventSet) :
+    (subScalar A omega).resolvent lambda = A.resolvent (lambda + omega) := by
   apply resolvent_eq_of_isResolventAt
   have h := isResolventAt_resolvent hlambda
   exact (isResolventAt_subScalar_iff (A := A) (omega := omega)).mpr h

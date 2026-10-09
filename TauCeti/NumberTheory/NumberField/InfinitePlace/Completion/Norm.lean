@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Completion.Ramification
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Extension
 import Mathlib.LinearAlgebra.Trace
 import Mathlib.RingTheory.Complex
 
@@ -22,10 +22,14 @@ infinite place `v` of `K`. Through the extension embeddings `K_v → ℂ` and `L
 * If `w` is ramified over `v`, so that `w` is complex and `v` is real, then the norm is
   `z ↦ |z|²`.
 
-These formulas compute the archimedean components of the norm map of ideles.
+These formulas compute the archimedean components of the norm map of ideles. The norm preserves
+the normalized absolute value: at a complex place over a real place the source uses the square
+of the ordinary absolute value, exactly as the norm does.
 
 ## Main results
 
+* `NumberField.InfinitePlace.completionNormalizedAbsValue_norm`: the norm preserves normalized
+  absolute values at infinite places.
 * `NumberField.InfinitePlace.Completion.extensionEmbedding_norm_of_isUnramified`: at an
   unramified place, the norm is the identity in `ℂ`.
 * `NumberField.InfinitePlace.Completion.extensionEmbedding_norm_of_isUnramified_conjugate`: the
@@ -103,3 +107,33 @@ theorem extensionEmbeddingOfIsReal_norm_of_isRamified (h : w.IsRamified K) (hv :
     Algebra.norm_complex_apply]
 
 end NumberField.InfinitePlace.Completion
+
+namespace NumberField.InfinitePlace
+
+open Completion
+
+variable {K L : Type*} [Field K] [Field L] [Algebra K L]
+
+/-- The local field norm preserves the normalized absolute value, including the squared
+normalization at complex places. -/
+@[simp↓]
+theorem completionNormalizedAbsValue_norm (v : InfinitePlace K) (w : InfinitePlace L)
+    [w.LiesOver v] (x : w.Completion) :
+    completionNormalizedAbsValue v (Algebra.norm v.Completion x) =
+      completionNormalizedAbsValue w x := by
+  by_cases hw : w.IsUnramified K
+  · obtain ⟨a, rfl⟩ :=
+      (Module.Free.bijective_algebraMap_of_finrank_eq_one (hw.finrank_eq_one v)).2 x
+    rw [Algebra.norm_algebraMap, hw.finrank_eq_one v, pow_one, RingHom.algebraMap_toAlgebra]
+    simpa only [hw.finrank_eq_one v, pow_one] using
+      (completionNormalizedAbsValue_completionMap (w := w) a).symm
+  · have hr : w.IsRamified K := hw
+    have hv' : v.IsReal := (LiesOver.comap_eq w v) ▸ hr.isReal
+    rw [completionNormalizedAbsValue_of_isReal v hv',
+      completionNormalizedAbsValue_of_isComplex w hr.isComplex,
+      ← (isometry_extensionEmbeddingOfIsReal hv').norm_map_of_map_zero (map_zero _),
+      extensionEmbeddingOfIsReal_norm_of_isRamified hr hv',
+      Real.norm_of_nonneg (Complex.normSq_nonneg _), Complex.normSq_eq_norm_sq,
+      (isometry_extensionEmbedding w).norm_map_of_map_zero (map_zero _)]
+
+end NumberField.InfinitePlace

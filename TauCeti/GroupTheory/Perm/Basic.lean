@@ -32,7 +32,11 @@ is a single cycle on each of its own orbits, the transport of its cycles along a
 types, and the factorization of an invariant function
 through a map on whose fibres the permutation is a single cycle, and a correction by a power of
 a cycle for a permutation commuting with it. It also identifies functions invariant under a
-permutation with functions on its cycle quotient (`TauCeti.invariantColouringEquiv`).
+permutation with functions on its cycle quotient (`TauCeti.invariantColouringEquiv`). Finally,
+right multiplication by `a` is a single cycle on the whole group exactly when `a` generates it
+(`Equiv.isCycleOn_mulRight_univ_iff`). Alternating a signed sum over permutations a second
+time, along a sign-preserving map of permutation groups, multiplies it by the number of
+permutations alternated over (`TauCeti.sum_sign_smul_sum_sign_smul_eq_card_nsmul`).
 -/
 
 public section
@@ -202,6 +206,13 @@ theorem sameCycle_permCongr {β : Type*} (e : α ≃ β) {x y : α} :
   refine ⟨fun h ↦ ?_, fun h ↦ h.map fun z ↦ by simp⟩
   simpa using h.map (g := e.symm) fun z ↦ by simp
 
+/-- The cycles of a permutation transported along an equivalence are the transported cycles:
+two points lie in the same cycle of `e.permCongr σ` exactly when their preimages under `e` lie in
+the same cycle of `σ`. -/
+theorem sameCycle_permCongr_iff {β : Type*} (e : α ≃ β) {x y : β} :
+    (e.permCongr σ).SameCycle x y ↔ σ.SameCycle (e.symm x) (e.symm y) := by
+  rw [← sameCycle_permCongr σ e, e.apply_symm_apply, e.apply_symm_apply]
+
 /-- Transporting a permutation along an equivalence transports its cycles on a set: the analogue of
 `Equiv.Perm.IsCycleOn.conj` for an equivalence between two types. -/
 theorem IsCycleOn.permCongr {σ : Perm α} {β : Type*} (e : α ≃ β) {s : Set α}
@@ -216,6 +227,23 @@ theorem IsCycleOn.permCongr {σ : Perm α} {β : Type*} (e : α ≃ β) {s : Set
     exact (sameCycle_permCongr σ e).2 (h.2 hx hy)
 
 end Equiv.Perm
+
+namespace Equiv
+
+/-- Right multiplication by `a` is a single cycle on the whole group exactly when `a` generates
+the group. -/
+@[to_additive /-- Right addition of `a` is a single cycle on the whole group exactly when `a`
+generates the group. -/]
+theorem isCycleOn_mulRight_univ_iff {G : Type*} [Group G] {a : G} :
+    (Equiv.mulRight a).IsCycleOn _root_.Set.univ ↔ Subgroup.zpowers a = ⊤ := by
+  simp only [Subgroup.eq_top_iff', Subgroup.mem_zpowers_iff]
+  refine ⟨fun h y => ?_, fun h => ⟨(Equiv.mulRight a).bijective.bijOn_univ, fun x _ y _ => ?_⟩⟩
+  · obtain ⟨k, hk⟩ := h.2 (Set.mem_univ 1) (Set.mem_univ y)
+    exact ⟨k, by simpa using hk⟩
+  · obtain ⟨k, hk⟩ := h (x⁻¹ * y)
+    exact ⟨k, by simp [hk]⟩
+
+end Equiv
 
 namespace TauCeti
 
@@ -392,5 +420,22 @@ theorem exists_perm_apply_eq_of_disjoint_range {α β γ : Type*} {e : α → γ
       hrange_e ▸ Set.disjoint_right.mp hd ⟨τ b, rfl⟩
     rw [Equiv.Perm.mul_apply, htwo,
       Equiv.Perm.viaEmbedding_apply_of_notMem (ι := ⟨e, he⟩) _ _ hmem]
+
+/-- Alternating a signed sum over the permutations of `α` a second time, along any
+sign-preserving map `ext` from the permutations of `β`, only multiplies it by the number of
+permutations of `β`. With `ext` the
+extension of permutations of a block of indices by the identity, this is the statement that the
+alternatization of a partially alternatized multilinear map is a multiple of the alternatization. -/
+theorem sum_sign_smul_sum_sign_smul_eq_card_nsmul {β M : Type*} [Fintype β] [DecidableEq β]
+    [AddCommGroup M] (ext : Perm β → Perm α) (hext : ∀ τ, sign (ext τ) = sign τ)
+    (T : Perm α → M) :
+    ∑ σ : Perm α, sign σ • ∑ τ : Perm β, sign τ • T (σ * ext τ) =
+      Fintype.card (Perm β) • ∑ σ : Perm α, sign σ • T σ := by
+  rw [← Finset.card_univ, ← Finset.sum_const]
+  simp_rw [Finset.smul_sum]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun τ _ => ?_
+  refine Fintype.sum_equiv (Equiv.mulRight (ext τ)) _ _ fun σ => ?_
+  rw [Equiv.coe_mulRight, sign_mul, hext, mul_smul, smul_comm]
 
 end TauCeti

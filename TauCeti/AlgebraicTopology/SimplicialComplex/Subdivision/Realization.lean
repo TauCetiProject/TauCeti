@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Ring.Real
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Basic
 
 import TauCeti.Order.Chain

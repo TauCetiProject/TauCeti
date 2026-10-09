@@ -8,14 +8,16 @@ module
 import Mathlib.Analysis.Normed.Module.RCLike.Real
 
 public import Mathlib.Analysis.Convex.StdSimplex
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Basic
 
 /-!
-# Realizations of the standard one-simplex and its boundary
+# Realizations of finite simplices
 
-This file identifies the geometric realization of the full abstract complex on a finite vertex
-type with Mathlib's standard simplex of barycentric coordinate functions. Specializing to two
+This file compares the closed coordinate simplex on any finite vertex set, including the empty
+set, with Mathlib's standard simplex on that set. It also identifies the geometric realization of
+the full abstract complex on a finite vertex type with Mathlib's standard simplex of barycentric
+coordinate functions. Specializing to two
 vertices gives a homeomorphism from the standard one-simplex to the unit interval. Its boundary,
 the bottom abstract complex on `Fin 2`, is then identified with the unit zero-sphere.
 
@@ -31,6 +33,8 @@ the elementary equivalence between its two points and `Fin 2`.
 
 ## Main results
 
+* `Finset.standardSimplexHomeomorph`: a closed coordinate simplex is homeomorphic to Mathlib's
+  standard simplex on its finite vertex set.
 * `realizationTopHomeomorphStdSimplex`: the full complex realizes to Mathlib's standard simplex.
 * `realizationOneSimplexHomeomorphUnitInterval`: the standard one-simplex realizes to `[0, 1]`.
 * `realizationOneSimplexBoundaryHomeomorphSphereZero`: its boundary realizes to `S⁰`.
@@ -42,11 +46,75 @@ noncomputable section
 
 open Metric Set TauCeti.SetLike
 
-namespace AbstractSimplicialComplex
+namespace Finset
 
-variable {ι : Type*} [Fintype ι] [Nonempty ι]
+open AbstractSimplicialComplex
+
+variable {α : Type*} {σ : Finset α}
 
 attribute [local instance] Classical.decEq
+
+/-- A closed coordinate simplex is homeomorphic to Mathlib's standard simplex on its finite
+vertex set, including when that set is empty. -/
+def standardSimplexHomeomorph (σ : Finset α) : StandardSimplex σ ≃ₜ Convexity.StdSimplex ℝ σ where
+  toFun x := {
+    weights := x.1.subtypeDomain (· ∈ σ)
+    nonneg := fun a => StandardSimplex.nonneg x a
+    total := by
+      exact (Finsupp.sum_subtypeDomain_index (p := fun a => a ∈ σ)
+        (h := fun (_ : α) (r : ℝ) => r) (StandardSimplex.support_subset x)).trans
+          (StandardSimplex.sum_eq_one x) }
+  invFun w := ⟨w.weights.mapDomain Subtype.val, by
+    rw [Finset.coe_image, mem_standardSimplex_iff]
+    refine ⟨fun a => Finsupp.mapDomain_nonneg w.nonneg a, ?_, ?_⟩
+    · rw [Finsupp.sum_mapDomain_index (fun _ => rfl) (fun _ _ _ => rfl)]
+      exact w.total
+    · intro a ha
+      obtain ⟨b, -, rfl⟩ := Finset.mem_image.mp (Finsupp.mapDomain_support ha)
+      exact b.2⟩
+  left_inv x := by
+    apply Subtype.ext
+    ext a
+    by_cases ha : a ∈ σ
+    · simpa only [Finsupp.subtypeDomain_apply] using
+        Finsupp.mapDomain_apply_of_injective Subtype.val_injective
+          (x.1.subtypeDomain (· ∈ σ)) ⟨a, ha⟩
+    · rw [Finsupp.mapDomain_of_notMem_range]
+      · exact (Finsupp.notMem_support_iff.mp
+          (fun h => ha (StandardSimplex.support_subset x h))).symm
+      · simpa using ha
+  right_inv w := by
+    apply Convexity.StdSimplex.ext
+    ext a
+    exact Finsupp.mapDomain_apply_of_injective Subtype.val_injective w.weights a
+  continuous_toFun := by
+    apply (Convexity.StdSimplex.isEmbedding_toFun_comp_weights ℝ σ).continuous_iff.mpr
+    exact continuous_pi fun a => (continuous_apply a.1).comp continuous_induced_dom
+  continuous_invFun := by
+    apply continuous_induced_rng.mpr
+    exact continuous_pi fun a =>
+      (Convexity.StdSimplex.continuous_weights_apply ℝ a).comp
+        (Convexity.StdSimplex.continuous_map ℝ (Subtype.val : σ → α))
+
+/-- The finite-simplex comparison reads the original coordinate at each vertex of the face. -/
+@[simp]
+theorem standardSimplexHomeomorph_weights (σ : Finset α) (x : StandardSimplex σ) (a : σ) :
+    (standardSimplexHomeomorph σ x).weights a = x.1 a := (rfl)
+
+/-- The inverse finite-simplex comparison extends the finite coordinate vector by zero. -/
+@[simp]
+theorem standardSimplexHomeomorph_symm_val (σ : Finset α) (w : Convexity.StdSimplex ℝ σ) :
+    ((standardSimplexHomeomorph σ).symm w : α →₀ ℝ) = w.weights.mapDomain Subtype.val := (rfl)
+
+end Finset
+
+namespace AbstractSimplicialComplex
+
+variable {ι : Type*}
+
+attribute [local instance] Classical.decEq
+
+variable [Fintype ι] [Nonempty ι]
 
 private theorem univ_mem_top : (Finset.univ : Finset ι) ∈ (⊤ : AbstractSimplicialComplex ι) :=
   Finset.univ_nonempty
@@ -237,4 +305,3 @@ theorem realizationOneSimplexBoundaryHomeomorphSphereZero_symm_apply_neg_one :
   simp
 
 end AbstractSimplicialComplex
-

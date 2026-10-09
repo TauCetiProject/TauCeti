@@ -25,7 +25,7 @@ noncomputable section
 
 local notation "𝔽₂" => ZMod 2
 
-attribute [local instance] f4ShortRootAmbientCotangentComodule
+attribute [local instance] f4ShortRootCotangentAdjointComodule
 
 /-- An equality of represented vectors under the ambient carrier action descends to the
 modular quotient. -/

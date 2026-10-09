@@ -65,7 +65,7 @@ private noncomputable def realCliffordZeroThreeAugmentedIsometry :
 private theorem realCliffordFormNegIsometry_three_zero (v : Fin 3 → ℝ) :
     realCliffordFormNegIsometry 3 0 v = v := by
   funext i
-  simpa using realCliffordFormNegIsometry_neg_of_pos 3 0 v i
+  simpa using realCliffordFormNegIsometry_apply_natAdd 3 0 v i
 
 private theorem realCliffordZeroThreeAugmentedIsometry_apply (v : Fin 3 → ℝ) :
     realCliffordZeroThreeAugmentedIsometry v = (![v 0, v 1], v 2) := by

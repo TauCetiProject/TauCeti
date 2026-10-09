@@ -454,8 +454,7 @@ noncomputable def specialOrthogonalGroupBaseChange [Module.Free R M] [Module.Fin
     apply mem_specialOrthogonalGroup_iff.mpr
     refine ⟨(orthogonalGroupBaseChange (A := A) Q
       ⟨g, specialOrthogonalGroup_le_orthogonalGroup Q g.2⟩).2, ?_⟩
-    have hg := (mem_specialOrthogonalGroup_iff.mp g.2).2
-    rw [det_orthogonalGroupBaseChange, hg, map_one]⟩
+    rw [det_orthogonalGroupBaseChange, det_coe_specialOrthogonalGroup, map_one]⟩
   map_one' := Subtype.ext (by simp [orthogonalGroupBaseChange])
   map_mul' g h := Subtype.ext (by simp [orthogonalGroupBaseChange, LinearEquiv.baseChange_mul])
 

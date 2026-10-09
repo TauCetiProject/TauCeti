@@ -122,7 +122,7 @@ theorem ideleNormMap_ofCompletion (v : InfinitePlace K) (w : InfinitePlace L) [w
     (u : w.Completionˣ) :
     ideleNormMap K L (IdeleGroup.ofCompletion (𝓞 L) L w u) =
       IdeleGroup.ofCompletion (𝓞 K) K v (Algebra.normUnits v.Completion u) := by
-  refine IdeleGroup.ext (fun v' ↦ ?_) ?_
+  refine IdeleGroup.ext (fun v' ↦ ?_) (fun v' ↦ ?_)
   · rw [ideleInfiniteCoord_ideleNormMap]
     by_cases hv : v' = v
     · subst hv
@@ -139,11 +139,8 @@ theorem ideleNormMap_ofCompletion (v : InfinitePlace K) (w : InfinitePlace L) [w
         apply hv
         rw [← LiesOver.comap_eq w'.1 v', ← LiesOver.comap_eq w v, h]
       rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne w'.1 hne, map_one]
-  · rw [IdeleGroup.toFiniteIdele_ofCompletion]
-    apply Units.ext
-    have h := congrArg Units.val (IdeleGroup.toFiniteIdele_ofCompletion (𝓞 L) L w u)
-    rw [IdeleGroup.coe_toFiniteIdele] at h ⊢
-    rw [coe_ideleNormMap, adeleNorm_snd, h, Units.val_one, map_one, Units.val_one]
+  · simp only [ideleFiniteCoord_ideleNormMap,
+      HeightOneSpectrum.ideleFiniteCoord_ofCompletion, map_one, finprod_one]
 
 /-- The norm of a principal idele is the principal idele of the norm of `L / K`. -/
 @[simp]

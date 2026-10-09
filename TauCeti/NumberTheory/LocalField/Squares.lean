@@ -39,7 +39,6 @@ characteristic: when it is odd, `v_K(2) = 0` and the statement is that some unit
 ## Main results
 
 * `TauCeti.unitFiltration_le_range_powMonoidHom_two`: `U(K, 2 v_K(2) + 1) ⊆ (Kˣ)²`.
-* `TauCeti.normalizedValuation_even_of_isSquare`: squares have even normalized valuation.
 * `TauCeti.isSquare_of_eq_one_add_four_mul`: a residue Artin–Schreier condition makes
   `1 + 4m` a square.
 * `TauCeti.valuation_one_add_four_mul`: in residue characteristic two, `1 + 4m` is a unit.
@@ -79,13 +78,6 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
-
-/-- A square in a nonarchimedean local field has even normalized valuation. -/
-theorem normalizedValuation_even_of_isSquare {a : Kˣ} (ha : IsSquare a) :
-    Even (normalizedValuation K a).toAdd := by
-  obtain ⟨b, rfl⟩ := ha
-  refine ⟨(normalizedValuation K b).toAdd, ?_⟩
-  simp
 
 /-- The dyadic level `v_K(2)`, expressed using the supplied natural-valued valuation. -/
 noncomputable def dyadicLevel (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]

@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Cyclic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
+public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Minimum
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Classical
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classical
@@ -18,7 +19,8 @@ import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classical
 
 The positive root lattice of type `Aₙ` is the rank-`n` integral lattice whose Gram matrix in the
 simple-root basis is the Cartan matrix `CartanMatrix.A n`.  This file constructs it inside
-`Fin n → ℚ`, proves it even and nondegenerate, and computes its discriminant form:
+`Fin n → ℚ`, proves it even and nondegenerate, with minimum `2` when `n ≥ 1`, and computes its
+discriminant form:
 
 ```text
 det Aₙ = n + 1,   A_{Aₙ} ≃+ ℤ/(n+1),   q(ω₁) = n / (2 (n + 1)),   b(ω₁, ω₁) = n / (n + 1).
@@ -56,6 +58,7 @@ The identification of this simple-root model with the classical coordinate model
 * `TauCeti.IntegralLattice.isEven_typeARootLattice`: it is even.
 * `TauCeti.IntegralLattice.isPosDef_typeARootLattice`: it is positive definite.
 * `TauCeti.IntegralLattice.determinant_typeARootLattice`: its determinant is `n + 1`.
+* `TauCeti.IntegralLattice.minimum_typeARootLattice`: for `n ≥ 1` its minimum is `2`.
 * `TauCeti.IntegralLattice.typeAFundamentalWeight`: the first fundamental weight `ω₁`.
 * `TauCeti.IntegralLattice.typeAFundamentalWeightClass`: its class in the discriminant group.
 * `TauCeti.IntegralLattice.form_typeAFundamentalWeight_self`: `⟨ω₁, ω₁⟩ = n / (n + 1)`.
@@ -210,6 +213,15 @@ so the `simpNF` linter rejects the tagged form. -/
 theorem natCard_discriminantGroup_typeARootLattice :
     Nat.card (typeARootLattice n).DiscriminantGroup = n + 1 := by
   rw [natCard_discriminantGroup, discriminant_typeARootLattice]
+
+/-- For `n ≥ 1` the minimum of the type `Aₙ` root lattice is `2`: the lattice is even, and a
+simple root has norm `2`. -/
+@[simp]
+theorem minimum_typeARootLattice (hn : n ≠ 0) : (typeARootLattice n).minimum = 2 :=
+  (isPosDef_typeARootLattice n).minimum_eq_two (isEven_typeARootLattice n)
+    (x := typeASimpleRootBasis n ⟨0, Nat.pos_of_ne_zero hn⟩) <| by
+      rw [integralNorm_apply, ← gramMatrix_apply, gramMatrix_typeASimpleRootBasis]
+      simp [CartanMatrix.A]
 
 /-! ## The first fundamental weight -/
 

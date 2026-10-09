@@ -39,6 +39,9 @@ such as the count of its power classes, to the group of principal units `U(K,1)`
 * `TauCeti.normalizedValuation_comp_zpowersHom`: a uniformizer splits the normalized valuation.
 * `TauCeti.existsUnique_eq_zpow_mul`: every `x : Kˣ` is uniquely `ϖ ^ n * u` with `u ∈ U(K,0)`.
 * `TauCeti.coe_unitsEquivIntProd_apply_snd_eq_mul`: how the splitting changes with the uniformizer.
+* `TauCeti.unitFiltration_sup_zpowers_inf_unitFiltration_zero` and
+  `TauCeti.index_unitFiltration_sup_zpowers`: the subgroup `U(K,i) · ϖ ^ ℤ` meets `U(K,0)` in
+  `U(K,i)`, and its index in `Kˣ` is `[U(K,0) : U(K,i)]`.
 * `TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField_unitFiltrationZeroEquivProd_apply_fst`:
   the root-of-unity component of `u ∈ U(K,0)` has the same residue class as `u`.
 
@@ -178,6 +181,55 @@ theorem coe_unitsEquivIntProd_apply_snd_eq_mul {ϖ' : Kˣ}
 theorem mul_inv_mem_unitFiltration_zero {ϖ' : Kˣ} (hϖ : normalizedValuation K ϖ = .ofAdd 1)
     (hϖ' : normalizedValuation K ϖ' = .ofAdd 1) : ϖ * ϖ'⁻¹ ∈ unitFiltration K 0 := by
   rw [← ker_normalizedValuation, MonoidHom.mem_ker, map_mul, map_inv, hϖ, hϖ', mul_inv_cancel]
+
+/-! ### The subgroups `U(K,i) · ϖ ^ ℤ` -/
+
+/-- Membership in `U(K,i) · ϖ ^ ℤ` for a uniformizer `ϖ`: `x` lies in it exactly when its unit
+part `x ϖ^{-v_K(x)}` lies in `U(K,i)`. -/
+theorem mem_unitFiltration_sup_zpowers_iff (hϖ : normalizedValuation K ϖ = .ofAdd 1) {i : ℕ}
+    {x : Kˣ} :
+    x ∈ unitFiltration K i ⊔ Subgroup.zpowers ϖ ↔
+      x * ϖ ^ (-(normalizedValuation K x).toAdd) ∈ unitFiltration K i := by
+  refine ⟨fun hx ↦ ?_, fun hx ↦ Subgroup.mem_sup.mpr
+    ⟨_, hx, _, Subgroup.zpow_mem_zpowers ϖ (normalizedValuation K x).toAdd, by group⟩⟩
+  obtain ⟨u, hu, _, ⟨k, rfl⟩, rfl⟩ := Subgroup.mem_sup.mp hx
+  have hu0 : normalizedValuation K u = 1 := by
+    rw [← MonoidHom.mem_ker, ker_normalizedValuation]
+    exact unitFiltration_antitone (Nat.zero_le i) hu
+  simpa [hu0, normalizedValuation_zpow_of_eq_ofAdd_one hϖ, mul_assoc, ← zpow_add] using hu
+
+/-- For a uniformizer `ϖ`, the units of `𝒪[K]` lying in `U(K,i) · ϖ ^ ℤ` are those of `U(K,i)`. -/
+theorem unitFiltration_sup_zpowers_inf_unitFiltration_zero
+    (hϖ : normalizedValuation K ϖ = .ofAdd 1) (i : ℕ) :
+    (unitFiltration K i ⊔ Subgroup.zpowers ϖ) ⊓ unitFiltration K 0 = unitFiltration K i := by
+  refine le_antisymm (fun x ⟨hx, hx0⟩ ↦ ?_)
+    (le_inf le_sup_left (unitFiltration_antitone (Nat.zero_le i)))
+  have hv : normalizedValuation K x = 1 := by
+    rwa [← MonoidHom.mem_ker, ker_normalizedValuation]
+  simpa [hv] using (mem_unitFiltration_sup_zpowers_iff hϖ).mp hx
+
+/-- For a uniformizer `ϖ`, a step `U(K,j)` lies in `U(K,i) · ϖ ^ ℤ` exactly when it lies in
+`U(K,i)`. -/
+theorem unitFiltration_le_unitFiltration_sup_zpowers_iff
+    (hϖ : normalizedValuation K ϖ = .ofAdd 1) {i j : ℕ} :
+    unitFiltration K j ≤ unitFiltration K i ⊔ Subgroup.zpowers ϖ ↔
+      unitFiltration K j ≤ unitFiltration K i := by
+  conv_rhs => rw [← unitFiltration_sup_zpowers_inf_unitFiltration_zero hϖ i]
+  rw [le_inf_iff, and_iff_left (unitFiltration_antitone (Nat.zero_le j))]
+
+/-- For a uniformizer `ϖ`, the index of `U(K,i) · ϖ ^ ℤ` in `Kˣ` is that of `U(K,i)` in
+`U(K,0)`: the valuation coordinate is absorbed by `ϖ ^ ℤ`. -/
+theorem index_unitFiltration_sup_zpowers (hϖ : normalizedValuation K ϖ = .ofAdd 1) (i : ℕ) :
+    (unitFiltration K i ⊔ Subgroup.zpowers ϖ).index =
+      (unitFiltration K i).relIndex (unitFiltration K 0) := by
+  have htop : unitFiltration K i ⊔ Subgroup.zpowers ϖ ⊔ unitFiltration K 0 = ⊤ := by
+    refine eq_top_iff.mpr fun x _ ↦ Subgroup.mem_sup.mpr
+      ⟨ϖ ^ (normalizedValuation K x).toAdd,
+        Subgroup.mem_sup_right (Subgroup.zpow_mem_zpowers ϖ _),
+        _, mul_zpow_neg_mem_unitFiltration_zero hϖ x, by
+          rw [← mul_assoc, mul_right_comm, ← zpow_add, add_neg_cancel, zpow_zero, one_mul]⟩
+  rw [← Subgroup.relIndex_top_right, ← htop, Subgroup.relIndex_sup_left,
+    ← Subgroup.inf_relIndex_right, unitFiltration_sup_zpowers_inf_unitFiltration_zero hϖ]
 
 end Uniformizer
 

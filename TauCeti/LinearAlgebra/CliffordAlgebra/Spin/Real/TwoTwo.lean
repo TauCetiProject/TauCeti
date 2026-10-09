@@ -262,8 +262,7 @@ private theorem realCliffordTwoTwoWeylConjSwap_apply
     (Matrix.GeneralLinearGroup.innerAut (GL2WeylElement ℝ) p.2,
       Matrix.GeneralLinearGroup.innerAut (GL2WeylElement ℝ) p.1) = _
   rw [Matrix.GeneralLinearGroup.innerAut_apply,
-    Matrix.GeneralLinearGroup.innerAut_apply, ← Matrix.coe_units_inv,
-    gl2WeylElement_inv]
+    Matrix.GeneralLinearGroup.innerAut_apply, gl2WeylElement_inv]
 
 private theorem realCliffordTwoTwoEvenEquivMatrixProd_conjugate
     (x : CliffordAlgebra.even realCliffordFormTwoTwo) :

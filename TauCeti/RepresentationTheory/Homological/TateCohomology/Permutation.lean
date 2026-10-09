@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.HerbrandQuotient
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+import TauCeti.GroupTheory.GroupAction.Stabilizer
 import TauCeti.RepresentationTheory.Coinvariants
 import TauCeti.RepresentationTheory.OfMulAction
 
@@ -49,6 +51,11 @@ the product of the local degrees.
 * `TauCeti.TateCohomology.herbrandQuotient_ofMulAction`: `h(ℤ[X]) = ∏_ω |G_ω|`.
 * `TauCeti.TateCohomology.herbrandQuotient_ofMulAction_of_isPretransitive`: `h(ℤ[X]) = |G_x|`
   for a transitive action.
+* `TauCeti.TateCohomology.herbrandQuotient_ofMulAction_sum`: multiplicativity over a disjoint union.
+* `TauCeti.TateCohomology.herbrandQuotient_ofMulAction_sigma`: multiplicativity over a finite
+  sigma family with finite fibre orbit spaces.
+* `TauCeti.TateCohomology.herbrandQuotient_ofMulAction_sigma_of_isPretransitive`: the product
+  of the stabilizer orders for a finite family of transitive actions.
 * `TauCeti.TateCohomology.herbrandQuotient_ofMulAction_quotient`: `h(ℤ[G ⧸ H]) = |H|`.
 
 ## References
@@ -220,6 +227,62 @@ theorem herbrandQuotient_ofMulAction_of_isPretransitive {G X : Type} [Group G] [
   rw [herbrandQuotient_ofMulAction, Fintype.prod_subsingleton _ (Quotient.mk (orbitRel G X) x),
     Nat.card_congr
       (stabilizerEquivStabilizerOfOrbitRel (Quotient.mk_out (s := orbitRel G X) x)).toEquiv]
+
+/-- The Herbrand quotient of a permutation lattice on a disjoint union is the product of
+those of its two summands. No cyclicity is needed. -/
+theorem herbrandQuotient_ofMulAction_sum {G X Y : Type} [Group G] [Fintype G]
+    [MulAction G X] [MulAction G Y]
+    [Finite (orbitRel.Quotient G X)] [Finite (orbitRel.Quotient G Y)] :
+    herbrandQuotient (Rep.ofMulAction ℤ G (X ⊕ Y)) =
+      herbrandQuotient (Rep.ofMulAction ℤ G X) *
+        herbrandQuotient (Rep.ofMulAction ℤ G Y) := by
+  classical
+  let e := TauCeti.MulAction.orbitRelQuotientSumEquiv (G := G) (X := X) (Y := Y)
+  let := Fintype.ofFinite (orbitRel.Quotient G X)
+  let := Fintype.ofFinite (orbitRel.Quotient G Y)
+  let := Fintype.ofEquiv _ e.symm
+  simp_rw [herbrandQuotient_ofMulAction, ← cardStabilizerOnOrbit_mk, Quotient.out_eq]
+  calc
+    _ = ∏ q : orbitRel.Quotient G X ⊕ orbitRel.Quotient G Y,
+        ((q.elim cardStabilizerOnOrbit cardStabilizerOnOrbit : ℕ) : ℚ) :=
+      (Fintype.prod_equiv e.symm _ _ fun q ↦ by simp [e]).symm
+    _ = _ := by rw [Fintype.prod_sum_type]; rfl
+
+/-- The Herbrand quotient of a permutation lattice on a finite sigma family is the
+product of the Herbrand quotients of its fibres, provided each fibre has finitely many orbits. -/
+theorem herbrandQuotient_ofMulAction_sigma {G ι : Type} {X : ι → Type} [Group G] [Fintype G]
+    [Fintype ι] [∀ i, MulAction G (X i)] [∀ i, Finite (orbitRel.Quotient G (X i))] :
+    herbrandQuotient (Rep.ofMulAction ℤ G (Σ i, X i)) =
+      ∏ i, herbrandQuotient (Rep.ofMulAction ℤ G (X i)) := by
+  let : ∀ i, Fintype (orbitRel.Quotient G (X i)) := fun i ↦ Fintype.ofFinite _
+  let e := TauCeti.MulAction.orbitRelQuotientSigmaEquiv (G := G) (Y := X)
+  let := Fintype.ofEquiv (Σ i, orbitRel.Quotient G (X i)) e.symm
+  rw [herbrandQuotient_ofMulAction]
+  simp_rw [herbrandQuotient_ofMulAction]
+  rw [← Fintype.prod_sigma (fun q : Σ i, orbitRel.Quotient G (X i) ↦
+    (Nat.card (stabilizer G q.2.out) : ℚ))]
+  refine Fintype.prod_equiv e _ _ fun ω ↦ ?_
+  have h : orbitRel G (Σ i, X i) ω.out (Sigma.mk (e ω).1 (e ω).2.out) := by
+    apply Quotient.exact
+    apply e.injective
+    rw [Quotient.out_eq]
+    simp [e]
+  rw [Nat.card_congr (stabilizerEquivStabilizerOfOrbitRel h).toEquiv,
+    TauCeti.MulAction.stabilizer_sigma_mk]
+
+/-- For a finite family of nonempty transitive actions, the Herbrand quotient of the
+permutation lattice is the product of the stabilizer orders, one for each fibre. -/
+theorem herbrandQuotient_ofMulAction_sigma_of_isPretransitive {G ι : Type} {X : ι → Type}
+    [Group G] [Fintype G] [Fintype ι] [∀ i, MulAction G (X i)]
+    [∀ i, IsPretransitive G (X i)] (x : ∀ i, X i) :
+    herbrandQuotient (Rep.ofMulAction ℤ G (Σ i, X i)) =
+      ∏ i, (Nat.card (stabilizer G (x i)) : ℚ) := by
+  let : ∀ i, Subsingleton (orbitRel.Quotient G (X i)) :=
+    fun i ↦ (pretransitive_iff_subsingleton_quotient G (X i)).1 inferInstance
+  let : ∀ i, Fintype (orbitRel.Quotient G (X i)) :=
+    fun i ↦ Fintype.ofSubsingleton (Quotient.mk'' (x i))
+  rw [herbrandQuotient_ofMulAction_sigma]
+  exact Finset.prod_congr rfl fun i _ ↦ herbrandQuotient_ofMulAction_of_isPretransitive (x i)
 
 /-- The Herbrand quotient of `ℤ[G ⧸ H]`, the module induced from the trivial `H`-module `ℤ`, is
 `|H|`. -/

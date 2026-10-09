@@ -61,10 +61,10 @@ universe u v
 /-- **Geometric connectedness of a commutative Hopf algebra can be tested after algebraically
 closed field extensions.** -/
 theorem geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace_of_isAlgClosed
-    (k : Type u) [Field k] (H : CommHopfAlgCat.{u} k) :
+    (k : Type u) [Field k] (H : CommHopfAlgCat.{v} k) :
     geometricallyConnectedCommHopfAlgProperty k H ↔
       ∀ (K : Type u) [Field K] [Algebra k K] [IsAlgClosed K],
-        ConnectedSpace (PrimeSpectrum ((H : Type u) ⊗[k] K)) := by
+        ConnectedSpace (PrimeSpectrum ((H : Type v) ⊗[k] K)) := by
   rw [geometricallyConnectedCommHopfAlgProperty_iff]
   constructor
   · intro h K _ _ _
@@ -72,7 +72,7 @@ theorem geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace_of_isAlgClo
   · intro h K _ _
     let Ω := AlgebraicClosure K
     let g : K →ₐ[k] Ω := IsScalarTower.toAlgHom k K Ω
-    let f : (H : Type u) ⊗[k] K →ₐ[k] (H : Type u) ⊗[k] Ω :=
+    let f : (H : Type v) ⊗[k] K →ₐ[k] (H : Type v) ⊗[k] Ω :=
       Algebra.TensorProduct.map (AlgHom.id k H) g
     have hg : Function.Injective g := RingHom.injective g.toRingHom
     have hf : Function.Injective f :=

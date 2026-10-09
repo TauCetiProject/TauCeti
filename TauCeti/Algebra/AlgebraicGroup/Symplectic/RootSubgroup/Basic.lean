@@ -340,21 +340,34 @@ theorem mapPointsFunctor_shortRootSubgroupCoordinateMap
   rw [shortRootSubgroupCoordinateMap, shortRootSubgroupPointsMap,
     mapPointsFunctor_rootSubgroupCoordinateMap]
 
-/-- On a same-universe algebra, a root coordinate morphism induces the constructed point map. -/
+/-- Over any value-algebra universe, a root coordinate morphism induces the constructed
+point map. -/
 @[simp]
 theorem mapPointsFunctor_rootSubgroupCoordinateMap_app
-    (root : GLSymplecticFin.RootSubgroupIndex m) (A : CommAlgCat.{u} R)
+    (root : GLSymplecticFin.RootSubgroupIndex m) (A : CommAlgCat.{w} R)
     (q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
     (CommHopfAlgCat.mapPointsFunctor
       (rootSubgroupCoordinateMap (R := R) root)).app A q = rootSubgroupPoints root q := by
-  rw [mapPointsFunctor_rootSubgroupCoordinateMap, rootSubgroupPointsMap_app]
-  rfl
+  let q₀ := toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R))
+  have hgeneric := congrArg
+    (fun τ => τ.app (CommAlgCat.of R (AdditiveGroup.coordinateHopfAlgebra R)) q₀)
+    (mapPointsFunctor_rootSubgroupCoordinateMap (R := R) root)
+  rw [rootSubgroupPointsMap_app, CommHopfAlgCat.mapPointsFunctor_app_apply,
+    AlgHom.id_comp] at hgeneric
+  -- Expose the monoid hom beneath `GrpCat.ofHom` so naturality can rewrite the point.
+  change toConv (rootSubgroupCoordinateMap (R := R) root).hom.toAlgHom =
+    rootSubgroupPoints root q₀ at hgeneric
+  have h := mapValue_rootSubgroupPoints root q.ofConv q₀
+  rw [← hgeneric] at h
+  rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+  simp only [AlgHom.mapValue_apply, toConv_ofConv, q₀, AlgHom.comp_id] at h
+  exact h
 
-/-- On a same-universe algebra, the positive coordinate morphism induces the constructed point
+/-- Over any value algebra, the positive coordinate morphism induces the constructed point
 homomorphism. -/
 @[simp]
 theorem mapPointsFunctor_positiveLongRootSubgroupCoordinateMap_app (i : Fin m)
-    (A : CommAlgCat.{u} R)
+    (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
     (CommHopfAlgCat.mapPointsFunctor
       (positiveLongRootSubgroupCoordinateMap (R := R) i)).app A f =
@@ -362,11 +375,11 @@ theorem mapPointsFunctor_positiveLongRootSubgroupCoordinateMap_app (i : Fin m)
   rw [positiveLongRootSubgroupCoordinateMap, positiveLongRootSubgroupPoints,
     mapPointsFunctor_rootSubgroupCoordinateMap_app]
 
-/-- On a same-universe algebra, the negative coordinate morphism induces the constructed point
+/-- Over any value algebra, the negative coordinate morphism induces the constructed point
 homomorphism. -/
 @[simp]
 theorem mapPointsFunctor_negativeLongRootSubgroupCoordinateMap_app (i : Fin m)
-    (A : CommAlgCat.{u} R)
+    (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
     (CommHopfAlgCat.mapPointsFunctor
       (negativeLongRootSubgroupCoordinateMap (R := R) i)).app A f =
@@ -374,10 +387,10 @@ theorem mapPointsFunctor_negativeLongRootSubgroupCoordinateMap_app (i : Fin m)
   rw [negativeLongRootSubgroupCoordinateMap, negativeLongRootSubgroupPoints,
     mapPointsFunctor_rootSubgroupCoordinateMap_app]
 
-/-- On a same-universe algebra, a short-root coordinate morphism induces its point homomorphism. -/
+/-- Over any value algebra, a short-root coordinate morphism induces its point homomorphism. -/
 @[simp]
 theorem mapPointsFunctor_shortRootSubgroupCoordinateMap_app
-    (family : GLSymplecticFin.ShortRootFamily) (hij : i ≠ j) (A : CommAlgCat.{u} R)
+    (family : GLSymplecticFin.ShortRootFamily) (hij : i ≠ j) (A : CommAlgCat.{w} R)
     (q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
     (CommHopfAlgCat.mapPointsFunctor
       (shortRootSubgroupCoordinateMap (R := R) family hij)).app A q =

@@ -103,9 +103,6 @@ theorem indexIntegral_arc_interval {z₀ : ℂ} {r : ℝ} (hr : r ≠ 0) (a b : 
   rw [intervalIntegral.integral_const, Complex.real_smul]
   field_simp
 
-@[deprecated (since := "2026-07-29")]
-alias windingNumber_modelSector_interval := indexIntegral_arc_interval
-
 /-- **The normalized index integral of a circular arc** (Hungerbühler–Wasem (2.4)). The arc
 `γ θ = z₀ + r·e^{iθ}` about its centre `z₀`, traversed over `[0, α]`, has normalized index integral
 `(2πi)⁻¹ ∫_0^α (γ̇ / (γ − z₀)) dθ = α / 2π`: an arc of *signed* angular extent `α` contributes
@@ -116,8 +113,7 @@ The `α = 2π` specialization is `windingNumber_circle`; the `α = π` and `α =
 formula names by their points are `windingNumber_at_i` and `windingNumber_at_rho`, in
 `ModelSector/Winding.lean`.
 
-`ContourIntegration/Suggested.lean` lists this statement as `windingNumber_modelSector`, which is
-retained below as a deprecated alias. The closed model-sector curve — a different statement — is
+This single arc is not the closed model-sector curve, whose winding number is
 `TauCeti.Contour.windingNumber_closedModelSector` in `ModelSector/Closed.lean`. -/
 theorem indexIntegral_arc {z₀ : ℂ} {r : ℝ} (hr : r ≠ 0) (α : ℝ) :
     (2 * (Real.pi : ℂ) * Complex.I)⁻¹ *
@@ -126,9 +122,6 @@ theorem indexIntegral_arc {z₀ : ℂ} {r : ℝ} (hr : r ≠ 0) (α : ℝ) :
   rw [indexIntegral_arc_interval hr]
   push_cast
   ring
-
-@[deprecated (since := "2026-07-29")]
-alias windingNumber_modelSector := indexIntegral_arc
 
 /-- **A full circle (`[0, 2π]`) has winding number `1`** — the closed-curve normalization, the
 `[0, 2π]` specialization of `indexIntegral_arc` (`2π / 2π = 1`). Its value also follows from

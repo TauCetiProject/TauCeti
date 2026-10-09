@@ -12,6 +12,7 @@ import TauCeti.LinearAlgebra.LinearMap.Cardinality
 import Mathlib.RepresentationTheory.Homological.FiniteCyclic
 import Mathlib.RepresentationTheory.Homological.GroupCohomology.Shapiro
 import TauCeti.RepresentationTheory.Homological.TateCohomology.Finite
+import TauCeti.RepresentationTheory.Homological.TateCohomology.Functoriality
 import TauCeti.RepresentationTheory.Invariants
 
 /-!
@@ -68,8 +69,12 @@ integral calculation reads off the low-degree evaluations
 * `TauCeti.TateCohomology.herbrandQuotient_eq_natCard_H2_div_natCard_H1`: the Herbrand quotient
   is `|H²(G, M)| / |H¹(G, M)|`; `TauCeti.TateCohomology.herbrandQuotient_eq_natCard_H2` is the
   case `H¹(G, M) = 0`.
+* `TauCeti.TateCohomology.herbrandQuotient_eq_of_iso`: isomorphic representations have the same
+  Herbrand quotient.
 * `TauCeti.TateCohomology.herbrandQuotient_coind`: **Shapiro's lemma for Herbrand quotients**,
   `h_G(Coind_S^G A) = h_S(A)` for a subgroup `S` of a finite cyclic group `G`.
+* `TauCeti.TateCohomology.herbrandQuotient_res_of_bijective`: restriction along an isomorphism of
+  finite groups does not change the Herbrand quotient.
 * `TauCeti.TateCohomology.natCard_tateCohomology_mul_of_shortExact`: the exact hexagon of a short
   exact sequence, in the form of an identity between two products of three orders. It assumes no
   finiteness.
@@ -204,6 +209,13 @@ theorem herbrandQuotient_eq_one_of_finite [IsCyclic G] (M : Rep R G) [Finite M] 
     natCard_tateCohomology_zero_eq_natCard_tateCohomology_negOne_of_finite]
   exact div_self (Nat.cast_ne_zero.mpr (Nat.card_ne_zero.mpr ⟨⟨0⟩, inferInstance⟩))
 
+/-- Isomorphic representations have the same Herbrand quotient. -/
+theorem herbrandQuotient_eq_of_iso {M N : Rep R G} (e : M ≅ N) :
+    herbrandQuotient M = herbrandQuotient N := by
+  rw [herbrandQuotient_def, herbrandQuotient_def,
+    Nat.card_congr ((tateCohomologyFunctor 0).mapIso e).toLinearEquiv.toEquiv,
+    Nat.card_congr ((tateCohomologyFunctor (-1)).mapIso e).toLinearEquiv.toEquiv]
+
 /-- For a finite cyclic group the Herbrand quotient is the ratio of the orders of ordinary group
 cohomology in degrees two and one, `h(M) = #H²(G, M) / #H¹(G, M)`: two-periodicity identifies the
 Tate groups of degrees `0` and `-1` with those of degrees `2` and `1`, which are ordinary group
@@ -260,6 +272,18 @@ theorem herbrandQuotient_coind [IsCyclic G] (S : Subgroup G) [Fintype S] (A : Re
   rw [herbrandQuotient_eq_natCard_H2_div_natCard_H1, herbrandQuotient_eq_natCard_H2_div_natCard_H1,
     Nat.card_congr (groupCohomology.coindIso A 2).toLinearEquiv.toEquiv,
     Nat.card_congr (groupCohomology.coindIso A 1).toLinearEquiv.toEquiv]
+
+/-- Restriction along an isomorphism of finite groups does not change the Herbrand
+quotient. -/
+theorem herbrandQuotient_res_of_bijective {H : Type u} [Group H] [Fintype H]
+    {f : H →* G} (hf : Function.Bijective f) (M : Rep R G) :
+    herbrandQuotient (Rep.res f M) = herbrandQuotient M := by
+  let e := MulEquiv.ofBijective f hf
+  have he : (e : H →* G) = f := by rfl
+  have h (n : ℤ) := natCard_tateCohomology_eq
+    (Rep.isIntertwiningMap_res M (e : H →* G)) n
+  rw [← he]
+  rw [herbrandQuotient_def, herbrandQuotient_def, h 0, h (-1)]
 
 section ShortExact
 

@@ -213,12 +213,8 @@ theorem mem_riemannRochSpace_poles (hF : IsFunctionField k F) (z : Fˣ) :
 
 /-- The `n`-th power of a nonzero function has poles bounded by `n` times its pole divisor. -/
 theorem pow_mem_riemannRochSpace_zsmul_poles (hF : IsFunctionField k F) (z : Fˣ) (n : ℕ) :
-    (z : F) ^ n ∈ riemannRochSpace ((n : ℤ) • Divisor.poles hF z) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [pow_succ, Nat.cast_succ, add_smul, one_smul]
-    exact mul_mem_riemannRochSpace_add ih (mem_riemannRochSpace_poles hF z)
+    (z : F) ^ n ∈ riemannRochSpace ((n : ℤ) • Divisor.poles hF z) :=
+  pow_mem_riemannRochSpace_zsmul (mem_riemannRochSpace_poles hF z) n
 
 /-- `z ^ i ∈ L(m · (z)_∞)` whenever `i ≤ m`: in particular the powers `1, z, …, z^{n-1}` of a
 nonzero function lie in `L((n - 1) · (z)_∞)`. -/

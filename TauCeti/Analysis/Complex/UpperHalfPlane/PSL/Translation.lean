@@ -8,6 +8,9 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
 public import TauCeti.Analysis.Complex.UpperHalfPlane.SmulDeriv
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.FinTwo
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Extended
+public import Mathlib.Algebra.Group.Action.Sum
+public import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
 
 /-!
 # Projective translations of the upper half-plane
@@ -21,12 +24,14 @@ parabolic stabilizers with the translations used in cusp coordinates.
 * `TauCeti.UpperHalfPlane.smul_zpow_smul`: conjugating to a translation turns the action of
   integer powers into translation by integer multiples.
 * `TauCeti.UpperHalfPlane.smulDeriv_upperRightHom`: a translation has derivative `1`.
+* `TauCeti.UpperHalfPlane.toComplex_upperRightHom_smul`: on `ℍ ∪ ∂ℍ` away from `∞`, a
+  translation adds its parameter to the complex coordinate.
 -/
 
 public section
 
 open Matrix.ProjectiveSpecialLinearGroup UpperHalfPlane
-open scoped MatrixGroups
+open scoped MatrixGroups OnePoint
 
 namespace TauCeti.UpperHalfPlane
 
@@ -52,5 +57,15 @@ theorem smulDeriv_upperRightHom (x : ℝ) (z : ℍ) : smulDeriv (upperRightHom x
   rw [upperRightHom_apply, Matrix.SpecialLinearGroup.smulDeriv_coe]
   simp [denom, Matrix.SpecialLinearGroup.mapGL_coe_matrix,
     Matrix.SpecialLinearGroup.transvection_coe]
+
+/-- A translation moves every point of `ℍ ∪ ∂ℍ` other than `∞` by its parameter. -/
+@[simp]
+theorem toComplex_upperRightHom_smul (x : ℝ) {p : ℍ ⊕ OnePoint ℝ} (hp : p ≠ .inr ∞) :
+    toComplex (upperRightHom x • p) = x + toComplex p := by
+  rcases p with z | ξ
+  · rw [Sum.smul_inl, toComplex_inl, toComplex_inl, upperRightHom_smul, coe_vadd]
+  · obtain ⟨c, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hp (congrArg _ h)
+    rw [Sum.smul_inr, upperRightHom_smul_coe, toComplex_inr_coe, toComplex_inr_coe,
+      Complex.ofReal_add, add_comm]
 
 end TauCeti.UpperHalfPlane

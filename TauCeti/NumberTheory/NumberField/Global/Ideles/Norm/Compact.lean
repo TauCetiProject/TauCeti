@@ -53,7 +53,7 @@ private lemma ringEquiv_mixedSpace_mul_unitEmbedding (z : IdeleGroup (𝓞 K) K)
         (Units.map (algebraMap (𝓞 K) K) u) : AdeleRing (𝓞 K) K).1) =
       u • InfiniteAdeleRing.ringEquiv_mixedSpace K (z : AdeleRing (𝓞 K) K).1 := by
   rw [unitSMul_smul, InfiniteAdeleRing.mixedEmbedding_eq_algebraMap_comp, ← map_mul,
-    IdeleGroup.coe_unitEmbedding, AdeleRing.fst_mul, mul_comm]
+    IdeleGroup.val_unitEmbedding_apply, AdeleRing.fst_mul, mul_comm]
   refine congrArg _ (congrArg (· * _) (funext fun w ↦ ?_))
   rw [AdeleRing.algebraMap_fst_apply, InfiniteAdeleRing.algebraMap_apply, Units.coe_map,
     MonoidHom.coe_ofClass]

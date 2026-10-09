@@ -27,7 +27,9 @@ branch points, one class for each choice of the unbranched point. The seven degr
 are the cyclic cover `z ↦ z³` in its three orderings of the branch points (monodromy `C₃`, one
 branch point unramified), the `S₃`-cover `TauCeti.PermutationTriple.s3Triple` in its three
 orderings (monodromy `S₃`), and the genus-one cover with a three-cycle at every branch point
-(monodromy `C₃`).
+(monodromy `C₃`). The twenty-six degree-four classes are counted by
+`TauCeti.ConnectedIsoClass.card_four` in `TauCeti.Combinatorics.PermutationTriple.SmallDegrees`,
+as a consequence of their classification by cycle data.
 
 ## Main definitions
 

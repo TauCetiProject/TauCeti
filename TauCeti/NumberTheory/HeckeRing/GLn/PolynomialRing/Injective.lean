@@ -51,19 +51,7 @@ namespace HeckeRing.GLn
 
 open HeckeRing.GL2
 
-/-- The `CommSemiring` structure this module needs on `IntegralHeckeRing n`, rebuilt locally
-from `HeckeCosetModule.instSemiringHeckeRing` and `HeckeCosetModule.mul_comm_of_antiInvolution`.
-
-`PolynomialRing/Basic.lean` carries the same reconstruction, but as a `local instance`, which
-does not cross the module boundary; and `commSemiringIntegralHeckeRing` is a sealed `def`, so
-registering it for typeclass search does not make its body reduce to the ambient
-`NonAssocSemiring`. Writing the structure here makes it transparent exactly where this file
-needs it, leaving the upstream definitions sealed for every other consumer. -/
-noncomputable local instance localCommSemiringForInjectivity (n : ℕ) [NeZero n] :
-    CommSemiring (IntegralHeckeRing n) :=
-  { (HeckeCosetModule.instSemiringHeckeRing ℤ : Semiring (IntegralHeckeRing n)) with
-    mul_comm := HeckeCosetModule.mul_comm_of_antiInvolution ℤ (transposeAntiInvolution n)
-      (transposeAntiInvolution_onHeckeCoset_eq_self n) }
+attribute [local instance] commSemiringIntegralHeckeRingLocal
 
 /-- The product of two diagonal basis elements, unfolded: it is the structure-constant family
 of their representatives. The `b₁ = b₂ = 1` case of `HeckeCosetModule.single_mul`.

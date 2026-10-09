@@ -452,11 +452,11 @@ theorem coe_explicitRes0 (m : H0 G M) : (explicitRes0 G M U m : M) = m :=
 /-- Restriction in degree zero is natural in equivariant coefficient homomorphisms. -/
 theorem map_explicitRes0 {N : Type*} [AddCommGroup N] [DistribMulAction G N]
     (f : M →+[G] N) (m : H0 G M) :
-    fixedPointsMap f U (explicitRes0 G M U m) =
+    f.fixedPointsMap U (explicitRes0 G M U m) =
       explicitRes0 G N U (explicitCoeff0 G M f m) := by
   ext
   rw [coe_explicitRes0, coe_explicitCoeff0, ← coe_explicitRes0 G M U m]
-  exact coe_fixedPointsMap f U _
+  exact f.coe_fixedPointsMap U _
 
 /-- Restriction in degree zero is the compatible-pair pullback along the inclusion of the subgroup
 with the identity on the coefficients. -/

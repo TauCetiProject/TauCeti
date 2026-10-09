@@ -6,16 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fintype.Perm
-public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
-public import Mathlib.LinearAlgebra.Trace
 
 /-!
 # Further results on exterior powers
 
 This file records that the `d`th exterior power of a finite free module over a commutative ring
-vanishes as soon as `d` exceeds the rank of the module, and computes the trace of an induced
-endomorphism from a basis of eigenvectors.
+vanishes as soon as `d` exceeds the rank of the module.
 
 It then builds the surjection `exteriorPower.fromTensorPower : ⨂[R]^n M →ₗ[R] ⋀[R]^n M` that is
 left inverse, up to the factor `n!`, to Mathlib's antisymmetrization
@@ -25,11 +22,6 @@ power, while composing the two the other way round is the antisymmetrization ope
 unit in the base ring, and its image is the image of that operator. That is the statement a Young
 symmetrizer of a one-column shape consumes.
 
-It then describes the exterior power in the top degree, that is, in the degree equal to the rank of
-the module. There an exterior product of `n` vectors is the determinant of those vectors against a
-fixed basis, times the exterior product of that basis; so the top exterior power is free of rank
-one, spanned by the exterior product of a basis, and an endomorphism acts on it by its determinant.
-
 Finally, it describes images of exterior powers under induced maps: inside the exterior algebra,
 the image of `⋀ⁿ M` under `f` is the `n`th power of the degree-one image of `f`, and over a field an
 injective map embeds `⋀ⁿ V` with its binomial dimension.
@@ -38,24 +30,14 @@ injective map embeds `⋀ⁿ V` with its binomial dimension.
 
 * `exteriorPower.fromTensorPower` is the canonical surjection of the tensor power onto the
   exterior power.
-* `exteriorPower.topEquiv` identifies the top exterior power of a module with the scalars, using a
-  basis indexed by `Fin n`.
-
 ## Main results
 
 * `exteriorPower.eq_zero_of_finrank_lt` states that every element of `⋀[R]^d M` is zero when
   `Module.finrank R M < d`.
-* `exteriorPower.map_basis_exteriorPower_of_apply_basis` says that an endomorphism diagonal in a
-  basis is again diagonal in the induced basis of the exterior power.
-* `exteriorPower.trace_map_of_apply_basis` computes the trace on `⋀[R]^d M` from the
-  eigenvalues of an endomorphism on a finite basis.
-* `exteriorPower.ιMulti_eq_basis_det_smul` expands a top-degree exterior product of vectors in
-  terms of the exterior product of a basis.
-* `exteriorPower.map_top_eq_det_smul` says an endomorphism acts on the top exterior power as
-  multiplication by its determinant, and `exteriorPower.trace_map_top` computes the resulting
-  trace.
 * `exteriorPower.fromTensorPower_comp_toTensorPower`: antisymmetrizing and projecting back is
   multiplication by `n!`, whence `exteriorPower.toTensorPower_injective`.
+* `exteriorPower.toTensorPower_injective_of_free`: antisymmetrization is injective for free
+  modules in every characteristic, without factorial invertibility.
 * `exteriorPower.range_toTensorPower`: the image of the antisymmetrization is the image of the
   antisymmetrization operator on the tensor power.
 * `exteriorPower.toTensorPower_comp_map` and `exteriorPower.map_comp_fromTensorPower`: the
@@ -68,8 +50,7 @@ injective map embeds `⋀ⁿ V` with its binomial dimension.
 ## References
 
 The results use Mathlib's exterior-power basis and dimension formula from
-`Mathlib.LinearAlgebra.ExteriorPower.Basis`, by Sophie Morel and Daniel Morrison, and the
-determinant of a family of vectors against a basis from `Mathlib.LinearAlgebra.Determinant`.
+`Mathlib.LinearAlgebra.ExteriorPower.Basis`, by Sophie Morel and Daniel Morrison.
 -/
 
 public section
@@ -81,61 +62,6 @@ universe u w
 variable {R : Type u} {M : Type w}
 
 namespace exteriorPower
-
-section Diagonal
-
-variable [CommRing R]
-variable {I : Type*} [LinearOrder I]
-variable [AddCommGroup M] [Module R M]
-
-/-- **An endomorphism diagonal in a basis is diagonal in the induced basis of the exterior
-power**: the basis vector indexed by the `d`-element subset `s` is an eigenvector, with eigenvalue
-the product of the eigenvalues indexed by `s`. Summing those eigenvalues over all `s` gives the
-trace, `exteriorPower.trace_map_of_apply_basis`. -/
-theorem map_basis_exteriorPower_of_apply_basis (b : Module.Basis I R M) (f : M →ₗ[R] M)
-    (a : I → R) (hf : ∀ i, f (b i) = a i • b i) (d : ℕ) (s : Set.powersetCard I d) :
-    map d f (b.exteriorPower d s) = (∏ i ∈ (s : Finset I), a i) • b.exteriorPower d s := by
-  have hprod : ∏ j : Fin d, a (Set.powersetCard.ofFinEmbEquiv.symm s j)
-      = ∏ i ∈ (s : Finset I), a i := by
-    rw [← Finset.prod_coe_sort s.1 a]
-    apply Fintype.prod_equiv (s.1.orderIsoOfFin s.2).toEquiv
-    intro j
-    rw [Set.powersetCard.ofFinEmbEquiv_symm_apply]
-    exact congrArg a (Finset.coe_orderIsoOfFin_apply s.1 s.2 j)
-  have hfun :
-      (f ∘ b) ∘ Set.powersetCard.ofFinEmbEquiv.symm s =
-        fun j => a (Set.powersetCard.ofFinEmbEquiv.symm s j) •
-          b (Set.powersetCard.ofFinEmbEquiv.symm s j) := by
-    funext j
-    simp only [Function.comp_apply, hf]
-  rw [basis_apply, map_apply_ιMulti_family, ιMulti_family, ιMulti_family, hfun, ← hprod]
-  simpa only [Function.comp_def] using
-    (ιMulti R d).map_smul_univ (fun j => a (Set.powersetCard.ofFinEmbEquiv.symm s j))
-      (fun j => b (Set.powersetCard.ofFinEmbEquiv.symm s j))
-
-end Diagonal
-
-section Trace
-
-variable [CommRing R]
-variable {I : Type*} [Fintype I]
-variable [AddCommGroup M] [Module R M]
-
-/-- If an endomorphism is diagonal in a finite basis, then its trace on the `d`th exterior
-power is the `d`th elementary symmetric sum of its eigenvalues. -/
-theorem trace_map_of_apply_basis (b : Module.Basis I R M) (f : M →ₗ[R] M)
-    (a : I → R) (d : ℕ) (hf : ∀ i, f (b i) = a i • b i) :
-    LinearMap.trace R (⋀[R]^d M) (map d f) =
-      ∑ s : Set.powersetCard I d, ∏ i ∈ (s : Finset I), a i := by
-  classical
-  let : LinearOrder I := linearOrderOfSTO WellOrderingRel
-  rw [LinearMap.trace_eq_matrix_trace R (b.exteriorPower d), Matrix.trace]
-  refine Finset.sum_congr rfl fun s _ => ?_
-  rw [Matrix.diag_apply, LinearMap.toMatrix_apply,
-    map_basis_exteriorPower_of_apply_basis b f a hf d s, map_smul, Finsupp.smul_apply,
-    Module.Basis.repr_self, Finsupp.single_eq_same, smul_eq_mul, mul_one]
-
-end Trace
 
 section Vanishing
 
@@ -153,6 +79,35 @@ theorem eq_zero_of_finrank_lt (d : ℕ) (h : Module.finrank R M < d) (x : ⋀[R]
   exact Subsingleton.elim x 0
 
 end Vanishing
+
+/-! ### Antisymmetrization of free modules -/
+
+section Free
+
+variable [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- Pairing with a pure exterior product of linear forms factors through the
+antisymmetrization into the tensor power. -/
+theorem pairingDual_ιMulti_apply {n : ℕ} (g : Fin n → Module.Dual R M) (x : ⋀[R]^n M) :
+    pairingDual R M n (ιMulti R n g) x =
+      TensorPower.multilinearMapToDual R M n g (toTensorPower R M n x) := by
+  simp [pairingDual, alternatingMapToDual]
+
+/-- Antisymmetrization embeds every exterior power of a free module into its tensor power,
+over any commutative ring, without requiring the factorial to be invertible. -/
+theorem toTensorPower_injective_of_free [Module.Free R M] {n : ℕ} :
+    Function.Injective (toTensorPower R M n) := by
+  classical
+  let : LinearOrder (Module.Free.ChooseBasisIndex R M) := linearOrderOfSTO WellOrderingRel
+  let b := Module.Free.chooseBasis R M
+  -- Each exterior-basis coordinate factors through antisymmetrization.
+  intro x y h
+  apply (b.exteriorPower n).repr.injective
+  ext s
+  rw [basis_repr_apply, basis_repr_apply]
+  simp only [ιMultiDual, ιMulti_family, pairingDual_ιMulti_apply, h]
+
+end Free
 
 /-! ### The exterior power as a quotient of the tensor power -/
 
@@ -248,82 +203,6 @@ theorem range_toTensorPower :
 
 end FromTensorPower
 
-section Top
-
-variable [CommRing R] [AddCommGroup M] [Module R M] {n : ℕ}
-
-/-- In the top degree, an exterior product of `n` vectors is the determinant of that family
-against a basis, times the exterior product of the basis. -/
-theorem ιMulti_eq_basis_det_smul (b : Module.Basis (Fin n) R M) (v : Fin n → M) :
-    ιMulti R n v = b.det v • ιMulti R n ⇑b := by
-  -- Compare both sides coordinatewise in the basis of `⋀[R]^n M` induced by `b`: each coordinate
-  -- is an `R`-valued alternating form, hence a multiple of `b.det`.
-  refine (b.exteriorPower n).ext_elem fun s ↦ ?_
-  -- The `s`th coordinate of `ιMulti R n v` is an alternating form in `v`.
-  set φ : M [⋀^Fin n]→ₗ[R] R := (ιMultiDual R n b s).compAlternatingMap (ιMulti R n) with hφ
-  have hφ_apply (w : Fin n → M) :
-      φ w = (b.exteriorPower n).repr (ιMulti R n w) s := by
-    rw [hφ, basis_repr_apply, LinearMap.compAlternatingMap_apply]
-  have hdet : φ = φ ⇑b • b.det := φ.eq_smul_basis_det b
-  calc (b.exteriorPower n).repr (ιMulti R n v) s
-      = φ v := (hφ_apply v).symm
-    _ = φ ⇑b * b.det v := by rw [hdet]; simp [Module.Basis.det_self]
-    _ = b.det v * (b.exteriorPower n).repr (ιMulti R n ⇑b) s := by
-        rw [← hφ_apply ⇑b, mul_comm]
-    _ = (b.exteriorPower n).repr (b.det v • ιMulti R n ⇑b) s := by simp
-
-/-- **An endomorphism acts on the top exterior power as multiplication by its determinant.** -/
-theorem map_top_eq_det_smul (b : Module.Basis (Fin n) R M) (f : M →ₗ[R] M) :
-    map n f = LinearMap.det f • LinearMap.id := by
-  refine LinearMap.ext_on (ιMulti_span R n M) ?_
-  rintro _ ⟨v, rfl⟩
-  rw [map_apply_ιMulti, ιMulti_eq_basis_det_smul b (f ∘ v), ιMulti_eq_basis_det_smul b v,
-    Module.Basis.det_comp, mul_smul]
-  simp only [LinearMap.smul_apply, LinearMap.id_coe, id_eq]
-
-/-- The basis-free form of `exteriorPower.map_top_eq_det_smul`: on the exterior power in the degree
-equal to the rank, an endomorphism of a finite free module acts by its determinant. -/
-@[simp]
-theorem map_finrank_eq_det_smul [Nontrivial R] [Module.Free R M] [Module.Finite R M]
-    (f : M →ₗ[R] M) :
-    map (Module.finrank R M) f = LinearMap.det f • LinearMap.id :=
-  map_top_eq_det_smul (Module.finBasis R M) f
-
-/-- The top exterior power of a module with a basis indexed by `Fin n` is free of rank one: it is
-identified with the scalars by sending an exterior product of vectors to their determinant against
-the basis. -/
-noncomputable def topEquiv (b : Module.Basis (Fin n) R M) : ⋀[R]^n M ≃ₗ[R] R :=
-  LinearEquiv.ofLinearMap (alternatingMapLinearEquiv b.det)
-    (LinearMap.toSpanSingleton R (⋀[R]^n M) (ιMulti R n ⇑b))
-    (by
-      ext
-      simp [Module.Basis.det_self])
-    (by
-      refine LinearMap.ext_on (ιMulti_span R n M) ?_
-      rintro _ ⟨v, rfl⟩
-      simp [ιMulti_eq_basis_det_smul b v, Module.Basis.det_self])
-
-@[simp]
-lemma topEquiv_apply_ιMulti (b : Module.Basis (Fin n) R M) (v : Fin n → M) :
-    topEquiv b (ιMulti R n v) = b.det v := by
-  simp [topEquiv]
-
-@[simp]
-lemma topEquiv_symm_apply (b : Module.Basis (Fin n) R M) (r : R) :
-    (topEquiv b).symm r = r • ιMulti R n ⇑b := by
-  simp [topEquiv]
-
-/-- The trace of the induced endomorphism of the top exterior power is the determinant. -/
-theorem trace_map_top [Nontrivial R] (b : Module.Basis (Fin n) R M) (f : M →ₗ[R] M) :
-    LinearMap.trace R (⋀[R]^n M) (map n f) = LinearMap.det f := by
-  have := Module.Free.of_basis b
-  have := Module.Finite.of_basis b
-  -- The top exterior power is one-dimensional, the diagonal case `Nat.choose n n = 1`.
-  rw [map_top_eq_det_smul b f, map_smul, LinearMap.trace_id, finrank_eq,
-    Module.finrank_eq_card_basis b, Fintype.card_fin, Nat.choose_self]
-  simp
-
-end Top
 
 end exteriorPower
 

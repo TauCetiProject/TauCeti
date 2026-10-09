@@ -130,7 +130,7 @@ theorem gradedBracket_mem_of_mem_span (W : Submodule (ZMod p) (gradedPiece p G 1
 
 /-- **The `p`-power of an element of a span** lies in any submodule containing the `p`-powers and
 the brackets of the generators: the degree-zero defect of additivity of `π` is a bracket. -/
-theorem gradedPow_mem_of_mem_span [NeZero p] (W : Submodule (ZMod p) (gradedPiece p G 1))
+theorem gradedPow_mem_of_mem_span (W : Submodule (ZMod p) (gradedPiece p G 1))
     {S : Set (gradedPiece p G 0)} (hpow : ∀ x ∈ S, gradedPow p G 0 x ∈ W)
     (hS : ∀ x ∈ S, ∀ y ∈ S, gradedBracket p G 0 0 x y ∈ W)
     {x : gradedPiece p G 0} (hx : x ∈ span (ZMod p) S) : gradedPow p G 0 x ∈ W := by
@@ -140,11 +140,11 @@ theorem gradedPow_mem_of_mem_span [NeZero p] (W : Submodule (ZMod p) (gradedPiec
   | add x y hx hy ihx ihy =>
     rw [gradedPow_add_zero]
     exact add_mem (add_mem ihx ihy) (nsmul_mem (gradedBracket_mem_of_mem_span W hS hy hx) _)
-  | smul r x _ ih => rw [gradedPow_smul_zero]; exact W.smul_mem r ih
+  | smul r x _ ih => rw [gradedPow_smul]; exact W.smul_mem r ih
 
 /-- **The `p`-power classes and the brackets of a topological generating set span `gr_1(G)`**,
 when `λ_2` is open. -/
-theorem span_gradedPow_gradedMkZero_union_gradedBracket_eq_top [NeZero p]
+theorem span_gradedPow_gradedMkZero_union_gradedBracket_eq_top
     (h₂ : IsOpen (pLowerCentralSeries p G 2 : Set G)) {s : Set G}
     (hs : (Subgroup.closure s).topologicalClosure = ⊤) :
     span (ZMod p) ((fun g ↦ gradedPow p G 0 (gradedMkZero p G g)) '' s ∪
@@ -198,7 +198,7 @@ theorem span_gradedPow_gradedMkZero_union_gradedBracket_eq_top [NeZero p]
 /-- **Linear maps out of `gr_1(G)` are determined on a topological generating set**, when `λ_2`
 is open: two `ZMod p`-linear maps agreeing on the `p`-power classes `π ⟦x⟧` and the brackets
 `[⟦x⟧, ⟦y⟧]` of the elements `x, y` of a topological generating set are equal. -/
-theorem linearMap_ext_gradedPiece_one [NeZero p] {M : Type*} [AddCommMonoid M]
+theorem linearMap_ext_gradedPiece_one {M : Type*} [AddCommMonoid M]
     [Module (ZMod p) M] (h₂ : IsOpen (pLowerCentralSeries p G 2 : Set G)) {s : Set G}
     (hs : (Subgroup.closure s).topologicalClosure = ⊤) {f g : gradedPiece p G 1 →ₗ[ZMod p] M}
     (hpow : ∀ x ∈ s, f (gradedPow p G 0 (gradedMkZero p G x)) =
@@ -334,7 +334,7 @@ end DegreeOneFamily
 /-- **The degree-one family of a topological generating family spans `gr_1(G)`**, when `λ_2` is
 open: the ordered form of `TauCeti.span_gradedPow_gradedMkZero_union_gradedBracket_eq_top`,
 using that the bracket is alternating and skew-symmetric. -/
-theorem span_range_degreeOneFamily_eq_top [NeZero p] {ι : Type*} [LinearOrder ι] {y : ι → G}
+theorem span_range_degreeOneFamily_eq_top {ι : Type*} [LinearOrder ι] {y : ι → G}
     (h₂ : IsOpen (pLowerCentralSeries p G 2 : Set G))
     (hy : (Subgroup.closure (Set.range y)).topologicalClosure = ⊤) :
     span (ZMod p) (Set.range (degreeOneFamily p y)) = ⊤ := by

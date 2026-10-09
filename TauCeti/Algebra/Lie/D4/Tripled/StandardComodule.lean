@@ -34,7 +34,10 @@ torus separates the twenty-four distinct weight lines, so a subcomodule is spann
 coordinate vectors it contains. The positive and negative simple-root points move a coordinate
 vector to that of each reflected weight, and the simple reflections act transitively on each
 summand. Hence every subcomodule is the span of a union of summands, and the remaining summands
-span a complement.
+span a complement. The criterion
+`TauCeti.D4Tripled.isCompletelyReducible_of_tripledWeights_of_rootSubgroupPoints` uses only the
+torus weights, numbered root actions, and absence of coefficients between summands; it applies
+also to the subgroup generated directly over the coefficient field.
 
 ## Main declarations
 
@@ -221,9 +224,9 @@ theorem torusCorestrict_eq_ofWeights :
 
 /-! ## Complete reducibility over a field -/
 
-section CompletelyReducible
+section RootInvariance
 
-variable (k : Type u) [Field k]
+variable (k : Type u) [CommRing k]
 
 private theorem tripledCharacter_injective : Function.Injective tripledCharacter := by
   intro a b h
@@ -256,49 +259,93 @@ private theorem negativeRoot_mulVec_single_sub (i : Fin 4) (a : Fin 24)
 /-- Invariance under the two simple-root points makes membership of coordinate vectors stable
 under every simple reflection. -/
 private theorem single_reflection_mem
-    (N : Subcomodule k (coordinateHopfAlgebra k) (Fin 24 → k))
+    (N : Submodule k (Fin 24 → k))
+    (hroot : ∀ j v, v ∈ N →
+      ((rootSubgroupPoints j k (Multiplicative.ofAdd 1) :
+        Matrix.GeneralLinearGroup (Fin 24) k) : Matrix (Fin 24) (Fin 24) k) *ᵥ v ∈ N)
     (a : Fin 24) (i : Fin 4) (ha : Pi.single a 1 ∈ N) :
     Pi.single (d4TripledReflection i a) 1 ∈ N := by
   rcases d4TripledWeight_apply_eq_neg_one_or_eq_zero_or_eq_one a i with hneg | hzero | hpos
-  · have hact := points_mulVec_mem k N (rootSubgroupPoints (.inl i) k (Multiplicative.ofAdd 1)) ha
-    have hsub := N.toSubmodule.sub_mem hact ha
+  · have hact := hroot (.inl i) _ ha
+    have hsub := N.sub_mem hact ha
     rwa [positiveRoot_mulVec_single_sub k i a hneg] at hsub
   · have hfix : d4TripledReflection i a = a := by
       apply d4TripledWeight_injective
       rw [d4TripledWeight_reflection, hzero, zero_smul, sub_zero]
     rw [hfix]
     exact ha
-  · have hact := points_mulVec_mem k N (rootSubgroupPoints (.inr i) k (Multiplicative.ofAdd 1)) ha
-    have hsub := N.toSubmodule.sub_mem hact ha
+  · have hact := hroot (.inr i) _ ha
+    have hsub := N.sub_mem hact ha
     rwa [negativeRoot_mulVec_single_sub k i a hpos] at hsub
+
+/-- A submodule stable under the numbered tripled root matrices containing one coordinate
+vector contains every coordinate vector in the same eight-dimensional summand. -/
+theorem single_mem_of_summand_eq_of_rootSubgroupPoints
+    (N : Submodule k (Fin 24 → k))
+    (hroot : ∀ j v, v ∈ N →
+      ((rootSubgroupPoints j k (Multiplicative.ofAdd 1) :
+        Matrix.GeneralLinearGroup (Fin 24) k) : Matrix (Fin 24) (Fin 24) k) *ᵥ v ∈ N)
+    {a b : Fin 24} (hab : d4TripledSummand a = d4TripledSummand b)
+    (hb : Pi.single b 1 ∈ N) : Pi.single a 1 ∈ N := by
+  obtain ⟨l, hl⟩ := (exists_foldl_d4TripledReflection_eq_iff b a).2 hab.symm
+  have h := (predicate_foldl_iff_of_involutive (fun c ↦ Pi.single c (1 : k) ∈ N)
+    (fun i ↦ d4TripledReflection i) (fun i ↦ d4TripledReflection_apply_apply i)
+    (single_reflection_mem k N hroot) l b).2 hb
+  rwa [hl] at h
+
+end RootInvariance
+
+section CompletelyReducible
+
+variable (k : Type u) [Field k]
+
+/-- A comodule with the distinct tripled torus weights, the numbered root actions, and no
+coefficients mixing the three summands is completely reducible. -/
+theorem isCompletelyReducible_of_tripledWeights_of_rootSubgroupPoints
+    {H : Type*} [AddCommGroup H] [Module k H] [Coalgebra k H]
+    [Comodule k H (Fin 24 → k)]
+    (τ : H →ₗc[k] (DiagonalizableGroup.coordinateRing k
+      (SplitTorus.characterGroup (Fin 4))).obj)
+    (hτ : Comodule.Corestrict τ = Comodule.ofWeights (Pi.basisFun k (Fin 24)) tripledCharacter)
+    (hroot : ∀ (N : Subcomodule k H (Fin 24 → k)) j v, v ∈ N →
+      ((rootSubgroupPoints j k (Multiplicative.ofAdd 1) :
+        Matrix.GeneralLinearGroup (Fin 24) k) : Matrix (Fin 24) (Fin 24) k) *ᵥ v ∈ N)
+    (hsummand : ∀ a b, d4TripledSummand a ≠ d4TripledSummand b →
+      Comodule.coefficientMatrix (C := H) (Pi.basisFun k (Fin 24)) a b = 0) :
+    Comodule.IsCompletelyReducible k H (Fin 24 → k) := by
+  classical
+  apply Comodule.IsCompletelyReducible.of_exists_isCompl
+  intro N
+  let s : Set (Fin 24) := {a | Pi.single a (1 : k) ∈ N}
+  let M := (Pi.basisFun k (Fin 24)).coordinateSpanSubcomodule sᶜ <|
+    ((Pi.basisFun k (Fin 24)).coordinateSpanIsStable_iff (C := H) sᶜ).2 <| by
+      intro a ha b hb
+      apply hsummand
+      intro hab
+      exact hb (single_mem_of_summand_eq_of_rootSubgroupPoints k N.toSubmodule
+        (hroot N) hab.symm (Set.notMem_compl_iff.mp ha))
+  refine ⟨M, ?_⟩
+  rw [Module.Basis.coordinateSpanSubcomodule_toSubmodule,
+    Subcomodule.toSubmodule_eq_span_of_corestrict_eq_ofWeights τ tripledCharacter
+      tripledCharacter_injective hτ N]
+  exact (Pi.basisFun k (Fin 24)).linearIndependent.isCompl_span_image
+    (Pi.basisFun k (Fin 24)).span_eq isCompl_compl
 
 /-- **The standard comodule of the specialized tripled type-`D₄` carrier is completely reducible
 over every field.** Every subcomodule is the span of a union of the three summands, and the
 remaining summands span a complementary subcomodule. -/
 theorem isCompletelyReducible_standardComodule :
-    Comodule.IsCompletelyReducible k (coordinateHopfAlgebra k) (Fin 24 → k) := by
-  classical
-  apply Comodule.IsCompletelyReducible.of_exists_isCompl
-  intro N
-  let s : Set (Fin 24) := {a | Pi.single a (1 : k) ∈ N}
-  have hs : ∀ a b, d4TripledSummand a = d4TripledSummand b → b ∈ s → a ∈ s := by
-    intro a b hab hb
-    obtain ⟨l, hl⟩ := (exists_foldl_d4TripledReflection_eq_iff b a).2 hab.symm
-    have hb' : Pi.single b (1 : k) ∈ N := hb
-    have h := (predicate_foldl_iff_of_involutive (fun c ↦ Pi.single c (1 : k) ∈ N)
-      (fun i ↦ d4TripledReflection i) (fun i ↦ d4TripledReflection_apply_apply i)
-      (fun c i hc ↦ single_reflection_mem k N c i hc) l b).2 hb'
-    rw [hl] at h
-    exact h
-  have hsc : ∀ a b, d4TripledSummand a = d4TripledSummand b → b ∈ sᶜ → a ∈ sᶜ :=
-    fun a b hab hb ha ↦ hb (hs b a hab.symm ha)
-  refine ⟨summandSubcomodule k sᶜ hsc, ?_⟩
-  rw [summandSubcomodule_toSubmodule,
-    Subcomodule.toSubmodule_eq_span_of_corestrict_eq_ofWeights
-      (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom tripledCharacter
-      tripledCharacter_injective (torusCorestrict_eq_ofWeights k) N]
-  exact (Pi.basisFun k (Fin 24)).linearIndependent.isCompl_span_image
-    (Pi.basisFun k (Fin 24)).span_eq isCompl_compl
+    Comodule.IsCompletelyReducible k (coordinateHopfAlgebra k) (Fin 24 → k) :=
+  isCompletelyReducible_of_tripledWeights_of_rootSubgroupPoints k
+    (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom
+    (torusCorestrict_eq_ofWeights k)
+    (fun N j _ hw ↦ points_mulVec_mem k N
+      (rootSubgroupPoints j k (Multiplicative.ofAdd 1)) hw)
+    (fun a b hab ↦ by
+      rw [Comodule.coefficientMatrix_corestrict, Matrix.map_apply,
+        GeneralLinear.coefficientMatrix_basisFun, BialgHom.toCoalgHom_apply,
+        GeneralLinear.genericMatrix_apply]
+      exact coordinateMap_X_eq_zero k hab)
 
 end CompletelyReducible
 

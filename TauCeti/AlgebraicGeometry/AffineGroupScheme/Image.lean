@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Image.Basic
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
-public import TauCeti.AlgebraicGeometry.SchemeTheoreticImage
+public import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.Basic
 
 /-!
 # Scheme-theoretic images of affine group morphisms

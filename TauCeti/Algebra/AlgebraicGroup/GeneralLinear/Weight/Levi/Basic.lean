@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 import TauCeti.CategoryTheory.Comma.Over
 
@@ -36,7 +36,7 @@ antipode calculations.
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
 * The closed-subgroup packaging specializes the generic construction abstracted from
-  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic`, which in turn adapts
+  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic`, which in turn adapts
   `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Borel` and
   `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic`.
 
@@ -123,11 +123,6 @@ theorem weightLeviInclusion_def (w : Fin N → ℤ) :
 instance isClosedImmersion_weightLeviInclusion (w : Fin N → ℤ) :
     IsClosedImmersion (weightLeviInclusion R w).hom.hom.left := by
   rw [weightLeviInclusion]
-  infer_instance
-
-/-- The weight-Levi group scheme is locally of finite type over the base. -/
-instance locallyOfFiniteType_weightLeviGroupScheme (w : Fin N → ℤ) :
-    LocallyOfFiniteType (weightLeviGroupScheme R w).X.hom := by
   infer_instance
 
 /-- The subgroup cut out by the weight-Levi ideal consists exactly of matrices preserving every

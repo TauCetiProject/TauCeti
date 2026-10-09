@@ -33,6 +33,7 @@ splices, which is the form in which coderivations are expanded.
   and the positive-length cases.
 * `TauCeti.TensorWords.prepend_subword` and `TauCeti.TensorWords.prepend_subword_eq_splice`:
   prepending to a block of a tuple.
+* `TauCeti.TensorWords.deconcatenation_reducedInclusion_prepend`: the cuts of a prepended word.
 * `TauCeti.TensorWords.prepend_mem_gradedPiece` and
   `TauCeti.TensorWords.isHomogeneous_lift_prepend`: prepending adds total letter degrees.
 * `TauCeti.TensorWords.subword_tail`: blocks of the tail of a tuple.
@@ -134,6 +135,38 @@ theorem prepend_subword_eq_splice {n : ℕ} (z : Fin n → M) {a b d : ℕ} (hd 
     simp only [Fin.cons_succ, Fin.val_cast, Fin.val_succ]
     rw [dite_eq_right (by omega), dite_eq_right (by omega)]
     exact congrArg z (Fin.ext (by simp only; omega))
+
+/-- Cutting a prepended word `a · w` either cuts before `a`, leaving the empty word on the left, or
+cuts `w` and prepends `a` to the left half. -/
+theorem deconcatenation_reducedInclusion_prepend (a : M) (w : TensorWords R M) :
+    deconcatenation R M (reducedInclusion R M (prepend R M a w)) =
+      (1 : TensorWords R M) ⊗ₜ[R] reducedInclusion R M (prepend R M a w) +
+        (reducedInclusion R M ∘ₗ prepend R M a).rTensor (TensorWords R M)
+          (deconcatenation R M w) := by
+  have h : deconcatenation R M ∘ₗ reducedInclusion R M ∘ₗ prepend R M a =
+      TensorProduct.mk R _ _ (1 : TensorWords R M) ∘ₗ reducedInclusion R M ∘ₗ prepend R M a +
+        (reducedInclusion R M ∘ₗ prepend R M a).rTensor (TensorWords R M) ∘ₗ
+          deconcatenation R M := by
+    refine linearMap_ext R M fun n y ↦ ?_
+    set z : Fin (n + 1) → M := Fin.cons a y with hz
+    have hy : of R M n (PiTensorProduct.tprod R y) = subword R z 1 n := by
+      rw [of_tprod_eq_subword, ← subword_tail, hz, Fin.tail_cons]
+    have ha : z ⟨0, Nat.succ_pos n⟩ = a := Fin.cons_zero _ _
+    have hp (k : ℕ) : reducedInclusion R M (prepend R M a (subword R z 1 k)) =
+        subword R z 0 (k + 1) := by
+      have h := prepend_subword (R := R) z (a := 0) (Nat.succ_pos n) k
+      rw [Nat.zero_add, ha] at h
+      rw [h, reducedInclusion_subword R z (Nat.succ_pos k)]
+    simp only [LinearMap.comp_apply, LinearMap.add_apply, TensorProduct.mk_apply]
+    rw [hy, hp, deconcatenation_subword,
+      deconcatenation_subword, map_sum, Finset.sum_range_succ', subword_length_zero R z
+        (Nat.zero_le _), add_comm]
+    congr 1
+    refine Finset.sum_congr rfl fun k hk ↦ ?_
+    rw [Finset.mem_range] at hk
+    rw [LinearMap.rTensor_tmul, LinearMap.comp_apply, hp]
+    congr 2 <;> omega
+  exact LinearMap.congr_fun h w
 
 end TensorWords
 

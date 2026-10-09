@@ -165,7 +165,7 @@ the Pin group. -/
 theorem reflection_mem_range_pinToOrthogonal (v : V) [Invertible (Q v)] :
     QuadraticMap.reflectionOrthogonal Q v ∈ (pinToOrthogonal Q).range := by
   exact reflection_mem_range_pinToOrthogonal_of_isSquare Q v
-    (IsSepClosed.exists_eq_mul_self (-⅟(Q v)))
+    (IsSepClosed.isSquare (-⅟(Q v)))
 
 /-- Over a separably closed field, every product of two reflections in vectors of invertible
 norm lifts to the Spin group. -/
@@ -174,7 +174,7 @@ theorem reflection_mul_reflection_mem_range_spinToOrthogonal
     QuadraticMap.reflectionOrthogonal Q v * QuadraticMap.reflectionOrthogonal Q w ∈
         (spinToOrthogonal Q).range := by
   exact reflection_mul_reflection_mem_range_spinToOrthogonal_of_isSquare Q v w
-    (IsSepClosed.exists_eq_mul_self (⅟(Q v) * ⅟(Q w)))
+    (IsSepClosed.isSquare (⅟(Q v) * ⅟(Q w)))
 
 /-! ### Linear generation of the even Clifford algebra -/
 
@@ -320,7 +320,7 @@ form over a separably closed field of characteristic different from two. -/
 theorem span_spinGroup_eq_even [NeZero (2 : K)] (hQ : Q.Nondegenerate) :
     Submodule.span K (spinGroup Q : Set (CliffordAlgebra Q)) = (even Q).toSubmodule := by
   exact span_spinGroup_eq_even_of_isSquare Q hQ fun v w _ _ =>
-    IsSepClosed.exists_eq_mul_self ((Q v)⁻¹ * (Q w)⁻¹)
+    IsSepClosed.isSquare ((Q v)⁻¹ * (Q w)⁻¹)
 
 end IsSepClosed
 
