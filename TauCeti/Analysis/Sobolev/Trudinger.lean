@@ -25,8 +25,8 @@ of `W^{1,1}_0` in `L^∞`.
 The proof is that of Gilbarg–Trudinger, Theorem 7.15: the bound is the case `p = n`,
 `δ = 1/n - 1/q` of the Sobolev inequality on sets of finite measure,
 `TauCeti.eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_lt`, which rests on the Riesz potential
-of `‖Du‖` of order one. The estimate then passes from test functions to their closure
-`W^{1,n}_0(Ω)` (`TauCeti.W1p.eLpNorm_value_le_of_forall_testFunction`).
+of `‖Du‖` of order one, and on `W^{1,n}_0(Ω)` it is the same case of
+`TauCeti.W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt`.
 
 ## Main declarations
 
@@ -112,18 +112,19 @@ theorem W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient (hp : p = finra
     rw [hp] at h1
     exact_mod_cast h1
   have : Nontrivial E := Module.nontrivial_of_finrank_pos hn
-  set C : ℝ≥0∞ := ENNReal.ofReal ((finrank ℝ E : ℝ)⁻¹ *
-    mu.real (ball 0 1) ^ (-(finrank ℝ E : ℝ)⁻¹) *
-    (q * (1 - (finrank ℝ E : ℝ)⁻¹) + 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹ + (q : ℝ)⁻¹)) *
-    mu Omega ^ (q : ℝ)⁻¹
-  have hC : C ≠ ∞ := ENNReal.mul_ne_top ENNReal.ofReal_ne_top
-    (ENNReal.rpow_ne_top_of_nonneg (by positivity) hOmega)
-  have h := W1p.eLpNorm_value_le_of_forall_testFunction (q := q) (C := C.toNNReal)
-    (fun phi => ?_) hu
-  · rwa [ENNReal.coe_toNNReal hC] at h
-  · rw [ENNReal.coe_toNNReal hC, hp]
-    exact eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv (phi.contDiff.of_le (by simp))
-      phi.hasCompactSupport Omega.isOpen.measurableSet phi.tsupport_subset hq
+  set n := finrank ℝ E
+  have hn0 : (n : ℝ) ≠ 0 := by positivity
+  have hq0 : (0 : ℝ) < q := lt_of_lt_of_le (by positivity) (by exact_mod_cast hq : (n : ℝ) ≤ q)
+  have h := W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt
+    (hp ▸ ENNReal.natCast_ne_top n) hOmega (by rw [hp]; exact_mod_cast hq)
+    (δ := (n : ℝ)⁻¹ - (q : ℝ)⁻¹) (by simp [hp]) (by linarith [inv_pos.2 hq0]) hu
+  -- At `p = n`, `δ = 1/n - 1/q`, so `1/n - δ = 1/q` and `(1 - δ) / (1/n - δ) = q (1 - 1/n) + 1`.
+  have hbase : (1 - ((n : ℝ)⁻¹ - (q : ℝ)⁻¹)) / ((n : ℝ)⁻¹ - ((n : ℝ)⁻¹ - (q : ℝ)⁻¹)) =
+      q * (1 - (n : ℝ)⁻¹) + 1 := by
+    field_simp [hn0]
+    ring
+  rwa [hbase, sub_sub_cancel, show 1 - ((n : ℝ)⁻¹ - (q : ℝ)⁻¹) = 1 - (n : ℝ)⁻¹ + (q : ℝ)⁻¹ by
+    ring] at h
 
 end W1p0
 
