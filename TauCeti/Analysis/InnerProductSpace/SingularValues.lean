@@ -57,6 +57,14 @@ of `A` run over the whole basis without splitting off the kernel.
 * `LinearMap.exists_orthonormalBasis_apply_eq_leftSingularVector`: the nonzero left singular
   vectors extend, index by index, to an orthonormal basis of the codomain.
 
+## Source
+
+The singular-system definitions `LinearMap.rightSingularBasis` and
+`LinearMap.leftSingularVector` follow the suggested forms in
+`TauCetiRoadmap/OperatorTheory/PolarDecomposition/Suggested.lean`, which reproduce the
+[AIQ-Kitware DKPS formalization](https://github.com/AIQ-Kitware/aiq-dkps-formalization).
+Original copyright (c) 2026 Kitware, Inc.; Apache-2.0.
+
 ## References
 
 * R. A. Horn and C. R. Johnson, *Matrix Analysis*, second edition, Cambridge University Press,
@@ -179,8 +187,9 @@ theorem inner_apply_rightSingularBasis (i : Fin (finrank 𝕜 E)) (x : E) :
 theorem norm_apply_rightSingularBasis (i : Fin (finrank 𝕜 E)) :
     ‖A (A.rightSingularBasis i)‖ = A.singularValues i := by
   have h := A.inner_apply_rightSingularBasis i (A.rightSingularBasis i)
-  rw [inner_self_eq_norm_sq_to_K, inner_self_eq_norm_sq_to_K, OrthonormalBasis.norm_eq_one,
-    RCLike.ofReal_one, one_pow, mul_one, ← RCLike.ofReal_pow, RCLike.ofReal_inj] at h
+  simp only [inner_self_eq_norm_sq_to_K, OrthonormalBasis.norm_eq_one, RCLike.ofReal_one,
+    one_pow, mul_one] at h
+  norm_cast at h
   exact (sq_eq_sq₀ (norm_nonneg _) (A.singularValues_nonneg _)).mp h
 
 /-- A right singular vector lies in the kernel of `A` exactly when its singular value
@@ -224,15 +233,14 @@ values: `⟪uᵢ, uⱼ⟫` is `1` if `i = j` and `σᵢ ≠ 0`, and `0` otherwis
 theorem inner_leftSingularVector (i j : Fin (finrank 𝕜 E)) :
     ⟪A.leftSingularVector i, A.leftSingularVector j⟫ =
       if i = j ∧ A.singularValues i ≠ 0 then 1 else 0 := by
-  rw [leftSingularVector_def, leftSingularVector_def, inner_smul_left, inner_smul_right,
-    inner_apply_rightSingularBasis, orthonormal_iff_ite.mp (A.rightSingularBasis).orthonormal,
-    map_inv₀, RCLike.conj_ofReal]
+  simp only [leftSingularVector_def, inner_smul_left, inner_smul_right,
+    inner_apply_rightSingularBasis, orthonormal_iff_ite.mp (A.rightSingularBasis).orthonormal]
   rcases eq_or_ne i j with rfl | hij
   · by_cases hc : A.singularValues i = 0
     · simp [hc]
     · have hc' : ((A.singularValues i : ℝ) : 𝕜) ≠ 0 := by simpa using hc
-      simp only [true_and, ne_eq, hc, not_false_eq_true, ite_true, mul_one, RCLike.ofReal_pow]
-      field_simp
+      simp [hc]
+      field_simp [hc']
   · simp [hij]
 
 /-- The left singular vectors with nonzero singular value form an orthonormal family. -/
@@ -256,16 +264,15 @@ theorem leftSingularVector_eq_zero_iff {i : Fin (finrank 𝕜 E)} :
 theorem adjoint_leftSingularVector (i : Fin (finrank 𝕜 E)) :
     adjoint A (A.leftSingularVector i) =
       ((A.singularValues i : ℝ) : 𝕜) • A.rightSingularBasis i := by
-  rw [leftSingularVector_def, map_smul, ← comp_apply, adjoint_comp_self_rightSingularBasis,
-    smul_smul, RCLike.ofReal_pow, sq, ← mul_assoc, inv_mul_mul_self]
+  rw [leftSingularVector_def, map_smul, ← comp_apply, adjoint_comp_self_rightSingularBasis]
+  simp [smul_smul, sq, ← mul_assoc]
 
 /-- The left singular vectors are eigenvectors of the target Gram operator `A A†` for the
 squared singular values. -/
 theorem self_comp_adjoint_leftSingularVector (i : Fin (finrank 𝕜 E)) :
     (A ∘ₗ adjoint A) (A.leftSingularVector i) =
       ((A.singularValues i ^ 2 : ℝ) : 𝕜) • A.leftSingularVector i := by
-  rw [comp_apply, adjoint_leftSingularVector, map_smul, apply_rightSingularBasis, smul_smul,
-    RCLike.ofReal_pow, sq]
+  simp [adjoint_leftSingularVector, apply_rightSingularBasis, smul_smul, sq]
 
 /-- The **singular expansion** of a vector: `A x = ∑ᵢ σᵢ ⟪vᵢ, x⟫ uᵢ`. -/
 theorem apply_eq_sum_singularValues_smul (x : E) :
