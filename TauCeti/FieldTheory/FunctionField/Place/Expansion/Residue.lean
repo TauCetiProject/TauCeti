@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Place.Expansion.LaurentSeries
+public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Laurent.Series
 
 /-!
 # Laurent coefficients and residues at rational places
