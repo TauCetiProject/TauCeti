@@ -21,6 +21,8 @@ Lie-algebra isomorphism: the universal covering group and `G` have the same Lie 
 
 ## Main results
 
+* `TauCeti.UniversalCover.lieEquivProjHom`: the Lie-algebra equivalence induced by the universal
+  covering projection.
 * `TauCeti.UniversalCover.lieMap_projHom_bijective`: the Lie map of the covering homomorphism is
   bijective.
 
@@ -50,5 +52,22 @@ theorem lieMap_projHom_bijective :
       (lieMap ((projHom : UniversalCover (1 : G) →ₜ* G).toContMDiffMonoidMorphism I I)) :=
   Lie.lieMap_bijective_of_isLocalDiffeomorphAt _ <| by
     simpa using isLocalDiffeomorph_proj (I := I) (n := ∞) (1 : G) 1
+
+variable (I G) in
+/-- The universal covering projection induces an equivalence between the Lie algebra of the
+universal covering group and the Lie algebra of the base group. -/
+noncomputable def lieEquivProjHom :
+    LeftInvariantDerivation I (UniversalCover (1 : G)) ≃ₗ⁅ℝ⁆ LeftInvariantDerivation I G :=
+  LieEquiv.ofBijective
+    (lieMap ((projHom : UniversalCover (1 : G) →ₜ* G).toContMDiffMonoidMorphism I I))
+    (lieMap_projHom_bijective I G)
+
+/-- The Lie-algebra equivalence induced by the universal covering projection acts by the Lie
+functor. -/
+@[simp]
+theorem lieEquivProjHom_apply (X : LeftInvariantDerivation I (UniversalCover (1 : G))) :
+    lieEquivProjHom I G X =
+      lieMap ((projHom : UniversalCover (1 : G) →ₜ* G).toContMDiffMonoidMorphism I I) X := by
+  simp [lieEquivProjHom]
 
 end TauCeti.UniversalCover
