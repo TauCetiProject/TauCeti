@@ -79,6 +79,7 @@ the weights of the natural representation, beginning at `ϖ₁ = (1, 0, 0, 0)`; 
 those of the half-spin representation `V(ϖ₃)`, beginning at `ϖ₃`; and indices `16` to `23` those
 of `V(ϖ₄)`, beginning at `ϖ₄`. Within each block every weight after the first is a simple
 reflection of an earlier weight of the block; no mathematical structure depends on the ordering. -/
+@[expose]
 def d4TripledWeight : Fin 24 → Fin 4 → ℤ := ![
   ![1, 0, 0, 0], ![-1, 1, 0, 0], ![0, -1, 1, 1], ![0, 0, -1, 1],
   ![0, 0, 1, -1], ![0, 1, -1, -1], ![1, -1, 0, 0], ![-1, 0, 0, 0],
@@ -162,6 +163,7 @@ theorem d4TripledWeight_reflection_apply (i : Fin 4) (a : Fin 24) (j : Fin 4) :
 /-- **The summand containing a tripled weight**, numbered `0`, `1` and `2` for `V(ϖ₁)`, `V(ϖ₃)`
 and `V(ϖ₄)`: the table lists the eight weights of each summand consecutively. The label is an
 integer so that it can serve directly as a block labelling of the coordinates of `GL₂₄`. -/
+@[expose]
 def d4TripledSummand (a : Fin 24) : ℤ :=
   ((a : ℕ) / 8 : ℕ)
 
