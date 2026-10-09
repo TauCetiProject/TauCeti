@@ -36,8 +36,9 @@ off its terms and its homology splits off its cycles
 (`HomologicalComplex.exists_homotopyEquiv_d_eq_zero`).  Every complex of semisimple modules, in
 particular every complex of vector spaces over a field, satisfies this, which gives the
 **Künneth theorem over a field**.  So does a complex whose cycles split off and whose homology is
-projective, for instance a complex of free modules over a principal ideal domain with free
-homology.
+projective.  Mathematically, a complex of free modules over a principal ideal domain with free
+homology is of this kind, but no instance here splits off its cycles, so that splitting has to be
+supplied as an instance argument.
 
 ## Main definitions and results
 

@@ -41,9 +41,11 @@ The splitting hypotheses hold in two standard situations.
   `⨁_{p + q = n} Hₚ(X; k) ⊗ H_q(Y; k) ≅ Hₙ(X × Y; k)`.
 * When the cycles split off and the homology modules `Hₚ(X; M)` and `H_q(Y; N)` are projective,
   the projection of the cycles onto the homology splits
-  (`TopCat.isIso_singularHomologyKunneth_of_projective`).  Over a principal ideal domain `k`, with
-  `M = N = k`, the boundaries are submodules of free modules and the cycles split off, so this is
-  the Künneth theorem for spaces whose homology is free, as for products of spheres.
+  (`TopCat.isIso_singularHomologyKunneth_of_projective`).  Mathematically, over a principal ideal
+  domain `k` with `M = N = k` the boundaries are submodules of free modules, so the cycles split
+  off and this covers spaces whose homology is free, as for products of spheres.  No instance
+  here provides that splitting yet, so the `IsSplitMono` hypothesis on the cycles must still be
+  supplied.
 
 ## Main definitions and results
 
@@ -248,10 +250,10 @@ end
 /-- **The Künneth theorem with projective homology**: if the cycles of the singular chain
 complexes `C(X; M)` and `C(Y; N)` split off their terms and the singular homology modules
 `Hₚ(X; M)` and `H_q(Y; N)` are all projective, the Künneth map
-`⨁_{p + q = n} Hₚ(X; M) ⊗ H_q(Y; N) ⟶ Hₙ(X × Y; M ⊗ N)` is an isomorphism.  Over a principal
-ideal domain the cycles of the singular chains with coefficients in the ring split off, since the
-boundaries are submodules of free modules, so the hypotheses there say that the homology of `X`
-and of `Y` is free. -/
+`⨁_{p + q = n} Hₚ(X; M) ⊗ H_q(Y; N) ⟶ Hₙ(X × Y; M ⊗ N)` is an isomorphism.  Mathematically,
+over a principal ideal domain the cycles of the singular chains with coefficients in the ring
+split off, since the boundaries are submodules of free modules; no instance here provides this
+yet, so the `IsSplitMono` hypotheses on the cycles must be supplied by the caller. -/
 theorem isIso_singularHomologyKunneth_of_projective (X Y : TopCat.{w}) (M N : ModuleCat.{w} k)
     [∀ p, IsSplitMono (((toSSet.obj X).chainComplex M).iCycles p)]
     [hX : ∀ p, Projective (((singularHomologyFunctor _ p).obj M).obj X)]

@@ -43,12 +43,6 @@ variable {C : Type*} [Category* C] [Abelian C] {ι : Type*} {c : ComplexShape ι
 def toBoundaries (i j : ι) : K.X i ⟶ kernel (K.homologyπ j) :=
   kernel.lift _ (K.toCycles i j) (K.toCycles_comp_homologyπ i j)
 
-/-- The corestriction of the differential to the boundaries is the lift of the corestriction to
-the cycles through the kernel of the projection onto the homology. -/
-lemma toBoundaries_def (i j : ι) :
-    K.toBoundaries i j = kernel.lift _ (K.toCycles i j) (K.toCycles_comp_homologyπ i j) :=
-  (rfl)
-
 /-- The corestriction of the differential to the boundaries, followed by the inclusion of the
 boundaries into the cycles, is the corestriction of the differential to the cycles. -/
 @[reassoc (attr := simp)]

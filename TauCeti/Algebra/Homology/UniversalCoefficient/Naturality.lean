@@ -42,14 +42,10 @@ private lemma extToHomology_homBoundary_representative (i j : α)
       (kernel.condition _)).ShortExact)
     (β : kernel (X.homologyπ j) ⟶ Y) :
     ∃ φ : (X.linearYonedaObj k Y).cycles i,
-      (X.linearYonedaObj k Y).iCycles i φ =
-        kernel.lift _ (X.toCycles i j) (X.toCycles_comp_homologyπ i j) ≫ β ∧
+      (X.linearYonedaObj k Y).iCycles i φ = X.toBoundaries i j ≫ β ∧
       extToHomology k X Y i j (homBoundary k hX Y β) =
         (X.linearYonedaObj k Y).homologyπ i φ := by
-  have hφ : (X.linearYonedaObj k Y).iCycles i
-      (cocycleOfComp k Y (X.toBoundaries i j) (X.d_toBoundaries _ i j) β) =
-        kernel.lift _ (X.toCycles i j) (X.toCycles_comp_homologyπ i j) ≫ β := by
-    rw [iCycles_cocycleOfComp, X.toBoundaries_def]
+  have hφ := iCycles_cocycleOfComp (k := k) _ (X.d_toBoundaries _ i j) β
   refine ⟨_, hφ, ?_⟩
   exact (congrArg (extToHomology k X Y i j) (homBoundary_apply k hX Y β)).trans
     (extToHomology_extClass_comp_mk₀ i j β _ hφ)
@@ -103,7 +99,7 @@ lemma extToHomology_naturality (f : X' ⟶ X) (i j : α)
   dsimp only [b]
   simp only [Category.assoc, kernel.lift_ι]
   rw [← cancel_mono (X.iCycles j)]
-  simp only [Category.assoc, kernel.lift_ι_assoc, cyclesMap_i,
+  simp only [Category.assoc, toBoundaries_ι_assoc, cyclesMap_i,
     X.toCycles_i, X'.toCycles_i_assoc]
   exact f.comm i j
 

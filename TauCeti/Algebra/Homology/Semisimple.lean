@@ -49,7 +49,7 @@ monomorphism. -/
 instance isSplitMono_iCycles_of_isSemisimpleModule : IsSplitMono (K.iCycles i) := by
   obtain ⟨r, hr⟩ := IsSemisimpleModule.extension_property (K.iCycles i).hom
     ((ModuleCat.mono_iff_injective _).mp inferInstance) LinearMap.id
-  exact .mk' ⟨ModuleCat.ofHom r, ModuleCat.hom_ext hr⟩
+  exact .mk' ⟨ModuleCat.ofHom r, by ext x; exact LinearMap.congr_fun hr x⟩
 
 /-- In a degree whose term is semisimple, the projection of the cycles of a complex of modules onto
 its homology is a split epimorphism: the cycles are a submodule of a semisimple module, hence
@@ -59,6 +59,6 @@ instance isSplitEpi_homologyπ_of_isSemisimpleModule : IsSplitEpi (K.homologyπ 
     ((ModuleCat.mono_iff_injective _).mp inferInstance)
   obtain ⟨s, hs⟩ := IsSemisimpleModule.lifting_property (K.homologyπ i).hom
     ((ModuleCat.epi_iff_surjective _).mp inferInstance) LinearMap.id
-  exact .mk' ⟨ModuleCat.ofHom s, ModuleCat.hom_ext hs⟩
+  exact .mk' ⟨ModuleCat.ofHom s, by ext x; exact LinearMap.congr_fun hs x⟩
 
 end HomologicalComplex

@@ -20,9 +20,10 @@ a split monomorphism and the projection `Zᵢ ⟶ Hᵢ` onto the homology is a s
 
 Both hypotheses hold for every complex of vector spaces, and more generally of semisimple modules
 (see `TauCeti.Algebra.Homology.Semisimple`).  The second holds whenever the homology objects are
-projective (`HomologicalComplex.isSplitEpi_homologyπ_of_projective`).  The first holds for a
-complex of projective modules over a principal ideal domain, or over any hereditary ring, since the
-image of the differential out of `Kᵢ` is then projective.  The result therefore reduces statements
+projective (`HomologicalComplex.isSplitEpi_homologyπ_of_projective`).  As a mathematical remark
+not formalized here, the first holds for a complex of projective modules over a principal ideal
+domain, or over any hereditary ring, since the image of the differential out of `Kᵢ` is then
+projective.  The result therefore reduces statements
 about the homology of such complexes, such as the Künneth theorem, to complexes with zero
 differential.
 
@@ -70,6 +71,12 @@ namespace Split
 
 variable [∀ i, IsSplitMono (K.iCycles i)]
 
+/-- The differential into `Kᵢ` followed by the retraction `r : Kᵢ ⟶ Zᵢ` is the corestriction of
+the differential to the cycles. -/
+@[reassoc (attr := local simp)]
+private lemma d_retraction (j i : ι) : K.d j i ≫ retraction (K.iCycles i) = K.toCycles j i := by
+  simp [← K.toCycles_i_assoc]
+
 /-- For a relation `j → i` of the shape, the map `Bᵢ ⟶ Kⱼ` through which the projection
 `𝟙 - r ≫ ι` of `Kⱼ` onto the complement of the cycles factors. -/
 private def fromBoundaries {j i : ι} (hji : c.Rel j i) : kernel (K.homologyπ i) ⟶ K.X j :=
@@ -101,9 +108,7 @@ private def boundaryPart (i : ι) : K.X i ⟶ kernel (K.homologyπ i) :=
 differential to the boundaries. -/
 private lemma d_boundaryPart (j i : ι) : K.d j i ≫ boundaryPart K i = K.toBoundaries j i := by
   rw [← cancel_mono (kernel.ι _)]
-  simp only [boundaryPart, Category.assoc, kernel.lift_ι, toBoundaries_ι]
-  rw [← K.toCycles_i_assoc, IsSplitMono.id_assoc, Preadditive.comp_sub, Category.comp_id,
-    toCycles_comp_homologyπ_assoc, zero_comp, sub_zero]
+  simp [boundaryPart, Preadditive.comp_sub]
 
 /-- The homotopy `Kᵢ ⟶ Kⱼ` for a relation `j → i` of the shape. -/
 private def htpy (i j : ι) (hji : c.Rel j i) : K.X i ⟶ K.X j :=
@@ -137,9 +142,7 @@ private def incl : homologyComplex K ⟶ K where
 /-- The projection `r ≫ π : Kᵢ ⟶ Hᵢ`, a chain map since boundaries have zero homology class. -/
 private def proj : K ⟶ homologyComplex K where
   f i := retraction (K.iCycles i) ≫ K.homologyπ i
-  comm' i j _ := by
-    simp only [comp_zero, ← K.toCycles_i_assoc, IsSplitMono.id_assoc,
-      toCycles_comp_homologyπ]
+  comm' i j _ := by simp
 
 private lemma incl_proj : incl K ≫ proj K = 𝟙 _ := by
   ext i

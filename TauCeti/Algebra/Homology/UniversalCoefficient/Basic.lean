@@ -121,15 +121,14 @@ of a morphism `β : Bⱼ ⟶ Y` from the boundaries goes to the class of the coc
 lemma extToHomology_extClass_comp_mk₀ (i j : α) [Projective (X.cycles j)]
     [IsSplitMono (X.iCycles j)] (β : kernel (X.homologyπ j) ⟶ Y)
     (φ : (X.linearYonedaObj k Y).cycles i)
-    (hφ : (X.linearYonedaObj k Y).iCycles i φ =
-      kernel.lift _ (X.toCycles i j) (X.toCycles_comp_homologyπ i j) ≫ β) :
+    (hφ : (X.linearYonedaObj k Y).iCycles i φ = X.toBoundaries i j ≫ β) :
     extToHomology k X Y i j
         ((kernelSequence_shortExact (X.homologyπ j)).extClass.comp (Ext.mk₀ β) (add_zero 1)) =
       (X.linearYonedaObj k Y).homologyπ i φ := by
   -- the extension classes of `kernelSequence` and of its unfolding agree by definition
   have h := congrArg (extToHomology k X Y i j) (homBoundary_apply k (boundaries_shortExact j) Y β)
   exact h.symm.trans ((extToHomology_homBoundary i j β).trans
-    (homologyClassOfComp_eq _ _ β φ (hφ.trans (by rw [X.toBoundaries_def]))))
+    (homologyClassOfComp_eq _ _ β φ hφ))
 
 /-- **Injectivity in the universal coefficient sequence**: in degree `i = j + 1`, the map
 `Ext¹(Hⱼ(X), Y) →ₗ[k] Hⁱ(Hom(X, Y))` is injective. If the cocycle `Xᵢ ⟶ Bⱼ ⟶ Y` is the coboundary
