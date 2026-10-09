@@ -32,9 +32,10 @@ Both statements hold on every cube, not only on dyadic ones. In the sup norm of 
 `∏ᵢ [cᵢ - r, cᵢ + r]` is the closed ball `closedBall c r`, and if `f` has mean oscillation at most
 `M` on every closed ball inside it, then the same two bounds hold on `closedBall c r`
 (`TauCeti.volume_lt_norm_sub_setAverage_closedBall_le`,
-`TauCeti.setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le`). This follows from the dyadic
-case by the affine change of variables carrying the unit dyadic cube onto `closedBall c r`, which
-rescales Lebesgue measure by a constant and so preserves averages.
+`TauCeti.setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le`). For `0 < r` this follows from
+the dyadic case by the affine change of variables carrying the unit dyadic cube onto
+`closedBall c r`, which rescales Lebesgue measure by a constant and so preserves averages. For
+`r ≤ 0` the closed ball is null and both bounds are immediate.
 
 The proof iterates the Calderón–Zygmund decomposition. At height `2M`, the Calderón–Zygmund
 cubes of `‖f - f_{Q₀}‖` restricted to `Q₀` lie inside `Q₀`, cover at most half of it, and carry
@@ -371,11 +372,12 @@ section ClosedBall
 /-! ### Arbitrary cubes
 
 In the sup norm of `ι → ℝ` the closed ball `closedBall c r` is the closed cube
-`∏ᵢ [cᵢ - r, cᵢ + r]`. The affine bijection `y ↦ 2r y + (c - r)` carries the unit dyadic cube
-`[0, 1)ⁿ` onto this cube up to a null set and its dyadic subcubes onto closed balls inside
-`closedBall c r` up to null sets, and it rescales Lebesgue measure by the constant `(2r)ⁿ`.
+`∏ᵢ [cᵢ - r, cᵢ + r]`. For `0 < r`, the affine bijection `y ↦ 2r y + (c - r)` carries the unit
+dyadic cube `[0, 1)ⁿ` onto this cube up to a null set and its dyadic subcubes onto closed balls
+inside `closedBall c r` up to null sets, and it rescales Lebesgue measure by the constant `(2r)ⁿ`.
 Averages are invariant under it, so the dyadic John–Nirenberg inequality for `f` composed with
-this map gives the inequality on every cube. -/
+this map gives the inequality on every cube of positive radius. For `r ≤ 0` the closed ball is
+null, so both bounds hold trivially. -/
 
 open Metric
 
@@ -459,10 +461,10 @@ private theorem setLAverage_comp_cubeEquiv_le (hr : 0 < r)
     rw [hpre, closure_dyadicCube]
     exact dyadicCube_ae_eq_closedBall q.1 q.2
   have havg : ⨍ y in e ⁻¹' B, f (e y) ∂volume = ⨍ y in B, f y ∂volume :=
-    setAverage_preimage_comp_of_map_eq_smul hmap ha ENNReal.ofReal_ne_top f B
+    setAverage_comp_preimage_of_map_eq_smul hmap ha ENNReal.ofReal_ne_top f B
   have hlavg : ⨍⁻ x in e ⁻¹' B, ‖f (e x) - ⨍ y in B, f y ∂volume‖ₑ ∂volume =
       ⨍⁻ x in B, ‖f x - ⨍ y in B, f y ∂volume‖ₑ ∂volume :=
-    setLAverage_preimage_comp_of_map_eq_smul hmap ha ENNReal.ofReal_ne_top
+    setLAverage_comp_preimage_of_map_eq_smul hmap ha ENNReal.ofReal_ne_top
       (fun x => ‖f x - ⨍ y in B, f y ∂volume‖ₑ) B
   simp only [Function.comp_apply]
   rw [setAverage_congr hae, setLAverage_congr hae, havg, hlavg]
@@ -505,7 +507,7 @@ theorem volume_lt_norm_sub_setAverage_closedBall_le [Nonempty ι] [CompleteSpace
     exact (dyadicCube_ae_eq_closedBall 0 0).symm
   have havg : ⨍ y in dyadicCube 0 0, (f ∘ e) y ∂volume = ⨍ y in B, f y ∂volume := by
     rw [← setAverage_congr hB]
-    exact setAverage_preimage_comp_of_map_eq_smul hmap ha ENNReal.ofReal_ne_top f B
+    exact setAverage_comp_preimage_of_map_eq_smul hmap ha ENNReal.ofReal_ne_top f B
   have hJN := volume_lt_norm_sub_setAverage_le (q₀ := (0, 0))
     (integrableOn_comp_cubeEquiv hr hf) (setLAverage_comp_cubeEquiv_le hr hM) s
   rw [havg] at hJN
@@ -542,11 +544,11 @@ theorem setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le [Nonempty ι] [Co
     exact (dyadicCube_ae_eq_closedBall 0 0).symm
   have havg : ⨍ y in dyadicCube 0 0, (f ∘ e) y ∂volume = ⨍ y in B, f y ∂volume := by
     rw [← setAverage_congr hB]
-    exact setAverage_preimage_comp_of_map_eq_smul hmap ha ENNReal.ofReal_ne_top f B
+    exact setAverage_comp_preimage_of_map_eq_smul hmap ha ENNReal.ofReal_ne_top f B
   have hJN := setLIntegral_exp_mul_norm_sub_setAverage_le (q₀ := (0, 0))
     (integrableOn_comp_cubeEquiv hr hf) (setLAverage_comp_cubeEquiv_le hr hM) hρ
   rw [havg] at hJN
-  have hint := setLIntegral_preimage_comp_of_map_eq_smul hmap
+  have hint := setLIntegral_comp_preimage_of_map_eq_smul hmap
     (fun x => ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in B, f y ∂volume‖))) B
   have hvol : volume (e ⁻¹' B) = ENNReal.ofReal ((2 * r) ^ Fintype.card ι)⁻¹ * volume B := by
     rw [← e.map_apply, hmap, Measure.smul_apply, smul_eq_mul]
