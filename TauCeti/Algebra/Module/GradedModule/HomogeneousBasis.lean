@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.GradedModule.Torsion
+public import TauCeti.LinearAlgebra.LinearIndependent.Polynomial
 
 /-!
 # Homogeneous bases of the free part of a graded `k[X]`-module
@@ -27,10 +28,6 @@ they are linearly independent.
 
 ## Main results
 
-* `LinearIndependent.polynomial`: a `k`-linearly independent family is `k[X]`-linearly independent
-  if `X` is injective on its `k[X]`-span and its `k`-span meets `X` times that span only in zero.
-* `TauCeti.InternalGrading.le_of_forall_mem_piece_exists_sub_X_smul_mem`: graded Nakayama for an
-  action lowering degree on a module with degrees bounded above.
 * `TauCeti.InternalGrading.exists_linearIndependent_span_eq_of_disjoint_torsion`: a homogeneous
   submodule meeting torsion trivially is spanned by a linearly independent homogeneous family.
 * `TauCeti.InternalGrading.exists_homogeneous_basis`: a torsion-free module has a homogeneous
@@ -49,102 +46,7 @@ public section
 
 open Polynomial
 
-namespace LinearIndependent
-
-variable {k M ι : Type*} [CommRing k] [AddCommGroup M] [Module k M] [Module k[X] M]
-  [IsScalarTower k k[X] M] {b : ι → M}
-
-/-- A family that is linearly independent over `k` is linearly independent over `k[X]`, provided
-`X` acts injectively on its `k[X]`-span and its `k`-span meets `X` times its `k[X]`-span only in
-zero. A relation over `k[X]` then has vanishing constant terms, so it can be divided by `X`
-indefinitely. -/
-theorem polynomial (hli : LinearIndependent k b)
-    (hreg : ∀ x ∈ Submodule.span k[X] (Set.range b), (X : k[X]) • x = 0 → x = 0)
-    (hdisj : ∀ z ∈ Submodule.span k (Set.range b), ∀ y ∈ Submodule.span k[X] (Set.range b),
-      z = (X : k[X]) • y → z = 0) :
-    LinearIndependent k[X] b := by
-  classical
-  rw [linearIndependent_iff']
-  have hdvd (n : ℕ) : ∀ (t : Finset ι) (g : ι → k[X]),
-      ∑ i ∈ t, g i • b i = 0 → ∀ i ∈ t, X ^ n ∣ g i := by
-    induction n with
-    | zero => simp
-    | succ n ih =>
-      intro t g hg
-      have hsplit : ∑ i ∈ t, g i • b i =
-          (X : k[X]) • ∑ i ∈ t, (g i).divX • b i + ∑ i ∈ t, (g i).coeff 0 • b i := by
-        rw [Finset.smul_sum, ← Finset.sum_add_distrib]
-        refine Finset.sum_congr rfl fun i _ ↦ ?_
-        conv_lhs => rw [← X_mul_divX_add (g i)]
-        rw [add_smul, mul_smul, ← algebraMap_eq, algebraMap_smul]
-      have hdiv_mem : ∑ i ∈ t, (g i).divX • b i ∈ Submodule.span k[X] (Set.range b) :=
-        Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
-      have hc : ∑ i ∈ t, (g i).coeff 0 • b i = 0 := by
-        refine hdisj _ (Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _
-          (Submodule.subset_span ⟨i, rfl⟩)) _ (Submodule.neg_mem _ hdiv_mem) ?_
-        rw [smul_neg, eq_neg_iff_add_eq_zero, add_comm, ← hsplit, hg]
-      have hc0 := linearIndependent_iff'.mp hli t _ hc
-      have hdiv : ∑ i ∈ t, (g i).divX • b i = 0 := by
-        refine hreg _ hdiv_mem ?_
-        rw [hg, hc, add_zero] at hsplit
-        exact hsplit.symm
-      intro i hi
-      obtain ⟨q, hq⟩ := ih t _ hdiv i hi
-      refine ⟨q, ?_⟩
-      rw [← X_mul_divX_add (g i), hc0 i hi, C_0, add_zero, hq, pow_succ', mul_assoc]
-  intro t g hg i hi
-  ext m
-  exact X_pow_dvd_iff.mp (hdvd (m + 1) t g hg i hi) m m.lt_succ_self
-
-end LinearIndependent
-
 namespace TauCeti.InternalGrading
-
-section Nakayama
-
-variable {k M : Type*} [CommRing k] [AddCommGroup M] [Module k M] [Module k[X] M]
-  {G : InternalGrading k M} {d : ℕ}
-
-/-- **Graded Nakayama for an action lowering degree.** Let the degrees of `M` be bounded above,
-and let `L` be a homogeneous `k[X]`-submodule. Suppose each homogeneous element of `L` of
-degree `p` is congruent modulo `N` to `X` times an element of `L` of degree `p + d`, where
-`d ≠ 0`. Then `L ≤ N`. -/
-theorem le_of_forall_mem_piece_exists_sub_X_smul_mem (hd : d ≠ 0)
-    (hbdd : BddAbove {p | G.piece p ≠ ⊥}) {L N : Submodule k[X] M}
-    (hL : DirectSum.SetLike.IsHomogeneous G.piece L)
-    (h : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → x ∈ L →
-      ∃ y ∈ G.piece (p + d), y ∈ L ∧ x - (X : k[X]) • y ∈ N) :
-    L ≤ N := by
-  classical
-  obtain ⟨B, hB⟩ := hbdd
-  have hpiece {p : ℤ} (hp : B < p) : G.piece p = ⊥ := by
-    by_contra hne
-    exact (hB hne).not_gt hp
-  -- Downward induction on the degree `B - n`, in steps of `d`.
-  have hN (n : ℕ) : ∀ x ∈ G.piece (B - n), x ∈ L → x ∈ N := by
-    induction n using Nat.strong_induction_on with
-    | h n ih =>
-      intro x hxG hxL
-      obtain ⟨y, hyG, hyL, hxy⟩ := h hxG hxL
-      rw [← sub_add_cancel x ((X : k[X]) • y)]
-      refine N.add_mem hxy (N.smul_mem X ?_)
-      by_cases hnd : d ≤ n
-      · have hdeg : B - n + d = B - ((n - d : ℕ) : ℤ) := by push_cast [hnd]; ring
-        exact ih (n - d) (by omega) y (hdeg ▸ hyG) hyL
-      · rw [hpiece (by omega), Submodule.mem_bot] at hyG
-        rw [hyG]
-        exact N.zero_mem
-  intro x hx
-  rw [← DirectSum.sum_support_decompose G.piece x]
-  refine N.sum_mem fun p _ ↦ ?_
-  by_cases hp : p ≤ B
-  · obtain ⟨n, rfl⟩ : ∃ n : ℕ, p = B - n := ⟨(B - p).toNat, by omega⟩
-    exact hN n _ (DirectSum.decompose G.piece x _).2 (hL _ hx)
-  · rw [(Submodule.eq_bot_iff _).mp (hpiece (not_le.mp hp)) _
-      (DirectSum.decompose G.piece x p).2]
-    exact N.zero_mem
-
-end Nakayama
 
 universe u
 
