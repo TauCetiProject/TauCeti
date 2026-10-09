@@ -36,7 +36,7 @@ continuity need only a normed commutative ring with multiplicative ultrametric n
 When `K` is complete, these points are not classical: the support of `η_r` is trivial, while the
 classical point at `a` kills `T - a`. Distinct radii give distinct points by comparing
 powers of `T` with constants. The file does not treat Wedhorn's classification of all points of
-the disc, nor discs about centres other than the origin.
+the disc; the Gauss points of discs about other centres are `TauCeti.ValuationSpectrum.discPoint`.
 
 ## Main definitions
 
@@ -268,15 +268,8 @@ theorem supp_gaussPoint (hr₀ : 0 < r) (hr₁ : r ≤ 1) : (gaussPoint (K := K)
 /-- **Gauss points over a complete field are not classical points.** -/
 theorem gaussPoint_ne_classicalPoint [CompleteSpace K] (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     (x : spa (powerBoundedSubring K)) (a : Fin 1 → K) (ha : ∀ i, IsPowerBounded (a i)) :
-    gaussPoint hr₀ hr₁ ≠ classicalPoint x a ha := by
-  intro h
-  have hvle := (classicalPoint_vle x a ha
-    (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
-      weightedC _ isWeightFamily_one_weight (a 0)) 0).mpr (by simp)
-  rw [← h, gaussPoint_vle_zero_iff, sub_eq_zero] at hvle
-  -- the variable and a constant differ in their coefficient of `T`
-  have hcoeff := congrArg (MvPowerSeries.coeff (Finsupp.single 0 1)) (congrArg Subtype.val hvle)
-  simp [MvPowerSeries.coeff_X, MvPowerSeries.coeff_C] at hcoeff
+    gaussPoint hr₀ hr₁ ≠ classicalPoint x a ha :=
+  ne_classicalPoint_of_supp_eq_bot _ (supp_gaussPoint hr₀ hr₁) x a ha
 
 /-- **Distinct radii `0 < r, s ≤ 1` give distinct Gauss points.** -/
 theorem gaussPoint_inj {s : ℝ} (hr₀ : 0 < r) (hr₁ : r ≤ 1) (hs₀ : 0 < s) (hs₁ : s ≤ 1) :

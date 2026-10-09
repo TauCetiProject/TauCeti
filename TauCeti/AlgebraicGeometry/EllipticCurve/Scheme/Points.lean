@@ -629,7 +629,7 @@ private theorem sectionOfClass_surjective [IsLocalRing R] :
   obtain ⟨hQ, hi, hαQ⟩ := exists_eq_awayEvalHom (α := α.hom) (Q := Q)
     (congrArg CommRingCat.Hom.hom hg) fun _ ↦ rfl
   refine ⟨⟨⟦Q⟧, (Projective.unimodularLift_iff _).mpr
-      ⟨hQ, TauCeti.Module.isUnimodular_of_isUnit_apply hi⟩⟩,
+      ⟨hQ, hi.isUnimodular_pi⟩⟩,
     Subtype.ext <| (W.sectionOfClass_mk _).trans <| (W.repPoint_eq hQ hi).trans ?_⟩
   rw [projModelPoint, ← hαQ, CommRingCat.ofHom_hom]
 
@@ -676,7 +676,7 @@ theorem projModelPointsEquivUnimodular_projModelPoint {P : Fin 3 → R}
       Projective.PointClass R) = ⟦P⟧ := by
   have hE : W.toProjective.Equation P := by simpa only [WeierstrassCurve.map_id] using hP
   have hU : W.toProjective.UnimodularLift ⟦P⟧ := (Projective.unimodularLift_iff P).mpr
-    ⟨hE, TauCeti.Module.isUnimodular_of_isUnit_apply hi⟩
+    ⟨hE, hi.isUnimodular_pi⟩
   -- the section attached to the class of `P` is the point with homogeneous coordinates `P`
   refine congrArg Subtype.val ((Equiv.symm_apply_eq _).mpr (Subtype.ext ?_) :
     W.projModelPointsEquivUnimodular ⟨_, _⟩ = ⟨⟦P⟧, hU⟩)
@@ -795,7 +795,7 @@ theorem projModelPointsEquiv_projModelPoint {P : Fin 3 → K}
   have hNS : W.toProjective.NonsingularLift ⟦P⟧ :=
     Projective.unimodularLift_iff_nonsingularLift.mp <| (Projective.unimodularLift_iff P).mpr
       ⟨by simpa only [WeierstrassCurve.map_id] using hP,
-        TauCeti.Module.isUnimodular_of_isUnit_apply hi⟩
+        hi.isUnimodular_pi⟩
   have h : (Projective.Point.equivUnimodularLift W.toProjective).symm
       (W.projModelPointsEquivUnimodular ⟨W.projModelPoint (RingHom.id K) hP hi, by simp⟩) =
         ⟨hNS⟩ :=

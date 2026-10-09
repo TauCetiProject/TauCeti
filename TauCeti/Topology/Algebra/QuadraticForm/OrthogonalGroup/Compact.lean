@@ -14,14 +14,14 @@ import TauCeti.LinearAlgebra.QuadraticForm.Representation
 # Compactness of the orthogonal group over a local field
 
 Let `Q` be a nondegenerate quadratic form on a finite-dimensional space `V` over a locally compact
-nontrivially normed field `K` in which `2` is invertible, such as `ℝ` or `ℚ_p`. The orthogonal
+nontrivially normed field `K`, such as `ℝ` or `ℚ_p`. The orthogonal
 group `O(Q)`, with the canonical topology of the linear automorphism group `V ≃ₗ[K] V`, is compact
 exactly when `Q` is anisotropic.
 
 If `Q` is anisotropic, an isometry sends each basis vector `bᵢ` into the set
 `{y | ‖Q y‖ ≤ ‖Q bᵢ‖}`, which is compact because anisotropic forms are coercive. So the
 isometries and their inverses lie in a compact set of endomorphisms, and `O(Q)`, being closed,
-is compact. No nondegeneracy is needed in this direction.
+is compact. No nondegeneracy or condition on `2` is needed in this direction.
 
 If `Q` is isotropic and nondegenerate, it contains a hyperbolic pair `u`, `v`, and the split torus
 of that pair is a family of isometries `g_t` with `g_t u = t • u`. The continuous function
@@ -86,7 +86,8 @@ special orthogonal group is not a compact subset of the linear automorphism grou
 theorem not_isCompact_specialOrthogonalGroup [FiniteDimensional K V] (hQ : Q.Nondegenerate)
     (hiso : ¬Q.Anisotropic) :
     ¬IsCompact (specialOrthogonalGroup Q : Set (V ≃ₗ[K] V)) := by
-  obtain ⟨u, v, -, hu, hv, huv⟩ := hQ.exists_isotropic_pair hiso
+  obtain ⟨u, v, -, hu, hv, huv⟩ :=
+    _root_.QuadraticMap.exists_isotropic_pair_of_radical_eq_bot hQ.radical_eq_bot hiso
   exact not_isCompact_of_hyperbolicPairTorus_sq_mem Q hu hv huv fun t =>
     hyperbolicPairTorus_mem_specialOrthogonalGroup hu hv huv (t ^ 2)
 
@@ -95,7 +96,8 @@ quadratic form over a nontrivially normed field, the orthogonal group is not a c
 the linear automorphism group. -/
 theorem not_isCompact_orthogonalGroup (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) :
     ¬IsCompact (orthogonalGroup Q : Set (V ≃ₗ[K] V)) := by
-  obtain ⟨u, v, -, hu, hv, huv⟩ := hQ.exists_isotropic_pair hiso
+  obtain ⟨u, v, -, hu, hv, huv⟩ :=
+    _root_.QuadraticMap.exists_isotropic_pair_of_radical_eq_bot hQ.radical_eq_bot hiso
   exact not_isCompact_of_hyperbolicPairTorus_sq_mem Q hu hv huv fun t =>
     (hyperbolicPairTorus Q hu hv huv (t ^ 2)).2
 
@@ -104,11 +106,11 @@ end Noncompact
 section Compact
 
 variable {K V : Type*} [NontriviallyNormedField K] [WeaklyLocallyCompactSpace K]
-  [Invertible (2 : K)] [AddCommGroup V] [Module K V] [FiniteDimensional K V] (Q : QuadraticForm K V)
+  [AddCommGroup V] [Module K V] [FiniteDimensional K V] (Q : QuadraticForm K V)
 
 /-- **The orthogonal group of an anisotropic form is compact.** For an anisotropic quadratic form
-on a finite-dimensional space over a locally compact nontrivially normed field in which `2` is
-invertible, the orthogonal group is a compact subset of the linear automorphism group. -/
+on a finite-dimensional space over a locally compact nontrivially normed field, the orthogonal
+group is a compact subset of the linear automorphism group. -/
 theorem isCompact_orthogonalGroup (hQ : Q.Anisotropic) :
     IsCompact (orthogonalGroup Q : Set (V ≃ₗ[K] V)) := by
   let _ : TopologicalSpace V := moduleTopology K V
@@ -146,8 +148,8 @@ theorem isCompact_orthogonalGroup (hQ : Q.Anisotropic) :
     ⟨hmemC hg, hmemC (inv_mem hg)⟩, hinv, hinv'⟩, LinearEquiv.ext fun x => by simp [Φ]⟩
 
 /-- **Compactness of the orthogonal group.** For a nondegenerate quadratic form on a
-finite-dimensional space over a locally compact nontrivially normed field in which `2` is
-invertible, such as `ℝ` or `ℚ_p`, the orthogonal group is compact exactly when the form is
+finite-dimensional space over a locally compact nontrivially normed field, such as `ℝ` or `ℚ_p`,
+the orthogonal group is compact exactly when the form is
 anisotropic. -/
 theorem isCompact_orthogonalGroup_iff (hQ : Q.Nondegenerate) :
     IsCompact (orthogonalGroup Q : Set (V ≃ₗ[K] V)) ↔ Q.Anisotropic :=

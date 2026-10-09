@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Basic
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.IsotropicFlag
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.IsotropicFlag.Basic
 
 /-!
 # The standard complete isotropic flag subgroup of the symplectic group
@@ -23,7 +23,9 @@ lower-triangular lower-right block, and zero lower-left block.
 The quotient Hopf algebra represents these matrices over every commutative algebra,
 including nonreduced algebras and characteristic two. Its algebra-valued point groups
 are solvable. The diagonal symplectic torus factorization is developed in
-`TauCeti.Algebra.AlgebraicGroup.Symplectic.IsotropicFlag.DiagonalTorus`.
+`TauCeti.Algebra.AlgebraicGroup.Symplectic.IsotropicFlag.DiagonalTorus`. Positive root subgroup
+factorizations are developed in
+`TauCeti.Algebra.AlgebraicGroup.Symplectic.IsotropicFlag.RootSubgroup`.
 These constructions provide the flag subgroup used in the standard symplectic pinning;
 no smoothness, connectedness, or Borel maximality assertion is made here.
 
@@ -40,6 +42,7 @@ points arguments follow
 public section
 
 open AlgebraicGeometry CategoryTheory WithConv Matrix
+open scoped CategoryTheory.MonObj
 
 namespace TauCeti.Symplectic.IsotropicFlag
 
@@ -166,6 +169,7 @@ theorem mem_definingPointsSubgroup_iff
       simp only [Matrix.BlockTriangular, Function.comp_apply, OrderDual.toDual_lt_toDual,
         weights_lt_weights_iff]
 
+/-- Identify the defining point subgroup with the flag-preserving symplectic matrices. -/
 private noncomputable def definingPointsSubgroupMulEquiv :
     CommHopfAlgCat.quotientPointsSubgroup
         (Symplectic.coordinateHopfAlgebra R m) (definingHopfIdeal R m)
@@ -246,6 +250,8 @@ theorem isSolvable_points :
     (pointsMulEquiv R m (A := A)).injective
 
 end Points
+
+
 
 /-- The isotropic flag subgroup has solvable geometric points over every field. -/
 theorem geometricallySolvablePointsCommHopfAlgProperty_coordinateHopfAlgebra

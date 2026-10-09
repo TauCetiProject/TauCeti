@@ -168,6 +168,15 @@ theorem unstableSet_reverse (φ : _root_.Flow ℝ α) (x : α) :
     unstableSet φ.reverse x = stableSet φ x := by
   rw [← stableSet_reverse φ.reverse x, reverse_reverse]
 
+/-- Reversing the flow and negating a function preserves antitonicity of the function along an
+orbit. -/
+theorem antitone_reverse_neg {β : Type*} [AddCommGroup β] [PartialOrder β]
+    [IsOrderedAddMonoid β] {φ : _root_.Flow ℝ α} {g : α → β} {y : α}
+    (hanti : Antitone fun t ↦ g (φ t y)) : Antitone fun t ↦ (-g) (φ.reverse t y) :=
+  fun _ _ hst ↦ by
+  simp only [_root_.Flow.reverse_apply, Pi.neg_apply]
+  exact neg_le_neg (hanti (neg_le_neg hst))
+
 /-- Under the identity flow, the stable set of `x` is the singleton `{x}`. -/
 @[simp]
 theorem stableSet_id [T1Space α] (x : α) :

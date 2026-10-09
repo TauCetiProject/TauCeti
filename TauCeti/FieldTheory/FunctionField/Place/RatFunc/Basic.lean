@@ -134,6 +134,11 @@ theorem ord_infty (f : RatFunc k) : (infty k).ord f = -f.intDegree := by
 theorem isUniformizer_infty : (infty k).valuation.IsUniformizer (RatFunc.X : RatFunc k)⁻¹ := by
   rw [isUniformizer_iff_ord_eq_one, ord_inv, ord_infty, RatFunc.intDegree_X, neg_neg]
 
+/-- `x⁻¹` has order one at the place at infinity: it is the uniformizer in which Laurent expansions
+and residues at `P_∞` are taken. -/
+theorem ord_infty_inv_X : (infty k).ord (RatFunc.X : RatFunc k)⁻¹ = 1 := by
+  rw [ord_inv, ord_infty, RatFunc.intDegree_X, neg_neg]
+
 theorem valuation_infty_lt_one_iff {f : RatFunc k} (hf : f ≠ 0) :
     (infty k).valuation f < 1 ↔ f.intDegree < 0 := by
   rw [valuation_infty_apply hf, ← WithZero.exp_zero, WithZero.exp_lt_exp]
@@ -428,6 +433,11 @@ theorem adicOfIrreducible_X_sub_C_injective :
   have hab := eq_of_monic_of_associated (monic_X_sub_C a) (monic_X_sub_C b)
     ((adicOfIrreducible_eq_adicOfIrreducible_iff _ _).mp h)
   simpa using congrArg (fun p : k[X] => p.coeff 0) hab
+
+/-- The place of a linear polynomial `X - a` is rational. -/
+theorem degree_adicOfIrreducible_X_sub_C (a : k) :
+    (adicOfIrreducible (irreducible_X_sub_C a)).degree = 1 := by
+  simp
 
 /-- **A rational place of `k(x)` is the place at infinity or the place of a linear polynomial**
 (Stichtenoth, Corollary 1.2.3): a monic irreducible generator of degree one is an `X - a`. -/
