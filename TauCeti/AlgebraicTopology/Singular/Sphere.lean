@@ -485,6 +485,7 @@ bases of real inner product spaces `E` and `F`, indexed by `Fin (n + 1)`, and le
 `f : E →ₗᵢ[ℝ] F` be a linear isometry with `f (b i) = c i` for every `i`.  Then the map induced on
 `H_redₙ` by the restriction of `f` to the unit spheres carries the generator determined by `b` to
 the generator determined by `c`. -/
+@[reassoc]
 theorem reducedSingularHomologySphereIso_hom_naturality {F : Type w} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] {n : ℕ} (b : OrthonormalBasis (Fin (n + 1)) ℝ E)
     (c : OrthonormalBasis (Fin (n + 1)) ℝ F) (f : E →ₗᵢ[ℝ] F) (hf : ∀ i, f (b i) = c i) :
