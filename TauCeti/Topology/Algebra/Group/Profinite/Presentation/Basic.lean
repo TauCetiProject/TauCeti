@@ -205,8 +205,8 @@ precomposition with its quotient map. -/
 theorem hom_ext {G : Type v} [Monoid G] [TopologicalSpace G]
     {φ ψ : presentedProfiniteGroup X rels →ₜ* G}
     (h : φ.comp (mk rels) = ψ.comp (mk rels)) : φ = ψ :=
-  ContinuousMonoidHom.toMonoidHom_injective
-    (QuotientGroup.monoidHom_ext _ (congrArg ContinuousMonoidHom.toMonoidHom h))
+  DFunLike.coe_injective <| (mk_surjective rels).injective_comp_right <| by
+    simpa only [ContinuousMonoidHom.coe_comp] using congrArg DFunLike.coe h
 
 /-- Two continuous homomorphisms out of a presented profinite group are equal if they agree on
 the canonical generators. -/
@@ -521,8 +521,8 @@ theorem mk_eq_one_iff (r : freeProP p X) :
 the relators. -/
 @[simp] theorem ker_mk :
     (mk p rels : freeProP p X →* presentedProP p X rels).ker =
-      (Subgroup.normalClosure rels).topologicalClosure :=
-  QuotientGroup.ker_mk' _
+      (Subgroup.normalClosure rels).topologicalClosure := by
+  rw [mk, ContinuousMonoidHom.coe_quotientMk, QuotientGroup.ker_mk']
 
 /-- The generators generate the presented pro-`p` group topologically. -/
 theorem dense_closure_range_of :
@@ -594,8 +594,8 @@ precomposition with its quotient map. -/
 theorem hom_ext {P : Type v} [Monoid P] [TopologicalSpace P]
     {φ ψ : presentedProP p X rels →ₜ* P}
     (h : φ.comp (mk p rels) = ψ.comp (mk p rels)) : φ = ψ :=
-  ContinuousMonoidHom.toMonoidHom_injective
-    (QuotientGroup.monoidHom_ext _ (congrArg ContinuousMonoidHom.toMonoidHom h))
+  DFunLike.coe_injective <| (mk_surjective p rels).injective_comp_right <| by
+    simpa only [ContinuousMonoidHom.coe_comp] using congrArg DFunLike.coe h
 
 /-- Two continuous homomorphisms out of a presented pro-`p` group are equal if they agree on
 the canonical generators. -/
