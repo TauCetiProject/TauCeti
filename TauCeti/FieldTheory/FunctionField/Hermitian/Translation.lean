@@ -10,6 +10,7 @@ public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.RingTheory.AdjoinRoot
 import Mathlib.FieldTheory.Finite.Basic
 import TauCeti.FieldTheory.Finite.PowAddSelf
+import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Transcendental
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
@@ -68,8 +69,9 @@ for each of the `q²` choices of `a`.
 * `TauCeti.IsHermitianCoordinates.translation_mul`, `TauCeti.IsHermitianCoordinates.translation_inv`
   and `TauCeti.IsHermitianCoordinates.translation_zero`: the group law on the parameters.
 * `TauCeti.add_pow_pow_sq_eq_add`, `TauCeti.neg_pow_pow_sq_eq_neg`,
-  `TauCeti.hermitian_pow_add_self_mul` and `TauCeti.hermitian_pow_add_self_inv`: the parameters of
-  a composite and of an inverse again satisfy the two conditions on `(a, b)`.
+  `TauCeti.pow_add_self_add_add_mul_pow_eq_add_pow_succ` and
+  `TauCeti.pow_pow_add_pow_eq_neg_pow_succ`: the parameters of a composite and of an inverse again
+  satisfy the two conditions on `(a, b)`.
 * `TauCeti.IsHermitianCoordinates.natCard_hermitianTranslations`: over a field with `q²`
   elements, the group of translations has order `q³`.
 
@@ -110,7 +112,7 @@ theorem neg_pow_pow_sq_eq_neg (ha : a ^ (p ^ n) ^ 2 = a) : (-a) ^ (p ^ n) ^ 2 = 
 
 /-- The parameters of the composite translation `σ_{a,b} ∘ σ_{a',b'} = σ_{a + a', b + b' + a a'^q}`
 satisfy the Hermitian equation `b ^ q + b = a ^ (q + 1)`. -/
-theorem hermitian_pow_add_self_mul (ha' : a' ^ (p ^ n) ^ 2 = a')
+theorem pow_add_self_add_add_mul_pow_eq_add_pow_succ (ha' : a' ^ (p ^ n) ^ 2 = a')
     (hb : b ^ p ^ n + b = a ^ (p ^ n + 1)) (hb' : b' ^ p ^ n + b' = a' ^ (p ^ n + 1)) :
     (b + b' + a * a' ^ p ^ n) ^ p ^ n + (b + b' + a * a' ^ p ^ n) = (a + a') ^ (p ^ n + 1) := by
   simp only [add_pow_expChar_pow, mul_pow, pow_pow_of_pow_sq ha', pow_succ] at hb hb' ⊢
@@ -118,7 +120,7 @@ theorem hermitian_pow_add_self_mul (ha' : a' ^ (p ^ n) ^ 2 = a')
 
 /-- The parameters of the inverse translation `σ_{a,b}⁻¹ = σ_{-a, b^q}` satisfy the Hermitian
 equation `b ^ q + b = a ^ (q + 1)`. -/
-theorem hermitian_pow_add_self_inv (ha : a ^ (p ^ n) ^ 2 = a)
+theorem pow_pow_add_pow_eq_neg_pow_succ (ha : a ^ (p ^ n) ^ 2 = a)
     (hb : b ^ p ^ n + b = a ^ (p ^ n + 1)) :
     (b ^ p ^ n) ^ p ^ n + b ^ p ^ n = (-a) ^ (p ^ n + 1) := by
   rw [← add_pow_expChar_pow, hb, pow_succ, mul_pow, pow_pow_of_pow_sq ha, pow_succ,
@@ -145,7 +147,7 @@ noncomputable def hermitianTranslations : Subgroup (F ≃ₐ[K] F) where
   mul_mem' := by
     rintro σ τ ⟨a, b, ha, hb, hσx, hσy⟩ ⟨a', b', ha', hb', hτx, hτy⟩
     refine ⟨a + a', b + b' + a * a' ^ p ^ n, add_pow_pow_sq_eq_add ha ha',
-      hermitian_pow_add_self_mul ha' hb hb', ?_, ?_⟩
+      pow_add_self_add_add_mul_pow_eq_add_pow_succ ha' hb hb', ?_, ?_⟩
     · simp [hτx, hσx, add_assoc]
     · simp only [AlgEquiv.mul_apply, hτy, map_add, map_mul, AlgEquiv.commutes, hσx, hσy,
         add_pow_expChar_pow]
@@ -155,7 +157,7 @@ noncomputable def hermitianTranslations : Subgroup (F ≃ₐ[K] F) where
     exact ⟨0, 0, by simp [hp], by simp [hp], by simp, by simp [hp]⟩
   inv_mem' := by
     rintro σ ⟨a, b, ha, hb, hσx, hσy⟩
-    refine ⟨-a, b ^ p ^ n, neg_pow_pow_sq_eq_neg ha, hermitian_pow_add_self_inv ha hb, ?_, ?_⟩
+    refine ⟨-a, b ^ p ^ n, neg_pow_pow_sq_eq_neg ha, pow_pow_add_pow_eq_neg_pow_succ ha hb, ?_, ?_⟩
     · rw [AlgEquiv.aut_inv, AlgEquiv.symm_apply_eq]
       simp [hσx]
     · have hbF := congrArg (algebraMap K F) hb
@@ -219,17 +221,6 @@ private theorem eval₂_minpoly {a b : K} (ha : a ^ (p ^ n) ^ 2 = a)
     (minpoly K⟮x⟯ y).eval₂ (h.transcendental_x.algHomAdjoin (h.transcendental_x.add_algebraMap a))
       (y + algebraMap K F (a ^ p ^ n) * x + algebraMap K F b) = 0 := by
   simpa [h.minpoly_adjoin_x hq, sub_eq_zero, eval₂_pow] using h.pow_add_self_eq ha hb
-
-omit hq [ExpChar K p] in
-/-- Two `K`-automorphisms of `F = K(x, y)` that agree on `x` and `y` are equal. -/
-private theorem algEquiv_ext {σ τ : F ≃ₐ[K] F} (hx : σ x = τ x) (hy : σ y = τ y) : σ = τ := by
-  refine AlgEquiv.coe_toAlgHom_injective ?_
-  have key := IntermediateField.algHom_ext_of_eq_adjoin K h.adjoin_eq_top.symm
-    (φ₁ := (σ : F →ₐ[K] F).comp (IntermediateField.val ⊤))
-    (φ₂ := (τ : F →ₐ[K] F).comp (IntermediateField.val ⊤)) (by
-      rintro z (rfl | rfl) <;> simp [hx, hy])
-  ext z
-  simpa using DFunLike.congr_fun key ⟨z, IntermediateField.mem_top⟩
 
 /-- The `K`-algebra endomorphism `σ_{a,b}` of `F`, before it is shown to be bijective: the
 substitution `x ↦ x + a` on `K(x)`, extended to `F = K(x)[T] / (minpoly)` by `T ↦ y + a ^ q x + b`.
@@ -319,33 +310,41 @@ theorem exists_translation_eq {σ : F ≃ₐ[K] F} (hσ : σ ∈ hermitianTransl
     ∃ (a b : K) (ha : a ^ (p ^ n) ^ 2 = a) (hb : b ^ p ^ n + b = a ^ (p ^ n + 1)),
       h.translation hq ha hb = σ := by
   obtain ⟨a, b, ha, hb, hσx, hσy⟩ := hσ
-  exact ⟨a, b, ha, hb, h.algEquiv_ext (by simp [hσx]) (by simp [hσy])⟩
+  refine ⟨a, b, ha, hb, IntermediateField.algEquiv_ext_of_adjoin_eq_top h.adjoin_eq_top ?_⟩
+  rintro z (rfl | rfl) <;> simp [hσx, hσy]
 
 /-- **The composition law**: `σ_{a,b} ∘ σ_{a',b'} = σ_{a + a', b + b' + a a'^q}`. -/
 theorem translation_mul {a b a' b' : K} (ha : a ^ (p ^ n) ^ 2 = a)
     (hb : b ^ p ^ n + b = a ^ (p ^ n + 1)) (ha' : a' ^ (p ^ n) ^ 2 = a')
     (hb' : b' ^ p ^ n + b' = a' ^ (p ^ n + 1)) :
     h.translation hq ha hb * h.translation hq ha' hb' =
-      h.translation hq (add_pow_pow_sq_eq_add ha ha') (hermitian_pow_add_self_mul ha' hb hb') :=
-  h.algEquiv_ext (by simp [add_assoc]) (by simp [add_pow_expChar_pow]; ring)
+      h.translation hq (add_pow_pow_sq_eq_add ha ha')
+        (pow_add_self_add_add_mul_pow_eq_add_pow_succ ha' hb hb') := by
+  refine IntermediateField.algEquiv_ext_of_adjoin_eq_top h.adjoin_eq_top ?_
+  rintro z (rfl | rfl)
+  · simp [add_assoc]
+  · simp [add_pow_expChar_pow]; ring
 
 /-- **The inverse law**: `σ_{a,b}⁻¹ = σ_{-a, b^q}`. -/
 theorem translation_inv {a b : K} (ha : a ^ (p ^ n) ^ 2 = a)
     (hb : b ^ p ^ n + b = a ^ (p ^ n + 1)) :
     (h.translation hq ha hb)⁻¹ =
-      h.translation hq (neg_pow_pow_sq_eq_neg ha) (hermitian_pow_add_self_inv ha hb) := by
+      h.translation hq (neg_pow_pow_sq_eq_neg ha) (pow_pow_add_pow_eq_neg_pow_succ ha hb) := by
   rw [inv_eq_iff_mul_eq_one, translation_mul]
-  exact h.algEquiv_ext (by simp) (by
-    have hbF := congrArg (algebraMap K F) hb
+  refine IntermediateField.algEquiv_ext_of_adjoin_eq_top h.adjoin_eq_top ?_
+  rintro z (rfl | rfl)
+  · simp
+  · have hbF := congrArg (algebraMap K F) hb
     simp only [map_add, map_pow, pow_succ, map_mul] at hbF
     simp [neg_pow_expChar_pow, (expChar_pos K p).ne']
-    linear_combination hbF)
+    linear_combination hbF
 
 /-- **The identity**: `σ_{0,0} = 1`. -/
 @[simp]
 theorem translation_zero (ha : (0 : K) ^ (p ^ n) ^ 2 = 0)
-    (hb : (0 : K) ^ p ^ n + 0 = 0 ^ (p ^ n + 1)) : h.translation hq ha hb = 1 :=
-  h.algEquiv_ext (by simp) (by simp [(expChar_pos K p).ne'])
+    (hb : (0 : K) ^ p ^ n + 0 = 0 ^ (p ^ n + 1)) : h.translation hq ha hb = 1 := by
+  refine IntermediateField.algEquiv_ext_of_adjoin_eq_top h.adjoin_eq_top ?_
+  rintro z (rfl | rfl) <;> simp [(expChar_pos K p).ne']
 
 omit hq in
 /-- **The order of the translation group**: over a field with `q²` elements, `q = p ^ n`, the
