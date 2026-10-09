@@ -18,12 +18,7 @@ order two. Every other infinite place contributes one.
 
 Combining this with the finite-place calculation gives the quotient of the permutation lattice
 on all infinite places and the primes above a finite set `S`. This is the place lattice used in
-the logarithmic comparison for the Herbrand quotient of the `S`-units. These computations require
-no cyclicity: they compute degree-zero and degree-minus-one Tate cohomology of permutation
-modules directly.
-
-The proof uses Mathlib's `InfinitePlace.orbitRelEquiv` and `InfinitePlace.card_stabilizer` and
-Tau Ceti's `TateCohomology.herbrandQuotient_ofMulAction`.
+the logarithmic comparison for the Herbrand quotient of the `S`-units.
 
 ## References
 
