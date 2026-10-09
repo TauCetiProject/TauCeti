@@ -64,6 +64,28 @@ theorem normalSphereBundleOfRadius_subset_normalDiscBundleOfRadius {f : M → V}
   mem_normalDiscBundleOfRadius.mpr
     ⟨(mem_normalSphereBundleOfRadius.mp hp).1, (mem_normalSphereBundleOfRadius.mp hp).2.le⟩
 
+/-- An open normal tube is contained in the closed normal discs of the same radius. -/
+theorem normalTubeOfRadius_subset_normalDiscBundleOfRadius {f : M → V} {r : M → ℝ} :
+    normalTubeOfRadius I f r ⊆ normalDiscBundleOfRadius I f r := fun _ hp =>
+  mem_normalDiscBundleOfRadius.mpr
+    ⟨(mem_normalTubeOfRadius.mp hp).1, (mem_normalTubeOfRadius.mp hp).2.le⟩
+
+/-- Closed normal discs are monotone in their pointwise radius. -/
+theorem normalDiscBundleOfRadius_subset_normalDiscBundleOfRadius {f : M → V} {r s : M → ℝ}
+    (hrs : ∀ x, r x ≤ s x) :
+    normalDiscBundleOfRadius I f r ⊆ normalDiscBundleOfRadius I f s := fun p hp =>
+  mem_normalDiscBundleOfRadius.mpr
+    ⟨(mem_normalDiscBundleOfRadius.mp hp).1,
+      (mem_normalDiscBundleOfRadius.mp hp).2.trans (hrs p.1)⟩
+
+/-- Closed normal discs lie in any open normal tube with a pointwise larger radius. -/
+theorem normalDiscBundleOfRadius_subset_normalTubeOfRadius {f : M → V} {r s : M → ℝ}
+    (hrs : ∀ x, r x < s x) :
+    normalDiscBundleOfRadius I f r ⊆ normalTubeOfRadius I f s := fun p hp =>
+  mem_normalTubeOfRadius.mpr
+    ⟨(mem_normalDiscBundleOfRadius.mp hp).1,
+      (mem_normalDiscBundleOfRadius.mp hp).2.trans_lt (hrs p.1)⟩
+
 /-- The difference between closed normal discs and their open tube consists of the
 normal spheres. -/
 @[simp] theorem normalDiscBundleOfRadius_sdiff_normalTubeOfRadius (f : M → V) (r : M → ℝ) :
@@ -73,6 +95,14 @@ normal spheres. -/
   simp only [Set.mem_sdiff, mem_normalDiscBundleOfRadius, mem_normalTubeOfRadius,
     mem_normalSphereBundleOfRadius]
   grind
+
+/-- The difference between constant-radius closed normal discs and their open tube
+consists of the normal spheres. -/
+@[simp] theorem normalDiscBundleOfRadius_sdiff_normalTube (f : M → V) (ε : ℝ) :
+    normalDiscBundleOfRadius I f (fun _ => ε) \ normalTube I f ε =
+      normalSphereBundleOfRadius I f (fun _ => ε) := by
+  simpa only [normalTubeOfRadius_const] using
+    normalDiscBundleOfRadius_sdiff_normalTubeOfRadius (I := I) f (fun _ => ε)
 
 section Regularity
 
@@ -136,8 +166,7 @@ theorem closure_normalTubeOfRadius (hf : ContMDiff I 𝓘(ℝ, V) 1 f)
     (hr : Continuous r) (hpos : ∀ x, 0 < r x) :
     closure (normalTubeOfRadius I f r) = normalDiscBundleOfRadius I f r := by
   refine subset_antisymm
-    (closure_minimal (fun p hp => ⟨(mem_normalTubeOfRadius.mp hp).1,
-      (mem_normalTubeOfRadius.mp hp).2.le⟩)
+    (closure_minimal normalTubeOfRadius_subset_normalDiscBundleOfRadius
       (isClosed_normalDiscBundleOfRadius hf hr)) ?_
   rintro ⟨x, v⟩ ⟨hv, hnorm⟩
   let w : normalSubspace I f x := ⟨v, hv⟩
@@ -170,8 +199,8 @@ theorem closure_image_normalTube (hf : ContMDiff I 𝓘(ℝ, V) 1 f) {ε : ℝ} 
     (hf.continuous.comp continuous_fst).add continuous_snd
   refine subset_antisymm (closure_minimal (image_mono ?_)
     ((isCompact_normalDiscBundleOfRadius_const hf ε).image hc).isClosed) ?_
-  · exact fun p hp => mem_normalDiscBundleOfRadius.mpr
-      ⟨(mem_normalTube.mp hp).1, (mem_normalTube.mp hp).2.le⟩
+  · simpa only [normalTubeOfRadius_const] using
+      (normalTubeOfRadius_subset_normalDiscBundleOfRadius (I := I) (f := f) (r := fun _ => ε))
   · rw [← closure_normalTubeOfRadius hf continuous_const (fun _ => hε), normalTubeOfRadius_const]
     exact image_closure_subset_closure_image hc
 
@@ -188,12 +217,11 @@ theorem isClosedEmbedding_normalDiscBundleOfRadius_const (hf : ContMDiff I 𝓘(
     (hf.continuous.comp continuous_fst).add continuous_snd
   refine (hc.comp continuous_subtype_val).isClosedEmbedding ?_
   intro p q hpq
-  have hp : p.1 ∈ normalTube I f R := mem_normalTube.mpr
-    ⟨(mem_normalDiscBundleOfRadius.mp p.2).1, (mem_normalDiscBundleOfRadius.mp p.2).2.trans_lt hεR⟩
-  have hq : q.1 ∈ normalTube I f R := mem_normalTube.mpr
-    ⟨(mem_normalDiscBundleOfRadius.mp q.2).1, (mem_normalDiscBundleOfRadius.mp q.2).2.trans_lt hεR⟩
+  have hsub : normalDiscBundleOfRadius I f (fun _ => ε) ⊆ normalTube I f R := by
+    simpa only [normalTubeOfRadius_const] using
+      (normalDiscBundleOfRadius_subset_normalTubeOfRadius (I := I) (f := f) (fun _ => hεR))
   exact Subtype.ext (congrArg (fun z : normalTube I f R => z.1)
-    (h.injective (a₁ := ⟨p.1, hp⟩) (a₂ := ⟨q.1, hq⟩) hpq))
+    (h.injective (a₁ := ⟨p.1, hsub p.2⟩) (a₂ := ⟨q.1, hsub q.2⟩) hpq))
 
 /-- The frontier of a smaller embedded normal tube is exactly the image of its normal
 sphere bundle. -/
@@ -213,11 +241,11 @@ theorem frontier_image_normalTube (hf : ContMDiff I 𝓘(ℝ, V) 1 f) {ε R : �
     exact congrArg Subtype.val
       ((isClosedEmbedding_normalDiscBundleOfRadius_const hf hεR h).injective
         (a₁ := ⟨p, hp⟩) (a₂ := ⟨q, hq⟩) hpq)
-  have hsub : normalTube I f ε ⊆ normalDiscBundleOfRadius I f (fun _ => ε) := fun p hp =>
-    mem_normalDiscBundleOfRadius.mpr ⟨(mem_normalTube.mp hp).1, (mem_normalTube.mp hp).2.le⟩
+  have hsub : normalTube I f ε ⊆ normalDiscBundleOfRadius I f (fun _ => ε) := by
+    simpa only [normalTubeOfRadius_const] using
+      (normalTubeOfRadius_subset_normalDiscBundleOfRadius (I := I) (f := f) (r := fun _ => ε))
   rw [frontier, closure_image_normalTube hf hε, hopen.interior_eq,
-    ← hinj.image_sdiff_subset hsub, ← normalTubeOfRadius_const,
-    normalDiscBundleOfRadius_sdiff_normalTubeOfRadius]
+    ← hinj.image_sdiff_subset hsub, normalDiscBundleOfRadius_sdiff_normalTube]
 
 end Regularity
 

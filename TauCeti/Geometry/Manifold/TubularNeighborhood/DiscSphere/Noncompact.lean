@@ -70,8 +70,7 @@ theorem closure_image_normalTubeOfRadius (hf : ContMDiff I 𝓘(ℝ, V) 1 f)
     closure ((fun p : M × V => f p.1 + p.2) '' normalTubeOfRadius I f r) =
       (fun p : M × V => f p.1 + p.2) '' normalDiscBundleOfRadius I f r := by
   refine subset_antisymm (closure_minimal (image_mono
-    (fun p hp => mem_normalDiscBundleOfRadius.mpr
-      ⟨(mem_normalTubeOfRadius.mp hp).1, (mem_normalTubeOfRadius.mp hp).2.le⟩))
+    normalTubeOfRadius_subset_normalDiscBundleOfRadius)
     (isClosed_image_normalDiscBundleOfRadius hf hproper hr hbound)) ?_
   rw [← closure_normalTubeOfRadius hf hr hpos]
   exact image_closure_subset_closure_image
@@ -87,9 +86,7 @@ theorem isClosedEmbedding_normalDiscBundleOfRadius (hf : ContMDiff I 𝓘(ℝ, V
     IsClosedEmbedding ((normalDiscBundleOfRadius I f r).domRestrict
       fun p : M × V => f p.1 + p.2) := by
   have hsub : normalDiscBundleOfRadius I f r ⊆ normalTubeOfRadius I f s :=
-    fun p hp => mem_normalTubeOfRadius.mpr
-      ⟨(mem_normalDiscBundleOfRadius.mp hp).1,
-        (mem_normalDiscBundleOfRadius.mp hp).2.trans_lt (hrs p.1)⟩
+    normalDiscBundleOfRadius_subset_normalTubeOfRadius hrs
   refine ⟨h.comp (IsEmbedding.inclusion hsub), ?_⟩
   simpa only [range_domRestrict] using
     isClosed_image_normalDiscBundleOfRadius hf hproper hr hbound
@@ -113,8 +110,7 @@ theorem frontier_image_normalTubeOfRadius (hf : ContMDiff I 𝓘(ℝ, V) 1 f)
       ((isClosedEmbedding_normalDiscBundleOfRadius hf hproper hr hbound hrs h.isEmbedding).injective
         (a₁ := ⟨p, hp⟩) (a₂ := ⟨q, hq⟩) hpq)
   have htd : normalTubeOfRadius I f r ⊆ normalDiscBundleOfRadius I f r :=
-    fun p hp => mem_normalDiscBundleOfRadius.mpr
-      ⟨(mem_normalTubeOfRadius.mp hp).1, (mem_normalTubeOfRadius.mp hp).2.le⟩
+    normalTubeOfRadius_subset_normalDiscBundleOfRadius
   rw [frontier, closure_image_normalTubeOfRadius hf hproper hr hpos hbound,
     hopen.interior_eq, ← hinj.image_sdiff_subset htd,
     normalDiscBundleOfRadius_sdiff_normalTubeOfRadius]
