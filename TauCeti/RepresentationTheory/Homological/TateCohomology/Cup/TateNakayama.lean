@@ -18,7 +18,7 @@ for every subgroup `S` of `G` of prime-power order, `H¹(S, C) = 0`, the restric
 generates `H²(S, C)`, and `H²(S, C)` has `|S|` elements. Then for every representation `M` with
 `Tor₁^ℤ(M, C) = 0`, cup product with `u` is a bijection
 
-`Ĥ^r(G, M) → Ĥ^{r+2}(G, M ⊗ C)`
+`H^r(G, M) → H^{r+2}(G, M ⊗ C)`
 
 in every integer degree `r`
 (`TauCeti.TateCohomology.cup_bijective_of_forall_isPGroup_of_lTensor_injective`). This is
@@ -27,7 +27,8 @@ Ann. of Math. 65 (1957)) of Tate's theorem, the case `M = ℤ`
 (`TauCeti.TateCohomology.cup_bijective_of_forall_isPGroup`). As in
 `Rep.isZero_res_tensor_of_isZero_res`, the vanishing of `Tor₁^ℤ(M, C)` is stated without a `Tor`
 functor: `M ⊗ X → M ⊗ Y` is injective for every short exact sequence `0 → X → Y → C → 0` of
-abelian groups. It holds for instance whenever `M` or `C` is torsion-free.
+abelian groups. It holds for instance whenever `M` or `C` is torsion-free. Throughout this
+file, `H^n(G, M)` denotes Tate cohomology in the integer degree `n`.
 
 ## Proof
 
@@ -38,11 +39,11 @@ The class `u` sits in two short exact sequences, both split over `ℤ`: the spli
 `C(u)` is `I_G × C`, so `Tor₁^ℤ(M, C(u)) = Tor₁^ℤ(M, C) = 0`, and the theorem of Nakayama and Rim
 applies (`TauCeti.TateCohomology.isZero_res_tensor_splittingModule`). Since `M ⊗ ℤ[G]` is induced,
 both tensored sequences have bijective connecting maps `δ`. As `u` dies in `C(u)`, it is
-`δ (δ z)` for some `z ∈ Ĥ⁰(G, ℤ) = ℤ/|G|`, and the rule `x ∪ δ y = (-1)^r δ (x ∪ y)` for `ℤ`-split
+`δ (δ z)` for some `z ∈ H⁰(G, ℤ) = ℤ/|G|`, and the rule `x ∪ δ y = (-1)^r δ (x ∪ y)` for `ℤ`-split
 sequences (`TauCeti.TateCohomology.cup_δ_of_leftInverse`), applied twice, turns cup product with
 `u` into `x ↦ δ (δ (x ∪ z))`. Finally `z` is the class of an integer prime to `|G|`: a prime
 `p ∣ |G|` dividing it would make `u` restrict to zero on a subgroup of order `p`, whose `H²` it
-generates and which has `p` elements. Such an integer is invertible in `Ĥ⁰(G, ℤ) = ℤ/|G|`, so cup
+generates and which has `p` elements. Such an integer is invertible in `H⁰(G, ℤ) = ℤ/|G|`, so cup
 product with `z` is bijective, as cup product with the class of `1` is.
 
 ## Main statements
@@ -240,14 +241,14 @@ private theorem not_dvd_of_eq_zsmul [Finite G] (C : Rep ℤ G) (u : groupCohomol
   rw [Nat.card_unique, hP] at hcardP
   exact hp.one_lt.ne hcardP
 
-/-- The class `u` is `δ (δ z)` for the connecting maps `Ĥ⁰(ℤ) → Ĥ¹(I_G) → Ĥ²(C)` and the class
+/-- The class `u` is `δ (δ z)` for the connecting maps `H⁰(ℤ) → H¹(I_G) → H²(C)` and the class
 `z` of an invariant of `ℤ`. -/
 private theorem exists_eq_δ_δ (C : Rep ℤ G) (u : groupCohomology C 2) :
     ∃ y : (Rep.trivial ℤ G ℤ).ρ.invariants,
       ((_root_.TateCohomology.isoGroupCohomology 2).app C).inv u =
         _root_.TateCohomology.δ (shortExact_splittingSES C u) 1
           (_root_.TateCohomology.δ shortExact_augSES 0 (H0π _ y)) := by
-  -- `u` dies in `C(u)`, so it is `δ e` for some `e ∈ Ĥ¹(I_G)`; and `δ : Ĥ⁰(ℤ) → Ĥ¹(I_G)` is onto.
+  -- `u` dies in `C(u)`, so it is `δ e` for some `e ∈ H¹(I_G)`; and `δ : H⁰(ℤ) → H¹(I_G)` is onto.
   have hι : (tateCohomologyFunctor 2).map (splittingModuleIncl C u)
       (((_root_.TateCohomology.isoGroupCohomology 2).app C).inv u) = 0 := by
     have hnat := (ConcreteCategory.congr_hom
@@ -307,7 +308,7 @@ private theorem cup_δ_δ (C : Rep ℤ G) (u : groupCohomology C 2) {r : ℤ}
         rw [Units.smul_def, Units.smul_def, map_zsmul, smul_smul, ← Units.val_mul,
           Int.units_mul_self, Units.val_one, one_smul, cup_zero_right]
 
-/-- Cup product with an integer `m` prime to `|G|`, read as a class of `Ĥ⁰(G, ℤ) = ℤ/|G|`, is
+/-- Cup product with an integer `m` prime to `|G|`, read as a class of `H⁰(G, ℤ) = ℤ/|G|`, is
 bijective. -/
 private theorem cupH0_zsmul_bijective {r : ℤ} {m : ℤ}
     (hm : ∀ p : ℕ, p.Prime → p ∣ Nat.card G → ¬ (p : ℤ) ∣ m) :
@@ -364,7 +365,7 @@ Suppose that for every subgroup `S` of `G` of prime-power order
 
 Then for every representation `M` with `Tor₁^ℤ(M, C) = 0`, in the form that `M ⊗ X → M ⊗ Y` is
 injective for every short exact sequence `0 → X → Y → C → 0` of abelian groups, cup product with
-`u` is a bijection `Ĥ^r(G, M) → Ĥ^{r+2}(G, M ⊗ C)` in every integer degree `r`. -/
+`u` is a bijection `H^r(G, M) → H^{r+2}(G, M ⊗ C)` in every integer degree `r`. -/
 theorem cup_bijective_of_forall_isPGroup_of_lTensor_injective (C : Rep ℤ G)
     (u : groupCohomology C 2)
     (h1 : ∀ (p : ℕ) [Fact p.Prime] (S : Subgroup G), IsPGroup p S →
