@@ -23,10 +23,14 @@ which is the quantity that the flow actually controls.
 
 ## Main declarations
 
-* `TauCeti.IsAdaptedPseudoGradient.integrable_mvfderiv_apply_flow`: the rate of decrease of `f`
-  along a connecting orbit is integrable.
-* `TauCeti.IsAdaptedPseudoGradient.integral_neg_mvfderiv_apply_flow`: the energy identity
-  `∫ -df(X)(γ t) dt = f x - f y`.
+* `TauCeti.IsAdaptedPseudoGradient.integrable_mvfderiv_apply_flow_of_tendsto`: the rate of
+  decrease of `f` along an orbit on which `f` has limits at both ends is integrable.
+* `TauCeti.IsAdaptedPseudoGradient.integral_neg_mvfderiv_apply_flow_eq_sub_of_tendsto`: the energy
+  identity `∫ -df(X)(γ t) dt = a - b` when `f (γ t)` tends to `a` and `b` at `-∞` and `+∞`.
+* `TauCeti.IsAdaptedPseudoGradient.integrable_mvfderiv_apply_flow`: the same along an orbit
+  connecting two points at which `f` is continuous.
+* `TauCeti.IsAdaptedPseudoGradient.integral_neg_mvfderiv_apply_flow_eq_sub`: the energy identity
+  `∫ -df(X)(γ t) dt = f x - f y` for an orbit connecting `x` to `y`.
 
 ## References
 
@@ -48,24 +52,20 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 namespace IsAdaptedPseudoGradient
 
-variable (hX : IsAdaptedPseudoGradient f X) {x y p : M}
-  (hf : ∀ t, MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f (hX.flow t p)) (hfx : ContinuousAt f x)
-  (hfy : ContinuousAt f y) (hpx : p ∈ hX.flow.unstableSet x) (hpy : p ∈ hX.flow.stableSet y)
-include hX hf hfx hfy hpx hpy
+variable (hX : IsAdaptedPseudoGradient f X) {x y p : M} {a b : ℝ}
+  (hf : ∀ t, MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f (hX.flow t p))
+include hX hf
 
-/-- **The rate of decrease of `f` along a connecting orbit is integrable.** If the orbit of `p`
-converges to `x` as `t → -∞` and to `y` as `t → +∞`, `f` is differentiable along it and continuous
-at `x` and `y`, then `t ↦ df(X)(φ_t p)` is integrable on the
-real line. -/
-theorem integrable_mvfderiv_apply_flow :
+/-- **The rate of decrease of `f` along an orbit is integrable.** If `f` is differentiable along
+the orbit of `p` and `f (φ_t p)` has finite limits as `t → -∞` and as `t → +∞`, then
+`t ↦ df(X)(φ_t p)` is integrable on the real line. -/
+theorem integrable_mvfderiv_apply_flow_of_tendsto
+    (hbot : Tendsto (fun t ↦ f (hX.flow t p)) atBot (𝓝 a))
+    (htop : Tendsto (fun t ↦ f (hX.flow t p)) atTop (𝓝 b)) :
     Integrable fun t ↦ mvfderiv 𝓘(ℝ, E) f (hX.flow t p) (X (hX.flow t p)) := by
   -- The derivative of `t ↦ f (φ_t p)` is nonpositive, so it is integrable on each half-line, since
   -- `f (φ_t p)` has limits at both ends.
   have hderiv (t : ℝ) := hX.hasDerivAt_comp_flow (hf t)
-  have htop : Tendsto (fun t ↦ f (hX.flow t p)) atTop (𝓝 (f y)) :=
-    hfy.tendsto.comp (Flow.mem_stableSet.1 hpy)
-  have hbot : Tendsto (fun t ↦ f (hX.flow t p)) atBot (𝓝 (f x)) :=
-    hfx.tendsto.comp (Flow.mem_unstableSet.1 hpx)
   rw [← integrableOn_univ, ← Iio_union_Ici (a := (0 : ℝ)), integrableOn_union,
     integrableOn_Ici_iff_integrableOn_Ioi]
   refine ⟨?_, integrableOn_Ioi_deriv_of_nonpos' (fun t _ ↦ hderiv t)
@@ -78,17 +78,35 @@ theorem integrable_mvfderiv_apply_flow :
   · simpa [comp_def] using (hderiv (-s)).comp s (hasDerivAt_neg s)
   · simpa using hX.mvfderiv_apply_nonpos _
 
-/-- **The energy identity.** If the orbit of `p` converges to `x` as `t → -∞` and to `y` as
-`t → +∞`, `f` is differentiable along it and continuous at `x` and `y`, its energy
-`∫ -df(X)(φ_t p) dt` is the drop `f x - f y`. -/
-theorem integral_neg_mvfderiv_apply_flow :
-    ∫ t, -mvfderiv 𝓘(ℝ, E) f (hX.flow t p) (X (hX.flow t p)) = f x - f y := by
+/-- **The energy identity.** If `f` is differentiable along the orbit of `p` and `f (φ_t p)` tends
+to `a` as `t → -∞` and to `b` as `t → +∞`, then the energy `∫ -df(X)(φ_t p) dt` is `a - b`. -/
+theorem integral_neg_mvfderiv_apply_flow_eq_sub_of_tendsto
+    (hbot : Tendsto (fun t ↦ f (hX.flow t p)) atBot (𝓝 a))
+    (htop : Tendsto (fun t ↦ f (hX.flow t p)) atTop (𝓝 b)) :
+    ∫ t, -mvfderiv 𝓘(ℝ, E) f (hX.flow t p) (X (hX.flow t p)) = a - b := by
   -- The fundamental theorem of calculus on the real line.
-  rw [integral_neg,
-    integral_of_hasDerivAt_of_tendsto (fun t ↦ hX.hasDerivAt_comp_flow (hf t))
-      (hX.integrable_mvfderiv_apply_flow hf hfx hfy hpx hpy)
-      (hfx.tendsto.comp (Flow.mem_unstableSet.1 hpx))
-      (hfy.tendsto.comp (Flow.mem_stableSet.1 hpy)), neg_sub]
+  rw [integral_neg, integral_of_hasDerivAt_of_tendsto (fun t ↦ hX.hasDerivAt_comp_flow (hf t))
+    (hX.integrable_mvfderiv_apply_flow_of_tendsto hf hbot htop) hbot htop, neg_sub]
+
+/-- **The rate of decrease of `f` along a connecting orbit is integrable.** If the orbit of `p`
+converges to `x` as `t → -∞` and to `y` as `t → +∞`, `f` is differentiable along it and continuous
+at `x` and `y`, then `t ↦ df(X)(φ_t p)` is integrable on the real line. -/
+theorem integrable_mvfderiv_apply_flow
+    (hfx : ContinuousAt f x) (hfy : ContinuousAt f y)
+    (hp : p ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet y) :
+    Integrable fun t ↦ mvfderiv 𝓘(ℝ, E) f (hX.flow t p) (X (hX.flow t p)) :=
+  hX.integrable_mvfderiv_apply_flow_of_tendsto hf
+    (hfx.tendsto.comp (Flow.mem_unstableSet.1 hp.1)) (hfy.tendsto.comp (Flow.mem_stableSet.1 hp.2))
+
+/-- **The energy identity for a connecting orbit.** If the orbit of `p` converges to `x` as
+`t → -∞` and to `y` as `t → +∞`, `f` is differentiable along it and continuous at `x` and `y`, its
+energy `∫ -df(X)(φ_t p) dt` is the drop `f x - f y`. -/
+theorem integral_neg_mvfderiv_apply_flow_eq_sub
+    (hfx : ContinuousAt f x) (hfy : ContinuousAt f y)
+    (hp : p ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet y) :
+    ∫ t, -mvfderiv 𝓘(ℝ, E) f (hX.flow t p) (X (hX.flow t p)) = f x - f y :=
+  hX.integral_neg_mvfderiv_apply_flow_eq_sub_of_tendsto hf
+    (hfx.tendsto.comp (Flow.mem_unstableSet.1 hp.1)) (hfy.tendsto.comp (Flow.mem_stableSet.1 hp.2))
 
 end IsAdaptedPseudoGradient
 
