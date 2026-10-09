@@ -11,6 +11,7 @@ public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Transfer
 public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Evens.Kummer.Value
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.AnisotropicQuaternary
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.PadicTwo
+public import TauCeti.NumberTheory.Padics.Basic
 import TauCeti.Algebra.Group.Units.Basic
 
 /-!
@@ -54,11 +55,6 @@ local notation "finrank_eq_two" => QuadraticAlgebra.finrank_eq_two (-1 : ℚ_[2]
 
 local instance : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
 
-local instance : Nontrivial ℚ_[2] :=
-  @DivisionRing.toNontrivial _ (instFieldPadic 2).toDivisionRing
-
-local instance : StrongRankCondition ℚ_[2] := commRing_strongRankCondition _
-
 /-- The nonsquareness of `-1` supplies Mathlib's field structure on `ℚ_2(i)`. -/
 instance : Fact (¬ IsSquare (-1 : ℚ_[2])) := by
   refine ⟨?_⟩
@@ -81,13 +77,13 @@ def oneAddTwoI : DyadicSqrtNegOneˣ := Units.mk0 (1 + 2 * i) one_add_two_mul_i_n
 theorem coe_oneAddTwoI : (oneAddTwoI : DyadicSqrtNegOne) = 1 + 2 * i := (rfl)
 
 /-- The trace of `1 + 2i` is `2`. -/
-@[simp]
+@[simp↓] -- Compute before coercion and quadratic-algebra comparison lemmas apply.
 theorem trace_oneAddTwoI : Algebra.trace ℚ_[2] DyadicSqrtNegOne oneAddTwoI = 2 := by
   rw [QuadraticAlgebra.algebraTrace_eq_trace]
   norm_num [QuadraticAlgebra.trace_def, coe_oneAddTwoI]
 
 /-- The norm of `1 + 2i` is `5`. -/
-@[simp]
+@[simp↓] -- Compute before coercion and quadratic-algebra comparison lemmas apply.
 theorem norm_oneAddTwoI : Algebra.norm ℚ_[2] (oneAddTwoI : DyadicSqrtNegOne) = 5 := by
   rw [QuadraticAlgebra.algebraNorm_eq_norm]
   norm_num [QuadraticAlgebra.norm_def, coe_oneAddTwoI]
