@@ -36,6 +36,7 @@ Mathlib's differentiation theorem along closed balls with moving centres.
 * `TauCeti.dyadicIndex_add_one`, `TauCeti.dyadicCube_subset_dyadicCube`,
   `TauCeti.dyadicCube_subset_or_disjoint`, `TauCeti.disjoint_dyadicCube`: the nesting of the
   dyadic levels.
+* `TauCeti.closure_dyadicCube`: the closure of a dyadic cube is a closed sup-norm ball.
 * `TauCeti.volume_dyadicCube`, `TauCeti.volume_dyadicCube_add_one`: a cube of level `k` has
   volume `(2ᵏ)ⁿ`, so its parent is `2ⁿ` times larger.
 * `TauCeti.ae_tendsto_setLAverage_dyadicCube`: the Lebesgue differentiation theorem along dyadic
@@ -154,6 +155,14 @@ theorem dyadicCube_ae_eq_closedBall (k : ℤ) (m : ι → ℤ) :
     dyadicCube k m =ᵐ[volume] closedBall (fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k) (2 ^ k / 2) := by
   rw [closedBall_dyadicCenter, dyadicCube_eq_pi, volume_pi]
   exact Measure.pi_Ico_ae_eq_pi_Icc
+
+/-- The closure of a dyadic cube is the closed sup-norm ball around its centre whose radius is half
+its side length. -/
+theorem closure_dyadicCube (k : ℤ) (m : ι → ℤ) :
+    closure (dyadicCube k m) = closedBall (fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k) (2 ^ k / 2) := by
+  have h2 : (0 : ℝ) < 2 ^ k := zpow_pos two_pos k
+  rw [closedBall_dyadicCenter, dyadicCube_eq_pi, closure_pi_set]
+  exact pi_congr rfl fun i _ => closure_Ico (by nlinarith)
 
 /-- A dyadic cube of level `k` has volume `(2ᵏ)ⁿ`. -/
 theorem volume_dyadicCube (k : ℤ) (m : ι → ℤ) :
