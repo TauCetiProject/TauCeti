@@ -70,10 +70,10 @@ theorem exists_rootSubgroupPoints_inl_mulVec_single_sub (i : Fin n)
             Matrix (Fin (dimension n)) (Fin (dimension n)) A) *ᵥ Pi.single a 1 -
           Pi.single a 1 =
         (toAdd u * ((c : ℤ) : A)) • Pi.single a' 1 := by
-  obtain ⟨c, hc⟩ := (polarization n).exists_typeDSpinRep_serreE_exteriorBasis
-    (polarizationBasis n) hn i (signSet n a) ha
-  refine ⟨c, fun u => rootSubgroupPoints_mulVec_single_sub_of_eq n hn (.inl i) ?_ A u⟩
-  simpa only [TauCeti.serreRootGenerator_inl, coe_latticeBasis, ha'] using hc
+  refine ⟨1, fun u => rootSubgroupPoints_mulVec_single_sub_of_eq n hn (.inl i) ?_ A u⟩
+  simpa only [TauCeti.serreRootGenerator_inl, coe_latticeBasis, ha', one_smul] using
+    (polarization n).typeDSpinRep_serreE_exteriorBasis
+      (polarizationBasis n) hn i (signSet n a) ha
 
 /-- At simple-coroot weight `1`, the negative root subgroup moves a spin coordinate vector
 by the reflected coordinate vector, with a fixed integral-unit sign at every parameter. -/
@@ -87,9 +87,9 @@ theorem exists_rootSubgroupPoints_inr_mulVec_single_sub (i : Fin n)
             Matrix (Fin (dimension n)) (Fin (dimension n)) A) *ᵥ Pi.single a 1 -
           Pi.single a 1 =
         (toAdd u * ((c : ℤ) : A)) • Pi.single a' 1 := by
-  obtain ⟨c, hc⟩ := (polarization n).exists_typeDSpinRep_serreF_exteriorBasis
-    (polarizationBasis n) hn i (signSet n a) ha
-  refine ⟨c, fun u => rootSubgroupPoints_mulVec_single_sub_of_eq n hn (.inr i) ?_ A u⟩
-  simpa only [TauCeti.serreRootGenerator_inr, coe_latticeBasis, ha'] using hc
+  refine ⟨1, fun u => rootSubgroupPoints_mulVec_single_sub_of_eq n hn (.inr i) ?_ A u⟩
+  simpa only [TauCeti.serreRootGenerator_inr, coe_latticeBasis, ha', one_smul] using
+    (polarization n).typeDSpinRep_serreF_exteriorBasis
+      (polarizationBasis n) hn i (signSet n a) ha
 
 end TauCeti.TypeDSpinCarrier

@@ -112,6 +112,8 @@ theorem basisEraseSign_eq_neg_one_pow_card_filter_lt {I : Type w} [LinearOrder I
   let n := (s.erase i).card
   have hsCard : s.card = n + 1 := by
     simpa [n] using (Finset.card_erase_add_one hi).symm
+  -- Enumerate `s` in increasing order. The position `k` of `i` counts precisely the entries
+  -- which the shuffle crosses when it moves the singleton `{i}` to the front.
   let e : Fin (n + 1) ↪o I := s.orderEmbOfFin hsCard
   let k : Fin (n + 1) := (s.orderIsoOfFin hsCard).symm ⟨i, hi⟩
   have hek : e k = i := by
@@ -134,6 +136,8 @@ theorem basisEraseSign_eq_neg_one_pow_card_filter_lt {I : Type w} [LinearOrder I
   let p : Equiv.Perm (Fin (1 + n)) := Set.powersetCard.permOfDisjoint hdisj
   let c : Fin (1 + n) ≃ Fin (n + 1) := finCongr (Nat.add_comm 1 n)
   let p' : Equiv.Perm (Fin (n + 1)) := c.symm.trans (p.trans c)
+  -- After reconciling the two cardinality presentations, this shuffle is the inverse cycle
+  -- which moves position `k` to the front and shifts the preceding positions one step right.
   have hec : (fun q ↦ e (c q)) =
       (Set.powersetCard.disjUnion hdisj).val.orderEmbOfFin
         (Set.powersetCard.disjUnion hdisj).prop := by
@@ -208,6 +212,8 @@ theorem basisEraseSign_eq_neg_one_pow_card_filter_lt {I : Type w} [LinearOrder I
   change Equiv.Perm.sign p = _
   rw [← hsign, hp, Equiv.Perm.sign_symm, Fin.sign_cycleRange]
   congr 1
+  -- The initial segment below `k` is order-isomorphic to the elements of `s` strictly below `i`,
+  -- so its cardinality is the exponent in the claimed sign.
   have himage : Finset.image e (Finset.Iio k) = s.filter (fun j ↦ j < i) := by
     ext x
     simp only [Finset.mem_image, Finset.mem_Iio, Finset.mem_filter]
