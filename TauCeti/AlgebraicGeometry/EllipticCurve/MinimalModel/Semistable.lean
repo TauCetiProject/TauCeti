@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 public import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
 
@@ -123,6 +122,14 @@ theorem not_hasAdditiveReduction_minimal_iff_exists_isUnit (W : WeierstrassCurve
     rwa [valuation_Δ_eq_of_isMinimal_smul R _ hD, valuation_c₄_eq_of_isMinimal_smul R _ hD]
 
 /-! ### Base change -/
+
+/-- The base change of an elliptic curve is elliptic. Mathlib's instance is stated for
+`WeierstrassCurve.map`, which instance search does not see through the plain `def`
+`WeierstrassCurve.baseChange`; this local copy avoids importing the affine point theory that
+carries the global one. -/
+local instance isElliptic_baseChange {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
+    (W : WeierstrassCurve A) [W.IsElliptic] : (W.baseChange B).IsElliptic :=
+  inferInstanceAs (W.map _).IsElliptic
 
 section BaseChange
 
