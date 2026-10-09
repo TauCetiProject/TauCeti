@@ -91,6 +91,7 @@ theorem weilDegreeAbelianization_mk (w : WeilGroup K) :
 
 /-- **Compatibility of degree and the unramified coordinate.**  The square formed by
 `W_K^{ab} → G_K^{ab}`, the abelianized Weil degree, and `ℤ → ℤ̂` commutes. -/
+@[simp]
 theorem unramifiedCoordinate_weilToAbsoluteAbelianization
     (w : TopologicalAbelianization (WeilGroup K)) :
     unramifiedCoordinate K (weilToAbsoluteAbelianization K w) =
@@ -107,6 +108,7 @@ def integralUnramifiedSubgroup : Subgroup (Field.absoluteGaloisGroupAbelianizati
 
 /-- Membership in the integral-unramified subgroup means exactly that the unramified coordinate
 belongs to the image of `ℤ → ℤ̂`. -/
+@[simp]
 theorem mem_integralUnramifiedSubgroup_iff
     (x : Field.absoluteGaloisGroupAbelianization K) :
     x ∈ integralUnramifiedSubgroup K ↔
@@ -120,24 +122,16 @@ theorem range_weilToAbsoluteAbelianization :
   ext x
   constructor
   · rintro ⟨w, rfl⟩
-    rw [mem_integralUnramifiedSubgroup_iff]
-    change unramifiedCoordinate K (weilToAbsoluteAbelianization K w) ∈ _
-    rw [unramifiedCoordinate_weilToAbsoluteAbelianization]
-    exact ⟨weilDegreeAbelianization K w, rfl⟩
+    exact ⟨weilDegreeAbelianization K w,
+      (unramifiedCoordinate_weilToAbsoluteAbelianization K w).symm⟩
   · intro hx
     obtain ⟨σ, rfl⟩ := QuotientGroup.mk_surjective x
     have hσ : σ ∈ localWeilGroup K :=
       mem_localWeilGroup_iff_unramifiedCoordinate.2
         ((mem_integralUnramifiedSubgroup_iff K _).1 hx)
-    let w : WeilGroup K := (weilGroupEquivLocalWeilGroup K).symm ⟨σ, hσ⟩
-    exact ⟨(w : TopologicalAbelianization (WeilGroup K)), by
-      change weilToAbsoluteAbelianization K
-        (w : TopologicalAbelianization (WeilGroup K)) = _
-      rw [weilToAbsoluteAbelianization_mk]
-      exact congrArg (fun g : Field.absoluteGaloisGroup K ↦
-        (g : Field.absoluteGaloisGroupAbelianization K))
-        (weilToAbsolute_weilGroupEquivLocalWeilGroup_symm (K := K)
-          (⟨σ, hσ⟩ : localWeilGroup K))⟩
+    refine ⟨((weilGroupEquivLocalWeilGroup K).symm ⟨σ, hσ⟩ : WeilGroup K), ?_⟩
+    simp only [ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass,
+      weilToAbsoluteAbelianization_mk, weilToAbsolute_weilGroupEquivLocalWeilGroup_symm]
 
 /-- The map from `W_K^{ab}` to its image in `G_K^{ab}`, with codomain restricted to the classes
 having integral unramified coordinate. -/
@@ -160,13 +154,9 @@ theorem coe_weilToIntegralUnramified
 /-- The abelianized Weil group surjects onto the subgroup of classes with integral unramified
 coordinate. -/
 theorem surjective_weilToIntegralUnramified :
-    Function.Surjective (weilToIntegralUnramified K) := fun x ↦ by
-  have hx : (x : Field.absoluteGaloisGroupAbelianization K) ∈
-      (weilToAbsoluteAbelianization K).toMonoidHom.range := by
-    rw [range_weilToAbsoluteAbelianization]
-    exact x.2
-  obtain ⟨w, hw⟩ := hx
-  exact ⟨w, Subtype.ext hw⟩
+    Function.Surjective (weilToIntegralUnramified K) :=
+  (Set.surjective_codRestrict _).2 <| by
+    rw [← MonoidHom.coe_range, range_weilToAbsoluteAbelianization]
 
 /-- The induced map `W_K^{ab} → G_K^{ab}` has dense image.  Equivalently, classes with integral
 unramified coordinate are dense in `G_K^{ab}`. -/
