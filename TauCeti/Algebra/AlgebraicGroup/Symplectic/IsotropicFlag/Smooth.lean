@@ -43,8 +43,10 @@ private instance instFormallySmoothCoordinateHopfAlgebra :
     Algebra.FormallySmooth R (coordinateHopfAlgebra R m) := by
   apply Algebra.FormallySmooth.of_comp_surjective
   intro B _ _ I hI f
+  let : IsLocalHom (Ideal.Quotient.mk I) :=
+    ⟨fun _ hx ↦ (IsNilpotent.isUnit_quotient_mk_iff (I := I) ⟨2, hI⟩).mp hx⟩
   obtain ⟨t, ht⟩ :=
-    GLSymplecticFin.IsotropicFlag.map_quotient_mk_surjective_of_isNilpotent I ⟨2, hI⟩
+    GLSymplecticFin.IsotropicFlag.map_quotient_mk_surjective I
       (pointsMulEquiv R m (A := B ⧸ I) (toConv f))
   let g : WithConv (coordinateHopfAlgebra R m →ₐ[R] B) :=
     (pointsMulEquiv R m (A := B)).symm t

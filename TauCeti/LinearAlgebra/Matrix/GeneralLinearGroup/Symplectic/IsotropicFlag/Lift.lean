@@ -14,8 +14,9 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Li
 
 A symplectic matrix preserving the standard complete isotropic flag factors as
 `diag(P, P⁻ᵀ) [1 T; 0 1]`, with `P` upper triangular and invertible and `T` symmetric.
-Both parameters lift modulo nilpotent ideals, so the flag subgroup has the infinitesimal
-lifting property over every commutative ring, including characteristic two.
+Both parameters lift along quotient maps that reflect units, including quotients by nilpotent
+ideals, so the flag subgroup has the infinitesimal lifting property over every commutative
+ring, including characteristic two.
 
 The factorization reuses `GLSymplecticFin.exists_gaussian_decomposition_of_isUnit_toBlocks₁₁`.
 
@@ -36,7 +37,7 @@ noncomputable section
 variable {m : ℕ} {R : Type*} [CommRing R]
 
 /-- An upper-triangular general-linear Levi element preserves the isotropic flag. -/
-theorem leviHom_mem_matrixSubgroup (P : upperTriangularGroup (Fin m) R) :
+@[simp↓] theorem leviHom_mem_matrixSubgroup (P : upperTriangularGroup (Fin m) R) :
     leviHom P.val ∈ matrixSubgroup m := by
   rw [mem_matrixSubgroup_iff]
   have hinv := UpperTriangularGroup.isUpperTriangular P⁻¹
@@ -48,7 +49,7 @@ theorem leviHom_mem_matrixSubgroup (P : upperTriangularGroup (Fin m) R) :
     fun i j hij ↦ hinv hij, fun _ _ ↦ trivial⟩
 
 /-- Every symmetric upper unipotent block preserves the isotropic flag. -/
-theorem upperUnipotent_mem_matrixSubgroup (T : Matrix (Fin m) (Fin m) R)
+@[simp↓] theorem upperUnipotent_mem_matrixSubgroup (T : Matrix (Fin m) (Fin m) R)
     (hT : T.IsSymm) : upperUnipotent T hT ∈ matrixSubgroup m := by
   rw [mem_matrixSubgroup_iff]
   simp only [coe_upperUnipotent, Matrix.submatrix_apply,
@@ -122,14 +123,14 @@ theorem exists_leviHom_mul_upperUnipotent (g : matrixSubgroup m (A := R)) :
   refine ⟨⟨P, hP⟩, T, hT, ?_⟩
   simpa only [hSzero, lowerUnipotent_zero, one_mul] using hfactor
 
-/-- Reduction modulo a nilpotent ideal is surjective on the symplectic isotropic flag
-subgroup. No invertibility of two is required. -/
-theorem map_quotient_mk_surjective_of_isNilpotent (I : Ideal R) (hI : IsNilpotent I) :
+/-- Reduction along a quotient map that reflects units is surjective on the symplectic
+isotropic flag subgroup. No invertibility of two is required. -/
+theorem map_quotient_mk_surjective (I : Ideal R) [IsLocalHom (Ideal.Quotient.mk I)] :
     Function.Surjective (map m (Ideal.Quotient.mk I)) := by
   classical
   intro g
   obtain ⟨P, T, hT, hg⟩ := exists_leviHom_mul_upperUnipotent g
-  obtain ⟨Q, hQ⟩ := UpperTriangularGroup.map_quotient_mk_surjective_of_isNilpotent I hI P
+  obtain ⟨Q, hQ⟩ := UpperTriangularGroup.map_quotient_mk_surjective I P
   choose a ha using fun i j ↦ Ideal.Quotient.mk_surjective (T i j)
   let U : Matrix (Fin m) (Fin m) R := Matrix.of fun i j ↦ if i ≤ j then a i j else a j i
   have hU : U.IsSymm := by

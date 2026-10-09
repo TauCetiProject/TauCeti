@@ -6,14 +6,13 @@ Authors: Codex
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
-public import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 
 /-!
 # Lifting upper-triangular invertible matrices
 
-Upper-triangular invertible matrices lift modulo nilpotent ideals. This is the diagonal-block
-lifting step for flag stabilizers: lift only the entries on and above the diagonal, then use
-nilpotent invariance of invertibility of the determinant.
+Upper-triangular invertible matrices lift along quotient maps that reflect units. This is the
+diagonal-block lifting step for flag stabilizers: lift only the entries on and above the
+diagonal, then reflect invertibility of the determinant along the quotient map.
 
 The entrywise construction follows
 `Matrix.SpecialLinearGroup.exists_isUpperTriangular_map_eq_of_isNilpotent` in
@@ -28,9 +27,9 @@ open Matrix
 
 variable {n : Type*} [Fintype n] [LinearOrder n] {R : Type*} [CommRing R]
 
-/-- Reduction modulo a nilpotent ideal is surjective on the upper-triangular general linear
-subgroup, including for an empty index type. -/
-theorem map_quotient_mk_surjective_of_isNilpotent (I : Ideal R) (hI : IsNilpotent I) :
+/-- Reduction along a quotient map that reflects units is surjective on the upper-triangular
+general linear subgroup, including for an empty index type. -/
+theorem map_quotient_mk_surjective (I : Ideal R) [IsLocalHom (Ideal.Quotient.mk I)] :
     Function.Surjective (map (m := n) (Ideal.Quotient.mk I)) := by
   classical
   intro g
@@ -42,7 +41,7 @@ theorem map_quotient_mk_surjective_of_isNilpotent (I : Ideal R) (hI : IsNilpoten
     · simpa only [M, Matrix.map_apply, Matrix.of_apply, ite_eq_left hji, map_zero] using
         ((mem_iff.mp g.2) hji).symm
     · simp only [M, Matrix.map_apply, Matrix.of_apply, ite_eq_right hji, ha]
-  have hunit : IsUnit M.det := (IsNilpotent.isUnit_quotient_mk_iff hI).mp (by
+  have hunit : IsUnit M.det := (isUnit_map_iff (Ideal.Quotient.mk I) M.det).mp (by
     rw [RingHom.map_det, RingHom.mapMatrix_apply, hM]
     exact (Matrix.isUnit_iff_isUnit_det _).mp g.val.isUnit)
   let t : GL n R := Matrix.GeneralLinearGroup.mk'' M hunit
