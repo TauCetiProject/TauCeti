@@ -63,7 +63,6 @@ variable [CompleteSpace E] {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 
 
 /-- A bounded operator does not see the component of a vector in its kernel: it agrees with its
 composition with the orthogonal projection onto the orthogonal complement of its kernel. -/
-@[simp]
 theorem apply_starProjection_orthogonal_ker (u : E →L[𝕜] G) (x : E) :
     u (u.kerᗮ.starProjection x) = u x := by
   have hx : x - u.kerᗮ.starProjection x ∈ u.ker :=
