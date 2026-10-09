@@ -91,7 +91,7 @@ def powerXOfLECokernelQuotientIso (hi : i ≤ n) :
 
 /-- The projection followed by the quotient comparison is the scalar-extension counit
 followed by the ordinary cyclic quotient projection. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem powerXOfLECokernelQuotientIso_π_hom (hi : i ≤ n) :
     cokernelπ (AdjoinRoot.mk (X ^ n : R[X])) (powerXOfLE R hi) ≫
       (powerXOfLECokernelQuotientIso R hi).hom =
@@ -116,18 +116,18 @@ theorem powerXOfLECokernelQuotientIso_π_hom (hi : i ≤ n) :
       (ModuleCat.extendScalars (AdjoinRoot.mk (X ^ n : R[X]))) ≫ ·)
       (rootPowHomCokernelIso_π_hom R n i))
 
-/-- The reduced polynomial factorization has the cyclic right-module cokernel `A/(x ^ i)`,
-viewed as a left module through the commutativity isomorphism `A ≃ Aᵐᵒᵖ`. -/
-def powerXOfLECokernelIso (hi : i ≤ n) :
-    ((cokernelFunctor (AdjoinRoot.mk (X ^ n : R[X]))).obj
-      (powerXOfLE R hi)).obj ≅
+/-- The quotient by `x ^ i` identifies with the cyclic right module, viewed as a left module
+by restriction along the commutativity isomorphism `A ≃ Aᵐᵒᵖ`. -/
+private def rootPowQuotientCyclicIso (n i : ℕ) :
+    ModuleCat.of (AdjoinRoot (X ^ n : R[X]))
+      (AdjoinRoot (X ^ n : R[X]) ⧸
+        Ideal.span {AdjoinRoot.root (X ^ n : R[X]) ^ i}) ≅
         (ModuleCat.restrictScalars (RingEquiv.toOpposite (AdjoinRoot (X ^ n : R[X]))).toRingHom).obj
           (FGModuleCat.cyclicModule (AdjoinRoot.root (X ^ n : R[X]) ^ i)).obj := by
   let A := AdjoinRoot (X ^ n : R[X])
   let a : A := AdjoinRoot.root (X ^ n : R[X]) ^ i
   let e := Ideal.quotientEquivAlg (Ideal.span {a}) (Ideal.span {op a})
     (AlgEquiv.toOpposite A A) (by simp [Ideal.map_span])
-  refine powerXOfLECokernelQuotientIso R hi ≪≫ ?_
   let e' : (A ⧸ Ideal.span {a}) ≃ₗ[A]
       (ModuleCat.restrictScalars (RingEquiv.toOpposite A).toRingHom).obj
         (FGModuleCat.cyclicModule a).obj :=
@@ -145,6 +145,23 @@ def powerXOfLECokernelIso (hi : i ≤ n) :
         congr 1 }
   exact e'.toModuleIso
 
+/-- The quotient-to-cyclic comparison takes a representative to its opposite class. -/
+private theorem rootPowQuotientCyclicIso_hom_mk (n i : ℕ)
+    (a : AdjoinRoot (X ^ n : R[X])) :
+    (rootPowQuotientCyclicIso R n i).hom (Submodule.Quotient.mk a) =
+      Submodule.Quotient.mk (op a) := by
+  exact Ideal.quotientEquivAlg_mk _
+    (AlgEquiv.toOpposite (AdjoinRoot (X ^ n : R[X])) (AdjoinRoot (X ^ n : R[X]))) _ a
+
+/-- The reduced polynomial factorization has the cyclic right-module cokernel `A/(x ^ i)`,
+viewed as a left module through the commutativity isomorphism `A ≃ Aᵐᵒᵖ`. -/
+def powerXOfLECokernelIso (hi : i ≤ n) :
+    ((cokernelFunctor (AdjoinRoot.mk (X ^ n : R[X]))).obj
+      (powerXOfLE R hi)).obj ≅
+        (ModuleCat.restrictScalars (RingEquiv.toOpposite (AdjoinRoot (X ^ n : R[X]))).toRingHom).obj
+          (FGModuleCat.cyclicModule (AdjoinRoot.root (X ^ n : R[X]) ^ i)).obj :=
+  powerXOfLECokernelQuotientIso R hi ≪≫ rootPowQuotientCyclicIso R n i
+
 /-- The right cyclic-module comparison sends an odd-module representative to the class of
 its scalar-extension counit image. -/
 theorem powerXOfLECokernelIso_hom_cokernelπ (hi : i ≤ n)
@@ -154,18 +171,11 @@ theorem powerXOfLECokernelIso_hom_cokernelπ (hi : i ≤ n)
       (cokernelπ (AdjoinRoot.mk (X ^ n : R[X])) (powerXOfLE R hi) a) =
         Submodule.Quotient.mk (op (Functor.OplaxMonoidal.η
           (ModuleCat.extendScalars (AdjoinRoot.mk (X ^ n : R[X]))) a)) := by
-  let e := Ideal.quotientEquivAlg
-    (Ideal.span {AdjoinRoot.root (X ^ n : R[X]) ^ i})
-    (Ideal.span {op (AdjoinRoot.root (X ^ n : R[X]) ^ i)})
-    (AlgEquiv.toOpposite (AdjoinRoot (X ^ n : R[X])) (AdjoinRoot (X ^ n : R[X])))
-    (by simp [Ideal.map_span])
   have h := ConcreteCategory.congr_hom (powerXOfLECokernelQuotientIso_π_hom R hi) a
   simp only [ConcreteCategory.comp_apply] at h
-  -- The final isomorphism reuses this quotient equivalence, with the target action transported
-  -- to the explicitly restricted right-module carrier.
-  change e ((powerXOfLECokernelQuotientIso R hi).hom
-    (cokernelπ (AdjoinRoot.mk (X ^ n : R[X])) (powerXOfLE R hi) a)) = _
+  dsimp only [powerXOfLECokernelIso, Iso.trans_hom]
+  simp only [ConcreteCategory.comp_apply]
   rw [h]
-  rfl
+  exact rootPowQuotientCyclicIso_hom_mk R n i _
 
 end TauCeti.MatrixFactorization
