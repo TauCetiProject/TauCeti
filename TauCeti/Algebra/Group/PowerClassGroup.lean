@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.Algebra.Group.PowMonoidHom
 
 /-!
@@ -28,6 +29,8 @@ the subgroup is Mathlib's `Subgroup.square G`, by `TauCeti.square_eq_range_powMo
   carries `n`th powers to `n`th powers. It is functorial (`TauCeti.powerClassMap_id`,
   `TauCeti.powerClassMap_comp`); for a field extension `L/K` and `f` the map `Kˣ →* Lˣ` it is the
   map of power classes along which Kummer theory is natural in the field.
+* `TauCeti.quotSMulTopPowerClassEquiv`: written additively, `G ⧸ Gⁿ` is the reduction
+  `G ⧸ nG = QuotSMulTop n G` of `G` as an abelian group.
 -/
 
 public section
@@ -122,5 +125,41 @@ theorem powerClassMap_comp {P : Type*} [CommGroup P] (f : G →* H) (f' : H →*
     powerClassMap n (f'.comp f) = (powerClassMap n f').comp (powerClassMap n f) := by
   ext g
   simp
+
+/-! ### Additive reduction -/
+
+open scoped Pointwise
+
+/-- In the additive group of a commutative group, the subgroup of integer multiples by `n` is the
+additive form of the subgroup of `n`th powers. -/
+theorem zsmulTop_toAddSubgroup_eq_powerSubgroup :
+    ((n : ℤ) • (⊤ : Submodule ℤ (Additive G))).toAddSubgroup =
+      (powerSubgroup G n).toAddSubgroup := by
+  ext x
+  simp only [Submodule.mem_toAddSubgroup, Submodule.mem_smul_pointwise_iff_exists,
+    Submodule.mem_top, true_and, Additive.mem_toAddSubgroup, mem_powerSubgroup_iff]
+  constructor
+  · rintro ⟨y, rfl⟩
+    exact ⟨y.toMul, by simp [natCast_zsmul]⟩
+  · rintro ⟨y, hy⟩
+    exact ⟨Additive.ofMul y, by simpa [natCast_zsmul] using congrArg Additive.ofMul hy⟩
+
+/-- **Reduction modulo `n` is the group of `n`th power classes**: for a commutative group `G`,
+written additively, `G ⧸ nG ≃ G ⧸ Gⁿ`, the class of `x` going to the power class of `x`
+(`TauCeti.quotSMulTopPowerClassEquiv_mk`). -/
+noncomputable def quotSMulTopPowerClassEquiv :
+    QuotSMulTop (n : ℤ) (Additive G) ≃+ Additive (powerClassQuotient G n) :=
+  (QuotientAddGroup.quotientAddEquivOfEq
+      ((zsmulTop_toAddSubgroup_eq_powerSubgroup n).trans
+        (by rw [MonoidHom.coe_toAdditive_ker, ker_powerClassHom]))).trans
+    (QuotientAddGroup.quotientKerEquivOfSurjective (MonoidHom.toAdditive (powerClassHom G n))
+      (powerClassHom_surjective G n))
+
+/-- The reduction/power-class equivalence sends the class of `x` to its power class. -/
+@[simp]
+theorem quotSMulTopPowerClassEquiv_mk (x : Additive G) :
+    quotSMulTopPowerClassEquiv n (Submodule.Quotient.mk x) =
+      Additive.ofMul (powerClassHom G n x.toMul) :=
+  (rfl)
 
 end TauCeti
