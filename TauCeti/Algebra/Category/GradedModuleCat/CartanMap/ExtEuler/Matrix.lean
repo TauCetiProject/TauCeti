@@ -247,12 +247,11 @@ theorem isUnit_det_gradedCartanMatrix
     (h : IsGradedEulerAdmissibleOn.{uA} (k := k) (e := GradedModuleCat.shift 𝒜)
       (gradedFiniteModules 𝒜) (gradedFiniteModules 𝒜)) :
     IsUnit (gradedCartanMatrix 𝒜 bP (gradedSimpleClassBasis S he he₀ hne hself hS)).det := by
-  have hdet := congrArg Matrix.det
+  have hdet := Matrix.isUnit_det_of_right_inverse
     (gradedCartanMatrix_map_invert_transpose_mul_gradedExtEulerMatrix_eq_one S he he₀ hI hne
       hself hS bP hbP h)
-  rw [Matrix.det_mul, Matrix.det_transpose, Matrix.det_one, ← AlgEquiv.mapMatrix_apply,
-    ← AlgEquiv.map_det] at hdet
-  exact (isUnit_map_iff (LaurentPolynomial.invert (R := ℤ)) _).1 (IsUnit.of_mul_eq_one _ hdet)
+  rw [Matrix.det_transpose, ← AlgEquiv.mapMatrix_apply, ← AlgEquiv.map_det] at hdet
+  exact (isUnit_map_iff (LaurentPolynomial.invert (R := ℤ)) _).1 hdet
 
 end Simple
 
