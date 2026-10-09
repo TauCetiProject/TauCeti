@@ -73,6 +73,10 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
 * `TauCeti.absoluteGaloisGroupExtendEquiv K L σ hU`: for a subgroup `U` of
   `Field.absoluteGaloisGroup K` that is the image of `absoluteGaloisGroupExtend K L σ`, the
   isomorphism of topological groups `Field.absoluteGaloisGroup L ≃ₜ* U`.
+* `TauCeti.absoluteGaloisGroupRestrictSubgroupEquiv K L σ hU`: for such a `U`, the restriction
+  isomorphism `U ≃ₜ* Gal(Kˢ/σ(L))` onto the subgroup of Tau Ceti's `G_K` fixing `σ(L)`.
+* `TauCeti.absoluteGaloisGroupExtendQuotientEquiv K L σ hU`: for such a `U` and a finite normal
+  `L/K`, the isomorphism `Field.absoluteGaloisGroup K ⧸ U ≃* Gal(L/K)`.
 
 ## Main results
 
@@ -89,9 +93,11 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
 * `TauCeti.mem_range_absoluteGaloisGroupExtend_iff`,
   `TauCeti.isOpen_range_absoluteGaloisGroupExtend`,
   `TauCeti.index_range_absoluteGaloisGroupExtend`: the image of `G_L` in Mathlib's `G_K` is the
-  open subgroup `galoisSubgroup K L σ`, of index `[L : K]`.
-* `TauCeti.quotientFixingSubgroupFieldRangeEquiv_mk`: the isomorphism sends the class of `g`
-  to `σ.restrictNormalHom g`.
+  open subgroup `galoisSubgroup K L σ`, of index `[L : K]`; its image under the restriction
+  isomorphism is the subgroup fixing `σ(L)` (`TauCeti.map_range_absoluteGaloisGroupExtend`).
+* `TauCeti.quotientFixingSubgroupFieldRangeEquiv_mk`,
+  `TauCeti.absoluteGaloisGroupExtendQuotientEquiv_mk`: the two quotient isomorphisms send the
+  class of `g` to its restriction along `σ`.
 * `TauCeti.exists_galoisOpenNormalSubgroup_eq`: every open normal subgroup of `G_K` is
   `galoisOpenNormalSubgroup K E E.val` for a finite Galois intermediate field `E` of `Kˢ/K`.
 * `TauCeti.fixingOpenNormalSubgroup_eq_galoisOpenNormalSubgroup`: for a finite Galois `L/K`,
@@ -329,6 +335,44 @@ theorem coe_absoluteGaloisGroupExtendEquiv_apply {U : Subgroup (Field.absoluteGa
   unfold absoluteGaloisGroupExtendEquiv
   exact congrArg Subtype.val (ContinuousMonoidHom.equivRangeOfIsEmbedding_apply _ _ g)
 
+/-- **The image of `G_L` in Tau Ceti's model of `G_K` is the subgroup fixing `σ(L)`**: the
+restriction isomorphism `absoluteGaloisGroupRestrictEquiv K` carries the image of
+`absoluteGaloisGroupExtend K L σ` onto `galoisSubgroup K L σ`. -/
+theorem map_range_absoluteGaloisGroupExtend :
+    (absoluteGaloisGroupExtend K L σ).range.map (absoluteGaloisGroupRestrictEquiv K :
+      Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K) = σ.fieldRange.fixingSubgroup := by
+  ext h
+  rw [Subgroup.mem_map]
+  refine ⟨fun ⟨g, hg, hgh⟩ ↦ hgh ▸ (mem_range_absoluteGaloisGroupExtend_iff K L σ).1 hg,
+    fun hh ↦ ⟨(absoluteGaloisGroupRestrictEquiv K).symm h,
+      (mem_range_absoluteGaloisGroupExtend_iff K L σ).2 ?_,
+      (absoluteGaloisGroupRestrictEquiv K).apply_symm_apply h⟩⟩
+  rw [ContinuousMulEquiv.apply_symm_apply]
+  exact hh
+
+/-- **`G_L` in the two models of `G_K`**: if `U` is the image of `G_L` in `G_K` along `σ`, the
+restriction isomorphism `absoluteGaloisGroupRestrictEquiv K` carries `U` onto the subgroup of
+`Gal(Kˢ/K)` fixing `σ(L)`, as topological groups. -/
+def absoluteGaloisGroupRestrictSubgroupEquiv {U : Subgroup (Field.absoluteGaloisGroup K)}
+    (hU : (absoluteGaloisGroupExtend K L σ).range = U) : U ≃ₜ* σ.fieldRange.fixingSubgroup where
+  toMulEquiv := ((absoluteGaloisGroupRestrictEquiv K : Field.absoluteGaloisGroup K ≃*
+      AbsoluteGaloisGroup K).subgroupMap U).trans
+    (MulEquiv.subgroupCongr (hU ▸ map_range_absoluteGaloisGroupExtend K L σ))
+  continuous_toFun :=
+    ((absoluteGaloisGroupRestrictEquiv K).continuous.comp continuous_subtype_val).subtype_mk _
+  continuous_invFun :=
+    ((absoluteGaloisGroupRestrictEquiv K).symm.continuous.comp continuous_subtype_val).subtype_mk _
+
+/-- `absoluteGaloisGroupRestrictSubgroupEquiv` is the restriction isomorphism
+`absoluteGaloisGroupRestrictEquiv K`. -/
+@[simp]
+theorem coe_absoluteGaloisGroupRestrictSubgroupEquiv_apply
+    {U : Subgroup (Field.absoluteGaloisGroup K)} (hU : (absoluteGaloisGroupExtend K L σ).range = U)
+    (g : U) :
+    (absoluteGaloisGroupRestrictSubgroupEquiv K L σ hU g : AbsoluteGaloisGroup K) =
+      absoluteGaloisGroupRestrictEquiv K g :=
+  (rfl)
+
 /-! ### Normal extensions: the quotient by the open subgroup -/
 
 section Normal
@@ -409,6 +453,31 @@ theorem galoisOpenNormalSubgroup_toSubgroup :
 underlying subgroup is the fixing subgroup of the normal intermediate field `σ(L)`. -/
 instance normal_galoisSubgroup : (galoisSubgroup K L σ).toSubgroup.Normal :=
   inferInstanceAs (σ.fieldRange.fixingSubgroup : Subgroup (AbsoluteGaloisGroup K)).Normal
+
+/-- **The finite Galois quotient of `G_K` cut out by a finite normal extension**: if the image of
+`G_L` in `G_K = Field.absoluteGaloisGroup K` along `σ` is the normal subgroup `U`, then
+`G_K ⧸ U ≃* Gal(L/K)`, sending the class of `g` to the restriction along `σ` of its action on
+`Kˢ` (`absoluteGaloisGroupExtendQuotientEquiv_mk`). It is `quotientFixingSubgroupFieldRangeEquiv`
+read in Mathlib's model of `G_K`; for an intermediate field of the algebraic closure itself, the
+corresponding isomorphism is `TauCeti.absoluteGaloisGroupQuotientEquiv`. -/
+def absoluteGaloisGroupExtendQuotientEquiv {U : Subgroup (Field.absoluteGaloisGroup K)} [U.Normal]
+    (hU : (absoluteGaloisGroupExtend K L σ).range = U) :
+    Field.absoluteGaloisGroup K ⧸ U ≃* Gal(L/K) :=
+  ((absoluteGaloisGroupRestrictEquiv K).quotientCongr U σ.fieldRange.fixingSubgroup
+    (hU ▸ map_range_absoluteGaloisGroupExtend K L σ)).toMulEquiv.trans
+    (quotientFixingSubgroupFieldRangeEquiv K L σ)
+
+/-- `absoluteGaloisGroupExtendQuotientEquiv` sends the class of `g` to the restriction along `σ`
+of `g` read on the separable closure. -/
+@[simp]
+theorem absoluteGaloisGroupExtendQuotientEquiv_mk {U : Subgroup (Field.absoluteGaloisGroup K)}
+    [U.Normal] (hU : (absoluteGaloisGroupExtend K L σ).range = U)
+    (g : Field.absoluteGaloisGroup K) :
+    absoluteGaloisGroupExtendQuotientEquiv K L σ hU g =
+      σ.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K g) := by
+  rw [absoluteGaloisGroupExtendQuotientEquiv, MulEquiv.trans_apply]
+  exact (congrArg _ (ContinuousMulEquiv.quotientCongr_mk _ _ _ _ g)).trans
+    (quotientFixingSubgroupFieldRangeEquiv_mk K L σ _)
 
 end OpenNormal
 

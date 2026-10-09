@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Independence.InfinitePi
-public import TauCeti.Probability.Exchangeability.ConditionallyIID.Const
-public import TauCeti.Probability.Exchangeability.Recurrence.Excursion
+public import TauCeti.Probability.Process.Excursion.Basic
 public import TauCeti.Probability.Process.MarkovChain
+public import TauCeti.Probability.Process.PathLaw.Basic
 -- Non-public: the reconstruction of a path from its excursions is used only inside a proof.
 import TauCeti.Probability.Process.Excursion.Reconstruction
 
@@ -18,8 +18,9 @@ import TauCeti.Probability.Process.Excursion.Reconstruction
 Fix a transition kernel `κ` on a countable discrete state space and a state `a₀` that the chain
 started at `a₀` returns to infinitely often almost surely. Cutting a path at its returns to `a₀`
 turns it into the sequence of its excursions, and this file proves that **that sequence is
-i.i.d.**: the excursions are independent, and each of them is distributed as the first one
-(`TauCeti.Probability.conditionallyIIDWith_excursionProcess`). Concatenating the excursions back
+i.i.d.**: the excursions are independent (`TauCeti.Probability.iIndepFun_excursionProcess`), and
+each of them is distributed as the first one
+(`TauCeti.Probability.map_excursionProcess_eq_excursionLaw`). Concatenating the excursions back
 therefore recovers the chain from an infinite product measure,
 
 ```text
@@ -28,7 +29,10 @@ markovChainLaw (Measure.dirac a₀) κ
 ```
 
 (`TauCeti.Probability.markovChainLaw_eq_map_pathOfExcursions`), which is the regenerative
-structure of a Markov chain at a recurrent state.
+structure of a Markov chain at a recurrent state. Nothing here involves any distributional
+symmetry; the excursion process and the reconstruction of a path from its excursions are those of
+`TauCeti.Probability.Process.Excursion.Basic` and
+`TauCeti.Probability.Process.Excursion.Reconstruction`.
 
 ## The mechanism
 
@@ -42,18 +46,8 @@ them, prescribing the first excursions of a path is exactly prescribing the loop
 (`TauCeti.Probability.measure_setOf_excursionPrefix_eq`), so the finite-dimensional laws of the
 excursion process are products and the excursions are independent with a common law.
 
-## Where this sits in the Diaconis–Freedman theorem
-
-`TauCeti/Probability/Exchangeability/Recurrence/Representation.lean` proves the decomposition step:
-a recurrent Markov exchangeable process is a mixture of processes with i.i.d. excursions. What
-remains for `TauCeti.Probability.MixedMarkovChain` is that the drawn excursion law is the excursion
-law of a Markov chain. This file supplies the converse half of that identification, namely that a
-Markov chain does have i.i.d. excursions and is rebuilt from them, so that a mixing law carried on
-excursion laws of Markov chains yields a mixture of Markov chains.
-
-Recurrence is a genuine hypothesis, not a technicality: the absorbed walk of
-`TauCeti/Probability/Exchangeability/Recurrence/AbsorbedWalk.lean` is a Markov chain that never
-returns to its initial state, and its excursion process is junk.
+Recurrence is a genuine hypothesis, not a technicality: a chain that leaves `a₀` and is absorbed
+elsewhere never returns, and its excursion process is junk.
 
 ## Main definitions
 
@@ -69,8 +63,9 @@ returns to its initial state, and its excursion process is junk.
   the law of an excursion is given by the excursion weights.
 * `TauCeti.Probability.prefixLaw_excursionProcess_eq_pi`: the finite-dimensional laws of the
   excursion process are products.
-* `TauCeti.Probability.conditionallyIIDWith_excursionProcess`: **the excursions of a recurrent
-  Markov chain are i.i.d.**, with `excursionLaw` as constant directing measure.
+* `TauCeti.Probability.iIndepFun_excursionProcess` and
+  `TauCeti.Probability.map_excursionProcess_eq_excursionLaw`: **the excursions of a recurrent
+  Markov chain are i.i.d.**, with common law `excursionLaw`.
 * `TauCeti.Probability.markovChainLaw_eq_map_pathOfExcursions`: **the chain is the concatenation of
   i.i.d. excursions.**
 * `TauCeti.Probability.ae_infinite_setOf_eq_markovChainLaw_const` and
@@ -81,10 +76,6 @@ returns to its initial state, and its excursion process is junk.
 
 * P. Diaconis and D. Freedman, "de Finetti's theorem for Markov chains", *Annals of Probability*
   8 (1980), 115–130.
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, Layer 8, "Markov exchangeability".
-
-No material is adapted from `cameronfreer/exchangeability`, which treats exchangeable rather than
-Markov exchangeable sequences.
 -/
 
 public section
@@ -389,19 +380,6 @@ theorem iIndepFun_excursionProcess
   rw [iIndepFun_iff_map_fun_eq_infinitePi_map₀ hX, hlaw, ← pathLaw_def]
   exact pathLaw_excursionProcess_eq_infinitePi hret
 
-/-- **The excursions of a recurrent Markov chain are i.i.d.**: independent, and each distributed as
-the first excursion. The constant directing measure is the excursion law, so this is genuine
-independence and not only a mixture identity. -/
-theorem conditionallyIIDWith_excursionProcess
-    (hret : ∀ᵐ x ∂(markovChainLaw (Measure.dirac a₀) κ), {n | x n = a₀}.Infinite) :
-    ConditionallyIIDWith (markovChainLaw (Measure.dirac a₀) κ)
-      (excursionProcess (fun n (x : ℕ → α) => x n) a₀)
-      (fun _ => ⟨excursionLaw κ a₀, isProbabilityMeasure_excursionLaw⟩) :=
-  conditionallyIIDWith_const_iff_iIndepFun_and_map_eq.2
-    ⟨aemeasurable_excursionProcess_eval _ a₀, iIndepFun_excursionProcess hret,
-      fun k => map_excursionProcess_eq_excursionLaw k
-        (hret.mono fun _ hx => exists_visitCount_of_infinite hx (k + 1))⟩
-
 /-- **A recurrent Markov chain is the concatenation of i.i.d. excursions.** Drawing excursions
 independently from the excursion law and concatenating them reproduces the chain: the chain is
 regenerative at a recurrent state. -/
@@ -456,7 +434,7 @@ theorem ae_infinite_setOf_eq_markovChainLaw_const (a₀ : α) :
   exact Set.infinite_univ
 
 /-- **The excursions of that chain are empty.** Its excursion law is the point mass at the empty
-word, which is what the representation theorem must give for a chain that never leaves `a₀`. -/
+word: a chain that never leaves `a₀` returns to `a₀` at every step. -/
 @[simp]
 theorem excursionLaw_const (a₀ : α) :
     excursionLaw (Kernel.const α (Measure.dirac a₀)) a₀ = Measure.dirac ([] : List α) := by
