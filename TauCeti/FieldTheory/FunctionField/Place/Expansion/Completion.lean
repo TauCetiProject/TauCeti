@@ -15,7 +15,8 @@ public import Mathlib.RingTheory.PowerSeries.PiTopology
 Uniformizer expansion identifies the completed valuation ring at a rational place with
 `k[[T]]`. Every coefficient sequence is realized: its polynomial partial sums are Cauchy,
 and their limit has the prescribed finite expansions. The isomorphism sends a chosen
-uniformizer to `T` and identifies the order filtrations. With the constants discrete and
+uniformizer to `T`, identifies the order filtrations, and restricts on the valuation ring
+of `F` to the uniformizer expansion before completion. With the constants discrete and
 power series given their coefficientwise topology, it is also a homeomorphism.
 
 ## References
@@ -144,21 +145,29 @@ theorem sub_sum_coeff_completionIntegersEquivPowerSeries_symm_mem_filtration
     AlgEquiv.apply_symm_apply] at h
   exact h
 
-/-- The chosen uniformizer maps to the power-series variable. -/
+/-- On integral functions of the original field, uniformizer expansion in the completion is
+uniformizer expansion before completion. -/
 @[simp]
+theorem completionIntegersEquivPowerSeries_completionIntegersEmbedding (x : P.integers) :
+    P.completionIntegersEquivPowerSeries hP ht (P.completionIntegersEmbedding x) =
+      P.powerSeriesExpansion hP ht x := by
+  ext n
+  rw [P.completionIntegersEquivPowerSeries_apply hP ht,
+    P.completionPlace.coeff_powerSeriesExpansion _ _ (n + 1) _ ⟨n, by omega⟩,
+    P.coeff_powerSeriesExpansion hP ht (n + 1) x ⟨n, by omega⟩]
+  have h := P.sub_sum_truncatedExpansion_mem_filtration hP ht (n + 1) x
+  rw [← P.completionEmbedding_mem_filtration_iff] at h
+  exact congrFun ((P.completionPlace.truncatedExpansion_eq_iff _ _ (n + 1) _ _).mpr
+    (by simpa only [completionIntegersEmbedding_apply, map_sub, map_sum, map_mul,
+      map_pow, AlgHom.commutes] using h)) _
+
+/-- The chosen uniformizer maps to the power-series variable. -/
 theorem completionIntegersEquivPowerSeries_uniformizer :
     P.completionIntegersEquivPowerSeries hP ht
       (P.completionIntegersEmbedding
         ⟨t, P.mem_integers_iff_ord_nonneg.mpr (by omega)⟩) = PowerSeries.X := by
-  rw [P.completionIntegersEquivPowerSeries_apply hP ht]
-  have heq : P.completionIntegersEmbedding
-      ⟨t, P.mem_integers_iff_ord_nonneg.mpr (by omega)⟩ =
-      ⟨P.completionEmbedding t,
-        P.completionPlace.mem_integers_iff_ord_nonneg.mpr
-          (by simp only [ord_completionEmbedding, ht]; omega)⟩ :=
-    Subtype.ext (P.completionIntegersEmbedding_apply _)
-  rw [heq]
-  exact P.completionPlace.powerSeriesExpansion_uniformizer _ _
+  rw [completionIntegersEquivPowerSeries_completionIntegersEmbedding,
+    powerSeriesExpansion_uniformizer]
 
 section Topology
 
