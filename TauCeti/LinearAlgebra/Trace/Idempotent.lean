@@ -41,7 +41,7 @@ maximal ideal.
   quasi-idempotent of a group algebra computes the character of its image.
 * `TauCeti.LinearMap.trace_eq_mul_finrank_range`: if `f * f = a • f`, then
   `trace f = a * finrank (range f)`, the case `f = 1` of the previous statement.
-* `TauCeti.LinearMap.trace_eq_finrank_range_of_isIdempotentElem`: over a local ring, the trace of
+* `LinearMap.trace_eq_finrank_range_of_isIdempotentElem`: over a local ring, the trace of
   an idempotent endomorphism of a finite free module is the rank of its range.
 * `TauCeti.LinearMap.two_mul_finrank_ker_one_add_of_sq_eq_one`: for an involution `σ`,
   `2 dim ker (1 + σ) = dim M - tr σ`, applying the above to `f = 1 + σ`, whose square is `2 f`.
@@ -136,7 +136,11 @@ theorem LinearMap.three_mul_finrank_ker_one_add_add_sq_of_pow_three_eq_one {υ :
   push_cast at hnull
   linear_combination 3 * hnull + htr
 
-section LocalRing
+end TauCeti
+
+namespace LinearMap
+
+open Module
 
 variable {A N : Type*} [CommRing A] [IsLocalRing A] [AddCommGroup N] [Module A N]
   [Module.Free A N] [Module.Finite A N]
@@ -144,25 +148,23 @@ variable {A N : Type*} [CommRing A] [IsLocalRing A] [AddCommGroup N] [Module A N
 /-- **The trace of an idempotent over a local ring** is the rank of its range. The range and the
 kernel of an idempotent endomorphism of a finite free module are direct summands, hence finite
 projective, hence free over the local ring `A`, so Mathlib's `LinearMap.IsProj.trace` applies. -/
-theorem LinearMap.trace_eq_finrank_range_of_isIdempotentElem {f : Module.End A N}
+theorem trace_eq_finrank_range_of_isIdempotentElem {f : Module.End A N}
     (hf : IsIdempotentElem f) :
-    _root_.LinearMap.trace A N f = (finrank A (_root_.LinearMap.range f) : A) := by
+    LinearMap.trace A N f = (finrank A (LinearMap.range f) : A) := by
   have hfx (x : N) : f (f x) = f x := by rw [← Module.End.mul_apply, hf.eq]
-  have : Module.Projective A (_root_.LinearMap.range f) :=
-    .of_split (_root_.LinearMap.range f).subtype f.rangeRestrict
-      (_root_.LinearMap.ext fun ⟨_, y, rfl⟩ ↦ Subtype.ext (by simp [hfx]))
-  let g : N →ₗ[A] _root_.LinearMap.ker f :=
-    (1 - f).codRestrict (_root_.LinearMap.ker f) fun x ↦ by simp [hfx]
+  have : Module.Projective A (LinearMap.range f) :=
+    .of_split (LinearMap.range f).subtype f.rangeRestrict
+      (LinearMap.ext fun ⟨_, y, rfl⟩ ↦ Subtype.ext (by simp [hfx]))
+  let g : N →ₗ[A] LinearMap.ker f :=
+    (1 - f).codRestrict (LinearMap.ker f) fun x ↦ by simp [hfx]
   have hg : Function.Surjective g := fun ⟨x, hx⟩ ↦
-    ⟨x, Subtype.ext (by simp [g, _root_.LinearMap.mem_ker.mp hx])⟩
-  have : Module.Projective A (_root_.LinearMap.ker f) :=
-    .of_split (_root_.LinearMap.ker f).subtype g
-      (_root_.LinearMap.ext fun ⟨x, hx⟩ ↦ Subtype.ext (by simp [g, _root_.LinearMap.mem_ker.mp hx]))
-  have : Module.Finite A (_root_.LinearMap.ker f) := .of_surjective g hg
-  have := Module.free_of_flat_of_isLocalRing (R := A) (P := _root_.LinearMap.range f)
-  have := Module.free_of_flat_of_isLocalRing (R := A) (P := _root_.LinearMap.ker f)
-  exact (_root_.LinearMap.IsIdempotentElem.isProj_range f hf).trace
+    ⟨x, Subtype.ext (by simp [g, LinearMap.mem_ker.mp hx])⟩
+  have : Module.Projective A (LinearMap.ker f) :=
+    .of_split (LinearMap.ker f).subtype g
+      (LinearMap.ext fun ⟨x, hx⟩ ↦ Subtype.ext (by simp [g, LinearMap.mem_ker.mp hx]))
+  have : Module.Finite A (LinearMap.ker f) := .of_surjective g hg
+  have := Module.free_of_flat_of_isLocalRing (R := A) (P := LinearMap.range f)
+  have := Module.free_of_flat_of_isLocalRing (R := A) (P := LinearMap.ker f)
+  exact (LinearMap.IsIdempotentElem.isProj_range f hf).trace
 
-end LocalRing
-
-end TauCeti
+end LinearMap
