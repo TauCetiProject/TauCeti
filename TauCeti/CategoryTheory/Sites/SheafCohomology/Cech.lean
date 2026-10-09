@@ -220,7 +220,6 @@ noncomputable def cechComplexMap (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduc
 
 /-- The factor of `(cechComplexMap P φ).f n` indexed by `a` is the factor of `Č(V, P)` indexed by
 `φ.f ∘ a`, restricted along the product of the morphisms `φ.φ (a j)`. -/
-@[reassoc (attr := simp)]
 theorem cechComplexMap_f_π (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (n : ℕ)
     (a : Fin (n + 1) → ι) :
     (cechComplexMap P φ).f n ≫ Pi.π _ a =
