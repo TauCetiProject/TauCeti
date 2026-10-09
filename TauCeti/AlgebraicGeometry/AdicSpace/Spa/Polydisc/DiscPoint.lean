@@ -42,13 +42,13 @@ classical point.
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.closedDiscGaussValuation_translateHom`: the Gauss norm of radius `r`
+* `TauCeti.ValuationSpectrum.closedDiscGaussValuation_taylorHom`: the Gauss norm of radius `r`
   is invariant under translation by `c` with `‖c‖ ≤ r`.
 * `TauCeti.ValuationSpectrum.discPoint_vle_iff`: `η_{a,r}` compares `f` and `g` by the Gauss
   norms of radius `r` of `f(T + a)` and `g(T + a)`.
 * `TauCeti.ValuationSpectrum.discPoint_zero`: about the origin, `η_{0,r}` is the Gauss point
   `η_r`.
-* `TauCeti.ValuationSpectrum.comap_translateHom_discPoint`: pulling `η_{c,r}` back along the
+* `TauCeti.ValuationSpectrum.comap_taylorHom_discPoint`: pulling `η_{c,r}` back along the
   translation `T ↦ T + b` gives `η_{c+b,r}`.
 * `TauCeti.ValuationSpectrum.discPoint_eq_gaussPoint_iff`: `η_{a,r} = η_s` if and only if `r = s`
   and `‖a‖ ≤ r`.
@@ -84,10 +84,10 @@ variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NonarchimedeanRin
 /-- Translation `T ↦ T + c` with `‖c‖ ≤ r` does not increase the Gauss norm of radius `r`: for
 `f = ∑ fₙ Tⁿ` every translated monomial `fₙ (T + c)ⁿ` has Gauss norm at most `‖fₙ‖ rⁿ`, and the
 closed ball of the Gauss norm is a closed additive subgroup containing their sums. -/
-private theorem closedDiscGaussValuation_translateHom_le (hr₀ : 0 < r) (hr₁ : r ≤ 1)
+private theorem closedDiscGaussValuation_taylorHom_le (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     (a : Fin 1 → R) (ha : ∀ i, IsPowerBounded (a i)) (har : ‖a 0‖ ≤ r)
     (f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight) :
-    closedDiscGaussValuation hr₀ hr₁ (translateHom a ha f) ≤
+    closedDiscGaussValuation hr₀ hr₁ (taylorHom a ha f) ≤
       closedDiscGaussValuation hr₀ hr₁ f := by
   set v := closedDiscGaussValuation (R := R) hr₀ hr₁
   rcases eq_or_ne f 0 with rfl | hf
@@ -102,7 +102,7 @@ private theorem closedDiscGaussValuation_translateHom_le (hr₀ : 0 < r) (hr₁ 
     rw [NNReal.coe_max, coe_closedDiscGaussValuation_weightedX, closedDiscGaussValuation_weightedC,
       coe_nnnorm]
     exact max_le le_rfl har
-  refine hclosed.mem_of_tendsto (hasSum_translateHom a ha f)
+  refine hclosed.mem_of_tendsto (hasSum_taylorHom a ha f)
     (Filter.Eventually.of_forall fun _ ↦ (v.leAddSubgroup (v f)).sum_mem fun ν _ ↦ ?_)
   -- in one variable every multi-index is `n • e₀`
   obtain ⟨n, rfl⟩ : ∃ n, ν = Finsupp.single 0 n :=
@@ -117,14 +117,14 @@ private theorem closedDiscGaussValuation_translateHom_le (hr₀ : 0 < r) (hr₁ 
 
 /-- **The Gauss norm of radius `r` is invariant under translation by `c` with `‖c‖ ≤ r`**: the
 Gauss norms of `f(T)` and `f(T + c)` agree. Here `c` is the sole entry `a 0` of the tuple `a`. -/
-theorem closedDiscGaussValuation_translateHom (hr₀ : 0 < r) (hr₁ : r ≤ 1) (a : Fin 1 → R)
+theorem closedDiscGaussValuation_taylorHom (hr₀ : 0 < r) (hr₁ : r ≤ 1) (a : Fin 1 → R)
     (ha : ∀ i, IsPowerBounded (a i)) (har : ‖a 0‖ ≤ r)
     (f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight) :
-    closedDiscGaussValuation hr₀ hr₁ (translateHom a ha f) = closedDiscGaussValuation hr₀ hr₁ f :=
-  le_antisymm (closedDiscGaussValuation_translateHom_le hr₀ hr₁ a ha har f) <| by
-    simpa only [translateHom_neg_translateHom] using
-      closedDiscGaussValuation_translateHom_le hr₀ hr₁ (-a) (fun i ↦ (ha i).neg)
-        (by rwa [Pi.neg_apply, norm_neg]) (translateHom a ha f)
+    closedDiscGaussValuation hr₀ hr₁ (taylorHom a ha f) = closedDiscGaussValuation hr₀ hr₁ f :=
+  le_antisymm (closedDiscGaussValuation_taylorHom_le hr₀ hr₁ a ha har f) <| by
+    simpa only [taylorHom_neg_taylorHom] using
+      closedDiscGaussValuation_taylorHom_le hr₀ hr₁ (-a) (fun i ↦ (ha i).neg)
+        (by rwa [Pi.neg_apply, norm_neg]) (taylorHom a ha f)
 
 end NormedRing
 
@@ -139,19 +139,17 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Nonarchi
 `T ↦ T + a`. -/
 noncomputable def discPoint (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
     closedPolydisc 1 K :=
-  ⟨comap (translateHom (fun _ ↦ a) (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha))
-    (gaussPoint hr₀ hr₁).1, by
-    obtain ⟨hcont, hle⟩ := (mem_closedPolydisc_iff _ _ _).mp (gaussPoint (K := K) hr₀ hr₁).2
-    refine (mem_closedPolydisc_iff _ _ _).mpr
-      ⟨hcont.comap (continuous_translateHom _ _), fun f hf ↦ ?_⟩
-    rw [comap_vle, map_one]
-    exact hle _ (translateHom_mem_powerBoundedSubring _ _ hf)⟩
+  ⟨comap (taylorHom (fun _ ↦ a) (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha))
+    (gaussPoint hr₀ hr₁).1,
+    (closedPolydisc_def 1 K).symm.subset <| comap_mem_spa (continuous_taylorHom _ _)
+      (fun _ hf ↦ taylorHom_mem_powerBoundedSubring _ _ hf)
+      ((closedPolydisc_def 1 K).subset (gaussPoint hr₀ hr₁).2)⟩
 
 /-- The underlying point in `Spv K⟨T⟩` is the pullback of the Gauss point `η_r` along the
 translation `T ↦ T + a`. -/
 theorem discPoint_val (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
     (discPoint a ha hr₀ hr₁).1 =
-      comap (translateHom (fun _ ↦ a) (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha))
+      comap (taylorHom (fun _ ↦ a) (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha))
         (gaussPoint hr₀ hr₁).1 :=
   (rfl)
 
@@ -162,9 +160,9 @@ theorem discPoint_vle_iff (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : 
     (f g : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight) :
     (discPoint a ha hr₀ hr₁).1.toValuativeRel.vle f g ↔
       closedDiscGaussValuation hr₀ hr₁
-          (translateHom (fun _ ↦ a) (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha) f) ≤
+          (taylorHom (fun _ ↦ a) (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha) f) ≤
         closedDiscGaussValuation hr₀ hr₁
-          (translateHom (fun _ ↦ a) (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha) g) := by
+          (taylorHom (fun _ ↦ a) (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha) g) := by
   rw [discPoint_val, comap_vle, gaussPoint_vle_iff]
 
 /-- **About the origin, `η_{0,r}` is the Gauss point `η_r`.** -/
@@ -172,19 +170,19 @@ theorem discPoint_vle_iff (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : 
 theorem discPoint_zero (ha : ‖(0 : K)‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
     discPoint 0 ha hr₀ hr₁ = gaussPoint hr₀ hr₁ := by
   -- translation by the zero tuple is the identity
-  have h0 : translateHom (fun _ : Fin 1 ↦ (0 : K))
+  have h0 : taylorHom (fun _ : Fin 1 ↦ (0 : K))
       (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha) = RingHom.id _ :=
-    translateHom_zero
+    taylorHom_zero
   exact Subtype.ext (by rw [discPoint_val, h0, comap_id, id])
 
 /-- **Translating recentres `η_{c,r}`**: pulling `η_{c,r}` back along the translation
 `T ↦ T + b` gives `η_{c+b,r}`, since translations compose additively. -/
-theorem comap_translateHom_discPoint {b c : K} (hb : ‖b‖ ≤ 1) (hc : ‖c‖ ≤ 1) (hcb : ‖c + b‖ ≤ 1)
+theorem comap_taylorHom_discPoint {b c : K} (hb : ‖b‖ ≤ 1) (hc : ‖c‖ ≤ 1) (hcb : ‖c + b‖ ≤ 1)
     (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
-    comap (translateHom (fun _ ↦ b) fun _ ↦ isPowerBounded_iff_norm_le_one.mpr hb)
+    comap (taylorHom (fun _ ↦ b) fun _ ↦ isPowerBounded_iff_norm_le_one.mpr hb)
         (discPoint c hc hr₀ hr₁).1 = (discPoint (c + b) hcb hr₀ hr₁).1 := by
   rw [discPoint_val, discPoint_val, ← Function.comp_apply (f := comap _), ← comap_comp,
-    translateHom_comp_translateHom]
+    taylorHom_comp_taylorHom]
   -- the tuple `(fun _ ↦ c) + (fun _ ↦ b)` is `fun _ ↦ c + b` by definition of `Pi.add`
   rfl
 
@@ -193,8 +191,8 @@ of the Gauss norm of radius `r`. -/
 theorem discPoint_eq_gaussPoint_of_norm_le {a : K} (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r)
     (hr₁ : r ≤ 1) (har : ‖a‖ ≤ r) : discPoint a ha hr₀ hr₁ = gaussPoint hr₀ hr₁ :=
   Subtype.ext <| ext' fun f g ↦ by
-    rw [discPoint_vle_iff, gaussPoint_vle_iff, closedDiscGaussValuation_translateHom _ _ _ _ har,
-      closedDiscGaussValuation_translateHom _ _ _ _ har]
+    rw [discPoint_vle_iff, gaussPoint_vle_iff, closedDiscGaussValuation_taylorHom _ _ _ _ har,
+      closedDiscGaussValuation_taylorHom _ _ _ _ har]
 
 /-- **`η_{a,r}` is the Gauss point `η_s` exactly when `r = s` and `‖a‖ ≤ r`.** If `‖a‖ > r`, then
 `η_{a,r}` finds `T - a` strictly smaller than the constant `a`, while every Gauss point about the
@@ -213,8 +211,8 @@ theorem discPoint_eq_gaussPoint_iff {a : K} (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r)
       (weightedC _ isWeightFamily_one_weight a)
       (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
         weightedC _ isWeightFamily_one_weight a)) h
-    simp only [discPoint_vle_iff, gaussPoint_vle_iff, translateHom_weightedC, map_sub,
-      translateHom_weightedX, add_sub_cancel_right, eq_iff_iff, ← NNReal.coe_le_coe,
+    simp only [discPoint_vle_iff, gaussPoint_vle_iff, taylorHom_weightedC, map_sub,
+      taylorHom_weightedX, add_sub_cancel_right, eq_iff_iff, ← NNReal.coe_le_coe,
       closedDiscGaussValuation_weightedC, coe_closedDiscGaussValuation_weightedX,
       coe_nnnorm] at key
     -- the constant coefficient of `T - a` bounds its Gauss norm of radius `s` below by `‖a‖`
@@ -240,10 +238,10 @@ theorem discPoint_eq_discPoint_iff {a b : K} (ha : ‖a‖ ≤ 1) (hb : ‖b‖ 
   rw [← sub_eq_add_neg] at hab
   -- pulling back along translation by `-b` is injective, and carries `η_{c,t}` to `η_{c - b,t}`
   rw [← discPoint_eq_gaussPoint_iff hab hr₀ hr₁ hs₀ hs₁, Subtype.ext_iff, Subtype.ext_iff,
-    ← (comap_injective (translateHom_surjective (fun _ : Fin 1 ↦ -b)
+    ← (comap_injective (taylorHom_surjective (fun _ : Fin 1 ↦ -b)
       fun _ ↦ isPowerBounded_iff_norm_le_one.mpr hb')).eq_iff,
-    comap_translateHom_discPoint hb' ha (by rwa [← sub_eq_add_neg]),
-    comap_translateHom_discPoint hb' hb (by simp), ← Subtype.ext_iff, ← Subtype.ext_iff]
+    comap_taylorHom_discPoint hb' ha (by rwa [← sub_eq_add_neg]),
+    comap_taylorHom_discPoint hb' hb (by simp), ← Subtype.ext_iff, ← Subtype.ext_iff]
   simp only [← sub_eq_add_neg, sub_self, discPoint_zero]
 
 /-- **At radius one every centre gives the Gauss point of the disc**: `D(a, 1)` is the whole
@@ -257,7 +255,7 @@ theorem discPoint_vle_zero_iff (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr�
     {f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight} :
     (discPoint a ha hr₀ hr₁).1.toValuativeRel.vle f 0 ↔ f = 0 := by
   rw [discPoint_val, comap_vle, map_zero, gaussPoint_vle_zero_iff,
-    map_eq_zero_iff _ (translateHom_injective _ _)]
+    map_eq_zero_iff _ (taylorHom_injective _ _)]
 
 /-- **The support of `η_{a,r}` is trivial.** -/
 @[simp]
