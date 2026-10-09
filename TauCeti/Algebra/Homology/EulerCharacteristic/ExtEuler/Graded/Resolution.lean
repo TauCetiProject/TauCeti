@@ -31,6 +31,8 @@ internal support bounds and shows that the result is independent of the resoluti
   criterion using graded Hom-finiteness of the projectives.
 * `TauCeti.ExactStructure.FiniteResolution.gradedExtEuler_eq_foldAlternating`: computation by
   the alternating graded Hom dimensions.
+* `TauCeti.ExactStructure.FiniteResolution.foldAlternating_gradedHom_eq`: independence of the
+  finite projective resolution and its graded Hom-support witnesses.
 
 ## References
 
@@ -110,6 +112,22 @@ theorem gradedExtEuler_eq_foldAlternating
         rw [gradedExtEuler_projective]
       rw [foldAlternating_step, ← ih, ← heval]
       exact eq_sub_of_add_eq' hadd.symm
+
+/-- The alternating graded Hom dimension is independent of the finite projective resolution
+of `X`, allowing different object properties and finite Laurent-support witnesses. -/
+theorem foldAlternating_gradedHom_eq {P' : ObjectProperty C}
+    (r : (ExactStructure.abelian C).FiniteResolution P X)
+    (s : (ExactStructure.abelian C).FiniteResolution P' X)
+    (hproj : P ≤ (ExactStructure.abelian C).isProjective)
+    (hHom : ∀ Z, P Z → HasFiniteLaurentSupport k fun j ↦ Z ⟶ (e ^ j).functor.obj Y)
+    (hproj' : P' ≤ (ExactStructure.abelian C).isProjective)
+    (hHom' : ∀ Z, P' Z → HasFiniteLaurentSupport k fun j ↦ Z ⟶ (e ^ j).functor.obj Y) :
+    (r.foldAlternating fun Z hZ ↦
+      targetShiftGradedDimension k (fun j ↦ Z ⟶ (e ^ j).functor.obj Y) (hHom Z hZ)) =
+    (s.foldAlternating fun Z hZ ↦
+      targetShiftGradedDimension k (fun j ↦ Z ⟶ (e ^ j).functor.obj Y) (hHom' Z hZ)) := by
+  rw [← r.gradedExtEuler_eq_foldAlternating hproj hHom,
+    ← s.gradedExtEuler_eq_foldAlternating hproj' hHom']
 
 end ExactStructure.FiniteResolution
 
