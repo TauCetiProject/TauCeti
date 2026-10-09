@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+public import TauCeti.Algebra.Group.Subgroup.Map
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 public import TauCeti.LinearAlgebra.GeneralLinearGroup.Congr
 import Mathlib.LinearAlgebra.Charpoly.BaseChange
@@ -209,20 +210,19 @@ private theorem map_isometryGroup (B : BilinForm R M) (e : M ≃ₗ[R] M') :
 conjugation by `e : M ≃ₗ[R] M'` carries `Aut(M, B)` onto `Aut(M', B ∘ e⁻¹)`. -/
 def isometryGroupCongr (B : BilinForm R M) (e : M ≃ₗ[R] M') :
     isometryGroup B ≃* isometryGroup (LinearMap.BilinForm.congr e B) :=
-  ((LinearEquiv.autCongr e).subgroupMap _).trans
-    (MulEquiv.subgroupCongr (map_isometryGroup B e))
+  TauCeti.Subgroup.congrOfMapEq (LinearEquiv.autCongr e) (map_isometryGroup B e)
 
 @[simp]
 theorem coe_isometryGroupCongr_apply (B : BilinForm R M) (e : M ≃ₗ[R] M') (a : isometryGroup B)
     (x : M') : (isometryGroupCongr B e a : M' ≃ₗ[R] M') x = e ((a : M ≃ₗ[R] M) (e.symm x)) := by
-  simp [isometryGroupCongr]
+  simp [isometryGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_apply]
 
 @[simp]
 theorem coe_isometryGroupCongr_symm_apply (B : BilinForm R M) (e : M ≃ₗ[R] M')
     (a : isometryGroup (LinearMap.BilinForm.congr e B)) (x : M) :
     ((isometryGroupCongr B e).symm a : M ≃ₗ[R] M) x
       = e.symm ((a : M' ≃ₗ[R] M') (e x)) := by
-  simp [isometryGroupCongr]
+  simp [isometryGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_symm_apply]
 
 end Congr
 
@@ -576,16 +576,15 @@ private theorem map_specialIsometryGroup (B : BilinForm R M) (e : M ≃ₗ[R] M'
 isometry group. -/
 noncomputable def specialIsometryGroupCongr (B : BilinForm R M) (e : M ≃ₗ[R] M') :
     specialIsometryGroup B ≃* specialIsometryGroup (LinearMap.BilinForm.congr e B) :=
-  ((LinearEquiv.autCongr e).subgroupMap _).trans
-    (MulEquiv.subgroupCongr (map_specialIsometryGroup B e))
+  TauCeti.Subgroup.congrOfMapEq (LinearEquiv.autCongr e) (map_specialIsometryGroup B e)
 
 @[simp]
 theorem coe_specialIsometryGroupCongr_apply (B : BilinForm R M) (e : M ≃ₗ[R] M')
     (g : specialIsometryGroup B) :
     (specialIsometryGroupCongr B e g : M' ≃ₗ[R] M') =
       (e.symm.trans (g : M ≃ₗ[R] M)).trans e := by
-  rw [specialIsometryGroupCongr, MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply,
-    MulEquiv.coe_subgroupMap_apply, LinearEquiv.autCongr_apply]
+  rw [specialIsometryGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_apply,
+    LinearEquiv.autCongr_apply]
 
 @[simp]
 theorem coe_specialIsometryGroupCongr_symm_apply (B : BilinForm R M) (e : M ≃ₗ[R] M')
