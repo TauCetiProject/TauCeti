@@ -38,11 +38,12 @@ is cohomologically trivial and `Tor₁^k(M, A) = 0`, then `M ⊗ A`, with the di
 cohomologically trivial (Nakayama, Ann. of Math. 65 (1957)), because tensoring
 `0 → R → F → A → 0` with `M` stays exact and `M ⊗ R`, `M ⊗ F` are cohomologically trivial
 (`Rep.isZero_res_tensor_of_shortExact`). This is how the theorem of Nakayama and Rim enters the
-Tate–Nakayama generalization `Ĥ^r(G, M) ≃ Ĥ^{r+2}(G, M ⊗ C)` of Tate's theorem, for a class module
-`C` with `Tor₁^ℤ(M, C) = 0`, whose splitting module is cohomologically trivial. The vanishing of
-`Tor₁^k(M, A)` is stated without a `Tor` functor, in the equivalent form that `M ⊗ -` keeps
-injective the first map of every short exact sequence `0 → X → Y → A → 0` of `k`-modules; it
-holds when `M` is flat over `k` and when `A` is.
+Tate–Nakayama generalization of Tate's theorem, an isomorphism from the Tate cohomology of `M` in
+degree `r` to that of `M ⊗ C` in degree `r + 2`, for a class module `C` with `Tor₁^ℤ(M, C) = 0`,
+whose splitting module is cohomologically trivial. The vanishing of `Tor₁^k(M, A)` is stated
+without a `Tor` functor, in the equivalent form that `M ⊗ -` keeps injective the first map of
+every short exact sequence `0 → X → Y → A → 0` of `k`-modules; it holds when `M` is flat over `k`
+and when `A` is.
 
 ## Main statements
 
