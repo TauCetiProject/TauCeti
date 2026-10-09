@@ -14,8 +14,6 @@ import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Surjectivity
 import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.NumberTheory.ClassFieldTheory.Local.Unramified
 import TauCeti.NumberTheory.Cyclotomic.Irreducible
-import TauCeti.NumberTheory.LocalField.Frobenius
-import TauCeti.NumberTheory.LocalField.ResidueCorrespondence
 import TauCeti.NumberTheory.LocalField.Unramified.Existence
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Cyclotomic
@@ -101,8 +99,9 @@ For the independent prescription, the cyclotomic character of `G_{ℚ_p}` is sur
 (`surjective_localCyclotomicCharacter_ratPadic`), so some `ρ₀` has `χ_cyc(ρ₀) = u`. A lift `τ` of
 the Artin symbol of `p` has trivial cyclotomic character and is an arithmetic Frobenius lift; its
 restriction to the unramified extension of degree `f` is that extension's Frobenius, which
-generates its Galois group (`zpowers_frobeniusAlgEquiv`). So `ρ₀` restricts there to a power
-`τ ^ j`, and `ρ = ρ₀ τ⁻ʲ τ` has character `u` and acts on the unramified extension as `τ` does.
+generates its Galois group (`IsArithFrobeniusLift.zpowers_restrictNormalHom_unramifiedExtension`).
+So `ρ₀` restricts there to a power `τ ^ j`, and `ρ = ρ₀ τ⁻ʲ τ` has character `u` and acts on the
+unramified extension as `τ` does.
 
 ## References
 
@@ -360,40 +359,21 @@ theorem exists_localCyclotomicCharacter_eq_and_apply_of_pow_eq_one (u : ℤ_[p]�
   have hτχ := localCyclotomicCharacter_artinMap_padic_uniformizer p τ hτ
   have hτF := isArithFrobeniusLift_of_mk_eq_artinMap_uniformizer ℚ_[p]
     (Padic.isUniformizer_natCast_self p) τ hτ
-  -- The roots of unity of order `p ^ f - 1` are the nonzero roots of `X ^ (p ^ f) - X`.
-  have hpow (z : AlgebraicClosure ℚ_[p]) (hz : z ^ (p ^ f - 1) = 1) : z ^ p ^ f = z := by
-    rw [← Nat.sub_add_cancel (Nat.one_le_pow f p hp.pos), pow_succ, hz, one_mul]
   have hτz (z : AlgebraicClosure ℚ_[p]) (hz : z ^ (p ^ f - 1) = 1) :
       DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) τ z = z ^ p := by
-    simpa using isArithFrobeniusLift_iff.1 hτF z f hf (by simpa using hpow z hz)
+    -- The roots of unity of order `p ^ f - 1` are the nonzero roots of `X ^ (p ^ f) - X`.
+    have hpow : z ^ p ^ f = z := by
+      rw [← Nat.sub_add_cancel (Nat.one_le_pow f p hp.pos), pow_succ, hz, one_mul]
+    simpa using isArithFrobeniusLift_iff.1 hτF z f hf (by simpa using hpow)
   have hF := unramifiedExtension_eq_adjoin_setOf_pow_eq_one (K := ℚ_[p])
     (Ω := AlgebraicClosure ℚ_[p]) hf
   rw [Padic.natCard_residueField] at hF
   set F := unramifiedExtension ℚ_[p] (AlgebraicClosure ℚ_[p]) f
   let r : Field.absoluteGaloisGroup ℚ_[p] →* Gal(F/ℚ_[p]) := AlgEquiv.restrictNormalHom F
-  have hext (σ₁ σ₂ : Gal(F/ℚ_[p]))
-      (h : ∀ x (hx : x ^ (p ^ f - 1) = 1), σ₁ ⟨x, hF.ge (IntermediateField.subset_adjoin _ _ hx)⟩ =
-        σ₂ ⟨x, hF.ge (IntermediateField.subset_adjoin _ _ hx)⟩) : σ₁ = σ₂ :=
-    AlgEquiv.coe_toAlgHom_injective (IntermediateField.algHom_ext_of_eq_adjoin ℚ_[p] hF h)
-  -- `τ` restricts to the Frobenius of `F`, which generates `Gal(F/ℚ_p)`.
-  have hgen (σ : Field.absoluteGaloisGroup ℚ_[p]) : ∃ j : ℤ, (r τ) ^ j = r σ := by
-    let := finiteExtensionValuativeRel ℚ_[p] F
-    let := finiteExtensionNormedFieldTopology ℚ_[p] F
-    have := finiteExtension_isNonarchimedeanLocalField ℚ_[p] F
-    have := finiteExtension_valuativeExtension ℚ_[p] F
-    have : IsUnramified ℚ_[p] F := isUnramified_unramifiedExtension hf
-    have hrτ : r τ = frobeniusAlgEquiv (K := ℚ_[p]) (L := F) := by
-      refine hext _ _ fun x hx ↦ Subtype.ext ?_
-      have hx' : (⟨x, hF.ge (IntermediateField.subset_adjoin _ _ hx)⟩ : F) ^
-          Nat.card 𝓀[ℚ_[p]] ^ f = ⟨x, hF.ge (IntermediateField.subset_adjoin _ _ hx)⟩ :=
-        Subtype.ext (by simpa using hpow x hx)
-      rw [frobeniusAlgEquiv_apply_of_pow_natCard_pow_eq_self hf hx', Padic.natCard_residueField]
-      exact (AlgEquiv.restrictNormalHom_apply F τ _).trans (hτz x hx)
-    obtain ⟨j, hj⟩ := Subgroup.mem_zpowers_iff.1
-      ((zpowers_frobeniusAlgEquiv (K := ℚ_[p]) (L := F)).symm ▸ Subgroup.mem_top (r σ))
-    exact ⟨j, hrτ ▸ hj⟩
   obtain ⟨ρ₀, hρ₀⟩ := surjective_localCyclotomicCharacter_ratPadic p u
-  obtain ⟨j, hj⟩ := hgen ρ₀
+  -- `τ` restricts to the Frobenius of `F`, which generates `Gal(F/ℚ_p)`.
+  obtain ⟨j, hj⟩ : ∃ j : ℤ, r τ ^ j = r ρ₀ := Subgroup.mem_zpowers_iff.1
+    ((hτF.zpowers_restrictNormalHom_unramifiedExtension hf).symm ▸ Subgroup.mem_top (r ρ₀))
   refine ⟨ρ₀ * (τ ^ j)⁻¹ * τ, ?_, fun z hz ↦ ?_⟩
   · rw [map_mul, map_mul, map_inv, map_zpow, hρ₀, hτχ, one_zpow, inv_one, mul_one, mul_one]
   · have hr : r (ρ₀ * (τ ^ j)⁻¹ * τ) = r τ := by
