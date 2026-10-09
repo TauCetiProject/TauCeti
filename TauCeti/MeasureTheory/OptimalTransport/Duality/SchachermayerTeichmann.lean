@@ -25,12 +25,14 @@ the translation `x ↦ x + α`, and a cycle of `k` such moves would give `k • 
 irrationality. So the diagonal is `c`-cyclically monotone. Yet the identity plan costs `1`, while
 the plan induced by the translation by `α` costs `0`.
 
-The proof has two halves. First, Rüschendorf's potential of the cyclically monotone set gives real
-potentials `φ`, `ψ`, feasible on a product of sets of full measure, on whose contact set the plan
-is concentrated (`TauCeti.IsCoupling.exists_ae_add_eq_of_isCyclicallyMonotone`). These potentials
-need not be integrable, so they are not a dual optimizer. Second, Schachermayer and Teichmann's
-truncation argument shows that such *strongly `c`-monotone* plans are nevertheless optimal
-(`TauCeti.IsCoupling.isOptimalCoupling_of_ae_mem_dualContactSet`).
+A plan is *strongly `c`-monotone* in the sense of Schachermayer and Teichmann when it is
+concentrated on the contact set of real potentials `φ`, `ψ` that satisfy the dual constraint on a
+product of sets of full measure. Unlike a dual certificate, the potentials need not be integrable,
+so they need not qualify as a dual optimizer; strong `c`-monotonicity is nevertheless an
+optimality criterion (`TauCeti.IsCoupling.isOptimalCoupling_of_ae_mem_dualContactSet`). For a
+finite-valued measurable cost on Polish spaces, every coupling of probability measures concentrated
+on a `c`-cyclically monotone set is strongly `c`-monotone, via Rüschendorf's potentials
+(`TauCeti.IsCoupling.exists_ae_add_eq_of_isCyclicallyMonotone`).
 
 ## Main statements
 
