@@ -181,7 +181,7 @@ theorem completionLaurentCoeff_ext_iff {x y : P.Completion} :
     apply (P.completionEquivLaurentSeries hP ht).injective
     apply HahnSeries.ext
     funext n
-    exact h n
+    simpa only [completionLaurentCoeff_apply] using h n
 
 /-- The coefficient of a Laurent monomial is zero away from its exponent. -/
 theorem completionLaurentCoeff_symm_single (m n : ℤ) (c : k) :
