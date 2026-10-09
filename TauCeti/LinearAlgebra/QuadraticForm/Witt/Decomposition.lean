@@ -24,9 +24,13 @@ invariance of the Witt index and of the anisotropic part under isometry is autom
 `m • hyperbolicClass K`, which is what turns the statement back into an isometry of forms in
 `QuadraticForm.exists_equivalent_hyperbolicPresentation_prod`.
 
-This file treats the regular case, which is the case the Witt ring needs. A form with a nonzero
-radical is the orthogonal sum of the zero form on its radical and a regular form, and its Witt
-decomposition follows from the regular one.
+The regular case is the case the Witt ring needs. A form `Q` with a nonzero radical is the
+orthogonal sum of the zero form on its radical and its regular part `Q.lift Q.radical le_rfl`
+(`QuadraticMap.equivalent_zero_prod_lift_radical`), and its Witt decomposition
+`Q ≅ 0 ⊥ m ℍ ⊥ A` follows from the regular one. All three summands are determined by `Q`: the zero
+summand lives on a copy of the radical
+(`QuadraticMap.nonempty_linearEquiv_radical_of_equivalent_zero_prod`), and `m` and the class of
+`A` are the Witt index and the anisotropic part of the class of the regular part.
 
 ## Main definitions
 
@@ -53,6 +57,12 @@ decomposition follows from the regular one.
   isometry of quadratic forms.
 * `QuadraticForm.mem_unitValueSet_iff_not_anisotropic_mk_rankOne_add`: a regular form represents
   a unit `c` exactly when adjoining `⟨-c⟩` to its class gives an isotropic class.
+* `QuadraticForm.exists_equivalent_zero_prod_hyperbolicPresentation_prod`: **Witt decomposition**
+  of a possibly degenerate form, `Q ≅ 0 ⊥ m ℍ ⊥ A` with the zero form on the radical.
+* `QuadraticForm.formClass_lift_radical_eq`,
+  `QuadraticForm.wittIndex_formClass_lift_radical_eq`,
+  `QuadraticForm.anisotropicPart_formClass_lift_radical_eq`: uniqueness of the regular, hyperbolic
+  and anisotropic summands of a decomposition of a possibly degenerate form.
 
 ## References
 
@@ -435,6 +445,75 @@ theorem _root_.QuadraticForm.exists_equivalent_hyperbolicPresentation_prod (Q : 
     exact (hr.trans hclass).trans (equivalent_presentedForm_append_prod _ p)
 
 end Form
+
+/-! ### The decomposition of a possibly degenerate form -/
+
+section Degenerate
+
+variable [Invertible (2 : K)] {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  {T : Type*} [AddCommGroup T] [Module K T] {W : Type*} [AddCommGroup W] [Module K W]
+  [FiniteDimensional K W]
+
+/-- **Witt decomposition** of a possibly degenerate form (Lam I.4.1): a quadratic form on a
+finite-dimensional space is isometric to the orthogonal sum of the zero form on its radical, `m`
+hyperbolic planes, and an anisotropic diagonal form, where `m` is the Witt index of the class of its
+regular part `Q.lift Q.radical le_rfl`. -/
+theorem _root_.QuadraticForm.exists_equivalent_zero_prod_hyperbolicPresentation_prod
+    (Q : QuadraticForm K V) :
+    ∃ p : RegularFormPresentation K, (presentedForm p).Anisotropic ∧
+      Q.Equivalent ((0 : QuadraticForm K Q.radical).prod
+        ((presentedForm (hyperbolicPresentation K
+          (RegularFormClass.wittIndex (formClass _ Q.nondegenerate_lift_radical)))).prod
+            (presentedForm p))) := by
+  obtain ⟨p, hp, -, he⟩ :=
+    QuadraticForm.exists_equivalent_hyperbolicPresentation_prod _ Q.nondegenerate_lift_radical
+  exact ⟨p, hp, Q.equivalent_zero_prod_lift_radical.trans ((Equivalent.refl _).prod he)⟩
+
+/-- The class of the regular part of `Q` is the class of the regular summand in any splitting of
+`Q` as the orthogonal sum of a zero form and a regular form. -/
+theorem _root_.QuadraticForm.formClass_lift_radical_eq {Q : QuadraticForm K V}
+    {R : QuadraticForm K W} (hR : R.Nondegenerate)
+    (h : Q.Equivalent ((0 : QuadraticForm K T).prod R)) :
+    formClass _ Q.nondegenerate_lift_radical = formClass R hR :=
+  (formClass_eq_iff _ _ _ _).mpr
+    (equivalent_lift_radical_of_equivalent_zero_prod h hR.radical_eq_bot)
+
+-- The class of the regular part, read off a decomposition `Q ≅ 0 ⊥ m ℍ ⊥ A`.
+private theorem formClass_lift_radical_eq_nsmul_hyperbolicClass_add {Q : QuadraticForm K V}
+    {m : ℕ} {A : QuadraticForm K W} (hA : A.Anisotropic)
+    (h : Q.Equivalent ((0 : QuadraticForm K T).prod
+      ((presentedForm (hyperbolicPresentation K m)).prod A))) :
+    formClass _ Q.nondegenerate_lift_radical =
+      m • hyperbolicClass K + formClass A hA.nondegenerate := by
+  rw [QuadraticForm.formClass_lift_radical_eq
+      ((nondegenerate_presentedForm _).prod hA.nondegenerate) h,
+    formClass_prod _ (nondegenerate_presentedForm _) _ hA.nondegenerate, formClass_presentedForm,
+    mk_hyperbolicPresentation]
+
+/-- **Uniqueness of the Witt index** in a Witt decomposition of a possibly degenerate form: in any
+decomposition `Q ≅ 0 ⊥ m ℍ ⊥ A` with `A` anisotropic, `m` is the Witt index of the regular part
+of `Q`. -/
+theorem _root_.QuadraticForm.wittIndex_formClass_lift_radical_eq {Q : QuadraticForm K V}
+    {m : ℕ} {A : QuadraticForm K W} (hA : A.Anisotropic)
+    (h : Q.Equivalent ((0 : QuadraticForm K T).prod
+      ((presentedForm (hyperbolicPresentation K m)).prod A))) :
+    RegularFormClass.wittIndex (formClass _ Q.nondegenerate_lift_radical) = m :=
+  RegularFormClass.wittIndex_eq ((anisotropic_formClass A hA.nondegenerate).mpr hA)
+    (formClass_lift_radical_eq_nsmul_hyperbolicClass_add hA h)
+
+/-- **Uniqueness of the anisotropic part** in a Witt decomposition of a possibly degenerate form:
+in any decomposition `Q ≅ 0 ⊥ m ℍ ⊥ A` with `A` anisotropic, the class of `A` is the anisotropic
+part of the regular part of `Q`. -/
+theorem _root_.QuadraticForm.anisotropicPart_formClass_lift_radical_eq {Q : QuadraticForm K V}
+    {m : ℕ} {A : QuadraticForm K W} (hA : A.Anisotropic)
+    (h : Q.Equivalent ((0 : QuadraticForm K T).prod
+      ((presentedForm (hyperbolicPresentation K m)).prod A))) :
+    RegularFormClass.anisotropicPart (formClass _ Q.nondegenerate_lift_radical) =
+      formClass A hA.nondegenerate :=
+  RegularFormClass.anisotropicPart_eq ((anisotropic_formClass A hA.nondegenerate).mpr hA)
+    (formClass_lift_radical_eq_nsmul_hyperbolicClass_add hA h)
+
+end Degenerate
 
 /-! ### Worked examples -/
 
