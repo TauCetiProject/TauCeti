@@ -104,13 +104,19 @@ theorem sphereTopCellMap_target :
     (sphereTopCellMap h).target = sphere 0 1 \ {spherePole h} :=
   (rfl)
 
-private theorem sphereTopCellMap_apply (x : Fin n → ℝ) :
-    sphereTopCellMap h x = sphereOnePointEquiv h (unitBallToOnePoint x) :=
+/-- The characteristic map of the top cell of `Sⁿ` is the boundary collapse
+`TauCeti.unitBallToOnePoint` followed by `onePointEquivSphereOfFinrankEq`. -/
+theorem sphereTopCellMap_apply (x : Fin n → ℝ) :
+    sphereTopCellMap h x =
+      ↑(onePointEquivSphereOfFinrankEq (ι := ι) (V := Fin n → ℝ) (by simp [h])
+        (unitBallToOnePoint x)) :=
   (rfl)
 
-private theorem sphereTopCellMap_symm_apply {y : EuclideanSpace ℝ ι} (hy : y ∈ sphere 0 1) :
-    (sphereTopCellMap h).symm y =
-      unitBallToOnePoint.symm ((sphereOnePointEquiv h).symm ⟨y, hy⟩) :=
+/-- On `Sⁿ`, the inverse of the characteristic map of the top cell is the inverse of
+`onePointEquivSphereOfFinrankEq` followed by the inverse of `TauCeti.unitBallToOnePoint`. -/
+theorem sphereTopCellMap_symm_apply {y : EuclideanSpace ℝ ι} (hy : y ∈ sphere 0 1) :
+    (sphereTopCellMap h).symm y = unitBallToOnePoint.symm
+      ((onePointEquivSphereOfFinrankEq (ι := ι) (V := Fin n → ℝ) (by simp [h])).symm ⟨y, hy⟩) :=
   dite_eq_left hy
 
 theorem sphereTopCellMap_mem_sphere (x : Fin n → ℝ) :
@@ -121,7 +127,8 @@ theorem sphereTopCellMap_mem_sphere (x : Fin n → ℝ) :
 @[simp]
 theorem sphereTopCellMap_apply_of_norm_eq_one {x : Fin n → ℝ} (hx : ‖x‖ = 1) :
     sphereTopCellMap h x = spherePole h := by
-  rw [sphereTopCellMap_apply, unitBallToOnePoint_apply_of_one_le_norm hx.ge, spherePole]
+  rw [sphereTopCellMap_apply, unitBallToOnePoint_apply_of_one_le_norm hx.ge, spherePole,
+    sphereOnePointEquiv]
 
 /-- The characteristic map of the top cell of `Sⁿ` is continuous on the closed unit ball, as a
 CW characteristic map must be. -/
