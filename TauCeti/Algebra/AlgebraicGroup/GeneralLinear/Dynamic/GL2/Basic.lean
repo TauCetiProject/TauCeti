@@ -60,7 +60,7 @@ namespace GL2
 section Coordinate
 
 /-- The bialgebra morphism representing the standard cocharacter `t ↦ diag(t, 1)`. -/
-@[expose] noncomputable def dynamicCocharacter :
+noncomputable def dynamicCocharacter :
     coordinateHopfAlgebra R 2 →ₐc[R] LaurentPolynomial R :=
   weightCocharacter (R := R) Borel.weights
 
