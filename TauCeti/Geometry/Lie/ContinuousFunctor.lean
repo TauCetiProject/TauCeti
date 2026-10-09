@@ -46,8 +46,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The Lie-algebra homomorphism induced by a continuous homomorphism between finite-dimensional
 real Lie groups. -/
--- Expose this one-line wrapper so Lean's module system can export the defining equation below.
-@[expose] public noncomputable def lieMap (f : G →ₜ* G') :
+public noncomputable def lieMap (f : G →ₜ* G') :
     LeftInvariantDerivation I G →ₗ⁅ℝ⁆ LeftInvariantDerivation I' G' :=
   _root_.lieMap (f.toContMDiffMonoidMorphism I I')
 
@@ -56,7 +55,7 @@ smoothness. -/
 theorem lieMap_def (f : G →ₜ* G') :
     lieMap (I := I) (I' := I') f =
       _root_.lieMap (f.toContMDiffMonoidMorphism I I') :=
-  rfl
+  (rfl)
 
 /-- The Lie map of the identity continuous homomorphism is the identity. -/
 @[simp]
