@@ -18,6 +18,8 @@ the ordinary derivative. This identifies the weak directional derivatives of
 
 public section
 
+namespace TauCeti
+
 variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- The directional derivative of a function of one variable in the direction `1` is its
@@ -25,3 +27,5 @@ derivative. No differentiability hypothesis is needed. -/
 @[simp]
 theorem lineDeriv_one {f : 𝕜 → F} {x : 𝕜} : lineDeriv 𝕜 f x 1 = deriv f x := by
   simp [lineDeriv, deriv_comp_const_add]
+
+end TauCeti

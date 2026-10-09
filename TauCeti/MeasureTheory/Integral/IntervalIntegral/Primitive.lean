@@ -123,11 +123,15 @@ theorem integral_deriv_smul_primitive_eq_sub_of_le {φ : ℝ → ℝ} (hab : a �
     have hGs : ∀ t, G t s = (Ioi s).indicator (deriv φ) t • f s := by
       intro t
       by_cases hst : s < t <;> simp [G, indicator, hst]
-    simp only [hGs, _root_.intervalIntegral.integral_smul_const]
-    rw [_root_.intervalIntegral.integral_of_le hab, setIntegral_indicator measurableSet_Ioi,
-      Ioc_inter_Ioi, sup_eq_right.2 hs.1, ← _root_.intervalIntegral.integral_of_le hs.2,
-      _root_.intervalIntegral.integral_deriv_eq_sub
-        (fun x _ ↦ (hφ.differentiable one_ne_zero) x) (hφd.intervalIntegrable _ _), sub_smul]
+    calc ∫ t in a..b, G t s = (∫ t in a..b, (Ioi s).indicator (deriv φ) t) • f s := by
+          simp only [hGs, _root_.intervalIntegral.integral_smul_const]
+      -- The indicator cuts `[a, b]` down to `[s, b]`.
+      _ = (∫ t in s..b, deriv φ t) • f s := by
+          rw [_root_.intervalIntegral.integral_of_le hab, setIntegral_indicator measurableSet_Ioi,
+            Ioc_inter_Ioi, sup_eq_right.2 hs.1, ← _root_.intervalIntegral.integral_of_le hs.2]
+      _ = φ b • f s - φ s • f s := by
+          rw [_root_.intervalIntegral.integral_deriv_eq_sub
+            (fun x _ ↦ (hφ.differentiable one_ne_zero) x) (hφd.intervalIntegrable _ _), sub_smul]
   rw [← _root_.intervalIntegral.integral_congr hleft,
     intervalIntegral_intervalIntegral_swap hGi,
     _root_.intervalIntegral.integral_congr hright,

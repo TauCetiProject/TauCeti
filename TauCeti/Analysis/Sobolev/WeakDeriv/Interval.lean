@@ -26,7 +26,8 @@ everywhere, a constant plus the primitive of `u'`:
 
 for any base point `t₀ ∈ (a, b)`. When `u'` is integrable on the whole interval, `u` therefore has
 a representative `v` continuous on `[a, b]`, every such representative satisfies the fundamental
-theorem of calculus `v t - v s = ∫ r in s..t, u' r` on `[a, b]`, and it is bounded by
+theorem of calculus `v t - v s = ∫ r in s..t, u' r` on `[a, b]`, and, when `a < b`, it is bounded
+by
 
 `‖v t‖ ≤ ⨍ s in (a, b), ‖u s‖ + ∫ s in (a, b), ‖u' s‖`.
 
@@ -60,7 +61,7 @@ theorem, turns `∫ φ' t • ∫ s in α..t, u' s` into `-∫ φ s • u' s`. T
   the function has a representative continuous on the closed interval.
 * `TauCeti.HasWeakLineDerivOn.integral_eq_sub`: the fundamental theorem of calculus for such a
   continuous representative.
-* `TauCeti.HasWeakLineDerivOn.norm_le_setAverage_add_integral`: the pointwise bound
+* `TauCeti.HasWeakLineDerivOn.norm_le_setAverage_add_integral`: for `a < b`, the pointwise bound
   `‖v t‖ ≤ ⨍ s in (a, b), ‖u s‖ + ∫ s in (a, b), ‖u' s‖` of a continuous representative `v`.
 
 ## References
@@ -126,15 +127,24 @@ theorem hasWeakLineDerivOn_intervalIntegral (hu' : LocallyIntegrableOn u' (Ioo a
     dsimp only
     rw [← smul_sub, integral_interval_sub_left (hint.mono_set (uIcc_subset_uIcc_left ht))
       (hint.mono_set (uIcc_subset_uIcc_left (Icc_subset_uIcc (Ioo_subset_Icc_self ht₀αβ))))]
-  rw [hL, hR, integral_congr hsplit, intervalIntegral.integral_sub,
-    intervalIntegral.integral_smul_const,
-    integral_deriv_eq_sub (fun x _ ↦ (hφ.differentiable one_ne_zero) x)
-      (hφd.intervalIntegrable _ _), hφ0 α (by simp), hφ0 β (by simp), sub_self, zero_smul,
-    sub_zero, TauCeti.intervalIntegral.integral_deriv_smul_primitive_eq_sub_of_le hle hφ hint,
-    hφ0 β (by simp), zero_smul, zero_sub]
-  · exact (hφd.continuousOn.smul (continuousOn_primitive_interval' hint
-      left_mem_uIcc)).intervalIntegrable
-  · exact (hφd.smul continuous_const).intervalIntegrable _ _
+  -- The constant part pairs to zero with `φ'`, since `φ` vanishes at `α` and `β`.
+  have hconst : ∫ t in α..β, deriv (φ : ℝ → ℝ) t • ∫ s in α..t₀, u' s = 0 := by
+    rw [intervalIntegral.integral_smul_const,
+      integral_deriv_eq_sub (fun x _ ↦ (hφ.differentiable one_ne_zero) x)
+        (hφd.intervalIntegrable _ _)]
+    simp [hφ0 α (by simp), hφ0 β (by simp)]
+  calc ∫ t, lineDeriv ℝ (φ : ℝ → ℝ) t 1 • ∫ s in t₀..t, u' s
+      = ∫ t in α..β, deriv (φ : ℝ → ℝ) t • ∫ s in t₀..t, u' s := hL
+    _ = (∫ t in α..β, deriv (φ : ℝ → ℝ) t • ∫ s in α..t, u' s) -
+          ∫ t in α..β, deriv (φ : ℝ → ℝ) t • ∫ s in α..t₀, u' s := by
+        rw [integral_congr hsplit, intervalIntegral.integral_sub ?_ ?_]
+        · exact (hφd.continuousOn.smul (continuousOn_primitive_interval' hint
+            left_mem_uIcc)).intervalIntegrable
+        · exact (hφd.smul continuous_const).intervalIntegrable _ _
+    _ = (φ : ℝ → ℝ) β • (∫ s in α..β, u' s) - ∫ t in α..β, (φ : ℝ → ℝ) t • u' t := by
+        rw [hconst, sub_zero,
+          TauCeti.intervalIntegral.integral_deriv_smul_primitive_eq_sub_of_le hle hφ hint]
+    _ = -∫ t, (φ : ℝ → ℝ) t • u' t := by simp [hφ0 β (by simp), hR]
 
 end Primitive
 
