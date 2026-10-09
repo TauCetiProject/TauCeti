@@ -27,12 +27,15 @@ Borel measurable structure on the scalar field.
 
 The Euclidean norm bounds the sum of coordinate norms by the square root of the number of
 coordinates. This finite-dimensional Cauchy--Schwarz estimate also controls matrix actions
-from entrywise bounds.
+from entrywise bounds. In the same way the Euclidean distance is at most `√n` times the sup
+distance of the coordinate vectors, which places cubes inside Euclidean balls.
 
 ## Additional result
 
 * `EuclideanSpace.sum_norm_le_sqrt_card_mul_norm`: the sum of coordinate norms is at most the
   square root of the coordinate count times the Euclidean norm.
+* `EuclideanSpace.dist_le_sqrt_card_mul_dist_ofLp`: the Euclidean distance is at most `√n` times
+  the sup distance of the coordinate vectors.
 
 ## Source
 
@@ -71,6 +74,18 @@ theorem sum_norm_le_sqrt_card_mul_norm
       rw [mul_pow, Real.sq_sqrt (by positivity : (0 : ℝ) ≤ (Fintype.card ι : ℝ))]
     rw [hrw, hnorm]; exact hcs
   exact (abs_le_of_sq_le_sq' hsq hrhs_nonneg).2
+
+/-- The Euclidean distance between two points is at most the square root of the coordinate count
+times the sup distance between their coordinate vectors. -/
+theorem dist_le_sqrt_card_mul_dist_ofLp (x y : EuclideanSpace 𝕜 ι) :
+    dist x y ≤ Real.sqrt (Fintype.card ι) * dist (WithLp.ofLp x) (WithLp.ofLp y) := by
+  have h := (PiLp.lipschitzWith_toLp 2 (fun _ : ι => 𝕜)).dist_le_mul (WithLp.ofLp x)
+    (WithLp.ofLp y)
+  have hc : (((Fintype.card ι : NNReal) ^ (1 / (2 : ENNReal)).toReal : NNReal) : ℝ) =
+      Real.sqrt (Fintype.card ι) := by
+    rw [NNReal.coe_rpow, NNReal.coe_natCast, Real.sqrt_eq_rpow]
+    norm_num
+  rwa [hc, WithLp.toLp_ofLp, WithLp.toLp_ofLp] at h
 
 end EuclideanSpace
 
