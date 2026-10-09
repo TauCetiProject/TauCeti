@@ -22,6 +22,9 @@ The structure is not an instance: it depends on the element `x` and on a proof, 
 transcendental elements induce distinct `k(X)`-algebra structures on the same `F`. It is meant
 to be introduced locally with `letI`.
 
+A simple transcendental extension is free on its generator: `k⟮x⟯` maps to any field over `k`
+by sending `x` to any transcendental element, since both generate a copy of `k(X)`.
+
 The nonconstant rational function `X - X⁻¹` is also shown to be transcendental.
 Consequently substitution at it loses no polynomial information, including in positive
 characteristic.
@@ -30,6 +33,8 @@ characteristic.
 
 * `TauCeti.ratFuncAlgebraOfTranscendental`: the `k(X)`-algebra structure on `F` sending `X`
   to `x`.
+* `Transcendental.algHomAdjoin`: the `k`-algebra map `k⟮x⟯ → E` sending `x` to a transcendental
+  element `z`.
 
 ## Main results
 
@@ -39,6 +44,7 @@ characteristic.
 * `TauCeti.isSeparable_ratFuncAlgebraOfTranscendental`: separability over `k⟮x⟯` transfers to
   separability over `k(X)`.
 * `TauCeti.transcendental_ratFunc_X_sub_inv`: `X - X⁻¹` is transcendental.
+* `Transcendental.algHomAdjoin_gen`: `Transcendental.algHomAdjoin` sends the generator `x` to `z`.
 -/
 
 public section
@@ -118,5 +124,18 @@ theorem isSeparable_ratFuncAlgebraOfTranscendental (hx : Transcendental k x)
   ext r
   rw [RingHom.comp_apply, RingHom.comp_apply, algebraMap_ratFuncAlgebraOfTranscendental_apply]
   simp
+
+/-- The `k`-algebra map `k⟮x⟯ → E` sending a transcendental `x` to a transcendental `z`: both
+`k⟮x⟯` and `k⟮z⟯` are identified with the rational function field `k(X)`. -/
+noncomputable def _root_.Transcendental.algHomAdjoin (hx : Transcendental k x) {E : Type*}
+    [Field E] [Algebra k E] {z : E} (hz : Transcendental k z) : k⟮x⟯ →ₐ[k] E :=
+  (IntermediateField.val _).comp ((RatFunc.algEquivOfTranscendental z hz).toAlgHom.comp
+    (RatFunc.algEquivOfTranscendental x hx).symm.toAlgHom)
+
+@[simp]
+theorem _root_.Transcendental.algHomAdjoin_gen (hx : Transcendental k x) {E : Type*} [Field E]
+    [Algebra k E] {z : E} (hz : Transcendental k z) :
+    hx.algHomAdjoin hz (IntermediateField.AdjoinSimple.gen k x) = z := by
+  simp [Transcendental.algHomAdjoin]
 
 end TauCeti

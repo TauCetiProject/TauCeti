@@ -144,7 +144,7 @@ theorem mul_ord_y_eq (hq : 1 < q) {P : Place K F} (hP : P.ord x < 0) :
   rw [← hrhs, P.ord_add_eq_min_of_ord_ne (pow_ne_zero q hy0) hy0 hlt.ne, min_eq_left hlt.le,
     P.ord_pow]
 
-/-- `q` divides the order of `x` at every place. -/
+/-- `q` divides the pole order `max (-ord_P x) 0` of `x` at every place. -/
 private theorem dvd_ord_x (hq : 1 < q) (P : Place K F) : (q : ℤ) ∣ -P.ord x ⊔ 0 := by
   by_cases hP : P.ord x < 0
   · rw [max_eq_left (by omega), dvd_neg]

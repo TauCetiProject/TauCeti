@@ -51,11 +51,7 @@ theorem natCard_pow_add_self_eq [Finite K] (hK : Nat.card K = (p ^ n) ^ 2) {c : 
   rw [Nat.card_eq_fintype_card] at hK
   set q := p ^ n with hqdef
   -- A field has at least two elements, so `q > 1`.
-  have hq : 1 < q := by
-    have := Fintype.one_lt_card (α := K)
-    rw [hK] at this
-    by_contra hle
-    interval_cases q <;> simp at this
+  have hq : 1 < q := (Nat.one_lt_pow_iff two_ne_zero).mp (hK ▸ Fintype.one_lt_card)
   -- The additive map `T b = b ^ q + b`.
   let T : K →+ K :=
     { toFun b := b ^ q + b
