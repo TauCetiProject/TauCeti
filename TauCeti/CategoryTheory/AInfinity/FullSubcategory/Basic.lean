@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Comap
-public import TauCeti.CategoryTheory.AInfinity.HomotopyCategory
+public import TauCeti.CategoryTheory.AInfinity.Basic
 public import TauCeti.CategoryTheory.Graded.FullSubquiver
 
 /-!
@@ -23,8 +23,9 @@ closed under the operations of `𝒞`: a composable string of morphisms between 
 `P` is sent to a morphism between two such objects, and every other string to zero.  The
 `A∞` structure of the full subcategory is therefore the pullback of the total algebra of `𝒞` along
 this injective inclusion (`TauCeti.AInfinityAlgebra.comap`), which is a strict `A∞` morphism of
-total algebras.  Closed degree-zero morphisms, differentials and composition are those of `𝒞`, so
-a full subcategory of a cohomologically unital `A∞` category is cohomologically unital.
+total algebras.  Differentials and composition are those of `𝒞`.
+The homotopy-level consequences are in
+`TauCeti.CategoryTheory.AInfinity.FullSubcategory.HomotopyCategory`.
 
 ## Main definitions
 
@@ -42,8 +43,6 @@ a full subcategory of a cohomologically unital `A∞` category is cohomologicall
 * `TauCeti.AInfinityCategory.homDifferential_fullSubcategory` and
   `TauCeti.AInfinityCategory.comp_fullSubcategory`: its differential and composition are those
   of `𝒞`.
-* `TauCeti.AInfinityCategory.CohomologicalUnits.fullSubcategory`: cohomological units restrict
-  to the full subcategory.
 
 ## References
 
@@ -192,39 +191,6 @@ theorem coe_fullSubcategoryInclusion :
     ⇑(𝒞.fullSubcategoryInclusion P) = totalHomInclusion R P :=
   congrArg (fun g : TotalHom R (FullSubquiver P) →ₗ[R] TotalHom R C ↦ ⇑g)
     (𝒞.fullSubcategoryInclusion_toLinearMap P)
-
-/-- The closed degree-zero morphisms of the full subcategory are those of `𝒞`. -/
-@[simp]
-theorem homCyclesZero_fullSubcategory (X Y : FullSubquiver P) :
-    (𝒞.fullSubcategory P).homCyclesZero X Y = 𝒞.homCyclesZero X.obj Y.obj := by
-  ext f
-  simp [FullSubquiver.grading_eq]
-
-/-- The boundaries of the full subcategory are those of `𝒞`. -/
-@[simp]
-theorem range_homDifferential_fullSubcategory (X Y : FullSubquiver P) :
-    LinearMap.range ((𝒞.fullSubcategory P).homDifferential X Y) =
-      LinearMap.range (𝒞.homDifferential X.obj Y.obj) := by
-  congr 1
-  exact LinearMap.ext (𝒞.homDifferential_fullSubcategory P X Y)
-
-variable {𝒞} {e : ∀ X : C, homModule (R := R) X X}
-
-/-- **Cohomological units restrict to full subcategories.** -/
-theorem CohomologicalUnits.fullSubcategory (he : 𝒞.CohomologicalUnits e) :
-    (𝒞.fullSubcategory P).CohomologicalUnits fun X ↦ e X.obj where
-  cycle X := by simpa using he.cycle X.obj
-  left_unit X Y f hf := by
-    simpa using he.left_unit X.obj Y.obj f (by simpa using hf)
-  right_unit X Y f hf := by
-    simpa using he.right_unit X.obj Y.obj f (by simpa using hf)
-
-/-- A full subcategory of a cohomologically unital `A∞` category is cohomologically unital. -/
-theorem CohomologicallyUnital.fullSubcategory (h𝒞 : 𝒞.CohomologicallyUnital) :
-    (𝒞.fullSubcategory P).CohomologicallyUnital := by
-  rw [cohomologicallyUnital_iff] at h𝒞 ⊢
-  obtain ⟨e, he⟩ := h𝒞
-  exact ⟨_, he.fullSubcategory P⟩
 
 end AInfinityCategory
 
